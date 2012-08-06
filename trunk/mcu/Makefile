@@ -1,7 +1,7 @@
 ###########################################
 # Fichero de configuracion
 ###########################################
-include ../config.mk
+include config.mk
 
 #OPTS+= -fPIC -DPIC -DNDEBUG
 
@@ -22,8 +22,8 @@ endif
 ############################################
 #Directorios
 ############################################
-BUILD = $(SRCDIR)/media/build/$(TAG)
-BIN   = $(SRCDIR)/bin//$(TAG)
+BUILD = $(SRCDIR)/build/$(TAG)
+BIN   = $(SRCDIR)/bin/$(TAG)
 
 ############################################
 #Objetos
@@ -88,20 +88,20 @@ BUILDOBJSFSCLIENT= $(addprefix $(BUILD)/,$(OBJSFSCLIENT))
 #Compilacion condicional
 ###################################
 VPATH  =  %.o $(BUILD)/
-VPATH +=  %.c $(SRCDIR)/media/lib/
-VPATH +=  %.c $(SRCDIR)/media/src/
-VPATH +=  %.cpp $(SRCDIR)/media/src/
-VPATH +=  %.cpp $(SRCDIR)/media/src/$(G711DIR)
-VPATH +=  %.cpp $(SRCDIR)/media/src/$(GSMDIR)
-VPATH +=  %.cpp $(SRCDIR)/media/src/$(H263DIR)
-VPATH +=  %.cpp $(SRCDIR)/media/src/$(H264DIR)
-VPATH +=  %.cpp $(SRCDIR)/media/src/$(FLV1DIR)
-VPATH +=  %.cpp $(SRCDIR)/media/src/$(SPEEXDIR)
-VPATH +=  %.cpp $(SRCDIR)/media/src/$(NELLYDIR)
-VPATH +=  %.cpp $(SRCDIR)/media/src/$(JSR309DIR)
+VPATH +=  %.c $(SRCDIR)/lib/
+VPATH +=  %.c $(SRCDIR)/src/
+VPATH +=  %.cpp $(SRCDIR)/src/
+VPATH +=  %.cpp $(SRCDIR)/src/$(G711DIR)
+VPATH +=  %.cpp $(SRCDIR)/src/$(GSMDIR)
+VPATH +=  %.cpp $(SRCDIR)/src/$(H263DIR)
+VPATH +=  %.cpp $(SRCDIR)/src/$(H264DIR)
+VPATH +=  %.cpp $(SRCDIR)/src/$(FLV1DIR)
+VPATH +=  %.cpp $(SRCDIR)/src/$(SPEEXDIR)
+VPATH +=  %.cpp $(SRCDIR)/src/$(NELLYDIR)
+VPATH +=  %.cpp $(SRCDIR)/src/$(JSR309DIR)
 
 
-INCLUDE+= -I$(SRCDIR)/media/include/ $(GNASHINCLUDE)
+INCLUDE+= -I$(SRCDIR)/include/ $(GNASHINCLUDE)
 LDFLAGS+= -lavcodec -lgsm -lpthread -lswscale -lavformat -lavutil -lx264 -lssl -lmp4v2 -lspeex -lspeexdsp -lcrypto
 LDXMLFLAGS+= -lxmlrpc -lxmlrpc_xmlparse -lxmlrpc_xmltok -lxmlrpc_abyss -lxmlrpc_server -lxmlrpc_util
 LDFLAGS+= $(LDXMLFLAGS)
@@ -126,7 +126,7 @@ all: mkdirs $(TARGETS)
 mkdirs:  
 	mkdir -p $(BUILD)
 	mkdir -p $(BIN)
-	cp $(SRCDIR)/media/logo.png $(BIN)
+	cp $(SRCDIR)/logo.png $(BIN)
 clean:
 	rm -f $(BUILDOBJSMCU)
 	rm -f $(BUILDOBJSFS)
@@ -141,6 +141,7 @@ install:
 ############################################
 #MCU
 ############################################
+
 
 mcu: $(OBJSMCU)
 	$(CXX) -o $(BIN)/$@ $(BUILDOBJSMCU) $(LDFLAGS)
