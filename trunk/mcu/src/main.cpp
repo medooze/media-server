@@ -248,8 +248,7 @@ int main(int argc,char **argv)
 	rtmpServer.AddApplication(L"streamer/mp4",&broadcaster);
 	rtmpServer.AddApplication(L"streamer/flv",&broadcaster);
 	//Add the rtmp applications from the media gateway
-	rtmpServer.AddApplication(L"bridge/input",&mediaGateway);
-	rtmpServer.AddApplication(L"bridge/output",&mediaGateway);
+	rtmpServer.AddApplication(L"bridge/",&mediaGateway);
 	
 	//Append mcu cmd handler to the http server
 	server.AddHandler(string("/mcu"),&xmlrpcmcu);
