@@ -232,11 +232,17 @@ void AVCDescriptor::Dump() const
 	for (int i=0;i<numOfSequenceParameterSets;i++)
 	{
 		Debug(" SequenceParameterSets[%d]\n",i);
-		H264SeqParameterSet sps;
-		//Decode
-		sps.Decode(spsData[i],spsSizes[i]);
-		//Dump
-		sps.Dump();
+		try {
+			H264SeqParameterSet sps;
+			//Decode
+			sps.Decode(spsData[i],spsSizes[i]);
+			//Dump
+			sps.Dump();
+		} catch (...) {
+			Debug(" exception raised while parsing sqs");
+			//Dump
+			Dump(spsData[i],spsSizes[i]);
+		}
 	}
 	
 	Debug(" numOfPictureParameterSets: %d\n",numOfPictureParameterSets);
@@ -244,10 +250,16 @@ void AVCDescriptor::Dump() const
 	for (int i=0;i<numOfPictureParameterSets;i++)
 	{
 		Debug(" PictureParameterSets[%d]\n",i);
-		H264PictureParameterSet pps;
-		//Decode
-		pps.Decode(spsData[i],spsSizes[i]);
-		//Dump
-		pps.Dump();
+		try {
+			H264PictureParameterSet pps;
+			//Decode
+			pps.Decode(spsData[i],spsSizes[i]);
+			//Dump
+			pps.Dump();
+		} catch (...) {
+			Debug(" exception raised while parsing pps");
+			//Dump
+			Dump(spsData[i],spsSizes[i]);
+		}
 	}
 }
