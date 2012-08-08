@@ -843,10 +843,7 @@ int RTMPParticipant::RecVideo()
 			desc.Parse(video->GetMediaData(),video->GetMaxMediaSize());
 
 			//Get nal
-			NALUnitLength = desc.GetNALUnitLength()+1,
-
-			//Dump it
-			desc.Dump();
+			NALUnitLength = desc.GetNALUnitLength()+1;
 
 			//Decode SPS
 			for (int i=0;i<desc.GetNumOfSequenceParameterSets();i++)
