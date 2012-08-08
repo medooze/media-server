@@ -1,7 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configurationDescriptor version="69">
   <logicalFolder name="root" displayName="root" projectFiles="true">
-    <df name="media" root="m:/media">
+    <df name="" root="m:/">
+      <df name="bin" kind="SOURCE_LOGICAL_FOLDER">
+        <df name="debug" kind="SOURCE_LOGICAL_FOLDER">
+          <in>http.log</in>
+          <in>logo.png</in>
+          <in>mcu</in>
+          <in>rtmpdebug</in>
+        </df>
+      </df>
       <df name="include" kind="SOURCE_LOGICAL_FOLDER">
         <in>FLVEncoder.h</in>
         <in>FlashSoundHandler.h</in>
@@ -86,11 +94,11 @@
         <in>xmlrpcserver.h</in>
         <in>xmlstreaminghandler.h</in>
       </df>
-      <df name="lib">
+      <df name="lib" kind="SOURCE_LOGICAL_FOLDER">
         <in>mediamixer.cpp</in>
         <in>mediamixer.h</in>
       </df>
-      <df name="src">
+      <df name="src" kind="SOURCE_LOGICAL_FOLDER">
         <df name="flv1" kind="SOURCE_LOGICAL_FOLDER">
           <in>flv1codec.cpp</in>
           <in>flv1codec.h</in>
@@ -236,6 +244,10 @@
         <in>xmlrpcserver.cpp</in>
         <in>xmlstreaminghandler.cpp</in>
       </df>
+      <in>Makefile</in>
+      <in>config.mk</in>
+      <in>logo.png</in>
+      <in>media-Makefile.mk</in>
     </df>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -246,7 +258,7 @@
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
-    <Elem>m:/media</Elem>
+    <Elem>m:/</Elem>
   </sourceRootList>
   <projectmakefile>media-Makefile.mk</projectmakefile>
   <confs>

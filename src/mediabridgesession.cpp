@@ -1478,17 +1478,6 @@ void MediaBridgeSession::NetStream::doPlay(std::wstring& url,RTMPMediaStream::Li
 		//Erase it
 		url.erase(0,4);
 
-	//Check
-	if (url.find(L"ouput")!=std::wstring::npos)
-	{
-		//Log
-		Error("-Stream name incorrect [%ls]\n",url.c_str());
-		//Send error
-		fireOnNetStreamStatus(RTMP::Netstream::Play::Failed,L"Type invalid");
-		//Nothing done
-		return;
-	}
-
 	//Check token
 	if (!sess->ConsumeOutputToken(url))
 	{
@@ -1517,16 +1506,6 @@ void MediaBridgeSession::NetStream::doPublish(std::wstring& url)
 {
 	//Log
 	Log("-Publish stream [%ls]\n",url.c_str());
-
-	//Check
-	if (url.find(L"ouput")!=std::wstring::npos) {
-		//Log
-		Error("-Stream name incorrect [%ls]\n",url.c_str());
-		//Send error
-		fireOnNetStreamStatus(RTMP::Netstream::Publish::BadName,L"Type invalid");
-		//Nothing done
-		return;
-	}
 
 	//Get participant stream
 	if (!sess->ConsumeInputToken(url))
