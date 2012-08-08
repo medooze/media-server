@@ -241,7 +241,7 @@ void AVCDescriptor::Dump() const
 		} catch (...) {
 			Debug(" exception raised while parsing sqs");
 			//Dump
-			Dump(spsData[i],spsSizes[i]);
+			::Dump(spsData[i],spsSizes[i]);
 		}
 	}
 	
@@ -259,7 +259,7 @@ void AVCDescriptor::Dump() const
 		} catch (...) {
 			Debug(" exception raised while parsing pps");
 			//Dump
-			Dump(spsData[i],spsSizes[i]);
+			::Dump(spsData[i],spsSizes[i]);
 		}
 	}
 }
