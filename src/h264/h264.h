@@ -41,7 +41,7 @@ public:
 			offset_for_top_to_bottom_field = ExpGolombDecoder::Decode(r); 
 			num_ref_frames_in_pic_order_cnt_cycle = ExpGolombDecoder::Decode(r);
 			for( int i = 0; i < num_ref_frames_in_pic_order_cnt_cycle; i++ )
-				offset_for_ref_frame[ i ] = ExpGolombDecoder::Decode(r);
+				offset_for_ref_frame.assign(i,ExpGolombDecoder::Decode(r));
 		}
 		num_ref_frames = ExpGolombDecoder::Decode(r);
 		gaps_in_frame_num_value_allowed_flag = r.Get(1);
@@ -146,12 +146,12 @@ public:
 			slice_group_map_type = ExpGolombDecoder::Decode(r);
 			if( slice_group_map_type == 0 )
 				for( int iGroup = 0; iGroup <= num_slice_groups_minus1; iGroup++ )
-					run_length_minus1[ iGroup ] = ExpGolombDecoder::Decode(r);
+					run_length_minus1.assign(iGroup,ExpGolombDecoder::Decode(r));
 			else if( slice_group_map_type == 2 )
 				for( int iGroup = 0; iGroup < num_slice_groups_minus1; iGroup++ )
 				{
-					top_left[ iGroup ] = ExpGolombDecoder::Decode(r);
-					bottom_right[ iGroup ] = ExpGolombDecoder::Decode(r);
+					top_left.assign(iGroup,ExpGolombDecoder::Decode(r));
+					bottom_right.assign(iGroup,ExpGolombDecoder::Decode(r));
 				}
 			else if( slice_group_map_type == 3 || slice_group_map_type ==  4 || slice_group_map_type == 5 )
 			{
@@ -160,7 +160,7 @@ public:
 			} else if( slice_group_map_type == 6 ) {
 				pic_size_in_map_units_minus1 = ExpGolombDecoder::Decode(r);
 				for( int i = 0; i <= pic_size_in_map_units_minus1; i++ )
-					slice_group_id[i] = r.Get(ceil(log2(num_slice_groups_minus1+1)));
+					slice_group_id.assign(i,r.Get(ceil(log2(num_slice_groups_minus1+1))));
 			}
 		}
 		num_ref_idx_l0_active_minus1 = ExpGolombDecoder::Decode(r);
