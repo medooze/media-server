@@ -11,7 +11,7 @@
             <sourceEncoding>UTF-8</sourceEncoding>
             <make-dep-projects/>
             <sourceRootList>
-                <sourceRootElem>m:/media</sourceRootElem>
+                <sourceRootElem>m:/</sourceRootElem>
             </sourceRootList>
             <confList>
                 <confElem>Default</confElem>
