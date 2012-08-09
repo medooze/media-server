@@ -34,7 +34,7 @@ FLV1Encoder::FLV1Encoder(int qualityMin,int qualityMax)
 	avcodec_register_all();
 
 	// Get encoder
-	codec = avcodec_find_encoder(CODEC_ID_FLV1);
+	codec = avcodec_find_encoder(AV_CODEC_ID_FLV1);
 
 	// Check codec
 	if(!codec)
@@ -282,7 +282,7 @@ FLV1Decoder::FLV1Decoder()
 	avcodec_register_all();
 
 	//Encotramos el codec
-	codec = avcodec_find_decoder(CODEC_ID_FLV1);
+	codec = avcodec_find_decoder(AV_CODEC_ID_FLV1);
 
 	//Comprobamos
 	if(codec==NULL)

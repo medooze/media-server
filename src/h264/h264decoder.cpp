@@ -29,7 +29,7 @@ H264Decoder::H264Decoder()
 	avcodec_register_all();
 
 	//Encotramos el codec
-	codec = avcodec_find_decoder(CODEC_ID_H264);
+	codec = avcodec_find_decoder(AV_CODEC_ID_H264);
 
 	//Comprobamos
 	if(codec==NULL)

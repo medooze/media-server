@@ -28,7 +28,7 @@ Mpeg4Decoder::Mpeg4Decoder()
 	bufLen = 0;
 	
 	//Encotramos el codec
-	codec = avcodec_find_decoder(CODEC_ID_MPEG4);
+	codec = avcodec_find_decoder(AV_CODEC_ID_MPEG4);
 
 	//Comprobamos
 	if(codec==NULL)
@@ -146,7 +146,7 @@ Mpeg4Encoder::Mpeg4Encoder(int qualityMin,int qualityMax)
 	SetFrameRate(5,300,20);
 
 	// Get encoder
-	codec = avcodec_find_encoder(CODEC_ID_MPEG4);
+	codec = avcodec_find_encoder(AV_CODEC_ID_MPEG4);
 
 	// Check codec
 	if(!codec)

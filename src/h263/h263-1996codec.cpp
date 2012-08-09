@@ -29,7 +29,7 @@ H263Decoder1996::H263Decoder1996()
 	avcodec_register_all();
 
 	//Encotramos el codec
-	codec = avcodec_find_decoder(CODEC_ID_H263);
+	codec = avcodec_find_decoder(AV_CODEC_ID_H263);
 
 	//Comprobamos
 	if(codec==NULL)
@@ -235,7 +235,7 @@ H263Encoder1996::H263Encoder1996()
 	avcodec_register_all();
 
 	// Get encoder
-	codec = avcodec_find_encoder(CODEC_ID_H263);
+	codec = avcodec_find_encoder(AV_CODEC_ID_H263);
 
 	// Check codec
 	if(!codec)

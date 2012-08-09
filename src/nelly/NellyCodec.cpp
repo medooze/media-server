@@ -23,7 +23,7 @@ NellyCodec::NellyCodec(): AudioCodec()
 	avcodec_register_all();
 
 	// Get encoder
-	codec = avcodec_find_encoder(CODEC_ID_NELLYMOSER);
+	codec = avcodec_find_encoder(AV_CODEC_ID_NELLYMOSER);
 
 	// Check codec
 	if(!codec)
@@ -87,7 +87,7 @@ NellyEncoder11Khz::NellyEncoder11Khz(): AudioCodec()
 	avcodec_register_all();
 
 	// Get encoder
-	codec = avcodec_find_encoder(CODEC_ID_NELLYMOSER);
+	codec = avcodec_find_encoder(AV_CODEC_ID_NELLYMOSER);
 
 	// Check codec
 	if(!codec)
@@ -170,7 +170,7 @@ NellyDecoder11Khz::NellyDecoder11Khz(): AudioCodec()
 	avcodec_register_all();
 
 	// Get encoder
-	codec = avcodec_find_decoder(CODEC_ID_NELLYMOSER);
+	codec = avcodec_find_decoder(AV_CODEC_ID_NELLYMOSER);
 
 	// Check codec
 	if(!codec)
