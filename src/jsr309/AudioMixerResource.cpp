@@ -56,7 +56,7 @@ int AudioMixerResource::CreatePort(std::wstring &tag)
 	port->decoder.Init(mixer.GetOutput(portId));
 
 	//Init mixer id
-	mixer.InitMixer(portId);
+	mixer.InitMixer(portId,0);
 
 	//Lo insertamos en el map
 	ports[portId] = port;

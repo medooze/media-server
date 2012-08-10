@@ -4,10 +4,6 @@
     <df name="" root="m:/">
       <df name="bin" kind="SOURCE_LOGICAL_FOLDER">
         <df name="debug" kind="SOURCE_LOGICAL_FOLDER">
-          <in>http.log</in>
-          <in>logo.png</in>
-          <in>mcu</in>
-          <in>rtmpdebug</in>
         </df>
       </df>
       <df name="include" kind="SOURCE_LOGICAL_FOLDER">
@@ -73,6 +69,7 @@
         <in>rtp.h</in>
         <in>rtpparticipant.h</in>
         <in>rtpsession.h</in>
+        <in>sidebar.h</in>
         <in>statushandler.h</in>
         <in>text.h</in>
         <in>textencoder.h</in>
@@ -225,6 +222,7 @@
         <in>rtp.cpp</in>
         <in>rtpparticipant.cpp</in>
         <in>rtpsession.cpp</in>
+        <in>sidebar.cpp</in>
         <in>statushandler.cpp</in>
         <in>textencoder.cpp</in>
         <in>textmixer.cpp</in>
@@ -244,10 +242,6 @@
         <in>xmlrpcserver.cpp</in>
         <in>xmlstreaminghandler.cpp</in>
       </df>
-      <in>Makefile</in>
-      <in>config.mk</in>
-      <in>logo.png</in>
-      <in>media-Makefile.mk</in>
     </df>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -270,7 +264,7 @@
       </toolsSet>
       <makefileType>
         <makeTool>
-          <buildCommandWorkingDir>/usr/local/src/mcu/media</buildCommandWorkingDir>
+          <buildCommandWorkingDir>/usr/local/src/mcu/</buildCommandWorkingDir>
           <buildCommand>${MAKE} -f Makefile</buildCommand>
           <cleanCommand>${MAKE} -f Makefile clean</cleanCommand>
           <executablePath>../bin/debug/mcu</executablePath>

@@ -6,6 +6,7 @@
 #include "audiomixer.h"
 #include "pipeaudioinput.h"
 #include "pipeaudiooutput.h"
+#include "sidebar.h"
 
 /***********************
 * AudioMixer
@@ -15,6 +16,8 @@ AudioMixer::AudioMixer()
 {
 	//Not mixing
 	mixingAudio = 0;
+	//No sidebars
+	numSidebars = 0;
 }
 
 /***********************
@@ -50,10 +53,7 @@ void *AudioMixer::startMixingAudio(void *par)
 int AudioMixer::MixAudio()
 {
 	timeval  tv;
-	Audios::iterator	it;
 	DWORD step = 10;
-	QWORD curr = 0;
-	QWORD prev = 0;
 
 	//Logeamos
 	Log(">MixAudio\n");
@@ -64,20 +64,11 @@ int AudioMixer::MixAudio()
 	//Mientras estemos mezclando
 	while(mixingAudio)
 	{
-		//zero the mixer buffer
-		memset(mixer_buffer, 0, MIXER_BUFFER_SIZE*sizeof(WORD));
+		//Wait until next to process
+		msleep(step*1000);
 
-		//Wait until next to process again minus process time
-		msleep(step*1000-(getDifTime(&tv)-curr*1000));
-
-		//Get new time
-		curr = getDifTime(&tv)/1000;
-		
 		//Get time elapsed
-		QWORD diff = curr-prev;
-
-		//Update
-		prev = curr;
+		QWORD diff = getUpdDifTime(&tv)/1000;
 
 		//Get num samples at 8Khz
 		DWORD numSamples = diff*8;
@@ -86,30 +77,41 @@ int AudioMixer::MixAudio()
 		lstAudiosUse.WaitUnusedAndLock();
 
 		//At most the maximum
-		if (numSamples>MIXER_BUFFER_SIZE)
+		if (numSamples>Sidebar::MIXER_BUFFER_SIZE)
 			//Set it at most (shoudl never happen)
-			numSamples = MIXER_BUFFER_SIZE;
+			numSamples = Sidebar::MIXER_BUFFER_SIZE;
 
+		//For each sidepaf
+		for (Sidebars::iterator sit=sidebars.begin(); sit!=sidebars.end(); ++sit)
+			//REset
+			sit->second->Reset();
+		
 		//First pass: Iterate through the audio inputs and calculate the sum of all streams
-		for(it = lstAudios.begin(); it != lstAudios.end(); it++)
+		for(Audios::iterator it = audios.begin(); it != audios.end(); ++it)
 		{
 			//Get the source
 			AudioSource *audio = it->second;
-
+			
 			//And the audio buffer
 			WORD *buffer = audio->buffer;
 
 			//Get the samples from the fifo
 			audio->len = audio->output->GetSamples(buffer,numSamples);
 
-			//Mix the audio
-			for(int i = 0; i < audio->len; i++)
-				//MIX
-				mixer_buffer[i] += buffer[i];
+			//For each sidepaf
+			for (Sidebars::iterator sit = sidebars.begin(); sit!=sidebars.end(); ++sit)
+			{
+				//Get sidebar
+				Sidebar* sidebar = sit->second;
+				//Check if it has the participant
+				if (sidebar->HasParticipant(it->first))
+					//Mix it
+					sidebar->Update(it->first,audio->buffer,audio->len);
+			}
 		}
 
 		// Second pass: Calculate this stream's output
-		for(it = lstAudios.begin(); it != lstAudios.end(); it++)
+		for(Audios::iterator it = audios.begin(); it != audios.end(); it++)
 		{
 			//Get the source
 			AudioSource *audio = it->second;
@@ -118,18 +120,24 @@ int AudioMixer::MixAudio()
 			if (!audio)
 				//Next
 				continue;
+			//Check sidebar
+			if (!audio->sidebar)
+				//Next
+				continue;
+			//Get mixer buffer
+			WORD *mixed = audio->sidebar->GetBuffer();
 			//And the audio buffer
 			WORD *buffer = audio->buffer;
 
 			//Calculate the result
 			for(int i=0; i<audio->len; i++)
 				//We don't want to hear our own signal
-				buffer[i] = mixer_buffer[i] - buffer[i];
+				buffer[i] = mixed[i] - buffer[i];
 
 			//Check length
 			if (audio->len<numSamples)
 				//Copy the rest
-				memcpy(((BYTE*)buffer)+audio->len*sizeof(WORD),((BYTE*)mixer_buffer)+audio->len*sizeof(WORD),(numSamples-audio->len)*sizeof(WORD));
+				memcpy(((BYTE*)buffer)+audio->len*sizeof(WORD),((BYTE*)mixed)+audio->len*sizeof(WORD),(numSamples-audio->len)*sizeof(WORD));
 
 			//PUt the output
 			audio->input->PutSamples(buffer,numSamples);
@@ -154,6 +162,12 @@ int AudioMixer::Init()
 	// Estamos mzclando
 	mixingAudio = true;
 
+	//Create default sidebar
+	int id = CreateSidebar();
+
+	//Set default
+	defaultSidebar = sidebars[id];
+
 	//Y arrancamoe el thread
 	createPriorityThread(&mixAudioThread,startMixingAudio,this,0);
 
@@ -168,8 +182,6 @@ int AudioMixer::End()
 {
 	Log(">End audiomixer\n");
 
-	//Borramos los audios
-	Audios::iterator it;
 
 	//Terminamos con la mezcla
 	if (mixingAudio)
@@ -185,7 +197,7 @@ int AudioMixer::End()
 	lstAudiosUse.WaitUnusedAndLock();
 
 	//Recorremos la lista
-	for (it =lstAudios.begin();it!=lstAudios.end();++it)
+	for (Audios::iterator it =audios.begin();it!=audios.end();++it)
 	{
 		//Obtenemos el audio source
 		AudioSource *audio = it->second;
@@ -199,6 +211,21 @@ int AudioMixer::End()
 		delete audio->output;
 		delete audio;
 	}
+
+	//Clear list
+	audios.clear();
+
+	//For each sidebar
+	for (Sidebars::iterator it=sidebars.begin(); it!=sidebars.end();++it)
+	{
+		//Get sidebar
+		Sidebar *sidebar = it->second;
+		//Delete the sidebar
+		delete(sidebar);
+	}
+
+	//Clear list
+	sidebars.clear();
 
 	//Unlock
 	lstAudiosUse.Unlock();
@@ -220,7 +247,7 @@ int AudioMixer::CreateMixer(int id)
 	lstAudiosUse.WaitUnusedAndLock();
 
 	//Miramos que si esta
-	if (lstAudios.find(id)!=lstAudios.end())
+	if (audios.find(id)!=audios.end())
 	{
 		//Desprotegemos la lista
 		lstAudiosUse.Unlock();
@@ -233,12 +260,14 @@ int AudioMixer::CreateMixer(int id)
 	//POnemos el input y el output
 	audio->input  = new PipeAudioInput();
 	audio->output = new PipeAudioOutput();
+	//No sidebar yet
+	audio->sidebar = NULL;
 	//Clean buffer
-	memset(audio->buffer, 0, MIXER_BUFFER_SIZE*sizeof(WORD));
+	memset(audio->buffer, 0, Sidebar::MIXER_BUFFER_SIZE*sizeof(WORD));
 	audio->len = 0;
 
 	//Y lo a�adimos a la lista
-	lstAudios[id] = audio;
+	audios[id] = audio;
 
 	//Desprotegemos la lista
 	lstAudiosUse.Unlock();
@@ -253,18 +282,19 @@ int AudioMixer::CreateMixer(int id)
 * InitMixer
 *	Inicializa un audio
 *************************/
-int AudioMixer::InitMixer(int id)
+int AudioMixer::InitMixer(int id,int sidebarId)
 {
+
 	Log(">Init mixer [%d]\n",id);
 
 	//Protegemos la lista
 	lstAudiosUse.IncUse();
 
 	//Buscamos el audio source
-	Audios::iterator it = lstAudios.find(id);
+	Audios::iterator it = audios.find(id);
 
 	//Si no esta	
-	if (it == lstAudios.end())
+	if (it == audios.end())
 	{
 		//Desprotegemos
 		lstAudiosUse.DecUse();
@@ -274,6 +304,17 @@ int AudioMixer::InitMixer(int id)
 
 	//Obtenemos el audio source
 	AudioSource *audio = it->second;
+
+	//Get the sidebar for the user
+	Sidebars::iterator itSidebar = sidebars.find(sidebarId);
+
+	//If found
+	if (itSidebar!=sidebars.end())
+		//Set it
+		audio->sidebar = itSidebar->second;
+	else
+		//Send only participant
+		Log("-No mosaic for participant found, will be send only.\n");
 
 	//INiciamos los pipes
 	audio->input->Init();
@@ -299,10 +340,10 @@ int AudioMixer::EndMixer(int id)
 	lstAudiosUse.IncUse();
 
 	//Buscamos el audio source
-	Audios::iterator it = lstAudios.find(id);
+	Audios::iterator it = audios.find(id);
 
 	//Si no esta	
-	if (it == lstAudios.end())
+	if (it == audios.end())
 	{
 		//Desprotegemos
 		lstAudiosUse.DecUse();
@@ -316,6 +357,14 @@ int AudioMixer::EndMixer(int id)
 	//Terminamos
 	audio->input->End();
 	audio->output->End();
+
+	//Unset sidebar
+	audio->sidebar = NULL;
+
+	//For all the sidebars
+	for (Sidebars::iterator it = sidebars.begin(); it!=sidebars.end(); ++it)
+		//Remove particiapant
+		it->second->RemoveParticipant(id);
 
 	//Desprotegemos
 	lstAudiosUse.DecUse();
@@ -336,10 +385,10 @@ int AudioMixer::DeleteMixer(int id)
 	lstAudiosUse.WaitUnusedAndLock();
 
 	//Lo buscamos
-	Audios::iterator it = lstAudios.find(id);
+	Audios::iterator it = audios.find(id);
 
 	//SI no ta
-	if (it == lstAudios.end())
+	if (it == audios.end())
 	{
 		//DDesprotegemos la lista
 		lstAudiosUse.Unlock();
@@ -351,7 +400,7 @@ int AudioMixer::DeleteMixer(int id)
 	AudioSource *audio = it->second;
 
 	//Lo quitamos de la lista
-	lstAudios.erase(it);
+	audios.erase(it);
 
 	//Desprotegemos la lista
 	lstAudiosUse.Unlock();
@@ -374,13 +423,13 @@ AudioInput* AudioMixer::GetInput(int id)
 	lstAudiosUse.IncUse();
 
 	//Buscamos el audio source
-	Audios::iterator it = lstAudios.find(id);
+	Audios::iterator it = audios.find(id);
 
 	//Obtenemos el input
 	AudioInput *input = NULL;
 
 	//Si esta
-	if (it != lstAudios.end())
+	if (it != audios.end())
 		input = it->second->input;
 
 	//Desprotegemos
@@ -400,13 +449,13 @@ AudioOutput* AudioMixer::GetOutput(int id)
 	lstAudiosUse.IncUse();
 
 	//Buscamos el audio source
-	Audios::iterator it = lstAudios.find(id);
+	Audios::iterator it = audios.find(id);
 
 	//Obtenemos el output
 	AudioOutput *output = NULL;
 
 	//Si esta	
-	if (it != lstAudios.end())
+	if (it != audios.end())
 		output = it->second->output;
 
 	//Desprotegemos
@@ -416,3 +465,144 @@ AudioOutput* AudioMixer::GetOutput(int id)
 	return output;
 }
 
+/***********************************
+ * SetMixerSidebar
+ *	Add a participant to be shown in a sidebar
+ ************************************/
+int AudioMixer::SetMixerSidebar(int id,int sidebarId)
+{
+	Log(">SetMixerSidebar [id:%d,sidebar:%d]\n",id,sidebarId);
+
+	//Protegemos la lista
+	lstAudiosUse.IncUse();
+
+	//Buscamos el audio source
+	Audios::iterator it = audios.find(id);
+
+	//Si no esta
+	if (it == audios.end())
+	{
+		//Desprotegemos
+		lstAudiosUse.DecUse();
+		//Salimos
+		return Error("Mixer not found\n");
+	}
+
+	//Obtenemos el audio source
+	AudioSource *audio = it->second;
+
+	//Get the sidebar for the user
+	Sidebars::iterator itSidebar = sidebars.find(sidebarId);
+
+	//If found
+	if (itSidebar!=sidebars.end())
+		//Set sidebar
+		audio->sidebar = itSidebar->second;
+	else
+		//Send only participant
+		Log("-No sidebar for participant found, will be send only.\n");
+
+	//Desprotegemos
+	lstAudiosUse.DecUse();
+
+	Log("<SetMixerSidebar [%d]\n",id);
+
+	//Si esta devolvemos el input
+	return true;
+}
+/***********************************
+ * AddSidebarParticipant
+ *	Add a participant to be shown in a sidebar
+ ************************************/
+int AudioMixer::AddSidebarParticipant(int sidebarId, int partId)
+{
+	Log("-AddSidebarParticipant [sidebar:%d,partId:%d]\n",sidebarId,partId);
+
+	//Get the sidebar for the user
+	Sidebars::iterator itSidebar = sidebars.find(sidebarId);
+
+	//If not found
+	if (itSidebar==sidebars.end())
+		//Salimos
+		return Error("Sidebar not found\n");
+
+	//Add participant to the sidebar
+	itSidebar->second->AddParticipant(partId);
+
+	//Everything ok
+	return 1;
+}
+
+/***********************************
+ * RemoveSidebarParticipant
+ *	Remove a participant to be shown in a sidebar
+ ************************************/
+int AudioMixer::RemoveSidebarParticipant(int sidebarId, int partId)
+{
+	Log(">-RemoveSidebarParticipant [sidebar:%d,partId:%d]\n",sidebarId,partId);
+
+	//Get the sidebar for the user
+	Sidebars::iterator itSidebar = sidebars.find(sidebarId);
+
+	//If not found
+	if (itSidebar==sidebars.end())
+		//Salimos
+		return Error("Sidebar not found\n");
+
+	//Get sidebar
+	Sidebar* sidebar = itSidebar->second;
+
+	//Remove participant to the sidebar
+	sidebar->RemoveParticipant(partId);
+
+	//Correct
+	return 1;
+}
+
+int AudioMixer::CreateSidebar()
+{
+	//Get id
+	int id = numSidebars++;
+
+	//add it
+	sidebars[id] = new Sidebar();
+
+	return id;
+}
+
+int AudioMixer::DeleteSidebar(int sidebarId)
+{
+	//Get sidebar from id
+	Sidebars::iterator it = sidebars.find(sidebarId);
+
+	//Check if we have found it
+	if (it==sidebars.end())
+		//error
+		return Error("Sidebar not found [id:%d]\n",sidebarId);
+
+	//Get the old sidebar
+	Sidebar *sidebar = it->second;
+
+	//Block
+	lstAudiosUse.IncUse();
+
+	//For each audio
+	for (Audios::iterator ita = audios.begin(); ita!= audios.end(); ++ita)
+	{
+		//Check it it has dis sidebar
+		if (ita->second->sidebar == sidebar)
+			//Set to null
+			ita->second->sidebar = NULL;
+	}
+	//UnBlock
+	lstAudiosUse.DecUse();
+
+	//Remove sidebar
+	sidebars.erase(it);
+
+	//Delete sidebar
+	delete(sidebar);
+
+	//Exit
+	return 1;
+}

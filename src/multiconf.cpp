@@ -82,7 +82,7 @@ int MultiConf::Init()
 	audioEncoder.SetAudioCodec(AudioCodec::PCMA);
 
 	//Start mixers
-	audioMixer.InitMixer(watcherId);
+	audioMixer.InitMixer(watcherId,0);
 	textMixer.InitMixer(watcherId);
 
 	//Start encoding
@@ -135,7 +135,7 @@ int MultiConf::StartBroadcaster()
 
 	//Init mixers
 	videoMixer.InitMixer(broadcastId,0);
-	audioMixer.InitMixer(broadcastId);
+	audioMixer.InitMixer(broadcastId,0);
 	textMixer.InitMixer(broadcastId);
 
 	//Start encoding
@@ -220,6 +220,29 @@ int MultiConf::RemoveMosaicParticipant(int mosaicId,int partId)
 	return videoMixer.RemoveMosaicParticipant(mosaicId,partId);
 }
 
+
+/************************
+* AddSidebarParticipant
+* 	Show participant in a Sidebar
+*************************/
+int MultiConf::AddSidebarParticipant(int sidebarId,int partId)
+{
+	//Set it
+	return audioMixer.AddSidebarParticipant(sidebarId,partId);
+}
+
+/************************
+* RemoveSidebarParticipant
+* 	Unshow a participant in a Sidebar
+*************************/
+int MultiConf::RemoveSidebarParticipant(int sidebarId,int partId)
+{
+	Log("-RemoveSidebarParticipant [sidebar:%d,partId:]\n",sidebarId,partId);
+
+	//Set it
+	return audioMixer.RemoveSidebarParticipant(sidebarId,partId);
+}
+
 /************************
 * CreateMosaic
 * 	Add a mosaic to the conference
@@ -257,7 +280,7 @@ int MultiConf::DeleteMosaic(int mosaicId)
 * CreateParticipant
 * 	A�ade un participante
 *************************/
-int MultiConf::CreateParticipant(int mosaicId,std::wstring name,Participant::Type type)
+int MultiConf::CreateParticipant(int mosaicId,int sidebarId,std::wstring name,Participant::Type type)
 {
 	Participant *part = NULL;
 
@@ -325,7 +348,7 @@ int MultiConf::CreateParticipant(int mosaicId,std::wstring name,Participant::Typ
 
 	//E iniciamos el mixer
 	videoMixer.InitMixer(partId,mosaicId);
-	audioMixer.InitMixer(partId);
+	audioMixer.InitMixer(partId,sidebarId);
 	textMixer.InitMixer(partId);
 
 	//Get lock
@@ -954,6 +977,35 @@ int MultiConf::SetParticipantMosaic(int partId,int mosaicId)
 	return ret;
 }
 
+
+/************************
+* SetParticipantSidebar
+* 	Change participant sidebar
+*************************/
+int MultiConf::SetParticipantSidebar(int partId,int sidebarId)
+{
+	int ret = 0;
+
+	Log("-SetParticipantSidebar [partId:%d,sidebar:%d]\n",partId,sidebarId);
+
+	//Use list
+	participantsLock.IncUse();
+
+	//Get the participant
+	Participant *part = GetParticipant(partId);
+
+	//Check particpant
+	if (part)
+		//Set it in the video mixer
+		ret =  audioMixer.SetMixerSidebar(partId,sidebarId);
+
+	//Unlock
+	participantsLock.DecUse();
+
+	//Exit
+	return ret;
+}
+
 /************************
 * CreatePlayer
 * 	Create a media player
@@ -1001,7 +1053,7 @@ int MultiConf::CreatePlayer(int privateId,std::wstring name)
 
 	//E iniciamos el mixer
 	videoMixer.InitMixer(playerId,-1);
-	audioMixer.InitMixer(playerId);
+	audioMixer.InitMixer(playerId,-1);
 	textMixer.InitPrivate(playerId);
 
 	//Lo insertamos en el map
