@@ -323,6 +323,9 @@ int VideoStream::StopReceiving()
 		//Dejamos de recivir
 		receivingVideo=0;
 
+		//Cancel rtp
+		rtp.CancelGetPacket();
+		
 		//Esperamos
 		pthread_join(recVideoThread,NULL);
 	}
@@ -510,8 +513,11 @@ int VideoStream::RecVideo()
 			}
 		}
 
+		//Get lost
+		WORD lost = rtp.GetLost();
+
 		//Si hemos perdido un paquete
-		if(rtp.GetLost())
+		if(lost)
 		{
 			//Debug
 			Log("Lost packet\n");
@@ -532,7 +538,7 @@ int VideoStream::RecVideo()
 		recBytes += packet->GetSize();
 
 		//Lo decodificamos
-		if(!videoDecoder->DecodePacket(packet->GetMediaData(),packet->GetMediaLength(),0,packet->GetMark()))
+		if(!videoDecoder->DecodePacket(packet->GetMediaData(),packet->GetMediaLength(),lost,packet->GetMark()))
 		{
 			//Check if we got listener and more than two seconds have elapsed from last request
 			if (listener && getDifTime(&lastFPURequest)>2000000)

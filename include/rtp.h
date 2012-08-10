@@ -38,9 +38,8 @@ typedef struct {
     DWORD pt:7;        /* payload type */
     DWORD m:1;         /* marker bit */
     DWORD seq:16;      /* sequence number */
-    DWORD ts;               /* timestamp */
-    DWORD ssrc;             /* synchronization source */
-    DWORD csrc[1];          /* optional CSRC list */
+    DWORD ts;          /* timestamp */
+    DWORD ssrc;        /* synchronization source */
 } rtp_hdr_t;
 
 /* RTP Header Extension 
@@ -130,17 +129,21 @@ public:
 	{
 		this->media = media;
 		this->codec = codec;
-		this->type = type;
 		//Get header pointer
 		header = (rtp_hdr_t*) buffer;
 		//empty header
 		memset(header,0,sizeof(rtp_hdr_t));
+		//set type
+		header->version = 2;
+		header->pt = type;
+		
+
 
 	}
 	RTPPacket* Clone()
 	{
 		//New one
-		RTPPacket* cloned = new RTPPacket(media,codec,type);
+		RTPPacket* cloned = new RTPPacket(media,codec,header->pt);
 		//Copy
 		memcpy(cloned->GetData(),buffer,MTU);
 		//Set media length
@@ -154,25 +157,26 @@ public:
 	void SetSeqNum(WORD sn)		{ header->seq = htons(sn);		}
 	void SetMark(bool mark)		{ header->m = mark;			}
 	void SetCodec(DWORD codec)	{ this->codec = codec;			}
-	void SetType(DWORD type)	{ this->type = type;			}
-	void SetSize(DWORD size)	{ len = size-sizeof(rtp_hdr_t);		}
+	void SetType(DWORD type)	{ header->pt = type;			}
+	void SetSize(DWORD size)	{ len = size-GetRTPHeaderLen();		}
 	
 	//Getters
 	MediaFrame::Type GetMedia()	{ return media;				}
-
+	rtp_hdr_t* GetRTPHeader()	{ return (rtp_hdr_t*)buffer;		}
+	DWORD GetRTPHeaderLen()		{ return sizeof(rtp_hdr_t)+4*header->cc;}
 	DWORD GetCodec()		{ return codec;				}
-	DWORD GetType()			{ return type;				}
-	DWORD GetSize()			{ return len+sizeof(rtp_hdr_t);		}
+	DWORD GetType()			{ return header->pt;			}
+	DWORD GetSize()			{ return len+GetRTPHeaderLen();		}
 	BYTE* GetData()			{ return buffer;			}
 	DWORD GetMaxSize()		{ return MTU;				}
-	BYTE* GetMediaData()		{ return buffer+sizeof(rtp_hdr_t);	}
+	BYTE* GetMediaData()		{ return buffer+GetRTPHeaderLen();	}
 	DWORD GetMediaLength()		{ return len;				}
 	DWORD GetMaxMediaLength()	{ return RTPPAYLOADSIZE;		}
 	bool  GetMark()			{ return header->m;			}
 	DWORD GetTimestamp()		{ return ntohl(header->ts);		}
 	WORD  GetSeqNum()		{ return ntohs(header->seq);		}
 	DWORD GetSSRC()			{ return ntohl(header->ssrc);		}
-	rtp_hdr_t* GetRTPHeader()	{ return (rtp_hdr_t*)buffer;		}
+	
 
 	bool SetPayload(BYTE *data,DWORD size)
 	{
@@ -189,9 +193,7 @@ public:
 	}
 private:
 	MediaFrame::Type media;
-	DWORD	type;
 	DWORD	codec;
-	DWORD	timeStamp;
 	BYTE	buffer[MTU];
 	DWORD	len;
 	rtp_hdr_t* header;

@@ -47,7 +47,7 @@ public:
 	int SendEmptyPacket();
 	int SendPacket(RTPPacket &packet,DWORD timestamp);
 	RTPPacket* GetPacket();
-
+	void CancelGetPacket();
 	DWORD GetNumRecvPackets()	{ return numRecvPackets;	}
 	DWORD GetNumSendPackets()	{ return numSendPackets;	}
 	DWORD GetTotalRecvBytes()	{ return totalRecvBytes;	}

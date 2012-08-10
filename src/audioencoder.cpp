@@ -169,6 +169,9 @@ int AudioEncoder::StopEncoding()
 		//paramos
 		encodingAudio=0;
 
+		//Cancel any pending audio
+		audioInput->CancelRecBuffer();
+
 		//Y esperamos
 		pthread_join(encodingAudioThread,NULL);
 	}
@@ -214,10 +217,8 @@ int AudioEncoder::Encode()
 	{
 		//Capturamos 20ms
 		if (audioInput->RecBuffer((WORD *)recBuffer,160)==0)
-		{
-			Log("-encodingAudio cont");
+			//Skip and probably exit
 			continue;
-		}
 
 		//Incrementamos el tiempo de envio
 		frameTime += 160;

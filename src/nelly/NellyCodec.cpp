@@ -124,7 +124,7 @@ int NellyEncoder11Khz::Encode (WORD *in,int inLen,BYTE* out,int outLen)
 	DWORD len8 = 512;
 	DWORD len11 = 512;
 	float bufferf[512];
-	
+
 	//If we have data
 	if (inLen>0)
 	{
