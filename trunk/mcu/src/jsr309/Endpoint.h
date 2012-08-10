@@ -21,24 +21,11 @@ public:
 	int Init();
 	int End();
 	
-	//Endpoint Video functionality
-	int StartSendingVideo(char *sendVideoIp,int sendVideoPort,VideoCodec::RTPMap& rtpMap);
-	int StopSendingVideo();
-	int StartReceivingVideo(VideoCodec::RTPMap& rtpMap);
-	int StopReceivingVideo();
-
-	// Audio functionality
-	int StartSendingAudio(char *sendAudioIp,int sendAudioPort,AudioCodec::RTPMap& rtpMap);
-	int StopSendingAudio();
-	int StartReceivingAudio(AudioCodec::RTPMap& rtpMap);
-	int StopReceivingAudio();
-
-	// Text functionality
-	int StartSendingText(char *sendTextIp,int sendTextPort,TextCodec::RTPMap& rtpMap);
-	int StopSendingText();
-	int StartReceivingText(TextCodec::RTPMap& rtpMap);
-	int StopReceivingText();
-
+	//Endpoint  functionality
+	int StartSending(MediaFrame::Type media,char *sendIp,int sendPort,RTPMap& rtpMap);
+	int StopSending(MediaFrame::Type media);
+	int StartReceiving(MediaFrame::Type media,RTPMap& rtpMap);
+	int StopReceiving(MediaFrame::Type media);
 	int RequestUpdate(MediaFrame::Type media);
 
 	//Attach
@@ -47,7 +34,21 @@ public:
 	Joinable* GetJoinable(MediaFrame::Type media);
 
 	std::wstring& GetName() { return name; }
-	
+private:
+	RTPEndpoint* GetRTPEndpoint(MediaFrame::Type media)
+	{
+		switch(media)
+		{
+			case MediaFrame::Audio:
+				return audio;
+			case MediaFrame::Video:
+				return video;
+			case MediaFrame::Text:
+				return text;
+		}
+
+		return NULL;
+	}
 private:
 	std::wstring name;
 	//RTP sessions

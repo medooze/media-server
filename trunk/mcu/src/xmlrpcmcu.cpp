@@ -515,188 +515,6 @@ xmlrpc_value* SetVideoCodec(xmlrpc_env *env, xmlrpc_value *param_array, void *us
 	return xmlok(env);
 }
 
-xmlrpc_value* StartSendingVideo(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
-{
-	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
-
-	 //Parseamos
-	int confId;
-	int partId;
-	char *sendVideoIp;
-	int sendVideoPort;
-	xmlrpc_value *rtpMap;
-	xmlrpc_parse_value(env, param_array, "(iisiS)", &confId,&partId,&sendVideoIp,&sendVideoPort,&rtpMap);
-
-	//Get the rtp map
-	VideoCodec::RTPMap map;
-
-	//Get map size
-	int j = xmlrpc_struct_size(env,rtpMap);
-
-	//Parse rtp map
-	for (int i=0;i<j;i++)
-	{
-		xmlrpc_value *key, *val;
-		const char *type;
-		int codec;
-		//Read member
-		xmlrpc_struct_read_member(env,rtpMap,i,&key,&val);
-		//Read name
-		xmlrpc_parse_value(env,key,"s",&type);
-		//Read value
-		xmlrpc_parse_value(env,val,"i",&codec);
-		//Add to map
-		map[atoi(type)] = (VideoCodec::Type) codec;
-		//Decrement ref counter
-		xmlrpc_DECREF(key);
-		xmlrpc_DECREF(val);
-	}
-
-	//Comprobamos si ha habido error
-	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
-
-	//Obtenemos la referencia
-	if(!mcu->GetConferenceRef(confId,&conf))
-		return xmlerror(env,"Conference does not exist");
-
-	//La borramos
-	int res = conf->StartSendingVideo(partId,sendVideoIp,sendVideoPort,map);
-
-	//Liberamos la referencia
-	mcu->ReleaseConferenceRef(confId);
-
-	//Salimos
-	if(!res)
-		return xmlerror(env,"Error\n");
-
-	//Devolvemos el resultado
-	return xmlok(env);
-}
-
-xmlrpc_value* StopSendingVideo(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
-{
-	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
-
-	 //Parseamos
-	int confId;
-	int partId;
-	xmlrpc_parse_value(env, param_array, "(ii)", &confId,&partId);
-
-	//Comprobamos si ha habido error
-	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
-	 
-	//Obtenemos la referencia
-	if(!mcu->GetConferenceRef(confId,&conf))
-		return xmlerror(env,"Conference does not exist");
-
-	//La borramos
-	int res = conf->StopSendingVideo(partId);
-
-	//Liberamos la referencia
-	mcu->ReleaseConferenceRef(confId);
-
-	//Salimos
-	if(!res)
-		return xmlerror(env,"Error stoping sending video\n");
-
-	//Devolvemos el resultado
-	return xmlok(env);
-}
-
-xmlrpc_value* StartReceivingVideo(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
-{
-	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
-
-	 //Parseamos
-	int confId;
-	int partId;
-	xmlrpc_value *rtpMap;
-	xmlrpc_parse_value(env, param_array, "(iiS)", &confId,&partId,&rtpMap);
-
-	//Get the rtp map
-	VideoCodec::RTPMap map;
-
-	//Get map size
-	int j = xmlrpc_struct_size(env,rtpMap);
-
-	//Parse rtp map
-	for (int i=0;i<j;i++)
-	{
-		xmlrpc_value *key, *val;
-		const char *type;
-		int codec;
-		//Read member
-		xmlrpc_struct_read_member(env,rtpMap,i,&key,&val);
-		//Read name
-		xmlrpc_parse_value(env,key,"s",&type);
-		//Read value
-		xmlrpc_parse_value(env,val,"i",&codec);
-		//Add to map
-		map[atoi(type)] = (VideoCodec::Type) codec;
-		//Decrement ref counter
-		xmlrpc_DECREF(key);
-		xmlrpc_DECREF(val);
-	}
-
-	//Comprobamos si ha habido error
-	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
-	 
-	//Obtenemos la referencia
-	if(!mcu->GetConferenceRef(confId,&conf))
-		return xmlerror(env,"Conference does not exist");
-
-	//La borramos
-	int recVideoPort = conf->StartReceivingVideo(partId,map);
-
-	//Liberamos la referencia
-	mcu->ReleaseConferenceRef(confId);
-
-	//Salimos
-	if(!recVideoPort)
-		return xmlerror(env,"Could not start receving video\n");
-
-	//Devolvemos el resultado
-	return xmlok(env,xmlrpc_build_value(env,"(i)",recVideoPort));
-}
-
-xmlrpc_value* StopReceivingVideo(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
-{
-	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
-
-	 //Parseamos
-	int confId;
-	int partId;
-	xmlrpc_parse_value(env, param_array, "(ii)", &confId,&partId);
-
-	//Comprobamos si ha habido error
-	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
-	 
-	//Obtenemos la referencia
-	if(!mcu->GetConferenceRef(confId,&conf))
-		return xmlerror(env,"Conference does not exist");
-
-	//La borramos
-	int res = conf->StopReceivingVideo(partId);
-
-	//Liberamos la referencia
-	mcu->ReleaseConferenceRef(confId);
-
-	//Salimos
-	if(!res)
-		return xmlerror(env,"Error stoping receving video");
-
-	//Devolvemos el resultado
-	return xmlok(env);
-}
-
 xmlrpc_value* SetAudioCodec(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
@@ -731,186 +549,6 @@ xmlrpc_value* SetAudioCodec(xmlrpc_env *env, xmlrpc_value *param_array, void *us
 	return xmlok(env);
 }
 
-xmlrpc_value* StartSendingAudio(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
-{
-	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
-
-	 //Parseamos
-	int confId;
-	int partId;
-	char *sendAudioIp;
-	int sendAudioPort;
-	xmlrpc_value *rtpMap;
-	xmlrpc_parse_value(env, param_array, "(iisiS)", &confId,&partId,&sendAudioIp,&sendAudioPort,&rtpMap);
-
-	//Get the rtp map
-	AudioCodec::RTPMap map;
-
-	int j = xmlrpc_struct_size(env,rtpMap);
-
-	//Parse rtp map
-	for (int i=0;i<j;i++)
-	{
-		xmlrpc_value *key, *val;
-		const char *type;
-		int codec;
-		//Read member
-		xmlrpc_struct_read_member(env,rtpMap,i,&key,&val);
-		//Read name
-		xmlrpc_parse_value(env,key,"s",&type);
-		//Read value
-		xmlrpc_parse_value(env,val,"i",&codec);
-		//Add to map
-		map[atoi(type)] = (AudioCodec::Type) codec;
-		//Decrement ref counter
-		xmlrpc_DECREF(key);
-		xmlrpc_DECREF(val);
-	}
-
-	//Comprobamos si ha habido error
-	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
-	 
-	//Obtenemos la referencia
-	if(!mcu->GetConferenceRef(confId,&conf))
-		return xmlerror(env,"Conference does not exist");
-
-	//La borramos
-	int res = conf->StartSendingAudio(partId,sendAudioIp,sendAudioPort,map);
-
-	//Liberamos la referencia
-	mcu->ReleaseConferenceRef(confId);
-
-	//Salimos
-	if(!res)
-		return xmlerror(env,"Could not stop sending audio");
-
-	//Devolvemos el resultado
-	return xmlok(env);
-}
-
-xmlrpc_value* StopSendingAudio(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
-{
-	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
-
-	 //Parseamos
-	int confId;
-	int partId;
-	xmlrpc_parse_value(env, param_array, "(ii)", &confId,&partId);
-
-	//Comprobamos si ha habido error
-	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
-	 
-	//Obtenemos la referencia
-	if(!mcu->GetConferenceRef(confId,&conf))
-		return xmlerror(env,"Conference does not exist");
-
-	//La borramos
-	int res = conf->StopSendingAudio(partId);
-
-	//Liberamos la referencia
-	mcu->ReleaseConferenceRef(confId);
-
-	//Salimos
-	if(!res)
-		return xmlerror(env,"Could not stop sending audio");
-
-	//Devolvemos el resultado
-	return xmlok(env);
-}
-
-xmlrpc_value* StartReceivingAudio(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
-{
-	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
-
-	 //Parseamos
-	int confId;
-	int partId;
-	xmlrpc_value *rtpMap;
-	xmlrpc_parse_value(env, param_array, "(iiS)", &confId,&partId,&rtpMap);
-
-	//Get the rtp map
-	AudioCodec::RTPMap map;
-
-	int j = xmlrpc_struct_size(env,rtpMap);
-
-	//Parse rtp map
-	for (int i=0;i<j;i++)
-	{
-		xmlrpc_value *key, *val;
-		const char *type;
-		int codec;
-		//Read member
-		xmlrpc_struct_read_member(env,rtpMap,i,&key,&val);
-		//Read name
-		xmlrpc_parse_value(env,key,"s",&type);
-		//Read value
-		xmlrpc_parse_value(env,val,"i",&codec);
-		//Add to map
-		map[atoi(type)] = (AudioCodec::Type) codec;
-		//Decrement ref counter
-		xmlrpc_DECREF(key);
-		xmlrpc_DECREF(val);
-	}
-
-	//Comprobamos si ha habido error
-	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
-	
-	//Obtenemos la referencia
-	if(!mcu->GetConferenceRef(confId,&conf))
-		return xmlerror(env,"Conference does not exist");
-
-	//La borramos
-	int recAudioPort = conf->StartReceivingAudio(partId,map);
-
-	//Liberamos la referencia
-	mcu->ReleaseConferenceRef(confId);
-
-	//Salimos
-	if(!recAudioPort)
-		return xmlerror(env,"Could not start receiving audio\n");
-
-	//Devolvemos el resultado
-	return xmlok(env,xmlrpc_build_value(env,"(i)",recAudioPort,recAudioPort));
-}
-
-xmlrpc_value* StopReceivingAudio(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
-{
-	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
-
-	 //Parseamos
-	int confId;
-	int partId;
-	xmlrpc_parse_value(env, param_array, "(ii)", &confId,&partId);
-
-	//Comprobamos si ha habido error
-	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
-	 
-	//Obtenemos la referencia
-	if(!mcu->GetConferenceRef(confId,&conf))
-		return xmlerror(env,"Conference does not exist");
-
-	//La borramos
-	int res = conf->StopReceivingAudio(partId);
-
-	//Liberamos la referencia
-	mcu->ReleaseConferenceRef(confId);
-
-	//Salimos
-	if(!res)
-		return xmlerror(env,"Could not stopreceiving audio");
-
-	//Devolvemos el resultado
-	return xmlok(env);
-}
-
 xmlrpc_value* SetTextCodec(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
@@ -940,186 +578,6 @@ xmlrpc_value* SetTextCodec(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 	//Salimos
 	if(!res)
 		return xmlerror(env,"No soportado");
-
-	//Devolvemos el resultado
-	return xmlok(env);
-}
-
-xmlrpc_value* StartSendingText(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
-{
-	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
-
-	 //Parseamos
-	int confId;
-	int partId;
-	char *sendTextIp;
-	int sendTextPort;
-	xmlrpc_value *rtpMap;
-	xmlrpc_parse_value(env, param_array, "(iisiS)", &confId,&partId,&sendTextIp,&sendTextPort,&rtpMap);
-
-	//Get the rtp map
-	TextCodec::RTPMap map;
-
-	int j = xmlrpc_struct_size(env,rtpMap);
-
-	//Parse rtp map
-	for (int i=0;i<j;i++)
-	{
-		xmlrpc_value *key, *val;
-		const char *type;
-		int codec;
-		//Read member
-		xmlrpc_struct_read_member(env,rtpMap,i,&key,&val);
-		//Read name
-		xmlrpc_parse_value(env,key,"s",&type);
-		//Read value
-		xmlrpc_parse_value(env,val,"i",&codec);
-		//Add to map
-		map[atoi(type)] = (TextCodec::Type) codec;
-		//Decrement ref counter
-		xmlrpc_DECREF(key);
-		xmlrpc_DECREF(val);
-	}
-
-	//Comprobamos si ha habido error
-	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
-
-	//Obtenemos la referencia
-	if(!mcu->GetConferenceRef(confId,&conf))
-		return xmlerror(env,"Conference does not exist");
-
-	//La borramos
-	int res = conf->StartSendingText(partId,sendTextIp,sendTextPort,map);
-
-	//Liberamos la referencia
-	mcu->ReleaseConferenceRef(confId);
-
-	//Salimos
-	if(!res)
-		return xmlerror(env,"Error");
-
-	//Devolvemos el resultado
-	return xmlok(env);
-}
-
-xmlrpc_value* StopSendingText(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
-{
-	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
-
-	 //Parseamos
-	int confId;
-	int partId;
-	xmlrpc_parse_value(env, param_array, "(ii)", &confId,&partId);
-
-	//Comprobamos si ha habido error
-	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
-
-	//Obtenemos la referencia
-	if(!mcu->GetConferenceRef(confId,&conf))
-		return xmlerror(env,"Conference does not exist");
-
-	//La borramos
-	int res = conf->StopSendingText(partId);
-
-	//Liberamos la referencia
-	mcu->ReleaseConferenceRef(confId);
-
-	//Salimos
-	if(!res)
-		return xmlerror(env,"Could not stop sending text");
-
-	//Devolvemos el resultado
-	return xmlok(env);
-}
-
-xmlrpc_value* StartReceivingText(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
-{
-	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
-
-	 //Parseamos
-	int confId;
-	int partId;
-	xmlrpc_value *rtpMap;
-	xmlrpc_parse_value(env, param_array, "(iiS)", &confId,&partId,&rtpMap);
-
-	//Get the rtp map
-	TextCodec::RTPMap map;
-
-	int j = xmlrpc_struct_size(env,rtpMap);
-
-	//Parse rtp map
-	for (int i=0;i<j;i++)
-	{
-		xmlrpc_value *key, *val;
-		const char *type;
-		int codec;
-		//Read member
-		xmlrpc_struct_read_member(env,rtpMap,i,&key,&val);
-		//Read name
-		xmlrpc_parse_value(env,key,"s",&type);
-		//Read value
-		xmlrpc_parse_value(env,val,"i",&codec);
-		//Add to map
-		map[atoi(type)] = (TextCodec::Type) codec;
-		//Decrement ref counter
-		xmlrpc_DECREF(key);
-		xmlrpc_DECREF(val);
-	}
-
-	//Comprobamos si ha habido error
-	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
-
-	//Obtenemos la referencia
-	if(!mcu->GetConferenceRef(confId,&conf))
-		return xmlerror(env,"Conference does not exist");
-
-	//La borramos
-	int recTextPort = conf->StartReceivingText(partId,map);
-
-	//Liberamos la referencia
-	mcu->ReleaseConferenceRef(confId);
-
-	//Salimos
-	if(!recTextPort)
-		return xmlerror(env,"Could not stop sending text");
-
-	//Devolvemos el resultado
-	return xmlok(env,xmlrpc_build_value(env,"(i)",recTextPort,recTextPort));
-}
-
-xmlrpc_value* StopReceivingText(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
-{
-	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
-
-	 //Parseamos
-	int confId;
-	int partId;
-	xmlrpc_parse_value(env, param_array, "(ii)", &confId,&partId);
-
-	//Comprobamos si ha habido error
-	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
-
-	//Obtenemos la referencia
-	if(!mcu->GetConferenceRef(confId,&conf))
-		return xmlerror(env,"Conference does not exist");
-
-	//La borramos
-	int res = conf->StopReceivingText(partId);
-
-	//Liberamos la referencia
-	mcu->ReleaseConferenceRef(confId);
-
-	//Salimos
-	if(!res)
-		return xmlerror(env,"Error\n");
 
 	//Devolvemos el resultado
 	return xmlok(env);
@@ -1742,6 +1200,192 @@ xmlrpc_value* MCUEventQueueDelete(xmlrpc_env *env, xmlrpc_value *param_array, vo
 	return xmlok(env);
 }
 
+xmlrpc_value* StartSending(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+	MCU *mcu = (MCU *)user_data;
+	MultiConf *conf = NULL;
+
+	 //Parseamos
+	int confId;
+	int partId;
+	int media;
+	char *sendIp;
+	int sendPort;
+	xmlrpc_value *rtpMap;
+	xmlrpc_parse_value(env, param_array, "(iiisiS)", &confId,&partId,&media,&sendIp,&sendPort,&rtpMap);
+
+	//Get the rtp map
+	RTPMap map;
+
+	//Get map size
+	int j = xmlrpc_struct_size(env,rtpMap);
+
+	//Parse rtp map
+	for (int i=0;i<j;i++)
+	{
+		xmlrpc_value *key, *val;
+		const char *type;
+		int codec;
+		//Read member
+		xmlrpc_struct_read_member(env,rtpMap,i,&key,&val);
+		//Read name
+		xmlrpc_parse_value(env,key,"s",&type);
+		//Read value
+		xmlrpc_parse_value(env,val,"i",&codec);
+		//Add to map
+		map[atoi(type)] = codec;
+		//Decrement ref counter
+		xmlrpc_DECREF(key);
+		xmlrpc_DECREF(val);
+	}
+
+	//Comprobamos si ha habido error
+	if(env->fault_occurred)
+		return 0;
+
+		//Obtenemos la referencia
+	if(!mcu->GetConferenceRef(confId,&conf))
+		return xmlerror(env,"Conference does not exist");
+
+	//La borramos
+	int res = conf->StartSending(partId,(MediaFrame::Type)media,sendIp,sendPort,map);
+
+	//Liberamos la referencia
+	mcu->ReleaseConferenceRef(confId);
+
+	//Salimos
+	if(!res)
+		return xmlerror(env,"Error\n");
+
+	//Devolvemos el resultado
+	return xmlok(env);
+}
+
+xmlrpc_value* StopSending(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+	MCU *mcu = (MCU *)user_data;
+	MultiConf *conf = NULL;
+
+	 //Parseamos
+	int confId;
+	int partId;
+	int media;
+	xmlrpc_parse_value(env, param_array, "(iii)", &confId,&partId,&media);
+
+	//Comprobamos si ha habido error
+	if(env->fault_occurred)
+		xmlerror(env,"Fault occurred");
+
+	//Obtenemos la referencia
+	if(!mcu->GetConferenceRef(confId,&conf))
+		return xmlerror(env,"Conference does not exist");
+
+	//La borramos
+	int res = conf->StopSending(partId,(MediaFrame::Type)media);
+
+	//Liberamos la referencia
+	mcu->ReleaseConferenceRef(confId);
+
+	//Salimos
+	if(!res)
+		return xmlerror(env,"Error stoping sending video\n");
+
+	//Devolvemos el resultado
+	return xmlok(env);
+}
+
+xmlrpc_value* StartReceiving(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+MCU *mcu = (MCU *)user_data;
+	MultiConf *conf = NULL;
+
+	 //Parseamos
+	int confId;
+	int partId;
+	int media;
+	int recPort = 0;
+	xmlrpc_value *rtpMap;
+	xmlrpc_parse_value(env, param_array, "(iiiS)", &confId,&partId,&media,&rtpMap);
+
+	//Get the rtp map
+	RTPMap map;
+
+	//Get map size
+	int j = xmlrpc_struct_size(env,rtpMap);
+
+	//Parse rtp map
+	for (int i=0;i<j;i++)
+	{
+		xmlrpc_value *key, *val;
+		const char *type;
+		int codec;
+		//Read member
+		xmlrpc_struct_read_member(env,rtpMap,i,&key,&val);
+		//Read name
+		xmlrpc_parse_value(env,key,"s",&type);
+		//Read value
+		xmlrpc_parse_value(env,val,"i",&codec);
+		//Add to map
+		map[atoi(type)] = codec;
+		//Decrement ref counter
+		xmlrpc_DECREF(key);
+		xmlrpc_DECREF(val);
+	}
+
+	//Comprobamos si ha habido error
+	if(env->fault_occurred)
+		xmlerror(env,"Fault occurred");
+
+	//Obtenemos la referencia
+	if(!mcu->GetConferenceRef(confId,&conf))
+		return xmlerror(env,"Conference does not exist");
+
+	//La borramos
+	int recVideoPort = conf->StartReceiving(partId,(MediaFrame::Type)media,map);
+
+	//Liberamos la referencia
+	mcu->ReleaseConferenceRef(confId);
+
+	//Salimos
+	if(!recVideoPort)
+		return xmlerror(env,"Could not start receving video\n");
+
+	//Devolvemos el resultado
+	return xmlok(env,xmlrpc_build_value(env,"(i)",recVideoPort));
+}
+
+xmlrpc_value* StopReceiving(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+	MCU *mcu = (MCU *)user_data;
+	MultiConf *conf = NULL;
+
+	 //Parseamos
+	int confId;
+	int partId;
+	int media;
+	xmlrpc_parse_value(env, param_array, "(iii)", &confId,&partId,&media);
+
+	//Comprobamos si ha habido error
+	if(env->fault_occurred)
+		xmlerror(env,"Fault occurred");
+
+	//Obtenemos la referencia
+	if(!mcu->GetConferenceRef(confId,&conf))
+		return xmlerror(env,"Conference does not exist");
+
+	//La borramos
+	int res = conf->StopReceiving(partId,(MediaFrame::Type)media);
+
+	//Liberamos la referencia
+	mcu->ReleaseConferenceRef(confId);
+
+	//Salimos
+	if(!res)
+		return xmlerror(env,"Error stoping receving video");
+
+	//Devolvemos el resultado
+	return xmlok(env);
+}
 XmlHandlerCmd mcuCmdList[] =
 {
 	{"EventQueueCreate",MCUEventQueueCreate},
@@ -1760,20 +1404,12 @@ XmlHandlerCmd mcuCmdList[] =
 	{"StartRecordingParticipant",StartRecordingParticipant},
 	{"StopRecordingParticipant",StopRecordingParticipant},
 	{"SetVideoCodec",SetVideoCodec},
-	{"StartSendingVideo",StartSendingVideo},
-	{"StopSendingVideo",StopSendingVideo},
-	{"StartReceivingVideo",StartReceivingVideo},
-	{"StopReceivingVideo",StopReceivingVideo},
+	{"StartSending",StartSending},
+	{"StopSending",StopSending},
+	{"StartReceiving",StartReceiving},
+	{"StopReceiving",StopReceiving},
 	{"SetAudioCodec",SetAudioCodec},
-	{"StartSendingAudio",StartSendingAudio},
-	{"StopSendingAudio",StopSendingAudio},
-	{"StartReceivingAudio",StartReceivingAudio},
-	{"StopReceivingAudio",StopReceivingAudio},
 	{"SetTextCodec",SetTextCodec},
-	{"StartSendingText",StartSendingText},
-	{"StopSendingText",StopSendingText},
-	{"StartReceivingText",StartReceivingText},
-	{"StopReceivingText",StopReceivingText},
 	{"SetCompositionType",SetCompositionType},
 	{"SetMosaicSlot",SetMosaicSlot},
 	{"AddConferenceToken",AddConferenceToken},

@@ -247,8 +247,6 @@
                    displayName="Important Files"
                    projectFiles="false"
                    kind="IMPORTANT_FILES_FOLDER">
-      <itemPath>m:/media/Makefile</itemPath>
-      <itemPath>media-Makefile.mk</itemPath>
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
@@ -267,7 +265,7 @@
           <buildCommandWorkingDir>/usr/local/src/mcu/</buildCommandWorkingDir>
           <buildCommand>${MAKE} -f Makefile</buildCommand>
           <cleanCommand>${MAKE} -f Makefile clean</cleanCommand>
-          <executablePath>../bin/debug/mcu</executablePath>
+          <executablePath>bin/debug/mcu</executablePath>
           <cTool>
             <incDir>
               <pElem>src</pElem>

@@ -16,9 +16,9 @@ public:
 
 	int Init(TextInput *input,TextOutput *output);
 	int SetTextCodec(TextCodec::Type codec);
-	int StartSending(char* sendTextIp,int sendTextPort,TextCodec::RTPMap& rtpMap);
+	int StartSending(char* sendTextIp,int sendTextPort,RTPMap& rtpMap);
 	int StopSending();
-	int StartReceiving(TextCodec::RTPMap& rtpMap);
+	int StartReceiving(RTPMap& rtpMap);
 	int StopReceiving();
 	int SetMute(bool isMuted);
 	int End();

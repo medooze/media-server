@@ -238,18 +238,8 @@ int RTPSmoother::Run()
 		//Get diference
 		DWORD ts = sched->GetTimestamp()-lastTS;
 
-		//Depending on the type
-		switch (sched->GetMedia())
-		{
-			case MediaFrame::Audio:
-				//Send it
-				session->SendAudioPacket(sched->GetMediaData(),sched->GetMediaLength(),ts);
-				break;
-			case MediaFrame::Video:
-				//Send it
-				session->SendVideoPacket(sched->GetMediaData(),sched->GetMediaLength(),sched->GetMark(),ts);
-				break;
-		}
+		//Send it
+		session->SendPacket(*sched,ts);
 
 		//Update sending time
 		sendingTime = sched->GetSendingTime();

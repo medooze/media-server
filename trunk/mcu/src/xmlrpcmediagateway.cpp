@@ -135,7 +135,7 @@ xmlrpc_value* MediaGatewayStartSendingVideo(xmlrpc_env *env, xmlrpc_value *param
 		return 0;
 
 	//Get the rtp map
-	VideoCodec::RTPMap map;
+	RTPMap map;
 
 	//Get map size
 	int j = xmlrpc_struct_size(env,rtpMap);
@@ -153,7 +153,7 @@ xmlrpc_value* MediaGatewayStartSendingVideo(xmlrpc_env *env, xmlrpc_value *param
 		//Read value
 		xmlrpc_parse_value(env,val,"i",&codec);
 		//Add to map
-		map[atoi(type)] = (VideoCodec::Type) codec;
+		map[atoi(type)] = codec;
 		//Decrement ref counter
 		xmlrpc_DECREF(key);
 		xmlrpc_DECREF(val);
@@ -223,7 +223,7 @@ xmlrpc_value* MediaGatewayStartReceivingVideo(xmlrpc_env *env, xmlrpc_value *par
 		return 0;
 
 	//Get the rtp map
-	VideoCodec::RTPMap map;
+	RTPMap map;
 
 	//Get map size
 	int j = xmlrpc_struct_size(env,rtpMap);
@@ -241,7 +241,7 @@ xmlrpc_value* MediaGatewayStartReceivingVideo(xmlrpc_env *env, xmlrpc_value *par
 		//Read value
 		xmlrpc_parse_value(env,val,"i",&codec);
 		//Add to map
-		map[atoi(type)] = (VideoCodec::Type) codec;
+		map[atoi(type)] = codec;
 		//Decrement ref counter
 		xmlrpc_DECREF(key);
 		xmlrpc_DECREF(val);
@@ -313,7 +313,7 @@ xmlrpc_value* MediaGatewayStartSendingAudio(xmlrpc_env *env, xmlrpc_value *param
 		return 0;
 
 	//Get the rtp map
-	AudioCodec::RTPMap map;
+	RTPMap map;
 
 	int j = xmlrpc_struct_size(env,rtpMap);
 
@@ -330,7 +330,7 @@ xmlrpc_value* MediaGatewayStartSendingAudio(xmlrpc_env *env, xmlrpc_value *param
 		//Read value
 		xmlrpc_parse_value(env,val,"i",&codec);
 		//Add to map
-		map[atoi(type)] = (AudioCodec::Type) codec;
+		map[atoi(type)] = codec;
 		//Decrement ref counter
 		xmlrpc_DECREF(key);
 		xmlrpc_DECREF(val);
@@ -396,7 +396,7 @@ xmlrpc_value* MediaGatewayStartReceivingAudio(xmlrpc_env *env, xmlrpc_value *par
 	xmlrpc_parse_value(env, param_array, "(iS)", &sessionId,&rtpMap);
 
 	//Get the rtp map
-	AudioCodec::RTPMap map;
+	RTPMap map;
 
 	int j = xmlrpc_struct_size(env,rtpMap);
 	
@@ -413,7 +413,7 @@ xmlrpc_value* MediaGatewayStartReceivingAudio(xmlrpc_env *env, xmlrpc_value *par
 		//Read value
 		xmlrpc_parse_value(env,val,"i",&codec);
 		//Add to map
-		map[atoi(type)] = (AudioCodec::Type) codec;
+		map[atoi(type)] = codec;
 		//Decrement ref counter
 		xmlrpc_DECREF(key);
 		xmlrpc_DECREF(val);
@@ -489,7 +489,7 @@ xmlrpc_value* MediaGatewayStartSendingText(xmlrpc_env *env, xmlrpc_value *param_
 		return 0;
 
 	//Get the rtp map
-	TextCodec::RTPMap map;
+	RTPMap map;
 
 	//Get map size
 	int j = xmlrpc_struct_size(env,rtpMap);
@@ -507,7 +507,7 @@ xmlrpc_value* MediaGatewayStartSendingText(xmlrpc_env *env, xmlrpc_value *param_
 		//Read value
 		xmlrpc_parse_value(env,val,"i",&codec);
 		//Add to map
-		map[atoi(type)] = (TextCodec::Type) codec;
+		map[atoi(type)] = codec;
 		//Decrement ref counter
 		xmlrpc_DECREF(key);
 		xmlrpc_DECREF(val);
@@ -577,7 +577,7 @@ xmlrpc_value* MediaGatewayStartReceivingText(xmlrpc_env *env, xmlrpc_value *para
 		return 0;
 
 	//Get the rtp map
-	TextCodec::RTPMap map;
+	RTPMap map;
 
 	//Get map size
 	int j = xmlrpc_struct_size(env,rtpMap);
@@ -595,7 +595,7 @@ xmlrpc_value* MediaGatewayStartReceivingText(xmlrpc_env *env, xmlrpc_value *para
 		//Read value
 		xmlrpc_parse_value(env,val,"i",&codec);
 		//Add to map
-		map[atoi(type)] = (TextCodec::Type) codec;
+		map[atoi(type)] = codec;
 		//Decrement ref counter
 		xmlrpc_DECREF(key);
 		xmlrpc_DECREF(val);

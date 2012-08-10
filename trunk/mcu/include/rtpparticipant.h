@@ -40,19 +40,11 @@ public:
 	virtual int Init();
 	virtual int End();
 
-	int StartSendingVideo(char *sendVideoIp,int sendVideoPort,VideoCodec::RTPMap& rtpMap);
-	int StopSendingVideo();
-	int StartReceivingVideo(VideoCodec::RTPMap& rtpMap);
-	int StopReceivingVideo();
-	int StartSendingAudio(char *sendAudioIp,int sendAudioPort,AudioCodec::RTPMap& rtpMap);
-	int StopSendingAudio();
-	int StartReceivingAudio(AudioCodec::RTPMap& rtpMap);
-	int StopReceivingAudio();
-	int StartSendingText(char *sendTextIp,int sendTextPort,TextCodec::RTPMap& rtpMap);
-	int StopSendingText();
-	int StartReceivingText(TextCodec::RTPMap& rtpMap);
-	int StopReceivingText();
-
+	int StartSending(MediaFrame::Type media,char *sendIp,int sendPort,RTPMap& rtpMap);
+	int StopSending(MediaFrame::Type media);
+	int StartReceiving(MediaFrame::Type media,RTPMap& rtpMap);
+	int StopReceiving(MediaFrame::Type media);
+	
 	int SetMediaListener(MediaFrame::Listener *listener) { return video.SetMediaListener(listener); }
 
 	//RTPSession::Listener

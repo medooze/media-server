@@ -69,77 +69,64 @@ int RTPParticipant::Init()
 	text.Init(textInput,textOutput);
 }
 
-int RTPParticipant::StartSendingVideo(char *ip,int port,VideoCodec::RTPMap& rtpMap)
+int RTPParticipant::StartSending(MediaFrame::Type media,char *ip, int port,RTPMap& rtpMap)
 {
-	//Start sending
-	return video.StartSending(ip,port,rtpMap);
+	switch (media)
+	{
+		case MediaFrame::Audio:
+			return audio.StartSending(ip,port,rtpMap);
+		case MediaFrame::Video:
+			return video.StartSending(ip,port,rtpMap);
+		case MediaFrame::Text:
+			return text.StartSending(ip,port,rtpMap);
+	}
+
+	return 0;
 }
 
-int RTPParticipant::StopSendingVideo()
+int RTPParticipant::StopSending(MediaFrame::Type media)
 {
-	//Stop sending
-	return video.StopSending();
-}
+	switch (media)
+	{
+		case MediaFrame::Audio:
+			return audio.StopSending();
+		case MediaFrame::Video:
+			return video.StopSending();
+		case MediaFrame::Text:
+			return text.StopSending();
+	}
 
-int RTPParticipant::StartReceivingVideo(VideoCodec::RTPMap& rtpMap)
-{
-	//Start receiving
-	return video.StartReceiving(rtpMap);
-}
-
-int RTPParticipant::StopReceivingVideo()
-{
-	//Stop receiving
-	return video.StopReceiving();
-}
-
-int RTPParticipant::StartSendingAudio(char *ip,int port,AudioCodec::RTPMap& rtpMap)
-{
-	//Start sending
-	return audio.StartSending(ip,port,rtpMap);
-}
-
-int RTPParticipant::StopSendingAudio()
-{
-	//Stop sending
-	return audio.StopSending();
-}
-
-int RTPParticipant::StartReceivingAudio(AudioCodec::RTPMap& rtpMap)
-{
-	//Start receiving
-	return audio.StartReceiving(rtpMap);
-}
-
-int RTPParticipant::StopReceivingAudio()
-{
-	//Stop receiving
-	return audio.StopReceiving();
-}
-
-int RTPParticipant::StartSendingText(char *ip,int port,TextCodec::RTPMap& rtpMap)
-{
-	//Start sending
-	return text.StartSending(ip,port,rtpMap);
-}
-
-int RTPParticipant::StopSendingText()
-{
-	//Stop sending
-	return text.StopSending();
+	return 0;
 
 }
 
-int RTPParticipant::StartReceivingText(TextCodec::RTPMap& rtpMap)
+int RTPParticipant::StartReceiving(MediaFrame::Type media,RTPMap& rtpMap)
 {
-	//Start receiving
-	return text.StartReceiving(rtpMap);
+		switch (media)
+	{
+		case MediaFrame::Audio:
+			return audio.StartReceiving(rtpMap);
+		case MediaFrame::Video:
+			return video.StartReceiving(rtpMap);
+		case MediaFrame::Text:
+			return text.StartReceiving(rtpMap);
+	}
+
+	return 0;
 }
 
-int RTPParticipant::StopReceivingText()
+int RTPParticipant::StopReceiving(MediaFrame::Type media)
 {
-	//Stop receiving
-	return text.StopReceiving();
+	switch (media)
+	{
+		case MediaFrame::Audio:
+			return audio.StopReceiving();
+		case MediaFrame::Video:
+			return video.StopReceiving();
+		case MediaFrame::Text:
+			return text.StopReceiving();
+	}
+	return 0;
 }
 
 void RTPParticipant::onFPURequested(RTPSession *session)

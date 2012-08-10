@@ -15,9 +15,9 @@ public:
 
 	int Init(AudioInput *input,AudioOutput *output);
 	int SetAudioCodec(AudioCodec::Type codec);
-	int StartSending(char* sendAudioIp,int sendAudioPort,AudioCodec::RTPMap& rtpMap);
+	int StartSending(char* sendAudioIp,int sendAudioPort,RTPMap& rtpMap);
 	int StopSending();
-	int StartReceiving(AudioCodec::RTPMap& rtpMap);
+	int StartReceiving(RTPMap& rtpMap);
 	int StopReceiving();
 	int SetMute(bool isMuted);
 	int End();

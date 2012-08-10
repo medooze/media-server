@@ -20,7 +20,7 @@
 * VideoStream
 *	Constructor
 ***********************************/
-VideoStream::VideoStream(Listener* listener) : rtp(listener)
+VideoStream::VideoStream(Listener* listener) : rtp(MediaFrame::Video,listener)
 {
 	//Inicializamos a cero todo
 	sendingVideo=0;
@@ -188,7 +188,7 @@ void* VideoStream::startReceivingVideo(void *par)
 * StartSending
 *	Comienza a mandar a la ip y puertos especificados
 ***************************************/
-int VideoStream::StartSending(char *sendVideoIp,int sendVideoPort,VideoCodec::RTPMap& rtpMap)
+int VideoStream::StartSending(char *sendVideoIp,int sendVideoPort,RTPMap& rtpMap)
 {
 	Log(">StartSending video [%s,%d]\n",sendVideoIp,sendVideoPort);
 
@@ -206,10 +206,10 @@ int VideoStream::StartSending(char *sendVideoIp,int sendVideoPort,VideoCodec::RT
 		return Error("Error abriendo puerto rtp\n");
 
 	//Set sending map
-	rtp.SetSendingVideoRTPMap(rtpMap);
+	rtp.SetSendingRTPMap(rtpMap);
 	
 	//Set video codec
-	if(!rtp.SetSendingVideoCodec(videoCodec))
+	if(!rtp.SetSendingCodec(videoCodec))
 		//Error
 		return Error("%s video codec not supported by peer\n",VideoCodec::GetNameFor(videoCodec));
 
@@ -229,7 +229,7 @@ int VideoStream::StartSending(char *sendVideoIp,int sendVideoPort,VideoCodec::RT
 * StartReceiving
 *	Abre los sockets y empieza la recetpcion
 ****************************************/
-int VideoStream::StartReceiving(VideoCodec::RTPMap& rtpMap)
+int VideoStream::StartReceiving(RTPMap& rtpMap)
 {
 	//Si estabamos reciviendo tenemos que parar
 	if (receivingVideo)
@@ -239,7 +239,7 @@ int VideoStream::StartReceiving(VideoCodec::RTPMap& rtpMap)
 	int recVideoPort= rtp.GetLocalPort();
 
 	//Set receving map
-	rtp.SetReceivingVideoRTPMap(rtpMap);
+	rtp.SetReceivingRTPMap(rtpMap);
 
 	//Estamos recibiendo
 	receivingVideo=1;
@@ -462,16 +462,11 @@ int VideoStream::RecVideo()
 {
 	VideoDecoder*	videoDecoder = NULL;
 	VideoCodec::Type type;
-	BYTE 		lost=0;
-	BYTE 		last=0;
-	DWORD		timestamp=0;
 	int 		recFrames=0;
 	int 		recBytes=0;
 	timeval 	before;
 	timeval		lastFPURequest;
 	float 		dif;
-	BYTE		data[MTU];
-	DWORD		size;
 	int 		width=0;
 	int 		height=0;
 	
@@ -486,12 +481,16 @@ int VideoStream::RecVideo()
 	//Mientras tengamos que capturar
 	while(receivingVideo)
 	{
-		//POnemos el tam�o
-		size=MTU;
-	
 		//Obtenemos el paquete
-		if (!rtp.GetVideoPacket((BYTE *)data,&size,&last,&lost,&type,&timestamp))
+		RTPPacket* packet = rtp.GetPacket();
+
+		//Check
+		if (!packet)
+			//Next
 			continue;
+
+		//Get type
+		type = (VideoCodec::Type)packet->GetCodec();
 		
 		//Comprobamos el tipo
 		if ((videoDecoder==NULL) || (type!=videoDecoder->type))
@@ -512,7 +511,7 @@ int VideoStream::RecVideo()
 		}
 
 		//Si hemos perdido un paquete
-		if(lost)
+		if(rtp.GetLost())
 		{
 			//Debug
 			Log("Lost packet\n");
@@ -530,10 +529,10 @@ int VideoStream::RecVideo()
 		}
 
 		//Aumentamos el numero de bytes recividos
-		recBytes+=size;
+		recBytes += packet->GetSize();
 
 		//Lo decodificamos
-		if(!videoDecoder->DecodePacket((BYTE *)&data,(int)size,lost,last))
+		if(!videoDecoder->DecodePacket(packet->GetMediaData(),packet->GetMediaLength(),0,packet->GetMark()))
 		{
 			//Check if we got listener and more than two seconds have elapsed from last request
 			if (listener && getDifTime(&lastFPURequest)>2000000)
@@ -550,7 +549,7 @@ int VideoStream::RecVideo()
 		}
 		
 		//Si es el ultimo
-		if(last)
+		if(packet->GetMark())
 		{
 			//Comprobamos el tama�o
 			if (width!=videoDecoder->GetWidth() || height!=videoDecoder->GetHeight())

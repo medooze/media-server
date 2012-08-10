@@ -47,6 +47,21 @@ public:
 public:
 	enum Type {Audio=0,Video=1,Text=2};
 
+	static const char * TypeToString(Type type)
+	{
+		switch(type)
+		{
+			case Audio:
+				return "Audio";
+			case Video:
+				return "Video";
+			case Text:
+				return "Text";
+			default:
+				return "Unknown";
+		}
+	}
+
 	MediaFrame(Type type,DWORD size)
 	{
 		//Set media type

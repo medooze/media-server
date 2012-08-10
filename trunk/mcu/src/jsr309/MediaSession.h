@@ -63,20 +63,11 @@ public:
 	int EndpointCreate(std::wstring name,bool audioSupported,bool videoSupported,bool textSupported);
 	int EndpointDelete(int endpointId);
 	//Endpoint Video functionality
-	int EndpointStartSendingVideo(int endpointId,char *sendVideoIp,int sendVideoPort,VideoCodec::RTPMap& rtpMap);
-	int EndpointStopSendingVideo(int endpointId);
-	int EndpointStartReceivingVideo(int endpointId,VideoCodec::RTPMap& rtpMap);
-	int EndpointStopReceivingVideo(int endpointId);
-	//Endpoint Audio functionality
-	int EndpointStartSendingAudio(int endpointId,char *sendAudioIp,int sendAudioPort,AudioCodec::RTPMap& rtpMap);
-	int EndpointStopSendingAudio(int endpointId);
-	int EndpointStartReceivingAudio(int endpointId,AudioCodec::RTPMap& rtpMap);
-	int EndpointStopReceivingAudio(int endpointId);
-
-	int EndpointStartSendingText(int endpointId,char *sendTextIp,int sendTextPort,TextCodec::RTPMap& rtpMap);
-	int EndpointStopSendingText(int endpointId);
-	int EndpointStartReceivingText(int endpointId,TextCodec::RTPMap& rtpMap);
-	int EndpointStopReceivingText(int endpointId);
+	int EndpointStartSending(int endpointId,MediaFrame::Type media,char *sendVideoIp,int sendVideoPort,RTPMap& rtpMap);
+	int EndpointStopSending(int endpointId,MediaFrame::Type media);
+	int EndpointStartReceiving(int endpointId,MediaFrame::Type media,RTPMap& rtpMap);
+	int EndpointStopReceiving(int endpointId,MediaFrame::Type media);
+	
 	int EndpointRequestUpdate(int endpointId,MediaFrame::Type media);
 	//Attach intput to
 	int EndpointAttachToPlayer(int endpointId,int playerId,MediaFrame::Type media);

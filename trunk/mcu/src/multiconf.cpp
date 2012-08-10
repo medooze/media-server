@@ -558,15 +558,11 @@ int MultiConf::SetVideoCodec(int id,int codec,int mode,int fps,int bitrate,int q
 	return ret;
 }
 
-/************************
-* StartSendingVideo
-* 	StartSendingVideo
-*************************/
-int MultiConf::StartSendingVideo(int id,char *sendVideoIp,int sendVideoPort,VideoCodec::RTPMap& rtpMap)
+int MultiConf::StartSending(int id,MediaFrame::Type media,char *sendIp,int sendPort,RTPMap& rtpMap)
 {
 	int ret = 0;
 
-	Log("-StartSendingVideo [%d]\n",id);
+	Log("-StartSending %s [partId:%d]\n",MediaFrame::TypeToString(media),id);
 
 	//Use list
 	participantsLock.IncUse();
@@ -576,8 +572,8 @@ int MultiConf::StartSendingVideo(int id,char *sendVideoIp,int sendVideoPort,Vide
 
 	//Check particpant
 	if (part)
-		//Set video codec
-		ret = part->StartSendingVideo(sendVideoIp,sendVideoPort,rtpMap);
+		//Set  codec
+		ret = part->StartSending(media,sendIp,sendPort,rtpMap);
 
 	//Unlock
 	participantsLock.DecUse();
@@ -586,15 +582,11 @@ int MultiConf::StartSendingVideo(int id,char *sendVideoIp,int sendVideoPort,Vide
 	return ret;
 }
 
-/************************
-* StopSendingVideo
-* 	StopSendingVideo
-*************************/
-int MultiConf::StopSendingVideo(int id)
+int MultiConf::StopSending(int id,MediaFrame::Type media)
 {
 	int ret = 0;
 
-	Log("-StopSendingVideo [%d]\n",id);
+	Log("-StopSending %s [partId:%d]\n",MediaFrame::TypeToString(media),id);
 
 	//Use list
 	participantsLock.IncUse();
@@ -605,7 +597,7 @@ int MultiConf::StopSendingVideo(int id)
 	//Check particpant
 	if (part)
 		//Set video codec
-		ret = part->StopSendingVideo();
+		ret = part->StopSending(media);
 
 	//Unlock
 	participantsLock.DecUse();
@@ -614,15 +606,11 @@ int MultiConf::StopSendingVideo(int id)
 	return ret;
 }
 
-/************************
-* StartReceivingVideo
-* 	StartReceivingVideo
-*************************/
-int MultiConf::StartReceivingVideo(int id,VideoCodec::RTPMap& rtpMap)
+int MultiConf::StartReceiving(int id,MediaFrame::Type media,RTPMap& rtpMap)
 {
 	int ret = 0;
 
-	Log("-StartReceivingVideo [%d]\n",id);
+	Log("-StartReceiving %s [partId:%d]\n",MediaFrame::TypeToString(media),id);
 
 	//Use list
 	participantsLock.IncUse();
@@ -633,7 +621,7 @@ int MultiConf::StartReceivingVideo(int id,VideoCodec::RTPMap& rtpMap)
 	//Check particpant
 	if (part)
 		//Set video codec
-		ret = part->StartReceivingVideo(rtpMap);
+		ret = part->StartReceiving(media,rtpMap);
 
 	//Unlock
 	participantsLock.DecUse();
@@ -646,11 +634,11 @@ int MultiConf::StartReceivingVideo(int id,VideoCodec::RTPMap& rtpMap)
 * StopReceivingVideo
 * 	StopReceivingVideo
 *************************/
-int MultiConf::StopReceivingVideo(int id)
+int MultiConf::StopReceiving(int id,MediaFrame::Type media)
 {
 	int ret = 0;
 
-	Log("-StopReceivingVideo [%d]\n",id);
+	Log("-StopReceiving %s [partId:%d]\n",MediaFrame::TypeToString(media),id);
 
 	//Use list
 	participantsLock.IncUse();
@@ -661,7 +649,7 @@ int MultiConf::StopReceivingVideo(int id)
 	//Check particpant
 	if (part)
 		//Set video codec
-		ret = part->StopReceivingVideo();
+		ret = part->StopReceiving(media);
 
 	//Unlock
 	participantsLock.DecUse();
@@ -699,118 +687,6 @@ int MultiConf::SetAudioCodec(int id,int codec)
 }
 
 /************************
-* StartSendingAudio
-* 	StartSendingAudio
-*************************/
-int MultiConf::StartSendingAudio(int id,char *sendAudioIp,int sendAudioPort,AudioCodec::RTPMap& rtpMap)
-{
-	int ret = 0;
-
-	Log("-StartSendingAudio [%d]\n",id);
-
-	//Use list
-	participantsLock.IncUse();
-
-	//Get the participant
-	RTPParticipant *part = (RTPParticipant*)GetParticipant(id,Participant::RTP);
-
-	//Check particpant
-	if (part)
-		//Set video codec
-		ret = part->StartSendingAudio(sendAudioIp,sendAudioPort,rtpMap);
-
-	//Unlock
-	participantsLock.DecUse();
-
-	//Exit
-	return ret;
-}
-
-/************************
-* StopSendingAudio
-* 	StopSendingAudio
-*************************/
-int MultiConf::StopSendingAudio(int id)
-{
-	int ret = 0;
-
-	Log("-StopSendingAudio [%d]\n",id);
-
-	//Use list
-	participantsLock.IncUse();
-
-	//Get the participant
-	RTPParticipant *part = (RTPParticipant*)GetParticipant(id,Participant::RTP);
-
-	//Check particpant
-	if (part)
-		//Set video codec
-		ret = part->StopSendingAudio();
-
-	//Unlock
-	participantsLock.DecUse();
-
-	//Exit
-	return ret;
-}
-
-/************************
-* StartReceivingAudio
-* 	StartReceivingAudio
-*************************/
-int MultiConf::StartReceivingAudio(int id,AudioCodec::RTPMap& rtpMap)
-{
-	int ret = 0;
-
-	Log("-StartReceivingAudio [%d]\n",id);
-
-	//Use list
-	participantsLock.IncUse();
-
-	//Get the participant
-	RTPParticipant *part = (RTPParticipant*)GetParticipant(id,Participant::RTP);
-
-	//Check particpant
-	if (part)
-		//Set video codec
-		ret = part->StartReceivingAudio(rtpMap);
-
-	//Unlock
-	participantsLock.DecUse();
-
-	//Exit
-	return ret;
-}
-
-/************************
-* End
-* 	Termina una multiconferencia
-*************************/
-int MultiConf::StopReceivingAudio(int id)
-{
-	int ret = 0;
-
-	Log("-StopReceivingAudio [%d]\n",id);
-
-	//Use list
-	participantsLock.IncUse();
-
-	//Get the participant
-	RTPParticipant *part = (RTPParticipant*)GetParticipant(id,Participant::RTP);
-
-	//Check particpant
-	if (part)
-		//Set video codec
-		ret = part->StopReceivingAudio();
-
-	//Unlock
-	participantsLock.DecUse();
-
-	//Exit
-	return ret;
-}
-
-/************************
 * SetTextCodec
 * 	SetTextCodec
 *************************/
@@ -838,117 +714,6 @@ int MultiConf::SetTextCodec(int id,int codec)
 	return ret;
 }
 
-/************************
-* StartSendingText
-* 	StartSendingText
-*************************/
-int MultiConf::StartSendingText(int id,char *sendTextIp,int sendTextPort,TextCodec::RTPMap& rtpMap)
-{
-	int ret = 0;
-
-	Log("-StartSendingText [%d]\n",id);
-
-	//Use list
-	participantsLock.IncUse();
-
-	//Get the participant
-	RTPParticipant *part = (RTPParticipant*)GetParticipant(id,Participant::RTP);
-
-	//Check particpant
-	if (part)
-		//Set video codec
-		ret = part->StartSendingText(sendTextIp,sendTextPort,rtpMap);
-
-	//Unlock
-	participantsLock.DecUse();
-
-	//Exit
-	return ret;
-}
-
-/************************
-* StopSendingText
-* 	StopSendingText
-*************************/
-int MultiConf::StopSendingText(int id)
-{
-	int ret = 0;
-
-	Log("-StopSendingText [%d]\n",id);
-
-	//Use list
-	participantsLock.IncUse();
-
-	//Get the participant
-	RTPParticipant *part = (RTPParticipant*)GetParticipant(id,Participant::RTP);
-
-	//Check particpant
-	if (part)
-		//Set video codec
-		ret = part->StopSendingText();
-
-	//Unlock
-	participantsLock.DecUse();
-
-	//Exit
-	return ret;
-}
-
-/************************
-* StartReceivingText
-* 	StartReceivingText
-*************************/
-int MultiConf::StartReceivingText(int id,TextCodec::RTPMap& rtpMap)
-{
-	int ret = 0;
-
-	Log("-StartReceivingText [%d]\n",id);
-
-	//Use list
-	participantsLock.IncUse();
-
-	//Get the participant
-	RTPParticipant *part = (RTPParticipant*)GetParticipant(id,Participant::RTP);
-
-	//Check particpant
-	if (part)
-		//Set video codec
-		ret = part->StartReceivingText(rtpMap);
-
-	//Unlock
-	participantsLock.DecUse();
-
-	//Exit
-	return ret;
-}
-
-/************************
-* End
-* 	Termina una multiconferencia
-*************************/
-int MultiConf::StopReceivingText(int id)
-{
-	int ret = 0;
-
-	Log("-StopReceivingText [%d]\n",id);
-
-	//Use list
-	participantsLock.IncUse();
-
-	//Get the participant
-	RTPParticipant *part = (RTPParticipant*)GetParticipant(id,Participant::RTP);
-
-	//Check particpant
-	if (part)
-		//Set video codec
-		ret = part->StopReceivingText();
-
-	//Unlock
-	participantsLock.DecUse();
-
-	//Exit
-	return ret;
-}
 /************************
 * SetParticipantMosaic
 * 	Change participant mosaic

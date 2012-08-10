@@ -48,9 +48,7 @@ public:
 	virtual void onFPURequested(RTPSession *session);
 	
 protected:
-	int RunAudio();
-	int RunVideo();
-	int RunText();
+	int Run();
 
 private:
 	//Funciones propias
