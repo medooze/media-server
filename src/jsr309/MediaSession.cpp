@@ -382,7 +382,7 @@ int MediaSession::EndpointDelete(int endpointId)
         return 1;
 }
 //Endpoint Video functionality
-int MediaSession::EndpointStartSendingVideo(int endpointId,char *sendVideoIp,int sendVideoPort,VideoCodec::RTPMap& rtpMap)
+int MediaSession::EndpointStartSending(int endpointId,MediaFrame::Type media,char *sendVideoIp,int sendVideoPort,RTPMap& rtpMap)
 {
         //Get Player
         Endpoints::iterator it = endpoints.find(endpointId);
@@ -395,12 +395,13 @@ int MediaSession::EndpointStartSendingVideo(int endpointId,char *sendVideoIp,int
         Endpoint* endpoint = it->second;
 
 	//Log endpoint tag name
-	Log("-EndpointStartSendingVideo [%ls]\n",endpoint->GetName().c_str());
+	Log("-EndpointStartSending [%ls]\n",endpoint->GetName().c_str());
 
 	//Execute
-	return endpoint->StartSendingVideo(sendVideoIp, sendVideoPort, rtpMap);
+	return endpoint->StartSending(media,sendVideoIp, sendVideoPort, rtpMap);
 }
-int MediaSession::EndpointStopSendingVideo(int endpointId)
+
+int MediaSession::EndpointStopSending(int endpointId,MediaFrame::Type media)
 {
         //Get Player
         Endpoints::iterator it = endpoints.find(endpointId);
@@ -413,12 +414,13 @@ int MediaSession::EndpointStopSendingVideo(int endpointId)
         Endpoint* endpoint = it->second;
 
 	//Log endpoint tag name
-	Log("-EndpointStopSendingVideo [%ls]\n",endpoint->GetName().c_str());
+	Log("-EndpointStopSending [%ls]\n",endpoint->GetName().c_str());
 
 	//Execute
-	return endpoint->StopSendingVideo();
+	return endpoint->StopSending(media);
 }
-int MediaSession::EndpointStartReceivingVideo(int endpointId,VideoCodec::RTPMap& rtpMap)
+
+int MediaSession::EndpointStartReceiving(int endpointId,MediaFrame::Type media,RTPMap& rtpMap)
 {
         //Get Player
         Endpoints::iterator it = endpoints.find(endpointId);
@@ -431,12 +433,12 @@ int MediaSession::EndpointStartReceivingVideo(int endpointId,VideoCodec::RTPMap&
         Endpoint* endpoint = it->second;
 
 	//Log endpoint tag name
-	Log("-EndpointStartReceivingVideo [%ls]\n",endpoint->GetName().c_str());
+	Log("-EndpointStartReceiving [%ls]\n",endpoint->GetName().c_str());
 
 	//Execute
-	return endpoint->StartReceivingVideo(rtpMap);
+	return endpoint->StartReceiving(media,rtpMap);
 }
-int MediaSession::EndpointStopReceivingVideo(int endpointId)
+int MediaSession::EndpointStopReceiving(int endpointId,MediaFrame::Type media)
 {
         //Get Player
         Endpoints::iterator it = endpoints.find(endpointId);
@@ -449,160 +451,12 @@ int MediaSession::EndpointStopReceivingVideo(int endpointId)
         Endpoint* endpoint = it->second;
 
 	//Log endpoint tag name
-	Log("-EndpointStartReceivingVideo [%ls]\n",endpoint->GetName().c_str());
+	Log("-EndpointStartReceiving [%ls]\n",endpoint->GetName().c_str());
 	
 	//Execute
-	return endpoint->StopReceivingVideo();
-}
-//Endpoint Audio functionality
-int MediaSession::EndpointStartSendingAudio(int endpointId,char *sendAudioIp,int sendAudioPort,AudioCodec::RTPMap& rtpMap)
-{
-        //Get Player
-        Endpoints::iterator it = endpoints.find(endpointId);
-
-        //If not found
-        if (it==endpoints.end())
-                //Exit
-                return Error("Endpoint not found\n");
-        //Get it
-        Endpoint* endpoint = it->second;
-
-	//Log endpoint tag name
-	Log("-EndpointStopReceivingVideo [%ls]\n",endpoint->GetName().c_str());
-
-	//Execute
-	return endpoint->StartSendingAudio(sendAudioIp,sendAudioPort,rtpMap);
+	return endpoint->StopReceiving(media);
 }
 
-int MediaSession::EndpointStopSendingAudio(int endpointId)
-{
-        //Get Player
-        Endpoints::iterator it = endpoints.find(endpointId);
-
-        //If not found
-        if (it==endpoints.end())
-                //Exit
-                return Error("Endpoint not found\n");
-        //Get it
-        Endpoint* endpoint = it->second;
-
-	//Log endpoint tag name
-	Log("-EndpointStopSendingAudio [%ls]\n",endpoint->GetName().c_str());
-
-	//Execute
-	return endpoint->StopSendingAudio();
-}
-
-int MediaSession::EndpointStartReceivingAudio(int endpointId,AudioCodec::RTPMap& rtpMap)
-{
-        //Get Player
-        Endpoints::iterator it = endpoints.find(endpointId);
-
-        //If not found
-        if (it==endpoints.end())
-                //Exit
-                return Error("Endpoint not found\n");
-        //Get it
-        Endpoint* endpoint = it->second;
-
-	//Log endpoint tag name
-	Log("-EndpointStartReceivingAudio [%ls]\n",endpoint->GetName().c_str());
-
-	//Execute
-	return endpoint->StartReceivingAudio(rtpMap);
-}
-int MediaSession::EndpointStopReceivingAudio(int endpointId)
-{
-        //Get Player
-        Endpoints::iterator it = endpoints.find(endpointId);
-
-        //If not found
-        if (it==endpoints.end())
-                //Exit
-                return Error("Endpoint not found\n");
-        //Get it
-        Endpoint* endpoint = it->second;
-
-	//Log endpoint tag name
-	Log("-EndpointStopReceivingAudio [%ls]\n",endpoint->GetName().c_str());
-
-	//Execute
-	return endpoint->StopReceivingAudio();
-}
-
-int MediaSession::EndpointStartSendingText(int endpointId,char *sendTextIp,int sendTextPort,TextCodec::RTPMap& rtpMap)
-{
-        //Get Player
-        Endpoints::iterator it = endpoints.find(endpointId);
-
-        //If not found
-        if (it==endpoints.end())
-                //Exit
-                return Error("Endpoint not found\n");
-        //Get it
-        Endpoint* endpoint = it->second;
-
-	//Log endpoint tag name
-	Log("-EndpointStartSendingText [%ls]\n",endpoint->GetName().c_str());
-
-	//Execute
-	return endpoint->StartSendingText(sendTextIp,sendTextPort,rtpMap);
-}
-int MediaSession::EndpointStopSendingText(int endpointId)
-{
-        //Get Player
-        Endpoints::iterator it = endpoints.find(endpointId);
-
-        //If not found
-        if (it==endpoints.end())
-                //Exit
-                return Error("Endpoint not found");
-        //Get it
-        Endpoint* endpoint = it->second;
-
-	//Log endpoint tag name
-	Log("-EndpointStopSendingText [%ls]\n",endpoint->GetName().c_str());
-
-	//Execute
-	return endpoint->StopSendingText();
-}
-int MediaSession::EndpointStartReceivingText(int endpointId,TextCodec::RTPMap& rtpMap)
-{       
-	//Get endpoint
-        Endpoints::iterator it = endpoints.find(endpointId);
-
-        //If not found
-        if (it==endpoints.end())
-                //Exit
-                return Error("Endpoint not found\n");
-        //Get it
-        Endpoint* endpoint = it->second;
-
-	//Log endpoint tag name
-	Log("-EndpointStartReceivingText [%ls]\n",endpoint->GetName().c_str());
-
-	//Execute
-	return endpoint->StartReceivingText(rtpMap);
-}
-
-int MediaSession::EndpointStopReceivingText(int endpointId)
-{       
-	//Get endpoint
-        Endpoints::iterator it = endpoints.find(endpointId);
-
-        //If not found
-        if (it==endpoints.end())
-                //Exit
-                return Error("Endpoint not found\n");
-        //Get it
-        Endpoint* endpoint = it->second;
-
-	//Log endpoint tag name
-	Log("EndpointStopReceivingText [%ls]\n",endpoint->GetName().c_str());
-
-	//Execute
-	return endpoint->StopReceivingText();
-}
 int MediaSession::EndpointRequestUpdate(int endpointId,MediaFrame::Type media)
 {
 	//Get endpoint

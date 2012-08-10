@@ -155,6 +155,7 @@ public:
 	void SetMark(bool mark)		{ header->m = mark;			}
 	void SetCodec(DWORD codec)	{ this->codec = codec;			}
 	void SetType(DWORD type)	{ this->type = type;			}
+	void SetSize(DWORD size)	{ len = size-sizeof(rtp_hdr_t);		}
 	
 	//Getters
 	MediaFrame::Type GetMedia()	{ return media;				}
@@ -163,12 +164,14 @@ public:
 	DWORD GetType()			{ return type;				}
 	DWORD GetSize()			{ return len+sizeof(rtp_hdr_t);		}
 	BYTE* GetData()			{ return buffer;			}
+	DWORD GetMaxSize()		{ return MTU;				}
 	BYTE* GetMediaData()		{ return buffer+sizeof(rtp_hdr_t);	}
 	DWORD GetMediaLength()		{ return len;				}
 	DWORD GetMaxMediaLength()	{ return RTPPAYLOADSIZE;		}
 	bool  GetMark()			{ return header->m;			}
 	DWORD GetTimestamp()		{ return ntohl(header->ts);		}
 	WORD  GetSeqNum()		{ return ntohs(header->seq);		}
+	DWORD GetSSRC()			{ return ntohl(header->ssrc);		}
 	rtp_hdr_t* GetRTPHeader()	{ return (rtp_hdr_t*)buffer;		}
 
 	bool SetPayload(BYTE *data,DWORD size)

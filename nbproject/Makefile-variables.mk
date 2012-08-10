@@ -8,9 +8,9 @@ CND_BUILDDIR=build
 CND_DISTDIR=dist
 # Default configuration
 CND_PLATFORM_Default=GNU-Linux-x86
-CND_ARTIFACT_DIR_Default=../bin/debug
+CND_ARTIFACT_DIR_Default=bin/debug
 CND_ARTIFACT_NAME_Default=mcu
-CND_ARTIFACT_PATH_Default=../bin/debug/mcu
+CND_ARTIFACT_PATH_Default=bin/debug/mcu
 CND_PACKAGE_DIR_Default=dist/Default/GNU-Linux-x86/package
 CND_PACKAGE_NAME_Default=.tar
 CND_PACKAGE_PATH_Default=dist/Default/GNU-Linux-x86/package/.tar

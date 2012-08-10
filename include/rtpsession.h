@@ -7,8 +7,11 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <use.h>
+#include <poll.h>
 #include "rtp.h"
+#include "waitqueue.h"
 
+typedef std::map<DWORD,DWORD> RTPMap;
 
 struct MediaStatistics
 {
@@ -30,55 +33,58 @@ public:
 		virtual void onFPURequested(RTPSession *session) = 0;
 	};
 public:
-	RTPSession(Listener *listener);
+	RTPSession(MediaFrame::Type media,Listener *listener);
 	~RTPSession();
 	int Init();
 	int GetLocalPort();
 	int SetRemotePort(char *ip,int sendPort);
-	
 	int End();
 
-	void SetSendingVideoRTPMap(VideoCodec::RTPMap &map);
-	void SetSendingAudioRTPMap(AudioCodec::RTPMap &map);
-	void SetSendingTextRTPMap(TextCodec::RTPMap &map);
-	void SetReceivingVideoRTPMap(VideoCodec::RTPMap &map);
-	void SetReceivingAudioRTPMap(AudioCodec::RTPMap &map);
-	void SetReceivingTextRTPMap(TextCodec::RTPMap &map);
-
-	bool SetSendingVideoCodec(VideoCodec::Type codec);
-	bool SetSendingAudioCodec(AudioCodec::Type codec);
-	bool SetSendingTextCodec(TextCodec::Type codec);
+	void SetSendingRTPMap(RTPMap &map);
+	void SetReceivingRTPMap(RTPMap &map);
+	bool SetSendingCodec(DWORD codec);
 
 	int SendEmptyPacket();
-	int SendVideoPacket(BYTE* data,int size,int last,DWORD frameTime);
-	int SendAudioPacket(BYTE* data,int size,DWORD frameTime);
-	int SendTextPacket(BYTE* data,int size,DWORD timestamp,bool mark);
 	int SendPacket(RTPPacket &packet,DWORD timestamp);
-	int GetVideoPacket(BYTE *data,DWORD *size,BYTE *last,BYTE *lost,VideoCodec::Type *codec,DWORD *timestamp);
-	int GetAudioPacket(BYTE* data,DWORD *size,BYTE *lost,AudioCodec::Type *codec,DWORD *timestamp);
-	int GetTextPacket(BYTE* data,DWORD *size,BYTE *lost,TextCodec::Type *codec,DWORD *timestamp);
+	RTPPacket* GetPacket();
 
 	DWORD GetNumRecvPackets()	{ return numRecvPackets;	}
 	DWORD GetNumSendPackets()	{ return numSendPackets;	}
 	DWORD GetTotalRecvBytes()	{ return totalRecvBytes;	}
 	DWORD GetTotalSendBytes()	{ return totalSendBytes;	}
 	DWORD GetLostRecvPackets()	{ return lostRecvPackets;	}
+
+	WORD  GetLost()			{ return lost;			} //TODO: ugly, will be fixed
 private:
+	void Start();
+	void Stop();
+	void ReadRTP();
+	void ReadRTCP();
 	void SetSendingType(int type);
-	inline int WaitForSocket(int fd, int secs);
-	
+	int Run();
+private:
+	static  void* run(void *par);
 protected:
 	//Envio y recepcion de rtcp
 	int RecvRtcp();
 	int SendRtcp();
 
 private:
+	MediaFrame::Type media;
 	Listener* listener;
+	WaitQueue<RTPPacket*> packets;
 	//Sockets
 	int 	simSocket;
 	int 	simRtcpSocket;
 	int 	simPort;
 	int	simRtcpPort;
+	pollfd	ufds[2];
+	bool	inited;
+	bool	running;
+	WORD	lost;
+
+	pthread_t thread;
+	pthread_mutex_t mutex;	
 
 	//Tipos
 	int 	sendType;
@@ -99,12 +105,8 @@ private:
 	DWORD	  recPort;
 
 	//RTP Map types
-	VideoCodec::RTPMap* rtpVideoMapIn;
-	VideoCodec::RTPMap* rtpVideoMapOut;
-	AudioCodec::RTPMap* rtpAudioMapIn;
-	AudioCodec::RTPMap* rtpAudioMapOut;
-	TextCodec::RTPMap* rtpTextMapIn;
-	TextCodec::RTPMap* rtpTextMapOut;
+	RTPMap* rtpMapIn;
+	RTPMap* rtpMapOut;
 
 	//Statistics
 	DWORD		numRecvPackets;

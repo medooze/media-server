@@ -17,7 +17,7 @@ static BYTE LOSTREPLACEMENT[]		= {0xEF,0xBF,0xBD};
 * TextStream
 *	Constructor
 ***********************************/
-TextStream::TextStream(RTPSession::Listener* listener) : rtp(listener)
+TextStream::TextStream(RTPSession::Listener* listener) : rtp(MediaFrame::Text,listener)
 {
 	sendingText=0;
 	receivingText=0;
@@ -106,7 +106,7 @@ void * TextStream::startReceivingText(void *par)
 * StartSending
 *	Comienza a mandar a la ip y puertos especificados
 ***************************************/
-int TextStream::StartSending(char *sendTextIp,int sendTextPort,TextCodec::RTPMap& rtpMap)
+int TextStream::StartSending(char *sendTextIp,int sendTextPort,RTPMap& rtpMap)
 {
 	Log(">StartSending text [%s,%d]\n",sendTextIp,sendTextPort);
 
@@ -127,10 +127,10 @@ int TextStream::StartSending(char *sendTextIp,int sendTextPort,TextCodec::RTPMap
 		return Error("Error en el SetRemotePort\n");
 
 	//Set sending map
-	rtp.SetSendingTextRTPMap(rtpMap);
+	rtp.SetSendingRTPMap(rtpMap);
 
 	//Get t140 for redundancy
-	for (TextCodec::RTPMap::iterator it = rtpMap.begin(); it!=rtpMap.end(); ++it)
+	for (RTPMap::iterator it = rtpMap.begin(); it!=rtpMap.end(); ++it)
 	{
 		//Is it ourr codec
 		if (it->second==TextCodec::T140)
@@ -143,7 +143,7 @@ int TextStream::StartSending(char *sendTextIp,int sendTextPort,TextCodec::RTPMap
 	}
 
 	//Set text codec
-	if(!rtp.SetSendingTextCodec(textCodec))
+	if(!rtp.SetSendingCodec(textCodec))
 		//Error
 		return Error("%s text codec not supported by peer\n",TextCodec::GetNameFor(textCodec));
 
@@ -162,7 +162,7 @@ int TextStream::StartSending(char *sendTextIp,int sendTextPort,TextCodec::RTPMap
 * StartReceiving
 *	Abre los sockets y empieza la recetpcion
 ****************************************/
-int TextStream::StartReceiving(TextCodec::RTPMap& rtpMap)
+int TextStream::StartReceiving(RTPMap& rtpMap)
 {
 	//If already receiving
 	if (receivingText)
@@ -173,7 +173,7 @@ int TextStream::StartReceiving(TextCodec::RTPMap& rtpMap)
 	int recTextPort = rtp.GetLocalPort();
 
 	//Set receving map
-	rtp.SetReceivingTextRTPMap(rtpMap);
+	rtp.SetReceivingRTPMap(rtpMap);
 
 	//We are reciving text
 	receivingText=1;
@@ -264,9 +264,6 @@ int TextStream::StopSending()
 *****************************************/
 int TextStream::RecText()
 {
-	BYTE 		lost=0;
-	DWORD		timeStamp=0;
-	BYTE		packet[MTU];
 	BYTE*		text;
 	DWORD		textSize;
 	RedHeaders	headers;
@@ -276,22 +273,34 @@ int TextStream::RecText()
 	//Mientras tengamos que capturar
 	while(receivingText)
 	{
-		TextCodec::Type type;
+		//Get packet
+		RTPPacket* packet = rtp.GetPacket();
 
-		DWORD packetSize = MTU;
-
-		//Obtenemos el paquete
-		if (!rtp.GetTextPacket(packet,&packetSize,&lost,&type,&timeStamp))
+		//Check if gor anti
+		if (!packet)
+			//Next
 			continue;
+
+		//Get type
+		TextCodec::Type type = (TextCodec::Type)packet->GetCodec();
+
+		//Get timestamp
+		DWORD timeStamp = packet->GetTimestamp();
+
+		//Get lost count
+		WORD lost = rtp.GetLost();
 
 		//Number of bytes to skip of text until primary data
 		WORD skip = 0;
 
 		//Get the text
-		text = packet;
+		BYTE* data = packet->GetMediaData();
+
+		//The text is the whole data
+		text = data;
 
 		//Get the text size
-		textSize = packetSize;
+		textSize = packet->GetMaxMediaLength();
 
 		//Check the type of data
 		if (type==TextCodec::T140RED)
@@ -303,15 +312,15 @@ int TextStream::RecText()
 			while(!last)
 			{
 				//Check if it is the last
-				last = !(packet[i++]>>7);
+				last = !(data[i++]>>7);
 				//if it is not last
 				if (!last)
 				{
 					//Get offset
-					WORD offset	= (((WORD)(packet[i++])<<6));
-					offset |= packet[i]>>2;
-					WORD size	= (((WORD)(packet[i++])&0x03)<<8);
-					size |= packet[i++];
+					WORD offset	= (((WORD)(data[i++])<<6));
+					offset |= data[i]>>2;
+					WORD size	= (((WORD)(data[i++])&0x03)<<8);
+					size |= data[i++];
 					//Append new t140red header
 					headers.push_back(RedHeader(offset,skip,size));
 					//Skip the redundant data
@@ -319,7 +328,7 @@ int TextStream::RecText()
 				}
 			}
 			//Skip redundant headers
-			text = packet+i;
+			text = data+i;
 			//Set text size
 			textSize -= i;
 		}
@@ -355,16 +364,11 @@ int TextStream::RecText()
 			{
 				//Get header
 				RedHeader &header = headers[i];
-				Log("-Recovered [offset:%u,ini:%u,size:%u]\n",header.offset,header.ini,header.size);
-				Dump(packet,packetSize);
-				Log("\n");
-				Dump(text+header.ini,header.size);
 				//Create frame
 				TextFrame frame(timeStamp-header.offset,text+header.ini,header.size);
 				//And send it
 				textOutput->SendFrame(frame);
 			}
-
 
 			//Check length
 			if (skip<textSize)
@@ -378,6 +382,9 @@ int TextStream::RecText()
 
 		//clean redundancy headres
 		headers.clear();
+
+		//Delete rtp packet
+		delete(packet);
 	}
 
 	Log("<RecText\n");
@@ -422,11 +429,11 @@ int TextStream::SendText()
 			if (frame)
 			{
 				//Send it
-				if(!rtp.SendTextPacket(frame->GetData(),frame->GetLength(),lastTime,idle))
+				/*/FIX!! if(!rtp.SendTextPacket(frame->GetData(),frame->GetLength(),lastTime,idle))
 				{
 					Log("Error mandando el packete de text\n");
 					continue;
-				}
+				}*/
 
 				//Delete frame
 				delete(frame);
@@ -442,11 +449,12 @@ int TextStream::SendText()
 				timeout = 25000;
 			} else {
 				//Lo enviamos
-				if(!rtp.SendTextPacket(BOMUTF8,sizeof(BOMUTF8),lastTime,0))
+				/* FIX!! if(!rtp.SendTextPacket(BOMUTF8,sizeof(BOMUTF8),lastTime,0))
 				{
 					Log("Error mandando el packete de text\n");
 					continue;
 				}
+				 * */
 			}
 		} else {
 			BYTE buffer[RTPPAYLOADSIZE];
@@ -535,13 +543,15 @@ int TextStream::SendText()
 			}
 			//Send the mark bit if it is first frame after idle
 			bool mark = idle && frame;
-			
+
+			/* FIX!!
 			//Send it
 			if(!rtp.SendTextPacket(buffer,bufferLen,lastTime,mark))
 			{
 				Log("Error mandando el packete de text\n");
 				continue;
 			}
+			*/
 
 			//Check size of the queue
 			if (reds.size()==3)

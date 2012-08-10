@@ -83,194 +83,78 @@ int Endpoint::End()
 	Log("<End endpoint\n");
 }
 
-//Endpoint Video functionality
-int Endpoint::StartSendingVideo(char *sendVideoIp,int sendVideoPort,VideoCodec::RTPMap& rtpMap)
+int Endpoint::StartSending(MediaFrame::Type media,char *sendIp,int sendPort,RTPMap& rtpMap)
 {
-	//Check video
-	if (!video)
+	//Get enpoint
+	RTPEndpoint* rtp = GetRTPEndpoint(media);
+	
+	//Check 
+	if (!rtp)
 		//Init it
-		return Error("No video supported");
+		return Error("No media supported");
 
 	//Stop sending for a while
-	video->StopSending();
+	rtp->StopSending();
 
 	//Set remote endpoint
-	if(!video->SetRemotePort(sendVideoIp,sendVideoPort))
+	if(!rtp->SetRemotePort(sendIp,sendPort))
 		//Error
 		return Error("Error SetRemotePort\n");
 
 	//Set sending map
-	video->SetSendingVideoRTPMap(rtpMap);
+	rtp->SetSendingRTPMap(rtpMap);
 
 	//And send
-	return video->StartSending();
+	return rtp->StartSending();
 }
 
-int Endpoint::StopSendingVideo()
+int Endpoint::StopSending(MediaFrame::Type media)
 {
-	//Check video
-	if (!video)
+	//Get rtp enpoint for media
+	RTPEndpoint* rtp = GetRTPEndpoint(media);
+
+	//Check
+	if (!rtp)
 		//Init it
-		return Error("No video supported");
+		return Error("No media supported");
 	
 	//Stop sending for a while
-	return video->StopSending();
+	return rtp->StopSending();
 }
 
-int Endpoint::StartReceivingVideo(VideoCodec::RTPMap& rtpMap)
+int Endpoint::StartReceiving(MediaFrame::Type media,RTPMap& rtpMap)
 {
-	//Check video
-	if (!video)
+	//Get rtp enpoint for media
+	RTPEndpoint* rtp = GetRTPEndpoint(media);
+
+	//Check
+	if (!rtp)
 		//Init it
-		return Error("No video supported");
+		return Error("No media supported");
 	
 	//Set map
-	video->SetReceivingVideoRTPMap(rtpMap);
+	rtp->SetReceivingRTPMap(rtpMap);
 	
 	//Start
-	if (!video->StartReceiving())
+	if (!rtp->StartReceiving())
 		//Exit
-		return Error("Error starting video receiving");
+		return Error("Error starting receiving media");
 
 	//Return port
-	return video->GetLocalPort();
+	return rtp->GetLocalPort();
 }
 
-int Endpoint::StopReceivingVideo()
+int Endpoint::StopReceiving(MediaFrame::Type media)
 {
-	//Check video
-	if (!video)
+	//Get rtp enpoint for media
+	RTPEndpoint* rtp = GetRTPEndpoint(media);
+
+	//Check
+	if (!rtp)
 		//Init it
-		return Error("No video supported");
+		return Error("No media supported");
 	//Start
-	return video->StopReceiving();
-}
-
-// Audio functionality
-//Endpoint Audio functionality
-int Endpoint::StartSendingAudio(char *sendAudioIp,int sendAudioPort,AudioCodec::RTPMap& rtpMap)
-{
-	//Check audio
-	if (!audio)
-		//Init it
-		return Error("No audio supported");
-
-	//Stop sending for a while
-	audio->StopSending();
-
-	//Set remote endpoint
-	if(!audio->SetRemotePort(sendAudioIp,sendAudioPort))
-		//Error
-		return Error("Error SetRemotePort\n");
-
-	//Set sending map
-	audio->SetSendingAudioRTPMap(rtpMap);
-
-	//And send
-	return audio->StartSending();
-}
-
-int Endpoint::StopSendingAudio()
-{
-	//Check audio
-	if (!audio)
-		//Init it
-		return Error("No audio supported");
-
-	//Stop sending for a while
-	return audio->StopSending();
-}
-
-int Endpoint::StartReceivingAudio(AudioCodec::RTPMap& rtpMap)
-{
-	//Check audio
-	if (!audio)
-		//Init it
-		return Error("No audio supported");
-
-	//Set map
-	audio->SetReceivingAudioRTPMap(rtpMap);
-
-	//Start
-	if (!audio->StartReceiving())
-		//Exit
-		return Error("Error starting audio receiving");
-
-	//Return port
-	return audio->GetLocalPort();
-}
-
-int Endpoint::StopReceivingAudio()
-{
-	//Check audio
-	if (!audio)
-		//Init it
-		return Error("No audio supported");
-	//Start
-	return audio->StopReceiving();
-}
-
-//Endpoint Text functionality
-int Endpoint::StartSendingText(char *sendTextIp,int sendTextPort,TextCodec::RTPMap& rtpMap)
-{
-	//Check text
-	if (!text)
-		//Init it
-		return Error("No text supported");
-
-	//Stop sending for a while
-	text->StopSending();
-
-	//Set remote endpoint
-	if(!text->SetRemotePort(sendTextIp,sendTextPort))
-		//Error
-		return Error("Error SetRemotePort\n");
-
-	//Set sending map
-	text->SetSendingTextRTPMap(rtpMap);
-
-	//And send
-	return text->StartSending();
-}
-
-int Endpoint::StopSendingText()
-{
-	//Check text
-	if (!text)
-		//Init it
-		return Error("No text supported");
-
-	//Stop sending for a while
-	return text->StopSending();
-}
-
-int Endpoint::StartReceivingText(TextCodec::RTPMap& rtpMap)
-{
-	//Check text
-	if (!text)
-		//Init it
-		return Error("No text supported");
-
-	//Set map
-	text->SetReceivingTextRTPMap(rtpMap);
-
-	//Start
-	if (!text->StartReceiving())
-		//Exit
-		return Error("Error starting audio receiving");
-
-	//Return port
-	return text->GetLocalPort();
-}
-
-int Endpoint::StopReceivingText()
-{
-	//Check text
-	if (!text)
-		//Init it
-		return Error("No text supported");
-	//Start
-	return text->StopReceiving();
+	return rtp->StopReceiving();
 }
 
 //Attach

@@ -22,10 +22,10 @@ public:
 
 	int Init(VideoInput *input, VideoOutput *output);
 	int SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int quality,int fillLevel,int intraPeriod);
-	int StartSending(char *sendVideoIp,int sendVideoPort,VideoCodec::RTPMap& rtpMap);
+	int StartSending(char *sendVideoIp,int sendVideoPort,RTPMap& rtpMap);
 	int StopSending();
 	int SendFPU();
-	int StartReceiving(VideoCodec::RTPMap& rtpMap);
+	int StartReceiving(RTPMap& rtpMap);
 	int StopReceiving();
 	int SetMediaListener(MediaFrame::Listener *listener);
 	int SetMute(bool isMuted);

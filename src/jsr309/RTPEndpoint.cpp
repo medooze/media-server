@@ -11,7 +11,7 @@
 #include "RTPEndpoint.h"
 #include "rtpsession.h"
 
-RTPEndpoint::RTPEndpoint(MediaFrame::Type type) : RTPMultiplexer() , RTPSession(this)
+RTPEndpoint::RTPEndpoint(MediaFrame::Type type) : RTPMultiplexer() , RTPSession(type,this)
 {
         //Store type
         this->type = type;
@@ -187,22 +187,8 @@ void RTPEndpoint::onRTPPacket(RTPPacket &packet)
         {
                 //Store it
                 codec = packet.GetCodec();
-                //Depending on the type
-                switch(packetType)
-                {
-                        case MediaFrame::Audio:
-                                //Set it
-                                RTPSession::SetSendingAudioCodec((AudioCodec::Type)codec);
-                                break;
-                        case MediaFrame::Video:
-                                //Set it
-                                RTPSession::SetSendingVideoCodec((VideoCodec::Type)codec);
-                                break;
-                        case MediaFrame::Text:
-                                //Set it
-                                RTPSession::SetSendingTextCodec((TextCodec::Type)codec);
-                                break;
-                }
+		//Set it
+                RTPSession::SetSendingCodec(codec);
 	}
 
 	//Get diference from latest frame
@@ -246,90 +232,23 @@ void RTPEndpoint::onEndStream()
 	joined = NULL;
 }
 
-int RTPEndpoint::RunAudio()
+int RTPEndpoint::Run()
 {
-        BYTE lost;
-        AudioCodec::Type codec;
-        DWORD timestamp;
-        RTPPacket audio(MediaFrame::Audio,0,0);
-
         while(inited)
         {
-		DWORD len = audio.GetMaxMediaLength();
                 //Get the packet
-                if (!RTPSession::GetAudioPacket(audio.GetMediaData(), &len ,&lost, &codec, &timestamp))
+		RTPPacket* packet = RTPSession::GetPacket();
+		//Check packet
+		if (!packet)
 			//Next
 			continue;
-		//Set length
-		audio.SetMediaLength(len);
-		//Set codec
-		audio.SetCodec(codec);
-		audio.SetType(codec);
-		//Set timestamp
-		audio.SetTimestamp(timestamp);
 		//Multiplex
-		Multiplex(audio);
+		Multiplex(*packet);
+		//Delete ti
+		delete(packet);
         }
 
         return 1;
-}
-
-int RTPEndpoint::RunVideo()
-{
-        BYTE lost;
-        BYTE last;
-        VideoCodec::Type codec;
-        DWORD timestamp = 0;
-        RTPPacket video(MediaFrame::Video,0,0);
-
-        while(inited)
-        {
-		DWORD len = video.GetMaxMediaLength();
-                //Get the packet
-                if (!RTPSession::GetVideoPacket(video.GetMediaData(),&len,&last,&lost, &codec, &timestamp))
-			continue;
-		//Set length
-		video.SetMediaLength(len);
-                //Set codec
-                video.SetCodec(codec);
-                video.SetType(codec);
-                //Set mark
-                video.SetMark(last);
-                //Set timestamp
-                video.SetTimestamp(timestamp);
-                //Multiplex
-                Multiplex(video);
-        }
-
-        return 1;
-}
-
-int RTPEndpoint::RunText()
-{
-        BYTE lost;
-        TextCodec::Type codec;
-        DWORD timestamp = 0;
-        RTPPacket text(MediaFrame::Text,0,0);
-
-        while(inited)
-        {
-		DWORD len = text.GetMaxMediaLength();
-                //Get the packet
-                if (!RTPSession::GetTextPacket(text.GetMediaData(),&len,&lost, &codec, &timestamp))
-			continue;
-		//Set length
-		text.SetMediaLength(len);
-                //Set codec
-                text.SetCodec(codec);
-                text.SetType(codec);
-                //Set timestamp
-                text.SetTimestamp(timestamp);
-                //Multiplex
-                Multiplex(text);
-        }
-
-        return 1;
-
 }
 
 void* RTPEndpoint::run(void *par)
@@ -341,25 +260,9 @@ void* RTPEndpoint::run(void *par)
 	blocksignals();
 	//Catch
 	signal(SIGIO,EmptyCatch);
-        //Depending on the type
-        switch(end->GetType())
-        {
-                case MediaFrame::Video:
-                        //Run Video
-                        pthread_exit((void *)end->RunVideo());
-                        break;
-                case MediaFrame::Audio:
-                        //Run Audio
-                        pthread_exit((void *)end->RunAudio());
-                        break;
-                case MediaFrame::Text:
-                        //Run Audio
-                        pthread_exit((void *)end->RunText());
-                        break;
-        }
-        
+	//Run
+	pthread_exit((void *)end->Run());
 }
-
 
 int RTPEndpoint::Attach(Joinable *join)
 {

@@ -13,6 +13,7 @@
 #include "codecs.h"
 #include "mp4recorder.h"
 #include "waitqueue.h"
+#include "RTPSmoother.h"
 #include <set>
 
 class MediaBridgeSession  :
@@ -41,22 +42,22 @@ public:
 	bool Init();
 
 	//Video RTP
-	int StartSendingVideo(char *sendVideoIp,int sendVideoPort,VideoCodec::RTPMap& rtpMap);
+	int StartSendingVideo(char *sendVideoIp,int sendVideoPort,RTPMap& rtpMap);
 	int SetSendingVideoCodec(VideoCodec::Type codec);
 	int SendFPU();
 	int StopSendingVideo();
-	int StartReceivingVideo(VideoCodec::RTPMap& rtpMap);
+	int StartReceivingVideo(RTPMap& rtpMap);
 	int StopReceivingVideo();
 	//Audio RTP
-	int StartSendingAudio(char *sendAudioIp,int sendAudioPort,AudioCodec::RTPMap& rtpMap);
+	int StartSendingAudio(char *sendAudioIp,int sendAudioPort,RTPMap& rtpMap);
 	int SetSendingAudioCodec(AudioCodec::Type codec);
 	int StopSendingAudio();
-	int StartReceivingAudio(AudioCodec::RTPMap& rtpMap);
+	int StartReceivingAudio(RTPMap& rtpMap);
 	int StopReceivingAudio();
 	//T140 Text RTP
-	int StartSendingText(char *sendTextIp,int sendTextPort,TextCodec::RTPMap& rtpMap);
+	int StartSendingText(char *sendTextIp,int sendTextPort,RTPMap& rtpMap);
 	int StopSendingText();
-	int StartReceivingText(TextCodec::RTPMap& rtpMap);
+	int StartReceivingText(RTPMap& rtpMap);
 	int StopReceivingText();
 
 	bool End();
@@ -118,6 +119,7 @@ private:
 	RTPSession      rtpAudio;
 	RTPSession      rtpVideo;
 	RTPSession      rtpText;
+	RTPSmoother	smoother;
 
 	WaitQueue<RTMPVideoFrame*> videoFrames;
 	WaitQueue<RTMPAudioFrame*> audioFrames;

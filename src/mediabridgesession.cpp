@@ -30,7 +30,7 @@
 #endif
 extern DWORD  h264_append_nals(BYTE *dest, DWORD destLen, DWORD destSize, BYTE *buffer, DWORD bufferLen,BYTE **nals,DWORD nalSize,DWORD *num);
 
-MediaBridgeSession::MediaBridgeSession() : audioFrames(), videoFrames(), rtpAudio(NULL), rtpVideo(NULL), rtpText(NULL)
+MediaBridgeSession::MediaBridgeSession() : rtpAudio(MediaFrame::Audio,NULL), rtpVideo(MediaFrame::Video,NULL), rtpText(MediaFrame::Text,NULL)
 {
 	//Neither sending nor receiving
 	sendingAudio = false;
@@ -84,6 +84,8 @@ bool MediaBridgeSession::Init()
 	rtpAudio.Init();
 	rtpVideo.Init();
 	rtpText.Init();
+	//Init smoother for video
+	smoother.Init(&rtpVideo);
 	//Set first timestamp
 	getUpdDifTime(&first);
 
@@ -111,6 +113,9 @@ bool MediaBridgeSession::End()
 	//No meta
 	meta = NULL;
 
+	//Close smoother
+	smoother.End();
+
 	//End rtp
 	rtpAudio.End();
 	rtpVideo.End();
@@ -122,8 +127,7 @@ bool MediaBridgeSession::End()
 	return true;
 }
 
-
-int  MediaBridgeSession::StartSendingVideo(char *sendVideoIp,int sendVideoPort,VideoCodec::RTPMap& rtpMap)
+int  MediaBridgeSession::StartSendingVideo(char *sendVideoIp,int sendVideoPort,RTPMap& rtpMap)
 {
 	Log("-StartSendingVideo [%s,%d]\n",sendVideoIp,sendVideoPort);
 
@@ -142,7 +146,7 @@ int  MediaBridgeSession::StartSendingVideo(char *sendVideoIp,int sendVideoPort,V
 		return Error("Error abriendo puerto rtp\n");
 
 	//Set sending map
-	rtpVideo.SetSendingVideoRTPMap(rtpMap);
+	rtpVideo.SetSendingRTPMap(rtpMap);
 
 	//Estamos mandando
 	sendingVideo=1;
@@ -170,7 +174,7 @@ int  MediaBridgeSession::StopSendingVideo()
 	Log("<StopSendingVideo\n");
 }
 
-int  MediaBridgeSession::StartReceivingVideo(VideoCodec::RTPMap& rtpMap)
+int  MediaBridgeSession::StartReceivingVideo(RTPMap& rtpMap)
 {
 	//Si estabamos reciviendo tenemos que parar
 	if (receivingVideo)
@@ -180,7 +184,7 @@ int  MediaBridgeSession::StartReceivingVideo(VideoCodec::RTPMap& rtpMap)
 	int recVideoPort= rtpVideo.GetLocalPort();
 
 	//Set receving map
-	rtpVideo.SetReceivingVideoRTPMap(rtpMap);
+	rtpVideo.SetReceivingRTPMap(rtpMap);
 
 	//Estamos recibiendo
 	receivingVideo=1;
@@ -216,7 +220,7 @@ int  MediaBridgeSession::StopReceivingVideo()
 	return 1;
 }
 
-int  MediaBridgeSession::StartSendingAudio(char *sendAudioIp,int sendAudioPort,AudioCodec::RTPMap& rtpMap)
+int  MediaBridgeSession::StartSendingAudio(char *sendAudioIp,int sendAudioPort,RTPMap& rtpMap)
 {
 	Log("-StartSendingAudio [%s,%d]\n",sendAudioIp,sendAudioPort);
 
@@ -234,10 +238,10 @@ int  MediaBridgeSession::StartSendingAudio(char *sendAudioIp,int sendAudioPort,A
 		return Error("Error abriendo puerto rtp\n");
 
 	//Set sending map
-	rtpAudio.SetSendingAudioRTPMap(rtpMap);
+	rtpAudio.SetSendingRTPMap(rtpMap);
 
 	//Set default codec
-	rtpAudio.SetSendingAudioCodec(rtpAudioCodec);
+	rtpAudio.SetSendingCodec(rtpAudioCodec);
 
 	//Estamos mandando
 	sendingAudio=1;
@@ -267,7 +271,7 @@ int  MediaBridgeSession::StopSendingAudio()
 	return 1;
 }
 
-int  MediaBridgeSession::StartReceivingAudio(AudioCodec::RTPMap& rtpMap)
+int  MediaBridgeSession::StartReceivingAudio(RTPMap& rtpMap)
 {
 	//Si estabamos reciviendo tenemos que parar
 	if (receivingAudio)
@@ -277,7 +281,7 @@ int  MediaBridgeSession::StartReceivingAudio(AudioCodec::RTPMap& rtpMap)
 	int recAudioPort= rtpAudio.GetLocalPort();
 
 	//Set receving map
-	rtpAudio.SetReceivingAudioRTPMap(rtpMap);
+	rtpAudio.SetReceivingRTPMap(rtpMap);
 
 	//Estamos recibiendo
 	receivingAudio=1;
@@ -313,7 +317,7 @@ int  MediaBridgeSession::StopReceivingAudio()
 	return 1;
 }
 
-int  MediaBridgeSession::StartSendingText(char *sendTextIp,int sendTextPort,TextCodec::RTPMap& rtpMap)
+int  MediaBridgeSession::StartSendingText(char *sendTextIp,int sendTextPort,RTPMap& rtpMap)
 {
 	Log("-StartSendingTextt [%s,%d]\n",sendTextIp,sendTextPort);
 
@@ -327,10 +331,10 @@ int  MediaBridgeSession::StartSendingText(char *sendTextIp,int sendTextPort,Text
 		return Error("No Text port defined\n");
 
 	//Set sending map
-	rtpText.SetSendingTextRTPMap(rtpMap);
+	rtpText.SetSendingRTPMap(rtpMap);
 
 	//Set codec type
-	rtpText.SetSendingTextCodec(TextCodec::T140);
+	rtpText.SetSendingCodec(TextCodec::T140);
 
 	//Iniciamos las sesiones rtp de envio
 	if(!rtpText.SetRemotePort(sendTextIp,sendTextPort))
@@ -355,7 +359,7 @@ int  MediaBridgeSession::StopSendingText()
 	return 1;
 }
 
-int  MediaBridgeSession::StartReceivingText(TextCodec::RTPMap& rtpMap)
+int  MediaBridgeSession::StartReceivingText(RTPMap& rtpMap)
 {
 	//Si estabamos reciviendo tenemos que parar
 	if (receivingText)
@@ -368,7 +372,7 @@ int  MediaBridgeSession::StartReceivingText(TextCodec::RTPMap& rtpMap)
 	receivingText = 1;
 
 	//Set receving map
-	rtpText.SetReceivingTextRTPMap(rtpMap);
+	rtpText.SetReceivingRTPMap(rtpMap);
 
 	//Arrancamos los procesos
 	createPriorityThread(&recTextThread,startReceivingText,this,0);
@@ -502,34 +506,26 @@ int MediaBridgeSession::RecVideo()
 	//Set codec
 	frame.SetVideoCodec(RTMPVideoFrame::FLV1);
 
-	BYTE 	lost=0;
-	BYTE 	last=0;
-	DWORD	timeStamp=0;
 	int 	width=0;
 	int 	height=0;
 	DWORD	numpixels=0;
-	
-	//RTP incoming packet
-	DWORD packetSize = MTU;
-	BYTE* packet[MTU];
 	
 	Log(">RecVideo\n");
 
 	//Mientras tengamos que capturar
 	while(receivingVideo)
 	{
-		//Video codec type
-		VideoCodec::Type type;
+		///Obtenemos el paquete
+		RTPPacket* packet = rtpVideo.GetPacket();
 
-		//POnemos el tam�o
-		packetSize=MTU;
-
-		//Obtenemos el paquete
-		if (!rtpVideo.GetVideoPacket((BYTE *)packet,&packetSize,&last,&lost,&type,&timeStamp))
-		{
-			Error("Error recv video [%d]\n",errno);
+		//Check
+		if (!packet)
+			//Next
 			continue;
-		}
+
+		//Get type
+		VideoCodec::Type type = (VideoCodec::Type)packet->GetCodec();
+
 
 		if ((decoder==NULL) || (type!=decoder->type))
 		{
@@ -546,11 +542,19 @@ int MediaBridgeSession::RecVideo()
 		}
 
 		//Lo decodificamos
-		if(!decoder->DecodePacket((BYTE*)packet,packetSize,lost,last))
+		if(!decoder->DecodePacket(packet->GetMediaData(),packet->GetMediaLength(),0,packet->GetMark()))
+		{
+			delete(packet);
 			continue;
+		}
+		//Get mark
+		bool mark = packet->GetMark();
+
+		//Delete packet
+		delete(packet);
 
 		//Check if it is last one
-		if(!last)
+		if(!mark)
 			continue;
 	
 		//Check size
@@ -624,7 +628,6 @@ int MediaBridgeSession::RecVideo()
 *****************************************/
 int MediaBridgeSession::RecAudio()
 {
-	BYTE 		lost=0;
 	DWORD		firstAudio = 0;
 	DWORD		timeStamp=0;
 	DWORD		firstTS = 0;
@@ -640,27 +643,22 @@ int MediaBridgeSession::RecAudio()
 	//Mientras tengamos que capturar
 	while(receivingAudio)
 	{
-		//Audio codec type
-		AudioCodec::Type codec;
-
-		//POnemos el tam�o
-		DWORD packetSize=audio->GetMaxMediaSize();
-
 		//Obtenemos el paquete
-		if (!rtpAudio.GetAudioPacket(audio->GetMediaData(),&packetSize,&lost,&codec,&timeStamp))
+		RTPPacket *packet = rtpAudio.GetPacket();
+		
+		//Check
+		if (!packet)
+			//Next
 			continue;
-
-		//Set media size
-		audio->SetMediaSize(packetSize);
+		
+		//Get type
+		AudioCodec::Type codec = (AudioCodec::Type)packet->GetCodec();
 
 		//Check rtp type
 		if (codec==AudioCodec::SPEEX16)
 		{
 			//TODO!!!!
-			//next one
-			continue;
 		}
-
 
 		//Check if we have a decoder
 		if (!rtpAudioDecoder || rtpAudioDecoder->type!=codec)
@@ -674,7 +672,10 @@ int MediaBridgeSession::RecAudio()
 		}
 
 		//Decode it
-		rawLen = rtpAudioDecoder->Decode(audio->GetMediaData(),audio->GetMediaSize(),raw,rawSize);
+		rawLen = rtpAudioDecoder->Decode(packet->GetMediaData(),packet->GetMediaLength(),raw,rawSize);
+
+		//Delete packet
+		delete(packet);
 
 		//Rencode it
 		DWORD len;
@@ -747,10 +748,8 @@ int MediaBridgeSession::RecAudio()
 *****************************************/
 int MediaBridgeSession::RecText()
 {
-	BYTE 		lost=0;
 	DWORD		timeStamp=0;
-	BYTE		packet[MTU];
-
+	
 	Log(">RecText\n");
 
 	//Mientras tengamos que capturar
@@ -759,12 +758,20 @@ int MediaBridgeSession::RecText()
 		TextCodec::Type type;
 		DWORD packetSize = MTU;
 
-		//Obtenemos el paquete
-		if (!rtpText.GetTextPacket(packet,&packetSize,&lost,&type,&timeStamp))
+		//Get packet
+		RTPPacket *packet = rtpText.GetPacket();
+
+		//Check packet
+		if (!packet)
 			continue;
 
 		WORD skip = 0;
 
+		//Get data
+		BYTE* data = packet->GetMediaData();
+		//And length
+		DWORD size = packet->GetMediaLength();
+		
 		//Check the type of data
 		if (type==TextCodec::T140RED)
 		{
@@ -775,15 +782,15 @@ int MediaBridgeSession::RecText()
 			while(!last)
 			{
 				//Check if it is the last
-				last = !(packet[i++]>>7);
+				last = !(data[i++]>>7);
 				//if it is not last
 				if (!last)
 				{
 					//Get offset
-					WORD offset	= (((WORD)(packet[i++])<<6));
-					offset |= packet[i]>>2;
-					WORD size	= (((WORD)(packet[i++])&0x03)<<8);
-					size |= packet[i++];
+					WORD offset	= (((WORD)(data[i++])<<6));
+					offset |= data[i]>>2;
+					WORD size	= (((WORD)(data[i++])&0x03)<<8);
+					size |= data[i++];
 					//Skip the redundant data
 					skip += size;
 				}
@@ -792,11 +799,13 @@ int MediaBridgeSession::RecText()
 			skip += i;
 		}
 
+
+
 		//Check length
-		if (skip<packetSize)
+		if (skip<size)
 	        {
 			//Create frame
-			TextFrame frame(timeStamp,packet+skip,packetSize-skip);
+			TextFrame frame(timeStamp,data+skip,size-skip);
 
 			//Create new timestamp associated to latest media time
 			RTMPMetaData *meta = new RTMPMetaData(getDifTime(&first));
@@ -810,7 +819,7 @@ int MediaBridgeSession::RecText()
 			Log("Got T140 frame\n");
 			meta->Dump();
 			
-			//Send packet
+			//Send data
 			SendMetaData(meta);
 		}
 	}
@@ -855,14 +864,12 @@ int MediaBridgeSession::SendVideo()
 	DWORD height = 0;
 	DWORD numpixels = 0;
 	
-	BYTE	data[RTPPAYLOADSIZE];
-	DWORD	size = RTPPAYLOADSIZE;
 	QWORD	lastVideoTs = 0;
 	
 	Log(">SendVideo\n");
 
 	//Set video format
-	if (!rtpVideo.SetSendingVideoCodec(rtpVideoCodec))
+	if (!rtpVideo.SetSendingCodec(rtpVideoCodec))
 		//Error
 		return Error("Peer do not support [%d,%s]\n",rtpVideoCodec,VideoCodec::GetNameFor(rtpVideoCodec));
 
@@ -950,25 +957,11 @@ int MediaBridgeSession::SendVideo()
 			continue;
 		}
 
-		//No es el ultimo
-		DWORD last=0;
+		//Set frame time
+		videoFrame->SetTimestamp(diff);
 
-		//Mientras tengamos que codificar
-		while(!last)
-		{
-			//Obtenemos el siguietne paquete
-			size = RTPPAYLOADSIZE;
-
-			//Y miramos si hay mas
-			last=encoder->GetNextPacket((BYTE *)&data,size)==0;
-
-			//Lo enviamos
-			if (!rtpVideo.SendVideoPacket((BYTE *)data,size,last,diff*90))
-			{
-				Log("Error sending video [%d]\n",errno);
-				continue;
-			}
-		}
+		//Send it smoothly
+		smoother.SendFrame(videoFrame,diff);
 
 		//Delete video frame
 		delete(video);
@@ -1061,11 +1054,13 @@ int MediaBridgeSession::SendAudio()
 					rtpLen = rtpAudioEncoder->Encode(raw,rawLen,rtp,rtpSize);
 					//Send
 					if (rtpAudioCodec==AudioCodec::SPEEX16)
+					{
 						//Send rtp packet
-						rtpAudio.SendAudioPacket(rtp,rtpLen,diff*16);
-					else
+						//FIX!!  rtpAudio.SendAudioPacket(rtp,rtpLen,diff*16);
+					} else {
 						//Send rtp packet
-						rtpAudio.SendAudioPacket(rtp,rtpLen,diff*8);
+						//FIX!! rtpAudio.SendAudioPacket(rtp,rtpLen,diff*8);
+					}
 				}
 				//Set diff
 				diff = 20;
@@ -1074,7 +1069,7 @@ int MediaBridgeSession::SendAudio()
 			}
 		} else {
 			//Send rtp packet
-			rtpAudio.SendAudioPacket(audio->GetMediaData(),audio->GetMediaSize(),diff*16);
+			//FIX!!  rtpAudio.SendAudioPacket(audio->GetMediaData(),audio->GetMediaSize(),diff*16);
 		}
 		//Delete audio
 		delete(audio);
@@ -1416,9 +1411,8 @@ void MediaBridgeSession::onMetaData(DWORD id,RTMPMetaData *publishedMetaData)
 		//Log
 		Log("Sending t140 data [\"%ls\"]\n",str->GetWChar());
 
-
 		//Send text
-		rtpText.SendTextPacket((BYTE*)str->GetWChar(),str->GetUTF8Size(),getDifTime(&first)/1000,0);
+		//FIX!! rtpText.SendTextPacket((BYTE*)str->GetWChar(),str->GetUTF8Size(),getDifTime(&first)/1000,0);
 	}
 }
 

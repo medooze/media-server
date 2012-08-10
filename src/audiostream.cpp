@@ -18,7 +18,7 @@
 * AudioStream
 *	Constructor
 ***********************************/
-AudioStream::AudioStream(RTPSession::Listener* listener) : rtp(listener)
+AudioStream::AudioStream(RTPSession::Listener* listener) : rtp(MediaFrame::Audio,listener)
 {
 	sendingAudio=0;
 	receivingAudio=0;
@@ -132,7 +132,7 @@ void * AudioStream::startReceivingAudio(void *par)
 * StartSending
 *	Comienza a mandar a la ip y puertos especificados
 ***************************************/
-int AudioStream::StartSending(char *sendAudioIp,int sendAudioPort,AudioCodec::RTPMap& rtpMap)
+int AudioStream::StartSending(char *sendAudioIp,int sendAudioPort,RTPMap& rtpMap)
 {
 	Log(">StartSending audio [%s,%d]\n",sendAudioIp,sendAudioPort);
 
@@ -153,10 +153,10 @@ int AudioStream::StartSending(char *sendAudioIp,int sendAudioPort,AudioCodec::RT
 		return Error("Error en el SetRemotePort\n");
 
 	//Set sending map
-	rtp.SetSendingAudioRTPMap(rtpMap);
+	rtp.SetSendingRTPMap(rtpMap);
 
 	//Set audio codec
-	if(!rtp.SetSendingAudioCodec(audioCodec))
+	if(!rtp.SetSendingCodec(audioCodec))
 		//Error
 		return Error("%s audio codec not supported by peer\n",AudioCodec::GetNameFor(audioCodec));
 
@@ -175,7 +175,7 @@ int AudioStream::StartSending(char *sendAudioIp,int sendAudioPort,AudioCodec::RT
 * StartReceiving
 *	Abre los sockets y empieza la recetpcion
 ****************************************/
-int AudioStream::StartReceiving(AudioCodec::RTPMap& rtpMap)
+int AudioStream::StartReceiving(RTPMap& rtpMap)
 {
 	//If already receiving
 	if (receivingAudio)
@@ -186,7 +186,7 @@ int AudioStream::StartReceiving(AudioCodec::RTPMap& rtpMap)
 	int recAudioPort = rtp.GetLocalPort();
 
 	//Set receving map
-	rtp.SetReceivingAudioRTPMap(rtpMap);
+	rtp.SetReceivingRTPMap(rtpMap);
 
 	//We are reciving audio
 	receivingAudio=1;
@@ -277,15 +277,11 @@ int AudioStream::StopSending()
 *****************************************/
 int AudioStream::RecAudio()
 {
-	BYTE 		lost=0;
 	int 		recBytes=0;
 	struct timeval 	before;
-	BYTE		data[512];
 	WORD		playBuffer[512];
-	DWORD		size=512;
 	AudioCodec*	codec=NULL;
 	AudioCodec::Type type;
-	DWORD		timeStamp=0;
 	DWORD		frameTime=0;
 	DWORD		lastTime=0;
 	
@@ -300,22 +296,14 @@ int AudioStream::RecAudio()
 	//Mientras tengamos que capturar
 	while(receivingAudio)
 	{
-		//POnemos el tam�o
-		size=512;
-		lost=0;
-		
 		//Obtenemos el paquete
-		if (!rtp.GetAudioPacket((BYTE *)data,&size,&lost,&type,&timeStamp))
-		{
-			switch (errno)
-			{
-				case 11: case 4: case 0:
-					break;
-				default:
-					Log("Error obteniendo el packete [%d]\n",errno);
-			}
+		RTPPacket *packet = rtp.GetPacket();
+		//Check
+		if (!packet)
+			//Next
 			continue;
-		}
+		//Get type
+		type = (AudioCodec::Type)packet->GetCodec();
 
 		//Comprobamos el tipo
 		if ((codec==NULL) || (type!=codec->type))
@@ -327,19 +315,22 @@ int AudioStream::RecAudio()
 			//Creamos uno dependiendo del tipo
 			if ((codec = CreateAudioCodec(type))==NULL)
 			{
+				//Delete pacekt
+				delete(packet);
+				//Next
 				Log("Error creando nuevo codec de audio [%d]\n",type);
 				continue;
 			}
 		}
 
 		//Lo decodificamos
-		int len = codec->Decode(data,size,playBuffer,512);
+		int len = codec->Decode(packet->GetMediaData(),packet->GetMediaLength(),playBuffer,512);
 
 		//Obtenemos el tiempo del frame
-		frameTime = timeStamp - lastTime;
+		frameTime = packet->GetTimestamp() - lastTime;
 
 		//Actualizamos el ultimo envio
-		lastTime = timeStamp;
+		lastTime = packet->GetTimestamp();
 
 		//Check muted
 		if (!muted)
@@ -347,7 +338,10 @@ int AudioStream::RecAudio()
 			audioOutput->PlayBuffer((WORD *)playBuffer,len,frameTime);
 
 		//Aumentamos el numero de bytes recividos
-		recBytes+=size;
+		recBytes+=packet->GetMediaLength();
+
+		//Delete
+		delete(packet);
 	}
 
 	//Terminamos de reproducir
@@ -368,8 +362,8 @@ int AudioStream::RecAudio()
 *******************************************/
 int AudioStream::SendAudio()
 {
+	RTPPacket	packet(MediaFrame::Audio,audioCodec,audioCodec);
 	WORD 		recBuffer[512];
-	BYTE		data[512];
         int 		sendBytes=0;
         struct timeval 	before;
 	AudioCodec* 	codec;
@@ -422,7 +416,7 @@ int AudioStream::SendAudio()
 			continue;
 	
 		//Lo codificamos
-		int len = codec->Encode(recBuffer,codec->numFrameSamples,data,512);
+		int len = codec->Encode(recBuffer,codec->numFrameSamples,packet.GetMediaData(),packet.GetMediaLength());
 
 		//Comprobamos que ha sido correcto
 		if(len<=0)
@@ -431,8 +425,11 @@ int AudioStream::SendAudio()
 			continue;
 		}
 
+		//Set frametiem
+		packet.SetTimestamp(frameTime);
+
 		//Lo enviamos
-		if(!rtp.SendAudioPacket((BYTE *)data,len,frameTime))
+		if(!rtp.SendPacket(packet,frameTime))
 		{
 			Log("Error mandando el packete de audio\n");
 			continue;

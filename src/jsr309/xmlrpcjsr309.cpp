@@ -680,104 +680,33 @@ xmlrpc_value* EndpointStartSending(xmlrpc_env *env, xmlrpc_value *param_array, v
 	if(!jsr->GetMediaSessionRef(sessionId,&session))
 		return xmlerror(env,"The media Session does not exist");
 
-	//Depending on the media
-	switch((MediaFrame::Type)media)
+	//Get the rtp map
+	RTPMap map;
+
+	//Get map size
+	int j = xmlrpc_struct_size(env,rtpMap);
+
+	//Parse rtp map
+	for (int i=0;i<j;i++)
 	{
-		case MediaFrame::Video:
-		{
-			//Get the rtp map
-			VideoCodec::RTPMap map;
-
-			//Get map size
-			int j = xmlrpc_struct_size(env,rtpMap);
-
-			//Parse rtp map
-			for (int i=0;i<j;i++)
-			{
-				xmlrpc_value *key, *val;
-				const char *type;
-				int codec;
-				//Read member
-				xmlrpc_struct_read_member(env,rtpMap,i,&key,&val);
-				//Read name
-				xmlrpc_parse_value(env,key,"s",&type);
-				//Read value
-				xmlrpc_parse_value(env,val,"i",&codec);
-				//Add to map
-				map[atoi(type)] = (VideoCodec::Type) codec;
-				//Decrement ref counter
-				xmlrpc_DECREF(key);
-				xmlrpc_DECREF(val);
-			}
-
-			//Start sending video
-			res = session->EndpointStartSendingVideo(endpointId,sendIp,sendPort,map);
-
-			//Continue
-			break;
-		}
-		case MediaFrame::Audio:
-		{
-			//Get the rtp map
-			AudioCodec::RTPMap map;
-
-			int j = xmlrpc_struct_size(env,rtpMap);
-
-			//Parse rtp map
-			for (int i=0;i<j;i++)
-			{
-				xmlrpc_value *key, *val;
-				const char *type;
-				int codec;
-				//Read member
-				xmlrpc_struct_read_member(env,rtpMap,i,&key,&val);
-				//Read name
-				xmlrpc_parse_value(env,key,"s",&type);
-				//Read value
-				xmlrpc_parse_value(env,val,"i",&codec);
-				//Add to map
-				map[atoi(type)] = (AudioCodec::Type) codec;
-				//Decrement ref counter
-				xmlrpc_DECREF(key);
-				xmlrpc_DECREF(val);
-			}
-			//Start sending audio
-			res = session->EndpointStartSendingAudio(endpointId,sendIp,sendPort,map);
-			//Continue
-			break;
-		}
-		case MediaFrame::Text:
-		{
-			//Get the rtp map
-			TextCodec::RTPMap map;
-
-			//Get map size
-			int j = xmlrpc_struct_size(env,rtpMap);
-
-			//Parse rtp map
-			for (int i=0;i<j;i++)
-			{
-				xmlrpc_value *key, *val;
-				const char *type;
-				int codec;
-				//Read member
-				xmlrpc_struct_read_member(env,rtpMap,i,&key,&val);
-				//Read name
-				xmlrpc_parse_value(env,key,"s",&type);
-				//Read value
-				xmlrpc_parse_value(env,val,"i",&codec);
-				//Add to map
-				map[atoi(type)] = (TextCodec::Type) codec;
-				//Decrement ref counter
-				xmlrpc_DECREF(key);
-				xmlrpc_DECREF(val);
-			}
-			//Start sending text
-			res = session->EndpointStartSendingText(endpointId,sendIp,sendPort,map);
-			//Continue
-			break;
-		}
+		xmlrpc_value *key, *val;
+		const char *type;
+		int codec;
+		//Read member
+		xmlrpc_struct_read_member(env,rtpMap,i,&key,&val);
+		//Read name
+		xmlrpc_parse_value(env,key,"s",&type);
+		//Read value
+		xmlrpc_parse_value(env,val,"i",&codec);
+		//Add to map
+		map[atoi(type)] = (VideoCodec::Type) codec;
+		//Decrement ref counter
+		xmlrpc_DECREF(key);
+		xmlrpc_DECREF(val);
 	}
+
+	//Start sending video
+	res = session->EndpointStartSending(endpointId,(MediaFrame::Type)media,sendIp,sendPort,map);
 
 	//Liberamos la referencia
 	jsr->ReleaseMediaSessionRef(sessionId);
@@ -810,25 +739,8 @@ xmlrpc_value* EndpointStopSending(xmlrpc_env *env, xmlrpc_value *param_array, vo
 	if(!jsr->GetMediaSessionRef(sessionId,&session))
 		return xmlerror(env,"The media Session does not exist");
 
-	//Depending on the media
-	switch((MediaFrame::Type)media)
-	{
-		case MediaFrame::Video:
-			//Stop sending video
-			res = session->EndpointStopSendingVideo(endpointId);
-			//Continue
-			break;
-		case MediaFrame::Audio:
-			//Stop sending video
-			res = session->EndpointStopSendingAudio(endpointId);
-			//Continue
-			break;
-		case MediaFrame::Text:
-			//Stop sending text
-			res = session->EndpointStopSendingText(endpointId);
-			//Continue
-			break;
-	}
+	//Stop sending video
+	res = session->EndpointStopSending(endpointId,(MediaFrame::Type)media);
 
 	//Liberamos la referencia
 	jsr->ReleaseMediaSessionRef(sessionId);
@@ -861,105 +773,34 @@ xmlrpc_value* EndpointStartReceiving(xmlrpc_env *env, xmlrpc_value *param_array,
 	//Obtenemos la referencia
 	if(!jsr->GetMediaSessionRef(sessionId,&session))
 		return xmlerror(env,"The media Session does not exist");
+	
+	//Get the rtp map
+	RTPMap map;
 
-	//Depending on the media
-	switch((MediaFrame::Type)media)
+	//Get map size
+	int j = xmlrpc_struct_size(env,rtpMap);
+
+	//Parse rtp map
+	for (int i=0;i<j;i++)
 	{
-		case MediaFrame::Video:
-		{
-			//Get the rtp map
-			VideoCodec::RTPMap map;
-
-			//Get map size
-			int j = xmlrpc_struct_size(env,rtpMap);
-
-			//Parse rtp map
-			for (int i=0;i<j;i++)
-			{
-				xmlrpc_value *key, *val;
-				const char *type;
-				int codec;
-				//Read member
-				xmlrpc_struct_read_member(env,rtpMap,i,&key,&val);
-				//Read name
-				xmlrpc_parse_value(env,key,"s",&type);
-				//Read value
-				xmlrpc_parse_value(env,val,"i",&codec);
-				//Add to map
-				map[atoi(type)] = (VideoCodec::Type) codec;
-				//Decrement ref counter
-				xmlrpc_DECREF(key);
-				xmlrpc_DECREF(val);
-			}
-
-			//Start receiving video and get listening port
-			recPort = session->EndpointStartReceivingVideo(endpointId,map);
-
-			//Continue
-			break;
-		}
-		case MediaFrame::Audio:
-		{
-			//Get the rtp map
-			AudioCodec::RTPMap map;
-
-			int j = xmlrpc_struct_size(env,rtpMap);
-
-			//Parse rtp map
-			for (int i=0;i<j;i++)
-			{
-				xmlrpc_value *key, *val;
-				const char *type;
-				int codec;
-				//Read member
-				xmlrpc_struct_read_member(env,rtpMap,i,&key,&val);
-				//Read name
-				xmlrpc_parse_value(env,key,"s",&type);
-				//Read value
-				xmlrpc_parse_value(env,val,"i",&codec);
-				//Add to map
-				map[atoi(type)] = (AudioCodec::Type) codec;
-				//Decrement ref counter
-				xmlrpc_DECREF(key);
-				xmlrpc_DECREF(val);
-			}
-			//Start receiving audio and get listening port
-			recPort = session->EndpointStartReceivingAudio(endpointId,map);
-			//Continue
-			break;
-		}
-		case MediaFrame::Text:
-		{
-			//Get the rtp map
-			TextCodec::RTPMap map;
-
-			//Get map size
-			int j = xmlrpc_struct_size(env,rtpMap);
-
-			//Parse rtp map
-			for (int i=0;i<j;i++)
-			{
-				xmlrpc_value *key, *val;
-				const char *type;
-				int codec;
-				//Read member
-				xmlrpc_struct_read_member(env,rtpMap,i,&key,&val);
-				//Read name
-				xmlrpc_parse_value(env,key,"s",&type);
-				//Read value
-				xmlrpc_parse_value(env,val,"i",&codec);
-				//Add to map
-				map[atoi(type)] = (TextCodec::Type) codec;
-				//Decrement ref counter
-				xmlrpc_DECREF(key);
-				xmlrpc_DECREF(val);
-			}
-			//Start receiving text and get listening port
-			recPort = session->EndpointStartReceivingText(endpointId,map);
-			//Continue
-			break;
-		}
+		xmlrpc_value *key, *val;
+		const char *type;
+		int codec;
+		//Read member
+		xmlrpc_struct_read_member(env,rtpMap,i,&key,&val);
+		//Read name
+		xmlrpc_parse_value(env,key,"s",&type);
+		//Read value
+		xmlrpc_parse_value(env,val,"i",&codec);
+		//Add to map
+		map[atoi(type)] = (VideoCodec::Type) codec;
+		//Decrement ref counter
+		xmlrpc_DECREF(key);
+		xmlrpc_DECREF(val);
 	}
+
+	//Start receiving video and get listening port
+	recPort = session->EndpointStartReceiving(endpointId,(MediaFrame::Type)media,map);
 
 	//Liberamos la referencia
 	jsr->ReleaseMediaSessionRef(sessionId);
@@ -992,25 +833,9 @@ xmlrpc_value* EndpointStopReceiving(xmlrpc_env *env, xmlrpc_value *param_array, 
 	if(!jsr->GetMediaSessionRef(sessionId,&session))
 		return xmlerror(env,"The media Session does not exist");
 
-	//Depending on the media
-	switch((MediaFrame::Type)media)
-	{
-		case MediaFrame::Video:
-			//Stop sending video
-			res = session->EndpointStopReceivingVideo(endpointId);
-			//Continue
-			break;
-		case MediaFrame::Audio:
-			//Stop sending video
-			res = session->EndpointStopReceivingAudio(endpointId);
-			//Continue
-			break;
-		case MediaFrame::Text:
-			//Stop sending text
-			res = session->EndpointStopReceivingText(endpointId);
-			//Continue
-			break;
-	}
+	//Stop sending video
+	res = session->EndpointStopReceiving(endpointId,(MediaFrame::Type)media);
+
 	//Liberamos la referencia
 	jsr->ReleaseMediaSessionRef(sessionId);
 

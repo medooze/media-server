@@ -78,32 +78,14 @@ public:
 	int AddSidebarParticipant(int sidebar,int partId);
 	int RemoveSidebarParticipant(int sidebar,int partId);
 	
-	//Video
+	int StartSending(int partId,MediaFrame::Type media,char *sendIp,int sendPort,RTPMap& rtpMap);
+	int StopSending(int partId,MediaFrame::Type media);
+	int StartReceiving(int partId,MediaFrame::Type media,RTPMap& rtpMap);
+	int StopReceiving(int partId,MediaFrame::Type media);
+
 	int SetVideoCodec(int partId,int codec,int mode,int fps,int bitrate,int quality=0, int fillLevel=0,int intraPeriod = 0);
-	int StartSendingVideo(int partId,char *sendVideoIp,int sendVideoPort,VideoCodec::RTPMap& rtpMap);
-	int StopSendingVideo(int partId);
-	int StartReceivingVideo(int partId,VideoCodec::RTPMap& rtpMap);
-	int StopReceivingVideo(int partId);
-	int IsSendingVideo(int partId);
-	int IsReceivingVideo(int partId);
-
-	//Audio
 	int SetAudioCodec(int partId,int codec);
-	int StartSendingAudio(int partId,char *sendAudioIp,int sendAudioPort,AudioCodec::RTPMap& rtpMap);
-	int StopSendingAudio(int partId);
-	int StartReceivingAudio(int partId,AudioCodec::RTPMap& rtpMap);
-	int StopReceivingAudio(int partId);
-	int IsSendingAudio(int partId);
-	int IsReceivingAudio(int partId);
-
-	//Text
 	int SetTextCodec(int partId,int codec);
-	int StartSendingText(int partId,char *sendTextIp,int sendTextPort,TextCodec::RTPMap& rtpMap);
-	int StopSendingText(int partId);
-	int StartReceivingText(int partId,TextCodec::RTPMap& rtpMap);
-	int StopReceivingText(int partId);
-	int IsSendingText(int partId);
-	int IsReceivingText(int partId);
 
 	int  StartBroadcaster();
 	int  StopBroadcaster();
