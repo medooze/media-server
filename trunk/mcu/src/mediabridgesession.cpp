@@ -167,6 +167,9 @@ int  MediaBridgeSession::StopSendingVideo()
 		//Dejamos de recivir
 		sendingVideo=0;
 
+		//Cancel any pending wait
+		videoFrames.Cancel();
+
 		//Esperamos
 		pthread_join(sendVideoThread,NULL);
 	}
@@ -208,8 +211,8 @@ int  MediaBridgeSession::StopReceivingVideo()
 		//Dejamos de recivir
 		receivingVideo=0;
 
-		//Cancel any pending wait
-		videoFrames.Cancel();
+		//Cancel the rtp
+		rtpVideo.CancelGetPacket();
 
 		//Esperamos
 		pthread_join(recVideoThread,NULL);
@@ -262,6 +265,9 @@ int  MediaBridgeSession::StopSendingAudio()
 		//Dejamos de recivir
 		sendingAudio=0;
 
+		//Cancel any pending wait
+		audioFrames.Cancel();
+
 		//Esperamos
 		pthread_join(sendAudioThread,NULL);
 	}
@@ -305,8 +311,8 @@ int  MediaBridgeSession::StopReceivingAudio()
 		//Dejamos de recivir
 		receivingAudio=0;
 
-		//Cancel any pending wait
-		audioFrames.Cancel();
+		//Cancel audio rtp get packet
+		rtpAudio.CancelGetPacket();
 		
 		//Esperamos
 		pthread_join(recAudioThread,NULL);
@@ -351,8 +357,12 @@ int  MediaBridgeSession::StopSendingText()
 {
 	Log(">StopSendingText\n");
 
-	//Dejamos de recivir
-	sendingText=0;
+	//Check
+	if (sendingText)
+	{
+		//Dejamos de recivir
+		sendingText=0;
+	}
 
 	Log("<StopSendingText\n");
 
@@ -392,6 +402,9 @@ int  MediaBridgeSession::StopReceivingText()
 	{
 		//Dejamos de recivir
 		receivingText=0;
+
+		//Cancel rtp
+		rtpText.CancelGetPacket();
 
 		//Esperamos
 		pthread_join(recTextThread,NULL);

@@ -234,6 +234,9 @@ int AudioStream::StopReceiving()
 		//Paramos de enviar
 		receivingAudio=0;
 
+		//Cancel rtp
+		rtp.CancelGetPacket();
+		
 		//Y unimos
 		pthread_join(recAudioThread,NULL);
 	}
@@ -416,7 +419,7 @@ int AudioStream::SendAudio()
 			continue;
 	
 		//Lo codificamos
-		int len = codec->Encode(recBuffer,codec->numFrameSamples,packet.GetMediaData(),packet.GetMediaLength());
+		int len = codec->Encode(recBuffer,codec->numFrameSamples,packet.GetMediaData(),packet.GetMaxMediaLength());
 
 		//Comprobamos que ha sido correcto
 		if(len<=0)
@@ -424,6 +427,9 @@ int AudioStream::SendAudio()
 			Log("Error codificando el packete de audio\n");
 			continue;
 		}
+
+		//Set length
+		packet.SetMediaLength(len);
 
 		//Set frametiem
 		packet.SetTimestamp(frameTime);

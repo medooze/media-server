@@ -54,7 +54,10 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener)
 	lostRecvPackets = 0;
 	lost = 0;
 	//Fill with 0
-	memset(sendPacket,0,sizeof(rtp_hdr_t));
+	memset(sendPacket,0,MTU);
+	//No thread
+	thread = NULL;
+	running = false;
 	//Set version
 	((rtp_hdr_t *)sendPacket)->version = RTP_VERSION;
 }
@@ -258,6 +261,9 @@ int RTPSession::Init()
 		Log("-Got ports [%d,%d]\n",simPort,simRtcpPort);
 	}
 
+	//Start receiving
+	Start();
+
 	Log("<Init RTPSession\n");
 
 	//Opened
@@ -274,13 +280,17 @@ int RTPSession::End()
 	//Stop just in case
 	Stop();
 
-	//If running
-	if (thread)
+	//If got socket
+	if (simSocket || simRtcpSocket)
 	{
-		//Wait for server thread to close
-		pthread_join(thread,NULL);
-		//No thread
-		thread = NULL;
+		//Not running;
+		running = false;
+		//Will cause poll to return
+		close(simSocket);
+		close(simRtcpSocket);
+		//No sockets
+		simSocket = 0;
+		simRtcpSocket = 0;
 	}
 
 	return 1;
@@ -322,11 +332,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 	headers->m=packet.GetMark();
 
 	//Calculamos el inicio
-	int ini = sizeof(rtp_hdr_t) -4;
-
-	//Si tiene cc
-	if (headers->cc)
-		ini+=4;
+	int ini = sizeof(rtp_hdr_t);
 
 	//Comprobamos que quepan
 	if (ini+packet.GetMaxMediaLength()>MTU)
@@ -354,7 +360,11 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 }
 void RTPSession::ReadRTCP()
 {
+	BYTE rtcp[MTU];
+	DWORD size = MTU;
 
+	//Get rtcp
+	recv(simRtcpSocket,rtcp,size,MSG_DONTWAIT);
 }
 /*********************************
 * GetTextPacket
@@ -369,12 +379,8 @@ void RTPSession::ReadRTP()
 	//Receive from everywhere
 	memset(&from_addr, 0, from_len);
 
-	//Set receiver IP address
-	from_addr.sin_addr.s_addr = recIP;
-	from_addr.sin_port = htons(recPort);
-
 	//Leemos del socket
-	int num = recvfrom(simSocket,packet->GetData(),packet->GetMaxSize(),0,(sockaddr*)&from_addr, &from_len);
+	int num = recvfrom(simSocket,packet->GetData(),packet->GetMaxSize(),MSG_DONTWAIT,(sockaddr*)&from_addr, &from_len);
 
 	//If we don't have originating IP
 	if (recIP==INADDR_ANY)
@@ -456,8 +462,6 @@ void RTPSession::ReadRTP()
 	//Check maps
 	if (rtpMapIn)
 	{
-		//Set media
-
 		//Find the type in the map
 		RTPMap::iterator it = rtpMapIn->find(type);
 		//Check it is in there
@@ -486,25 +490,16 @@ void RTPSession::Stop()
 	//Check thred
 	if (thread)
 	{
+		//Not running
+		running = false;
+		
 		//Signal the pthread this will cause the poll call to exit
 		pthread_kill(thread,SIGIO);
 		//Wait thread to close
 		pthread_join(thread,NULL);
+		//Nulifi thread
+		thread = NULL;
 	}
-
-	//If got socket
-	if (simSocket || simRtcpSocket)
-	{
-		//Not running;
-		running = false;
-		//Will cause poll to return
-		close(simSocket);
-		close(simRtcpSocket);
-		//No sockets
-		simSocket = 0;
-		simRtcpSocket = 0;
-	}
-
 }
 
 /***********************
@@ -537,7 +532,7 @@ int RTPSession::Run()
 	ufds[0].fd = simSocket;
 	ufds[0].events = POLLIN | POLLERR | POLLHUP;
 	ufds[1].fd = simRtcpSocket;
-	ufds[0].events = POLLIN | POLLERR | POLLHUP;
+	ufds[1].events = POLLIN | POLLERR | POLLHUP;
 
 	//Set non blocking so we can get an error when we are closed by end
 	int fsflags = fcntl(simSocket,F_GETFL,0);
@@ -580,6 +575,16 @@ int RTPSession::Run()
 
 RTPPacket* RTPSession::GetPacket()
 {
+	//Wait for pacekts
+	if (!packets.Wait(0))
+		//We have been canceled
+		return NULL;
 	//Send it
 	return packets.Pop();
+}
+
+void RTPSession::CancelGetPacket()
+{
+	//cancel
+	packets.Cancel();
 }

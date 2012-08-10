@@ -135,6 +135,9 @@ int RTPEndpoint::StopReceiving()
         //Not inited anymore
         receiving = false;
 
+	//Cancel grab
+	CancelGetPacket();
+
 	//Cancel any pending IO
 	pthread_kill(thread,SIGIO);
 

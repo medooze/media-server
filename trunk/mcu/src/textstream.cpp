@@ -221,6 +221,9 @@ int TextStream::StopReceiving()
 		//Paramos de enviar
 		receivingText=0;
 
+		//Cancel rtp
+		rtp.CancelGetPacket();
+		
 		//Y unimos
 		pthread_join(recTextThread,NULL);
 	}
@@ -300,7 +303,7 @@ int TextStream::RecText()
 		text = data;
 
 		//Get the text size
-		textSize = packet->GetMaxMediaLength();
+		textSize = packet->GetMediaLength();
 
 		//Check the type of data
 		if (type==TextCodec::T140RED)

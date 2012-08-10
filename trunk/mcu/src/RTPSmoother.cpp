@@ -213,7 +213,6 @@ int RTPSmoother::Run()
 	timeval prev;
 	timespec wait;
 	DWORD	sendingTime = 0;
-	DWORD	lastTS = 0;
 	
 	//Calculate first
 	getUpdDifTime(&prev);
@@ -235,11 +234,8 @@ int RTPSmoother::Run()
 			//Exit
 			break;
 
-		//Get diference
-		DWORD ts = sched->GetTimestamp()-lastTS;
-
 		//Send it
-		session->SendPacket(*sched,ts);
+		session->SendPacket(*sched,sched->GetTimestamp());
 
 		//Update sending time
 		sendingTime = sched->GetSendingTime();
@@ -263,15 +259,12 @@ int RTPSmoother::Run()
 				pthread_mutex_unlock(&mutex);
 			}
 		} else {
-			//Updata last ts
-			lastTS = sched->GetTimestamp();
 			//Update time of the previous frame
 			DWORD frameTime = getUpdDifTime(&prev)/1000;
 			//Check queue length, it should be empty
 			if (queue.Length()>0)
 				//Log it
-				Log("-RTPSmoother lagging behind [enqueued:%d,frameTime:%u,sendingTime:%u,lastTs:%u]\n",queue.Length(),frameTime,sendingTime,lastTS);
-
+				Log("-RTPSmoother lagging behind [enqueued:%d,frameTime:%u,sendingTime:%u]\n",queue.Length(),frameTime,sendingTime);
 		}
 
 		//DElete it

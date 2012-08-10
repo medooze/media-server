@@ -86,7 +86,7 @@ int VideoMixer::MixVideo()
 				//Colocamos el frame
 				input->SetFrame(mosaic->GetFrame(),mosaic->GetWidth(),mosaic->GetHeight());
 		}
-		
+
 		//Desprotege la lista
 		lstVideosUse.Unlock();
 		
@@ -101,10 +101,11 @@ int VideoMixer::MixVideo()
 		//Everything is updated
 		forceUpdate = 0;
 
-		//Calculate timeout
+		//Get now
 		gettimeofday(&tp, NULL);
-		ts.tv_sec  = tp.tv_sec + 1;
-		ts.tv_nsec = tp.tv_usec * 1000;
+
+		//Calculate timeout
+		calcAbsTimeout(&ts,&tp,50);
 
 		//Wait for new images or timeout and adquire mutex on exit
 		if (pthread_cond_timedwait(&mixVideoCond,&mixVideoMutex,&ts)==ETIMEDOUT)
@@ -117,10 +118,10 @@ int VideoMixer::MixVideo()
 			//go to the begining
 			continue;
 		}
-		
+
 		//Protegemos la lista
 		lstVideosUse.WaitUnusedAndLock();
-			
+
 		//Nos recorremos los videos
 		for (it=lstVideos.begin();it!=lstVideos.end();++it)
 		{
