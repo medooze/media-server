@@ -244,9 +244,10 @@ xmlrpc_value* CreateParticipant(xmlrpc_env *env, xmlrpc_value *param_array, void
 	 //Parseamos
 	int confId;
 	int mosaicId;
+	int sidebarId;
 	char *name;
 	int type;
-	xmlrpc_parse_value(env, param_array, "(iisi)", &confId,&mosaicId,&name,&type);
+	xmlrpc_parse_value(env, param_array, "(isiii)", &confId,&name,&type,&mosaicId,&sidebarId);
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
@@ -260,7 +261,7 @@ xmlrpc_value* CreateParticipant(xmlrpc_env *env, xmlrpc_value *param_array, void
 	parser.Parse((BYTE*)name,strlen(name));
 
 	//La borramos
-	int partId = conf->CreateParticipant(mosaicId,parser.GetWString(),(Participant::Type)type);
+	int partId = conf->CreateParticipant(mosaicId,sidebarId,parser.GetWString(),(Participant::Type)type);
 
 	//Liberamos la referencia
 	mcu->ReleaseConferenceRef(confId);
@@ -1191,6 +1192,38 @@ xmlrpc_value* SetParticipantMosaic(xmlrpc_env *env, xmlrpc_value *param_array, v
 	return xmlok(env);
 }
 
+xmlrpc_value* SetParticipantSidebar(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+	MCU *mcu = (MCU *)user_data;
+	MultiConf *conf = NULL;
+
+	 //Parseamos
+	int confId;
+	int partId;
+	int sidebarId;
+	xmlrpc_parse_value(env, param_array, "(iii)", &confId,&partId,&sidebarId);
+
+	//Comprobamos si ha habido error
+	if(env->fault_occurred)
+		xmlerror(env,"Fault occurred");
+
+	//Obtenemos la referencia
+	if(!mcu->GetConferenceRef(confId,&conf))
+		return xmlerror(env,"Conference does not exist");
+
+	//La borramos
+	int res = conf->SetParticipantSidebar(partId,sidebarId);
+
+	//Liberamos la referencia
+	mcu->ReleaseConferenceRef(confId);
+
+	//Salimos
+	if(!res)
+		return xmlerror(env,"Error");
+
+	//Devolvemos el resultado
+	return xmlok(env);
+}
 
 xmlrpc_value* SetMosaicSlot(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
@@ -1280,6 +1313,72 @@ xmlrpc_value* RemoveMosaicParticipant(xmlrpc_env *env, xmlrpc_value *param_array
 
 	//Set slot
 	int res = conf->RemoveMosaicParticipant(mosaicId,partId);
+
+	//Liberamos la referencia
+	mcu->ReleaseConferenceRef(confId);
+
+	//Salimos
+	if(!res)
+		return xmlerror(env,"Error");
+
+	//Devolvemos el resultado
+	return xmlok(env);
+}
+
+xmlrpc_value* AddSidebarParticipant(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+	MCU *mcu = (MCU *)user_data;
+	MultiConf *conf = NULL;
+
+	 //Parseamos
+	int confId;
+	int sidebarId;
+	int partId;
+	xmlrpc_parse_value(env, param_array, "(iii)", &confId,&sidebarId,&partId);
+
+	//Comprobamos si ha habido error
+	if(env->fault_occurred)
+		xmlerror(env,"Fault occurred");
+
+	//Obtenemos la referencia
+	if(!mcu->GetConferenceRef(confId,&conf))
+		return xmlerror(env,"Conference does not exist");
+
+	//Set slot
+	int res = conf->AddSidebarParticipant(sidebarId,partId);
+
+	//Liberamos la referencia
+	mcu->ReleaseConferenceRef(confId);
+
+	//Salimos
+	if(!res)
+		return xmlerror(env,"Error");
+
+	//Devolvemos el resultado
+	return xmlok(env);
+}
+
+xmlrpc_value* RemoveSidebarParticipant(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+	MCU *mcu = (MCU *)user_data;
+	MultiConf *conf = NULL;
+
+	 //Parseamos
+	int confId;
+	int sidebarId;
+	int partId;
+	xmlrpc_parse_value(env, param_array, "(iii)", &confId,&sidebarId,&partId);
+
+	//Comprobamos si ha habido error
+	if(env->fault_occurred)
+		xmlerror(env,"Fault occurred");
+
+	//Obtenemos la referencia
+	if(!mcu->GetConferenceRef(confId,&conf))
+		return xmlerror(env,"Conference does not exist");
+
+	//Set slot
+	int res = conf->RemoveSidebarParticipant(sidebarId,partId);
 
 	//Liberamos la referencia
 	mcu->ReleaseConferenceRef(confId);
@@ -1680,6 +1779,8 @@ XmlHandlerCmd mcuCmdList[] =
 	{"AddConferenceToken",AddConferenceToken},
 	{"AddMosaicParticipant",AddMosaicParticipant},
 	{"RemoveMosaicParticipant",RemoveMosaicParticipant},
+	{"AddSidebarParticipant",AddSidebarParticipant},
+	{"RemoveSidebarParticipant",RemoveSidebarParticipant},
 	{"CreatePlayer",CreatePlayer},
 	{"DeletePlayer",DeletePlayer},
 	{"StartPlaying",StartPlaying},
@@ -1690,5 +1791,6 @@ XmlHandlerCmd mcuCmdList[] =
 	{"AddParticipantInputToken",AddParticipantInputToken},
 	{"AddParticipantOutputToken",AddParticipantOutputToken},
 	{"SetParticipantMosaic",SetParticipantMosaic},
+	{"SetParticipantSidebar",SetParticipantSidebar},
 	{NULL,NULL}
 };

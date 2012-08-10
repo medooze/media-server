@@ -56,13 +56,14 @@ public:
 	int SetMosaicOverlayImage(int mosaicId,const char* filename);
 	int ResetMosaicOverlay(int mosaicId);
 	int DeleteMosaic(int mosaicId);
-	int CreateParticipant(int mosaicId,std::wstring name,Participant::Type type);
+	int CreateParticipant(int mosaicId,int sidebarId,std::wstring name,Participant::Type type);
 	int StartRecordingParticipant(int partId,const char* filename);
 	int StopRecordingParticipant(int partId);
 	int SendFPU(int partId);
 	int SetMute(int partId,MediaFrame::Type media,bool isMuted);
 	ParticipantStatistics* GetParticipantStatistic(int partId);
 	int SetParticipantMosaic(int partId,int mosaicId);
+	int SetParticipantSidebar(int partId,int sidebarId);
 	int DeleteParticipant(int partId);
 
 	int CreatePlayer(int privateId,std::wstring name);
@@ -74,6 +75,8 @@ public:
 	int SetMosaicSlot(int mosaicId,int num,int id);
 	int AddMosaicParticipant(int mosaicId,int partId);
 	int RemoveMosaicParticipant(int mosaicId,int partId);
+	int AddSidebarParticipant(int sidebar,int partId);
+	int RemoveSidebarParticipant(int sidebar,int partId);
 	
 	//Video
 	int SetVideoCodec(int partId,int codec,int mode,int fps,int bitrate,int quality=0, int fillLevel=0,int intraPeriod = 0);

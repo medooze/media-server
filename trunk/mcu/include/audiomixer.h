@@ -5,9 +5,8 @@
 #include <audio.h>
 #include "pipeaudioinput.h"
 #include "pipeaudiooutput.h"
+#include "sidebar.h"
 #include <map>
-
-#define MIXER_BUFFER_SIZE 256
 
 class AudioMixer 
 {
@@ -17,12 +16,18 @@ public:
 
 	int Init();
 	int CreateMixer(int id);
-	int InitMixer(int id);
+	int InitMixer(int id,int sidebarId);
+	int SetMixerSidebar(int id,int sidebarId);
 	int EndMixer(int id);
 	int DeleteMixer(int id);
 	AudioInput*  GetInput(int id);
 	AudioOutput* GetOutput(int id);
 	void Process(void);
+
+	int CreateSidebar();
+	int AddSidebarParticipant(int SidebarId,int partId);
+	int RemoveSidebarParticipant(int SidebarId,int partId);
+	int DeleteSidebar(int SidebarId);
 	int End();
 
 protected:
@@ -40,23 +45,23 @@ private:
 	{
 		PipeAudioInput  *input;
 		PipeAudioOutput *output;
-		WORD		buffer[MIXER_BUFFER_SIZE];
+		WORD		buffer[Sidebar::MIXER_BUFFER_SIZE];
 		DWORD		len;
+		Sidebar*	sidebar;
 	} AudioSource;
 
-	typedef std::map<int,AudioSource *> Audios;
-
-	//La lista de audios a mezclar
-	Audios lstAudios;
+	typedef std::map<int,AudioSource *>	Audios;
+	typedef std::map<int,Sidebar *>		Sidebars;
 
 private:
-	//Audio mixing buffer
-	WORD mixer_buffer[MIXER_BUFFER_SIZE];
-
-	//Threads, mutex y condiciones
 	pthread_t 	mixAudioThread;
 	int		mixingAudio;
 	Use		lstAudiosUse;
+	
+	Audios		audios;
+	Sidebars	sidebars;
+	Sidebar*	defaultSidebar;
+	int		numSidebars;
 
 };
 

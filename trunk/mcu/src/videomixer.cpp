@@ -358,20 +358,6 @@ int VideoMixer::InitMixer(int id,int mosaicId)
 {
 	Log(">Init mixer [id:%d,mosaic:%d]\n",id,mosaicId);
 
-	//Get the mosaic for the user
-	Mosaics::iterator itMosaic = mosaics.find(mosaicId);
-
-	//Get mosaic
-	Mosaic *mosaic = NULL;
-
-	//If found
-	if (itMosaic!=mosaics.end())
-		//Set it
-		mosaic = itMosaic->second;
-	else
-		//Send only participant
-		Log("-No mosaic for participant found, will be send only.\n");
-
 	//Protegemos la lista
 	lstVideosUse.IncUse();
 
@@ -393,9 +379,17 @@ int VideoMixer::InitMixer(int id,int mosaicId)
 	//INiciamos los pipes
 	video->input->Init();
 	video->output->Init();
-	
-	//Set mosaic
-	video->mosaic = mosaic;
+
+	//Get the mosaic for the user
+	Mosaics::iterator itMosaic = mosaics.find(mosaicId);
+
+	//If found
+	if (itMosaic!=mosaics.end())
+		//Set mosaic
+		video->mosaic = itMosaic->second;
+	else
+		//Send only participant
+		Log("-No mosaic for participant found, will be send only.\n");
 
 	//Desprotegemos
 	lstVideosUse.DecUse();
@@ -873,6 +867,9 @@ int VideoMixer::DeleteMosaic(int mosaicId)
 	//Get the old mosaic
 	Mosaic *mosaic = it->second;
 
+	//Blcok
+	lstVideosUse.IncUse();
+
 	//For each video
 	for (Videos::iterator itv = lstVideos.begin(); itv!= lstVideos.end(); ++itv)
 	{
@@ -881,6 +878,9 @@ int VideoMixer::DeleteMosaic(int mosaicId)
 			//Set to null
 			itv->second->mosaic = NULL;
 	}
+
+	//Blcok
+	lstVideosUse.DecUse();
 
 	//Remove mosaic
 	mosaics.erase(it);
