@@ -68,7 +68,11 @@ XmlHandler::XmlHandler(XmlHandlerCmd *cmd,void *user_data)
 		cmd++;
 	}
 }
-
+XmlHandler::~XmlHandler()
+{
+	//Destroy
+	xmlrpc_registry_free(registry);
+}
 /**************************************
 * XmlHandler
 *	A�ade un metodo

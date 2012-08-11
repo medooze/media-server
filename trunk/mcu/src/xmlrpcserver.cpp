@@ -47,6 +47,9 @@ XmlRpcServer::XmlRpcServer(int port)
 	ServerAddHandler3(&srv,&abbysHndlr,&ret);
 }
 
+XmlRpcServer::~XmlRpcServer()
+{
+}
 /**************************************
 * Start
 *	Arranca el servidor

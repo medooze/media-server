@@ -67,21 +67,21 @@ int AudioMixer::MixAudio()
 		//Wait until next to process
 		msleep(step*1000);
 
+		//Block list
+		lstAudiosUse.WaitUnusedAndLock();
+
 		//Get time elapsed
 		QWORD diff = getUpdDifTime(&tv)/1000;
 
 		//Get num samples at 8Khz
 		DWORD numSamples = diff*8;
-
-		//Block list
-		lstAudiosUse.WaitUnusedAndLock();
-
+		
 		//At most the maximum
 		if (numSamples>Sidebar::MIXER_BUFFER_SIZE)
 			//Set it at most (shoudl never happen)
 			numSamples = Sidebar::MIXER_BUFFER_SIZE;
 
-		//For each sidepaf
+		//For each sidepar
 		for (Sidebars::iterator sit=sidebars.begin(); sit!=sidebars.end(); ++sit)
 			//REset
 			sit->second->Reset();
@@ -91,12 +91,11 @@ int AudioMixer::MixAudio()
 		{
 			//Get the source
 			AudioSource *audio = it->second;
+			//Get id
+			DWORD id = it->first;
 			
-			//And the audio buffer
-			WORD *buffer = audio->buffer;
-
 			//Get the samples from the fifo
-			audio->len = audio->output->GetSamples(buffer,numSamples);
+			audio->len = audio->output->GetSamples(audio->buffer,numSamples);
 
 			//For each sidepaf
 			for (Sidebars::iterator sit = sidebars.begin(); sit!=sidebars.end(); ++sit)
@@ -104,9 +103,9 @@ int AudioMixer::MixAudio()
 				//Get sidebar
 				Sidebar* sidebar = sit->second;
 				//Check if it has the participant
-				if (sidebar->HasParticipant(it->first))
+				if (sidebar->HasParticipant(id))
 					//Mix it
-					sidebar->Update(it->first,audio->buffer,audio->len);
+					sidebar->Update(id,audio->buffer,audio->len);
 			}
 		}
 
@@ -124,7 +123,7 @@ int AudioMixer::MixAudio()
 			if (!audio->sidebar)
 				//Next
 				continue;
-			//Get mixer buffer
+			//Get mixed buffer
 			WORD *mixed = audio->sidebar->GetBuffer();
 			//And the audio buffer
 			WORD *buffer = audio->buffer;
@@ -132,7 +131,7 @@ int AudioMixer::MixAudio()
 			//Calculate the result
 			for(int i=0; i<audio->len; i++)
 				//We don't want to hear our own signal
-				buffer[i] = mixed[i] - buffer[i];
+				buffer[i] -= mixed[i];
 
 			//Check length
 			if (audio->len<numSamples)

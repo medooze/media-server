@@ -62,11 +62,14 @@ RTMPConnection::~RTMPConnection()
 {
 	//End just in case
 	End();
-	//TODO: Clean all!!
-	delete(chunkOutputStreams[2]);
-	delete(chunkOutputStreams[3]);
-	delete(chunkOutputStreams[4]);
-	delete(chunkOutputStreams[5]);
+	//For each chunk strean
+	for (RTMPChunkInputStreams::iterator it=chunkInputStreams.begin(); it!=chunkInputStreams.end(); ++it)
+		//Delete it
+		delete(it->second);
+	//For each chunk strean
+	for (RTMPChunkOutputStreams::iterator it=chunkOutputStreams.begin(); it!=chunkOutputStreams.end(); ++it)
+		//Delete it
+		delete(it->second);
 	//Destroy mutex
 	pthread_mutex_destroy(&mutex);
 }
@@ -101,7 +104,7 @@ void RTMPConnection::Start()
 void RTMPConnection::Stop()
 {
 	//If got socket
-	if (socket)
+	if (running)
 	{
 		//Not running;
 		running = false;
@@ -111,7 +114,6 @@ void RTMPConnection::Stop()
 		close(socket);
 		//No socket
 		socket = 0;
-
 	}
 }
 
@@ -1106,8 +1108,9 @@ void RTMPConnection::onCommand(DWORD streamId,const wchar_t *name,AMFData* obj)
 
 void RTMPConnection::onNetStreamStatus(DWORD streamId,const RTMPNetStatusEventInfo &info,const wchar_t *message)
 {
+	RTMPNetStatusEvent event(info.code,info.level,message);
 	//Send command
-	onCommand(streamId,L"onStatus",new RTMPNetStatusEvent(info.code,info.level,message));
+	onCommand(streamId,L"onStatus",&event);
 }
 
 void RTMPConnection::onMediaFrame(DWORD streamId,RTMPMediaFrame *frame)
@@ -1182,8 +1185,9 @@ void RTMPConnection::onNetStreamDestroyed(DWORD streamId)
 
 void RTMPConnection::onNetConnectionStatus(const RTMPNetStatusEventInfo &info,const wchar_t *message)
 {
+	RTMPNetStatusEvent event(info.code,info.level,message);
 	//Send command
-	onCommand(0,L"onStatus",new RTMPNetStatusEvent(info.code,info.level,message));
+	onCommand(0,L"onStatus",&event);
 }
 void RTMPConnection::onNetConnectionDisconnected()
 {

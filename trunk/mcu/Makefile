@@ -102,7 +102,7 @@ VPATH +=  %.cpp $(SRCDIR)/src/$(JSR309DIR)
 
 
 INCLUDE+= -I$(SRCDIR)/include/ $(GNASHINCLUDE)
-LDFLAGS+= -lavcodec -lgsm -lpthread -lswscale -lavformat -lavutil -lx264 -lssl -lmp4v2 -lspeex -lspeexdsp -lcrypto -lsrtp
+LDFLAGS+= -lavcodec -lgsm -lpthread -lswscale -lavformat -lavutil -lx264 -lssl -lmp4v2 -lspeex -lspeexdsp -lcrypto 
 LDXMLFLAGS+= -lxmlrpc -lxmlrpc_xmlparse -lxmlrpc_xmltok -lxmlrpc_abyss -lxmlrpc_server -lxmlrpc_util
 LDFLAGS+= $(LDXMLFLAGS)
 

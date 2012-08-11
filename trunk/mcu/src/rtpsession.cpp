@@ -72,6 +72,10 @@ RTPSession::~RTPSession()
 		delete(rtpMapIn);
 	if (rtpMapOut)
 		delete(rtpMapOut);
+	//For each codec
+	while(packets.Length())
+		//Delete
+		delete(packets.Pop());
 }
 
 void RTPSession::SetSendingRTPMap(RTPMap &map)
