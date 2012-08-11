@@ -509,6 +509,9 @@ int VideoStream::RecVideo()
 			if (videoDecoder==NULL)
 			{
 				Error("Error creando nuevo decodificador de video [%d]\n",type);
+				//Delete packet
+				delete(packet);
+				//Next
 				continue;
 			}
 		}
@@ -550,6 +553,8 @@ int VideoStream::RecVideo()
 				//Update time
 				getUpdDifTime(&lastFPURequest);
 			}
+			//Delete packet
+			delete(packet);
 			//Next frame
 			continue;
 		}
@@ -596,6 +601,8 @@ int VideoStream::RecVideo()
 				recBytes=0;
 			}
 		}
+		//Delete packet
+		delete(packet);
 	}
 
 	//Borramos el encoder

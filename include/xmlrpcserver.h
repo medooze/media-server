@@ -17,7 +17,7 @@ class XmlRpcServer
 {
 public:
 	XmlRpcServer(int port);
-
+	~XmlRpcServer();
 	int AddHandler(string base,Handler* hnd);
 
 	int Start();
