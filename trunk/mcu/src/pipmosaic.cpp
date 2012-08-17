@@ -316,3 +316,64 @@ int PIPMosaic::GetSlots()
 {
 	return numSlots+1;
 }
+int PIPMosaic::GetWidth(int pos)
+{
+	//Check it's in the mosaic
+	if (pos+1>numSlots)
+		//Exit
+		return 0;
+	//Main
+	if (!pos)
+		return mosaicTotalWidth;
+
+	//If only 2 PIP
+	if (numSlots==2)
+		return SIZE4MUL(mosaicTotalWidth/4);
+
+	return SIZE4MUL(mosaicTotalWidth/5);
+}
+
+int PIPMosaic::GetHeight(int pos)
+{
+	//Check it's in the mosaic
+	if (pos+1>numSlots)
+		//Exit
+		return 0;
+	//Main
+	if(!pos)
+		return mosaicTotalHeight;
+	//If only 2 PIP
+	if (numSlots==2)
+		return SIZE4MUL(mosaicTotalHeight/4);
+	return SIZE4MUL(mosaicTotalHeight/5);
+}
+int PIPMosaic::GetTop(int pos)
+{
+	//Check it's in the mosaic
+	if (pos+1>numSlots)
+		//Exit
+		return 0;
+	//Main
+	if (!pos)
+		return 0;
+	//Calculate pip participant size
+	DWORD mosaicHeight		= SIZE4MUL(mosaicTotalHeight/5);
+	//Get top position
+	return SIZE4MUL(mosaicTotalHeight-mosaicHeight-mosaicHeight/2);
+}
+int PIPMosaic::GetLeft(int pos)
+{
+	//Check it's in the mosaic
+	if (pos+1>numSlots)
+		//Exit
+		return 0;
+		//Main
+	if (!pos)
+		return 0;
+	//Calculate pip participant size
+	DWORD mosaicWidth		= SIZE4MUL(mosaicTotalWidth/5);
+	//Get empty space between PIP
+	DWORD intraWidth = mosaicWidth/2;
+
+	return intraWidth + (intraWidth+mosaicWidth)*(pos-1);
+}

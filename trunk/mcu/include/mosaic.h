@@ -55,12 +55,10 @@ public:
 	int ResetOverlay();
 	int DrawVUMeter(int pos,DWORD val,DWORD size);
 protected:
-	/*
 	virtual int GetWidth(int pos) = 0;
 	virtual int GetHeight(int pos) = 0;
 	virtual int GetTop(int pos) = 0;
 	virtual int GetLeft(int pos) = 0;
-	 */
 protected:
 	void SetChanged()	{ mosaicChanged = true; overlayNeedsUpdate = true; }
 	

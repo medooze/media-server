@@ -71,13 +71,13 @@ ifeq ($(FLASHSTREAMER),yes)
 	TARGETS += flashstreamer flashclient testflash
 endif
 
-ifeq ($(VAD_WEBRTC),yes)
+ifeq ($(VADWEBRTC),yes)
 	VADINCLUDE = -I$(WEBRTCINCLUDE)
-	VADLD=$(WEBRTDIROBJ)/common_audio/libvad.a $(WEBRTDIROBJ)/common_audio/libsignal_processing.a
+	VADLD = $(WEBRTDIROBJ)/common_audio/libvad.a $(WEBRTDIROBJ)/common_audio/libsignal_processing.a
 	OPTS+= -DVADWEBRTC
 else
 	VADINCLUDE =
-	VADLD=
+	VADLD =
 endif
 
 OBJSMCU = $(OBJS) main.o
@@ -155,7 +155,7 @@ mcu: $(OBJSMCU)
 	$(CXX) -o $(BIN)/$@ $(BUILDOBJSMCU) $(LDFLAGS) $(VADLD)
 
 rtmpdebug: $(OBJSRTMPDEBUG)
-	$(CXX) -o $(BIN)/$@ $(BUILDOBJSRTMPDEBUG) $(LDFLAGS)
+	$(CXX) -o $(BIN)/$@ $(BUILDOBJSRTMPDEBUG) $(LDFLAGS) $(VADLD)
 
 libmediamixer: $(OBJSLIB)
 	gcc $(CXXFLAGS) -c lib/mediamixer.cpp -o $(BUILD)/mediamixer.o -DPIC -fPIC
