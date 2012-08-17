@@ -45,6 +45,15 @@ PIPMosaic::~PIPMosaic()
 *****************************/
 int PIPMosaic::Update(int pos, BYTE *image, int imgWidth, int imgHeight)
 {
+	//Check size
+	if (!image && !imgHeight && !imgHeight)
+	{
+		//Clean position
+		Clean(pos);
+		//Exit
+		return 0;
+
+	}
 	//Check it's in the mosaic
 	if (pos+1>numSlots)
 		//Exit

@@ -9,10 +9,7 @@
 #include "log.h"
 #include "tools.h"
 #include "audio.h"
-#include "g711/g711codec.h"
-#include "gsm/gsmcodec.h"
 #include "audiostream.h"
-
 
 /**********************************
 * AudioStream
@@ -32,31 +29,6 @@ AudioStream::AudioStream(RTPSession::Listener* listener) : rtp(MediaFrame::Audio
 ********************************/
 AudioStream::~AudioStream()
 {
-}
-
-/***************************************
-* CreateAudioCodec
-* 	Crea un objeto de codec de audio del tipo correspondiente
-****************************************/
-AudioCodec* AudioStream::CreateAudioCodec(AudioCodec::Type codec)
-{
-
-	Log("-CreateAudioCodec [%d]\n",codec);
-
-	//Creamos uno dependiendo del tipo
-	switch(codec)
-	{
-		case AudioCodec::GSM:
-			return new GSMCodec();
-		case AudioCodec::PCMA:
-			return new PCMACodec();
-		case AudioCodec::PCMU:
-			return new PCMUCodec();
-		default:
-			Log("Codec de audio erroneo [%d]\n",codec);
-	}
-	
-	return NULL;
 }
 
 /***************************************
@@ -282,7 +254,7 @@ int AudioStream::RecAudio()
 {
 	int 		recBytes=0;
 	struct timeval 	before;
-	WORD		playBuffer[512];
+	SWORD		playBuffer[512];
 	AudioCodec*	codec=NULL;
 	AudioCodec::Type type;
 	DWORD		frameTime=0;
@@ -316,7 +288,7 @@ int AudioStream::RecAudio()
 				delete codec;
 
 			//Creamos uno dependiendo del tipo
-			if ((codec = CreateAudioCodec(type))==NULL)
+			if ((codec = AudioCodec::CreateDecoder(type))==NULL)
 			{
 				//Delete pacekt
 				delete(packet);
@@ -338,7 +310,8 @@ int AudioStream::RecAudio()
 		//Check muted
 		if (!muted)
 			//Y lo reproducimos
-			audioOutput->PlayBuffer((WORD *)playBuffer,len,frameTime);
+			audioOutput->PlayBuffer(playBuffer,len,frameTime);
+
 
 		//Aumentamos el numero de bytes recividos
 		recBytes+=packet->GetMediaLength();
@@ -366,7 +339,7 @@ int AudioStream::RecAudio()
 int AudioStream::SendAudio()
 {
 	RTPPacket	packet(MediaFrame::Audio,audioCodec,audioCodec);
-	WORD 		recBuffer[512];
+	SWORD 		recBuffer[512];
         int 		sendBytes=0;
         struct timeval 	before;
 	AudioCodec* 	codec;
@@ -378,7 +351,7 @@ int AudioStream::SendAudio()
 	gettimeofday(&before,NULL);
 
 	//Creamos el codec de audio
-	if ((codec = CreateAudioCodec(audioCodec))==NULL)
+	if ((codec = AudioCodec::CreateCodec(audioCodec))==NULL)
 	{
 		Log("Error en el envio de audio,saliendo\n");
 		return 0;
@@ -394,7 +367,7 @@ int AudioStream::SendAudio()
 		frameTime += codec->numFrameSamples;
 
 		//Capturamos 
-		if (audioInput->RecBuffer((WORD *)recBuffer,codec->numFrameSamples)==0)
+		if (audioInput->RecBuffer(recBuffer,codec->numFrameSamples)==0)
 		{
 			Log("-sendingAudio cont\n");
 			continue;
@@ -440,10 +413,7 @@ int AudioStream::SendAudio()
 			Log("Error mandando el packete de audio\n");
 			continue;
 		}
-
-		//Y reseteamos el frameTime
-		frameTime = 0;
-
+		
 		//Aumentamos lo enviado
 		sendBytes+=len;
 	}

@@ -108,7 +108,7 @@ void MP4Player::onTextFrame(TextFrame &text)
 
 void MP4Player::onRTPPacket(RTPPacket &packet)
 {
-	WORD buffer[1024];
+	SWORD buffer[1024];
 	DWORD bufferSize = 1024;
 	//Get data
 	BYTE *data = packet.GetMediaData();
@@ -130,7 +130,7 @@ void MP4Player::onRTPPacket(RTPPacket &packet)
 			len = audioCodec->Decode(data,len,buffer,bufferSize);
 
 			//Play it
-			audioOutput->PlayBuffer((WORD *)buffer,len,0);
+			audioOutput->PlayBuffer(buffer,len,0);
 
 			break;
 		case MediaFrame::Video:

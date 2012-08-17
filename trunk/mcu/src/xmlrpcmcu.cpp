@@ -12,23 +12,14 @@ xmlrpc_value* CreateConference(xmlrpc_env *env, xmlrpc_value *param_array, void 
 	UTF8Parser tagParser;
 	 //Parseamos
 	char *str;
+	int isVADenabled = 0;
 	int queueId = 0;
-	xmlrpc_parse_value(env, param_array, "(si)", &str, &queueId);
+	xmlrpc_parse_value(env, param_array, "(sii)", &str, &isVADenabled, &queueId);
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-	{
-		//Clean fault
-		env->fault_occurred = 0;
-
-		//Try with old parameters
-		xmlrpc_parse_value(env, param_array, "(s)", &str);
-
-		//Comprobamos si ha habido error
-		if(env->fault_occurred)
-			//Send errro
-			return xmlerror(env,"Fault occurred");
-	}
+		//Send errro
+		return xmlerror(env,"Fault occurred");
 
 	//Parse string
 	tagParser.Parse((BYTE*)str,strlen(str));
@@ -45,7 +36,7 @@ xmlrpc_value* CreateConference(xmlrpc_env *env, xmlrpc_value *param_array, void 
 		return xmlerror(env,"Conference deleted before initing");
 
 	//La iniciamos
-	int res = conf->Init();
+	int res = conf->Init(isVADenabled);
 
 	//Liberamos la referencia
 	mcu->ReleaseConferenceRef(confId);

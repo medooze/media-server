@@ -23,7 +23,6 @@ MultiConf::MultiConf(const std::wstring &tag) : broadcast(tag)
 	inited = 0;
 }
 
-
 /************************
 * ~ MultiConf
 * 	Destructor
@@ -46,15 +45,19 @@ void MultiConf::SetListener(Listener *listener,void* param)
 * Init
 * 	Constructo
 *************************/
-int MultiConf::Init()
+int MultiConf::Init(bool isVADenabled)
 {
-	Log("-Init multiconf\n");
+	Log("-Init multiconf [vad:%d]\n",isVADenabled);
 
 	//We are inited
 	inited = true;
 
 	//Init audio mixers
-	int res = audioMixer.Init();
+	int res = audioMixer.Init(isVADenabled);
+	//Check if we need to use vad
+	if (isVADenabled)
+		//Set VAD proxy
+		videoMixer.SetVADProxy(&audioMixer);
 	//Init video mixer with dedault parameters
 	res &= videoMixer.Init(Mosaic::mosaic2x2,CIF);
 	//Init text mixer

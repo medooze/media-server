@@ -40,6 +40,8 @@ RTPMultiplexerSmoother::~RTPMultiplexerSmoother()
 
 int RTPMultiplexerSmoother::Start()
 {
+	Log("-RTPMultiplexerSmoother start\n");
+	
 	//Check if we are already inited
 	if (inited)
 		//End first
@@ -184,6 +186,8 @@ int RTPMultiplexerSmoother::Stop()
 	//Check
 	if (!inited)
 		return 0;
+
+	Log(">RTPMultiplexerSmoother stop\n");
 	
 	//Not inited
 	inited = false;
@@ -193,6 +197,8 @@ int RTPMultiplexerSmoother::Stop()
 
 	//Wait
 	pthread_join(thread,NULL);
+
+	Log("<RTPMultiplexerSmoother stopped\n");
 
 	return 1;
 }
@@ -230,7 +236,7 @@ int RTPMultiplexerSmoother::Run()
 		//Check it
 		if (!sched)
 			//Exit
-			break;
+			continue;
 
 		//Multiplex
 		Multiplex(*(RTPPacket*)sched);

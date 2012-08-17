@@ -16,8 +16,13 @@ Sidebar::~Sidebar()
 {
 }
 
-void Sidebar::Update(int index,WORD *samples,DWORD len)
+void Sidebar::Update(int id,SWORD *samples,DWORD len)
 {
+	//Check if
+	if (participants.find(id)==participants.end())
+		//Exit
+		return;
+
 	//Mix the audio
 	for(int i = 0; i < len; ++i)
 		//MIX
@@ -27,17 +32,12 @@ void Sidebar::Update(int index,WORD *samples,DWORD len)
 void Sidebar::Reset()
 {
 	//zero the mixer buffer
-	memset(mixer_buffer, 0, MIXER_BUFFER_SIZE*sizeof(WORD));
+	memset(mixer_buffer, 0, MIXER_BUFFER_SIZE*sizeof(SWORD));
 }
 
 void Sidebar::AddParticipant(int id)
 {
 	participants.insert(id);
-}
-
-bool Sidebar::HasParticipant(int id)
-{
-	return participants.find(id)!=participants.end();
 }
 
 void Sidebar::RemoveParticipant(int id)

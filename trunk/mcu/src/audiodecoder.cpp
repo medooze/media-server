@@ -85,7 +85,7 @@ int  AudioDecoder::Stop()
 
 int AudioDecoder::Decode()
 {
-	WORD		raw[512];
+	SWORD		raw[512];
 	DWORD		rawSize=512;
 	AudioCodec*	codec=NULL;
 	DWORD		frameTime=0;
@@ -135,7 +135,7 @@ int AudioDecoder::Decode()
 		lastTime = packet->GetTimestamp();
 
 		//Y lo reproducimos
-		output->PlayBuffer((WORD *)raw,len,frameTime);
+		output->PlayBuffer(raw,len,frameTime);
 
 		//Delete packet
 		delete(packet);

@@ -232,7 +232,7 @@ int RTPSmoother::Run()
 		//Check it
 		if (!sched)
 			//Exit
-			break;
+			continue;
 
 		//Send it
 		session->SendPacket(*sched,sched->GetTimestamp());

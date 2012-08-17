@@ -8,13 +8,13 @@
 #include "sidebar.h"
 #include <map>
 
-class AudioMixer 
+class AudioMixer : public VADProxy
 {
 public:
 	AudioMixer();
 	~AudioMixer();
 
-	int Init();
+	int Init(bool vad);
 	int CreateMixer(int id);
 	int InitMixer(int id,int sidebarId);
 	int SetMixerSidebar(int id,int sidebarId);
@@ -29,6 +29,9 @@ public:
 	int RemoveSidebarParticipant(int SidebarId,int partId);
 	int DeleteSidebar(int SidebarId);
 	int End();
+
+	//VAD proxy interface
+	virtual DWORD GetVAD(int id);
 
 protected:
 	//Mix thread
@@ -45,9 +48,10 @@ private:
 	{
 		PipeAudioInput  *input;
 		PipeAudioOutput *output;
-		WORD		buffer[Sidebar::MIXER_BUFFER_SIZE];
+		SWORD		buffer[Sidebar::MIXER_BUFFER_SIZE];
 		DWORD		len;
 		Sidebar*	sidebar;
+		DWORD		vad;
 	} AudioSource;
 
 	typedef std::map<int,AudioSource *>	Audios;
@@ -62,6 +66,7 @@ private:
 	Sidebars	sidebars;
 	Sidebar*	defaultSidebar;
 	int		numSidebars;
+	bool		vad;
 
 };
 

@@ -16,21 +16,20 @@ public:
 	Sidebar();
 	~Sidebar();
 
-	void Update(int index,WORD *samples,DWORD len);
+	void Update(int index,SWORD *samples,DWORD len);
 	void Reset();
 
 	void AddParticipant(int id);
-	bool HasParticipant(int id);
 	void RemoveParticipant(int id);
 
-	WORD* GetBuffer()	{ return mixer_buffer; }
+	SWORD* GetBuffer()	{ return mixer_buffer; }
 public:
-	static const DWORD MIXER_BUFFER_SIZE = 320;
+	static const DWORD MIXER_BUFFER_SIZE = 640;
 private:
 	typedef std::set<int> Participants;
 private:
 	//Audio mixing buffer
-	WORD mixer_buffer[MIXER_BUFFER_SIZE];
+	SWORD mixer_buffer[MIXER_BUFFER_SIZE];
 	Participants participants;
 };
 

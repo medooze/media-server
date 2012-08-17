@@ -47,7 +47,7 @@ public:
 	MultiConf(const std::wstring& tag);
 	~MultiConf();
 
-	int Init();
+	int Init(bool isVADenabled);
 	int End();
 
 	void SetListener(Listener *listener,void* param);

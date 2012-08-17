@@ -5,9 +5,9 @@
         <data xmlns="http://www.netbeans.org/ns/make-project/1">
             <name>media</name>
             <make-project-type>0</make-project-type>
-            <c-extensions/>
+            <c-extensions>c</c-extensions>
             <cpp-extensions>cpp</cpp-extensions>
-            <header-extensions>c,h</header-extensions>
+            <header-extensions>h</header-extensions>
             <sourceEncoding>UTF-8</sourceEncoding>
             <make-dep-projects/>
             <sourceRootList>

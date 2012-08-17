@@ -11,7 +11,7 @@ CND_CONF=Default
 CND_DISTDIR=dist
 NBTMPDIR=build/${CND_CONF}/${CND_PLATFORM}/tmp-packaging
 TMPDIRNAME=tmp-packaging
-OUTPUT_PATH=../bin/debug/mcu
+OUTPUT_PATH=bin/debug/mcu
 OUTPUT_BASENAME=mcu
 PACKAGE_TOP_DIR=.tar/
 

@@ -24,7 +24,7 @@ PipeAudioInput::~PipeAudioInput()
 	pthread_cond_destroy(&cond);
 }
 
-int PipeAudioInput::RecBuffer(WORD *buffer,DWORD size)
+int PipeAudioInput::RecBuffer(SWORD *buffer,DWORD size)
 {
 	int len = 0;
 
@@ -88,7 +88,7 @@ int PipeAudioInput::StopRecording()
 	return true;
 }
 
-int PipeAudioInput::PutSamples(WORD *buffer,DWORD size)
+int PipeAudioInput::PutSamples(SWORD *buffer,DWORD size)
 {
 	//Bloqueamos
 	pthread_mutex_lock(&mutex);

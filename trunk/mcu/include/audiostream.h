@@ -34,7 +34,6 @@ private:
 	//Funciones propias
 	static void *startSendingAudio(void *par);
 	static void *startReceivingAudio(void *par);
-	AudioCodec* CreateAudioCodec(AudioCodec::Type type);
 
 	//Los objectos gordos
 	RTPSession	rtp;

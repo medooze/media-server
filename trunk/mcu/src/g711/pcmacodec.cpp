@@ -15,7 +15,7 @@ PCMACodec::~PCMACodec()
 {
 }
 
-int PCMACodec::Encode (WORD *in,int inLen,BYTE* out,int outLen)
+int PCMACodec::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 {
 	//Comprobamos las longitudes
 	if (outLen<inLen)
@@ -28,7 +28,7 @@ int PCMACodec::Encode (WORD *in,int inLen,BYTE* out,int outLen)
 	return inLen;
 }
 
-int PCMACodec::Decode (BYTE *in,int inLen,WORD* out,int outLen)
+int PCMACodec::Decode (BYTE *in,int inLen,SWORD* out,int outLen)
 {
 	//Comprobamos las longitudes
 	if (outLen<inLen)

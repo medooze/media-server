@@ -10,12 +10,12 @@ class PipeAudioInput :
 public:
 	PipeAudioInput();
 	~PipeAudioInput();
-	virtual int RecBuffer(WORD *buffer,DWORD size);
+	virtual int RecBuffer(SWORD *buffer,DWORD size);
 	virtual void  CancelRecBuffer();
 	virtual int StartRecording();
 	virtual int StopRecording();
 	int Init();
-	int PutSamples(WORD *buffer,DWORD size);
+	int PutSamples(SWORD *buffer,DWORD size);
 	int End();
 
 private:
@@ -24,7 +24,7 @@ private:
 	pthread_cond_t  cond; 
 
 	//Members
-	fifo<WORD,2048>	fifoBuffer;
+	fifo<SWORD,2048>	fifoBuffer;
 	int		recording;
 	int 		inited;
 	int		canceled;

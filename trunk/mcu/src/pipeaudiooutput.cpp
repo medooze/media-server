@@ -1,8 +1,13 @@
 #include "log.h"
 #include "pipeaudiooutput.h"
 
-PipeAudioOutput::PipeAudioOutput()
+
+PipeAudioOutput::PipeAudioOutput(bool calcVAD)
 {
+	//Store vad flag
+	this->calcVAD = calcVAD;
+	//No vad score acumulated
+	acu = 0;
 	//Creamos el mutex
 	pthread_mutex_init(&mutex,NULL);
 }
@@ -13,8 +18,15 @@ PipeAudioOutput::~PipeAudioOutput()
 	pthread_mutex_destroy(&mutex);
 }
 
-int PipeAudioOutput::PlayBuffer(WORD *buffer,DWORD size,DWORD frameTime)
+int PipeAudioOutput::PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime)
 {
+	int v = 0;
+
+	//Check if we need to calculate it
+	if (calcVAD)
+		//Calculate vad
+		v = vad.CalcVad8khz(buffer,size);
+
 	//Bloqueamos
 	pthread_mutex_lock(&mutex);
 
@@ -22,6 +34,18 @@ int PipeAudioOutput::PlayBuffer(WORD *buffer,DWORD size,DWORD frameTime)
 	if(fifoBuffer.length()+size>1024)
 		//Limpiamos
 		fifoBuffer.clear();
+
+	//Get initial bump
+	if (!acu && v)
+		//Two seconds minimum
+		acu+=16000;
+	//Acumule VAD
+	acu += v;
+
+	//Check max
+	if (acu>720000)
+		//Limit so it can timeout faster
+		acu = 720000;
 
 	//Metemos en la fifo
 	fifoBuffer.push(buffer,size);
@@ -41,7 +65,7 @@ int PipeAudioOutput::StopPlaying()
 	return true;
 }
 
-int PipeAudioOutput::GetSamples(WORD *buffer,DWORD num)
+int PipeAudioOutput::GetSamples(SWORD *buffer,DWORD num)
 {
 	//Bloqueamos
 	pthread_mutex_lock(&mutex);
@@ -93,4 +117,24 @@ int PipeAudioOutput::End()
 	pthread_mutex_unlock(&mutex);
 
 	return true;
-} 
+}
+
+DWORD PipeAudioOutput::GetVAD(DWORD numSamples)
+{
+	//Protegemos
+	pthread_mutex_lock(&mutex);
+	//Get vad value
+	DWORD r = acu;
+	//Check
+	if (acu<numSamples)
+		//No vad
+		acu = 0;
+	else
+		//Remove cumulative value
+		acu -= numSamples;
+	//Protegemos
+	pthread_mutex_unlock(&mutex);
+	
+	//Return
+	return r;
+}

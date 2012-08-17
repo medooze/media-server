@@ -189,7 +189,7 @@ int AudioEncoder::StopEncoding()
 *******************************************/
 int AudioEncoder::Encode()
 {
-	WORD 		recBuffer[512];
+	SWORD 		recBuffer[512];
         struct timeval 	before;
 	AudioCodec* 	codec;
 	DWORD		frameTime=0;
@@ -216,7 +216,7 @@ int AudioEncoder::Encode()
 	while(encodingAudio)
 	{
 		//Capturamos 20ms
-		if (audioInput->RecBuffer((WORD *)recBuffer,160)==0)
+		if (audioInput->RecBuffer(recBuffer,160)==0)
 			//Skip and probably exit
 			continue;
 

@@ -225,7 +225,7 @@ int FLVEncoder::StopEncoding()
 int FLVEncoder::EncodeAudio()
 {
 	RTMPAudioFrame	frame(0,512);
-	WORD 		recBuffer[512];
+	SWORD 		recBuffer[512];
 
 	Log(">Encode Audio\n");
 
@@ -240,7 +240,7 @@ int FLVEncoder::EncodeAudio()
 	{
 		DWORD numSamples = encoder->numFrameSamples;
 		//Capturamos 20ms
-		if (audioInput->RecBuffer((WORD *)recBuffer,numSamples)==0)
+		if (audioInput->RecBuffer(recBuffer,numSamples)==0)
 			continue;
 
 		DWORD frameLength = 0;

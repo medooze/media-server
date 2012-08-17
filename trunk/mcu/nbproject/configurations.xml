@@ -78,6 +78,7 @@
         <in>textstream.h</in>
         <in>tools.h</in>
         <in>use.h</in>
+        <in>vad.h</in>
         <in>video.h</in>
         <in>videomixer.h</in>
         <in>videostream.h</in>
@@ -228,6 +229,7 @@
         <in>textmixer.cpp</in>
         <in>textmixerworker.cpp</in>
         <in>textstream.cpp</in>
+        <in>vad.cpp</in>
         <in>video.cpp</in>
         <in>videomixer.cpp</in>
         <in>videostream.cpp</in>
@@ -242,6 +244,7 @@
         <in>xmlrpcserver.cpp</in>
         <in>xmlstreaminghandler.cpp</in>
       </df>
+      <in>newfile.cpp</in>
     </df>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"

@@ -26,6 +26,16 @@ AsymmetricMosaic::~AsymmetricMosaic()
 *****************************/
 int AsymmetricMosaic::Update(int pos, BYTE *image, int imgWidth, int imgHeight)
 {
+	//Check size
+	if (!image && !imgHeight && !imgHeight)
+	{
+		//Clean position
+		Clean(pos);
+		//Exit
+		return 0;
+
+	}
+
 	DWORD mosaicNumPixels = mosaicTotalWidth*mosaicTotalHeight;
 	DWORD offset=0;
 	DWORD offset2=0;
@@ -262,6 +272,8 @@ int AsymmetricMosaic::Update(int pos, BYTE *image, int imgWidth, int imgHeight)
 		resizer[pos]->SetResize(imgWidth,imgHeight,imgWidth,mosaicWidth,mosaicHeight,mosaicTotalWidth);
 		//Resize and set to slot
 		resizer[pos]->Resize(imageY,imageU,imageV,lineaY,lineaU,lineaV);
+	} else {
+		return 0;
 	}
 
 	//We have changed

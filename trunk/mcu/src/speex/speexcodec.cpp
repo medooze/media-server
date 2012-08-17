@@ -65,9 +65,9 @@ SpeexCodec::~SpeexCodec()
 	speex_decoder_destroy(decoder);
 }
 
-int SpeexCodec::Encode (WORD *in,int inLen,BYTE* out,int outLen)
+int SpeexCodec::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 {
-	WORD wbBuffer[512];
+	SWORD wbBuffer[512];
 	DWORD wblen = 512;
 
 	//check lengths
@@ -84,9 +84,9 @@ int SpeexCodec::Encode (WORD *in,int inLen,BYTE* out,int outLen)
 	return speex_bits_write_whole_bytes(&encbits, (char*)out, outLen);
 }
 
-int SpeexCodec::Decode (BYTE *in, int inLen, WORD* out, int outLen)
+int SpeexCodec::Decode (BYTE *in, int inLen, SWORD* out, int outLen)
 {
-	WORD wbBuffer[512];
+	SWORD wbBuffer[512];
 	DWORD wbSize = 512;
 	DWORD wbLen = dec_frame_size;
 
