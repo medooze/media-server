@@ -18,6 +18,8 @@ AudioMixer::AudioMixer()
 	mixingAudio = 0;
 	//No sidebars
 	numSidebars = 0;
+	//NO vad by default
+	vad = false;
 }
 
 /***********************
@@ -54,6 +56,7 @@ int AudioMixer::MixAudio()
 {
 	timeval  tv;
 	DWORD step = 10;
+	QWORD prev = 0;
 
 	//Logeamos
 	Log(">MixAudio\n");
@@ -64,14 +67,22 @@ int AudioMixer::MixAudio()
 	//Mientras estemos mezclando
 	while(mixingAudio)
 	{
-		//Wait until next to process
-		msleep(step*1000);
+		DWORD next = getDifTime(&tv)-prev+step*1000;
+
+		//Wait until next to process again minus process time
+		msleep(next);
+
+		//Get new time
+		QWORD curr = getDifTime(&tv);
+
+		//Get time elapsed
+		DWORD diff = (curr-prev)/1000;
+
+		//Update curr
+		prev = curr;
 
 		//Block list
 		lstAudiosUse.WaitUnusedAndLock();
-
-		//Get time elapsed
-		QWORD diff = getUpdDifTime(&tv)/1000;
 
 		//Get num samples at 8Khz
 		DWORD numSamples = diff*8;
@@ -91,22 +102,14 @@ int AudioMixer::MixAudio()
 		{
 			//Get the source
 			AudioSource *audio = it->second;
-			//Get id
-			DWORD id = it->first;
-			
 			//Get the samples from the fifo
 			audio->len = audio->output->GetSamples(audio->buffer,numSamples);
-
+			//Get VAD value
+			audio->vad = audio->output->GetVAD(numSamples);
 			//For each sidepaf
 			for (Sidebars::iterator sit = sidebars.begin(); sit!=sidebars.end(); ++sit)
-			{
-				//Get sidebar
-				Sidebar* sidebar = sit->second;
-				//Check if it has the participant
-				if (sidebar->HasParticipant(id))
-					//Mix it
-					sidebar->Update(id,audio->buffer,audio->len);
-			}
+				//Mix it
+				sit->second->Update(sit->first,audio->buffer,audio->len);
 		}
 
 		// Second pass: Calculate this stream's output
@@ -124,19 +127,19 @@ int AudioMixer::MixAudio()
 				//Next
 				continue;
 			//Get mixed buffer
-			WORD *mixed = audio->sidebar->GetBuffer();
+			SWORD *mixed = audio->sidebar->GetBuffer();
 			//And the audio buffer
-			WORD *buffer = audio->buffer;
+			SWORD *buffer = audio->buffer;
 
 			//Calculate the result
 			for(int i=0; i<audio->len; i++)
 				//We don't want to hear our own signal
-				buffer[i] -= mixed[i];
+				buffer[i] = mixed[i] - buffer[i];
 
 			//Check length
 			if (audio->len<numSamples)
 				//Copy the rest
-				memcpy(((BYTE*)buffer)+audio->len*sizeof(WORD),((BYTE*)mixed)+audio->len*sizeof(WORD),(numSamples-audio->len)*sizeof(WORD));
+				memcpy(((BYTE*)buffer)+audio->len*sizeof(SWORD),((BYTE*)mixed)+audio->len*sizeof(SWORD),(numSamples-audio->len)*sizeof(SWORD));
 
 			//PUt the output
 			audio->input->PutSamples(buffer,numSamples);
@@ -156,8 +159,11 @@ int AudioMixer::MixAudio()
 * Init
 *	Inicializa el mezclado de audio
 ************************/
-int AudioMixer::Init()
+int AudioMixer::Init(bool vad)
 {
+	//Store if we need to use vad or not
+	this->vad = vad;
+
 	// Estamos mzclando
 	mixingAudio = true;
 
@@ -258,12 +264,13 @@ int AudioMixer::CreateMixer(int id)
 
 	//POnemos el input y el output
 	audio->input  = new PipeAudioInput();
-	audio->output = new PipeAudioOutput();
+	audio->output = new PipeAudioOutput(vad);
 	//No sidebar yet
 	audio->sidebar = NULL;
 	//Clean buffer
-	memset(audio->buffer, 0, Sidebar::MIXER_BUFFER_SIZE*sizeof(WORD));
+	memset(audio->buffer, 0, Sidebar::MIXER_BUFFER_SIZE*sizeof(SWORD));
 	audio->len = 0;
+	audio->vad = 0;
 
 	//Y lo a�adimos a la lista
 	audios[id] = audio;
@@ -604,4 +611,26 @@ int AudioMixer::DeleteSidebar(int sidebarId)
 
 	//Exit
 	return 1;
+}
+
+DWORD AudioMixer::GetVAD(int id)
+{
+	DWORD acuVAD = 0;
+
+	//Lock
+	lstAudiosUse.IncUse();
+
+	//Find it
+	Audios::iterator it = audios.find(id);
+
+	//If found
+	if (it!=audios.end())
+		//Get vad
+		acuVAD = it->second->vad;
+
+	//Unlock
+	lstAudiosUse.DecUse();
+
+	//Return VAD acumulated
+	return acuVAD;
 }

@@ -673,10 +673,10 @@ int RTMPParticipant::SendAudio()
 	//Mientras tengamos que capturar
 	while(sendingAudio)
 	{
-		WORD recBuffer[512];
+		SWORD recBuffer[512];
 
 		//Capturamos
-		DWORD  recLen = audioInput->RecBuffer((WORD *)recBuffer,rtmpAudioEncoder->numFrameSamples);
+		DWORD  recLen = audioInput->RecBuffer(recBuffer,rtmpAudioEncoder->numFrameSamples);
 
 		//Check len
 		if (!recLen)
@@ -928,6 +928,7 @@ int RTMPParticipant::RecAudio()
 {
 	AudioCodec::Type rtmpAudioCodec;
 	AudioCodec *rtmpAudioDecoder = NULL;
+	VAD vad;
 	
 	Log(">RecAudio\n");
 
@@ -962,7 +963,7 @@ int RTMPParticipant::RecAudio()
 				continue;
 		}
 
-		WORD raw[512];
+		SWORD raw[512];
 		DWORD rawSize = 512;
 		DWORD rawLen = 0;
 
@@ -986,8 +987,12 @@ int RTMPParticipant::RecAudio()
 		{
 			//Check size
 			if (rawLen>0 && !audioMuted)
+			{
 				//Enqeueue it
 				audioOutput->PlayBuffer(raw,rawLen,0);
+				//calculate vad
+				vad.CalcVad8khz(raw,rawLen);
+			}
 			//Remove size
 			size = 0;
 		}

@@ -10,8 +10,8 @@ class SpeexCodec : public AudioCodec
 public:
 	SpeexCodec();
 	virtual ~SpeexCodec();
-	virtual int Encode(WORD *in,int inLen,BYTE* out,int outLen);
-	virtual int Decode(BYTE *in,int inLen,WORD* out,int outLen);
+	virtual int Encode(SWORD *in,int inLen,BYTE* out,int outLen);
+	virtual int Decode(BYTE *in,int inLen,SWORD* out,int outLen);
 private:
 	void *encoder;
 	void *decoder;

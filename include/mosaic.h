@@ -3,6 +3,7 @@
 #include "config.h"
 #include "framescaler.h"
 #include "overlay.h"
+#include "vad.h"
 #include <map>
 
 class Mosaic
@@ -28,7 +29,7 @@ public:
 	int GetHeight()		{ return mosaicTotalHeight;}
 	int HasChanged()	{ return mosaicChanged; }
 	void Reset()		{ mosaicChanged = true; }
-	
+
 	BYTE* GetFrame();
 	virtual int Update(int index,BYTE *frame,int width,int heigth) = 0;
 	virtual int Clean(int index) = 0;
@@ -39,10 +40,12 @@ public:
 	int SetSlot(int num,int id);
 	int CalculatePositions();
 	int GetPosition(int id);
+	int GetVADPosition();
 	int* GetPositions();
 	int* GetSlots();
 	int GetNumSlots();
 	void SetSlots(int *slots,int num);
+	bool IsFixed(DWORD pos);
 	
 	static int GetNumSlotsForType(Type type);
 	static Mosaic* CreateMosaic(Type type,DWORD size);
@@ -50,13 +53,22 @@ public:
 	int SetOverlayPNG(const char* filename);
 	int SetOverlaySVG(const char* svg);
 	int ResetOverlay();
-
+	int DrawVUMeter(int pos,DWORD val,DWORD size);
+protected:
+	/*
+	virtual int GetWidth(int pos) = 0;
+	virtual int GetHeight(int pos) = 0;
+	virtual int GetTop(int pos) = 0;
+	virtual int GetLeft(int pos) = 0;
+	 */
 protected:
 	void SetChanged()	{ mosaicChanged = true; overlayNeedsUpdate = true; }
 	
 protected:
 	typedef std::map<int,int> Participants;
-
+protected:
+	static const int LOCKED = -1;
+	static const int VAD = -2;
 protected:
 	Participants participants;
 	int mosaicChanged;

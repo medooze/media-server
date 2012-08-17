@@ -43,7 +43,7 @@ private:
 class AudioInput
 {
 public:
-	virtual int RecBuffer(WORD *buffer,DWORD size)=0;
+	virtual int RecBuffer(SWORD *buffer,DWORD size)=0;
 	virtual void  CancelRecBuffer()=0;
 	virtual int StartRecording()=0;
 	virtual int StopRecording()=0;
@@ -52,7 +52,7 @@ public:
 class AudioOutput
 {
 public:
-	virtual int PlayBuffer(WORD *buffer,DWORD size,DWORD frameTime)=0;
+	virtual int PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime)=0;
 	virtual int StartPlaying()=0;
 	virtual int StopPlaying()=0;
 };

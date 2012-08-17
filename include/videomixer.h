@@ -20,6 +20,7 @@ public:
 	~VideoMixer();
 
 	int Init(Mosaic::Type comp,int size);
+	void SetVADProxy(VADProxy* proxy);
 	int CreateMixer(int id);
 	int InitMixer(int id,int mosaicId);
 	int SetMixerMosaic(int id,int mosaicId);
@@ -79,6 +80,7 @@ private:
 	pthread_mutex_t mixVideoMutex;
 	int		mixingVideo;
 	Use		lstVideosUse;
+	VADProxy*	proxy;
 };
 
 #endif

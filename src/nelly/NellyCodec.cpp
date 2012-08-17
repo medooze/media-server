@@ -49,9 +49,9 @@ NellyCodec::~NellyCodec()
 {
 }
 
-int NellyCodec::Encode (WORD *in,int inLen,BYTE* out,int outLen)
+int NellyCodec::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 {
-	WORD buffer[512];
+	SWORD buffer[512];
 	DWORD len = 512;
 	float bufferf[512];
 
@@ -69,10 +69,10 @@ int NellyCodec::Encode (WORD *in,int inLen,BYTE* out,int outLen)
 		bufferf[i] = buffer[i] * (1.0 / (1<<15));
 
 	//Encode
-	return avcodec_encode_audio(ctx, out, outLen, (short int*)in);
+	return avcodec_encode_audio(ctx, out, outLen, (SWORD*)bufferf);
 }
 
-int NellyCodec::Decode (BYTE *in, int inLen, WORD* out, int outLen)
+int NellyCodec::Decode (BYTE *in, int inLen, SWORD* out, int outLen)
 {
 	//Not supported yet
 	return 0;
@@ -117,10 +117,10 @@ NellyEncoder11Khz::~NellyEncoder11Khz()
 {
 }
 
-int NellyEncoder11Khz::Encode (WORD *in,int inLen,BYTE* out,int outLen)
+int NellyEncoder11Khz::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 {
-	WORD buffer8[512];
-	WORD buffer11[512];
+	SWORD buffer8[512];
+	SWORD buffer11[512];
 	DWORD len8 = 512;
 	DWORD len11 = 512;
 	float bufferf[512];
@@ -135,7 +135,7 @@ int NellyEncoder11Khz::Encode (WORD *in,int inLen,BYTE* out,int outLen)
 		//Peek all
 		samples8.peek(buffer8,len8);
 		//Resample
-		speex_resampler_process_int(resampler,0,(SWORD*)buffer8,&len8,(SWORD*)buffer11,&len11);
+		speex_resampler_process_int(resampler,0,buffer8,&len8,buffer11,&len11);
 		//Remove
 		samples8.remove(len8);
 		//Push
@@ -150,12 +150,12 @@ int NellyEncoder11Khz::Encode (WORD *in,int inLen,BYTE* out,int outLen)
 	//For each one
 	for (int i=0;i<ctx->frame_size;++i)
 		//Convert to float
-		bufferf[i] = ((SWORD*)buffer11)[i] * (1.0 / (1<<15));
+		bufferf[i] = buffer11[i] * (1.0 / (1<<15));
 	//Encode
 	return avcodec_encode_audio(ctx, out, outLen, (SWORD*)bufferf);
 }
 
-int NellyEncoder11Khz::Decode (BYTE *in, int inLen, WORD* out, int outLen)
+int NellyEncoder11Khz::Decode (BYTE *in, int inLen, SWORD* out, int outLen)
 {
 	//Not supported yet
 	return 0;
@@ -201,17 +201,17 @@ NellyDecoder11Khz::~NellyDecoder11Khz()
 {
 }
 
-int NellyDecoder11Khz::Encode (WORD *in,int inLen,BYTE* out,int outLen)
+int NellyDecoder11Khz::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 {
 	//Encode
 	return 0;
 }
 
-int NellyDecoder11Khz::Decode(BYTE *in, int inLen, WORD* out, int outLen)
+int NellyDecoder11Khz::Decode(BYTE *in, int inLen, SWORD* out, int outLen)
 {
 	AVFrame frame;
 	int got_frame;
-	WORD buffer8[512];
+	SWORD buffer8[512];
 	DWORD len8 = 512;
 	
 	//If we have input
@@ -236,14 +236,14 @@ int NellyDecoder11Khz::Decode(BYTE *in, int inLen, WORD* out, int outLen)
 		if (got_frame)
 		{
 			//Get data
-			WORD *buffer11 = (WORD*)frame.extended_data[0];
+			SWORD *buffer11 = (SWORD *)frame.extended_data[0];
 			DWORD len11 = frame.nb_samples;
 
 			//Resample
-			speex_resampler_process_int(resampler,0,(SWORD*)buffer11,&len11,(SWORD*)buffer8,&len8);
+			speex_resampler_process_int(resampler,0,buffer11,&len11,buffer8,&len8);
 
 			//Append to samples
-			samples.push((WORD*)buffer8,len8);
+			samples.push(buffer8,len8);
 		}
 
 	}

@@ -19,8 +19,8 @@ public:
 	
 public:
 	virtual ~AudioCodec(){};
-	virtual int Encode(WORD *in,int inLen,BYTE* out,int outLen)=0;
-	virtual int Decode(BYTE *in,int inLen,WORD* out,int outLen)=0;
+	virtual int Encode(SWORD *in,int inLen,BYTE* out,int outLen)=0;
+	virtual int Decode(BYTE *in,int inLen,SWORD* out,int outLen)=0;
 	Type type;
 	int numFrameSamples;
 	int frameLength;

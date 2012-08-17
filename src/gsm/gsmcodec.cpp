@@ -21,7 +21,7 @@ GSMCodec::~GSMCodec()
 	gsm_destroy(g);
 }
 
-int GSMCodec::Encode (WORD *in,int inLen,BYTE* out,int outLen)
+int GSMCodec::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 {
 	//Comprobamos las longitudes
 	if ((inLen!=numFrameSamples) || (outLen<frameLength))
@@ -33,7 +33,7 @@ int GSMCodec::Encode (WORD *in,int inLen,BYTE* out,int outLen)
 	return frameLength;
 }
 
-int GSMCodec::Decode (BYTE *in,int inLen,WORD* out,int outLen)
+int GSMCodec::Decode (BYTE *in,int inLen,SWORD* out,int outLen)
 {
 	//Dependiendo de la longitud tenemos un tipo u otro
 	if (inLen==33)

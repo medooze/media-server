@@ -110,7 +110,6 @@ public:
 				Error("-WaitQueue cond timedwait error [%rd,%d]\n",ret,errno);
 		}
 		
-		
 		//If we have been cancel
 		if (cancel)
 			//Not ok

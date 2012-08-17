@@ -226,7 +226,7 @@ void RTMPMP4Stream::onMediaFrame(MediaFrame &media)
 				case AudioCodec::PCMA:
 				case AudioCodec::PCMU:
 				{
-					WORD raw[512];
+					SWORD raw[512];
 					DWORD rawsize = 512;
 					//Decode audio frame
 					DWORD rawlen = decoder->Decode(audio.GetData(),audio.GetLength(),raw,rawsize);

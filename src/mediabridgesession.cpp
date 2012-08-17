@@ -644,7 +644,7 @@ int MediaBridgeSession::RecAudio()
 	DWORD		firstAudio = 0;
 	DWORD		timeStamp=0;
 	DWORD		firstTS = 0;
-	WORD		raw[512];
+	SWORD		raw[512];
 	DWORD		rawSize = 512;
 	DWORD		rawLen;
 
@@ -1040,7 +1040,7 @@ int MediaBridgeSession::SendAudio()
 			BYTE rtp[MTU];
 			DWORD rtpSize = MTU;
 			DWORD rtpLen = 0;
-			WORD raw[512];
+			SWORD raw[512];
 			DWORD rawSize = 512;
 			DWORD rawLen = 0;
 			//Check if we have a decoder

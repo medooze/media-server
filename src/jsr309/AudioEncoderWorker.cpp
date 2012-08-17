@@ -109,7 +109,7 @@ int AudioEncoderWorker::End()
 int AudioEncoderWorker::Encode()
 {
 	RTPPacket	packet(MediaFrame::Audio,codec,codec);
-	WORD 		recBuffer[512];
+	SWORD 		recBuffer[512];
 	AudioCodec* 	encoder;
 	DWORD		frameTime=0;
 
@@ -134,7 +134,7 @@ int AudioEncoderWorker::Encode()
 		frameTime += encoder->numFrameSamples;
 
 		//Capturamos
-		if (input->RecBuffer((WORD *)recBuffer,encoder->numFrameSamples)==0)
+		if (input->RecBuffer(recBuffer,encoder->numFrameSamples)==0)
 			continue;
 
 		//Lo codificamos

@@ -179,7 +179,7 @@ int Mosaic::GetPosition(int id)
 	//If not found
 	if (it==participants.end())
 		//Exit
-		return -1;
+		return -2;
 
 	//Get position
 	return it->second;
@@ -209,7 +209,7 @@ int Mosaic::AddParticipant(int id)
 		//Return it
 		return it->second;
 
-	//Not shown by defautl
+	//Not shown by default
 	int pos = -1;
 
 	//Look in the slots
@@ -313,7 +313,7 @@ int Mosaic::CalculatePositions()
 				firstFree = -1;
 				//Next
 				break;
-			} else if (mosaicSlots[i]==-1 && i==first) {
+			} else if (mosaicSlots[i]<0 && i==first) {
 				//If the first one was a locked one skip it next time
 				first++;
 			} else if (mosaicSlots[i]==0 && mosaicPos[i]==0 && firstFree==-1) {
@@ -442,4 +442,44 @@ int Mosaic::ResetOverlay()
 		delete(overlay);
 	//remove it
 	overlay = false;
+	//OK
+	return 1;
+}
+int Mosaic::GetVADPosition()
+{
+	//for each slot
+	for (int i=0;i<numSlots;i++)
+		//Check slot
+		if (mosaicSlots[i]==VAD)
+			//This is it
+			return i;
+	//Not found
+	return -1;
+}
+bool Mosaic::IsFixed(DWORD pos)
+{
+	//Check if the position is fixed
+	return pos<numSlots ? mosaicSlots[pos]>0 : false;
+}
+
+int Mosaic::DrawVUMeter(int pos,DWORD val,DWORD size)
+{
+	/*
+	//Get dimensions for slot
+	DWORD width = GetWidth(pos);
+	DWORD height = GetHeight(pos);
+	//Get mosaic dimension
+	DWORD totalWidth = GetWidth();
+	DWORD totalHeight = GetHeight();
+	//Get initial pos
+	DWORD top = GetTop(pos);
+	DWORD left = GetLeft(pos);
+	//Calculate total pixels
+	DWORD numPixels = totalWidth*totalHeight*3/2;
+	//Get data planes
+	BYTE *y = GetFrame();
+	BYTE *u = y+numPixels;
+	BYTE *v = v+numPixels/4;
+*/
+	return 1;
 }

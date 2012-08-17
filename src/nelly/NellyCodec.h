@@ -21,12 +21,12 @@ class NellyCodec : public AudioCodec
 public:
 	NellyCodec();
 	virtual ~NellyCodec();
-	virtual int Encode(WORD *in,int inLen,BYTE* out,int outLen);
-	virtual int Decode(BYTE *in,int inLen,WORD* out,int outLen);
+	virtual int Encode(SWORD *in,int inLen,BYTE* out,int outLen);
+	virtual int Decode(BYTE *in,int inLen,SWORD* out,int outLen);
 private:
 	AVCodec 	*codec;
 	AVCodecContext	*ctx;
-	fifo<WORD,512>  samples;
+	fifo<SWORD,512>  samples;
 };
 
 class NellyEncoder11Khz : public AudioCodec
@@ -34,14 +34,14 @@ class NellyEncoder11Khz : public AudioCodec
 public:
 	NellyEncoder11Khz();
 	virtual ~NellyEncoder11Khz();
-	virtual int Encode(WORD *in,int inLen,BYTE* out,int outLen);
-	virtual int Decode(BYTE *in,int inLen,WORD* out,int outLen);
+	virtual int Encode(SWORD *in,int inLen,BYTE* out,int outLen);
+	virtual int Decode(BYTE *in,int inLen,SWORD* out,int outLen);
 private:
 	SpeexResamplerState *resampler;
 	AVCodec 	*codec;
 	AVCodecContext	*ctx;
-	fifo<WORD,1024>  samples8;
-	fifo<WORD,1024>  samples11;
+	fifo<SWORD,1024>  samples8;
+	fifo<SWORD,1024>  samples11;
 };
 
 class NellyDecoder11Khz : public AudioCodec
@@ -49,13 +49,13 @@ class NellyDecoder11Khz : public AudioCodec
 public:
 	NellyDecoder11Khz();
 	virtual ~NellyDecoder11Khz();
-	virtual int Encode(WORD *in,int inLen,BYTE* out,int outLen);
-	virtual int Decode(BYTE *in,int inLen,WORD* out,int outLen);
+	virtual int Encode(SWORD *in,int inLen,BYTE* out,int outLen);
+	virtual int Decode(BYTE *in,int inLen,SWORD* out,int outLen);
 private:
 	SpeexResamplerState *resampler;
 	AVCodec 	*codec;
 	AVCodecContext	*ctx;
-	fifo<WORD,1024>  samples;
+	fifo<SWORD,1024>  samples;
 };
 
 #endif	/* NELLYCODEC_H */

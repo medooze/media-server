@@ -51,6 +51,16 @@ PartedMosaic::~PartedMosaic()
 *****************************/
 int PartedMosaic::Update(int pos, BYTE *image, int imgWidth, int imgHeight)
 {
+	//Check size
+	if (!image && !imgHeight && !imgHeight)
+	{
+		//Clean position
+		Clean(pos);
+		//Exit
+		return 0;
+
+	}
+
 	DWORD mosaicNumPixels = mosaicTotalWidth*mosaicTotalHeight;
 	DWORD offset,offset2;
 	BYTE *lineaY;

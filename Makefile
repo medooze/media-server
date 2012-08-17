@@ -46,7 +46,6 @@ else
 	FLV1OBJ=flv1codec.o
 endif
 
-
 H264DIR=h264
 H264OBJ=h264encoder.o h264decoder.o h264depacketizer.o
 
@@ -59,8 +58,8 @@ SPEEXOBJ=speexcodec.o
 NELLYDIR=nelly
 NELLYOBJ=NellyCodec.o
 
-OBJS=codecs.o video.o mcu.o multiconf.o rtpparticipant.o rtmpparticipant.o videomixer.o audiomixer.o xmlrpcserver.o xmlhandler.o xmlstreaminghandler.o statushandler.o xmlrpcmcu.o   rtpsession.o audiostream.o videostream.o pipeaudioinput.o pipeaudiooutput.o pipevideoinput.o pipevideooutput.o framescaler.o sidebar.o mosaic.o partedmosaic.o asymmetricmosaic.o pipmosaic.o logo.o overlay.o amf.o rtmpmessage.o rtmpchunk.o rtmpstream.o rtmpconnection.o  rtmpserver.o broadcaster.o broadcastsession.o rtmpflvstream.o flvrecorder.o FLVEncoder.o xmlrpcbroadcaster.o mediagateway.o mediabridgesession.o xmlrpcmediagateway.o textmixer.o textmixerworker.o textstream.o pipetextinput.o pipetextoutput.o mp4player.o mp4streamer.o audioencoder.o audiodecoder.o textencoder.o mp4recorder.o rtmpmp4stream.o rtmpnetconnection.o avcdescriptor.o RTPSmoother.o rtp.o rtmpclientconnection.o
-OBJS+= $(G711OBJ) $(H263OBJ) $(GSMOBJ)  $(H264OBJ) ${FLV1OBJ} $(SPEEXOBJ) $(NELLYOBJ) $(JSR309OBJ)
+OBJS=codecs.o video.o mcu.o multiconf.o rtpparticipant.o rtmpparticipant.o videomixer.o audiomixer.o xmlrpcserver.o xmlhandler.o xmlstreaminghandler.o statushandler.o xmlrpcmcu.o   rtpsession.o audiostream.o videostream.o pipeaudioinput.o pipeaudiooutput.o pipevideoinput.o pipevideooutput.o framescaler.o sidebar.o mosaic.o partedmosaic.o asymmetricmosaic.o pipmosaic.o logo.o overlay.o amf.o rtmpmessage.o rtmpchunk.o rtmpstream.o rtmpconnection.o  rtmpserver.o broadcaster.o broadcastsession.o rtmpflvstream.o flvrecorder.o FLVEncoder.o xmlrpcbroadcaster.o mediagateway.o mediabridgesession.o xmlrpcmediagateway.o textmixer.o textmixerworker.o textstream.o pipetextinput.o pipetextoutput.o mp4player.o mp4streamer.o audioencoder.o audiodecoder.o textencoder.o mp4recorder.o rtmpmp4stream.o rtmpnetconnection.o avcdescriptor.o RTPSmoother.o rtp.o rtmpclientconnection.o vad.o
+OBJS+= $(G711OBJ) $(H263OBJ) $(GSMOBJ)  $(H264OBJ) ${FLV1OBJ} $(SPEEXOBJ) $(NELLYOBJ) $(JSR309OBJ) $(VADOBJ)
 TARGETS=mcu rtmpdebug
 
 ifeq ($(FLASHSTREAMER),yes)
@@ -70,6 +69,15 @@ ifeq ($(FLASHSTREAMER),yes)
 	OBJSFS   = flashstreamer.o FlashPlayer.o FlashSoundHandler.o $(OBJS)
 	OBJSFSCLIENT = xmlrpcclient.o xmlrpcflashclient.o
 	TARGETS += flashstreamer flashclient testflash
+endif
+
+ifeq ($(VAD_WEBRTC),yes)
+	VADINCLUDE = -I$(WEBRTCINCLUDE)
+	VADLD=$(WEBRTDIROBJ)/common_audio/libvad.a $(WEBRTDIROBJ)/common_audio/libsignal_processing.a
+	OPTS+= -DVADWEBRTC
+else
+	VADINCLUDE =
+	VADLD=
 endif
 
 OBJSMCU = $(OBJS) main.o
@@ -101,8 +109,8 @@ VPATH +=  %.cpp $(SRCDIR)/src/$(NELLYDIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(JSR309DIR)
 
 
-INCLUDE+= -I$(SRCDIR)/include/ $(GNASHINCLUDE)
-LDFLAGS+= -lavcodec -lgsm -lpthread -lswscale -lavformat -lavutil -lx264 -lssl -lmp4v2 -lspeex -lspeexdsp -lcrypto 
+INCLUDE+= -I$(SRCDIR)/include/ $(VADINCLUDE)
+LDFLAGS+= -lavcodec -lgsm -lpthread -lswscale -lavformat -lavutil -lx264 -lssl -lmp4v2 -lspeex -lspeexdsp -lcrypto
 LDXMLFLAGS+= -lxmlrpc -lxmlrpc_xmlparse -lxmlrpc_xmltok -lxmlrpc_abyss -lxmlrpc_server -lxmlrpc_util
 LDFLAGS+= $(LDXMLFLAGS)
 
@@ -144,14 +152,14 @@ install:
 
 
 mcu: $(OBJSMCU)
-	$(CXX) -o $(BIN)/$@ $(BUILDOBJSMCU) $(LDFLAGS)
+	$(CXX) -o $(BIN)/$@ $(BUILDOBJSMCU) $(LDFLAGS) $(VADLD)
 
 rtmpdebug: $(OBJSRTMPDEBUG)
 	$(CXX) -o $(BIN)/$@ $(BUILDOBJSRTMPDEBUG) $(LDFLAGS)
 
 libmediamixer: $(OBJSLIB)
 	gcc $(CXXFLAGS) -c lib/mediamixer.cpp -o $(BUILD)/mediamixer.o -DPIC -fPIC
-	gcc -shared -o $(BIN)/$@.so $(BUILDOBJOBJSLIB) $(BUILD)/mediamixer.o $(LDFLAGS)
+	gcc -shared -o $(BIN)/$@.so $(BUILDOBJOBJSLIB) $(BUILD)/mediamixer.o $(LDFLAGS) $(VADLD)
 flashstreamer: $(OBJSFS) $(OBJS)
 	g++ -o $(BIN)/$@ $(BUILDOBJSFS) $(BUILDOBJS) $(GNASHBASE)/backend/.libs/libgnashagg.a /usr/lib/libagg.a $(LDFLAGS) $(GNASHLD)
 

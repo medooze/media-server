@@ -16,6 +16,9 @@ VideoMixer::VideoMixer()
 	//No mosaics
 	maxMosaics = 0;
 
+	//No proxy
+	proxy = NULL;
+	
 	//Inciamos lso mutex y la condicion
 	pthread_mutex_init(&mixVideoMutex,0);
 	pthread_cond_init(&mixVideoCond,0);
@@ -122,31 +125,78 @@ int VideoMixer::MixVideo()
 		//Protegemos la lista
 		lstVideosUse.WaitUnusedAndLock();
 
-		//Nos recorremos los videos
-		for (it=lstVideos.begin();it!=lstVideos.end();++it)
+		//For each mosaic
+		for (itMosaic=mosaics.begin();itMosaic!=mosaics.end();++itMosaic)
 		{
-			//Get Id
-			int id = (*it).first;
+			//Calculate max vad
+			DWORD maxVAD = 0;
+			//No maximum vad
+			int vadId = -1;
 
-			//Get output
-			PipeVideoOutput *output = (*it).second->output;
-			
-			//If we've got a new frame on source
-			if (output && output->IsChanged())
+			//Get Mosaic
+			Mosaic *mosaic = itMosaic->second;
+
+			//Nos recorremos los videos
+			for (it=lstVideos.begin();it!=lstVideos.end();++it)
 			{
-				//For each mosaic
-				for (itMosaic=mosaics.begin();itMosaic!=mosaics.end();++itMosaic)
+				//Get Id
+				int id = it->first;
+
+				//Get output
+				PipeVideoOutput *output = it->second->output;
+
+				//Get position
+				int pos = mosaic->GetPosition(id);
+
+				//If we've got a new frame on source and it is visible
+				if (output && output->IsChanged() && pos>=0)
+					//Change mosaic
+					mosaic->Update(pos,output->GetFrame(),output->GetWidth(),output->GetHeight());
+
+				//Check it is on the mosaic and it is vad
+				if (pos!=-2 && proxy)
 				{
-					//Get Mosaic
-					Mosaic *mosaic = itMosaic->second;
+					//Get vad
+					DWORD vad = proxy->GetVAD(id);
+					//Check if position is fixed
+					bool isFixed = mosaic->IsFixed(pos);
+					//Check if it the maximun and the position is not fixed
+					if (vad>maxVAD && !isFixed)
+					{
+						//Store max vad value
+						maxVAD = vad;
+						//Store speaker participant
+						vadId = id;
+					}
+				}
+			}
 
-					//Get position
-					int pos = mosaic->GetPosition(id);
-
-					//If it's visible
-					if (pos!=-1)
-						//Change mosaic
-						mosaic->Update(pos,output->GetFrame(),output->GetWidth(),output->GetHeight());
+			//Check vad is enabled
+			if (proxy)
+			{
+				//Get posistion for VAD
+				int pos = mosaic->GetVADPosition();
+				
+				//Check which if it is shown
+				if (pos>=0)
+				{
+					//Check if it is a active speaked
+					if (maxVAD>0)
+					{
+						//Get participant
+						it = lstVideos.find(vadId);
+						//If it is found
+						if (it!=lstVideos.end())
+						{
+							//Get output
+							PipeVideoOutput *output = it->second->output;
+							//Change mosaic
+							mosaic->Update(pos,output->GetFrame(),output->GetWidth(),output->GetHeight());
+						}
+					} else {
+						//Update with logo
+						mosaic->Update(pos,logo.GetFrame(),logo.GetWidth(),logo.GetHeight());
+					}
 				}
 			}
 		}
@@ -774,22 +824,12 @@ int VideoMixer::UpdateMosaic(Mosaic* mosaic)
 				//Update slot
 				mosaic->Update(i,output->GetFrame(),output->GetWidth(),output->GetHeight());
 			} else {
-				//If we have logo
-				if (logo.GetFrame())
-					//Update with logo
-					mosaic->Update(i,logo.GetFrame(),logo.GetWidth(),logo.GetHeight());
-				else
-					//Clean it
-					mosaic->Clean(i);
-			}
-		} else {
-			//If we have logo
-			if (logo.GetFrame())
 				//Update with logo
 				mosaic->Update(i,logo.GetFrame(),logo.GetWidth(),logo.GetHeight());
-			else
-				//Clean it
-				mosaic->Clean(i);
+			}
+		} else {
+			//Update with logo
+			mosaic->Update(i,logo.GetFrame(),logo.GetWidth(),logo.GetHeight());
 		}
 	}
 
@@ -827,16 +867,9 @@ int VideoMixer::SetSlot(int mosaicId,int num,int id)
 	int pos = mosaic->GetPosition(id);
 
 	//If it was shown
-	if (pos!=-1 )
-	{
-		//If we have logo
-		if (logo.GetFrame())
-			//Update with logo
-			mosaic->Update(pos,logo.GetFrame(),logo.GetWidth(),logo.GetHeight());
-		else
-			//Clean it
-			mosaic->Clean(pos);
-	}
+	if (pos>=0)
+		//Update with logo
+		mosaic->Update(pos,logo.GetFrame(),logo.GetWidth(),logo.GetHeight());
 
 	//Set it in the mosaic
 	mosaic->SetSlot(num,id);
@@ -893,3 +926,12 @@ int VideoMixer::DeleteMosaic(int mosaicId)
 	return 1;
 }
 
+void VideoMixer::SetVADProxy(VADProxy* proxy)
+{
+	//Lock
+	lstVideosUse.IncUse();
+	//Set it
+	this->proxy = proxy;
+	//Unlock
+	lstVideosUse.DecUse();
+}
