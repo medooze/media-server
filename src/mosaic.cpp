@@ -464,7 +464,6 @@ bool Mosaic::IsFixed(DWORD pos)
 
 int Mosaic::DrawVUMeter(int pos,DWORD val,DWORD size)
 {
-	/*
 	//Get dimensions for slot
 	DWORD width = GetWidth(pos);
 	DWORD height = GetHeight(pos);
@@ -475,11 +474,56 @@ int Mosaic::DrawVUMeter(int pos,DWORD val,DWORD size)
 	DWORD top = GetTop(pos);
 	DWORD left = GetLeft(pos);
 	//Calculate total pixels
-	DWORD numPixels = totalWidth*totalHeight*3/2;
+	DWORD numPixels = totalWidth*totalHeight;
 	//Get data planes
-	BYTE *y = GetFrame();
+	BYTE *y = mosaic;
 	BYTE *u = y+numPixels;
-	BYTE *v = v+numPixels/4;
-*/
+	BYTE *v = u+numPixels/4;
+
+	//Get init of xVU meter
+	int i = (left+9) & 0xFFFFFFF8;
+	int j = (top+height-10) & 0xFFFFFFFE;
+	//Set dimensions
+	int w = (width-16) & 0xFFFFFFF0;
+	int m = ((w-4)*val)/size & 0xFFFFFFFC;
+
+	//Write top border
+	for (int k=0;k<1;k++,j+=2)
+	{
+		memset(y+j*totalWidth+i			,0,w);
+		memset(y+(j+1)*totalWidth+i		,0,w);
+		memset(u+(j*totalWidth)/4+i/2		,-64,w/2);
+		memset(v+(j*totalWidth)/4+i/2		,-64,w/2);
+	}
+	
+	//Write VU
+	for (int k=0;k<2;k++,j+=2)
+	{
+		//Left border
+		memset(y+j*totalWidth+i			,0,2);
+		memset(y+(j+1)*totalWidth+i		,0,2);
+		memset(u+(j*totalWidth)/4+i/2		,-64,1);
+		memset(v+(j*totalWidth)/4+i/2		,-64,1);
+		//VU
+		memset(y+j*totalWidth+i+2		,160,m);
+		memset(y+(j+1)*totalWidth+i+2		,160,m);
+		memset(u+(j*totalWidth)/4+i/2+2		,160,m/2);
+		memset(v+(j*totalWidth)/4+i/2+2		,160,m/2);
+		//VU
+		memset(y+j*totalWidth+i+m+2		,0,w-m-2);
+		memset(y+(j+1)*totalWidth+i+m+2		,0,w-m-2);
+		memset(u+(j*totalWidth)/4+(m+i+2)/2	,-64,(w-m)/2-1);
+		memset(v+(j*totalWidth)/4+(m+i+2)/2	,-64,(w-m)/2-1);
+	}
+
+	//Write bottom border
+	for (int k=0;k<1;k++,j+=2)
+	{
+		memset(y+j*totalWidth+i			,0,w);
+		memset(y+(j+1)*totalWidth+i		,0,w);
+		memset(u+(j*totalWidth)/4+i/2		,-64,w/2);
+		memset(v+(j*totalWidth)/4+i/2		,-64,w/2);
+	}
+
 	return 1;
 }

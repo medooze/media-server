@@ -25,7 +25,7 @@ int PipeAudioOutput::PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime)
 	//Check if we need to calculate it
 	if (calcVAD)
 		//Calculate vad
-		v = vad.CalcVad8khz(buffer,size);
+		v = vad.CalcVad8khz(buffer,size)*size;
 
 	//Bloqueamos
 	pthread_mutex_lock(&mutex);
@@ -43,9 +43,9 @@ int PipeAudioOutput::PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime)
 	acu += v;
 
 	//Check max
-	if (acu>720000)
+	if (acu>48000)
 		//Limit so it can timeout faster
-		acu = 720000;
+		acu = 48000;
 
 	//Metemos en la fifo
 	fifoBuffer.push(buffer,size);

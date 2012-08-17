@@ -168,6 +168,12 @@ int VideoMixer::MixVideo()
 						//Store speaker participant
 						vadId = id;
 					}
+#ifdef MCUDEBUG
+					//Check pos
+					if (pos>=0)
+						//Set VU meter
+						mosaic->DrawVUMeter(pos,vad,48000);
+#endif
 				}
 			}
 

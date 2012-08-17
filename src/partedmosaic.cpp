@@ -187,3 +187,38 @@ int PartedMosaic::Clean(int pos)
 	return 1;
 }
 
+int PartedMosaic::GetWidth(int pos)
+{
+	//Check it's in the mosaic
+	if (pos >= numSlots)
+		return 0;
+
+	//Get widht
+	return mosaicWidth;
+}
+int PartedMosaic::GetHeight(int pos)
+{
+	//Check it's in the mosaic
+	if (pos >= numSlots)
+		return 0;
+
+	//Get widht
+	return mosaicHeight;
+}
+int PartedMosaic::GetTop(int pos)
+{
+	//Get slot position in mosaic
+	int i = pos / mosaicCols;
+	int j = pos - i*mosaicCols;
+
+	//Get offsets
+	return mosaicHeight*i;
+}
+int PartedMosaic::GetLeft(int pos)
+{
+	//Get slot position in mosaic
+	int i = pos / mosaicCols;
+	int j = pos - i*mosaicCols;
+	//Get offsets
+	return mosaicWidth*j;
+}
