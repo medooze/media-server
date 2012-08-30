@@ -521,11 +521,10 @@ int RTMPParticipant::SendVideo()
 
 	//Set sice
 	videoInput->StartVideoCapture(videoWidth,videoHeight,videoFPS);
-	//Set size
-	encoder->SetSize(videoWidth,videoHeight);
-
 	//Set bitrate
 	encoder->SetFrameRate(videoFPS,videoBitrate,videoIntraPeriod);
+	//Set size
+	encoder->SetSize(videoWidth,videoHeight);
 
 	//Mientras tengamos que capturar
 	while(sendingVideo)
@@ -783,7 +782,7 @@ int RTMPParticipant::RecVideo()
 	VideoDecoder *decoder = NULL;
 	DWORD width = 0;
 	DWORD height = 0;
-	int NALUnitLength = 0;
+	BYTE NALUnitLength = 0;
 
 	Log(">RecVideo\n");
 
@@ -840,7 +839,15 @@ int RTMPParticipant::RecVideo()
 			AVCDescriptor desc;
 
 			//Parse it
-			desc.Parse(video->GetMediaData(),video->GetMaxMediaSize());
+			if (!desc.Parse(video->GetMediaData(),video->GetMaxMediaSize()))
+			{
+				//Show error
+				Error("AVCDescriptor parse error\n");
+				//Dump it
+				desc.Dump();
+				//Skip
+				continue;
+			}
 
 			//Get nal
 			NALUnitLength = desc.GetNALUnitLength()+1;
