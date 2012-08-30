@@ -102,6 +102,8 @@ int AudioMixer::MixAudio()
 		{
 			//Get the source
 			AudioSource *audio = it->second;
+			//Get id
+			DWORD id = it->first;
 			//Get the samples from the fifo
 			audio->len = audio->output->GetSamples(audio->buffer,numSamples);
 			//Get VAD value
@@ -109,7 +111,7 @@ int AudioMixer::MixAudio()
 			//For each sidepaf
 			for (Sidebars::iterator sit = sidebars.begin(); sit!=sidebars.end(); ++sit)
 				//Mix it
-				sit->second->Update(sit->first,audio->buffer,audio->len);
+				sit->second->Update(id,audio->buffer,audio->len);
 		}
 
 		// Second pass: Calculate this stream's output
@@ -130,12 +132,11 @@ int AudioMixer::MixAudio()
 			SWORD *mixed = audio->sidebar->GetBuffer();
 			//And the audio buffer
 			SWORD *buffer = audio->buffer;
-
 			//Calculate the result
 			for(int i=0; i<audio->len; i++)
 				//We don't want to hear our own signal
 				buffer[i] = mixed[i] - buffer[i];
-
+			
 			//Check length
 			if (audio->len<numSamples)
 				//Copy the rest
