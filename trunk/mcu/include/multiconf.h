@@ -35,6 +35,7 @@ public:
 		void Close();
 	private:
 		MultiConf *conf;
+		bool opened;
 	};
 
 	class Listener
