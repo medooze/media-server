@@ -1289,12 +1289,16 @@ MultiConf::NetStream::NetStream(DWORD streamId,MultiConf *conf,RTMPNetStream::Li
 {
 	//Store conf
 	this->conf = conf;
+	//Not opened
+	opened = false;
 }
 
 MultiConf::NetStream::~NetStream()
 {
 	//Close
 	Close();
+	//Not opened
+	opened = false;
 }
 
 /***************************************
@@ -1304,9 +1308,20 @@ MultiConf::NetStream::~NetStream()
 void MultiConf::NetStream::doPlay(std::wstring& url,RTMPMediaStream::Listener* listener)
 {
 	RTMPMediaStream *stream = NULL;
-	
+
 	//Log
-	Log("-Play stream [%ls]\n",url.c_str());
+	Log("-Play stream [%d,%ls]\n",GetStreamId(),url.c_str());
+
+	//Check  if already in use
+	if (opened)
+	{
+		//Send error
+		fireOnNetStreamStatus(RTMP::Netstream::Failed,L"Stream already in use");
+		//Noting found
+		Error("Stream #%d already in use\n", GetStreamId());
+		//Exit
+		return;
+	}
 
 	//Skip the type part "flv:" inserted by FMS
 	size_t i = url.find(L":",0);
@@ -1368,6 +1383,9 @@ void MultiConf::NetStream::doPlay(std::wstring& url,RTMPMediaStream::Listener* l
 		return;
 	}
 	
+	//Opened
+	opened = true;
+	
 	//Send reseted status
 	fireOnNetStreamStatus(RTMP::Netstream::Play::Reset,L"Playback reset");
 	//Send play status
@@ -1392,6 +1410,17 @@ void MultiConf::NetStream::doPublish(std::wstring& url)
 {
 	//Log
 	Log("-Publish stream [%ls]\n",url.c_str());
+
+	//Check  if already in use
+	if (opened)
+	{
+		//Send error
+		fireOnNetStreamStatus(RTMP::Netstream::Failed,L"Stream already in use");
+		//Noting found
+		Error("Stream #%d already in use\n", GetStreamId());
+		//Exit
+		return;
+	}
 
 	//Skip the type part "flv:" inserted by FMS
 	size_t i = url.find(L":",0);
@@ -1445,6 +1474,9 @@ void MultiConf::NetStream::doPublish(std::wstring& url)
 		//Exit
 		return;
 	}
+
+	//Opened
+	opened = true;
 
 	//Add this as listener
 	AddMediaListener(listener);
