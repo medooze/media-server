@@ -302,7 +302,7 @@ DWORD h264_append_nals(BYTE *dest, DWORD destLen, DWORD destSize, BYTE *buffer, 
 DWORD h264_append(BYTE *dest, DWORD destLen, DWORD destSize, BYTE *buffer, DWORD bufferLen)
 {
 	DWORD num = 0;
-	h264_append_nals(dest,destLen,destSize,buffer,bufferLen,NULL,0,&num);
+	return h264_append_nals(dest,destLen,destSize,buffer,bufferLen,NULL,0,&num);
 }
 
 /***********************
