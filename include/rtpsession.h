@@ -33,6 +33,16 @@ public:
 		virtual void onFPURequested(RTPSession *session) = 0;
 	};
 public:
+	static bool SetPortRange(int minPort, int maxPort);
+	static DWORD GetMinPort() { return minLocalPort; }
+	static DWORD GetMaxPort() { return maxLocalPort; }
+
+private:
+	// Admissible port range
+	static DWORD minLocalPort;
+	static DWORD maxLocalPort;
+
+public:
 	RTPSession(MediaFrame::Type media,Listener *listener);
 	~RTPSession();
 	int Init();
@@ -114,6 +124,8 @@ private:
 	DWORD		totalRecvBytes;
 	DWORD		totalSendBytes;
 	DWORD		lostRecvPackets;
+
+	
 };
 
 #endif

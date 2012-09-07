@@ -55,18 +55,25 @@ MediaStatistics RTPParticipant::GetStatistics(MediaFrame::Type type)
 
 int RTPParticipant::End()
 {
+	int ret = 1;
+
 	//End all streams
-	video.End();
-	audio.End();
-	text.End();
+	ret &= video.End();
+	ret &= audio.End();
+	ret &= text.End();
+	//aggregater results
+	return ret;
 }
 
 int RTPParticipant::Init()
 {
+	int ret = 1;
 	//Init each stream
-	video.Init(videoInput,videoOutput);
-	audio.Init(audioInput,audioOutput);
-	text.Init(textInput,textOutput);
+	ret &= video.Init(videoInput,videoOutput);
+	ret &= audio.Init(audioInput,audioOutput);
+	ret &= text.Init(textInput,textOutput);
+	//aggregater results
+	return ret;
 }
 
 int RTPParticipant::StartSending(MediaFrame::Type media,char *ip, int port,RTPMap& rtpMap)

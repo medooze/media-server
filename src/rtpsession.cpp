@@ -20,6 +20,58 @@
 
 BYTE rtpEmpty[] = {0x80,0x14,0x00,0x00,0x00,0x00,0x00,0x00};
 
+DWORD RTPSession::minLocalPort = 49152;
+DWORD RTPSession::maxLocalPort = 65535;
+
+bool RTPSession::SetPortRange(int minPort, int maxPort)
+{
+	// mitPort should be even
+	if ( minPort % 2 )
+		minPort++;
+
+	//Check port range is possitive
+	if (maxPort<minPort)
+		//Error
+		return Error("-RTPSession port range invalid [%d,%d]\n",minPort,maxPort);
+
+	//check min range ports
+	if (maxPort-minPort<50)
+	{
+		//Error
+		Error("-RTPSession port raange too short %d, should be at least 50\n",maxPort-minPort);
+		//Correct
+		maxPort = minPort+50;
+	}
+
+	//check min range
+	if (minPort<1024)
+	{
+		//Error
+		Error("-RTPSession min rtp port is inside privileged range, increasing it\n");
+		//Correct it
+		minPort = 1024;
+	}
+
+	//Check max port
+	if (maxPort>65535)
+	{
+		//Error
+		Error("-RTPSession max rtp port is too high, decreasing it\n");
+		//Correc it
+		maxPort = 65535;
+	}
+	
+	//Set range
+	minLocalPort = minPort;
+	maxLocalPort = maxPort;
+
+	//Log
+	Log("-RTPSession configured RTP/RTCP ports range [%d,%d]\n", minLocalPort, maxLocalPort);
+
+	//OK
+	return true;
+}
+
 /*************************
 * RTPSession
 * 	Constructro
@@ -209,69 +261,72 @@ int RTPSession::SendEmptyPacket()
 ********************************/
 int RTPSession::Init()
 {
-	Log(">Init RTPSession\n");
-
+	int retries = 0;
 	sockaddr_in sendAddr;
-	socklen_t len;
 
-	// Set addres
+	Log(">Init RTPSession\n");
+	
+	//Clear addr
 	memset(&sendAddr,0,sizeof(struct sockaddr_in));
+	//Set family
 	sendAddr.sin_family = AF_INET;
-	// Create sockets
-	simSocket = socket(PF_INET,SOCK_DGRAM,0);
 
-	//Bind
-	bind(simSocket,(struct sockaddr *)&sendAddr,sizeof(struct sockaddr_in));
-	// Get rtp socket port
-	len = sizeof(struct sockaddr_in);
-	getsockname(simSocket,(struct sockaddr *)&sendAddr,&len);
-	simPort = ntohs(sendAddr.sin_port);
-
-	// Open rtcp socket
-	simRtcpSocket = socket(PF_INET,SOCK_DGRAM,0);
-	// Try get next port
-	sendAddr.sin_port = htons(simPort+1);
-	// Bind
-	bind(simRtcpSocket,(struct sockaddr *)&sendAddr,sizeof(struct sockaddr_in));
-
-	//Get rtcp port
-	len = sizeof(struct sockaddr_in);
-	getsockname(simRtcpSocket,(struct sockaddr *)&sendAddr,&len);
-	simRtcpPort = ntohs(sendAddr.sin_port);
-
-	// Ensure they are consecutive
-	while ( simPort%2 || simPort+1!=simRtcpPort )
+	//Get two consecutive ramdom ports
+	while (retries++<100)
 	{
-		// Close first socket
-		close(simSocket);
-		// Reuse previus opened socket
-		simSocket = simRtcpSocket;
-		simPort = simRtcpPort;
-		// Create new socket
-		simRtcpSocket = socket(PF_INET,SOCK_DGRAM,0);
-		// if we have a port
-		if (simPort)
-			// Get next port
-			sendAddr.sin_port = htons(simPort+1);
-		else
-			// Get random port
-			sendAddr.sin_port = htons(0);
+		//If we have a rtp socket
+		if (simSocket)
+		{
+			// Close first socket
+			close(simSocket);
+			//No socket
+			simSocket = 0;
+		}
+		//If we have a rtcp socket
+		if (simRtcpSocket)
+		{
+			///Close it
+			close(simRtcpSocket);
+			//No socket
+			simRtcpSocket = 0;
+		}
+
+		//Create new sockets
+		simSocket = socket(PF_INET,SOCK_DGRAM,0);
+		//Get random
+		simPort = (RTPSession::GetMinPort()+(RTPSession::GetMaxPort()-RTPSession::GetMinPort())*double(rand()/double(RAND_MAX)));
+		//Make even
+		simPort &= 0xFFFFFFFE;
+		//Try to bind to port
+		sendAddr.sin_port = htons(simPort);
 		//Bind the rtcp socket
-		bind(simRtcpSocket,(struct sockaddr *)&sendAddr,sizeof(struct sockaddr_in));
-		//And get rtcp port
-		len = sizeof(struct sockaddr_in);
-		getsockname(simRtcpSocket,(struct sockaddr *)&sendAddr,&len);
-		simRtcpPort = ntohs(sendAddr.sin_port);
+		if(bind(simSocket,(struct sockaddr *)&sendAddr,sizeof(struct sockaddr_in))!=0)
+			//Try again
+			continue;
+		//Create new sockets
+		simRtcpSocket = socket(PF_INET,SOCK_DGRAM,0);
+		//Next port
+		simRtcpPort = simPort+1;
+		//Try to bind to port
+		sendAddr.sin_port = htons(simRtcpPort);
+		//Bind the rtcp socket
+		if(bind(simRtcpSocket,(struct sockaddr *)&sendAddr,sizeof(struct sockaddr_in))!=0)
+			//Try again
+			continue;
+		//Everything ok
 		Log("-Got ports [%d,%d]\n",simPort,simRtcpPort);
+		//Start receiving
+		Start();
+		//Done
+		Log("<Init RTPSession\n");
+		//Opened
+		return 1;
 	}
-
-	//Start receiving
-	Start();
-
-	Log("<Init RTPSession\n");
-
-	//Opened
-	return 1;
+	//Error
+	Error("RTPSession too many failed attemps opening sockets");
+	
+	//Failed
+	return 0;
 }
 
 
