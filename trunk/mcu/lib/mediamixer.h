@@ -34,6 +34,13 @@ typedef void* AudioDecoder;
 typedef void* RTPDepacketizer;
 typedef void* MediaFrame;
 typedef void* MP4Recorder;
+typedef void* RTPPacket;
+typedef struct
+{
+	void (*onRTPPacket) (void*,void*);
+	void (*onMediaFrame) (void*,void*);
+	void (*onEnd) (void*);
+} MP4PLayerListener;
 
 RTPDepacketizer RTPDepacketizerCreate(uint8_t mediaType,uint8_t codec);
 void		RTPDepacketizerSetTimestamp(void* rtp,uint32_t timestamp);
@@ -41,11 +48,25 @@ MediaFrame	RTPDepacketizerAddPayload(RTPDepacketizer rtp,uint8_t* payload,uint32
 void		RTPDepacketizerResetFrame(RTPDepacketizer rtp);
 void		RTPDepacketizerDelete(RTPDepacketizer rtp);
 
+uint8_t		RTPPacketGetMediaType(RTPPacket packet);
+uint8_t		RTPPacketGetCodec(RTPPacket packet);
+uint32_t	RTPPacketGetTimestamp(RTPPacket packet);
+uint8_t		RTPPacketGetMark(RTPPacket packet);
+uint8_t*	RTPPacketGetData(RTPPacket packet);
+uint32_t	RTPPacketGetSize(RTPPacket packet);
+uint8_t*	RTPPacketGetPayloadData(RTPPacket packet);
+uint8_t*	RTPPacketGetPayloadSize(RTPPacket packet);
+
 MP4Recorder	MP4RecorderCreate();
 int		MP4RecorderRecord(MP4Recorder recorder,const char* filename);
 int		MP4RecorderStop(MP4Recorder recorder);
 void		MP4RecorderOnMediaFrame(MP4Recorder recorder,MediaFrame frame);
 void		MP4RecorderDelete(MP4Recorder recorder);
+
+MP4Player	MP4Playercreate(MP4PLayerListener* listener, void *arg);
+bool		MP4PlayerPlay(MP4Player player,const char* filename);
+void		MP4PlayerStop(MP4Player player);
+void		MP4PlayerDestroy(MP4Player player);
 
 AudioMixer	AudioMixerCreate();
 int		AudioMixerCreatePort(AudioMixer mixer,int id);

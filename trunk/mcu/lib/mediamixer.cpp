@@ -3,6 +3,8 @@
 #include "audiomixer.h"
 #include "audioencoder.h"
 #include "audiodecoder.h"
+#include "mp4player.h"
+#include "mediamixer.h"
 
 extern "C"
 {
@@ -30,6 +32,46 @@ extern "C"
 	void RTPDepacketizerDelete(void* rtp)
 	{
 		delete (RTPDepacketizer*)rtp;
+	}
+
+	uint8_t	RTPPacketGetMediaType(void* packet)
+	{
+		return ((RTPPacket*)packet)->GetMedia();
+	}
+
+	uint8_t	RTPPacketGetCodec(void* packet)
+	{
+		return ((RTPPacket*)packet)->GetCodec();
+	}
+
+	uint32_t RTPPacketGetTimestamp(void* packet)
+	{
+		return ((RTPPacket*)packet)->GetTimestamp();
+	}
+
+	uint8_t	RTPPacketGetMark(void* packet)
+	{
+		return ((RTPPacket*)packet)->GetMark();
+	}
+
+	uint8_t* RTPPacketGetData(void* packet)
+	{
+		return ((RTPPacket*)packet)->GetData();
+	}
+
+	uint32_t RTPPacketGetSize(void* packet)
+	{
+		return ((RTPPacket*)packet)->GetSize();
+	}
+
+	uint8_t* RTPPacketGetPayloadData(void* packet)
+	{
+		return ((RTPPacket*)packet)->GetMediaData();
+	}
+
+	uint32_t RTPPacketGetPayloadSize(void* packet)
+	{
+		return ((RTPPacket*)packet)->GetMediaLength();
 	}
 
 	void* MP4RecorderCreate()
@@ -60,10 +102,79 @@ extern "C"
 		((MP4Recorder*)recorder)->End();
 		delete ((MP4Recorder*)recorder);
 	}
+
+	struct MP4PLayerListener {
+		void (*onRTPPacket) (void*,void*);
+		void (*onMediaFrame) (void*,void*);
+		void (*onEnd) (void*);
+	};
+	
+	class MP4PlayerWrapper : public MP4Streamer::Listener
+	{
+	public:
+		MP4Streamer* streamer;
+		MP4PLayerListener* listener;
+		void *arg;
+	public:
+		virtual void onRTPPacket(RTPPacket &packet)
+		{
+			if (listener->onRTPPacket)
+				listener->onRTPPacket(arg,&packet);
+		}
+		virtual void onTextFrame(TextFrame &text)
+		{
+		}
+		virtual void onMediaFrame(MediaFrame &frame)
+		{
+			if (listener->onMediaFrame)
+				listener->onMediaFrame(arg,&frame);
+		}
+		virtual void onEnd()
+		{
+			if (listener->onEnd)
+				listener->onEnd(arg);
+		}
+	};
+
+	void*	MP4Playercreate(MP4PLayerListener *listener,void* arg)
+	{
+		if (!listener)
+			return NULL;
+
+		MP4PlayerWrapper *wrapper = new MP4PlayerWrapper();
+		wrapper->streamer = new MP4Streamer(wrapper);
+		wrapper->listener = listener;
+		wrapper->arg = arg;
+		return wrapper;
+	}
+
+	bool MP4PlayerPlay(void* player,const char* filename)
+	{
+		MP4PlayerWrapper *wrapper = (MP4PlayerWrapper *)player;
+		if (!wrapper->streamer->Open(filename))
+			return false;
+		if (!wrapper->streamer->Play())
+			return false;
+		return true;
+	}
+
+	void MP4PlayerStop(void* player)
+	{
+		MP4PlayerWrapper *wrapper = (MP4PlayerWrapper *)player;
+		wrapper->streamer->Stop();
+	}
+
+	void MP4PlayerDestroy(void* player)
+	{
+		MP4PlayerWrapper *wrapper = (MP4PlayerWrapper *)player;
+		delete wrapper->streamer;
+		delete wrapper;
+	}
+
 	void*	AudioMixerCreate()
 	{
 		AudioMixer* mixer = new AudioMixer();
-		mixer->Init();
+		mixer->Init(false);
 		return mixer;
 	}
 
@@ -71,7 +182,7 @@ extern "C"
 	{
 		if (!((AudioMixer*)mixer)->CreateMixer(id))
 			return 0;
-		return ((AudioMixer*)mixer)->InitMixer(id);
+		return ((AudioMixer*)mixer)->InitMixer(id,0);
 	}
 
 	void	AudioMixerDeletePort(void* mixer,int id)

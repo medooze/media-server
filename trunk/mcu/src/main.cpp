@@ -91,6 +91,8 @@ int main(int argc,char **argv)
 	bool forking = false;
 	int port = 8080;
 	int rtmpPort = 1935;
+	int minPort = RTPSession::GetMinPort();
+	int maxPort = RTPSession::GetMaxPort();
 	const char *logfile = "mcu.log";
 	const char *pidfile = "mcu.pid";
 
@@ -101,14 +103,16 @@ int main(int argc,char **argv)
 		if (strcmp(argv[i],"-h")==0 || strcmp(argv[i],"--help")==0)
 		{
 			//Show usage
-			printf("Usage: mcu [-h] [--help] [--mcu-log logfile] [--mcu-pid pidfile] [--http-port port] [--rtmp-port port]\r\n\r\n"
+			printf("Usage: mcu [-h] [--help] [--mcu-log logfile] [--mcu-pid pidfile] [--http-port port] [--rtmp-port port] [--min-rtp-port port] [--max-rtp-port port]\r\n\r\n"
 				"Options:\r\n"
-				" -h,--help     Print help\r\n"
-				" -f            Run as daemon in safe mode\r\n"
-				" --mcu-log	Set mcu log file path (default: mcu.log)\r\n"
-				" --mcu-pid	Set mcu pid file path (default: mcu.pid)\r\n"
-				" --http-port   Set HTTP xmlrpc api port\r\n"
-				" --rtmp-port   Set RTMP xmlrpc api port\r\n");
+				" -h,--help        Print help\r\n"
+				" -f               Run as daemon in safe mode\r\n"
+				" --mcu-log        Set mcu log file path (default: mcu.log)\r\n"
+				" --mcu-pid        Set mcu pid file path (default: mcu.pid)\r\n"
+				" --http-port      Set HTTP xmlrpc api port\r\n"
+				" --min-rtp-port   Set min rtp port\r\n"
+				" --max-rtp-port   Set max rtp port\r\n"
+				" --rtmp-port      Set RTMP xmlrpc api port\r\n");
 			//Exit
 			return 0;
 		} else if (strcmp(argv[i],"-f")==0)
@@ -120,6 +124,12 @@ int main(int argc,char **argv)
 		else if (strcmp(argv[i],"--rtmp-port")==0 && (i+1<argc))
 			//Get rtmp port
 			rtmpPort = atoi(argv[++i]);
+		else if (strcmp(argv[i],"--min-rtp-port")==0 && (i+1<argc))
+			//Get rtmp port
+			minPort = atoi(argv[++i]);
+		else if (strcmp(argv[i],"--max-rtp-port")==0 && (i+1<argc))
+			//Get rtmp port
+			maxPort = atoi(argv[++i]);
 		else if (strcmp(argv[i],"--mcu-log")==0 && (i+1<argc))
 			//Get rtmp port
 			logfile = argv[++i];
@@ -271,6 +281,11 @@ int main(int argc,char **argv)
 
 	//Init the rtmp server
 	rtmpServer.Init(rtmpPort);
+
+	//Set port ramge
+	if (!RTPSession::SetPortRange(minPort,maxPort))
+		//Using default ones
+		Log("-RTPSession using default port range [%d,%d]\n",RTPSession::GetMinPort(),RTPSession::GetMaxPort());
 
 	//Run it
 	server.Start();
