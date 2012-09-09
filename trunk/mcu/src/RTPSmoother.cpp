@@ -116,11 +116,7 @@ int RTPSmoother::SendFrame(MediaFrame* frame,DWORD duration)
 		//Get total length
 		frameLength += info[i]->GetTotalLength();
 
-	//Calculate bitrate for frame
-	DWORD bitrate = frameLength*8000/duration;
 	DWORD current = 0;
-	
-	//printf("-Frame bitrate [%dbps,size:%d,total:%d,duration:%d,num:%d,acu:%d]\n",(bitrate/1024),frameLength,frameSize,duration,info.size(),queue.Length());
 	
 	//For each one
 	for (int i=0;i<info.size();i++)
