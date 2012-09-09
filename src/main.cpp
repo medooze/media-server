@@ -252,6 +252,7 @@ int main(int argc,char **argv)
 
 	//Add the rtmp application from the mcu to the rtmp server
 	rtmpServer.AddApplication(L"mcu/",&mcu);
+	rtmpServer.AddApplication(L"mcutag/",&mcu);
 	//Add the rtmp applications from the broadcaster to the rmtp server
 	rtmpServer.AddApplication(L"broadcaster/publish",&broadcaster);
 	rtmpServer.AddApplication(L"broadcaster",&broadcaster);

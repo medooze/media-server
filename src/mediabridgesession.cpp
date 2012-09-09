@@ -97,7 +97,9 @@ bool MediaBridgeSession::End()
 	//Check if we are running
 	if (!inited)
 		return false;
-	
+
+	Log(">MediaBridgeSession end\n");
+
 	//Stop everithing
 	StopReceivingAudio();
 	StopReceivingVideo();
@@ -123,6 +125,8 @@ bool MediaBridgeSession::End()
 
 	//Stop
 	inited=0;
+
+	Log("<MediaBridgeSession end\n");
 
 	return true;
 }
@@ -173,6 +177,8 @@ int  MediaBridgeSession::StopSendingVideo()
 		//Esperamos
 		pthread_join(sendVideoThread,NULL);
 	}
+
+	return true;
 
 	Log("<StopSendingVideo\n");
 }
@@ -812,8 +818,6 @@ int MediaBridgeSession::RecText()
 			skip += i;
 		}
 
-
-
 		//Check length
 		if (skip<size)
 	        {
@@ -905,14 +909,12 @@ int MediaBridgeSession::SendVideo()
 		DWORD diff = 0;
 		//Get timestam
 		QWORD ts = video->GetTimestamp();
-		//If it is the first frame
+		//If it is not the first frame
 		if (lastVideoTs)
 			//Calculate it
 			diff = ts - lastVideoTs;
 		//Set the last audio timestamp
 		lastVideoTs = ts;
-
-		//Debug("[%lld,%lld,%d]\n",ts,getDifTime(&first)/1000,video->GetMediaSize());
 
 		//Check
 		if (video->GetVideoCodec()!=RTMPVideoFrame::FLV1)
@@ -1407,6 +1409,8 @@ void MediaBridgeSession::onMediaFrame(DWORD id,RTMPMediaFrame *frame)
 
 void MediaBridgeSession::onMetaData(DWORD id,RTMPMetaData *publishedMetaData)
 {
+	Log("-onMetadata\n");
+
 	//Cheeck
 	if (!sendingText)
 		//Exit
@@ -1545,10 +1549,8 @@ void MediaBridgeSession::NetStream::doClose(RTMPMediaStream::Listener *listener)
 
 void MediaBridgeSession::NetStream::NetStream::Close()
 {
-	Log(">Close multiconf netstream\n");
+	Log(">Close mediabridge netstream\n");
 
-	//Remove us from listener
-	sess->RemoveMediaListener(this);
 	//Dettach if playing
 	Detach();
 

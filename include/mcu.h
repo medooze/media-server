@@ -38,6 +38,7 @@ public:
 
 	int CreateConference(std::wstring tag,int queueId);
 	int GetConferenceRef(int id,MultiConf **conf);
+	int GetConferenceId(const std::wstring& tag);
 	int ReleaseConferenceRef(int id);
 	int DeleteConference(int confId);
 	int GetConferenceList(ConferencesInfo& lst);
@@ -57,9 +58,11 @@ private:
 	};
 
 	typedef std::map<int,ConferenceEntry*> Conferences;
+	typedef std::map<std::wstring,int> ConferenceTags;
 private:
 	XmlStreamingHandler	*eventMngr;
 	Conferences		conferences;
+	ConferenceTags		tags;
 	int			maxId;
 	pthread_mutex_t		mutex;
 	int inited;

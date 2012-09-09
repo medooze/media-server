@@ -157,6 +157,8 @@ int MCU::CreateConference(std::wstring tag,int queueId)
 
 	//a�adimos a la lista
 	conferences[confId] = entry;
+	//Add to tags
+	tags[tag] = confId;
 
 	//Desbloqueamos
 	pthread_mutex_unlock(&mutex);
@@ -214,6 +216,38 @@ int MCU::GetConferenceRef(int id,MultiConf **conf)
 	pthread_mutex_unlock(&mutex);
 
 	return true;
+}
+
+/**************************************
+* GetConferenceID
+*	Get conference Id by tag
+**************************************/
+int MCU::GetConferenceId(const std::wstring& tag)
+{
+	Log("-GetConferenceId [%ls]\n",tag.c_str());
+
+	//Bloqueamos
+	pthread_mutex_lock(&mutex);
+
+	//Find id by tag
+	ConferenceTags::iterator it = tags.find(tag);
+
+	//Check if found
+	if (it==tags.end())
+	{
+		//Desbloquamos el mutex
+		pthread_mutex_unlock(&mutex);
+		//Y salimos
+		return Error("Conference tag not found [%ls]\n",tag.c_str());
+	}
+
+	//Get id
+	int confId = it->second;
+
+	//Desbloquamos el mutex
+	pthread_mutex_unlock(&mutex);
+
+	return confId;
 }
 
 /**************************************
@@ -285,6 +319,9 @@ int MCU::DeleteConference(int id)
 	//Disable it
 	entry->enabled = 0;
 
+	//Remove tag
+	tags.erase(entry->conf->GetTag());
+
 	//Whait to get free
 	while(entry->numRef>0)
 	{
@@ -334,6 +371,7 @@ int MCU::DeleteConference(int id)
 
 RTMPNetConnection* MCU::Connect(const std::wstring& appName,RTMPNetConnection::Listener* listener)
 {
+	int confId = 0;
 	MultiConf *conf = NULL;
 	wchar_t *stopwcs;
 	
@@ -349,8 +387,19 @@ RTMPNetConnection* MCU::Connect(const std::wstring& appName,RTMPNetConnection::L
 		return NULL;
 	}
 
-	//Get conf id
-	int confId = wcstol(appName.substr(i+1).c_str(),&stopwcs,10);
+	//Get type
+	std::wstring type = appName.substr(0,i);
+
+	//Get arg
+	std::wstring arg = appName.substr(i+1);
+
+	//Check type
+	if (type.compare(L"mcutag")==0)
+		//Get by tag
+		confId = GetConferenceId(arg);
+	else
+		//Fet conf Id
+		confId = wcstol(arg.c_str(),&stopwcs,10);
 
 	//Get conference
 	if(!GetConferenceRef(confId,&conf))
