@@ -825,19 +825,15 @@ int MediaBridgeSession::RecText()
 			TextFrame frame(timeStamp,data+skip,size-skip);
 
 			//Create new timestamp associated to latest media time
-			RTMPMetaData *meta = new RTMPMetaData(getDifTime(&first));
+			RTMPMetaData meta(getDifTime(&first)/1000);
 
 			//Add text name
-			meta->AddParam(new AMFString(L"onText"));
+			meta.AddParam(new AMFString(L"onText"));
 			//Set data
-			meta->AddParam(new AMFString(frame.GetWChar()));
+			meta.AddParam(new AMFString(frame.GetWChar()));
 
-			//Debug
-			Log("Got T140 frame\n");
-			meta->Dump();
-			
 			//Send data
-			SendMetaData(meta);
+			SendMetaData(&meta);
 		}
 	}
 
@@ -1409,8 +1405,6 @@ void MediaBridgeSession::onMediaFrame(DWORD id,RTMPMediaFrame *frame)
 
 void MediaBridgeSession::onMetaData(DWORD id,RTMPMetaData *publishedMetaData)
 {
-	Log("-onMetadata\n");
-
 	//Cheeck
 	if (!sendingText)
 		//Exit
@@ -1422,14 +1416,25 @@ void MediaBridgeSession::onMetaData(DWORD id,RTMPMetaData *publishedMetaData)
 	//Check it the send command text
 	if (name->GetWString().compare(L"onText")==0)
 	{
+		RTPPacket packet(MediaFrame::Text,TextCodec::T140);
+		
 		//Get string
 		AMFString *str = (AMFString*)publishedMetaData->GetParams(1);
 
 		//Log
 		Log("Sending t140 data [\"%ls\"]\n",str->GetWChar());
 
-		//Send text
-		//FIX!! rtpText.SendTextPacket((BYTE*)str->GetWChar(),str->GetUTF8Size(),getDifTime(&first)/1000,0);
+		//Set data
+		packet.SetPayload((BYTE*)str->GetWChar(),str->GetUTF8Size());
+
+		//Set timestamp
+		packet.SetTimestamp(getDifTime(&first)/1000);
+
+		//No mark
+		packet.SetMark(false);
+
+		//Send it
+		rtpText.SendPacket(packet);
 	}
 }
 

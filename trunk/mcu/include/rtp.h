@@ -125,6 +125,19 @@ typedef struct rtcp_sdes rtcp_sdes_t;
 class RTPPacket
 {
 public:
+	RTPPacket(MediaFrame::Type media,DWORD codec)
+	{
+		this->media = media;
+		this->codec = codec;
+		//Get header pointer
+		header = (rtp_hdr_t*) buffer;
+		//empty header
+		memset(header,0,sizeof(rtp_hdr_t));
+		//set type
+		header->version = 2;
+		header->pt = codec;
+	}
+
 	RTPPacket(MediaFrame::Type media,DWORD codec,DWORD type)
 	{
 		this->media = media;
@@ -136,10 +149,8 @@ public:
 		//set type
 		header->version = 2;
 		header->pt = type;
-		
-
-
 	}
+
 	RTPPacket* Clone()
 	{
 		//New one
@@ -151,6 +162,7 @@ public:
 		//Return it
 		return cloned;
 	}
+	
 	//Setters
 	void SetMediaLength(DWORD len)	{ this->len = len;			}
 	void SetTimestamp(DWORD ts)	{ header->ts = htonl(ts);		}

@@ -1140,6 +1140,7 @@ void RTMPConnection::onMediaFrame(DWORD streamId,RTMPMediaFrame *frame)
 
 void RTMPConnection::onMetaData(DWORD streamId,RTMPMetaData *meta)
 {
+	meta->Dump();
 	//Get the timestamp of the metadata
 	QWORD ts = meta->GetTimestamp();
 

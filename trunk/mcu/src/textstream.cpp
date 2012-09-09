@@ -402,6 +402,7 @@ int TextStream::RecText()
 *******************************************/
 int TextStream::SendText()
 {
+	RTPPacket packet(MediaFrame::Text,textCodec);
 	bool idle = true;
 	DWORD timeout = 25000;
 	DWORD lastTime = 0;
@@ -425,19 +426,24 @@ int TextStream::SendText()
 			//Update last send time with timeout
 			lastTime += timeout;
 
+		//Set timestamp
+		packet.SetTimestamp(lastTime);
+
 		//Check codec
 		if (textCodec==TextCodec::T140)
 		{
 			//Check frame
 			if (frame)
 			{
-				//Send it
-				/*/FIX!! if(!rtp.SendTextPacket(frame->GetData(),frame->GetLength(),lastTime,idle))
-				{
-					Log("Error mandando el packete de text\n");
-					continue;
-				}*/
+				//Set data
+				packet.SetPayload(frame->GetData(),frame->GetLength());
 
+				//Set Mark for the first frame after idle
+				packet.SetMark(idle);
+
+				//Send it
+				rtp.SendPacket(packet);
+				
 				//Delete frame
 				delete(frame);
 
@@ -451,13 +457,14 @@ int TextStream::SendText()
 				//Set timeout to 25 seconds to send the keepalive minus the already waited time
 				timeout = 25000;
 			} else {
-				//Lo enviamos
-				/* FIX!! if(!rtp.SendTextPacket(BOMUTF8,sizeof(BOMUTF8),lastTime,0))
-				{
-					Log("Error mandando el packete de text\n");
-					continue;
-				}
-				 * */
+				//Set data
+				packet.SetPayload(BOMUTF8,sizeof(BOMUTF8));
+
+				//No mark
+				packet.SetMark(false);
+
+				//Send it
+				rtp.SendPacket(packet);
 			}
 		} else {
 			BYTE buffer[RTPPAYLOADSIZE];
@@ -547,14 +554,17 @@ int TextStream::SendText()
 			//Send the mark bit if it is first frame after idle
 			bool mark = idle && frame;
 
-			/* FIX!!
+			//Set data
+			packet.SetPayload(buffer,bufferLen);
+
+			//Set timestamp
+			packet.SetTimestamp(lastTime);
+
+			//Set mark
+			packet.SetMark(mark);
+
 			//Send it
-			if(!rtp.SendTextPacket(buffer,bufferLen,lastTime,mark))
-			{
-				Log("Error mandando el packete de text\n");
-				continue;
-			}
-			*/
+			rtp.SendPacket(packet);
 
 			//Check size of the queue
 			if (reds.size()==3)
