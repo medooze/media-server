@@ -347,6 +347,9 @@ void RTMPPipedMediaStream:: onMetaData(DWORD id,RTMPMetaData *publishedMetaData)
 	//Check method
 	AMFString* name = (AMFString*)publishedMetaData->GetParams(0);
 
+	//Get timestamp
+	QWORD ts = publishedMetaData->GetTimestamp();
+
 	//Check it
 	if (name->GetWString().compare(L"@setDataFrame")==0)
 	{
@@ -354,9 +357,6 @@ void RTMPPipedMediaStream:: onMetaData(DWORD id,RTMPMetaData *publishedMetaData)
 		if (meta)
 			//Delete if already have one
 			delete(meta);
-
-		//Get timestamp
-		QWORD ts = publishedMetaData->GetTimestamp();
 
 		//Create new msg
 		meta = new RTMPMetaData(0);
@@ -376,6 +376,24 @@ void RTMPPipedMediaStream:: onMetaData(DWORD id,RTMPMetaData *publishedMetaData)
 			//Send it back
 			SendMetaData(meta);
 		} 
+	} else {
+		
+		RTMPMetaData *cloned = publishedMetaData->Clone();
+		//Check if we have to rewrite ts
+		if (rewriteTimestamps)
+		{
+
+			//Check if we have started to send it
+			if (first!=-1)
+				//Set new meta
+				cloned->SetTimestamp(ts-first);
+			else
+				//Now
+				cloned->SetTimestamp(0);
+		}
+		//Send it back
+		SendMetaData(cloned);
+		
 	}
 }
 

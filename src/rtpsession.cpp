@@ -355,10 +355,11 @@ int RTPSession::End()
 	return 1;
 }
 
-/*********************************
-* SendPacket
-*	Manda un packete de video
-*********************************/
+int RTPSession::SendPacket(RTPPacket &packet)
+{
+	return SendPacket(packet,packet.GetTimestamp());
+}
+
 int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 {
 	//Check if we have sendinf ip address
