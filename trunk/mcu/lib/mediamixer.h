@@ -34,6 +34,7 @@ typedef void* AudioDecoder;
 typedef void* RTPDepacketizer;
 typedef void* MediaFrame;
 typedef void* MP4Recorder;
+typedef void* MP4Player;
 typedef void* RTPPacket;
 typedef struct
 {
@@ -64,7 +65,7 @@ void		MP4RecorderOnMediaFrame(MP4Recorder recorder,MediaFrame frame);
 void		MP4RecorderDelete(MP4Recorder recorder);
 
 MP4Player	MP4Playercreate(MP4PLayerListener* listener, void *arg);
-bool		MP4PlayerPlay(MP4Player player,const char* filename);
+int		MP4PlayerPlay(MP4Player player,const char* filename);
 void		MP4PlayerStop(MP4Player player);
 void		MP4PlayerDestroy(MP4Player player);
 
