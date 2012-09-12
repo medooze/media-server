@@ -114,7 +114,7 @@ xmlrpc_value* CreateMosaic(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 	 
 	//Obtenemos la referencia
 	if(!mcu->GetConferenceRef(confId,&conf))
-		return xmlerror(env,"Conference does not exist\n");
+		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	int mosaicId = conf->CreateMosaic((Mosaic::Type)comp,size);
@@ -124,7 +124,7 @@ xmlrpc_value* CreateMosaic(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 
 	//Salimos
 	if(!mosaicId)
-		return xmlerror(env,"Could not create mosaic\n");
+		return xmlerror(env,"Could not create mosaic");
 
 	//Devolvemos el resultado
 	return xmlok(env,xmlrpc_build_value(env,"(i)",mosaicId));
@@ -157,7 +157,7 @@ xmlrpc_value* SetMosaicOverlayImage(xmlrpc_env *env, xmlrpc_value *param_array, 
 
 	//Salimos
 	if(!res)
-		return xmlerror(env,"Could set overlay image\n");
+		return xmlerror(env,"Could set overlay image");
 
 	//Devolvemos el resultado
 	return xmlok(env,xmlrpc_build_value(env,"(i)",mosaicId));
@@ -220,10 +220,72 @@ xmlrpc_value* DeleteMosaic(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 
 	//Salimos
 	if(!res)
-		return xmlerror(env,"Could reset overlay image");
+		return xmlerror(env,"Could delete mosaic");
 
 	//Devolvemos el resultado
 	return xmlok(env,xmlrpc_build_value(env,"(i)",mosaicId));
+}
+xmlrpc_value* CreateSidebar(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+	MCU *mcu = (MCU *)user_data;
+	MultiConf *conf = NULL;
+
+	 //Parseamos
+	int confId;
+	xmlrpc_parse_value(env, param_array, "(i)", &confId);
+
+	//Comprobamos si ha habido error
+	if(env->fault_occurred)
+		xmlerror(env,"Fault occurred");
+
+	//Obtenemos la referencia
+	if(!mcu->GetConferenceRef(confId,&conf))
+		return xmlerror(env,"Conference does not exist");
+
+	//La borramos
+	int sidebarId = conf->CreateSidebar();
+
+	//Liberamos la referencia
+	mcu->ReleaseConferenceRef(confId);
+
+	//Salimos
+	if(!mosaicId)
+		return xmlerror(env,"Could not create sidebar");
+
+	//Devolvemos el resultado
+	return xmlok(env,xmlrpc_build_value(env,"(i)",sidebarId));
+}
+
+xmlrpc_value* DeleteSidebar(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+	MCU *mcu = (MCU *)user_data;
+	MultiConf *conf = NULL;
+
+	 //Parseamos
+	int confId;
+	int sidebarId;
+	xmlrpc_parse_value(env, param_array, "(ii)", &confId,&sidebarId);
+
+	//Comprobamos si ha habido error
+	if(env->fault_occurred)
+		xmlerror(env,"Fault occurred");
+
+	//Obtenemos la referencia
+	if(!mcu->GetConferenceRef(confId,&conf))
+		return xmlerror(env,"Conference does not exist");
+
+	//La borramos
+	int res = conf->DeleteSidebar(sidebarId);
+
+	//Liberamos la referencia
+	mcu->ReleaseConferenceRef(confId);
+
+	//Salimos
+	if(!res)
+		return xmlerror(env,"Could delete sidebar");
+
+	//Devolvemos el resultado
+	return xmlok(env,xmlrpc_build_value(env,"(i)",sidebarId));
 }
 
 xmlrpc_value* CreateParticipant(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
@@ -1246,7 +1308,7 @@ xmlrpc_value* StartSending(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 
 	//Salimos
 	if(!res)
-		return xmlerror(env,"Error\n");
+		return xmlerror(env,"Error");
 
 	//Devolvemos el resultado
 	return xmlok(env);
@@ -1279,7 +1341,7 @@ xmlrpc_value* StopSending(xmlrpc_env *env, xmlrpc_value *param_array, void *user
 
 	//Salimos
 	if(!res)
-		return xmlerror(env,"Error stoping sending video\n");
+		return xmlerror(env,"Error stoping sending video");
 
 	//Devolvemos el resultado
 	return xmlok(env);
@@ -1339,7 +1401,7 @@ MCU *mcu = (MCU *)user_data;
 
 	//Salimos
 	if(!recVideoPort)
-		return xmlerror(env,"Could not start receving video\n");
+		return xmlerror(env,"Could not start receving video");
 
 	//Devolvemos el resultado
 	return xmlok(env,xmlrpc_build_value(env,"(i)",recVideoPort));
@@ -1388,6 +1450,8 @@ XmlHandlerCmd mcuCmdList[] =
 	{"SetMosaicOverlayImage",SetMosaicOverlayImage},
 	{"ResetMosaicOverlay",ResetMosaicOverlay},
 	{"DeleteMosaic",DeleteMosaic},
+	{"CreateSidebar",CreateSidebar},
+	{"DeleteSidebar",DeleteSidebar},
 	{"CreateParticipant",CreateParticipant},
 	{"DeleteParticipant",DeleteParticipant},
 	{"StartBroadcaster",StartBroadcaster},
