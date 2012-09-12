@@ -249,7 +249,7 @@ xmlrpc_value* CreateSidebar(xmlrpc_env *env, xmlrpc_value *param_array, void *us
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
-	if(!mosaicId)
+	if(!sidebarId)
 		return xmlerror(env,"Could not create sidebar");
 
 	//Devolvemos el resultado
