@@ -259,7 +259,7 @@ int MultiConf::CreateMosaic(Mosaic::Type comp,int size)
 * CreateSidebar
 * 	Add a sidebar to the conference
 *************************/
-int MultiConf::CreateMosaic()
+int MultiConf::CreateSidebar()
 {
 	return audioMixer.CreateSidebar();
 }
