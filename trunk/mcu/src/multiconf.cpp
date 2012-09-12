@@ -254,6 +254,16 @@ int MultiConf::CreateMosaic(Mosaic::Type comp,int size)
 {
 	return videoMixer.CreateMosaic(comp,size);
 }
+
+/************************
+* CreateSidebar
+* 	Add a sidebar to the conference
+*************************/
+int MultiConf::CreateMosaic()
+{
+	return audioMixer.CreateSidebar();
+}
+
 /************************
 * SetMosaicOverlayImage
 * 	Set mosaic overlay image
@@ -277,6 +287,15 @@ int MultiConf::ResetMosaicOverlay(int mosaicId)
 int MultiConf::DeleteMosaic(int mosaicId)
 {
 	return videoMixer.DeleteMosaic(mosaicId);
+}
+
+/************************
+* DeleteSidebar
+* 	delete sidebar
+*************************/
+int MultiConf::DeleteSidebar(int sidebarId)
+{
+	return audioMixer.DeleteSidebar(sidebarId);
 }
 
 /************************

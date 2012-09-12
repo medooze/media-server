@@ -57,6 +57,8 @@ public:
 	int SetMosaicOverlayImage(int mosaicId,const char* filename);
 	int ResetMosaicOverlay(int mosaicId);
 	int DeleteMosaic(int mosaicId);
+	int CreateSidebar();
+	int DeleteSidebar(int sidebarId);
 	int CreateParticipant(int mosaicId,int sidebarId,std::wstring name,Participant::Type type);
 	int StartRecordingParticipant(int partId,const char* filename);
 	int StopRecordingParticipant(int partId);
