@@ -4,7 +4,7 @@
 LOG		= yes
 DEBUG 		= yes
 FLASHSTREAMER	= no
-VADWEBRTC	= yes
+VADWEBRTC	= no
 WEBRTCINCLUDE	= /usr/local/src/webrtc/trunk/src
 WEBRTDIROBJ	= /usr/local/src/webrtc/trunk/out/Release/obj.target/src/
 SRCDIR		= /usr/local/src/mcu

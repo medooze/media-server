@@ -29,6 +29,10 @@ PipeVideoOutput::~PipeVideoOutput()
 
 int PipeVideoOutput::NextFrame(BYTE *pic)
 {
+	//Check pic
+	if (!pic)
+		return Error("-PipeVideoOuput called with null frame");
+
 	//Check if wer are inited
 	if (!inited)
 		//Exit

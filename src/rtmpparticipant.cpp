@@ -834,7 +834,7 @@ int RTMPParticipant::RecVideo()
 		}
 
 		//Check if it is AVC descriptor
-		if (video->GetVideoCodec()==RTMPVideoFrame::AVC && video->GetAVCType()==0)
+		if (video->GetVideoCodec()==RTMPVideoFrame::AVC && video->GetAVCType()==RTMPVideoFrame::AVCHEADER)
 		{
 			AVCDescriptor desc;
 
@@ -863,7 +863,7 @@ int RTMPParticipant::RecVideo()
 
 			//Nothing more needded;
 			continue;
-		} else if (video->GetVideoCodec()==RTMPVideoFrame::AVC && video->GetAVCType()==1) {
+		} else if (video->GetVideoCodec()==RTMPVideoFrame::AVC && video->GetAVCType()==RTMPVideoFrame::AVCNALU) {
 			//Malloc
 			BYTE *data = video->GetMediaData();
 			//Get size
@@ -897,13 +897,8 @@ int RTMPParticipant::RecVideo()
 				decoder->DecodePacket(nal,nalSize,0,(size<NALUnitLength));
 			}
 		} else {
-			//Decode frame
-			if (!decoder->Decode(video->GetMediaData(),video->GetMediaSize()))
-			{
-				Error("decode packet error");
-				//Next
-				continue;
-			}
+			//Decode full frame
+			decoder->Decode(video->GetMediaData(),video->GetMediaSize());
 		}
 
 		//Check size
@@ -917,10 +912,13 @@ int RTMPParticipant::RecVideo()
 			videoOutput->SetVideoSize(width,height);
 		}
 
+		//Get frame
+		BYTE *frame = decoder->GetFrame();
+
 		//If it is muted
-		if (!videoMuted)
+		if (!videoMuted && frame)
 			//Send
-			videoOutput->NextFrame(decoder->GetFrame());
+			videoOutput->NextFrame(frame);
 
 		//Delete video frame
 		delete(video);
