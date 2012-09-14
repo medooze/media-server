@@ -86,16 +86,20 @@ bool XmlEventQueue::WaitForEvent(DWORD timeout)
 		return false;
 	}
 
-	//Calculate timeout
-	calcTimout(&ts,timeout);
-	
-	//Esperamos la condicion
-	pthread_cond_timedwait(&cond,&mutex,&ts);
+	//If there are no events in the queue
+	if (events.empty())
+	{
+		//Calculate timeout
+		calcTimout(&ts,timeout);
+
+		//Esperamos la condicion
+		pthread_cond_timedwait(&cond,&mutex,&ts);
+	}
 
 	//Unlock
 	pthread_mutex_unlock(&mutex);
 	
-	//canceled
+	//There are events in the queue
 	return true;
 }
 
