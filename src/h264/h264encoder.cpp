@@ -151,7 +151,7 @@ int H264Encoder::OpenCodec()
 	params.rc.f_vbv_buffer_init = 0;
 	params.rc.f_rate_tolerance  = 0.1;
 	params.rc.b_stat_write      = 0;
-	params.i_slice_max_size     = RTPPAYLOADSIZE;
+	params.i_slice_max_size     = RTPPAYLOADSIZE-8;
 	params.i_threads	    = 1; //0 is auto!!
 	params.b_sliced_threads	    = 0;
 	params.rc.i_lookahead       = 0;

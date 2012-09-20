@@ -68,6 +68,8 @@ public:
 		this->type = type;
 		//Set no timestamp
 		ts = (DWORD)-1;
+		//No duration
+		duration = 0;
 		//Set buffer size
 		bufferSize = size;
 		//Allocate memory
@@ -104,9 +106,13 @@ public:
 	Type	GetType()		{ return type;	}
 	DWORD	GetTimeStamp()		{ return ts;	}
 	DWORD	SetTimestamp(DWORD ts)	{ this->ts = ts; }
+
 	bool	HasRtpPacketizationInfo()		{ return !rtpInfo.empty();	}
 	RtpPacketizationInfo& GetRtpPacketizationInfo()	{ return rtpInfo;		}
 	virtual MediaFrame* Clone() = 0;
+
+	DWORD GetDuration()			{ return duration;		}
+	void SetDuration(DWORD duration)	{ this->duration = duration;	}
 
 	BYTE* GetData()			{ return buffer;		}
 	DWORD GetLength()		{ return length;		}
@@ -153,6 +159,7 @@ protected:
 	BYTE	*buffer;
 	DWORD	length;
 	DWORD	bufferSize;
+	DWORD	duration;
 };
 
 #endif	/* MEDIA_H */

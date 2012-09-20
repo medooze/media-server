@@ -730,6 +730,8 @@ QWORD MP4RtpTrack::Read(Listener *listener)
 			video->SetTimestamp(startTime*90000/timeScale);
 			//Set intra
 			video->SetIntra(isSyncSample);
+			//Set video duration (informative)
+			video->SetDuration(duration);
 		} else {
 			//Get Audio frame
 			AudioFrame *audio = (AudioFrame*)frame;
@@ -737,6 +739,8 @@ QWORD MP4RtpTrack::Read(Listener *listener)
 			audio->SetLength(dataLen);
 			//Timestamp
 			audio->SetTimestamp(startTime*8000/timeScale);
+			//Set audio duration (informative)
+			audio->SetDuration(duration);
 		}
 
 		//Check listener

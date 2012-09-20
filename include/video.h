@@ -31,6 +31,8 @@ public:
 		frame->SetIntra(isIntra);
 		//Set timestamp
 		frame->SetTimestamp(GetTimeStamp());
+		//Set duration
+		frame->SetDuration(GetDuration());
 		//Check if it has rtp info
 		for (MediaFrame::RtpPacketizationInfo::iterator it = rtpInfo.begin();it!=rtpInfo.end();++it)
 		{
