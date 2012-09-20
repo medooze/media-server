@@ -1,10 +1,9 @@
-#include "../include/rtp.h"
-#include "../include/mp4recorder.h"
+#include "rtp.h"
+#include "mp4recorder.h"
 #include "audiomixer.h"
 #include "audioencoder.h"
 #include "audiodecoder.h"
 #include "mp4player.h"
-#include "mediamixer.h"
 
 extern "C"
 {
@@ -33,6 +32,17 @@ extern "C"
 	{
 		delete (RTPDepacketizer*)rtp;
 	}
+
+	uint8_t	MediaFrameGetMediaType(void* frame)
+	{
+		return ((MediaFrame*)frame)->GetType();
+	}
+	
+	uint32_t MediaFrameGetDuration(void* frame)
+	{
+		return ((MediaFrame*)frame)->GetDuration();
+	}
+
 
 	uint8_t	RTPPacketGetMediaType(void* packet)
 	{
@@ -136,7 +146,7 @@ extern "C"
 		}
 	};
 
-	void*	MP4Playercreate(MP4PLayerListener *listener,void* arg)
+	void*	MP4PlayerCreate(MP4PLayerListener *listener,void* arg)
 	{
 		if (!listener)
 			return NULL;

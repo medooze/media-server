@@ -467,7 +467,7 @@ int TextStream::SendText()
 				rtp.SendPacket(packet);
 			}
 		} else {
-			BYTE buffer[RTPPAYLOADSIZE];
+			BYTE buffer[MTU];
 			//Get first
 			BYTE* red = buffer;
 			//Init buffer length

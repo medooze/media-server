@@ -156,7 +156,7 @@ public:
 		//New one
 		RTPPacket* cloned = new RTPPacket(media,codec,header->pt);
 		//Copy
-		memcpy(cloned->GetData(),buffer,MTU);
+		memcpy(cloned->GetData(),buffer,SIZE);
 		//Set media length
 		cloned->SetMediaLength(len);
 		//Return it
@@ -180,10 +180,10 @@ public:
 	DWORD GetType()			{ return header->pt;			}
 	DWORD GetSize()			{ return len+GetRTPHeaderLen();		}
 	BYTE* GetData()			{ return buffer;			}
-	DWORD GetMaxSize()		{ return MTU;				}
+	DWORD GetMaxSize()		{ return SIZE;				}
 	BYTE* GetMediaData()		{ return buffer+GetRTPHeaderLen();	}
 	DWORD GetMediaLength()		{ return len;				}
-	DWORD GetMaxMediaLength()	{ return RTPPAYLOADSIZE;		}
+	DWORD GetMaxMediaLength()	{ return SIZE-GetRTPHeaderLen();		}
 	bool  GetMark()			{ return header->m;			}
 	DWORD GetTimestamp()		{ return ntohl(header->ts);		}
 	WORD  GetSeqNum()		{ return ntohs(header->seq);		}
@@ -204,9 +204,11 @@ public:
 		return true;
 	}
 private:
+	static const DWORD SIZE = 1700;
+private:
 	MediaFrame::Type media;
 	DWORD	codec;
-	BYTE	buffer[MTU];
+	BYTE	buffer[SIZE];
 	DWORD	len;
 	rtp_hdr_t* header;
 };

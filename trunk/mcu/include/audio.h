@@ -11,8 +11,6 @@ public:
 	{
 		//Store codec
 		this->codec = codec;
-		//Init values
-		duration = 0;
 	}
 
 	virtual MediaFrame* Clone()
@@ -29,14 +27,10 @@ public:
 		return (MediaFrame*)frame;
 	}
 
-	DWORD GetDuration()		{ return duration;		}
 	AudioCodec::Type GetCodec()	{ return codec;			}
-	
 	void SetCodec(AudioCodec::Type codec)	{ this->codec = codec;		}
-	void SetDuration(DWORD duration)	{ this->duration = duration;	}
 
 private:
-	DWORD	duration;
 	AudioCodec::Type codec;
 };
 
