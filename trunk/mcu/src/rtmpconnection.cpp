@@ -829,10 +829,19 @@ void RTMPConnection::ProcessCommandMessage(DWORD streamId,RTMPCommandMessage* cm
 			stream->doPlay(url,this);
 		//Publish
 		} else if (name.compare(L"publish")==0){
-			//Get url to play
-			std::wstring url = *(cmd->GetExtra(0));
-			//Publish
-			stream->doPublish(url);
+			//Get param
+			AMFData *obj = cmd->GetExtra(0);
+			//Check type
+			if (obj->CheckType(AMFData::String))
+			{
+				//Get url to play
+				std::wstring url = *obj;
+				//Publish
+				stream->doPublish(url);
+			} else {
+				//Close
+				stream->doClose(this);
+			}
 		} else if (name.compare(L"seek")==0) {
 			//Get timestamp
 			double time = *(cmd->GetExtra(0));
