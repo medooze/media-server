@@ -395,12 +395,8 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 	int ini = sizeof(rtp_hdr_t);
 
 	//Comprobamos que quepan
-	if (ini+packet.GetMaxMediaLength()>MTU)
-	{
-		//Salimos
-		Log("SendPacket Overflow\n");
-		return 0;
-	}
+	if (ini+packet.GetMediaLength()>MTU)
+		return Error("SendPacket Overflow [size:%d,max:%d]\n",ini+packet.GetMediaLength(),MTU);
 
 	//Copiamos los datos
         memcpy(sendPacket+ini,packet.GetMediaData(),packet.GetMediaLength());
