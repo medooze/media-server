@@ -119,7 +119,8 @@ int AudioMixer::MixAudio()
 		{
 			//Get the source
 			AudioSource *audio = it->second;
-
+			//Get id
+			DWORD id = it->first;
 			//Check audio
 			if (!audio)
 				//Next
@@ -132,11 +133,11 @@ int AudioMixer::MixAudio()
 			SWORD *mixed = audio->sidebar->GetBuffer();
 			//And the audio buffer
 			SWORD *buffer = audio->buffer;
+			
 			//Calculate the result
 			for(int i=0; i<audio->len; i++)
 				//We don't want to hear our own signal
 				buffer[i] = mixed[i] - buffer[i];
-			
 			//Check length
 			if (audio->len<numSamples)
 				//Copy the rest
@@ -327,6 +328,9 @@ int AudioMixer::InitMixer(int id,int sidebarId)
 	audio->input->Init();
 	audio->output->Init();
 
+	//Add participant to default sidebar
+	defaultSidebar->AddParticipant(id);
+
 	//Desprotegemos
 	lstAudiosUse.DecUse();
 
@@ -357,6 +361,9 @@ int AudioMixer::EndMixer(int id)
 		//Salimos
 		return false;
 	}
+
+	//Remvoe participant to default sidebar
+	defaultSidebar->RemoveParticipant(id);
 
 	//Obtenemos el audio source
 	AudioSource *audio = it->second;
