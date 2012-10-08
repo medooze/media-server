@@ -62,6 +62,7 @@ int VideoMixer::MixVideo()
 	struct timespec   ts;
 	struct timeval    tp;
 	int forceUpdate = 0;
+	DWORD version = 0;
 
 	//Video Iterator
 	Videos::iterator it;
@@ -125,6 +126,9 @@ int VideoMixer::MixVideo()
 		//Protegemos la lista
 		lstVideosUse.WaitUnusedAndLock();
 
+		//New version
+		version++;
+
 		//For each mosaic
 		for (itMosaic=mosaics.begin();itMosaic!=mosaics.end();++itMosaic)
 		{
@@ -149,7 +153,7 @@ int VideoMixer::MixVideo()
 				int pos = mosaic->GetPosition(id);
 
 				//If we've got a new frame on source and it is visible
-				if (output && output->IsChanged() && pos>=0)
+				if (output && output->IsChanged(version) && pos>=0)
 					//Change mosaic
 					mosaic->Update(pos,output->GetFrame(),output->GetWidth(),output->GetHeight());
 

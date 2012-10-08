@@ -14,7 +14,7 @@ public:
 	virtual int SetVideoSize(int width,int height);
 
 	BYTE*	GetFrame();
-	int	IsChanged()	{ return isChanged && inited;	};
+	int	IsChanged(DWORD version);
 	int 	GetWidth()	{ return videoWidth;		};
 	int 	GetHeight()	{ return videoHeight;		};
 	int	Init();
@@ -24,8 +24,10 @@ private:
 	int	bufferSize;
 	int 	videoWidth;
 	int	videoHeight;
-	int	isChanged;
+	bool	isChanged;
+	bool	versionChanged;
 	int 	inited;
+	DWORD	version;
 
 	pthread_mutex_t* videoMixerMutex;
 	pthread_cond_t*  videoMixerCond;
