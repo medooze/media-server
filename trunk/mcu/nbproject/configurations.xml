@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configurationDescriptor version="69">
   <logicalFolder name="root" displayName="root" projectFiles="true">
-    <df name="" root="m:/">
+    <df name="Media Mixer" root=".">
       <df name="bin" kind="SOURCE_LOGICAL_FOLDER">
         <df name="debug" kind="SOURCE_LOGICAL_FOLDER">
         </df>
@@ -253,7 +253,7 @@
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
-    <Elem>m:/</Elem>
+    <Elem>.</Elem>
   </sourceRootList>
   <projectmakefile>media-Makefile.mk</projectmakefile>
   <confs>
@@ -278,10 +278,9 @@
           </cTool>
           <ccTool>
             <incDir>
-              <pElem>src</pElem>
               <pElem>.</pElem>
               <pElem>include</pElem>
-              <pElem>m:/media/src</pElem>
+              <pElem>src</pElem>
               <pElem>src/jsr309</pElem>
               <pElem>R:/usr/local/include</pElem>
               <pElem>R:/usr/local/src/ffmpeg/libavcodec</pElem>

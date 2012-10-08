@@ -15,7 +15,9 @@ PipeVideoOutput::PipeVideoOutput(pthread_mutex_t* mutex, pthread_cond_t* cond)
 
 	//Ponemos el cambio
 	isChanged   = false;
-	videoWidth  = 0;
+	versionChanged = false;
+	version = -1;
+	videoWidth = 0;
 	videoHeight = 0;
 }
 
@@ -108,3 +110,21 @@ int PipeVideoOutput::End()
 
 	return true;
 } 
+
+int PipeVideoOutput::IsChanged(DWORD version)
+{
+	//If not inited
+	if (!inited)
+		//Not changed
+		return false;
+	//Check if we are asking for the same answer than before
+	if (this->version==version)
+		//Return previous chanded
+		return versionChanged;
+	//Store version number
+	this->version = version;
+	//Store value for change associated to that version
+	versionChanged = isChanged;
+	//Have we changed?
+	return isChanged;
+};
