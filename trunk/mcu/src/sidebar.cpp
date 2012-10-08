@@ -45,6 +45,13 @@ void Sidebar::RemoveParticipant(int id)
 	participants.erase(id);
 }
 
-	
+bool Sidebar::HasParticipant(int id)
+{
+	//Check if
+	if (participants.find(id)==participants.end())
+		//Exit
+		return false;
+	return true;
+}
 
 	
