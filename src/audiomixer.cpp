@@ -133,18 +133,25 @@ int AudioMixer::MixAudio()
 			SWORD *mixed = audio->sidebar->GetBuffer();
 			//And the audio buffer
 			SWORD *buffer = audio->buffer;
-			
-			//Calculate the result
-			for(int i=0; i<audio->len; i++)
-				//We don't want to hear our own signal
-				buffer[i] = mixed[i] - buffer[i];
-			//Check length
-			if (audio->len<numSamples)
-				//Copy the rest
-				memcpy(((BYTE*)buffer)+audio->len*sizeof(SWORD),((BYTE*)mixed)+audio->len*sizeof(SWORD),(numSamples-audio->len)*sizeof(SWORD));
 
-			//PUt the output
-			audio->input->PutSamples(buffer,numSamples);
+			//Check if we have been added to the sidebar
+			if (audio->sidebar->HasParticipant(id))
+			{
+				//Calculate the result
+				for(int i=0; i<audio->len; i++)
+					//We don't want to hear our own signal
+					buffer[i] = mixed[i] - buffer[i];
+				//Check length
+				if (audio->len<numSamples)
+					//Copy the rest
+					memcpy(((BYTE*)buffer)+audio->len*sizeof(SWORD),((BYTE*)mixed)+audio->len*sizeof(SWORD),(numSamples-audio->len)*sizeof(SWORD));
+
+				//Put the output
+				audio->input->PutSamples(buffer,numSamples);
+			} else {
+				//Copy everything as it is
+				audio->input->PutSamples(mixed,numSamples);
+			}
 		}
 
 		//Unblock list

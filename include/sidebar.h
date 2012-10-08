@@ -20,6 +20,7 @@ public:
 	void Reset();
 
 	void AddParticipant(int id);
+	bool HasParticipant(int id);
 	void RemoveParticipant(int id);
 
 	SWORD* GetBuffer()	{ return mixer_buffer; }
