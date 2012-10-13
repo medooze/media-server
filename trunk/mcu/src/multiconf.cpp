@@ -141,6 +141,26 @@ int MultiConf::StartBroadcaster()
 	audioMixer.InitMixer(broadcastId,0);
 	textMixer.InitMixer(broadcastId);
 
+	//Create name for the recording
+	char filename[1024];
+	//Get time
+	struct timeval now;
+	gettimeofday(&now,0);
+	//Set filenamee
+	snprintf(filename,sizeof(filename),"/var/recordings/%s-%.11ld-%ls.flv",tag.c_str(),(long)now.tv_sec,tag.c_str());
+
+	//Log filename
+	Log("-Recording broadcast [file:\"%s\"]\n",filename);
+
+	//Open file for recording
+	recorder.Create(filename);
+
+	//And start recording
+	recorder.Record();
+
+	//Set listener
+	flvEncoder.AddMediaListener(&recorder);
+
 	//Start encoding
 	flvEncoder.StartEncoding();
 
@@ -161,6 +181,9 @@ int MultiConf::StopBroadcaster()
 		return 0;
 
 	Log(">StopBroadcaster\n");
+
+	//Close recorder
+	recorder.Close();
 
 	//Stop endoding
 	flvEncoder.StopEncoding();
