@@ -149,6 +149,7 @@ private:
 	AudioEncoder		audioEncoder;
 	TextEncoder		textEncoder;
 	BroadcastSession	broadcast;
+	FLVRecorder		recorder;
 
 	Use			participantsLock;
 };
