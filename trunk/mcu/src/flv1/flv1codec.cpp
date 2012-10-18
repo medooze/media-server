@@ -151,10 +151,11 @@ int FLV1Encoder::OpenCodec()
 	ctx->gop_size		= intraPeriod;
 
 	// Encoder quality
-	ctx->rc_min_rate 	= bitrate;
-	ctx->rc_max_rate	= bitrate;
-	ctx->rc_buffer_size	= bitrate;
-	ctx->rc_qsquish 	= 1;
+	//ctx->rc_eq		= "tex^qComp";
+	//ctx->rc_min_rate 	= bitrate;
+	//ctx->rc_max_rate	= bitrate;
+	//ctx->rc_buffer_size	= bitrate;
+	//ctx->rc_qsquish 	= 1;
 	ctx->max_b_frames	= 0;
 	ctx->me_method		= ME_EPZS;
 	ctx->mb_decision	= FF_MB_DECISION_RD;
