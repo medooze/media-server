@@ -147,7 +147,7 @@ int MultiConf::StartBroadcaster()
 	struct timeval now;
 	gettimeofday(&now,0);
 	//Set filenamee
-	snprintf(filename,sizeof(filename),"/var/recordings/%s-%.11ld-%ls.flv",tag.c_str(),(long)now.tv_sec,tag.c_str());
+	snprintf(filename,sizeof(filename),"/var/recordings/%ls-%.11ld-%ls.flv",tag.c_str(),(long)now.tv_sec,tag.c_str());
 
 	//Log filename
 	Log("-Recording broadcast [file:\"%s\"]\n",filename);
