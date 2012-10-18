@@ -447,6 +447,10 @@ void RTPSession::ReadRTP()
 		recPort = ntohs(from_addr.sin_port);
 		//Log
 		Log("-RTPSession NAT: received packet from [%s:%d]\n", inet_ntoa(from_addr.sin_addr), recPort);
+		//Check if got listener
+		if (listener)
+			//Request a I frame
+			listener->onFPURequested(this);
 	}
 
 	//Increase stats

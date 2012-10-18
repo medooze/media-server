@@ -22,7 +22,7 @@ static void X264_log(void *p, int level, const char *fmt, va_list args)
 		//Not show it
 		return;
 	//Print it
-	Log2("x264",line);
+	Log("x264 %s",line);
 }
 
 /**********************
