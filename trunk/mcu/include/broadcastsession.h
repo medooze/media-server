@@ -97,7 +97,6 @@ private:
 	Publishers	publishers;
 	Watchers	watchers;
 	Transmitters	transmitters;
-	//FLVRecorder	recorder;
 	std::wstring	tag;
 	
 	bool		inited;
