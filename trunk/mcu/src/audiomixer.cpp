@@ -67,7 +67,7 @@ int AudioMixer::MixAudio()
 	//Mientras estemos mezclando
 	while(mixingAudio)
 	{
-		DWORD next = getDifTime(&tv)-prev+step*1000;
+		DWORD next = step*1000-(getDifTime(&tv)-prev);
 
 		//Wait until next to process again minus process time
 		msleep(next);
@@ -75,8 +75,8 @@ int AudioMixer::MixAudio()
 		//Get new time
 		QWORD curr = getDifTime(&tv);
 
-		//Get time elapsed
-		DWORD diff = (curr-prev)/1000;
+		//Get time elapsed, take care of the reminders!! (12000 - 11999)/1000 = 0 while 12000/1000-11999/1000 = 1 !!!
+		DWORD diff = curr/1000-prev/1000;
 
 		//Update curr
 		prev = curr;
@@ -86,7 +86,7 @@ int AudioMixer::MixAudio()
 
 		//Get num samples at 8Khz
 		DWORD numSamples = diff*8;
-		
+
 		//At most the maximum
 		if (numSamples>Sidebar::MIXER_BUFFER_SIZE)
 			//Set it at most (shoudl never happen)
@@ -138,13 +138,13 @@ int AudioMixer::MixAudio()
 			if (audio->sidebar->HasParticipant(id))
 			{
 				//Calculate the result
-				for(int i=0; i<audio->len; i++)
+				for(int i=0; i<audio->len; ++i)
 					//We don't want to hear our own signal
 					buffer[i] = mixed[i] - buffer[i];
 				//Check length
 				if (audio->len<numSamples)
 					//Copy the rest
-					memcpy(((BYTE*)buffer)+audio->len*sizeof(SWORD),((BYTE*)mixed)+audio->len*sizeof(SWORD),(numSamples-audio->len)*sizeof(SWORD));
+					memcpy(buffer+audio->len,mixed+audio->len,numSamples-audio->len);
 
 				//Put the output
 				audio->input->PutSamples(buffer,numSamples);
