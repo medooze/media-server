@@ -144,7 +144,7 @@ int AudioMixer::MixAudio()
 				//Check length
 				if (audio->len<numSamples)
 					//Copy the rest
-					memcpy(buffer+audio->len,mixed+audio->len,numSamples-audio->len);
+					memcpy(buffer+audio->len,mixed+audio->len,(numSamples-audio->len)*sizeof(SWORD));
 
 				//Put the output
 				audio->input->PutSamples(buffer,numSamples);
