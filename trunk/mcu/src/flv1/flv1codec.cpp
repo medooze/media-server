@@ -137,9 +137,9 @@ int FLV1Encoder::OpenCodec()
 	bufSize = (int)bitrate/8;
 
 	//Check size
-	if (bufSize<FF_MIN_BUFFER_SIZE)
+	if (bufSize<65535)
 		//Set minimun
-		bufSize = FF_MIN_BUFFER_SIZE*2;
+		bufSize = 65535;
 
 	//Y alocamos el buffer
 	frame = new VideoFrame(type,bufSize);
