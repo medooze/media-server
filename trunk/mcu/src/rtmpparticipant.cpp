@@ -46,6 +46,7 @@ RTMPParticipant::RTMPParticipant(DWORD partId) :
 	attached = NULL;
 	//Inicializamos los mutex
 	pthread_mutex_init(&mutex,NULL);
+	pthread_cond_init(&cond,0);
 }
 
 RTMPParticipant::~RTMPParticipant()
@@ -54,6 +55,7 @@ RTMPParticipant::~RTMPParticipant()
 	End();
 	//Destroy mutex
 	pthread_mutex_destroy(&mutex);
+	pthread_cond_destroy(&cond);
 }
 
 int RTMPParticipant::SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int quality,int fillLevel,int intraPeriod)
