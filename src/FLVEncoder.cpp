@@ -21,6 +21,7 @@ FLVEncoder::FLVEncoder()
 	audioCodec = AudioCodec::NELLY11;
 	//Mutex
 	pthread_mutex_init(&mutex,0);
+	pthread_cond_init(&cond,0);
 }
 
 FLVEncoder::~FLVEncoder()
@@ -31,6 +32,7 @@ FLVEncoder::~FLVEncoder()
 		End();
 	//Mutex
 	pthread_mutex_destroy(&mutex);
+	pthread_cond_destroy(&cond);
 }
 
 int FLVEncoder::Init(AudioInput* audioInput,VideoInput *videoInput)
@@ -309,9 +311,11 @@ int FLVEncoder::EncodeAudio()
 
 int FLVEncoder::EncodeVideo()
 {
+	timeval prev;
 	//Set width and height
 	DWORD width = 352;
 	DWORD height = 288;
+	DWORD fps = 30;
 
 	//Allocate media frame
 	RTMPVideoFrame frame(0,65535);
@@ -320,15 +324,17 @@ int FLVEncoder::EncodeVideo()
 	//Create the encoder
 	VideoEncoder *encoder = VideoCodecFactory::CreateEncoder(VideoCodec::SORENSON);
 
-
 	///Set frame rate
-	encoder->SetFrameRate(30,512,600);
+	encoder->SetFrameRate(fps,512,600);
 
 	//Set dimensions
 	encoder->SetSize(width,height);
 
 	//Start capturing
-	videoInput->StartVideoCapture(width,height,30);
+	videoInput->StartVideoCapture(width,height,fps);
+
+	//No wait for first
+	DWORD frameTime = 0;
 
 	//Mientras tengamos que capturar
 	while(encodingVideo)
@@ -354,9 +360,36 @@ int FLVEncoder::EncodeVideo()
 
 		//Check size
 		if (frame.GetMaxMediaSize()<encoded->GetLength())
+		{
 			//Not enougth space
-			return Error("Not enought space to copy FLV encodec frame [frame:%d,encoded:%d",frame.GetMaxMediaSize(),encoded->GetLength());
+			Error("Not enought space to copy FLV encodec frame [frame:%d,encoded:%d",frame.GetMaxMediaSize(),encoded->GetLength());
+			//NExt
+			continue;
+		}
 
+		//Check
+		if (frameTime)
+		{
+			timespec ts;
+			//Lock
+			pthread_mutex_lock(&mutex);
+			//Calculate timeout
+			calcAbsTimeout(&ts,&prev,frameTime);
+			//Wait next or stopped
+			int canceled  = !pthread_cond_timedwait(&cond,&mutex,&ts);
+			//Unlock
+			pthread_mutex_unlock(&mutex);
+			//Check if we have been canceled
+			if (canceled)
+				//Exit
+				break;
+		}
+		//Set sending time of previous frame
+		getUpdDifTime(&prev);
+
+		//Set next one
+		frameTime = 1000/fps;
+		
 		//Get full frame
 		frame.SetVideoFrame(encoded->GetData(),encoded->GetLength());
 
