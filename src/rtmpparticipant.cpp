@@ -238,6 +238,9 @@ int  RTMPParticipant::StopSendingVideo()
 		//Cancel frame cpature
 		videoInput->CancelGrabFrame();
 
+		//Cancel sending
+		pthread_cond_signal(&cond);
+
 		//Esperamos
 		pthread_join(sendVideoThread,NULL);
 	}
@@ -491,12 +494,16 @@ void* RTMPParticipant::startSendingAudio(void *par)
 int RTMPParticipant::SendVideo()
 {
 	timeval t;
+	timeval prev;
 	//Get now
 	getUpdDifTime(&t);
 	//Coders
 	VideoEncoder* encoder = VideoCodecFactory::CreateEncoder(videoCodec);
 	//Create new video frame
 	RTMPVideoFrame  frame(0,65535);
+
+	//No wait for first
+	DWORD frameTime = 0;
 
 	Log(">SendVideo\n");
 	
@@ -525,6 +532,9 @@ int RTMPParticipant::SendVideo()
 	encoder->SetFrameRate(videoFPS,videoBitrate,videoIntraPeriod);
 	//Set size
 	encoder->SetSize(videoWidth,videoHeight);
+
+	//The time of the first one
+	gettimeofday(&prev,NULL);
 
 	//Mientras tengamos que capturar
 	while(sendingVideo)
@@ -559,8 +569,35 @@ int RTMPParticipant::SendVideo()
 
 		//Check size
 		if (frame.GetMaxMediaSize()<encoded->GetLength())
+		{
 			//Not enougth space
-			return Error("Not enought space to copy FLV encodec frame [frame:%d,encoded:%d",frame.GetMaxMediaSize(),encoded->GetLength());
+			Error("Not enought space to copy FLV encodec frame [frame:%d,encoded:%d",frame.GetMaxMediaSize(),encoded->GetLength());
+			//NExt
+			continue;
+		}
+
+		//Check
+		if (frameTime)
+		{
+			timespec ts;
+			//Lock
+			pthread_mutex_lock(&mutex);
+			//Calculate timeout
+			calcAbsTimeout(&ts,&prev,frameTime);
+			//Wait next or stopped
+			int canceled  = !pthread_cond_timedwait(&cond,&mutex,&ts);
+			//Unlock
+			pthread_mutex_unlock(&mutex);
+			//Check if we have been canceled
+			if (canceled)
+				//Exit
+				break;
+		}
+		//Set sending time of previous frame
+		getUpdDifTime(&prev);
+
+		//Set next one
+		frameTime = 1000/videoFPS;
 
 		//Get full frame
 		frame.SetVideoFrame(encoded->GetData(),encoded->GetLength());

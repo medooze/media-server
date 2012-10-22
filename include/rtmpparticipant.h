@@ -116,6 +116,7 @@ private:
 	pthread_t 	sendVideoThread;
 	pthread_t 	sendAudioThread;
 	pthread_mutex_t	mutex;
+	pthread_cond_t	cond;
 
 	//Controlamos si estamos mandando o no
 	bool	sendingVideo;
