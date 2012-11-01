@@ -847,7 +847,7 @@ bool H263RFC2190Paquetizer::PaquetizeFrame(VideoFrame	*frame)
 			pos = r.GetPos()-1;
 
 			//Check the size of the current paquet
-			while (pos-ini>1200*8)
+			while (pos-ini>RTPPAYLOADSIZE*8)
 			{
 				//Check the mode
 				if (modeA)

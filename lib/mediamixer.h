@@ -70,6 +70,8 @@ void		MP4RecorderDelete(MP4Recorder recorder);
 MP4Player	MP4PlayerCreate(MP4PLayerListener* listener, void *arg);
 int		MP4PlayerPlay(MP4Player player,const char* filename);
 void		MP4PlayerStop(MP4Player player);
+uint64_t	MP4PlayerSeek(MP4Player player, uint64_t seek);
+uint64_t	MP4PlayerTell(MP4Player player);
 void		MP4PlayerDestroy(MP4Player player);
 
 AudioMixer	AudioMixerCreate();

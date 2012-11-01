@@ -174,6 +174,18 @@ extern "C"
 		wrapper->streamer->Stop();
 	}
 
+	uint64_t MP4PlayerSeek(void* player,uint64_t seek)
+	{
+		MP4PlayerWrapper *wrapper = (MP4PlayerWrapper *)player;
+		return wrapper->streamer->Seek(seek);
+	}
+
+	uint64_t MP4PlayerTell(void* player)
+	{
+		MP4PlayerWrapper *wrapper = (MP4PlayerWrapper *)player;
+		return wrapper->streamer->Tell();
+	}
+
 	void MP4PlayerDestroy(void* player)
 	{
 		MP4PlayerWrapper *wrapper = (MP4PlayerWrapper *)player;
