@@ -24,6 +24,9 @@ MP4Streamer::MP4Streamer(Listener *listener)
 	audio = NULL;
 	video = NULL;
 	text = NULL;
+	//No time or seeked
+	seeked = 0;
+	t = 0;
 	//Inciamos lso mutex y la condicion
 	pthread_mutex_init(&mutex,0);
 	pthread_cond_init(&cond,0);
@@ -218,7 +221,7 @@ int MP4Streamer::Play()
 
 	//From the begining
 	seeked = 0;
-
+	
 	//Arrancamos los procesos
 	createPriorityThread(&thread,play,this,0);
 
@@ -309,8 +312,8 @@ int MP4Streamer::PlayLoop()
 	//Lock
 	pthread_mutex_lock(&mutex);
 
-	//Time counter
-	QWORD t = 0;
+	//Reset time counter
+	t = 0;
 
 	// Wait control messages or finish of both streams
 	while ( opened && playing && (!(audioNext==MP4_INVALID_TIMESTAMP && videoNext==MP4_INVALID_TIMESTAMP && textNext==MP4_INVALID_TIMESTAMP)))

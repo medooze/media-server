@@ -148,6 +148,7 @@ public:
 	int Play();
 	QWORD PreSeek(QWORD time);
 	int Seek(QWORD time);
+	QWORD Tell()		{ return t+seeked;	}
 	int Stop();
 	int Close();
 	
@@ -165,6 +166,7 @@ private:
 	pthread_cond_t  cond;
 	pthread_mutex_t mutex;
 	QWORD		seeked;
+	QWORD		t;
 
 	MP4FileHandle mp4;
 	MP4RtpTrack *audio;
