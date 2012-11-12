@@ -76,6 +76,21 @@ int AudioStream::Init(AudioInput *input, AudioOutput *output)
 	return 1;
 }
 
+int AudioStream::SetLocalCryptoSDES(const char* suite, const char* key64)
+{
+	return rtp.SetLocalCryptoSDES(suite,key64);
+}
+
+int AudioStream::SetRemoteCryptoSDES(const char* suite, const char* key64)
+{
+	return rtp.SetRemoteCryptoSDES(suite,key64);
+}
+
+int AudioStream::SetLocalSTUNCredentials(const char* username, const char* pwd)
+{
+	return rtp.SetLocalSTUNCredentials(username,pwd);
+}
+
 /***************************************
 * startSendingAudio
 *	Helper function

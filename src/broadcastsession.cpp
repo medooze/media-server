@@ -33,25 +33,6 @@ bool BroadcastSession::Init(DWORD maxTransfer,DWORD maxConcurrent)
 	//We are started
 	inited = true;
 
-	/*
-	//Create name for the recording
-	char filename[1024];
-	//Get time
-	struct timeval now;
-	gettimeofday(&now,0);
-	//Set filenamee
-	snprintf(filename,sizeof(filename),"/var/recordings/%.11ld-%ls.flv",(long)now.tv_sec,tag.c_str());
-
-	//Log filename
-	Log("-Recording broadcast [file:\"%s\"]\n",filename);
-
-	//Open file for recording
-	recorder.Create(filename);
-
-	//And start recording
-	recorder.Record();
-*/
-
 	return true;
 }
 
@@ -67,8 +48,7 @@ bool BroadcastSession::End()
 
 	//Stop
 	inited=0;
-	//Close recorder
-	//recorder.Close();
+
 	//For each connection watcher
 	for (Watchers::iterator it=watchers.begin(); it!=watchers.end(); ++it )
 		//Delete nc

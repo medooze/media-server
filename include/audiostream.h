@@ -20,6 +20,9 @@ public:
 	int StartReceiving(RTPMap& rtpMap);
 	int StopReceiving();
 	int SetMute(bool isMuted);
+	int SetLocalCryptoSDES(const char* suite, const char* key64);
+	int SetRemoteCryptoSDES(const char* suite, const char* key64);
+	int SetLocalSTUNCredentials(const char* username, const char* pwd);
 	int End();
 
 	int IsSending()	  { return sendingAudio;  }

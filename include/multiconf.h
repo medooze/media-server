@@ -85,6 +85,9 @@ public:
 	int StopSending(int partId,MediaFrame::Type media);
 	int StartReceiving(int partId,MediaFrame::Type media,RTPMap& rtpMap);
 	int StopReceiving(int partId,MediaFrame::Type media);
+	int SetLocalCryptoSDES(int id,MediaFrame::Type media,const char *suite,const char* key);
+	int SetRemoteCryptoSDES(int id,MediaFrame::Type media,const char *suite,const char* key);
+	int SetLocalSTUNCredentials(int id,MediaFrame::Type media,const char *username,const char* pwd);
 
 	int SetVideoCodec(int partId,int codec,int mode,int fps,int bitrate,int quality=0, int fillLevel=0,int intraPeriod = 0);
 	int SetAudioCodec(int partId,int codec);

@@ -33,8 +33,6 @@ VideoStream::VideoStream(Listener* listener) : rtp(MediaFrame::Video,listener)
 	videoGrabHeight=0;
 	videoFPS=0;
 	videoBitrate=0;
-	videoQuality=0;
-	videoFillLevel=0;
 	videoIntraPeriod=0;
 	sendFPU = false;
 	this->listener = listener;
@@ -62,41 +60,13 @@ VideoStream::~VideoStream()
 **********************************************/
 int VideoStream::SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int quality, int fillLevel,int intraPeriod)
 {
-	Log("-SetVideoCodec [%s,%dfps,%dkbps,qMax:%d,qMin%d,intra:%d]\n",VideoCodec::GetNameFor(codec),fps,bitrate,quality,fillLevel,intraPeriod);
-
-	//Dependiendo del tipo ponemos las calidades por defecto
-	switch(codec)
-	{
-		case VideoCodec::H263_1996:
-			videoQuality=1;
-			videoFillLevel=6;
-			break;
-		case VideoCodec::H263_1998:
-			videoQuality=1;
-			videoFillLevel=6;
-			break;
-		case VideoCodec::H264:
-			videoQuality=1;
-			videoFillLevel=6;
-			break;
-		default:
-			//Return codec
-			return Error("Codec not found\n");
-	}
+	Log("-SetVideoCodec [%s,%dfps,%dkbps,intra:%d]\n",VideoCodec::GetNameFor(codec),fps,bitrate,intraPeriod);
 
 	//LO guardamos
 	videoCodec=codec;
 
 	//Guardamos el bitrate
 	videoBitrate=bitrate;
-
-	//La calidad
-	if (quality>0)
-		videoQuality = quality;
-
-	//El level
-	if (fillLevel>0)
-		videoFillLevel = fillLevel;
 
 	//The intra period
 	if (intraPeriod>0)
@@ -146,6 +116,21 @@ int VideoStream::Init(VideoInput *input,VideoOutput *output)
 	Log("<Init video stream\n");
 
 	return 1;
+}
+
+int VideoStream::SetLocalCryptoSDES(const char* suite, const char* key64)
+{
+	return rtp.SetLocalCryptoSDES(suite,key64);
+}
+
+int VideoStream::SetRemoteCryptoSDES(const char* suite, const char* key64)
+{
+	return rtp.SetRemoteCryptoSDES(suite,key64);
+}
+
+int VideoStream::SetLocalSTUNCredentials(const char* username, const char* pwd)
+{
+	return rtp.SetLocalSTUNCredentials(username,pwd);
 }
 
 /**************************************
@@ -520,7 +505,7 @@ int VideoStream::RecVideo()
 		WORD lost = rtp.GetLost();
 
 		//Si hemos perdido un paquete
-		if(lost)
+		/*if(lost)
 		{
 			//Debug
 			Log("Lost packet\n");
@@ -535,7 +520,7 @@ int VideoStream::RecVideo()
 				//Update time
 				getUpdDifTime(&lastFPURequest);
 			}
-		}
+		}*/
 
 		//Aumentamos el numero de bytes recividos
 		recBytes += packet->GetSize();

@@ -818,6 +818,8 @@ int MediaBridgeSession::RecText()
 			skip += i;
 		}
 
+
+
 		//Check length
 		if (skip<size)
 	        {

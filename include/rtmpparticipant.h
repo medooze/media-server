@@ -125,7 +125,6 @@ private:
 	bool	receivingAudio;
 	bool	sendingText;
 	bool	inited;
-	bool	waitVideo;
 	bool	sendFPU;
 	timeval	first;
 

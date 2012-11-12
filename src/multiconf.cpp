@@ -147,7 +147,7 @@ int MultiConf::StartBroadcaster()
 	struct timeval now;
 	gettimeofday(&now,0);
 	//Set filenamee
-	snprintf(filename,sizeof(filename),"/var/recordings/%ls-%.11ld-%ls.flv",tag.c_str(),(long)now.tv_sec,tag.c_str());
+	snprintf(filename,sizeof(filename),"/var/recordings/%.11ld-%ls.flv",(long)now.tv_sec,tag.c_str());
 
 	//Log filename
 	Log("-Recording broadcast [file:\"%s\"]\n",filename);
@@ -602,6 +602,80 @@ int MultiConf::SetVideoCodec(int id,int codec,int mode,int fps,int bitrate,int q
 	//Exit
 	return ret;
 }
+
+int MultiConf::SetLocalCryptoSDES(int id,MediaFrame::Type media,const char *suite,const char* key)
+{
+	int ret = 0;
+
+	Log("-SetLocalCryptoSDES %s [partId:%d]\n",MediaFrame::TypeToString(media),id);
+
+	//Use list
+	participantsLock.IncUse();
+
+	//Get the participant
+	RTPParticipant *part = (RTPParticipant*)GetParticipant(id,Participant::RTP);
+
+	//Check particpant
+	if (part)
+		//Set  codec
+		ret = part->SetLocalCryptoSDES(media,suite,key);
+
+	//Unlock
+	participantsLock.DecUse();
+
+	//Exit
+	return ret;
+}
+
+int MultiConf::SetRemoteCryptoSDES(int id,MediaFrame::Type media,const char *suite,const char* key)
+{
+	int ret = 0;
+
+	Log("-SetLocalCryptoSDES %s [partId:%d]\n",MediaFrame::TypeToString(media),id);
+
+	//Use list
+	participantsLock.IncUse();
+
+	//Get the participant
+	RTPParticipant *part = (RTPParticipant*)GetParticipant(id,Participant::RTP);
+
+	//Check particpant
+	if (part)
+		//Set  codec
+		ret = part->SetRemoteCryptoSDES(media,suite,key);
+
+	//Unlock
+	participantsLock.DecUse();
+
+	//Exit
+	return ret;
+}
+
+
+int MultiConf::SetLocalSTUNCredentials(int id,MediaFrame::Type media,const char *username,const char* pwd)
+{
+	int ret = 0;
+
+	Log("-SetLocalSTUNCredentials %s [partId:%d,username:%s,pwd:%s]\n",MediaFrame::TypeToString(media),id,username,pwd);
+
+	//Use list
+	participantsLock.IncUse();
+
+	//Get the participant
+	RTPParticipant *part = (RTPParticipant*)GetParticipant(id,Participant::RTP);
+
+	//Check particpant
+	if (part)
+		//Set  codec
+		ret = part->SetLocalSTUNCredentials(media,username,pwd);
+
+	//Unlock
+	participantsLock.DecUse();
+
+	//Exit
+	return ret;
+}
+
 
 int MultiConf::StartSending(int id,MediaFrame::Type media,char *sendIp,int sendPort,RTPMap& rtpMap)
 {
@@ -1400,9 +1474,9 @@ void MultiConf::NetStream::doPlay(std::wstring& url,RTMPMediaStream::Listener* l
 	{
 		//Get participant stream
 		stream = conf->ConsumeParticipantOutputToken(token);
-		//Do not wait for intra
+		//Wait for intra
 		SetWaitIntra(true);
-		//And do not rewrite
+		//And rewrite
 		SetRewriteTimestamps(true);
 	} else if (type.compare(L"watcher")==0) {
 		//Get broadcast stream

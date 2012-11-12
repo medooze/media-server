@@ -2,7 +2,7 @@
 <configurationDescriptor version="69">
   <logicalFolder name="root" displayName="root" projectFiles="true">
     <df name="Media Mixer" root=".">
-      <df name="bin" kind="SOURCE_LOGICAL_FOLDER">
+      <df name="bin">
         <df name="debug" kind="SOURCE_LOGICAL_FOLDER">
         </df>
       </df>
@@ -24,6 +24,7 @@
         <in>broadcastsession.h</in>
         <in>codecs.h</in>
         <in>config.h</in>
+        <in>crc32calc.h</in>
         <in>fifo.h</in>
         <in>flash.h</in>
         <in>flv.h</in>
@@ -71,6 +72,7 @@
         <in>rtpsession.h</in>
         <in>sidebar.h</in>
         <in>statushandler.h</in>
+        <in>stunmessage.h</in>
         <in>text.h</in>
         <in>textencoder.h</in>
         <in>textmixer.h</in>
@@ -185,6 +187,7 @@
         <in>broadcaster.cpp</in>
         <in>broadcastsession.cpp</in>
         <in>codecs.cpp</in>
+        <in>crc32calc.cpp</in>
         <in>flash.cpp</in>
         <in>flashstreamer.cpp</in>
         <in>flvplayer.cpp</in>
@@ -225,6 +228,7 @@
         <in>rtpsession.cpp</in>
         <in>sidebar.cpp</in>
         <in>statushandler.cpp</in>
+        <in>stunmessage.cpp</in>
         <in>textencoder.cpp</in>
         <in>textmixer.cpp</in>
         <in>textmixerworker.cpp</in>
@@ -244,7 +248,6 @@
         <in>xmlrpcserver.cpp</in>
         <in>xmlstreaminghandler.cpp</in>
       </df>
-      <in>newfile.cpp</in>
     </df>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"

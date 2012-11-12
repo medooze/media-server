@@ -52,6 +52,7 @@ protected:
 	void Start();
 	void Stop();
 	int Run();
+	void PingRequest();
 private:
 	static  void* run(void *par);
 	void ParseData(BYTE *data,const DWORD size);
@@ -126,6 +127,10 @@ private:
 	DWORD recvSize;
 	DWORD inBytes;
 	DWORD outBytes;
+
+	QWORD bandIni;
+	DWORD bandSize;
+	DWORD bandCalc;
 };
 
 #endif

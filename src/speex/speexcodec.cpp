@@ -67,6 +67,9 @@ SpeexCodec::~SpeexCodec()
 
 int SpeexCodec::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 {
+	if (!inLen)
+		return 0;
+
 	SWORD wbBuffer[512];
 	DWORD wblen = 512;
 

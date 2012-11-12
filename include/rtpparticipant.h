@@ -44,6 +44,9 @@ public:
 	int StopSending(MediaFrame::Type media);
 	int StartReceiving(MediaFrame::Type media,RTPMap& rtpMap);
 	int StopReceiving(MediaFrame::Type media);
+	int SetLocalCryptoSDES(MediaFrame::Type media,const char* suite, const char* key64);
+	int SetRemoteCryptoSDES(MediaFrame::Type media,const char* suite, const char* key64);
+	int SetLocalSTUNCredentials(MediaFrame::Type media,const char* username, const char* pwd);
 	
 	int SetMediaListener(MediaFrame::Listener *listener) { return video.SetMediaListener(listener); }
 

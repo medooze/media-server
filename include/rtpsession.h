@@ -8,6 +8,7 @@
 #include <arpa/inet.h>
 #include <use.h>
 #include <poll.h>
+#include <srtp/srtp.h>
 #include "rtp.h"
 #include "waitqueue.h"
 
@@ -66,6 +67,10 @@ public:
 	DWORD GetLostRecvPackets()	{ return lostRecvPackets;	}
 
 	WORD  GetLost()			{ return lost;			} //TODO: ugly, will be fixed
+
+	int SetLocalCryptoSDES(const char* suite, const char* key64);
+	int SetRemoteCryptoSDES(const char* suite, const char* key64);
+	int SetLocalSTUNCredentials(const char* username, const char* pwd);
 private:
 	void Start();
 	void Stop();
@@ -94,6 +99,12 @@ private:
 	bool	running;
 	WORD	lost;
 
+	bool	encript;
+	bool	decript;
+	srtp_t	srtp;
+
+	char*	iceUsername;
+	char*	icePwd;
 	pthread_t thread;
 	pthread_mutex_t mutex;	
 
