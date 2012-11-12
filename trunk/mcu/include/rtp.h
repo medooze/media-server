@@ -6,6 +6,8 @@
 #include "video.h"
 
 #define RTP_VERSION    2
+#define RTCP_VALID_MASK	   (0xc000 | 0x2000 | 0xfe)
+#define RTCP_VALID_VALUE ((RTP_VERSION << 14) | RTCP_SR)
 
 typedef enum {
     RTCP_SR   = 200,

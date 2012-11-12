@@ -221,10 +221,14 @@ int RTMPConnection::Run()
 		{
 			//Write data buffer
 			DWORD len = SerializeChunkData(data,size);
-			//Send it
-			WriteData(data,len);
-			//Increase sent bytes
-			outBytes += len;
+			//Check length
+			if (len)
+			{
+				//Send it
+				WriteData(data,len);
+				//Increase sent bytes
+				outBytes += len;
+			}
 		} 
 
 		if (ufds[0].revents & POLLIN) 
@@ -276,6 +280,15 @@ void RTMPConnection::SignalWriteNeeded()
 	//lock now
 	pthread_mutex_lock(&mutex);
 
+	//Check if there was not anyhting left in the queeue
+	if (!(ufds[0].events & POLLOUT))
+	{
+		//Init bandwidth calculation
+		bandIni = getDifTime(&startTime);
+		//Nothing sent
+		bandSize = 0;
+	}
+
 	//Set to wait also for read events
 	ufds[0].events = POLLIN | POLLOUT | POLLERR | POLLHUP;
 
@@ -296,7 +309,7 @@ DWORD RTMPConnection::SerializeChunkData(BYTE *data,DWORD size)
 	pthread_mutex_lock(&mutex);
 
 	//Remove the write signal
-	ufds[0].events = POLLIN | POLLERR | POLLHUP;
+	//ufds[0].events = POLLIN | POLLERR | POLLHUP;
 
 	//Iterate the chunks in ascendig order (more important firsts)
 	for (RTMPChunkOutputStreams::iterator it=chunkOutputStreams.begin(); it!=chunkOutputStreams.end();++it)
@@ -311,7 +324,7 @@ DWORD RTMPConnection::SerializeChunkData(BYTE *data,DWORD size)
 			if(size-len<maxOutChunkSize+12)
 			{
 				//We have more data to write
-				ufds[0].events = POLLIN | POLLOUT | POLLERR | POLLHUP;
+				//ufds[0].events = POLLIN | POLLOUT | POLLERR | POLLHUP;
 				//End this writing
 				goto end;
 			}
@@ -321,7 +334,40 @@ DWORD RTMPConnection::SerializeChunkData(BYTE *data,DWORD size)
 
 		}
 	}
+
+	
 end:
+	//Add size
+	bandSize += len;
+	//Calc elapsed time
+	QWORD elapsed = getDifTime(&startTime)-bandIni;
+	//Check if
+	if (!len)
+	{
+		//Do not wait for write anymore
+		ufds[0].events = POLLIN | POLLERR | POLLHUP;
+		
+		//Check
+		if (elapsed)
+		{
+			//Calculate bandwith in kbps
+			bandCalc = bandSize*8000/elapsed;
+			//LOg
+			//Debug("-Band calc ended [%d,%dkbps in %dns]\n",bandSize,bandCalc,elapsed);
+		}
+	} else {
+		//Check
+		if (elapsed>1000000)
+		{
+			//Calculate bandwith in kbps
+			bandCalc = bandSize*8000/elapsed;
+			//LOg
+			//Debug("-Band calc resetd [%d,%dkbps in %dns]\n",bandSize,bandCalc,elapsed);
+			bandIni = getDifTime(&startTime);
+			bandSize = 0;
+		}
+	}
+		
 	//Un Lock mutex
 	pthread_mutex_unlock(&mutex);
 
@@ -725,7 +771,6 @@ int RTMPConnection::WriteData(BYTE *data,const DWORD size)
 	write(fd,data,size);
 	close(fd);*/
 #endif
-	
 	return write(socket,data,size);
 }
 
@@ -776,7 +821,11 @@ void RTMPConnection::ProcessControlMessage(DWORD streamId,BYTE type,RTMPObject* 
 					SendControlMessage(RTMPMessage::UserControlMessage,RTMPUserControlMessage::CreatePingResponse(event->GetEventData()));
 					break;
 				case RTMPUserControlMessage::PingResponse:
-					Log("PingResponse [milis:%d]\n",event->GetEventData());
+					//Get response
+					DWORD ping = event->GetEventData();
+					//Get roundtrip delay
+					DWORD delay = getDifTime(&startTime)/1000-ping;
+					Log("PingResponse [ping:%d,delay:%d]\n",ping,delay);
 					break;
 				
 			}
@@ -935,7 +984,8 @@ void RTMPConnection::ProcessCommandMessage(DWORD streamId,RTMPCommandMessage* cm
 		data->AddProperty(L"version"           	,L"3,5,1,525");
 		//Create 
 		SendCommandResult(streamId,transId,params,extra);
-
+		//Ping
+		PingRequest();
 	} else if (name.compare(L"createStream")==0 || name.compare(L"initStream")==0) {
 		//Check if we have an application
 		if (!app)
@@ -1078,6 +1128,11 @@ void RTMPConnection::SendControlMessage(RTMPMessage::Type type,RTMPObject* msg)
 	SignalWriteNeeded();
 }
 
+void RTMPConnection::PingRequest()
+{
+	//Send ping request
+	SendControlMessage(RTMPMessage::UserControlMessage,RTMPUserControlMessage::CreatePingRequest(getDifTime(&startTime)/1000));
+}
 /****************************************
  * RTMPStreamListener events
  *

@@ -61,7 +61,7 @@ RTMPParticipant::~RTMPParticipant()
 int RTMPParticipant::SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int quality,int fillLevel,int intraPeriod)
 {
 	//LO guardamos
-	videoCodec=codec;
+	videoCodec = codec;
 
 	//Guardamos el bitrate
 	videoBitrate=bitrate;
@@ -106,8 +106,6 @@ int RTMPParticipant::Init()
 {
 	//We are started
 	inited = true;
-	//Wait for first Iframe
-	waitVideo = true;
 	//Set first timestamp
 	getUpdDifTime(&first);
 	//Ok
@@ -604,12 +602,12 @@ int RTMPParticipant::SendVideo()
 		//Get full frame
 		frame.SetVideoFrame(encoded->GetData(),encoded->GetLength());
 
+		//Set timestamp
+		frame.SetTimestamp(getDifTime(&first)/1000);
+
 		//Set buffer size
 		frame.SetMediaSize(encoded->GetLength());
 
-		//Set timestamp
-		frame.SetTimestamp(getDifTime(&first)/1000);
-		
 		//Check type
 		if (encoded->IsIntra())
 		{
@@ -657,8 +655,6 @@ int RTMPParticipant::SendVideo()
 
 				//Crete desc frame
 				RTMPVideoFrame frameDesc(frame.GetTimestamp(),desc);
-				//Dump it
-				frameDesc.Dump();
 				//Send it
 				SendMediaFrame(&frameDesc);
 			}
@@ -666,6 +662,7 @@ int RTMPParticipant::SendVideo()
 			//Set type
 			frame.SetFrameType(RTMPVideoFrame::INTER);
 		}
+
 		//Send it
 		SendMediaFrame(&frame);
 	}
@@ -699,7 +696,7 @@ int RTMPParticipant::SendAudio()
 	gettimeofday(&before,NULL);
 
 	//Creamos el codec de audio
-	if ((rtmpAudioEncoder = AudioCodec::CreateCodec(AudioCodec::NELLY11))==NULL)
+	if ((rtmpAudioEncoder = AudioCodec::CreateCodec(audioCodec))==NULL)
 	{
 		Log("Error en el envio de audio,saliendo\n");
 		return 0;
@@ -707,6 +704,12 @@ int RTMPParticipant::SendAudio()
 
 	//Empezamos a grabar
 	audioInput->StartRecording();
+
+	//Calculate first timestamp
+	DWORD ini = getDifTime(&first)/1000;
+
+	//Num of samples since ini
+	DWORD samples = 0;
 
 	//Mientras tengamos que capturar
 	while(sendingAudio)
@@ -719,7 +722,13 @@ int RTMPParticipant::SendAudio()
 		//Check len
 		if (!recLen)
 		{
-			Log("-sendingAudio cont\n");
+			//Log
+			Debug("-cont\n");
+			//Reser timestam
+			ini = getDifTime(&first)/1000;
+			//And samples
+			samples = 0;
+			//Skip
 			continue;
 		}
 
@@ -742,6 +751,10 @@ int RTMPParticipant::SendAudio()
 					audio->SetSoundRate(RTMPAudioFrame::RATE11khz);
 					audio->SetSamples16Bits(1);
 					audio->SetStereo(0);
+					//Set timestamp
+					audio->SetTimestamp(ini+samples/16);
+					//Increase samples
+					samples += 320;
 					break;
 				case AudioCodec::NELLY8:
 					//Set RTMP data
@@ -749,6 +762,10 @@ int RTMPParticipant::SendAudio()
 					audio->SetSoundRate(RTMPAudioFrame::RATE11khz);
 					audio->SetSamples16Bits(1);
 					audio->SetStereo(0);
+					//Set timestamp
+					audio->SetTimestamp(ini+samples/8);
+					//Increase samples
+					samples += 256;
 					break;
 				case AudioCodec::NELLY11:
 					//Set RTMP data
@@ -756,11 +773,13 @@ int RTMPParticipant::SendAudio()
 					audio->SetSoundRate(RTMPAudioFrame::RATE11khz);
 					audio->SetSamples16Bits(1);
 					audio->SetStereo(0);
+					//Set timestamp
+					audio->SetTimestamp(ini+samples*1000/11025);
+					//Increase samples
+					samples += 256;
 					break;
 			}
 
-			//Set timestamp
-			audio->SetTimestamp(getDifTime(&first)/1000);
 
 			//Send audio
 			SendMediaFrame(audio);

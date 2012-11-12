@@ -76,6 +76,51 @@ int RTPParticipant::Init()
 	return ret;
 }
 
+int RTPParticipant::SetLocalCryptoSDES(MediaFrame::Type media,const char* suite, const char* key)
+{
+	switch (media)
+	{
+		case MediaFrame::Audio:
+			return audio.SetLocalCryptoSDES(suite,key);
+		case MediaFrame::Video:
+			return video.SetLocalCryptoSDES(suite,key);
+		case MediaFrame::Text:
+			return text.SetLocalCryptoSDES(suite,key);
+	}
+
+	return 0;
+}
+
+int RTPParticipant::SetRemoteCryptoSDES(MediaFrame::Type media,const char* suite, const char* key)
+{
+	switch (media)
+	{
+		case MediaFrame::Audio:
+			return audio.SetRemoteCryptoSDES(suite,key);
+		case MediaFrame::Video:
+			return video.SetRemoteCryptoSDES(suite,key);
+		case MediaFrame::Text:
+			return text.SetRemoteCryptoSDES(suite,key);
+	}
+
+	return 0;
+}
+
+int RTPParticipant::SetLocalSTUNCredentials(MediaFrame::Type media,const char* username, const char* pwd)
+{
+	switch (media)
+	{
+		case MediaFrame::Audio:
+			return audio.SetLocalSTUNCredentials(username,pwd);
+		case MediaFrame::Video:
+			return video.SetLocalSTUNCredentials(username,pwd);
+		case MediaFrame::Text:
+			return text.SetLocalSTUNCredentials(username,pwd);
+	}
+
+	return 0;
+}
+
 int RTPParticipant::StartSending(MediaFrame::Type media,char *ip, int port,RTPMap& rtpMap)
 {
 	switch (media)

@@ -141,6 +141,7 @@ int NellyEncoder11Khz::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 		//Push
 		samples11.push(buffer11,len11);
 	}
+
 	//If not enought samples
 	if (samples11.length()<ctx->frame_size)
 		//Exit

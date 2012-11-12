@@ -78,6 +78,21 @@ int TextStream::Init(TextInput *input, TextOutput *output)
 	return 1;
 }
 
+int TextStream::SetLocalCryptoSDES(const char* suite, const char* key64)
+{
+	return rtp.SetLocalCryptoSDES(suite,key64);
+}
+
+int TextStream::SetRemoteCryptoSDES(const char* suite, const char* key64)
+{
+	return rtp.SetRemoteCryptoSDES(suite,key64);
+}
+
+int TextStream::SetLocalSTUNCredentials(const char* username, const char* pwd)
+{
+	return rtp.SetLocalSTUNCredentials(username,pwd);
+}
+
 /***************************************
 * startSendingText
 *	Helper function

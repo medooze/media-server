@@ -13,12 +13,23 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <errno.h>
+#include <srtp/srtp.h>
 #include "log.h"
 #include "tools.h"
 #include "rtp.h"
 #include "rtpsession.h"
+#include "stunmessage.h"
+#include <libavutil/base64.h>
 
 BYTE rtpEmpty[] = {0x80,0x14,0x00,0x00,0x00,0x00,0x00,0x00};
+
+//srtp library initializers
+class SRTPLib
+{
+public:
+	SRTPLib()	{ srtp_init();	}
+};
+SRTPLib srtp;
 
 DWORD RTPSession::minLocalPort = 49152;
 DWORD RTPSession::maxLocalPort = 65535;
@@ -105,6 +116,13 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener)
 	totalSendBytes = 0;
 	lostRecvPackets = 0;
 	lost = 0;
+	//No cripto
+	encript = false;
+	decript = false;
+	srtp = NULL;
+	//No ICE
+	iceUsername = NULL;
+	icePwd = NULL;
 	//Fill with 0
 	memset(sendPacket,0,MTU);
 	//No thread
@@ -128,6 +146,15 @@ RTPSession::~RTPSession()
 	while(packets.Length())
 		//Delete
 		delete(packets.Pop());
+	//Clean mem
+	if (iceUsername)
+		free(iceUsername);
+	if (icePwd)
+		free(icePwd);
+	//If secure
+	if (srtp)
+		//Dealoacate
+		srtp_dealloc(srtp);
 }
 
 void RTPSession::SetSendingRTPMap(RTPMap &map)
@@ -138,6 +165,148 @@ void RTPSession::SetSendingRTPMap(RTPMap &map)
 		delete(rtpMapOut);
 	//Clone it
 	rtpMapOut = new RTPMap(map);
+}
+int RTPSession::SetLocalCryptoSDES(const char* suite, const char* key64)
+{
+	err_status_t err;
+	srtp_policy_t policy;
+
+	Log("-Set local RTP SDES [suite:%s,key:%s]\n",suite,key64);
+
+	//empty policy
+	memset(&policy, 0, sizeof(srtp_policy_t));
+
+	//Get cypher
+	if (strcmp(suite,"AES_CM_128_HMAC_SHA1_80")==0)
+	{
+		crypto_policy_set_rtp_default(&policy.rtp);
+		crypto_policy_set_rtcp_default(&policy.rtcp);
+	} else if (strcmp(suite,"AES_CM_128_HMAC_SHA1_32")==0) {
+		crypto_policy_set_aes_cm_128_hmac_sha1_32(&policy.rtp);
+		crypto_policy_set_aes_cm_128_hmac_sha1_32(&policy.rtcp);
+	} else if (strcmp(suite,"AES_CM_128_NULL_AUTH")==0) {
+		crypto_policy_set_aes_cm_128_null_auth(&policy.rtp);
+		crypto_policy_set_aes_cm_128_null_auth(&policy.rtcp);
+	} else if (strcmp(suite,"NULL_CIPHER_HMAC_SHA1_80")==0) {
+		crypto_policy_set_null_cipher_hmac_sha1_80(&policy.rtp);
+		crypto_policy_set_null_cipher_hmac_sha1_80(&policy.rtcp);
+	} else {
+		return Error("Unknown cipher suite");
+	}
+	//Get lenght
+	WORD len64 = strlen(key64);
+	//Allocate memory for the key
+	BYTE* key = (BYTE*)malloc(len64);
+	//Decode
+	WORD len = av_base64_decode(key,key64,len64);
+
+	//Check sizes
+	if (len!=policy.rtp.cipher_key_len)
+		//Error
+		return Error("Key size (%d) doesn't match the selected srtp profile (required %d)\n",len,policy.rtp.cipher_key_len);
+
+	//Set polciy values
+	policy.ssrc.type	= ssrc_specific;
+	policy.ssrc.value	= sendSSRC;
+	policy.key		= key;
+	policy.next		= NULL;
+
+	//If the srtp is already allocated
+	if (!srtp)
+		//Create new
+		err = srtp_create(&srtp,&policy);
+	else
+		//Append policy
+		err = srtp_add_stream(srtp, &policy);
+
+	//Free key memory
+	free(key);
+
+	//Check error
+	if (err!=err_status_ok)
+		//Error
+		return Error("Failed to create srtp session (%d)\n", err);
+
+	//Evrything ok
+	return 1;
+}
+
+int RTPSession::SetLocalSTUNCredentials(const char* username, const char* pwd)
+{
+	Log("-SetLocalSTUNCredentials [frag:%s,pwd:%s]\n",username,pwd);
+	//Clean mem
+	if (iceUsername)
+		free(iceUsername);
+	if (icePwd)
+		free(icePwd);
+	//Store values
+	iceUsername = strdup(username);
+	icePwd = strdup(pwd);
+	//Ok
+	return 1;
+}
+
+int RTPSession::SetRemoteCryptoSDES(const char* suite, const char* key64)
+{
+	err_status_t err;
+	srtp_policy_t policy;
+
+	Log("-Set remote RTP SDES [suite:%s,key:%s]\n",suite,key64);
+	
+	//empty policy
+	memset(&policy, 0, sizeof(srtp_policy_t));
+
+	if (strcmp(suite,"AES_CM_128_HMAC_SHA1_80")==0)
+	{
+		crypto_policy_set_rtp_default(&policy.rtp);
+		crypto_policy_set_rtcp_default(&policy.rtcp);
+	} else if (strcmp(suite,"AES_CM_128_HMAC_SHA1_32")==0) {
+		crypto_policy_set_aes_cm_128_hmac_sha1_32(&policy.rtp);
+		crypto_policy_set_aes_cm_128_hmac_sha1_32(&policy.rtcp);
+	} else if (strcmp(suite,"AES_CM_128_NULL_AUTH")==0) {
+		crypto_policy_set_aes_cm_128_null_auth(&policy.rtp);
+		crypto_policy_set_aes_cm_128_null_auth(&policy.rtcp);
+	} else if (strcmp(suite,"NULL_CIPHER_HMAC_SHA1_80")==0) {
+		crypto_policy_set_null_cipher_hmac_sha1_80(&policy.rtp);
+		crypto_policy_set_null_cipher_hmac_sha1_80(&policy.rtcp);
+	} else {
+		return Error("Unknown cipher suite");
+	}
+	//Get lenght
+	WORD len64 = strlen(key64);
+	//Allocate memory for the key
+	BYTE* key = (BYTE*)malloc(len64);
+	//Decode
+	WORD len = av_base64_decode(key,key64,len64);
+
+	//Check sizes
+	if (len!=policy.rtp.cipher_key_len)
+		//Error
+		return Error("Key size (%d) doesn't match the selected srtp profile (required %d)\n",len,policy.rtp.cipher_key_len);
+
+	//Set polciy values
+	policy.ssrc.type	= ssrc_any_inbound;
+	policy.key		= key;
+	policy.next		= NULL;
+
+	//If the srtp is already allocated
+	if (!srtp)
+		//Create new
+		err = srtp_create(&srtp,&policy);
+	else
+		//Append policy
+		err = srtp_add_stream(srtp, &policy);
+
+	//Free key memory
+	free(key);
+		
+	//Check error
+	if (err!=err_status_ok)
+		//Error
+		return Error("Failed set local SDES  (%d)\n", err);
+
+	//Everything ok
+	return 1;
 }
 
 void RTPSession::SetReceivingRTPMap(RTPMap &map)
@@ -262,10 +431,11 @@ int RTPSession::SendEmptyPacket()
 int RTPSession::Init()
 {
 	int retries = 0;
+	
+	Log(">Init RTPSession\n");
+
 	sockaddr_in sendAddr;
 
-	Log(">Init RTPSession\n");
-	
 	//Clear addr
 	memset(&sendAddr,0,sizeof(struct sockaddr_in));
 	//Set family
@@ -328,7 +498,6 @@ int RTPSession::Init()
 	//Failed
 	return 0;
 }
-
 
 /*********************************
 * End
@@ -404,6 +573,17 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 	//Set pateckt length
 	DWORD len = packet.GetMediaLength()+ini;
 
+	//Check if we ar encripted
+	if (encript)
+	{
+		//Get size
+		int size = packet.GetSize();
+		//Encrip
+		srtp_protect(srtp,sendPacket,&size);
+		//Set length
+		packet.SetSize(size);
+	}
+
 	//Mandamos el mensaje
 	int ret = sendto(simSocket,sendPacket,len,0,(sockaddr *)&sendAddr,sizeof(struct sockaddr_in));
 
@@ -438,6 +618,70 @@ void RTPSession::ReadRTP()
 	//Leemos del socket
 	int num = recvfrom(simSocket,packet->GetData(),packet->GetMaxSize(),MSG_DONTWAIT,(sockaddr*)&from_addr, &from_len);
 
+	//Check if it is an STUN request
+	STUNMessage *stun = STUNMessage::Parse(packet->GetData(),num);
+	
+	//If it was
+	if (stun)
+	{
+		STUNMessage::Type type = stun->GetType();
+		STUNMessage::Method method = stun->GetMethod();
+		
+		//If it is a request
+		if (type==STUNMessage::Request && method==STUNMessage::Binding)
+		{
+			//If set
+			if (stun->HasAttribute(STUNMessage::Attribute::UseCandidate))
+			{
+				//Create response
+				STUNMessage* resp = stun->CreateResponse();
+				//Add received xor mapped addres
+				resp->AddXorAddressAttribute(&from_addr);
+				//TODO: Check incoming request username attribute value starts with iceUsername+":"
+				//Create  response
+				DWORD size = resp->GetSize();
+				BYTE *aux = (BYTE*)malloc(size);
+
+				//Serialize and autenticate
+				DWORD len = resp->AuthenticatedFingerPrint(aux,size,icePwd);
+				//Send it
+				sendto(simSocket,aux,len,0,(sockaddr *)&from_addr,sizeof(struct sockaddr_in));
+
+				//Clean memory
+				free(aux);
+				//Clean response
+				delete(resp);
+
+				//If we don't have originating IP
+				if (recIP==INADDR_ANY)
+				{
+					//Bind it to first received packet ip
+					recIP = from_addr.sin_addr.s_addr;
+					//Get also port
+					recPort = ntohs(from_addr.sin_port);
+					//Log
+					Log("-RTPSession NAT: received bind request from [%s:%d]\n", inet_ntoa(from_addr.sin_addr), recPort);
+					//Check if got listener
+					if (listener)
+						//Request a I frame
+						listener->onFPURequested(this);
+				}
+			}
+		}
+
+		//Delete message
+		delete(stun);
+		//Exit
+		return;
+	}
+	
+	//Check if it is RTCP
+	if ((*(WORD *)packet->GetData() & RTCP_VALID_MASK) == RTCP_VALID_VALUE) {
+		//TODO:RTCP muxing
+		//Skip
+		return;
+	}
+
 	//If we don't have originating IP
 	if (recIP==INADDR_ANY)
 	{
@@ -464,6 +708,24 @@ void RTPSession::ReadRTP()
 	//Set size
 	packet->SetSize(num);
 	
+	//Check if it is encripted
+	if (decript)
+	{
+		//Get size
+		int size = packet->GetSize();
+		//unprotect
+		err_status_t err = srtp_unprotect(srtp,packet->GetData(),&size);
+		//Check error
+		if (err!=err_status_ok)
+		{
+			Error("Error decoding packet [%d]\n",err);
+			//Nothing
+			return;
+		}
+		//Set size
+		packet->SetSize(size);
+	}
+
 	//Get sec number
 	WORD seq = packet->GetSeqNum();
 
@@ -522,6 +784,8 @@ void RTPSession::ReadRTP()
 	//Check maps
 	if (rtpMapIn)
 	{
+		//Set media
+
 		//Find the type in the map
 		RTPMap::iterator it = rtpMapIn->find(type);
 		//Check it is in there

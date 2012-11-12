@@ -357,5 +357,14 @@ inline char *av_base64_encode(char *out, int out_size, const uint8_t *in, int in
     return ret;
 }
 
+inline DWORD pad32(DWORD size)
+{
+	//Alling to 32 bits
+	if (size & 0x03)
+		//Add padding
+		return  (size & 0xFFFFFFFC)+4;
+	else
+		return size;
+}
 #endif
 

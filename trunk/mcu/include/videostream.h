@@ -29,6 +29,9 @@ public:
 	int StopReceiving();
 	int SetMediaListener(MediaFrame::Listener *listener);
 	int SetMute(bool isMuted);
+	int SetLocalCryptoSDES(const char* suite, const char* key64);
+	int SetRemoteCryptoSDES(const char* suite, const char* key64);
+	int SetLocalSTUNCredentials(const char* username, const char* pwd);
 	int End();
 
 	int IsSending()	  { return sendingVideo;  }
@@ -60,8 +63,6 @@ private:
 	int 		videoGrabHeight;	//Alto de la captur
 	int 		videoFPS;
 	int 		videoBitrate;
-	int		videoQuality;
-	int		videoFillLevel;
 	int		videoIntraPeriod;
 
 	//Las threads

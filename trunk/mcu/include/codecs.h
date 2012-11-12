@@ -29,7 +29,7 @@ public:
 class VideoCodec
 {
 public:
-	enum Type {H263_1996=34,H263_1998=103,MPEG4=104,H264=99,SORENSON=100};
+	enum Type {H263_1996=34,H263_1998=103,MPEG4=104,H264=99,SORENSON=100,VP8=107};
 	static const char* GetNameFor(Type type)
 	{
 		switch (type)
@@ -39,6 +39,7 @@ public:
 			case MPEG4:	return "MPEG4";
 			case H264:	return "H264";
 			case SORENSON:  return "SORENSON";
+			case VP8:	return "VP8";
 			default:	return "unknown";
 		}
 	}
