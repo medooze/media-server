@@ -140,8 +140,9 @@ public:
 		length=size;
 	}
 
-	bool AppendMedia(BYTE* data,DWORD size)
+	DWORD AppendMedia(BYTE* data,DWORD size)
 	{
+		DWORD pos = length;
 		//Check size
 		if (size+length>bufferSize)
 			//Allocate new size
@@ -150,6 +151,8 @@ public:
 		memcpy(buffer+length,data,size);
 		//Increase length
 		length+=size;
+		//Return previous pos
+		return pos;
 	}
 	
 protected:
