@@ -227,6 +227,9 @@ int RTPSession::SetLocalCryptoSDES(const char* suite, const char* key64)
 		//Error
 		return Error("Failed to create srtp session (%d)\n", err);
 
+	//Decript
+	encript = true;
+
 	//Evrything ok
 	return 1;
 }
@@ -305,6 +308,9 @@ int RTPSession::SetRemoteCryptoSDES(const char* suite, const char* key64)
 		//Error
 		return Error("Failed set local SDES  (%d)\n", err);
 
+	//Decript
+	decript = true;
+	
 	//Everything ok
 	return 1;
 }

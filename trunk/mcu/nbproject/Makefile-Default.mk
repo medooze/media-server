@@ -53,14 +53,14 @@ LDLIBSOPTIONS=
 
 # Build Targets
 .build-conf: ${BUILD_SUBPROJECTS}
-	cd /usr/local/src/mcuwebrtc/ && ${MAKE} -f Makefile
+	cd /usr/local/src/mcu/ && ${MAKE} -f Makefile
 
 # Subprojects
 .build-subprojects:
 
 # Clean Targets
 .clean-conf: ${CLEAN_SUBPROJECTS}
-	cd /usr/local/src/mcuwebrtc/ && ${MAKE} -f Makefile clean
+	cd /usr/local/src/mcu/ && ${MAKE} -f Makefile clean
 
 # Subprojects
 .clean-subprojects:
