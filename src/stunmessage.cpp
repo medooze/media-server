@@ -156,12 +156,13 @@ DWORD STUNMessage::AuthenticatedFingerPrint(BYTE* data,DWORD size,const char* pw
 		//Set attr type
 		set2(data,i,(*it)->type);
 		set2(data,i+2,(*it)->size);
-		//Copy
-		memcpy(data+i+4,(*it)->attr,(*it)->size);
+		//Check not empty attr
+		if ((*it)->attr)
+			//Copy
+			memcpy(data+i+4,(*it)->attr,(*it)->size);
 		//Move
 		i = pad32(i+4+(*it)->size);
 	}
-
 
 	DWORD len;
 	CRC32Calc crc32calc;
@@ -245,6 +246,38 @@ void  STUNMessage::AddAttribute(Attribute::Type type,BYTE *data,DWORD size)
 {
 	//Add it
 	attributes.push_back(new Attribute(type,data,size));
+}
+
+void  STUNMessage::AddAttribute(Attribute::Type type)
+{
+	//Add it
+	attributes.push_back(new Attribute(type,NULL,0));
+}
+
+void  STUNMessage::AddAttribute(Attribute::Type type,QWORD data)
+{
+	//Add it
+	attributes.push_back(new Attribute(type,data));
+}
+
+void  STUNMessage::AddAttribute(Attribute::Type type,DWORD data)
+{
+	//Add it
+	attributes.push_back(new Attribute(type,data));
+}
+
+void  STUNMessage::AddUsernameAttribute(const char* local,const char* remote)
+{
+	//Calculate new size
+	DWORD size = strlen(local)+strlen(remote)+1;
+	//Allocate data
+	BYTE* data =(BYTE*)malloc(size+1);
+	//Create username
+	sprintf((char*)data,"%s:%s",remote,local);
+	//Add attribute
+	AddAttribute(Attribute::Username,data,size);
+	//Free mem
+	free(data);
 }
 
 void  STUNMessage::AddAddressAttribute(sockaddr_in* addr)

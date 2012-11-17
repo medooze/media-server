@@ -71,6 +71,7 @@ public:
 	int SetLocalCryptoSDES(const char* suite, const char* key64);
 	int SetRemoteCryptoSDES(const char* suite, const char* key64);
 	int SetLocalSTUNCredentials(const char* username, const char* pwd);
+	int SetRemoteSTUNCredentials(const char* username, const char* pwd);
 private:
 	void Start();
 	void Stop();
@@ -103,8 +104,10 @@ private:
 	bool	decript;
 	srtp_t	srtp;
 
-	char*	iceUsername;
-	char*	icePwd;
+	char*	iceRemoteUsername;
+	char*	iceRemotePwd;
+	char*	iceLocalUsername;
+	char*	iceLocalPwd;
 	pthread_t thread;
 	pthread_mutex_t mutex;	
 

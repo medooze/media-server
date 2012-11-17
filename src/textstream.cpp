@@ -93,6 +93,11 @@ int TextStream::SetLocalSTUNCredentials(const char* username, const char* pwd)
 	return rtp.SetLocalSTUNCredentials(username,pwd);
 }
 
+int TextStream::SetRemoteSTUNCredentials(const char* username, const char* pwd)
+{
+	return rtp.SetRemoteSTUNCredentials(username,pwd);
+}
+
 /***************************************
 * startSendingText
 *	Helper function

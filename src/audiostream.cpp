@@ -91,6 +91,11 @@ int AudioStream::SetLocalSTUNCredentials(const char* username, const char* pwd)
 	return rtp.SetLocalSTUNCredentials(username,pwd);
 }
 
+int AudioStream::SetRemoteSTUNCredentials(const char* username, const char* pwd)
+{
+	return rtp.SetRemoteSTUNCredentials(username,pwd);
+}
+
 /***************************************
 * startSendingAudio
 *	Helper function

@@ -8,6 +8,7 @@
 #ifndef STUNMESSAGE_H
 #define	STUNMESSAGE_H
 #include "config.h"
+#include "tools.h"
 #include <vector>
 #include <stdlib.h>
 #include <string.h>
@@ -47,10 +48,38 @@ public:
 			//Copy values
 			this->type = type;
 			this->size = size;
+			if (attr)
+			{
+				//allocate
+				this->attr = (BYTE*)malloc(size);
+				//Copy
+				memcpy(this->attr,attr,size);
+			} else {
+				//Empty
+				this->attr = NULL;
+			}
+		}
+
+		Attribute(WORD type,QWORD data)
+		{
+			//Copy values
+			this->type = type;
+			this->size = size;
 			//allocate
-			this->attr = (BYTE*)malloc(size);
+			this->attr = (BYTE*)malloc(sizeof(data));
 			//Copy
-			memcpy(this->attr,attr,size);
+			set8(this->attr,0,data);
+		}
+
+		Attribute(WORD type,DWORD data)
+		{
+			//Copy values
+			this->type = type;
+			this->size = size;
+			//allocate
+			this->attr = (BYTE*)malloc(sizeof(data));
+			//Copy
+			set4(this->attr,0,data);
 		}
 
 		~Attribute()
@@ -78,8 +107,12 @@ public:
 	bool  HasAttribute(Attribute::Type type);
 	void  AddAttribute(Attribute* attr);
 	void  AddAttribute(Attribute::Type type,BYTE *data,DWORD size);
+	void  AddAttribute(Attribute::Type type,QWORD data);
+	void  AddAttribute(Attribute::Type type,DWORD data);
+	void  AddAttribute(Attribute::Type type);
 	void  AddAddressAttribute(sockaddr_in *addr);
 	void  AddXorAddressAttribute(sockaddr_in *addr);
+	void  AddUsernameAttribute(const char* local,const char* remote);
 
 
 	Type GetType()		{ return type; }

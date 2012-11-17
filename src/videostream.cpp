@@ -133,6 +133,10 @@ int VideoStream::SetLocalSTUNCredentials(const char* username, const char* pwd)
 	return rtp.SetLocalSTUNCredentials(username,pwd);
 }
 
+int VideoStream::SetRemoteSTUNCredentials(const char* username, const char* pwd)
+{
+	return rtp.SetRemoteSTUNCredentials(username,pwd);
+}
 /**************************************
 * startSendingVideo
 *	Function helper for thread
