@@ -121,6 +121,21 @@ int RTPParticipant::SetLocalSTUNCredentials(MediaFrame::Type media,const char* u
 	return 0;
 }
 
+int RTPParticipant::SetRemoteSTUNCredentials(MediaFrame::Type media,const char* username, const char* pwd)
+{
+	switch (media)
+	{
+		case MediaFrame::Audio:
+			return audio.SetRemoteSTUNCredentials(username,pwd);
+		case MediaFrame::Video:
+			return video.SetRemoteSTUNCredentials(username,pwd);
+		case MediaFrame::Text:
+			return text.SetRemoteSTUNCredentials(username,pwd);
+	}
+
+	return 0;
+}
+
 int RTPParticipant::StartSending(MediaFrame::Type media,char *ip, int port,RTPMap& rtpMap)
 {
 	switch (media)

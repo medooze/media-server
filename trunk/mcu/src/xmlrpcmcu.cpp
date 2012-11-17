@@ -1422,6 +1422,42 @@ xmlrpc_value* SetLocalSTUNCredentials(xmlrpc_env *env, xmlrpc_value *param_array
 	return xmlok(env);
 }
 
+xmlrpc_value* SetRemoteSTUNCredentials(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+	MCU *mcu = (MCU *)user_data;
+	MultiConf *conf = NULL;
+
+	//Parseamos
+	int confId;
+	int partId;
+	int media;
+	char *username;
+	char *pwd;
+	xmlrpc_value *rtpMap;
+	xmlrpc_parse_value(env, param_array, "(iiiss)", &confId,&partId,&media,&username,&pwd);
+
+	//Comprobamos si ha habido error
+	if(env->fault_occurred)
+		return 0;
+
+		//Obtenemos la referencia
+	if(!mcu->GetConferenceRef(confId,&conf))
+		return xmlerror(env,"Conference does not exist");
+
+	//La borramos
+	int res = conf->SetRemoteSTUNCredentials(partId,(MediaFrame::Type)media,username,pwd);
+
+	//Liberamos la referencia
+	mcu->ReleaseConferenceRef(confId);
+
+	//Salimos
+	if(!res)
+		return xmlerror(env,"Error");
+
+	//Devolvemos el resultado
+	return xmlok(env);
+}
+
 xmlrpc_value* StopSending(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
@@ -1594,5 +1630,6 @@ XmlHandlerCmd mcuCmdList[] =
 	{"SetRemoteCryptoSDES",SetRemoteCryptoSDES},
 	{"SetLocalCryptoSDES",SetLocalCryptoSDES},
 	{"SetLocalSTUNCredentials",SetLocalSTUNCredentials},
+	{"SetRemoteSTUNCredentials",SetRemoteSTUNCredentials},
 	{NULL,NULL}
 };

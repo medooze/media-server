@@ -120,9 +120,11 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener)
 	encript = false;
 	decript = false;
 	srtp = NULL;
-	//No ICE
-	iceUsername = NULL;
-	icePwd = NULL;
+	//No ice
+	iceLocalUsername = NULL;
+	iceLocalPwd = NULL;
+	iceRemoteUsername = NULL;
+	iceRemotePwd = NULL;
 	//Fill with 0
 	memset(sendPacket,0,MTU);
 	//No thread
@@ -147,10 +149,10 @@ RTPSession::~RTPSession()
 		//Delete
 		delete(packets.Pop());
 	//Clean mem
-	if (iceUsername)
-		free(iceUsername);
-	if (icePwd)
-		free(icePwd);
+	if (iceLocalUsername)
+		free(iceLocalUsername);
+	if (iceLocalPwd)
+		free(iceLocalPwd);
 	//If secure
 	if (srtp)
 		//Dealoacate
@@ -238,17 +240,32 @@ int RTPSession::SetLocalSTUNCredentials(const char* username, const char* pwd)
 {
 	Log("-SetLocalSTUNCredentials [frag:%s,pwd:%s]\n",username,pwd);
 	//Clean mem
-	if (iceUsername)
-		free(iceUsername);
-	if (icePwd)
-		free(icePwd);
+	if (iceLocalUsername)
+		free(iceLocalUsername);
+	if (iceLocalPwd)
+		free(iceLocalPwd);
 	//Store values
-	iceUsername = strdup(username);
-	icePwd = strdup(pwd);
+	iceLocalUsername = strdup(username);
+	iceLocalPwd = strdup(pwd);
 	//Ok
 	return 1;
 }
 
+
+int RTPSession::SetRemoteSTUNCredentials(const char* username, const char* pwd)
+{
+	Log("-SetRemoteSTUNCredentials [frag:%s,pwd:%s]\n",username,pwd);
+	//Clean mem
+	if (iceRemoteUsername)
+		free(iceRemoteUsername);
+	if (iceRemotePwd)
+		free(iceRemotePwd);
+	//Store values
+	iceRemoteUsername = strdup(username);
+	iceRemotePwd = strdup(pwd);
+	//Ok
+	return 1;
+}
 int RTPSession::SetRemoteCryptoSDES(const char* suite, const char* key64)
 {
 	err_status_t err;
@@ -643,13 +660,13 @@ void RTPSession::ReadRTP()
 				STUNMessage* resp = stun->CreateResponse();
 				//Add received xor mapped addres
 				resp->AddXorAddressAttribute(&from_addr);
-				//TODO: Check incoming request username attribute value starts with iceUsername+":"
+				//TODO: Check incoming request username attribute value starts with iceLocalUsername+":"
 				//Create  response
 				DWORD size = resp->GetSize();
 				BYTE *aux = (BYTE*)malloc(size);
 
 				//Serialize and autenticate
-				DWORD len = resp->AuthenticatedFingerPrint(aux,size,icePwd);
+				DWORD len = resp->AuthenticatedFingerPrint(aux,size,iceLocalPwd);
 				//Send it
 				sendto(simSocket,aux,len,0,(sockaddr *)&from_addr,sizeof(struct sockaddr_in));
 
@@ -672,6 +689,35 @@ void RTPSession::ReadRTP()
 						//Request a I frame
 						listener->onFPURequested(this);
 				}
+				//Create trans id
+				BYTE transId[12];
+				//Set first to 0
+				set4(transId,0,0);
+				//Set timestamp as trans id
+				set8(transId,4,getTime());
+				//Create binding request to send back
+				STUNMessage *request = new STUNMessage(STUNMessage::Request,STUNMessage::Binding,transId);
+				//Add username
+				request->AddUsernameAttribute(iceLocalUsername,iceRemoteUsername);
+				//Add other attributes
+				request->AddAttribute(STUNMessage::Attribute::IceControlled,(QWORD)-1);
+				request->AddAttribute(STUNMessage::Attribute::UseCandidate);
+				request->AddAttribute(STUNMessage::Attribute::Priority,(DWORD)33554431);
+
+				//Create  request
+				size = request->GetSize();
+				aux = (BYTE*)malloc(size);
+
+				//Serialize and autenticate
+				len = request->AuthenticatedFingerPrint(aux,size,iceRemotePwd);
+				//Send it
+				sendto(simSocket,aux,len,0,(sockaddr *)&from_addr,sizeof(struct sockaddr_in));
+
+				//Clean memory
+				free(aux);
+				//Clean response
+				delete(request);
+
 			}
 		}
 
