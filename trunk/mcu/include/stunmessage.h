@@ -64,9 +64,9 @@ public:
 		{
 			//Copy values
 			this->type = type;
-			this->size = size;
+			this->size = sizeof(data);
 			//allocate
-			this->attr = (BYTE*)malloc(sizeof(data));
+			this->attr = (BYTE*)malloc(size);
 			//Copy
 			set8(this->attr,0,data);
 		}
@@ -75,9 +75,9 @@ public:
 		{
 			//Copy values
 			this->type = type;
-			this->size = size;
+			this->size = sizeof(data);
 			//allocate
-			this->attr = (BYTE*)malloc(sizeof(data));
+			this->attr = (BYTE*)malloc(size);
 			//Copy
 			set4(this->attr,0,data);
 		}

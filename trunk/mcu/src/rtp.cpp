@@ -1,7 +1,18 @@
+#include <arpa/inet.h>
+#include "log.h"
 #include "rtp.h"
 #include "audio.h"
 #include "h264/h264depacketizer.h"
 
+static DWORD GetRTCPHeaderLength(rtcp_common_t* header)
+{
+	return (ntohs(header->length)+1)*4;
+}
+
+static void SetRTCPHeaderLength(rtcp_common_t* header,DWORD size)
+{
+	header->length = htons(size/4-1);
+}
 
 class DummyAudioDepacketizer : public RTPDepacketizer
 {
@@ -71,3 +82,914 @@ RTPDepacketizer* RTPDepacketizer::Create(MediaFrame::Type mediaType,DWORD codec)
 	 }
 	 return NULL;
 }
+void RTCPPacket::Dump()
+{
+	Debug("\t[RTCPpacket type=%s size=%d]\n",TypeToString(type),GetSize());
+}
+void RTCPCompoundPacket::Dump()
+{
+	Debug("[RTCPCompoundPacket count=%d size=%d]\n",packets.size(),GetSize());
+	//For each one
+	for(RTCPPackets::iterator it = packets.begin(); it!=packets.end(); ++it)
+		//Dump
+		(*it)->Dump();
+	Debug("[/RTCPCompoundPacket]\n");
+}
+RTCPCompoundPacket* RTCPCompoundPacket::Parse(BYTE *data,DWORD size)
+{
+	//Check if it is an RTCP valid header
+	if (!IsRTCP(data,size))
+		//Exit
+		return NULL;
+	//Create pacekt
+	RTCPCompoundPacket* rtcp = new RTCPCompoundPacket();
+	//Init pointers
+	BYTE *buffer = data;
+	DWORD bufferLen = size;
+	//Parse
+	while (bufferLen)
+	{
+		RTCPPacket *packet = NULL;
+		//Get header
+		rtcp_common_t* header = (rtcp_common_t*) buffer;
+		//Get type
+		RTCPPacket::Type type = (RTCPPacket::Type)header->pt;
+		//Create new packet
+		switch (type)
+		{
+			case RTCPPacket::SenderReport:
+				//Create packet
+				packet = new RTCPSenderReport();
+				break;
+			case RTCPPacket::ReceiverReport:
+				//Create packet
+				packet = new RTCPReceiverReport();
+				break;
+			case RTCPPacket::SDES:
+				//Create packet
+				packet = new RTCPSDES();
+				break;
+			case RTCPPacket::Bye:
+				//Create packet
+				packet = new RTCPBye();
+				break;
+			case RTCPPacket::App:
+				//Create packet
+				packet = new RTCPApp();
+				break;
+			case RTCPPacket::RTPFeedback:
+				//Create packet
+				packet = new RTCPRTPFeedback();
+				break;
+			case RTCPPacket::PayloadFeedback:
+				//Create packet
+				packet = new RTCPPayloadFeedback();
+				break;
+			case RTCPPacket::FullIntraRequest:
+				//Create packet
+				packet = new RTCPFullIntraRequest();
+				break;
+			case RTCPPacket::NACK:
+				//Create packet
+				packet = new RTCPNACK();
+				break;
+			default:
+				//Skip
+				Debug("-Unknown rtcp packet type [%d]\n",header->pt);
+		}
+		//Get size of the packet
+		DWORD len = GetRTCPHeaderLength(header);
+		//Check len
+		if (len>bufferLen)
+			//error
+			return (RTCPCompoundPacket*)Error("Wrong rtcp packet size");
+		//parse
+		if (packet && packet->Parse(buffer,len))
+			//Add packet
+			rtcp->AddRTCPacket(packet);
+		//Remove size
+		bufferLen -= len;
+		//Increase pointer
+		buffer    += len;
+	}
+
+	//Return it
+	return rtcp;
+}
+RTCPSenderReport::RTCPSenderReport() : RTCPPacket(RTCPPacket::SenderReport)
+{
+	ssrc = 0;
+	ntpSec = 0;
+	ntpFrac = 0;
+	rtpTimestamp = 0;
+	packetsSent = 0;
+	octectsSent = 0;
+}
+
+RTCPSenderReport::~RTCPSenderReport()
+{
+	for(Reports::iterator it = reports.begin();it!=reports.end();++it)
+		delete(*it);
+}
+
+DWORD RTCPSenderReport::GetSize()
+{
+	return sizeof(rtcp_common_t)+24+24*reports.size();
+}
+
+DWORD RTCPSenderReport::Parse(BYTE* data,DWORD size)
+{
+	//Get header
+	rtcp_common_t * header = (rtcp_common_t *)data;
+
+
+	//Check size
+	if (size<GetRTCPHeaderLength(header))
+		//Exit
+		return 0;
+	//Skip headder
+	DWORD len = sizeof(rtcp_common_t);
+	//Get info
+	ssrc		= get4(data,len);
+	ntpSec		= get4(data,len+4);
+	ntpFrac		= get4(data,len+8);
+	rtpTimestamp	= get4(data,len+12);
+	packetsSent	= get4(data,len+16);
+	octectsSent	= get4(data,len+20);
+	//Move forward
+	len += 24;
+	//for each
+	for(int i=0;i<header->count&&size>len+24;i++)
+	{
+		//New report
+		RTCPReport* report = new RTCPReport();
+		//parse
+		len += report->Parse(data+len,size-len);
+		//Add it
+		AddReport(report);
+	}
+	
+	//Return total size
+	return len;
+}
+
+DWORD RTCPSenderReport::Serialize(BYTE* data,DWORD size)
+{
+	//Get packet size
+	DWORD packetSize = GetSize();
+	//Check size
+	if (size<packetSize)
+		//error
+		return Error("Serialize RTCPSenderReport invalid size\n");
+	//Set header
+	rtcp_common_t * header = (rtcp_common_t *)data;
+	//Set values
+	header->count	= reports.size();
+	header->pt	= GetType();
+	header->p	= 0;
+	header->version = 2;
+	SetRTCPHeaderLength(header,packetSize);
+	//Skip
+	DWORD len = sizeof(rtcp_common_t);
+	//Set values
+	set4(data,len,ssrc);
+	set4(data,len+4,ntpSec);
+	set4(data,len+8,ntpFrac);
+	set4(data,len+12,rtpTimestamp);
+	set4(data,len+16,packetsSent);
+	set4(data,len+20,octectsSent);
+	//Next
+	len += 24;
+	//for each
+	for(int i=0;i<header->count;i++)
+		//Serialize
+		len += reports[i]->Serialize(data+len,size-len);
+	//return
+	return len;
+}
+
+RTCPReceiverReport::RTCPReceiverReport() : RTCPPacket(RTCPPacket::ReceiverReport)
+{
+
+}
+
+
+RTCPReceiverReport::~RTCPReceiverReport()
+{
+	for(Reports::iterator it = reports.begin();it!=reports.end();++it)
+		delete(*it);
+}
+
+DWORD RTCPReceiverReport::GetSize()
+{
+	return sizeof(rtcp_common_t)+4+24*reports.size();
+}
+
+DWORD RTCPReceiverReport::Parse(BYTE* data,DWORD size)
+{
+	//Get header
+	rtcp_common_t * header = (rtcp_common_t *)data;
+
+	//Check size
+	if (size<GetRTCPHeaderLength(header))
+		//Exit
+		return 0;
+	//Skip headder
+	DWORD len = sizeof(rtcp_common_t);
+	//Get info
+	ssrc = get4(data,len);
+	//Move forward
+	len += 4;
+	//for each
+	for(int i=0;i<header->count&&size>len+24;i++)
+	{
+		//New report
+		RTCPReport* report = new RTCPReport();
+		//parse
+		len += report->Parse(data+len,size-len);
+		//Add it
+		AddReport(report);
+	}
+
+	//Return total size
+	return len;
+}
+
+DWORD RTCPReceiverReport::Serialize(BYTE* data,DWORD size)
+{
+	//Get packet size
+	DWORD packetSize = GetSize();
+	//Check size
+	if (size<packetSize)
+		//error
+		return Error("Serialize RTCPSenderReport invalid size\n");
+	//Set header
+	rtcp_common_t * header = (rtcp_common_t *)data;
+	//Set values
+	header->count	= reports.size();
+	header->pt	= GetType();
+	header->p	= 0;
+	header->version = 2;
+	SetRTCPHeaderLength(header,packetSize);
+	//Skip
+	DWORD len = sizeof(rtcp_common_t);
+	//Set values
+	set4(data,len,ssrc);
+	//Next
+	len += 4;
+	//for each
+	for(int i=0;i<header->count;i++)
+		//Serialize
+		len += reports[i]->Serialize(data+len,size-len);
+	//return
+	return len;
+}
+
+RTCPBye::RTCPBye() : RTCPPacket(RTCPPacket::Bye)
+{
+	//No reason
+	reason = NULL;
+}
+
+RTCPBye::~RTCPBye()
+{
+	//Free
+	if (reason)
+		free(reason);
+}
+DWORD RTCPBye::GetSize()
+{
+	DWORD len = sizeof(rtcp_common_t)+4*ssrcs.size();
+	if (reason)
+		len += strlen(reason)+1;
+	return len;
+}
+
+DWORD RTCPBye::Parse(BYTE* data,DWORD size)
+{
+	//Get header
+	rtcp_common_t * header = (rtcp_common_t *)data;
+
+	//Get packet size
+	DWORD packetSize = GetSize();
+	//Check size
+	if (size<packetSize)
+		//Exit
+		return 0;
+	//Skip headder
+	DWORD len = sizeof(rtcp_common_t);
+	//for each
+	for(int i=0;i<header->count;i++)
+	{
+		//Get ssrc
+		ssrcs.push_back(get4(data,len));
+		//Add lenght
+		len+=4;
+	}
+
+	//Check if more preseng
+	if (packetSize>len)
+	{
+		//Get len or reason
+		DWORD n = data[len];
+		//Allocate mem
+		reason = (char*)malloc(n+1);
+		//Copy
+		memcpy(reason,data+len+1,n);
+		//End it
+		reason[n] = 0;
+		//Move
+		len += n+1;
+	}
+
+	//Return total size
+	return len;
+}
+
+DWORD RTCPBye::Serialize(BYTE* data,DWORD size)
+{
+	//Get packet size
+	DWORD packetSize = GetSize();
+	//Check size
+	if (size<packetSize)
+		//error
+		return Error("Serialize RTCPSenderReport invalid size\n");
+	//Set header
+	rtcp_common_t * header = (rtcp_common_t *)data;
+	//Set values
+	header->count	= ssrcs.size();
+	header->pt	= GetType();
+	header->p	= 0;
+	header->version = 2;
+	SetRTCPHeaderLength(header,packetSize);
+	//Skip
+	DWORD len = sizeof(rtcp_common_t);
+	//for each
+	for(int i=0;i<ssrcs.size();i++)
+	{
+		//Set ssrc
+		set4(data,len,ssrcs[i]);
+		//skip
+		len += 4;
+	}
+	//Optional reason
+	if (reason)
+	{
+		//Set reason length
+		data[len] = strlen(reason);
+
+		//Copy reason
+		memcpy(data+len+1,reason,strlen(reason));
+
+		//Add len
+		len +=strlen(reason)+1;
+	}
+
+	//return
+	return len;
+}
+
+RTCPApp::RTCPApp() : RTCPPacket(RTCPPacket::App)
+{
+	data = NULL;
+	size = 0;
+	subtype = 0;
+}
+
+RTCPApp::~RTCPApp()
+{
+	if (data)
+		free(data);
+}
+
+DWORD RTCPApp::GetSize()
+{
+	return sizeof(rtcp_common_t)+8+size;
+}
+
+DWORD RTCPApp::Serialize(BYTE* data, DWORD size)
+{
+	//Get packet size
+	DWORD packetSize = GetSize();
+	//Check size
+	if (size<packetSize)
+		//error
+		return Error("Serialize RTCPSenderReport invalid size\n");
+	//Set header
+	rtcp_common_t * header = (rtcp_common_t *)data;
+	//Set values
+	header->count	= subtype;
+	header->pt	= GetType();
+	header->p	= 0;
+	header->version = 2;
+	SetRTCPHeaderLength(header,packetSize);
+	//Set lenght
+	DWORD len = sizeof(rtcp_common_t);
+	//Copy
+	set4(data,len,ssrc);
+	//Move
+	len += 4;
+	//Copy name
+	memcpy(data+len,name,4);
+	//Inc len
+	len += 4;
+	//Copy
+	memcpy(data+len,this->data,this->size);
+	//add it
+	len += this->size;
+	//return it
+	return len;
+}
+
+DWORD RTCPApp::Parse(BYTE* data,DWORD size)
+{
+	//Get header
+	rtcp_common_t * header = (rtcp_common_t *)data;
+
+	//Get packet size
+	DWORD packetSize = GetSize();
+	//Check size
+	if (size<packetSize)
+		//Exit
+		return 0;
+	//Get subtype
+	subtype = header->count;
+	//Skip headder
+	DWORD len = sizeof(rtcp_common_t);
+	//Get ssrc
+	ssrc = get4(data,len);
+	//Move
+	len += 4;
+	//Copy name
+	memcpy(name,data+len,4);
+	//Skip
+	len += 4;
+	//Set size
+	this->size = packetSize-len;
+	//Allocate mem
+	this->data = (BYTE*)malloc(this->size);
+	//Copy data
+	memcpy(this->data,data+len,this->size);
+	//Skip
+	len += this->size;
+	//Copy
+	return len;
+}
+
+RTCPRTPFeedback::RTCPRTPFeedback() : RTCPPacket(RTCPPacket::RTPFeedback)
+{
+
+}
+
+DWORD RTCPRTPFeedback::GetSize()
+{
+	return sizeof(rtcp_common_t)+12;
+}
+
+DWORD RTCPRTPFeedback::Parse(BYTE* data,DWORD size)
+{
+	//Get header
+	rtcp_common_t * header = (rtcp_common_t *)data;
+
+	//Check size
+	if (size<GetRTCPHeaderLength(header))
+		//Exit
+		return 0;
+	//Get subtype
+	feedbackType = (FeedbackType)header->count;
+	//Check
+	if (feedbackType!=NACK)
+		//Error
+		return Error("-Unknowon RTCPRTPFeedback type [%d]\n",feedbackType);
+	//Skip headder
+	DWORD len = sizeof(rtcp_common_t);
+	//Get ssrcs
+	senderSSRC = get4(data,len);
+	mediaSSRC = get4(data,len+4);
+	//Get nack data
+	nack.pid = get2(data,len+8);
+	nack.blp = get2(data,len+10);
+	//Return consumed len
+	return len+12;
+}
+
+DWORD RTCPRTPFeedback::Serialize(BYTE* data,DWORD size)
+{
+	//Get packet size
+	DWORD packetSize = GetSize();
+	//Check size
+	if (size<packetSize)
+		//error
+		return Error("Serialize RTCPSenderReport invalid size\n");
+	//Set header
+	rtcp_common_t * header = (rtcp_common_t *)data;
+	//Set values
+	header->count	= feedbackType;
+	header->pt	= GetType();
+	header->p	= 0;
+	header->version = 2;
+	SetRTCPHeaderLength(header,packetSize);
+	//Set lenght
+	DWORD len = sizeof(rtcp_common_t);
+	//Set ssrcs
+	set4(data,len,senderSSRC);
+	set4(data,len+4,mediaSSRC);
+	//Set nack data
+	set2(data,len+8,nack.pid);
+	set2(data,len+10,nack.blp);
+	//Retrun writed data len
+	return len+12;
+}
+
+
+RTCPPayloadFeedback::RTCPPayloadFeedback() : RTCPPacket(RTCPPacket::PayloadFeedback)
+{
+
+}
+
+RTCPPayloadFeedback::~RTCPPayloadFeedback()
+{
+	//For each field
+	for (Fields::iterator it=fields.begin();it!=fields.end();++it)
+		//delete it
+		delete(*it);
+}
+
+void RTCPPayloadFeedback::Dump()
+{
+	Debug("\t[/RTCPPakcet PayloadFeedback %s]\n",TypeToString(feedbackType));
+}
+DWORD RTCPPayloadFeedback::GetSize()
+{
+	DWORD len = 8+sizeof(rtcp_common_t);
+	//For each field
+	for (Fields::iterator it=fields.begin();it!=fields.end();++it)
+		//add size
+		len += (*it)->GetSize();
+	return len;
+}
+
+DWORD RTCPPayloadFeedback::Parse(BYTE* data,DWORD size)
+{
+	//Get header
+	rtcp_common_t * header = (rtcp_common_t *)data;
+
+	//Get packet size
+	DWORD packetSize = GetSize();
+	//Check size
+	if (size<packetSize)
+		//Exit
+		return 0;
+	//Get subtype
+	feedbackType = (FeedbackType)header->count;
+	//Skip headder
+	DWORD len = sizeof(rtcp_common_t);
+	//Get ssrcs
+	senderSSRC = get4(data,len);
+	mediaSSRC = get4(data,len+4);
+	//skip fields
+	len += 8;
+	//While we have more
+	while (len<packetSize)
+	{
+		Field *field = NULL;
+		//Depending on the type
+		switch(feedbackType)
+		{
+			case PictureLossIndication:
+				return Error("PictureLossIndication with body\n");
+			case SliceLossIndication:
+				field = new SliceLossIndicationField();
+				break;
+			case ReferencePictureSelectionIndication:
+				field = new ReferencePictureSelectionField();
+				break;
+			case FullIntraRequest:
+				field = new FullIntraRequestField();
+				break;
+			case TemporalSpatialTradeOffRequest:
+			case TemporalSpatialTradeOffNotification:
+				field = new TemporalSpatialTradeOffField();
+				break;
+			case VideoBackChannelMessage:
+				field = new VideoBackChannelMessageField();
+				break;
+			case ApplicationLayerFeeedbackMessage:
+				field = new ApplicationLayerFeeedbackField();
+				break;
+			default:
+				return Error("Unknown RTCPPayloadFeedback type [%d]\n",header->count);
+		}
+		//Parse field
+		DWORD parsed = field->Parse(data+len,packetSize-len);
+		//If not parsed
+		if (!parsed)
+			//Error
+			return 0;
+		//Add field
+		fields.push_back(field);
+		//Skip
+		len += parsed;
+	}
+	//Return consumed len
+	return len;
+}
+
+DWORD RTCPPayloadFeedback::Serialize(BYTE* data,DWORD size)
+{
+	//Get packet size
+	DWORD packetSize = GetSize();
+	//Check size
+	if (size<packetSize)
+		//error
+		return Error("Serialize RTCPSenderReport invalid size\n");
+	//Set header
+	rtcp_common_t * header = (rtcp_common_t *)data;
+	//Set values
+	header->count	= feedbackType;
+	header->pt	= GetType();
+	header->p	= 0;
+	header->version = 2;
+	SetRTCPHeaderLength(header,packetSize);
+	//Set lenght
+	DWORD len = sizeof(rtcp_common_t);
+	//Set ssrcs
+	set4(data,len,senderSSRC);
+	set4(data,len+4,mediaSSRC);
+	//Inclrease len
+	len += 8;
+	//For each field
+	for (Fields::iterator it=fields.begin();it!=fields.end();++it)
+		//Serialize it
+		len+=(*it)->Serialize(data+len,size-len);
+	//Retrun writed data len
+	return len;
+}
+
+RTCPFullIntraRequest::RTCPFullIntraRequest() : RTCPPacket(RTCPPacket::FullIntraRequest)
+{
+
+}
+
+DWORD RTCPFullIntraRequest::GetSize()
+{
+	return sizeof(rtcp_common_t)+4;
+}
+
+DWORD RTCPFullIntraRequest::Parse(BYTE* data,DWORD size)
+{
+	//Get header
+	rtcp_common_t * header = (rtcp_common_t *)data;
+
+	//Check size
+	if (size<GetRTCPHeaderLength(header))
+		//Exit
+		return 0;
+	//Skip headder
+	DWORD len = sizeof(rtcp_common_t);
+	//Get ssrcs
+	ssrc = get4(data,len);
+	//Return consumed len
+	return len+4;
+}
+
+DWORD RTCPFullIntraRequest::Serialize(BYTE* data,DWORD size)
+{
+	//Get packet size
+	DWORD packetSize = GetSize();
+	//Check size
+	if (size<packetSize)
+		//error
+		return Error("Serialize RTCPSenderReport invalid size\n");
+	//Set header
+	rtcp_common_t * header = (rtcp_common_t *)data;
+	//Set values
+	header->count	= 0;
+	header->pt	= 0;
+	header->p	= 0;
+	header->version = 2;
+	SetRTCPHeaderLength(header,packetSize);
+	//Set lenght
+	DWORD len = sizeof(rtcp_common_t);
+	//Set ssrcs
+	set4(data,len,ssrc);
+	//Retrun writed data len
+	return len+4;
+}
+
+RTCPNACK::RTCPNACK() : RTCPPacket(RTCPPacket::NACK)
+{
+
+}
+
+DWORD RTCPNACK::GetSize()
+{
+	return sizeof(rtcp_common_t)+8;
+}
+
+DWORD RTCPNACK::Parse(BYTE* data,DWORD size)
+{
+	//Get header
+	rtcp_common_t * header = (rtcp_common_t *)data;
+
+	//Check size
+	if (size<GetRTCPHeaderLength(header))
+		//Exit
+		return 0;
+	//Skip headder
+	DWORD len = sizeof(rtcp_common_t);
+	//Get ssrcs
+	ssrc = get4(data,len);
+	fsn = get2(data,len+4);
+	blp = get2(data,len+2);
+	//Return consumed len
+	return len+8;
+}
+
+DWORD RTCPNACK::Serialize(BYTE* data,DWORD size)
+{
+	//Get packet size
+	DWORD packetSize = GetSize();
+	//Check size
+	if (size<packetSize)
+		//error
+		return Error("Serialize RTCPSenderReport invalid size\n");
+	//Set header
+	rtcp_common_t * header = (rtcp_common_t *)data;
+	//Set values
+	header->count	= 0;
+	header->pt	= 0;
+	header->p	= 0;
+	header->version = 2;
+	SetRTCPHeaderLength(header,packetSize);
+	//Set lenght
+	DWORD len = sizeof(rtcp_common_t);
+	//Set ssrcs
+	set4(data,len,ssrc);
+	set2(data,len+4,fsn);
+	set2(data,len+6,blp);
+	//Retrun writed data len
+	return len+8;
+}
+
+RTCPSDES::RTCPSDES() : RTCPPacket(RTCPPacket::SDES)
+{
+
+}
+RTCPSDES::~RTCPSDES()
+{
+	for (Descriptions::iterator it=descriptions.begin();it!=descriptions.end();++it)
+		delete(*it);
+}
+DWORD RTCPSDES::GetSize()
+{
+	DWORD len = sizeof(rtcp_common_t);
+	//For each field
+	for (Descriptions::iterator it=descriptions.begin();it!=descriptions.end();++it)
+		//add size
+		len += (*it)->GetSize();
+	return len;
+}
+DWORD RTCPSDES::Parse(BYTE* data,DWORD size)
+{
+	//Get header
+	rtcp_common_t * header = (rtcp_common_t *)data;
+
+	//Check size
+	if (size<GetRTCPHeaderLength(header))
+		//Exit
+		return 0;
+	//Skip headder
+	DWORD len = sizeof(rtcp_common_t);
+	//Parse fields
+	DWORD i = 0;
+	//While we have
+	while (size>len && i<header->count)
+	{
+		Description *desc = new Description();
+		//Parse field
+		DWORD parsed = desc->Parse(data+len,size-len);
+		//If not parsed
+		if (!parsed)
+			//Error
+			return 0;
+		//Add field
+		descriptions.push_back(desc);
+		//Skip
+		len += parsed;
+	}
+	//Return consumed len
+	return len;
+}
+
+DWORD RTCPSDES::Serialize(BYTE* data,DWORD size)
+{
+	//Get packet size
+	DWORD packetSize = GetSize();
+	//Check size
+	if (size<packetSize)
+		//error
+		return Error("Serialize RTCPSDES invalid size\n");
+	//Set header
+	rtcp_common_t * header = (rtcp_common_t *)data;
+	//Set values
+	header->count	= 0;
+	header->pt	= 0;
+	header->p	= 0;
+	header->version = 2;
+	SetRTCPHeaderLength(header,packetSize);
+	//Skip headder
+	DWORD len = sizeof(rtcp_common_t);
+	//For each field
+	for (Descriptions::iterator it=descriptions.begin();it!=descriptions.end();++it)
+		//Serilize it
+		len += (*it)->Serialize(data+len,size-len);
+
+	//Return
+	return len;
+ }
+
+
+
+RTCPSDES::Description::Description()
+{
+
+}
+RTCPSDES::Description::Description(DWORD ssrc)
+{
+	this->ssrc = ssrc;
+}
+RTCPSDES::Description::~Description()
+{
+	for (Items::iterator it=items.begin();it!=items.end();++it)
+		delete(*it);
+}
+DWORD RTCPSDES::Description::GetSize()
+{
+	DWORD len = 4;
+	//For each field
+	for (Items::iterator it=items.begin();it!=items.end();++it)
+		//add size
+		len += (*it)->GetSize();
+	return pad32(len);
+}
+DWORD RTCPSDES::Description::Parse(BYTE* data,DWORD size)
+{
+	//Check size
+	if (size<4)
+		//Exit
+		return 0;
+	//Get ssrc
+	ssrc = get4(data,0);
+	//Skip ssrc
+	DWORD len = 4;
+	//While we have
+	while (size>len+2 && data[len])
+	{
+		//Get tvalues
+		RTCPSDES::Item::Type type = (RTCPSDES::Item::Type)data[len];
+		BYTE length = data[len+1];
+		//Check size
+		if (len+2+length>size)
+			//Error
+			return 0;
+		//Add item
+		items.push_back( new Item(type,data+len+2,length));
+		//Move
+		len += length+2;
+	}
+	//Return consumed len
+	return pad32(len);
+}
+DWORD RTCPSDES::Description::Serialize(BYTE* data,DWORD size)
+{
+	//Get packet size
+	DWORD packetSize = GetSize();
+	//Check size
+	if (size<packetSize)
+		//error
+		return Error("Serialize RTCPSDES Description invalid size\n");
+	//Set ssrc
+	set4(data,0,ssrc);
+	//Skip headder
+	DWORD len = 4;
+	//For each field
+	for (Items::iterator it=items.begin();it!=items.end();++it)
+	{
+		//Get item
+		Item *item = (*it);
+		//Serilize it
+		data[len++] = item->GetType();
+		data[len++] = item->GetSize();
+		//Copy data
+		memcpy(data+len,item->GetData(),item->GetSize());
+		//Move
+		len += item->GetSize();
+	}
+	//Add null item
+	data[len++] = 0;
+	//Append nulls till pading
+	memset(data+len,0,pad32(len)-len);
+	//Return padded size
+	return pad32(len);
+ }
