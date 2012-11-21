@@ -77,6 +77,7 @@ private:
 	void Stop();
 	void ReadRTP();
 	void ReadRTCP();
+	void ProcessRTCPPacket(RTCPCompoundPacket *packet);
 	void SetSendingType(int type);
 	int Run();
 private:
@@ -90,6 +91,7 @@ private:
 	MediaFrame::Type media;
 	Listener* listener;
 	WaitQueue<RTPPacket*> packets;
+	bool muxRTCP;
 	//Sockets
 	int 	simSocket;
 	int 	simRtcpSocket;
@@ -102,7 +104,10 @@ private:
 
 	bool	encript;
 	bool	decript;
-	srtp_t	srtp;
+	srtp_t	sendSRTPSession;
+	BYTE*	sendKey;
+	srtp_t	recvSRTPSession;
+	BYTE*	recvKey;
 
 	char*	iceRemoteUsername;
 	char*	iceRemotePwd;
@@ -139,8 +144,6 @@ private:
 	DWORD		totalRecvBytes;
 	DWORD		totalSendBytes;
 	DWORD		lostRecvPackets;
-
-	
 };
 
 #endif

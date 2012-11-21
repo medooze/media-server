@@ -98,8 +98,6 @@
         <in>mediamixer.cpp</in>
         <in>mediamixer.h</in>
       </df>
-      <df name="mcu">
-      </df>
       <df name="src" kind="SOURCE_LOGICAL_FOLDER">
         <df name="flv1" kind="SOURCE_LOGICAL_FOLDER">
           <in>flv1codec.cpp</in>
@@ -175,29 +173,6 @@
           <in>speexcodec.h</in>
         </df>
         <df name="vp8">
-          <df name=".svn">
-            <df name="prop-base" kind="SOURCE_LOGICAL_FOLDER">
-            </df>
-            <df name="props" kind="SOURCE_LOGICAL_FOLDER">
-            </df>
-            <df name="text-base" kind="SOURCE_LOGICAL_FOLDER">
-              <in>vp8.h.svn-base</in>
-              <in>vp8decoder.cpp.svn-base</in>
-              <in>vp8decoder.h.svn-base</in>
-              <in>vp8encoder.cpp.svn-base</in>
-              <in>vp8encoder.h.svn-base</in>
-            </df>
-            <df name="tmp" kind="SOURCE_LOGICAL_FOLDER">
-              <df name="prop-base" kind="SOURCE_LOGICAL_FOLDER">
-              </df>
-              <df name="props" kind="SOURCE_LOGICAL_FOLDER">
-              </df>
-              <df name="text-base" kind="SOURCE_LOGICAL_FOLDER">
-              </df>
-            </df>
-            <in>all-wcprops</in>
-            <in>entries</in>
-          </df>
           <in>vp8.h</in>
           <in>vp8decoder.cpp</in>
           <in>vp8decoder.h</in>

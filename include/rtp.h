@@ -4,30 +4,10 @@
 #include "config.h"
 #include "media.h"
 #include "video.h"
+#include <vector>
 
 #define RTP_VERSION    2
-#define RTCP_VALID_MASK	   (0xc000 | 0x2000 | 0xfe)
-#define RTCP_VALID_VALUE ((RTP_VERSION << 14) | RTCP_SR)
 
-typedef enum {
-    RTCP_SR   = 200,
-    RTCP_RR   = 201,
-    RTCP_SDES = 202,
-    RTCP_BYE  = 203,
-    RTCP_APP  = 204
-} rtcp_type_t;
-
-typedef enum {
-    RTCP_SDES_END   = 0,
-    RTCP_SDES_CNAME = 1,
-    RTCP_SDES_NAME  = 2,
-    RTCP_SDES_EMAIL = 3,
-    RTCP_SDES_PHONE = 4,
-    RTCP_SDES_LOC   = 5,
-    RTCP_SDES_TOOL  = 6,
-    RTCP_SDES_NOTE  = 7,
-    RTCP_SDES_PRIV  = 8
-} rtcp_sdes_type_t;
 
 /*
  * RTP data header
@@ -62,67 +42,6 @@ typedef struct {
     DWORD length:16;   /* pkt len in words, w/o this word */
 } rtcp_common_t;
 
-/*
- * Reception report block
- */
-typedef struct {
-    DWORD ssrc;             /* data source being reported */
-    DWORD fraction:8;	    /* fraction lost since last SR/RR */
-    DWORD lost:24;          /* cumul. no. pkts lost (signed!) */
-    DWORD last_seq;         /* extended last seq. no. received */
-    DWORD jitter;           /* interarrival jitter */
-    DWORD lsr;              /* last SR packet from this source */
-    DWORD dlsr;             /* delay since last SR packet */
-} rtcp_rr_t;
-
-/*
- * SDES item
- */
-typedef struct {
-    BYTE type;			/* type of item (rtcp_sdes_type_t) */
-    BYTE length;		/* length of item (in octets) */
-    char data[1];		/* text, not null-terminated */
-} rtcp_sdes_item_t;
-
-/*
- * One RTCP packet
- */
-typedef struct {
-    rtcp_common_t common;     /* common header */
-    union {
-        /* sender report (SR) */
-        struct {
-            DWORD ssrc;     /* sender generating this report */
-            DWORD ntp_sec;  /* NTP timestamp */
-            DWORD ntp_frac;
-            DWORD rtp_ts;   /* RTP timestamp */
-            DWORD psent;    /* packets sent */
-            DWORD osent;    /* octets sent */
-            rtcp_rr_t rr[1];  /* variable-length list */
-        } sr;
-
-        /* reception report (RR) */
-        struct {
-            DWORD ssrc;     /* receiver generating this report */
-            rtcp_rr_t rr[1];  /* variable-length list */
-        } rr;
-
-        /* source description (SDES) */
-        struct rtcp_sdes {
-            DWORD src;      /* first SSRC/CSRC */
-            rtcp_sdes_item_t item[1]; /* list of SDES items */
-        } sdes;
-
-        /* BYE */
-        struct {
-            DWORD src[1];   /* list of sources */
-            /* can't express trailing text for reason */
-        } bye;
-    } r;
-} rtcp_t;
-
-typedef struct rtcp_sdes rtcp_sdes_t;
-
 
 class RTPPacket
 {
@@ -138,6 +57,16 @@ public:
 		//set type
 		header->version = 2;
 		header->pt = codec;
+	}
+	
+	RTPPacket(MediaFrame::Type media,BYTE *data,DWORD size)
+	{
+		this->media = media;
+		this->codec = codec;
+		//Get header pointer
+		header = (rtp_hdr_t*) buffer;
+		//Set Data
+		SetData(data,size);
 	}
 
 	RTPPacket(MediaFrame::Type media,DWORD codec,DWORD type)
@@ -175,21 +104,21 @@ public:
 	void SetSize(DWORD size)	{ len = size-GetRTPHeaderLen();		}
 	
 	//Getters
-	MediaFrame::Type GetMedia()	{ return media;				}
-	rtp_hdr_t* GetRTPHeader()	{ return (rtp_hdr_t*)buffer;		}
-	DWORD GetRTPHeaderLen()		{ return sizeof(rtp_hdr_t)+4*header->cc;}
-	DWORD GetCodec()		{ return codec;				}
-	DWORD GetType()			{ return header->pt;			}
-	DWORD GetSize()			{ return len+GetRTPHeaderLen();		}
-	BYTE* GetData()			{ return buffer;			}
-	DWORD GetMaxSize()		{ return SIZE;				}
-	BYTE* GetMediaData()		{ return buffer+GetRTPHeaderLen();	}
-	DWORD GetMediaLength()		{ return len;				}
-	DWORD GetMaxMediaLength()	{ return SIZE-GetRTPHeaderLen();		}
-	bool  GetMark()			{ return header->m;			}
-	DWORD GetTimestamp()		{ return ntohl(header->ts);		}
-	WORD  GetSeqNum()		{ return ntohs(header->seq);		}
-	DWORD GetSSRC()			{ return ntohl(header->ssrc);		}
+	MediaFrame::Type GetMedia()	const { return media;				}
+	rtp_hdr_t* GetRTPHeader()	const { return (rtp_hdr_t*)buffer;		}
+	DWORD GetRTPHeaderLen()		const { return sizeof(rtp_hdr_t)+4*header->cc;	}
+	DWORD GetCodec()		const { return codec;				}
+	DWORD GetType()			const { return header->pt;			}
+	DWORD GetSize()			const { return len+GetRTPHeaderLen();		}
+	BYTE* GetData()			      { return buffer;				}
+	DWORD GetMaxSize()		const { return SIZE;				}
+	BYTE* GetMediaData()		      { return buffer+GetRTPHeaderLen();	}
+	DWORD GetMediaLength()		const { return len;				}
+	DWORD GetMaxMediaLength()	const { return SIZE-GetRTPHeaderLen();		}
+	bool  GetMark()			const { return header->m;			}
+	DWORD GetTimestamp()		const { return ntohl(header->ts);		}
+	WORD  GetSeqNum()		const { return ntohs(header->seq);		}
+	DWORD GetSSRC()			const { return ntohl(header->ssrc);		}
 	
 
 	bool SetPayload(BYTE *data,DWORD size)
@@ -203,6 +132,20 @@ public:
 		//Ser size
 		SetMediaLength(size);
 		//good
+		return true;
+	}
+
+	bool SetData(BYTE* data,DWORD size)
+	{
+		//Check
+		if (size>SIZE)
+			//Error
+			return false;
+		//Copy data
+		memcpy(buffer,data,size);
+		//Set size
+		SetSize(size);
+		//OK
 		return true;
 	}
 private:
@@ -256,4 +199,732 @@ private:
 	DWORD			codec;
 };
 
+class RTCPReport
+{
+public:
+	DWORD GetSSRC()			const { return get4(buffer,0);  }
+	BYTE  GetFactionLost()		const { return get1(buffer,4);  }
+	DWORD GetLostCount()		const { return get3(buffer,5);  }
+	DWORD GetLastSeqNum()		const { return get4(buffer,8);  }
+	DWORD GetJitter()		const { return get4(buffer,12); }
+	DWORD GetLastSR()		const { return get4(buffer,16); }
+	DWORD GetDelaySinceLastSR()	const { return get4(buffer,20); }
+	DWORD GetSize()			const { return 24;		}
+
+	void SetSSRC(DWORD ssrc)		{ set4(buffer,0,ssrc);		}
+	void SetFractionLost(BYTE fraction)	{ set1(buffer,4,fraction);	}
+	void SetLostCount(DWORD count)		{ set3(buffer,5,count);		}
+	void SetLastSeqNum(DWORD seq)		{ set4(buffer,8,seq);		}
+	void SetLastJitter(DWORD jitter)	{ set4(buffer,12,jitter);	}
+	void SetLastSR(DWORD last)		{ set4(buffer,16,last);		}
+	void SetDelaySinceLastSR(DWORD delay)	{ set4(buffer,20,delay);	}
+
+
+	DWORD Serialize(BYTE* data,DWORD size)
+	{
+		//Check size
+		if (size<24)
+			return 0;
+		//Copy
+		memcpy(data,buffer,24);
+		//Return size
+		return 24;
+	}
+
+	DWORD Parse(BYTE* data,DWORD size)
+	{
+		//Check size
+		if (size<24)
+			return 0;
+		//Copy
+		memcpy(buffer,data,24);
+		//Return size
+		return 24;
+	}
+private:
+	BYTE buffer[24];
+};
+
+
+class RTCPPacket
+{
+public:
+	 enum Type{
+		FullIntraRequest= 192,
+		NACK		= 193,
+		SenderReport	= 200,
+		ReceiverReport  = 201,
+		SDES		= 202,
+		Bye		= 203,
+		App		= 204,
+		RTPFeedback	= 205,
+		PayloadFeedback	= 206
+	};
+
+	static const char* TypeToString(Type type)
+	{
+		switch (type)
+		{
+			case RTCPPacket::SenderReport:
+				return "SenderReport";
+			case RTCPPacket::ReceiverReport:
+				return "ReceiverReport";
+			case RTCPPacket::SDES:
+				return "SDES";
+			case RTCPPacket::Bye:
+				return "Bye";
+			case RTCPPacket::App:
+				return "App";
+			case RTCPPacket::RTPFeedback:
+				return "RTPFeedback";
+			case RTCPPacket::PayloadFeedback:
+				return "PayloadFeedback";
+			case RTCPPacket::FullIntraRequest:
+				return "FullIntraRequest";
+			case RTCPPacket::NACK:
+				return "NACK";
+		}
+		return("Unknown");
+	}
+protected:
+	RTCPPacket(Type type)
+	{
+		this->type = type;
+	}
+public:
+	Type GetType()	{return type; }
+	virtual void Dump();
+	virtual DWORD GetSize() = 0;
+	virtual DWORD Parse(BYTE* data,DWORD size) = 0;
+	virtual DWORD Serialize(BYTE* data,DWORD size) = 0;
+protected:
+	typedef std::vector<RTCPReport*> Reports;
+private:
+	Type type;
+};
+
+class RTCPSenderReport : public RTCPPacket
+{
+public:
+	RTCPSenderReport();
+	virtual ~RTCPSenderReport();
+	virtual DWORD GetSize();
+	virtual DWORD Parse(BYTE* data,DWORD size);
+	virtual DWORD Serialize(BYTE* data,DWORD size);
+
+	void SetOctectsSent(DWORD octectsSent)	{ this->octectsSent = octectsSent;	}
+	void SetPacketsSent(DWORD packetsSent)	{ this->packetsSent = packetsSent;	}
+	void SetRtpTimestamp(DWORD rtpTimestamp){ this->rtpTimestamp = rtpTimestamp;	}
+	void SetSSRC(DWORD ssrc)		{ this->ssrc = ssrc;			}
+	void SetNTPFrac(DWORD ntpFrac)		{ this->ntpFrac = ntpFrac;		}
+	void SetNTPSec(DWORD ntpSec)		{ this->ntpSec = ntpSec;		}
+	void SetTimestamp(QWORD ts)		{ SetNTPSec(ts<<32); SetNTPFrac(ts);	}
+
+	DWORD GetOctectsSent()	const		{ return octectsSent;		}
+	DWORD GetPacketsSent()	const		{ return packetsSent;		}
+	DWORD GetRTPTimestamp() const		{ return rtpTimestamp;		}
+	DWORD GetNTPFrac()	const		{ return ntpFrac;		}
+	DWORD GetNTPSec()	const		{ return ntpSec;		}
+	QWORD GetTimestamp()	const		{ return ((QWORD)ntpSec)<<32 || ntpFrac; }
+	DWORD GetSSRC()		const		{ return ssrc;			}
+
+	DWORD GetCount()	const		{ return reports.size();	}
+	RTCPReport* GetReport(BYTE i) const	{ return reports[i];		}
+	void  AddReport(RTCPReport* report)	{ reports.push_back(report);	}
+	
+private:
+	DWORD ssrc;           /* sender generating this report */
+	DWORD ntpSec;	      /* NTP timestamp */
+	DWORD ntpFrac;
+	DWORD rtpTimestamp;   /* RTP timestamp */
+	DWORD packetsSent;    /* packets sent */
+	DWORD octectsSent;    /* octets sent */
+
+private:
+	Reports	reports;
+};
+
+class RTCPReceiverReport : public RTCPPacket
+{
+public:
+	RTCPReceiverReport();
+	virtual ~RTCPReceiverReport();
+	virtual DWORD GetSize();
+	virtual DWORD Parse(BYTE* data,DWORD size);
+	virtual DWORD Serialize(BYTE* data,DWORD size);
+	
+	DWORD GetCount()	const		{ return reports.size();	}
+	RTCPReport* GetReport(BYTE i) const	{ return reports[i];		}
+	void  AddReport(RTCPReport* report)	{ reports.push_back(report);	}
+private:
+	DWORD ssrc;     /* receiver generating this report */
+
+private:
+	Reports	reports;
+};
+
+class RTCPBye : public RTCPPacket
+{
+public:
+	RTCPBye();
+	~RTCPBye();
+	virtual DWORD GetSize();
+	virtual DWORD Parse(BYTE* data,DWORD size);
+	virtual DWORD Serialize(BYTE* data,DWORD size);
+private:
+	typedef std::vector<DWORD> SSRCs;
+private:
+	SSRCs ssrcs;
+	char* reason;
+};
+
+class RTCPFullIntraRequest : public RTCPPacket
+{
+public:
+	RTCPFullIntraRequest();
+	virtual DWORD GetSize();
+	virtual DWORD Parse(BYTE* data,DWORD size);
+	virtual DWORD Serialize(BYTE* data,DWORD size);
+private:
+	DWORD ssrc;
+};
+
+class RTCPNACK : public RTCPPacket
+{
+public:
+	RTCPNACK();
+	virtual DWORD GetSize();
+	virtual DWORD Parse(BYTE* data,DWORD size);
+	virtual DWORD Serialize(BYTE* data,DWORD size);
+private:
+	DWORD ssrc;
+	WORD fsn;
+	WORD blp;
+};
+
+class RTCPSDES : public RTCPPacket
+{
+public:
+	
+public:
+	class Item
+	{
+	public:
+		enum Type
+		{
+			CName = 1,
+			Name = 2,
+			Email = 3,
+			Phone = 4,
+			Location = 5,
+			Tool = 6,
+			Note = 7,
+			Private = 8
+		};
+	public:
+		Item(Type type,BYTE* data,DWORD size)
+		{
+			this->type = type;
+			this->data = (BYTE*)malloc(size);
+			this->size = size;
+			memcpy(this->data,data,size);
+		}
+		~Item()
+		{
+			free(data);
+		}
+		Type  GetType() const { return type; }
+		BYTE* GetData() const { return data; }
+		BYTE  GetSize() const { return size; }
+	private:
+		Type type;
+		BYTE* data;
+		BYTE size;
+	};
+
+	class Description
+	{
+	public:
+		Description();
+		Description(DWORD ssrc);
+		~Description();
+		DWORD GetSize();
+		DWORD Parse(BYTE* data,DWORD size);
+		DWORD Serialize(BYTE* data,DWORD size);
+
+		void AddItem(Item* item)	{ items.push_back(item);	}
+		DWORD GetItemCount() const	{ return items.size();	}
+		Item* GetItem(BYTE i)		{ return items[i];	}
+	private:
+		typedef std::vector<Item*> Items;
+	private:
+		DWORD ssrc;
+		Items items;
+	};
+public:
+	RTCPSDES();
+	~RTCPSDES();
+	virtual DWORD GetSize();
+	virtual DWORD Parse(BYTE* data,DWORD size);
+	virtual DWORD Serialize(BYTE* data,DWORD size);
+
+	void AddDescription(Description* desc)	{ descriptions.push_back(desc);	}
+	DWORD GetDescriptionCount() const	{ return descriptions.size();	}
+	Description* GetDescription(BYTE i)	{ return descriptions[i];	}
+private:
+	typedef std::vector<Description*> Descriptions;
+private:
+	Descriptions descriptions;
+};
+
+class RTCPApp : public RTCPPacket
+{
+public:
+	RTCPApp();
+	virtual ~RTCPApp();
+	virtual DWORD GetSize();
+	virtual DWORD Parse(BYTE* data,DWORD size);
+	virtual DWORD Serialize(BYTE* data,DWORD size);
+private:
+	BYTE subtype;
+	DWORD ssrc;
+	char name[4];
+	BYTE *data;
+	DWORD size;
+};
+
+class RTCPRTPFeedback : public RTCPPacket
+{
+public:
+	enum FeedbackType { NACK = 1 };
+public:
+	struct NACKMessage
+	{
+		NACKMessage()
+		{
+			pid = 0;
+			blp = 0;
+		}
+		NACKMessage(WORD pid,WORD blp)
+		{
+			this->pid = pid;
+			this->blp = blp;
+		}
+		WORD pid;
+		WORD blp;
+	};
+public:
+	RTCPRTPFeedback();
+	virtual DWORD GetSize();
+	virtual DWORD Parse(BYTE* data,DWORD size);
+	virtual DWORD Serialize(BYTE* data,DWORD size);
+
+	void SetSenderSSRC(DWORD ssrc)	{ senderSSRC = ssrc; }
+	void SetMediaSSRC(DWORD ssrc)	{ mediaSSRC = ssrc;  }
+	DWORD GetSenderSSRC() const	{ return senderSSRC; }
+	DWORD GetMediaSSRC() const	{ return mediaSSRC;  }
+
+private:
+	FeedbackType feedbackType;
+	DWORD senderSSRC;
+	DWORD mediaSSRC;
+	NACKMessage nack;
+};
+
+class RTCPPayloadFeedback : public RTCPPacket
+{
+public:
+	enum FeedbackType {
+		PictureLossIndication =1, 
+		SliceLossIndication = 2,
+		ReferencePictureSelectionIndication = 3,
+		FullIntraRequest = 4,
+		TemporalSpatialTradeOffRequest = 5,
+		TemporalSpatialTradeOffNotification = 6,
+		VideoBackChannelMessage = 7,
+		ApplicationLayerFeeedbackMessage = 15
+
+	};
+	static const char* TypeToString(FeedbackType type)
+	{
+		switch(type)
+		{
+			case PictureLossIndication:
+				return "PictureLossIndication";
+			case SliceLossIndication:
+				return "SliceLossIndication";
+			case ReferencePictureSelectionIndication:
+				return "ReferencePictureSelectionIndication";
+			case FullIntraRequest:
+				return "FullIntraRequest";
+			case TemporalSpatialTradeOffRequest:
+				return "TemporalSpatialTradeOffRequest";
+			case TemporalSpatialTradeOffNotification:
+				return "TemporalSpatialTradeOffNotification";
+			case VideoBackChannelMessage:
+				return "VideoBackChannelMessage";
+			case ApplicationLayerFeeedbackMessage:
+				return "ApplicationLayerFeeedbackMessage";
+		}
+	}
+public:
+	struct Field
+	{
+		virtual DWORD GetSize() = 0;
+		virtual DWORD Parse(BYTE* data,DWORD size) = 0;
+		virtual DWORD Serialize(BYTE* data,DWORD size) = 0;
+	};
+
+	struct SliceLossIndicationField : public Field
+	{
+		/*
+		    0                   1                   2                   3
+		    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+		   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		   |            First        |        Number           | PictureID |
+		   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		 */
+		WORD first; // 13 b
+		WORD number; // 13 b
+		BYTE pictureId; // 6
+		DWORD GetSize() { return 4;}
+		virtual DWORD Parse(BYTE* data,DWORD size)
+		{
+			if (size<4) return 0;
+			first = data[0];
+			first = first<<5 | data [1]>>3;
+			number = data[1] & 0x07;
+			number = number<<8 | data[2];
+			number = number<<2 | data[3]>>6;
+			pictureId = data[4] & 0x3F;
+		}
+		virtual DWORD Serialize(BYTE* data,DWORD size)
+		{
+			if (size<4) return 0;
+			data[0] = first >> 5;
+			data[1] = first << 3 | number >> 10;
+			data[2] = number >> 2;
+			data[3] = number << 6 | pictureId;
+		}
+	};
+
+	struct ReferencePictureSelectionField : public Field
+	{
+		/*
+		    0                   1                   2                   3
+		    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+		   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		   |      PB       |0| Payload Type|    Native RPSI bit string     |
+		   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		   |   defined per codec          ...                | Padding (0) |
+		   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		 *
+		 */
+		BYTE padding;
+		BYTE type;
+		DWORD length;
+		BYTE* payload;
+
+		ReferencePictureSelectionField()
+		{
+			payload = NULL;
+			length = 0;
+		}
+		
+		~ReferencePictureSelectionField()
+		{
+			if (payload) free(payload);
+		}
+		
+		DWORD GetSize() { return 2+length+padding;}
+		virtual DWORD Parse(BYTE* data,DWORD size)
+		{
+			if (size<2) return 0;
+			//Get values
+			padding = data[0];
+			type = data[1];
+			if (size<2+padding) return 0;
+			//Set length
+			length = size-padding-2;
+			//allocate
+			payload = (BYTE*)malloc(length);
+			//Copy payload
+			memcpy(payload,data+2,length);
+			//Copy
+			return 2+padding+length;
+		}
+		virtual DWORD Serialize(BYTE* data,DWORD size)
+		{
+			if (size<2+padding+length) return 0;
+			//Set
+			data[0] = padding;
+			data[1] = type & 0x7F;
+			set2(data,6,length);
+			//copy payload
+			memcpy(data+2,payload,length);
+			//Fill padding
+			memset(data+2+length,0,padding);
+			//return size
+			return 2+padding+length;
+		}
+	};
+	
+	struct FullIntraRequestField : public Field
+	{
+		/*
+		    0                   1                   2                   3
+		    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+		   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		   |                              SSRC                             |
+		   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		   | Seq. nr       |    Reserved                                   |
+		   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		*/
+		DWORD ssrc;
+		BYTE seq;
+
+		DWORD GetSize() { return 8;}
+		virtual DWORD Parse(BYTE* data,DWORD size)
+		{
+			if (size<8) return 0;
+			ssrc = get4(data,0);
+			seq = data[5];
+			return 8;
+		}
+		virtual DWORD Serialize(BYTE* data,DWORD size)
+		{
+			if (size<8) return 0;
+			set4(data,0,ssrc);
+			data[4] = seq;
+			data[5] = 0;
+			data[6] = 0;
+			data[7] = 0;
+			return 8;
+		}
+	};
+
+	struct TemporalSpatialTradeOffField : public Field
+	{
+		/*
+		 *  0                   1                   2                   3
+		    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+		   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		   |                              SSRC                             |
+		   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		   |  Seq nr.      |  Reserved                           | Index   |
+		   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		 */
+		DWORD ssrc;
+		BYTE seq;
+		BYTE index;
+		DWORD GetSize() { return 8;}
+		virtual DWORD Parse(BYTE* data,DWORD size)
+		{
+			if (size<8) return 0;
+			//Get values
+			ssrc = get4(data,0);
+			seq = data[4];
+			index = data[7];
+			//Return size
+			return 8;
+		}
+		virtual DWORD Serialize(BYTE* data,DWORD size)
+		{
+			if (size<8) return 0;
+			//Set values
+			set4(data,0,ssrc);
+			data[4] = seq;
+			data[5] = 0;
+			data[6] = 0;
+			data[7] = index;
+			//Return size
+			return 8;
+		}
+	};
+
+	struct VideoBackChannelMessageField : public Field
+	{
+		/*
+		    0                   1                   2                   3
+		    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+		   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		   |                              SSRC                             |
+		   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		   | Seq. nr       |0| Payload Type| Length                        |
+		   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		   |                    VBCM Octet String....      |    Padding    |
+		   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		 */
+		DWORD ssrc;
+		BYTE seq;
+		BYTE type;
+		WORD length;
+		BYTE* payload;
+		VideoBackChannelMessageField()
+		{
+			payload = 0;
+			length = 0;
+		}
+		~VideoBackChannelMessageField()
+		{
+			if (payload) free(payload);
+		}
+		DWORD GetSize() { return 8+length;}
+		virtual DWORD Parse(BYTE* data,DWORD size)
+		{
+			if (size<8) return 0;
+			//Get values
+			ssrc = get4(data,0);
+			seq = data[4];
+			type = data[5];
+			length = get2(data,6);
+			if (size<8+pad32(length)) return 0;
+			//allocate
+			payload = (BYTE*)malloc(length);
+			//Copy payload
+			memcpy(payload,data+8,length);
+			//Copy
+			return 8+pad32(length);
+		}
+		virtual DWORD Serialize(BYTE* data,DWORD size)
+		{
+			if (size<8+pad32(length)) return 0;
+			//Set values
+			set4(data,0,ssrc);
+			data[4] = seq;
+			data[5] = type & 0x7F;
+			set2(data,6,length);
+			//copy payload
+			memcpy(data+8,payload,length);
+			//Fill padding
+			memset(data+8+length,0,pad32(length)-length);
+			//return size
+			return 8+pad32(length);
+		}
+	};
+
+	struct ApplicationLayerFeeedbackField : public Field
+	{
+		WORD length;
+		BYTE* payload;
+		ApplicationLayerFeeedbackField()
+		{
+			payload = 0;
+			length = 0;
+		}
+		~ApplicationLayerFeeedbackField()
+		{
+			if (payload) free(payload);
+		}
+		DWORD GetSize() { return pad32(length); }
+		virtual DWORD Parse(BYTE* data,DWORD size)
+		{
+			if (size!=pad32(size)) return 0;
+			//Get values
+			length = size;
+			//allocate
+			payload = (BYTE*)malloc(length);
+			//Copy payload
+			memcpy(payload,data,length);
+			//Copy
+			return length;
+		}
+		virtual DWORD Serialize(BYTE* data,DWORD size)
+		{
+			if (size<pad32(length)) return 0;
+			//copy payload
+			memcpy(data,payload,length);
+			//Fill padding
+			memset(data+length,0,pad32(length)-length);
+			//return size
+			return pad32(length);
+		}
+	};
+public:
+	RTCPPayloadFeedback();
+	virtual ~RTCPPayloadFeedback();
+	virtual void Dump();
+	virtual DWORD GetSize();
+	virtual DWORD Parse(BYTE* data,DWORD size);
+	virtual DWORD Serialize(BYTE* data,DWORD size);
+	FeedbackType GetFeedbackType() const { return feedbackType; }
+private:
+	typedef std::vector<Field*> Fields;
+private:
+	FeedbackType feedbackType;
+	DWORD senderSSRC;
+	DWORD mediaSSRC;
+	Fields fields;
+};
+
+class RTCPCompoundPacket
+{
+public:
+	static bool IsRTCP(BYTE *data,DWORD size)
+	{
+		//Check size
+		if (size<sizeof(rtcp_common_t))
+			//No
+			return 0;
+		//Get RTCP common header
+		rtcp_common_t* header = (rtcp_common_t*)data;
+		//Check version
+		if (header->version!=2)
+			//No
+			return 0;
+		//Check type
+		if (header->pt<200 ||  header->pt>204)
+			//It is no
+			return 0;
+		//RTCP
+		return 1;
+	}
+	
+	~RTCPCompoundPacket()
+	{
+		//Fir each oen
+		for(RTCPPackets::iterator it = packets.begin(); it!=packets.end(); ++it)
+			//delete
+			delete((*it));
+		//Clean
+		packets.clear();
+	}
+
+	DWORD GetSize()
+	{
+		DWORD size = 0;
+		//Calculate
+		for(RTCPPackets::iterator it = packets.begin(); it!=packets.end(); ++it)
+			//Append size
+			size = sizeof(rtcp_common_t)+(*it)->GetSize();
+		//Return total size
+		return size;
+	}
+
+	DWORD Serialize(BYTE *data,DWORD size)
+	{
+		DWORD len = 0;
+		//Check size
+		if (size<GetSize())
+			//Error
+			return 0;
+		//For each one
+		for(RTCPPackets::iterator it = packets.begin(); it!=packets.end(); ++it)
+			//Serialize
+			len +=(*it)->Serialize(data+len,size-len);
+		//Exit
+		return len;
+	}
+	void Dump();
+
+	DWORD	    AddRTCPacket(RTCPPacket* packet)	{ packets.push_back(packet);	}
+	DWORD	    GetPacketCount()			{ return packets.size();	}
+	RTCPPacket* GetPacket(DWORD num)		{ return packets[num];		}
+	
+	static RTCPCompoundPacket* Parse(BYTE *data,DWORD size);
+private:
+	typedef std::vector<RTCPPacket*> RTCPPackets;
+private:
+	RTCPPackets packets;
+};
 #endif
