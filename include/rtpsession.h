@@ -11,6 +11,8 @@
 #include <srtp/srtp.h>
 #include "rtp.h"
 #include "waitqueue.h"
+#include <map>
+#include <string>
 
 typedef std::map<DWORD,DWORD> RTPMap;
 
@@ -33,6 +35,8 @@ public:
 	public:
 		virtual void onFPURequested(RTPSession *session) = 0;
 	};
+public:
+	typedef std::map<std::string,std::string> Properties;
 public:
 	static bool SetPortRange(int minPort, int maxPort);
 	static DWORD GetMinPort() { return minLocalPort; }
@@ -58,6 +62,7 @@ public:
 	int SendEmptyPacket();
 	int SendPacket(RTPPacket &packet,DWORD timestamp);
 	int SendPacket(RTPPacket &packet);
+	
 	RTPPacket* GetPacket();
 	void CancelGetPacket();
 	DWORD GetNumRecvPackets()	{ return numRecvPackets;	}
@@ -72,6 +77,7 @@ public:
 	int SetRemoteCryptoSDES(const char* suite, const char* key64);
 	int SetLocalSTUNCredentials(const char* username, const char* pwd);
 	int SetRemoteSTUNCredentials(const char* username, const char* pwd);
+	int SetProperties(const RTPSession::Properties& properties);
 private:
 	void Start();
 	void Stop();
@@ -85,7 +91,8 @@ private:
 protected:
 	//Envio y recepcion de rtcp
 	int RecvRtcp();
-	int SendRtcp();
+	int SendPacket(RTCPCompoundPacket &rtcp);
+	int SendSenderReport();
 
 private:
 	MediaFrame::Type media;
@@ -109,6 +116,7 @@ private:
 	srtp_t	recvSRTPSession;
 	BYTE*	recvKey;
 
+	char*	cname;
 	char*	iceRemoteUsername;
 	char*	iceRemotePwd;
 	char*	iceLocalUsername;
@@ -125,12 +133,17 @@ private:
 	BYTE 	sendPacket[MTU];
 	WORD    sendSeq;
 	DWORD   sendTime;
+	DWORD	sendLastTime;
 	DWORD	sendSSRC;
 
 	//Recepcion
 	BYTE	recBuffer[MTU];
 	int	recSeq;
 	DWORD	recSSRC;
+	DWORD	recTimestamp;
+	timeval recTimeval;
+	QWORD	recSR;
+	DWORD   recCycles;
 	in_addr_t recIP;
 	DWORD	  recPort;
 
@@ -139,11 +152,17 @@ private:
 	RTPMap* rtpMapOut;
 
 	//Statistics
-	DWORD		numRecvPackets;
-	DWORD		numSendPackets;
-	DWORD		totalRecvBytes;
-	DWORD		totalSendBytes;
-	DWORD		lostRecvPackets;
+	DWORD	numRecvPackets;
+	DWORD	numSendPackets;
+	DWORD	totalRecvBytes;
+	DWORD	totalSendBytes;
+	DWORD	lostRecvPackets;
+	DWORD	lostRecvPacketsSinceLastSR;
+	DWORD	totalRecvPacketsSinceLastSR;
+	DWORD	jitter;
+
+	timeval lastSR;
+	
 };
 
 #endif

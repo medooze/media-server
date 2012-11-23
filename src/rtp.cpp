@@ -82,10 +82,12 @@ RTPDepacketizer* RTPDepacketizer::Create(MediaFrame::Type mediaType,DWORD codec)
 	 }
 	 return NULL;
 }
+
 void RTCPPacket::Dump()
 {
-	Debug("\t[RTCPpacket type=%s size=%d]\n",TypeToString(type),GetSize());
+	Debug("\t[RTCPpacket type=%s size=%d/]\n",TypeToString(type),GetSize());
 }
+
 void RTCPCompoundPacket::Dump()
 {
 	Debug("[RTCPCompoundPacket count=%d size=%d]\n",packets.size(),GetSize());
@@ -192,6 +194,24 @@ RTCPSenderReport::~RTCPSenderReport()
 		delete(*it);
 }
 
+void RTCPSenderReport::Dump()
+{
+	Debug("\t[RTCPSenderReport ssrc=%u count=%u \n",ssrc,reports.size());
+	Debug("\t\tntpSec=%u\n"		,ntpSec);
+	Debug("\t\tntpFrac=%u\n"	,ntpFrac);
+	Debug("\t\trtpTimestamp=%u\n"	,rtpTimestamp);
+	Debug("\t\tpacketsSent=%u\n"	,packetsSent);
+	Debug("\t\toctectsSent=%u\n"	,octectsSent);
+	if (reports.size())
+	{
+		Debug("\t]\n");
+		for(Reports::iterator it = reports.begin();it!=reports.end();++it)
+			(*it)->Dump();
+		Debug("\t[/RTCPSenderReport]\n");
+	} else
+		Debug("\t/]\n");
+}
+
 DWORD RTCPSenderReport::GetSize()
 {
 	return sizeof(rtcp_common_t)+24+24*reports.size();
@@ -278,6 +298,18 @@ RTCPReceiverReport::~RTCPReceiverReport()
 {
 	for(Reports::iterator it = reports.begin();it!=reports.end();++it)
 		delete(*it);
+}
+
+void RTCPReceiverReport::Dump()
+{
+	if (reports.size())
+	{
+		Debug("\t[RTCPReceiverReport ssrc=%d count=%u]\n",ssrc,reports.size());
+		for(Reports::iterator it = reports.begin();it!=reports.end();++it)
+			(*it)->Dump();
+		Debug("\t[/RTCPReceiverReport]\n");
+	} else
+		Debug("\t[RTCPReceiverReport ssrc=%d]\n",ssrc);
 }
 
 DWORD RTCPReceiverReport::GetSize()
@@ -617,7 +649,7 @@ RTCPPayloadFeedback::~RTCPPayloadFeedback()
 
 void RTCPPayloadFeedback::Dump()
 {
-	Debug("\t[/RTCPPakcet PayloadFeedback %s]\n",TypeToString(feedbackType));
+	Debug("\t[RTCPPakcet PayloadFeedback %s/]\n",TypeToString(feedbackType));
 }
 DWORD RTCPPayloadFeedback::GetSize()
 {
@@ -765,7 +797,7 @@ DWORD RTCPFullIntraRequest::Serialize(BYTE* data,DWORD size)
 	rtcp_common_t * header = (rtcp_common_t *)data;
 	//Set values
 	header->count	= 0;
-	header->pt	= 0;
+	header->pt	= GetType();
 	header->p	= 0;
 	header->version = 2;
 	SetRTCPHeaderLength(header,packetSize);
@@ -818,7 +850,7 @@ DWORD RTCPNACK::Serialize(BYTE* data,DWORD size)
 	rtcp_common_t * header = (rtcp_common_t *)data;
 	//Set values
 	header->count	= 0;
-	header->pt	= 0;
+	header->pt	= GetType();
 	header->p	= 0;
 	header->version = 2;
 	SetRTCPHeaderLength(header,packetSize);
@@ -840,6 +872,19 @@ RTCPSDES::~RTCPSDES()
 {
 	for (Descriptions::iterator it=descriptions.begin();it!=descriptions.end();++it)
 		delete(*it);
+}
+
+void RTCPSDES::Dump()
+{
+	
+	if (descriptions.size())
+	{
+		Debug("\t[RTCPSDES count=%u]\n",descriptions.size());
+		for(Descriptions::iterator it = descriptions.begin();it!=descriptions.end();++it)
+			(*it)->Dump();
+		Debug("\t[/RTCPSDES]\n");
+	} else
+		Debug("\t[RTCPSDES/]\n");
 }
 DWORD RTCPSDES::GetSize()
 {
@@ -893,8 +938,8 @@ DWORD RTCPSDES::Serialize(BYTE* data,DWORD size)
 	//Set header
 	rtcp_common_t * header = (rtcp_common_t *)data;
 	//Set values
-	header->count	= 0;
-	header->pt	= 0;
+	header->count	= descriptions.size();
+	header->pt	= GetType();
 	header->p	= 0;
 	header->version = 2;
 	SetRTCPHeaderLength(header,packetSize);
@@ -910,7 +955,6 @@ DWORD RTCPSDES::Serialize(BYTE* data,DWORD size)
  }
 
 
-
 RTCPSDES::Description::Description()
 {
 
@@ -924,6 +968,18 @@ RTCPSDES::Description::~Description()
 	for (Items::iterator it=items.begin();it!=items.end();++it)
 		delete(*it);
 }
+void RTCPSDES::Description::Dump()
+{
+	if (items.size())
+	{
+		Debug("\t\t[Description ssrc=%u count=%u\n",ssrc,items.size());
+		for(Items::iterator it=items.begin();it!=items.end();++it)
+			Debug("\t\t\t[%s '%.*s'/]\n",RTCPSDES::Item::TypeToString((*it)->GetType()),(*it)->GetSize(),(*it)->GetData());
+		Debug("\t\t[/Description]\n");
+	} else
+		Debug("\t\t[Description ssrc=%x/]\n",ssrc);
+}
+
 DWORD RTCPSDES::Description::GetSize()
 {
 	DWORD len = 4;
@@ -961,6 +1017,7 @@ DWORD RTCPSDES::Description::Parse(BYTE* data,DWORD size)
 	//Return consumed len
 	return pad32(len);
 }
+
 DWORD RTCPSDES::Description::Serialize(BYTE* data,DWORD size)
 {
 	//Get packet size

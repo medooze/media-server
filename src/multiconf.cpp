@@ -675,6 +675,27 @@ int MultiConf::SetLocalSTUNCredentials(int id,MediaFrame::Type media,const char 
 	//Exit
 	return ret;
 }
+int MultiConf::SetRTPProperties(int id,MediaFrame::Type media,const RTPSession::Properties& properties)
+{
+	int ret = 0;
+
+	//Use list
+	participantsLock.IncUse();
+
+	//Get the participant
+	RTPParticipant *part = (RTPParticipant*)GetParticipant(id,Participant::RTP);
+
+	//Check particpant
+	if (part)
+		//Set  codec
+		ret = part->SetRTPProperties(media,properties);
+
+	//Unlock
+	participantsLock.DecUse();
+
+	//Exit
+	return ret;
+}
 int MultiConf::SetRemoteSTUNCredentials(int id,MediaFrame::Type media,const char *username,const char* pwd)
 {
 	int ret = 0;

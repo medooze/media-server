@@ -137,6 +137,10 @@ int VideoStream::SetRemoteSTUNCredentials(const char* username, const char* pwd)
 {
 	return rtp.SetRemoteSTUNCredentials(username,pwd);
 }
+int VideoStream::SetRTPProperties(const RTPSession::Properties& properties)
+{
+	return rtp.SetProperties(properties);
+}
 /**************************************
 * startSendingVideo
 *	Function helper for thread

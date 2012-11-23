@@ -39,6 +39,7 @@ private:
 	int opened;
 	int intraPeriod;
 	int pts;
+	int num;
 };
 
 #endif	/* VP8ENCODER_H */

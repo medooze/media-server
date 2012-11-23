@@ -2,6 +2,7 @@
 #define _RTP_H_
 #include <arpa/inet.h>
 #include "config.h"
+#include "log.h"
 #include "media.h"
 #include "video.h"
 #include <vector>
@@ -241,6 +242,17 @@ public:
 		//Return size
 		return 24;
 	}
+	void Dump()
+	{
+		Debug("\t\t[Report ssrc=%u\n",		GetSSRC());
+		Debug("\t\t\tfractionLost=%u\n",	GetFactionLost());
+		Debug("\t\t\tlostCount=%u\n",		GetLostCount());
+		Debug("\t\t\tlastSeqNum=%u\n",		GetLastSeqNum());
+		Debug("\t\t\tjitter=%u\n",		GetJitter());
+		Debug("\t\t\tlastSR=%u\n",		GetLastSR());
+		Debug("\t\t\tdelaySinceLastSR=%u\n",	GetDelaySinceLastSR());
+		Debug("\t\t/]");
+	}
 private:
 	BYTE buffer[24];
 };
@@ -308,6 +320,7 @@ class RTCPSenderReport : public RTCPPacket
 public:
 	RTCPSenderReport();
 	virtual ~RTCPSenderReport();
+	virtual void Dump();
 	virtual DWORD GetSize();
 	virtual DWORD Parse(BYTE* data,DWORD size);
 	virtual DWORD Serialize(BYTE* data,DWORD size);
@@ -318,14 +331,13 @@ public:
 	void SetSSRC(DWORD ssrc)		{ this->ssrc = ssrc;			}
 	void SetNTPFrac(DWORD ntpFrac)		{ this->ntpFrac = ntpFrac;		}
 	void SetNTPSec(DWORD ntpSec)		{ this->ntpSec = ntpSec;		}
-	void SetTimestamp(QWORD ts)		{ SetNTPSec(ts<<32); SetNTPFrac(ts);	}
 
 	DWORD GetOctectsSent()	const		{ return octectsSent;		}
 	DWORD GetPacketsSent()	const		{ return packetsSent;		}
 	DWORD GetRTPTimestamp() const		{ return rtpTimestamp;		}
 	DWORD GetNTPFrac()	const		{ return ntpFrac;		}
 	DWORD GetNTPSec()	const		{ return ntpSec;		}
-	QWORD GetTimestamp()	const		{ return ((QWORD)ntpSec)<<32 || ntpFrac; }
+	QWORD GetTimestamp()	const		{ return ((QWORD)ntpSec)<<32 | ntpFrac; }
 	DWORD GetSSRC()		const		{ return ssrc;			}
 
 	DWORD GetCount()	const		{ return reports.size();	}
@@ -349,6 +361,7 @@ class RTCPReceiverReport : public RTCPPacket
 public:
 	RTCPReceiverReport();
 	virtual ~RTCPReceiverReport();
+	virtual void Dump();
 	virtual DWORD GetSize();
 	virtual DWORD Parse(BYTE* data,DWORD size);
 	virtual DWORD Serialize(BYTE* data,DWORD size);
@@ -421,6 +434,29 @@ public:
 			Note = 7,
 			Private = 8
 		};
+		static const char* TypeToString(Type type)
+		{
+			switch(type)
+			{
+				case CName:
+					return "CName";
+				case Name:
+					return "Name";
+				case Email:
+					return "Email";
+				case Phone:
+					return "Phone";
+				case Location:
+					return "Location";
+				case Tool:
+					return "Tool";
+				case Note:
+					return "Note";
+				case Private:
+					return "Private";
+			}
+			return "Unknown";
+		}
 	public:
 		Item(Type type,BYTE* data,DWORD size)
 		{
@@ -428,6 +464,13 @@ public:
 			this->data = (BYTE*)malloc(size);
 			this->size = size;
 			memcpy(this->data,data,size);
+		}
+		Item(Type type,const char* str)
+		{
+			this->type = type;
+			size = strlen(str);
+			data = (BYTE*)malloc(size);
+			memcpy(data,(BYTE*)str,size);
 		}
 		~Item()
 		{
@@ -448,13 +491,17 @@ public:
 		Description();
 		Description(DWORD ssrc);
 		~Description();
+		void Dump();
 		DWORD GetSize();
 		DWORD Parse(BYTE* data,DWORD size);
 		DWORD Serialize(BYTE* data,DWORD size);
 
 		void AddItem(Item* item)	{ items.push_back(item);	}
-		DWORD GetItemCount() const	{ return items.size();	}
-		Item* GetItem(BYTE i)		{ return items[i];	}
+		DWORD GetItemCount() const	{ return items.size();		}
+		Item* GetItem(BYTE i)		{ return items[i];		}
+
+		DWORD GetSSRC()	const		{ return ssrc;			}
+		void  SetSSRC(DWORD ssrc)	{ this->ssrc = ssrc;		}
 	private:
 		typedef std::vector<Item*> Items;
 	private:
@@ -464,6 +511,7 @@ public:
 public:
 	RTCPSDES();
 	~RTCPSDES();
+	virtual void Dump();
 	virtual DWORD GetSize();
 	virtual DWORD Parse(BYTE* data,DWORD size);
 	virtual DWORD Serialize(BYTE* data,DWORD size);
@@ -543,8 +591,8 @@ public:
 		TemporalSpatialTradeOffNotification = 6,
 		VideoBackChannelMessage = 7,
 		ApplicationLayerFeeedbackMessage = 15
-
 	};
+	
 	static const char* TypeToString(FeedbackType type)
 	{
 		switch(type)
@@ -873,7 +921,7 @@ public:
 			//No
 			return 0;
 		//Check type
-		if (header->pt<200 ||  header->pt>204)
+		if (header->pt<200 ||  header->pt>206)
 			//It is no
 			return 0;
 		//RTCP
@@ -917,7 +965,7 @@ public:
 	}
 	void Dump();
 
-	DWORD	    AddRTCPacket(RTCPPacket* packet)	{ packets.push_back(packet);	}
+	void	    AddRTCPacket(RTCPPacket* packet)	{ packets.push_back(packet);	}
 	DWORD	    GetPacketCount()			{ return packets.size();	}
 	RTCPPacket* GetPacket(DWORD num)		{ return packets[num];		}
 	

@@ -1314,6 +1314,65 @@ xmlrpc_value* StartSending(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 	return xmlok(env);
 }
 
+xmlrpc_value* SetRTPProperties(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+	MCU *mcu = (MCU *)user_data;
+	MultiConf *conf = NULL;
+
+	 //Parseamos
+	int confId;
+	int partId;
+	int media;
+	xmlrpc_value *map;
+	xmlrpc_parse_value(env, param_array, "(iiiS)", &confId,&partId,&media,&map);
+
+	//Get the rtp map
+	RTPSession::Properties properties;
+
+	//Get map size
+	int j = xmlrpc_struct_size(env,map);
+
+	//Parse rtp map
+	for (int i=0;i<j;i++)
+	{
+		xmlrpc_value *key, *val;
+		const char *strKey;
+		const char *strVal;
+		//Read member
+		xmlrpc_struct_read_member(env,map,i,&key,&val);
+		//Read name
+		xmlrpc_parse_value(env,key,"s",&strKey);
+		//Read value
+		xmlrpc_parse_value(env,val,"s",&strVal);
+		//Add to map
+		properties[strKey] = strVal;
+		//Decrement ref counter
+		xmlrpc_DECREF(key);
+		xmlrpc_DECREF(val);
+	}
+
+	//Comprobamos si ha habido error
+	if(env->fault_occurred)
+		return 0;
+
+		//Obtenemos la referencia
+	if(!mcu->GetConferenceRef(confId,&conf))
+		return xmlerror(env,"Conference does not exist");
+
+	//La borramos
+	int res = conf->SetRTPProperties(partId,(MediaFrame::Type)media,properties);
+
+	//Liberamos la referencia
+	mcu->ReleaseConferenceRef(confId);
+
+	//Salimos
+	if(!res)
+		return xmlerror(env,"Error");
+
+	//Devolvemos el resultado
+	return xmlok(env);
+}
+
 xmlrpc_value* SetLocalCryptoSDES(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
@@ -1631,5 +1690,6 @@ XmlHandlerCmd mcuCmdList[] =
 	{"SetLocalCryptoSDES",SetLocalCryptoSDES},
 	{"SetLocalSTUNCredentials",SetLocalSTUNCredentials},
 	{"SetRemoteSTUNCredentials",SetRemoteSTUNCredentials},
+	{"SetRTPProperties",SetRTPProperties},
 	{NULL,NULL}
 };

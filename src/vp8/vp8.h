@@ -8,6 +8,8 @@
 #ifndef _VP8_H_
 #define	_VP8_H_
 #include <string.h>
+#include "config.h"
+#include "log.h"
 
 struct VP8PayloadDescriptor
 {
@@ -28,13 +30,37 @@ struct VP8PayloadDescriptor
 	VP8PayloadDescriptor()
 	{
 		//Empty
-		memset(this,0,sizeof(this));
+		extendedControlBitsPresent = 0;
+		nonReferencePicture = 0;
+		startOfPartition = 0;
+		partitionIndex = 0;
+		pictureIdPresent = 0;
+		temporalLevelZeroIndexPresent = 0;
+		temporalLayerIndexPreset = 0;
+		keyIndexPresent = 0;
+		layerSync = 0;
+		pictureId = 0;
+		temporalLevelZeroIndex = 0;
+		temporalLayerIndex = 0;
+		keyIndex = 0;
 	}
 	
 	VP8PayloadDescriptor(bool startOfPartition,BYTE partitionIndex)
 	{
 		//Empty
-		memset(this,0,sizeof(this));
+		extendedControlBitsPresent = 0;
+		nonReferencePicture = 0;
+		startOfPartition = 0;
+		partitionIndex = 0;
+		pictureIdPresent = 0;
+		temporalLevelZeroIndexPresent = 0;
+		temporalLayerIndexPreset = 0;
+		keyIndexPresent = 0;
+		layerSync = 0;
+		pictureId = 0;
+		temporalLevelZeroIndex = 0;
+		temporalLayerIndex = 0;
+		keyIndex = 0;
 		//Set values
 		this->startOfPartition = startOfPartition;
 		this->partitionIndex = partitionIndex;
@@ -66,7 +92,7 @@ struct VP8PayloadDescriptor
 		//Read first
 		extendedControlBitsPresent	= data[0] >> 7;
 		nonReferencePicture		= data[0] >> 5 & 0x01;
-		startOfPartition		= data[0] >> 6 & 0x01;
+		startOfPartition		= data[0] >> 4 & 0x01;
 		partitionIndex			= data[0] & 0x0F;
 
 		//check if more
@@ -146,9 +172,9 @@ struct VP8PayloadDescriptor
 		 */
 
 		data[0] = extendedControlBitsPresent;
-		data[0] = data[0]<<3 | nonReferencePicture;
+		data[0] = data[0]<<2 | nonReferencePicture;
 		data[0] = data[0]<<1 | startOfPartition;
-		data[0] = data[0]<<1 | (partitionIndex & 0x0F);
+		data[0] = data[0]<<4 | (partitionIndex & 0x0F);
 
 		//If nothing more present
 		if (!extendedControlBitsPresent)
@@ -200,6 +226,25 @@ struct VP8PayloadDescriptor
 		}
 
 		return len;
+	}
+
+	void Dump()
+	{
+		Debug("[VP8PayloadDescriptor \n");
+		Debug("\t extendedControlBitsPresent=%d\n"	, extendedControlBitsPresent);
+		Debug("\t nonReferencePicture=%d\n"		, nonReferencePicture);
+		Debug("\t startOfPartition=%d\n"		, startOfPartition);
+		Debug("\t partitionIndex=%d\n"			, partitionIndex);
+		Debug("\t pictureIdPresent=%d\n"		, pictureIdPresent);
+		Debug("\t temporalLevelZeroIndexPresent=%d\n"	, temporalLevelZeroIndexPresent);
+		Debug("\t temporalLayerIndexPreset=%d\n"	, temporalLayerIndexPreset);
+		Debug("\t keyIndexPresent=%d\n"			, keyIndexPresent);
+		Debug("\t layerSync=%d\n"			, layerSync);
+		Debug("\t pictureId=%u\n"			, pictureId);
+		Debug("\t temporalLevelZeroIndex=%d\n"		, temporalLevelZeroIndex);
+		Debug("\t temporalLayerIndex=%d\n"		, temporalLayerIndex);
+		Debug("\t keyIndex=%d\n"			, keyIndex);
+		Debug("/]\n");
 	}
 };
 

@@ -89,6 +89,7 @@ public:
 	int SetRemoteCryptoSDES(int id,MediaFrame::Type media,const char *suite,const char* key);
 	int SetLocalSTUNCredentials(int id,MediaFrame::Type media,const char *username,const char* pwd);
 	int SetRemoteSTUNCredentials(int id,MediaFrame::Type media,const char *username,const char* pwd);
+	int SetRTPProperties(int id,MediaFrame::Type media,const RTPSession::Properties& properties);
 
 	int SetVideoCodec(int partId,int codec,int mode,int fps,int bitrate,int quality=0, int fillLevel=0,int intraPeriod = 0);
 	int SetAudioCodec(int partId,int codec);

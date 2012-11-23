@@ -96,6 +96,10 @@ int AudioStream::SetRemoteSTUNCredentials(const char* username, const char* pwd)
 	return rtp.SetRemoteSTUNCredentials(username,pwd);
 }
 
+int AudioStream::SetRTPProperties(const RTPSession::Properties& properties)
+{
+	return rtp.SetProperties(properties);
+}
 /***************************************
 * startSendingAudio
 *	Helper function
@@ -428,11 +432,11 @@ int AudioStream::SendAudio()
 		packet.SetTimestamp(frameTime);
 
 		//Lo enviamos
-		if(!rtp.SendPacket(packet,frameTime))
+		/*if(!rtp.SendPacket(packet,frameTime))
 		{
 			Log("Error mandando el packete de audio\n");
 			continue;
-		}
+		}*/
 		
 		//Aumentamos lo enviado
 		sendBytes+=len;

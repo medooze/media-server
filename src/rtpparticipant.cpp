@@ -120,7 +120,20 @@ int RTPParticipant::SetLocalSTUNCredentials(MediaFrame::Type media,const char* u
 
 	return 0;
 }
+int RTPParticipant::SetRTPProperties(MediaFrame::Type media,const RTPSession::Properties& properties)
+{
+	switch (media)
+	{
+		case MediaFrame::Audio:
+			return audio.SetRTPProperties(properties);
+		case MediaFrame::Video:
+			return video.SetRTPProperties(properties);
+		case MediaFrame::Text:
+			return text.SetRTPProperties(properties);
+	}
 
+	return 0;
+}
 int RTPParticipant::SetRemoteSTUNCredentials(MediaFrame::Type media,const char* username, const char* pwd)
 {
 	switch (media)
