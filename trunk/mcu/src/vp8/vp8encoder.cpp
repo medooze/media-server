@@ -37,6 +37,7 @@ VP8Encoder::VP8Encoder()
 	type    = VideoCodec::VP8;
 	frame	= NULL;
 	pts	= 0;
+	num	= 0;
 	pic	= NULL;
 	//not force
 	forceKeyFrame = false;
@@ -235,10 +236,13 @@ VideoFrame* VP8Encoder::EncodeFrame(BYTE *buffer,DWORD bufferSize)
 			VP8PayloadDescriptor desc;
 			//Append data to the frame
 			DWORD pos = frame->AppendMedia((BYTE*)pkt->data.frame.buf,pkt->data.frame.sz);
-			//New
-			desc.partitionIndex	 = partitionIndex;
+			//Set data
+			desc.extendedControlBitsPresent = 1;
+			desc.nonReferencePicture = pkt->data.frame.flags & VPX_FRAME_IS_DROPPABLE;
 			desc.startOfPartition	 = true;
-			desc.nonReferencePicture = !frame->IsIntra();
+			desc.partitionIndex	 = partitionIndex;
+			desc.pictureIdPresent	 = 1;
+			desc.pictureId		 = num++;
 			//Split into MTU
 			DWORD cur = 0;
 			//For each

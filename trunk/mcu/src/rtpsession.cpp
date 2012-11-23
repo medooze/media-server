@@ -102,13 +102,20 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener)
 	simRtcpPort = 0;
 	sendSeq = 0;
 	sendTime = random();
+	sendLastTime = sendTime;
 	sendSSRC = random();
 	recSeq = (WORD)-1;
 	recSSRC = 0;
+	recCycles = 0;
+	recTimestamp = 0;
+	recSR = 0;
+	setZeroTime(&recTimeval);
 	recIP = INADDR_ANY;
 	recPort = 0;
 	//Not muxing
 	muxRTCP = false;
+	//Default cname
+	cname = strdup("default@localhost");
 	//Empty types by defauilt
 	rtpMapIn = NULL;
 	rtpMapOut = NULL;
@@ -118,7 +125,11 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener)
 	totalRecvBytes = 0;
 	totalSendBytes = 0;
 	lostRecvPackets = 0;
+	lostRecvPacketsSinceLastSR = 0;
+	totalRecvPacketsSinceLastSR = 0;
 	lost = 0;
+	//No reports
+	setZeroTime(&lastSR);
 	//No cripto
 	encript = false;
 	decript = false;
@@ -171,6 +182,8 @@ RTPSession::~RTPSession()
 		free(sendKey);
 	if (recvKey)
 		free(recvKey);
+	if (cname)
+		free(cname);
 }
 
 void RTPSession::SetSendingRTPMap(RTPMap &map)
@@ -224,8 +237,6 @@ int RTPSession::SetLocalCryptoSDES(const char* suite, const char* key64)
 	//Set polciy values
 	policy.ssrc.type	= ssrc_any_outbound;
 	policy.ssrc.value	= 0;
-	policy.window_size	= 1024;
-	policy.allow_repeat_tx	= 1;
 	policy.key		= sendKey;
 	policy.next		= NULL;
 
@@ -243,7 +254,35 @@ int RTPSession::SetLocalCryptoSDES(const char* suite, const char* key64)
 	//Evrything ok
 	return 1;
 }
-
+int RTPSession::SetProperties(const RTPSession::Properties& properties)
+{
+	//For each property
+	for (RTPSession::Properties::const_iterator it=properties.begin();it!=properties.end();++it)
+	{
+		Log("Setting RTP property [%s:%s]\n",it->first.c_str(),it->second.c_str());
+		
+		//Check
+		if (it->first.compare("rtcp-mux")==0)
+		{
+			//Set rtcp muxing
+			muxRTCP = atoi(it->second.c_str());
+		} else if (it->first.compare("ssrc")==0) {
+			//Set ssrc for sending
+			sendSSRC = atoi(it->second.c_str());
+		} else if (it->first.compare("cname")==0) {
+			//Check if already got one
+			if (cname)
+				//Delete it
+				free(cname);
+			//Clone
+			cname = strdup(it->second.c_str());
+		} else {
+			Error("Unknown RTP property [%s]\n",it->first.c_str());
+		}
+	}
+	
+	return 0;
+}
 int RTPSession::SetLocalSTUNCredentials(const char* username, const char* pwd)
 {
 	Log("-SetLocalSTUNCredentials [frag:%s,pwd:%s]\n",username,pwd);
@@ -315,8 +354,6 @@ int RTPSession::SetRemoteCryptoSDES(const char* suite, const char* key64)
 	//Set polciy values
 	policy.ssrc.type	= ssrc_any_inbound;
 	policy.ssrc.value	= 0;
-	policy.window_size	= 1024;
-	policy.allow_repeat_tx	= 1;
 	policy.key		= recvKey;
 	policy.next		= NULL;
 
@@ -405,9 +442,6 @@ bool RTPSession::SetSendingCodec(DWORD codec)
 int RTPSession::SetRemotePort(char *ip,int sendPort)
 {
 	Log("-SetRemotePort [%s:%d]\n",ip,sendPort);
-
-	//Reset SSRC
-	sendSSRC = simPort;;//random();
 
 	//Modificamos las cabeceras del packete
 	rtp_hdr_t *headers = (rtp_hdr_t *)sendPacket;
@@ -550,6 +584,42 @@ int RTPSession::End()
 	return 1;
 }
 
+int RTPSession::SendPacket(RTCPCompoundPacket &rtcp)
+{
+	int ret = 0;
+	BYTE data[MTU];
+	DWORD size = MTU;
+
+	//Serialize
+	int len = rtcp.Serialize(data,size);
+	//Check result
+	if (!len)
+		//Error
+		return 0;
+
+	//If encripted
+	if (encript)
+	{
+		//Protect
+		err_status_t err = srtp_protect_rtcp(sendSRTPSession,data,&len);
+		//Check error
+		if (err!=err_status_ok)
+			//Nothing
+			return Error("Error protecting RTCP packet [%d]\n",err);
+	}
+
+	//If muxin
+	if (muxRTCP)
+		//Send using RTP 5 tuple
+		ret = sendto(simSocket,data,len,0,(sockaddr *)&sendAddr,sizeof(struct sockaddr_in));
+	else
+		//Send using RCTP 5 tuple
+		ret = sendto(simRtcpSocket,data,len,0,(sockaddr *)&sendRtcpAddr,sizeof(struct sockaddr_in));
+
+	//Exit
+	return (ret>0);
+}
+
 int RTPSession::SendPacket(RTPPacket &packet)
 {
 	return SendPacket(packet,packet.GetTimestamp());
@@ -603,12 +673,20 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 			//Exit
 			return 0;
 	}
+
+	//Check if we need to send SR
+	if (isZeroTime(&lastSR) || getDifTime(&lastSR)>1000000)
+		//Send it
+		SendSenderReport();
 	
 	//Modificamos las cabeceras del packete
 	rtp_hdr_t *headers = (rtp_hdr_t *)sendPacket;
 
+	//Calculate last timestamp
+	sendLastTime = sendTime + timestamp;
+
 	//POnemos el timestamp
-	headers->ts=htonl(timestamp);
+	headers->ts=htonl(sendLastTime);
 
 	//Incrementamos el numero de secuencia
 	headers->seq=htons(sendSeq++);
@@ -913,6 +991,7 @@ void RTPSession::ReadRTP()
 
 	//Increase stats
 	numRecvPackets++;
+	totalRecvPacketsSinceLastSR++;
 	totalRecvBytes += size;
 
 	//Get sec number
@@ -932,14 +1011,20 @@ void RTPSession::ReadRTP()
 			{
 				//Check if it is an out of order or duplicate packet
 				if (recSeq-seq<255)
+				{
 					//Ignore it
 					return;
-				else if (seq==1 && recSeq==(WORD)-1)
-					//Not lost
+				} else if (seq==1 && recSeq==(WORD)-1) {
+					//Not lost, just seq wrapping
 					lost = 0;
-				else
+					//Increase cycles
+					recCycles++;
+				} else {
 					//Too many
 					lost = (WORD)-1;
+					//Reset stats
+					recCycles = 0;
+				}
 			} else if (seq-(recSeq+1)<255) {
 				//Get the number of lost packets
 				lost = seq-(recSeq+1);
@@ -951,6 +1036,12 @@ void RTPSession::ReadRTP()
 			//Not lost
 			lost = 0;
 		}
+	} else if (recSSRC!=ssrc) {
+		//Change of SSRC
+		//Reset cycles
+		recCycles = 0;
+		//Lost
+		lost = (WORD)-1;
 	} else {
 		//Lost
 		lost = (WORD)-1;
@@ -958,8 +1049,14 @@ void RTPSession::ReadRTP()
 
 	//Check if it has not been something extrange
 	if (lost!=(WORD)-1)
+	{
 		//Increase lost packet count
 		lostRecvPackets += lost;
+		//And the lost packet for the SR
+		lostRecvPacketsSinceLastSR += lost;
+		//Also count it for the total
+		totalRecvPacketsSinceLastSR += lost;
+	}
 
 	//Update ssrc
 	recSSRC = ssrc;
@@ -967,8 +1064,34 @@ void RTPSession::ReadRTP()
 	//Update last one
 	recSeq = seq;
 
+	//Get diff from previous
+	DWORD diff = getUpdDifTime(&recTimeval)/1000;
+
+	//if not fist packet
+	if (recTimestamp)
+	{
+		//TODO: FIX rate should be inside packet
+		DWORD rate = 1;
+		if (media==MediaFrame::Audio)
+			rate = 8;
+		else if (media==MediaFrame::Video)
+			rate = 90;
+		//Get difference of arravail times
+		DWORD d = (packet->GetTimestamp()-recTimestamp)/rate-diff;
+		//Calculate jitter
+		jitter += (abs(d)-jitter)/16;
+	}
+	
+	//Update rtp timestamp
+	recTimestamp = packet->GetTimestamp();
+
 	//Push it back
 	packets.Add(packet);
+
+	//Check if we need to send SR
+	if (isZeroTime(&lastSR) || getDifTime(&lastSR)>1000000)
+		//Send it
+		SendSenderReport();
 }
 
 void RTPSession::Start()
@@ -1095,7 +1218,12 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 		switch (packet->GetType())
 		{
 			case RTCPPacket::SenderReport:
+			{
+				RTCPSenderReport* sr = (RTCPSenderReport*)packet;
+				//Get Timestamp
+				recSR = sr->GetTimestamp();
 				break;
+			}
 			case RTCPPacket::ReceiverReport:
 				break;
 			case RTCPPacket::SDES:
@@ -1148,4 +1276,90 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 	}
 	//Delete pacekt
 	delete(rtcp);
+}
+
+int RTPSession::SendSenderReport()
+{
+	RTCPCompoundPacket rtcp;
+	timeval tv;
+	
+	//Get now
+	gettimeofday(&tv, NULL);
+
+	//Convert secs to NTP_JAN_1970;
+	DWORD secs = tv.tv_sec + 2208988800UL;
+	//Convert microsecods to 32 bits fraction
+	DWORD frac = ((double)tv.tv_usec)*0.4294967296;
+
+	//Create Sender report
+	RTCPSenderReport *sr = new RTCPSenderReport();
+
+	//Append data
+	sr->SetSSRC(sendSSRC);
+	sr->SetNTPSec(secs);
+	sr->SetNTPFrac(frac);
+	sr->SetRtpTimestamp(sendLastTime);
+	sr->SetOctectsSent(totalSendBytes);
+	sr->SetPacketsSent(numSendPackets);
+
+	//If we have received somthing
+	if (totalRecvPacketsSinceLastSR)
+	{
+		//Create report
+		RTCPReport *report = new RTCPReport();
+
+		//Set SSRC of incoming rtp stream
+		report->SetSSRC(recSSRC);
+
+		//Check last report time
+		if (!isZeroTime(&lastSR))
+			//Get time and update it
+			report->SetDelaySinceLastSR(getDifTime(&lastSR)/1000);
+		else
+			//No previous SR
+			report->SetDelaySinceLastSR(0);
+		
+		//The middle 32 bits out of 64 in the NTP timestamp (as explained in Section 4) received as part of the most recent RTCP sender report (SR) packet from source SSRC_n. If no SR has been received yet, the field is set to zero.
+		report->SetLastSR(recSR>>16);
+		//Calculate fraction lost
+		DWORD frac = (lostRecvPacketsSinceLastSR*256)/totalRecvPacketsSinceLastSR;
+		//Set it
+		report->SetFractionLost(frac);
+		//Reset
+		totalRecvPacketsSinceLastSR = 0;
+		lostRecvPacketsSinceLastSR = 0;
+
+		//Set other data
+		report->SetLastJitter(jitter);
+		report->SetLostCount(lostRecvPackets);
+		report->SetLastSeqNum(recCycles<<16 | recSeq);
+
+		//Append it
+		sr->AddReport(report);
+	}
+
+	//Append SR to rtcp
+	rtcp.AddRTCPacket(sr);
+
+	//Update time of latest sr
+	getUpdDifTime(&lastSR);
+
+	//Create SDES
+	RTCPSDES* sdes = new RTCPSDES();
+	
+	//Create description
+	RTCPSDES::Description *desc = new RTCPSDES::Description();
+	//Set ssrc
+	desc->SetSSRC(sendSSRC);
+	//Add item
+	desc->AddItem( new RTCPSDES::Item(RTCPSDES::Item::CName,cname));
+
+	//Add it
+	sdes->AddDescription(desc);
+
+	//Add to rtcp
+	rtcp.AddRTCPacket(sdes);
+
+	//Send Sender Report
+	return SendPacket(rtcp);
 }
