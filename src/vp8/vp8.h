@@ -163,7 +163,7 @@ struct VP8PayloadDescriptor
 		      +-+-+-+-+-+-+-+-+
 		   X: |I|L|T|K|RSV-A  | (OPTIONAL)
 		      +-+-+-+-+-+-+-+-+
-		   I: |   PictureID   | (OPTIONAL)
+		   I: |   PictureID   | (OPTIONAL 8b/16b)
 		      +-+-+-+-+-+-+-+-+
 		   L: |   TL0PICIDX   | (OPTIONAL)
 		      +-+-+-+-+-+-+-+-+
@@ -191,11 +191,11 @@ struct VP8PayloadDescriptor
 		//Check if picture id present
 		if (pictureIdPresent)
 		{
-			//Check how much size
+			//Check long is the picture id
 			if (pictureId>>7)
 			{
 				//Set picture id
-				data[len]  = pictureId>>7 | 0x80;
+				data[len]  = pictureId>>8 | 0x80;
 				data[len+1] = pictureId & 0x7F;
 				//Inc lenght
 				len+=2;

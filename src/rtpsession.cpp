@@ -796,8 +796,10 @@ void RTPSession::ReadRTCP()
 		muxRTCP = false;
 		//Parse it
 		RTCPCompoundPacket* rtcp = RTCPCompoundPacket::Parse(buffer,size);
-		//Handle incomming rtcp packets
-		ProcessRTCPPacket(rtcp);
+		//Check packet
+		if (rtcp)
+			//Handle incomming rtcp packets
+			ProcessRTCPPacket(rtcp);
 	}
 }
 
@@ -925,8 +927,10 @@ void RTPSession::ReadRTP()
 		muxRTCP = true;
 		//Parse it
 		RTCPCompoundPacket* rtcp = RTCPCompoundPacket::Parse(buffer,size);
-		//Handle incomming rtcp packets
-		ProcessRTCPPacket(rtcp);
+		//Check packet
+		if (rtcp)
+			//Handle incomming rtcp packets
+			ProcessRTCPPacket(rtcp);
 		//Skip
 		return;
 	}
