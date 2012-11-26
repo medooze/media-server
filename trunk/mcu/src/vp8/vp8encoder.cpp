@@ -251,7 +251,7 @@ VideoFrame* VP8Encoder::EncodeFrame(BYTE *buffer,DWORD bufferSize)
 				//Serialized desc
 				BYTE aux[6];
 				//Serialize
-				DWORD auxLen = desc.Serialize(aux,desc.GetSize());
+				DWORD auxLen = desc.Serialize(aux,6);
 				//Get
 				DWORD len = RTPPAYLOADSIZE-desc.GetSize();
 				//Check iw we have enought
