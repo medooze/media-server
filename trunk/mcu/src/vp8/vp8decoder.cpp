@@ -62,6 +62,7 @@ VP8Decoder::~VP8Decoder()
 ************************/
 int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 {
+	vpx_codec_err_t err;
 	VP8PayloadDescriptor desc;
 
 	//Decode payload descriptr
@@ -73,21 +74,29 @@ int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 		return Error("Could not parse VP8 payload descriptor");
 
 	//If it is first of the partition
-	if (desc.startOfPartition && bufLen)
+	if ((desc.startOfPartition || lost) && bufLen)
 	{
 		//Decode previous partition
-		if (vpx_codec_decode(&decoder,buffer,bufLen,NULL,0)!=VPX_CODEC_OK)
-			//Error
-			return Error("Error decoding VP8 partition [error %d:%s]\n",decoder.err,decoder.err_detail);
+		err = vpx_codec_decode(&decoder,buffer,bufLen,NULL,0);
 
 		//Reset length
 		bufLen = 0;
+
+		//Check error
+		if (err!=VPX_CODEC_OK)
+			//Error
+			return Error("Error decoding VP8 partition [error %d:%s]\n",decoder.err,decoder.err_detail);
+
 	}
 
 	//Check size
 	if (bufLen+inLen-pos>bufSize)
+	{
+		//Reset
+		bufLen = 0;
 		//Error
 		return Error("too much data in vp8 partition\n");
+	}
 	
 	//Append
 	memcpy(buffer+bufLen,in+pos,inLen-pos);
@@ -99,12 +108,15 @@ int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 	if(last)
 	{
 		//Decode last partition
-		if (vpx_codec_decode(&decoder,buffer,bufLen,NULL,0)!=VPX_CODEC_OK)
-			//Error
-			return Error("Error decoding VP8 last partition [error %d:%s]\n",decoder.err,decoder.err_detail);
+		err = vpx_codec_decode(&decoder,buffer,bufLen,NULL,0);
 
 		//Y resetamos el buffer
 		bufLen=0;
+
+		//Check error
+		if (err!=VPX_CODEC_OK)
+			//Error but do not exit yet, try to get a frame anyway
+			 Error("Error decoding VP8 last partition [error %d:%s]\n",decoder.err,decoder.err_detail);
 		
 		//Ger image
 		vpx_codec_iter_t iter = NULL;
