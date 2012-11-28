@@ -27,8 +27,9 @@ static DWORD MaxIntraTarget(DWORD optimalBuffersize,DWORD fps)
 	uint32_t targetPct = optimalBuffersize * scalePar * fps / 10;
 
 	// Don't go below 3 times the per frame bandwidth.
-	const uint32_t minIntraTh = 300;
-	return (targetPct < minIntraTh) ? minIntraTh : targetPct;
+	//const uint32_t minIntraTh = 300;
+	//return (targetPct < minIntraTh) ? minIntraTh : targetPct;
+	return targetPct;
 }
 
 VP8Encoder::VP8Encoder()
@@ -118,7 +119,7 @@ int VP8Encoder::OpenCodec()
 	config.g_profile = 1;
 	config.g_w = width;
 	config.g_h = height;
-	config.rc_target_bitrate = bitrate;
+	config.rc_target_bitrate = bitrate*fps;
 	config.g_timebase.num = 1;
 	config.g_timebase.den = 90000;
 	config.g_error_resilient = VPX_ERROR_RESILIENT_DEFAULT;

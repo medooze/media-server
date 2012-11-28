@@ -194,6 +194,47 @@ RTCPSenderReport::~RTCPSenderReport()
 		delete(*it);
 }
 
+void RTCPSenderReport::SetTimestamp(timeval *tv)
+{
+	/*
+	   Wallclock time (absolute date and time) is represented using the
+	   timestamp format of the Network Time Protocol (NTP), which is in
+	   seconds relative to 0h UTC on 1 January 1900 [4].  The full
+	   resolution NTP timestamp is a 64-bit unsigned fixed-point number with
+	   the integer part in the first 32 bits and the fractional part in the
+	   last 32 bits.  In some fields where a more compact representation is
+	   appropriate, only the middle 32 bits are used; that is, the low 16
+	   bits of the integer part and the high 16 bits of the fractional part.
+	   The high 16 bits of the integer part must be determined
+	   independently.
+	 */
+
+	//Convert from ecpoch (JAN_1970) to NTP (JAN 1900);
+	SetNTPSec(tv->tv_sec + 2208988800UL);
+	//Convert microsecods to 32 bits fraction
+	SetNTPFrac(tv->tv_usec*4294.967296);
+}
+
+void RTCPSenderReport::GetTimestamp(timeval *tv) const
+{
+	//Convert to epcoh JAN_1970
+	tv->tv_sec = ntpSec - 2208988800UL;
+	//Add fraction of
+	tv->tv_usec = ntpFrac/4294.967296;
+}
+
+QWORD RTCPSenderReport::GetTimestamp() const
+{
+	//Convert to epcoh JAN_1970
+	QWORD ts = ntpSec - 2208988800UL;
+	//convert to microseconds
+	ts *=1E6;
+	//Add fraction
+	ts += ntpFrac/4294.967296;
+	//Return it
+	return ts;
+}
+
 void RTCPSenderReport::Dump()
 {
 	Debug("\t[RTCPSenderReport ssrc=%u count=%u \n",ssrc,reports.size());
@@ -985,8 +1026,11 @@ DWORD RTCPSDES::Description::GetSize()
 	DWORD len = 4;
 	//For each field
 	for (Items::iterator it=items.begin();it!=items.end();++it)
-		//add size
-		len += (*it)->GetSize();
+		//add data size and header
+		len += (*it)->GetSize()+2;
+	//ADD end
+	len+=1;
+	//Return
 	return pad32(len);
 }
 DWORD RTCPSDES::Description::Parse(BYTE* data,DWORD size)
@@ -1014,6 +1058,8 @@ DWORD RTCPSDES::Description::Parse(BYTE* data,DWORD size)
 		//Move
 		len += length+2;
 	}
+	//Skip last
+	len++;
 	//Return consumed len
 	return pad32(len);
 }
