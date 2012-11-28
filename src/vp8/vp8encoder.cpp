@@ -237,12 +237,10 @@ VideoFrame* VP8Encoder::EncodeFrame(BYTE *buffer,DWORD bufferSize)
 			//Append data to the frame
 			DWORD pos = frame->AppendMedia((BYTE*)pkt->data.frame.buf,pkt->data.frame.sz);
 			//Set data
-			desc.extendedControlBitsPresent = 1;
+			desc.extendedControlBitsPresent = 0;
 			desc.nonReferencePicture = pkt->data.frame.flags & VPX_FRAME_IS_DROPPABLE;
 			desc.startOfPartition	 = true;
 			desc.partitionIndex	 = partitionIndex;
-			desc.pictureIdPresent	 = 1;
-			desc.pictureId		 = num++;
 			//Split into MTU
 			DWORD cur = 0;
 			//For each
