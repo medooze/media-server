@@ -12,7 +12,7 @@
 #define WQVGA	7
 
 #define MTU		1500
-#define RTPPAYLOADSIZE	1300
+#define RTPPAYLOADSIZE	1350
 
 #define QWORD		uint64_t
 #define DWORD		uint32_t

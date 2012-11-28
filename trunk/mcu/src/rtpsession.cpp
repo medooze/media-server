@@ -1290,18 +1290,12 @@ int RTPSession::SendSenderReport()
 	//Get now
 	gettimeofday(&tv, NULL);
 
-	//Convert secs to NTP_JAN_1970;
-	DWORD secs = tv.tv_sec + 2208988800UL;
-	//Convert microsecods to 32 bits fraction
-	DWORD frac = ((double)tv.tv_usec)*0.4294967296;
-
 	//Create Sender report
 	RTCPSenderReport *sr = new RTCPSenderReport();
 
 	//Append data
 	sr->SetSSRC(sendSSRC);
-	sr->SetNTPSec(secs);
-	sr->SetNTPFrac(frac);
+	sr->SetTimestamp(&tv);
 	sr->SetRtpTimestamp(sendLastTime);
 	sr->SetOctectsSent(totalSendBytes);
 	sr->SetPacketsSent(numSendPackets);

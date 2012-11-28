@@ -331,18 +331,21 @@ public:
 	void SetSSRC(DWORD ssrc)		{ this->ssrc = ssrc;			}
 	void SetNTPFrac(DWORD ntpFrac)		{ this->ntpFrac = ntpFrac;		}
 	void SetNTPSec(DWORD ntpSec)		{ this->ntpSec = ntpSec;		}
-
+	
 	DWORD GetOctectsSent()	const		{ return octectsSent;		}
 	DWORD GetPacketsSent()	const		{ return packetsSent;		}
 	DWORD GetRTPTimestamp() const		{ return rtpTimestamp;		}
 	DWORD GetNTPFrac()	const		{ return ntpFrac;		}
 	DWORD GetNTPSec()	const		{ return ntpSec;		}
-	QWORD GetTimestamp()	const		{ return ((QWORD)ntpSec)<<32 | ntpFrac; }
 	DWORD GetSSRC()		const		{ return ssrc;			}
 
 	DWORD GetCount()	const		{ return reports.size();	}
 	RTCPReport* GetReport(BYTE i) const	{ return reports[i];		}
 	void  AddReport(RTCPReport* report)	{ reports.push_back(report);	}
+
+	void  SetTimestamp(timeval *tv);
+	QWORD GetTimestamp() const;
+	void  GetTimestamp(timeval *tv) const;
 	
 private:
 	DWORD ssrc;           /* sender generating this report */

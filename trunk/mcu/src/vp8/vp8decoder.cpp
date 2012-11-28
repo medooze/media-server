@@ -74,7 +74,7 @@ int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 		return Error("Could not parse VP8 payload descriptor");
 
 	//If it is first of the partition
-	if ((desc.startOfPartition || lost) && bufLen)
+	if ((desc.startOfPartition || lost ) && bufLen)
 	{
 		//Decode previous partition
 		err = vpx_codec_decode(&decoder,buffer,bufLen,NULL,0);
@@ -115,8 +115,8 @@ int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 
 		//Check error
 		if (err!=VPX_CODEC_OK)
-			//Error but do not exit yet, try to get a frame anyway
-			 Error("Error decoding VP8 last partition [error %d:%s]\n",decoder.err,decoder.err_detail);
+			//Error
+			return Error("Error decoding VP8 last [error %d:%s]\n",decoder.err,decoder.err_detail);
 		
 		//Ger image
 		vpx_codec_iter_t iter = NULL;
