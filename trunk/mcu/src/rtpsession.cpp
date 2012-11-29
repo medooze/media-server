@@ -21,6 +21,7 @@
 #include "rtpsession.h"
 #include "stunmessage.h"
 #include <libavutil/base64.h>
+#include <openssl/ossl_typ.h>
 
 BYTE rtpEmpty[] = {0x80,0x14,0x00,0x00,0x00,0x00,0x00,0x00};
 
@@ -1237,7 +1238,35 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 			case RTCPPacket::App:
 				break;
 			case RTCPPacket::RTPFeedback:
+			{
+
+				//Get feedback packet
+				RTCPRTPFeedback *fb = (RTCPRTPFeedback*) packet;
+				//Check feedback type
+				switch(fb->GetFeedbackType())
+				{
+					case RTCPRTPFeedback::NACK:
+						
+						break;
+					case RTCPRTPFeedback::TempMaxMediaStreamBitrateRequest:
+						
+						for (BYTE i=0;i<fb->GetFieldCount();i++)
+						{
+							//Get field
+							RTCPRTPFeedback::TempMaxMediaStreamBitrateField *field = (RTCPRTPFeedback::TempMaxMediaStreamBitrateField*) fb->GetField(i);
+						}
+						break;
+					case RTCPRTPFeedback::TempMaxMediaStreamBitrateNotification:
+						for (BYTE i=0;i<fb->GetFieldCount();i++)
+						{
+							//Get field
+							RTCPRTPFeedback::TempMaxMediaStreamBitrateField *field = (RTCPRTPFeedback::TempMaxMediaStreamBitrateField*) fb->GetField(i);
+
+						}
+						break;
+				}
 				break;
+			}
 			case RTCPPacket::PayloadFeedback:
 			{
 				//Get feedback packet

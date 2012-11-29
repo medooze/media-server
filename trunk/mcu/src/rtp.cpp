@@ -155,6 +155,10 @@ RTCPCompoundPacket* RTCPCompoundPacket::Parse(BYTE *data,DWORD size)
 				//Create packet
 				packet = new RTCPNACK();
 				break;
+			case RTCPPacket::ExtendedJitterReport:
+				//Create packet
+				packet = new RTCPExtendedJitterReport();
+				break;
 			default:
 				//Skip
 				Debug("-Unknown rtcp packet type [%d]\n",header->pt);
@@ -263,7 +267,6 @@ DWORD RTCPSenderReport::Parse(BYTE* data,DWORD size)
 	//Get header
 	rtcp_common_t * header = (rtcp_common_t *)data;
 
-
 	//Check size
 	if (size<GetRTCPHeaderLength(header))
 		//Exit
@@ -333,7 +336,6 @@ RTCPReceiverReport::RTCPReceiverReport() : RTCPPacket(RTCPPacket::ReceiverReport
 {
 
 }
-
 
 RTCPReceiverReport::~RTCPReceiverReport()
 {
@@ -443,8 +445,7 @@ DWORD RTCPBye::Parse(BYTE* data,DWORD size)
 	//Get header
 	rtcp_common_t * header = (rtcp_common_t *)data;
 
-	//Get packet size
-	DWORD packetSize = GetSize();
+	DWORD packetSize = GetRTCPHeaderLength(header);
 	//Check size
 	if (size<packetSize)
 		//Exit
@@ -522,6 +523,70 @@ DWORD RTCPBye::Serialize(BYTE* data,DWORD size)
 	return len;
 }
 
+
+
+RTCPExtendedJitterReport::RTCPExtendedJitterReport() : RTCPPacket(RTCPPacket::ExtendedJitterReport)
+{
+}
+
+DWORD RTCPExtendedJitterReport::GetSize()
+{
+	return sizeof(rtcp_common_t)+4*jitters.size();
+}
+
+DWORD RTCPExtendedJitterReport::Parse(BYTE* data,DWORD size)
+{
+	//Get header
+	rtcp_common_t * header = (rtcp_common_t *)data;
+
+	//Check size
+	if (size<GetRTCPHeaderLength(header))
+		//Exit
+		return 0;
+	//Skip headder
+	DWORD len = sizeof(rtcp_common_t);
+	//for each
+	for(int i=0;i<header->count;i++)
+	{
+		//Get ssrc
+		jitters.push_back(get4(data,len));
+		//Add lenght
+		len+=4;
+	}
+
+	//Return total size
+	return len;
+}
+
+DWORD RTCPExtendedJitterReport::Serialize(BYTE* data,DWORD size)
+{
+	//Get packet size
+	DWORD packetSize = GetSize();
+	//Check size
+	if (size<packetSize)
+		//error
+		return Error("Serialize RTCPExtendedJitterReport invalid size\n");
+	//Set header
+	rtcp_common_t * header = (rtcp_common_t *)data;
+	//Set values
+	header->count	= jitters.size();
+	header->pt	= GetType();
+	header->p	= 0;
+	header->version = 2;
+	SetRTCPHeaderLength(header,packetSize);
+	//Skip
+	DWORD len = sizeof(rtcp_common_t);
+	//for each
+	for(int i=0;i<jitters.size();i++)
+	{
+		//Set ssrc
+		set4(data,len,jitters[i]);
+		//skip
+		len += 4;
+	}
+	//return
+	return len;
+}
 RTCPApp::RTCPApp() : RTCPPacket(RTCPPacket::App)
 {
 	data = NULL;
@@ -580,7 +645,7 @@ DWORD RTCPApp::Parse(BYTE* data,DWORD size)
 	rtcp_common_t * header = (rtcp_common_t *)data;
 
 	//Get packet size
-	DWORD packetSize = GetSize();
+	DWORD packetSize = GetRTCPHeaderLength(header);
 	//Check size
 	if (size<packetSize)
 		//Exit
@@ -613,6 +678,13 @@ RTCPRTPFeedback::RTCPRTPFeedback() : RTCPPacket(RTCPPacket::RTPFeedback)
 {
 
 }
+RTCPRTPFeedback::~RTCPRTPFeedback()
+{
+	//For each field
+	for (Fields::iterator it=fields.begin();it!=fields.end();++it)
+		//delete it
+		delete(*it);
+}
 
 DWORD RTCPRTPFeedback::GetSize()
 {
@@ -624,24 +696,49 @@ DWORD RTCPRTPFeedback::Parse(BYTE* data,DWORD size)
 	//Get header
 	rtcp_common_t * header = (rtcp_common_t *)data;
 
+	//Get size decalred in header
+	DWORD packetSize = GetRTCPHeaderLength(header);
 	//Check size
-	if (size<GetRTCPHeaderLength(header))
+	if (size<packetSize)
 		//Exit
 		return 0;
 	//Get subtype
 	feedbackType = (FeedbackType)header->count;
-	//Check
-	if (feedbackType!=NACK)
-		//Error
-		return Error("-Unknowon RTCPRTPFeedback type [%d]\n",feedbackType);
 	//Skip headder
 	DWORD len = sizeof(rtcp_common_t);
 	//Get ssrcs
 	senderSSRC = get4(data,len);
 	mediaSSRC = get4(data,len+4);
-	//Get nack data
-	nack.pid = get2(data,len+8);
-	nack.blp = get2(data,len+10);
+	//skip fields
+	len += 8;
+	//While we have more
+	while (len<packetSize)
+	{
+		Field *field = NULL;
+		//Depending on the type
+		switch(feedbackType)
+		{
+			case NACK:
+				field = new NACKField();
+				break;
+			case TempMaxMediaStreamBitrateRequest:
+			case TempMaxMediaStreamBitrateNotification:
+				field = new TempMaxMediaStreamBitrateField();
+				break;
+			default:
+				return Error("Unknown RTCPRTPFeedback type [%d]\n",header->count);
+		}
+		//Parse field
+		DWORD parsed = field->Parse(data+len,packetSize-len);
+		//If not parsed
+		if (!parsed)
+			//Error
+			return 0;
+		//Add field
+		fields.push_back(field);
+		//Skip
+		len += parsed;
+	}
 	//Return consumed len
 	return len+12;
 }
@@ -667,11 +764,14 @@ DWORD RTCPRTPFeedback::Serialize(BYTE* data,DWORD size)
 	//Set ssrcs
 	set4(data,len,senderSSRC);
 	set4(data,len+4,mediaSSRC);
-	//Set nack data
-	set2(data,len+8,nack.pid);
-	set2(data,len+10,nack.blp);
+	//Inclrease len
+	len += 8;
+	//For each field
+	for (Fields::iterator it=fields.begin();it!=fields.end();++it)
+		//Serialize it
+		len+=(*it)->Serialize(data+len,size-len);
 	//Retrun writed data len
-	return len+12;
+	return len;
 }
 
 
@@ -690,7 +790,32 @@ RTCPPayloadFeedback::~RTCPPayloadFeedback()
 
 void RTCPPayloadFeedback::Dump()
 {
-	Debug("\t[RTCPPakcet PayloadFeedback %s/]\n",TypeToString(feedbackType));
+	Debug("\t[RTCPPacket PayloadFeedback %s]\n",TypeToString(feedbackType));
+	for (int i=0;i<fields.size();i++)
+	{
+		
+		//Check type
+		switch(feedbackType)
+		{
+			case RTCPPayloadFeedback::PictureLossIndication:
+			case RTCPPayloadFeedback::FullIntraRequest:
+			case RTCPPayloadFeedback::SliceLossIndication:
+			case RTCPPayloadFeedback::ReferencePictureSelectionIndication:
+			case RTCPPayloadFeedback::TemporalSpatialTradeOffRequest:
+			case RTCPPayloadFeedback::TemporalSpatialTradeOffNotification:
+			case RTCPPayloadFeedback::VideoBackChannelMessage:
+				break;
+			case RTCPPayloadFeedback:: ApplicationLayerFeeedbackMessage:
+			{
+				//Get field
+				ApplicationLayerFeeedbackField* field = (ApplicationLayerFeeedbackField*)fields[i];
+				//Dump it
+				::Dump(field->payload,field->length);
+				break;
+			}
+		}
+	}
+	Debug("\t[/RTCPPacket PayloadFeedback %s]\n",TypeToString(feedbackType));
 }
 DWORD RTCPPayloadFeedback::GetSize()
 {
@@ -708,7 +833,7 @@ DWORD RTCPPayloadFeedback::Parse(BYTE* data,DWORD size)
 	rtcp_common_t * header = (rtcp_common_t *)data;
 
 	//Get packet size
-	DWORD packetSize = GetSize();
+	DWORD packetSize = GetRTCPHeaderLength(header);
 	//Check size
 	if (size<packetSize)
 		//Exit
