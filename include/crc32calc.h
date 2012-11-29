@@ -39,9 +39,8 @@ public:
 	DWORD Update(BYTE *data, DWORD size)
 	{
 		DWORD c = crc ^ 0xFFFFFFFF;
-		for (DWORD i = 0; i < size; ++i) {
+		for (DWORD i = 0; i < size; ++i) 
 			c = table[(c ^ data[i]) & 0xFF] ^ (c >> 8);
-		}
 		crc =  c ^ 0xFFFFFFFF;
 		return crc;
 	}
