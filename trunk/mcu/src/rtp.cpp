@@ -688,7 +688,12 @@ RTCPRTPFeedback::~RTCPRTPFeedback()
 
 DWORD RTCPRTPFeedback::GetSize()
 {
-	return sizeof(rtcp_common_t)+12;
+	DWORD len = 8+sizeof(rtcp_common_t);
+	//For each field
+	for (Fields::iterator it=fields.begin();it!=fields.end();++it)
+		//add size
+		len += (*it)->GetSize();
+	return len;
 }
 
 DWORD RTCPRTPFeedback::Parse(BYTE* data,DWORD size)

@@ -667,8 +667,8 @@ public:
 		{
 			if (size<8) return 0;
 			ssrc = get4(data,0);
-			maxTotalBitrateExp	= data[0] >> 1;
-			maxTotalBitrateMantissa = data[4] & 0x01;
+			maxTotalBitrateExp	= data[4] >> 2;
+			maxTotalBitrateMantissa = data[4] & 0x03;
 			maxTotalBitrateMantissa = maxTotalBitrateMantissa <<8 | data[5];
 			maxTotalBitrateMantissa = maxTotalBitrateMantissa <<8 | data[6] >> 1;
 			overhead		= data[6] & 0x01;
@@ -679,8 +679,8 @@ public:
 		{
 			if (size<8) return 0;
 			set4(data,0,ssrc);
-			data[4] = maxTotalBitrateExp << 1 | (maxTotalBitrateMantissa >>16 & 0x01);
-			data[5] = maxTotalBitrateMantissa>>8;
+			data[4] = maxTotalBitrateExp << 2 | (maxTotalBitrateMantissa >>15 & 0x03);
+			data[5] = maxTotalBitrateMantissa >>7;
 			data[6] = maxTotalBitrateMantissa <<1 | (overhead >>8 & 0x01);
 			data[7] = overhead;
 			return 8;
@@ -1071,10 +1071,13 @@ public:
 		static ApplicationLayerFeeedbackField* CreateReceiverEstimatedMaxBitrate(DWORD ssrc,DWORD bitrate)
 		{
 			/*
+			    0                   1                   2                   3
+			    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+			   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 			   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 			   |  Unique identifier 'R' 'E' 'M' 'B'                            |
 			   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-			   |  Num SSRC     | BR Exp    |  BR Mantissa                      |
+			   |  Num SSRC     | BR Exp    |  BR Mantissa (18)                 |
 			   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 			   |   SSRC feedback                                               |
 			   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -1082,11 +1085,11 @@ public:
 
 			//Init exp
 			BYTE bitrateExp = 0;
-			//Find 17 most significants bits
+			//Find 18 most significants bits
 			for(BYTE i=0;i<64;i++)
 			{
 				//If bitrate is less than
-				if(bitrate <= (0x000FFFF << i))
+				if(bitrate <= (0x003FFFF << i))
 				{
 					//That's the exp
 					bitrateExp = i;
@@ -1094,7 +1097,7 @@ public:
 				}
 			}
 			//Get mantisa
-			DWORD bitrateMantissa = (bitrate >> bitrateMantissa);
+			DWORD bitrateMantissa = (bitrate >> bitrateExp);
 			//Create field
 			ApplicationLayerFeeedbackField* field = new ApplicationLayerFeeedbackField();
 			//Set size of data
@@ -1108,8 +1111,9 @@ public:
 			field->payload[3] = 'B';
 			//Set data
 			field->payload[4] = 1;
-			field->payload[5] = bitrateExp;
-			set2(field->payload,6,bitrateMantissa);
+			field->payload[5] = bitrateExp << 2 | (bitrateMantissa >>16 & 0x03);
+			field->payload[6] = bitrateMantissa >> 8;
+			field->payload[7] = bitrateMantissa;
 			//Set ssrc
 			set4(field->payload,8,ssrc);
 			//Return it
