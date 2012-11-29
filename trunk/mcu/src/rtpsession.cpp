@@ -145,6 +145,9 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener)
 	iceRemotePwd = NULL;
 	//Fill with 0
 	memset(sendPacket,0,MTU);
+	//Preparamos las direcciones de envio
+	memset(&sendAddr,       0,sizeof(struct sockaddr_in));
+	memset(&sendRtcpAddr,   0,sizeof(struct sockaddr_in));
 	//No thread
 	thread = NULL;
 	running = false;
@@ -282,8 +285,9 @@ int RTPSession::SetProperties(const RTPSession::Properties& properties)
 		}
 	}
 	
-	return 0;
+	return 1;
 }
+
 int RTPSession::SetLocalSTUNCredentials(const char* username, const char* pwd)
 {
 	Log("-SetLocalSTUNCredentials [frag:%s,pwd:%s]\n",username,pwd);
@@ -611,11 +615,17 @@ int RTPSession::SendPacket(RTCPCompoundPacket &rtcp)
 
 	//If muxin
 	if (muxRTCP)
-		//Send using RTP 5 tuple
-		ret = sendto(simSocket,data,len,0,(sockaddr *)&sendAddr,sizeof(struct sockaddr_in));
-	else
-		//Send using RCTP 5 tuple
-		ret = sendto(simRtcpSocket,data,len,0,(sockaddr *)&sendRtcpAddr,sizeof(struct sockaddr_in));
+	{
+		//Check if we have sendinf ip address
+		if (sendAddr.sin_addr.s_addr != INADDR_ANY)
+			//Send using RTP 5 tuple
+			ret = sendto(simSocket,data,len,0,(sockaddr *)&sendAddr,sizeof(struct sockaddr_in));
+	} else {
+		//Check if we have sendinf ip address
+		if (sendRtcpAddr.sin_addr.s_addr != INADDR_ANY)
+			//Send using RCTP 5 tuple
+			ret = sendto(simRtcpSocket,data,len,0,(sockaddr *)&sendRtcpAddr,sizeof(struct sockaddr_in));
+	}
 
 	//Exit
 	return (ret>0);
