@@ -6,6 +6,7 @@
 #include "media.h"
 #include "video.h"
 #include <vector>
+#include <math.h>
 
 #define RTP_VERSION    2
 
@@ -262,15 +263,16 @@ class RTCPPacket
 {
 public:
 	 enum Type{
-		FullIntraRequest= 192,
-		NACK		= 193,
-		SenderReport	= 200,
-		ReceiverReport  = 201,
-		SDES		= 202,
-		Bye		= 203,
-		App		= 204,
-		RTPFeedback	= 205,
-		PayloadFeedback	= 206
+		FullIntraRequest	= 192,
+		NACK			= 193,
+		ExtendedJitterReport	= 195,
+		SenderReport		= 200,
+		ReceiverReport		= 201,
+		SDES			= 202,
+		Bye			= 203,
+		App			= 204,
+		RTPFeedback		= 205,
+		PayloadFeedback		= 206
 	};
 
 	static const char* TypeToString(Type type)
@@ -392,6 +394,20 @@ private:
 private:
 	SSRCs ssrcs;
 	char* reason;
+};
+
+class RTCPExtendedJitterReport : public RTCPPacket
+{
+public:
+	RTCPExtendedJitterReport();
+
+	virtual DWORD GetSize();
+	virtual DWORD Parse(BYTE* data,DWORD size);
+	virtual DWORD Serialize(BYTE* data,DWORD size);
+private:
+	typedef std::vector<DWORD> Jitters;
+private:
+	Jitters jitters;
 };
 
 class RTCPFullIntraRequest : public RTCPPacket
@@ -547,39 +563,184 @@ private:
 class RTCPRTPFeedback : public RTCPPacket
 {
 public:
-	enum FeedbackType { NACK = 1 };
-public:
-	struct NACKMessage
+	enum FeedbackType {
+		NACK = 1,
+		TempMaxMediaStreamBitrateRequest = 3,
+		TempMaxMediaStreamBitrateNotification =4
+	};
+
+	static const char* TypeToString(FeedbackType type)
 	{
-		NACKMessage()
+		switch(type)
+		{
+			case NACK:
+				return "NACK";
+			case TempMaxMediaStreamBitrateRequest:
+				return "TempMaxMediaStreamBitrateRequest";
+			case TempMaxMediaStreamBitrateNotification:
+				return "TempMaxMediaStreamBitrateNotification";
+		}
+		return "Unknown";
+	}
+	
+	static RTCPRTPFeedback* Create(FeedbackType type,DWORD senderSSRC,DWORD mediaSSRC)
+	{
+		//Create
+		RTCPRTPFeedback* packet = new RTCPRTPFeedback();
+		//Set type
+		packet->SetFeedBackTtype(type);
+		//Set ssrcs
+		packet->SetSenderSSRC(senderSSRC);
+		packet->SetMediaSSRC(mediaSSRC);
+		//return it
+		return packet;
+	}
+public:
+	struct Field
+	{
+		virtual DWORD GetSize() = 0;
+		virtual DWORD Parse(BYTE* data,DWORD size) = 0;
+		virtual DWORD Serialize(BYTE* data,DWORD size) = 0;
+	};
+
+	struct NACKField : public Field
+	{
+		
+		WORD pid;
+		WORD blp;
+
+		NACKField()
 		{
 			pid = 0;
 			blp = 0;
 		}
-		NACKMessage(WORD pid,WORD blp)
+		NACKField(WORD pid,WORD blp)
 		{
 			this->pid = pid;
 			this->blp = blp;
 		}
-		WORD pid;
-		WORD blp;
+		virtual DWORD GetSize() { return 8;}
+		virtual DWORD Parse(BYTE* data,DWORD size)
+		{
+			if (size<8) return 0;
+			pid = get4(data,0);
+			blp = get4(data,4);
+			return 8;
+		}
+		virtual DWORD Serialize(BYTE* data,DWORD size)
+		{
+			if (size<8) return 0;
+			set4(data,0,pid);
+			set4(data,4,blp);
+			return 8;
+		}
 	};
+
+	struct TempMaxMediaStreamBitrateField : public Field
+	{
+		/*
+		    0                   1                   2                   3
+		    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+		   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		   |                              SSRC                             |
+		   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		   | MxTBR Exp |  MxTBR Mantissa                 |Measured Overhead|
+		   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		 */
+		DWORD	ssrc;
+		BYTE	maxTotalBitrateExp;		// 6 bits
+		DWORD	maxTotalBitrateMantissa;	// 17 bits
+		WORD	overhead;			// 9 bits
+
+		TempMaxMediaStreamBitrateField()
+		{
+
+		}
+		TempMaxMediaStreamBitrateField(DWORD ssrc,DWORD bitrate,WORD overhead)
+		{
+			this->ssrc = ssrc;
+			this->overhead = overhead;
+			SetBitrate(bitrate);
+		}
+		virtual DWORD GetSize() { return 8;}
+		virtual DWORD Parse(BYTE* data,DWORD size)
+		{
+			if (size<8) return 0;
+			ssrc = get4(data,0);
+			maxTotalBitrateExp	= data[0] >> 1;
+			maxTotalBitrateMantissa = data[4] & 0x01;
+			maxTotalBitrateMantissa = maxTotalBitrateMantissa <<8 | data[5];
+			maxTotalBitrateMantissa = maxTotalBitrateMantissa <<8 | data[6] >> 1;
+			overhead		= data[6] & 0x01;
+			overhead		= overhead << 8 | data[7];
+			return 8;
+		}
+		virtual DWORD Serialize(BYTE* data,DWORD size)
+		{
+			if (size<8) return 0;
+			set4(data,0,ssrc);
+			data[4] = maxTotalBitrateExp << 1 | (maxTotalBitrateMantissa >>16 & 0x01);
+			data[5] = maxTotalBitrateMantissa>>8;
+			data[6] = maxTotalBitrateMantissa <<1 | (overhead >>8 & 0x01);
+			data[7] = overhead;
+			return 8;
+		}
+
+		void SetBitrate(DWORD bitrate)
+		{
+			//Init exp
+			maxTotalBitrateExp = 0;
+			//Find 17 most significants bits
+			for(BYTE i=0;i<64;i++)
+			{
+				//If bitrate is less than
+				if(bitrate <= (0x001FFFF << i))
+				{
+					//That's the exp
+					maxTotalBitrateExp = i;
+					break;
+				}
+			}
+			//Get mantisa
+			maxTotalBitrateMantissa = (bitrate >> maxTotalBitrateExp);
+		}
+		
+		DWORD GetBitrate() const
+		{
+			return maxTotalBitrateMantissa << maxTotalBitrateExp;
+		}
+		
+		void SetSSRC(WORD ssrc)		{ this->ssrc = ssrc;		}
+		void SetOverhead(WORD overhead)	{ this->overhead = overhead;	}
+		WORD GetSSRC() const		{ return ssrc;			}
+		WORD GetOverhead() const	{ return overhead;		}
+	};
+	
 public:
 	RTCPRTPFeedback();
+	virtual ~RTCPRTPFeedback();
 	virtual DWORD GetSize();
 	virtual DWORD Parse(BYTE* data,DWORD size);
 	virtual DWORD Serialize(BYTE* data,DWORD size);
 
-	void SetSenderSSRC(DWORD ssrc)	{ senderSSRC = ssrc; }
-	void SetMediaSSRC(DWORD ssrc)	{ mediaSSRC = ssrc;  }
-	DWORD GetSenderSSRC() const	{ return senderSSRC; }
-	DWORD GetMediaSSRC() const	{ return mediaSSRC;  }
+	void SetSenderSSRC(DWORD ssrc)		{ senderSSRC = ssrc;		}
+	void SetMediaSSRC(DWORD ssrc)		{ mediaSSRC = ssrc;		}
+	void SetFeedBackTtype(FeedbackType type){ feedbackType = type;		}
+	void AddField(Field* field)		{ fields.push_back(field);	}
 
+	DWORD		GetMediaSSRC() const	{ return mediaSSRC;		}
+	DWORD		GetSenderSSRC() const	{ return senderSSRC;		}
+	FeedbackType	GetFeedbackType() const	{ return feedbackType;		}
+	DWORD		GetFieldCount() const	{ return fields.size();		}
+	Field*		GetField(BYTE i) const	{ return fields[i];		}
+	
+private:
+	typedef std::vector<Field*> Fields;
 private:
 	FeedbackType feedbackType;
 	DWORD senderSSRC;
 	DWORD mediaSSRC;
-	NACKMessage nack;
+	Fields fields;
 };
 
 class RTCPPayloadFeedback : public RTCPPacket
@@ -617,6 +778,20 @@ public:
 			case ApplicationLayerFeeedbackMessage:
 				return "ApplicationLayerFeeedbackMessage";
 		}
+		return "Unknown";
+	}
+
+	static RTCPPayloadFeedback* Create(FeedbackType type,DWORD senderSSRC,DWORD mediaSSRC)
+	{
+		//Create
+		RTCPPayloadFeedback* packet = new RTCPPayloadFeedback();
+		//Set type
+		packet->SetFeedBackTtype(type);
+		//Set ssrcs
+		packet->SetSenderSSRC(senderSSRC);
+		packet->SetMediaSSRC(mediaSSRC);
+		//return it
+		return packet;
 	}
 public:
 	struct Field
@@ -638,7 +813,7 @@ public:
 		WORD first; // 13 b
 		WORD number; // 13 b
 		BYTE pictureId; // 6
-		DWORD GetSize() { return 4;}
+		virtual DWORD GetSize() { return 4;}
 		virtual DWORD Parse(BYTE* data,DWORD size)
 		{
 			if (size<4) return 0;
@@ -648,6 +823,7 @@ public:
 			number = number<<8 | data[2];
 			number = number<<2 | data[3]>>6;
 			pictureId = data[4] & 0x3F;
+			return 4;
 		}
 		virtual DWORD Serialize(BYTE* data,DWORD size)
 		{
@@ -656,6 +832,7 @@ public:
 			data[1] = first << 3 | number >> 10;
 			data[2] = number >> 2;
 			data[3] = number << 6 | pictureId;
+			return 4;
 		}
 	};
 
@@ -687,7 +864,7 @@ public:
 			if (payload) free(payload);
 		}
 		
-		DWORD GetSize() { return 2+length+padding;}
+		virtual DWORD GetSize() { return 2+length+padding;}
 		virtual DWORD Parse(BYTE* data,DWORD size)
 		{
 			if (size<2) return 0;
@@ -734,7 +911,7 @@ public:
 		DWORD ssrc;
 		BYTE seq;
 
-		DWORD GetSize() { return 8;}
+		virtual DWORD GetSize() { return 8;}
 		virtual DWORD Parse(BYTE* data,DWORD size)
 		{
 			if (size<8) return 0;
@@ -768,7 +945,7 @@ public:
 		DWORD ssrc;
 		BYTE seq;
 		BYTE index;
-		DWORD GetSize() { return 8;}
+		virtual DWORD GetSize() { return 8;}
 		virtual DWORD Parse(BYTE* data,DWORD size)
 		{
 			if (size<8) return 0;
@@ -820,7 +997,7 @@ public:
 		{
 			if (payload) free(payload);
 		}
-		DWORD GetSize() { return 8+length;}
+		virtual DWORD GetSize() { return 8+length;}
 		virtual DWORD Parse(BYTE* data,DWORD size)
 		{
 			if (size<8) return 0;
@@ -867,7 +1044,7 @@ public:
 		{
 			if (payload) free(payload);
 		}
-		DWORD GetSize() { return pad32(length); }
+		virtual DWORD GetSize() { return pad32(length); }
 		virtual DWORD Parse(BYTE* data,DWORD size)
 		{
 			if (size!=pad32(size)) return 0;
@@ -890,15 +1067,75 @@ public:
 			//return size
 			return pad32(length);
 		}
+
+		static ApplicationLayerFeeedbackField* CreateReceiverEstimatedMaxBitrate(DWORD ssrc,DWORD bitrate)
+		{
+			/*
+			   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+			   |  Unique identifier 'R' 'E' 'M' 'B'                            |
+			   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+			   |  Num SSRC     | BR Exp    |  BR Mantissa                      |
+			   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+			   |   SSRC feedback                                               |
+			   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+			 **/
+
+			//Init exp
+			BYTE bitrateExp = 0;
+			//Find 17 most significants bits
+			for(BYTE i=0;i<64;i++)
+			{
+				//If bitrate is less than
+				if(bitrate <= (0x000FFFF << i))
+				{
+					//That's the exp
+					bitrateExp = i;
+					break;
+				}
+			}
+			//Get mantisa
+			DWORD bitrateMantissa = (bitrate >> bitrateMantissa);
+			//Create field
+			ApplicationLayerFeeedbackField* field = new ApplicationLayerFeeedbackField();
+			//Set size of data
+			field->length = 12;
+			//Allocate memory
+			field->payload = (BYTE*)malloc(field->length);
+			//Set id
+			field->payload[0] = 'R';
+			field->payload[1] = 'E';
+			field->payload[2] = 'M';
+			field->payload[3] = 'B';
+			//Set data
+			field->payload[4] = 1;
+			field->payload[5] = bitrateExp;
+			set2(field->payload,6,bitrateMantissa);
+			//Set ssrc
+			set4(field->payload,8,ssrc);
+			//Return it
+			return field;
+		}
+
 	};
 public:
 	RTCPPayloadFeedback();
 	virtual ~RTCPPayloadFeedback();
+
 	virtual void Dump();
 	virtual DWORD GetSize();
 	virtual DWORD Parse(BYTE* data,DWORD size);
 	virtual DWORD Serialize(BYTE* data,DWORD size);
-	FeedbackType GetFeedbackType() const { return feedbackType; }
+
+	void SetSenderSSRC(DWORD ssrc)		{ senderSSRC = ssrc;		}
+	void SetMediaSSRC(DWORD ssrc)		{ mediaSSRC = ssrc;		}
+	void SetFeedBackTtype(FeedbackType type){ feedbackType = type;		}
+	void AddField(Field* field)		{ fields.push_back(field);	}
+
+	DWORD		GetMediaSSRC() const	{ return mediaSSRC;		}
+	DWORD		GetSenderSSRC() const	{ return senderSSRC;		}
+	FeedbackType	GetFeedbackType() const	{ return feedbackType;		}
+	DWORD		GetFieldCount() const	{ return fields.size();		}
+	Field*		GetField(BYTE i) const	{ return fields[i];		}
 private:
 	typedef std::vector<Field*> Fields;
 private:
