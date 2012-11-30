@@ -18,7 +18,7 @@ public:
 		//Check if inited globally
 		if (!inited)
 		{
-			for (DWORD i = 0; i < sizeof(table); ++i) {
+			for (DWORD i = 0; i < 256; ++i) {
 				DWORD c = i;
 				for (DWORD j = 0; j < 8; ++j) {
 					if (c & 1) {
