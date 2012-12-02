@@ -432,11 +432,11 @@ int AudioStream::SendAudio()
 		packet.SetTimestamp(frameTime);
 
 		//Lo enviamos
-		/*if(!rtp.SendPacket(packet,frameTime))
+		if(!rtp.SendPacket(packet,frameTime))
 		{
 			Log("Error mandando el packete de audio\n");
 			continue;
-		}*/
+		}
 		
 		//Aumentamos lo enviado
 		sendBytes+=len;
