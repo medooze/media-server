@@ -465,6 +465,7 @@ int VideoStream::RecVideo()
 	float 		dif;
 	int 		width=0;
 	int 		height=0;
+	DWORD		lostCount=0;
 	
 	Log(">RecVideo\n");
 	
@@ -512,11 +513,17 @@ int VideoStream::RecVideo()
 		//Get lost
 		WORD lost = rtp.GetLost();
 
+		//Increase total lost count
+		lostCount += lost;
+
 		//Si hemos perdido un paquete
-		/*if(lost)
+		if(lostCount>5)
 		{
 			//Debug
 			Log("Lost packet\n");
+
+			//Reset count
+			lostCount = 0;
 			
 			//Check if we got listener and more than two seconds have elapsed from last request
 			if (listener && getDifTime(&lastFPURequest)>2000000)
@@ -525,10 +532,12 @@ int VideoStream::RecVideo()
 				Log("-Requesting FPU\n");
 				//Request it
 				listener->onRequestFPU();
+				//Request also over rtp
+				rtp.RequestFPU();
 				//Update time
 				getUpdDifTime(&lastFPURequest);
 			}
-		}*/
+		}
 
 		//Aumentamos el numero de bytes recividos
 		recBytes += packet->GetSize();
@@ -541,8 +550,12 @@ int VideoStream::RecVideo()
 			{
 				//Debug
 				Log("-Requesting FPU\n");
+				//Reset count
+				lostCount = 0;
 				//Request it
 				listener->onRequestFPU();
+				//Request also over rtp
+				rtp.RequestFPU();
 				//Update time
 				getUpdDifTime(&lastFPURequest);
 			}
@@ -551,6 +564,11 @@ int VideoStream::RecVideo()
 			//Next frame
 			continue;
 		}
+
+		//If got lost packets
+		if (lostCount)
+			//Decrease one per rec frame
+			lostCount--;
 		
 		//Si es el ultimo
 		if(packet->GetMark())

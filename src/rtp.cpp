@@ -283,7 +283,7 @@ DWORD RTCPSenderReport::Parse(BYTE* data,DWORD size)
 	//Move forward
 	len += 24;
 	//for each
-	for(int i=0;i<header->count&&size>len+24;i++)
+	for(int i=0;i<header->count&&size>=len+24;i++)
 	{
 		//New report
 		RTCPReport* report = new RTCPReport();
@@ -376,7 +376,7 @@ DWORD RTCPReceiverReport::Parse(BYTE* data,DWORD size)
 	//Move forward
 	len += 4;
 	//for each
-	for(int i=0;i<header->count&&size>len+24;i++)
+	for(int i=0;i<header->count&&size>=len+24;i++)
 	{
 		//New report
 		RTCPReport* report = new RTCPReport();
