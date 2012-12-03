@@ -14,12 +14,20 @@
 class VideoMixer 
 {
 public:
+	enum VADMode
+	{
+		NoVAD	 = 0,
+		BasicVAD = 1,
+		FullVAD  = 2
+	};
+public:
 	// Los valores indican el n�mero de mosaicos por composicion
 
 	VideoMixer();
 	~VideoMixer();
 
 	int Init(Mosaic::Type comp,int size);
+	void SetVADMode(VADMode vadMode);
 	void SetVADProxy(VADProxy* proxy);
 	int CreateMixer(int id);
 	int InitMixer(int id,int mosaicId);
@@ -81,6 +89,7 @@ private:
 	int		mixingVideo;
 	Use		lstVideosUse;
 	VADProxy*	proxy;
+	VADMode		vadMode;
 };
 
 #endif
