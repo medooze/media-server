@@ -133,8 +133,10 @@ CXXFLAGS+= $(INCLUDE) $(OPTS)
 ############################################
 #Targets
 ############################################
-all: mkdirs $(TARGETS) 
+all: touch mkdirs $(TARGETS)
 
+touch:
+	touch $(SRCDIR)/include/version.h
 mkdirs:  
 	mkdir -p $(BUILD)
 	mkdir -p $(BIN)
