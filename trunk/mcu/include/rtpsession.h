@@ -83,8 +83,8 @@ private:
 	void SetRTT(DWORD rtt);
 	void Start();
 	void Stop();
-	void ReadRTP();
-	void ReadRTCP();
+	int  ReadRTP();
+	int  ReadRTCP();
 	void ProcessRTCPPacket(RTCPCompoundPacket *packet);
 	void SetSendingType(int type);
 	int Run();

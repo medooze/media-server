@@ -631,8 +631,12 @@ int RTPSession::SendPacket(RTCPCompoundPacket &rtcp)
 			ret = sendto(simRtcpSocket,data,len,0,(sockaddr *)&sendRtcpAddr,sizeof(struct sockaddr_in));
 	}
 
+	//Check error
+	if (ret<0)
+		//Return
+		return Error("-Error sending RTP packet [%d]\n",errno);
 	//Exit
-	return (ret>0);
+	return 1;
 }
 
 int RTPSession::SendPacket(RTPPacket &packet)
@@ -724,8 +728,15 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 
 	//Check if we ar encripted
 	if (encript)
+	{
+
 		//Encrip
-		srtp_protect(sendSRTPSession,sendPacket,&len);
+		err_status_t err = srtp_protect(sendSRTPSession,sendPacket,&len);
+		//Check error
+		if (err!=err_status_ok)
+			//Nothing
+			return Error("Error protecting RTCP packet [%d]\n",err);
+	}
 
 	//Mandamos el mensaje
 	int ret = sendto(simSocket,sendPacket,len,0,(sockaddr *)&sendAddr,sizeof(struct sockaddr_in));
@@ -737,7 +748,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 	//Exit
 	return (ret>0);
 }
-void RTPSession::ReadRTCP()
+int RTPSession::ReadRTCP()
 {
 	BYTE buffer[MTU];
 	sockaddr_in from_addr;
@@ -788,7 +799,7 @@ void RTPSession::ReadRTCP()
 		//Delete message
 		delete(stun);
 		//Exit
-		return;
+		return 1;
 	}
 
 	//Check if it is RTCP
@@ -801,11 +812,7 @@ void RTPSession::ReadRTCP()
 			err_status_t err = srtp_unprotect_rtcp(recvSRTPSession,buffer,&size);
 			//Check error
 			if (err!=err_status_ok)
-			{
-				Error("Error decoding packet [%d]\n",err);
-				//Nothing
-				return;
-			}
+				return Error("Error decoding packet [%d]\n",err);
 		}
 		//RTCP mux disabled
 		muxRTCP = false;
@@ -816,13 +823,15 @@ void RTPSession::ReadRTCP()
 			//Handle incomming rtcp packets
 			ProcessRTCPPacket(rtcp);
 	}
+	//OK
+	return 1;
 }
 
 /*********************************
 * GetTextPacket
 *	Lee el siguiente paquete de video
 *********************************/
-void RTPSession::ReadRTP()
+int RTPSession::ReadRTP()
 {
 	BYTE buffer[MTU];
 	sockaddr_in from_addr;
@@ -919,7 +928,7 @@ void RTPSession::ReadRTP()
 		//Delete message
 		delete(stun);
 		//Exit
-		return;
+		return 1;
 	}
 
 	//Check if it is RTCP
@@ -932,11 +941,7 @@ void RTPSession::ReadRTP()
 			err_status_t err = srtp_unprotect_rtcp(recvSRTPSession,buffer,&size);
 			//Check error
 			if (err!=err_status_ok)
-			{
-				Error("Error decoding packet [%d]\n",err);
-				//Nothing
-				return;
-			}
+				return Error("Error decoding packet [%d]\n",err);
 		}
 		//RTCP mux enabled
 		muxRTCP = true;
@@ -947,7 +952,7 @@ void RTPSession::ReadRTP()
 			//Handle incomming rtcp packets
 			ProcessRTCPPacket(rtcp);
 		//Skip
-		return;
+		return 1;
 	}
 
 	//If we don't have originating IP
@@ -967,7 +972,7 @@ void RTPSession::ReadRTP()
 
 	//Check minimum size for rtp packet
 	if (size<12)
-		return;
+		return 0;
 	
 	//Check if it is encripted
 	if (decript)
@@ -976,11 +981,7 @@ void RTPSession::ReadRTP()
 		err_status_t err = srtp_unprotect(recvSRTPSession,buffer,&size);
 		//Check error
 		if (err!=err_status_ok)
-		{
-			Error("Error decoding packet [%d]\n",err);
-			//Nothing
-			return;
-		}
+			return Error("Error decoding packet [%d]\n",err);
 	}
 
 	//Create rtp packet
@@ -1000,7 +1001,7 @@ void RTPSession::ReadRTP()
 			//Delete pacekt
 			delete(packet);
 			//Exit
-			return;
+			return Error("-RTP packet type unknown [%d]\n",type);
 		}
 		//It is our codec
 		packet->SetCodec(it->second);
@@ -1032,7 +1033,7 @@ void RTPSession::ReadRTP()
 				if (recSeq-seq<255)
 				{
 					//Ignore it
-					return;
+					return 0;
 				} else if (seq==1 && recSeq==(WORD)-1) {
 					//Not lost, just seq wrapping
 					lost = 0;
@@ -1111,6 +1112,9 @@ void RTPSession::ReadRTP()
 	if (isZeroTime(&lastSR) || getDifTime(&lastSR)>1000000)
 		//Send it
 		SendSenderReport();
+
+	//OK
+	return 1;
 }
 
 void RTPSession::Start()
