@@ -4,6 +4,10 @@
 #include <pipevideoinput.h>
 #include <pipevideooutput.h>
 
+typedef std::pair<int, DWORD> Pair;
+typedef std::set<Pair, std::less<Pair>    > OrderedSetOfPairs;
+typedef std::set<Pair, std::greater<Pair> > RevOrderedSetOfPairs;
+
 /***********************
 * VideoMixer
 *	Constructor
@@ -18,6 +22,8 @@ VideoMixer::VideoMixer()
 
 	//No proxy
 	proxy = NULL;
+	//No vad
+	vadMode = NoVAD;
 	
 	//Inciamos lso mutex y la condicion
 	pthread_mutex_init(&mixVideoMutex,0);
@@ -132,13 +138,129 @@ int VideoMixer::MixVideo()
 		//For each mosaic
 		for (itMosaic=mosaics.begin();itMosaic!=mosaics.end();++itMosaic)
 		{
+			
+
+			
+
 			//Calculate max vad
 			DWORD maxVAD = 0;
-			//No maximum vad
-			int vadId = -1;
+			//No maximum vad participant
+			int vadId = 0;
+			//No previous pos of var participant
+			int vadPos = Mosaic::NotShown;
 
 			//Get Mosaic
 			Mosaic *mosaic = itMosaic->second;
+
+			//If vad mode is full
+			if (vadMode==FullVAD && proxy)
+			{
+				//Order sets
+				OrderedSetOfPairs partVadOrder;
+				RevOrderedSetOfPairs slotsRevVadOrder;
+				//Get number of available slots
+				int numSlots = mosaic->GetNumSlots();
+				//Get mosaic slots
+				int* slots = mosaic->GetSlots();
+				int* positions = mosaic->GetPositions();
+
+				//Nos recorremos los videos
+				for (it=lstVideos.begin();it!=lstVideos.end();++it)
+				{
+					//Get Id
+					int id = it->first;
+					//Get vad
+					DWORD vad = proxy->GetVAD(id);
+					//Get position
+					int pos = mosaic->GetPosition(id);
+					//Check if it is in the mosaic
+					if (pos==Mosaic::NotFound)
+						//Next
+						continue;
+					//Check if position is fixed
+					if (mosaic->IsFixed(pos))
+						//this slot cannot be changed and the participant cannot be moved
+						continue;
+					//Check max vad
+					if (vad>maxVAD)
+					{
+						//Store max vad value
+						maxVAD = vad;
+						//Store speaker participant
+						vadId = id;
+						//Store pos of speaker
+						vadPos = pos;
+					}
+					//Include participant vad info to the non fixed participant list
+					partVadOrder.insert(Pair(vad,id));
+					//Check if it is not shown
+					if (pos!=Mosaic::NotShown)
+						//Set slot vad score so it can be switched to a participant to higher vad
+						//TODO: Add quarentine time check
+						slotsRevVadOrder.insert(Pair(vad,pos));
+				}
+
+				//get initial count of kickable slots
+				DWORD kickableSlots = numSlots;
+				//Find free slots
+				for (int i=0;i<numSlots;++i)
+				{
+					//If it is free
+					if (positions[i]==Mosaic::SlotFree)
+						//make sure it gets the lower vad value, so they are choosen firts
+						slotsRevVadOrder.insert(Pair(-1,i));
+					//Check if it is kickable
+					if (slots[i]==Mosaic::SlotLocked || slots[i]==Mosaic::SlotVAD)
+						//It is not kickable
+						kickableSlots--;
+				}
+				
+				//If we max vad was shown
+				if (vadPos!=Mosaic::NotShown)
+				{
+					//Clean it
+					if (logo.GetFrame())
+						//Print logo
+						mosaic->Update(vadPos,logo.GetFrame(),logo.GetWidth(),logo.GetHeight());
+					else
+						//Clean
+						mosaic->Clean(vadPos);
+					//Add also the slot as free
+					slotsRevVadOrder.insert(Pair(-1,vadPos));
+				}
+					
+				//Get first participant
+				OrderedSetOfPairs::iterator p = partVadOrder.begin();
+				//Get first kickable slot
+				RevOrderedSetOfPairs::iterator s = slotsRevVadOrder.begin();
+				//Make sure there is someone here
+				if (p==partVadOrder.end() || s==slotsRevVadOrder.end())
+					//Finish with this mosaic
+					break;
+				//Remove first as it is max VAD
+				partVadOrder.erase(p);
+				//For each kickable slot while there are still particpants
+				for (int i=0;i<kickableSlots && p!=partVadOrder.end() && s!=slotsRevVadOrder.end();++i)
+				{
+					//Get participant id
+					DWORD id = p->second;
+					//Get pos for participant
+					int pos = mosaic->GetPosition(id);
+					//Get slot pos
+					DWORD slot = s->second;
+					//If it was not shown
+					if (pos==Mosaic::NotShown)
+					{
+						//Kick whoever was there and set the new participant
+						mosaic->SetSlot(slot,id);
+						//Remove slot
+						slotsRevVadOrder.erase(s);
+					} else if (pos==slot) {
+						//The slots that are yet in the kickable list have higher VAD than this, so we are finish
+						break;
+					}
+				}
+			}
 
 			//Nos recorremos los videos
 			for (it=lstVideos.begin();it!=lstVideos.end();++it)
@@ -158,7 +280,7 @@ int VideoMixer::MixVideo()
 					mosaic->Update(pos,output->GetFrame(),output->GetWidth(),output->GetHeight());
 
 				//Check it is on the mosaic and it is vad
-				if (pos!=-2 && proxy)
+				if (pos!=Mosaic::NotFound && proxy)
 				{
 					//Get vad
 					DWORD vad = proxy->GetVAD(id);
@@ -173,16 +295,18 @@ int VideoMixer::MixVideo()
 						vadId = id;
 					}
 #ifdef MCUDEBUG
+#ifdef VADWEBRTC
 					//Check pos
 					if (pos>=0)
 						//Set VU meter
 						mosaic->DrawVUMeter(pos,vad,48000);
 #endif
+#endif
 				}
 			}
 
-			//Check vad is enabled
-			if (proxy)
+			//Check if vad is enabled
+			if (vadMode!=NoVAD && proxy)
 			{
 				//Get posistion for VAD
 				int pos = mosaic->GetVADPosition();
@@ -944,4 +1068,9 @@ void VideoMixer::SetVADProxy(VADProxy* proxy)
 	this->proxy = proxy;
 	//Unlock
 	lstVideosUse.DecUse();
+}
+
+void VideoMixer::SetVADMode(VADMode vadMode)
+{
+	this->vadMode = vadMode;
 }

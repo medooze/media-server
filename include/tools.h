@@ -9,9 +9,10 @@
 #include <sys/signal.h>
 #include <climits>
 #include <pthread.h>
+#include <set>
+#include <functional>
 
 
-#define LIMIT(x) ((x)>0xffffff?0xff: ((x)<=0xffff?0:((x)>>16)))
 
 /*************************************
 * blocksignals

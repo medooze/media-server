@@ -142,7 +142,7 @@ int Mosaic::SetSlot(int num,int id)
 			//Ensure it is inside bounds and was shown
 			if (pos>=0 && pos<numSlots)
 				//Set the old position free
-				mosaicSlots[pos] = 0;
+				mosaicSlots[pos] = SlotFree;
 		}
 	}
 
@@ -179,7 +179,7 @@ int Mosaic::GetPosition(int id)
 	//If not found
 	if (it==participants.end())
 		//Exit
-		return -2;
+		return NotFound;
 
 	//Get position
 	return it->second;
@@ -210,7 +210,7 @@ int Mosaic::AddParticipant(int id)
 		return it->second;
 
 	//Not shown by default
-	int pos = -1;
+	int pos = NotShown;
 
 	//Look in the slots
 	for (int i=0;i<numSlots;i++)
@@ -244,7 +244,7 @@ int Mosaic::RemoveParticipant(int id)
 	//If not found 
 	if (it==participants.end())
 		//Exit
-		return -1;
+		return NotFound;
 	
 	//Get position
 	int pos = it->second;
@@ -255,7 +255,7 @@ int Mosaic::RemoveParticipant(int id)
 	//If  was shown and fixed
 	if (pos>=0 && mosaicSlots[pos]==id)
 		//lock it
-		mosaicSlots[pos]=-1;
+		mosaicSlots[pos] = SlotLocked;
 
 	//Recalculate positions
 	CalculatePositions();
@@ -281,16 +281,12 @@ int Mosaic::CalculatePositions()
 		//Get id
 		int id = it->first;
 		//Clean position
-		it->second = -1;
+		it->second = NotShown;
 
 		//If we have been over the end
 		if (first>numSlots)
-		{
-			//Not shown
-			it->second = -1;
 			//Continue with next
 			continue;
-		}
 		
 		//Not found the first free one
 		int firstFree = -1;
@@ -454,8 +450,9 @@ int Mosaic::GetVADPosition()
 			//This is it
 			return i;
 	//Not found
-	return -1;
+	return NotFound;
 }
+
 bool Mosaic::IsFixed(DWORD pos)
 {
 	//Check if the position is fixed

@@ -9,6 +9,12 @@
 class Mosaic
 {
 public:
+	static const int NotShown = -1;
+	static const int NotFound = -2;
+
+	static const int SlotFree     = 0;
+	static const int SlotLocked   = -1;
+	static const int SlotVAD      = -2;
 	typedef enum
 	{
 		mosaic1x1	= 0,

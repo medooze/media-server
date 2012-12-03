@@ -45,18 +45,19 @@ void MultiConf::SetListener(Listener *listener,void* param)
 * Init
 * 	Constructo
 *************************/
-int MultiConf::Init(bool isVADenabled)
+int MultiConf::Init(int vad)
 {
-	Log("-Init multiconf [vad:%d]\n",isVADenabled);
+	Log("-Init multiconf [vad:%d]\n",vad);
 
 	//We are inited
 	inited = true;
-
 	//Init audio mixers
-	int res = audioMixer.Init(isVADenabled);
+	int res = audioMixer.Init(vad);
+	//Set vad mode
+	videoMixer.SetVADMode((VideoMixer::VADMode)vad);
 	//Check if we need to use vad
-	if (isVADenabled)
-		//Set VAD proxy
+	if (vad)
+		//Set VAD proxyG
 		videoMixer.SetVADProxy(&audioMixer);
 	//Init video mixer with dedault parameters
 	res &= videoMixer.Init(Mosaic::mosaic2x2,CIF);

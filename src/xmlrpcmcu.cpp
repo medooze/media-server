@@ -12,9 +12,9 @@ xmlrpc_value* CreateConference(xmlrpc_env *env, xmlrpc_value *param_array, void 
 	UTF8Parser tagParser;
 	 //Parseamos
 	char *str;
-	int isVADenabled = 0;
+	int vad = 0;
 	int queueId = 0;
-	xmlrpc_parse_value(env, param_array, "(sii)", &str, &isVADenabled, &queueId);
+	xmlrpc_parse_value(env, param_array, "(sii)", &str, &vad, &queueId);
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
@@ -36,7 +36,7 @@ xmlrpc_value* CreateConference(xmlrpc_env *env, xmlrpc_value *param_array, void 
 		return xmlerror(env,"Conference deleted before initing");
 
 	//La iniciamos
-	int res = conf->Init(isVADenabled);
+	int res = conf->Init(vad);
 
 	//Liberamos la referencia
 	mcu->ReleaseConferenceRef(confId);
