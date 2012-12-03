@@ -1,7 +1,7 @@
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
-
 #include <stdint.h>
+#include "version.h"
 #define QCIF	0
 #define CIF	1
 #define VGA	2

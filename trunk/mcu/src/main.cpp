@@ -150,6 +150,7 @@ int main(int argc,char **argv)
 
 		//Log
 		printf("MCU started\r\n");
+		
 
 		//Create the safe child
 		pid = fork();
@@ -221,6 +222,8 @@ int main(int argc,char **argv)
 	//Create servers
 	XmlRpcServer	server(port);
 	RTMPServer	rtmpServer;
+
+	Log("-MCU Version %s\r\n",MCUVERSION);
 
 	//Create services
 	MCU		mcu;
