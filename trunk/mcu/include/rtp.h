@@ -221,6 +221,22 @@ public:
 	void SetLastSR(DWORD last)		{ set4(buffer,16,last);		}
 	void SetDelaySinceLastSR(DWORD delay)	{ set4(buffer,20,delay);	}
 
+	void SetDelaySinceLastSRMilis(DWORD milis)
+	{
+		//calculate the delay, expressed in units of 1/65536 seconds
+		DWORD dlsr = (milis/1000) << 16 | (DWORD)((milis%1000)*65.535);
+		//Set it
+		SetDelaySinceLastSR(dlsr);
+	}
+
+	DWORD GetDelaySinceLastSRMilis()
+	{
+		//Get the delay, expressed in units of 1/65536 seconds
+		DWORD dslr = GetDelaySinceLastSR();
+		//Return in milis
+		return (dslr>>16)*1000 + ((double)(dslr & 0xFFFF))/65.635;
+	}
+
 
 	DWORD Serialize(BYTE* data,DWORD size)
 	{
@@ -910,6 +926,18 @@ public:
 		*/
 		DWORD ssrc;
 		BYTE seq;
+
+		FullIntraRequestField()
+		{
+			this->ssrc = 0;
+			this->seq  = 0;
+		}
+
+		FullIntraRequestField(DWORD ssrc,BYTE seq)
+		{
+			this->ssrc = ssrc;
+			this->seq  = seq;
+		}
 
 		virtual DWORD GetSize() { return 8;}
 		virtual DWORD Parse(BYTE* data,DWORD size)

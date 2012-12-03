@@ -78,7 +78,9 @@ public:
 	int SetLocalSTUNCredentials(const char* username, const char* pwd);
 	int SetRemoteSTUNCredentials(const char* username, const char* pwd);
 	int SetProperties(const RTPSession::Properties& properties);
+	int RequestFPU();
 private:
+	void SetRTT(DWORD rtt);
 	void Start();
 	void Stop();
 	void ReadRTP();
@@ -135,6 +137,7 @@ private:
 	DWORD   sendTime;
 	DWORD	sendLastTime;
 	DWORD	sendSSRC;
+	DWORD	sendSR;
 
 	//Recepcion
 	BYTE	recBuffer[MTU];
@@ -142,7 +145,7 @@ private:
 	DWORD	recSSRC;
 	DWORD	recTimestamp;
 	timeval recTimeval;
-	QWORD	recSR;
+	DWORD	recSR;
 	DWORD   recCycles;
 	in_addr_t recIP;
 	DWORD	  recPort;
@@ -160,8 +163,11 @@ private:
 	DWORD	lostRecvPacketsSinceLastSR;
 	DWORD	totalRecvPacketsSinceLastSR;
 	DWORD	jitter;
+	BYTE	firReqNum;
 
+	DWORD	rtt;
 	timeval lastSR;
+	timeval lastReceivedSR;
 	
 };
 

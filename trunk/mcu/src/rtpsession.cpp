@@ -105,6 +105,7 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener)
 	sendTime = random();
 	sendLastTime = sendTime;
 	sendSSRC = random();
+	sendSR = 0;
 	recSeq = (WORD)-1;
 	recSSRC = 0;
 	recCycles = 0;
@@ -113,6 +114,7 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener)
 	setZeroTime(&recTimeval);
 	recIP = INADDR_ANY;
 	recPort = 0;
+	firReqNum = 0;
 	//Not muxing
 	muxRTCP = false;
 	//Default cname
@@ -131,6 +133,8 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener)
 	lost = 0;
 	//No reports
 	setZeroTime(&lastSR);
+	setZeroTime(&lastReceivedSR);
+	rtt = 0;
 	//No cripto
 	encript = false;
 	decript = false;
@@ -1234,12 +1238,55 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 		{
 			case RTCPPacket::SenderReport:
 			{
+				
 				RTCPSenderReport* sr = (RTCPSenderReport*)packet;
 				//Get Timestamp
-				recSR = sr->GetTimestamp();
+				recSR = sr->GetTimestamp() >> 16;
+				//Uptade last received SR
+				getUpdDifTime(&lastReceivedSR);
+				//Check recievd report
+				for (int j=0;j<sr->GetCount();j++)
+				{
+					//Get report
+					RTCPReport *report = sr->GetReport(j);
+					//Check ssrc
+					if (report->GetSSRC()==sendSSRC)
+					{
+						//Calculate RTT
+						if (!isZeroTime(&lastSR) && report->GetLastSR() == sendSR)
+						{
+							//Calculate new rtt
+							DWORD rtt = getDifTime(&lastSR)/1000-report->GetDelaySinceLastSRMilis();
+							//Set it
+							SetRTT(rtt);
+						}
+					}
+				}
 				break;
 			}
 			case RTCPPacket::ReceiverReport:
+			{
+				RTCPReceiverReport* rr = (RTCPReceiverReport*)packet;
+				//Check recievd report
+				for (int j=0;j<rr->GetCount();j++)
+				{
+					//Get report
+					RTCPReport *report = rr->GetReport(j);
+					//Check ssrc
+					if (report->GetSSRC()==sendSSRC)
+					{
+						//Calculate RTT
+						if (!isZeroTime(&lastSR) && report->GetLastSR() == sendSR)
+						{
+							//Calculate new rtt
+							DWORD rtt = getDifTime(&lastSR)/1000-report->GetDelaySinceLastSRMilis();
+							//Set it
+							SetRTT(rtt);
+						}
+					}
+				}
+				break;
+			}
 				break;
 			case RTCPPacket::SDES:
 				break;
@@ -1349,15 +1396,15 @@ int RTPSession::SendSenderReport()
 		report->SetSSRC(recSSRC);
 
 		//Check last report time
-		if (!isZeroTime(&lastSR))
+		if (!isZeroTime(&lastReceivedSR))
 			//Get time and update it
-			report->SetDelaySinceLastSR(getDifTime(&lastSR)/1000);
+			report->SetDelaySinceLastSRMilis(getDifTime(&lastReceivedSR)/1000);
 		else
 			//No previous SR
-			report->SetDelaySinceLastSR(0);
+			report->SetDelaySinceLastSRMilis(0);
 		
 		//The middle 32 bits out of 64 in the NTP timestamp (as explained in Section 4) received as part of the most recent RTCP sender report (SR) packet from source SSRC_n. If no SR has been received yet, the field is set to zero.
-		report->SetLastSR(recSR>>16);
+		report->SetLastSR(recSR);
 		//Calculate fraction lost
 		DWORD frac = (lostRecvPacketsSinceLastSR*256)/totalRecvPacketsSinceLastSR;
 		//Set it
@@ -1381,6 +1428,9 @@ int RTPSession::SendSenderReport()
 	//Update time of latest sr
 	getUpdDifTime(&lastSR);
 
+	//Store last send SR 32 middle bits
+	sendSR = sr->GetNTPSec() << 16 | sr->GetNTPFrac() >> 16;
+
 	//Create SDES
 	RTCPSDES* sdes = new RTCPSDES();
 	
@@ -1400,3 +1450,103 @@ int RTPSession::SendSenderReport()
 	//Send Sender Report
 	return SendPacket(rtcp);
 }
+
+int RTPSession::RequestFPU()
+{
+	RTCPCompoundPacket rtcp;
+	timeval tv;
+
+	//Get now
+	gettimeofday(&tv, NULL);
+
+	//Create Sender report
+	RTCPSenderReport *sr = new RTCPSenderReport();
+
+	//Append data
+	sr->SetSSRC(sendSSRC);
+	sr->SetTimestamp(&tv);
+	sr->SetRtpTimestamp(sendLastTime);
+	sr->SetOctectsSent(totalSendBytes);
+	sr->SetPacketsSent(numSendPackets);
+
+	//If we have received somthing
+	if (totalRecvPacketsSinceLastSR)
+	{
+		//Create report
+		RTCPReport *report = new RTCPReport();
+
+		//Set SSRC of incoming rtp stream
+		report->SetSSRC(recSSRC);
+
+		//Check last report time
+		if (!isZeroTime(&lastReceivedSR))
+			//Get time and update it
+			report->SetDelaySinceLastSRMilis(getDifTime(&lastReceivedSR)/1000);
+		else
+			//No previous SR
+			report->SetDelaySinceLastSRMilis(0);
+
+		//The middle 32 bits out of 64 in the NTP timestamp (as explained in Section 4) received as part of the most recent RTCP sender report (SR) packet from source SSRC_n. If no SR has been received yet, the field is set to zero.
+		report->SetLastSR(recSR);
+		//Calculate fraction lost
+		DWORD frac = (lostRecvPacketsSinceLastSR*256)/totalRecvPacketsSinceLastSR;
+		//Set it
+		report->SetFractionLost(frac);
+		//Reset
+		totalRecvPacketsSinceLastSR = 0;
+		lostRecvPacketsSinceLastSR = 0;
+
+		//Set other data
+		report->SetLastJitter(jitter);
+		report->SetLostCount(lostRecvPackets);
+		report->SetLastSeqNum(recCycles<<16 | recSeq);
+
+		//Append it
+		sr->AddReport(report);
+	}
+
+	//Append SR to rtcp
+	rtcp.AddRTCPacket(sr);
+
+	//Update time of latest sr
+	getUpdDifTime(&lastSR);
+
+	//Store last send SR 32 middle bits
+	sendSR = sr->GetNTPSec() << 16 | sr->GetNTPFrac() >> 16;
+
+	//Create SDES
+	RTCPSDES* sdes = new RTCPSDES();
+
+	//Create description
+	RTCPSDES::Description *desc = new RTCPSDES::Description();
+	//Set ssrc
+	desc->SetSSRC(sendSSRC);
+	//Add item
+	desc->AddItem( new RTCPSDES::Item(RTCPSDES::Item::CName,cname));
+
+	//Add it
+	sdes->AddDescription(desc);
+
+	//Add to rtcp
+	rtcp.AddRTCPacket(sdes);
+
+	//Create fir request
+	RTCPPayloadFeedback *fir = RTCPPayloadFeedback::Create(RTCPPayloadFeedback::FullIntraRequest,sendSSRC,recSSRC);
+
+	//ADD field
+	fir->AddField(new RTCPPayloadFeedback::FullIntraRequestField(recSSRC,firReqNum++));
+
+	//Add to rtcp
+	rtcp.AddRTCPacket(fir);
+
+	//Send Sender Report
+	return SendPacket(rtcp);
+}
+
+void RTPSession::SetRTT(DWORD rtt)
+{
+	Log("-RTP RTT is %dms\n",rtt);
+	//Set it
+	this->rtt = rtt;
+}
+
