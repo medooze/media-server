@@ -118,6 +118,10 @@ Mosaic::~Mosaic()
 	if (mosaicPos)
 		//Delete it
 		free(mosaicPos);
+	//Check blocking time
+	if (mosaicSlotsBlockingTime)
+		//Free it
+		free(mosaicSlotsBlockingTime);
 }
 
 /************************

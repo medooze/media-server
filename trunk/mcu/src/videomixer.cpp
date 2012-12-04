@@ -210,6 +210,8 @@ int VideoMixer::MixVideo()
 						kickableSlots--;
 				}
 				
+				bool changed = false;
+
 				//If we have a active speaker
 				if (maxVAD>0)
 				{
@@ -234,6 +236,8 @@ int VideoMixer::MixVideo()
 							mosaic->SetSlot(vadPos,Mosaic::SlotFree);
 							//Add also the slot as free
 							slotsRevVadOrder.insert(Pair(-1,vadPos));
+							//We are changed
+							changed = true;
 							//Clean it
 							if (logo.GetFrame())
 								//Print logo
@@ -243,7 +247,7 @@ int VideoMixer::MixVideo()
 								mosaic->Clean(vadPos);
 						}
 					}
-				} else {
+				} else if (vadMode==BasicVAD) {
 					//Free vad
 					mosaic->SetVADParticipant(0,0);
 					//Get VAD position
@@ -264,6 +268,7 @@ int VideoMixer::MixVideo()
 				//Check if full vad so reshufle participants
 				if (vadMode==FullVAD)
 				{
+					
 					//Get first participant
 					OrderedSetOfPairs::iterator p = partVadOrder.begin();
 					//Get first kickable slot
@@ -290,15 +295,43 @@ int VideoMixer::MixVideo()
 							mosaic->SetSlot(slot,id,getTime()+(QWORD)1e6);
 							//Remove slot
 							slotsRevVadOrder.erase(s);
+							//We have changed
+							changed = true;
 						} else if (pos==slot) {
 							//The slots that are yet in the kickable list have higher VAD than this, so we are finish
 							break;
 						}
 					}
+					//If we have changed
+					if (changed)
+					{
+						//Get old possitions
+						int* old = (int*)malloc(numSlots*sizeof(int));
+						//Copy them
+						memcpy(old,mosaic->GetPositions(),numSlots*sizeof(int));
+						//Calculate positions after change
+						mosaic->CalculatePositions();
+						//Get new mosaic positions
+						int* positions = mosaic->GetPositions();
+						//For each slot
+						for (int i=0;i<numSlots;++i)
+						{
+							//If it is free
+							if (old[i]!=positions[i] && positions[i]==Mosaic::SlotFree)
+							{
+								//Clean it
+								if (logo.GetFrame())
+									//Update with logo
+									mosaic->Update(i,logo.GetFrame(),logo.GetWidth(),logo.GetHeight());
+								else
+									//Clean
+									mosaic->Clean(i);
+							}
+						}
+						//Free olf
+						free(old);
+					}
 				}
-
-				//Calculate positions after change
-				mosaic->CalculatePositions();
 
 				//Get posistion for VAD
 				int pos = mosaic->GetVADPosition();
