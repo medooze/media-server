@@ -268,7 +268,6 @@ int VideoMixer::MixVideo()
 				//Check if full vad so reshufle participants
 				if (vadMode==FullVAD)
 				{
-					
 					//Get first participant
 					OrderedSetOfPairs::iterator p = partVadOrder.begin();
 					//Get first kickable slot
@@ -352,14 +351,6 @@ int VideoMixer::MixVideo()
 							//Change mosaic
 							mosaic->Update(pos,output->GetFrame(),output->GetWidth(),output->GetHeight());
 						}
-					} else {
-						//Clean it
-						if (logo.GetFrame())
-							//Update with logo
-							mosaic->Update(pos,logo.GetFrame(),logo.GetWidth(),logo.GetHeight());
-						else
-							//Clean
-							mosaic->Clean(pos);
 					}
 				}
 			}
