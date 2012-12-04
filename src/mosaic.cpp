@@ -91,6 +91,9 @@ Mosaic::Mosaic(Type type,DWORD size)
 
 	//No overlay
 	overlay = false;
+
+	//No vad particpant
+	vadParticipant = 0;
 }
 
 Mosaic::~Mosaic()
@@ -133,8 +136,6 @@ int Mosaic::SetSlot(int num,int id)
 *************************/
 int Mosaic::SetSlot(int num,int id,QWORD blockedUntil)
 {
-	Log(">SetPosition [num:%d,id:%d,max:%d]\n",num,id,numSlots);
-
 	//Check num
 	if (num>numSlots-1 || num<0)
 		//Exit
@@ -163,11 +164,7 @@ int Mosaic::SetSlot(int num,int id,QWORD blockedUntil)
 	//Set blocking time
 	mosaicSlotsBlockingTime[num] = blockedUntil;
 
-	//Calculate positions
-	CalculatePositions();
-
-	Log("<SetPosition\n");
-
+	//Evirything ok
 	return 1;
 }
 
@@ -184,7 +181,7 @@ int* Mosaic::GetPositions()
 QWORD Mosaic::GetBlockingTime(int pos)
 {
 	//Check if the position is fixed
-	return pos<numSlots ? mosaicSlotsBlockingTime[pos]>0 : 0;
+	return pos<numSlots ? mosaicSlotsBlockingTime[pos] : 0;
 }
 
 /************************
@@ -295,8 +292,20 @@ int Mosaic::CalculatePositions()
 	//First erase positions
 	memset(mosaicPos,0,numSlots*sizeof(int));
 
+	//Copy old block time
+	QWORD* oldTimes = (QWORD*) malloc(numSlots*sizeof(QWORD));
+
+	//Copy
+	memcpy(oldTimes,mosaicSlotsBlockingTime,numSlots*sizeof(QWORD));
+
+	//erase
+	memset(mosaicSlotsBlockingTime,0,numSlots*sizeof(QWORD));
+
 	//Start from the begining
 	int first = 0;
+
+	//Get vad pos
+	int vadPos = GetVADPosition();
 
 	//Iterate Videos
 	for (Participants::iterator it=participants.begin(); it!=participants.end(); ++it)
@@ -308,25 +317,35 @@ int Mosaic::CalculatePositions()
 		int pos = it->second;
 		//if it was shonw
 		if (pos>=0 && pos<numSlots)
-		{
 			//Copy blocking time
-			blockTime = mosaicSlotsBlockingTime[pos];
-			//And free it
-			mosaicSlotsBlockingTime[pos] = 0;
-		}
+			blockTime = oldTimes[pos];
+		
 		//Clean position
 		it->second = NotShown;
 
+		//If it is the vad particpant
+		if (id == vadParticipant && vadPos!=NotFound)
+		{
+			//Set our position
+			mosaicPos[vadPos]=id;
+			//Copy vad block time
+			mosaicSlotsBlockingTime[vadPos] = oldTimes[vadPos];
+			//Set it also in the participant
+			it->second = vadPos;
+			//Continue with next
+			continue;
+		}
+		
 		//If we have been over the end
 		if (first>numSlots)
 			//Continue with next
 			continue;
-		
+
 		//Not found the first free one
 		int firstFree = -1;
 
 		//Look in the slots
-		for (int i=first;i<numSlots;i++)
+		for (int i=0;i<numSlots;i++)
 		{
 			//It's lock for me?
 			if (mosaicSlots[i]==id)
@@ -487,6 +506,25 @@ int Mosaic::GetVADPosition()
 			return i;
 	//Not found
 	return NotFound;
+}
+int Mosaic::GetVADParticipant()
+{
+	return vadParticipant;
+}
+
+int Mosaic::SetVADParticipant(int id,QWORD blockedUntil)
+{
+	//Set it
+	vadParticipant = id;
+	//Find vad slot
+	int pos = GetVADPosition();
+	//If found
+	if (pos>=0 && pos<numSlots)
+		//Set block time
+		mosaicSlotsBlockingTime[pos] = blockedUntil;
+
+	//Return vad position
+	return pos;
 }
 
 bool Mosaic::IsFixed(DWORD pos)

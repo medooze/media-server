@@ -54,6 +54,9 @@ public:
 	int GetNumSlots();
 	void SetSlots(int *slots,int num);
 	bool IsFixed(DWORD pos);
+
+	int GetVADParticipant();
+	int SetVADParticipant(int id,QWORD blockedUntil);
 	
 	static int GetNumSlotsForType(Type type);
 	static Mosaic* CreateMosaic(Type type,DWORD size);
@@ -80,6 +83,7 @@ protected:
 	int *mosaicPos;
 	QWORD *mosaicSlotsBlockingTime;
 	int numSlots;
+	int vadParticipant;
 	
 	FrameScaler** resizer;
 	BYTE* 	mosaic;

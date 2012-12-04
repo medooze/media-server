@@ -1549,7 +1549,6 @@ int RTPSession::RequestFPU()
 
 void RTPSession::SetRTT(DWORD rtt)
 {
-	Log("-RTP RTT is %dms\n",rtt);
 	//Set it
 	this->rtt = rtt;
 }
