@@ -44,6 +44,8 @@ public:
 	int HasParticipant(int id);
 	int RemoveParticipant(int id);
 	int SetSlot(int num,int id);
+	int SetSlot(int num,int id,QWORD blockedUntil);
+	QWORD GetBlockingTime(int num);
 	int CalculatePositions();
 	int GetPosition(int id);
 	int GetVADPosition();
@@ -70,14 +72,13 @@ protected:
 	
 protected:
 	typedef std::map<int,int> Participants;
-protected:
-	static const int LOCKED = -1;
-	static const int VAD = -2;
+
 protected:
 	Participants participants;
 	int mosaicChanged;
 	int *mosaicSlots;
 	int *mosaicPos;
+	QWORD *mosaicSlotsBlockingTime;
 	int numSlots;
 	
 	FrameScaler** resizer;

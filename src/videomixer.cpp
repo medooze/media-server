@@ -3,6 +3,8 @@
 #include <videomixer.h>
 #include <pipevideoinput.h>
 #include <pipevideooutput.h>
+#include <set>
+#include <functional>
 
 typedef std::pair<int, DWORD> Pair;
 typedef std::set<Pair, std::less<Pair>    > OrderedSetOfPairs;
@@ -138,10 +140,6 @@ int VideoMixer::MixVideo()
 		//For each mosaic
 		for (itMosaic=mosaics.begin();itMosaic!=mosaics.end();++itMosaic)
 		{
-			
-
-			
-
 			//Calculate max vad
 			DWORD maxVAD = 0;
 			//No maximum vad participant
@@ -193,10 +191,9 @@ int VideoMixer::MixVideo()
 					}
 					//Include participant vad info to the non fixed participant list
 					partVadOrder.insert(Pair(vad,id));
-					//Check if it is not shown
-					if (pos!=Mosaic::NotShown)
+					//Check if it is shown and not blocked
+					if (pos!=Mosaic::NotShown && mosaic->GetBlockingTime(pos)<getTime())
 						//Set slot vad score so it can be switched to a participant to higher vad
-						//TODO: Add quarentine time check
 						slotsRevVadOrder.insert(Pair(vad,pos));
 				}
 
@@ -215,7 +212,7 @@ int VideoMixer::MixVideo()
 						kickableSlots--;
 				}
 				
-				//If we max vad was shown
+				//If the max vad was shown
 				if (vadPos!=Mosaic::NotShown)
 				{
 					//Clean it
@@ -225,6 +222,8 @@ int VideoMixer::MixVideo()
 					else
 						//Clean
 						mosaic->Clean(vadPos);
+					//Free the slot
+					mosaic->SetSlot(vadPos,Mosaic::SlotFree);
 					//Add also the slot as free
 					slotsRevVadOrder.insert(Pair(-1,vadPos));
 				}
@@ -251,8 +250,8 @@ int VideoMixer::MixVideo()
 					//If it was not shown
 					if (pos==Mosaic::NotShown)
 					{
-						//Kick whoever was there and set the new participant
-						mosaic->SetSlot(slot,id);
+						//Kick whoever was there and set the new participant with a 1 sec blocking time
+						mosaic->SetSlot(slot,id,getTime()+1e6);
 						//Remove slot
 						slotsRevVadOrder.erase(s);
 					} else if (pos==slot) {
@@ -311,12 +310,14 @@ int VideoMixer::MixVideo()
 				//Get posistion for VAD
 				int pos = mosaic->GetVADPosition();
 				
-				//Check which if it is shown
-				if (pos>=0)
+				//Check which if it is shown and not blocked
+				if (pos>=0 && mosaic->GetBlockingTime(pos)<getTime())
 				{
 					//Check if it is a active speaked
 					if (maxVAD>0)
 					{
+						//Set the slot to the participant and block it for 2 seconds
+						 mosaic->SetSlot(pos,vadId,getTime()+2e6);
 						//Get participant
 						it = lstVideos.find(vadId);
 						//If it is found
@@ -328,8 +329,15 @@ int VideoMixer::MixVideo()
 							mosaic->Update(pos,output->GetFrame(),output->GetWidth(),output->GetHeight());
 						}
 					} else {
-						//Update with logo
-						mosaic->Update(pos,logo.GetFrame(),logo.GetWidth(),logo.GetHeight());
+						//Free it
+						mosaic->SetSlot(pos,Mosaic::SlotFree);
+						//Clean it
+						if (logo.GetFrame())
+							//Update with logo
+							mosaic->Update(pos,logo.GetFrame(),logo.GetWidth(),logo.GetHeight());
+						else
+							//Clean
+							mosaic->Clean(pos);
 					}
 				}
 			}
@@ -1072,5 +1080,7 @@ void VideoMixer::SetVADProxy(VADProxy* proxy)
 
 void VideoMixer::SetVADMode(VADMode vadMode)
 {
+	Log("-SetVadMode [%d]\n",vadMode);
+	//Set it
 	this->vadMode = vadMode;
 }

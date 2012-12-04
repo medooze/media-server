@@ -9,9 +9,6 @@
 #include <sys/signal.h>
 #include <climits>
 #include <pthread.h>
-#include <set>
-#include <functional>
-
 
 
 /*************************************

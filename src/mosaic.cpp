@@ -68,10 +68,12 @@ Mosaic::Mosaic(Type type,DWORD size)
 	//Allocate sizes
 	mosaicSlots = (int*)malloc(numSlots*sizeof(int));
 	mosaicPos   = (int*)malloc(numSlots*sizeof(int));
+	mosaicSlotsBlockingTime = (QWORD*)malloc(numSlots*sizeof(QWORD));
 
 	//Empty them
 	memset(mosaicSlots,0,numSlots*sizeof(int));
 	memset(mosaicPos,0,numSlots*sizeof(int));
+	memset(mosaicSlotsBlockingTime,0,numSlots*sizeof(QWORD));
 
 	//Alloc resizers
 	resizer = (FrameScaler**)malloc(numSlots*sizeof(FrameScaler*));
@@ -121,6 +123,16 @@ Mosaic::~Mosaic()
 *************************/
 int Mosaic::SetSlot(int num,int id)
 {
+	//Set wihtout blocking
+	return SetSlot(num,id,0);
+}
+
+/************************
+* SetSlot
+*	Set slot participant
+*************************/
+int Mosaic::SetSlot(int num,int id,QWORD blockedUntil)
+{
 	Log(">SetPosition [num:%d,id:%d,max:%d]\n",num,id,numSlots);
 
 	//Check num
@@ -148,6 +160,8 @@ int Mosaic::SetSlot(int num,int id)
 
 	//Set it
 	mosaicSlots[num] = id;
+	//Set blocking time
+	mosaicSlotsBlockingTime[num] = blockedUntil;
 
 	//Calculate positions
 	CalculatePositions();
@@ -165,6 +179,12 @@ int* Mosaic::GetPositions()
 {
 	//Return them
 	return mosaicPos;
+}
+
+QWORD Mosaic::GetBlockingTime(int pos)
+{
+	//Check if the position is fixed
+	return pos<numSlots ? mosaicSlotsBlockingTime[pos]>0 : 0;
 }
 
 /************************
@@ -257,6 +277,9 @@ int Mosaic::RemoveParticipant(int id)
 		//lock it
 		mosaicSlots[pos] = SlotLocked;
 
+	//Unblock
+	mosaicSlotsBlockingTime[pos] = 0;
+
 	//Recalculate positions
 	CalculatePositions();
 	
@@ -278,8 +301,19 @@ int Mosaic::CalculatePositions()
 	//Iterate Videos
 	for (Participants::iterator it=participants.begin(); it!=participants.end(); ++it)
 	{
+		QWORD blockTime = 0;
 		//Get id
 		int id = it->first;
+		//Get old pos
+		int pos = it->second;
+		//if it was shonw
+		if (pos>=0 && pos<numSlots)
+		{
+			//Copy blocking time
+			blockTime = mosaicSlotsBlockingTime[pos];
+			//And free it
+			mosaicSlotsBlockingTime[pos] = 0;
+		}
 		//Clean position
 		it->second = NotShown;
 
@@ -299,6 +333,8 @@ int Mosaic::CalculatePositions()
 			{
 				//Set our position
 				mosaicPos[i]=id;
+				//Copy block time
+				mosaicSlotsBlockingTime[i] = blockTime;
 				//Set it also in the participant
 				it->second = i;
 				//If we were the first one
@@ -326,15 +362,15 @@ int Mosaic::CalculatePositions()
 		{
 			//Here we are
 			mosaicPos[firstFree]=id;
+			//Copy block time
+			mosaicSlotsBlockingTime[firstFree] = blockTime;
 			//Set it also in the participant
 			it->second = firstFree;
 			//If we were the first one
 			if (first==firstFree)
 				//Start after me next pass
 				first++;
-		} else {
-
-		}
+		} 
 	}
 }
 
@@ -446,7 +482,7 @@ int Mosaic::GetVADPosition()
 	//for each slot
 	for (int i=0;i<numSlots;i++)
 		//Check slot
-		if (mosaicSlots[i]==VAD)
+		if (mosaicSlots[i]==SlotVAD)
 			//This is it
 			return i;
 	//Not found
