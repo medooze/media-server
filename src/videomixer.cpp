@@ -273,32 +273,32 @@ int VideoMixer::MixVideo()
 					//Get first kickable slot
 					RevOrderedSetOfPairs::iterator s = slotsRevVadOrder.begin();
 					//Make sure there is someone here
-					if (p==partVadOrder.end() || s==slotsRevVadOrder.end())
-						//Finish with this mosaic
-						break;
-					//Remove first as it is max VAD
-					partVadOrder.erase(p);
-					//For each kickable slot while there are still particpants
-					for (int i=0;i<kickableSlots && p!=partVadOrder.end() && s!=slotsRevVadOrder.end();++i)
+					if (p!=partVadOrder.end())
 					{
-						//Get participant id
-						DWORD id = p->second;
-						//Get pos for participant
-						int pos = mosaic->GetPosition(id);
-						//Get slot pos
-						DWORD slot = s->second;
-						//If it was not shown and it is not the VAD participant
-						if (pos==Mosaic::NotShown && id!=vadId)
+						//Remove first as it is max VAD
+						partVadOrder.erase(p);
+						//For each kickable slot while there are still particpants
+						for (int i=0;i<kickableSlots && p!=partVadOrder.end() && s!=slotsRevVadOrder.end();++i)
 						{
-							//Kick whoever was there and set the new participant with a 1 sec blocking time
-							mosaic->SetSlot(slot,id,getTime()+(QWORD)1e6);
-							//Remove slot
-							slotsRevVadOrder.erase(s);
-							//We have changed
-							changed = true;
-						} else if (pos==slot) {
-							//The slots that are yet in the kickable list have higher VAD than this, so we are finish
-							break;
+							//Get participant id
+							DWORD id = p->second;
+							//Get pos for participant
+							int pos = mosaic->GetPosition(id);
+							//Get slot pos
+							DWORD slot = s->second;
+							//If it was not shown and it is not the VAD participant
+							if (pos==Mosaic::NotShown && id!=vadId)
+							{
+								//Kick whoever was there and set the new participant with a 1 sec blocking time
+								mosaic->SetSlot(slot,id,getTime()+(QWORD)1e6);
+								//Remove slot
+								slotsRevVadOrder.erase(s);
+								//We have changed
+								changed = true;
+							} else if (pos==slot) {
+								//The slots that are yet in the kickable list have higher VAD than this, so we are finish
+								break;
+							}
 						}
 					}
 					//If we have changed
