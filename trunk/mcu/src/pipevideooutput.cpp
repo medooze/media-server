@@ -10,15 +10,16 @@ PipeVideoOutput::PipeVideoOutput(pthread_mutex_t* mutex, pthread_cond_t* cond)
 	videoMixerCond  = cond;
 
 	//E iniciamos el buffer
-	buffer = NULL;
-	bufferSize = 0;
+	buffer		= NULL;
+	bufferSize	= 0;
 
 	//Ponemos el cambio
-	isChanged   = false;
-	versionChanged = false;
-	version = -1;
-	videoWidth = 0;
-	videoHeight = 0;
+	inited		= false;
+	isChanged	= false;
+	versionChanged	= false;
+	version		= -1;
+	videoWidth	= 0;
+	videoHeight	= 0;
 }
 
 PipeVideoOutput::~PipeVideoOutput()

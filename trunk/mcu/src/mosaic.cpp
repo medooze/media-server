@@ -41,7 +41,7 @@ int Mosaic::GetNumSlotsForType(Mosaic::Type type)
 			return 4;
 	}
 	//Error
-	return 0;
+	return Error("-Unknown mosaic type %d\n",type);
 }
 
 Mosaic::Mosaic(Type type,DWORD size)
@@ -273,13 +273,20 @@ int Mosaic::RemoveParticipant(int id)
 	//Remove it for the list
 	participants.erase(it);
 	
-	//If  was shown and fixed
-	if (pos>=0 && mosaicSlots[pos]==id)
-		//lock it
-		mosaicSlots[pos] = SlotLocked;
+	//Log
+	Log("-RemoveParticipant [%d,%d]\n",id,pos);
 
-	//Unblock
-	mosaicSlotsBlockingTime[pos] = 0;
+	//If  was shown and fixed
+	if (pos>=0 && pos<numSlots)
+	{
+		//Check if it was locked
+		if (mosaicSlots[pos]==id)
+			//lock it
+			mosaicSlots[pos] = SlotLocked;
+
+		//Unblock
+		mosaicSlotsBlockingTime[pos] = 0;
+	}
 
 	//Recalculate positions
 	CalculatePositions();
