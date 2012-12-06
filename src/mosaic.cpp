@@ -402,6 +402,9 @@ int Mosaic::CalculatePositions()
 				first++;
 		} 
 	}
+
+	//Free mem
+	free(oldTimes);
 }
 
 int* Mosaic::GetSlots()
