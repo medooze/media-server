@@ -185,7 +185,7 @@ int* Mosaic::GetPositions()
 QWORD Mosaic::GetBlockingTime(int pos)
 {
 	//Check if the position is fixed
-	return pos<numSlots ? mosaicSlotsBlockingTime[pos] : 0;
+	return pos>=0 && pos<numSlots ? mosaicSlotsBlockingTime[pos] : 0;
 }
 
 /************************
@@ -541,7 +541,7 @@ int Mosaic::SetVADParticipant(int id,QWORD blockedUntil)
 bool Mosaic::IsFixed(DWORD pos)
 {
 	//Check if the position is fixed
-	return pos<numSlots ? mosaicSlots[pos]>0 : false;
+	return pos>=0 && pos<numSlots ? mosaicSlots[pos]>0 : false;
 }
 
 int Mosaic::DrawVUMeter(int pos,DWORD val,DWORD size)

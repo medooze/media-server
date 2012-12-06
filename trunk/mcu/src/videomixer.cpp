@@ -718,13 +718,20 @@ int VideoMixer::RemoveMosaicParticipant(int mosaicId, int partId)
 {
 	Log(">-RemoveMosaicParticipant [mosaic:%d,partId:%d]\n",mosaicId,partId);
 
+	//Block
+	lstVideosUse.WaitUnusedAndLock();
+
 	//Get the mosaic for the user
 	Mosaics::iterator itMosaic = mosaics.find(mosaicId);
 
 	//If not found
 	if (itMosaic==mosaics.end())
+	{
+		//Unblock
+		lstVideosUse.Unlock();
 		//Salimos
 		return Error("Mosaic not found\n");
+	}
 
 	//Get mosaic
 	Mosaic* mosaic = itMosaic->second;
@@ -736,6 +743,27 @@ int VideoMixer::RemoveMosaicParticipant(int mosaicId, int partId)
 	if (pos!=-1)
 		//Update mosaic
 		UpdateMosaic(mosaic);
+
+	//Check if it was the VAD
+	if (partId==mosaic->GetVADParticipant())
+	{
+		//Get VAD position
+		pos = mosaic->GetVADPosition();
+		
+		//Check logo
+		if (logo.GetFrame())
+			//Update with logo
+			mosaic->Update(pos,logo.GetFrame(),logo.GetWidth(),logo.GetHeight());
+		else
+			//Clean
+			mosaic->Clean(pos);
+
+		//Reset VAD
+		mosaic->SetVADParticipant(0,0);
+	}
+	
+	//Unblock
+	lstVideosUse.Unlock();
 
 	//Correct
 	return 1;
