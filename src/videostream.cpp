@@ -441,8 +441,10 @@ int VideoStream::SendVideo()
 	//Terminamos de capturar
 	videoInput->StopVideoCapture();
 
-	//Borramos el encoder
-	delete videoEncoder;
+	//Check
+	if (videoEncoder)
+		//Borramos el encoder
+		delete videoEncoder;
 
 	//Salimos
 	Log("<SendVideo [%d]\n",sendingVideo);

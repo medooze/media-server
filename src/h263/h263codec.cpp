@@ -130,7 +130,7 @@ int H263Encoder::OpenCodec()
 		delete(frame);
 
 	//Set new buffer size
-	bufSize = (int)bitrate/8;
+	bufSize = ctx->width*ctx->height*232+10000;
 
 	//Check size
 	if (bufSize<FF_MIN_BUFFER_SIZE)
@@ -147,12 +147,12 @@ int H263Encoder::OpenCodec()
 	ctx->gop_size		= intraPeriod;
 
 	// Encoder quality
-	ctx->rc_min_rate 	= bitrate;
+	/*ctx->rc_min_rate 	= bitrate;
 	ctx->rc_max_rate	= bitrate;
 	ctx->rc_buffer_size	= bitrate/fps+1;
 	ctx->rc_buffer_aggressivity	 = 1;
 	ctx->rc_initial_buffer_occupancy = 0;
-	ctx->rc_qsquish 	= 1;
+	ctx->rc_qsquish 	= 1;*/
 	ctx->max_b_frames	= 0;
 	ctx->dia_size		= 1024;
 	ctx->mb_decision	= FF_MB_DECISION_RD;
@@ -191,7 +191,15 @@ VideoFrame* H263Encoder::EncodeFrame(BYTE *in,DWORD len)
 	picture->data[2] = in+numPixels*5/4;
 
 	//Codificamos
-	bufLen=avcodec_encode_video(ctx,frame->GetData(),frame->GetMaxMediaLength(),picture);
+	int ret = avcodec_encode_video(ctx,frame->GetData(),frame->GetMaxMediaLength(),picture);
+
+	//Check
+	if (ret<0)
+		//Exit
+		return NULL;
+
+	//Set lenfht
+	bufLen = ret;
 
 	//Set length
 	frame->SetLength(bufLen);

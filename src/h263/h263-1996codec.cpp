@@ -355,7 +355,7 @@ int H263Encoder1996::OpenCodec()
 		delete(frame);
 
 	//Set new buffer size
-	DWORD bufSize = (int)bitrate/(8*fps);
+	DWORD bufSize = ctx->width*ctx->height*232+10000;
 
 	//Check size
 	if (bufSize<FF_MIN_BUFFER_SIZE)
@@ -381,12 +381,12 @@ int H263Encoder1996::OpenCodec()
 	ctx->gop_size		= intraPeriod;
 
 	// Encoder quality
-	ctx->rc_min_rate 	= bitrate;
+	/*/ctx->rc_min_rate 	= bitrate;
 	ctx->rc_max_rate	= bitrate;
 	ctx->rc_buffer_size	= bitrate/fps+1;
 	ctx->rc_buffer_aggressivity	 = 1;
 	ctx->rc_initial_buffer_occupancy = 0;
-	ctx->rc_qsquish 	= 1;
+	ctx->rc_qsquish 	= 1;*/
 	ctx->max_b_frames	= 0;
 	ctx->dia_size		= 1024;
 	ctx->mb_decision	= FF_MB_DECISION_RD;
