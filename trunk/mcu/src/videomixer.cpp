@@ -212,14 +212,14 @@ int VideoMixer::MixVideo()
 				
 				bool changed = false;
 
+				//Get old vad participant
+				int oldVad = mosaic->GetVADParticipant();
+
 				//If we have a active speaker
 				if (maxVAD>0)
 				{
 					//Get VAD position
 					int pos = mosaic->GetVADPosition();
-					
-					//Get old vad participant
-					int oldVad = mosaic->GetVADParticipant();
 
 					//Check if we are not allowed to change
 					if (oldVad>0 && oldVad!=vadId && mosaic->GetBlockingTime(pos)>getTime())
@@ -263,6 +263,9 @@ int VideoMixer::MixVideo()
 							//Clean
 							mosaic->Clean(pos);
 					}
+				} else if (vadMode==FullVAD) {
+					//Set to old one
+					vadId = oldVad;
 				}
 				
 				//Check if full vad so reshufle participants
@@ -275,8 +278,6 @@ int VideoMixer::MixVideo()
 					//Make sure there is someone here
 					if (p!=partVadOrder.end())
 					{
-						//Remove first as it is max VAD
-						partVadOrder.erase(p);
 						//For each kickable slot while there are still particpants
 						for (int i=0;i<kickableSlots && p!=partVadOrder.end() && s!=slotsRevVadOrder.end();++i)
 						{
@@ -339,7 +340,7 @@ int VideoMixer::MixVideo()
 				if (pos>=0)
 				{
 					//Check if it is a active speaker
-					if (maxVAD>0)
+					if (vadId>0)
 					{
 						//Get participant
 						it = lstVideos.find(vadId);

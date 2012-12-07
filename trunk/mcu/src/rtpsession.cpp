@@ -599,6 +599,22 @@ int RTPSession::SendPacket(RTCPCompoundPacket &rtcp)
 	BYTE data[MTU];
 	DWORD size = MTU;
 
+	//Check if we have sendinf ip address
+	if (sendRtcpAddr.sin_addr.s_addr == INADDR_ANY)
+	{
+		//Do we have rec ip?
+		if (recIP!=INADDR_ANY && !muxRTCP)
+		{
+			//Do NAT
+			sendRtcpAddr.sin_addr.s_addr = recIP;
+			//Set port
+			sendRtcpAddr.sin_port = htons(recPort);
+			
+		} else
+			//Exit
+			return 0;
+	}
+
 	//Serialize
 	int len = rtcp.Serialize(data,size);
 	//Check result
