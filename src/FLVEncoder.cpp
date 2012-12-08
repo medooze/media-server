@@ -19,6 +19,16 @@ FLVEncoder::FLVEncoder()
 	sendFPU = false;
 	//Set default codecs
 	audioCodec = AudioCodec::NELLY11;
+	videoCodec = VideoCodec::SORENSON;
+	//Set values for default video
+	width	= 352;
+	height	= 288;
+	bitrate = 512;
+	fps	= 30;
+	intra	= 600;
+	//No meta no desc
+	meta = NULL;
+	frameDesc = NULL;
 	//Mutex
 	pthread_mutex_init(&mutex,0);
 	pthread_cond_init(&cond,0);
@@ -30,6 +40,12 @@ FLVEncoder::~FLVEncoder()
 	if (inited)
 		//End it
 		End();
+
+	if (meta)
+		delete(meta);
+	if (frameDesc)
+		delete(frameDesc);
+
 	//Mutex
 	pthread_mutex_destroy(&mutex);
 	pthread_cond_destroy(&cond);
@@ -101,6 +117,21 @@ DWORD FLVEncoder::AddMediaListener(RTMPMediaStream::Listener *listener)
 {
 	//Call parent
 	RTMPMediaStream::AddMediaListener(listener);
+	//Init
+	listener->onStreamBegin(RTMPMediaStream::id);
+
+	//If we already have metadata
+	if (meta)
+		//Send it
+		listener->onMetaData(RTMPMediaStream::id,meta);
+	//Check desc
+	if (frameDesc)
+	{
+		//Update timestamp
+		frameDesc->SetTimestamp(getDifTime(&ini)/1000);
+		//Send it
+		listener->onMediaFrame(RTMPMediaStream::id,frameDesc);
+	}
 	//Send FPU
 	sendFPU = true;
 }
@@ -124,8 +155,13 @@ int FLVEncoder::StartEncoding()
 	//Set init time
 	getUpdDifTime(&ini);
 
+	//Check if got old meta
+	if (meta)
+		//Delete
+		delete(meta);
+
 	//Create metadata object
-	RTMPMetaData *meta = new RTMPMetaData(0);
+	meta = new RTMPMetaData(0);
 
 	//Set name
 	meta->AddParam(new AMFString(L"@setDataFrame"));
@@ -154,15 +190,18 @@ int FLVEncoder::StartEncoding()
 
 	prop->AddProperty(L"stereo"		,new AMFBoolean(false)		);	// Boolean Indicating stereo audio
 	prop->AddProperty(L"audiodelay"		,0.0				);	// Number Delay introduced by the audio codec in seconds
-	//prop->AddProperty(L"audiodatarate"	,(float)8000			);	// Number Audio bit rate in kilobits per second
-	//prop->AddProperty(L"audiosamplesize"	,160.0				);	// Number Resolution of a single audio sample
-
+	
 	//Set video codecs
-	prop->AddProperty(L"videocodecid"	,(float)RTMPVideoFrame::FLV1	);	// Number Video codec ID used in the file (see E.4.3.1 for available CodecID values)
-	prop->AddProperty(L"framerate"		,(float)30			);	// Number Number of frames per second
-	prop->AddProperty(L"height"		,(float)288			);	// Number Height of the video in pixels
-	prop->AddProperty(L"videodatarate"	,(float)512			);	// Number Video bit rate in kilobits per second
-	prop->AddProperty(L"width"		,(float)352			);	// Number Width of the video in pixels
+	if (videoCodec==VideoCodec::SORENSON)
+		//Set number
+		prop->AddProperty(L"videocodecid"	,(float)RTMPVideoFrame::FLV1	);	// Number Video codec ID used in the file (see E.4.3.1 for available CodecID values)
+	else if (videoCodec==VideoCodec::H264)
+		//AVC
+		prop->AddProperty(L"videocodecid"	,new AMFString(L"avc1")		);	// Number Video codec ID used in the file (see E.4.3.1 for available CodecID values)
+	prop->AddProperty(L"framerate"		,(float)fps			);	// Number Number of frames per second
+	prop->AddProperty(L"height"		,(float)height			);	// Number Height of the video in pixels
+	prop->AddProperty(L"videodatarate"	,(float)bitrate			);	// Number Video bit rate in kilobits per second
+	prop->AddProperty(L"width"		,(float)width			);	// Number Width of the video in pixels
 	prop->AddProperty(L"canSeekToEnd"	,new AMFBoolean(false)		);	// Boolean Indicating the last video frame is a key frame
 
 	//Add param
@@ -173,9 +212,6 @@ int FLVEncoder::StartEncoding()
 
 	//Send metadata
 	SendMetaData(meta);
-
-	//And delete it
-	delete(meta);
 
 	//Start thread
 	createPriorityThread(&encodingAudioThread,startEncodingAudio,this,1);
@@ -312,20 +348,30 @@ int FLVEncoder::EncodeAudio()
 int FLVEncoder::EncodeVideo()
 {
 	timeval prev;
-	//Set width and height
-	DWORD width = 352;
-	DWORD height = 288;
-	DWORD fps = 30;
 
 	//Allocate media frame
 	RTMPVideoFrame frame(0,65535);
-	//Ser Video codec
-	frame.SetVideoCodec(RTMPVideoFrame::FLV1);
+
+	//Check codec
+	switch(videoCodec)
+	{
+		case VideoCodec::SORENSON:
+			//Ser Video codec
+			frame.SetVideoCodec(RTMPVideoFrame::FLV1);
+			break;
+		case VideoCodec::H264:
+			//Ser Video codec
+			frame.SetVideoCodec(RTMPVideoFrame::AVC);
+			break;
+		default:
+			return Error("-Wrong codec type %d\n",videoCodec);
+	}
+	
 	//Create the encoder
-	VideoEncoder *encoder = VideoCodecFactory::CreateEncoder(VideoCodec::SORENSON);
+	VideoEncoder *encoder = VideoCodecFactory::CreateEncoder(videoCodec);
 
 	///Set frame rate
-	encoder->SetFrameRate(fps,512,600);
+	encoder->SetFrameRate(fps,bitrate,intra);
 
 	//Set dimensions
 	encoder->SetSize(width,height);
@@ -406,6 +452,29 @@ int FLVEncoder::EncodeVideo()
 
 		//Let the connection set the timestamp
 		frame.SetTimestamp(getDifTime(&ini)/1000);
+		
+		//If we need desc but yet not have it
+		if (!frameDesc && encoded->IsIntra() && videoCodec==VideoCodec::H264)
+		{
+			//Create new description
+			AVCDescriptor desc;
+			//Set values
+			desc.SetConfigurationVersion(1);
+			desc.SetAVCProfileIndication(0x42);
+			desc.SetProfileCompatibility(0x80);
+			desc.SetAVCLevelIndication(0x0C);
+			desc.SetNALUnitLength(3);
+			//Get encoded data
+			BYTE *data = encoded->GetData();
+			//Get size
+			DWORD size = encoded->GetLength();
+			//get from frame
+			desc.AddParametersFromFrame(data,size);
+			//Crete desc frame
+			frameDesc = new RTMPVideoFrame(frame.GetTimestamp(),desc);
+			//Send it
+			SendMediaFrame(frameDesc);
+		}
 
 		//Lock
 		pthread_mutex_lock(&mutex);
