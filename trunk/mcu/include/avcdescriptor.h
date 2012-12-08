@@ -18,6 +18,7 @@ public:
 	~AVCDescriptor();
 	void AddSequenceParameterSet(BYTE *data,DWORD size);
 	void AddPictureParameterSet(BYTE *data,DWORD size);
+	void AddParametersFromFrame(BYTE *data,DWORD size);
 	void ClearSequenceParameterSets();
 	void ClearPictureParameterSets();
 	DWORD Serialize(BYTE* buffer,DWORD bufferLength) const;

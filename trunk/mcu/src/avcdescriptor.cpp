@@ -117,6 +117,33 @@ void AVCDescriptor::AddSequenceParameterSet(BYTE *data,DWORD size)
 	spsTotalSizes+=size;
 }
 
+void AVCDescriptor::AddParametersFromFrame(BYTE *data,DWORD size)
+{
+	//Chop into NALs
+	while(size>4)
+	{
+		//Get nal size
+		DWORD nalSize =  get4(data,0);
+		//Get NAL start
+		BYTE *nal = data+4;
+		//Depending on the type
+		switch(nal[0] & 0xF)
+		{
+			case 8:
+				//Append
+				AddPictureParameterSet(nal,nalSize);
+				break;
+			case 7:
+				//Append
+				AddSequenceParameterSet(nal,nalSize);
+				break;
+		}
+		//Skip it
+		data+=4+nalSize;
+		size-=4+nalSize;
+	}
+}
+
 void AVCDescriptor::AddPictureParameterSet(BYTE *data,DWORD size)
 {
 	//Increase number of pps

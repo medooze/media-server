@@ -437,6 +437,10 @@ void RTMPCachedPipedMediaStream::Clear()
 
 DWORD RTMPCachedPipedMediaStream::AddMediaListener(RTMPMediaStream::Listener* listener)
 {
+	
+	//return number of listeners
+	int num = RTMPMediaStream::AddMediaListener(listener);
+	
 	//Send meta if available
 	if (meta)
 		//Add media listener
@@ -454,8 +458,8 @@ DWORD RTMPCachedPipedMediaStream::AddMediaListener(RTMPMediaStream::Listener* li
 		listener->onMediaFrame(id,*it);
 	//Dec use
 	use.DecUse();
-	//return number of listeners
-	return RTMPMediaStream::AddMediaListener(listener);
+	//Return it
+	return num;
 }
 void RTMPCachedPipedMediaStream::SendMediaFrame(RTMPMediaFrame *frame)
 {

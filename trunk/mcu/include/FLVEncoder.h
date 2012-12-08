@@ -33,15 +33,27 @@ private:
 	pthread_t		encodingAudioThread;
 	int			encodingAudio;
 
+	VideoCodec::Type	videoCodec;
 	VideoInput*		videoInput;
 	pthread_t		encodingVideoThread;
 	int			encodingVideo;
+
+	RTMPMetaData*	meta;
+	RTMPVideoFrame* frameDesc;
+	int		width;
+	int		height;
+	int		bitrate;
+	int		fps;
+	int		intra;
+
 
 	int		inited;
 	bool		sendFPU;
 	timeval		ini;
 	pthread_mutex_t mutex;
 	pthread_cond_t	cond;
+
+	
 };
 
 #endif

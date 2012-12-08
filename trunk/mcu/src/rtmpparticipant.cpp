@@ -629,30 +629,8 @@ int RTMPParticipant::SendVideo()
 				BYTE *data = encoded->GetData();
 				//Get size
 				DWORD size = encoded->GetLength();
-				//Chop into NALs
-				while(size>4)
-				{
-					//Get nal size
-					DWORD nalSize =  get4(data,0);
-					//Get NAL start
-					BYTE *nal = data+4;
-					//Depending on the type
-					switch(nal[0] & 0xF)
-					{
-						case 8:
-							//Append
-							desc.AddPictureParameterSet(nal,nalSize);
-							break;
-						case 7:
-							//Append
-							desc.AddSequenceParameterSet(nal,nalSize);
-							break;
-					}
-					//Skip it
-					data+=4+nalSize;
-					size-=4+nalSize;
-				}
-
+				//get from frame
+				desc.AddParametersFromFrame(data,size);
 				//Crete desc frame
 				RTMPVideoFrame frameDesc(frame.GetTimestamp(),desc);
 				//Send it
