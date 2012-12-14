@@ -255,15 +255,6 @@ H263Encoder1996::H263Encoder1996()
 ************************/
 H263Encoder1996::~H263Encoder1996()
 {
-	//Empty temporal packets
-	while (!packets.empty())
-	{
-		//delete
-		delete(packets.front());
-		//remove
-		packets.pop_front();
-	}
-	
 	if (frame);
 		delete(frame);
 
@@ -355,25 +346,16 @@ int H263Encoder1996::OpenCodec()
 		delete(frame);
 
 	//Set new buffer size
-	DWORD bufSize = ctx->width*ctx->height*232+10000;
+	DWORD bufSize = bitrate/fps+1;
 
 	//Check size
 	if (bufSize<FF_MIN_BUFFER_SIZE)
 		//Set minimun
-		bufSize = FF_MIN_BUFFER_SIZE*2;
+		bufSize = FF_MIN_BUFFER_SIZE;
 
 	//Y alocamos el buffer
 	frame = new VideoFrame(type,bufSize);
 
-#if 0
-	//Set rtp info
-	ctx->rtp_payload_size	= 400;
-	ctx->rtp_callback	= RTPCallback;
-	ctx->opaque		= this;
-#else
-	ctx->rtp_payload_size	= 1;
-#endif
-	
 	// Bitrate,fps
 	ctx->bit_rate 		= bitrate;
 	ctx->bit_rate_tolerance = bitrate/fps+1;
@@ -381,15 +363,11 @@ int H263Encoder1996::OpenCodec()
 	ctx->gop_size		= intraPeriod;
 
 	// Encoder quality
-	/*/ctx->rc_min_rate 	= bitrate;
 	ctx->rc_max_rate	= bitrate;
 	ctx->rc_buffer_size	= bitrate/fps+1;
-	ctx->rc_buffer_aggressivity	 = 1;
 	ctx->rc_initial_buffer_occupancy = 0;
-	ctx->rc_qsquish 	= 1;*/
+	ctx->rc_qsquish 	= 1;
 	ctx->max_b_frames	= 0;
-	ctx->dia_size		= 1024;
-	ctx->mb_decision	= FF_MB_DECISION_RD;
 	
 	// Open codec
 	if (avcodec_open2(ctx, codec, NULL)<0)
@@ -447,63 +425,9 @@ VideoFrame* H263Encoder1996::EncodeFrame(BYTE *in,DWORD len)
 	picture->key_frame = 0;
 	picture->pict_type = AV_PICTURE_TYPE_NONE;
 
-#if 0
-	//Create h263 header
-	H263HeadersBasic header;
-
-	//Clean it
-	memset(&header,0,sizeof(H263HeadersBasic));
-
-	//Set values
-	header.f = 0;
-	header.p = 0;
-	header.sbits = 0;
-	header.ebits = 0;
-	//PictureSize UB[3] 000: custom, 1 byte
-	// 000 forbidden
-	// 001 subQCIF
-	// 010 QCIF
-	// 011 CIF
-	// 100 4CIF
-	// 101 16CIF
-	// 111 ext
-	if (ctx->width==352)
-		header.src = 3;
-	else if (ctx->width==176)
-		header.src = 2;
-	else if (ctx->width==128)
-		header.src = 1;
-	else if (ctx->width==704)
-		header.src = 5;
-	else if (ctx->width==1408)
-		header.src = 6;
-	else
-		header.src = 1;
-	//Set picture type
-	header.i = !ctx->coded_frame->key_frame;
-
-	DWORD pos = 0;
-
-	//For akll packet
-	while(!packets.empty())
-	{
-		//Get first
-		RTPInfo *info = packets.front();
-		//Init values
-		DWORD size = (DWORD)info->size;
-		//Remove
-		packets.pop_front();
-		//Delete it
-		delete(info);
-		//Append
-		frame->AddRtpPacket(pos,size,(BYTE*)&header,sizeof(header));
-		//increase pos
-		pos += size;
-	}
-#else
 	//Paquetize
 	paquetizer.PaquetizeFrame(frame);
-#endif
+	
 	//From the first
 	num = 0;
 	
@@ -525,30 +449,6 @@ int H263Encoder1996::FastPictureUpdate()
 	}
 
 	return 1;
-}
-/***********************
-* RTPCallback
-*	RTPCallbacl for ffmpeg
-************************/
-void H263Encoder1996::RTPCallback(AVCodecContext *ctx, void *data, int size, int mb)
-{
-	//Get encoder
-	H263Encoder1996* enc = (H263Encoder1996*)ctx->opaque;
-	//Set data
-	enc->AddRTPPacket((BYTE*)data,size,mb);
-
-	if (size>1350)
-		Error("Biiiiig\n");
-}
-
-/***********************
-* AddRTPPacket
-*	Append ffmpeg data
-************************/
-void H263Encoder1996::AddRTPPacket(BYTE *data, int size, int mb)
-{
-	//Set data
-	packets.push_back(new RTPInfo(data,size,mb));
 }
 
 /***********************
