@@ -32,9 +32,6 @@ private:
 	int		opened;
 	int		intraPeriod;
 	VideoFrame	*frame;
-	DWORD		bufSize;
-	DWORD		bufLen;
-	DWORD		bufIni;
 };
 
 class H263Decoder : public VideoDecoder
@@ -82,14 +79,9 @@ public:
 	virtual int GetNextPacket(BYTE *out,DWORD &len);
 	virtual int SetSize(int width,int height);
 	virtual int SetFrameRate(int fps,int kbits,int intraPeriod);
-protected:
-	void AddRTPPacket(BYTE* data,int size,int mb);
 private:
-	static void RTPCallback(AVCodecContext *avctx, void *data, int size, int mb_nb);
 	int OpenCodec();
 
-private:
-	typedef std::list<RTPInfo*>	RTPPackets;
 private:
 	AVCodec 	*codec;
 	AVCodecContext	*ctx;
@@ -100,7 +92,6 @@ private:
 	int		opened;
 	int		intraPeriod;
 	VideoFrame	*frame;
-	RTPPackets	packets;
 	WORD		num;
 	H263RFC2190Paquetizer paquetizer;
 };

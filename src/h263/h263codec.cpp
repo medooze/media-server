@@ -19,7 +19,6 @@ H263Encoder::H263Encoder()
 	// Set default values
 	frame	= NULL;
 	codec   = NULL;
-	bufSize = 0;
 	type    = VideoCodec::H263_1998;
 	format  = 0;
 
@@ -130,12 +129,12 @@ int H263Encoder::OpenCodec()
 		delete(frame);
 
 	//Set new buffer size
-	bufSize = ctx->width*ctx->height*232+10000;
+	DWORD bufSize = bitrate/fps+1;
 
 	//Check size
 	if (bufSize<FF_MIN_BUFFER_SIZE)
 		//Set minimun
-		bufSize = FF_MIN_BUFFER_SIZE*2;
+		bufSize = FF_MIN_BUFFER_SIZE;
 
 	//Y alocamos el buffer
 	frame = new VideoFrame(type,bufSize);
@@ -147,15 +146,11 @@ int H263Encoder::OpenCodec()
 	ctx->gop_size		= intraPeriod;
 
 	// Encoder quality
-	/*ctx->rc_min_rate 	= bitrate;
 	ctx->rc_max_rate	= bitrate;
 	ctx->rc_buffer_size	= bitrate/fps+1;
-	ctx->rc_buffer_aggressivity	 = 1;
 	ctx->rc_initial_buffer_occupancy = 0;
-	ctx->rc_qsquish 	= 1;*/
+	ctx->rc_qsquish 	= 1;
 	ctx->max_b_frames	= 0;
-	ctx->dia_size		= 1024;
-	ctx->mb_decision	= FF_MB_DECISION_RD;
 
 	// Open codec
 	if (avcodec_open2(ctx, codec, NULL)<0)
@@ -199,7 +194,7 @@ VideoFrame* H263Encoder::EncodeFrame(BYTE *in,DWORD len)
 		return NULL;
 
 	//Set lenfht
-	bufLen = ret;
+	DWORD bufLen = ret;
 
 	//Set length
 	frame->SetLength(bufLen);
@@ -253,9 +248,6 @@ VideoFrame* H263Encoder::EncodeFrame(BYTE *in,DWORD len)
 		ini += len;
 	}
 	
-	//Y ponemos a cero el comienzo
-	bufIni=0;
-
 	return frame;
 }
 
@@ -282,34 +274,8 @@ int H263Encoder::FastPictureUpdate()
 ************************/
 int H263Encoder::GetNextPacket(BYTE *out,DWORD &len)
 {
-	//If it's the first
-	if (bufIni==0)
-	{
-		//Check length
-		if (len+bufIni>bufLen)
-			len=bufLen-bufIni;
-		//Copy data
-		memcpy(out+2, frame->GetData()+2, len-2);
-	       	//Set header
-	        out[0] = 0x04;
-		out[1] = 0x00;
-		//Increase pointer
-		bufIni += len;
-	} else {
-		//Check length
-		if (len-2+bufIni>bufLen)
-			len=bufLen-bufIni+2;
-		//Copy data
-		memcpy(out+2, frame->GetData()+bufIni, len-2);
-	       	//Set header
-	        out[0] = 0x00;
-		out[1] = 0x00;
-		//Increase pointer
-		bufIni += len-2;
-	}
-
-	//Y salimos
-	return bufLen>bufIni;
+	//Deprecated
+	return 0;
 }
 
 
