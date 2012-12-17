@@ -28,13 +28,8 @@ int AsymmetricMosaic::Update(int pos, BYTE *image, int imgWidth, int imgHeight)
 {
 	//Check size
 	if (!image && !imgHeight && !imgHeight)
-	{
 		//Clean position
-		Clean(pos);
-		//Exit
-		return 0;
-
-	}
+		return Clean(pos);
 
 	DWORD mosaicNumPixels = mosaicTotalWidth*mosaicTotalHeight;
 	DWORD offset=0;
@@ -48,191 +43,19 @@ int AsymmetricMosaic::Update(int pos, BYTE *image, int imgWidth, int imgHeight)
 	BYTE *imageU  = imageY  + imgNumPixels;
 	BYTE *imageV  = imageU + imgNumPixels/4;
 
-	int i;
-	int j;
-	int index;
-	int mosaicWidth;
-	int mosaicHeight;
-	int cols;
-
 	//Check it's in the mosaic
 	if (pos >= numSlots)
 		return 0;
 
-	//Get values
-	switch(mosaicType)
-	{
-		case mosaic3p4:
-			/**********************************************
-			*	--------------------
-			*      |          |	    |
-			*      |    1	  |    2    |	
-			*      |_________ |_________|
-			*      |	  | 4  | 5  |
-			*      |    3	  |--- |--- |
-			*      |	  | 6  | 7  |
-			*	--------------------
-			***********************************************/
-			switch(pos)
-			{
-				case 3:
-					index = 10;
-					cols = 4;
-					break;
-				case 4:
-					index = 11;
-					cols = 4;
-					break;
-				case 5:
-					index = 14;
-					cols = 4;
-					break;
-				case 6:	
-					index = 15;
-					cols = 4;
-					break;
-				default:
-					index = pos;
-					cols = 2;
-			}
-
-			i = index/cols;
-			j = index - i*cols;
-			mosaicWidth = (int)mosaicTotalWidth/cols;
-			mosaicHeight = (int)mosaicTotalHeight/cols;
-			break;
-		case mosaic1p7:
-			/**********************************************
-			*	----------------
-			*      |	    | 2 |
-			*      |            |---|
-			*      |     1      | 3 |	
-			*      |            |---|
-			*      |	    | 4 |
-			*      |------------|---|
-			*      | 5 | 6	| 7 | 8 |
-			*	----------------
-			***********************************************/
-			switch(pos)
-			{
-				case 0:
-					index = 0;
-					i = 0;
-					j = 0;
-					mosaicWidth = (int)(mosaicTotalWidth*3/4);
-					mosaicHeight = (int)(mosaicTotalHeight*3/4);
-					break;
-				case 1:
-					index = 3;
-					break;
-				case 2:
-					index = 7;
-					break;
-				case 3:
-					index = 11;
-					break;
-				case 4:
-					index = 12;
-					break;
-				case 5:
-					index = 13;
-					break;
-				case 6:
-					index = 14;
-					break;
-				case 7:
-					index = 15;
-					break;
-			}
-		
-			if (index)
-			{
-				i = index/4;
-				j = index - i*4;
-				mosaicWidth = (int)mosaicTotalWidth/4;
-				mosaicHeight = (int)mosaicTotalHeight/4;
-			}
-			break;
-		case mosaic1p5:
-			/**********************************************
-			*	-----------------
-			*      |           |  2  |	
-			*      |     1     |---- |
-			*      |	   |  3  |
-			*      |---------- |---- |
-			*      |  4  |  5  |  6  |
-			*	------------------
-			***********************************************/
-			switch (pos)
-			{
-				case 0:
-					index = 0;
-					i = 0;
-					j = 0;
-					mosaicWidth = (int)(mosaicTotalWidth*2/3);
-					mosaicHeight = (int)(mosaicTotalHeight*2/3);
-					break;
-				case 1:
-					index = 2;
-					break;			
-				case 2:
-					index = 5;
-					break;			
-				case 3:
-					index = 6;
-					break;			
-				case 4:
-					index = 7;
-					break;			
-				case 5:
-					index = 8;
-					break;			
-			}
-
-			if (index)
-			{
-				i = index/3;
-				j = index - i*3;
-				mosaicWidth = (int)mosaicTotalWidth/3;
-				mosaicHeight = (int)mosaicTotalHeight/3;
-			}
-			break;
-		case mosaic1p1:
-			/**********************************************
-			*	----------------
-			*      |	        |
-			*      |----------------|
-			*      |       |        |
-			*      |   1   |   2    |
-			*      |       |        |
-			*      |----------------|
-			*      |      	        |
-			*	----------------
-			***********************************************/
-			switch(pos)
-			{
-				case 0:
-					i = 0;
-					j = 0;
-					mosaicWidth = (int)(mosaicTotalWidth/2);
-					mosaicHeight = (int)(mosaicTotalHeight/2);
-					break;
-				case 1:
-					i = 0;
-					j = 1;
-					mosaicWidth = (int)(mosaicTotalWidth/2);
-					mosaicHeight = (int)(mosaicTotalHeight/2);
-					break;
-			}
-			//Vertical center
-			offset = (mosaicTotalWidth*mosaicHeight/2);
-			offset2 = (mosaicTotalWidth*mosaicHeight)/8;
-			break;
-	}
+	//Get positions
+	int left = GetLeft(pos);
+	int top = GetTop(pos);
+	int mosaicWidth = GetWidth(pos);
+	int mosaicHeight = GetHeight(pos);
 
 	//Get offsets
-	offset += (mosaicTotalWidth*mosaicHeight*i) + mosaicWidth*j;
-	offset2 += (mosaicTotalWidth*mosaicHeight*i)/4+(mosaicWidth*j)/2;
+	offset += (mosaicTotalWidth*top) + left;
+	offset2 += (mosaicTotalWidth*top)/4+left/2;
 
 	//Get plane pointers
 	lineaY = mosaic + offset;
@@ -295,191 +118,19 @@ int AsymmetricMosaic::Clean(int pos)
 	BYTE *lineaU;
 	BYTE *lineaV;
 
-	int i;
-	int j;
-	int index;
-	int mosaicWidth;
-	int mosaicHeight;
-	int cols;
-
 	//Check it's in the mosaic
 	if (pos >= numSlots)
 		return 0;
-
-	//Get values
-	switch(mosaicType)
-	{
-		case mosaic3p4:
-			/**********************************************
-			*	--------------------
-			*      |          |	    |
-			*      |    1	  |    2    |
-			*      |_________ |_________|
-			*      |	  | 4  | 5  |
-			*      |    3	  |--- |--- |
-			*      |	  | 6  | 7  |
-			*	--------------------
-			***********************************************/
-			switch(pos)
-			{
-				case 3:
-					index = 10;
-					cols = 4;
-					break;
-				case 4:
-					index = 11;
-					cols = 4;
-					break;
-				case 5:
-					index = 14;
-					cols = 4;
-					break;
-				case 6:
-					index = 15;
-					cols = 4;
-					break;
-				default:
-					index = pos;
-					cols = 2;
-			}
-
-			i = index/cols;
-			j = index - i*cols;
-			mosaicWidth = (int)mosaicTotalWidth/cols;
-			mosaicHeight = (int)mosaicTotalHeight/cols;
-			break;
-		case mosaic1p7:
-			/**********************************************
-			*	----------------
-			*      |	    | 2 |
-			*      |            |---|
-			*      |     1      | 3 |
-			*      |            |---|
-			*      |	    | 4 |
-			*      |------------|---|
-			*      | 5 | 6	| 7 | 8 |
-			*	----------------
-			***********************************************/
-			switch(pos)
-			{
-				case 0:
-					index = 0;
-					i = 0;
-					j = 0;
-					mosaicWidth = (int)(mosaicTotalWidth*3/4);
-					mosaicHeight = (int)(mosaicTotalHeight*3/4);
-					break;
-				case 1:
-					index = 3;
-					break;
-				case 2:
-					index = 7;
-					break;
-				case 3:
-					index = 11;
-					break;
-				case 4:
-					index = 12;
-					break;
-				case 5:
-					index = 13;
-					break;
-				case 6:
-					index = 14;
-					break;
-				case 7:
-					index = 15;
-					break;
-			}
-
-			if (index)
-			{
-				i = index/4;
-				j = index - i*4;
-				mosaicWidth = (int)mosaicTotalWidth/4;
-				mosaicHeight = (int)mosaicTotalHeight/4;
-			}
-			break;
-		case mosaic1p5:
-			/**********************************************
-			*	-----------------
-			*      |           |  2  |
-			*      |     1     |---- |
-			*      |	   |  3  |
-			*      |---------- |---- |
-			*      |  4  |  5  |  6  |
-			*	------------------
-			***********************************************/
-			switch (pos)
-			{
-				case 0:
-					index = 0;
-					i = 0;
-					j = 0;
-					mosaicWidth = (int)(mosaicTotalWidth*2/3);
-					mosaicHeight = (int)(mosaicTotalHeight*2/3);
-					break;
-				case 1:
-					index = 2;
-					break;
-				case 2:
-					index = 5;
-					break;
-				case 3:
-					index = 6;
-					break;
-				case 4:
-					index = 7;
-					break;
-				case 5:
-					index = 8;
-					break;
-			}
-
-			if (index)
-			{
-				i = index/3;
-				j = index - i*3;
-				mosaicWidth = (int)mosaicTotalWidth/3;
-				mosaicHeight = (int)mosaicTotalHeight/3;
-			}
-			break;
-		case mosaic1p1:
-			/**********************************************
-			*	----------------
-			*      |	        |
-			*      |----------------|
-			*      |       |        |
-			*      |   1   |   2    |
-			*      |       |        |
-			*      |----------------|
-			*      |      	        |
-			*	----------------
-			***********************************************/
-			switch(pos)
-			{
-				case 0:
-					i = 0;
-					j = 0;
-					mosaicWidth = (int)(mosaicTotalWidth/2);
-					mosaicHeight = (int)(mosaicTotalHeight/2);
-					break;
-				case 1:
-					i = 0;
-					j = 1;
-					mosaicWidth = (int)(mosaicTotalWidth/2);
-					mosaicHeight = (int)(mosaicTotalHeight/2);
-					break;
-			}
-			//Vertical center
-			offset = (mosaicTotalWidth*mosaicHeight/2);
-			offset2 = (mosaicTotalWidth*mosaicHeight)/8;
-			break;
-	}
+	
+	//Get positions
+	int left = GetLeft(pos);
+	int top = GetTop(pos);
+	int mosaicWidth = GetWidth(pos);
+	int mosaicHeight = GetHeight(pos);
 
 	//Get offsets
-	offset += (mosaicTotalWidth*mosaicHeight*i) + mosaicWidth*j;
-	offset2 += (mosaicTotalWidth*mosaicHeight*i)/4+(mosaicWidth*j)/2;
+	offset += (mosaicTotalWidth*top) + left;
+	offset2 += (mosaicTotalWidth*top)/4+left/2;
 
 	//Get plane pointers
 	lineaY = mosaic + offset;
@@ -507,7 +158,6 @@ int AsymmetricMosaic::Clean(int pos)
 		lineaV += mosaicTotalWidth/2;
 	}
 
-
 	//We have changed
 	SetChanged();
 
@@ -515,11 +165,13 @@ int AsymmetricMosaic::Clean(int pos)
 }
 int AsymmetricMosaic::GetWidth(int pos)
 {
-	DWORD cols;
+	
 	//Check it's in the mosaic
 	if (pos >= numSlots)
 		return 0;
 
+	BYTE cols = 1;
+	BYTE size = 1;
 	//Get values
 	switch(mosaicType)
 	{
@@ -534,24 +186,12 @@ int AsymmetricMosaic::GetWidth(int pos)
 			*      |	  | 6  | 7  |
 			*	--------------------
 			***********************************************/
-			switch(pos)
-			{
-				case 3:
-					cols = 4;
-					break;
-				case 4:
-					cols = 4;
-					break;
-				case 5:
-					cols = 4;
-					break;
-				case 6:
-					cols = 4;
-					break;
-				default:
-					cols = 2;
-			}
-			return mosaicTotalWidth/cols;
+			cols = 4;
+			if (pos<3)
+				size = 2;
+			else
+				size = 1;
+			break;
 		case mosaic1p7:
 			/**********************************************
 			*	----------------
@@ -564,10 +204,11 @@ int AsymmetricMosaic::GetWidth(int pos)
 			*      | 5 | 6	| 7 | 8 |
 			*	----------------
 			***********************************************/
+			cols = 4;
 			if(!pos)
-				return (mosaicTotalWidth*3/4);
+				size = 3;
 			else
-				return  mosaicTotalWidth/4;
+				size = 1;
 			break;
 		case mosaic1p5:
 			/**********************************************
@@ -579,10 +220,12 @@ int AsymmetricMosaic::GetWidth(int pos)
 			*      |  4  |  5  |  6  |
 			*	------------------
 			***********************************************/
+			cols = 3;
 			if(!pos)
-				return (mosaicTotalWidth*2/3);
+				size = 2;
 			else
-				return  mosaicTotalWidth/3;
+				size = 1;
+			break;
 		case mosaic1p1:
 			/**********************************************
 			*	----------------
@@ -595,9 +238,11 @@ int AsymmetricMosaic::GetWidth(int pos)
 			*      |      	        |
 			*	----------------
 			***********************************************/
-			return (mosaicTotalWidth/2);
+			cols = 4;
+			size = 2;
+			break;
 	}
-	return 0;
+	return (mosaicTotalWidth/cols)*size;
 }
 int AsymmetricMosaic::GetHeight(int pos)
 {
@@ -606,6 +251,8 @@ int AsymmetricMosaic::GetHeight(int pos)
 	if (pos >= numSlots)
 		return 0;
 
+	BYTE rows = 1;
+	BYTE size = 1;
 	//Get values
 	switch(mosaicType)
 	{
@@ -620,24 +267,12 @@ int AsymmetricMosaic::GetHeight(int pos)
 			*      |	  | 6  | 7  |
 			*	--------------------
 			***********************************************/
-			switch(pos)
-			{
-				case 3:
-					cols = 4;
-					break;
-				case 4:
-					cols = 4;
-					break;
-				case 5:
-					cols = 4;
-					break;
-				case 6:
-					cols = 4;
-					break;
-				default:
-					cols = 2;
-			}
-			return mosaicTotalHeight/cols;
+			rows = 4;
+			if (pos<3)
+				size = 2;
+			else
+				size = 1;
+			break;
 		case mosaic1p7:
 			/**********************************************
 			*	----------------
@@ -650,10 +285,12 @@ int AsymmetricMosaic::GetHeight(int pos)
 			*      | 5 | 6	| 7 | 8 |
 			*	----------------
 			***********************************************/
+			rows = 4;
 			if(!pos)
-				return mosaicTotalHeight*3/4;
+				size = 3;
 			else
-				return mosaicTotalHeight/4;
+				size = 1;
+			break;
 		case mosaic1p5:
 			/**********************************************
 			*	-----------------
@@ -664,10 +301,12 @@ int AsymmetricMosaic::GetHeight(int pos)
 			*      |  4  |  5  |  6  |
 			*	------------------
 			***********************************************/
-			if (!pos)
-				return mosaicTotalHeight*2/3;
+			rows = 3;
+			if(!pos)
+				size = 2;
 			else
-				return mosaicTotalHeight/3;
+				size = 1;
+			break;
 		case mosaic1p1:
 			/**********************************************
 			*	----------------
@@ -680,28 +319,26 @@ int AsymmetricMosaic::GetHeight(int pos)
 			*      |      	        |
 			*	----------------
 			***********************************************/
-			return mosaicTotalHeight/2;
+			rows = 4;
+			size = 2;
+			break;
 	}
-	return 0;
+	return (mosaicTotalHeight/rows)*size;
 }
+
 int AsymmetricMosaic::GetTop(int pos)
 {
-	DWORD index;
-	DWORD i = 0;
-	DWORD j = 0;
+	BYTE index = 0;
+	BYTE rows = 1;
 
 	//Check it's in the mosaic
 	if (pos >= numSlots)
 		return 0;
 
-	int mosaicWidth;
-	int mosaicHeight;
-	int cols;
-
 	//Check it's in the mosaic
 	if (pos >= numSlots)
 		return 0;
-
+	
 	//Get values
 	switch(mosaicType)
 	{
@@ -718,31 +355,25 @@ int AsymmetricMosaic::GetTop(int pos)
 			***********************************************/
 			switch(pos)
 			{
+				case 0:
+				case 1:
+					return 0;
+				case 2:
+					index = 8;
 				case 3:
 					index = 10;
-					cols = 4;
 					break;
 				case 4:
 					index = 11;
-					cols = 4;
 					break;
 				case 5:
 					index = 14;
-					cols = 4;
 					break;
 				case 6:
 					index = 15;
-					cols = 4;
 					break;
-				default:
-					index = pos;
-					cols = 2;
 			}
-
-			i = index/cols;
-			j = index - i*cols;
-			mosaicWidth = (int)mosaicTotalWidth/cols;
-			mosaicHeight = (int)mosaicTotalHeight/cols;
+			rows = 4;
 			break;
 		case mosaic1p7:
 			/**********************************************
@@ -759,15 +390,8 @@ int AsymmetricMosaic::GetTop(int pos)
 			switch(pos)
 			{
 				case 0:
-					index = 0;
-					i = 0;
-					j = 0;
-					mosaicWidth = (int)(mosaicTotalWidth*3/4);
-					mosaicHeight = (int)(mosaicTotalHeight*3/4);
-					break;
 				case 1:
-					index = 3;
-					break;
+					return 0;
 				case 2:
 					index = 7;
 					break;
@@ -787,14 +411,7 @@ int AsymmetricMosaic::GetTop(int pos)
 					index = 15;
 					break;
 			}
-
-			if (index)
-			{
-				i = index/4;
-				j = index - i*4;
-				mosaicWidth = (int)mosaicTotalWidth/4;
-				mosaicHeight = (int)mosaicTotalHeight/4;
-			}
+			rows = 4;
 			break;
 		case mosaic1p5:
 			/**********************************************
@@ -809,15 +426,8 @@ int AsymmetricMosaic::GetTop(int pos)
 			switch (pos)
 			{
 				case 0:
-					index = 0;
-					i = 0;
-					j = 0;
-					mosaicWidth = (int)(mosaicTotalWidth*2/3);
-					mosaicHeight = (int)(mosaicTotalHeight*2/3);
-					break;
 				case 1:
-					index = 2;
-					break;
+					return 0;
 				case 2:
 					index = 5;
 					break;
@@ -831,14 +441,7 @@ int AsymmetricMosaic::GetTop(int pos)
 					index = 8;
 					break;
 			}
-
-			if (index)
-			{
-				i = index/3;
-				j = index - i*3;
-				mosaicWidth = (int)mosaicTotalWidth/3;
-				mosaicHeight = (int)mosaicTotalHeight/3;
-			}
+			rows = 3;
 			break;
 		case mosaic1p1:
 			/**********************************************
@@ -852,44 +455,28 @@ int AsymmetricMosaic::GetTop(int pos)
 			*      |      	        |
 			*	----------------
 			***********************************************/
-			switch(pos)
-			{
-				case 0:
-					i = 0;
-					j = 0;
-					mosaicWidth = (int)(mosaicTotalWidth/2);
-					mosaicHeight = (int)(mosaicTotalHeight/2);
-					break;
-				case 1:
-					i = 0;
-					j = 1;
-					mosaicWidth = (int)(mosaicTotalWidth/2);
-					mosaicHeight = (int)(mosaicTotalHeight/2);
-					break;
-			}
-			break;
+			//Alling vertically
+			return mosaicTotalHeight/4;
 	}
-
+	//Get row
+	int i = index/rows;
+	//Get row heigth
+	int mosaicHeight = mosaicTotalHeight/rows;
+	//Calculate top
 	return mosaicHeight*i;
 }
 int AsymmetricMosaic::GetLeft(int pos)
 {
-	DWORD index;
-	DWORD i = 0;
-	DWORD j = 0;
+	//Check it's in the mosaic
+	if (pos >= numSlots)
+		return 0;
 
 	//Check it's in the mosaic
 	if (pos >= numSlots)
 		return 0;
 
-	int mosaicWidth;
-	int mosaicHeight;
-	int cols;
-
-	//Check it's in the mosaic
-	if (pos >= numSlots)
-		return 0;
-
+	BYTE index;
+	BYTE cols;
 	//Get values
 	switch(mosaicType)
 	{
@@ -906,31 +493,26 @@ int AsymmetricMosaic::GetLeft(int pos)
 			***********************************************/
 			switch(pos)
 			{
+				case 0:
+				case 2:
+					return 0;
+				case 1:
+					index = 2;
+					break;
 				case 3:
 					index = 10;
-					cols = 4;
 					break;
 				case 4:
 					index = 11;
-					cols = 4;
 					break;
 				case 5:
 					index = 14;
-					cols = 4;
 					break;
 				case 6:
 					index = 15;
-					cols = 4;
 					break;
-				default:
-					index = pos;
-					cols = 2;
 			}
-
-			i = index/cols;
-			j = index - i*cols;
-			mosaicWidth = (int)mosaicTotalWidth/cols;
-			mosaicHeight = (int)mosaicTotalHeight/cols;
+			cols = 4;
 			break;
 		case mosaic1p7:
 			/**********************************************
@@ -947,12 +529,7 @@ int AsymmetricMosaic::GetLeft(int pos)
 			switch(pos)
 			{
 				case 0:
-					index = 0;
-					i = 0;
-					j = 0;
-					mosaicWidth = (int)(mosaicTotalWidth*3/4);
-					mosaicHeight = (int)(mosaicTotalHeight*3/4);
-					break;
+					return 0;
 				case 1:
 					index = 3;
 					break;
@@ -975,14 +552,7 @@ int AsymmetricMosaic::GetLeft(int pos)
 					index = 15;
 					break;
 			}
-
-			if (index)
-			{
-				i = index/4;
-				j = index - i*4;
-				mosaicWidth = (int)mosaicTotalWidth/4;
-				mosaicHeight = (int)mosaicTotalHeight/4;
-			}
+			cols = 4;
 			break;
 		case mosaic1p5:
 			/**********************************************
@@ -997,12 +567,7 @@ int AsymmetricMosaic::GetLeft(int pos)
 			switch (pos)
 			{
 				case 0:
-					index = 0;
-					i = 0;
-					j = 0;
-					mosaicWidth = (int)(mosaicTotalWidth*2/3);
-					mosaicHeight = (int)(mosaicTotalHeight*2/3);
-					break;
+					return 0;
 				case 1:
 					index = 2;
 					break;
@@ -1019,14 +584,7 @@ int AsymmetricMosaic::GetLeft(int pos)
 					index = 8;
 					break;
 			}
-
-			if (index)
-			{
-				i = index/3;
-				j = index - i*3;
-				mosaicWidth = (int)mosaicTotalWidth/3;
-				mosaicHeight = (int)mosaicTotalHeight/3;
-			}
+			cols = 3;
 			break;
 		case mosaic1p1:
 			/**********************************************
@@ -1040,23 +598,16 @@ int AsymmetricMosaic::GetLeft(int pos)
 			*      |      	        |
 			*	----------------
 			***********************************************/
-			switch(pos)
-			{
-				case 0:
-					i = 0;
-					j = 0;
-					mosaicWidth = (int)(mosaicTotalWidth/2);
-					mosaicHeight = (int)(mosaicTotalHeight/2);
-					break;
-				case 1:
-					i = 0;
-					j = 1;
-					mosaicWidth = (int)(mosaicTotalWidth/2);
-					mosaicHeight = (int)(mosaicTotalHeight/2);
-					break;
-			}
+			if(!pos)
+					return 0;
+			index = 1;
+			cols = 2;
 			break;
 	}
 
+	int i = index/cols;
+	int j = index - i*cols;
+	int mosaicWidth = mosaicTotalWidth/cols;
+	//Start filling from the end to not cause overlap
 	return mosaicWidth*j;
 }

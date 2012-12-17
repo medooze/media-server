@@ -346,7 +346,7 @@ int H263Encoder1996::OpenCodec()
 		delete(frame);
 
 	//Set new buffer size
-	DWORD bufSize = bitrate/fps+1;
+	DWORD bufSize = 1.5*bitrate/fps;
 
 	//Check size
 	if (bufSize<FF_MIN_BUFFER_SIZE)

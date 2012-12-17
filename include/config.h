@@ -32,7 +32,7 @@ inline DWORD GetWidth(DWORD size)
 	{
 		case QCIF:	return 176;
 		case CIF:	return 352;
-		case PAL:	return 704;
+		case PAL:	return 768;
 		case QVGA:	return 160;
 		case HVGA:	return 320;
 		case VGA:	return 640;
