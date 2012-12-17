@@ -328,7 +328,7 @@ int TextMixerWorker::ProcessText()
 			}
 
 			//Check if last char is the first of a sentece delimiter
-			if (buffer[len-1]=='?' || buffer[len-1]=='!' ||buffer[len-1]=='.')
+			if (len>0 && (buffer[len-1]=='?' || buffer[len-1]=='!' ||buffer[len-1]=='.'))
 				//Set to true
 				currentWritter->firstSentenceDelimiterCharFound = true;
 			else
