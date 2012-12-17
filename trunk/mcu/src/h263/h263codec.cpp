@@ -129,7 +129,7 @@ int H263Encoder::OpenCodec()
 		delete(frame);
 
 	//Set new buffer size
-	DWORD bufSize = bitrate/fps+1;
+	DWORD bufSize = 1.5*bitrate/fps;
 
 	//Check size
 	if (bufSize<FF_MIN_BUFFER_SIZE)
@@ -191,7 +191,7 @@ VideoFrame* H263Encoder::EncodeFrame(BYTE *in,DWORD len)
 	//Check
 	if (ret<0)
 		//Exit
-		return NULL;
+		return (VideoFrame*)Error("%d\n",frame->GetMaxMediaLength());
 
 	//Set lenfht
 	DWORD bufLen = ret;
