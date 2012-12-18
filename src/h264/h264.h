@@ -79,27 +79,27 @@ public:
 	DWORD GetHeight()	{ return (pic_height_in_map_units_minus1+1)*16; }
 	void Dump()
 	{
-		Log("[H264SeqParameterSet \n");
-		Log("\tprofile_idc=%.2x\n",				profile_idc);
-		Log("\tconstraint_set0_flag=%u\n",			constraint_set0_flag);
-		Log("\tconstraint_set1_flag=%u\n",			constraint_set1_flag);
-		Log("\tconstraint_set2_flag=%u\n",			constraint_set2_flag);
-		Log("\treserved_zero_5bits =%u\n",			reserved_zero_5bits );
-		Log("\tlevel_idc=%.2x\n",				level_idc);
-		Log("\tseq_parameter_set_id=%u\n",			seq_parameter_set_id);
-		Log("\tlog2_max_frame_num_minus4=%u\n",			log2_max_frame_num_minus4);
-		Log("\tpic_order_cnt_type=%u\n",			pic_order_cnt_type);
-		Log("\tlog2_max_pic_order_cnt_lsb_minus4=%u\n",		log2_max_pic_order_cnt_lsb_minus4);
-		Log("\t delta_pic_order_always_zero_flag=%u\n",		delta_pic_order_always_zero_flag);
-		Log("\toffset_for_non_ref_pic=%d\n",			offset_for_non_ref_pic);
-		Log("\toffset_for_top_to_bottom_field=%d\n",		offset_for_top_to_bottom_field);
-		Log("\tnum_ref_frames_in_pic_order_cnt_cycle=%u\n",	num_ref_frames_in_pic_order_cnt_cycle);
-		Log("\tnum_ref_frames=%u\n",				num_ref_frames);
-		Log("\tgaps_in_frame_num_value_allowed_flag=%u\n",	gaps_in_frame_num_value_allowed_flag);
-		Log("\tpic_width_in_mbs_minus1=%u\n",			pic_width_in_mbs_minus1);
-		Log("\tpic_height_in_map_units_minus1=%u\n",		pic_height_in_map_units_minus1);
-		Log("\tframe_mbs_only_flag=%u\n",			frame_mbs_only_flag);
-		Log("/]\n");
+		Debug("[H264SeqParameterSet \n");
+		Debug("\tprofile_idc=%.2x\n",				profile_idc);
+		Debug("\tconstraint_set0_flag=%u\n",			constraint_set0_flag);
+		Debug("\tconstraint_set1_flag=%u\n",			constraint_set1_flag);
+		Debug("\tconstraint_set2_flag=%u\n",			constraint_set2_flag);
+		Debug("\treserved_zero_5bits =%u\n",			reserved_zero_5bits );
+		Debug("\tlevel_idc=%.2x\n",				level_idc);
+		Debug("\tseq_parameter_set_id=%u\n",			seq_parameter_set_id);
+		Debug("\tlog2_max_frame_num_minus4=%u\n",			log2_max_frame_num_minus4);
+		Debug("\tpic_order_cnt_type=%u\n",			pic_order_cnt_type);
+		Debug("\tlog2_max_pic_order_cnt_lsb_minus4=%u\n",		log2_max_pic_order_cnt_lsb_minus4);
+		Debug("\t delta_pic_order_always_zero_flag=%u\n",		delta_pic_order_always_zero_flag);
+		Debug("\toffset_for_non_ref_pic=%d\n",			offset_for_non_ref_pic);
+		Debug("\toffset_for_top_to_bottom_field=%d\n",		offset_for_top_to_bottom_field);
+		Debug("\tnum_ref_frames_in_pic_order_cnt_cycle=%u\n",	num_ref_frames_in_pic_order_cnt_cycle);
+		Debug("\tnum_ref_frames=%u\n",				num_ref_frames);
+		Debug("\tgaps_in_frame_num_value_allowed_flag=%u\n",	gaps_in_frame_num_value_allowed_flag);
+		Debug("\tpic_width_in_mbs_minus1=%u\n",			pic_width_in_mbs_minus1);
+		Debug("\tpic_height_in_map_units_minus1=%u\n",		pic_height_in_map_units_minus1);
+		Debug("\tframe_mbs_only_flag=%u\n",			frame_mbs_only_flag);
+		Debug("/]\n");
 	}
 private:
 	BYTE			profile_idc;
@@ -203,27 +203,27 @@ private:
 public:
 	void Dump()
 	{
-		Log("[H264PictureParameterSet \n");
-		Log("\tpic_parameter_set_id=%u\n",			pic_parameter_set_id);
-		Log("\tseq_parameter_set_id=%u\n",			seq_parameter_set_id);
-		Log("\tentropy_coding_mode_flag=%u\n",			entropy_coding_mode_flag);
-		Log("\tpic_order_present_flag=%u\n",			pic_order_present_flag);
-		Log("\tnum_slice_groups_minus1=%u\n",			num_slice_groups_minus1);
-		Log("\tslice_group_map_type=%u\n",			slice_group_map_type);
-		Log("\tslice_group_change_direction_flag=%u\n",		slice_group_change_direction_flag);
-		Log("\tslice_group_change_rate_minus1=%u\n",		slice_group_change_rate_minus1);
-		Log("\tpic_size_in_map_units_minus1=%u\n",		pic_size_in_map_units_minus1);
-		Log("\tnum_ref_idx_l0_active_minus1=%u\n",		num_ref_idx_l0_active_minus1);
-		Log("\tnum_ref_idx_l1_active_minus1=%u\n",		num_ref_idx_l1_active_minus1);
-		Log("\tweighted_pred_flag=%u\n",			weighted_pred_flag);
-		Log("\tweighted_bipred_idc=%u\n",			weighted_bipred_idc);
-		Log("\tpic_init_qp_minus26=%d\n",			pic_init_qp_minus26);
-		Log("\tpic_init_qs_minus26=%d\n",			pic_init_qs_minus26);
-		Log("\tchroma_qp_index_offset=%d\n",			chroma_qp_index_offset);
-		Log("\tdeblocking_filter_control_present_flag=%u\n",	deblocking_filter_control_present_flag);
-		Log("\tconstrained_intra_pred_flag=%u\n",		constrained_intra_pred_flag);
-		Log("\tredundant_pic_cnt_present_flag=%u\n",		redundant_pic_cnt_present_flag);
-		Log("/]\n");
+		Debug("[H264PictureParameterSet \n");
+		Debug("\tpic_parameter_set_id=%u\n",			pic_parameter_set_id);
+		Debug("\tseq_parameter_set_id=%u\n",			seq_parameter_set_id);
+		Debug("\tentropy_coding_mode_flag=%u\n",			entropy_coding_mode_flag);
+		Debug("\tpic_order_present_flag=%u\n",			pic_order_present_flag);
+		Debug("\tnum_slice_groups_minus1=%u\n",			num_slice_groups_minus1);
+		Debug("\tslice_group_map_type=%u\n",			slice_group_map_type);
+		Debug("\tslice_group_change_direction_flag=%u\n",		slice_group_change_direction_flag);
+		Debug("\tslice_group_change_rate_minus1=%u\n",		slice_group_change_rate_minus1);
+		Debug("\tpic_size_in_map_units_minus1=%u\n",		pic_size_in_map_units_minus1);
+		Debug("\tnum_ref_idx_l0_active_minus1=%u\n",		num_ref_idx_l0_active_minus1);
+		Debug("\tnum_ref_idx_l1_active_minus1=%u\n",		num_ref_idx_l1_active_minus1);
+		Debug("\tweighted_pred_flag=%u\n",			weighted_pred_flag);
+		Debug("\tweighted_bipred_idc=%u\n",			weighted_bipred_idc);
+		Debug("\tpic_init_qp_minus26=%d\n",			pic_init_qp_minus26);
+		Debug("\tpic_init_qs_minus26=%d\n",			pic_init_qs_minus26);
+		Debug("\tchroma_qp_index_offset=%d\n",			chroma_qp_index_offset);
+		Debug("\tdeblocking_filter_control_present_flag=%u\n",	deblocking_filter_control_present_flag);
+		Debug("\tconstrained_intra_pred_flag=%u\n",		constrained_intra_pred_flag);
+		Debug("\tredundant_pic_cnt_present_flag=%u\n",		redundant_pic_cnt_present_flag);
+		Debug("/]\n");
 	}
 private:
 	DWORD			pic_parameter_set_id;

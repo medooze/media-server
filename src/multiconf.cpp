@@ -1525,6 +1525,10 @@ void MultiConf::NetStream::doPlay(std::wstring& url,RTMPMediaStream::Listener* l
 	} else if (type.compare(L"watcher")==0) {
 		//Get broadcast stream
 		stream = conf->ConsumeBroadcastToken(token);
+		//Wait for intra
+		SetWaitIntra(true);
+		//And rewrite
+		SetRewriteTimestamps(true);
 	} else {
 		//Log
 		Error("-Application type name incorrect [%ls]\n",type.c_str());

@@ -146,7 +146,7 @@ void RTMPMediaStream::Reset()
 /*****************************
  * RTMPPipedMediaStream
  ****************************/
-RTMPPipedMediaStream::RTMPPipedMediaStream()
+RTMPPipedMediaStream::RTMPPipedMediaStream() : RTMPMediaStream(0)
 {
 	//Not attached
 	attached = NULL;
@@ -338,7 +338,7 @@ void RTMPPipedMediaStream:: onMediaFrame(DWORD id,RTMPMediaFrame *frame)
 
 	//Check if we have rewriten ts
 	if (rewriteTimestamps)
-		//Set previour
+		//Set previous
 		frame->SetTimestamp(ts);
 }
 
