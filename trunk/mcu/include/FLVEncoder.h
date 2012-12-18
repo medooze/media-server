@@ -49,7 +49,7 @@ private:
 
 	int		inited;
 	bool		sendFPU;
-	timeval		ini;
+	timeval		first;
 	pthread_mutex_t mutex;
 	pthread_cond_t	cond;
 

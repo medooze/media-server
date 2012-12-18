@@ -846,7 +846,7 @@ void RTMPVideoFrame::Dump()
 	//Dump
 	Debug("[VideoFrame codec:%d intra:%d timestamp:%lld bufferSize:%d mediaSize:%d]\n",codec,frameType,timestamp,bufferSize,mediaSize);
 	if (codec==AVC)
-		::Dump(extraData,4);
+		Debug("\t[AVC header 0x%.2x 0x%.2x 0x%.2x 0x%.2x /]\n",extraData[0],extraData[1],extraData[2],extraData[3]);
 	if (codec==AVC && extraData[0]==AVCHEADER)
 	{
 		//Paser AVCDesc

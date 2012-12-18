@@ -126,12 +126,8 @@ DWORD FLVEncoder::AddMediaListener(RTMPMediaStream::Listener *listener)
 		listener->onMetaData(RTMPMediaStream::id,meta);
 	//Check desc
 	if (frameDesc)
-	{
-		//Update timestamp
-		frameDesc->SetTimestamp(getDifTime(&ini)/1000);
 		//Send it
 		listener->onMediaFrame(RTMPMediaStream::id,frameDesc);
-	}
 	//Send FPU
 	sendFPU = true;
 }
@@ -153,7 +149,7 @@ int FLVEncoder::StartEncoding()
 	encodingVideo = 1;
 
 	//Set init time
-	getUpdDifTime(&ini);
+	getUpdDifTime(&first);
 
 	//Check if got old meta
 	if (meta)
@@ -207,9 +203,6 @@ int FLVEncoder::StartEncoding()
 	//Add param
 	meta->AddParam(prop);
 
-	//Dump
-	meta->Dump();
-
 	//Send metadata
 	SendMetaData(meta);
 
@@ -262,86 +255,117 @@ int FLVEncoder::StopEncoding()
 *******************************************/
 int FLVEncoder::EncodeAudio()
 {
-	RTMPAudioFrame	frame(0,512);
-	SWORD 		recBuffer[512];
-
 	Log(">Encode Audio\n");
 
-	//Empezamos a grabar
+	//Start recording
 	audioInput->StartRecording();
 
 	//Create encoder
 	AudioCodec *encoder = AudioCodec::CreateCodec(audioCodec);
 
+	//Check
+	if (!encoder)
+		//Error
+		return Error("Error encoding audio");
+
+	//Calculate first timestamp
+	DWORD ini = getDifTime(&first)/1000;
+
+	//Num of samples since ini
+	DWORD samples = 0;
+
 	//Mientras tengamos que capturar
 	while(encodingAudio)
 	{
-		DWORD numSamples = encoder->numFrameSamples;
-		//Capturamos 20ms
-		if (audioInput->RecBuffer(recBuffer,numSamples)==0)
+		RTMPAudioFrame	audio(0,MTU);
+		SWORD 		recBuffer[512];
+
+		//Capturamos
+		DWORD  recLen = audioInput->RecBuffer(recBuffer,encoder->numFrameSamples);
+
+		//Check len
+		if (!recLen)
+		{
+			//Log
+			Debug("-cont\n");
+			//Reser timestam
+			ini = getDifTime(&first)/1000;
+			//And samples
+			samples = 0;
+			//Skip
 			continue;
+		}
 
-		DWORD frameLength = 0;
+		//Rencode it
+		DWORD len;
 
-		while((frameLength = encoder->Encode(recBuffer,numSamples,frame.GetMediaData(),frame.GetMaxMediaSize()))>0)
+		while((len=encoder->Encode(recBuffer,recLen,audio.GetMediaData(),audio.GetMaxMediaSize()))>0)
 		{
 			//REset
-			numSamples = 0;
+			recLen = 0;
 
 			//Set length
-			frame.SetMediaSize(frameLength);
+			audio.SetMediaSize(len);
 
 			switch(encoder->type)
 			{
 				case AudioCodec::SPEEX16:
 					//Set RTMP data
-					frame.SetAudioCodec(RTMPAudioFrame::SPEEX);
-					frame.SetSoundRate(RTMPAudioFrame::RATE11khz);
-					frame.SetSamples16Bits(1);
-					frame.SetStereo(0);
+					audio.SetAudioCodec(RTMPAudioFrame::SPEEX);
+					audio.SetSoundRate(RTMPAudioFrame::RATE11khz);
+					audio.SetSamples16Bits(1);
+					audio.SetStereo(0);
+					//Set timestamp
+					audio.SetTimestamp(ini+samples/16);
+					//Increase samples
+					samples += 320;
 					break;
 				case AudioCodec::NELLY8:
 					//Set RTMP data
-					frame.SetAudioCodec(RTMPAudioFrame::NELLY8khz);
-					frame.SetSoundRate(RTMPAudioFrame::RATE11khz);
-					frame.SetSamples16Bits(1);
-					frame.SetStereo(0);
+					audio.SetAudioCodec(RTMPAudioFrame::NELLY8khz);
+					audio.SetSoundRate(RTMPAudioFrame::RATE11khz);
+					audio.SetSamples16Bits(1);
+					audio.SetStereo(0);
+					//Set timestamp
+					audio.SetTimestamp(ini+samples/8);
+					//Increase samples
+					samples += 256;
 					break;
 				case AudioCodec::NELLY11:
 					//Set RTMP data
-					frame.SetAudioCodec(RTMPAudioFrame::NELLY);
-					frame.SetSoundRate(RTMPAudioFrame::RATE11khz);
-					frame.SetSamples16Bits(1);
-					frame.SetStereo(0);
+					audio.SetAudioCodec(RTMPAudioFrame::NELLY);
+					audio.SetSoundRate(RTMPAudioFrame::RATE11khz);
+					audio.SetSamples16Bits(1);
+					audio.SetStereo(0);
+					//Set timestamp
+					audio.SetTimestamp(ini+samples*1000/11025);
+					//Increase samples
+					samples += 256;
 					break;
 			}
-			
-			//Set timestamp
-			frame.SetTimestamp(getDifTime(&ini)/1000);
+
 
 			//Lock
 			pthread_mutex_lock(&mutex);
-			//Publish
-			SendMediaFrame(&frame);
+			//Send audio
+			SendMediaFrame(&audio);
 			//unlock
 			pthread_mutex_unlock(&mutex);
 		}
 	}
 
-	Log("-Encode Audio cleanup[%d]\n",encodingAudio);
-
-	//Paramos de grabar por si acaso
+	//Stop recording
 	audioInput->StopRecording();
 
-	//Logeamos
-	Log("-Deleting codec\n");
-
-	//Borramos el codec
-	delete(encoder);
+	//Check codec
+	if (encoder)
+		//Borramos el codec
+		delete(encoder);
 	
 	//Salimos
         Log("<Encode Audio\n");
 
+	//Exit
 	pthread_exit(0);
 }
 
@@ -362,6 +386,10 @@ int FLVEncoder::EncodeVideo()
 		case VideoCodec::H264:
 			//Ser Video codec
 			frame.SetVideoCodec(RTMPVideoFrame::AVC);
+			//Set NAL type
+			frame.SetAVCType(RTMPVideoFrame::AVCNALU);
+			//No delay
+			frame.SetAVCTS(0);
 			break;
 		default:
 			return Error("-Wrong codec type %d\n",videoCodec);
@@ -388,6 +416,10 @@ int FLVEncoder::EncodeVideo()
 		//Nos quedamos con el puntero antes de que lo cambien
 		BYTE* pic=videoInput->GrabFrame();
 
+		//Check pic
+		if (!pic)
+			continue;
+
 		//Check if we need to send intra
 		if (sendFPU)
 		{
@@ -398,7 +430,7 @@ int FLVEncoder::EncodeVideo()
 		}
 
 		//Encode next frame
-		VideoFrame *encoded = encoder->EncodeFrame(pic,width*height*3/2);
+		VideoFrame *encoded = encoder->EncodeFrame(pic,videoInput->GetBufferSize());
 
 		//Check
 		if (!encoded)
@@ -439,6 +471,9 @@ int FLVEncoder::EncodeVideo()
 		//Get full frame
 		frame.SetVideoFrame(encoded->GetData(),encoded->GetLength());
 
+		//Set timestamp
+		frame.SetTimestamp(getDifTime(&first)/1000);
+
 		//Set buffer size
 		frame.SetMediaSize(encoded->GetLength());
 
@@ -450,9 +485,7 @@ int FLVEncoder::EncodeVideo()
 			//Set type
 			frame.SetFrameType(RTMPVideoFrame::INTER);
 
-		//Let the connection set the timestamp
-		frame.SetTimestamp(getDifTime(&ini)/1000);
-		
+	
 		//If we need desc but yet not have it
 		if (!frameDesc && encoded->IsIntra() && videoCodec==VideoCodec::H264)
 		{
@@ -487,8 +520,10 @@ int FLVEncoder::EncodeVideo()
 	//Stop the capture
 	videoInput->StopVideoCapture();
 
-	//Exit
-	delete(encoder);
+	//Check
+	if (encoder)
+		//Exit
+		delete(encoder);
 	
 	//Exit
 	return 1;
