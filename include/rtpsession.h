@@ -94,7 +94,7 @@ protected:
 	//Envio y recepcion de rtcp
 	int RecvRtcp();
 	int SendPacket(RTCPCompoundPacket &rtcp);
-	int SendSenderReport();
+	int SendSenderReport(bool fpu);
 
 private:
 	MediaFrame::Type media;
@@ -162,6 +162,8 @@ private:
 	DWORD	lostRecvPackets;
 	DWORD	lostRecvPacketsSinceLastSR;
 	DWORD	totalRecvPacketsSinceLastSR;
+	DWORD	totalRecvBytesSinceLastSR;
+	DWORD	bitrateRecv;
 	DWORD	jitter;
 	BYTE	firReqNum;
 

@@ -521,9 +521,6 @@ int VideoStream::RecVideo()
 		//Si hemos perdido un paquete
 		if(lostCount>5)
 		{
-			//Debug
-			Log("Lost packet\n");
-
 			//Reset count
 			lostCount = 0;
 			
@@ -567,14 +564,14 @@ int VideoStream::RecVideo()
 			continue;
 		}
 
-		//If got lost packets
-		if (lostCount)
-			//Decrease one per rec frame
-			lostCount--;
-		
 		//Si es el ultimo
 		if(packet->GetMark())
 		{
+			//If got lost packets
+			if (lostCount)
+				//Decrease one per rec frame
+				lostCount--;
+
 			//Comprobamos el tama�o
 			if (width!=videoDecoder->GetWidth() || height!=videoDecoder->GetHeight())
 			{
