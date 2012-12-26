@@ -1,0 +1,161 @@
+/* 
+ * File:   remoteratecontrol.cpp
+ * Author: Sergio
+ * 
+ * Created on 26 de diciembre de 2012, 12:49
+ */
+
+#include "remoteratecontrol.h"
+#include <math.h>
+
+RemoteRateControl::RemoteRateControl() : bitrateCalc(1000)
+{
+	prevTS = 0;
+	prevTime = 0;
+	prevSize = 0;
+	curSize = 0;
+	num = 0;
+	slope = 8.0/512.0;
+	E[0][0] = 100;
+	E[0][1] = 0;
+	E[1][0] = 0;
+	E[1][1] = 1e-1;
+	processNoise[0] = 1e-10;
+	processNoise[1] = 1e-2;
+	avgNoise = 0;
+	varNoise = 50;
+	threshold = 25;
+	prevOffset = 0;
+	offset = 0;
+	hypothesis = Normal;
+}
+
+void RemoteRateControl::Update(RTPTimedPacket* packet)
+{
+	
+	//Get packet size and time
+	QWORD time = packet->GetTime();
+	DWORD size = packet->GetSize();
+	//Update bitrate calculator and get instant bitrate
+	QWORD bitrate = bitrateCalc.Update(time, size*8);
+	//Get current seq num
+	DWORD seq = packet->GetSeqNum();
+	//Get rtp timestamp in ms
+	DWORD ts = packet->GetClockTimestamp();
+	//If it is a our of order packet from previous frame
+	if (ts < prevTS)
+		//Exit
+		return;
+
+	//Check if it is from a new frame
+	if (ts > prevTS)
+	{
+		//If not first one
+		if (prevTime)
+			//Update Kalman filter as per google algorithm
+			UpdateKalman(time - prevTime, ts - prevTS, curSize, prevSize);
+		//Move
+		prevTS = ts;
+		prevTime = time;
+		prevSize = curSize;
+		curSize = 0;
+	}
+	//Update size of current frame
+	curSize += size;
+}
+
+void RemoteRateControl::UpdateKalman(QWORD tdelta, double tsdelta, DWORD framesize, DWORD prevframesize)
+{
+	if (num<60)
+		num++;
+	else
+		num = 60;
+
+	const double ttsdelta = tdelta - tsdelta;
+	double fsdelta = static_cast<double> (framesize) - prevframesize;
+
+	// Update the Kalman filter
+	E[0][0] += processNoise[0];
+	E[1][1] += processNoise[1];
+
+	if ((hypothesis == OverUsing && offset < prevOffset) || 
+	    (hypothesis == UnderUsing && offset > prevOffset)   )
+		E[1][1] += 10 * processNoise[1];
+
+	const double h[2] = 
+	{	fsdelta,
+		1.0
+	};
+	const double Eh[2] =
+	{
+		E[0][0] * h[0] + E[0][1] * h[1],
+		E[1][0] * h[0] + E[1][1] * h[1]
+	};
+
+	const double residual = ttsdelta - slope * h[0] - offset;
+
+	// Only update the noise estimate if we're not over-using
+	if (num * fabsf(offset) < threshold)
+	{
+		// Faster filter during startup to faster adapt to the jitter level
+		// of the network alpha is tuned for 30 frames per second, but
+		double alpha = 0.01;
+		if (num == 60)
+			alpha = 0.002;
+
+		// beta is a function of alpha and the time delta since
+		// the previous update.
+		const double beta = pow(1 - alpha, tsdelta * 30.0 / 1000.0);
+		avgNoise = beta * avgNoise + (1 - beta) * residual;
+		varNoise = beta * varNoise + (1 - beta) * (avgNoise - residual) * (avgNoise - residual);
+	}
+
+	const double denom = varNoise + h[0] * Eh[0] + h[1] * Eh[1];
+	const double K[2] = 
+	{
+		Eh[0] / denom,
+		Eh[1] / denom
+	};
+	const double IKh[2][2] =
+	{
+		{ 1.0 - K[0] * h[0] ,     - K[0] * h[1] },
+		{     - K[1] * h[0] , 1.0 - K[1] * h[1] }
+	};
+
+	// Update state
+	E[0][0] = E[0][0] * IKh[0][0] + E[1][0] * IKh[0][1];
+	E[0][1] = E[0][1] * IKh[0][0] + E[1][1] * IKh[0][1];
+	E[1][0] = E[0][0] * IKh[1][0] + E[1][0] * IKh[1][1];
+	E[1][1] = E[0][1] * IKh[1][0] + E[1][1] * IKh[1][1];
+
+	slope = slope + K[0] * residual;
+	prevOffset = offset;
+	offset = offset + K[1] * residual;
+
+	const double T = num * offset;
+
+	//Debug("num:%d offset:%f prev:%f threshold:%f\n",num,offset,prevOffset,threshold);
+	if (fabsf(T) > threshold)
+	{
+		if (offset > 0)
+		{
+			if (hypothesis != OverUsing)
+				Log("BWE: OverUsing bitrate:%llds max:%llds min:%llds\n",bitrateCalc.GetInstant(),bitrateCalc.GetMax(),bitrateCalc.GetMin());
+			hypothesis = OverUsing;
+		} else {
+			if (hypothesis != UnderUsing)
+				Log("BWE: UnderUsing bitrate:%llds max:%llds min:%llds\n",bitrateCalc.GetInstant(),bitrateCalc.GetMax(),bitrateCalc.GetMin());
+			hypothesis = UnderUsing;
+		}
+	} else {
+		if (hypothesis != Normal)
+			Log("BWE: Normal  bitrate:%llds max:%llds min:%llds\n",bitrateCalc.GetInstant(),bitrateCalc.GetMax(),bitrateCalc.GetMin());
+		hypothesis = Normal;
+	}
+}
+
+void RemoteRateControl::UpdateRTT(DWORD rtt)
+{
+	this->rtt = rtt;
+	bitrateCalc.Reset();
+}

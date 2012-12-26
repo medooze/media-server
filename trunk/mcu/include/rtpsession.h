@@ -11,6 +11,7 @@
 #include <srtp/srtp.h>
 #include "rtp.h"
 #include "rtpbuffer.h"
+#include "remoteratecontrol.h"
 #include <map>
 #include <string>
 
@@ -171,7 +172,8 @@ private:
 	DWORD	rtt;
 	timeval lastSR;
 	timeval lastReceivedSR;
-	
+
+	RemoteRateControl remoteRateControl;
 };
 
 #endif
