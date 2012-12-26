@@ -106,7 +106,7 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener)
 	sendLastTime = sendTime;
 	sendSSRC = random();
 	sendSR = 0;
-	recSeq = (WORD)-1;
+	recExtSeq = 0;
 	recSSRC = 0;
 	recCycles = 0;
 	recTimestamp = 0;
@@ -128,11 +128,12 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener)
 	totalRecvBytes = 0;
 	totalSendBytes = 0;
 	lostRecvPackets = 0;
-	lostRecvPacketsSinceLastSR = 0;
 	totalRecvPacketsSinceLastSR = 0;
 	totalRecvBytesSinceLastSR = 0;
+	minRecvExtSeqNumSinceLastSR = RTPPacket::MaxExtSeqNum;
 	bitrateRecv = 0;
 	lost = 0;
+	jitter = 0;
 	//No reports
 	setZeroTime(&lastSR);
 	setZeroTime(&lastReceivedSR);
@@ -171,10 +172,8 @@ RTPSession::~RTPSession()
 		delete(rtpMapIn);
 	if (rtpMapOut)
 		delete(rtpMapOut);
-	//For each codec
-	while(packets.Length())
-		//Delete
-		delete(packets.Pop());
+	//Delete packets
+	packets.Clear();
 	//Clean mem
 	if (iceLocalUsername)
 		free(iceLocalUsername);
@@ -1003,7 +1002,7 @@ int RTPSession::ReadRTP()
 	}
 
 	//Create rtp packet
-	RTPPacket *packet = new RTPPacket(media,buffer,size);
+	RTPTimedPacket *packet = new RTPTimedPacket(media,buffer,size);
 
 	//Obtenemos el tipo
 	BYTE type = packet->GetType();
@@ -1027,105 +1026,88 @@ int RTPSession::ReadRTP()
 		//Set codec
 		packet->SetCodec(type);
 
+	//Get ssrc
+	DWORD ssrc = packet->GetSSRC();
+
+	//If new ssrc
+	if (recSSRC!=ssrc)
+	{
+		//Send SR to old one
+		SendSenderReport(false);
+		//Clear packets
+		packets.Clear();
+		//Reset cycles
+		recCycles = 0;
+	}
+	
+	//Update ssrc
+	recSSRC = ssrc;
+	
+	//Get sec number
+	WORD seq = packet->GetSeqNum();
+
+	//Check if we have a sequence wrap
+	if (seq<0x00FF && (recExtSeq & 0xFFFF)>0xFF000)
+		//Increase cycles
+		recCycles++;
+
+	//Set cycles
+	packet->SetCycles(recCycles);
+
+	//Push it back
+	if (!packets.Add(packet))
+		//It was lost forever
+		return 0;
+
 	//Increase stats
 	numRecvPackets++;
 	totalRecvPacketsSinceLastSR++;
 	totalRecvBytes += size;
 	totalRecvBytesSinceLastSR += size;
 
-	//Get sec number
-	WORD seq = packet->GetSeqNum();
+	//Get ext seq
+	DWORD extSeq = packet->GetExtSeqNum();
 
-	//Get ssrc
-	DWORD ssrc = packet->GetSSRC();
+	//Check if it is the min for this SR
+	if (extSeq<minRecvExtSeqNumSinceLastSR)
+		//Store minimum
+		minRecvExtSeqNumSinceLastSR = extSeq;
 
-	//Check SSRC
-	if (recSSRC==(DWORD)-1 || recSSRC==ssrc)
+	//If we have a not out of order pacekt
+	if (extSeq>recExtSeq)
 	{
-		//If it is no first
-		if (recSeq!=(WORD)-1)
+		//Update seq num
+		recExtSeq = extSeq;
+
+		//Get diff from previous
+		DWORD diff = getUpdDifTime(&recTimeval)/1000;
+
+		//If it is not first one and not from the same frame
+		if (recTimestamp && recTimestamp<packet->GetTimestamp())
 		{
-			//Check sequence number
-			if (seq<=recSeq)
-			{
-				//Check if it is an out of order or duplicate packet
-				if (recSeq-seq<255)
-				{
-					//Ignore it
-					return 0;
-				} else if (seq==1 && recSeq==(WORD)-1) {
-					//Not lost, just seq wrapping
-					lost = 0;
-					//Increase cycles
-					recCycles++;
-				} else {
-					//Too many
-					lost = (WORD)-1;
-					//Reset stats
-					recCycles = 0;
-				}
-			} else if (seq-(recSeq+1)<255) {
-				//Get the number of lost packets
-				lost = seq-(recSeq+1);
-			} else {
-				//Too much
-				lost = (WORD)-1;
-			}
-		} else {
-			//Not lost
-			lost = 0;
+			//TODO: FIX rate should be inside packet
+			DWORD rate = 1;
+			if (media==MediaFrame::Audio)
+				rate = 8;
+			else if (media==MediaFrame::Video)
+				rate = 90;
+			//Get difference of arravail times
+			int d = (packet->GetTimestamp()-recTimestamp)/rate-diff;
+			//Check negative
+			if (d<0)
+				//Calc abs
+				d = -d;
+			//Calculate variance
+			int v = d-jitter;
+			//Calculate jitter
+			jitter += v/16;
+
+			
 		}
-	} else if (recSSRC!=ssrc) {
-		//Change of SSRC
-		//Reset cycles
-		recCycles = 0;
-		//Lost
-		lost = (WORD)-1;
-	} else {
-		//Lost
-		lost = (WORD)-1;
+
+		//Update rtp timestamp
+		recTimestamp = packet->GetTimestamp();
 	}
-
-	//Check if it has not been something extrange
-	if (lost!=(WORD)-1)
-	{
-		//Increase lost packet count
-		lostRecvPackets += lost;
-		//And the lost packet for the SR
-		lostRecvPacketsSinceLastSR += lost;
-		//Also count it for the total
-		totalRecvPacketsSinceLastSR += lost;
-	}
-
-	//Update ssrc
-	recSSRC = ssrc;
-
-	//Update last one
-	recSeq = seq;
-
-	//Get diff from previous
-	DWORD diff = getUpdDifTime(&recTimeval)/1000;
-
-	//if not fist packet
-	if (recTimestamp)
-	{
-		//TODO: FIX rate should be inside packet
-		DWORD rate = 1;
-		if (media==MediaFrame::Audio)
-			rate = 8;
-		else if (media==MediaFrame::Video)
-			rate = 90;
-		//Get difference of arravail times
-		DWORD d = (packet->GetTimestamp()-recTimestamp)/rate-diff;
-		//Calculate jitter
-		jitter += (abs(d)-jitter)/16;
-	}
-	
-	//Update rtp timestamp
-	recTimestamp = packet->GetTimestamp();
-
-	//Push it back
-	packets.Add(packet);
 
 	//Check if we need to send SR
 	if (isZeroTime(&lastSR) || getDifTime(&lastSR)>1000000)
@@ -1236,11 +1218,7 @@ int RTPSession::Run()
 RTPPacket* RTPSession::GetPacket()
 {
 	//Wait for pacekts
-	if (!packets.Wait(0))
-		//We have been canceled
-		return NULL;
-	//Send it
-	return packets.Pop();
+	return packets.Wait();
 }
 
 void RTPSession::CancelGetPacket()
@@ -1261,9 +1239,8 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 		{
 			case RTCPPacket::SenderReport:
 			{
-				
 				RTCPSenderReport* sr = (RTCPSenderReport*)packet;
-				//Get Timestamp
+				//Get Timestamp, the middle 32 bits out of 64 in the NTP timestamp (as explained in Section 4) received as part of the most recent RTCP sender report (SR) packet from source SSRC_n. If no SR has been received yet, the field is set to zero.
 				recSR = sr->GetTimestamp() >> 16;
 				//Uptade last received SR
 				getUpdDifTime(&lastReceivedSR);
@@ -1415,6 +1392,17 @@ int RTPSession::SendSenderReport(bool fpu)
 	//If we have received somthing
 	if (totalRecvPacketsSinceLastSR)
 	{
+		//Get number of total packtes
+		DWORD total = recExtSeq - minRecvExtSeqNumSinceLastSR + 1;
+		//Calculate lost
+		DWORD lostRecvPacketsSinceLastSR = total - totalRecvPacketsSinceLastSR;
+		//Add to total lost count
+		lostRecvPackets += lostRecvPacketsSinceLastSR;
+		//Calculate fraction lost
+		DWORD frac = (lostRecvPacketsSinceLastSR*256)/total;
+		//Calculate bitrate
+		bitrateRecv = totalRecvBytesSinceLastSR*8/sinceLastSR;
+
 		//Create report
 		RTCPReport *report = new RTCPReport();
 
@@ -1428,24 +1416,18 @@ int RTPSession::SendSenderReport(bool fpu)
 		else
 			//No previous SR
 			report->SetDelaySinceLastSRMilis(0);
-		
-		//The middle 32 bits out of 64 in the NTP timestamp (as explained in Section 4) received as part of the most recent RTCP sender report (SR) packet from source SSRC_n. If no SR has been received yet, the field is set to zero.
+		//Set data
 		report->SetLastSR(recSR);
-		//Calculate fraction lost
-		DWORD frac = (lostRecvPacketsSinceLastSR*256)/totalRecvPacketsSinceLastSR;
-		//Set it
 		report->SetFractionLost(frac);
-		//Calculate bitrate
-		bitrateRecv = totalRecvBytesSinceLastSR*8/sinceLastSR;
-		//Reset
-		totalRecvPacketsSinceLastSR = 0;
-		lostRecvPacketsSinceLastSR = 0;
-		totalRecvBytesSinceLastSR = 0;
-
-		//Set other data
 		report->SetLastJitter(jitter);
 		report->SetLostCount(lostRecvPackets);
-		report->SetLastSeqNum(recCycles<<16 | recSeq);
+		report->SetLastSeqNum(recExtSeq);
+
+		//Reset data
+		totalRecvPacketsSinceLastSR = 0;
+		totalRecvBytesSinceLastSR = 0;
+		minRecvExtSeqNumSinceLastSR = RTPPacket::MaxExtSeqNum;
+		recExtSeq = 0;
 
 		//Append it
 		sr->AddReport(report);
@@ -1509,5 +1491,7 @@ void RTPSession::SetRTT(DWORD rtt)
 {
 	//Set it
 	this->rtt = rtt;
+	//Update
+	packets.SetMaxWaitTime(rtt/2);
 }
 

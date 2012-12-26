@@ -10,7 +10,7 @@
 #include <poll.h>
 #include <srtp/srtp.h>
 #include "rtp.h"
-#include "waitqueue.h"
+#include "rtpbuffer.h"
 #include <map>
 #include <string>
 
@@ -99,7 +99,7 @@ protected:
 private:
 	MediaFrame::Type media;
 	Listener* listener;
-	WaitQueue<RTPPacket*> packets;
+	RTPBuffer packets;
 	bool muxRTCP;
 	//Sockets
 	int 	simSocket;
@@ -141,7 +141,7 @@ private:
 
 	//Recepcion
 	BYTE	recBuffer[MTU];
-	int	recSeq;
+	DWORD	recExtSeq;
 	DWORD	recSSRC;
 	DWORD	recTimestamp;
 	timeval recTimeval;
@@ -165,6 +165,7 @@ private:
 	DWORD	totalRecvBytesSinceLastSR;
 	DWORD	bitrateRecv;
 	DWORD	jitter;
+	DWORD   minRecvExtSeqNumSinceLastSR;
 	BYTE	firReqNum;
 
 	DWORD	rtt;

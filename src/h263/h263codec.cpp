@@ -361,78 +361,83 @@ int H263Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 		return 0;
 	}
 
-	/* The H.263+ payload header is structured as follows:
-
-	      0                   1
-	      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
-	     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-	     |   RR    |P|V|   PLEN    |PEBIT|
-	     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-	   RR: 5 bits
-	     Reserved bits.  Shall be zero.
-
-	   P: 1 bit
-	     Indicates the picture start or a picture segment (GOB/Slice) start
-	     or a video sequence end (EOS or EOSBS).  Two bytes of zero bits
-	     then have to be prefixed to the payload of such a packet to compose
-	     a complete picture/GOB/slice/EOS/EOSBS start code.  This bit allows
-	     the omission of the two first bytes of the start codes, thus
-	     improving the compression ratio.
-
-	   V: 1 bit
-	     Indicates the presence of an 8 bit field containing information for
-	     Video Redundancy Coding (VRC), which follows immediately after the
-	     initial 16 bits of the payload header if present.  For syntax and
-	     semantics of that 8 bit VRC field see section 4.2.
-
-	   PLEN: 6 bits
-	     Length in bytes of the extra picture header.  If no extra picture
-	     header is attached, PLEN is 0.  If PLEN>0, the extra picture header
-	     is attached immediately following the rest of the payload header.
-	     Note the length reflects the omission of the first two bytes of the
-	     picture start code (PSC).  See section 5.1.
-
-	   PEBIT: 3 bits
-	     Indicates the number of bits that shall be ignored in the last byte
-	     of the picture header.  If PLEN is not zero, the ignored bits shall
-	     be the least significant bits of the byte.  If PLEN is zero, then
-	     PEBIT shall also be zero.
-	*/
-
-	/* Get header */
-	BYTE p = in[0] & 0x04;
-	BYTE v = in[0] & 0x02;
-	BYTE plen = ((in[0] & 0x1 ) << 5 ) | (in[1] >> 3);
-	BYTE pebit = in[0] & 0x7;
-
-	/* Skip the header and the extra picture */
-	BYTE* i = in+2+plen;
-	DWORD  len = inLen-2-plen;
-
-	/* Check extra VRC byte*/
-	if (v)
+	//Check if not empty last pacekt
+	if (inLen)
 	{
-		/* Increase ini */
-		i++;
-		len--;
+
+		/* The H.263+ payload header is structured as follows:
+
+		      0                   1
+		      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
+		     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		     |   RR    |P|V|   PLEN    |PEBIT|
+		     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+		   RR: 5 bits
+		     Reserved bits.  Shall be zero.
+
+		   P: 1 bit
+		     Indicates the picture start or a picture segment (GOB/Slice) start
+		     or a video sequence end (EOS or EOSBS).  Two bytes of zero bits
+		     then have to be prefixed to the payload of such a packet to compose
+		     a complete picture/GOB/slice/EOS/EOSBS start code.  This bit allows
+		     the omission of the two first bytes of the start codes, thus
+		     improving the compression ratio.
+
+		   V: 1 bit
+		     Indicates the presence of an 8 bit field containing information for
+		     Video Redundancy Coding (VRC), which follows immediately after the
+		     initial 16 bits of the payload header if present.  For syntax and
+		     semantics of that 8 bit VRC field see section 4.2.
+
+		   PLEN: 6 bits
+		     Length in bytes of the extra picture header.  If no extra picture
+		     header is attached, PLEN is 0.  If PLEN>0, the extra picture header
+		     is attached immediately following the rest of the payload header.
+		     Note the length reflects the omission of the first two bytes of the
+		     picture start code (PSC).  See section 5.1.
+
+		   PEBIT: 3 bits
+		     Indicates the number of bits that shall be ignored in the last byte
+		     of the picture header.  If PLEN is not zero, the ignored bits shall
+		     be the least significant bits of the byte.  If PLEN is zero, then
+		     PEBIT shall also be zero.
+		*/
+
+		/* Get header */
+		BYTE p = in[0] & 0x04;
+		BYTE v = in[0] & 0x02;
+		BYTE plen = ((in[0] & 0x1 ) << 5 ) | (in[1] >> 3);
+		BYTE pebit = in[0] & 0x7;
+
+		/* Skip the header and the extra picture */
+		BYTE* i = in+2+plen;
+		DWORD  len = inLen-2-plen;
+
+		/* Check extra VRC byte*/
+		if (v)
+		{
+			/* Increase ini */
+			i++;
+			len--;
+		}
+
+		/* Check p bit for first packet of a frame*/
+		if (p)
+		{
+			/* Append 0s to the begining*/
+			buffer[bufLen] = 0;
+			buffer[bufLen+1] = 0;
+			/* Increase buffer length*/
+			bufLen += 2;
+		}
+
+		/* Copy the rest */
+		memcpy(buffer+bufLen,i,len);
+
+		//Aumentamos la longitud
+		bufLen+=len;
 	}
-
-	/* Check p bit for first packet of a frame*/
-	if (p)
-	{
-		/* Append 0s to the begining*/
-		buffer[bufLen] = 0;
-		buffer[bufLen+1] = 0;
-		/* Increase buffer length*/
-		bufLen += 2;
-	}
-
-	/* Copy the rest */
-	memcpy(buffer+bufLen,i,len);
-
-	//Aumentamos la longitud
-	bufLen+=len;
 
 	//Si es el ultimo
 	if(last)

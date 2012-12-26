@@ -75,75 +75,79 @@ int H263Decoder1996::DecodePacket(BYTE *in,DWORD len,int lost,int last)
 {
 	int ret = 1;
 
-	//Comprobamos que quepa
-	if(len<4)
-		return Error("Recived short packed [%d]\n",len);
-
-	//Get header
-	H263HeadersBasic* headers = H263HeadersBasic::CreateHeaders(in[0]);
-
-	//Parse it
-	DWORD parsed = headers->Parse(in,len);
-
-	//Check
-	if (!parsed)
-		return Error("Error parsing H263 RFC 2190 packet\n");
-	
-	//Si ha cambiado el formato
-	if (!src)
+	//Check not empty last packet
+	if (len)
 	{
-		//Guardamos el formato
-		src = headers->src;
-	} else if(src!=headers->src) {
-		Log("-Source format changed, reopening codec [%d,%d]\n",src,headers->src);
+		//Comprobamos que quepa
+		if(len<4)
+			return Error("Recived short packed [%d]\n",len);
 
-		//Cerramos el codec
-		avcodec_close(ctx);
+		//Get header
+		H263HeadersBasic* headers = H263HeadersBasic::CreateHeaders(in[0]);
 
-		//Y lo reabrimos
-		avcodec_open2(ctx, codec, NULL);
+		//Parse it
+		DWORD parsed = headers->Parse(in,len);
 
-		//Guardamos el formato
-		src = headers->src;
+		//Check
+		if (!parsed)
+			return Error("Error parsing H263 RFC 2190 packet\n");
 
-		//Nos cargamos el buffer
-		bufLen = 0;
+		//Si ha cambiado el formato
+		if (!src)
+		{
+			//Guardamos el formato
+			src = headers->src;
+		} else if(src!=headers->src) {
+			Log("-Source format changed, reopening codec [%d,%d]\n",src,headers->src);
+
+			//Cerramos el codec
+			avcodec_close(ctx);
+
+			//Y lo reabrimos
+			avcodec_open2(ctx, codec, NULL);
+
+			//Guardamos el formato
+			src = headers->src;
+
+			//Nos cargamos el buffer
+			bufLen = 0;
+		}
+
+		//Aumentamos el puntero
+		in+=parsed;
+		len-=parsed;
+
+		//POnemos en blanco el primer bit hasta el comienzo
+		in[0] &= 0xff >> headers->sbits;
+
+		//Y el final
+		if (len>0)
+			in[len-1] &= 0xff << headers->ebits;
+
+		//Si el hay solapamiento de bytes
+		if(headers->sbits!=0 && bufLen>0)
+		{
+			//A�adimos lo que falta
+			buffer[bufLen-1] |= in[0];
+
+			//Y avanzamos
+			in++;
+			len--;
+		}
+
+		//Free headers
+		delete(headers);
+
+		//Nos aseguramos que quepa
+		if (len<0 || bufLen+len+FF_INPUT_BUFFER_PADDING_SIZE>bufSize)
+			return Error("Wrong size of packet [%d,%d]\n",bufLen,len);
+
+		//Copiamos
+		memcpy(buffer+bufLen,in,len);
+
+		//Aumentamos la longitud
+		bufLen+=len;
 	}
-
-	//Aumentamos el puntero
-	in+=parsed;
-	len-=parsed;
-
-	//POnemos en blanco el primer bit hasta el comienzo
-	in[0] &= 0xff >> headers->sbits;
-
-	//Y el final
-	if (len>0)
-		in[len-1] &= 0xff << headers->ebits;
-
-	//Si el hay solapamiento de bytes
-	if(headers->sbits!=0 && bufLen>0)
-	{
-		//A�adimos lo que falta
-		buffer[bufLen-1] |= in[0];
-
-		//Y avanzamos
-		in++;
-		len--;
-	}
-
-	//Free headers
-	delete(headers);
-	
-	//Nos aseguramos que quepa
-	if (len<0 || bufLen+len+FF_INPUT_BUFFER_PADDING_SIZE>bufSize)
-		return Error("Wrong size of packet [%d,%d]\n",bufLen,len);
-
-	//Copiamos 
-	memcpy(buffer+bufLen,in,len);
-
-	//Aumentamos la longitud
-	bufLen+=len;
 
 	//Si es el ultimo
 	if(last)
