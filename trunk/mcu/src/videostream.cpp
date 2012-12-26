@@ -460,14 +460,11 @@ int VideoStream::RecVideo()
 {
 	VideoDecoder*	videoDecoder = NULL;
 	VideoCodec::Type type;
-	int 		recFrames=0;
-	int 		recBytes=0;
 	timeval 	before;
 	timeval		lastFPURequest;
-	float 		dif;
-	int 		width=0;
-	int 		height=0;
 	DWORD		lostCount=0;
+	DWORD		frameSeqNum = RTPPacket::MaxExtSeqNum;
+	DWORD		lastSeq = RTPPacket::MaxExtSeqNum;
 	
 	Log(">RecVideo\n");
 	
@@ -512,14 +509,47 @@ int VideoStream::RecVideo()
 			}
 		}
 
-		//Get lost
-		WORD lost = rtp.GetLost();
+		//Get extended sequence number
+		DWORD seq = packet->GetExtSeqNum();
+
+		//Check if we have lost the last packet from the previous frame
+		if (seq>frameSeqNum)
+		{
+			//Try to decode what is in the buffer
+			videoDecoder->DecodePacket(NULL,0,1,1);
+			//Get picture
+			BYTE *frame = videoDecoder->GetFrame();
+			DWORD width = videoDecoder->GetWidth();
+			DWORD height = videoDecoder->GetHeight();
+			//Check values
+			if (frame && width && height)
+			{
+				//Set frame size
+				videoOutput->SetVideoSize(width,height);
+
+				//Check if muted
+				if (!muted)
+					//Send it
+					videoOutput->NextFrame(frame);
+			}
+		}
+
+		//Lost packets since last
+		DWORD lost = 0;
+
+		//If not first
+		if (lastSeq!=RTPPacket::MaxExtSeqNum)
+			//Calculate losts
+			lost = seq-lastSeq-1;
 
 		//Increase total lost count
 		lostCount += lost;
 
+		//Update last sequence number
+		lastSeq = seq;
+
 		//Si hemos perdido un paquete
-		if(lostCount>5)
+		if(lostCount>2)
 		{
 			//Reset count
 			lostCount = 0;
@@ -537,10 +567,7 @@ int VideoStream::RecVideo()
 				getUpdDifTime(&lastFPURequest);
 			}
 		}
-
-		//Aumentamos el numero de bytes recividos
-		recBytes += packet->GetSize();
-
+		
 		//Lo decodificamos
 		if(!videoDecoder->DecodePacket(packet->GetMediaData(),packet->GetMediaLength(),lost,packet->GetMark()))
 		{
@@ -572,43 +599,23 @@ int VideoStream::RecVideo()
 				//Decrease one per rec frame
 				lostCount--;
 
-			//Comprobamos el tama�o
-			if (width!=videoDecoder->GetWidth() || height!=videoDecoder->GetHeight())
-			{
-				//A cambiado o es la primera vez
-				width = videoDecoder->GetWidth();
-				height= videoDecoder->GetHeight();
-
-				Log("-Changing video size %dx%d\n",width,height);
-
-				//POnemos el modo de pantalla
-				if (!videoOutput->SetVideoSize(width,height))
-				{
-					Error("Can't update video size\n");
-					break;;
-				}
-			}
+			//No seq number for frame
+			frameSeqNum = RTPPacket::MaxExtSeqNum;
 
 			//Get picture
 			BYTE *frame = videoDecoder->GetFrame();
-			
-			//Check size
-			if (width && height && frame && !muted)
-				//Lo sacamos
-				videoOutput->NextFrame(frame);
-			
-			//Aumentamos el numero de frames y de bytes
-			recFrames++;
-			
-			//Cada 20 frames sacamos las estadisticas
-			if ((videoFPS && (recFrames==videoFPS*2)) || recFrames==60)
+			DWORD width = videoDecoder->GetWidth();
+			DWORD height = videoDecoder->GetHeight();
+			//Check values
+			if (frame && width && height)
 			{
-				//Y la diferencia
-				dif=getUpdDifTime(&before);
-	
-				//Y reseteamos
-				recFrames=0;
-				recBytes=0;
+				//Set frame size
+				videoOutput->SetVideoSize(width,height);
+				
+				//Check if muted
+				if (!muted)
+					//Send it
+					videoOutput->NextFrame(frame);
 			}
 		}
 		//Delete packet

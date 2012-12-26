@@ -48,6 +48,8 @@ typedef struct {
 class RTPPacket
 {
 public:
+	const static DWORD MaxExtSeqNum = 0xFFFFFFFF;
+public:
 	RTPPacket(MediaFrame::Type media,DWORD codec)
 	{
 		this->media = media;
@@ -59,6 +61,8 @@ public:
 		//set type
 		header->version = 2;
 		header->pt = codec;
+		//NO seq cycles
+		cycles = 0;
 	}
 	
 	RTPPacket(MediaFrame::Type media,BYTE *data,DWORD size)
@@ -69,6 +73,8 @@ public:
 		header = (rtp_hdr_t*) buffer;
 		//Set Data
 		SetData(data,size);
+		//NO seq cycles
+		cycles = 0;
 	}
 
 	RTPPacket(MediaFrame::Type media,DWORD codec,DWORD type)
@@ -82,6 +88,8 @@ public:
 		//set type
 		header->version = 2;
 		header->pt = type;
+		//NO seq cycles
+		cycles = 0;
 	}
 
 	RTPPacket* Clone()
@@ -104,6 +112,7 @@ public:
 	void SetCodec(DWORD codec)	{ this->codec = codec;			}
 	void SetType(DWORD type)	{ header->pt = type;			}
 	void SetSize(DWORD size)	{ len = size-GetRTPHeaderLen();		}
+	void SetCycles(WORD cycles)	{ this->cycles = cycles;		}
 	
 	//Getters
 	MediaFrame::Type GetMedia()	const { return media;				}
@@ -121,8 +130,9 @@ public:
 	DWORD GetTimestamp()		const { return ntohl(header->ts);		}
 	WORD  GetSeqNum()		const { return ntohs(header->seq);		}
 	DWORD GetSSRC()			const { return ntohl(header->ssrc);		}
+	WORD  GetSeqCycles()		const { return cycles;				}
+	DWORD GetExtSeqNum()		const { return ((DWORD)cycles)<<16 | GetSeqNum();	}
 	
-
 	bool SetPayload(BYTE *data,DWORD size)
 	{
 		//Check size
@@ -155,6 +165,7 @@ private:
 private:
 	MediaFrame::Type media;
 	DWORD	codec;
+	WORD	cycles;
 	BYTE	buffer[SIZE];
 	DWORD	len;
 	rtp_hdr_t* header;
@@ -169,10 +180,50 @@ public:
 		//Set sending type
 		sendingTime = 0;
 	}
+
+	RTPPacketSched(MediaFrame::Type media,BYTE *data,DWORD size) : RTPPacket(media,data,size)
+	{
+		//Set sending type
+		sendingTime = 0;
+	}
+
+	RTPPacketSched(MediaFrame::Type media,DWORD codec,DWORD type) : RTPPacket(media,codec,type)
+	{
+		//Set sending type
+		sendingTime = 0;
+	}
+	
 	void	SetSendingTime(DWORD sendingTime)	{ this->sendingTime = sendingTime;	}
 	DWORD	GetSendingTime()			{ return sendingTime;			}
 private:
 	DWORD sendingTime;
+};
+
+class RTPTimedPacket:
+	public RTPPacket
+{
+public:
+	RTPTimedPacket(MediaFrame::Type media,DWORD codec) : RTPPacket(media,codec,codec)
+	{
+		//Set time
+		time = ::getTime();
+	}
+
+	RTPTimedPacket(MediaFrame::Type media,BYTE *data,DWORD size) : RTPPacket(media,data,size)
+	{
+		//Set time
+		time = ::getTime();
+	}
+
+	RTPTimedPacket(MediaFrame::Type media,DWORD codec,DWORD type) : RTPPacket(media,codec,type)
+	{
+		//Set time
+		time = ::getTime();
+	}
+
+	QWORD GetTime() { return time; }
+private:
+	QWORD time;
 };
 
 class RTPDepacketizer

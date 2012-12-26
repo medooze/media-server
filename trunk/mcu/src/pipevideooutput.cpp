@@ -61,30 +61,32 @@ int PipeVideoOutput::NextFrame(BYTE *pic)
 
 int PipeVideoOutput::SetVideoSize(int width,int height)
 {
-
 	//Check it it is the same size
-	if ((videoWidth!=width) || (videoHeight!=height))
-	{
-		//Bloqueamos
-		pthread_mutex_lock(videoMixerMutex);
+	if ((videoWidth==width) && (videoHeight==height))
+		//Not changed
+		return 0;
+	
+	//Lock
+	pthread_mutex_lock(videoMixerMutex);
 
-		//Si habia buffer lo liberamos
-		if (buffer)
-			free(buffer);
-		//Guardamos el tama�o
-		videoWidth = width;
-		videoHeight= height;
+	//Freem memory
+	if (buffer)
+		free(buffer);
+	
+	//Store size
+	videoWidth = width;
+	videoHeight= height;
 
-		//Calculamos la memoria
-		bufferSize = (width*height*3)/2;
-		//Alocamos
-		buffer = (BYTE*)malloc(bufferSize);
+	//Check frame size
+	bufferSize = (width*height*3)/2;
+	//Get memory
+	buffer = (BYTE*)malloc(bufferSize);
 
-		//Y desbloqueamos
-		pthread_mutex_unlock(videoMixerMutex);
-	}
-
-	return true;
+	//Unlock
+	pthread_mutex_unlock(videoMixerMutex);
+	
+	//Changed
+	return 1;
 }
 
 BYTE* PipeVideoOutput::GetFrame()
