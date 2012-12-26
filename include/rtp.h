@@ -63,6 +63,18 @@ public:
 		header->pt = codec;
 		//NO seq cycles
 		cycles = 0;
+		//Default clock rates
+		switch(media)
+		{
+			case MediaFrame::Video:
+				clockRate = 90000;
+				break;
+			case MediaFrame::Audio:
+				clockRate = 8000;
+				break;
+			default:
+				clockRate = 1000;
+		}
 	}
 	
 	RTPPacket(MediaFrame::Type media,BYTE *data,DWORD size)
@@ -75,6 +87,18 @@ public:
 		SetData(data,size);
 		//NO seq cycles
 		cycles = 0;
+		//Default clock rates
+		switch(media)
+		{
+			case MediaFrame::Video:
+				clockRate = 90000;
+				break;
+			case MediaFrame::Audio:
+				clockRate = 8000;
+				break;
+			default:
+				clockRate = 1000;
+		}
 	}
 
 	RTPPacket(MediaFrame::Type media,DWORD codec,DWORD type)
@@ -90,6 +114,18 @@ public:
 		header->pt = type;
 		//NO seq cycles
 		cycles = 0;
+		//Default clock rates
+		switch(media)
+		{
+			case MediaFrame::Video:
+				clockRate = 90000;
+				break;
+			case MediaFrame::Audio:
+				clockRate = 8000;
+				break;
+			default:
+				clockRate = 1000;
+		}
 	}
 
 	RTPPacket* Clone()
@@ -113,6 +149,7 @@ public:
 	void SetType(DWORD type)	{ header->pt = type;			}
 	void SetSize(DWORD size)	{ len = size-GetRTPHeaderLen();		}
 	void SetCycles(WORD cycles)	{ this->cycles = cycles;		}
+	void SetClockRate(DWORD rate)	{ this->clockRate = rate;		}
 	
 	//Getters
 	MediaFrame::Type GetMedia()	const { return media;				}
@@ -131,7 +168,9 @@ public:
 	WORD  GetSeqNum()		const { return ntohs(header->seq);		}
 	DWORD GetSSRC()			const { return ntohl(header->ssrc);		}
 	WORD  GetSeqCycles()		const { return cycles;				}
-	DWORD GetExtSeqNum()		const { return ((DWORD)cycles)<<16 | GetSeqNum();	}
+	DWORD GetClockRate()		const { return clockRate;			}
+	DWORD GetExtSeqNum()		const { return ((DWORD)cycles)<<16 | GetSeqNum();			}
+	DWORD GetClockTimestamp()	const { return static_cast<QWORD>(GetTimestamp())*1000/clockRate;	}
 	
 	bool SetPayload(BYTE *data,DWORD size)
 	{
@@ -165,6 +204,7 @@ private:
 private:
 	MediaFrame::Type media;
 	DWORD	codec;
+	DWORD	clockRate;
 	WORD	cycles;
 	BYTE	buffer[SIZE];
 	DWORD	len;
@@ -206,13 +246,13 @@ public:
 	RTPTimedPacket(MediaFrame::Type media,DWORD codec) : RTPPacket(media,codec,codec)
 	{
 		//Set time
-		time = ::getTime();
+		time = ::getTime()/1000;
 	}
 
 	RTPTimedPacket(MediaFrame::Type media,BYTE *data,DWORD size) : RTPPacket(media,data,size)
 	{
 		//Set time
-		time = ::getTime();
+		time = ::getTime()/1000;
 	}
 
 	RTPTimedPacket(MediaFrame::Type media,DWORD codec,DWORD type) : RTPPacket(media,codec,type)

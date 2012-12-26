@@ -1054,10 +1054,9 @@ int RTPSession::ReadRTP()
 	//Set cycles
 	packet->SetCycles(recCycles);
 
-	//Push it back
-	if (!packets.Add(packet))
-		//It was lost forever
-		return 0;
+	if (media==MediaFrame::Video)
+		//Update rate control
+		remoteRateControl.Update(packet);
 
 	//Increase stats
 	numRecvPackets++;
@@ -1083,16 +1082,10 @@ int RTPSession::ReadRTP()
 		DWORD diff = getUpdDifTime(&recTimeval)/1000;
 
 		//If it is not first one and not from the same frame
-		if (recTimestamp && recTimestamp<packet->GetTimestamp())
+		if (recTimestamp && recTimestamp<packet->GetClockTimestamp())
 		{
-			//TODO: FIX rate should be inside packet
-			DWORD rate = 1;
-			if (media==MediaFrame::Audio)
-				rate = 8;
-			else if (media==MediaFrame::Video)
-				rate = 90;
 			//Get difference of arravail times
-			int d = (packet->GetTimestamp()-recTimestamp)/rate-diff;
+			int d = (packet->GetClockTimestamp()-recTimestamp)-diff;
 			//Check negative
 			if (d<0)
 				//Calc abs
@@ -1101,13 +1094,16 @@ int RTPSession::ReadRTP()
 			int v = d-jitter;
 			//Calculate jitter
 			jitter += v/16;
-
-			
 		}
 
 		//Update rtp timestamp
-		recTimestamp = packet->GetTimestamp();
+		recTimestamp = packet->GetClockTimestamp();
 	}
+
+	//Push it back
+	if (!packets.Add(packet))
+		//It was lost forever
+		return 0;
 
 	//Check if we need to send SR
 	if (isZeroTime(&lastSR) || getDifTime(&lastSR)>1000000)
