@@ -28,7 +28,7 @@ struct MediaStatistics
 	DWORD		totalSendBytes;
 };
 
-class RTPSession
+class RTPSession : public RemoteRateControl::Listener
 {
 public:
 	class Listener
@@ -80,6 +80,8 @@ public:
 	int SetRemoteSTUNCredentials(const char* username, const char* pwd);
 	int SetProperties(const RTPSession::Properties& properties);
 	int RequestFPU();
+
+	virtual void onTargetBitrateRequested(DWORD bitrate);
 private:
 	void SetRTT(DWORD rtt);
 	void Start();
@@ -95,7 +97,9 @@ protected:
 	//Envio y recepcion de rtcp
 	int RecvRtcp();
 	int SendPacket(RTCPCompoundPacket &rtcp);
-	int SendSenderReport(bool fpu);
+	int SendSenderReport();
+	int SendFIR();
+	RTCPCompoundPacket* CreateSenderReport();
 
 private:
 	MediaFrame::Type media;

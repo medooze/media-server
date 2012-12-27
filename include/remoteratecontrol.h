@@ -18,6 +18,12 @@
 class RemoteRateControl
 {
 public:
+	class Listener
+	{
+	public:
+		virtual void onTargetBitrateRequested(DWORD bitrate) = 0;
+	};
+public:
 	enum BandwidthUsage
 	{
 		Normal,
@@ -25,12 +31,13 @@ public:
 		UnderUsing
 	};
 public:
-	RemoteRateControl();
+	RemoteRateControl(Listener* listener);
 	void Update(RTPTimedPacket* packet);
 	void UpdateRTT(DWORD rtt);
 private:
 	void UpdateKalman(QWORD t_delta, double ts_delta, DWORD frame_size, DWORD prev_frame_size);
 private:
+	Listener*  listener;
 	Acumulator bitrateCalc;
 	DWORD rtt;
 
