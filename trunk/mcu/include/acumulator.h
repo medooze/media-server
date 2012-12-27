@@ -14,7 +14,7 @@
 class Acumulator
 {
 public:
-	Acumulator(int window)
+	Acumulator(DWORD window)
 	{
 		this->window  = window;
 		instant = 0;
@@ -25,6 +25,8 @@ public:
 	QWORD GetInstant()	const { return instant;		}
 	QWORD GetMin()		const { return min;		}
 	QWORD GetMax()		const { return max;		}
+	DWORD GetWindow()	const { return window;		}
+	bool  IsInWindow()	const { return inWindow;	}
 
 	void Reset()
 	{
@@ -63,6 +65,7 @@ public:
 		//Return accumulated value
 		return instant;
 	}
+
 private:
 	typedef std::pair<QWORD,DWORD>  Value;
 	typedef std::list<Value>	Values;

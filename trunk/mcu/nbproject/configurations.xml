@@ -81,6 +81,7 @@
         <in>tools.h</in>
         <in>use.h</in>
         <in>vad.h</in>
+        <in>version.h</in>
         <in>video.h</in>
         <in>videomixer.h</in>
         <in>videostream.h</in>

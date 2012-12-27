@@ -89,7 +89,7 @@ bool RTPSession::SetPortRange(int minPort, int maxPort)
 * RTPSession
 * 	Constructro
 **************************/
-RTPSession::RTPSession(MediaFrame::Type media,Listener *listener)
+RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) : remoteRateControl(this)
 {
 	//Store listener
 	this->listener = listener;
@@ -713,7 +713,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 	//Check if we need to send SR
 	if (isZeroTime(&lastSR) || getDifTime(&lastSR)>1000000)
 		//Send it
-		SendSenderReport(false);
+		SendSenderReport();
 	
 	//Modificamos las cabeceras del packete
 	rtp_hdr_t *headers = (rtp_hdr_t *)sendPacket;
@@ -1033,7 +1033,7 @@ int RTPSession::ReadRTP()
 	if (recSSRC!=ssrc)
 	{
 		//Send SR to old one
-		SendSenderReport(false);
+		SendSenderReport();
 		//Clear packets
 		packets.Clear();
 		//Reset cycles
@@ -1108,7 +1108,7 @@ int RTPSession::ReadRTP()
 	//Check if we need to send SR
 	if (isZeroTime(&lastSR) || getDifTime(&lastSR)>1000000)
 		//Send it
-		SendSenderReport(false);
+		SendSenderReport();
 
 	//OK
 	return 1;
@@ -1364,11 +1364,13 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 	delete(rtcp);
 }
 
-int RTPSession::SendSenderReport(bool fpu)
+RTCPCompoundPacket* RTPSession::CreateSenderReport()
 {
-	RTCPCompoundPacket rtcp;
 	timeval tv;
-	
+
+	//Create packet
+	RTCPCompoundPacket* rtcp = new RTCPCompoundPacket();
+
 	//Get now
 	gettimeofday(&tv, NULL);
 
@@ -1430,14 +1432,14 @@ int RTPSession::SendSenderReport(bool fpu)
 	}
 
 	//Append SR to rtcp
-	rtcp.AddRTCPacket(sr);
+	rtcp->AddRTCPacket(sr);
 
 	//Store last send SR 32 middle bits
 	sendSR = sr->GetNTPSec() << 16 | sr->GetNTPFrac() >> 16;
 
 	//Create SDES
 	RTCPSDES* sdes = new RTCPSDES();
-	
+
 	//Create description
 	RTCPSDES::Description *desc = new RTCPSDES::Description();
 	//Set ssrc
@@ -1449,38 +1451,53 @@ int RTPSession::SendSenderReport(bool fpu)
 	sdes->AddDescription(desc);
 
 	//Add to rtcp
-	rtcp.AddRTCPacket(sdes);
+	rtcp->AddRTCPacket(sdes);
 
-	//Check if we need to request new I frame
-	if (fpu)
-	{
-		//Create fir request
-		RTCPPayloadFeedback *fir = RTCPPayloadFeedback::Create(RTCPPayloadFeedback::FullIntraRequest,sendSSRC,recSSRC);
-		//ADD field
-		fir->AddField(new RTCPPayloadFeedback::FullIntraRequestField(recSSRC,firReqNum++));
-		//Add to rtcp
-		rtcp.AddRTCPacket(fir);
+	//Return it
+	return rtcp;
+}
 
-		//Limit bandwith
-		if (bitrateRecv>0)
-		{
-			//Create TMMBR
-			RTCPRTPFeedback *rfb = RTCPRTPFeedback::Create(RTCPRTPFeedback::TempMaxMediaStreamBitrateRequest,sendSSRC,recSSRC);
-			//Limit incoming bitrate
-			rfb->AddField( new RTCPRTPFeedback::TempMaxMediaStreamBitrateField(recSSRC,bitrateRecv,0));
-			//Add to packet
-			rtcp.AddRTCPacket(rfb);
-		}
-	}
+int RTPSession::SendSenderReport()
+{
+	//Create rtcp sender retpor
+	RTCPCompoundPacket* rtcp = CreateSenderReport();
 
-	//Send Sender Report
-	return SendPacket(rtcp);
+	//Send packet
+	int ret = SendPacket(*rtcp);
+
+	//Delete it
+	delete(rtcp);
+
+	//Exit
+	return ret;
+}
+
+int RTPSession::SendFIR()
+{
+	//Create rtcp sender retpor
+	RTCPCompoundPacket* rtcp = CreateSenderReport();
+
+	//Create fir request
+	RTCPPayloadFeedback *fir = RTCPPayloadFeedback::Create(RTCPPayloadFeedback::FullIntraRequest,sendSSRC,recSSRC);
+	//ADD field
+	fir->AddField(new RTCPPayloadFeedback::FullIntraRequestField(recSSRC,firReqNum++));
+	//Add to rtcp
+	rtcp->AddRTCPacket(fir);
+
+	//Send packet
+	int ret = SendPacket(*rtcp);
+
+	//Delete it
+	delete(rtcp);
+	
+	//Exit
+	return ret;
 }
 
 int RTPSession::RequestFPU()
 {
 	//Send Sender Report with fpu
-	return SendSenderReport(true);
+	return SendFIR();
 }
 
 void RTPSession::SetRTT(DWORD rtt)
@@ -1488,6 +1505,24 @@ void RTPSession::SetRTT(DWORD rtt)
 	//Set it
 	this->rtt = rtt;
 	//Update
-	packets.SetMaxWaitTime(rtt/2);
+	packets.SetMaxWaitTime(rtt);
 }
 
+void RTPSession::onTargetBitrateRequested(DWORD bitrate)
+{
+	//Create rtcp sender retpor
+	RTCPCompoundPacket* rtcp = CreateSenderReport();
+
+	//Create TMMBR
+	RTCPRTPFeedback *rfb = RTCPRTPFeedback::Create(RTCPRTPFeedback::TempMaxMediaStreamBitrateRequest,sendSSRC,recSSRC);
+	//Limit incoming bitrate
+	rfb->AddField( new RTCPRTPFeedback::TempMaxMediaStreamBitrateField(recSSRC,bitrate,0));
+	//Add to packet
+	rtcp->AddRTCPacket(rfb);
+
+	//Send packet
+	SendPacket(*rtcp);
+
+	//Delete it
+	delete(rtcp);
+}
