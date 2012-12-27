@@ -1163,6 +1163,7 @@ public:
 		{
 			if (payload) free(payload);
 		}
+		BYTE* GetPayload()	{ return payload;	}
 		virtual DWORD GetSize() { return pad32(length); }
 		virtual DWORD Parse(BYTE* data,DWORD size)
 		{
