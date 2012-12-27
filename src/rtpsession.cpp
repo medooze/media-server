@@ -1302,7 +1302,6 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 						
 						break;
 					case RTCPRTPFeedback::TempMaxMediaStreamBitrateRequest:
-						
 						for (BYTE i=0;i<fb->GetFieldCount();i++)
 						{
 							//Get field
@@ -1344,8 +1343,28 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 						break;
 					case RTCPPayloadFeedback::VideoBackChannelMessage:
 						break;
-					case RTCPPayloadFeedback:: ApplicationLayerFeeedbackMessage:
+					case RTCPPayloadFeedback::ApplicationLayerFeeedbackMessage:
+					{
+						//Get feedback
+						RTCPPayloadFeedback::ApplicationLayerFeeedbackField* msg = (RTCPPayloadFeedback::ApplicationLayerFeeedbackField*)fb;
+						//Get size and payload
+						DWORD size	= msg->GetSize();
+						BYTE* payload	= msg->GetPayload();
+						//Check if it is a REMB
+						if (size>8 && payload[0]=='R' && payload[1]=='E' && payload[2]=='M' && payload[3]=='B')
+						{
+							//GEt exponent
+							BYTE exp = payload[5] >> 2;
+							DWORD mantisa = payload[5] & 0x03;
+							mantisa = mantisa << 8 | payload[6];
+							mantisa = mantisa << 8 | payload[7];
+							//Get bitrate
+							DWORD bitrate = mantisa << exp;
+							//Log
+							Log("-REMB bitrate=%d\n",bitrate);
+						}
 						break;
+					}
 				}
 				break;
 			}
