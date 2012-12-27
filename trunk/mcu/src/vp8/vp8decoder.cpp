@@ -62,7 +62,7 @@ VP8Decoder::~VP8Decoder()
 ************************/
 int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 {
-	vpx_codec_err_t err;
+	vpx_codec_err_t err = VPX_CODEC_OK;
 
 	//Check if not empty last packet
 	if (inLen)
@@ -78,7 +78,7 @@ int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 			return Error("Could not parse VP8 payload descriptor");
 
 		//If it is first of the partition
-		if ((desc.startOfPartition || lost ) && bufLen)
+		if (desc.startOfPartition && bufLen)
 		{
 			//Decode previous partition
 			err = vpx_codec_decode(&decoder,buffer,bufLen,NULL,0);
@@ -112,8 +112,10 @@ int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 	//Si es el ultimo
 	if(last)
 	{
-		//Decode last partition
-		err = vpx_codec_decode(&decoder,buffer,bufLen,NULL,0);
+		//If got last partition
+		if (bufLen)
+			//Decode last partition
+			err = vpx_codec_decode(&decoder,buffer,bufLen,NULL,0);
 
 		//Y resetamos el buffer
 		bufLen=0;
