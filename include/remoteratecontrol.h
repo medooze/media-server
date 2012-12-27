@@ -55,6 +55,7 @@ private:
 	double threshold;
 	double prevOffset;
 	BandwidthUsage hypothesis;
+	int overUseCount;
 };
 
 #endif	/* REMOTERATECONTROL_H */

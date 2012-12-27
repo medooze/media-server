@@ -1306,6 +1306,7 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 						{
 							//Get field
 							RTCPRTPFeedback::TempMaxMediaStreamBitrateField *field = (RTCPRTPFeedback::TempMaxMediaStreamBitrateField*) fb->GetField(i);
+							Debug("-TempMaxMediaStreamBitrateRequest bitrate:%d,overhead:%d\n",field->GetBitrate(),field->GetOverhead());
 						}
 						break;
 					case RTCPRTPFeedback::TempMaxMediaStreamBitrateNotification:
@@ -1313,6 +1314,7 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 						{
 							//Get field
 							RTCPRTPFeedback::TempMaxMediaStreamBitrateField *field = (RTCPRTPFeedback::TempMaxMediaStreamBitrateField*) fb->GetField(i);
+							Debug("-TempMaxMediaStreamBitrateNotification bitrate:%d,overhead:%d\n",field->GetBitrate(),field->GetOverhead());
 
 						}
 						break;
@@ -1344,27 +1346,28 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 					case RTCPPayloadFeedback::VideoBackChannelMessage:
 						break;
 					case RTCPPayloadFeedback::ApplicationLayerFeeedbackMessage:
-					{
-						//Get feedback
-						RTCPPayloadFeedback::ApplicationLayerFeeedbackField* msg = (RTCPPayloadFeedback::ApplicationLayerFeeedbackField*)fb;
-						//Get size and payload
-						DWORD size	= msg->GetSize();
-						BYTE* payload	= msg->GetPayload();
-						//Check if it is a REMB
-						if (size>8 && payload[0]=='R' && payload[1]=='E' && payload[2]=='M' && payload[3]=='B')
+						for (BYTE i=0;i<fb->GetFieldCount();i++)
 						{
-							//GEt exponent
-							BYTE exp = payload[5] >> 2;
-							DWORD mantisa = payload[5] & 0x03;
-							mantisa = mantisa << 8 | payload[6];
-							mantisa = mantisa << 8 | payload[7];
-							//Get bitrate
-							DWORD bitrate = mantisa << exp;
-							//Log
-							Log("-REMB bitrate=%d\n",bitrate);
+							//Get feedback
+							RTCPPayloadFeedback::ApplicationLayerFeeedbackField* msg = (RTCPPayloadFeedback::ApplicationLayerFeeedbackField*)fb->GetField(i);
+							//Get size and payload
+							DWORD len	= msg->GetLength();
+							BYTE* payload	= msg->GetPayload();
+							//Check if it is a REMB
+							if (len>8 && payload[0]=='R' && payload[1]=='E' && payload[2]=='M' && payload[3]=='B')
+							{
+								//GEt exponent
+								BYTE exp = payload[5] >> 2;
+								DWORD mantisa = payload[5] & 0x03;
+								mantisa = mantisa << 8 | payload[6];
+								mantisa = mantisa << 8 | payload[7];
+								//Get bitrate
+								DWORD bitrate = mantisa << exp;
+								//Log
+								//Log("-REMB bitrate=%d\n",bitrate);
+							}
 						}
 						break;
-					}
 				}
 				break;
 			}
