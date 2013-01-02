@@ -1314,7 +1314,6 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 						{
 							//Get field
 							RTCPRTPFeedback::TempMaxMediaStreamBitrateField *field = (RTCPRTPFeedback::TempMaxMediaStreamBitrateField*) fb->GetField(i);
-							Debug("-TempMaxMediaStreamBitrateNotification bitrate:%d,overhead:%d\n",field->GetBitrate(),field->GetOverhead());
 
 						}
 						break;
@@ -1527,7 +1526,7 @@ void RTPSession::SetRTT(DWORD rtt)
 	//Set it
 	this->rtt = rtt;
 	//Update
-	packets.SetMaxWaitTime(rtt);
+	packets.SetMaxWaitTime(rtt/2);
 }
 
 void RTPSession::onTargetBitrateRequested(DWORD bitrate)

@@ -9,7 +9,7 @@
 #include <math.h>
 
 
-RemoteRateControl::RemoteRateControl(Listener* listener) : bitrateCalc(1000)
+RemoteRateControl::RemoteRateControl(Listener* listener) : bitrateCalc(60)
 {
 	this->listener = listener;
 	prevTS = 0;
@@ -55,7 +55,7 @@ void RemoteRateControl::Update(RTPTimedPacket* packet)
 		//If not first one
 		if (prevTime)
 			//Update Kalman filter as per google algorithm
-			UpdateKalman(time - prevTime, ts - prevTS, curSize, prevSize);
+			UpdateKalman(time,time - prevTime, ts - prevTS, curSize, prevSize);
 		//Move
 		prevTS = ts;
 		prevTime = time;
@@ -66,7 +66,7 @@ void RemoteRateControl::Update(RTPTimedPacket* packet)
 	curSize += size;
 }
 
-void RemoteRateControl::UpdateKalman(QWORD tdelta, double tsdelta, DWORD framesize, DWORD prevframesize)
+void RemoteRateControl::UpdateKalman(QWORD now,QWORD tdelta, double tsdelta, DWORD framesize, DWORD prevframesize)
 {
 	if (num<60)
 		num++;
@@ -148,14 +148,15 @@ void RemoteRateControl::UpdateKalman(QWORD tdelta, double tsdelta, DWORD framesi
 			if (hypothesis!=OverUsing )
 			{
 				//Check 
-				if (overUseCount>2)
+				if (overUseCount>1)
 				{
-					//Go conservative
-					target = bitrateCalc.GetInstant()*1000/bitrateCalc.GetWindow();
+					if (bitrateCalc.GetDiff())
+						//Go conservative
+						target = bitrateCalc.GetAcumulated()*1000/bitrateCalc.GetDiff();
+					else
+						target =  bitrateCalc.GetInstant()*1000/bitrateCalc.GetWindow();
 					//Log
 					Log("BWE:  OverUsing bitrate:%lld max:%lld min:%lld target:%d\n",bitrateCalc.GetInstant(),bitrateCalc.GetMax(),bitrateCalc.GetMin(),target);
-					//Reset
-					bitrateCalc.Reset();
 					//Overusing
 					hypothesis = OverUsing;
 					//Reset counter
@@ -163,48 +164,33 @@ void RemoteRateControl::UpdateKalman(QWORD tdelta, double tsdelta, DWORD framesi
 				} else {
 					//increase counter
 					overUseCount++;
+					//Reset
+					bitrateCalc.Reset(now);
 				}
 			}
 		} else {
 			//If we change state
 			if (hypothesis!=UnderUsing)
 			{
-				Log("BWE:  UnderUsing bitrate:%lld max:%lld min:%lld\n",bitrateCalc.GetInstant(),bitrateCalc.GetMax(),bitrateCalc.GetMin());
+		//		Log("BWE:  UnderUsing bitrate:%lld max:%lld min:%lld\n",bitrateCalc.GetInstant(),bitrateCalc.GetMax(),bitrateCalc.GetMin());
 				//Reset bitrate
-				bitrateCalc.Reset();
+				bitrateCalc.Reset(now);
 				//Under using, do nothing until going back to normal
 				hypothesis = UnderUsing;
 			}
 		}
 	} else {
-		//Check state
-		switch(hypothesis)
+
+		//If we change state
+		if (hypothesis!=Normal)
 		{
-			case OverUsing:
-				//The over use period has been very small, try to keep rate as it seems safe
-				target = bitrateCalc.GetInstant()*900/bitrateCalc.GetWindow();
-				//Log
-				Log("BWE:  Normal  bitrate:%lld max:%lld min:%lld target:%d\n",bitrateCalc.GetInstant(),bitrateCalc.GetMax(),bitrateCalc.GetMin(),target);
-				//Reset
-				bitrateCalc.Reset();
-				//Going to normal
-				hypothesis = Normal;
-				break;
-			case UnderUsing:
-				//Get maximum bitrate during the under use period, it is safe
-				target = fmax(bitrateCalc.GetMax()*1200/bitrateCalc.GetWindow(),bitrateCalc.GetInstant()*1200/bitrateCalc.GetWindow());
-				//Log
-				Log("BWE:  Normal  bitrate:%lld max:%lld min:%lld target:%d\n",bitrateCalc.GetInstant(),bitrateCalc.GetMax(),bitrateCalc.GetMin(),target);
-				//Reset
-				bitrateCalc.Reset();
-				break;
-			case Normal:
-				//We should periodically increase the bitrate if conditions are good
-				//Check
-				break;
+			//Log
+		//	Log("BWE:  Normal  bitrate:%lld max:%lld min:%lld\n",bitrateCalc.GetInstant(),bitrateCalc.GetMax(),bitrateCalc.GetMin());
+			//Reset
+			bitrateCalc.Reset(now);
+			//Normal
+			hypothesis = Normal;
 		}
-		//Normal
-		hypothesis = Normal;
 	}
 
 	//If we have a new target bitrate

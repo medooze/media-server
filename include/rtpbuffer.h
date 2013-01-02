@@ -46,7 +46,7 @@ public:
 		//If already past
 		if (next!=(DWORD)-1 && seq<next)
 			//Skip it and lost forever
-			return true;
+			return Error("-Out of order non recoverable packet\n");
 
 		//Add event
 		packets[seq] = rtp;

@@ -549,14 +549,13 @@ int VideoStream::RecVideo()
 		lastSeq = seq;
 
 		//Si hemos perdido un paquete
-		if(lostCount>2)
+		if(lostCount>1)
 		{
-			//Reset count
-			lostCount = 0;
-			
 			//Check if we got listener and more than two seconds have elapsed from last request
-			if (listener && getDifTime(&lastFPURequest)>2000000)
+			if (listener && getDifTime(&lastFPURequest)>1000000)
 			{
+				//Reset count
+				lostCount = 0;
 				//Debug
 				Log("-Requesting FPU\n");
 				//Request it
@@ -572,7 +571,7 @@ int VideoStream::RecVideo()
 		if(!videoDecoder->DecodePacket(packet->GetMediaData(),packet->GetMediaLength(),lost,packet->GetMark()))
 		{
 			//Check if we got listener and more than two seconds have elapsed from last request
-			if (listener && getDifTime(&lastFPURequest)>2000000)
+			if (listener && getDifTime(&lastFPURequest)>1000000)
 			{
 				//Debug
 				Log("-Requesting FPU\n");
@@ -594,11 +593,6 @@ int VideoStream::RecVideo()
 		//Si es el ultimo
 		if(packet->GetMark())
 		{
-			//If got lost packets
-			if (lostCount)
-				//Decrease one per rec frame
-				lostCount--;
-
 			//No seq number for frame
 			frameSeqNum = RTPPacket::MaxExtSeqNum;
 
