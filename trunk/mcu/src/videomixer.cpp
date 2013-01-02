@@ -10,6 +10,16 @@ typedef std::pair<int, DWORD> Pair;
 typedef std::set<Pair, std::less<Pair>    > OrderedSetOfPairs;
 typedef std::set<Pair, std::greater<Pair> > RevOrderedSetOfPairs;
 
+
+DWORD VideoMixer::vadDefaultChangePeriod = 5000;
+
+void VideoMixer::SetVADDefaultChangePeriod(DWORD ms)
+{
+	//Set it
+	vadDefaultChangePeriod = ms;
+	//Log it
+	Log("-VideoMixer VAD default change period set to %dms\n",vadDefaultChangePeriod);
+}
 /***********************
 * VideoMixer
 *	Constructord
@@ -26,7 +36,7 @@ VideoMixer::VideoMixer()
 	proxy = NULL;
 	//No vad
 	vadMode = NoVAD;
-	
+
 	//Inciamos lso mutex y la condicion
 	pthread_mutex_init(&mixVideoMutex,0);
 	pthread_cond_init(&mixVideoCond,0);
@@ -53,8 +63,8 @@ void * VideoMixer::startMixingVideo(void *par)
 
 	//Obtenemos el parametro
 	VideoMixer *vm = (VideoMixer *)par;
-	
-	//Bloqueamos las se�ales
+
+	//Bloqueamos las seï¿½ales
 	blocksignals();
 
 	//Ejecutamos
@@ -101,7 +111,7 @@ int VideoMixer::MixVideo()
 
 		//Desprotege la lista
 		lstVideosUse.Unlock();
-		
+
 		//For each mosaic
 		for (itMosaic=mosaics.begin();itMosaic!=mosaics.end();++itMosaic)
 			//Reset it
@@ -109,7 +119,7 @@ int VideoMixer::MixVideo()
 
 		//LOck the mixing
 		pthread_mutex_lock(&mixVideoMutex);
-		
+
 		//Everything is updated
 		forceUpdate = 0;
 
@@ -153,14 +163,11 @@ int VideoMixer::MixVideo()
 			//If vad mode is full
 			if (vadMode!=NoVAD && proxy)
 			{
-				//Order sets
-				OrderedSetOfPairs partVadOrder;
-				RevOrderedSetOfPairs slotsRevVadOrder;
+				//We have not changed, yet
+				bool changed = false;
 				//Get number of available slots
 				int numSlots = mosaic->GetNumSlots();
-				//Get mosaic slots
-				int* slots = mosaic->GetSlots();
-
+				
 				//Nos recorremos los videos
 				for (it=lstVideos.begin();it!=lstVideos.end();++it)
 				{
@@ -170,16 +177,19 @@ int VideoMixer::MixVideo()
 					DWORD vad = proxy->GetVAD(id);
 					//Get position
 					int pos = mosaic->GetPosition(id);
+
 					//Check if it is in the mosaic
 					if (pos==Mosaic::NotFound)
 						//Next
 						continue;
+
 					//Check if position is fixed
 					if (mosaic->IsFixed(pos))
 						//this slot cannot be changed and the participant cannot be moved
 						continue;
-					//Check max vad
-					if (vad>maxVAD)
+
+					//Found the highest VAD participant but elect at least one.
+					if (vad>maxVAD || vadId==0)
 					{
 						//Store max vad value
 						maxVAD = vad;
@@ -188,170 +198,163 @@ int VideoMixer::MixVideo()
 						//Store pos of speaker
 						vadPos = pos;
 					}
-					//Include participant vad info to the non fixed participant list
-					partVadOrder.insert(Pair(vad,id));
-					//Check if it is shown and not blocked
-					if (pos!=Mosaic::NotShown && mosaic->GetBlockingTime(pos)<getTime())
-						//Set slot vad score so it can be switched to a participant to higher vad
-						slotsRevVadOrder.insert(Pair(vad,pos));
-				}
 
-				//get initial count of kickable slots
-				DWORD kickableSlots = numSlots;
-				//Find free slots
-				for (int i=0;i<numSlots;++i)
-				{
-					//If it is free
-					if (slots[i]==Mosaic::SlotFree)
-						//make sure it gets the lower vad value, so they are choosen firts
-						slotsRevVadOrder.insert(Pair(-1,i));
-					else
-						//It is not kickable
-						kickableSlots--;
+					//Send VAD info to mosaic
+					if (mosaic->UpdateParticipantInfo(id,vad))
+						//We need to racalculate positions
+						changed = true;
 				}
-				
-				bool changed = false;
 
 				//Get old vad participant
 				int oldVad = mosaic->GetVADParticipant();
+				//Get old vad position
+				int oldVadPos = mosaic->GetVADPosition();
 
-				//If we have a active speaker
-				if (maxVAD>0)
+				//If the VAD is shown
+				if (oldVadPos>=0)
 				{
-					//Get VAD position
-					int pos = mosaic->GetVADPosition();
+					//If there is an active speaker and the vad is shown
+					if (maxVAD>0)
+					{
+						//Depending on the VAD mode
+						switch(vadMode)
+						{
+							case FullVAD:
+								//If VAD slot is not blocked
+								if (mosaic->GetBlockingTime(oldVadPos)<=getTime())
+								{
+									//We have a new vad participant
+									if (vadId!=oldVad)
+										//Log it
+										Log("old active speaker = %d -> new one = %d, vad level = %d\n", oldVad, vadId, maxVAD);
 
-					//Check if we are not allowed to change
-					if (oldVad>0 && oldVad!=vadId && mosaic->GetBlockingTime(pos)>getTime())
-					{
-						//Use old one yet
-						vadId = oldVad;
-					} else if (oldVad!=vadId) {
-						//Set the slot to the participant and block it for 1 second
-						mosaic->SetVADParticipant(vadId,getTime()+(QWORD)1e6);
-						//If it was shown
-						if (vadPos>=0)
-						{
-							//Free the slot
-							mosaic->SetSlot(vadPos,Mosaic::SlotFree);
-							//Add also the slot as free
-							slotsRevVadOrder.insert(Pair(-1,vadPos));
-							//We are changed
-							changed = true;
-							//Clean it
-							if (logo.GetFrame())
-								//Print logo
-								mosaic->Update(vadPos,logo.GetFrame(),logo.GetWidth(),logo.GetHeight());
-							else
-								//Clean
-								mosaic->Clean(vadPos);
-						}
-					}
-				} else if (vadMode==BasicVAD) {
-					//Free vad
-					mosaic->SetVADParticipant(0,0);
-					//Get VAD position
-					int pos = mosaic->GetVADPosition();
-					//Check
-					if (pos>=0)
-					{
-						//Clean it
-						if (logo.GetFrame())
-							//Print logo
-							mosaic->Update(pos,logo.GetFrame(),logo.GetWidth(),logo.GetHeight());
-						else
-							//Clean
-							mosaic->Clean(pos);
-					}
-				} else if (vadMode==FullVAD) {
-					//Set to old one
-					vadId = oldVad;
-				}
-				
-				//Check if full vad so reshufle participants
-				if (vadMode==FullVAD)
-				{
-					//Get first participant
-					OrderedSetOfPairs::iterator p = partVadOrder.begin();
-					//Get first kickable slot
-					RevOrderedSetOfPairs::iterator s = slotsRevVadOrder.begin();
-					//Make sure there is someone here
-					if (p!=partVadOrder.end())
-					{
-						//For each kickable slot while there are still particpants
-						for (int i=0;i<kickableSlots && p!=partVadOrder.end() && s!=slotsRevVadOrder.end();++i)
-						{
-							//Get participant id
-							DWORD id = p->second;
-							//Get pos for participant
-							int pos = mosaic->GetPosition(id);
-							//Get slot pos
-							DWORD slot = s->second;
-							//If it was not shown and it is not the VAD participant
-							if (pos==Mosaic::NotShown && id!=vadId)
-							{
-								//Kick whoever was there and set the new participant with a 1 sec blocking time
-								mosaic->SetSlot(slot,id,getTime()+(QWORD)1e6);
-								//Remove slot
-								slotsRevVadOrder.erase(s);
-								//We have changed
-								changed = true;
-							} else if (pos==slot) {
-								//The slots that are yet in the kickable list have higher VAD than this, so we are finish
+									// set the VAD participant
+									mosaic->SetVADParticipant(vadId,getTime() + vadDefaultChangePeriod*1000);
+									//If it was shown elsewere than in VAD
+									//and cleanup the slot
+									if (vadPos>=0 && vadPos!=oldVadPos && vadId!=oldVad)
+									{
+										//Free the slot
+										mosaic->SetSlot(vadPos,Mosaic::SlotFree);
+										//We are changed
+										changed = true;
+										//Clean it
+										if (logo.GetFrame())
+											//Print logo
+											mosaic->Update(vadPos,logo.GetFrame(),logo.GetWidth(),logo.GetHeight());
+										else
+											//Clean
+											mosaic->Clean(vadPos);
+									}
+								}
 								break;
-							}
+
+							case BasicVAD:
+								//Set VAD participant
+								mosaic->SetVADParticipant(vadId,0);
+								break;
+
+							default:
+							break;
 						}
-					}
-					//If we have changed
-					if (changed)
-					{
-						//Get old possitions
-						int* old = (int*)malloc(numSlots*sizeof(int));
-						//Copy them
-						memcpy(old,mosaic->GetPositions(),numSlots*sizeof(int));
-						//Calculate positions after change
-						mosaic->CalculatePositions();
-						//Get new mosaic positions
-						int* positions = mosaic->GetPositions();
-						//For each slot
-						for (int i=0;i<numSlots;++i)
+					//NO active speaker
+					} else  {
+						//Depending on the VAD mode
+						switch ( vadMode )
 						{
-							//If it is free
-							if (old[i]!=positions[i] && positions[i]==Mosaic::SlotFree)
-							{
+							case BasicVAD:
 								//Clean it
 								if (logo.GetFrame())
-									//Update with logo
-									mosaic->Update(i,logo.GetFrame(),logo.GetWidth(),logo.GetHeight());
+									//Print logo
+									mosaic->Update(oldVadPos,logo.GetFrame(),logo.GetWidth(),logo.GetHeight());
 								else
 									//Clean
-									mosaic->Clean(i);
-							}
+									mosaic->Clean(oldVadPos);
+								break;
+							case FullVAD:
+								//If we had an active speaker before
+								if ( oldVad > 0 )
+								{
+									// Reelect the same participant if no voice activity
+									mosaic->SetVADParticipant(oldVad,getTime() + vadDefaultChangePeriod*1000);
+								} else {
+									// Special case where no partipant was elected before
+									// or VAD participant left the conference
+									Log("No previous active speaker and no voice activity -> new one = %d\n", vadId);
+									mosaic->SetVADParticipant(vadId,getTime() + vadDefaultChangePeriod*1000);
+									//If the new vad was shown in a different slot than the vad one
+									if (vadPos >= 0 && vadPos != oldVadPos)
+									{
+										//Free the slot
+										mosaic->SetSlot(vadPos,Mosaic::SlotFree);
+										//We are changed
+										changed = true;
+										//Clean it
+										if (logo.GetFrame())
+											//Print logo
+											mosaic->Update(vadPos,logo.GetFrame(),logo.GetWidth(),logo.GetHeight());
+										else
+											//Clean
+											mosaic->Clean(vadPos);
+										// Feed old VAD participa,t with non null VAD info
+										// to try to keep it in the visible mosaic (and set it as eligible)
+										mosaic->UpdateParticipantInfo(vadPos, 200);
+									}
+								}
+								break;
+
+							default:
+								break;
 						}
-						//Free olf
-						free(old);
 					}
 				}
 
-				//Get posistion for VAD
-				int pos = mosaic->GetVADPosition();
-
-				//Check if it is shown
-				if (pos>=0)
+				//Check if full vad so reshufle participants
+				if (vadMode==FullVAD && changed)
 				{
-					//Check if it is a active speaker
-					if (vadId>0)
+					//Get old possitions
+					int* old = (int*)malloc(numSlots*sizeof(int));
+					//Copy them
+					memcpy(old,mosaic->GetPositions(),numSlots*sizeof(int));
+					//Calculate positions after change
+					mosaic->CalculatePositions();
+					//Get new mosaic positions
+					int* positions = mosaic->GetPositions();
+					//For each slot
+					for (int i=0;i<numSlots;++i)
 					{
-						//Get participant
-						it = lstVideos.find(vadId);
-						//If it is found
-						if (it!=lstVideos.end())
+						//If it is free
+						if (old[i]!=positions[i] && positions[i]==Mosaic::SlotFree)
 						{
-							//Get output
-							PipeVideoOutput *output = it->second->output;
-							//Change mosaic
-							mosaic->Update(pos,output->GetFrame(),output->GetWidth(),output->GetHeight());
+							//Clean it
+							if (logo.GetFrame())
+								//Update with logo
+								mosaic->Update(i,logo.GetFrame(),logo.GetWidth(),logo.GetHeight());
+							else
+								//Clean
+								mosaic->Clean(i);
 						}
+					}
+					//Free olf
+					free(old);
+				}
+
+				//Get posistion and id for VAD now that we have updated it
+				vadPos = mosaic->GetVADPosition();
+				vadId = mosaic->GetVADParticipant();
+
+				//Check if it is a active speaker and it is shown
+				if (vadPos>=0)
+				{
+					//Get participant
+					it = lstVideos.find(vadId);
+					//If it is found
+					if (it!=lstVideos.end())
+					{
+						//Get output
+						PipeVideoOutput *output = it->second->output;
+						//Change mosaic
+						mosaic->Update(vadPos,output->GetFrame(),output->GetWidth(),output->GetHeight());
 					}
 				}
 			}
@@ -446,7 +449,7 @@ int VideoMixer::SetMosaicOverlayImage(int mosaicId,const char* filename)
 int VideoMixer::ResetMosaicOverlay(int mosaicId)
 {
 	Log("-ResetMosaicOverlay [id:%d]\n",mosaicId);
-	
+
 	//Get mosaic from id
 	Mosaics::iterator it = mosaics.find(mosaicId);
 
@@ -476,7 +479,7 @@ int VideoMixer::Init(Mosaic::Type comp,int size)
 
 	//Set default
 	defaultMosaic = mosaics[id];
-	
+
 	// Estamos mzclando
 	mixingVideo = true;
 
@@ -496,14 +499,14 @@ int VideoMixer::End()
 
 	//Borramos los videos
 	Videos::iterator it;
-	
+
 	//Terminamos con la mezcla
 	if (mixingVideo)
 	{
 		//Terminamos la mezcla
 		mixingVideo = 0;
 
-		//Se�alamos la condicion
+		//Seï¿½alamos la condicion
 		pthread_cond_signal(&mixVideoCond);
 
 		//Y esperamos
@@ -538,12 +541,12 @@ int VideoMixer::End()
 
 	//Clean list
 	mosaics.clear();
-	
+
 	//Desprotegemos la lista
 	lstVideosUse.Unlock();
 
 	Log("<End videomixer\n");
-	
+
 	return 1;
 }
 
@@ -575,7 +578,7 @@ int VideoMixer::CreateMixer(int id)
 	//No mosaic yet
 	video->mosaic = NULL;
 
-	//Y lo a�adimos a la lista
+	//Y lo aï¿½adimos a la lista
 	lstVideos[id] = video;
 
 	//Desprotegemos la lista
@@ -601,7 +604,7 @@ int VideoMixer::InitMixer(int id,int mosaicId)
 	//Buscamos el video source
 	Videos::iterator it = lstVideos.find(id);
 
-	//Si no esta	
+	//Si no esta
 	if (it == lstVideos.end())
 	{
 		//Desprotegemos
@@ -703,7 +706,7 @@ int VideoMixer::AddMosaicParticipant(int mosaicId, int partId)
 	if (itMosaic==mosaics.end())
 		//Salimos
 		return Error("Mosaic not found\n");
-	
+
 	//Add participant to the mosaic
 	itMosaic->second->AddParticipant(partId);
 
@@ -717,6 +720,7 @@ int VideoMixer::AddMosaicParticipant(int mosaicId, int partId)
  ************************************/
 int VideoMixer::RemoveMosaicParticipant(int mosaicId, int partId)
 {
+	int pos = 0;
 	Log(">-RemoveMosaicParticipant [mosaic:%d,partId:%d]\n",mosaicId,partId);
 
 	//Block
@@ -737,20 +741,14 @@ int VideoMixer::RemoveMosaicParticipant(int mosaicId, int partId)
 	//Get mosaic
 	Mosaic* mosaic = itMosaic->second;
 
-	//Remove participant to the mosaic
-	int pos = mosaic->RemoveParticipant(partId);
-
-	//If was shown
-	if (pos!=-1)
-		//Update mosaic
-		UpdateMosaic(mosaic);
-
+	Log("In Mosaic %d VAD participant is  %d.\n", itMosaic->first, mosaic->GetVADParticipant() );
 	//Check if it was the VAD
-	if (partId==mosaic->GetVADParticipant())
+	if (partId == mosaic->GetVADParticipant())
 	{
+		Log("Participant %d was in VAD slot. Cleaning up.\n", partId);
 		//Get VAD position
 		pos = mosaic->GetVADPosition();
-		
+
 		//Check logo
 		if (logo.GetFrame())
 			//Update with logo
@@ -762,7 +760,15 @@ int VideoMixer::RemoveMosaicParticipant(int mosaicId, int partId)
 		//Reset VAD
 		mosaic->SetVADParticipant(0,0);
 	}
-	
+
+	//Remove participant to the mosaic
+	pos = mosaic->RemoveParticipant(partId);
+
+	//If was shown Update mosaic
+	if ( pos!= Mosaic::NotFound )
+	    UpdateMosaic(mosaic);
+	else
+	    Log("No participant %d in mosaic %d.\n", partId, mosaicId);
 	//Unblock
 	lstVideosUse.Unlock();
 
@@ -784,7 +790,7 @@ int VideoMixer::EndMixer(int id)
 	//Buscamos el video source
 	Videos::iterator it = lstVideos.find(id);
 
-	//Si no esta	
+	//Si no esta
 	if (it == lstVideos.end())
 	{
 		//Desprotegemos
@@ -799,13 +805,13 @@ int VideoMixer::EndMixer(int id)
 	//Terminamos
 	video->input->End();
 	video->output->End();
-	
+
 	//Unset mosaic
 	video->mosaic = NULL;
 
 	//Dec usage
 	lstVideosUse.DecUse();
-	
+
 	//LOck the mixing
 	pthread_mutex_lock(&mixVideoMutex);
 
@@ -818,12 +824,9 @@ int VideoMixer::EndMixer(int id)
 			//Get mosaic
 			Mosaic *mosaic = it->second;
 			//Remove particiapant ande get position for user
-			int pos = mosaic->RemoveParticipant(id);
+			//int pos = mosaic->RemoveParticipant(id);
+			int pos = RemoveMosaicParticipant(it->first, id);
 			Log("-Removed from mosaic [mosaicId:%d,pos:%d]\n",it->first,pos);
-			//If was shown
-			if (pos!=-1)
-				//Update mosaic
-				UpdateMosaic(mosaic);
 		}
 	}
 
@@ -874,7 +877,7 @@ int VideoMixer::DeleteMixer(int id)
 	//SI esta borramos los objetos
 	delete video->input;
 	delete video->output;
-	delete video; 
+	delete video;
 
 	Log("<DeleteMixer video [%d]\n",id);
 
@@ -922,7 +925,7 @@ VideoOutput* VideoMixer::GetOutput(int id)
 	//Obtenemos el output
 	VideoOutput *output = NULL;
 
-	//Si esta	
+	//Si esta
 	if (it != lstVideos.end())
 		output = (VideoOutput*)(*it).second->output;
 
@@ -986,7 +989,7 @@ int VideoMixer::SetCompositionType(int mosaicId,Mosaic::Type comp, int size)
 		if (oldMosaic==defaultMosaic)
 			//Set new one as defautl
 			defaultMosaic = mosaic;
-		
+
 		//Delete old one
 		delete(oldMosaic);
 	}
@@ -1024,7 +1027,7 @@ int VideoMixer::UpdateMosaic(Mosaic* mosaic)
 
 	//Get number of slots
 	int numSlots = mosaic->GetNumSlots();
-	
+
 	//For each one
 	for (int i=0;i<numSlots;i++)
 	{
@@ -1167,7 +1170,7 @@ void VideoMixer::SetVADProxy(VADProxy* proxy)
 
 void VideoMixer::SetVADMode(VADMode vadMode)
 {
-	Log("-SetVadMode [%d]\n",vadMode);
+	Log("-SetVadMode [%d]\n", vadMode);
 	//Set it
 	this->vadMode = vadMode;
 }

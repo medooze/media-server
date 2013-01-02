@@ -9,8 +9,6 @@
 #include "logo.h"
 #include <map>
 
-
-
 class VideoMixer 
 {
 public:
@@ -50,6 +48,9 @@ public:
 	int DeleteMosaic(int mosaicId);
 
 	int End();
+	
+public:
+	static void SetVADDefaultChangePeriod(DWORD ms);
 
 protected:
 	int MixVideo();
@@ -71,6 +72,8 @@ private:
 
 	typedef std::map<int,VideoSource *> Videos;
 	typedef std::map<int,Mosaic *> Mosaics;
+private:
+	static DWORD vadDefaultChangePeriod;
 private:
 	//La lista de videos a mezclar
 	Videos lstVideos;
