@@ -18,21 +18,24 @@ public:
 	{
 		this->window  = window;
 		instant = 0;
-		Reset();
+		Reset(0);
 	}
 
 	QWORD GetAcumulated()	const { return acumulated;	}
+	QWORD GetDiff()		const { return last-first;	}
 	QWORD GetInstant()	const { return instant;		}
 	QWORD GetMin()		const { return min;		}
 	QWORD GetMax()		const { return max;		}
 	DWORD GetWindow()	const { return window;		}
 	bool  IsInWindow()	const { return inWindow;	}
 
-	void Reset()
+	void Reset(QWORD now)
 	{
 		acumulated = 0;
 		max = 0;
 		min = (QWORD)-1;
+		first = now;
+		last = 0;
 		inWindow = false;
 	}
 	
@@ -54,6 +57,12 @@ public:
 			//We are in a window
 			inWindow = true;
 		}
+		//If we do not have first
+		if (!first)
+			//This is first
+			first = now;
+		//Update last
+		last = now;
 		//Check max
 		if (instant>max)
 			//new max
@@ -77,6 +86,8 @@ private:
 	QWORD instant;
 	QWORD max;
 	QWORD min;
+	QWORD first;
+	QWORD last;
 };
 #endif	/* ACUMULATOR_H */
 

@@ -35,7 +35,7 @@ public:
 	void Update(RTPTimedPacket* packet);
 	void UpdateRTT(DWORD rtt);
 private:
-	void UpdateKalman(QWORD t_delta, double ts_delta, DWORD frame_size, DWORD prev_frame_size);
+	void UpdateKalman(QWORD now,QWORD t_delta, double ts_delta, DWORD frame_size, DWORD prev_frame_size);
 private:
 	Listener*  listener;
 	Acumulator bitrateCalc;
