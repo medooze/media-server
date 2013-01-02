@@ -761,7 +761,10 @@ public:
 
 		TempMaxMediaStreamBitrateField()
 		{
-
+			ssrc = 0;
+			maxTotalBitrateExp = 0;
+			maxTotalBitrateMantissa = 0;
+			overhead = 0;
 		}
 		TempMaxMediaStreamBitrateField(DWORD ssrc,DWORD bitrate,WORD overhead)
 		{

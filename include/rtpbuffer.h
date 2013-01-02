@@ -45,8 +45,12 @@ public:
 
 		//If already past
 		if (next!=(DWORD)-1 && seq<next)
+		{
+			//Unlock
+			pthread_mutex_unlock(&mutex);
 			//Skip it and lost forever
 			return Error("-Out of order non recoverable packet\n");
+		}
 
 		//Add event
 		packets[seq] = rtp;
