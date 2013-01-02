@@ -93,6 +93,7 @@ int main(int argc,char **argv)
 	int rtmpPort = 1935;
 	int minPort = RTPSession::GetMinPort();
 	int maxPort = RTPSession::GetMaxPort();
+	int vadPeriod = 5000;
 	const char *logfile = "mcu.log";
 	const char *pidfile = "mcu.pid";
 
@@ -112,7 +113,8 @@ int main(int argc,char **argv)
 				" --http-port      Set HTTP xmlrpc api port\r\n"
 				" --min-rtp-port   Set min rtp port\r\n"
 				" --max-rtp-port   Set max rtp port\r\n"
-				" --rtmp-port      Set RTMP xmlrpc api port\r\n");
+				" --rtmp-port      Set RTMP port\r\n"
+				" --vad-period     Set the VAD based conference change period in milliseconds\r\n");
 			//Exit
 			return 0;
 		} else if (strcmp(argv[i],"-f")==0)
@@ -136,6 +138,9 @@ int main(int argc,char **argv)
 		else if (strcmp(argv[i],"--mcu-pid")==0 && (i+1<argc))
 			//Get rtmp port
 			pidfile = argv[++i];
+		else if (strcmp(argv[i],"--vad-period")==0 && (i+1<=argc))
+			//Get rtmp port
+			vadPeriod = atoi(argv[++i]);
 	}
 	
 	//Loop
@@ -290,6 +295,9 @@ int main(int argc,char **argv)
 	if (!RTPSession::SetPortRange(minPort,maxPort))
 		//Using default ones
 		Log("-RTPSession using default port range [%d,%d]\n",RTPSession::GetMinPort(),RTPSession::GetMaxPort());
+	
+	//Set default video mixer vad period
+	VideoMixer::SetVADDefaultChangePeriod(vadPeriod);
 
 	//Run it
 	server.Start();

@@ -25,8 +25,18 @@ public:
 		mosaic1p5	= 5,
 		mosaic1p1	= 6,
 		mosaicPIP1	= 7,
-		mosaicPIP3	= 8
+		mosaicPIP3	= 8,
+		mosaic4x4	= 9,
 	} Type;
+
+	class PartInfo
+	{
+	    public:
+		int vadLevel;
+		bool kickable;
+		bool eligible;
+	};
+
 public:
 	Mosaic(Type type,DWORD size);
 	virtual ~Mosaic();
@@ -46,7 +56,7 @@ public:
 	int SetSlot(int num,int id);
 	int SetSlot(int num,int id,QWORD blockedUntil);
 	QWORD GetBlockingTime(int num);
-	int CalculatePositions();
+
 	int GetPosition(int id);
 	int GetVADPosition();
 	int* GetPositions();
@@ -57,7 +67,7 @@ public:
 
 	int GetVADParticipant();
 	int SetVADParticipant(int id,QWORD blockedUntil);
-	
+
 	static int GetNumSlotsForType(Type type);
 	static Mosaic* CreateMosaic(Type type,DWORD size);
 
@@ -65,6 +75,17 @@ public:
 	int SetOverlaySVG(const char* svg);
 	int ResetOverlay();
 	int DrawVUMeter(int pos,DWORD val,DWORD size);
+
+	// inform mosaic of participant VAD info.
+	// returns:
+	// 0 = this participant will not move
+	// -1 = this participant is kickable
+	// 1 this participant is elligble
+	// -2 unknown participant
+	int UpdateParticipantInfo(int id, int vadLevel);
+
+	// Reshuffle participants according to the
+	int CalculatePositions();
 protected:
 	virtual int GetWidth(int pos) = 0;
 	virtual int GetHeight(int pos) = 0;
@@ -72,19 +93,26 @@ protected:
 	virtual int GetLeft(int pos) = 0;
 protected:
 	void SetChanged()	{ mosaicChanged = true; overlayNeedsUpdate = true; }
-	
+
 protected:
 	typedef std::map<int,int> Participants;
+	typedef std::map<int,PartInfo> ParticipantInfos;
 
 protected:
 	Participants participants;
+	ParticipantInfos partVad;
 	int mosaicChanged;
+
+	// information on whether slot is locked, free, fixed (= id of participant), vad
 	int *mosaicSlots;
+
+	// association between position and ids
 	int *mosaicPos;
 	QWORD *mosaicSlotsBlockingTime;
+	QWORD *oldTimes;
 	int numSlots;
 	int vadParticipant;
-	
+
 	FrameScaler** resizer;
 	BYTE* 	mosaic;
 	BYTE*	mosaicBuffer;
@@ -95,6 +123,9 @@ protected:
 
 	Overlay* overlay;
 	bool	 overlayNeedsUpdate;
+
+protected:
+	int GetNextFreeSlot(int id);
 };
 
-#endif 
+#endif
