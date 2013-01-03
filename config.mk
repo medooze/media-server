@@ -3,7 +3,6 @@
 ##################################
 LOG		= yes
 DEBUG 		= yes
-FLASHSTREAMER	= no
 VADWEBRTC	= no
 WEBRTCINCLUDE	= /usr/local/src/webrtc/trunk/third_party/webrtc/
 WEBRTDIROBJ	= /usr/local/src/webrtc/trunk/out/Debug/obj.target/third_party/webrtc

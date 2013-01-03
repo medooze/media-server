@@ -80,11 +80,6 @@ int lock_ffmpeg(void **param, enum AVLockOp op)
 	return 0;
 }
 
-#ifdef FLASHSTREAMER
-#include "flash.h"
-extern XmlHandlerCmd flashCmdList[];
-#endif
-
 int main(int argc,char **argv)
 {
 	//Set default values
@@ -104,7 +99,7 @@ int main(int argc,char **argv)
 		if (strcmp(argv[i],"-h")==0 || strcmp(argv[i],"--help")==0)
 		{
 			//Show usage
-			printf("Usage: mcu [-h] [--help] [--mcu-log logfile] [--mcu-pid pidfile] [--http-port port] [--rtmp-port port] [--min-rtp-port port] [--max-rtp-port port]\r\n\r\n"
+			printf("Usage: mcu [-h] [--help] [--mcu-log logfile] [--mcu-pid pidfile] [--http-port port] [--rtmp-port port] [--min-rtp-port port] [--max-rtp-port port] [--vad-period ms]\r\n\r\n"
 				"Options:\r\n"
 				" -h,--help        Print help\r\n"
 				" -f               Run as daemon in safe mode\r\n"
@@ -165,7 +160,7 @@ int main(int argc,char **argv)
 		{
 			//It is the child obtain a new process group
 			setsid();
-			//for each descriptor
+			//for each descriptor opened
 			for (int i=getdtablesize();i>=0;--i)
 				//Close it
 				close(i);
@@ -228,6 +223,7 @@ int main(int argc,char **argv)
 	XmlRpcServer	server(port);
 	RTMPServer	rtmpServer;
 
+	//Log version
 	Log("-MCU Version %s\r\n",MCUVERSION);
 
 	//Create services
@@ -277,14 +273,6 @@ int main(int argc,char **argv)
 	server.AddHandler(string("/events/jsr309"),&xmleventjsr309);
 	server.AddHandler(string("/events/mcu"),&xmleventmcu);
 	
-#ifdef FLASHSTREAMER
-	Flash flash;
-	flash.Init();
-	XmlHandler xmlrpcFlash(flashCmdList,(void*)&flash);
-	//Append flash cmldhandler
-	server.AddHandler(string("/flash"),&xmlrpcFlash);
-#endif
-
 	//Add the html status handler
 	server.AddHandler(string("/status"),&status);
 
@@ -313,10 +301,5 @@ int main(int argc,char **argv)
 	mediaGateway.End();
 	//End the jsr309
 	jsr309Manager.End();
-
-#ifdef FLASHSTREAMER
-	//End flash player
-	flash.End();
-#endif
 }
 
