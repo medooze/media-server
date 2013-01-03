@@ -829,7 +829,7 @@ int RTPSession::ReadRTCP()
 			err_status_t err = srtp_unprotect_rtcp(recvSRTPSession,buffer,&size);
 			//Check error
 			if (err!=err_status_ok)
-				return Error("Error decoding packet [%d]\n",err);
+				return Error("Error unprotecting rtcp packet [%d]\n",err);
 		}
 		//RTCP mux disabled
 		muxRTCP = false;
@@ -958,7 +958,7 @@ int RTPSession::ReadRTP()
 			err_status_t err = srtp_unprotect_rtcp(recvSRTPSession,buffer,&size);
 			//Check error
 			if (err!=err_status_ok)
-				return Error("Error decoding packet [%d]\n",err);
+				return Error("Error unprotecting rtcp packet [%d]\n",err);
 		}
 		//RTCP mux enabled
 		muxRTCP = true;
@@ -998,7 +998,7 @@ int RTPSession::ReadRTP()
 		err_status_t err = srtp_unprotect(recvSRTPSession,buffer,&size);
 		//Check error
 		if (err!=err_status_ok)
-			return Error("Error decoding packet [%d]\n",err);
+			return Error("Error unprotecting rtp packet [%d]\n",err);
 	}
 
 	//Create rtp packet
