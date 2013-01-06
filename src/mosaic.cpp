@@ -293,11 +293,8 @@ int Mosaic::AddParticipant(int id)
 
 	//If it was
 	if (it!=participants.end())
-	{
-		 Log ("participant id %d was already in this mosaic with pos %d.\n");
 		//Return it
 		return it->second;
-	}
 
 	//Not shown by default
 	int pos = GetNextFreeSlot(id);
@@ -465,8 +462,6 @@ int Mosaic::CalculatePositions()
 			    // If none available select a kickable slot.
 			    if ( itk != kickables.end() )
 			    {
-				Log("Kicked participant %d from mosaic and replaced with %d in slot %d.\n",
-				    itk->first, id, itk->second);
 			        newslot = itk->second;
 				if (newslot >=0) mosaicPos[newslot] = id;
 				participants[itk->first] = NotShown; // previous partiicpant is not shown anymore.
@@ -481,7 +476,6 @@ int Mosaic::CalculatePositions()
 
 			// participant has been elected. Update its position now.
 			participants[id] = newslot;
-			Log("CalculatePosition: Elected participant %d -> slot %d.\n", id, newslot);
 		}
 		else if ( id != vadParticipant )
 		{
@@ -493,7 +487,6 @@ int Mosaic::CalculatePositions()
 			{
 				newslot = GetNextFreeSlot(id);
 				participants[id] = newslot;
-				Log("CalculatePosition: participant %d -> , not shown new slot =%d\n", id, newslot);
 
 			}
 			else if ( oldslot == vadPos )
@@ -503,7 +496,6 @@ int Mosaic::CalculatePositions()
 				// move it somewhere else
 				newslot = GetNextFreeSlot(id);
 				participants[id] = newslot;
-				Log("CalculatePosition: participant %d -> old vad. new slot =%d\n", id, newslot);
 			}
 			else
 			{
@@ -512,14 +504,9 @@ int Mosaic::CalculatePositions()
 				// participant is supposed to be shown on a free (movable) slot
 				if ( mosaicPos[oldslot] != id )
 				{
-				     Log("CalculatePosition: inconsistent position %d [ %d ] for part %d.\n",
-					 oldslot, mosaicPos[oldslot],id );
-
 				     // check consistency
 			    	     newslot = GetNextFreeSlot(id);
 				     participants[id] = newslot;
-				     Log("CalculatePosition: Reallocating a new slot %d for particpant %d.\n",
-				         newslot, id);
 				}
 				else
 				{
@@ -530,11 +517,6 @@ int Mosaic::CalculatePositions()
 					mosaicPos[newslot] = id;
 					mosaicPos[oldslot] = 0;
 					participants[id] = newslot;
-					Log("CalculatePosition: moving part %d to slot %d as there is a hole oldpos = %d.\n", id, newslot , oldslot);
-				    }
-				    else
-				    {
-					Log("CalculatePosition: participant %d untouched -> slot = %d.\n", id, oldslot);
 				    }
 				}
 			    }
@@ -554,20 +536,15 @@ int Mosaic::CalculatePositions()
 				// check consistency
 				if ( it->second != i )
 				{
-					// What should we do ?
-					Log("CalculatePosition: inconsistency - slot %d contains part %d, which has pos %d\n",
-					    i, mosaicPos[i], it->second);
 					mosaicPos[i] = 0;
 				}
 			}
 			else
 			{
-				Log("CalculatePosition: inconsistency - unknown participant referenced. Resetting.\n");
 				mosaicPos[i] = 0;
 			}
 		    }
 		}
-		Log("CalculatePosition: pos[%d] = %d\n", i,  mosaicPos[i]);
 	}
 }
 
