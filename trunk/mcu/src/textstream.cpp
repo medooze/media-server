@@ -314,7 +314,8 @@ int TextStream::RecText()
 		DWORD timeStamp = packet->GetTimestamp();
 
 		//Get lost count
-		WORD lost = rtp.GetLost();
+		// TODO: Calculate lost!
+		WORD lost = 0;
 
 		//Number of bytes to skip of text until primary data
 		WORD skip = 0;

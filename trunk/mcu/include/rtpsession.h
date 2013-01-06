@@ -72,7 +72,6 @@ public:
 	DWORD GetTotalSendBytes()	{ return totalSendBytes;	}
 	DWORD GetLostRecvPackets()	{ return lostRecvPackets;	}
 
-	WORD  GetLost()			{ return lost;			} //TODO: ugly, will be fixed
 
 	int SetLocalCryptoSDES(const char* suite, const char* key64);
 	int SetRemoteCryptoSDES(const char* suite, const char* key64);
@@ -114,7 +113,6 @@ private:
 	pollfd	ufds[2];
 	bool	inited;
 	bool	running;
-	WORD	lost;
 
 	bool	encript;
 	bool	decript;
@@ -168,7 +166,6 @@ private:
 	DWORD	lostRecvPacketsSinceLastSR;
 	DWORD	totalRecvPacketsSinceLastSR;
 	DWORD	totalRecvBytesSinceLastSR;
-	DWORD	bitrateRecv;
 	DWORD	jitter;
 	DWORD   minRecvExtSeqNumSinceLastSR;
 	BYTE	firReqNum;
@@ -176,6 +173,8 @@ private:
 	DWORD	rtt;
 	timeval lastSR;
 	timeval lastReceivedSR;
+	bool	requestFPU;
+	bool	pendingTMBR;
 
 	RemoteRateControl remoteRateControl;
 };

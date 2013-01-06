@@ -223,10 +223,6 @@ int VideoMixer::MixVideo()
 								//If VAD slot is not blocked
 								if (mosaic->GetBlockingTime(oldVadPos)<=getTime())
 								{
-									//We have a new vad participant
-									if (vadId!=oldVad)
-										//Log it
-										Log("old active speaker = %d -> new one = %d, vad level = %d\n", oldVad, vadId, maxVAD);
 
 									// set the VAD participant
 									mosaic->SetVADParticipant(vadId,getTime() + vadDefaultChangePeriod*1000);
@@ -279,8 +275,6 @@ int VideoMixer::MixVideo()
 									mosaic->SetVADParticipant(oldVad,getTime() + vadDefaultChangePeriod*1000);
 								} else {
 									// Special case where no partipant was elected before
-									// or VAD participant left the conference
-									Log("No previous active speaker and no voice activity -> new one = %d\n", vadId);
 									mosaic->SetVADParticipant(vadId,getTime() + vadDefaultChangePeriod*1000);
 									//If the new vad was shown in a different slot than the vad one
 									if (vadPos >= 0 && vadPos != oldVadPos)

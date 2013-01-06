@@ -115,6 +115,8 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) : remoteRateCo
 	recIP = INADDR_ANY;
 	recPort = 0;
 	firReqNum = 0;
+	requestFPU = false;
+	pendingTMBR = false;
 	//Not muxing
 	muxRTCP = false;
 	//Default cname
@@ -131,8 +133,6 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) : remoteRateCo
 	totalRecvPacketsSinceLastSR = 0;
 	totalRecvBytesSinceLastSR = 0;
 	minRecvExtSeqNumSinceLastSR = RTPPacket::MaxExtSeqNum;
-	bitrateRecv = 0;
-	lost = 0;
 	jitter = 0;
 	//No reports
 	setZeroTime(&lastSR);
@@ -1032,12 +1032,15 @@ int RTPSession::ReadRTP()
 	//If new ssrc
 	if (recSSRC!=ssrc)
 	{
+		Log("-New SSSRC [old:%x,new:%x]\n",ssrc,recSSRC);
 		//Send SR to old one
 		SendSenderReport();
-		//Clear packets
-		packets.Clear();
+		//Reset packets
+		packets.Reset();
 		//Reset cycles
 		recCycles = 0;
+		//Reset
+		recExtSeq = 0;
 	}
 	
 	//Update ssrc
@@ -1047,7 +1050,7 @@ int RTPSession::ReadRTP()
 	WORD seq = packet->GetSeqNum();
 
 	//Check if we have a sequence wrap
-	if (seq<0x00FF && (recExtSeq & 0xFFFF)>0xFF000)
+	if (seq<0x00FF && (recExtSeq & 0xFFFF)>0xFF00)
 		//Increase cycles
 		recCycles++;
 
@@ -1310,12 +1313,20 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 						}
 						break;
 					case RTCPRTPFeedback::TempMaxMediaStreamBitrateNotification:
+						Log("-TempMaxMediaStreamBitrateNotification\n");
+						pendingTMBR = false;
+						if (requestFPU)
+						{
+							requestFPU = false;
+							SendFIR();
+						}
 						for (BYTE i=0;i<fb->GetFieldCount();i++)
 						{
 							//Get field
 							RTCPRTPFeedback::TempMaxMediaStreamBitrateField *field = (RTCPRTPFeedback::TempMaxMediaStreamBitrateField*) fb->GetField(i);
 
 						}
+		
 						break;
 				}
 				break;
@@ -1409,7 +1420,7 @@ RTCPCompoundPacket* RTPSession::CreateSenderReport()
 	DWORD sinceLastSR = getUpdDifTime(&lastSR);
 
 	//If we have received somthing
-	if (totalRecvPacketsSinceLastSR)
+	if (totalRecvPacketsSinceLastSR && recExtSeq>=minRecvExtSeqNumSinceLastSR)
 	{
 		//Get number of total packtes
 		DWORD total = recExtSeq - minRecvExtSeqNumSinceLastSR + 1;
@@ -1419,8 +1430,6 @@ RTCPCompoundPacket* RTPSession::CreateSenderReport()
 		lostRecvPackets += lostRecvPacketsSinceLastSR;
 		//Calculate fraction lost
 		DWORD frac = (lostRecvPacketsSinceLastSR*256)/total;
-		//Calculate bitrate
-		bitrateRecv = totalRecvBytesSinceLastSR*8/sinceLastSR;
 
 		//Create report
 		RTCPReport *report = new RTCPReport();
@@ -1495,6 +1504,7 @@ int RTPSession::SendSenderReport()
 
 int RTPSession::SendFIR()
 {
+	Log("-SendFIR\n");
 	//Create rtcp sender retpor
 	RTCPCompoundPacket* rtcp = CreateSenderReport();
 
@@ -1517,8 +1527,11 @@ int RTPSession::SendFIR()
 
 int RTPSession::RequestFPU()
 {
-	//Send Sender Report with fpu
-	return SendFIR();
+	//packets.Reset();
+	if (!pendingTMBR)
+		SendFIR();
+	else
+		requestFPU = true;
 }
 
 void RTPSession::SetRTT(DWORD rtt)
@@ -1526,7 +1539,7 @@ void RTPSession::SetRTT(DWORD rtt)
 	//Set it
 	this->rtt = rtt;
 	//Update
-	packets.SetMaxWaitTime(rtt/2);
+	packets.SetMaxWaitTime(fmin(rtt/2,100));
 }
 
 void RTPSession::onTargetBitrateRequested(DWORD bitrate)
@@ -1540,6 +1553,8 @@ void RTPSession::onTargetBitrateRequested(DWORD bitrate)
 	rfb->AddField( new RTCPRTPFeedback::TempMaxMediaStreamBitrateField(recSSRC,bitrate,0));
 	//Add to packet
 	rtcp->AddRTCPacket(rfb);
+
+	pendingTMBR = true;
 
 	//Send packet
 	SendPacket(*rtcp);

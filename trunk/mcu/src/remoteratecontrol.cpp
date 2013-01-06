@@ -152,9 +152,9 @@ void RemoteRateControl::UpdateKalman(QWORD now,QWORD tdelta, double tsdelta, DWO
 				{
 					if (bitrateCalc.GetDiff())
 						//Go conservative
-						target = bitrateCalc.GetAcumulated()*1000/bitrateCalc.GetDiff();
+						target = bitrateCalc.GetAcumulated()*900/bitrateCalc.GetDiff();
 					else
-						target =  bitrateCalc.GetInstant()*1000/bitrateCalc.GetWindow();
+						target =  bitrateCalc.GetInstant()*900/bitrateCalc.GetWindow();
 					//Log
 					Log("BWE:  OverUsing bitrate:%lld max:%lld min:%lld target:%d\n",bitrateCalc.GetInstant(),bitrateCalc.GetMax(),bitrateCalc.GetMin(),target);
 					//Overusing

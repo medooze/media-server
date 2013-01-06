@@ -49,7 +49,7 @@ public:
 			//Unlock
 			pthread_mutex_unlock(&mutex);
 			//Skip it and lost forever
-			return Error("-Out of order non recoverable packet\n");
+			return Error("-Out of order non recoverable packeti [next:%d,seq:%d,maxWaitTime=%d,%d,%d]\n",seq,next,maxWaitTime,rtp->GetSeqCycles(),rtp->GetSeqNum());
 		}
 
 		//Add event
