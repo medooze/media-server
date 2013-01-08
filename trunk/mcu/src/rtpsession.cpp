@@ -1309,7 +1309,10 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 						{
 							//Get field
 							RTCPRTPFeedback::TempMaxMediaStreamBitrateField *field = (RTCPRTPFeedback::TempMaxMediaStreamBitrateField*) fb->GetField(i);
-							Debug("-TempMaxMediaStreamBitrateRequest bitrate:%d,overhead:%d\n",field->GetBitrate(),field->GetOverhead());
+							//Check if it is for us
+							if (listener && field->GetSSRC()==sendSSRC)
+								//call listener
+								listener->onTempMaxMediaStreamBitrateRequest(this,field->GetBitrate(),field->GetOverhead());
 						}
 						break;
 					case RTCPRTPFeedback::TempMaxMediaStreamBitrateNotification:
@@ -1373,8 +1376,10 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 								mantisa = mantisa << 8 | payload[7];
 								//Get bitrate
 								DWORD bitrate = mantisa << exp;
-								//Log
-								//Log("-REMB bitrate=%d\n",bitrate);
+								//Check if it is for us
+								if (listener)
+									//call listener
+									listener->onReceiverEstimatedMaxBitrate(this,bitrate);
 							}
 						}
 						break;
