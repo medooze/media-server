@@ -35,6 +35,8 @@ public:
 	{
 	public:
 		virtual void onFPURequested(RTPSession *session) = 0;
+		virtual void onReceiverEstimatedMaxBitrate(RTPSession *session,DWORD bitrate) = 0;
+		virtual void onTempMaxMediaStreamBitrateRequest(RTPSession *session,DWORD bitrate,DWORD overhead) = 0;
 	};
 public:
 	typedef std::map<std::string,std::string> Properties;
@@ -66,12 +68,14 @@ public:
 	
 	RTPPacket* GetPacket();
 	void CancelGetPacket();
-	DWORD GetNumRecvPackets()	{ return numRecvPackets;	}
-	DWORD GetNumSendPackets()	{ return numSendPackets;	}
-	DWORD GetTotalRecvBytes()	{ return totalRecvBytes;	}
-	DWORD GetTotalSendBytes()	{ return totalSendBytes;	}
-	DWORD GetLostRecvPackets()	{ return lostRecvPackets;	}
+	DWORD GetNumRecvPackets()	const { return numRecvPackets;	}
+	DWORD GetNumSendPackets()	const { return numSendPackets;	}
+	DWORD GetTotalRecvBytes()	const { return totalRecvBytes;	}
+	DWORD GetTotalSendBytes()	const { return totalSendBytes;	}
+	DWORD GetLostRecvPackets()	const { return lostRecvPackets;	}
 
+
+	MediaFrame::Type GetMediaType()	const { return media;		}
 
 	int SetLocalCryptoSDES(const char* suite, const char* key64);
 	int SetRemoteCryptoSDES(const char* suite, const char* key64);

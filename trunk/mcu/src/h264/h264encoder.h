@@ -19,8 +19,8 @@ public:
 
 private:
 	int OpenCodec();
-
 	x264_t*		enc;
+	x264_param_t    params;
 	x264_nal_t*	nals;
 	x264_picture_t  pic;
 	x264_picture_t 	pic_out;

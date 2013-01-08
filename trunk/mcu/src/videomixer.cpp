@@ -292,7 +292,7 @@ int VideoMixer::MixVideo()
 											mosaic->Clean(vadPos);
 										// Feed old VAD participa,t with non null VAD info
 										// to try to keep it in the visible mosaic (and set it as eligible)
-										mosaic->UpdateParticipantInfo(vadPos, 200);
+										mosaic->UpdateParticipantInfo(vadId, 200);
 									}
 								}
 								break;

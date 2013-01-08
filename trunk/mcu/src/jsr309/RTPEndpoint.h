@@ -46,6 +46,8 @@ public:
 
 	//RTPSession::Listener
 	virtual void onFPURequested(RTPSession *session);
+	virtual void onReceiverEstimatedMaxBitrate(RTPSession *session,DWORD bitrate);
+	virtual void onTempMaxMediaStreamBitrateRequest(RTPSession *session,DWORD bitrate,DWORD overhead);
 	
 protected:
 	int Run();

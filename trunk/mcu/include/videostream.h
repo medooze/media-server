@@ -22,6 +22,7 @@ public:
 
 	int Init(VideoInput *input, VideoOutput *output);
 	int SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int quality,int fillLevel,int intraPeriod);
+	int SetTemporalBitrateLimit(int bitrate);
 	int StartSending(char *sendVideoIp,int sendVideoPort,RTPMap& rtpMap);
 	int StopSending();
 	int SendFPU();
@@ -65,6 +66,8 @@ private:
 	int 		videoGrabHeight;	//Alto de la captur
 	int 		videoFPS;
 	int 		videoBitrate;
+	int 		videoBitrateLimit;
+	int 		videoBitrateLimitCount;
 	int		videoIntraPeriod;
 
 	//Las threads

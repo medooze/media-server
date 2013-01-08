@@ -34,6 +34,8 @@ VideoStream::VideoStream(Listener* listener) : rtp(MediaFrame::Video,listener)
 	videoFPS=0;
 	videoBitrate=0;
 	videoIntraPeriod=0;
+	videoBitrateLimit=0;
+	videoBitrateLimitCount=0;
 	sendFPU = false;
 	this->listener = listener;
 	mediaListener = NULL;
@@ -88,6 +90,14 @@ int VideoStream::SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitra
 	videoFPS=fps;
 
 	return 1;
+}
+
+int VideoStream::SetTemporalBitrateLimit(int bitrate)
+{
+	//Set bitrate limit
+	videoBitrateLimit = bitrate;
+	//Set limit of bitrate to 5 secs
+	videoBitrateLimitCount = videoFPS*5;
 }
 
 /***************************************
@@ -376,6 +386,7 @@ int VideoStream::SendVideo()
 	//Mientras tengamos que capturar
 	while(sendingVideo)
 	{
+
 		//Nos quedamos con el puntero antes de que lo cambien
 		BYTE *pic = videoInput->GrabFrame();
 
@@ -391,6 +402,14 @@ int VideoStream::SendVideo()
 			videoEncoder->FastPictureUpdate();
 			//Do not send anymore
 			sendFPU = false;
+		}
+		//Check if we have a bitrate limitation
+		if (videoBitrateLimit>0 && videoBitrateLimitCount>0)
+		{
+			//Reset bitrate
+			videoEncoder->SetFrameRate(videoFPS,videoBitrateLimit,videoIntraPeriod);
+			//One frame less of limit
+			videoBitrateLimitCount--;
 		}
 		//Procesamos el frame
 		VideoFrame *videoFrame = videoEncoder->EncodeFrame(pic,videoInput->GetBufferSize());
