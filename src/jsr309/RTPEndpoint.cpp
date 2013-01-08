@@ -305,6 +305,16 @@ void RTPEndpoint::onFPURequested(RTPSession *session)
 	Update();
 }
 
+void RTPEndpoint::onReceiverEstimatedMaxBitrate(RTPSession *session,DWORD bitrate)
+{
+	//TODO: Implement
+}
+
+void RTPEndpoint::onTempMaxMediaStreamBitrateRequest(RTPSession *session,DWORD bitrate,DWORD overhead)
+{
+	//TODO: Implement
+}
+
 int RTPEndpoint::RequestUpdate()
 {
 	//Check if joined

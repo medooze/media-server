@@ -215,6 +215,21 @@ void RTPParticipant::onFPURequested(RTPSession *session)
 	video.SendFPU();
 }
 
+
+void RTPParticipant::onReceiverEstimatedMaxBitrate(RTPSession *session,DWORD bitrate)
+{
+	//Limit video taking into count max audio
+	video.SetTemporalBitrateLimit(bitrate-64);
+}
+
+void RTPParticipant::onTempMaxMediaStreamBitrateRequest(RTPSession *session,DWORD bitrate,DWORD overhead)
+{
+	//Check which session is
+	if (session->GetMediaType()==MediaFrame::Video)
+		//Limit video
+		video.SetTemporalBitrateLimit(bitrate);
+}
+
 void RTPParticipant::onRequestFPU()
 {
 	//Check

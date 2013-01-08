@@ -82,6 +82,8 @@ int VP8Encoder::SetSize(int width, int height)
 **************************/
 int VP8Encoder::SetFrameRate(int frames,int kbits,int intraPeriod)
 {
+	Log("-SetFrameRate [%dfps,%dkbps,intra:%d]\n",frames,kbits,intraPeriod);
+	
 	// Save frame rate
 	if (frames>0)
 		fps=frames;
@@ -96,6 +98,20 @@ int VP8Encoder::SetFrameRate(int frames,int kbits,int intraPeriod)
 	if (intraPeriod>0)
 		this->intraPeriod = intraPeriod;
 
+	//Check if already opened
+	if (opened)
+	{
+		//Reconfig parameters
+		config.rc_target_bitrate = bitrate*fps;
+		config.kf_max_dist = intraPeriod;
+		//Reconfig
+		if (vpx_codec_enc_config_set(&encoder,&config)!=VPX_CODEC_OK)
+			//Exit
+			return Error("-Reconfig error");
+		//Set mas intra bitrate
+		vpx_codec_control(&encoder, VP8E_SET_MAX_INTRA_BITRATE_PCT,MaxIntraTarget(config.rc_buf_optimal_sz,fps));
+	}
+	
 	return 1;
 }
 

@@ -88,6 +88,8 @@ int H264Encoder::SetSize(int width, int height)
 **************************/
 int H264Encoder::SetFrameRate(int frames,int kbits,int intraPeriod)
 {
+	Log("-SetFrameRate [%dfps,%dkbps,intra:%d]\n",frames,kbits,intraPeriod);
+	
 	// Save frame rate
 	if (frames>0)
 		fps=frames;
@@ -101,6 +103,23 @@ int H264Encoder::SetFrameRate(int frames,int kbits,int intraPeriod)
 	//Save intra period
 	if (intraPeriod>0)
 		this->intraPeriod = intraPeriod;
+
+	//Check if already opened
+	if (opened)
+	{
+		//Reconfig parameters
+		params.i_keyint_max         = intraPeriod;
+		params.i_frame_reference    = 1;
+		params.rc.i_rc_method	    = X264_RC_ABR;
+		params.rc.i_bitrate         = bitrate;
+		params.rc.i_vbv_max_bitrate = bitrate;
+		params.rc.i_vbv_buffer_size = bitrate/fps;
+		params.rc.f_vbv_buffer_init = 0;
+		params.rc.f_rate_tolerance  = 0.1;
+		params.i_fps_num	    = fps;
+		//Reconfig
+		x264_encoder_reconfig(enc,&params);
+	}
 	
 	return 1;
 }
@@ -111,8 +130,6 @@ int H264Encoder::SetFrameRate(int frames,int kbits,int intraPeriod)
 ***********************/
 int H264Encoder::OpenCodec()
 {
-	x264_param_t    params;
-
 	Log("-OpenCodec H264 [%dkbps,%dfps,%dintra]\n",bitrate,fps,intraPeriod);
 
 	// Check 
