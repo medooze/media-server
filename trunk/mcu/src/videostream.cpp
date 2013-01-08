@@ -6,6 +6,7 @@
 #include <pthread.h>
 #include <sys/time.h>
 #include <signal.h>
+#include <math.h>
 #include "videostream.h"
 #include "h263/h263codec.h"
 #include "h263/mpeg4codec.h"
@@ -94,10 +95,16 @@ int VideoStream::SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitra
 
 int VideoStream::SetTemporalBitrateLimit(int bitrate)
 {
+	//Check limit with comfigured bitrate
+	if (bitrate>videoBitrate)
+		//Do nothing
+		return 1;
 	//Set bitrate limit
 	videoBitrateLimit = bitrate;
 	//Set limit of bitrate to 5 secs
 	videoBitrateLimitCount = videoFPS*5;
+	//Exit
+	return 1;
 }
 
 /***************************************
@@ -365,8 +372,11 @@ int VideoStream::SendVideo()
 	if (!videoInput->StartVideoCapture(videoGrabWidth,videoGrabHeight,videoFPS))
 		return Error("Couldn't set video capture\n");
 
+	//Start at 80%
+	int current = videoBitrate*0.8;
+
 	//Iniciamos el birate y el framerate
-	videoEncoder->SetFrameRate(videoFPS,videoBitrate,videoIntraPeriod);
+	videoEncoder->SetFrameRate(videoFPS,current,videoIntraPeriod);
 
 	//No wait for first
 	DWORD frameTime = 0;
@@ -403,14 +413,32 @@ int VideoStream::SendVideo()
 			//Do not send anymore
 			sendFPU = false;
 		}
-		//Check if we have a bitrate limitation
-		if (videoBitrateLimit>0 && videoBitrateLimitCount>0)
-		{
+
+		//Calculate current target birate
+		int target = current;
+
+		//Check about temporal limits
+		if (target>videoBitrateLimit && videoBitrateLimitCount>0)
+			//Set limit to temporal limit
+			target = videoBitrateLimit;
+		//check agains
+		else if (target>videoBitrate)
+			//Set limit to max bitrate
+			target = videoBitrate;
+		else
+			//Increase
+			target += fmax(target*0.05,10000);
+
+		//Check if we have a new bitrate
+		if (target!=current)
 			//Reset bitrate
-			videoEncoder->SetFrameRate(videoFPS,videoBitrateLimit,videoIntraPeriod);
+			videoEncoder->SetFrameRate(videoFPS,target,videoIntraPeriod);
+
+		//Check limits
+		if (videoBitrateLimitCount>1)
 			//One frame less of limit
 			videoBitrateLimitCount--;
-		}
+		
 		//Procesamos el frame
 		VideoFrame *videoFrame = videoEncoder->EncodeFrame(pic,videoInput->GetBufferSize());
 
