@@ -43,11 +43,13 @@ VP8Encoder::VP8Encoder()
 	//not force
 	forceKeyFrame = false;
 	
-	// Init framerate
-	SetFrameRate(5,300,20);
-
 	//No estamos abiertos
 	opened = false;
+
+	//No bitrate
+	bitrate = 0;
+	fps = 0;
+	intraPeriod = 0;
 }
 
 VP8Encoder::~VP8Encoder()

@@ -37,12 +37,14 @@ H264Encoder::H264Encoder()
 	frame	= NULL;
 	pts	= 0;
 
-	// Init framerate
-	SetFrameRate(5,300,20);
-
 	//No estamos abiertos
 	opened = false;
 
+	//No bitrate
+	bitrate = 0;
+	fps = 0;
+	intraPeriod = 0;
+	
 	//Reste values
 	enc = NULL;
 }
