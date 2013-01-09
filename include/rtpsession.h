@@ -179,6 +179,7 @@ private:
 	timeval lastReceivedSR;
 	bool	requestFPU;
 	bool	pendingTMBR;
+	DWORD	pendingTMBBitrate;
 
 	RemoteRateControl remoteRateControl;
 };
