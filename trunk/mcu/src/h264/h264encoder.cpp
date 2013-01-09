@@ -71,8 +71,6 @@ H264Encoder::~H264Encoder()
 ***********************/
 int H264Encoder::SetSize(int width, int height)
 {
-	Log("-SetSize [%d,%d]\n",width,height);
-
 	//Save values
 	this->width = width;
 	this->height = height;
@@ -90,8 +88,6 @@ int H264Encoder::SetSize(int width, int height)
 **************************/
 int H264Encoder::SetFrameRate(int frames,int kbits,int intraPeriod)
 {
-	Log("-SetFrameRate [%dfps,%dkbps,intra:%d]\n",frames,kbits,intraPeriod);
-	
 	// Save frame rate
 	if (frames>0)
 		fps=frames;

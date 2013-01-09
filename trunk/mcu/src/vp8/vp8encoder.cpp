@@ -65,8 +65,6 @@ VP8Encoder::~VP8Encoder()
 ***********************/
 int VP8Encoder::SetSize(int width, int height)
 {
-	Log("-SetSize [%d,%d]\n",width,height);
-
 	//Save values
 	this->width = width;
 	this->height = height;
@@ -84,8 +82,6 @@ int VP8Encoder::SetSize(int width, int height)
 **************************/
 int VP8Encoder::SetFrameRate(int frames,int kbits,int intraPeriod)
 {
-	Log("-SetFrameRate [%dfps,%dkbps,intra:%d]\n",frames,kbits,intraPeriod);
-	
 	// Save frame rate
 	if (frames>0)
 		fps=frames;
@@ -147,17 +143,17 @@ int VP8Encoder::OpenCodec()
 	config.rc_dropframe_thresh = 0;
 	config.rc_end_usage = VPX_CBR;
 	config.g_pass = VPX_RC_ONE_PASS;
-	config.kf_mode = VPX_KF_AUTO;
-	config.kf_max_dist = intraPeriod;
+	config.kf_mode = VPX_KF_DISABLED;
+	config.kf_min_dist = intraPeriod;
 	//Below are just copy paste from webrtc code
 	config.rc_resize_allowed = 0;
 	config.rc_min_quantizer = 2;
 	config.rc_max_quantizer = 56;
-	config.rc_undershoot_pct = 100;
-	config.rc_overshoot_pct = 15;
-	config.rc_buf_initial_sz = 500;
-	config.rc_buf_optimal_sz = 600;
-	config.rc_buf_sz = 1000;
+	config.rc_undershoot_pct = 0;
+	config.rc_overshoot_pct = 0;
+	config.rc_buf_initial_sz = 1000/fps;
+	config.rc_buf_optimal_sz = 1000/fps;
+	config.rc_buf_sz = 1000/fps;
 
 	//Check result
 	if (vpx_codec_enc_init(&encoder, interface, &config, VPX_CODEC_USE_OUTPUT_PARTITION)!=VPX_CODEC_OK)
