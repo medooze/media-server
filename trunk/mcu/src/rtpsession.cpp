@@ -117,6 +117,7 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) : remoteRateCo
 	firReqNum = 0;
 	requestFPU = false;
 	pendingTMBR = false;
+	pendingTMBBitrate = 0;
 	//Not muxing
 	muxRTCP = false;
 	//Default cname
@@ -1497,6 +1498,17 @@ int RTPSession::SendSenderReport()
 	//Create rtcp sender retpor
 	RTCPCompoundPacket* rtcp = CreateSenderReport();
 
+	//If we have not got a notification from latest TMBR
+	if (pendingTMBR)
+	{
+		//Resend TMMBR
+		RTCPRTPFeedback *rfb = RTCPRTPFeedback::Create(RTCPRTPFeedback::TempMaxMediaStreamBitrateRequest,sendSSRC,recSSRC);
+		//Limit incoming bitrate
+		rfb->AddField( new RTCPRTPFeedback::TempMaxMediaStreamBitrateField(recSSRC,pendingTMBBitrate,0));
+		//Add to packet
+		rtcp->AddRTCPacket(rfb);
+	}
+	
 	//Send packet
 	int ret = SendPacket(*rtcp);
 
@@ -1559,7 +1571,10 @@ void RTPSession::onTargetBitrateRequested(DWORD bitrate)
 	//Add to packet
 	rtcp->AddRTCPacket(rfb);
 
+	//We have a pending request
 	pendingTMBR = true;
+	//Store values
+	pendingTMBBitrate = bitrate;
 
 	//Send packet
 	SendPacket(*rtcp);
