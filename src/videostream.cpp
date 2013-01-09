@@ -14,6 +14,7 @@
 #include "h264/h264decoder.h"
 #include "log.h"
 #include "tools.h"
+#include "acumulator.h"
 #include "RTPSmoother.h"
 
 
@@ -101,8 +102,8 @@ int VideoStream::SetTemporalBitrateLimit(int bitrate)
 		return 1;
 	//Set bitrate limit
 	videoBitrateLimit = bitrate;
-	//Set limit of bitrate to 5 secs
-	videoBitrateLimitCount = videoFPS*5;
+	//Set limit of bitrate to 1 frames;
+	videoBitrateLimitCount = 1;
 	//Exit
 	return 1;
 }
@@ -353,6 +354,8 @@ int VideoStream::SendVideo()
 {
 	timeval first;
 	timeval prev;
+
+	Acumulator bitrateAcu(1000);
 	
 	Log(">SendVideo [width:%d,size:%d,bitrate:%d,fps:%d,intra:%d]\n",videoGrabWidth,videoGrabHeight,videoBitrate,videoFPS,videoIntraPeriod);
 
@@ -414,30 +417,39 @@ int VideoStream::SendVideo()
 			sendFPU = false;
 		}
 
-		//Calculate current target birate
+		//Calculate target bitrate
 		int target = current;
 
-		//Check about temporal limits
-		if (target>videoBitrateLimit && videoBitrateLimitCount>0)
-			//Set limit to temporal limit
-			target = videoBitrateLimit;
-		//check agains
-		else if (target>videoBitrate)
+		//Get real sent bitrate during last second and convert to kbits (*1000/1000)
+		DWORD instant = bitrateAcu.GetInstant()/bitrateAcu.GetWindow();
+
+		//Check temporal limits
+		if (bitrateAcu.IsInWindow() && instant && instant>videoBitrateLimit && videoBitrateLimitCount>0)
+			//Calculate decrease rate and apply it
+			target = current*videoBitrateLimit/instant;
+		else
+			//Increase a 8% each second
+			target += target*0.08/videoFPS+1;
+
+		//check max bitrate
+		if (target>videoBitrate)
 			//Set limit to max bitrate
 			target = videoBitrate;
-		else
-			//Increase
-			target += fmax(target*0.05,10000);
 
-		//Check if we have a new bitrate
-		if (target!=current)
-			//Reset bitrate
-			videoEncoder->SetFrameRate(videoFPS,target,videoIntraPeriod);
-
-		//Check limits
-		if (videoBitrateLimitCount>1)
+		//Check limits counter
+		if (videoBitrateLimitCount>0)
 			//One frame less of limit
 			videoBitrateLimitCount--;
+
+		//Check if we have a new bitrate
+		if (target && target!=current)
+		{
+			//Reset bitrate
+			videoEncoder->SetFrameRate(videoFPS,target,videoIntraPeriod);
+			//Upate current
+			current = target;
+		}
+
 		
 		//Procesamos el frame
 		VideoFrame *videoFrame = videoEncoder->EncodeFrame(pic,videoInput->GetBufferSize());
@@ -467,6 +479,9 @@ int VideoStream::SendVideo()
 		
 		//Set next one
 		frameTime = 1000/videoFPS;
+
+		//Add frame size in bits to bitrate calculator
+		bitrateAcu.Update(getDifTime(&first)/1000,videoFrame->GetLength()*8);
 
 		//Set frame timestamp
 		videoFrame->SetTimestamp(getDifTime(&first)/1000);

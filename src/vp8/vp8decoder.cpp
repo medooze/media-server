@@ -40,8 +40,6 @@ VP8Decoder::VP8Decoder()
 	//Init decoder
 	if(vpx_codec_dec_init(&decoder, interface, NULL, flags)!=VPX_CODEC_OK)
 		Error("Error initing VP8 decoder [error %d:%s]\n",decoder.err,decoder.err_detail);
-
-	Log("decoder %p\n",decoder.iface);
 }
 
 /***********************
