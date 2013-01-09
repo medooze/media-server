@@ -242,6 +242,9 @@ VideoFrame* VP8Encoder::EncodeFrame(BYTE *buffer,DWORD bufferSize)
 	//Emtpy rtp info
 	frame->ClearRTPPacketizationInfo();
 
+	//Emtpy
+	frame->SetLength(0);
+
 	//For each packet
 	while ((pkt = vpx_codec_get_cx_data(&encoder, &iter)) != NULL)
 	{
