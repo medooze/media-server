@@ -8,7 +8,6 @@
 #include <string>
 #include <poll.h>
 #include <srtp/srtp.h>
-#include "codecs.h"
 #include "config.h"
 #include "use.h"
 #include "rtp.h"
@@ -55,6 +54,7 @@ public:
 	RTPSession(MediaFrame::Type media,Listener *listener);
 	~RTPSession();
 	int Init();
+	int SetLocalPort(int recvPort);
 	int GetLocalPort();
 	int SetRemotePort(char *ip,int sendPort);
 	int End();
