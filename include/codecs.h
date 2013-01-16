@@ -2,9 +2,7 @@
 #define _CODECS_H_
 
 #include "config.h"
-#include "text.h"
 #include <map>
-
 
 class AudioCodec
 {

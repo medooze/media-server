@@ -13,6 +13,7 @@
 #include "Joinable.h"
 #include "AudioEncoderWorker.h"
 #include "AudioDecoderWorker.h"
+#include <string>
 
 class AudioMixerResource
 {
