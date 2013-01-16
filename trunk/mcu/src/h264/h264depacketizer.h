@@ -8,6 +8,7 @@
 #ifndef H264DEPACKETIZER_H
 #define	H264DEPACKETIZER_H
 #include "rtp.h"
+#include "video.h"
 
 class H264Depacketizer : public RTPDepacketizer
 {

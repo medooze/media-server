@@ -7,7 +7,8 @@
 
 #ifndef RTPBUFFER_H
 #define	RTPBUFFER_H
-
+#include <errno.h>
+#include <pthread.h>
 #include "rtp.h"
 
 class RTPBuffer 

@@ -14,6 +14,7 @@
 #include "Joinable.h"
 #include "VideoEncoderWorker.h"
 #include "VideoDecoderWorker.h"
+#include <string>
 
 class VideoMixerResource
 {
