@@ -393,10 +393,12 @@ void RTPSession::SetReceivingRTPMap(RTPMap &map)
 	rtpMapIn = new RTPMap(map);
 }
 
-/***********************************
-* SetLocalPort
-*	Inicia la sesion rtp de video local
-***********************************/
+int RTPSession::SetLocalPort(int recvPort)
+{
+	//Override
+	simPort = recvPort;
+}
+
 int RTPSession::GetLocalPort()
 {
 	// Return local
@@ -534,10 +536,14 @@ int RTPSession::Init()
 
 		//Create new sockets
 		simSocket = socket(PF_INET,SOCK_DGRAM,0);
-		//Get random
-		simPort = (RTPSession::GetMinPort()+(RTPSession::GetMaxPort()-RTPSession::GetMinPort())*double(rand()/double(RAND_MAX)));
-		//Make even
-		simPort &= 0xFFFFFFFE;
+		//If not forced to any port
+		if (!simPort)
+		{
+			//Get random
+			simPort = (RTPSession::GetMinPort()+(RTPSession::GetMaxPort()-RTPSession::GetMinPort())*double(rand()/double(RAND_MAX)));
+			//Make even
+			simPort &= 0xFFFFFFFE;
+		}
 		//Try to bind to port
 		sendAddr.sin_port = htons(simPort);
 		//Bind the rtcp socket
@@ -552,8 +558,12 @@ int RTPSession::Init()
 		sendAddr.sin_port = htons(simRtcpPort);
 		//Bind the rtcp socket
 		if(bind(simRtcpSocket,(struct sockaddr *)&sendAddr,sizeof(struct sockaddr_in))!=0)
+		{
+			//Use random
+			simPort = 0;
 			//Try again
 			continue;
+		}
 		//Everything ok
 		Log("-Got ports [%d,%d]\n",simPort,simRtcpPort);
 		//Start receiving
