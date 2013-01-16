@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <algorithm>
 #include "log.h"
 #include "multiconf.h"
 #include "rtpparticipant.h"
@@ -92,6 +93,15 @@ int MultiConf::Init(int vad)
 	//Start encoding
 	audioEncoder.StartEncoding();
 	textEncoder.StartEncoding();
+
+	//Create one mixer for the app Mixer ouuput
+	videoMixer.CreateMixer(AppMixerId);
+
+	//Init
+	appMixer.Init(videoMixer.GetOutput(AppMixerId));
+
+	//Init mixer for the app mixer
+	videoMixer.InitMixer(AppMixerId,-1);
 
 	return res;
 }
@@ -562,6 +572,15 @@ int MultiConf::End()
 	while(players.size()>0)
 		//Delete the first one
 		DeletePlayer(players.begin()->first);
+
+	//Stop app mixer
+	videoMixer.EndMixer(AppMixerId);
+
+	//End it
+	appMixer.End();
+
+	//Delete mixer
+	videoMixer.DeleteMixer(AppMixerId);
 
 	Log("-End conference mixers\n");
 
@@ -1673,4 +1692,10 @@ void MultiConf::onRequestFPU(Participant *part)
 	if (listener)
 		//Send event
 		listener->onParticipantRequestFPU(this,part->GetPartId(),this->param);
+}
+
+int MultiConf::AppMixerDisplayImage(const char* filename)
+{
+	//Display it
+	return appMixer.DisplayImage(filename);
 }

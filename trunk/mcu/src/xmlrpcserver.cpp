@@ -109,7 +109,7 @@ int XmlRpcServer::Stop()
 * AddHandler 
 *	A�ade un handler para una uri
 **************************************/
-int XmlRpcServer::AddHandler(string base,Handler* hnd)
+int XmlRpcServer::AddHandler(std::string base,Handler* hnd)
 {
 	//A�adimos al map
 	lstHandlers[base] = hnd;
@@ -146,7 +146,7 @@ int XmlRpcServer::DispatchRequest(TSession *ses)
 
 
 	//Obtenemos la uri
-	string uri = req->uri;
+	std::string uri = req->uri;
 
 	//Vamos a buscar en orden inverso
 	LstHandlers::reverse_iterator it;
@@ -184,7 +184,7 @@ int XmlRpcServer::DispatchRequest(TSession *ses)
 * GetBody
 	Devuelve el body de una peticion
 **************************************/
-int XmlRpcServer::GetBody(TSession *ses,char *body,short bodyLen)
+int XmlRpcServer::GetBody(TSession *ses,char *body,DWORD bodyLen)
 {
 	int len=0;
 
@@ -215,58 +215,6 @@ int XmlRpcServer::GetBody(TSession *ses,char *body,short bodyLen)
 
 	//Return
 	return len;
-/*/
-
-	//Obtenemos lo que quedaba en el buffer
-	ConnReadInit(r->conn);
-
-	//Obtenemos lo que hay en la conexion
-	if (r->conn->buffersize > bodyLen)
-		len = bodyLen;
-	else
-		len = r->conn->buffersize;
-
-	//Copiamos
-	memcpy(body,r->conn->buffer,len);
-
-	//MIentras no hayamos leido del todo
-	while (len<bodyLen)
-	{
-		int size;
-
-		//Iniciamos la lectura
-		ConnReadInit(r->conn);
-
-		//Leemos
-		if(!ConnRead(r->conn,100))
-			return 0;
-
-		//Obtenemos lo que hay en la conexion
-		if (r->conn->buffersize > bodyLen - len)
-			size = bodyLen - len;
-		else
-			size = r->conn->buffersize;
-
-		//Copiamos
-		memcpy(body+len,r->conn->buffer,size);
-
-		//Incrementamos el buffer
-		len += size;
-
-		//Increase buffer pos
-		r->conn->bufferpos += len;
-	}
-
-	//Reset buffer
-	r->conn->buffersize = 0;
-	r->conn->bufferpos = 0;
-
-	//Clean buffer
-	ConnReadInit(r->conn);
-
-	//Salimos bien
-	return 1;
- * */
 }
 
 /**************************************

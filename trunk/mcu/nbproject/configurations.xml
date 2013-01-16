@@ -10,6 +10,7 @@
         <in>FLVEncoder.h</in>
         <in>FlashSoundHandler.h</in>
         <in>RTPSmoother.h</in>
+        <in>acumulator.h</in>
         <in>amf.h</in>
         <in>amf3.h</in>
         <in>asymmetricmosaic.h</in>
@@ -25,11 +26,13 @@
         <in>codecs.h</in>
         <in>config.h</in>
         <in>crc32calc.h</in>
+        <in>fec.h</in>
         <in>fifo.h</in>
         <in>flash.h</in>
         <in>flv.h</in>
         <in>flvrecorder.h</in>
         <in>framescaler.h</in>
+        <in>http.h</in>
         <in>log.h</in>
         <in>logo.h</in>
         <in>mcu.h</in>
@@ -52,6 +55,7 @@
         <in>pipevideoinput.h</in>
         <in>pipevideooutput.h</in>
         <in>pipmosaic.h</in>
+        <in>remoteratecontrol.h</in>
         <in>rtmp.h</in>
         <in>rtmpapplication.h</in>
         <in>rtmpbroadcaster.h</in>
@@ -68,10 +72,12 @@
         <in>rtmpstream.h</in>
         <in>rtmptranscoder.h</in>
         <in>rtp.h</in>
+        <in>rtpbuffer.h</in>
         <in>rtpparticipant.h</in>
         <in>rtpsession.h</in>
         <in>sidebar.h</in>
         <in>statushandler.h</in>
+        <in>stringparser.h</in>
         <in>stunmessage.h</in>
         <in>text.h</in>
         <in>textencoder.h</in>
@@ -79,6 +85,7 @@
         <in>textmixerworker.h</in>
         <in>textstream.h</in>
         <in>tools.h</in>
+        <in>uploadhandler.h</in>
         <in>use.h</in>
         <in>vad.h</in>
         <in>version.h</in>
@@ -87,6 +94,9 @@
         <in>videostream.h</in>
         <in>videotranscoder.h</in>
         <in>waitqueue.h</in>
+        <in>websockets.h</in>
+        <in>websocketserver.h</in>
+        <in>websocketshandler.h</in>
         <in>xmlhandler.h</in>
         <in>xmlrpcclient.h</in>
         <in>xmlrpcflashclient.h</in>
@@ -186,6 +196,7 @@
         <in>RTPSmoother.cpp</in>
         <in>amf.cpp</in>
         <in>amf3.cpp</in>
+        <in>appmixer.cpp</in>
         <in>asymmetricmosaic.cpp</in>
         <in>audiodecoder.cpp</in>
         <in>audioencoder.cpp</in>
@@ -196,11 +207,13 @@
         <in>broadcastsession.cpp</in>
         <in>codecs.cpp</in>
         <in>crc32calc.cpp</in>
+        <in>fec.cpp</in>
         <in>flash.cpp</in>
         <in>flashstreamer.cpp</in>
         <in>flvplayer.cpp</in>
         <in>flvrecorder.cpp</in>
         <in>framescaler.cpp</in>
+        <in>http.cpp</in>
         <in>logo.cpp</in>
         <in>main.cpp</in>
         <in>mcu.cpp</in>
@@ -220,6 +233,7 @@
         <in>pipevideoinput.cpp</in>
         <in>pipevideooutput.cpp</in>
         <in>pipmosaic.cpp</in>
+        <in>remoteratecontrol.cpp</in>
         <in>rtmpchunk.cpp</in>
         <in>rtmpclientconnection.cpp</in>
         <in>rtmpconnection.cpp</in>
@@ -241,10 +255,13 @@
         <in>textmixer.cpp</in>
         <in>textmixerworker.cpp</in>
         <in>textstream.cpp</in>
+        <in>uploadhandler.cpp</in>
         <in>vad.cpp</in>
         <in>video.cpp</in>
         <in>videomixer.cpp</in>
         <in>videostream.cpp</in>
+        <in>websocketserver.cpp</in>
+        <in>websocketshandler.cpp</in>
         <in>xmlhandler.cpp</in>
         <in>xmlrpcbroadcaster.cpp</in>
         <in>xmlrpcclient.cpp</in>
@@ -300,6 +317,8 @@
               <pElem>R:/usr/local/src/mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
               <pElem>R:/usr/local/src/mpeg4ip-1.5.0.1/lib/mp4</pElem>
               <pElem>R:/usr/local/src/x264/encoder</pElem>
+              <pElem>R:/usr/include</pElem>
+              <pElem>R:/usr/local/include</pElem>
             </incDir>
           </ccTool>
         </makeTool>

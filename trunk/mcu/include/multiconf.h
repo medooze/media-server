@@ -12,6 +12,7 @@
 #include "audioencoder.h"
 #include "textencoder.h"
 #include "rtmpnetconnection.h"
+#include "appmixer.h"
 #include <map>
 #include <string>
 
@@ -19,6 +20,8 @@ class MultiConf :
 	public RTMPNetConnection,
 	public Participant::Listener
 {
+public:
+	static const int AppMixerId = 1;
 public:
 	typedef std::map<std::string,MediaStatistics> ParticipantStatistics;
 public:
@@ -74,6 +77,8 @@ public:
 	int StopPlaying(int playerId);
 	int DeletePlayer(int playerId);
 
+	int AppMixerDisplayImage(const char* filename);
+	
 	int SetCompositionType(int mosaicId,Mosaic::Type comp,int size);
 	int SetMosaicSlot(int mosaicId,int num,int id);
 	int AddMosaicParticipant(int mosaicId,int partId);
@@ -126,7 +131,7 @@ private:
 	typedef std::set<std::wstring> BroadcastTokens;
 	typedef std::map<std::wstring,DWORD> ParticipantTokens;
 	typedef std::map<int, MP4Player*> Players;
-	
+
 private:
 	ParticipantTokens	inputTokens;
 	ParticipantTokens	outputTokens;
@@ -143,6 +148,7 @@ private:
 	VideoMixer videoMixer;
 	AudioMixer audioMixer;
 	TextMixer  textMixer;
+	AppMixer   appMixer;
 
 	//Lists
 	Participants		participants;
