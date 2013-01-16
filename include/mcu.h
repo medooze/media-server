@@ -6,12 +6,14 @@
 #include "rtmpstream.h"
 #include "rtmpapplication.h"
 #include "xmlstreaminghandler.h"
+#include "uploadhandler.h"
 
 
 
 class MCU : 
 	public RTMPApplication,
-	public MultiConf::Listener
+	public MultiConf::Listener,
+	public UploadHandler::Listener
 {
 public:
 	enum Events
@@ -47,6 +49,8 @@ public:
 	virtual void onParticipantRequestFPU(MultiConf *conf,int partId,void *param);
 	/** RTMP application interface*/
 	virtual RTMPNetConnection* Connect(const std::wstring& appName,RTMPNetConnection::Listener* listener);
+	/** File uploader event */
+	virtual int onFileUploaded(const char* url, const char *filename);
 private:
 	struct ConferenceEntry
 	{

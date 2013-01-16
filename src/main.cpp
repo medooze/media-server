@@ -238,6 +238,9 @@ int main(int argc,char **argv)
 	XmlHandler xmlrpcmediagateway(mediagatewayCmdList,(void*)&mediaGateway);
 	XmlHandler xmlrpcjsr309(jsr309CmdList,(void*)&jsr309Manager);
 
+	//Create upload handlers
+	UploadHandler uploadermcu(&mcu);
+
 	//Create http streaming for service events
 	XmlStreamingHandler xmleventjsr309;
 	XmlStreamingHandler xmleventmcu;
@@ -266,15 +269,18 @@ int main(int argc,char **argv)
 	rtmpServer.AddApplication(L"bridge/",&mediaGateway);
 	
 	//Append mcu cmd handler to the http server
-	server.AddHandler(string("/mcu"),&xmlrpcmcu);
-	server.AddHandler(string("/broadcaster"),&xmlrpcbroadcaster);
-	server.AddHandler(string("/mediagateway"),&xmlrpcmediagateway);
-	server.AddHandler(string("/jsr309"),&xmlrpcjsr309);
-	server.AddHandler(string("/events/jsr309"),&xmleventjsr309);
-	server.AddHandler(string("/events/mcu"),&xmleventmcu);
+	server.AddHandler("/mcu",&xmlrpcmcu);
+	server.AddHandler("/broadcaster",&xmlrpcbroadcaster);
+	server.AddHandler("/mediagateway",&xmlrpcmediagateway);
+	server.AddHandler("/jsr309",&xmlrpcjsr309);
+	server.AddHandler("/events/jsr309",&xmleventjsr309);
+	server.AddHandler("/events/mcu",&xmleventmcu);
+
+	//Add uploaders
+	server.AddHandler("/upload/mcu/app/",&uploadermcu);
 	
 	//Add the html status handler
-	server.AddHandler(string("/status"),&status);
+	server.AddHandler("/status",&status);
 
 	//Init the rtmp server
 	rtmpServer.Init(rtmpPort);

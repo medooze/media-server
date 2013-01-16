@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <map>
+#include <cstring>
 #include "log.h"
 #include "mcu.h"
 #include "rtmpparticipant.h"
@@ -461,4 +462,51 @@ void MCU::onParticipantRequestFPU(MultiConf *conf,int partId,void *param)
 	if (eventMngr && entry->queueId>0)
 		//Send new event
 		eventMngr->AddEvent(entry->queueId, new ::PlayerRequestFPUEvent(entry->id,conf->GetTag(),partId));
+}
+
+int MCU::onFileUploaded(const char* url, const char *filename)
+{
+	Log("-File upload for %s\n",url);
+	
+	MultiConf* conf = NULL;
+
+	//Skip the first path
+	const char *sep = url + strlen("/upload/mcu/app/");
+
+	//If not found
+	if (!sep)
+		//not found
+		return 404;
+
+	//Convert to wstring
+	UTF8Parser parser;
+
+	if (!parser.Parse((BYTE*)sep,strlen(sep)))
+	{
+		//Error
+		Error("Error parsing conference tag\n");
+		//Error
+		return 500;
+	}
+	
+	//Get id by tag
+	int confId = GetConferenceId(parser.GetWString());
+
+	//Get conference
+	if(!GetConferenceRef(confId,&conf))
+	{
+		//Error
+		Error("Conference does not exist\n");
+		//Not found
+		return 404;
+	}
+
+	//Display it
+	int ret = conf->AppMixerDisplayImage(filename) ? 200 : 500;
+
+	//Release it
+	ReleaseConferenceRef(confId);
+
+	//REturn result
+	return ret;
 }

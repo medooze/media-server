@@ -1642,6 +1642,7 @@ xmlrpc_value* StopReceiving(xmlrpc_env *env, xmlrpc_value *param_array, void *us
 	//Devolvemos el resultado
 	return xmlok(env);
 }
+
 XmlHandlerCmd mcuCmdList[] =
 {
 	{"EventQueueCreate",MCUEventQueueCreate},
