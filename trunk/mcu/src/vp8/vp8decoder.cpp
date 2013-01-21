@@ -50,7 +50,7 @@ VP8Decoder::VP8Decoder()
 	/**< the strength of deblocking, valid range [0, 16] */
 	ppcfg.deblocking_level = 3;
 	//Set deblocking  settings
-	vpx_codec_control(decoder, VP8_SET_POSTPROC, &ppcfg);
+	vpx_codec_control(&decoder, VP8_SET_POSTPROC, &ppcfg);
 }
 
 /***********************
