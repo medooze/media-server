@@ -35,11 +35,22 @@ VP8Decoder::VP8Decoder()
 	height = 0;
 	//Set flags
 	vpx_codec_flags_t flags = 0;
+	/**< Postprocess decoded frame */
 	flags |= VPX_CODEC_USE_POSTPROC;
+	/**< Conceal errors in decoded frames */
+	flags |= VPX_CODEC_USE_ERROR_CONCEALMENT;
 
 	//Init decoder
 	if(vpx_codec_dec_init(&decoder, interface, NULL, flags)!=VPX_CODEC_OK)
 		Error("Error initing VP8 decoder [error %d:%s]\n",decoder.err,decoder.err_detail);
+
+	vp8_postproc_cfg_t  ppcfg;
+	 /**< the types of post processing to be done, should be combination of "vp8_postproc_level" */
+	ppcfg.post_proc_flag = VP8_DEMACROBLOCK | VP8_DEBLOCK;
+	/**< the strength of deblocking, valid range [0, 16] */
+	ppcfg.deblocking_level = 3;
+	//Set deblocking  settings
+	vpx_codec_control(decoder, VP8_SET_POSTPROC, &ppcfg);
 }
 
 /***********************
