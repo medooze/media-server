@@ -136,7 +136,14 @@ int VP8Encoder::OpenCodec()
 	config.rc_target_bitrate = bitrate*fps;
 	config.g_timebase.num = 1;
 	config.g_timebase.den = 90000;
-	config.g_error_resilient = VPX_ERROR_RESILIENT_DEFAULT;
+	config.g_error_resilient = VPX_ERROR_RESILIENT_PARTITIONS;  /**< The frame partitions are
+									 independently decodable by the
+									 bool decoder, meaning that
+									 partitions can be decoded even
+									 though earlier partitions have
+									 been lost. Note that intra
+									 predicition is still done over
+									 the partition boundary. */
 	config.g_lag_in_frames = 0; // 0- no frame lagging
 	config.g_threads = 1;
 	// rate control settings
