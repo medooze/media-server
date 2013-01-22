@@ -199,12 +199,8 @@ DWORD RTMPPipedMediaStream::AddMediaListener(RTMPMediaStream::Listener *listener
 		listener->onMetaData(id,meta);
 	//Check desc
 	if (desc)
-	{
 		//Send it
 		listener->onMediaFrame(id,desc);
-		//Dump
-		desc->Dump();
-	}
 	//return number of listeners
 	return RTMPMediaStream::AddMediaListener(listener);
 }
@@ -320,12 +316,8 @@ void RTMPPipedMediaStream:: onMediaFrame(DWORD id,RTMPMediaFrame *frame)
 			SendMetaData(meta);
 		//Check
 		if (desc)
-		{
-			//Dump
-			desc->Dump();
 			//Send previous desc before frame
 			SendMediaFrame(desc);
-		}
 	}
 	
 	//Check if we have to rewrite ts
