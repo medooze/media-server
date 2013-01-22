@@ -527,6 +527,7 @@ int VideoStream::RecVideo()
 	DWORD		lostCount=0;
 	DWORD		frameSeqNum = RTPPacket::MaxExtSeqNum;
 	DWORD		lastSeq = RTPPacket::MaxExtSeqNum;
+	bool		waitIntra = false;
 	
 	Log(">RecVideo\n");
 	
@@ -610,8 +611,8 @@ int VideoStream::RecVideo()
 		//Update last sequence number
 		lastSeq = seq;
 
-		//Si hemos perdido un paquete
-		if(lostCount>1)
+		//Si hemos perdido un paquete or still have not got an iframe
+		if(lostCount>1 || waitIntra)
 		{
 			//Check if we got listener and more than two seconds have elapsed from last request
 			if (listener && getDifTime(&lastFPURequest)>1000000)
@@ -626,6 +627,8 @@ int VideoStream::RecVideo()
 				rtp.RequestFPU();
 				//Update time
 				getUpdDifTime(&lastFPURequest);
+				//Waiting for refresh
+				waitIntra = true;
 			}
 		}
 		
@@ -645,6 +648,8 @@ int VideoStream::RecVideo()
 				rtp.RequestFPU();
 				//Update time
 				getUpdDifTime(&lastFPURequest);
+				//Waiting for refresh
+				waitIntra = true;
 			}
 			//Delete packet
 			delete(packet);
@@ -673,6 +678,10 @@ int VideoStream::RecVideo()
 					//Send it
 					videoOutput->NextFrame(frame);
 			}
+			//Check if we got the waiting refresh
+			if (waitIntra && videoDecoder->IsKeyFrame())
+				//Do not wait anymore
+				waitIntra = false;
 		}
 		//Delete packet
 		delete(packet);
