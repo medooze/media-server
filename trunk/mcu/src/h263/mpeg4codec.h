@@ -13,9 +13,10 @@ public:
 	virtual ~Mpeg4Decoder();
 	virtual int DecodePacket(BYTE *in,DWORD len,int lost,int last);
 	virtual int Decode(BYTE *in,DWORD len);
-	virtual int GetWidth()	{return ctx->width;};
-	virtual int GetHeight()	{return ctx->height;};
-	virtual BYTE* GetFrame(){return (BYTE *)bufDecode;};
+	virtual int GetWidth()		{ return ctx->width;		};
+	virtual int GetHeight()		{ return ctx->height;		};
+	virtual BYTE* GetFrame()	{ return (BYTE *)bufDecode;	};
+	virtual bool  IsKeyFrame()	{ return picture->key_frame;	};
 private:
 	AVCodec 	*codec;
 	AVCodecContext	*ctx;

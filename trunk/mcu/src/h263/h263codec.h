@@ -41,9 +41,10 @@ public:
 	virtual ~H263Decoder();
 	virtual int DecodePacket(BYTE *in,DWORD len,int lost,int last);
 	virtual int Decode(BYTE *in,DWORD len);
-	virtual int GetWidth()	{return ctx->width;};
-	virtual int GetHeight()	{return ctx->height;};
-	virtual BYTE* GetFrame(){return (BYTE *)frame;};
+	virtual int GetWidth()		{ return ctx->width;		};
+	virtual int GetHeight()		{ return ctx->height;		};
+	virtual BYTE* GetFrame()	{ return (BYTE *)frame;		};
+	virtual bool  IsKeyFrame()	{ return picture->key_frame;	};
 private:
 	AVCodec 	*codec;
 	AVCodecContext	*ctx;
@@ -103,9 +104,10 @@ public:
 	virtual ~H263Decoder1996();
 	virtual int DecodePacket(BYTE *in,DWORD len,int lost,int last);
 	virtual int Decode(BYTE *in,DWORD len);
-	virtual int GetWidth()	{return ctx->width;};
-	virtual int GetHeight()	{return ctx->height;};
-	virtual BYTE* GetFrame(){return (BYTE *)frame;};
+	virtual int GetWidth()		{ return ctx->width;		};
+	virtual int GetHeight()		{ return ctx->height;		};
+	virtual BYTE* GetFrame()	{ return (BYTE *)frame;		};
+	virtual bool  IsKeyFrame()	{ return picture->key_frame;	};
 private:
 	AVCodec 	*codec;
 	AVCodecContext	*ctx;

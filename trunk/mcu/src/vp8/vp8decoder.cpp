@@ -37,8 +37,6 @@ VP8Decoder::VP8Decoder()
 	vpx_codec_flags_t flags = 0;
 	/**< Postprocess decoded frame */
 	flags |= VPX_CODEC_USE_POSTPROC;
-	/**< Conceal errors in decoded frames */
-	flags |= VPX_CODEC_USE_ERROR_CONCEALMENT;
 
 	//Init decoder
 	if(vpx_codec_dec_init(&decoder, interface, NULL, flags)!=VPX_CODEC_OK)
@@ -181,3 +179,18 @@ int VP8Decoder::Decode(BYTE *buffer,DWORD size)
 	return 0;
 }
 
+bool VP8Decoder::IsKeyFrame()
+{
+	int corrupted = 0;
+	int reference_updates = 0;
+	//Gett reference update
+	if (vpx_codec_control(&decoder, VP8D_GET_LAST_REF_UPDATES,&reference_updates))
+		return false;
+
+	//Check if it is corrupted
+	if (vpx_codec_control(&decoder, VP8D_GET_FRAME_CORRUPTED, &corrupted))
+		return false;
+
+	//Check not corrupted key
+	return ((reference_updates & VP8_GOLD_FRAME) || (reference_updates & VP8_ALTR_FRAME)) && !corrupted;
+}

@@ -23,6 +23,7 @@ public:
 	virtual int GetWidth()	{return width;};
 	virtual int GetHeight()	{return height;};
 	virtual BYTE* GetFrame(){return (BYTE *)frame;};
+	virtual bool  IsKeyFrame();
 private:
 	vpx_codec_ctx_t  decoder;
 	BYTE*		buffer;
