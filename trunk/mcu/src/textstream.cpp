@@ -293,6 +293,7 @@ int TextStream::RecText()
 	BYTE*		text;
 	DWORD		textSize;
 	RedHeaders	headers;
+	DWORD		lastSeq = RTPPacket::MaxExtSeqNum;
 
 	Log(">RecText\n");
 
@@ -313,9 +314,19 @@ int TextStream::RecText()
 		//Get timestamp
 		DWORD timeStamp = packet->GetTimestamp();
 
-		//Get lost count
-		// TODO: Calculate lost!
-		WORD lost = 0;
+		//Get extended sequence number
+		DWORD seq = packet->GetExtSeqNum();
+
+		//Lost packets since last one
+		DWORD lost = 0;
+
+		//If not first
+		if (lastSeq!=RTPPacket::MaxExtSeqNum)
+			//Calculate losts
+			lost = seq-lastSeq-1;
+
+		//Update last sequence number
+		lastSeq = seq;
 
 		//Number of bytes to skip of text until primary data
 		WORD skip = 0;
