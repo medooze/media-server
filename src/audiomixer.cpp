@@ -539,16 +539,26 @@ int AudioMixer::AddSidebarParticipant(int sidebarId, int partId)
 {
 	Log("-AddSidebarParticipant [sidebar:%d,partId:%d]\n",sidebarId,partId);
 
+	//Block
+	lstAudiosUse.IncUse();
+
 	//Get the sidebar for the user
 	Sidebars::iterator itSidebar = sidebars.find(sidebarId);
 
 	//If not found
 	if (itSidebar==sidebars.end())
+	{
+		//UnBlock
+		lstAudiosUse.DecUse();
 		//Salimos
 		return Error("Sidebar not found\n");
+	}
 
 	//Add participant to the sidebar
 	itSidebar->second->AddParticipant(partId);
+
+	//UnBlock
+	lstAudiosUse.DecUse();
 
 	//Everything ok
 	return 1;
@@ -562,13 +572,20 @@ int AudioMixer::RemoveSidebarParticipant(int sidebarId, int partId)
 {
 	Log(">-RemoveSidebarParticipant [sidebar:%d,partId:%d]\n",sidebarId,partId);
 
+	//Block
+	lstAudiosUse.IncUse();
+	
 	//Get the sidebar for the user
 	Sidebars::iterator itSidebar = sidebars.find(sidebarId);
 
 	//If not found
 	if (itSidebar==sidebars.end())
+	{
+		//UnBlock
+		lstAudiosUse.DecUse();
 		//Salimos
 		return Error("Sidebar not found\n");
+	}
 
 	//Get sidebar
 	Sidebar* sidebar = itSidebar->second;
@@ -576,6 +593,9 @@ int AudioMixer::RemoveSidebarParticipant(int sidebarId, int partId)
 	//Remove participant to the sidebar
 	sidebar->RemoveParticipant(partId);
 
+	//UnBlock
+	lstAudiosUse.DecUse();
+		
 	//Correct
 	return 1;
 }
@@ -585,27 +605,38 @@ int AudioMixer::CreateSidebar()
 	//Get id
 	int id = numSidebars++;
 
+	//Block
+	lstAudiosUse.IncUse();
+
 	//add it
 	sidebars[id] = new Sidebar();
+
+	//UnBlock
+	lstAudiosUse.DecUse();
 
 	return id;
 }
 
 int AudioMixer::DeleteSidebar(int sidebarId)
 {
+
+	//Block
+	lstAudiosUse.WaitUnusedAndLock();
+
 	//Get sidebar from id
 	Sidebars::iterator it = sidebars.find(sidebarId);
 
 	//Check if we have found it
 	if (it==sidebars.end())
+	{
+		//UnBlock
+		lstAudiosUse.Unlock();
 		//error
 		return Error("Sidebar not found [id:%d]\n",sidebarId);
+	}
 
 	//Get the old sidebar
 	Sidebar *sidebar = it->second;
-
-	//Block
-	lstAudiosUse.IncUse();
 
 	//For each audio
 	for (Audios::iterator ita = audios.begin(); ita!= audios.end(); ++ita)
@@ -615,11 +646,12 @@ int AudioMixer::DeleteSidebar(int sidebarId)
 			//Set to null
 			ita->second->sidebar = NULL;
 	}
-	//UnBlock
-	lstAudiosUse.DecUse();
 
 	//Remove sidebar
 	sidebars.erase(it);
+
+	//UnBlock
+	lstAudiosUse.Unlock();
 
 	//Delete sidebar
 	delete(sidebar);
