@@ -932,32 +932,27 @@ VideoOutput* VideoMixer::GetOutput(int id)
 
 /**************************
 * SetCompositionType
-*	Pone el modo de mosaico
+*    Pone el modo de mosaico
 ***************************/
 int VideoMixer::SetCompositionType(int mosaicId,Mosaic::Type comp, int size)
 {
 	Log(">SetCompositionType [id:%d,comp:%d,size:%d]\n",mosaicId,comp,size);
 
-	//Get mosaic from id
-	Mosaics::iterator it = mosaics.find(mosaicId);
-
-	//No mosaic
-	Mosaic *oldMosaic = NULL;
-
-	//Check if we have found it
-	if (it!=mosaics.end())
-		//Get the old mosaic
-		oldMosaic = it->second;
-
-	//New mosaic
+	//Create new mosaic
 	Mosaic *mosaic = Mosaic::CreateMosaic(comp,size);
 
 	//Protegemos la lista
 	lstVideosUse.WaitUnusedAndLock();
 
-	//If we had a previus mosaic
-	if (oldMosaic)
+	//Get mosaic from id
+	Mosaics::iterator it = mosaics.find(mosaicId);
+
+	//Check if we have found it
+	if (it!=mosaics.end())
 	{
+		//Get the old mosaic
+		Mosaic *oldMosaic = it->second;
+
 		//Add all the participants
 		for (Videos::iterator it=lstVideos.begin();it!=lstVideos.end();++it)
 		{
@@ -1000,7 +995,7 @@ int VideoMixer::SetCompositionType(int mosaicId,Mosaic::Type comp, int size)
 	//Signal for new video
 	pthread_cond_signal(&mixVideoCond);
 
-	//Desprotegemos la lista
+	//Unlock (Could this be done earlier??)
 	lstVideosUse.Unlock();
 
 	Log("<SetCompositionType\n");
