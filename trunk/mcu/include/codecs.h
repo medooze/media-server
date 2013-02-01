@@ -27,7 +27,7 @@ public:
 class VideoCodec
 {
 public:
-	enum Type {H263_1996=34,H263_1998=103,MPEG4=104,H264=99,SORENSON=100,VP8=107};
+	enum Type {H263_1996=34,H263_1998=103,MPEG4=104,H264=99,SORENSON=100,VP8=107,ULPFEC=108,RED=109};
 	static const char* GetNameFor(Type type)
 	{
 		switch (type)

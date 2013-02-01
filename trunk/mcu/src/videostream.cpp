@@ -548,8 +548,24 @@ int VideoStream::RecVideo()
 			//Next
 			continue;
 
+		//Get packet data
+		BYTE* buffer = packet->GetMediaData();
+		DWORD size = packet->GetMediaLength();
+
 		//Get type
 		type = (VideoCodec::Type)packet->GetCodec();
+
+		//Check if it is a redundant packet
+		if (type==VideoCodec::RED)
+		{
+			//Get redundant packet
+			RTPRedundantPacket* red = (RTPRedundantPacket*)packet;
+			//Get primary codec
+			type = (VideoCodec::Type)red->GetPrimaryCodec();
+			//Update primary redundant payload
+			buffer = red->GetPrimaryPayloadData();
+			size = red->GetPrimaryPayloadSize();
+		}
 		
 		//Comprobamos el tipo
 		if ((videoDecoder==NULL) || (type!=videoDecoder->type))
@@ -633,7 +649,7 @@ int VideoStream::RecVideo()
 		}
 		
 		//Lo decodificamos
-		if(!videoDecoder->DecodePacket(packet->GetMediaData(),packet->GetMediaLength(),lost,packet->GetMark()))
+		if(!videoDecoder->DecodePacket(buffer,size,lost,packet->GetMark()))
 		{
 			//Check if we got listener and more than two seconds have elapsed from last request
 			if (listener && getDifTime(&lastFPURequest)>1000000)

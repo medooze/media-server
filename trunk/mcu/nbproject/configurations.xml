@@ -13,6 +13,7 @@
         <in>acumulator.h</in>
         <in>amf.h</in>
         <in>amf3.h</in>
+        <in>appmixer.h</in>
         <in>asymmetricmosaic.h</in>
         <in>audio.h</in>
         <in>audiodecoder.h</in>

@@ -328,98 +328,52 @@ int TextStream::RecText()
 		//Update last sequence number
 		lastSeq = seq;
 
-		//Number of bytes to skip of text until primary data
-		WORD skip = 0;
-
-		//Get the text
-		BYTE* data = packet->GetMediaData();
-
-		//The text is the whole data
-		text = data;
-
-		//Get the text size
-		textSize = packet->GetMediaLength();
-
-		//Check the type of data
-		if (type==TextCodec::T140RED)
-		{
-			WORD i = 0;
-			bool last = false;
-
-			//Read redundant headers
-			while(!last)
-			{
-				//Check if it is the last
-				last = !(data[i++]>>7);
-				//if it is not last
-				if (!last)
-				{
-					//Get offset
-					WORD offset	= (((WORD)(data[i++])<<6));
-					offset |= data[i]>>2;
-					WORD size	= (((WORD)(data[i++])&0x03)<<8);
-					size |= data[i++];
-					//Append new t140red header
-					headers.push_back(RedHeader(offset,skip,size));
-					//Skip the redundant data
-					skip += size;
-				}
-			}
-			//Skip redundant headers
-			text = data+i;
-			//Set text size
-			textSize -= i;
-		}
-
-		//Number of redundancy packets to recover
-		BYTE num = lost;
-
-		//Safety check
-		if (num==(BYTE)-1)
-			//Only one
-			num = 1;
-
-		//If we have lost too more
-		if (num>headers.size())
-		{
-			//Get what we have available only
-			num = headers.size();
-			//For each non recovered packet
-			for (int i=headers.size();i<lost;i++)
-			{
-				//Create frame of lost replacement
-				TextFrame frame(timeStamp,LOSTREPLACEMENT,sizeof(LOSTREPLACEMENT));
-				//Y lo reproducimos
-				textOutput->SendFrame(frame);
-			}
-		}
-
-		//if it is not muted
+		//Check if we are muted
 		if (!muted)
 		{
-			//Recover from redundancy packets
-			for(int i=(headers.size()-num);i<headers.size();i++)
+			//Check the type of data
+			if (type==TextCodec::T140RED)
 			{
-				//Get header
-				RedHeader &header = headers[i];
-				//Create frame
-				TextFrame frame(timeStamp-header.offset,text+header.ini,header.size);
-				//And send it
-				textOutput->SendFrame(frame);
-			}
+				//Get redundant packet
+				RTPRedundantPacket* red = (RTPRedundantPacket*)packet;
 
-			//Check length
-			if (skip<textSize)
-			{
+				//For each lonot recoveredt packet send a mark
+				for (int i=red->GetRedundantCount();i<lost;i++)
+				{
+					//Create frame of lost replacement
+					TextFrame frame(timeStamp,LOSTREPLACEMENT,sizeof(LOSTREPLACEMENT));
+					//Y lo reproducimos
+					textOutput->SendFrame(frame);
+				}
+
+				//If we have lost too many
+				if (lost>red->GetRedundantCount())
+					//Get what we have available only
+					lost = red->GetRedundantCount();
+				//Fore each recovered packet
+				for (int i=red->GetRedundantCount()-lost;i<red->GetRedundantCount();i++)
+				{
+					//Create frame from recovered data
+					TextFrame frame(timeStamp,red->GetRedundantPayloadData(i),red->GetRedundantPayloadSize(i));
+					//Y lo reproducimos
+					textOutput->SendFrame(frame);
+				}
+
+			} else {
+				//For each lost packet send a mark
+				for (int i=0;i<lost;i++)
+				{
+					//Create frame of lost replacement
+					TextFrame frame(timeStamp,LOSTREPLACEMENT,sizeof(LOSTREPLACEMENT));
+					//Y lo reproducimos
+					textOutput->SendFrame(frame);
+				}
 				//Create frame
-				TextFrame frame(timeStamp,text+skip,textSize-skip);
-				//Y lo reproducimos
+				TextFrame frame(timeStamp,packet->GetMediaData(),packet->GetMediaLength());
+				//Send it
 				textOutput->SendFrame(frame);
 			}
 		}
-
-		//clean redundancy headres
-		headers.clear();
 
 		//Delete rtp packet
 		delete(packet);
