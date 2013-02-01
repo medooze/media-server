@@ -17,6 +17,7 @@
 #include <time.h>
 #include "log.h"
 #include "tools.h"
+#include "codecs.h"
 #include "rtp.h"
 #include "rtpsession.h"
 #include "stunmessage.h"
@@ -1012,30 +1013,66 @@ int RTPSession::ReadRTP()
 			return Error("Error unprotecting rtp packet [%d]\n",err);
 	}
 
+	//Get type
+	BYTE type = RTPPacket::GetType(buffer);
+
+	//Set initial codec
+	BYTE codec = rtpMapIn->GetCodecForType(type);
+
+	//Check codec
+	if (codec==RTPMap::NotFound)
+		//Exit
+		return Error("-RTP packet type unknown [%d]\n",type);
+
 	//Create rtp packet
-	RTPTimedPacket *packet = new RTPTimedPacket(media,buffer,size);
+	RTPTimedPacket *packet = NULL;
 
-	//Obtenemos el tipo
-	BYTE type = packet->GetType();
-
-	//Check maps
-	if (rtpMapIn)
+	//Peek type
+	if (codec==TextCodec::T140RED || codec==VideoCodec::RED)
 	{
-		//Find the type in the map
-		RTPMap::iterator it = rtpMapIn->find(type);
-		//Check it is in there
-		if (it==rtpMapIn->end())
+		//Create redundant type
+		RTPRedundantPacket *red = new RTPRedundantPacket(media,buffer,size);
+		//Get primary type
+		BYTE t = red->GetPrimaryType();
+		//Map primary data codec
+		BYTE c = rtpMapIn->GetCodecForType(t);
+		//Check codec
+		if (c==RTPMap::NotFound)
 		{
-			//Delete pacekt
-			delete(packet);
+			//Delete red packet
+			delete(red);
 			//Exit
-			return Error("-RTP packet type unknown [%d]\n",type);
+			return Error("-RTP packet type unknown for primary type of redundant data [%d]\n",t);
 		}
-		//It is our codec
-		packet->SetCodec(it->second);
-	} else
-		//Set codec
-		packet->SetCodec(type);
+		//Set it
+		red->SetPrimaryCodec(c);
+		//For each redundant packet
+		for (int i=0; i<red->GetRedundantCount();++i)
+		{
+			//Get redundant type
+			BYTE t = red->GetRedundantType(i);
+			//Map redundant data codec
+			BYTE c = rtpMapIn->GetCodecForType(t);
+			//Check codec
+			if (c==RTPMap::NotFound)
+			{
+				//Delete red packet
+				delete(red);
+				//Exit
+				return Error("-RTP packet type unknown for primary type of secundary data [%d,%d]\n",i,t);
+			}
+			//Set it
+			red->SetRedundantCodec(i,c);
+		}
+		//Set packet
+		packet = red;
+	} else {
+		//Create normal packet
+		packet = new RTPTimedPacket(media,buffer,size);
+	}
+
+	//Set codec
+	packet->SetCodec(codec);
 
 	//Get ssrc
 	DWORD ssrc = packet->GetSSRC();
