@@ -336,12 +336,21 @@ int TextStream::RecText()
 			{
 				//Get redundant packet
 				RTPRedundantPacket* red = (RTPRedundantPacket*)packet;
+				
+				//Timestamp of first packet (either receovered or not)
+				DWORD ts = timeStamp;
+					
+				//Check if we have any red pacekt
+				if (red->GetRedundantCount()>0)
+					//Get the timestamp of first redundant packet
+					ts = red->GetRedundantTimestamp(0);
 
 				//For each lonot recoveredt packet send a mark
 				for (int i=red->GetRedundantCount();i<lost;i++)
 				{
+
 					//Create frame of lost replacement
-					TextFrame frame(timeStamp,LOSTREPLACEMENT,sizeof(LOSTREPLACEMENT));
+					TextFrame frame(ts,LOSTREPLACEMENT,sizeof(LOSTREPLACEMENT));
 					//Y lo reproducimos
 					textOutput->SendFrame(frame);
 				}
@@ -354,7 +363,7 @@ int TextStream::RecText()
 				for (int i=red->GetRedundantCount()-lost;i<red->GetRedundantCount();i++)
 				{
 					//Create frame from recovered data
-					TextFrame frame(timeStamp,red->GetRedundantPayloadData(i),red->GetRedundantPayloadSize(i));
+					TextFrame frame(red->GetRedundantTimestamp(i),red->GetRedundantPayloadData(i),red->GetRedundantPayloadSize(i));
 					//Y lo reproducimos
 					textOutput->SendFrame(frame);
 				}
