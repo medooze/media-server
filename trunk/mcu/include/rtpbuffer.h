@@ -49,6 +49,8 @@ public:
 		{
 			//Unlock
 			pthread_mutex_unlock(&mutex);
+			//Delete pacekt
+			delete(rtp);
 			//Skip it and lost forever
 			return Error("-Out of order non recoverable packet [next:%d,seq:%d,maxWaitTime=%d,%d,%d]\n",next,seq,maxWaitTime,rtp->GetSeqCycles(),rtp->GetSeqNum());
 		}
