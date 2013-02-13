@@ -28,6 +28,7 @@
         <in>config.h</in>
         <in>crc32calc.h</in>
         <in>fec.h</in>
+        <in>fecdecoder.h</in>
         <in>fifo.h</in>
         <in>flash.h</in>
         <in>flv.h</in>
@@ -209,6 +210,7 @@
         <in>codecs.cpp</in>
         <in>crc32calc.cpp</in>
         <in>fec.cpp</in>
+        <in>fecdecoder.cpp</in>
         <in>flash.cpp</in>
         <in>flashstreamer.cpp</in>
         <in>flvplayer.cpp</in>

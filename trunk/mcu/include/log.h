@@ -84,6 +84,21 @@ inline void BitDump(DWORD val,BYTE n)
 	Debug("Dumping 0x%.4x:%d\n\t%s\n\t%s\n",val,n,line1,line2);
 }
 
+inline void BitDump(WORD val)
+{
+	BitDump(val,16);
+}
+
+inline void BitDump(DWORD val)
+{
+	BitDump(val,32);
+}
+
+inline void BitDump(QWORD val)
+{
+	BitDump(val>>32,32);
+	BitDump(val,32);
+}
 
 inline void Dump(BYTE *data,DWORD size)
 {

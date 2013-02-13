@@ -34,7 +34,6 @@ public:
 	int DeleteMixer(int id);
 	VideoInput*  GetInput(int id);
 	VideoOutput* GetOutput(int id);
-	int SetWatcher(VideoOutput* watcher);
 	int SetSlot(int num,int id);
 	int SetCompositionType(Mosaic::Type comp,int size);
 

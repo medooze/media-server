@@ -152,6 +152,8 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) : remoteRateCo
 	iceLocalPwd = NULL;
 	iceRemoteUsername = NULL;
 	iceRemotePwd = NULL;
+	//NO FEC
+	useFEC = false;
 	//Fill with 0
 	memset(sendPacket,0,MTU);
 	//Preparamos las direcciones de envio
@@ -287,6 +289,9 @@ int RTPSession::SetProperties(const RTPSession::Properties& properties)
 				free(cname);
 			//Clone
 			cname = strdup(it->second.c_str());
+		} else if (it->first.compare("useFEC")==0) {
+			//Set fec decoding
+			useFEC = atoi(it->second.c_str());
 		} else {
 			Error("Unknown RTP property [%s]\n",it->first.c_str());
 		}
@@ -1096,14 +1101,14 @@ int RTPSession::ReadRTP()
 	
 	//Get sec number
 	WORD seq = packet->GetSeqNum();
-
+	
 	//Check if we have a sequence wrap
 	if (seq<0x00FF && (recExtSeq & 0xFFFF)>0xFF00)
 		//Increase cycles
 		recCycles++;
 
 	//Set cycles
-	packet->SetCycles(recCycles);
+	packet->SetSeqCycles(recCycles);
 
 	if (media==MediaFrame::Video)
 		//Update rate control
@@ -1149,6 +1154,38 @@ int RTPSession::ReadRTP()
 
 		//Update rtp timestamp
 		recTimestamp = packet->GetClockTimestamp();
+	}
+
+	//Check if we are using fec
+	if (useFEC)
+	{
+		//Append to the FEC decoder
+		fec.AddPacket(packet);
+		//Try to recover
+		RTPTimedPacket* recovered = fec.Recover();
+		//If we have recovered a pacekt
+		while(recovered)
+		{
+			//Log
+			Log("packet receovered!!!!\n");
+			//Overwrite time with the time of the original 
+			recovered->SetTime(packet->GetTime());
+			//Get pacekte type
+			BYTE t = recovered->GetType();
+			//Map receovered data codec
+			BYTE c = rtpMapIn->GetCodecForType(t);
+			//Check codec
+			if (c!=RTPMap::NotFound)
+				//Set codec
+				recovered->SetCodec(c);
+			else
+				//Set type for passtrhought
+				recovered->SetCodec(t);
+			//add recovered packet
+			packets.Add(recovered);
+			//Try to recover another one (yuhu!)
+			recovered = fec.Recover();
+		}
 	}
 
 	//Push it back
