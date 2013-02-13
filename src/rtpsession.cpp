@@ -1160,7 +1160,9 @@ int RTPSession::ReadRTP()
 	if (useFEC)
 	{
 		//Append to the FEC decoder
-		fec.AddPacket(packet);
+		if (fec.AddPacket(packet))
+			//Append only packets with media data
+			packets.Add(packet);
 		//Try to recover
 		RTPTimedPacket* recovered = fec.Recover();
 		//If we have recovered a pacekt
@@ -1186,12 +1188,10 @@ int RTPSession::ReadRTP()
 			//Try to recover another one (yuhu!)
 			recovered = fec.Recover();
 		}
+	} else {
+		//Add pacekt
+		packets.Add(packet);
 	}
-
-	//Push it back
-	if (!packets.Add(packet))
-		//It was lost forever
-		return 0;
 
 	//Check if we need to send SR
 	if (isZeroTime(&lastSR) || getDifTime(&lastSR)>1000000)

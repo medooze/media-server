@@ -20,7 +20,6 @@ void DumpBits(QWORD val)
 	for (int i=0;i<64;i++)
 		str[i] = r.Get(1) ? '1' : '0';
 	str[64]=0;
-	Debug("0x%.16llx %s\n",val,str);
 }
 
 FECDecoder::FECDecoder()
@@ -39,31 +38,7 @@ FECDecoder::~FECDecoder()
 		delete (it->second);
 }
 
-void FECDecoder::AddFECData(BYTE* buffer,DWORD size)
-{
-	//Create new FEC data
-	FECData *fec = new FECData(buffer,size);
-
-	Debug("Fec data base:%d long:%d mask:%llx size:%d\n",fec->GetBaseExtSeq(),fec->GetLongMask(),fec->GetLevel0Mask(),fec->GetLevel0Size());
-	Dump(buffer,18);
-	DumpBits(fec->GetLevel0Mask());
-
-	//Check if it was ok
-	if (fec)
-		//Append it
-		codes[fec->GetBaseExtSeq()] = fec;
-	
-	//Delete
-	RTPOrderedPackets::iterator it = medias.find(fec->GetBaseExtSeq());
-	if (it!=medias.end())
-	{
-		Dump(it->second->GetData(),32);
-		delete(it->second);
-		medias.erase(it);
-	}
-}
-
-void FECDecoder::AddPacket(RTPTimedPacket* packet)
+bool FECDecoder::AddPacket(RTPTimedPacket* packet)
 {
 	//Check if it is a redundant packet
 	if (packet->GetCodec()==VideoCodec::RED)
@@ -73,21 +48,41 @@ void FECDecoder::AddPacket(RTPTimedPacket* packet)
 		
 		//Check primary redundant type
 		if (red->GetPrimaryCodec()==VideoCodec::ULPFEC)
-			//Add fec data to list
-			AddFECData(red->GetPrimaryPayloadData(),red->GetPrimaryPayloadSize());
-		else
-			//Add media packet,
-			medias[packet->GetExtSeqNum()] = red->CreatePrimaryPacket();
+		{
+			//Create new FEC data
+			FECData *fec = new FECData(red->GetPrimaryPayloadData(),red->GetPrimaryPayloadSize());
+			//Append it
+			codes[fec->GetBaseExtSeq()] = fec;
+			//Delete pacekt
+			delete(packet);
+			//Packet contained no media
+			return false;
+		}
+
+		//Add media packet
+		medias[packet->GetExtSeqNum()] = red->CreatePrimaryPacket();
 
 		//For each redundant data
 		for (int i=0;i<red->GetRedundantCount();++i)
+		{
 			//Check if it is a FEC pacekt
 			if (red->GetRedundantCodec(i)==VideoCodec::ULPFEC)
+			{
 				//Create new FEC data
-				AddFECData(red->GetRedundantPayloadData(i),red->GetRedundantPayloadSize(i));
+				FECData *fec = new FECData(red->GetRedundantPayloadData(i),red->GetRedundantPayloadSize(i));
+				//Append it
+				codes[fec->GetBaseExtSeq()] = fec;
+			}
+		}
 	} else if (packet->GetCodec()==VideoCodec::ULPFEC) {
 		//Create new FEC data
-		 AddFECData(packet->GetMediaData(),packet->GetMediaLength());
+		FECData *fec = new FECData(packet->GetMediaData(),packet->GetMediaLength());
+		//Append it
+				codes[fec->GetBaseExtSeq()] = fec;
+		//Delete pacekt
+		delete(packet);
+		//Packet contained no media
+		return false;
 	} else {
 		//Add media packet
 		medias[packet->GetExtSeqNum()] = packet->Clone();
@@ -116,6 +111,9 @@ void FECDecoder::AddPacket(RTPTimedPacket* packet)
 		//Erase and move to next
 		codes.erase(it2++);
 	}
+
+	//Packet had media
+	return true;
 }
 
 RTPTimedPacket* FECDecoder::Recover()
@@ -137,7 +135,7 @@ RTPTimedPacket* FECDecoder::Recover()
 	DWORD lastSeq = minSeq;
 
 	//Set to 0
-	memset(aux,8,0);
+	memset(aux,0,8);
 	//Create writter
 	BitWritter w(aux,8);
 	//vector of lost pacekt seq
@@ -179,21 +177,17 @@ RTPTimedPacket* FECDecoder::Recover()
 		//Get lost packet sequence
 		DWORD seq = *it;
 
-		Debug("-lost seq %d %llx %d %d\n",seq,lostMask,minSeq,lastSeq);
-		
 		//Search FEC packets associated this media packet
 		for (FECOrderedData::iterator it2 = codes.begin();it2!=codes.end();++it2)
 		{
 			//Get FEC packet
 			FECData *fec = it2->second;
-			//Debug
-			Debug("-fec %d %llx\n",fec->GetBaseExtSeq(),fec->GetLevel0Mask());
-			
+
 			//Check if it is associated with this media pacekt in level 0
 			if (!fec->IsProtectedAtLevel0(seq))
 				//Next
 				continue;
-			Debug("---------seq %d base %d\n",seq,fec->GetBaseExtSeq());
+
 			//Get the seq difference between fec data and the media
 			// fec seq has to be <= media seq it fec data protect media data)
 			DWORD diff = seq-fec->GetBaseExtSeq();
@@ -202,16 +196,9 @@ RTPTimedPacket* FECDecoder::Recover()
 			//Remove lost packet bit from the fec mask
 			QWORD fecMask = fec->GetLevel0Mask() & ~(((QWORD)1)<<(64-diff-1));
 
-			Debug("-fe masks %llx diff %d\n",fecMask,diff);
-			DumpBits(fec->GetLevel0Mask());
-			DumpBits(fecMask);
-			Debug("-media masks %llx %d\n",mediaMask,fec->GetBaseExtSeq()-minSeq);
-			DumpBits(mediaMask);
-			
 			//Compare needed pacekts with actual pacekts, to check if we have all of them except the missing
 			if ((fecMask & mediaMask) == fecMask)
 			{
-				Debug("----------recovered!!");
 				//Rocovered media data
 				BYTE	recovered[MTU];
 				//Get attributes
@@ -233,16 +220,11 @@ RTPTimedPacket* FECDecoder::Recover()
 				//Read all media packet
 				while(r.Left())
 				{
-					bool x = r.Get(1);
-					Debug("%d",x);
 					//If the media packet is used to reconstrud the packet
-					if (x)
+					if (r.Get(1))
 					{
-						Debug("-recovering from %d %d\n",fec->GetBaseExtSeq()+r.GetPos()-1,r.GetPos()-1);
 						//Get media packet
 						RTPTimedPacket* media = medias[fec->GetBaseExtSeq()+r.GetPos()-1];
-						//Retreive
-						Debug("%u\n",media->GetTimestamp());
 						//Calculate receovered attributes
 						p  ^= media->GetP();
 						x  ^= media->GetX();
@@ -274,9 +256,9 @@ RTPTimedPacket* FECDecoder::Recover()
 				packet->SetSSRC(ssrc);
 				//Set payload and recovered length
 				packet->SetPayload(recovered,l);
-				Debug("-recovered packet len:%u ts:%u pts:%u seq:%d\n",l,ts,packet->GetTimestamp() ,packet->GetSeqNum());
-				Dump(packet->GetData(),32);
 
+				Debug("-recovered packet len:%u ts:%u pts:%u seq:%d\n",l,ts,packet->GetTimestamp() ,packet->GetSeqNum());
+				
 				//Append the packet to the media packet list
 				AddPacket(packet);
 				//Return it
