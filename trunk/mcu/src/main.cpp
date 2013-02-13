@@ -99,6 +99,7 @@ int main(int argc,char **argv)
 		if (strcmp(argv[i],"-h")==0 || strcmp(argv[i],"--help")==0)
 		{
 			//Show usage
+			printf("Medooze MCU media mixer version %s %s\r\n",MCUVERSION,MCUDATE);
 			printf("Usage: mcu [-h] [--help] [--mcu-log logfile] [--mcu-pid pidfile] [--http-port port] [--rtmp-port port] [--min-rtp-port port] [--max-rtp-port port] [--vad-period ms]\r\n\r\n"
 				"Options:\r\n"
 				" -h,--help        Print help\r\n"
@@ -151,7 +152,6 @@ int main(int argc,char **argv)
 		//Log
 		printf("MCU started\r\n");
 		
-
 		//Create the safe child
 		pid = fork();
 
@@ -224,7 +224,7 @@ int main(int argc,char **argv)
 	RTMPServer	rtmpServer;
 
 	//Log version
-	Log("-MCU Version %s\r\n",MCUVERSION);
+	Log("-MCU Version %s %s\r\n",MCUVERSION,MCUDATE);
 
 	//Create services
 	MCU		mcu;

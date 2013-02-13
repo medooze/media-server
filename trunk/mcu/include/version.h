@@ -9,6 +9,6 @@
 #define	VERSION_H
 
 #define MCUVERSION	"$Rev$"
+#define MCUDATE		"$Date$"
 
 #endif	/* VERSION_H */
-
