@@ -1301,3 +1301,22 @@ RTPRedundantPacket::RTPRedundantPacket(MediaFrame::Type media,BYTE *data,DWORD s
 	//Get size of primary payload
 	primarySize = GetMediaLength()-i-skip;
 }
+
+RTPTimedPacket* RTPRedundantPacket::CreatePrimaryPacket()
+{
+	//Create new pacekt
+	RTPTimedPacket* packet = new RTPTimedPacket(GetMedia(),primaryCodec,primaryType);
+	//Set attributes
+	packet->SetClockRate(GetClockRate());
+	packet->SetMark(GetMark());
+	packet->SetSeqNum(GetSeqNum());
+	packet->SetSeqCycles(GetSeqCycles());
+	packet->SetTimestamp(GetTimestamp());
+	packet->SetSSRC(GetSSRC());
+	//Set paylaod
+	packet->SetPayload(primaryData,primarySize);
+	//Set time
+	packet->SetTime(packet->GetTime());
+	//Return it
+	return packet;
+}

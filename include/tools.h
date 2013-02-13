@@ -165,6 +165,7 @@ inline BYTE  get1(const BYTE *data,BYTE i) { return data[i]; }
 inline DWORD get2(const BYTE *data,BYTE i) { return (DWORD)(data[i+1]) | ((DWORD)(data[i]))<<8; }
 inline DWORD get3(const BYTE *data,BYTE i) { return (DWORD)(data[i+2]) | ((DWORD)(data[i+1]))<<8 | ((DWORD)(data[i]))<<16; }
 inline DWORD get4(const BYTE *data,BYTE i) { return (DWORD)(data[i+3]) | ((DWORD)(data[i+2]))<<8 | ((DWORD)(data[i+1]))<<16 | ((DWORD)(data[i]))<<24; }
+inline DWORD get8(const BYTE *data,BYTE i) { return ((QWORD)get4(data,i))<<32 | get4(data,i+4);	}
 
 inline void set1(BYTE *data,BYTE i,BYTE val)
 {

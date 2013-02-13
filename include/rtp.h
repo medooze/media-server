@@ -130,11 +130,15 @@ public:
 	RTPPacket* Clone()
 	{
 		//New one
-		RTPPacket* cloned = new RTPPacket(media,codec,header->pt);
-		//Copy
-		memcpy(cloned->GetData(),buffer,SIZE);
-		//Set media length
-		cloned->SetMediaLength(len);
+		RTPPacket* cloned = new RTPPacket(GetMedia(),GetCodec(),GetType());
+		//Set attrributes
+		cloned->SetClockRate(GetClockRate());
+		cloned->SetMark(GetMark());
+		cloned->SetSeqNum(GetSeqNum());
+		cloned->SetSeqCycles(GetSeqCycles());
+		cloned->SetTimestamp(GetTimestamp());
+		//Set payload
+		cloned->SetPayload(GetMediaData(),GetMediaLength());
 		//Return it
 		return cloned;
 	}
@@ -143,11 +147,15 @@ public:
 	void SetMediaLength(DWORD len)	{ this->len = len;			}
 	void SetTimestamp(DWORD ts)	{ header->ts = htonl(ts);		}
 	void SetSeqNum(WORD sn)		{ header->seq = htons(sn);		}
+	void SetP(bool p)		{ header->p = p;			}
+	void SetX(bool x)		{ header->x = x;			}
+	void SetCC(BYTE cc)		{ header->cc = cc;			}
 	void SetMark(bool mark)		{ header->m = mark;			}
+	void SetSSRC(DWORD ssrc)	{ header->ssrc = htonl(ssrc);		}
 	void SetCodec(DWORD codec)	{ this->codec = codec;			}
 	void SetType(DWORD type)	{ header->pt = type;			}
 	void SetSize(DWORD size)	{ len = size-GetRTPHeaderLen();		}
-	void SetCycles(WORD cycles)	{ this->cycles = cycles;		}
+	void SetSeqCycles(WORD cycles)	{ this->cycles = cycles;		}
 	void SetClockRate(DWORD rate)	{ this->clockRate = rate;		}
 	
 	//Getters
@@ -155,6 +163,9 @@ public:
 	rtp_hdr_t* GetRTPHeader()	const { return (rtp_hdr_t*)buffer;		}
 	DWORD GetRTPHeaderLen()		const { return sizeof(rtp_hdr_t)+4*header->cc;	}
 	DWORD GetCodec()		const { return codec;				}
+	bool  GetX()			const { return header->x;			}
+	bool  GetP()			const { return header->p;			}
+	BYTE  GetCC()			const { return header->cc;			}
 	DWORD GetType()			const { return header->pt;			}
 	DWORD GetSize()			const { return len+GetRTPHeaderLen();		}
 	BYTE* GetData()			      { return buffer;				}
@@ -262,7 +273,26 @@ public:
 		time = ::getTime();
 	}
 
-	QWORD GetTime() { return time; }
+	RTPTimedPacket* Clone()
+	{
+		//New one
+		RTPTimedPacket* cloned = new RTPTimedPacket(GetMedia(),GetCodec(),GetType());
+		//Set attrributes
+		cloned->SetClockRate(GetClockRate());
+		cloned->SetMark(GetMark());
+		cloned->SetSeqNum(GetSeqNum());
+		cloned->SetSeqCycles(GetSeqCycles());
+		cloned->SetTimestamp(GetTimestamp());
+		//Set payload
+		cloned->SetPayload(GetMediaData(),GetMediaLength());
+		//Set time
+		cloned->SetTime(GetTime());
+		//Return it
+		return cloned;
+	}
+
+	QWORD GetTime()			{ return time;		}
+	void  SetTime(QWORD time )	{ this->time = time;	}
 private:
 	QWORD time;
 };
@@ -278,6 +308,8 @@ public:
 	BYTE  GetPrimaryType()			const { return primaryType;	}
 	BYTE  GetPrimaryCodec()			const { return primaryCodec;	}
 	void  SetPrimaryCodec(BYTE codec)	      { primaryCodec = codec;	}
+
+	RTPTimedPacket* CreatePrimaryPacket();
 	
 	BYTE  GetRedundantCount()		const { return headers.size();	}
 	BYTE* GetRedundantPayloadData(int i)	const { return i<headers.size()?redundantData+headers[i].ini:NULL;	}

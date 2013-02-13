@@ -347,8 +347,10 @@ int VideoMixer::MixVideo()
 					{
 						//Get output
 						PipeVideoOutput *output = it->second->output;
-						//Change mosaic
-						mosaic->Update(vadPos,output->GetFrame(),output->GetWidth(),output->GetHeight());
+						//Check if it has chenged
+						if (output && (output->IsChanged(version) || vadPos!=oldVadPos))
+							//Change mosaic
+							mosaic->Update(vadPos,output->GetFrame(),output->GetWidth(),output->GetHeight());
 					}
 				}
 			}

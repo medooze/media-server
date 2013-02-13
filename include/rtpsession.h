@@ -13,6 +13,7 @@
 #include "rtp.h"
 #include "rtpbuffer.h"
 #include "remoteratecontrol.h"
+#include "fecdecoder.h"
 
 
 class RTPMap : 
@@ -199,7 +200,9 @@ private:
 	bool	pendingTMBR;
 	DWORD	pendingTMBBitrate;
 
-	RemoteRateControl remoteRateControl;
+	RemoteRateControl	remoteRateControl;
+	FECDecoder		fec;
+	bool			useFEC;
 };
 
 #endif
