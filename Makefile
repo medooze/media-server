@@ -137,6 +137,7 @@ all: touch mkdirs $(TARGETS)
 
 touch:
 	touch $(SRCDIR)/include/version.h
+	svn propset buittime "`date`" $(SRCDIR)/include/version.h
 mkdirs:  
 	mkdir -p $(BUILD)
 	mkdir -p $(BIN)
