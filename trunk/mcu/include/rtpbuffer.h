@@ -186,7 +186,8 @@ public:
 	}
 	void SetMaxWaitTime(DWORD maxWaitTime)
 	{
-		this->maxWaitTime = maxWaitTime;
+		//Convert to mili to nano
+		this->maxWaitTime = maxWaitTime*1000;
 	}
 private:
 	void ClearPackets()
