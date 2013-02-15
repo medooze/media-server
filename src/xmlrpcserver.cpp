@@ -14,37 +14,14 @@
 **************************************/
 XmlRpcServer::XmlRpcServer(int port)
 {
-	char name[65];
-
 	//Iniciamos la fecha
 	DateInit();
 
 	//Los mime tipes
 	MIMETypeInit();
 
-	//Le pasamos como nombre un puntero a nosotros mismos
-	sprintf(name,"%p",this);	
-
-	//Creamos el servidor
-	ServerCreate(&srv,name, port, DEFAULT_DOCS, "http.log");
-
-	//Iniciamos el servidor
-	ServerInit(&srv);
-
-	//Set the handler
-	abyss_bool ret;
-
-	//Create abyss handler
-	ServerReqHandler3 abbysHndlr;
-
-	//Set
-	abbysHndlr.userdata	= (void*)this;
-	abbysHndlr.handleReq	= RequestHandler;
-	abbysHndlr.term		= NULL;
-	abbysHndlr.handleReqStackSize = 0;
-
-	//Add handler
-	ServerAddHandler3(&srv,&abbysHndlr,&ret);
+	//Store port
+	this->port = port;
 }
 
 XmlRpcServer::~XmlRpcServer()
@@ -73,19 +50,51 @@ int XmlRpcServer::Start()
 **************************************/
 int XmlRpcServer::Run()
 {
-	Log(">Run [%p]\n",this);
+	char name[65];
 
-	//Vamos a buscar en orden inverso
-	LstHandlers::reverse_iterator it;
+	//While we are not stopped
+	while (running)
+	{
+		//LOg
+		Log(">Run Server [%p]\n",this);
+		
+		//Le pasamos como nombre un puntero a nosotros mismos
+		sprintf(name,"%p",this);
 
-	//Recorremos la lista
-	for (it=lstHandlers.rbegin();it!=lstHandlers.rend();it++)	
-		Log("-Handler on %s\n",(*it).first.c_str());
+		//Creamos el servidor
+		ServerCreate(&srv,name, port, DEFAULT_DOCS, "http.log");
 
-	//Ejecutamos
-	ServerRun(&srv);
+		//Iniciamos el servidor
+		ServerInit(&srv);
 
-	Log("<Run\n");
+		//Set the handler
+		abyss_bool ret;
+
+		//Create abyss handler
+		ServerReqHandler3 abbysHndlr;
+
+		//Set
+		abbysHndlr.userdata	= (void*)this;
+		abbysHndlr.handleReq	= RequestHandler;
+		abbysHndlr.term		= NULL;
+		abbysHndlr.handleReqStackSize = 0;
+
+		//Add handler
+		ServerAddHandler3(&srv,&abbysHndlr,&ret);
+
+		//Vamos a buscar en orden inverso
+		LstHandlers::reverse_iterator it;
+
+		//Recorremos la lista
+		for (it=lstHandlers.rbegin();it!=lstHandlers.rend();it++)
+			Log("-Handler on %s\n",(*it).first.c_str());
+
+		//Ejecutamos
+		ServerRun(&srv);
+
+		//Log
+		Log("<Run\n");
+	}
 
 	return 1;
 }
