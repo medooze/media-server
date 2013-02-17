@@ -21,6 +21,7 @@
 #include "rtp.h"
 #include "rtpsession.h"
 #include "stunmessage.h"
+#include "bitstream.h"
 #include <libavutil/base64.h>
 #include <openssl/ossl_typ.h>
 
@@ -204,6 +205,14 @@ RTPSession::~RTPSession()
 		free(recvKey);
 	if (cname)
 		free(cname);
+	//Delete rtx packets
+	for (RTPOrderedPackets::iterator it = rtxs.begin(); it!=rtxs.end();++it)
+	{
+		//Get pacekt
+		RTPTimedPacket *pkt = it->second;
+		//Delete object
+		delete(pkt);
+	}
 }
 
 void RTPSession::SetSendingRTPMap(RTPMap &map)
@@ -257,7 +266,7 @@ int RTPSession::SetLocalCryptoSDES(const char* suite, const char* key64)
 	//Set polciy values
 	policy.ssrc.type	= ssrc_any_outbound;
 	policy.ssrc.value	= 0;
-	policy.allow_repeat_tx  = 1;
+	//policy.allow_repeat_tx  = 1; <--- Not all srtp libs containts it
 	policy.key		= sendKey;
 	policy.next		= NULL;
 
@@ -783,8 +792,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 	//Check if we ar encripted
 	if (encript)
 	{
-
-		//Encrip
+		//Encript
 		err_status_t err = srtp_protect(sendSRTPSession,sendPacket,&len);
 		//Check error
 		if (err!=err_status_ok)
@@ -793,11 +801,45 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 	}
 
 	//Mandamos el mensaje
-	int ret = sendto(simSocket,sendPacket,len,0,(sockaddr *)&sendAddr,sizeof(struct sockaddr_in));
+	int ret;
+
+	//if (!(rand() %16))
+		ret = sendto(simSocket,sendPacket,len,0,(sockaddr *)&sendAddr,sizeof(struct sockaddr_in));
 
 	//Inc stats
 	numSendPackets++;
 	totalSendBytes += packet.GetMediaLength();
+
+	//Add it rtx queue
+	if (useNACK)
+	{
+		//Create new pacekt
+		RTPTimedPacket *rtx = new RTPTimedPacket(media,sendPacket,len);
+		//Block
+		rtxUse.WaitUnusedAndLock();
+		//Add it to que
+		rtxs[rtx->GetExtSeqNum()] = rtx;
+		//Get time for packets to discard
+		QWORD until = getTime()/1000 - fmax(rtt*2,100);
+		//Delete old packets 
+		RTPOrderedPackets::iterator it = rtxs.begin();
+		//Until the end
+		while(it!=rtxs.end())
+		{
+			//Get pacekt
+			RTPTimedPacket *pkt = it->second;
+			//Check time
+			if (pkt->GetTime()>until)
+				//Keep the rest
+				break;
+			//DElete from queue and move next
+			rtxs.erase(it++);
+			//Delete object
+			delete(pkt);
+		}
+		//Unlock
+		rtxUse.Unlock();
+	}
 
 	//Exit
 	return (ret>0);
@@ -1204,9 +1246,11 @@ int RTPSession::ReadRTP()
 			//Send them
 			while (lost>0)
 			{
+				//Skip base
+				lost--;
 				//Get number of lost in the 16 mask
 				WORD n = lost;
-				//Check
+				//Check nex 16 packets
 				if (n>16)
 					//Clip
 					n = 16;
@@ -1480,7 +1524,6 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 				break;
 			case RTCPPacket::RTPFeedback:
 			{
-
 				//Get feedback packet
 				RTCPRTPFeedback *fb = (RTCPRTPFeedback*) packet;
 				//Check feedback type
@@ -1491,8 +1534,14 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 						{
 							//Get field
 							RTCPRTPFeedback::NACKField *field = (RTCPRTPFeedback::NACKField*) fb->GetField(i);
-							//Debug it
-							Log("NACK %d %x\n",field->pid,field->blp);
+							//Resent it
+							ReSendPacket(field->pid);
+							//Check each bit of the mask
+							for (int i=0;i<16;i++)
+								//Check it bit is present to rtx the packets
+								if ((field->blp >> (15-i)) & 1)
+									//Resent it
+									ReSendPacket(field->pid+i+1);
 						}
 						break;
 					case RTCPRTPFeedback::TempMaxMediaStreamBitrateRequest:
@@ -1540,14 +1589,19 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 							listener->onFPURequested(this);
 						break;
 					case RTCPPayloadFeedback::SliceLossIndication:
+						Log("-SliceLossIndication\n");
 						break;
 					case RTCPPayloadFeedback::ReferencePictureSelectionIndication:
+						Log("-ReferencePictureSelectionIndication\n");
 						break;
 					case RTCPPayloadFeedback::TemporalSpatialTradeOffRequest:
+						Log("-TemporalSpatialTradeOffRequest\n");
 						break;
 					case RTCPPayloadFeedback::TemporalSpatialTradeOffNotification:
+						Log("-TemporalSpatialTradeOffNotification\n");
 						break;
 					case RTCPPayloadFeedback::VideoBackChannelMessage:
+						Log("-VideoBackChannelMessage\n");
 						break;
 					case RTCPPayloadFeedback::ApplicationLayerFeeedbackMessage:
 						for (BYTE i=0;i<fb->GetFieldCount();i++)
@@ -1782,4 +1836,28 @@ void RTPSession::onTargetBitrateRequested(DWORD bitrate)
 
 	//Delete it
 	delete(rtcp);
+}
+
+void RTPSession::ReSendPacket(int seq)
+{
+	//Lock
+	rtxUse.IncUse();
+
+	//Calculate ext seq number
+	DWORD ext = ((DWORD)recCycles)<<16 | seq;
+
+	//Find packet to retransmit
+	RTPOrderedPackets::iterator it = rtxs.find(ext);
+
+	//If we still have it
+	if (it!=rtxs.end())
+	{
+		//Get packet
+		RTPTimedPacket* packet = it->second;
+		//Re send pacekt
+		sendto(simSocket,packet->GetData(),packet->GetSize(),0,(sockaddr *)&sendAddr,sizeof(struct sockaddr_in));
+	}
+
+	//Unlock
+	rtxUse.DecUse();
 }
