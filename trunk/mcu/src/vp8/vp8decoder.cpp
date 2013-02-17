@@ -71,6 +71,9 @@ int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 {
 	vpx_codec_err_t err = VPX_CODEC_OK;
 
+	//Not key frame
+	isKeyFrame = false;
+
 	//Check if not empty last packet
 	if (inLen)
 	{
@@ -131,6 +134,12 @@ int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 		if (err!=VPX_CODEC_OK)
 			//Error
 			return Error("Error decoding VP8 last [error %d:%s]\n",decoder.err,decoder.err_detail);
+
+		//Check if it is corrupted
+		int corrupted;
+		if (vpx_codec_control(&decoder, VP8D_GET_FRAME_CORRUPTED, &corrupted)==VPX_CODEC_OK)
+			//Set key frame flag
+			isKeyFrame =  !(buffer[0] & 1) && !corrupted;
 		
 		//Ger image
 		vpx_codec_iter_t iter = NULL;
@@ -181,16 +190,5 @@ int VP8Decoder::Decode(BYTE *buffer,DWORD size)
 
 bool VP8Decoder::IsKeyFrame()
 {
-	int corrupted = 0;
-	int reference_updates = 0;
-	//Gett reference update
-	if (vpx_codec_control(&decoder, VP8D_GET_LAST_REF_UPDATES,&reference_updates))
-		return false;
-
-	//Check if it is corrupted
-	if (vpx_codec_control(&decoder, VP8D_GET_FRAME_CORRUPTED, &corrupted))
-		return false;
-
-	//Check not corrupted key
-	return ((reference_updates & VP8_GOLD_FRAME) || (reference_updates & VP8_ALTR_FRAME)) && !corrupted;
+	return isKeyFrame;
 }

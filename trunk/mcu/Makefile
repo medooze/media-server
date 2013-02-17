@@ -75,7 +75,7 @@ ifeq ($(FLASHSTREAMER),yes)
 endif
 
 ifeq ($(VADWEBRTC),yes)
-	VADINCLUDE = -I$(WEBRTCINCLUDE)
+	VADINCLUDE = -I$(WEBRTCINCLUDE) -I$(WEBRTCINCLUDE)/webrtc
 	VADLD = $(WEBRTDIROBJ)/common_audio/libvad.a $(WEBRTDIROBJ)/common_audio/libsignal_processing.a
 	OPTS+= -DVADWEBRTC
 else

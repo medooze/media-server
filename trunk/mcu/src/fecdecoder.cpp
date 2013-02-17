@@ -11,17 +11,6 @@
 #include "codecs.h"
 #include "bitstream.h"
 
-void DumpBits(QWORD val)
-{
-	char str[65];
-	BYTE aux[8];
-	set8(aux,0,val);
-	BitReader r(aux,8);
-	for (int i=0;i<64;i++)
-		str[i] = r.Get(1) ? '1' : '0';
-	str[64]=0;
-}
-
 FECDecoder::FECDecoder()
 {
 }

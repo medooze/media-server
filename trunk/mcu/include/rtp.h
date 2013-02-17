@@ -210,7 +210,8 @@ public:
 		return true;
 	}
 public:
-	static BYTE GetType(const BYTE* data)	{ return ((rtp_hdr_t*)data)->pt;	}
+	static BYTE GetType(const BYTE* data)	{ return ((rtp_hdr_t*)data)->pt;		}
+	static DWORD GetSSRC(const BYTE* data)	{ return ntohl(((rtp_hdr_t*)data)->ssrc);	}
 private:
 	static const DWORD SIZE = 1700;
 private:
@@ -792,7 +793,16 @@ public:
 
 	struct NACKField : public Field
 	{
-		
+
+		/*
+		 *
+		    0                   1                   2                   3
+		    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+		   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		   |            PID                |             BLP               |
+		   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		 */
+
 		WORD pid;
 		WORD blp;
 
@@ -806,20 +816,20 @@ public:
 			this->pid = pid;
 			this->blp = blp;
 		}
-		virtual DWORD GetSize() { return 8;}
+		virtual DWORD GetSize() { return 4;}
 		virtual DWORD Parse(BYTE* data,DWORD size)
 		{
-			if (size<8) return 0;
-			pid = get4(data,0);
-			blp = get4(data,4);
-			return 8;
+			if (size<4) return 0;
+			pid = get2(data,0);
+			blp = get2(data,2);
+			return 4;
 		}
 		virtual DWORD Serialize(BYTE* data,DWORD size)
 		{
-			if (size<8) return 0;
-			set4(data,0,pid);
-			set4(data,4,blp);
-			return 8;
+			if (size<4) return 0;
+			set2(data,0,pid);
+			set2(data,2,blp);
+			return 4;
 		}
 	};
 

@@ -34,6 +34,7 @@ private:
 	BYTE		src;
 	DWORD		width;
 	DWORD		height;
+	bool		isKeyFrame;
 };
 #endif	/* VP8DECODER_H */
 

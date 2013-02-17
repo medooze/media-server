@@ -14,6 +14,7 @@
 #include "rtpbuffer.h"
 #include "remoteratecontrol.h"
 #include "fecdecoder.h"
+#include "stunmessage.h"
 
 
 class RTPMap : 
@@ -142,6 +143,7 @@ private:
 	srtp_t	sendSRTPSession;
 	BYTE*	sendKey;
 	srtp_t	recvSRTPSession;
+	srtp_t	recvSRTPSessionRTX;
 	BYTE*	recvKey;
 
 	char*	cname;
@@ -203,6 +205,8 @@ private:
 	RemoteRateControl	remoteRateControl;
 	FECDecoder		fec;
 	bool			useFEC;
+	bool			useNACK;
+	bool			isNACKEnabled;
 };
 
 #endif

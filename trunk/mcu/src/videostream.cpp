@@ -680,6 +680,9 @@ int VideoStream::RecVideo()
 		//Si es el ultimo
 		if(packet->GetMark())
 		{
+			if (videoDecoder->IsKeyFrame())
+				Log("-Got Intra\n");
+			
 			//No seq number for frame
 			frameSeqNum = RTPPacket::MaxExtSeqNum;
 
