@@ -113,6 +113,7 @@ private:
 	int  ReadRTCP();
 	void ProcessRTCPPacket(RTCPCompoundPacket *packet);
 	void SetSendingType(int type);
+	void ReSendPacket(int seq);
 	int Run();
 private:
 	static  void* run(void *par);
@@ -123,7 +124,8 @@ protected:
 	int SendSenderReport();
 	int SendFIR();
 	RTCPCompoundPacket* CreateSenderReport();
-
+private:
+	typedef std::map<DWORD,RTPTimedPacket*> RTPOrderedPackets;
 private:
 	MediaFrame::Type media;
 	Listener* listener;
@@ -207,6 +209,9 @@ private:
 	bool			useFEC;
 	bool			useNACK;
 	bool			isNACKEnabled;
+
+	RTPOrderedPackets	rtxs;
+	Use			rtxUse;
 };
 
 #endif
