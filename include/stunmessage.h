@@ -114,7 +114,6 @@ public:
 	void  AddXorAddressAttribute(sockaddr_in *addr);
 	void  AddUsernameAttribute(const char* local,const char* remote);
 
-
 	Type GetType()		{ return type; }
 	Method GetMethod()	{ return method; }
 private:

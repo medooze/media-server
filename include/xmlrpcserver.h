@@ -37,6 +37,7 @@ protected:
 private:
 	typedef std::map<std::string,Handler *> LstHandlers;
 	int running;
+	int port;
 	TServer srv;
 	LstHandlers lstHandlers;
 

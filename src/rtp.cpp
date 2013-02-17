@@ -397,7 +397,7 @@ DWORD RTCPReceiverReport::Serialize(BYTE* data,DWORD size)
 	//Check size
 	if (size<packetSize)
 		//error
-		return Error("Serialize RTCPSenderReport invalid size\n");
+		return Error("Serialize RTCPReceiverReport invalid size\n");
 	//Set header
 	rtcp_common_t * header = (rtcp_common_t *)data;
 	//Set values
@@ -487,7 +487,7 @@ DWORD RTCPBye::Serialize(BYTE* data,DWORD size)
 	//Check size
 	if (size<packetSize)
 		//error
-		return Error("Serialize RTCPSenderReport invalid size\n");
+		return Error("Serialize RTCPBye invalid size\n");
 	//Set header
 	rtcp_common_t * header = (rtcp_common_t *)data;
 	//Set values
@@ -612,7 +612,7 @@ DWORD RTCPApp::Serialize(BYTE* data, DWORD size)
 	//Check size
 	if (size<packetSize)
 		//error
-		return Error("Serialize RTCPSenderReport invalid size\n");
+		return Error("Serialize RTCPApp invalid size\n");
 	//Set header
 	rtcp_common_t * header = (rtcp_common_t *)data;
 	//Set values
@@ -755,7 +755,7 @@ DWORD RTCPRTPFeedback::Serialize(BYTE* data,DWORD size)
 	//Check size
 	if (size<packetSize)
 		//error
-		return Error("Serialize RTCPSenderReport invalid size\n");
+		return Error("Serialize RTCPRTPFeedback invalid size\n");
 	//Set header
 	rtcp_common_t * header = (rtcp_common_t *)data;
 	//Set values
@@ -905,7 +905,7 @@ DWORD RTCPPayloadFeedback::Serialize(BYTE* data,DWORD size)
 	//Check size
 	if (size<packetSize)
 		//error
-		return Error("Serialize RTCPSenderReport invalid size\n");
+		return Error("Serialize RTCPPayloadFeedback invalid size\n");
 	//Set header
 	rtcp_common_t * header = (rtcp_common_t *)data;
 	//Set values
@@ -963,7 +963,7 @@ DWORD RTCPFullIntraRequest::Serialize(BYTE* data,DWORD size)
 	//Check size
 	if (size<packetSize)
 		//error
-		return Error("Serialize RTCPSenderReport invalid size\n");
+		return Error("Serialize RTCPFullIntraRequest invalid size\n");
 	//Set header
 	rtcp_common_t * header = (rtcp_common_t *)data;
 	//Set values
@@ -1016,7 +1016,7 @@ DWORD RTCPNACK::Serialize(BYTE* data,DWORD size)
 	//Check size
 	if (size<packetSize)
 		//error
-		return Error("Serialize RTCPSenderReport invalid size\n");
+		return Error("Serialize RTCPNACK invalid size\n");
 	//Set header
 	rtcp_common_t * header = (rtcp_common_t *)data;
 	//Set values
