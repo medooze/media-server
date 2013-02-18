@@ -19,6 +19,7 @@ RTMPServer::RTMPServer()
 	//Y no tamos iniciados
 	inited = 0;
 	serverPort = 0;
+	server = 0;
 
 	//Create mutx
 	pthread_mutex_init(&sessionMutex,0);
@@ -45,35 +46,10 @@ RTMPServer::~RTMPServer()
 *************************/
 int RTMPServer::Init(int port)
 {
-	sockaddr_in addr;
-
-	Log(">Init RTMP Server\n");
+	Log("-Init RTMP Server [%d]\n",port);
 
 	//Save server port
 	serverPort = port;
-
-	//Create socket
-	server = socket(AF_INET, SOCK_STREAM, 0);
-
-	//Set SO_REUSEADDR on a socket to true (1):
-	int optval = 1;
-	setsockopt(server, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
-	
-	//Bind to first available port
-	memset(&addr,0,sizeof(addr));
-	addr.sin_family 	= AF_INET;
-	addr.sin_addr.s_addr 	= INADDR_ANY;
-	addr.sin_port 		= htons(serverPort);
-	
-	//Bind
-     	if (bind(server, (sockaddr *) &addr, sizeof(addr)) < 0) 
-		//Error 
-		return Error("Can't bind server socket\n");
-	
-	//Listen for connections
-	if (listen(server,5)<0)
-		//Error 
-		return Error("Can't listen on  server socket\n");
 
 	//I am inited
 	inited = 1;
@@ -81,10 +57,8 @@ int RTMPServer::Init(int port)
 	//Create threads
 	createPriorityThread(&serverThread,run,this,0);
 
-	Log("<Init RTMP Server [%d]\n",serverPort);
-
-	//Return server port
-	return serverPort;
+	//Return ok
+	return 1;
 }
 
 /***************************
@@ -93,9 +67,34 @@ int RTMPServer::Init(int port)
  ***************************/
 int RTMPServer::Run()
 {
+	sockaddr_in addr;
 	pollfd ufds[1];
-
+	
+init:
+	//Log
 	Log(">Run RTMP Server [%p]\n",this);
+	//Create socket
+	server = socket(AF_INET, SOCK_STREAM, 0);
+
+	//Set SO_REUSEADDR on a socket to true (1):
+	int optval = 1;
+	setsockopt(server, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
+
+	//Bind to first available port
+	memset(&addr,0,sizeof(addr));
+	addr.sin_family 	= AF_INET;
+	addr.sin_addr.s_addr 	= INADDR_ANY;
+	addr.sin_port 		= htons(serverPort);
+
+	//Bind
+     	if (bind(server, (sockaddr *) &addr, sizeof(addr)) < 0)
+		//Error
+		return Error("Can't bind server socket\n");
+
+	//Listen for connections
+	if (listen(server,5)<0)
+		//Error
+		return Error("Can't listen on  server socket\n");
 
 	//Set values for polling
 	ufds[0].fd = server;
@@ -109,22 +108,38 @@ int RTMPServer::Run()
 	//Run until ended
 	while(inited)
 	{
-		Log("-Accepting connections [%d]\n",inited);
+		//Log
+		Log("-RTMP Server accepting connections [fd:%d]\n", ufds[0].fd);
 
 		//Wait for events
 		if (poll(ufds,1,-1)<0)
-			//Check again
-			continue;
+		{
+			//Error
+			Error("RTMPServer: pool error [fd:%d,errno:%d]\n",ufds[0].fd,errno);
+			//Check if already inited
+			if (!inited)
+				//Exit
+				break;
+			//Close socket just in case
+			close(server);
+			//Re-init
+			goto init;
+		}
 
 		//Chek events, will fail if closed by End() so we can exit
 		if (ufds[0].revents!=POLLIN)
 		{
 			//Error
-			Log("Pool error event [%d]\n",ufds[0].revents);
-			//Exit
-			break;
+			Error("RTMPServer: poolin error event [event:%d,fd:%d,errno:%d]\n",ufds[0].revents,ufds[0].fd,errno);
+			//Check if already inited
+			if (!inited)
+				//Exit
+				break;
+			//Close socket just in case
+			close(server);
+			//Re-init
+			goto init;
 		}
-
 
 		//Accpept incoming connections
 		int fd = accept(server,NULL,0);
@@ -132,9 +147,16 @@ int RTMPServer::Run()
 		//If error
 		if (fd<0)
 		{
-			Log("Error accepting new connection [%d]\n",errno);
-			//Exit
-			continue;
+			//LOg error
+			Error("RTMPServer: error accepting new connection [fd:%d,errno:%d]\n",server,errno);
+			//Check if already inited
+			if (!inited)
+				//Exit
+				break;
+			//Close socket just in case
+			close(server);
+			//Re-init
+			goto init;
 		}
 
 		//Set non blocking again
@@ -144,10 +166,11 @@ int RTMPServer::Run()
 
 		//Create the connection
 		CreateConnection(fd);
-
 	}
 
 	Log("<Run RTMP Server\n");
+
+	return 0;
 }
 
 /*************************
