@@ -650,7 +650,7 @@ int RTPSession::SendPacket(RTCPCompoundPacket &rtcp)
 	if (sendRtcpAddr.sin_addr.s_addr == INADDR_ANY)
 	{
 		//Do we have rec ip?
-		if (recIP!=INADDR_ANY && !muxRTCP)
+		if (recIP!=INADDR_ANY && muxRTCP)
 		{
 			//Do NAT
 			sendRtcpAddr.sin_addr.s_addr = recIP;
@@ -890,6 +890,14 @@ int RTPSession::ReadRTCP()
 				//Clean response
 				delete(resp);
 			}
+			//Check if we have sendinf ip address
+			if (sendRtcpAddr.sin_addr.s_addr == INADDR_ANY)
+			{
+				//Do NAT
+				sendRtcpAddr.sin_addr.s_addr = from_addr.sin_addr.s_addr;
+				//Set port
+				sendRtcpAddr.sin_port = from_addr.sin_addr.s_addr;
+			}
 		}
 
 		//Delete message
@@ -899,26 +907,37 @@ int RTPSession::ReadRTCP()
 	}
 
 	//Check if it is RTCP
-	if (RTCPCompoundPacket::IsRTCP(buffer,size))
+	if (!RTCPCompoundPacket::IsRTCP(buffer,size))
+		//Exit
+		return 0;
+
+	//Check if we have sendinf ip address
+	if (sendRtcpAddr.sin_addr.s_addr == INADDR_ANY)
 	{
-		//Decript
-		if (decript)
-		{
-			//unprotect
-			err_status_t err = srtp_unprotect_rtcp(recvSRTPSession,buffer,&size);
-			//Check error
-			if (err!=err_status_ok)
-				return Error("Error unprotecting rtcp packet [%d]\n",err);
-		}
-		//RTCP mux disabled
-		muxRTCP = false;
-		//Parse it
-		RTCPCompoundPacket* rtcp = RTCPCompoundPacket::Parse(buffer,size);
-		//Check packet
-		if (rtcp)
-			//Handle incomming rtcp packets
-			ProcessRTCPPacket(rtcp);
+		//Do NAT
+		sendRtcpAddr.sin_addr.s_addr = from_addr.sin_addr.s_addr;
+		//Set port
+		sendRtcpAddr.sin_port = from_addr.sin_addr.s_addr;
 	}
+	
+	//Decript
+	if (decript)
+	{
+		//unprotect
+		err_status_t err = srtp_unprotect_rtcp(recvSRTPSession,buffer,&size);
+		//Check error
+		if (err!=err_status_ok)
+			return Error("Error unprotecting rtcp packet [%d]\n",err);
+	}
+	//RTCP mux disabled
+	muxRTCP = false;
+	//Parse it
+	RTCPCompoundPacket* rtcp = RTCPCompoundPacket::Parse(buffer,size);
+	//Check packet
+	if (rtcp)
+		//Handle incomming rtcp packets
+		ProcessRTCPPacket(rtcp);
+	
 	//OK
 	return 1;
 }
