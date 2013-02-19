@@ -100,13 +100,17 @@ int H264Encoder::SetFrameRate(int frames,int kbits,int intraPeriod)
 
 	//Save intra period
 	if (intraPeriod>0)
+		//Set maximium intra period
 		this->intraPeriod = intraPeriod;
+	else
+		//No maximum intra period
+		this->intraPeriod = X264_KEYINT_MAX_INFINITE;
 
 	//Check if already opened
 	if (opened)
 	{
 		//Reconfig parameters
-		params.i_keyint_max         = intraPeriod;
+		params.i_keyint_max         = intraPeriod ;
 		params.i_frame_reference    = 1;
 		params.rc.i_rc_method	    = X264_RC_ABR;
 		params.rc.i_bitrate         = bitrate;
@@ -159,6 +163,7 @@ int H264Encoder::OpenCodec()
 	// Set parameters
 	params.i_keyint_max         = intraPeriod;
 	params.i_frame_reference    = 1;
+	params.i_redundant_intra_mb = 0; //Encode random mbs as intra on P frames
 	params.rc.i_rc_method	    = X264_RC_ABR;
 	params.rc.i_bitrate         = bitrate;
 	params.rc.i_vbv_max_bitrate = bitrate;
