@@ -46,6 +46,11 @@ RTMPServer::~RTMPServer()
 *************************/
 int RTMPServer::Init(int port)
 {
+	//Check not already inited
+	if (inited)
+		//Error
+		return Error("-Init: RTMP Server is already running.\n");
+
 	Log("-Init RTMP Server [%d]\n",port);
 
 	//Save server port
@@ -89,12 +94,12 @@ init:
 	//Bind
      	if (bind(server, (sockaddr *) &addr, sizeof(addr)) < 0)
 		//Error
-		return Error("Can't bind server socket\n");
+		return Error("Can't bind server socket. errno = %d.\n", errno);
 
 	//Listen for connections
 	if (listen(server,5)<0)
 		//Error
-		return Error("Can't listen on  server socket\n");
+		return Error("Can't listen on server socket. errno = %d\n", errno);
 
 	//Set values for polling
 	ufds[0].fd = server;

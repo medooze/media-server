@@ -102,8 +102,8 @@ int VideoStream::SetTemporalBitrateLimit(int bitrate)
 		return 1;
 	//Set bitrate limit
 	videoBitrateLimit = bitrate;
-	//Set limit of bitrate to 1 frames;
-	videoBitrateLimitCount = 1;
+	//Set limit of bitrate to 1 second;
+	videoBitrateLimitCount = videoFPS;
 	//Exit
 	return 1;
 }
@@ -424,12 +424,12 @@ int VideoStream::SendVideo()
 		DWORD instant = bitrateAcu.GetInstant()/bitrateAcu.GetWindow();
 
 		//Check temporal limits
-		if (bitrateAcu.IsInWindow() && instant && instant>videoBitrateLimit && videoBitrateLimitCount>0)
+		if (bitrateAcu.IsInWindow() && instant && instant>videoBitrateLimit || videoBitrateLimitCount>0)
 			//Calculate decrease rate and apply it
-			target = current*videoBitrateLimit/instant;
+			target = ((QWORD)current)*videoBitrateLimit/instant;
 		else
-			//Increase a 8% each second
-			target += target*0.08/videoFPS+1;
+			//Increase a 8% each second o 10kbps
+			target += fmax(target*0.08,10000)/videoFPS+1;
 
 		//check max bitrate
 		if (target>videoBitrate)
