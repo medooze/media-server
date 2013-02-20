@@ -16,6 +16,7 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include "amf.h"
 extern "C" {
 #include "libavcodec/avcodec.h"
 }
