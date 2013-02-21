@@ -356,6 +356,7 @@ int VideoStream::SendVideo()
 	timeval prev;
 
 	Acumulator bitrateAcu(1000);
+	Acumulator fpsAcu(1000);
 	
 	Log(">SendVideo [width:%d,size:%d,bitrate:%d,fps:%d,intra:%d]\n",videoGrabWidth,videoGrabHeight,videoBitrate,videoFPS,videoIntraPeriod);
 
@@ -420,16 +421,19 @@ int VideoStream::SendVideo()
 		//Calculate target bitrate
 		int target = current;
 
-		//Get real sent bitrate during last second and convert to kbits (*1000/1000)
-		DWORD instant = bitrateAcu.GetInstant()/bitrateAcu.GetWindow();
-
-		//Check temporal limits
-		if (bitrateAcu.IsInWindow() && instant && instant>videoBitrateLimit || videoBitrateLimitCount>0)
-			//Calculate decrease rate and apply it
-			target = ((QWORD)current)*videoBitrateLimit/instant;
-		else
-			//Increase a 8% each second o 10kbps
-			target += fmax(target*0.08,10000)/videoFPS+1;
+		//Check temporal limits for estimations
+		if (bitrateAcu.IsInWindow())
+		{
+			//Get real sent bitrate during last second and convert to kbits (*1000/1000)
+			DWORD instant = bitrateAcu.GetInstantAvg();
+			//Check if are not in quarentine period or sending below limits
+			if (videoBitrateLimitCount || instant<videoBitrateLimit)
+				//Increase a 8% each second o 10kbps
+				target += fmax(target*0.08,10000)/videoFPS+1;
+			else
+				//Calculate decrease rate and apply it
+				target = videoBitrateLimit;
+		}
 
 		//check max bitrate
 		if (target>videoBitrate)
@@ -449,7 +453,6 @@ int VideoStream::SendVideo()
 			//Upate current
 			current = target;
 		}
-
 		
 		//Procesamos el frame
 		VideoFrame *videoFrame = videoEncoder->EncodeFrame(pic,videoInput->GetBufferSize());
@@ -459,6 +462,9 @@ int VideoStream::SendVideo()
 			//Next
 			continue;
 
+		//Increase frame counter
+		fpsAcu.Update(getTime()/1000,1);
+		
 		//Check
 		if (frameTime)
 		{

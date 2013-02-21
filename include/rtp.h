@@ -870,7 +870,7 @@ public:
 			maxTotalBitrateExp	= data[4] >> 2;
 			maxTotalBitrateMantissa = data[4] & 0x03;
 			maxTotalBitrateMantissa = maxTotalBitrateMantissa <<8 | data[5];
-			maxTotalBitrateMantissa = maxTotalBitrateMantissa <<8 | data[6] >> 1;
+			maxTotalBitrateMantissa = maxTotalBitrateMantissa <<7 | data[6] >> 1;
 			overhead		= data[6] & 0x01;
 			overhead		= overhead << 8 | data[7];
 			return 8;
@@ -881,7 +881,7 @@ public:
 			set4(data,0,ssrc);
 			data[4] = maxTotalBitrateExp << 2 | (maxTotalBitrateMantissa >>15 & 0x03);
 			data[5] = maxTotalBitrateMantissa >>7;
-			data[6] = maxTotalBitrateMantissa <<1 | (overhead >>8 & 0x01);
+			data[6] = maxTotalBitrateMantissa <<1 | (overhead>>8 & 0x01);
 			data[7] = overhead;
 			return 8;
 		}
@@ -912,7 +912,7 @@ public:
 		
 		void SetSSRC(WORD ssrc)		{ this->ssrc = ssrc;		}
 		void SetOverhead(WORD overhead)	{ this->overhead = overhead;	}
-		WORD GetSSRC() const		{ return ssrc;			}
+		DWORD GetSSRC() const		{ return ssrc;			}
 		WORD GetOverhead() const	{ return overhead;		}
 	};
 	

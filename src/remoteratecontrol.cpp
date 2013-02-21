@@ -8,7 +8,6 @@
 #include "remoteratecontrol.h"
 #include <math.h>
 
-
 RemoteRateControl::RemoteRateControl(Listener* listener) : bitrateCalc(60)
 {
 	this->listener = listener;
@@ -38,10 +37,8 @@ void RemoteRateControl::Update(RTPTimedPacket* packet)
 	//Get packet size and time
 	QWORD time = packet->GetTime();
 	DWORD size = packet->GetMediaLength();
-	//Update bitrate calculator and get instant bitrate
-	QWORD bitrate = bitrateCalc.Update(time, size*8);
-	//Get current seq num
-	DWORD seq = packet->GetSeqNum();
+	//Update bitrate calculator
+	bitrateCalc.Update(time, size*8);
 	//Get rtp timestamp in ms
 	DWORD ts = packet->GetClockTimestamp();
 	//If it is a our of order packet from previous frame
