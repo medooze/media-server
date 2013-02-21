@@ -104,6 +104,8 @@ public:
 	int SetProperties(const RTPSession::Properties& properties);
 	int RequestFPU();
 
+	int SendTempMaxMediaStreamBitrateNotification(DWORD bitrate,DWORD overhead);
+
 	virtual void onTargetBitrateRequested(DWORD bitrate);
 private:
 	void SetRTT(DWORD rtt);

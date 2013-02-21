@@ -21,7 +21,6 @@
 #include "rtp.h"
 #include "rtpsession.h"
 #include "stunmessage.h"
-#include "bitstream.h"
 #include <libavutil/base64.h>
 #include <openssl/ossl_typ.h>
 
@@ -649,17 +648,14 @@ int RTPSession::SendPacket(RTCPCompoundPacket &rtcp)
 	//Check if we have sendinf ip address
 	if (sendRtcpAddr.sin_addr.s_addr == INADDR_ANY)
 	{
-		//Do we have rec ip?
-		if (recIP!=INADDR_ANY && muxRTCP)
-		{
-			//Do NAT
-			sendRtcpAddr.sin_addr.s_addr = recIP;
-			//Set port
-			sendRtcpAddr.sin_port = htons(recPort);
-			
-		} else
+		//Do we have rec ip and doing mux rtcp?
+		if (recIP==INADDR_ANY && !muxRTCP)
 			//Exit
-			return 0;
+			return Error("-No rtcp ip\n");
+		//Do NAT using rtp values
+		sendRtcpAddr.sin_addr.s_addr = recIP;
+		//Set port
+		sendRtcpAddr.sin_port = htons(recPort);
 	}
 
 	//Serialize
@@ -682,17 +678,11 @@ int RTPSession::SendPacket(RTCPCompoundPacket &rtcp)
 
 	//If muxin
 	if (muxRTCP)
-	{
-		//Check if we have sendinf ip address
-		if (sendAddr.sin_addr.s_addr != INADDR_ANY)
-			//Send using RTP 5 tuple
-			ret = sendto(simSocket,data,len,0,(sockaddr *)&sendAddr,sizeof(struct sockaddr_in));
-	} else {
-		//Check if we have sendinf ip address
-		if (sendRtcpAddr.sin_addr.s_addr != INADDR_ANY)
-			//Send using RCTP 5 tuple
-			ret = sendto(simRtcpSocket,data,len,0,(sockaddr *)&sendRtcpAddr,sizeof(struct sockaddr_in));
-	}
+		//Send using RTP port
+		ret = sendto(simSocket,data,len,0,(sockaddr *)&sendRtcpAddr,sizeof(struct sockaddr_in));
+	else
+		//Send using RCTP port
+		ret = sendto(simRtcpSocket,data,len,0,(sockaddr *)&sendRtcpAddr,sizeof(struct sockaddr_in));
 
 	//Check error
 	if (ret<0)
@@ -1564,6 +1554,7 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 						}
 						break;
 					case RTCPRTPFeedback::TempMaxMediaStreamBitrateRequest:
+						Log("-TempMaxMediaStreamBitrateRequest\n");
 						for (BYTE i=0;i<fb->GetFieldCount();i++)
 						{
 							//Get field
@@ -1879,4 +1870,27 @@ void RTPSession::ReSendPacket(int seq)
 
 	//Unlock
 	rtxUse.DecUse();
+}
+int RTPSession::SendTempMaxMediaStreamBitrateNotification(DWORD bitrate,DWORD overhead)
+{
+	Log("-SendTempMaxMediaStreamBitrateNotification [%d,%d]\n",bitrate,overhead);
+
+	//Create rtcp sender retpor
+	RTCPCompoundPacket* rtcp = CreateSenderReport();
+
+	//Create TMMBR
+	RTCPRTPFeedback *rfb = RTCPRTPFeedback::Create(RTCPRTPFeedback::TempMaxMediaStreamBitrateNotification,sendSSRC,recSSRC);
+	//Limit incoming bitrate
+	rfb->AddField( new RTCPRTPFeedback::TempMaxMediaStreamBitrateField(sendSSRC,bitrate,0));
+	//Add to packet
+	rtcp->AddRTCPacket(rfb);
+
+	//Send packet
+	int ret = SendPacket(*rtcp);
+
+	//Delete it
+	delete(rtcp);
+
+	//Exit
+	return ret;
 }
