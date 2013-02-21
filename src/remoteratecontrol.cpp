@@ -8,7 +8,7 @@
 #include "remoteratecontrol.h"
 #include <math.h>
 
-RemoteRateControl::RemoteRateControl(Listener* listener) : bitrateCalc(60)
+RemoteRateControl::RemoteRateControl(Listener* listener) : bitrateCalc(100)
 {
 	this->listener = listener;
 	prevTS = 0;
@@ -147,28 +147,28 @@ void RemoteRateControl::UpdateKalman(QWORD now,QWORD tdelta, double tsdelta, DWO
 				//Check 
 				if (overUseCount>1)
 				{
-					if (bitrateCalc.GetDiff())
-						//Go conservative
-						target = bitrateCalc.GetAcumulated()*900/bitrateCalc.GetDiff();
-					else
-						target =  bitrateCalc.GetInstant()*900/bitrateCalc.GetWindow();
-					//Log("BWE:  OverUsing bitrate:%lld max:%lld min:%lld target:%d\n",bitrateCalc.GetInstant(),bitrateCalc.GetMax(),bitrateCalc.GetMin(),target);
+					//Get target bitrate
+					target =  (bitrateCalc.GetInstantAvg()+ bitrateCalc.GetMinAvg())/2;
+					//Log	
+					Log("BWE:  OverUsing bitrate:%llf max:%llf min:%llf target:%d \n",bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg(),target);
 					//Overusing
 					hypothesis = OverUsing;
 					//Reset counter
 					overUseCount=0;
+					//Reset
+					 bitrateCalc.Reset(now);
 				} else {
 					//increase counter
 					overUseCount++;
 					//Reset
-					bitrateCalc.Reset(now);
+					bitrateCalc.ResetMinMax();
 				}
 			}
 		} else {
 			//If we change state
 			if (hypothesis!=UnderUsing)
 			{
-		//		Log("BWE:  UnderUsing bitrate:%lld max:%lld min:%lld\n",bitrateCalc.GetInstant(),bitrateCalc.GetMax(),bitrateCalc.GetMin());
+				//Log("BWE:  UnderUsing bitrate:%llf max:%llf min:%llf\n",bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg());
 				//Reset bitrate
 				bitrateCalc.Reset(now);
 				//Under using, do nothing until going back to normal
@@ -181,7 +181,7 @@ void RemoteRateControl::UpdateKalman(QWORD now,QWORD tdelta, double tsdelta, DWO
 		if (hypothesis!=Normal)
 		{
 			//Log
-		//	Log("BWE:  Normal  bitrate:%lld max:%lld min:%lld\n",bitrateCalc.GetInstant(),bitrateCalc.GetMax(),bitrateCalc.GetMin());
+			//Log("BWE:  Normal  bitrate:%llf max:%llf min:%llf\n",bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg());
 			//Reset
 			bitrateCalc.Reset(now);
 			//Normal
