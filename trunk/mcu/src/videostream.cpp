@@ -554,12 +554,50 @@ int VideoStream::RecVideo()
 			//Next
 			continue;
 
+		//Get extended sequence number
+		DWORD seq = packet->GetExtSeqNum();
+
 		//Get packet data
 		BYTE* buffer = packet->GetMediaData();
 		DWORD size = packet->GetMediaLength();
 
 		//Get type
 		type = (VideoCodec::Type)packet->GetCodec();
+
+		//Lost packets since last
+		DWORD lost = 0;
+
+		//If not first
+		if (lastSeq!=RTPPacket::MaxExtSeqNum)
+			//Calculate losts
+			lost = seq-lastSeq-1;
+
+		//Increase total lost count
+		lostCount += lost;
+
+		//Update last sequence number
+		lastSeq = seq;
+
+		//Si hemos perdido un paquete or still have not got an iframe
+		if(lostCount>1 || waitIntra)
+		{
+			//Check if we got listener and more than two seconds have elapsed from last request
+			if (listener && getDifTime(&lastFPURequest)>1000000)
+			{
+				//Reset count
+				lostCount = 0;
+				//Debug
+				Log("-Requesting FPU\n");
+				//Request it
+				listener->onRequestFPU();
+				//Request also over rtp
+				rtp.RequestFPU();
+				//Update time
+				getUpdDifTime(&lastFPURequest);
+				//Waiting for refresh
+				waitIntra = true;
+			}
+		}
 
 		//Check if it is a redundant packet
 		if (type==VideoCodec::RED)
@@ -598,9 +636,6 @@ int VideoStream::RecVideo()
 			}
 		}
 
-		//Get extended sequence number
-		DWORD seq = packet->GetExtSeqNum();
-
 		//Check if we have lost the last packet from the previous frame
 		if (seq>frameSeqNum)
 		{
@@ -623,40 +658,6 @@ int VideoStream::RecVideo()
 			}
 		}
 
-		//Lost packets since last
-		DWORD lost = 0;
-
-		//If not first
-		if (lastSeq!=RTPPacket::MaxExtSeqNum)
-			//Calculate losts
-			lost = seq-lastSeq-1;
-
-		//Increase total lost count
-		lostCount += lost;
-
-		//Update last sequence number
-		lastSeq = seq;
-
-		//Si hemos perdido un paquete or still have not got an iframe
-		if(lostCount>1 || waitIntra)
-		{
-			//Check if we got listener and more than two seconds have elapsed from last request
-			if (listener && getDifTime(&lastFPURequest)>1000000)
-			{
-				//Reset count
-				lostCount = 0;
-				//Debug
-				Log("-Requesting FPU\n");
-				//Request it
-				listener->onRequestFPU();
-				//Request also over rtp
-				rtp.RequestFPU();
-				//Update time
-				getUpdDifTime(&lastFPURequest);
-				//Waiting for refresh
-				waitIntra = true;
-			}
-		}
 		
 		//Lo decodificamos
 		if(!videoDecoder->DecodePacket(buffer,size,lost,packet->GetMark()))

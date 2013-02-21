@@ -136,7 +136,7 @@ int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 			return Error("Error decoding VP8 last [error %d:%s]\n",decoder.err,decoder.err_detail);
 
 		//Check if it is corrupted
-		int corrupted;
+		int corrupted = 0;
 		if (vpx_codec_control(&decoder, VP8D_GET_FRAME_CORRUPTED, &corrupted)==VPX_CODEC_OK)
 			//Set key frame flag
 			isKeyFrame =  !(buffer[0] & 1) && !corrupted;
@@ -145,8 +145,8 @@ int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 		vpx_codec_iter_t iter = NULL;
 		vpx_image_t *img = vpx_codec_get_frame(&decoder, &iter);
 		//Check img
-		if (!img)
-			return Error("No frame available\n");
+		if (!img || corrupted)
+			return 0;
 		//Get dimensions
 		width = img->d_w;
 		height = img->d_h;
