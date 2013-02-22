@@ -19,7 +19,7 @@ RTMPServer::RTMPServer()
 	//Y no tamos iniciados
 	inited = 0;
 	serverPort = 0;
-	server = 0;
+	server = FD_INVALID;
 
 	//Create mutx
 	pthread_mutex_init(&sessionMutex,0);
@@ -127,6 +127,8 @@ init:
 				break;
 			//Close socket just in case
 			close(server);
+			//Invalidate
+			server = FD_INVALID;
 			//Re-init
 			goto init;
 		}
@@ -142,6 +144,8 @@ init:
 				break;
 			//Close socket just in case
 			close(server);
+			//Invalidate
+			server = FD_INVALID;
 			//Re-init
 			goto init;
 		}
@@ -160,6 +164,8 @@ init:
 				break;
 			//Close socket just in case
 			close(server);
+			//Invalidate
+			server = FD_INVALID;
 			//Re-init
 			goto init;
 		}
@@ -304,6 +310,8 @@ int RTMPServer::End()
 	shutdown(server,SHUT_RDWR);
 	//Will cause poll function to exit
 	close(server);
+	//Invalidate
+	server = FD_INVALID;
 
 	//Wait for server thread to close
         Log("Joining server thread [%d,%d]\n",serverThread,inited);

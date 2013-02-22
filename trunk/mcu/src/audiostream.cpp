@@ -397,24 +397,6 @@ int AudioStream::SendAudio()
 			continue;
 		}
 
-		//Analizamos el paquete para ver si es de ceros
-		int silence = true;
-
-		//Recorremos el paquete
-		for (int i=0;i<codec->numFrameSamples;i++)
-			//Hasta encontrar uno que no sea cero
-			if (recBuffer[i]!=0)
-			{
-				//No es silencio
-				silence = false;
-				//Salimos
-				break;
-			}
-
-		//Si es silencio pasamos al siguiente
-		if (silence)
-			continue;
-	
 		//Lo codificamos
 		int len = codec->Encode(recBuffer,codec->numFrameSamples,packet.GetMediaData(),packet.GetMaxMediaLength());
 

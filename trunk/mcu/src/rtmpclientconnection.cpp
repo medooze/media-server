@@ -47,7 +47,7 @@ RTMPClientConnection::RTMPClientConnection()
 	//Not inited
 	inited = false;
 	running = false;
-	fd = 0;
+	fd = FD_INVALID;
 	thread = NULL;
 	//Set initial time
 	gettimeofday(&startTime,0);
@@ -140,7 +140,7 @@ void RTMPClientConnection::Start()
 void RTMPClientConnection::Stop()
 {
 	//If got socket
-	if (fd)
+	if (fd!=FD_INVALID)
 	{
 		//Not running;
 		running = false;
@@ -149,8 +149,7 @@ void RTMPClientConnection::Stop()
 		//Will cause poll to return
 		close(fd);
 		//No socket
-		fd = 0;
-
+		fd = FD_INVALID;
 	}
 }
 
