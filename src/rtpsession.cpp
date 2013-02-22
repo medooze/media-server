@@ -98,8 +98,8 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) : remoteRateCo
 	this->media = media;
 	//Init values
 	sendType = -1;
-	simSocket = 0;
-	simRtcpSocket = 0;
+	simSocket = FD_INVALID;
+	simRtcpSocket = FD_INVALID;
 	simPort = 0;
 	simRtcpPort = 0;
 	sendSeq = 0;
@@ -560,20 +560,20 @@ int RTPSession::Init()
 	while (retries++<100)
 	{
 		//If we have a rtp socket
-		if (simSocket)
+		if (simSocket!=FD_INVALID)
 		{
 			// Close first socket
 			close(simSocket);
 			//No socket
-			simSocket = 0;
+			simSocket = FD_INVALID;
 		}
 		//If we have a rtcp socket
-		if (simRtcpSocket)
+		if (simRtcpSocket!=FD_INVALID)
 		{
 			///Close it
 			close(simRtcpSocket);
 			//No socket
-			simRtcpSocket = 0;
+			simRtcpSocket = FD_INVALID;
 		}
 
 		//Create new sockets
@@ -631,17 +631,22 @@ int RTPSession::End()
 	//Stop just in case
 	Stop();
 
+	//Not running;
+	running = false;
 	//If got socket
-	if (simSocket || simRtcpSocket)
+	if (simSocket!=FD_INVALID)
 	{
-		//Not running;
-		running = false;
 		//Will cause poll to return
 		close(simSocket);
+		//No sockets
+		simSocket = FD_INVALID;
+	}
+	if (simRtcpSocket!=FD_INVALID)
+	{
+		//Will cause poll to return
 		close(simRtcpSocket);
 		//No sockets
-		simSocket = 0;
-		simRtcpSocket = 0;
+		simRtcpSocket = FD_INVALID;
 	}
 
 	return 1;

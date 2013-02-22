@@ -42,7 +42,7 @@ RTMPConnection::RTMPConnection(Listener *listener)
 	//Not inited
 	inited = false;
 	running = false;
-	socket = 0;
+	socket = FD_INVALID;
 	thread = NULL;
 	//Set initial time
 	gettimeofday(&startTime,0);
@@ -113,7 +113,7 @@ void RTMPConnection::Stop()
 		//Will cause poll to return
 		close(socket);
 		//No socket
-		socket = 0;
+		socket = FD_INVALID;
 	}
 }
 
