@@ -12,9 +12,6 @@
 #include "rtp.h"
 #include "acumulator.h"
 
-
-
-
 class RemoteRateControl
 {
 public:

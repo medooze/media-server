@@ -76,15 +76,7 @@ public:
 	int ResetOverlay();
 	int DrawVUMeter(int pos,DWORD val,DWORD size);
 
-	// inform mosaic of participant VAD info.
-	// returns:
-	// 0 = this participant will not move
-	// -1 = this participant is kickable
-	// 1 this participant is elligble
-	// -2 unknown participant
 	int UpdateParticipantInfo(int id, int vadLevel);
-
-	// Reshuffle participants according to the
 	int CalculatePositions();
 protected:
 	virtual int GetWidth(int pos) = 0;

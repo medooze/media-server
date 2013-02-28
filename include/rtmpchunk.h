@@ -10,8 +10,8 @@ class RTMPChunkStreamInfo
 public:
 	RTMPChunkStreamInfo();
 
-	void SetTimestamp(QWORD timestamp);
-	void SetTimestampDelta(QWORD delta);
+	void SetTimestamp(DWORD timestamp);
+	void SetTimestampDelta(DWORD delta);
 	void IncreaseTimestampWithDelta();
 	void SetMessageLength(DWORD length);
 	void SetMessageTypeId(BYTE type);
@@ -19,14 +19,14 @@ public:
 
 	DWORD GetMessageStreamId();
 	BYTE  GetMessageTypeId();
-	QWORD GetTimestamp();
+	DWORD GetTimestamp();
 
 protected:
 	RTMPMessage::Type	type;
 	DWORD 			streamId;
 	DWORD			length;
-	QWORD			timestamp;
-	QWORD			timestampDelta;
+	DWORD			timestamp;
+	DWORD			timestampDelta;
 };
 
 
