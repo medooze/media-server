@@ -674,8 +674,8 @@ int RTMPParticipant::SendAudio()
 		//Error
 		return Error("Error encoding audio");
 	
-	//Calculate first timestamp
-	DWORD ini = getDifTime(&first)/1000;
+	//No first yet
+	QWORD ini = 0;
 
 	//Num of samples since ini
 	DWORD samples = 0;
@@ -711,6 +711,11 @@ int RTMPParticipant::SendAudio()
 
 			//Set length
 			audio.SetMediaSize(len);
+			
+			//Check if it is first frame
+			if (!ini)
+				//Get initial timestamp
+				ini = getDifTime(&first)/1000;
 
 			switch(encoder->type)
 			{

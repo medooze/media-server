@@ -319,11 +319,20 @@ void RTMPPipedMediaStream:: onMediaFrame(DWORD id,RTMPMediaFrame *frame)
 			//Send previous desc before frame
 			SendMediaFrame(desc);
 	}
-	
+
 	//Check if we have to rewrite ts
 	if (rewriteTimestamps)
+	{
+		//Make sure it is not an out of order packet
+		if (ts<first)
+		{
+			//Exit
+			 Error("ERROR: RTMP media frame ts before first one, dropping it!!");
+			 return;
+		}
 		//Modify timestamp
 		frame->SetTimestamp(ts-first);
+	}
 
 	//Send it
 	SendMediaFrame(frame);

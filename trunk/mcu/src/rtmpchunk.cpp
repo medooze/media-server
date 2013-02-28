@@ -10,24 +10,24 @@
  **************************************/
 RTMPChunkStreamInfo::RTMPChunkStreamInfo()
 {
-	timestamp = -1;
-	timestampDelta = -1;
+	timestamp = 0;
+	timestampDelta = 0;
 	streamId = -1;
 	length = -1;
 }	
 
-void RTMPChunkStreamInfo::SetTimestamp(QWORD ts)
+void RTMPChunkStreamInfo::SetTimestamp(DWORD ts)
 {
 	//Set timestamp
 	timestamp = ts;
 }
-void RTMPChunkStreamInfo::SetTimestampDelta(QWORD delta)
+void RTMPChunkStreamInfo::SetTimestampDelta(DWORD delta)
 {
 	//Set delta
 	timestampDelta = delta;
 }
 
-QWORD RTMPChunkStreamInfo::GetTimestamp()
+DWORD RTMPChunkStreamInfo::GetTimestamp()
 {
 	//Return timestamp
 	return timestamp;
@@ -192,8 +192,8 @@ DWORD RTMPChunkOutputStream::GetNextChunk(BYTE *data,DWORD size,DWORD maxChunkSi
 		RTMPMessage::Type    msgType	= message->GetType();
 		DWORD   msgStreamId 		= message->GetStreamId();
 		DWORD   msgLength 		= message->GetLength();
-		QWORD   msgTimestamp 		= message->GetTimestamp();
-		QWORD	msgTimestampDelta 	= msgTimestamp-timestamp;
+		DWORD   msgTimestamp 		= message->GetTimestamp();
+		DWORD	msgTimestampDelta 	= msgTimestamp-timestamp;
 		//Start sending 
 		pos = 0;
 
@@ -250,7 +250,6 @@ DWORD RTMPChunkOutputStream::GetNextChunk(BYTE *data,DWORD size,DWORD maxChunkSi
 		SetMessageLength(msgLength);
 		SetMessageTypeId(msgType);
 		SetMessageStreamId(msgStreamId);
-
 	} else {
 		//Set header type 3 as it shares all data with previous
 		header.SetFmt(3);
@@ -316,6 +315,8 @@ bool RTMPChunkOutputStream::HasData()
 
 bool RTMPChunkOutputStream::ResetStream(DWORD id)
 {
+	Log("-ResetStream %d\n",id);
+	
 	bool abort = false;
 	
 	//lock now

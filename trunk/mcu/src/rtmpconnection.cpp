@@ -1181,7 +1181,7 @@ void RTMPConnection::onMediaFrame(DWORD streamId,RTMPMediaFrame *frame)
 {
 	//Get the timestamp from the frame
 	QWORD ts = frame->GetTimestamp();
-	
+
 	//Check timestamp
 	if (ts==-1)
 		//Calculate timestamp based on current time
