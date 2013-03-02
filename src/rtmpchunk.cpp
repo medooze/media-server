@@ -172,6 +172,10 @@ DWORD RTMPChunkOutputStream::GetNextChunk(BYTE *data,DWORD size,DWORD maxChunkSi
 	header.SetStreamId(chunkStreamId);
 	//Chunk header
 	RTMPObject* chunkHeader = NULL;
+	//Extended timestamp
+	RTMPExtendedTimestamp extts;
+	//Use extended timestamp flag
+	bool useExtTimestamp = false;
 
 	//If we are not processing an object
 	if (!message)
@@ -201,6 +205,10 @@ DWORD RTMPChunkOutputStream::GetNextChunk(BYTE *data,DWORD size,DWORD maxChunkSi
 		msgBuffer = (BYTE*)malloc(msgLength);
 		//Serialize it
 		message->Serialize(msgBuffer,msgLength);
+
+		//Check timestamps
+		if (msgTimestampDelta>200)
+			Error("-Timestamp delta too high [id:%d,type:%d,last:%d,ts:%d,delta:%d\n",msgType,msgStreamId,timestamp,msgTimestamp,msgTimestampDelta);
 		
 		//Select wich header
 		if (!msgStreamId || msgStreamId!=streamId || msgTimestamp<timestamp)
@@ -209,8 +217,21 @@ DWORD RTMPChunkOutputStream::GetNextChunk(BYTE *data,DWORD size,DWORD maxChunkSi
 			RTMPChunkType0* type0 = new RTMPChunkType0();
 			//Set header type
 			header.SetFmt(0);
+			//Check timestamp
+			if (msgTimestamp>=0xFFFFFF)
+			{
+				//Set flag
+				useExtTimestamp = true;
+				//Use extended header
+				type0->SetTimestamp(0xFFFFFF);
+				//Set it
+				extts.SetTimestamp(msgTimestamp);
+
+			} else {
+				//Set timestamp
+				type0->SetTimestamp(msgTimestamp);
+			}
 			//Set data in chunk header
-			type0->SetTimestamp(msgTimestamp);
 			type0->SetMessageLength(msgLength);
 			type0->SetMessageTypeId(msgType);
 			type0->SetMessageStreamId(msgStreamId);
@@ -263,6 +284,10 @@ DWORD RTMPChunkOutputStream::GetNextChunk(BYTE *data,DWORD size,DWORD maxChunkSi
 	if (chunkHeader)
 		//Serialize chunk header
 		headersLen += chunkHeader->Serialize(data+headersLen,size-headersLen);
+	//Check if need to use extended timestamp
+	if (useExtTimestamp)
+		//Serialize extened header
+		headersLen += extts.Serialize(data+headersLen,size-headersLen);
 
 	//Size of the msg data of the chunk
 	DWORD payloadLen = maxChunkSize;
