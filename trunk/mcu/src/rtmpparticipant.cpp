@@ -678,7 +678,7 @@ int RTMPParticipant::SendAudio()
 	QWORD ini = 0;
 
 	//Num of samples since ini
-	DWORD samples = 0;
+	QWORD samples = 0;
 
 	//Mientras tengamos que capturar
 	while(sendingAudio)
