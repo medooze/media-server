@@ -52,7 +52,7 @@ public:
 		virtual void onDisconnected(RTMPClientConnection* conn) = 0;
 	};
 public:
-	RTMPClientConnection();
+	RTMPClientConnection(const std::wstring& tag);
 	virtual ~RTMPClientConnection();
 
 	int Connect(const char* server,int port, const char* app,RTMPClientConnection::Listener *listener);
@@ -60,6 +60,9 @@ public:
 	DWORD Call(const wchar_t* name,AMFData* params,AMFData *extra);
 	void DeleteStream(RTMPMediaStream *stream);
 	int Disconnect();
+
+	void  SetUserData(DWORD data)	{ this->data = data;	}
+	DWORD GetUserData()		{ return data;		}
 
 	//Listener for the media data
 	virtual void onAttached(RTMPMediaStream *stream);
@@ -200,6 +203,8 @@ private:
 	DWORD outBytes;
 
 	bool	needsAuth;
+	DWORD	data;
+	std::wstring tag;
 	std::wstring user;
 	std::wstring pwd;
 	std::wstring method;

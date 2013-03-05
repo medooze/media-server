@@ -528,6 +528,73 @@ xmlrpc_value* StopBroadcaster(xmlrpc_env *env, xmlrpc_value *param_array, void *
 	return xmlok(env);
 }
 
+xmlrpc_value* StartPublishing(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+	MCU *mcu = (MCU *)user_data;
+	MultiConf *conf = NULL;
+
+	 //Parseamos
+	int confId;
+	char *server;
+	int port;
+	char* app;
+	char* stream;
+	xmlrpc_parse_value(env, param_array, "(isiss)", &confId,&server,&port,&app,&stream);
+
+	//Comprobamos si ha habido error
+	if(env->fault_occurred)
+		xmlerror(env,"Fault occurred");
+
+	//Obtenemos la referencia
+	if(!mcu->GetConferenceRef(confId,&conf))
+		return xmlerror(env,"Conference does not exist");
+
+	//Publish it
+	int id = conf->StartPublishing(server,port,app,stream);
+
+	//Liberamos la referencia
+	mcu->ReleaseConferenceRef(confId);
+
+	//Salimos
+	if(!id)
+		return xmlerror(env,"Could not start publisihing broadcast");
+
+	//Devolvemos el resultado
+	return xmlok(env,xmlrpc_build_value(env,"(i)",id));
+}
+
+xmlrpc_value* StopPublishing(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+	MCU *mcu = (MCU *)user_data;
+	MultiConf *conf = NULL;
+
+	 //Parseamos
+	int confId;
+	int id;
+	xmlrpc_parse_value(env, param_array, "(ii)", &confId,&id);
+
+	//Comprobamos si ha habido error
+	if(env->fault_occurred)
+		xmlerror(env,"Fault occurred");
+
+	//Obtenemos la referencia
+	if(!mcu->GetConferenceRef(confId,&conf))
+		return xmlerror(env,"Conference does not exist");
+
+	//Stop publishing
+	int res = conf->StopPublishing(id);
+
+	//Liberamos la referencia
+	mcu->ReleaseConferenceRef(confId);
+
+	//Salimos
+	if(!res)
+		return xmlerror(env,"Error stoping publishing broadcaster");
+
+	//Devolvemos el resultado
+	return xmlok(env);
+}
+
 xmlrpc_value* SetVideoCodec(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
@@ -1660,6 +1727,8 @@ XmlHandlerCmd mcuCmdList[] =
 	{"DeleteParticipant",DeleteParticipant},
 	{"StartBroadcaster",StartBroadcaster},
 	{"StopBroadcaster",StopBroadcaster},
+	{"StartPublishing",StartPublishing},
+	{"StopPublishing",StopPublishing},
 	{"StartRecordingParticipant",StartRecordingParticipant},
 	{"StopRecordingParticipant",StopRecordingParticipant},
 	{"SetVideoCodec",SetVideoCodec},

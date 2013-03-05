@@ -206,10 +206,6 @@ DWORD RTMPChunkOutputStream::GetNextChunk(BYTE *data,DWORD size,DWORD maxChunkSi
 		//Serialize it
 		message->Serialize(msgBuffer,msgLength);
 
-		//Check timestamps
-		if (msgTimestampDelta>200)
-			Error("-Timestamp delta too high [id:%d,type:%d,last:%d,ts:%d,delta:%d\n",msgType,msgStreamId,timestamp,msgTimestamp,msgTimestampDelta);
-		
 		//Select wich header
 		if (!msgStreamId || msgStreamId!=streamId || msgTimestamp<timestamp)
 		{
