@@ -24,8 +24,12 @@
  * to the message layer.
  *******************************************************************/
 
-RTMPClientConnection::RTMPClientConnection()
+RTMPClientConnection::RTMPClientConnection(const std::wstring& tag) 
 {
+	//Store tag
+	this->tag = tag;
+	//NO user data
+	data = 0;
 	//Set initial state
 	state = NONE;
 	//Set chunk size
@@ -89,6 +93,10 @@ int RTMPClientConnection::Connect(const char* server,int port, const char* app,L
 	//Get ip of server
 	host = gethostbyname(server);
 
+	//If not found
+	if (!host)
+		//Error
+		return Error("-Could not resolve %s\n",host);
 	//Set to zero
 	bzero((char *) &addr, sizeof(addr));
 

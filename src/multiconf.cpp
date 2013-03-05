@@ -17,6 +17,9 @@ MultiConf::MultiConf(const std::wstring &tag) : broadcast(tag)
 	//No watcher
 	watcherId = 0;
 
+	//Init counter
+	maxPublisherId = 1;
+
 	//Inicializamos el contador
 	maxId = 500;
 
@@ -1698,4 +1701,144 @@ int MultiConf::AppMixerDisplayImage(const char* filename)
 {
 	//Display it
 	return appMixer.DisplayImage(filename);
+}
+
+int  MultiConf::StartPublishing(const char* server,int port, const char* app,const char* stream)
+{
+	
+	PublisherInfo info;
+	UTF8Parser parser;
+
+	//Parse stream name
+	parser.SetString(stream);
+	
+	//LOg
+	Log(">StartPublishing broadcast to [url=\"rtmp://%s:%d/%s\",stream=\"%ls\"\n",server,port,app,parser.GetWChar());
+
+	//Pa porsi
+	if (!inited)
+		//Exit
+		return Error("Multiconf not initied");
+	
+	//Get published id
+	info.id = maxPublisherId++;
+
+	//Store published stream name
+	info.name = parser.GetWString();
+	
+	//Create new publisherf1722
+	info.conn = new RTMPClientConnection(tag);
+
+	//Store id as user data
+	info.conn->SetUserData(info.id);
+
+	//No stream
+	info.stream = NULL;
+
+	//Add to map
+	publishers[info.id] = info;
+	
+	//Connect
+	info.conn->Connect(server,port,app,this);
+
+	Log("<StartPublishing broadcast [id%d]\n",info.id);
+
+	//Return id
+	return info.id;
+}
+
+int  MultiConf::StopPublishing(int id)
+{
+	Log("-StopPublishing broadcast [id:%d]\n",id);
+	
+	//Find it
+	Publishers::iterator it = publishers.find(id);
+
+	//If not found
+	if (it==publishers.end())
+		//Exit
+		return Error("-Publisher not found\n");
+}
+
+void MultiConf::onConnected(RTMPClientConnection* conn)
+{
+	//Get id
+	DWORD id = conn->GetUserData();
+	//Log
+	Log("-RTMPClientConnection connected [id:%d]\n",id);
+	//Find it
+	Publishers::iterator it = publishers.find(id);
+	//If found
+	if (it!=publishers.end())
+	{
+		//Get publisher info
+		PublisherInfo& info = it->second;
+		//Release stream
+		conn->Call(L"releaseStream",new AMFNull,new AMFString(info.name));
+		//Publish
+		conn->Call(L"FCPublish",new AMFNull,new AMFString(info.name));
+		//Create stream
+		conn->CreateStream(tag);
+	}
+}
+
+void MultiConf::onNetStreamCreated(RTMPClientConnection* conn,RTMPClientConnection::NetStream *stream)
+{
+	//Get id
+	DWORD id = conn->GetUserData();
+	//Log
+	Log("-RTMPClientConnection onNetStreamCreated [id:%d]\n",id);
+	//Find it
+	Publishers::iterator it = publishers.find(id);
+	//If found
+	if (it!=publishers.end())
+	{
+		//Store sream
+		PublisherInfo& info = it->second;
+		//Store stream
+		info.stream = stream;
+		//Do publish url
+		stream->Publish(info.name);
+		//Wait for intra
+		stream->SetWaitIntra(true);
+		//Add listener (TODO: move downwards)
+		flvEncoder.AddMediaListener(stream);
+	}
+}
+
+void MultiConf::onCommandResponse(RTMPClientConnection* conn,DWORD id,bool isError,AMFData* param)
+{
+	//We sould do the add listener here
+}
+void MultiConf::onDisconnected(RTMPClientConnection* conn)
+{
+	//TODO: should we lock? I expect so
+	//Check if it were ended
+	if (inited)
+		//Do nothing it will be handled outside
+		return;
+	//Get id
+	DWORD id = conn->GetUserData();
+	//Log
+	Log("-RTMPClientConnection onDisconnected [id:%d]\n",id);
+	//Find it
+	Publishers::iterator it = publishers.find(id);
+	//If found
+	if (it!=publishers.end())
+	{
+		//Store sream
+		PublisherInfo& info = it->second;
+		//If it was an stream
+		if (info.stream)
+		{
+			//Remove listener
+			flvEncoder.RemoveMediaListener(info.stream);
+			//Delete it
+			delete(info.stream);
+		}
+		//Delete connection
+		delete(info.conn);
+		//Remove
+		publishers.erase(it);
+	}
 }

@@ -30,6 +30,18 @@ public:
 
 	virtual void	Dump();
 
+	static const char* GetTypeName(Type type)
+	{
+		switch (type)
+		{
+			case Audio:
+				return "Audio";
+			case Video:
+				return "Video";
+		}
+		return "Unknown";
+	}
+
 protected:
 	RTMPMediaFrame(Type type,QWORD timestamp,BYTE *data,DWORD size);
 	RTMPMediaFrame(Type type,QWORD timestamp,DWORD size);

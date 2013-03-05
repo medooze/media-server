@@ -305,7 +305,7 @@ void RTMPPipedMediaStream:: onMediaFrame(DWORD id,RTMPMediaFrame *frame)
 			}
 		}
 		//We got it
-		Log("-Got first frame [%llu]\n",ts);
+		Log("-Got first frame [%llu,waitIntra:%d,type:%s]\n",ts,waitIntra,RTMPMediaFrame::GetTypeName(frame->GetType()));
 		//Send stream begin
 		SendStreamBegin();
 		//Store timestamp
@@ -327,7 +327,7 @@ void RTMPPipedMediaStream:: onMediaFrame(DWORD id,RTMPMediaFrame *frame)
 		if (ts<first)
 		{
 			//Exit
-			 Error("ERROR: RTMP media frame ts before first one, dropping it!!");
+			 Error("ERROR: RTMP media frame ts before first one, dropping it!! [ts:%llu,first:%llu]\n",ts,first);
 			 return;
 		}
 		//Modify timestamp

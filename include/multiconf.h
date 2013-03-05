@@ -18,7 +18,8 @@
 
 class MultiConf :
 	public RTMPNetConnection,
-	public Participant::Listener
+	public Participant::Listener,
+	public RTMPClientConnection::Listener
 {
 public:
 	static const int AppMixerId = 1;
@@ -101,6 +102,8 @@ public:
 	int SetTextCodec(int partId,int codec);
 
 	int  StartBroadcaster();
+	int  StartPublishing(const char* server,int port, const char* app,const char* name);
+	int  StopPublishing(int id);
 	int  StopBroadcaster();
 
 	bool AddParticipantInputToken(int partId,const std::wstring &token);
@@ -122,15 +125,30 @@ public:
 	virtual RTMPNetStream* CreateStream(DWORD streamId,DWORD audioCaps,DWORD videoCaps,RTMPNetStream::Listener* listener);
 	virtual void DeleteStream(RTMPNetStream *stream);
 	//virtual void Disconnect(RTMPNetConnection::Listener* listener);  -> Not needed to be overriden yet
+
+	/** RTMPClientConnection for pubblishers*/
+	virtual void onConnected(RTMPClientConnection* conn);
+	virtual void onNetStreamCreated(RTMPClientConnection* conn,RTMPClientConnection::NetStream *stream);
+	virtual void onCommandResponse(RTMPClientConnection* conn,DWORD id,bool isError,AMFData* param);
+	virtual void onDisconnected(RTMPClientConnection* conn);
 private:
 	Participant *GetParticipant(int partId);
 	Participant *GetParticipant(int partId,Participant::Type type);
 	void DestroyParticipant(int partId,Participant* part);
 private:
+	struct PublisherInfo
+	{
+		DWORD			id;
+		std::wstring		name;
+		RTMPClientConnection*	conn;
+		RTMPClientConnection::NetStream * stream;
+	};
+private:
 	typedef std::map<int,Participant*> Participants;
 	typedef std::set<std::wstring> BroadcastTokens;
 	typedef std::map<std::wstring,DWORD> ParticipantTokens;
 	typedef std::map<int, MP4Player*> Players;
+	typedef std::map<int, PublisherInfo> Publishers;
 
 private:
 	ParticipantTokens	inputTokens;
@@ -161,6 +179,8 @@ private:
 	TextEncoder		textEncoder;
 	BroadcastSession	broadcast;
 	FLVRecorder		recorder;
+	Publishers		publishers;
+	int			maxPublisherId;
 
 	Use			participantsLock;
 };

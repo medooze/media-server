@@ -476,9 +476,6 @@ int FLVEncoder::EncodeVideo()
 		//Get full frame
 		frame.SetVideoFrame(encoded->GetData(),encoded->GetLength());
 
-		//Set timestamp
-		frame.SetTimestamp(getDifTime(&first)/1000);
-
 		//Set buffer size
 		frame.SetMediaSize(encoded->GetLength());
 
@@ -509,13 +506,18 @@ int FLVEncoder::EncodeVideo()
 			//get from frame
 			desc.AddParametersFromFrame(data,size);
 			//Crete desc frame
-			frameDesc = new RTMPVideoFrame(frame.GetTimestamp(),desc);
+			frameDesc = new RTMPVideoFrame(getDifTime(&first)/1000,desc);
+			//Lock
+			pthread_mutex_lock(&mutex);
 			//Send it
 			SendMediaFrame(frameDesc);
+			//unlock
+			pthread_mutex_unlock(&mutex);
 		}
-
-		//Lock
-		pthread_mutex_lock(&mutex);
+		
+		
+		//Set timestamp
+		frame.SetTimestamp(getDifTime(&first)/1000);
 		//Publish it
 		SendMediaFrame(&frame);
 		//unlock
