@@ -24,7 +24,7 @@ RemoteRateEstimator::RemoteRateEstimator() : bitrateAcu(500)
 	beta			= 0.9f,
 	rtt			=  200;
 	//Set initial state and region
-	state = Decrease;
+	cameFromState = Decrease;
 	state = Hold;
 	region = MaxUnknown;
 
@@ -63,6 +63,25 @@ void RemoteRateEstimator::Update(DWORD size)
 		if (usage<streamUsage)
 			//Set it
 			usage = streamUsage;
+	}
+
+	//Modify state depending on the bandwidht state
+	switch (usage)
+	{
+		case RemoteRateControl::Normal:
+			if (state == Hold)
+				//Swicth to increase
+				ChangeState(Increase);
+			break;
+		case RemoteRateControl::OverUsing:
+			if (state != Decrease)
+				//Decrease
+				ChangeState(Decrease);
+			break;
+		case RemoteRateControl::UnderUsing:
+			//Hold
+			ChangeState(Hold);
+			break;
 	}
 
 	//No noise var calculationyet
