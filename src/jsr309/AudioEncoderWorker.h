@@ -12,12 +12,12 @@
 #include "RTPMultiplexer.h"
 
 
-class AudioEncoderWorker :
+class AudioEncoderMultiplexerWorker :
 	public RTPMultiplexer
 {
 public:
-	AudioEncoderWorker();
-	virtual ~AudioEncoderWorker();
+	AudioEncoderMultiplexerWorker();
+	virtual ~AudioEncoderMultiplexerWorker();
 
 	int Init(AudioInput *input);
 	int SetCodec(AudioCodec::Type codec);

@@ -667,7 +667,7 @@ int RTMPParticipant::SendAudio()
 	audioInput->StartRecording();
 
 	//Create encoder
-	AudioCodec *encoder = AudioCodec::CreateCodec(audioCodec);
+	AudioEncoder *encoder = AudioCodecFactory::CreateEncoder(audioCodec);
 
 	//Check
 	if (!encoder)
@@ -967,7 +967,7 @@ int RTMPParticipant::RecVideo()
 int RTMPParticipant::RecAudio()
 {
 	AudioCodec::Type rtmpAudioCodec;
-	AudioCodec *rtmpAudioDecoder = NULL;
+	AudioDecoder *rtmpAudioDecoder = NULL;
 	VAD vad;
 	
 	Log(">RecAudio\n");
@@ -1015,7 +1015,7 @@ int RTMPParticipant::RecAudio()
 				//Delete old one
 				delete(rtmpAudioDecoder);
 			//Create new one
-			rtmpAudioDecoder = AudioCodec::CreateDecoder(rtmpAudioCodec);
+			rtmpAudioDecoder = AudioCodecFactory::CreateDecoder(rtmpAudioCodec);
 		}
 
 		//Get data

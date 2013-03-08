@@ -47,11 +47,11 @@ MediaBridgeSession::MediaBridgeSession() : rtpAudio(MediaFrame::Audio,NULL), rtp
 	rtpVideoCodec = VideoCodec::H264;
 	rtpAudioCodec = AudioCodec::PCMU;
 	//Create default encoders and decoders
-	rtpAudioEncoder = AudioCodec::CreateCodec(AudioCodec::PCMU);
-	rtpAudioDecoder = AudioCodec::CreateDecoder(AudioCodec::PCMU);
+	rtpAudioEncoder = AudioCodecFactory::CreateEncoder(AudioCodec::PCMU);
+	rtpAudioDecoder = AudioCodecFactory::CreateDecoder(AudioCodec::PCMU);
 	//Create speex encoder and decoder
-	rtmpAudioEncoder = AudioCodec::CreateCodec(AudioCodec::NELLY11);
-	rtmpAudioDecoder = AudioCodec::CreateDecoder(AudioCodec::NELLY11);
+	rtmpAudioEncoder = AudioCodecFactory::CreateEncoder(AudioCodec::NELLY11);
+	rtmpAudioDecoder = AudioCodecFactory::CreateDecoder(AudioCodec::NELLY11);
 
 	//Inicializamos los mutex
 	pthread_mutex_init(&mutex,NULL);
@@ -687,7 +687,7 @@ int MediaBridgeSession::RecAudio()
 				//Delete old one
 				delete(rtpAudioDecoder);
 			//Create new one
-			rtpAudioDecoder = AudioCodec::CreateDecoder(codec);
+			rtpAudioDecoder = AudioCodecFactory::CreateDecoder(codec);
 		}
 
 		//Decode it
@@ -1051,7 +1051,7 @@ int MediaBridgeSession::SendAudio()
 					//Delete old one
 					delete(rtmpAudioDecoder);
 				//Create new one
-				rtmpAudioDecoder = AudioCodec::CreateDecoder(rtmpAudioCodec);
+				rtmpAudioDecoder = AudioCodecFactory::CreateDecoder(rtmpAudioCodec);
 			}
 			//Get data
 			BYTE *data = audio->GetMediaData();

@@ -14,10 +14,12 @@
 #include "fifo.h"
 #include "log.h"
 
-NellyCodec::NellyCodec(): AudioCodec()
+NellyEncoder::NellyEncoder()
 {
+	//NO ctx yet
+	ctx = NULL;
 	///Set type
-	type = NELLY8;
+	type = AudioCodec::NELLY8;
 
 	//Register all
 	avcodec_register_all();
@@ -45,11 +47,15 @@ NellyCodec::NellyCodec(): AudioCodec()
 	numFrameSamples = ctx->frame_size;
 }
 
-NellyCodec::~NellyCodec()
+NellyEncoder::~NellyEncoder()
 {
+	//Check
+	if (ctx)
+		//Close
+		avcodec_close(ctx);
 }
 
-int NellyCodec::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
+int NellyEncoder::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 {
 	SWORD buffer[512];
 	DWORD len = 512;
@@ -72,16 +78,13 @@ int NellyCodec::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 	return avcodec_encode_audio(ctx, out, outLen, (SWORD*)bufferf);
 }
 
-int NellyCodec::Decode (BYTE *in, int inLen, SWORD* out, int outLen)
-{
-	//Not supported yet
-	return 0;
-}
 
-NellyEncoder11Khz::NellyEncoder11Khz(): AudioCodec()
+NellyEncoder11Khz::NellyEncoder11Khz()
 {
+	//NO ctx yet
+	ctx = NULL;
 	///Set type
-	type = NELLY11;
+	type = AudioCodec::NELLY11;
 
 	//Register all
 	avcodec_register_all();
@@ -115,6 +118,10 @@ NellyEncoder11Khz::NellyEncoder11Khz(): AudioCodec()
 
 NellyEncoder11Khz::~NellyEncoder11Khz()
 {
+	//Check
+	if (ctx)
+		//Close
+		avcodec_close(ctx);
 }
 
 int NellyEncoder11Khz::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
@@ -156,16 +163,12 @@ int NellyEncoder11Khz::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 	return avcodec_encode_audio(ctx, out, outLen, (SWORD*)bufferf);
 }
 
-int NellyEncoder11Khz::Decode (BYTE *in, int inLen, SWORD* out, int outLen)
+NellyDecoder11Khz::NellyDecoder11Khz()
 {
-	//Not supported yet
-	return 0;
-}
-
-NellyDecoder11Khz::NellyDecoder11Khz(): AudioCodec()
-{
+	//NO ctx yet
+	ctx = NULL;
 	///Set type
-	type = NELLY11;
+	type = AudioCodec::NELLY11;
 
 	//Register all
 	avcodec_register_all();
@@ -200,12 +203,10 @@ NellyDecoder11Khz::NellyDecoder11Khz(): AudioCodec()
 
 NellyDecoder11Khz::~NellyDecoder11Khz()
 {
-}
-
-int NellyDecoder11Khz::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
-{
-	//Encode
-	return 0;
+	//Check
+	if (ctx)
+		//Close
+		avcodec_close(ctx);
 }
 
 int NellyDecoder11Khz::Decode(BYTE *in, int inLen, SWORD* out, int outLen)

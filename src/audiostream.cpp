@@ -50,6 +50,12 @@ int AudioStream::SetAudioCodec(AudioCodec::Type codec)
 	return 1;	
 }
 
+void AudioStream::SetRemoteRateEstimator(RemoteRateEstimator* estimator)
+{
+	//Set it in the rtp session
+	rtp.SetRemoteRateEstimator(estimator);
+}
+
 /***************************************
 * Init
 *	Inicializa los devices 
@@ -279,7 +285,7 @@ int AudioStream::RecAudio()
 	int 		recBytes=0;
 	struct timeval 	before;
 	SWORD		playBuffer[512];
-	AudioCodec*	codec=NULL;
+	AudioDecoder*	codec=NULL;
 	AudioCodec::Type type;
 	DWORD		frameTime=0;
 	DWORD		lastTime=0;
@@ -312,7 +318,7 @@ int AudioStream::RecAudio()
 				delete codec;
 
 			//Creamos uno dependiendo del tipo
-			if ((codec = AudioCodec::CreateDecoder(type))==NULL)
+			if ((codec = AudioCodecFactory::CreateDecoder(type))==NULL)
 			{
 				//Delete pacekt
 				delete(packet);
@@ -366,7 +372,7 @@ int AudioStream::SendAudio()
 	SWORD 		recBuffer[512];
         int 		sendBytes=0;
         struct timeval 	before;
-	AudioCodec* 	codec;
+	AudioEncoder* 	codec;
 	DWORD		frameTime=0;
 
 	Log(">SendAudio\n");
@@ -375,7 +381,7 @@ int AudioStream::SendAudio()
 	gettimeofday(&before,NULL);
 
 	//Creamos el codec de audio
-	if ((codec = AudioCodec::CreateCodec(audioCodec))==NULL)
+	if ((codec = AudioCodecFactory::CreateEncoder(audioCodec))==NULL)
 	{
 		Log("Error en el envio de audio,saliendo\n");
 		return 0;

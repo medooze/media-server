@@ -200,6 +200,7 @@
         <in>amf3.cpp</in>
         <in>appmixer.cpp</in>
         <in>asymmetricmosaic.cpp</in>
+        <in>audio.cpp</in>
         <in>audiodecoder.cpp</in>
         <in>audioencoder.cpp</in>
         <in>audiomixer.cpp</in>
@@ -207,7 +208,6 @@
         <in>avcdescriptor.cpp</in>
         <in>broadcaster.cpp</in>
         <in>broadcastsession.cpp</in>
-        <in>codecs.cpp</in>
         <in>crc32calc.cpp</in>
         <in>fec.cpp</in>
         <in>fecdecoder.cpp</in>
@@ -222,6 +222,7 @@
         <in>mcu.cpp</in>
         <in>mediabridgesession.cpp</in>
         <in>mediagateway.cpp</in>
+        <in>mosaic - copia.cpp</in>
         <in>mosaic.cpp</in>
         <in>mp4player.cpp</in>
         <in>mp4recorder.cpp</in>

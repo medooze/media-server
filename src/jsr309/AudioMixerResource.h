@@ -26,8 +26,8 @@ public:
 			this->tag = tag;
 		}
 		std::wstring	tag;
-		AudioEncoderWorker encoder;
-		AudioDecoderWorker decoder;
+		AudioEncoderMultiplexerWorker encoder;
+		AudioDecoderJoinableWorker decoder;
 	};
 
 public:

@@ -3,22 +3,31 @@ extern "C" {
 #include <speex/speex_resampler.h>
 }
 
-#include "codecs.h"
+#include "audio.h"
 
-class SpeexCodec : public AudioCodec
+class SpeexEncoder : public AudioEncoder
 {
 public:
-	SpeexCodec();
-	virtual ~SpeexCodec();
+	SpeexEncoder();
+	virtual ~SpeexEncoder();
 	virtual int Encode(SWORD *in,int inLen,BYTE* out,int outLen);
-	virtual int Decode(BYTE *in,int inLen,SWORD* out,int outLen);
 private:
 	void *encoder;
-	void *decoder;
 	SpeexResamplerState *resampler;
+	SpeexBits encbits;
+	int enc_frame_size;
+};
+
+class SpeexDecoder : public AudioDecoder
+{
+public:
+	SpeexDecoder();
+	virtual ~SpeexDecoder();
+	virtual int Decode(BYTE *in,int inLen,SWORD* out,int outLen);
+private:
+	void *decoder;
 	SpeexResamplerState *wbresampler;
 	SpeexBits decbits;
-	SpeexBits encbits;
-	int dec_frame_size, enc_frame_size;
+	int dec_frame_size;
 
 };

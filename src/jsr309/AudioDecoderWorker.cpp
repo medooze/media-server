@@ -8,7 +8,7 @@
 #include "AudioDecoderWorker.h"
 #include "rtp.h"
 
-AudioDecoderWorker::AudioDecoderWorker()
+AudioDecoderJoinableWorker::AudioDecoderJoinableWorker()
 {
 	//Nothing
 	output = NULL;
@@ -16,18 +16,18 @@ AudioDecoderWorker::AudioDecoderWorker()
 	decoding = false;
 }
 
-AudioDecoderWorker::~AudioDecoderWorker()
+AudioDecoderJoinableWorker::~AudioDecoderJoinableWorker()
 {
 	End();
 }
 
-int AudioDecoderWorker::Init(AudioOutput *output)
+int AudioDecoderJoinableWorker::Init(AudioOutput *output)
 {
 	//Store it
 	this->output = output;
 }
 
-int AudioDecoderWorker::End()
+int AudioDecoderJoinableWorker::End()
 {
 	//Dettach
 	Dettach();
@@ -41,9 +41,9 @@ int AudioDecoderWorker::End()
 	output = NULL;
 }
 
-int AudioDecoderWorker::Start()
+int AudioDecoderJoinableWorker::Start()
 {
-	Log("-StartAudioDecoderWorker\n");
+	Log("-StartAudioDecoderJoinableWorker\n");
 
 	//Check
 	if (!output)
@@ -63,20 +63,20 @@ int AudioDecoderWorker::Start()
 
 	return 1;
 }
-void * AudioDecoderWorker::startDecoding(void *par)
+void * AudioDecoderJoinableWorker::startDecoding(void *par)
 {
-	Log("AudioDecoderWorkerThread [%d]\n",getpid());
+	Log("AudioDecoderJoinableWorkerThread [%d]\n",getpid());
 	//Get worker
-	AudioDecoderWorker *worker = (AudioDecoderWorker *)par;
+	AudioDecoderJoinableWorker *worker = (AudioDecoderJoinableWorker *)par;
 	//Block all signals
 	blocksignals();
 	//Run
 	pthread_exit((void *)worker->Decode());
 }
 
-int  AudioDecoderWorker::Stop()
+int  AudioDecoderJoinableWorker::Stop()
 {
-	Log(">StopAudioDecoderWorker\n");
+	Log(">StopAudioDecoderJoinableWorker\n");
 
 	//If we were started
 	if (decoding)
@@ -91,17 +91,17 @@ int  AudioDecoderWorker::Stop()
 		pthread_join(thread,NULL);
 	}
 
-	Log("<StopAudioDecoderWorker\n");
+	Log("<StopAudioDecoderJoinableWorker\n");
 
 	return 1;
 }
 
 
-int AudioDecoderWorker::Decode()
+int AudioDecoderJoinableWorker::Decode()
 {
 	SWORD		raw[512];
 	DWORD		rawSize=512;
-	AudioCodec*	codec=NULL;
+	AudioDecoder*	codec=NULL;
 	DWORD		frameTime=0;
 	DWORD		lastTime=0;
 
@@ -134,7 +134,7 @@ int AudioDecoderWorker::Decode()
 				delete codec;
 
 			//Creamos uno dependiendo del tipo
-			if (!(codec = AudioCodec::CreateCodec((AudioCodec::Type)packet->GetCodec())))
+			if (!(codec = AudioCodecFactory::CreateDecoder((AudioCodec::Type)packet->GetCodec())))
 				continue;
 			
 		}
@@ -170,19 +170,19 @@ int AudioDecoderWorker::Decode()
 	pthread_exit(0);
 }
 
-void AudioDecoderWorker::onRTPPacket(RTPPacket &packet)
+void AudioDecoderJoinableWorker::onRTPPacket(RTPPacket &packet)
 {
 	//Put it on the queue
 	packets.Add(packet.Clone());
 }
 
-void AudioDecoderWorker::onResetStream()
+void AudioDecoderJoinableWorker::onResetStream()
 {
 	//Clean all packets
 	packets.Clear();
 }
 
-void AudioDecoderWorker::onEndStream()
+void AudioDecoderJoinableWorker::onEndStream()
 {
 	//Stop decoding
 	Stop();
@@ -190,7 +190,7 @@ void AudioDecoderWorker::onEndStream()
 	joined = NULL;
 }
 
-int AudioDecoderWorker::Attach(Joinable *join)
+int AudioDecoderJoinableWorker::Attach(Joinable *join)
 {
 	//Detach if joined
 	if (joined)
@@ -214,7 +214,7 @@ int AudioDecoderWorker::Attach(Joinable *join)
 	return 1;
 }
 
-int AudioDecoderWorker::Dettach()
+int AudioDecoderJoinableWorker::Dettach()
 {
         //Detach if joined
 	if (joined)

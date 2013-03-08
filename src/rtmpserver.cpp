@@ -116,6 +116,9 @@ init:
 		//Log
 		Log("-RTMP Server accepting connections [fd:%d]\n", ufds[0].fd);
 
+		//Clean zombies each time
+		CleanZombies();
+
 		//Wait for events
 		if (poll(ufds,1,-1)<0)
 		{
@@ -204,7 +207,7 @@ void RTMPServer::CreateConnection(int fd)
 	pthread_mutex_lock(&sessionMutex);
 
 	//Append
-	lstConnections.push_back(rtmp);
+	connections.push_back(rtmp);
 
 	//Unlock
 	pthread_mutex_unlock(&sessionMutex);
@@ -216,27 +219,22 @@ void RTMPServer::CreateConnection(int fd)
  * DeleteConnection
  * 	DeleteConnection
  **************************/
-void RTMPServer::DeleteConnection(RTMPConnection *rtmp)
+void RTMPServer::CleanZombies()
 {
-
-	Log(">Delete connection [0x%x]\n",rtmp);
-
 	//Lock list
 	pthread_mutex_lock(&sessionMutex);
 
-	//End connection
-	rtmp->End();
-	
-	//Remove from list
-	lstConnections.remove(rtmp);
+	//Zombie iterator
+	for (Connections::iterator it=zombies.begin();it!=zombies.end();++it)
+		//Delete zombies
+		delete *it;
 
-	//Destroy it
-	delete(rtmp);
-	
+	//Clear zombies
+	zombies.clear();
+
 	//Unlock list
 	pthread_mutex_unlock(&sessionMutex);
-
-	Log("<Delete connection\n");
+	
 }
 
 /*********************
@@ -245,15 +243,13 @@ void RTMPServer::DeleteConnection(RTMPConnection *rtmp)
  *********************/
 void RTMPServer::DeleteAllConnections()
 {
-	LstConnections::iterator it;
-
 	Log(">Delete all connections\n");
 
 	//Lock list
 	pthread_mutex_lock(&sessionMutex);
 
 	//Connection iterator
-	for (it=lstConnections.begin();it!=lstConnections.end();++it)
+	for (Connections::iterator it=connections.begin();it!=connections.end();++it)
 	{
 		//End connection
 		(*it)->End();
@@ -262,7 +258,7 @@ void RTMPServer::DeleteAllConnections()
 	}
 
 	//Clear connections
-	lstConnections.clear();
+	connections.clear();
 
 	//Unlock list
 	pthread_mutex_unlock(&sessionMutex);
@@ -364,6 +360,19 @@ RTMPNetConnection* RTMPServer::OnConnect(const std::wstring &appName,RTMPNetConn
 void RTMPServer::onDisconnect(RTMPConnection *con)
 {
 	Log("-onDisconnected [%p]\n",con);
-	//Delete connection
-	DeleteConnection(con);
+
+	//Lock list
+	pthread_mutex_lock(&sessionMutex);
+
+	//End connection
+	con->End();
+
+	//Remove from list
+	connections.remove(con);
+
+	//Append to destroyed
+	zombies.push_back(con);
+
+	//Unlock list
+	pthread_mutex_unlock(&sessionMutex);
 }

@@ -4,18 +4,30 @@
 
 #define NUMFRAMES 160
 
-PCMACodec::PCMACodec()
+PCMAEncoder::PCMAEncoder()
 {
 	type=AudioCodec::PCMA;
 	numFrameSamples=NUMFRAMES;
 	frameLength=NUMFRAMES;
 }
 
-PCMACodec::~PCMACodec()
+PCMAEncoder::~PCMAEncoder()
 {
 }
 
-int PCMACodec::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
+PCMADecoder::PCMADecoder()
+{
+	type=AudioCodec::PCMA;
+	numFrameSamples=NUMFRAMES;
+	frameLength=NUMFRAMES;
+}
+
+PCMADecoder::~PCMADecoder()
+{
+
+}
+
+int PCMAEncoder::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 {
 	//Comprobamos las longitudes
 	if (outLen<inLen)
@@ -28,7 +40,7 @@ int PCMACodec::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 	return inLen;
 }
 
-int PCMACodec::Decode (BYTE *in,int inLen,SWORD* out,int outLen)
+int PCMADecoder::Decode (BYTE *in,int inLen,SWORD* out,int outLen)
 {
 	//Comprobamos las longitudes
 	if (outLen<inLen)

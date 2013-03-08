@@ -3,13 +3,13 @@
 #include <cstdlib>
 
 
-#include "g711/g711codec.h"
+
 #include <fcntl.h>
 #include <stdio.h>
 #include <errno.h>
 #include "rtmpmp4stream.h"
 #include "flvrecorder.h"
-#include "speex/speexcodec.h"
+#include "audio.h"
 
 #ifdef FLV1PARSER
 #include "flv1/flv1Parser.h"
@@ -80,17 +80,17 @@ void RTMPMP4Stream::doPlay(std::wstring& url,RTMPMediaStream::Listener* listener
 				prop->AddProperty(L"audiocodecid"	,(float)RTMPAudioFrame::SPEEX	);	//Number Audio codec ID used in the file (see E.4.2.1 for available SoundFormat values)
 				prop->AddProperty(L"audiodatarate"	,(float)16000			);	// Number Audio bit rate in kilobits per second
 				//Set decoder
-				decoder = new PCMUCodec();
-				//Set encode
-				encoder = new SpeexCodec();
+				decoder = AudioCodecFactory::CreateDecoder(AudioCodec::PCMU);
+				//Set encoder to speek
+				encoder = AudioCodecFactory::CreateEncoder((AudioCodec::SPEEX16));
 				break;
 			case AudioCodec::PCMA:
 				prop->AddProperty(L"audiocodecid"	,(float)RTMPAudioFrame::SPEEX	);	//Number Audio codec ID used in the file (see E.4.2.1 for available SoundFormat values)
 				prop->AddProperty(L"audiodatarate"	,(float)16000			);	// Number Audio bit rate in kilobits per second
 				//Set decoder
-				decoder = new PCMACodec();
-				//Set encode
-				encoder = new SpeexCodec();
+				decoder =  AudioCodecFactory::CreateDecoder(AudioCodec::PCMA);
+				//Setencoder to speek
+				encoder = AudioCodecFactory::CreateEncoder(AudioCodec::SPEEX16);
 				break;
 		}
 		//prop->AddProperty(L"stereo"		,new AMFBoolean(false)	);	// Boolean Indicating stereo audio

@@ -17,10 +17,10 @@
 
 
 /**********************************
-* AudioEncoder
+* AudioEncoderWorker
 *	Constructor
 ***********************************/
-AudioEncoder::AudioEncoder()
+AudioEncoderWorker::AudioEncoderWorker()
 {
 	//Not encoding
 	encodingAudio=0;
@@ -31,10 +31,10 @@ AudioEncoder::AudioEncoder()
 }
 
 /*******************************
-* ~AudioEncoder
+* ~AudioEncoderWorker
 *	Destructor.
 ********************************/
-AudioEncoder::~AudioEncoder()
+AudioEncoderWorker::~AudioEncoderWorker()
 {
 	//If still running
 	if (encodingAudio)
@@ -45,35 +45,10 @@ AudioEncoder::~AudioEncoder()
 }
 
 /***************************************
-* CreateAudioCodec
-* 	Crea un objeto de codec de audio del tipo correspondiente
-****************************************/
-AudioCodec* AudioEncoder::CreateAudioCodec(AudioCodec::Type codec)
-{
-
-	Log("-CreateAudioCodec [%d]\n",codec);
-
-	//Creamos uno dependiendo del tipo
-	switch(codec)
-	{
-		case AudioCodec::GSM:
-			return new GSMCodec();
-		case AudioCodec::PCMA:
-			return new PCMACodec();
-		case AudioCodec::PCMU:
-			return new PCMUCodec();
-		default:
-			Log("Codec de audio erroneo [%d]\n",codec);
-	}
-
-	return NULL;
-}
-
-/***************************************
 * SetAudioCodec
 *	Fija el codec de audio
 ***************************************/
-int AudioEncoder::SetAudioCodec(AudioCodec::Type codec)
+int AudioEncoderWorker::SetAudioCodec(AudioCodec::Type codec)
 {
 	//Compromabos que soportamos el modo
 	if (!(codec==AudioCodec::PCMA || codec==AudioCodec::GSM || codec==AudioCodec::PCMU))
@@ -92,7 +67,7 @@ int AudioEncoder::SetAudioCodec(AudioCodec::Type codec)
 * Init
 *	Inicializa los devices
 ***************************************/
-int AudioEncoder::Init(AudioInput *input)
+int AudioEncoderWorker::Init(AudioInput *input)
 {
 	Log(">Init audio encoder\n");
 
@@ -111,9 +86,9 @@ int AudioEncoder::Init(AudioInput *input)
 * startencodingAudio
 *	Helper function
 ***************************************/
-void * AudioEncoder::startEncoding(void *par)
+void * AudioEncoderWorker::startEncoding(void *par)
 {
-	AudioEncoder *conf = (AudioEncoder *)par;
+	AudioEncoderWorker *conf = (AudioEncoderWorker *)par;
 	blocksignals();
 	Log("Encoding audio [%d]\n",getpid());
 	pthread_exit((void *)conf->Encode());
@@ -124,7 +99,7 @@ void * AudioEncoder::startEncoding(void *par)
 * StartSending
 *	Comienza a mandar a la ip y puertos especificados
 ***************************************/
-int AudioEncoder::StartEncoding()
+int AudioEncoderWorker::StartEncoding()
 {
 	Log(">Start encoding audio\n");
 
@@ -146,7 +121,7 @@ int AudioEncoder::StartEncoding()
 * End
 *	Termina la conferencia activa
 ***************************************/
-int AudioEncoder::End()
+int AudioEncoderWorker::End()
 {
 	//Terminamos de enviar
 	StopEncoding();
@@ -159,7 +134,7 @@ int AudioEncoder::End()
 * StopEncoding
 * 	Termina el envio
 ****************************************/
-int AudioEncoder::StopEncoding()
+int AudioEncoderWorker::StopEncoding()
 {
 	Log(">StopEncoding Audio\n");
 
@@ -187,11 +162,11 @@ int AudioEncoder::StopEncoding()
 * Encode
 *	Capturamos el audio y lo mandamos
 *******************************************/
-int AudioEncoder::Encode()
+int AudioEncoderWorker::Encode()
 {
 	SWORD 		recBuffer[512];
         struct timeval 	before;
-	AudioCodec* 	codec;
+	AudioEncoder* 	codec;
 	DWORD		frameTime=0;
 
 	Log(">Encode Audio\n");
@@ -200,7 +175,7 @@ int AudioEncoder::Encode()
 	gettimeofday(&before,NULL);
 
 	//Creamos el codec de audio
-	if ((codec = CreateAudioCodec(audioCodec))==NULL)
+	if ((codec = AudioCodecFactory::CreateEncoder(audioCodec))==NULL)
 	{
 		Log("Error en el envio de audio,saliendo\n");
 		return 0;
@@ -288,7 +263,7 @@ int AudioEncoder::Encode()
 	pthread_exit(0);
 }
 
-bool AudioEncoder::AddListener(MediaFrame::Listener *listener)
+bool AudioEncoderWorker::AddListener(MediaFrame::Listener *listener)
 {
 	//Lock
 	pthread_mutex_lock(&mutex);
@@ -302,7 +277,7 @@ bool AudioEncoder::AddListener(MediaFrame::Listener *listener)
 	return true;
 }
 
-bool AudioEncoder::RemoveListener(MediaFrame::Listener *listener)
+bool AudioEncoderWorker::RemoveListener(MediaFrame::Listener *listener)
 {
 	//Lock
 	pthread_mutex_lock(&mutex);

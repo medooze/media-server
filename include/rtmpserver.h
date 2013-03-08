@@ -29,12 +29,12 @@ protected:
 
 private:
 	typedef std::map<std::wstring,RTMPApplication *> ApplicationMap;
-	typedef std::list<RTMPConnection*> LstConnections;
+	typedef std::list<RTMPConnection*>	Connections;
 
         static void * run(void *par);
 
 	void CreateConnection(int fd);
-	void DeleteConnection(RTMPConnection *rtmp);
+	void CleanZombies();
 	void DeleteAllConnections();
 
 private:
@@ -42,7 +42,8 @@ private:
 	int serverPort;
 	int server;
 
-	LstConnections lstConnections;
+	Connections connections;
+	Connections zombies;
 	ApplicationMap applications;
 	pthread_t serverThread;
 	pthread_mutex_t	sessionMutex;

@@ -23,14 +23,15 @@ public:
 public:
 	enum BandwidthUsage
 	{
-		Normal,
-		OverUsing,
-		UnderUsing
+		UnderUsing = 0,
+		Normal = 1,
+		OverUsing = 2
 	};
 public:
 	RemoteRateControl(Listener* listener);
 	void Update(RTPTimedPacket* packet);
 	void UpdateRTT(DWORD rtt);
+	BandwidthUsage GetUsage()	{ return hypothesis; }
 private:
 	void UpdateKalman(QWORD now,QWORD t_delta, double ts_delta, DWORD frame_size, DWORD prev_frame_size);
 private:

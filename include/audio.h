@@ -4,6 +4,24 @@
 #include "media.h"
 #include "codecs.h"
 
+class AudioEncoder
+{
+public:
+	virtual int Encode(SWORD *in,int inLen,BYTE* out,int outLen)=0;
+	AudioCodec::Type	type;
+	int			numFrameSamples;
+	int			frameLength;
+};
+
+class AudioDecoder
+{
+public:
+	virtual int Decode(BYTE *in,int inLen,SWORD* out,int outLen)=0;
+	AudioCodec::Type	type;
+	int			numFrameSamples;
+	int			frameLength;
+};
+
 class AudioFrame : public MediaFrame
 {
 public:
@@ -49,6 +67,13 @@ public:
 	virtual int PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime)=0;
 	virtual int StartPlaying()=0;
 	virtual int StopPlaying()=0;
+};
+
+class AudioCodecFactory
+{
+public:
+	static AudioDecoder* CreateDecoder(AudioCodec::Type codec);
+	static AudioEncoder* CreateEncoder(AudioCodec::Type codec);
 };
 
 #endif

@@ -28,7 +28,7 @@ public:
 private:
 	
 	MP4Streamer streamer;
-	AudioCodec *audioCodec;
+	AudioDecoder *audioDecoder;
 	VideoDecoder *videoDecoder;
 	VideoOutput *videoOutput;
 	AudioOutput *audioOutput;

@@ -8,20 +8,20 @@ class AudioCodec
 {
 public:
 	enum Type {PCMA=8,PCMU=0,GSM=3,SPEEX16=117,AMR=118,TELEPHONE_EVENT=100,NELLY8=130,NELLY11=131};
+	static const char* GetNameFor(Type codec)
+	{
+		switch (codec)
+		{
+			case PCMA:	return "PCMA";
+			case PCMU:	return "PCMU";
+			case GSM:	return "GSM";
+			case SPEEX16:	return "SPEEX16";
+			case NELLY8:	return "NELLY8Khz";
+			case NELLY11:	return "NELLY11Khz";
+			default:	return "unknown";
+		}
+	}
 	typedef std::map<int,Type> RTPMap;
-	
-public:
-	static const char* GetNameFor(Type codec);
-	static AudioCodec* CreateCodec(Type codec);
-	static AudioCodec* CreateDecoder(Type codec);
-	
-public:
-	virtual ~AudioCodec(){};
-	virtual int Encode(SWORD *in,int inLen,BYTE* out,int outLen)=0;
-	virtual int Decode(BYTE *in,int inLen,SWORD* out,int outLen)=0;
-	Type type;
-	int numFrameSamples;
-	int frameLength;
 };
 
 class VideoCodec
