@@ -150,7 +150,7 @@ void RemoteRateEstimator::Update(DWORD size)
 			if (maxHoldRate > 0 && beta * maxHoldRate > current)
 			{
 				current = (DWORD) (beta * maxHoldRate);
-				avgMaxBitRate = beta * maxHoldRate / 1000.0f;
+				avgMaxBitRate = beta * maxHoldRate;
 				ChangeRegion(NearMax);
 				recovery = true;
 			}
@@ -172,7 +172,7 @@ void RemoteRateEstimator::Update(DWORD size)
 				{
 					// Avoid increasing the rate when over-using.
 					if (region != MaxUnknown)
-						current = (DWORD) (beta * avgMaxBitRate * 1000 + 0.5f);
+						current = (DWORD) (beta * avgMaxBitRate + 0.5f);
 					current = fmin(current, currentBitRate);
 				}
 
