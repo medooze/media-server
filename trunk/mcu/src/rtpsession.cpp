@@ -165,6 +165,8 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) : remoteRateCo
 	//No thread
 	thread = NULL;
 	running = false;
+	//No stimator
+	remoteRateEstimator = NULL;
 	//Set version
 	((rtp_hdr_t *)sendPacket)->version = RTP_VERSION;
 }
@@ -539,6 +541,12 @@ int RTPSession::SendEmptyPacket()
 	return 1;
 }
 
+void RTPSession::SetRemoteRateEstimator(RemoteRateEstimator* estimator)
+{
+	//Store it
+	remoteRateEstimator = estimator;
+}
+
 /********************************
 * Init
 *	Inicia el control rtcp
@@ -862,6 +870,11 @@ int RTPSession::ReadRTCP()
 	//Read rtcp socket
 	int size = recvfrom(simRtcpSocket,buffer,MTU,MSG_DONTWAIT,(sockaddr*)&from_addr, &from_len);
 
+	//if got estimator
+	if (remoteRateEstimator)
+		//Update estimator
+		remoteRateEstimator->Update(size);
+
 	//Check if it is an STUN request
 	STUNMessage *stun = STUNMessage::Parse(buffer,size);
 	
@@ -967,6 +980,11 @@ int RTPSession::ReadRTP()
 
 	//Leemos del socket
 	int size = recvfrom(simSocket,buffer,MTU,MSG_DONTWAIT,(sockaddr*)&from_addr, &from_len);
+
+	//if got estimator
+	if (remoteRateEstimator)
+		//Update estimator
+		remoteRateEstimator->Update(size);
 
 	//Check if it is an STUN request
 	STUNMessage *stun = STUNMessage::Parse(buffer,size);
@@ -1218,14 +1236,17 @@ int RTPSession::ReadRTP()
 			recCycles = 0;
 			//Reset
 			recExtSeq = 0;
+			//Update ssrc
+			recSSRC = ssrc;
+			//If remote estimator
+			if (remoteRateEstimator)
+				//Add stream
+				remoteRateEstimator->AddStream(recSSRC,&remoteRateControl);
 		} else {
 			//Set SSRC of the original stream
 			packet->SetSSRC(recSSRC);
 		}
 	}
-	
-	//Update ssrc
-	recSSRC = ssrc;
 	
 	//Get sec number
 	WORD seq = packet->GetSeqNum();
@@ -1780,6 +1801,25 @@ int RTPSession::SendSenderReport()
 		//Add to packet
 		rtcp->AddRTCPacket(rfb);
 	}
+	//if got estimator
+	if (remoteRateEstimator)
+	{
+		//Get lastest estimation and convert to kbps
+		DWORD estimation = remoteRateEstimator->GetEstimatedBitrate()/1000;
+		//If it was ok
+		if (estimation)
+		{
+			std::list<DWORD> ssrcs;
+			//Get ssrcs
+			remoteRateEstimator->GetSSRCs(ssrcs);
+			//Create feedback
+			RTCPPayloadFeedback *remb = RTCPPayloadFeedback::Create(RTCPPayloadFeedback::ApplicationLayerFeeedbackMessage,sendSSRC,recSSRC);
+			//Send estimation
+			remb->AddField(RTCPPayloadFeedback::ApplicationLayerFeeedbackField::CreateReceiverEstimatedMaxBitrate(ssrcs,estimation));
+			//Add to packet
+			rtcp->AddRTCPacket(remb);
+		}
+	}
 	
 	//Send packet
 	int ret = SendPacket(*rtcp);
@@ -1840,6 +1880,10 @@ void RTPSession::SetRTT(DWORD rtt)
 {
 	//Set it
 	this->rtt = rtt;
+	//if got estimator
+	if (remoteRateEstimator)
+		//Update estimator
+		remoteRateEstimator->SetRTT(rtt);
 	//If it is video
 	if (media==MediaFrame::Video)
 		//Update

@@ -3,12 +3,12 @@
 #include "log.h"
 #include "speexcodec.h"
 
-SpeexCodec::SpeexCodec(): AudioCodec()
+SpeexEncoder::SpeexEncoder()
 {
 	//Set number of input frames for codec
 	numFrameSamples = 160;
 	///Set type
-	type = SPEEX16;
+	type =  AudioCodec::SPEEX16;
 
 	//+------+---------------+-------------------+------------------------+
 	//| mode | Speex quality | wideband bit-rate |     ultra wideband     |
@@ -37,8 +37,6 @@ SpeexCodec::SpeexCodec(): AudioCodec()
 	speex_encoder_ctl(encoder, SPEEX_SET_QUALITY, &quality);
 	//The resampler to convert to WB
 	resampler = speex_resampler_init(1, 8000, 16000, 10, &err);
-	//The resampler to convert from WB
-	wbresampler = speex_resampler_init(1, 16000, 8000, 10, &err);
 	//Init bits
 	speex_bits_init(&encbits);
 	// get frame sizes
@@ -46,26 +44,17 @@ SpeexCodec::SpeexCodec(): AudioCodec()
 	int rate = 16000;
 	speex_encoder_ctl(encoder, SPEEX_SET_SAMPLING_RATE, &rate);
 
-	// init decoder
-	decoder = speex_decoder_init(&speex_wb_mode);
-        speex_bits_init(&decbits);
-        speex_bits_reset(&decbits);
-
 	// get frame sizes
 	speex_mode_query(&speex_wb_mode, SPEEX_MODE_FRAME_SIZE, &enc_frame_size);
-	speex_decoder_ctl(decoder, SPEEX_GET_FRAME_SIZE, &dec_frame_size);
-
 }
 
-SpeexCodec::~SpeexCodec()
+SpeexEncoder::~SpeexEncoder()
 {
-	speex_bits_destroy(&decbits);
 	speex_bits_destroy(&encbits);
 	speex_encoder_destroy(encoder);
-	speex_decoder_destroy(decoder);
 }
 
-int SpeexCodec::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
+int SpeexEncoder::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 {
 	if (!inLen)
 		return 0;
@@ -87,10 +76,38 @@ int SpeexCodec::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 	return speex_bits_write_whole_bytes(&encbits, (char*)out, outLen);
 }
 
-int SpeexCodec::Decode (BYTE *in, int inLen, SWORD* out, int outLen)
+
+SpeexDecoder::SpeexDecoder()
+{
+	//Set number of input frames for codec
+	numFrameSamples = 160;
+	///Set type
+	type = AudioCodec::SPEEX16;
+	
+	int err = 0;
+	//The resampler to convert from WB
+	wbresampler = speex_resampler_init(1, 16000, 8000, 10, &err);
+
+
+	// init decoder
+	decoder = speex_decoder_init(&speex_wb_mode);
+        speex_bits_init(&decbits);
+        speex_bits_reset(&decbits);
+
+	// get frame sizes
+	speex_decoder_ctl(decoder, SPEEX_GET_FRAME_SIZE, &dec_frame_size);
+
+}
+
+SpeexDecoder::~SpeexDecoder()
+{
+	speex_bits_destroy(&decbits);
+	speex_encoder_destroy(decoder);
+}
+
+int SpeexDecoder::Decode (BYTE *in, int inLen, SWORD* out, int outLen)
 {
 	SWORD wbBuffer[512];
-	DWORD wbSize = 512;
 	DWORD wbLen = dec_frame_size;
 
 	//Nothing to decode

@@ -9,7 +9,7 @@
 #include "log.h"
 #include "AudioEncoderWorker.h"
 
-AudioEncoderWorker::AudioEncoderWorker()
+AudioEncoderMultiplexerWorker::AudioEncoderMultiplexerWorker()
 {
 	//Nothing
 	input = NULL;
@@ -17,17 +17,17 @@ AudioEncoderWorker::AudioEncoderWorker()
 	codec = (AudioCodec::Type)-1;
 }
 
-AudioEncoderWorker::~AudioEncoderWorker()
+AudioEncoderMultiplexerWorker::~AudioEncoderMultiplexerWorker()
 {
 	End();
 }
 
-int AudioEncoderWorker::Init(AudioInput *input)
+int AudioEncoderMultiplexerWorker::Init(AudioInput *input)
 {
 	//Store it
 	this->input = input;
 }
-int AudioEncoderWorker::SetCodec(AudioCodec::Type codec)
+int AudioEncoderMultiplexerWorker::SetCodec(AudioCodec::Type codec)
 {
 	//Colocamos el tipo de audio
 	this->codec = codec;
@@ -40,7 +40,7 @@ int AudioEncoderWorker::SetCodec(AudioCodec::Type codec)
 	return 1;
 }
 
-int AudioEncoderWorker::Start()
+int AudioEncoderMultiplexerWorker::Start()
 {
 	//Check
 	if (!input)
@@ -60,20 +60,20 @@ int AudioEncoderWorker::Start()
 
 	return 1;
 }
-void * AudioEncoderWorker::startEncoding(void *par)
+void * AudioEncoderMultiplexerWorker::startEncoding(void *par)
 {
-	Log("AudioEncoderWorkerThread [%d]\n",getpid());
+	Log("AudioEncoderMultiplexerWorkerThread [%d]\n",getpid());
 	//Get worker
-	AudioEncoderWorker *worker = (AudioEncoderWorker *)par;
+	AudioEncoderMultiplexerWorker *worker = (AudioEncoderMultiplexerWorker *)par;
 	//Block all signals
 	blocksignals();
 	//Run
 	pthread_exit((void *)worker->Encode());
 }
 
-int AudioEncoderWorker::Stop()
+int AudioEncoderMultiplexerWorker::Stop()
 {
-	Log(">Stop AudioEncoderWorker\n");
+	Log(">Stop AudioEncoderMultiplexerWorker\n");
 
 	//If we were started
 	if (encoding)
@@ -85,12 +85,12 @@ int AudioEncoderWorker::Stop()
 		pthread_join(thread,NULL);
 	}
 
-	Log("<Stop AudioEncoderWorker\n");
+	Log("<Stop AudioEncoderMultiplexerWorker\n");
 
 	return 1;
 }
 
-int AudioEncoderWorker::End()
+int AudioEncoderMultiplexerWorker::End()
 {
 	//Check if already decoding
 	if (encoding)
@@ -106,17 +106,17 @@ int AudioEncoderWorker::End()
 * SendAudio
 *	Capturamos el audio y lo mandamos
 *******************************************/
-int AudioEncoderWorker::Encode()
+int AudioEncoderMultiplexerWorker::Encode()
 {
 	RTPPacket	packet(MediaFrame::Audio,codec,codec);
 	SWORD 		recBuffer[512];
-	AudioCodec* 	encoder;
+	AudioEncoder* 	encoder;
 	DWORD		frameTime=0;
 
-	Log(">Encode AudioEncoderWorker [%d,%s]\n",codec,AudioCodec::GetNameFor(codec));
+	Log(">Encode AudioEncoderMultiplexerWorker [%d,%s]\n",codec,AudioCodec::GetNameFor(codec));
 
 	//Create the audio codec
-	if ((encoder = AudioCodec::CreateCodec(codec))==NULL)
+	if ((encoder = AudioCodecFactory::CreateEncoder(codec))==NULL)
 	{
 		//Not encoding
 		encoding = false;
@@ -170,7 +170,7 @@ int AudioEncoderWorker::Encode()
 	pthread_exit(0);
 }
 
-void AudioEncoderWorker::AddListener(Listener *listener)
+void AudioEncoderMultiplexerWorker::AddListener(Listener *listener)
 {
 	//Check if we were already encoding
 	if (listener && !encoding && codec!=-1)
@@ -180,7 +180,7 @@ void AudioEncoderWorker::AddListener(Listener *listener)
 	RTPMultiplexer::AddListener(listener);
 }
 
-void AudioEncoderWorker::RemoveListener(Listener *listener)
+void AudioEncoderMultiplexerWorker::RemoveListener(Listener *listener)
 {
 	//Remove the listener
 	RTPMultiplexer::RemoveListener(listener);
@@ -190,6 +190,6 @@ void AudioEncoderWorker::RemoveListener(Listener *listener)
 		Stop();
 }
 
-void AudioEncoderWorker::Update()
+void AudioEncoderMultiplexerWorker::Update()
 {
 }

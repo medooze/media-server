@@ -15,6 +15,7 @@
 #include "remoteratecontrol.h"
 #include "fecdecoder.h"
 #include "stunmessage.h"
+#include "remoterateestimator.h"
 
 
 class RTPMap : 
@@ -73,6 +74,7 @@ public:
 	RTPSession(MediaFrame::Type media,Listener *listener);
 	~RTPSession();
 	int Init();
+	void SetRemoteRateEstimator(RemoteRateEstimator* estimator);
 	int SetLocalPort(int recvPort);
 	int GetLocalPort();
 	int SetRemotePort(char *ip,int sendPort);
@@ -207,6 +209,7 @@ private:
 	DWORD	pendingTMBBitrate;
 
 	RemoteRateControl	remoteRateControl;
+	RemoteRateEstimator*	remoteRateEstimator;
 	FECDecoder		fec;
 	bool			useFEC;
 	bool			useNACK;

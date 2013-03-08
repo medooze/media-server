@@ -2,7 +2,7 @@
 #include "gsmcodec.h"
 
 
-GSMCodec::GSMCodec():AudioCodec()
+GSMEncoder::GSMEncoder()
 {
 	int     fast       = 0;
 	int     wav        = 0;
@@ -16,12 +16,12 @@ GSMCodec::GSMCodec():AudioCodec()
 	gsm_option(g, GSM_OPT_WAV49,   &wav);
 }
 
-GSMCodec::~GSMCodec()
+GSMEncoder::~GSMEncoder()
 {
 	gsm_destroy(g);
 }
 
-int GSMCodec::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
+int GSMEncoder::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 {
 	//Comprobamos las longitudes
 	if ((inLen!=numFrameSamples) || (outLen<frameLength))
@@ -33,7 +33,27 @@ int GSMCodec::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 	return frameLength;
 }
 
-int GSMCodec::Decode (BYTE *in,int inLen,SWORD* out,int outLen)
+
+GSMDecoder::GSMDecoder()
+{
+	int     fast       = 0;
+	int     wav        = 0;
+
+	type=AudioCodec::GSM;
+	numFrameSamples=160;
+	frameLength=33;
+	g = gsm_create();
+
+//	gsm_option(g, GSM_OPT_FAST,    &fast);
+	gsm_option(g, GSM_OPT_WAV49,   &wav);
+}
+
+GSMDecoder::~GSMDecoder()
+{
+	gsm_destroy(g);
+}
+
+int GSMDecoder::Decode (BYTE *in,int inLen,SWORD* out,int outLen)
 {
 	//Dependiendo de la longitud tenemos un tipo u otro
 	if (inLen==33)

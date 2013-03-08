@@ -12,11 +12,11 @@
 #include "waitqueue.h"
 #include "rtp.h"
 
-class AudioDecoder
+class AudioDecoderWorker
 {
 public:
-	AudioDecoder();
-	virtual ~AudioDecoder();
+	AudioDecoderWorker();
+	virtual ~AudioDecoderWorker();
 
 	int Init(AudioOutput *output);
 	int Start();

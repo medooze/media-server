@@ -127,10 +127,10 @@ private:
 	VideoCodec::Type rtpVideoCodec;
 	AudioCodec::Type rtpAudioCodec;
 
-	AudioCodec *rtpAudioEncoder;
-	AudioCodec *rtpAudioDecoder;
-	AudioCodec *rtmpAudioEncoder;
-	AudioCodec *rtmpAudioDecoder;
+	AudioEncoder *rtpAudioEncoder;
+	AudioDecoder *rtpAudioDecoder;
+	AudioEncoder *rtmpAudioEncoder;
+	AudioDecoder *rtmpAudioDecoder;
 
 	//Las threads
 	pthread_t 	recVideoThread;

@@ -5,6 +5,7 @@
 #include "log.h"
 #include "media.h"
 #include <vector>
+#include <list>
 #include <math.h>
 
 #define RTP_VERSION    2
@@ -1282,7 +1283,7 @@ public:
 			return pad32(length);
 		}
 
-		static ApplicationLayerFeeedbackField* CreateReceiverEstimatedMaxBitrate(DWORD ssrc,DWORD bitrate)
+		static ApplicationLayerFeeedbackField* CreateReceiverEstimatedMaxBitrate(std::list<DWORD> ssrcs,DWORD bitrate)
 		{
 			/*
 			    0                   1                   2                   3
@@ -1315,7 +1316,7 @@ public:
 			//Create field
 			ApplicationLayerFeeedbackField* field = new ApplicationLayerFeeedbackField();
 			//Set size of data
-			field->length = 12;
+			field->length = 8+4*ssrcs.size();
 			//Allocate memory
 			field->payload = (BYTE*)malloc(field->length);
 			//Set id
@@ -1328,8 +1329,12 @@ public:
 			field->payload[5] = bitrateExp << 2 | (bitrateMantissa >>16 & 0x03);
 			field->payload[6] = bitrateMantissa >> 8;
 			field->payload[7] = bitrateMantissa;
-			//Set ssrc
-			set4(field->payload,8,ssrc);
+			//Num of ssrcs
+			DWORD i = 0;
+			//For each ssrc
+			for (std::list<DWORD>::iterator it = ssrcs.begin(); it!= ssrcs.end(); ++it)
+				//Set ssrc
+				set4(field->payload,8+4*(i++),(*it));
 			//Return it
 			return field;
 		}

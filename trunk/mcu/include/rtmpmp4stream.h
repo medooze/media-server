@@ -28,8 +28,8 @@ public:
 private:
 	MP4Streamer streamer;
 	AVCDescriptor *desc;
-	AudioCodec *decoder;
-	AudioCodec *encoder;
+	AudioDecoder *decoder;
+	AudioEncoder *encoder;
 };
 
 #endif

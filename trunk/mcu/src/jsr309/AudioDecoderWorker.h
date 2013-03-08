@@ -12,12 +12,12 @@
 #include "waitqueue.h"
 #include "Joinable.h"
 
-class AudioDecoderWorker:
+class AudioDecoderJoinableWorker:
 	public Joinable::Listener
 {
 public:
-	AudioDecoderWorker();
-	virtual ~AudioDecoderWorker();
+	AudioDecoderJoinableWorker();
+	virtual ~AudioDecoderJoinableWorker();
 
 	int Init(AudioOutput *output);
 	int End();

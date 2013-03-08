@@ -68,6 +68,9 @@ int RTPParticipant::End()
 int RTPParticipant::Init()
 {
 	int ret = 1;
+	//Set estimator for audio and video
+	video.SetRemoteRateEstimator(&estimator);
+	audio.SetRemoteRateEstimator(&estimator);
 	//Init each stream
 	ret &= video.Init(videoInput,videoOutput);
 	ret &= audio.Init(audioInput,audioOutput);

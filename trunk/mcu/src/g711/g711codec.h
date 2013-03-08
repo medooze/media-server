@@ -1,26 +1,38 @@
 #ifndef _G711CODEC_H_
 #define _G711CODEC_H_
 
-#include "codecs.h"
+#include "audio.h"
 
-class PCMACodec : public AudioCodec
+class PCMAEncoder : public AudioEncoder
 {
 public:
-	PCMACodec();
-	virtual ~PCMACodec();
+	PCMAEncoder();
+	virtual ~PCMAEncoder();
 	virtual int Encode(SWORD *in,int inLen,BYTE* out,int outLen);
-	virtual int Decode(BYTE *in,int inLen,SWORD* out,int outLen);
-
 };
 
-class PCMUCodec : public AudioCodec
+class PCMADecoder : public AudioDecoder
 {
 public:
-	PCMUCodec();
-	virtual ~PCMUCodec();
-	virtual int Encode(SWORD *in,int inLen,BYTE* out,int outLen);
+	PCMADecoder();
+	virtual ~PCMADecoder();
 	virtual int Decode(BYTE *in,int inLen,SWORD* out,int outLen);
+};
 
+class PCMUEncoder : public AudioEncoder
+{
+public:
+	PCMUEncoder();
+	virtual ~PCMUEncoder();
+	virtual int Encode(SWORD *in,int inLen,BYTE* out,int outLen);
+};
+
+class PCMUDecoder : public AudioDecoder
+{
+public:
+	PCMUDecoder();
+	virtual ~PCMUDecoder();
+	virtual int Decode(BYTE *in,int inLen,SWORD* out,int outLen);
 };
 
 #endif

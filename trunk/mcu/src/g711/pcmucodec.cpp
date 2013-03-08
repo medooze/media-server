@@ -4,18 +4,29 @@
 
 #define NUMFRAMES 160
 
-PCMUCodec::PCMUCodec()
+PCMUEncoder::PCMUEncoder()
 {
 	type=AudioCodec::PCMU;
 	numFrameSamples=NUMFRAMES;
 	frameLength=NUMFRAMES;
 }
 
-PCMUCodec::~PCMUCodec()
+PCMUEncoder::~PCMUEncoder()
 {
 }
 
-int PCMUCodec::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
+PCMUDecoder::PCMUDecoder()
+{
+	type=AudioCodec::PCMU;
+	numFrameSamples=NUMFRAMES;
+	frameLength=NUMFRAMES;
+}
+
+PCMUDecoder::~PCMUDecoder()
+{
+}
+
+int PCMUEncoder::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 {
 	//Comprobamos las longitudes
 	if (outLen<inLen)
@@ -28,7 +39,7 @@ int PCMUCodec::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 	return inLen;
 }
 
-int PCMUCodec::Decode (BYTE *in,int inLen,SWORD* out,int outLen)
+int PCMUDecoder::Decode (BYTE *in,int inLen,SWORD* out,int outLen)
 {
 	//Comprobamos las longitudes
 	if (outLen<inLen)

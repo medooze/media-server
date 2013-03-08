@@ -175,7 +175,7 @@ private:
 	int			watcherId;
 	int			broadcastId;
 	FLVEncoder		flvEncoder;
-	AudioEncoder		audioEncoder;
+	AudioEncoderWorker	audioEncoder;
 	TextEncoder		textEncoder;
 	BroadcastSession	broadcast;
 	FLVRecorder		recorder;

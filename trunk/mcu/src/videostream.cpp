@@ -108,6 +108,12 @@ int VideoStream::SetTemporalBitrateLimit(int bitrate)
 	return 1;
 }
 
+void VideoStream::SetRemoteRateEstimator(RemoteRateEstimator* estimator)
+{
+	//Set it in the rtp session
+	rtp.SetRemoteRateEstimator(estimator);
+}
+
 /***************************************
 * Init
 *	Inicializa los devices 

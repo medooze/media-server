@@ -7,15 +7,15 @@
 
 MP4Player::MP4Player() : streamer(this)
 {
-	audioCodec = NULL;
+	audioDecoder = NULL;
 	videoDecoder = NULL;
 }
 
 MP4Player::~MP4Player()
 {
 	//Delete codecs
-	if (audioCodec)
-		delete (audioCodec);
+	if (audioDecoder)
+		delete (audioDecoder);
 	if (videoDecoder)
 		delete (videoDecoder);
 }
@@ -45,32 +45,13 @@ int MP4Player::Play(const char* filename,bool loop)
 
 	//Open audio codec
 	if (streamer.HasAudioTrack())
-		//Depending on the codec
-		switch (streamer.GetAudioCodec())
-		{
-			case AudioCodec::PCMA:
-				//Create audio codec
-				audioCodec = new PCMACodec();
-				break;
-			case AudioCodec::PCMU:
-				//Create audio codec
-				audioCodec = new PCMACodec();
-				break;
-		}
+		//Create audio codec
+		audioDecoder = AudioCodecFactory::CreateDecoder((AudioCodec::Type)streamer.GetAudioCodec());
+
 	//Open video codec
 	if (streamer.HasVideoTrack())
-		//Depending on the codec
-		switch (streamer.GetVideoCodec())
-		{
-			case VideoCodec::H263_1998:
-				//Create audio codec
-				videoDecoder = new H263Decoder();
-				break;
-			case VideoCodec::H264:
-				//Create audio codec
-				videoDecoder = new H264Decoder();
-				break;
-		}
+		//Create audio codec
+		videoDecoder = VideoCodecFactory::CreateDecoder((VideoCodec::Type)streamer.GetVideoCodec());
 		
 	//Start playback
 	return streamer.Play();
@@ -122,12 +103,12 @@ void MP4Player::onRTPPacket(RTPPacket &packet)
 	{
 		case MediaFrame::Audio:
 			//Check decoder
-			if (!audioCodec || !audioOutput)
+			if (!audioDecoder || !audioOutput)
 				//Do nothing
 				return;
 
 			//Decode it
-			len = audioCodec->Decode(data,len,buffer,bufferSize);
+			len = audioDecoder->Decode(data,len,buffer,bufferSize);
 
 			//Play it
 			audioOutput->PlayBuffer(buffer,len,0);

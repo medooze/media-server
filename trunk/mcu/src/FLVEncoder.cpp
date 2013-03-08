@@ -261,7 +261,7 @@ int FLVEncoder::EncodeAudio()
 	audioInput->StartRecording();
 
 	//Create encoder
-	AudioCodec *encoder = AudioCodec::CreateCodec(audioCodec);
+	AudioEncoder *encoder = AudioCodecFactory::CreateEncoder(audioCodec);
 
 	//Check
 	if (!encoder)

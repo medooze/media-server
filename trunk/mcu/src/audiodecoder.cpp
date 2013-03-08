@@ -1,25 +1,25 @@
 #include "audiodecoder.h"
 #include "media.h"
 
-AudioDecoder::AudioDecoder()
+AudioDecoderWorker::AudioDecoderWorker()
 {
 	//Nothing
 	output = NULL;
 	decoding = false;
 }
 
-AudioDecoder::~AudioDecoder()
+AudioDecoderWorker::~AudioDecoderWorker()
 {
 	End();
 }
 
-int AudioDecoder::Init(AudioOutput *output)
+int AudioDecoderWorker::Init(AudioOutput *output)
 {
 	//Store it
 	this->output = output;
 }
 
-int AudioDecoder::End()
+int AudioDecoderWorker::End()
 {
 	//Check if already decoding
 	if (decoding)
@@ -27,7 +27,7 @@ int AudioDecoder::End()
 		Stop();
 }
 
-int AudioDecoder::Start()
+int AudioDecoderWorker::Start()
 {
 	Log("-StartAudioDecoder\n");
 
@@ -49,18 +49,18 @@ int AudioDecoder::Start()
 
 	return 1;
 }
-void * AudioDecoder::startDecoding(void *par)
+void * AudioDecoderWorker::startDecoding(void *par)
 {
 	Log("AudioDecoderThread [%d]\n",getpid());
 	//Get worker
-	AudioDecoder *worker = (AudioDecoder *)par;
+	AudioDecoderWorker *worker = (AudioDecoderWorker *)par;
 	//Block all signals
 	blocksignals();
 	//Run
 	pthread_exit((void *)worker->Decode());
 }
 
-int  AudioDecoder::Stop()
+int  AudioDecoderWorker::Stop()
 {
 	Log(">StopAudioDecoder\n");
 
@@ -83,11 +83,11 @@ int  AudioDecoder::Stop()
 }
 
 
-int AudioDecoder::Decode()
+int AudioDecoderWorker::Decode()
 {
 	SWORD		raw[512];
 	DWORD		rawSize=512;
-	AudioCodec*	codec=NULL;
+	AudioDecoder*	codec=NULL;
 	DWORD		frameTime=0;
 	DWORD		lastTime=0;
 
@@ -120,7 +120,7 @@ int AudioDecoder::Decode()
 				delete codec;
 
 			//Creamos uno dependiendo del tipo
-			if (!(codec = AudioCodec::CreateCodec((AudioCodec::Type)packet->GetCodec())))
+			if (!(codec = AudioCodecFactory::CreateDecoder((AudioCodec::Type)packet->GetCodec())))
 				continue;
 
 		}
@@ -156,7 +156,7 @@ int AudioDecoder::Decode()
 	pthread_exit(0);
 }
 
-void AudioDecoder::onRTPPacket(RTPPacket &packet)
+void AudioDecoderWorker::onRTPPacket(RTPPacket &packet)
 {
 	//Put it on the queue
 	packets.Add(packet.Clone());

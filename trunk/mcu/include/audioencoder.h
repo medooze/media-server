@@ -3,11 +3,11 @@
 #include "audio.h"
 #include <set>
 
-class AudioEncoder
+class AudioEncoderWorker
 {
 public:
-	AudioEncoder();
-	~AudioEncoder();
+	AudioEncoderWorker();
+	~AudioEncoderWorker();
 
 	int Init(AudioInput *input);
 	bool AddListener(MediaFrame::Listener *listener);
@@ -26,7 +26,7 @@ protected:
 private:
 	//Funciones propias
 	static void *startEncoding(void *par);
-	AudioCodec* CreateAudioCodec(AudioCodec::Type type);
+	AudioEncoder* CreateAudioEncoder(AudioCodec::Type type);
 
 private:
 	typedef std::set<MediaFrame::Listener*> Listeners;

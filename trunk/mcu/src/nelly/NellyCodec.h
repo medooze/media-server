@@ -16,26 +16,24 @@ extern "C" {
 #include "codecs.h"
 #include "audio.h"
 
-class NellyCodec : public AudioCodec
+class NellyEncoder : public AudioEncoder
 {
 public:
-	NellyCodec();
-	virtual ~NellyCodec();
+	NellyEncoder();
+	virtual ~NellyEncoder();
 	virtual int Encode(SWORD *in,int inLen,BYTE* out,int outLen);
-	virtual int Decode(BYTE *in,int inLen,SWORD* out,int outLen);
 private:
 	AVCodec 	*codec;
 	AVCodecContext	*ctx;
 	fifo<SWORD,512>  samples;
 };
 
-class NellyEncoder11Khz : public AudioCodec
+class NellyEncoder11Khz : public AudioEncoder
 {
 public:
 	NellyEncoder11Khz();
 	virtual ~NellyEncoder11Khz();
 	virtual int Encode(SWORD *in,int inLen,BYTE* out,int outLen);
-	virtual int Decode(BYTE *in,int inLen,SWORD* out,int outLen);
 private:
 	SpeexResamplerState *resampler;
 	AVCodec 	*codec;
@@ -44,12 +42,11 @@ private:
 	fifo<SWORD,1024>  samples11;
 };
 
-class NellyDecoder11Khz : public AudioCodec
+class NellyDecoder11Khz : public AudioDecoder
 {
 public:
 	NellyDecoder11Khz();
 	virtual ~NellyDecoder11Khz();
-	virtual int Encode(SWORD *in,int inLen,BYTE* out,int outLen);
 	virtual int Decode(BYTE *in,int inLen,SWORD* out,int outLen);
 private:
 	SpeexResamplerState *resampler;
