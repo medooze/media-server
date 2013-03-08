@@ -148,7 +148,7 @@ void RemoteRateControl::UpdateKalman(QWORD now,QWORD tdelta, double tsdelta, DWO
 				if (overUseCount>1)
 				{
 					//Get target bitrate
-					target =  (bitrateCalc.GetInstantAvg()+ bitrateCalc.GetMinAvg())/2;
+					target =  (bitrateCalc.GetInstantAvg()+bitrateCalc.GetMinAvg()*3)/4;
 					//Log	
 					Log("BWE:  OverUsing bitrate:%llf max:%llf min:%llf target:%d \n",bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg(),target);
 					//Overusing
@@ -197,5 +197,18 @@ void RemoteRateControl::UpdateKalman(QWORD now,QWORD tdelta, double tsdelta, DWO
 
 void RemoteRateControl::UpdateRTT(DWORD rtt)
 {
+	//Check difference
+	if (this->rtt && rtt>this->rtt*1.30 && bitrateCalc.GetInstantAvg())
+	{
+		//Get target bitrate
+		DWORD target =  bitrateCalc.GetInstantAvg();
+		//Log	
+		Log("BWE: RTT increase %d to %d bitrate:%llf target:%d \n",this->rtt,rtt,bitrateCalc.GetInstantAvg(),target);
+		//If we have a new target bitrate
+		if (target && listener)
+			//Call listenter
+			listener->onTargetBitrateRequested(target);
+	}
+	//Update RTT
 	this->rtt = rtt;
 }

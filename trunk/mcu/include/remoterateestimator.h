@@ -39,6 +39,19 @@ public:
 		}
 		return "Unknown";
 	}
+	const char * GetName(Region region)
+	{
+		switch (region)
+		{
+			case MaxUnknown:
+				return "MaxUnknown";
+			case AboveMax:
+				return "AboveMax";
+			case NearMax:
+				return "NearMax";
+		}
+		return "Unknown";
+	}
 public:
 	RemoteRateEstimator();
 	void AddStream(DWORD ssrc,RemoteRateControl* ctrl);

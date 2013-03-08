@@ -12,17 +12,17 @@
 RemoteRateEstimator::RemoteRateEstimator() : bitrateAcu(500)
 {
 	//Not last estimate
-	minConfiguredBitRate	= 30000,
-	maxConfiguredBitRate	= 30000000,
-	currentBitRate		= maxConfiguredBitRate,
-	maxHoldRate		= 0,
-	avgMaxBitRate		= -1.0f,
-	varMaxBitRate		= 0.4f,
-	lastBitRateChange	= -1,
-	avgChangePeriod		= 1000.0f,
-	lastChangeMs		= -1,
-	beta			= 0.9f,
-	rtt			=  200;
+	minConfiguredBitRate	= 30000;
+	maxConfiguredBitRate	= 30000000;
+	currentBitRate		= 0;
+	maxHoldRate		= 0;
+	avgMaxBitRate		= -1.0f;
+	varMaxBitRate		= 0.4f;
+	lastBitRateChange	= 0;
+	avgChangePeriod		= 1000.0f;
+	lastChangeMs		= 0;
+	beta			= 0.9f;
+	rtt			= 200;
 	//Set initial state and region
 	cameFromState = Decrease;
 	state = Hold;
@@ -54,18 +54,28 @@ void RemoteRateEstimator::Update(DWORD size)
 	bitrateAcu.Update(now,size*8);
 
 	//If not firs update
-	if (lastChangeMs > -1)
+	if (!lastChangeMs)
+	{
+		//Set first
+		lastChangeMs = now;
+	} else {
 		//Calculate difference from last update
 		changePeriod = now - lastChangeMs;
+	}
 	
 	//Only update once per second
-	if (changePeriod>1000)
+	if (changePeriod<1000)
 	{
 		//Unlock
 		lock.Unlock();
 		//Exit
 		return;
 	}
+
+	// If it is the first estimation
+	if (!currentBitRate)
+		//Init to maximum
+		currentBitRate = bitrateAcu.GetMaxAvg();
 
 	//Update last changed
 	lastChangeMs = now;
@@ -132,18 +142,13 @@ void RemoteRateEstimator::Update(DWORD size)
 				{
 					ChangeRegion(MaxUnknown);
 					avgMaxBitRate = -1.0;
-				} else if (incomingBitRate > avgMaxBitRate + 2.5 * stdMaxBitRate)
-				{
+				} else if (incomingBitRate > avgMaxBitRate + 2.5 * stdMaxBitRate) {
 					ChangeRegion(AboveMax);
 				}
 			}
 
-			Log("BWE: Response time: %f + %i + 10*33\n", avgChangePeriod, rtt);
-
 			const DWORD responseTime = (DWORD) (avgChangePeriod + 0.5f) + rtt + 300;
 			double alpha = RateIncreaseFactor(now, lastBitRateChange, responseTime, noiseVar);
-
-			Log("BWE: avgChangePeriod = %f ms; RTT = %u ms alpha = %f\n", avgChangePeriod, rtt, alpha);
 
 			current = (DWORD) (current * alpha) + 1000;
 
@@ -205,6 +210,8 @@ void RemoteRateEstimator::Update(DWORD size)
 
 	//Unlock
 	lock.Unlock();
+
+	Log("-estimation currentBitRate=%d recovery=%d current=%d incoming=%f\n",currentBitRate/1000,recovery,current/1000,incomingBitRate/1000);
 }
 
 double RemoteRateEstimator::RateIncreaseFactor(QWORD nowMs, QWORD lastMs, DWORD reactionTimeMs, double noiseVar) const
@@ -225,7 +232,7 @@ double RemoteRateEstimator::RateIncreaseFactor(QWORD nowMs, QWORD lastMs, DWORD 
 		alpha = 1.3;
 
 
-	if (lastMs > -1)
+	if (lastMs )
 		alpha = pow(alpha, (nowMs - lastMs) / 1000.0);
 
 	if (region == NearMax)
@@ -241,7 +248,7 @@ double RemoteRateEstimator::RateIncreaseFactor(QWORD nowMs, QWORD lastMs, DWORD 
 void RemoteRateEstimator::UpdateChangePeriod(QWORD nowMs)
 {
 	QWORD changePeriod = 0;
-	if (lastChangeMs > -1)
+	if (lastChangeMs)
 		changePeriod = nowMs - lastChangeMs;
 	lastChangeMs = nowMs;
 	avgChangePeriod = 0.9f * avgChangePeriod + 0.1f * changePeriod;
@@ -293,6 +300,7 @@ void RemoteRateEstimator::ChangeState(State newState)
 
 void RemoteRateEstimator::ChangeRegion(Region newRegion)
 {
+	Log("-Change region to:%s\n",GetName(newRegion));
 	//Store new region
 	region = newRegion;
 	//Calculate new beta
