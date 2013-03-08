@@ -67,8 +67,9 @@ void RemoteRateEstimator::Update(DWORD size)
 
 	//No noise var calculationyet
 	DWORD noiseVar = 1;
-	
-	// Get current bitrate
+	//Get current estimation
+	DWORD current = currentBitRate;
+	//Get current bitrate
 	const float incomingBitRate = bitrateAcu.GetInstantAvg();
 	// Calculate the max bit rate std dev given the normalized
 	// variance and the current incoming bit rate.
@@ -103,37 +104,37 @@ void RemoteRateEstimator::Update(DWORD size)
 
 			Log("BWE: avgChangePeriod = %f ms; RTT = %u ms", avgChangePeriod, rtt);
 
-			currentBitRate = (DWORD) (currentBitRate * alpha) + 1000;
+			current = (DWORD) (current * alpha) + 1000;
 
-			if (maxHoldRate > 0 && beta * maxHoldRate > currentBitRate)
+			if (maxHoldRate > 0 && beta * maxHoldRate > current)
 			{
-				currentBitRate = (DWORD) (beta * maxHoldRate);
+				current = (DWORD) (beta * maxHoldRate);
 				avgMaxBitRate = beta * maxHoldRate / 1000.0f;
 				ChangeRegion(NearMax);
 				recovery = true;
 			}
 
 			maxHoldRate = 0;
-			Log("BWE: Increase rate to currentBitRate = %u kbps", currentBitRate / 1000);
+			Log("BWE: Increase rate to current = %u kbps", current / 1000);
 			lastBitRateChange = now;
 			break;
 		}
 		case Decrease:
 			if (incomingBitRate < minConfiguredBitRate)
 			{
-				currentBitRate = minConfiguredBitRate;
+				current = minConfiguredBitRate;
 			} else	{
 				// Set bit rate to something slightly lower than max
 				// to get rid of any self-induced delay.
-				currentBitRate = (DWORD) (beta * incomingBitRate + 0.5);
-				if (currentBitRate > currentBitRate)
+				current = (DWORD) (beta * incomingBitRate + 0.5);
+				if (current > currentBitRate)
 				{
 					// Avoid increasing the rate when over-using.
 					if (region != MaxUnknown)
 					{
-						currentBitRate = (DWORD) (beta * avgMaxBitRate * 1000 + 0.5f);
+						current = (DWORD) (beta * avgMaxBitRate * 1000 + 0.5f);
 					}
-					currentBitRate = fmin(currentBitRate, currentBitRate);
+					current = fmin(current, currentBitRate);
 				}
 
 				ChangeRegion(NearMax);
@@ -145,7 +146,7 @@ void RemoteRateEstimator::Update(DWORD size)
 
 				UpdateMaxBitRateEstimate(incomingBitRate);
 
-				Log("BWE: Decrease rate to currentBitRate = %u kbps", currentBitRate / 1000);
+				Log("BWE: Decrease rate to current = %u kbps", current / 1000);
 			}
 			// Stay on hold until the pipes are cleared.
 			ChangeState(Hold);
@@ -153,13 +154,16 @@ void RemoteRateEstimator::Update(DWORD size)
 			break;
 	}
 	
-	if (!recovery && (incomingBitRate > 100000 || currentBitRate > 150000) && currentBitRate > 1.5 * incomingBitRate)
+	if (!recovery && (incomingBitRate > 100000 || current > 150000) && current > 1.5 * incomingBitRate)
 	{
 		// Allow changing the bit rate if we are operating at very low rates
 		// Don't change the bit rate if the send side is too far off
-		currentBitRate = currentBitRate;
+		current = currentBitRate;
 		lastBitRateChange = now;
 	}
+
+	//Update
+	currentBitRate = current;
 
 	//Unlock
 	lock.Unlock();
