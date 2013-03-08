@@ -590,10 +590,10 @@ int VideoStream::RecVideo()
 			//Check if we got listener and more than two seconds have elapsed from last request
 			if (listener && getDifTime(&lastFPURequest)>1000000)
 			{
+				//Debug
+				Log("-Requesting FPU lost %d\n",lostCount);
 				//Reset count
 				lostCount = 0;
-				//Debug
-				Log("-Requesting FPU\n");
 				//Request it
 				listener->onRequestFPU();
 				//Request also over rtp
@@ -672,7 +672,7 @@ int VideoStream::RecVideo()
 			if (listener && getDifTime(&lastFPURequest)>1000000)
 			{
 				//Debug
-				Log("-Requesting FPU\n");
+				Log("-Requesting FPU decoder error\n");
 				//Reset count
 				lostCount = 0;
 				//Request it

@@ -543,6 +543,8 @@ int RTPSession::SendEmptyPacket()
 
 void RTPSession::SetRemoteRateEstimator(RemoteRateEstimator* estimator)
 {
+	Log("-SetRemoteRateEstimator\n");
+
 	//Store it
 	remoteRateEstimator = estimator;
 }
@@ -1288,6 +1290,8 @@ int RTPSession::ReadRTP()
 			//Base packet missing
 			WORD base = recExtSeq+1;
 
+			Log("-Nacking %d lost %d\n",base,lost);
+
 			//Generate new RTCP NACK report
 			RTCPCompoundPacket* rtcp = new RTCPCompoundPacket();
 
@@ -1805,7 +1809,7 @@ int RTPSession::SendSenderReport()
 	if (remoteRateEstimator)
 	{
 		//Get lastest estimation and convert to kbps
-		DWORD estimation = remoteRateEstimator->GetEstimatedBitrate()/1000;
+		DWORD estimation = remoteRateEstimator->GetEstimatedBitrate()/2;
 		//If it was ok
 		if (estimation)
 		{
@@ -1813,7 +1817,8 @@ int RTPSession::SendSenderReport()
 			//Get ssrcs
 			remoteRateEstimator->GetSSRCs(ssrcs);
 			//Create feedback
-			RTCPPayloadFeedback *remb = RTCPPayloadFeedback::Create(RTCPPayloadFeedback::ApplicationLayerFeeedbackMessage,sendSSRC,recSSRC);
+			// SSRC of media source (32 bits):  Always 0; this is the same convention as in [RFC5104] section 4.2.2.2 (TMMBN).
+			RTCPPayloadFeedback *remb = RTCPPayloadFeedback::Create(RTCPPayloadFeedback::ApplicationLayerFeeedbackMessage,sendSSRC,0);
 			//Send estimation
 			remb->AddField(RTCPPayloadFeedback::ApplicationLayerFeeedbackField::CreateReceiverEstimatedMaxBitrate(ssrcs,estimation));
 			//Add to packet
@@ -1836,7 +1841,7 @@ int RTPSession::SendFIR()
 	Log("-SendFIR\n");
 
 	//clear pacekts in the queue
-	packets.Clear();
+	//packets.Clear();
 
 	//Create rtcp sender retpor
 	RTCPCompoundPacket* rtcp = CreateSenderReport();
@@ -1880,6 +1885,8 @@ void RTPSession::SetRTT(DWORD rtt)
 {
 	//Set it
 	this->rtt = rtt;
+	//Uptade the rate control
+	remoteRateControl.UpdateRTT(rtt);
 	//if got estimator
 	if (remoteRateEstimator)
 		//Update estimator
@@ -1891,7 +1898,7 @@ void RTPSession::SetRTT(DWORD rtt)
 	//Check RTT to enable NACK
 	if (useNACK)
 		//Enable NACK only if RTT is small
-		isNACKEnabled = (rtt < 120);
+		isNACKEnabled = (rtt < 180);
 }
 
 void RTPSession::onTargetBitrateRequested(DWORD bitrate)
