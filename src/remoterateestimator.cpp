@@ -51,7 +51,7 @@ void RemoteRateEstimator::Update(DWORD size)
 	QWORD now = getTime()/1000;
 
 	//Acumulate
-	bitrateAcu.Update(size,now);
+	bitrateAcu.Update(now,size*8);
 
 	//If not firs update
 	if (lastChangeMs > -1)
@@ -143,7 +143,7 @@ void RemoteRateEstimator::Update(DWORD size)
 			const DWORD responseTime = (DWORD) (avgChangePeriod + 0.5f) + rtt + 300;
 			double alpha = RateIncreaseFactor(now, lastBitRateChange, responseTime, noiseVar);
 
-			Log("BWE: avgChangePeriod = %f ms; RTT = %u ms", avgChangePeriod, rtt);
+			Log("BWE: avgChangePeriod = %f ms; RTT = %u ms alpha = %f\n", avgChangePeriod, rtt, alpha);
 
 			current = (DWORD) (current * alpha) + 1000;
 
@@ -156,7 +156,7 @@ void RemoteRateEstimator::Update(DWORD size)
 			}
 
 			maxHoldRate = 0;
-			Log("BWE: Increase rate to current = %u kbps", current / 1000);
+			Log("BWE: Increase rate to current = %u kbps\n", current / 1000);
 			lastBitRateChange = now;
 			break;
 		}
@@ -183,7 +183,7 @@ void RemoteRateEstimator::Update(DWORD size)
 
 				UpdateMaxBitRateEstimate(incomingBitRate);
 
-				Log("BWE: Decrease rate to current = %u kbps", current / 1000);
+				Log("BWE: Decrease rate to current = %u kbps\n", current / 1000);
 			}
 			// Stay on hold until the pipes are cleared.
 			ChangeState(Hold);
