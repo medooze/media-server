@@ -42,6 +42,8 @@ void RemoteRateEstimator::RemoveStream(DWORD ssrc)
 
 void RemoteRateEstimator::Update(DWORD size)
 {
+	QWORD changePeriod = 0;
+
 	//Lock
 	lock.WaitUnusedAndLock();
 
@@ -50,6 +52,26 @@ void RemoteRateEstimator::Update(DWORD size)
 
 	//Acumulate
 	bitrateAcu.Update(size,now);
+
+	//If not firs update
+	if (lastChangeMs > -1)
+		//Calculate difference from last update
+		changePeriod = now - lastChangeMs;
+	
+	//Only update once per second
+	if (changePeriod>1000)
+	{
+		//Unlock
+		lock.Unlock();
+		//Exit
+		return;
+	}
+
+	//Update last changed
+	lastChangeMs = now;
+
+	//calculate average period
+	avgChangePeriod = 0.9f * avgChangePeriod + 0.1f * changePeriod;
 
 	//Get global usage for all streams
 	RemoteRateControl::BandwidthUsage usage = RemoteRateControl::UnderUsing;
@@ -150,18 +172,14 @@ void RemoteRateEstimator::Update(DWORD size)
 				{
 					// Avoid increasing the rate when over-using.
 					if (region != MaxUnknown)
-					{
 						current = (DWORD) (beta * avgMaxBitRate * 1000 + 0.5f);
-					}
 					current = fmin(current, currentBitRate);
 				}
 
 				ChangeRegion(NearMax);
 
 				if (incomingBitRate < avgMaxBitRate - 3 * stdMaxBitRate)
-				{
 					avgMaxBitRate = -1.0f;
-				}
 
 				UpdateMaxBitRateEstimate(incomingBitRate);
 
@@ -169,6 +187,7 @@ void RemoteRateEstimator::Update(DWORD size)
 			}
 			// Stay on hold until the pipes are cleared.
 			ChangeState(Hold);
+
 			lastBitRateChange = now;
 			break;
 	}
