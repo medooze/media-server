@@ -1325,7 +1325,7 @@ public:
 			field->payload[2] = 'M';
 			field->payload[3] = 'B';
 			//Set data
-			field->payload[4] = 1;
+			field->payload[4] = ssrcs.size();
 			field->payload[5] = bitrateExp << 2 | (bitrateMantissa >>16 & 0x03);
 			field->payload[6] = bitrateMantissa >> 8;
 			field->payload[7] = bitrateMantissa;
