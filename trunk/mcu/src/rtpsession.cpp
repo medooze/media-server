@@ -1261,9 +1261,8 @@ int RTPSession::ReadRTP()
 	//Set cycles
 	packet->SetSeqCycles(recCycles);
 
-	if (media==MediaFrame::Video)
-		//Update rate control
-		remoteRateControl.Update(packet);
+	//Update rate control
+	remoteRateControl.Update(packet);
 
 	//Increase stats
 	numRecvPackets++;
@@ -1809,7 +1808,7 @@ int RTPSession::SendSenderReport()
 	if (remoteRateEstimator)
 	{
 		//Get lastest estimation and convert to kbps
-		DWORD estimation = remoteRateEstimator->GetEstimatedBitrate()/2;
+		DWORD estimation = remoteRateEstimator->GetEstimatedBitrate();
 		//If it was ok
 		if (estimation)
 		{
@@ -1840,8 +1839,8 @@ int RTPSession::SendFIR()
 {
 	Log("-SendFIR\n");
 
-	//clear pacekts in the queue
-	//packets.Clear();
+	//Send all the packets inmediatelly to the decoderso I frame can be handled as soon as possoble
+	packets.HurryUp();
 
 	//Create rtcp sender retpor
 	RTCPCompoundPacket* rtcp = CreateSenderReport();
