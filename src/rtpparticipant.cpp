@@ -221,8 +221,9 @@ void RTPParticipant::onFPURequested(RTPSession *session)
 
 void RTPParticipant::onReceiverEstimatedMaxBitrate(RTPSession *session,DWORD bitrate)
 {
+	Log("-onReceiverEstimatedMaxBitrate %d\n",bitrate);
 	//Limit video taking into count max audio
-	video.SetTemporalBitrateLimit(bitrate/1000);
+	video.SetTemporalBitrateLimit(bitrate/1000-64);
 }
 
 void RTPParticipant::onTempMaxMediaStreamBitrateRequest(RTPSession *session,DWORD bitrate,DWORD overhead)

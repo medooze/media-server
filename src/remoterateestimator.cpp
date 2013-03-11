@@ -121,7 +121,7 @@ void RemoteRateEstimator::Update(DWORD size)
 	//Get current estimation
 	DWORD current = currentBitRate;
 	//Get current bitrate
-	const float incomingBitRate = bitrateAcu.GetInstantAvg();
+	const float incomingBitRate = bitrateAcu.GetMaxAvg();
 	// Calculate the max bit rate std dev given the normalized
 	// variance and the current incoming bit rate.
 	const float stdMaxBitRate = sqrt(varMaxBitRate * avgMaxBitRate);
@@ -161,7 +161,7 @@ void RemoteRateEstimator::Update(DWORD size)
 			}
 
 			maxHoldRate = 0;
-			Log("BWE: Increase rate to current = %u kbps\n", current / 1000);
+			//Log("BWE: Increase rate to current = %u kbps\n", current / 1000);
 			lastBitRateChange = now;
 			break;
 		}
@@ -188,7 +188,7 @@ void RemoteRateEstimator::Update(DWORD size)
 
 				UpdateMaxBitRateEstimate(incomingBitRate);
 
-				Log("BWE: Decrease rate to current = %u kbps\n", current / 1000);
+				//Log("BWE: Decrease rate to current = %u kbps\n", current / 1000);
 			}
 			// Stay on hold until the pipes are cleared.
 			ChangeState(Hold);
@@ -208,10 +208,15 @@ void RemoteRateEstimator::Update(DWORD size)
 	//Update
 	currentBitRate = current;
 
+	Log("--estimation currentBitRate=%d current=%d incoming=%f min=%llf max=%llf\n",currentBitRate/1000,current/1000,incomingBitRate/1000,bitrateAcu.GetMinAvg()/1000,bitrateAcu.GetMaxAvg()/1000);
+
+	//Reset min max
+	bitrateAcu.ResetMinMax();
+
 	//Unlock
 	lock.Unlock();
 
-	Log("-estimation currentBitRate=%d recovery=%d current=%d incoming=%f\n",currentBitRate/1000,recovery,current/1000,incomingBitRate/1000);
+
 }
 
 double RemoteRateEstimator::RateIncreaseFactor(QWORD nowMs, QWORD lastMs, DWORD reactionTimeMs, double noiseVar) const
@@ -280,7 +285,7 @@ void RemoteRateEstimator::UpdateMaxBitRateEstimate(float incomingBitRate)
 DWORD RemoteRateEstimator::GetEstimatedBitrate()
 {
 	//Retun estimation
-	return bitrateAcu.IsInWindow() ? currentBitRate : 0;
+	return bitrateAcu.IsInWindow() ? currentBitRate*0.80 : 0;
 }
 
 void RemoteRateEstimator::GetSSRCs(std::list<DWORD> &ssrcs)
@@ -292,7 +297,7 @@ void RemoteRateEstimator::GetSSRCs(std::list<DWORD> &ssrcs)
 }
 void RemoteRateEstimator::ChangeState(State newState)
 {
-	Log("-ChangeState from:%s to %s\n",GetName(state),GetName(newState));
+	//Log("-ChangeState from:%s to %s\n",GetName(state),GetName(newState));
 	//Store values
 	cameFromState = state;
 	state = newState;
@@ -300,7 +305,7 @@ void RemoteRateEstimator::ChangeState(State newState)
 
 void RemoteRateEstimator::ChangeRegion(Region newRegion)
 {
-	Log("-Change region to:%s\n",GetName(newRegion));
+	//Log("-Change region to:%s\n",GetName(newRegion));
 	//Store new region
 	region = newRegion;
 	//Calculate new beta

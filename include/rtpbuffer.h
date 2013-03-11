@@ -18,6 +18,8 @@ public:
 	{
 		//NO wait time
 		maxWaitTime = 0;
+		//No hurring up
+		hurryUp = false;
 		//No canceled
 		cancel = false;
 		//No next
@@ -110,7 +112,7 @@ public:
 				QWORD time = candidate->GetTime();
 
 				//Check if first is the one expected or wait if not
-				if (next==(DWORD)-1 || seq==next || time+maxWaitTime<getTime()/1000)
+				if (next==(DWORD)-1 || seq==next || time+maxWaitTime<getTime()/1000 || hurryUp)
 				{
 					//We have it!
 					rtp = candidate;
@@ -136,6 +138,8 @@ public:
 					Error("-WaitQueue cond timedwait error [%d,%d]\n",ret,errno);
 				
 			} else {
+				//Not hurryUp more
+				hurryUp = false;
 				//Wait until we have a new rtp pacekt
 				int ret = pthread_cond_wait(&cond,&mutex);
 				//Check error
@@ -162,6 +166,12 @@ public:
 
 		//UnLock
 		pthread_mutex_unlock(&mutex);
+	}
+
+	void HurryUp()
+	{
+		//Set flag
+		hurryUp = true;
 	}
 
 	void Reset()
@@ -209,6 +219,7 @@ private:
 	//The event list
 	RTPOrderedPackets	packets;
 	bool			cancel;
+	bool			hurryUp;
 	pthread_mutex_t		mutex;
 	pthread_cond_t		cond;
 	DWORD			next;
