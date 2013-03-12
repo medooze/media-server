@@ -20,12 +20,7 @@ public:
 		Increase,
 		Decrease
 	};
-	enum Region {
-		MaxUnknown,
-		AboveMax,
-		NearMax,
-		
-	};
+
 	const char * GetName(State state)
 	{
 		switch (state)
@@ -36,19 +31,6 @@ public:
 				return "Increase";
 			case Decrease:
 				return "Decrease";
-		}
-		return "Unknown";
-	}
-	const char * GetName(Region region)
-	{
-		switch (region)
-		{
-			case MaxUnknown:
-				return "MaxUnknown";
-			case AboveMax:
-				return "AboveMax";
-			case NearMax:
-				return "NearMax";
 		}
 		return "Unknown";
 	}
@@ -65,7 +47,7 @@ private:
 	void UpdateChangePeriod(QWORD nowMs);
 	void UpdateMaxBitRateEstimate(float incomingBitRateKbps);
 	void ChangeState(State newState);
-	void ChangeRegion(Region newRegion);
+	void ChangeRegion(RemoteRateControl::Region newRegion);
 private:
 	typedef std::map<DWORD,RemoteRateControl*> Streams;
 private:
@@ -80,7 +62,7 @@ private:
 	float varMaxBitRate;
 	State state;
 	State cameFromState;
-	Region region;
+	RemoteRateControl::Region region;
 	QWORD lastBitRateChange;
 
 	float avgChangePeriod;

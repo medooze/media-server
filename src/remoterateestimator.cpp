@@ -26,7 +26,7 @@ RemoteRateEstimator::RemoteRateEstimator() : bitrateAcu(500)
 	//Set initial state and region
 	cameFromState = Decrease;
 	state = Hold;
-	region = MaxUnknown;
+	region = RemoteRateControl::MaxUnknown;
 
 }
 void RemoteRateEstimator::AddStream(DWORD ssrc,RemoteRateControl* ctrl)
@@ -42,6 +42,7 @@ void RemoteRateEstimator::RemoveStream(DWORD ssrc)
 
 void RemoteRateEstimator::Update(DWORD size)
 {
+	double noiseVar = 0;
 	QWORD changePeriod = 0;
 
 	//Lock
@@ -89,13 +90,20 @@ void RemoteRateEstimator::Update(DWORD size)
 	//For each one
 	for (Streams::iterator it = streams.begin(); it!=streams.end(); ++it)
 	{
+		//Get control
+		RemoteRateControl *ctrl = it->second;
 		//Get stream usage
-		RemoteRateControl::BandwidthUsage streamUsage = it->second->GetUsage();
+		RemoteRateControl::BandwidthUsage streamUsage = ctrl->GetUsage();
 		//Get worst
 		if (usage<streamUsage)
 			//Set it
 			usage = streamUsage;
+		//Get noise var and sum up
+		noiseVar += ctrl->GetNoise();
 	}
+
+	//Normalize
+	noiseVar = noiseVar/streams.size();
 
 	//Modify state depending on the bandwidht state
 	switch (usage)
@@ -116,8 +124,7 @@ void RemoteRateEstimator::Update(DWORD size)
 			break;
 	}
 
-	//No noise var calculationyet
-	DWORD noiseVar = 1;
+
 	//Get current estimation
 	DWORD current = currentBitRate;
 	//Get current bitrate
@@ -140,10 +147,10 @@ void RemoteRateEstimator::Update(DWORD size)
 			{
 				if (incomingBitRate > avgMaxBitRate + 3 * stdMaxBitRate)
 				{
-					ChangeRegion(MaxUnknown);
+					ChangeRegion(RemoteRateControl::MaxUnknown);
 					avgMaxBitRate = -1.0;
 				} else if (incomingBitRate > avgMaxBitRate + 2.5 * stdMaxBitRate) {
-					ChangeRegion(AboveMax);
+					ChangeRegion(RemoteRateControl::AboveMax);
 				}
 			}
 
@@ -156,7 +163,7 @@ void RemoteRateEstimator::Update(DWORD size)
 			{
 				current = (DWORD) (beta * maxHoldRate);
 				avgMaxBitRate = beta * maxHoldRate;
-				ChangeRegion(NearMax);
+				ChangeRegion(RemoteRateControl::NearMax);
 				recovery = true;
 			}
 
@@ -176,12 +183,12 @@ void RemoteRateEstimator::Update(DWORD size)
 				if (current > currentBitRate)
 				{
 					// Avoid increasing the rate when over-using.
-					if (region != MaxUnknown)
+					if (region != RemoteRateControl::MaxUnknown)
 						current = (DWORD) (beta * avgMaxBitRate + 0.5f);
 					current = fmin(current, currentBitRate);
 				}
 
-				ChangeRegion(NearMax);
+				ChangeRegion(RemoteRateControl::NearMax);
 
 				if (incomingBitRate < avgMaxBitRate - 3 * stdMaxBitRate)
 					avgMaxBitRate = -1.0f;
@@ -240,11 +247,11 @@ double RemoteRateEstimator::RateIncreaseFactor(QWORD nowMs, QWORD lastMs, DWORD 
 	if (lastMs )
 		alpha = pow(alpha, (nowMs - lastMs) / 1000.0);
 
-	if (region == NearMax)
+	if (region == RemoteRateControl::NearMax)
 		// We're close to our previous maximum. Try to stabilize the
 		// bit rate in this region, by increasing in smaller steps.
 		alpha = alpha - (alpha - 1.0) / 2.0;
-	else if (region == MaxUnknown)
+	else if (region == RemoteRateControl::MaxUnknown)
 		alpha = alpha + (alpha - 1.0) * 2.0;
 
 	return alpha;
@@ -303,7 +310,7 @@ void RemoteRateEstimator::ChangeState(State newState)
 	state = newState;
 }
 
-void RemoteRateEstimator::ChangeRegion(Region newRegion)
+void RemoteRateEstimator::ChangeRegion(RemoteRateControl::Region newRegion)
 {
 	//Log("-Change region to:%s\n",GetName(newRegion));
 	//Store new region
@@ -311,14 +318,18 @@ void RemoteRateEstimator::ChangeRegion(Region newRegion)
 	//Calculate new beta
 	switch (region)
 	{
-		case AboveMax:
-		case MaxUnknown:
+		case RemoteRateControl::AboveMax:
+		case RemoteRateControl::MaxUnknown:
 			beta = 0.9f;
 			break;
-		case NearMax:
+		case RemoteRateControl::NearMax:
 			beta = 0.95f;
 			break;
 	}
+	//Set it on controls
+	for (Streams::iterator it = streams.begin(); it!=streams.end(); ++it)
+		//Set region on control
+		 it->second->SetRateControlRegion(newRegion);
 }
 
 void RemoteRateEstimator::SetRTT(DWORD rtt)
