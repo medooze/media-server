@@ -27,16 +27,54 @@ public:
 		Normal = 1,
 		OverUsing = 2
 	};
+
+	enum Region {
+		MaxUnknown,
+		AboveMax,
+		NearMax,
+
+	};
+
+	const char * GetName(BandwidthUsage usage)
+	{
+		switch (usage)
+		{
+			case UnderUsing:
+				return "UnderUsing";
+			case Normal:
+				return "Normal";
+			case OverUsing:
+				return "OverUsing";
+		}
+		return "Unknown";
+	}
+	
+	const char * GetName(Region region)
+	{
+		switch (region)
+		{
+			case MaxUnknown:
+				return "MaxUnknown";
+			case AboveMax:
+				return "AboveMax";
+			case NearMax:
+				return "NearMax";
+		}
+		return "Unknown";
+	}
 public:
 	RemoteRateControl(Listener* listener);
 	void Update(RTPTimedPacket* packet);
 	void UpdateRTT(DWORD rtt);
+	void SetRateControlRegion(Region region);
 	BandwidthUsage GetUsage()	{ return hypothesis; }
+	double GetNoise()		{ return varNoise;   }
 private:
 	void UpdateKalman(QWORD now,QWORD t_delta, double ts_delta, DWORD frame_size, DWORD prev_frame_size);
 private:
 	Listener*  listener;
 	Acumulator bitrateCalc;
+	Acumulator fpsCalc;
 	DWORD rtt;
 
 	WORD num;

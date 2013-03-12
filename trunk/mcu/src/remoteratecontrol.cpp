@@ -1,14 +1,14 @@
 /* 
- * File:   remoteratecontrol.cpp
- * Author: Sergio
- * 
- * Created on 26 de diciembre de 2012, 12:49
+*File:   remoteratecontrol.cpp
+*Author: Sergio
+*
+*Created on 26 de diciembre de 2012, 12:49
  */
 
 #include "remoteratecontrol.h"
 #include <math.h>
 
-RemoteRateControl::RemoteRateControl(Listener* listener) : bitrateCalc(100)
+RemoteRateControl::RemoteRateControl(Listener* listener) : bitrateCalc(100), fpsCalc(1000)
 {
 	this->listener = listener;
 	prevTS = 0;
@@ -49,10 +49,12 @@ void RemoteRateControl::Update(RTPTimedPacket* packet)
 	//Check if it is from a new frame
 	if (ts > prevTS)
 	{
+		//Add new frame
+		fpsCalc.Update(ts,1);
 		//If not first one
 		if (prevTime)
 			//Update Kalman filter as per google algorithm
-			UpdateKalman(time,time - prevTime, ts - prevTS, curSize, prevSize);
+			UpdateKalman(time,time-prevTime, ts-prevTS, curSize, prevSize);
 		//Move
 		prevTS = ts;
 		prevTime = time;
@@ -65,51 +67,55 @@ void RemoteRateControl::Update(RTPTimedPacket* packet)
 
 void RemoteRateControl::UpdateKalman(QWORD now,QWORD tdelta, double tsdelta, DWORD framesize, DWORD prevframesize)
 {
-	if (num<60)
-		num++;
-	else
-		num = 60;
+	const double ttsdelta = tdelta-tsdelta;
+	double fsdelta = static_cast<double> (framesize)-prevframesize;
 
-	const double ttsdelta = tdelta - tsdelta;
-	double fsdelta = static_cast<double> (framesize) - prevframesize;
-
+	//Get scaling factor
+	const double scaleFactor = 30/fpsCalc.GetInstantAvg();
 	// Update the Kalman filter
-	E[0][0] += processNoise[0];
-	E[1][1] += processNoise[1];
+	E[0][0] += processNoise[0]*scaleFactor;
+	E[1][1] += processNoise[1]*scaleFactor;
 
-	if ((hypothesis == OverUsing && offset < prevOffset) || 
-	    (hypothesis == UnderUsing && offset > prevOffset)   )
-		E[1][1] += 10 * processNoise[1];
+	if ((hypothesis==OverUsing && offset<prevOffset) || (hypothesis==UnderUsing && offset>prevOffset))
+		E[1][1] += 10*processNoise[1]*scaleFactor;
 
 	const double h[2] = 
-	{	fsdelta,
+	{
+		fsdelta,
 		1.0
 	};
 	const double Eh[2] =
 	{
-		E[0][0] * h[0] + E[0][1] * h[1],
-		E[1][0] * h[0] + E[1][1] * h[1]
+		E[0][0]*h[0] + E[0][1]*h[1],
+		E[1][0]*h[0] + E[1][1]*h[1]
 	};
 
-	const double residual = ttsdelta - slope * h[0] - offset;
+	const double residual = ttsdelta-slope*h[0]-offset;
 
-	// Only update the noise estimate if we're not over-using
-	if (num * fabsf(offset) < threshold)
+	// Only update the noise estimate if we're not over-using and in stable state
+	if (hypothesis!=OverUsing && (fmin(fpsCalc.GetAcumulated(),60)*fabsf(offset)<threshold))
 	{
+		double residualFiltered = residual;
+
+		// We try to filter out very late frames. For instance periodic key
+		// frames doesn't fit the Gaussian model well.
+		if (fabsf(residual)<3*sqrt(varNoise))
+			residualFiltered = 3*sqrt(varNoise);
+
 		// Faster filter during startup to faster adapt to the jitter level
 		// of the network alpha is tuned for 30 frames per second, but
 		double alpha = 0.01;
-		if (num == 60)
+		if (fpsCalc.GetAcumulated()> 60)
 			alpha = 0.002;
 
 		// beta is a function of alpha and the time delta since
 		// the previous update.
-		const double beta = pow(1 - alpha, tsdelta * 30.0 / 1000.0);
-		avgNoise = beta * avgNoise + (1 - beta) * residual;
-		varNoise = beta * varNoise + (1 - beta) * (avgNoise - residual) * (avgNoise - residual);
+		const double beta = pow(1-alpha, tsdelta*fpsCalc.GetInstantAvg()/1000.0);
+		avgNoise = beta*avgNoise + (1-beta)*residualFiltered;
+		varNoise = beta*varNoise + (1-beta)*(avgNoise-residualFiltered)*(avgNoise-residualFiltered);
 	}
 
-	const double denom = varNoise + h[0] * Eh[0] + h[1] * Eh[1];
+	const double denom = varNoise+h[0]*Eh[0]+h[1]*Eh[1];
 	const double K[2] = 
 	{
 		Eh[0] / denom,
@@ -117,21 +123,21 @@ void RemoteRateControl::UpdateKalman(QWORD now,QWORD tdelta, double tsdelta, DWO
 	};
 	const double IKh[2][2] =
 	{
-		{ 1.0 - K[0] * h[0] ,     - K[0] * h[1] },
-		{     - K[1] * h[0] , 1.0 - K[1] * h[1] }
+		{ 1.0-K[0]*h[0] ,    -K[0]*h[1] },
+		{    -K[1]*h[0] , 1.0-K[1]*h[1] }
 	};
 
 	// Update state
-	E[0][0] = E[0][0] * IKh[0][0] + E[1][0] * IKh[0][1];
-	E[0][1] = E[0][1] * IKh[0][0] + E[1][1] * IKh[0][1];
-	E[1][0] = E[0][0] * IKh[1][0] + E[1][0] * IKh[1][1];
-	E[1][1] = E[0][1] * IKh[1][0] + E[1][1] * IKh[1][1];
+	E[0][0] = E[0][0]*IKh[0][0] + E[1][0]*IKh[0][1];
+	E[0][1] = E[0][1]*IKh[0][0] + E[1][1]*IKh[0][1];
+	E[1][0] = E[0][0]*IKh[1][0] + E[1][0]*IKh[1][1];
+	E[1][1] = E[0][1]*IKh[1][0] + E[1][1]*IKh[1][1];
 
-	slope = slope + K[0] * residual;
+	slope = slope+K[0]*residual;
 	prevOffset = offset;
-	offset = offset + K[1] * residual;
+	offset = offset+K[1]*residual;
 
-	const double T = num * offset;
+	const double T = fmin(fpsCalc.GetAcumulated(),60)*offset;
 
 	DWORD target = 0;
 
@@ -211,4 +217,18 @@ void RemoteRateControl::UpdateRTT(DWORD rtt)
 	}
 	//Update RTT
 	this->rtt = rtt;
+}
+
+void RemoteRateControl::SetRateControlRegion(Region region)
+{
+	switch (region)
+	{
+		case MaxUnknown:
+			threshold = 25;
+			break;
+		case AboveMax:
+		case NearMax:
+			threshold = 12;
+			break;
+	}
 }
