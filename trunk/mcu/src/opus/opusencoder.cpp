@@ -10,6 +10,8 @@
 OpusEncoder::OpusEncoder()
 {
 	int error;
+	//Set type
+	type = AudioCodec::OPUS;
 	//Set number of input frames for codec
 	numFrameSamples = 160;
 	//Open encoder
