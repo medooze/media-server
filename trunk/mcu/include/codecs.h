@@ -7,7 +7,7 @@
 class AudioCodec
 {
 public:
-	enum Type {PCMA=8,PCMU=0,GSM=3,SPEEX16=117,AMR=118,TELEPHONE_EVENT=100,NELLY8=130,NELLY11=131};
+	enum Type {PCMA=8,PCMU=0,GSM=3,SPEEX16=117,AMR=118,TELEPHONE_EVENT=100,NELLY8=130,NELLY11=131,OPUS=98};
 	static const char* GetNameFor(Type codec)
 	{
 		switch (codec)
@@ -18,6 +18,7 @@ public:
 			case SPEEX16:	return "SPEEX16";
 			case NELLY8:	return "NELLY8Khz";
 			case NELLY11:	return "NELLY11Khz";
+			case OPUS:	return "OPUS";
 			default:	return "unknown";
 		}
 	}

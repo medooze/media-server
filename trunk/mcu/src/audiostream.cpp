@@ -284,7 +284,8 @@ int AudioStream::RecAudio()
 {
 	int 		recBytes=0;
 	struct timeval 	before;
-	SWORD		playBuffer[512];
+	SWORD		playBuffer[1024];
+	const DWORD	playBufferSize = 1024;
 	AudioDecoder*	codec=NULL;
 	AudioCodec::Type type;
 	DWORD		frameTime=0;
@@ -329,7 +330,7 @@ int AudioStream::RecAudio()
 		}
 
 		//Lo decodificamos
-		int len = codec->Decode(packet->GetMediaData(),packet->GetMediaLength(),playBuffer,512);
+		int len = codec->Decode(packet->GetMediaData(),packet->GetMediaLength(),playBuffer,playBufferSize);
 
 		//Obtenemos el tiempo del frame
 		frameTime = packet->GetTimestamp() - lastTime;
@@ -382,19 +383,57 @@ int AudioStream::SendAudio()
 
 	//Creamos el codec de audio
 	if ((codec = AudioCodecFactory::CreateEncoder(audioCodec))==NULL)
-	{
-		Log("Error en el envio de audio,saliendo\n");
-		return 0;
-	}
+		//Error
+		return Error("Could not create audio codec\n");
 
+	/*
+	   Opus supports 5 different audio bandwidths which may be adjusted
+	   during the duration of a call.  The RTP timestamp clock frequency is
+	   defined as the highest supported sampling frequency of Opus, i.e.
+	   48000 Hz, for all modes and sampling rates of Opus.  The unit for the
+	   timestamp is samples per single (mono) channel.  The RTP timestamp
+	   corresponds to the sample time of the first encoded sample in the
+	   encoded frame.  For sampling rates lower than 48000 Hz the number of
+	   samples has to be multiplied with a multiplier according to Table 2
+	   to determine the RTP timestamp.
+
+                         +---------+------------+
+                         | fs (Hz) | Multiplier |
+                         +---------+------------+
+                         |   8000  |      6     |
+                         |         |            |
+                         |  12000  |      4     |
+                         |         |            |
+                         |  16000  |      3     |
+                         |         |            |
+                         |  24000  |      2     |
+                         |         |            |
+                         |  48000  |      1     |
+                         +---------+------------+
+
+	 */
+
+	//Update clock rate
+	if (codec->type==AudioCodec::SPEEX16)
+		//Set it
+		packet.SetClockRate(16000);
+	else if (codec->type==AudioCodec::OPUS)
+		//It is 48khz always even if the data sent is at 8khz
+		packet.SetClockRate(48000);
+	
 	//Empezamos a grabar
 	audioInput->StartRecording();
 
 	//Mientras tengamos que capturar
 	while(sendingAudio)
 	{
-		//Incrementamos el tiempo de envio
-		frameTime += codec->numFrameSamples;
+		//Check if opus
+		if (codec->type==AudioCodec::OPUS)
+			//Incrementamos el tiempo de envio
+			frameTime += codec->numFrameSamples*6;
+		else
+			//Incrementamos el tiempo de envio
+			frameTime += codec->numFrameSamples;
 
 		//Capturamos 
 		if (audioInput->RecBuffer(recBuffer,codec->numFrameSamples)==0)
