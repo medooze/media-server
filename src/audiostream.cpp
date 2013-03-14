@@ -37,10 +37,6 @@ AudioStream::~AudioStream()
 ***************************************/
 int AudioStream::SetAudioCodec(AudioCodec::Type codec)
 {
-	//Compromabos que soportamos el modo
-	if (!(codec==AudioCodec::PCMA || codec==AudioCodec::GSM || codec==AudioCodec::PCMU))
-		return 0;
-
 	//Colocamos el tipo de audio
 	audioCodec = codec;
 

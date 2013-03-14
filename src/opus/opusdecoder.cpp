@@ -11,6 +11,8 @@
 OpusDecoder::OpusDecoder()
 {
 	int error = 0;
+	//Set type
+	type = AudioCodec::OPUS;
 	//Create decoder
 	dec = opus_decoder_create(8000,1,&error);
 	//Check error

@@ -10,7 +10,7 @@
 
 AudioEncoder* AudioCodecFactory::CreateEncoder(AudioCodec::Type codec)
 {
-	Log("-CreateAudioCodec [%d,%s]\n",codec,AudioCodec::GetNameFor(codec));
+	Log("-CreateAudioEncoder [%d,%s]\n",codec,AudioCodec::GetNameFor(codec));
 
 	//Creamos uno dependiendo del tipo
 	switch(codec)
@@ -38,7 +38,7 @@ AudioEncoder* AudioCodecFactory::CreateEncoder(AudioCodec::Type codec)
 
 AudioDecoder* AudioCodecFactory::CreateDecoder(AudioCodec::Type codec)
 {
-	Log("-CreateAudioCodec [%d,%s]\n",codec,AudioCodec::GetNameFor(codec));
+	Log("-CreateAudioDecoder [%d,%s]\n",codec,AudioCodec::GetNameFor(codec));
 
 	//Creamos uno dependiendo del tipo
 	switch(codec)
