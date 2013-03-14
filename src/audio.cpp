@@ -4,6 +4,8 @@
 #include "gsm/gsmcodec.h"
 #include "speex/speexcodec.h"
 #include "nelly/NellyCodec.h"
+#include "opus/opusencoder.h"
+#include "opus/opusdecoder.h"
 
 
 AudioEncoder* AudioCodecFactory::CreateEncoder(AudioCodec::Type codec)
@@ -25,6 +27,8 @@ AudioEncoder* AudioCodecFactory::CreateEncoder(AudioCodec::Type codec)
 			return new NellyEncoder();
 		case AudioCodec::NELLY11:
 			return new NellyEncoder11Khz();
+		case AudioCodec::OPUS:
+			return new OpusEncoder();
 		default:
 			Error("Codec not found [%d]\n",codec);
 	}
@@ -51,6 +55,8 @@ AudioDecoder* AudioCodecFactory::CreateDecoder(AudioCodec::Type codec)
 			return NULL;
 		case AudioCodec::NELLY11:
 			return new NellyDecoder11Khz();
+		case AudioCodec::OPUS:
+			return new OpusDecoder();
 		default:
 			Error("Codec not found [%d]\n",codec);
 	}
