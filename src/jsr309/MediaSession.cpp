@@ -9,6 +9,7 @@ MediaSession::MediaSession(std::wstring tag)
 	maxRecordersId = 1;
 	maxAudioMixerId = 1;
 	maxVideoMixerId = 1;
+	maxVideoTranscoderId = 1;
 	//Store it
 	this->tag = tag;
 }
@@ -55,6 +56,14 @@ int MediaSession::End()
 		delete(it->second);
 	//Clean map
 	players.clear();
+
+	//Delete all video transcoders
+	for (VideoTranscoders::iterator it=videoTranscoders.begin(); it!=videoTranscoders.end(); ++it)
+		//Delete object
+		delete(it->second);
+
+	//Clean map
+	videoTranscoders.clear();
 
 	//Delete all endpoints
 	for (Endpoints::iterator it=endpoints.begin(); it!=endpoints.end(); ++it)
@@ -381,6 +390,85 @@ int MediaSession::EndpointDelete(int endpointId)
 
         return 1;
 }
+
+int MediaSession::EndpointSetLocalCryptoSDES(int endpointId,MediaFrame::Type media,const char *suite,const char* key)
+{
+        //Get endpoint
+        Endpoints::iterator it = endpoints.find(endpointId);
+
+        //If not found
+        if (it==endpoints.end())
+                //Exit
+                return Error("Endpoint not found\n");
+        //Get it
+        Endpoint* endpoint = it->second;
+
+	//Call it
+	return endpoint->SetLocalCryptoSDES(media,suite,key);
+}
+
+int MediaSession::EndpointSetRemoteCryptoSDES(int endpointId,MediaFrame::Type media,const char *suite,const char* key)
+{
+        //Get endpoint
+        Endpoints::iterator it = endpoints.find(endpointId);
+
+        //If not found
+        if (it==endpoints.end())
+                //Exit
+                return Error("Endpoint not found\n");
+        //Get it
+        Endpoint* endpoint = it->second;
+
+	//Call it
+	return endpoint->SetRemoteCryptoSDES(media,suite,key);
+}
+
+int MediaSession::EndpointSetLocalSTUNCredentials(int endpointId,MediaFrame::Type media,const char *username,const char* pwd)
+{
+        //Get endpoint
+        Endpoints::iterator it = endpoints.find(endpointId);
+
+        //If not found
+        if (it==endpoints.end())
+                //Exit
+                return Error("Endpoint not found\n");
+        //Get it
+        Endpoint* endpoint = it->second;
+
+	//Call it
+	return endpoint->SetLocalSTUNCredentials(media,username,pwd);
+}
+
+int MediaSession::EndpointSetRemoteSTUNCredentials(int endpointId,MediaFrame::Type media,const char *username,const char* pwd)
+{
+        //Get endpoint
+        Endpoints::iterator it = endpoints.find(endpointId);
+
+        //If not found
+        if (it==endpoints.end())
+                //Exit
+                return Error("Endpoint not found\n");
+        //Get it
+        Endpoint* endpoint = it->second;
+
+	//Call it
+	return endpoint->SetRemoteSTUNCredentials(media,username,pwd);
+}
+
+int MediaSession::EndpointSetRTPProperties(int endpointId,MediaFrame::Type media,const RTPSession::Properties& properties)
+{
+        //Get endpoint
+        Endpoints::iterator it = endpoints.find(endpointId);
+
+        //If not found
+        if (it==endpoints.end())
+                //Exit
+                return Error("Endpoint not found\n");
+        //Get it
+        Endpoint* endpoint = it->second;
+
+}
+
 //Endpoint Video functionality
 int MediaSession::EndpointStartSending(int endpointId,MediaFrame::Type media,char *sendVideoIp,int sendVideoPort,RTPMap& rtpMap)
 {
@@ -556,13 +644,43 @@ int MediaSession::EndpointAttachToVideoMixerPort(int endpointId,int mixerId,int 
         //If not found
         if (itMixer==videoMixers.end())
                 //Exit
-                return Error("AudioMixerResource not found\n");
+                return Error("VideoMixerResource not found\n");
 
 	 //Get it
         VideoMixerResource* videoMixer = itMixer->second;
 
 	//And attach
 	return endpoint->Attach(MediaFrame::Video,videoMixer->GetJoinable(portId));
+}
+
+int MediaSession::EndpointAttachToVideoTranscoder(int endpointId,int videoTranscoderId)
+{
+	//Get endpoint
+        Endpoints::iterator it = endpoints.find(endpointId);
+
+        //If not found
+        if (it==endpoints.end())
+                //Exit
+                return Error("Endpoint not found\n");
+        //Get it
+        Endpoint* endpoint = it->second;
+
+	//Log endpoint tag name
+	Log("-EndpointAttachToVideoTranscoder [%ls]\n",endpoint->GetName().c_str());
+
+	 //Get Video transcoder
+        VideoTranscoders::iterator itTranscoder = videoTranscoders.find(videoTranscoderId);
+
+        //If not found
+        if (itTranscoder==videoTranscoders.end())
+                //Exit
+                return Error("VideoTranscoder not found\n");
+
+	 //Get it
+        VideoTranscoder* videoTranscoder = itTranscoder->second;
+
+	//And attach
+	return endpoint->Attach(MediaFrame::Video,videoTranscoder);
 }
 
 int MediaSession::EndpointAttachToEndpoint(int endpointId,int sourceId,MediaFrame::Type media)
@@ -1069,4 +1187,104 @@ int MediaSession::VideoMixerMosaicRemovePort(int mixerId,int mosaicId,int portId
 
        //Attach
 	return videoMixer->RemoveMosaicParticipant(mosaicId,portId);
+}
+
+int MediaSession::VideoTranscoderCreate(std::wstring tag)
+{
+	//Create ID
+        int videoTranscoderId = maxVideoTranscoderId++;
+	//Create trascoder
+	VideoTranscoder* videoTranscoder = new VideoTranscoder(tag);
+	//Init
+	videoTranscoder->Init();
+        //Append the player
+        videoTranscoders[videoTranscoderId] = videoTranscoder;
+        //Return it
+        return videoTranscoderId;
+}
+
+int MediaSession::VideoTranscoderSetCodec(int videoTranscoderId,VideoCodec::Type codec,int size,int fps,int bitrate,int intraPeriod)
+{
+	//Get Player
+        VideoTranscoders::iterator it = videoTranscoders.find(videoTranscoderId);
+
+        //If not found
+        if (it==videoTranscoders.end())
+                //Exit
+                return Error("VideoTranscoder not found [%d]\n",videoTranscoderId);
+        //Get it
+        VideoTranscoder* videoTranscoder = it->second;
+
+	//Execute
+	return videoTranscoder->SetCodec(codec,size,fps,bitrate,1,52,intraPeriod);
+}
+
+int MediaSession::VideoTranscoderDelete(int videoTranscoderId)
+{
+	//Get Player
+        VideoTranscoders::iterator it = videoTranscoders.find(videoTranscoderId);
+
+        //If not found
+        if (it==videoTranscoders.end())
+                //Exit
+                return Error("VideoTranscoder not found [%d]\n",videoTranscoderId);
+        //Get it
+        VideoTranscoder* videoTranscoder = it->second;
+
+        //Remove from list
+        videoTranscoders.erase(it);
+
+	//End it
+	videoTranscoder->End();
+
+        //Relete videoMixer
+        delete(videoTranscoder);
+
+        return 1;
+}
+
+int MediaSession::VideoTranscoderAttachToEndpoint(int videoTranscoderId,int endpointId)
+{
+	//Get mixer
+        VideoTranscoders::iterator it = videoTranscoders.find(videoTranscoderId);
+
+        //If not found
+        if (it==videoTranscoders.end())
+                //Exit
+                return Error("VideoTranscoder not found [%d]\n",videoTranscoderId);
+        //Get it
+        VideoTranscoder* videoTranscoder = it->second;
+
+	//Get endpoint
+        Endpoints::iterator itEnd = endpoints.find(endpointId);
+
+        //If not found
+        if (itEnd==endpoints.end())
+                //Exit
+                return Error("Endpoint not found\n");
+
+        //Get it
+        Endpoint* endpoint = itEnd->second;
+
+	//Log endpoint tag name
+	Log("-VideoTranscoderAttachToEndpoint [%ls]\n",endpoint->GetName().c_str());
+
+	//Attach
+	return videoTranscoder->Attach(endpoint->GetJoinable(MediaFrame::Video));
+}
+
+int MediaSession::VideoTranscoderDettach(int videoTranscoderId)
+{
+	//Get mixer
+        VideoTranscoders::iterator it = videoTranscoders.find(videoTranscoderId);
+
+        //If not found
+        if (it==videoTranscoders.end())
+                //Exit
+                return Error("VideoTranscoder not found [%d]\n",videoTranscoderId);
+        //Get it
+        VideoTranscoder* videoTranscoder = it->second;
+
+       //Attach
+	return videoTranscoder->Dettach();
 }

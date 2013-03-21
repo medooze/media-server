@@ -15,12 +15,12 @@
 #include "video.h"
 #include "RTPMultiplexerSmoother.h"
 
-class VideoEncoderWorker :
+class VideoEncoderMultiplexerWorker :
 	public RTPMultiplexerSmoother
 {
 public:
-	VideoEncoderWorker();
-	virtual ~VideoEncoderWorker();
+	VideoEncoderMultiplexerWorker();
+	virtual ~VideoEncoderMultiplexerWorker();
 
 	int Init(VideoInput *input);
 	int SetCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int qMin=0, int qMax=0,int intraPeriod=0);

@@ -27,8 +27,8 @@ public:
 			this->tag = tag;
 		}
 		std::wstring	tag;
-		VideoEncoderWorker encoder;
-		VideoDecoderWorker decoder;
+		VideoEncoderMultiplexerWorker encoder;
+		VideoDecoderJoinableWorker decoder;
 	};
 
 public:
