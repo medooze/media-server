@@ -162,7 +162,6 @@ int FLV1Encoder::OpenCodec()
 
 	// Flags
 	ctx->flags |= CODEC_FLAG_PASS1;
-	ctx->flags |= CODEC_FLAG_QP_RD;
 	ctx->flags |= CODEC_FLAG_MV0;
 
 	//Set input bits
