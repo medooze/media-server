@@ -13,12 +13,12 @@
 #include "waitqueue.h"
 #include "Joinable.h"
 
-class VideoDecoderWorker:
+class VideoDecoderJoinableWorker:
 	public Joinable::Listener
 {
 public:
-	VideoDecoderWorker();
-	virtual ~VideoDecoderWorker();
+	VideoDecoderJoinableWorker();
+	virtual ~VideoDecoderJoinableWorker();
 
 	int Init(VideoOutput *output);
 	int End();

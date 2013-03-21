@@ -17,6 +17,7 @@
 #include "Endpoint.h"
 #include "AudioMixerResource.h"
 #include "VideoMixerResource.h"
+#include "VideoTranscoder.h"
 
 class MediaSession : public Player::Listener
 {
@@ -62,6 +63,11 @@ public:
 	//Endpoint management
 	int EndpointCreate(std::wstring name,bool audioSupported,bool videoSupported,bool textSupported);
 	int EndpointDelete(int endpointId);
+	int EndpointSetLocalCryptoSDES(int id,MediaFrame::Type media,const char *suite,const char* key);
+	int EndpointSetRemoteCryptoSDES(int id,MediaFrame::Type media,const char *suite,const char* key);
+	int EndpointSetLocalSTUNCredentials(int id,MediaFrame::Type media,const char *username,const char* pwd);
+	int EndpointSetRemoteSTUNCredentials(int id,MediaFrame::Type media,const char *username,const char* pwd);
+	int EndpointSetRTPProperties(int id,MediaFrame::Type media,const RTPSession::Properties& properties);
 	//Endpoint Video functionality
 	int EndpointStartSending(int endpointId,MediaFrame::Type media,char *sendVideoIp,int sendVideoPort,RTPMap& rtpMap);
 	int EndpointStopSending(int endpointId,MediaFrame::Type media);
@@ -75,6 +81,7 @@ public:
 	int EndpointAttachToAudioMixerPort(int endpointId,int mixerId,int portId);
 	int EndpointDettach(int endpointId,MediaFrame::Type media);
 	int EndpointAttachToVideoMixerPort(int endpointId,int mixerId,int portId);
+	int EndpointAttachToVideoTranscoder(int endpointId,int transcoderId);
 
 	//AudioMixer management
 	int AudioMixerCreate(std::wstring tag);
@@ -113,6 +120,12 @@ public:
 	int VideoMixerMosaicAddPort(int mixerId,int mosaicId,int portId);
 	int VideoMixerMosaicRemovePort(int mixerId,int mosaicId,int portId);
 
+	int VideoTranscoderCreate(std::wstring tag);
+	int VideoTranscoderDelete(int transcoderId);
+	int VideoTranscoderSetCodec(int transcoderId,VideoCodec::Type codec,int size,int fps,int bitrate,int intraPeriod);
+	int VideoTranscoderAttachToEndpoint(int transcoderId,int endpointId);
+	int VideoTranscoderDettach(int transcoderId);
+
 	//Events
 	virtual void onEndOfFile(Player *player,void* param);
 
@@ -124,6 +137,7 @@ private:
 	typedef std::map<int,Player*> Players;
 	typedef std::map<int,AudioMixerResource*> AudioMixers;
 	typedef std::map<int,VideoMixerResource*> VideoMixers;
+	typedef std::map<int,VideoTranscoder*> VideoTranscoders;
 private:
 	std::wstring tag;
 	
@@ -144,6 +158,9 @@ private:
 
 	VideoMixers	videoMixers;
 	int maxVideoMixerId;
+
+	VideoTranscoders videoTranscoders;
+	int maxVideoTranscoderId;
  
 };
 

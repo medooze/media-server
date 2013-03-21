@@ -275,3 +275,76 @@ int Endpoint::RequestUpdate(MediaFrame::Type media)
 	//Nothing
 	return 0;
 }
+int Endpoint::SetLocalCryptoSDES(MediaFrame::Type media,const char* suite, const char* key)
+{
+	switch (media)
+	{
+		case MediaFrame::Audio:
+			return audio->SetLocalCryptoSDES(suite,key);
+		case MediaFrame::Video:
+			return video->SetLocalCryptoSDES(suite,key);
+		case MediaFrame::Text:
+			return text->SetLocalCryptoSDES(suite,key);
+	}
+
+	return 0;
+}
+
+int Endpoint::SetRemoteCryptoSDES(MediaFrame::Type media,const char* suite, const char* key)
+{
+	switch (media)
+	{
+		case MediaFrame::Audio:
+			return audio->SetRemoteCryptoSDES(suite,key);
+		case MediaFrame::Video:
+			return video->SetRemoteCryptoSDES(suite,key);
+		case MediaFrame::Text:
+			return text->SetRemoteCryptoSDES(suite,key);
+	}
+
+	return 0;
+}
+
+int Endpoint::SetLocalSTUNCredentials(MediaFrame::Type media,const char* username, const char* pwd)
+{
+	switch (media)
+	{
+		case MediaFrame::Audio:
+			return audio->SetLocalSTUNCredentials(username,pwd);
+		case MediaFrame::Video:
+			return video->SetLocalSTUNCredentials(username,pwd);
+		case MediaFrame::Text:
+			return text->SetLocalSTUNCredentials(username,pwd);
+	}
+
+	return 0;
+}
+int Endpoint::SetRTPProperties(MediaFrame::Type media,const RTPSession::Properties& properties)
+{
+	switch (media)
+	{
+		case MediaFrame::Audio:
+			return audio->SetProperties(properties);
+		case MediaFrame::Video:
+			return video->SetProperties(properties);
+		case MediaFrame::Text:
+			return text->SetProperties(properties);
+	}
+
+	return 0;
+}
+
+int Endpoint::SetRemoteSTUNCredentials(MediaFrame::Type media,const char* username, const char* pwd)
+{
+	switch (media)
+	{
+		case MediaFrame::Audio:
+			return audio->SetRemoteSTUNCredentials(username,pwd);
+		case MediaFrame::Video:
+			return video->SetRemoteSTUNCredentials(username,pwd);
+		case MediaFrame::Text:
+			return text->SetRemoteSTUNCredentials(username,pwd);
+	}
+
+	return 0;
+}

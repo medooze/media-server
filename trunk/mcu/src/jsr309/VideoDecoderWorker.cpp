@@ -9,7 +9,7 @@
 #include "rtp.h"
 #include "log.h"
 
-VideoDecoderWorker::VideoDecoderWorker()
+VideoDecoderJoinableWorker::VideoDecoderJoinableWorker()
 {
 	//Nothing
 	output = NULL;
@@ -17,18 +17,18 @@ VideoDecoderWorker::VideoDecoderWorker()
 	decoding = false;
 }
 
-VideoDecoderWorker::~VideoDecoderWorker()
+VideoDecoderJoinableWorker::~VideoDecoderJoinableWorker()
 {
 	End();
 }
 
-int VideoDecoderWorker::Init(VideoOutput *output)
+int VideoDecoderJoinableWorker::Init(VideoOutput *output)
 {
 	//Store it
 	this->output = output;
 }
 
-int VideoDecoderWorker::End()
+int VideoDecoderJoinableWorker::End()
 {
 	//Dettach
 	Dettach();
@@ -42,9 +42,9 @@ int VideoDecoderWorker::End()
 	output = NULL;
 }
 
-int VideoDecoderWorker::Start()
+int VideoDecoderJoinableWorker::Start()
 {
-	Log("-StartVideoDecoderWorker\n");
+	Log("-StartVideoDecoderJoinableWorker\n");
 
 	//Check
 	if (!output)
@@ -64,20 +64,20 @@ int VideoDecoderWorker::Start()
 
 	return 1;
 }
-void * VideoDecoderWorker::startDecoding(void *par)
+void * VideoDecoderJoinableWorker::startDecoding(void *par)
 {
-	Log("VideoDecoderWorkerThread [%d]\n",getpid());
+	Log("VideoDecoderJoinableWorkerThread [%d]\n",getpid());
 	//Get worker
-	VideoDecoderWorker *worker = (VideoDecoderWorker *)par;
+	VideoDecoderJoinableWorker *worker = (VideoDecoderJoinableWorker *)par;
 	//Block all signals
 	blocksignals();
 	//Run
 	pthread_exit((void *)worker->Decode());
 }
 
-int  VideoDecoderWorker::Stop()
+int  VideoDecoderJoinableWorker::Stop()
 {
-	Log(">StopVideoDecoderWorker\n");
+	Log(">StopVideoDecoderJoinableWorker\n");
 
 	//If we were started
 	if (decoding)
@@ -92,13 +92,13 @@ int  VideoDecoderWorker::Stop()
 		pthread_join(thread,NULL);
 	}
 
-	Log("<StopVideoDecoderWorker\n");
+	Log("<StopVideoDecoderJoinableWorker\n");
 
 	return 1;
 }
 
 
-int VideoDecoderWorker::Decode()
+int VideoDecoderJoinableWorker::Decode()
 {
 	VideoDecoder*	videoDecoder = NULL;
 	VideoCodec::Type type;
@@ -194,19 +194,19 @@ int VideoDecoderWorker::Decode()
 	return 0;
 }
 
-void VideoDecoderWorker::onRTPPacket(RTPPacket &packet)
+void VideoDecoderJoinableWorker::onRTPPacket(RTPPacket &packet)
 {
 	//Put it on the queue
 	packets.Add(packet.Clone());
 }
 
-void VideoDecoderWorker::onResetStream()
+void VideoDecoderJoinableWorker::onResetStream()
 {
 	//Clean all packets
 	packets.Clear();
 }
 
-void VideoDecoderWorker::onEndStream()
+void VideoDecoderJoinableWorker::onEndStream()
 {
 	//Stop decoding
 	Stop();
@@ -214,7 +214,7 @@ void VideoDecoderWorker::onEndStream()
 	joined = NULL;
 }
 
-int VideoDecoderWorker::Attach(Joinable *join)
+int VideoDecoderJoinableWorker::Attach(Joinable *join)
 {
 	//Detach if joined
 	if (joined)
@@ -238,7 +238,7 @@ int VideoDecoderWorker::Attach(Joinable *join)
 	return 1;
 }
 
-int VideoDecoderWorker::Dettach()
+int VideoDecoderJoinableWorker::Dettach()
 {
         //Detach if joined
 	if (joined)

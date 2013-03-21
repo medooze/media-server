@@ -9,7 +9,7 @@
 #include "log.h"
 #include "RTPMultiplexer.h"
 
-VideoEncoderWorker::VideoEncoderWorker() : RTPMultiplexerSmoother()
+VideoEncoderMultiplexerWorker::VideoEncoderMultiplexerWorker() : RTPMultiplexerSmoother()
 {
 	//Nothing
 	input = NULL;
@@ -21,7 +21,7 @@ VideoEncoderWorker::VideoEncoderWorker() : RTPMultiplexerSmoother()
 	pthread_cond_init(&cond,NULL);
 }
 
-VideoEncoderWorker::~VideoEncoderWorker()
+VideoEncoderMultiplexerWorker::~VideoEncoderMultiplexerWorker()
 {
 	End();
 	//Clean object
@@ -29,13 +29,13 @@ VideoEncoderWorker::~VideoEncoderWorker()
 	pthread_cond_destroy(&cond);
 }
 
-int VideoEncoderWorker::Init(VideoInput *input)
+int VideoEncoderMultiplexerWorker::Init(VideoInput *input)
 {
 	//Store it
 	this->input = input;
 }
 
-int VideoEncoderWorker::SetCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int qMin, int qMax,int intraPeriod)
+int VideoEncoderMultiplexerWorker::SetCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int qMin, int qMax,int intraPeriod)
 {
 	Log("-SetVideoCodec [%s,%d,%d,%d,%d,%d,%d]\n",VideoCodec::GetNameFor(codec),codec,fps,bitrate,qMin,qMax,intraPeriod);
 
@@ -72,7 +72,7 @@ int VideoEncoderWorker::SetCodec(VideoCodec::Type codec,int mode,int fps,int bit
 	return 1;
 }
 
-int VideoEncoderWorker::Start()
+int VideoEncoderMultiplexerWorker::Start()
 {
 	//Check
 	if (!input)
@@ -95,20 +95,20 @@ int VideoEncoderWorker::Start()
 
 	return 1;
 }
-void * VideoEncoderWorker::startEncoding(void *par)
+void * VideoEncoderMultiplexerWorker::startEncoding(void *par)
 {
-	Log("VideoEncoderWorkerThread [%d]\n",getpid());
+	Log("VideoEncoderMultiplexerWorkerThread [%d]\n",getpid());
 	//Get worker
-	VideoEncoderWorker *worker = (VideoEncoderWorker *)par;
+	VideoEncoderMultiplexerWorker *worker = (VideoEncoderMultiplexerWorker *)par;
 	//Block all signals
 	blocksignals();
 	//Run
 	pthread_exit((void *)worker->Encode());
 }
 
-int VideoEncoderWorker::Stop()
+int VideoEncoderMultiplexerWorker::Stop()
 {
-	Log(">Stop VideoEncoderWorker\n");
+	Log(">Stop VideoEncoderMultiplexerWorker\n");
 
 	//If we were started
 	if (encoding)
@@ -129,12 +129,12 @@ int VideoEncoderWorker::Stop()
 	//Stop smoother
 	RTPMultiplexerSmoother::Stop();
 
-	Log("<Stop VideoEncoderWorker\n");
+	Log("<Stop VideoEncoderMultiplexerWorker\n");
 
 	return 1;
 }
 
-int VideoEncoderWorker::End()
+int VideoEncoderMultiplexerWorker::End()
 {
 	//Check if already decoding
 	if (encoding)
@@ -145,7 +145,7 @@ int VideoEncoderWorker::End()
 	input = NULL;
 }
 
-void VideoEncoderWorker::AddListener(Listener *listener)
+void VideoEncoderMultiplexerWorker::AddListener(Listener *listener)
 {
 	//Check if we were already encoding
 	if (listener && !encoding && codec!=-1)
@@ -155,7 +155,7 @@ void VideoEncoderWorker::AddListener(Listener *listener)
 	RTPMultiplexer::AddListener(listener);
 }
 
-void VideoEncoderWorker::RemoveListener(Listener *listener)
+void VideoEncoderMultiplexerWorker::RemoveListener(Listener *listener)
 {
 	//Remove the listener
 	RTPMultiplexer::RemoveListener(listener);
@@ -165,13 +165,13 @@ void VideoEncoderWorker::RemoveListener(Listener *listener)
 		Stop();
 }
 
-void VideoEncoderWorker::Update()
+void VideoEncoderMultiplexerWorker::Update()
 {
 	//Sedn FPU
 	sendFPU = true;
 }
 
-int VideoEncoderWorker::Encode()
+int VideoEncoderMultiplexerWorker::Encode()
 {
 	timeval first;
 	timeval prev;

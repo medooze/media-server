@@ -657,6 +657,214 @@ xmlrpc_value* EndpointDelete(xmlrpc_env *env, xmlrpc_value *param_array, void *u
 	return xmlok(env);
 }
 
+xmlrpc_value* EndpointSetLocalCryptoSDES(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+	MediaSession *session;
+	JSR309Manager *jsr = (JSR309Manager*)user_data;
+
+	//Parseamos
+	int sessionId;
+	int endpointId;
+	int media;
+	char *suite;
+	char *key;
+	xmlrpc_value *rtpMap;
+	xmlrpc_parse_value(env, param_array, "(iiiss)", &sessionId,&endpointId,&media,&suite,&key);
+
+	//Comprobamos si ha habido error
+	if(env->fault_occurred)
+		return 0;
+
+	//Obtenemos la referencia
+	if(!jsr->GetMediaSessionRef(sessionId,&session))
+		return xmlerror(env,"The media Session does not exist");
+
+	//La borramos
+	int res = session->EndpointSetLocalCryptoSDES(endpointId,(MediaFrame::Type)media,suite,key);
+
+	//Liberamos la referencia
+	jsr->ReleaseMediaSessionRef(sessionId);
+
+	//Salimos
+	if(!res)
+		return xmlerror(env,"Error");
+
+	//Devolvemos el resultado
+	return xmlok(env);
+}
+
+xmlrpc_value* EndpointSetRemoteCryptoSDES(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+	MediaSession *session;
+	JSR309Manager *jsr = (JSR309Manager*)user_data;
+
+	//Parseamos
+	int sessionId;
+	int endpointId;
+	int media;
+	char *suite;
+	char *key;
+	xmlrpc_value *rtpMap;
+	xmlrpc_parse_value(env, param_array, "(iiiss)", &sessionId,&endpointId,&media,&suite,&key);
+
+	//Comprobamos si ha habido error
+	if(env->fault_occurred)
+		return 0;
+
+	//Obtenemos la referencia
+	if(!jsr->GetMediaSessionRef(sessionId,&session))
+		return xmlerror(env,"The media Session does not exist");
+
+	//La borramos
+	int res = session->EndpointSetRemoteCryptoSDES(endpointId,(MediaFrame::Type)media,suite,key);
+
+	//Liberamos la referencia
+	jsr->ReleaseMediaSessionRef(sessionId);
+	
+	//Salimos
+	if(!res)
+		return xmlerror(env,"Error");
+
+	//Devolvemos el resultado
+	return xmlok(env);
+}
+
+xmlrpc_value* EndpointSetLocalSTUNCredentials(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+	MediaSession *session;
+	JSR309Manager *jsr = (JSR309Manager*)user_data;
+
+	//Parseamos
+	int sessionId;
+	int endpointId;
+	int media;
+	char *username;
+	char *pwd;
+	xmlrpc_parse_value(env, param_array, "(iiiss)", &sessionId,&endpointId,&media,&username,&pwd);
+
+	//Comprobamos si ha habido error
+	if(env->fault_occurred)
+		return 0;
+
+	//Obtenemos la referencia
+	if(!jsr->GetMediaSessionRef(sessionId,&session))
+		return xmlerror(env,"The media Session does not exist");
+
+	//La borramos
+	int res = session->EndpointSetLocalSTUNCredentials(endpointId,(MediaFrame::Type)media,username,pwd);
+
+	//Liberamos la referencia
+	jsr->ReleaseMediaSessionRef(sessionId);
+
+	//Salimos
+	if(!res)
+		return xmlerror(env,"Error");
+
+	//Devolvemos el resultado
+	return xmlok(env);
+}
+
+xmlrpc_value* EndpointSetRemoteSTUNCredentials(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+	MediaSession *session;
+	JSR309Manager *jsr = (JSR309Manager*)user_data;
+
+	//Parseamos
+	int sessionId;
+	int endpointId;
+	int media;
+	char *username;
+	char *pwd;
+	xmlrpc_value *rtpMap;
+	xmlrpc_parse_value(env, param_array, "(iiiss)", &sessionId,&endpointId,&media,&username,&pwd);
+
+	//Comprobamos si ha habido error
+	if(env->fault_occurred)
+		return 0;
+
+	//Obtenemos la referencia
+	if(!jsr->GetMediaSessionRef(sessionId,&session))
+		return xmlerror(env,"The media Session does not exist");
+
+	//La borramos
+	int res = session->EndpointSetRemoteSTUNCredentials(sessionId,(MediaFrame::Type)media,username,pwd);
+
+	//Liberamos la referencia
+	jsr->ReleaseMediaSessionRef(sessionId);
+
+	//Salimos
+	if(!res)
+		return xmlerror(env,"Error");
+
+	//Devolvemos el resultado
+	return xmlok(env);
+}
+
+
+xmlrpc_value* EndpointSetRTPProperties(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+	JSR309Manager *jsr = (JSR309Manager*)user_data;
+	MediaSession *session = NULL;
+
+	 //Parseamos
+	int sessionId;
+	int endpointId;
+	int media;
+	xmlrpc_value *map;
+	xmlrpc_parse_value(env, param_array, "(iiiS)", &sessionId,&endpointId,&media,&map);
+
+	//Get the rtp map
+	RTPSession::Properties properties;
+
+	//Get map size
+	int j = xmlrpc_struct_size(env,map);
+
+	//Parse rtp map
+	for (int i=0;i<j;i++)
+	{
+		xmlrpc_value *key, *val;
+		const char *strKey;
+		const char *strVal;
+		//Read member
+		xmlrpc_struct_read_member(env,map,i,&key,&val);
+		//Read name
+		xmlrpc_parse_value(env,key,"s",&strKey);
+		//Read value
+		xmlrpc_parse_value(env,val,"s",&strVal);
+		//Add to map
+		properties[strKey] = strVal;
+		//Decrement ref counter
+		xmlrpc_DECREF(key);
+		xmlrpc_DECREF(val);
+	}
+
+	//Comprobamos si ha habido error
+	if(env->fault_occurred)
+		return 0;
+
+	//Comprobamos si ha habido error
+	if(env->fault_occurred)
+		return 0;
+
+	//Obtenemos la referencia
+	if(!jsr->GetMediaSessionRef(sessionId,&session))
+		return xmlerror(env,"The media Session does not exist");
+
+	//La borramos
+	int res = session->EndpointSetRTPProperties(endpointId,(MediaFrame::Type)media,properties);
+
+	//Liberamos la referencia
+	jsr->ReleaseMediaSessionRef(sessionId);
+
+	//Salimos
+	if(!res)
+		return xmlerror(env,"Error\n");
+
+	//Devolvemos el resultado
+	return xmlok(env);
+
+}
+
 xmlrpc_value* EndpointStartSending(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	JSR309Manager *jsr = (JSR309Manager*)user_data;
@@ -1005,6 +1213,39 @@ xmlrpc_value* EndpointAttachToVideoMixerPort(xmlrpc_env *env, xmlrpc_value *para
 
 	//La borramos
 	int res = session->EndpointAttachToVideoMixerPort(endpointId,mixerId,portId);
+
+	//Liberamos la referencia
+	jsr->ReleaseMediaSessionRef(sessionId);
+
+	//Salimos
+	if(!res)
+		return xmlerror(env,"Error\n");
+
+	//Devolvemos el resultado
+	return xmlok(env);
+}
+
+xmlrpc_value* EndpointAttachToVideoTranscoder(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+	JSR309Manager *jsr = (JSR309Manager*)user_data;
+	MediaSession *session = NULL;
+
+	 //Parseamos
+	int sessionId;
+	int endpointId;
+	int videoTranscoderId;
+	xmlrpc_parse_value(env, param_array, "(iii)", &sessionId,&endpointId,&videoTranscoderId);
+
+	//Comprobamos si ha habido error
+	if(env->fault_occurred)
+		return 0;
+
+	//Obtenemos la referencia
+	if(!jsr->GetMediaSessionRef(sessionId,&session))
+		return xmlerror(env,"The media Session does not exist");
+
+	//La borramos
+	int res = session->EndpointAttachToVideoTranscoder(endpointId,videoTranscoderId);
 
 	//Liberamos la referencia
 	jsr->ReleaseMediaSessionRef(sessionId);
@@ -1879,6 +2120,177 @@ xmlrpc_value* VideoMixerMosaicRemovePort(xmlrpc_env *env, xmlrpc_value *param_ar
 	return xmlok(env);
 }
 
+xmlrpc_value* VideoTranscoderCreate(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+	UTF8Parser parser;
+	MediaSession *session;
+	JSR309Manager *jsr = (JSR309Manager*)user_data;
+
+	//Parseamos
+	int sessionId;
+	char *str;
+	xmlrpc_parse_value(env, param_array, "(is)", &sessionId, &str);
+
+	//Comprobamos si ha habido error
+	if(env->fault_occurred)
+		return 0;
+
+	//Parse string
+	parser.Parse((BYTE*)str,strlen(str));
+
+	//Obtenemos la referencia
+	if(!jsr->GetMediaSessionRef(sessionId,&session))
+		return xmlerror(env,"The media Session does not exist");
+
+	//Create player
+	int mixerId = session->VideoTranscoderCreate(parser.GetWString());
+
+	//Release ref
+	jsr->ReleaseMediaSessionRef(sessionId);
+
+	//Salimos
+	if(mixerId<0)
+		return xmlerror(env,"Could not create video transcoder\n");
+
+	//Devolvemos el resultado
+	return xmlok(env,xmlrpc_build_value(env,"(i)",mixerId));
+}
+
+xmlrpc_value* VideoTranscoderDelete(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+	MediaSession *session;
+	JSR309Manager *jsr = (JSR309Manager*)user_data;
+
+	//Parseamos
+	int sessionId;
+	int videoTranscoderId;
+	xmlrpc_parse_value(env, param_array, "(ii)", &sessionId, &videoTranscoderId);
+
+	//Comprobamos si ha habido error
+	if(env->fault_occurred)
+		return 0;
+
+	//Obtenemos la referencia
+	if(!jsr->GetMediaSessionRef(sessionId,&session))
+		return xmlerror(env,"Media session not found\n");
+
+	//La borramos
+	bool res = session->VideoTranscoderDelete(videoTranscoderId);
+
+	//Release ref
+	jsr->ReleaseMediaSessionRef(sessionId);
+
+	//Salimos
+	if(!res)
+		return xmlerror(env,"Could not delete video transcoder\n");
+
+	//Devolvemos el resultado
+	return xmlok(env);
+}
+
+xmlrpc_value* VideoTranscoderSetCodec(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+	UTF8Parser parser;
+	MediaSession *session;
+	JSR309Manager *jsr = (JSR309Manager*)user_data;
+
+	//Parseamos
+	int sessionId;
+	int videoTranscoderId;
+	int codec;
+	int size;
+	int fps;
+	int bitrate;
+	int intraPeriod;
+	xmlrpc_parse_value(env, param_array, "(iiiiiii)", &sessionId, &videoTranscoderId, &codec, &size, &fps, &bitrate, &intraPeriod);
+
+	//Comprobamos si ha habido error
+	if(env->fault_occurred)
+		return 0;
+
+	//Obtenemos la referencia
+	if(!jsr->GetMediaSessionRef(sessionId,&session))
+		return xmlerror(env,"The media Session does not exist");
+
+	//Create player
+	int res = session->VideoTranscoderSetCodec(videoTranscoderId,(VideoCodec::Type)codec,size,fps,bitrate,intraPeriod);
+
+	//Liberamos la referencia
+	jsr->ReleaseMediaSessionRef(sessionId);
+
+	//Salimos
+	if(!res)
+		return xmlerror(env,"Error\n");
+
+	//Devolvemos el resultado
+	return xmlok(env);
+}
+
+xmlrpc_value* VideoTranscoderAttachToEndpoint(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+	JSR309Manager *jsr = (JSR309Manager*)user_data;
+	MediaSession *session = NULL;
+
+	 //Parseamos
+	int sessionId;
+	int videoTranscoderId;
+	int endpointId;
+	xmlrpc_parse_value(env, param_array, "(iii)", &sessionId,&videoTranscoderId,&endpointId);
+
+	//Comprobamos si ha habido error
+	if(env->fault_occurred)
+		return 0;
+
+	//Obtenemos la referencia
+	if(!jsr->GetMediaSessionRef(sessionId,&session))
+		return xmlerror(env,"The media Session does not exist");
+
+	//La borramos
+	int res = session->VideoTranscoderAttachToEndpoint(videoTranscoderId,endpointId);
+
+	//Liberamos la referencia
+	jsr->ReleaseMediaSessionRef(sessionId);
+
+	//Salimos
+	if(!res)
+		return xmlerror(env,"Error\n");
+
+	//Devolvemos el resultado
+	return xmlok(env);
+}
+
+xmlrpc_value* VideoTranscoderDettach(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+	JSR309Manager *jsr = (JSR309Manager*)user_data;
+	MediaSession *session = NULL;
+
+	 //Parseamos
+	int sessionId;
+	int videoTranscoderId;
+	xmlrpc_parse_value(env, param_array, "(ii)", &sessionId,&videoTranscoderId);
+
+	//Comprobamos si ha habido error
+	if(env->fault_occurred)
+		return 0;
+
+	//Obtenemos la referencia
+	if(!jsr->GetMediaSessionRef(sessionId,&session))
+		return xmlerror(env,"The media Session does not exist");
+
+	//La borramos
+	int res = session->VideoTranscoderDettach(videoTranscoderId);
+
+	//Liberamos la referencia
+	jsr->ReleaseMediaSessionRef(sessionId);
+
+	//Salimos
+	if(!res)
+		return xmlerror(env,"Error\n");
+
+	//Devolvemos el resultado
+	return xmlok(env);
+}
+
 XmlHandlerCmd jsr309CmdList[] =
 {
 	{"EventQueueCreate",			EventQueueCreate},
@@ -1902,6 +2314,11 @@ XmlHandlerCmd jsr309CmdList[] =
 	{"RecorderDettach",			RecorderDettach},
 	{"EndpointCreate",			EndpointCreate},
 	{"EndpointDelete",			EndpointDelete},
+	{"EndpointSetRemoteCryptoSDES",		EndpointSetRemoteCryptoSDES},
+	{"EndpointSetLocalCryptoSDES",		EndpointSetLocalCryptoSDES},
+	{"EndpointSetLocalSTUNCredentials",	EndpointSetLocalSTUNCredentials},
+	{"EndpointSetRemoteSTUNCredentials",	EndpointSetRemoteSTUNCredentials},
+	{"EndpointSetRTPProperties",		EndpointSetRTPProperties},
 	{"EndpointStartSending",		EndpointStartSending},
 	{"EndpointStopSending",			EndpointStopSending},
 	{"EndpointStartReceiving",		EndpointStartReceiving},
@@ -1911,6 +2328,7 @@ XmlHandlerCmd jsr309CmdList[] =
 	{"EndpointAttachToEndpoint",		EndpointAttachToEndpoint},
 	{"EndpointAttachToAudioMixerPort",	EndpointAttachToAudioMixerPort},
 	{"EndpointAttachToVideoMixerPort",	EndpointAttachToVideoMixerPort},
+	{"EndpointAttachToVideoTranscoder",	EndpointAttachToVideoTranscoder},
 	{"EndpointDettach",			EndpointDettach},
 	{"AudioMixerCreate",			AudioMixerCreate},
 	{"AudioMixerDelete",			AudioMixerDelete},
@@ -1936,6 +2354,11 @@ XmlHandlerCmd jsr309CmdList[] =
 	{"VideoMixerMosaicResetOverlay",	VideoMixerMosaicResetOverlay},
 	{"VideoMixerMosaicAddPort",		VideoMixerMosaicAddPort},
 	{"VideoMixerMosaicRemovePort",		VideoMixerMosaicRemovePort},
+	{"VideoTranscoderCreate",		VideoTranscoderCreate},
+	{"VideoTranscoderDelete",		VideoTranscoderDelete},
+	{"VideoTranscoderSetCodec",		VideoTranscoderSetCodec},
+	{"VideoTranscoderAttachToEndpoint",	VideoTranscoderAttachToEndpoint},
+	{"VideoTranscoderDettach",		VideoTranscoderDettach},
 	{NULL,NULL}
 };
 

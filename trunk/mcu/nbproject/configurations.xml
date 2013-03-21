@@ -27,7 +27,6 @@
         <in>codecs.h</in>
         <in>config.h</in>
         <in>crc32calc.h</in>
-        <in>fec.h</in>
         <in>fecdecoder.h</in>
         <in>fifo.h</in>
         <in>flash.h</in>
@@ -47,6 +46,7 @@
         <in>mp4recorder.h</in>
         <in>mp4streamer.h</in>
         <in>multiconf.h</in>
+        <in>newfile.cpp</in>
         <in>overlay.h</in>
         <in>partedmosaic.h</in>
         <in>participant.h</in>
@@ -58,6 +58,7 @@
         <in>pipevideooutput.h</in>
         <in>pipmosaic.h</in>
         <in>remoteratecontrol.h</in>
+        <in>remoterateestimator.h</in>
         <in>rtmp.h</in>
         <in>rtmpapplication.h</in>
         <in>rtmpbroadcaster.h</in>
@@ -181,6 +182,12 @@
           <in>NellyCodec.cpp</in>
           <in>NellyCodec.h</in>
         </df>
+        <df name="opus">
+          <in>opusdecoder.cpp</in>
+          <in>opusdecoder.h</in>
+          <in>opusencoder.cpp</in>
+          <in>opusencoder.h</in>
+        </df>
         <df name="speex" kind="SOURCE_LOGICAL_FOLDER">
           <in>speexcodec.cpp</in>
           <in>speexcodec.h</in>
@@ -209,7 +216,6 @@
         <in>broadcaster.cpp</in>
         <in>broadcastsession.cpp</in>
         <in>crc32calc.cpp</in>
-        <in>fec.cpp</in>
         <in>fecdecoder.cpp</in>
         <in>flash.cpp</in>
         <in>flashstreamer.cpp</in>
@@ -238,6 +244,7 @@
         <in>pipevideooutput.cpp</in>
         <in>pipmosaic.cpp</in>
         <in>remoteratecontrol.cpp</in>
+        <in>remoterateestimator.cpp</in>
         <in>rtmpchunk.cpp</in>
         <in>rtmpclientconnection.cpp</in>
         <in>rtmpconnection.cpp</in>
