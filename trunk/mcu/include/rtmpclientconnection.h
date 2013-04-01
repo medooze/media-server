@@ -34,6 +34,7 @@ public:
 		bool Resume();
 		bool Close();
 		bool Publish(std::wstring& url);
+		bool UnPublish();
 
 	protected:
 		virtual void fireOnNetStreamStatus(const RTMPNetStatusEventInfo &info,const wchar_t* message);
