@@ -51,7 +51,7 @@ public:
 		return partId;
 	}
 
-	virtual int SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int quality=0, int fillLevel=0,int intraPeriod=0) = 0;
+	virtual int SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int intraPeriod,const Properties &properties) = 0;
 	virtual int SetAudioCodec(AudioCodec::Type codec) = 0;
 	virtual int SetTextCodec(TextCodec::Type codec) = 0;
 

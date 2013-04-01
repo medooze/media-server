@@ -9,11 +9,10 @@ extern "C" {
 class FLV1Encoder : public VideoEncoder
 {
 public:
-	FLV1Encoder(int qualityMin,int qualityMax);
+	FLV1Encoder(const Properties& properties);
 	virtual ~FLV1Encoder();
 	virtual VideoFrame* EncodeFrame(BYTE *in,DWORD len);
 	virtual int FastPictureUpdate();
-	virtual int GetNextPacket(BYTE *out,DWORD &len);
 	virtual int SetSize(int width,int height);
 	virtual int SetFrameRate(int fps,int kbits,int intraPeriod);
 

@@ -23,7 +23,7 @@ public:
 	RTMPParticipant(DWORD partId);
 	virtual ~RTMPParticipant();
 
-	virtual int SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int quality=0, int fillLevel=0,int intraPeriod=0);
+	virtual int SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int intraPeriod,const Properties& properties);
 	virtual int SetAudioCodec(AudioCodec::Type codec);
 	virtual int SetTextCodec(TextCodec::Type codec);
 

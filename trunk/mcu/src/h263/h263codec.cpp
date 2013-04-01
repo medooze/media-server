@@ -14,7 +14,7 @@
 * H263Encoder
 *	Constructor de la clase
 ************************/
-H263Encoder::H263Encoder()
+H263Encoder::H263Encoder(const Properties& properties)
 {
 	// Set default values
 	frame	= NULL;
@@ -267,17 +267,6 @@ int H263Encoder::FastPictureUpdate()
 
 	return 1;
 }
-
-/***********************
-* GetNextPacket
-*	Obtiene el siguiente paquete para enviar
-************************/
-int H263Encoder::GetNextPacket(BYTE *out,DWORD &len)
-{
-	//Deprecated
-	return 0;
-}
-
 
 //////////////////////////////////////////////////////////////////////////
 //H263Decoder

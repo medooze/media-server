@@ -29,7 +29,7 @@ static void X264_log(void *p, int level, const char *fmt, va_list args)
 * H264Encoder
 *	Constructor de la clase
 ***********************/
-H264Encoder::H264Encoder()
+H264Encoder::H264Encoder(const Properties& properties) : h264ProfileLevelId("428031")
 {
 	// Set default values
 	type    = VideoCodec::H264;
@@ -44,6 +44,14 @@ H264Encoder::H264Encoder()
 	bitrate = 0;
 	fps = 0;
 	intraPeriod = 0;
+
+	//Check profile level id
+	Properties::const_iterator it = properties.find(std::string("h264.profile-level-id"));
+
+	//If found
+	if (it!=properties.end())
+		//Update it
+		h264ProfileLevelId = it->second;
 	
 	//Reste values
 	enc = NULL;
@@ -184,8 +192,31 @@ int H264Encoder::OpenCodec()
 	params.vui.i_chroma_loc	    = 0;
 	params.i_scenecut_threshold = 0;
 	params.analyse.i_subpel_refine = 6; //Subpixel motion estimation and mode decision :3 qpel (medim:6, ultrafast:1)
-	// Set profile level constrains
-	x264_param_apply_profile(&params,"baseline");
+
+	//Get profile and level
+	int profile = strtol(h264ProfileLevelId.substr(0,2).c_str(),NULL,16);
+	int level   = atoi(h264ProfileLevelId.substr(4,2).c_str());
+
+	//Set level
+	params.i_level_idc = level;
+
+	//Depending on the profile in hex
+	switch (profile)
+	{
+		case 100:
+		case 88:
+			//High
+			x264_param_apply_profile(&params,"high");
+			break;
+		case 77:
+			//Main
+			x264_param_apply_profile(&params,"main");
+			break;
+		case 66:
+		default:
+			//Baseline
+			x264_param_apply_profile(&params,"baseline");
+	}
 
 	// Open encoder
 	enc = x264_encoder_open(&params);
@@ -273,13 +304,22 @@ VideoFrame* H264Encoder::EncodeFrame(BYTE *buffer,DWORD bufferSize)
 	//Add packetization
 	for (DWORD i=0;i<numNals;i++)
 	{
-		
 		// Get NAL data pointer skiping the header
 		BYTE* nalData = nals[i].p_payload+4;
 		//Get size
 		DWORD nalSize = nals[i].i_payload-4;
 		//Get nal pos
 		DWORD pos = nalData - nals[0].p_payload;
+		//Get nal type
+		BYTE nalType = (nalData[0] & 0x1f);
+		//Check if it is an SPS
+		if (nalType==7)
+		{
+			//Get profile as hex representation
+			DWORD profileLevel = strtol (h264ProfileLevelId.c_str(),NULL,16);
+			//Modify profile level ID to match offered one
+			set3(nalData,1,profileLevel);
+		}
 		//Add rtp packet
 		frame->AddRtpPacket(pos,nalSize,NULL,0);
 	}
@@ -300,38 +340,5 @@ int H264Encoder::FastPictureUpdate()
 	pic.i_type = X264_TYPE_I;
 
 	return 1;
-}
-
-/**********************
-* GetNextPacket
-*	Obtiene el siguiente paquete para enviar
-***********************/
-int H264Encoder::GetNextPacket(BYTE *out,DWORD &len)
-{
-	// Get NAL data pointer skiping the header
-	BYTE* nalData = nals[curNal].p_payload+4;
-
-	// Get NAL size 
-	DWORD nalSize = nals[curNal].i_payload-4;
-
-	// Check if it fits in a udp packet 
-	if (nalSize<len)
-	{
-		// Set frame len 
-		len = nalSize;
-		// Copy NAL 
-		memcpy(out, nalData, nalSize);
-	} else 
-		Log("-Error NAL too big [%lu]\n",nalSize);
-
-	// Increase NAL 
-	curNal++;
-	// Check if it is the last packet 
-	if (curNal==numNals)
-		// Last packet 
-		return 0;
-	else
-		// Not Last packet
-		return 1;
 }
 

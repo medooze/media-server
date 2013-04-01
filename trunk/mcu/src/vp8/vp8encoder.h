@@ -15,11 +15,10 @@
 class VP8Encoder : public VideoEncoder
 {
 public:
-	VP8Encoder();
+	VP8Encoder(const Properties& properties);
 	virtual ~VP8Encoder();
 	virtual VideoFrame* EncodeFrame(BYTE *in,DWORD len);
 	virtual int FastPictureUpdate();
-	virtual int GetNextPacket(BYTE *out,DWORD &len);
 	virtual int SetSize(int width,int height);
 	virtual int SetFrameRate(int fps,int kbits,int intraPeriod);
 private:

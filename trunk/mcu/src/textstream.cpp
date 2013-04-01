@@ -97,7 +97,7 @@ int TextStream::SetRemoteSTUNCredentials(const char* username, const char* pwd)
 {
 	return rtp.SetRemoteSTUNCredentials(username,pwd);
 }
-int TextStream::SetRTPProperties(const RTPSession::Properties& properties)
+int TextStream::SetRTPProperties(const Properties& properties)
 {
 	return rtp.SetProperties(properties);
 }

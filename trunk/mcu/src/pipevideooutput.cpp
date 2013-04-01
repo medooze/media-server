@@ -36,6 +36,10 @@ int PipeVideoOutput::NextFrame(BYTE *pic)
 	if (!pic)
 		return Error("-PipeVideoOuput called with null frame");
 
+	//Check pic
+	if (!buffer)
+		return Error("-Null buffer, size not set");
+
 	//Check if wer are inited
 	if (!inited)
 		//Exit

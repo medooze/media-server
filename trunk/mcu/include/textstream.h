@@ -25,7 +25,7 @@ public:
 	int SetRemoteCryptoSDES(const char* suite, const char* key64);
 	int SetLocalSTUNCredentials(const char* username, const char* pwd);
 	int SetRemoteSTUNCredentials(const char* username, const char* pwd);
-	int SetRTPProperties(const RTPSession::Properties& properties);
+	int SetRTPProperties(const Properties& properties);
 	int End();
 
 	int IsSending()	  { return sendingText;  }

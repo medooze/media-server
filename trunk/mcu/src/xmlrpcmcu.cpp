@@ -60,7 +60,7 @@ xmlrpc_value* DeleteConference(xmlrpc_env *env, xmlrpc_value *param_array, void 
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-			xmlerror(env,"Fault occurred");
+			return xmlerror(env,"Fault occurred");
 
 	//Delete conference 
 	if (!mcu->DeleteConference(confId))
@@ -110,7 +110,7 @@ xmlrpc_value* CreateMosaic(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 	 
 	//Obtenemos la referencia
 	if(!mcu->GetConferenceRef(confId,&conf))
@@ -143,7 +143,7 @@ xmlrpc_value* SetMosaicOverlayImage(xmlrpc_env *env, xmlrpc_value *param_array, 
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 
 	//Obtenemos la referencia
 	if(!mcu->GetConferenceRef(confId,&conf))
@@ -175,7 +175,7 @@ xmlrpc_value* ResetMosaicOverlay(xmlrpc_env *env, xmlrpc_value *param_array, voi
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 
 	//Obtenemos la referencia
 	if(!mcu->GetConferenceRef(confId,&conf))
@@ -206,7 +206,7 @@ xmlrpc_value* DeleteMosaic(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 
 	//Obtenemos la referencia
 	if(!mcu->GetConferenceRef(confId,&conf))
@@ -236,7 +236,7 @@ xmlrpc_value* CreateSidebar(xmlrpc_env *env, xmlrpc_value *param_array, void *us
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 
 	//Obtenemos la referencia
 	if(!mcu->GetConferenceRef(confId,&conf))
@@ -268,7 +268,7 @@ xmlrpc_value* DeleteSidebar(xmlrpc_env *env, xmlrpc_value *param_array, void *us
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 
 	//Obtenemos la referencia
 	if(!mcu->GetConferenceRef(confId,&conf))
@@ -304,7 +304,7 @@ xmlrpc_value* CreateParticipant(xmlrpc_env *env, xmlrpc_value *param_array, void
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 	 
 	//Obtenemos la referencia
 	if(!mcu->GetConferenceRef(confId,&conf))
@@ -339,7 +339,7 @@ xmlrpc_value* DeleteParticipant(xmlrpc_env *env, xmlrpc_value *param_array, void
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 	 
 	//Obtenemos la referencia
 	if(!mcu->GetConferenceRef(confId,&conf))
@@ -371,7 +371,7 @@ xmlrpc_value* AddConferenceToken(xmlrpc_env *env, xmlrpc_value *param_array, voi
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 
 	//Parse string
 	parser.Parse((BYTE*)str,strlen(str));
@@ -407,7 +407,7 @@ xmlrpc_value* AddParticipantInputToken(xmlrpc_env *env, xmlrpc_value *param_arra
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 
 	//Parse string
 	parser.Parse((BYTE*)str,strlen(str));
@@ -443,7 +443,7 @@ xmlrpc_value* AddParticipantOutputToken(xmlrpc_env *env, xmlrpc_value *param_arr
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 
 	//Parse string
 	parser.Parse((BYTE*)str,strlen(str));
@@ -477,7 +477,7 @@ xmlrpc_value* StartBroadcaster(xmlrpc_env *env, xmlrpc_value *param_array, void 
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 	 
 	//Obtenemos la referencia
 	if(!mcu->GetConferenceRef(confId,&conf))
@@ -508,7 +508,7 @@ xmlrpc_value* StopBroadcaster(xmlrpc_env *env, xmlrpc_value *param_array, void *
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 	 
 	//Obtenemos la referencia
 	if(!mcu->GetConferenceRef(confId,&conf))
@@ -543,7 +543,7 @@ xmlrpc_value* StartPublishing(xmlrpc_env *env, xmlrpc_value *param_array, void *
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 
 	//Obtenemos la referencia
 	if(!mcu->GetConferenceRef(confId,&conf))
@@ -575,7 +575,7 @@ xmlrpc_value* StopPublishing(xmlrpc_env *env, xmlrpc_value *param_array, void *u
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 
 	//Obtenemos la referencia
 	if(!mcu->GetConferenceRef(confId,&conf))
@@ -600,7 +600,7 @@ xmlrpc_value* SetVideoCodec(xmlrpc_env *env, xmlrpc_value *param_array, void *us
 	MCU *mcu = (MCU *)user_data;
 	MultiConf *conf = NULL;
 
-	 //Parseamos
+	//Parseamos
 	int confId;
 	int partId;
 	int codec;
@@ -610,19 +610,51 @@ xmlrpc_value* SetVideoCodec(xmlrpc_env *env, xmlrpc_value *param_array, void *us
 	int quality;
 	int fillLevel;
 	int intraPeriod;
+	Properties properties;
+	xmlrpc_value *map;
+	xmlrpc_parse_value(env, param_array, "(iiiiiiiS)", &confId,&partId,&codec,&mode,&fps,&bitrate,&intraPeriod,&map);
 
-	xmlrpc_parse_value(env, param_array, "(iiiiiiiii)", &confId,&partId,&codec,&mode,&fps,&bitrate,&quality,&fillLevel,&intraPeriod);
+	//Check if it is new api
+	if(!env->fault_occurred)
+	{
+		//Get map size
+		int j = xmlrpc_struct_size(env,map);
+
+		//Parse rtp map
+		for (int i=0;i<j;i++)
+		{
+			xmlrpc_value *key, *val;
+			const char *strKey;
+			const char *strVal;
+			//Read member
+			xmlrpc_struct_read_member(env,map,i,&key,&val);
+			//Read name
+			xmlrpc_parse_value(env,key,"s",&strKey);
+			//Read value
+			xmlrpc_parse_value(env,val,"s",&strVal);
+			//Add to map
+			properties[strKey] = strVal;
+			//Decrement ref counter
+			xmlrpc_DECREF(key);
+			xmlrpc_DECREF(val);
+		}
+	} else {
+		//Clean error
+		xmlrpc_env_init(env);
+		//Parse old values,
+		xmlrpc_parse_value(env, param_array, "(iiiiiiiii)", &confId,&partId,&codec,&mode,&fps,&bitrate,&quality,&fillLevel,&intraPeriod);
+	}
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 	 
 	//Obtenemos la referencia
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
-	int res = conf->SetVideoCodec(partId,codec,mode,fps,bitrate,quality,fillLevel,intraPeriod);
+	int res = conf->SetVideoCodec(partId,codec,mode,fps,bitrate,intraPeriod,properties);
 
 	//Liberamos la referencia
 	mcu->ReleaseConferenceRef(confId);
@@ -649,7 +681,7 @@ xmlrpc_value* SetAudioCodec(xmlrpc_env *env, xmlrpc_value *param_array, void *us
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 	 
 	//Obtenemos la referencia
 	if(!mcu->GetConferenceRef(confId,&conf))
@@ -683,7 +715,7 @@ xmlrpc_value* SetTextCodec(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 
 	//Obtenemos la referencia
 	if(!mcu->GetConferenceRef(confId,&conf))
@@ -717,7 +749,7 @@ xmlrpc_value* SetCompositionType(xmlrpc_env *env, xmlrpc_value *param_array, voi
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 	 
 	//Obtenemos la referencia
 	if(!mcu->GetConferenceRef(confId,&conf))
@@ -750,7 +782,7 @@ xmlrpc_value* SetParticipantMosaic(xmlrpc_env *env, xmlrpc_value *param_array, v
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 
 	//Obtenemos la referencia
 	if(!mcu->GetConferenceRef(confId,&conf))
@@ -783,7 +815,7 @@ xmlrpc_value* SetParticipantSidebar(xmlrpc_env *env, xmlrpc_value *param_array, 
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 
 	//Obtenemos la referencia
 	if(!mcu->GetConferenceRef(confId,&conf))
@@ -817,7 +849,7 @@ xmlrpc_value* SetMosaicSlot(xmlrpc_env *env, xmlrpc_value *param_array, void *us
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 	 
 	//Obtenemos la referencia
 	if(!mcu->GetConferenceRef(confId,&conf))
@@ -850,7 +882,7 @@ xmlrpc_value* AddMosaicParticipant(xmlrpc_env *env, xmlrpc_value *param_array, v
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 
 	//Obtenemos la referencia
 	if(!mcu->GetConferenceRef(confId,&conf))
@@ -883,7 +915,7 @@ xmlrpc_value* RemoveMosaicParticipant(xmlrpc_env *env, xmlrpc_value *param_array
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 
 	//Obtenemos la referencia
 	if(!mcu->GetConferenceRef(confId,&conf))
@@ -916,7 +948,7 @@ xmlrpc_value* AddSidebarParticipant(xmlrpc_env *env, xmlrpc_value *param_array, 
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 
 	//Obtenemos la referencia
 	if(!mcu->GetConferenceRef(confId,&conf))
@@ -949,7 +981,7 @@ xmlrpc_value* RemoveSidebarParticipant(xmlrpc_env *env, xmlrpc_value *param_arra
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 
 	//Obtenemos la referencia
 	if(!mcu->GetConferenceRef(confId,&conf))
@@ -983,7 +1015,7 @@ xmlrpc_value* CreatePlayer(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 
 	//Obtenemos la referencia
 	if(!mcu->GetConferenceRef(confId,&conf))
@@ -1018,7 +1050,7 @@ xmlrpc_value* DeletePlayer(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 
 	//Obtenemos la referencia
 	if(!mcu->GetConferenceRef(confId,&conf))
@@ -1052,7 +1084,7 @@ xmlrpc_value* StartPlaying(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 
 	//Obtenemos la referencia
 	if(!mcu->GetConferenceRef(confId,&conf))
@@ -1084,7 +1116,7 @@ xmlrpc_value* StopPlaying(xmlrpc_env *env, xmlrpc_value *param_array, void *user
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 
 	//Obtenemos la referencia
 	if(!mcu->GetConferenceRef(confId,&conf))
@@ -1117,7 +1149,7 @@ xmlrpc_value* StartRecordingParticipant(xmlrpc_env *env, xmlrpc_value *param_arr
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 
 	//Obtenemos la referencia
 	if(!mcu->GetConferenceRef(confId,&conf))
@@ -1149,7 +1181,7 @@ xmlrpc_value* StopRecordingParticipant(xmlrpc_env *env, xmlrpc_value *param_arra
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 
 	//Obtenemos la referencia
 	if(!mcu->GetConferenceRef(confId,&conf))
@@ -1181,7 +1213,7 @@ xmlrpc_value* SendFPU(xmlrpc_env *env, xmlrpc_value *param_array, void *user_dat
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 
 	//Obtenemos la referencia
 	if(!mcu->GetConferenceRef(confId,&conf))
@@ -1215,7 +1247,7 @@ xmlrpc_value* SetMute(xmlrpc_env *env, xmlrpc_value *param_array, void *user_dat
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 
 	//Obtenemos la referencia
 	if(!mcu->GetConferenceRef(confId,&conf))
@@ -1247,7 +1279,7 @@ xmlrpc_value* GetParticipantStatistics(xmlrpc_env *env, xmlrpc_value *param_arra
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 
 	//Obtenemos la referencia
 	if(!mcu->GetConferenceRef(confId,&conf))
@@ -1310,7 +1342,7 @@ xmlrpc_value* MCUEventQueueDelete(xmlrpc_env *env, xmlrpc_value *param_array, vo
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 
 	//Delete event queue
 	if (!mcu->DeleteEventQueue(queueId))
@@ -1394,7 +1426,7 @@ xmlrpc_value* SetRTPProperties(xmlrpc_env *env, xmlrpc_value *param_array, void 
 	xmlrpc_parse_value(env, param_array, "(iiiS)", &confId,&partId,&media,&map);
 
 	//Get the rtp map
-	RTPSession::Properties properties;
+	Properties properties;
 
 	//Get map size
 	int j = xmlrpc_struct_size(env,map);
@@ -1597,7 +1629,7 @@ xmlrpc_value* StopSending(xmlrpc_env *env, xmlrpc_value *param_array, void *user
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 
 	//Obtenemos la referencia
 	if(!mcu->GetConferenceRef(confId,&conf))
@@ -1657,7 +1689,7 @@ MCU *mcu = (MCU *)user_data;
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 
 	//Obtenemos la referencia
 	if(!mcu->GetConferenceRef(confId,&conf))
@@ -1690,7 +1722,7 @@ xmlrpc_value* StopReceiving(xmlrpc_env *env, xmlrpc_value *param_array, void *us
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
-		xmlerror(env,"Fault occurred");
+		return xmlerror(env,"Fault occurred");
 
 	//Obtenemos la referencia
 	if(!mcu->GetConferenceRef(confId,&conf))

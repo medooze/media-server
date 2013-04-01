@@ -224,7 +224,7 @@ int H263Decoder1996::Decode(BYTE *buffer,DWORD size)
 * H263Encoder
 *	Constructor de la clase
 ************************/
-H263Encoder1996::H263Encoder1996()
+H263Encoder1996::H263Encoder1996(const Properties& properties)
 {
 	// Set default values
 	frame	= NULL;
@@ -455,39 +455,3 @@ int H263Encoder1996::FastPictureUpdate()
 	return 1;
 }
 
-/***********************
-* GetNextPacket
-*	Obtiene el siguiente paquete para enviar
-************************/
-int H263Encoder1996::GetNextPacket(BYTE *out,DWORD &len)
-{
-	//Get info
-	MediaFrame::RtpPacketizationInfo& info = frame->GetRtpPacketizationInfo();
-
-	//Check
-	if (num>info.size())
-		//Exit
-		return Error("No mor rtp packets!!");
-	
-	//Get packet
-	MediaFrame::RtpPacketization* rtp = info[num++];
-
-	//Make sure it is enought length
-	if (rtp->GetTotalLength()>len)
-	{
-		//Nullify
-		len = 0;
-		//Send it
-		return Error("H263 MB too big!!! [%d,%d]\n",rtp->GetTotalLength(),len);
-	}
-	
-	//Copy prefic
-	memcpy(out,rtp->GetPrefixData(),rtp->GetPrefixLen());
-	//Copy data
-	memcpy(out+rtp->GetPrefixLen(),frame->GetData()+rtp->GetPos(),rtp->GetSize());
-	//Set len
-	len = rtp->GetPrefixLen()+rtp->GetSize();
-
-	//It is last??
-	return (num<info.size());
-}

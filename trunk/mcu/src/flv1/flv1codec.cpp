@@ -16,15 +16,15 @@
 * FLV1Encoder
 *	Constructor de la clase
 ************************/
-FLV1Encoder::FLV1Encoder(int qualityMin,int qualityMax)
+FLV1Encoder::FLV1Encoder(const Properties& properties)
 {
 	// Set default values
 	frame   = NULL;
 	codec   = NULL;
 	bufSize = 0;
 	type    = VideoCodec::SORENSON;
-	qMin	= qualityMin;
-	qMax	= qualityMax;
+	qMin	= 1;
+	qMax	= 31;
 	format  = 0;
 
 	// Init framerate
@@ -245,22 +245,6 @@ int FLV1Encoder::FastPictureUpdate()
 	}
 	return 1;
 }
-
-/***********************
-* GetNextPacket
-*	Obtiene el siguiente paquete para enviar
-************************/
-int FLV1Encoder::GetNextPacket(BYTE *out,DWORD &len)
-{
-	//Copy data
-	memcpy(out, frame->GetData()+bufIni, len);
-	//Increase pointer
-	bufIni += len;
-	
-	//Y salimos
-	return bufLen>bufIni;
-}
-
 
 //////////////////////////////////////////////////////////////////////////
 //FLV1Decoder

@@ -62,7 +62,7 @@ VideoStream::~VideoStream()
 * SetVideoCodec
 *	Fija el modo de envio de video 
 **********************************************/
-int VideoStream::SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int quality, int fillLevel,int intraPeriod)
+int VideoStream::SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int intraPeriod,const Properties& properties)
 {
 	Log("-SetVideoCodec [%s,%dfps,%dkbps,intra:%d]\n",VideoCodec::GetNameFor(codec),fps,bitrate,intraPeriod);
 
@@ -161,7 +161,7 @@ int VideoStream::SetRemoteSTUNCredentials(const char* username, const char* pwd)
 {
 	return rtp.SetRemoteSTUNCredentials(username,pwd);
 }
-int VideoStream::SetRTPProperties(const RTPSession::Properties& properties)
+int VideoStream::SetRTPProperties(const Properties& properties)
 {
 	return rtp.SetProperties(properties);
 }

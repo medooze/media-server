@@ -455,7 +455,7 @@ int MediaSession::EndpointSetRemoteSTUNCredentials(int endpointId,MediaFrame::Ty
 	return endpoint->SetRemoteSTUNCredentials(media,username,pwd);
 }
 
-int MediaSession::EndpointSetRTPProperties(int endpointId,MediaFrame::Type media,const RTPSession::Properties& properties)
+int MediaSession::EndpointSetRTPProperties(int endpointId,MediaFrame::Type media,const Properties& properties)
 {
         //Get endpoint
         Endpoints::iterator it = endpoints.find(endpointId);

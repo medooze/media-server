@@ -1,6 +1,8 @@
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
 #include <stdint.h>
+#include <map>
+#include <string>
 #include "version.h"
 #define QCIF	0	// 176  x 144
 #define CIF	1	// 352  x 288
@@ -83,4 +85,6 @@ inline DWORD GetHeight(DWORD size)
 	//Nothing
 	return 0;
 }
+
+typedef std::map<std::string,std::string> Properties;
 #endif

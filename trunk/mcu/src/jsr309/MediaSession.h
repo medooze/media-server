@@ -67,7 +67,7 @@ public:
 	int EndpointSetRemoteCryptoSDES(int id,MediaFrame::Type media,const char *suite,const char* key);
 	int EndpointSetLocalSTUNCredentials(int id,MediaFrame::Type media,const char *username,const char* pwd);
 	int EndpointSetRemoteSTUNCredentials(int id,MediaFrame::Type media,const char *username,const char* pwd);
-	int EndpointSetRTPProperties(int id,MediaFrame::Type media,const RTPSession::Properties& properties);
+	int EndpointSetRTPProperties(int id,MediaFrame::Type media,const Properties& properties);
 	//Endpoint Video functionality
 	int EndpointStartSending(int endpointId,MediaFrame::Type media,char *sendVideoIp,int sendVideoPort,RTPMap& rtpMap);
 	int EndpointStopSending(int endpointId,MediaFrame::Type media);

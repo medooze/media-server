@@ -12,11 +12,10 @@ extern "C" {
 class H263Encoder : public VideoEncoder
 {
 public:
-	H263Encoder();
+	H263Encoder(const Properties& properties);
 	virtual ~H263Encoder();
 	virtual VideoFrame* EncodeFrame(BYTE *in,DWORD len);
 	virtual int FastPictureUpdate();
-	virtual int GetNextPacket(BYTE *out,DWORD &len);
 	virtual int SetSize(int width,int height);
 	virtual int SetFrameRate(int fps,int kbits,int intraPeriod);
 
@@ -73,11 +72,10 @@ private:
 		int mb;
 	};
 public:
-	H263Encoder1996();
+	H263Encoder1996(const Properties& properties);
 	virtual ~H263Encoder1996();
 	virtual VideoFrame* EncodeFrame(BYTE *in,DWORD len);
 	virtual int FastPictureUpdate();
-	virtual int GetNextPacket(BYTE *out,DWORD &len);
 	virtual int SetSize(int width,int height);
 	virtual int SetFrameRate(int fps,int kbits,int intraPeriod);
 private:
