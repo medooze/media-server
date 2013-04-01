@@ -211,10 +211,13 @@ int MultiConf::StopBroadcaster()
 	flvEncoder.End();
 
 	//For each publisher
-	while (publishers.size())
+	Publishers::iterator it = publishers.begin();
+
+	//until last
+	while (it!=publishers.end())
 	{
 		//Get first publisher info
-		PublisherInfo info = publishers.begin()->second;
+		PublisherInfo info = it->second;
 		//Check stream
 		if (info.stream)
 		{
@@ -222,9 +225,17 @@ int MultiConf::StopBroadcaster()
 			info.stream->UnPublish();
 			//And close
 			info.stream->Close();
+			//Remove listener
+			flvEncoder.RemoveMediaListener(info.stream);
+			//Delete it
+			delete(info.stream);
 		}
 		//Disconnect
 		info.conn->Disconnect();
+		//Delete connection
+		delete(info.conn);
+		//Remove
+		publishers.erase(it++);
 	}
 
 	//Stop broacast
