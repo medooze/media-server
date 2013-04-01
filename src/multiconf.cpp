@@ -210,6 +210,23 @@ int MultiConf::StopBroadcaster()
 	//End Transmiter
 	flvEncoder.End();
 
+	//For each publisher
+	while (publishers.size())
+	{
+		//Get first publisher info
+		PublisherInfo info = publishers.begin()->second;
+		//Check stream
+		if (info.stream)
+		{
+			//Un publish
+			info.stream->UnPublish();
+			//And close
+			info.stream->Close();
+		}
+		//Disconnect
+		info.conn->Disconnect();
+	}
+
 	//Stop broacast
 	broadcast.End();
 
@@ -1758,6 +1775,22 @@ int  MultiConf::StopPublishing(int id)
 	if (it==publishers.end())
 		//Exit
 		return Error("-Publisher not found\n");
+
+	//Get info
+	PublisherInfo info = it->second;
+
+	//Check it has an stream opened
+	if (info.stream)
+	{
+		//Un publish
+		info.stream->UnPublish();
+		//And close
+		info.stream->Close();
+	}
+	//Disconnect
+	info.conn->Disconnect();
+	//Exit
+	return 1;
 }
 
 void MultiConf::onConnected(RTMPClientConnection* conn)

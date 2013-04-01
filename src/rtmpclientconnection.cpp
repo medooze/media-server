@@ -189,7 +189,7 @@ int RTMPClientConnection::Disconnect()
 	if (listener)
 	{
 		//Disconnect application
-		//listener->o(this);
+		listener->onDisconnected(this);
 		//NO listener
 		listener = NULL;
 	}
@@ -1121,10 +1121,23 @@ bool RTMPClientConnection::NetStream::Close()
 }
 bool RTMPClientConnection::NetStream::Publish(std::wstring& url)
 {
+	//Send FMLE 3.2 commands
+	conn->SendCommand(id,L"releaseStream",NULL,new AMFString(url));
+	conn->SendCommand(id,L"FCPublish",NULL,new AMFString(url));
 	//Publish
 	conn->SendCommand(id,L"publish",NULL,new AMFString(url));
 	//Add listener
 	AddMediaListener(conn);
+	//Ok
+	return true;
+}
+
+bool RTMPClientConnection::NetStream::UnPublish()
+{
+	//UnPublish
+	conn->SendCommand(id,L"publish",NULL,new AMFBoolean(false));
+	//Add listener
+	RemoveMediaListener(conn);
 	//Ok
 	return true;
 }
