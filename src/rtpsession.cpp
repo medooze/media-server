@@ -285,10 +285,10 @@ int RTPSession::SetLocalCryptoSDES(const char* suite, const char* key64)
 	//Evrything ok
 	return 1;
 }
-int RTPSession::SetProperties(const RTPSession::Properties& properties)
+int RTPSession::SetProperties(const Properties& properties)
 {
 	//For each property
-	for (RTPSession::Properties::const_iterator it=properties.begin();it!=properties.end();++it)
+	for (Properties::const_iterator it=properties.begin();it!=properties.end();++it)
 	{
 		Log("Setting RTP property [%s:%s]\n",it->first.c_str(),it->second.c_str());
 		

@@ -9,11 +9,10 @@ extern "C" {
 class H264Encoder : public VideoEncoder
 {
 public:
-	H264Encoder();
+	H264Encoder(const Properties& properties);
 	virtual ~H264Encoder();
 	virtual VideoFrame* EncodeFrame(BYTE *in,DWORD len);
 	virtual int FastPictureUpdate();
-	virtual int GetNextPacket(BYTE *out,DWORD &len);
 	virtual int SetSize(int width,int height);
 	virtual int SetFrameRate(int fps,int kbits,int intraPeriod);
 
@@ -36,6 +35,7 @@ private:
 	int opened;
 	int intraPeriod;
 	int pts;
+	std::string h264ProfileLevelId;
 };
 
 #endif 

@@ -602,7 +602,7 @@ int MultiConf::End()
 * SetVideoCodec
 * 	SetVideoCodec
 *************************/
-int MultiConf::SetVideoCodec(int id,int codec,int mode,int fps,int bitrate,int quality, int fillLevel,int intraPeriod)
+int MultiConf::SetVideoCodec(int id,int codec,int mode,int fps,int bitrate,int intraPeriod,const Properties &properties)
 {
 	int ret = 0;
 
@@ -617,7 +617,7 @@ int MultiConf::SetVideoCodec(int id,int codec,int mode,int fps,int bitrate,int q
 	//Check particpant
 	if (part)
 		//Set video codec
-		ret = part->SetVideoCodec((VideoCodec::Type)codec,mode,fps,bitrate,quality,fillLevel,intraPeriod);
+		ret = part->SetVideoCodec((VideoCodec::Type)codec,mode,fps,bitrate,intraPeriod,properties);
 
 	//Unlock
 	participantsLock.DecUse();
@@ -698,7 +698,7 @@ int MultiConf::SetLocalSTUNCredentials(int id,MediaFrame::Type media,const char 
 	//Exit
 	return ret;
 }
-int MultiConf::SetRTPProperties(int id,MediaFrame::Type media,const RTPSession::Properties& properties)
+int MultiConf::SetRTPProperties(int id,MediaFrame::Type media,const Properties& properties)
 {
 	int ret = 0;
 

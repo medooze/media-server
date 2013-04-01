@@ -98,7 +98,7 @@ int AudioStream::SetRemoteSTUNCredentials(const char* username, const char* pwd)
 	return rtp.SetRemoteSTUNCredentials(username,pwd);
 }
 
-int AudioStream::SetRTPProperties(const RTPSession::Properties& properties)
+int AudioStream::SetRTPProperties(const Properties& properties)
 {
 	return rtp.SetProperties(properties);
 }

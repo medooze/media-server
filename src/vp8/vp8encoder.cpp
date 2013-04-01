@@ -32,7 +32,7 @@ static DWORD MaxIntraTarget(DWORD optimalBuffersize,DWORD fps)
 	return targetPct;
 }
 
-VP8Encoder::VP8Encoder()
+VP8Encoder::VP8Encoder(const Properties& properties)
 {
 	// Set default values
 	type    = VideoCodec::VP8;
@@ -294,9 +294,4 @@ VideoFrame* VP8Encoder::EncodeFrame(BYTE *buffer,DWORD bufferSize)
 	}
 
 	return frame;
-}
-
-int VP8Encoder::GetNextPacket(BYTE *out,DWORD &len)
-{
-	return 0;
 }

@@ -22,7 +22,7 @@ public:
 
 	int Init(VideoInput *input, VideoOutput *output);
 	void SetRemoteRateEstimator(RemoteRateEstimator* estimator);
-	int SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int quality,int fillLevel,int intraPeriod);
+	int SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int intraPeriod,const Properties& properties);
 	int SetTemporalBitrateLimit(int bitrate);
 	int StartSending(char *sendVideoIp,int sendVideoPort,RTPMap& rtpMap);
 	int StopSending();
@@ -35,7 +35,7 @@ public:
 	int SetRemoteCryptoSDES(const char* suite, const char* key64);
 	int SetLocalSTUNCredentials(const char* username, const char* pwd);
 	int SetRemoteSTUNCredentials(const char* username, const char* pwd);
-	int SetRTPProperties(const RTPSession::Properties& properties);
+	int SetRTPProperties(const Properties& properties);
 	int End();
 
 	int IsSending()	  { return sendingVideo;  }
@@ -70,6 +70,7 @@ private:
 	int 		videoBitrateLimit;
 	int 		videoBitrateLimitCount;
 	int		videoIntraPeriod;
+	Properties	properties;
 
 	//Las threads
 	pthread_t 	sendVideoThread;

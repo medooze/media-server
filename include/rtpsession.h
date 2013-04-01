@@ -59,7 +59,7 @@ public:
 		virtual void onTempMaxMediaStreamBitrateRequest(RTPSession *session,DWORD bitrate,DWORD overhead) = 0;
 	};
 public:
-	typedef std::map<std::string,std::string> Properties;
+	
 public:
 	static bool SetPortRange(int minPort, int maxPort);
 	static DWORD GetMinPort() { return minLocalPort; }
@@ -103,7 +103,7 @@ public:
 	int SetRemoteCryptoSDES(const char* suite, const char* key64);
 	int SetLocalSTUNCredentials(const char* username, const char* pwd);
 	int SetRemoteSTUNCredentials(const char* username, const char* pwd);
-	int SetProperties(const RTPSession::Properties& properties);
+	int SetProperties(const Properties& properties);
 	int RequestFPU();
 
 	int SendTempMaxMediaStreamBitrateNotification(DWORD bitrate,DWORD overhead);

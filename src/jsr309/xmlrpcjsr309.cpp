@@ -814,7 +814,7 @@ xmlrpc_value* EndpointSetRTPProperties(xmlrpc_env *env, xmlrpc_value *param_arra
 	xmlrpc_parse_value(env, param_array, "(iiiS)", &sessionId,&endpointId,&media,&map);
 
 	//Get the rtp map
-	RTPSession::Properties properties;
+	Properties properties;
 
 	//Get map size
 	int j = xmlrpc_struct_size(env,map);

@@ -21,7 +21,7 @@ public:
 	RTPParticipant(DWORD partId);
 	virtual ~RTPParticipant();
 
-	virtual int SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int quality=0, int fillLevel=0,int intraPeriod=0);
+	virtual int SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int intraPeriod,const Properties& properties);
 	virtual int SetAudioCodec(AudioCodec::Type codec);
 	virtual int SetTextCodec(TextCodec::Type codec);
 
@@ -48,7 +48,7 @@ public:
 	int SetRemoteCryptoSDES(MediaFrame::Type media,const char* suite, const char* key64);
 	int SetLocalSTUNCredentials(MediaFrame::Type media,const char* username, const char* pwd);
 	int SetRemoteSTUNCredentials(MediaFrame::Type media,const char* username, const char* pwd);
-	int SetRTPProperties(MediaFrame::Type media,const RTPSession::Properties& properties);
+	int SetRTPProperties(MediaFrame::Type media,const Properties& properties);
 	
 	int SetMediaListener(MediaFrame::Listener *listener) { return video.SetMediaListener(listener); }
 

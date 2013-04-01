@@ -90,7 +90,6 @@ public:
 
 	virtual int SetSize(int width,int height)=0;
 	virtual VideoFrame* EncodeFrame(BYTE *in,DWORD len)=0;
-	virtual int GetNextPacket(BYTE *out,DWORD &len)=0;
 	virtual int FastPictureUpdate()=0;
 	virtual int SetFrameRate(int fps,int kbits,int intraPeriod)=0;
 public:
@@ -118,6 +117,6 @@ class VideoCodecFactory
 public:
 	static VideoDecoder* CreateDecoder(VideoCodec::Type codec);
 	static VideoEncoder* CreateEncoder(VideoCodec::Type codec);
-	static VideoEncoder* CreateEncoder(VideoCodec::Type codec, int qMin, int qMax);
+	static VideoEncoder* CreateEncoder(VideoCodec::Type codec, const Properties &properties);
 };
 #endif

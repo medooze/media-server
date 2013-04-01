@@ -5,9 +5,7 @@
 #include "mpeg4codec.h"
 #include "video.h"
 
-#define CODEC_FLAG_RFC2190         0x04000000
-#define VIDEOQMIN 3
-#define VIDEOQMAX 31
+DWORD Mpeg4Decoder::bufSize = 4096*16;
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -45,6 +43,12 @@ Mpeg4Decoder::Mpeg4Decoder()
 	ctx->workaround_bugs 	= 255*255;
 	ctx->error_concealment 	= FF_EC_GUESS_MVS | FF_EC_DEBLOCK;
 
+	//Alocamos el buffer
+	bufSize = 1024*756*3/2;
+	buffer = (BYTE *)malloc(bufSize);
+	frame = NULL;
+	frameSize = 0;
+	src = 0;
 
 	//Lo abrimos
 	avcodec_open2(ctx, codec, NULL);
@@ -56,6 +60,9 @@ Mpeg4Decoder::Mpeg4Decoder()
 ************************/
 Mpeg4Decoder::~Mpeg4Decoder()
 {
+	free(buffer);
+	if (frame!=NULL)
+		free(frame);
 	avcodec_close(ctx);
 	free(picture);
 	free(ctx);
@@ -67,10 +74,18 @@ Mpeg4Decoder::~Mpeg4Decoder()
 ************************/
 int Mpeg4Decoder::DecodePacket(BYTE *in,DWORD len,int lost,int last)
 {
-	int ret = 0;
+	int ret = 1;
 
+	//Check size
+	if (bufLen+len>bufSize)
+	{
+		//Reset
+		bufLen = 0;
+		//Error
+		return Error("-Not enought buffer size to decode packet");
+	}
         //Guardamos
-	memcpy(bufDecode+bufLen,in,len);
+	memcpy(buffer+bufLen,in,len);
 	
 	//Aumentamos el tama�o
 	bufLen+=len;
@@ -79,7 +94,7 @@ int Mpeg4Decoder::DecodePacket(BYTE *in,DWORD len,int lost,int last)
 	if (last)
 	{
 		//Decode
-		ret = Decode(bufDecode,bufLen);
+		ret = Decode(buffer,bufLen);
 		//Reset
 		bufLen = 0;
 	}
@@ -95,31 +110,44 @@ int Mpeg4Decoder::Decode(BYTE* buffer,DWORD size)
 	av_init_packet(&pkt);
 	pkt.data = buffer;
 	pkt.size = size;
-	avcodec_decode_video2(ctx, picture, &got_picture, &pkt);
+	int readed = avcodec_decode_video2(ctx, picture, &got_picture, &pkt);
 
 	//Si hay picture
-	if (got_picture)
+	if (got_picture && readed>0)
 	{
 		if(ctx->width==0 || ctx->height==0)
-			return 0;
+			return Error("-Wrong dimmensions [%d,%d]\n",ctx->width,ctx->height);;
 
 		int w = ctx->width;
 		int h = ctx->height;
 		int u = w*h;
 		int v = w*h*5/4;
+		int size = w*h*3/2;
+
+		//Comprobamos el tama�o
+		if (size>frameSize)
+		{
+			Log("-Frame size %dx%d\n",w,h);
+			//Liberamos si habia
+			if(frame!=NULL)
+				free(frame);
+			//Y allocamos de nuevo
+			frame = (BYTE*) malloc(size);
+			frameSize = size;
+		}
+
 
 		//Copaamos  el Cy
 		for(int i=0;i<ctx->height;i++)
-			memcpy(&bufDecode[i*w],&picture->data[0][i*picture->linesize[0]],w);
+			memcpy(&frame[i*w],&picture->data[0][i*picture->linesize[0]],w);
 
 		//Y el Cr y Cb
 		for(int i=0;i<ctx->height/2;i++)
 		{
-			memcpy(&bufDecode[i*w/2+u],&picture->data[1][i*picture->linesize[1]],w/2);
-			memcpy(&bufDecode[i*w/2+v],&picture->data[2][i*picture->linesize[2]],w/2);
+			memcpy(&frame[i*w/2+u],&picture->data[1][i*picture->linesize[1]],w/2);
+			memcpy(&frame[i*w/2+v],&picture->data[2][i*picture->linesize[2]],w/2);
 		}
 	}
-
 	return 1;
 }
 
@@ -133,13 +161,13 @@ DWORD Mpeg4Encoder::bufSize=4096*16;
 * Mpeg4Encoder
 *	Constructor de la clase
 ************************/
-Mpeg4Encoder::Mpeg4Encoder(int qualityMin,int qualityMax)
+Mpeg4Encoder::Mpeg4Encoder(const Properties& properties)
 {
 	// Set default values
 	codec   = NULL;
 	type    = VideoCodec::MPEG4;
-	qMin	= qualityMin;
-	qMax	= qualityMax;
+	qMin	= 1;
+	qMax	= 31;
 	format  = 0;
 
 	// Init framerate
@@ -236,22 +264,15 @@ int Mpeg4Encoder::OpenCodec()
 
 	// Bitrate,fps
 	ctx->bit_rate 		= bitrate;
-	ctx->bit_rate_tolerance = 1;
+	ctx->bit_rate_tolerance = bitrate/fps+1;
 	ctx->time_base          = (AVRational){1,fps};
 	ctx->gop_size		= intraPeriod;	// about one Intra frame per second
 	// Encoder quality
-	ctx->rc_min_rate 	= bitrate;
 	ctx->rc_max_rate	= bitrate;
-	ctx->rc_buffer_size	= bufSize;
-	ctx->rc_qsquish 	= 0; //ratecontrol qmin qmax limiting method.
+	ctx->rc_buffer_size	= bitrate/fps+1;
+	ctx->rc_initial_buffer_occupancy = 0;
+	ctx->rc_qsquish 	= 1;
 	ctx->max_b_frames	= 0;
-	ctx->qmin= qMin;
-	ctx->qmax= qMax;
-	ctx->i_quant_factor	= (float)-0.6;
-	ctx->i_quant_offset 	= (float)0.0;
-	ctx->b_quant_factor 	= (float)1.5;
-	// Flags
-	ctx->flags |= CODEC_FLAG_PASS1;			//PASS1 
 
 	// Open codec
 	if (avcodec_open2(ctx, codec, NULL)<0)
@@ -298,6 +319,29 @@ VideoFrame* Mpeg4Encoder::EncodeFrame(BYTE *in,DWORD len)
 	//Unset fpu
 	picture->key_frame = 0;
 	picture->pict_type = AV_PICTURE_TYPE_NONE;
+	//Clean all previous packets
+	frame->ClearRTPPacketizationInfo();
+
+	//From the begining
+	DWORD ini = 0;
+
+	//Copy all
+	while(ini<bufLen)
+	{
+		//The mtu
+		DWORD len = RTPPAYLOADSIZE;
+
+		//Check length
+		if (len+ini>bufLen)
+			//Fix it
+			len=bufLen-ini;
+
+		//Add rtp packet
+		frame->AddRtpPacket(ini,len,NULL,0);
+
+		//Increase pointer
+		ini += len;
+	}
 
 	//Y ponemos a cero el comienzo
 	bufIni=0;
@@ -320,24 +364,3 @@ int Mpeg4Encoder::FastPictureUpdate()
 	}
 	return 1;
 }
-
-/***********************
-* GetNextPacket
-*	Obtiene el siguiente paquete para enviar
-************************/
-int Mpeg4Encoder::GetNextPacket(BYTE *out,DWORD &len)
-{
-	//Copiamos lo que quepa
-	if (len+bufIni>bufLen)
-		len=bufLen-bufIni;
-
-	//Copiamos
-	memcpy(out,frame->GetData()+bufIni,len);
-
-	//Incrementamos el inicio
-	bufIni+=len;
-
-	//Y salimos
-	return bufLen>bufIni;
-}
-

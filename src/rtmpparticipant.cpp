@@ -58,7 +58,7 @@ RTMPParticipant::~RTMPParticipant()
 	pthread_cond_destroy(&cond);
 }
 
-int RTMPParticipant::SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int quality,int fillLevel,int intraPeriod)
+int RTMPParticipant::SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int intraPeriod,const Properties& properties)
 {
 	//LO guardamos
 	videoCodec = codec;

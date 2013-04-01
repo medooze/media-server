@@ -15,10 +15,10 @@ RTPParticipant::~RTPParticipant()
 {
 }
 
-int RTPParticipant::SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int quality,int fillLevel,int intraPeriod)
+int RTPParticipant::SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int intraPeriod,const Properties& properties)
 {
 	//Set it
-	return video.SetVideoCodec(codec,mode,fps,bitrate,quality,fillLevel,intraPeriod);
+	return video.SetVideoCodec(codec,mode,fps,bitrate,intraPeriod,properties);
 }
 
 int RTPParticipant::SetAudioCodec(AudioCodec::Type codec)
@@ -70,7 +70,6 @@ int RTPParticipant::Init()
 	int ret = 1;
 	//Set estimator for audio and video
 	video.SetRemoteRateEstimator(&estimator);
-	audio.SetRemoteRateEstimator(&estimator);
 	//Init each stream
 	ret &= video.Init(videoInput,videoOutput);
 	ret &= audio.Init(audioInput,audioOutput);
@@ -123,7 +122,7 @@ int RTPParticipant::SetLocalSTUNCredentials(MediaFrame::Type media,const char* u
 
 	return 0;
 }
-int RTPParticipant::SetRTPProperties(MediaFrame::Type media,const RTPSession::Properties& properties)
+int RTPParticipant::SetRTPProperties(MediaFrame::Type media,const Properties& properties)
 {
 	switch (media)
 	{

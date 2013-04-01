@@ -319,7 +319,7 @@ int Endpoint::SetLocalSTUNCredentials(MediaFrame::Type media,const char* usernam
 
 	return 0;
 }
-int Endpoint::SetRTPProperties(MediaFrame::Type media,const RTPSession::Properties& properties)
+int Endpoint::SetRTPProperties(MediaFrame::Type media,const Properties& properties)
 {
 	switch (media)
 	{

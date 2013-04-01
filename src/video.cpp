@@ -35,23 +35,33 @@ VideoDecoder* VideoCodecFactory::CreateDecoder(VideoCodec::Type codec)
 
 VideoEncoder* VideoCodecFactory::CreateEncoder(VideoCodec::Type codec)
 {
+	//Empty properties
+	Properties properties;
+
+	//Create codec
+	return CreateEncoder(codec,properties);
+}
+
+
+VideoEncoder* VideoCodecFactory::CreateEncoder(VideoCodec::Type codec,const Properties& properties)
+{
 	Log("-CreateVideoEncoder[%d,%s]\n",codec,VideoCodec::GetNameFor(codec));
 
 	//Depending on the codec
 	switch(codec)
 	{
 		case VideoCodec::SORENSON:
-			return new FLV1Encoder(1,31);
+			return new FLV1Encoder(properties);
 		case VideoCodec::H263_1998:
-			return new H263Encoder();
+			return new H263Encoder(properties);
 		case VideoCodec::H263_1996:
-			return new H263Encoder1996();
+			return new H263Encoder1996(properties);
 		case VideoCodec::MPEG4:
-			return new Mpeg4Encoder(1,31);
+			return new Mpeg4Encoder(properties);
 		case VideoCodec::H264:
-			return new H264Encoder();
+			return new H264Encoder(properties);
 		case VideoCodec::VP8:
-			return new VP8Encoder();
+			return new VP8Encoder(properties);
 		default:
 			Error("Video Encoder not found\n");
 	}

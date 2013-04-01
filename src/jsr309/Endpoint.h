@@ -32,7 +32,7 @@ public:
 	int SetRemoteCryptoSDES(MediaFrame::Type media,const char* suite, const char* key64);
 	int SetLocalSTUNCredentials(MediaFrame::Type media,const char* username, const char* pwd);
 	int SetRemoteSTUNCredentials(MediaFrame::Type media,const char* username, const char* pwd);
-	int SetRTPProperties(MediaFrame::Type media,const RTPSession::Properties& properties);
+	int SetRTPProperties(MediaFrame::Type media,const Properties& properties);
 
 	//Attach
 	int Attach(MediaFrame::Type media, Joinable *join);
