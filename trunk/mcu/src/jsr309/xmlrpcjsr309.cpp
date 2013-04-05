@@ -787,7 +787,7 @@ xmlrpc_value* EndpointSetRemoteSTUNCredentials(xmlrpc_env *env, xmlrpc_value *pa
 		return xmlerror(env,"The media Session does not exist");
 
 	//La borramos
-	int res = session->EndpointSetRemoteSTUNCredentials(sessionId,(MediaFrame::Type)media,username,pwd);
+	int res = session->EndpointSetRemoteSTUNCredentials(endpointId,(MediaFrame::Type)media,username,pwd);
 
 	//Liberamos la referencia
 	jsr->ReleaseMediaSessionRef(sessionId);

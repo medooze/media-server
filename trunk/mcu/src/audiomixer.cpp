@@ -67,10 +67,15 @@ int AudioMixer::MixAudio()
 	//Mientras estemos mezclando
 	while(mixingAudio)
 	{
-		DWORD next = step*1000-(getDifTime(&tv)-prev);
+		//Get processing time
+		DWORD proc = getDifTime(&tv)-prev;
 
-		//Wait until next to process again minus process time
-		msleep(next);
+		//check we have not to hurry up
+		if (proc<step*1000)
+			//Wait until next to process again minus process time
+			msleep(step*1000-proc);
+		else
+			Log("-Audimixer taking too much time, hurrying up [%u]\n",proc);
 
 		//Get new time
 		QWORD curr = getDifTime(&tv);

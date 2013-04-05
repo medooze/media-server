@@ -911,14 +911,10 @@ int RTPSession::ReadRTCP()
 				//Clean response
 				delete(resp);
 			}
-			//Check if we have sendinf ip address
-			if (sendRtcpAddr.sin_addr.s_addr == INADDR_ANY)
-			{
-				//Do NAT
-				sendRtcpAddr.sin_addr.s_addr = from_addr.sin_addr.s_addr;
-				//Set port
-				sendRtcpAddr.sin_port = from_addr.sin_addr.s_addr;
-			}
+			//Do NAT
+			sendRtcpAddr.sin_addr.s_addr = from_addr.sin_addr.s_addr;
+			//Set port
+			sendRtcpAddr.sin_port = from_addr.sin_addr.s_addr;
 		}
 
 		//Delete message
@@ -1022,20 +1018,17 @@ int RTPSession::ReadRTP()
 				//Clean response
 				delete(resp);
 
-				//If we don't have originating IP
-				if (recIP==INADDR_ANY)
-				{
-					//Bind it to first received packet ip
-					recIP = from_addr.sin_addr.s_addr;
-					//Get also port
-					recPort = ntohs(from_addr.sin_port);
-					//Log
-					Log("-RTPSession NAT: received bind request from [%s:%d]\n", inet_ntoa(from_addr.sin_addr), recPort);
-					//Check if got listener
-					if (listener)
-						//Request a I frame
-						listener->onFPURequested(this);
-				}
+				//Bind it to first received packet ip
+				recIP = from_addr.sin_addr.s_addr;
+				//Get also port
+				recPort = ntohs(from_addr.sin_port);
+				//Log
+				Log("-RTPSession NAT: received bind request from [%s:%d]\n", inet_ntoa(from_addr.sin_addr), recPort);
+				//Check if got listener
+				if (listener)
+					//Request a I frame
+					listener->onFPURequested(this);
+				
 				if (iceRemoteUsername && iceRemotePwd)
 				{
 					//Create trans id
