@@ -199,17 +199,21 @@ int MultiConf::StopBroadcaster()
 	//Close recorder
 	recorder.Close();
 
+	Log("-flvEncoder.StopEncoding\n");
 	//Stop endoding
 	flvEncoder.StopEncoding();
 
+	Log("-Ending mixers\n");
 	//End mixers
 	videoMixer.EndMixer(broadcastId);
 	audioMixer.EndMixer(broadcastId);
 	textMixer.EndMixer(broadcastId);
 
+	Log("flvEncoder.End\n");
 	//End Transmiter
 	flvEncoder.End();
 
+	Log("Ending publishers");
 	//For each publisher
 	Publishers::iterator it = publishers.begin();
 
@@ -1823,6 +1827,8 @@ void MultiConf::onConnected(RTMPClientConnection* conn)
 		conn->Call(L"FCPublish",new AMFNull,new AMFString(info.name));
 		//Create stream
 		conn->CreateStream(tag);
+	} else {
+		Log("-RTMPClientConnection connection not found\n");
 	}
 }
 
