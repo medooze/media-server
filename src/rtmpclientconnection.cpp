@@ -1121,9 +1121,6 @@ bool RTMPClientConnection::NetStream::Close()
 }
 bool RTMPClientConnection::NetStream::Publish(std::wstring& url)
 {
-	//Send FMLE 3.2 commands
-	conn->SendCommand(id,L"releaseStream",NULL,new AMFString(url));
-	conn->SendCommand(id,L"FCPublish",NULL,new AMFString(url));
 	//Publish
 	conn->SendCommand(id,L"publish",NULL,new AMFString(url));
 	//Add listener
