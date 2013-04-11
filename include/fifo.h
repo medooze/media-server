@@ -2,12 +2,12 @@
 #define _FIFO_H_
 
 #include <string.h>
-template<typename T,int size> 
+template<typename T,int S>
 class fifo
 {
 
 private:
-	T	data[size];
+	T	data[S];
 	int	ini;
 	int	end;
 	int	len;
@@ -23,11 +23,11 @@ public:
 	int push(const T *in,int l)
 	{
 		//Comprobamos que quepa
-		if (size<len+l)
+		if (size()<len+l)
 			return 0;
 	
 		//Calculamos lo que queda libre hasta el final
-		int free = size-end;
+		int free = size()-end;
 	
 		//Y si tenemos que copiar al principio
 		if (free>=l)
@@ -39,7 +39,7 @@ public:
 			end+=l;
 
 			//Check end
-			if (end==size)
+			if (end==size())
 				//From the begining
 				end=0;
 		} else {
@@ -74,7 +74,7 @@ public:
 			return 0;
 	
 		//Calculamos lo que queda hasta el end
-		unsigned int total = size-ini;
+		unsigned int total = size()-ini;
 	
 		//Y si tenemos que copiar al principio
 		if (total>=l)
@@ -86,7 +86,7 @@ public:
 			if (remove)
 				ini+=l;
 			//cehck if we hav past the end
-			if (ini==size)
+			if (ini==size())
 				ini=0;
 		} else {
 			//El resto esta al principio
@@ -112,7 +112,7 @@ public:
 			return 0;
 	
 		//Calculamos lo que queda hasta el end
-		int total = size-ini;
+		int total = size()-ini;
 	
 		//Y si tenemos que copiar al principio
 		if (total>=l)
@@ -129,7 +129,10 @@ public:
 	
 		return l;
 	}
-	
+	int size()
+	{
+		return S;
+	}
 	int length()
 	{
 		return len;
