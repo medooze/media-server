@@ -30,10 +30,12 @@ int PipeAudioOutput::PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime)
 	//Bloqueamos
 	pthread_mutex_lock(&mutex);
 
-	//Si no cabe
-	if(fifoBuffer.length()+size>1024)
-		//Limpiamos
-		fifoBuffer.clear();
+	//Get left space
+	int left = fifoBuffer.size()-fifoBuffer.length();
+	//if not enought
+	if(size>left)
+		//Free space
+		fifoBuffer.remove(size-left);
 
 	//Get initial bump
 	if (!acu && v)

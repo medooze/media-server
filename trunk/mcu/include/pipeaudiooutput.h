@@ -25,7 +25,7 @@ private:
 	pthread_mutex_t mutex;
 
 	//Members
-	fifo<SWORD,2048>	fifoBuffer;
+	fifo<SWORD,4096>	fifoBuffer;
 	int			inited;
 	VAD			vad;
 	DWORD			acu;
