@@ -889,28 +889,25 @@ int RTPSession::ReadRTCP()
 		//If it is a request
 		if (type==STUNMessage::Request && method==STUNMessage::Binding)
 		{
-			//If set
-			if (stun->HasAttribute(STUNMessage::Attribute::UseCandidate))
-			{
-				//Create response
-				STUNMessage* resp = stun->CreateResponse();
-				//Add received xor mapped addres
-				resp->AddXorAddressAttribute(&from_addr);
-				//TODO: Check incoming request username attribute value starts with iceLocalUsername+":"
-				//Create  response
-				DWORD size = resp->GetSize();
-				BYTE *aux = (BYTE*)malloc(size);
+			//Create response
+			STUNMessage* resp = stun->CreateResponse();
+			//Add received xor mapped addres
+			resp->AddXorAddressAttribute(&from_addr);
+			//TODO: Check incoming request username attribute value starts with iceLocalUsername+":"
+			//Create  response
+			DWORD size = resp->GetSize();
+			BYTE *aux = (BYTE*)malloc(size);
 
-				//Serialize and autenticate
-				DWORD len = resp->AuthenticatedFingerPrint(aux,size,iceLocalPwd);
-				//Send it
-				sendto(simRtcpSocket,aux,len,0,(sockaddr *)&from_addr,sizeof(struct sockaddr_in));
+			//Serialize and autenticate
+			DWORD len = resp->AuthenticatedFingerPrint(aux,size,iceLocalPwd);
+			//Send it
+			sendto(simRtcpSocket,aux,len,0,(sockaddr *)&from_addr,sizeof(struct sockaddr_in));
 
-				//Clean memory
-				free(aux);
-				//Clean response
-				delete(resp);
-			}
+			//Clean memory
+			free(aux);
+			//Clean response
+			delete(resp);
+
 			//Do NAT
 			sendRtcpAddr.sin_addr.s_addr = from_addr.sin_addr.s_addr;
 			//Set port
@@ -996,29 +993,31 @@ int RTPSession::ReadRTP()
 		//If it is a request
 		if (type==STUNMessage::Request && method==STUNMessage::Binding)
 		{
+			//Create response
+			STUNMessage* resp = stun->CreateResponse();
+			//Add received xor mapped addres
+			resp->AddXorAddressAttribute(&from_addr);
+			//TODO: Check incoming request username attribute value starts with iceLocalUsername+":"
+			//Create  response
+			DWORD size = resp->GetSize();
+			BYTE *aux = (BYTE*)malloc(size);
+
+			//Serialize and autenticate
+			DWORD len = resp->AuthenticatedFingerPrint(aux,size,iceLocalPwd);
+			//Send it
+			sendto(simSocket,aux,len,0,(sockaddr *)&from_addr,sizeof(struct sockaddr_in));
+
+			//Clean memory
+			free(aux);
+			//Clean response
+			delete(resp);
+
 			//If set
-			if (stun->HasAttribute(STUNMessage::Attribute::UseCandidate))
+			//if (stun->HasAttribute(STUNMessage::Attribute::UseCandidate))
+			//Check if ip's are different
+			if (recIP!=from_addr.sin_addr.s_addr)
 			{
-				//Create response
-				STUNMessage* resp = stun->CreateResponse();
-				//Add received xor mapped addres
-				resp->AddXorAddressAttribute(&from_addr);
-				//TODO: Check incoming request username attribute value starts with iceLocalUsername+":"
-				//Create  response
-				DWORD size = resp->GetSize();
-				BYTE *aux = (BYTE*)malloc(size);
-
-				//Serialize and autenticate
-				DWORD len = resp->AuthenticatedFingerPrint(aux,size,iceLocalPwd);
-				//Send it
-				sendto(simSocket,aux,len,0,(sockaddr *)&from_addr,sizeof(struct sockaddr_in));
-
-				//Clean memory
-				free(aux);
-				//Clean response
-				delete(resp);
-
-				//Bind it to first received packet ip
+				//Bind it to received packet ip
 				recIP = from_addr.sin_addr.s_addr;
 				//Get also port
 				recPort = ntohs(from_addr.sin_port);
