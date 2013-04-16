@@ -215,6 +215,10 @@ void RemoteRateEstimator::Update(DWORD size)
 	//Update
 	currentBitRate = current;
 
+	//Chec min
+	if (currentBitRate<minConfiguredBitRate)
+		currentBitRate = minConfiguredBitRate;
+
 	Log("--estimation currentBitRate=%d current=%d incoming=%f min=%llf max=%llf\n",currentBitRate/1000,current/1000,incomingBitRate/1000,bitrateAcu.GetMinAvg()/1000,bitrateAcu.GetMaxAvg()/1000);
 
 	//Reset min max

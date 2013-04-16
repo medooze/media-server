@@ -360,6 +360,7 @@ int VideoStream::SendVideo()
 {
 	timeval first;
 	timeval prev;
+	DWORD num = 0;
 
 	Acumulator bitrateAcu(1000);
 	Acumulator fpsAcu(1000);
@@ -508,6 +509,14 @@ int VideoStream::SendVideo()
 		
 		//Send it smoothly
 		smoother.SendFrame(videoFrame,frameTime);
+
+		if (num && ( (num%30)==0))
+		{
+			//Log("-Send bitrate current=%d avg=%llf rate=[%llf,%llf] fps=[%llf,%llf] limit=%d\n",current,bitrateAcu.GetInstantAvg()/1000,bitrateAcu.GetMinAvg()/1000,bitrateAcu.GetMaxAvg()/1000,fpsAcu.GetMinAvg(),fpsAcu.GetMaxAvg(),videoBitrateLimit);
+			bitrateAcu.ResetMinMax();
+			fpsAcu.ResetMinMax();
+		}
+		num++;
 	}
 
 	Log("-SendVideo out of loop\n");

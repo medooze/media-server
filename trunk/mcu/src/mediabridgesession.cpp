@@ -521,7 +521,7 @@ int MediaBridgeSession::RecVideo()
 	VideoDecoder* decoder = NULL;
 	VideoEncoder* encoder = VideoCodecFactory::CreateEncoder(VideoCodec::SORENSON);
 	//Create new video frame
-	RTMPVideoFrame  frame(0,65500);
+	RTMPVideoFrame  frame(0,262143);
 	//Set codec
 	frame.SetVideoCodec(RTMPVideoFrame::FLV1);
 

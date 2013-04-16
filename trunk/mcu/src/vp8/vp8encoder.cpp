@@ -100,7 +100,7 @@ int VP8Encoder::SetFrameRate(int frames,int kbits,int intraPeriod)
 	if (opened)
 	{
 		//Reconfig parameters
-		config.rc_target_bitrate = bitrate*fps;
+		config.rc_target_bitrate = bitrate;
 		config.kf_max_dist = intraPeriod;
 		//Reconfig
 		if (vpx_codec_enc_config_set(&encoder,&config)!=VPX_CODEC_OK)
@@ -133,7 +133,7 @@ int VP8Encoder::OpenCodec()
 	config.g_profile = 1;
 	config.g_w = width;
 	config.g_h = height;
-	config.rc_target_bitrate = bitrate*fps;
+	config.rc_target_bitrate = bitrate;
 	config.g_timebase.num = 1;
 	config.g_timebase.den = 90000;
 	config.g_error_resilient = VPX_ERROR_RESILIENT_PARTITIONS;  /**< The frame partitions are
