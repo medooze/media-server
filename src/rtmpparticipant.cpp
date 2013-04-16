@@ -500,7 +500,7 @@ int RTMPParticipant::SendVideo()
 	//Coders
 	VideoEncoder* encoder = VideoCodecFactory::CreateEncoder(videoCodec);
 	//Create new video frame
-	RTMPVideoFrame  frame(0,65535);
+	RTMPVideoFrame  frame(0,262143);
 
 	//No wait for first
 	DWORD frameTime = 0;
