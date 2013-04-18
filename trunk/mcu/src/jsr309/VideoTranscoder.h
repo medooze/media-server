@@ -38,6 +38,8 @@ public:
 	int Attach(Joinable *join);
 	int Dettach();
 
+	const std::wstring& GetName() { return tag;	}
+
 private:
 	VideoEncoderMultiplexerWorker	encoder;
 	VideoDecoderJoinableWorker	decoder;

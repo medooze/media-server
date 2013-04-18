@@ -39,6 +39,9 @@ public:
 	int Attach(Joinable *join);
 	int Dettach();
 
+	//Joinable interface
+	virtual void Update();
+
 	//Joinable::Listener
 	virtual void onRTPPacket(RTPPacket &packet);
 	virtual void onResetStream();

@@ -379,7 +379,7 @@ int FLVEncoder::EncodeVideo()
 	timeval prev;
 
 	//Allocate media frame
-	RTMPVideoFrame frame(0,65535);
+	RTMPVideoFrame frame(0,262143);
 
 	//Check codec
 	switch(videoCodec)

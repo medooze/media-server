@@ -10,6 +10,7 @@
 #include "log.h"
 #include "RTPEndpoint.h"
 #include "rtpsession.h"
+#include "codecs.h"
 
 RTPEndpoint::RTPEndpoint(MediaFrame::Type type) : RTPMultiplexer() , RTPSession(type,this)
 {
@@ -245,8 +246,19 @@ int RTPEndpoint::Run()
 		if (!packet)
 			//Next
 			continue;
-		//Multiplex
-		Multiplex(*packet);
+		//Check type
+		if (packet->GetCodec()==VideoCodec::RED)
+		{
+			//Get primary data
+			RTPPacket *primary = ((RTPRedundantPacket*)packet)->CreatePrimaryPacket();
+			//Multiplex only primary data
+			Multiplex(*primary);
+			//Delete it
+			delete(primary);
+		} else {
+			//Multiplex
+			Multiplex(*packet);
+		}
 		//Delete ti
 		delete(packet);
         }
@@ -301,8 +313,10 @@ int RTPEndpoint::Dettach()
 
 void RTPEndpoint::onFPURequested(RTPSession *session)
 {
-	//Request update of the stream
-	Update();
+	//Check if joined
+	if (joined)
+		//Request update
+		joined->Update();
 }
 
 void RTPEndpoint::onReceiverEstimatedMaxBitrate(RTPSession *session,DWORD bitrate)
@@ -315,10 +329,14 @@ void RTPEndpoint::onTempMaxMediaStreamBitrateRequest(RTPSession *session,DWORD b
 	//TODO: Implement
 }
 
+void RTPEndpoint::Update()
+{
+	//Update
+	RequestUpdate();
+}
+
 int RTPEndpoint::RequestUpdate()
 {
-	//Check if joined
-	if (joined)
-		//Remove ourself as listeners
-		joined->Update();
+	//Request FIR
+	RequestFPU();
 }

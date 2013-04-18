@@ -58,7 +58,7 @@ struct MP4RtpTrack
 		{
 			case MediaFrame::Video:
 				//Create video frame
-				frame = new VideoFrame((VideoCodec::Type)codec,65535);
+				frame = new VideoFrame((VideoCodec::Type)codec,262143);
 				break;
 			case MediaFrame::Audio:
 				//Create audio frame

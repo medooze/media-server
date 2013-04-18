@@ -47,7 +47,6 @@ private:
 	pthread_t thread;
 	bool decoding;
 	Joinable *joined;
-
 };
 
 #endif	/* VIDEODECODERWORKER_H */

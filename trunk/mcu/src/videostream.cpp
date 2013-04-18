@@ -623,8 +623,12 @@ int VideoStream::RecVideo()
 			type = (VideoCodec::Type)red->GetPrimaryCodec();
 			//Check it is not ULPFEC redundant packet
 			if (type==VideoCodec::ULPFEC)
+			{
+				//Delete packet
+				delete(packet);
 				//Skip
 				continue;
+			}
 			//Update primary redundant payload
 			buffer = red->GetPrimaryPayloadData();
 			size = red->GetPrimaryPayloadSize();

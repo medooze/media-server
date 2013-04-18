@@ -769,7 +769,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 			}
 		} else
 			//Exit
-			return 0;
+			return Error("-No remote address");
 	}
 
 	//Check if we need to send SR
@@ -816,11 +816,8 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 			return Error("Error protecting RTCP packet [%d]\n",err);
 	}
 
-	//Mandamos el mensaje
-	int ret;
-
-	//if (!(rand() %16))
-		ret = sendto(simSocket,sendPacket,len,0,(sockaddr *)&sendAddr,sizeof(struct sockaddr_in));
+	//Send packet
+	int ret = sendto(simSocket,sendPacket,len,0,(sockaddr *)&sendAddr,sizeof(struct sockaddr_in));
 
 	//Inc stats
 	numSendPackets++;

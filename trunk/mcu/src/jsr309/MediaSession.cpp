@@ -661,12 +661,9 @@ int MediaSession::EndpointAttachToVideoTranscoder(int endpointId,int videoTransc
         //If not found
         if (it==endpoints.end())
                 //Exit
-                return Error("Endpoint not found\n");
+                return Error("Endpoint not found [%d]\n",endpointId);
         //Get it
         Endpoint* endpoint = it->second;
-
-	//Log endpoint tag name
-	Log("-EndpointAttachToVideoTranscoder [%ls]\n",endpoint->GetName().c_str());
 
 	 //Get Video transcoder
         VideoTranscoders::iterator itTranscoder = videoTranscoders.find(videoTranscoderId);
@@ -674,10 +671,13 @@ int MediaSession::EndpointAttachToVideoTranscoder(int endpointId,int videoTransc
         //If not found
         if (itTranscoder==videoTranscoders.end())
                 //Exit
-                return Error("VideoTranscoder not found\n");
+                return Error("VideoTranscoder not found[%d]\n",videoTranscoderId);
 
 	 //Get it
         VideoTranscoder* videoTranscoder = itTranscoder->second;
+
+	//Log endpoint tag name
+	Log("-EndpointAttachToVideoTranscoder [endpoint:%ls,transcoder:%ls]\n",endpoint->GetName().c_str(),videoTranscoder->GetName().c_str());
 
 	//And attach
 	return endpoint->Attach(MediaFrame::Video,videoTranscoder);
@@ -1261,13 +1261,13 @@ int MediaSession::VideoTranscoderAttachToEndpoint(int videoTranscoderId,int endp
         //If not found
         if (itEnd==endpoints.end())
                 //Exit
-                return Error("Endpoint not found\n");
+                return Error("Endpoint not found [%d]\n",endpointId);
 
         //Get it
         Endpoint* endpoint = itEnd->second;
 
 	//Log endpoint tag name
-	Log("-VideoTranscoderAttachToEndpoint [%ls]\n",endpoint->GetName().c_str());
+	Log("-VideoTranscoderAttachToEndpoint [transcoder:%ls,endpoint:%ls]\n",videoTranscoder->GetName().c_str(),endpoint->GetName().c_str());
 
 	//Attach
 	return videoTranscoder->Attach(endpoint->GetJoinable(MediaFrame::Video));
