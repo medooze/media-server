@@ -11,7 +11,7 @@
 VideoTranscoder::VideoTranscoder(std::wstring &name)
 {
 	//Store tag
-	this->tag = tag;
+	this->tag = name;
 
 	//Not inited
 	inited = false;
@@ -27,14 +27,14 @@ VideoTranscoder::~VideoTranscoder()
 
 int VideoTranscoder::Init()
 {
-	Log("-Init VideoTranscoder [%ls]\n",tag.c_str());
+	Log("-Init VideoTranscoder [%ls,encoder:%p,decoder:%p]\n",tag.c_str(),&encoder,&decoder);
 	
 	//Init pipe
 	pipe.Init();
 	//Start encoder
 	encoder.Init(&pipe);
 	//Star decoder
-	encoder.Init(&pipe);
+	decoder.Init(&pipe);
 	//Inited
 	inited = true;
 	//OK

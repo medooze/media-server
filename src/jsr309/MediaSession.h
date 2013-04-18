@@ -73,7 +73,7 @@ public:
 	int EndpointStopSending(int endpointId,MediaFrame::Type media);
 	int EndpointStartReceiving(int endpointId,MediaFrame::Type media,RTPMap& rtpMap);
 	int EndpointStopReceiving(int endpointId,MediaFrame::Type media);
-	
+
 	int EndpointRequestUpdate(int endpointId,MediaFrame::Type media);
 	//Attach intput to
 	int EndpointAttachToPlayer(int endpointId,int playerId,MediaFrame::Type media);

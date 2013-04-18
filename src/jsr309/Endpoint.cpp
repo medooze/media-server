@@ -124,6 +124,8 @@ int Endpoint::StopSending(MediaFrame::Type media)
 
 int Endpoint::StartReceiving(MediaFrame::Type media,RTPMap& rtpMap)
 {
+	Log("-StartReceiving endpoint [name:%ls,media:%s]\n",name.c_str(),MediaFrame::TypeToString(media));
+	
 	//Get rtp enpoint for media
 	RTPEndpoint* rtp = GetRTPEndpoint(media);
 

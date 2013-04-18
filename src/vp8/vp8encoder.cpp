@@ -192,7 +192,6 @@ int VP8Encoder::FastPictureUpdate()
 
 VideoFrame* VP8Encoder::EncodeFrame(BYTE *buffer,DWORD bufferSize)
 {
-
 	if(!opened)
 	{
 		Error("-Codec not opened\n");
@@ -238,7 +237,7 @@ VideoFrame* VP8Encoder::EncodeFrame(BYTE *buffer,DWORD bufferSize)
 	//Check size
 	if (!frame)
 		//Create new frame
-		frame = new VideoFrame(type,65535);
+		frame = new VideoFrame(type,262143);
 
 	//Set width and height
 	frame->SetWidth(width);

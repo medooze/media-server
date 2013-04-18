@@ -102,10 +102,11 @@ int VideoDecoderJoinableWorker::Decode()
 {
 	VideoDecoder*	videoDecoder = NULL;
 	VideoCodec::Type type;
-	int width  = 0;
-	int height = 0;
-	int lastSN = -1;
-	bool lost = false;
+	timeval		lastFPURequest;
+	DWORD		lostCount=0;
+	DWORD		frameSeqNum = RTPPacket::MaxExtSeqNum;
+	DWORD		lastSeq = RTPPacket::MaxExtSeqNum;
+	bool		waitIntra = false;
 
 	Log(">DecodeVideo\n");
 
@@ -119,26 +120,75 @@ int VideoDecoderJoinableWorker::Decode()
 
 		//Get packet in queue
 		RTPPacket* packet = packets.Pop();
-
+		
 		//Check
 		if (!packet)
 			//Check condition again
 			continue;
 
-		//Check
-		if (lastSN!=-1 && lastSN+1!=packet->GetSeqNum())
-			//No lost
-			lost = false;
-		else
-			//Lost packet
-			lost = true;
+		//Get extended sequence number
+		DWORD seq = packet->GetExtSeqNum();
 
-		//Update
-		lastSN = packet->GetSeqNum();
+		//Get packet data
+		BYTE* buffer = packet->GetMediaData();
+		DWORD size = packet->GetMediaLength();
 
-		//Get new type
+		//Get type
 		type = (VideoCodec::Type)packet->GetCodec();
-		
+
+		//Lost packets since last
+		DWORD lost = 0;
+
+		//If not first
+		if (lastSeq!=RTPPacket::MaxExtSeqNum)
+			//Calculate losts
+			lost = seq-lastSeq-1;
+
+		//Increase total lost count
+		lostCount += lost;
+
+		//Update last sequence number
+		lastSeq = seq;
+
+		//Si hemos perdido un paquete or still have not got an iframe
+		if(lostCount>1 || waitIntra)
+		{
+			//Check if we got listener and more than two seconds have elapsed from last request
+			if (joined && getDifTime(&lastFPURequest)>1000000)
+			{
+				//Debug
+				Log("-Requesting FPU lost %d\n",lostCount);
+				//Reset count
+				lostCount = 0;
+				//Request also over rtp
+				joined->Update();
+				//Update time
+				getUpdDifTime(&lastFPURequest);
+				//Waiting for refresh
+				waitIntra = true;
+			}
+		}
+
+		//Check if it is a redundant packet
+		if (type==VideoCodec::RED)
+		{
+			//Get redundant packet
+			RTPRedundantPacket* red = (RTPRedundantPacket*)packet;
+			//Get primary codec
+			type = (VideoCodec::Type)red->GetPrimaryCodec();
+			//Check it is not ULPFEC redundant packet
+			if (type==VideoCodec::ULPFEC)
+			{
+				//Delete packet
+				delete(packet);
+				//Skip
+				continue;
+			}
+			//Update primary redundant payload
+			buffer = red->GetPrimaryPayloadData();
+			size = red->GetPrimaryPayloadSize();
+		}
+
 		//Comprobamos el tipo
 		if ((videoDecoder==NULL) || (type!=videoDecoder->type))
 		{
@@ -147,42 +197,92 @@ int VideoDecoderJoinableWorker::Decode()
 				delete videoDecoder;
 
 			//Creamos uno dependiendo del tipo
-			if (!(videoDecoder = VideoCodecFactory::CreateDecoder(type)))
+			videoDecoder = VideoCodecFactory::CreateDecoder(type);
+
+			//Si es nulo
+			if (videoDecoder==NULL)
+			{
+				Error("Error creando nuevo decodificador de video [%p,%d]\n",this,type);
+				//Delete packet
+				delete(packet);
+				//Next
 				continue;
+			}
 		}
 
+		//Check if we have lost the last packet from the previous frame
+		if (seq>frameSeqNum)
+		{
+			//Try to decode what is in the buffer
+			videoDecoder->DecodePacket(NULL,0,1,1);
+			//Get picture
+			BYTE *frame = videoDecoder->GetFrame();
+			DWORD width = videoDecoder->GetWidth();
+			DWORD height = videoDecoder->GetHeight();
+			//Check values
+			if (frame && width && height)
+			{
+				//Set frame size
+				output->SetVideoSize(width,height);
+				//Send it
+				output->NextFrame(frame);
+			}
+		}
+
+
 		//Lo decodificamos
-		if(!videoDecoder->DecodePacket(packet->GetMediaData(),packet->GetMediaLength(),lost,packet->GetMark()))
+		if(!videoDecoder->DecodePacket(buffer,size,lost,packet->GetMark()))
+		{
+			//Check if we got listener and more than two seconds have elapsed from last request
+			if (joined && getDifTime(&lastFPURequest)>1000000)
+			{
+				//Debug
+				Log("-Requesting FPU decoder error\n");
+				//Reset count
+				lostCount = 0;
+				//Request also over rtp
+				joined->Update();
+				//Update time
+				getUpdDifTime(&lastFPURequest);
+				//Waiting for refresh
+				waitIntra = true;
+			}
+			//Delete packet
+			delete(packet);
+			//Next frame
 			continue;
+		}
 
 		//Si es el ultimo
 		if(packet->GetMark())
 		{
-			//Comprobamos el tama�o
-			if (width!=videoDecoder->GetWidth() || height!=videoDecoder->GetHeight())
-			{
-				//A cambiado o es la primera vez
-				width = videoDecoder->GetWidth();
-				height= videoDecoder->GetHeight();
+			if (videoDecoder->IsKeyFrame())
+				Log("-Got Intra\n");
 
-				Log("-Changing video size %dx%d\n",width,height);
-
-				//POnemos el modo de pantalla
-				if (!output->SetVideoSize(width,height))
-				{
-					Error("Can't update video size\n");
-					break;;
-				}
-			}
+			//No seq number for frame
+			frameSeqNum = RTPPacket::MaxExtSeqNum;
 
 			//Get picture
 			BYTE *frame = videoDecoder->GetFrame();
+			DWORD width = videoDecoder->GetWidth();
+			DWORD height = videoDecoder->GetHeight();
+			//Check values
+			if (frame && width && height)
+			{
+				//Set frame size
+				output->SetVideoSize(width,height);
 
-			//Check size
-			if (width && height && frame)
-				//Lo sacamos
+				//Send it
 				output->NextFrame(frame);
+			}
+			//Check if we got the waiting refresh
+			if (waitIntra && videoDecoder->IsKeyFrame())
+				//Do not wait anymore
+				waitIntra = false;
 		}
+
+		//Delete packet
+		delete(packet);
 	}
 
 	//Borramos el encoder
