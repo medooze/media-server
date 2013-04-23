@@ -12,7 +12,7 @@
 RemoteRateEstimator::RemoteRateEstimator() : bitrateAcu(500)
 {
 	//Not last estimate
-	minConfiguredBitRate	= 30000;
+	minConfiguredBitRate	= 100000;
 	maxConfiguredBitRate	= 30000000;
 	currentBitRate		= 0;
 	maxHoldRate		= 0;
@@ -296,7 +296,7 @@ void RemoteRateEstimator::UpdateMaxBitRateEstimate(float incomingBitRate)
 DWORD RemoteRateEstimator::GetEstimatedBitrate()
 {
 	//Retun estimation
-	return bitrateAcu.IsInWindow() ? currentBitRate*0.80 : 0;
+	return bitrateAcu.IsInWindow() ? currentBitRate : 0;
 }
 
 void RemoteRateEstimator::GetSSRCs(std::list<DWORD> &ssrcs)

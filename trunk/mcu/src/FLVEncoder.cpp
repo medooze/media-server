@@ -21,8 +21,8 @@ FLVEncoder::FLVEncoder()
 	audioCodec = AudioCodec::NELLY11;
 	videoCodec = VideoCodec::SORENSON;
 	//Set values for default video
-	width	= 352;
-	height	= 288;
+	width	= GetWidth(CIF);
+	height	= GetHeight(CIF);
 	bitrate = 512;
 	fps	= 30;
 	intra	= 600;

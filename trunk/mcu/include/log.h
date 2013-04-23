@@ -9,7 +9,7 @@
 #include "config.h"
 #include "tools.h"
 
-inline void Log(const char *msg, ...)
+inline int Log(const char *msg, ...)
 {
 	struct timeval tv;
 	va_list ap;
@@ -19,10 +19,10 @@ inline void Log(const char *msg, ...)
 	vprintf(msg, ap);
 	va_end(ap);
 	fflush(stdout);
-	return ;
+	return 1;
 }
 
-inline void Log2(const char* prefix,const char *msg, ...)
+inline int Log2(const char* prefix,const char *msg, ...)
 {
 	struct timeval tv;
 	va_list ap;
@@ -32,7 +32,7 @@ inline void Log2(const char* prefix,const char *msg, ...)
 	vprintf(msg, ap);
 	va_end(ap);
 	fflush(stdout);
-	return ;
+	return 1;
 }
 
 inline void Debug(const char *msg, ...)
