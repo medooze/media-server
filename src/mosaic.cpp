@@ -150,6 +150,9 @@ int Mosaic::SetSlot(int num,int id,QWORD blockedUntil)
 	//Log
 	Log("-SetSlot [slot=%d,id=%d]\n",num,id);
 
+	//Get the id of the ol participant in that slot
+	int oldId = mosaicPos[num];
+
 	//Set slot to participant id
 	mosaicSlots[num] = id;
 
@@ -175,41 +178,22 @@ int Mosaic::SetSlot(int num,int id,QWORD blockedUntil)
 			it->second = num;
 			//Set slot position
 			mosaicPos[num] = id;
+			//Find old id
+			
 		}
-	} else if (id == SlotFree) {
-		//Get the id of the participant in that slot
-		int partId = mosaicPos[num];
-		//Find it
-		Participants::iterator it = participants.find(partId);
-		//IF it was there
-		if (it!=participants.end())
-			//participant is not shown, yet
-			it->second = NotShown;
-		//Clean slot position
-		mosaicPos[num] = 0;
-	} else if (id == SlotLocked) {
-		//Get the id of the participant in that slot
-		int partId = mosaicPos[num];
-		//Find it
-		Participants::iterator it = participants.find(partId);
-		//IF it was there
-		if (it!=participants.end())
-			//Get next free slot for it
-			it->second = GetNextFreeSlot(partId);
-		//Clean slot position
-		mosaicPos[num] = 0;
-	} else if (id == SlotVAD) {
-		//Get the id of the participant in that slot
-		int partId = mosaicPos[num];
-		//Find it
-		Participants::iterator it = participants.find(partId);
-		//IF it was there
-		if (it!=participants.end())
-			//Get next free slot for it
-			it->second = GetNextFreeSlot(partId);
+	} else {
 		//Clean slot position
 		mosaicPos[num] = 0;
 	}
+	
+	//Try to recolocate old participant
+	Participants::iterator it  = participants.find(oldId);
+	//If it was a proper participantt and still not shown
+	if (it!=participants.end())
+		//Get next free slot for it if possible
+		it->second = GetNextFreeSlot(oldId);
+	//Recalculate positions
+	CalculatePositions();
 
 	//Set blocking time
 	mosaicSlotsBlockingTime[num] = blockedUntil;
@@ -335,7 +319,7 @@ int Mosaic::RemoveParticipant(int id)
 	//Log
 	Log("-RemoveParticipant [%d,%d]\n",id,pos);
 
-	//If  was shown and fixed
+	//If  was shown
 	if (pos>=0 && pos<numSlots)
 	{
 		//Check if it was locked
@@ -345,6 +329,8 @@ int Mosaic::RemoveParticipant(int id)
 		else
 			//Unlock it
 			mosaicPos[pos] = SlotFree;
+		//Clean slot position
+		mosaicPos[pos] = 0;
 		//Unblock
 		mosaicSlotsBlockingTime[pos] = 0;
 	}
@@ -431,11 +417,8 @@ int Mosaic::CalculatePositions()
 		info = it2->second;
 		it = participants.find(id);
 
-
 		if ( info.kickable && it!=participants.end() && it->second >= 0 && it->second < numSlots)
-		{
 			kickables[id] = it->second;
-		}
 	}
 
 	//Pass 2 - reshuffle
@@ -521,29 +504,6 @@ int Mosaic::CalculatePositions()
 				}
 			    }
 			}
-		}
-	}
-	// Dumping positions
-	for (int i=0; i< numSlots; i++)
-	{
-		if ( mosaicSlots[i] == SlotFree )
-		{
-		    if ( mosaicPos[i] > 0 )
-		    {
-			it = participants.find(mosaicPos[i]);
-			if ( it != participants.end() )
-			{
-				// check consistency
-				if ( it->second != i )
-				{
-					mosaicPos[i] = 0;
-				}
-			}
-			else
-			{
-				mosaicPos[i] = 0;
-			}
-		    }
 		}
 	}
 }

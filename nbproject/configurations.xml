@@ -46,7 +46,6 @@
         <in>mp4recorder.h</in>
         <in>mp4streamer.h</in>
         <in>multiconf.h</in>
-        <in>newfile.cpp</in>
         <in>overlay.h</in>
         <in>partedmosaic.h</in>
         <in>participant.h</in>
@@ -94,6 +93,7 @@
         <in>version.h</in>
         <in>video.h</in>
         <in>videomixer.h</in>
+        <in>videopipe.h</in>
         <in>videostream.h</in>
         <in>videotranscoder.h</in>
         <in>waitqueue.h</in>
@@ -153,6 +153,8 @@
           <in>AudioEncoderWorker.h</in>
           <in>AudioMixerResource.cpp</in>
           <in>AudioMixerResource.h</in>
+          <in>AudioTranscoder.cpp</in>
+          <in>AudioTranscoder.h</in>
           <in>Endpoint.cpp</in>
           <in>Endpoint.h</in>
           <in>JSR309Manager.cpp</in>
@@ -176,6 +178,8 @@
           <in>VideoEncoderWorker.h</in>
           <in>VideoMixerResource.cpp</in>
           <in>VideoMixerResource.h</in>
+          <in>VideoTranscoder.cpp</in>
+          <in>VideoTranscoder.h</in>
           <in>xmlrpcjsr309.cpp</in>
         </df>
         <df name="nelly" kind="SOURCE_LOGICAL_FOLDER">
@@ -270,6 +274,7 @@
         <in>vad.cpp</in>
         <in>video.cpp</in>
         <in>videomixer.cpp</in>
+        <in>videopipe.cpp</in>
         <in>videostream.cpp</in>
         <in>websocketserver.cpp</in>
         <in>websocketshandler.cpp</in>

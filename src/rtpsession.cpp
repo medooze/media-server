@@ -167,8 +167,19 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) : remoteRateCo
 	running = false;
 	//No stimator
 	remoteRateEstimator = NULL;
-	//Set version
-	((rtp_hdr_t *)sendPacket)->version = RTP_VERSION;
+	//Modificamos las cabeceras del packete
+	rtp_hdr_t *headers = (rtp_hdr_t *)sendPacket;
+	//Init sned packet
+	headers->version = RTP_VERSION;
+	headers->ssrc = htonl(sendSSRC);
+
+	//Clear send addr
+	memset(&sendAddr,0,sizeof(struct sockaddr_in));
+	memset(&sendRtcpAddr,   0,sizeof(struct sockaddr_in));
+
+	//Set family
+	sendAddr.sin_family     	= AF_INET;
+	sendRtcpAddr.sin_family 	= AF_INET;
 }
 
 /*************************
@@ -492,33 +503,29 @@ bool RTPSession::SetSendingCodec(DWORD codec)
 ***********************************/
 int RTPSession::SetRemotePort(char *ip,int sendPort)
 {
+	//Get ip addr
+	DWORD ipAddr = inet_addr(ip);
+
+	//If we already have one and it is a NATed
+	if (recIP!=INADDR_ANY && ipAddr==INADDR_ANY)
+		//Exit
+		return Log("-SetRemotePort NAT already binded sucessfully to [%s:%d]\n",inet_ntoa(recIP),recPort);
+
+	//Ok, let's et it
 	Log("-SetRemotePort [%s:%d]\n",ip,sendPort);
 
-	//Modificamos las cabeceras del packete
-	rtp_hdr_t *headers = (rtp_hdr_t *)sendPacket;
-	
-	//Set it in packet
-	headers->ssrc = htonl(sendSSRC);
-
-	//Preparamos las direcciones de envio
-	memset(&sendAddr,       0,sizeof(struct sockaddr_in));
-	memset(&sendRtcpAddr,   0,sizeof(struct sockaddr_in));
-	
-	//Los rellenamos
-	sendAddr.sin_family     	= AF_INET;
-	sendRtcpAddr.sin_family 	= AF_INET;
-
 	//Ip y puerto de destino
-	sendAddr.sin_addr.s_addr 	= inet_addr(ip);
-	sendRtcpAddr.sin_addr.s_addr 	= inet_addr(ip);
+	sendAddr.sin_addr.s_addr 	= ipAddr;
+	sendRtcpAddr.sin_addr.s_addr 	= ipAddr;
 	sendAddr.sin_port 		= htons(sendPort);
+	
 	//Check if doing rtcp muxing
 	if (muxRTCP)
 		//Same than rtp
-		sendRtcpAddr.sin_port 		= htons(sendPort);
+		sendRtcpAddr.sin_port 	= htons(sendPort);
 	else
 		//One more than rtp
-		sendRtcpAddr.sin_port 		= htons(sendPort+1);
+		sendRtcpAddr.sin_port 	= htons(sendPort+1);
 
 	//Open rtp and rtcp ports
 	sendto(simSocket,rtpEmpty,sizeof(rtpEmpty),0,(sockaddr *)&sendAddr,sizeof(struct sockaddr_in));
@@ -559,12 +566,13 @@ int RTPSession::Init()
 	
 	Log(">Init RTPSession\n");
 
-	sockaddr_in sendAddr;
+	sockaddr_in recAddr;
 
 	//Clear addr
-	memset(&sendAddr,0,sizeof(struct sockaddr_in));
+	memset(&recAddr,0,sizeof(struct sockaddr_in));
+
 	//Set family
-	sendAddr.sin_family = AF_INET;
+	recAddr.sin_family     	= AF_INET;
 
 	//Get two consecutive ramdom ports
 	while (retries++<100)
@@ -597,9 +605,9 @@ int RTPSession::Init()
 			simPort &= 0xFFFFFFFE;
 		}
 		//Try to bind to port
-		sendAddr.sin_port = htons(simPort);
+		recAddr.sin_port = htons(simPort);
 		//Bind the rtcp socket
-		if(bind(simSocket,(struct sockaddr *)&sendAddr,sizeof(struct sockaddr_in))!=0)
+		if(bind(simSocket,(struct sockaddr *)&recAddr,sizeof(struct sockaddr_in))!=0)
 			//Try again
 			continue;
 		//Create new sockets
@@ -607,9 +615,9 @@ int RTPSession::Init()
 		//Next port
 		simRtcpPort = simPort+1;
 		//Try to bind to port
-		sendAddr.sin_port = htons(simRtcpPort);
+		recAddr.sin_port = htons(simRtcpPort);
 		//Bind the rtcp socket
-		if(bind(simRtcpSocket,(struct sockaddr *)&sendAddr,sizeof(struct sockaddr_in))!=0)
+		if(bind(simRtcpSocket,(struct sockaddr *)&recAddr,sizeof(struct sockaddr_in))!=0)
 		{
 			//Use random
 			simPort = 0;
@@ -1151,6 +1159,11 @@ int RTPSession::ReadRTP()
 	//Get type
 	BYTE type = RTPPacket::GetType(buffer);
 
+	//Check rtp map
+	if (rtpMapIn)
+		//Error
+		return Error("-RTP map not set");
+	
 	//Set initial codec
 	BYTE codec = rtpMapIn->GetCodecForType(type);
 
@@ -1939,7 +1952,7 @@ void RTPSession::ReSendPacket(int seq)
 int RTPSession::SendTempMaxMediaStreamBitrateNotification(DWORD bitrate,DWORD overhead)
 {
 	Log("-SendTempMaxMediaStreamBitrateNotification [%d,%d]\n",bitrate,overhead);
-	
+
 	//Create rtcp sender retpor
 	RTCPCompoundPacket* rtcp = CreateSenderReport();
 
