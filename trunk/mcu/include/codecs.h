@@ -2,6 +2,7 @@
 #define _CODECS_H_
 
 #include "config.h"
+#include "media.h"
 #include <map>
 
 class AudioCodec
@@ -61,5 +62,19 @@ public:
 	}
 	typedef std::map<int,Type> RTPMap;
 };
+
+static const char* GetNameForCodec(MediaFrame::Type media,DWORD codec)
+{
+	switch (media)
+	{
+		case MediaFrame::Audio:
+			return AudioCodec::GetNameFor((AudioCodec::Type)codec);
+		case MediaFrame::Video:
+			return VideoCodec::GetNameFor((VideoCodec::Type)codec);
+		case MediaFrame::Text:
+			return TextCodec::GetNameFor((TextCodec::Type)codec);
+	}
+	return "unknown media";
+}
 
 #endif
