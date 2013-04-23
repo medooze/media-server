@@ -116,7 +116,6 @@ private:
 	int  ReadRTP();
 	int  ReadRTCP();
 	void ProcessRTCPPacket(RTCPCompoundPacket *packet);
-	void SetSendingType(int type);
 	void ReSendPacket(int seq);
 	int Run();
 private:

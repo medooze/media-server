@@ -169,17 +169,10 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) : remoteRateCo
 	remoteRateEstimator = NULL;
 	//Modificamos las cabeceras del packete
 	rtp_hdr_t *headers = (rtp_hdr_t *)sendPacket;
-	//Init sned packet
-	headers->version = RTP_VERSION;
-	headers->ssrc = htonl(sendSSRC);
-
-	//Clear send addr
-	memset(&sendAddr,0,sizeof(struct sockaddr_in));
-	memset(&sendRtcpAddr,   0,sizeof(struct sockaddr_in));
-
+	
 	//Set family
-	sendAddr.sin_family     	= AF_INET;
-	sendRtcpAddr.sin_family 	= AF_INET;
+	sendAddr.sin_family     = AF_INET;
+	sendRtcpAddr.sin_family = AF_INET;
 }
 
 /*************************
@@ -236,6 +229,7 @@ void RTPSession::SetSendingRTPMap(RTPMap &map)
 	//Clone it
 	rtpMapOut = new RTPMap(map);
 }
+
 int RTPSession::SetLocalCryptoSDES(const char* suite, const char* key64)
 {
 	err_status_t err;
@@ -454,47 +448,34 @@ int RTPSession::GetLocalPort()
 	return simPort;
 }
 
-/***********************************
-* SetRemotePort
-*	Inicia la sesion rtp de video remota
-***********************************/
-void RTPSession::SetSendingType(int type)
-{
-	Log("-SetSendingType [type:%d]\n",type);
-
-	//Set type in header
-	((rtp_hdr_t *)sendPacket)->pt = type;
-
-	//Set type
-	sendType = type;
-}
-
 bool RTPSession::SetSendingCodec(DWORD codec)
 {
-	//If we have rtp map
-	if (rtpMapOut)
+	//Check rtp map
+	if (!rtpMapOut)
+		//Error
+		return Error("-SetSendingCodec error: no out RTP map\n");
+
+	//Try to find it in the map
+	for (RTPMap::iterator it = rtpMapOut->begin(); it!=rtpMapOut->end(); ++it)
 	{
-		//Try to find it in the map
-		for (RTPMap::iterator it = rtpMapOut->begin(); it!=rtpMapOut->end(); ++it)
+		//Is it ourr codec
+		if (it->second==codec)
 		{
-			//Is it ourr codec
-			if (it->second==codec)
-			{
-				//Set it
-				SetSendingType(it->first);
-				//and we are done
-				return true;
-			}
+			//Get type
+			DWORD type = it->first;
+			//Log it
+			Log("-SetSendingCodec [codec:%s,type:%d]\n",GetNameForCodec(media,codec),type);
+			//Set type in header
+			((rtp_hdr_t *)sendPacket)->pt = type;
+			//Set type
+			sendType = type;
+			//and we are done
+			return true;
 		}
-	} else {
-		//Send codec as it is
-		SetSendingType(codec);
-		//It is ok for now
-		return true;
 	}
 
 	//Not found
-	return Error("RTP codec mapping not found\n");
+	return Error("-SetSendingCodec error: codec mapping not found\n");
 }
 
 /***********************************
@@ -787,6 +768,10 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 	
 	//Modificamos las cabeceras del packete
 	rtp_hdr_t *headers = (rtp_hdr_t *)sendPacket;
+
+	//Init send packet
+	headers->version = RTP_VERSION;
+	headers->ssrc = htonl(sendSSRC);
 
 	//Calculate last timestamp
 	sendLastTime = sendTime + timestamp;
@@ -1162,7 +1147,7 @@ int RTPSession::ReadRTP()
 	//Check rtp map
 	if (!rtpMapIn)
 		//Error
-		return Error("-RTP map not set");
+		return Error("-RTP map not set\n");
 	
 	//Set initial codec
 	BYTE codec = rtpMapIn->GetCodecForType(type);

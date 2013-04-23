@@ -207,7 +207,7 @@ void* VideoStream::startReceivingVideo(void *par)
 ***************************************/
 int VideoStream::StartSending(char *sendVideoIp,int sendVideoPort,RTPMap& rtpMap)
 {
-	Log(">StartSending video [%s,%d]\n",sendVideoIp,sendVideoPort);
+	Log(">StartSendingVideo [%s,%d]\n",sendVideoIp,sendVideoPort);
 
 	//Si estabamos mandando tenemos que parar
 	if (sendingVideo)
