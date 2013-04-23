@@ -509,7 +509,7 @@ int RTPSession::SetRemotePort(char *ip,int sendPort)
 	//If we already have one and it is a NATed
 	if (recIP!=INADDR_ANY && ipAddr==INADDR_ANY)
 		//Exit
-		return Log("-SetRemotePort NAT already binded sucessfully to [%s:%d]\n",inet_ntoa(recIP),recPort);
+		return Log("-SetRemotePort NAT already binded sucessfully to [%s:%d]\n",inet_ntoa(sendAddr.sin_addr),recPort);
 
 	//Ok, let's et it
 	Log("-SetRemotePort [%s:%d]\n",ip,sendPort);
