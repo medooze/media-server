@@ -1160,7 +1160,7 @@ int RTPSession::ReadRTP()
 	BYTE type = RTPPacket::GetType(buffer);
 
 	//Check rtp map
-	if (rtpMapIn)
+	if (!rtpMapIn)
 		//Error
 		return Error("-RTP map not set");
 	
