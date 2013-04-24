@@ -466,7 +466,8 @@ int MediaSession::EndpointSetRTPProperties(int endpointId,MediaFrame::Type media
                 return Error("Endpoint not found\n");
         //Get it
         Endpoint* endpoint = it->second;
-
+	//Call it
+	return endpoint->SetRTPProperties(media,properties);
 }
 
 //Endpoint Video functionality
@@ -1201,6 +1202,25 @@ int MediaSession::VideoTranscoderCreate(std::wstring tag)
         videoTranscoders[videoTranscoderId] = videoTranscoder;
         //Return it
         return videoTranscoderId;
+}
+
+int MediaSession::VideoTranscoderFPU(int videoTranscoderId)
+{
+	//Get Player
+        VideoTranscoders::iterator it = videoTranscoders.find(videoTranscoderId);
+
+        //If not found
+        if (it==videoTranscoders.end())
+                //Exit
+                return Error("VideoTranscoder not found [%d]\n",videoTranscoderId);
+        //Get it
+        VideoTranscoder* videoTranscoder = it->second;
+
+	//Execute
+	videoTranscoder->Update();
+
+	//OK
+	return 1;
 }
 
 int MediaSession::VideoTranscoderSetCodec(int videoTranscoderId,VideoCodec::Type codec,int size,int fps,int bitrate,int intraPeriod)

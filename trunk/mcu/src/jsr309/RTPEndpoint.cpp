@@ -249,13 +249,16 @@ int RTPEndpoint::Run()
 		//Check type
 		if (packet->GetCodec()==VideoCodec::RED)
 		{
+
 			//Get primary data
 			RTPPacket *primary = ((RTPRedundantPacket*)packet)->CreatePrimaryPacket();
+//			Log("-RED %d %s\n",primary->GetType(),VideoCodec::GetNameFor((VideoCodec::Type)primary->GetCodec()));
 			//Multiplex only primary data
 			Multiplex(*primary);
 			//Delete it
 			delete(primary);
 		} else {
+//			if (packet->GetMedia()==MediaFrame::Video) Log("-PRI %d %s\n",packet->GetType(),VideoCodec::GetNameFor((VideoCodec::Type)packet->GetCodec()));
 			//Multiplex
 			Multiplex(*packet);
 		}
@@ -313,6 +316,7 @@ int RTPEndpoint::Dettach()
 
 void RTPEndpoint::onFPURequested(RTPSession *session)
 {
+	Log("-onFPURequested [joined:%p]\n",joined);
 	//Check if joined
 	if (joined)
 		//Request update

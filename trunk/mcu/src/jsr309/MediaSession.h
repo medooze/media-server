@@ -123,6 +123,7 @@ public:
 	int VideoTranscoderCreate(std::wstring tag);
 	int VideoTranscoderDelete(int transcoderId);
 	int VideoTranscoderSetCodec(int transcoderId,VideoCodec::Type codec,int size,int fps,int bitrate,int intraPeriod);
+	int VideoTranscoderFPU(int transcoderId);
 	int VideoTranscoderAttachToEndpoint(int transcoderId,int endpointId);
 	int VideoTranscoderDettach(int transcoderId);
 
