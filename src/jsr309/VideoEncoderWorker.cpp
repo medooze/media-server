@@ -225,6 +225,8 @@ int VideoEncoderMultiplexerWorker::Encode()
 		//Check if we need to send intra
 		if (sendFPU)
 		{
+			//Log
+			Log("-FastPictureUpdate\n");
 			//Set it
 			videoEncoder->FastPictureUpdate();
 			//Do not send anymore

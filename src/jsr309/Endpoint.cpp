@@ -272,24 +272,33 @@ int Endpoint::RequestUpdate(MediaFrame::Type media)
 			if (text)
 				//text
 				return text->RequestUpdate();
+		default:
+			return Error("Unknown media [%d]\n",media);
 	}
 
-	//Nothing
-	return 0;
+	//OK
+	return 1;
 }
+
 int Endpoint::SetLocalCryptoSDES(MediaFrame::Type media,const char* suite, const char* key)
 {
 	switch (media)
 	{
 		case MediaFrame::Audio:
-			return audio->SetLocalCryptoSDES(suite,key);
+			if (audio)
+				return audio->SetLocalCryptoSDES(suite,key);
 		case MediaFrame::Video:
-			return video->SetLocalCryptoSDES(suite,key);
+			if (video)
+				return video->SetLocalCryptoSDES(suite,key);
 		case MediaFrame::Text:
-			return text->SetLocalCryptoSDES(suite,key);
+			if (text)
+				return text->SetLocalCryptoSDES(suite,key);
+		default:
+			return Error("Unknown media [%d]\n",media);
 	}
 
-	return 0;
+	//OK
+	return 1;
 }
 
 int Endpoint::SetRemoteCryptoSDES(MediaFrame::Type media,const char* suite, const char* key)
@@ -302,9 +311,12 @@ int Endpoint::SetRemoteCryptoSDES(MediaFrame::Type media,const char* suite, cons
 			return video->SetRemoteCryptoSDES(suite,key);
 		case MediaFrame::Text:
 			return text->SetRemoteCryptoSDES(suite,key);
+		default:
+			return Error("Unknown media [%d]\n",media);
 	}
 
-	return 0;
+	//OK
+	return 1;
 }
 
 int Endpoint::SetLocalSTUNCredentials(MediaFrame::Type media,const char* username, const char* pwd)
@@ -317,10 +329,14 @@ int Endpoint::SetLocalSTUNCredentials(MediaFrame::Type media,const char* usernam
 			return video->SetLocalSTUNCredentials(username,pwd);
 		case MediaFrame::Text:
 			return text->SetLocalSTUNCredentials(username,pwd);
+		default:
+			return Error("Unknown media [%d]\n",media);
 	}
 
-	return 0;
+	//OK
+	return 1;
 }
+
 int Endpoint::SetRTPProperties(MediaFrame::Type media,const Properties& properties)
 {
 	switch (media)
@@ -331,9 +347,12 @@ int Endpoint::SetRTPProperties(MediaFrame::Type media,const Properties& properti
 			return video->SetProperties(properties);
 		case MediaFrame::Text:
 			return text->SetProperties(properties);
+		default:
+			return Error("Unknown media [%d]\n",media);
 	}
 
-	return 0;
+	//OK
+	return 1;
 }
 
 int Endpoint::SetRemoteSTUNCredentials(MediaFrame::Type media,const char* username, const char* pwd)
@@ -346,7 +365,10 @@ int Endpoint::SetRemoteSTUNCredentials(MediaFrame::Type media,const char* userna
 			return video->SetRemoteSTUNCredentials(username,pwd);
 		case MediaFrame::Text:
 			return text->SetRemoteSTUNCredentials(username,pwd);
+		default:
+			return Error("Unknown media [%d]\n",media);
 	}
 
-	return 0;
+	//OK
+	return 1;
 }

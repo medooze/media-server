@@ -2188,6 +2188,39 @@ xmlrpc_value* VideoTranscoderDelete(xmlrpc_env *env, xmlrpc_value *param_array, 
 	return xmlok(env);
 }
 
+xmlrpc_value* VideoTranscoderFPU(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+	UTF8Parser parser;
+	MediaSession *session;
+	JSR309Manager *jsr = (JSR309Manager*)user_data;
+
+	//Parseamos
+	int sessionId;
+	int videoTranscoderId;
+	xmlrpc_parse_value(env, param_array, "(ii)", &sessionId, &videoTranscoderId);
+
+	//Comprobamos si ha habido error
+	if(env->fault_occurred)
+		return 0;
+
+	//Obtenemos la referencia
+	if(!jsr->GetMediaSessionRef(sessionId,&session))
+		return xmlerror(env,"The media Session does not exist");
+
+	//Create player
+	int res = session->VideoTranscoderFPU(videoTranscoderId);
+
+	//Liberamos la referencia
+	jsr->ReleaseMediaSessionRef(sessionId);
+
+	//Salimos
+	if(!res)
+		return xmlerror(env,"Error\n");
+
+	//Devolvemos el resultado
+	return xmlok(env);
+}
+
 xmlrpc_value* VideoTranscoderSetCodec(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	UTF8Parser parser;
@@ -2357,6 +2390,7 @@ XmlHandlerCmd jsr309CmdList[] =
 	{"VideoTranscoderCreate",		VideoTranscoderCreate},
 	{"VideoTranscoderDelete",		VideoTranscoderDelete},
 	{"VideoTranscoderSetCodec",		VideoTranscoderSetCodec},
+	{"VideoTranscoderFPU",			VideoTranscoderFPU},
 	{"VideoTranscoderAttachToEndpoint",	VideoTranscoderAttachToEndpoint},
 	{"VideoTranscoderDettach",		VideoTranscoderDettach},
 	{NULL,NULL}

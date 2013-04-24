@@ -167,9 +167,7 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) : remoteRateCo
 	running = false;
 	//No stimator
 	remoteRateEstimator = NULL;
-	//Modificamos las cabeceras del packete
-	rtp_hdr_t *headers = (rtp_hdr_t *)sendPacket;
-	
+
 	//Set family
 	sendAddr.sin_family     = AF_INET;
 	sendRtcpAddr.sin_family = AF_INET;
@@ -725,7 +723,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 			//Set port
 			sendAddr.sin_port = htons(recPort);
 			//Log
-			Log("-RTPSession NAT: Now sending to [%s:%d].\n", inet_ntoa(sendAddr.sin_addr), recPort);
+			Log("-RTPSession NAT: Now sending %s to [%s:%d].\n", MediaFrame::TypeToString(media),inet_ntoa(sendAddr.sin_addr), recPort);
 			//Check if using ice
 			if (iceRemoteUsername && iceRemotePwd && iceLocalUsername)
 			{
@@ -758,7 +756,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 			}
 		} else
 			//Exit
-			return Error("-No remote address");
+			return Error("-No remote address\n");
 	}
 
 	//Check if we need to send SR
