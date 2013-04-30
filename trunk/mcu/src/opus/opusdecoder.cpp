@@ -34,5 +34,5 @@ int OpusDecoder::Decode(BYTE *in,int inLen,SWORD* out,int outLen)
 	if (ret<0)
 		return Error("-Opus decode error [%d]",ret);
 	//return decoded samples
-	retturn ret;
+	return ret;
 }
