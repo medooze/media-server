@@ -328,16 +328,20 @@ int AudioStream::RecAudio()
 		//Lo decodificamos
 		int len = codec->Decode(packet->GetMediaData(),packet->GetMediaLength(),playBuffer,playBufferSize);
 
-		//Obtenemos el tiempo del frame
-		frameTime = packet->GetTimestamp() - lastTime;
+		//Check len
+		if (len>0)
+		{
+			//Obtenemos el tiempo del frame
+			frameTime = packet->GetTimestamp() - lastTime;
 
-		//Actualizamos el ultimo envio
-		lastTime = packet->GetTimestamp();
+			//Actualizamos el ultimo envio
+			lastTime = packet->GetTimestamp();
 
-		//Check muted
-		if (!muted)
-			//Y lo reproducimos
-			audioOutput->PlayBuffer(playBuffer,len,frameTime);
+			//Check muted
+			if (!muted)
+				//Y lo reproducimos
+				audioOutput->PlayBuffer(playBuffer,len,frameTime);
+		}
 
 
 		//Aumentamos el numero de bytes recividos

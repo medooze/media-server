@@ -29,5 +29,10 @@ OpusDecoder::~OpusDecoder()
 int OpusDecoder::Decode(BYTE *in,int inLen,SWORD* out,int outLen)
 {
 	//Decode without FEC
-	return opus_decode(dec,in,inLen,out,outLen,0);
+	int ret = opus_decode(dec,in,inLen,out,outLen,0);
+	//Check error
+	if (ret<0)
+		return Error("-Opus decode error [%d]",ret);
+	//return decoded samples
+	retturn ret;
 }
