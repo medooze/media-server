@@ -40,9 +40,9 @@ int VideoTranscoder::Init()
 	//OK
 	return 1;
 }
-int VideoTranscoder::SetCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int qMin, int qMax,int intraPeriod)
+int VideoTranscoder::SetCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int intraPeriod)
 {
-	return encoder.SetCodec(codec,mode,fps,bitrate,qMin,qMax,intraPeriod);
+	return encoder.SetCodec(codec,mode,fps,bitrate,intraPeriod);
 }
 int VideoTranscoder::End()
 {
@@ -62,10 +62,17 @@ void VideoTranscoder::AddListener(Joinable::Listener *listener)
 {
 	encoder.AddListener(listener);
 }
+
 void VideoTranscoder::Update()
 {
 	encoder.Update();
 }
+
+void VideoTranscoder::SetREMB(DWORD estimation)
+{
+	encoder.SetREMB(estimation);
+}
+
 void VideoTranscoder::RemoveListener(Joinable::Listener *listener)
 {
 	encoder.RemoveListener(listener);

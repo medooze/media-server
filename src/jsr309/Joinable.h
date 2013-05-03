@@ -22,6 +22,8 @@ public:
 public:
 	virtual void AddListener(Listener *listener) = 0;
 	virtual void Update() = 0;
+	virtual void SetREMB(DWORD estimation) = 0;
+
 	virtual void RemoveListener(Listener *listener) = 0;
 };
 

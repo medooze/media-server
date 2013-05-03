@@ -969,7 +969,7 @@ int MediaSession::VideoMixerPortSetCodec(int mixerId,int portId,VideoCodec::Type
         VideoMixerResource* videoMixer = it->second;
 
 	//Execute
-	return videoMixer->SetPortCodec(portId,codec,size,fps,bitrate,1,52,intraPeriod);
+	return videoMixer->SetPortCodec(portId,codec,size,fps,bitrate,intraPeriod);
 }
 
 int MediaSession::VideoMixerPortDelete(int mixerId,int portId)
@@ -1236,7 +1236,7 @@ int MediaSession::VideoTranscoderSetCodec(int videoTranscoderId,VideoCodec::Type
         VideoTranscoder* videoTranscoder = it->second;
 
 	//Execute
-	return videoTranscoder->SetCodec(codec,size,fps,bitrate,1,52,intraPeriod);
+	return videoTranscoder->SetCodec(codec,size,fps,bitrate,intraPeriod);
 }
 
 int MediaSession::VideoTranscoderDelete(int videoTranscoderId)

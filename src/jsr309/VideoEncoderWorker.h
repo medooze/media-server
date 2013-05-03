@@ -23,12 +23,13 @@ public:
 	virtual ~VideoEncoderMultiplexerWorker();
 
 	int Init(VideoInput *input);
-	int SetCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int qMin=0, int qMax=0,int intraPeriod=0);
+	int SetCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int intraPeriod);
 	int End();
 	
 	//Joinable interface
 	virtual void AddListener(Listener *listener);
 	virtual void Update();
+	virtual void SetREMB(int bitrate);
 	virtual void RemoveListener(Listener *listener);
 
 private:
@@ -44,14 +45,14 @@ private:
 	VideoInput *input;
 	VideoCodec::Type codec;
 
-	int mode;	//Modo de captura de video actual
-	int width;	//Ancho de la captura
-	int height;	//Alto de la captur
+	int mode;	
+	int width;	
+	int height;	
 	int fps;
 	int bitrate;
-	int qMin;
-	int qMax;
 	int intraPeriod;
+	int videoBitrateLimit;
+	int videoBitrateLimitCount;
 
 	pthread_t	thread;
 	pthread_mutex_t mutex;

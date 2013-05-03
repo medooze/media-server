@@ -7,7 +7,9 @@
 
 #include "VideoEncoderWorker.h"
 #include "log.h"
+#include "tools.h"
 #include "RTPMultiplexer.h"
+#include "acumulator.h"
 
 VideoEncoderMultiplexerWorker::VideoEncoderMultiplexerWorker() : RTPMultiplexerSmoother()
 {
@@ -35,17 +37,15 @@ int VideoEncoderMultiplexerWorker::Init(VideoInput *input)
 	this->input = input;
 }
 
-int VideoEncoderMultiplexerWorker::SetCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int qMin, int qMax,int intraPeriod)
+int VideoEncoderMultiplexerWorker::SetCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int intraPeriod)
 {
-	Log("-SetVideoCodec [%s,%d,%d,%d,%d,%d,%d]\n",VideoCodec::GetNameFor(codec),codec,fps,bitrate,qMin,qMax,intraPeriod);
+	Log("-SetVideoCodec [%s,%d,%d,%d,%d,]\n",VideoCodec::GetNameFor(codec),codec,fps,bitrate,intraPeriod);
 
 	//Store parameters
 	this->codec	= codec;
 	this->mode	= mode;
 	this->bitrate	= bitrate;
 	this->fps	= fps;
-	this->qMin	= qMin;
-	this->qMax	= qMax;
 	this->intraPeriod = intraPeriod;
 
 	//Get width and height
@@ -95,6 +95,7 @@ int VideoEncoderMultiplexerWorker::Start()
 
 	return 1;
 }
+
 void * VideoEncoderMultiplexerWorker::startEncoding(void *par)
 {
 	Log("VideoEncoderMultiplexerWorkerThread [%d]\n",getpid());
@@ -171,18 +172,38 @@ void VideoEncoderMultiplexerWorker::Update()
 	sendFPU = true;
 }
 
+void VideoEncoderMultiplexerWorker::SetREMB(int estimation)
+{
+	//Check limit with comfigured bitrate
+	if (estimation>bitrate)
+		//Do nothing
+		return;
+	//Set bitrate limit
+	videoBitrateLimit = estimation;
+	//Set limit of bitrate to 1 second;
+	videoBitrateLimitCount = fps;
+	//Exit
+	return;
+}
+
 int VideoEncoderMultiplexerWorker::Encode()
 {
 	timeval first;
 	timeval prev;
+	DWORD num = 0;
+	QWORD overslept = 0;
 
-	Log(">SendVideo [%d,%d,%d,%d,%d,%d,%d]\n",width,height,bitrate,fps,qMin,qMax,intraPeriod);
+	Acumulator bitrateAcu(1000);
+	Acumulator fpsAcu(1000);
+
+	Log(">SendVideo [width:%d,size:%d,bitrate:%d,fps:%d,intra:%d]\n",width,height,bitrate,fps,intraPeriod);
 
 	//Creamos el encoder
 	VideoEncoder* videoEncoder = VideoCodecFactory::CreateEncoder(codec);
 
 	//Comprobamos que se haya creado correctamente
 	if (videoEncoder == NULL)
+		//error
 		return Error("Can't create video encoder\n");
 
 	//Comrpobamos que tengamos video de entrada
@@ -193,15 +214,18 @@ int VideoEncoderMultiplexerWorker::Encode()
 	if (!input->StartVideoCapture(width,height,fps))
 		return Error("Couldn't set video capture\n");
 
+	//Start at 80%
+	int current = bitrate*0.8;
+
 	//Iniciamos el birate y el framerate
-	videoEncoder->SetFrameRate((float)fps,bitrate,intraPeriod);
+	videoEncoder->SetFrameRate((float)fps,current,intraPeriod);
+
+	//No wait for first
+	QWORD frameTime = 0;
 
 	//Iniciamos el tamama�o del encoder
  	videoEncoder->SetSize(width,height);
 	
-	//No wait for first
-	DWORD frameTime = 0;
-
 	//The time of the first one
 	gettimeofday(&first,NULL);
 
@@ -232,6 +256,41 @@ int VideoEncoderMultiplexerWorker::Encode()
 			//Do not send anymore
 			sendFPU = false;
 		}
+		//Calculate target bitrate
+		int target = current;
+
+		//Check temporal limits for estimations
+		if (bitrateAcu.IsInWindow())
+		{
+			//Get real sent bitrate during last second and convert to kbits (*1000/1000)
+			DWORD instant = bitrateAcu.GetInstantAvg();
+			//Check if are not in quarentine period or sending below limits
+			if (videoBitrateLimitCount || instant<videoBitrateLimit)
+				//Increase a 8% each second o 10kbps
+				target += fmax(target*0.08,10000)/fps+1;
+			else
+				//Calculate decrease rate and apply it
+				target = videoBitrateLimit;
+		}
+
+		//check max bitrate
+		if (target>bitrate)
+			//Set limit to max bitrate
+			target = bitrate;
+
+		//Check limits counter
+		if (videoBitrateLimitCount>0)
+			//One frame less of limit
+			videoBitrateLimitCount--;
+
+		//Check if we have a new bitrate
+		if (target && target!=current)
+		{
+			//Reset bitrate
+			videoEncoder->SetFrameRate(fps,target,intraPeriod);
+			//Upate current
+			current = target;
+		}
 
 		//Procesamos el frame
 		VideoFrame *videoFrame = videoEncoder->EncodeFrame(pic,input->GetBufferSize());
@@ -248,7 +307,7 @@ int VideoEncoderMultiplexerWorker::Encode()
 			//Lock
 			pthread_mutex_lock(&mutex);
 			//Calculate timeout
-			calcAbsTimeout(&ts,&prev,frameTime);
+			calcAbsTimeoutNS(&ts,&prev,frameTime-overslept);
 			//Wait next or stopped
 			int canceled  = !pthread_cond_timedwait(&cond,&mutex,&ts);
 			//Unlock
@@ -257,10 +316,19 @@ int VideoEncoderMultiplexerWorker::Encode()
 			if (canceled)
 				//Exit
 				break;
+			//Get differencence
+			QWORD diff = getDifTime(&prev);
+			//If it is biffer
+			if (diff>frameTime)
+				//Get what we have slept more
+				overslept = diff-frameTime;
+			else
+				//No oversletp (shoulddn't be possible)
+				overslept = 0;
 		}
 		
 		//Set next one
-		frameTime = 1000/fps;
+		frameTime = 1000000/fps;
 
 		//Set frame timestamp
 		videoFrame->SetTimestamp(getDifTime(&first)/1000);
@@ -269,7 +337,7 @@ int VideoEncoderMultiplexerWorker::Encode()
 		getUpdDifTime(&prev);
 
 		//Send it smoothly
-		SmoothFrame(videoFrame,frameTime);
+		SmoothFrame(videoFrame,frameTime/1000);
 	}
 
 	Log("-SendVideo out of loop\n");
@@ -277,8 +345,10 @@ int VideoEncoderMultiplexerWorker::Encode()
 	//Terminamos de capturar
 	input->StopVideoCapture();
 
-	//Borramos el encoder
-	delete videoEncoder;
+	//Check
+	if (videoEncoder)
+		//Borramos el encoder
+		delete videoEncoder;
 
 	//Salimos
 	Log("<SendVideo [%d]\n",encoding);

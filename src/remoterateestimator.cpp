@@ -341,3 +341,8 @@ void RemoteRateEstimator::SetRTT(DWORD rtt)
 	//Update
 	this->rtt = rtt;
 }
+
+void RemoteRateEstimator::SetTemporalMaxLimit(DWORD limit)
+{
+	//Do nothing yet
+}

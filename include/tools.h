@@ -145,6 +145,25 @@ inline void calcAbsTimeout(struct timespec *ts,struct timeval *tp,DWORD timeout)
 }
 
 /*****************************************
+ * calcAbsTimout
+ *      Create timespec value to be used in timeout calls
+ **************************************/
+inline void calcAbsTimeoutNS(struct timespec *ts,struct timeval *tp,QWORD timeout)
+{
+	ts->tv_sec  = tp->tv_sec + timeout/1000000;
+	ts->tv_nsec = tp->tv_usec * 1000 + (timeout%1000000)*1000;
+
+	//Check overflowns
+	if (ts->tv_nsec>=1000000000)
+	{
+		//Decrease
+		ts->tv_nsec -= 1000000000;
+		//Inc seconds
+		ts->tv_sec++;
+	}
+}
+
+/*****************************************
  * calcTimout
  *      Create timespec value to be used in timeout calls
  **************************************/

@@ -129,6 +129,9 @@ protected:
 	RTCPCompoundPacket* CreateSenderReport();
 private:
 	typedef std::map<DWORD,RTPTimedPacket*> RTPOrderedPackets;
+protected:
+	RemoteRateControl	remoteRateControl;
+	RemoteRateEstimator*	remoteRateEstimator;
 private:
 	MediaFrame::Type media;
 	Listener* listener;
@@ -207,8 +210,6 @@ private:
 	bool	pendingTMBR;
 	DWORD	pendingTMBBitrate;
 
-	RemoteRateControl	remoteRateControl;
-	RemoteRateEstimator*	remoteRateEstimator;
 	FECDecoder		fec;
 	bool			useFEC;
 	bool			useNACK;

@@ -336,7 +336,16 @@ void RTPEndpoint::onTempMaxMediaStreamBitrateRequest(RTPSession *session,DWORD b
 void RTPEndpoint::Update()
 {
 	//Update
-	RequestUpdate();
+	RequestFPU();
+}
+
+void RTPEndpoint::SetREMB(DWORD estimation)
+{
+	//Check if we have an estimator
+	if (remoteRateEstimator)
+		//Update temporal limit
+		remoteRateEstimator->SetTemporalMaxLimit(estimation);
+
 }
 
 int RTPEndpoint::RequestUpdate()
