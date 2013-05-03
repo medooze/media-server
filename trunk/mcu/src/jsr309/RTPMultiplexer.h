@@ -26,6 +26,7 @@ public:
 	//Joinable interface
 	virtual void AddListener(Listener *listener);
 	virtual void Update();
+	virtual void SetREMB(DWORD estimation);
 	virtual void RemoveListener(Listener *listener);
 private:
 	typedef std::set<Joinable::Listener*> Listeners;

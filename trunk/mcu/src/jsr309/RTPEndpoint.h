@@ -41,6 +41,7 @@ public:
 
 	//Joinable interface
 	virtual void Update();
+	virtual void SetREMB(DWORD estimation);
 
 	//Joinable::Listener
 	virtual void onRTPPacket(RTPPacket &packet);

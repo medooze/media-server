@@ -93,5 +93,10 @@ void RTPMultiplexer::RemoveListener(Listener *listener)
 
 void RTPMultiplexer::Update()
 {
-	//Nothing
+	//Should be overriden
+}
+
+void RTPMultiplexer::SetREMB(DWORD estimation)
+{
+	//Should be overriden
 }

@@ -361,6 +361,7 @@ int VideoStream::SendVideo()
 	timeval first;
 	timeval prev;
 	DWORD num = 0;
+	QWORD overslept = 0;
 
 	Acumulator bitrateAcu(1000);
 	Acumulator fpsAcu(1000);
@@ -390,7 +391,7 @@ int VideoStream::SendVideo()
 	videoEncoder->SetFrameRate(videoFPS,current,videoIntraPeriod);
 
 	//No wait for first
-	DWORD frameTime = 0;
+	QWORD frameTime = 0;
 
 	//Iniciamos el tamama�o del encoder
  	videoEncoder->SetSize(videoGrabWidth,videoGrabHeight);
@@ -479,7 +480,7 @@ int VideoStream::SendVideo()
 			//Lock
 			pthread_mutex_lock(&mutex);
 			//Calculate timeout
-			calcAbsTimeout(&ts,&prev,frameTime);
+			calcAbsTimeoutNS(&ts,&prev,frameTime-overslept);
 			//Wait next or stopped
 			int canceled  = !pthread_cond_timedwait(&cond,&mutex,&ts);
 			//Unlock
@@ -488,10 +489,19 @@ int VideoStream::SendVideo()
 			if (canceled)
 				//Exit
 				break;
+			//Get differencence
+			QWORD diff = getDifTime(&prev);
+			//If it is biffer
+			if (diff>frameTime)
+				//Get what we have slept more
+				overslept = diff-frameTime;
+			else
+				//No oversletp (shoulddn't be possible)
+				overslept = 0;
 		}
 		
 		//Set next one
-		frameTime = 1000/videoFPS;
+		frameTime = 1000000/videoFPS;
 
 		//Add frame size in bits to bitrate calculator
 		bitrateAcu.Update(getDifTime(&first)/1000,videoFrame->GetLength()*8);
@@ -508,7 +518,7 @@ int VideoStream::SendVideo()
 		getUpdDifTime(&prev);
 		
 		//Send it smoothly
-		smoother.SendFrame(videoFrame,frameTime);
+		smoother.SendFrame(videoFrame,frameTime/1000);
 
 		if (num && ( (num%30)==0))
 		{

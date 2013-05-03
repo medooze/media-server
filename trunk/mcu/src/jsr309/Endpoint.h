@@ -61,6 +61,7 @@ private:
 	RTPEndpoint *audio;
 	RTPEndpoint *video;
 	RTPEndpoint *text;
+	RemoteRateEstimator estimator;
 };
 
 #endif	/* ENDPOINT_H */

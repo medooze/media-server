@@ -21,12 +21,13 @@ public:
 	virtual ~VideoTranscoder();
 
 	int Init();
-	int SetCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int qMin=0, int qMax=0,int intraPeriod=0);
+	int SetCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int intraPeriod);
 	int End();
 
 	//Joinable interface
 	virtual void AddListener(Joinable::Listener *listener);
 	virtual void Update();
+	virtual void SetREMB(DWORD estimation);
 	virtual void RemoveListener(Joinable::Listener *listener);
 
 	//Virtuals from Joinable::Listener

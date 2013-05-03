@@ -55,8 +55,12 @@ int Endpoint::Init()
 		audio->Init();
 	//If endpoint for video
 	if (video)
+	{
 		//Init it
 		video->Init();
+		//Set estimator
+		video->SetRemoteRateEstimator(&estimator);
+	}
 	//If endpoint for audio
 	if (text)
 		//Init it
