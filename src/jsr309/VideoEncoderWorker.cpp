@@ -42,11 +42,14 @@ int VideoEncoderMultiplexerWorker::SetCodec(VideoCodec::Type codec,int mode,int 
 	Log("-SetVideoCodec [%s,%d,%d,%d,%d,]\n",VideoCodec::GetNameFor(codec),codec,fps,bitrate,intraPeriod);
 
 	//Store parameters
-	this->codec	= codec;
-	this->mode	= mode;
-	this->bitrate	= bitrate;
-	this->fps	= fps;
+	this->codec	  = codec;
+	this->mode	  = mode;
+	this->bitrate	  = bitrate;
+	this->fps	  = fps;
 	this->intraPeriod = intraPeriod;
+	//Init limits
+	this->videoBitrateLimit		= bitrate;
+	this->videoBitrateLimitCount	= fps;
 
 	//Get width and height
 	width = GetWidth(mode);
@@ -174,16 +177,10 @@ void VideoEncoderMultiplexerWorker::Update()
 
 void VideoEncoderMultiplexerWorker::SetREMB(int estimation)
 {
-	//Check limit with comfigured bitrate
-	if (estimation>bitrate)
-		//Do nothing
-		return;
 	//Set bitrate limit
-	videoBitrateLimit = estimation;
+	videoBitrateLimit = estimation/1000;
 	//Set limit of bitrate to 1 second;
 	videoBitrateLimitCount = fps;
-	//Exit
-	return;
 }
 
 int VideoEncoderMultiplexerWorker::Encode()
@@ -266,8 +263,8 @@ int VideoEncoderMultiplexerWorker::Encode()
 			DWORD instant = bitrateAcu.GetInstantAvg();
 			//Check if are not in quarentine period or sending below limits
 			if (videoBitrateLimitCount || instant<videoBitrateLimit)
-				//Increase a 8% each second o 10kbps
-				target += fmax(target*0.08,10000)/fps+1;
+				//Increase a 8% each second or fps kbps
+				target += target*0.08/fps+1;
 			else
 				//Calculate decrease rate and apply it
 				target = videoBitrateLimit;
@@ -306,8 +303,17 @@ int VideoEncoderMultiplexerWorker::Encode()
 			timespec ts;
 			//Lock
 			pthread_mutex_lock(&mutex);
+			//Calculate slept time
+			QWORD sleep = frameTime;
+			//Remove extra sleep from prev
+			if (overslept<sleep)
+				//Remove it
+				sleep -= overslept;
+			else
+				//Do not overflow
+				sleep = 1;
 			//Calculate timeout
-			calcAbsTimeoutNS(&ts,&prev,frameTime-overslept);
+			calcAbsTimeoutNS(&ts,&prev,sleep);
 			//Wait next or stopped
 			int canceled  = !pthread_cond_timedwait(&cond,&mutex,&ts);
 			//Unlock
@@ -330,6 +336,12 @@ int VideoEncoderMultiplexerWorker::Encode()
 		//Set next one
 		frameTime = 1000000/fps;
 
+		//Add frame size in bits to bitrate calculator
+	        bitrateAcu.Update(getDifTime(&first)/1000,videoFrame->GetLength()*8);
+
+		//Update fps count
+		fpsAcu.Update(getDifTime(&first)/1000,1);
+
 		//Set frame timestamp
 		videoFrame->SetTimestamp(getDifTime(&first)/1000);
 
@@ -338,6 +350,15 @@ int VideoEncoderMultiplexerWorker::Encode()
 
 		//Send it smoothly
 		SmoothFrame(videoFrame,frameTime/1000);
+
+		//Dump statistics
+		if (num && ((num%fps)==0))
+		{
+			Log("-Send bitrate current=%d avg=%llf rate=[%llf,%llf] fps=[%llf,%llf] limit=%d\n",current,bitrateAcu.GetInstantAvg()/1000,bitrateAcu.GetMinAvg()/1000,bitrateAcu.GetMaxAvg()/1000,fpsAcu.GetMinAvg(),fpsAcu.GetMaxAvg(),videoBitrateLimit);
+			bitrateAcu.ResetMinMax();
+			fpsAcu.ResetMinMax();
+		}
+		num++;
 	}
 
 	Log("-SendVideo out of loop\n");

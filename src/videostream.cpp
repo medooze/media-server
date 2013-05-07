@@ -436,8 +436,8 @@ int VideoStream::SendVideo()
 			DWORD instant = bitrateAcu.GetInstantAvg();
 			//Check if are not in quarentine period or sending below limits
 			if (videoBitrateLimitCount || instant<videoBitrateLimit)
-				//Increase a 8% each second o 10kbps
-				target += fmax(target*0.08,10000)/videoFPS+1;
+				//Increase a 8% each second or fps kbps
+				target += target*0.08/videoFPS+1;
 			else
 				//Calculate decrease rate and apply it
 				target = videoBitrateLimit;
@@ -479,8 +479,17 @@ int VideoStream::SendVideo()
 			timespec ts;
 			//Lock
 			pthread_mutex_lock(&mutex);
+			//Calculate slept time
+			QWORD sleep = frameTime;
+			//Remove extra sleep from prev
+			if (overslept<sleep)
+				//Remove it
+				sleep -= overslept;
+			else
+				//Do not overflow
+				sleep = 1;
 			//Calculate timeout
-			calcAbsTimeoutNS(&ts,&prev,frameTime-overslept);
+			calcAbsTimeoutNS(&ts,&prev,sleep);
 			//Wait next or stopped
 			int canceled  = !pthread_cond_timedwait(&cond,&mutex,&ts);
 			//Unlock
@@ -520,9 +529,10 @@ int VideoStream::SendVideo()
 		//Send it smoothly
 		smoother.SendFrame(videoFrame,frameTime/1000);
 
-		if (num && ( (num%30)==0))
+		//Dump statistics
+		if (num && ((num%videoFPS)==0))
 		{
-			//Log("-Send bitrate current=%d avg=%llf rate=[%llf,%llf] fps=[%llf,%llf] limit=%d\n",current,bitrateAcu.GetInstantAvg()/1000,bitrateAcu.GetMinAvg()/1000,bitrateAcu.GetMaxAvg()/1000,fpsAcu.GetMinAvg(),fpsAcu.GetMaxAvg(),videoBitrateLimit);
+			Log("-Send bitrate current=%d avg=%llf rate=[%llf,%llf] fps=[%llf,%llf] limit=%d\n",current,bitrateAcu.GetInstantAvg()/1000,bitrateAcu.GetMinAvg()/1000,bitrateAcu.GetMaxAvg()/1000,fpsAcu.GetMinAvg(),fpsAcu.GetMaxAvg(),videoBitrateLimit);
 			bitrateAcu.ResetMinMax();
 			fpsAcu.ResetMinMax();
 		}

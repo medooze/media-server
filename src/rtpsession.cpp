@@ -473,7 +473,7 @@ bool RTPSession::SetSendingCodec(DWORD codec)
 	}
 
 	//Not found
-	return Error("-SetSendingCodec error: codec mapping not found\n");
+	return Error("-SetSendingCodec error: codec mapping not found [codec:%s]\n",GetNameForCodec(media,codec));
 }
 
 /***********************************

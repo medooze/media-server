@@ -89,8 +89,8 @@ int AudioMixer::MixAudio()
 		//Block list
 		lstAudiosUse.WaitUnusedAndLock();
 
-		//Get num samples at 8Khz
-		DWORD numSamples = diff*8;
+		//Get num samples at desired rate
+		DWORD numSamples = (diff*rate)/1000;
 
 		//At most the maximum
 		if (numSamples>Sidebar::MIXER_BUFFER_SIZE)
@@ -173,10 +173,15 @@ int AudioMixer::MixAudio()
 * Init
 *	Inicializa el mezclado de audio
 ************************/
-int AudioMixer::Init(bool vad)
+int AudioMixer::Init(bool vad,DWORD rate)
 {
+	Log("-Init audio mixer [vad:%d,rate:%d]\n",vad,rate);
+
 	//Store if we need to use vad or not
 	this->vad = vad;
+
+	//Store rate
+	this->rate = rate;
 
 	// Estamos mzclando
 	mixingAudio = true;

@@ -14,7 +14,7 @@ public:
 	AudioMixer();
 	~AudioMixer();
 
-	int Init(bool vad);
+	int Init(bool vad,DWORD rate = 8000);
 	int CreateMixer(int id);
 	int InitMixer(int id,int sidebarId);
 	int SetMixerSidebar(int id,int sidebarId);
@@ -67,6 +67,7 @@ private:
 	Sidebar*	defaultSidebar;
 	int		numSidebars;
 	bool		vad;
+	DWORD		rate;
 
 };
 
