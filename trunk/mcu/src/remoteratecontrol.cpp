@@ -204,7 +204,7 @@ void RemoteRateControl::UpdateKalman(QWORD now,QWORD tdelta, double tsdelta, DWO
 void RemoteRateControl::UpdateRTT(DWORD rtt)
 {
 	//Check difference
-	if (this->rtt && rtt>this->rtt*1.50 && bitrateCalc.GetInstantAvg())
+	if (this->rtt>40 && rtt>this->rtt*1.50 && bitrateCalc.GetInstantAvg())
 	{
 		//Get target bitrate
 		DWORD target =  bitrateCalc.GetInstantAvg()*0.85;
