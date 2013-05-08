@@ -659,7 +659,7 @@ int RTPSession::SendPacket(RTCPCompoundPacket &rtcp)
 	if (sendRtcpAddr.sin_addr.s_addr == INADDR_ANY)
 	{
 		//Do we have rec ip and doing mux rtcp?
-		if (recIP==INADDR_ANY && !muxRTCP)
+		if (recIP==INADDR_ANY || !muxRTCP)
 			//Exit
 			return Error("-No rtcp ip\n");
 		//Do NAT using rtp values

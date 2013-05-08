@@ -14,24 +14,6 @@
 
 #define interface (vpx_codec_vp8_cx())
 
-static DWORD MaxIntraTarget(DWORD optimalBuffersize,DWORD fps)
-{
-	// Set max to the optimal buffer level (normalized by target BR),
-	// and scaled by a scalePar.
-	// Max target size = scalePar * optimalBufferSize * targetBR[Kbps].
-	// This values is presented in percentage of perFrameBw:
-	// perFrameBw = targetBR[Kbps] * 1000 / frameRate.
-	// The target in % is as follows:
-
-	float scalePar = 0.5;
-	uint32_t targetPct = optimalBuffersize * scalePar * fps / 10;
-
-	// Don't go below 3 times the per frame bandwidth.
-	//const uint32_t minIntraTh = 300;
-	//return (targetPct < minIntraTh) ? minIntraTh : targetPct;
-	return targetPct;
-}
-
 VP8Encoder::VP8Encoder(const Properties& properties)
 {
 	// Set default values
@@ -105,9 +87,14 @@ int VP8Encoder::SetFrameRate(int frames,int kbits,int intraPeriod)
 		//Reconfig
 		if (vpx_codec_enc_config_set(&encoder,&config)!=VPX_CODEC_OK)
 			//Exit
-			return Error("-Reconfig error");
-		//Set mas intra bitrate
-		vpx_codec_control(&encoder, VP8E_SET_MAX_INTRA_BITRATE_PCT,MaxIntraTarget(config.rc_buf_optimal_sz,fps));
+			return Error("-Reconfig error\n");
+		//Set max data rate for Intra frames.
+		//	This value controls additional clamping on the maximum size of a keyframe.
+		//	It is expressed as a percentage of the average per-frame bitrate, with the
+		//	special (and default) value 0 meaning unlimited, or no additional clamping
+		//	beyond the codec's built-in algorithm.
+		//	For example, to allocate no more than 4.5 frames worth of bitrate to a keyframe, set this to 450.
+		vpx_codec_control(&encoder, VP8E_SET_MAX_INTRA_BITRATE_PCT,1);
 	}
 	
 	return 1;
@@ -135,7 +122,7 @@ int VP8Encoder::OpenCodec()
 	config.g_h = height;
 	config.rc_target_bitrate = bitrate;
 	config.g_timebase.num = 1;
-	config.g_timebase.den = 90000;
+	config.g_timebase.den = 1000;
 	config.g_error_resilient = VPX_ERROR_RESILIENT_PARTITIONS;  /**< The frame partitions are
 									 independently decodable by the
 									 bool decoder, meaning that
@@ -152,15 +139,48 @@ int VP8Encoder::OpenCodec()
 	config.g_pass = VPX_RC_ONE_PASS;
 	config.kf_mode = VPX_KF_DISABLED;
 	config.kf_min_dist = intraPeriod;
-	//Below are just copy paste from webrtc code
 	config.rc_resize_allowed = 0;
 	config.rc_min_quantizer = 2;
 	config.rc_max_quantizer = 56;
+	//Rate control adaptation undershoot control.
+	//	This value, expressed as a percentage of the target bitrate, 
+	//	controls the maximum allowed adaptation speed of the codec.
+	//	This factor controls the maximum amount of bits that can be
+	//	subtracted from the target bitrate in order to compensate for
+	//	prior overshoot.
+	//	Valid values in the range 0-1000.
 	config.rc_undershoot_pct = 0;
+	//Rate control adaptation overshoot control.
+	//	This value, expressed as a percentage of the target bitrate, 
+	//	controls the maximum allowed adaptation speed of the codec.
+	//	This factor controls the maximum amount of bits that can be
+	//	added to the target bitrate in order to compensate for prior
+	//	undershoot.
+	//	Valid values in the range 0-1000.
 	config.rc_overshoot_pct = 0;
-	config.rc_buf_initial_sz = 1000/fps;
-	config.rc_buf_optimal_sz = 1000/fps;
+	//Decoder Buffer Size.
+	//	This value indicates the amount of data that may be buffered
+	//	by the decoding application. Note that this value is expressed
+	//	in units of time (milliseconds). For example, a value of 5000
+	//	indicates that the client will buffer (at least) 5000ms worth
+	//	of encoded data. Use the target bitrate (rc_target_bitrate) to
+	//	convert to bits/bytes, if necessary.
 	config.rc_buf_sz = 1000/fps;
+	//Decoder Buffer Initial Size.
+	//	This value indicates the amount of data that will be buffered 
+	//	by the decoding application prior to beginning playback.
+	//	This value is expressed in units of time (milliseconds).
+	//	Use the target bitrate (rc_target_bitrate) to convert to
+	//	bits/bytes, if necessary.
+	config.rc_buf_initial_sz = 1000/fps;
+	//Decoder Buffer Optimal Size.
+	//	This value indicates the amount of data that the encoder should
+	//	try to maintain in the decoder's buffer. This value is expressed
+	//	in units of time (milliseconds).
+	//	Use the target bitrate (rc_target_bitrate) to convert to
+	//	bits/bytes, if necessary.
+	config.rc_buf_optimal_sz = 1000/fps;
+	
 
 	//Check result
 	if (vpx_codec_enc_init(&encoder, interface, &config, VPX_CODEC_USE_OUTPUT_PARTITION)!=VPX_CODEC_OK)
@@ -175,8 +195,13 @@ int VP8Encoder::OpenCodec()
 	vpx_codec_control(&encoder, VP8E_SET_TOKEN_PARTITIONS,VP8_ONE_TOKENPARTITION);
 	//Enable noise reduction
 	vpx_codec_control(&encoder, VP8E_SET_NOISE_SENSITIVITY,0);
-	//Set mas intra bitrate
-	vpx_codec_control(&encoder, VP8E_SET_MAX_INTRA_BITRATE_PCT,MaxIntraTarget(config.rc_buf_optimal_sz,fps));
+	//Set max data rate for Intra frames.
+	//	This value controls additional clamping on the maximum size of a keyframe.
+	//	It is expressed as a percentage of the average per-frame bitrate, with the
+	//	special (and default) value 0 meaning unlimited, or no additional clamping
+	//	beyond the codec's built-in algorithm.
+	//	For example, to allocate no more than 4.5 frames worth of bitrate to a keyframe, set this to 450.
+	vpx_codec_control(&encoder, VP8E_SET_MAX_INTRA_BITRATE_PCT,1);
 
 	// We are opened
 	opened=true;

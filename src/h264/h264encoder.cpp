@@ -117,16 +117,15 @@ int H264Encoder::SetFrameRate(int frames,int kbits,int intraPeriod)
 	//Check if already opened
 	if (opened)
 	{
-		//Reconfig parameters
+		//Reconfig parameters -> FPS is not allowed to be recondigured
 		params.i_keyint_max         = intraPeriod ;
 		params.i_frame_reference    = 1;
 		params.rc.i_rc_method	    = X264_RC_ABR;
 		params.rc.i_bitrate         = bitrate;
 		params.rc.i_vbv_max_bitrate = bitrate;
-		params.rc.i_vbv_buffer_size = bitrate/fps;
+		params.rc.i_vbv_buffer_size = bitrate/params.i_fps_num;
 		params.rc.f_vbv_buffer_init = 0;
 		params.rc.f_rate_tolerance  = 0.1;
-		params.i_fps_num	    = fps;
 		//Reconfig
 		x264_encoder_reconfig(enc,&params);
 	}
@@ -233,7 +232,7 @@ int H264Encoder::OpenCodec()
 	pic.i_type = X264_TYPE_AUTO;
 	
 	// We are opened
-	opened=true;
+	opened = true;
 
 	// Exit
 	return 1;
