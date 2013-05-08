@@ -236,7 +236,7 @@ int VideoEncoderMultiplexerWorker::Encode()
 	while(encoding)
 	{
 		//Nos quedamos con el puntero antes de que lo cambien
-		BYTE *pic=input->GrabFrame();
+		BYTE *pic=input->GrabFrame(frameTime/1000);
 
 		//Check picture
 		if (!pic)

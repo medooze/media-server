@@ -410,7 +410,7 @@ int VideoStream::SendVideo()
 	{
 
 		//Nos quedamos con el puntero antes de que lo cambien
-		BYTE *pic = videoInput->GrabFrame();
+		BYTE *pic = videoInput->GrabFrame(frameTime/1000);
 
 		//Check picture
 		if (!pic)

@@ -13,7 +13,7 @@ public:
 	~PipeVideoInput();
 
 	virtual int   StartVideoCapture(int width,int height,int fps);
-	virtual BYTE* GrabFrame();
+	virtual BYTE* GrabFrame(DWORD timeout);
 	virtual void  CancelGrabFrame();
 	virtual DWORD GetBufferSize();
 	virtual int   StopVideoCapture();

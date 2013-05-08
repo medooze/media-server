@@ -121,7 +121,7 @@ int VideoPipe::StopVideoCapture()
 	return true;
 }
 
-BYTE* VideoPipe::GrabFrame()
+BYTE* VideoPipe::GrabFrame(DWORD timeout)
 {
 	BYTE *pic;
 
@@ -141,8 +141,20 @@ BYTE* VideoPipe::GrabFrame()
 
 	//Miramos a ver si hay un nuevo pict
 	if(imgNew==0)
-		//Esperamos a otro picture
-		pthread_cond_wait(&newPicCond,&newPicMutex);
+	{
+		//If timeout has been specified
+		if (timeout)
+		{
+			timespec   ts;
+			//Calculate timeout
+			calcTimout(&ts,timeout);
+			//wait
+			pthread_cond_timedwait(&newPicCond,&newPicMutex,&ts);
+		} else {
+			//Wait ad infinitum
+			pthread_cond_wait(&newPicCond,&newPicMutex);
+		}
+	}
 
 	//Lo vamos a consumir
 	imgNew=0;
