@@ -540,7 +540,8 @@ int RTMPParticipant::SendVideo()
 	while(sendingVideo)
 	{
 		//Nos quedamos con el puntero antes de que lo cambien
-		BYTE *pic = videoInput->GrabFrame();
+		BYTE *pic = videoInput->GrabFrame(frameTime);
+		
 		//Check picture
 		if (!pic)
 		{

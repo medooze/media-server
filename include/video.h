@@ -68,7 +68,7 @@ class VideoInput
 {
 public:
 	virtual int   StartVideoCapture(int width,int height,int fps)=0;
-	virtual BYTE* GrabFrame()=0;
+	virtual BYTE* GrabFrame(DWORD timeout)=0;
 	virtual void  CancelGrabFrame()=0;
 	virtual DWORD GetBufferSize()=0;
 	virtual int   StopVideoCapture()=0;
