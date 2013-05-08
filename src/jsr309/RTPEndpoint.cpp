@@ -323,7 +323,7 @@ void RTPEndpoint::onFPURequested(RTPSession *session)
 		joined->Update();
 }
 
-void RTPEndpoint::onReceiverEstimatedMaxBitrate(RTPSession *session,DWORD bitrate)
+void RTPEndpoint::onReceiverEstimatedMaxBitrate(RTPSession *session,DWORD estimation)
 {
 	//Check if joined
        if (joined)
