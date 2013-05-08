@@ -214,8 +214,8 @@ int VideoEncoderMultiplexerWorker::Encode()
 	//Start at 80%
 	int current = bitrate*0.8;
 
-	//Iniciamos el birate y el framerate
-	videoEncoder->SetFrameRate((float)fps,current,intraPeriod);
+	//Send at higher bitrate first frame, but skip frames after that so sending bitrate is kept
+	videoEncoder->SetFrameRate(fps,current*5,intraPeriod);
 
 	//No wait for first
 	QWORD frameTime = 0;
@@ -259,21 +259,22 @@ int VideoEncoderMultiplexerWorker::Encode()
 		//Check temporal limits for estimations
 		if (bitrateAcu.IsInWindow())
 		{
-			//Get real sent bitrate during last second and convert to kbits (*1000/1000)
-			DWORD instant = bitrateAcu.GetInstantAvg();
-			//Check if are not in quarentine period or sending below limits
-			if (videoBitrateLimitCount || instant<videoBitrateLimit)
-				//Increase a 8% each second or fps kbps
-				target += target*0.08/fps+1;
-			else
-				//Calculate decrease rate and apply it
+			//Get real sent bitrate during last second and convert to kbits
+			DWORD instant = bitrateAcu.GetInstantAvg()/1000;
+			//If we are in quarentine
+			if (videoBitrateLimitCount)
+				//Limit sending bitrate
 				target = videoBitrateLimit;
+			//Check if sending below limits
+			else if (instant<bitrate)
+				//Increase a 8% each second or fps kbps
+				target += (DWORD)(target*0.08/fps)+1;
 		}
 
-		//check max bitrate
-		if (target>bitrate)
-			//Set limit to max bitrate
-			target = bitrate;
+		//Check target bitrate agains max conf bitrate
+		if (target>bitrate*1.2)
+			//Set limit to max bitrate allowing a 20% overflow so instant bitrate can get closer to target
+			target = bitrate*1.2;
 
 		//Check limits counter
 		if (videoBitrateLimitCount>0)
@@ -333,8 +334,17 @@ int VideoEncoderMultiplexerWorker::Encode()
 				overslept = 0;
 		}
 		
-		//Set next one
-		frameTime = 1000000/fps;
+		//If first
+		if (!frameTime)
+		{
+			//Set frame time, slower
+			frameTime = 5*1000000/fps;
+			//Restore frame rate
+			videoEncoder->SetFrameRate(fps,current,intraPeriod);
+		} else {
+			//Set frame time
+			frameTime = 1000000/fps;
+		}
 
 		//Add frame size in bits to bitrate calculator
 	        bitrateAcu.Update(getDifTime(&first)/1000,videoFrame->GetLength()*8);
@@ -347,12 +357,20 @@ int VideoEncoderMultiplexerWorker::Encode()
 
 		//Set sending time of previous frame
 		getUpdDifTime(&prev);
+		
+		//Calculate sending times based on bitrate
+		DWORD sendingTime = videoFrame->GetLength()*8/current;
+
+		//Adjust to maximum time
+		if (sendingTime>frameTime/1000)
+			//Cap it
+			sendingTime = frameTime/1000;
 
 		//Send it smoothly
-		SmoothFrame(videoFrame,frameTime/1000);
+		SmoothFrame(videoFrame,sendingTime);
 
 		//Dump statistics
-		if (num && ((num%fps)==0))
+		if (num && ((num%fps*4)==0))
 		{
 			Log("-Send bitrate current=%d avg=%llf rate=[%llf,%llf] fps=[%llf,%llf] limit=%d\n",current,bitrateAcu.GetInstantAvg()/1000,bitrateAcu.GetMinAvg()/1000,bitrateAcu.GetMaxAvg()/1000,fpsAcu.GetMinAvg(),fpsAcu.GetMaxAvg(),videoBitrateLimit);
 			bitrateAcu.ResetMinMax();
