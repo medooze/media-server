@@ -96,7 +96,6 @@ int VideoStream::SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitra
 
 int VideoStream::SetTemporalBitrateLimit(int estimation)
 {
-	Log("-SetTemporalBitrateLimit [%d]\n",estimation/1000);
 	//Set bitrate limit
 	videoBitrateLimit = estimation/1000;
 	//Set limit of bitrate to 1 second;

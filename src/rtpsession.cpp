@@ -681,7 +681,7 @@ int RTPSession::SendPacket(RTCPCompoundPacket &rtcp)
 	//If muxin
 	if (muxRTCP)
 		//Send using RTP port
-		ret = sendto(simSocket,data,len,0,(sockaddr *)&sendRtcpAddr,sizeof(struct sockaddr_in));
+		ret = sendto(simSocket,data,len,0,(sockaddr *)&sendAddr,sizeof(struct sockaddr_in));
 	else
 		//Send using RCTP port
 		ret = sendto(simRtcpSocket,data,len,0,(sockaddr *)&sendRtcpAddr,sizeof(struct sockaddr_in));
@@ -1066,6 +1066,7 @@ int RTPSession::ReadRTP()
 		if (rtcp)
 			//Handle incomming rtcp packets
 			ProcessRTCPPacket(rtcp);
+		
 		//Skip
 		return 1;
 	}
