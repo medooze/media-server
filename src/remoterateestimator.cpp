@@ -295,6 +295,7 @@ void RemoteRateEstimator::UpdateMaxBitRateEstimate(float incomingBitRate)
 
 DWORD RemoteRateEstimator::GetEstimatedBitrate()
 {
+	Log("-GetEstimatedBitrate [%d]\n",bitrateAcu.IsInWindow() ? currentBitRate : 0);
 	//Retun estimation
 	return bitrateAcu.IsInWindow() ? currentBitRate : 0;
 }

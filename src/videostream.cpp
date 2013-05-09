@@ -94,14 +94,11 @@ int VideoStream::SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitra
 	return 1;
 }
 
-int VideoStream::SetTemporalBitrateLimit(int bitrate)
+int VideoStream::SetTemporalBitrateLimit(int estimation)
 {
-	//Check limit with comfigured bitrate
-	if (bitrate>videoBitrate)
-		//Do nothing
-		return 1;
+	Log("-SetTemporalBitrateLimit [%d]\n",estimation/1000);
 	//Set bitrate limit
-	videoBitrateLimit = bitrate;
+	videoBitrateLimit = estimation/1000;
 	//Set limit of bitrate to 1 second;
 	videoBitrateLimitCount = videoFPS;
 	//Exit
@@ -547,7 +544,7 @@ int VideoStream::SendVideo()
 		smoother.SendFrame(videoFrame,sendingTime);
 
 		//Dump statistics
-		if (num && ((num%videoFPS*4)==0))
+		if (num && ((num%videoFPS*10)==0))
 		{
 			Log("-Send bitrate current=%d avg=%llf rate=[%llf,%llf] fps=[%llf,%llf] limit=%d\n",current,bitrateAcu.GetInstantAvg()/1000,bitrateAcu.GetMinAvg()/1000,bitrateAcu.GetMaxAvg()/1000,fpsAcu.GetMinAvg(),fpsAcu.GetMaxAvg(),videoBitrateLimit);
 			bitrateAcu.ResetMinMax();

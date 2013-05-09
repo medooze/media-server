@@ -14,7 +14,7 @@ inline int Log(const char *msg, ...)
 	struct timeval tv;
 	va_list ap;
 	gettimeofday(&tv,NULL);
-	printf("[0x%lx][%.11ld.%.3ld]", (long) pthread_self(),(long)tv.tv_sec,(long)tv.tv_usec/1000);
+	printf("[0x%lx][%.10ld.%.3ld][LOG]", (long) pthread_self(),(long)tv.tv_sec,(long)tv.tv_usec/1000);
 	va_start(ap, msg);
 	vprintf(msg, ap);
 	va_end(ap);
@@ -27,7 +27,7 @@ inline int Log2(const char* prefix,const char *msg, ...)
 	struct timeval tv;
 	va_list ap;
 	gettimeofday(&tv,NULL);
-	printf("[0x%lx][%.11ld.%.3ld] %s ", (long) pthread_self(),(long)tv.tv_sec,(long)tv.tv_usec/1000,prefix);
+	printf("[0x%lx][%.10ld.%.3ld][LOG]%s ", (long) pthread_self(),(long)tv.tv_sec,(long)tv.tv_usec/1000,prefix);
 	va_start(ap, msg);
 	vprintf(msg, ap);
 	va_end(ap);
@@ -49,7 +49,7 @@ inline int Error(const char *msg, ...)
 	struct timeval tv;
 	va_list ap;
 	gettimeofday(&tv,NULL);
-	printf("[0x%lx][%.11ld.%.3ld]", (long) pthread_self(),(long)tv.tv_sec,(long)tv.tv_usec/1000);
+	printf("[0x%lx][%.10ld.%.3ld][ERR]", (long) pthread_self(),(long)tv.tv_sec,(long)tv.tv_usec/1000);
 	va_start(ap, msg);
 	vprintf(msg, ap);
 	va_end(ap);

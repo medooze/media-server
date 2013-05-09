@@ -798,7 +798,6 @@ void RTCPPayloadFeedback::Dump()
 	Debug("\t[RTCPPacket PayloadFeedback %s]\n",TypeToString(feedbackType));
 	for (int i=0;i<fields.size();i++)
 	{
-		
 		//Check type
 		switch(feedbackType)
 		{
@@ -814,8 +813,25 @@ void RTCPPayloadFeedback::Dump()
 			{
 				//Get field
 				ApplicationLayerFeeedbackField* field = (ApplicationLayerFeeedbackField*)fields[i];
+				//Get size and payload
+				DWORD len	= field->GetLength();
+				BYTE* payload	= field->GetPayload();
 				//Dump it
-				::Dump(field->payload,field->length);
+				::Dump(payload,len);
+				//Check if it is a REMB
+				if (len>8 && payload[0]=='R' && payload[1]=='E' && payload[2]=='M' && payload[3]=='B')
+				{
+					//GEt exponent
+					BYTE exp = payload[5] >> 2;
+					DWORD mantisa = payload[5] & 0x03;
+					mantisa = mantisa << 8 | payload[6];
+					mantisa = mantisa << 8 | payload[7];
+					//Get bitrate
+					DWORD bitrate = mantisa << exp;
+					//Log
+					Debug("\t[REMB bitrate=%d exp=%d mantisa=%d]\n",bitrate,exp,mantisa);
+				}
+				
 				break;
 			}
 		}
