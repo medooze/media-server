@@ -706,6 +706,9 @@ int VideoMixer::AddMosaicParticipant(int mosaicId, int partId)
 	//Add participant to the mosaic
 	itMosaic->second->AddParticipant(partId);
 
+	//Dump positions
+	itMosaic->second->Dump();
+
 	//Everything ok
 	return 1;
 }
@@ -767,6 +770,9 @@ int VideoMixer::RemoveMosaicParticipant(int mosaicId, int partId)
 	    Log("No participant %d in mosaic %d.\n", partId, mosaicId);
 	//Unblock
 	lstVideosUse.Unlock();
+
+	//Dump positions
+	mosaic->Dump();
 
 	//Correct
 	return 1;
@@ -1102,6 +1108,9 @@ int VideoMixer::SetSlot(int mosaicId,int num,int id)
 
 	//Update it
 	UpdateMosaic(mosaic);
+
+	//Dump positions
+	mosaic->Dump();
 
 	//Desprotegemos la lista
 	lstVideosUse.Unlock();
