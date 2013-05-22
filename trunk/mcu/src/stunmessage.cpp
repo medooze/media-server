@@ -166,6 +166,7 @@ DWORD STUNMessage::NonAuthenticatedFingerPrint(BYTE* data,DWORD size)
 	//Return size
 	return i;
 }
+
 DWORD STUNMessage::AuthenticatedFingerPrint(BYTE* data,DWORD size,const char* pwd)
 {
 	//Get size
