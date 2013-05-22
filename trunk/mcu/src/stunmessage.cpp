@@ -114,7 +114,58 @@ STUNMessage* STUNMessage::Parse(BYTE* data,DWORD size)
 	//Return it
 	return msg;
 }
+DWORD STUNMessage::NonAuthenticatedFingerPrint(BYTE* data,DWORD size)
+{
+	//Get size - FINGERPRINT
+	WORD msgSize = GetSize()-8;
 
+	//Check
+	if (size<msgSize)
+		//Not enought
+		return ::Error("Not enought size");
+
+	//Convert so we can sift
+	WORD msgType = type;
+	WORD msgMethod = method;
+
+	//Merge the type and method
+	DWORD msgTypeField =  (msgMethod & 0x0f80) << 2;
+	msgTypeField |= (msgMethod & 0x0070) << 1;
+	msgTypeField |= (msgMethod & 0x000f);
+	msgTypeField |= (msgType & 0x02) << 7;
+	msgTypeField |= (msgType & 0x01) << 4;
+
+	//Set it
+	set2(data,0,msgTypeField);
+
+	//Set attributte length
+	set2(data,2,msgSize-20);
+
+	//Set cookie
+	memcpy(data+4,MagicCookie,4);
+
+	//Set trnasaction
+	memcpy(data+8,transId,12);
+
+	DWORD i = 20;
+
+	//For each
+	for (Attributes::iterator it = attributes.begin(); it!=attributes.end(); ++it)
+	{
+		//Set attr type
+		set2(data,i,(*it)->type);
+		set2(data,i+2,(*it)->size);
+		//Check not empty attr
+		if ((*it)->attr)
+			//Copy
+			memcpy(data+i+4,(*it)->attr,(*it)->size);
+		//Move
+		i = pad32(i+4+(*it)->size);
+	}
+
+	//Return size
+	return i;
+}
 DWORD STUNMessage::AuthenticatedFingerPrint(BYTE* data,DWORD size,const char* pwd)
 {
 	//Get size

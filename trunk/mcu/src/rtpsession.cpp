@@ -867,6 +867,7 @@ int RTPSession::ReadRTCP()
 		//If it is a request
 		if (type==STUNMessage::Request && method==STUNMessage::Binding)
 		{
+			DWORD len = 0;
 			//Create response
 			STUNMessage* resp = stun->CreateResponse();
 			//Add received xor mapped addres
@@ -876,8 +877,14 @@ int RTPSession::ReadRTCP()
 			DWORD size = resp->GetSize();
 			BYTE *aux = (BYTE*)malloc(size);
 
-			//Serialize and autenticate
-			DWORD len = resp->AuthenticatedFingerPrint(aux,size,iceLocalPwd);
+			//Check if we have local passworkd
+			if (iceLocalPwd)
+				//Serialize and autenticate
+				len = resp->AuthenticatedFingerPrint(aux,size,iceLocalPwd);
+			else
+				//Do nto authenticate
+				len = resp->NonAuthenticatedFingerPrint(aux,size);
+			
 			//Send it
 			sendto(simRtcpSocket,aux,len,0,(sockaddr *)&from_addr,sizeof(struct sockaddr_in));
 
@@ -1733,7 +1740,6 @@ RTCPCompoundPacket* RTPSession::CreateSenderReport()
 		totalRecvPacketsSinceLastSR = 0;
 		totalRecvBytesSinceLastSR = 0;
 		minRecvExtSeqNumSinceLastSR = RTPPacket::MaxExtSeqNum;
-		recExtSeq = 0;
 
 		//Append it
 		sr->AddReport(report);
