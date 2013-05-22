@@ -102,6 +102,7 @@ public:
 	STUNMessage* CreateResponse();
 	static STUNMessage* Parse(BYTE* data,DWORD size);
 	DWORD AuthenticatedFingerPrint(BYTE* data,DWORD size,const char* pwd);
+	DWORD NonAuthenticatedFingerPrint(BYTE* data,DWORD size);
 	DWORD GetSize();
 	Attribute* GetAttribute(Attribute::Type type);
 	bool  HasAttribute(Attribute::Type type);

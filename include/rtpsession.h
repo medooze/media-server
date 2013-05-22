@@ -196,11 +196,11 @@ private:
 	DWORD	totalRecvBytes;
 	DWORD	totalSendBytes;
 	DWORD	lostRecvPackets;
-	DWORD	lostRecvPacketsSinceLastSR;
 	DWORD	totalRecvPacketsSinceLastSR;
 	DWORD	totalRecvBytesSinceLastSR;
-	DWORD	jitter;
 	DWORD   minRecvExtSeqNumSinceLastSR;
+	DWORD	jitter;
+	
 	BYTE	firReqNum;
 
 	DWORD	rtt;
