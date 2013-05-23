@@ -209,7 +209,7 @@ void RemoteRateControl::UpdateRTT(DWORD rtt)
 	if (this->rtt>40 && rtt>this->rtt*1.50 && bitrateCalc.GetInstantAvg())
 	{
 		//Get target bitrate
-		DWORD target =  bitrateCalc.GetInstantAvg()*0.85;
+		DWORD target =  bitrateCalc.GetMaxAvg()*0.85;
 		//Log	
 		Log("BWE: RTT increase %d to %d bitrate:%llf target:%d \n",this->rtt,rtt,bitrateCalc.GetInstantAvg(),target);
 		//If we have a new target bitrate
@@ -234,7 +234,7 @@ void RemoteRateControl::UpdateLost(DWORD num)
 	if (packetCalc.GetInstantAvg()<num*5)
 	{
 		//Get target bitrate
-		DWORD target =  bitrateCalc.GetInstantAvg()*0.80;
+		DWORD target = bitrateCalc.GetMaxAvg()*0.80;
 		//Log
 		Log("BWE: Possible pacekt loss to high %d of %llf target:%d \n",num,packetCalc.GetInstantAvg(),target);
 		//If we have a new target bitrate
