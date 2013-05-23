@@ -1271,49 +1271,56 @@ int RTPSession::ReadRTP()
 	//If we have a not out of order pacekt
 	if (extSeq>recExtSeq)
 	{
-		//If we are using NACK and there are missing packets
-		if (isNACKEnabled && recExtSeq && extSeq>(recExtSeq+1))
+		//Check possible lost pacekts
+		if (recExtSeq && extSeq>(recExtSeq+1))
 		{
 			//Get number of lost packets
 			WORD lost = extSeq-recExtSeq-1;
 			//Base packet missing
 			WORD base = recExtSeq+1;
 
-			Log("-Nacking %d lost %d\n",base,lost);
+			//Update estimator
+			remoteRateControl.UpdateLost(lost);
 
-			//Generate new RTCP NACK report
-			RTCPCompoundPacket* rtcp = new RTCPCompoundPacket();
-
-			//Send them
-			while (lost>0)
+			//If nack is enable t waiting for a PLI/FIR response (to not oeverflow)
+			if (isNACKEnabled && !requestFPU)
 			{
-				//Skip base
-				lost--;
-				//Get number of lost in the 16 mask
-				WORD n = lost;
-				//Check nex 16 packets
-				if (n>16)
-					//Clip
-					n = 16;
-				//Create mask
-				WORD mask = 0xFFFF << (16-n);
-				//Create NACK
-				RTCPRTPFeedback *nack = RTCPRTPFeedback::Create(RTCPRTPFeedback::NACK,sendSSRC,recSSRC);
-				//Limit incoming bitrate
-				nack->AddField( new RTCPRTPFeedback::NACKField(base,mask));
-				//Add to packet
-				rtcp->AddRTCPacket(nack);
-				//Reduce lost
-				lost -= n;
-				//Increase base
-				base += 16;
+				Log("-Nacking %d lost %d\n",base,lost);
+
+				//Generate new RTCP NACK report
+				RTCPCompoundPacket* rtcp = new RTCPCompoundPacket();
+
+				//Send them
+				while (lost>0)
+				{
+					//Skip base
+					lost--;
+					//Get number of lost in the 16 mask
+					WORD n = lost;
+					//Check nex 16 packets
+					if (n>16)
+						//Clip
+						n = 16;
+					//Create mask
+					WORD mask = 0xFFFF << (16-n);
+					//Create NACK
+					RTCPRTPFeedback *nack = RTCPRTPFeedback::Create(RTCPRTPFeedback::NACK,sendSSRC,recSSRC);
+					//Limit incoming bitrate
+					nack->AddField( new RTCPRTPFeedback::NACKField(base,mask));
+					//Add to packet
+					rtcp->AddRTCPacket(nack);
+					//Reduce lost
+					lost -= n;
+					//Increase base
+					base += 16;
+				}
+
+				//Send packet
+				SendPacket(*rtcp);
+
+				//Delete it
+				delete(rtcp);
 			}
-
-			//Send packet
-			SendPacket(*rtcp);
-
-			//Delete it
-			delete(rtcp);
 		}
 		
 		//Update seq num
@@ -1959,3 +1966,4 @@ int RTPSession::SendTempMaxMediaStreamBitrateNotification(DWORD bitrate,DWORD ov
 	//Exit
 	return ret;
 }
+
