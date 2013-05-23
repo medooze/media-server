@@ -124,7 +124,6 @@ void RemoteRateEstimator::Update(DWORD size)
 			break;
 	}
 
-
 	//Get current estimation
 	DWORD current = currentBitRate;
 	//Get current bitrate

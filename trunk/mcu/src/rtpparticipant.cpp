@@ -213,7 +213,6 @@ int RTPParticipant::StopReceiving(MediaFrame::Type media)
 
 void RTPParticipant::onFPURequested(RTPSession *session)
 {
-	Log("-onFPURequested\n");
 	//Request it
 	video.SendFPU();
 }
