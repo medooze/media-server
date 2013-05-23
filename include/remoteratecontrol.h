@@ -66,6 +66,7 @@ public:
 	RemoteRateControl(Listener* listener);
 	void Update(RTPTimedPacket* packet);
 	void UpdateRTT(DWORD rtt);
+	void UpdateLost(DWORD num);
 	void SetRateControlRegion(Region region);
 	BandwidthUsage GetUsage()	{ return hypothesis; }
 	double GetNoise()		{ return varNoise;   }
@@ -75,6 +76,7 @@ private:
 	Listener*  listener;
 	Acumulator bitrateCalc;
 	Acumulator fpsCalc;
+	Acumulator packetCalc;
 	DWORD rtt;
 
 	WORD num;

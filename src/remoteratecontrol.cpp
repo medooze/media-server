@@ -8,7 +8,7 @@
 #include "remoteratecontrol.h"
 #include <math.h>
 
-RemoteRateControl::RemoteRateControl(Listener* listener) : bitrateCalc(100), fpsCalc(1000)
+RemoteRateControl::RemoteRateControl(Listener* listener) : bitrateCalc(100), fpsCalc(1000), packetCalc(100)
 {
 	this->listener = listener;
 	prevTS = 0;
@@ -39,6 +39,8 @@ void RemoteRateControl::Update(RTPTimedPacket* packet)
 	DWORD size = packet->GetMediaLength();
 	//Update bitrate calculator
 	bitrateCalc.Update(time, size*8);
+	//Update packet count
+	packetCalc.Update(time, 1);
 	//Get rtp timestamp in ms
 	DWORD ts = packet->GetClockTimestamp();
 	//If it is a our of order packet from previous frame
@@ -214,9 +216,39 @@ void RemoteRateControl::UpdateRTT(DWORD rtt)
 		if (target && listener)
 			//Call listenter
 			listener->onTargetBitrateRequested(target);
+		//Update state
+		if (hypothesis==UnderUsing)
+			//Move to normal
+			hypothesis = Normal;
+		else
+			//Overusing
+			hypothesis = OverUsing;
 	}
 	//Update RTT
 	this->rtt = rtt;
+}
+
+void RemoteRateControl::UpdateLost(DWORD num)
+{
+	//Check number
+	if (packetCalc.GetInstantAvg()<num*20)
+	{
+		//Get target bitrate
+		DWORD target =  bitrateCalc.GetInstantAvg()*0.80;
+		//Log
+		Log("BWE: Possible pacekt loss to high %d of %llf target:%d \n",num,packetCalc.GetInstantAvg(),target);
+		//If we have a new target bitrate
+		if (target && listener)
+			//Call listenter
+			listener->onTargetBitrateRequested(target);
+		//Update state
+		if (hypothesis==UnderUsing)
+			//Move to normal
+			hypothesis = Normal;
+		else
+			//Overusing
+			hypothesis = OverUsing;
+	}
 }
 
 void RemoteRateControl::SetRateControlRegion(Region region)
