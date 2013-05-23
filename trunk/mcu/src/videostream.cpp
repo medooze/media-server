@@ -356,6 +356,8 @@ int VideoStream::SendVideo()
 {
 	timeval first;
 	timeval prev;
+	timeval lastFPU;
+	
 	DWORD num = 0;
 	QWORD overslept = 0;
 
@@ -397,6 +399,9 @@ int VideoStream::SendVideo()
 
 	//The time of the previos one
 	gettimeofday(&prev,NULL);
+
+	//Fist FPU
+	gettimeofday(&lastFPU,NULL);
 	
 	//Started
 	Log("-Sending video\n");
@@ -415,10 +420,17 @@ int VideoStream::SendVideo()
 		//Check if we need to send intra
 		if (sendFPU)
 		{
-			//Set it
-			videoEncoder->FastPictureUpdate();
 			//Do not send anymore
 			sendFPU = false;
+			//Do not send if just send one (100ms)
+			if (getDifTime(&lastFPU)/100>100)
+			{
+				//Set it
+				videoEncoder->FastPictureUpdate();
+				//Update last FPU
+				getUpdDifTime(&lastFPU);
+			}
+
 		}
 
 		//Calculate target bitrate

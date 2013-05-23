@@ -231,7 +231,7 @@ void RemoteRateControl::UpdateRTT(DWORD rtt)
 void RemoteRateControl::UpdateLost(DWORD num)
 {
 	//Check number
-	if (packetCalc.GetInstantAvg()<num*20)
+	if (packetCalc.GetInstantAvg()<num*5)
 	{
 		//Get target bitrate
 		DWORD target =  bitrateCalc.GetInstantAvg()*0.80;
