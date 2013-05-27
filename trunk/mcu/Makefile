@@ -79,7 +79,7 @@ endif
 
 ifeq ($(VADWEBRTC),yes)
 	VADINCLUDE = -I$(WEBRTCINCLUDE) -I$(WEBRTCINCLUDE)/webrtc
-	VADLD = $(WEBRTDIROBJ)/common_audio/libvad.a $(WEBRTDIROBJ)/common_audio/libsignal_processing.a
+	VADLD = $(WEBRTDIROBJ)/common_audio/libcommon_audio.a
 	OPTS+= -DVADWEBRTC
 else
 	VADINCLUDE =
@@ -118,7 +118,8 @@ VPATH +=  %.cpp $(SRCDIR)/src/$(OPUSDIR)
 
 
 INCLUDE+= -I$(SRCDIR)/include/ $(VADINCLUDE)
-LDFLAGS+= -lavcodec -lgsm -lpthread -lswscale -lavformat -lavutil -lx264 -lssl -lmp4v2 -lspeex -lspeexdsp -lcrypto -lsrtp -lvpx -lopus
+LDFLAGS+= -lgsm -lpthread -lssl -lcrypto -lsrtp 
+LDFLAGS+= -lavcodec -lswscale -lavformat -lavutil -lx264 -lmp4v2 -lspeex -lspeexdsp -lvpx -lopus
 LDXMLFLAGS+= -lxmlrpc -lxmlrpc_xmlparse -lxmlrpc_xmltok -lxmlrpc_abyss -lxmlrpc_server -lxmlrpc_util
 LDFLAGS+= $(LDXMLFLAGS)
 
