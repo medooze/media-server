@@ -19,7 +19,7 @@ extern "C" {
 class NellyEncoder : public AudioEncoder
 {
 public:
-	NellyEncoder();
+	NellyEncoder(const Properties &properties);
 	virtual ~NellyEncoder();
 	virtual int Encode(SWORD *in,int inLen,BYTE* out,int outLen);
 private:
@@ -31,7 +31,7 @@ private:
 class NellyEncoder11Khz : public AudioEncoder
 {
 public:
-	NellyEncoder11Khz();
+	NellyEncoder11Khz(const Properties &properties);
 	virtual ~NellyEncoder11Khz();
 	virtual int Encode(SWORD *in,int inLen,BYTE* out,int outLen);
 private:

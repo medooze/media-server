@@ -15,7 +15,7 @@ public:
 
 	int Init(AudioInput *input,AudioOutput *output);
 	void SetRemoteRateEstimator(RemoteRateEstimator* estimator);
-	int SetAudioCodec(AudioCodec::Type codec);
+	int SetAudioCodec(AudioCodec::Type codec,const Properties& properties);
 	int StartSending(char* sendAudioIp,int sendAudioPort,RTPMap& rtpMap);
 	int StopSending();
 	int StartReceiving(RTPMap& rtpMap);
@@ -48,6 +48,7 @@ private:
 
 	//Parametros del audio
 	AudioCodec::Type audioCodec;
+	Properties	 audioProperties;
 	
 	//Las threads
 	pthread_t 	recAudioThread;

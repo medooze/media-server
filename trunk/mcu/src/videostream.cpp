@@ -72,6 +72,9 @@ int VideoStream::SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitra
 	//Guardamos el bitrate
 	videoBitrate=bitrate;
 
+	//Store properties
+	videoProperties = properties;
+
 	//The intra period
 	if (intraPeriod>0)
 		videoIntraPeriod = intraPeriod;
@@ -367,7 +370,7 @@ int VideoStream::SendVideo()
 	Log(">SendVideo [width:%d,size:%d,bitrate:%d,fps:%d,intra:%d]\n",videoGrabWidth,videoGrabHeight,videoBitrate,videoFPS,videoIntraPeriod);
 
 	//Creamos el encoder
-	VideoEncoder* videoEncoder = VideoCodecFactory::CreateEncoder(videoCodec);
+	VideoEncoder* videoEncoder = VideoCodecFactory::CreateEncoder(videoCodec,videoProperties);
 
 	//Comprobamos que se haya creado correctamente
 	if (videoEncoder == NULL)

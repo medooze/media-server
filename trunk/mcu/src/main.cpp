@@ -238,6 +238,8 @@ int main(int argc,char **argv)
 	XmlHandler xmlrpcbroadcaster(broadcasterCmdList,(void*)&broadcaster);
 	XmlHandler xmlrpcmediagateway(mediagatewayCmdList,(void*)&mediaGateway);
 	XmlHandler xmlrpcjsr309(jsr309CmdList,(void*)&jsr309Manager);
+	//Get event source handler singleton
+	EventStreamingHandler& events = EvenSource::getInstance();
 
 	//Create upload handlers
 	UploadHandler uploadermcu(&mcu);
@@ -276,6 +278,8 @@ int main(int argc,char **argv)
 	server.AddHandler("/jsr309",&xmlrpcjsr309);
 	server.AddHandler("/events/jsr309",&xmleventjsr309);
 	server.AddHandler("/events/mcu",&xmleventmcu);
+	//Append stream evetns
+	server.AddHandler("/stream",&events);
 
 	//Add uploaders
 	server.AddHandler("/upload/mcu/app/",&uploadermcu);

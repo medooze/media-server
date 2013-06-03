@@ -18,11 +18,11 @@
 class RTPParticipant : public Participant, public VideoStream::Listener
 {
 public:
-	RTPParticipant(DWORD partId);
+	RTPParticipant(DWORD partId,const std::wstring &uuid);
 	virtual ~RTPParticipant();
 
 	virtual int SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int intraPeriod,const Properties& properties);
-	virtual int SetAudioCodec(AudioCodec::Type codec);
+	virtual int SetAudioCodec(AudioCodec::Type codec,const Properties& properties);
 	virtual int SetTextCodec(TextCodec::Type codec);
 
 	virtual int SendVideoFPU();

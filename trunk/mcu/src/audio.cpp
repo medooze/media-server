@@ -7,8 +7,16 @@
 #include "opus/opusencoder.h"
 #include "opus/opusdecoder.h"
 
-
 AudioEncoder* AudioCodecFactory::CreateEncoder(AudioCodec::Type codec)
+{
+	//Empty properties
+	Properties properties;
+
+	//Create codec
+	return CreateEncoder(codec,properties);
+}
+
+AudioEncoder* AudioCodecFactory::CreateEncoder(AudioCodec::Type codec, const Properties &properties)
 {
 	Log("-CreateAudioEncoder [%d,%s]\n",codec,AudioCodec::GetNameFor(codec));
 
@@ -16,19 +24,19 @@ AudioEncoder* AudioCodecFactory::CreateEncoder(AudioCodec::Type codec)
 	switch(codec)
 	{
 		case AudioCodec::GSM:
-			return new GSMEncoder();
+			return new GSMEncoder(properties);
 		case AudioCodec::PCMA:
-			return new PCMAEncoder();
+			return new PCMAEncoder(properties);
 		case AudioCodec::PCMU:
-			return new PCMUEncoder();
+			return new PCMUEncoder(properties);
 		case AudioCodec::SPEEX16:
-			return new SpeexEncoder();
+			return new SpeexEncoder(properties);
 		case AudioCodec::NELLY8:
-			return new NellyEncoder();
+			return new NellyEncoder(properties);
 		case AudioCodec::NELLY11:
-			return new NellyEncoder11Khz();
+			return new NellyEncoder11Khz(properties);
 		case AudioCodec::OPUS:
-			return new OpusEncoder();
+			return new OpusEncoder(properties);
 		default:
 			Error("Codec not found [%d]\n",codec);
 	}

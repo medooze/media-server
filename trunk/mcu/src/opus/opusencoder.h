@@ -14,7 +14,7 @@
 class OpusEncoder : public AudioEncoder
 {
 public:
-	OpusEncoder();
+	OpusEncoder(const Properties &properties);
 	virtual ~OpusEncoder();
 	virtual int Encode(SWORD *in,int inLen,BYTE* out,int outLen);
 private:

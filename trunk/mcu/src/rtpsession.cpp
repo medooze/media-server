@@ -1805,6 +1805,12 @@ int RTPSession::SendSenderReport()
 		//If it was ok
 		if (estimation)
 		{
+			//Resend TMMBR
+			RTCPRTPFeedback *rfb = RTCPRTPFeedback::Create(RTCPRTPFeedback::TempMaxMediaStreamBitrateRequest,sendSSRC,recSSRC);
+			//Limit incoming bitrate
+			rfb->AddField( new RTCPRTPFeedback::TempMaxMediaStreamBitrateField(recSSRC,estimation,0));
+			//Add to packet
+			rtcp->AddRTCPacket(rfb);
 			std::list<DWORD> ssrcs;
 			//Get ssrcs
 			remoteRateEstimator->GetSSRCs(ssrcs);
@@ -1815,12 +1821,6 @@ int RTPSession::SendSenderReport()
 			remb->AddField(RTCPPayloadFeedback::ApplicationLayerFeeedbackField::CreateReceiverEstimatedMaxBitrate(ssrcs,estimation));
 			//Add to packet
 			rtcp->AddRTCPacket(remb);
-			//Resend TMMBR
-			RTCPRTPFeedback *rfb = RTCPRTPFeedback::Create(RTCPRTPFeedback::TempMaxMediaStreamBitrateRequest,sendSSRC,recSSRC);
-			//Limit incoming bitrate
-			rfb->AddField( new RTCPRTPFeedback::TempMaxMediaStreamBitrateField(recSSRC,estimation,0));
-			//Add to packet
-			rtcp->AddRTCPacket(rfb);
 		}
 	}
 	

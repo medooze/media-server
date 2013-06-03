@@ -9,7 +9,9 @@
 
 #include "remoterateestimator.h"
 
-RemoteRateEstimator::RemoteRateEstimator() : bitrateAcu(500)
+RemoteRateEstimator::RemoteRateEstimator(const std::wstring& tag) :
+	bitrateAcu(500),
+	eventSource(tag)
 {
 	//Not last estimate
 	minConfiguredBitRate	= 100000;
@@ -29,8 +31,11 @@ RemoteRateEstimator::RemoteRateEstimator() : bitrateAcu(500)
 	region = RemoteRateControl::MaxUnknown;
 
 }
+
 void RemoteRateEstimator::AddStream(DWORD ssrc,RemoteRateControl* ctrl)
 {
+	//Set tracer
+	ctrl->SetEventSource(&eventSource);
 	//Add it
 	streams[ssrc] = ctrl;
 }
@@ -218,15 +223,15 @@ void RemoteRateEstimator::Update(DWORD size)
 	if (currentBitRate<minConfiguredBitRate)
 		currentBitRate = minConfiguredBitRate;
 
-	Log("--estimation currentBitRate=%d current=%d incoming=%f min=%llf max=%llf\n",currentBitRate/1000,current/1000,incomingBitRate/1000,bitrateAcu.GetMinAvg()/1000,bitrateAcu.GetMaxAvg()/1000);
+	Log("--estimation state=%s region=%s currentBitRate=%d current=%d incoming=%f min=%llf max=%llf\n",GetName(state),RemoteRateControl::GetName(region),currentBitRate/1000,current/1000,incomingBitRate/1000,bitrateAcu.GetMinAvg()/1000,bitrateAcu.GetMaxAvg()/1000);
+
+	eventSource.SendEvent("rre","[\"%s\",\"%s\",%d,%d,%f,%llf,%llf]",GetName(state),RemoteRateControl::GetName(region),currentBitRate/1000,current/1000,incomingBitRate/1000,bitrateAcu.GetMinAvg()/1000,bitrateAcu.GetMaxAvg()/1000);
 
 	//Reset min max
 	bitrateAcu.ResetMinMax();
 
 	//Unlock
 	lock.Unlock();
-
-
 }
 
 double RemoteRateEstimator::RateIncreaseFactor(QWORD nowMs, QWORD lastMs, DWORD reactionTimeMs, double noiseVar) const

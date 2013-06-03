@@ -14,7 +14,7 @@
 #include "fifo.h"
 #include "log.h"
 
-NellyEncoder::NellyEncoder()
+NellyEncoder::NellyEncoder(const Properties &properties)
 {
 	//NO ctx yet
 	ctx = NULL;
@@ -79,7 +79,7 @@ int NellyEncoder::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 }
 
 
-NellyEncoder11Khz::NellyEncoder11Khz()
+NellyEncoder11Khz::NellyEncoder11Khz(const Properties &properties)
 {
 	//NO ctx yet
 	ctx = NULL;

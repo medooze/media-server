@@ -52,7 +52,7 @@ public:
 	}
 
 	virtual int SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int intraPeriod,const Properties &properties) = 0;
-	virtual int SetAudioCodec(AudioCodec::Type codec) = 0;
+	virtual int SetAudioCodec(AudioCodec::Type codec,const Properties &properties) = 0;
 	virtual int SetTextCodec(TextCodec::Type codec) = 0;
 
 	virtual int SetVideoInput(VideoInput* input) = 0;
