@@ -28,6 +28,7 @@ public:
 	QWORD GetMax()		const { return max;		}
 	DWORD GetWindow()	const { return window;		}
 	bool  IsInWindow()	const { return inWindow;	}
+	bool  IsInMinMaxWindow()const { return inWindow && min!=(QWORD)-1;	}
 
 	long double GetInstantAvg()	const { return GetInstant()*1000/GetWindow();	}
 	long double GetAverage()	const { return GetAcumulated()*1000/GetDiff();	}

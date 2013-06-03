@@ -6,7 +6,7 @@
 class PCMAEncoder : public AudioEncoder
 {
 public:
-	PCMAEncoder();
+	PCMAEncoder(const Properties &properties);
 	virtual ~PCMAEncoder();
 	virtual int Encode(SWORD *in,int inLen,BYTE* out,int outLen);
 };
@@ -22,7 +22,7 @@ public:
 class PCMUEncoder : public AudioEncoder
 {
 public:
-	PCMUEncoder();
+	PCMUEncoder(const Properties &properties);
 	virtual ~PCMUEncoder();
 	virtual int Encode(SWORD *in,int inLen,BYTE* out,int outLen);
 };

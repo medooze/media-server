@@ -7,8 +7,14 @@
 
 #include "rtpparticipant.h"
 
-RTPParticipant::RTPParticipant(DWORD partId) : Participant(Participant::RTP,partId) , audio(NULL) , video(this), text(NULL)
+RTPParticipant::RTPParticipant(DWORD partId,const std::wstring &tag) :
+	Participant(Participant::RTP,partId),
+	audio(NULL),
+	video(this),
+	text(NULL),
+	estimator(tag)
 {
+	Log("-RTPParticipant [id:%d,tag:%ls]\n",partId,tag.c_str());
 }
 
 RTPParticipant::~RTPParticipant()
@@ -21,10 +27,10 @@ int RTPParticipant::SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bi
 	return video.SetVideoCodec(codec,mode,fps,bitrate,intraPeriod,properties);
 }
 
-int RTPParticipant::SetAudioCodec(AudioCodec::Type codec)
+int RTPParticipant::SetAudioCodec(AudioCodec::Type codec,const Properties& properties)
 {
 	//Set it
-	return audio.SetAudioCodec(codec);
+	return audio.SetAudioCodec(codec,properties);
 }
 
 int RTPParticipant::SetTextCodec(TextCodec::Type codec)

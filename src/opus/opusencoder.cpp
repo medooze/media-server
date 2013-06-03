@@ -7,7 +7,7 @@
 #include "opusencoder.h"
 #include "log.h"
 
-OpusEncoder::OpusEncoder()
+OpusEncoder::OpusEncoder(const Properties &properties)
 {
 	int error;
 	//Set type

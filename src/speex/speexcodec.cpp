@@ -3,7 +3,7 @@
 #include "log.h"
 #include "speexcodec.h"
 
-SpeexEncoder::SpeexEncoder()
+SpeexEncoder::SpeexEncoder(const Properties &properties)
 {
 	//Set number of input frames for codec
 	numFrameSamples = 160;

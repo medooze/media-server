@@ -70,7 +70,7 @@ private:
 	int 		videoBitrateLimit;
 	int 		videoBitrateLimitCount;
 	int		videoIntraPeriod;
-	Properties	properties;
+	Properties	videoProperties;
 
 	//Las threads
 	pthread_t 	sendVideoThread;

@@ -2,7 +2,7 @@
 #include "gsmcodec.h"
 
 
-GSMEncoder::GSMEncoder()
+GSMEncoder::GSMEncoder(const Properties &properties)
 {
 	int     fast       = 0;
 	int     wav        = 0;

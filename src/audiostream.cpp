@@ -35,10 +35,13 @@ AudioStream::~AudioStream()
 * SetAudioCodec
 *	Fija el codec de audio
 ***************************************/
-int AudioStream::SetAudioCodec(AudioCodec::Type codec)
+int AudioStream::SetAudioCodec(AudioCodec::Type codec,const Properties& properties)
 {
 	//Colocamos el tipo de audio
 	audioCodec = codec;
+
+	//Store properties
+	audioProperties = properties;
 
 	Log("-SetAudioCodec [%d,%s]\n",audioCodec,AudioCodec::GetNameFor(audioCodec));
 
@@ -382,7 +385,7 @@ int AudioStream::SendAudio()
 	gettimeofday(&before,NULL);
 
 	//Creamos el codec de audio
-	if ((codec = AudioCodecFactory::CreateEncoder(audioCodec))==NULL)
+	if ((codec = AudioCodecFactory::CreateEncoder(audioCodec,audioProperties))==NULL)
 		//Error
 		return Error("Could not create audio codec\n");
 

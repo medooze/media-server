@@ -98,7 +98,7 @@ public:
 	int SetRTPProperties(int id,MediaFrame::Type media,const Properties& properties);
 
 	int SetVideoCodec(int partId,int codec,int mode,int fps,int bitrate,int intraPeriod,const Properties &properties);
-	int SetAudioCodec(int partId,int codec);
+	int SetAudioCodec(int partId,int codec,const Properties& properties);
 	int SetTextCodec(int partId,int codec);
 
 	int  StartBroadcaster();

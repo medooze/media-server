@@ -8,7 +8,7 @@ extern "C" {
 class SpeexEncoder : public AudioEncoder
 {
 public:
-	SpeexEncoder();
+	SpeexEncoder(const Properties &properties);
 	virtual ~SpeexEncoder();
 	virtual int Encode(SWORD *in,int inLen,BYTE* out,int outLen);
 private:

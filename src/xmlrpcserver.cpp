@@ -259,6 +259,8 @@ int XmlRpcServer::SendResponse(TSession *r, short code, const char *msg, int len
 **************************************/
 int XmlRpcServer::SendError(TSession * r, short code) 
 {
+	Log("-XmlRpcServer::SendError [code:%d]\n",code);
+
 	//POnemos el content type
 	ResponseContentType(r, (char*)"text/html; charset=\"utf-8\"");
 
@@ -272,6 +274,8 @@ int XmlRpcServer::SendError(TSession * r, short code)
 **************************************/
 int XmlRpcServer::SendError(TSession * r, short code,const char *msg)
 {
+	Log("-XmlRpcServer::SendError [code:%d,msg=%s]\n",code,msg);
+
 	//POnemos el content type
 	ResponseContentType(r, (char*)"text/html; charset=\"utf-8\"");
 

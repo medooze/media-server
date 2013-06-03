@@ -74,6 +74,7 @@ class AudioCodecFactory
 public:
 	static AudioDecoder* CreateDecoder(AudioCodec::Type codec);
 	static AudioEncoder* CreateEncoder(AudioCodec::Type codec);
+	static AudioEncoder* CreateEncoder(AudioCodec::Type codec, const Properties &properties);
 };
 
 #endif

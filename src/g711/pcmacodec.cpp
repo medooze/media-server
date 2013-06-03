@@ -4,7 +4,7 @@
 
 #define NUMFRAMES 160
 
-PCMAEncoder::PCMAEncoder()
+PCMAEncoder::PCMAEncoder(const Properties &properties)
 {
 	type=AudioCodec::PCMA;
 	numFrameSamples=NUMFRAMES;

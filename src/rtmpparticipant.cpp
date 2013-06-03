@@ -69,6 +69,9 @@ int RTMPParticipant::SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int b
 	//Store intra period
 	videoIntraPeriod = intraPeriod;
 
+	//Store properties
+	videoProperties = properties;
+
 	//Get width and height
 	videoWidth = GetWidth(mode);
 	videoHeight = GetHeight(mode);
@@ -82,10 +85,12 @@ int RTMPParticipant::SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int b
 	videoFPS=fps;
 }
 
-int RTMPParticipant::SetAudioCodec(AudioCodec::Type codec)
+int RTMPParticipant::SetAudioCodec(AudioCodec::Type codec,const Properties &properties)
 {
 	//Set it
 	audioCodec = codec;
+	//Set properties
+	audioProperties = properties;
 }
 
 int RTMPParticipant::SetTextCodec(TextCodec::Type codec)
@@ -498,7 +503,7 @@ int RTMPParticipant::SendVideo()
 	//Get now
 	getUpdDifTime(&t);
 	//Coders
-	VideoEncoder* encoder = VideoCodecFactory::CreateEncoder(videoCodec);
+	VideoEncoder* encoder = VideoCodecFactory::CreateEncoder(videoCodec,videoProperties);
 	//Create new video frame
 	RTMPVideoFrame  frame(0,262143);
 
@@ -668,7 +673,7 @@ int RTMPParticipant::SendAudio()
 	audioInput->StartRecording();
 
 	//Create encoder
-	AudioEncoder *encoder = AudioCodecFactory::CreateEncoder(audioCodec);
+	AudioEncoder *encoder = AudioCodecFactory::CreateEncoder(audioCodec,audioProperties);
 
 	//Check
 	if (!encoder)

@@ -6,7 +6,7 @@ extern "C" {
 class GSMEncoder : public AudioEncoder
 {
 public:
-	GSMEncoder();
+	GSMEncoder(const Properties &properties);
 	virtual ~GSMEncoder();
 	virtual int Encode(SWORD *in,int inLen,BYTE* out,int outLen);
 private:

@@ -11,9 +11,11 @@
 RemoteRateControl::RemoteRateControl(Listener* listener) : bitrateCalc(100), fpsCalc(1000), packetCalc(100)
 {
 	this->listener = listener;
+	eventSource = NULL;
 	prevTS = 0;
 	prevTime = 0;
 	prevSize = 0;
+	prevTarget = 0;
 	curSize = 0;
 	num = 0;
 	slope = 8.0/512.0;
@@ -158,13 +160,11 @@ void RemoteRateControl::UpdateKalman(QWORD now,QWORD tdelta, double tsdelta, DWO
 					//Get target bitrate
 					target = bitrateCalc.GetMaxAvg()*0.85;
 					//Log	
-					Log("BWE:  OverUsing bitrate:%llf max:%llf min:%llf target:%d \n",bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg(),target);
+					Log("BWE:  OverUsing bitrate:%.0llf max:%.0llf min:%.0llf target:%d \n",bitrateCalc.GetInstantAvg()/1000,bitrateCalc.GetMaxAvg()/1000,bitrateCalc.GetMinAvg()/1000,target/1000);
 					//Overusing
 					hypothesis = OverUsing;
 					//Reset counter
 					overUseCount=0;
-					//Reset
-					 bitrateCalc.Reset(now);
 				} else {
 					//increase counter
 					overUseCount++;
@@ -176,9 +176,9 @@ void RemoteRateControl::UpdateKalman(QWORD now,QWORD tdelta, double tsdelta, DWO
 			//If we change state
 			if (hypothesis!=UnderUsing)
 			{
-				//Log("BWE:  UnderUsing bitrate:%llf max:%llf min:%llf\n",bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg());
+				//Log("BWE:  UnderUsing bitrate:%.0llf max:%.0llf min:%.0llf\n",bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg());
 				//Reset bitrate
-				bitrateCalc.Reset(now);
+				bitrateCalc.ResetMinMax();
 				//Under using, do nothing until going back to normal
 				hypothesis = UnderUsing;
 			}
@@ -189,33 +189,50 @@ void RemoteRateControl::UpdateKalman(QWORD now,QWORD tdelta, double tsdelta, DWO
 		if (hypothesis!=Normal)
 		{
 			//Log
-			//Log("BWE:  Normal  bitrate:%llf max:%llf min:%llf\n",bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg());
+			//Log("BWE:  Normal  bitrate:%.0llf max:%.0llf min:%.0llf\n",bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg());
 			//Reset
-			bitrateCalc.Reset(now);
+			bitrateCalc.ResetMinMax();
 			//Normal
 			hypothesis = Normal;
 		}
 	}
 
 	//If we have a new target bitrate
-	if (target && listener)
-		//Call listenter
-		listener->onTargetBitrateRequested(target);
+	if (target)
+	{
+		//If got listener
+		if (listener)
+			//Call listenter
+			listener->onTargetBitrateRequested(target);
+		//Update previous target
+		prevTarget = target;
+	}
+
+	//Dumping statistics?
+	//if (eventSource && bitrateCalc.IsInMinMaxWindow())
+	//	//Trace
+	//	eventSource->SendEvent("rrc.update","{\"ssrc\":\"%p\",\"data\":[\"%s\",%.0llf,%.0llf,%.0llf,%d,%d]}",this,GetName(hypothesis),bitrateCalc.GetInstantAvg()/1000,bitrateCalc.GetMaxAvg()/1000,bitrateCalc.GetMinAvg()/1000,prevTarget/1000,rtt);
 }
 
 void RemoteRateControl::UpdateRTT(DWORD rtt)
 {
 	//Check difference
-	if (this->rtt>40 && rtt>this->rtt*1.50 && bitrateCalc.GetInstantAvg())
+	if (this->rtt>40 && rtt>this->rtt*1.50 && bitrateCalc.IsInMinMaxWindow())
 	{
 		//Get target bitrate
 		DWORD target =  bitrateCalc.GetMaxAvg()*0.85;
 		//Log	
-		Log("BWE: RTT increase %d to %d bitrate:%llf target:%d \n",this->rtt,rtt,bitrateCalc.GetInstantAvg(),target);
+		Log("BWE: RTT increase %d to %d bitrate:%.0llf target:%d \n",this->rtt,rtt,bitrateCalc.GetInstantAvg(),target);
 		//If we have a new target bitrate
-		if (target && listener)
-			//Call listenter
-			listener->onTargetBitrateRequested(target);
+		if (target)
+		{
+			//If got listener
+			if (listener)
+				//Call listenter
+				listener->onTargetBitrateRequested(target);
+			//Update previous target
+			prevTarget = target;
+		}
 		//Update state
 		if (hypothesis==UnderUsing)
 			//Move to normal
@@ -223,6 +240,10 @@ void RemoteRateControl::UpdateRTT(DWORD rtt)
 		else
 			//Overusing
 			hypothesis = OverUsing;
+		//Dumping statistics?
+		//if (eventSource)
+		//	//Trace
+		//	eventSource->SendEvent("rrc.rtt","{\"ssrc\":\"%p\",\"data\":[\"%s\",%.0llf,%.0llf,%.0llf,%d,%d]}",this,GetName(hypothesis),bitrateCalc.GetInstantAvg()/1000,bitrateCalc.GetMaxAvg()/1000,bitrateCalc.GetMinAvg()/1000,prevTarget/1000,rtt);
 	}
 	//Update RTT
 	this->rtt = rtt;
@@ -231,16 +252,22 @@ void RemoteRateControl::UpdateRTT(DWORD rtt)
 void RemoteRateControl::UpdateLost(DWORD num)
 {
 	//Check number
-	if (packetCalc.GetInstantAvg()<num*5)
+	if (packetCalc.GetInstantAvg()<num*5  && bitrateCalc.IsInMinMaxWindow())
 	{
 		//Get target bitrate
 		DWORD target = bitrateCalc.GetMaxAvg()*0.80;
 		//Log
-		Log("BWE: Possible pacekt loss to high %d of %llf target:%d \n",num,packetCalc.GetInstantAvg(),target);
+		Log("BWE: Possible pacekt loss to high %d of %.0llf target:%d \n",num,packetCalc.GetInstantAvg(),target);
 		//If we have a new target bitrate
-		if (target && listener)
-			//Call listenter
-			listener->onTargetBitrateRequested(target);
+		if (target)
+		{
+			//If got listener
+			if (listener)
+				//Call listenter
+				listener->onTargetBitrateRequested(target);
+			//Update previous target
+			prevTarget = target;
+		}
 		//Update state
 		if (hypothesis==UnderUsing)
 			//Move to normal
@@ -248,6 +275,10 @@ void RemoteRateControl::UpdateLost(DWORD num)
 		else
 			//Overusing
 			hypothesis = OverUsing;
+		//Dumping statistics?
+		//if (eventSource)
+		//	//Trace
+		//	eventSource->SendEvent("rrc.lost","{\"ssrc\":\"%p\",\"data\":[\"%s\",%.0llf,%.0llf,%.0llf,%d,%d]}",this,GetName(hypothesis),bitrateCalc.GetInstantAvg()/1000,bitrateCalc.GetMaxAvg()/1000,bitrateCalc.GetMinAvg()/1000,prevTarget/1000,num);
 	}
 }
 

@@ -7,7 +7,7 @@
 #include "log.h"
 #include "Endpoint.h"
 
-Endpoint::Endpoint(std::wstring name,bool audioSupported,bool videoSupported,bool textSupported)
+Endpoint::Endpoint(std::wstring name,bool audioSupported,bool videoSupported,bool textSupported) : estimator(name)
 {
 	//Store name
 	this->name = name;

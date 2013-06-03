@@ -24,7 +24,7 @@ public:
 	virtual ~RTMPParticipant();
 
 	virtual int SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int intraPeriod,const Properties& properties);
-	virtual int SetAudioCodec(AudioCodec::Type codec);
+	virtual int SetAudioCodec(AudioCodec::Type codec,const Properties& properties);
 	virtual int SetTextCodec(TextCodec::Type codec);
 
 	virtual int SendVideoFPU();
@@ -102,12 +102,14 @@ private:
 	WaitQueue<RTMPAudioFrame*> audioFrames;
 
 	AudioCodec::Type audioCodec;
+	Properties	 audioProperties;
 	VideoCodec::Type videoCodec;
 	int 		videoWidth;
 	int 		videoHeight;
 	int 		videoFPS;
 	int 		videoBitrate;
 	int		videoIntraPeriod;
+	Properties	videoProperties;
 
 	//Las threads
 	pthread_t 	recVideoThread;

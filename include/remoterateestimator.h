@@ -35,7 +35,7 @@ public:
 		return "Unknown";
 	}
 public:
-	RemoteRateEstimator();
+	RemoteRateEstimator(const std::wstring& tag);
 	void AddStream(DWORD ssrc,RemoteRateControl* ctrl);
 	void RemoveStream(DWORD ssrc);
 	void SetRTT(DWORD rtt);
@@ -52,6 +52,7 @@ private:
 private:
 	typedef std::map<DWORD,RemoteRateControl*> Streams;
 private:
+	EvenSource	eventSource;
 	Acumulator	bitrateAcu;
 	Streams		streams;
 	Use		lock;

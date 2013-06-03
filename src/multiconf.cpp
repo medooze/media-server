@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <algorithm>
 #include "log.h"
@@ -373,6 +374,7 @@ int MultiConf::DeleteSidebar(int sidebarId)
 *************************/
 int MultiConf::CreateParticipant(int mosaicId,int sidebarId,std::wstring name,Participant::Type type)
 {
+	wchar_t uuid[64];
 	Participant *part = NULL;
 
 	Log(">CreateParticipant [mosaic:%d]\n",mosaicId);
@@ -386,6 +388,9 @@ int MultiConf::CreateParticipant(int mosaicId,int sidebarId,std::wstring name,Pa
 
 	//Obtenemos el id
 	int partId = maxId++;
+
+	//Create uuid
+	swprintf(uuid,64,L"%ls@%d",tag.c_str(),partId);
 
 	//Unlock
 	participantsLock.Unlock();
@@ -418,7 +423,7 @@ int MultiConf::CreateParticipant(int mosaicId,int sidebarId,std::wstring name,Pa
 	{
 		case Participant::RTP:
 			//Create RTP Participant
-			part = new RTPParticipant(partId);
+			part = new RTPParticipant(partId,std::wstring(uuid));
 			break;
 		case Participant::RTMP:
 			part = new RTMPParticipant(partId);
@@ -879,7 +884,7 @@ int MultiConf::StopReceiving(int id,MediaFrame::Type media)
 * SetAudioCodec
 * 	SetAudioCodec
 *************************/
-int MultiConf::SetAudioCodec(int id,int codec)
+int MultiConf::SetAudioCodec(int id,int codec,const Properties& properties)
 {
 	int ret = 0;
 
@@ -894,7 +899,7 @@ int MultiConf::SetAudioCodec(int id,int codec)
 	//Check particpant
 	if (part)
 		//Set video codec
-		ret = part->SetAudioCodec((AudioCodec::Type)codec);
+		ret = part->SetAudioCodec((AudioCodec::Type)codec,properties);
 
 	//Unlock
 	participantsLock.DecUse();

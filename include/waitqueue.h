@@ -32,6 +32,7 @@ public:
 	{
 		//Destroy mutex
 		pthread_mutex_destroy(&mutex);
+		pthread_cond_destroy(&cond);
 	}
 
 	void Add(T obj)

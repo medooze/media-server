@@ -11,6 +11,7 @@
 #include "config.h"
 #include "rtp.h"
 #include "acumulator.h"
+#include "eventstreaminghandler.h"
 
 class RemoteRateControl
 {
@@ -32,10 +33,9 @@ public:
 		MaxUnknown,
 		AboveMax,
 		NearMax,
-
 	};
 
-	const char * GetName(BandwidthUsage usage)
+	static const char * GetName(BandwidthUsage usage)
 	{
 		switch (usage)
 		{
@@ -49,7 +49,7 @@ public:
 		return "Unknown";
 	}
 	
-	const char * GetName(Region region)
+	static const char * GetName(Region region)
 	{
 		switch (region)
 		{
@@ -70,9 +70,12 @@ public:
 	void SetRateControlRegion(Region region);
 	BandwidthUsage GetUsage()	{ return hypothesis; }
 	double GetNoise()		{ return varNoise;   }
+	void SetEventSource(EvenSource *eventSource) {	this->eventSource = eventSource; }
+
 private:
 	void UpdateKalman(QWORD now,QWORD t_delta, double ts_delta, DWORD frame_size, DWORD prev_frame_size);
 private:
+	EvenSource *eventSource;
 	Listener*  listener;
 	Acumulator bitrateCalc;
 	Acumulator fpsCalc;
@@ -84,6 +87,7 @@ private:
 	QWORD prevTime;
 	DWORD prevSize;
 	DWORD curSize;
+	DWORD prevTarget;
 	double slope;
 	double offset;
 	double E[2][2];

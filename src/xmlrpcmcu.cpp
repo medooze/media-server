@@ -676,8 +676,40 @@ xmlrpc_value* SetAudioCodec(xmlrpc_env *env, xmlrpc_value *param_array, void *us
 	int confId;
 	int partId;
 	int codec;
+	Properties properties;
+	xmlrpc_value *map;
+	xmlrpc_parse_value(env, param_array, "(iiiS)", &confId,&partId,&codec,&map);
 
-	xmlrpc_parse_value(env, param_array, "(iii)", &confId,&partId,&codec);
+	//Check if it is new api
+	if(!env->fault_occurred)
+	{
+		//Get map size
+		int j = xmlrpc_struct_size(env,map);
+
+		//Parse rtp map
+		for (int i=0;i<j;i++)
+		{
+			xmlrpc_value *key, *val;
+			const char *strKey;
+			const char *strVal;
+			//Read member
+			xmlrpc_struct_read_member(env,map,i,&key,&val);
+			//Read name
+			xmlrpc_parse_value(env,key,"s",&strKey);
+			//Read value
+			xmlrpc_parse_value(env,val,"s",&strVal);
+			//Add to map
+			properties[strKey] = strVal;
+			//Decrement ref counter
+			xmlrpc_DECREF(key);
+			xmlrpc_DECREF(val);
+		}
+	} else {
+		//Clean error
+		xmlrpc_env_init(env);
+		//Parse old values,
+		xmlrpc_parse_value(env, param_array, "(iii)", &confId,&partId,&codec);
+	}
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
@@ -688,7 +720,7 @@ xmlrpc_value* SetAudioCodec(xmlrpc_env *env, xmlrpc_value *param_array, void *us
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
-	int res = conf->SetAudioCodec(partId,codec);
+	int res = conf->SetAudioCodec(partId,codec,properties);
 
 	//Liberamos la referencia
 	mcu->ReleaseConferenceRef(confId);
