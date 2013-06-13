@@ -102,6 +102,8 @@ public:
 	int SetTextCodec(int partId,int codec);
 
 	int  StartBroadcaster();
+	int  StartRecordingBroadcaster(const char* filename);
+	int  StopRecordingBroadcaster();
 	int  StartPublishing(const char* server,int port, const char* app,const char* name);
 	int  StopPublishing(int id);
 	int  StopBroadcaster();

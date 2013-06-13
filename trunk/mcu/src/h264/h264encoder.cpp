@@ -194,7 +194,7 @@ int H264Encoder::OpenCodec()
 
 	//Get profile and level
 	int profile = strtol(h264ProfileLevelId.substr(0,2).c_str(),NULL,16);
-	int level   = atoi(h264ProfileLevelId.substr(4,2).c_str());
+	int level   = strtol(h264ProfileLevelId.substr(4,2).c_str(),NULL,16);
 
 	//Set level
 	params.i_level_idc = level;
