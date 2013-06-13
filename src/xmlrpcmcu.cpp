@@ -1233,6 +1233,69 @@ xmlrpc_value* StopRecordingParticipant(xmlrpc_env *env, xmlrpc_value *param_arra
 	return xmlok(env);
 }
 
+xmlrpc_value* StartRecordingBroadcaster(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+	MCU *mcu = (MCU *)user_data;
+	MultiConf *conf = NULL;
+
+	 //Parseamos
+	int confId;
+	char *filename;
+	xmlrpc_parse_value(env, param_array, "(is)", &confId, &filename);
+
+	//Comprobamos si ha habido error
+	if(env->fault_occurred)
+		return xmlerror(env,"Fault occurred");
+
+	//Obtenemos la referencia
+	if(!mcu->GetConferenceRef(confId,&conf))
+		return xmlerror(env,"Conference does not exist");
+
+	//La borramos
+	int res = conf->StartRecordingBroadcaster(filename);
+
+	//Liberamos la referencia
+	mcu->ReleaseConferenceRef(confId);
+
+	//Salimos
+	if(!res)
+		return xmlerror(env,"Could not record broadcast");
+
+	//Devolvemos el resultado
+	return xmlok(env);
+}
+
+xmlrpc_value* StopRecordingBroadcaster(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+	MCU *mcu = (MCU *)user_data;
+	MultiConf *conf = NULL;
+
+	 //Parseamos
+	int confId;
+	xmlrpc_parse_value(env, param_array, "(i)", &confId);
+
+	//Comprobamos si ha habido error
+	if(env->fault_occurred)
+		return xmlerror(env,"Fault occurred");
+
+	//Obtenemos la referencia
+	if(!mcu->GetConferenceRef(confId,&conf))
+		return xmlerror(env,"Conference does not exist");
+
+	//La borramos
+	int res = conf->StopRecordingBroadcaster();
+
+	//Liberamos la referencia
+	mcu->ReleaseConferenceRef(confId);
+
+	//Salimos
+	if(!res)
+		return xmlerror(env,"Could not stop recording in conference");
+
+	//Devolvemos el resultado
+	return xmlok(env);
+}
+
 xmlrpc_value* SendFPU(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
@@ -1793,6 +1856,8 @@ XmlHandlerCmd mcuCmdList[] =
 	{"StopBroadcaster",StopBroadcaster},
 	{"StartPublishing",StartPublishing},
 	{"StopPublishing",StopPublishing},
+	{"StartRecordingBroadcaster",StartRecordingBroadcaster},
+	{"StopRecordingBroadcaster",StopRecordingBroadcaster},
 	{"StartRecordingParticipant",StartRecordingParticipant},
 	{"StopRecordingParticipant",StopRecordingParticipant},
 	{"SetVideoCodec",SetVideoCodec},

@@ -39,7 +39,6 @@ bool FLVRecorder::Create(const char *filename)
 	//Check fd
 	if (fd<0)
 		return Error("Could not create file [%d,%s]\n",errno,filename);
-
 }
 
 bool FLVRecorder::Record()

@@ -8,7 +8,7 @@
 class AudioCodec
 {
 public:
-	enum Type {PCMA=8,PCMU=0,GSM=3,SPEEX16=117,AMR=118,TELEPHONE_EVENT=100,NELLY8=130,NELLY11=131,OPUS=98};
+	enum Type {PCMA=8,PCMU=0,GSM=3,G722=9,SPEEX16=117,AMR=118,TELEPHONE_EVENT=100,NELLY8=130,NELLY11=131,OPUS=98};
 	static const char* GetNameFor(Type codec)
 	{
 		switch (codec)
@@ -20,6 +20,7 @@ public:
 			case NELLY8:	return "NELLY8Khz";
 			case NELLY11:	return "NELLY11Khz";
 			case OPUS:	return "OPUS";
+			case G722:	return "G722";
 			default:	return "unknown";
 		}
 	}
@@ -29,7 +30,7 @@ public:
 class VideoCodec
 {
 public:
-	enum Type {H263_1996=34,H263_1998=103,MPEG4=104,H264=99,SORENSON=100,VP8=107,ULPFEC=108,RED=109};
+	enum Type {H263_1996=34,H263_1998=103,MPEG4=104,H264=99,SORENSON=100,VP6=106,VP8=107,ULPFEC=108,RED=109};
 	static const char* GetNameFor(Type type)
 	{
 		switch (type)
@@ -39,6 +40,7 @@ public:
 			case MPEG4:	return "MPEG4";
 			case H264:	return "H264";
 			case SORENSON:  return "SORENSON";
+			case VP6:	return "VP6";
 			case VP8:	return "VP8";
 			default:	return "unknown";
 		}
@@ -76,5 +78,4 @@ static const char* GetNameForCodec(MediaFrame::Type media,DWORD codec)
 	}
 	return "unknown media";
 }
-
 #endif
