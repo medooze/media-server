@@ -49,6 +49,9 @@ endif
 H264DIR=h264
 H264OBJ=h264encoder.o h264decoder.o h264depacketizer.o
 
+VP6DIR=vp6
+VP6OBJ=vp6decoder.o
+
 VP8DIR=vp8
 VP8OBJ=vp8encoder.o vp8decoder.o
 
@@ -64,8 +67,11 @@ NELLYOBJ=NellyCodec.o
 OPUSDIR=opus
 OPUSOBJ=opusdecoder.o opusencoder.o
 
+G722DIR=g722
+G722OBJ=g722codec.o
+
 OBJS=audio.o video.o mcu.o multiconf.o rtpparticipant.o rtmpparticipant.o videomixer.o audiomixer.o xmlrpcserver.o xmlhandler.o xmlstreaminghandler.o statushandler.o xmlrpcmcu.o   rtpsession.o audiostream.o videostream.o audiotransrater.o pipeaudioinput.o pipeaudiooutput.o pipevideoinput.o pipevideooutput.o framescaler.o sidebar.o mosaic.o partedmosaic.o asymmetricmosaic.o pipmosaic.o logo.o overlay.o amf.o rtmpmessage.o rtmpchunk.o rtmpstream.o rtmpconnection.o  rtmpserver.o broadcaster.o broadcastsession.o rtmpflvstream.o flvrecorder.o FLVEncoder.o xmlrpcbroadcaster.o mediagateway.o mediabridgesession.o xmlrpcmediagateway.o textmixer.o textmixerworker.o textstream.o pipetextinput.o pipetextoutput.o mp4player.o mp4streamer.o audioencoder.o audiodecoder.o textencoder.o mp4recorder.o rtmpmp4stream.o rtmpnetconnection.o avcdescriptor.o RTPSmoother.o rtp.o rtmpclientconnection.o vad.o stunmessage.o crc32calc.o remoteratecontrol.o remoterateestimator.o uploadhandler.o http.o appmixer.o fecdecoder.o videopipe.o eventstreaminghandler.o
-OBJS+= $(G711OBJ) $(H263OBJ) $(GSMOBJ)  $(H264OBJ) ${FLV1OBJ} $(SPEEXOBJ) $(NELLYOBJ) $(JSR309OBJ) $(VADOBJ) $(VP8OBJ) $(OPUSOBJ)
+OBJS+= $(G711OBJ) $(H263OBJ) $(GSMOBJ)  $(H264OBJ) ${FLV1OBJ} $(SPEEXOBJ) $(NELLYOBJ) $(G722OBJ) $(JSR309OBJ) $(VADOBJ) $(VP6OBJ) $(VP8OBJ) $(OPUSOBJ)
 TARGETS=mcu rtmpdebug
 
 ifeq ($(FLASHSTREAMER),yes)
@@ -112,7 +118,9 @@ VPATH +=  %.cpp $(SRCDIR)/src/$(H264DIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(FLV1DIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(SPEEXDIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(NELLYDIR)
+VPATH +=  %.cpp $(SRCDIR)/src/$(G722DIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(JSR309DIR)
+VPATH +=  %.cpp $(SRCDIR)/src/$(VP6DIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(VP8DIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(OPUSDIR)
 

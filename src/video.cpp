@@ -7,6 +7,7 @@
 #include "h264/h264decoder.h"
 #include "vp8/vp8decoder.h"
 #include "vp8/vp8encoder.h"
+#include "vp6/vp6decoder.h"
 
 VideoDecoder* VideoCodecFactory::CreateDecoder(VideoCodec::Type codec)
 {
@@ -25,6 +26,8 @@ VideoDecoder* VideoCodecFactory::CreateDecoder(VideoCodec::Type codec)
 			return new Mpeg4Decoder();
 		case VideoCodec::H264:
 			return new H264Decoder();
+		case VideoCodec::VP6:
+			return new VP6Decoder();
 		case VideoCodec::VP8:
 			return new VP8Decoder();
 		default:
