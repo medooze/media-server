@@ -185,7 +185,7 @@ int AudioEncoderWorker::Encode()
 	AudioFrame frame(audioCodec);
 
 	//Empezamos a grabar
-	audioInput->StartRecording();
+	audioInput->StartRecording(8000);
 
 	//Mientras tengamos que capturar
 	while(encodingAudio)

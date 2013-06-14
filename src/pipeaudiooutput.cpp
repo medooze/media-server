@@ -8,6 +8,9 @@ PipeAudioOutput::PipeAudioOutput(bool calcVAD)
 	this->calcVAD = calcVAD;
 	//No vad score acumulated
 	acu = 0;
+	//No rates yet
+	nativeRate = 0;
+	playRate = 0;
 	//Creamos el mutex
 	pthread_mutex_init(&mutex,NULL);
 }
@@ -20,18 +23,41 @@ PipeAudioOutput::~PipeAudioOutput()
 
 int PipeAudioOutput::PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime)
 {
-	int v = 0;
+	SWORD resampled[4096];
+	DWORD resampledSize = 4096;
+	int v = -1;
 
 	//Check if we need to calculate it
-	if (calcVAD)
+	if (calcVAD && vad.IsRateSupported(playRate))
 		//Calculate vad
-		v = vad.CalcVad8khz(buffer,size)*size;
+		v = vad.CalcVad(buffer,size,playRate)*size;
+
+	//Check if we are transtrating
+	if (transrater.IsOpen())
+	{
+		//Proccess
+		int ret = transrater.ProcessBuffer( buffer, size, NULL, &resampledSize);
+		
+		//If error
+		if (ret)
+			return Error("-PipeAudioOutput: resampling error.\n", ret );
+
+		//Check if we need to calculate it
+		if (calcVAD && v<0 && vad.IsRateSupported(nativeRate))
+			//Calculate vad
+			v = vad.CalcVad(buffer,size,nativeRate)*resampledSize;
+
+		//Update parameters
+		buffer = resampled;
+		size = resampledSize;
+	}
 
 	//Bloqueamos
 	pthread_mutex_lock(&mutex);
 
 	//Get left space
 	int left = fifoBuffer.size()-fifoBuffer.length();
+
 	//if not enought
 	if(size>left)
 		//Free space
@@ -57,13 +83,42 @@ int PipeAudioOutput::PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime)
 
 	return size;
 }
-int PipeAudioOutput::StartPlaying()
+
+int PipeAudioOutput::StartPlaying(DWORD rate)
 {
+	//Lock
+	pthread_mutex_lock(&mutex);
+
+	//Store play rate
+	playRate = rate;
+
+	//If we already had an open transcoder
+	if (transrater.IsOpen())
+		//Close it
+		transrater.Close();
+
+	//if rates are different
+	if (playRate!=nativeRate)
+		//Open it
+		transrater.Open(playRate,nativeRate);
+	
+	//Unlock
+	pthread_mutex_unlock(&mutex);
+	
+	//Exit
 	return true;
 }
 
 int PipeAudioOutput::StopPlaying()
 {
+	//Lock
+	pthread_mutex_lock(&mutex);
+	//Close transrater
+	transrater.Close();
+	//Unlock
+	pthread_mutex_unlock(&mutex);
+	
+	//Exit
 	return true;
 }
 
@@ -88,12 +143,15 @@ int PipeAudioOutput::GetSamples(SWORD *buffer,DWORD num)
 	//Salimos
 	return len;
 }
-int PipeAudioOutput::Init()
+int PipeAudioOutput::Init(DWORD rate)
 {
 	Log("PipeAudioOutput init\n");
 
 	//Protegemos
 	pthread_mutex_lock(&mutex);
+
+	//Store play rate
+	playRate = rate;
 
 	//Iniciamos
 	inited = true;

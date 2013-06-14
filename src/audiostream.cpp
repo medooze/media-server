@@ -296,7 +296,7 @@ int AudioStream::RecAudio()
 	gettimeofday(&before,NULL);
 
 	//Empezamos a reproducir
-	audioOutput->StartPlaying();
+	audioOutput->StartPlaying(8000);
 
 	//Mientras tengamos que capturar
 	while(receivingAudio)
@@ -425,7 +425,7 @@ int AudioStream::SendAudio()
 		packet.SetClockRate(48000);
 	
 	//Empezamos a grabar
-	audioInput->StartRecording();
+	audioInput->StartRecording(8000);
 
 	//Mientras tengamos que capturar
 	while(sendingAudio)

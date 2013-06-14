@@ -43,11 +43,13 @@ int PipeAudioInput::RecBuffer(SWORD *buffer,DWORD size)
 			//Remove flag
 			canceled = false;
 			//Exit
+			Log("PipeAudioInput: RecBuffer cancelled.\n");
+			//End
 			goto end;
 		}
 	}
 
-	//Obtenemos el numero de muestras
+	//Get samples from queue
 	len = fifoBuffer.pop(buffer,size);
 
 end:
@@ -57,14 +59,16 @@ end:
 	return len;
 }
 
-int PipeAudioInput::StartRecording()
+int PipeAudioInput::StartRecording(DWORD rate)
 {
 	//Bloqueamos
 	pthread_mutex_lock(&mutex);
-
+	//Store recording rate
+	recordRate = rate;
+	//Open transrater
+	transrater.Open( nativeRate, recordRate );
 	//Estamos grabando
 	recording = true;
-
 	//Desbloqueamos
 	pthread_mutex_unlock(&mutex);
 
@@ -90,7 +94,22 @@ int PipeAudioInput::StopRecording()
 
 int PipeAudioInput::PutSamples(SWORD *buffer,DWORD size)
 {
-	//Bloqueamos
+	SWORD resampled[4096];
+	DWORD resampledSize = 4096;
+
+	//If we need to transrate
+	if (transrater.IsOpen())
+	{
+		//Transrate
+		if (!transrater.ProcessBuffer(buffer, size, resampled, &resampledSize))
+			//Error
+			return Error("-PipeAudioInput could not transrate");
+		//Swith input parameters to resample ones
+		buffer = resampled;
+		size = resampledSize;
+	}
+
+	//Block
 	pthread_mutex_lock(&mutex);
 
 	//Si estamos reproduciendo
@@ -116,13 +135,16 @@ int PipeAudioInput::PutSamples(SWORD *buffer,DWORD size)
 
 }
 
-int PipeAudioInput::Init()
+int PipeAudioInput::Init(DWORD rate)
 {
 	//Protegemos
 	pthread_mutex_lock(&mutex);
 
 	//Iniciamos
 	inited = true;
+
+	//Store native sample rate
+	nativeRate = rate;
 
 	//Desprotegemos
 	pthread_mutex_unlock(&mutex);

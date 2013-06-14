@@ -28,8 +28,9 @@ public:
 	VAD();
 	
 	bool SetMode(Mode mode);
-	int CalcVad8khz(SWORD* frame,DWORD size);
+	int CalcVad(SWORD* frame,DWORD size, DWORD rate);
 	int GetVAD();
+	bool IsRateSupported(DWORD rate ) { return ( rate == 8000 || rate == 160000 || rate == 32000 ); }
 private:
 	VadInstT inst;
 };
@@ -38,8 +39,9 @@ class VAD
 {
 public:
 	VAD(){};
-	int CalcVad8khz(SWORD* frame,DWORD size) { return 0; }
-	int GetVAD()				 { return 0; }
+	int CalcVad(SWORD* frame,DWORD size, DWORD rate) { return 0; }
+	int GetVAD()			 { return 0; }
+	bool IsRateSupported(DWORD rate ) { return 0; }
 };
 #endif
 #endif	/* VAD_H */
