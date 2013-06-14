@@ -11,8 +11,22 @@ VAD::VAD()
 
 int VAD::CalcVad8khz(SWORD* frame,DWORD size)
 {
-	//Calculate VAD
-	return WebRtcVad_CalcVad8khz(&inst,frame,size);
+	//Check rates
+	switch (rate)
+	{
+		case 8000:
+			//Calculate VAD
+			return WebRtcVad_CalcVad8khz(&inst,frame,size);
+		case 16000:
+			//Calculate VAD
+			return WebRtcVad_CalcVad16khz(&inst,frame,size);
+		case 32000:
+			//Calculate VAD
+			return WebRtcVad_CalcVad32khz(&inst,frame,size);
+	}
+
+	//No reate supported
+	return 0;
 }
 
 bool VAD::SetMode(Mode mode)
@@ -20,6 +34,7 @@ bool VAD::SetMode(Mode mode)
 	//Set mode
 	return !WebRtcVad_set_mode_core(&inst,mode);
 }
+
 int VAD::GetVAD()
 {
 	return inst.vad;

@@ -94,7 +94,7 @@ int AudioDecoderWorker::Decode()
 	Log(">DecodeAudio\n");
 
 	//Empezamos a reproducir
-	output->StartPlaying();
+	output->StartPlaying(8000);
 
 	//Mientras tengamos que capturar
 	while(decoding)

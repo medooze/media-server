@@ -670,7 +670,7 @@ int RTMPParticipant::SendAudio()
 	Log(">RTMP Participant send audio\n");
 
 	//Start recording
-	audioInput->StartRecording();
+	audioInput->StartRecording(8000);
 
 	//Create encoder
 	AudioEncoder *encoder = AudioCodecFactory::CreateEncoder(audioCodec,audioProperties);
@@ -974,7 +974,6 @@ int RTMPParticipant::RecAudio()
 {
 	AudioCodec::Type rtmpAudioCodec;
 	AudioDecoder *rtmpAudioDecoder = NULL;
-	VAD vad;
 	
 	Log(">RecAudio\n");
 
@@ -1033,12 +1032,8 @@ int RTMPParticipant::RecAudio()
 		{
 			//Check size
 			if (rawLen>0 && !audioMuted)
-			{
 				//Enqeueue it
 				audioOutput->PlayBuffer(raw,rawLen,0);
-				//calculate vad
-				vad.CalcVad8khz(raw,rawLen);
-			}
 			//Remove size
 			size = 0;
 		}

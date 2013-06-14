@@ -125,7 +125,7 @@ int AudioEncoderMultiplexerWorker::Encode()
 	}
 
 	//Empezamos a grabar
-	input->StartRecording();
+	input->StartRecording(8000);
 
 	//Mientras tengamos que capturar
 	while(encoding)
