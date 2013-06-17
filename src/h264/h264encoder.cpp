@@ -29,7 +29,7 @@ static void X264_log(void *p, int level, const char *fmt, va_list args)
 * H264Encoder
 *	Constructor de la clase
 ***********************/
-H264Encoder::H264Encoder(const Properties& properties) : h264ProfileLevelId("428031")
+H264Encoder::H264Encoder(const Properties& properties) : h264ProfileLevelId("42801F")
 {
 	// Set default values
 	type    = VideoCodec::H264;
