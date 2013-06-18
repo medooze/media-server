@@ -9,7 +9,7 @@ VAD::VAD()
 	WebRtcVad_set_mode_core(&inst,VERYAGGRESIVE);
 }
 
-int VAD::CalcVad8khz(SWORD* frame,DWORD size)
+int VAD::CalcVad(SWORD* frame,DWORD size,DWORD rate)
 {
 	//Check rates
 	switch (rate)

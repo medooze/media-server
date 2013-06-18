@@ -342,8 +342,8 @@ int AudioMixer::InitMixer(int id,int sidebarId)
 		Log("-No mosaic for participant found, will be send only.\n");
 
 	//INiciamos los pipes
-	audio->input->Init(8000);
-	audio->output->Init(8000);
+	audio->input->Init(rate);
+	audio->output->Init(rate);
 
 	//Add participant to default sidebar
 	defaultSidebar->AddParticipant(id);

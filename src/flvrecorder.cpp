@@ -39,6 +39,9 @@ bool FLVRecorder::Create(const char *filename)
 	//Check fd
 	if (fd<0)
 		return Error("Could not create file [%d,%s]\n",errno,filename);
+
+	//Everythin ok
+	return 1;
 }
 
 bool FLVRecorder::Record()
@@ -52,7 +55,6 @@ bool FLVRecorder::Record()
 	if (fd<0)
 		//Return error
 		return Error("Recording error, file not openeed\n");
-
 
 	//We are recording
 	recording = true;
