@@ -220,6 +220,8 @@ int main(int argc,char **argv)
 	//Ignore SIGPIPE
 	signal( SIGPIPE, SIG_IGN );
 
+	//Hack to allocate fd =0 and avoid bug closure
+	int fdzero = socket(AF_INET, SOCK_STREAM, 0);
 	//Create servers
 	XmlRpcServer	server(port);
 	RTMPServer	rtmpServer;

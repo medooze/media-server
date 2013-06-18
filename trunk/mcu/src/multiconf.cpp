@@ -182,6 +182,7 @@ int MultiConf::StartRecordingBroadcaster(const char* filename)
 	//Set listener
 	flvEncoder.AddMediaListener(&recorder);
 
+	//OK
 	return 1;
 }
 
