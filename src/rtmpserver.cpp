@@ -226,8 +226,12 @@ void RTMPServer::CleanZombies()
 
 	//Zombie iterator
 	for (Connections::iterator it=zombies.begin();it!=zombies.end();++it)
-		//Delete zombies
-		delete *it;
+	{
+		//Get connection
+		RTMPConnection *con = *it;
+		//Delete connection
+		delete con;
+	}
 
 	//Clear zombies
 	zombies.clear();
@@ -251,10 +255,12 @@ void RTMPServer::DeleteAllConnections()
 	//Connection iterator
 	for (Connections::iterator it=connections.begin();it!=connections.end();++it)
 	{
+		//Get connection
+		RTMPConnection *con = *it;
 		//End connection
-		(*it)->End();
+		con->End();
 		//Delete connection
-		delete *it;
+		delete con;
 	}
 
 	//Clear connections
@@ -353,6 +359,7 @@ RTMPNetConnection* RTMPServer::OnConnect(const std::wstring &appName,RTMPNetConn
 	//Not found
 	return NULL;
 }
+
 /**************************************
  * OnDisconnect
  *   Event launched from RTMPConnection to indicate that the connection stream has been disconnected
@@ -363,9 +370,6 @@ void RTMPServer::onDisconnect(RTMPConnection *con)
 
 	//Lock list
 	pthread_mutex_lock(&sessionMutex);
-
-	//End connection
-	con->End();
 
 	//Remove from list
 	connections.remove(con);

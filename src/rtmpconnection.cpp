@@ -1254,6 +1254,7 @@ void RTMPConnection::onNetConnectionStatus(const RTMPNetStatusEventInfo &info,co
 	//Send command
 	onCommand(0,L"onStatus",&event);
 }
+
 void RTMPConnection::onNetConnectionDisconnected()
 {
 	Log("-onNetConnectionDisconnected [0x%x]\n",this);
@@ -1261,6 +1262,6 @@ void RTMPConnection::onNetConnectionDisconnected()
 	//Delete app
 	app = NULL;
 
-	//Stop just in case
-	Stop();
+	//End us
+	End();
 }
