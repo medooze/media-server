@@ -17,6 +17,9 @@ public:
 	virtual int StartPlaying(DWORD samplerate);
 	virtual int StopPlaying();
 
+	virtual DWORD GetNativeRate()		{ return nativeRate;	}
+	virtual DWORD GetPlayingRate()		{ return playRate;	}
+
 	int GetSamples(SWORD *buffer,DWORD size);
 	DWORD GetVAD(DWORD numSamples);
 	int Init(DWORD samplerate);

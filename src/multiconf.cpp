@@ -50,14 +50,14 @@ void MultiConf::SetListener(Listener *listener,void* param)
 * Init
 * 	Constructo
 *************************/
-int MultiConf::Init(int vad)
+int MultiConf::Init(int vad, DWORD rate)
 {
-	Log("-Init multiconf [vad:%d]\n",vad);
+	Log("-Init multiconf [vad:%d,rate:%d]\n",vad,rate);
 
 	//We are inited
 	inited = true;
 	//Init audio mixers
-	int res = audioMixer.Init(vad);
+	int res = audioMixer.Init(vad,rate);
 	//Set vad mode
 	videoMixer.SetVADMode((VideoMixer::VADMode)vad);
 	//Check if we need to use vad

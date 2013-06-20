@@ -14,11 +14,45 @@ OpusEncoder::OpusEncoder(const Properties &properties)
 	type = AudioCodec::OPUS;
 	//Set number of input frames for codec
 	numFrameSamples = 160;
+	//Rate
+	rate = 8000;
+	//Set default mode
+	mode = OPUS_APPLICATION_VOIP;
+
+	//Check speex quality overrride
+	Properties::const_iterator it = properties.find(std::string("opus.applicaion.audio"));
+
+	//If found
+	if (it!=properties.end())
+		//Update it
+		mode = OPUS_APPLICATION_AUDIO;
+	
 	//Open encoder
-	enc = opus_encoder_create(8000, 1, OPUS_APPLICATION_VOIP, &error);
+	enc = opus_encoder_create(rate, 1, mode, &error);
+		
 	//Check error
 	if (!enc || error)
 		Error("Could not open OPUS encoder");
+}
+
+DWORD OpusEncoder::TrySetRate(DWORD rate)
+{
+	int error = 0;
+	//Try to create a new encoder with that rate
+	OpusEncoder *aux = opus_encoder_create(rate, 1, mode, &error);
+	//If no error
+	if (aux || !error)
+	{
+		//Destroy old one
+		if (enc) opus_encoder_destroy(enc);
+		//Get new decoded
+		enc = aux;
+		//Store new rate
+		this->rate = rate;
+	}
+
+	//Return new rate
+	return this->rate;
 }
 
 OpusEncoder::~OpusEncoder()

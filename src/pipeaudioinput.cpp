@@ -61,6 +61,8 @@ end:
 
 int PipeAudioInput::StartRecording(DWORD rate)
 {
+	Log("-PipeAudioInput start recording [rate:%d]\n",rate);
+
 	//Bloqueamos
 	pthread_mutex_lock(&mutex);
 	//Store recording rate
@@ -77,6 +79,8 @@ int PipeAudioInput::StartRecording(DWORD rate)
 
 int PipeAudioInput::StopRecording()
 {
+	Log("-PipeAudioInput stop recording\n");
+	
 	//Bloqueamos
 	pthread_mutex_lock(&mutex);
 
@@ -103,7 +107,7 @@ int PipeAudioInput::PutSamples(SWORD *buffer,DWORD size)
 		//Transrate
 		if (!transrater.ProcessBuffer(buffer, size, resampled, &resampledSize))
 			//Error
-			return Error("-PipeAudioInput could not transrate");
+			return Error("-PipeAudioInput could not transrate\n");
 		//Swith input parameters to resample ones
 		buffer = resampled;
 		size = resampledSize;
@@ -137,6 +141,8 @@ int PipeAudioInput::PutSamples(SWORD *buffer,DWORD size)
 
 int PipeAudioInput::Init(DWORD rate)
 {
+	Log("-PipeAudioInput init [rate:%d]\n",rate);
+	
 	//Protegemos
 	pthread_mutex_lock(&mutex);
 

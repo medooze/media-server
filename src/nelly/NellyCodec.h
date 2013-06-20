@@ -22,6 +22,9 @@ public:
 	NellyEncoder(const Properties &properties);
 	virtual ~NellyEncoder();
 	virtual int Encode(SWORD *in,int inLen,BYTE* out,int outLen);
+	virtual DWORD TrySetRate(DWORD rate)	{ return 8000;	}
+	virtual DWORD GetRate()			{ return 8000;	}
+	virtual DWORD GetClockRate()		{ return 8000;	}
 private:
 	AVCodec 	*codec;
 	AVCodecContext	*ctx;
@@ -34,6 +37,9 @@ public:
 	NellyEncoder11Khz(const Properties &properties);
 	virtual ~NellyEncoder11Khz();
 	virtual int Encode(SWORD *in,int inLen,BYTE* out,int outLen);
+	virtual DWORD TrySetRate(DWORD rate)	{ return 8000;	}
+	virtual DWORD GetRate()			{ return 8000;	}
+	virtual DWORD GetClockRate()		{ return 11025;	}
 private:
 	SpeexResamplerState *resampler;
 	AVCodec 	*codec;
@@ -48,6 +54,8 @@ public:
 	NellyDecoder11Khz();
 	virtual ~NellyDecoder11Khz();
 	virtual int Decode(BYTE *in,int inLen,SWORD* out,int outLen);
+	virtual DWORD TrySetRate(DWORD rate)	{ return 8000;	}
+	virtual DWORD GetRate()			{ return 8000;	}
 private:
 	SpeexResamplerState *resampler;
 	AVCodec 	*codec;

@@ -295,9 +295,6 @@ int AudioStream::RecAudio()
 	//Inicializamos el tiempo
 	gettimeofday(&before,NULL);
 
-	//Empezamos a reproducir
-	audioOutput->StartPlaying(8000);
-
 	//Mientras tengamos que capturar
 	while(receivingAudio)
 	{
@@ -326,6 +323,12 @@ int AudioStream::RecAudio()
 				Log("Error creando nuevo codec de audio [%d]\n",type);
 				continue;
 			}
+
+			//Try to set native pipe rate
+			DWORD rate = codec->TrySetRate(audioOutput->GetNativeRate());
+
+			//Start playing at codec rate
+			audioOutput->StartPlaying(rate);
 		}
 
 		//Lo decodificamos
@@ -389,6 +392,13 @@ int AudioStream::SendAudio()
 		//Error
 		return Error("Could not create audio codec\n");
 
+	//Get codec rate
+	DWORD rate = codec->TrySetRate(audioInput->GetNativeRate());
+
+	//Start recording at codec rate
+	audioInput->StartRecording(rate);
+
+
 	/*
 	   Opus supports 5 different audio bandwidths which may be adjusted
 	   during the duration of a call.  The RTP timestamp clock frequency is
@@ -416,27 +426,22 @@ int AudioStream::SendAudio()
 
 	 */
 
-	//Update clock rate
-	if (codec->type==AudioCodec::SPEEX16)
-		//Set it
-		packet.SetClockRate(16000);
-	else if (codec->type==AudioCodec::OPUS)
-		//It is 48khz always even if the data sent is at 8khz
-		packet.SetClockRate(48000);
-	
-	//Empezamos a grabar
-	audioInput->StartRecording(8000);
+
+	//Get clock rate for codec
+	DWORD clock = codec->GetClockRate();
+
+	//Set it
+	packet.SetClockRate(clock);
+
+
+	//Get ts multiplier
+	float multiplier = clock/rate;
 
 	//Mientras tengamos que capturar
 	while(sendingAudio)
 	{
-		//Check if opus
-		if (codec->type==AudioCodec::OPUS)
-			//Incrementamos el tiempo de envio
-			frameTime += codec->numFrameSamples*6;
-		else
-			//Incrementamos el tiempo de envio
-			frameTime += codec->numFrameSamples;
+		//Incrementamos el tiempo de envio
+		frameTime += codec->numFrameSamples*multiplier;
 
 		//Capturamos 
 		if (audioInput->RecBuffer(recBuffer,codec->numFrameSamples)==0)
