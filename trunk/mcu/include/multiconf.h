@@ -52,7 +52,7 @@ public:
 	MultiConf(const std::wstring& tag);
 	~MultiConf();
 
-	int Init(int vad);
+	int Init(int vad,DWORD rate);
 	int End();
 
 	void SetListener(Listener *listener,void* param);

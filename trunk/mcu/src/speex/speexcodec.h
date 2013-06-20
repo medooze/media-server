@@ -11,11 +11,12 @@ public:
 	SpeexEncoder(const Properties &properties);
 	virtual ~SpeexEncoder();
 	virtual int Encode(SWORD *in,int inLen,BYTE* out,int outLen);
+	virtual DWORD TrySetRate(DWORD rate);
+	virtual DWORD GetRate();
+	virtual DWORD GetClockRate()	{ return 16000;}
 private:
 	void *encoder;
-	SpeexResamplerState *resampler;
 	SpeexBits encbits;
-	int enc_frame_size;
 };
 
 class SpeexDecoder : public AudioDecoder
@@ -24,6 +25,8 @@ public:
 	SpeexDecoder();
 	virtual ~SpeexDecoder();
 	virtual int Decode(BYTE *in,int inLen,SWORD* out,int outLen);
+	virtual DWORD TrySetRate(DWORD rate);
+	virtual DWORD GetRate();
 private:
 	void *decoder;
 	SpeexResamplerState *wbresampler;

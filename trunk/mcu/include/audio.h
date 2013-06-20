@@ -7,7 +7,10 @@
 class AudioEncoder
 {
 public:
-	virtual int Encode(SWORD *in,int inLen,BYTE* out,int outLen)=0;
+	virtual int   Encode(SWORD *in,int inLen,BYTE* out,int outLen)=0;
+	virtual DWORD TrySetRate(DWORD rate)=0;
+	virtual DWORD GetRate()=0;
+	virtual DWORD GetClockRate()=0;
 	AudioCodec::Type	type;
 	int			numFrameSamples;
 	int			frameLength;
@@ -16,7 +19,9 @@ public:
 class AudioDecoder
 {
 public:
-	virtual int Decode(BYTE *in,int inLen,SWORD* out,int outLen)=0;
+	virtual int   Decode(BYTE *in,int inLen,SWORD* out,int outLen)=0;
+	virtual DWORD TrySetRate(DWORD rate)=0;
+	virtual DWORD GetRate()=0;
 	AudioCodec::Type	type;
 	int			numFrameSamples;
 	int			frameLength;
@@ -55,6 +60,8 @@ private:
 class AudioInput
 {
 public:
+	virtual DWORD GetNativeRate()=0;
+	virtual DWORD GetRecordingRate()=0;
 	virtual int RecBuffer(SWORD *buffer,DWORD size)=0;
 	virtual void  CancelRecBuffer()=0;
 	virtual int StartRecording(DWORD samplerate)=0;
@@ -64,6 +71,8 @@ public:
 class AudioOutput
 {
 public:
+	virtual DWORD GetNativeRate()=0;
+	virtual DWORD GetPlayingRate()=0;
 	virtual int PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime)=0;
 	virtual int StartPlaying(DWORD samplerate)=0;
 	virtual int StopPlaying()=0;

@@ -36,11 +36,9 @@ int PipeAudioOutput::PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime)
 	if (transrater.IsOpen())
 	{
 		//Proccess
-		int ret = transrater.ProcessBuffer( buffer, size, NULL, &resampledSize);
-		
-		//If error
-		if (ret)
-			return Error("-PipeAudioOutput: resampling error.\n", ret );
+		if (!transrater.ProcessBuffer( buffer, size, resampled, &resampledSize))
+			//Error
+			return Error("-PipeAudioOutput could not transrate\n");
 
 		//Check if we need to calculate it
 		if (calcVAD && v<0 && vad.IsRateSupported(nativeRate))
@@ -86,6 +84,8 @@ int PipeAudioOutput::PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime)
 
 int PipeAudioOutput::StartPlaying(DWORD rate)
 {
+	Log("-PipeAudioOutput start playing [rate:%d]\n",rate);
+
 	//Lock
 	pthread_mutex_lock(&mutex);
 
@@ -111,6 +111,8 @@ int PipeAudioOutput::StartPlaying(DWORD rate)
 
 int PipeAudioOutput::StopPlaying()
 {
+	Log("-PipeAudioOutput stop playing\n");
+
 	//Lock
 	pthread_mutex_lock(&mutex);
 	//Close transrater
@@ -145,13 +147,13 @@ int PipeAudioOutput::GetSamples(SWORD *buffer,DWORD num)
 }
 int PipeAudioOutput::Init(DWORD rate)
 {
-	Log("PipeAudioOutput init\n");
+	Log("-PipeAudioOutput init [rate:%d]\n",rate);
 
 	//Protegemos
 	pthread_mutex_lock(&mutex);
 
 	//Store play rate
-	playRate = rate;
+	nativeRate = rate;
 
 	//Iniciamos
 	inited = true;

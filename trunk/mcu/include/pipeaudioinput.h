@@ -16,6 +16,10 @@ public:
 	virtual void CancelRecBuffer();
 	virtual int StartRecording(DWORD rate);
 	virtual int StopRecording();
+
+	virtual DWORD GetNativeRate()		{ return nativeRate;	}
+	virtual DWORD GetRecordingRate()	{ return recordRate;	}
+	
 	int Init(DWORD rate);
 	int PutSamples(SWORD *buffer,DWORD size);
 	int End();

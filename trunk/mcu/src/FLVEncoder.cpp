@@ -257,9 +257,6 @@ int FLVEncoder::EncodeAudio()
 {
 	Log(">Encode Audio\n");
 
-	//Start recording
-	audioInput->StartRecording(8000);
-
 	//Create encoder
 	AudioEncoder *encoder = AudioCodecFactory::CreateEncoder(audioCodec);
 
@@ -267,6 +264,12 @@ int FLVEncoder::EncodeAudio()
 	if (!encoder)
 		//Error
 		return Error("Error encoding audio");
+
+	//Try to set native rate
+	DWORD rate = encoder->TrySetRate(audioInput->GetNativeRate());
+
+	//Start recording
+	audioInput->StartRecording(rate);
 
 	//No first yet
 	QWORD ini = 0;

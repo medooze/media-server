@@ -14,12 +14,20 @@ xmlrpc_value* CreateConference(xmlrpc_env *env, xmlrpc_value *param_array, void 
 	char *str;
 	int vad = 0;
 	int queueId = 0;
-	xmlrpc_parse_value(env, param_array, "(sii)", &str, &vad, &queueId);
+	int rate = 8000;
+	xmlrpc_parse_value(env, param_array, "(siii)", &str, &vad, &rate, &queueId);
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
+	{
+		//Try again
+		xmlrpc_parse_value(env, param_array, "(sii)", &str, &vad, &queueId);
+
+		//Comprobamos si ha habido error
+		if(env->fault_occurred)
 		//Send errro
 		return xmlerror(env,"Fault occurred");
+	}
 
 	//Parse string
 	tagParser.Parse((BYTE*)str,strlen(str));
@@ -36,7 +44,7 @@ xmlrpc_value* CreateConference(xmlrpc_env *env, xmlrpc_value *param_array, void 
 		return xmlerror(env,"Conference deleted before initing");
 
 	//La iniciamos
-	int res = conf->Init(vad);
+	int res = conf->Init(vad,rate);
 
 	//Liberamos la referencia
 	mcu->ReleaseConferenceRef(confId);
