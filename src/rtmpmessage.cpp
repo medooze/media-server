@@ -1003,10 +1003,19 @@ DWORD RTMPAudioFrame::Parse(BYTE *data,DWORD size)
 	if (!pos)
 	{
 		//Parse type
-		codec	= (AudioCodec)(data[0]>>4);
-		rate	= (SoundRate)((data[0]>>2) & 0x03);
-		sample16bits	= ((data[0]>>1) & 0x01);
-		stereo		= data[0] & 0x01;
+		codec		= (AudioCodec)(buffer[0]>>4);
+		rate		= (SoundRate)((buffer[0]>>2) & 0x03);
+		sample16bits	= ((buffer[0]>>1) & 0x01);
+		stereo		=  buffer[0] & 0x01;
+		//Remove from data
+		buffer++;
+		bufferLen--;
+	}
+	//Check AAC
+	if (codec==AAC)
+	{
+		//Get type
+		extraData[0] = buffer[0];
 		//Remove from data
 		buffer++;
 		bufferLen--;
@@ -1022,24 +1031,36 @@ DWORD RTMPAudioFrame::Parse(BYTE *data,DWORD size)
 
 DWORD RTMPAudioFrame::Serialize(BYTE* data,DWORD size)
 {
+	int pos = 0;
+
 	//Check if enought space
-	if (size<mediaSize+1)
+	if (size<GetSize())
 		//Failed
 		return 0;
 
 	//Set first byte
-	data[0] = (codec<<4) | (rate<<2) | (sample16bits<<1) | stereo;
+	data[pos++] = (codec<<4) | (rate<<2) | (sample16bits<<1) | stereo;
+
+	//Check codec
+	if (codec==AAC)
+		//Se type
+		data[pos++] = extraData[0];
 
 	//Copy media
-	memcpy(data+1,buffer,mediaSize);
+	memcpy(data+pos,buffer,mediaSize);
 
 	//Exit
-	return mediaSize+1;
+	return mediaSize+pos;
 }
 DWORD RTMPAudioFrame::GetSize()
 {
-	//Check if enought space
-	return mediaSize+1;
+	//Check if extradata is used
+	if (codec!=AAC)
+		//Check if enought space
+		return mediaSize+1;
+	else
+		//Check if enought space
+		return mediaSize+2;
 }
 
 DWORD RTMPAudioFrame::SetAudioFrame(BYTE* data,DWORD size)
@@ -1067,6 +1088,7 @@ RTMPMediaFrame *RTMPAudioFrame::Clone()
 	frame->SetSoundRate(rate);
 	frame->SetSamples16Bits(sample16bits);
 	frame->SetStereo(stereo);
+	frame->SetAACPacketType(GetAACPacketType());
 	frame->SetAudioFrame(buffer,mediaSize);
 	//Return frame
 	return frame;

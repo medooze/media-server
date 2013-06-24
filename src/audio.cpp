@@ -7,6 +7,7 @@
 #include "opus/opusencoder.h"
 #include "opus/opusdecoder.h"
 #include "g722/g722codec.h"
+#include "aac/aacencoder.h"
 
 AudioEncoder* AudioCodecFactory::CreateEncoder(AudioCodec::Type codec)
 {
@@ -40,6 +41,8 @@ AudioEncoder* AudioCodecFactory::CreateEncoder(AudioCodec::Type codec, const Pro
 			return new OpusEncoder(properties);
 		case AudioCodec::G722:
 			return new G722Encoder(properties);
+		case AudioCodec::AAC:
+			return new AACEncoder(properties);
 		default:
 			Error("Codec not found [%d]\n",codec);
 	}

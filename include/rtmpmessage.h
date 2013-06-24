@@ -90,8 +90,9 @@ protected:
 class RTMPAudioFrame : public RTMPMediaFrame
 {
 public:
-	enum AudioCodec {PCM=0,ADPCM=1,MP3=2,PCMLE=3,NELLY16khz=4,NELLY8khz=5,NELLY=6,G711A=7,G711U=8,AAC=10,SPEEX=11,MP38khz=14};
-	enum SoundRate  {RATE5khz=0,RATE11khz=1,RATE22khz=2,RATE44khz=3};
+	enum AudioCodec		{PCM=0,ADPCM=1,MP3=2,PCMLE=3,NELLY16khz=4,NELLY8khz=5,NELLY=6,G711A=7,G711U=8,AAC=10,SPEEX=11,MP38khz=14};
+	enum SoundRate		{RATE5khz=0,RATE11khz=1,RATE22khz=2,RATE44khz=3};
+	enum AACPacketType	{AACSequenceHeader = 0, AACRaw = 1};
 public:
 	RTMPAudioFrame(QWORD timestamp,DWORD size);
 	virtual RTMPMediaFrame* Clone();
@@ -110,11 +111,14 @@ public:
 	void		SetStereo(bool stereo)		{ this->stereo = stereo;	}
 	DWORD		SetAudioFrame(BYTE* data,DWORD size);
 
+	void		SetAACPacketType(AACPacketType type)	{ extraData[0] = type;	}
+	AACPacketType   GetAACPacketType()			{ return (AACPacketType) extraData[0]; }
 private:
 	AudioCodec	codec;
 	SoundRate	rate;
 	bool		sample16bits;
 	bool		stereo;
+	BYTE		extraData[0];
 
 };
 

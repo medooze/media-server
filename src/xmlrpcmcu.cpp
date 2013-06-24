@@ -20,13 +20,16 @@ xmlrpc_value* CreateConference(xmlrpc_env *env, xmlrpc_value *param_array, void 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
 	{
+		//Clean error
+		xmlrpc_env_init(env);
+		
 		//Try again
 		xmlrpc_parse_value(env, param_array, "(sii)", &str, &vad, &queueId);
 
 		//Comprobamos si ha habido error
 		if(env->fault_occurred)
-		//Send errro
-		return xmlerror(env,"Fault occurred");
+			//Send errro
+			return xmlerror(env,"Fault occurred");
 	}
 
 	//Parse string

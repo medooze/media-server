@@ -1,6 +1,7 @@
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
 #include <stdint.h>
+#include <stdlib.h>
 #include <map>
 #include <string>
 #include "version.h"
@@ -86,5 +87,84 @@ inline DWORD GetHeight(DWORD size)
 	return 0;
 }
 
-typedef std::map<std::string,std::string> Properties;
+class Properties: public std::map<std::string,std::string>
+{
+public:
+	bool HasProperty(const std::string key) const
+	{
+		return find(key)!=end();
+	}
+
+	std::string GetProperty(const char* key,const std::string defaultValue) const
+	{
+		//Find item
+		const_iterator it = find(std::string(key));
+		//If not found
+		if (it==end())
+			//return default
+			return defaultValue;
+		//Return value
+		return it->second;
+	}
+	
+	std::string GetProperty(const std::string key,const std::string defaultValue) const
+	{
+		//Find item
+		const_iterator it = find(key);
+		//If not found
+		if (it==end())
+			//return default
+			return defaultValue;
+		//Return value
+		return it->second;
+	}
+
+	const char* GetProperty(const char* key,char *defaultValue) const
+	{
+		//Find item
+		const_iterator it = find(std::string(key));
+		//If not found
+		if (it==end())
+			//return default
+			return defaultValue;
+		//Return value
+		return it->second.c_str();
+	}
+
+	const char* GetProperty(const std::string key,char *defaultValue) const
+	{
+		//Find item
+		const_iterator it = find(key);
+		//If not found
+		if (it==end())
+			//return default
+			return defaultValue;
+		//Return value
+		return it->second.c_str();
+	}
+
+	int GetProperty(const char* key,int defaultValue) const
+	{
+		//Find item
+		const_iterator it = find(std::string(key));
+		//If not found
+		if (it==end())
+			//return default
+			return defaultValue;
+		//Return value
+		return atoi(it->second.c_str());
+	}
+	
+	int GetProperty(const std::string key,int defaultValue) const
+	{
+		//Find item
+		const_iterator it = find(key);
+		//If not found
+		if (it==end())
+			//return default
+			return defaultValue;
+		//Return value
+		return atoi(it->second.c_str());
+	}
+};
 #endif

@@ -10,6 +10,7 @@
 #include <climits>
 #include <pthread.h>
 
+int Log(const char *msg, ...);
 
 /*************************************
 * blocksignals
@@ -42,6 +43,9 @@ inline int createPriorityThread(pthread_t *thread, void *(*function)(void *), vo
 	if (pthread_create(thread,NULL,function,arg) != 0)
 		return 0;
 
+	//Log
+	Log("-Created thread [%p]\n",thread);
+	
 	return 1;
 	/*
 	 * //Aumentamos la prioridad

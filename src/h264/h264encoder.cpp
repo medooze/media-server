@@ -29,7 +29,7 @@ static void X264_log(void *p, int level, const char *fmt, va_list args)
 * H264Encoder
 *	Constructor de la clase
 ***********************/
-H264Encoder::H264Encoder(const Properties& properties) : h264ProfileLevelId("42801F")
+H264Encoder::H264Encoder(const Properties& properties)
 {
 	// Set default values
 	type    = VideoCodec::H264;
@@ -46,13 +46,8 @@ H264Encoder::H264Encoder(const Properties& properties) : h264ProfileLevelId("428
 	intraPeriod = 0;
 
 	//Check profile level id
-	Properties::const_iterator it = properties.find(std::string("h264.profile-level-id"));
+	h264ProfileLevelId = properties.GetProperty("h264.profile-level-id",std::string("42801F"));
 
-	//If found
-	if (it!=properties.end())
-		//Update it
-		h264ProfileLevelId = it->second;
-	
 	//Reste values
 	enc = NULL;
 }
