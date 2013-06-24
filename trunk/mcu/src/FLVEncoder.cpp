@@ -264,10 +264,10 @@ int FLVEncoder::EncodeAudio()
 	if (!encoder)
 		//Error
 		return Error("Error encoding audio");
-
+	
 	//Try to set native rate
 	DWORD rate = encoder->TrySetRate(audioInput->GetNativeRate());
-
+	
 	//Start recording
 	audioInput->StartRecording(rate);
 
@@ -277,15 +277,17 @@ int FLVEncoder::EncodeAudio()
 	//Num of samples since ini
 	QWORD samples = 0;
 
+	//Allocate samlpes
+	SWORD* recBuffer = (SWORD*) malloc(encoder->numFrameSamples*sizeof(SWORD));
+
 	//Mientras tengamos que capturar
 	while(encodingAudio)
 	{
+		//Audio frame
 		RTMPAudioFrame	audio(0,MTU);
-		SWORD 		recBuffer[512];
-
+		
 		//Capturamos
 		DWORD  recLen = audioInput->RecBuffer(recBuffer,encoder->numFrameSamples);
-
 		//Check len
 		if (!recLen)
 		{
@@ -350,8 +352,21 @@ int FLVEncoder::EncodeAudio()
 					//Increase samples
 					samples += 256;
 					break;
+				case AudioCodec::AAC:
+					//Set RTMP data
+					// If the SoundFormat indicates AAC, the SoundType should be 1 (stereo) and the SoundRate should be 3 (44 kHz).
+					// However, this does not mean that AAC audio in FLV is always stereo, 44 kHz data.
+					// Instead, the Flash Player ignores these values and extracts the channel and sample rate data is encoded in the AAC bit stream.
+					audio.SetAudioCodec(RTMPAudioFrame::AAC);
+					audio.SetSoundRate(RTMPAudioFrame::RATE44khz);
+					audio.SetSamples16Bits(1);
+					audio.SetStereo(1);
+					audio.SetAACPacketType(RTMPAudioFrame::AACRaw);
+					//Set timestamp
+					audio.SetTimestamp(ini+samples*1000/encoder->GetClockRate());
+					//Increase samples
+					samples += encoder->numFrameSamples;
 			}
-
 
 			//Lock
 			pthread_mutex_lock(&mutex);
@@ -364,6 +379,11 @@ int FLVEncoder::EncodeAudio()
 
 	//Stop recording
 	audioInput->StopRecording();
+
+	//Delete buffer
+	if (recBuffer)
+		//Delete
+		delete(recBuffer);
 
 	//Check codec
 	if (encoder)

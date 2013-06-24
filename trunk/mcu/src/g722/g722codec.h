@@ -1,10 +1,3 @@
-/* 
- * File:   NellyCodec.h
- * Author: Sergio
- *
- * Created on 7 de diciembre de 2011, 23:29
- */
-
 #ifndef G722_H
 #define	G722_H
 extern "C" {

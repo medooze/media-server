@@ -26,27 +26,25 @@ SpeexEncoder::SpeexEncoder(const Properties &properties)
 	//+------+---------------+-------------------+------------------------+
 
 	//Set default quality
-	int quality = 5;
+	int quality = properties.GetProperty("speex.quality",5);
 
-	//Check speex quality overrride
-	Properties::const_iterator it = properties.find(std::string("speex.quality"));
-
-	//If found
-	if (it!=properties.end())
-		//Update it
-		quality = atoi(it->second.c_str());
-	
 	// init encoder in wide band
 	encoder = speex_encoder_init(&speex_wb_mode);
 	
 	//Set quality
 	speex_encoder_ctl(encoder, SPEEX_SET_QUALITY, &quality);
+
+	//Update rate
+	int rate = 16000;
+	speex_encoder_ctl(encoder, SPEEX_SET_SAMPLING_RATE, &rate);
 	
 	//Init bits
 	speex_bits_init(&encbits);
 
 	// get frame sizes
 	speex_mode_query(&speex_wb_mode, SPEEX_MODE_FRAME_SIZE, &numFrameSamples);
+
+	Log("-Speex: Open codec with %d numFrameSamples\n",numFrameSamples);
 }
 
 SpeexEncoder::~SpeexEncoder()
@@ -58,8 +56,6 @@ SpeexEncoder::~SpeexEncoder()
 
 DWORD SpeexEncoder::TrySetRate(DWORD rate)
 {
-	//Update rate
-	speex_encoder_ctl(encoder, SPEEX_SET_SAMPLING_RATE, &rate);
 	//return real rate
 	return GetRate();
 }
