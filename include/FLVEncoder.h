@@ -40,6 +40,7 @@ private:
 
 	RTMPMetaData*	meta;
 	RTMPVideoFrame* frameDesc;
+	RTMPAudioFrame* aacSpecificConfig;
 	int		width;
 	int		height;
 	int		bitrate;

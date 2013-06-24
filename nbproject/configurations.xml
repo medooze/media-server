@@ -10,6 +10,7 @@
         <in>FLVEncoder.h</in>
         <in>FlashSoundHandler.h</in>
         <in>RTPSmoother.h</in>
+        <in>aacconfig.h</in>
         <in>acumulator.h</in>
         <in>amf.h</in>
         <in>amf3.h</in>
@@ -20,6 +21,7 @@
         <in>audioencoder.h</in>
         <in>audiomixer.h</in>
         <in>audiostream.h</in>
+        <in>audiotransrater.h</in>
         <in>avcdescriptor.h</in>
         <in>bitstream.h</in>
         <in>broadcaster.h</in>
@@ -27,6 +29,7 @@
         <in>codecs.h</in>
         <in>config.h</in>
         <in>crc32calc.h</in>
+        <in>eventstreaminghandler.h</in>
         <in>fecdecoder.h</in>
         <in>fifo.h</in>
         <in>flash.h</in>
@@ -96,6 +99,7 @@
         <in>videopipe.h</in>
         <in>videostream.h</in>
         <in>videotranscoder.h</in>
+        <in>wait.h</in>
         <in>waitqueue.h</in>
         <in>websockets.h</in>
         <in>websocketserver.h</in>
@@ -113,6 +117,30 @@
         <in>mediamixer.h</in>
       </df>
       <df name="src" kind="SOURCE_LOGICAL_FOLDER">
+        <df name="aac">
+          <df name=".svn">
+            <df name="prop-base" kind="SOURCE_LOGICAL_FOLDER">
+            </df>
+            <df name="props" kind="SOURCE_LOGICAL_FOLDER">
+            </df>
+            <df name="text-base" kind="SOURCE_LOGICAL_FOLDER">
+              <in>aacencoder.cpp.svn-base</in>
+              <in>aacencoder.h.svn-base</in>
+            </df>
+            <df name="tmp" kind="SOURCE_LOGICAL_FOLDER">
+              <df name="prop-base" kind="SOURCE_LOGICAL_FOLDER">
+              </df>
+              <df name="props" kind="SOURCE_LOGICAL_FOLDER">
+              </df>
+              <df name="text-base" kind="SOURCE_LOGICAL_FOLDER">
+              </df>
+            </df>
+            <in>all-wcprops</in>
+            <in>entries</in>
+          </df>
+          <in>aacencoder.cpp</in>
+          <in>aacencoder.h</in>
+        </df>
         <df name="flv1" kind="SOURCE_LOGICAL_FOLDER">
           <in>flv1codec.cpp</in>
           <in>flv1codec.h</in>
@@ -123,6 +151,10 @@
           <in>g711codec.h</in>
           <in>pcmacodec.cpp</in>
           <in>pcmucodec.cpp</in>
+        </df>
+        <df name="g722">
+          <in>g722codec.cpp</in>
+          <in>g722codec.h</in>
         </df>
         <df name="gsm" kind="SOURCE_LOGICAL_FOLDER">
           <in>gsmcodec.cpp</in>
@@ -196,6 +228,10 @@
           <in>speexcodec.cpp</in>
           <in>speexcodec.h</in>
         </df>
+        <df name="vp6">
+          <in>vp6decoder.cpp</in>
+          <in>vp6decoder.h</in>
+        </df>
         <df name="vp8">
           <in>vp8.h</in>
           <in>vp8decoder.cpp</in>
@@ -216,10 +252,12 @@
         <in>audioencoder.cpp</in>
         <in>audiomixer.cpp</in>
         <in>audiostream.cpp</in>
+        <in>audiotransrater.cpp</in>
         <in>avcdescriptor.cpp</in>
         <in>broadcaster.cpp</in>
         <in>broadcastsession.cpp</in>
         <in>crc32calc.cpp</in>
+        <in>eventstreaminghandler.cpp</in>
         <in>fecdecoder.cpp</in>
         <in>flash.cpp</in>
         <in>flashstreamer.cpp</in>

@@ -989,6 +989,14 @@ RTMPMediaFrame *RTMPVideoFrame::Clone()
 	return frame;
 }
 
+RTMPAudioFrame::RTMPAudioFrame(QWORD timestamp,const AACSpecificConfig &config) : RTMPMediaFrame(Audio,timestamp,config.GetSize())
+{
+	//Set type
+	SetAACPacketType(AACSequenceHeader);
+	//Set data
+	SetAudioFrame(config.GetData(),config.GetSize());
+}
+
 RTMPAudioFrame::RTMPAudioFrame(QWORD timestamp,DWORD size) : RTMPMediaFrame(Audio,timestamp,size)
 {
 
@@ -1063,7 +1071,7 @@ DWORD RTMPAudioFrame::GetSize()
 		return mediaSize+2;
 }
 
-DWORD RTMPAudioFrame::SetAudioFrame(BYTE* data,DWORD size)
+DWORD RTMPAudioFrame::SetAudioFrame(const BYTE* data,DWORD size)
 {
 	//Check if enought space
 	if (size>bufferSize)
