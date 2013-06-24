@@ -5,6 +5,7 @@
 #include "amf.h"
 #include "rtmp.h"
 #include "avcdescriptor.h"
+#include "aacconfig.h"
 #include <vector>
 
 class RTMPMediaFrame 
@@ -95,6 +96,7 @@ public:
 	enum AACPacketType	{AACSequenceHeader = 0, AACRaw = 1};
 public:
 	RTMPAudioFrame(QWORD timestamp,DWORD size);
+	RTMPAudioFrame(QWORD timestamp,const AACSpecificConfig &config);
 	virtual RTMPMediaFrame* Clone();
 
 	virtual DWORD	Parse(BYTE *data,DWORD size);
@@ -109,7 +111,7 @@ public:
 	void		SetSoundRate(SoundRate rate)	{ this->rate = rate;		}
 	void		SetSamples16Bits(bool sample16bits) { this->sample16bits = sample16bits; }
 	void		SetStereo(bool stereo)		{ this->stereo = stereo;	}
-	DWORD		SetAudioFrame(BYTE* data,DWORD size);
+	DWORD		SetAudioFrame(const BYTE* data,DWORD size);
 
 	void		SetAACPacketType(AACPacketType type)	{ extraData[0] = type;	}
 	AACPacketType   GetAACPacketType()			{ return (AACPacketType) extraData[0]; }

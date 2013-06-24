@@ -9,6 +9,7 @@
 #include "flv.h"
 #include "flv1/flv1codec.h"
 #include "audioencoder.h"
+#include "aacconfig.h"
 
 FLVEncoder::FLVEncoder()
 {
@@ -29,6 +30,7 @@ FLVEncoder::FLVEncoder()
 	//No meta no desc
 	meta = NULL;
 	frameDesc = NULL;
+	aacSpecificConfig = NULL;
 	//Mutex
 	pthread_mutex_init(&mutex,0);
 	pthread_cond_init(&cond,0);
@@ -128,6 +130,10 @@ DWORD FLVEncoder::AddMediaListener(RTMPMediaStream::Listener *listener)
 	if (frameDesc)
 		//Send it
 		listener->onMediaFrame(RTMPMediaStream::id,frameDesc);
+	//Check audio desc
+	if (aacSpecificConfig)
+		//Send it
+		listener->onMediaFrame(RTMPMediaStream::id,aacSpecificConfig);
 	//Send FPU
 	sendFPU = true;
 }
@@ -276,6 +282,20 @@ int FLVEncoder::EncodeAudio()
 
 	//Num of samples since ini
 	QWORD samples = 0;
+
+	//Check codec
+	if (audioCodec==AudioCodec::AAC)
+	{
+		//Create AAC config frame
+		aacSpecificConfig = new RTMPAudioFrame(0,AACSpecificConfig(rate,1));
+
+		//Lock
+		pthread_mutex_lock(&mutex);
+		//Send audio desc
+		SendMediaFrame(aacSpecificConfig);
+		//unlock
+		pthread_mutex_unlock(&mutex);
+	}
 
 	//Allocate samlpes
 	SWORD* recBuffer = (SWORD*) malloc(encoder->numFrameSamples*sizeof(SWORD));
