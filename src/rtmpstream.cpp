@@ -156,6 +156,7 @@ RTMPPipedMediaStream::RTMPPipedMediaStream() : RTMPMediaStream(0)
 	meta = NULL;
 	//No desc
 	desc = NULL;
+	aacSpecificConfig = NULL;
 	//Do not wait for intra
 	waitIntra = false;
 	//Rewrite ts on default
@@ -171,6 +172,7 @@ RTMPPipedMediaStream::RTMPPipedMediaStream(DWORD id) : RTMPMediaStream(id)
 	meta = NULL;
 	//No desc
 	desc = NULL;
+	aacSpecificConfig = NULL;
 	//Do not wait for intra
 	waitIntra = false;
 	//Rewrite ts on default
@@ -189,6 +191,10 @@ RTMPPipedMediaStream::~RTMPPipedMediaStream()
 	if (desc)
 		//Delete it
 		delete(desc);
+	//Delete aac config
+	if (aacSpecificConfig)
+		//Delete it
+		delete(aacSpecificConfig);
 }
 
 DWORD RTMPPipedMediaStream::AddMediaListener(RTMPMediaStream::Listener *listener)
@@ -268,10 +274,19 @@ void RTMPPipedMediaStream:: onMediaFrame(DWORD id,RTMPMediaFrame *frame)
 		//If we have to wait to video
 		if (waitIntra)
 		{
-			//Check if it is video
-			if (frame->GetType()!=RTMPMediaFrame::Video)
-				//Skip
+			//Get AAC config
+			if (frame->GetType()==RTMPMediaFrame::Audio)
+			{
+				//Check if it is aac config frame
+				RTMPAudioFrame* audio = (RTMPAudioFrame*)frame;
+
+				//check frame type
+				if (audio->GetAudioCodec()==RTMPAudioFrame::AAC && audio->GetAACPacketType()==RTMPAudioFrame::AACSequenceHeader)
+					//clone aac config
+					aacSpecificConfig = (RTMPAudioFrame*)audio->Clone();
+				//Skip frame
 				return;
+			}
 
 			//Check if it is intra video frame
 			RTMPVideoFrame* video = (RTMPVideoFrame*)frame;
@@ -318,6 +333,10 @@ void RTMPPipedMediaStream:: onMediaFrame(DWORD id,RTMPMediaFrame *frame)
 		if (desc)
 			//Send previous desc before frame
 			SendMediaFrame(desc);
+		//Check aac config
+		if (aacSpecificConfig)
+			//Send it
+			SendMediaFrame(aacSpecificConfig);
 	}
 
 	//Check if we have to rewrite ts

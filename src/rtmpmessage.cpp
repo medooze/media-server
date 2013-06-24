@@ -991,6 +991,8 @@ RTMPMediaFrame *RTMPVideoFrame::Clone()
 
 RTMPAudioFrame::RTMPAudioFrame(QWORD timestamp,const AACSpecificConfig &config) : RTMPMediaFrame(Audio,timestamp,config.GetSize())
 {
+	//Set codec
+	SetAudioCodec(AAC);
 	//Set type
 	SetAACPacketType(AACSequenceHeader);
 	//Set data

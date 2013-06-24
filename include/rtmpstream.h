@@ -216,6 +216,7 @@ protected:
 	RTMPMediaStream*	attached;
 	RTMPMetaData*		meta;
 	RTMPVideoFrame*		desc;
+	RTMPAudioFrame*		aacSpecificConfig;
 	QWORD	first;
 	bool	waitIntra;
 	bool	rewriteTimestamps;

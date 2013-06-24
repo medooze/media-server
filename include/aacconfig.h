@@ -36,10 +36,6 @@ public:
 		writter.Put(1, 0); //does not depend on core coder
 		writter.Put(1, 0); //is not extension
 
-		//Explicitly Mark SBR absent
-		//writter.Put(11, 0x2b7); //sync extension
-		//writter.Put(5,  0);
-		//writter.Put(1,  0);
 		//Flush
 		size = writter.Flush();
 	}
