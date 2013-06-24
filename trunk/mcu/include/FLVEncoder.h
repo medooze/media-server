@@ -32,6 +32,7 @@ private:
 	AudioInput*		audioInput;
 	pthread_t		encodingAudioThread;
 	int			encodingAudio;
+	Properties		audioProperties;
 
 	VideoCodec::Type	videoCodec;
 	VideoInput*		videoInput;

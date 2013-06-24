@@ -21,6 +21,9 @@ FLVEncoder::FLVEncoder()
 	//Set default codecs
 	audioCodec = AudioCodec::NELLY11;
 	videoCodec = VideoCodec::SORENSON;
+	//Add aac properties
+	audioProperties.SetProperty("aac.samplerate","48000");
+	audioProperties.SetProperty("aac.bitrate","128000");
 	//Set values for default video
 	width	= GetWidth(CIF);
 	height	= GetHeight(CIF);
@@ -47,6 +50,8 @@ FLVEncoder::~FLVEncoder()
 		delete(meta);
 	if (frameDesc)
 		delete(frameDesc);
+	if (aacSpecificConfig)
+		delete(aacSpecificConfig);
 
 	//Mutex
 	pthread_mutex_destroy(&mutex);
@@ -264,7 +269,7 @@ int FLVEncoder::EncodeAudio()
 	Log(">Encode Audio\n");
 
 	//Create encoder
-	AudioEncoder *encoder = AudioCodecFactory::CreateEncoder(audioCodec);
+	AudioEncoder *encoder = AudioCodecFactory::CreateEncoder(audioCodec,audioProperties);
 
 	//Check
 	if (!encoder)
@@ -277,11 +282,14 @@ int FLVEncoder::EncodeAudio()
 	//Start recording
 	audioInput->StartRecording(rate);
 
-	//No first yet
+	//Get first
 	QWORD ini = 0;
 
 	//Num of samples since ini
 	QWORD samples = 0;
+
+	//Allocate samlpes
+	SWORD* recBuffer = (SWORD*) malloc(encoder->numFrameSamples*sizeof(SWORD));
 
 	//Check codec
 	if (audioCodec==AudioCodec::AAC)
@@ -297,15 +305,12 @@ int FLVEncoder::EncodeAudio()
 		pthread_mutex_unlock(&mutex);
 	}
 
-	//Allocate samlpes
-	SWORD* recBuffer = (SWORD*) malloc(encoder->numFrameSamples*sizeof(SWORD));
-
 	//Mientras tengamos que capturar
 	while(encodingAudio)
 	{
 		//Audio frame
 		RTMPAudioFrame	audio(0,MTU);
-		
+
 		//Capturamos
 		DWORD  recLen = audioInput->RecBuffer(recBuffer,encoder->numFrameSamples);
 		//Check len
@@ -320,7 +325,7 @@ int FLVEncoder::EncodeAudio()
 			//Skip
 			continue;
 		}
-
+		
 		//Rencode it
 		DWORD len;
 

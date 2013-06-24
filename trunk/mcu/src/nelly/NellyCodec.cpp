@@ -214,6 +214,7 @@ int NellyDecoder11Khz::Decode(BYTE *in, int inLen, SWORD* out, int outLen)
 	AVFrame frame;
 	int got_frame;
 	SWORD buffer8[512];
+	SWORD buffer11[512]; 
 	DWORD len8 = 512;
 	
 	//If we have input
@@ -238,9 +239,13 @@ int NellyDecoder11Khz::Decode(BYTE *in, int inLen, SWORD* out, int outLen)
 		if (got_frame)
 		{
 			//Get data
-			SWORD *buffer11 = (SWORD *)frame.extended_data[0];
+			float *fbuffer11 = (float *) frame.extended_data[0];
 			DWORD len11 = frame.nb_samples;
 
+			//Convert to SWORD
+			for (int i=0; i<len11; ++i)
+				buffer11[i] = (fbuffer11[i] * (1<<15));
+			
 			//Resample
 			speex_resampler_process_int(resampler,0,buffer11,&len11,buffer8,&len8);
 

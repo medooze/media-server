@@ -120,7 +120,7 @@ int PipeAudioInput::PutSamples(SWORD *buffer,DWORD size)
 	if (recording)
 	{
 		//Si no cabe
-		if (fifoBuffer.length()+size>1024)
+		if (fifoBuffer.length()+size>fifoBuffer.size())
 			//Limpiamos
 			fifoBuffer.clear();
 

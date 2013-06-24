@@ -95,6 +95,10 @@ public:
 		return find(key)!=end();
 	}
 
+	void SetProperty(const char* key,const char* val)
+	{
+		insert(std::pair<std::string,std::string>(std::string(key),std::string(val)));
+	}
 	std::string GetProperty(const char* key,const std::string defaultValue) const
 	{
 		//Find item
