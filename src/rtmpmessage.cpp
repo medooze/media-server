@@ -991,10 +991,14 @@ RTMPMediaFrame *RTMPVideoFrame::Clone()
 
 RTMPAudioFrame::RTMPAudioFrame(QWORD timestamp,const AACSpecificConfig &config) : RTMPMediaFrame(Audio,timestamp,config.GetSize())
 {
-	//Set codec
+	//Set AAC codec properties
 	SetAudioCodec(AAC);
+        SetSoundRate(RTMPAudioFrame::RATE44khz);
+        SetSamples16Bits(1);
+        SetStereo(1);
 	//Set type
 	SetAACPacketType(AACSequenceHeader);
+
 	//Set data
 	SetAudioFrame(config.GetData(),config.GetSize());
 }
@@ -1007,7 +1011,7 @@ RTMPAudioFrame::RTMPAudioFrame(QWORD timestamp,DWORD size) : RTMPMediaFrame(Audi
 void RTMPAudioFrame::Dump()
 {
 	//Dump
-	Debug("[AudioFrame type:%d codec:%d timestamp:%lld bufferSize:%d mediaSize:%d]\n",type,codec,timestamp,bufferSize,mediaSize);
+	Debug("[AudioFrame type:%d codec:%d rate:%d sample16bits:%d stereo:%d timestamp:%lld bufferSize:%d mediaSize:%d]\n",type,codec,rate,sample16bits,stereo,timestamp,bufferSize,mediaSize);
 	if(bufferSize>8)
 		::Dump(buffer,8);
 	else
