@@ -309,7 +309,7 @@ int FLVEncoder::EncodeAudio()
 	while(encodingAudio)
 	{
 		//Audio frame
-		RTMPAudioFrame	audio(0,MTU);
+		RTMPAudioFrame	audio(0,65535);
 
 		//Capturamos
 		DWORD  recLen = audioInput->RecBuffer(recBuffer,encoder->numFrameSamples);

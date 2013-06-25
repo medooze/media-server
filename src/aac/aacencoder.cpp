@@ -120,5 +120,5 @@ int AACEncoder::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 	int len = avresample_convert(avr, &samples, samplesSize, samplesNum, (BYTE**)&in, inLen*sizeof(SWORD), inLen);
 
 	//Encode
-	return avcodec_encode_audio(ctx, out,len,(short *)samples);
+	return avcodec_encode_audio(ctx, out,outLen,(short *)samples);
 } 
