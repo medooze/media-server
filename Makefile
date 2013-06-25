@@ -99,11 +99,13 @@ OBJSMCU = $(OBJS) main.o
 OBJSLIB = $(OBJS)
 OBJSMCUCLIENT = xmlrpcclient.o xmlrpcmcuclient.o
 OBJSRTMPDEBUG = $(OBJS) rtmpdebug.o
+OBJSFLVDUMP = $(OBJS) flvdump.o
 
 BUILDOBJSMCU = $(addprefix $(BUILD)/,$(OBJSMCU))
 BUILDOBJOBJSLIB = $(addprefix $(BUILD)/,$(OBJSLIB))
 BUILDOBJSMCUCLIENT= $(addprefix $(BUILD)/,$(OBJSMCUCLIENT))
 BUILDOBJSRTMPDEBUG= $(addprefix $(BUILD)/,$(OBJSRTMPDEBUG))
+BUILDOBJSFLVDUMP= $(addprefix $(BUILD)/,$(OBJSFLVDUMP))
 BUILDOBJSFS= $(addprefix $(BUILD)/,$(OBJSFS)) 
 BUILDOBJSFSCLIENT= $(addprefix $(BUILD)/,$(OBJSFSCLIENT))
 
@@ -180,6 +182,10 @@ mcu: $(OBJSMCU)
 
 rtmpdebug: $(OBJSRTMPDEBUG)
 	$(CXX) -o $(BIN)/$@ $(BUILDOBJSRTMPDEBUG) $(LDFLAGS) $(VADLD)
+
+flvdump: $(OBJSFLVDUMP)
+	$(CXX) -o $(BIN)/$@ $(BUILDOBJSFLVDUMP) $(LDFLAGS) $(VADLD)
+
 
 libmediamixer: $(OBJSLIB)
 	gcc $(CXXFLAGS) -c lib/mediamixer.cpp -o $(BUILD)/mediamixer.o -DPIC -fPIC

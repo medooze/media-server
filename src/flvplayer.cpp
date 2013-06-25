@@ -4,45 +4,8 @@
 #include <stdio.h>
 #include <errno.h>
 #include "log.h"
+#include "flv.h"
 #include "rtmpflvstream.h"
-
-class FLVHeader : public RTMPFormat<9>
-{		
-public:
-	BYTE*   GetTag()        	{ return data;	       }
-        BYTE    GetVersion()  		{ return get1(data,3); }
-        BYTE    GetMedia()      	{ return get1(data,4); }
-        BYTE    GetHeaderOffset()	{ return get4(data,5); }
-
-	void 	SetTag(BYTE* tag)	{ memcpy(data,tag,3);	}
-        void    SetVersion(BYTE version){ set1(data,3,version);	}
-        void    SetMedia(BYTE media)   	{ set1(data,4,media); 	}
-        void    SetHeaderOffset(DWORD o){ set4(data,5,o); 	}
-};
-
-class FLVTag : public RTMPFormat<11>
-{		
-public:
-	BYTE    GetType()        	{ return get1(data,0); }
-        DWORD   GetDataSize()  		{ return get3(data,1); }
-        DWORD   GetTimestamp()      	{ return get3(data,4); }
-        BYTE    GetTimestampExt()	{ return get1(data,7); }
-        DWORD   GetStreamId()		{ return get3(data,8); }
-
-	void    SetType(BYTE type)    	 { set1(data,0,type);	}
-        void    SetDataSize(DWORD size)  { set3(data,1,size);	}
-        void    SetTimestamp(DWORD ts)   { set3(data,4,ts);	}
-        void    SetTimestampExt(BYTE ext){ set1(data,7,ext);	}
-        void    SetStreamId(DWORD id)	 { set3(data,8,id);	}
-};
-
-class FLVTagSize : public RTMPFormat<4>
-{		
-public:
-        DWORD   GetTagSize()  		{ return get4(data,0);	}
-        void    SetTagSize(DWORD size)	{ set4(data,0,size);	}
-};
-
 
 RTMPFLVStream::RTMPFLVStream(DWORD id) : RTMPStream(id)
 {
