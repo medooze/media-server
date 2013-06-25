@@ -987,8 +987,16 @@ AMFObject::AMFObject()
 AMFData* AMFObject::Clone()
 {
 	AMFObject *obj = new AMFObject();
-	for (AMFObjectMap::iterator it=properties.begin(); it!=properties.end(); it++)
+
+	//Get object properties in order
+	for (int i=0;i<propertiesOrder.size();i++)
+	{
+		//Search for the property
+		AMFObjectMap::iterator it = properties.find(propertiesOrder[i]);
+		//Ad property
 		obj->AddProperty(it->first.c_str(),it->second->Clone());
+	}
+	
 	return obj;
 }
 
