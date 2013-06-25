@@ -892,7 +892,7 @@ DWORD RTMPVideoFrame::Parse(BYTE *data,DWORD size)
 		if (len>bufferLen)
 			len = bufferLen;
 		//Copy
-		memcpy(extraData,buffer,len);
+		memcpy(extraData+headerPos-1,buffer,len);
 		//Skip next 4 bytes
 		buffer	  += len;
 		bufferLen -= len;
@@ -998,14 +998,14 @@ RTMPAudioFrame::RTMPAudioFrame(QWORD timestamp,const AACSpecificConfig &config) 
         SetStereo(1);
 	//Set type
 	SetAACPacketType(AACSequenceHeader);
-
 	//Set data
 	SetAudioFrame(config.GetData(),config.GetSize());
 }
 
 RTMPAudioFrame::RTMPAudioFrame(QWORD timestamp,DWORD size) : RTMPMediaFrame(Audio,timestamp,size)
 {
-
+        //No header for parsing
+	headerPos = 0;
 }
 
 void RTMPAudioFrame::Dump()
@@ -1036,14 +1036,22 @@ DWORD RTMPAudioFrame::Parse(BYTE *data,DWORD size)
 		buffer++;
 		bufferLen--;
 	}
+
+        //Check still something
+        if (!bufferlen)
+                //Done so far
+                return 1;
+
 	//Check AAC
-	if (codec==AAC)
+	if (codec==AAC && !headerPos)
 	{
 		//Get type
 		extraData[0] = buffer[0];
 		//Remove from data
 		buffer++;
 		bufferLen--;
+                //Increase header pos
+                headerPos++;
 	}
 	//Parse the rest
 	DWORD len = RTMPMediaFrame::Parse(buffer,bufferLen);

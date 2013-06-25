@@ -122,6 +122,7 @@ private:
 	SoundRate	rate;
 	bool		sample16bits;
 	bool		stereo;
+	DWORD		headerPos;
 	BYTE		extraData[0];
 
 };
