@@ -118,26 +118,6 @@
       </df>
       <df name="src" kind="SOURCE_LOGICAL_FOLDER">
         <df name="aac">
-          <df name=".svn">
-            <df name="prop-base" kind="SOURCE_LOGICAL_FOLDER">
-            </df>
-            <df name="props" kind="SOURCE_LOGICAL_FOLDER">
-            </df>
-            <df name="text-base" kind="SOURCE_LOGICAL_FOLDER">
-              <in>aacencoder.cpp.svn-base</in>
-              <in>aacencoder.h.svn-base</in>
-            </df>
-            <df name="tmp" kind="SOURCE_LOGICAL_FOLDER">
-              <df name="prop-base" kind="SOURCE_LOGICAL_FOLDER">
-              </df>
-              <df name="props" kind="SOURCE_LOGICAL_FOLDER">
-              </df>
-              <df name="text-base" kind="SOURCE_LOGICAL_FOLDER">
-              </df>
-            </df>
-            <in>all-wcprops</in>
-            <in>entries</in>
-          </df>
           <in>aacencoder.cpp</in>
           <in>aacencoder.h</in>
         </df>
