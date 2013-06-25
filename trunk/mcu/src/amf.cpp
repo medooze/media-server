@@ -1203,8 +1203,11 @@ DWORD AMFObject::Serialize(BYTE* data,DWORD size)
 void AMFObject::Dump()
 {
 	Debug("[Object]\n");
-	for (AMFObjectMap::iterator it=properties.begin();it!=properties.end();it++)
+	//Loop properties in insert order
+	for (int i=0;i<propertiesOrder.size();i++)
 	{
+		//Search for the property
+		AMFObjectMap::iterator it = properties.find(propertiesOrder[i]);
 		Debug("  %*ls:\t",20,it->first.c_str());
 		it->second->Dump();
 	}
