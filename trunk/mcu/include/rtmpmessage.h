@@ -115,6 +115,8 @@ public:
 
 	void		SetAACPacketType(AACPacketType type)	{ extraData[0] = type;	}
 	AACPacketType   GetAACPacketType()			{ return (AACPacketType) extraData[0]; }
+
+	virtual void	Dump();
 private:
 	AudioCodec	codec;
 	SoundRate	rate;

@@ -1004,6 +1004,17 @@ RTMPAudioFrame::RTMPAudioFrame(QWORD timestamp,DWORD size) : RTMPMediaFrame(Audi
 
 }
 
+void RTMPAudioFrame::Dump()
+{
+	//Dump
+	Debug("[AudioFrame type:%d codec:%d timestamp:%lld bufferSize:%d mediaSize:%d]\n",type,codec,timestamp,bufferSize,mediaSize);
+	if(bufferSize>8)
+		::Dump(buffer,8);
+	else
+		::Dump(buffer,bufferSize);
+	Debug("[/AudioFrame]\n");
+}
+
 DWORD RTMPAudioFrame::Parse(BYTE *data,DWORD size)
 {
 	BYTE* buffer = data;
