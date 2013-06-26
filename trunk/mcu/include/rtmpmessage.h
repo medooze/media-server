@@ -125,8 +125,7 @@ private:
 	bool		sample16bits;
 	bool		stereo;
 	DWORD		headerPos;
-	BYTE		extraData[0];
-
+	BYTE		extraData[1];
 };
 
 class RTMPCommandMessage
