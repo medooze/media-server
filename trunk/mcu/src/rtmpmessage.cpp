@@ -1024,6 +1024,11 @@ DWORD RTMPAudioFrame::Parse(BYTE *data,DWORD size)
 	BYTE* buffer = data;
 	DWORD bufferLen = size;
 
+        //Check size
+        if (!size)
+                //Done
+                return size;
+        
 	//If it is the first
 	if (!pos)
 	{
@@ -1038,9 +1043,9 @@ DWORD RTMPAudioFrame::Parse(BYTE *data,DWORD size)
 	}
 
         //Check still something
-        if (!bufferlen)
+        if (!bufferLen)
                 //Done so far
-                return 1;
+                return size;
 
 	//Check AAC
 	if (codec==AAC && !headerPos)
