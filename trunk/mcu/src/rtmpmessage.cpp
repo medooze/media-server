@@ -841,6 +841,12 @@ RTMPVideoFrame::RTMPVideoFrame(QWORD timestamp,const AVCDescriptor &desc) : RTMP
 	mediaSize = desc.Serialize(buffer,bufferSize);
 }
 
+RTMPVideoFrame::~RTMPVideoFrame()
+{
+	//No header
+	headerPos = 0;
+}
+
 void RTMPVideoFrame::Dump()
 {
 	//Dump
@@ -1006,6 +1012,10 @@ RTMPAudioFrame::RTMPAudioFrame(QWORD timestamp,DWORD size) : RTMPMediaFrame(Audi
 {
         //No header for parsing
 	headerPos = 0;
+}
+
+RTMPAudioFrame::~RTMPAudioFrame()
+{
 }
 
 void RTMPAudioFrame::Dump()
