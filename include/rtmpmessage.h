@@ -64,6 +64,7 @@ public:
 public:
 	RTMPVideoFrame(QWORD timestamp,DWORD size);
 	RTMPVideoFrame(QWORD timestamp, const AVCDescriptor &desc);
+	virtual ~RTMPVideoFrame();
 	virtual RTMPMediaFrame* Clone();
 
 	virtual DWORD	Parse(BYTE *data,DWORD size);
@@ -97,6 +98,7 @@ public:
 public:
 	RTMPAudioFrame(QWORD timestamp,DWORD size);
 	RTMPAudioFrame(QWORD timestamp,const AACSpecificConfig &config);
+	virtual ~RTMPAudioFrame();
 	virtual RTMPMediaFrame* Clone();
 
 	virtual DWORD	Parse(BYTE *data,DWORD size);
