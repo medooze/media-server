@@ -61,8 +61,8 @@ struct MP4RtpTrack
 				frame = new VideoFrame((VideoCodec::Type)codec,262143);
 				break;
 			case MediaFrame::Audio:
-				//Create audio frame
-				frame = new AudioFrame((AudioCodec::Type)codec);
+				//Create audio frame with 8Khz rate
+				frame = new AudioFrame((AudioCodec::Type)codec,8000);
 				break;
 		}
 	}

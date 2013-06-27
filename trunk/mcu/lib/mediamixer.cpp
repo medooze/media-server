@@ -87,15 +87,15 @@ extern "C"
 	void* MP4RecorderCreate()
 	{
 		 MP4Recorder* recorder = new MP4Recorder();
-		 //Init it
-		 recorder->Init();
 		 //Return
 		 return (void*)recorder;
 	}
 
 	bool MP4RecorderRecord(void* recorder,const char* filename)
 	{
-		return ((MP4Recorder*)recorder)->Record(filename);
+		if (!((MP4Recorder*)recorder)->Create(filename))
+                        return false;
+                return ((MP4Recorder*)recorder)->Record();
 	}
 
 	bool MP4RecorderStop(void* recorder)
@@ -109,7 +109,7 @@ extern "C"
 
 	void MP4RecorderDelete(void* recorder)
 	{
-		((MP4Recorder*)recorder)->End();
+		((MP4Recorder*)recorder)->Close();
 		delete ((MP4Recorder*)recorder);
 	}
 

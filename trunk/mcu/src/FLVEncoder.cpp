@@ -87,6 +87,10 @@ int FLVEncoder::End()
 		//error
 		return 0;
 
+	//Remove all rmpt media listenere
+	RTMPMediaStream::RemoveAllMediaListeners();
+	//Clear media listeners
+	mediaListeners.clear();
 	//Stop Encodings
 	StopEncoding();
 
@@ -141,6 +145,38 @@ DWORD FLVEncoder::AddMediaListener(RTMPMediaStream::Listener *listener)
 		listener->onMediaFrame(RTMPMediaStream::id,aacSpecificConfig);
 	//Send FPU
 	sendFPU = true;
+}
+
+DWORD FLVEncoder::AddMediaFrameListener(MediaFrame::Listener* listener)
+{
+	//Lock mutexk
+	pthread_mutex_lock(&mutex);
+	//Apend
+	mediaListeners.insert(listener);
+	//Get number of listeners
+	DWORD num = listeners.size();
+	//Unlock
+	pthread_mutex_unlock(&mutex);
+	//return number of listeners
+	return num;
+}
+
+DWORD FLVEncoder::RemoveMediaFrameListener(MediaFrame::Listener* listener)
+{
+	//Lock mutexk
+	pthread_mutex_lock(&mutex);
+	//Find it
+	MediaFrameListeners::iterator it = mediaListeners.find(listener);
+	//If present
+	if (it!=mediaListeners.end())
+		//erase it
+		mediaListeners.erase(it);
+	//Get number of listeners
+	DWORD num = mediaListeners.size();
+	//Unlock
+	pthread_mutex_unlock(&mutex);
+	//return number of listeners
+	return num;
 }
 /***************************************
 * StartEncoding
@@ -278,7 +314,10 @@ int FLVEncoder::EncodeAudio()
 	
 	//Try to set native rate
 	DWORD rate = encoder->TrySetRate(audioInput->GetNativeRate());
-	
+
+	//Create audio frame
+	AudioFrame frame(audioCodec,rate);
+
 	//Start recording
 	audioInput->StartRecording(rate);
 
@@ -397,6 +436,21 @@ int FLVEncoder::EncodeAudio()
 			pthread_mutex_lock(&mutex);
 			//Send audio
 			SendMediaFrame(&audio);
+			//Copy to rtp frame
+			frame.SetMedia(audio.GetMediaData(),audio.GetMediaSize());
+			//Set frame time
+			frame.SetTimestamp(audio.GetTimestamp());
+			//Set frame duration
+			frame.SetDuration(encoder->numFrameSamples);
+			//Clear rtp
+			frame.ClearRTPPacketizationInfo();
+			//Add rtp packet
+			frame.AddRtpPacket(0,len,NULL,0);
+			//For each listere
+			//For each listener
+			for(MediaFrameListeners::iterator it = mediaListeners.begin(); it!=mediaListeners.end(); ++it)
+				//Send it
+				(*it)->onMediaFrame(frame);
 			//unlock
 			pthread_mutex_unlock(&mutex);
 		}
@@ -518,8 +572,14 @@ int FLVEncoder::EncodeVideo()
 		//Set sending time of previous frame
 		getUpdDifTime(&prev);
 
+		//Set timestamp
+		encoded->SetTimestamp(getDifTime(&first)/1000);
+
 		//Set next one
 		frameTime = 1000/fps;
+
+		//Set duration
+		encoded->SetDuration(frameTime);
 		
 		//Get full frame
 		frame.SetVideoFrame(encoded->GetData(),encoded->GetLength());
@@ -565,9 +625,13 @@ int FLVEncoder::EncodeVideo()
 		
 		
 		//Set timestamp
-		frame.SetTimestamp(getDifTime(&first)/1000);
+		frame.SetTimestamp(encoded->GetTimeStamp());
 		//Publish it
 		SendMediaFrame(&frame);
+		//For each listener
+		for(MediaFrameListeners::iterator it = mediaListeners.begin(); it!=mediaListeners.end(); ++it)
+			//Send it
+			(*it)->onMediaFrame(*encoded);
 		//unlock
 		pthread_mutex_unlock(&mutex);
 	}

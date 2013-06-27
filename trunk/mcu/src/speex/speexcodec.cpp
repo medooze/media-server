@@ -110,19 +110,7 @@ SpeexDecoder::~SpeexDecoder()
 
 DWORD SpeexDecoder::TrySetRate(DWORD rate)
 {
-	//Update rate
-	speex_encoder_ctl(decoder, SPEEX_SET_SAMPLING_RATE, &rate);
-	//return real rate
 	return GetRate();
-}
-
-DWORD SpeexDecoder::GetRate()
-{
-	int rate;
-	//Update rate
-	speex_encoder_ctl(decoder, SPEEX_GET_SAMPLING_RATE, &rate);
-	//return it
-	return rate;
 }
 
 int SpeexDecoder::Decode (BYTE *in, int inLen, SWORD* out, int outLen)

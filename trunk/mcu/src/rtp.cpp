@@ -17,7 +17,7 @@ static void SetRTCPHeaderLength(rtcp_common_t* header,DWORD size)
 class DummyAudioDepacketizer : public RTPDepacketizer
 {
 public:
-	DummyAudioDepacketizer(DWORD codec) : RTPDepacketizer(MediaFrame::Audio,codec), frame((AudioCodec::Type)codec)
+	DummyAudioDepacketizer(DWORD codec) : RTPDepacketizer(MediaFrame::Audio,codec), frame((AudioCodec::Type)codec,8000)
 	{
 
 	}

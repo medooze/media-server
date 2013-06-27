@@ -7,13 +7,14 @@
 #include "video.h"
 #include "text.h"
 #include "media.h"
+#include "recordercontrol.h"
 
 
 class mp4track
 {
 public:
 	mp4track(MP4FileHandle mp4);
-	int CreateAudioTrack(AudioCodec::Type codec);
+	int CreateAudioTrack(AudioCodec::Type codec,DWORD rate);
 	int CreateVideoTrack(VideoCodec::Type codec,int width, int height);
 	int CreateTextTrack();
 	int WriteAudioFrame(AudioFrame &audioFrame);
@@ -38,15 +39,21 @@ private:
 };
 
 
-class MP4Recorder : public MediaFrame::Listener
+class MP4Recorder :
+	public RecorderControl,
+	public MediaFrame::Listener
 {
 public:
 	MP4Recorder();
 	~MP4Recorder();
-	bool Init();
-	bool Record(const char* filename);
-	bool Stop();
-	bool End();
+
+	//Recorder interface
+	virtual bool Create(const char *filename);
+	virtual bool Record();
+	virtual bool Stop();
+	virtual bool Close();
+
+	virtual RecorderControl::Type GetType()	{ return RecorderControl::MP4;	}
 
 	virtual void onMediaFrame(MediaFrame &frame);
 private:

@@ -195,8 +195,6 @@ int MediaSession::RecorderCreate(std::wstring tag)
         int recorderId = maxRecordersId++;
 	//Create recorder
 	Recorder* recorder = new Recorder(tag);
-	//Init it
-	recorder->Init();
 	//Append the recorder
         recorders[recorderId] = recorder;
         //Return it
@@ -213,8 +211,12 @@ int MediaSession::RecorderRecord(int recorderId,const char* filename)
                 return Error("Recorder not found\n");
         //Get it
         Recorder* recorder = it->second;
+	//create recording
+        if (!recorder->Create(filename))
+		//Error
+		return Error("-Could not create file");
 	//Start recording
-        return recorder->Record(filename);
+	return recorder->Record();
 }
 
 int MediaSession::RecorderStop(int recorderId)
@@ -228,7 +230,7 @@ int MediaSession::RecorderStop(int recorderId)
         //Get it
         Recorder* recorder = it->second;
 	//Stop recording
-        return recorder->Stop();
+        return recorder->Close();
 }
 
 int MediaSession::RecorderDelete(int recorderId)

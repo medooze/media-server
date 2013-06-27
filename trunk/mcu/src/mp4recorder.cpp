@@ -5,6 +5,7 @@
 #include "log.h"
 #include "mp4recorder.h"
 #include "h264/h264.h"
+#include "aacconfig.h"
 
 
 
@@ -22,7 +23,7 @@ mp4track::mp4track(MP4FileHandle mp4)
 	hasPPS = false;
 }
 
-int mp4track::CreateAudioTrack(AudioCodec::Type codec)
+int mp4track::CreateAudioTrack(AudioCodec::Type codec,DWORD rate)
 {
 	BYTE type;
 
@@ -32,7 +33,7 @@ int mp4track::CreateAudioTrack(AudioCodec::Type codec)
 		case AudioCodec::PCMU:
 		{
 			// Create audio track
-			track = MP4AddULawAudioTrack(mp4,8000);
+			track = MP4AddULawAudioTrack(mp4,rate);
 			// Create audio hint track
 			hint = MP4AddHintTrack(mp4, track);
 			// Set payload type for hint track
@@ -47,7 +48,7 @@ int mp4track::CreateAudioTrack(AudioCodec::Type codec)
 		case AudioCodec::PCMA:
 		{
 			// Create audio track
-			track = MP4AddALawAudioTrack(mp4,8000);
+			track = MP4AddALawAudioTrack(mp4,rate);
 			// Set channel and sample properties
 			MP4SetTrackIntegerProperty(mp4, track, "mdia.minf.stbl.stsd.alaw.channels", 1);
 			MP4SetTrackIntegerProperty(mp4, track, "mdia.minf.stbl.stsd.alaw.sampleSize", 8);
@@ -56,6 +57,19 @@ int mp4track::CreateAudioTrack(AudioCodec::Type codec)
 			// Set payload type for hint track
 			type = 8;
 			MP4SetHintTrackRtpPayload(mp4, hint, "PCMA", &type, 0, NULL, 1, 0);
+			break;
+		}
+		break;
+		case AudioCodec::AAC:
+		{
+			// Create audio track
+			track = MP4AddAudioTrack(mp4, rate, 1024, MP4_MPEG2_AAC_LC_AUDIO_TYPE);
+			//Create AAC config
+			AACSpecificConfig config(rate,1);
+			// Set channel and sample properties
+			MP4SetTrackESConfiguration(mp4, track,config.GetData(),config.GetSize());
+			// No hint track
+			hint = 0;
 			break;
 		}
 		break;
@@ -125,17 +139,21 @@ int mp4track::FlushAudioFrame(AudioFrame* frame,DWORD duration)
 	// Save audio frame
 	MP4WriteSample(mp4, track, frame->GetData(), frame->GetLength(), duration, 0, 1);
 
-	// Add rtp hint
-	MP4AddRtpHint(mp4, hint);
+	//If as rtp info
+	if (hint)
+	{
+		// Add rtp hint
+		MP4AddRtpHint(mp4, hint);
 
-	///Create packet
-	MP4AddRtpPacket(mp4, hint, 0, 0);
+		///Create packet
+		MP4AddRtpPacket(mp4, hint, 0, 0);
 
-	// Set full frame as data
-	MP4AddRtpSampleData(mp4, hint, sampleId, 0, frame->GetLength());
+		// Set full frame as data
+		MP4AddRtpSampleData(mp4, hint, sampleId, 0, frame->GetLength());
 
-	// Write rtp hint
-	MP4WriteRtpHint(mp4, hint, duration, 1);
+		// Write rtp hint
+		MP4WriteRtpHint(mp4, hint, duration, 1);
+	}
 
 	// Delete old one
 	delete frame;
@@ -160,7 +178,7 @@ int mp4track::WriteAudioFrame(AudioFrame &audioFrame)
 	sampleId++;
 
 	//Get number of samples
-	DWORD duration = (frame->GetTimeStamp()-prev->GetTimeStamp())*8;
+	DWORD duration = (frame->GetTimeStamp()-prev->GetTimeStamp())*audioFrame.GetRate()/1000;
 
 	//Flush sample
 	FlushAudioFrame((AudioFrame *)prev,duration);
@@ -394,6 +412,9 @@ MP4Recorder::MP4Recorder()
 
 MP4Recorder::~MP4Recorder()
 {
+        //Close just in case
+        Close();
+        
 	//If has audio track
 	if (audioTrack)
 		//Delete it
@@ -410,34 +431,14 @@ MP4Recorder::~MP4Recorder()
 	pthread_mutex_destroy(&mutex);
 }
 
-bool MP4Recorder::Init()
+bool MP4Recorder::Create(const char* filename)
 {
-	//Not recording
-	recording = false;
-	
-	//Exit
-	return true;
-}
-
-bool MP4Recorder::End()
-{
-	//if recording
-	if (recording)
-		//Stop recording
-		Stop();
-	
-	//NOthing more
-	return true;
-}
-
-bool MP4Recorder::Record(const char* filename)
-{
-	Log("-Recording [%s]\n",filename);
+	Log("-Opening record [%s]\n",filename);
 
 	//If we are recording
-	if (recording)
-		//Stop
-		Stop();
+	if (mp4!=MP4_INVALID_FILE_HANDLE)
+		//Close
+		Close();
 
 	// We have to wait for first I-Frame
 	waitVideo = 1;
@@ -447,21 +448,42 @@ bool MP4Recorder::Record(const char* filename)
 
 	// If failed
 	if (mp4 == MP4_INVALID_FILE_HANDLE)
-		return false;
-
-	//We are recording
-	recording = true;
+                //Error
+		return Error("-Error openein mp4 file for recording\n");
 
 	//Success
 	return true;
 }
 
+bool MP4Recorder::Record()
+{
+        //Check mp4 file is opened
+        if (mp4 == MP4_INVALID_FILE_HANDLE)
+                //Error
+                return Error("No MP4 file opened for recording\n");
+        
+	//Recording
+	recording = true;
+	
+	//Exit
+	return recording;
+}
+
 bool MP4Recorder::Stop()
 {
-	//Check if we are recording
-	if (!recording)
-		//Exit
-		return false;
+        //not recording anymore
+	recording = false;
+}
+
+bool MP4Recorder::Close()
+{
+        //Check mp4 file is opened
+        if (mp4 == MP4_INVALID_FILE_HANDLE)
+                //Error
+                return false;
+        
+        //Stop always
+        Stop();
 
 	//If has audio track
 	if (audioTrack)
@@ -479,9 +501,10 @@ bool MP4Recorder::Stop()
 	// Close file
 	MP4Close(mp4);
 
-	//not recording anymore
-	recording = false;
-
+        //Empty file
+        mp4 = MP4_INVALID_FILE_HANDLE;
+	
+	//NOthing more
 	return true;
 }
 
@@ -514,9 +537,9 @@ void MP4Recorder::onMediaFrame(MediaFrame &frame)
 				//Create object
 				audioTrack = new mp4track(mp4);
 				//Create track
-				audioTrack->CreateAudioTrack(audioFrame.GetCodec());
+				audioTrack->CreateAudioTrack(audioFrame.GetCodec(),audioFrame.GetRate());
 				//Create empty text frame
-				AudioFrame empty(audioFrame.GetCodec());
+				AudioFrame empty(audioFrame.GetCodec(),audioFrame.GetRate());
 				//Set empty data
 				empty.SetTimestamp(0);
 				empty.SetLength(0);
