@@ -30,16 +30,18 @@ public:
 class AudioFrame : public MediaFrame
 {
 public:
-	AudioFrame(AudioCodec::Type codec) : MediaFrame(MediaFrame::Audio,512)
+	AudioFrame(AudioCodec::Type codec,DWORD rate) : MediaFrame(MediaFrame::Audio,2048)
 	{
 		//Store codec
 		this->codec = codec;
+		//Set default rate
+		this->rate = rate;
 	}
 
 	virtual MediaFrame* Clone()
 	{
 		//Create new one
-		AudioFrame *frame = new AudioFrame(codec);
+		AudioFrame *frame = new AudioFrame(codec,rate);
 		//Copy content
 		frame->SetMedia(buffer,length);
 		//Duration
@@ -50,11 +52,13 @@ public:
 		return (MediaFrame*)frame;
 	}
 
-	AudioCodec::Type GetCodec()	{ return codec;			}
-	void SetCodec(AudioCodec::Type codec)	{ this->codec = codec;		}
+	AudioCodec::Type GetCodec()			{ return codec;		}
+	void	SetCodec(AudioCodec::Type codec)	{ this->codec = codec;	}
+	DWORD	GetRate()				{ return rate;		}
 
 private:
 	AudioCodec::Type codec;
+	DWORD		 rate;
 };
 
 class AudioInput

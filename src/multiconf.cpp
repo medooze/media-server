@@ -26,6 +26,9 @@ MultiConf::MultiConf(const std::wstring &tag) : broadcast(tag)
 
 	//Y no tamos iniciados
 	inited = 0;
+
+        //No recorder
+        recorder = NULL;
 }
 
 /************************
@@ -37,6 +40,10 @@ MultiConf::~MultiConf()
 	//Pa porsi
 	if (inited)
 		End();
+        //Delete recoreder
+        if (recorder)
+                //Delete
+                delete(recorder);
 }
 
 void MultiConf::SetListener(Listener *listener,void* param)
@@ -168,19 +175,49 @@ int MultiConf::StartRecordingBroadcaster(const char* filename)
 {
 	//Log filename
 	Log("-Recording broadcast [file:\"%s\"]\n",filename);
+	
+	//Find last "."
+	const char* ext = (const char*)strrchr(filename,'.');
+
+	//If not found
+	if (!ext)
+		//Error
+		return Error("Extension not found for [file:\"%s\"]\n",filename);
+
+	//Check file name
+	if (strncasecmp(ext,".flv",4)==0)
+		//FLV
+		recorder = new FLVRecorder();
+	else if (strncasecmp(ext,".mp4",4)==0)
+		//MP4
+		recorder = new MP4Recorder();
+	else
+		//Error
+		return Error("Not known extension [ext:\"%s\"]\n",ext);
 
 	//Open file for recording
-	if (!recorder.Create(filename))
+	if (!recorder->Create(filename))
 		//Fail
 		return 0;
 
 	//And start recording
-	if (!recorder.Record())
+	if (!recorder->Record())
 		//Exit
 		return 0;
 
-	//Set listener
-	flvEncoder.AddMediaListener(&recorder);
+	//Check type
+	switch (recorder->GetType())
+	{
+		case RecorderControl::FLV:
+			//Set RTMP listener
+			flvEncoder.AddMediaListener((FLVRecorder*)recorder);
+			break;
+		case RecorderControl::MP4:
+			//Set RTMP listener
+			flvEncoder.AddMediaFrameListener((MP4Recorder*)recorder);
+			break;
+	}
+	
 
 	//OK
 	return 1;
@@ -188,11 +225,24 @@ int MultiConf::StartRecordingBroadcaster(const char* filename)
 
 int MultiConf::StopRecordingBroadcaster()
 {
-	//Remove listener
-	flvEncoder.RemoveMediaListener(&recorder);
-
+	//Check type
+	switch (recorder->GetType())
+	{
+		case RecorderControl::FLV:
+			//Set RTMP listener
+			flvEncoder.RemoveMediaListener((FLVRecorder*)recorder);
+			break;
+		case RecorderControl::MP4:
+			//Set RTMP listener
+			flvEncoder.RemoveMediaFrameListener((MP4Recorder*)recorder);
+			break;
+	}
+	
 	//Close recorder
-	recorder.Close();
+	recorder->Stop();
+	
+	//Close recorder
+	recorder->Close();
 
 	//Exit
 	return 1;
@@ -211,8 +261,10 @@ int MultiConf::StopBroadcaster()
 
 	Log(">StopBroadcaster\n");
 
-	//Close recorder
-	recorder.Close();
+	//Check recorder
+	if (recorder)
+		//Close it
+		recorder->Close();
 
 	Log("-flvEncoder.StopEncoding\n");
 	//Stop endoding
@@ -245,7 +297,7 @@ int MultiConf::StopBroadcaster()
 			//And close
 			info.stream->Close();
 			//Remove listener
-			flvEncoder.RemoveMediaListener(info.stream);
+			flvEncoder.RemoveMediaListener((RTMPMediaStream::Listener*)info.stream);
 			//Delete it
 			delete(info.stream);
 		}
@@ -1169,11 +1221,13 @@ int MultiConf::StartRecordingParticipant(int partId,const char* filename)
 		//End
 		goto end;
 	
-	//Start recording
-	rtp->recorder.Init();
+	//Create recording
+	if (!rtp->recorder.Create(filename))
+		//End
+		goto end;
 
-	//Start recording
-	if (!rtp->recorder.Record(filename))
+        //Start recording
+        if (!rtp->recorder.Record())
 		//End
 		goto end;
 	
@@ -1221,7 +1275,7 @@ int MultiConf::StopRecordingParticipant(int partId)
 		rtp->recorder.Stop();
 
 		//End recording
-		ret = rtp->recorder.End();
+		ret = rtp->recorder.Close();
 	}
 
 	//Unlock
@@ -1901,7 +1955,7 @@ void MultiConf::onDisconnected(RTMPClientConnection* conn)
 		if (info.stream)
 		{
 			//Remove listener
-			flvEncoder.RemoveMediaListener(info.stream);
+			flvEncoder.RemoveMediaListener((RTMPMediaStream::Listener*)info.stream);
 			//Delete it
 			delete(info.stream);
 		}

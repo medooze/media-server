@@ -17,7 +17,11 @@ public:
 	int StopEncoding();
 	int End();
 	/* Overrride from RTMPMediaStream*/
-	virtual DWORD AddMediaListener(RTMPMediaStream::Listener *listener);
+	virtual DWORD AddMediaListener(RTMPMediaStream::Listener* listener);
+	//Add listenest for media stream
+	virtual DWORD AddMediaFrameListener(MediaFrame::Listener* listener);
+	virtual DWORD RemoveMediaFrameListener(MediaFrame::Listener* listener);
+
 protected:
 	int EncodeAudio();
 	int EncodeVideo();
@@ -26,7 +30,8 @@ private:
 	//Funciones propias
 	static void *startEncodingAudio(void *par);
 	static void *startEncodingVideo(void *par);
-	
+private:
+	typedef std::set<MediaFrame::Listener*> MediaFrameListeners;
 private:
 	AudioCodec::Type	audioCodec;
 	AudioInput*		audioInput;
@@ -55,6 +60,7 @@ private:
 	pthread_mutex_t mutex;
 	pthread_cond_t	cond;
 
+	MediaFrameListeners mediaListeners;
 	
 };
 

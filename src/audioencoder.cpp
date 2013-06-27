@@ -181,11 +181,14 @@ int AudioEncoderWorker::Encode()
 		return 0;
 	}
 
+	//Try to set native rate
+	DWORD rate = codec->TrySetRate(audioInput->GetNativeRate());
+
 	//Create audio frame
-	AudioFrame frame(audioCodec);
+	AudioFrame frame(audioCodec,rate);
 
 	//Empezamos a grabar
-	audioInput->StartRecording(8000);
+	audioInput->StartRecording(rate);
 
 	//Mientras tengamos que capturar
 	while(encodingAudio)

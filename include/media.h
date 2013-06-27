@@ -163,6 +163,7 @@ protected:
 	DWORD	length;
 	DWORD	bufferSize;
 	DWORD	duration;
+	DWORD	clockRate;
 };
 
 #endif	/* MEDIA_H */

@@ -20,10 +20,8 @@ FLVRecorder::FLVRecorder()
 
 FLVRecorder::~FLVRecorder()
 {
-	//If we had a file opened
-	if (fd!=-1)
-		//Close it
-		Close();
+	//Close it
+	Close();
 }
 
 bool FLVRecorder::Create(const char *filename)
@@ -261,17 +259,17 @@ bool FLVRecorder::Set(RTMPMetaData *setMetaData)
 	return true;
 }
 
-bool FLVRecorder::Close()
+bool FLVRecorder::Stop()
 {
-	//Check if we are recording
-	if (!recording)
-		//Error
-		return Error("Not recording\n");
-	
-	//Stop
+        //Check if recording
+        if (!recording)
+                //Error
+                return 0;
+
+        //Not recording anymore
 	recording = false;
 
-	//Rewind
+        //Rewind
 	lseek(fd,offset,SEEK_SET);
 
 	//Check meta
@@ -302,6 +300,20 @@ bool FLVRecorder::Close()
 		//Empty
 		meta = NULL;
 	}
+
+        //OK
+        return true;
+}
+
+bool FLVRecorder::Close()
+{
+	//Stop
+        Stop();
+
+        //Check fd
+        if (fd<0)
+                //Error
+                return false;
 	
 	//Close file
 	close(fd);
@@ -309,6 +321,7 @@ bool FLVRecorder::Close()
 	//We are not playing or recording
 	fd = -1;
 
+        //OK
 	return true;
 }
 

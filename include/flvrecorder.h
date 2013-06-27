@@ -1,20 +1,29 @@
 #ifndef _FLVRECORDER_H_
 #define _FLVRECORDER_H_
 #include "flv.h"
+#include "recordercontrol.h"
 #include "rtmpmessage.h"
 #include "rtmpstream.h"
 
 class FLVRecorder :
+	public RecorderControl,
 	public RTMPMediaStream::Listener
 {
 public:
 	FLVRecorder();
 	~FLVRecorder();
-	bool Create(const char *filename);
-	bool Record();
+
+	//Recorder interface
+	virtual bool Create(const char *filename);
+	virtual bool Record();
+	virtual bool Stop();
+	virtual bool Close();
+
+	virtual RecorderControl::Type GetType()	{ return RecorderControl::FLV;	}
+
 	bool Write(RTMPMediaFrame *frame);
 	bool Set(RTMPMetaData *meta);
-	bool Close();
+	
 
 	/* RTMPMediaStream listener interface*/
 	virtual void onAttached(RTMPMediaStream *stream) {};

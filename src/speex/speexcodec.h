@@ -26,7 +26,7 @@ public:
 	virtual ~SpeexDecoder();
 	virtual int Decode(BYTE *in,int inLen,SWORD* out,int outLen);
 	virtual DWORD TrySetRate(DWORD rate);
-	virtual DWORD GetRate();
+	virtual DWORD GetRate()		{ return 16000;}
 private:
 	void *decoder;
 	SpeexResamplerState *wbresampler;

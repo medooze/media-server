@@ -180,7 +180,7 @@ private:
 	AudioEncoderWorker	audioEncoder;
 	TextEncoder		textEncoder;
 	BroadcastSession	broadcast;
-	FLVRecorder		recorder;
+	RecorderControl*	recorder;
 	Publishers		publishers;
 	int			maxPublisherId;
 
