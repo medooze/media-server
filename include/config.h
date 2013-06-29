@@ -20,6 +20,7 @@
 #define FOURCIF 12	// 704  x 576
 #define FOURSIF 13	// 704  x 576
 #define XGA     14	// 1024 x 768
+#define WVGA    15	// 800  x 480
 
 
 #define FD_INVALID	(int)-1
@@ -57,6 +58,7 @@ inline DWORD GetWidth(DWORD size)
 		case FOURCIF:	return 704;
 		case FOURSIF:	return 704;
 		case XGA:	return 1024;
+		case WVGA:	return 800;
 	}
 	//Nothing
 	return 0;
@@ -82,6 +84,7 @@ inline DWORD GetHeight(DWORD size)
 		case FOURCIF:	return 576;
 		case FOURSIF:	return 576;
 		case XGA:	return 768;
+		case WVGA:	return 480;
 	}
 	//Nothing
 	return 0;

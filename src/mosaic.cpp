@@ -41,6 +41,8 @@ int Mosaic::GetNumSlotsForType(Mosaic::Type type)
 			return 4;
 		case mosaic4x4:
 			return 16;
+		case mosaic1p4:
+			return 16;
 	}
 	//Error
 	return Error("-Unknown mosaic type %d\n",type);
@@ -555,6 +557,7 @@ Mosaic* Mosaic::CreateMosaic(Type type,DWORD size)
 		case Mosaic::mosaic3p4:
 		case Mosaic::mosaic1p7:
 		case Mosaic::mosaic1p5:
+		case Mosaic::mosaic1p4:
 			//Set mosaic
 			return new AsymmetricMosaic(type,size);
 		case mosaicPIP1:

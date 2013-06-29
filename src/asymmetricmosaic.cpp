@@ -210,6 +210,26 @@ int AsymmetricMosaic::GetWidth(int pos)
 			else
 				size = 1;
 			break;
+		case mosaic1p4:
+			/**********************************************
+			*	-----------------------
+			*      | 	           | 2 |
+			*      |                   |---|
+			*      |                   | 3 |
+			*      |         1         |---|
+			*      |   	           | 4 |
+			*      |                   |---|
+			*      |   	           | 5 |
+			*      |-----------------------|
+			*
+			*      Participant size has to be different than mosaic size to keep aspect ratio
+			***********************************************/
+			cols = 4;
+			if(!pos)
+				size = 3;
+			else
+				size = 1;
+			break;
 		case mosaic1p5:
 			/**********************************************
 			*	-----------------
@@ -246,7 +266,6 @@ int AsymmetricMosaic::GetWidth(int pos)
 }
 int AsymmetricMosaic::GetHeight(int pos)
 {
-	DWORD cols;
 	//Check it's in the mosaic
 	if (pos >= numSlots)
 		return 0;
@@ -288,6 +307,26 @@ int AsymmetricMosaic::GetHeight(int pos)
 			rows = 4;
 			if(!pos)
 				size = 3;
+			else
+				size = 1;
+			break;
+		case mosaic1p4:
+			/**********************************************
+			*	-----------------------
+			*      | 	           | 2 |
+			*      |                   |---|
+			*      |                   | 3 |
+			*      |         1         |---|
+			*      |   	           | 4 |
+			*      |                   |---|
+			*      |   	           | 5 |
+			*      |-----------------------|
+			* 
+			*      Participant size has to be different than mosaic size to keep aspect ratio
+			***********************************************/
+			rows = 4;
+			if(!pos)
+				size = 4;
 			else
 				size = 1;
 			break;
