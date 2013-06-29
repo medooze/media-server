@@ -452,6 +452,40 @@ int AsymmetricMosaic::GetTop(int pos)
 			}
 			rows = 4;
 			break;
+		case mosaic1p4:
+			/**********************************************
+			*	-----------------------
+			*      | 	           | 2 |
+			*      |                   |---|
+			*      |                   | 3 |
+			*      |         1         |---|
+			*      |   	           | 4 |
+			*      |                   |---|
+			*      |   	           | 5 |
+			*      |-----------------------|
+			*
+			*      Participant size has to be different than mosaic size to keep aspect ratio
+			***********************************************/
+			switch(pos)
+			{
+				case 0:
+				case 1:
+					return 0;
+				case 2:
+					index = 7;
+					break;
+				case 3:
+					index = 11;
+					break;
+				case 4:
+					index = 12;
+					break;
+				case 5:
+					index = 13;
+					break;
+			}
+			rows = 4;
+			break;
 		case mosaic1p5:
 			/**********************************************
 			*	-----------------
@@ -592,7 +626,42 @@ int AsymmetricMosaic::GetLeft(int pos)
 					break;
 			}
 			cols = 4;
+		case mosaic1p4:
 			break;
+			/**********************************************
+			*	-----------------------
+			*      | 	           | 2 |
+			*      |                   |---|
+			*      |                   | 3 |
+			*      |         1         |---|
+			*      |   	           | 4 |
+			*      |                   |---|
+			*      |   	           | 5 |
+			*      |-----------------------|
+			*
+			*      Participant size has to be different than mosaic size to keep aspect ratio
+			***********************************************/
+			switch(pos)
+			{
+				case 0:
+					return 0;
+				case 1:
+					index = 3;
+					break;
+				case 2:
+					index = 7;
+					break;
+				case 3:
+					index = 11;
+					break;
+				case 4:
+					index = 12;
+					break;
+				case 5:
+					index = 13;
+					break;
+			}
+			cols = 4;
 		case mosaic1p5:
 			/**********************************************
 			*	-----------------
