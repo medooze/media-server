@@ -626,8 +626,8 @@ int AsymmetricMosaic::GetLeft(int pos)
 					break;
 			}
 			cols = 4;
-		case mosaic1p4:
 			break;
+		case mosaic1p4:
 			/**********************************************
 			*	-----------------------
 			*      | 	           | 2 |
@@ -662,6 +662,7 @@ int AsymmetricMosaic::GetLeft(int pos)
 					break;
 			}
 			cols = 4;
+			break;
 		case mosaic1p5:
 			/**********************************************
 			*	-----------------
