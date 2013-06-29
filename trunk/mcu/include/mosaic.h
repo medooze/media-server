@@ -27,6 +27,7 @@ public:
 		mosaicPIP1	= 7,
 		mosaicPIP3	= 8,
 		mosaic4x4	= 9,
+		mosaic1p4	= 10,
 	} Type;
 
 	class PartInfo
