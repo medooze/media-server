@@ -669,11 +669,14 @@ int RTMPParticipant::SendAudio()
 {
 	Log(">RTMP Participant send audio\n");
 
-	//Start recording
-	audioInput->StartRecording(8000);
-
 	//Create encoder
 	AudioEncoder *encoder = AudioCodecFactory::CreateEncoder(audioCodec,audioProperties);
+
+	//Try to set native rate
+	DWORD rate = encoder->TrySetRate(audioInput->GetNativeRate());
+	
+	//Start recording
+	audioInput->StartRecording(rate);
 
 	//Check
 	if (!encoder)
@@ -865,8 +868,21 @@ int RTMPParticipant::RecVideo()
 					if (decoder)
 						//Delet
 						delete(decoder);
-					//Create sorenson one
+					//Create h264 one
 					decoder = VideoCodecFactory::CreateDecoder(VideoCodec::H264);
+				}
+				break;
+			case RTMPVideoFrame::VP6:
+			case RTMPVideoFrame::VP6A:
+				//Check if there is no decoder of of different type
+				if (!decoder || decoder->type!=VideoCodec::VP6)
+				{
+					//check decoder
+					if (decoder)
+						//Delet
+						delete(decoder);
+					//Create sorenson one
+					decoder = VideoCodecFactory::CreateDecoder(VideoCodec::VP6);
 				}
 				break;
 			default:
