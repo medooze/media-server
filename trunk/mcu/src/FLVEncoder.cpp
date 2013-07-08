@@ -277,6 +277,9 @@ int FLVEncoder::StopEncoding()
 		//paramos
 		encodingAudio=0;
 
+		//Cancel any pending grab
+		audioInput->CancelRecBuffer();
+
 		//Y esperamos
 		pthread_join(encodingAudioThread,NULL);
 	}
@@ -286,6 +289,9 @@ int FLVEncoder::StopEncoding()
 	{
 		//paramos
 		encodingVideo=0;
+
+		//Cancel any pending grab
+		videoInput->CancelGrabFrame();
 
 		//Y esperamos
 		pthread_join(encodingVideoThread,NULL);	
