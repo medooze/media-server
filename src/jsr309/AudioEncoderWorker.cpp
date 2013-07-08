@@ -82,7 +82,7 @@ int AudioEncoderMultiplexerWorker::Stop()
 		encoding=0;
 
 		//Stop any pending grab
-		AudioInput->CancelRecBuffer();
+		input->CancelRecBuffer();
 
 		//Esperamos
 		pthread_join(thread,NULL);
