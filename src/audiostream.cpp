@@ -65,9 +65,8 @@ int AudioStream::Init(AudioInput *input, AudioOutput *output)
 
 	//Iniciamos el rtp
 	if(!rtp.Init())
-		return Error("No hemos podido abrir el rtp\n");
+		return Error("Could not open rtp\n");
 	
-
 	//Nos quedamos con los puntericos
 	audioInput  = input;
 	audioOutput = output;
@@ -382,7 +381,13 @@ int AudioStream::SendAudio()
 	AudioEncoder* 	codec;
 	DWORD		frameTime=0;
 
+	//Log
 	Log(">SendAudio\n");
+
+	//Check input
+	if (!audioInput)
+		//Error
+		return Error("-SendAudio failed, audioInput is null");
 
 	//Obtenemos el tiempo ahora
 	gettimeofday(&before,NULL);
@@ -390,7 +395,7 @@ int AudioStream::SendAudio()
 	//Creamos el codec de audio
 	if ((codec = AudioCodecFactory::CreateEncoder(audioCodec,audioProperties))==NULL)
 		//Error
-		return Error("Could not create audio codec\n");
+		return Error("-SendAudio failed, could not create audio codec [codec:%d]\n",audioCodec);
 
 	//Get codec rate
 	DWORD rate = codec->TrySetRate(audioInput->GetNativeRate());
@@ -398,41 +403,11 @@ int AudioStream::SendAudio()
 	//Start recording at codec rate
 	audioInput->StartRecording(rate);
 
-
-	/*
-	   Opus supports 5 different audio bandwidths which may be adjusted
-	   during the duration of a call.  The RTP timestamp clock frequency is
-	   defined as the highest supported sampling frequency of Opus, i.e.
-	   48000 Hz, for all modes and sampling rates of Opus.  The unit for the
-	   timestamp is samples per single (mono) channel.  The RTP timestamp
-	   corresponds to the sample time of the first encoded sample in the
-	   encoded frame.  For sampling rates lower than 48000 Hz the number of
-	   samples has to be multiplied with a multiplier according to Table 2
-	   to determine the RTP timestamp.
-
-                         +---------+------------+
-                         | fs (Hz) | Multiplier |
-                         +---------+------------+
-                         |   8000  |      6     |
-                         |         |            |
-                         |  12000  |      4     |
-                         |         |            |
-                         |  16000  |      3     |
-                         |         |            |
-                         |  24000  |      2     |
-                         |         |            |
-                         |  48000  |      1     |
-                         +---------+------------+
-
-	 */
-
-
 	//Get clock rate for codec
 	DWORD clock = codec->GetClockRate();
 
 	//Set it
 	packet.SetClockRate(clock);
-
 
 	//Get ts multiplier
 	float multiplier = clock/rate;

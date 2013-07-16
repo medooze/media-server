@@ -12,6 +12,7 @@ RemoteRateControl::RemoteRateControl(Listener* listener) : bitrateCalc(100), fps
 {
 	this->listener = listener;
 	eventSource = NULL;
+	rtt = 0;
 	prevTS = 0;
 	prevTime = 0;
 	prevSize = 0;

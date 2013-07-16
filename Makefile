@@ -8,7 +8,7 @@ include config.mk
 #DEBUG
 ifeq ($(DEBUG),yes)
 	TAG=debug
-	OPTS+= -g -O0 -DMCUDEBUG 
+	OPTS+= -g -O0 -DMCUDEBUG -pg 
 else
 	OPTS+= -O3
 	TAG=release
@@ -132,10 +132,25 @@ VPATH +=  %.cpp $(SRCDIR)/src/$(AACDIR)
 
 
 INCLUDE+= -I$(SRCDIR)/include/ $(VADINCLUDE)
-LDFLAGS+= -lgsm -lpthread -lssl -lcrypto -lsrtp 
-LDFLAGS+= -lavcodec -lswscale -lavformat -lavutil -lavresample -lx264 -lmp4v2 -lspeex -lspeexdsp -lvpx -lopus 
-LDXMLFLAGS+= -lxmlrpc -lxmlrpc_xmlparse -lxmlrpc_xmltok -lxmlrpc_abyss -lxmlrpc_server -lxmlrpc_util
-LDFLAGS+= $(LDXMLFLAGS)
+LDFLAGS+= -lgsm -lpthread -lssl -lcrypto -lsrtp
+
+ifeq ($(STATIC),yes)
+	LDFLAGS+=/usr/local/src/ffmpeg/libavformat/libavformat.a
+	LDFLAGS+=/usr/local/src/ffmpeg/libavcodec/libavcodec.a
+	LDFLAGS+=/usr/local/src/ffmpeg/libavresample/libavresample.a
+	LDFLAGS+=/usr/local/src/ffmpeg/libswscale/libswscale.a
+	LDFLAGS+=/usr/local/src/ffmpeg/libavutil/libavutil.a
+	LDFLAGS+=/usr/local/src/x264/libx264.a
+	LDFLAGS+=/usr/local/src/opus-1.0.2/.libs/libopus.a
+	LDFLAGS+=/usr/local/src/speex-1.2rc1/libspeex/.libs/libspeex.a
+	LDFLAGS+=/usr/local/src/speex-1.2rc1/libspeex/.libs/libspeexdsp.a
+	LDFLAGS+=/usr/local/src/libvpx/libvpx.a
+	LDFLAGS+=/usr/local/lib/libmp4v2.a
+else
+	LDFLAGS+= -lavcodec -lswscale -lavformat -lavutil -lavresample -lx264 -lmp4v2 -lspeex -lspeexdsp -lvpx -lopus
+endif
+
+LDFLAGS+= -lxmlrpc -lxmlrpc_xmlparse -lxmlrpc_xmltok -lxmlrpc_abyss -lxmlrpc_server -lxmlrpc_util
 
 #For abyss
 OPTS 	+= -D_UNIX -D__STDC_CONSTANT_MACROS
@@ -178,7 +193,7 @@ install:
 
 
 mcu: $(OBJSMCU)
-	$(CXX) -o $(BIN)/$@ $(BUILDOBJSMCU) $(LDFLAGS) $(VADLD)
+	$(CXX) -o $(BIN)/$@ $(BUILDOBJSMCU) $(LDFLAGS) $(VADLD) -pg
 
 rtmpdebug: $(OBJSRTMPDEBUG)
 	$(CXX) -o $(BIN)/$@ $(BUILDOBJSRTMPDEBUG) $(LDFLAGS) $(VADLD)
