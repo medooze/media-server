@@ -8,7 +8,7 @@ include config.mk
 #DEBUG
 ifeq ($(DEBUG),yes)
 	TAG=debug
-	OPTS+= -g -O0 -DMCUDEBUG -pg 
+	OPTS+= -g -O0 -DMCUDEBUG
 else
 	OPTS+= -O3
 	TAG=release
@@ -193,7 +193,7 @@ install:
 
 
 mcu: $(OBJSMCU)
-	$(CXX) -o $(BIN)/$@ $(BUILDOBJSMCU) $(LDFLAGS) $(VADLD) -pg
+	$(CXX) -o $(BIN)/$@ $(BUILDOBJSMCU) $(LDFLAGS) $(VADLD)
 
 rtmpdebug: $(OBJSRTMPDEBUG)
 	$(CXX) -o $(BIN)/$@ $(BUILDOBJSRTMPDEBUG) $(LDFLAGS) $(VADLD)

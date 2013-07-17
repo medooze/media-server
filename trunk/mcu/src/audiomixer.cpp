@@ -94,8 +94,12 @@ int AudioMixer::MixAudio()
 
 		//At most the maximum
 		if (numSamples>Sidebar::MIXER_BUFFER_SIZE)
+		{
+			//Log
+			Log("-AudiMixer num mixing samples bigger than buffer [%d]\n",numSamples);
 			//Set it at most (shoudl never happen)
 			numSamples = Sidebar::MIXER_BUFFER_SIZE;
+		}
 
 		//For each sidepar
 		for (Sidebars::iterator sit=sidebars.begin(); sit!=sidebars.end(); ++sit)
