@@ -16,7 +16,7 @@ public:
 	Sidebar();
 	~Sidebar();
 
-	void Update(int index,SWORD *samples,DWORD len);
+	int  Update(int index,SWORD *samples,DWORD len);
 	void Reset();
 
 	void AddParticipant(int id);
