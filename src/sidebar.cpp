@@ -21,7 +21,7 @@ void Sidebar::Update(int id,SWORD *samples,DWORD len)
 	//Check if
 	if (participants.find(id)==participants.end())
 		//Exit
-		return;
+		return Error("-Sidebar error updating particionat not found [%d]\n",id);
 
 	//Mix the audio
 	for(int i = 0; i < len; ++i)
@@ -51,6 +51,7 @@ bool Sidebar::HasParticipant(int id)
 	if (participants.find(id)==participants.end())
 		//Exit
 		return false;
+	//Found
 	return true;
 }
 
