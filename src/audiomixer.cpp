@@ -116,11 +116,11 @@ int AudioMixer::MixAudio()
 			//Get the samples from the fifo
 			audio->len = audio->output->GetSamples(audio->buffer,numSamples);
 			//Get VAD value
-			audio->vad = audio->output->GetVAD(numSamples);
+			audio->vad = audio->output->GetVAD(audio->len);
 			//For each sidepaf
 			for (Sidebars::iterator sit = sidebars.begin(); sit!=sidebars.end(); ++sit)
-				//Mix it
-				sit->second->Update(id,audio->buffer,audio->len);
+				//Mix it and update length
+				audio->len = sit->second->Update(id,audio->buffer,audio->len);
 		}
 
 		// Second pass: Calculate this stream's output

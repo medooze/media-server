@@ -4,9 +4,9 @@
  * 
  * Created on 9 de agosto de 2012, 15:26
  */
-
-#include "sidebar.h"
 #include <string.h>
+#include "sidebar.h"
+#include "log.h"
 
 Sidebar::Sidebar()
 {
@@ -18,15 +18,22 @@ Sidebar::~Sidebar()
 
 void Sidebar::Update(int id,SWORD *samples,DWORD len)
 {
+	//Check size
+	if (len>MIXER_BUFFER_SIZE)
+		//error
+		return Error("-Sidebar error updating particionat, len bigger than mixer max buffer size [len:%d,size:%d]\n",len,MIXER_BUFFER_SIZE);
 	//Check if
 	if (participants.find(id)==participants.end())
 		//Exit
-		return Error("-Sidebar error updating particionat not found [%d]\n",id);
+		return Error("-Sidebar error updating particionat not found [id:%d]\n",id);
 
 	//Mix the audio
 	for(int i = 0; i < len; ++i)
 		//MIX
 		mixer_buffer[i] += samples[i];
+
+	//OK
+	return len;
 }
 
 void Sidebar::Reset()
