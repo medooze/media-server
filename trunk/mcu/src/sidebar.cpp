@@ -16,7 +16,7 @@ Sidebar::~Sidebar()
 {
 }
 
-void Sidebar::Update(int id,SWORD *samples,DWORD len)
+int Sidebar::Update(int id,SWORD *samples,DWORD len)
 {
 	//Check size
 	if (len>MIXER_BUFFER_SIZE)
