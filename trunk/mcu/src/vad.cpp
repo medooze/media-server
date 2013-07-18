@@ -23,6 +23,9 @@ int VAD::CalcVad(SWORD* frame,DWORD size,DWORD rate)
 		case 32000:
 			//Calculate VAD
 			return WebRtcVad_CalcVad32khz(&inst,frame,size);
+		case 48000:
+			/Calculate VAD
+			return WebRtcVad_CalcVad48khz(&inst,frame,size);
 	}
 
 	//No reate supported

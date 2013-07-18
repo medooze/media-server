@@ -38,7 +38,7 @@ DWORD OpusDecoder::TrySetRate(DWORD rate)
 		this->rate = rate;
 	}
 	
-	//Return new rate
+	//Return codec rate
 	return this->rate;
 }
 

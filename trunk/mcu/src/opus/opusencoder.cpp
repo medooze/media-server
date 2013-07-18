@@ -33,6 +33,9 @@ OpusEncoder::OpusEncoder(const Properties &properties)
 	//Check error
 	if (!enc || error)
 		Error("Could not open OPUS encoder");
+
+	//Enable FEC
+	opus_encoder_ctl(enc, OPUS_SET_INBAND_FEC(1));
 }
 
 DWORD OpusEncoder::TrySetRate(DWORD rate)
@@ -50,6 +53,9 @@ DWORD OpusEncoder::TrySetRate(DWORD rate)
 		//Store new rate
 		this->rate = rate;
 	}
+
+	//Enable FEC
+	opus_encoder_ctl(enc, OPUS_SET_INBAND_FEC(1));
 
 	//Return new rate
 	return this->rate;
