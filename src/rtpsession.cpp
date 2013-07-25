@@ -603,6 +603,14 @@ int RTPSession::Init()
 			//Try again
 			continue;
 		}
+		//Set COS
+		int cos = 5;
+		setsockopt(simSocket,     SOL_SOCKET, SO_PRIORITY, &cos, sizeof(cos));
+		setsockopt(simRtcpSocket, SOL_SOCKET, SO_PRIORITY, &cos, sizeof(cos));
+		//Set TOS
+		int tos = 0x2E;
+		setsockopt(simSocket,     IPPROTO_IP, IP_TOS, &tos, sizeof(tos));
+		setsockopt(simRtcpSocket, IPPROTO_IP, IP_TOS, &tos, sizeof(tos));
 		//Everything ok
 		Log("-Got ports [%d,%d]\n",simPort,simRtcpPort);
 		//Start receiving
@@ -612,6 +620,7 @@ int RTPSession::Init()
 		//Opened
 		return 1;
 	}
+
 	//Error
 	Error("RTPSession too many failed attemps opening sockets");
 	

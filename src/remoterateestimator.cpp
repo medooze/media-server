@@ -348,5 +348,22 @@ void RemoteRateEstimator::SetRTT(DWORD rtt)
 
 void RemoteRateEstimator::SetTemporalMaxLimit(DWORD limit)
 {
-	//Do nothing yet
+	//Check if reseting
+	if (limit)
+		//Set maximun bitrate
+		maxConfiguredBitRate = limit;
+	else
+		//Set default max
+		maxConfiguredBitRate = 30000000;
+}
+
+void RemoteRateEstimator::SetTemporalMinLimit(DWORD limit)
+{
+	//Check if reseting
+	if (limit)
+		//Set maximun bitrate
+		minConfiguredBitRate = limit;
+	else
+		//Set default min
+		minConfiguredBitRate = 100000;
 }

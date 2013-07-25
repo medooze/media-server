@@ -23,6 +23,13 @@ RTPParticipant::~RTPParticipant()
 
 int RTPParticipant::SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int intraPeriod,const Properties& properties)
 {
+	//Fix: Should not be here
+	if (properties.HasProperty("rateEstimator.maxRate"))
+		estimator.SetTemporalMaxLimit(properties.GetProperty("rateEstimator.maxRate",0));
+	//Fix: Should not be here
+	if (properties.HasProperty("rateEstimator.minRate"))
+		//Set it
+		estimator.SetTemporalMinLimit(properties.GetProperty("rateEstimator.minRate",0));
 	//Set it
 	return video.SetVideoCodec(codec,mode,fps,bitrate,intraPeriod,properties);
 }

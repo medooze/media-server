@@ -84,6 +84,7 @@
         <in>statushandler.h</in>
         <in>stringparser.h</in>
         <in>stunmessage.h</in>
+        <in>tcpsocketserver.h</in>
         <in>text.h</in>
         <in>textencoder.h</in>
         <in>textmixer.h</in>
@@ -102,7 +103,6 @@
         <in>wait.h</in>
         <in>waitqueue.h</in>
         <in>websockets.h</in>
-        <in>websocketserver.h</in>
         <in>websocketshandler.h</in>
         <in>xmlhandler.h</in>
         <in>xmlrpcclient.h</in>
@@ -284,6 +284,7 @@
         <in>sidebar.cpp</in>
         <in>statushandler.cpp</in>
         <in>stunmessage.cpp</in>
+        <in>tcpsocketserver.cpp</in>
         <in>textencoder.cpp</in>
         <in>textmixer.cpp</in>
         <in>textmixerworker.cpp</in>
@@ -294,7 +295,6 @@
         <in>videomixer.cpp</in>
         <in>videopipe.cpp</in>
         <in>videostream.cpp</in>
-        <in>websocketserver.cpp</in>
         <in>websocketshandler.cpp</in>
         <in>xmlhandler.cpp</in>
         <in>xmlrpcbroadcaster.cpp</in>
