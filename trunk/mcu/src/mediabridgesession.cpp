@@ -1,7 +1,7 @@
-/* 
+/*
  * File:   mediabridgesession.cpp
  * Author: Sergio
- * 
+ *
  * Created on 22 de diciembre de 2010, 18:20
  */
 #include <errno.h>
@@ -29,6 +29,9 @@
 #include "flv1/flv1Parser.h"
 #endif
 extern DWORD  h264_append_nals(BYTE *dest, DWORD destLen, DWORD destSize, BYTE *buffer, DWORD bufferLen,BYTE **nals,DWORD nalSize,DWORD *num);
+
+static BYTE BOMUTF8[]			= {0xEF,0xBB,0xBF};
+static BYTE LOSTREPLACEMENT[]		= {0xEF,0xBF,0xBD};
 
 MediaBridgeSession::MediaBridgeSession() : rtpAudio(MediaFrame::Audio,NULL), rtpVideo(MediaFrame::Video,NULL), rtpText(MediaFrame::Text,NULL)
 {
@@ -319,7 +322,7 @@ int  MediaBridgeSession::StopReceivingAudio()
 
 		//Cancel audio rtp get packet
 		rtpAudio.CancelGetPacket();
-		
+
 		//Esperamos
 		pthread_join(recAudioThread,NULL);
 	}
@@ -432,7 +435,7 @@ void* MediaBridgeSession::startReceivingVideo(void *par)
 	//Obtenemos el objeto
 	MediaBridgeSession *sess = (MediaBridgeSession *)par;
 
-	//Bloqueamos las se�a�es
+	//Block signals
 	blocksignals();
 
 	//Y ejecutamos
@@ -450,7 +453,7 @@ void* MediaBridgeSession::startReceivingAudio(void *par)
 	//Obtenemos el objeto
 	MediaBridgeSession *sess = (MediaBridgeSession *)par;
 
-	//Bloqueamos las se�a�es
+	//Block signals
 	blocksignals();
 
 	//Y ejecutamos
@@ -468,7 +471,7 @@ void* MediaBridgeSession::startSendingVideo(void *par)
 	//Obtenemos el objeto
 	MediaBridgeSession *sess = (MediaBridgeSession *)par;
 
-	//Bloqueamos las se�a�es
+	//Block signals
 	blocksignals();
 
 	//Y ejecutamos
@@ -486,7 +489,7 @@ void* MediaBridgeSession::startSendingAudio(void *par)
 	//Obtenemos el objeto
 	MediaBridgeSession *sess = (MediaBridgeSession *)par;
 
-	//Bloqueamos las se�a�es
+	//Block signals
 	blocksignals();
 
 	//Y ejecutamos
@@ -504,7 +507,7 @@ void* MediaBridgeSession::startReceivingText(void *par)
 	//Obtenemos el objeto
 	MediaBridgeSession *sess = (MediaBridgeSession *)par;
 
-	//Bloqueamos las se�a�es
+	//Block signals
 	blocksignals();
 
 	//Y ejecutamos
@@ -528,7 +531,7 @@ int MediaBridgeSession::RecVideo()
 	int 	width=0;
 	int 	height=0;
 	DWORD	numpixels=0;
-	
+
 	Log(">RecVideo\n");
 
 	//Mientras tengamos que capturar
@@ -575,7 +578,7 @@ int MediaBridgeSession::RecVideo()
 		//Check if it is last one
 		if(!mark)
 			continue;
-	
+
 		//Check size
 		if (decoder->GetWidth()!=width || decoder->GetHeight()!=height)
 		{
@@ -664,12 +667,12 @@ int MediaBridgeSession::RecAudio()
 	{
 		//Obtenemos el paquete
 		RTPPacket *packet = rtpAudio.GetPacket();
-		
+
 		//Check
 		if (!packet)
 			//Next
 			continue;
-		
+
 		//Get type
 		AudioCodec::Type codec = (AudioCodec::Type)packet->GetCodec();
 
@@ -698,15 +701,15 @@ int MediaBridgeSession::RecAudio()
 
 		//Rencode it
 		DWORD len;
-		
+
 		while((len=rtmpAudioEncoder->Encode(raw,rawLen,audio->GetMediaData(),audio->GetMaxMediaSize()))>0)
 		{
 			//REset
 			rawLen = 0;
-			
+
 			//Set length
 			audio->SetMediaSize(len);
-		
+
 			switch(rtmpAudioEncoder->type)
 			{
 				case AudioCodec::SPEEX16:
@@ -754,7 +757,7 @@ int MediaBridgeSession::RecAudio()
 	if (audio)
 		//Delete it
 		delete(audio);
-	
+
 	Log("<RecAudio\n");
 
 	//Salimos
@@ -768,15 +771,13 @@ int MediaBridgeSession::RecAudio()
 int MediaBridgeSession::RecText()
 {
 	DWORD		timeStamp=0;
-	
+	DWORD		lastSeq = RTPPacket::MaxExtSeqNum;
+
 	Log(">RecText\n");
 
 	//Mientras tengamos que capturar
 	while(receivingText)
 	{
-		TextCodec::Type type;
-		DWORD packetSize = MTU;
-
 		//Get packet
 		RTPPacket *packet = rtpText.GetPacket();
 
@@ -784,48 +785,100 @@ int MediaBridgeSession::RecText()
 		if (!packet)
 			continue;
 
-		WORD skip = 0;
-
 		//Get data
 		BYTE* data = packet->GetMediaData();
 		//And length
 		DWORD size = packet->GetMediaLength();
-		
+
+		//Get extended sequence number
+		DWORD seq = packet->GetExtSeqNum();
+
+		//Lost packets since last one
+		DWORD lost = 0;
+
+		//If not first
+		if (lastSeq!=RTPPacket::MaxExtSeqNum)
+			//Calculate losts
+			lost = seq-lastSeq-1;
+
+		//Update last sequence number
+		lastSeq = seq;
+
+		//Get type
+		TextCodec::Type type = (TextCodec::Type)packet->GetCodec();
+
 		//Check the type of data
 		if (type==TextCodec::T140RED)
 		{
-			WORD i = 0;
-			bool last = false;
+			//Get redundant packet
+			RTPRedundantPacket* red = (RTPRedundantPacket*)packet;
 
-			//Read redundant headers
-			while(!last)
+			//Check lost packets count
+			if (lost == 0)
 			{
-				//Check if it is the last
-				last = !(data[i++]>>7);
-				//if it is not last
-				if (!last)
+				//Create text frame
+				TextFrame frame(timeStamp ,red->GetPrimaryPayloadData(),red->GetPrimaryPayloadSize());
+				//Create new timestamp associated to latest media time
+				RTMPMetaData meta(getDifTime(&first)/1000);
+
+				//Add text name
+				meta.AddParam(new AMFString(L"onText"));
+				//Set data
+				meta.AddParam(new AMFString(frame.GetWChar()));
+
+				//Send data
+				SendMetaData(&meta);
+			} else {
+				//Timestamp of first packet (either receovered or not)
+				DWORD ts = timeStamp;
+
+				//Check if we have any red pacekt
+				if (red->GetRedundantCount()>0)
+					//Get the timestamp of first redundant packet
+					ts = red->GetRedundantTimestamp(0);
+
+				//If we have lost too many
+				if (lost>red->GetRedundantCount())
+					//Get what we have available only
+					lost = red->GetRedundantCount();
+
+				//For each lonot recoveredt packet send a mark
+				for (int i=red->GetRedundantCount();i<lost;i++)
 				{
-					//Get offset
-					WORD offset	= (((WORD)(data[i++])<<6));
-					offset |= data[i]>>2;
-					WORD size	= (((WORD)(data[i++])&0x03)<<8);
-					size |= data[i++];
-					//Skip the redundant data
-					skip += size;
+					//Create frame of lost replacement
+					TextFrame frame(ts,LOSTREPLACEMENT,sizeof(LOSTREPLACEMENT));
+					//Create new timestamp associated to latest media time
+					RTMPMetaData meta(getDifTime(&first)/1000);
+
+					//Add text name
+					meta.AddParam(new AMFString(L"onText"));
+					//Set data
+					meta.AddParam(new AMFString(frame.GetWChar()));
+
+					//Send data
+					SendMetaData(&meta);
+				}
+
+				//Fore each recovered packet
+				for (int i=red->GetRedundantCount()-lost;i<red->GetRedundantCount();i++)
+				{
+					//Create frame from recovered data
+					TextFrame frame(red->GetRedundantTimestamp(i),red->GetRedundantPayloadData(i),red->GetRedundantPayloadSize(i));
+					//Create new timestamp associated to latest media time
+					RTMPMetaData meta(getDifTime(&first)/1000);
+
+					//Add text name
+					meta.AddParam(new AMFString(L"onText"));
+					//Set data
+					meta.AddParam(new AMFString(frame.GetWChar()));
+
+					//Send data
+					SendMetaData(&meta);
 				}
 			}
-			//Skip redundant data
-			skip += i;
-		}
-
-
-
-		//Check length
-		if (skip<size)
-	        {
+		} else {
 			//Create frame
-			TextFrame frame(timeStamp,data+skip,size-skip);
-
+			TextFrame frame(timeStamp,data,size);
 			//Create new timestamp associated to latest media time
 			RTMPMetaData meta(getDifTime(&first)/1000);
 
@@ -878,9 +931,9 @@ int MediaBridgeSession::SendVideo()
 	DWORD width = 0;
 	DWORD height = 0;
 	DWORD numpixels = 0;
-	
+
 	QWORD	lastVideoTs = 0;
-	
+
 	Log(">SendVideo\n");
 
 	//Set video format
@@ -1140,7 +1193,7 @@ int MediaBridgeSession::RecVideo()
 		//Video codec type
 		VideoCodec::Type type;
 
-		//POnemos el tam�o
+		//POnemos el tamï¿½o
 		packetSize=MTU;
 
 		//Obtenemos el paquete
@@ -1419,7 +1472,7 @@ void MediaBridgeSession::onMetaData(DWORD id,RTMPMetaData *publishedMetaData)
 	if (name->GetWString().compare(L"onText")==0)
 	{
 		RTPPacket packet(MediaFrame::Text,TextCodec::T140);
-		
+
 		//Get string
 		AMFString *str = (AMFString*)publishedMetaData->GetParams(1);
 
@@ -1539,7 +1592,7 @@ void MediaBridgeSession::NetStream::doPublish(std::wstring& url)
 
 	//Send publish notification
 	fireOnNetStreamStatus(RTMP::Netstream::Publish::Start,L"Publish started");
-	
+
 }
 
 /***************************************

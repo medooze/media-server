@@ -43,6 +43,7 @@ public:
 	DWORD GetEstimatedBitrate();
 	void GetSSRCs(std::list<DWORD> &ssrcs);
 	void SetTemporalMaxLimit(DWORD limit);
+	void SetTemporalMinLimit(DWORD limit);
 private:
 	double RateIncreaseFactor(QWORD nowMs, QWORD lastMs, DWORD reactionTimeMs, double noiseVar) const;
 	void UpdateChangePeriod(QWORD nowMs);

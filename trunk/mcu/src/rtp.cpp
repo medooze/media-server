@@ -1292,7 +1292,7 @@ RTPRedundantPacket::RTPRedundantPacket(MediaFrame::Type media,BYTE *data,DWORD s
 		 */
 
 		//Get Type
-		BYTE type = payload[i++];
+		BYTE type = payload[i++] & 0x7F;
 		//Get offset
 		WORD offset = payload[i++];
 		offset = offset <<6 | payload[i]>>2;

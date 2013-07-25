@@ -310,8 +310,10 @@ int VideoStream::StopSending()
 		//Paramos el envio
 		sendingVideo=0;
 
-		//Cencel video grab
-		videoInput->CancelGrabFrame();
+		//Check we have video
+		if (videoInput)
+			//Cencel video grab
+			videoInput->CancelGrabFrame();
 
 		//Cancel sending
 		pthread_cond_signal(&cond);
