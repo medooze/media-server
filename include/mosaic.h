@@ -66,8 +66,6 @@ public:
 	void SetSlots(int *slots,int num);
 	bool IsFixed(DWORD pos);
 
-	void Dump();
-
 	int GetVADParticipant();
 	int SetVADParticipant(int id,QWORD blockedUntil);
 

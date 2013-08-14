@@ -59,6 +59,7 @@ public:
 	int StopSendingText();
 	int StartReceivingText(RTPMap& rtpMap);
 	int StopReceivingText();
+	int SetSendingTextCodec(TextCodec::Type codec);
 
 	bool End();
 
@@ -126,6 +127,7 @@ private:
 	
 	VideoCodec::Type rtpVideoCodec;
 	AudioCodec::Type rtpAudioCodec;
+	TextCodec::Type  rtpTextCodec;
 
 	AudioEncoder *rtpAudioEncoder;
 	AudioDecoder *rtpAudioDecoder;

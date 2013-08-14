@@ -10,7 +10,7 @@
 * MultiConf
 * 	Constructor
 *************************/
-MultiConf::MultiConf(const std::wstring &tag) : broadcast(tag)
+MultiConf::MultiConf(const std::wstring &tag) : broadcast(tag),videoMixer(tag)
 {
 	//Guardamos el nombre
 	this->tag = tag;
@@ -337,6 +337,11 @@ int MultiConf::SetMosaicSlot(int mosaicId,int slot,int id)
 	return videoMixer.SetSlot(mosaicId,slot,id);
 }
 
+int MultiConf::GetMosaicPositions(int mosaicId,std::list<int> &positions)
+{
+	//Set it
+	return videoMixer.GetMosaicPositions(mosaicId,positions);
+}
 /************************
 * AddMosaicParticipant
 * 	Show participant in a mosaic

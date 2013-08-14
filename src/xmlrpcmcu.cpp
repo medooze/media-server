@@ -1423,6 +1423,49 @@ xmlrpc_value* GetParticipantStatistics(xmlrpc_env *env, xmlrpc_value *param_arra
 	return xmlok(env,arr);
 }
 
+xmlrpc_value* GetMosaicPositions(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+	MCU *mcu = (MCU *)user_data;
+	MultiConf *conf = NULL;
+	std::list<int> positions;
+
+	 //Parseamos
+	int confId;
+	int mosaicId;
+	xmlrpc_parse_value(env, param_array, "(ii)", &confId, &mosaicId);
+
+	//Comprobamos si ha habido error
+	if(env->fault_occurred)
+		return xmlerror(env,"Fault occurred");
+
+	//Obtenemos la referencia
+	if(!mcu->GetConferenceRef(confId,&conf))
+		return xmlerror(env,"Conference does not exist");
+
+	//Get statistics
+	conf->GetMosaicPositions(mosaicId,positions);
+
+	//Liberamos la referencia
+	mcu->ReleaseConferenceRef(confId);
+
+	//Create array
+	xmlrpc_value* arr = xmlrpc_array_new(env);
+
+	//Process result
+	for (std::list<int>::iterator it = positions.begin(); it!=positions.end(); ++it)
+	{
+		//Create array
+		xmlrpc_value* val = xmlrpc_build_value(env,"i",*it);
+		//Add it
+		xmlrpc_array_append_item(env,arr,val);
+		//Release
+		xmlrpc_DECREF(val);
+	}
+
+	//return
+	return xmlok(env,arr);
+}
+
 xmlrpc_value* MCUEventQueueCreate(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
         MCU *mcu = (MCU *)user_data;
@@ -1901,5 +1944,6 @@ XmlHandlerCmd mcuCmdList[] =
 	{"SetLocalSTUNCredentials",SetLocalSTUNCredentials},
 	{"SetRemoteSTUNCredentials",SetRemoteSTUNCredentials},
 	{"SetRTPProperties",SetRTPProperties},
+	{"GetMosaicPositions",GetMosaicPositions},
 	{NULL,NULL}
 };

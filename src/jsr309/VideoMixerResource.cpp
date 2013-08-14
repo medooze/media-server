@@ -1,7 +1,7 @@
 #include "log.h"
 #include "VideoMixerResource.h"
 
-VideoMixerResource::VideoMixerResource(std::wstring &tag)
+VideoMixerResource::VideoMixerResource(std::wstring &tag) : mixer(tag)
 {
 	//Store tag
 	this->tag = tag;

@@ -86,6 +86,8 @@ public:
 	int RemoveMosaicParticipant(int mosaicId,int partId);
 	int AddSidebarParticipant(int sidebar,int partId);
 	int RemoveSidebarParticipant(int sidebar,int partId);
+
+	int GetMosaicPositions(int mosaicId,std::list<int> &positions);
 	
 	int StartSending(int partId,MediaFrame::Type media,char *sendIp,int sendPort,RTPMap& rtpMap);
 	int StopSending(int partId,MediaFrame::Type media);
