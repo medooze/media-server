@@ -7,6 +7,7 @@
 #include "pipevideooutput.h"
 #include "mosaic.h"
 #include "logo.h"
+#include "eventstreaminghandler.h"
 #include <map>
 
 class VideoMixer 
@@ -21,7 +22,7 @@ public:
 public:
 	// Los valores indican el n�mero de mosaicos por composicion
 
-	VideoMixer();
+	VideoMixer(const std::wstring &tag);
 	~VideoMixer();
 
 	int Init(Mosaic::Type comp,int size);
@@ -42,6 +43,7 @@ public:
 	int ResetMosaicOverlay(int mosaicId);
 	int AddMosaicParticipant(int mosaicId,int partId);
 	int RemoveMosaicParticipant(int mosaicId,int partId);
+	int GetMosaicPositions(int mosaicId,std::list<int> &positions);
 	int SetSlot(int mosaicId,int num,int id);
 	int SetCompositionType(int mosaicId,Mosaic::Type comp,int size);
 	int DeleteMosaic(int mosaicId);
@@ -54,6 +56,7 @@ public:
 protected:
 	int MixVideo();
 	int UpdateMosaic(Mosaic* mosaic);
+	int DumpMosaic(DWORD id,Mosaic* mosaic);
 	int GetPosition(int mosaicId,int id);
 	
 private:
@@ -74,6 +77,8 @@ private:
 private:
 	static DWORD vadDefaultChangePeriod;
 private:
+	EvenSource	eventSource;
+	std::wstring tag;
 	//La lista de videos a mezclar
 	Videos lstVideos;
 	//Mosaics

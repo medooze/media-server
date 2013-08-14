@@ -24,8 +24,11 @@ void VideoMixer::SetVADDefaultChangePeriod(DWORD ms)
 * VideoMixer
 *	Constructord
 ************************/
-VideoMixer::VideoMixer()
+VideoMixer::VideoMixer(const std::wstring &tag) : eventSource(tag)
 {
+        //Save tag
+ 	this->tag = tag;
+
 	//Incializamos a cero
 	defaultMosaic	= NULL;
 
@@ -461,6 +464,45 @@ int VideoMixer::ResetMosaicOverlay(int mosaicId)
 	return mosaic->ResetOverlay();
 }
 
+int VideoMixer::GetMosaicPositions(int mosaicId,std::list<int> &positions)
+{
+	Log("-GetMosaicPositions [id:%d]\n",mosaicId);
+
+	//Protegemos la lista
+	lstVideosUse.IncUse();
+	
+	//Get mosaic from id
+	Mosaics::iterator it = mosaics.find(mosaicId);
+
+	//Check if we have found it
+	if (it==mosaics.end())
+		//error
+		return Error("Mosaic not found [id:%d]\n",mosaicId);
+
+	//Get the old mosaic
+	Mosaic *mosaic = it->second;
+
+	//Get num slots
+	DWORD numSlots = mosaic->GetNumSlots();
+
+	//Get data
+	int* mosaicPos   = mosaic->GetPositions();
+
+	//For each pos
+	for (int i=0;i<numSlots;++i)
+		//Add it
+		positions.push_back(mosaicPos[i]);
+
+	//Unlock
+	lstVideosUse.DecUse();
+	
+	//Dump it
+	DumpMosaic(mosaicId,mosaic);
+	
+	//Exit
+	return numSlots;
+}
+
 /***********************
 * Init
 *	Inicializa el mezclado de video
@@ -702,12 +744,14 @@ int VideoMixer::AddMosaicParticipant(int mosaicId, int partId)
 	if (itMosaic==mosaics.end())
 		//Salimos
 		return Error("Mosaic not found\n");
+	//Get mosaic
+	Mosaic* mosaic = itMosaic->second;
 
 	//Add participant to the mosaic
-	itMosaic->second->AddParticipant(partId);
+	mosaic->AddParticipant(partId);
 
 	//Dump positions
-	itMosaic->second->Dump();
+	DumpMosaic(mosaicId,mosaic);
 
 	//Everything ok
 	return 1;
@@ -772,7 +816,7 @@ int VideoMixer::RemoveMosaicParticipant(int mosaicId, int partId)
 	lstVideosUse.Unlock();
 
 	//Dump positions
-	mosaic->Dump();
+	DumpMosaic(mosaicId,mosaic);
 
 	//Correct
 	return 1;
@@ -1006,6 +1050,9 @@ int VideoMixer::SetCompositionType(int mosaicId,Mosaic::Type comp, int size)
 	//Unlock (Could this be done earlier??)
 	lstVideosUse.Unlock();
 
+	//Dump positions
+	DumpMosaic(mosaicId,mosaic);
+
 	Log("<SetCompositionType\n");
 
 	return 1;
@@ -1110,7 +1157,7 @@ int VideoMixer::SetSlot(int mosaicId,int num,int id)
 	UpdateMosaic(mosaic);
 
 	//Dump positions
-	mosaic->Dump();
+	DumpMosaic(mosaicId,mosaic);
 
 	//Desprotegemos la lista
 	lstVideosUse.Unlock();
@@ -1173,4 +1220,47 @@ void VideoMixer::SetVADMode(VADMode vadMode)
 	Log("-SetVadMode [%d]\n", vadMode);
 	//Set it
 	this->vadMode = vadMode;
+}
+
+
+int VideoMixer::DumpMosaic(DWORD id,Mosaic* mosaic)
+{
+	char p[16];
+	char line1[1024];
+	char line2[1024];
+
+	//Empty
+	*line1=0;
+	*line2=0;
+
+	//Get num slots
+	DWORD numSlots = mosaic->GetNumSlots();
+
+	//Get data
+	int* mosaicSlots = mosaic->GetSlots();
+	int* mosaicPos   = mosaic->GetPositions();
+
+	//Create string from array
+	for (int i=0;i<numSlots;++i)
+	{
+		if (i)
+		{
+			strcat(line1,",");
+			strcat(line2,",");
+		}
+		sprintf(p,"%.4d",mosaicSlots[i]);
+		strcat(line1,p);
+		sprintf(p,"%.4d",mosaicPos[i]);
+		strcat(line2,p);
+	}
+
+	//Log
+	Log("-MosaicSlots %d [%s]\n",id,line1);
+	Log("-MosaicPos   %d [%s]\n",id,line2);
+
+	//Send event
+	eventSource.SendEvent("mosaic","{id:%d,slots:[%s],pos:[%s]}",id,line1,line2);
+
+	//OK
+	return 1;
 }

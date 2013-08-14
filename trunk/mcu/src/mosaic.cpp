@@ -734,30 +734,3 @@ int Mosaic::DrawVUMeter(int pos,DWORD val,DWORD size)
 	return 1;
 }
 
-void Mosaic::Dump()
-{
-	char p[16];
-	char line1[1024];
-	char line2[1024];
-
-	//Empty
-	*line1=0;
-	*line2=0;
-
-	for (int i=0;i<numSlots;++i)
-	{
-		if (i)
-		{
-			strcat(line1,",");
-			strcat(line2,",");
-		}
-		sprintf(p,"%.4d",mosaicSlots[i]);
-		strcat(line1,p);
-		sprintf(p,"%.4d",mosaicPos[i]);
-		strcat(line2,p);
-	}
-
-	Log("-MosaicSlots [%s]\n",line1);
-	Log("-MosaicPos   [%s]\n",line2);
-
-}

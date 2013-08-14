@@ -49,6 +49,7 @@ MediaBridgeSession::MediaBridgeSession() : rtpAudio(MediaFrame::Audio,NULL), rtp
 	//Default values
 	rtpVideoCodec = VideoCodec::H264;
 	rtpAudioCodec = AudioCodec::PCMU;
+	rtpTextCodec  = TextCodec::T140;
 	//Create default encoders and decoders
 	rtpAudioEncoder = AudioCodecFactory::CreateEncoder(AudioCodec::PCMU);
 	rtpAudioDecoder = AudioCodecFactory::CreateDecoder(AudioCodec::PCMU);
@@ -349,7 +350,9 @@ int  MediaBridgeSession::StartSendingText(char *sendTextIp,int sendTextPort,RTPM
 	rtpText.SetSendingRTPMap(rtpMap);
 
 	//Set codec type
-	rtpText.SetSendingCodec(TextCodec::T140);
+	if(!rtpText.SetSendingCodec(rtpTextCodec))
+		//Error
+		return Error("%s text codec not supported by peer\n",TextCodec::GetNameFor(rtpTextCodec));
 
 	//Iniciamos las sesiones rtp de envio
 	if(!rtpText.SetRemotePort(sendTextIp,sendTextPort))
@@ -915,6 +918,14 @@ int MediaBridgeSession::SetSendingAudioCodec(AudioCodec::Type codec)
 	return 1;
 }
 
+int MediaBridgeSession::SetSendingTextCodec(TextCodec::Type codec)
+{
+	//Store it
+	rtpTextCodec = codec;
+	//OK
+	return 1;
+}
+
 int MediaBridgeSession::SendFPU()
 {
 	//Set it
@@ -1041,7 +1052,9 @@ int MediaBridgeSession::SendVideo()
 int MediaBridgeSession::SendAudio()
 {
 	AudioCodec::Type rtmpAudioCodec;
+	RTPPacket	 packet(MediaFrame::Audio,rtpAudioCodec,rtpAudioCodec);
 	QWORD lastAudioTs = 0;
+	DWORD frameTime=0;
 
 	Log(">SendAudio\n");
 
@@ -1134,8 +1147,10 @@ int MediaBridgeSession::SendAudio()
 				size = 0;
 			}
 		} else {
+			//Set data
+			packet.SetPayload(audio->GetMediaData(),audio->GetMediaSize());
 			//Send rtp packet
-			//FIX!!  rtpAudio.SendAudioPacket(audio->GetMediaData(),audio->GetMediaSize(),diff*16);
+			rtpAudio.SendPacket(packet);
 		}
 		//Delete audio
 		delete(audio);
@@ -1146,215 +1161,6 @@ int MediaBridgeSession::SendAudio()
 	return 1;
 }
 
-#if 0
-/****************************************
-* RecVideo
-*	Obtiene los packetes y los muestra
-*****************************************/
-int MediaBridgeSession::RecVideo()
-{
-	BYTE 	lost=0;
-	BYTE 	last=0;
-	DWORD	timeStamp=0;
-	DWORD	firstVideo=0;
-	DWORD	firstTS=0;
-	int 	width=0;
-	int 	height=0;
-	bool	isIntra = false;
-
-	//RTP incoming packet
-	DWORD packetSize = MTU;
-	BYTE* packet = (BYTE*)malloc(packetSize);
-
-
-	//Create new video frame
-	RTMPVideoFrame  *video = new RTMPVideoFrame(0,65500);
-
-	//Temporary buffer
-	DWORD bufferSize = video->GetMaxMediaSize();
-	BYTE* buffer =  video->GetMediaData();
-	WORD bufferLen = 0;
-
-
-	//The descriptor for the AVC
-	AVCDescriptor desc;
-	//Set description properties
-	desc.SetConfigurationVersion(0x01);
-	desc.SetAVCProfileIndication(0x42);	//Baseline
-	desc.SetProfileCompatibility(0xC0);
-	desc.SetAVCLevelIndication(0x0D);	//1.3
-	desc.SetNALUnitLength(4);
-
-	Log(">RecVideo\n");
-
-	//Mientras tengamos que capturar
-	while(receivingVideo)
-	{
-		//Video codec type
-		VideoCodec::Type type;
-
-		//POnemos el tamï¿½o
-		packetSize=MTU;
-
-		//Obtenemos el paquete
-		if (!rtpVideo.GetVideoPacket((BYTE *)packet,&packetSize,&last,&lost,&type,&timeStamp))
-		{
-			Error("Error recv video [%d]\n",errno);
-			continue;
-		}
-
-		//If it is first
-		if (!firstTS)
-		{
-			//Get first audio time
-			firstVideo = getDifTime(&first)/1000;
-			//It is first
-			firstTS = timeStamp;
-		}
-
-		DWORD ts = firstVideo +(timeStamp-firstTS)/90;
-
-		//Depending on the video type
-		switch (type)
-		{
-			case VideoCodec::H263_1998:
-				break;
-			case VideoCodec::H263_1996:
-				break;
-			case VideoCodec::H264:
-			{
-				//Nals
-				BYTE* nals[16];
-				DWORD num;
-
-				//Depacketize it
-				bufferLen += h264_append_nals(buffer,bufferLen,bufferSize,packet,packetSize,(BYTE**)&nals,16,&num);
-
-				//For each nal
-				for (DWORD i=0;i<num;i++)
-				{
-
-					DWORD nalSize = 0;
-					//Get nal
-					BYTE *nal = nals[i];
-					//Get nal type
-					BYTE nalType = (nal[0] & 0x1f);
-					//Get length
-					if (i<num-1)
-						//Get nal size to the next nal
-						nalSize = nals[i+1]-nals[i];
-					else
-						//Get nal size to the end of buffer
-						nalSize = bufferLen - (nals[i]-buffer);
-					//Depending on the type
-					switch (nalType)
-					{
-						case 1:
-							break;
-						case 6:
-							break;
-						case 7:
-							//Clear SPS
-							desc.ClearSequenceParameterSets();
-							//Add new SPS
-							desc.AddSequenceParameterSet(nal,nalSize);
-							break;
-						case 8:
-							//Clear PPS
-							desc.ClearPictureParameterSets();
-							//Add PPS
-							desc.AddPictureParameterSet(nal,nalSize);
-							break;
-						case 5:
-							//Is intra
-							isIntra = true;
-							break;
-						default:
-							Debug("Unhandled nal [%d]\n",nalType);
-					}
-				}
-				//If it is not last
-				if (!last)
-					//Get next packet
-					continue;
-
-				//Set frame type
-				video->SetVideoCodec(RTMPVideoFrame::AVC);
-				//Set NALU type
-				video->SetAVCType(1);
-				//No delay
-				video->SetAVCTS(0);
-
-				//Set buffer len
-				video->SetMediaSize(bufferLen);
-				//If we have the receiver
-				if (receiver)
-				{
-					//If it is intra
-					if (isIntra)
-					{
-						//Set type
-						video->SetFrameType(RTMPVideoFrame::INTRA);
-
-						//If we where waiting for video
-						if (waitVideo)
-						{
-							//Stop waiting
-							waitVideo = false;
-							getUpdDifTime(&first); //!!
-						}
-
-						//Create rtmp frame to send descriptor
-						RTMPVideoFrame *frame = new RTMPVideoFrame(0,desc.GetSize());
-						//Set type
-						frame->SetVideoCodec(RTMPVideoFrame::AVC);
-						//Set type
-						frame->SetFrameType(RTMPVideoFrame::INTRA);
-						//Set NALU type
-						frame->SetAVCType(0);
-						//Set no delay
-						frame->SetAVCTS(0);
-						//Serialize
-						DWORD len = desc.Serialize(frame->GetMediaData(),frame->GetMaxMediaSize());
-						//Set size
-						frame->SetMediaSize(len);
-						//Set timestamp
-						frame->SetTimestamp(getDifTime(&first)/1000);
-						//Send it
-						receiver->PlayMediaFrame(frame);
-						//Delete it
-						delete(frame);
-					} else {
-						//Set type
-						video->SetFrameType(RTMPVideoFrame::INTER);
-					}
-					//Set timestamp
-					video->SetTimestamp(getDifTime(&first)/1000);
-					//Check if we are still waiting for the intra
-					if (!waitVideo)
-						//Send it
-						receiver->PlayMediaFrame(video);
-				}
-				//No size yet
-				bufferLen = 0;
-				//No intra
-				isIntra = false;
-				break;
-			}
-		}
-	}
-
-	//Delete
-	delete(video);
-	//Free rtp packet
-	free(packet);
-
-	Log("<RecVideo\n");
-
-	//Salimos
-	pthread_exit(0);
-}
-#endif
 void MediaBridgeSession::AddInputToken(const std::wstring &token)
 {
 	//Add token
