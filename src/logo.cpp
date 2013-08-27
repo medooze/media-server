@@ -212,17 +212,17 @@ end:
 	return res;	
 }
 
-int Logo::GetWidth()
+int Logo::GetWidth() const
 {
 	return width;
 }
 
-int Logo::GetHeight()
+int Logo::GetHeight() const
 {
 	return height;
 }
 
-BYTE* Logo::GetFrame()
+BYTE* Logo::GetFrame() const
 {
 	return frame;
 }
