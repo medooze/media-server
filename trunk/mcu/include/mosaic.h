@@ -4,6 +4,7 @@
 #include "framescaler.h"
 #include "overlay.h"
 #include "vad.h"
+#include "logo.h"
 #include <map>
 
 class Mosaic
