@@ -9,9 +9,9 @@ public:
 	~Logo();
 	int Load(const char *filename);
 
-	BYTE* GetFrame();
-	int GetWidth();
-	int GetHeight();
+	BYTE* GetFrame() const;
+	int GetWidth() const;
+	int GetHeight() const;
 
 private:
 	BYTE*	 frame;
