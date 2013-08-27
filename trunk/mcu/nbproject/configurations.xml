@@ -2,10 +2,6 @@
 <configurationDescriptor version="69">
   <logicalFolder name="root" displayName="root" projectFiles="true">
     <df name="Media Mixer" root=".">
-      <df name="bin">
-        <df name="debug" kind="SOURCE_LOGICAL_FOLDER">
-        </df>
-      </df>
       <df name="include" kind="SOURCE_LOGICAL_FOLDER">
         <in>FLVEncoder.h</in>
         <in>FlashSoundHandler.h</in>
@@ -250,7 +246,6 @@
         <in>mcu.cpp</in>
         <in>mediabridgesession.cpp</in>
         <in>mediagateway.cpp</in>
-        <in>mosaic - copia.cpp</in>
         <in>mosaic.cpp</in>
         <in>mp4player.cpp</in>
         <in>mp4recorder.cpp</in>
@@ -307,6 +302,7 @@
         <in>xmlrpcserver.cpp</in>
         <in>xmlstreaminghandler.cpp</in>
       </df>
+      <in>ice-tcp-relay.cpp</in>
     </df>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
