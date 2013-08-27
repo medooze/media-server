@@ -167,15 +167,15 @@ int VideoMixer::MixVideo()
 				//Not need to change
 				bool changed = 0;
 
-				//No speaker participant
-				int vadId = 0;
-				//Active speaker not shown yet
-				int vadPos = Mosaic::NotShown;
-
 				//Get old speaker participant
 				int oldVad = mosaic->GetVADParticipant();
 				//Get old speaker position
 				int oldVadPos = mosaic->GetVADPosition();
+
+				//Keep latest speaker if no one is talking
+				int vadId = oldVad;
+				//Active speaker position not known yet
+				int vadPos = Mosaic::NotShown;
 
 				
 				//Update VAD info for each participant
