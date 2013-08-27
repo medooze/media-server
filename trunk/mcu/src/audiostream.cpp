@@ -430,10 +430,7 @@ int AudioStream::SendAudio()
 
 		//Comprobamos que ha sido correcto
 		if(len<=0)
-		{
-			Log("Error codificando el packete de audio\n");
 			continue;
-		}
 
 		//Set length
 		packet.SetMediaLength(len);

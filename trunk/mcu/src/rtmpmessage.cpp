@@ -876,6 +876,11 @@ DWORD RTMPVideoFrame::Parse(BYTE *data,DWORD size)
 	BYTE* buffer = data;
 	DWORD bufferLen = size;
 
+	//check size
+	if(!size)
+		//return consumed
+		return size;
+
 	//If it is the first
 	if (!headerPos)
 	{
@@ -888,6 +893,11 @@ DWORD RTMPVideoFrame::Parse(BYTE *data,DWORD size)
 		//INcrease header
 		headerPos++;
 	}
+
+	//check size
+	if(!bufferLen)
+		//return consumed
+		return size;
 
 	//Check codec type
 	if (headerPos<5 && codec==AVC)
