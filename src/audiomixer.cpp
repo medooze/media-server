@@ -77,20 +77,20 @@ int AudioMixer::MixAudio()
 		else
 			Log("-Audimixer taking too much time, hurrying up [%u]\n",proc);
 
+		//Block list
+		lstAudiosUse.WaitUnusedAndLock();
+
 		//Get new time
 		QWORD curr = getDifTime(&tv);
 
 		//Get time elapsed, take care of the reminders!! (12000 - 11999)/1000 = 0 while 12000/1000-11999/1000 = 1 !!!
 		DWORD diff = curr/1000-prev/1000;
 
+		//Get num samples at desired rate
+		DWORD numSamples = (curr*rate)/1000000-(prev*rate)/1000000;
+
 		//Update curr
 		prev = curr;
-
-		//Block list
-		lstAudiosUse.WaitUnusedAndLock();
-
-		//Get num samples at desired rate
-		DWORD numSamples = (diff*rate)/1000;
 
 		//At most the maximum
 		if (numSamples>Sidebar::MIXER_BUFFER_SIZE)
