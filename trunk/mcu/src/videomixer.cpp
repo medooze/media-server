@@ -153,6 +153,8 @@ int VideoMixer::MixVideo()
 		//For each mosaic
 		for (itMosaic=mosaics.begin();itMosaic!=mosaics.end();++itMosaic)
 		{
+			//Get mosaic Id
+			DWORD mosaicId = itMosaic->first;
 			//Get Mosaic
 			Mosaic *mosaic = itMosaic->second;
 
@@ -222,19 +224,21 @@ int VideoMixer::MixVideo()
 					//If there was no previous speaker or the  slot is not blocked
 					if (oldVad==0 || mosaic->GetBlockingTime(oldVadPos)<=getTime())
 					{
+						//Do we need to hide it?
+						bool hide = (vadMode==FullVAD);
 						// set the VAD participant
-						mosaic->SetVADParticipant(vadId,getTime() + vadDefaultChangePeriod*1000);
+						mosaic->SetVADParticipant(vadId,hide,getTime() + vadDefaultChangePeriod*1000);
 						//If full VAD and ifit was shown elsewere in the mosaic
-						if (vadMode==vadMode && vadPos>=0)
+						if ( hide && vadPos>=0)
 						{
-							//Free the slot
-							mosaic->SetSlot(vadPos,Mosaic::SlotFree);
-							//We are changed
-							changed = true;
-							//Clean
+							//Clean previous position of active speaker
 							mosaic->Clean(vadPos,logo);
+							//And try to fill the slot
+							changed = true;
 						}
 					}
+					//Debug
+					DumpMosaic(mosaicId,mosaic);
 				}
 
 				//Get posistion and id for VAD now that we have updated it
@@ -298,18 +302,21 @@ int VideoMixer::MixVideo()
 				if (output && output->IsChanged(version) && pos>=0)
 					//Change mosaic
 					mosaic->Update(pos,output->GetFrame(),output->GetWidth(),output->GetHeight());
-#ifdef MCUDEBUG
 #ifdef VADWEBRTC
-				//Check it is on the mosaic and it is vad
-				if (pos>=0 && proxy)
+				//Check if debug is enabled
+				if (Logger::IsDebugEnabled())
 				{
-					//Get vad
-					DWORD vad = proxy->GetVAD(id);
-					//Set VU meter
-					mosaic->DrawVUMeter(pos,vad,48000);
+					//Check it is on the mosaic and it is vad
+					if (pos>=0 && proxy)
+					{
+						//Get vad
+						DWORD vad = proxy->GetVAD(id);
+						//Set VU meter
+						mosaic->DrawVUMeter(pos,vad,48000);
+					}
 				}
 #endif
-#endif
+
 			}
 		}
 
@@ -720,7 +727,7 @@ int VideoMixer::RemoveMosaicParticipant(int mosaicId, int partId)
 		mosaic->Clean(pos,logo);
 
 		//Reset VAD
-		mosaic->SetVADParticipant(0,0);
+		mosaic->SetVADParticipant(0,0,0);
 	}
 
 	//Remove participant to the mosaic
@@ -943,7 +950,7 @@ int VideoMixer::SetCompositionType(int mosaicId,Mosaic::Type comp, int size)
 		mosaic->SetSlots(oldMosaic->GetSlots(),oldMosaic->GetNumSlots());
 
 		//Set vad
-		mosaic->SetVADParticipant(mosaic->GetVADParticipant(),0);
+		mosaic->SetVADParticipant(mosaic->GetVADParticipant(),(vadMode==FullVAD),0);
 
 		//IF it is the defualt one
 		if (oldMosaic==defaultMosaic)
@@ -1129,7 +1136,6 @@ void VideoMixer::SetVADMode(VADMode vadMode)
 	//Set it
 	this->vadMode = vadMode;
 }
-
 
 int VideoMixer::DumpMosaic(DWORD id,Mosaic* mosaic)
 {

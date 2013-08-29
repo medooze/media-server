@@ -26,6 +26,10 @@ AsymmetricMosaic::~AsymmetricMosaic()
 *****************************/
 int AsymmetricMosaic::Update(int pos, BYTE *image, int imgWidth, int imgHeight)
 {
+	//Check it's in the mosaic
+	if (pos<0 || pos >= numSlots)
+		return 0;
+	
 	//Check size
 	if (!image && !imgHeight && !imgHeight)
 		//Clean position
@@ -42,10 +46,6 @@ int AsymmetricMosaic::Update(int pos, BYTE *image, int imgWidth, int imgHeight)
 	BYTE *imageY = image;
 	BYTE *imageU  = imageY  + imgNumPixels;
 	BYTE *imageV  = imageU + imgNumPixels/4;
-
-	//Check it's in the mosaic
-	if (pos >= numSlots)
-		return 0;
 
 	//Get positions
 	int left = GetLeft(pos);
@@ -111,6 +111,10 @@ int AsymmetricMosaic::Update(int pos, BYTE *image, int imgWidth, int imgHeight)
 *****************************/
 int AsymmetricMosaic::Clean(int pos)
 {
+	//Check it's in the mosaic
+	if (pos<0 || pos >= numSlots)
+		return 0;
+
 	DWORD mosaicNumPixels = mosaicTotalWidth*mosaicTotalHeight;
 	DWORD offset=0;
 	DWORD offset2=0;
@@ -118,10 +122,6 @@ int AsymmetricMosaic::Clean(int pos)
 	BYTE *lineaU;
 	BYTE *lineaV;
 
-	//Check it's in the mosaic
-	if (pos >= numSlots)
-		return 0;
-	
 	//Get positions
 	int left = GetLeft(pos);
 	int top = GetTop(pos);

@@ -1115,11 +1115,8 @@ int RTPSession::ReadRTP()
 
 	//This should be improbed
 	if (useNACK && recSSRC && recSSRC!=RTPPacket::GetSSRC(buffer))
-	{
-		Debug("-----nacked %x %x\n",recSSRC,RTPPacket::GetSSRC(buffer));
 		//It is a retransmited packet
 		isRTX = true;
-	}
 	
 	//Check if it is encripted
 	if (decript)
@@ -1294,7 +1291,7 @@ int RTPSession::ReadRTP()
 			//If nack is enable t waiting for a PLI/FIR response (to not oeverflow)
 			if (isNACKEnabled && !requestFPU)
 			{
-				Log("-Nacking %d lost %d\n",base,lost);
+				Debug("-Nacking %d lost %d\n",base,lost);
 
 				//Generate new RTCP NACK report
 				RTCPCompoundPacket* rtcp = new RTCPCompoundPacket();
@@ -1369,8 +1366,6 @@ int RTPSession::ReadRTP()
 		//If we have recovered a pacekt
 		while(recovered)
 		{
-			//Log
-			Log("packet receovered!!!!\n");
 			//Overwrite time with the time of the original 
 			recovered->SetTime(packet->GetTime());
 			//Get pacekte type
@@ -1602,7 +1597,7 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 						}
 						break;
 					case RTCPRTPFeedback::TempMaxMediaStreamBitrateRequest:
-						Log("-TempMaxMediaStreamBitrateRequest\n");
+						Debug("-TempMaxMediaStreamBitrateRequest\n");
 						for (BYTE i=0;i<fb->GetFieldCount();i++)
 						{
 							//Get field
@@ -1614,7 +1609,7 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 						}
 						break;
 					case RTCPRTPFeedback::TempMaxMediaStreamBitrateNotification:
-						Log("-TempMaxMediaStreamBitrateNotification\n");
+						Debug("-TempMaxMediaStreamBitrateNotification\n");
 						pendingTMBR = false;
 						if (requestFPU)
 						{
@@ -1647,19 +1642,19 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 							listener->onFPURequested(this);
 						break;
 					case RTCPPayloadFeedback::SliceLossIndication:
-						Log("-SliceLossIndication\n");
+						Debug("-SliceLossIndication\n");
 						break;
 					case RTCPPayloadFeedback::ReferencePictureSelectionIndication:
-						Log("-ReferencePictureSelectionIndication\n");
+						Debug("-ReferencePictureSelectionIndication\n");
 						break;
 					case RTCPPayloadFeedback::TemporalSpatialTradeOffRequest:
-						Log("-TemporalSpatialTradeOffRequest\n");
+						Debug("-TemporalSpatialTradeOffRequest\n");
 						break;
 					case RTCPPayloadFeedback::TemporalSpatialTradeOffNotification:
-						Log("-TemporalSpatialTradeOffNotification\n");
+						Debug("-TemporalSpatialTradeOffNotification\n");
 						break;
 					case RTCPPayloadFeedback::VideoBackChannelMessage:
-						Log("-VideoBackChannelMessage\n");
+						Debug("-VideoBackChannelMessage\n");
 						break;
 					case RTCPPayloadFeedback::ApplicationLayerFeeedbackMessage:
 						for (BYTE i=0;i<fb->GetFieldCount();i++)
@@ -1845,7 +1840,7 @@ int RTPSession::SendSenderReport()
 
 int RTPSession::SendFIR()
 {
-	Log("-SendFIR\n");
+	Debug("-SendFIR\n");
 
 	//Send all the packets inmediatelly to the decoderso I frame can be handled as soon as possoble
 	packets.HurryUp();
@@ -1957,7 +1952,7 @@ void RTPSession::ReSendPacket(int seq)
 }
 int RTPSession::SendTempMaxMediaStreamBitrateNotification(DWORD bitrate,DWORD overhead)
 {
-	Log("-SendTempMaxMediaStreamBitrateNotification [%d,%d]\n",bitrate,overhead);
+	Debug("-SendTempMaxMediaStreamBitrateNotification [%d,%d]\n",bitrate,overhead);
 
 	//Create rtcp sender retpor
 	RTCPCompoundPacket* rtcp = CreateSenderReport();

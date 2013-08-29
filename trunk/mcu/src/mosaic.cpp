@@ -3,6 +3,7 @@
 #include "partedmosaic.h"
 #include "asymmetricmosaic.h"
 #include "pipmosaic.h"
+#include "participant.h"
 #include <stdexcept>
 #include <vector>
 #include <map>
@@ -193,8 +194,10 @@ int Mosaic::SetSlot(int num,int id,QWORD blockedUntil)
 		Participants::iterator it  = participants.find(oldId);
 		//If it was a proper participantt and still not shown
 		if (it!=participants.end())
+		{
 			//Get next free slot for it if possible
 			it->second = GetNextFreeSlot(oldId);
+		}
 	}
 	
 	//Recalculate positions
@@ -333,7 +336,7 @@ int Mosaic::RemoveParticipant(int id)
 			mosaicSlots[pos] = SlotLocked;
 		else
 			//Unlock it
-			mosaicPos[pos] = SlotFree;
+			mosaicSlots[pos] = SlotFree;
 		//Clean slot position
 		mosaicPos[pos] = 0;
 		//Unblock
@@ -405,109 +408,108 @@ int Mosaic::UpdateParticipantInfo(int id, int vadLevel)
 
 int Mosaic::CalculatePositions()
 {
+	Participants kickables;
+	int vadPos = -1;
+	
 	//Get number of available slots
 	int numSlots = GetNumSlots();
-
-	Participants kickables;
-
-	Participants::iterator it;
-	ParticipantInfos::iterator it2;
-	PartInfo info;
-	int id, vadPos;
-
+ 
 	// Pass 1 - Build kickable slot list
-	for (it2 = partVad.begin(); it2 != partVad.end(); ++it2)
+	for (ParticipantInfos::iterator it2 = partVad.begin(); it2 != partVad.end(); ++it2)
 	{
-		id = it2->first;
-		info = it2->second;
-		it = participants.find(id);
+		//Get participant info
+		int id = it2->first;
+		PartInfo info = it2->second;
+		
+		//Find participant
+		Participants::iterator it = participants.find(id);
 
-		if ( info.kickable && it!=participants.end() && it->second >= 0 && it->second < numSlots)
-			kickables[id] = it->second;
+		//If found
+		if (it!=participants.end())
+		{
+			//Get pos
+			int pos = it->second;
+			//Check if it is kickable and shown
+			if ( info.kickable &&  pos>=0 && pos<numSlots)
+				//Add to kickable list
+				kickables[id] = it->second;
+		}
 	}
 
 	//Pass 2 - reshuffle
 	Participants::iterator itk = kickables.begin();
+	
+	//Get VAD position
 	vadPos = GetVADPosition();
 
-	for (it = participants.begin(); it != participants.end(); ++it)
+	for (Participants::iterator it = participants.begin(); it != participants.end(); ++it)
 	{
-		id = it->first;
-		int oldslot = it->second;
-		it2 = partVad.find(id);
+		bool eligible = false;
+		//Get participant id
+		int id = it->first;
+		//Get info
+		ParticipantInfos::iterator it2 = partVad.find(id);
+		//Double check
 		if (it2 != partVad.end() )
-			info = it2->second;
-		else
-			info.eligible = false;
+			//Get elegible info
+			eligible = it2->second.eligible;
 
-		int newslot;
-		if (info.eligible)
+		//Check if the participant is speaking and not shown
+		if (eligible)
 		{
-			// This participant is eligible. Try to get a free slot first
-			newslot = GetNextFreeSlot(id);
+			// This participant is eligible for entering the mosaic, try to get a free slot first
+			int newslot = GetNextFreeSlot(id);
+			//Check if we have a free slot
 			if (newslot == NotShown)
 			{
-			    // If none available select a kickable slot.
-			    if ( itk != kickables.end() )
-			    {
+				// If We cannot kick any more of the mosaic
+				if ( itk == kickables.end() )
+					// we cannot elect this participant. Process the next one
+					continue;
+				//Get the slot of the kickable
 			        newslot = itk->second;
-				if (newslot >=0) mosaicPos[newslot] = id;
-				participants[itk->first] = NotShown; // previous partiicpant is not shown anymore.
+				//Set slot to participant
+				mosaicPos[newslot] = id;
+				//Kickable partiicpant is not shown anymore.
+				participants[itk->first] = NotShown;
+				//Get next kickable
 				itk++;
-			    }
-			    else
-			    {
-			        // we cannot elect this participant. Process the next one
-				continue;
-			    }
 			}
 
-			// participant has been elected. Update its position now.
+			//Update its position
 			participants[id] = newslot;
-		}
-		else if ( id != vadParticipant )
-		{
-			int oldslot = it->second;
+			
+		} else {
+			//Get participant position
+			int pos = it->second;
+
 			// if participant is not to be elected then ... do nothing. It has either been
 			// kicked or remain in place (and in peace)
 
-			if ( oldslot == NotShown )
+			//IF not shown
+			if ( pos == NotShown )
 			{
-				newslot = GetNextFreeSlot(id);
+				//Try to get next free slot for it
+				int newslot = GetNextFreeSlot(id);
+				//Check if we have a free slot
+				if (newslot != NotShown)
+					//Set slot to participant
+					mosaicPos[newslot] = id;
+				//Update its position
 				participants[id] = newslot;
-
-			}
-			else if ( oldslot == vadPos )
-			{
+			} else if ( pos == vadPos && id!=vadParticipant) {
 				// Special case
 				// This participant was the former VAD participant and its output is set to vad slot
 				// move it somewhere else
-				newslot = GetNextFreeSlot(id);
-				participants[id] = newslot;
-			}
-			else
-			{
-			    if ( oldslot >= 0 &&  mosaicSlots[oldslot] == SlotFree)
-			    {
-				// participant is supposed to be shown on a free (movable) slot
-				if ( mosaicPos[oldslot] != id )
-				{
-				     // check consistency
-			    	     newslot = GetNextFreeSlot(id);
-				     participants[id] = newslot;
-				}
-				else
-				{
-				    // check if mosaic needs to be compacted
-				    newslot = GetNextFreeSlot(0);
-				    if (  newslot >= 0 && oldslot > newslot )
-				    {
+
+				//Try to get next free slot for it
+				int newslot = GetNextFreeSlot(id);
+				//Check if we have a free slot
+				if (newslot != NotShown)
+					//Set slot to participant
 					mosaicPos[newslot] = id;
-					mosaicPos[oldslot] = 0;
-					participants[id] = newslot;
-				    }
-				}
-			    }
+				//Update its position
+				participants[id] = newslot;
 			}
 		}
 	}
@@ -634,7 +636,7 @@ int Mosaic::GetVADParticipant()
 	return vadParticipant;
 }
 
-int Mosaic::SetVADParticipant(int id,QWORD blockedUntil)
+int Mosaic::SetVADParticipant(int id,bool hide,QWORD blockedUntil)
 {
 	//Set it
 	vadParticipant = id;
@@ -656,6 +658,25 @@ int Mosaic::SetVADParticipant(int id,QWORD blockedUntil)
 		//Participant is not kickable and not elegible
 		info.kickable = false;
 		info.eligible = false;
+	}
+	//Store if it is hidden
+	hideVadParticipant = hide;
+
+	//If is hidden
+	if (hide)
+	{
+		//Get participant
+		Participants::iterator it = participants.find(id);
+		//Double check
+		if (it!=participants.end())
+		{
+			//Get pos
+			int pos = it->second;
+			//Hide it
+			mosaicPos[pos] = 0;
+			//Update position
+			it->second = NotShown;
+		}
 	}
 
 	//Return vad position

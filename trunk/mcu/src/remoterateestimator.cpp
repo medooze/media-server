@@ -172,7 +172,7 @@ void RemoteRateEstimator::Update(DWORD size)
 			}
 
 			maxHoldRate = 0;
-			//Log("BWE: Increase rate to current = %u kbps\n", current / 1000);
+			Debug("BWE: Increase rate to current = %u kbps\n", current / 1000);
 			lastBitRateChange = now;
 			break;
 		}
@@ -199,7 +199,7 @@ void RemoteRateEstimator::Update(DWORD size)
 
 				UpdateMaxBitRateEstimate(incomingBitRate);
 
-				//Log("BWE: Decrease rate to current = %u kbps\n", current / 1000);
+				Debug("BWE: Decrease rate to current = %u kbps\n", current / 1000);
 			}
 			// Stay on hold until the pipes are cleared.
 			ChangeState(Hold);
@@ -223,7 +223,7 @@ void RemoteRateEstimator::Update(DWORD size)
 	if (currentBitRate<minConfiguredBitRate)
 		currentBitRate = minConfiguredBitRate;
 
-	Log("--estimation state=%s region=%s currentBitRate=%d current=%d incoming=%f min=%llf max=%llf\n",GetName(state),RemoteRateControl::GetName(region),currentBitRate/1000,current/1000,incomingBitRate/1000,bitrateAcu.GetMinAvg()/1000,bitrateAcu.GetMaxAvg()/1000);
+	Debug("--estimation state=%s region=%s currentBitRate=%d current=%d incoming=%f min=%llf max=%llf\n",GetName(state),RemoteRateControl::GetName(region),currentBitRate/1000,current/1000,incomingBitRate/1000,bitrateAcu.GetMinAvg()/1000,bitrateAcu.GetMaxAvg()/1000);
 
 	eventSource.SendEvent("rre","[\"%s\",\"%s\",%d,%d,%f,%llf,%llf]",GetName(state),RemoteRateControl::GetName(region),currentBitRate/1000,current/1000,incomingBitRate/1000,bitrateAcu.GetMinAvg()/1000,bitrateAcu.GetMaxAvg()/1000);
 
@@ -312,7 +312,7 @@ void RemoteRateEstimator::GetSSRCs(std::list<DWORD> &ssrcs)
 }
 void RemoteRateEstimator::ChangeState(State newState)
 {
-	//Log("-ChangeState from:%s to %s\n",GetName(state),GetName(newState));
+	Debug("-ChangeState from:%s to %s\n",GetName(state),GetName(newState));
 	//Store values
 	cameFromState = state;
 	state = newState;
@@ -320,7 +320,7 @@ void RemoteRateEstimator::ChangeState(State newState)
 
 void RemoteRateEstimator::ChangeRegion(RemoteRateControl::Region newRegion)
 {
-	//Log("-Change region to:%s\n",GetName(newRegion));
+	Debug("-Change region to:%s\n",RemoteRateControl::GetName(newRegion));
 	//Store new region
 	region = newRegion;
 	//Calculate new beta

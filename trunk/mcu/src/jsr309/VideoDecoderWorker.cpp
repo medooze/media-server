@@ -257,7 +257,7 @@ int VideoDecoderJoinableWorker::Decode()
 		if(packet->GetMark())
 		{
 			if (videoDecoder->IsKeyFrame())
-				Log("-Got Intra\n");
+				Debug("-Got Intra\n");
 
 			//No seq number for frame
 			frameSeqNum = RTPPacket::MaxExtSeqNum;

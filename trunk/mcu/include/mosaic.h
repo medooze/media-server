@@ -78,7 +78,7 @@ public:
 	bool IsFixed(DWORD pos);
 
 	int GetVADParticipant();
-	int SetVADParticipant(int id,QWORD blockedUntil);
+	int SetVADParticipant(int id,bool hide,QWORD blockedUntil);
 
 	static int GetNumSlotsForType(Type type);
 	static Mosaic* CreateMosaic(Type type,DWORD size);
@@ -116,6 +116,7 @@ protected:
 	QWORD *oldTimes;
 	int numSlots;
 	int vadParticipant;
+	bool hideVadParticipant;
 
 	FrameScaler** resizer;
 	BYTE* 	mosaic;

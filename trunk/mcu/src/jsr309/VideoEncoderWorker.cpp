@@ -372,7 +372,7 @@ int VideoEncoderMultiplexerWorker::Encode()
 		//Dump statistics
 		if (num && ((num%fps*4)==0))
 		{
-			Log("-Send bitrate current=%d avg=%llf rate=[%llf,%llf] fps=[%llf,%llf] limit=%d\n",current,bitrateAcu.GetInstantAvg()/1000,bitrateAcu.GetMinAvg()/1000,bitrateAcu.GetMaxAvg()/1000,fpsAcu.GetMinAvg(),fpsAcu.GetMaxAvg(),videoBitrateLimit);
+			Debug("-Send bitrate current=%d avg=%llf rate=[%llf,%llf] fps=[%llf,%llf] limit=%d\n",current,bitrateAcu.GetInstantAvg()/1000,bitrateAcu.GetMinAvg()/1000,bitrateAcu.GetMaxAvg()/1000,fpsAcu.GetMinAvg(),fpsAcu.GetMaxAvg(),videoBitrateLimit);
 			bitrateAcu.ResetMinMax();
 			fpsAcu.ResetMinMax();
 		}
