@@ -15,7 +15,6 @@ public:
 	virtual DWORD GetVAD(int id) = 0;
 };
 
-#define VADWEBRTC
 #ifdef VADWEBRTC
 extern "C" {
 #include <common_audio/vad/vad_core.h>
