@@ -874,7 +874,7 @@ int RTPSession::ReadRTCP()
 		STUNMessage::Method method = stun->GetMethod();
 		
 		//If it is a request
-		if (type==STUNMessage::Request && method==STUNMessage::Binding)
+		if (type==STUNMessage::Request && method==STUNMessage::Binding && iceLocalPwd)
 		{
 			DWORD len = 0;
 			//Create response
@@ -985,7 +985,7 @@ int RTPSession::ReadRTP()
 		STUNMessage::Method method = stun->GetMethod();
 		
 		//If it is a request
-		if (type==STUNMessage::Request && method==STUNMessage::Binding)
+		if (type==STUNMessage::Request && method==STUNMessage::Binding && iceLocalPwd)
 		{
 			DWORD len = 0;
 			//Create response
