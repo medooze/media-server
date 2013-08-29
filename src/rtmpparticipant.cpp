@@ -763,6 +763,17 @@ int RTMPParticipant::SendAudio()
 					break;
 			}
 
+			//Check clock drift, do not allow to exceed 100ms
+			if (audio.GetTimestamp()-100>getDifTime(&first)/1000-ini)
+			{
+				Log("-RTMPParticipant clock drift, reseting init time");
+				//Reser timestam
+				ini = getDifTime(&first)/1000;
+				//And samples
+				samples = 0;
+				//Override TS
+				audio.SetTimestamp(ini);
+			}
 
 			//Send audio
 			SendMediaFrame(&audio);
