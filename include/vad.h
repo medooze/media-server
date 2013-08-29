@@ -8,13 +8,14 @@
 #ifndef VAD_H
 #define	VAD_H
 #include "config.h"
-
+#include "fifo.h"
 class VADProxy
 {
 public:
 	virtual DWORD GetVAD(int id) = 0;
 };
 
+#define VADWEBRTC
 #ifdef VADWEBRTC
 extern "C" {
 #include <common_audio/vad/vad_core.h>
@@ -33,6 +34,7 @@ public:
 	bool IsRateSupported(DWORD rate ) { return ( rate == 8000 || rate == 160000 || rate == 32000 ); }
 private:
 	VadInstT inst;
+	fifo<SWORD,1204> samples;
 };
 #else
 class VAD
