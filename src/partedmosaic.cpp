@@ -56,6 +56,10 @@ PartedMosaic::~PartedMosaic()
 *****************************/
 int PartedMosaic::Update(int pos, BYTE *image, int imgWidth, int imgHeight)
 {
+	//Check it's in the mosaic
+	if (pos<0 || pos >= numSlots)
+		return 0;
+
 	//Check size
 	if (!image && !imgHeight && !imgHeight)
 	{
@@ -76,10 +80,6 @@ int PartedMosaic::Update(int pos, BYTE *image, int imgWidth, int imgHeight)
 	BYTE *imageY = image;
 	BYTE *imageU  = image  + imgNumPixels;
 	BYTE *imageV  = imageU + imgNumPixels/4;
-
-	//Check it's in the mosaic
-	if (pos >= numSlots)
-		return 0;
 
 	//Get slot position in mosaic
 	int i = pos / mosaicCols;
@@ -142,15 +142,15 @@ int PartedMosaic::Update(int pos, BYTE *image, int imgWidth, int imgHeight)
 *****************************/
 int PartedMosaic::Clean(int pos)
 {
+	//Check it's in the mosaic
+	if (pos<0 || pos >= numSlots)
+		return 0;
+
 	DWORD mosaicNumPixels = mosaicTotalWidth*mosaicTotalHeight;
 	DWORD offset,offset2;
 	BYTE *lineaY;
 	BYTE *lineaU;
 	BYTE *lineaV;
-
-	//Check it's in the mosaic
-	if (pos >= numSlots)
-		return 0;
 
 	//Get slot position in mosaic
 	int i = pos / mosaicCols;

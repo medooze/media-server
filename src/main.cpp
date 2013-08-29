@@ -30,10 +30,8 @@ void log_ffmpeg(void* ptr, int level, const char* fmt, va_list vl)
 	static int print_prefix = 1;
 	char line[1024];
 
-#ifndef MCUDEBUG
-	if (level > AV_LOG_ERROR)
+	if (!Logger::IsDebugEnabled() && level > AV_LOG_ERROR)
 		return;
-#endif
 
 	//Format the
 	av_log_format_line(ptr, level, fmt, vl, line, sizeof(line), &print_prefix);
@@ -105,6 +103,7 @@ int main(int argc,char **argv)
 				"Options:\r\n"
 				" -h,--help        Print help\r\n"
 				" -f               Run as daemon in safe mode\r\n"
+				" -d               Enable debug logging\r\n"
 				" --mcu-log        Set mcu log file path (default: mcu.log)\r\n"
 				" --mcu-pid        Set mcu pid file path (default: mcu.pid)\r\n"
 				" --http-port      Set HTTP xmlrpc api port\r\n"
@@ -117,6 +116,9 @@ int main(int argc,char **argv)
 		} else if (strcmp(argv[i],"-f")==0)
 			//Fork
 			forking = true;
+		else if (strcmp(argv[i],"-d")==0)
+			//Enable debug
+			Logger::EnableDebug(true);
 		else if (strcmp(argv[i],"--http-port")==0 && (i+1<argc))
 			//Get port
 			port = atoi(argv[++i]);

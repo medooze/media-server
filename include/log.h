@@ -9,6 +9,47 @@
 #include "config.h"
 #include "tools.h"
 
+class Logger
+{
+public:
+        static Logger& getInstance()
+        {
+            static Logger   instance;
+            return instance;
+        }
+	static bool IsDebugEnabled()
+	{
+		return getInstance().debug;
+	}
+
+	static bool EnableDebug(bool debug)
+	{
+		return getInstance().debug = debug;
+	}
+
+	inline int Log(const char *msg, ...)
+	{
+		return 1;
+	}
+
+	inline int Error(const char *msg, ...)
+	{
+		return 0;
+	}
+protected:
+	bool debug;
+private:
+        Logger()
+	{
+		debug = false;
+	}
+        // Dont forget to declare these two. You want to make sure they
+        // are unaccessable otherwise you may accidently get copies of
+        // your singelton appearing.
+        Logger(Logger const&);			// Don't Implement
+        void operator=(Logger const&);		// Don't implement
+};
+
 inline int Log(const char *msg, ...)
 {
 	struct timeval tv;
@@ -35,13 +76,20 @@ inline int Log2(const char* prefix,const char *msg, ...)
 	return 1;
 }
 
-inline void Debug(const char *msg, ...)
+inline int Debug(const char *msg, ...)
 {
-	va_list ap;
-	va_start(ap, msg);
-	vprintf(msg, ap);
-	va_end(ap);
-	return ;
+	if (Logger::IsDebugEnabled())
+	{
+		struct timeval tv;
+		va_list ap;
+		gettimeofday(&tv,NULL);
+		printf("[0x%lx][%.10ld.%.3ld][LOG]", (long) pthread_self(),(long)tv.tv_sec,(long)tv.tv_usec/1000);
+		va_start(ap, msg);
+		vprintf(msg, ap);
+		va_end(ap);
+		fflush(stdout);
+	}
+	return 1;
 }
 
 inline int Error(const char *msg, ...)
@@ -133,38 +181,6 @@ inline void Dump(BYTE *data,DWORD size)
 }
 
 
-class Logger
-{
-public:
-	class Listener
-	{
 
-	};
-
-public:
-        static Logger& getInstance()
-        {
-            static Logger   instance;
-            return instance;
-        }
-
-	inline void Log(const char *msg, ...)
-	{
-
-	}
-	
-	inline int Error(const char *msg, ...)
-	{
-		return 0;
-	}
-
-private:
-        Logger();
-        // Dont forget to declare these two. You want to make sure they
-        // are unaccessable otherwise you may accidently get copies of
-        // your singelton appearing.
-        Logger(Logger const&);			// Don't Implement
-        void operator=(Logger const&);		// Don't implement
-};
 
 #endif

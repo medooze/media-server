@@ -8,7 +8,7 @@ include config.mk
 #DEBUG
 ifeq ($(DEBUG),yes)
 	TAG=debug
-	OPTS+= -g -O0 -DMCUDEBUG
+	OPTS+= -g -O0
 else
 	OPTS+= -O3
 	TAG=release
@@ -171,7 +171,7 @@ all: touch mkdirs $(TARGETS)
 
 touch:
 	touch $(SRCDIR)/include/version.h
-	svn propset builtime "`date`" $(SRCDIR)/include/version.h
+	svn propset builtime "`date`" $(SRCDIR)/include/version.h || true
 mkdirs:  
 	mkdir -p $(BUILD)
 	mkdir -p $(BIN)

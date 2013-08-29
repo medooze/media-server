@@ -149,15 +149,13 @@ int H264Encoder::OpenCodec()
 	// Set log
 	params.pf_log               = X264_log;
 
-#ifdef MCUDEBUG
-	//Set debug level loging
-	params.i_log_level          = X264_LOG_INFO;
-#else
-	//Set error level for loging
-	params.i_log_level          = X264_LOG_ERROR;
-#endif
-
-
+	if (Logger::IsDebugEnabled())
+		//Set debug level loging
+		params.i_log_level          = X264_LOG_INFO;
+	else
+		//Set error level for loging
+		params.i_log_level          = X264_LOG_ERROR;
+	
 	// Set encoding context size
 	params.i_width 	= width;
 	params.i_height	= height;
