@@ -7,7 +7,8 @@ SpeexEncoder::SpeexEncoder(const Properties &properties)
 {
 	///Set type
 	type =  AudioCodec::SPEEX16;
-
+	//Set number of input frames for codec
+	numFrameSamples = 320;
 	//+------+---------------+-------------------+------------------------+
 	//| mode | Speex quality | wideband bit-rate |     ultra wideband     |
 	//|      |               |                   |        bit-rate        |

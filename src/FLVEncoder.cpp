@@ -308,15 +308,57 @@ int FLVEncoder::StopEncoding()
 *******************************************/
 int FLVEncoder::EncodeAudio()
 {
+	RTMPAudioFrame	audio(0,MTU);
+
+	//Start
 	Log(">Encode Audio\n");
 
+	//Fill frame preperties
+	switch(audioCodec)
+	{
+		case AudioCodec::SPEEX16:
+			//Set RTMP data
+			audio.SetAudioCodec(RTMPAudioFrame::SPEEX);
+			audio.SetSoundRate(RTMPAudioFrame::RATE11khz);
+			audio.SetSamples16Bits(1);
+			audio.SetStereo(0);
+			break;
+		case AudioCodec::NELLY8:
+			//Set RTMP data
+			audio.SetAudioCodec(RTMPAudioFrame::NELLY8khz);
+			audio.SetSoundRate(RTMPAudioFrame::RATE11khz);
+			audio.SetSamples16Bits(1);
+			audio.SetStereo(0);
+			break;
+		case AudioCodec::NELLY11:
+			//Set RTMP data
+			audio.SetAudioCodec(RTMPAudioFrame::NELLY);
+			audio.SetSoundRate(RTMPAudioFrame::RATE11khz);
+			audio.SetSamples16Bits(1);
+			audio.SetStereo(0);
+			break;
+		case AudioCodec::AAC:
+			//Set RTMP data
+			// If the SoundFormat indicates AAC, the SoundType should be 1 (stereo) and the SoundRate should be 3 (44 kHz).
+			// However, this does not mean that AAC audio in FLV is always stereo, 44 kHz data.
+			// Instead, the Flash Player ignores these values and extracts the channel and sample rate data is encoded in the AAC bit stream.
+			audio.SetAudioCodec(RTMPAudioFrame::AAC);
+			audio.SetSoundRate(RTMPAudioFrame::RATE44khz);
+			audio.SetSamples16Bits(1);
+			audio.SetStereo(1);
+			audio.SetAACPacketType(RTMPAudioFrame::AACRaw);
+			break;
+		default:
+			return Error("-Codec %s not supported\n",AudioCodec::GetNameFor(audioCodec));
+	}
+	
 	//Create encoder
 	AudioEncoder *encoder = AudioCodecFactory::CreateEncoder(audioCodec,audioProperties);
 
 	//Check
 	if (!encoder)
 		//Error
-		return Error("Error encoding audio");
+		return Error("Error opening encoder");
 	
 	//Try to set native rate
 	DWORD rate = encoder->TrySetRate(audioInput->GetNativeRate());
@@ -353,9 +395,18 @@ int FLVEncoder::EncodeAudio()
 	//Mientras tengamos que capturar
 	while(encodingAudio)
 	{
-		//Audio frame
-		RTMPAudioFrame	audio(0,65535);
-
+		//Check clock drift, do not allow to exceed 4 frames
+		if (ini+(samples+encoder->numFrameSamples*4)*1000/encoder->GetClockRate()<getDifTime(&first)/1000)
+		{
+			Log("-RTMPParticipant clock drift, dropping audio and reseting init time\n");
+			//Clear buffer
+			audioInput->ClearBuffer();
+			//Reser timestam
+			ini = getDifTime(&first)/1000;
+			//And samples
+			samples = 0;
+		}
+		
 		//Capturamos
 		DWORD  recLen = audioInput->RecBuffer(recBuffer,encoder->numFrameSamples);
 		//Check len
@@ -387,73 +438,12 @@ int FLVEncoder::EncodeAudio()
 				//Get initial timestamp
 				ini = getDifTime(&first)/1000;
 
-			switch(encoder->type)
-			{
-				case AudioCodec::SPEEX16:
-					//Set RTMP data
-					audio.SetAudioCodec(RTMPAudioFrame::SPEEX);
-					audio.SetSoundRate(RTMPAudioFrame::RATE11khz);
-					audio.SetSamples16Bits(1);
-					audio.SetStereo(0);
-					//Set timestamp
-					audio.SetTimestamp(ini+samples/16);
-					//Increase samples
-					samples += 320;
-					break;
-				case AudioCodec::NELLY8:
-					//Set RTMP data
-					audio.SetAudioCodec(RTMPAudioFrame::NELLY8khz);
-					audio.SetSoundRate(RTMPAudioFrame::RATE11khz);
-					audio.SetSamples16Bits(1);
-					audio.SetStereo(0);
-					//Set timestamp
-					audio.SetTimestamp(ini+samples/8);
-					//Increase samples
-					samples += 256;
-					break;
-				case AudioCodec::NELLY11:
-					//Set RTMP data
-					audio.SetAudioCodec(RTMPAudioFrame::NELLY);
-					audio.SetSoundRate(RTMPAudioFrame::RATE11khz);
-					audio.SetSamples16Bits(1);
-					audio.SetStereo(0);
-					//Set timestamp
-					audio.SetTimestamp(ini+samples*1000/11025);
-					//Increase samples
-					samples += 256;
-					break;
-				case AudioCodec::AAC:
-					//Set RTMP data
-					// If the SoundFormat indicates AAC, the SoundType should be 1 (stereo) and the SoundRate should be 3 (44 kHz).
-					// However, this does not mean that AAC audio in FLV is always stereo, 44 kHz data.
-					// Instead, the Flash Player ignores these values and extracts the channel and sample rate data is encoded in the AAC bit stream.
-					audio.SetAudioCodec(RTMPAudioFrame::AAC);
-					audio.SetSoundRate(RTMPAudioFrame::RATE44khz);
-					audio.SetSamples16Bits(1);
-					audio.SetStereo(1);
-					audio.SetAACPacketType(RTMPAudioFrame::AACRaw);
-					//Set timestamp
-					audio.SetTimestamp(ini+samples*1000/encoder->GetClockRate());
-					//Increase samples
-					samples += encoder->numFrameSamples;
-			}
+			//Set timestamp
+			audio.SetTimestamp(ini+samples*1000/encoder->GetClockRate());
 
-			//Check clock drift, do not allow to exceed 100ms
-			if (audio.GetTimestamp()-100>getDifTime(&first)/1000-ini)
-			{
-				Log("-FLVEncoder clock drift, reseting init time");
-				//Reser timestam
-				ini = getDifTime(&first)/1000;
-				//And samples
-				samples = 0;
-				//Override TS
-				audio.SetTimestamp(ini);
-			}
-			
-			//Lock
-			pthread_mutex_lock(&mutex);
-			//Send audio
-			SendMediaFrame(&audio);
+			//Increase samples
+			samples += encoder->numFrameSamples;
+
 			//Copy to rtp frame
 			frame.SetMedia(audio.GetMediaData(),audio.GetMediaSize());
 			//Set frame time
@@ -464,7 +454,11 @@ int FLVEncoder::EncodeAudio()
 			frame.ClearRTPPacketizationInfo();
 			//Add rtp packet
 			frame.AddRtpPacket(0,len,NULL,0);
-			//For each listere
+			
+			//Lock
+			pthread_mutex_lock(&mutex);
+			//Send audio
+			SendMediaFrame(&audio);
 			//For each listener
 			for(MediaFrameListeners::iterator it = mediaListeners.begin(); it!=mediaListeners.end(); ++it)
 				//Send it
@@ -497,6 +491,9 @@ int FLVEncoder::EncodeAudio()
 int FLVEncoder::EncodeVideo()
 {
 	timeval prev;
+
+	//Start
+	Log(">FLVEncoder  encode video\n");
 
 	//Allocate media frame
 	RTMPVideoFrame frame(0,262143);
@@ -531,6 +528,9 @@ int FLVEncoder::EncodeVideo()
 
 	//Start capturing
 	videoInput->StartVideoCapture(width,height,fps);
+
+	//The time of the first one
+	gettimeofday(&prev,NULL);
 
 	//No wait for first
 	DWORD frameTime = 0;

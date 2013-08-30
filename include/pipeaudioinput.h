@@ -13,6 +13,7 @@ public:
 	PipeAudioInput();
 	~PipeAudioInput();
 	virtual int RecBuffer(SWORD *buffer,DWORD size);
+	virtual int ClearBuffer();
 	virtual void CancelRecBuffer();
 	virtual int StartRecording(DWORD rate);
 	virtual int StopRecording();
