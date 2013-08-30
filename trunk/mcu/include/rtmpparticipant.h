@@ -95,6 +95,8 @@ private:
 private:
 	RTMPMediaStream		*attached;
 	RTMPMetaData		*meta;
+	RTMPVideoFrame*		frameDesc;
+	RTMPAudioFrame*		aacSpecificConfig;
 	MediaStatistics		audioStats;
 	MediaStatistics		videoStats;
 	MediaStatistics		textStats;

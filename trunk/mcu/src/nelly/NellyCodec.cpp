@@ -20,7 +20,7 @@ NellyEncoder::NellyEncoder(const Properties &properties)
 	ctx = NULL;
 	///Set type
 	type = AudioCodec::NELLY8;
-
+	
 	//Register all
 	avcodec_register_all();
 

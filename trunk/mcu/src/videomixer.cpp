@@ -237,8 +237,9 @@ int VideoMixer::MixVideo()
 							changed = true;
 						}
 					}
+
 					//Debug
-					DumpMosaic(mosaicId,mosaic);
+					//DumpMosaic(mosaicId,mosaic);
 				}
 
 				//Get posistion and id for VAD now that we have updated it

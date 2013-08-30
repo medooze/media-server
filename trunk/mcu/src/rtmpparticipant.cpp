@@ -44,6 +44,10 @@ RTMPParticipant::RTMPParticipant(DWORD partId) :
 	inited = false;
 	//NOt attached
 	attached = NULL;
+	//No meta no desc
+	meta = NULL;
+	frameDesc = NULL;
+	aacSpecificConfig = NULL;
 	//Inicializamos los mutex
 	pthread_mutex_init(&mutex,NULL);
 	pthread_cond_init(&cond,0);
@@ -53,6 +57,12 @@ RTMPParticipant::~RTMPParticipant()
 {
 	//End it just in case
 	End();
+	if (meta)
+		delete(meta);
+	if (frameDesc)
+		delete(frameDesc);
+	if (aacSpecificConfig)
+		delete(aacSpecificConfig);
 	//Destroy mutex
 	pthread_mutex_destroy(&mutex);
 	pthread_cond_destroy(&cond);
@@ -183,7 +193,8 @@ int RTMPParticipant::End()
 {
 	//Check if we are running
 	if (!inited)
-		return false;
+		//Error
+		return 0;
 
 	//Stop sending
 	StopSending();
@@ -200,18 +211,13 @@ int RTMPParticipant::End()
 	//Not attached anymore
 	attached = NULL;
 
-	//Remove meta
-	if (meta)
-		//delete objet
-		delete(meta);
-	//No meta
-	meta = NULL;
-
 	//Stop
-	inited=0;
+	inited = 0;
 
-	return true;
+	//OK
+	return 1;
 }
+
 int  RTMPParticipant::StartSendingVideo()
 {
 	Log("-StartSendingVideo\n");
@@ -498,19 +504,12 @@ void* RTMPParticipant::startSendingAudio(void *par)
 
 int RTMPParticipant::SendVideo()
 {
-	timeval t;
 	timeval prev;
-	//Get now
-	getUpdDifTime(&t);
-	//Coders
-	VideoEncoder* encoder = VideoCodecFactory::CreateEncoder(videoCodec,videoProperties);
-	//Create new video frame
-	RTMPVideoFrame  frame(0,262143);
+	
+	Log(">RTMP Participant send video\n");
 
-	//No wait for first
-	DWORD frameTime = 0;
-
-	Log(">SendVideo\n");
+	//Allocate media frame
+	RTMPVideoFrame frame(0,262143);
 	
 	//Set codec
 	switch(videoCodec)
@@ -528,18 +527,25 @@ int RTMPParticipant::SendVideo()
 			frame.SetAVCTS(0);
 			break;
 		default:
-			return Error("Codec not supported\n");
+			return Error("-Wrong codec type %d\n",videoCodec);
 	}
+	
+	//Coders
+	VideoEncoder* encoder = VideoCodecFactory::CreateEncoder(videoCodec,videoProperties);
 
-	//Set sice
-	videoInput->StartVideoCapture(videoWidth,videoHeight,videoFPS);
 	//Set bitrate
 	encoder->SetFrameRate(videoFPS,videoBitrate,videoIntraPeriod);
 	//Set size
 	encoder->SetSize(videoWidth,videoHeight);
 
+	//Set sice
+	videoInput->StartVideoCapture(videoWidth,videoHeight,videoFPS);
+
 	//The time of the first one
 	gettimeofday(&prev,NULL);
+
+	//No wait for first
+	DWORD frameTime = 0;
 
 	//Mientras tengamos que capturar
 	while(sendingVideo)
@@ -549,11 +555,8 @@ int RTMPParticipant::SendVideo()
 		
 		//Check picture
 		if (!pic)
-		{
-			Log("-no pic\n");
 			//Exit
 			continue;
-		}
 
 		//Check if we need to send intra
 		if (sendFPU)
@@ -565,9 +568,7 @@ int RTMPParticipant::SendVideo()
 		}
 		
 		//Encode next frame
-		//Log(">Encoding frame [%lld]\n",getUpdDifTime(&t));
 		VideoFrame *encoded = encoder->EncodeFrame(pic,videoInput->GetBufferSize());
-		//Log("<Encoding frame [%lld]\n",getUpdDifTime(&t));
 		
 		//Check
 		if (!encoded)
@@ -602,49 +603,47 @@ int RTMPParticipant::SendVideo()
 		//Set sending time of previous frame
 		getUpdDifTime(&prev);
 
+		//Set timestamp
+		frame.SetTimestamp(getDifTime(&first)/1000);
+
 		//Set next one
 		frameTime = 1000/videoFPS;
 
 		//Get full frame
 		frame.SetVideoFrame(encoded->GetData(),encoded->GetLength());
 
-		//Set timestamp
-		frame.SetTimestamp(getDifTime(&first)/1000);
-
 		//Set buffer size
 		frame.SetMediaSize(encoded->GetLength());
 
 		//Check type
 		if (encoded->IsIntra())
-		{
-			//Log("-is intra frame\n");
 			//Set type
 			frame.SetFrameType(RTMPVideoFrame::INTRA);
-			//Check if it is an AVC and not send the description
-			if (frame.GetVideoCodec()==RTMPVideoFrame::AVC)
-			{
-				//Create description
-				AVCDescriptor desc;
-				//Set values
-				desc.SetConfigurationVersion(1);
-				desc.SetAVCProfileIndication(0x42);
-				desc.SetProfileCompatibility(0x80);
-				desc.SetAVCLevelIndication(0x0C);
-				desc.SetNALUnitLength(3);
-				//Get encoded data
-				BYTE *data = encoded->GetData();
-				//Get size
-				DWORD size = encoded->GetLength();
-				//get from frame
-				desc.AddParametersFromFrame(data,size);
-				//Crete desc frame
-				RTMPVideoFrame frameDesc(frame.GetTimestamp(),desc);
-				//Send it
-				SendMediaFrame(&frameDesc);
-			}
-		} else {
+		else
 			//Set type
 			frame.SetFrameType(RTMPVideoFrame::INTER);
+
+		//If we need desc but yet not have it
+		if (!frameDesc && encoded->IsIntra() && videoCodec==VideoCodec::H264)
+		{
+			//Create new description
+			AVCDescriptor desc;
+			//Set values
+			desc.SetConfigurationVersion(1);
+			desc.SetAVCProfileIndication(0x42);
+			desc.SetProfileCompatibility(0x80);
+			desc.SetAVCLevelIndication(0x0C);
+			desc.SetNALUnitLength(3);
+			//Get encoded data
+			BYTE *data = encoded->GetData();
+			//Get size
+			DWORD size = encoded->GetLength();
+			//get from frame
+			desc.AddParametersFromFrame(data,size);
+			//Crete desc frame
+			frameDesc = new RTMPVideoFrame(getDifTime(&first)/1000,desc);
+			//Send it
+			SendMediaFrame(frameDesc);
 		}
 
 		//Send it
@@ -659,7 +658,7 @@ int RTMPParticipant::SendVideo()
 		//Delete
 		delete(encoder);
 
-	Log("<SendVideo\n");
+	Log("<RTMP Participant send video\n");
 
 	//Salimos
 	pthread_exit(0);
@@ -667,7 +666,50 @@ int RTMPParticipant::SendVideo()
 
 int RTMPParticipant::SendAudio()
 {
+	//RTMP audio frame
+	RTMPAudioFrame	audio(0,65535);
+
+	//Start
 	Log(">RTMP Participant send audio\n");
+
+	//Fill frame preperties
+	switch(audioCodec)
+	{
+		case AudioCodec::SPEEX16:
+			//Set RTMP data
+			audio.SetAudioCodec(RTMPAudioFrame::SPEEX);
+			audio.SetSoundRate(RTMPAudioFrame::RATE11khz);
+			audio.SetSamples16Bits(1);
+			audio.SetStereo(0);
+			break;
+		case AudioCodec::NELLY8:
+			//Set RTMP data
+			audio.SetAudioCodec(RTMPAudioFrame::NELLY8khz);
+			audio.SetSoundRate(RTMPAudioFrame::RATE11khz);
+			audio.SetSamples16Bits(1);
+			audio.SetStereo(0);
+			break;
+		case AudioCodec::NELLY11:
+			//Set RTMP data
+			audio.SetAudioCodec(RTMPAudioFrame::NELLY);
+			audio.SetSoundRate(RTMPAudioFrame::RATE11khz);
+			audio.SetSamples16Bits(1);
+			audio.SetStereo(0);
+			break;
+		case AudioCodec::AAC:
+			//Set RTMP data
+			// If the SoundFormat indicates AAC, the SoundType should be 1 (stereo) and the SoundRate should be 3 (44 kHz).
+			// However, this does not mean that AAC audio in FLV is always stereo, 44 kHz data.
+			// Instead, the Flash Player ignores these values and extracts the channel and sample rate data is encoded in the AAC bit stream.
+			audio.SetAudioCodec(RTMPAudioFrame::AAC);
+			audio.SetSoundRate(RTMPAudioFrame::RATE44khz);
+			audio.SetSamples16Bits(1);
+			audio.SetStereo(1);
+			audio.SetAACPacketType(RTMPAudioFrame::AACRaw);
+			break;
+		default:
+			return Error("-Codec %s not supported\n",AudioCodec::GetNameFor(audioCodec));
+	}
 
 	//Create encoder
 	AudioEncoder *encoder = AudioCodecFactory::CreateEncoder(audioCodec,audioProperties);
@@ -681,7 +723,8 @@ int RTMPParticipant::SendAudio()
 	//Check
 	if (!encoder)
 		//Error
-		return Error("Error encoding audio");
+		return Error("Error opening encoder");
+	
 	
 	//No first yet
 	QWORD ini = 0;
@@ -689,11 +732,34 @@ int RTMPParticipant::SendAudio()
 	//Num of samples since ini
 	QWORD samples = 0;
 
+	//Allocate samlpes
+	SWORD* recBuffer = (SWORD*) malloc(encoder->numFrameSamples*sizeof(SWORD));
+
+	//Check codec
+	if (audioCodec==AudioCodec::AAC)
+	{
+		//Create AAC config frame
+		aacSpecificConfig = new RTMPAudioFrame(0,AACSpecificConfig(rate,1));
+
+		//Send audio desc
+		SendMediaFrame(aacSpecificConfig);
+	}
+
 	//Mientras tengamos que capturar
 	while(sendingAudio)
 	{
-		RTMPAudioFrame	audio(0,MTU);
-		SWORD 		recBuffer[512];
+		//Check clock drift, do not allow to exceed 4 frames
+		if (ini+(samples+encoder->numFrameSamples*4)*1000/encoder->GetClockRate()<getDifTime(&first)/1000)
+		{
+			Log("-RTMPParticipant clock drift, dropping audio and reseting init time\n");
+			//Clear buffer
+			audioInput->ClearBuffer();
+			//Reser timestam
+			ini = getDifTime(&first)/1000;
+			//And samples
+			samples = 0;
+		}
+
 		//Capturamos
 		DWORD  recLen = audioInput->RecBuffer(recBuffer,encoder->numFrameSamples);
 
@@ -726,54 +792,11 @@ int RTMPParticipant::SendAudio()
 				//Get initial timestamp
 				ini = getDifTime(&first)/1000;
 
-			switch(encoder->type)
-			{
-				case AudioCodec::SPEEX16:
-					//Set RTMP data
-					audio.SetAudioCodec(RTMPAudioFrame::SPEEX);
-					audio.SetSoundRate(RTMPAudioFrame::RATE11khz);
-					audio.SetSamples16Bits(1);
-					audio.SetStereo(0);
-					//Set timestamp
-					audio.SetTimestamp(ini+samples/16);
-					//Increase samples
-					samples += 320;
-					break;
-				case AudioCodec::NELLY8:
-					//Set RTMP data
-					audio.SetAudioCodec(RTMPAudioFrame::NELLY8khz);
-					audio.SetSoundRate(RTMPAudioFrame::RATE11khz);
-					audio.SetSamples16Bits(1);
-					audio.SetStereo(0);
-					//Set timestamp
-					audio.SetTimestamp(ini+samples/8);
-					//Increase samples
-					samples += 256;
-					break;
-				case AudioCodec::NELLY11:
-					//Set RTMP data
-					audio.SetAudioCodec(RTMPAudioFrame::NELLY);
-					audio.SetSoundRate(RTMPAudioFrame::RATE11khz);
-					audio.SetSamples16Bits(1);
-					audio.SetStereo(0);
-					//Set timestamp
-					audio.SetTimestamp(ini+samples*1000/11025);
-					//Increase samples
-					samples += 256;
-					break;
-			}
-
-			//Check clock drift, do not allow to exceed 100ms
-			if (audio.GetTimestamp()-100>getDifTime(&first)/1000-ini)
-			{
-				Log("-RTMPParticipant clock drift, reseting init time");
-				//Reser timestam
-				ini = getDifTime(&first)/1000;
-				//And samples
-				samples = 0;
-				//Override TS
-				audio.SetTimestamp(ini);
-			}
+			//Set timestamp
+			audio.SetTimestamp(ini+samples*1000/encoder->GetClockRate());
+			
+			//Increase samples
+			samples += encoder->numFrameSamples;
 
 			//Send audio
 			SendMediaFrame(&audio);
@@ -788,7 +811,7 @@ int RTMPParticipant::SendAudio()
 		//Borramos el codec
 		delete(encoder);
 
-	Log("<SendAudio\n");
+	Log("<RTMP Participant send audio\n");
 
 	//Exit
 	pthread_exit(0);
@@ -796,7 +819,7 @@ int RTMPParticipant::SendAudio()
 
 int RTMPParticipant::SendText()
 {
-	Log(">SendText\n");
+	Log(">RTMP Participant send text\n");
 
 	//Mientras tengamos que capturar
 	while(sendingText)
@@ -826,7 +849,7 @@ int RTMPParticipant::SendText()
 		delete(frame);
 	}
 
-	Log("<SendText\n");
+	Log("<RTMP Participant send text\n");
 
 	//Salimos
 	pthread_exit(0);
@@ -839,7 +862,7 @@ int RTMPParticipant::RecVideo()
 	DWORD height = 0;
 	BYTE NALUnitLength = 0;
 
-	Log(">RecVideo\n");
+	Log(">RTMP Participant rec video\n");
 
 	//While sending video
 	while (receivingVideo)
@@ -992,7 +1015,7 @@ int RTMPParticipant::RecVideo()
 		delete(video);
 	}
 
-	Log("<RecVideo\n");
+	Log("<RTMP Participant rec video\n");
 
 	return 1;
 }
@@ -1002,7 +1025,7 @@ int RTMPParticipant::RecAudio()
 	AudioCodec::Type rtmpAudioCodec;
 	AudioDecoder *rtmpAudioDecoder = NULL;
 	
-	Log(">RecAudio\n");
+	Log(">RTMP Participant rec audio\n");
 
 	//While sending audio
 	while (receivingAudio)
@@ -1069,7 +1092,7 @@ int RTMPParticipant::RecAudio()
 		delete(audio);
 	}
 
-	Log("<RecAudio\n");
+	Log("<RTMP Participant rec audio\n");
 
 	return 1;
 }
@@ -1137,6 +1160,14 @@ DWORD RTMPParticipant::AddMediaListener(RTMPMediaStream::Listener *listener)
 		//Send it
 		listener->onMetaData(RTMPMediaStream::id,meta);
 
+	//Check desc
+	if (frameDesc)
+		//Send it
+		listener->onMediaFrame(RTMPMediaStream::id,frameDesc);
+	//Check audio desc
+	if (aacSpecificConfig)
+		//Send it
+		listener->onMediaFrame(RTMPMediaStream::id,aacSpecificConfig);
 	//Return number of listeners
 	return num;
 }

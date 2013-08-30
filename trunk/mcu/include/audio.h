@@ -67,6 +67,7 @@ public:
 	virtual DWORD GetNativeRate()=0;
 	virtual DWORD GetRecordingRate()=0;
 	virtual int RecBuffer(SWORD *buffer,DWORD size)=0;
+	virtual int ClearBuffer() = 0;
 	virtual void  CancelRecBuffer()=0;
 	virtual int StartRecording(DWORD samplerate)=0;
 	virtual int StopRecording()=0;

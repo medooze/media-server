@@ -24,6 +24,17 @@ PipeAudioInput::~PipeAudioInput()
 	pthread_cond_destroy(&cond);
 }
 
+int PipeAudioInput::ClearBuffer()
+{
+	//Bloqueamos
+	pthread_mutex_lock(&mutex);
+
+	//Clear data
+	fifoBuffer.clear();
+
+	//Desbloqueamos
+	pthread_mutex_unlock(&mutex);
+}
 int PipeAudioInput::RecBuffer(SWORD *buffer,DWORD size)
 {
 	int len = 0;
