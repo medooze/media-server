@@ -74,8 +74,6 @@ int AudioMixer::MixAudio()
 		if (proc<step*1000)
 			//Wait until next to process again minus process time
 			msleep(step*1000-proc);
-		else
-			Log("-Audimixer taking too much time, hurrying up [%u]\n",proc);
 
 		//Block list
 		lstAudiosUse.WaitUnusedAndLock();
@@ -83,10 +81,7 @@ int AudioMixer::MixAudio()
 		//Get new time
 		QWORD curr = getDifTime(&tv);
 
-		//Get time elapsed, take care of the reminders!! (12000 - 11999)/1000 = 0 while 12000/1000-11999/1000 = 1 !!!
-		DWORD diff = curr/1000-prev/1000;
-
-		//Get num samples at desired rate
+		//Get num samples at desired rate for the time difference
 		DWORD numSamples = (curr*rate)/1000000-(prev*rate)/1000000;
 
 		//Update curr
@@ -115,6 +110,8 @@ int AudioMixer::MixAudio()
 			DWORD id = it->first;
 			//Get the samples from the fifo
 			audio->len = audio->output->GetSamples(audio->buffer,numSamples);
+			//Clean rest
+			memset(audio->buffer+audio->len,0,Sidebar::MIXER_BUFFER_SIZE-audio->len);
 			//Get VAD value
 			audio->vad = audio->output->GetVAD(audio->len);
 			//For each sidepaf
@@ -140,26 +137,34 @@ int AudioMixer::MixAudio()
 				continue;
 			//Get mixed buffer
 			SWORD *mixed = audio->sidebar->GetBuffer();
-			//And the audio buffer
+			//And the audio buffer for participant
 			SWORD *buffer = audio->buffer;
 
 			//Check if we have been added to the sidebar
 			if (audio->sidebar->HasParticipant(id))
 			{
-				//Calculate the result
-				for(int i=0; i<audio->len; ++i)
-					//We don't want to hear our own signal
-					buffer[i] = mixed[i] - buffer[i];
+				//Get pointers to buffer
+				__m128i* b = (__m128i*) buffer;
+				__m128i* m = (__m128i*) mixed;
+
+				//Sum 8 ech time
+				for(DWORD n = (audio->len + 7) >> 3; n != 0; --n,++b,++m)
+				{
+					//Load data in SSE registers
+					__m128i xmm1 = _mm_load_si128(m);
+					__m128i xmm2 = _mm_load_si128(b);
+					//SSE2 sum
+					_mm_store_si128(b,  _mm_sub_epi16(xmm1,xmm2));
+				}
 				//Check length
 				if (audio->len<numSamples)
 					//Copy the rest
 					memcpy(buffer+audio->len,mixed+audio->len,(numSamples-audio->len)*sizeof(SWORD));
-
 				//Put the output
 				audio->input->PutSamples(buffer,numSamples);
 			} else {
 				//Copy everything as it is
-				audio->input->PutSamples(mixed,numSamples);
+				audio->input->PutSamples((SWORD*)mixed,numSamples);
 			}
 		}
 

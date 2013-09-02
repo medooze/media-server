@@ -4,14 +4,6 @@
     <df name="Media Mixer" root=".">
       <df name="bin">
         <df name="debug" kind="SOURCE_LOGICAL_FOLDER">
-          <in>core</in>
-          <in>http.log</in>
-          <in>logo.png</in>
-          <in>rtmpdebug</in>
-        </df>
-      </df>
-      <df name="build">
-        <df name="debug" kind="SOURCE_LOGICAL_FOLDER">
         </df>
       </df>
       <df name="include" kind="SOURCE_LOGICAL_FOLDER">
@@ -213,8 +205,15 @@
           <in>opusencoder.h</in>
         </df>
         <df name="speex" kind="SOURCE_LOGICAL_FOLDER">
+          <in>arch.h</in>
+          <in>cpusupport.h</in>
+          <in>os_support.h</in>
+          <in>resample.c</in>
+          <in>resample_sse.h</in>
+          <in>speex_resampler.h</in>
           <in>speexcodec.cpp</in>
           <in>speexcodec.h</in>
+          <in>stack_alloc.h</in>
         </df>
         <df name="vp6">
           <in>vp6decoder.cpp</in>
@@ -292,6 +291,7 @@
         <in>statushandler.cpp</in>
         <in>stunmessage.cpp</in>
         <in>tcpsocketserver.cpp</in>
+        <in>testmixer.cpp</in>
         <in>textencoder.cpp</in>
         <in>textmixer.cpp</in>
         <in>textmixerworker.cpp</in>

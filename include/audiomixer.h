@@ -44,15 +44,26 @@ private:
 private:
 
 	//Tipos
-	typedef struct 
+	class AudioSource
 	{
+	public:
+		AudioSource()
+		{
+			//Alloc alligned buffer
+			buffer = (SWORD*)malloc32(Sidebar::MIXER_BUFFER_SIZE*sizeof(SWORD));
+		}
+		~AudioSource()
+		{
+			//Free buffer
+			free(buffer);
+		}
+		SWORD*		buffer;
+		DWORD		len;
 		PipeAudioInput  *input;
 		PipeAudioOutput *output;
-		SWORD		buffer[Sidebar::MIXER_BUFFER_SIZE];
-		DWORD		len;
 		Sidebar*	sidebar;
 		DWORD		vad;
-	} AudioSource;
+	};
 
 	typedef std::map<int,AudioSource *>	Audios;
 	typedef std::map<int,Sidebar *>		Sidebars;

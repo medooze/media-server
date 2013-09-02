@@ -174,7 +174,7 @@ int Logo::Load(const char* fileName)
 	numpixels = width*height;
 
 	//Allocate frame
-	frame = (BYTE*)malloc(size); /* size for YUV 420 */
+	frame = (BYTE*)malloc32(size); /* size for YUV 420 */
 
 	//Alloc data
 	logo->data[0] = frame;

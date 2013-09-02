@@ -9,7 +9,7 @@
 #define	NELLYCODEC_H
 extern "C" {
 #include <libavcodec/avcodec.h>
-#include <speex/speex_resampler.h>
+#include "speex/speex_resampler.h"
 }
 #include "config.h"
 #include "fifo.h"

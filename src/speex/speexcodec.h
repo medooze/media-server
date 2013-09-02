@@ -1,6 +1,5 @@
 extern "C" {
 #include <speex/speex.h>
-#include <speex/speex_resampler.h>
 }
 
 #include "audio.h"
@@ -29,7 +28,6 @@ public:
 	virtual DWORD GetRate()		{ return 16000;}
 private:
 	void *decoder;
-	SpeexResamplerState *wbresampler;
 	SpeexBits decbits;
 	int dec_frame_size;
 

@@ -10,10 +10,13 @@
 
 Sidebar::Sidebar()
 {
+	//Alloc alligned
+	mixer_buffer = (SWORD*) malloc32(MIXER_BUFFER_SIZE*sizeof(SWORD));
 }
 
 Sidebar::~Sidebar()
 {
+	free(mixer_buffer);
 }
 
 int Sidebar::Update(int id,SWORD *samples,DWORD len)
@@ -27,10 +30,19 @@ int Sidebar::Update(int id,SWORD *samples,DWORD len)
 		//Exit
 		return Error("-Sidebar error updating particionat not found [id:%d]\n",id);
 
-	//Mix the audio
-	for(int i = 0; i < len; ++i)
-		//MIX
-		mixer_buffer[i] += samples[i];
+	//Get pointers to buffer
+	__m128i* d = (__m128i*) mixer_buffer;
+	__m128i* s = (__m128i*) samples;
+
+	//Sum 8 ech time
+	for(DWORD n = (len + 7) >> 3; n != 0; --n,++d,++s)
+	{
+		//Load data in SSE registers
+		__m128i xmm1 = _mm_load_si128(d);
+		__m128i xmm2 = _mm_load_si128(s);
+		//SSE2 sum
+		_mm_store_si128(d, _mm_add_epi16(xmm1,xmm2));
+	}
 
 	//OK
 	return len;
@@ -39,7 +51,7 @@ int Sidebar::Update(int id,SWORD *samples,DWORD len)
 void Sidebar::Reset()
 {
 	//zero the mixer buffer
-	memset(mixer_buffer, 0, MIXER_BUFFER_SIZE*sizeof(SWORD));
+	memset((BYTE*)mixer_buffer, 0, MIXER_BUFFER_SIZE*sizeof(SWORD));
 }
 
 void Sidebar::AddParticipant(int id)
