@@ -3,7 +3,7 @@
 ###########################################
 include config.mk
 
-#OPTS+= -fPIC -DPIC -DNDEBUG
+OPTS+= -fPIC -DPIC -msse -msse2 -msse3 -DSPX_RESAMPLE_EXPORT= -DRANDOM_PREFIX=mcu -DOUTSIDE_SPEEX -DFLOATING_POINT -D__SSE2__
 
 #DEBUG
 ifeq ($(DEBUG),yes)
@@ -59,7 +59,7 @@ GSMDIR=gsm
 GSMOBJ=gsmcodec.o
 
 SPEEXDIR=speex
-SPEEXOBJ=speexcodec.o
+SPEEXOBJ=speexcodec.o resample.o
 
 NELLYDIR=nelly
 NELLYOBJ=NellyCodec.o
@@ -143,11 +143,10 @@ ifeq ($(STATIC),yes)
 	LDFLAGS+=/usr/local/src/x264/libx264.a
 	LDFLAGS+=/usr/local/src/opus-1.0.2/.libs/libopus.a
 	LDFLAGS+=/usr/local/src/speex-1.2rc1/libspeex/.libs/libspeex.a
-	LDFLAGS+=/usr/local/src/speex-1.2rc1/libspeex/.libs/libspeexdsp.a
 	LDFLAGS+=/usr/local/src/libvpx/libvpx.a
 	LDFLAGS+=/usr/local/lib/libmp4v2.a
 else
-	LDFLAGS+= -lavcodec -lswscale -lavformat -lavutil -lavresample -lx264 -lmp4v2 -lspeex -lspeexdsp -lvpx -lopus
+	LDFLAGS+= -lavcodec -lswscale -lavformat -lavutil -lavresample -lx264 -lmp4v2 -lspeex -lvpx -lopus
 endif
 
 LDFLAGS+= -lxmlrpc -lxmlrpc_xmlparse -lxmlrpc_xmltok -lxmlrpc_abyss -lxmlrpc_server -lxmlrpc_util

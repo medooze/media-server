@@ -1,6 +1,6 @@
 #ifndef _AUDIOTRANSRATER_H_
 #define _AUDIOTRANSRATER_H_
-#include <speex/speex_resampler.h>
+#include "speex/speex_resampler.h"
 
 class AudioTransrater
 {

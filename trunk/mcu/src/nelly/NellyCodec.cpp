@@ -101,7 +101,7 @@ NellyEncoder11Khz::NellyEncoder11Khz(const Properties &properties)
 
 	//The resampler to convert to WB
 	int err;
-	resampler = speex_resampler_init(1, 8000, 11025, 5, &err);
+	resampler = mcu_resampler_init(1, 8000, 11025, 5, &err);
 
 	//Set params
 	ctx->channels		= 1;
@@ -142,7 +142,7 @@ int NellyEncoder11Khz::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 		//Peek all
 		samples8.peek(buffer8,len8);
 		//Resample
-		speex_resampler_process_int(resampler,0,buffer8,&len8,buffer11,&len11);
+		mcu_resampler_process_int(resampler,0,buffer8,&len8,buffer11,&len11);
 		//Remove
 		samples8.remove(len8);
 		//Push
@@ -185,7 +185,7 @@ NellyDecoder11Khz::NellyDecoder11Khz()
 
 	//The resampler to convert to 8Khz
 	int err;
-	resampler = speex_resampler_init(1, 11025, 8000, 5, &err);
+	resampler = mcu_resampler_init(1, 11025, 8000, 5, &err);
 
 	//Set params
 	ctx->request_sample_fmt		= AV_SAMPLE_FMT_S16;
@@ -247,7 +247,7 @@ int NellyDecoder11Khz::Decode(BYTE *in, int inLen, SWORD* out, int outLen)
 				buffer11[i] = (fbuffer11[i] * (1<<15));
 			
 			//Resample
-			speex_resampler_process_int(resampler,0,buffer11,&len11,buffer8,&len8);
+			mcu_resampler_process_int(resampler,0,buffer11,&len11,buffer8,&len8);
 
 			//Append to samples
 			samples.push(buffer8,len8);

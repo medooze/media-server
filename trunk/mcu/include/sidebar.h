@@ -8,6 +8,7 @@
 #ifndef SIDEBAR_H
 #define	SIDEBAR_H
 #include "config.h"
+#include "tools.h"
 #include <set>
 
 class Sidebar
@@ -30,7 +31,7 @@ private:
 	typedef std::set<int> Participants;
 private:
 	//Audio mixing buffer
-	SWORD mixer_buffer[MIXER_BUFFER_SIZE];
+	SWORD* mixer_buffer;
 	Participants participants;
 };
 

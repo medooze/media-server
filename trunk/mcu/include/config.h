@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <map>
 #include <string>
+#include <malloc.h>
 #include "version.h"
 #define QCIF	0	// 176  x 144
 #define CIF	1	// 352  x 288
@@ -177,4 +178,8 @@ public:
 		return atoi(it->second.c_str());
 	}
 };
+inline void* malloc32(size_t size)
+{
+	return memalign(32,size);
+}
 #endif
