@@ -20,7 +20,7 @@ int VAD::CalcVad(SWORD* frame,DWORD size,DWORD rate)
 	int vad = 0;
 
 	//Maximun 20 ms at 48khz
-	BYTE buffer[960];
+	SWORD buffer[960];
 	
 	//Calcule 20ms at rate
 	DWORD len = 20*rate/1000;
