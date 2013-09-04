@@ -15,6 +15,12 @@
 class RemoteRateEstimator
 {
 public:
+	class Listener
+	{
+	public:
+		virtual void onTargetBitrateRequested(DWORD bitrate) = 0;
+	};
+public:
 	enum State {
 		Hold,
 		Increase,
@@ -36,10 +42,12 @@ public:
 	}
 public:
 	RemoteRateEstimator(const std::wstring& tag);
-	void AddStream(DWORD ssrc,RemoteRateControl* ctrl);
+	void SetListener(Listener *listener);
+	void AddStream(DWORD ssrc);
 	void RemoveStream(DWORD ssrc);
-	void SetRTT(DWORD rtt);
-	void Update(DWORD size);
+	void UpdateRTT(DWORD ssrc,DWORD rtt);
+	void UpdateLost(DWORD ssrc,DWORD lost);
+	void Update(DWORD ssrc,RTPTimedPacket* packet);
 	DWORD GetEstimatedBitrate();
 	void GetSSRCs(std::list<DWORD> &ssrcs);
 	void SetTemporalMaxLimit(DWORD limit);
@@ -53,6 +61,7 @@ private:
 private:
 	typedef std::map<DWORD,RemoteRateControl*> Streams;
 private:
+	Listener*	listener;
 	EvenSource	eventSource;
 	Acumulator	bitrateAcu;
 	Streams		streams;

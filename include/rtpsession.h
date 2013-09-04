@@ -48,7 +48,7 @@ struct MediaStatistics
 	DWORD		totalSendBytes;
 };
 
-class RTPSession : public RemoteRateControl::Listener
+class RTPSession : public RemoteRateEstimator::Listener
 {
 public:
 	class Listener
@@ -130,7 +130,6 @@ protected:
 private:
 	typedef std::map<DWORD,RTPTimedPacket*> RTPOrderedPackets;
 protected:
-	RemoteRateControl	remoteRateControl;
 	RemoteRateEstimator*	remoteRateEstimator;
 private:
 	MediaFrame::Type media;

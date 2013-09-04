@@ -26,26 +26,45 @@ RemoteRateEstimator::RemoteRateEstimator(const std::wstring& tag) :
 	beta			= 0.9f;
 	rtt			= 200;
 	//Set initial state and region
-	cameFromState = Decrease;
-	state = Hold;
-	region = RemoteRateControl::MaxUnknown;
+	cameFromState		= Decrease;
+	state			= Hold;
+	region			= RemoteRateControl::MaxUnknown;
 
 }
 
-void RemoteRateEstimator::AddStream(DWORD ssrc,RemoteRateControl* ctrl)
+void RemoteRateEstimator::AddStream(DWORD ssrc)
 {
+	//Lock
+	lock.WaitUnusedAndLock();
+	//Create new control
+	RemoteRateControl* ctrl = new RemoteRateControl();
 	//Set tracer
 	ctrl->SetEventSource(&eventSource);
 	//Add it
 	streams[ssrc] = ctrl;
+	//Unlock
+	lock.Unlock();
 }
 void RemoteRateEstimator::RemoveStream(DWORD ssrc)
 {
+	//Lock
+	lock.WaitUnusedAndLock();
+	Streams::iterator it = streams.find(ssrc);
+	//If found
+	if (it!=streams.end())
+	{
+		//Delete
+		delete(it->second);
+		//REmove
+		streams.erase(it);
+	}
 	//Remove
 	streams.erase(ssrc);
+	//Unlock
+	lock.Unlock();
 }
 
-void RemoteRateEstimator::Update(DWORD size)
+void RemoteRateEstimator::Update(DWORD ssrc,RTPTimedPacket* packet)
 {
 	double noiseVar = 0;
 	QWORD changePeriod = 0;
@@ -53,11 +72,52 @@ void RemoteRateEstimator::Update(DWORD size)
 	//Lock
 	lock.WaitUnusedAndLock();
 
+	//Get size
+	DWORD size = packet->GetSize();
+
 	//Get now
 	QWORD now = getTime()/1000;
 
-	//Acumulate
+	//Acumulate bitrate
 	bitrateAcu.Update(now,size*8);
+
+	//Get global usage for all streams
+	RemoteRateControl::BandwidthUsage usage = RemoteRateControl::UnderUsing;
+
+	//Check if we need to target
+	bool streamOverusing = false;
+
+	//For each one
+	for (Streams::iterator it = streams.begin(); it!=streams.end(); ++it)
+	{
+		//Get control
+		RemoteRateControl *ctrl = it->second;
+		//Get stream usage
+		RemoteRateControl::BandwidthUsage streamUsage = ctrl->GetUsage();
+		//Check if it is the new one
+		if (it->first == ssrc)
+		{
+			//Update it
+			ctrl->Update(packet);
+			//Check if pacekt triggered overuse
+			if (streamUsage!=RemoteRateControl::OverUsing && ctrl->GetUsage()==RemoteRateControl::OverUsing)
+			{
+				//We are overusing now
+				streamOverusing = true;
+				//Set usage
+				usage = RemoteRateControl::OverUsing;
+			}
+		}
+		//Get worst
+		if (usage<streamUsage)
+			//Set it
+			usage = streamUsage;
+		//Get noise var and sum up
+		noiseVar += ctrl->GetNoise();
+	}
+
+	//Normalize
+	noiseVar = noiseVar/streams.size();
 
 	//If not firs update
 	if (!lastChangeMs)
@@ -69,8 +129,8 @@ void RemoteRateEstimator::Update(DWORD size)
 		changePeriod = now - lastChangeMs;
 	}
 	
-	//Only update once per second
-	if (changePeriod<1000)
+	//Only update once per second or when the stream starts to overuse
+	if (changePeriod<1000 || streamOverusing)
 	{
 		//Unlock
 		lock.Unlock();
@@ -89,34 +149,17 @@ void RemoteRateEstimator::Update(DWORD size)
 	//calculate average period
 	avgChangePeriod = 0.9f * avgChangePeriod + 0.1f * changePeriod;
 
-	//Get global usage for all streams
-	RemoteRateControl::BandwidthUsage usage = RemoteRateControl::UnderUsing;
-
-	//For each one
-	for (Streams::iterator it = streams.begin(); it!=streams.end(); ++it)
-	{
-		//Get control
-		RemoteRateControl *ctrl = it->second;
-		//Get stream usage
-		RemoteRateControl::BandwidthUsage streamUsage = ctrl->GetUsage();
-		//Get worst
-		if (usage<streamUsage)
-			//Set it
-			usage = streamUsage;
-		//Get noise var and sum up
-		noiseVar += ctrl->GetNoise();
-	}
-
-	//Normalize
-	noiseVar = noiseVar/streams.size();
-
 	//Modify state depending on the bandwidht state
 	switch (usage)
 	{
 		case RemoteRateControl::Normal:
 			if (state == Hold)
+			{
+				//Change now
+				lastBitRateChange = now;
 				//Swicth to increase
 				ChangeState(Increase);
+			}
 			break;
 		case RemoteRateControl::OverUsing:
 			if (state != Decrease)
@@ -221,6 +264,7 @@ void RemoteRateEstimator::Update(DWORD size)
 
 	//Chec min
 	if (currentBitRate<minConfiguredBitRate)
+		//Set minimun
 		currentBitRate = minConfiguredBitRate;
 
 	Debug("--estimation state=%s region=%s currentBitRate=%d current=%d incoming=%f min=%llf max=%llf\n",GetName(state),RemoteRateControl::GetName(region),currentBitRate/1000,current/1000,incomingBitRate/1000,bitrateAcu.GetMinAvg()/1000,bitrateAcu.GetMaxAvg()/1000);
@@ -232,6 +276,11 @@ void RemoteRateEstimator::Update(DWORD size)
 
 	//Unlock
 	lock.Unlock();
+
+	//Check if we need to send inmediate feedback
+	if (streamOverusing && listener && bitrateAcu.IsInWindow())
+		//Send it
+		listener->onTargetBitrateRequested(currentBitRate);
 }
 
 double RemoteRateEstimator::RateIncreaseFactor(QWORD nowMs, QWORD lastMs, DWORD reactionTimeMs, double noiseVar) const
@@ -340,11 +389,36 @@ void RemoteRateEstimator::ChangeRegion(RemoteRateControl::Region newRegion)
 		 it->second->SetRateControlRegion(newRegion);
 }
 
-void RemoteRateEstimator::SetRTT(DWORD rtt)
+void RemoteRateEstimator::UpdateRTT(DWORD ssrc, DWORD rtt)
 {
+	//Lock
+	lock.WaitUnusedAndLock();
 	//Update
 	this->rtt = rtt;
+	//Find stream
+	Streams::iterator it = streams.find(ssrc);
+	//If found
+	if (it!=streams.end())
+		//Set it
+		it->second->UpdateRTT(rtt);
+	//Unlock
+	lock.Unlock();
 }
+
+void RemoteRateEstimator::UpdateLost(DWORD ssrc, DWORD lost)
+{
+	//Lock
+	lock.WaitUnusedAndLock();
+	//Find stream
+	Streams::iterator it = streams.find(ssrc);
+	//If found
+	if (it!=streams.end())
+		//Set it
+		it->second->UpdateLost(lost);
+	//Unlock
+	lock.Unlock();
+}
+
 
 void RemoteRateEstimator::SetTemporalMaxLimit(DWORD limit)
 {
@@ -366,4 +440,9 @@ void RemoteRateEstimator::SetTemporalMinLimit(DWORD limit)
 	else
 		//Set default min
 		minConfiguredBitRate = 100000;
+}
+void RemoteRateEstimator::SetListener(Listener *listener)
+{
+	//Store listener
+	this->listener = listener;
 }

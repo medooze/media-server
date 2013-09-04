@@ -90,7 +90,7 @@ bool RTPSession::SetPortRange(int minPort, int maxPort)
 * RTPSession
 * 	Constructro
 **************************/
-RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) : remoteRateControl(this)
+RTPSession::RTPSession(MediaFrame::Type media,Listener *listener)
 {
 	//Store listener
 	this->listener = listener;
@@ -179,6 +179,10 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) : remoteRateCo
 **************************/
 RTPSession::~RTPSession()
 {
+	//Check listener
+	if (remoteRateEstimator)
+		//Add as listener
+		remoteRateEstimator->SetListener(NULL);
 	if (rtpMapIn)
 		delete(rtpMapIn);
 	if (rtpMapOut)
@@ -533,6 +537,9 @@ void RTPSession::SetRemoteRateEstimator(RemoteRateEstimator* estimator)
 
 	//Store it
 	remoteRateEstimator = estimator;
+
+	//Add as listener
+	remoteRateEstimator->SetListener(this);
 }
 
 /********************************
@@ -634,6 +641,10 @@ int RTPSession::Init()
 *********************************/
 int RTPSession::End()
 {
+	//Check if not running
+	if (!running)
+		//Nothing
+		return 0;
 	//Stop just in case
 	Stop();
 
@@ -654,6 +665,10 @@ int RTPSession::End()
 		//No sockets
 		simRtcpSocket = FD_INVALID;
 	}
+	//Check listener
+	if (remoteRateEstimator && recSSRC)
+		//Remove stream
+		remoteRateEstimator->RemoveStream(recSSRC);
 
 	return 1;
 }
@@ -859,11 +874,6 @@ int RTPSession::ReadRTCP()
 	//Read rtcp socket
 	int size = recvfrom(simRtcpSocket,buffer,MTU,MSG_DONTWAIT,(sockaddr*)&from_addr, &from_len);
 
-	//if got estimator
-	if (remoteRateEstimator)
-		//Update estimator
-		remoteRateEstimator->Update(size);
-
 	//Check if it is an STUN request
 	STUNMessage *stun = STUNMessage::Parse(buffer,size);
 	
@@ -969,11 +979,6 @@ int RTPSession::ReadRTP()
 
 	//Leemos del socket
 	int size = recvfrom(simSocket,buffer,MTU,MSG_DONTWAIT,(sockaddr*)&from_addr, &from_len);
-
-	//if got estimator
-	if (remoteRateEstimator)
-		//Update estimator
-		remoteRateEstimator->Update(size);
 
 	//Check if it is an STUN request
 	STUNMessage *stun = STUNMessage::Parse(buffer,size);
@@ -1239,7 +1244,7 @@ int RTPSession::ReadRTP()
 			//If remote estimator
 			if (remoteRateEstimator)
 				//Add stream
-				remoteRateEstimator->AddStream(recSSRC,&remoteRateControl);
+				remoteRateEstimator->AddStream(recSSRC);
 		} else {
 			//Set SSRC of the original stream
 			packet->SetSSRC(recSSRC);
@@ -1257,8 +1262,10 @@ int RTPSession::ReadRTP()
 	//Set cycles
 	packet->SetSeqCycles(recCycles);
 
-	//Update rate control
-	remoteRateControl.Update(packet);
+	//If remote estimator
+	if (remoteRateEstimator)
+		//Update rate control
+		remoteRateEstimator->Update(recSSRC,packet);
 
 	//Increase stats
 	numRecvPackets++;
@@ -1285,8 +1292,10 @@ int RTPSession::ReadRTP()
 			//Base packet missing
 			WORD base = recExtSeq+1;
 
-			//Update estimator
-			remoteRateControl.UpdateLost(lost);
+			//If remote estimator
+			if (remoteRateEstimator)
+				//Update estimator
+				remoteRateEstimator->UpdateLost(recSSRC,lost);
 
 			//If nack is enable t waiting for a PLI/FIR response (to not oeverflow)
 			if (isNACKEnabled && !requestFPU)
@@ -1887,12 +1896,10 @@ void RTPSession::SetRTT(DWORD rtt)
 {
 	//Set it
 	this->rtt = rtt;
-	//Uptade the rate control
-	remoteRateControl.UpdateRTT(rtt);
 	//if got estimator
 	if (remoteRateEstimator)
 		//Update estimator
-		remoteRateEstimator->SetRTT(rtt);
+		remoteRateEstimator->UpdateRTT(recSSRC,rtt);
 	//If it is video
 	if (media==MediaFrame::Video)
 		//Update

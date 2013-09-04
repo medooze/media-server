@@ -15,12 +15,7 @@
 
 class RemoteRateControl
 {
-public:
-	class Listener
-	{
-	public:
-		virtual void onTargetBitrateRequested(DWORD bitrate) = 0;
-	};
+
 public:
 	enum BandwidthUsage
 	{
@@ -63,7 +58,7 @@ public:
 		return "Unknown";
 	}
 public:
-	RemoteRateControl(Listener* listener);
+	RemoteRateControl();
 	void Update(RTPTimedPacket* packet);
 	void UpdateRTT(DWORD rtt);
 	void UpdateLost(DWORD num);
@@ -76,7 +71,6 @@ private:
 	void UpdateKalman(QWORD now,QWORD t_delta, double ts_delta, DWORD frame_size, DWORD prev_frame_size);
 private:
 	EvenSource *eventSource;
-	Listener*  listener;
 	Acumulator bitrateCalc;
 	Acumulator fpsCalc;
 	Acumulator packetCalc;
