@@ -533,8 +533,6 @@ int RTPSession::SendEmptyPacket()
 
 void RTPSession::SetRemoteRateEstimator(RemoteRateEstimator* estimator)
 {
-	Log("-SetRemoteRateEstimator\n");
-
 	//Store it
 	remoteRateEstimator = estimator;
 
@@ -681,8 +679,12 @@ int RTPSession::SendPacket(RTCPCompoundPacket &rtcp)
 
 	//Check if we have sendinf ip address
 	if (sendRtcpAddr.sin_addr.s_addr == INADDR_ANY && !muxRTCP)
+	{
+		//Debug
+		Debug("-Error sending rtp packet, no remote IP yet\n");
 		//Exit
-		return Error("-No rtcp ip\n");
+		return 0;
+	}
 
 	//Serialize
 	int len = rtcp.Serialize(data,size);
@@ -1606,7 +1608,7 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 						}
 						break;
 					case RTCPRTPFeedback::TempMaxMediaStreamBitrateRequest:
-						Debug("-TempMaxMediaStreamBitrateRequest\n");
+						//Debug("-TempMaxMediaStreamBitrateRequest\n");
 						for (BYTE i=0;i<fb->GetFieldCount();i++)
 						{
 							//Get field
@@ -1618,7 +1620,7 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 						}
 						break;
 					case RTCPRTPFeedback::TempMaxMediaStreamBitrateNotification:
-						Debug("-TempMaxMediaStreamBitrateNotification\n");
+						//Debug("-TempMaxMediaStreamBitrateNotification\n");
 						pendingTMBR = false;
 						if (requestFPU)
 						{
@@ -1881,15 +1883,16 @@ int RTPSession::SendFIR()
 
 int RTPSession::RequestFPU()
 {
+		SendFIR();
 	//packets.Reset();
-	if (!pendingTMBR)
+	/*if (!pendingTMBR)
 	{
 		//request FIR
 		SendFIR();
 	} else {
 		//Wait for TMBN response to no overflow
 		requestFPU = true;
-	}
+	}*/
 }
 
 void RTPSession::SetRTT(DWORD rtt)
@@ -1903,11 +1906,11 @@ void RTPSession::SetRTT(DWORD rtt)
 	//If it is video
 	if (media==MediaFrame::Video)
 		//Update
-		packets.SetMaxWaitTime(fmax(rtt,120)*2);
+		packets.SetMaxWaitTime(fmin(fmax(rtt,120)*2,500));
 	//Check RTT to enable NACK
 	if (useNACK)
 		//Enable NACK only if RTT is small
-		isNACKEnabled = (rtt < 180);
+		isNACKEnabled = (rtt < 240);
 }
 
 void RTPSession::onTargetBitrateRequested(DWORD bitrate)
@@ -1959,8 +1962,6 @@ void RTPSession::ReSendPacket(int seq)
 }
 int RTPSession::SendTempMaxMediaStreamBitrateNotification(DWORD bitrate,DWORD overhead)
 {
-	Debug("-SendTempMaxMediaStreamBitrateNotification [%d,%d]\n",bitrate,overhead);
-
 	//Create rtcp sender retpor
 	RTCPCompoundPacket* rtcp = CreateSenderReport();
 

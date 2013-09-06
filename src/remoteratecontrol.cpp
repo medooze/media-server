@@ -156,11 +156,13 @@ void RemoteRateControl::UpdateKalman(QWORD now,QWORD tdelta, double tsdelta, DWO
 				//Check 
 				if (overUseCount>1)
 				{
+					Debug("BWE:  Overusing bitrate:%.0llf max:%.0llf min:%.0llf\n",bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg());
 					//Overusing
 					hypothesis = OverUsing;
 					//Reset counter
 					overUseCount=0;
 				} else {
+					Debug("BWE:  first Overusing bitrate:%.0llf max:%.0llf min:%.0llf\n",bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg());
 					//increase counter
 					overUseCount++;
 				}
@@ -169,7 +171,7 @@ void RemoteRateControl::UpdateKalman(QWORD now,QWORD tdelta, double tsdelta, DWO
 			//If we change state
 			if (hypothesis!=UnderUsing)
 			{
-				Debug("BWE:  UnderUsing bitrate:%.0llf max:%.0llf min:%.0llf\n",bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg());
+				//Debug("BWE:  UnderUsing bitrate:%.0llf max:%.0llf min:%.0llf\n",bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg());
 				//Reset bitrate
 				bitrateCalc.ResetMinMax();
 				//Under using, do nothing until going back to normal
@@ -182,7 +184,7 @@ void RemoteRateControl::UpdateKalman(QWORD now,QWORD tdelta, double tsdelta, DWO
 		if (hypothesis!=Normal)
 		{
 			//Log
-			Debug("BWE:  Normal  bitrate:%.0llf max:%.0llf min:%.0llf\n",bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg());
+			//Debug("BWE:  Normal  bitrate:%.0llf max:%.0llf min:%.0llf\n",bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg());
 			//Reset
 			bitrateCalc.ResetMinMax();
 			//Normal
@@ -191,36 +193,40 @@ void RemoteRateControl::UpdateKalman(QWORD now,QWORD tdelta, double tsdelta, DWO
 	}
 }
 
-void RemoteRateControl::UpdateRTT(DWORD rtt)
+bool RemoteRateControl::UpdateRTT(DWORD rtt)
 {
+	int overusing = false;
 	//Check difference
 	if (this->rtt>40 && rtt>this->rtt*1.50)
 	{
 		//Update state
-		if (hypothesis==UnderUsing)
-			//Move to normal
-			hypothesis = Normal;
-		else
+		if (hypothesis==Normal)
+		{
 			//Overusing
 			hypothesis = OverUsing;
+			//we have changed
+			overusing = true;
+		} else if (hypothesis==UnderUsing)
+			//Move to normal
+			hypothesis = Normal;
 	}
 	//Update RTT
 	this->rtt = rtt;
+	//Return if we are overusing now
+	return overusing;
 }
 
-void RemoteRateControl::UpdateLost(DWORD num)
+bool RemoteRateControl::UpdateLost(DWORD num)
 {
-	//Check number
-	if (packetCalc.GetInstantAvg()<num*5)
+	//Check lost is more than 2.5%
+	if (packetCalc.GetInstantAvg()<num*40)
 	{
-		//Update state
-		if (hypothesis==UnderUsing)
-			//Move to normal
-			hypothesis = Normal;
-		else
-			//Overusing
-			hypothesis = OverUsing;
+		//Overusing
+		hypothesis = OverUsing;
+		//overusing now
+		return true;
 	}
+	return false;
 }
 
 void RemoteRateControl::SetRateControlRegion(Region region)

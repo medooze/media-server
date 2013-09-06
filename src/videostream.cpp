@@ -562,7 +562,7 @@ int VideoStream::SendVideo()
 		//Dump statistics
 		if (num && ((num%videoFPS*10)==0))
 		{
-			Debug("-Send bitrate current=%d avg=%llf rate=[%llf,%llf] fps=[%llf,%llf] limit=%d\n",current,bitrateAcu.GetInstantAvg()/1000,bitrateAcu.GetMinAvg()/1000,bitrateAcu.GetMaxAvg()/1000,fpsAcu.GetMinAvg(),fpsAcu.GetMaxAvg(),videoBitrateLimit);
+			//Debug("-Send bitrate current=%d avg=%llf rate=[%llf,%llf] fps=[%llf,%llf] limit=%d\n",current,bitrateAcu.GetInstantAvg()/1000,bitrateAcu.GetMinAvg()/1000,bitrateAcu.GetMaxAvg()/1000,fpsAcu.GetMinAvg(),fpsAcu.GetMaxAvg(),videoBitrateLimit);
 			bitrateAcu.ResetMinMax();
 			fpsAcu.ResetMinMax();
 		}
@@ -646,8 +646,8 @@ int VideoStream::RecVideo()
 		//Si hemos perdido un paquete or still have not got an iframe
 		if(lostCount>1 || waitIntra)
 		{
-			//Check if we got listener and more than two seconds have elapsed from last request
-			if (listener && getDifTime(&lastFPURequest)>1000000)
+			//Check if we got listener and more than 1/2 second have elapsed from last request
+			if (listener && getDifTime(&lastFPURequest)>500000)
 			{
 				//Debug
 				Debug("-Requesting FPU lost %d\n",lostCount);
@@ -731,8 +731,8 @@ int VideoStream::RecVideo()
 		//Lo decodificamos
 		if(!videoDecoder->DecodePacket(buffer,size,lost,packet->GetMark()))
 		{
-			//Check if we got listener and more than two seconds have elapsed from last request
-			if (listener && getDifTime(&lastFPURequest)>1000000)
+			//Check if we got listener and more than 1/2 seconds have elapsed from last request
+			if (listener && getDifTime(&lastFPURequest)>500000)
 			{
 				//Debug
 				Log("-Requesting FPU decoder error\n");

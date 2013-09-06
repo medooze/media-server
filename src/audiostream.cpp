@@ -49,11 +49,6 @@ int AudioStream::SetAudioCodec(AudioCodec::Type codec,const Properties& properti
 	return 1;	
 }
 
-void AudioStream::SetRemoteRateEstimator(RemoteRateEstimator* estimator)
-{
-	//Set it in the rtp session
-	rtp.SetRemoteRateEstimator(estimator);
-}
 
 /***************************************
 * Init

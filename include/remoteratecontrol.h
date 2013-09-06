@@ -60,8 +60,8 @@ public:
 public:
 	RemoteRateControl();
 	void Update(RTPTimedPacket* packet);
-	void UpdateRTT(DWORD rtt);
-	void UpdateLost(DWORD num);
+	bool UpdateRTT(DWORD rtt);
+	bool UpdateLost(DWORD num);
 	void SetRateControlRegion(Region region);
 	BandwidthUsage GetUsage()	{ return hypothesis; }
 	double GetNoise()		{ return varNoise;   }
