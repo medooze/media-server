@@ -14,7 +14,6 @@ public:
 	~AudioStream();
 
 	int Init(AudioInput *input,AudioOutput *output);
-	void SetRemoteRateEstimator(RemoteRateEstimator* estimator);
 	int SetAudioCodec(AudioCodec::Type codec,const Properties& properties);
 	int StartSending(char* sendAudioIp,int sendAudioPort,RTPMap& rtpMap);
 	int StopSending();

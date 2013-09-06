@@ -53,7 +53,8 @@ public:
 	void SetTemporalMaxLimit(DWORD limit);
 	void SetTemporalMinLimit(DWORD limit);
 private:
-	double RateIncreaseFactor(QWORD nowMs, QWORD lastMs, DWORD reactionTimeMs, double noiseVar) const;
+	double RateIncreaseFactor(QWORD nowMs, QWORD lastMs, DWORD reactionTimeMs) const;
+	void Update(RemoteRateControl::BandwidthUsage usage,bool reactNow);
 	void UpdateChangePeriod(QWORD nowMs);
 	void UpdateMaxBitRateEstimate(float incomingBitRateKbps);
 	void ChangeState(State newState);
@@ -76,6 +77,7 @@ private:
 	State cameFromState;
 	RemoteRateControl::Region region;
 	QWORD lastBitRateChange;
+	DWORD noiseVar;
 
 	float avgChangePeriod;
 	QWORD lastChangeMs;
