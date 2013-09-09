@@ -172,6 +172,8 @@ public:
 	{
 		//Set flag
 		hurryUp = true;
+		//Signal condition and proccess rtp now
+		pthread_cond_signal(&cond);
 	}
 
 	void Reset()

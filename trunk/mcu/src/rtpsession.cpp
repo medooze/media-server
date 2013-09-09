@@ -1647,6 +1647,7 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 				{
 					case RTCPPayloadFeedback::PictureLossIndication:
 					case RTCPPayloadFeedback::FullIntraRequest:
+						Debug("-FPU requested\n");
 						//Chec listener
 						if (listener)
 							//Send intra refresh
@@ -1853,8 +1854,6 @@ int RTPSession::SendFIR()
 {
 	Debug("-SendFIR\n");
 
-	//Send all the packets inmediatelly to the decoderso I frame can be handled as soon as possoble
-	packets.HurryUp();
 
 	//Create rtcp sender retpor
 	RTCPCompoundPacket* rtcp = CreateSenderReport();
@@ -1883,7 +1882,11 @@ int RTPSession::SendFIR()
 
 int RTPSession::RequestFPU()
 {
-		SendFIR();
+	//Send all the packets inmediatelly to the decoderso I frame can be handled as soon as possoble
+	packets.HurryUp();
+	//request FIR
+	SendFIR();
+
 	//packets.Reset();
 	/*if (!pendingTMBR)
 	{
@@ -1897,6 +1900,8 @@ int RTPSession::RequestFPU()
 
 void RTPSession::SetRTT(DWORD rtt)
 {
+	//Debug
+	Debug("-Set RTT [%dms]\n",rtt);
 	//Set it
 	this->rtt = rtt;
 	//if got estimator
@@ -1906,11 +1911,11 @@ void RTPSession::SetRTT(DWORD rtt)
 	//If it is video
 	if (media==MediaFrame::Video)
 		//Update
-		packets.SetMaxWaitTime(fmin(fmax(rtt,120)*2,500));
+		packets.SetMaxWaitTime(fmin(fmax(rtt,120)*2,400));
 	//Check RTT to enable NACK
 	if (useNACK)
 		//Enable NACK only if RTT is small
-		isNACKEnabled = (rtt < 240);
+		isNACKEnabled = (rtt < 300);
 }
 
 void RTPSession::onTargetBitrateRequested(DWORD bitrate)
