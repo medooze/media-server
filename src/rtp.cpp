@@ -755,7 +755,7 @@ DWORD RTCPRTPFeedback::Serialize(BYTE* data,DWORD size)
 	//Check size
 	if (size<packetSize)
 		//error
-		return Error("Serialize RTCPRTPFeedback invalid size\n");
+		return Error("Serialize RTCPRTPFeedback invalid size [size:%d,packetSize:%d]\n",size,packetSize);
 	//Set header
 	rtcp_common_t * header = (rtcp_common_t *)data;
 	//Set values
