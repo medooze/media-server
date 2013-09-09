@@ -1257,7 +1257,7 @@ int RTPSession::ReadRTP()
 	WORD seq = packet->GetSeqNum();
 	
 	//Check if we have a sequence wrap
-	if (seq<0x00FF && (recExtSeq & 0xFFFF)>0xFF00)
+	if (seq<0x0FFF && (recExtSeq & 0xFFFF)>0xF000)
 		//Increase cycles
 		recCycles++;
 
@@ -1302,41 +1302,46 @@ int RTPSession::ReadRTP()
 			//If nack is enable t waiting for a PLI/FIR response (to not oeverflow)
 			if (isNACKEnabled && !requestFPU)
 			{
-				Debug("-Nacking %d lost %d\n",base,lost);
-
-				//Generate new RTCP NACK report
-				RTCPCompoundPacket* rtcp = new RTCPCompoundPacket();
-
-				//Send them
-				while (lost>0)
+				//Double check
+				if (lost<0x0FFF)
 				{
-					//Skip base
-					lost--;
-					//Get number of lost in the 16 mask
-					WORD n = lost;
-					//Check nex 16 packets
-					if (n>16)
-						//Clip
-						n = 16;
-					//Create mask
-					WORD mask = 0xFFFF << (16-n);
-					//Create NACK
-					RTCPRTPFeedback *nack = RTCPRTPFeedback::Create(RTCPRTPFeedback::NACK,sendSSRC,recSSRC);
-					//Limit incoming bitrate
-					nack->AddField( new RTCPRTPFeedback::NACKField(base,mask));
-					//Add to packet
-					rtcp->AddRTCPacket(nack);
-					//Reduce lost
-					lost -= n;
-					//Increase base
-					base += 16;
+					Debug("-Nacking %d lost %d\n",base,lost);
+
+					//Generate new RTCP NACK report
+					RTCPCompoundPacket* rtcp = new RTCPCompoundPacket();
+
+					//Send them
+					while (lost>0)
+					{
+						//Skip base
+						lost--;
+						//Get number of lost in the 16 mask
+						WORD n = lost;
+						//Check nex 16 packets
+						if (n>16)
+							//Clip
+							n = 16;
+						//Create mask
+						WORD mask = 0xFFFF << (16-n);
+						//Create NACK
+						RTCPRTPFeedback *nack = RTCPRTPFeedback::Create(RTCPRTPFeedback::NACK,sendSSRC,recSSRC);
+						//Limit incoming bitrate
+						nack->AddField( new RTCPRTPFeedback::NACKField(base,mask));
+						//Add to packet
+						rtcp->AddRTCPacket(nack);
+						//Reduce lost
+						lost -= n;
+						//Increase base
+						base += 16;
+					}
+					//Send packet
+					SendPacket(*rtcp);
+
+					//Delete it
+					delete(rtcp);
+				} else {
+					Error("-Weird lost count [lost:%d,base:%d,recExtSeq:%d,recCycles:%d,extSeq:%d,seq:%d]\n",lost,base,recExtSeq,recCycles,extSeq,packet->GetSeqNum());
 				}
-
-				//Send packet
-				SendPacket(*rtcp);
-
-				//Delete it
-				delete(rtcp);
 			}
 		}
 		
