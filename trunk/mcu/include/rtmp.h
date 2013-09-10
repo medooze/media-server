@@ -240,7 +240,7 @@ public:
 		if (len==0)
 		{
 			//Get header length
-			switch(buffer[0] & 0x1F)
+			switch(buffer[0] & 0x3F)
 			{
 				case 0:
 					//2 byte header
