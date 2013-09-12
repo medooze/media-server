@@ -312,6 +312,14 @@ int Mosaic::RemoveParticipant(int id)
 	//Delete it
 	delete(info);
 
+	//If it was the vad
+	if (id==vadParticipant)
+	{
+		//Reset vad
+		vadParticipant = 0;
+		vadBlockingTime = 0;
+	}
+
 	//Return position
 	return 1;
 }

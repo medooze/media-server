@@ -30,7 +30,7 @@ public:
 	bool SetMode(Mode mode);
 	int CalcVad(SWORD* frame,DWORD size, DWORD rate);
 	int GetVAD();
-	bool IsRateSupported(DWORD rate ) { return ( rate == 8000 || rate == 160000 || rate == 32000 ); }
+	bool IsRateSupported(DWORD rate ) { return ( rate == 8000 || rate == 16000 || rate == 32000  || rate == 48000); }
 private:
 	VadInstT inst;
 	fifo<SWORD,1204> samples;
