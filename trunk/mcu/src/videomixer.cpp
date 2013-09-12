@@ -164,7 +164,7 @@ int VideoMixer::MixVideo()
 			int vadId = oldVad;
 
 			//If VAD is set and we have the VAD proxy enabled do the "VAD thing"!
-			//If there was no previous speaker or the  slot is not blocked
+			//If there was no previous speaker or the vad slot is not blocked
 			if (vadMode!=NoVAD && proxy && (oldVad==0 || mosaic->GetVADBlockingTime()<=getTime()))
 			{
 				//Update VAD info for each participant
@@ -194,8 +194,12 @@ int VideoMixer::MixVideo()
 					bool hide = (vadMode==FullVAD);
 					// set the VAD participant
 					mosaic->SetVADParticipant(vadId,hide,getTime() + vadDefaultChangePeriod*1000);
-					//Set score of old particippant to last time on VAD slot
-					mosaic->SetScore(oldVad,getTime());
+					//If there was a previous active spearkc and wein FULL vad
+					if (oldVad && hide)
+						//Set score of old particippant to last time on VAD slot
+						mosaic->SetScore(oldVad,getTime());
+					//Calculate participants again
+					mosaic->CalculatePositions();
 				}
 			}
 
