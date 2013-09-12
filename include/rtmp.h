@@ -210,7 +210,7 @@ public:
 			case 2:
 				return data[1] + 64;
 			case 3:
-				return data[1] + ((DWORD)(data[2]))*256;
+				return ((DWORD)data[1])<<8 + data[2] + 64;
 		}
 	}
 	void	SetStreamId(DWORD csid)
@@ -226,11 +226,11 @@ public:
 			data[0] &= 0xC0;
 			data[1] = (csid-64);
 		} else {
-			//1 byte header
-			size = 2;
-			data[0] &= 0xC0;
-			data[1] = csid & 0xFF;
-			data[2] = csid >> 8;
+			//3 byte header
+			size = 3;
+			data[0] = (data[0]&0xC0) | 1;
+			data[1] = (csid-64) & 0xFF;
+			data[2] = (csid-64) >> 8;
 		}
 	}
 

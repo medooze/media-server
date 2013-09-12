@@ -15,8 +15,9 @@ MultiConf::MultiConf(const std::wstring &tag) : broadcast(tag),videoMixer(tag)
 	//Guardamos el nombre
 	this->tag = tag;
 
-	//No watcher
+	//No watcher or broadcaster
 	watcherId = 0;
+	broadcastId = 0;
 
 	//Init counter
 	maxPublisherId = 1;

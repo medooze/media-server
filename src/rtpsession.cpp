@@ -770,9 +770,12 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 				//Clean response
 				delete(request);
 			}
-		} else
+		} else {
 			//Exit
-			return Error("-No remote address\n");
+			Debug("-No remote address for [%s]\n",MediaFrame::TypeToString(media));
+			//Exit
+			return 0;
+		}
 	}
 
 	//Check if we need to send SR

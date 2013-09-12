@@ -15,6 +15,7 @@ extern "C" {
 #include <libavformat/avformat.h>
 #include <libavutil/opt.h>
 #include <libavutil/common.h>
+#include <set>
 }
 
 int Mosaic::GetNumSlotsForType(Mosaic::Type type)
@@ -64,8 +65,17 @@ Mosaic::Mosaic(Type type,DWORD size)
 	mosaicBuffer = (BYTE *) malloc(mosaicSize);
 	//Get aligned
 	mosaic = ALIGNTO32(mosaicBuffer);
-	//Reset mosaic
-	memset(mosaicBuffer ,(BYTE)-128,mosaicSize);
+
+	//Clean mosaic
+	DWORD mosaicNumPixels = mosaicTotalWidth*mosaicTotalHeight;
+	BYTE *lineaY = mosaic;
+	BYTE *lineaU = mosaic + mosaicNumPixels;
+	BYTE *lineaV = lineaU + mosaicNumPixels/4;
+
+	// paint the background in black
+	memset(lineaY, 0, mosaicNumPixels);
+	memset(lineaU, (BYTE) -128, mosaicNumPixels/4);
+	memset(lineaV, (BYTE) -128, mosaicNumPixels/4);
 
 	//Store number of slots
 	numSlots = GetNumSlotsForType(type);
@@ -73,12 +83,13 @@ Mosaic::Mosaic(Type type,DWORD size)
 	//Allocate sizes
 	mosaicSlots = (int*)malloc(numSlots*sizeof(int));
 	mosaicPos   = (int*)malloc(numSlots*sizeof(int));
-	mosaicSlotsBlockingTime = (QWORD*)malloc(numSlots*sizeof(QWORD));
+	oldPos	    = (int*)malloc(numSlots*sizeof(int));
 
 	//Empty them
 	memset(mosaicSlots,0,numSlots*sizeof(int));
 	memset(mosaicPos,0,numSlots*sizeof(int));
-	memset(mosaicSlotsBlockingTime,0,numSlots*sizeof(QWORD));
+	//Old pos are different so they are filled with logo on first pass
+	memset(oldPos,-1,numSlots*sizeof(int));
 
 	//Alloc resizers
 	resizer = (FrameScaler**)malloc(numSlots*sizeof(FrameScaler*));
@@ -99,6 +110,10 @@ Mosaic::Mosaic(Type type,DWORD size)
 
 	//No vad particpant
 	vadParticipant = 0;
+	//Not blocked
+	vadBlockingTime = 0;
+	//Don't' hide
+	hideVadParticipant = false;
 }
 
 Mosaic::~Mosaic()
@@ -123,10 +138,10 @@ Mosaic::~Mosaic()
 	if (mosaicPos)
 		//Delete it
 		free(mosaicPos);
-	//Check blocking time
-	if (mosaicSlotsBlockingTime)
+	//Check old positions
+	if (oldPos)
 		//Free it
-		free(mosaicSlotsBlockingTime);
+		free(oldPos);
 }
 
 /************************
@@ -134,16 +149,6 @@ Mosaic::~Mosaic()
 *	Set slot participant
 *************************/
 int Mosaic::SetSlot(int num,int id)
-{
-	//Set wihtout blocking
-	return SetSlot(num,id,0);
-}
-
-/************************
-* SetSlot
-*	Set slot participant
-*************************/
-int Mosaic::SetSlot(int num,int id,QWORD blockedUntil)
 {
 	//Check num
 	if (num>numSlots-1 || num<0)
@@ -153,95 +158,54 @@ int Mosaic::SetSlot(int num,int id,QWORD blockedUntil)
 	//Log
 	Log("-SetSlot [slot=%d,id=%d]\n",num,id);
 
-	//Get the id of the ol participant in that slot
-	int oldId = mosaicPos[num];
+	//Get old participant
+	int oldId = mosaicSlots[num];
 
 	//Set slot to participant id
 	mosaicSlots[num] = id;
 
-	//If we fix a participant
-	if (id>0)
+	//If we fix a differrent participant
+	if (id>0 && oldId!=id)
 	{
 		//Find participant
 		Participants::iterator it = participants.find(id);
 		//If it is found
 		if (it!=participants.end())
-		{
-			//Get position
-			int pos = it->second;
-			//Ensure it is inside bounds and was shown
-			if (pos>=0 && pos<numSlots)
-			{
-				//Set the old position free
-				mosaicSlots[pos] = SlotFree;
-				//Clean slot position
-				mosaicPos[pos] = 0;
-			}
-			// change the output position
-			it->second = num;
-			//Set slot position
-			mosaicPos[num] = id;
-		}
-	} else {
-		//Clean slot position
-		mosaicPos[num] = 0;
-	}
+			//It is fixed
+			it->second->isFixed++;
+	} 
 
 	//If it is not same participant
-	if (oldId!=id)
+	if (oldId>0 && oldId!=id)
 	{
-		//Try to recolocate old participant
-		Participants::iterator it  = participants.find(oldId);
-		//If it was a proper participantt and still not shown
+		//Find participant
+		Participants::iterator it = participants.find(oldId);
+		//If it is found
 		if (it!=participants.end())
-		{
-			//Get next free slot for it if possible
-			it->second = GetNextFreeSlot(oldId);
-		}
+			//It is fixed
+			it->second->isFixed--;
 	}
-	
-	//Recalculate positions
-	CalculatePositions();
-
-	//Set blocking time
-	mosaicSlotsBlockingTime[num] = blockedUntil;
 
 	//Evirything ok
 	return 1;
 }
 
-/************************
-* GetPositions
-*	Get position for participant
-*************************/
 int* Mosaic::GetPositions()
 {
 	//Return them
 	return mosaicPos;
 }
 
-QWORD Mosaic::GetBlockingTime(int pos)
+int* Mosaic::GetOldPositions()
 {
-	//Check if the position is fixed
-	return pos>=0 && pos<numSlots ? mosaicSlotsBlockingTime[pos] : 0;
+	//Return them
+	return oldPos;
 }
 
-/************************
-* GetPosition
-*	Get position for participant
-*************************/
-int Mosaic::GetPosition(int id)
+QWORD Mosaic::GetVADBlockingTime()
 {
-	//Find it
-	Participants::iterator it = participants.find(id);
-
-	//If not found
-	if (it==participants.end())
-		//Exit
-		return NotFound;
-
-	//Get position
-	return it->second;
+	//Check if the position is fixed
+	return vadBlockingTime;
 }
 
 int Mosaic::HasParticipant(int id)
@@ -258,57 +222,7 @@ int Mosaic::HasParticipant(int id)
 	return 1;
 }
 
-int Mosaic::GetNextFreeSlot(int id)
-{
-	//Look in the slots
-	for (int i=0;i<numSlots;i++)
-	{
-		//It's lock for me or it is free
-		if ((id > 0 && mosaicSlots[i]==id) || (mosaicSlots[i]==0 && mosaicPos[i]==0))
-		{
-			//Set our position if we are a real participant
-			if (id > 0) mosaicPos[i]=id;
-			//Return slot
-			return i;
-		}
-	}
-
-	//Not slot found
-	return NotShown;
-}
-
-int Mosaic::AddParticipant(int id)
-{
-	PartInfo info;
-	//Chck if allready added
-	Participants::iterator it = participants.find(id);
-
-	//If it was
-	if (it!=participants.end())
-		//Return it
-		return it->second;
-
-	//Not shown by default
-	int pos = GetNextFreeSlot(id);
-
-	//Set position and VAD level to 0
-	participants[id] = pos;
-
-	//Add vad info for the participant
-	info.vadLevel = 0;
-	info.kickable = false;
-	info.eligible = false;
-	
-	//Set it
-	partVad[id] = info;
-	
-	Log("-AddParticipant [id:%d,pos:%d]\n",id,pos);
-
-	//Return it
-	return pos;
-}
-
-int Mosaic::RemoveParticipant(int id)
+QWORD  Mosaic::GetScore(int id)
 {
 	//Find it
 	Participants::iterator it = participants.find(id);
@@ -316,201 +230,153 @@ int Mosaic::RemoveParticipant(int id)
 	//If not found
 	if (it==participants.end())
 		//Exit
-		return NotFound;
+		return 0;
 
-	//Get position
-	int pos = it->second;
+	//We have it
+	return it->second->score;
+}
+
+int  Mosaic::SetScore(int id, QWORD score)
+{
+	//Find it
+	Participants::iterator it = participants.find(id);
+
+	//If not found
+	if (it==participants.end())
+		//Exit
+		return 0;
+	
+	//Get info
+	PartInfo *info = it->second;
+
+	//Remove from order
+	order.erase(info);
+
+	//Set new score
+	info->score = score;
+
+	//Add it again so it is ordered
+	order.insert(info);
+
+	//We have it
+	return 1;
+}
+
+int Mosaic::AddParticipant(int id,QWORD score)
+{
+	//Log
+	Log("-AddParticipant [id:%d,score:%lld]\n",id,score);
+
+	//Chck if allready added
+	Participants::iterator it = participants.find(id);
+
+	//If it wasa already presetn
+	if (it!=participants.end())
+		//Error
+		return Error("Participant already in Mosaic\n");
+
+	//Create new participant info
+	PartInfo *info = new PartInfo(id,score,0);
+		
+	//Set it
+	participants[id] = info;
+
+	//Add to order set
+	order.insert(info);
+	
+	//Return 
+	return 1;
+}
+
+int Mosaic::RemoveParticipant(int id)
+{
+	Log("-RemoveParticipant [id:%d]\n",id);
+
+	//Find it
+	Participants::iterator it = participants.find(id);
+
+	//If not found
+	if (it==participants.end())
+		//Exit
+		return Error("-Participant not found\n");
+
+	//Get info
+	PartInfo *info = it->second;
 
 	//Remove it for the list
 	participants.erase(it);
 
-	//Log
-	Log("-RemoveParticipant [%d,%d]\n",id,pos);
+	//Remove from order set
+	order.erase(info);
 
-	//If  was shown
-	if (pos>=0 && pos<numSlots)
-	{
-		//Check if it was locked
-		if (mosaicSlots[pos]==id)
-			//lock it
-			mosaicSlots[pos] = SlotLocked;
-		else
-			//Unlock it
-			mosaicSlots[pos] = SlotFree;
-		//Clean slot position
-		mosaicPos[pos] = 0;
-		//Unblock
-		mosaicSlotsBlockingTime[pos] = 0;
-	}
-
-	//Get part info
-	ParticipantInfos::iterator itVad = partVad.find(id);
-	//If found
-	if (itVad!=partVad.end())
-		//Delete it
-		partVad.erase(itVad);
-
-	//Recalculate positions
-	CalculatePositions();
+	//Delete it
+	delete(info);
 
 	//Return position
-	return pos;
+	return 1;
 }
 
-int Mosaic::UpdateParticipantInfo(int id, int vadLevel)
+int Mosaic::GetVADParticipant()
 {
-	//Get participant position
-	int pos = GetPosition(id);
+	return vadParticipant;
+}
 
-	//Check it is in the mosaic
-	if (pos==NotFound)
-		//Exit
-		return NotFound;
 
-	//Get info
-	ParticipantInfos::iterator it = partVad.find(id);
-
-	//Check if present
-	if (it==partVad.end())
-		//Exit
-		return NotFound;
-
-	//Get info
-	PartInfo &info = it->second;
-	
-	//Set vad level
-	info.vadLevel = vadLevel;
-
-	//IF the participant is not speaking and it is not fixed
-	if (vadLevel == 0 && pos > 0 && mosaicSlots[pos] == SlotFree && id != vadParticipant)
-		//Kicable
-		info.kickable = true;
-	else
-		//Not kickable
-		info.kickable = false;
-
-	//If it is speaking and not shown
-	if (vadLevel > 0 && pos == NotShown && id != vadParticipant)
-		//Try to add it to the mosaic
-		info.eligible = true;
-	else
-		//Do nothing
-		info.eligible = false;
-
-	//Check if it is movable
-	if ( info.eligible || info.kickable )
-		//It needs re-calculation
-		return 1;
-	
-	//It does not need it
-	return 0;
+void Mosaic::SetVADParticipant(int id,bool hide,QWORD blockedUntil)
+{
+	//Set it
+	vadParticipant = id;
+	//Set block time
+	vadBlockingTime = blockedUntil;
+	//Store if it is hidden
+	hideVadParticipant = hide;
 }
 
 int Mosaic::CalculatePositions()
 {
-	Participants kickables;
-	int vadPos = -1;
-	
-	//Get number of available slots
-	int numSlots = GetNumSlots();
- 
-	// Pass 1 - Build kickable slot list
-	for (ParticipantInfos::iterator it2 = partVad.begin(); it2 != partVad.end(); ++it2)
+	//Clean all positions
+	memset(mosaicPos,0,numSlots*sizeof(int));
+
+	//Get ordererd participants
+	ParticipantsOrder::iterator it = order.begin();
+
+	//For each slot
+	for (int i=0; i<numSlots; ++i)
 	{
-		//Get participant info
-		int id = it2->first;
-		PartInfo info = it2->second;
-		
-		//Find participant
-		Participants::iterator it = participants.find(id);
-
-		//If found
-		if (it!=participants.end())
+		//Depending the slot availability
+		switch (mosaicSlots[i])
 		{
-			//Get pos
-			int pos = it->second;
-			//Check if it is kickable and shown
-			if ( info.kickable &&  pos>=0 && pos<numSlots)
-				//Add to kickable list
-				kickables[id] = it->second;
-		}
-	}
-
-	//Pass 2 - reshuffle
-	Participants::iterator itk = kickables.begin();
-	
-	//Get VAD position
-	vadPos = GetVADPosition();
-
-	for (Participants::iterator it = participants.begin(); it != participants.end(); ++it)
-	{
-		bool eligible = false;
-		//Get participant id
-		int id = it->first;
-		//Get info
-		ParticipantInfos::iterator it2 = partVad.find(id);
-		//Double check
-		if (it2 != partVad.end() )
-			//Get elegible info
-			eligible = it2->second.eligible;
-
-		//Check if the participant is speaking and not shown
-		if (eligible)
-		{
-			// This participant is eligible for entering the mosaic, try to get a free slot first
-			int newslot = GetNextFreeSlot(id);
-			//Check if we have a free slot
-			if (newslot == NotShown)
-			{
-				// If We cannot kick any more of the mosaic
-				if ( itk == kickables.end() )
-					// we cannot elect this participant. Process the next one
-					continue;
-				//Get the slot of the kickable
-			        newslot = itk->second;
-				//Set slot to participant
-				mosaicPos[newslot] = id;
-				//Kickable partiicpant is not shown anymore.
-				participants[itk->first] = NotShown;
-				//Get next kickable
-				itk++;
-			}
-
-			//Update its position
-			participants[id] = newslot;
-			
-		} else {
-			//Get participant position
-			int pos = it->second;
-
-			// if participant is not to be elected then ... do nothing. It has either been
-			// kicked or remain in place (and in peace)
-
-			//IF not shown
-			if ( pos == NotShown )
-			{
-				//Try to get next free slot for it
-				int newslot = GetNextFreeSlot(id);
-				//Check if we have a free slot
-				if (newslot != NotShown)
-					//Set slot to participant
-					mosaicPos[newslot] = id;
-				//Update its position
-				participants[id] = newslot;
-			} else if ( pos == vadPos && id!=vadParticipant) {
-				// Special case
-				// This participant was the former VAD participant and its output is set to vad slot
-				// move it somewhere else
-
-				//Try to get next free slot for it
-				int newslot = GetNextFreeSlot(id);
-				//Check if we have a free slot
-				if (newslot != NotShown)
-					//Set slot to participant
-					mosaicPos[newslot] = id;
-				//Update its position
-				participants[id] = newslot;
-			}
+			case SlotFree:
+				//Check if we have more participants to draw
+				while (it!=order.end())
+				{
+					//Get info
+					PartInfo* info = *it;
+					//Move to next participant
+					++it;
+					//Check if it is the VAD participnat and we have to hide it or if it is fixed
+					if ((info->id==vadParticipant && hideVadParticipant) || info->isFixed>0)
+						//Next one
+						continue;
+					//Put it in the position
+					mosaicPos[i] = info->id;
+					//found
+					break;
+				}
+				break;
+			case SlotLocked:
+				//Nothing to do
+				break;
+			case SlotVAD:
+				//Check if we have VAD participant
+				if (vadParticipant)
+					//Put it in the position
+					mosaicPos[i] = vadParticipant;
+				break;
+			default:
+				//Fix the participant
+				mosaicPos[i] = mosaicSlots[i];
+				break;
 		}
 	}
 }
@@ -534,13 +400,24 @@ void Mosaic::SetSlots(int *slots,int num)
 	if (!slots)
 		return;
 
-	//Which was bigger?
-	if (num<numSlots)
-		//Copy
-		memcpy(mosaicSlots,slots,num*sizeof(int));
-	else
-		//Copy
-		memcpy(mosaicSlots,slots,numSlots*sizeof(int));
+	//For each slot
+	for (int i=0;i<numSlots && i<num;i++)
+	{
+		//Get id
+		int id = slots[i];
+		//If we fix a participant
+		if (id>0)
+		{
+			//Find participant
+			Participants::iterator it = participants.find(id);
+			//If it is found
+			if (it!=participants.end())
+				//It is fixed
+				it->second->isFixed++;
+		}
+		//Set slot position
+		mosaicSlots[i] = id;
+	}
 }
 
 
@@ -584,6 +461,15 @@ BYTE* Mosaic::GetFrame()
 	return overlay->GetOverlay();
 }
 
+void Mosaic::Reset()
+{
+	//Not changed anymore
+	mosaicChanged = false;
+
+	//Move old position to new one
+	memcpy(oldPos,mosaicPos,numSlots*sizeof(int));
+}
+
 int Mosaic::SetOverlayPNG(const char* filename)
 {
 	//Log
@@ -619,74 +505,6 @@ int Mosaic::ResetOverlay()
 	overlay = false;
 	//OK
 	return 1;
-}
-int Mosaic::GetVADPosition()
-{
-	//for each slot
-	for (int i=0;i<numSlots;i++)
-		//Check slot
-		if (mosaicSlots[i]==SlotVAD)
-			//This is it
-			return i;
-	//Not found
-	return NotFound;
-}
-int Mosaic::GetVADParticipant()
-{
-	return vadParticipant;
-}
-
-int Mosaic::SetVADParticipant(int id,bool hide,QWORD blockedUntil)
-{
-	//Set it
-	vadParticipant = id;
-	//Find vad slot
-	int pos = GetVADPosition();
-	//If found
-	if (pos>=0 && pos<numSlots)
-		//Set block time
-		mosaicSlotsBlockingTime[pos] = blockedUntil;
-
-	//Get vad info
-	ParticipantInfos::iterator it = partVad.find(id);
-
-	//If found
-	if (it!=partVad.end())
-	{
-		//Get info
-		PartInfo &info = it->second;
-		//Participant is not kickable and not elegible
-		info.kickable = false;
-		info.eligible = false;
-	}
-	//Store if it is hidden
-	hideVadParticipant = hide;
-
-	//If is hidden
-	if (hide)
-	{
-		//Get participant
-		Participants::iterator it = participants.find(id);
-		//Double check
-		if (it!=participants.end())
-		{
-			//Get pos
-			int pos = it->second;
-			//Hide it
-			mosaicPos[pos] = 0;
-			//Update position
-			it->second = NotShown;
-		}
-	}
-
-	//Return vad position
-	return pos;
-}
-
-bool Mosaic::IsFixed(DWORD pos)
-{
-	//Check if the position is fixed
-	return pos>=0 && pos<numSlots ? mosaicSlots[pos]>0 : false;
 }
 
 int Mosaic::DrawVUMeter(int pos,DWORD val,DWORD size)
