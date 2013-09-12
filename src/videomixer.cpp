@@ -245,20 +245,15 @@ int VideoMixer::MixVideo()
 					{
 						//Change mosaic
 						mosaic->Update(i,output->GetFrame(),output->GetWidth(),output->GetHeight());
-#ifdef VADWEBRTC
+
 						//Check if debug is enabled
-						if (Logger::IsDebugEnabled())
+						if (vadMode!=NoVAD && proxy && Logger::IsDebugEnabled())
 						{
-							//Check it is on the mosaic and it is vad
-							if (pos>=0 && proxy)
-							{
-								//Get vad
-								DWORD vad = proxy->GetVAD(id);
-								//Set VU meter
-								mosaic->DrawVUMeter(pos,vad,48000);
-							}
+							//Get vad
+							DWORD vad = proxy->GetVAD(partId);
+							//Set VU meter
+							mosaic->DrawVUMeter(i,vad,48000);
 						}
-#endif
 					}
 				} else if (changed) {
 					//Clean position
