@@ -6,12 +6,13 @@
 #include "vad.h"
 #include "logo.h"
 #include <map>
+#include <set>
 
 class Mosaic
 {
 public:
-	static const int NotShown = -1;
-	static const int NotFound = -2;
+	static const int PositionNotShown = -1;
+	static const int PositionNotFound = -2;
 
 	static const int SlotFree     = 0;
 	static const int SlotLocked   = -1;
@@ -31,13 +32,32 @@ public:
 		mosaic1p4	= 10,
 	} Type;
 
-	class PartInfo
+	struct PartInfo
 	{
-	    public:
-		int vadLevel;
-		bool kickable;
-		bool eligible;
+		PartInfo(int id,QWORD score,int isFixed)
+		{
+			this->id	= id;
+			this->score	= score;
+			this->isFixed	= isFixed;
+		}
+		
+		int	id;
+		QWORD	score;		//Score SHALL be unique
+		int	isFixed;
+
+		struct Short
+		{
+			//Bigger score first
+			bool operator()(const PartInfo* a, const PartInfo* b) const
+			{
+				return a->score>b->score;
+			}
+		};
 	};
+
+public:
+	static int GetNumSlotsForType(Type type);
+	static Mosaic* CreateMosaic(Type type,DWORD size);
 
 public:
 	Mosaic(Type type,DWORD size);
@@ -46,7 +66,6 @@ public:
 	int GetWidth()		{ return mosaicTotalWidth;}
 	int GetHeight()		{ return mosaicTotalHeight;}
 	int HasChanged()	{ return mosaicChanged; }
-	void Reset()		{ mosaicChanged = true; }
 
 	BYTE* GetFrame();
 	virtual int Update(int index,BYTE *frame,int width,int heigth) = 0;
@@ -62,34 +81,30 @@ public:
 			return Clean(index);
 	}
 
-	int AddParticipant(int id);
+	int AddParticipant(int id,QWORD score);
 	int HasParticipant(int id);
 	int RemoveParticipant(int id);
 	int SetSlot(int num,int id);
-	int SetSlot(int num,int id,QWORD blockedUntil);
-	QWORD GetBlockingTime(int num);
+	QWORD GetScore(int id);
+	int SetScore(int id, QWORD score);
 
-	int GetPosition(int id);
-	int GetVADPosition();
+	int CalculatePositions();
+	void Reset();
+
 	int* GetPositions();
+	int* GetOldPositions();
 	int* GetSlots();
 	int GetNumSlots();
 	void SetSlots(int *slots,int num);
-	bool IsFixed(DWORD pos);
 
 	int GetVADParticipant();
-	int SetVADParticipant(int id,bool hide,QWORD blockedUntil);
-
-	static int GetNumSlotsForType(Type type);
-	static Mosaic* CreateMosaic(Type type,DWORD size);
+	void SetVADParticipant(int id,bool hide,QWORD blockedUntil);
+	QWORD GetVADBlockingTime();
 
 	int SetOverlayPNG(const char* filename);
 	int SetOverlaySVG(const char* svg);
 	int ResetOverlay();
 	int DrawVUMeter(int pos,DWORD val,DWORD size);
-
-	int UpdateParticipantInfo(int id, int vadLevel);
-	int CalculatePositions();
 protected:
 	virtual int GetWidth(int pos) = 0;
 	virtual int GetHeight(int pos) = 0;
@@ -99,22 +114,23 @@ protected:
 	void SetChanged()	{ mosaicChanged = true; overlayNeedsUpdate = true; }
 
 protected:
-	typedef std::map<int,int> Participants;
-	typedef std::map<int,PartInfo> ParticipantInfos;
+	typedef std::map<int,PartInfo*> Participants;
+	typedef std::set<PartInfo*,PartInfo::Short> ParticipantsOrder;
 
 protected:
-	Participants participants;
-	ParticipantInfos partVad;
+	Participants		participants;
+	ParticipantsOrder	order;
 	int mosaicChanged;
+	int numSlots;
 
 	// information on whether slot is locked, free, fixed (= id of participant), vad
 	int *mosaicSlots;
 
 	// association between position and ids
 	int *mosaicPos;
-	QWORD *mosaicSlotsBlockingTime;
-	QWORD *oldTimes;
-	int numSlots;
+	int *oldPos;
+	QWORD vadBlockingTime;
+	
 	int vadParticipant;
 	bool hideVadParticipant;
 
@@ -128,9 +144,6 @@ protected:
 
 	Overlay* overlay;
 	bool	 overlayNeedsUpdate;
-
-protected:
-	int GetNextFreeSlot(int id);
 };
 
 #endif

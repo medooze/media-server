@@ -1221,6 +1221,9 @@ void RTMPConnection::onMetaData(DWORD streamId,RTMPMetaData *meta)
 
 void RTMPConnection::onStreamReset(DWORD id)
 {
+	//Lock mutex
+	pthread_mutex_lock(&mutex);
+
 	for (RTMPChunkOutputStreams::iterator it=chunkOutputStreams.begin(); it!=chunkOutputStreams.end();++it)
 	{
 		//Get stream
@@ -1233,6 +1236,12 @@ void RTMPConnection::onStreamReset(DWORD id)
 			//Send Abort message
 			SendControlMessage(RTMPMessage::AbortMessage, RTMPAbortMessage::Create(chunkId));
 	}
+	
+	//Lock mutex
+	pthread_mutex_unlock(&mutex);
+	
+	//We need to write
+	SignalWriteNeeded();
 }
 
 void RTMPConnection::onNetStreamDestroyed(DWORD streamId)

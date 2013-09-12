@@ -141,7 +141,7 @@ int AsymmetricMosaic::Clean(int pos)
 	for (int i = 0; i<mosaicHeight; i++)
 	{
 		//Copy Y line
-		memset(lineaY, (BYTE)-128, mosaicWidth);
+		memset(lineaY, 0, mosaicWidth);
 		//Go to next
 		lineaY += mosaicTotalWidth;
 	}

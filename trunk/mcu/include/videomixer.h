@@ -55,7 +55,6 @@ public:
 
 protected:
 	int MixVideo();
-	int UpdateMosaic(Mosaic* mosaic);
 	int DumpMosaic(DWORD id,Mosaic* mosaic);
 	int GetPosition(int mosaicId,int id);
 	
@@ -94,6 +93,7 @@ private:
 	pthread_cond_t  mixVideoCond;
 	pthread_mutex_t mixVideoMutex;
 	int		mixingVideo;
+	QWORD		ini;
 	Use		lstVideosUse;
 	VADProxy*	proxy;
 	VADMode		vadMode;
