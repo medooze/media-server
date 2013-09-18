@@ -30,7 +30,7 @@ int PipeAudioOutput::PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime)
 	//Check if we need to calculate it
 	if (calcVAD && vad.IsRateSupported(playRate))
 		//Calculate vad
-		v = vad.CalcVad(buffer,size,playRate)*size;
+		v = vad.CalcVad(buffer,size,playRate)*size*nativeRate/playRate;
 
 	//Check if we are transtrating
 	if (transrater.IsOpen())
@@ -64,14 +64,14 @@ int PipeAudioOutput::PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime)
 	//Get initial bump
 	if (!acu && v)
 		//Two seconds minimum
-		acu+=16000;
+		acu+=nativeRate*2;
 	//Acumule VAD
 	acu += v;
 
 	//Check max
-	if (acu>48000)
+	if (acu>nativeRate*6)
 		//Limit so it can timeout faster
-		acu = 48000;
+		acu = nativeRate*6;
 
 	//Metemos en la fifo
 	fifoBuffer.push(buffer,size);
