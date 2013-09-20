@@ -26,7 +26,7 @@ public:
 
 	SWORD* GetBuffer()	{ return mixer_buffer; }
 public:
-	static const DWORD MIXER_BUFFER_SIZE = 2048;
+	static const DWORD MIXER_BUFFER_SIZE = 4096;
 private:
 	typedef std::set<int> Participants;
 private:

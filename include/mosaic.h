@@ -83,6 +83,7 @@ public:
 
 	int AddParticipant(int id,QWORD score);
 	int HasParticipant(int id);
+	int GetParticipantSlot(int id);
 	int RemoveParticipant(int id);
 	int SetSlot(int num,int id);
 	QWORD GetScore(int id);
