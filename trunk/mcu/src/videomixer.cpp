@@ -963,6 +963,17 @@ int VideoMixer::SetSlot(int mosaicId,int num,int id)
 	//Get the  mosaic
 	Mosaic *mosaic = it->second;
 
+	//If it is a participant
+	if (id>0)
+	{
+		//Get old position
+		int old = mosaic->GetParticipantSlot(id);
+		//If was fixed
+		if (old!=Mosaic::PositionNotFound)
+			//Free it
+			mosaic->SetSlot(old,Mosaic::SlotFree);
+	}
+
 	//Set it in the mosaic
 	mosaic->SetSlot(num,id);
 

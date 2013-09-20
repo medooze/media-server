@@ -190,6 +190,14 @@ int Mosaic::SetSlot(int num,int id)
 	return 1;
 }
 
+int Mosaic::GetParticipantSlot(int id)
+{
+	for (int i=0; i<numSlots; ++i)
+		if (mosaicSlots[i]==id)
+			return i;
+	return PositionNotShown;
+}
+
 int* Mosaic::GetPositions()
 {
 	//Return them
