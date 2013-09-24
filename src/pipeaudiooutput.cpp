@@ -30,7 +30,7 @@ int PipeAudioOutput::PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime)
 	//Check if we need to calculate it
 	if (calcVAD && vad.IsRateSupported(playRate))
 		//Calculate vad
-		v = vad.CalcVad(buffer,size,playRate)*size*nativeRate/playRate;
+		v = vad.CalcVad(buffer,size,playRate);
 
 	//Check if we are transtrating
 	if (transrater.IsOpen())
@@ -43,7 +43,7 @@ int PipeAudioOutput::PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime)
 		//Check if we need to calculate it
 		if (calcVAD && v<0 && vad.IsRateSupported(nativeRate))
 			//Calculate vad
-			v = vad.CalcVad(buffer,size,nativeRate)*resampledSize;
+			v = vad.CalcVad(buffer,size,nativeRate);
 
 		//Update parameters
 		buffer = resampled;
@@ -63,15 +63,16 @@ int PipeAudioOutput::PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime)
 
 	//Get initial bump
 	if (!acu && v)
-		//Two seconds minimum
-		acu+=nativeRate*2;
-	//Acumule VAD
-	acu += v;
+		//Two seconds minimum at 8khz
+		acu+=8000;
+
+	//Acumule VAD at 8Khz
+	acu += v*size*8000/playRate;
 
 	//Check max
-	if (acu>nativeRate*6)
+	if (acu>48000)
 		//Limit so it can timeout faster
-		acu = nativeRate*6;
+		acu = 48000;
 
 	//Metemos en la fifo
 	fifoBuffer.push(buffer,size);
@@ -84,7 +85,7 @@ int PipeAudioOutput::PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime)
 
 int PipeAudioOutput::StartPlaying(DWORD rate)
 {
-	Log("-PipeAudioOutput start playing [rate:%d]\n",rate);
+	Log("-PipeAudioOutput start playing [rate:%d,vad:%d]\n",rate,calcVAD);
 
 	//Lock
 	pthread_mutex_lock(&mutex);
@@ -187,13 +188,15 @@ DWORD PipeAudioOutput::GetVAD(DWORD numSamples)
 	pthread_mutex_lock(&mutex);
 	//Get vad value
 	DWORD r = acu;
+
 	//Check
-	if (acu<numSamples)
+	if (acu<numSamples || !nativeRate)
 		//No vad
 		acu = 0;
-	else
+	else 
 		//Remove cumulative value
-		acu -= numSamples;
+		acu -= numSamples*8000/nativeRate;
+		
 	//Protegemos
 	pthread_mutex_unlock(&mutex);
 	
