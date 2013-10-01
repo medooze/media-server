@@ -104,7 +104,8 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener)
 	simRtcpPort = 0;
 	sendSeq = 0;
 	sendTime = random();
-	sendLastTime = sendTime;
+	sendLastTime = 0;
+	useAbsTime = false;
 	sendSSRC = random();
 	sendSR = 0;
 	recExtSeq = 0;
@@ -156,6 +157,7 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener)
 	//NO FEC
 	useFEC = false;
 	useNACK = false;
+	useAbsTime = false;
 	isNACKEnabled = false;
 	//Fill with 0
 	memset(sendPacket,0,MTU);
@@ -294,6 +296,9 @@ int RTPSession::SetLocalCryptoSDES(const char* suite, const char* key64)
 }
 int RTPSession::SetProperties(const Properties& properties)
 {
+	//Clean extension map
+	extMap.clear();
+
 	//For each property
 	for (Properties::const_iterator it=properties.begin();it!=properties.end();++it)
 	{
@@ -322,6 +327,17 @@ int RTPSession::SetProperties(const Properties& properties)
 			useNACK = atoi(it->second.c_str());
 			//Enable NACK until first RTT
 			isNACKEnabled = useNACK;
+		} else if (it->first.compare("urn:ietf:params:rtp-hdrext:ssrc-audio-level")==0) {
+			//Set extension
+			extMap[RTPPacket::HeaderExtension::SSRCAudioLevel] =  atoi(it->second.c_str());
+		} else if (it->first.compare("urn:ietf:params:rtp-hdrext:toffset")==0) {
+			//Set extension
+			extMap[RTPPacket::HeaderExtension::TimeOffset] =  atoi(it->second.c_str());
+		} else if (it->first.compare("http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time")==0) {
+			//Set extension
+			extMap[RTPPacket::HeaderExtension::AbsoluteSendTime] =  atoi(it->second.c_str());
+			//Use timestamsp
+			useAbsTime = true;
 		} else {
 			Error("Unknown RTP property [%s]\n",it->first.c_str());
 		}
@@ -777,7 +793,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 			return 0;
 		}
 	}
-
+	
 	//Check if we need to send SR
 	if (isZeroTime(&lastSR) || getDifTime(&lastSR)>1000000)
 		//Send it
@@ -805,13 +821,38 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 	//Calculamos el inicio
 	int ini = sizeof(rtp_hdr_t);
 
+	//If we have are using any sending extensions
+	if (useAbsTime)
+	{
+		//Get header
+		rtp_hdr_ext_t* ext = (rtp_hdr_ext_t*)(sendPacket + ini);
+		//Set extension header
+		headers->x = 1;
+		//Set magic cookie
+		ext->ext_type = htons(0xBEDE);
+		//Set total length in 32bits words
+		ext->len = htons(1);
+		//Increase ini
+		ini += sizeof(rtp_hdr_ext_t);
+
+		//Calculate sending time
+		WORD abs = (getTime() >> 14) & 0x00ffffff;
+		//Set header
+		sendPacket[ini] = extMap.GetCodecForType(RTPPacket::HeaderExtension::AbsoluteSendTime) << 4 | 0x02;
+		//Set data
+		set3(sendPacket,ini+1,abs);
+		//Increase ini
+		ini+=4;
+
+	}
+
 	//Comprobamos que quepan
 	if (ini+packet.GetMediaLength()>MTU)
 		return Error("SendPacket Overflow [size:%d,max:%d]\n",ini+packet.GetMediaLength(),MTU);
 
 	//Copiamos los datos
         memcpy(sendPacket+ini,packet.GetMediaData(),packet.GetMediaLength());
-	
+
 	//Set pateckt length
 	int len = packet.GetMediaLength()+ini;
 
@@ -843,7 +884,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 		//Add it to que
 		rtxs[rtx->GetExtSeqNum()] = rtx;
 		//Get time for packets to discard
-		QWORD until = getTime()/1000 - fmax(rtt*2,100);
+		QWORD until = getTime()/1000 - fmax(rtt*2,400);
 		//Delete old packets 
 		RTPOrderedPackets::iterator it = rtxs.begin();
 		//Until the end
@@ -867,6 +908,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 	//Exit
 	return (ret>0);
 }
+
 int RTPSession::ReadRTCP()
 {
 	BYTE buffer[MTU];
@@ -889,7 +931,7 @@ int RTPSession::ReadRTCP()
 		STUNMessage::Method method = stun->GetMethod();
 		
 		//If it is a request
-		if (type==STUNMessage::Request && method==STUNMessage::Binding && iceLocalPwd)
+		if (type==STUNMessage::Request && method==STUNMessage::Binding)
 		{
 			DWORD len = 0;
 			//Create response
@@ -987,7 +1029,7 @@ int RTPSession::ReadRTP()
 
 	//Check if it is an STUN request
 	STUNMessage *stun = STUNMessage::Parse(buffer,size);
-	
+
 	//If it was
 	if (stun)
 	{
@@ -995,7 +1037,7 @@ int RTPSession::ReadRTP()
 		STUNMessage::Method method = stun->GetMethod();
 		
 		//If it is a request
-		if (type==STUNMessage::Request && method==STUNMessage::Binding && iceLocalPwd)
+		if (type==STUNMessage::Request && method==STUNMessage::Binding)
 		{
 			DWORD len = 0;
 			//Create response
@@ -1039,37 +1081,43 @@ int RTPSession::ReadRTP()
 					//Request a I frame
 					listener->onFPURequested(this);
 				
-				if (iceRemoteUsername && iceRemotePwd)
-				{
-					//Create trans id
-					BYTE transId[12];
-					//Set first to 0
-					set4(transId,0,0);
-					//Set timestamp as trans id
-					set8(transId,4,getTime());
-					//Create binding request to send back
-					STUNMessage *request = new STUNMessage(STUNMessage::Request,STUNMessage::Binding,transId);
+				DWORD len = 0;
+				//Create trans id
+				BYTE transId[12];
+				//Set first to 0
+				set4(transId,0,0);
+				//Set timestamp as trans id
+				set8(transId,4,getTime());
+				//Create binding request to send back
+				STUNMessage *request = new STUNMessage(STUNMessage::Request,STUNMessage::Binding,transId);
+				//Check usernames
+				if (iceLocalUsername &&iceRemoteUsername )
 					//Add username
 					request->AddUsernameAttribute(iceLocalUsername,iceRemoteUsername);
-					//Add other attributes
-					request->AddAttribute(STUNMessage::Attribute::IceControlled,(QWORD)-1);
-					request->AddAttribute(STUNMessage::Attribute::UseCandidate);
-					request->AddAttribute(STUNMessage::Attribute::Priority,(DWORD)33554431);
+				//Add other attributes
+				request->AddAttribute(STUNMessage::Attribute::IceControlled,(QWORD)-1);
+				request->AddAttribute(STUNMessage::Attribute::UseCandidate);
+				request->AddAttribute(STUNMessage::Attribute::Priority,(DWORD)33554431);
 
-					//Create  request
-					DWORD size = request->GetSize();
-					BYTE* aux = (BYTE*)malloc(size);
+				//Create  request
+				DWORD size = request->GetSize();
+				BYTE* aux = (BYTE*)malloc(size);
 
+				//Check remote pwd
+				if (iceRemotePwd)
 					//Serialize and autenticate
-					DWORD len = request->AuthenticatedFingerPrint(aux,size,iceRemotePwd);
-					//Send it
-					sendto(simSocket,aux,len,0,(sockaddr *)&from_addr,sizeof(struct sockaddr_in));
+					request->AuthenticatedFingerPrint(aux,size,iceRemotePwd);
+				else
+					//Do nto authenticate
+					len = resp->NonAuthenticatedFingerPrint(aux,size);
 
-					//Clean memory
-					free(aux);
-					//Clean response
-					delete(request);
-				}
+				//Send it
+				sendto(simSocket,aux,len,0,(sockaddr *)&from_addr,sizeof(struct sockaddr_in));
+
+				//Clean memory
+				free(aux);
+				//Clean response
+				delete(request);
 			}
 		}
 
@@ -1121,7 +1169,10 @@ int RTPSession::ReadRTP()
 
 	//Check minimum size for rtp packet
 	if (size<12)
-		return 0;
+	{
+		Debug("-RTP data not big enought[%d]\n",size);
+		return 1;
+	}
 
 	//This should be improbed
 	if (useNACK && recSSRC && recSSRC!=RTPPacket::GetSSRC(buffer))
@@ -1194,7 +1245,7 @@ int RTPSession::ReadRTP()
 			//Delete red packet
 			delete(red);
 			//Exit
-			return Error("-RTP packet type unknown for primary type of redundant data [%d]\n",t);
+			return Error("-RTP packet type unknown for primary type of redundant data [%d,rd:%d]\n",t,codec);
 		}
 		//Set it
 		red->SetPrimaryCodec(c);
@@ -1211,7 +1262,7 @@ int RTPSession::ReadRTP()
 				//Delete red packet
 				delete(red);
 				//Exit
-				return Error("-RTP packet type unknown for primary type of secundary data [%d,%d]\n",i,t);
+				return Error("-RTP packet type unknown for primary type of secundary data [%d,%d,red:%d]\n",i,t,codec);
 			}
 			//Set it
 			red->SetRedundantCodec(i,c);
@@ -1226,6 +1277,58 @@ int RTPSession::ReadRTP()
 	//Set codec
 	packet->SetCodec(codec);
 
+	//Check extensions
+	if (packet->GetX())
+	{
+		//Get extension data
+		const BYTE* ext = packet->GetExtensionData();
+		//Get extesnion lenght
+		WORD length = packet->GetExtensionLength();
+		//Read all
+		while (length)
+		{
+			//Get header
+			const BYTE header = *(ext++);
+			//Decrease lenght
+			length--;
+			//If it is padding
+			if (!header)
+				//Next
+				continue;
+			//Get extension element id
+			BYTE id = header >> 4;
+			//GEt extenion element length
+			BYTE n = (header & 0x0F) + 1;
+			//Check consistency
+			if (n>length)
+				//Exit
+				break;
+			//Get mapped extension
+			BYTE t = extMap.GetCodecForType(id);
+			//Check type
+			switch (t)
+			{
+				case RTPPacket::HeaderExtension::SSRCAudioLevel:
+					Debug("-SSRCAudioLevel\n");
+					Dump(ext,n);
+					break;
+				case RTPPacket::HeaderExtension::TimeOffset:
+					Debug("-TimeOffset\n");
+					Dump(ext,n);
+					break;
+				case RTPPacket::HeaderExtension::AbsoluteSendTime:
+					Debug("-AbsoluteSendTime\n");
+					Dump(ext,n);
+					break;
+				default:
+					Debug("-Unknown or unmapped extension [%d]\n",id);
+			}
+			//Skip bytes
+			ext+=n;
+			length-=n;
+		}
+	}
+	
 	//Get ssrc
 	DWORD ssrc = packet->GetSSRC();
 
