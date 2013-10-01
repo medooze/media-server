@@ -367,7 +367,10 @@ int TextStream::RecText()
 					//Y lo reproducimos
 					textOutput->SendFrame(frame);
 				}
-
+				// Now process the primary data
+				TextFrame frame(timeStamp,red->GetPrimaryPayloadData(),red->GetPrimaryPayloadSize());
+				//Send it
+				textOutput->SendFrame(frame);
 			} else {
 				//For each lost packet send a mark
 				for (int i=0;i<lost;i++)
