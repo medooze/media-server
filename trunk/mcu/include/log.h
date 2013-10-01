@@ -83,7 +83,7 @@ inline int Debug(const char *msg, ...)
 		struct timeval tv;
 		va_list ap;
 		gettimeofday(&tv,NULL);
-		printf("[0x%lx][%.10ld.%.3ld][LOG]", (long) pthread_self(),(long)tv.tv_sec,(long)tv.tv_usec/1000);
+		printf("[0x%lx][%.10ld.%.3ld][DBG]", (long) pthread_self(),(long)tv.tv_sec,(long)tv.tv_usec/1000);
 		va_start(ap, msg);
 		vprintf(msg, ap);
 		va_end(ap);
@@ -148,7 +148,7 @@ inline void BitDump(QWORD val)
 	BitDump(val,32);
 }
 
-inline void Dump(BYTE *data,DWORD size)
+inline void Dump(const BYTE *data,DWORD size)
 {
 	int i;
 

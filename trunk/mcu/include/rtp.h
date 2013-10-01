@@ -50,17 +50,30 @@ class RTPPacket
 public:
 	const static DWORD MaxExtSeqNum = 0xFFFFFFFF;
 public:
+	class HeaderExtension
+	{
+	public:
+		enum Type {
+			SSRCAudioLevel		= 1,
+			TimeOffset		= 2,
+			AbsoluteSendTime	= 3
+		};
+	private:
+	};
+
+public:
 	RTPPacket(MediaFrame::Type media,DWORD codec)
 	{
 		this->media = media;
-		this->codec = codec;
+		//Set coced
+		SetCodec(codec);
 		//Get header pointer
 		header = (rtp_hdr_t*) buffer;
 		//empty header
 		memset(header,0,sizeof(rtp_hdr_t));
-		//set type
-		header->version = 2;
-		header->pt = codec;
+		//set version and type
+		SetVersion(2);
+		SetType(codec);
 		//NO seq cycles
 		cycles = 0;
 		//Default clock rates
@@ -80,11 +93,12 @@ public:
 	RTPPacket(MediaFrame::Type media,BYTE *data,DWORD size)
 	{
 		this->media = media;
-		this->codec = codec;
 		//Get header pointer
 		header = (rtp_hdr_t*) buffer;
 		//Set Data
 		SetData(data,size);
+		//Set codec as type for now
+		codec = GetType();
 		//NO seq cycles
 		cycles = 0;
 		//Default clock rates
@@ -109,9 +123,9 @@ public:
 		header = (rtp_hdr_t*) buffer;
 		//empty header
 		memset(header,0,sizeof(rtp_hdr_t));
-		//set type
-		header->version = 2;
-		header->pt = type;
+		//set version and type
+		SetVersion(2);
+		SetType(type);
 		//NO seq cycles
 		cycles = 0;
 		//Default clock rates
@@ -148,6 +162,7 @@ public:
 	void SetMediaLength(DWORD len)	{ this->len = len;			}
 	void SetTimestamp(DWORD ts)	{ header->ts = htonl(ts);		}
 	void SetSeqNum(WORD sn)		{ header->seq = htons(sn);		}
+	void SetVersion(BYTE version)	{ header->version = version;		}
 	void SetP(bool p)		{ header->p = p;			}
 	void SetX(bool x)		{ header->x = x;			}
 	void SetCC(BYTE cc)		{ header->cc = cc;			}
@@ -160,10 +175,16 @@ public:
 	void SetClockRate(DWORD rate)	{ this->clockRate = rate;		}
 	
 	//Getters
-	MediaFrame::Type GetMedia()	const { return media;				}
-	rtp_hdr_t* GetRTPHeader()	const { return (rtp_hdr_t*)buffer;		}
-	DWORD GetRTPHeaderLen()		const { return sizeof(rtp_hdr_t)+4*header->cc;	}
+	MediaFrame::Type GetMedia()	const { return media;			}
+	rtp_hdr_t*	GetRTPHeader()		const { return (rtp_hdr_t*)buffer;	}
+	rtp_hdr_ext_t*	GeExtensionHeader()	const { return  GetX() ? (rtp_hdr_ext_t*)(buffer+sizeof(rtp_hdr_t)+4*header->cc) : NULL;	}
+	DWORD GetRTPHeaderLen()		const { return sizeof(rtp_hdr_t)+4*header->cc+GetExtensionSize();	}
+	WORD  GetExtensionType()	const { return GeExtensionHeader()->ext_type;				}
+	WORD  GetExtensionLength()	const { return GetX() ? htons(GeExtensionHeader()->len)*4 : 0;		}
+	const BYTE* GetExtensionData()	const { return GetX() ? buffer+sizeof(rtp_hdr_t)+4*header->cc+sizeof(rtp_hdr_ext_t) : NULL;		}
+	DWORD GetExtensionSize()	const { return GetX() ? GetExtensionLength()+sizeof(rtp_hdr_ext_t) : 0; };
 	DWORD GetCodec()		const { return codec;				}
+	BYTE  GetVersion()		const { return header->version;			}
 	bool  GetX()			const { return header->x;			}
 	bool  GetP()			const { return header->p;			}
 	BYTE  GetCC()			const { return header->cc;			}
@@ -209,6 +230,21 @@ public:
 		SetSize(size);
 		//OK
 		return true;
+	}
+
+	virtual void Dump()
+	{
+		Log("[RTPPacket %s codec=%d size=%d payload=%d]\n",MediaFrame::TypeToString(GetMedia()),GetCodec(),GetSize(),GetMediaLength());
+		Log("\t[Header v=%d p=%d x=%d cc=%d m=%d pt=%d seq=%d ts=%d ssrc=%d len=%d]\n",GetVersion(),GetP(),GetX(),GetCC(),GetMark(),GetType(),GetSeqNum(),GetClockTimestamp(),GetSSRC(),GetRTPHeaderLen());
+		//If  there is an extension
+		if (GetX())
+		{
+			Log("\t\t[Extension type=0x%x len=%d size=%d]\n",GetExtensionType(),GetExtensionLength(),GetExtensionSize());
+			//DUMP
+			::Dump(GetExtensionData(),GetExtensionLength());
+		}
+		::Dump(GetMediaData(),16);
+		Log("[[/RTPPacket]\n");
 	}
 public:
 	static BYTE GetType(const BYTE* data)	{ return ((rtp_hdr_t*)data)->pt;		}

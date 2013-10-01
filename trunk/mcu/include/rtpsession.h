@@ -189,6 +189,8 @@ private:
 	RTPMap* rtpMapIn;
 	RTPMap* rtpMapOut;
 
+	RTPMap	extMap;
+
 	//Statistics
 	DWORD	numRecvPackets;
 	DWORD	numSendPackets;
@@ -213,6 +215,7 @@ private:
 	bool			useFEC;
 	bool			useNACK;
 	bool			isNACKEnabled;
+	bool			useAbsTime;
 
 	RTPOrderedPackets	rtxs;
 	Use			rtxUse;

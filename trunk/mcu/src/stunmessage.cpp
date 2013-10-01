@@ -116,8 +116,8 @@ STUNMessage* STUNMessage::Parse(BYTE* data,DWORD size)
 }
 DWORD STUNMessage::NonAuthenticatedFingerPrint(BYTE* data,DWORD size)
 {
-	//Get size - FINGERPRINT
-	WORD msgSize = GetSize()-8;
+	//Get size - Message attribute - FINGERPRINT
+	WORD msgSize = GetSize()-24-8;
 
 	//Check
 	if (size<msgSize)
