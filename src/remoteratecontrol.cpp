@@ -45,6 +45,11 @@ void RemoteRateControl::Update(RTPTimedPacket* packet)
 	packetCalc.Update(time, 1);
 	//Get rtp timestamp in ms
 	DWORD ts = packet->GetClockTimestamp();
+	Debug("-ts:%d abs:%d\n",ts,packet->GetAbsSendTime());
+	//If packet has abs time extension
+	if (packet->HasAbsSentTime())
+		//Get it
+		ts = packet->GetAbsSendTime();
 	//If it is a our of order packet from previous frame
 	if (ts < prevTS)
 		//Exit

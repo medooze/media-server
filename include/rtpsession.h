@@ -17,26 +17,6 @@
 #include "stunmessage.h"
 #include "remoterateestimator.h"
 
-
-class RTPMap : 
-	public std::map<BYTE,BYTE>
-{
-public:
-	BYTE GetCodecForType(BYTE type)
-	{
-		//Find the type in the map
-		iterator it = find(type);
-		//Check it is in there
-		if (it==end())
-			//Exit
-			return NotFound;
-		//It is our codec
-		return it->second;
-	};
-public:
-	static const BYTE NotFound = -1;
-};
-
 struct MediaStatistics
 {
 	bool		isSending;

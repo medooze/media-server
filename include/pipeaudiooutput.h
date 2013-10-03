@@ -13,7 +13,7 @@ class PipeAudioOutput :
 public:
 	PipeAudioOutput(bool calcVAD);
 	~PipeAudioOutput();
-	virtual int PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime);
+	virtual int PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime, BYTE vadLevel = -1);
 	virtual int StartPlaying(DWORD samplerate);
 	virtual int StopPlaying();
 

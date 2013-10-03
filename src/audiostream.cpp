@@ -340,7 +340,7 @@ int AudioStream::RecAudio()
 			//Check muted
 			if (!muted)
 				//Y lo reproducimos
-				audioOutput->PlayBuffer(playBuffer,len,frameTime);
+				audioOutput->PlayBuffer(playBuffer,len,frameTime, packet->HasAudioLevel() && packet->GetVAD() ? packet->GetLevel() : -1);
 		}
 
 
