@@ -4,6 +4,91 @@
 #include "audio.h"
 #include "h264/h264depacketizer.h"
 
+void RTPPacket::ProcessExtensions(const RTPMap &extMap)
+{
+	//Check extensions
+	if (GetX())
+	{
+		//Get extension data
+		const BYTE* ext = GetExtensionData();
+		//Get extesnion lenght
+		WORD length = GetExtensionLength();
+		//Read all
+		while (length)
+		{
+			//Get header
+			const BYTE header = *(ext++);
+			//Decrease lenght
+			length--;
+			//If it is padding
+			if (!header)
+				//Next
+				continue;
+			//Get extension element id
+			BYTE id = header >> 4;
+			//GEt extenion element length
+			BYTE n = (header & 0x0F) + 1;
+			//Check consistency
+			if (n>length)
+				//Exit
+				break;
+			//Get mapped extension
+			BYTE t = extMap.GetCodecForType(id);
+			//Check type
+			switch (t)
+			{
+				case RTPPacket::HeaderExtension::SSRCAudioLevel:
+					//  0                   1                   2                   3
+					//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+					// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+					// |  ID   | len=0 |V|   level     |      0x00     |      0x00     |
+					// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+					//
+					// Set extennsion
+					extension.hasAudioLevel = true;
+					extension.vad	= (*ext & 0x80) >> 7;
+					extension.level	= (*ext & 0x7f);
+					break;
+				case RTPPacket::HeaderExtension::TimeOffset:
+					//  0                   1                   2                   3
+					//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+					// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+					// |  ID   | len=2 |              transmission offset              |
+					// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+					//
+					// Set extension
+					extension.hasTimeOffset = true;
+					extension.timeOffset = get3(ext,0);
+					//Check if it is negative
+					if (extension.timeOffset & 0x800000)
+						  // Negative offset, correct sign for Word24 to Word32.
+						extension.timeOffset |= 0xFF000000;
+					break;
+				case RTPPacket::HeaderExtension::AbsoluteSendTime:
+					//  0                   1                   2                   3
+					//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+					// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+					// |  ID   | len=2 |              absolute send time               |
+					// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+					// Calculate absolute send time field (convert ms to 24-bit unsigned with 18 bit fractional part.
+					// Encoding: Timestamp is in seconds, 24 bit 6.18 fixed point, yielding 64s wraparound and 3.8us resolution (one increment for each 477 bytes going out on a 1Gbps interface).
+					// Set extension
+					extension.hasAbsSentTime = true;
+					extension.absSentTime = ((QWORD)get3(ext,0))*1000 >> 18;
+					break;
+				default:
+					Debug("-Unknown or unmapped extension [%d]\n",id);
+					break;
+			}
+			//Skip bytes
+			ext+=n;
+			length-=n;
+		}
+
+		//Debug("-RTPExtensions [vad=%d,level=%.2d,offset=%d,ts=%lld]\n",GetVAD(),GetLevel(),GetTimeOffset(),GetAbsSendTime());
+	}
+}
+
 static DWORD GetRTCPHeaderLength(rtcp_common_t* header)
 {
 	return (ntohs(header->length)+1)*4;

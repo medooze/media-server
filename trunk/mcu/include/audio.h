@@ -78,7 +78,7 @@ class AudioOutput
 public:
 	virtual DWORD GetNativeRate()=0;
 	virtual DWORD GetPlayingRate()=0;
-	virtual int PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime)=0;
+	virtual int PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime, BYTE vadLevel = -1) = 0;
 	virtual int StartPlaying(DWORD samplerate)=0;
 	virtual int StopPlaying()=0;
 };

@@ -44,6 +44,24 @@ typedef struct {
     DWORD length:16;   /* pkt len in words, w/o this word */
 } rtcp_common_t;
 
+class RTPMap :
+	public std::map<BYTE,BYTE>
+{
+public:
+	BYTE GetCodecForType(BYTE type) const
+	{
+		//Find the type in the map
+		const_iterator it = find(type);
+		//Check it is in there
+		if (it==end())
+			//Exit
+			return NotFound;
+		//It is our codec
+		return it->second;
+	};
+public:
+	static const BYTE NotFound = -1;
+};
 
 class RTPPacket
 {
@@ -52,13 +70,32 @@ public:
 public:
 	class HeaderExtension
 	{
+	friend class  RTPPacket;
 	public:
 		enum Type {
 			SSRCAudioLevel		= 1,
 			TimeOffset		= 2,
 			AbsoluteSendTime	= 3
 		};
-	private:
+	public:
+		HeaderExtension()
+		{
+			absSentTime = 0;
+			timeOffset = 0;
+			vad = 0;
+			level = 0;
+			hasAbsSentTime = 0;
+			hasTimeOffset =  0;
+			hasAudioLevel = 0;
+		}
+	protected:
+		QWORD	absSentTime;
+		int	timeOffset;
+		bool	vad;
+		BYTE	level;
+		bool    hasAbsSentTime;
+		bool	hasTimeOffset;
+		bool	hasAudioLevel;
 	};
 
 public:
@@ -203,6 +240,20 @@ public:
 	DWORD GetClockRate()		const { return clockRate;			}
 	DWORD GetExtSeqNum()		const { return ((DWORD)cycles)<<16 | GetSeqNum();			}
 	DWORD GetClockTimestamp()	const { return static_cast<QWORD>(GetTimestamp())*1000/clockRate;	}
+
+	void  ProcessExtensions(const RTPMap &extMap);
+
+	//Extensions
+	void  SetAbsSentTime(QWORD absSentTime)	{ extension.absSentTime = absSentTime;	}
+	void  SetTimeOffset(int timeOffset)     { extension.timeOffset = timeOffset;	}
+	QWORD GetAbsSendTime()		const	{ return extension.absSentTime;		}
+	int GetTimeOffset()		const	{ return extension.timeOffset;		}
+	bool  GetVAD()			const	{ return extension.vad;			}
+	BYTE  GetLevel()		const	{ return extension.level;		}
+	bool  HasAudioLevel()		const	{ return extension.hasAudioLevel;	}
+	bool  HasAbsSentTime()		const	{ return extension.hasAbsSentTime;	}
+	bool  HasTimeOffeset()		const   { return extension.hasTimeOffset;	}
+
 	
 	bool SetPayload(BYTE *data,DWORD size)
 	{
@@ -240,8 +291,14 @@ public:
 		if (GetX())
 		{
 			Log("\t\t[Extension type=0x%x len=%d size=%d]\n",GetExtensionType(),GetExtensionLength(),GetExtensionSize());
-			//DUMP
-			::Dump(GetExtensionData(),GetExtensionLength());
+			if (extension.hasAudioLevel)
+				Log("\t\t\t[AudioLevel vad=%d level=%d]\n",GetVAD(),GetLevel());
+			if (extension.hasTimeOffset)
+				Log("\t\t\t[TimeOffset offset=%d]\n",GetTimeOffset());
+			if (extension.hasAudioLevel)
+				Log("\t\t\t[AudioLevel ts=%lld]\n",GetAbsSendTime());
+			Log("\t\t[\Extension]");
+
 		}
 		::Dump(GetMediaData(),16);
 		Log("[[/RTPPacket]\n");
@@ -259,6 +316,8 @@ private:
 	BYTE	buffer[SIZE];
 	DWORD	len;
 	rtp_hdr_t* header;
+	HeaderExtension extension;
+
 };
 
 class RTPPacketSched :

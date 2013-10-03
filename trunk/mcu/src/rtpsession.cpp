@@ -834,16 +834,15 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 		ext->len = htons(1);
 		//Increase ini
 		ini += sizeof(rtp_hdr_ext_t);
-
-		//Calculate sending time
-		WORD abs = (getTime() >> 14) & 0x00ffffff;
+		//Calculate absolute send time field (convert ms to 24-bit unsigned with 18 bit fractional part.
+		// Encoding: Timestamp is in seconds, 24 bit 6.18 fixed point, yielding 64s wraparound and 3.8us resolution (one increment for each 477 bytes going out on a 1Gbps interface).
+		WORD abs = ((getTimeMS() << 18) / 1000) & 0x00ffffff;
 		//Set header
 		sendPacket[ini] = extMap.GetCodecForType(RTPPacket::HeaderExtension::AbsoluteSendTime) << 4 | 0x02;
 		//Set data
 		set3(sendPacket,ini+1,abs);
 		//Increase ini
 		ini+=4;
-
 	}
 
 	//Comprobamos que quepan
@@ -1277,57 +1276,8 @@ int RTPSession::ReadRTP()
 	//Set codec
 	packet->SetCodec(codec);
 
-	//Check extensions
-	if (packet->GetX())
-	{
-		//Get extension data
-		const BYTE* ext = packet->GetExtensionData();
-		//Get extesnion lenght
-		WORD length = packet->GetExtensionLength();
-		//Read all
-		while (length)
-		{
-			//Get header
-			const BYTE header = *(ext++);
-			//Decrease lenght
-			length--;
-			//If it is padding
-			if (!header)
-				//Next
-				continue;
-			//Get extension element id
-			BYTE id = header >> 4;
-			//GEt extenion element length
-			BYTE n = (header & 0x0F) + 1;
-			//Check consistency
-			if (n>length)
-				//Exit
-				break;
-			//Get mapped extension
-			BYTE t = extMap.GetCodecForType(id);
-			//Check type
-			switch (t)
-			{
-				case RTPPacket::HeaderExtension::SSRCAudioLevel:
-					Debug("-SSRCAudioLevel\n");
-					Dump(ext,n);
-					break;
-				case RTPPacket::HeaderExtension::TimeOffset:
-					Debug("-TimeOffset\n");
-					Dump(ext,n);
-					break;
-				case RTPPacket::HeaderExtension::AbsoluteSendTime:
-					Debug("-AbsoluteSendTime\n");
-					Dump(ext,n);
-					break;
-				default:
-					Debug("-Unknown or unmapped extension [%d]\n",id);
-			}
-			//Skip bytes
-			ext+=n;
-			length-=n;
-		}
-	}
+	//Process extensions
+	packet->ProcessExtensions(extMap);
 	
 	//Get ssrc
 	DWORD ssrc = packet->GetSSRC();

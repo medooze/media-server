@@ -21,14 +21,14 @@ PipeAudioOutput::~PipeAudioOutput()
 	pthread_mutex_destroy(&mutex);
 }
 
-int PipeAudioOutput::PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime)
+int PipeAudioOutput::PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime, BYTE vadLevel)
 {
 	SWORD resampled[4096];
 	DWORD resampledSize = 4096;
-	int v = -1;
+	int v = -1;//vadLevel;
 
 	//Check if we need to calculate it
-	if (calcVAD && vad.IsRateSupported(playRate))
+	if (calcVAD && v<0 && vad.IsRateSupported(playRate))
 		//Calculate vad
 		v = vad.CalcVad(buffer,size,playRate);
 
@@ -69,10 +69,14 @@ int PipeAudioOutput::PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime)
 	//Acumule VAD at 8Khz
 	acu += v*size*8000/playRate;
 
+	//Debug("-acu:%.6d v:%.2d level:%.2d\n",acu,v,vadLevel);
+	
 	//Check max
 	if (acu>48000)
 		//Limit so it can timeout faster
 		acu = 48000;
+
+	
 
 	//Metemos en la fifo
 	fifoBuffer.push(buffer,size);
@@ -186,11 +190,12 @@ DWORD PipeAudioOutput::GetVAD(DWORD numSamples)
 {
 	//Protegemos
 	pthread_mutex_lock(&mutex);
+	
 	//Get vad value
 	DWORD r = acu;
 
 	//Check
-	if (acu<numSamples || !nativeRate)
+	if (!nativeRate || acu<numSamples*8000/nativeRate)
 		//No vad
 		acu = 0;
 	else 

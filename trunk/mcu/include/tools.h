@@ -70,6 +70,7 @@ inline int msleep(long msec)
 	tv.tv_usec=msec-tv.tv_sec*1000000;
 	return select(0,0,0,0,&tv);
 }
+
 inline QWORD getTime()
 {
 	//Obtenemos ahora
@@ -78,6 +79,16 @@ inline QWORD getTime()
 
 	//Ahora calculamos la diferencia
 	return (((QWORD)now.tv_sec)*1000000+now.tv_usec);
+}
+
+inline QWORD getTimeMS()
+{
+	//Obtenemos ahora
+	struct timeval now;
+	gettimeofday(&now,0);
+
+	//Ahora calculamos la diferencia
+	return (((QWORD)now.tv_sec)*1000+now.tv_usec/1000);
 }
 
 /*********************************
