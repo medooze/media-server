@@ -1090,7 +1090,7 @@ int RTPSession::ReadRTP()
 				//Create binding request to send back
 				STUNMessage *request = new STUNMessage(STUNMessage::Request,STUNMessage::Binding,transId);
 				//Check usernames
-				if (iceLocalUsername &&iceRemoteUsername )
+				if (iceLocalUsername && iceRemoteUsername)
 					//Add username
 					request->AddUsernameAttribute(iceLocalUsername,iceRemoteUsername);
 				//Add other attributes
@@ -1105,10 +1105,10 @@ int RTPSession::ReadRTP()
 				//Check remote pwd
 				if (iceRemotePwd)
 					//Serialize and autenticate
-					request->AuthenticatedFingerPrint(aux,size,iceRemotePwd);
+					len = request->AuthenticatedFingerPrint(aux,size,iceRemotePwd);
 				else
 					//Do nto authenticate
-					len = resp->NonAuthenticatedFingerPrint(aux,size);
+					len = request->NonAuthenticatedFingerPrint(aux,size);
 
 				//Send it
 				sendto(simSocket,aux,len,0,(sockaddr *)&from_addr,sizeof(struct sockaddr_in));
