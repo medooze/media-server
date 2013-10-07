@@ -1,4 +1,5 @@
 #include "log.h"
+#include <math.h>
 #include "pipeaudiooutput.h"
 
 
@@ -66,8 +67,21 @@ int PipeAudioOutput::PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime, BYTE v
 		//Two seconds minimum at 8khz
 		acu+=8000;
 
+	//Check if we have level info
+	if (vadLevel>0)
+	{
+		double sum = 0;
+		for (int i = 0; i < size ; ++i)
+		{
+		    double sample = buffer[i] / 32768.0;
+		    sum += (sample * sample);
+		}
+		//Set RMS level
+		vadLevel = sqrt(sum /size);
+	}
+
 	//Acumule VAD at 8Khz
-	acu += v*size*8000/playRate;
+	acu += v*vadLevel*8000/playRate;
 
 	//Debug("-acu:%.6d v:%.2d level:%.2d\n",acu,v,vadLevel);
 	
@@ -75,8 +89,6 @@ int PipeAudioOutput::PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime, BYTE v
 	if (acu>48000)
 		//Limit so it can timeout faster
 		acu = 48000;
-
-	
 
 	//Metemos en la fifo
 	fifoBuffer.push(buffer,size);
