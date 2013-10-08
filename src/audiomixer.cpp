@@ -113,7 +113,7 @@ int AudioMixer::MixAudio()
 			//Clean rest
 			memset(audio->buffer+audio->len,0,Sidebar::MIXER_BUFFER_SIZE-audio->len);
 			//Get VAD value
-			audio->vad = audio->output->GetVAD(audio->len);
+			audio->vad = audio->output->GetVAD(numSamples);
 			//For each sidepaf
 			for (Sidebars::iterator sit = sidebars.begin(); sit!=sidebars.end(); ++sit)
 				//Mix it and update length
