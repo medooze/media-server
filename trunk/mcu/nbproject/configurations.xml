@@ -28,11 +28,11 @@
         <in>codecs.h</in>
         <in>config.h</in>
         <in>crc32calc.h</in>
+        <in>dtls.h</in>
         <in>eventstreaminghandler.h</in>
         <in>fecdecoder.h</in>
         <in>fifo.h</in>
         <in>flash.h</in>
-        <in>flv.h</in>
         <in>flvrecorder.h</in>
         <in>framescaler.h</in>
         <in>http.h</in>
@@ -116,11 +116,9 @@
         <in>mediamixer.cpp</in>
         <in>mediamixer.h</in>
       </df>
+      <df name="scripts">
+      </df>
       <df name="src" kind="SOURCE_LOGICAL_FOLDER">
-        <df name="aac">
-          <in>aacencoder.cpp</in>
-          <in>aacencoder.h</in>
-        </df>
         <df name="flv1" kind="SOURCE_LOGICAL_FOLDER">
           <in>flv1codec.cpp</in>
           <in>flv1codec.h</in>
@@ -243,6 +241,7 @@
         <in>broadcaster.cpp</in>
         <in>broadcastsession.cpp</in>
         <in>crc32calc.cpp</in>
+        <in>dtls.cpp</in>
         <in>eventstreaminghandler.cpp</in>
         <in>fecdecoder.cpp</in>
         <in>flash.cpp</in>

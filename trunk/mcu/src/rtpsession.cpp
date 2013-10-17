@@ -240,7 +240,6 @@ int RTPSession::SetLocalCryptoSDES(const char* suite, const char* key64)
 	srtp_policy_t policy;
 
 	Log("-Set local RTP SDES [suite:%s,key:%s]\n",suite,key64);
-
 	//empty policy
 	memset(&policy, 0, sizeof(srtp_policy_t));
 
@@ -294,6 +293,7 @@ int RTPSession::SetLocalCryptoSDES(const char* suite, const char* key64)
 	//Evrything ok
 	return 1;
 }
+
 int RTPSession::SetProperties(const Properties& properties)
 {
 	//Clean extension map
@@ -376,6 +376,7 @@ int RTPSession::SetRemoteSTUNCredentials(const char* username, const char* pwd)
 	//Ok
 	return 1;
 }
+
 int RTPSession::SetRemoteCryptoSDES(const char* suite, const char* key64)
 {
 	err_status_t err;
@@ -427,7 +428,6 @@ int RTPSession::SetRemoteCryptoSDES(const char* suite, const char* key64)
 	if (err!=err_status_ok)
 		//Error
 		return Error("Failed set remote SDES  (%d)\n", err);
-
 
 	//Create new
 	err = srtp_create(&recvSRTPSessionRTX,&policy);
@@ -641,6 +641,7 @@ int RTPSession::Init()
 		//Opened
 		return 1;
 	}
+
 
 	//Error
 	Error("RTPSession too many failed attemps opening sockets");
@@ -2047,4 +2048,3 @@ int RTPSession::SendTempMaxMediaStreamBitrateNotification(DWORD bitrate,DWORD ov
 	//Exit
 	return ret;
 }
-
