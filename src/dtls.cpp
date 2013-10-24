@@ -173,21 +173,24 @@ int DTLSConnection::Init()
 
 int DTLSConnection::End()
 {
+	//REset
+	//Reset();
+	
 	if (read_bio)
 	{
-		BIO_free(read_bio);
+		//BIO_free(read_bio);
 		read_bio = NULL;
 	}
 
 	if (write_bio)
 	{
-		BIO_free(write_bio);
+		//BIO_free(write_bio);
 		write_bio = NULL;
 	}
 
 	if (ssl)
 	{
-		SSL_free(ssl);
+	//	SSL_free(ssl);
 		ssl = NULL;
 	}
 
@@ -335,10 +338,10 @@ int DTLSConnection::SetupSRTP()
 
 	//Create local master key
 	memcpy(localMasterKey,local_key,SRTP_MASTER_KEY_LEN);
-	memcpy(localMasterKey+SRTP_MASTER_KEY_LEN,local_key,SRTP_MASTER_SALT_LEN);
+	memcpy(localMasterKey+SRTP_MASTER_KEY_LEN,local_salt,SRTP_MASTER_SALT_LEN);
 	//Create remote master key
 	memcpy(remoteMasterKey,remote_key,SRTP_MASTER_KEY_LEN);
-	memcpy(remoteMasterKey+SRTP_MASTER_KEY_LEN,remote_key,SRTP_MASTER_SALT_LEN);
+	memcpy(remoteMasterKey+SRTP_MASTER_KEY_LEN,remote_salt,SRTP_MASTER_SALT_LEN);
 
 	//Fire event
 	listener.onDTLSSetup(suite,localMasterKey,SRTP_MASTER_LEN,remoteMasterKey,SRTP_MASTER_LEN);

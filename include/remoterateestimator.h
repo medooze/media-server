@@ -42,6 +42,7 @@ public:
 	}
 public:
 	RemoteRateEstimator(const std::wstring& tag);
+	~RemoteRateEstimator();
 	void SetListener(Listener *listener);
 	void AddStream(DWORD ssrc);
 	void RemoveStream(DWORD ssrc);
@@ -83,7 +84,6 @@ private:
 	QWORD lastChangeMs;
 	float beta;
 	DWORD rtt;
-
 };
 
 #endif	/* REMOTERATEESTIMATOR_H */

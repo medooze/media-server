@@ -30,11 +30,19 @@ RemoteRateEstimator::RemoteRateEstimator(const std::wstring& tag) :
 	cameFromState		= Decrease;
 	state			= Hold;
 	region			= RemoteRateControl::MaxUnknown;
-
 }
 
+RemoteRateEstimator::~RemoteRateEstimator()
+{
+	//Clean all streasm
+	for (Streams::iterator it = streams.begin(); it!=streams.end(); ++it)
+		//Delete
+		delete(it->second);
+}
 void RemoteRateEstimator::AddStream(DWORD ssrc)
 {
+	Log("-RemoteRateEstimator adding stream [ssrc:%x]\n",ssrc);
+
 	//Lock
 	lock.WaitUnusedAndLock();
 	//Create new control
@@ -48,9 +56,12 @@ void RemoteRateEstimator::AddStream(DWORD ssrc)
 }
 void RemoteRateEstimator::RemoveStream(DWORD ssrc)
 {
+	Log("-RemoteRateEstimator removing stream [ssrc:%x]\n",ssrc);
+	
 	//Lock
 	lock.WaitUnusedAndLock();
 	Streams::iterator it = streams.find(ssrc);
+
 	//If found
 	if (it!=streams.end())
 	{
@@ -59,15 +70,13 @@ void RemoteRateEstimator::RemoveStream(DWORD ssrc)
 		//REmove
 		streams.erase(it);
 	}
-	//Remove
-	streams.erase(ssrc);
+	
 	//Unlock
 	lock.Unlock();
 }
 
 void RemoteRateEstimator::Update(DWORD ssrc,RTPTimedPacket* packet)
 {
-
 	//Lock
 	lock.WaitUnusedAndLock();
 
@@ -109,7 +118,7 @@ void RemoteRateEstimator::Update(DWORD ssrc,RTPTimedPacket* packet)
 				//Set usage
 				usage = RemoteRateControl::OverUsing;
 			}
-		}
+		} 
 		//Get worst
 		if (usage<streamUsage)
 			//Set it
@@ -277,7 +286,6 @@ void RemoteRateEstimator::Update(RemoteRateControl::BandwidthUsage usage,bool re
 	Debug("--estimation state=%s region=%s usage=%s currentBitRate=%d current=%d incoming=%f min=%llf max=%llf\n",GetName(state),RemoteRateControl::GetName(region),RemoteRateControl::GetName(usage),currentBitRate/1000,current/1000,incomingBitRate/1000,bitrateAcu.GetMinAvg()/1000,bitrateAcu.GetMaxAvg()/1000);
 
 	eventSource.SendEvent("rre","[\"%s\",\"%s\",%d,%d,%f,%llf,%llf]",GetName(state),RemoteRateControl::GetName(region),currentBitRate/1000,current/1000,incomingBitRate/1000,bitrateAcu.GetMinAvg()/1000,bitrateAcu.GetMaxAvg()/1000);
-
 
 	//Check if we need to send inmediate feedback
 	if (reactNow && listener)

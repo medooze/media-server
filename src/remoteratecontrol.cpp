@@ -16,8 +16,9 @@ RemoteRateControl::RemoteRateControl() : bitrateCalc(100), fpsCalc(1000), packet
 	prevTime = 0;
 	prevSize = 0;
 	prevTarget = 0;
+	curTS = 0;
+	curTime = 0;
 	curSize = 0;
-	num = 0;
 	slope = 8.0/512.0;
 	E[0][0] = 100;
 	E[0][1] = 0;
@@ -31,7 +32,8 @@ RemoteRateControl::RemoteRateControl() : bitrateCalc(100), fpsCalc(1000), packet
 	prevOffset = 0;
 	offset = 0;
 	hypothesis = Normal;
-	overUseCount=0;
+	overUseCount = 0;
+	absSendTimeCycles = 0;
 }
 
 void RemoteRateControl::Update(RTPTimedPacket* packet)
@@ -45,42 +47,62 @@ void RemoteRateControl::Update(RTPTimedPacket* packet)
 	packetCalc.Update(time, 1);
 	//Get rtp timestamp in ms
 	DWORD ts = packet->GetClockTimestamp();
-	Debug("-ts:%d abs:%d\n",ts,packet->GetAbsSendTime());
+
 	//If packet has abs time extension
 	if (packet->HasAbsSentTime())
-		//Get it
-		ts = packet->GetAbsSendTime();
+	{
+		//Use absolote time instead of rtp time for knowing timestamp at origin
+		ts = packet->GetAbsSendTime()+64000*absSendTimeCycles;
+		//Check if it has been a wrapp arround, absSendTime has 64s wraps
+		if (ts+32000<curTS)
+		{
+			//Increase cycles
+			absSendTimeCycles++;
+			//Fix wrap for this one
+			ts += 64000;
+		}
+	}
+	
 	//If it is a our of order packet from previous frame
-	if (ts < prevTS)
+	if (ts < curTS)
 		//Exit
 		return;
 
 	//Check if it is from a new frame
-	if (ts > prevTS)
+	if (ts > curTS)
 	{
 		//Add new frame
 		fpsCalc.Update(ts,1);
+		//Debug("+curTime:%llu,prevTime:%llu,ts:%u,curTS:%u,prevTS:%u\n",curTime,prevTime,ts,curTS,prevTS);
 		//If not first one
 		if (prevTime)
-			//Update Kalman filter as per google algorithm
-			UpdateKalman(time,time-prevTime, ts-prevTS, curSize, prevSize);
+			//Update Kalman filter as per google algorithm from the previous frame
+			UpdateKalman(time,
+				static_cast<int64_t>(curTime) - static_cast<int64_t>(prevTime),
+				static_cast<int>(curTS)   - static_cast<int>(prevTS),
+				static_cast<int>(curSize) - static_cast<int>(prevSize)
+			);
 		//Move
-		prevTS = ts;
-		prevTime = time;
+		prevTS = curTS;
+		prevTime = curTime;
 		prevSize = curSize;
 		curSize = 0;
 	}
 	//Update size of current frame
 	curSize += size;
+	//And reception time
+	curTS	= ts;
+	curTime = time;
+	//Debug("-curTime:%llu,prevTime:%llu,ts:%u,curTS:%u,prevTS:%u\n",curTime,prevTime,ts,curTS,prevTS);
 }
 
-void RemoteRateControl::UpdateKalman(QWORD now,QWORD tdelta, double tsdelta, DWORD framesize, DWORD prevframesize)
+void RemoteRateControl::UpdateKalman(QWORD now,int deltaTime, int deltaTS, int deltaSize)
 {
-	const double ttsdelta = tdelta-tsdelta;
-	double fsdelta = static_cast<double> (framesize)-prevframesize;
+	//Calculate time to timestamp delta
+	const int ttsdelta = deltaTime-deltaTS;
 
 	//Get scaling factor
-	const double scaleFactor = 30/fpsCalc.GetInstantAvg();
+	const double scaleFactor = 30.0/fpsCalc.GetInstantAvg();
 	// Update the Kalman filter
 	E[0][0] += processNoise[0]*scaleFactor;
 	E[1][1] += processNoise[1]*scaleFactor;
@@ -90,7 +112,7 @@ void RemoteRateControl::UpdateKalman(QWORD now,QWORD tdelta, double tsdelta, DWO
 
 	const double h[2] = 
 	{
-		fsdelta,
+		(double)deltaSize,
 		1.0
 	};
 	const double Eh[2] =
@@ -120,7 +142,7 @@ void RemoteRateControl::UpdateKalman(QWORD now,QWORD tdelta, double tsdelta, DWO
 
 		// beta is a function of alpha and the time delta since
 		// the previous update.
-		const double beta = pow(1-alpha, tsdelta*fpsCalc.GetInstantAvg()/1000.0);
+		const double beta = pow(1-alpha, deltaSize*fpsCalc.GetInstantAvg()/1000.0);
 		avgNoise = beta*avgNoise + (1-beta)*residualFiltered;
 		varNoise = beta*varNoise + (1-beta)*(avgNoise-residualFiltered)*(avgNoise-residualFiltered);
 	}
@@ -149,6 +171,8 @@ void RemoteRateControl::UpdateKalman(QWORD now,QWORD tdelta, double tsdelta, DWO
 
 	const double T = fmin(fpsCalc.GetAcumulated(),60)*offset;
 
+	//Debug("BWE: Update tdelta:%d,tsdelta:%d,fsdelta:%d,t:%f,threshold:%f,slope:%f,offset:%f\n",deltaTime,deltaTS,deltaSize,T,threshold,slope,offset);
+
 	//Compare
 	if (fabsf(T)>threshold)
 	{
@@ -176,7 +200,7 @@ void RemoteRateControl::UpdateKalman(QWORD now,QWORD tdelta, double tsdelta, DWO
 			//If we change state
 			if (hypothesis!=UnderUsing)
 			{
-				//Debug("BWE:  UnderUsing bitrate:%.0llf max:%.0llf min:%.0llf\n",bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg());
+				Debug("BWE:  UnderUsing bitrate:%.0llf max:%.0llf min:%.0llf\n",bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg());
 				//Reset bitrate
 				bitrateCalc.ResetMinMax();
 				//Under using, do nothing until going back to normal
@@ -189,7 +213,7 @@ void RemoteRateControl::UpdateKalman(QWORD now,QWORD tdelta, double tsdelta, DWO
 		if (hypothesis!=Normal)
 		{
 			//Log
-			//Debug("BWE:  Normal  bitrate:%.0llf max:%.0llf min:%.0llf\n",bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg());
+			Debug("BWE:  Normal  bitrate:%.0llf max:%.0llf min:%.0llf\n",bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg());
 			//Reset
 			bitrateCalc.ResetMinMax();
 			//Normal
@@ -200,42 +224,40 @@ void RemoteRateControl::UpdateKalman(QWORD now,QWORD tdelta, double tsdelta, DWO
 
 bool RemoteRateControl::UpdateRTT(DWORD rtt)
 {
-	int overusing = false;
 	//Check difference
 	if (this->rtt>40 && rtt>this->rtt*1.50)
-	{
-		//Update state
-		if (hypothesis==Normal)
-		{
-			//Overusing
-			hypothesis = OverUsing;
-			//we have changed
-			overusing = true;
-		} else if (hypothesis==UnderUsing)
-			//Move to normal
-			hypothesis = Normal;
-	}
+		//Overusing
+		hypothesis = OverUsing;
+	
 	//Update RTT
 	this->rtt = rtt;
+
+	//Debug
+	Debug("BWE: UpdateRTT rtt:%d hipothesis:%s\n",rtt,GetName(hypothesis));
+
 	//Return if we are overusing now
-	return overusing;
+	return hypothesis==OverUsing;
 }
 
 bool RemoteRateControl::UpdateLost(DWORD num)
 {
 	//Check lost is more than 2.5%
 	if (packetCalc.GetInstantAvg()<num*40)
-	{
 		//Overusing
 		hypothesis = OverUsing;
-		//overusing now
-		return true;
-	}
-	return false;
+
+	//Debug
+	Debug("BWE: UpdateLostlost:%d hipothesis:%s\n",num,GetName(hypothesis));
+
+	//true if overusing
+	return hypothesis==OverUsing;
 }
 
 void RemoteRateControl::SetRateControlRegion(Region region)
 {
+	//Debug
+	Debug("BWE: SetRateControlRegion %s\n",GetName(region));
+
 	switch (region)
 	{
 		case MaxUnknown:
