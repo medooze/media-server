@@ -6,7 +6,7 @@ VAD::VAD()
 	//Init webrtc vad
 	WebRtcVad_InitCore(&inst);
 	//Set agrresive mode
-	WebRtcVad_set_mode_core(&inst,LOWBITRATE);
+	WebRtcVad_set_mode_core(&inst,QUALITY);
 }
 
 int VAD::CalcVad(SWORD* frame,DWORD size,DWORD rate)
