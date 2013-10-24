@@ -64,11 +64,11 @@ int PipeAudioOutput::PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime, BYTE v
 
 	//Get initial bump
 	if (!acu && v)
-		//Two seconds minimum at 8khz
+		//half second minimum at 8khz
 		acu+=8000;
 
 	//Check if we have level info
-	if (vadLevel>0)
+	if (1)
 	{
 		double sum = 0;
 		for (int i = 0; i < size ; ++i)
@@ -76,14 +76,15 @@ int PipeAudioOutput::PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime, BYTE v
 		    double sample = buffer[i] / 32768.0;
 		    sum += (sample * sample);
 		}
+		Debug("-sum %f %f\n",sum,sum/size);
 		//Set RMS level
-		vadLevel = sqrt(sum /size);
+		vadLevel = sqrt(sum)*4;
 	}
 
 	//Acumule VAD at 8Khz
-	acu += v*vadLevel*8000/playRate;
+	acu += v*vadLevel*size*8000/playRate;
 
-	//Debug("-acu:%.6d v:%.2d level:%.2d\n",acu,v,vadLevel);
+	Debug("-%p acu:%.6d v:%.2d level:%.2d\n",this,acu,v,vadLevel);
 	
 	//Check max
 	if (acu>48000)
