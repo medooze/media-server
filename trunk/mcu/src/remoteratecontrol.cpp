@@ -48,7 +48,7 @@ void RemoteRateControl::Update(RTPTimedPacket* packet)
 	//Get rtp timestamp in ms
 	DWORD ts = packet->GetClockTimestamp();
 
-	//If packet has abs time extension
+	/* DO NOT USE IT YET
 	if (packet->HasAbsSentTime())
 	{
 		//Use absolote time instead of rtp time for knowing timestamp at origin
@@ -61,7 +61,7 @@ void RemoteRateControl::Update(RTPTimedPacket* packet)
 			//Fix wrap for this one
 			ts += 64000;
 		}
-	}
+	}*/
 	
 	//If it is a our of order packet from previous frame
 	if (ts < curTS)
