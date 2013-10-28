@@ -557,7 +557,7 @@ int VideoStream::SendVideo()
 			sendingTime = frameTime/1000;
 
 		//Send it smoothly
-		smoother.SendFrame(videoFrame,sendingTime);
+		smoother.SendFrame(videoFrame,0);//sendingTime);
 
 		//Dump statistics
 		if (num && ((num%videoFPS*10)==0))

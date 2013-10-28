@@ -62,6 +62,7 @@ void RemoteRateControl::Update(RTPTimedPacket* packet)
 			ts += 64000;
 		}
 	}*/
+//	Debug("ts:%u,time:%llu,%u\n",ts,time,size);
 	
 	//If it is a our of order packet from previous frame
 	if (ts < curTS)
@@ -73,7 +74,7 @@ void RemoteRateControl::Update(RTPTimedPacket* packet)
 	{
 		//Add new frame
 		fpsCalc.Update(ts,1);
-		//Debug("+curTime:%llu,prevTime:%llu,ts:%u,curTS:%u,prevTS:%u\n",curTime,prevTime,ts,curTS,prevTS);
+	//	Debug("+curTime:%llu,prevTime:%llu,ts:%u,curTS:%u,prevTS:%u\n",curTime,prevTime,ts,curTS,prevTS);
 		//If not first one
 		if (prevTime)
 			//Update Kalman filter as per google algorithm from the previous frame
@@ -102,7 +103,11 @@ void RemoteRateControl::UpdateKalman(QWORD now,int deltaTime, int deltaTS, int d
 	const int ttsdelta = deltaTime-deltaTS;
 
 	//Get scaling factor
-	const double scaleFactor = 30.0/fpsCalc.GetInstantAvg();
+	double scaleFactor = 1;
+
+	if (fpsCalc.GetAcumulated()>60)
+		scaleFactor = 30.0/fpsCalc.GetInstantAvg();
+
 	// Update the Kalman filter
 	E[0][0] += processNoise[0]*scaleFactor;
 	E[1][1] += processNoise[1]*scaleFactor;
@@ -123,7 +128,6 @@ void RemoteRateControl::UpdateKalman(QWORD now,int deltaTime, int deltaTS, int d
 
 	const double residual = ttsdelta-slope*h[0]-offset;
 
-
 	// Only update the noise estimate if we're not over-using and in stable state
 	if (hypothesis!=OverUsing && (fmin(fpsCalc.GetAcumulated(),60)*fabsf(offset)<threshold))
 	{
@@ -142,7 +146,7 @@ void RemoteRateControl::UpdateKalman(QWORD now,int deltaTime, int deltaTS, int d
 
 		// beta is a function of alpha and the time delta since
 		// the previous update.
-		const double beta = pow(1-alpha, deltaSize*fpsCalc.GetInstantAvg()/1000.0);
+		const double beta = pow(1-alpha, deltaSize*30/1000.0);
 		avgNoise = beta*avgNoise + (1-beta)*residualFiltered;
 		varNoise = beta*varNoise + (1-beta)*(avgNoise-residualFiltered)*(avgNoise-residualFiltered);
 	}
@@ -171,7 +175,7 @@ void RemoteRateControl::UpdateKalman(QWORD now,int deltaTime, int deltaTS, int d
 
 	const double T = fmin(fpsCalc.GetAcumulated(),60)*offset;
 
-	//Debug("BWE: Update tdelta:%d,tsdelta:%d,fsdelta:%d,t:%f,threshold:%f,slope:%f,offset:%f\n",deltaTime,deltaTS,deltaSize,T,threshold,slope,offset);
+	//Debug("BWE: Update tdelta:%d,tsdelta:%d,fsdelta:%d,t:%f,threshold:%f,slope:%f,offset:%f,scale:%f,frames:%lld,fps:%llf,residual:%f\n",deltaTime,deltaTS,deltaSize,T,threshold,slope,offset,scaleFactor,fpsCalc.GetAcumulated(),fpsCalc.GetInstantAvg(),residual);
 
 	//Compare
 	if (fabsf(T)>threshold)
@@ -183,15 +187,15 @@ void RemoteRateControl::UpdateKalman(QWORD now,int deltaTime, int deltaTS, int d
 			if (hypothesis!=OverUsing )
 			{
 				//Check 
-				if (overUseCount>1)
+				if (overUseCount>2)
 				{
-					Debug("BWE:  Overusing bitrate:%.0llf max:%.0llf min:%.0llf\n",bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg());
+					Debug("BWE: Overusing bitrate:%.0llf max:%.0llf min:%.0llf T:%f\n",bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg(),fabsf(T));
 					//Overusing
 					hypothesis = OverUsing;
 					//Reset counter
 					overUseCount=0;
 				} else {
-					Debug("BWE:  first Overusing bitrate:%.0llf max:%.0llf min:%.0llf\n",bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg());
+					Debug("BWE: Overusing bitrate:%.0llf max:%.0llf min:%.0llf T:%d\n",overUseCount,bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg(),fabsf(T));
 					//increase counter
 					overUseCount++;
 				}
@@ -200,11 +204,13 @@ void RemoteRateControl::UpdateKalman(QWORD now,int deltaTime, int deltaTS, int d
 			//If we change state
 			if (hypothesis!=UnderUsing)
 			{
-				Debug("BWE:  UnderUsing bitrate:%.0llf max:%.0llf min:%.0llf\n",bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg());
+				Debug("BWE:  UnderUsing bitrate:%.0llf max:%.0llf min:%.0llf T:%d\n",bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg(),fabsf(T));
 				//Reset bitrate
 				bitrateCalc.ResetMinMax();
 				//Under using, do nothing until going back to normal
 				hypothesis = UnderUsing;
+				//Reset counter
+				overUseCount=0;
 			}
 		}
 	} else {
@@ -218,6 +224,8 @@ void RemoteRateControl::UpdateKalman(QWORD now,int deltaTime, int deltaTS, int d
 			bitrateCalc.ResetMinMax();
 			//Normal
 			hypothesis = Normal;
+			//Reset counter
+			overUseCount=0;
 		}
 	}
 }
@@ -226,8 +234,12 @@ bool RemoteRateControl::UpdateRTT(DWORD rtt)
 {
 	//Check difference
 	if (this->rtt>40 && rtt>this->rtt*1.50)
+	{	
 		//Overusing
 		hypothesis = OverUsing;
+		//Reset counter
+		overUseCount=0;
+	}
 	
 	//Update RTT
 	this->rtt = rtt;
@@ -243,8 +255,12 @@ bool RemoteRateControl::UpdateLost(DWORD num)
 {
 	//Check lost is more than 2.5%
 	if (packetCalc.GetInstantAvg()<num*40)
+	{
 		//Overusing
 		hypothesis = OverUsing;
+		//Reset counter
+		overUseCount=0;
+	}
 
 	//Debug
 	Debug("BWE: UpdateLostlost:%d hipothesis:%s\n",num,GetName(hypothesis));
@@ -260,6 +276,7 @@ void RemoteRateControl::SetRateControlRegion(Region region)
 
 	switch (region)
 	{
+		case BelowMax:
 		case MaxUnknown:
 			threshold = 25;
 			break;

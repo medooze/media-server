@@ -134,10 +134,12 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener)
 	totalSendBytes = 0;
 	lostRecvPackets = 0;
 	totalRecvPacketsSinceLastSR = 0;
+	nackedPacketsSinceLastSR = 0;
 	totalRecvBytesSinceLastSR = 0;
 	minRecvExtSeqNumSinceLastSR = RTPPacket::MaxExtSeqNum;
 	jitter = 0;
 	//No reports
+	setZeroTime(&lastFPU);
 	setZeroTime(&lastSR);
 	setZeroTime(&lastReceivedSR);
 	rtt = 0;
@@ -837,7 +839,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 		ini += sizeof(rtp_hdr_ext_t);
 		//Calculate absolute send time field (convert ms to 24-bit unsigned with 18 bit fractional part.
 		// Encoding: Timestamp is in seconds, 24 bit 6.18 fixed point, yielding 64s wraparound and 3.8us resolution (one increment for each 477 bytes going out on a 1Gbps interface).
-		WORD abs = ((getTimeMS() << 18) / 1000) & 0x00ffffff;
+		DWORD abs = ((getTimeMS() << 18) / 1000) & 0x00ffffff;
 		//Set header
 		sendPacket[ini] = extMap.GetCodecForType(RTPPacket::HeaderExtension::AbsoluteSendTime) << 4 | 0x02;
 		//Set data
@@ -884,7 +886,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 		//Add it to que
 		rtxs[rtx->GetExtSeqNum()] = rtx;
 		//Get time for packets to discard
-		QWORD until = getTime()/1000 - fmax(rtt*2,400);
+		QWORD until = getTime()/1000 - 2000;
 		//Delete old packets 
 		RTPOrderedPackets::iterator it = rtxs.begin();
 		//Until the end
@@ -1357,12 +1359,14 @@ int RTPSession::ReadRTP()
 				remoteRateEstimator->UpdateLost(recSSRC,lost);
 
 			//If nack is enable t waiting for a PLI/FIR response (to not oeverflow)
-			if (isNACKEnabled && !requestFPU)
+			if (isNACKEnabled && getDifTime(&lastFPU)/1000>rtt/2)
 			{
 				//Double check
 				if (lost<0x0FFF)
 				{
 					Debug("-Nacking %d lost %d\n",base,lost);
+					//Inc nacked count
+					nackedPacketsSinceLastSR += lost;
 
 					//Generate new RTCP NACK report
 					RTCPCompoundPacket* rtcp = new RTCPCompoundPacket();
@@ -1682,7 +1686,7 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 						}
 						break;
 					case RTCPRTPFeedback::TempMaxMediaStreamBitrateNotification:
-						//Debug("-TempMaxMediaStreamBitrateNotification\n");
+						Debug("-TempMaxMediaStreamBitrateNotification\n");
 						pendingTMBR = false;
 						if (requestFPU)
 						{
@@ -1693,7 +1697,6 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 						{
 							//Get field
 							RTCPRTPFeedback::TempMaxMediaStreamBitrateField *field = (RTCPRTPFeedback::TempMaxMediaStreamBitrateField*) fb->GetField(i);
-
 						}
 		
 						break;
@@ -1766,6 +1769,7 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 					listener->onFPURequested(this);
 				break;
 			case RTCPPacket::NACK:
+				Log("-----NACK!\n");
 				break;
 		}
 	}
@@ -1802,7 +1806,7 @@ RTCPCompoundPacket* RTPSession::CreateSenderReport()
 		//Get number of total packtes
 		DWORD total = recExtSeq - minRecvExtSeqNumSinceLastSR + 1;
 		//Calculate lost
-		DWORD lostRecvPacketsSinceLastSR = total - totalRecvPacketsSinceLastSR;
+		DWORD lostRecvPacketsSinceLastSR = total - totalRecvPacketsSinceLastSR + nackedPacketsSinceLastSR;
 		//Add to total lost count
 		lostRecvPackets += lostRecvPacketsSinceLastSR;
 		//Calculate fraction lost
@@ -1831,6 +1835,7 @@ RTCPCompoundPacket* RTPSession::CreateSenderReport()
 		//Reset data
 		totalRecvPacketsSinceLastSR = 0;
 		totalRecvBytesSinceLastSR = 0;
+		nackedPacketsSinceLastSR = 0;
 		minRecvExtSeqNumSinceLastSR = RTPPacket::MaxExtSeqNum;
 
 		//Append it
@@ -1928,9 +1933,9 @@ int RTPSession::SendFIR()
 	rtcp->AddRTCPacket(fir);
 
 	//Add PLI
-	RTCPPayloadFeedback *pli = RTCPPayloadFeedback::Create(RTCPPayloadFeedback::PictureLossIndication,sendSSRC,recSSRC);
+	//RTCPPayloadFeedback *pli = RTCPPayloadFeedback::Create(RTCPPayloadFeedback::PictureLossIndication,sendSSRC,recSSRC);
 	//Add to rtcp
-	rtcp->AddRTCPacket(pli);
+	//rtcp->AddRTCPacket(pli);
 
 	//Send packet
 	int ret = SendPacket(*rtcp);
@@ -1944,10 +1949,16 @@ int RTPSession::SendFIR()
 
 int RTPSession::RequestFPU()
 {
+	Debug("-RequestFPU\n");
 	//Send all the packets inmediatelly to the decoderso I frame can be handled as soon as possoble
-	packets.HurryUp();
+	//packets.HurryUp();
+	//
+	packets.Reset();
+	packets.SetMaxWaitTime(0);
 	//request FIR
 	SendFIR();
+	//Update last request FPU
+	getUpdDifTime(&lastFPU);
 
 	//packets.Reset();
 	/*if (!pendingTMBR)
@@ -1982,6 +1993,8 @@ void RTPSession::SetRTT(DWORD rtt)
 
 void RTPSession::onTargetBitrateRequested(DWORD bitrate)
 {
+	Debug("-onTargetBitrateRequested [%d]\n",bitrate);
+
 	//Create rtcp sender retpor
 	RTCPCompoundPacket* rtcp = CreateSenderReport();
 
@@ -2022,6 +2035,9 @@ void RTPSession::ReSendPacket(int seq)
 		RTPTimedPacket* packet = it->second;
 		//Re send pacekt
 		sendto(simSocket,packet->GetData(),packet->GetSize(),0,(sockaddr *)&sendAddr,sizeof(struct sockaddr_in));
+		Debug("-ReSendPacket %d %d\n",seq,ext);
+	} else {
+		Debug("-ReSendPacket %d %d not found first %d\n",seq,ext,rtxs.size() ?  rtxs.begin()->first : 0);
 	}
 
 	//Unlock

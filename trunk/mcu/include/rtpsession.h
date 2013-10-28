@@ -178,6 +178,7 @@ private:
 	DWORD	totalSendBytes;
 	DWORD	lostRecvPackets;
 	DWORD	totalRecvPacketsSinceLastSR;
+	DWORD   nackedPacketsSinceLastSR;
 	DWORD	totalRecvBytesSinceLastSR;
 	DWORD   minRecvExtSeqNumSinceLastSR;
 	DWORD	jitter;
@@ -185,6 +186,7 @@ private:
 	BYTE	firReqNum;
 
 	DWORD	rtt;
+	timeval lastFPU;
 	timeval lastSR;
 	timeval lastReceivedSR;
 	bool	requestFPU;
