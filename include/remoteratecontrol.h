@@ -28,6 +28,7 @@ public:
 		MaxUnknown,
 		AboveMax,
 		NearMax,
+		BelowMax
 	};
 
 	static const char * GetName(BandwidthUsage usage)
@@ -54,6 +55,8 @@ public:
 				return "AboveMax";
 			case NearMax:
 				return "NearMax";
+			case BelowMax:
+				return "BelowMax";
 		}
 		return "Unknown";
 	}

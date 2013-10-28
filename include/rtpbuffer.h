@@ -189,6 +189,9 @@ public:
 
 		//No next
 		next = (DWORD)-1;
+
+		//Signal condition
+		pthread_cond_signal(&cond);
 		
 		//UnLock
 		pthread_mutex_unlock(&mutex);

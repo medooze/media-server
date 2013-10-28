@@ -10,7 +10,7 @@
 #include "remoterateestimator.h"
 
 RemoteRateEstimator::RemoteRateEstimator(const std::wstring& tag) :
-	bitrateAcu(100),
+	bitrateAcu(400),
 	eventSource(tag)
 {
 	//Not last estimate

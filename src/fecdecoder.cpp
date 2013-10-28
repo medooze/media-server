@@ -40,6 +40,8 @@ bool FECDecoder::AddPacket(RTPTimedPacket* packet)
 		{
 			//Create new FEC data
 			FECData *fec = new FECData(red->GetPrimaryPayloadData(),red->GetPrimaryPayloadSize());
+			//Log
+			Debug("-fec primary red data at %d\n",fec->GetBaseExtSeq());
 			//Append it
 			codes[fec->GetBaseExtSeq()] = fec;
 			//Delete pacekt
@@ -59,6 +61,8 @@ bool FECDecoder::AddPacket(RTPTimedPacket* packet)
 			{
 				//Create new FEC data
 				FECData *fec = new FECData(red->GetRedundantPayloadData(i),red->GetRedundantPayloadSize(i));
+				//Log
+				Debug("-fec red data at %d\n",fec->GetBaseExtSeq());
 				//Append it
 				codes[fec->GetBaseExtSeq()] = fec;
 			}
@@ -66,8 +70,10 @@ bool FECDecoder::AddPacket(RTPTimedPacket* packet)
 	} else if (packet->GetCodec()==VideoCodec::ULPFEC) {
 		//Create new FEC data
 		FECData *fec = new FECData(packet->GetMediaData(),packet->GetMediaLength());
+		//Log
+		Debug("-fec data at %d\n",fec->GetBaseExtSeq());
 		//Append it
-				codes[fec->GetBaseExtSeq()] = fec;
+		codes[fec->GetBaseExtSeq()] = fec;
 		//Delete pacekt
 		delete(packet);
 		//Packet contained no media
