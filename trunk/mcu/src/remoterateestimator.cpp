@@ -137,10 +137,12 @@ void RemoteRateEstimator::Update(DWORD ssrc,RTPTimedPacket* packet)
 	
 	//Only update once per second or when the stream starts to overuse
 	if (lastChangeMs+1000<now || streamOverusing)
+	{
 		//Update
 		Update(usage,streamOverusing);
-	//Reset min max
-	bitrateAcu.ResetMinMax();
+		//Reset min max
+		bitrateAcu.ResetMinMax();
+	}
 	//Unloc
 	lock.Unlock();
 	//Exit
@@ -175,6 +177,8 @@ void RemoteRateEstimator::Update(RemoteRateControl::BandwidthUsage usage,bool re
 				lastBitRateChange = now;
 				//Swicth to increase
 				ChangeState(Increase);
+			} else if (state == Decrease) {
+				ChangeState(Hold);
 			}
 			break;
 		case RemoteRateControl::OverUsing:
@@ -183,22 +187,30 @@ void RemoteRateEstimator::Update(RemoteRateControl::BandwidthUsage usage,bool re
 				ChangeState(Decrease);
 			break;
 		case RemoteRateControl::UnderUsing:
-			//Hold
-			ChangeState(Hold);
+			if (region==RemoteRateControl::NearMax && state != Hold)
+			{
+				ChangeState(Hold);
+			}
+			else if (state!=Increase)
+			{
+				//Change now
+				lastBitRateChange = now;
+				//Swicth to increase
+				ChangeState(Increase);
+			}
 			break;
 	}
 
 	//Get current estimation
 	DWORD current = currentBitRate;
 	//Get incoming bitrate
-	float incomingBitRate = bitrateAcu.GetMaxAvg();
-	//If got enought data since last reset
-	if (!incomingBitRate)
-		//Set to current
-		incomingBitRate = bitrateAcu.GetInstantAvg();
+	float incomingBitRate = bitrateAcu.GetInstantAvg();
 	// Calculate the max bit rate std dev given the normalized
 	// variance and the current incoming bit rate.
-	const float stdMaxBitRate = sqrt(varMaxBitRate * avgMaxBitRate);
+	float stdMaxBitRate = sqrt(varMaxBitRate * avgMaxBitRate);
+
+	if (stdMaxBitRate<avgMaxBitRate*0.03)
+		stdMaxBitRate = avgMaxBitRate*0.03;	
 
 	bool recovery = false;
 
@@ -215,21 +227,25 @@ void RemoteRateEstimator::Update(RemoteRateControl::BandwidthUsage usage,bool re
 				if (incomingBitRate > avgMaxBitRate + 3 * stdMaxBitRate)
 				{
 					ChangeRegion(RemoteRateControl::MaxUnknown);
-					avgMaxBitRate = -1.0;
+					UpdateMaxBitRateEstimate(currentBitRate);
 				} else if (incomingBitRate > avgMaxBitRate + 2.5 * stdMaxBitRate) {
 					ChangeRegion(RemoteRateControl::AboveMax);
+				} else if (incomingBitRate > avgMaxBitRate - 3 * stdMaxBitRate) {
+					ChangeRegion(RemoteRateControl::NearMax);
+				} else {
+					ChangeRegion(RemoteRateControl::BelowMax);
 				}
 			}
 
 			const DWORD responseTime = (DWORD) (avgChangePeriod + 0.5f) + rtt + 300;
 			double alpha = RateIncreaseFactor(now, lastBitRateChange, responseTime);
 
-			current = (DWORD) (current * alpha) + 1000;
+			current = (DWORD) (current * alpha) + 8000;
 
 			if (maxHoldRate > 0 && beta * maxHoldRate > current)
 			{
 				current = (DWORD) (beta * maxHoldRate);
-				avgMaxBitRate = beta * maxHoldRate;
+				UpdateMaxBitRateEstimate(current);
 				ChangeRegion(RemoteRateControl::NearMax);
 				recovery = true;
 			}
@@ -251,18 +267,17 @@ void RemoteRateEstimator::Update(RemoteRateControl::BandwidthUsage usage,bool re
 				current = fmin(current, currentBitRate);
 			}
 
-			ChangeRegion(RemoteRateControl::NearMax);
 
-			if (incomingBitRate < avgMaxBitRate - 3 * stdMaxBitRate)
-				avgMaxBitRate = -1.0f;
-
-			UpdateMaxBitRateEstimate(incomingBitRate);
+			if (avgMaxBitRate<0 || incomingBitRate > avgMaxBitRate - 3 * stdMaxBitRate )
+			{
+				ChangeRegion(RemoteRateControl::NearMax);
+				UpdateMaxBitRateEstimate(current);
+			} else {
+				ChangeRegion(RemoteRateControl::BelowMax);
+			}	
 
 			Debug("BWE: Decrease rate to current = %u kbps\n", current / 1000);
 		
-			// Stay on hold until the pipes are cleared.
-			ChangeState(Hold);
-
 			lastBitRateChange = now;
 			break;
 	}
@@ -285,7 +300,18 @@ void RemoteRateEstimator::Update(RemoteRateControl::BandwidthUsage usage,bool re
 
 	Debug("--estimation state=%s region=%s usage=%s currentBitRate=%d current=%d incoming=%f min=%llf max=%llf\n",GetName(state),RemoteRateControl::GetName(region),RemoteRateControl::GetName(usage),currentBitRate/1000,current/1000,incomingBitRate/1000,bitrateAcu.GetMinAvg()/1000,bitrateAcu.GetMaxAvg()/1000);
 
-	eventSource.SendEvent("rre","[\"%s\",\"%s\",%d,%d,%f,%llf,%llf]",GetName(state),RemoteRateControl::GetName(region),currentBitRate/1000,current/1000,incomingBitRate/1000,bitrateAcu.GetMinAvg()/1000,bitrateAcu.GetMaxAvg()/1000);
+	eventSource.SendEvent
+	(
+		"rre",
+		"[\"%s\",\"%s\",%d,%d,%d,%d,%d]",
+		GetName(state),
+		RemoteRateControl::GetName(region),
+		(DWORD)currentBitRate/1000,
+		avgMaxBitRate>0?(DWORD)avgMaxBitRate/1000:0,
+		(DWORD)incomingBitRate/1000,
+		bitrateAcu.IsInMinMaxWindow()?(DWORD)bitrateAcu.GetMinAvg()/1000:0,
+		bitrateAcu.IsInMinMaxWindow()?(DWORD)bitrateAcu.GetMaxAvg()/1000:0
+	);
 
 	//Check if we need to send inmediate feedback
 	if (reactNow && listener)
@@ -310,8 +336,7 @@ double RemoteRateEstimator::RateIncreaseFactor(QWORD nowMs, QWORD lastMs, DWORD 
 	else if (alpha > 1.3)
 		alpha = 1.3;
 
-
-	if (lastMs )
+	if (lastMs)
 		alpha = pow(alpha, (nowMs - lastMs) / 1000.0);
 
 	if (region == RemoteRateControl::NearMax)
@@ -319,6 +344,8 @@ double RemoteRateEstimator::RateIncreaseFactor(QWORD nowMs, QWORD lastMs, DWORD 
 		// bit rate in this region, by increasing in smaller steps.
 		alpha = alpha - (alpha - 1.0) / 2.0;
 	else if (region == RemoteRateControl::MaxUnknown)
+		alpha = alpha + (alpha - 1.0) * 2.0;
+	else if (region == RemoteRateControl::BelowMax)
 		alpha = alpha + (alpha - 1.0) * 2.0;
 
 	return alpha;
@@ -335,7 +362,7 @@ void RemoteRateEstimator::UpdateChangePeriod(QWORD nowMs)
 
 void RemoteRateEstimator::UpdateMaxBitRateEstimate(float incomingBitRate)
 {
-	const float alpha = 0.05f;
+	const float alpha = 0.10f;
 	
 	if (avgMaxBitRate == -1.0f)
 		avgMaxBitRate = incomingBitRate;
@@ -354,6 +381,7 @@ void RemoteRateEstimator::UpdateMaxBitRateEstimate(float incomingBitRate)
 	// 2.5f ~= 35 kbit/s at 500 kbit/s
 	if (varMaxBitRate > 2.5f)
 		varMaxBitRate = 2.5f;
+
 }
 
 DWORD RemoteRateEstimator::GetEstimatedBitrate()

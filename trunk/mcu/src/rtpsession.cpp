@@ -1873,16 +1873,8 @@ int RTPSession::SendSenderReport()
 	//Create rtcp sender retpor
 	RTCPCompoundPacket* rtcp = CreateSenderReport();
 
-	//If we have not got a notification from latest TMBR
-	if (pendingTMBR)
+	if (remoteRateEstimator)
 	{
-		//Resend TMMBR
-		RTCPRTPFeedback *rfb = RTCPRTPFeedback::Create(RTCPRTPFeedback::TempMaxMediaStreamBitrateRequest,sendSSRC,recSSRC);
-		//Limit incoming bitrate
-		rfb->AddField( new RTCPRTPFeedback::TempMaxMediaStreamBitrateField(recSSRC,pendingTMBBitrate,0));
-		//Add to packet
-		rtcp->AddRTCPacket(rfb);
-	} else if (remoteRateEstimator)	{
 		//Get lastest estimation and convert to kbps
 		DWORD estimation = remoteRateEstimator->GetEstimatedBitrate();
 		//If it was ok
