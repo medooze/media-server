@@ -189,13 +189,13 @@ void RemoteRateControl::UpdateKalman(QWORD now,int deltaTime, int deltaTS, int d
 				//Check 
 				if (overUseCount>2)
 				{
-					Debug("BWE: Overusing bitrate:%.0llf max:%.0llf min:%.0llf T:%f\n",bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg(),fabsf(T));
+					Debug("BWE: Overusing bitrate:%.0llf max:%.0llf min:%.0llf T:%f,threshold:%f\n",bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg(),fabsf(T),threshold);
 					//Overusing
 					hypothesis = OverUsing;
 					//Reset counter
 					overUseCount=0;
 				} else {
-					Debug("BWE: Overusing bitrate:%.0llf max:%.0llf min:%.0llf T:%d\n",overUseCount,bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg(),fabsf(T));
+					Debug("BWE: Overusing bitrate:%.0llf max:%.0llf min:%.0llf T:%f,threshold:%f\n",overUseCount,bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg(),fabsf(T),threshold);
 					//increase counter
 					overUseCount++;
 				}
@@ -228,6 +228,7 @@ void RemoteRateControl::UpdateKalman(QWORD now,int deltaTime, int deltaTS, int d
 			overUseCount=0;
 		}
 	}
+	if (eventSource) eventSource->SendEvent("rrc.lost","[\"%s\",\"%d\"]",GetName(hypothesis),rtt);
 }
 
 bool RemoteRateControl::UpdateRTT(DWORD rtt)
@@ -247,6 +248,8 @@ bool RemoteRateControl::UpdateRTT(DWORD rtt)
 	//Debug
 	Debug("BWE: UpdateRTT rtt:%d hipothesis:%s\n",rtt,GetName(hypothesis));
 
+	if (eventSource) eventSource->SendEvent("rrc.rtt","[\"%s\",\"%d\"]",GetName(hypothesis),rtt);
+
 	//Return if we are overusing now
 	return hypothesis==OverUsing;
 }
@@ -265,6 +268,8 @@ bool RemoteRateControl::UpdateLost(DWORD num)
 	//Debug
 	Debug("BWE: UpdateLostlost:%d hipothesis:%s\n",num,GetName(hypothesis));
 
+	if (eventSource) eventSource->SendEvent("rrc.lost","[\"%s\",\"%d\"]",GetName(hypothesis),rtt);
+
 	//true if overusing
 	return hypothesis==OverUsing;
 }
@@ -277,6 +282,8 @@ void RemoteRateControl::SetRateControlRegion(Region region)
 	switch (region)
 	{
 		case BelowMax:
+			threshold = 35;
+			break;
 		case MaxUnknown:
 			threshold = 25;
 			break;
