@@ -128,16 +128,20 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener)
 	rtpMapIn = NULL;
 	rtpMapOut = NULL;
 	//Empty stats
-	numRecvPackets = 0;
-	numSendPackets = 0;
-	totalRecvBytes = 0;
-	totalSendBytes = 0;
-	lostRecvPackets = 0;
-	totalRecvPacketsSinceLastSR = 0;
-	nackedPacketsSinceLastSR = 0;
-	totalRecvBytesSinceLastSR = 0;
-	minRecvExtSeqNumSinceLastSR = RTPPacket::MaxExtSeqNum;
-	jitter = 0;
+	numRecvPackets			= 0;
+	numRTCPRecvPackets		= 0;
+	numSendPackets			= 0;
+	numRTCPSendPackets		= 0;
+	totalRecvBytes			= 0;
+	totalRTCPRecvBytes		= 0;
+	totalSendBytes			= 0;
+	totalRTCPSendBytes		= 0;
+	lostRecvPackets			= 0;
+	totalRecvPacketsSinceLastSR	= 0;
+	nackedPacketsSinceLastSR	= 0;
+	totalRecvBytesSinceLastSR	= 0;
+	minRecvExtSeqNumSinceLastSR	= RTPPacket::MaxExtSeqNum;
+	jitter	= 0;
 	//No reports
 	setZeroTime(&lastFPU);
 	setZeroTime(&lastSR);
@@ -149,8 +153,8 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener)
 	sendSRTPSession = NULL;
 	recvSRTPSession = NULL;
 	recvSRTPSessionRTX = NULL;
-	sendKey		= NULL;
-	recvKey		= NULL;
+	sendKey	= NULL;
+	recvKey	= NULL;
 	//No ice
 	iceLocalUsername = NULL;
 	iceLocalPwd = NULL;
@@ -241,7 +245,6 @@ int RTPSession::SetLocalCryptoSDES(const char* suite, const char* key64)
 	err_status_t err;
 	srtp_policy_t policy;
 
-	Log("-Set local RTP SDES [suite:%s,key:%s]\n",suite,key64);
 	//empty policy
 	memset(&policy, 0, sizeof(srtp_policy_t));
 
@@ -384,8 +387,6 @@ int RTPSession::SetRemoteCryptoSDES(const char* suite, const char* key64)
 	err_status_t err;
 	srtp_policy_t policy;
 
-	Log("-Set remote RTP SDES [suite:%s,key:%s]\n",suite,key64);
-	
 	//empty policy
 	memset(&policy, 0, sizeof(srtp_policy_t));
 
@@ -507,8 +508,8 @@ int RTPSession::SetRemotePort(char *ip,int sendPort)
 	//Get ip addr
 	DWORD ipAddr = inet_addr(ip);
 
-	//If we already have one and it is a NATed
-	if (recIP!=INADDR_ANY && ipAddr==INADDR_ANY)
+	//If we already have one IP binded
+	if (recIP!=INADDR_ANY)
 		//Exit
 		return Log("-SetRemotePort NAT already binded sucessfully to [%s:%d]\n",inet_ntoa(sendAddr.sin_addr),recPort);
 
@@ -662,6 +663,9 @@ int RTPSession::End()
 	if (!running)
 		//Nothing
 		return 0;
+
+	Log(">End RTPSession\n");
+
 	//Stop just in case
 	Stop();
 
@@ -686,6 +690,8 @@ int RTPSession::End()
 	if (remoteRateEstimator && recSSRC)
 		//Remove stream
 		remoteRateEstimator->RemoveStream(recSSRC);
+
+	Log("<End RTPSession\n");
 
 	return 1;
 }
@@ -715,6 +721,9 @@ int RTPSession::SendPacket(RTCPCompoundPacket &rtcp)
 	//If encripted
 	if (encript)
 	{
+		//Check  session
+		if (!sendSRTPSession)
+			return Error("-no sendSRTPSession\n");
 		//Protect
 		err_status_t err = srtp_protect_rtcp(sendSRTPSession,data,&len);
 		//Check error
@@ -736,6 +745,9 @@ int RTPSession::SendPacket(RTCPCompoundPacket &rtcp)
 		//Return
 		return Error("-Error sending RTP packet [%d]\n",errno);
 
+	//INcrease stats
+	numRTCPSendPackets++;
+	totalRTCPSendBytes += len;
 	//Exit
 	return 1;
 }
@@ -861,6 +873,9 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 	//Check if we ar encripted
 	if (encript)
 	{
+		//Check  session
+		if (!sendSRTPSession)
+			return Error("-no sendSRTPSession\n");
 		//Encript
 		err_status_t err = srtp_protect(sendSRTPSession,sendPacket,&len);
 		//Check error
@@ -992,6 +1007,9 @@ int RTPSession::ReadRTCP()
 	//Decript
 	if (decript)
 	{
+		//Check session
+		if (!recvSRTPSession)
+			return Error("-No recvSRTPSession\n");
 		//unprotect
 		err_status_t err = srtp_unprotect_rtcp(recvSRTPSession,buffer,&size);
 		//Check error
@@ -1135,6 +1153,9 @@ int RTPSession::ReadRTP()
 		//Decript
 		if (decript)
 		{
+			//Check session
+			if (!recvSRTPSession)
+				return Error("-No recvSRTPSession\n");
 			//unprotect
 			err_status_t err = srtp_unprotect_rtcp(recvSRTPSession,buffer,&size);
 			//Check error
@@ -1185,6 +1206,9 @@ int RTPSession::ReadRTP()
 	if (decript)
 	{
 		err_status_t err;
+		//Check session
+		if (!recvSRTPSession)
+			return Error("-No recvSRTPSession\n");
 		//Check if it is a retransmited packet
 		if (!isRTX)
 			//unprotect
@@ -1586,6 +1610,10 @@ void RTPSession::CancelGetPacket()
 
 void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 {
+	//Increase stats
+	numRTCPRecvPackets++;
+	totalRTCPRecvBytes += rtcp->GetSize();
+
 	//For each packet
 	for (int i = 0; i<rtcp->GetPacketCount();i++)
 	{
@@ -1913,7 +1941,6 @@ int RTPSession::SendFIR()
 {
 	Debug("-SendFIR\n");
 
-
 	//Create rtcp sender retpor
 	RTCPCompoundPacket* rtcp = CreateSenderReport();
 
@@ -1942,10 +1969,9 @@ int RTPSession::SendFIR()
 int RTPSession::RequestFPU()
 {
 	Debug("-RequestFPU\n");
-	//Send all the packets inmediatelly to the decoderso I frame can be handled as soon as possoble
-	//packets.HurryUp();
-	//
+	//Drop all paquets queued, we could also hurry up
 	packets.Reset();
+	//Do not wait until next RTCP SR
 	packets.SetMaxWaitTime(0);
 	//request FIR
 	SendFIR();
