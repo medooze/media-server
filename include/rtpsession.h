@@ -70,10 +70,10 @@ public:
 	
 	RTPPacket* GetPacket();
 	void CancelGetPacket();
-	DWORD GetNumRecvPackets()	const { return numRecvPackets;	}
-	DWORD GetNumSendPackets()	const { return numSendPackets;	}
-	DWORD GetTotalRecvBytes()	const { return totalRecvBytes;	}
-	DWORD GetTotalSendBytes()	const { return totalSendBytes;	}
+	DWORD GetNumRecvPackets()	const { return numRecvPackets+numRTCPRecvPackets;	}
+	DWORD GetNumSendPackets()	const { return numSendPackets+numRTCPSendPackets;	}
+	DWORD GetTotalRecvBytes()	const { return totalRecvBytes+totalRTCPRecvBytes;	}
+	DWORD GetTotalSendBytes()	const { return totalSendBytes+totalRTCPSendBytes;	}
 	DWORD GetLostRecvPackets()	const { return lostRecvPackets;	}
 
 
@@ -173,9 +173,13 @@ private:
 
 	//Statistics
 	DWORD	numRecvPackets;
+	DWORD	numRTCPRecvPackets;
 	DWORD	numSendPackets;
+	DWORD	numRTCPSendPackets;
 	DWORD	totalRecvBytes;
+	DWORD	totalRTCPRecvBytes;
 	DWORD	totalSendBytes;
+	DWORD	totalRTCPSendBytes;
 	DWORD	lostRecvPackets;
 	DWORD	totalRecvPacketsSinceLastSR;
 	DWORD   nackedPacketsSinceLastSR;
