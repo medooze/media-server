@@ -641,7 +641,8 @@ int FLVEncoder::EncodeVideo()
 			pthread_mutex_unlock(&mutex);
 		}
 		
-		
+		//Lock
+		pthread_mutex_lock(&mutex);
 		//Set timestamp
 		frame.SetTimestamp(encoded->GetTimeStamp());
 		//Publish it
