@@ -1814,6 +1814,13 @@ int MultiConf::AppMixerDisplayImage(const char* filename)
 	return appMixer.DisplayImage(filename);
 }
 
+int MultiConf::AppMixerWebsocketConnectRequest(int partId,WebSocket *ws,bool isPresenter)
+{
+	//Connect it
+	return appMixer.WebsocketConnectRequest(partId,ws,isPresenter);
+}
+
+
 int  MultiConf::StartPublishing(const char* server,int port, const char* app,const char* stream)
 {
 	

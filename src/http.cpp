@@ -168,6 +168,18 @@ std::string Headers::GetHeader(const std::string &key) const
 	return it->second.front();
 }
 
+int  Headers::GetIntHeader(const std::string& key,int defaultValue) const
+{
+	//Search
+	const_iterator it = find(key);
+	//if not found
+	if (it==end())
+		//return default
+		return defaultValue;
+	//Return first Header
+	return atoi(it->second.front().c_str());
+}
+
 std::vector<std::string> Headers::GetHeaders(const std::string &key) const
 {
 	//Search
@@ -421,8 +433,28 @@ DWORD ContentDisposition::GetSize()
 }
 
 
+std::string HTTPResponse::Serialize()
+{
+	char line[4096];
 
+	snprintf(line,4096,"HTTP/%d.%d %d %s\r\n",httpMajor,httpMinor,code,reason.c_str());
 
+	//Create response
+	std::string response(line);
 
+	///For each header
+	for (Headers::iterator it = begin(); it!=end(); ++it)
+	{
+		//get values vector
+		Headers::mapped_type& values = it->second;
+		//For each value
+		for (Headers::mapped_type::iterator vit = values.begin(); vit!=values.end(); ++vit)
+			//Append
+			response += it->first +": "+ (*vit) +"\r\n";
+ 	}
 
-
+	//Add final \r\n
+	response += "\r\n";
+	//Return serialized reponse
+	return response;
+}

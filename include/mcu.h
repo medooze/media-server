@@ -7,12 +7,13 @@
 #include "rtmpapplication.h"
 #include "xmlstreaminghandler.h"
 #include "uploadhandler.h"
-
+#include "websocketserver.h"
 
 
 class MCU : 
 	public RTMPApplication,
 	public MultiConf::Listener,
+	public WebSocketServer::Handler,
 	public UploadHandler::Listener
 {
 public:
@@ -51,6 +52,9 @@ public:
 	virtual RTMPNetConnection* Connect(const std::wstring& appName,RTMPNetConnection::Listener* listener);
 	/** File uploader event */
 	virtual int onFileUploaded(const char* url, const char *filename);
+	/** WebSocket connection event */
+	virtual void onWebSocketConnection(const HTTPRequest& request,WebSocket *ws);
+
 private:
 	struct ConferenceEntry
 	{

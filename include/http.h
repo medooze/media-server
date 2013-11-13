@@ -33,6 +33,7 @@ public:
 	bool HasHeader (const std::string& key);
 	bool ParseHeader(const std::string &line);
 	std::string GetHeader(const std::string& key) const;
+	int  GetIntHeader(const std::string& key,int defaultValue) const;
 	std::vector<std::string> GetHeaders(const std::string& key) const;
 };
 
@@ -68,6 +69,56 @@ private:
 	std::string subtype;
 };
 
+class HTTPRequest : public Headers
+{
+public:
+	HTTPRequest(const std::string method,const std::string requestURI,unsigned short httpMajor, unsigned short httpMinor)
+	{
+		this->requestURI = requestURI;
+		this->method = method;
+		this->httpMajor = httpMajor;
+		this->httpMinor = httpMinor;
+	}
+	
+        void SetHttpMajor(unsigned short httpMajor)     { this->httpMajor = httpMajor;		}
+	void SetHttpMinor(unsigned short httpMinor)     { this->httpMinor = httpMinor;		}
+        void SetRequestURI(std::string requestURI)	{ this->requestURI = requestURI;        }
+        void SetMethod(std::string method)		{ this->method = method;		}
+
+	unsigned short GetHttpMajor() const  { return httpMajor;	}
+	unsigned short GetHttpMinor() const  { return httpMinor;	}
+	std::string GetRequestURI() const    { return requestURI;	}
+        std::string GetMethod() const        { return method;		}
+private:
+	std::string method;
+	std::string requestURI;
+	unsigned short httpMajor;
+	unsigned short httpMinor;
+};
+
+class HTTPResponse : public Headers
+{
+public:
+	HTTPResponse(unsigned short code,const std::string reason,unsigned short httpMajor, unsigned short httpMinor)
+	{
+		this->code = code;
+		this->reason = reason;
+		this->httpMajor = httpMajor;
+		this->httpMinor = httpMinor;
+	}
+        unsigned short GetHttpMinor() const     { return httpMinor;     }
+        unsigned short GetHttpMajor() const     { return httpMajor;     }
+        std::string GetReason() const		{ return reason;	}
+        unsigned short GetCode() const		{ return code;		}
+
+	std::string Serialize();
+	
+private:
+	unsigned short code;
+	std::string reason;
+	unsigned short httpMajor;
+	unsigned short httpMinor;
+};
 
 #endif	/* __HTTP_H_ */
 

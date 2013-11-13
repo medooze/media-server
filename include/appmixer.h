@@ -11,19 +11,31 @@
 #include "config.h"
 #include "video.h"
 #include "logo.h"
+#include "websockets.h"
 
-class AppMixer
+class AppMixer : public WebSocket::Listener
 {
 public:
 	AppMixer();
 
 	int Init(VideoOutput *output);
 	int DisplayImage(const char* filename);
+	int WebsocketConnectRequest(int partId,WebSocket *ws,bool isPresenter);
 	int End();
 
+	virtual void onOpen(WebSocket *ws);
+	virtual void onMessageStart(WebSocket *ws,const WebSocket::MessageType type);
+	virtual void onMessageData(WebSocket *ws,const BYTE* data, const DWORD size);
+	virtual void onMessageEnd(WebSocket *ws);
+	virtual void onError(WebSocket *ws);
+	virtual void onClose(WebSocket *ws);
+private:
+	typedef std::map<int,WebSocket*> Viewers;
 private:
 	Logo		logo;
 	VideoOutput*	output;
+	WebSocket*	presenter;
+	Viewers		viewers;
 };
 
 #endif	/* APPMIXER_H */
