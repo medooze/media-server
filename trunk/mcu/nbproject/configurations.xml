@@ -33,9 +33,11 @@
         <in>fecdecoder.h</in>
         <in>fifo.h</in>
         <in>flash.h</in>
+        <in>flv.h</in>
         <in>flvrecorder.h</in>
         <in>framescaler.h</in>
         <in>http.h</in>
+        <in>httpparser.h</in>
         <in>log.h</in>
         <in>logo.h</in>
         <in>mcu.h</in>
@@ -79,6 +81,7 @@
         <in>rtp.h</in>
         <in>rtpbuffer.h</in>
         <in>rtpparticipant.h</in>
+        <in>rtpsession - copia.h</in>
         <in>rtpsession.h</in>
         <in>sidebar.h</in>
         <in>statushandler.h</in>
@@ -102,7 +105,9 @@
         <in>videotranscoder.h</in>
         <in>wait.h</in>
         <in>waitqueue.h</in>
+        <in>websocketconnection.h</in>
         <in>websockets.h</in>
+        <in>websocketserver.h</in>
         <in>websocketshandler.h</in>
         <in>xmlhandler.h</in>
         <in>xmlrpcclient.h</in>
@@ -119,6 +124,10 @@
       <df name="scripts">
       </df>
       <df name="src" kind="SOURCE_LOGICAL_FOLDER">
+        <df name="aac">
+          <in>aacencoder.cpp</in>
+          <in>aacencoder.h</in>
+        </df>
         <df name="flv1" kind="SOURCE_LOGICAL_FOLDER">
           <in>flv1codec.cpp</in>
           <in>flv1codec.h</in>
@@ -251,6 +260,7 @@
         <in>flvrecorder.cpp</in>
         <in>framescaler.cpp</in>
         <in>http.cpp</in>
+        <in>httpparser.cpp</in>
         <in>logo.cpp</in>
         <in>main.cpp</in>
         <in>mcu.cpp</in>
@@ -285,6 +295,7 @@
         <in>rtmpstream.cpp</in>
         <in>rtp.cpp</in>
         <in>rtpparticipant.cpp</in>
+        <in>rtpsession - copia.cpp</in>
         <in>rtpsession.cpp</in>
         <in>sidebar.cpp</in>
         <in>statushandler.cpp</in>
@@ -301,6 +312,8 @@
         <in>videomixer.cpp</in>
         <in>videopipe.cpp</in>
         <in>videostream.cpp</in>
+        <in>websocketconnection.cpp</in>
+        <in>websocketserver.cpp</in>
         <in>websocketshandler.cpp</in>
         <in>xmlhandler.cpp</in>
         <in>xmlrpcbroadcaster.cpp</in>

@@ -12,6 +12,8 @@ AppMixer::AppMixer()
 {
 	//No output
 	output = NULL;
+	//No presenter
+	presenter = NULL;
 }
 
 int AppMixer::Init(VideoOutput* output)
@@ -47,4 +49,69 @@ int AppMixer::End()
 {
 	//Reset output
 	output = NULL;
+
+	//Check if presenting
+	if (presenter)
+	{
+		//End it
+		presenter->Close();
+		//Nullify
+		presenter = NULL;
+	}
+	for (Viewers::iterator it = viewers.begin(); it!=viewers.end(); ++it)
+		it->second->Close();
+}
+
+int AppMixer::WebsocketConnectRequest(int partId,WebSocket *ws,bool isPresenter)
+{
+	if (isPresenter)
+	{
+		if (presenter) presenter->Close();
+		presenter = ws;
+	} else {
+		viewers[partId] = ws;
+	}
+
+	//Accept connection
+	ws->Accept(this);
+}
+
+void AppMixer::onOpen(WebSocket *ws)
+{
+
+}
+
+void AppMixer::onMessageStart(WebSocket *ws,const WebSocket::MessageType type)
+{
+
+}
+
+void AppMixer::onMessageData(WebSocket *ws,const BYTE* data, const DWORD size)
+{
+	Dump(data,size);
+
+	if (ws==presenter)
+		for (Viewers::iterator it = viewers.begin(); it!=viewers.end(); ++it)
+			it->second->SendMessage(data,size);
+	else
+		presenter->SendMessage(data,size);
+}
+
+void AppMixer::onMessageEnd(WebSocket *ws)
+{
+
+}
+void AppMixer::onClose(WebSocket *ws)
+{
+	if (ws==presenter)
+	{
+		//Remote presenter
+		presenter = NULL;
+	} else {
+		//Remove
+	}
+}
+void AppMixer::onError(WebSocket *ws)
+{
+
 }

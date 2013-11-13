@@ -2,6 +2,7 @@
 #include "xmlrpcserver.h"
 #include "xmlhandler.h"
 #include "xmlstreaminghandler.h"
+#include "websockets.h"
 #include "statushandler.h"
 #include "audiomixer.h"
 #include "rtmpserver.h"
@@ -9,6 +10,7 @@
 #include "broadcaster.h"
 #include "mediagateway.h"
 #include "jsr309/JSR309Manager.h"
+#include "websocketserver.h"
 #include <signal.h>
 #include <sys/time.h>
 #include <sys/resource.h>
@@ -20,6 +22,7 @@
 extern "C" {
 #include "libavcodec/avcodec.h"
 }
+
 extern XmlHandlerCmd mcuCmdList[];
 extern XmlHandlerCmd broadcasterCmdList[];
 extern XmlHandlerCmd mediagatewayCmdList[];
@@ -84,6 +87,7 @@ int main(int argc,char **argv)
 	//Set default values
 	bool forking = false;
 	int port = 8080;
+	int wsPort = 8090;
 	int rtmpPort = 1935;
 	int minPort = RTPSession::GetMinPort();
 	int maxPort = RTPSession::GetMaxPort();
@@ -125,6 +129,9 @@ int main(int argc,char **argv)
 		else if (strcmp(argv[i],"--rtmp-port")==0 && (i+1<argc))
 			//Get rtmp port
 			rtmpPort = atoi(argv[++i]);
+		else if (strcmp(argv[i],"--websocket-port")==0 && (i+1<argc))
+			//Get port
+			wsPort = atoi(argv[++i]);
 		else if (strcmp(argv[i],"--min-rtp-port")==0 && (i+1<argc))
 			//Get rtmp port
 			minPort = atoi(argv[++i]);
@@ -227,6 +234,7 @@ int main(int argc,char **argv)
 	//Create servers
 	XmlRpcServer	server(port);
 	RTMPServer	rtmpServer;
+	WebSocketServer wsServer;
 
 	//Log version
 	Log("-MCU Version %s %s\r\n",MCUVERSION,MCUDATE);
@@ -287,12 +295,19 @@ int main(int argc,char **argv)
 
 	//Add uploaders
 	server.AddHandler("/upload/mcu/app/",&uploadermcu);
+
+	//Add websocket handlers
+	wsServer.AddHandler("/echo", new TexgEchoWebsocketHandler());
+	wsServer.AddHandler("/mcu", &mcu);
 	
 	//Add the html status handler
 	server.AddHandler("/status",&status);
 
 	//Init the rtmp server
 	rtmpServer.Init(rtmpPort);
+
+	//Init web socket server
+	wsServer.Init(wsPort);
 
 	//Set port ramge
 	if (!RTPSession::SetPortRange(minPort,maxPort))
@@ -316,5 +331,9 @@ int main(int argc,char **argv)
 	mediaGateway.End();
 	//End the jsr309
 	jsr309Manager.End();
+	//End servers
+	rtmpServer.End();
+	//ENd ws server
+	wsServer.End();
 }
 

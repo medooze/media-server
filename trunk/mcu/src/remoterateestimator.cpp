@@ -481,7 +481,7 @@ void RemoteRateEstimator::SetTemporalMinLimit(DWORD limit)
 		minConfiguredBitRate = limit;
 	else
 		//Set default min
-		minConfiguredBitRate = 100000;
+		minConfiguredBitRate = 32000;
 }
 void RemoteRateEstimator::SetListener(Listener *listener)
 {

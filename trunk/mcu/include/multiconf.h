@@ -13,6 +13,7 @@
 #include "textencoder.h"
 #include "rtmpnetconnection.h"
 #include "appmixer.h"
+#include "websockets.h"
 #include <map>
 #include <string>
 
@@ -79,6 +80,7 @@ public:
 	int DeletePlayer(int playerId);
 
 	int AppMixerDisplayImage(const char* filename);
+	int AppMixerWebsocketConnectRequest(int partId,WebSocket *ws,bool isPresenter);
 	
 	int SetCompositionType(int mosaicId,Mosaic::Type comp,int size);
 	int SetMosaicSlot(int mosaicId,int num,int id);

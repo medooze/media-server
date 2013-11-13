@@ -4,6 +4,7 @@
 #include "log.h"
 #include "mcu.h"
 #include "rtmpparticipant.h"
+#include "websockets.h"
 
 
 /**************************************
@@ -509,4 +510,92 @@ int MCU::onFileUploaded(const char* url, const char *filename)
 
 	//REturn result
 	return ret;
+}
+
+void MCU::onWebSocketConnection(const HTTPRequest& request,WebSocket *ws)
+{
+	MultiConf* conf = NULL;
+
+	//Log
+	Log("-WebSocket connection for for %s\n",request.GetRequestURI().c_str());
+
+	//Get url
+	std::string url = request.GetRequestURI();
+
+	StringParser parser(url);
+
+	//Check it is for us
+	if(!parser.MatchString("/mcu/"))
+	{
+		//reject
+		ws->Reject(400,"Bad request");
+		//Not found
+		return;
+	}
+
+	//Get until next /
+	if (!parser.ParseUntilCharset("/"))
+	{
+		//reject
+		ws->Reject(400,"Bad request");
+		//Not found
+		return;
+	}
+	
+	//Get value
+	std::string value = parser.GetValue();
+
+	//Get id by tag
+	int confId = GetConferenceId(std::wstring(value.begin(),value.end()));
+
+	//If not found
+	if (!confId)
+	{
+		//reject
+		ws->Reject(404,"Conference does not exist");
+		//Error
+		Error("Conference does not exist\n");
+		//Not found
+		return;
+	}
+
+	//Skip /
+	parser.Next();
+
+	//Get participant id
+	if (!parser.ParseUntilCharset("/"))
+	{
+		//reject
+		ws->Reject(400,"Bad request");
+		//Not found
+		return;
+	}
+
+	//Get value
+	int partId = atoi(parser.GetValue().c_str());
+
+	//Viewer only by default
+	bool isPresenter = false;
+
+	//Check if it is presented
+	if (parser.CheckString("?presenter"))
+		//It is presenter
+		isPresenter = true;
+
+	//Get conference
+	if(!GetConferenceRef(confId,&conf))
+	{
+		//reject
+		ws->Reject(404,"Conference does not exist");
+		//Error
+		Error("Conference does not exist\n");
+		//Not found
+		return;
+	}
+
+	//Connect it
+	conf->AppMixerWebsocketConnectRequest(partId,ws,isPresenter);
+
+	//Release it
+	ReleaseConferenceRef(confId);
 }

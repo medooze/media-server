@@ -8,6 +8,7 @@
 #ifndef STRINGPARSER_H
 #define	STRINGPARSER_H
 #include <string>
+#include <cstring>
 #include "config.h"
 
 class StringParser
@@ -191,6 +192,27 @@ public:
 		//Set value string
 		value = std::string(start,end-start);
 		//Everything ok
+		return true;
+	}
+	
+	bool ParseUntilCharset(const char* str)
+	{
+		//Check ended
+		if (IsEnded())
+			//Not found
+			return false;
+		//Get init
+		char *start = c;
+		//Wheck it is a not charset
+		while (!IsEnded() && !CheckCharSet(str))
+			Next();
+		//If we don't have any char
+		if (start==c)
+			//No token found
+			return false;
+		//Set value string
+		value = std::string(start,c-start);
+		//Done
 		return true;
 	}
 
