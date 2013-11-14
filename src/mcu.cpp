@@ -563,7 +563,7 @@ void MCU::onWebSocketConnection(const HTTPRequest& request,WebSocket *ws)
 	parser.Next();
 
 	//Get participant id
-	if (!parser.ParseUntilCharset("/"))
+	if (!parser.ParseUntilCharset("/?"))
 	{
 		//reject
 		ws->Reject(400,"Bad request");

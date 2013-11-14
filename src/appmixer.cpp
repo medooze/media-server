@@ -64,6 +64,7 @@ int AppMixer::End()
 
 int AppMixer::WebsocketConnectRequest(int partId,WebSocket *ws,bool isPresenter)
 {
+	Log("-WebsocketConnectRequest [partId:%d,isPresenter:%d]\n",partId,isPresenter);
 	if (isPresenter)
 	{
 		if (presenter) presenter->Close();
@@ -88,12 +89,13 @@ void AppMixer::onMessageStart(WebSocket *ws,const WebSocket::MessageType type)
 
 void AppMixer::onMessageData(WebSocket *ws,const BYTE* data, const DWORD size)
 {
+	Log("-onMessageData %p\n",ws);
 	Dump(data,size);
 
 	if (ws==presenter)
 		for (Viewers::iterator it = viewers.begin(); it!=viewers.end(); ++it)
 			it->second->SendMessage(data,size);
-	else
+	else if (presenter)
 		presenter->SendMessage(data,size);
 }
 
