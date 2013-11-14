@@ -215,8 +215,6 @@ int WebSocketConnection::Run()
 				//Check length
 				if (frame)
 				{
-					Debug("-Sending\n");
-					Dump(frame->GetData(),frame->GetSize());
 					//Send it
 					outBytes += write(socket,frame->GetData(),frame->GetSize());
 					//Delete it
@@ -500,7 +498,7 @@ void  WebSocketConnection::SendMessage(const std::string& message)
 void WebSocketConnection::SendMessage(const BYTE* data, const DWORD size)
 {
 	//Create new frame
-	Frame *frame = new Frame(WebSocketFrameHeader::TextFrame,data,size);
+	Frame *frame = new Frame(WebSocketFrameHeader::BinaryFrame,data,size);
 
 	//Lock mutex
 	pthread_mutex_lock(&mutex);
@@ -517,8 +515,6 @@ void WebSocketConnection::SendMessage(const BYTE* data, const DWORD size)
 
 int WebSocketConnection::on_url (HTTPParser* parser, const char *at, DWORD length)
 {
-	Debug("-WebSocketConnection::on_url\n");
-	
 	//Get value
 	std::string uri(at,length);
 	//Get method
@@ -570,7 +566,7 @@ int WebSocketConnection::on_headers_complete (HTTPParser*)
 int WebSocketConnection::on_message_complete (HTTPParser*)
 {
 	//Debug
-	Debug("-Incoming websocket connection for url:%s\n",request->GetRequestURI().c_str());
+	Log("-Incoming websocket connection for url:%s\n",request->GetRequestURI().c_str());
 
 	//Check listener
 	if (listener)
