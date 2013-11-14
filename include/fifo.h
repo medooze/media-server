@@ -57,6 +57,20 @@ public:
 		return l;
 	}
 
+	T pop()
+	{
+		T out;
+		pop(&out,1,true);
+		return out;
+	}
+
+	T peek()
+	{
+		T out;
+		pop(&out,1,false);
+		return out;
+	}
+
 	int pop(T *out,int l)
 	{
 		return pop(out,l,true);

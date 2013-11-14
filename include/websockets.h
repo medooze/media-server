@@ -28,6 +28,11 @@ public:
 	virtual void SendMessage(const std::string& message) = 0;
 	virtual void SendMessage(const BYTE* data, const DWORD size) = 0;
 	virtual void Close() = 0;
+
+	virtual void* GetUserData()			{ return userData;		}
+	virtual void  SetUserData(void* userData)	{ this->userData = userData;	}
+private:
+	void *userData;
 };
 
 #endif	/* WEBSOCKETS_H */
