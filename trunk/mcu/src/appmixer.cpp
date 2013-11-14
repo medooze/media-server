@@ -171,7 +171,7 @@ void AppMixer::onMessageEnd(WebSocket *ws)
 			//Get viewer
 			Viewer* viewer= it->second;
 			//Check if it is waiting for the server ini
-			if (viewer->CheckState(Viewer::WaitingForServerIni))
+			if (viewer->CheckState(Viewer::Established))
 				//Send server ini
 				viewer->SendMessage(presenter->GetMessage(),presenter->GetLength());
 		}
