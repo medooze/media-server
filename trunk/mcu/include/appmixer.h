@@ -9,6 +9,7 @@
 #define	APPMIXER_H
 #include <string>
 #include "config.h"
+#include "tools.h"
 #include "video.h"
 #include "logo.h"
 #include "websockets.h"
@@ -42,13 +43,15 @@ private:
 	public:
 		Presenter(WebSocket *ws);
 		int Process(const BYTE* data,DWORD size);
+		void SendMessage(const BYTE* data,DWORD size);
 		
-		int CheckState(State state)	{ return this->state==state;	}
-		BYTE* GetServerIniData()	{ return (BYTE*)serverIni;	}
-		DWORD GetServerIniSize()	{ return sizeof(serverIni);	}
-		BYTE* GetMessage()		{ return (BYTE*)message;	}
-		DWORD GetLength()		{ return length;		}
-		void  ClearMessage()		{ length = 0;			}
+		int CheckState(State state)	{ return this->state==state;		}
+		BYTE* GetServerIniData()	{ return (BYTE*)serverIni;		}
+		DWORD GetServerIniSize()	{ return sizeof(serverIni);		}
+		BYTE* GetMessage()		{ return (BYTE*)message;		}
+		DWORD GetLength()		{ return length;			}
+		void  ClearMessage()		{ length = 0;				}
+		bool  IsFramebufferUpdate()	{ return length>3 && get3(message,0)==0; 	}
 	public:
 		WebSocket* ws;
 		BYTE serverIni[27];
@@ -69,11 +72,20 @@ private:
 		void SendServerIni(BYTE* data,DWORD size);
 		int Process(const BYTE* data,DWORD size);
 		int CheckState(State state)	{ return this->state==state;	}
+		BYTE* GetMessage()		{ return (BYTE*)message;	}
+		DWORD GetLength()		{ return length;		}
+		void  ClearMessage()		{ length = 0;			}
+		bool  IsSafe()			{ return safe;			}
+		void  SetSafe()			{ safe = 1;			}
+		int   GetId()			{ return id;			}
 	public:
 		int id;
+		bool safe;
 		WebSocket* ws;
 		State state;
 		fifo<BYTE,1024> buffer;
+		BYTE	message[65535];
+		DWORD	length;
 	};
 public:
 	AppMixer();

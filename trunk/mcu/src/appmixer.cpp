@@ -12,6 +12,27 @@
 #include "fifo.h"
 #include "use.h"
 
+/*
+No. of bytes Type [Value] Description
+1 U8 3 message-type
+1 U8 incremental
+2 U16 x-position
+2 U16 y-position
+2 U16 width
+2 U16 height
+*/
+BYTE framebufferUpdateRequest[10] = { 0x03, 0x01, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff };
+BYTE setPixetFormat[20] = { 0x00  ,0x00  ,0x00  ,0x00  ,0x20  ,0x18  ,0x00  ,0x01
+				,0x00  ,0xff  ,0x00  ,0xff  ,0x00  ,0xff  ,0x10  ,0x0
+				,0x00  ,0x00  ,0x00  ,0x00};
+BYTE setEncodings[44] = {0x02  ,0x00  ,0x00  ,0x0a
+			,0x00  ,0x00  ,0x00  ,0x01  ,0x00  ,0x00  ,0x00  ,0x07
+			,0xff  ,0xff  ,0xfe  ,0xfc  ,0x00  ,0x00  ,0x00  ,0x05
+			,0x00  ,0x00  ,0x00  ,0x02  ,0x00  ,0x00  ,0x00  ,0x00
+			,0xff  ,0xff  ,0xff  ,0x21  ,0xff  ,0xff  ,0xff  ,0xe6
+			,0xff  ,0xff  ,0xff  ,0x09  ,0xff  ,0xff  ,0xff  ,0x20};
+
+
 AppMixer::AppMixer()
 {
 	//No output
@@ -71,8 +92,12 @@ int AppMixer::End()
 int AppMixer::WebsocketConnectRequest(int partId,WebSocket *ws,bool isPresenter)
 {
 	Log("-WebsocketConnectRequest [partId:%d,isPresenter:%d]\n",partId,isPresenter);
+
 	if (isPresenter)
 	{
+		//LOck
+		use.WaitUnusedAndLock();
+		//Check if already presenting
 		if (presenter)
 		{
 			//Close websocket
@@ -84,13 +109,33 @@ int AppMixer::WebsocketConnectRequest(int partId,WebSocket *ws,bool isPresenter)
 		presenter = new Presenter(ws);
 		//No user data
 		ws->SetUserData(NULL);
+		//Unlock
+		use.Unlock();
 	} else {
+		//Lock
+		use.IncUse();
+		//Find 
+		Viewers::iterator it = viewers.find(partId);
+		//If already got a viewer for that aprticipant
+		if (it!=viewers.end())
+		{
+			//Get viewer
+			Viewer* viewer = it->second;
+			//Close websocket
+			viewer->ws->Close();
+			//Delete it
+			delete(viewer);	
+			//Erase it
+			viewers.erase(it);
+		}
 		//Create new viewer
 		Viewer* viewer = new Viewer(partId,ws);
 		//Set as ws user data
 		ws->SetUserData(viewer);
 		//add To map
 		viewers[partId] = viewer;
+		//Unlock
+		use.DecUse();
 		//Start handshake
 		viewer->StartHandshake();
 	}
@@ -111,8 +156,6 @@ void AppMixer::onMessageStart(WebSocket *ws,const WebSocket::MessageType type)
 
 void AppMixer::onMessageData(WebSocket *ws,const BYTE* data, const DWORD size)
 {
-	Log("-onMessageData %p\n",ws);
-	Dump(data,size);
 
 	///Get user data
 	void * user = ws->GetUserData();
@@ -120,6 +163,8 @@ void AppMixer::onMessageData(WebSocket *ws,const BYTE* data, const DWORD size)
 	//Check if it is presenter
 	if (user)
 	{
+	Log("-onMessageData user %p\n",ws);
+	Dump(data,size);
 
 		//Get viewer from user data
 		Viewer* viewer = (Viewer*) user;
@@ -130,12 +175,18 @@ void AppMixer::onMessageData(WebSocket *ws,const BYTE* data, const DWORD size)
 		{
 			//Check if presenter is established
 			if (presenter && presenter->CheckState(Presenter::Established))
+			{
 				//Send server ini
 				viewer->SendServerIni(presenter->GetServerIniData(),presenter->GetServerIniSize());
+				//Send FUR
+				presenter->SendMessage((BYTE*)framebufferUpdateRequest,sizeof(framebufferUpdateRequest));
+			}
 		}
 		//Unlock
 		use.DecUse();
 	} else if (ws==presenter->ws) {
+	Log("-onMessageData presenter %p\n",ws);
+	Dump(data,size);
 		//Process it
 		if (presenter->Process(data,size))
 		{
@@ -157,11 +208,31 @@ void AppMixer::onMessageData(WebSocket *ws,const BYTE* data, const DWORD size)
 
 			
 	}
+
+	Log("<onMessageData\n");
 }
 
 void AppMixer::onMessageEnd(WebSocket *ws)
 {
-	if (presenter && ws==presenter->ws)
+	//Get viewer
+	Viewer* viewer = (Viewer*) ws->GetUserData();
+
+	Log("-onMessageEndedi %s\n",viewer?"viewer":"presenter");
+
+	if (viewer)
+	{
+		//Lock
+		use.WaitUnusedAndLock();
+		//Send to the presenter
+		//if (presenter && presenter->ws && presenter->CheckState(Presenter::Established))
+			//Send
+			//presenter->SendMessage(viewer->GetMessage(),viewer->GetLength());
+		//Unlock
+		use.Unlock();
+		//Cleare message
+		viewer->ClearMessage();
+	}
+	else if (presenter && ws==presenter->ws && presenter->CheckState(Presenter::Established) && presenter->GetLength())
 	{
 		//We are established lock viewers
 		use.WaitUnusedAndLock();
@@ -169,11 +240,16 @@ void AppMixer::onMessageEnd(WebSocket *ws)
 		for (Viewers::iterator it = viewers.begin(); it!=viewers.end(); ++it)
 		{
 			//Get viewer
-			Viewer* viewer= it->second;
+			Viewer* viewer = it->second;
 			//Check if it is waiting for the server ini
-			if (viewer->CheckState(Viewer::Established))
+			if (viewer->CheckState(Viewer::Established) && (viewer->IsSafe() || presenter->IsFramebufferUpdate()))
+			{
+				Log("-Sending frame viewer:%p safe:%d update%d\n",viewer,viewer->IsSafe(),presenter->IsFramebufferUpdate());
 				//Send server ini
 				viewer->SendMessage(presenter->GetMessage(),presenter->GetLength());
+				//We are safe
+				viewer->SetSafe();
+			}
 		}
 		//Unlock
 		use.Unlock();
@@ -181,15 +257,35 @@ void AppMixer::onMessageEnd(WebSocket *ws)
 		presenter->ClearMessage();
 	}
 }
+
 void AppMixer::onClose(WebSocket *ws)
 {
-	if (ws==presenter->ws)
+	///Get user data
+	void * user = ws->GetUserData();
+
+	//Check if it is presenter
+	if (user)
 	{
+		//Get viewer from user data
+		Viewer* viewer = (Viewer*) user;
+		//Lock
+		use.WaitUnusedAndLock();
+		//Erase it
+		viewers.erase(viewer->GetId());
+		//Delete it
+		delete(viewer);
+		//Unlcok
+		use.Unlock();
+	} else if (presenter && ws==presenter->ws) {
+		//Lock
+		use.WaitUnusedAndLock();
+		//Delete presenter
+		delete(presenter);
 		//Remote presenter
 		presenter = NULL;
-	} else {
-		//Remove
-	}
+		//Unlock
+		use.Unlock();
+	} 
 }
 
 void AppMixer::onError(WebSocket *ws)
@@ -205,6 +301,10 @@ AppMixer::Viewer::Viewer(int id,WebSocket *ws)
 	this->ws = ws;
 	//No state
 	state = None;
+	//NO length
+	length = 0;
+	//Not safe
+	safe = 0;
 }
 
 void AppMixer::Viewer::StartHandshake()
@@ -212,7 +312,7 @@ void AppMixer::Viewer::StartHandshake()
 	//Set state
 	state = VersionSent;
 	//Send
-	ws->SendMessage((BYTE*)"RFB.003.008\n",12);
+	ws->SendMessage((BYTE*)"RFB 003.008\n",12);
 }
 
 int AppMixer::Viewer::Process(const BYTE* data,DWORD size)
@@ -259,7 +359,8 @@ int AppMixer::Viewer::Process(const BYTE* data,DWORD size)
 				waitingForServeIni = 1;
 				break;
 			default:
-				return waitingForServeIni;
+				//Get what is left in the buffer
+				length += buffer.pop(message+length,buffer.length());
 		}
 	}
 	return waitingForServeIni;
@@ -269,11 +370,19 @@ void  AppMixer::Viewer::SendServerIni(BYTE* data,DWORD size)
 {
 	//Move state
 	state = Established;
+	//Log
+	Log("-VNC viewer established %p\n",this);
 	//Send security
 	ws->SendMessage(data,size);
 }
 
 void AppMixer::Viewer::SendMessage(const BYTE* data,DWORD size)
+{
+	//Send data
+	ws->SendMessage(data,size);
+}
+
+void AppMixer::Presenter::SendMessage(const BYTE* data,DWORD size)
 {
 	//Send data
 	ws->SendMessage(data,size);
@@ -285,6 +394,8 @@ AppMixer::Presenter::Presenter(WebSocket *ws)
 	this->ws = ws;
 	//Set empty state
 	state = WaitingVersion;
+	//NO length
+	length = 0;
 }
 
 int AppMixer::Presenter::Process(const BYTE* data,DWORD size)
@@ -315,7 +426,7 @@ int AppMixer::Presenter::Process(const BYTE* data,DWORD size)
 					//Move state
 					state = WaitingSecurity;
 					//Send security
-					ws->SendMessage((BYTE*)"RFB.003.008\n",12);
+					ws->SendMessage((BYTE*)"RFB 003.008\n",12);
 					break;
 				case WaitingSecurity:
 				{
@@ -371,6 +482,15 @@ int AppMixer::Presenter::Process(const BYTE* data,DWORD size)
 					set4(serverIni,20,3);
 					//Move state
 					state = Established;
+					//Log
+					Log("-VNC presenter established %p\n",this);
+					//Send  pixet formats
+					ws->SendMessage((BYTE*)setPixetFormat,sizeof(setPixetFormat));
+					//Sned encodings
+					ws->SendMessage((BYTE*)setEncodings,sizeof(setEncodings));
+					//Send FUR
+					ws->SendMessage((BYTE*)framebufferUpdateRequest,sizeof(framebufferUpdateRequest));
+				
 					//Get what is left in the buffer
 					length = buffer.pop(message,buffer.length());
 					//Just established

@@ -497,7 +497,10 @@ void  WebSocketConnection::SendMessage(const std::string& message)
 
 void WebSocketConnection::SendMessage(const BYTE* data, const DWORD size)
 {
-	Debug("-sending ");
+	//Do not send empty frames
+	if (!size)
+		return;
+	Debug("-sending\n ");
 	Dump(data,size);
 	//Create new frame
 	Frame *frame = new Frame(WebSocketFrameHeader::BinaryFrame,data,size);
