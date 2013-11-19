@@ -33,6 +33,7 @@ VP8Decoder::VP8Decoder()
 	src = 0;
 	width = 0;
 	height = 0;
+	completeFrame = true;
 	//Set flags
 	vpx_codec_flags_t flags = 0;
 	/**< Postprocess decoded frame */
@@ -74,8 +75,13 @@ int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 	//Not key frame
 	isKeyFrame = false;
 
+	//Check if lost
+	if (lost)
+		//Not complete frame
+		completeFrame = false;
+
 	//Check if not empty last packet
-	if (inLen)
+	if (inLen && completeFrame)
 	{
 		VP8PayloadDescriptor desc;
 
@@ -122,6 +128,17 @@ int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 	//Si es el ultimo
 	if(last)
 	{
+		//Check if it is not compete
+		int corrupted = completeFrame;
+
+		//Clean next frame
+		completeFrame = true;
+
+		//Check it is corrupted
+		if (corrupted)
+			//Do nothing
+			return 0;
+
 		//If got last partition
 		if (bufLen)
 			//Decode last partition
@@ -135,18 +152,25 @@ int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 			//Error
 			return Error("Error decoding VP8 last [error %d:%s]\n",decoder.err,decoder.err_detail);
 
-		//Check if it is corrupted
-		int corrupted = 0;
+		//Check if it is corrupted even if completed
 		if (vpx_codec_control(&decoder, VP8D_GET_FRAME_CORRUPTED, &corrupted)==VPX_CODEC_OK)
 			//Set key frame flag
 			isKeyFrame =  !(buffer[0] & 1) && !corrupted;
+
+		//Check it is corrupted
+		if (corrupted)
+			//Do nothing
+			return 0;
 		
 		//Ger image
 		vpx_codec_iter_t iter = NULL;
 		vpx_image_t *img = vpx_codec_get_frame(&decoder, &iter);
+
 		//Check img
-		if (!img || corrupted)
+		if (!img)
+			//Do nothing
 			return 0;
+		
 		//Get dimensions
 		width = img->d_w;
 		height = img->d_h;
@@ -154,7 +178,7 @@ int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 		int v = width*height*5/4;
 		int size = width*height*3/2;
 
-		//Comprobamos el tama�o
+		//Check size
 		if (size>frameSize)
 		{
 			Log("-Frame size %dx%d\n",width,height);
