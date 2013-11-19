@@ -129,7 +129,7 @@ int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 	if(last)
 	{
 		//Check if it is not compete
-		int corrupted = completeFrame;
+		int corrupted = !completeFrame;
 
 		//Clean next frame
 		completeFrame = true;
@@ -137,7 +137,7 @@ int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 		//Check it is corrupted
 		if (corrupted)
 			//Do nothing
-			return 0;
+			return Error("-Not complete VP8 frame\n");
 
 		//If got last partition
 		if (bufLen)
@@ -160,7 +160,7 @@ int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 		//Check it is corrupted
 		if (corrupted)
 			//Do nothing
-			return 0;
+			return Error("-Corrupted VP8 frame\n");
 		
 		//Ger image
 		vpx_codec_iter_t iter = NULL;
