@@ -35,6 +35,7 @@ private:
 	DWORD		width;
 	DWORD		height;
 	bool		isKeyFrame;
+	bool		completeFrame;
 };
 #endif	/* VP8DECODER_H */
 
