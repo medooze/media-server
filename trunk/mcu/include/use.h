@@ -2,7 +2,6 @@
 #define _USE_H_
 #include <pthread.h>
 
-
 class Use
 {
 public:
@@ -24,10 +23,10 @@ public:
 	void IncUse()
 	{
 		pthread_mutex_lock(&lock);
-		pthread_mutex_unlock(&lock);
 		pthread_mutex_lock(&mutex);
 		cont ++;
 		pthread_mutex_unlock(&mutex);
+		pthread_mutex_unlock(&lock);
 	}
 
 	void DecUse()
