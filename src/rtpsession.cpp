@@ -706,7 +706,7 @@ int RTPSession::SendPacket(RTCPCompoundPacket &rtcp)
 	if (sendRtcpAddr.sin_addr.s_addr == INADDR_ANY && !muxRTCP)
 	{
 		//Debug
-		Debug("-Error sending rtp packet, no remote IP yet\n");
+		Debug("-Error sending rtcp packet, no remote IP yet\n");
 		//Exit
 		return 0;
 	}
