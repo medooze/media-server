@@ -103,6 +103,9 @@ int Logo::Load(const char* fileName)
 		goto end;
 	}
 
+	//Use only one thread to avoid decoding on background and logo not displayed
+	ctx->thread_count = 1;
+
 	//Decode logo
 	if (avcodec_decode_video2(ctx, logoRGB, &gotLogo, &packet)<0)
 	{
