@@ -297,6 +297,10 @@ void RemoteRateEstimator::Update(RemoteRateControl::BandwidthUsage usage,bool re
 	if (currentBitRate<minConfiguredBitRate)
 		//Set minimun
 		currentBitRate = minConfiguredBitRate;
+	//Chec max
+	if (currentBitRate<maxConfiguredBitRate)
+		//Set maximum
+		currentBitRate = maxConfiguredBitRate;
 
 	Debug("--estimation state=%s region=%s usage=%s currentBitRate=%d current=%d incoming=%f min=%llf max=%llf\n",GetName(state),RemoteRateControl::GetName(region),RemoteRateControl::GetName(usage),currentBitRate/1000,current/1000,incomingBitRate/1000,bitrateAcu.GetMinAvg()/1000,bitrateAcu.GetMaxAvg()/1000);
 
@@ -464,6 +468,7 @@ void RemoteRateEstimator::UpdateLost(DWORD ssrc, DWORD lost)
 
 void RemoteRateEstimator::SetTemporalMaxLimit(DWORD limit)
 {
+	Log("-SetTemporalMaxLimit %d\n",limit);
 	//Check if reseting
 	if (limit)
 		//Set maximun bitrate
@@ -475,6 +480,7 @@ void RemoteRateEstimator::SetTemporalMaxLimit(DWORD limit)
 
 void RemoteRateEstimator::SetTemporalMinLimit(DWORD limit)
 {
+	Log("-SetTemporalMinLimit %d\n",limit);
 	//Check if reseting
 	if (limit)
 		//Set maximun bitrate
