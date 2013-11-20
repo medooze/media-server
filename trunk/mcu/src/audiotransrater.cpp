@@ -39,7 +39,7 @@ int AudioTransrater::Open(DWORD inputRate, DWORD outputRate)
 		//Nullify
 		resampler = NULL;
 		//Exit
-		return Error("-AudioTransrater: failed to init SPEEX resanmpler. Speex err = %d\n", err);
+		return Error("-AudioTransrater: failed to init SPEEX resampler. Speex err = %d\n", err);
 	}
 
 	//OK

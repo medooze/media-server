@@ -39,6 +39,8 @@ VP8Encoder::~VP8Encoder()
 	vpx_codec_destroy(&encoder);
 	if (pic)
 		vpx_img_free(pic);
+	if (frame)
+		delete frame;
 }
 
 /**********************

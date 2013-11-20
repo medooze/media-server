@@ -112,8 +112,11 @@ int Logo::Load(const char* fileName)
 		//Set errror
 		res = Error("Couldn't decode logo\n");
 		//Free resources
+		av_free_packet(&packet);
 		goto end;
 	}
+
+	av_free_packet(&packet);
 
 	//If it we don't have a logo
 	if (!gotLogo)

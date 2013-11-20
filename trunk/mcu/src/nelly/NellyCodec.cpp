@@ -50,9 +50,12 @@ NellyEncoder::NellyEncoder(const Properties &properties)
 NellyEncoder::~NellyEncoder()
 {
 	//Check
-	if (ctx)
+	if (ctx) {
 		//Close
 		avcodec_close(ctx);
+		av_free(ctx);
+		ctx = NULL;
+	}
 }
 
 int NellyEncoder::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
@@ -83,6 +86,7 @@ NellyEncoder11Khz::NellyEncoder11Khz(const Properties &properties)
 {
 	//NO ctx yet
 	ctx = NULL;
+	resampler = NULL;
 	///Set type
 	type = AudioCodec::NELLY11;
 
@@ -102,6 +106,11 @@ NellyEncoder11Khz::NellyEncoder11Khz(const Properties &properties)
 	//The resampler to convert to WB
 	int err;
 	resampler = mcu_resampler_init(1, 8000, 11025, 5, &err);
+	if (err)
+	{
+		resampler = NULL;
+		Error("failed to init SPEEX resampler. Speex err = %d\n", err);
+	}
 
 	//Set params
 	ctx->channels		= 1;
@@ -119,9 +128,17 @@ NellyEncoder11Khz::NellyEncoder11Khz(const Properties &properties)
 NellyEncoder11Khz::~NellyEncoder11Khz()
 {
 	//Check
-	if (ctx)
+	if (ctx) {
 		//Close
 		avcodec_close(ctx);
+		av_free(ctx);
+		ctx = NULL;
+	}
+	if (resampler)
+	{
+		mcu_resampler_destroy(resampler);
+		resampler = NULL;
+	}
 }
 
 int NellyEncoder11Khz::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
@@ -167,6 +184,7 @@ NellyDecoder11Khz::NellyDecoder11Khz()
 {
 	//NO ctx yet
 	ctx = NULL;
+	resampler = NULL;
 	///Set type
 	type = AudioCodec::NELLY11;
 
@@ -186,6 +204,11 @@ NellyDecoder11Khz::NellyDecoder11Khz()
 	//The resampler to convert to 8Khz
 	int err;
 	resampler = mcu_resampler_init(1, 11025, 8000, 5, &err);
+	if (err)
+	{
+		resampler = NULL;
+		Error("failed to init SPEEX resampler. Speex err = %d\n", err);
+	}
 
 	//Set params
 	ctx->request_sample_fmt		= AV_SAMPLE_FMT_S16;
@@ -204,9 +227,17 @@ NellyDecoder11Khz::NellyDecoder11Khz()
 NellyDecoder11Khz::~NellyDecoder11Khz()
 {
 	//Check
-	if (ctx)
+	if (ctx) {
 		//Close
 		avcodec_close(ctx);
+		av_free(ctx);
+		ctx = NULL;
+	}
+	if (resampler)
+	{
+		mcu_resampler_destroy(resampler);
+		resampler = NULL;
+	}
 }
 
 int NellyDecoder11Khz::Decode(BYTE *in, int inLen, SWORD* out, int outLen)
