@@ -21,8 +21,11 @@ public:
 	{
 		//No canceled
 		cancel = false;
-		//Crete mutex
-		pthread_mutex_init(&mutex,NULL);
+		//Crete recursive mutex
+		pthread_mutexattr_t   mta;
+		pthread_mutexattr_init(&mta);
+		pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_RECURSIVE_NP);
+		pthread_mutex_init(&mutex, &mta);
 		//Create condition
 		pthread_cond_init(&cond,NULL);
 	}
@@ -34,6 +37,17 @@ public:
 		//Destroy mutex
 		pthread_mutex_destroy(&mutex);
 		pthread_cond_destroy(&cond);
+	}
+	void Lock()
+	{
+		//Lock
+		pthread_mutex_lock(&mutex);
+	}
+
+	void Unlock()
+	{
+		//Lock
+		pthread_mutex_unlock(&mutex);
 	}
 
 	void Signal()

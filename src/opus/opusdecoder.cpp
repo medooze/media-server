@@ -28,7 +28,7 @@ DWORD OpusDecoder::TrySetRate(DWORD rate)
 	//Try to create a new decored with that rate
 	OpusDecoder *aux = opus_decoder_create(rate,1,&error);
 	//If no error
-	if (aux || !error)
+	if (aux && !error)
 	{
 		//Destroy old one
 		if (dec) opus_decoder_destroy(dec);

@@ -44,7 +44,7 @@ DWORD OpusEncoder::TrySetRate(DWORD rate)
 	//Try to create a new encoder with that rate
 	OpusEncoder *aux = opus_encoder_create(rate, 1, mode, &error);
 	//If no error
-	if (aux || !error)
+	if (aux && !error)
 	{
 		//Destroy old one
 		if (enc) opus_encoder_destroy(enc);

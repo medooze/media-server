@@ -58,6 +58,7 @@ VP8Decoder::VP8Decoder()
 ************************/
 VP8Decoder::~VP8Decoder()
 {
+	vpx_codec_destroy(&decoder);
 	if (buffer)
 		free(buffer);
 	if (frame)
