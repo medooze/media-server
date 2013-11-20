@@ -298,7 +298,7 @@ void RemoteRateEstimator::Update(RemoteRateControl::BandwidthUsage usage,bool re
 		//Set minimun
 		currentBitRate = minConfiguredBitRate;
 	//Chec max
-	if (currentBitRate<maxConfiguredBitRate)
+	if (currentBitRate>maxConfiguredBitRate)
 		//Set maximum
 		currentBitRate = maxConfiguredBitRate;
 
