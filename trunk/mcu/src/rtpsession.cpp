@@ -2055,7 +2055,11 @@ void RTPSession::ReSendPacket(int seq)
 		sendto(simSocket,packet->GetData(),packet->GetSize(),0,(sockaddr *)&sendAddr,sizeof(struct sockaddr_in));
 		Debug("-ReSendPacket %d %d\n",seq,ext);
 	} else {
-		Debug("-ReSendPacket %d %d not found first %d\n",seq,ext,rtxs.size() ?  rtxs.begin()->first : 0);
+		Debug("-ReSendPacket %d %d not found first %d sending intra instead\n",seq,ext,rtxs.size() ?  rtxs.begin()->first : 0);
+		//Check if got listener
+		if (listener)
+			//Request a I frame
+			listener->onFPURequested(this);
 	}
 
 	//Unlock
