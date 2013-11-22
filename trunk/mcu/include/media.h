@@ -11,6 +11,10 @@ public:
 	class Listener
 	{
 	public:
+		//Virtual desctructor
+		virtual ~Listener(){};
+	public:
+		//Interface
 		virtual void onMediaFrame(MediaFrame &frame) = 0;
 	};
 

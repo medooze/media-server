@@ -202,6 +202,10 @@ RTPSession::~RTPSession()
 		free(iceLocalUsername);
 	if (iceLocalPwd)
 		free(iceLocalPwd);
+	if (iceRemoteUsername)
+		free(iceRemoteUsername);
+	if (iceRemotePwd)
+		free(iceRemotePwd);
 	//If secure
 	if (sendSRTPSession)
 		//Dealoacate
@@ -409,7 +413,7 @@ int RTPSession::SetRemoteCryptoSDES(const char* suite, const char* key64)
 	//Get lenght
 	WORD len64 = strlen(key64);
 	//Allocate memory for the key
-	BYTE* recvKey = (BYTE*)malloc(len64);
+	recvKey = (BYTE*)malloc(len64);
 	//Decode
 	WORD len = av_base64_decode(recvKey,key64,len64);
 
@@ -774,7 +778,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 			//Check if using ice
 			if (iceRemoteUsername && iceRemotePwd && iceLocalUsername)
 			{
-				BYTE aux[MTU];
+			BYTE aux[MTU] = {0};
 				//Create trans id
 				BYTE transId[12];
 				//Set first to 0
@@ -959,6 +963,7 @@ int RTPSession::ReadRTCP()
 			//Create  response
 			DWORD size = resp->GetSize();
 			BYTE *aux = (BYTE*)malloc(size);
+			memset(aux, 0, size);
 
 			//Check if we have local passworkd
 			if (iceLocalPwd)
@@ -1068,6 +1073,7 @@ int RTPSession::ReadRTP()
 			//Create  response
 			DWORD size = resp->GetSize();
 			BYTE *aux = (BYTE*)malloc(size);
+			memset(aux, 0, size);
 
 			//Check if we have local passworkd
 			if (iceLocalPwd)
@@ -1122,6 +1128,7 @@ int RTPSession::ReadRTP()
 				//Create  request
 				DWORD size = request->GetSize();
 				BYTE* aux = (BYTE*)malloc(size);
+				memset(aux, 0, size);
 
 				//Check remote pwd
 				if (iceRemotePwd)

@@ -14,6 +14,10 @@ public:
 	class Listener : public RTPSession::Listener
 	{
 	public:
+		//Virtual desctructor
+		virtual ~Listener(){};
+	public:
+		//Interface
 		virtual void onRequestFPU() = 0;
 	};
 public:

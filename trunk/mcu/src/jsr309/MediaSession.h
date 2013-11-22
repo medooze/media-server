@@ -25,6 +25,10 @@ public:
 	class Listener
 	{
 	public:
+		//Virtual desctructor
+		virtual ~Listener(){};
+	public:
+		//Interface
 		virtual void onPlayerEndOfFile(MediaSession *sess, Player* player,int playerId, void *param) = 0;
 	};
 public:

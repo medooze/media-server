@@ -176,6 +176,10 @@ public:
 	class Listener
 	{
 	public:
+		//Virtual desctructor
+		virtual ~Listener(){};
+	public:
+		//Interface
 		/* Callbacks should return non-zero to indicate an error. The parser will
 		 * then halt execution.
 		 *

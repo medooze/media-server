@@ -266,6 +266,10 @@ public:
 	class Listener
 	{
 	public:
+		//Virtual desctructor
+		virtual ~Listener(){};
+	public:
+		//Interface
 		virtual void onUpgradeRequest(WebSocketConnection* conn) = 0;
 		virtual void onDisconnected(WebSocketConnection* conn) = 0;
 	};

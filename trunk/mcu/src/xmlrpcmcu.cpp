@@ -21,6 +21,7 @@ xmlrpc_value* CreateConference(xmlrpc_env *env, xmlrpc_value *param_array, void 
 	if(env->fault_occurred)
 	{
 		//Clean error
+		xmlrpc_env_clean(env);
 		xmlrpc_env_init(env);
 		
 		//Try again
@@ -651,6 +652,7 @@ xmlrpc_value* SetVideoCodec(xmlrpc_env *env, xmlrpc_value *param_array, void *us
 		}
 	} else {
 		//Clean error
+		xmlrpc_env_clean(env);
 		xmlrpc_env_init(env);
 		//Parse old values,
 		xmlrpc_parse_value(env, param_array, "(iiiiiiiii)", &confId,&partId,&codec,&mode,&fps,&bitrate,&quality,&fillLevel,&intraPeriod);
@@ -717,6 +719,7 @@ xmlrpc_value* SetAudioCodec(xmlrpc_env *env, xmlrpc_value *param_array, void *us
 		}
 	} else {
 		//Clean error
+		xmlrpc_env_clean(env);
 		xmlrpc_env_init(env);
 		//Parse old values,
 		xmlrpc_parse_value(env, param_array, "(iii)", &confId,&partId,&codec);

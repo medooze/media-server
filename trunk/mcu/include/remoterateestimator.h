@@ -18,6 +18,10 @@ public:
 	class Listener
 	{
 	public:
+		//Virtual desctructor
+		virtual ~Listener(){};
+	public:
+		//Interface
 		virtual void onTargetBitrateRequested(DWORD bitrate) = 0;
 	};
 public:

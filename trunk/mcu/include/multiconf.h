@@ -1,5 +1,7 @@
 #ifndef _MULTICONF_H_
 #define _MULTICONF_H_
+#include <map>
+#include <string>
 #include "videomixer.h"
 #include "audiomixer.h"
 #include "textmixer.h"
@@ -12,10 +14,8 @@
 #include "audioencoder.h"
 #include "textencoder.h"
 #include "rtmpnetconnection.h"
-#include "appmixer.h"
 #include "websockets.h"
-#include <map>
-#include <string>
+#include "appmixer.h"
 
 class MultiConf :
 	public RTMPNetConnection,
@@ -46,6 +46,10 @@ public:
 	class Listener
 	{
 	public:
+		//Virtual desctructor
+		virtual ~Listener(){};
+	public:
+		//Interface
 		virtual void onParticipantRequestFPU(MultiConf *conf,int partId,void *param) = 0;
 	};
 	

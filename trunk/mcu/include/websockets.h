@@ -15,6 +15,10 @@ public:
 	class Listener
 	{
 	public:
+		//Virtual desctructor
+		virtual ~Listener(){};
+	public:
+		//Interface
 		virtual void onOpen(WebSocket *ws) = 0;
 		virtual void onMessageStart(WebSocket *ws,const WebSocket::MessageType type) = 0;
 		virtual void onMessageData(WebSocket *ws,const BYTE* data, const DWORD size) = 0;

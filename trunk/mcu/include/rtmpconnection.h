@@ -20,9 +20,13 @@ class RTMPConnection :
 public:
 	class Listener
 	{
-		public: 
-			virtual RTMPNetConnection* OnConnect(const std::wstring& appName,RTMPNetConnection::Listener *listener) = 0;
-			virtual void onDisconnect(RTMPConnection *con) = 0;
+	public:
+		//Virtual desctructor
+		virtual ~Listener(){};
+	public:
+		//Interface
+		virtual RTMPNetConnection* OnConnect(const std::wstring& appName,RTMPNetConnection::Listener *listener) = 0;
+		virtual void onDisconnect(RTMPConnection *con) = 0;
 	};
 public:
 	RTMPConnection(Listener* listener);

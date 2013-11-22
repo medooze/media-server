@@ -21,6 +21,11 @@ public:
 	public:
 		class Listener
 		{
+		public:
+			//Virtual desctructor
+			virtual ~Listener(){};
+		public:
+			//Interface
 			virtual void onNetStreamStatus(RTMPClientConnection *conn,NetStream *sream,const RTMPNetStatusEventInfo &info,const wchar_t* message) = 0;
 		};
 	public:
@@ -47,6 +52,10 @@ public:
 	class Listener
 	{
 	public:
+		//Virtual desctructor
+		virtual ~Listener(){};
+	public:
+		//Interface
 		virtual void onConnected(RTMPClientConnection* conn) = 0;
 		virtual void onNetStreamCreated(RTMPClientConnection* conn,NetStream *stream) = 0;
 		virtual void onCommandResponse(RTMPClientConnection* conn,DWORD id,bool isError,AMFData* param) = 0;

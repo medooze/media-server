@@ -22,6 +22,10 @@ public:
 	class Listener
 	{
 	public:
+		//Virtual desctructor
+		virtual ~Listener(){};
+	public:
+		//Interface
 		virtual void onRequestFPU(Participant *part) = 0;
 	};
 public:
