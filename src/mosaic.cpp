@@ -142,6 +142,11 @@ Mosaic::~Mosaic()
 	if (oldPos)
 		//Free it
 		free(oldPos);
+
+	//Delete lingering participants
+	for(Participants::iterator it = participants.begin(); it!=participants.end(); it++)
+		//Delete participant info
+		delete (it->second);
 }
 
 /************************

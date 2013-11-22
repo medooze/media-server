@@ -34,12 +34,14 @@ static size_t collect(void *  const ptr, size_t  const size, size_t  const nmemb
 	xmlrpc_env_init(&env);
 	size_t const length = nmemb * size;
 
-	//Añadimos
+	//Aï¿½adimos
 	xmlrpc_mem_block_append(&env, (xmlrpc_mem_block *) stream, (char *)ptr,length);
 
 	//Si error
 	if (env.fault_occurred)
 		return 	(size_t)-1;
+
+	xmlrpc_env_clean(&env);
 
 	//Salimos
 	return length;
@@ -85,7 +87,7 @@ int XmlRpcClient::MakeCall(const char *uri,const char *method,xmlrpc_value *para
 		goto cleanup;
 	}
 
-	//Añadimos el \0 del final
+	//Aï¿½adimos el \0 del final
 	xmlrpc_mem_block_append(&env, callXml,(void *)"\0", 1);
 
 	//Set up enviroment
@@ -146,6 +148,8 @@ cleanup:
 
 	//Liberamos el bloque
 	xmlrpc_mem_block_free(responseXml);
+
+	xmlrpc_env_clean(&env);
 
 	//Salimos
 	return !error;

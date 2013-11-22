@@ -144,6 +144,10 @@ public:
 	class Listener
 	{
 	public:
+		//Virtual desctructor
+		virtual ~Listener(){};
+	public:
+		//Interface
 		virtual void onAttached(RTMPMediaStream *stream) = 0;
 		virtual void onMediaFrame(DWORD id,RTMPMediaFrame *frame) = 0;
 		virtual void onMetaData(DWORD id,RTMPMetaData *meta) = 0;
@@ -244,6 +248,10 @@ public:
 	class Listener
 	{
 	public:
+		//Virtual desctructor
+		virtual ~Listener(){};
+	public:
+		//Interface
 		virtual void onNetStreamStatus(DWORD id,const RTMPNetStatusEventInfo &info,const wchar_t *message) = 0;
 		virtual void onNetStreamDestroyed(DWORD id) = 0;
 	};

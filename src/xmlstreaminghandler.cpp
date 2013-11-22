@@ -388,6 +388,8 @@ int XmlStreamingHandler::ProcessRequest(TRequestInfo *req,TSession * const ses)
 	//Dec queue usage
 	queue->DecUse();
 
+	xmlrpc_env_clean(&env);
+
 	Log("<ProcessRequest [time:%llu]\n",getDifTime(&tv)/1000);
 
 	return 1;

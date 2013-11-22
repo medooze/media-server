@@ -884,6 +884,7 @@ public:
 public:
 	struct Field
 	{
+		virtual ~Field(){};
 		virtual DWORD GetSize() = 0;
 		virtual DWORD Parse(BYTE* data,DWORD size) = 0;
 		virtual DWORD Serialize(BYTE* data,DWORD size) = 0;
@@ -1094,6 +1095,7 @@ public:
 public:
 	struct Field
 	{
+		virtual ~Field(){};
 		virtual DWORD GetSize() = 0;
 		virtual DWORD Parse(BYTE* data,DWORD size) = 0;
 		virtual DWORD Serialize(BYTE* data,DWORD size) = 0;

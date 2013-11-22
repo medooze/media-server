@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <algorithm>
 #include "log.h"
-#include "multiconf.h"
 #include "rtpparticipant.h"
+#include "multiconf.h"
 #include "rtmpparticipant.h"
 
 /************************
@@ -114,6 +114,10 @@ int MultiConf::Init(int vad, DWORD rate)
 
 	//Init mixer for the app mixer
 	videoMixer.InitMixer(AppMixerId,-1);
+
+	int playerId = CreatePlayer(0,L"idiot");
+	AddMosaicParticipant(0,playerId);
+	StartPlaying(playerId,"/idiots_480x270.mp4",true);
 
 	return res;
 }
@@ -763,7 +767,7 @@ int MultiConf::SetRemoteCryptoSDES(int id,MediaFrame::Type media,const char *sui
 {
 	int ret = 0;
 
-	Log("-SetLocalCryptoSDES %s [partId:%d]\n",MediaFrame::TypeToString(media),id);
+	Log("-SetRemoteCryptoSDES %s [partId:%d]\n",MediaFrame::TypeToString(media),id);
 
 	//Use list
 	participantsLock.IncUse();
@@ -1094,14 +1098,18 @@ int MultiConf::CreatePlayer(int privateId,std::wstring name)
 		return Error("Couldn't set audio mixer\n");
 	}
 
-	//Add a pivate text
-	if (!textMixer.CreatePrivate(playerId,privateId,name))
+	//If it has private text
+	if (privateId)
 	{
-		//Borramos el de video y audio
-		videoMixer.DeleteMixer(playerId);
-		audioMixer.DeleteMixer(playerId);
-		//Y salimos
-		return Error("Couldn't set text mixer\n");
+		//Add a pivate text
+		if (!textMixer.CreatePrivate(playerId,privateId,name))
+		{
+			//Borramos el de video y audio
+			videoMixer.DeleteMixer(playerId);
+			audioMixer.DeleteMixer(playerId);
+			//Y salimos
+			return Error("Couldn't set text mixer\n");
+		}
 	}
 
 	//Create player
@@ -1187,7 +1195,7 @@ int MultiConf::DeletePlayer(int id)
 	//Terminamos el audio y el video
 	player->Stop();
 
-	Log("-DeletePlayer ending mixers [%d]\n",id);
+	Log("-DeletePlayer ending player [%d]\n",id);
 
 	//Paramos el mixer
 	videoMixer.EndMixer(id);

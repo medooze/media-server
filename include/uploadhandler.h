@@ -18,6 +18,10 @@ public:
 	class Listener
 	{
 	public:
+		//Virtual desctructor
+		virtual ~Listener(){};
+	public:
+		//Interface
 		virtual int onFileUploaded(const char* url, const char *filename) = 0;
 	};
 public:

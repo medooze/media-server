@@ -15,6 +15,10 @@ public:
 	class Listener 
 	{
 	public:
+		//Virtual desctructor
+		virtual ~Listener(){};
+	public:
+		//Interface
 		virtual void onRTPPacket(RTPPacket &packet) = 0;
 		virtual void onResetStream() = 0;
 		virtual void onEndStream() = 0;

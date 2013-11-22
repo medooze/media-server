@@ -14,6 +14,10 @@ struct MP4RtpTrack
 	class Listener : public MediaFrame::Listener
 	{
 	public:
+		//Virtual desctructor
+		virtual ~Listener(){};
+	public:
+		//Interface
 		virtual void onRTPPacket(RTPPacket &packet) = 0;
 	};
 
@@ -87,6 +91,10 @@ struct MP4TextTrack
 	class Listener
 	{
 	public:
+		//Virtual desctructor
+		virtual ~Listener(){};
+	public:
+		//Interface
 		virtual void onTextFrame(TextFrame &text) = 0;
 	};
 
@@ -127,6 +135,10 @@ public:
 		public MP4TextTrack::Listener
 	{
 	public:
+		//Virtual desctructor
+		virtual ~Listener(){};
+	public:
+		//Interface
 		virtual void onEnd() = 0;
 	};
 public:

@@ -34,6 +34,10 @@ public:
 	class Listener
 	{
 	public:
+		//Virtual desctructor
+		virtual ~Listener(){};
+	public:
+		//Interface
 		virtual void onFPURequested(RTPSession *session) = 0;
 		virtual void onReceiverEstimatedMaxBitrate(RTPSession *session,DWORD bitrate) = 0;
 		virtual void onTempMaxMediaStreamBitrateRequest(RTPSession *session,DWORD bitrate,DWORD overhead) = 0;

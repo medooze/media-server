@@ -43,6 +43,9 @@ XmlHandler::XmlHandler()
 
 	//Creamos el registro
 	registry = xmlrpc_registry_new(&env);
+
+	//Clean env
+	xmlrpc_env_clean(&env);
 }
 
 /**************************************
@@ -59,8 +62,11 @@ XmlHandler::XmlHandler(XmlHandlerCmd *cmd,void *user_data)
 	//Creamos el registro
 	registry = xmlrpc_registry_new(&env);
 
+	//Clean env
+	xmlrpc_env_clean(&env);
+
 	//Append commands
-        while (cmd && cmd->name)
+	while (cmd && cmd->name)
 	{
 		//Append methods
 		AddMethod(cmd->name,cmd->func,user_data);
@@ -80,6 +86,7 @@ XmlHandler::~XmlHandler()
 int XmlHandler::AddMethod(const char *name,xmlrpc_method method,void *user_data)
 {
 	xmlrpc_env env;
+	int ret;
 
 	//Build the enviroment
 	xmlrpc_env_init(&env);
@@ -89,7 +96,9 @@ int XmlHandler::AddMethod(const char *name,xmlrpc_method method,void *user_data)
  	//xmlrpc_registry_add_method_w_doc( &env, registry, NULL, method_name, method, user_data, signature, help);
 
 	//Salimos
-	return !env.fault_occurred;
+	ret = !env.fault_occurred;
+	xmlrpc_env_clean(&env);
+	return ret;
 }
 
 /**************************************
@@ -184,6 +193,8 @@ int XmlHandler::ProcessRequest(TRequestInfo *req,TSession * const ses)
 
 	//Liberamos el buffer
 	free(buffer);
+
+	xmlrpc_env_clean(&env);
 
 	Log("<ProcessRequest [time:%llu]\n",getDifTime(&tv)/1000);
 

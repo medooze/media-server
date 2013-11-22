@@ -20,6 +20,10 @@ public:
 	class Listener
 	{
 	public:
+		//Virtual desctructor
+		virtual ~Listener(){};
+	public:
+		//Interface
 		virtual void onEndOfFile(Player *player,void* param) = 0;
 	};
 public:
