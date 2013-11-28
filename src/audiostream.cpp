@@ -370,9 +370,9 @@ int AudioStream::RecAudio()
 int AudioStream::SendAudio()
 {
 	RTPPacket	packet(MediaFrame::Audio,audioCodec,audioCodec);
-	SWORD 		recBuffer[512];
-        int 		sendBytes=0;
-        struct timeval 	before;
+	SWORD 		recBuffer[1024];
+	int 		sendBytes=0;
+	struct timeval 	before;
 	AudioEncoder* 	codec;
 	DWORD		frameTime=0;
 

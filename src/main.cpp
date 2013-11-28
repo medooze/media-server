@@ -87,7 +87,7 @@ int main(int argc,char **argv)
 	//Set default values
 	bool forking = false;
 	int port = 8080;
-	int wsPort = 8090;
+	int wsPort = 9090;
 	int rtmpPort = 1935;
 	int minPort = RTPSession::GetMinPort();
 	int maxPort = RTPSession::GetMaxPort();
@@ -114,6 +114,7 @@ int main(int argc,char **argv)
 				" --min-rtp-port   Set min rtp port\r\n"
 				" --max-rtp-port   Set max rtp port\r\n"
 				" --rtmp-port      Set RTMP port\r\n"
+				" --websocket-port Set WebSocket server port\r\n"
 				" --vad-period     Set the VAD based conference change period in milliseconds\r\n");
 			//Exit
 			return 0;
@@ -297,7 +298,7 @@ int main(int argc,char **argv)
 	server.AddHandler("/upload/mcu/app/",&uploadermcu);
 
 	//Add websocket handlers
-	wsServer.AddHandler("/echo", new TexgEchoWebsocketHandler());
+	wsServer.AddHandler("/echo", new TextEchoWebsocketHandler());
 	wsServer.AddHandler("/mcu", &mcu);
 	
 	//Add the html status handler

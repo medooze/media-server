@@ -14,7 +14,7 @@ OpusDecoder::OpusDecoder()
 	//Set type
 	type = AudioCodec::OPUS;
 	//Set rate
-	rate = 8000;
+	rate = 48000;
 	//Create decoder
 	dec = opus_decoder_create(rate,1,&error);
 	//Check error

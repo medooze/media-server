@@ -12,10 +12,10 @@ OpusEncoder::OpusEncoder(const Properties &properties)
 	int error;
 	//Set type
 	type = AudioCodec::OPUS;
-	//Set number of input frames for codec
-	numFrameSamples = 160;
 	//Rate
-	rate = 8000;
+	rate = 48000;
+	//Set number of input frames for codec
+	numFrameSamples = rate * 20 / 1000;
 	//Set default mode
 	mode = OPUS_APPLICATION_VOIP;
 
@@ -52,6 +52,8 @@ DWORD OpusEncoder::TrySetRate(DWORD rate)
 		enc = aux;
 		//Store new rate
 		this->rate = rate;
+		//Set number of input frames for codec
+		numFrameSamples = rate * 20 / 1000;
 	}
 
 	//Enable FEC

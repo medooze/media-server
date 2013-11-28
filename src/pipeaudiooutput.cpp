@@ -63,12 +63,12 @@ int PipeAudioOutput::PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime, BYTE v
 		fifoBuffer.remove(size-left);
 
 	//Get initial bump
-	if (!acu && v)
-		//half second minimum at 8khz
+	if (!acu && v>0)
+		//1 second minimum at 8khz
 		acu+=8000;
 
 	//Check if we have level info
-	if (1)
+	if (v>0)
 	{
 		double sum = 0;
 		for (int i = 0; i < size ; ++i)
@@ -81,8 +81,10 @@ int PipeAudioOutput::PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime, BYTE v
 		vadLevel = sqrt(sum)*4;
 	}
 
-	//Acumule VAD at 8Khz
-	acu += v*vadLevel*size*8000/playRate;
+	//Check we have detected speech
+	if (v>0)
+		//Acumule VAD at 8Khz
+		acu += v*vadLevel*size*8000/playRate;
 
 	//Debug("-%p acu:%.6d v:%.2d level:%.2d\n",this,acu,v,vadLevel);
 	
