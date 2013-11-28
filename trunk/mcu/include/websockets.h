@@ -20,7 +20,7 @@ public:
 	public:
 		//Interface
 		virtual void onOpen(WebSocket *ws) = 0;
-		virtual void onMessageStart(WebSocket *ws,const WebSocket::MessageType type) = 0;
+		virtual void onMessageStart(WebSocket *ws,const WebSocket::MessageType type,const DWORD length) = 0;
 		virtual void onMessageData(WebSocket *ws,const BYTE* data, const DWORD size) = 0;
 		virtual void onMessageEnd(WebSocket *ws) = 0;
 		virtual void onError(WebSocket *ws) = 0;

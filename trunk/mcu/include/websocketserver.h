@@ -54,7 +54,7 @@ private:
 
 
 
-class TexgEchoWebsocketHandler :
+class TextEchoWebsocketHandler :
 	public WebSocketServer::Handler,
 	public WebSocket::Listener
 {
@@ -68,7 +68,7 @@ public:
 	{
 		Debug("-onOpened\n");
 	}
-	virtual void onMessageStart(WebSocket *ws,WebSocket::MessageType type)
+	virtual void onMessageStart(WebSocket *ws,WebSocket::MessageType type,const DWORD length)
 	{
 		Debug("-onMessageStart\n");
 	}

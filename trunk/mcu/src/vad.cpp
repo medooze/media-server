@@ -29,7 +29,7 @@ int VAD::CalcVad(SWORD* frame,DWORD size,DWORD rate)
 	samples.push(frame,size);
 
 	//While we have enought samples
-	while (samples.length()>len)
+	while (samples.length()>=len)
 	{
 		//Get 20 ms of samples
 		samples.pop(buffer,len);

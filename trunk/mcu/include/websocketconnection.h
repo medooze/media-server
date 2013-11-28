@@ -245,10 +245,24 @@ private:
 			this->data = (BYTE*) malloc(this->size);
 			//Copy header data
 			memcpy(this->data,header.GetData(),header.GetSize());
+			//Set initial length
+			length = header.GetSize();
 			//If we have payload
 			if (data)
-				//Copy payload data
-				memcpy(this->data+header.GetSize(),data,size);
+				//Append it
+				Append(data,size);
+		}
+
+		bool Append(const BYTE* data,DWORD size)
+		{
+			//Check
+			if (size+length>this->size)
+				//Error
+				return Error("-WebSocketConnection::Frame not enoguth length for appending data size:%d,length:%d,data:%d",this->size,length,size);
+			//Copy payload data
+			memcpy(this->data+length,data,size);
+			//Set length
+			length += size;
 		}
 
 		~Frame()
@@ -261,6 +275,7 @@ private:
 	private:
 		BYTE* data;
 		DWORD size;
+		DWORD length;
 	};
 public:
 	class Listener
@@ -345,6 +360,7 @@ private:
 	WORD		 incomingFrameLength;
 
 	std::list<Frame*>  frames;
+	Frame*		   pong;
 };
 
 #endif

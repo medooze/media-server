@@ -23,6 +23,8 @@ WebSocketConnection::WebSocketConnection(Listener *listener)
 	running = false;
 	socket = FD_INVALID;
 	thread = NULL;
+	//No pong
+	pong = NULL;
 	//Not uypgraded yet
 	upgraded = false;
 	//No incoming frame yet
@@ -52,6 +54,8 @@ WebSocketConnection::~WebSocketConnection()
 	if (request)  delete(request);
 	if (response) delete(response);
 	if (header)   delete(header);
+	//Check unsent pong
+	if (pong)     delete(pong);
 	//Destroy mutex
 	pthread_mutex_destroy(&mutex);
 }
@@ -383,30 +387,23 @@ void WebSocketConnection::ProcessData(BYTE *data,DWORD size)
 							break;
 						case WebSocketFrameHeader::TextFrame:
 							//Start frame
-							wsl->onMessageStart(this,WebSocket::Text);
+							wsl->onMessageStart(this,WebSocket::Text,header->GetPayloadLength());
 							break;
 						case WebSocketFrameHeader::Close:
+							//Log
+							Log("-Received close request\n");
 							//End us
 							End();
 							break;
 						case WebSocketFrameHeader::BinaryFrame:
 							//Start frame
-							wsl->onMessageStart(this,WebSocket::Binary);
+							wsl->onMessageStart(this,WebSocket::Binary,header->GetPayloadLength());
 							break;
 						case WebSocketFrameHeader::Ping:
-							if (header->GetPayloadLength()==0)
-							{
-								//Lock mutex
-								pthread_mutex_lock(&mutex);
-								//Push frame
-								frames.push_back(new Frame(WebSocketFrameHeader::Pong,NULL,0));
-								//Un Lock mutex
-								pthread_mutex_unlock(&mutex);
-								//We need to write data!
-								SignalWriteNeeded();
-							} else {
-								Error("-Websocket PING with payload readed, not supported yet");
-							}
+							//Debug
+							Debug("-Received ping\n");
+							//Create new pong frame
+							pong = new Frame(WebSocketFrameHeader::Pong,NULL,header->GetPayloadLength());
 							break;
 						case WebSocketFrameHeader::Pong:
 							break;
@@ -438,10 +435,10 @@ void WebSocketConnection::ProcessData(BYTE *data,DWORD size)
 					case WebSocketFrameHeader::BinaryFrame:
 						//Send data
 						wsl->onMessageData(this,data,len);
-
 						break;
 					case WebSocketFrameHeader::Ping:
-						//We should copy data here for the PONG
+						//data here to the PONG
+						pong->Append(data,len);
 						break;
 				}
 				//Move pos
@@ -464,7 +461,18 @@ void WebSocketConnection::ProcessData(BYTE *data,DWORD size)
 								wsl->onMessageEnd(this);
 							break;
 						case WebSocketFrameHeader::Ping:
-							//We should send here the PONG with data
+							//Debug
+							Debug("-Sending pong\n");
+							//Lock mutex
+							pthread_mutex_lock(&mutex);
+							//Push pong frame
+							frames.push_back(pong);
+							//NO pong to send
+							pong = NULL;
+							//Un Lock mutex
+							pthread_mutex_unlock(&mutex);
+							//We need to write data!
+							SignalWriteNeeded();
 							break;
 					}
 					//Delete header
@@ -500,8 +508,8 @@ void WebSocketConnection::SendMessage(const BYTE* data, const DWORD size)
 	//Do not send empty frames
 	if (!size)
 		return;
-	Debug("-sending\n ");
-	Dump(data,size);
+	Debug("-WebSocketConnection sending %d\n",size);
+	//Dump(data,size);
 	//Create new frame
 	Frame *frame = new Frame(WebSocketFrameHeader::BinaryFrame,data,size);
 
