@@ -51,7 +51,7 @@ public:
 			int Parse(BYTE* data,DWORD size)
 			{
 				//IF still have a parsed header
-				if (header=NULL && IsParsed())
+				if (header==NULL && IsParsed())
 					//Do nothing
 					return 0;
 				//Nothing yet

@@ -10,7 +10,7 @@ ifeq ($(DEBUG),yes)
 	TAG=debug
 	OPTS+= -g -O0
 else
-	OPTS+= -O3
+	OPTS+= -O3 -g
 	TAG=release
 endif
 
@@ -73,7 +73,10 @@ G722OBJ=g722codec.o
 AACDIR=aac
 AACOBJ=aacencoder.o
 
-OBJS=httpparser.o websocketserver.o websocketconnection.o audio.o video.o mcu.o multiconf.o rtpparticipant.o rtmpparticipant.o videomixer.o audiomixer.o xmlrpcserver.o xmlhandler.o xmlstreaminghandler.o statushandler.o xmlrpcmcu.o   rtpsession.o audiostream.o videostream.o audiotransrater.o pipeaudioinput.o pipeaudiooutput.o pipevideoinput.o pipevideooutput.o framescaler.o sidebar.o mosaic.o partedmosaic.o asymmetricmosaic.o pipmosaic.o logo.o overlay.o amf.o rtmpmessage.o rtmpchunk.o rtmpstream.o rtmpconnection.o  rtmpserver.o broadcaster.o broadcastsession.o rtmpflvstream.o flvrecorder.o FLVEncoder.o xmlrpcbroadcaster.o mediagateway.o mediabridgesession.o xmlrpcmediagateway.o textmixer.o textmixerworker.o textstream.o pipetextinput.o pipetextoutput.o mp4player.o mp4streamer.o audioencoder.o audiodecoder.o textencoder.o mp4recorder.o rtmpmp4stream.o rtmpnetconnection.o avcdescriptor.o RTPSmoother.o rtp.o rtmpclientconnection.o vad.o stunmessage.o crc32calc.o remoteratecontrol.o remoterateestimator.o uploadhandler.o http.o appmixer.o fecdecoder.o videopipe.o eventstreaminghandler.o dtls.o
+VNCDIR=vnc
+VNCOBJ=VNCViewer.o rfbproto.o cursor.o minilzo.o tls_none.o
+
+OBJS= $(VNCOBJ) httpparser.o websocketserver.o websocketconnection.o audio.o video.o mcu.o rtpparticipant.o multiconf.o  rtmpparticipant.o videomixer.o audiomixer.o xmlrpcserver.o xmlhandler.o xmlstreaminghandler.o statushandler.o xmlrpcmcu.o   rtpsession.o audiostream.o videostream.o audiotransrater.o pipeaudioinput.o pipeaudiooutput.o pipevideoinput.o pipevideooutput.o framescaler.o sidebar.o mosaic.o partedmosaic.o asymmetricmosaic.o pipmosaic.o logo.o overlay.o amf.o rtmpmessage.o rtmpchunk.o rtmpstream.o rtmpconnection.o  rtmpserver.o broadcaster.o broadcastsession.o rtmpflvstream.o flvrecorder.o FLVEncoder.o xmlrpcbroadcaster.o mediagateway.o mediabridgesession.o xmlrpcmediagateway.o textmixer.o textmixerworker.o textstream.o pipetextinput.o pipetextoutput.o mp4player.o mp4streamer.o audioencoder.o audiodecoder.o textencoder.o mp4recorder.o rtmpmp4stream.o rtmpnetconnection.o avcdescriptor.o RTPSmoother.o rtp.o rtmpclientconnection.o vad.o stunmessage.o crc32calc.o remoteratecontrol.o remoterateestimator.o uploadhandler.o http.o appmixer.o fecdecoder.o videopipe.o eventstreaminghandler.o dtls.o
 OBJS+= $(G711OBJ) $(H263OBJ) $(GSMOBJ)  $(H264OBJ) ${FLV1OBJ} $(SPEEXOBJ) $(NELLYOBJ) $(G722OBJ) $(JSR309OBJ) $(VADOBJ) $(VP6OBJ) $(VP8OBJ) $(OPUSOBJ) $(AACOBJ)
 TARGETS=mcu rtmpdebug
 
@@ -129,9 +132,12 @@ VPATH +=  %.cpp $(SRCDIR)/src/$(VP6DIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(VP8DIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(OPUSDIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(AACDIR)
+VPATH +=  %.cpp $(SRCDIR)/src/$(VNCDIR)
+VPATH +=  %.cpp $(SRCDIR)/src/$(VNCDIR)/libvncclient
+VPATH +=  %.cpp $(SRCDIR)/src/$(VNCDIR)/common
 
 
-INCLUDE+= -I$(SRCDIR)/include/ $(VADINCLUDE)
+INCLUDE+= -I$(SRCDIR)/include/ $(VADINCLUDE) -I$(SRCDIR)/src/vnc/common
 LDFLAGS+= -lgsm -lpthread -lssl -lcrypto -lsrtp
 
 ifeq ($(STATIC),yes)
@@ -149,7 +155,7 @@ else
 	LDFLAGS+= -lavcodec -lswscale -lavformat -lavutil -lavresample -lx264 -lmp4v2 -lspeex -lvpx -lopus
 endif
 
-LDFLAGS+= -lxmlrpc -lxmlrpc_xmlparse -lxmlrpc_xmltok -lxmlrpc_abyss -lxmlrpc_server -lxmlrpc_util
+LDFLAGS+= -lxmlrpc -lxmlrpc_xmlparse -lxmlrpc_xmltok -lxmlrpc_abyss -lxmlrpc_server -lxmlrpc_util -lnsl -lpthread -lz -lpng -ljpeg -lresolv -lssl -lcrypto -L/lib/i386-linux-gnu -lgcrypt -lgnutls
 
 #For abyss
 OPTS 	+= -D_UNIX -D__STDC_CONSTANT_MACROS

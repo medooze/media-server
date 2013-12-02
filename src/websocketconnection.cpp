@@ -163,7 +163,10 @@ void * WebSocketConnection::run(void *par)
         WebSocketConnection *con = (WebSocketConnection *)par;
 
         //Ejecutamos
-        pthread_exit((void *)con->Run());
+        con->Run();
+
+	//OK
+	return 0;
 }
 
 /***************************
