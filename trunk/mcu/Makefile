@@ -155,7 +155,7 @@ else
 	LDFLAGS+= -lavcodec -lswscale -lavformat -lavutil -lavresample -lx264 -lmp4v2 -lspeex -lvpx -lopus
 endif
 
-LDFLAGS+= -lxmlrpc -lxmlrpc_xmlparse -lxmlrpc_xmltok -lxmlrpc_abyss -lxmlrpc_server -lxmlrpc_util -lnsl -lpthread -lz -lpng -ljpeg -lresolv -lssl -lcrypto -L/lib/i386-linux-gnu -lgcrypt -lgnutls
+LDFLAGS+= -lxmlrpc -lxmlrpc_xmlparse -lxmlrpc_xmltok -lxmlrpc_abyss -lxmlrpc_server -lxmlrpc_util -lnsl -lpthread -lz -ljpeg -lresolv -lssl -lcrypto -L/lib/i386-linux-gnu -lgcrypt
 
 #For abyss
 OPTS 	+= -D_UNIX -D__STDC_CONSTANT_MACROS
