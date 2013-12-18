@@ -249,6 +249,9 @@ int RTPSession::SetLocalCryptoSDES(const char* suite, const char* key64)
 	err_status_t err;
 	srtp_policy_t policy;
 
+	//Log
+	Log("-SetLocalCryptoSDES [key:%s,suite:%s]\n",key64,suite);
+
 	//empty policy
 	memset(&policy, 0, sizeof(srtp_policy_t));
 
@@ -295,7 +298,6 @@ int RTPSession::SetLocalCryptoSDES(const char* suite, const char* key64)
 	if (err!=err_status_ok)
 	{
 		//Debug
-		Debug("-SetLocalCryptoSDES key:%s,suite%s\n",key64,suite);
 		Debug("-Dumping sendkey\n");
 		Dump(&sendSRTPSession,sizeof(sendSRTPSession));
 		Debug("-Dumping policy\n");
@@ -401,6 +403,9 @@ int RTPSession::SetRemoteCryptoSDES(const char* suite, const char* key64)
 	err_status_t err;
 	srtp_policy_t policy;
 
+	//Log
+	Log("-SetRemoteCryptoSDES [key:%s,suite:%s]\n",key64,suite);
+
 	//empty policy
 	memset(&policy, 0, sizeof(srtp_policy_t));
 
@@ -445,7 +450,6 @@ int RTPSession::SetRemoteCryptoSDES(const char* suite, const char* key64)
 	if (err!=err_status_ok)
 	{
 		//Debug
-		Debug("-SetRemoteCryptoSDES key:%s,suite%s\n",key64,suite);
 		Debug("-Dumping sendkey\n");
 		Dump(&recvSRTPSession,sizeof(recvSRTPSession));
 		Debug("-Dumping policy\n");
