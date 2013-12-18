@@ -318,11 +318,11 @@ int main(int argc,char **argv)
 	//Set default video mixer vad period
 	VideoMixer::SetVADDefaultChangePeriod(vadPeriod);
 
-	int confId = mcu.CreateConference(L"vnc",0);
+	/*int confId = mcu.CreateConference(L"vnc",0);
 	MultiConf *conf;
 	mcu.GetConferenceRef(confId,&conf);
 	conf->Init(0,8000);
-	mcu.ReleaseConferenceRef(confId);
+	mcu.ReleaseConferenceRef(confId);*/
 
 	//Run it
 	server.Start();
