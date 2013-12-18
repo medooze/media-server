@@ -51,6 +51,8 @@ private:
 		{
 			//Alloc alligned buffer
 			buffer = (SWORD*)malloc32(Sidebar::MIXER_BUFFER_SIZE*sizeof(SWORD));
+			//No len
+			len = 0;
 		}
 		~AudioSource()
 		{

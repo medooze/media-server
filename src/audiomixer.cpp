@@ -56,13 +56,12 @@ int AudioMixer::MixAudio()
 {
 	timeval  tv;
 	DWORD step = 10;
-	QWORD prev = 0;
 
 	//Logeamos
 	Log(">MixAudio\n");
 
 	//Init ts
-	getUpdDifTime(&tv);
+	QWORD prev = getUpdDifTime(&tv);
 
 	//Mientras estemos mezclando
 	while(mixingAudio)
@@ -116,8 +115,8 @@ int AudioMixer::MixAudio()
 			audio->vad = audio->output->GetVAD(numSamples);
 			//For each sidepaf
 			for (Sidebars::iterator sit = sidebars.begin(); sit!=sidebars.end(); ++sit)
-				//Mix it and update length
-				audio->len = sit->second->Update(id,audio->buffer,audio->len);
+				//Mix it
+				sit->second->Update(id,audio->buffer,audio->len);
 		}
 
 		// Second pass: Calculate this stream's output
@@ -147,7 +146,7 @@ int AudioMixer::MixAudio()
 				__m128i* b = (__m128i*) buffer;
 				__m128i* m = (__m128i*) mixed;
 
-				//Sum 8 ech time
+				//Sum 8 each time
 				for(DWORD n = (audio->len + 7) >> 3; n != 0; --n,++b,++m)
 				{
 					//Load data in SSE registers
