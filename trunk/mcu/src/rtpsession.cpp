@@ -293,8 +293,18 @@ int RTPSession::SetLocalCryptoSDES(const char* suite, const char* key64)
 	
 	//Check error
 	if (err!=err_status_ok)
+	{
+		//Debug
+		Debug("-SetLocalCryptoSDES key:%s,suite%s\n",key64,suite);
+		Debug("-Dumping sendkey\n");
+		Dump(&sendSRTPSession,sizeof(sendSRTPSession));
+		Debug("-Dumping policy\n");
+		Dump(&policy,sizeof(policy));
+		Debug("-Dumping key len64:%d len:%d\n",len64,len);
+		Dump(sendKey,len);
 		//Error
 		return Error("Failed to create srtp session (%d)\n", err);
+	}
 
 	//Decript
 	encript = true;
@@ -433,8 +443,18 @@ int RTPSession::SetRemoteCryptoSDES(const char* suite, const char* key64)
 
 	//Check error
 	if (err!=err_status_ok)
+	{
+		//Debug
+		Debug("-SetRemoteCryptoSDES key:%s,suite%s\n",key64,suite);
+		Debug("-Dumping sendkey\n");
+		Dump(&recvSRTPSession,sizeof(recvSRTPSession));
+		Debug("-Dumping policy\n");
+		Dump(&policy,sizeof(policy));
+		Debug("-Dumping key len64:%d len:%d\n",len64,len);
+		Dump(sendKey,len);
 		//Error
-		return Error("Failed set remote SDES  (%d)\n", err);
+		return Error("Failed to create srtp session (%d)\n", err);
+	}
 
 	//Create new
 	err = srtp_create(&recvSRTPSessionRTX,&policy);
