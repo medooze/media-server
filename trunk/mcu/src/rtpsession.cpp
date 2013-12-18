@@ -299,9 +299,9 @@ int RTPSession::SetLocalCryptoSDES(const char* suite, const char* key64)
 	{
 		//Debug
 		Debug("-Dumping sendkey\n");
-		Dump(&sendSRTPSession,sizeof(sendSRTPSession));
+		Dump((BYTE*)&sendSRTPSession,sizeof(sendSRTPSession));
 		Debug("-Dumping policy\n");
-		Dump(&policy,sizeof(policy));
+		Dump((BYTE*)&policy,sizeof(policy));
 		Debug("-Dumping key len64:%d len:%d\n",len64,len);
 		Dump(sendKey,len);
 		//Error
@@ -451,9 +451,9 @@ int RTPSession::SetRemoteCryptoSDES(const char* suite, const char* key64)
 	{
 		//Debug
 		Debug("-Dumping sendkey\n");
-		Dump(&recvSRTPSession,sizeof(recvSRTPSession));
+		Dump((BYTE*)&recvSRTPSession,sizeof(recvSRTPSession));
 		Debug("-Dumping policy\n");
-		Dump(&policy,sizeof(policy));
+		Dump((BYTE*)&policy,sizeof(policy));
 		Debug("-Dumping key len64:%d len:%d\n",len64,len);
 		Dump(sendKey,len);
 		//Error
