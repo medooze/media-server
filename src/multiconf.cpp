@@ -115,10 +115,6 @@ int MultiConf::Init(int vad, DWORD rate)
 	//Init mixer for the app mixer
 	videoMixer.InitMixer(AppMixerId,-1);
 
-	int playerId = CreatePlayer(0,L"idiot");
-	AddMosaicParticipant(0,playerId);
-	StartPlaying(playerId,"/idiots_480x270.mp4",true);
-
 	return res;
 }
 
