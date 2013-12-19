@@ -106,7 +106,7 @@ SpeexDecoder::SpeexDecoder()
 SpeexDecoder::~SpeexDecoder()
 {
 	speex_bits_destroy(&decbits);
-	speex_encoder_destroy(decoder);
+	speex_decoder_destroy(decoder);
 }
 
 DWORD SpeexDecoder::TrySetRate(DWORD rate)
