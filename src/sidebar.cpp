@@ -25,10 +25,6 @@ int Sidebar::Update(int id,SWORD *samples,DWORD len)
 	if (len>MIXER_BUFFER_SIZE)
 		//error
 		return Error("-Sidebar error updating particionat, len bigger than mixer max buffer size [len:%d,size:%d]\n",len,MIXER_BUFFER_SIZE);
-	//Check if
-	if (participants.find(id)==participants.end())
-		//Exit
-		return Error("-Sidebar error updating particionat not found [id:%d]\n",id);
 
 	//Get pointers to buffer
 	__m128i* d = (__m128i*) mixer_buffer;
