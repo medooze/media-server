@@ -56,12 +56,13 @@ int AudioMixer::MixAudio()
 {
 	timeval  tv;
 	DWORD step = 10;
+	QWORD prev = 0;
 
 	//Logeamos
 	Log(">MixAudio\n");
 
 	//Init ts
-	QWORD prev = getUpdDifTime(&tv);
+	getUpdDifTime(&tv);
 
 	//Mientras estemos mezclando
 	while(mixingAudio)
@@ -115,8 +116,14 @@ int AudioMixer::MixAudio()
 			audio->vad = audio->output->GetVAD(numSamples);
 			//For each sidepaf
 			for (Sidebars::iterator sit = sidebars.begin(); sit!=sidebars.end(); ++sit)
-				//Mix it
-				sit->second->Update(id,audio->buffer,audio->len);
+			{
+				//Get sidebar
+				Sidebar * sidebar = sit->second;
+				//Check if participant is in the sidebar
+				if (sidebar->HasParticipant(id))
+					//Mix it
+					sidebar->Update(id,audio->buffer,audio->len);
+			}
 		}
 
 		// Second pass: Calculate this stream's output
@@ -139,7 +146,7 @@ int AudioMixer::MixAudio()
 			//And the audio buffer for participant
 			SWORD *buffer = audio->buffer;
 
-			//Check if we have been added to the sidebar
+			//Check if we are also an input to the sidebar to remove ound sound
 			if (audio->sidebar->HasParticipant(id))
 			{
 				//Get pointers to buffer
