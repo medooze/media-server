@@ -524,14 +524,11 @@
 #endif
 
 /* Disable TightVNCFileTransfer protocol */
-#ifndef LIBVNCSERVER_WITH_TIGHTVNC_FILETRANSFER 
-#define LIBVNCSERVER_WITH_TIGHTVNC_FILETRANSFER  1 
-#endif
+#undef LIBVNCSERVER_WITH_TIGHTVNC_FILETRANSFER
 
 /* Disable WebSockets support */
-#ifndef LIBVNCSERVER_WITH_WEBSOCKETS 
-#define LIBVNCSERVER_WITH_WEBSOCKETS  1 
-#endif
+#undef LIBVNCSERVER_WITH_WEBSOCKETS
+
 
 /* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
    significant byte first (like Motorola and SPARC, unlike Intel). */
