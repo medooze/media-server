@@ -250,14 +250,14 @@ int VNCServer::SetSize(int width,int height)
 	memcpy(screen2,screen,sizeof(rfbScreenInfo));
 
 	//Set new size
-	screen->width = width;
-	screen->height = height;
+	screen2->width = width;
+	screen2->height = height;
 
 	//Allocate new framebuffer
-	screen2->frameBuffer = (char*) malloc(screen->width*screen->height*screen->depth/8);
+	screen2->frameBuffer = (char*) malloc(screen2->width*screen2->height*screen2->depth/8);
 
 	//Check if it is been used by any client
-	if (screen->scaledScreenRefCount)
+	if (!screen->scaledScreenRefCount)
 	{
 		//Free framebuffer
 		if (screen->frameBuffer)
