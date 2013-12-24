@@ -290,8 +290,10 @@ int AppMixer::onFrameBufferSizeChanged(VNCViewer *viewer, int width, int height)
 	
 	//Create number of pixels
 	DWORD num = width*height;
+	//Get size with padding
+	DWORD size = (((width/32+1)*32)*((height/32+1)*32)*3)/2+FF_INPUT_BUFFER_PADDING_SIZE+32;
 	//Allocate memory
-	img = (BYTE*) malloc(num*3/2+FF_INPUT_BUFFER_PADDING_SIZE+32);
+	img = (BYTE*) malloc(size);
 
 	// paint the background in black for YUV
 	memset(img	, 0		, num);
