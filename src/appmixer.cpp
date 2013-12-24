@@ -34,6 +34,8 @@ int AppMixer::Init(VideoOutput* output)
 {
 	//Set output
 	this->output = output;
+	//Init VNC server
+	server.Init();
 }
 
 int AppMixer::DisplayImage(const char* filename)
@@ -76,63 +78,38 @@ int AppMixer::End()
 		//Nullify
 		 presenter = NULL;
 	}
-	for (Viewers::iterator it = viewers.begin(); it!=viewers.end(); ++it)
-		it->second->ws->Close();
 }
 
 int AppMixer::WebsocketConnectRequest(int partId,WebSocket *ws,bool isPresenter)
 {
 	Log("-WebsocketConnectRequest [partId:%d,isPresenter:%d]\n",partId,isPresenter);
 
-	if (isPresenter)
-	{
-		//LOck
-		use.WaitUnusedAndLock();
-		//Check if already presenting
-		if (presenter)
-		{
-			//Close websocket
-			presenter->ws->Close();
-			//Delete it
-			delete(presenter);
-		}
-		//Create new presenter
-		presenter = new Presenter(ws);
-		//No user data
-		ws->SetUserData(NULL);
-		//Init it
-		presenter->Init(this);
-		//Unlock
-		use.Unlock();
-	} else {
-		//Lock
-		use.IncUse();
-		//Find 
-		Viewers::iterator it = viewers.find(partId);
-		//If already got a viewer for that aprticipant
-		if (it!=viewers.end())
-		{
-			//Get viewer
-			Viewer* viewer = it->second;
-			//Close websocket
-			viewer->ws->Close();
-			//Delete it
-			delete(viewer);	
-			//Erase it
-			viewers.erase(it);
-		}
-		//Create new viewer
-		Viewer* viewer = new Viewer(partId,ws);
-		//Set as ws user data
-		ws->SetUserData(viewer);
-		//add To map
-		viewers[partId] = viewer;
-		//Unlock
-		use.DecUse();
-	}
+	//Check if it is a viewer
+	if (!isPresenter)
+		//Let the server handle it
+		return server.Connect(partId,ws);
 
+	//LOck
+	use.WaitUnusedAndLock();
+	//Check if already presenting
+	if (presenter)
+	{
+		//Close websocket
+		presenter->ws->Close();
+		//Delete it
+		delete(presenter);
+	}
+	//Create new presenter
+	presenter = new Presenter(ws);
+	//Init it
+	presenter->Init(this);
 	//Accept connection
 	ws->Accept(this);
+	//Unlock
+	use.Unlock();
+
+	//Ok
+	return 1;
 }
 
 void AppMixer::onOpen(WebSocket *ws)
@@ -149,26 +126,10 @@ void AppMixer::onMessageData(WebSocket *ws,const BYTE* data, const DWORD size)
 {
 	Debug("-onMessageData %p size:%d\n",ws,size);
 
-	///Get user data
-	void * user = ws->GetUserData();
-
-	//Check if it is presenter
-	if (user)
-	{
-		//Get viewer from user data
-		Viewer* viewer = (Viewer*) user;
-		//Lock
-		use.IncUse();
-		//Process data
-		viewer->Process(data,size);
-		//Unlock
-		use.DecUse();
-	} else if (ws==presenter->ws) {
+	if (ws==presenter->ws) {
 		//Process it
 		presenter->Process(data,size);
 	}
-
-
 }
 
 void AppMixer::onMessageEnd(WebSocket *ws)
@@ -178,23 +139,8 @@ void AppMixer::onMessageEnd(WebSocket *ws)
 
 void AppMixer::onClose(WebSocket *ws)
 {
-	///Get user data
-	void * user = ws->GetUserData();
-
-	//Check if it is presenter
-	if (user)
-	{
-		//Get viewer from user data
-		Viewer* viewer = (Viewer*) user;
-		//Lock
-		use.WaitUnusedAndLock();
-		//Erase it
-		viewers.erase(viewer->GetId());
-		//Delete it
-		delete(viewer);
-		//Unlcok
-		use.Unlock();
-	} else if (presenter && ws==presenter->ws) {
+	 if (presenter && ws==presenter->ws)
+	 {
 		//Lock
 		use.WaitUnusedAndLock();
 		//Delete presenter
@@ -208,21 +154,19 @@ void AppMixer::onClose(WebSocket *ws)
 
 void AppMixer::onError(WebSocket *ws)
 {
-
+	if (presenter && ws==presenter->ws)
+	{
+		//Lock
+		use.WaitUnusedAndLock();
+		//Delete presenter
+		delete(presenter);
+		//Remote presenter
+		presenter = NULL;
+		//Unlock
+		use.Unlock();
+	}
 }
 
-AppMixer::Viewer::Viewer(int id,WebSocket *ws)
-{
-	//Store id
-	this->id = id;
-	//Store ws
-	this->ws = ws;
-}
-
-int AppMixer::Viewer::Process(const BYTE* data,DWORD size)
-{
-	
-}
 
 AppMixer::Presenter::Presenter(WebSocket *ws)
 {
@@ -321,6 +265,9 @@ bool AppMixer::Presenter::WriteToRFBServer(char *buf, int size)
 
 int AppMixer::onFrameBufferSizeChanged(VNCViewer *viewer, int width, int height)
 {
+	//Change server size
+	server.SetSize(width,height);
+	
 	// Set property's of YUV rescaller context
 	av_opt_set_defaults(sws);
 	av_opt_set_int(sws, "srcw",       width			,AV_OPT_SEARCH_CHILDREN);
@@ -359,6 +306,10 @@ int AppMixer::onFrameBufferSizeChanged(VNCViewer *viewer, int width, int height)
 int AppMixer::onFrameBufferUpdate(VNCViewer *viewer,int x, int y, int w, int h)
 {
 	//Log("-onFrameBufferUpdate [%d,%d,%d,%d]\n",x,y,w,h);
+
+	//UPdate vnc server frame buffer
+	server.FrameBufferUpdate(viewer->GetFrameBuffer(),x,y,w,h);
+	
 	return 1;
 }
 int AppMixer::onFinishedFrameBufferUpdate(VNCViewer *viewer)
@@ -367,6 +318,9 @@ int AppMixer::onFinishedFrameBufferUpdate(VNCViewer *viewer)
 	DWORD height = viewer->GetHeight();
 
 	Log("-onFinishedFrameBufferUpdate [%d,%d]\n",width,height);
+
+	//Signal server
+	server.FrameBufferUpdateDone();
 
 	//Calc num pixels
 	DWORD numpixels = width*height;

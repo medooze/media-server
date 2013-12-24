@@ -17,6 +17,7 @@
 #include "use.h"
 #include "wait.h"
 #include "VNCViewer.h"
+#include "VNCServer.h"
 extern "C" {
 #include <libswscale/swscale.h>
 #include <libavcodec/avcodec.h>
@@ -34,7 +35,7 @@ private:
 	{
 	public:
 		Presenter(WebSocket *ws);
-		~Presenter();
+		virtual ~Presenter();
 		int Init(VNCViewer::Listener *listener);
 		int Process(const BYTE* data,DWORD size);
 		int End();
@@ -51,20 +52,7 @@ private:
 		VNCViewer viewer;
 	};
 
-	class Viewer
-	{
-	public:
-		Viewer(int id,WebSocket *ws);
-		int Process(const BYTE* data,DWORD size);
-		void  SetSafe()			{ safe = 1;			}
-		int   GetId()			{ return id;			}
-	public:
-		int id;
-		bool safe;
-		WebSocket* ws;
-		fifo<BYTE,65535> buffer;
-		Wait wait;
-	};
+	
 public:
 	AppMixer();
 	~AppMixer();
@@ -85,12 +73,10 @@ public:
 	virtual int onFrameBufferUpdate(VNCViewer *viewer,int x, int y, int w, int h);
 	virtual int onFinishedFrameBufferUpdate(VNCViewer *viewer);
 private:
-	typedef std::map<int,Viewer*> Viewers;
-private:
 	Logo		logo;
 	VideoOutput*	output;
 	Presenter*	presenter;
-	Viewers		viewers;
+	VNCServer	server;
 	Use		use;
 	SwsContext*	sws;
 	BYTE*		img;
