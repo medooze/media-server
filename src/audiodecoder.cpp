@@ -57,7 +57,9 @@ void * AudioDecoderWorker::startDecoding(void *par)
 	//Block all signals
 	blocksignals();
 	//Run
-	pthread_exit((void *)worker->Decode());
+	worker->Decode();
+	//Exit
+	return NULL;;
 }
 
 int  AudioDecoderWorker::Stop()
@@ -153,7 +155,7 @@ int AudioDecoderWorker::Decode()
 	Log("<DecodeAudio\n");
 
 	//Exit
-	pthread_exit(0);
+	return 0;
 }
 
 void AudioDecoderWorker::onRTPPacket(RTPPacket &packet)

@@ -45,7 +45,9 @@ void *AudioMixer::startMixingAudio(void *par)
 	blocksignals();
 	
 	//Ejecutamos
-	pthread_exit((void *)am->MixAudio());
+	am->MixAudio();
+	//Exit
+	return NULL;;
 }
 
 /***********************************

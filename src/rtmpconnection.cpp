@@ -179,7 +179,9 @@ void * RTMPConnection::run(void *par)
         RTMPConnection *con = (RTMPConnection *)par;
 
         //Ejecutamos
-        pthread_exit((void *)con->Run());
+        con->Run();
+	//Exit
+	return NULL;
 }
 
 /***************************

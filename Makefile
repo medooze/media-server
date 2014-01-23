@@ -8,7 +8,7 @@ OPTS+= -fPIC -DPIC -msse -msse2 -msse3 -DSPX_RESAMPLE_EXPORT= -DRANDOM_PREFIX=mc
 #DEBUG
 ifeq ($(DEBUG),yes)
 	TAG=debug
-	OPTS+= -g -O0
+	OPTS+= -g -O0 
 else
 	OPTS+= -O3 -g
 	TAG=release
@@ -164,13 +164,12 @@ CFLAGS  += $(INCLUDE) $(OPTS)
 CXXFLAGS+= $(INCLUDE) $(OPTS)
 
 %.o: %.c
-	@$(CC) $(CFLAGS) -c $< -o $(BUILD)/$@
 	@echo "[CC ] $(TAG) $<"
+	@$(CC) $(CFLAGS) -c $< -o $(BUILD)/$@
 
 %.o: %.cpp
-	@$(CXX) $(CXXFLAGS) -c $< -o $(BUILD)/$@
 	@echo "[CXX] $(TAG) $<"
-
+	@$(CXX) $(CXXFLAGS) -c $< -o $(BUILD)/$@
 
 ############################################
 #Targets

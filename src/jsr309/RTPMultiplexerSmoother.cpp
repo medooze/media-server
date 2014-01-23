@@ -206,7 +206,9 @@ void* RTPMultiplexerSmoother::run(void *par)
         //Get endpoint
 	RTPMultiplexerSmoother *smooth = (RTPMultiplexerSmoother *)par;
 	//Run 
-        pthread_exit((void *)smooth->Run());
+        smooth->Run();
+	//Exit
+	return NULL;
 }
 
 int RTPMultiplexerSmoother::Run()

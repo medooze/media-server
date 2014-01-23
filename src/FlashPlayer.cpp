@@ -88,7 +88,9 @@ void* FlashPlayer::startPlayback(void *par)
 	//blocksignals();
 
 	//Y ejecutamos la funcion
-	pthread_exit((void *)player->Run());
+	player->Run();
+	//Exit
+	return NULL;
 }
 
 int FlashPlayer::Run()

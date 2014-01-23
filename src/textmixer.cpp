@@ -44,7 +44,9 @@ void *TextMixer::startMixingText(void *par)
 	blocksignals();
 	
 	//Ejecutamos
-	pthread_exit((void *)am->MixText());
+	am->MixText();
+	//Exit
+	return NULL;
 }
 
 /***********************************

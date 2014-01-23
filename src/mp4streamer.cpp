@@ -244,7 +244,9 @@ void * MP4Streamer::play(void *par)
 	blocksignals();
 
 	//Ejecutamos
-	pthread_exit((void *)player->PlayLoop());
+	player->PlayLoop();
+	//Exit
+	return NULL;
 }
 
 int MP4Streamer::PlayLoop()

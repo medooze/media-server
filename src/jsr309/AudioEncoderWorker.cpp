@@ -68,7 +68,9 @@ void * AudioEncoderMultiplexerWorker::startEncoding(void *par)
 	//Block all signals
 	blocksignals();
 	//Run
-	pthread_exit((void *)worker->Encode());
+	worker->Encode();
+	//Exit
+	return NULL;;
 }
 
 int AudioEncoderMultiplexerWorker::Stop()
@@ -169,8 +171,6 @@ int AudioEncoderMultiplexerWorker::Encode()
 
 	//Salimos
         Log("<SendAudio\n");
-	
-	pthread_exit(0);
 }
 
 void AudioEncoderMultiplexerWorker::AddListener(Listener *listener)
