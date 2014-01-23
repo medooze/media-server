@@ -71,7 +71,9 @@ void * AudioDecoderJoinableWorker::startDecoding(void *par)
 	//Block all signals
 	blocksignals();
 	//Run
-	pthread_exit((void *)worker->Decode());
+	worker->Decode();
+	//Exit
+	return NULL;;
 }
 
 int  AudioDecoderJoinableWorker::Stop()
@@ -162,12 +164,8 @@ int AudioDecoderJoinableWorker::Decode()
 	if (codec!=NULL)
 		//Delete object
 		delete codec;
-
 	
 	Log("<DecodeAudio\n");
-
-	//Exit
-	pthread_exit(0);
 }
 
 void AudioDecoderJoinableWorker::onRTPPacket(RTPPacket &packet)

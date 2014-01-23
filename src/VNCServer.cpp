@@ -27,20 +27,20 @@ extern "C"
 	 {
 		if(cl->screen && cl->screen->maxClientWait)
 			return(rfbReadExactTimeout(cl,buf,len,cl->screen->maxClientWait));
-		 else
+		else
 			return(rfbReadExactTimeout(cl,buf,len,0));
 	 }
 
 	 int rfbReadExactTimeout(rfbClientPtr cl, char *buf, int len,int timeout)
 	 {
-		 return ((VNCServer::Client*)(cl->clientData))->Read(buf,len,timeout);
+		return ((VNCServer::Client*)(cl->clientData))->Read(buf,len,timeout);
 	 }
 
 	 int rfbPeekExactTimeout(rfbClientPtr cl, char *buf, int len,int timeout){return 1;}
 
 	 int rfbWriteExact(rfbClientPtr cl, const char *buf, int len)
 	 {
-		return ((VNCServer::Client*)(cl->clientData))->Write(buf,len) ? 0 : -1;
+		return ((VNCServer::Client*)(cl->clientData))->Write(buf,len);
 	 }
 
 	 int rfbCheckFds(rfbScreenInfoPtr rfbScreen,long usec){return 1;}
