@@ -179,7 +179,9 @@ void* VideoStream::startSendingVideo(void *par)
 	blocksignals();
 
 	//Y ejecutamos la funcion
-	pthread_exit((void *)conf->SendVideo());
+	conf->SendVideo();
+	//Exit
+	return NULL;
 }
 
 /**************************************
@@ -197,7 +199,9 @@ void* VideoStream::startReceivingVideo(void *par)
 	blocksignals();
 
 	//Y ejecutamos
-	pthread_exit( (void *)conf->RecVideo());
+	conf->RecVideo();
+	//Exit
+	return NULL;
 }
 
 /***************************************

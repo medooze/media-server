@@ -255,7 +255,9 @@ void * WebSocketServer::run(void *par)
         blocksignals();
 
         //Ejecutamos
-        pthread_exit((void *)ses->Run());
+        ses->Run();
+	//Exit
+	return NULL;
 }
 
 
