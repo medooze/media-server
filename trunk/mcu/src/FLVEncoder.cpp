@@ -58,7 +58,7 @@ FLVEncoder::~FLVEncoder()
 	pthread_cond_destroy(&cond);
 }
 
-int FLVEncoder::Init(AudioInput* audioInput,VideoInput *videoInput)
+int FLVEncoder::Init(AudioInput* audioInput,VideoInput *videoInput,const Properties &properties)
 {
 	//Check if inited
 	if (inited)

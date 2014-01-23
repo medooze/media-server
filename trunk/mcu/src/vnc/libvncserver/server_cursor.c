@@ -528,7 +528,7 @@ void rfbShowCursor(rfbClientPtr cl)
    if(s->underCursorBufferLen<bufSize) {
       if(s->underCursorBuffer!=NULL)
 	free(s->underCursorBuffer);
-      s->underCursorBuffer=malloc(bufSize);
+      s->underCursorBuffer=calloc(bufSize,1);
       s->underCursorBufferLen=bufSize;
    }
 

@@ -158,7 +158,7 @@ int Mosaic::SetSlot(int num,int id)
 	//Check num
 	if (num>numSlots-1 || num<0)
 		//Exit
-		return Error("Slot not in mosaic \n");
+		return Error("Slot not in mosaic [num:%d,numSlots:%d]\n",num,numSlots);
 
 	//Log
 	Log("-SetSlot [slot=%d,id=%d]\n",num,id);
@@ -335,6 +335,18 @@ int Mosaic::RemoveParticipant(int id)
 
 	//Return position
 	return 1;
+}
+
+bool Mosaic::IsVADShown()
+{
+	//For each slot
+	for (int i=0; i<numSlots; ++i)
+		//Check if it is VAD
+		if (mosaicSlots[i]==SlotVAD)
+			//Shown
+			return true;
+	//Not shown
+	return false;
 }
 
 int Mosaic::GetVADParticipant()

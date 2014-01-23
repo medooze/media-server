@@ -114,7 +114,7 @@ int AppMixer::WebsocketConnectRequest(int partId,WebSocket *ws,bool isPresenter)
 
 void AppMixer::onOpen(WebSocket *ws)
 {
-
+	Log("-AppMixer::onOpen %p",ws);
 }
 
 void AppMixer::onMessageStart(WebSocket *ws,const WebSocket::MessageType type,const DWORD length)
@@ -139,21 +139,26 @@ void AppMixer::onMessageEnd(WebSocket *ws)
 
 void AppMixer::onClose(WebSocket *ws)
 {
-	 if (presenter && ws==presenter->ws)
-	 {
+	Log(">AppMixer::onClose %p %p\n",ws,presenter);
+
+	if (presenter && ws==presenter->ws)
+	{
 		//Lock
 		use.WaitUnusedAndLock();
 		//Delete presenter
 		delete(presenter);
-		//Remote presenter
+		//Remove presenter
 		presenter = NULL;
 		//Unlock
 		use.Unlock();
-	} 
+	}
+	Log("<AppMixer::onClose\n");
 }
 
 void AppMixer::onError(WebSocket *ws)
 {
+	Log(">AppMixer::onError %p %p\n",ws,presenter);
+	
 	if (presenter && ws==presenter->ws)
 	{
 		//Lock
@@ -165,6 +170,7 @@ void AppMixer::onError(WebSocket *ws)
 		//Unlock
 		use.Unlock();
 	}
+	Log("<AppMixer::onError\n");
 }
 
 
@@ -206,15 +212,9 @@ int AppMixer::Presenter::WaitForMessage(DWORD usecs)
 {
 	Debug(">WaitForMessage %d\n",buffer.length());
 
-	//Lock
-	wait.Lock();
-
 	//Wait for data
 	int ret = wait.WaitSignal(usecs*1000);
 
-	//Unlock
-	wait.Unlock();
-	
 	Debug("<WaitForMessage %d %d\n",buffer.length(),ret);
 
 	return ret;
@@ -222,14 +222,17 @@ int AppMixer::Presenter::WaitForMessage(DWORD usecs)
 
 void AppMixer::Presenter::CancelWaitForMessage()
 {
+	//Log
+	Debug(">AppMixer::Presenter::CancelWaitForMessage\n");
+	//Cancel wait
 	wait.Cancel();
+	//Log
+	Debug("AppMixer::Presenter::CancelWaitForMessage\n");
 }
 
 bool  AppMixer::Presenter::ReadFromRFBServer(char *out, unsigned int size)
 {
 	Debug(">ReadFromRFBServer requested:%d,buffered:%d\n",size,buffer.length());
-	//Lock
-	wait.Lock();
 
 	//Bytes to read
 	int num = size;
@@ -246,11 +249,7 @@ bool  AppMixer::Presenter::ReadFromRFBServer(char *out, unsigned int size)
 	//Read
 	buffer.pop((BYTE*)out,num);
 
-	//Unlock
-	wait.Unlock();
-
 	Debug("<ReadFromRFBServer requested:%d,returned:%d,left:%d\n",size,num,buffer.length());
-	
 
 	//Return readed
 	return num;
@@ -263,10 +262,31 @@ bool AppMixer::Presenter::WriteToRFBServer(char *buf, int size)
 	return size;
 }
 
+void AppMixer::Presenter::Close()
+{
+	//Close websocket
+	ws->Close();
+}
+
 int AppMixer::onFrameBufferSizeChanged(VNCViewer *viewer, int width, int height)
 {
+	Log("-onFrameBufferSizeChanged [%d,%d]\n",width,height);
 	//Change server size
 	server.SetSize(width,height);
+
+	//Check if not minimized
+	if (!width || !height)
+		//Exit
+		return 0;
+
+	//Check if we already have a context
+	if (sws)
+	{
+		//Free sws contes
+		sws_freeContext(sws);
+		// Create YUV rescaller cotext
+		sws = sws_alloc_context();
+	}
 	
 	// Set property's of YUV rescaller context
 	av_opt_set_defaults(sws);
@@ -293,7 +313,7 @@ int AppMixer::onFrameBufferSizeChanged(VNCViewer *viewer, int width, int height)
 	//Get size with padding
 	DWORD size = (((width/32+1)*32)*((height/32+1)*32)*3)/2+FF_INPUT_BUFFER_PADDING_SIZE+32;
 	//Allocate memory
-	img = (BYTE*) malloc(size);
+	img = (BYTE*) malloc32(size);
 
 	// paint the background in black for YUV
 	memset(img	, 0		, num);
@@ -314,15 +334,24 @@ int AppMixer::onFrameBufferUpdate(VNCViewer *viewer,int x, int y, int w, int h)
 	
 	return 1;
 }
+
+int AppMixer::onGotCopyRectangle(VNCViewer *viewer, int src_x, int src_y, int w, int h, int dest_x, int dest_y)
+{
+	//Copy vnc server frame buffer rect to destination
+	server.CopyRect(viewer->GetFrameBuffer(),src_x, src_y, w, h, dest_x, dest_y);
+
+	return 1;
+}
+
 int AppMixer::onFinishedFrameBufferUpdate(VNCViewer *viewer)
 {
 	DWORD width = viewer->GetWidth();
 	DWORD height = viewer->GetHeight();
 
-	Log("-onFinishedFrameBufferUpdate [%d,%d]\n",width,height);
-
 	//Signal server
 	server.FrameBufferUpdateDone();
+
+	return 1;
 
 	//Calc num pixels
 	DWORD numpixels = width*height;

@@ -62,6 +62,23 @@ extern "C"
 	extern void rfbDefaultKbdAddEvent(rfbBool down, rfbKeySym keySym, rfbClientPtr cl);
 	extern void rfbDefaultSetXCutText(char* text, int len, rfbClientPtr cl);
 	extern rfbCursorPtr rfbDefaultGetCursorPtr(rfbClientPtr cl);
+
+	/* from tight.c */
+	#ifdef LIBVNCSERVER_HAVE_LIBZ
+	#ifdef LIBVNCSERVER_HAVE_LIBJPEG
+	extern void rfbTightCleanup(rfbScreenInfoPtr screen);
+	#endif
+
+	/* from zlib.c */
+	extern void rfbZlibCleanup(rfbScreenInfoPtr screen);
+
+	/* from zrle.c */
+	void rfbFreeZrleData(rfbClientPtr cl);
+	#endif
+
+	/* from ultra.c */
+	extern void rfbFreeUltraData(rfbClientPtr cl);
+
 }
 
 static rfbCursor myCursor =
@@ -118,18 +135,23 @@ VNCServer::VNCServer()
 	screen->httpSock=-1;
 
 	screen->desktopName = "MCU";
-	screen->alwaysShared = FALSE;
+	screen->alwaysShared = TRUE;
 	screen->neverShared = FALSE;
-	screen->dontDisconnect = FALSE;
+	screen->dontDisconnect = TRUE;
+
 	screen->authPasswdData = NULL;
 	screen->authPasswdFirstViewOnly = 1;
 
 	screen->width = width;
 	screen->height = height;
 	screen->bitsPerPixel = screen->depth = 8*bytesPerPixel;
+	screen->paddedWidthInBytes = width*bytesPerPixel;
 
 	//Allocate memory
 	screen->frameBuffer = (char*) malloc(screen->width*screen->height*screen->depth/8);
+	memset(screen->frameBuffer,0xDD,screen->width*screen->height*screen->depth/8);
+	for (int j = 0;j<screen->height/10;++j)
+		memset(screen->frameBuffer+screen->width*(j*10)*4,0x00,screen->width*4);
 
 	screen->passwordCheck = rfbDefaultPasswordCheck;
 
@@ -196,7 +218,7 @@ int VNCServer::Connect(int partId,WebSocket *socket)
 {
 	Log("-VNCServer connecting participant viewer [id:%d]\n",partId);
 	//Lock
-	use.IncUse();
+	use.WaitUnusedAndLock();
 	//Create client
 	Client *client = new Client(partId,screen);
 	//Set client as as user data
@@ -206,7 +228,7 @@ int VNCServer::Connect(int partId,WebSocket *socket)
 	//Accept incoming connection and add us as listeners
 	socket->Accept(this);
 	//Unlock
-	use.DecUse();
+	use.Unlock();
 	//Connect to socket
 	return client->Connect(socket);
 }
@@ -243,19 +265,15 @@ int VNCServer::SetSize(int width,int height)
 	//Lock
 	use.WaitUnusedAndLock();
 
-	//Create new screen
-	rfbScreenInfo* screen2 = (rfbScreenInfo*)malloc(sizeof(rfbScreenInfo));
-
-	//Copy contents of first screen
-	memcpy(screen2,screen,sizeof(rfbScreenInfo));
-
 	//Set new size
-	screen2->width = width;
-	screen2->height = height;
+	screen->width = width;
+	screen->height = height;
+	screen->paddedWidthInBytes = width*screen->depth/8;
 
 	//Allocate new framebuffer
-	screen2->frameBuffer = (char*) malloc(screen2->width*screen2->height*screen2->depth/8);
+	screen->frameBuffer = (char*) malloc(screen->width*screen->height*screen->depth/8);
 
+	/*/
 	//Check if it is been used by any client
 	if (!screen->scaledScreenRefCount)
 	{
@@ -269,11 +287,12 @@ int VNCServer::SetSize(int width,int height)
 	//Set new screen
 	screen = screen2;
 
+	 **/
 	//Resize all viewers
 	for (Clients::iterator it=clients.begin(); it!=clients.end(); ++it)
 		//Update it
 		it->second->ResizeScreen(screen);
-
+	
 	//Unlock
 	use.Unlock();
 
@@ -283,10 +302,15 @@ int VNCServer::SetSize(int width,int height)
 
 int VNCServer::FrameBufferUpdateDone()
 {
+	//LOck
+	use.WaitUnusedAndLock();
+
 	//Send and update to all viewers
 	for (Clients::iterator it=clients.begin(); it!=clients.end(); ++it)
 		//Update it
 		it->second->Update();
+	//Unlock
+	use.Unlock();
 }
 
 int VNCServer::FrameBufferUpdate(BYTE *data,int x,int y,int width,int height)
@@ -304,6 +328,26 @@ int VNCServer::FrameBufferUpdate(BYTE *data,int x,int y,int width,int height)
 
 	//Unlock
 	use.DecUse();
+}
+
+int VNCServer::CopyRect(BYTE *data,int src_x, int src_y, int w, int h, int dest_x, int dest_y)
+{
+	FrameBufferUpdate(data,dest_x,dest_y,w,h);
+	/*
+	//LOck
+	use.IncUse();
+
+	//Update frame
+	for (int j=0;j<h;++j)
+		//Copy
+		memcpy(screen->frameBuffer+(dest_x+(dest_y+j)*screen->width)*4,data+(src_x+(src_y+j)*screen->width)*4,w*4);
+
+	//Set modified region
+	rfbDoCopyRect(screen,src_x, src_y,src_x+w, src_y+h, dest_x, dest_y);
+
+	//Unlock
+	use.DecUse();
+	 */
 }
 
 int VNCServer::End()
@@ -330,48 +374,7 @@ void VNCServer::onMouseEvent(int buttonMask, int x, int y, rfbClientRec* cl)
 
 void VNCServer::onUpdateDone(rfbClientRec* cl, int result)
 {
-	//Get lock
-	Use* use = (Use*) cl->screen->screenData;
-
-	//Lock
-	use->WaitUnusedAndLock();
 	
-	//If the scren has been resized
-	if (cl->scaledScreen!=cl->screen)
-	{
-		//Get old screen
-		rfbScreenInfo* old = cl->scaledScreen;
-
-		//Remove client from it
-		old->scaledScreenRefCount--;
-
-		//If old one is no longer used
-		if (old && old->scaledScreenRefCount)
-		{
-			//Free frame buffer
-			free(old->frameBuffer);
-			//Delete it
-			free(old);
-		}
-
-		/* setup pseudo scaling */
-		cl->scaledScreen = cl->screen;
-		cl->scaledScreen->scaledScreenRefCount++;
-
-		//Free region
-		sraRgnDestroy(cl->modifiedRegion);
-
-		//Set new modified region
-		cl->modifiedRegion = sraRgnCreateRect(0,0,cl->screen->width,cl->screen->height);
-
-		//Frame size has changed
-		cl->newFBSizePending = TRUE;
-
-		//Should we update client???
-	}
-
-	//Unlock
-	use->Unlock();
 }
 
 
@@ -390,7 +393,7 @@ void VNCServer::onMessageStart(WebSocket *ws,const WebSocket::MessageType type,c
 void VNCServer::onMessageData(WebSocket *ws,const BYTE* data, const DWORD size)
 {
 	Debug("-onMessageData %p size:%d\n",ws,size);
-
+	Dump(data,size);
 	//Get client
 	Client *client = (Client *)ws->GetUserData();
 	//Process it
@@ -470,21 +473,19 @@ VNCServer::Client::Client(int id,rfbScreenInfo* screen)
 	cl->translateFn = rfbTranslateNone;
 	cl->translateLookupTable = NULL;
 
-	//LOCK(rfbClientListMutex);
+	//Add to list
+	cl->refCount = 0;
+	cl->next = screen->clientHead;
+	cl->prev = NULL;
+	if (screen->clientHead)
+		screen->clientHead->prev = cl;
 
-	//IF_PTHREADS(cl->refCount = 0);
-	//cl->next = screen->clientHead;
-	//cl->prev = NULL;
-	//if (screen->clientHead)
-	//	screen->clientHead->prev = cl;
-
-	//screen->clientHead = cl;
-	//UNLOCK(rfbClientListMutex);
+	screen->clientHead = cl;
 
 #if defined(LIBVNCSERVER_HAVE_LIBZ) || defined(LIBVNCSERVER_HAVE_LIBPNG)
-	cl->tightQualityLevel = -1;
+	cl->tightQualityLevel = 1;//-1;
 #ifdef LIBVNCSERVER_HAVE_LIBJPEG
-	cl->tightCompressLevel = TIGHT_DEFAULT_COMPRESSION;
+	cl->tightCompressLevel = 9;//TIGHT_DEFAULT_COMPRESSION;
 	cl->turboSubsampLevel = TURBO_DEFAULT_SUBSAMP;
 	for (int i = 0; i < 4; i++)
 		cl->zsActive[i] = FALSE;
@@ -524,13 +525,64 @@ VNCServer::Client::Client(int id,rfbScreenInfo* screen)
 
 VNCServer::Client::~Client()
 {
-	//Remvoe us from screen
-	cl->scaledScreen->scaledScreenRefCount--;
-	//Free name
+	if (cl->prev)
+		cl->prev->next = cl->next;
+	else
+		cl->screen->clientHead = cl->next;
+	if (cl->next)
+		cl->next->prev = cl->prev;
+
+	if (cl->scaledScreen!=NULL)
+		cl->scaledScreen->scaledScreenRefCount--;
+
+#ifdef LIBVNCSERVER_HAVE_LIBZ
+	rfbFreeZrleData(cl);
+#endif
+
+	rfbFreeUltraData(cl);
+
+	/* free buffers holding pixel data before and after encoding */
+	free(cl->beforeEncBuf);
+	free(cl->afterEncBuf);
+
+
 	free(cl->host);
-	//Free regions
+
+#ifdef LIBVNCSERVER_HAVE_LIBZ
+	/* Release the compression state structures if any. */
+	if ( cl->compStreamInited )
+		deflateEnd( &(cl->compStream) );
+
+#ifdef LIBVNCSERVER_HAVE_LIBJPEG
+	for (int i = 0; i < 4; i++)
+		if (cl->zsActive[i])
+			deflateEnd(&cl->zsStruct[i]);
+#endif
+#endif
+
+	if (cl->screen->pointerClient == cl) cl->screen->pointerClient = NULL;
+
 	sraRgnDestroy(cl->modifiedRegion);
+	sraRgnDestroy(cl->requestedRegion);
 	sraRgnDestroy(cl->copyRegion);
+
+	if (cl->translateLookupTable) free(cl->translateLookupTable);
+
+	TINI_COND(cl->updateCond);
+	TINI_MUTEX(cl->updateMutex);
+
+	/* make sure outputMutex is unlocked before destroying */
+	LOCK(cl->outputMutex);
+	UNLOCK(cl->outputMutex);
+	TINI_MUTEX(cl->outputMutex);
+
+	LOCK(cl->sendMutex);
+	UNLOCK(cl->sendMutex);
+	TINI_MUTEX(cl->sendMutex);
+
+	rfbPrintStats(cl);
+	rfbResetStats(cl);
+
 	//Free mem
 	free(cl);
 }
@@ -613,30 +665,31 @@ void VNCServer::Client::CancelWait()
 
 int VNCServer::Client::Read(char *out, int size, int timeout)
 {
-	Debug(">Read requested:%d,buffered:%d\n",size,buffer.length());
+	//Bytes read
+	int num = 0;
+	
+	//Debug(">Read requested:%d,buffered:%d\n",size,buffer.length());
+
 	//Lock
 	wait.Lock();
 
-	//Bytes to read
-	int num = size;
-
 	//Check if we have enought data
-	while(buffer.length()<num)
+	while(buffer.length()<size)
 	{
 		//Wait for mor data
 		if (!wait.WaitSignal(timeout))
-			//Error
-			return 0;
+			//End
+			goto end;
 	}
 
 	//Read
-	buffer.pop((BYTE*)out,num);
+	num = buffer.pop((BYTE*)out,size);
 
+end:
 	//Unlock
 	wait.Unlock();
 
-	Debug("<Read requested:%d,returned:%d,left:%d\n",size,num,buffer.length());
-
+	//Debug("<Read requested:%d,returned:%d,left:%d\n",size,num,buffer.length());
 
 	//Return readed
 	return num;
@@ -653,22 +706,74 @@ int VNCServer::Client::ProcessMessage()
 {
 	//While we have data
 	while(buffer.length())
+	{
 		//Process message
 		rfbProcessClientMessage(cl);
-	//Update just in case
-	rfbUpdateClient(cl);
+		//If connected
+		if (cl->state == rfbClientRec::RFB_NORMAL )
+			//Try an update
+			Update();
+	}
+	
 	//OK
 	return 1;
 }
 
 void VNCServer::Client::Update()
 {
-	//Update just in case
-	rfbUpdateClient(cl);
+	rfbBool haveUpdate = false;
+	sraRegion* updateRegion = NULL;
+
+	//Check if it is a pending update
+	if  (!FB_UPDATE_PENDING(cl))
+		return;
+
+	//Lock update region
+	//LOCK(cl->updateMutex);
+
+	//If the scren has been resized
+	if (cl->newFBSizePending)
+	{
+		//Free region
+		sraRgnDestroy(cl->modifiedRegion);
+
+		//Set new modified region
+		cl->modifiedRegion = sraRgnCreateRect(0,0,cl->screen->width,cl->screen->height);
+
+		//We have an update
+		haveUpdate = TRUE;
+
+	/* always require a FB Update Request (otherwise can crash.) */
+	} else if (!sraRgnEmpty(cl->requestedRegion))
+	{
+		/* Now, get the region we're going to update, and remove
+		it from cl->modifiedRegion _before_ we send the update.
+		That way, if anything that overlaps the region we're sending
+		is updated, we'll be sure to do another update later. */
+		updateRegion = sraRgnCreateRgn(cl->modifiedRegion);
+		//Check it is inside requested region
+		haveUpdate   = sraRgnAnd(updateRegion,cl->requestedRegion);
+        }
+
+	//Unlock region
+	//UNLOCK(cl->updateMutex);
+
+	//If we have to update
+	if (haveUpdate)
+	{
+		/* Now actually send the update. */
+		rfbIncrClientRef(cl);
+		//LOCK(cl->sendMutex);
+		rfbSendFramebufferUpdate(cl, updateRegion);
+		//UNLOCK(cl->sendMutex);
+		rfbDecrClientRef(cl);
+	}
+	//Destroy region
+	if (updateRegion) sraRgnDestroy(updateRegion);
 }
 
 void VNCServer::Client::ResizeScreen(rfbScreenInfo* screen)
 {
 	//Set new one and wait for display finished hook to do the other chantes
-	cl->screen = screen;
+	cl->newFBSizePending = true;
 }

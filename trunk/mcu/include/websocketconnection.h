@@ -235,14 +235,14 @@ private:
 	class Frame
 	{
 	public:
-		Frame(WebSocketFrameHeader::OpCode opCode,const BYTE* data,DWORD size)
+		Frame(bool fin,WebSocketFrameHeader::OpCode opCode,const BYTE* data,DWORD size)
 		{
 			//Create header
-			WebSocketFrameHeader header(true,opCode,size,0);
+			WebSocketFrameHeader header(fin,opCode,size,0);
 			//Calculate total size
 			this->size = size+header.GetSize();
 			//Set values
-			this->data = (BYTE*) malloc(this->size);
+			this->data = (BYTE*)calloc(this->size,1);
 			//Copy header data
 			memcpy(this->data,header.GetData(),header.GetSize());
 			//Set initial length

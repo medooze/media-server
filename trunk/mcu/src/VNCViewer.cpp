@@ -49,6 +49,7 @@ extern "C"
 	rfbBool StringToIPAddr(const char *str, unsigned int *addr) { return 1; }
 	rfbBool SameMachine(int sock)  { return 1; }
 	rfbBool errorMessageOnReadFailure = TRUE;
+	static void CopyRectangleFromRectangle(rfbClient* client, int src_x, int src_y, int w, int h, int dest_x, int dest_y);
 }
 
 
@@ -71,6 +72,7 @@ rfbBool VNCViewer::MallocFrameBuffer(rfbClient* client)
 
 void VNCViewer::FinishedFrameBufferUpdate(rfbClient* client)
 {
+	Log("-FinishedFrameBufferUpdate\n");
 	//Vet viewer
 	VNCViewer * viewer = (VNCViewer *)(client->clientData);
 	//Send event
@@ -81,12 +83,28 @@ void VNCViewer::FinishedFrameBufferUpdate(rfbClient* client)
 
 void VNCViewer::GotFrameBufferUpdate(rfbClient* client, int x, int y, int w, int h)
 {
+	Log("-GotFrameBufferUpdate [%d,%d,%d,%d]\n",x,y,w,h);
 	//Vet viewer
 	VNCViewer * viewer = (VNCViewer *)(client->clientData);
 	//Send event
 	if (viewer->listener)
 		//Call it
 		viewer->listener->onFrameBufferUpdate(viewer,x,y,w,h);
+}
+
+
+void VNCViewer::GotCopyRectangle(rfbClient* client, int src_x, int src_y, int w, int h, int dest_x, int dest_y)
+{
+	//Log
+	Log("-GotCopyRectangle [x:%d,y;%d,w:%d,h:%d,to_x:%d,to_y:%d]\n",src_x, src_y, w, h, dest_x, dest_y);
+	//Copy rectangle in framebuffer first
+	CopyRectangleFromRectangle(client,src_x, src_y, w, h,dest_x, dest_y);
+	//Vet viewer
+	VNCViewer * viewer = (VNCViewer *)(client->clientData);
+	//Send event
+	if (viewer->listener)
+		//Call it
+		viewer->listener->onGotCopyRectangle(viewer,src_x, src_y, w, h, dest_x, dest_y);;
 }
 
 int VNCViewer::Init(VNCViewer::Socket* socket, VNCViewer::Listener* listener)
@@ -189,6 +207,7 @@ int VNCViewer::Init(VNCViewer::Socket* socket, VNCViewer::Listener* listener)
 	client->canHandleNewFBSize = TRUE;
 	client->FinishedFrameBufferUpdate = VNCViewer::FinishedFrameBufferUpdate;
 	client->GotFrameBufferUpdate = VNCViewer::GotFrameBufferUpdate;
+	client->GotCopyRect = VNCViewer::GotCopyRectangle;
 	client->MallocFrameBuffer = VNCViewer::MallocFrameBuffer;
 
         client->HandleCursorPos = DummyPoint;
@@ -246,8 +265,10 @@ int VNCViewer::End()
 	//Cancel any pending wait
 	((Socket*)client->tlsSession)->CancelWaitForMessage();
 
+	Log("-End VNCViewer joining thread\n");
 	//Join run thread
 	pthread_join(thread,NULL);
+	Log("-End VNCViewer joined thread\n");
 
 	#ifdef LIBVNCSERVER_HAVE_LIBZ
 #ifdef LIBVNCSERVER_HAVE_LIBJPEG
@@ -347,11 +368,17 @@ int VNCViewer::Run()
 
 	//Loop 
 	while(running)
-	{	
+	{
+		Debug(">HandleRFBServerMessage\n");
 		//PRocessmessage
 		if (!HandleRFBServerMessage(client))
+		{
+			//Close socket
+			((Socket*)client->tlsSession)->CancelWaitForMessage();
 			//Error
 			return  Error("HandleRFBServerMessage error\n");
+		}
+		Debug("<HandleRFBServerMessage\n");
 	}
 	Log("<VNCViewer run");
 }
@@ -369,7 +396,7 @@ int VNCViewer::ResetSize()
 	DWORD size = client->width*client->height*client->format.bitsPerPixel/8;
 
 	//Allocate memory for RGB and YUV + padding
-	client->frameBuffer = (BYTE*)malloc(size+64);
+	client->frameBuffer = (BYTE*)malloc32(size+64);
 	
 	//Clean RGB
 	memset(client->frameBuffer, 0, size);

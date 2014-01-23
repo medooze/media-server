@@ -485,7 +485,41 @@ xmlrpc_value* StartBroadcaster(xmlrpc_env *env, xmlrpc_value *param_array, void 
 
 	 //Parseamos
 	int confId;
-	xmlrpc_parse_value(env, param_array, "(i)", &confId);
+	Properties properties;
+	xmlrpc_value *map;
+	xmlrpc_parse_value(env, param_array, "(iS)", &confId,&map);
+
+	//Check if it is new api
+	if(!env->fault_occurred)
+	{
+		//Get map size
+		int j = xmlrpc_struct_size(env,map);
+
+		//Parse rtp map
+		for (int i=0;i<j;i++)
+		{
+			xmlrpc_value *key, *val;
+			const char *strKey;
+			const char *strVal;
+			//Read member
+			xmlrpc_struct_read_member(env,map,i,&key,&val);
+			//Read name
+			xmlrpc_parse_value(env,key,"s",&strKey);
+			//Read value
+			xmlrpc_parse_value(env,val,"s",&strVal);
+			//Add to map
+			properties[strKey] = strVal;
+			//Decrement ref counter
+			xmlrpc_DECREF(key);
+			xmlrpc_DECREF(val);
+		}
+	} else {
+		//Clean error
+		xmlrpc_env_clean(env);
+		xmlrpc_env_init(env);
+		//Parse old values,
+		xmlrpc_parse_value(env, param_array, "(i)", &confId);
+	}
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
@@ -496,7 +530,7 @@ xmlrpc_value* StartBroadcaster(xmlrpc_env *env, xmlrpc_value *param_array, void 
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
-	int port = conf->StartBroadcaster();
+	int port = conf->StartBroadcaster(properties);
 
 	//Liberamos la referencia
 	mcu->ReleaseConferenceRef(confId);

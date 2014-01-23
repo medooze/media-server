@@ -134,7 +134,7 @@ int MultiConf::SetCompositionType(int mosaicId,Mosaic::Type comp,int size)
 * StartBroadcaster
 * 	Create FLV Watcher port
 *******************************/
-int MultiConf::StartBroadcaster()
+int MultiConf::StartBroadcaster(const Properties &properties)
 {
 	std::wstring name = std::wstring(L"broadcaster");
 
@@ -157,7 +157,7 @@ int MultiConf::StartBroadcaster()
 	broadcast.Init(0,0);
 
 	//Init it flv encoder
-	flvEncoder.Init(audioMixer.GetInput(broadcastId),videoMixer.GetInput(broadcastId));
+	flvEncoder.Init(audioMixer.GetInput(broadcastId),videoMixer.GetInput(broadcastId),properties);
 
 	//Init mixers
 	videoMixer.InitMixer(broadcastId,0);

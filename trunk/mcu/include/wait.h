@@ -102,7 +102,7 @@ public:
 				Error("-Wait cond timedwait error [%d,%d]\n",ret,errno);
 		} else {
 			//Wait with out timout
-			ret=pthread_cond_wait(&cond,&mutex);
+			ret = pthread_cond_wait(&cond,&mutex);
 			//Check error
 			if (ret)
 				//Print error
