@@ -91,7 +91,9 @@ void * AudioEncoderWorker::startEncoding(void *par)
 	AudioEncoderWorker *conf = (AudioEncoderWorker *)par;
 	blocksignals();
 	Log("Encoding audio [%d]\n",getpid());
-	pthread_exit((void *)conf->Encode());
+	conf->Encode();
+	//Exit
+	return NULL;;
 }
 
 
@@ -263,7 +265,6 @@ int AudioEncoderWorker::Encode()
 	//Salimos
         Log("<Encode Audio\n");
 	
-	pthread_exit(0);
 }
 
 bool AudioEncoderWorker::AddListener(MediaFrame::Listener *listener)

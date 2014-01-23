@@ -2,7 +2,6 @@
 #include "dtls.h"
 #include "log.h"
 
-#define SRTP_MASTER_KEY_LEN 16
 #define SRTP_MASTER_SALT_LEN 14
 #define SRTP_MASTER_LEN (SRTP_MASTER_KEY_LEN + SRTP_MASTER_SALT_LEN)
 

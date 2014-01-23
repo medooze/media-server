@@ -68,7 +68,9 @@ void * TextEncoder::startEncoding(void *par)
 	TextEncoder *conf = (TextEncoder *)par;
 	blocksignals();
 	Log("Encoding text [%d]\n",getpid());
-	pthread_exit((void *)conf->Encode());
+	conf->Encode();
+	//Exit
+	return NULL;
 }
 
 
@@ -240,8 +242,6 @@ int TextEncoder::Encode()
 
 	//Salimos
         Log("<Encode Text\n");
-	
-	pthread_exit(0);
 }
 
 bool TextEncoder::AddListener(MediaFrame::Listener *listener)

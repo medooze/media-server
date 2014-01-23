@@ -201,7 +201,9 @@ void* RTPSmoother::run(void *par)
         //Get endpoint
 	RTPSmoother *smooth = (RTPSmoother *)par;
 	//Run 
-        pthread_exit((void *)smooth->Run());
+        smooth->Run();
+	//Exit
+	return NULL;
 }
 
 int RTPSmoother::Run()

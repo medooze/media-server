@@ -72,9 +72,9 @@ protected:
 	int SetupSRTP();
 	int CheckPending();
 public:
-	char *certfile;                        /*!< Certificate file */
-	char *pvtfile;                         /*!< Private key file */
-	char *cipher;                          /*!< Cipher to use */
+	const char *certfile;                        /*!< Certificate file */
+	const char *pvtfile;                         /*!< Private key file */
+	const char *cipher;                          /*!< Cipher to use */
 //	char *cafile;                          /*!< Certificate authority file */
 //	char *capath;                          /*!< Path to certificate authority */
 	bool dtls_failure;		/*!< Failure occurred during DTLS negotiation */

@@ -311,7 +311,6 @@ VNCViewer::~VNCViewer()
 	End();
 }
 
-
 void *VNCViewer::run(void *par)
 {
 	Log("-VNCViewerThread [%d]\n",getpid());
@@ -323,9 +322,10 @@ void *VNCViewer::run(void *par)
 	blocksignals();
 
 	//Ejecutamos
-	pthread_exit((void *)viewer->Run());
+	viewer->Run();
+	//Exit
+	return NULL;
 }
-
 
 int VNCViewer::Run()
 {

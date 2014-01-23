@@ -107,7 +107,9 @@ void * VideoEncoderMultiplexerWorker::startEncoding(void *par)
 	//Block all signals
 	blocksignals();
 	//Run
-	pthread_exit((void *)worker->Encode());
+	worker->Encode();
+	//Exit
+	return NULL;
 }
 
 int VideoEncoderMultiplexerWorker::Stop()
@@ -391,7 +393,4 @@ int VideoEncoderMultiplexerWorker::Encode()
 
 	//Salimos
 	Log("<SendVideo [%d]\n",encoding);
-
-	//Exit
-	pthread_exit(0);
 }

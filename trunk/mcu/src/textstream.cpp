@@ -110,7 +110,9 @@ void * TextStream::startSendingText(void *par)
 	TextStream *conf = (TextStream *)par;
 	blocksignals();
 	Log("SendTextThread [%d]\n",getpid());
-	pthread_exit((void *)conf->SendText());
+	conf->SendText();
+	//Exit
+	return NULL;
 }
 
 /***************************************
@@ -122,7 +124,9 @@ void * TextStream::startReceivingText(void *par)
 	TextStream *conf = (TextStream *)par;
 	blocksignals();
 	Log("RecvTextThread [%d]\n",getpid());
-	pthread_exit((void *)conf->RecText());
+	conf->RecText();
+	//Exit
+	return NULL;
 }
 
 /***************************************
@@ -392,9 +396,6 @@ int TextStream::RecText()
 	}
 
 	Log("<RecText\n");
-
-	//Salimos
-	pthread_exit(0);
 }
 
 /*******************************************
@@ -608,8 +609,6 @@ int TextStream::SendText()
 
 	//Salimos
 	Log("<SendText\n");
-	
-	pthread_exit(0);
 }
 
 MediaStatistics TextStream::GetStatistics()

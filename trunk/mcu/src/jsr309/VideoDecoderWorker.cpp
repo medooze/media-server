@@ -72,7 +72,9 @@ void * VideoDecoderJoinableWorker::startDecoding(void *par)
 	//Block all signals
 	blocksignals();
 	//Run
-	pthread_exit((void *)worker->Decode());
+	worker->Decode();
+	//Exit
+	return NULL;
 }
 
 int  VideoDecoderJoinableWorker::Stop()

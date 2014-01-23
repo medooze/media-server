@@ -442,7 +442,9 @@ void* MediaBridgeSession::startReceivingVideo(void *par)
 	blocksignals();
 
 	//Y ejecutamos
-	pthread_exit( (void *)sess->RecVideo());
+	sess->RecVideo();
+	//Exit
+	return NULL;
 }
 
 /**************************************
@@ -460,7 +462,9 @@ void* MediaBridgeSession::startReceivingAudio(void *par)
 	blocksignals();
 
 	//Y ejecutamos
-	pthread_exit( (void *)sess->RecAudio());
+	sess->RecAudio();
+	//Exit
+	return NULL;
 }
 
 /**************************************
@@ -478,7 +482,9 @@ void* MediaBridgeSession::startSendingVideo(void *par)
 	blocksignals();
 
 	//Y ejecutamos
-	pthread_exit( (void *)sess->SendVideo());
+	sess->SendVideo();
+	//Exit
+	return NULL;
 }
 
 /**************************************
@@ -496,7 +502,9 @@ void* MediaBridgeSession::startSendingAudio(void *par)
 	blocksignals();
 
 	//Y ejecutamos
-	pthread_exit( (void *)sess->SendAudio());
+	sess->SendAudio();
+	//Exit
+	return NULL;
 }
 
 /**************************************
@@ -514,7 +522,9 @@ void* MediaBridgeSession::startReceivingText(void *par)
 	blocksignals();
 
 	//Y ejecutamos
-	pthread_exit( (void *)sess->RecText());
+	sess->RecText();
+	//Exit
+	return NULL;
 }
 
 /****************************************
@@ -642,9 +652,6 @@ int MediaBridgeSession::RecVideo()
 		delete(encoder);
 
 	Log("<RecVideo\n");
-
-	//Salimos
-	pthread_exit(0);
 }
 
 /****************************************
@@ -762,9 +769,6 @@ int MediaBridgeSession::RecAudio()
 		delete(audio);
 
 	Log("<RecAudio\n");
-
-	//Salimos
-	pthread_exit(0);
 }
 
 /****************************************
@@ -896,9 +900,6 @@ int MediaBridgeSession::RecText()
 	}
 
 	Log("<RecText\n");
-
-	//Salimos
-	pthread_exit(0);
 }
 
 

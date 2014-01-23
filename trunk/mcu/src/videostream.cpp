@@ -794,9 +794,6 @@ int VideoStream::RecVideo()
 	delete videoDecoder;
 
 	Log("<RecVideo\n");
-
-	//Salimos
-	pthread_exit(0);
 }
 
 int VideoStream::SetMediaListener(MediaFrame::Listener *listener)

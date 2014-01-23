@@ -247,7 +247,6 @@ inline char PC(BYTE b)
 
 inline DWORD BitPrint(char* out,BYTE val,BYTE n)
 {
-	char aux[2];
 	int j=0;
 
 	for (int i=0;i<(8-n);i++)

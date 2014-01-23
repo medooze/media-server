@@ -218,7 +218,9 @@ void * RTMPClientConnection::run(void *par)
         RTMPClientConnection *con = (RTMPClientConnection *)par;
 
         //Ejecutamos
-        pthread_exit((void *)con->Run());
+        con->Run();
+	//Exit
+	return NULL;
 }
 
 /***************************

@@ -279,7 +279,9 @@ void* RTPEndpoint::run(void *par)
 	//Catch
 	signal(SIGIO,EmptyCatch);
 	//Run
-	pthread_exit((void *)end->Run());
+	end->Run();
+	//Exit
+	return NULL;
 }
 
 int RTPEndpoint::Attach(Joinable *join)
