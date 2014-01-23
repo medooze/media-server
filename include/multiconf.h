@@ -109,7 +109,7 @@ public:
 	int SetAudioCodec(int partId,int codec,const Properties& properties);
 	int SetTextCodec(int partId,int codec);
 
-	int  StartBroadcaster();
+	int  StartBroadcaster(const Properties &properties);
 	int  StartRecordingBroadcaster(const char* filename);
 	int  StopRecordingBroadcaster();
 	int  StartPublishing(const char* server,int port, const char* app,const char* name);

@@ -749,7 +749,7 @@ rfbProcessClientInitMessage(rfbClientPtr cl)
     rfbClientPtr otherCl;
     rfbExtensionData* extension;
 
-    if (cl->state == RFB_INITIALISATION_SHARED) {
+   if (cl->state == RFB_INITIALISATION_SHARED) {
         /* In this case behave as though an implicit ClientInit message has
          * already been received with a shared-flag of true. */
         ci.shared = 1;
@@ -766,6 +766,8 @@ rfbProcessClientInitMessage(rfbClientPtr cl)
             return;
         }
     }
+
+    rfbLog("rfbProcessClientInitMessage: shared %d\n", ci.shared);
 
     memset(u.buf,0,sizeof(u.buf));
 
@@ -824,6 +826,8 @@ rfbProcessClientInitMessage(rfbClientPtr cl)
             rfbReleaseClientIterator(iterator);
         }
     }
+
+     rfbLog("rfbProcessClientInitMessage: RFB normal state\n");
 }
 
 /* The values come in based on the scaled screen, we need to convert them to

@@ -389,7 +389,7 @@ int mp4track::Close()
 				break;
 			case MediaFrame::Text:
 				//Flush it
-				FlushVideoFrame((VideoFrame*)frame,1000);
+				FlushTextFrame((TextFrame*)frame,1000);
 				break;
 		}
 		//NO frame

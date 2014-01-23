@@ -101,6 +101,7 @@ public:
 	int GetVADParticipant();
 	void SetVADParticipant(int id,bool hide,QWORD blockedUntil);
 	QWORD GetVADBlockingTime();
+	bool IsVADShown();
 
 	int SetOverlayPNG(const char* filename);
 	int SetOverlaySVG(const char* svg);

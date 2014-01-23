@@ -1124,6 +1124,9 @@ rfbUpdateClient(rfbClientPtr cl)
   rfbBool result=FALSE;
   rfbScreenInfoPtr screen = cl->screen;
 
+  int a = FB_UPDATE_PENDING(cl);
+  int b = sraRgnEmpty(cl->requestedRegion);
+
   if (cl->sock >= 0 && !cl->onHold && FB_UPDATE_PENDING(cl) &&
         !sraRgnEmpty(cl->requestedRegion)) {
       result=TRUE;

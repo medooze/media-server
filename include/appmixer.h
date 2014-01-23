@@ -45,6 +45,7 @@ private:
 		virtual void CancelWaitForMessage();
 		virtual bool ReadFromRFBServer(char *data, unsigned int size);
 		virtual bool WriteToRFBServer(char *data, int size);
+		virtual void Close();
 	public:
 		WebSocket* ws;
 		fifo<BYTE,65535> buffer;
@@ -71,6 +72,7 @@ public:
 
 	virtual int onFrameBufferSizeChanged(VNCViewer *viewer, int width, int height);
 	virtual int onFrameBufferUpdate(VNCViewer *viewer,int x, int y, int w, int h);
+	virtual int onGotCopyRectangle(VNCViewer *viewer, int src_x, int src_y, int w, int h, int dest_x, int dest_y);
 	virtual int onFinishedFrameBufferUpdate(VNCViewer *viewer);
 private:
 	Logo		logo;

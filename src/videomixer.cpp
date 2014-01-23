@@ -191,7 +191,7 @@ int VideoMixer::MixVideo()
 				if (oldVad!=vadId)
 				{
 					//Do we need to hide it?
-					bool hide = (vadMode==FullVAD);
+					bool hide = (vadMode==FullVAD && mosaic->IsVADShown());
 					// set the VAD participant
 					mosaic->SetVADParticipant(vadId,hide,getTime() + vadDefaultChangePeriod*1000);
 					//If there was a previous active spearkc and wein FULL vad
@@ -969,7 +969,7 @@ int VideoMixer::SetSlot(int mosaicId,int num,int id)
 		//Get old position
 		int old = mosaic->GetParticipantSlot(id);
 		//If was fixed
-		if (old!=Mosaic::PositionNotFound)
+		if (old!=Mosaic::PositionNotFound && old!=Mosaic::PositionNotShown)
 			//Free it
 			mosaic->SetSlot(old,Mosaic::SlotFree);
 	}

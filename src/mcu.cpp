@@ -578,7 +578,7 @@ void MCU::onWebSocketConnection(const HTTPRequest& request,WebSocket *ws)
 	bool isPresenter = false;
 
 	//Check if it is presented
-	if (parser.CheckString("?presenter"))
+	if (parser.CheckString("/presenter"))
 		//It is presenter
 		isPresenter = true;
 

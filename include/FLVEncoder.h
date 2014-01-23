@@ -12,7 +12,7 @@ public:
 	FLVEncoder();
 	~FLVEncoder();
 
-	int Init(AudioInput* audioInput,VideoInput *videoInput);
+	int Init(AudioInput* audioInput,VideoInput *videoInput,const Properties &properties);
 	int StartEncoding();
 	int StopEncoding();
 	int End();

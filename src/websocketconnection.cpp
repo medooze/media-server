@@ -1,5 +1,6 @@
 #include <unistd.h>
 #include <sys/socket.h>
+ #include <math.h>
 #include <netinet/tcp.h>
 #include <netinet/in.h>
 #include <fcntl.h>
@@ -134,14 +135,6 @@ int WebSocketConnection::End()
 		thread = NULL;
 	}
 
-	//If got listener
-	if (listener)
-		//Send end
-		listener->onDisconnected(this);
-
-	//Don't send more events
-	listener = NULL;
-
 	//Ended
 	Log("<End WebSocket connection\n");
 
@@ -232,7 +225,6 @@ int WebSocketConnection::Run()
 
 		if (ufds[0].revents & POLLIN) 
 		{
-
 			//Read data from connection
 			int len = read(socket,data,size);	
 			if (len<=0)
@@ -267,7 +259,20 @@ int WebSocketConnection::Run()
 		}
 	}
 
+	//If we were opened
+	if (upgraded)
+		//Send close
+		wsl->onClose(this);
+
 	Log("<Run WebSocket connection\n");
+	
+	//If got listener
+	if (listener)
+		//Send end
+		listener->onDisconnected(this);
+
+	//Don't send more events
+	listener = NULL;
 }
 
 void WebSocketConnection::SignalWriteNeeded()
@@ -406,7 +411,7 @@ void WebSocketConnection::ProcessData(BYTE *data,DWORD size)
 							//Debug
 							Debug("-Received ping\n");
 							//Create new pong frame
-							pong = new Frame(WebSocketFrameHeader::Pong,NULL,header->GetPayloadLength());
+							pong = new Frame(true,WebSocketFrameHeader::Pong,NULL,header->GetPayloadLength());
 							break;
 						case WebSocketFrameHeader::Pong:
 							break;
@@ -491,7 +496,7 @@ void WebSocketConnection::ProcessData(BYTE *data,DWORD size)
 void  WebSocketConnection::SendMessage(const std::string& message)
 {
 	//Create new frame
-	Frame *frame = new Frame(WebSocketFrameHeader::TextFrame,(BYTE*)message.c_str(),message.length());
+	Frame *frame = new Frame(true,WebSocketFrameHeader::TextFrame,(BYTE*)message.c_str(),message.length());
 		
 	//Lock mutex
 	pthread_mutex_lock(&mutex);
@@ -511,19 +516,49 @@ void WebSocketConnection::SendMessage(const BYTE* data, const DWORD size)
 	//Do not send empty frames
 	if (!size)
 		return;
-	Debug("-WebSocketConnection sending %d\n",size);
-	//Dump(data,size);
-	//Create new frame
-	Frame *frame = new Frame(WebSocketFrameHeader::BinaryFrame,data,size);
+
+	//Not last frame
+	bool last = false;
+
+	//Binary type
+	WebSocketFrameHeader::OpCode code  = WebSocketFrameHeader::BinaryFrame;
+
+	//Sent length
+	DWORD pos = 0;
 
 	//Lock mutex
 	pthread_mutex_lock(&mutex);
 
-	//Push frame
-	frames.push_back(frame);
+	//Send 1300 byte frames
+	while (!last)
+	{
+		//Get remaining frame size
+		DWORD len = size-pos;
+
+		//Check if bigger than desired frame length
+		if (len>1300)
+			//Set new length
+			len = 1300;
+
+		//Check if it is last
+		last = (len+pos==size);
+		
+		//Create new frame
+		Frame *frame = new Frame(last,code,data+pos,len);
+
+		//Push frame
+		frames.push_back(frame);
+
+		//Next is always a continuation frame
+		code = WebSocketFrameHeader::ContinuationFrame;
+
+		//Move pos
+		pos += len;
+	}
 
 	//Un Lock mutex
 	pthread_mutex_unlock(&mutex);
+
 
 	//We need to write data!
 	SignalWriteNeeded();
@@ -643,6 +678,8 @@ void WebSocketConnection::Accept(WebSocket::Listener *wsl)
 	SignalWriteNeeded();
 	//We are upgraded
 	upgraded = true;
+	//We are opened
+	wsl->onOpen(this);
 }
 
 void WebSocketConnection::Reject(const WORD code, const char* reason)

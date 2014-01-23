@@ -175,7 +175,7 @@ static void CopyRectangle(rfbClient* client, uint8_t* buffer, int x, int y, int 
 }
 
 /* TODO: test */
-static void CopyRectangleFromRectangle(rfbClient* client, int src_x, int src_y, int w, int h, int dest_x, int dest_y) {
+void CopyRectangleFromRectangle(rfbClient* client, int src_x, int src_y, int w, int h, int dest_x, int dest_y) {
   int i,j;
 
 #define COPY_RECT_FROM_RECT(BPP) \
@@ -1276,6 +1276,8 @@ SetFormatAndEncodings(rfbClient* client)
   if (!SupportsClient2Server(client, rfbSetPixelFormat)) return TRUE;
 
   spf.type = rfbSetPixelFormat;
+  spf.pad1 = 0;
+  spf.pad2 = 0;
   spf.format = client->format;
   spf.format.redMax = rfbClientSwap16IfLE(spf.format.redMax);
   spf.format.greenMax = rfbClientSwap16IfLE(spf.format.greenMax);
@@ -1944,7 +1946,6 @@ HandleRFBServerMessage(rfbClient* client)
 		CopyRectangleFromRectangle(client,
 				   cr.srcX, cr.srcY, rect.r.w, rect.r.h,
 				   rect.r.x, rect.r.y);
-
 	break;
       }
 
@@ -2147,7 +2148,8 @@ HandleRFBServerMessage(rfbClient* client)
       /* Now we may discard "soft cursor locks". */
       client->SoftCursorUnlockScreen(client);
 
-      client->GotFrameBufferUpdate(client, rect.r.x, rect.r.y, rect.r.w, rect.r.h);
+      if (rect.encoding!=rfbEncodingCopyRect && client->GotCopyRect != NULL)
+        client->GotFrameBufferUpdate(client, rect.r.x, rect.r.y, rect.r.w, rect.r.h);
     }
 
     if (!SendIncrementalFramebufferUpdateRequest(client))

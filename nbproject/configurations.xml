@@ -7,9 +7,21 @@
         </df>
       </df>
       <df name="include" kind="SOURCE_LOGICAL_FOLDER">
+        <df name="rfb">
+          <in>default8x16.h</in>
+          <in>keysym.h</in>
+          <in>rfb.h</in>
+          <in>rfbclient.h</in>
+          <in>rfbconfig.h</in>
+          <in>rfbint.h</in>
+          <in>rfbproto.h</in>
+          <in>rfbregion.h</in>
+        </df>
         <in>FLVEncoder.h</in>
         <in>FlashSoundHandler.h</in>
         <in>RTPSmoother.h</in>
+        <in>VNCServer.h</in>
+        <in>VNCViewer.h</in>
         <in>aacconfig.h</in>
         <in>acumulator.h</in>
         <in>amf.h</in>
@@ -81,7 +93,6 @@
         <in>rtp.h</in>
         <in>rtpbuffer.h</in>
         <in>rtpparticipant.h</in>
-        <in>rtpsession - copia.h</in>
         <in>rtpsession.h</in>
         <in>sidebar.h</in>
         <in>statushandler.h</in>
@@ -222,6 +233,98 @@
           <in>speexcodec.h</in>
           <in>stack_alloc.h</in>
         </df>
+        <df name="vnc">
+          <df name="common" kind="SOURCE_LOGICAL_FOLDER">
+            <in>d3des.c</in>
+            <in>d3des.h</in>
+            <in>lzoconf.h</in>
+            <in>lzodefs.h</in>
+            <in>md5.c</in>
+            <in>md5.h</in>
+            <in>minilzo.c</in>
+            <in>minilzo.h</in>
+            <in>sha1.c</in>
+            <in>sha1.h</in>
+            <in>turbojpeg.c</in>
+            <in>turbojpeg.h</in>
+            <in>vncauth.c</in>
+            <in>zywrletemplate.c</in>
+          </df>
+          <df name="libvncclient" kind="SOURCE_LOGICAL_FOLDER">
+            <in>corre.c</in>
+            <in>cursor.c</in>
+            <in>hextile.c</in>
+            <in>listen.c</in>
+            <in>rfbproto.c</in>
+            <in>rre.c</in>
+            <in>sockets.c</in>
+            <in>tight.c</in>
+            <in>tls.h</in>
+            <in>tls_gnutls.c</in>
+            <in>tls_none.c</in>
+            <in>tls_openssl.c</in>
+            <in>ultra.c</in>
+            <in>vncviewer.c</in>
+            <in>zlib.c</in>
+            <in>zrle.c</in>
+          </df>
+          <df name="libvncserver" kind="SOURCE_LOGICAL_FOLDER">
+            <df name="tightvnc-filetransfer">
+              <in>filelistinfo.c</in>
+              <in>filelistinfo.h</in>
+              <in>filetransfermsg.c</in>
+              <in>filetransfermsg.h</in>
+              <in>handlefiletransferrequest.c</in>
+              <in>handlefiletransferrequest.h</in>
+              <in>rfbtightproto.h</in>
+              <in>rfbtightserver.c</in>
+            </df>
+            <in>auth.c</in>
+            <in>cargs.c</in>
+            <in>corre.c</in>
+            <in>cutpaste.c</in>
+            <in>draw.c</in>
+            <in>font.c</in>
+            <in>hextile.c</in>
+            <in>httpd.c</in>
+            <in>private.h</in>
+            <in>rfbcrypto.h</in>
+            <in>rfbcrypto_gnutls.c</in>
+            <in>rfbcrypto_included.c</in>
+            <in>rfbcrypto_openssl.c</in>
+            <in>rfbregion.c</in>
+            <in>rfbserver.c</in>
+            <in>rfbssl.h</in>
+            <in>rfbssl_gnutls.c</in>
+            <in>rfbssl_none.c</in>
+            <in>rfbssl_openssl.c</in>
+            <in>rre.c</in>
+            <in>scale.c</in>
+            <in>scale.h</in>
+            <in>selbox.c</in>
+            <in>server.c</in>
+            <in>server_cursor.c</in>
+            <in>sockets.c</in>
+            <in>stats.c</in>
+            <in>tableinit24.c</in>
+            <in>tableinitcmtemplate.c</in>
+            <in>tableinittctemplate.c</in>
+            <in>tabletrans24template.c</in>
+            <in>tabletranstemplate.c</in>
+            <in>tight.c</in>
+            <in>translate.c</in>
+            <in>ultra.c</in>
+            <in>websockets.c</in>
+            <in>zlib.c</in>
+            <in>zrle.c</in>
+            <in>zrleencodetemplate.c</in>
+            <in>zrleoutstream.c</in>
+            <in>zrleoutstream.h</in>
+            <in>zrlepalettehelper.c</in>
+            <in>zrlepalettehelper.h</in>
+            <in>zrletypes.h</in>
+          </df>
+        </df>
         <df name="vp6">
           <in>vp6decoder.cpp</in>
           <in>vp6decoder.h</in>
@@ -237,6 +340,8 @@
         <in>FlashPlayer.cpp</in>
         <in>FlashSoundHandler.cpp</in>
         <in>RTPSmoother.cpp</in>
+        <in>VNCServer.cpp</in>
+        <in>VNCViewer.cpp</in>
         <in>amf.cpp</in>
         <in>appmixer.cpp</in>
         <in>asymmetricmosaic.cpp</in>
@@ -295,7 +400,6 @@
         <in>rtmpstream.cpp</in>
         <in>rtp.cpp</in>
         <in>rtpparticipant.cpp</in>
-        <in>rtpsession - copia.cpp</in>
         <in>rtpsession.cpp</in>
         <in>sidebar.cpp</in>
         <in>statushandler.cpp</in>
