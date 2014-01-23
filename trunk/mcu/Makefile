@@ -164,10 +164,12 @@ CFLAGS  += $(INCLUDE) $(OPTS)
 CXXFLAGS+= $(INCLUDE) $(OPTS)
 
 %.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $(BUILD)/$@
+	@$(CC) $(CFLAGS) -c $< -o $(BUILD)/$@
+	@echo "[CC ] $(TAG) $<"
 
 %.o: %.cpp
-	$(CXX) $(CXXFLAGS) -c $< -o $(BUILD)/$@
+	@$(CXX) $(CXXFLAGS) -c $< -o $(BUILD)/$@
+	@echo "[CXX] $(TAG) $<"
 
 
 ############################################
@@ -200,7 +202,8 @@ install:
 
 
 mcu: $(OBJSMCU)
-	$(CXX) -o $(BIN)/$@ $(BUILDOBJSMCU) $(LDFLAGS) $(VADLD)
+	@$(CXX) -o $(BIN)/$@ $(BUILDOBJSMCU) $(LDFLAGS) $(VADLD)
+	@echo [OUT] $(TAG) $(BIN)/$@
 
 rtmpdebug: $(OBJSRTMPDEBUG)
 	$(CXX) -o $(BIN)/$@ $(BUILDOBJSRTMPDEBUG) $(LDFLAGS) $(VADLD)
