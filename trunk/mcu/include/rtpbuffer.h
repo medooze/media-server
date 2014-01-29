@@ -49,12 +49,14 @@ public:
 		//If already past
 		if (next!=(DWORD)-1 && seq<next)
 		{
-			//Unlock
-			pthread_mutex_unlock(&mutex);
+			//Error
+			Error("-Out of order non recoverable packet [next:%d,seq:%d,maxWaitTime=%d,%d,%d]\n",next,seq,maxWaitTime,rtp->GetSeqCycles(),rtp->GetSeqNum());
 			//Delete pacekt
 			delete(rtp);
+			//Unlock
+			pthread_mutex_unlock(&mutex);
 			//Skip it and lost forever
-			return Error("-Out of order non recoverable packet [next:%d,seq:%d,maxWaitTime=%d,%d,%d]\n",next,seq,maxWaitTime,rtp->GetSeqCycles(),rtp->GetSeqNum());
+			return 0;
 		}
 
 		//Add event
