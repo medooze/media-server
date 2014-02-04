@@ -34,6 +34,7 @@ VP8Decoder::VP8Decoder()
 	width = 0;
 	height = 0;
 	completeFrame = true;
+	first = true;
 	//Set flags
 	vpx_codec_flags_t flags = 0;
 	/**< Postprocess decoded frame */
@@ -89,10 +90,26 @@ int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 		//Decode payload descriptr
 		DWORD pos = desc.Parse(in,inLen);
 
-		//Check
+		//Check if we have been able to parse frame
 		if (!pos)
+		{
+			//Frame not complete
+			completeFrame == false;
 			//Error
 			return Error("Could not parse VP8 payload descriptor");
+		}
+
+		//If it is first packetand it is not a partition start
+		if (first && !desc.startOfPartition)
+		{
+			//Frame not complete
+			completeFrame == false;
+			//Error
+			return Error("First packet lost of VP8 frame");
+		}
+
+		//Next is not first frame
+		first = false;
 
 		//If it is first of the partition
 		if (desc.startOfPartition && bufLen)
@@ -129,6 +146,9 @@ int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 	//Si es el ultimo
 	if(last)
 	{
+		//Next is first again
+		first = true;
+
 		//Check if it is not compete
 		int corrupted = !completeFrame;
 
