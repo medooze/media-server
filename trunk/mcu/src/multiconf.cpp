@@ -446,7 +446,7 @@ int MultiConf::DeleteSidebar(int sidebarId)
 *************************/
 int MultiConf::CreateParticipant(int mosaicId,int sidebarId,std::wstring name,Participant::Type type)
 {
-	wchar_t uuid[64];
+	wchar_t uuid[1024];
 	Participant *part = NULL;
 
 	Log(">CreateParticipant [mosaic:%d]\n",mosaicId);
@@ -462,7 +462,7 @@ int MultiConf::CreateParticipant(int mosaicId,int sidebarId,std::wstring name,Pa
 	int partId = maxId++;
 
 	//Create uuid
-	swprintf(uuid,64,L"%ls@%d",tag.c_str(),partId);
+	swprintf(uuid,1024,L"%ls@%d",tag.c_str(),partId);
 
 	//Unlock
 	participantsLock.Unlock();
