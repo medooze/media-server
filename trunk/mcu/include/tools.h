@@ -141,6 +141,25 @@ inline DWORD isZeroTime(struct timeval *val)
         return !(val->tv_sec & val->tv_usec);
 }
 
+inline void setZeroThread(pthread_t *pthread)
+{
+        //Fill with zeros
+	memset((BYTE*)pthread,0,sizeof(pthread_t));
+}
+
+/*********************************
+* isZeroTime
+*	Check if time val is 0
+*********************************/
+inline DWORD isZeroThread(const pthread_t thread)
+{
+	pthread_t zero;
+	//Set zero thread
+	setZeroThread(&zero);
+        //Check if it is zero
+        return memcmp(&thread,&zero,sizeof(pthread_t))==0;
+}
+
 /*****************************************
  * calcAbsTimout
  *      Create timespec value to be used in timeout calls
