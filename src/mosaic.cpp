@@ -106,7 +106,7 @@ Mosaic::Mosaic(Type type,DWORD size)
 	overlayNeedsUpdate = false;
 
 	//No overlay
-	overlay = false;
+	overlay = NULL;;
 
 	//No vad particpant
 	vadParticipant = 0;
@@ -535,7 +535,7 @@ int Mosaic::ResetOverlay()
 		//Delete it
 		delete(overlay);
 	//remove it
-	overlay = false;
+	overlay = NULL;
 	//OK
 	return 1;
 }

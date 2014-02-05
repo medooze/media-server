@@ -43,7 +43,7 @@ RTMPConnection::RTMPConnection(Listener *listener)
 	inited = false;
 	running = false;
 	socket = FD_INVALID;
-	thread = NULL;
+	setZeroThread(&thread);
 	//Set initial time
 	gettimeofday(&startTime,0);
 	//Init mutex
@@ -133,12 +133,12 @@ int RTMPConnection::End()
 	Stop();
 
 	//If running
-	if (thread)
+	if (!isZeroThread(thread))
 	{
 		//Wait for server thread to close
 		pthread_join(thread,NULL);
 		//No thread
-		thread = NULL;
+		setZeroThread(&thread);
 	}
 
 	//If got application
@@ -298,7 +298,7 @@ void RTMPConnection::SignalWriteNeeded()
 	pthread_mutex_unlock(&mutex);
 
 	//Check thred
-	if (thread)
+	if (!isZeroThread(thread))
 		//Signal the pthread this will cause the poll call to exit
 		pthread_kill(thread,SIGIO);
 }

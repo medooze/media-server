@@ -144,7 +144,7 @@ int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 	}
 
 	//Si es el ultimo
-	if(last)
+	if (last)
 	{
 		//Next is first again
 		first = true;

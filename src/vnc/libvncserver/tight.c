@@ -57,12 +57,12 @@
  * that we resort to using thread local storage instead of having
  * per-client data.
  */
-#if LIBVNCSERVER_HAVE_LIBPTHREAD && LIBVNCSERVER_HAVE_TLS && !defined(TLS) && defined(__linux__)
+//#if LIBVNCSERVER_HAVE_LIBPTHREAD && LIBVNCSERVER_HAVE_TLS && !defined(TLS) && defined(__linux__)
 #define TLS __thread
-#endif
-#ifndef TLS
-#define TLS
-#endif
+//#endif
+//#ifndef TLS
+//#define TLS
+//#endif
 
 /* This variable is set on every rfbSendRectEncodingTight() call. */
 static TLS rfbBool usePixelFormat24 = FALSE;
