@@ -613,8 +613,12 @@ Participant *MultiConf::GetParticipant(int partId)
 
 	//If not found
 	if (it == participants.end())
+	{
 		//Error
-		return (Participant *)Error("Participant not found\n");
+		Error("Participant not found\n");
+		//Exit
+		return NULL;
+	}
 
 	//Get the participant
 	return it->second;
@@ -632,8 +636,12 @@ Participant *MultiConf::GetParticipant(int partId,Participant::Type type)
 
 	//Ensure it is from the correct type
 	if (part->GetType()!=type)
+	{
 		//Error
-		return (Participant *)Error("Participant is not of desired type\n");
+		Error("Participant is not of desired type\n");
+		//Exit
+		return NULL;
+	}
 	
 	//Return it
 	return part;
