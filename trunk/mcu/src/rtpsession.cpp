@@ -171,7 +171,7 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener)
 	memset(&sendAddr,       0,sizeof(struct sockaddr_in));
 	memset(&sendRtcpAddr,   0,sizeof(struct sockaddr_in));
 	//No thread
-	thread = NULL;
+	setZeroThread(&thread);
 	running = false;
 	//No stimator
 	remoteRateEstimator = NULL;
@@ -1256,16 +1256,33 @@ int RTPSession::ReadRTP()
 	//If it is a retransmission
 	if (isRTX)
 	{
+		 /*
+			The format of a retransmission packet is shown below:
+		    0                   1                   2                   3
+		    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+		   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		   |                         RTP Header                            |
+		   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		   |            OSN                |                               |
+		   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               |
+		   |                  Original RTP Packet Payload                  |
+		   |                                                               |
+		   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		 */
+		//Create temporal packet
+		RTPTimedPacket tmp(media,buffer,size);
 		//Get original sequence number
-		WORD osn = get2(buffer,sizeof(rtp_hdr_t));
-		//Move origin
-		for (int i=sizeof(rtp_hdr_t)-1;i>=0;--i)
+		WORD osn = get2(buffer,tmp.GetRTPHeaderLen());
+		//Move origina
+		for (int i=tmp.GetRTPHeaderLen()-1;i>=0;--i)
 			//Move
 			buffer[i+2] = buffer[i];
 		//Move init
 		buffer+=2;
 		//Set original seq num
 		set2(buffer,2,osn);
+		//Set original ssrc
+		set4(buffer,8,recSSRC);
 	}
 
 	//Get type
@@ -1542,7 +1559,7 @@ void RTPSession::Start()
 void RTPSession::Stop()
 {
 	//Check thred
-	if (thread)
+	if (!isZeroThread(thread))
 	{
 		//Not running
 		running = false;
@@ -1552,7 +1569,7 @@ void RTPSession::Stop()
 		//Wait thread to close
 		pthread_join(thread,NULL);
 		//Nulifi thread
-		thread = NULL;
+		setZeroThread(&thread);
 	}
 }
 
