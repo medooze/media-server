@@ -23,7 +23,7 @@ WebSocketConnection::WebSocketConnection(Listener *listener)
 	inited = false;
 	running = false;
 	socket = FD_INVALID;
-	thread = NULL;
+	setZeroThread(&thread);
 	//No pong
 	pong = NULL;
 	//Not uypgraded yet
@@ -127,12 +127,12 @@ int WebSocketConnection::End()
 	Stop();
 
 	//If running
-	if (thread)
+	if (!isZeroThread(thread))
 	{
 		//Wait for server thread to close
 		pthread_join(thread,NULL);
 		//No thread
-		thread = NULL;
+		setZeroThread(&thread);
 	}
 
 	//Ended
@@ -296,7 +296,7 @@ void WebSocketConnection::SignalWriteNeeded()
 	pthread_mutex_unlock(&mutex);
 
 	//Check thred
-	if (thread)
+	if (!isZeroThread(thread))
 		//Signal the pthread this will cause the poll call to exit
 		pthread_kill(thread,SIGIO);
 }

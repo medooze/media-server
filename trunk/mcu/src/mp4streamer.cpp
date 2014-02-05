@@ -31,7 +31,7 @@ MP4Streamer::MP4Streamer(Listener *listener)
 	pthread_mutex_init(&mutex,0);
 	pthread_cond_init(&cond,0);
 	//Clean thread
-	thread = NULL;
+	setZeroThread(&thread);
 }
 
 MP4Streamer::~MP4Streamer()
@@ -457,7 +457,7 @@ int MP4Streamer::Stop()
 	pthread_t running = thread;
 
 	//Clean thread
-	thread = NULL;
+	setZeroThread(&thread);
 
 	//Signal
 	pthread_cond_signal(&cond);
@@ -508,7 +508,7 @@ int MP4Streamer::Close()
 		DWORD running = thread;
 
 		//Clean thread
-		thread = NULL;
+		setZeroThread(&thread);
 
 		//Unlock
 		pthread_mutex_unlock(&mutex);
