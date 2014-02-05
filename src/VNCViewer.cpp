@@ -49,7 +49,7 @@ extern "C"
 	rfbBool StringToIPAddr(const char *str, unsigned int *addr) { return 1; }
 	rfbBool SameMachine(int sock)  { return 1; }
 	rfbBool errorMessageOnReadFailure = TRUE;
-	static void CopyRectangleFromRectangle(rfbClient* client, int src_x, int src_y, int w, int h, int dest_x, int dest_y);
+	static void CopyRectangleFromRectangle(rfbClient* client, int src_x, int src_y, int w, int h, int dest_x, int dest_y) { }
 }
 
 
@@ -72,7 +72,7 @@ rfbBool VNCViewer::MallocFrameBuffer(rfbClient* client)
 
 void VNCViewer::FinishedFrameBufferUpdate(rfbClient* client)
 {
-	Log("-FinishedFrameBufferUpdate\n");
+	Debug("-FinishedFrameBufferUpdate\n");
 	//Vet viewer
 	VNCViewer * viewer = (VNCViewer *)(client->clientData);
 	//Send event
@@ -83,7 +83,7 @@ void VNCViewer::FinishedFrameBufferUpdate(rfbClient* client)
 
 void VNCViewer::GotFrameBufferUpdate(rfbClient* client, int x, int y, int w, int h)
 {
-	Log("-GotFrameBufferUpdate [%d,%d,%d,%d]\n",x,y,w,h);
+	Debug("-GotFrameBufferUpdate [%d,%d,%d,%d]\n",x,y,w,h);
 	//Vet viewer
 	VNCViewer * viewer = (VNCViewer *)(client->clientData);
 	//Send event

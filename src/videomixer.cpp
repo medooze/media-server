@@ -28,7 +28,7 @@ VideoMixer::VideoMixer(const std::wstring &tag) : eventSource(tag)
 {
         //Save tag
  	this->tag = tag;
-
+	
 	//Incializamos a cero
 	defaultMosaic	= NULL;
 
