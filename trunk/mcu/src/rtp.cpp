@@ -253,7 +253,7 @@ RTCPCompoundPacket* RTCPCompoundPacket::Parse(BYTE *data,DWORD size)
 		//Check len
 		if (len>bufferLen)
 			//error
-			return (RTCPCompoundPacket*)Error("Wrong rtcp packet size");
+			return (RTCPCompoundPacket*)Error("Wrong rtcp packet size\n");
 		//parse
 		if (packet && packet->Parse(buffer,len))
 			//Add packet

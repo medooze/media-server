@@ -33,7 +33,7 @@ VP6Decoder::VP6Decoder()
 
 	//Alocamos el contxto y el picture
 	ctx = avcodec_alloc_context3(codec);
-	picture = avcodec_alloc_frame();
+	picture = av_frame_alloc();
 
 	//POnemos los valores del contexto
 	ctx->workaround_bugs 	= 255*255;

@@ -357,8 +357,8 @@ int AppMixer::onFinishedFrameBufferUpdate(VNCViewer *viewer)
 	DWORD numpixels = width*height;
 
 	//Alloc data
-	AVFrame* in = avcodec_alloc_frame();
-	AVFrame* out = avcodec_alloc_frame();
+	AVFrame* in = av_frame_alloc();
+	AVFrame* out = av_frame_alloc();
 
 	//Set in frame
 	in->data[0] = viewer->GetFrameBuffer();

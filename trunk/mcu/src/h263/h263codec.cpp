@@ -40,7 +40,7 @@ H263Encoder::H263Encoder(const Properties& properties)
  
 	//Alocamos el conto y el picture
 	ctx = avcodec_alloc_context3(codec);
-	picture = avcodec_alloc_frame();
+	picture = av_frame_alloc();
 }
 
 /***********************
@@ -190,8 +190,12 @@ VideoFrame* H263Encoder::EncodeFrame(BYTE *in,DWORD len)
 
 	//Check
 	if (ret<0)
+	{
+		//Error
+		Error("%d\n",frame->GetMaxMediaLength());
 		//Exit
-		return (VideoFrame*)Error("%d\n",frame->GetMaxMediaLength());
+		return NULL;
+	}
 
 	//Set lenfht
 	DWORD bufLen = ret;
@@ -299,7 +303,7 @@ H263Decoder::H263Decoder()
 
 	//Alocamos el contxto y el picture
 	ctx = avcodec_alloc_context3(codec);
-	picture = avcodec_alloc_frame();
+	picture = av_frame_alloc();
 
 	//POnemos los valores del contexto
 	ctx->workaround_bugs 	= 255*255;

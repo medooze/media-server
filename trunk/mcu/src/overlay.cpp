@@ -106,7 +106,7 @@ int Overlay::LoadPNG(const char* filename)
 	}
 
 	//Alloc frame
-	if (!(logoRGB = avcodec_alloc_frame()))
+	if (!(logoRGB = av_frame_alloc()))
 	{
 		//Set errror
 		res = Error("Couldn't alloc frame\n");
@@ -133,7 +133,7 @@ int Overlay::LoadPNG(const char* filename)
 	}
 
 	//Allocate new one
-	if (!(logo = avcodec_alloc_frame()))
+	if (!(logo = av_frame_alloc()))
 	{
 		//Set errror
 		res = Error("Couldn't alloc frame\n");

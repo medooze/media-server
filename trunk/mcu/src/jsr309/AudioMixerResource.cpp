@@ -151,8 +151,12 @@ Joinable* AudioMixerResource:: GetJoinable(int portId)
 
 	//Check present
 	if (it == ports.end())
+	{
 		//Error
-		return (Joinable*)Error("Audio port not found\n");
+		Error("Audio port not found\n");
+		//Exit
+		return NULL;
+	}
 
 	//LO obtenemos
 	Port *port = it->second;

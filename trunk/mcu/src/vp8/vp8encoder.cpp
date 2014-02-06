@@ -251,8 +251,12 @@ VideoFrame* VP8Encoder::EncodeFrame(BYTE *buffer,DWORD bufferSize)
 	uint32_t duration = 1000 / fps;
 
 	if (vpx_codec_encode(&encoder, pic, pts, duration, flags, VPX_DL_REALTIME)!=VPX_CODEC_OK)
+	{
 		//Error
-		return (VideoFrame*)Error("WEBRTC_VIDEO_CODEC_ERROR [error %d:%s]\n",encoder.err,encoder.err_detail);
+		Error("WEBRTC_VIDEO_CODEC_ERROR [error %d:%s]\n",encoder.err,encoder.err_detail);
+		//Exit
+		return NULL;
+	}
 
 	//Increase timestamp
 	pts += duration;
