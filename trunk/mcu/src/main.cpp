@@ -84,6 +84,8 @@ int lock_ffmpeg(void **param, enum AVLockOp op)
 
 int main(int argc,char **argv)
 {
+	//Init random
+	srand (time(NULL));
 	//Set default values
 	bool forking = false;
 	int port = 8080;
