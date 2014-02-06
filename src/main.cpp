@@ -263,7 +263,8 @@ int main(int argc,char **argv)
 
 	//And default status hanlder
 	StatusHandler status;
-
+	TextEchoWebsocketHandler echo;
+	
 	//Init de mcu
 	mcu.Init(&xmleventmcu);
 	//Init the broadcaster
@@ -298,7 +299,7 @@ int main(int argc,char **argv)
 	server.AddHandler("/upload/mcu/app/",&uploadermcu);
 
 	//Add websocket handlers
-	wsServer.AddHandler("/echo", new TextEchoWebsocketHandler());
+	wsServer.AddHandler("/echo", &echo);
 	wsServer.AddHandler("/mcu", &mcu);
 	
 	//Add the html status handler

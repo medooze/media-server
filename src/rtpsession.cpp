@@ -673,7 +673,6 @@ int RTPSession::Init()
 		return 1;
 	}
 
-
 	//Error
 	Error("RTPSession too many failed attemps opening sockets");
 	
@@ -726,9 +725,9 @@ int RTPSession::End()
 
 int RTPSession::SendPacket(RTCPCompoundPacket &rtcp)
 {
-	int ret = 0;
-	BYTE data[MTU];
+	BYTE data[MTU] __attribute__ ((aligned (32))) = {0};
 	DWORD size = MTU;
+	int ret = 0;
 
 	//Check if we have sendinf ip address
 	if (sendRtcpAddr.sin_addr.s_addr == INADDR_ANY && !muxRTCP)
@@ -802,7 +801,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 			//Check if using ice
 			if (iceRemoteUsername && iceRemotePwd && iceLocalUsername)
 			{
-			BYTE aux[MTU] = {0};
+				BYTE aux[MTU] __attribute__ ((aligned (32))) = {0};
 				//Create trans id
 				BYTE transId[12];
 				//Set first to 0
@@ -956,7 +955,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 
 int RTPSession::ReadRTCP()
 {
-	BYTE buffer[MTU];
+	BYTE buffer[MTU] __attribute__ ((aligned (32))) = {0};
 	sockaddr_in from_addr;
 	DWORD from_len = sizeof(from_addr);
 
@@ -1064,7 +1063,7 @@ int RTPSession::ReadRTCP()
 *********************************/
 int RTPSession::ReadRTP()
 {
-	BYTE data[MTU];
+	BYTE data[MTU] __attribute__ ((aligned (32))) = {0};
 	BYTE *buffer = data;
 	sockaddr_in from_addr;
 	bool isRTX = false;
@@ -1228,11 +1227,6 @@ int RTPSession::ReadRTP()
 		return 1;
 	}
 
-	//This should be improbed
-	if (useNACK && recSSRC && recSSRC!=RTPPacket::GetSSRC(buffer))
-		//It is a retransmited packet
-		isRTX = true;
-	
 	//Check if it is encripted
 	if (decript)
 	{
@@ -1254,6 +1248,8 @@ int RTPSession::ReadRTP()
 	}
 
 	//If it is a retransmission
+	// TODO: currently it is always false as we need to now in advance the ssrc if the rtx stream
+	// TODO: WebRTC implementaions just resend same packet, and don't use this RFC for retransmision
 	if (isRTX)
 	{
 		 /*

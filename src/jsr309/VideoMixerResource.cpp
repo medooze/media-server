@@ -151,8 +151,12 @@ Joinable* VideoMixerResource:: GetJoinable(int portId)
 
 	//Check present
 	if (it == ports.end())
+	{
 		//Error
-		return (Joinable*)Error("Video port not found\n");
+		Error("Video port not found\n");
+		//Exit
+		return NULL;
+	}
 
 	//LO obtenemos
 	Port *port = it->second;
