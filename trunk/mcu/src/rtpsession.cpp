@@ -24,6 +24,8 @@
 #include <libavutil/base64.h>
 #include <openssl/ossl_typ.h>
 
+#define HMAC_PADDING	512
+
 BYTE rtpEmpty[] = {0x80,0x14,0x00,0x00,0x00,0x00,0x00,0x00};
 
 //srtp library initializers
@@ -725,7 +727,7 @@ int RTPSession::End()
 
 int RTPSession::SendPacket(RTCPCompoundPacket &rtcp)
 {
-	BYTE data[MTU] __attribute__ ((aligned (32))) = {0};
+	BYTE data[MTU+HMACSAFEPADDING] ZEROALIGNEDTO32;
 	DWORD size = MTU;
 	int ret = 0;
 
@@ -801,7 +803,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 			//Check if using ice
 			if (iceRemoteUsername && iceRemotePwd && iceLocalUsername)
 			{
-				BYTE aux[MTU] __attribute__ ((aligned (32))) = {0};
+				BYTE aux[MTU+HMACSAFEPADDING] ZEROALIGNEDTO32;
 				//Create trans id
 				BYTE transId[12];
 				//Set first to 0
@@ -955,7 +957,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 
 int RTPSession::ReadRTCP()
 {
-	BYTE buffer[MTU] __attribute__ ((aligned (32))) = {0};
+	BYTE buffer[MTU+HMACSAFEPADDING] ZEROALIGNEDTO32;
 	sockaddr_in from_addr;
 	DWORD from_len = sizeof(from_addr);
 
@@ -1063,7 +1065,7 @@ int RTPSession::ReadRTCP()
 *********************************/
 int RTPSession::ReadRTP()
 {
-	BYTE data[MTU] __attribute__ ((aligned (32))) = {0};
+	BYTE data[MTU+HMACSAFEPADDING] ZEROALIGNEDTO32;
 	BYTE *buffer = data;
 	sockaddr_in from_addr;
 	bool isRTX = false;

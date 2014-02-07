@@ -195,7 +195,7 @@ RTPTimedPacket* FECDecoder::Recover()
 			if ((fecMask & mediaMask) == fecMask)
 			{
 				//Rocovered media data
-				BYTE	recovered[MTU];
+				BYTE	recovered[MTU+HMACSAFEPADDING] ZEROALIGNEDTO32;
 				//Get attributes
 				bool  p  = fec->GetRecoveryP();
 				bool  x  = fec->GetRecoveryX();

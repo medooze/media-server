@@ -168,7 +168,7 @@ void * WebSocketConnection::run(void *par)
  ***************************/
 int WebSocketConnection::Run()
 {
-	BYTE data[MTU];
+	BYTE data[MTU] ZEROALIGNEDTO32;
 	DWORD size = MTU;
 
 	Log(">Run connection [%p]\n",this);

@@ -106,7 +106,7 @@ public:
 	}
 	
 private:
-	BYTE data[MTU];
+	BYTE data[MTU+HMACSAFEPADDING] ALIGNEDTO32;
 	DWORD size;
 	WORD  cycles;
 };

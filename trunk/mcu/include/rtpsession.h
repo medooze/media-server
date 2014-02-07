@@ -151,7 +151,7 @@ private:
 	//Transmision
 	sockaddr_in sendAddr;
 	sockaddr_in sendRtcpAddr;
-	BYTE 	sendPacket[MTU];
+	BYTE 	sendPacket[MTU+HMACSAFEPADDING] ALIGNEDTO32;
 	WORD    sendSeq;
 	DWORD   sendTime;
 	DWORD	sendLastTime;
@@ -159,7 +159,7 @@ private:
 	DWORD	sendSR;
 
 	//Recepcion
-	BYTE	recBuffer[MTU];
+	BYTE	recBuffer[MTU+HMACSAFEPADDING] ALIGNEDTO32;
 	DWORD	recExtSeq;
 	DWORD	recSSRC;
 	DWORD	recTimestamp;

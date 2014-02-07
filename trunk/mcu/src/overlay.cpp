@@ -19,13 +19,13 @@ Overlay::Overlay(DWORD width,DWORD height)
 	//Calculate size for overlay iage with alpha
 	overlaySize = width*height*5/2+FF_INPUT_BUFFER_PADDING_SIZE+32;
 	//Create overlay image
-	overlayBuffer = (BYTE*)malloc(overlaySize);
+	overlayBuffer = (BYTE*)malloc32(overlaySize);
 	//Get aligned buffer
 	overlay = ALIGNTO32(overlayBuffer);
 	//Calculate size for final image i.e. without alpha
 	imageSize = width*height*3/2+FF_INPUT_BUFFER_PADDING_SIZE+32;
 	//Create final image
-	imageBuffer = (BYTE*)malloc(imageSize);
+	imageBuffer = (BYTE*)malloc32(imageSize);
 	//Get aligned buffer
 	image = ALIGNTO32(imageBuffer);
 	//Do not display
