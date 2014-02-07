@@ -22,7 +22,7 @@ PIPMosaic::PIPMosaic(Mosaic::Type type, DWORD size) : Mosaic(type,size)
 	mosaicTotalHeight = ::GetHeight(size);
 
 	//Allocate memory for under image
-	underBuffer = (BYTE *) malloc(mosaicSize);
+	underBuffer = (BYTE *) malloc32(mosaicSize);
 	//Get aligned
 	under = ALIGNTO32(underBuffer);
 	//Reset mosaic

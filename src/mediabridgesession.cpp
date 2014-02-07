@@ -1104,7 +1104,7 @@ int MediaBridgeSession::SendAudio()
 		//Check rtp type
 		if (rtpAudioCodec!=rtmpAudioCodec)
 		{
-			BYTE rtp[MTU];
+			BYTE rtp[MTU+HMACSAFEPADDING] ZEROALIGNEDTO32;
 			DWORD rtpSize = MTU;
 			DWORD rtpLen = 0;
 			SWORD raw[512];

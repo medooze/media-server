@@ -116,7 +116,7 @@ int FrameScaler::SetResize(int srcWidth,int srcHeight,int srcLineWidth,int dstWi
 		free(tmpBuffer);
 
 	//Allocate it
-	tmpBuffer = (BYTE*)malloc(tmpBufferSize);
+	tmpBuffer = (BYTE*)malloc32(tmpBufferSize);
 
 	// Set values for line sizes
 	resizeSrc[0] = srcLineWidth;
