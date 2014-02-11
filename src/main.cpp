@@ -11,6 +11,7 @@
 #include "mediagateway.h"
 #include "jsr309/JSR309Manager.h"
 #include "websocketserver.h"
+#include "dtls.h"
 #include <signal.h>
 #include <sys/time.h>
 #include <sys/resource.h>
@@ -93,9 +94,11 @@ int main(int argc,char **argv)
 	int rtmpPort = 1935;
 	int minPort = RTPSession::GetMinPort();
 	int maxPort = RTPSession::GetMaxPort();
-	int vadPeriod = 5000;
+	int vadPeriod = 2000;
 	const char *logfile = "mcu.log";
 	const char *pidfile = "mcu.pid";
+	const char *crtfile = "mcu.crt";
+	const char *keyfile = "mcu.key";
 
 	//Get all
 	for(int i=1;i<argc;i++)
@@ -112,12 +115,14 @@ int main(int argc,char **argv)
 				" -d               Enable debug logging\r\n"
 				" --mcu-log        Set mcu log file path (default: mcu.log)\r\n"
 				" --mcu-pid        Set mcu pid file path (default: mcu.pid)\r\n"
+				" --mcu-crt        Set mcu SSL certificate file path (default: mcu.crt)\r\n"
+				" --mcu-key        Set mcu SSL key file path (default: mcu.pid)\r\n"
 				" --http-port      Set HTTP xmlrpc api port\r\n"
 				" --min-rtp-port   Set min rtp port\r\n"
 				" --max-rtp-port   Set max rtp port\r\n"
 				" --rtmp-port      Set RTMP port\r\n"
 				" --websocket-port Set WebSocket server port\r\n"
-				" --vad-period     Set the VAD based conference change period in milliseconds\r\n");
+				" --vad-period     Set the VAD based conference change period in milliseconds (default: 2000ms)\r\n");
 			//Exit
 			return 0;
 		} else if (strcmp(argv[i],"-f")==0)
@@ -147,6 +152,12 @@ int main(int argc,char **argv)
 		else if (strcmp(argv[i],"--mcu-pid")==0 && (i+1<argc))
 			//Get rtmp port
 			pidfile = argv[++i];
+		else if (strcmp(argv[i],"--mcu-crt")==0 && (i+1<argc))
+			//Get certificate file
+			crtfile = argv[++i];
+		else if (strcmp(argv[i],"--mcu-key")==0 && (i+1<argc))
+			//Get certificate key file
+			keyfile = argv[++i];
 		else if (strcmp(argv[i],"--vad-period")==0 && (i+1<=argc))
 			//Get rtmp port
 			vadPeriod = atoi(argv[++i]);
@@ -242,6 +253,22 @@ int main(int argc,char **argv)
 	//Log version
 	Log("-MCU Version %s %s\r\n",MCUVERSION,MCUDATE);
 
+	//Set default video mixer vad period
+	VideoMixer::SetVADDefaultChangePeriod(vadPeriod);
+	
+	//Set port ramge
+	if (!RTPSession::SetPortRange(minPort,maxPort))
+		//Using default ones
+		Log("-RTPSession using default port range [%d,%d]\n",RTPSession::GetMinPort(),RTPSession::GetMaxPort());
+
+	//Set DTLS certificate
+	DTLSConnection::SetCertificate(crtfile,keyfile);
+	//Log
+	Log("-Set SSL certificate files [crt:\"%s\",key:\"%s\"]\n",crtfile,keyfile);
+	//Print hashs
+	Log("-SHA1   fingerprint \"%s\"\n",DTLSConnection::GetCertificateFingerPrint(DTLSConnection::SHA1).c_str());
+	Log("-SHA256 fingerprint \"%s\"\n",DTLSConnection::GetCertificateFingerPrint(DTLSConnection::SHA256).c_str());
+
 	//Create services
 	MCU		mcu;
 	Broadcaster	broadcaster;
@@ -312,14 +339,6 @@ int main(int argc,char **argv)
 
 	//Init web socket server
 	wsServer.Init(wsPort);
-
-	//Set port ramge
-	if (!RTPSession::SetPortRange(minPort,maxPort))
-		//Using default ones
-		Log("-RTPSession using default port range [%d,%d]\n",RTPSession::GetMinPort(),RTPSession::GetMaxPort());
-	
-	//Set default video mixer vad period
-	VideoMixer::SetVADDefaultChangePeriod(vadPeriod);
 
 	/*int confId = mcu.CreateConference(L"vnc",0);
 	MultiConf *conf;

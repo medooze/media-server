@@ -62,7 +62,7 @@ int AudioEncoderMultiplexerWorker::Start()
 }
 void * AudioEncoderMultiplexerWorker::startEncoding(void *par)
 {
-	Log("AudioEncoderMultiplexerWorkerThread [%d]\n",getpid());
+	Log("AudioEncoderMultiplexerWorkerThread [%p]\n",pthread_self());
 	//Get worker
 	AudioEncoderMultiplexerWorker *worker = (AudioEncoderMultiplexerWorker *)par;
 	//Block all signals

@@ -151,6 +151,11 @@ int VideoStream::SetRemoteCryptoSDES(const char* suite, const char* key64)
 	return rtp.SetRemoteCryptoSDES(suite,key64);
 }
 
+int VideoStream::SetRemoteCryptoDTLS(const char *setup,const char *hash,const char *fingerprint)
+{
+	return rtp.SetRemoteCryptoDTLS(setup,hash,fingerprint);
+}
+
 int VideoStream::SetLocalSTUNCredentials(const char* username, const char* pwd)
 {
 	return rtp.SetLocalSTUNCredentials(username,pwd);
@@ -170,7 +175,7 @@ int VideoStream::SetRTPProperties(const Properties& properties)
 **************************************/
 void* VideoStream::startSendingVideo(void *par)
 {
-	Log("SendVideoThread [%d]\n",getpid());
+	Log("SendVideoThread [%p]\n",pthread_self());
 
 	//OBtenemos el objeto
 	VideoStream *conf = (VideoStream *)par;
@@ -190,7 +195,7 @@ void* VideoStream::startSendingVideo(void *par)
 **************************************/
 void* VideoStream::startReceivingVideo(void *par)
 {
-	Log("RecVideoThread [%d]\n",getpid());
+	Log("RecVideoThread [%p]\n",pthread_self());
 
 	//Obtenemos el objeto
 	VideoStream *conf = (VideoStream *)par;

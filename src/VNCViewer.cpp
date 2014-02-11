@@ -313,7 +313,7 @@ VNCViewer::~VNCViewer()
 
 void *VNCViewer::run(void *par)
 {
-	Log("-VNCViewerThread [%d]\n",getpid());
+	Log("-VNCViewerThread [%p]\n",pthread_self());
 
 	//Get object
 	VNCViewer *viewer = (VNCViewer *)par;

@@ -85,6 +85,11 @@ int AudioStream::SetRemoteCryptoSDES(const char* suite, const char* key64)
 	return rtp.SetRemoteCryptoSDES(suite,key64);
 }
 
+int AudioStream::SetRemoteCryptoDTLS(const char *setup,const char *hash,const char *fingerprint)
+{
+	return rtp.SetRemoteCryptoDTLS(setup,hash,fingerprint);
+}
+
 int AudioStream::SetLocalSTUNCredentials(const char* username, const char* pwd)
 {
 	return rtp.SetLocalSTUNCredentials(username,pwd);
@@ -107,7 +112,7 @@ void * AudioStream::startSendingAudio(void *par)
 {
 	AudioStream *conf = (AudioStream *)par;
 	blocksignals();
-	Log("SendAudioThread [%d]\n",getpid());
+	Log("SendAudioThread [%p]\n",pthread_self());
 	conf->SendAudio();
 	//Exit
 	return NULL;
@@ -121,7 +126,7 @@ void * AudioStream::startReceivingAudio(void *par)
 {
 	AudioStream *conf = (AudioStream *)par;
 	blocksignals();
-	Log("RecvAudioThread [%d]\n",getpid());
+	Log("RecvAudioThread [%p]\n",pthread_self());
 	conf->RecAudio();
 	//Exit
 	return NULL;;

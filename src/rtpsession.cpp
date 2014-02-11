@@ -92,7 +92,7 @@ bool RTPSession::SetPortRange(int minPort, int maxPort)
 * RTPSession
 * 	Constructro
 **************************/
-RTPSession::RTPSession(MediaFrame::Type media,Listener *listener)
+RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) : dtls(*this)
 {
 	//Store listener
 	this->listener = listener;
@@ -398,6 +398,34 @@ int RTPSession::SetRemoteSTUNCredentials(const char* username, const char* pwd)
 	iceRemotePwd = strdup(pwd);
 	//Ok
 	return 1;
+}
+
+int RTPSession::SetRemoteCryptoDTLS(const char *setup,const char *hash,const char *fingerprint)
+{
+	Log("-SetRemoteCryptoDTLS [setup:%s,hash:%s,fingerpritn:%s]\n",setup,hash,fingerprint);
+
+	//Set Suite
+	if (strcmp(setup,"active")==0)
+		dtls.SetRemoteSetup(DTLSConnection::SETUP_ACTIVE);
+	else if (strcmp(setup,"passive")==0)
+		dtls.SetRemoteSetup(DTLSConnection::SETUP_PASSIVE);
+	else if (strcmp(setup,"actpass")==0)
+		dtls.SetRemoteSetup(DTLSConnection::SETUP_ACTPASS);
+	else if (strcmp(setup,"holdconn")==0)
+		dtls.SetRemoteSetup(DTLSConnection::SETUP_HOLDCONN);
+	else
+		return Error("Unknown setup");
+
+	//Set fingerprint
+	if (strcmp(hash,"SHA-1")==0)
+		dtls.SetRemoteFingerprint(DTLSConnection::SHA1,fingerprint);
+	else if (strcmp(hash,"SHA-256")==0)
+		dtls.SetRemoteFingerprint(DTLSConnection::SHA256,fingerprint);
+	else
+		return Error("Unknown hash");
+
+	//Init DTLS
+	dtls.Init();
 }
 
 int RTPSession::SetRemoteCryptoSDES(const char* suite, const char* key64)
@@ -2133,4 +2161,10 @@ int RTPSession::SendTempMaxMediaStreamBitrateNotification(DWORD bitrate,DWORD ov
 
 	//Exit
 	return ret;
+}
+
+
+void RTPSession::onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMasterKey,DWORD localMasterKeySize,BYTE* remoteMasterKey,DWORD remoteMasterKeySize)
+{
+	Log("-onDTLSSetup");
 }

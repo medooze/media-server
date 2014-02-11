@@ -305,6 +305,24 @@ int Endpoint::SetLocalCryptoSDES(MediaFrame::Type media,const char* suite, const
 	return 1;
 }
 
+int Endpoint::SetRemoteCryptoDTLS(MediaFrame::Type media,const char *setup,const char *hash,const char *fingerprint)
+{
+	switch (media)
+	{
+		case MediaFrame::Audio:
+			return audio->SetRemoteCryptoDTLS(setup,hash,fingerprint);
+		case MediaFrame::Video:
+			return video->SetRemoteCryptoDTLS(setup,hash,fingerprint);
+		case MediaFrame::Text:
+			return text->SetRemoteCryptoDTLS(setup,hash,fingerprint);
+		default:
+			return Error("Unknown media [%d]\n",media);
+	}
+
+	//OK
+	return 1;
+}
+
 int Endpoint::SetRemoteCryptoSDES(MediaFrame::Type media,const char* suite, const char* key)
 {
 	switch (media)

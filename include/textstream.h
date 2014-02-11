@@ -23,6 +23,7 @@ public:
 	int SetMute(bool isMuted);
 	int SetLocalCryptoSDES(const char* suite, const char* key64);
 	int SetRemoteCryptoSDES(const char* suite, const char* key64);
+	int SetRemoteCryptoDTLS(const char *setup,const char *hash,const char *fingerprint);
 	int SetLocalSTUNCredentials(const char* username, const char* pwd);
 	int SetRemoteSTUNCredentials(const char* username, const char* pwd);
 	int SetRTPProperties(const Properties& properties);

@@ -46,6 +46,7 @@ public:
 	int StopReceiving(MediaFrame::Type media);
 	int SetLocalCryptoSDES(MediaFrame::Type media,const char* suite, const char* key64);
 	int SetRemoteCryptoSDES(MediaFrame::Type media,const char* suite, const char* key64);
+	int SetRemoteCryptoDTLS(MediaFrame::Type media,const char *setup,const char *hash,const char *fingerprint);
 	int SetLocalSTUNCredentials(MediaFrame::Type media,const char* username, const char* pwd);
 	int SetRemoteSTUNCredentials(MediaFrame::Type media,const char* username, const char* pwd);
 	int SetRTPProperties(MediaFrame::Type media,const Properties& properties);

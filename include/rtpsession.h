@@ -16,6 +16,7 @@
 #include "fecdecoder.h"
 #include "stunmessage.h"
 #include "remoterateestimator.h"
+#include "dtls.h"
 
 struct MediaStatistics
 {
@@ -28,7 +29,9 @@ struct MediaStatistics
 	DWORD		totalSendBytes;
 };
 
-class RTPSession : public RemoteRateEstimator::Listener
+class RTPSession : 
+	public RemoteRateEstimator::Listener,
+	public DTLSConnection::Listener
 {
 public:
 	class Listener
@@ -85,6 +88,7 @@ public:
 
 	int SetLocalCryptoSDES(const char* suite, const char* key64);
 	int SetRemoteCryptoSDES(const char* suite, const char* key64);
+	int SetRemoteCryptoDTLS(const char *setup,const char *hash,const char *fingerprint);
 	int SetLocalSTUNCredentials(const char* username, const char* pwd);
 	int SetRemoteSTUNCredentials(const char* username, const char* pwd);
 	int SetProperties(const Properties& properties);
@@ -93,6 +97,8 @@ public:
 	int SendTempMaxMediaStreamBitrateNotification(DWORD bitrate,DWORD overhead);
 
 	virtual void onTargetBitrateRequested(DWORD bitrate);
+
+	virtual void onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMasterKey,DWORD localMasterKeySize,BYTE* remoteMasterKey,DWORD remoteMasterKeySize);
 private:
 	void SetRTT(DWORD rtt);
 	void Start();
@@ -129,6 +135,7 @@ private:
 	bool	inited;
 	bool	running;
 
+	DTLSConnection dtls;
 	bool	encript;
 	bool	decript;
 	srtp_t	sendSRTPSession;

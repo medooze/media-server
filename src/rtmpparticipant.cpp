@@ -389,7 +389,7 @@ int  RTMPParticipant::StopReceivingAudio()
 
 void* RTMPParticipant::startSendingText(void *par)
 {
-	Log("RecTextThread [%d]\n",getpid());
+	Log("RecTextThread [%p]\n",pthread_self());
 
 	//Obtenemos el objeto
 	RTMPParticipant *sess = (RTMPParticipant *)par;
@@ -437,7 +437,7 @@ int  RTMPParticipant::StopSendingText()
 **************************************/
 void* RTMPParticipant::startReceivingVideo(void *par)
 {
-	Log("RecVideoThread [%d]\n",getpid());
+	Log("RecVideoThread [%p]\n",pthread_self());
 
 	//Obtenemos el objeto
 	RTMPParticipant *sess = (RTMPParticipant *)par;
@@ -457,7 +457,7 @@ void* RTMPParticipant::startReceivingVideo(void *par)
 **************************************/
 void* RTMPParticipant::startSendingVideo(void *par)
 {
-	Log("SendVideoThread [%d]\n",getpid());
+	Log("SendVideoThread [%p]\n",pthread_self());
 
 	//Obtenemos el objeto
 	RTMPParticipant *sess = (RTMPParticipant *)par;
@@ -477,7 +477,7 @@ void* RTMPParticipant::startSendingVideo(void *par)
 **************************************/
 void* RTMPParticipant::startReceivingAudio(void *par)
 {
-	Log("RecVideoThread [%d]\n",getpid());
+	Log("RecVideoThread [%p]\n",pthread_self());
 
 	//Obtenemos el objeto
 	RTMPParticipant *sess = (RTMPParticipant *)par;
@@ -498,7 +498,7 @@ void* RTMPParticipant::startReceivingAudio(void *par)
 **************************************/
 void* RTMPParticipant::startSendingAudio(void *par)
 {
-	Log("SendAudioThread [%d]\n",getpid());
+	Log("SendAudioThread [%p]\n",pthread_self());
 
 	//Obtenemos el objeto
 	RTMPParticipant *sess = (RTMPParticipant *)par;

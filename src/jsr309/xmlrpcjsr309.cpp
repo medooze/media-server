@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "xmlhandler.h"
 #include "JSR309Manager.h"
 #include "MediaSession.h"
@@ -704,7 +705,6 @@ xmlrpc_value* EndpointSetRemoteCryptoSDES(xmlrpc_env *env, xmlrpc_value *param_a
 	int media;
 	char *suite;
 	char *key;
-	xmlrpc_value *rtpMap;
 	xmlrpc_parse_value(env, param_array, "(iiiss)", &sessionId,&endpointId,&media,&suite,&key);
 
 	//Comprobamos si ha habido error
@@ -729,6 +729,68 @@ xmlrpc_value* EndpointSetRemoteCryptoSDES(xmlrpc_env *env, xmlrpc_value *param_a
 	return xmlok(env);
 }
 
+xmlrpc_value* EndpointSetRemoteCryptoDTLS(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+	MediaSession *session;
+	JSR309Manager *jsr = (JSR309Manager*)user_data;
+
+	//Parseamos
+	int sessionId;
+	int endpointId;
+	int media;
+	char *suite;
+	char *setup;
+	char *hash;
+	char *fingerprint;
+	xmlrpc_parse_value(env, param_array, "(iiissss)", &sessionId,&endpointId,&media,&suite,&setup,&hash,&fingerprint);
+
+	//Comprobamos si ha habido error
+	if(env->fault_occurred)
+		return 0;
+
+	//Obtenemos la referencia
+	if(!jsr->GetMediaSessionRef(sessionId,&session))
+		return xmlerror(env,"The media Session does not exist");
+
+	//La borramos
+	int res = session->EndpointSetRemoteCryptoDTLS(endpointId,(MediaFrame::Type)media,setup,hash,fingerprint);
+
+	//Liberamos la referencia
+	jsr->ReleaseMediaSessionRef(sessionId);
+
+	//Salimos
+	if(!res)
+		return xmlerror(env,"Error");
+
+	//Devolvemos el resultado
+	return xmlok(env);
+}
+
+xmlrpc_value* EndpointGetLocalCryptoDTLSFingerprint(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+	std::string fingerprint;
+	char *hash;
+	xmlrpc_parse_value(env, param_array, "(s)", &hash);
+
+	//Comprobamos si ha habido error
+	if(env->fault_occurred)
+		return 0;
+
+	//Check hash
+	if (strcasecmp(hash,"sha-1")==0)
+		//Gen fingerprint
+		fingerprint = DTLSConnection::GetCertificateFingerPrint(DTLSConnection::SHA1);
+	else if (strcasecmp(hash,"sha-256")==0)
+		//Gen fingerprint
+		fingerprint = DTLSConnection::GetCertificateFingerPrint(DTLSConnection::SHA256);
+	else
+		return 0;
+	//Create array
+	xmlrpc_value* arr = xmlrpc_build_value(env,"(s)",fingerprint.c_str());
+
+	//return
+	return xmlok(env,arr);
+}
 xmlrpc_value* EndpointSetLocalSTUNCredentials(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MediaSession *session;
@@ -2326,6 +2388,7 @@ xmlrpc_value* VideoTranscoderDettach(xmlrpc_env *env, xmlrpc_value *param_array,
 
 XmlHandlerCmd jsr309CmdList[] =
 {
+	{"EndpointGetLocalCryptoDTLSFingerprint",EndpointGetLocalCryptoDTLSFingerprint},
 	{"EventQueueCreate",			EventQueueCreate},
 	{"EventQueueDelete",			EventQueueDelete},
 	{"MediaSessionCreate",			MediaSessionCreate},
@@ -2351,6 +2414,7 @@ XmlHandlerCmd jsr309CmdList[] =
 	{"EndpointSetLocalCryptoSDES",		EndpointSetLocalCryptoSDES},
 	{"EndpointSetLocalSTUNCredentials",	EndpointSetLocalSTUNCredentials},
 	{"EndpointSetRemoteSTUNCredentials",	EndpointSetRemoteSTUNCredentials},
+	{"EndpointSetRemoteCryptoDTLS",		EndpointSetRemoteCryptoDTLS},
 	{"EndpointSetRTPProperties",		EndpointSetRTPProperties},
 	{"EndpointStartSending",		EndpointStartSending},
 	{"EndpointStopSending",			EndpointStopSending},

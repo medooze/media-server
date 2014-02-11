@@ -69,6 +69,7 @@ public:
 	int EndpointDelete(int endpointId);
 	int EndpointSetLocalCryptoSDES(int id,MediaFrame::Type media,const char *suite,const char* key);
 	int EndpointSetRemoteCryptoSDES(int id,MediaFrame::Type media,const char *suite,const char* key);
+	int EndpointSetRemoteCryptoDTLS(int id,MediaFrame::Type media,const char *setup,const char *hash,const char *fingerprint);
 	int EndpointSetLocalSTUNCredentials(int id,MediaFrame::Type media,const char *username,const char* pwd);
 	int EndpointSetRemoteSTUNCredentials(int id,MediaFrame::Type media,const char *username,const char* pwd);
 	int EndpointSetRTPProperties(int id,MediaFrame::Type media,const Properties& properties);

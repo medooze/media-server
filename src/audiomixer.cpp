@@ -36,7 +36,7 @@ AudioMixer::~AudioMixer()
 ************************************/
 void *AudioMixer::startMixingAudio(void *par)
 {
-	Log("-MixAudioThread [%d]\n",getpid());
+	Log("-MixAudioThread [%p]\n",pthread_self());
 
 	//Obtenemos el parametro
 	AudioMixer *am = (AudioMixer *)par;

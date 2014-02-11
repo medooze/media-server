@@ -197,7 +197,7 @@ int RTPSmoother::End()
 
 void* RTPSmoother::run(void *par)
 {
-        Log("RTPSmootherThread [%d]\n",getpid());
+        Log("RTPSmootherThread [%p]\n",pthread_self());
         //Get endpoint
 	RTPSmoother *smooth = (RTPSmoother *)par;
 	//Run 

@@ -395,7 +395,7 @@ int RTMPFLVStream::PlayFLV()
 
 void* RTMPFLVStream::play(void *par)
 {
-	Log("-PlayTrhead [%d]\n",getpid());
+	Log("-PlayTrhead [%p]\n",pthread_self());
 
 	//Obtenemos el parametro
 	RTMPFLVStream *flv = (RTMPFLVStream *)par;

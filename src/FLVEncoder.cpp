@@ -108,7 +108,7 @@ void * FLVEncoder::startEncodingAudio(void *par)
 {
 	FLVEncoder *enc = (FLVEncoder *)par;
 	blocksignals();
-	Log("Encoding FLV audio [%d]\n",getpid());
+	Log("Encoding FLV audio [%p]\n",pthread_self());
 	enc->EncodeAudio();
 	//Exit
 	return NULL;;
@@ -122,7 +122,7 @@ void * FLVEncoder::startEncodingVideo(void *par)
 {
 	FLVEncoder *enc = (FLVEncoder *)par;
 	blocksignals();
-	Log("Encoding FLV video [%d]\n",getpid());
+	Log("Encoding FLV video [%p]\n",pthread_self());
 	enc->EncodeVideo();
 	//Exit
 	return NULL;
