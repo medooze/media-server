@@ -35,7 +35,7 @@ TextMixer::~TextMixer()
 ************************************/
 void *TextMixer::startMixingText(void *par)
 {
-	Log("-MixTextThread [%d]\n",getpid());
+	Log("-MixTextThread [%p]\n",pthread_self());
 
 	//Obtenemos el parametro
 	TextMixer *am = (TextMixer *)par;

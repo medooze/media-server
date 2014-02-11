@@ -246,7 +246,7 @@ void WebSocketServer::CleanZombies()
 ************************/
 void * WebSocketServer::run(void *par)
 {
-        Log("-WebSocket Server Thread [%d]\n",getpid());
+        Log("-WebSocket Server Thread [%d]\n",pthread_self());
 
         //Obtenemos el parametro
         WebSocketServer *ses = (WebSocketServer *)par;

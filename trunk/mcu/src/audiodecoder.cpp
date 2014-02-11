@@ -51,7 +51,7 @@ int AudioDecoderWorker::Start()
 }
 void * AudioDecoderWorker::startDecoding(void *par)
 {
-	Log("AudioDecoderThread [%d]\n",getpid());
+	Log("AudioDecoderThread [%p]\n",pthread_self());
 	//Get worker
 	AudioDecoderWorker *worker = (AudioDecoderWorker *)par;
 	//Block all signals

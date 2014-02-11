@@ -101,7 +101,7 @@ int VideoEncoderMultiplexerWorker::Start()
 
 void * VideoEncoderMultiplexerWorker::startEncoding(void *par)
 {
-	Log("VideoEncoderMultiplexerWorkerThread [%d]\n",getpid());
+	Log("VideoEncoderMultiplexerWorkerThread [%p]\n",pthread_self());
 	//Get worker
 	VideoEncoderMultiplexerWorker *worker = (VideoEncoderMultiplexerWorker *)par;
 	//Block all signals

@@ -62,7 +62,7 @@ VideoMixer::~VideoMixer()
 ************************/
 void * VideoMixer::startMixingVideo(void *par)
 {
-        Log("-MixVideoThread [%d]\n",getpid());
+        Log("-MixVideoThread [%p]\n",pthread_self());
 
 	//Obtenemos el parametro
 	VideoMixer *vm = (VideoMixer *)par;

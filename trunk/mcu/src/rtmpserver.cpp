@@ -279,7 +279,7 @@ void RTMPServer::DeleteAllConnections()
 ************************/
 void * RTMPServer::run(void *par)
 {
-        Log("-RTMP Server Thread [%d]\n",getpid());
+        Log("-RTMP Server Thread [%p]\n",pthread_self());
 
         //Obtenemos el parametro
         RTMPServer *ses = (RTMPServer *)par;

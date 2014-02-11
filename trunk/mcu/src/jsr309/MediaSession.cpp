@@ -425,6 +425,23 @@ int MediaSession::EndpointSetRemoteCryptoSDES(int endpointId,MediaFrame::Type me
 	return endpoint->SetRemoteCryptoSDES(media,suite,key);
 }
 
+int MediaSession::EndpointSetRemoteCryptoDTLS(int endpointId,MediaFrame::Type media,const char *setup,const char *hash,const char *fingerprint)
+{
+        //Get endpoint
+        Endpoints::iterator it = endpoints.find(endpointId);
+
+        //If not found
+        if (it==endpoints.end())
+                //Exit
+                return Error("Endpoint not found\n");
+        //Get it
+        Endpoint* endpoint = it->second;
+
+	//Call it
+	return endpoint->SetRemoteCryptoDTLS(media,setup,hash,fingerprint);
+}
+
+
 int MediaSession::EndpointSetLocalSTUNCredentials(int endpointId,MediaFrame::Type media,const char *username,const char* pwd)
 {
         //Get endpoint

@@ -65,7 +65,7 @@ int AudioDecoderJoinableWorker::Start()
 }
 void * AudioDecoderJoinableWorker::startDecoding(void *par)
 {
-	Log("AudioDecoderJoinableWorkerThread [%d]\n",getpid());
+	Log("AudioDecoderJoinableWorkerThread [%p]\n",pthread_self());
 	//Get worker
 	AudioDecoderJoinableWorker *worker = (AudioDecoderJoinableWorker *)par;
 	//Block all signals
@@ -73,7 +73,7 @@ void * AudioDecoderJoinableWorker::startDecoding(void *par)
 	//Run
 	worker->Decode();
 	//Exit
-	return NULL;;
+	return NULL;
 }
 
 int  AudioDecoderJoinableWorker::Stop()

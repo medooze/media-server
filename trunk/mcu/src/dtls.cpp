@@ -5,6 +5,9 @@
 #define SRTP_MASTER_SALT_LEN 14
 #define SRTP_MASTER_LEN (SRTP_MASTER_KEY_LEN + SRTP_MASTER_SALT_LEN)
 
+//Certificates
+
+
 void dtls_info_callback(const SSL *ssl, int where, int ret)
 {
 	DTLSConnection *con = (DTLSConnection*) SSL_get_ex_data(ssl, 0);
@@ -16,6 +19,81 @@ void dtls_info_callback(const SSL *ssl, int where, int ret)
 	con->dtls_failure = 1;
 }
 
+std::string DTLSConnection::certfile("mcu.crt");
+std::string DTLSConnection::pvtfile("mcy.key");	
+std::string DTLSConnection::cipher("ALL:NULL:eNULL:aNULL");
+
+void DTLSConnection::SetCertificate(const char* cert,const char* key)
+{
+	//Set certificate files
+	certfile.assign(cert);
+	pvtfile.assign(key);
+}
+
+std::string DTLSConnection::GetCertificateFingerPrint(Hash hash)
+{
+	BIO *certbio;
+	X509 *cert;
+	unsigned int size;
+	char local_fingerprint[EVP_MAX_MD_SIZE*3+1] = {0};
+	unsigned char fingerprint[EVP_MAX_MD_SIZE];
+
+	//Creaate BIO for certificate file
+	certbio = BIO_new(BIO_s_file());
+
+	//Read certificate filename
+	if (!BIO_read_filename(certbio, certfile.c_str()))
+	{
+		//Error
+		Error("Could not read certificate filename [%s]\n",certfile.c_str());
+		//Error
+		goto end;
+	}
+
+	//Read certificate in X509 format
+	cert = PEM_read_bio_X509(certbio, NULL, 0, NULL);
+
+	//Check it
+	if (!cert)
+	{
+		//Error
+		Error("Could not read X509 certificate from filename [%s]\n",certfile.c_str());
+		//Error
+		goto end;
+	}
+
+	//Check hash algorithm
+	switch (hash)
+	{
+		case SHA1:
+			//Hash
+			X509_digest(cert, EVP_sha(), fingerprint, &size);
+			break;
+		case SHA256:
+			X509_digest(cert, EVP_sha256(), fingerprint, &size);
+	}
+
+	//Check size
+	if (!size)
+	{
+		//Error
+		Error("Wrong X509 certificate size\n");
+		//Error
+		goto end;
+	}
+
+	//Convert to hex format
+	for (int i = 0; i < size; i++)
+		sprintf(local_fingerprint+i*3, "%.2X:", fingerprint[i]);
+
+	//End string
+	local_fingerprint[size*3-1] = 0;
+end:
+	BIO_free_all(certbio);
+
+	return std::string(local_fingerprint);
+}
+
 DTLSConnection::DTLSConnection(Listener& listener) : listener(listener)
 {
 	//Set default values
@@ -23,15 +101,11 @@ DTLSConnection::DTLSConnection(Listener& listener) : listener(listener)
 	dtls_setup	= SETUP_PASSIVE;
 	connection	= CONNECTION_NEW;
 	suite		= AES_CM_128_HMAC_SHA1_80;
-	//Certificates
-	certfile = "mcu.crt";                        /*!< Certificate file */
-	pvtfile = "mcu.key";                         /*!< Private key file */
-	cipher = "ALL:NULL:eNULL:aNULL";                          /*!< Cipher to use */
-	dtls_failure =  false;			/*!< Failure occurred during DTLS negotiation */
-	ssl_ctx = NULL;				/*!< SSL context */
-	ssl = NULL;				/*!< SSL session */
-	read_bio = NULL;			/*!< Memory buffer for reading */
-	write_bio = NULL;			/*!< Memory buffer for writing */
+	dtls_failure	=  false;		/*!< Failure occurred during DTLS negotiation */
+	ssl_ctx		= NULL;			/*!< SSL context */
+	ssl		= NULL;			/*!< SSL session */
+	read_bio	= NULL;			/*!< Memory buffer for reading */
+	write_bio	= NULL;			/*!< Memory buffer for writing */
 	//Init library just in case
 	SSL_library_init();
 
@@ -79,52 +153,22 @@ int DTLSConnection::Init()
 	if(!ssl_ctx)
 		//Fail
 		return Error("Error creating SSL contecx");
-	
+
 	//Verify always
 	bool verify = false;
 
 	//Set verify
 	SSL_CTX_set_verify(ssl_ctx, verify ? SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT : SSL_VERIFY_NONE, NULL);
 
+	//Set certifigate
+	if (!SSL_CTX_use_certificate_file(ssl_ctx, certfile.c_str(), SSL_FILETYPE_PEM))
+		return Error("Specified certificate file '%s' for  could not be used\n", certfile.c_str());
 
-	if (certfile)
-	{
-		BIO *certbio;
-		X509 *cert;
-		unsigned int size, i;
-		unsigned char fingerprint[EVP_MAX_MD_SIZE];
+	if (!SSL_CTX_use_PrivateKey_file(ssl_ctx, pvtfile.c_str(), SSL_FILETYPE_PEM) || !SSL_CTX_check_private_key(ssl_ctx))
+		return Error("Specified private key file '%s' for  could not be used\n",pvtfile.c_str());
 
-		if (!SSL_CTX_use_certificate_file(ssl_ctx, certfile, SSL_FILETYPE_PEM))
-			return Error("Specified certificate file '%s' for  could not be used\n", certfile);
-
-		if (!SSL_CTX_use_PrivateKey_file(ssl_ctx, pvtfile, SSL_FILETYPE_PEM) || !SSL_CTX_check_private_key(ssl_ctx))
-			return Error("Specified private key file '%s' for  could not be used\n",pvtfile);
-
-		if (!(certbio = BIO_new(BIO_s_file())))
-			return Error("Failed to allocate memory for certificate fingerprinting \n");
-
-		if (!BIO_read_filename(certbio, certfile) ||
-			!(cert = PEM_read_bio_X509(certbio, NULL, 0, NULL)) ||
-			!X509_digest(cert, EVP_sha1(), fingerprint, &size) ||
-			!size)
-		{
-			
-			BIO_free_all(certbio);
-			return Error("Could not produce fingerprint from certificate '%s' for \n", certfile);
-		}
-
-		for (i = 0; i < size; i++)
-			sprintf(local_fingerprint+i*3, "%.2X:", fingerprint[i]);
-
-		*(local_fingerprint - 1) = 0;
-
-		Log("-Local fingerprint %s\n",local_fingerprint);
-
-		BIO_free_all(certbio);
-	}
-
-	if (cipher && !SSL_CTX_set_cipher_list(ssl_ctx, cipher))
-		return Error("Invalid cipher specified in cipher list '%s' for \n",cipher);
+	if (!SSL_CTX_set_cipher_list(ssl_ctx, cipher.c_str()))
+		return Error("Invalid cipher specified in cipher list '%s' for \n",cipher.c_str());
 
 /*
  * 	if (cafile || capath)
@@ -254,7 +298,7 @@ void DTLSConnection::SetRemoteSetup(Setup remote)
 
 void DTLSConnection::SetRemoteFingerprint(Hash hash, const char *fingerprint)
 {
-
+	//TODO: store hash!
 	char *tmp = strdupa(fingerprint), *value;
 	int pos = 0;
 	

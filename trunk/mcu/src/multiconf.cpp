@@ -791,6 +791,29 @@ int MultiConf::SetRemoteCryptoSDES(int id,MediaFrame::Type media,const char *sui
 	return ret;
 }
 
+int MultiConf::SetRemoteCryptoDTLS(int id,MediaFrame::Type media,const char *setup,const char *hash,const char *fingerprint)
+{
+	int ret = 0;
+
+	Log("-SetRemoteCryptoDTLS %s [partId:%d]\n",MediaFrame::TypeToString(media),id);
+
+	//Use list
+	participantsLock.IncUse();
+
+	//Get the participant
+	RTPParticipant *part = (RTPParticipant*)GetParticipant(id,Participant::RTP);
+
+	//Check particpant
+	if (part)
+		//Set  codec
+		ret = part->SetRemoteCryptoDTLS(media,setup,hash,fingerprint);
+
+	//Unlock
+	participantsLock.DecUse();
+
+	//Exit
+	return ret;
+}
 
 int MultiConf::SetLocalSTUNCredentials(int id,MediaFrame::Type media,const char *username,const char* pwd)
 {

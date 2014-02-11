@@ -202,7 +202,7 @@ int RTPMultiplexerSmoother::Stop()
 
 void* RTPMultiplexerSmoother::run(void *par)
 {
-        Log("RTPMultiplexerSmootherThread [%d]\n",getpid());
+        Log("RTPMultiplexerSmootherThread [%p]\n",pthread_self());
         //Get endpoint
 	RTPMultiplexerSmoother *smooth = (RTPMultiplexerSmoother *)par;
 	//Run 

@@ -271,7 +271,7 @@ int RTPEndpoint::Run()
 
 void* RTPEndpoint::run(void *par)
 {
-        Log("RTPEndpointThread [%d]\n",getpid());
+        Log("RTPEndpointThread [%p]\n",pthread_self());
         //Get endpoint
 	RTPEndpoint *end = (RTPEndpoint *)par;
         //Block signal in thread

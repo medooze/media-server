@@ -106,6 +106,25 @@ int RTPParticipant::SetLocalCryptoSDES(MediaFrame::Type media,const char* suite,
 	return 0;
 }
 
+
+int RTPParticipant::SetRemoteCryptoDTLS(MediaFrame::Type media,const char *setup,const char *hash,const char *fingerprint)
+{
+	switch (media)
+	{
+		case MediaFrame::Audio:
+			return audio.SetRemoteCryptoDTLS(setup,hash,fingerprint);
+		case MediaFrame::Video:
+			return video.SetRemoteCryptoDTLS(setup,hash,fingerprint);
+		case MediaFrame::Text:
+			return text.SetRemoteCryptoDTLS(setup,hash,fingerprint);
+		default:
+			return Error("Unknown media [%d]\n",media);
+	}
+
+	//OK
+	return 1;
+}
+
 int RTPParticipant::SetRemoteCryptoSDES(MediaFrame::Type media,const char* suite, const char* key)
 {
 	switch (media)

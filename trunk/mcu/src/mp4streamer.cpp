@@ -235,7 +235,7 @@ int MP4Streamer::Play()
 
 void * MP4Streamer::play(void *par)
 {
-        Log("-PlayThread [%d]\n",getpid());
+        Log("-PlayThread [%p]\n",pthread_self());
 
 	//Obtenemos el parametro
 	MP4Streamer *player = (MP4Streamer *)par;

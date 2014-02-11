@@ -88,6 +88,11 @@ int TextStream::SetRemoteCryptoSDES(const char* suite, const char* key64)
 	return rtp.SetRemoteCryptoSDES(suite,key64);
 }
 
+int TextStream::SetRemoteCryptoDTLS(const char *setup,const char *hash,const char *fingerprint)
+{
+	return rtp.SetRemoteCryptoDTLS(setup,hash,fingerprint);
+}
+
 int TextStream::SetLocalSTUNCredentials(const char* username, const char* pwd)
 {
 	return rtp.SetLocalSTUNCredentials(username,pwd);
@@ -109,7 +114,7 @@ void * TextStream::startSendingText(void *par)
 {
 	TextStream *conf = (TextStream *)par;
 	blocksignals();
-	Log("SendTextThread [%d]\n",getpid());
+	Log("SendTextThread [%p]\n",pthread_self());
 	conf->SendText();
 	//Exit
 	return NULL;
@@ -123,7 +128,7 @@ void * TextStream::startReceivingText(void *par)
 {
 	TextStream *conf = (TextStream *)par;
 	blocksignals();
-	Log("RecvTextThread [%d]\n",getpid());
+	Log("RecvTextThread [%p]\n",pthread_self());
 	conf->RecText();
 	//Exit
 	return NULL;

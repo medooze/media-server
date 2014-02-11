@@ -433,7 +433,7 @@ int  MediaBridgeSession::StopReceivingText()
 **************************************/
 void* MediaBridgeSession::startReceivingVideo(void *par)
 {
-	Log("RecVideoThread [%d]\n",getpid());
+	Log("RecVideoThread [%p]\n",pthread_self());
 
 	//Obtenemos el objeto
 	MediaBridgeSession *sess = (MediaBridgeSession *)par;
@@ -453,7 +453,7 @@ void* MediaBridgeSession::startReceivingVideo(void *par)
 **************************************/
 void* MediaBridgeSession::startReceivingAudio(void *par)
 {
-	Log("RecVideoThread [%d]\n",getpid());
+	Log("RecVideoThread [%p]\n",pthread_self());
 
 	//Obtenemos el objeto
 	MediaBridgeSession *sess = (MediaBridgeSession *)par;
@@ -473,7 +473,7 @@ void* MediaBridgeSession::startReceivingAudio(void *par)
 **************************************/
 void* MediaBridgeSession::startSendingVideo(void *par)
 {
-	Log("SendVideoThread [%d]\n",getpid());
+	Log("SendVideoThread [%p]\n",pthread_self());
 
 	//Obtenemos el objeto
 	MediaBridgeSession *sess = (MediaBridgeSession *)par;
@@ -493,7 +493,7 @@ void* MediaBridgeSession::startSendingVideo(void *par)
 **************************************/
 void* MediaBridgeSession::startSendingAudio(void *par)
 {
-	Log("SendAudioThread [%d]\n",getpid());
+	Log("SendAudioThread [%p]\n",pthread_self());
 
 	//Obtenemos el objeto
 	MediaBridgeSession *sess = (MediaBridgeSession *)par;
@@ -513,7 +513,7 @@ void* MediaBridgeSession::startSendingAudio(void *par)
 **************************************/
 void* MediaBridgeSession::startReceivingText(void *par)
 {
-	Log("RecTextThread [%d]\n",getpid());
+	Log("RecTextThread [%p]\n",pthread_self());
 
 	//Obtenemos el objeto
 	MediaBridgeSession *sess = (MediaBridgeSession *)par;
