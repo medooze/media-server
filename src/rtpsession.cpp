@@ -1241,6 +1241,15 @@ int RTPSession::ReadRTP()
 		sendto(simSocket,buffer,len,0,(sockaddr *)&from_addr,sizeof(struct sockaddr_in));
 	}
 
+	//Double check it is an RTP packet
+	if (!RTPPacket::IsRTP(buffer,size))
+	{
+		//Debug
+		Debug("-Not RTP data recevied\n");
+		//Exit
+		return 1;
+	}
+
 	//If we don't have originating IP
 	if (recIP==INADDR_ANY)
 	{
@@ -1259,7 +1268,9 @@ int RTPSession::ReadRTP()
 	//Check minimum size for rtp packet
 	if (size<12)
 	{
+		//Debug
 		Debug("-RTP data not big enought[%d]\n",size);
+		//Exit
 		return 1;
 	}
 
@@ -2176,7 +2187,7 @@ int RTPSession::SendTempMaxMediaStreamBitrateNotification(DWORD bitrate,DWORD ov
 
 void RTPSession::onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMasterKey,DWORD localMasterKeySize,BYTE* remoteMasterKey,DWORD remoteMasterKeySize)
 {
-	Log("-onDTLSSetup");
+	Log("-onDTLSSetup for [%s]\n",MediaFrame::TypeToString(media));
 
 	switch (suite)
 	{
