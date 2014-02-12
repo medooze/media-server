@@ -24,8 +24,6 @@
 #include <libavutil/base64.h>
 #include <openssl/ossl_typ.h>
 
-#define HMAC_PADDING	512
-
 BYTE rtpEmpty[] = {0x80,0x14,0x00,0x00,0x00,0x00,0x00,0x00};
 
 //srtp library initializers
@@ -168,7 +166,7 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) : dtls(*this)
 	useAbsTime = false;
 	isNACKEnabled = false;
 	//Fill with 0
-	memset(sendPacket,0,MTU);
+	memset(sendPacket,0,MTU+SRTP_MAX_TRAILER_LEN);
 	//Preparamos las direcciones de envio
 	memset(&sendAddr,       0,sizeof(struct sockaddr_in));
 	memset(&sendRtcpAddr,   0,sizeof(struct sockaddr_in));
@@ -751,8 +749,8 @@ int RTPSession::End()
 
 int RTPSession::SendPacket(RTCPCompoundPacket &rtcp)
 {
-	BYTE data[MTU+HMACSAFEPADDING] ZEROALIGNEDTO32;
-	DWORD size = MTU;
+	BYTE data[MTU+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
+	DWORD size = RTPPAYLOADSIZE;
 	int ret = 0;
 
 	//Check if we have sendinf ip address
@@ -827,7 +825,10 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 			//Check if using ice
 			if (iceRemoteUsername && iceRemotePwd && iceLocalUsername)
 			{
-				BYTE aux[MTU+HMACSAFEPADDING] ZEROALIGNEDTO32;
+				//Create buffer
+				BYTE aux[MTU+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
+				int size = RTPPAYLOADSIZE;
+				
 				//Create trans id
 				BYTE transId[12];
 				//Set first to 0
@@ -842,10 +843,6 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 				request->AddAttribute(STUNMessage::Attribute::IceControlled,(QWORD)-1);
 				request->AddAttribute(STUNMessage::Attribute::UseCandidate);
 				request->AddAttribute(STUNMessage::Attribute::Priority,(DWORD)33554431);
-
-				//Create  request
-				DWORD size = request->GetSize();
-
 				//Serialize and autenticate
 				int len = request->AuthenticatedFingerPrint(aux,size,iceRemotePwd);
 				//Send it
@@ -981,7 +978,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 
 int RTPSession::ReadRTCP()
 {
-	BYTE buffer[MTU+HMACSAFEPADDING] ZEROALIGNEDTO32;
+	BYTE buffer[MTU+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
 	sockaddr_in from_addr;
 	DWORD from_len = sizeof(from_addr);
 
@@ -1089,7 +1086,7 @@ int RTPSession::ReadRTCP()
 *********************************/
 int RTPSession::ReadRTP()
 {
-	BYTE data[MTU+HMACSAFEPADDING] ZEROALIGNEDTO32;
+	BYTE data[MTU+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
 	BYTE *buffer = data;
 	sockaddr_in from_addr;
 	bool isRTX = false;

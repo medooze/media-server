@@ -28,7 +28,6 @@
 #define FD_INVALID	(int)-1
 #define MTU		1500
 #define RTPPAYLOADSIZE	1350
-#define HMACSAFEPADDING 512
 
 #define QWORD		uint64_t
 #define DWORD		uint32_t

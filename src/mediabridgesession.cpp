@@ -668,7 +668,7 @@ int MediaBridgeSession::RecAudio()
 	DWORD		rawLen;
 
 	//Create new audio frame
-	RTMPAudioFrame  *audio = new RTMPAudioFrame(0,MTU);
+	RTMPAudioFrame  *audio = new RTMPAudioFrame(0,RTPPAYLOADSIZE);
 
 	Log(">RecAudio\n");
 
@@ -1104,8 +1104,8 @@ int MediaBridgeSession::SendAudio()
 		//Check rtp type
 		if (rtpAudioCodec!=rtmpAudioCodec)
 		{
-			BYTE rtp[MTU+HMACSAFEPADDING] ZEROALIGNEDTO32;
-			DWORD rtpSize = MTU;
+			BYTE rtp[MTU+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
+			DWORD rtpSize = RTPPAYLOADSIZE;
 			DWORD rtpLen = 0;
 			SWORD raw[512];
 			DWORD rawSize = 512;

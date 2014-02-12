@@ -6,6 +6,7 @@
  */
 
 #include <set>
+#include <srtp/srtp.h>
 
 #include "fecdecoder.h"
 #include "codecs.h"
@@ -195,7 +196,7 @@ RTPTimedPacket* FECDecoder::Recover()
 			if ((fecMask & mediaMask) == fecMask)
 			{
 				//Rocovered media data
-				BYTE	recovered[MTU+HMACSAFEPADDING] ZEROALIGNEDTO32;
+				BYTE	recovered[MTU+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
 				//Get attributes
 				bool  p  = fec->GetRecoveryP();
 				bool  x  = fec->GetRecoveryX();
@@ -206,6 +207,14 @@ RTPTimedPacket* FECDecoder::Recover()
 				WORD  l  = fec->GetRecoveryLength();
 				//Get protection length
 				DWORD level0Size = fec->GetLevel0Size();
+				//Ensure there is enought size
+				if (level0Size>MTU)
+				{
+					//Error
+					Error("-FEC level 0 data size too big [%d]\n",level0Size);
+					//Skip this one
+					continue;
+				}
 				//Copy data
 				memcpy(recovered,fec->GetLevel0Data(),level0Size);
 				//Set value in temp buffer
@@ -250,7 +259,15 @@ RTPTimedPacket* FECDecoder::Recover()
 				//Set ssrc
 				packet->SetSSRC(ssrc);
 				//Set payload and recovered length
-				packet->SetPayload(recovered,l);
+				if (!packet->SetPayload(recovered,l))
+				{
+					//Delete packet
+					delete(packet);
+					//Error
+					Error("-FEC payload of recovered packet to big [%l]\n",l);
+					//Skip
+					continue;
+				}
 
 				Debug("-recovered packet len:%u ts:%u pts:%u seq:%d\n",l,ts,packet->GetTimestamp() ,packet->GetSeqNum());
 				
