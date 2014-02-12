@@ -2,8 +2,9 @@
 #include "dtls.h"
 #include "log.h"
 
-#define SRTP_MASTER_SALT_LEN 14
-#define SRTP_MASTER_LEN (SRTP_MASTER_KEY_LEN + SRTP_MASTER_SALT_LEN)
+#define DTLS_MASTER_KEY_LEN 16
+#define DTLS_MASTER_SALT_LEN 14
+#define DTLS_MASTER_LEN (DTLS_MASTER_KEY_LEN + DTLS_MASTER_SALT_LEN)
 
 //Certificates
 
@@ -328,9 +329,9 @@ int DTLSConnection::Renegotiate()
 
 int DTLSConnection::SetupSRTP()
 {
-	BYTE material[SRTP_MASTER_LEN * 2];
-	BYTE localMasterKey[SRTP_MASTER_LEN];
-	BYTE remoteMasterKey[SRTP_MASTER_LEN];
+	BYTE material[DTLS_MASTER_LEN * 2];
+	BYTE localMasterKey[DTLS_MASTER_LEN];
+	BYTE remoteMasterKey[DTLS_MASTER_LEN];
 	BYTE *local_key, *local_salt, *remote_key, *remote_salt;
 
 	/* If a fingerprint is present in the SDP make sure that the peer certificate matches it */
@@ -364,32 +365,32 @@ int DTLSConnection::SetupSRTP()
 		return Error("Peer certificate on  failed verification test\n");
 
 	/* Produce key information and set up SRTP */
-	if (!SSL_export_keying_material(ssl, material, SRTP_MASTER_LEN * 2, "EXTRACTOR-dtls_srtp", 19, NULL, 0, 0))
+	if (!SSL_export_keying_material(ssl, material, DTLS_MASTER_LEN * 2, "EXTRACTOR-dtls_srtp", 19, NULL, 0, 0))
 		return Error("Unable to extract SRTP keying material from DTLS-SRTP negotiation on RTP instance \n");
 
 	/* Whether we are acting as a server or client determines where the keys/salts are */
 	if (dtls_setup == SETUP_ACTIVE)
 	{
 		local_key = material;
-		remote_key = local_key + SRTP_MASTER_KEY_LEN;
-		local_salt = remote_key + SRTP_MASTER_KEY_LEN;
-		remote_salt = local_salt + SRTP_MASTER_SALT_LEN;
+		remote_key = local_key + DTLS_MASTER_KEY_LEN;
+		local_salt = remote_key + DTLS_MASTER_KEY_LEN;
+		remote_salt = local_salt + DTLS_MASTER_SALT_LEN;
 	} else	{
 		remote_key = material;
-		local_key = remote_key + SRTP_MASTER_KEY_LEN;
-		remote_salt = local_key + SRTP_MASTER_KEY_LEN;
-		local_salt = remote_salt + SRTP_MASTER_SALT_LEN;
+		local_key = remote_key + DTLS_MASTER_KEY_LEN;
+		remote_salt = local_key + DTLS_MASTER_KEY_LEN;
+		local_salt = remote_salt + DTLS_MASTER_SALT_LEN;
 	}
 
 	//Create local master key
-	memcpy(localMasterKey,local_key,SRTP_MASTER_KEY_LEN);
-	memcpy(localMasterKey+SRTP_MASTER_KEY_LEN,local_salt,SRTP_MASTER_SALT_LEN);
+	memcpy(localMasterKey,local_key,DTLS_MASTER_KEY_LEN);
+	memcpy(localMasterKey+DTLS_MASTER_KEY_LEN,local_salt,DTLS_MASTER_SALT_LEN);
 	//Create remote master key
-	memcpy(remoteMasterKey,remote_key,SRTP_MASTER_KEY_LEN);
-	memcpy(remoteMasterKey+SRTP_MASTER_KEY_LEN,remote_salt,SRTP_MASTER_SALT_LEN);
+	memcpy(remoteMasterKey,remote_key,DTLS_MASTER_KEY_LEN);
+	memcpy(remoteMasterKey+DTLS_MASTER_KEY_LEN,remote_salt,DTLS_MASTER_SALT_LEN);
 
 	//Fire event
-	listener.onDTLSSetup(suite,localMasterKey,SRTP_MASTER_LEN,remoteMasterKey,SRTP_MASTER_LEN);
+	listener.onDTLSSetup(suite,localMasterKey,DTLS_MASTER_LEN,remoteMasterKey,DTLS_MASTER_LEN);
 
 	return 0;
 }

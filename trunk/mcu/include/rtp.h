@@ -304,8 +304,9 @@ public:
 		Log("[[/RTPPacket]\n");
 	}
 public:
-	static BYTE GetType(const BYTE* data)	{ return ((rtp_hdr_t*)data)->pt;		}
-	static DWORD GetSSRC(const BYTE* data)	{ return ntohl(((rtp_hdr_t*)data)->ssrc);	}
+	static BYTE  GetType(const BYTE* data)		{ return ((rtp_hdr_t*)data)->pt;		}
+	static DWORD GetSSRC(const BYTE* data)		{ return ntohl(((rtp_hdr_t*)data)->ssrc);	}
+	static bool  IsRTP(const BYTE* data,DWORD size)	{ return size>=sizeof(rtp_hdr_t) && ((rtp_hdr_t*)data)->version==2;	}
 private:
 	static const DWORD SIZE = 1700;
 private:
