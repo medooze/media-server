@@ -2083,8 +2083,12 @@ void RTPSession::SetRTT(DWORD rtt)
 		remoteRateEstimator->UpdateRTT(recSSRC,rtt);
 	//If it is video
 	if (media==MediaFrame::Video)
-		//Update
-		packets.SetMaxWaitTime(fmin(fmax(rtt,120)*2,400));
+		//Update jitter buffer size in ms in [120,400]
+		packets.SetMaxWaitTime(fmin(fmax(rtt,60)*2,400));
+	//If it is audio
+	else if (media==MediaFrame::Audio)
+		//Update jitter buffer size in ms in [60,200]
+		packets.SetMaxWaitTime(fmin(fmax(rtt,30)*2,200));
 	//Check RTT to enable NACK
 	if (useNACK)
 		//Enable NACK only if RTT is small
