@@ -312,7 +312,7 @@ int FLVEncoder::StopEncoding()
 *******************************************/
 int FLVEncoder::EncodeAudio()
 {
-	RTMPAudioFrame	audio(0,MTU);
+	RTMPAudioFrame	audio(0,RTPPAYLOADSIZE);
 
 	//Start
 	Log(">Encode Audio\n");

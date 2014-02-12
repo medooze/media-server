@@ -479,6 +479,25 @@ int TextStream::SendText()
 			BYTE* red = buffer;
 			//Init buffer length
 			DWORD bufferLen = 0;
+			//Total red size
+			DWORD redLen = 0;
+			//Calculate total red size without headers
+			for (RedFrames::iterator it = reds.begin();it!=reds.end();++it)
+				//Add packet payload
+				redLen = (*it)->GetLength();
+			//Now remove until it fits in an rtp payload (taking red headers into account)
+			while (redLen+frame->GetLength()+8>RTPPAYLOADSIZE)
+			{
+				//Get packe
+				TextFrame* r = reds.front();
+				//Dequeue it
+				reds.pop_front();
+				//Reduce red size
+				redLen -= r->GetLength();
+				//Delete it
+				delete(r);
+			}
+
 			//Fill with empty redundant packets
 			for (int i=0;i<2-reds.size();i++)
 			{

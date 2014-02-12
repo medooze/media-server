@@ -106,7 +106,7 @@ public:
 	}
 	
 private:
-	BYTE data[MTU+HMACSAFEPADDING] ALIGNEDTO32;
+	BYTE data[MTU+SRTP_MAX_TRAILER_LEN] ALIGNEDTO32;
 	DWORD size;
 	WORD  cycles;
 };
