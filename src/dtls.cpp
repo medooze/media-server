@@ -149,11 +149,13 @@ int DTLSConnection::SetSuite(Suite suite)
 
 int DTLSConnection::Init()
 {
+	Log("-DTLS init\n");
+	
 	//Check
 	if(!ssl_ctx)
 		//Fail
-		return Error("Error creating SSL contecx");
-
+		return Error("-No SSL contecx\n");
+	
 	//Verify always
 	bool verify = false;
 
@@ -394,6 +396,9 @@ int DTLSConnection::SetupSRTP()
 
 int DTLSConnection::Write(BYTE *buffer,int size)
 {
+	if(!ssl || ! read_bio)
+		return Error("DTLS not yet initialized\n");
+	
 	BIO_write(read_bio, buffer, size);
 
 	SSL_read(ssl, buffer, size);

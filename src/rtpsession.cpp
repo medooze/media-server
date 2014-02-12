@@ -246,13 +246,10 @@ void RTPSession::SetSendingRTPMap(RTPMap &map)
 	rtpMapOut = new RTPMap(map);
 }
 
-int RTPSession::SetLocalCryptoSDES(const char* suite, const char* key64)
+int RTPSession::SetLocalCryptoSDES(const char* suite,const BYTE* key,const DWORD len)
 {
 	err_status_t err;
 	srtp_policy_t policy;
-
-	//Log
-	Log("-SetLocalCryptoSDES [key:%s,suite:%s]\n",key64,suite);
 
 	//empty policy
 	memset(&policy, 0, sizeof(srtp_policy_t));
@@ -274,12 +271,6 @@ int RTPSession::SetLocalCryptoSDES(const char* suite, const char* key64)
 	} else {
 		return Error("Unknown cipher suite");
 	}
-	//Get lenght
-	WORD len64 = strlen(key64);
-	//Allocate memory for the key
-	sendKey = (BYTE*)malloc(len64);
-	//Decode
-	WORD len = av_base64_decode(sendKey,key64,len64);
 
 	//Check sizes
 	if (len!=policy.rtp.cipher_key_len)
@@ -295,26 +286,33 @@ int RTPSession::SetLocalCryptoSDES(const char* suite, const char* key64)
 
 	//Create new
 	err = srtp_create(&sendSRTPSession,&policy);
-	
+
 	//Check error
 	if (err!=err_status_ok)
-	{
-		//Debug
-		Debug("-Dumping sendkey\n");
-		Dump((BYTE*)&sendSRTPSession,sizeof(sendSRTPSession));
-		Debug("-Dumping policy\n");
-		Dump((BYTE*)&policy,sizeof(policy));
-		Debug("-Dumping key len64:%d len:%d\n",len64,len);
-		Dump(sendKey,len);
 		//Error
 		return Error("Failed to create srtp session (%d)\n", err);
-	}
 
 	//Decript
 	encript = true;
 
 	//Evrything ok
 	return 1;
+}
+
+int RTPSession::SetLocalCryptoSDES(const char* suite, const char* key64)
+{
+	//Log
+	Log("-SetLocalCryptoSDES [key:%s,suite:%s]\n",key64,suite);
+
+	//Get lenght
+	WORD len64 = strlen(key64);
+	//Allocate memory for the key
+	sendKey = (BYTE*)malloc(len64);
+	//Decode
+	WORD len = av_base64_decode(sendKey,key64,len64);
+
+	//Set it
+	return SetLocalCryptoSDES(suite,sendKey,len);
 }
 
 int RTPSession::SetProperties(const Properties& properties)
@@ -405,21 +403,21 @@ int RTPSession::SetRemoteCryptoDTLS(const char *setup,const char *hash,const cha
 	Log("-SetRemoteCryptoDTLS [setup:%s,hash:%s,fingerpritn:%s]\n",setup,hash,fingerprint);
 
 	//Set Suite
-	if (strcmp(setup,"active")==0)
+	if (strcasecmp(setup,"active")==0)
 		dtls.SetRemoteSetup(DTLSConnection::SETUP_ACTIVE);
-	else if (strcmp(setup,"passive")==0)
+	else if (strcasecmp(setup,"passive")==0)
 		dtls.SetRemoteSetup(DTLSConnection::SETUP_PASSIVE);
-	else if (strcmp(setup,"actpass")==0)
+	else if (strcasecmp(setup,"actpass")==0)
 		dtls.SetRemoteSetup(DTLSConnection::SETUP_ACTPASS);
-	else if (strcmp(setup,"holdconn")==0)
+	else if (strcasecmp(setup,"holdconn")==0)
 		dtls.SetRemoteSetup(DTLSConnection::SETUP_HOLDCONN);
 	else
 		return Error("Unknown setup");
 
 	//Set fingerprint
-	if (strcmp(hash,"SHA-1")==0)
+	if (strcasecmp(hash,"SHA-1")==0)
 		dtls.SetRemoteFingerprint(DTLSConnection::SHA1,fingerprint);
-	else if (strcmp(hash,"SHA-256")==0)
+	else if (strcasecmp(hash,"SHA-256")==0)
 		dtls.SetRemoteFingerprint(DTLSConnection::SHA256,fingerprint);
 	else
 		return Error("Unknown hash");
@@ -428,13 +426,10 @@ int RTPSession::SetRemoteCryptoDTLS(const char *setup,const char *hash,const cha
 	dtls.Init();
 }
 
-int RTPSession::SetRemoteCryptoSDES(const char* suite, const char* key64)
+int RTPSession::SetRemoteCryptoSDES(const char* suite, const BYTE* key, const DWORD len)
 {
 	err_status_t err;
 	srtp_policy_t policy;
-
-	//Log
-	Log("-SetRemoteCryptoSDES [key:%s,suite:%s]\n",key64,suite);
 
 	//empty policy
 	memset(&policy, 0, sizeof(srtp_policy_t));
@@ -455,12 +450,6 @@ int RTPSession::SetRemoteCryptoSDES(const char* suite, const char* key64)
 	} else {
 		return Error("Unknown cipher suite");
 	}
-	//Get lenght
-	WORD len64 = strlen(key64);
-	//Allocate memory for the key
-	recvKey = (BYTE*)malloc(len64);
-	//Decode
-	WORD len = av_base64_decode(recvKey,key64,len64);
 
 	//Check sizes
 	if (len!=policy.rtp.cipher_key_len)
@@ -478,17 +467,8 @@ int RTPSession::SetRemoteCryptoSDES(const char* suite, const char* key64)
 
 	//Check error
 	if (err!=err_status_ok)
-	{
-		//Debug
-		Debug("-Dumping sendkey\n");
-		Dump((BYTE*)&recvSRTPSession,sizeof(recvSRTPSession));
-		Debug("-Dumping policy\n");
-		Dump((BYTE*)&policy,sizeof(policy));
-		Debug("-Dumping key len64:%d len:%d\n",len64,len);
-		Dump(sendKey,len);
 		//Error
 		return Error("Failed to create srtp session (%d)\n", err);
-	}
 
 	//Create new
 	err = srtp_create(&recvSRTPSessionRTX,&policy);
@@ -503,6 +483,22 @@ int RTPSession::SetRemoteCryptoSDES(const char* suite, const char* key64)
 	
 	//Everything ok
 	return 1;
+}
+
+int RTPSession::SetRemoteCryptoSDES(const char* suite, const char* key64)
+{
+	//Log
+	Log("-SetRemoteCryptoSDES [key:%s,suite:%s]\n",key64,suite);
+
+	//Get length
+	WORD len64 = strlen(key64);
+	//Allocate memory for the key
+	recvKey = (BYTE*)malloc(len64);
+	//Decode
+	WORD len = av_base64_decode(recvKey,key64,len64);
+
+	//Set it
+	return SetRemoteCryptoSDES(suite,recvKey,len);
 }
 
 void RTPSession::SetReceivingRTPMap(RTPMap &map)
@@ -1233,6 +1229,19 @@ int RTPSession::ReadRTP()
 		
 		//Skip
 		return 1;
+	}
+
+	//Check if it a DTLS packet
+	if (DTLSConnection::IsDTLS(buffer,size))
+	{
+		//Feed it
+		if (!dtls.Write(buffer,size))
+			//Exit
+			return 0;
+		//Read
+		int len = dtls.Read(buffer,MTU);
+		//Send it back
+		sendto(simSocket,buffer,len,0,(sockaddr *)&from_addr,sizeof(struct sockaddr_in));
 	}
 
 	//If we don't have originating IP
@@ -2167,4 +2176,27 @@ int RTPSession::SendTempMaxMediaStreamBitrateNotification(DWORD bitrate,DWORD ov
 void RTPSession::onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMasterKey,DWORD localMasterKeySize,BYTE* remoteMasterKey,DWORD remoteMasterKeySize)
 {
 	Log("-onDTLSSetup");
+
+	switch (suite)
+	{
+		case DTLSConnection::AES_CM_128_HMAC_SHA1_80:
+			//Set keys
+			SetLocalCryptoSDES("AES_CM_128_HMAC_SHA1_80",localMasterKey,localMasterKeySize);
+			SetRemoteCryptoSDES("AES_CM_128_HMAC_SHA1_80",remoteMasterKey,remoteMasterKeySize);
+			break;
+		case DTLSConnection::AES_CM_128_HMAC_SHA1_32:
+			//Set keys
+			SetLocalCryptoSDES("AES_CM_128_HMAC_SHA1_32",localMasterKey,localMasterKeySize);
+			SetRemoteCryptoSDES("AES_CM_128_HMAC_SHA1_32",remoteMasterKey,remoteMasterKeySize);
+			break;
+		case DTLSConnection::F8_128_HMAC_SHA1_80:
+			//Set keys
+			SetLocalCryptoSDES("NULL_CIPHER_HMAC_SHA1_80",localMasterKey,localMasterKeySize);
+			SetRemoteCryptoSDES("NULL_CIPHER_HMAC_SHA1_80",remoteMasterKey,remoteMasterKeySize);
+			break;
+	}
+
+
+
+	
 }
