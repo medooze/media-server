@@ -10,7 +10,7 @@ ifeq ($(DEBUG),yes)
 	TAG=debug
 	OPTS+= -g -O0 
 else
-	OPTS+= -O3 -g
+	OPTS+= -g -O4 -fexpensive-optimizations -funroll-loops
 	TAG=release
 endif
 
@@ -160,12 +160,12 @@ LDFLAGS+= -lxmlrpc -lxmlrpc_xmlparse -lxmlrpc_xmltok -lxmlrpc_abyss -lxmlrpc_ser
 
 #For abyss
 OPTS 	+= -D_UNIX -D__STDC_CONSTANT_MACROS
-CFLAGS  += $(INCLUDE) $(OPTS)
-CXXFLAGS+= $(INCLUDE) $(OPTS)
+CFLAGS  += $(INCLUDE) $(OPTS)  
+CXXFLAGS+= $(INCLUDE) $(OPTS) 
 
 %.o: %.c
 	@echo "[CC ] $(TAG) $<"
-	@$(CC) $(CFLAGS) -c $< -o $(BUILD)/$@
+	@gcc $(CFLAGS) -c $< -o $(BUILD)/$@
 
 %.o: %.cpp
 	@echo "[CXX] $(TAG) $<"

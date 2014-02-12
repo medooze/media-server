@@ -278,7 +278,7 @@ int RTPSession::SetLocalCryptoSDES(const char* suite,const BYTE* key,const DWORD
 	//Set polciy values
 	policy.ssrc.type	= ssrc_any_outbound;
 	policy.ssrc.value	= 0;
-	//policy.allow_repeat_tx  = 1; <--- Not all srtp libs containts it
+	policy.allow_repeat_tx  = 1; 
 	policy.key		= sendKey;
 	policy.next		= NULL;
 
