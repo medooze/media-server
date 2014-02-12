@@ -1739,11 +1739,10 @@ xmlrpc_value* SetRemoteCryptoDTLS(xmlrpc_env *env, xmlrpc_value *param_array, vo
 	int confId;
 	int partId;
 	int media;
-	char *suite;
 	char *setup;
 	char *hash;
 	char *fingerprint;
-	xmlrpc_parse_value(env, param_array, "(iiissss)", &confId,&partId,&media,&suite,&setup,&hash,&fingerprint);
+	xmlrpc_parse_value(env, param_array, "(iiisss)", &confId,&partId,&media,&setup,&hash,&fingerprint);
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
 		return 0;

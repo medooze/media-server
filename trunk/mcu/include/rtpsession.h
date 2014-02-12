@@ -100,6 +100,8 @@ public:
 
 	virtual void onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMasterKey,DWORD localMasterKeySize,BYTE* remoteMasterKey,DWORD remoteMasterKeySize);
 private:
+	int SetLocalCryptoSDES(const char* suite, const BYTE* key, const DWORD len);
+	int SetRemoteCryptoSDES(const char* suite, const BYTE* key, const DWORD len);
 	void SetRTT(DWORD rtt);
 	void Start();
 	void Stop();
