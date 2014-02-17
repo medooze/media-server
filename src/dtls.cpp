@@ -133,18 +133,9 @@ DTLSConnection::~DTLSConnection()
 
 int DTLSConnection::SetSuite(Suite suite)
 {
-	switch(suite)
-	{
-		case AES_CM_128_HMAC_SHA1_80:
-			SSL_CTX_set_tlsext_use_srtp(ssl_ctx, "SRTP_AES128_CM_SHA1_80");
-			break;
-		case AES_CM_128_HMAC_SHA1_32:
-			SSL_CTX_set_tlsext_use_srtp(ssl_ctx, "SRTP_AES128_CM_SHA1_32");
-			break;
-		default:
-			return Error("Unsupported suite [%d] specified for DTLS-SRTP\n",suite);
-	}
-
+	//Store
+	this->suite = suite;
+	//OK
 	return 1;
 }
 
@@ -159,6 +150,19 @@ int DTLSConnection::Init()
 	
 	//Verify always
 	bool verify = false;
+	
+	//Set suite
+	switch(suite)
+	{
+		case AES_CM_128_HMAC_SHA1_80:
+			SSL_CTX_set_tlsext_use_srtp(ssl_ctx, "SRTP_AES128_CM_SHA1_80");
+			break;
+		case AES_CM_128_HMAC_SHA1_32:
+			SSL_CTX_set_tlsext_use_srtp(ssl_ctx, "SRTP_AES128_CM_SHA1_32");
+			break;
+		default:
+			return Error("Unsupported suite [%d] specified for DTLS-SRTP\n",suite);
+	}
 
 	//Set verify
 	SSL_CTX_set_verify(ssl_ctx, verify ? SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT : SSL_VERIFY_NONE, NULL);
@@ -301,6 +305,8 @@ void DTLSConnection::SetRemoteSetup(Setup remote)
 
 void DTLSConnection::SetRemoteFingerprint(Hash hash, const char *fingerprint)
 {
+	//Sotore remote fingerprint has
+	remoteHash = hash;
 	//TODO: store hash!
 	char *tmp = strdupa(fingerprint), *value;
 	int pos = 0;

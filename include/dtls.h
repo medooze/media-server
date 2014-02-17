@@ -107,6 +107,7 @@ private:
 	Connection connection;		/*!< Whether this is a new or existing connection */
 	unsigned int rekey;	/*!< Interval at which to renegotiate and rekey */
 	int rekeyid;		/*!< Scheduled item id for rekeying */
+	Hash remoteHash;
 };
 
 #endif	/* DTLS_H */
