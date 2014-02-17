@@ -1558,8 +1558,6 @@ int RTPSession::ReadRTP()
 		//If we have recovered a pacekt
 		while(recovered)
 		{
-			//Overwrite time with the time of the original 
-			recovered->SetTime(packet->GetTime());
 			//Get pacekte type
 			BYTE t = recovered->GetType();
 			//Map receovered data codec
