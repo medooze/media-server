@@ -2,9 +2,9 @@
 #include "dtls.h"
 #include "log.h"
 
-#define DTLS_MASTER_KEY_LEN 16
-#define DTLS_MASTER_SALT_LEN 14
-#define DTLS_MASTER_LEN (DTLS_MASTER_KEY_LEN + DTLS_MASTER_SALT_LEN)
+#define SRTP_MASTER_KEY_LENGTH 16
+#define SRTP_MASTER_SALT_LENGTH 14
+#define SRTP_MASTER_LENGTH (SRTP_MASTER_KEY_LENGTH + SRTP_MASTER_SALT_LENGTH)
 
 //Certificates
 
@@ -13,11 +13,21 @@ void dtls_info_callback(const SSL *ssl, int where, int ret)
 {
 	DTLSConnection *con = (DTLSConnection*) SSL_get_ex_data(ssl, 0);
 
+	Log("dtls_info_callback(where: %d, ret: %d) | SSL status: %s | SSL_is_init_finished: %d\n", where, ret, SSL_state_string_long(ssl), SSL_is_init_finished(ssl));
+    if (where & SSL_CB_HANDSHAKE_START) { Log("dtls_info_callback(): SSL_CB_HANDSHAKE_START\n"); }
+    if (where & SSL_CB_HANDSHAKE_DONE) { Log("dtls_info_callback(): SSL_CB_HANDSHAKE_DONE\n"); }
+    if (!ret) {     Log("dtls_info_callback(): alert: %s (%s)\n", SSL_alert_type_string_long(ret), SSL_alert_desc_string_long(ret)); }
+
 	/* We only care about alerts */
 	if (!(where & SSL_CB_ALERT))
 		return;
 
 	con->dtls_failure = 1;
+}
+
+int fakeDtlsVerifyCallback(int preverify_ok, X509_STORE_CTX *ctx) {
+	/* We just use the verify_callback to request a certificate from the client */
+	return 1;
 }
 
 std::string DTLSConnection::certfile("mcu.crt");
@@ -141,7 +151,7 @@ int DTLSConnection::SetSuite(Suite suite)
 
 int DTLSConnection::Init()
 {
-	Log("-DTLS init\n");
+	Log("-DTLSConnection::Init\n");
 	
 	//Check
 	if(!ssl_ctx)
@@ -149,8 +159,21 @@ int DTLSConnection::Init()
 		return Error("-No SSL contecx\n");
 	
 	//Verify always
-	bool verify = false;
+	bool verify = true;
 	
+	//Set verify
+	SSL_CTX_set_verify(ssl_ctx, verify ? SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT : SSL_VERIFY_NONE, fakeDtlsVerifyCallback);
+
+	//Set certifigate
+	if (!SSL_CTX_use_certificate_file(ssl_ctx, certfile.c_str(), SSL_FILETYPE_PEM))
+		return Error("Specified certificate file '%s' for  could not be used\n", certfile.c_str());
+
+	if (!SSL_CTX_use_PrivateKey_file(ssl_ctx, pvtfile.c_str(), SSL_FILETYPE_PEM) || !SSL_CTX_check_private_key(ssl_ctx))
+		return Error("Specified private key file '%s' for  could not be used\n",pvtfile.c_str());
+
+	if (!SSL_CTX_set_cipher_list(ssl_ctx, cipher.c_str()))
+		return Error("Invalid cipher specified in cipher list '%s' for \n",cipher.c_str());
+
 	//Set suite
 	switch(suite)
 	{
@@ -163,20 +186,6 @@ int DTLSConnection::Init()
 		default:
 			return Error("Unsupported suite [%d] specified for DTLS-SRTP\n",suite);
 	}
-
-	//Set verify
-	SSL_CTX_set_verify(ssl_ctx, verify ? SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT : SSL_VERIFY_NONE, NULL);
-
-	//Set certifigate
-	if (!SSL_CTX_use_certificate_file(ssl_ctx, certfile.c_str(), SSL_FILETYPE_PEM))
-		return Error("Specified certificate file '%s' for  could not be used\n", certfile.c_str());
-
-	if (!SSL_CTX_use_PrivateKey_file(ssl_ctx, pvtfile.c_str(), SSL_FILETYPE_PEM) || !SSL_CTX_check_private_key(ssl_ctx))
-		return Error("Specified private key file '%s' for  could not be used\n",pvtfile.c_str());
-
-	if (!SSL_CTX_set_cipher_list(ssl_ctx, cipher.c_str()))
-		return Error("Invalid cipher specified in cipher list '%s' for \n",cipher.c_str());
-
 /*
  * 	if (cafile || capath)
 		if (!SSL_CTX_load_verify_locations(ssl_ctx, cafile, capath))
@@ -204,9 +213,11 @@ int DTLSConnection::Init()
 	switch (dtls_setup)
 	{
 		case SETUP_ACTIVE:
+			Log("-DTLSConnection::Init: we are SETUP_ACTIVE\n");
 			SSL_set_connect_state(ssl);
 			break;
 		case SETUP_PASSIVE:
+			Log("-DTLSConnection::Init: we are SETUP_PASSIVE\n");
 			SSL_set_accept_state(ssl);
 			break;
 	}
@@ -223,8 +234,6 @@ int DTLSConnection::Init()
 
 int DTLSConnection::End()
 {
-	//REset
-	//Reset();
 	
 	if (read_bio)
 	{
@@ -249,6 +258,8 @@ int DTLSConnection::End()
 
 void DTLSConnection::Reset()
 {
+	Log("-DTLSConnection::Reset\n");
+
 	/* If the SSL session is not yet finalized don't bother resetting */
 	if (!SSL_is_init_finished(ssl))
 		return;
@@ -261,6 +272,8 @@ void DTLSConnection::Reset()
 void DTLSConnection::SetRemoteSetup(Setup remote)
 {
 	Setup old = dtls_setup;
+
+	Log("-DTLSConnection::SetRemoteSetup [remote:%d]\n", remote);
 
 	switch (remote)
 	{
@@ -307,7 +320,6 @@ void DTLSConnection::SetRemoteFingerprint(Hash hash, const char *fingerprint)
 {
 	//Sotore remote fingerprint has
 	remoteHash = hash;
-	//TODO: store hash!
 	char *tmp = strdupa(fingerprint), *value;
 	int pos = 0;
 	
@@ -335,9 +347,9 @@ int DTLSConnection::Renegotiate()
 
 int DTLSConnection::SetupSRTP()
 {
-	BYTE material[DTLS_MASTER_LEN * 2];
-	BYTE localMasterKey[DTLS_MASTER_LEN];
-	BYTE remoteMasterKey[DTLS_MASTER_LEN];
+	BYTE material[SRTP_MASTER_LENGTH * 2];
+	BYTE localMasterKey[SRTP_MASTER_LENGTH];
+	BYTE remoteMasterKey[SRTP_MASTER_LENGTH];
 	BYTE *local_key, *local_salt, *remote_key, *remote_salt;
 
 	/* If a fingerprint is present in the SDP make sure that the peer certificate matches it */
@@ -354,7 +366,7 @@ int DTLSConnection::SetupSRTP()
 			unsigned char fingerprint[EVP_MAX_MD_SIZE];
 			unsigned int size;
 
-			if (!X509_digest(certificate, EVP_sha1(), fingerprint, &size) ||
+			if (!X509_digest(certificate, EVP_sha256(), fingerprint, &size) ||
 				!size ||
 				memcmp(fingerprint, remote_fingerprint, size))
 			{
@@ -365,38 +377,40 @@ int DTLSConnection::SetupSRTP()
 
 		X509_free(certificate);
 	}
+	Log("SSL client cert verification OK\n");
 
 	/* Ensure that certificate verification was successful */
-	if (SSL_get_verify_result(ssl) != X509_V_OK)
-		return Error("Peer certificate on  failed verification test\n");
+	/* NOTE: Cannot check this since remote cert is always self-signed and validation would always fail. */
+	// if (SSL_get_verify_result(ssl) != X509_V_OK)
+	// 	return Error("Peer certificate on  failed verification test\n");
 
 	/* Produce key information and set up SRTP */
-	if (!SSL_export_keying_material(ssl, material, DTLS_MASTER_LEN * 2, "EXTRACTOR-dtls_srtp", 19, NULL, 0, 0))
+	if (!SSL_export_keying_material(ssl, material, SRTP_MASTER_LENGTH * 2, "EXTRACTOR-dtls_srtp", 19, NULL, 0, 0))
 		return Error("Unable to extract SRTP keying material from DTLS-SRTP negotiation on RTP instance \n");
 
 	/* Whether we are acting as a server or client determines where the keys/salts are */
 	if (dtls_setup == SETUP_ACTIVE)
 	{
 		local_key = material;
-		remote_key = local_key + DTLS_MASTER_KEY_LEN;
-		local_salt = remote_key + DTLS_MASTER_KEY_LEN;
-		remote_salt = local_salt + DTLS_MASTER_SALT_LEN;
+		remote_key = local_key + SRTP_MASTER_KEY_LENGTH;
+		local_salt = remote_key + SRTP_MASTER_KEY_LENGTH;
+		remote_salt = local_salt + SRTP_MASTER_SALT_LENGTH;
 	} else	{
 		remote_key = material;
-		local_key = remote_key + DTLS_MASTER_KEY_LEN;
-		remote_salt = local_key + DTLS_MASTER_KEY_LEN;
-		local_salt = remote_salt + DTLS_MASTER_SALT_LEN;
+		local_key = remote_key + SRTP_MASTER_KEY_LENGTH;
+		remote_salt = local_key + SRTP_MASTER_KEY_LENGTH;
+		local_salt = remote_salt + SRTP_MASTER_SALT_LENGTH;
 	}
 
 	//Create local master key
-	memcpy(localMasterKey,local_key,DTLS_MASTER_KEY_LEN);
-	memcpy(localMasterKey+DTLS_MASTER_KEY_LEN,local_salt,DTLS_MASTER_SALT_LEN);
+	memcpy(localMasterKey,local_key,SRTP_MASTER_KEY_LENGTH);
+	memcpy(localMasterKey+SRTP_MASTER_KEY_LENGTH,local_salt,SRTP_MASTER_SALT_LENGTH);
 	//Create remote master key
-	memcpy(remoteMasterKey,remote_key,DTLS_MASTER_KEY_LEN);
-	memcpy(remoteMasterKey+DTLS_MASTER_KEY_LEN,remote_salt,DTLS_MASTER_SALT_LEN);
+	memcpy(remoteMasterKey,remote_key,SRTP_MASTER_KEY_LENGTH);
+	memcpy(remoteMasterKey+SRTP_MASTER_KEY_LENGTH,remote_salt,SRTP_MASTER_SALT_LENGTH);
 
 	//Fire event
-	listener.onDTLSSetup(suite,localMasterKey,DTLS_MASTER_LEN,remoteMasterKey,DTLS_MASTER_LEN);
+	listener.onDTLSSetup(suite,localMasterKey,SRTP_MASTER_LENGTH,remoteMasterKey,SRTP_MASTER_LENGTH);
 
 	return 0;
 }
@@ -406,7 +420,7 @@ int DTLSConnection::Write(BYTE *buffer,int size)
 	if(!ssl || ! read_bio)
 		return Error("DTLS not yet initialized\n");
 	
-	BIO_write(read_bio, buffer, size);
+	int ret = BIO_write(read_bio, buffer, size);
 
 	SSL_read(ssl, buffer, size);
 
