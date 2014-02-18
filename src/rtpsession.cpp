@@ -153,8 +153,6 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) : dtls(*this)
 	sendSRTPSession = NULL;
 	recvSRTPSession = NULL;
 	recvSRTPSessionRTX = NULL;
-	sendKey	= NULL;
-	recvKey	= NULL;
 	//No ice
 	iceLocalUsername = NULL;
 	iceLocalPwd = NULL;
@@ -218,10 +216,6 @@ RTPSession::~RTPSession()
 	if (recvSRTPSessionRTX)
 		//Dealoacate
 		srtp_dealloc(recvSRTPSessionRTX);
-	if (sendKey)
-		free(sendKey);
-	if (recvKey)
-		free(recvKey);
 	if (cname)
 		free(cname);
 	//Delete rtx packets
@@ -279,7 +273,7 @@ int RTPSession::SetLocalCryptoSDES(const char* suite,const BYTE* key,const DWORD
 	policy.ssrc.type	= ssrc_any_outbound;
 	policy.ssrc.value	= 0;
 	policy.allow_repeat_tx  = 1; 
-	policy.key		= sendKey;
+	policy.key		= (BYTE*)key;
 	policy.next		= NULL;
 
 	//Create new
@@ -288,7 +282,7 @@ int RTPSession::SetLocalCryptoSDES(const char* suite,const BYTE* key,const DWORD
 	//Check error
 	if (err!=err_status_ok)
 		//Error
-		return Error("Failed to create srtp session (%d)\n", err);
+		return Error("Failed to create local SRTP session | err:%d\n", err);
 
 	//Decript
 	encript = true;
@@ -305,7 +299,7 @@ int RTPSession::SetLocalCryptoSDES(const char* suite, const char* key64)
 	//Get lenght
 	WORD len64 = strlen(key64);
 	//Allocate memory for the key
-	sendKey = (BYTE*)malloc(len64);
+	BYTE sendKey[len64];
 	//Decode
 	WORD len = av_base64_decode(sendKey,key64,len64);
 
@@ -457,7 +451,7 @@ int RTPSession::SetRemoteCryptoSDES(const char* suite, const BYTE* key, const DW
 	//Set polciy values
 	policy.ssrc.type	= ssrc_any_inbound;
 	policy.ssrc.value	= 0;
-	policy.key		= recvKey;
+	policy.key		= (unsigned char*)key;
 	policy.next		= NULL;
 
 	//Create new
@@ -466,7 +460,7 @@ int RTPSession::SetRemoteCryptoSDES(const char* suite, const BYTE* key, const DW
 	//Check error
 	if (err!=err_status_ok)
 		//Error
-		return Error("Failed to create srtp session (%d)\n", err);
+		return Error("Failed to create remote SRTP session | err:%d\n", err);
 
 	//Create new
 	err = srtp_create(&recvSRTPSessionRTX,&policy);
@@ -491,7 +485,7 @@ int RTPSession::SetRemoteCryptoSDES(const char* suite, const char* key64)
 	//Get length
 	WORD len64 = strlen(key64);
 	//Allocate memory for the key
-	recvKey = (BYTE*)malloc(len64);
+	BYTE recvKey[len64];
 	//Decode
 	WORD len = av_base64_decode(recvKey,key64,len64);
 
@@ -1191,6 +1185,11 @@ int RTPSession::ReadRTP()
 				free(aux);
 				//Clean response
 				delete(request);
+
+				// Needed for DTLS in client mode (otherwise the DTLS "Client Hello" is not sent over the wire)
+				len = dtls.Read(buffer,MTU);
+				//Send back
+				sendto(simSocket,buffer,len,0,(sockaddr *)&from_addr,sizeof(struct sockaddr_in));
 			}
 		}
 

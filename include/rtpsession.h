@@ -141,10 +141,8 @@ private:
 	bool	encript;
 	bool	decript;
 	srtp_t	sendSRTPSession;
-	BYTE*	sendKey;
 	srtp_t	recvSRTPSession;
 	srtp_t	recvSRTPSessionRTX;
-	BYTE*	recvKey;
 
 	char*	cname;
 	char*	iceRemoteUsername;
