@@ -284,9 +284,6 @@ int RTPSession::SetLocalCryptoSDES(const char* suite,const BYTE* key,const DWORD
 		//Error
 		return Error("Failed to create local SRTP session | err:%d\n", err);
 
-	//Decript
-	encript = true;
-
 	//Evrything ok
 	return 1;
 }
@@ -295,6 +292,9 @@ int RTPSession::SetLocalCryptoSDES(const char* suite, const char* key64)
 {
 	//Log
 	Log("-SetLocalCryptoSDES [key:%s,suite:%s]\n",key64,suite);
+
+	//encript
+	encript = true;
 
 	//Get lenght
 	WORD len64 = strlen(key64);
@@ -414,6 +414,10 @@ int RTPSession::SetRemoteCryptoDTLS(const char *setup,const char *hash,const cha
 	else
 		return Error("Unknown hash");
 
+	//encript & decript
+	encript = true;
+	decript = true;
+
 	//Init DTLS
 	dtls.Init();
 }
@@ -451,7 +455,7 @@ int RTPSession::SetRemoteCryptoSDES(const char* suite, const BYTE* key, const DW
 	//Set polciy values
 	policy.ssrc.type	= ssrc_any_inbound;
 	policy.ssrc.value	= 0;
-	policy.key		= (unsigned char*)key;
+	policy.key		= (BYTE*)key;
 	policy.next		= NULL;
 
 	//Create new
@@ -470,9 +474,6 @@ int RTPSession::SetRemoteCryptoSDES(const char* suite, const BYTE* key, const DW
 		//Error
 		Error("------------------------------------Failed set remote RTX SDES  (%d)\n", err);
 
-	//Decript
-	decript = true;
-	
 	//Everything ok
 	return 1;
 }
@@ -481,6 +482,9 @@ int RTPSession::SetRemoteCryptoSDES(const char* suite, const char* key64)
 {
 	//Log
 	Log("-SetRemoteCryptoSDES [key:%s,suite:%s]\n",key64,suite);
+
+	//Decript
+	decript = true;
 
 	//Get length
 	WORD len64 = strlen(key64);
