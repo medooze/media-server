@@ -6,23 +6,30 @@
 #include <string>
 #include <malloc.h>
 #include "version.h"
-#define QCIF	0	// 176  x 144
-#define CIF	1	// 352  x 288
-#define VGA	2	// 640  x 480
-#define PAL	3	// 768  x 576
-#define HVGA	4	// 320  x 240
-#define QVGA	5	// 160  x 120
-#define HD720P	6	// 1280 x 720
-#define WQVGA	7	// 400  x 240
-#define w448P   8	// 768  x 448
-#define sd448P  9	// 576  x 448
-#define w288P   10	// 512  x 288
-#define w576    11	// 1024 x 576
-#define FOURCIF 12	// 704  x 576
-#define FOURSIF 13	// 704  x 576
-#define XGA     14	// 1024 x 768
-#define WVGA    15	// 800  x 480
-#define DCIF	16	// 528  x  384
+
+#define	QCIF	0	// 176  x 144 	AR:	1,222222222
+#define	CIF	1	// 352  x 288	AR:	1,222222222
+#define	VGA	2	// 640  x 480	AR:	1,333333333
+#define	PAL	3	// 768  x 576	AR:	1,333333333
+#define	HVGA	4	// 480  x 320	AR:	1,5
+#define	QVGA	5	// 320  x 240	AR:	1,333333333
+#define	HD720P	6	// 1280 x 720	AR:	1,777777778
+#define	WQVGA	7	// 400  x 240	AR:	1,666666667
+#define	W448P	8	// 768  x 448	AR:	1,714285714
+#define	SD448P	9	// 576  x 448	AR:	1,285714286
+#define	W288P	10	// 512  x 288	AR:	1,777777778
+#define	W576	11	// 1024 x 576	AR:	1,777777778
+#define	FOURCIF	12	// 704  x 576	AR:	1,222222222
+#define	FOURSIF	13	// 704  x 480	AR:	1,466666667
+#define	XGA	14	// 1024 x 768	AR:	1,333333333
+#define	WVGA	15	// 800  x 480	AR:	1,666666667
+#define	DCIF	16	// 528  x 384	AR:	1,375
+#define	SIF	17	// 352  x 240	AR:	1,466666667
+#define	QSIF	18	// 176  x 120	AR:	1,466666667
+#define	SD480P	19	// 480  x 360	AR:	1,333333333
+#define	SQCIF	20	// 128  x 96	AR:	1,333333333
+#define	SCIF	21	// 256  x 192	AR:	1,333333333
+
 
 
 #define FD_INVALID	(int)-1
@@ -50,21 +57,26 @@ inline DWORD GetWidth(DWORD size)
 	{
 		case QCIF:	return 176;
 		case CIF:	return 352;
-		case PAL:	return 768;
-		case QVGA:	return 160;
-		case HVGA:	return 320;
 		case VGA:	return 640;
+		case PAL:	return 768;
+		case HVGA:	return 480;
+		case QVGA:	return 320;
 		case HD720P:	return 1280;
 		case WQVGA:	return 400;
-		case w448P:	return 768;
-		case sd448P:	return 576;
-		case w288P:	return 512;
-		case w576:	return 1024;
+		case W448P:	return 768;
+		case SD448P:	return 576;
+		case W288P:	return 512;
+		case W576:	return 1024;
 		case FOURCIF:	return 704;
 		case FOURSIF:	return 704;
 		case XGA:	return 1024;
 		case WVGA:	return 800;
 		case DCIF:	return 528;
+		case SIF:	return 352;
+		case QSIF:	return 176;
+		case SD480P:	return 480;
+		case SQCIF:	return 128;
+		case SCIF:	return 256;
 	}
 	//Nothing
 	return 0;
@@ -77,21 +89,26 @@ inline DWORD GetHeight(DWORD size)
 	{
 		case QCIF:	return 144;
 		case CIF:	return 288;
-		case PAL:	return 576;
-		case QVGA:	return 120;
-		case HVGA:	return 240;
 		case VGA:	return 480;
+		case PAL:	return 576;
+		case HVGA:	return 320;
+		case QVGA:	return 240;
 		case HD720P:	return 720;
 		case WQVGA:	return 240;
-		case w448P:	return 448;
-		case sd448P:	return 448;
-		case w288P:	return 288;
-		case w576:	return 576;
+		case W448P:	return 448;
+		case SD448P:	return 448;
+		case W288P:	return 288;
+		case W576:	return 576;
 		case FOURCIF:	return 576;
-		case FOURSIF:	return 576;
+		case FOURSIF:	return 480;
 		case XGA:	return 768;
 		case WVGA:	return 480;
 		case DCIF:	return 384;
+		case SIF:	return 240;
+		case QSIF:	return 120;
+		case SD480P:	return 360;
+		case SQCIF:	return 96;
+		case SCIF:	return 192;
 	}
 	//Nothing
 	return 0;

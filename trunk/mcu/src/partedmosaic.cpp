@@ -54,7 +54,7 @@ PartedMosaic::~PartedMosaic()
 * Update
 * 	Update slot of mosaic with given image
 *****************************/
-int PartedMosaic::Update(int pos, BYTE *image, int imgWidth, int imgHeight)
+int PartedMosaic::Update(int pos, BYTE *image, int imgWidth, int imgHeight,bool keepAspectRatio)
 {
 	//Check it's in the mosaic
 	if (pos<0 || pos >= numSlots)
@@ -124,7 +124,7 @@ int PartedMosaic::Update(int pos, BYTE *image, int imgWidth, int imgHeight)
 		}
 	} else {
 		//Set resize
-		resizer[pos]->SetResize(imgWidth,imgHeight,imgWidth,mosaicWidth,mosaicHeight,mosaicTotalWidth);
+		resizer[pos]->SetResize(imgWidth,imgHeight,imgWidth,mosaicWidth,mosaicHeight,mosaicTotalWidth,keepAspectRatio);
 
 		//And resize
 		resizer[pos]->Resize(imageY,imageU,imageV,lineaY,lineaU,lineaV);

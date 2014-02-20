@@ -11,16 +11,18 @@ class FrameScaler
 public:
 	FrameScaler();
 	~FrameScaler();
-	int SetResize(int srcWidth,int srcHeight,int srcLineWidth,int dstWidth,int dstHeight,int dstLineWidth);
+	int SetResize(int srcWidth,int srcHeight,int srcLineWidth,int dstWidth,int dstHeight,int dstLineWidth,bool keepAspectRatio = true);
 	int Resize(BYTE *srcY,BYTE *srcU,BYTE *srcV,BYTE *dstY, BYTE *dstU, BYTE *dstV);
-	int Resize(BYTE *src,DWORD srcWidth,DWORD srcHeight,BYTE *dst,DWORD dstWidth,DWORD dstHeight);
+	int Resize(BYTE *src,DWORD srcWidth,DWORD srcHeight,BYTE *dst,DWORD dstWidth,DWORD dstHeight,bool keepAspectRatio = true);
 
 private:
 	struct SwsContext* resizeCtx;
 	int     resizeWidth;
 	int     resizeHeight;
-	int     resizeDstWidth;
+	int	resizeDstWidth;
 	int     resizeDstHeight;
+	int     resizeDstAdjustedHeight;
+	int     resizeDstAdjustedWidth;
 	int	resizeDstLineWidth;
 	int     resizeSrc[3];
 	int     resizeDst[3];

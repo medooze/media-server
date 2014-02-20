@@ -198,7 +198,7 @@ int PipeVideoInput::SetFrame(BYTE * buffer, int width, int height)
 		imgPos = !imgPos;
 
 		//Copy & Resize
-		resizer.Resize(buffer,width,height,grabPic,videoWidth,videoHeight);
+		resizer.Resize(buffer,width,height,grabPic,videoWidth,videoHeight,true);
 		
 		//Hay imagen
 		imgNew = true;
