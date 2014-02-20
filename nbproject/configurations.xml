@@ -417,6 +417,7 @@
         <in>videopipe.cpp</in>
         <in>videostream.cpp</in>
         <in>websocketconnection.cpp</in>
+        <in>websocketconnection.cpp.bak</in>
         <in>websocketserver.cpp</in>
         <in>websocketshandler.cpp</in>
         <in>xmlhandler.cpp</in>
@@ -430,7 +431,6 @@
         <in>xmlrpcserver.cpp</in>
         <in>xmlstreaminghandler.cpp</in>
       </df>
-      <in>ice-tcp-relay.cpp</in>
     </df>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"

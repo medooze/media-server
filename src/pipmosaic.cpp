@@ -43,7 +43,7 @@ PIPMosaic::~PIPMosaic()
 * Update
 * 	Update slot of mosaic with given image
 *****************************/
-int PIPMosaic::Update(int pos, BYTE *image, int imgWidth, int imgHeight)
+int PIPMosaic::Update(int pos, BYTE *image, int imgWidth, int imgHeight,bool keepAspectRatio)
 {
 	//Check size
 	if (!image && !imgHeight && !imgHeight)
@@ -127,7 +127,7 @@ int PIPMosaic::Update(int pos, BYTE *image, int imgWidth, int imgHeight)
 			BYTE *underV = underU + numSlotsPixels/4;
 
 			//Set resize
-			resizer[pos]->SetResize(imgWidth,imgHeight,imgWidth,mosaicTotalWidth,mosaicTotalHeight,mosaicTotalWidth);
+			resizer[pos]->SetResize(imgWidth,imgHeight,imgWidth,mosaicTotalWidth,mosaicTotalHeight,mosaicTotalWidth,keepAspectRatio);
 			//Resize and set to slot
 			resizer[pos]->Resize(imageY,imageU,imageV,underY,underU,underV);
 
@@ -260,7 +260,7 @@ int PIPMosaic::Update(int pos, BYTE *image, int imgWidth, int imgHeight)
 			}
 		} else if ((imgWidth > 0) && (imgHeight > 0)) {
 			//Set resize
-			resizer[pos]->SetResize(imgWidth,imgHeight,imgWidth,mosaicWidth,mosaicHeight,mosaicTotalWidth);
+			resizer[pos]->SetResize(imgWidth,imgHeight,imgWidth,mosaicWidth,mosaicHeight,mosaicTotalWidth,keepAspectRatio);
 			//Resize and set to slot
 			resizer[pos]->Resize(imageY,imageU,imageV,lineaY,lineaU,lineaV);
 		}

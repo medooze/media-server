@@ -212,7 +212,7 @@ int VideoPipe::NextFrame(BYTE * buffer)
 		imgPos = !imgPos;
 
 		//Copy & Resize
-		resizer.Resize(buffer,inputWidth,inputHeight,grabPic,videoWidth,videoHeight);
+		resizer.Resize(buffer,inputWidth,inputHeight,grabPic,videoWidth,videoHeight,true);
 
 		//Hay imagen
 		imgNew = true;

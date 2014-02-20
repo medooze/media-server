@@ -17,7 +17,7 @@ public:
 	virtual int GetWidth();
 	virtual int GetHeight();
 
-	virtual int Update(int index,BYTE *frame,int width,int heigth);
+	virtual int Update(int index,BYTE *frame,int width,int heigth, bool keepAspectRatio);
 	virtual int Clean(int index);
 protected:
 	virtual int GetWidth(int pos);

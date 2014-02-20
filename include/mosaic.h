@@ -68,14 +68,14 @@ public:
 	int HasChanged()	{ return mosaicChanged; }
 
 	BYTE* GetFrame();
-	virtual int Update(int index,BYTE *frame,int width,int heigth) = 0;
+	virtual int Update(int index,BYTE *frame,int width,int heigth, bool keepAspectRatio = true) = 0;
 	virtual int Clean(int index) = 0;
 	virtual int Clean(int index,const Logo& logo)
 	{
 		//Check logo
 		if (logo.GetFrame())
 			//Print logo
-			return Update(index,logo.GetFrame(),logo.GetWidth(),logo.GetHeight());
+			return Update(index,logo.GetFrame(),logo.GetWidth(),logo.GetHeight(),false);
 		else
 			//Clean
 			return Clean(index);

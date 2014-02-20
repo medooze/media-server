@@ -11,7 +11,7 @@ public:
 	AsymmetricMosaic(Type type, DWORD size);
 	virtual ~AsymmetricMosaic();
 
-	virtual int Update(int index,BYTE *frame,int width,int heigth);
+	virtual int Update(int index,BYTE *frame,int width,int heigth, bool keepAspectRatio);
 	virtual int Clean(int index);
 protected:
 	virtual int GetWidth(int pos);

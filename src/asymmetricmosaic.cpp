@@ -24,7 +24,7 @@ AsymmetricMosaic::~AsymmetricMosaic()
 * Update
 * 	Update slot of mosaic with given image
 *****************************/
-int AsymmetricMosaic::Update(int pos, BYTE *image, int imgWidth, int imgHeight)
+int AsymmetricMosaic::Update(int pos, BYTE *image, int imgWidth, int imgHeight,bool keepAspectRatio)
 {
 	//Check it's in the mosaic
 	if (pos<0 || pos >= numSlots)
@@ -92,7 +92,7 @@ int AsymmetricMosaic::Update(int pos, BYTE *image, int imgWidth, int imgHeight)
 		}
 	} else if ((imgWidth > 0) && (imgHeight > 0)) {
 		//Set resize
-		resizer[pos]->SetResize(imgWidth,imgHeight,imgWidth,mosaicWidth,mosaicHeight,mosaicTotalWidth);
+		resizer[pos]->SetResize(imgWidth,imgHeight,imgWidth,mosaicWidth,mosaicHeight,mosaicTotalWidth,keepAspectRatio);
 		//Resize and set to slot
 		resizer[pos]->Resize(imageY,imageU,imageV,lineaY,lineaU,lineaV);
 	} else {

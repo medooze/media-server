@@ -250,7 +250,7 @@ int VideoMixer::MixVideo()
 					if ((output && output->IsChanged(version)) || changed)
 					{
 						//Change mosaic
-						mosaic->Update(i,output->GetFrame(),output->GetWidth(),output->GetHeight());
+						mosaic->Update(i,output->GetFrame(),output->GetWidth(),output->GetHeight(),true);
 
 						//Check if debug is enabled
 						if (vadMode!=NoVAD && proxy && Logger::IsDebugEnabled())
