@@ -272,9 +272,9 @@ RTPTimedPacket* FECDecoder::Recover()
 				Debug("-recovered packet len:%u ts:%u pts:%u seq:%d\n",l,ts,packet->GetTimestamp() ,packet->GetSeqNum());
 				
 				//Append the packet to the media packet list
-				AddPacket(packet);
-				//Return it
-				return packet;
+				if (AddPacket(packet))
+					//Return it if contained media
+					return packet;
 			}
 		}
 	}

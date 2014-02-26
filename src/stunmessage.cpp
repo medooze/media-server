@@ -69,7 +69,7 @@ STUNMessage* STUNMessage::Parse(BYTE* data,DWORD size)
 	//Normalize
 	method =  (method & 0x000f) | ((method & 0x00e0)>>1) | ((method & 0x3E00)>>2);
 	//Get class
-	WORD type = ((data[0] & 0x01) << 1) | ((data[0] & 0x10) >> 4);
+	WORD type = ((data[0] & 0x01) << 1) | ((data[1] & 0x10) >> 4);
 
 	//Create new message
 	STUNMessage* msg = new STUNMessage((Type)type,(Method)method,data+8);
