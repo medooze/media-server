@@ -231,7 +231,7 @@ public:
 	DWORD GetMaxSize()		const { return SIZE;				}
 	BYTE* GetMediaData()		      { return buffer+GetRTPHeaderLen();	}
 	DWORD GetMediaLength()		const { return len;				}
-	DWORD GetMaxMediaLength()	const { return SIZE-GetRTPHeaderLen();		}
+	DWORD GetMaxMediaLength()	const { return SIZE>GetRTPHeaderLen() ? SIZE-GetRTPHeaderLen() : 0;		}
 	bool  GetMark()			const { return header->m;			}
 	DWORD GetTimestamp()		const { return ntohl(header->ts);		}
 	WORD  GetSeqNum()		const { return ntohs(header->seq);		}
