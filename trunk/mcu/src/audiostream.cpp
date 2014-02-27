@@ -381,7 +381,7 @@ int AudioStream::SendAudio()
 	SWORD 		recBuffer[1024];
 	int 		sendBytes=0;
 	struct timeval 	before;
-	AudioEncoder* 	codec;
+	;
 	DWORD		frameTime=0;
 
 	//Log
@@ -395,13 +395,19 @@ int AudioStream::SendAudio()
 	//Obtenemos el tiempo ahora
 	gettimeofday(&before,NULL);
 
-	//Creamos el codec de audio
-	if ((codec = AudioCodecFactory::CreateEncoder(audioCodec,audioProperties))==NULL)
+	//Create audio encoder
+	AudioEncoder* codec = AudioCodecFactory::CreateEncoder(audioCodec,audioProperties);
+	
+	//Check it
+	if (!codec)
 		//Error
 		return Error("-SendAudio failed, could not create audio codec [codec:%d]\n",audioCodec);
 
+	//Get native rate
+	DWORD nativeRate = audioInput->GetNativeRate();
+
 	//Get codec rate
-	DWORD rate = codec->TrySetRate(audioInput->GetNativeRate());
+	DWORD rate = codec->TrySetRate(nativeRate);
 
 	//Start recording at codec rate
 	audioInput->StartRecording(rate);

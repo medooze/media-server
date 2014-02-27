@@ -13,6 +13,7 @@ PipeAudioInput::PipeAudioInput()
 	inited = false;
 	recording = false;
 	canceled = false;
+	nativeRate = 8000;
 }
 
 PipeAudioInput::~PipeAudioInput()
