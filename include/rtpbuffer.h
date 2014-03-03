@@ -129,8 +129,8 @@ public:
 				//We have to wait
 				timespec ts;
 				//Calculate until when we have to sleep
-				ts.tv_sec  = (time+maxWaitTime) / 1e6;
-				ts.tv_nsec = (time+maxWaitTime) - ts.tv_sec*1e6;
+				ts.tv_sec  = (time+maxWaitTime) / 1000;
+				ts.tv_nsec = (time+maxWaitTime - ts.tv_sec*1000)*1000;
 				
 				//Wait with time out
 				int ret = pthread_cond_timedwait(&cond,&mutex,&ts);
