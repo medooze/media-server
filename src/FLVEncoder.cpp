@@ -72,6 +72,40 @@ int FLVEncoder::Init(AudioInput* audioInput,VideoInput *videoInput,const Propert
 	//Y aun no estamos mandando nada
 	encodingAudio = 0;
 	encodingVideo = 0;
+	
+	//Check audio codec
+	if (properties.HasProperty("broadcast.audio.codec"))
+	{
+		//Get it
+		const char* codec = properties.GetProperty("broadcast.codecs.audio");
+		//Get audio codec
+		audioCodec = AudioCodec::GetCodecForName(codec);
+		
+	}
+	//Check video codec
+	if (properties.HasProperty("broadcast.video.codec"))
+	{
+		//Get it
+		const char* codec = properties.GetProperty("broadcast.codecs.audio");
+		//Get audio codec
+		videoCodec = VideoCodec::GetCodecForName(codec);
+
+	}
+	
+	//Set values for video
+	width	= properties.GetProperty("broadcast.video.width",width);
+	height	= properties.GetProperty("broadcast.video.height",height);
+	bitrate = properties.GetProperty("broadcast.video.bitrate",bitrate);
+	fps	= properties.GetProperty("broadcast.video.fps",fps);
+	intra	= properties.GetProperty("broadcast.video.intra",intra);
+
+	//Set audio properties
+	audioProperties.SetProperty("aac.samplerate",properties.GetProperty("broadcast.audio.codec.aac.samplerate","48000"));
+	audioProperties.SetProperty("aac.bitrate",properties.GetProperty("broadcast.audio.codec.aac.bitrate","288000"));
+	
+	//Set video properties
+	videoProperties.SetProperty("streaming","true");
+	
 
 	//We are initer
 	inited = 1;
@@ -519,7 +553,7 @@ int FLVEncoder::EncodeVideo()
 	}
 	
 	//Create the encoder
-	VideoEncoder *encoder = VideoCodecFactory::CreateEncoder(videoCodec);
+	VideoEncoder *encoder = VideoCodecFactory::CreateEncoder(videoCodec,videoProperties);
 
 	///Set frame rate
 	encoder->SetFrameRate(fps,bitrate,intra);
@@ -535,6 +569,8 @@ int FLVEncoder::EncodeVideo()
 
 	//No wait for first
 	DWORD frameTime = 0;
+
+	Log(">FLVEncoder encode vide\n");
 
 	//Mientras tengamos que capturar
 	while(encodingVideo)
@@ -655,6 +691,7 @@ int FLVEncoder::EncodeVideo()
 		//unlock
 		pthread_mutex_unlock(&mutex);
 	}
+	Log("-FLVEncoder encode video end of loop\n");
 
 	//Stop the capture
 	videoInput->StopVideoCapture();
@@ -663,6 +700,7 @@ int FLVEncoder::EncodeVideo()
 	if (encoder)
 		//Exit
 		delete(encoder);
+	Log("<FLVEncoder encode vide\n");
 	
 	//Exit
 	return 1;

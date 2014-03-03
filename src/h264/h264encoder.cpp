@@ -48,6 +48,9 @@ H264Encoder::H264Encoder(const Properties& properties)
 	//Check profile level id
 	h264ProfileLevelId = properties.GetProperty("h264.profile-level-id",std::string("42801F"));
 
+	//Check mode
+	streaming = properties.HasProperty("streamin");
+
 	//Reste values
 	enc = NULL;
 }
@@ -166,11 +169,17 @@ int H264Encoder::OpenCodec()
 	params.rc.i_rc_method	    = X264_RC_ABR;
 	params.rc.i_bitrate         = bitrate;
 	params.rc.i_vbv_max_bitrate = bitrate;
-	params.rc.i_vbv_buffer_size = bitrate/fps;
+	if (!streaming)
+	{
+		params.rc.i_vbv_buffer_size = bitrate/fps;
+		params.rc.f_rate_tolerance  = 0.1;
+		params.rc.b_stat_write      = 0;
+		params.i_slice_max_size     = RTPPAYLOADSIZE-8;
+		params.b_intra_refresh	    = 1;
+	} else  {
+		params.rc.i_vbv_buffer_size = bitrate;
+	}
 	params.rc.f_vbv_buffer_init = 0;
-	params.rc.f_rate_tolerance  = 0.1;
-	params.rc.b_stat_write      = 0;
-	params.i_slice_max_size     = RTPPAYLOADSIZE-8;
 	params.i_threads	    = 1; //0 is auto!!
 	params.b_sliced_threads	    = 0;
 	params.rc.i_lookahead       = 0;
@@ -180,10 +189,9 @@ int H264Encoder::OpenCodec()
 	params.b_repeat_headers     = 1;
 	params.i_fps_num	    = fps;
 	params.i_fps_den	    = 1;
-	params.b_intra_refresh	    = 1;
 	params.vui.i_chroma_loc	    = 0;
 	params.i_scenecut_threshold = 0;
-	params.analyse.i_subpel_refine = 6; //Subpixel motion estimation and mode decision :3 qpel (medim:6, ultrafast:1)
+	params.analyse.i_subpel_refine = 5; //Subpixel motion estimation and mode decision :3 qpel (medim:6, ultrafast:1)
 
 	//Get profile and level
 	int profile = strtol(h264ProfileLevelId.substr(0,2).c_str(),NULL,16);

@@ -90,6 +90,7 @@ int main(int argc,char **argv)
 	//Set default values
 	bool forking = false;
 	int port = 8080;
+	char* iface = NULL;
 	int wsPort = 9090;
 	int rtmpPort = 1935;
 	int minPort = RTPSession::GetMinPort();
@@ -118,6 +119,7 @@ int main(int argc,char **argv)
 				" --mcu-crt        Set mcu SSL certificate file path (default: mcu.crt)\r\n"
 				" --mcu-key        Set mcu SSL key file path (default: mcu.pid)\r\n"
 				" --http-port      Set HTTP xmlrpc api port\r\n"
+				" --http-ip        Set HTTP xmlrpc api listening interface ip\r\n"
 				" --min-rtp-port   Set min rtp port\r\n"
 				" --max-rtp-port   Set max rtp port\r\n"
 				" --rtmp-port      Set RTMP port\r\n"
@@ -134,6 +136,9 @@ int main(int argc,char **argv)
 		else if (strcmp(argv[i],"--http-port")==0 && (i+1<argc))
 			//Get port
 			port = atoi(argv[++i]);
+		else if (strcmp(argv[i],"--http-ip")==0 && (i+1<argc))
+			//Get ip
+			iface = argv[++i];
 		else if (strcmp(argv[i],"--rtmp-port")==0 && (i+1<argc))
 			//Get rtmp port
 			rtmpPort = atoi(argv[++i]);
@@ -246,7 +251,7 @@ int main(int argc,char **argv)
 	//Hack to allocate fd =0 and avoid bug closure
 	int fdzero = socket(AF_INET, SOCK_STREAM, 0);
 	//Create servers
-	XmlRpcServer	server(port);
+	XmlRpcServer	server(port,iface);
 	RTMPServer	rtmpServer;
 	WebSocketServer wsServer;
 
