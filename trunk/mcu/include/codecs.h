@@ -4,11 +4,28 @@
 #include "config.h"
 #include "media.h"
 #include <map>
+#include <string.h>
 
 class AudioCodec
 {
 public:
-	enum Type {PCMA=8,PCMU=0,GSM=3,G722=9,SPEEX16=117,AMR=118,TELEPHONE_EVENT=100,NELLY8=130,NELLY11=131,OPUS=98,AAC=97};
+	enum Type {PCMA=8,PCMU=0,GSM=3,G722=9,SPEEX16=117,AMR=118,TELEPHONE_EVENT=100,NELLY8=130,NELLY11=131,OPUS=98,AAC=97,UNKNOWN=-1};
+
+public:
+	static Type GetCodecForName(const char* codec)
+	{
+		if	(strcasecmp(codec,"PCMA")==0) return PCMA;
+		else if (strcasecmp(codec,"PCMU")==0) return PCMU;
+		else if (strcasecmp(codec,"GSM")==0) return GSM;
+		else if (strcasecmp(codec,"SPEEX16")==0) return SPEEX16;
+		else if (strcasecmp(codec,"NELLY8")==0) return NELLY8;
+		else if (strcasecmp(codec,"NELLY11")==0) return NELLY11;
+		else if (strcasecmp(codec,"OPUS")==0) return OPUS;
+		else if (strcasecmp(codec,"G722")==0) return G722;
+		else if (strcasecmp(codec,"AAC")==0) return AAC;
+		return UNKNOWN;
+	}
+
 	static const char* GetNameFor(Type codec)
 	{
 		switch (codec)
@@ -25,13 +42,16 @@ public:
 			default:	return "unknown";
 		}
 	}
+
+	
+
 	typedef std::map<int,Type> RTPMap;
 };
 
 class VideoCodec
 {
 public:
-	enum Type {H263_1996=34,H263_1998=103,MPEG4=104,H264=99,SORENSON=100,VP6=106,VP8=107,ULPFEC=108,RED=109};
+	enum Type {H263_1996=34,H263_1998=103,MPEG4=104,H264=99,SORENSON=100,VP6=106,VP8=107,ULPFEC=108,RED=109,UNKNOWN=-1};
 	static const char* GetNameFor(Type type)
 	{
 		switch (type)
@@ -45,6 +65,21 @@ public:
 			case VP8:	return "VP8";
 			default:	return "unknown";
 		}
+	}
+	static Type GetCodecForName(const char* codec)
+	{
+		if	(strcasecmp(codec,"H263_1996")==0) return H263_1996;
+		else if (strcasecmp(codec,"H263-1996")==0) return H263_1996;
+		else if (strcasecmp(codec,"H263")==0) return H263_1996;
+		else if (strcasecmp(codec,"H263P")==0) return H263_1998;
+		else if (strcasecmp(codec,"H263_1998")==0) return H263_1998;
+		else if (strcasecmp(codec,"H263-1998")==0) return H263_1998;
+		else if (strcasecmp(codec,"MPEG4")==0) return MPEG4;
+		else if (strcasecmp(codec,"H264")==0) return H264;
+		else if (strcasecmp(codec,"SORENSON")==0) return SORENSON;
+		else if (strcasecmp(codec,"VP6")==0) return VP6;
+		else if (strcasecmp(codec,"VP8")==0) return VP8;
+		return UNKNOWN;
 	}
 	typedef std::map<int,Type> RTPMap;
 };

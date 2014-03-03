@@ -126,6 +126,12 @@ public:
 	{
 		insert(std::pair<std::string,std::string>(std::string(key),std::string(val)));
 	}
+	
+	const char* GetProperty(const char* key) const
+	{
+		return GetProperty(key,"");
+	}
+
 	std::string GetProperty(const char* key,const std::string defaultValue) const
 	{
 		//Find item
@@ -150,7 +156,7 @@ public:
 		return it->second;
 	}
 
-	const char* GetProperty(const char* key,char *defaultValue) const
+	const char* GetProperty(const char* key,const char *defaultValue) const
 	{
 		//Find item
 		const_iterator it = find(std::string(key));

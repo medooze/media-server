@@ -18,6 +18,7 @@ public:
 
 private:
 	int OpenCodec();
+	bool streaming;
 	x264_t*		enc;
 	x264_param_t    params;
 	x264_nal_t*	nals;

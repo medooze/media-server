@@ -1,5 +1,8 @@
 #ifndef _XMLRPCSERVER_H_
 #define _XMLRPCSERVER_H_
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include <xmlrpc.h>
 #include <xmlrpc-c/abyss.h>
 #include <xmlrpc-c/server_abyss.h>
@@ -17,7 +20,7 @@ public:
 class XmlRpcServer
 {
 public:
-	XmlRpcServer(int port);
+	XmlRpcServer(int port, const char* iface = NULL);
 	~XmlRpcServer();
 	int AddHandler(std::string base,Handler* hnd);
 
@@ -37,6 +40,7 @@ protected:
 private:
 	typedef std::map<std::string,Handler *> LstHandlers;
 	int running;
+	in_addr_t iface;
 	int port;
 	TServer srv;
 	LstHandlers lstHandlers;

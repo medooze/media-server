@@ -4,6 +4,7 @@
 #include <log.h>
 #include <xmlrpc-c/abyss.h>
 #include "xmlrpcserver.h"
+#include <errno.h>
 
 #define ERRORMSG "MCU Error."
 #define SHUTDOWNMSG "Shutting down."
@@ -12,7 +13,7 @@
 * XmlRpcServer
 *	Constructor
 **************************************/
-XmlRpcServer::XmlRpcServer(int port)
+XmlRpcServer::XmlRpcServer(int port,const char* iface)
 {
 	//Iniciamos la fecha
 	DateInit();
@@ -22,6 +23,12 @@ XmlRpcServer::XmlRpcServer(int port)
 
 	//Store port
 	this->port = port;
+	//Listen on all by default
+	this->iface = INADDR_ANY;
+	//If listening on an specific interface
+	if (iface)
+		//Store it
+		this->iface = inet_addr(iface);
 }
 
 XmlRpcServer::~XmlRpcServer()
@@ -33,7 +40,7 @@ XmlRpcServer::~XmlRpcServer()
 **************************************/
 int XmlRpcServer::Start()
 {
-	Log("-Start [%p]\n",this);
+	Log("-Start XmlRpcServer [%p]\n",this);
 
 	//Start it
 	running = 1;
@@ -52,17 +59,43 @@ int XmlRpcServer::Run()
 {
 	char name[65];
 
+	sockaddr_in addr;
+
+	//Create socket
+	int server = socket(AF_INET, SOCK_STREAM, 0);
+
+	//Set SO_REUSEADDR on a socket to true (1):
+	int optval = 1;
+	setsockopt(server, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
+
+	//Bind to first available port
+	memset(&addr,0,sizeof(addr));
+	addr.sin_family 	= AF_INET;
+	addr.sin_addr.s_addr 	= iface;
+	addr.sin_port 		= htons(port);
+
+	//Bind
+     	if (bind(server, (sockaddr *) &addr, sizeof(addr)) < 0)
+		//Error
+		return Error("Can't bind server socket. errno = %d.\n", errno);
+
+	//Listen for connections
+	if (listen(server,5)<0)
+		//Error
+		return Error("Can't listen on server socket. errno = %d\n", errno);
+
+
 	//While we are not stopped
 	while (running)
 	{
 		//LOg
-		Log(">Run Server [%p]\n",this);
+		Log(">Run XML RPC Server [%s:%d]\n",inet_ntoa(addr.sin_addr),port);
 		
 		//Le pasamos como nombre un puntero a nosotros mismos
 		sprintf(name,"%p",this);
 
 		//Creamos el servidor
-		ServerCreate(&srv,name, port, DEFAULT_DOCS, "http.log");
+		ServerCreateSocket(&srv,name, server, DEFAULT_DOCS, "http.log");
 
 		//Iniciamos el servidor
 		ServerInit(&srv);
@@ -95,6 +128,12 @@ int XmlRpcServer::Run()
 		//Log
 		Log("<Run\n");
 	}
+
+	//Shutdown server socket
+	shutdown(server,SHUT_RDWR);
+
+	//Close it
+	close(server);
 
 	return 1;
 }

@@ -43,6 +43,7 @@ private:
 	VideoInput*		videoInput;
 	pthread_t		encodingVideoThread;
 	int			encodingVideo;
+	Properties		videoProperties;
 
 	RTMPMetaData*	meta;
 	RTMPVideoFrame* frameDesc;
