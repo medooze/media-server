@@ -239,8 +239,10 @@ private:
 		{
 			//Create header
 			WebSocketFrameHeader header(fin,opCode,size,0);
+			//Get size
+			headerSize = header.GetSize();
 			//Calculate total size
-			this->size = size+header.GetSize();
+			this->size = size+headerSize;
 			//Set values
 			this->data = (BYTE*)calloc(this->size,1);
 			//Copy header data
@@ -272,9 +274,13 @@ private:
 		
 		const BYTE* GetData()	{ return data;	}
 		const DWORD GetSize()	{ return size;	}
+
+		BYTE*	    GetPayloadData() { return data+headerSize;	}
+		const DWORD GetPayloadSize() { return size-headerSize;	}
 	private:
 		BYTE* data;
 		DWORD size;
+		DWORD headerSize;
 		DWORD length;
 	};
 public:
@@ -299,7 +305,7 @@ public:
 	//Weksocket
 	virtual void Accept(WebSocket::Listener *listener);
 	virtual void Reject(const WORD code, const char* reason);
-	virtual void SendMessage(const std::string& message);
+	virtual void SendMessage(const std::wstring& message);
 	virtual void SendMessage(const BYTE* data, const DWORD size);
 	virtual void Close();
 

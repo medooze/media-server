@@ -29,7 +29,7 @@ public:
 public:
 	virtual void Accept(Listener *listener) = 0;
 	virtual void Reject(const WORD code, const char* reason) = 0;
-	virtual void SendMessage(const std::string& message) = 0;
+	virtual void SendMessage(const std::wstring& message) = 0;
 	virtual void SendMessage(const BYTE* data, const DWORD size) = 0;
 	virtual void Close() = 0;
 

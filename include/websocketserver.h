@@ -4,6 +4,7 @@
 #include <list>
 #include "websockets.h"
 #include "websocketconnection.h"
+#include "amf.h"
 
 
 class WebSocketServer : public WebSocketConnection::Listener
@@ -74,8 +75,15 @@ public:
 	}
 	virtual void onMessageData(WebSocket *ws,const BYTE* data, const DWORD size)
 	{
-		std::string str((char*)data,size);
-		Debug("-onMessageData %s\n",str.c_str());
+		//Parse UTF 8 
+		UTF8Parser parser;
+		
+		//Parse ut8
+		parser.Parse(data,size);
+		
+		//Get text
+		std::wstring str = parser.GetWString();
+		Debug("-onMessageData %ls\n",str.c_str());
 		Dump(data,size);
 		ws->SendMessage(str);
 	}

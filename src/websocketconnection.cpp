@@ -14,6 +14,7 @@
 #include "log.h"
 #include "tools.h"
 #include "websocketconnection.h"
+#include "amf.h"
 
 WebSocketConnection::WebSocketConnection(Listener *listener)
 {
@@ -493,10 +494,16 @@ void WebSocketConnection::ProcessData(BYTE *data,DWORD size)
 	} 
 }
 
-void  WebSocketConnection::SendMessage(const std::string& message)
+void  WebSocketConnection::SendMessage(const std::wstring& message)
 {
-	//Create new frame
-	Frame *frame = new Frame(true,WebSocketFrameHeader::TextFrame,(BYTE*)message.c_str(),message.length());
+	//Convert to UTF8 before sending
+	UTF8Parser utf8(message);
+
+	//Create new frame with no data yet
+	Frame *frame = new Frame(true,WebSocketFrameHeader::TextFrame,NULL,utf8.GetUTF8Size());
+
+	//Serialize
+	utf8.Serialize(frame->GetPayloadData(),frame->GetPayloadSize());
 		
 	//Lock mutex
 	pthread_mutex_lock(&mutex);
