@@ -11,27 +11,28 @@
 #include <cstring>
 #include "config.h"
 
-class StringParser
+template <typename _CharT, typename _StringT>
+class  BaseStringParser
 {
 public:
-	StringParser(const std::string str)
+	BaseStringParser(const _StringT str)
 	{
-		buffer = (char*)str.c_str();
+		buffer = (_CharT*)str.c_str();
 		size = str.size();
 		c = buffer;
 	}
 	
-	StringParser(const char* buffer,DWORD size)
+	BaseStringParser(const _CharT* buffer,DWORD size)
 	{
-		this->buffer = (char*)buffer;
+		this->buffer = (_CharT*)buffer;
 		this->size = size;
 		c = this->buffer;
 	}
-	char* Mark()
+	_CharT* Mark()
 	{
 		return c;
 	}
-	void  Reset(char* pos)
+	void  Reset(_CharT* pos)
 	{
 		c = pos;
 	}
@@ -77,11 +78,11 @@ public:
 		if (IsEnded())
 			//Not found
 			return false;
-		//Check chars
+		//Check _CharTs
 		return CheckCharSet("");
 	}
 
-	bool  CheckChar(const char x)
+	bool  CheckChar(const _CharT x)
 	{
 		//Check ended
 		if (IsEnded())
@@ -91,19 +92,19 @@ public:
 		return *c==x;
 	}
 
-	bool  CheckCharSet(const char* str)
+	bool  CheckCharSet(const _CharT* str)
 	{
 		//Check ended
 		if (IsEnded())
 			//Not found
 			return false;
 		//Get pointer to init of string
-		char *i = (char*)str;
-		//Get current char
-		char cur = *c;
+		_CharT *i = (_CharT*)str;
+		//Get current _CharT
+		_CharT cur = *c;
 		//Until the end of the string
 		while(*i!=0 && !IsEnded())
-			//If it is the same char
+			//If it is the same _CharT
 			if (*(i++)==cur)
 				//found
 				return true;
@@ -121,7 +122,7 @@ public:
 		return true;
 	}
 
-	bool ParseChar(const char x)
+	bool ParseChar(const _CharT x)
 	{
 		//Check
 		if(!CheckChar(x))
@@ -141,16 +142,16 @@ public:
 			//Not found
 			return false;
 		//Get init
-		char *start = c;
+		_CharT *start = c;
 		//Wheck it is a token
 		while (!IsEnded() && *c>32 && *c<127 && !CheckCharSet("()<>@,;:\\\"/[]?={}"))
 			Next();
-		//If we don't have any char
+		//If we don't have any _CharT
 		if (start==c)
 			//No token found
 			return false;
 		//Set value string
-		value = std::string(start,c-start);
+		value = _StringT(start,c-start);
 		//Done
 		return true;
 	}
@@ -158,13 +159,13 @@ public:
 	bool  ParseQuotedString()
 	{
 		//Get mark
-		char *m = Mark();
+		_CharT *m = Mark();
 		//Check it starts by "
 		if (!ParseChar('"'))
 			//Error
 			return false;
 		//Get init
-		char *start = c;
+		_CharT *start = c;
 		//Any TEXT except "
 		while (!IsEnded() && !CheckChar('"'))
 		{
@@ -180,7 +181,7 @@ public:
 				break;
 		}
 		//Get end
-		char* end = c;
+		_CharT* end = c;
 		//Check it starts by "
 		if (!ParseChar('"'))
 		{
@@ -190,33 +191,33 @@ public:
 			return false;
 		}
 		//Set value string
-		value = std::string(start,end-start);
+		value = _StringT(start,end-start);
 		//Everything ok
 		return true;
 	}
 	
-	bool ParseUntilCharset(const char* str)
+	bool ParseUntilCharset(const _CharT* str)
 	{
 		//Check ended
 		if (IsEnded())
 			//Not found
 			return false;
 		//Get init
-		char *start = c;
-		//Wheck it is a not charset
+		_CharT *start = c;
+		//Wheck it is a not _CharTset
 		while (!IsEnded() && !CheckCharSet(str))
 			Next();
-		//If we don't have any char
+		//If we don't have any _CharT
 		if (start==c)
 			//No token found
 			return false;
 		//Set value string
-		value = std::string(start,c-start);
+		value = _StringT(start,c-start);
 		//Done
 		return true;
 	}
 
-	std::string& GetValue()
+	_StringT& GetValue()
 	{
 		return value;
 	}
@@ -237,6 +238,14 @@ public:
 			Next();
 	}
 
+	void  SkipCharset(const _CharT* set)
+	{
+		//Wheck it is space
+		while (!IsEnded() && CheckCharSet(set))
+			//increase
+			Next();
+	}
+
 	void Next()
 	{
 		//Check ended
@@ -252,7 +261,7 @@ public:
 			//Not found
 			return false;
 		//Init
-		char *start = c;
+		_CharT *start = c;
 		//Find CRLF
 		while (Left()>1 && (*c!=13 || *(c+1)!=10))
 			//increase
@@ -266,7 +275,7 @@ public:
 			return false;
 		}
 		//Set value string
-		value = std::string(start,c-start);
+		value = _StringT(start,c-start);
 		//Skip CRLF
 		Move(2);
 		//Done
@@ -278,18 +287,18 @@ public:
 		return size-(c-buffer);
 	}
 
-	std::string GetLeft()
+	_StringT GetLeft()
 	{
 		//Return what's left
-		return std::string(c,size-(c-buffer));
+		return _StringT(c,size-(c-buffer));
 	}
 
-	bool MatchString(const std::string &str)
+	bool MatchString(const _StringT &str)
 	{
 		MatchString(str.c_str());
 	}
 	
-	bool MatchString(const char* str)
+	bool MatchString(const _CharT* str)
 	{
 		//Get str len
 		int len = strlen(str);
@@ -298,7 +307,7 @@ public:
 			//Not found
 			return false;
 		//Init
-		char *start = c;
+		_CharT *start = c;
 		//Compare
 		if (strncmp(c,str,len)!=0)
 			//Not match
@@ -306,17 +315,17 @@ public:
 		//Move
 		Move(len);
 		//Set value string
-		value = std::string(start,c-start);
+		value = _StringT(start,c-start);
 		//Found
 		return true;
 	}
 
-	bool CheckString(const std::string &str)
+	bool CheckString(const _StringT &str)
 	{
 		CheckString(str.c_str());
 	}
 
-	bool CheckString(const char* str)
+	bool CheckString(const _CharT* str)
 	{
 		//Get str len
 		int len = strlen(str);
@@ -338,11 +347,14 @@ public:
 	}
 
 private:
-	char* buffer;
+	_CharT* buffer;
 	DWORD size;
-	char* c;
-	std::string value;
+	_CharT* c;
+	_StringT value;
 };
 
+
+typedef BaseStringParser<char,std::string> StringParser;
+typedef BaseStringParser<wchar_t,std::wstring> WideStringParser;
 #endif	/* STRINGPARSER_H */
 
