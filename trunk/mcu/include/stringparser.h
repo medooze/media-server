@@ -9,6 +9,8 @@
 #define	STRINGPARSER_H
 #include <string>
 #include <cstring>
+#include <errno.h>
+#include <math.h>
 #include "config.h"
 
 template <typename _CharT, typename _StringT>
@@ -31,6 +33,10 @@ public:
 	_CharT* Mark()
 	{
 		return c;
+	}
+	_CharT Get()
+	{
+		return *c;
 	}
 	void  Reset(_CharT* pos)
 	{
@@ -293,12 +299,38 @@ public:
 		return _StringT(c,size-(c-buffer));
 	}
 
-	bool MatchString(const _StringT &str)
+	
+
+	void Move(DWORD num)
+	{
+		c +=num;
+	}
+
+protected:
+	_CharT* buffer;
+	DWORD size;
+	_CharT* c;
+	_StringT value;
+};
+
+
+class StringParser : public BaseStringParser<char,std::string>
+{
+public:
+	StringParser(const std::string str) : BaseStringParser<char,std::string>(str)
+	{
+	}
+
+	StringParser(const char* buffer,DWORD size) : BaseStringParser<char,std::string>(buffer,size)
+	{
+	}
+
+	bool MatchString(const std::string &str)
 	{
 		MatchString(str.c_str());
 	}
-	
-	bool MatchString(const _CharT* str)
+
+	bool MatchString(const char* str)
 	{
 		//Get str len
 		int len = strlen(str);
@@ -307,7 +339,7 @@ public:
 			//Not found
 			return false;
 		//Init
-		_CharT *start = c;
+		char *start = c;
 		//Compare
 		if (strncmp(c,str,len)!=0)
 			//Not match
@@ -315,17 +347,17 @@ public:
 		//Move
 		Move(len);
 		//Set value string
-		value = _StringT(start,c-start);
+		value = std::string(start,c-start);
 		//Found
 		return true;
 	}
 
-	bool CheckString(const _StringT &str)
+	bool CheckString(const std::string &str)
 	{
 		CheckString(str.c_str());
 	}
 
-	bool CheckString(const _CharT* str)
+	bool CheckString(const char* str)
 	{
 		//Get str len
 		int len = strlen(str);
@@ -340,21 +372,476 @@ public:
 		//Found
 		return true;
 	}
-
-	void Move(DWORD num)
-	{
-		c +=num;
-	}
-
-private:
-	_CharT* buffer;
-	DWORD size;
-	_CharT* c;
-	_StringT value;
 };
 
+class WideStringParser : public BaseStringParser<wchar_t,std::wstring>
+{
+public:
+	WideStringParser(const std::wstring str) : BaseStringParser<wchar_t,std::wstring>(str)
+	{
+	}
 
-typedef BaseStringParser<char,std::string> StringParser;
-typedef BaseStringParser<wchar_t,std::wstring> WideStringParser;
+	WideStringParser(const wchar_t* buffer,DWORD size) : BaseStringParser<wchar_t,std::wstring>(buffer,size)
+	{
+	}
+
+	bool MatchString(const std::wstring &str)
+	{
+		MatchString(str.c_str());
+	}
+
+	bool MatchString(const wchar_t* str)
+	{
+		//Get str len
+		int len = wcslen(str);
+		//Check we have enought
+		if (Left()<len)
+			//Not found
+			return false;
+		//Init
+		wchar_t *start = c;
+		//Compare
+		if (wcsncmp(c,str,len)!=0)
+			//Not match
+			return false;
+		//Move
+		Move(len);
+		//Set value string
+		value = std::wstring(start,c-start);
+		//Found
+		return true;
+	}
+
+	bool CheckString(const std::wstring &str)
+	{
+		CheckString(str.c_str());
+	}
+
+	bool CheckString(const wchar_t* str)
+	{
+		//Get str len
+		int len = wcslen(str);
+		//Check we have enought
+		if (Left()<len)
+			//Not found
+			return false;
+		//Compare
+		if (wcsncmp(c,str,len)!=0)
+			//Not match
+			return false;
+		//Found
+		return true;
+	}
+};
+
+class JSONParser : public WideStringParser
+{
+public:
+	JSONParser(const std::wstring str) : WideStringParser(str)
+	{
+	}
+
+	JSONParser(const wchar_t* buffer,DWORD size) : WideStringParser(buffer,size)
+	{
+	}
+
+	void SkipJSONSpaces()
+	{
+		return SkipCharset(L" \t\r\n");
+	}
+
+	bool ParseJSONObjectStart()
+	{
+		//Skip WS
+		SkipJSONSpaces();
+
+		//Check object start
+		return ParseChar('{');
+	}
+
+	bool ParseJSONObjectEnd()
+	{
+		//Skip WS
+		SkipJSONSpaces();
+
+		//Check object start
+		return ParseChar('}');
+	}
+
+	bool ParseJSONArrayStart()
+	{
+		//Skip WS
+		SkipJSONSpaces();
+
+		//Check object start
+		return ParseChar('[');
+	}
+
+	bool ParseComma()
+	{
+		//Skip WS
+		SkipJSONSpaces();
+
+		//Check object start
+		return ParseChar(',');
+	}
+
+	bool ParseDoubleDot()
+	{
+		//Skip WS
+		SkipJSONSpaces();
+
+		//Check object start
+		return ParseChar(':');
+	}
+
+	bool ParseJSONArrayEnd()
+	{
+		//Skip WS
+		SkipJSONSpaces();
+
+		//Check object start
+		return ParseChar(']');
+	}
+
+	bool CheckJSONObject()
+	{
+		//Skip WS
+		SkipJSONSpaces();
+
+		//Check object start
+		return CheckChar('{');
+	}
+
+	bool CheckJSONArray()
+	{
+		//Skip WS
+		SkipJSONSpaces();
+
+		//Check object start
+		return CheckChar('[');
+	}
+
+	bool CheckJSONString()
+	{
+		//Skip WS
+		SkipJSONSpaces();
+
+		//Check object start
+		return CheckChar('"');
+	}
+
+	bool CheckJSONNumber()
+	{
+		//Skip WS
+		SkipJSONSpaces();
+
+		//Check object start
+		return CheckChar('-') || CheckDigit();
+	}
+
+	bool CheckJSONTrue()
+	{
+		//Skip WS
+		SkipJSONSpaces();
+
+		//Check object start
+		return CheckString(L"true");
+	}
+
+	bool CheckJSONFalse()
+	{
+		//Skip WS
+		SkipJSONSpaces();
+
+		//Check object start
+		return CheckString(L"false");
+	}
+
+	bool CheckJSONNull()
+	{
+		//Skip WS
+		SkipJSONSpaces();
+
+		//Check object start
+		return CheckString(L"null");
+	}
+
+	bool ParseJSONNumber()
+	{
+		//Mark
+		wchar_t* ini = Mark();
+		wchar_t* end = NULL;
+
+		//Parse double
+		number  = wcstold(ini,&end);
+
+		//Check conversion
+		if (!number && errno==EINVAL)
+			//error
+			goto error;
+
+		//Check if exponent is present
+		if (CheckCharSet(L"Ee"))
+		{
+			//Skip
+			Next();
+
+			//Get exponent
+			long e = wcstod(Mark(),&end);
+
+			//Check conversion
+			if (!e && errno==EINVAL)
+				//error
+				goto error;
+
+			//Power
+			number *= pow10(e);
+		}
+
+		//Done
+		return true;
+
+	error:
+		//Reset pos
+		Reset(ini);
+	}
+
+	bool ParseJSONString()
+	{
+
+	}
+
+	bool ParseJSONTrue()
+	{
+		//Skip WS
+		SkipJSONSpaces();
+
+		//Check object start
+		return MatchString(L"true");
+	}
+
+	bool ParseJSONFalse()
+	{
+		//Skip WS
+		SkipJSONSpaces();
+
+		//Check object start
+		return MatchString(L"false");
+	}
+
+	bool ParseJSONNull()
+	{
+		//Skip WS
+		SkipJSONSpaces();
+
+		//Check object start
+		return MatchString(L"null");
+	}
+
+	bool SkipJSONValue()
+	{
+		return SkipJSONObject() || SkipJSONArray() || ParseJSONString() || ParseJSONNumber() || ParseJSONTrue() || ParseJSONFalse() || ParseJSONNull();
+	}
+
+	bool SkipJSONObject()
+	{
+		//Get init
+		wchar_t* ini =  Mark();
+
+		//Check object start
+		if (!ParseJSONObjectStart())
+			//exit
+			goto error;
+
+		//Check end
+		if (ParseJSONObjectEnd())
+			//Done
+			return true;
+
+		do
+		{
+			//Skip key : value
+			if (!ParseJSONString()  || !ParseDoubleDot() || !SkipJSONValue())
+				///exit
+				goto error;
+		//Next object atribute
+		} while (ParseComma());
+
+		//Check object end
+		if (!ParseJSONObjectEnd())
+			//exit
+			goto error;
+		//OK
+		return true;
+	error:
+		//Move back
+		Reset(ini);
+	}
+
+	bool SkipJSONArray()
+	{
+		//Get init
+		wchar_t *ini =  Mark();
+		
+		//Check object start
+		if (!ParseJSONArrayStart())
+			//exit
+			goto error;
+
+		//Check end
+		if (ParseJSONArrayEnd())
+			//Done
+			return true;
+
+		do
+		{
+			//Skip member
+			if (!SkipJSONValue())
+				//exit
+				goto error;
+		//Next object atribute
+		} while (ParseComma());
+
+		//OK
+		if (!ParseJSONArrayEnd())
+			//exit
+			goto error;
+		//OK
+		return true;
+	error:
+		//Move back
+		Reset(ini);
+	}
+
+	bool  ParseQuotedString()
+	{
+		//Get mark
+		wchar_t *m = Mark();
+		//Check it starts by "
+		if (!ParseChar('"'))
+			//Error
+			return false;
+
+		//Init value
+		value.clear();
+
+		//Any TEXT except "
+		while (!IsEnded() && !CheckChar('"'))
+		{
+			//Check escapes
+			if (*c=='\\')
+			{
+				//Skip
+				Next();
+				//Check enought
+				if (IsEnded())
+					//Error
+					goto error;
+				//Check next
+				switch(Get())
+				{
+					case '"':
+						//Add it
+						value.push_back('\"');
+						//Skip
+						Next();
+						//Break
+						break;
+					case '\\':
+						//Add it
+						value.push_back('\\');
+						//Skip
+						Next();
+						//Break
+						break;
+					case '/':
+						//Add it
+						value.push_back('/');
+						//Skip
+						Next();
+						//Break
+						break;
+					case 'b':
+						//Add it
+						value.push_back('\b');
+						//Skip
+						Next();
+						//Break
+						break;
+					case 'f':
+						//Add it
+						value.push_back('\f');
+						//Skip
+						Next();
+						//Break
+						break;
+					case 'n':
+						//Add it
+						value.push_back('\n');
+						//Skip
+						Next();
+						//Break
+						break;
+					case 'r':
+						//Add it
+						value.push_back('\r');
+						//Skip
+						Next();
+						//Break
+						break;
+					case 't':
+						//Add it
+						value.push_back('\t');
+						//Skip
+						Next();
+						//Break
+						break;
+					default:
+						//Ensure we have enought
+						if (Left()<4)
+							//error
+							goto error;
+						//Skip 4
+						Move(4);
+						//TODO: Parse them
+						value.push_back('?');
+						
+				}
+			}
+			//Check TEXT
+			else if (*c>31)
+			{
+				//Add the value
+				value.push_back(*c);
+				//Move
+				Next();
+			}
+			//Break on anything else
+			else
+				break;
+		}
+		
+		//Check it starts by "
+		if (!ParseChar('"'))
+			//Exit
+			goto error;
+
+		//Everything ok
+		return true;
+	error:
+		//Rollback to initial position
+		Reset(m);
+		//Error
+		return false;
+	}
+	
+	long double GetNumberValue()
+	{
+		return number;
+	}
+private:
+	long double number;
+};
 #endif	/* STRINGPARSER_H */
 
