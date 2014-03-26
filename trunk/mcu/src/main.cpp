@@ -20,6 +20,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include "amf.h"
+#include "CPUMonitor.h"
 extern "C" {
 #include "libavcodec/avcodec.h"
 }
@@ -250,6 +251,8 @@ int main(int argc,char **argv)
 
 	//Hack to allocate fd =0 and avoid bug closure
 	int fdzero = socket(AF_INET, SOCK_STREAM, 0);
+	//Create monitor
+	CPUMonitor	monitor;
 	//Create servers
 	XmlRpcServer	server(port,iface);
 	RTMPServer	rtmpServer;
@@ -350,6 +353,12 @@ int main(int argc,char **argv)
 	mcu.GetConferenceRef(confId,&conf);
 	conf->Init(0,8000);
 	mcu.ReleaseConferenceRef(confId);*/
+
+	//Set mcu monitor listener
+	monitor.AddListener(&mcu);
+	
+	//Start cpu monitor
+	monitor.Start(10000);
 
 	//Run it
 	server.Start();

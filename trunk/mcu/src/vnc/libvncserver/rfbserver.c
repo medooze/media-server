@@ -345,7 +345,7 @@ rfbNewTCPOrUDPClient(rfbScreenInfoPtr rfbScreen,
       }
 
       FD_SET(sock,&(rfbScreen->allFds));
-		rfbScreen->maxFd = max(sock,rfbScreen->maxFd);
+		rfbScreen->maxFd = sock>rfbScreen->maxFd?sock:rfbScreen->maxFd;
 
       INIT_MUTEX(cl->outputMutex);
       INIT_MUTEX(cl->refCountMutex);

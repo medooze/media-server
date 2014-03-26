@@ -188,6 +188,8 @@ void UTF8Parser::Reset()
 	//Reset number of utf8 bytes stored
 	len = 0;
 	utf8size = -1;
+	bytes = 0;
+	w = 0;
 }
 
 void UTF8Parser::SetSize(DWORD size)

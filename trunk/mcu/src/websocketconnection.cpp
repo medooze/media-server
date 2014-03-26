@@ -206,6 +206,10 @@ int WebSocketConnection::Run()
 				std::string out = response->Serialize();
 				//Send it
 				outBytes += write(socket,out.c_str(),out.length());
+				//Chec if it is not upgrade
+				if (response->GetCode()!=101)
+					//End connection
+					End();
 				//Delete it
 				delete(response);
 				//Nullify
@@ -695,6 +699,4 @@ void WebSocketConnection::Reject(const WORD code, const char* reason)
 	response = new HTTPResponse(code,reason,1,1);
 	//Signal write needed
 	SignalWriteNeeded();
-	//End
-	End();
 }

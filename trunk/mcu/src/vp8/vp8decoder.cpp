@@ -94,7 +94,7 @@ int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 		if (!pos)
 		{
 			//Frame not complete
-			completeFrame == false;
+			completeFrame = false;
 			//Error
 			return Error("Could not parse VP8 payload descriptor");
 		}
@@ -103,7 +103,7 @@ int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 		if (first && !desc.startOfPartition)
 		{
 			//Frame not complete
-			completeFrame == false;
+			completeFrame = false;
 			//Error
 			return Error("First packet lost of VP8 frame");
 		}

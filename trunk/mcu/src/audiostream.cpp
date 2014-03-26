@@ -17,6 +17,8 @@
 ***********************************/
 AudioStream::AudioStream(RTPSession::Listener* listener) : rtp(MediaFrame::Audio,listener)
 {
+	audioInput = NULL;
+	audioOutput = NULL;
 	sendingAudio=0;
 	receivingAudio=0;
 	audioCodec=AudioCodec::PCMU;
