@@ -26,6 +26,7 @@ public:
 	~VideoMixer();
 
 	int Init(Mosaic::Type comp,int size);
+	void SetKeepAspectRatio(bool keepAspectRatio);
 	void SetVADMode(VADMode vadMode);
 	void SetVADProxy(VADProxy* proxy);
 	int CreateMixer(int id);
@@ -97,6 +98,7 @@ private:
 	Use		lstVideosUse;
 	VADProxy*	proxy;
 	VADMode		vadMode;
+	bool		keepAspectRatio;
 };
 
 #endif

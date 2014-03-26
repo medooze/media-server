@@ -40,6 +40,9 @@ VideoMixer::VideoMixer(const std::wstring &tag) : eventSource(tag)
 	//No vad
 	vadMode = NoVAD;
 
+	//Keep aspect ration by default
+	keepAspectRatio = true;
+
 	//Inciamos lso mutex y la condicion
 	pthread_mutex_init(&mixVideoMutex,0);
 	pthread_cond_init(&mixVideoCond,0);
@@ -250,7 +253,7 @@ int VideoMixer::MixVideo()
 					if ((output && output->IsChanged(version)) || changed)
 					{
 						//Change mosaic
-						mosaic->Update(i,output->GetFrame(),output->GetWidth(),output->GetHeight(),true);
+						mosaic->Update(i,output->GetFrame(),output->GetWidth(),output->GetHeight(),keepAspectRatio);
 
 						//Check if debug is enabled
 						if (vadMode!=NoVAD && proxy && Logger::IsDebugEnabled())
@@ -1052,6 +1055,13 @@ void VideoMixer::SetVADMode(VADMode vadMode)
 	Log("-SetVadMode [%d]\n", vadMode);
 	//Set it
 	this->vadMode = vadMode;
+}
+
+void VideoMixer::SetKeepAspectRatio(bool keepAspectRatio)
+{
+	Log("-SetKeepAspectRatio [%d]\n", keepAspectRatio);
+	//Set it
+	this->keepAspectRatio = keepAspectRatio;
 }
 
 int VideoMixer::DumpMosaic(DWORD id,Mosaic* mosaic)

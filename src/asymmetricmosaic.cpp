@@ -210,7 +210,7 @@ int AsymmetricMosaic::GetWidth(int pos)
 			else
 				size = 1;
 			break;
-		case mosaic1p4:
+		case mosaic1p4A:
 			/**********************************************
 			*	-----------------------
 			*      | 	           | 2 |
@@ -224,9 +224,9 @@ int AsymmetricMosaic::GetWidth(int pos)
 			*
 			*      Participant size has to be different than mosaic size to keep aspect ratio
 			***********************************************/
-			cols = 4;
+			cols = 5;
 			if(!pos)
-				size = 3;
+				size = 4;
 			else
 				size = 1;
 			break;
@@ -260,6 +260,89 @@ int AsymmetricMosaic::GetWidth(int pos)
 			***********************************************/
 			cols = 4;
 			size = 2;
+			break;
+		case mosaic1p2A:
+			/**********************************************
+			*	-----------------
+			*      |           |  2  |
+			*      |     1     |---- |
+			*      |	   |  3  |
+			*      ------------------
+			*      Participant size has to be different than mosaic size to keep aspect ratio
+			***********************************************/
+			cols = 3;
+			if(!pos)
+				size = 2;
+			else
+				size = 1;
+			break;
+		case mosaic1p2x2A:
+
+
+			/**********************************************
+			*	--------------------
+			*      |	  | 2  | 3  |
+			*      |    1	  |--- |--- |
+			*      |	  | 4  | 5  |
+			*	--------------------
+			***********************************************/
+			cols = 4;
+			if(!pos)
+				size = 2;
+			else
+				size = 1;
+			break;
+		case mosaic1p6A:
+			/**********************************************
+			*	--------------------
+			*      |	  | 2  | 3  |
+			*      |     	  |--- |--- |
+			*      |    1     | 4  | 5  |
+			*      |     	  |--- |--- |
+			*      |	  | 6  | 7  |
+			*	--------------------
+			***********************************************/
+			cols = 4;
+			if(!pos)
+				size = 2;
+			else
+				size = 1;
+			break;
+		case mosaic1p12:
+			/**********************************************
+			*	----------------
+			*      |       | 2 | 3 | 
+			*      |   1   |---|---|
+			*      |       | 4 | 5 |
+			*      |-------|---|---|
+			*      | 6 | 7 | 8 | 9 |
+			*      |-------|---|---|
+			*      | 10| 11| 12| 13|
+			*	----------------
+			***********************************************/
+			cols = 4;
+			if(!pos)
+				size = 2;
+			else
+				size = 1;
+			break;
+		case mosaic1p16A:
+			/**********************************************
+			*	--------------------
+			*      |       | 2 | 3 | 4 |
+			*      |   1   |---|---|---|
+			*      |       | 5 | 6 | 7 |
+			*      |-------|---|---|---|
+			*      | 8 | 9 | 10| 11| 12|
+			*      |-------|---|---|---|
+			*      | 13| 14| 15| 16| 17|
+			*	--------------------
+			***********************************************/
+			cols = 5;
+			if(!pos)
+				size = 2;
+			else
+				size = 1;
 			break;
 	}
 	return (mosaicTotalWidth/cols)*size;
@@ -310,7 +393,7 @@ int AsymmetricMosaic::GetHeight(int pos)
 			else
 				size = 1;
 			break;
-		case mosaic1p4:
+		case mosaic1p4A:
 			/**********************************************
 			*	-----------------------
 			*      | 	           | 2 |
@@ -361,14 +444,98 @@ int AsymmetricMosaic::GetHeight(int pos)
 			rows = 4;
 			size = 2;
 			break;
+		case mosaic1p2A:
+			/**********************************************
+			*	-----------------
+			*      |           |  2  |
+			*      |     1     |---- |
+			*      |	   |  3  |
+			*      ------------------
+			*      Participant size has to be different than mosaic size to keep aspect ratio
+			***********************************************/
+			rows = 2;
+			if(!pos)
+				size = 2;
+			else
+				size = 1;
+			break;
+		case mosaic1p2x2A:
+
+
+			/**********************************************
+			*	--------------------
+			*      |	  | 2  | 3  |
+			*      |    1	  |--- |--- |
+			*      |	  | 4  | 5  |
+			*	--------------------
+			***********************************************/
+			rows = 2;
+			if(!pos)
+				size = 2;
+			else
+				size = 1;
+			break;
+		case mosaic1p6A:
+			/**********************************************
+			*	--------------------
+			*      |	  | 2  | 3  |
+			*      |     	  |--- |--- |
+			*      |    1     | 4  | 5  |
+			*      |     	  |--- |--- |
+			*      |	  | 6  | 7  |
+			*	--------------------
+			***********************************************/
+			rows = 3;
+			if(!pos)
+				size = 3;
+			else
+				size = 1;
+			break;
+		case mosaic1p12:
+			/**********************************************
+			*	----------------
+			*      |       | 2 | 3 |
+			*      |   1   |---|---|
+			*      |       | 5 | 6 | 
+			*      |-------|---|---|
+			*      | 8 | 9 | 10| 11|
+			*      |-------|---|---|
+			*      | 13| 14| 15| 16|
+			*	----------------
+			***********************************************/
+			rows = 4;
+			if(!pos)
+				size = 2;
+			else
+				size = 1;
+			break;
+		case mosaic1p16A:
+			/**********************************************
+			*	--------------------
+			*      |       | 2 | 3 | 4 |
+			*      |   1   |---|---|---|
+			*      |       | 5 | 6 | 7 |
+			*      |-------|---|---|---|
+			*      | 8 | 9 | 10| 11| 12|
+			*      |-------|---|---|---|
+			*      | 13| 14| 15| 16| 17|
+			*	--------------------
+			***********************************************/
+			rows = 4;
+			if(!pos)
+				size = 2;
+			else
+				size = 1;
+			break;
 	}
 	return (mosaicTotalHeight/rows)*size;
 }
 
 int AsymmetricMosaic::GetTop(int pos)
 {
-	BYTE index = 0;
+	const BYTE* index;
 	BYTE rows = 1;
+	BYTE cols = 1;
 
 	//Check it's in the mosaic
 	if (pos >= numSlots)
@@ -392,27 +559,9 @@ int AsymmetricMosaic::GetTop(int pos)
 			*      |	  | 6  | 7  |
 			*	--------------------
 			***********************************************/
-			switch(pos)
-			{
-				case 0:
-				case 1:
-					return 0;
-				case 2:
-					index = 8;
-				case 3:
-					index = 10;
-					break;
-				case 4:
-					index = 11;
-					break;
-				case 5:
-					index = 14;
-					break;
-				case 6:
-					index = 15;
-					break;
-			}
+			cols = 4;
 			rows = 4;
+			index = (BYTE[]){0,2,8,10,11,14,15};
 			break;
 		case mosaic1p7:
 			/**********************************************
@@ -426,33 +575,11 @@ int AsymmetricMosaic::GetTop(int pos)
 			*      | 5 | 6	| 7 | 8 |
 			*	----------------
 			***********************************************/
-			switch(pos)
-			{
-				case 0:
-				case 1:
-					return 0;
-				case 2:
-					index = 7;
-					break;
-				case 3:
-					index = 11;
-					break;
-				case 4:
-					index = 12;
-					break;
-				case 5:
-					index = 13;
-					break;
-				case 6:
-					index = 14;
-					break;
-				case 7:
-					index = 15;
-					break;
-			}
+			cols = 4;
 			rows = 4;
+			index = (BYTE[]){0,3,7,11,12,13,14,15};
 			break;
-		case mosaic1p4:
+		case mosaic1p4A:
 			/**********************************************
 			*	-----------------------
 			*      | 	           | 2 |
@@ -466,25 +593,9 @@ int AsymmetricMosaic::GetTop(int pos)
 			*
 			*      Participant size has to be different than mosaic size to keep aspect ratio
 			***********************************************/
-			switch(pos)
-			{
-				case 0:
-				case 1:
-					return 0;
-				case 2:
-					index = 7;
-					break;
-				case 3:
-					index = 11;
-					break;
-				case 4:
-					index = 12;
-					break;
-				case 5:
-					index = 13;
-					break;
-			}
+			cols = 5;
 			rows = 4;
+			index = (BYTE[]){0,4,9,14,19};
 			break;
 		case mosaic1p5:
 			/**********************************************
@@ -496,25 +607,9 @@ int AsymmetricMosaic::GetTop(int pos)
 			*      |  4  |  5  |  6  |
 			*	------------------
 			***********************************************/
-			switch (pos)
-			{
-				case 0:
-				case 1:
-					return 0;
-				case 2:
-					index = 5;
-					break;
-				case 3:
-					index = 6;
-					break;
-				case 4:
-					index = 7;
-					break;
-				case 5:
-					index = 8;
-					break;
-			}
+			cols = 3;
 			rows = 3;
+			index = (BYTE[]){0,2,5,6,7,8};
 			break;
 		case mosaic1p1:
 			/**********************************************
@@ -530,26 +625,102 @@ int AsymmetricMosaic::GetTop(int pos)
 			***********************************************/
 			//Alling vertically
 			return mosaicTotalHeight/4;
+		case mosaic1p2A:
+			/**********************************************
+			*	-----------------
+			*      |           |  2  |
+			*      |     1     |---- |
+			*      |	   |  3  |
+			*      ------------------
+			*      Participant size has to be different than mosaic size to keep aspect ratio
+			***********************************************/
+			cols = 3;
+			rows = 2;
+			index = (BYTE[]){0,2,5};
+			break;
+		case mosaic1p2x2A:
+			/**********************************************
+			*	--------------------
+			*      |	  | 2  | 3  |
+			*      |    1	  |--- |--- |
+			*      |	  | 4  | 5  |
+			*	--------------------
+			***********************************************/
+			cols = 4;
+			rows = 2;
+			index = (BYTE[]){0,2,3,6,7};
+			break;
+		case mosaic1p6A:
+			/**********************************************
+			*	--------------------
+			*      |	  | 2  | 3  |
+			*      |     	  |--- |--- |
+			*      |    1     | 4  | 5  |
+			*      |     	  |--- |--- |
+			*      |	  | 6  | 7  |
+			*	--------------------
+			***********************************************/
+			cols = 4;
+			rows = 3;
+			index = (BYTE[]){0,2,3,6,7,10,11};
+			break;
+		case mosaic1p12:
+			/**********************************************
+			*	----------------
+			*      |       | 2 | 3 |
+			*      |   1   |---|---|
+			*      |       | 4 | 5 |
+			*      |-------|---|---|
+			*      | 6 | 7 |  8| 9 |
+			*      |-------|---|---|
+			*      | 10| 11| 12| 13|
+			*	----------------
+			***********************************************/
+			cols = 4;
+			rows = 4;
+			index = (BYTE[]){0, 2,3, 6,7, 8,9,10,11, 12,13,14,15};
+			break;
+		case mosaic1p16A:
+			/**********************************************
+			*	--------------------
+			*      |       | 2 | 3 | 4 |
+			*      |   1   |---|---|---|
+			*      |       | 5 | 6 | 7 |
+			*      |-------|---|---|---|
+			*      | 8 | 9 | 10| 11| 12|
+			*      |-------|---|---|---|
+			*      | 13| 14| 15| 16| 17|
+			*	--------------------
+			***********************************************/
+			cols = 5;
+			rows = 4;
+			index = (BYTE[]){0, 2,3,4, 7,8,9,  10,11,12,13,14, 15,16,17,18,19};
+			break;
 	}
 	//Get row
-	int i = index/rows;
+	int i = index[pos]/cols;
+	//Get col
+	int j = index[pos] - i*cols;
 	//Get row heigth
 	int mosaicHeight = mosaicTotalHeight/rows;
 	//Calculate top
 	return mosaicHeight*i;
 }
+
 int AsymmetricMosaic::GetLeft(int pos)
 {
-	//Check it's in the mosaic
-	if (pos >= numSlots)
-		return 0;
+	BYTE *index;
+	BYTE rows = 1;
+	BYTE cols = 1;
 
 	//Check it's in the mosaic
 	if (pos >= numSlots)
 		return 0;
 
-	BYTE index;
-	BYTE cols;
+	//Check it's in the mosaic
+	if (pos >= numSlots)
+		return 0;
+
 	//Get values
 	switch(mosaicType)
 	{
@@ -564,28 +735,9 @@ int AsymmetricMosaic::GetLeft(int pos)
 			*      |	  | 6  | 7  |
 			*	--------------------
 			***********************************************/
-			switch(pos)
-			{
-				case 0:
-				case 2:
-					return 0;
-				case 1:
-					index = 2;
-					break;
-				case 3:
-					index = 10;
-					break;
-				case 4:
-					index = 11;
-					break;
-				case 5:
-					index = 14;
-					break;
-				case 6:
-					index = 15;
-					break;
-			}
 			cols = 4;
+			rows = 4;
+			index = (BYTE[]){0,2,8,10,11,14,15};
 			break;
 		case mosaic1p7:
 			/**********************************************
@@ -599,35 +751,11 @@ int AsymmetricMosaic::GetLeft(int pos)
 			*      | 5 | 6	| 7 | 8 |
 			*	----------------
 			***********************************************/
-			switch(pos)
-			{
-				case 0:
-					return 0;
-				case 1:
-					index = 3;
-					break;
-				case 2:
-					index = 7;
-					break;
-				case 3:
-					index = 11;
-					break;
-				case 4:
-					index = 12;
-					break;
-				case 5:
-					index = 13;
-					break;
-				case 6:
-					index = 14;
-					break;
-				case 7:
-					index = 15;
-					break;
-			}
 			cols = 4;
+			rows = 4;
+			index = (BYTE[]){0,3,7,11,12,13,14,15};
 			break;
-		case mosaic1p4:
+		case mosaic1p4A:
 			/**********************************************
 			*	-----------------------
 			*      | 	           | 2 |
@@ -641,27 +769,9 @@ int AsymmetricMosaic::GetLeft(int pos)
 			*
 			*      Participant size has to be different than mosaic size to keep aspect ratio
 			***********************************************/
-			switch(pos)
-			{
-				case 0:
-					return 0;
-				case 1:
-					index = 3;
-					break;
-				case 2:
-					index = 7;
-					break;
-				case 3:
-					index = 11;
-					break;
-				case 4:
-					index = 12;
-					break;
-				case 5:
-					index = 13;
-					break;
-			}
-			cols = 4;
+			cols = 5;
+			rows = 4;
+			index = (BYTE[]){0,4,9,14,19};
 			break;
 		case mosaic1p5:
 			/**********************************************
@@ -673,27 +783,9 @@ int AsymmetricMosaic::GetLeft(int pos)
 			*      |  4  |  5  |  6  |
 			*	------------------
 			***********************************************/
-			switch (pos)
-			{
-				case 0:
-					return 0;
-				case 1:
-					index = 2;
-					break;
-				case 2:
-					index = 5;
-					break;
-				case 3:
-					index = 6;
-					break;
-				case 4:
-					index = 7;
-					break;
-				case 5:
-					index = 8;
-					break;
-			}
 			cols = 3;
+			rows = 3;
+			index = (BYTE[]){0,2,5,6,7,8};
 			break;
 		case mosaic1p1:
 			/**********************************************
@@ -707,15 +799,86 @@ int AsymmetricMosaic::GetLeft(int pos)
 			*      |      	        |
 			*	----------------
 			***********************************************/
-			if(!pos)
-					return 0;
-			index = 1;
 			cols = 2;
+			rows = 1;
+			index = (BYTE[]){0,1};
+			break;
+		case mosaic1p2A:
+			/**********************************************
+			*	-----------------
+			*      |           |  2  |
+			*      |     1     |---- |
+			*      |	   |  3  |
+			*      ------------------
+			*      Participant size has to be different than mosaic size to keep aspect ratio
+			***********************************************/
+			cols = 3;
+			rows = 2;
+			index = (BYTE[]){0,2,5};
+			break;
+		case mosaic1p2x2A:
+			/**********************************************
+			*	--------------------
+			*      |	  | 2  | 3  |
+			*      |    1	  |--- |--- |
+			*      |	  | 4  | 5  |
+			*	--------------------
+			***********************************************/
+			cols = 4;
+			rows = 2;
+			index = (BYTE[]){0,2,3,6,7};
+			break;
+		case mosaic1p6A:
+			/**********************************************
+			*	--------------------
+			*      |	  | 2  | 3  |
+			*      |     	  |--- |--- |
+			*      |    1     | 4  | 5  |
+			*      |     	  |--- |--- |
+			*      |	  | 6  | 7  |
+			*	--------------------
+			***********************************************/
+			cols = 4;
+			rows = 3;
+			index = (BYTE[]){0,2,3,6,7,10,11};
+			break;
+		case mosaic1p12:
+			/**********************************************
+			*	----------------
+			*      |       | 2 | 3 |
+			*      |   1   |---|---|
+			*      |       | 4 | 5 |
+			*      |-------|---|---|
+			*      | 6 | 7 |  8| 9 |
+			*      |-------|---|---|
+			*      | 10| 11| 12| 13|
+			*	----------------
+			***********************************************/
+			cols = 4;
+			rows = 4;
+			index = (BYTE[]){0, 2,3, 6,7, 8,9,10,11, 12,13,14,15};
+			break;
+		case mosaic1p16A:
+			/**********************************************
+			*	--------------------
+			*      |       | 2 | 3 | 4 |
+			*      |   1   |---|---|---|
+			*      |       | 5 | 6 | 7 |
+			*      |-------|---|---|---|
+			*      | 8 | 9 | 10| 11| 12|
+			*      |-------|---|---|---|
+			*      | 13| 14| 15| 16| 17|
+			*	--------------------
+			***********************************************/
+			cols = 5;
+			rows = 4;
+			index = (BYTE[]){0, 2,3,4, 7,8,9,  10,11,12,13,14, 15,16,17,18,19};
 			break;
 	}
-
-	int i = index/cols;
-	int j = index - i*cols;
+	//Get row
+	int i = index[pos]/cols;
+	//Get col
+	int j = index[pos] - i*cols;
 	int mosaicWidth = mosaicTotalWidth/cols;
 	//Start filling from the end to not cause overlap
 	return mosaicWidth*j;

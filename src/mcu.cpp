@@ -115,18 +115,25 @@ int MCU::CreateEventQueue()
 		return Error("Event manager not set!\n");
 
 	//Create it
-	return eventMngr->CreateEventQueue();
+	int queueId = eventMngr->CreateEventQueue();
+	//Add to list
+	eventQueues.insert(queueId);
+	//return it
+	return queueId;
 }
 
-int MCU::DeleteEventQueue(int id)
+int MCU::DeleteEventQueue(int queueId)
 {
 	//Check mngr
 	if (!eventMngr)
 		//Error
 		return Error("Event manager not set!\n");
 
-	//Create it
-	return eventMngr->DestroyEventQueue(id);
+	//Delete from set
+	eventQueues.erase(queueId);
+
+	//Delete it
+	return eventMngr->DestroyEventQueue(queueId);
 }
 
 /**************************************
@@ -463,6 +470,16 @@ void MCU::onParticipantRequestFPU(MultiConf *conf,int partId,void *param)
 	if (eventMngr && entry->queueId>0)
 		//Send new event
 		eventMngr->AddEvent(entry->queueId, new ::PlayerRequestFPUEvent(entry->id,conf->GetTag(),partId));
+}
+
+void MCU::onCPULoad(int user, int sys, int load, int numcpu)
+{
+	//Check Event and event queue
+	if (eventMngr)
+		//For each queue
+		for (EventQueues::iterator it=eventQueues.begin();it!=eventQueues.end();++it)
+			//Send new event
+			eventMngr->AddEvent(*it, new CPULoadInfoEvent(user,sys,load,numcpu));
 }
 
 int MCU::onFileUploaded(const char* url, const char *filename)

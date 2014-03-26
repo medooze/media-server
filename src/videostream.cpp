@@ -735,7 +735,6 @@ int VideoStream::RecVideo()
 					videoOutput->NextFrame(frame);
 			}
 		}
-
 		
 		//Lo decodificamos
 		if(!videoDecoder->DecodePacket(buffer,size,lost,packet->GetMark()))
@@ -769,7 +768,7 @@ int VideoStream::RecVideo()
 				Debug("-Got Intra\n");
 			
 			//No seq number for frame
-			frameSeqNum = RTPPacket::MaxExtSeqNum;
+			frameSeqNum = RTPPacket::MaxExtSeqNum; //TODO: Check, shouldn't it be packet->GetExtSeqNum() ??? 
 
 			//Get picture
 			BYTE *frame = videoDecoder->GetFrame();

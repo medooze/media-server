@@ -609,7 +609,124 @@ public:
 
 	bool ParseJSONString()
 	{
+		//Get mark
+		wchar_t *m = Mark();
+		//Check it starts by "
+		if (!ParseChar('"'))
+			//Error
+			return false;
 
+		//Init value
+		value.clear();
+
+		//Any TEXT except "
+		while (!IsEnded() && !CheckChar('"'))
+		{
+			//Check escapes
+			if (*c=='\\')
+			{
+				//Skip
+				Next();
+				//Check enought
+				if (IsEnded())
+					//Error
+					goto error;
+				//Check next
+				switch(Get())
+				{
+					case '"':
+						//Add it
+						value.push_back('\"');
+						//Skip
+						Next();
+						//Break
+						break;
+					case '\\':
+						//Add it
+						value.push_back('\\');
+						//Skip
+						Next();
+						//Break
+						break;
+					case '/':
+						//Add it
+						value.push_back('/');
+						//Skip
+						Next();
+						//Break
+						break;
+					case 'b':
+						//Add it
+						value.push_back('\b');
+						//Skip
+						Next();
+						//Break
+						break;
+					case 'f':
+						//Add it
+						value.push_back('\f');
+						//Skip
+						Next();
+						//Break
+						break;
+					case 'n':
+						//Add it
+						value.push_back('\n');
+						//Skip
+						Next();
+						//Break
+						break;
+					case 'r':
+						//Add it
+						value.push_back('\r');
+						//Skip
+						Next();
+						//Break
+						break;
+					case 't':
+						//Add it
+						value.push_back('\t');
+						//Skip
+						Next();
+						//Break
+						break;
+					default:
+						//Ensure we have enought
+						if (Left()<4)
+							//error
+							goto error;
+						//Skip 4
+						Move(4);
+						//TODO: Parse them
+						value.push_back('?');
+
+				}
+			}
+			//Check TEXT
+			else if (*c>31)
+			{
+				//Add the value
+				value.push_back(*c);
+				//Move
+				Next();
+			}
+			//Break on anything else
+			else
+				break;
+		}
+
+		//Check it starts by "
+		if (!ParseChar('"'))
+			//Exit
+			goto error;
+
+		//Everything ok
+		return true;
+	error:
+		//Rollback to initial position
+		Reset(m);
+		//Error
+		return false;
 	}
 
 	bool ParseJSONTrue()
@@ -714,128 +831,6 @@ public:
 		Reset(ini);
 	}
 
-	bool  ParseQuotedString()
-	{
-		//Get mark
-		wchar_t *m = Mark();
-		//Check it starts by "
-		if (!ParseChar('"'))
-			//Error
-			return false;
-
-		//Init value
-		value.clear();
-
-		//Any TEXT except "
-		while (!IsEnded() && !CheckChar('"'))
-		{
-			//Check escapes
-			if (*c=='\\')
-			{
-				//Skip
-				Next();
-				//Check enought
-				if (IsEnded())
-					//Error
-					goto error;
-				//Check next
-				switch(Get())
-				{
-					case '"':
-						//Add it
-						value.push_back('\"');
-						//Skip
-						Next();
-						//Break
-						break;
-					case '\\':
-						//Add it
-						value.push_back('\\');
-						//Skip
-						Next();
-						//Break
-						break;
-					case '/':
-						//Add it
-						value.push_back('/');
-						//Skip
-						Next();
-						//Break
-						break;
-					case 'b':
-						//Add it
-						value.push_back('\b');
-						//Skip
-						Next();
-						//Break
-						break;
-					case 'f':
-						//Add it
-						value.push_back('\f');
-						//Skip
-						Next();
-						//Break
-						break;
-					case 'n':
-						//Add it
-						value.push_back('\n');
-						//Skip
-						Next();
-						//Break
-						break;
-					case 'r':
-						//Add it
-						value.push_back('\r');
-						//Skip
-						Next();
-						//Break
-						break;
-					case 't':
-						//Add it
-						value.push_back('\t');
-						//Skip
-						Next();
-						//Break
-						break;
-					default:
-						//Ensure we have enought
-						if (Left()<4)
-							//error
-							goto error;
-						//Skip 4
-						Move(4);
-						//TODO: Parse them
-						value.push_back('?');
-						
-				}
-			}
-			//Check TEXT
-			else if (*c>31)
-			{
-				//Add the value
-				value.push_back(*c);
-				//Move
-				Next();
-			}
-			//Break on anything else
-			else
-				break;
-		}
-		
-		//Check it starts by "
-		if (!ParseChar('"'))
-			//Exit
-			goto error;
-
-		//Everything ok
-		return true;
-	error:
-		//Rollback to initial position
-		Reset(m);
-		//Error
-		return false;
-	}
-	
 	long double GetNumberValue()
 	{
 		return number;

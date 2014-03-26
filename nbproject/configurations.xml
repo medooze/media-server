@@ -17,6 +17,7 @@
           <in>rfbproto.h</in>
           <in>rfbregion.h</in>
         </df>
+        <in>BFCPServer.h</in>
         <in>FLVEncoder.h</in>
         <in>FlashSoundHandler.h</in>
         <in>RTPSmoother.h</in>
@@ -105,6 +106,7 @@
         <in>textmixerworker.h</in>
         <in>textstream.h</in>
         <in>tools.h</in>
+        <in>ts.cpp</in>
         <in>uploadhandler.h</in>
         <in>use.h</in>
         <in>vad.h</in>
@@ -352,6 +354,7 @@
         <in>audiostream.cpp</in>
         <in>audiotransrater.cpp</in>
         <in>avcdescriptor.cpp</in>
+        <in>bfcp.cpp</in>
         <in>broadcaster.cpp</in>
         <in>broadcastsession.cpp</in>
         <in>crc32calc.cpp</in>
@@ -417,7 +420,6 @@
         <in>videopipe.cpp</in>
         <in>videostream.cpp</in>
         <in>websocketconnection.cpp</in>
-        <in>websocketconnection.cpp.bak</in>
         <in>websocketserver.cpp</in>
         <in>websocketshandler.cpp</in>
         <in>xmlhandler.cpp</in>

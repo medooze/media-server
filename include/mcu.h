@@ -1,6 +1,7 @@
 #ifndef _MCU_H_
 #define _MCU_H_
 #include <string>
+#include <set>
 #include "pthread.h"
 #include "multiconf.h"
 #include "rtmpstream.h"
@@ -8,18 +9,21 @@
 #include "xmlstreaminghandler.h"
 #include "uploadhandler.h"
 #include "websocketserver.h"
+#include "CPUMonitor.h"
 
 
 class MCU : 
 	public RTMPApplication,
 	public MultiConf::Listener,
 	public WebSocketServer::Handler,
-	public UploadHandler::Listener
+	public UploadHandler::Listener,
+	public CPUMonitor::Listener
 {
 public:
 	enum Events
 	{
-		ParticipantRequestFPU = 1
+		ParticipantRequestFPU = 1,
+		CPULoadInfo = 2
 	};
 
 	struct ConferenceInfo
@@ -46,6 +50,9 @@ public:
 	int DeleteConference(int confId);
 	int GetConferenceList(ConferencesInfo& lst);
 
+
+	/** CPU montior*/
+	virtual void onCPULoad(int user, int sys, int load, int numcpu);
 	/** Conference events*/
 	virtual void onParticipantRequestFPU(MultiConf *conf,int partId,void *param);
 	/** RTMP application interface*/
@@ -67,6 +74,7 @@ private:
 
 	typedef std::map<int,ConferenceEntry*> Conferences;
 	typedef std::map<std::wstring,int> ConferenceTags;
+	typedef std::set<int>	EventQueues;
 private:
 	XmlStreamingHandler	*eventMngr;
 	Conferences		conferences;
@@ -74,6 +82,28 @@ private:
 	int			maxId;
 	pthread_mutex_t		mutex;
 	int inited;
+	EventQueues		eventQueues;
+};
+
+class CPULoadInfoEvent : public XmlEvent
+{
+public:
+	CPULoadInfoEvent(int user,int sys,int load,int cpus)
+	{
+		this->user = user;
+		this->sys  = sys;
+		this->load = load;
+		this->cpus = cpus;
+	}
+	virtual xmlrpc_value* GetXmlValue(xmlrpc_env *env)
+	{
+		return xmlrpc_build_value(env,"(iiiii)",(int)MCU::CPULoadInfo,user,sys,load,cpus);
+	}
+private:
+	int user;
+	int sys;
+	int load;
+	int cpus;
 };
 
 class PlayerRequestFPUEvent: public XmlEvent
