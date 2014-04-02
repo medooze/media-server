@@ -533,7 +533,7 @@ int AsymmetricMosaic::GetHeight(int pos)
 
 int AsymmetricMosaic::GetTop(int pos)
 {
-	const BYTE* index;
+	BYTE index;
 	BYTE rows = 1;
 	BYTE cols = 1;
 
@@ -561,7 +561,7 @@ int AsymmetricMosaic::GetTop(int pos)
 			***********************************************/
 			cols = 4;
 			rows = 4;
-			index = (BYTE[]){0,2,8,10,11,14,15};
+			index = ((BYTE[]){0,2,8,10,11,14,15})[pos];
 			break;
 		case mosaic1p7:
 			/**********************************************
@@ -577,7 +577,7 @@ int AsymmetricMosaic::GetTop(int pos)
 			***********************************************/
 			cols = 4;
 			rows = 4;
-			index = (BYTE[]){0,3,7,11,12,13,14,15};
+			index = ((BYTE[]){0,3,7,11,12,13,14,15})[pos];
 			break;
 		case mosaic1p4A:
 			/**********************************************
@@ -595,7 +595,7 @@ int AsymmetricMosaic::GetTop(int pos)
 			***********************************************/
 			cols = 5;
 			rows = 4;
-			index = (BYTE[]){0,4,9,14,19};
+			index = ((BYTE[]){0,4,9,14,19})[pos];
 			break;
 		case mosaic1p5:
 			/**********************************************
@@ -609,7 +609,7 @@ int AsymmetricMosaic::GetTop(int pos)
 			***********************************************/
 			cols = 3;
 			rows = 3;
-			index = (BYTE[]){0,2,5,6,7,8};
+			index = ((BYTE[]){0,2,5,6,7,8})[pos];
 			break;
 		case mosaic1p1:
 			/**********************************************
@@ -636,7 +636,7 @@ int AsymmetricMosaic::GetTop(int pos)
 			***********************************************/
 			cols = 3;
 			rows = 2;
-			index = (BYTE[]){0,2,5};
+			index = ((BYTE[]){0,2,5})[pos];
 			break;
 		case mosaic1p2x2A:
 			/**********************************************
@@ -648,7 +648,7 @@ int AsymmetricMosaic::GetTop(int pos)
 			***********************************************/
 			cols = 4;
 			rows = 2;
-			index = (BYTE[]){0,2,3,6,7};
+			index = ((BYTE[]){0,2,3,6,7})[pos];
 			break;
 		case mosaic1p6A:
 			/**********************************************
@@ -662,7 +662,7 @@ int AsymmetricMosaic::GetTop(int pos)
 			***********************************************/
 			cols = 4;
 			rows = 3;
-			index = (BYTE[]){0,2,3,6,7,10,11};
+			index = ((BYTE[]){0,2,3,6,7,10,11})[pos];
 			break;
 		case mosaic1p12:
 			/**********************************************
@@ -678,7 +678,7 @@ int AsymmetricMosaic::GetTop(int pos)
 			***********************************************/
 			cols = 4;
 			rows = 4;
-			index = (BYTE[]){0, 2,3, 6,7, 8,9,10,11, 12,13,14,15};
+			index = ((BYTE[]){0, 2,3, 6,7, 8,9,10,11, 12,13,14,15})[pos];
 			break;
 		case mosaic1p16A:
 			/**********************************************
@@ -694,13 +694,13 @@ int AsymmetricMosaic::GetTop(int pos)
 			***********************************************/
 			cols = 5;
 			rows = 4;
-			index = (BYTE[]){0, 2,3,4, 7,8,9,  10,11,12,13,14, 15,16,17,18,19};
+			index = ((BYTE[]){0, 2,3,4, 7,8,9,  10,11,12,13,14, 15,16,17,18,19})[pos];
 			break;
 	}
 	//Get row
-	int i = index[pos]/cols;
+	int i = index/cols;
 	//Get col
-	int j = index[pos] - i*cols;
+	int j = index - i*cols;
 	//Get row heigth
 	int mosaicHeight = mosaicTotalHeight/rows;
 	//Calculate top
@@ -709,7 +709,7 @@ int AsymmetricMosaic::GetTop(int pos)
 
 int AsymmetricMosaic::GetLeft(int pos)
 {
-	BYTE *index;
+	BYTE index;
 	BYTE rows = 1;
 	BYTE cols = 1;
 
@@ -737,7 +737,7 @@ int AsymmetricMosaic::GetLeft(int pos)
 			***********************************************/
 			cols = 4;
 			rows = 4;
-			index = (BYTE[]){0,2,8,10,11,14,15};
+			index = ((BYTE[]){0,2,8,10,11,14,15})[pos];
 			break;
 		case mosaic1p7:
 			/**********************************************
@@ -753,7 +753,7 @@ int AsymmetricMosaic::GetLeft(int pos)
 			***********************************************/
 			cols = 4;
 			rows = 4;
-			index = (BYTE[]){0,3,7,11,12,13,14,15};
+			index = ((BYTE[]){0,3,7,11,12,13,14,15})[pos];
 			break;
 		case mosaic1p4A:
 			/**********************************************
@@ -771,7 +771,7 @@ int AsymmetricMosaic::GetLeft(int pos)
 			***********************************************/
 			cols = 5;
 			rows = 4;
-			index = (BYTE[]){0,4,9,14,19};
+			index = ((BYTE[]){0,4,9,14,19})[pos];
 			break;
 		case mosaic1p5:
 			/**********************************************
@@ -785,7 +785,7 @@ int AsymmetricMosaic::GetLeft(int pos)
 			***********************************************/
 			cols = 3;
 			rows = 3;
-			index = (BYTE[]){0,2,5,6,7,8};
+			index = ((BYTE[]){0,2,5,6,7,8})[pos];
 			break;
 		case mosaic1p1:
 			/**********************************************
@@ -801,7 +801,7 @@ int AsymmetricMosaic::GetLeft(int pos)
 			***********************************************/
 			cols = 2;
 			rows = 1;
-			index = (BYTE[]){0,1};
+			index = ((BYTE[]){0,1})[pos];
 			break;
 		case mosaic1p2A:
 			/**********************************************
@@ -814,7 +814,7 @@ int AsymmetricMosaic::GetLeft(int pos)
 			***********************************************/
 			cols = 3;
 			rows = 2;
-			index = (BYTE[]){0,2,5};
+			index = ((BYTE[]){0,2,5})[pos];
 			break;
 		case mosaic1p2x2A:
 			/**********************************************
@@ -826,7 +826,7 @@ int AsymmetricMosaic::GetLeft(int pos)
 			***********************************************/
 			cols = 4;
 			rows = 2;
-			index = (BYTE[]){0,2,3,6,7};
+			index = ((BYTE[]){0,2,3,6,7})[pos];
 			break;
 		case mosaic1p6A:
 			/**********************************************
@@ -840,7 +840,7 @@ int AsymmetricMosaic::GetLeft(int pos)
 			***********************************************/
 			cols = 4;
 			rows = 3;
-			index = (BYTE[]){0,2,3,6,7,10,11};
+			index = ((BYTE[]){0,2,3,6,7,10,11})[pos];
 			break;
 		case mosaic1p12:
 			/**********************************************
@@ -856,9 +856,10 @@ int AsymmetricMosaic::GetLeft(int pos)
 			***********************************************/
 			cols = 4;
 			rows = 4;
-			index = (BYTE[]){0, 2,3, 6,7, 8,9,10,11, 12,13,14,15};
+			index = ((BYTE[]){0, 2,3, 6,7, 8,9,10,11, 12,13,14,15})[pos];
 			break;
 		case mosaic1p16A:
+		{
 			/**********************************************
 			*	--------------------
 			*      |       | 2 | 3 | 4 |
@@ -872,13 +873,14 @@ int AsymmetricMosaic::GetLeft(int pos)
 			***********************************************/
 			cols = 5;
 			rows = 4;
-			index = (BYTE[]){0, 2,3,4, 7,8,9,  10,11,12,13,14, 15,16,17,18,19};
+			index = ((BYTE[]){0, 2,3,4, 7,8,9,  10,11,12,13,14, 15,16,17,18,19})[pos];
 			break;
+		}
 	}
 	//Get row
-	int i = index[pos]/cols;
+	int i = index/cols;
 	//Get col
-	int j = index[pos] - i*cols;
+	int j = index - i*cols;
 	int mosaicWidth = mosaicTotalWidth/cols;
 	//Start filling from the end to not cause overlap
 	return mosaicWidth*j;
