@@ -36,7 +36,9 @@ public:
 		mosaic1p12	= 14,
 		mosaic1p16A	= 15,
 		mosaic4x5A	= 16,
-		mosaic5x5	= 17
+		mosaic5x5	= 17,
+		mosaic1p1A	= 18,
+		mosaic1p2	= 19
 	} Type;
 
 	struct PartInfo
