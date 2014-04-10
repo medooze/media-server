@@ -59,6 +59,10 @@ int Mosaic::GetNumSlotsForType(Mosaic::Type type)
 			return 20;
 		case mosaic5x5:
 			return 25;
+		case mosaic1p1A:
+			return 2;
+		case mosaic1p2:
+			return 3;
 	}
 	//Error
 	return Error("-Unknown mosaic type %d\n",type);
@@ -479,6 +483,7 @@ Mosaic* Mosaic::CreateMosaic(Type type,DWORD size)
 		case mosaic4x4:
 		case mosaic5x5:
 		case mosaic4x5A:
+		case mosaic1p1A:
 			//Set mosaic
 			return new PartedMosaic(type,size);
 		case mosaic1p1:
@@ -491,6 +496,7 @@ Mosaic* Mosaic::CreateMosaic(Type type,DWORD size)
 		case mosaic1p6A:
 		case mosaic1p12:
 		case mosaic1p16A:
+		case mosaic1p2:
 			//Set mosaic
 			return new AsymmetricMosaic(type,size);
 		case mosaicPIP1:

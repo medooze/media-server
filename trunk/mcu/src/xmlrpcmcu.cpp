@@ -311,23 +311,51 @@ xmlrpc_value* CreateParticipant(xmlrpc_env *env, xmlrpc_value *param_array, void
 	int confId;
 	int mosaicId;
 	int sidebarId;
-	char *name;
+	char *sname;
+	char *stoken;
 	int type;
-	xmlrpc_parse_value(env, param_array, "(isiii)", &confId,&name,&type,&mosaicId,&sidebarId);
+	xmlrpc_parse_value(env, param_array, "(issiii)", &confId,&sname,&stoken,&type,&mosaicId,&sidebarId);
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
+	{
+		//Clean error
+		xmlrpc_env_clean(env);
+		xmlrpc_env_init(env);
+
+		//Try again
+		xmlrpc_parse_value(env, param_array, "(isiii)", &confId,&sname,&type,&mosaicId,&sidebarId);
+
+		//No token
+		stoken = (char*)"";
+
+		//Comprobamos si ha habido error
+		if(env->fault_occurred)
+			//Send errro
 		return xmlerror(env,"Fault occurred");
+	}
 	 
 	//Obtenemos la referencia
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//Parse string
-	parser.Parse((BYTE*)name,strlen(name));
+	parser.Parse((BYTE*)sname,strlen(sname));
+
+	//Get name
+	std::wstring name = parser.GetWString();
+
+	//Reset parser to parse mor strings
+	parser.Reset();
+
+	//Parse token
+	parser.Parse((BYTE*)stoken,strlen(stoken));
+
+	//Get token
+	std::wstring token = parser.GetWString();
 
 	//La borramos
-	int partId = conf->CreateParticipant(mosaicId,sidebarId,parser.GetWString(),(Participant::Type)type);
+	int partId = conf->CreateParticipant(mosaicId,sidebarId,name,(Participant::Type)type);
 
 	//Liberamos la referencia
 	mcu->ReleaseConferenceRef(confId);
