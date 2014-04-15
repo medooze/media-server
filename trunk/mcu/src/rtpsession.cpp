@@ -36,6 +36,7 @@ SRTPLib srtp;
 
 DWORD RTPSession::minLocalPort = 49152;
 DWORD RTPSession::maxLocalPort = 65535;
+int RTPSession::minLocalPortRange = 50;
 
 bool RTPSession::SetPortRange(int minPort, int maxPort)
 {
@@ -49,12 +50,12 @@ bool RTPSession::SetPortRange(int minPort, int maxPort)
 		return Error("-RTPSession port range invalid [%d,%d]\n",minPort,maxPort);
 
 	//check min range ports
-	if (maxPort-minPort<50)
+	if (maxPort-minPort<minLocalPortRange)
 	{
 		//Error
-		Error("-RTPSession port raange too short %d, should be at least 50\n",maxPort-minPort);
+		Error("-RTPSession port range too short %d, should be at least %d\n",maxPort-minPort,minLocalPortRange);
 		//Correct
-		maxPort = minPort+50;
+		maxPort = minPort+minLocalPortRange;
 	}
 
 	//check min range
@@ -74,7 +75,7 @@ bool RTPSession::SetPortRange(int minPort, int maxPort)
 		//Correc it
 		maxPort = 65535;
 	}
-	
+
 	//Set range
 	minLocalPort = minPort;
 	maxLocalPort = maxPort;
@@ -272,7 +273,7 @@ int RTPSession::SetLocalCryptoSDES(const char* suite,const BYTE* key,const DWORD
 	//Set polciy values
 	policy.ssrc.type	= ssrc_any_outbound;
 	policy.ssrc.value	= 0;
-	policy.allow_repeat_tx  = 1; 
+	policy.allow_repeat_tx  = 1;
 	policy.key		= (BYTE*)key;
 	policy.next		= NULL;
 
@@ -316,7 +317,7 @@ int RTPSession::SetProperties(const Properties& properties)
 	for (Properties::const_iterator it=properties.begin();it!=properties.end();++it)
 	{
 		Log("Setting RTP property [%s:%s]\n",it->first.c_str(),it->second.c_str());
-		
+
 		//Check
 		if (it->first.compare("rtcp-mux")==0)
 		{
@@ -355,7 +356,7 @@ int RTPSession::SetProperties(const Properties& properties)
 			Error("Unknown RTP property [%s]\n",it->first.c_str());
 		}
 	}
-	
+
 	return 1;
 }
 
@@ -551,7 +552,7 @@ bool RTPSession::SetSendingCodec(DWORD codec)
 
 /***********************************
 * SetRemotePort
-*	Inicia la sesion rtp de video remota 
+*	Inicia la sesion rtp de video remota
 ***********************************/
 int RTPSession::SetRemotePort(char *ip,int sendPort)
 {
@@ -570,7 +571,7 @@ int RTPSession::SetRemotePort(char *ip,int sendPort)
 	sendAddr.sin_addr.s_addr 	= ipAddr;
 	sendRtcpAddr.sin_addr.s_addr 	= ipAddr;
 	sendAddr.sin_port 		= htons(sendPort);
-	
+
 	//Check if doing rtcp muxing
 	if (muxRTCP)
 		//Same than rtp
@@ -582,7 +583,7 @@ int RTPSession::SetRemotePort(char *ip,int sendPort)
 	//Open rtp and rtcp ports
 	sendto(simSocket,rtpEmpty,sizeof(rtpEmpty),0,(sockaddr *)&sendAddr,sizeof(struct sockaddr_in));
 
-	//Y abrimos los sockets	
+	//Y abrimos los sockets
 	return 1;
 }
 
@@ -592,7 +593,7 @@ int RTPSession::SendEmptyPacket()
 	if (sendAddr.sin_addr.s_addr == INADDR_ANY)
 		//Exit
 		return 0;
-	
+
 	//Open rtp and rtcp ports
 	sendto(simSocket,rtpEmpty,sizeof(rtpEmpty),0,(sockaddr *)&sendAddr,sizeof(struct sockaddr_in));
 
@@ -616,7 +617,7 @@ void RTPSession::SetRemoteRateEstimator(RemoteRateEstimator* estimator)
 int RTPSession::Init()
 {
 	int retries = 0;
-	
+
 	Log(">Init RTPSession\n");
 
 	sockaddr_in recAddr;
@@ -661,8 +662,12 @@ int RTPSession::Init()
 		recAddr.sin_port = htons(simPort);
 		//Bind the rtcp socket
 		if(bind(simSocket,(struct sockaddr *)&recAddr,sizeof(struct sockaddr_in))!=0)
+		{
+			//Use random
+			simPort = 0;
 			//Try again
 			continue;
+		}
 		//Create new sockets
 		simRtcpSocket = socket(PF_INET,SOCK_DGRAM,0);
 		//Next port
@@ -697,7 +702,7 @@ int RTPSession::Init()
 
 	//Error
 	Error("RTPSession too many failed attemps opening sockets");
-	
+
 	//Failed
 	return 0;
 }
@@ -792,7 +797,7 @@ int RTPSession::SendPacket(RTCPCompoundPacket &rtcp)
 	//Check error
 	if (ret<0)
 		//Return
-		return Error("-Error sending RTP packet [%d]\n",errno);
+		return Error("-Error sending RTCP packet [%d]\n",errno);
 
 	//INcrease stats
 	numRTCPSendPackets++;
@@ -826,7 +831,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 				//Create buffer
 				BYTE aux[MTU+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
 				int size = RTPPAYLOADSIZE;
-				
+
 				//Create trans id
 				BYTE transId[12];
 				//Set first to 0
@@ -856,12 +861,12 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 			return 0;
 		}
 	}
-	
+
 	//Check if we need to send SR
 	if (isZeroTime(&lastSR) || getDifTime(&lastSR)>1000000)
 		//Send it
 		SendSenderReport();
-	
+
 	//Modificamos las cabeceras del packete
 	rtp_hdr_t *headers = (rtp_hdr_t *)sendPacket;
 
@@ -950,7 +955,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 		rtxs[rtx->GetExtSeqNum()] = rtx;
 		//Get time for packets to discard
 		QWORD until = getTime()/1000 - 2000;
-		//Delete old packets 
+		//Delete old packets
 		RTPOrderedPackets::iterator it = rtxs.begin();
 		//Until the end
 		while(it!=rtxs.end())
@@ -988,13 +993,13 @@ int RTPSession::ReadRTCP()
 
 	//Check if it is an STUN request
 	STUNMessage *stun = STUNMessage::Parse(buffer,size);
-	
+
 	//If it was
 	if (stun)
 	{
 		STUNMessage::Type type = stun->GetType();
 		STUNMessage::Method method = stun->GetMethod();
-		
+
 		//If it is a request
 		if (type==STUNMessage::Request && method==STUNMessage::Binding)
 		{
@@ -1016,7 +1021,7 @@ int RTPSession::ReadRTCP()
 			else
 				//Do nto authenticate
 				len = resp->NonAuthenticatedFingerPrint(aux,size);
-			
+
 			//Send it
 			sendto(simRtcpSocket,aux,len,0,(sockaddr *)&from_addr,sizeof(struct sockaddr_in));
 
@@ -1052,7 +1057,7 @@ int RTPSession::ReadRTCP()
 		//Log it
 		Log("-Got first RTCP, sending to %s:%d with rtcp-muxing:%d\n",inet_ntoa(sendRtcpAddr.sin_addr),ntohs(sendRtcpAddr.sin_port),muxRTCP);
 	}
-	
+
 	//Decript
 	if (decript)
 	{
@@ -1073,7 +1078,7 @@ int RTPSession::ReadRTCP()
 	if (rtcp)
 		//Handle incomming rtcp packets
 		ProcessRTCPPacket(rtcp);
-	
+
 	//OK
 	return 1;
 }
@@ -1104,7 +1109,7 @@ int RTPSession::ReadRTP()
 	{
 		STUNMessage::Type type = stun->GetType();
 		STUNMessage::Method method = stun->GetMethod();
-		
+
 		//If it is a request
 		if (type==STUNMessage::Request && method==STUNMessage::Binding)
 		{
@@ -1126,7 +1131,7 @@ int RTPSession::ReadRTP()
 			else
 				//Do nto authenticate
 				len = resp->NonAuthenticatedFingerPrint(aux,size);
-			
+
 			//Send it
 			sendto(simSocket,aux,len,0,(sockaddr *)&from_addr,sizeof(struct sockaddr_in));
 
@@ -1150,7 +1155,7 @@ int RTPSession::ReadRTP()
 				if (listener)
 					//Request a I frame
 					listener->onFPURequested(this);
-				
+
 				DWORD len = 0;
 				//Create trans id
 				BYTE transId[12];
@@ -1226,7 +1231,7 @@ int RTPSession::ReadRTP()
 		if (rtcp)
 			//Handle incomming rtcp packets
 			ProcessRTCPPacket(rtcp);
-		
+
 		//Skip
 		return 1;
 	}
@@ -1249,6 +1254,8 @@ int RTPSession::ReadRTP()
 	{
 		//Debug
 		Debug("-Not RTP data recevied\n");
+		//Dump it
+		Dump(buffer,size);
 		//Exit
 		return 1;
 	}
@@ -1338,7 +1345,7 @@ int RTPSession::ReadRTP()
 	if (!rtpMapIn)
 		//Error
 		return Error("-RTP map not set\n");
-	
+
 	//Set initial codec
 	BYTE codec = rtpMapIn->GetCodecForType(type);
 
@@ -1399,7 +1406,7 @@ int RTPSession::ReadRTP()
 
 	//Process extensions
 	packet->ProcessExtensions(extMap);
-	
+
 	//Get ssrc
 	DWORD ssrc = packet->GetSSRC();
 
@@ -1429,10 +1436,10 @@ int RTPSession::ReadRTP()
 			packet->SetSSRC(recSSRC);
 		}
 	}
-	
+
 	//Get sec number
 	WORD seq = packet->GetSeqNum();
-	
+
 	//Check if we have a sequence wrap
 	if (seq<0x0FFF && (recExtSeq & 0xFFFF)>0xF000)
 		//Increase cycles
@@ -1523,7 +1530,7 @@ int RTPSession::ReadRTP()
 				}
 			}
 		}
-		
+
 		//Update seq num
 		recExtSeq = extSeq;
 
@@ -1607,7 +1614,7 @@ void RTPSession::Stop()
 	{
 		//Not running
 		running = false;
-		
+
 		//Signal the pthread this will cause the poll call to exit
 		pthread_kill(thread,SIGIO);
 		//Wait thread to close
@@ -1820,7 +1827,7 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 							//Get field
 							RTCPRTPFeedback::TempMaxMediaStreamBitrateField *field = (RTCPRTPFeedback::TempMaxMediaStreamBitrateField*) fb->GetField(i);
 						}
-		
+
 						break;
 				}
 				break;
@@ -2020,7 +2027,7 @@ int RTPSession::SendSenderReport()
 			rtcp->AddRTCPacket(remb);
 		}
 	}
-	
+
 	//Send packet
 	int ret = SendPacket(*rtcp);
 
@@ -2055,7 +2062,7 @@ int RTPSession::SendFIR()
 
 	//Delete it
 	delete(rtcp);
-	
+
 	//Exit
 	return ret;
 }
@@ -2093,7 +2100,7 @@ void RTPSession::SetRTT(DWORD rtt)
 	if (remoteRateEstimator)
 		//Update estimator
 		remoteRateEstimator->UpdateRTT(recSSRC,rtt);
-	
+
 	//Check RTT to enable NACK
 	if (useNACK && rtt < 240)
 	{
@@ -2213,5 +2220,5 @@ void RTPSession::onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMasterKey,DW
 
 
 
-	
+
 }
