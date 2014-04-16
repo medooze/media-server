@@ -29,7 +29,7 @@ struct MediaStatistics
 	DWORD		totalSendBytes;
 };
 
-class RTPSession : 
+class RTPSession :
 	public RemoteRateEstimator::Listener,
 	public DTLSConnection::Listener
 {
@@ -46,7 +46,7 @@ public:
 		virtual void onTempMaxMediaStreamBitrateRequest(RTPSession *session,DWORD bitrate,DWORD overhead) = 0;
 	};
 public:
-	
+
 public:
 	static bool SetPortRange(int minPort, int maxPort);
 	static DWORD GetMinPort() { return minLocalPort; }
@@ -56,6 +56,7 @@ private:
 	// Admissible port range
 	static DWORD minLocalPort;
 	static DWORD maxLocalPort;
+	static int minLocalPortRange;
 
 public:
 	RTPSession(MediaFrame::Type media,Listener *listener);
@@ -74,7 +75,7 @@ public:
 	int SendEmptyPacket();
 	int SendPacket(RTPPacket &packet,DWORD timestamp);
 	int SendPacket(RTPPacket &packet);
-	
+
 	RTPPacket* GetPacket();
 	void CancelGetPacket();
 	DWORD GetNumRecvPackets()	const { return numRecvPackets+numRTCPRecvPackets;	}
@@ -150,7 +151,7 @@ private:
 	char*	iceLocalUsername;
 	char*	iceLocalPwd;
 	pthread_t thread;
-	pthread_mutex_t mutex;	
+	pthread_mutex_t mutex;
 
 	//Tipos
 	int 	sendType;
@@ -197,7 +198,7 @@ private:
 	DWORD	totalRecvBytesSinceLastSR;
 	DWORD   minRecvExtSeqNumSinceLastSR;
 	DWORD	jitter;
-	
+
 	BYTE	firReqNum;
 
 	DWORD	rtt;
