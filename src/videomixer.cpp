@@ -676,7 +676,7 @@ int VideoMixer::RemoveMosaicParticipant(int mosaicId, int partId)
 	Mosaics::iterator itMosaic = mosaics.find(mosaicId);
 
 	//If not found
-	if (itMosaic!=mosaics.end())
+	if (itMosaic==mosaics.end())
 	{
 		//Unblock
 		lstVideosUse.DecUse();
