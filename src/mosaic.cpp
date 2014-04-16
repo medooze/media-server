@@ -438,7 +438,7 @@ int Mosaic::CalculatePositions()
 				break;
 			default:
 				//Double check that the participant is in the mosaic yet
-				if (participants.find(mosaicSlots[i])==participants.end())
+				if (participants.find(mosaicSlots[i])!=participants.end())
 				{
 					//Fix the participant
 					mosaicPos[i] = mosaicSlots[i];
