@@ -350,6 +350,18 @@ int Mosaic::RemoveParticipant(int id)
 		vadParticipant = 0;
 		vadBlockingTime = 0;
 	}
+	//Check all slots
+	for (int i=0;i<numSlots;i++)
+	{
+		//Check if it was ours
+		if (mosaicSlots[i]==id)
+		{
+			//Set mosaic slot free
+			mosaicSlots[i] = SlotFree;
+			//Set empty pos
+			mosaicPos[i] = 0;
+		}
+	}
 
 	//Return position
 	return 1;
@@ -425,8 +437,31 @@ int Mosaic::CalculatePositions()
 					mosaicPos[i] = vadParticipant;
 				break;
 			default:
-				//Fix the participant
-				mosaicPos[i] = mosaicSlots[i];
+				//Double check that the participant is in the mosaic yet
+				if (participants.find(mosaicSlots[i])==participants.end())
+				{
+					//Fix the participant
+					mosaicPos[i] = mosaicSlots[i];
+				} else {
+					//Set slot free
+					mosaicSlots[i] = SlotFree;
+					//Check if we have more participants to draw
+					while (it!=order.end())
+					{
+						//Get info
+						PartInfo* info = *it;
+						//Move to next participant
+						++it;
+						//Check if it is the VAD participnat and we have to hide it or if it is fixed
+						if ((info->id==vadParticipant && hideVadParticipant) || info->isFixed>0)
+							//Next one
+							continue;
+						//Put it in the position
+						mosaicPos[i] = info->id;
+						//found
+						break;
+					}
+				}
 				break;
 		}
 	}
