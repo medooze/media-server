@@ -107,6 +107,19 @@ void VNCViewer::GotCopyRectangle(rfbClient* client, int src_x, int src_y, int w,
 		viewer->listener->onGotCopyRectangle(viewer,src_x, src_y, w, h, dest_x, dest_y);;
 }
 
+rfbBool VNCViewer::HandleCursorPos(rfbClient* client, int x, int y)
+{
+	//Vet viewer
+	VNCViewer * viewer = (VNCViewer *)(client->clientData);
+	//Send event
+	if (viewer->listener)
+		//Call it
+		viewer->listener->onHandleCursorPos(viewer,x,y);
+
+	//Ok
+	return true;
+}
+
 int VNCViewer::Init(VNCViewer::Socket* socket, VNCViewer::Listener* listener)
 {
 	//Check if running
@@ -372,12 +385,8 @@ int VNCViewer::Run()
 		Debug(">HandleRFBServerMessage\n");
 		//PRocessmessage
 		if (!HandleRFBServerMessage(client))
-		{
-			//Close socket
-			((Socket*)client->tlsSession)->CancelWaitForMessage();
 			//Error
 			return  Error("HandleRFBServerMessage error\n");
-		}
 		Debug("<HandleRFBServerMessage\n");
 	}
 	Log("<VNCViewer run");
@@ -408,4 +417,16 @@ int VNCViewer::ResetSize()
 	
 	//return result
 	return true;
+}
+
+int VNCViewer::SendMouseEvent(int buttonMask, int x, int y)
+{
+	Log("-SendMouseEvent [x:%,y:%d,mask:0x%x]\n",x,y,buttonMask);
+	return SendPointerEvent(client,x,y,buttonMask);
+}
+
+int VNCViewer::SendKeyboardEvent(bool down, DWORD key)
+{
+	Log("-SendKeyboardEvent [key:%d,down:%d]\n",key,down);
+	return SendKeyEvent(client,key,down);
 }

@@ -5,6 +5,7 @@
 #include "mcu.h"
 #include "rtmpparticipant.h"
 #include "websockets.h"
+#include "bfcp.h"
 
 
 /**************************************
@@ -174,6 +175,13 @@ int MCU::CreateConference(std::wstring tag,int queueId)
 
 	//Set us as listeners
 	conf->SetListener(this,(void*)entry);
+
+	//Create BFCP conference
+	BFCPFloorControlServer* floorServer = BFCP::getInstance().CreateConference(confId,conf);
+
+	//Set floor server in cong
+	conf->SetFloorControlServer(floorServer);
+
 		
 	Log("<CreateConference [%d]\n",confId);
 
@@ -366,6 +374,9 @@ int MCU::DeleteConference(int id)
 	//End conference
 	conf->End();
 
+	//Delete BFCP
+	BFCP::getInstance().RemoveConference(id);
+
 	//Delete conference
 	delete conf;
 
@@ -542,24 +553,16 @@ void MCU::onWebSocketConnection(const HTTPRequest& request,WebSocket *ws)
 	StringParser parser(url);
 
 	//Check it is for us
-	if(!parser.MatchString("/mcu/"))
-	{
+	if (!parser.MatchString("/mcu/"))
 		//reject
-		ws->Reject(400,"Bad request");
-		//Not found
-		return;
-	}
+		return ws->Reject(400,"Bad request");
 
 	//Get until next /
 	if (!parser.ParseUntilCharset("/"))
-	{
 		//reject
-		ws->Reject(400,"Bad request");
-		//Not found
-		return;
-	}
+		return ws->Reject(400,"Bad request");
 	
-	//Get value
+	//Get conf id value
 	std::string value = parser.GetValue();
 
 	//Get id by tag
@@ -568,51 +571,57 @@ void MCU::onWebSocketConnection(const HTTPRequest& request,WebSocket *ws)
 	//If not found
 	if (!confId)
 	{
-		//reject
-		ws->Reject(404,"Conference does not exist");
 		//Error
 		Error("Conference does not exist\n");
-		//Not found
-		return;
+		//reject
+		return ws->Reject(404,"Conference does not exist");
 	}
 
 	//Skip /
 	parser.Next();
 
 	//Get participant id
-	if (!parser.ParseUntilCharset("/?"))
-	{
+	if (!parser.ParseUntilCharset(":"))
 		//reject
-		ws->Reject(400,"Bad request");
-		//Not found
-		return;
-	}
+		return ws->Reject(400,"Bad request");
 
 	//Get value
 	int partId = atoi(parser.GetValue().c_str());
 
-	//Viewer only by default
-	bool isPresenter = false;
+	//Skip :
+	parser.Next();
 
-	//Check if it is presented
-	if (parser.CheckString("/presenter"))
-		//It is presenter
-		isPresenter = true;
+	//Get participant id
+	if (!parser.ParseUntilCharset("/"))
+		//reject
+		return ws->Reject(400,"Bad request");
 
+	//Get to what are they connecting
+	std::string token = parser.GetValue();
+
+	//Skip /
+	parser.Next();
+
+	//Get participant id
+	if (!parser.ParseUntilCharset("/"))
+		//reject
+		return ws->Reject(400,"Bad request");
+
+	//Get to what are they connecting
+	std::string to = parser.GetValue();
+	
 	//Get conference
 	if(!GetConferenceRef(confId,&conf))
 	{
-		//reject
-		ws->Reject(404,"Conference does not exist");
 		//Error
 		Error("Conference does not exist\n");
-		//Not found
-		return;
+		//reject
+		return ws->Reject(404,"Conference does not exist");
 	}
 
 	//Connect it
-	conf->AppMixerWebsocketConnectRequest(partId,ws,isPresenter);
-
+	conf->WebsocketConnectRequest(ws,partId,token,to);
+	
 	//Release it
 	ReleaseConferenceRef(confId);
 }

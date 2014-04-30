@@ -181,6 +181,11 @@ UTF8Parser::UTF8Parser(const std::wstring& str)
 	SetWString(str);
 }
 
+UTF8Parser::UTF8Parser(const std::string& str)
+{
+	SetString(str);
+}
+
 void UTF8Parser::Reset()
 {
 	//Remove al string content
@@ -200,8 +205,15 @@ void UTF8Parser::SetSize(DWORD size)
 	value.reserve(utf8size);
 }
 
+DWORD UTF8Parser::SetString(const std::string& str)
+{
+	Reset();
+	return Parse((BYTE*)str.c_str(),str.size());
+}
+
 DWORD UTF8Parser::SetString(const char* str)
 {
+	Reset();
 	return Parse((BYTE*)str,strlen(str));
 }
 

@@ -23,7 +23,7 @@ public:
 	static int GlobalEnd();
 
 	int Init();
-	int CreateMixer(int id,std::wstring &name);
+	int CreateMixer(int id,const std::wstring &name);
 	int InitMixer(int id);
 	int EndMixer(int id);
 	int DeleteMixer(int id);

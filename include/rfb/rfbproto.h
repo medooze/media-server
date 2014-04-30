@@ -396,7 +396,10 @@ typedef struct {
 #define rfbPalmVNCReSizeFrameBuffer 0xF
 
 /* custom */
+#define rfbReset 16
+#define rfbChangedControlMode 17
 #define rfbMinimized 18
+
 
 /* client -> server */
 

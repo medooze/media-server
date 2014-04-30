@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   stringparser.h
  * Author: Sergio
  *
@@ -23,7 +23,7 @@ public:
 		size = str.size();
 		c = buffer;
 	}
-	
+
 	BaseStringParser(const _CharT* buffer,DWORD size)
 	{
 		this->buffer = (_CharT*)buffer;
@@ -201,7 +201,7 @@ public:
 		//Everything ok
 		return true;
 	}
-	
+
 	bool ParseUntilCharset(const _CharT* str)
 	{
 		//Check ended
@@ -299,7 +299,7 @@ public:
 		return _StringT(c,size-(c-buffer));
 	}
 
-	
+
 
 	void Move(DWORD num)
 	{
@@ -372,6 +372,50 @@ public:
 		//Found
 		return true;
 	}
+
+	bool CheckInteger()
+	{
+		return CheckChar('-') || CheckChar('+') || CheckDigit();
+	}
+
+	bool ParseInteger()
+	{
+		if (! CheckInteger())
+			return false;
+
+		//Mark
+		char* ini = Mark();
+		char* end = NULL;
+
+		//Parse long
+		number = strtol(ini,&end,10);
+
+		//Check conversion
+		if (!number && (errno==EINVAL || errno==ERANGE || ini==end))
+			//error
+			goto error;
+
+		//Goto end of number
+		Move(end-ini);
+
+		//Done
+		return true;
+
+	error:
+		//Reset pos
+		Reset(ini);
+
+		//Error
+		return false;
+	}
+
+	long int GetIntegerValue()
+	{
+		return number;
+	}
+
+private:
+	long int number;
 };
 
 class WideStringParser : public BaseStringParser<wchar_t,std::wstring>
@@ -569,6 +613,9 @@ public:
 
 	bool ParseJSONNumber()
 	{
+		//Skip WS
+		SkipJSONSpaces();
+
 		//Mark
 		wchar_t* ini = Mark();
 		wchar_t* end = NULL;
@@ -577,9 +624,12 @@ public:
 		number  = wcstold(ini,&end);
 
 		//Check conversion
-		if (!number && errno==EINVAL)
+		if (!number && (errno==EINVAL || ini==end))
 			//error
 			goto error;
+
+		//Goto end of number
+		Move(end-ini);
 
 		//Check if exponent is present
 		if (CheckCharSet(L"Ee"))
@@ -591,9 +641,12 @@ public:
 			long e = wcstod(Mark(),&end);
 
 			//Check conversion
-			if (!e && errno==EINVAL)
+			if (!e && (errno==EINVAL || ini==end))
 				//error
 				goto error;
+
+			//Goto end of number
+			Move(end-ini);
 
 			//Power
 			number *= pow10(e);
@@ -605,10 +658,16 @@ public:
 	error:
 		//Reset pos
 		Reset(ini);
+
+		//Error
+		return false;
 	}
 
 	bool ParseJSONString()
 	{
+		//Skip WS
+		SkipJSONSpaces();
+
 		//Get mark
 		wchar_t *m = Mark();
 		//Check it starts by "
@@ -794,13 +853,14 @@ public:
 	error:
 		//Move back
 		Reset(ini);
+		return false;
 	}
 
 	bool SkipJSONArray()
 	{
 		//Get init
 		wchar_t *ini =  Mark();
-		
+
 		//Check object start
 		if (!ParseJSONArrayStart())
 			//exit
@@ -829,12 +889,14 @@ public:
 	error:
 		//Move back
 		Reset(ini);
+		return false;
 	}
 
 	long double GetNumberValue()
 	{
 		return number;
 	}
+
 private:
 	long double number;
 };

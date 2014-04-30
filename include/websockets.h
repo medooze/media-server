@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   websockets.h
  * Author: Sergio
  *
@@ -23,6 +23,7 @@ public:
 		virtual void onMessageStart(WebSocket *ws,const WebSocket::MessageType type,const DWORD length) = 0;
 		virtual void onMessageData(WebSocket *ws,const BYTE* data, const DWORD size) = 0;
 		virtual void onMessageEnd(WebSocket *ws) = 0;
+		virtual void onWriteBufferEmpty(WebSocket *ws) = 0;
 		virtual void onError(WebSocket *ws) = 0;
 		virtual void onClose(WebSocket *ws) = 0;
 	};
@@ -31,7 +32,12 @@ public:
 	virtual void Reject(const WORD code, const char* reason) = 0;
 	virtual void SendMessage(const std::wstring& message) = 0;
 	virtual void SendMessage(const BYTE* data, const DWORD size) = 0;
+	virtual void ForceClose() = 0;
+	virtual DWORD GetWriteBufferLength() = 0;
+	virtual bool IsWriteBufferEmtpy() = 0;
+	virtual void Close(const WORD code, const std::wstring& reason) = 0;
 	virtual void Close() = 0;
+	virtual void Detach() = 0;
 
 	virtual void* GetUserData()			{ return userData;		}
 	virtual void  SetUserData(void* userData)	{ this->userData = userData;	}

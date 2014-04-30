@@ -73,27 +73,34 @@ public:
 
 	bool WaitSignal(DWORD timeout)
 	{
-		int ret = 0;
-		timespec ts;
-
 		//Lock
 		pthread_mutex_lock(&mutex);
 
+		//We are locked
+		bool ret = PreLockedWaitSignal(timeout);
+
+		//Unlock
+		pthread_mutex_unlock(&mutex);
+
+		//return result
+		return ret;
+	}
+
+	bool PreLockedWaitSignal(DWORD timeout)
+	{
+		int ret = 0;
+		timespec ts;
+
 		//if we are cancel
 		if (cancel)
-		{
-			//Unlock
-			pthread_mutex_unlock(&mutex);
 			//canceled
 			return false;
-		}
 
 		//Check if we have a time
 		if (timeout)
 		{
 			//Calculate timeout
 			calcTimout(&ts,timeout);
-
 			//Wait with time out
 			ret = pthread_cond_timedwait(&cond,&mutex,&ts);
 			//Check if there is an errot different than timeout
@@ -112,15 +119,13 @@ public:
 		//If we have been cancel
 		if (cancel)
 			//Not ok
-			ret = 1;
+			return false;
 
-		//Unlock
-		pthread_mutex_unlock(&mutex);
-
-		//canceled
+		//OK
 		return !ret;
 	}
 
+	bool IsCanceled()	{ return cancel;	}
 
 private:
 	bool		cancel;

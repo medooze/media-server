@@ -250,19 +250,23 @@ int RTPSession::SetLocalCryptoSDES(const char* suite,const BYTE* key,const DWORD
 	//Get cypher
 	if (strcmp(suite,"AES_CM_128_HMAC_SHA1_80")==0)
 	{
+		Log("RTPSession::SetLocalCryptoSDES() | suite: AES_CM_128_HMAC_SHA1_80\n");
 		crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtp);
 		crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtcp);
 	} else if (strcmp(suite,"AES_CM_128_HMAC_SHA1_32")==0) {
+		Log("RTPSession::SetLocalCryptoSDES() | suite: AES_CM_128_HMAC_SHA1_32\n");
 		crypto_policy_set_aes_cm_128_hmac_sha1_32(&policy.rtp);
 		crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtcp);
 	} else if (strcmp(suite,"AES_CM_128_NULL_AUTH")==0) {
+		Log("RTPSession::SetLocalCryptoSDES() | suite: AES_CM_128_NULL_AUTH\n");
 		crypto_policy_set_aes_cm_128_null_auth(&policy.rtp);
 		crypto_policy_set_aes_cm_128_null_auth(&policy.rtcp);
 	} else if (strcmp(suite,"NULL_CIPHER_HMAC_SHA1_80")==0) {
+		Log("RTPSession::SetLocalCryptoSDES() | suite: NULL_CIPHER_HMAC_SHA1_80\n");
 		crypto_policy_set_null_cipher_hmac_sha1_80(&policy.rtp);
 		crypto_policy_set_null_cipher_hmac_sha1_80(&policy.rtcp);
 	} else {
-		return Error("Unknown cipher suite");
+		return Error("RTPSession::SetLocalCryptoSDES() | Unknown cipher suite: %s", suite);
 	}
 
 	//Check sizes
@@ -278,12 +282,21 @@ int RTPSession::SetLocalCryptoSDES(const char* suite,const BYTE* key,const DWORD
 	policy.next		= NULL;
 
 	//Create new
-	err = srtp_create(&sendSRTPSession,&policy);
+	srtp_t session;
+	err = srtp_create(&session,&policy);
 
 	//Check error
 	if (err!=err_status_ok)
 		//Error
 		return Error("Failed to create local SRTP session | err:%d\n", err);
+
+	//Set send SSRTP sesion
+	sendSRTPSession = session;
+
+	//Request an intra to start clean
+	if (listener)
+		//Request a I frame
+		listener->onFPURequested(this);
 
 	//Evrything ok
 	return 1;
@@ -293,9 +306,6 @@ int RTPSession::SetLocalCryptoSDES(const char* suite, const char* key64)
 {
 	//Log
 	Log("-SetLocalCryptoSDES [key:%s,suite:%s]\n",key64,suite);
-
-	//encript
-	encript = true;
 
 	//Get lenght
 	WORD len64 = strlen(key64);
@@ -323,6 +333,10 @@ int RTPSession::SetProperties(const Properties& properties)
 		{
 			//Set rtcp muxing
 			muxRTCP = atoi(it->second.c_str());
+		} else if (it->first.compare("secure")==0) {
+			//Encript and decript
+			encript = true;
+			decript = true;
 		} else if (it->first.compare("ssrc")==0) {
 			//Set ssrc for sending
 			sendSSRC = atoi(it->second.c_str());
@@ -415,10 +429,6 @@ int RTPSession::SetRemoteCryptoDTLS(const char *setup,const char *hash,const cha
 	else
 		return Error("Unknown hash");
 
-	//encript & decript
-	encript = true;
-	decript = true;
-
 	//Init DTLS
 	dtls.Init();
 }
@@ -433,19 +443,23 @@ int RTPSession::SetRemoteCryptoSDES(const char* suite, const BYTE* key, const DW
 
 	if (strcmp(suite,"AES_CM_128_HMAC_SHA1_80")==0)
 	{
+		Log("RTPSession::SetRemoteCryptoSDES() | suite: AES_CM_128_HMAC_SHA1_80\n");
 		crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtp);
 		crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtcp);
 	} else if (strcmp(suite,"AES_CM_128_HMAC_SHA1_32")==0) {
+		Log("RTPSession::SetRemoteCryptoSDES() | suite: AES_CM_128_HMAC_SHA1_32\n");
 		crypto_policy_set_aes_cm_128_hmac_sha1_32(&policy.rtp);
 		crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtcp);
 	} else if (strcmp(suite,"AES_CM_128_NULL_AUTH")==0) {
+		Log("RTPSession::SetRemoteCryptoSDES() | suite: AES_CM_128_NULL_AUTH\n");
 		crypto_policy_set_aes_cm_128_null_auth(&policy.rtp);
 		crypto_policy_set_aes_cm_128_null_auth(&policy.rtcp);
 	} else if (strcmp(suite,"NULL_CIPHER_HMAC_SHA1_80")==0) {
+		Log("RTPSession::SetRemoteCryptoSDES() | suite: NULL_CIPHER_HMAC_SHA1_80\n");
 		crypto_policy_set_null_cipher_hmac_sha1_80(&policy.rtp);
 		crypto_policy_set_null_cipher_hmac_sha1_80(&policy.rtcp);
 	} else {
-		return Error("Unknown cipher suite");
+		return Error("RTPSession::SetRemoteCryptoSDES() | Unknown cipher suite %s", suite);
 	}
 
 	//Check sizes
@@ -460,20 +474,26 @@ int RTPSession::SetRemoteCryptoSDES(const char* suite, const BYTE* key, const DW
 	policy.next		= NULL;
 
 	//Create new
-	err = srtp_create(&recvSRTPSession,&policy);
+	srtp_t session;
+	err = srtp_create(&session,&policy);
 
 	//Check error
 	if (err!=err_status_ok)
 		//Error
 		return Error("Failed to create remote SRTP session | err:%d\n", err);
+	//Set it
+	recvSRTPSession = session;
 
 	//Create new
-	err = srtp_create(&recvSRTPSessionRTX,&policy);
+	err = srtp_create(&session,&policy);
 
 	//Check error
 	if (err!=err_status_ok)
 		//Error
-		Error("------------------------------------Failed set remote RTX SDES  (%d)\n", err);
+		Error("Failed set remote RTX SDES | err:%d\n", err);
+
+	//Set it
+	recvSRTPSessionRTX = session;
 
 	//Everything ok
 	return 1;
@@ -701,7 +721,7 @@ int RTPSession::Init()
 	}
 
 	//Error
-	Error("RTPSession too many failed attemps opening sockets");
+	Error("RTPSession too many failed attemps opening sockets\n");
 
 	//Failed
 	return 0;
@@ -934,7 +954,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 		//Check error
 		if (err!=err_status_ok)
 			//Nothing
-			return Error("Error protecting RTCP packet [%d]\n",err);
+			return Error("Error protecting RTP packet [%d]\n",err);
 	}
 
 	//Send packet
@@ -1247,6 +1267,8 @@ int RTPSession::ReadRTP()
 		int len = dtls.Read(buffer,MTU);
 		//Send it back
 		sendto(simSocket,buffer,len,0,(sockaddr *)&from_addr,sizeof(struct sockaddr_in));
+		//Exit
+		return 1;
 	}
 
 	//Double check it is an RTP packet

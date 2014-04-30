@@ -7,8 +7,8 @@
 
 #include "rtpparticipant.h"
 
-RTPParticipant::RTPParticipant(DWORD partId,const std::wstring &tag) :
-	Participant(Participant::RTP,partId),
+RTPParticipant::RTPParticipant(DWORD partId,const std::wstring &token,const std::wstring &tag) :
+	Participant(Participant::RTP,partId,token),
 	audio(NULL),
 	video(this),
 	text(NULL),

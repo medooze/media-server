@@ -38,10 +38,11 @@ public:
 		virtual int onFrameBufferUpdate(VNCViewer *viewer,int x, int y, int w, int h) = 0;
 		virtual int onGotCopyRectangle(VNCViewer *viewer, int src_x, int src_y, int w, int h, int dest_x, int dest_y) = 0;
 		virtual int onFinishedFrameBufferUpdate(VNCViewer *viewer) = 0;
+		virtual int onHandleCursorPos(VNCViewer *viewer,int x, int y) = 0;
 	};
 public:
 	VNCViewer();
-	~VNCViewer();
+	virtual ~VNCViewer();
 
 	int Init(Socket *socket,Listener *listener);
 	int End();
@@ -49,6 +50,9 @@ public:
 	BYTE* GetFrameBuffer()	{ return client->frameBuffer;	}
 	DWORD GetWidth()	{ return client->width;		}
 	DWORD GetHeight()	{ return client->height;	}
+
+	int SendMouseEvent(int buttonMask, int x, int y);
+	int SendKeyboardEvent(bool down, DWORD key);
 protected:
 	int ResetSize();
 public:
@@ -56,6 +60,7 @@ public:
 	static void GotFrameBufferUpdate(rfbClient* client, int x, int y, int w, int h);
 	static void GotCopyRectangle(rfbClient* client, int src_x, int src_y, int w, int h, int dest_x, int dest_y);
 	static void FinishedFrameBufferUpdate(rfbClient* client);
+	static rfbBool HandleCursorPos(rfbClient* client, int x, int y);
 private:
 	static void * run(void *par);
 protected:

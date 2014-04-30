@@ -25,8 +25,8 @@
 #include <wchar.h>
 #include <stdlib.h>
 
-RTMPParticipant::RTMPParticipant(DWORD partId) :
-	Participant(Participant::RTMP,partId),
+RTMPParticipant::RTMPParticipant(DWORD partId,const std::wstring& token) :
+	Participant(Participant::RTMP,partId,token),
 	RTMPMediaStream(0)
 {
 	//Neither sending nor receiving

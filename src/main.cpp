@@ -19,11 +19,12 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include "amf.h"
 #include "CPUMonitor.h"
 extern "C" {
 #include "libavcodec/avcodec.h"
 }
+#include "bfcp.h"
+
 
 extern XmlHandlerCmd mcuCmdList[];
 extern XmlHandlerCmd broadcasterCmdList[];
@@ -168,7 +169,7 @@ int main(int argc,char **argv)
 			//Get rtmp port
 			vadPeriod = atoi(argv[++i]);
 	}
-	
+
 	//Loop
 	while(forking)
 	{
@@ -181,7 +182,7 @@ int main(int argc,char **argv)
 
 		//Log
 		printf("MCU started\r\n");
-		
+
 		//Create the safe child
 		pid = fork();
 
@@ -263,7 +264,7 @@ int main(int argc,char **argv)
 
 	//Set default video mixer vad period
 	VideoMixer::SetVADDefaultChangePeriod(vadPeriod);
-	
+
 	//Set port ramge
 	if (!RTPSession::SetPortRange(minPort,maxPort))
 		//Using default ones
@@ -276,6 +277,9 @@ int main(int argc,char **argv)
 	//Print hashs
 	Log("-SHA1   fingerprint \"%s\"\n",DTLSConnection::GetCertificateFingerPrint(DTLSConnection::SHA1).c_str());
 	Log("-SHA256 fingerprint \"%s\"\n",DTLSConnection::GetCertificateFingerPrint(DTLSConnection::SHA256).c_str());
+
+	//Init BFCP
+	BFCP::Init();
 
 	//Create services
 	MCU		mcu;
@@ -301,14 +305,14 @@ int main(int argc,char **argv)
 	//And default status hanlder
 	StatusHandler status;
 	TextEchoWebsocketHandler echo;
-	
+
 	//Init de mcu
 	mcu.Init(&xmleventmcu);
 	//Init the broadcaster
 	broadcaster.Init();
 	//Init the media gateway
 	mediaGateway.Init();
-	//INit the jsr309
+	//Init the jsr309
 	jsr309Manager.Init(&xmleventjsr309);
 
 	//Add the rtmp application from the mcu to the rtmp server
@@ -321,7 +325,7 @@ int main(int argc,char **argv)
 	rtmpServer.AddApplication(L"streamer/flv",&broadcaster);
 	//Add the rtmp applications from the media gateway
 	rtmpServer.AddApplication(L"bridge/",&mediaGateway);
-	
+
 	//Append mcu cmd handler to the http server
 	server.AddHandler("/mcu",&xmlrpcmcu);
 	server.AddHandler("/broadcaster",&xmlrpcbroadcaster);
@@ -338,7 +342,8 @@ int main(int argc,char **argv)
 	//Add websocket handlers
 	wsServer.AddHandler("/echo", &echo);
 	wsServer.AddHandler("/mcu", &mcu);
-	
+	wsServer.AddHandler("/bfcp", &BFCP::getInstance());
+
 	//Add the html status handler
 	server.AddHandler("/status",&status);
 
@@ -348,15 +353,9 @@ int main(int argc,char **argv)
 	//Init web socket server
 	wsServer.Init(wsPort);
 
-	/*int confId = mcu.CreateConference(L"vnc",0);
-	MultiConf *conf;
-	mcu.GetConferenceRef(confId,&conf);
-	conf->Init(0,8000);
-	mcu.ReleaseConferenceRef(confId);*/
-
 	//Set mcu monitor listener
 	monitor.AddListener(&mcu);
-	
+
 	//Start cpu monitor
 	monitor.Start(10000);
 

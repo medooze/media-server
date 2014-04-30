@@ -185,7 +185,7 @@ int TextMixer::End()
 * CreateMixer
 *	Crea una nuevo source de text para mezclar
 ************************/
-int TextMixer::CreateMixer(int id,std::wstring &name)
+int TextMixer::CreateMixer(int id,const std::wstring &name)
 {
 	Log(">CreateMixer text [%d]\n",id);
 

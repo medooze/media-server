@@ -4,7 +4,10 @@
 #include <sys/poll.h>
 #include <pthread.h>
 #include <map>
+#include <list>
 #include "config.h"
+#include "log.h"
+#include "tools.h"
 #include "fifo.h"
 #include "websockets.h"
 #include "http.h"
@@ -237,6 +240,8 @@ private:
 	public:
 		Frame(bool fin,WebSocketFrameHeader::OpCode opCode,const BYTE* data,DWORD size)
 		{
+			//Store opCode
+			this->opCode = opCode;
 			//Create header
 			WebSocketFrameHeader header(fin,opCode,size,0);
 			//Get size
@@ -271,6 +276,7 @@ private:
 		{
 			free(data);
 		}
+		const WebSocketFrameHeader::OpCode GetOpCode()	{ return opCode;	}
 		
 		const BYTE* GetData()	{ return data;	}
 		const DWORD GetSize()	{ return size;	}
@@ -278,6 +284,7 @@ private:
 		BYTE*	    GetPayloadData() { return data+headerSize;	}
 		const DWORD GetPayloadSize() { return size-headerSize;	}
 	private:
+		WebSocketFrameHeader::OpCode opCode;
 		BYTE* data;
 		DWORD size;
 		DWORD headerSize;
@@ -307,7 +314,12 @@ public:
 	virtual void Reject(const WORD code, const char* reason);
 	virtual void SendMessage(const std::wstring& message);
 	virtual void SendMessage(const BYTE* data, const DWORD size);
+	virtual DWORD GetWriteBufferLength();
+	virtual bool IsWriteBufferEmtpy();
+	virtual void Close(const WORD code, const std::wstring& reason);
 	virtual void Close();
+	virtual void ForceClose();
+	virtual void Detach();
 
 	//HTTPParser listener
 	virtual int on_url (HTTPParser*, const char *at, DWORD length);

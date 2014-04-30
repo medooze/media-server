@@ -1,7 +1,7 @@
-/* 
+/*
  * File:   appmixer.cpp
  * Author: Sergio
- * 
+ *
  * Created on 15 de enero de 2013, 15:38
  */
 
@@ -17,6 +17,9 @@ AppMixer::AppMixer()
 	output = NULL;
 	//No presenter
 	presenter = NULL;
+	presenterId = 0;
+	//NO editor
+	editorId = 0;
 	//No img
 	img = NULL;
 	// Create YUV rescaller cotext
@@ -24,6 +27,8 @@ AppMixer::AppMixer()
 }
 AppMixer::~AppMixer()
 {
+	//End just in case
+	End();
 	//Clean mem
 	if (img) free(img);
 	//Free sws contes
@@ -35,7 +40,7 @@ int AppMixer::Init(VideoOutput* output)
 	//Set output
 	this->output = output;
 	//Init VNC server
-	server.Init();
+	server.Init(this);
 }
 
 int AppMixer::DisplayImage(const char* filename)
@@ -63,6 +68,8 @@ int AppMixer::DisplayImage(const char* filename)
 
 int AppMixer::End()
 {
+	Log(">AppMixer::End\n");
+
 	//Reset output
 	output = NULL;
 
@@ -71,13 +78,16 @@ int AppMixer::End()
 	{
 		//ENd presenter
 		presenter->End();
-		//End it
-		presenter->ws->Close();
 		//Delete presenter
 		delete(presenter);
 		//Nullify
-		 presenter = NULL;
+		presenter = NULL;
 	}
+
+	//End VNC server
+	server.End();
+
+	Log("<AppMixer::End\n");
 }
 
 int AppMixer::WebsocketConnectRequest(int partId,WebSocket *ws,bool isPresenter)
@@ -89,13 +99,22 @@ int AppMixer::WebsocketConnectRequest(int partId,WebSocket *ws,bool isPresenter)
 		//Let the server handle it
 		return server.Connect(partId,ws);
 
+	//Check if we have presenter
+	if (presenterId!=partId)
+	{
+		//Reject it
+		ws->Reject(403,"Forbidden");
+		//Error
+		return Error("-Participant not allowed to present\n");
+	}
+
 	//LOck
 	use.WaitUnusedAndLock();
 	//Check if already presenting
 	if (presenter)
 	{
-		//Close websocket
-		presenter->ws->Close();
+		//End presenter
+		presenter->End();
 		//Delete it
 		delete(presenter);
 	}
@@ -112,6 +131,54 @@ int AppMixer::WebsocketConnectRequest(int partId,WebSocket *ws,bool isPresenter)
 	return 1;
 }
 
+int AppMixer::SetPresenter(int partId)
+{
+	Log(">AppMixer::SetPresenter [%d]\n",partId);
+
+	//Stopre it
+	presenterId = partId;
+
+	//LOck
+	use.WaitUnusedAndLock();
+
+	//Check if already presenting
+	if (presenter)
+	{
+		//End it
+		presenter->End();
+		//Delete it
+		delete(presenter);
+		//NULL
+		presenter = NULL;
+		//Reset size
+		server.Reset();
+	}
+
+	//Unlock
+	use.Unlock();
+
+	Log("<AppMixer::SetPresenter [%d]\n",partId);
+
+	//OK
+	return 1;
+}
+
+int AppMixer::SetEditor(int partId)
+{
+	Log(">AppMixer::SetEditor [%d]\n",partId);
+
+	//Store it
+	editorId = partId;
+
+	//Set it to the vnc server
+	server.SetEditor(editorId);
+
+	Log("<AppMixer::SetEditor [%d]\n",partId);
+	
+	//OK
+	return 1;
+}
+
 void AppMixer::onOpen(WebSocket *ws)
 {
 	Log("-AppMixer::onOpen %p",ws);
@@ -119,22 +186,24 @@ void AppMixer::onOpen(WebSocket *ws)
 
 void AppMixer::onMessageStart(WebSocket *ws,const WebSocket::MessageType type,const DWORD length)
 {
-	Debug("-onMessageData %p size:%d\n",ws,length);
+	//Nothing
 }
 
 void AppMixer::onMessageData(WebSocket *ws,const BYTE* data, const DWORD size)
 {
-	Debug("-onMessageData %p size:%d\n",ws,size);
-
-	if (ws==presenter->ws) {
+	if (ws==presenter->ws) 
 		//Process it
 		presenter->Process(data,size);
-	}
 }
 
 void AppMixer::onMessageEnd(WebSocket *ws)
 {
-	Debug("-onMessageEnd %p\n",ws);
+	//Nothing
+}
+
+void AppMixer::onWriteBufferEmpty(WebSocket *ws)
+{
+	//Nothing
 }
 
 void AppMixer::onClose(WebSocket *ws)
@@ -145,10 +214,14 @@ void AppMixer::onClose(WebSocket *ws)
 	{
 		//Lock
 		use.WaitUnusedAndLock();
+		//End presenter
+		presenter->End();
 		//Delete presenter
 		delete(presenter);
 		//Remove presenter
 		presenter = NULL;
+		//Reset server
+		server.Reset();
 		//Unlock
 		use.Unlock();
 	}
@@ -158,15 +231,19 @@ void AppMixer::onClose(WebSocket *ws)
 void AppMixer::onError(WebSocket *ws)
 {
 	Log(">AppMixer::onError %p %p\n",ws,presenter);
-	
+
 	if (presenter && ws==presenter->ws)
 	{
 		//Lock
 		use.WaitUnusedAndLock();
+		//End presenter
+		presenter->End();
 		//Delete presenter
 		delete(presenter);
 		//Remote presenter
 		presenter = NULL;
+		//Reset server
+		server.Reset();
 		//Unlock
 		use.Unlock();
 	}
@@ -182,26 +259,39 @@ AppMixer::Presenter::Presenter(WebSocket *ws)
 
 AppMixer::Presenter::~Presenter()
 {
+	//End just in case
+	End();
 }
 
 
 int AppMixer::Presenter::Init(VNCViewer::Listener *listener)
 {
 	//Init viewer
-	return viewer.Init(this,listener);
+	return VNCViewer::Init(this,listener);
 }
 
 int AppMixer::Presenter::End()
 {
 	//End viewer
-	return viewer.End();
+	VNCViewer::End();
+	//Close websocket and stop listening for events
+	if (ws) 
+		ws->ForceClose();
+	//NO websocket anymore
+	ws = NULL; 
+	//OK
+	return 1;
 }
 
 int AppMixer::Presenter::Process(const BYTE* data,DWORD size)
 {
 	Debug("-Process size:%d\n",size);
+	//Lock
+	wait.Lock();
 	//Puss to buffer
 	buffer.push(data,size);
+	//Lock
+	wait.Unlock();
 	//Signal
 	wait.Signal();
 	//Return written
@@ -227,21 +317,24 @@ void AppMixer::Presenter::CancelWaitForMessage()
 	//Cancel wait
 	wait.Cancel();
 	//Log
-	Debug("AppMixer::Presenter::CancelWaitForMessage\n");
+	Debug("<AppMixer::Presenter::CancelWaitForMessage\n");
 }
 
 bool  AppMixer::Presenter::ReadFromRFBServer(char *out, unsigned int size)
 {
-	Debug(">ReadFromRFBServer requested:%d,buffered:%d\n",size,buffer.length());
+	//Debug(">ReadFromRFBServer requested:%d,buffered:%d\n",size,buffer.length());
 
 	//Bytes to read
 	int num = size;
-	
+
+	//Lock buffer access
+	wait.Lock();
+
 	//Check if we have enought data
 	while(buffer.length()<num)
 	{
 		//Wait for mor data
-		if (!wait.WaitSignal(0))
+		if (!wait.PreLockedWaitSignal(0))
 			//Error
 			return 0;
 	}
@@ -249,7 +342,10 @@ bool  AppMixer::Presenter::ReadFromRFBServer(char *out, unsigned int size)
 	//Read
 	buffer.pop((BYTE*)out,num);
 
-	Debug("<ReadFromRFBServer requested:%d,returned:%d,left:%d\n",size,num,buffer.length());
+	//Unlock
+	wait.Unlock();
+
+	//Debug("<ReadFromRFBServer requested:%d,returned:%d,left:%d\n",size,num,buffer.length());
 
 	//Return readed
 	return num;
@@ -264,7 +360,7 @@ bool AppMixer::Presenter::WriteToRFBServer(char *buf, int size)
 
 void AppMixer::Presenter::Close()
 {
-	//Close websocket
+	//Close use
 	ws->Close();
 }
 
@@ -287,7 +383,7 @@ int AppMixer::onFrameBufferSizeChanged(VNCViewer *viewer, int width, int height)
 		// Create YUV rescaller cotext
 		sws = sws_alloc_context();
 	}
-	
+
 	// Set property's of YUV rescaller context
 	av_opt_set_defaults(sws);
 	av_opt_set_int(sws, "srcw",       width			,AV_OPT_SEARCH_CHILDREN);
@@ -297,7 +393,7 @@ int AppMixer::onFrameBufferSizeChanged(VNCViewer *viewer, int width, int height)
 	av_opt_set_int(sws, "dsth",       height		,AV_OPT_SEARCH_CHILDREN);
 	av_opt_set_int(sws, "dst_format", PIX_FMT_YUV420P	,AV_OPT_SEARCH_CHILDREN);
 	av_opt_set_int(sws, "sws_flags",  SWS_FAST_BILINEAR	,AV_OPT_SEARCH_CHILDREN);
-
+	
 	// Init YUV rescaller context
 	if (sws_init_context(sws, NULL, NULL) < 0)
 		//Set errror
@@ -307,7 +403,7 @@ int AppMixer::onFrameBufferSizeChanged(VNCViewer *viewer, int width, int height)
 	if (img)
 		//Free it
 		free(img);
-	
+
 	//Create number of pixels
 	DWORD num = width*height;
 	//Get size with padding
@@ -331,7 +427,7 @@ int AppMixer::onFrameBufferUpdate(VNCViewer *viewer,int x, int y, int w, int h)
 
 	//UPdate vnc server frame buffer
 	server.FrameBufferUpdate(viewer->GetFrameBuffer(),x,y,w,h);
-	
+
 	return 1;
 }
 
@@ -345,42 +441,81 @@ int AppMixer::onGotCopyRectangle(VNCViewer *viewer, int src_x, int src_y, int w,
 
 int AppMixer::onFinishedFrameBufferUpdate(VNCViewer *viewer)
 {
-	DWORD width = viewer->GetWidth();
-	DWORD height = viewer->GetHeight();
-
 	//Signal server
 	server.FrameBufferUpdateDone();
 
+	if (output)
+	{
+		DWORD width = viewer->GetWidth();
+		DWORD height = viewer->GetHeight();
+
+		//Calc num pixels
+		DWORD numpixels = width*height;
+
+		//Alloc data
+		AVFrame* in = av_frame_alloc();
+		AVFrame* out = av_frame_alloc();
+
+		//Set in frame
+		in->data[0] = viewer->GetFrameBuffer();
+
+		//Set size
+		in->linesize[0] = width*4;
+
+		//Alloc data
+		out->data[0] = img;
+		out->data[1] = out->data[0] + numpixels;
+		out->data[2] = out->data[1] + numpixels / 4;
+
+		//Set size for planes
+		out->linesize[0] = width;
+		out->linesize[1] = width/2;
+		out->linesize[2] = width/2;
+
+		//Convert
+		sws_scale(sws, in->data, in->linesize, 0, height, out->data, out->linesize);
+
+		//Put new frame
+		output->NextFrame(img);
+
+		//Free frames
+		av_frame_free(&in);
+		av_frame_free(&out);
+	}
+
 	return 1;
+}
 
-	//Calc num pixels
-	DWORD numpixels = width*height;
-
-	//Alloc data
-	AVFrame* in = av_frame_alloc();
-	AVFrame* out = av_frame_alloc();
-
-	//Set in frame
-	in->data[0] = viewer->GetFrameBuffer();
-
-	//Set size
-	in->linesize[0] = width*4;
-
-	//Alloc data
-	out->data[0] = img;
-	out->data[1] = out->data[0] + numpixels;
-	out->data[2] = out->data[1] + numpixels / 4;
-
-	//Set size for planes
-	out->linesize[0] = width;
-	out->linesize[1] = width/2;
-	out->linesize[2] = width/2;
-
-	//Convert
-	sws_scale(sws, in->data, in->linesize, 0, height, out->data, out->linesize);
-
-	//Put new frame
-	if (output) output->NextFrame(img);
-	
+//** Server -> Client */
+int AppMixer::onHandleCursorPos(VNCViewer *viewer,int x, int y)
+{
+	//Do nothing
 	return 1;
+}
+
+//** Client -> Server */
+ void AppMixer::onMouseEvent(int buttonMask, int x, int y)
+{
+	//Lock
+	use.WaitUnusedAndLock();
+
+	//Send to server
+	if (presenter)
+		//Send ley
+		presenter->SendMouseEvent(buttonMask,x,y);
+	//Unlock
+	use.Unlock();
+}
+
+void AppMixer::onKeyboardEvent(bool down, DWORD keySym)
+{
+	//Lock
+	use.WaitUnusedAndLock();
+
+	//Send to server
+	if (presenter)
+		//Send ley
+		presenter->SendKeyboardEvent(down,keySym);
+	//Unlock
+	use.Unlock();
 }

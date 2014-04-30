@@ -29,7 +29,7 @@ public:
 		virtual void onRequestFPU(Participant *part) = 0;
 	};
 public:
-	Participant(Type type,int partId)
+	Participant(Type type,int partId,const std::wstring &token) : token(token)
 	{
 		this->type = type;
 		this->partId = partId;
@@ -55,6 +55,11 @@ public:
 		return partId;
 	}
 
+	const std::wstring& GetToken()
+	{
+		return token;
+	}
+	
 	virtual int SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int intraPeriod,const Properties &properties) = 0;
 	virtual int SetAudioCodec(AudioCodec::Type codec,const Properties &properties) = 0;
 	virtual int SetTextCodec(TextCodec::Type codec) = 0;
@@ -77,6 +82,7 @@ protected:
 	Type type;
 	Listener *listener;
 	DWORD partId;
+	std::wstring token;
 };
 
 #endif	/* PARTICIPANT_H */

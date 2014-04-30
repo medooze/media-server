@@ -20,7 +20,7 @@ class RTMPParticipant :
 	public RTMPMediaStream::Listener
 {
 public:
-	RTMPParticipant(DWORD partId);
+	RTMPParticipant(DWORD partId,const std::wstring &token);
 	virtual ~RTMPParticipant();
 
 	virtual int SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int intraPeriod,const Properties& properties);

@@ -8,7 +8,7 @@ OPTS+= -fPIC -DPIC -msse -msse2 -msse3 -DSPX_RESAMPLE_EXPORT= -DRANDOM_PREFIX=mc
 #DEBUG
 ifeq ($(DEBUG),yes)
 	TAG=debug
-	OPTS+= -g -O0 
+	OPTS+= -g -O0
 else
 	OPTS+= -g -O4 -fexpensive-optimizations -funroll-loops
 	TAG=release
@@ -76,14 +76,43 @@ AACOBJ=aacencoder.o
 VNCDIR=vnc
 VNCOBJ=VNCViewer.o VNCServer.o server.o rfbproto.o cursor.o minilzo.o tls_none.o rfbserver.o rfbregion.o scale.o ultra.o corre.o hextile.o draw.o font.o rre.o selbox.o stats.o tight.o translate.o zlib.o zrle.o zrleoutstream.o zrlepalettehelper.o zywrletemplate.o turbojpeg.o auth.o server_cursor.o vncauth.o d3des.o md5.o sha1.o cargs.o
 
-OBJS= $(VNCOBJ) httpparser.o websocketserver.o websocketconnection.o audio.o video.o mcu.o rtpparticipant.o multiconf.o  rtmpparticipant.o videomixer.o audiomixer.o xmlrpcserver.o xmlhandler.o xmlstreaminghandler.o statushandler.o xmlrpcmcu.o   rtpsession.o audiostream.o videostream.o audiotransrater.o pipeaudioinput.o pipeaudiooutput.o pipevideoinput.o pipevideooutput.o framescaler.o sidebar.o mosaic.o partedmosaic.o asymmetricmosaic.o pipmosaic.o logo.o overlay.o amf.o rtmpmessage.o rtmpchunk.o rtmpstream.o rtmpconnection.o  rtmpserver.o broadcaster.o broadcastsession.o rtmpflvstream.o flvrecorder.o FLVEncoder.o xmlrpcbroadcaster.o mediagateway.o mediabridgesession.o xmlrpcmediagateway.o textmixer.o textmixerworker.o textstream.o pipetextinput.o pipetextoutput.o mp4player.o mp4streamer.o audioencoder.o audiodecoder.o textencoder.o mp4recorder.o rtmpmp4stream.o rtmpnetconnection.o avcdescriptor.o RTPSmoother.o rtp.o rtmpclientconnection.o vad.o stunmessage.o crc32calc.o remoteratecontrol.o remoterateestimator.o uploadhandler.o http.o appmixer.o fecdecoder.o videopipe.o eventstreaminghandler.o dtls.o CPUMonitor.o
+BFCPOBJ=\
+	bfcp.o  \
+	BFCPFloorControlServer.o  \
+	BFCPUser.o  \
+	BFCPFloorRequest.o  \
+	BFCPMessage.o  \
+	BFCPAttribute.o  \
+	BFCPMsgFloorQuery.o  \
+	BFCPMsgFloorRelease.o  \
+	BFCPMsgFloorRequest.o  \
+	BFCPMsgHello.o  \
+	BFCPMsgError.o  \
+	BFCPMsgFloorRequestStatus.o  \
+	BFCPMsgFloorStatus.o  \
+	BFCPAttrBeneficiaryId.o  \
+	BFCPAttrFloorId.o  \
+	BFCPAttrFloorRequestId.o  \
+	BFCPAttrParticipantProvidedInfo.o  \
+	BFCPAttrErrorCode.o  \
+	BFCPAttrErrorInfo.o  \
+	BFCPAttrFloorRequestInformation.o  \
+	BFCPAttrOverallRequestStatus.o  \
+	BFCPAttrFloorRequestStatus.o  \
+	BFCPAttrRequestStatus.o  \
+	BFCPAttrBeneficiaryInformation.o  \
+	BFCPAttrRequestedByInformation.o  \
+	BFCPAttrStatusInfo.o
+BFCPDIR=bfcp
+
+OBJS=  $(BFCPOBJ) $(VNCOBJ) httpparser.o websocketserver.o websocketconnection.o audio.o video.o mcu.o rtpparticipant.o multiconf.o  rtmpparticipant.o videomixer.o audiomixer.o xmlrpcserver.o xmlhandler.o xmlstreaminghandler.o statushandler.o xmlrpcmcu.o   rtpsession.o audiostream.o videostream.o audiotransrater.o pipeaudioinput.o pipeaudiooutput.o pipevideoinput.o pipevideooutput.o framescaler.o sidebar.o mosaic.o partedmosaic.o asymmetricmosaic.o pipmosaic.o logo.o overlay.o amf.o rtmpmessage.o rtmpchunk.o rtmpstream.o rtmpconnection.o  rtmpserver.o broadcaster.o broadcastsession.o rtmpflvstream.o flvrecorder.o FLVEncoder.o xmlrpcbroadcaster.o mediagateway.o mediabridgesession.o xmlrpcmediagateway.o textmixer.o textmixerworker.o textstream.o pipetextinput.o pipetextoutput.o mp4player.o mp4streamer.o audioencoder.o audiodecoder.o textencoder.o mp4recorder.o rtmpmp4stream.o rtmpnetconnection.o avcdescriptor.o RTPSmoother.o rtp.o rtmpclientconnection.o vad.o stunmessage.o crc32calc.o remoteratecontrol.o remoterateestimator.o uploadhandler.o http.o appmixer.o fecdecoder.o videopipe.o eventstreaminghandler.o dtls.o CPUMonitor.o
 OBJS+= $(G711OBJ) $(H263OBJ) $(GSMOBJ)  $(H264OBJ) ${FLV1OBJ} $(SPEEXOBJ) $(NELLYOBJ) $(G722OBJ) $(JSR309OBJ) $(VADOBJ) $(VP6OBJ) $(VP8OBJ) $(OPUSOBJ) $(AACOBJ)
 TARGETS=mcu
 
 ifeq ($(FLASHSTREAMER),yes)
-	GNASHINCLUDE = -I$(GNASHBASE) -I$(GNASHBASE)/server -I$(GNASHBASE)/libbase -I$(GNASHBASE)/libgeometry -I$(GNASHBASE)/server/parser -I$(GNASHBASE)/server/vm -I$(GNASHBASE)/backend -I$(GNASHBASE)/libmedia -DFLASHSTREAMER 
-	GNASHLD =  -lgnashserver -lagg  -L$(GNASHLIBS) 
-	OBJS+= flash.o xmlrpcflash.o 
+	GNASHINCLUDE = -I$(GNASHBASE) -I$(GNASHBASE)/server -I$(GNASHBASE)/libbase -I$(GNASHBASE)/libgeometry -I$(GNASHBASE)/server/parser -I$(GNASHBASE)/server/vm -I$(GNASHBASE)/backend -I$(GNASHBASE)/libmedia -DFLASHSTREAMER
+	GNASHLD =  -lgnashserver -lagg  -L$(GNASHLIBS)
+	OBJS+= flash.o xmlrpcflash.o
 	OBJSFS   = flashstreamer.o FlashPlayer.o FlashSoundHandler.o $(OBJS)
 	OBJSFSCLIENT = xmlrpcclient.o xmlrpcflashclient.o
 	TARGETS += flashstreamer flashclient testflash
@@ -109,7 +138,7 @@ BUILDOBJOBJSLIB = $(addprefix $(BUILD)/,$(OBJSLIB))
 BUILDOBJSMCUCLIENT= $(addprefix $(BUILD)/,$(OBJSMCUCLIENT))
 BUILDOBJSRTMPDEBUG= $(addprefix $(BUILD)/,$(OBJSRTMPDEBUG))
 BUILDOBJSFLVDUMP= $(addprefix $(BUILD)/,$(OBJSFLVDUMP))
-BUILDOBJSFS= $(addprefix $(BUILD)/,$(OBJSFS)) 
+BUILDOBJSFS= $(addprefix $(BUILD)/,$(OBJSFS))
 BUILDOBJSFSCLIENT= $(addprefix $(BUILD)/,$(OBJSFSCLIENT))
 
 ###################################
@@ -136,6 +165,10 @@ VPATH +=  %.cpp $(SRCDIR)/src/$(VNCDIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(VNCDIR)/libvncserver
 VPATH +=  %.cpp $(SRCDIR)/src/$(VNCDIR)/libvncclient
 VPATH +=  %.cpp $(SRCDIR)/src/$(VNCDIR)/common
+VPATH +=  %.cpp $(SRCDIR)/src/$(BFCPDIR)
+VPATH +=  %.cpp $(SRCDIR)/src/$(BFCPDIR)/attributes
+VPATH +=  %.cpp $(SRCDIR)/src/$(BFCPDIR)/messages
+
 
 
 INCLUDE+= -I$(SRCDIR)/include/ $(VADINCLUDE) -I$(SRCDIR)/src/vnc/common -I$(SRCDIR)/src/vnc/libvncserver
@@ -160,8 +193,8 @@ LDFLAGS+= -lxmlrpc -lxmlrpc_xmlparse -lxmlrpc_xmltok -lxmlrpc_abyss -lxmlrpc_ser
 
 #For abyss
 OPTS 	+= -D_UNIX -D__STDC_CONSTANT_MACROS
-CFLAGS  += $(INCLUDE) $(OPTS)  
-CXXFLAGS+= $(INCLUDE) $(OPTS) 
+CFLAGS  += $(INCLUDE) $(OPTS)
+CXXFLAGS+= $(INCLUDE) $(OPTS)
 
 %.o: %.c
 	@echo "[CC ] $(TAG) $<"
@@ -174,16 +207,18 @@ CXXFLAGS+= $(INCLUDE) $(OPTS)
 ############################################
 #Targets
 ############################################
-all: touch mkdirs $(TARGETS)
+all: touch mkdirs $(TARGETS) certs
 
 touch:
 	touch $(SRCDIR)/include/version.h
 	svn propset builtime "`date`" $(SRCDIR)/include/version.h || true
-mkdirs:  
+mkdirs:
 	mkdir -p $(BUILD)
 	mkdir -p $(BUILD)/libvncserver
 	mkdir -p $(BIN)
+ifeq ($(wildcard $(BIN)/logo.png), )
 	cp $(SRCDIR)/logo.png $(BIN)
+endif
 clean:
 	rm -f $(BUILDOBJSMCU)
 	rm -f $(BUILDOBJSFS)
@@ -191,9 +226,14 @@ clean:
 	rm -f "$(BIN)/flashstreamer"
 
 install:
-	mkdir -p  $(TARGET)/lib
+	mkdir -p  $(TARGET)/libA
 	mkdir -p  $(TARGET)/include/mcu
-	
+
+certs:
+ifeq ($(wildcard $(BIN)/mcu.crt), )
+	@echo "Generating DTLS certificate files"
+	@openssl req -nodes -new -x509 -keyout $(BIN)/mcu.key -out $(BIN)/mcu.crt
+endif
 
 ############################################
 #MCU

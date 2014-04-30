@@ -26,12 +26,14 @@ extern "C" {
 
 class AppMixer : 
 	public WebSocket::Listener,
-	public VNCViewer::Listener
+	public VNCViewer::Listener,
+	public VNCServer::Listener
 {
 private:
 
 	class Presenter : 
-		public VNCViewer::Socket
+		public VNCViewer::Socket,
+		public VNCViewer
 	{
 	public:
 		Presenter(WebSocket *ws);
@@ -40,7 +42,7 @@ private:
 		int Process(const BYTE* data,DWORD size);
 		int End();
 
-		// VNCViewer::Socket listeners
+		// VNCViewer::Socket methods
 		virtual int WaitForMessage(DWORD usecs);
 		virtual void CancelWaitForMessage();
 		virtual bool ReadFromRFBServer(char *data, unsigned int size);
@@ -61,12 +63,17 @@ public:
 	int Init(VideoOutput *output);
 	int DisplayImage(const char* filename);
 	int WebsocketConnectRequest(int partId,WebSocket *ws,bool isPresenter);
+	int SetPresenter(int partId);
+	int SetEditor(int partId);
+	int GetPresenter()	{ return presenterId;	}
+	int GetEditor()		{ return editorId;	}
 	int End();
 
 	virtual void onOpen(WebSocket *ws);
 	virtual void onMessageStart(WebSocket *ws,const WebSocket::MessageType type, const DWORD length);
 	virtual void onMessageData(WebSocket *ws,const BYTE* data, const DWORD size);
 	virtual void onMessageEnd(WebSocket *ws);
+	virtual void onWriteBufferEmpty(WebSocket *ws);
 	virtual void onError(WebSocket *ws);
 	virtual void onClose(WebSocket *ws);
 
@@ -74,6 +81,10 @@ public:
 	virtual int onFrameBufferUpdate(VNCViewer *viewer,int x, int y, int w, int h);
 	virtual int onGotCopyRectangle(VNCViewer *viewer, int src_x, int src_y, int w, int h, int dest_x, int dest_y);
 	virtual int onFinishedFrameBufferUpdate(VNCViewer *viewer);
+	virtual int onHandleCursorPos(VNCViewer *viewer,int x, int y);
+
+	virtual void onMouseEvent(int buttonMask, int x, int y);
+	virtual void onKeyboardEvent(bool down, DWORD keySym);
 private:
 	Logo		logo;
 	VideoOutput*	output;
@@ -84,6 +95,8 @@ private:
 	BYTE*		img;
 	DWORD		width;
 	DWORD		height;
+	int		presenterId;
+	int		editorId;
 };
 
 #endif	/* APPMIXER_H */

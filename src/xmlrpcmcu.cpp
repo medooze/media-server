@@ -332,7 +332,7 @@ xmlrpc_value* CreateParticipant(xmlrpc_env *env, xmlrpc_value *param_array, void
 		//Comprobamos si ha habido error
 		if(env->fault_occurred)
 			//Send errro
-		return xmlerror(env,"Fault occurred");
+			return xmlerror(env,"Fault occurred");
 	}
 	 
 	//Obtenemos la referencia
@@ -355,7 +355,7 @@ xmlrpc_value* CreateParticipant(xmlrpc_env *env, xmlrpc_value *param_array, void
 	std::wstring token = parser.GetWString();
 
 	//La borramos
-	int partId = conf->CreateParticipant(mosaicId,sidebarId,name,(Participant::Type)type);
+	int partId = conf->CreateParticipant(mosaicId,sidebarId,name,token,(Participant::Type)type);
 
 	//Liberamos la referencia
 	mcu->ReleaseConferenceRef(confId);
@@ -1439,6 +1439,38 @@ xmlrpc_value* SetMute(xmlrpc_env *env, xmlrpc_value *param_array, void *user_dat
 	return xmlok(env);
 }
 
+xmlrpc_value* SetChair(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+	MCU *mcu = (MCU *)user_data;
+	MultiConf *conf = NULL;
+
+	 //Parseamos
+	int confId;
+	int partId;
+	xmlrpc_parse_value(env, param_array, "(ii)", &confId, &partId);
+
+	//Comprobamos si ha habido error
+	if(env->fault_occurred)
+		return xmlerror(env,"Fault occurred");
+
+	//Obtenemos la referencia
+	if(!mcu->GetConferenceRef(confId,&conf))
+		return xmlerror(env,"Conference does not exist");
+
+	//La borramos
+	int res = conf->SetChair(partId);
+
+	//Liberamos la referencia
+	mcu->ReleaseConferenceRef(confId);
+
+	//Salimos
+	if(!res)
+		return xmlerror(env,"Could not start playback");
+
+	//Devolvemos el resultado
+	return xmlok(env);
+}
+
 xmlrpc_value* GetParticipantStatistics(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
@@ -2060,6 +2092,7 @@ XmlHandlerCmd mcuCmdList[] =
 	{"StopPlaying",StopPlaying},
 	{"SendFPU",SendFPU},
 	{"SetMute",SetMute},
+	{"SetChair",SetChair},
 	{"GetParticipantStatistics",GetParticipantStatistics},
 	{"AddParticipantInputToken",AddParticipantInputToken},
 	{"AddParticipantOutputToken",AddParticipantOutputToken},
