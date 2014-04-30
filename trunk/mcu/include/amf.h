@@ -56,6 +56,7 @@ class UTF8Parser
 public:
 	UTF8Parser();
 	UTF8Parser(const std::wstring& str);
+	UTF8Parser(const std::string& str);
 	void Reset();
 	DWORD Parse(const BYTE *data,DWORD size);
 	bool IsParsed();
@@ -67,6 +68,7 @@ public:
 	void SetWString(const std::wstring& str);
 	void SetWChar(const wchar_t* buffer,DWORD bufferLen);
 	DWORD SetString(const char* str);
+	DWORD SetString(const std::string& str);
 	DWORD Serialize(BYTE *data,DWORD size);
 private:
 	std::wstring value;

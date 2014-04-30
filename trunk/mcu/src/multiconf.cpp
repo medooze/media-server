@@ -5,6 +5,8 @@
 #include "rtpparticipant.h"
 #include "multiconf.h"
 #include "rtmpparticipant.h"
+#include "bfcp/BFCPFloorControlServer.h"
+#include "bfcp.h"
 
 /************************
 * MultiConf
@@ -30,6 +32,14 @@ MultiConf::MultiConf(const std::wstring &tag) : broadcast(tag),videoMixer(tag)
 
         //No recorder
         recorder = NULL;
+
+	//Nothing else
+	floorServer = NULL;
+	listener = NULL;
+	param = NULL;
+
+	//No chair
+	chairId = 0;
 }
 
 /************************
@@ -45,6 +55,11 @@ MultiConf::~MultiConf()
         if (recorder)
                 //Delete
                 delete(recorder);
+}
+
+void MultiConf::SetFloorControlServer(BFCPFloorControlServer* floorServer)
+{
+	this->floorServer = floorServer;
 }
 
 void MultiConf::SetListener(Listener *listener,void* param)
@@ -115,6 +130,10 @@ int MultiConf::Init(int vad, DWORD rate)
 	//Init mixer for the app mixer
 	videoMixer.InitMixer(AppMixerId,-1);
 
+	//Create floors
+	floorServer->AddFloor(1);	//Presenter
+	floorServer->AddFloor(2);	//Editor
+
 	return res;
 }
 
@@ -176,7 +195,7 @@ int MultiConf::StartRecordingBroadcaster(const char* filename)
 {
 	//Log filename
 	Log("-Recording broadcast [file:\"%s\"]\n",filename);
-	
+
 	//Find last "."
 	const char* ext = (const char*)strrchr(filename,'.');
 
@@ -218,7 +237,7 @@ int MultiConf::StartRecordingBroadcaster(const char* filename)
 			flvEncoder.AddMediaFrameListener((MP4Recorder*)recorder);
 			break;
 	}
-	
+
 
 	//OK
 	return 1;
@@ -238,10 +257,10 @@ int MultiConf::StopRecordingBroadcaster()
 			flvEncoder.RemoveMediaFrameListener((MP4Recorder*)recorder);
 			break;
 	}
-	
+
 	//Close recorder
 	recorder->Stop();
-	
+
 	//Close recorder
 	recorder->Close();
 
@@ -359,7 +378,7 @@ int MultiConf::AddMosaicParticipant(int mosaicId,int partId)
 *************************/
 int MultiConf::RemoveMosaicParticipant(int mosaicId,int partId)
 {
-	Log("-RemoveMosaicParticipant [mosaic:%d,partId:]\n",mosaicId,partId);
+	Log("-RemoveMosaicParticipant [mosaic:%d,partId:%d]\n",mosaicId,partId);
 
 	//Set it
 	return videoMixer.RemoveMosaicParticipant(mosaicId,partId);
@@ -444,7 +463,7 @@ int MultiConf::DeleteSidebar(int sidebarId)
 * CreateParticipant
 * 	A�ade un participante
 *************************/
-int MultiConf::CreateParticipant(int mosaicId,int sidebarId,std::wstring name,Participant::Type type)
+int MultiConf::CreateParticipant(int mosaicId,int sidebarId,const std::wstring &name,const std::wstring &token,Participant::Type type)
 {
 	wchar_t uuid[1024];
 	Participant *part = NULL;
@@ -495,10 +514,10 @@ int MultiConf::CreateParticipant(int mosaicId,int sidebarId,std::wstring name,Pa
 	{
 		case Participant::RTP:
 			//Create RTP Participant
-			part = new RTPParticipant(partId,std::wstring(uuid));
+			part = new RTPParticipant(partId,token,std::wstring(uuid));
 			break;
 		case Participant::RTMP:
-			part = new RTMPParticipant(partId);
+			part = new RTMPParticipant(partId,token);
 			//Create RTP Participant
 			break;
 	}
@@ -528,12 +547,27 @@ int MultiConf::CreateParticipant(int mosaicId,int sidebarId,std::wstring name,Pa
 	//Unlock
 	participantsLock.Unlock();
 
+	//Add bfcp
+	floorServer->AddUser(partId);
+
 	//Set us as listener
 	part->SetListener(this);
 
 	Log("<CreateParticipant [%d]\n",partId);
 
 	return partId;
+}
+
+int MultiConf::SetChair(int partId)
+{
+	//Log
+	Log("-SetChair [partId:%d]\n",partId);
+	//Store it
+	chairId = partId;
+	//Set it to the foor server
+	floorServer->SetChair(partId);
+	//REMOVE!!! Only for debug!
+	appMixer.SetPresenter(partId);
 }
 
 /************************
@@ -549,7 +583,7 @@ int MultiConf::DeleteParticipant(int id)
 
 	//Block
 	participantsLock.WaitUnusedAndLock();
-	
+
 	//El iterator
 	Participants::iterator it = participants.find(id);
 
@@ -585,6 +619,9 @@ void MultiConf:: DestroyParticipant(int partId,Participant* part)
 
 	//End participant audio and video streams
 	part->End();
+
+	Log("-DestroyParticipant ending bfcp [%d]\n",partId);
+	floorServer->RemoveUser(partId);
 
 	Log("-DestroyParticipant ending mixers [%d]\n",partId);
 
@@ -642,7 +679,7 @@ Participant *MultiConf::GetParticipant(int partId,Participant::Type type)
 		//Exit
 		return NULL;
 	}
-	
+
 	//Return it
 	return part;
 }
@@ -676,7 +713,7 @@ int MultiConf::End()
 
 	//Get lock
 	participantsLock.WaitUnusedAndLock();
-	
+
 	//Destroy all participants
 	for(Participants::iterator it=participants.begin(); it!=participants.end(); it++)
 		//Destroy it
@@ -684,7 +721,7 @@ int MultiConf::End()
 
 	//Clear list
 	participants.clear();
-	
+
 	//Unlock
 	participantsLock.Unlock();
 
@@ -1248,7 +1285,7 @@ int MultiConf::DeletePlayer(int id)
 int MultiConf::StartRecordingParticipant(int partId,const char* filename)
 {
 	int ret = 0;
-	
+
 	Log("-StartRecordingParticipant [id:%d,name:\"%s\"]\n",partId,filename);
 
 	//Lock
@@ -1261,7 +1298,7 @@ int MultiConf::StartRecordingParticipant(int partId,const char* filename)
 	if (!rtp)
 		//End
 		goto end;
-	
+
 	//Create recording
 	if (!rtp->recorder.Create(filename))
 		//End
@@ -1271,7 +1308,7 @@ int MultiConf::StartRecordingParticipant(int partId,const char* filename)
         if (!rtp->recorder.Record())
 		//End
 		goto end;
-	
+
 	//Set the listener for the rtp video packets
 	rtp->SetMediaListener(&rtp->recorder);
 
@@ -1293,7 +1330,7 @@ end:
 int MultiConf::StopRecordingParticipant(int partId)
 {
 	int ret = 0;
-	
+
 	Log("-StopRecordingParticipant [id:%d]\n",partId);
 
 	//Lock
@@ -1329,9 +1366,9 @@ int MultiConf::StopRecordingParticipant(int partId)
 int MultiConf::SendFPU(int partId)
 {
 	int ret = 0;
-	
+
 	Log("-SendFPU [id:%d]\n",partId);
-	
+
 	//Lock
 	participantsLock.IncUse();
 
@@ -1516,7 +1553,7 @@ RTMPMediaStream::Listener* MultiConf::ConsumeParticipantInputToken(const std::ws
 		//Broadcast not found
 		return NULL;
 	}
-	
+
 	//Get it
 	Participant* part = itPart->second;
 
@@ -1529,7 +1566,7 @@ RTMPMediaStream::Listener* MultiConf::ConsumeParticipantInputToken(const std::ws
 		//Broadcast not found
 		return NULL;
 	}
-	
+
 	//return it
 	return (RTMPMediaStream::Listener*)(RTMPParticipant*)part;
 }
@@ -1714,10 +1751,10 @@ void MultiConf::NetStream::doPlay(std::wstring& url,RTMPMediaStream::Listener* l
 		//Exit
 		return;
 	}
-	
+
 	//Opened
 	opened = true;
-	
+
 	//Send reseted status
 	fireOnNetStreamStatus(RTMP::Netstream::Play::Reset,L"Playback reset");
 	//Send play status
@@ -1849,22 +1886,68 @@ int MultiConf::AppMixerDisplayImage(const char* filename)
 	return appMixer.DisplayImage(filename);
 }
 
-int MultiConf::AppMixerWebsocketConnectRequest(int partId,WebSocket *ws,bool isPresenter)
+int MultiConf::WebsocketConnectRequest(WebSocket *ws,int partId,const std::string &token,const std::string &to)
 {
-	//Connect it
-	return appMixer.WebsocketConnectRequest(partId,ws,isPresenter);
+	//Convert token to wstring
+	UTF8Parser utf8(token);
+
+	//Get participant lock
+	participantsLock.IncUse();
+
+	//Get participant
+	Participants::iterator it = participants.find(partId);
+
+	//Check if found
+	if (it==participants.end())
+		//Exit
+		goto forbiden;
+
+	//compare token
+	if (utf8.GetWString().compare(it->second->GetToken())!=0)
+		//Exit
+		goto forbiden;
+
+	//Check what are they connecting to
+	if (to.compare("bfcp")==0)
+		//Connect to bfcp
+		BFCP::getInstance().ConnectTransport(ws,floorServer,partId);
+	else if (to.compare("vnc")==0)
+		//Connect to app mixer vnc viewer
+		appMixer.WebsocketConnectRequest(partId,ws,0);
+	else if (to.compare("vnc-server")==0)
+		//Connect to app mixer vnc server
+		appMixer.WebsocketConnectRequest(partId,ws,1);
+	else
+		//Exit
+		goto forbiden;
+
+	//Dec use
+	participantsLock.DecUse();
+
+	//OK
+	return 1;
+
+forbiden:
+	//Reject it
+	ws->Reject(403,"Forbidden");
+
+	//Dec use
+	participantsLock.DecUse();
+
+	//Error
+	return 0;
 }
 
 
 int  MultiConf::StartPublishing(const char* server,int port, const char* app,const char* stream)
 {
-	
+
 	PublisherInfo info;
 	UTF8Parser parser;
 
 	//Parse stream name
 	parser.SetString(stream);
-	
+
 	//LOg
 	Log(">StartPublishing broadcast to [url=\"rtmp://%s:%d/%s\",stream=\"%ls\"\n",server,port,app,parser.GetWChar());
 
@@ -1872,13 +1955,13 @@ int  MultiConf::StartPublishing(const char* server,int port, const char* app,con
 	if (!inited)
 		//Exit
 		return Error("Multiconf not initied");
-	
+
 	//Get published id
 	info.id = maxPublisherId++;
 
 	//Store published stream name
 	info.name = parser.GetWString();
-	
+
 	//Create new publisherf1722
 	info.conn = new RTMPClientConnection(tag);
 
@@ -1890,7 +1973,7 @@ int  MultiConf::StartPublishing(const char* server,int port, const char* app,con
 
 	//Add to map
 	publishers[info.id] = info;
-	
+
 	//Connect
 	info.conn->Connect(server,port,app,this);
 
@@ -1903,7 +1986,7 @@ int  MultiConf::StartPublishing(const char* server,int port, const char* app,con
 int  MultiConf::StopPublishing(int id)
 {
 	Log("-StopPublishing broadcast [id:%d]\n",id);
-	
+
 	//Find it
 	Publishers::iterator it = publishers.find(id);
 
@@ -2012,4 +2095,92 @@ void MultiConf::onDisconnected(RTMPClientConnection* conn)
 		//Remove
 		publishers.erase(it);
 	}
+}
+
+void MultiConf::onFloorRequest(int floorRequestId, int userId, int beneficiaryId, std::set<int> floorIds)
+{
+	::Log("MultiConf::onFloorRequest() | [floorRequestId:'%d',userId:'%d',beneficiaryId:'%d']\n", floorRequestId, userId, beneficiaryId);
+
+	// Grant if the requester is owner or presenter, deny otherwise.
+	// NOTE: if the requester is the chair (owner) it would be automatically granted.
+	// TODO: Must check which floor(s) is being requested.
+	if ((userId == chairId) || (userId == appMixer.GetPresenter())) {
+		::Log("MultiConf::onFloorRequest() | FloorRequest '%d' granted\n", floorRequestId);
+		floorServer->GrantFloorRequest(floorRequestId);
+	}
+	else {
+		::Log("MultiConf::onFloorRequest() | FloorRequest '%d' denied | just chair or presenter allowed\n", floorRequestId);
+		floorServer->DenyFloorRequest(floorRequestId);
+	}
+}
+
+
+void MultiConf::onFloorGranted(int floorRequestId, int beneficiaryId, std::set<int> floorIds)
+{
+	::Log("MultiConf::onFloorGranted() | [floorRequestId:%d, beneficiaryId:%d]\n", floorRequestId, beneficiaryId);
+
+	//Check if it is a Presenter floor request.
+	if (floorIds.find(1) != floorIds.end())
+	{
+		::Log("MultiConf::onFloorGranted() | FloorRequest '%d' includes Presenter Floor\n", floorRequestId);
+
+		//Set presenter.
+		appMixer.SetPresenter(beneficiaryId);
+
+		// If somebody has the Editor floor revoke it.
+		// But don't do it if the Editor floor has been granted in the current FloorRequest.
+		if (floorIds.find(2) == floorIds.end()) {
+			//Get floor request for Editor floor.
+			int editorRequestId = floorServer->GetGrantedFloorRequestId(2);
+			//If it exists
+			if (editorRequestId) {
+				::Log("MultiConf::onFloorGranted() | somebody has the Editor Floor in a previous FloorRequest '%d', revoking it due to this new granted FloorRequest '%d'\n", editorRequestId, floorRequestId);
+				//Release Editor floor.
+				floorServer->RevokeFloorRequest(editorRequestId);
+			}
+		}
+	}
+
+	//Check if it is a editor request
+	if (floorIds.find(2)!=floorIds.end()) {
+		::Log("MultiConf::onFloorGranted() | FloorRequest '%d' includes Editor Floor\n", floorRequestId);
+
+		//Set editor
+		appMixer.SetEditor(beneficiaryId);
+	}
+}
+
+void MultiConf::onFloorReleased(int floorRequestId, int beneficiaryId, std::set<int> floorIds)
+{
+	::Log("MultiConf::onFloorReleased() | [floorRequestId:%d, beneficiaryId:%d]\n", floorRequestId, beneficiaryId);
+
+ 	//Check if the release includes the Presenter floor.
+ 	if (floorIds.find(1) != floorIds.end())
+	{
+		::Log("MultiConf::onFloorReleased() | FloorRequest '%d' included Presenter Floor\n", floorRequestId);
+
+ 		//No presenter.
+ 		appMixer.SetPresenter(0);
+
+ 		// If somebody has the EditorFloor revoke it.
+ 		// But don't do it if the EditorFloor has been released in the current FloorRelease.
+ 		if (floorIds.find(2) == floorIds.end()) {
+			//Get floor request for Editor floor.
+			int editorRequestId = floorServer->GetGrantedFloorRequestId(2);
+			//If it exists
+			if (editorRequestId) {
+				::Log("MultiConf::onFloorReleased() | somebody has the Editor Floor in previous FloorRequest '%d', revoking it due to this new granted FloorRequest '%d'\n", editorRequestId, floorRequestId);
+				//Release Editor floor.
+				floorServer->RevokeFloorRequest(editorRequestId);
+			}
+		}
+	}
+
+ 	//Check if it has the editor
+ 	if (floorIds.find(2)!=floorIds.end()) {
+ 		::Log("MultiConf::onFloorReleased() | FloorRequest '%d' included Editor Floor\n", floorRequestId);
+
+ 		//No editor
+ 		appMixer.SetEditor(0);
+ 	}
 }

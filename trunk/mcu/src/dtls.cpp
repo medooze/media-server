@@ -31,7 +31,7 @@ int fakeDtlsVerifyCallback(int preverify_ok, X509_STORE_CTX *ctx) {
 }
 
 std::string DTLSConnection::certfile("mcu.crt");
-std::string DTLSConnection::pvtfile("mcy.key");	
+std::string DTLSConnection::pvtfile("mcy.key");
 std::string DTLSConnection::cipher("ALL:NULL:eNULL:aNULL");
 
 void DTLSConnection::SetCertificate(const char* cert,const char* key)
@@ -133,7 +133,7 @@ DTLSConnection::~DTLSConnection()
 {
 	//ENd
 	End();
-	
+
 	if (ssl_ctx)
 	{
 		SSL_CTX_free(ssl_ctx);
@@ -152,15 +152,15 @@ int DTLSConnection::SetSuite(Suite suite)
 int DTLSConnection::Init()
 {
 	Log("-DTLSConnection::Init\n");
-	
+
 	//Check
 	if(!ssl_ctx)
 		//Fail
 		return Error("-No SSL contecx\n");
-	
+
 	//Verify always
 	bool verify = true;
-	
+
 	//Set verify
 	SSL_CTX_set_verify(ssl_ctx, verify ? SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT : SSL_VERIFY_NONE, fakeDtlsVerifyCallback);
 
@@ -205,7 +205,7 @@ int DTLSConnection::Init()
 
 	if (!(write_bio = BIO_new(BIO_s_mem())))
 		return Error("Failed to allocate memory for outbound SSL traffic on \n");
-	
+
 	BIO_set_mem_eof_return(write_bio, -1);
 
 	SSL_set_bio(ssl, read_bio, write_bio);
@@ -234,7 +234,7 @@ int DTLSConnection::Init()
 
 int DTLSConnection::End()
 {
-	
+
 	if (read_bio)
 	{
 		//BIO_free(read_bio);
@@ -265,7 +265,7 @@ void DTLSConnection::Reset()
 		return;
 
 	SSL_shutdown(ssl);
-	
+
 	connection = CONNECTION_NEW;
 }
 
@@ -312,7 +312,7 @@ void DTLSConnection::SetRemoteSetup(Setup remote)
 		default:
 			return;
 	}
-	
+
 	return;
 }
 
@@ -322,7 +322,7 @@ void DTLSConnection::SetRemoteFingerprint(Hash hash, const char *fingerprint)
 	remoteHash = hash;
 	char *tmp = strdupa(fingerprint), *value;
 	int pos = 0;
-	
+
 	while ((value = strsep(&tmp, ":")) && (pos != (EVP_MAX_MD_SIZE - 1)))
 		sscanf(value, "%02x", (unsigned int*) &remote_fingerprint[pos++]);
 
@@ -419,7 +419,7 @@ int DTLSConnection::Write(BYTE *buffer,int size)
 {
 	if(!ssl || ! read_bio)
 		return Error("DTLS not yet initialized\n");
-	
+
 	int ret = BIO_write(read_bio, buffer, size);
 
 	SSL_read(ssl, buffer, size);
@@ -443,6 +443,6 @@ int DTLSConnection::CheckPending()
 {
 	if (!write_bio)
 		return 0;
-	
+
         return BIO_ctrl_pending(write_bio);
 }

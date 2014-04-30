@@ -87,6 +87,11 @@ public:
 		Dump(data,size);
 		ws->SendMessage(str);
 	}
+
+	virtual void onWriteBufferEmpty(WebSocket *ws)
+	{
+	}
+
 	virtual void onMessageEnd(WebSocket *ws)
 	{
 		Debug("-onMessageEnd\n");

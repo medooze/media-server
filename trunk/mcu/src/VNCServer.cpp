@@ -94,8 +94,15 @@ static rfbCursor myCursor =
 
 VNCServer::VNCServer()
 {
-	int width=400;
-	int height=200;
+	//NO editor
+	editorId = 0;
+
+	//NO listener yet
+	listener = NULL;
+
+	//No height
+	int width=0;
+	int height=0;
 	int bytesPerPixel = 4;
 	int bitsPerSample  = 8;
 
@@ -147,11 +154,8 @@ VNCServer::VNCServer()
 	screen->bitsPerPixel = screen->depth = 8*bytesPerPixel;
 	screen->paddedWidthInBytes = width*bytesPerPixel;
 
-	//Allocate memory
-	screen->frameBuffer = (char*) malloc(screen->width*screen->height*screen->depth/8);
-	memset(screen->frameBuffer,0xDD,screen->width*screen->height*screen->depth/8);
-	for (int j = 0;j<screen->height/10;++j)
-		memset(screen->frameBuffer+screen->width*(j*10)*4,0x00,screen->width*4);
+	//Allocate memory for max usage
+	screen->frameBuffer = (char*) malloc32(4096*3072*3);
 
 	screen->passwordCheck = rfbDefaultPasswordCheck;
 
@@ -190,7 +194,7 @@ VNCServer::VNCServer()
 
 	/* proc's and hook's */
 
-	screen->kbdAddEvent = rfbDefaultKbdAddEvent;
+	screen->kbdAddEvent = onKeyboardEvent;
 	screen->kbdReleaseAllKeys = rfbDoNothingWithClient;
 	screen->ptrAddEvent = onMouseEvent;
 	screen->setXCutText = rfbDefaultSetXCutText;
@@ -209,9 +213,41 @@ VNCServer::VNCServer()
 VNCServer::~VNCServer()
 {
 }
-int VNCServer::Init()
+
+int VNCServer::Init(Listener* listener)
 {
-	
+	//Store listener
+	this->listener = listener;
+}
+
+int VNCServer::SetEditor(int editorId) {
+
+	//Lock
+	use.WaitUnusedAndLock();
+	//If we got another editor
+	if (this->editorId)
+	{
+		//Find it
+		Clients::iterator it = clients.find(this->editorId);
+		//If found
+		if (it!=clients.end())
+			//Set client view onlu
+			it->second->SetViewOnly(true);
+	}
+	//Set new one
+	this->editorId = editorId;
+	//Find it
+	Clients::iterator it = clients.find(this->editorId);
+	//If found
+	if (it!=clients.end())
+		//Set client editor
+		it->second->SetViewOnly(false);
+	//Reset screen pointer
+	screen->pointerClient = NULL;
+	//Unlock
+	use.Unlock();
+	//Ok
+	return true;
 }
 
 int VNCServer::Connect(int partId,WebSocket *socket)
@@ -220,7 +256,7 @@ int VNCServer::Connect(int partId,WebSocket *socket)
 	//Lock
 	use.WaitUnusedAndLock();
 	//Create client
-	Client *client = new Client(partId,screen);
+	Client *client = new Client(partId,this);
 	//Set client as as user data
 	socket->SetUserData(client);
 	//Append to client list
@@ -235,66 +271,77 @@ int VNCServer::Connect(int partId,WebSocket *socket)
 
 int VNCServer::Disconnect(WebSocket *socket)
 {
+	Log("-VNCServer::Disconnect [ws:%p]\n",socket);
+
 	//Get client
 	Client *client = (Client *)socket->GetUserData();
-	//Disconnect
-	client->Close();
-	//Lock
-	use.WaitUnusedAndLock();
-	//Remove it
-	Clients::iterator it = clients.find(client->GetId());
-	//Check if found
-	if (it!=clients.end())
-	{
-		//Get client
-		Client *client = it->second;
-		//Erase it
-		clients.erase(it);
-		//Delete it
-		delete(client);
-	}
-	//Unlock
-	use.Unlock();
-	//OK
-	return 1;
-}
-int VNCServer::SetSize(int width,int height)
-{
-	Log("-VNCServer::SetSize [%d,%d]\n",width,height);
+
+	//If no client was attached
+	if (!client)
+		//Nothing more
+		return 0;
 	
 	//Lock
 	use.WaitUnusedAndLock();
+	//Remove it
+	clients.erase(client->GetId());
+	//Unlock
+	use.Unlock();
+	//Let it finish
+	client->Disconnect();
+	//Delete it
+	delete(client);
+	//OK
+	return 1;
+}
+
+int VNCServer::Reset()
+{
+	Log("-VNCServer::Reset\n");
+
+	//Lock
+	use.IncUse();
+
+	//Reset size
+	screen->width = 0;
+	screen->height = 0;
+	screen->paddedWidthInBytes = 0;
+
+	//Reset all viewers
+	for (Clients::iterator it=clients.begin(); it!=clients.end(); ++it)
+		//Send sharing stoped event
+		it->second->Reset();
+
+	//Unlock
+	use.DecUse();
+
+	return 1;
+}
+
+int VNCServer::SetSize(int width,int height)
+{
+	Log("-VNCServer::SetSize [%d,%d]\n",width,height);
+
+	//Check max size
+	if (width*height>4096*3072)
+		//Error
+		return Error("-Size bigger than max size allowed (4096*3072)\n");
+	
+	//Lock
+	use.IncUse();
 
 	//Set new size
 	screen->width = width;
 	screen->height = height;
 	screen->paddedWidthInBytes = width*screen->depth/8;
 
-	//Allocate new framebuffer
-	screen->frameBuffer = (char*) malloc(screen->width*screen->height*screen->depth/8);
-
-	/*/
-	//Check if it is been used by any client
-	if (!screen->scaledScreenRefCount)
-	{
-		//Free framebuffer
-		if (screen->frameBuffer)
-			free(screen->frameBuffer);
-		//Delete screen
-		free(screen);
-	}
-
-	//Set new screen
-	screen = screen2;
-
-	 **/
 	//Resize all viewers
 	for (Clients::iterator it=clients.begin(); it!=clients.end(); ++it)
 		//Update it
-		it->second->ResizeScreen(screen);
+		it->second->ResizeScreen();
 	
 	//Unlock
-	use.Unlock();
+	use.DecUse();
 
 	//OK
 	return 1;
@@ -303,14 +350,15 @@ int VNCServer::SetSize(int width,int height)
 int VNCServer::FrameBufferUpdateDone()
 {
 	//LOck
-	use.WaitUnusedAndLock();
+	use.IncUse();
 
 	//Send and update to all viewers
 	for (Clients::iterator it=clients.begin(); it!=clients.end(); ++it)
 		//Update it
 		it->second->Update();
+	
 	//Unlock
-	use.Unlock();
+	use.DecUse();
 }
 
 int VNCServer::FrameBufferUpdate(BYTE *data,int x,int y,int width,int height)
@@ -325,6 +373,11 @@ int VNCServer::FrameBufferUpdate(BYTE *data,int x,int y,int width,int height)
 
 	//Set modified region
 	rfbMarkRectAsModified(screen,x,y,width,height);
+
+	//Send and update to all viewers
+	for (Clients::iterator it=clients.begin(); it!=clients.end(); ++it)
+		//Update it
+		it->second->Update();
 
 	//Unlock
 	use.DecUse();
@@ -352,24 +405,66 @@ int VNCServer::CopyRect(BYTE *data,int src_x, int src_y, int w, int h, int dest_
 
 int VNCServer::End()
 {
+	Log(">VNCServer::End\n");
 
+	//Lock
+	use.WaitUnusedAndLock();
+
+	//Get client iterator
+	Clients::iterator it=clients.begin();
+
+	//Close clients
+	while (it!=clients.end())
+	{
+		//Get client
+		Client *client = it->second;
+		//Erase it and move forward
+		clients.erase(it++);
+		//End it
+		client->Close();
+		//Delete it
+		delete(client);
+	}
+
+	//Unlock
+	use.Unlock();
+
+	Log("<VNCServer::End\n");
+}
+
+
+void VNCServer::onKeyboardEvent(rfbBool down, rfbKeySym keySym, rfbClientPtr cl)
+{
+	//Get client
+	Client *client = (Client *)cl->clientData;
+	//Get server
+	VNCServer* server  = client->GetServer();
+
+	Log("-onKeyboardEvent [key:%d,down:%d,client:%d,editor:%d,listener:%p]\n",keySym,down,server->editorId,client->GetId(),server->listener);
+
+	//Double check it is the editor
+	if (server->editorId==client->GetId())
+		//If it has listener
+		if (server->listener)
+			//Launch it
+			server->listener->onKeyboardEvent(down,keySym);
 }
 
 void VNCServer::onMouseEvent(int buttonMask, int x, int y, rfbClientRec* cl)
 {
-	Debug("-onMouseEvent [mask:%d,x:%d,y:%y]\n",buttonMask,x,y);
-
 	//Get client
 	Client *client = (Client *)cl->clientData;
-	/*
-	//If if has floor
-	if (client->GetId()==mouseFloorId)
-	{
-		if (listener)
-			//Send event
-			listener->onMouseEvent(buttonMask,x,y);
-	}
-	 * */
+	//Get server
+	VNCServer* server  = client->GetServer();
+
+	Log("-onMouseEvent [x:%d,y:%d,mask:%x,client:%d,editor:%d,listener:%p]\n",x,y,buttonMask,server->editorId,client->GetId(),server->listener);
+
+	//Double check it is the editor
+	if (server->editorId==client->GetId())
+		//If it has listener
+		if (server->listener)
+			//Launch it
+			server->listener->onMouseEvent(buttonMask,x,y);
 }
 
 void VNCServer::onUpdateDone(rfbClientRec* cl, int result)
@@ -385,15 +480,11 @@ void VNCServer::onOpen(WebSocket *ws)
 
 void VNCServer::onMessageStart(WebSocket *ws,const WebSocket::MessageType type,const DWORD length)
 {
-	Debug("-onMessageStart %p size:%d\n",ws,length);
-
 	//Do nothing
 }
 
 void VNCServer::onMessageData(WebSocket *ws,const BYTE* data, const DWORD size)
 {
-	Debug("-onMessageData %p size:%d\n",ws,size);
-	Dump(data,size);
 	//Get client
 	Client *client = (Client *)ws->GetUserData();
 	//Process it
@@ -402,7 +493,6 @@ void VNCServer::onMessageData(WebSocket *ws,const BYTE* data, const DWORD size)
 
 void VNCServer::onMessageEnd(WebSocket *ws)
 {
-	Debug("-onMessageEnd %p\n",ws);
 	//Get client
 	Client *client = (Client *)ws->GetUserData();
 	//Process recevied message
@@ -411,28 +501,48 @@ void VNCServer::onMessageEnd(WebSocket *ws)
 
 void VNCServer::onClose(WebSocket *ws)
 {
-	 Debug("-onClose %p\n",ws);
+	//Disconnect ws
+	Disconnect(ws);
 }
 
 void VNCServer::onError(WebSocket *ws)
 {
-	Debug("-onError %p\n",ws);
+	//Disconnect ws
+	Disconnect(ws);
 }
 
-VNCServer::Client::Client(int id,rfbScreenInfo* screen)
+void VNCServer::onWriteBufferEmpty(WebSocket *ws)
+{
+	//Nothing
+	Client *client = (Client *)ws->GetUserData();
+	//Debug
+	Debug("-VNCServer::Client::onWriteBufferEmpty [%p]\n",client);
+	//We can send a new update
+	client->Update();
+}
+
+VNCServer::Client::Client(int id,VNCServer* server)
 {
 	//Store id
 	this->id = id;
+	//Store server
+	this->server = server;
+
+	//Not reseted
+	reset = false;
 
 	//No websocket yet
 	this->ws = NULL;
+
+	//Get server screen
+	rfbScreenInfo* screen = server->GetScreenInfo();
 
 	//Create client
 	cl = (rfbClientRec*)calloc(sizeof(rfbClientRec),1);
 
 	cl->screen = screen;
 	cl->sock = 1;			//Dummy value to allow updatiing
-	cl->viewOnly = FALSE;
+	cl->viewOnly = TRUE;
 	/* setup pseudo scaling */
 	cl->scaledScreen = screen;
 	cl->scaledScreen->scaledScreenRefCount++;
@@ -571,15 +681,6 @@ VNCServer::Client::~Client()
 	TINI_COND(cl->updateCond);
 	TINI_MUTEX(cl->updateMutex);
 
-	/* make sure outputMutex is unlocked before destroying */
-	LOCK(cl->outputMutex);
-	UNLOCK(cl->outputMutex);
-	TINI_MUTEX(cl->outputMutex);
-
-	LOCK(cl->sendMutex);
-	UNLOCK(cl->sendMutex);
-	TINI_MUTEX(cl->sendMutex);
-
 	rfbPrintStats(cl);
 	rfbResetStats(cl);
 
@@ -617,15 +718,32 @@ int VNCServer::Client::Connect(WebSocket *ws)
 
 	cl->onHold = FALSE;
 
+	//Start thread
+	createPriorityThread(&thread,run,this,0);
+
 	return 1;
 }
 
+int VNCServer::Client::Disconnect()
+{
+	Debug("-VNCServer::Client::Disconnect [this:%p]\n",this);
+	//Detach listeners
+	ws->Detach();
+	//Remove ws data
+	ws->SetUserData(NULL);
+	//Cancel any read
+	CancelWait();
+}
 
 int VNCServer::Client::Process(const BYTE* data,DWORD size)
 {
 	Debug("-Process size:%d\n",size);
+	//Lock buffer
+	wait.Lock();
 	//Puss to buffer
 	buffer.push(data,size);
+	//Unlock
+	wait.Unlock();
 	//Signal
 	wait.Signal();
 	//Return written
@@ -636,14 +754,8 @@ int VNCServer::Client::WaitForData(DWORD usecs)
 {
 	Debug(">WaitForData %d\n",buffer.length());
 
-	//Lock
-	wait.Lock();
-
 	//Wait for data
 	int ret = wait.WaitSignal(usecs*1000);
-
-	//Unlock
-	wait.Unlock();
 
 	Debug("<WaitForData %d %d\n",buffer.length(),ret);
 
@@ -652,15 +764,33 @@ int VNCServer::Client::WaitForData(DWORD usecs)
 
 void VNCServer::Client::Close()
 {
-	//Cancel any read
-	CancelWait();
+	Log("-VNCServer::Client::Close\n");
+	//Disconnect
+	Disconnect();
 	//Close
 	ws->Close();
 }
 
+void *VNCServer::Client::run(void *par)
+{
+	Log("VNCServer::Client::Thread [%p]\n",pthread_self());
+	//Get worker
+	VNCServer::Client *client = (VNCServer::Client *)par;
+	//Block all signals
+	blocksignals();
+	//Run
+	client->Run();
+	//Exit
+	return NULL;
+}
+
 void VNCServer::Client::CancelWait()
 {
+	//Cancel wait
 	wait.Cancel();
+
+	//Join thread
+	pthread_join(thread,NULL);
 }
 
 int VNCServer::Client::Read(char *out, int size, int timeout)
@@ -705,75 +835,146 @@ int VNCServer::Client::Write(const char *buf, int size)
 int VNCServer::Client::ProcessMessage()
 {
 	//While we have data
-	while(buffer.length())
-	{
+	while(buffer.length() && !wait.IsCanceled())
 		//Process message
 		rfbProcessClientMessage(cl);
-		//If connected
-		if (cl->state == rfbClientRec::RFB_NORMAL )
-			//Try an update
-			Update();
-	}
 	
 	//OK
 	return 1;
 }
 
+int VNCServer::Client::Run()
+{
+	//Lock
+	LOCK(cl->updateMutex);
+	
+	//Until ended
+	while (!wait.IsCanceled())
+	{
+		//If connected
+		if (cl->state == rfbClientRec::RFB_NORMAL )
+		{
+			rfbBool haveUpdate = false;
+			sraRegion* updateRegion = NULL;
+
+			//If reseted
+			if (reset)
+			{
+				Log("-Reseting client\n");
+				//Reset message
+				char msg[] = {16};
+				//Write it
+				Write(msg,sizeof(msg));
+				//Clear reset flag
+				reset = false;
+			}
+
+			//Check if it is a pending update
+			if  (FB_UPDATE_PENDING(cl))
+			{
+				//If the scren has been resized
+				if (cl->newFBSizePending)
+				{
+					//Free region
+					sraRgnDestroy(cl->modifiedRegion);
+
+					//Set new modified region
+					cl->modifiedRegion = sraRgnCreateRect(0,0,cl->screen->width,cl->screen->height);
+
+					//We have an update
+					haveUpdate = TRUE;
+
+				/* always require a FB Update Request (otherwise can crash.) */
+				} else if (!sraRgnEmpty(cl->requestedRegion))
+				{
+					/* Now, get the region we're going to update, and remove
+					it from cl->modifiedRegion _before_ we send the update.
+					That way, if anything that overlaps the region we're sending
+					is updated, we'll be sure to do another update later. */
+					updateRegion = sraRgnCreateRgn(cl->modifiedRegion);
+					//Check it is inside requested region
+					haveUpdate   = sraRgnAnd(updateRegion,cl->requestedRegion);
+				} else {
+					Debug("-VNCServer::Client requestedRegion is empty [%p]\n",this);
+				}
+
+				//Unlock region
+				UNLOCK(cl->updateMutex);
+
+				//If we have to update
+				if (haveUpdate)
+				{
+					Debug(">VNCServer::Clietn SendFramebufferUpdate [%p]\n",this);
+					/* Now actually send the update. */
+					rfbIncrClientRef(cl);
+					//LOCK(cl->sendMutex);
+					rfbSendFramebufferUpdate(cl, updateRegion);
+					//UNLOCK(cl->sendMutex);
+					rfbDecrClientRef(cl);
+					Debug("<VNCServer::Clietn SendFramebufferUpdate [%p]\n",this);
+				} else {
+					Debug("-VNCServer::Client haveUpdate=false [%p]\n",this);
+				}
+				//Destroy region
+				if (updateRegion)
+					sraRgnDestroy(updateRegion);
+
+				//Lock again
+				LOCK(cl->updateMutex);
+			} else {
+				Debug("-VNCServer::Client no pending update [%p]\n",this);
+			}
+		}
+		Debug("<VNCServer::Client going to sleep [%p]\n",this);
+
+		//Wait cond
+		WAIT(cl->updateCond,cl->updateMutex);
+
+		Debug(">VNCServer::Client waked up from wait mutex[%p]\n",this);
+	}
+	//Unlock
+	UNLOCK(cl->updateMutex);
+	
+	//OK
+	return 0;
+}
+
 void VNCServer::Client::Update()
 {
-	rfbBool haveUpdate = false;
-	sraRegion* updateRegion = NULL;
-
-	//Check if it is a pending update
-	if  (!FB_UPDATE_PENDING(cl))
-		return;
-
-	//Lock update region
-	//LOCK(cl->updateMutex);
-
-	//If the scren has been resized
-	if (cl->newFBSizePending)
-	{
-		//Free region
-		sraRgnDestroy(cl->modifiedRegion);
-
-		//Set new modified region
-		cl->modifiedRegion = sraRgnCreateRect(0,0,cl->screen->width,cl->screen->height);
-
-		//We have an update
-		haveUpdate = TRUE;
-
-	/* always require a FB Update Request (otherwise can crash.) */
-	} else if (!sraRgnEmpty(cl->requestedRegion))
-	{
-		/* Now, get the region we're going to update, and remove
-		it from cl->modifiedRegion _before_ we send the update.
-		That way, if anything that overlaps the region we're sending
-		is updated, we'll be sure to do another update later. */
-		updateRegion = sraRgnCreateRgn(cl->modifiedRegion);
-		//Check it is inside requested region
-		haveUpdate   = sraRgnAnd(updateRegion,cl->requestedRegion);
-        }
-
-	//Unlock region
-	//UNLOCK(cl->updateMutex);
-
-	//If we have to update
-	if (haveUpdate)
-	{
-		/* Now actually send the update. */
-		rfbIncrClientRef(cl);
-		//LOCK(cl->sendMutex);
-		rfbSendFramebufferUpdate(cl, updateRegion);
-		//UNLOCK(cl->sendMutex);
-		rfbDecrClientRef(cl);
-	}
-	//Destroy region
-	if (updateRegion) sraRgnDestroy(updateRegion);
+	Debug("-VNCServer::Client::Update\n");
+	//Check if write buffer is empty before sending anything
+	if (ws->IsWriteBufferEmtpy())
+		//Signal cond
+		TSIGNAL(cl->updateCond);
 }
 
-void VNCServer::Client::ResizeScreen(rfbScreenInfo* screen)
+void VNCServer::Client::ResizeScreen()
 {
+	//Lock update region
+	LOCK(cl->updateMutex);
 	//Set new one and wait for display finished hook to do the other chantes
 	cl->newFBSizePending = true;
+	//Unlock region
+	UNLOCK(cl->updateMutex);
+	//Update
+	Update();
 }
+
+void VNCServer::Client::Reset()
+{
+	//Lock update region
+	LOCK(cl->updateMutex);
+	//We have been reseted
+	reset = true;
+	//Unlock region
+	UNLOCK(cl->updateMutex);
+	//Update
+	Update();
+}
+
+void VNCServer::Client::SetViewOnly(bool viewOnly)
+{
+	this->cl->viewOnly = viewOnly;
+}
+
+

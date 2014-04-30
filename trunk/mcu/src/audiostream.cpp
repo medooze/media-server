@@ -267,8 +267,10 @@ int AudioStream::StopSending()
 		//paramos
 		sendingAudio=0;
 
-		//Cancel
-		audioInput->CancelRecBuffer();
+		//Check audioInput
+		if (audioInput)
+			//Cancel
+			audioInput->CancelRecBuffer();
 
 		//Y esperamos
 		pthread_join(sendAudioThread,NULL);
@@ -362,14 +364,17 @@ int AudioStream::RecAudio()
 		delete(packet);
 	}
 
-	//Terminamos de reproducir
-	audioOutput->StopPlaying();
+	//Check not null
+	if (audioOutput)
+		//Terminamos de reproducir
+		audioOutput->StopPlaying();
 
-	//Borramos el codec
-	if (codec!=NULL)
-		delete codec;
+	//Check not null
+	if (codec)
+		//Delete codec
+		delete(codec);
 
-	//Salimos
+	//Exit
 	Log("<RecAudio\n");
 }
 

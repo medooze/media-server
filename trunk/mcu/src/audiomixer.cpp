@@ -292,7 +292,8 @@ int AudioMixer::CreateMixer(int id)
 	{
 		//Desprotegemos la lista
 		lstAudiosUse.Unlock();
-		return Error("Audio sourecer already existed\n");
+		//Error
+		return Error("Audio source already existed\n");
 	}
 
 	//Creamos el source

@@ -21,14 +21,18 @@ public:
 	class Client
 	{
 	public:
-		Client(int id,rfbScreenInfo* screen);
+		Client(int id,VNCServer* server);
 		virtual ~Client();
 		int Connect(WebSocket* ws);
+		int Disconnect();
 		int Process(const BYTE* data,DWORD size);
 		int ProcessMessage();
 		int GetId(){return id;}
 		void Update();
-		void ResizeScreen(rfbScreenInfo* screen);
+		void ResizeScreen();
+		void Reset();
+		void SetViewOnly(bool viewOnly);
+		VNCServer* GetServer() { return server; }
 
 		//Socket functionas
 		 void Close();
@@ -36,23 +40,37 @@ public:
 		 void CancelWait();
 		 int Read(char *data, int size,int timeout);
 		 int Write(const char *data, int size);
-	public:
+	protected:
+		int Run();
+
+	private:
+		static void *run(void *par);
+	private:
 		int id;
+		VNCServer* server;
 		rfbClientRec* cl;
 		WebSocket* ws;
 		fifo<BYTE,65535> buffer;
 		Wait wait;
+		int reset;
+		pthread_t thread;
 	};
-public:
-	typedef std::map<int,Client*> Clients;
-	
+
+	class Listener
+	{
+	public:
+		virtual void onMouseEvent(int buttonMask, int x, int y) = 0;
+		virtual void onKeyboardEvent(bool down, DWORD keySym) = 0;
+	};
 public:
 	VNCServer();
 	virtual ~VNCServer();
 
-	int Init();
+	int Init(Listener* listener);
+	int SetEditor(int editorId);
 	int Connect(int partId,WebSocket *socket);
 	int Disconnect(WebSocket *socket);
+	int Reset();
 	int SetSize(int width,int height);
 	int CopyRect(BYTE *data,int src_x, int src_y, int w, int h, int dest_x, int dest_y);
 	int FrameBufferUpdate(BYTE *data,int x,int y,int width,int height);
@@ -63,11 +81,22 @@ public:
 	virtual void onMessageStart(WebSocket *ws,const WebSocket::MessageType type, const DWORD length);
 	virtual void onMessageData(WebSocket *ws,const BYTE* data, const DWORD size);
 	virtual void onMessageEnd(WebSocket *ws);
+	virtual void onWriteBufferEmpty(WebSocket *ws);
 	virtual void onError(WebSocket *ws);
 	virtual void onClose(WebSocket *ws);
+
+	rfbScreenInfo* GetScreenInfo()	{ return screen;	}
+	
 public:
 	static void onMouseEvent(int buttonMask, int x, int y, rfbClientRec* cl);
+	static void onKeyboardEvent(rfbBool down, rfbKeySym keySym, rfbClientRec* cl);
 	static void onUpdateDone(rfbClientRec* cl, int result);
+
+protected:
+	Listener* listener;
+	int editorId;
+private:
+	typedef std::map<int,Client*> Clients;
 private:
 	rfbScreenInfo* screen;
 	Clients clients;
