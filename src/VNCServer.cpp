@@ -724,18 +724,26 @@ int VNCServer::Client::Connect(WebSocket *ws)
 	//Start thread
 	createPriorityThread(&thread,run,this,0);
 
+	//OK
 	return 1;
 }
 
 int VNCServer::Client::Disconnect()
 {
-	Debug("-VNCServer::Client::Disconnect [this:%p]\n",this);
+	Debug(">VNCServer::Client::Disconnect [this:%p]\n",this);
 	//Detach listeners
 	ws->Detach();
 	//Remove ws data
 	ws->SetUserData(NULL);
 	//Cancel any read
 	CancelWait();
+	//Wait thread end
+	pthread_join(thread,NULL);
+	//Wait
+	Debug("<VNCServer::Client::Disconnect [this:%p]\n",this);
+
+	//OK
+	return 1;
 }
 
 int VNCServer::Client::Process(const BYTE* data,DWORD size)
