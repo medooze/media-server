@@ -674,12 +674,17 @@ void WebSocketConnection::SendMessage(const BYTE* data, const DWORD size)
 
 DWORD WebSocketConnection::GetWriteBufferLength()
 {
-	return frames.size();
+	//Lock mutex
+	pthread_mutex_lock(&mutex);
+	//Get size
+	DWORD size = frames.size();
+	//Un Lock mutex
+	pthread_mutex_unlock(&mutex);
 }
 
 bool WebSocketConnection::IsWriteBufferEmtpy()
 {
-	return frames.size()==0;
+	return GetWriteBufferLength()==0;
 }
 
 int WebSocketConnection::on_url (HTTPParser* parser, const char *at, DWORD length)

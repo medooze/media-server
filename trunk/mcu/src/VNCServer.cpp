@@ -385,22 +385,25 @@ int VNCServer::FrameBufferUpdate(BYTE *data,int x,int y,int width,int height)
 
 int VNCServer::CopyRect(BYTE *data,int src_x, int src_y, int w, int h, int dest_x, int dest_y)
 {
+	Log("-CopyRect from [%d,%d] to [%d,%d] size [%d,%d]\n",src_x,src_y,dest_x,dest_y,w,h);
+	
 	FrameBufferUpdate(data,dest_x,dest_y,w,h);
-	/*
+	
 	//LOck
-	use.IncUse();
+	/*use.IncUse();
 
 	//Update frame
 	for (int j=0;j<h;++j)
 		//Copy
 		memcpy(screen->frameBuffer+(dest_x+(dest_y+j)*screen->width)*4,data+(src_x+(src_y+j)*screen->width)*4,w*4);
+		//memset(screen->frameBuffer+(dest_x+(dest_y+j)*screen->width)*4,0xCA,w*4);
 
 	//Set modified region
-	rfbDoCopyRect(screen,src_x, src_y,src_x+w, src_y+h, dest_x, dest_y);
+	//rfbScheduleCopyRect(screen,src_x, src_y,src_x+w, src_y+h, dest_x, dest_y);
 
 	//Unlock
 	use.DecUse();
-	 */
+*/
 }
 
 int VNCServer::End()
