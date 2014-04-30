@@ -2317,11 +2317,12 @@ rfbProcessClientNormalMessage(rfbClientPtr cl)
 	if (cl->screen->pointerClient && cl->screen->pointerClient != cl)
 	    return;
 
+/*
 	if (msg.pe.buttonMask == 0)
 	    cl->screen->pointerClient = NULL;
 	else
 	    cl->screen->pointerClient = cl;
-
+*/
 	if(!cl->viewOnly) {
 	    if (msg.pe.buttonMask != cl->lastPtrButtons ||
 		    cl->screen->deferPtrUpdateTime == 0) {
@@ -2530,7 +2531,6 @@ rfbProcessClientNormalMessage(rfbClientPtr cl)
 	  rfbSendXvp(cl, 1, rfbXvp_Fail);
       }
       return;
-
     default:
 	{
 	    rfbExtensionData *e,*next;
@@ -2763,7 +2763,8 @@ rfbSendFramebufferUpdate(rfbClientPtr cl,
      sraRgnSubtract(cl->modifiedRegion,updateRegion);
      sraRgnSubtract(cl->modifiedRegion,updateCopyRegion);
 
-     sraRgnMakeEmpty(cl->requestedRegion);
+     ///SERGIO -> We don't clean the requested region to be able to set the rate of update request on server
+     //sraRgnMakeEmpty(cl->requestedRegion);
      sraRgnMakeEmpty(cl->copyRegion);
      cl->copyDX = 0;
      cl->copyDY = 0;

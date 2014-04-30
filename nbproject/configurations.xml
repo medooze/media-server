@@ -7,6 +7,39 @@
         </df>
       </df>
       <df name="include" kind="SOURCE_LOGICAL_FOLDER">
+        <df name="bfcp">
+          <df name="attributes" kind="SOURCE_LOGICAL_FOLDER">
+            <in>BFCPAttrBeneficiaryId.h</in>
+            <in>BFCPAttrBeneficiaryInformation.h</in>
+            <in>BFCPAttrErrorCode.h</in>
+            <in>BFCPAttrErrorInfo.h</in>
+            <in>BFCPAttrFloorId.h</in>
+            <in>BFCPAttrFloorRequestId.h</in>
+            <in>BFCPAttrFloorRequestInformation.h</in>
+            <in>BFCPAttrFloorRequestStatus.h</in>
+            <in>BFCPAttrOverallRequestStatus.h</in>
+            <in>BFCPAttrParticipantProvidedInfo.h</in>
+            <in>BFCPAttrRequestStatus.h</in>
+            <in>BFCPAttrRequestedByInformation.h</in>
+            <in>BFCPAttrStatusInfo.h</in>
+          </df>
+          <df name="messages" kind="SOURCE_LOGICAL_FOLDER">
+            <in>BFCPMsgError.h</in>
+            <in>BFCPMsgFloorQuery.h</in>
+            <in>BFCPMsgFloorRelease.h</in>
+            <in>BFCPMsgFloorRequest.h</in>
+            <in>BFCPMsgFloorRequestStatus.h</in>
+            <in>BFCPMsgFloorStatus.h</in>
+            <in>BFCPMsgHello.h</in>
+          </df>
+          <in>BFCPAttribute.h</in>
+          <in>BFCPFloorControlServer.h</in>
+          <in>BFCPFloorRequest.h</in>
+          <in>BFCPMessage.h</in>
+          <in>BFCPUser.h</in>
+          <in>attributes.h</in>
+          <in>messages.h</in>
+        </df>
         <df name="rfb">
           <in>default8x16.h</in>
           <in>keysym.h</in>
@@ -17,7 +50,7 @@
           <in>rfbproto.h</in>
           <in>rfbregion.h</in>
         </df>
-        <in>BFCPServer.h</in>
+        <in>CPUMonitor.h</in>
         <in>FLVEncoder.h</in>
         <in>FlashSoundHandler.h</in>
         <in>RTPSmoother.h</in>
@@ -26,6 +59,7 @@
         <in>aacconfig.h</in>
         <in>acumulator.h</in>
         <in>amf.h</in>
+        <in>amf.h.bak</in>
         <in>appmixer.h</in>
         <in>asymmetricmosaic.h</in>
         <in>audio.h</in>
@@ -35,6 +69,7 @@
         <in>audiostream.h</in>
         <in>audiotransrater.h</in>
         <in>avcdescriptor.h</in>
+        <in>bfcp.h</in>
         <in>bitstream.h</in>
         <in>broadcaster.h</in>
         <in>broadcastsession.h</in>
@@ -95,6 +130,7 @@
         <in>rtpbuffer.h</in>
         <in>rtpparticipant.h</in>
         <in>rtpsession.h</in>
+        <in>rtpsession.h.bak</in>
         <in>sidebar.h</in>
         <in>statushandler.h</in>
         <in>stringparser.h</in>
@@ -106,7 +142,6 @@
         <in>textmixerworker.h</in>
         <in>textstream.h</in>
         <in>tools.h</in>
-        <in>ts.cpp</in>
         <in>uploadhandler.h</in>
         <in>use.h</in>
         <in>vad.h</in>
@@ -140,6 +175,37 @@
         <df name="aac">
           <in>aacencoder.cpp</in>
           <in>aacencoder.h</in>
+        </df>
+        <df name="bfcp">
+          <df name="attributes" kind="SOURCE_LOGICAL_FOLDER">
+            <in>BFCPAttrBeneficiaryId.cpp</in>
+            <in>BFCPAttrBeneficiaryInformation.cpp</in>
+            <in>BFCPAttrErrorCode.cpp</in>
+            <in>BFCPAttrErrorInfo.cpp</in>
+            <in>BFCPAttrFloorId.cpp</in>
+            <in>BFCPAttrFloorRequestId.cpp</in>
+            <in>BFCPAttrFloorRequestInformation.cpp</in>
+            <in>BFCPAttrFloorRequestStatus.cpp</in>
+            <in>BFCPAttrOverallRequestStatus.cpp</in>
+            <in>BFCPAttrParticipantProvidedInfo.cpp</in>
+            <in>BFCPAttrRequestStatus.cpp</in>
+            <in>BFCPAttrRequestedByInformation.cpp</in>
+            <in>BFCPAttrStatusInfo.cpp</in>
+          </df>
+          <df name="messages" kind="SOURCE_LOGICAL_FOLDER">
+            <in>BFCPMsgError.cpp</in>
+            <in>BFCPMsgFloorQuery.cpp</in>
+            <in>BFCPMsgFloorRelease.cpp</in>
+            <in>BFCPMsgFloorRequest.cpp</in>
+            <in>BFCPMsgFloorRequestStatus.cpp</in>
+            <in>BFCPMsgFloorStatus.cpp</in>
+            <in>BFCPMsgHello.cpp</in>
+          </df>
+          <in>BFCPAttribute.cpp</in>
+          <in>BFCPFloorControlServer.cpp</in>
+          <in>BFCPFloorRequest.cpp</in>
+          <in>BFCPMessage.cpp</in>
+          <in>BFCPUser.cpp</in>
         </df>
         <df name="flv1" kind="SOURCE_LOGICAL_FOLDER">
           <in>flv1codec.cpp</in>
@@ -338,6 +404,7 @@
           <in>vp8encoder.cpp</in>
           <in>vp8encoder.h</in>
         </df>
+        <in>CPUMonitor.cpp</in>
         <in>FLVEncoder.cpp</in>
         <in>FlashPlayer.cpp</in>
         <in>FlashSoundHandler.cpp</in>
@@ -351,6 +418,7 @@
         <in>audiodecoder.cpp</in>
         <in>audioencoder.cpp</in>
         <in>audiomixer.cpp</in>
+        <in>audiomixer.cpp.bak</in>
         <in>audiostream.cpp</in>
         <in>audiotransrater.cpp</in>
         <in>avcdescriptor.cpp</in>
@@ -371,6 +439,7 @@
         <in>httpparser.cpp</in>
         <in>logo.cpp</in>
         <in>main.cpp</in>
+        <in>main.cpp.bak</in>
         <in>mcu.cpp</in>
         <in>mediabridgesession.cpp</in>
         <in>mediagateway.cpp</in>
@@ -408,7 +477,6 @@
         <in>statushandler.cpp</in>
         <in>stunmessage.cpp</in>
         <in>tcpsocketserver.cpp</in>
-        <in>testmixer.cpp</in>
         <in>textencoder.cpp</in>
         <in>textmixer.cpp</in>
         <in>textmixerworker.cpp</in>
@@ -433,6 +501,7 @@
         <in>xmlrpcserver.cpp</in>
         <in>xmlstreaminghandler.cpp</in>
       </df>
+      <in>Makefile.bak</in>
     </df>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"

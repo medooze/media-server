@@ -40,8 +40,8 @@ MCU::~MCU()
 int MCU::Init(XmlStreamingHandler *eventMngr)
 {
 	timeval tv;
-	
-	//Bloqueamos
+
+	//Lock
 	pthread_mutex_lock(&mutex);
 
 	//Estamos iniciados
@@ -49,14 +49,14 @@ int MCU::Init(XmlStreamingHandler *eventMngr)
 
 	//Get secs
 	gettimeofday(&tv,NULL);
-	
+
 	//El id inicial
 	maxId = (tv.tv_sec & 0x7FFF) << 16;
 
 	//Store event mngr
 	this->eventMngr = eventMngr;
 
-	//Desbloqueamos
+	//Unlock
 	pthread_mutex_unlock(&mutex);
 
 	//Salimos
@@ -71,7 +71,7 @@ int MCU::End()
 {
 	Log(">End MCU\n");
 
-	//Bloqueamos
+	//Lock
 	pthread_mutex_lock(&mutex);
 
 	//Dejamos de estar iniciados
@@ -99,7 +99,7 @@ int MCU::End()
 	//LImpiamos las listas
 	conferences.clear();
 
-	//Desbloqueamos
+	//Unlock
 	pthread_mutex_unlock(&mutex);
 
 	Log("<End MCU\n");
@@ -152,7 +152,7 @@ int MCU::CreateConference(std::wstring tag,int queueId)
 	//Create the entry
 	ConferenceEntry *entry = new ConferenceEntry();
 
-	//Bloqueamos
+	//Lock
 	pthread_mutex_lock(&mutex);
 
 	//Get the id
@@ -165,12 +165,12 @@ int MCU::CreateConference(std::wstring tag,int queueId)
 	entry->numRef	= 0;
 	entry->queueId	= queueId;
 
-	//a�adimos a la lista
+	//Add to the conference entry list
 	conferences[confId] = entry;
 	//Add to tags
 	tags[tag] = confId;
 
-	//Desbloqueamos
+	//Unlock
 	pthread_mutex_unlock(&mutex);
 
 	//Set us as listeners
@@ -179,10 +179,10 @@ int MCU::CreateConference(std::wstring tag,int queueId)
 	//Create BFCP conference
 	BFCPFloorControlServer* floorServer = BFCP::getInstance().CreateConference(confId,conf);
 
-	//Set floor server in cong
+	//Set floor server in conf
 	conf->SetFloorControlServer(floorServer);
 
-		
+
 	Log("<CreateConference [%d]\n",confId);
 
 	return confId;
@@ -196,7 +196,7 @@ int MCU::GetConferenceRef(int id,MultiConf **conf)
 {
 	Log("-GetConferenceRef [%d]\n",id);
 
-	//Bloqueamos
+	//Lock
 	pthread_mutex_lock(&mutex);
 
 	//Find confernce
@@ -243,7 +243,7 @@ int MCU::GetConferenceId(const std::wstring& tag)
 {
 	Log("-GetConferenceId [%ls]\n",tag.c_str());
 
-	//Bloqueamos
+	//Lock
 	pthread_mutex_lock(&mutex);
 
 	//Find id by tag
@@ -275,7 +275,7 @@ int MCU::ReleaseConferenceRef(int id)
 {
 	Log(">ReleaseConferenceRef [%d]\n",id);
 
-	//Bloqueamos
+	//Lock
 	pthread_mutex_lock(&mutex);
 
 	//Find confernce
@@ -306,13 +306,13 @@ int MCU::ReleaseConferenceRef(int id)
 
 /**************************************
 * DeleteConference
-*	Inicializa la mcu
+*	Removes the mcu
 **************************************/
 int MCU::DeleteConference(int id)
 {
 	Log(">DeleteConference [%d]\n",id);
 
-	//Bloqueamos
+	//Lock
 	pthread_mutex_lock(&mutex);
 
 	//Find conference
@@ -346,7 +346,7 @@ int MCU::DeleteConference(int id)
 		pthread_mutex_unlock(&mutex);
 		//FIXME: poner una condicion
 		sleep(20);
-		//Bloqueamos
+		//Lock
 		pthread_mutex_lock(&mutex);
 		//Find conference
 		it = conferences.find(id);
@@ -394,7 +394,7 @@ RTMPNetConnection* MCU::Connect(const std::wstring& appName,RTMPNetConnection::L
 	int confId = 0;
 	MultiConf *conf = NULL;
 	wchar_t *stopwcs;
-	
+
 	//Skip the mcu part and find the conf Id
 	int i = appName.find(L"/");
 
@@ -432,7 +432,7 @@ RTMPNetConnection* MCU::Connect(const std::wstring& appName,RTMPNetConnection::L
 
 	//Connect
 	conf->Connect(listener);
-	
+
 	//release it
 	ReleaseConferenceRef(confId);
 
@@ -444,7 +444,7 @@ int MCU::GetConferenceList(ConferencesInfo& lst)
 {
 	Log(">GetConferenceList\n");
 
-	//Bloqueamos
+	//Lock
 	pthread_mutex_lock(&mutex);
 
 	//For each conference
@@ -465,7 +465,7 @@ int MCU::GetConferenceList(ConferencesInfo& lst)
 			lst[entry->id] = info;
 		}
 	}
-	
+
 	//Desbloquamos el mutex
 	pthread_mutex_unlock(&mutex);
 
@@ -496,7 +496,7 @@ void MCU::onCPULoad(int user, int sys, int load, int numcpu)
 int MCU::onFileUploaded(const char* url, const char *filename)
 {
 	Log("-File upload for %s\n",url);
-	
+
 	MultiConf* conf = NULL;
 
 	//Skip the first path
@@ -517,7 +517,7 @@ int MCU::onFileUploaded(const char* url, const char *filename)
 		//Error
 		return 500;
 	}
-	
+
 	//Get id by tag
 	int confId = GetConferenceId(parser.GetWString());
 
@@ -561,7 +561,7 @@ void MCU::onWebSocketConnection(const HTTPRequest& request,WebSocket *ws)
 	if (!parser.ParseUntilCharset("/"))
 		//reject
 		return ws->Reject(400,"Bad request");
-	
+
 	//Get conf id value
 	std::string value = parser.GetValue();
 
@@ -609,7 +609,7 @@ void MCU::onWebSocketConnection(const HTTPRequest& request,WebSocket *ws)
 
 	//Get to what are they connecting
 	std::string to = parser.GetValue();
-	
+
 	//Get conference
 	if(!GetConferenceRef(confId,&conf))
 	{
@@ -621,7 +621,7 @@ void MCU::onWebSocketConnection(const HTTPRequest& request,WebSocket *ws)
 
 	//Connect it
 	conf->WebsocketConnectRequest(ws,partId,token,to);
-	
+
 	//Release it
 	ReleaseConferenceRef(confId);
 }
