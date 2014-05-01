@@ -253,18 +253,39 @@ int VNCServer::SetEditor(int editorId) {
 int VNCServer::Connect(int partId,WebSocket *socket)
 {
 	Log("-VNCServer connecting participant viewer [id:%d]\n",partId);
+
 	//Lock
 	use.WaitUnusedAndLock();
-	//Create client
+
+	//Create new client
 	Client *client = new Client(partId,this);
 	//Set client as as user data
 	socket->SetUserData(client);
-	//Append to client list
-	clients[partId] = client;
+
+	//Check if there was one already ws connected for that user
+	Clients::iterator it = clients.find(partId);
+	//If it was
+	if (it!=clients.end())
+	{
+		//Get old client
+		Client *old = it->second;
+		//End it
+		old->Close();
+		//Delete it
+		delete(old);
+		//Set new one
+		it->second = client;
+	} else {
+		//Append to client list
+		clients[partId] = client;
+	}
+	
+	//Unlock clients list
+	use.Unlock();
+
 	//Accept incoming connection and add us as listeners
 	socket->Accept(this);
-	//Unlock
-	use.Unlock();
+	
 	//Connect to socket
 	return client->Connect(socket);
 }
