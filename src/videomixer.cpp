@@ -485,14 +485,14 @@ int VideoMixer::CreateMixer(int id)
 {
 	Log(">CreateMixer video [%d]\n",id);
 
-	//Protegemos la lista
-	lstVideosUse.IncUse();
+	//Block list
+	lstVideosUse.WaitUnusedAndLock();
 
 	//Miramos que si esta
 	if (lstVideos.find(id)!=lstVideos.end())
 	{
 		//Desprotegemos la lista
-		lstVideosUse.DecUse();
+		lstVideosUse.Unlock();
 		//Exit
 		return Error("Video sourecer already existed\n");
 	}
@@ -506,11 +506,11 @@ int VideoMixer::CreateMixer(int id)
 	//No mosaic yet
 	video->mosaic = NULL;
 
-	//Y lo aï¿½adimos a la lista
+	//Add to list
 	lstVideos[id] = video;
 
-	//Desprotegemos la lista
-	lstVideosUse.DecUse();
+	//Unlock
+	lstVideosUse.Unlock();
 
 	//Y salimos
 	Log("<CreateMixer video\n");
