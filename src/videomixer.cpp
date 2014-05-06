@@ -834,12 +834,12 @@ VideoInput* VideoMixer::GetInput(int id)
 
 	//Si esta
 	if (it != lstVideos.end())
-		input = (VideoInput*)(*it).second->input;
+		input = (VideoInput*)it->second->input;
 
 	//Desprotegemos
 	lstVideosUse.DecUse();
 
-	//Si esta devolvemos el input
+	//Return input
 	return input;
 }
 
@@ -860,13 +860,13 @@ VideoOutput* VideoMixer::GetOutput(int id)
 
 	//Si esta
 	if (it != lstVideos.end())
-		output = (VideoOutput*)(*it).second->output;
+		output = (VideoOutput*)it->second->output;
 
 	//Desprotegemos
 	lstVideosUse.DecUse();
 
-	//Si esta devolvemos el input
-	return (VideoOutput*)(*it).second->output;
+	//return output
+	return output;
 }
 
 /**************************
