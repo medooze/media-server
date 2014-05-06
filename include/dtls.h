@@ -13,6 +13,7 @@
 #include <openssl/bio.h>
 #include <string>
 #include "config.h"
+#include "log.h"
 
 
 class DTLSConnection
@@ -84,17 +85,6 @@ private:
 public:
 	bool dtls_failure;		/*!< Failure occurred during DTLS negotiation */
 private:
-	class LibraryInit
-	{
-	public:
-		LibraryInit()
-		{
-			SSL_library_init();
-		}
-	};
-	static const LibraryInit library;
-private:
-	
 	Listener& listener;
 	SSL_CTX *ssl_ctx;		/*!< SSL context */
 	SSL *ssl;			/*!< SSL session */

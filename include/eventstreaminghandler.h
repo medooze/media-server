@@ -136,6 +136,7 @@ public:
 		//Create source
 		getInstance().CreateEvenSource(source);
 	}
+
 	EvenSource(const std::wstring &str)
 	{
 		//Convert to utf
