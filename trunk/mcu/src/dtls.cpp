@@ -6,9 +6,6 @@
 #define SRTP_MASTER_SALT_LENGTH 14
 #define SRTP_MASTER_LENGTH (SRTP_MASTER_KEY_LENGTH + SRTP_MASTER_SALT_LENGTH)
 
-//Certificates
-
-
 void dtls_info_callback(const SSL *ssl, int where, int ret)
 {
 	DTLSConnection *con = (DTLSConnection*) SSL_get_ex_data(ssl, 0);
@@ -117,15 +114,7 @@ DTLSConnection::DTLSConnection(Listener& listener) : listener(listener)
 	ssl		= NULL;			/*!< SSL session */
 	read_bio	= NULL;			/*!< Memory buffer for reading */
 	write_bio	= NULL;			/*!< Memory buffer for writing */
-	//Init library just in case
-	SSL_library_init();
 
-	//Create ssl context
-	ssl_ctx = SSL_CTX_new(DTLSv1_method());
-	//Check
-	if(!ssl_ctx)
-		//Print SSl error
-		ERR_print_errors_fp(stderr);
 
 }
 
@@ -134,11 +123,6 @@ DTLSConnection::~DTLSConnection()
 	//ENd
 	End();
 
-	if (ssl_ctx)
-	{
-		SSL_CTX_free(ssl_ctx);
-		ssl_ctx = NULL;
-	}
 }
 
 int DTLSConnection::SetSuite(Suite suite)
@@ -153,10 +137,17 @@ int DTLSConnection::Init()
 {
 	Log("-DTLSConnection::Init\n");
 
+	//Create ssl context
+	ssl_ctx = SSL_CTX_new(DTLSv1_method());
+
 	//Check
 	if(!ssl_ctx)
+	{
+		//Print SSl error
+		ERR_print_errors_fp(stderr);
 		//Fail
 		return Error("-No SSL contecx\n");
+	}
 
 	//Verify always
 	bool verify = true;
@@ -249,8 +240,14 @@ int DTLSConnection::End()
 
 	if (ssl)
 	{
-	//	SSL_free(ssl);
+		//SSL_free(ssl);
 		ssl = NULL;
+	}
+
+	if (ssl_ctx)
+	{
+		SSL_CTX_free(ssl_ctx);
+		ssl_ctx = NULL;
 	}
 
 	return 1;

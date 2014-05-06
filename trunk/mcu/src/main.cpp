@@ -89,6 +89,10 @@ int main(int argc,char **argv)
 {
 	//Init random
 	srand (time(NULL));
+	//Init open ssl lib
+        SSL_load_error_strings();
+        SSL_library_init();
+
 	//Set default values
 	bool forking = false;
 	int port = 8080;
