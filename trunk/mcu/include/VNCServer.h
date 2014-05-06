@@ -37,7 +37,6 @@ public:
 		//Socket functionas
 		 void Close();
 		 int WaitForData(DWORD usecs);
-		 void CancelWait();
 		 int Read(char *data, int size,int timeout);
 		 int Write(const char *data, int size);
 	protected:

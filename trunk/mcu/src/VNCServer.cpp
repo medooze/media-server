@@ -220,10 +220,13 @@ int VNCServer::Init(Listener* listener)
 	this->listener = listener;
 }
 
-int VNCServer::SetEditor(int editorId) {
+int VNCServer::SetEditor(int editorId) 
+{
+	Debug(">VNCServer::SetEditor [partId:%d]\n",editorId);
 
 	//Lock
 	use.WaitUnusedAndLock();
+
 	//If we got another editor
 	if (this->editorId)
 	{
@@ -234,6 +237,7 @@ int VNCServer::SetEditor(int editorId) {
 			//Set client view onlu
 			it->second->SetViewOnly(true);
 	}
+
 	//Set new one
 	this->editorId = editorId;
 	//Find it
@@ -244,15 +248,19 @@ int VNCServer::SetEditor(int editorId) {
 		it->second->SetViewOnly(false);
 	//Reset screen pointer
 	screen->pointerClient = NULL;
+
 	//Unlock
 	use.Unlock();
+
+	Debug("<VNCServer::SetEditor [partId:%d]\n",editorId);
+
 	//Ok
 	return true;
 }
 
 int VNCServer::Connect(int partId,WebSocket *socket)
 {
-	Log("-VNCServer connecting participant viewer [id:%d]\n",partId);
+	Log(">VNCServer connecting participant viewer [id:%d]\n",partId);
 
 	//Lock
 	use.WaitUnusedAndLock();
@@ -308,10 +316,12 @@ int VNCServer::Disconnect(WebSocket *socket)
 	clients.erase(client->GetId());
 	//Unlock
 	use.Unlock();
+
 	//Let it finish
 	client->Disconnect();
 	//Delete it
 	delete(client);
+
 	//OK
 	return 1;
 }
@@ -714,6 +724,7 @@ VNCServer::Client::~Client()
 
 int VNCServer::Client::Connect(WebSocket *ws)
 {
+	Debug(">VNCServer::Client::Connect [ws:%p,this:%p]\n",ws,this);
 	//Store websocekt
 	this->ws = ws;
 
@@ -745,6 +756,8 @@ int VNCServer::Client::Connect(WebSocket *ws)
 	//Start thread
 	createPriorityThread(&thread,run,this,0);
 
+	Debug("<VNCServer::Client::Connect [ws:%p,this:%p]\n",ws,this);
+
 	//OK
 	return 1;
 }
@@ -752,14 +765,23 @@ int VNCServer::Client::Connect(WebSocket *ws)
 int VNCServer::Client::Disconnect()
 {
 	Debug(">VNCServer::Client::Disconnect [this:%p]\n",this);
+
 	//Detach listeners
 	ws->Detach();
 	//Remove ws data
 	ws->SetUserData(NULL);
-	//Cancel any read
-	CancelWait();
-	//Wait thread end
+
+	Debug("-VNCServer::Client::Disconnect cancel wait [this:%p]\n",this);
+
+	//Cancel read wait
+	wait.Cancel();
+	//Signal cond to exit update loop
+	TSIGNAL(cl->updateCond);
+
+	Debug("-VNCServer::Client::Disconnect cancel join [this:%p]\n",this);
+	//Join thread
 	pthread_join(thread,NULL);
+
 	//Wait
 	Debug("<VNCServer::Client::Disconnect [this:%p]\n",this);
 
@@ -816,15 +838,6 @@ void *VNCServer::Client::run(void *par)
 	return NULL;
 }
 
-void VNCServer::Client::CancelWait()
-{
-	//Cancel wait
-	wait.Cancel();
-
-	//Join thread
-	pthread_join(thread,NULL);
-}
-
 int VNCServer::Client::Read(char *out, int size, int timeout)
 {
 	//Bytes read
@@ -877,6 +890,8 @@ int VNCServer::Client::ProcessMessage()
 
 int VNCServer::Client::Run()
 {
+	Log(">VNCServer::Client::Run [this:%p]\n",this);
+
 	//Lock
 	LOCK(cl->updateMutex);
 	
@@ -957,15 +972,17 @@ int VNCServer::Client::Run()
 				Debug("-VNCServer::Client no pending update [%p]\n",this);
 			}
 		}
-		Debug("<VNCServer::Client going to sleep [%p]\n",this);
+		Debug("<VNCServer::Client going to sleep [this:%p]\n",this);
 
 		//Wait cond
 		WAIT(cl->updateCond,cl->updateMutex);
 
-		Debug(">VNCServer::Client waked up from wait mutex[%p]\n",this);
+		Debug(">VNCServer::Client waked up from wait mutex[this:%p,isCanceled:%d]\n",this,wait.IsCanceled());
 	}
 	//Unlock
 	UNLOCK(cl->updateMutex);
+
+	Log("<VNCServer::Client::Run [this:%p]\n",this);
 	
 	//OK
 	return 0;
