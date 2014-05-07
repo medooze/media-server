@@ -400,6 +400,8 @@ int VNCViewer::Run()
 		{
 			//Error
 			Error("HandleRFBServerMessage error\n");
+			//Close socket
+			((Socket*)client->tlsSession)->Close();
 			//Exit
 			break;
 		}
