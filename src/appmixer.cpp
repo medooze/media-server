@@ -370,34 +370,36 @@ int AppMixer::onFrameBufferSizeChanged(VNCViewer *viewer, int width, int height)
 	//Change server size
 	server.SetSize(width,height);
 
-	//Check if not minimized
-	if (!width || !height)
-		//Exit
-		return 0;
-
 	//Check if we already have a context
 	if (sws)
 	{
 		//Free sws contes
 		sws_freeContext(sws);
-		// Create YUV rescaller cotext
-		sws = sws_alloc_context();
+		//Null it
+		sws = NULL;
 	}
 
-	// Set property's of YUV rescaller context
-	av_opt_set_defaults(sws);
-	av_opt_set_int(sws, "srcw",       width			,AV_OPT_SEARCH_CHILDREN);
-	av_opt_set_int(sws, "srch",       height		,AV_OPT_SEARCH_CHILDREN);
-	av_opt_set_int(sws, "src_format", AV_PIX_FMT_RGBA	,AV_OPT_SEARCH_CHILDREN);
-	av_opt_set_int(sws, "dstw",       width			,AV_OPT_SEARCH_CHILDREN);
-	av_opt_set_int(sws, "dsth",       height		,AV_OPT_SEARCH_CHILDREN);
-	av_opt_set_int(sws, "dst_format", PIX_FMT_YUV420P	,AV_OPT_SEARCH_CHILDREN);
-	av_opt_set_int(sws, "sws_flags",  SWS_FAST_BILINEAR	,AV_OPT_SEARCH_CHILDREN);
+	//If got size
+	if (width && height)
+	{
+		// Create YUV rescaller cotext
+		sws = sws_alloc_context();
+
+		// Set property's of YUV rescaller context
+		av_opt_set_defaults(sws);
+		av_opt_set_int(sws, "srcw",       width			,AV_OPT_SEARCH_CHILDREN);
+		av_opt_set_int(sws, "srch",       height		,AV_OPT_SEARCH_CHILDREN);
+		av_opt_set_int(sws, "src_format", AV_PIX_FMT_RGBA	,AV_OPT_SEARCH_CHILDREN);
+		av_opt_set_int(sws, "dstw",       width			,AV_OPT_SEARCH_CHILDREN);
+		av_opt_set_int(sws, "dsth",       height		,AV_OPT_SEARCH_CHILDREN);
+		av_opt_set_int(sws, "dst_format", PIX_FMT_YUV420P	,AV_OPT_SEARCH_CHILDREN);
+		av_opt_set_int(sws, "sws_flags",  SWS_FAST_BILINEAR	,AV_OPT_SEARCH_CHILDREN);
 	
-	// Init YUV rescaller context
-	if (sws_init_context(sws, NULL, NULL) < 0)
-		//Set errror
-		return  Error("Couldn't init sws context\n");
+		// Init YUV rescaller context
+		if (sws_init_context(sws, NULL, NULL) < 0)
+			//Set errror
+			return  Error("Couldn't init sws context\n");
+	}
 
 	//If already got memory
 	if (img)
@@ -473,7 +475,7 @@ int AppMixer::onFinishedFrameBufferUpdate(VNCViewer *viewer)
 		out->linesize[2] = width/2;
 
 		//Convert
-		sws_scale(sws, in->data, in->linesize, 0, height, out->data, out->linesize);
+		if (sws) sws_scale(sws, in->data, in->linesize, 0, height, out->data, out->linesize);
 
 		//Put new frame
 		output->NextFrame(img);
