@@ -387,6 +387,11 @@ int VNCViewer::Run()
                         return Error("-VNCViewer error SendFramebufferUpdateRequest\n");
         }
 
+	//Check listener
+	if (listener)
+		//Started
+		listener->onSharingStarted(this);
+
 	//Loop 
 	while(running)
 	{
@@ -402,8 +407,8 @@ int VNCViewer::Run()
 
 	//Check listener
 	if (listener)
-		//Set 0 size
-		listener->onFrameBufferSizeChanged(this,0,0);
+		//End it
+		listener->onSharingEnded(this);
 
 	//Log
 	Log("<VNCViewer run");

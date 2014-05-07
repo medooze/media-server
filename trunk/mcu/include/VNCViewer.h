@@ -34,11 +34,13 @@ public:
 		virtual ~Listener(){};
 	public:
 		//Interface
+		virtual int onSharingStarted(VNCViewer *viewer) = 0;
 		virtual int onFrameBufferSizeChanged(VNCViewer *viewer, int width, int height) = 0;
 		virtual int onFrameBufferUpdate(VNCViewer *viewer,int x, int y, int w, int h) = 0;
 		virtual int onGotCopyRectangle(VNCViewer *viewer, int src_x, int src_y, int w, int h, int dest_x, int dest_y) = 0;
 		virtual int onFinishedFrameBufferUpdate(VNCViewer *viewer) = 0;
 		virtual int onHandleCursorPos(VNCViewer *viewer,int x, int y) = 0;
+		virtual int onSharingEnded(VNCViewer *viewer) = 0;
 	};
 public:
 	VNCViewer();
