@@ -346,23 +346,29 @@ int VNCViewer::Run()
 
 	//Init connection
 	if (!InitialiseRFBConnection(client))
+		//Error
                 return Error("-VNCViewer error initializing\n");
 
+	//Set initial size and alloc mem
         client->width = client->si.framebufferWidth;
         client->height = client->si.framebufferHeight;
         client->MallocFrameBuffer(client);
 
         if (!SetFormatAndEncodings(client))
+		//Error
                 return Error("-VNCViewer error initializing\n");
 
-        if (client->updateRect.x < 0) {
+        if (client->updateRect.x < 0)
+	{
                 client->updateRect.x = client->updateRect.y = 0;
                 client->updateRect.w = client->width;
                 client->updateRect.h = client->height;
         }
 
-        if (client->appData.scaleSetting > 1) {
+        if (client->appData.scaleSetting > 1)
+	{
                 if (!SendScaleSetting(client, client->appData.scaleSetting))
+			//Error
                         return Error("-VNCViewer error scaleSetting\n");
                 if (!SendFramebufferUpdateRequest(client,
                         client->updateRect.x / client->appData.scaleSetting,
@@ -370,26 +376,40 @@ int VNCViewer::Run()
                         client->updateRect.w / client->appData.scaleSetting,
                         client->updateRect.h / client->appData.scaleSetting,
                         FALSE))
+			//Error
                         return Error("-VNCViewer error SendFramebufferUpdateRequest scaleSetting\n");
         } else {
                 if (!SendFramebufferUpdateRequest(client,
                         client->updateRect.x, client->updateRect.y,
                         client->updateRect.w, client->updateRect.h,
                         FALSE))
+			//Error
                         return Error("-VNCViewer error SendFramebufferUpdateRequest\n");
         }
 
 	//Loop 
 	while(running)
 	{
-		Debug(">HandleRFBServerMessage\n");
 		//PRocessmessage
 		if (!HandleRFBServerMessage(client))
+		{
 			//Error
-			return  Error("HandleRFBServerMessage error\n");
-		Debug("<HandleRFBServerMessage\n");
+			Error("HandleRFBServerMessage error\n");
+			//Exit
+			break;
+		}
 	}
+
+	//Check listener
+	if (listener)
+		//Set 0 size
+		listener->onFrameBufferSizeChanged(this,0,0);
+
+	//Log
 	Log("<VNCViewer run");
+	
+	//OK
+	return 1;
 }
 
 int VNCViewer::ResetSize()
