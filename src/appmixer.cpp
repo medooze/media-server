@@ -364,6 +364,20 @@ void AppMixer::Presenter::Close()
 	ws->Close();
 }
 
+int AppMixer::onSharingStarted(VNCViewer *viewer)
+{
+	//Nothing
+	Log("-onSharingStarted\n");
+}
+
+int AppMixer::onSharingEnded(VNCViewer *viewer)
+{
+	//Log
+	Log("-onSharingEnded\n");
+	//End sharing
+	server.Reset();
+}
+
 int AppMixer::onFrameBufferSizeChanged(VNCViewer *viewer, int width, int height)
 {
 	Log("-onFrameBufferSizeChanged [%d,%d]\n",width,height);

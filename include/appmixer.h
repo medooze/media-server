@@ -77,11 +77,14 @@ public:
 	virtual void onError(WebSocket *ws);
 	virtual void onClose(WebSocket *ws);
 
+
+        virtual int onSharingStarted(VNCViewer *viewer);
 	virtual int onFrameBufferSizeChanged(VNCViewer *viewer, int width, int height);
 	virtual int onFrameBufferUpdate(VNCViewer *viewer,int x, int y, int w, int h);
 	virtual int onGotCopyRectangle(VNCViewer *viewer, int src_x, int src_y, int w, int h, int dest_x, int dest_y);
 	virtual int onFinishedFrameBufferUpdate(VNCViewer *viewer);
 	virtual int onHandleCursorPos(VNCViewer *viewer,int x, int y);
+	virtual int onSharingEnded(VNCViewer *viewer);
 
 	virtual void onMouseEvent(int buttonMask, int x, int y);
 	virtual void onKeyboardEvent(bool down, DWORD keySym);
