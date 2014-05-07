@@ -2300,9 +2300,7 @@ HandleRFBServerMessage(rfbClient* client)
 	  handled = TRUE;
 
       if(!handled) {
-	char buffer[256];
 	rfbClientLog("Unknown message type %d from VNC server\n",msg.type);
-	ReadFromRFBServer(client, buffer, 256);
 	return FALSE;
       }
     }
