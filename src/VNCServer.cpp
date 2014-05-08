@@ -899,7 +899,8 @@ int VNCServer::Client::Run()
 	while (!wait.IsCanceled())
 	{
 		//If connected
-		if (cl->state == rfbClientRec::RFB_NORMAL )
+		/* always require a FB Update Request (otherwise can crash.) */
+		if (cl->state == rfbClientRec::RFB_NORMAL && !sraRgnEmpty(cl->requestedRegion))
 		{
 			rfbBool haveUpdate = false;
 			sraRegion* updateRegion = NULL;
@@ -924,27 +925,18 @@ int VNCServer::Client::Run()
 				{
 					//Free region
 					sraRgnDestroy(cl->modifiedRegion);
-
 					//Set new modified region
 					cl->modifiedRegion = sraRgnCreateRect(0,0,cl->screen->width,cl->screen->height);
-
-					//We have an update
-					haveUpdate = TRUE;
-
-				/* always require a FB Update Request (otherwise can crash.) */
-				} else if (!sraRgnEmpty(cl->requestedRegion))
-				{
-					/* Now, get the region we're going to update, and remove
-					it from cl->modifiedRegion _before_ we send the update.
-					That way, if anything that overlaps the region we're sending
-					is updated, we'll be sure to do another update later. */
-					updateRegion = sraRgnCreateRgn(cl->modifiedRegion);
-					//Check it is inside requested region
-					haveUpdate   = sraRgnAnd(updateRegion,cl->requestedRegion);
-				} else {
-					Debug("-VNCServer::Client requestedRegion is empty [%p]\n",this);
 				}
 
+				/* Now, get the region we're going to update, and remove
+				it from cl->modifiedRegion _before_ we send the update.
+				That way, if anything that overlaps the region we're sending
+				is updated, we'll be sure to do another update later. */
+				updateRegion = sraRgnCreateRgn(cl->modifiedRegion);
+				//Check it is inside requested region
+				haveUpdate   = sraRgnAnd(updateRegion,cl->requestedRegion);
+				
 				//Unlock region
 				UNLOCK(cl->updateMutex);
 
@@ -959,17 +951,13 @@ int VNCServer::Client::Run()
 					//UNLOCK(cl->sendMutex);
 					rfbDecrClientRef(cl);
 					Debug("<VNCServer::Clietn SendFramebufferUpdate [%p]\n",this);
-				} else {
-					Debug("-VNCServer::Client haveUpdate=false [%p]\n",this);
 				}
+
 				//Destroy region
-				if (updateRegion)
-					sraRgnDestroy(updateRegion);
+				sraRgnDestroy(updateRegion);
 
 				//Lock again
 				LOCK(cl->updateMutex);
-			} else {
-				Debug("-VNCServer::Client no pending update [%p]\n",this);
 			}
 		}
 		Debug("<VNCServer::Client going to sleep [this:%p]\n",this);
