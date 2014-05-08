@@ -2285,6 +2285,20 @@ HandleRFBServerMessage(rfbClient* client)
   }
 
   /** Custom **/
+  case rfbRestart:
+  {
+    rfbClientLog("Restart, closing connection\n");
+    return FALSE;
+    break;
+  }
+  case rfbChangedControlMode:
+  {
+    char mode;
+    //Read control mode
+    ReadFromRFBServer(client,&mode,1);
+    rfbClientLog("ChangedControlMode [%d]\n",mode);
+    break;
+  }
   case rfbMinimized:
   {
     rfbClientLog("Window minimized\n");

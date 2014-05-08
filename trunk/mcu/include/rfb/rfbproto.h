@@ -393,9 +393,10 @@ typedef struct {
 #define rfbServerCutText 3
 /* Modif sf@2002 */
 #define rfbResizeFrameBuffer 4
-#define rfbPalmVNCReSizeFrameBuffer 0xF
+#define rfbPalmVNCReSizeFrameBuffer 25
 
 /* custom */
+#define rfbRestart  15 //<- Collides with rfbPalmVNCReSizeFrameBuffer
 #define rfbReset 16
 #define rfbChangedControlMode 17
 #define rfbMinimized 18
