@@ -133,13 +133,14 @@ int AppMixer::WebsocketConnectRequest(int partId,WebSocket *ws,bool isPresenter)
 
 int AppMixer::SetPresenter(int partId)
 {
+	//Log
 	Log(">AppMixer::SetPresenter [%d]\n",partId);
-
-	//Stopre it
-	presenterId = partId;
 
 	//LOck
 	use.WaitUnusedAndLock();
+
+	//Stopre it
+	presenterId = partId;
 
 	//Check if already presenting
 	if (presenter)
@@ -157,6 +158,7 @@ int AppMixer::SetPresenter(int partId)
 	//Unlock
 	use.Unlock();
 
+	//Log
 	Log("<AppMixer::SetPresenter [%d]\n",partId);
 
 	//OK
@@ -208,12 +210,14 @@ void AppMixer::onWriteBufferEmpty(WebSocket *ws)
 
 void AppMixer::onClose(WebSocket *ws)
 {
+	//Log
 	Log(">AppMixer::onClose %p %p\n",ws,presenter);
+
+	//Lock
+	use.WaitUnusedAndLock();
 
 	if (presenter && ws==presenter->ws)
 	{
-		//Lock
-		use.WaitUnusedAndLock();
 		//End presenter
 		presenter->End();
 		//Delete presenter
@@ -222,9 +226,12 @@ void AppMixer::onClose(WebSocket *ws)
 		presenter = NULL;
 		//Reset server
 		server.Reset();
-		//Unlock
-		use.Unlock();
 	}
+
+	//Unlock
+	use.Unlock();
+
+	//Log
 	Log("<AppMixer::onClose\n");
 }
 
@@ -232,10 +239,11 @@ void AppMixer::onError(WebSocket *ws)
 {
 	Log(">AppMixer::onError %p %p\n",ws,presenter);
 
+	//Lock
+	use.WaitUnusedAndLock();
+
 	if (presenter && ws==presenter->ws)
 	{
-		//Lock
-		use.WaitUnusedAndLock();
 		//End presenter
 		presenter->End();
 		//Delete presenter
@@ -244,9 +252,11 @@ void AppMixer::onError(WebSocket *ws)
 		presenter = NULL;
 		//Reset server
 		server.Reset();
-		//Unlock
-		use.Unlock();
 	}
+
+	//Unlock
+	use.Unlock();
+
 	Log("<AppMixer::onError\n");
 }
 
