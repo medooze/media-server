@@ -27,9 +27,10 @@ public:
 
 	int Init(Mosaic::Type comp,int size);
 	void SetKeepAspectRatio(bool keepAspectRatio);
+	void SetDiplayNames(bool displayNames);
 	void SetVADMode(VADMode vadMode);
 	void SetVADProxy(VADProxy* proxy);
-	int CreateMixer(int id);
+	int CreateMixer(int id,const std::wstring &name);
 	int InitMixer(int id,int mosaicId);
 	int SetMixerMosaic(int id,int mosaicId);
 	int EndMixer(int id);
@@ -64,13 +65,24 @@ private:
 
 private:
 
-	//Tipos
-	typedef struct 
+	struct VideoSource
 	{
 		PipeVideoInput  *input;
 		PipeVideoOutput *output;
 		Mosaic *mosaic;
-	} VideoSource;
+		std::wstring name;
+		
+		VideoSource(const std::wstring &name)
+		{
+			//Store name
+			this->name = name;
+			//NULL
+			input = NULL;
+			output = NULL;
+			mosaic = NULL;
+			
+		}
+	};
 
 	typedef std::map<int,VideoSource *> Videos;
 	typedef std::map<int,Mosaic *> Mosaics;
@@ -99,6 +111,7 @@ private:
 	VADProxy*	proxy;
 	VADMode		vadMode;
 	bool		keepAspectRatio;
+	bool		displayNames;
 };
 
 #endif

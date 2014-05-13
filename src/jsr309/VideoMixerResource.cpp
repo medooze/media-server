@@ -44,8 +44,9 @@ int VideoMixerResource::CreatePort(std::wstring &tag, int mosaicId)
 	//Obtenemos el id
 	int portId = maxId++;
 
-	//Y el de video
-	if (!mixer.CreateMixer(portId))
+	//Y el de video 
+	//TODO: Add name
+	if (!mixer.CreateMixer(portId,tag))
 		return Error("Couldn't set video mixer\n");
 
 	//Create the video port

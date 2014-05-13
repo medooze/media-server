@@ -43,6 +43,9 @@ VideoMixer::VideoMixer(const std::wstring &tag) : eventSource(tag)
 	//Keep aspect ration by default
 	keepAspectRatio = true;
 
+	//Don't show display names by default
+	displayNames = false;
+
 	//Inciamos lso mutex y la condicion
 	pthread_mutex_init(&mixVideoMutex,0);
 	pthread_cond_init(&mixVideoCond,0);
@@ -153,8 +156,12 @@ int VideoMixer::MixVideo()
 		//For each mosaic
 		for (itMosaic=mosaics.begin();itMosaic!=mosaics.end();++itMosaic)
 		{
+
 			//Get Mosaic
 			Mosaic *mosaic = itMosaic->second;
+
+			//FIX: Reset text overlay
+			mosaic->SetOverlayText();
 
 			//Get number of slots
 			int numSlots = mosaic->GetNumSlots();
@@ -233,7 +240,7 @@ int VideoMixer::MixVideo()
 				{
 					//Find  it
 					Videos::iterator it = lstVideos.find(partId);
-					
+
 					//Double check
 					if (it==lstVideos.end())
 					{
@@ -246,6 +253,12 @@ int VideoMixer::MixVideo()
 						//Next slot
 						continue;
 					}
+					
+					//If we are displaying names
+					if (displayNames)
+						//Set name
+						mosaic->RenderOverlayText(it->second->name,mosaic->GetLeft(i),mosaic->GetTop(i)+mosaic->GetHeight(i)-30,mosaic->GetWidth(i),30);
+
 					//Get output
 					PipeVideoOutput *output = it->second->output;
 
@@ -481,7 +494,7 @@ int VideoMixer::End()
 * CreateMixer
 *	Crea una nuevo source de video para mezclar
 ************************/
-int VideoMixer::CreateMixer(int id)
+int VideoMixer::CreateMixer(int id,const std::wstring &name)
 {
 	Log(">CreateMixer video [%d]\n",id);
 
@@ -498,7 +511,7 @@ int VideoMixer::CreateMixer(int id)
 	}
 
 	//Creamos el source
-	VideoSource *video = new VideoSource();
+	VideoSource *video = new VideoSource(name);
 
 	//POnemos el input y el output
 	video->input  = new PipeVideoInput();

@@ -14,15 +14,14 @@ class Overlay
 public:
 	Overlay(DWORD width,DWORD height);
 	~Overlay();
-	int LoadPNG(const char*);
-	int GenerateSVG(const char*);
+	int LoadPNG(const char* png);
+	int LoadSVG(const char* svg);
+	int RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWORD height);
 	BYTE* Display(BYTE* frame);
 	BYTE* GetOverlay() { return overlay; }
 private:
-	BYTE* overlayBuffer;
 	DWORD overlaySize;
 	BYTE* overlay;
-	BYTE* imageBuffer;
 	DWORD imageSize;
 	BYTE* image;
 

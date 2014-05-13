@@ -122,7 +122,7 @@ int MultiConf::Init(int vad, DWORD rate)
 	textEncoder.StartEncoding();
 
 	//Create one mixer for the app Mixer ouuput
-	videoMixer.CreateMixer(AppMixerId);
+	videoMixer.CreateMixer(AppMixerId,std::wstring(L"AppMixer"));
 
 	//Init
 	appMixer.Init(videoMixer.GetOutput(AppMixerId));
@@ -168,7 +168,7 @@ int MultiConf::StartBroadcaster(const Properties &properties)
 	broadcastId = maxId++;
 
 	//Create mixers
-	videoMixer.CreateMixer(broadcastId);
+	videoMixer.CreateMixer(broadcastId,name);
 	audioMixer.CreateMixer(broadcastId);
 	textMixer.CreateMixer(broadcastId,name);
 
@@ -487,7 +487,7 @@ int MultiConf::CreateParticipant(int mosaicId,int sidebarId,const std::wstring &
 	participantsLock.Unlock();
 
 	//Le creamos un mixer
-	if (!videoMixer.CreateMixer(partId))
+	if (!videoMixer.CreateMixer(partId,name))
 		return Error("Couldn't set video mixer\n");
 
 	//Y el de audio
@@ -1150,7 +1150,7 @@ int MultiConf::CreatePlayer(int privateId,std::wstring name)
 	int playerId = maxId++;
 
 	//Le creamos un mixer
-	if (!videoMixer.CreateMixer(playerId))
+	if (!videoMixer.CreateMixer(playerId,name))
 		return Error("Couldn't set video mixer\n");
 
 	//Y el de audio
