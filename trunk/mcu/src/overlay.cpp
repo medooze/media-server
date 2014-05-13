@@ -14,7 +14,7 @@ extern "C" {
 #include <libavutil/common.h>
 }
 
-#ifdef HAVE_IMAGIMAGIK
+#ifdef HAVE_IMAGEMAGICK
 #include <Magick++.h>
 #endif
 
@@ -217,7 +217,7 @@ end:
 
 int Overlay::LoadSVG(const char* svg)
 {
-#ifdef HAVE_IMAGIMAGIK
+#ifdef HAVE_IMAGEMAGICK
 	//CHeck input
 	if (!svg)
 		//ERROR
@@ -286,7 +286,7 @@ int Overlay::LoadSVG(const char* svg)
 
 int Overlay::RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWORD height)
 {
-#ifdef HAVE_IMAGIMAGIK
+#ifdef HAVE_IMAGEMAGICK
 	//Colors in RGBA
 	char strokeColor[] = "#40404040";
 	char fillColor[] = "#11111140";
