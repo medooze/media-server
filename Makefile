@@ -176,8 +176,8 @@ VPATH +=  %.cpp $(SRCDIR)/src/$(BFCPDIR)/messages
 INCLUDE+= -I$(SRCDIR)/include/ $(VADINCLUDE) -I$(SRCDIR)/src/vnc/common -I$(SRCDIR)/src/vnc/libvncserver
 LDFLAGS+= -lgsm -lpthread -lssl -lcrypto -lsrtp
 
-ifeq ($(IMAGIMAGIK),yes)
-	OPTS+=-DHAVE_IMAGIMAGIK `pkg-config --cflags ImageMagick++`
+ifeq ($(IMAGEMAGICK),yes)
+	OPTS+=-DHAVE_IMAGEMAGICK `pkg-config --cflags ImageMagick++`
 	LDFLAGS+=`pkg-config --libs ImageMagick++`
 endif
 
