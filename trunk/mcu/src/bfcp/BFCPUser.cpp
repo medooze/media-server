@@ -58,6 +58,8 @@ void BFCPUser::UnsetTransport()
 // Called by the BFCPFloorControlServer when a user is removed ot the conference is terminated.
 void BFCPUser::CloseTransport(const WORD code, const std::wstring& reason)
 {
+	::Debug("BFCPUser::CloseTransport() | start\n");
+
 	if (this->transport) {
 		BFCP::ConnectionData *conn_data = (BFCP::ConnectionData *)this->transport->GetUserData();
 		// Important: set this flag to true so revoking process does not take twice.
@@ -66,6 +68,8 @@ void BFCPUser::CloseTransport(const WORD code, const std::wstring& reason)
 		this->transport->Close(code, reason);
 		this->transport = NULL;
 	}
+
+	::Debug("BFCPUser::CloseTransport() | end\n");
 }
 
 
@@ -77,6 +81,8 @@ bool BFCPUser::IsConnected()
 
 void BFCPUser::SendMessage(BFCPMessage *msg)
 {
+	::Debug("BFCPUser::SendMessage() | start\n");
+
 	if (! this->transport) {
 		::Debug("BFCPUser::SendMessage() | user '%d' not connected, cannot send message\n", this->userId);
 		return;
@@ -86,6 +92,8 @@ void BFCPUser::SendMessage(BFCPMessage *msg)
 	// instance with inherited classes BFCPWebSocketTransport and BFCPBinaryTransport with
 	// different implementations of the SendMessage() method.
 	this->transport->SendMessage(msg->Stringify());
+
+	::Debug("BFCPUser::SendMessage() | end\n");
 }
 
 

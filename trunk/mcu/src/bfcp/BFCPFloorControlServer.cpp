@@ -74,9 +74,12 @@ bool BFCPFloorControlServer::RemoveUser(int userId)
 	}
 
 	// Revoke user's ongoing FloorRequests.
+	::Debug("BFCPFloorControlServer::RemoveUser() | calling RevokeUserFloorRequests(%d)\n", userId);
 	RevokeUserFloorRequests(user);
+	::Debug("BFCPFloorControlServer::RemoveUser() | RevokeUserFloorRequests(%d) returns\n", userId);
 
 	// Close its transport (if connected).
+	// TODO: log?
 	user->CloseTransport(4001, L"you have been removed from the BFCP conference");
 
 	// Delete user.
@@ -139,6 +142,8 @@ bool BFCPFloorControlServer::GrantFloorRequest(int floorRequestId)
 {
 	if (this->ending) { return false; }
 
+	::Debug("BFCPFloorControlServer::GrantFloorRequest() | start | [floorRequestId: %d]\n", floorRequestId);
+
 	BFCPFloorRequest *floorRequest = GetFloorRequest(floorRequestId);
 	if (! floorRequest) {
 		::Error("BFCPFloorControlServer::GrantFloorRequest() | FloorRequest '%d' does not exist\n", floorRequestId);
@@ -161,6 +166,7 @@ bool BFCPFloorControlServer::GrantFloorRequest(int floorRequestId)
 
 	// Revoke the Granted ones (the current FloorRequest won't be revoked since it is not granted yet).
 	for (int i=0; i<floorRequestsToRevoke.size(); i++) {
+		::Debug("BFCPFloorControlServer::GrantFloorRequest() | revoking FloorRequest %d/%d\n", i, floorRequestsToRevoke.size());
 		BFCPFloorRequest* floorRequestToRevoke = floorRequestsToRevoke[i];
 
 		if (! floorRequestToRevoke->IsGranted())
@@ -198,7 +204,11 @@ bool BFCPFloorControlServer::GrantFloorRequest(int floorRequestId)
 
 	/* Notify the chair */
 
+	::Debug("BFCPFloorControlServer::GrantFloorRequest() | calling listener->onFloorGranted(%d)\n", floorRequestId);
 	this->listener->onFloorGranted(floorRequestId, floorRequest->GetBeneficiaryId(), floorRequest->GetFloorIds());
+	::Debug("BFCPFloorControlServer::GrantFloorRequest() | listener->onFloorGranted(%d) returns\n", floorRequestId);
+
+	::Debug("BFCPFloorControlServer::GrantFloorRequest() | end | [floorRequestId: %d]\n", floorRequestId);
 
 	return true;
 }
@@ -206,6 +216,8 @@ bool BFCPFloorControlServer::GrantFloorRequest(int floorRequestId)
 
 bool BFCPFloorControlServer::DenyFloorRequest(int floorRequestId, std::wstring statusInfo)
 {
+	::Debug("BFCPFloorControlServer::DenyFloorRequest() | start | [floorRequestId: %d]\n", floorRequestId);
+
 	BFCPFloorRequest *floorRequest = GetFloorRequest(floorRequestId);
 	if (! floorRequest) {
 		::Error("BFCPFloorControlServer::DenyFloorRequest() | FloorRequest '%d' does not exist\n", floorRequestId);
@@ -255,12 +267,16 @@ bool BFCPFloorControlServer::DenyFloorRequest(int floorRequestId, std::wstring s
 	this->floorRequests.erase(floorRequestId);
 	delete floorRequest;
 
+	::Debug("BFCPFloorControlServer::DenyFloorRequest() | end | [floorRequestId: %d]\n", floorRequestId);
+
 	return true;
 }
 
 
 bool BFCPFloorControlServer::RevokeFloorRequest(int floorRequestId, std::wstring statusInfo)
 {
+	::Debug("BFCPFloorControlServer::RevokeFloorRequest() | start | [floorRequestId: %d]\n", floorRequestId);
+
 	BFCPFloorRequest *floorRequest = GetFloorRequest(floorRequestId);
 	if (! floorRequest) {
 		::Error("BFCPFloorControlServer::RevokeFloorRequest() | FloorRequest '%d' does not exist\n", floorRequestId);
@@ -312,7 +328,9 @@ bool BFCPFloorControlServer::RevokeFloorRequest(int floorRequestId, std::wstring
 	this->floorRequests.erase(floorRequestId);
 
 	if (! this->ending) {
+		::Debug("BFCPFloorControlServer::RevokeFloorRequest() | calling listener->onFloorReleased(%d)\n", floorRequestId);
 		this->listener->onFloorReleased(floorRequestId, floorRequest->GetBeneficiaryId(), floorRequest->GetFloorIds());
+		::Debug("BFCPFloorControlServer::RevokeFloorRequest() | listener->onFloorReleased(%d) returns\n", floorRequestId);
 	}
 
 
@@ -322,6 +340,8 @@ bool BFCPFloorControlServer::RevokeFloorRequest(int floorRequestId, std::wstring
 	if (GetFloorRequest(floorRequestId)) {
 		delete floorRequest;
 	}
+
+	::Debug("BFCPFloorControlServer::RevokeFloorRequest() | end | [floorRequestId: %d]\n", floorRequestId);
 
 	return true;
 }
@@ -364,6 +384,8 @@ void BFCPFloorControlServer::End()
 
 	BFCPFloorControlServer::FloorRequests::iterator it;
 	while (this->floorRequests.size() > 0) {
+		::Debug("BFCPFloorControlServer::End() | [number of ongoing FloorRequests: %d]\n", this->floorRequests.size());
+
 		it = this->floorRequests.begin();
 		BFCPFloorRequest* floorRequest = it->second;
 
@@ -380,6 +402,8 @@ void BFCPFloorControlServer::End()
 
 	BFCPFloorControlServer::Users::iterator it2;
 	while(this->users.size() > 0) {
+		::Debug("BFCPFloorControlServer::End() | [number of users: %d]\n", this->users.size());
+
 		it2 = this->users.begin();
 		BFCPUser* user = it2->second;
 
@@ -418,8 +442,12 @@ bool BFCPFloorControlServer::UserConnected(int userId, WebSocket *ws)
 
 		// Reset queried floors.
 		user->ResetQueriedFloorIds();
+
 		// Revoke user's ongoing FloorRequests.
+		::Debug("BFCPFloorControlServer::UserConnected() | calling RevokeUserFloorRequests(%d)\n", userId);
 		RevokeUserFloorRequests(user);
+		::Debug("BFCPFloorControlServer::UserConnected() | RevokeUserFloorRequests(%d) returns\n", userId);
+
 		// Close the previous connection from this user.
 		user->CloseTransport(4002, L"your user has connected from somewhere else");
 	}
@@ -463,7 +491,9 @@ void BFCPFloorControlServer::UserDisconnected(int userId, bool closedByServer)
 	user->ResetQueriedFloorIds();
 
 	// Revoke user's ongoing FloorRequests.
+	::Debug("BFCPFloorControlServer::UserDisconnected() | calling RevokeUserFloorRequests(%d)\n", userId);
 	RevokeUserFloorRequests(user);
+	::Debug("BFCPFloorControlServer::UserDisconnected() | RevokeUserFloorRequests(%d) returns\n", userId);
 }
 
 
@@ -473,6 +503,8 @@ void BFCPFloorControlServer::UserDisconnected(int userId, bool closedByServer)
 void BFCPFloorControlServer::DisconnectUser(int userId, const WORD code, const std::wstring& reason)
 {
 	if (this->ending) { return; }
+
+	::Debug("BFCPFloorControlServer::DisconnectUser() | start | [userId: %d]\n", userId);
 
 	BFCPUser *user = this->GetUser(userId);
 
@@ -488,10 +520,14 @@ void BFCPFloorControlServer::DisconnectUser(int userId, const WORD code, const s
 	user->ResetQueriedFloorIds();
 
 	// Revoke user's ongoing FloorRequests.
+	::Debug("BFCPFloorControlServer::DisconnectUser() | calling RevokeUserFloorRequests(%d)\n", userId);
 	RevokeUserFloorRequests(user);
+	::Debug("BFCPFloorControlServer::DisconnectUser() | RevokeUserFloorRequests(%d) returns\n", userId);
 
 	// Disconnect the transport.
 	user->CloseTransport(code, reason);
+
+	::Debug("BFCPFloorControlServer::DisconnectUser() | end | [userId: %d]\n", userId);
 }
 
 
@@ -503,7 +539,7 @@ void BFCPFloorControlServer::MessageReceived(BFCPMessage *msg)
 {
 	if (this->ending) { return; }
 
-	::Debug("BFCPFloorControlServer::MessageReceived() | %ls message received:\n", BFCPMessage::mapPrimitive2JsonStr[msg->GetPrimitive()].c_str());
+	::Debug("BFCPFloorControlServer::MessageReceived() | start | %ls message received:\n", BFCPMessage::mapPrimitive2JsonStr[msg->GetPrimitive()].c_str());
 	msg->Dump();
 
 	int userId = msg->GetUserId();
@@ -552,6 +588,8 @@ void BFCPFloorControlServer::MessageReceived(BFCPMessage *msg)
 				ReplyError(msg, BFCPAttrErrorCode::UnknownPrimitive, L"unknown or unsupported primitive");
 			}
 	}
+
+	::Debug("BFCPFloorControlServer::MessageReceived() | end | %ls message processed:\n", BFCPMessage::mapPrimitive2JsonStr[msg->GetPrimitive()].c_str());
 }
 
 
@@ -620,7 +658,7 @@ std::vector<BFCPFloorRequest*> BFCPFloorControlServer::GetFloorRequestsForFloors
 
 void BFCPFloorControlServer::NotifyForFloorRequest(BFCPFloorRequest* floorRequest)
 {
-	::Debug("BFCPFloorControlServer::NotifyForFloorRequest() | notifying changes in FloorRequest '%d' to subscribers\n", floorRequest->GetFloorRequestId());
+	::Debug("BFCPFloorControlServer::NotifyForFloorRequest() | start | notifying changes in FloorRequest '%d' to subscribers\n", floorRequest->GetFloorRequestId());
 
 	// Map of users and their queried affected floors due to the status change in
 	// the given FloorRequest.
@@ -676,12 +714,15 @@ void BFCPFloorControlServer::NotifyForFloorRequest(BFCPFloorRequest* floorReques
 
 	// Delete the FloorStatus.
 	delete floorStatus;
+
+	::Debug("BFCPFloorControlServer::NotifyForFloorRequest() | end | notified changes in FloorRequest '%d' to subscribers\n", floorRequest->GetFloorRequestId());
+
 }
 
 
 void BFCPFloorControlServer::RevokeUserFloorRequests(BFCPUser* user)
 {
-	::Debug("BFCPFloorControlServer::RevokeUserFloorRequests() | revoking (or cancelling) ongoing FloorRequest of user '%d'\n", user->GetUserId());
+	::Debug("BFCPFloorControlServer::RevokeUserFloorRequests() | start | revoking (or cancelling) ongoing FloorRequest of user '%d'\n", user->GetUserId());
 
 	int userId = user->GetUserId();
 	std::vector<int> userFloorRequests;
@@ -699,6 +740,8 @@ void BFCPFloorControlServer::RevokeUserFloorRequests(BFCPUser* user)
 	// For each stored FloorRequestId check that it still exists (the chair may delete it
 	// when notified).
 	for(int i=0; i<userFloorRequests.size(); i++) {
+		::Debug("BFCPFloorControlServer::RevokeUserFloorRequests() | revoking FloorRequest %d/%d\n", i, userFloorRequests.size());
+
 		int floorRequestId = userFloorRequests[i];
 		BFCPFloorRequest* floorRequest = GetFloorRequest(floorRequestId);
 
@@ -713,6 +756,8 @@ void BFCPFloorControlServer::RevokeUserFloorRequests(BFCPUser* user)
 			DenyFloorRequest(floorRequest->GetFloorRequestId(), L"FloorRequests from this user have been revoked or denied");
 		}
 	}
+
+	::Debug("BFCPFloorControlServer::RevokeUserFloorRequests() | end | revoke (or cancelled) ongoing FloorRequest of user '%d'\n", userId);
 }
 
 
@@ -775,7 +820,9 @@ void BFCPFloorControlServer::ProcessFloorRequest(BFCPMsgFloorRequest *req, BFCPU
 	// Otherwise notify the chair.
 	else {
 		::Log("BFCPFloorControlServer::ProcessFloorRequest() | the FloorRequest sender is not a chair, let's ask the chair\n");
+		::Debug("BFCPFloorControlServer::ProcessFloorRequest() | calling listener->onFloorRequest(%d)\n", floorRequestId);
 		this->listener->onFloorRequest(floorRequestId, floorRequest->GetUserId(), floorRequest->GetBeneficiaryId(), floorRequest->GetFloorIds());
+		::Debug("BFCPFloorControlServer::ProcessFloorRequest() | listener->onFloorRequest(%d) returns\n", floorRequestId);
 	}
 }
 
@@ -883,7 +930,9 @@ void BFCPFloorControlServer::ProcessFloorRelease(BFCPMsgFloorRelease *req, BFCPU
 	this->floorRequests.erase(floorRequestId);
 
 	if (must_notify_chair) {
+		::Debug("BFCPFloorControlServer::ProcessFloorRelease() | calling listener->onFloorReleased(%d)\n", floorRequestId);
 		this->listener->onFloorReleased(floorRequestId, floorRequestBeneficiary, floorRequest->GetFloorIds());
+		::Debug("BFCPFloorControlServer::ProcessFloorRelease() | listener->onFloorReleased(%d) returns\n", floorRequestId);
 	}
 
 	/* Delete the FloorRequest. */
