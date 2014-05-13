@@ -117,9 +117,11 @@ public:
 
 	int SetOverlayPNG(const char* filename);
 	int SetOverlaySVG(const char* svg);
+	int SetOverlayText();
+	int RenderOverlayText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWORD height);
 	int ResetOverlay();
 	int DrawVUMeter(int pos,DWORD val,DWORD size);
-protected:
+	
 	virtual int GetWidth(int pos) = 0;
 	virtual int GetHeight(int pos) = 0;
 	virtual int GetTop(int pos) = 0;

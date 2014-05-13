@@ -1,6 +1,9 @@
 #include "overlay.h"
 #include "log.h"
 #include "bitstream.h"
+
+
+#include "amf.h"
 #include <stdlib.h>
 #include <string.h>
 extern "C" {
@@ -11,6 +14,11 @@ extern "C" {
 #include <libavutil/common.h>
 }
 
+#ifdef HAVE_IMAGIMAGIK
+#include <Magick++.h>
+#endif
+
+
 Overlay::Overlay(DWORD width,DWORD height)
 {
 	//Store values
@@ -19,15 +27,13 @@ Overlay::Overlay(DWORD width,DWORD height)
 	//Calculate size for overlay iage with alpha
 	overlaySize = width*height*5/2+FF_INPUT_BUFFER_PADDING_SIZE+32;
 	//Create overlay image
-	overlayBuffer = (BYTE*)malloc32(overlaySize);
-	//Get aligned buffer
-	overlay = ALIGNTO32(overlayBuffer);
+	overlay = (BYTE*)malloc32(overlaySize);
+	//Clean it
+	memset(overlay,0,overlaySize);
 	//Calculate size for final image i.e. without alpha
 	imageSize = width*height*3/2+FF_INPUT_BUFFER_PADDING_SIZE+32;
 	//Create final image
-	imageBuffer = (BYTE*)malloc32(imageSize);
-	//Get aligned buffer
-	image = ALIGNTO32(imageBuffer);
+	image = (BYTE*)malloc32(imageSize);
 	//Do not display
 	display = false;
 }
@@ -35,8 +41,8 @@ Overlay::Overlay(DWORD width,DWORD height)
 Overlay::~Overlay()
 {
 	//Free memor
-	free(overlayBuffer);
-	free(imageBuffer);
+	free(overlay);
+	free(image);
 }
 
 int Overlay::LoadPNG(const char* filename)
@@ -209,9 +215,210 @@ end:
 	return res;
 }
 
-int Overlay::GenerateSVG(const char*)
+int Overlay::LoadSVG(const char* svg)
 {
+#ifdef HAVE_IMAGIMAGIK
+	//CHeck input
+	if (!svg)
+		//ERROR
+		return Error("-Overlay::RenderSVG is null\n");
+	try
+	{
+		//Get renderer object
+		Magick::Image render( Magick::Geometry(width, height) );
+		//Create svg content
+		Magick::Blob rgbablob(svg,strlen(svg));
+		//Draw it
+		render.magick("RGBA");
+		render.write(&rgbablob);
 
+		int numpixels = width*height;
+		
+		//First from to RGBA to YUVB
+		SwsContext *sws = sws_getContext( width, height, AV_PIX_FMT_RGBA,width, height, PIX_FMT_YUVA420P,SWS_FAST_BILINEAR, 0, 0, 0);
+
+		if (!sws)
+			return Error("Couldn't alloc sws context\n");
+		
+		//Alocate input
+		AVFrame* rgbaFrame = av_frame_alloc();
+
+		//Set data
+		rgbaFrame->data[0] = (BYTE *) rgbablob.data();
+		rgbaFrame->linesize[0] = 4*width;
+
+		//Allocate new one
+		AVFrame* logo = av_frame_alloc();
+		
+		//Set size for planes
+		logo->linesize[0] = width;
+		logo->linesize[1] = width/2;
+		logo->linesize[2] = width/2;
+		logo->linesize[3] = width;
+
+		//Alloc data
+		logo->data[0] = overlay;
+		logo->data[1] = logo->data[0] + numpixels;
+		logo->data[2] = logo->data[1] + numpixels / 4;
+		logo->data[3] = logo->data[2] + numpixels / 4;
+
+		//Convert
+		int res = sws_scale(sws, rgbaFrame->data, rgbaFrame->linesize, 0, height, logo->data, logo->linesize);
+
+		//Free memory
+		av_free(rgbaFrame);
+		av_free(logo);
+		sws_freeContext(sws);
+		
+		//Done
+		display = true;
+	} catch ( Magick::Exception &error ) {
+		display = false;
+		return Error("-Overlay: failed to load picture file %s: %s.\n", svg, error.what() );
+	} catch ( std::exception &error2 ) {
+		display = false;
+		return Error("-Overlay: failed to load picture file %s: %s.\n", svg, error2.what() );
+	}
+#endif
+    //OK
+    return 1;
+}
+
+int Overlay::RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWORD height)
+{
+#ifdef HAVE_IMAGIMAGIK
+	//Colors in RGBA
+	char strokeColor[] = "#40404040";
+	char fillColor[] = "#11111140";
+	char color[] = "white";
+	bool drawBackground = true;
+	BYTE strokeWidth = 2;
+	char font[] = "OrbitronB";
+	BYTE fontSize = 14;
+	BYTE padding = 2;
+	BYTE margin = 2;
+
+	try
+	{
+		Magick::Blob rgbablob;
+		//Create rendered
+		Magick::Image render( Magick::Geometry(width,height),Magick::Color("#00000000"));
+		render.depth(8);
+		render.interlaceType(Magick::NoInterlace);
+		//Check if we need to draw background
+		if (drawBackground)
+		{
+			//background color
+			render.fillColor(Magick::Color(fillColor));
+			//If got border
+			if (strokeWidth)
+			{
+				render.strokeColor(Magick::Color(strokeColor));
+				//Set stroke widht
+				render.strokeWidth(strokeWidth);
+			}
+			// Check if it can be printed witthout be truncated
+			render.draw(Magick::DrawableRoundRectangle(margin, margin, width-margin*2, height-margin*2, 5, 5) );
+		}
+
+		//Set font
+		render.font(font);
+		render.fontPointsize(fontSize);
+
+		//Convert text to tuf8
+		UTF8Parser utf8(text);
+		//Create utf8 string
+		char *str = (char*)malloc(utf8.GetUTF8Size()+1);
+		//Serialize it
+		utf8.Serialize((BYTE*)str,utf8.GetUTF8Size());
+		str[utf8.GetUTF8Size()] = 0;
+		Dump((BYTE*)str,utf8.GetUTF8Size());
+
+/*
+		Magick::TypeMetric textSize;
+		render.fontTypeMetrics( txt, &textSize );
+		//Get width at this size
+		float curwidth = textSize.textWidth();
+		//Check it
+		while ( curwidth >= width )
+		{
+			// Text is too large to fit in, lower the font size, truncate it. Leave some space for the ...
+			render.fontPointsize(20);
+			if ( text.Truncate(1) == 0)
+			{
+				contentType = NONE;
+				Error("-Overlay: not enough width to render text in slot.\n");
+				return 0;
+			}
+
+			text.Serialize(text2);
+			text2 += " ...";
+			render.fontTypeMetrics( text2, &textSize );
+			curwidth = textSize.textWidth();
+		}
+ */
+		render.fillColor(Magick::Color(color));
+		render.draw( Magick::DrawableText(margin+padding+strokeWidth, margin+padding+strokeWidth+fontSize, str, "UTF-8"));
+		render.magick("RGBA");
+		render.write(&rgbablob);
+
+		//First from to RGBA to YUVB
+		SwsContext *sws = sws_getContext(
+							width,
+							height,
+							AV_PIX_FMT_RGBA,
+							width,
+							height,
+							PIX_FMT_YUVA420P,
+							SWS_FAST_BILINEAR,
+							0,
+							0,
+							0
+						);
+
+		//Create new frames for converting  RGBA->YUVA
+		AVFrame* rgba = av_frame_alloc();
+		AVFrame* yuva = av_frame_alloc();
+
+		//Check
+		if (!sws)
+			//Set errror
+			return  Error("Couldn't alloc sws context\n");
+
+		//Set data origin data
+		rgba->data[0] = (BYTE *) rgbablob.data();
+		//Set origin planes
+		rgba->linesize[0] = 4*width;
+		
+		//Set size for planes dest
+		yuva->linesize[0] = this->width;
+		yuva->linesize[1] = this->width/2;
+		yuva->linesize[2] = this->width/2;
+		yuva->linesize[3] = this->width;
+
+		//Set destination data
+		int numpixels = this->width*this->height;
+		yuva->data[0] = overlay                 +x  +y*this->width;
+		yuva->data[1] = overlay + numpixels     +x/2+y/2*this->width/2;
+		yuva->data[2] = overlay + numpixels*5/4 +x/2+y/2*this->width/2;
+		yuva->data[3] = overlay + numpixels*3/2 +x  +y*this->width;
+
+		//Convert
+		sws_scale(sws, rgba->data, rgba->linesize, 0, height, yuva->data, yuva->linesize);
+
+		//Free memory
+		av_free(rgba);
+		av_free(yuva);
+		sws_freeContext(sws);
+		//OK
+		display = true;
+	} catch ( Magick::Exception &error ) {
+		display = false;
+		return Error("-Overlay: failed to render text %ls: %s.\n", text.c_str(), error.what() );
+	}
+#endif
+	//OK
+	return 1;
 }
 
 BYTE* Overlay::Display(BYTE* frame)

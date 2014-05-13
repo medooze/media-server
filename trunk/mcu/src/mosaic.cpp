@@ -591,12 +591,57 @@ int Mosaic::SetOverlayPNG(const char* filename)
 		return Error("Error loading png image");
 	//Display it
 	overlayNeedsUpdate = true;
+
+	//OK
+	return 1;
 }
+
 int Mosaic::SetOverlaySVG(const char* svg)
 {
-	//Nothing yet
-	return false;
+	//Log
+	Log("-SetOverlay [%s]\n",svg);
+
+	//Reset any previous one
+	if (overlay)
+		//Delete it
+		delete(overlay);
+	//Create new one
+	overlay = new Overlay(mosaicTotalWidth,mosaicTotalHeight);
+	//And load it
+	if(!overlay->LoadSVG(svg))
+		//Error
+		return Error("Error loading png image");
+	//Display it
+	overlayNeedsUpdate = true;
+	//OK
+	return 1;
 }
+
+int Mosaic::SetOverlayText()
+{
+	//Reset any previous one
+	if (overlay)
+		//Delete it
+		delete(overlay);
+	//Create new one
+	overlay = new Overlay(mosaicTotalWidth,mosaicTotalHeight);
+	
+	//Display it
+	overlayNeedsUpdate = true;
+	//OK
+	return 1;
+}
+
+int Mosaic::RenderOverlayText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWORD height)
+{
+	//Check overlay
+	if (!overlay)
+		//Error
+		return Error("-no overlay\n");
+	//Render text
+	return overlay->RenderText(text,x,y,width,height);
+}
+
 int Mosaic::ResetOverlay()
 {
 	//Log
