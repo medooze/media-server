@@ -12,7 +12,7 @@ std::map<enum BFCPMessage::Primitive, std::wstring>		BFCPMessage::mapPrimitive2J
 
 /* Subclasses */
 
-BFCPMessage::AttributeNotFound::AttributeNotFound(const char* description="") :
+BFCPMessage::AttributeNotFound::AttributeNotFound(const char* description) :
 	std::runtime_error(description)
 {
 }
