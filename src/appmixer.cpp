@@ -80,21 +80,19 @@ int AppMixer::End()
 
 	//LOck
 	use.WaitUnusedAndLock();
-	//Get old presneter
-	Presenter* old = presenter;
-	//Remove presneter
-	presenter = NULL;
-	//Unlock
-	use.Unlock();
 
 	//Check if presenting
-	if (old)
+	if (presenter)
 	{
 		//ENd presenter
-		old->End();
+		presenter->End();
 		//Delete presenter
-		delete(old);
+		delete(presenter);
+		//Remove presneter
+		presenter = NULL;
 	}
+	//Unlock
+	use.Unlock();
 
 	//End VNC server
 	server.End();
@@ -122,28 +120,26 @@ int AppMixer::WebsocketConnectRequest(int partId,WebSocket *ws,bool isPresenter)
 
 	//LOck
 	use.WaitUnusedAndLock();
-	//Get old presneter
-	Presenter* old = presenter;
+
+	//Check if already was presenting
+	if (presenter)
+	{
+		//End presenter
+		presenter->End();
+		//Delete it
+		delete(presenter);
+	}
+
 	//Create new presenter
 	presenter = new Presenter(ws);
+	//Init it
+	presenter->Init(this);
+	
 	//Unlock
 	use.Unlock();
 	
-	//Init it
-	presenter->Init(this);
-	//Set presenter as data
-	ws->SetUserData(presenter);
 	//Accept connection
 	ws->Accept(this);
-
-	//Check if already was presenting
-	if (old)
-	{
-		//End presenter
-		old->End();
-		//Delete it
-		delete(old);
-	}
 
 	//Ok
 	return 1;
@@ -156,26 +152,26 @@ int AppMixer::SetPresenter(int partId)
 
 	//LOck
 	use.WaitUnusedAndLock();
+	
 	//Store it
 	presenterId = partId;
-	//Get old presneter
-	Presenter* old = presenter;
-	//NULL this one
-	presenter = NULL;
-	//Unlock
-	use.Unlock();
+	
+	//Check if already presenting
+	if (presenter)
+	{
+		//End it
+		presenter->End();
+		//Delete it
+		delete(presenter);
+		//NULL
+		presenter = NULL;
+	}
 
 	//Reset size
 	server.Reset();
-
-	//Check if already presenting
-	if (old)
-	{
-		//End it
-		old->End();
-		//Delete it
-		delete(old);
-	}
+	
+	//Unlock
+	use.Unlock();
 
 	//Log
 	Log("<AppMixer::SetPresenter [%d]\n",partId);
@@ -212,9 +208,13 @@ void AppMixer::onMessageStart(WebSocket *ws,const WebSocket::MessageType type,co
 
 void AppMixer::onMessageData(WebSocket *ws,const BYTE* data, const DWORD size)
 {
-	if (ws==presenter->ws) 
+	//Get ws presenter
+	Presenter *wsp = (Presenter*) ws->GetUserData();
+
+	//Ensure it is still the presenter
+	if (wsp)
 		//Process it
-		presenter->Process(data,size);
+		wsp->Process(data,size);
 }
 
 void AppMixer::onMessageEnd(WebSocket *ws)
@@ -235,25 +235,24 @@ void AppMixer::onClose(WebSocket *ws)
 	//Get ws presenter
 	Presenter *wsp = (Presenter*) ws->GetUserData();
 
-	//Lock
-	use.WaitUnusedAndLock();
-
-	//If it was the current presenter
-	if (wsp==presenter)
+	//If it was still attached
+	if (wsp)
 	{
-		//Remove presenter
-		presenter = NULL;
-		//Reset server
-		server.Reset();
+		//Lock
+		use.WaitUnusedAndLock();
+
+		//If it was the current presenter
+		if (wsp==presenter)
+		{
+			//Remove presenter
+			presenter = NULL;
+			//Reset server
+			server.Reset();
+		}
+
+		//Unlock
+		use.Unlock();
 	}
-
-	//Unlock
-	use.Unlock();
-
-	//End presenter
-	wsp->End();
-	//Delete presenter
-	delete(wsp);
 
 	//Log
 	Log("<AppMixer::onClose\n");
@@ -266,25 +265,24 @@ void AppMixer::onError(WebSocket *ws)
 	//Get ws presenter
 	Presenter *wsp = (Presenter*) ws->GetUserData();
 
-	//Lock
-	use.WaitUnusedAndLock();
-
-	//If it was the current presenter
-	if (wsp==presenter)
+	//If it was still attached
+	if (wsp)
 	{
-		//Remove presenter
-		presenter = NULL;
-		//Reset server
-		server.Reset();
+		//Lock
+		use.WaitUnusedAndLock();
+
+		//If it was the current presenter
+		if (wsp==presenter)
+		{
+			//Remove presenter
+			presenter = NULL;
+			//Reset server
+			server.Reset();
+		}
+
+		//Unlock
+		use.Unlock();
 	}
-
-	//Unlock
-	use.Unlock();
-
-	//End presenter
-	wsp->End();
-	//Delete presenter
-	delete(wsp);
 
 	Log("<AppMixer::onError\n");
 }
@@ -302,9 +300,10 @@ AppMixer::Presenter::~Presenter()
 	End();
 }
 
-
 int AppMixer::Presenter::Init(VNCViewer::Listener *listener)
 {
+	//Set presenter as data
+	ws->SetUserData(this);
 	//Init viewer
 	return VNCViewer::Init(this,listener);
 }
