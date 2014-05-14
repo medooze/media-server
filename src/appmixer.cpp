@@ -310,9 +310,7 @@ int AppMixer::Presenter::Init(VNCViewer::Listener *listener)
 
 int AppMixer::Presenter::End()
 {
-	//End viewer
-	VNCViewer::End();
-	//Close websocket and stop listening for events
+	//Close websocket and stop listening for events, do it first or VNCViewer::End may dead block
 	if (ws) 
 	{
 		//Remove us from it
@@ -320,6 +318,8 @@ int AppMixer::Presenter::End()
 		//Close inmediatelly
 		ws->ForceClose();
 	}
+	//End viewer
+	VNCViewer::End();
 	//NO websocket anymore
 	ws = NULL; 
 	//OK
