@@ -44,7 +44,7 @@ VideoMixer::VideoMixer(const std::wstring &tag) : eventSource(tag)
 	keepAspectRatio = true;
 
 	//Don't show display names by default
-	displayNames = false;
+	displayNames = true;
 
 	//Inciamos lso mutex y la condicion
 	pthread_mutex_init(&mixVideoMutex,0);
