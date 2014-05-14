@@ -1,13 +1,18 @@
 #include "log.h"
 #include "logo.h"
 #include <stdlib.h>
-
+extern "C" {
+#include <libswscale/swscale.h>
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libavutil/opt.h>
+}
 
 Logo::Logo()
 {
 	//No logo
-	logoRGB = NULL;
 	frame = NULL;
+	frameRGBA = NULL;
 	width = 0;
 	height = 0;
 }
@@ -22,8 +27,10 @@ Logo::~Logo()
 	if(frame)
 		//Free it
 		free(frame);
-	if (logoRGB)
-		av_free(logoRGB);
+	//If we have open a gile
+	if(frameRGBA)
+		//Free it
+		free(frameRGBA);
 }
 
 int Logo::Load(const char* fileName)
@@ -31,6 +38,7 @@ int Logo::Load(const char* fileName)
 	AVFormatContext *fctx = NULL;
 	AVCodecContext *ctx = NULL;
 	AVCodec *codec = NULL;
+	AVFrame *logoRGB = NULL;
 	AVFrame* logo = NULL;
 	SwsContext *sws = NULL;
 	AVPacket packet;
@@ -169,6 +177,10 @@ int Logo::Load(const char* fileName)
 	if (frame)
 		//Free memory
 		free(frame);
+	//Check if we already had one
+	if (frameRGBA)
+		//Free memory
+		free(frameRGBA);
 
 	//Get size with padding
 	size = (((width/32+1)*32)*((height/32+1)*32)*3)/2+FF_INPUT_BUFFER_PADDING_SIZE+32;
@@ -178,6 +190,7 @@ int Logo::Load(const char* fileName)
 
 	//Allocate frame
 	frame = (BYTE*)malloc32(size); /* size for YUV 420 */
+	frameRGBA = (BYTE*)malloc32(numpixels*4);
 
 	//Alloc data
 	logo->data[0] = frame;
@@ -191,6 +204,12 @@ int Logo::Load(const char* fileName)
 
 	//Convert
 	sws_scale(sws, logoRGB->data, logoRGB->linesize, 0, height, logo->data, logo->linesize);
+
+	//Copy logo from rgbA to rgb
+	for (int j=0;j<height;j++)
+		for (int i=0;i<width;i++)
+			//Copy line by line
+			memcpy(frameRGBA+(width*j+i)*4,logoRGB->data[0]+logoRGB->linesize[0]*j+i*3,3);
 	
 	//Everything was ok
 	res = 1;
@@ -198,6 +217,9 @@ int Logo::Load(const char* fileName)
 end:
 	if (logo)
 		av_free(logo);
+
+	if (logoRGB)
+		av_free(logoRGB);
 
 	if (ctx)
 		avcodec_close(ctx);
@@ -229,5 +251,5 @@ BYTE* Logo::GetFrame() const
 
 BYTE* Logo::GetFrameRGBA() const
 {
-	return logoRGB->data[0];
+	return frameRGBA;
 }
