@@ -22,9 +22,9 @@ public:
 
 private:
 	BYTE*	 frame;
+	BYTE*	 frameRGBA;
 	int width;
 	int height;
-	AVFrame *logoRGB;
 };
 
 #endif

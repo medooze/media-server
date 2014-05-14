@@ -78,15 +78,22 @@ int AppMixer::End()
 	//Reset output
 	output = NULL;
 
+	//LOck
+	use.WaitUnusedAndLock();
+	//Get old presneter
+	Presenter* old = presenter;
+	//Remove presneter
+	presenter = NULL;
+	//Unlock
+	use.Unlock();
+
 	//Check if presenting
-	if (presenter)
+	if (old)
 	{
 		//ENd presenter
-		presenter->End();
+		old->End();
 		//Delete presenter
-		delete(presenter);
-		//Nullify
-		presenter = NULL;
+		delete(old);
 	}
 
 	//End VNC server
@@ -115,12 +122,10 @@ int AppMixer::WebsocketConnectRequest(int partId,WebSocket *ws,bool isPresenter)
 
 	//LOck
 	use.WaitUnusedAndLock();
-
 	//Get old presneter
 	Presenter* old = presenter;
 	//Create new presenter
 	presenter = new Presenter(ws);
-
 	//Unlock
 	use.Unlock();
 	
@@ -131,7 +136,7 @@ int AppMixer::WebsocketConnectRequest(int partId,WebSocket *ws,bool isPresenter)
 	//Accept connection
 	ws->Accept(this);
 
-	//Check if already presenting
+	//Check if already was presenting
 	if (old)
 	{
 		//End presenter
@@ -151,21 +156,17 @@ int AppMixer::SetPresenter(int partId)
 
 	//LOck
 	use.WaitUnusedAndLock();
-
-	//Stopre it
+	//Store it
 	presenterId = partId;
-
 	//Get old presneter
 	Presenter* old = presenter;
-
 	//NULL this one
 	presenter = NULL;
+	//Unlock
+	use.Unlock();
 
 	//Reset size
 	server.Reset();
-		
-	//Unlock
-	use.Unlock();
 
 	//Check if already presenting
 	if (old)
@@ -174,8 +175,6 @@ int AppMixer::SetPresenter(int partId)
 		old->End();
 		//Delete it
 		delete(old);
-		//NULL
-		old = NULL;
 	}
 
 	//Log

@@ -1891,6 +1891,9 @@ int MultiConf::WebsocketConnectRequest(WebSocket *ws,int partId,const std::strin
 	//Convert token to wstring
 	UTF8Parser utf8(token);
 
+	//REMOVE!!!! just for testing
+	if (!partId) return appMixer.WebsocketConnectRequest(0,ws,0);
+
 	//Get participant lock
 	participantsLock.IncUse();
 
