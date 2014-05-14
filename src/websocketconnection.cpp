@@ -335,8 +335,6 @@ int WebSocketConnection::Run()
 	//unlock now
 	pthread_mutex_unlock(&mutex);
 
-	Log("<Run WebSocket connection\n");
-
 	//If got listener
 	if (listener)
 		//Send end
@@ -344,6 +342,8 @@ int WebSocketConnection::Run()
 
 	//Don't send more events
 	listener = NULL;
+
+	Log("<Run WebSocket connection\n");
 }
 
 void WebSocketConnection::SignalWriteNeeded()
@@ -601,7 +601,7 @@ void  WebSocketConnection::SendMessage(const std::wstring& message)
 	if (!inited)
 	{
 		//ERROR
-		Error("-WebSocketConnection::SendMessage while not inited\n");
+		Error("-WebSocketConnection::\n");
 		//Exit
 		return;
 	}
