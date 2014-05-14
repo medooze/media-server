@@ -467,8 +467,6 @@ bool BFCPFloorControlServer::UserConnected(int userId, WebSocket *ws)
  */
 void BFCPFloorControlServer::UserDisconnected(int userId, bool closedByServer)
 {
-	if (this->ending) { return; }
-
 	BFCPUser *user = this->GetUser(userId);
 
 	// The user does not longer exist it is has been removed via RemoveUser().
@@ -489,6 +487,9 @@ void BFCPFloorControlServer::UserDisconnected(int userId, bool closedByServer)
 
 	// Reset queried floors.
 	user->ResetQueriedFloorIds();
+
+	// Don't do more if the conference is ending.
+	if (this->ending) { return; }
 
 	// Revoke user's ongoing FloorRequests.
 	::Debug("BFCPFloorControlServer::UserDisconnected() | calling RevokeUserFloorRequests(%d)\n", userId);
