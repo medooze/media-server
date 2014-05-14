@@ -597,6 +597,15 @@ void WebSocketConnection::ProcessData(BYTE *data,DWORD size)
 
 void  WebSocketConnection::SendMessage(const std::wstring& message)
 {
+	//Check we have been inited
+	if (!inited)
+	{
+		//ERROR
+		Error("-WebSocketConnection::SendMessage while not inited\n");
+		//Exit
+		return;
+	}
+
 	//Convert to UTF8 before sending
 	UTF8Parser utf8(message);
 
@@ -621,6 +630,15 @@ void  WebSocketConnection::SendMessage(const std::wstring& message)
 
 void WebSocketConnection::SendMessage(const BYTE* data, const DWORD size)
 {
+	//Check we have been inited
+	if (!inited)
+	{
+		//ERROR
+		Error("-WebSocketConnection::SendMessage while not inited\n");
+		//Exit
+		return;
+	}
+
 	//Do not send empty frames
 	if (!size)
 		return;
@@ -750,8 +768,6 @@ int WebSocketConnection::on_message_complete (HTTPParser*)
 
 void WebSocketConnection::Accept(WebSocket::Listener *wsl)
 {
-
-
 	/*
 	If the response lacks a |Sec-WebSocket-Accept| header field or
 	the |Sec-WebSocket-Accept| contains a value other than the
