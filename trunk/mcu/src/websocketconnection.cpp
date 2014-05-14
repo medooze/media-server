@@ -18,9 +18,6 @@
 #include "amf.h"
 
 
-#define ASSERT_RUNNING()  assert(this->running == true && "MUST NOT call this method if not running")
-
-
 WebSocketConnection::WebSocketConnection(Listener *listener)
 {
 	//Store listener
@@ -105,27 +102,29 @@ void WebSocketConnection::Stop()
 {
 	Log("-WebSocketConnection Stop\n");
 
-	ASSERT_RUNNING();
+	if (!this->running) {
+		Error("WebSocketConnection::Stop() called when not running\n");
+		return;
+	}
 
-	//If got socket
-	// if (running)
-	// {
-		//Not running;
-		running = false;
-		//Close socket
-		shutdown(socket,SHUT_RDWR);
-		//Will cause poll to return
-		close(socket);
-		//No socket
-		socket = FD_INVALID;
-	// }
+	//Not running;
+	running = false;
+	//Close socket
+	shutdown(socket,SHUT_RDWR);
+	//Will cause poll to return
+	close(socket);
+	//No socket
+	socket = FD_INVALID;
 }
 
 void WebSocketConnection::Detach()
 {
 	Log("-WebSocketConnection Detach\n");
 
-	ASSERT_RUNNING();
+	if (!this->running) {
+		Error("WebSocketConnection::Detach() called when not running\n");
+		return;
+	}
 
 	//Lock mutex
 	pthread_mutex_lock(&mutex);
@@ -139,7 +138,10 @@ void WebSocketConnection::ForceClose()
 {
 	Log("-WebSocketConnection ForceClose\n");
 
-	ASSERT_RUNNING();
+	if (!this->running) {
+		Error("WebSocketConnection::ForceClose() called when not running\n");
+		return;
+	}
 
 	//Don't listen for events
 	Detach();
@@ -151,7 +153,10 @@ void WebSocketConnection::Close()
 {
 	Log("-WebSocketConnection Close\n");
 
-	ASSERT_RUNNING();
+	if (!this->running) {
+		Error("WebSocketConnection::Close() called when not running\n");
+		return;
+	}
 
 	//Lock mutex
 	pthread_mutex_lock(&mutex);
@@ -167,7 +172,10 @@ void WebSocketConnection::Close(const WORD code, const std::wstring& reason)
 {
 	Log("-WebSocketConnection Close [%d %ls]\n",code,reason.c_str());
 
-	ASSERT_RUNNING();
+	if (!this->running) {
+		Error("WebSocketConnection::Close() called when not running\n");
+		return;
+	}
 
 	//Convert to UTF8 before sending
 	UTF8Parser utf8(reason);
@@ -248,7 +256,10 @@ int WebSocketConnection::Run()
 {
 	Log("-WebSocket Connecttion Run [%p]\n", this);
 
-	ASSERT_RUNNING();
+	if (!this->running) {
+		Error("WebSocketConnection::Run() called when not running\n");
+		return 0;
+	}
 
 	BYTE data[MTU] ZEROALIGNEDTO32;
 	DWORD size = MTU;
@@ -619,7 +630,10 @@ void WebSocketConnection::SendMessage(const std::wstring& message)
 {
 	Log("-WebSocket Connection SendMessage\n");
 
-	ASSERT_RUNNING();
+	if (!this->running) {
+		Error("WebSocketConnection::SendMessage() called when not running\n");
+		return;
+	}
 
 	//Convert to UTF8 before sending
 	UTF8Parser utf8(message);
@@ -647,7 +661,10 @@ void WebSocketConnection::SendMessage(const BYTE* data, const DWORD size)
 {
 	Log("-WebSocket Connection SendMessage\n");
 
-	ASSERT_RUNNING();
+	if (!this->running) {
+		Error("WebSocketConnection::SendMessage() called when not running\n");
+		return;
+	}
 
 	//Do not send empty frames
 	if (!size)
