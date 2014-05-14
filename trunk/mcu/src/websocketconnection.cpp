@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <string>
 #include <openssl/sha.h>
+#include <cassert>  // TMP
 #include "http.h"
 #include <signal.h>
 #include <errno.h>
@@ -15,6 +16,10 @@
 #include "tools.h"
 #include "websocketconnection.h"
 #include "amf.h"
+
+
+#define ASSERT_RUNNING()  assert(this->running == true && "MUST NOT call this method if not running")
+
 
 WebSocketConnection::WebSocketConnection(Listener *listener)
 {
@@ -98,9 +103,13 @@ void WebSocketConnection::Start()
 
 void WebSocketConnection::Stop()
 {
+	Log("-WebSocketConnection Stop\n");
+
+	ASSERT_RUNNING();
+
 	//If got socket
-	if (running)
-	{
+	// if (running)
+	// {
 		//Not running;
 		running = false;
 		//Close socket
@@ -109,12 +118,15 @@ void WebSocketConnection::Stop()
 		close(socket);
 		//No socket
 		socket = FD_INVALID;
-	}
+	// }
 }
 
 void WebSocketConnection::Detach()
 {
 	Log("-WebSocketConnection Detach\n");
+
+	ASSERT_RUNNING();
+
 	//Lock mutex
 	pthread_mutex_lock(&mutex);
 	//Remove websocket listener
@@ -126,6 +138,9 @@ void WebSocketConnection::Detach()
 void WebSocketConnection::ForceClose()
 {
 	Log("-WebSocketConnection ForceClose\n");
+
+	ASSERT_RUNNING();
+
 	//Don't listen for events
 	Detach();
 	//Close now
@@ -135,6 +150,8 @@ void WebSocketConnection::ForceClose()
 void WebSocketConnection::Close()
 {
 	Log("-WebSocketConnection Close\n");
+
+	ASSERT_RUNNING();
 
 	//Lock mutex
 	pthread_mutex_lock(&mutex);
@@ -149,6 +166,8 @@ void WebSocketConnection::Close()
 void WebSocketConnection::Close(const WORD code, const std::wstring& reason)
 {
 	Log("-WebSocketConnection Close [%d %ls]\n",code,reason.c_str());
+
+	ASSERT_RUNNING();
 
 	//Convert to UTF8 before sending
 	UTF8Parser utf8(reason);
@@ -227,10 +246,12 @@ void * WebSocketConnection::run(void *par)
  ***************************/
 int WebSocketConnection::Run()
 {
+	Log("-WebSocket Connecttion Run [%p]\n", this);
+
+	ASSERT_RUNNING();
+
 	BYTE data[MTU] ZEROALIGNEDTO32;
 	DWORD size = MTU;
-
-	Log(">Run connection [%p]\n",this);
 
 	//Set values for polling
 	ufds[0].fd = socket;
@@ -433,7 +454,6 @@ WebSocketConnection::Frame* WebSocketConnection::GetNextFrame()
  **********************/
 void WebSocketConnection::ProcessData(BYTE *data,DWORD size)
 {
-
 	Debug("-ProcessData [size:%d,wsl:%p]\n",size,wsl);
 
 	//And total size
@@ -597,14 +617,9 @@ void WebSocketConnection::ProcessData(BYTE *data,DWORD size)
 
 void WebSocketConnection::SendMessage(const std::wstring& message)
 {
-	//Check we are nto running
-	if (!running)
-	{
-		//ERROR
-		Error("-WebSocketConnection::SendMessage while not running\n");
-		//Exit
-		return;
-	}
+	Log("-WebSocket Connection SendMessage\n");
+
+	ASSERT_RUNNING();
 
 	//Convert to UTF8 before sending
 	UTF8Parser utf8(message);
@@ -630,14 +645,9 @@ void WebSocketConnection::SendMessage(const std::wstring& message)
 
 void WebSocketConnection::SendMessage(const BYTE* data, const DWORD size)
 {
-	//Check we have been inited
-	if (!running)
-	{
-		//ERROR
-		Error("-WebSocketConnection::SendMessage while not inited\n");
-		//Exit
-		return;
-	}
+	Log("-WebSocket Connection SendMessage\n");
+
+	ASSERT_RUNNING();
 
 	//Do not send empty frames
 	if (!size)
