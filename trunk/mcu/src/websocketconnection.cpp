@@ -601,7 +601,7 @@ void  WebSocketConnection::SendMessage(const std::wstring& message)
 	if (!inited)
 	{
 		//ERROR
-		Error("-WebSocketConnection::\n");
+		Error("-WebSocketConnection::SendMessage while not inited\n");
 		//Exit
 		return;
 	}
