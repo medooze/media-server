@@ -595,13 +595,13 @@ void WebSocketConnection::ProcessData(BYTE *data,DWORD size)
 	}
 }
 
-void  WebSocketConnection::SendMessage(const std::wstring& message)
+void WebSocketConnection::SendMessage(const std::wstring& message)
 {
-	//Check we have been inited
-	if (!inited)
+	//Check we are nto running
+	if (!running)
 	{
 		//ERROR
-		Error("-WebSocketConnection::SendMessage while not inited\n");
+		Error("-WebSocketConnection::SendMessage while not running\n");
 		//Exit
 		return;
 	}
@@ -631,7 +631,7 @@ void  WebSocketConnection::SendMessage(const std::wstring& message)
 void WebSocketConnection::SendMessage(const BYTE* data, const DWORD size)
 {
 	//Check we have been inited
-	if (!inited)
+	if (!running)
 	{
 		//ERROR
 		Error("-WebSocketConnection::SendMessage while not inited\n");
