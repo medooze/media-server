@@ -59,7 +59,6 @@
         <in>aacconfig.h</in>
         <in>acumulator.h</in>
         <in>amf.h</in>
-        <in>amf.h.bak</in>
         <in>appmixer.h</in>
         <in>asymmetricmosaic.h</in>
         <in>audio.h</in>
@@ -130,7 +129,6 @@
         <in>rtpbuffer.h</in>
         <in>rtpparticipant.h</in>
         <in>rtpsession.h</in>
-        <in>rtpsession.h.bak</in>
         <in>sidebar.h</in>
         <in>statushandler.h</in>
         <in>stringparser.h</in>
@@ -418,7 +416,6 @@
         <in>audiodecoder.cpp</in>
         <in>audioencoder.cpp</in>
         <in>audiomixer.cpp</in>
-        <in>audiomixer.cpp.bak</in>
         <in>audiostream.cpp</in>
         <in>audiotransrater.cpp</in>
         <in>avcdescriptor.cpp</in>
@@ -439,7 +436,6 @@
         <in>httpparser.cpp</in>
         <in>logo.cpp</in>
         <in>main.cpp</in>
-        <in>main.cpp.bak</in>
         <in>mcu.cpp</in>
         <in>mediabridgesession.cpp</in>
         <in>mediagateway.cpp</in>
@@ -501,7 +497,6 @@
         <in>xmlrpcserver.cpp</in>
         <in>xmlstreaminghandler.cpp</in>
       </df>
-      <in>Makefile.bak</in>
     </df>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
