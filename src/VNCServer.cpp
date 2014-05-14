@@ -8,6 +8,15 @@
 #include "errno.h"
 #include "VNCServer.h"
 
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/tcp.h>
+#include <netinet/in.h>
+#include <fcntl.h>
+#include <signal.h>
+#include <errno.h>
+#include <stdio.h>
+
 
 extern "C"
 {
@@ -40,6 +49,13 @@ extern "C"
 
 	 int rfbWriteExact(rfbClientPtr cl, const char *buf, int len)
 	 {
+/*
+		char name[256];
+		sprintf(name,"/tmp/vnc_out_%p.raw",cl);
+		int fd = open(name,O_CREAT|O_WRONLY|O_APPEND, S_IRUSR | S_IWUSR, 0644);
+		write(fd,buf,len);
+		close(fd);
+*/
 		return ((VNCServer::Client*)(cl->clientData))->Write(buf,len);
 	 }
 
@@ -380,6 +396,8 @@ int VNCServer::SetSize(int width,int height)
 
 int VNCServer::FrameBufferUpdateDone()
 {
+	Debug("-FrameBufferUpdateDone\n");
+
 	//LOck
 	use.IncUse();
 
@@ -394,6 +412,8 @@ int VNCServer::FrameBufferUpdateDone()
 
 int VNCServer::FrameBufferUpdate(BYTE *data,int x,int y,int width,int height)
 {
+	Debug("-FrameBufferUpdate [x:%d,y:%d,w:%d,h:%d]\n",x,y,width,height);
+
 	//LOck
 	use.IncUse();
 
@@ -416,25 +436,29 @@ int VNCServer::FrameBufferUpdate(BYTE *data,int x,int y,int width,int height)
 
 int VNCServer::CopyRect(BYTE *data,int src_x, int src_y, int w, int h, int dest_x, int dest_y)
 {
-	Log("-CopyRect from [%d,%d] to [%d,%d] size [%d,%d]\n",src_x,src_y,dest_x,dest_y,w,h);
-	
-	FrameBufferUpdate(data,dest_x,dest_y,w,h);
+	Debug("-CopyRect from [%d,%d] to [%d,%d] size [%d,%d]\n",src_x,src_y,dest_x,dest_y,w,h);
 	
 	//LOck
-	/*use.IncUse();
+	use.IncUse();
 
 	//Update frame
-	for (int j=0;j<h;++j)
+	for (int j=src_y;j<src_y+h;++j)
 		//Copy
-		memcpy(screen->frameBuffer+(dest_x+(dest_y+j)*screen->width)*4,data+(src_x+(src_y+j)*screen->width)*4,w*4);
-		//memset(screen->frameBuffer+(dest_x+(dest_y+j)*screen->width)*4,0xCA,w*4);
+		//memcpy(screen->frameBuffer+(dest_x+j*screen->width)*4,data+(src_x+(src_y+j)*screen->width)*4,w*4);
+		memset(screen->frameBuffer+dest_x+j*screen->width*4,0xCA,w*4);
 
 	//Set modified region
 	//rfbScheduleCopyRect(screen,src_x, src_y,src_x+w, src_y+h, dest_x, dest_y);
+	//Set modified region
+	rfbMarkRectAsModified(screen,dest_x,dest_y,w,h);
+
+	//Send and update to all viewers
+	for (Clients::iterator it=clients.begin(); it!=clients.end(); ++it)
+		//Update it
+		it->second->Update();
 
 	//Unlock
 	use.DecUse();
-*/
 }
 
 int VNCServer::End()
@@ -898,13 +922,11 @@ int VNCServer::Client::Run()
 	//Until ended
 	while (!wait.IsCanceled())
 	{
+		Debug("-VNCServer::Client lopp [this:%p,state:%d,empty:%d]\n",this,cl->state,sraRgnEmpty(cl->requestedRegion));
 		//If connected
 		/* always require a FB Update Request (otherwise can crash.) */
 		if (cl->state == rfbClientRec::RFB_NORMAL && !sraRgnEmpty(cl->requestedRegion))
 		{
-			rfbBool haveUpdate = false;
-			sraRegion* updateRegion = NULL;
-
 			//If reseted
 			if (reset)
 			{
@@ -917,48 +939,52 @@ int VNCServer::Client::Run()
 				reset = false;
 			}
 
-			//Check if it is a pending update
-			if  (FB_UPDATE_PENDING(cl))
+			//If the scren has been resized
+			if (cl->newFBSizePending)
 			{
-				//If the scren has been resized
-				if (cl->newFBSizePending)
-				{
-					//Free region
-					sraRgnDestroy(cl->modifiedRegion);
-					//Set new modified region
-					cl->modifiedRegion = sraRgnCreateRect(0,0,cl->screen->width,cl->screen->height);
-				}
-
-				/* Now, get the region we're going to update, and remove
-				it from cl->modifiedRegion _before_ we send the update.
-				That way, if anything that overlaps the region we're sending
-				is updated, we'll be sure to do another update later. */
-				updateRegion = sraRgnCreateRgn(cl->modifiedRegion);
-				//Check it is inside requested region
-				haveUpdate   = sraRgnAnd(updateRegion,cl->requestedRegion);
-				
-				//Unlock region
-				UNLOCK(cl->updateMutex);
-
-				//If we have to update
-				if (haveUpdate)
-				{
-					Debug(">VNCServer::Clietn SendFramebufferUpdate [%p]\n",this);
-					/* Now actually send the update. */
-					rfbIncrClientRef(cl);
-					//LOCK(cl->sendMutex);
-					rfbSendFramebufferUpdate(cl, updateRegion);
-					//UNLOCK(cl->sendMutex);
-					rfbDecrClientRef(cl);
-					Debug("<VNCServer::Clietn SendFramebufferUpdate [%p]\n",this);
-				}
-
-				//Destroy region
-				sraRgnDestroy(updateRegion);
-
-				//Lock again
-				LOCK(cl->updateMutex);
+				//Free region
+				sraRgnDestroy(cl->modifiedRegion);
+				//Set new modified region
+				cl->modifiedRegion = sraRgnCreateRect(0,0,cl->screen->width,cl->screen->height);
 			}
+			
+			//We need to update by default
+			bool haveUpdate = true;
+
+			/* Now, get the region we're going to update, and remove
+			it from cl->modifiedRegion _before_ we send the update.
+			That way, if anything that overlaps the region we're sending
+			is updated, we'll be sure to do another update later. */
+			sraRegion* updateRegion = sraRgnCreateRgn(cl->modifiedRegion);
+
+			//Check if we didn't already have a pending update
+			if  (!FB_UPDATE_PENDING(cl))
+				//Check it is inside requested region
+				haveUpdate = !sraRgnEmpty(cl->modifiedRegion);//sraRgnAnd(updateRegion,cl->requestedRegion);
+				
+			//Unlock region
+			UNLOCK(cl->updateMutex);
+
+			Debug("-VNCServer::Client update [this:%p,update:%d,mod:%d,req:%d]\n",this,haveUpdate,sraRgnEmpty(cl->modifiedRegion),sraRgnEmpty(cl->requestedRegion));
+
+			//If we have to update
+			if (haveUpdate)
+			{
+				Debug(">VNCServer::Client SendFramebufferUpdate [%p]\n",this);
+				/* Now actually send the update. */
+				rfbIncrClientRef(cl);
+				//LOCK(cl->sendMutex);
+				rfbSendFramebufferUpdate(cl, updateRegion);
+				//UNLOCK(cl->sendMutex);
+				rfbDecrClientRef(cl);
+				Debug("<VNCServer::Clietn SendFramebufferUpdate [%p]\n",this);
+			}
+
+			//Destroy region
+			sraRgnDestroy(updateRegion);
+
+			//Lock again
+			LOCK(cl->updateMutex);
 		}
 		Debug("<VNCServer::Client going to sleep [this:%p]\n",this);
 
