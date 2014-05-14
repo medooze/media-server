@@ -1,16 +1,12 @@
 #include "log.h"
 #include "logo.h"
 #include <stdlib.h>
-extern "C" {
-#include <libswscale/swscale.h>
-#include <libavcodec/avcodec.h>
-#include <libavformat/avformat.h>
-#include <libavutil/opt.h>
-}
+
 
 Logo::Logo()
 {
 	//No logo
+	logoRGB = NULL;
 	frame = NULL;
 	width = 0;
 	height = 0;
@@ -26,6 +22,8 @@ Logo::~Logo()
 	if(frame)
 		//Free it
 		free(frame);
+	if (logoRGB)
+		av_free(logoRGB);
 }
 
 int Logo::Load(const char* fileName)
@@ -33,7 +31,6 @@ int Logo::Load(const char* fileName)
 	AVFormatContext *fctx = NULL;
 	AVCodecContext *ctx = NULL;
 	AVCodec *codec = NULL;
-	AVFrame *logoRGB = NULL;
 	AVFrame* logo = NULL;
 	SwsContext *sws = NULL;
 	AVPacket packet;
@@ -202,9 +199,6 @@ end:
 	if (logo)
 		av_free(logo);
 
-	if (logoRGB)
-		av_free(logoRGB);
-
 	if (ctx)
 		avcodec_close(ctx);
 
@@ -231,4 +225,9 @@ int Logo::GetHeight() const
 BYTE* Logo::GetFrame() const
 {
 	return frame;
+}
+
+BYTE* Logo::GetFrameRGBA() const
+{
+	return logoRGB->data[0];
 }

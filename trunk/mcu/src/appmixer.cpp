@@ -62,6 +62,11 @@ int AppMixer::DisplayImage(const char* filename)
 	//Set image
 	output->NextFrame(logo.GetFrame());
 
+	//Set size to the vnc
+	server.SetSize(logo.GetWidth(),logo.GetHeight());
+	//Set new frame
+	server.FrameBufferUpdate(logo.GetFrameRGBA(),0,0,logo.GetWidth(),logo.GetHeight());
+
 	//Everything ok
 	return true;
 }
@@ -110,22 +115,30 @@ int AppMixer::WebsocketConnectRequest(int partId,WebSocket *ws,bool isPresenter)
 
 	//LOck
 	use.WaitUnusedAndLock();
-	//Check if already presenting
-	if (presenter)
-	{
-		//End presenter
-		presenter->End();
-		//Delete it
-		delete(presenter);
-	}
+
+	//Get old presneter
+	Presenter* old = presenter;
 	//Create new presenter
 	presenter = new Presenter(ws);
-	//Init it
-	presenter->Init(this);
-	//Accept connection
-	ws->Accept(this);
+
 	//Unlock
 	use.Unlock();
+	
+	//Init it
+	presenter->Init(this);
+	//Set presenter as data
+	ws->SetUserData(presenter);
+	//Accept connection
+	ws->Accept(this);
+
+	//Check if already presenting
+	if (old)
+	{
+		//End presenter
+		old->End();
+		//Delete it
+		delete(old);
+	}
 
 	//Ok
 	return 1;
@@ -142,21 +155,28 @@ int AppMixer::SetPresenter(int partId)
 	//Stopre it
 	presenterId = partId;
 
-	//Check if already presenting
-	if (presenter)
-	{
-		//End it
-		presenter->End();
-		//Delete it
-		delete(presenter);
-		//NULL
-		presenter = NULL;
-		//Reset size
-		server.Reset();
-	}
+	//Get old presneter
+	Presenter* old = presenter;
 
+	//NULL this one
+	presenter = NULL;
+
+	//Reset size
+	server.Reset();
+		
 	//Unlock
 	use.Unlock();
+
+	//Check if already presenting
+	if (old)
+	{
+		//End it
+		old->End();
+		//Delete it
+		delete(old);
+		//NULL
+		old = NULL;
+	}
 
 	//Log
 	Log("<AppMixer::SetPresenter [%d]\n",partId);
@@ -213,15 +233,15 @@ void AppMixer::onClose(WebSocket *ws)
 	//Log
 	Log(">AppMixer::onClose %p %p\n",ws,presenter);
 
+	//Get ws presenter
+	Presenter *wsp = (Presenter*) ws->GetUserData();
+
 	//Lock
 	use.WaitUnusedAndLock();
 
-	if (presenter && ws==presenter->ws)
+	//If it was the current presenter
+	if (wsp==presenter)
 	{
-		//End presenter
-		presenter->End();
-		//Delete presenter
-		delete(presenter);
 		//Remove presenter
 		presenter = NULL;
 		//Reset server
@@ -231,6 +251,11 @@ void AppMixer::onClose(WebSocket *ws)
 	//Unlock
 	use.Unlock();
 
+	//End presenter
+	wsp->End();
+	//Delete presenter
+	delete(wsp);
+
 	//Log
 	Log("<AppMixer::onClose\n");
 }
@@ -239,16 +264,16 @@ void AppMixer::onError(WebSocket *ws)
 {
 	Log(">AppMixer::onError %p %p\n",ws,presenter);
 
+	//Get ws presenter
+	Presenter *wsp = (Presenter*) ws->GetUserData();
+
 	//Lock
 	use.WaitUnusedAndLock();
 
-	if (presenter && ws==presenter->ws)
+	//If it was the current presenter
+	if (wsp==presenter)
 	{
-		//End presenter
-		presenter->End();
-		//Delete presenter
-		delete(presenter);
-		//Remote presenter
+		//Remove presenter
 		presenter = NULL;
 		//Reset server
 		server.Reset();
@@ -256,6 +281,11 @@ void AppMixer::onError(WebSocket *ws)
 
 	//Unlock
 	use.Unlock();
+
+	//End presenter
+	wsp->End();
+	//Delete presenter
+	delete(wsp);
 
 	Log("<AppMixer::onError\n");
 }
@@ -286,7 +316,12 @@ int AppMixer::Presenter::End()
 	VNCViewer::End();
 	//Close websocket and stop listening for events
 	if (ws) 
+	{
+		//Remove us from it
+		ws->SetUserData(NULL);
+		//Close inmediatelly
 		ws->ForceClose();
+	}
 	//NO websocket anymore
 	ws = NULL; 
 	//OK
