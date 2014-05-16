@@ -363,6 +363,15 @@ int main(int argc,char **argv)
 	//Start cpu monitor
 	monitor.Start(10000);
 
+	//Create converence
+	MultiConf* conf;
+	int confId = mcu.CreateConference(L"vnc",0);
+	mcu.GetConferenceRef(confId,&conf);
+	conf->Init(0,8000);
+	conf->AppMixerDisplayImage("/screen.png");
+	mcu.ReleaseConferenceRef(confId);
+
+
 	//Run it
 	server.Start();
 
