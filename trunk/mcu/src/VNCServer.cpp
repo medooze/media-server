@@ -217,8 +217,8 @@ VNCServer::VNCServer()
 	screen->getCursorPtr = rfbDefaultGetCursorPtr;
 	screen->setTranslateFunction = rfbSetTranslateFunction;
 	screen->newClientHook = NULL;
-	screen->displayHook = onDisplayHook;
-	screen->displayFinishedHook = onDisplayFinishedHook;
+	screen->displayHook = onDisplay;
+	screen->displayFinishedHook = onDisplayFinished;
 	screen->getKeyboardLedStateHook = NULL;
 	screen->xvpHook = NULL;
 
