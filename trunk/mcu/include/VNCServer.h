@@ -90,6 +90,8 @@ public:
 	static void onMouseEvent(int buttonMask, int x, int y, rfbClientRec* cl);
 	static void onKeyboardEvent(rfbBool down, rfbKeySym keySym, rfbClientRec* cl);
 	static void onUpdateDone(rfbClientRec* cl, int result);
+	static void onDisplay(rfbClientRec* cl);
+	static void onDisplayFinished(rfbClientRec* cl, int result);
 
 protected:
 	Listener* listener;

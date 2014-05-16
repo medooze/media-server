@@ -217,8 +217,8 @@ VNCServer::VNCServer()
 	screen->getCursorPtr = rfbDefaultGetCursorPtr;
 	screen->setTranslateFunction = rfbSetTranslateFunction;
 	screen->newClientHook = NULL;
-	screen->displayHook = NULL;
-	screen->displayFinishedHook = NULL;
+	screen->displayHook = onDisplayHook;
+	screen->displayFinishedHook = onDisplayFinishedHook;
 	screen->getKeyboardLedStateHook = NULL;
 	screen->xvpHook = NULL;
 
@@ -415,7 +415,7 @@ int VNCServer::FrameBufferUpdate(BYTE *data,int x,int y,int width,int height)
 	Debug("-FrameBufferUpdate [x:%d,y:%d,w:%d,h:%d]\n",x,y,width,height);
 
 	//LOck
-	use.IncUse();
+	use.WaitUnusedAndLock();
 
 	//Update frame
 	for (int j=y;j<y+height;++j)
@@ -425,13 +425,8 @@ int VNCServer::FrameBufferUpdate(BYTE *data,int x,int y,int width,int height)
 	//Set modified region
 	rfbMarkRectAsModified(screen,x,y,width,height);
 
-	//Send and update to all viewers
-	for (Clients::iterator it=clients.begin(); it!=clients.end(); ++it)
-		//Update it
-		it->second->Update();
-
 	//Unlock
-	use.DecUse();
+	use.Unlock();
 }
 
 int VNCServer::CopyRect(BYTE *data,int src_x, int src_y, int w, int h, int dest_x, int dest_y)
@@ -439,23 +434,18 @@ int VNCServer::CopyRect(BYTE *data,int src_x, int src_y, int w, int h, int dest_
 	Debug("-CopyRect from [%d,%d] to [%d,%d] size [%d,%d]\n",src_x,src_y,dest_x,dest_y,w,h);
 	
 	//LOck
-	use.IncUse();
+	use.WaitUnusedAndLock();
 
 	//Update frame
 	for (int j=src_y;j<src_y+h;++j)
 		//Copy
-		//memcpy(screen->frameBuffer+(dest_x+j*screen->width)*4,data+(src_x+(src_y+j)*screen->width)*4,w*4);
-		memset(screen->frameBuffer+dest_x+j*screen->width*4,0xCA,w*4);
+		memcpy(screen->frameBuffer+(dest_x+j*screen->width)*4,data+(src_x+(src_y+j)*screen->width)*4,w*4);
+		//memset(screen->frameBuffer+dest_x+j*screen->width*4,0xCA,w*4);
 
 	//Set modified region
 	//rfbScheduleCopyRect(screen,src_x, src_y,src_x+w, src_y+h, dest_x, dest_y);
 	//Set modified region
 	rfbMarkRectAsModified(screen,dest_x,dest_y,w,h);
-
-	//Send and update to all viewers
-	for (Clients::iterator it=clients.begin(); it!=clients.end(); ++it)
-		//Update it
-		it->second->Update();
 
 	//Unlock
 	use.DecUse();
@@ -530,6 +520,32 @@ void VNCServer::onUpdateDone(rfbClientRec* cl, int result)
 	
 }
 
+
+void VNCServer::onDisplay(rfbClientRec* cl)
+{
+	//Get client
+	Client *client = (Client *)cl->clientData;
+	//Get server
+	VNCServer* server  = client->GetServer();
+	
+	//Block use, so we cannot change framebuffer while sending frame buffer updates
+	Debug(">onDisplay\n");
+	server->use.IncUse();
+	Debug("<onDisplay");
+}
+
+void VNCServer::onDisplayFinished(rfbClientRec* cl, int result)
+{
+	//Get client
+	Client *client = (Client *)cl->clientData;
+	//Get server
+	VNCServer* server  = client->GetServer();
+
+	//Unblock use
+	Debug(">onDisplayFinished\n");
+	server->use.DecUse();
+	Debug("<onDisplayFinished");
+}
 
 void VNCServer::onOpen(WebSocket *ws)
 {
@@ -922,10 +938,10 @@ int VNCServer::Client::Run()
 	//Until ended
 	while (!wait.IsCanceled())
 	{
-		Debug("-VNCServer::Client lopp [this:%p,state:%d,empty:%d]\n",this,cl->state,sraRgnEmpty(cl->requestedRegion));
+		Debug("-VNCServer::Client lopp [this:%p,state:%d,empty:%d,buffer:%d]\n",this,cl->state,sraRgnEmpty(cl->requestedRegion), ws->GetWriteBufferLength());
 		//If connected
 		/* always require a FB Update Request (otherwise can crash.) */
-		if (cl->state == rfbClientRec::RFB_NORMAL && !sraRgnEmpty(cl->requestedRegion))
+		if (cl->state == rfbClientRec::RFB_NORMAL && !sraRgnEmpty(cl->requestedRegion) && ws->IsWriteBufferEmtpy())
 		{
 			//If reseted
 			if (reset)
@@ -977,7 +993,7 @@ int VNCServer::Client::Run()
 				rfbSendFramebufferUpdate(cl, updateRegion);
 				//UNLOCK(cl->sendMutex);
 				rfbDecrClientRef(cl);
-				Debug("<VNCServer::Clietn SendFramebufferUpdate [%p]\n",this);
+				Debug("<VNCServer::Clietn SendFramebufferUpdate [%p,buffer:%d]\n",this,ws->GetWriteBufferLength());
 			}
 
 			//Destroy region
@@ -1004,7 +1020,7 @@ int VNCServer::Client::Run()
 
 void VNCServer::Client::Update()
 {
-	Debug("-VNCServer::Client::Update\n");
+	Debug("-VNCServer::Client::Update [buffer:%d]\n",ws->GetWriteBufferLength());
 	//Check if write buffer is empty before sending anything
 	if (ws->IsWriteBufferEmtpy())
 		//Signal cond
