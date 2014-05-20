@@ -89,9 +89,10 @@ int main(int argc,char **argv)
 {
 	//Init random
 	srand (time(NULL));
+
 	//Init open ssl lib
-        SSL_load_error_strings();
-        SSL_library_init();
+    SSL_load_error_strings();
+    SSL_library_init();
 
 	//Set default values
 	bool forking = false;
@@ -278,9 +279,17 @@ int main(int argc,char **argv)
 	DTLSConnection::SetCertificate(crtfile,keyfile);
 	//Log
 	Log("-Set SSL certificate files [crt:\"%s\",key:\"%s\"]\n",crtfile,keyfile);
-	//Print hashs
-	Log("-SHA1   fingerprint \"%s\"\n",DTLSConnection::GetCertificateFingerPrint(DTLSConnection::SHA1).c_str());
-	Log("-SHA256 fingerprint \"%s\"\n",DTLSConnection::GetCertificateFingerPrint(DTLSConnection::SHA256).c_str());
+
+	//Init DTLS
+	if (DTLSConnection::ClassInit()) {
+		//Print hashes
+		Log("-DTLS SHA1   local fingerprint \"%s\"\n",DTLSConnection::GetCertificateFingerPrint(DTLSConnection::SHA1).c_str());
+		Log("-DTLS SHA256 local fingerprint \"%s\"\n",DTLSConnection::GetCertificateFingerPrint(DTLSConnection::SHA256).c_str());
+	}
+	// DTLS not available.
+	else {
+		Error("DTLS initialization failed, no DTLS available\n");
+	}
 
 	//Init BFCP
 	BFCP::Init();

@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   dtls.h
  * Author: Sergio
  *
@@ -12,6 +12,8 @@
 #include <openssl/err.h>
 #include <openssl/bio.h>
 #include <string>
+#include <map>
+#include <vector>
 #include "config.h"
 #include "log.h"
 
@@ -35,7 +37,7 @@ public:
 
 	enum Hash
 	{
-		SHA1, 
+		SHA1,
 		SHA256
 	};
 
@@ -55,44 +57,46 @@ public:
 	};
 
 public:
+	static void SetCertificate(const char* cert,const char* key);
+	static std::string GetCertificateFingerPrint(Hash hash);
+	static int ClassInit();
+	static bool IsDTLS(BYTE* buffer,int size)		{ return buffer[0]>=20 && buffer[0]<=64; }
+private:
+	static std::string certfile;	/*!< Certificate file */
+	static std::string pvtfile;		/*!< Private key file */
+	static std::string cipher;		/*!< Cipher to use */
+	static SSL_CTX* ssl_ctx;		/*!< SSL context */
+	static Suite suite;				/*!< SRTP crypto suite */
+	typedef std::map<Hash, std::string> LocalFingerPrints;
+	static LocalFingerPrints localFingerPrints;
+	typedef std::vector<Hash> AvailableHashes;
+	static AvailableHashes availableHashes;
+	static bool hasDTLS;
+
+public:
 	DTLSConnection(Listener& listener);
 	~DTLSConnection();
 
-	
 	int  Init();
-	int  SetSuite(Suite suite);
 	void SetRemoteSetup(Setup setup);
 	void SetRemoteFingerprint(Hash hash, const char *fingerprint);
-	int  End();
+	void End();
 	void Reset();
-	
+
 	int  Read(BYTE* data,int size);
 	int  Write(BYTE *buffer,int size);
 	int  Renegotiate();
-public:
-	static void SetCertificate(const char* cert,const char* key);
-	static bool IsDTLS(BYTE* buffer,int size)		{ return buffer[0]>=20 && buffer[0]<=64; }
-	static std::string	GetCertificateFingerPrint(Hash hash);
 protected:
-	int SetupSRTP();
-	int CheckPending();
-private:
-	static std::string certfile;	/*!< Certificate file */
-	static std::string pvtfile;	/*!< Private key file */
-	static std::string cipher;	/*!< Cipher to use */
-//	char *cafile;				/*!< Certificate authority file */
-//	char *capath;                          /*!< Path to certificate authority */
+	int  SetupSRTP();
+	int  CheckPending();
 public:
 	bool dtls_failure;		/*!< Failure occurred during DTLS negotiation */
 private:
 	Listener& listener;
-	SSL_CTX *ssl_ctx;		/*!< SSL context */
 	SSL *ssl;			/*!< SSL session */
 	BIO *read_bio;			/*!< Memory buffer for reading */
 	BIO *write_bio;			/*!< Memory buffer for writing */
 	Setup dtls_setup;		/*!< Current setup state */
-	Suite suite;						/*!< SRTP crypto suite */
-	char local_fingerprint[160];				/*!< Fingerprint of our certificate */
 	unsigned char remote_fingerprint[EVP_MAX_MD_SIZE];	/*!< Fingerprint of the peer certificate */
 	Connection connection;		/*!< Whether this is a new or existing connection */
 	unsigned int rekey;	/*!< Interval at which to renegotiate and rekey */
