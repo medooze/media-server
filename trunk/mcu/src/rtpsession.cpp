@@ -430,7 +430,7 @@ int RTPSession::SetRemoteCryptoDTLS(const char *setup,const char *hash,const cha
 		return Error("Unknown hash");
 
 	//Init DTLS
-	dtls.Init();
+	return dtls.Init();
 }
 
 int RTPSession::SetRemoteCryptoSDES(const char* suite, const BYTE* key, const DWORD len)
