@@ -2714,7 +2714,7 @@ rfbSendFramebufferUpdate(rfbClientPtr cl,
 
     sraRgnOr(updateRegion,cl->copyRegion);
     if(!sraRgnAnd(updateRegion,cl->requestedRegion) &&
-       sraRgnEmpty(updateRegion) &&
+        sraRgnEmpty(updateRegion) &&
        (cl->enableCursorShapeUpdates ||
 	(cl->cursorX == cl->screen->cursorX && cl->cursorY == cl->screen->cursorY)) &&
        !sendCursorShape && !sendCursorPos && !sendKeyboardLedState &&
@@ -2763,8 +2763,7 @@ rfbSendFramebufferUpdate(rfbClientPtr cl,
      sraRgnSubtract(cl->modifiedRegion,updateRegion);
      sraRgnSubtract(cl->modifiedRegion,updateCopyRegion);
 
-     ///SERGIO -> We don't clean the requested region to be able to set the rate of update request on server
-     //sraRgnMakeEmpty(cl->requestedRegion);
+     sraRgnMakeEmpty(cl->requestedRegion);
      sraRgnMakeEmpty(cl->copyRegion);
      cl->copyDX = 0;
      cl->copyDY = 0;
