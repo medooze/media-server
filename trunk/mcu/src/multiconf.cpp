@@ -566,8 +566,6 @@ int MultiConf::SetChair(int partId)
 	chairId = partId;
 	//Set it to the foor server
 	floorServer->SetChair(partId);
-	//REMOVE!!! Only for debug!
-	appMixer.SetPresenter(partId);
 }
 
 /************************

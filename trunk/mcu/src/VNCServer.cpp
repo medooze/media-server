@@ -56,6 +56,7 @@ extern "C"
 		write(fd,buf,len);
 		close(fd);
 */
+		Debug("-rfbWriteExact [%d]\n",len);
 		return ((VNCServer::Client*)(cl->clientData))->Write(buf,len);
 	 }
 
@@ -171,7 +172,7 @@ VNCServer::VNCServer()
 	screen->paddedWidthInBytes = width*bytesPerPixel;
 
 	//Allocate memory for max usage
-	screen->frameBuffer = (char*) malloc32(4096*3072*3);
+	screen->frameBuffer = (char*) malloc32(width*height*4);
 
 	screen->passwordCheck = rfbDefaultPasswordCheck;
 
@@ -228,6 +229,12 @@ VNCServer::VNCServer()
 
 VNCServer::~VNCServer()
 {
+	if (screen->frameBuffer)
+	{
+		free(screen->frameBuffer);
+		screen->frameBuffer = NULL;
+	}
+	rfbScreenCleanup(screen);
 }
 
 int VNCServer::Init(Listener* listener)
@@ -241,7 +248,7 @@ int VNCServer::SetEditor(int editorId)
 	Debug(">VNCServer::SetEditor [partId:%d]\n",editorId);
 
 	//Lock
-	use.WaitUnusedAndLock();
+	use.IncUse();
 
 	//If we got another editor
 	if (this->editorId)
@@ -266,7 +273,7 @@ int VNCServer::SetEditor(int editorId)
 	screen->pointerClient = NULL;
 
 	//Unlock
-	use.Unlock();
+	use.DecUse();
 
 	Debug("<VNCServer::SetEditor [partId:%d]\n",editorId);
 
@@ -375,9 +382,36 @@ int VNCServer::SetSize(int width,int height)
 		return Error("-Size bigger than max size allowed (4096*3072)\n");
 	
 	//Lock
-	use.IncUse();
+	use.WaitUnusedAndLock();
 
-	//Set new size
+	//Get old framebuffer
+	char *old = (char*)screen->frameBuffer;
+
+	//Alloc new framebuffer
+	char *fb = (char*)malloc32(width*height*4);
+
+	//If we got and old one
+	if (screen->frameBuffer)
+	{
+		//NUmber of bytes to copy
+		DWORD n = screen->width*4;
+
+		//which is bigger
+		if (screen->width>width)
+			//Old one biggerC than this one so cap it
+			n = width*4;
+	
+		//Copy each line
+		for (int i=0;i<height && i<screen->height; ++i)
+			//Copy
+			memcpy(fb+i*width*4,screen->frameBuffer+i*screen->width*4,n);
+
+		//Free old one
+		free(screen->frameBuffer);
+	}
+
+	//Set new framebuffer size
+	screen->frameBuffer = fb;
 	screen->width = width;
 	screen->height = height;
 	screen->paddedWidthInBytes = width*screen->depth/8;
@@ -388,7 +422,7 @@ int VNCServer::SetSize(int width,int height)
 		it->second->ResizeScreen();
 	
 	//Unlock
-	use.DecUse();
+	use.Unlock();
 
 	//OK
 	return 1;
@@ -399,7 +433,7 @@ int VNCServer::FrameBufferUpdateDone()
 	Debug("-FrameBufferUpdateDone\n");
 
 	//LOck
-	use.IncUse();
+	use.WaitUnusedAndLock();
 
 	//Send and update to all viewers
 	for (Clients::iterator it=clients.begin(); it!=clients.end(); ++it)
@@ -407,7 +441,7 @@ int VNCServer::FrameBufferUpdateDone()
 		it->second->Update();
 	
 	//Unlock
-	use.DecUse();
+	use.Unlock();
 }
 
 int VNCServer::FrameBufferUpdate(BYTE *data,int x,int y,int width,int height)
@@ -415,37 +449,57 @@ int VNCServer::FrameBufferUpdate(BYTE *data,int x,int y,int width,int height)
 	Debug("-FrameBufferUpdate [x:%d,y:%d,w:%d,h:%d]\n",x,y,width,height);
 
 	//LOck
-	use.WaitUnusedAndLock();
+	use.IncUse();
 
 	//Update frame
 	for (int j=y;j<y+height;++j)
 		//Copy
 		memcpy(screen->frameBuffer+(x+j*screen->width)*4,data+(x+j*screen->width)*4,width*4);
 
+	/*
+	{
+		screen->frameBuffer[(x+j*screen->width)*4] = 0xFF;
+		screen->frameBuffer[(x+j*screen->width)*4+1] = 00;
+		screen->frameBuffer[(x+j*screen->width)*4+2] = 00;
+		screen->frameBuffer[(x+j*screen->width+width-1)*4] = 0x00;
+		screen->frameBuffer[(x+j*screen->width+width-1)*4+1] = 0xFF;
+		screen->frameBuffer[(x+j*screen->width+width-1)*4+2] = 00;
+	}
+	for (int i=x;i<x+width;i++)
+	{
+		screen->frameBuffer[(i+y*screen->width)*4] = 0xFF;
+		screen->frameBuffer[(i+y*screen->width)*4+1] = 00;
+		screen->frameBuffer[(i+y*screen->width)*4+2] = 00;
+		screen->frameBuffer[(i+(y+height-1)*screen->width)*4] = 0x00;
+		screen->frameBuffer[(i+(y+height-1)*screen->width)*4+1] = 00;
+		screen->frameBuffer[(i+(y+height-1)*screen->width)*4+2] = 0xFF;
+	}
+	*/
+
 	//Set modified region
-	rfbMarkRectAsModified(screen,x,y,width,height);
+	rfbMarkRectAsModified(screen,x,y,x+width,y+height);
 
 	//Unlock
-	use.Unlock();
+	use.DecUse();
 }
 
-int VNCServer::CopyRect(BYTE *data,int src_x, int src_y, int w, int h, int dest_x, int dest_y)
+int VNCServer::CopyRect(BYTE *data,int x, int y, int width, int height, int dest_x, int dest_y)
 {
-	Debug("-CopyRect from [%d,%d] to [%d,%d] size [%d,%d]\n",src_x,src_y,dest_x,dest_y,w,h);
+	Debug("-CopyRect from [%d,%d] to [%d,%d] size [%d,%d]\n",x,y,dest_x,dest_y,width,height);
 	
 	//LOck
-	use.WaitUnusedAndLock();
+	use.IncUse();
 
 	//Update frame
-	for (int j=src_y;j<src_y+h;++j)
+	for (int j=0;j<height;++j)
 		//Copy
-		memcpy(screen->frameBuffer+(dest_x+j*screen->width)*4,data+(src_x+(src_y+j)*screen->width)*4,w*4);
-		//memset(screen->frameBuffer+dest_x+j*screen->width*4,0xCA,w*4);
+		memcpy(screen->frameBuffer+(dest_x+(dest_y+j)*screen->width)*4,data+(x+(y+j)*screen->width)*4,width*4);
+		//memset(screen->frameBuffer+dest_x+(dest_y+j)*screen->width*4,0xCA,width*4);
 
 	//Set modified region
-	//rfbScheduleCopyRect(screen,src_x, src_y,src_x+w, src_y+h, dest_x, dest_y);
+	//rfbScheduleCopyRect(screen,x, y,x+w, y+h, dest_x, dest_y);
 	//Set modified region
-	rfbMarkRectAsModified(screen,dest_x,dest_y,w,h);
+	rfbMarkRectAsModified(screen,dest_x,dest_y,dest_x+width,dest_y+height);
 
 	//Unlock
 	use.DecUse();
@@ -531,7 +585,7 @@ void VNCServer::onDisplay(rfbClientRec* cl)
 	//Block use, so we cannot change framebuffer while sending frame buffer updates
 	Debug(">onDisplay\n");
 	server->use.IncUse();
-	Debug("<onDisplay");
+	Debug("<onDisplay\n");
 }
 
 void VNCServer::onDisplayFinished(rfbClientRec* cl, int result)
@@ -544,7 +598,7 @@ void VNCServer::onDisplayFinished(rfbClientRec* cl, int result)
 	//Unblock use
 	Debug(">onDisplayFinished\n");
 	server->use.DecUse();
-	Debug("<onDisplayFinished");
+	Debug("<onDisplayFinished\n");
 }
 
 void VNCServer::onOpen(WebSocket *ws)
@@ -938,10 +992,10 @@ int VNCServer::Client::Run()
 	//Until ended
 	while (!wait.IsCanceled())
 	{
-		Debug("-VNCServer::Client lopp [this:%p,state:%d,empty:%d,buffer:%d]\n",this,cl->state,sraRgnEmpty(cl->requestedRegion), ws->GetWriteBufferLength());
-		//If connected
-		/* always require a FB Update Request (otherwise can crash.) */
-		if (cl->state == rfbClientRec::RFB_NORMAL && !sraRgnEmpty(cl->requestedRegion) && ws->IsWriteBufferEmtpy())
+		Debug("-VNCServer::Client lopp [this:%p,state:%d,empty:%d]\n",this,cl->state,sraRgnEmpty(cl->requestedRegion));
+
+		//If connected, always require a FB Update Request (otherwise can crash.)
+		if (cl->state == rfbClientRec::RFB_NORMAL && !sraRgnEmpty(cl->requestedRegion))
 		{
 			//If reseted
 			if (reset)
@@ -955,7 +1009,7 @@ int VNCServer::Client::Run()
 				reset = false;
 			}
 
-			//If the scren has been resized
+		/*	//If the scren has been resized
 			if (cl->newFBSizePending)
 			{
 				//Free region
@@ -963,6 +1017,7 @@ int VNCServer::Client::Run()
 				//Set new modified region
 				cl->modifiedRegion = sraRgnCreateRect(0,0,cl->screen->width,cl->screen->height);
 			}
+		*/
 			
 			//We need to update by default
 			bool haveUpdate = true;
@@ -977,6 +1032,9 @@ int VNCServer::Client::Run()
 			if  (!FB_UPDATE_PENDING(cl))
 				//Check it is inside requested region
 				haveUpdate = !sraRgnEmpty(cl->modifiedRegion);//sraRgnAnd(updateRegion,cl->requestedRegion);
+
+			//Clean modified region
+			sraRgnMakeEmpty(cl->modifiedRegion);
 				
 			//Unlock region
 			UNLOCK(cl->updateMutex);
@@ -993,7 +1051,7 @@ int VNCServer::Client::Run()
 				rfbSendFramebufferUpdate(cl, updateRegion);
 				//UNLOCK(cl->sendMutex);
 				rfbDecrClientRef(cl);
-				Debug("<VNCServer::Clietn SendFramebufferUpdate [%p,buffer:%d]\n",this,ws->GetWriteBufferLength());
+				Debug("<VNCServer::Clietn SendFramebufferUpdate [%p]\n",this);
 			}
 
 			//Destroy region
