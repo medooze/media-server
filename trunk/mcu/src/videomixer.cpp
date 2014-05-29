@@ -255,7 +255,7 @@ int VideoMixer::MixVideo()
 					}
 					
 					//If we are displaying names
-					if (displayNames)
+					if (displayNames && !it->second->name.empty())
 						//Set name
 						mosaic->RenderOverlayText(it->second->name,mosaic->GetLeft(i),mosaic->GetTop(i)+mosaic->GetHeight(i)-30,mosaic->GetWidth(i),30);
 
