@@ -332,8 +332,6 @@ int Overlay::RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWO
 		//Serialize it
 		utf8.Serialize((BYTE*)str,utf8.GetUTF8Size());
 		str[utf8.GetUTF8Size()] = 0;
-		Dump((BYTE*)str,utf8.GetUTF8Size());
-
 /*
 		Magick::TypeMetric textSize;
 		render.fontTypeMetrics( txt, &textSize );
