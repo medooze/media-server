@@ -45,8 +45,6 @@ bool FECDecoder::AddPacket(RTPTimedPacket* packet)
 			Debug("-fec primary red data at %d\n",fec->GetBaseExtSeq());
 			//Append it
 			codes[fec->GetBaseExtSeq()] = fec;
-			//Delete pacekt
-			delete(packet);
 			//Packet contained no media
 			return false;
 		}
@@ -75,8 +73,6 @@ bool FECDecoder::AddPacket(RTPTimedPacket* packet)
 		Debug("-fec data at %d\n",fec->GetBaseExtSeq());
 		//Append it
 		codes[fec->GetBaseExtSeq()] = fec;
-		//Delete pacekt
-		delete(packet);
 		//Packet contained no media
 		return false;
 	} else {
