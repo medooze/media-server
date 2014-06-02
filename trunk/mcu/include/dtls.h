@@ -58,9 +58,15 @@ public:
 
 public:
 	static void SetCertificate(const char* cert,const char* key);
-	static std::string GetCertificateFingerPrint(Hash hash);
 	static int ClassInit();
+	static std::string GetCertificateFingerPrint(Hash hash);
 	static bool IsDTLS(BYTE* buffer,int size)		{ return buffer[0]>=20 && buffer[0]<=64; }
+
+public:
+	// Static callbacks for OpenSSL.
+	static void dtls_info_callback(const SSL *ssl, int where, int ret);
+	static int fakeDtlsVerifyCallback(int preverify_ok, X509_STORE_CTX *ctx);
+
 private:
 	static std::string certfile;	/*!< Certificate file */
 	static std::string pvtfile;		/*!< Private key file */
@@ -97,11 +103,11 @@ private:
 	BIO *read_bio;			/*!< Memory buffer for reading */
 	BIO *write_bio;			/*!< Memory buffer for writing */
 	Setup dtls_setup;		/*!< Current setup state */
-	unsigned char remote_fingerprint[EVP_MAX_MD_SIZE];	/*!< Fingerprint of the peer certificate */
+	unsigned char remoteFingerprint[EVP_MAX_MD_SIZE];	/*!< Fingerprint of the peer certificate */
+	Hash remoteHash;		/*!< Hash of the peer fingerprint */
 	Connection connection;		/*!< Whether this is a new or existing connection */
 	unsigned int rekey;	/*!< Interval at which to renegotiate and rekey */
 	int rekeyid;		/*!< Scheduled item id for rekeying */
-	Hash remoteHash;
 };
 
 #endif	/* DTLS_H */
