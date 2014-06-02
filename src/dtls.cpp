@@ -293,9 +293,11 @@ void DTLSConnection::SetRemoteSetup(Setup remote)
 	switch (dtls_setup)
 	{
 		case SETUP_ACTIVE:
+			Debug("-DTLSConnection::SetRemoteSetup() | we are SETUP_ACTIVE\n");
 			SSL_set_connect_state(ssl);
 			break;
 		case SETUP_PASSIVE:
+			Debug("-DTLSConnection::SetRemoteSetup() | we are SETUP_PASSIVE\n");
 			SSL_set_accept_state(ssl);
 			break;
 		case SETUP_HOLDCONN:
