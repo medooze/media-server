@@ -47,13 +47,13 @@ bool RTPSession::SetPortRange(int minPort, int maxPort)
 	//Check port range is possitive
 	if (maxPort<minPort)
 		//Error
-		return Error("-RTPSession port range invalid [%d,%d]\n",minPort,maxPort);
+		return Error("-RTPSession::SetPortRange() | port range invalid [%d,%d]\n",minPort,maxPort);
 
 	//check min range ports
 	if (maxPort-minPort<minLocalPortRange)
 	{
 		//Error
-		Error("-RTPSession port range too short %d, should be at least %d\n",maxPort-minPort,minLocalPortRange);
+		Error("-RTPSession::SetPortRange() | port range too short %d, should be at least %d\n",maxPort-minPort,minLocalPortRange);
 		//Correct
 		maxPort = minPort+minLocalPortRange;
 	}
@@ -62,7 +62,7 @@ bool RTPSession::SetPortRange(int minPort, int maxPort)
 	if (minPort<1024)
 	{
 		//Error
-		Error("-RTPSession min rtp port is inside privileged range, increasing it\n");
+		Error("-RTPSession::SetPortRange() | min rtp port is inside privileged range, increasing it\n");
 		//Correct it
 		minPort = 1024;
 	}
@@ -71,7 +71,7 @@ bool RTPSession::SetPortRange(int minPort, int maxPort)
 	if (maxPort>65535)
 	{
 		//Error
-		Error("-RTPSession max rtp port is too high, decreasing it\n");
+		Error("-RTPSession::SetPortRange() | max rtp port is too high, decreasing it\n");
 		//Correc it
 		maxPort = 65535;
 	}
@@ -81,7 +81,7 @@ bool RTPSession::SetPortRange(int minPort, int maxPort)
 	maxLocalPort = maxPort;
 
 	//Log
-	Log("-RTPSession configured RTP/RTCP ports range [%d,%d]\n", minLocalPort, maxLocalPort);
+	Log("-RTPSession::SetPortRange() | configured RTP/RTCP ports range [%d,%d]\n", minLocalPort, maxLocalPort);
 
 	//OK
 	return true;
@@ -250,29 +250,29 @@ int RTPSession::SetLocalCryptoSDES(const char* suite,const BYTE* key,const DWORD
 	//Get cypher
 	if (strcmp(suite,"AES_CM_128_HMAC_SHA1_80")==0)
 	{
-		Log("RTPSession::SetLocalCryptoSDES() | suite: AES_CM_128_HMAC_SHA1_80\n");
+		Log("-RTPSession::SetLocalCryptoSDES() | suite: AES_CM_128_HMAC_SHA1_80\n");
 		crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtp);
 		crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtcp);
 	} else if (strcmp(suite,"AES_CM_128_HMAC_SHA1_32")==0) {
-		Log("RTPSession::SetLocalCryptoSDES() | suite: AES_CM_128_HMAC_SHA1_32\n");
+		Log("-RTPSession::SetLocalCryptoSDES() | suite: AES_CM_128_HMAC_SHA1_32\n");
 		crypto_policy_set_aes_cm_128_hmac_sha1_32(&policy.rtp);
-		crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtcp);
+		crypto_policy_set_aes_cm_128_hmac_sha1_32(&policy.rtcp);
 	} else if (strcmp(suite,"AES_CM_128_NULL_AUTH")==0) {
-		Log("RTPSession::SetLocalCryptoSDES() | suite: AES_CM_128_NULL_AUTH\n");
+		Log("-RTPSession::SetLocalCryptoSDES() | suite: AES_CM_128_NULL_AUTH\n");
 		crypto_policy_set_aes_cm_128_null_auth(&policy.rtp);
 		crypto_policy_set_aes_cm_128_null_auth(&policy.rtcp);
 	} else if (strcmp(suite,"NULL_CIPHER_HMAC_SHA1_80")==0) {
-		Log("RTPSession::SetLocalCryptoSDES() | suite: NULL_CIPHER_HMAC_SHA1_80\n");
+		Log("-RTPSession::SetLocalCryptoSDES() | suite: NULL_CIPHER_HMAC_SHA1_80\n");
 		crypto_policy_set_null_cipher_hmac_sha1_80(&policy.rtp);
 		crypto_policy_set_null_cipher_hmac_sha1_80(&policy.rtcp);
 	} else {
-		return Error("RTPSession::SetLocalCryptoSDES() | Unknown cipher suite: %s", suite);
+		return Error("-RTPSession::SetLocalCryptoSDES() | Unknown cipher suite: %s", suite);
 	}
 
 	//Check sizes
 	if (len!=policy.rtp.cipher_key_len)
 		//Error
-		return Error("Key size (%d) doesn't match the selected srtp profile (required %d)\n",len,policy.rtp.cipher_key_len);
+		return Error("-RTPSession::SetLocalCryptoSDES() | Key size (%d) doesn't match the selected srtp profile (required %d)\n",len,policy.rtp.cipher_key_len);
 
 	//Set polciy values
 	policy.ssrc.type	= ssrc_any_outbound;
@@ -288,7 +288,7 @@ int RTPSession::SetLocalCryptoSDES(const char* suite,const BYTE* key,const DWORD
 	//Check error
 	if (err!=err_status_ok)
 		//Error
-		return Error("Failed to create local SRTP session | err:%d\n", err);
+		return Error("-RTPSession::SetLocalCryptoSDES() | Failed to create local SRTP session | err:%d\n", err);
 
 	//Set send SSRTP sesion
 	sendSRTPSession = session;
@@ -305,7 +305,7 @@ int RTPSession::SetLocalCryptoSDES(const char* suite,const BYTE* key,const DWORD
 int RTPSession::SetLocalCryptoSDES(const char* suite, const char* key64)
 {
 	//Log
-	Log("-SetLocalCryptoSDES [key:%s,suite:%s]\n",key64,suite);
+	Log("-RTPSession::SetLocalCryptoSDES() | [key:%s,suite:%s]\n",key64,suite);
 
 	//Get lenght
 	WORD len64 = strlen(key64);
@@ -326,7 +326,7 @@ int RTPSession::SetProperties(const Properties& properties)
 	//For each property
 	for (Properties::const_iterator it=properties.begin();it!=properties.end();++it)
 	{
-		Log("Setting RTP property [%s:%s]\n",it->first.c_str(),it->second.c_str());
+		Log("-RTPSession::SetProperties() | Setting RTP property [%s:%s]\n",it->first.c_str(),it->second.c_str());
 
 		//Check
 		if (it->first.compare("rtcp-mux")==0)
@@ -367,7 +367,7 @@ int RTPSession::SetProperties(const Properties& properties)
 			//Use timestamsp
 			useAbsTime = true;
 		} else {
-			Error("Unknown RTP property [%s]\n",it->first.c_str());
+			Error("-RTPSession::SetProperties() | Unknown RTP property [%s]\n",it->first.c_str());
 		}
 	}
 
@@ -376,7 +376,7 @@ int RTPSession::SetProperties(const Properties& properties)
 
 int RTPSession::SetLocalSTUNCredentials(const char* username, const char* pwd)
 {
-	Log("-SetLocalSTUNCredentials [frag:%s,pwd:%s]\n",username,pwd);
+	Log("-RTPSession::SetLocalSTUNCredentials() | [frag:%s,pwd:%s]\n",username,pwd);
 	//Clean mem
 	if (iceLocalUsername)
 		free(iceLocalUsername);
@@ -392,7 +392,7 @@ int RTPSession::SetLocalSTUNCredentials(const char* username, const char* pwd)
 
 int RTPSession::SetRemoteSTUNCredentials(const char* username, const char* pwd)
 {
-	Log("-SetRemoteSTUNCredentials [frag:%s,pwd:%s]\n",username,pwd);
+	Log("-RTPSession::SetRemoteSTUNCredentials() |  [frag:%s,pwd:%s]\n",username,pwd);
 	//Clean mem
 	if (iceRemoteUsername)
 		free(iceRemoteUsername);
@@ -407,7 +407,7 @@ int RTPSession::SetRemoteSTUNCredentials(const char* username, const char* pwd)
 
 int RTPSession::SetRemoteCryptoDTLS(const char *setup,const char *hash,const char *fingerprint)
 {
-	Log("-SetRemoteCryptoDTLS [setup:%s,hash:%s,fingerpritn:%s]\n",setup,hash,fingerprint);
+	Log("-RTPSession::SetRemoteCryptoDTLS | [setup:%s,hash:%s,fingerprint:%s]\n",setup,hash,fingerprint);
 
 	//Set Suite
 	if (strcasecmp(setup,"active")==0)
@@ -419,7 +419,7 @@ int RTPSession::SetRemoteCryptoDTLS(const char *setup,const char *hash,const cha
 	else if (strcasecmp(setup,"holdconn")==0)
 		dtls.SetRemoteSetup(DTLSConnection::SETUP_HOLDCONN);
 	else
-		return Error("Unknown setup");
+		return Error("-RTPSession::SetRemoteCryptoDTLS | Unknown setup");
 
 	//Set fingerprint
 	if (strcasecmp(hash,"SHA-1")==0)
@@ -427,7 +427,7 @@ int RTPSession::SetRemoteCryptoDTLS(const char *setup,const char *hash,const cha
 	else if (strcasecmp(hash,"SHA-256")==0)
 		dtls.SetRemoteFingerprint(DTLSConnection::SHA256,fingerprint);
 	else
-		return Error("Unknown hash");
+		return Error("-RTPSession::SetRemoteCryptoDTLS | Unknown hash");
 
 	//Init DTLS
 	return dtls.Init();
@@ -443,29 +443,29 @@ int RTPSession::SetRemoteCryptoSDES(const char* suite, const BYTE* key, const DW
 
 	if (strcmp(suite,"AES_CM_128_HMAC_SHA1_80")==0)
 	{
-		Log("RTPSession::SetRemoteCryptoSDES() | suite: AES_CM_128_HMAC_SHA1_80\n");
+		Log("-RTPSession::SetRemoteCryptoSDES() | suite: AES_CM_128_HMAC_SHA1_80\n");
 		crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtp);
 		crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtcp);
 	} else if (strcmp(suite,"AES_CM_128_HMAC_SHA1_32")==0) {
-		Log("RTPSession::SetRemoteCryptoSDES() | suite: AES_CM_128_HMAC_SHA1_32\n");
+		Log("-RTPSession::SetRemoteCryptoSDES() | suite: AES_CM_128_HMAC_SHA1_32\n");
 		crypto_policy_set_aes_cm_128_hmac_sha1_32(&policy.rtp);
-		crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtcp);
+		crypto_policy_set_aes_cm_128_hmac_sha1_32(&policy.rtcp);
 	} else if (strcmp(suite,"AES_CM_128_NULL_AUTH")==0) {
-		Log("RTPSession::SetRemoteCryptoSDES() | suite: AES_CM_128_NULL_AUTH\n");
+		Log("-RTPSession::SetRemoteCryptoSDES() | suite: AES_CM_128_NULL_AUTH\n");
 		crypto_policy_set_aes_cm_128_null_auth(&policy.rtp);
 		crypto_policy_set_aes_cm_128_null_auth(&policy.rtcp);
 	} else if (strcmp(suite,"NULL_CIPHER_HMAC_SHA1_80")==0) {
-		Log("RTPSession::SetRemoteCryptoSDES() | suite: NULL_CIPHER_HMAC_SHA1_80\n");
+		Log("-RTPSession::SetRemoteCryptoSDES() | suite: NULL_CIPHER_HMAC_SHA1_80\n");
 		crypto_policy_set_null_cipher_hmac_sha1_80(&policy.rtp);
 		crypto_policy_set_null_cipher_hmac_sha1_80(&policy.rtcp);
 	} else {
-		return Error("RTPSession::SetRemoteCryptoSDES() | Unknown cipher suite %s", suite);
+		return Error("-RTPSession::SetRemoteCryptoSDES() | Unknown cipher suite %s", suite);
 	}
 
 	//Check sizes
 	if (len!=policy.rtp.cipher_key_len)
 		//Error
-		return Error("Key size (%d) doesn't match the selected srtp profile (required %d)\n",len,policy.rtp.cipher_key_len);
+		return Error("-RTPSession::SetRemoteCryptoSDES() | Key size (%d) doesn't match the selected srtp profile (required %d)\n",len,policy.rtp.cipher_key_len);
 
 	//Set polciy values
 	policy.ssrc.type	= ssrc_any_inbound;
@@ -480,7 +480,7 @@ int RTPSession::SetRemoteCryptoSDES(const char* suite, const BYTE* key, const DW
 	//Check error
 	if (err!=err_status_ok)
 		//Error
-		return Error("Failed to create remote SRTP session | err:%d\n", err);
+		return Error("-RTPSession::SetRemoteCryptoSDES() | Failed to create remote SRTP session | err:%d\n", err);
 	//Set it
 	recvSRTPSession = session;
 
@@ -490,7 +490,7 @@ int RTPSession::SetRemoteCryptoSDES(const char* suite, const BYTE* key, const DW
 	//Check error
 	if (err!=err_status_ok)
 		//Error
-		Error("Failed set remote RTX SDES | err:%d\n", err);
+		Error("-RTPSession::SetRemoteCryptoSDES() | Failed set remote RTX SDES | err:%d\n", err);
 
 	//Set it
 	recvSRTPSessionRTX = session;
@@ -502,7 +502,7 @@ int RTPSession::SetRemoteCryptoSDES(const char* suite, const BYTE* key, const DW
 int RTPSession::SetRemoteCryptoSDES(const char* suite, const char* key64)
 {
 	//Log
-	Log("-SetRemoteCryptoSDES [key:%s,suite:%s]\n",key64,suite);
+	Log("-RTPSession::SetRemoteCryptoSDES() | [key:%s,suite:%s]\n",key64,suite);
 
 	//Decript
 	decript = true;
@@ -545,7 +545,7 @@ bool RTPSession::SetSendingCodec(DWORD codec)
 	//Check rtp map
 	if (!rtpMapOut)
 		//Error
-		return Error("-SetSendingCodec error: no out RTP map\n");
+		return Error("-RTPSession::SetSendingCodec() | error: no out RTP map\n");
 
 	//Try to find it in the map
 	for (RTPMap::iterator it = rtpMapOut->begin(); it!=rtpMapOut->end(); ++it)
@@ -556,7 +556,7 @@ bool RTPSession::SetSendingCodec(DWORD codec)
 			//Get type
 			DWORD type = it->first;
 			//Log it
-			Log("-SetSendingCodec [codec:%s,type:%d]\n",GetNameForCodec(media,codec),type);
+			Log("-RTPSession::SetSendingCodec() | [codec:%s,type:%d]\n",GetNameForCodec(media,codec),type);
 			//Set type in header
 			((rtp_hdr_t *)sendPacket)->pt = type;
 			//Set type
@@ -567,7 +567,7 @@ bool RTPSession::SetSendingCodec(DWORD codec)
 	}
 
 	//Not found
-	return Error("-SetSendingCodec error: codec mapping not found [codec:%s]\n",GetNameForCodec(media,codec));
+	return Error("-RTPSession::SetSendingCodec() | error: codec mapping not found [codec:%s]\n",GetNameForCodec(media,codec));
 }
 
 /***********************************
@@ -582,10 +582,10 @@ int RTPSession::SetRemotePort(char *ip,int sendPort)
 	//If we already have one IP binded
 	if (recIP!=INADDR_ANY)
 		//Exit
-		return Log("-SetRemotePort NAT already binded sucessfully to [%s:%d]\n",inet_ntoa(sendAddr.sin_addr),recPort);
+		return Log("-RTPSession::SetRemotePort() | NAT already binded sucessfully to [%s:%d]\n",inet_ntoa(sendAddr.sin_addr),recPort);
 
 	//Ok, let's et it
-	Log("-SetRemotePort [%s:%d]\n",ip,sendPort);
+	Log("-RTPSession::SetRemotePort() | [%s:%d]\n",ip,sendPort);
 
 	//Ip y puerto de destino
 	sendAddr.sin_addr.s_addr 	= ipAddr;
@@ -638,7 +638,7 @@ int RTPSession::Init()
 {
 	int retries = 0;
 
-	Log(">Init RTPSession\n");
+	Log(">RTPSession::Init()\n");
 
 	sockaddr_in recAddr;
 
@@ -711,17 +711,17 @@ int RTPSession::Init()
 		setsockopt(simSocket,     IPPROTO_IP, IP_TOS, &tos, sizeof(tos));
 		setsockopt(simRtcpSocket, IPPROTO_IP, IP_TOS, &tos, sizeof(tos));
 		//Everything ok
-		Log("-Got ports [%d,%d]\n",simPort,simRtcpPort);
+		Log("-RTPSession::Init() | Got ports [%d,%d]\n",simPort,simRtcpPort);
 		//Start receiving
 		Start();
 		//Done
-		Log("<Init RTPSession\n");
+		Log("<RTPSession::Init()\n");
 		//Opened
 		return 1;
 	}
 
 	//Error
-	Error("RTPSession too many failed attemps opening sockets\n");
+	Error("-RTPSession::Init() | too many failed attemps opening sockets\n");
 
 	//Failed
 	return 0;
@@ -738,7 +738,7 @@ int RTPSession::End()
 		//Nothing
 		return 0;
 
-	Log(">End RTPSession\n");
+	Log(">RTPSession::End()\n");
 
 	//Stop just in case
 	Stop();
@@ -765,7 +765,7 @@ int RTPSession::End()
 		//Remove stream
 		remoteRateEstimator->RemoveStream(recSSRC);
 
-	Log("<End RTPSession\n");
+	Log("<RTPSession::End()\n");
 
 	return 1;
 }
@@ -780,7 +780,7 @@ int RTPSession::SendPacket(RTCPCompoundPacket &rtcp)
 	if (sendRtcpAddr.sin_addr.s_addr == INADDR_ANY && !muxRTCP)
 	{
 		//Debug
-		Debug("-Error sending rtcp packet, no remote IP yet\n");
+		Debug("-RTPSession::SendPacket() | Error sending rtcp packet, no remote IP yet\n");
 		//Exit
 		return 0;
 	}
@@ -790,20 +790,20 @@ int RTPSession::SendPacket(RTCPCompoundPacket &rtcp)
 	//Check result
 	if (!len)
 		//Error
-		return Error("Error serializing RTCP packet\n");
+		return Error("-RTPSession::SendPacket() | Error serializing RTCP packet\n");
 
 	//If encripted
 	if (encript)
 	{
 		//Check  session
 		if (!sendSRTPSession)
-			return Error("-no sendSRTPSession\n");
+			return Error("-RTPSession::SendPacket() | no sendSRTPSession\n");
 		//Protect
 		err_status_t err = srtp_protect_rtcp(sendSRTPSession,data,&len);
 		//Check error
 		if (err!=err_status_ok)
 			//Nothing
-			return Error("Error protecting RTCP packet [%d]\n",err);
+			return Error("-RTPSession::SendPacket() | Error protecting RTCP packet [%d]\n",err);
 	}
 
 	//If muxin
@@ -817,7 +817,7 @@ int RTPSession::SendPacket(RTCPCompoundPacket &rtcp)
 	//Check error
 	if (ret<0)
 		//Return
-		return Error("-Error sending RTCP packet [%d]\n",errno);
+		return Error("-RTPSession::SendPacket() | Error sending RTCP packet [%d]\n",errno);
 
 	//INcrease stats
 	numRTCPSendPackets++;
@@ -844,7 +844,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 			//Set port
 			sendAddr.sin_port = htons(recPort);
 			//Log
-			Log("-RTPSession NAT: Now sending %s to [%s:%d].\n", MediaFrame::TypeToString(media),inet_ntoa(sendAddr.sin_addr), recPort);
+			Log("-RTPSession::SendPacket() | NAT: Now sending %s to [%s:%d].\n", MediaFrame::TypeToString(media),inet_ntoa(sendAddr.sin_addr), recPort);
 			//Check if using ice
 			if (iceRemoteUsername && iceRemotePwd && iceLocalUsername)
 			{
@@ -876,7 +876,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 			}
 		} else {
 			//Exit
-			Debug("-No remote address for [%s]\n",MediaFrame::TypeToString(media));
+			Debug("-RTPSession::SendPacket() | No remote address for [%s]\n",MediaFrame::TypeToString(media));
 			//Exit
 			return 0;
 		}
@@ -935,7 +935,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 
 	//Comprobamos que quepan
 	if (ini+packet.GetMediaLength()>MTU)
-		return Error("SendPacket Overflow [size:%d,max:%d]\n",ini+packet.GetMediaLength(),MTU);
+		return Error("-RTPSession::SendPacket() | Overflow [size:%d,max:%d]\n",ini+packet.GetMediaLength(),MTU);
 
 	//Copiamos los datos
         memcpy(sendPacket+ini,packet.GetMediaData(),packet.GetMediaLength());
@@ -948,13 +948,13 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 	{
 		//Check  session
 		if (!sendSRTPSession)
-			return Error("-no sendSRTPSession\n");
+			return Error("-RTPSession::SendPacket() | no sendSRTPSession\n");
 		//Encript
 		err_status_t err = srtp_protect(sendSRTPSession,sendPacket,&len);
 		//Check error
 		if (err!=err_status_ok)
 			//Nothing
-			return Error("Error protecting RTP packet [%d]\n",err);
+			return Error("-RTPSession::SendPacket() | Error protecting RTP packet [%d]\n",err);
 	}
 
 	//Send packet
@@ -1075,7 +1075,7 @@ int RTPSession::ReadRTCP()
 		//Set port
 		sendRtcpAddr.sin_port = from_addr.sin_port;
 		//Log it
-		Log("-Got first RTCP, sending to %s:%d with rtcp-muxing:%d\n",inet_ntoa(sendRtcpAddr.sin_addr),ntohs(sendRtcpAddr.sin_port),muxRTCP);
+		Log("-RTPSession::ReadRTCP() | Got first RTCP, sending to %s:%d with rtcp-muxing:%d\n",inet_ntoa(sendRtcpAddr.sin_addr),ntohs(sendRtcpAddr.sin_port),muxRTCP);
 	}
 
 	//Decript
@@ -1083,12 +1083,12 @@ int RTPSession::ReadRTCP()
 	{
 		//Check session
 		if (!recvSRTPSession)
-			return Error("-No recvSRTPSession\n");
+			return Error("-RTPSession::ReadRTCP() | No recvSRTPSession\n");
 		//unprotect
 		err_status_t err = srtp_unprotect_rtcp(recvSRTPSession,buffer,&size);
 		//Check error
 		if (err!=err_status_ok)
-			return Error("Error unprotecting rtcp packet [%d]\n",err);
+			return Error("-RTPSession::ReadRTCP() | Error unprotecting rtcp packet [%d]\n",err);
 	}
 	//RTCP mux disabled
 	muxRTCP = false;
@@ -1170,7 +1170,7 @@ int RTPSession::ReadRTP()
 				//Get also port
 				recPort = ntohs(from_addr.sin_port);
 				//Log
-				Log("-RTPSession NAT: received bind request from [%s:%d]\n", inet_ntoa(from_addr.sin_addr), recPort);
+				Log("-RTPSession::ReadRTP() | NAT: received bind request from [%s:%d]\n", inet_ntoa(from_addr.sin_addr), recPort);
 				//Check if got listener
 				if (listener)
 					//Request a I frame
@@ -1236,12 +1236,12 @@ int RTPSession::ReadRTP()
 		{
 			//Check session
 			if (!recvSRTPSession)
-				return Error("-No recvSRTPSession\n");
+				return Error("-RTPSession::ReadRTP() | No recvSRTPSession\n");
 			//unprotect
 			err_status_t err = srtp_unprotect_rtcp(recvSRTPSession,buffer,&size);
 			//Check error
 			if (err!=err_status_ok)
-				return Error("Error unprotecting rtcp packet [%d]\n",err);
+				return Error("-RTPSession::ReadRTP() | Error unprotecting rtcp packet [%d]\n",err);
 		}
 		//RTCP mux enabled
 		muxRTCP = true;
@@ -1275,7 +1275,7 @@ int RTPSession::ReadRTP()
 	if (!RTPPacket::IsRTP(buffer,size))
 	{
 		//Debug
-		Debug("-Not RTP data recevied\n");
+		Debug("-RTPSession::ReadRTP() | Not RTP data recevied\n");
 		//Dump it
 		Dump(buffer,size);
 		//Exit
@@ -1290,7 +1290,7 @@ int RTPSession::ReadRTP()
 		//Get also port
 		recPort = ntohs(from_addr.sin_port);
 		//Log
-		Log("-RTPSession NAT: received packet from [%s:%d]\n", inet_ntoa(from_addr.sin_addr), ntohs(from_addr.sin_port));
+		Log("-RTPSession::ReadRTP() | NAT: received packet from [%s:%d]\n", inet_ntoa(from_addr.sin_addr), ntohs(from_addr.sin_port));
 		//Check if got listener
 		if (listener)
 			//Request a I frame
@@ -1301,7 +1301,7 @@ int RTPSession::ReadRTP()
 	if (size<12)
 	{
 		//Debug
-		Debug("-RTP data not big enought[%d]\n",size);
+		Debug("-RTPSession::ReadRTP() | RTP data not big enought[%d]\n",size);
 		//Exit
 		return 1;
 	}
@@ -1312,7 +1312,7 @@ int RTPSession::ReadRTP()
 		err_status_t err;
 		//Check session
 		if (!recvSRTPSession)
-			return Error("-No recvSRTPSession\n");
+			return Error("-RTPSession::ReadRTP() | No recvSRTPSession\n");
 		//Check if it is a retransmited packet
 		if (!isRTX)
 			//unprotect
@@ -1323,7 +1323,7 @@ int RTPSession::ReadRTP()
 		//Check status
 		if (err!=err_status_ok)
 			//Error
-			return Error("Error unprotecting rtp packet [%d]\n",err);
+			return Error("-RTPSession::ReadRTP() | Error unprotecting rtp packet [%d]\n",err);
 	}
 
 	//If it is a retransmission
@@ -1366,7 +1366,7 @@ int RTPSession::ReadRTP()
 	//Check rtp map
 	if (!rtpMapIn)
 		//Error
-		return Error("-RTP map not set\n");
+		return Error("-RTPSession::ReadRTP() | RTP map not set\n");
 
 	//Set initial codec
 	BYTE codec = rtpMapIn->GetCodecForType(type);
@@ -1374,7 +1374,7 @@ int RTPSession::ReadRTP()
 	//Check codec
 	if (codec==RTPMap::NotFound)
 		//Exit
-		return Error("-RTP packet type unknown [%d]\n",type);
+		return Error("-RTPSession::ReadRTP() | RTP packet type unknown [%d]\n",type);
 
 	//Create rtp packet
 	RTPTimedPacket *packet = NULL;
@@ -1394,7 +1394,7 @@ int RTPSession::ReadRTP()
 			//Delete red packet
 			delete(red);
 			//Exit
-			return Error("-RTP packet type unknown for primary type of redundant data [%d,rd:%d]\n",t,codec);
+			return Error("-RTPSession::ReadRTP() | RTP packet type unknown for primary type of redundant data [%d,rd:%d]\n",t,codec);
 		}
 		//Set it
 		red->SetPrimaryCodec(c);
@@ -1411,7 +1411,7 @@ int RTPSession::ReadRTP()
 				//Delete red packet
 				delete(red);
 				//Exit
-				return Error("-RTP packet type unknown for primary type of secundary data [%d,%d,red:%d]\n",i,t,codec);
+				return Error("-RTPSession::ReadRTP() | RTP packet type unknown for primary type of secundary data [%d,%d,red:%d]\n",i,t,codec);
 			}
 			//Set it
 			red->SetRedundantCodec(i,c);
@@ -1438,7 +1438,7 @@ int RTPSession::ReadRTP()
 		//Check if it is from the retransmission stream
 		if (!isRTX)
 		{
-			Log("-New SSSRC [new:%x,old:%x]\n",ssrc,recSSRC);
+			Log("-RTPSession::ReadRTP() | New SSRC [new:%x,old:%x]\n",ssrc,recSSRC);
 			//Send SR to old one
 			SendSenderReport();
 			//Reset packets
@@ -1511,7 +1511,7 @@ int RTPSession::ReadRTP()
 				//Double check
 				if (lost<0x0FFF)
 				{
-					Debug("-Nacking %d lost %d\n",base,lost);
+					Debug("-RTPSession::ReadRTP() | Nacking %d lost %d\n",base,lost);
 					//Inc nacked count
 					nackedPacketsSinceLastSR += lost;
 
@@ -1548,7 +1548,7 @@ int RTPSession::ReadRTP()
 					//Delete it
 					delete(rtcp);
 				} else {
-					Error("-Weird lost count [lost:%d,base:%d,recExtSeq:%d,recCycles:%d,extSeq:%d,seq:%d]\n",lost,base,recExtSeq,recCycles,extSeq,packet->GetSeqNum());
+					Error("-RTPSession::ReadRTP() | Weird lost count [lost:%d,base:%d,recExtSeq:%d,recCycles:%d,extSeq:%d,seq:%d]\n",lost,base,recExtSeq,recCycles,extSeq,packet->GetSeqNum());
 				}
 			}
 		}
@@ -1651,7 +1651,7 @@ void RTPSession::Stop()
 ************************/
 void * RTPSession::run(void *par)
 {
-        Log("-RTPSession thread [%d,0x%x]\n",getpid(),par);
+        Log("-RTPSession::run() | thread [%d,0x%x]\n",getpid(),par);
 
 	//Block signals to avoid exiting on SIGUSR1
 	blocksignals();
@@ -1671,7 +1671,7 @@ void * RTPSession::run(void *par)
  ***************************/
 int RTPSession::Run()
 {
-	Log(">Run RTPSession [%p]\n",this);
+	Log(">RTPSession::Run() | [%p]\n",this);
 
 	//Set values for polling
 	ufds[0].fd = simSocket;
@@ -1709,13 +1709,13 @@ int RTPSession::Run()
 		if ((ufds[0].revents & POLLHUP) || (ufds[0].revents & POLLERR) || (ufds[1].revents & POLLHUP) || (ufds[0].revents & POLLERR))
 		{
 			//Error
-			Log("Pool error event [%d]\n",ufds[0].revents);
+			Log("-RTPSession::Run() | Pool error event [%d]\n",ufds[0].revents);
 			//Exit
 			break;
 		}
 	}
 
-	Log("<RTPSession run\n");
+	Log("<RTPSession::Run()\n");
 }
 
 RTPPacket* RTPSession::GetPacket()
@@ -1836,7 +1836,7 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 						}
 						break;
 					case RTCPRTPFeedback::TempMaxMediaStreamBitrateNotification:
-						Debug("-TempMaxMediaStreamBitrateNotification\n");
+						Debug("-RTPSession::ProcessRTCPPacket() | TempMaxMediaStreamBitrateNotification\n");
 						pendingTMBR = false;
 						if (requestFPU)
 						{
@@ -1862,26 +1862,26 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 				{
 					case RTCPPayloadFeedback::PictureLossIndication:
 					case RTCPPayloadFeedback::FullIntraRequest:
-						Debug("-FPU requested\n");
+						Debug("-RTPSession::ProcessRTCPPacket() | FPU requested\n");
 						//Chec listener
 						if (listener)
 							//Send intra refresh
 							listener->onFPURequested(this);
 						break;
 					case RTCPPayloadFeedback::SliceLossIndication:
-						Debug("-SliceLossIndication\n");
+						Debug("-RTPSession::ProcessRTCPPacket() | SliceLossIndication\n");
 						break;
 					case RTCPPayloadFeedback::ReferencePictureSelectionIndication:
-						Debug("-ReferencePictureSelectionIndication\n");
+						Debug("-RTPSession::ProcessRTCPPacket() | ReferencePictureSelectionIndication\n");
 						break;
 					case RTCPPayloadFeedback::TemporalSpatialTradeOffRequest:
-						Debug("-TemporalSpatialTradeOffRequest\n");
+						Debug("-RTPSession::ProcessRTCPPacket() | TemporalSpatialTradeOffRequest\n");
 						break;
 					case RTCPPayloadFeedback::TemporalSpatialTradeOffNotification:
-						Debug("-TemporalSpatialTradeOffNotification\n");
+						Debug("-RTPSession::ProcessRTCPPacket() | TemporalSpatialTradeOffNotification\n");
 						break;
 					case RTCPPayloadFeedback::VideoBackChannelMessage:
-						Debug("-VideoBackChannelMessage\n");
+						Debug("-RTPSession::ProcessRTCPPacket() | VideoBackChannelMessage\n");
 						break;
 					case RTCPPayloadFeedback::ApplicationLayerFeeedbackMessage:
 						for (BYTE i=0;i<fb->GetFieldCount();i++)
@@ -1919,7 +1919,7 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 					listener->onFPURequested(this);
 				break;
 			case RTCPPacket::NACK:
-				Log("-----NACK!\n");
+				Log("-RTPSession::ProcessRTCPPacket() | NACK!\n");
 				break;
 		}
 	}
@@ -2061,7 +2061,7 @@ int RTPSession::SendSenderReport()
 
 int RTPSession::SendFIR()
 {
-	Debug("-SendFIR\n");
+	Debug("-RTPSession::SendFIR()\n");
 
 	//Create rtcp sender retpor
 	RTCPCompoundPacket* rtcp = CreateSenderReport();
@@ -2090,7 +2090,7 @@ int RTPSession::SendFIR()
 
 int RTPSession::RequestFPU()
 {
-	Debug("-RequestFPU\n");
+	Debug("-RTPSession::RequestFPU()\n");
 	//Drop all paquets queued, we could also hurry up
 	packets.Reset();
 	//Do not wait until next RTCP SR
@@ -2114,7 +2114,7 @@ int RTPSession::RequestFPU()
 void RTPSession::SetRTT(DWORD rtt)
 {
 	//Debug
-	Debug("-Set RTT [%dms]\n",rtt);
+	Debug("-RTPSession::SetRTT() | [%dms]\n",rtt);
 	//Set it
 	this->rtt = rtt;
 	//if got estimator
@@ -2139,7 +2139,7 @@ void RTPSession::SetRTT(DWORD rtt)
 
 void RTPSession::onTargetBitrateRequested(DWORD bitrate)
 {
-	Debug("-onTargetBitrateRequested [%d]\n",bitrate);
+	Debug("-RTPSession::onTargetBitrateRequested() | [%d]\n",bitrate);
 
 	//Create rtcp sender retpor
 	RTCPCompoundPacket* rtcp = CreateSenderReport();
@@ -2181,9 +2181,9 @@ void RTPSession::ReSendPacket(int seq)
 		RTPTimedPacket* packet = it->second;
 		//Re send pacekt
 		sendto(simSocket,packet->GetData(),packet->GetSize(),0,(sockaddr *)&sendAddr,sizeof(struct sockaddr_in));
-		Debug("-ReSendPacket %d %d\n",seq,ext);
+		Debug("-RTPSession::ReSendPacket() | %d %d\n",seq,ext);
 	} else {
-		Debug("-ReSendPacket %d %d not found first %d sending intra instead\n",seq,ext,rtxs.size() ?  rtxs.begin()->first : 0);
+		Debug("-RTPSession::ReSendPacket() | %d %d not found first %d sending intra instead\n",seq,ext,rtxs.size() ?  rtxs.begin()->first : 0);
 		//Check if got listener
 		if (listener)
 			//Request a I frame
@@ -2218,7 +2218,7 @@ int RTPSession::SendTempMaxMediaStreamBitrateNotification(DWORD bitrate,DWORD ov
 
 void RTPSession::onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMasterKey,DWORD localMasterKeySize,BYTE* remoteMasterKey,DWORD remoteMasterKeySize)
 {
-	Log("-onDTLSSetup for [%s]\n",MediaFrame::TypeToString(media));
+	Log("-RTPSession::onDTLSSetup() | [media: %s]\n",MediaFrame::TypeToString(media));
 
 	switch (suite)
 	{
@@ -2238,8 +2238,4 @@ void RTPSession::onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMasterKey,DW
 			SetRemoteCryptoSDES("NULL_CIPHER_HMAC_SHA1_80",remoteMasterKey,remoteMasterKeySize);
 			break;
 	}
-
-
-
-
 }
