@@ -23,17 +23,18 @@ EventStreamingHandler::~EventStreamingHandler()
 {
 	//Safe wait
 	listUse.WaitUnusedAndLock();
-	//For each request
-	for(EventSources::iterator it = sources.begin(); it!=sources.end(); ++it)
+
+	//Delete all requests
+	EventSources::iterator it = sources.begin();
+
+	//Until empty
+	while(it!=sources.end())
 	{
 		//Get request
 		Requests* reqs = it->second;
 
 		//Erase from list
-		sources.erase(it);
-
-		//Unlock
-		listUse.Unlock();
+		sources.erase(it++);
 
 		//For each one
 		for (Requests::iterator itReq = reqs->begin(); itReq!=reqs->end();++itReq)
@@ -43,6 +44,7 @@ EventStreamingHandler::~EventStreamingHandler()
 		//Delete list
 		delete(reqs);
 	}
+
 	//Unlock
 	listUse.Unlock();
 }
