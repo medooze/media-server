@@ -1516,6 +1516,8 @@ xmlrpc_value* GetParticipantStatistics(xmlrpc_env *env, xmlrpc_value *param_arra
 		//Release
 		xmlrpc_DECREF(val);
 	}
+	//Free stats
+	delete(partStats);
 
 	//return
 	return xmlok(env,arr);

@@ -13,37 +13,48 @@ BFCPUser::BFCPUser(int userId, int conferenceId) :
 	isChair(false),
 	transport(NULL)
 {
+	//Create mutex
+	pthread_mutex_init(&mutex,NULL);
 }
 
+BFCPUser::~BFCPUser()
+{
+	//Destroy mutex
+	pthread_mutex_destroy(&mutex);
+}
 
 int BFCPUser::GetUserId()
 {
-	return this->userId;
+	return userId;
 }
 
 
 void BFCPUser::SetChair()
 {
-	this->isChair = true;
+	isChair = true;
 }
 
 
 void BFCPUser::UnsetChair()
 {
-	this->isChair = false;
+	isChair = false;
 }
 
 
 bool BFCPUser::IsChair()
 {
-	return this->isChair;
+	return isChair;
 }
 
 
 void BFCPUser::SetTransport(WebSocket *transport)
 {
+	//Lock mutex
+	pthread_mutex_lock(&mutex);
 	// Set the new transport for this user.
 	this->transport = transport;
+	//Un Lock mutex
+	pthread_mutex_unlock(&mutex);
 }
 
 
@@ -51,7 +62,12 @@ void BFCPUser::SetTransport(WebSocket *transport)
 // the client, so we don't need to close it.
 void BFCPUser::UnsetTransport()
 {
-	this->transport = NULL;
+	//Lock mutex
+	pthread_mutex_lock(&mutex);
+	//Disconnected
+	transport = NULL;
+	//Un Lock mutex
+	pthread_mutex_unlock(&mutex);
 }
 
 
@@ -60,14 +76,20 @@ void BFCPUser::CloseTransport(const WORD code, const std::wstring& reason)
 {
 	::Debug("BFCPUser::CloseTransport() | start\n");
 
-	if (this->transport) {
-		BFCP::ConnectionData *conn_data = (BFCP::ConnectionData *)this->transport->GetUserData();
+	//Lock mutex
+	pthread_mutex_lock(&mutex);
+	
+	if (transport) {
+		BFCP::ConnectionData *conn_data = (BFCP::ConnectionData *)transport->GetUserData();
 		// Important: set this flag to true so revoking process does not take twice.
 		conn_data->closedByServer = true;
-
-		this->transport->Close(code, reason);
-		this->transport = NULL;
+		//Close transport
+		transport->Close(code, reason);
+		transport = NULL;
 	}
+
+	//Un Lock mutex
+	pthread_mutex_unlock(&mutex);
 
 	::Debug("BFCPUser::CloseTransport() | end\n");
 }
@@ -75,7 +97,7 @@ void BFCPUser::CloseTransport(const WORD code, const std::wstring& reason)
 
 bool BFCPUser::IsConnected()
 {
-	return (this->transport ? true : false);
+	return (transport ? true : false);
 }
 
 
@@ -83,15 +105,20 @@ void BFCPUser::SendMessage(BFCPMessage *msg)
 {
 	::Debug("BFCPUser::SendMessage() | start\n");
 
-	if (! this->transport) {
-		::Debug("BFCPUser::SendMessage() | user '%d' not connected, cannot send message\n", this->userId);
-		return;
+	//Lock mutex
+	pthread_mutex_lock(&mutex);
+
+	if (transport) {
+		// TODO: Here we assume that the user is connected via WS. transport should be a BFCPTransport
+		// instance with inherited classes BFCPWebSocketTransport and BFCPBinaryTransport with
+		// different implementations of the SendMessage() method.
+		transport->SendMessage(msg->Stringify());
+	} else {
+		::Debug("BFCPUser::SendMessage() | user '%d' not connected, cannot send message\n", userId);
 	}
 
-	// TODO: Here we assume that the user is connected via WS. transport should be a BFCPTransport
-	// instance with inherited classes BFCPWebSocketTransport and BFCPBinaryTransport with
-	// different implementations of the SendMessage() method.
-	this->transport->SendMessage(msg->Stringify());
+	//Un Lock mutex
+	pthread_mutex_unlock(&mutex);
 
 	::Debug("BFCPUser::SendMessage() | end\n");
 }
@@ -99,29 +126,29 @@ void BFCPUser::SendMessage(BFCPMessage *msg)
 
 void BFCPUser::ResetQueriedFloorIds()
 {
-	this->queriedFloorIds.clear();
+	queriedFloorIds.clear();
 }
 
 
 void BFCPUser::AddQueriedFloorId(int floorId)
 {
 	// Avoid duplicated floorIds.
-	if (std::find(this->queriedFloorIds.begin(), this->queriedFloorIds.end(), floorId) != this->queriedFloorIds.end())
+	if (std::find(queriedFloorIds.begin(), queriedFloorIds.end(), floorId) != queriedFloorIds.end())
 		return;
 
-	this->queriedFloorIds.push_back(floorId);
+	queriedFloorIds.push_back(floorId);
 }
 
 
 int BFCPUser::CountQueriedFloorIds()
 {
-	return this->queriedFloorIds.size();
+	return queriedFloorIds.size();
 }
 
 
 bool BFCPUser::HasQueriedFloorId(int floorId)
 {
-	if (std::find(this->queriedFloorIds.begin(), this->queriedFloorIds.end(), floorId) != this->queriedFloorIds.end())
+	if (std::find(queriedFloorIds.begin(), queriedFloorIds.end(), floorId) != queriedFloorIds.end())
 		return true;
 	else
 		return false;
@@ -130,33 +157,33 @@ bool BFCPUser::HasQueriedFloorId(int floorId)
 
 int BFCPUser::GetQueriedFloorId(unsigned int index)
 {
-	if (index >= this->queriedFloorIds.size())
+	if (index >= queriedFloorIds.size())
 		throw BFCPMessage::AttributeNotFound("'queriedFloorId' not in range");
 
-	return this->queriedFloorIds[index];
+	return queriedFloorIds[index];
 }
 
 
 void BFCPUser::Dump()
 {
 	::Debug("[BFCPUser]\n");
-	::Debug("- userId: %d\n", this->userId);
-	::Debug("- conferenceId: %d\n", this->conferenceId);
-	if (this->isChair) {
+	::Debug("- userId: %d\n", userId);
+	::Debug("- conferenceId: %d\n", conferenceId);
+	if (isChair) {
 		::Debug("- chair: yes\n");
 	}
 	else {
 		::Debug("- chair: no\n");
 	}
-	if (this->transport) {
+	if (transport) {
 		::Debug("- connected\n");
 	}
 	else {
 		::Debug("- not connected\n");
 	}
-	int num_floors = this->queriedFloorIds.size();
+	int num_floors = queriedFloorIds.size();
 	for (int i=0; i<num_floors; i++) {
-		::Debug("- queriedFloorId: %d\n", this->queriedFloorIds[i]);
+		::Debug("- queriedFloorId: %d\n", queriedFloorIds[i]);
 	}
 	::Debug("[/BFCPUser]\n");
 }
