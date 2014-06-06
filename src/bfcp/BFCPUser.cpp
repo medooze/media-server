@@ -49,24 +49,23 @@ bool BFCPUser::IsChair()
 
 void BFCPUser::SetTransport(WebSocket *transport)
 {
-	//Lock mutex
+	// Lock mutex.
 	pthread_mutex_lock(&mutex);
 	// Set the new transport for this user.
 	this->transport = transport;
-	//Un Lock mutex
+	// Un Lock mutex.
 	pthread_mutex_unlock(&mutex);
 }
 
 
-// This is called by the BFCPFloorControlServer when a user connection is disconnected from
-// the client, so we don't need to close it.
+// This is called by the BFCPFloorControlServer when the user connection is remotely closed
 void BFCPUser::UnsetTransport()
 {
-	//Lock mutex
+	// Lock mutex.
 	pthread_mutex_lock(&mutex);
 	//Disconnected
 	transport = NULL;
-	//Un Lock mutex
+	// Un Lock mutex.
 	pthread_mutex_unlock(&mutex);
 }
 
@@ -76,9 +75,9 @@ void BFCPUser::CloseTransport(const WORD code, const std::wstring& reason)
 {
 	::Debug("BFCPUser::CloseTransport() | start\n");
 
-	//Lock mutex
+	// Lock mutex.
 	pthread_mutex_lock(&mutex);
-	
+
 	if (transport) {
 		BFCP::ConnectionData *conn_data = (BFCP::ConnectionData *)transport->GetUserData();
 		// Important: set this flag to true so revoking process does not take twice.
@@ -88,7 +87,7 @@ void BFCPUser::CloseTransport(const WORD code, const std::wstring& reason)
 		transport = NULL;
 	}
 
-	//Un Lock mutex
+	// Un Lock mutex.
 	pthread_mutex_unlock(&mutex);
 
 	::Debug("BFCPUser::CloseTransport() | end\n");
@@ -105,7 +104,7 @@ void BFCPUser::SendMessage(BFCPMessage *msg)
 {
 	::Debug("BFCPUser::SendMessage() | start\n");
 
-	//Lock mutex
+	// Lock mutex.
 	pthread_mutex_lock(&mutex);
 
 	if (transport) {
@@ -117,7 +116,7 @@ void BFCPUser::SendMessage(BFCPMessage *msg)
 		::Debug("BFCPUser::SendMessage() | user '%d' not connected, cannot send message\n", userId);
 	}
 
-	//Un Lock mutex
+	// Un Lock mutex.
 	pthread_mutex_unlock(&mutex);
 
 	::Debug("BFCPUser::SendMessage() | end\n");

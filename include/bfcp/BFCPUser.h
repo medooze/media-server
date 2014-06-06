@@ -4,6 +4,7 @@
 
 #include "bfcp/BFCPMessage.h"
 #include "websocketconnection.h"
+#include <pthread.h>
 #include <vector>
 #include <string>
 
@@ -13,7 +14,7 @@ class BFCPUser
 public:
 	BFCPUser(int userId, int conferenceId);
 	~BFCPUser();
-	
+
 	int GetUserId();
 	void SetChair();
 	void UnsetChair();
@@ -40,7 +41,7 @@ private:
 	// The list of floors the user has subscribed to via FloorQuery request.
 	// Note that just the floors within the last received FloorQuery are considered.
 	std::vector<int> queriedFloorIds;
-
+	// Mutex for blocking access to the transport.
 	pthread_mutex_t mutex;
 };
 
