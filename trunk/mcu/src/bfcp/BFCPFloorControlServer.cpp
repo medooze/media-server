@@ -476,11 +476,11 @@ void BFCPFloorControlServer::UserDisconnected(int userId, bool closedByServer)
 
 	// If the server has disconnected the user then do nothing (already done).
 	if (closedByServer) {
-		::Log("BFCPFloorControlServer::UserDisconnected() | user '%d' disconnected by the server from conference '%d':\n", userId, this->conferenceId);
+		::Log("BFCPFloorControlServer::UserDisconnected() | user '%d' disconnected by the server from conference '%d'\n", userId, this->conferenceId);
 		return;
 	}
 
-	::Log("BFCPFloorControlServer::UserDisconnected() | user '%d' disconnected from conference '%d':\n", userId, this->conferenceId);
+	::Log("BFCPFloorControlServer::UserDisconnected() | user '%d' disconnected from conference '%d'\n", userId, this->conferenceId);
 
 	// Remove the transport of the user (so we detect it as disconnected).
 	user->UnsetTransport();
