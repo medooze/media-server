@@ -311,6 +311,12 @@ int VNCViewer::End()
         if (client->serverHost)		free(client->serverHost);
         if (client->destHost)		free(client->destHost);
         if (client->clientAuthSchemes)	free(client->clientAuthSchemes);
+
+	//Check if it already has allocated memory
+	if (client->frameBuffer)
+		//Clean it
+		free(client->frameBuffer);
+
 	//Free client
 	free(client);
 
