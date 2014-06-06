@@ -700,7 +700,7 @@ VNCServer::Client::Client(int id,VNCServer* server)
 	cl->copyDX = 0;
 	cl->copyDY = 0;
 
-	cl->modifiedRegion = sraRgnCreateRect(0,0,screen->width,screen->height);
+	cl->modifiedRegion = NULL;
 
 	INIT_MUTEX(cl->updateMutex);
 	INIT_COND(cl->updateCond);
@@ -800,9 +800,9 @@ VNCServer::Client::~Client()
 
 	if (cl->screen->pointerClient == cl) cl->screen->pointerClient = NULL;
 
-	sraRgnDestroy(cl->modifiedRegion);
-	sraRgnDestroy(cl->requestedRegion);
-	sraRgnDestroy(cl->copyRegion);
+	if (cl->modifiedRegion) sraRgnDestroy(cl->modifiedRegion);
+	if (cl->requestedRegion) sraRgnDestroy(cl->requestedRegion);
+	if (cl->copyRegion) sraRgnDestroy(cl->copyRegion);
 
 	if (cl->translateLookupTable) free(cl->translateLookupTable);
 
@@ -988,6 +988,9 @@ int VNCServer::Client::Run()
 
 	//Lock
 	LOCK(cl->updateMutex);
+
+	//Set new modified region
+	cl->modifiedRegion = sraRgnCreateRect(0,0,cl->screen->width,cl->screen->height);
 	
 	//Until ended
 	while (!wait.IsCanceled())
@@ -1078,6 +1081,15 @@ int VNCServer::Client::Run()
 
 void VNCServer::Client::Update()
 {
+	//Check if we are already connected
+	if (!ws)
+	{
+		//Error
+		Error("-VNCServer::Client::Update not connected [this:%p]\n",this);
+		//Exit
+		return;
+	}
+	//Debug
 	Debug("-VNCServer::Client::Update [buffer:%d]\n",ws->GetWriteBufferLength());
 	//Check if write buffer is empty before sending anything
 	if (ws->IsWriteBufferEmtpy())
