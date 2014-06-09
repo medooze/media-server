@@ -219,6 +219,16 @@ RTPSession::~RTPSession()
 		srtp_dealloc(recvSRTPSessionRTX);
 	if (cname)
 		free(cname);
+	//Empty queue
+	FlushRTXPackets();
+	
+}
+
+void RTPSession::FlushRTXPackets()
+{
+	//Block
+	rtxUse.WaitUnusedAndLock();
+
 	//Delete rtx packets
 	for (RTPOrderedPackets::iterator it = rtxs.begin(); it!=rtxs.end();++it)
 	{
@@ -227,6 +237,12 @@ RTPSession::~RTPSession()
 		//Delete object
 		delete(pkt);
 	}
+	
+	//Clear list
+	rtxs.clear();
+
+	//Unlock
+	rtxUse.Unlock();
 }
 
 void RTPSession::SetSendingRTPMap(RTPMap &map)
@@ -2095,6 +2111,8 @@ int RTPSession::RequestFPU()
 	packets.Reset();
 	//Do not wait until next RTCP SR
 	packets.SetMaxWaitTime(0);
+	//Disable NACK
+	isNACKEnabled = false;
 	//request FIR
 	SendFIR();
 	//Update last request FPU
@@ -2179,11 +2197,19 @@ void RTPSession::ReSendPacket(int seq)
 	{
 		//Get packet
 		RTPTimedPacket* packet = it->second;
-		//Re send pacekt
+		//If has extensions
+		if (packet->GetX())
+		{
+			//Calculate absolute send time field (convert ms to 24-bit unsigned with 18 bit fractional part.
+			// Encoding: Timestamp is in seconds, 24 bit 6.18 fixed point, yielding 64s wraparound and 3.8us resolution (one increment for each 477 bytes going out on a 1Gbps interface).
+			DWORD abs = ((getTimeMS() << 18) / 1000) & 0x00ffffff;
+			//Overwrite it
+			set3(packet->GetData(),sizeof(rtp_hdr_t)+sizeof(rtp_hdr_ext_t),abs);
+		}
+		//Re send packet
 		sendto(simSocket,packet->GetData(),packet->GetSize(),0,(sockaddr *)&sendAddr,sizeof(struct sockaddr_in));
 		Debug("-RTPSession::ReSendPacket() | %d %d\n",seq,ext);
 	} else {
-		Debug("-RTPSession::ReSendPacket() | %d %d not found first %d sending intra instead\n",seq,ext,rtxs.size() ?  rtxs.begin()->first : 0);
 		//Check if got listener
 		if (listener)
 			//Request a I frame
