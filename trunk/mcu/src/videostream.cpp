@@ -565,6 +565,11 @@ int VideoStream::SendVideo()
 			//Cap it
 			sendingTime = frameTime/1000;
 
+		//If it was a I frame
+		if (videoFrame->IsIntra())
+			//Clean rtp rtx buffer
+			rtp.FlushRTXPackets();
+
 		//Send it smoothly
 		smoother.SendFrame(videoFrame,sendingTime);
 

@@ -94,6 +94,7 @@ public:
 	int SetRemoteSTUNCredentials(const char* username, const char* pwd);
 	int SetProperties(const Properties& properties);
 	int RequestFPU();
+	void FlushRTXPackets();
 
 	int SendTempMaxMediaStreamBitrateNotification(DWORD bitrate,DWORD overhead);
 

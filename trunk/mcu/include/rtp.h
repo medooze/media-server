@@ -385,6 +385,14 @@ public:
 		cloned->SetPayload(GetMediaData(),GetMediaLength());
 		//Set time
 		cloned->SetTime(GetTime());
+		//Check if we have extension
+		if (HasAbsSentTime())
+			//Set abs time
+			cloned->SetAbsSentTime(GetAbsSendTime());
+		//Check if we have extension
+		if (HasTimeOffeset())
+			//Set abs time
+			cloned->SetAbsSentTime(GetTimeOffset());
 		//Return it
 		return cloned;
 	}
