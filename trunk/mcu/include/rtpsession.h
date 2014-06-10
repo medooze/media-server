@@ -110,7 +110,7 @@ private:
 	int  ReadRTP();
 	int  ReadRTCP();
 	void ProcessRTCPPacket(RTCPCompoundPacket *packet);
-	void ReSendPacket(int seq);
+	int ReSendPacket(int seq);
 	int Run();
 private:
 	static  void* run(void *par);
@@ -152,7 +152,6 @@ private:
 	char*	iceLocalUsername;
 	char*	iceLocalPwd;
 	pthread_t thread;
-	pthread_mutex_t mutex;
 
 	//Tipos
 	int 	sendType;
@@ -161,11 +160,13 @@ private:
 	sockaddr_in sendAddr;
 	sockaddr_in sendRtcpAddr;
 	BYTE 	sendPacket[MTU+SRTP_MAX_TRAILER_LEN] ALIGNEDTO32;
-	WORD    sendSeq;
+	DWORD   sendExtSeq;
+	DWORD	sendCycles;
 	DWORD   sendTime;
 	DWORD	sendLastTime;
 	DWORD	sendSSRC;
 	DWORD	sendSR;
+	Mutex	sendMutex;
 
 	//Recepcion
 	BYTE	recBuffer[MTU+SRTP_MAX_TRAILER_LEN] ALIGNEDTO32;
@@ -217,7 +218,6 @@ private:
 	bool			useAbsTime;
 
 	RTPOrderedPackets	rtxs;
-	Use			rtxUse;
 };
 
 #endif

@@ -59,4 +59,64 @@ private:
 
 };
 
+
+class Mutex
+{
+public:
+	Mutex()
+	{
+		pthread_mutex_init(&mutex,NULL);
+	};
+
+	Mutex(int recursive)
+	{
+		if (recursive)
+		{
+			//Crete recursive mutex
+			pthread_mutexattr_t   mta;
+			pthread_mutexattr_init(&mta);
+			pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_RECURSIVE_NP);
+			pthread_mutex_init(&mutex, &mta);
+		} else {
+			pthread_mutex_init(&mutex,NULL);
+		}
+	};
+
+	~Mutex()
+	{
+		pthread_mutex_destroy(&mutex);
+	};
+
+	void Lock()
+	{
+		pthread_mutex_lock(&mutex);
+	};
+
+	void Unlock()
+	{
+		pthread_mutex_unlock(&mutex);
+	};
+
+private:
+	pthread_mutex_t	mutex;
+};
+
+class  ScopedLock
+{
+public:
+	ScopedLock(Mutex &m) : mutex(m)
+	{
+		//Lock it
+		mutex.Lock();
+	}
+
+	~ScopedLock()
+	{
+		//Unlock it
+		mutex.Unlock();
+	}
+	
+private:
+	Mutex &mutex;
+};
 #endif
