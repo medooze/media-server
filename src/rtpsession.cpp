@@ -1003,7 +1003,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 		ret = !sendto(simSocket,sendPacket,len,0,(sockaddr *)&sendAddr,sizeof(struct sockaddr_in));
 
 	//Get time for packets to discard
-	QWORD until = getTime()/1000 - 2000;
+	QWORD until = getTime()/1000 - fmin(rtt*2,300);
 	//Delete old packets
 	RTPOrderedPackets::iterator it = rtxs.begin();
 	//Until the end
@@ -2247,8 +2247,14 @@ int RTPSession::ReSendPacket(int seq)
 			err_status_t err = srtp_protect(sendSRTPSession,data,&len);
 			//Check error
 			if (err!=err_status_ok)
+			{
+				//Check if got listener
+				if (listener)
+					//Request a I frame
+					listener->onFPURequested(this);
 				//Nothing
-				return Error("-RTPSession::ReSendPacket() | Error protecting RTP packet [%d]\n",err);
+				return Error("-RTPSession::ReSendPacket() | Error protecting RTP packet [%d] sending intra instead\n",err);
+			}
 		}
 
 		//Check len
