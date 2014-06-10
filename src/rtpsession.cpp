@@ -103,7 +103,8 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) : dtls(*this)
 	simRtcpSocket = FD_INVALID;
 	simPort = 0;
 	simRtcpPort = 0;
-	sendSeq = 0;
+	sendExtSeq = 0;
+	sendCycles = 0;
 	sendTime = random();
 	sendLastTime = 0;
 	useAbsTime = false;
@@ -226,8 +227,8 @@ RTPSession::~RTPSession()
 
 void RTPSession::FlushRTXPackets()
 {
-	//Block
-	rtxUse.WaitUnusedAndLock();
+	//Lock mutex inside the method
+	ScopedLock method(sendMutex);
 
 	//Delete rtx packets
 	for (RTPOrderedPackets::iterator it = rtxs.begin(); it!=rtxs.end();++it)
@@ -240,9 +241,6 @@ void RTPSession::FlushRTXPackets()
 	
 	//Clear list
 	rtxs.clear();
-
-	//Unlock
-	rtxUse.Unlock();
 }
 
 void RTPSession::SetSendingRTPMap(RTPMap &map)
@@ -788,9 +786,12 @@ int RTPSession::End()
 
 int RTPSession::SendPacket(RTCPCompoundPacket &rtcp)
 {
-	BYTE data[MTU+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
+	BYTE data[RTPPAYLOADSIZE+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
 	DWORD size = RTPPAYLOADSIZE;
 	int ret = 0;
+
+	//Lock muthed inside  method
+	ScopedLock method(sendMutex);
 
 	//Check if we have sendinf ip address
 	if (sendRtcpAddr.sin_addr.s_addr == INADDR_ANY && !muxRTCP)
@@ -849,6 +850,8 @@ int RTPSession::SendPacket(RTPPacket &packet)
 
 int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 {
+	int ret = 0;
+
 	//Check if we have sendinf ip address
 	if (sendAddr.sin_addr.s_addr == INADDR_ANY)
 	{
@@ -917,7 +920,12 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 	headers->ts=htonl(sendLastTime);
 
 	//Incrementamos el numero de secuencia
-	headers->seq=htons(sendSeq++);
+	headers->seq=htons(sendExtSeq++);
+
+	//Check seq wrap
+	if (sendExtSeq==0)
+		//Inc cycles
+		sendCycles++;
 
 	//La marca de fin de frame
 	headers->m=packet.GetMark();
@@ -959,60 +967,69 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 	//Set pateckt length
 	int len = packet.GetMediaLength()+ini;
 
+	//Block
+	sendMutex.Lock();
+
+	//Add it rtx queue before encripting
+	if (useNACK)
+	{
+		//Create new pacekt
+		RTPTimedPacket *rtx = new RTPTimedPacket(media,sendPacket,len);
+		//Set cycles
+		rtx->SetSeqCycles(sendCycles);
+		//Add it to que
+		rtxs[rtx->GetExtSeqNum()] = rtx;
+	}
+
 	//Check if we ar encripted
 	if (encript)
 	{
 		//Check  session
-		if (!sendSRTPSession)
-			return Error("-RTPSession::SendPacket() | no sendSRTPSession\n");
-		//Encript
-		err_status_t err = srtp_protect(sendSRTPSession,sendPacket,&len);
-		//Check error
-		if (err!=err_status_ok)
-			//Nothing
-			return Error("-RTPSession::SendPacket() | Error protecting RTP packet [%d]\n",err);
+		if (sendSRTPSession)
+		{
+			//Encript
+			err_status_t err = srtp_protect(sendSRTPSession,sendPacket,&len);
+			//Check error
+			if (err!=err_status_ok)
+				//Don't send
+				len = Error("-RTPSession::SendPacket() | Error protecting RTP packet [%d]\n",err);
+		} else {
+			//Error
+			Error("-RTPSession::SendPacket() | no sendSRTPSession\n");
+		}
 	}
 
-	//Send packet
-	int ret = sendto(simSocket,sendPacket,len,0,(sockaddr *)&sendAddr,sizeof(struct sockaddr_in));
+	if (len)
+		ret = !sendto(simSocket,sendPacket,len,0,(sockaddr *)&sendAddr,sizeof(struct sockaddr_in));
+
+	//Get time for packets to discard
+	QWORD until = getTime()/1000 - 2000;
+	//Delete old packets
+	RTPOrderedPackets::iterator it = rtxs.begin();
+	//Until the end
+	while(it!=rtxs.end())
+	{
+		//Get pacekt
+		RTPTimedPacket *pkt = it->second;
+		//Check time
+		if (pkt->GetTime()>until)
+			//Keep the rest
+			break;
+		//DElete from queue and move next
+		rtxs.erase(it++);
+		//Delete object
+		delete(pkt);
+	}
 
 	//Inc stats
 	numSendPackets++;
 	totalSendBytes += packet.GetMediaLength();
 
-	//Add it rtx queue
-	if (useNACK)
-	{
-		//Create new pacekt
-		RTPTimedPacket *rtx = new RTPTimedPacket(media,sendPacket,len);
-		//Block
-		rtxUse.WaitUnusedAndLock();
-		//Add it to que
-		rtxs[rtx->GetExtSeqNum()] = rtx;
-		//Get time for packets to discard
-		QWORD until = getTime()/1000 - 2000;
-		//Delete old packets
-		RTPOrderedPackets::iterator it = rtxs.begin();
-		//Until the end
-		while(it!=rtxs.end())
-		{
-			//Get pacekt
-			RTPTimedPacket *pkt = it->second;
-			//Check time
-			if (pkt->GetTime()>until)
-				//Keep the rest
-				break;
-			//DElete from queue and move next
-			rtxs.erase(it++);
-			//Delete object
-			delete(pkt);
-		}
-		//Unlock
-		rtxUse.Unlock();
-	}
+	//Unlock
+	sendMutex.Unlock();
 
 	//Exit
-	return (ret>0);
+	return ret;
 }
 
 int RTPSession::ReadRTCP()
@@ -1176,10 +1193,8 @@ int RTPSession::ReadRTP()
 			//Clean response
 			delete(resp);
 
-			//If set
-			//if (stun->HasAttribute(STUNMessage::Attribute::UseCandidate))
-			//Check if ip's are different
-			if (recIP!=from_addr.sin_addr.s_addr)
+			//If use candidate to a differentIP  is set or we don't have another IP address
+			if (recIP==INADDR_ANY || (recIP!=from_addr.sin_addr.s_addr && stun->HasAttribute(STUNMessage::Attribute::UseCandidate)))
 			{
 				//Bind it to received packet ip
 				recIP = from_addr.sin_addr.s_addr;
@@ -2181,13 +2196,13 @@ void RTPSession::onTargetBitrateRequested(DWORD bitrate)
 	delete(rtcp);
 }
 
-void RTPSession::ReSendPacket(int seq)
+int RTPSession::ReSendPacket(int seq)
 {
-	//Lock
-	rtxUse.IncUse();
+	//Lock send lock inside the method
+	ScopedLock method(sendMutex);
 
 	//Calculate ext seq number
-	DWORD ext = ((DWORD)recCycles)<<16 | seq;
+	DWORD ext = ((DWORD)sendCycles)<<16 | seq;
 
 	//Find packet to retransmit
 	RTPOrderedPackets::iterator it = rtxs.find(ext);
@@ -2197,28 +2212,61 @@ void RTPSession::ReSendPacket(int seq)
 	{
 		//Get packet
 		RTPTimedPacket* packet = it->second;
-		//If has extensions
-		if (packet->GetX())
+		
+		//Data
+		BYTE data[RTPPAYLOADSIZE+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
+		DWORD size = RTPPAYLOADSIZE;
+		int len = packet->GetSize();
+
+		//Check size
+		if (len>size)
+			//Error
+			return Error("-RTPSession::ReSendPacket() | so enought size for copying pacekt[len:%d]\n",len);
+
+		//Copy
+		memcpy(data,packet->GetData(),packet->GetSize());
+
+		//If using abs-time
+		if (useAbsTime)
 		{
 			//Calculate absolute send time field (convert ms to 24-bit unsigned with 18 bit fractional part.
 			// Encoding: Timestamp is in seconds, 24 bit 6.18 fixed point, yielding 64s wraparound and 3.8us resolution (one increment for each 477 bytes going out on a 1Gbps interface).
 			DWORD abs = ((getTimeMS() << 18) / 1000) & 0x00ffffff;
 			//Overwrite it
-			set3(packet->GetData(),sizeof(rtp_hdr_t)+sizeof(rtp_hdr_ext_t),abs);
+			set3(data,sizeof(rtp_hdr_t)+sizeof(rtp_hdr_ext_t)+1,abs);
 		}
-		//Re send packet
-		sendto(simSocket,packet->GetData(),packet->GetSize(),0,(sockaddr *)&sendAddr,sizeof(struct sockaddr_in));
-		Debug("-RTPSession::ReSendPacket() | %d %d\n",seq,ext);
+
+		//Check if we ar encripted
+		if (encript)
+		{
+			//Check  session
+			if (!sendSRTPSession)
+				//Error
+				return Error("-RTPSession::ReSendPacket() | no sendSRTPSession\n");
+			//Encript
+			err_status_t err = srtp_protect(sendSRTPSession,data,&len);
+			//Check error
+			if (err!=err_status_ok)
+				//Nothing
+				return Error("-RTPSession::ReSendPacket() | Error protecting RTP packet [%d]\n",err);
+		}
+
+		//Check len
+		if (len)
+		{
+			Debug("-RTPSession::ReSendPacket() | %d %d\n",seq,ext);
+			//Send packet
+			sendto(simSocket,data,len,0,(sockaddr *)&sendAddr,sizeof(struct sockaddr_in));
+		}
 	} else {
+		Debug("-RTPSession::ReSendPacket() | %d:%d %d not found first %d sending intra instead\n",sendCycles,seq,ext,rtxs.size() ?  rtxs.begin()->first : 0);
 		//Check if got listener
 		if (listener)
 			//Request a I frame
 			listener->onFPURequested(this);
 	}
-
-	//Unlock
-	rtxUse.DecUse();
 }
+
 int RTPSession::SendTempMaxMediaStreamBitrateNotification(DWORD bitrate,DWORD overhead)
 {
 	//Create rtcp sender retpor
