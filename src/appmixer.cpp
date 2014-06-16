@@ -374,7 +374,7 @@ bool  AppMixer::Presenter::ReadFromRFBServer(char *out, unsigned int size)
 	wait.Lock();
 
 	//Check if we have enought data
-	while(buffer.length()<num)
+	while(buffer.length()<num && !wait.IsCanceled())
 	{
 		//Wait for mor data
 		if (!wait.PreLockedWaitSignal(0))
