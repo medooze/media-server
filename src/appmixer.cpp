@@ -255,6 +255,8 @@ void AppMixer::onClose(WebSocket *ws)
 		
 		//End it
 		wsp->End();
+		//Delete it
+		delete(wsp);
 	}
 
 	//Log
@@ -288,6 +290,8 @@ void AppMixer::onError(WebSocket *ws)
 
 		//End it
 		wsp->End();
+		//Delete it
+		delete(wsp);
 	}
 
 	Log("<AppMixer::onError\n");
