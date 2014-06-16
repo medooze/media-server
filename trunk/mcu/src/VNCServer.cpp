@@ -1091,10 +1091,8 @@ void VNCServer::Client::Update()
 	}
 	//Debug
 	Debug("-VNCServer::Client::Update [buffer:%d]\n",ws->GetWriteBufferLength());
-	//Check if write buffer is empty before sending anything
-	if (ws->IsWriteBufferEmtpy())
-		//Signal cond
-		TSIGNAL(cl->updateCond);
+	//Signal cond
+	TSIGNAL(cl->updateCond);
 }
 
 void VNCServer::Client::ResizeScreen()

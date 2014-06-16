@@ -1893,7 +1893,13 @@ int MultiConf::WebsocketConnectRequest(WebSocket *ws,int partId,const std::strin
 	if (!partId) return appMixer.WebsocketConnectRequest(0,ws,0);
 
 	//Get participant lock
-	participantsLock.IncUse();
+	if (!participantsLock.IncUse(2000))
+	{
+		//Reject
+		ws->Reject(408,"Timout locking participant list");
+		//Error
+		return Error("Timout locking participant list");
+	}
 
 	//Get participant
 	Participants::iterator it = participants.find(partId);

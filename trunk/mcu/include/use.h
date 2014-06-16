@@ -29,6 +29,19 @@ public:
 		pthread_mutex_unlock(&lock);
 	}
 
+	bool IncUse(DWORD timeout)
+	{
+		timespec ts;
+		calcTimout(&ts,timeout);
+		if (!pthread_mutex_lock(&lock,&ts))
+			return false;
+		pthread_mutex_lock(&mutex);
+		cont ++;
+		pthread_mutex_unlock(&mutex);
+		pthread_mutex_unlock(&lock);
+		return true;
+	}
+
 	void DecUse()
 	{
 		pthread_mutex_lock(&mutex);
@@ -43,6 +56,26 @@ public:
 		pthread_mutex_lock(&mutex);
 		while(cont)
 			pthread_cond_wait(&cond,&mutex);
+	};
+
+	void WaitUnusedAndLock(DWORD timeout)
+	{
+		timespec ts;
+
+		pthread_mutex_lock(&lock);
+		pthread_mutex_lock(&mutex);
+		//Calculate timeout
+		calcTimout(&ts,timeout);
+		while(cont)
+		{
+			if (pthread_cond_timedwait(&cond,&mutex,&ts))
+			{
+				pthread_mutex_unlock(&mutex);
+				pthread_mutex_unlock(&lock);
+				return false;
+			}
+		}
+		return true;
 	};
 
 	void Unlock()
