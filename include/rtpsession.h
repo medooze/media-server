@@ -72,7 +72,7 @@ public:
 	void SetReceivingRTPMap(RTPMap &map);
 	bool SetSendingCodec(DWORD codec);
 
-	int SendEmptyPacket();
+	void SendEmptyPacket();
 	int SendPacket(RTPPacket &packet,DWORD timestamp);
 	int SendPacket(RTPPacket &packet);
 
