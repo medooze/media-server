@@ -614,26 +614,23 @@ int RTPSession::SetRemotePort(char *ip,int sendPort)
 		//One more than rtp
 		sendRtcpAddr.sin_port 	= htons(sendPort+1);
 
-	//Open rtp and rtcp ports
-	sendto(simSocket,rtpEmpty,sizeof(rtpEmpty),0,(sockaddr *)&sendAddr,sizeof(struct sockaddr_in));
+	//Open ports
+	SendEmptyPacket();
 
 	//Y abrimos los sockets
 	return 1;
 }
 
-int RTPSession::SendEmptyPacket()
+void RTPSession::SendEmptyPacket()
 {
-	//Check if we have sendinf ip address
-	if (sendAddr.sin_addr.s_addr == INADDR_ANY)
-		//Exit
-		return 0;
-
-	//Open rtp and rtcp ports
+	//Open rtp
 	sendto(simSocket,rtpEmpty,sizeof(rtpEmpty),0,(sockaddr *)&sendAddr,sizeof(struct sockaddr_in));
-
-	//ok
-	return 1;
+	//If not muxing
+	if (!muxRTCP)	
+		//Send
+		sendto(simRtcpSocket,rtpEmpty,sizeof(rtpEmpty),0,(sockaddr *)&sendRtcpAddr,sizeof(struct sockaddr_in));
 }
+
 
 void RTPSession::SetRemoteRateEstimator(RemoteRateEstimator* estimator)
 {
@@ -805,9 +802,9 @@ int RTPSession::SendPacket(RTCPCompoundPacket &rtcp)
 	//Serialize
 	int len = rtcp.Serialize(data,size);
 	//Check result
-	if (!len)
+	if (len<=0 || len>size)
 		//Error
-		return Error("-RTPSession::SendPacket() | Error serializing RTCP packet\n");
+		return Error("-RTPSession::SendPacket() | Error serializing RTCP packet [len:%d]\n",len);
 
 	//If encripted
 	if (encript)
@@ -815,6 +812,7 @@ int RTPSession::SendPacket(RTCPCompoundPacket &rtcp)
 		//Check  session
 		if (!sendSRTPSession)
 			return Error("-RTPSession::SendPacket() | no sendSRTPSession\n");
+		Debug("-srtp_protect_rtcp for %s [len:%d,size:%d]\n",MediaFrame::TypeToString(media),len,size);
 		//Protect
 		err_status_t err = srtp_protect_rtcp(sendSRTPSession,data,&len);
 		//Check error
@@ -882,8 +880,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 				//Add username
 				request->AddUsernameAttribute(iceLocalUsername,iceRemoteUsername);
 				//Add other attributes
-				request->AddAttribute(STUNMessage::Attribute::IceControlled,(QWORD)-1);
-				request->AddAttribute(STUNMessage::Attribute::UseCandidate);
+				request->AddAttribute(STUNMessage::Attribute::IceControlled,(QWORD)1);
 				request->AddAttribute(STUNMessage::Attribute::Priority,(DWORD)33554431);
 				//Serialize and autenticate
 				int len = request->AuthenticatedFingerPrint(aux,size,iceRemotePwd);
@@ -1221,8 +1218,7 @@ int RTPSession::ReadRTP()
 					//Add username
 					request->AddUsernameAttribute(iceLocalUsername,iceRemoteUsername);
 				//Add other attributes
-				request->AddAttribute(STUNMessage::Attribute::IceControlled,(QWORD)-1);
-				request->AddAttribute(STUNMessage::Attribute::UseCandidate);
+				request->AddAttribute(STUNMessage::Attribute::IceControlled,(QWORD)1);
 				request->AddAttribute(STUNMessage::Attribute::Priority,(DWORD)33554431);
 
 				//Create  request

@@ -14,7 +14,7 @@ RTPParticipant::RTPParticipant(DWORD partId,const std::wstring &token,const std:
 	text(NULL),
 	estimator(tag)
 {
-	Log("-RTPParticipant [id:%d,tag:%ls]\n",partId,tag.c_str());
+	Log("-RTPParticipant [id:%d,token:%ls,tag:%ls]\n",partId,token.c_str(),tag.c_str());
 }
 
 RTPParticipant::~RTPParticipant()
