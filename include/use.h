@@ -1,6 +1,7 @@
 #ifndef _USE_H_
 #define _USE_H_
 #include <pthread.h>
+#include "tools.h"
 
 class Use
 {
@@ -33,7 +34,7 @@ public:
 	{
 		timespec ts;
 		calcTimout(&ts,timeout);
-		if (!pthread_mutex_lock(&lock,&ts))
+		if (!pthread_mutex_timedlock(&lock,&ts))
 			return false;
 		pthread_mutex_lock(&mutex);
 		cont ++;
@@ -58,7 +59,7 @@ public:
 			pthread_cond_wait(&cond,&mutex);
 	};
 
-	void WaitUnusedAndLock(DWORD timeout)
+	bool WaitUnusedAndLock(DWORD timeout)
 	{
 		timespec ts;
 
