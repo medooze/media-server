@@ -252,6 +252,9 @@ void AppMixer::onClose(WebSocket *ws)
 
 		//Unlock
 		use.Unlock();
+		
+		//End it
+		wsp->End();
 	}
 
 	//Log
@@ -282,6 +285,9 @@ void AppMixer::onError(WebSocket *ws)
 
 		//Unlock
 		use.Unlock();
+
+		//End it
+		wsp->End();
 	}
 
 	Log("<AppMixer::onError\n");
@@ -374,7 +380,7 @@ bool  AppMixer::Presenter::ReadFromRFBServer(char *out, unsigned int size)
 	wait.Lock();
 
 	//Check if we have enought data
-	while(buffer.length()<num && !wait.IsCanceled())
+	while(buffer.length()<num)
 	{
 		//Wait for mor data
 		if (!wait.PreLockedWaitSignal(0))
