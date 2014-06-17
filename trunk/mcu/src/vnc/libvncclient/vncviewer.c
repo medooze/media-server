@@ -31,6 +31,7 @@
 #include <time.h>
 #include <rfb/rfbclient.h>
 #include "tls.h"
+#include "assertions.h"
 
 static void Dummy(rfbClient* client) {
 }
@@ -122,13 +123,13 @@ rfbClient* rfbGetClient(int bitsPerSample,int samplesPerPixel,
 
   client->destHost = NULL;
   client->destPort = 5900;
-  
+
   client->CurrentKeyboardLedState = 0;
   client->HandleKeyboardLedState = (HandleKeyboardLedStateProc)DummyPoint;
 
-  /* default: use complete frame buffer */ 
+  /* default: use complete frame buffer */
   client->updateRect.x = -1;
- 
+
   client->format.bitsPerPixel = bytesPerPixel*8;
   client->format.depth = bitsPerSample*samplesPerPixel;
   client->appData.requestedDepth=client->format.depth;
@@ -366,9 +367,9 @@ void rfbClientCleanup(rfbClient* client) {
   FreeTLS(client);
 
   if (client->sock >= 0)
-    close(client->sock);
+    MCU_CLOSE(client->sock);
   if (client->listenSock >= 0)
-    close(client->listenSock);
+    MCU_CLOSE(client->listenSock);
   free(client->desktopName);
   free(client->serverHost);
   if (client->destHost)
