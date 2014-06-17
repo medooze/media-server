@@ -8,7 +8,7 @@ OPTS+= -fPIC -DPIC -msse -msse2 -msse3 -DSPX_RESAMPLE_EXPORT= -DRANDOM_PREFIX=mc
 #DEBUG
 ifeq ($(DEBUG),yes)
 	TAG=debug
-	OPTS+= -g -O0
+	OPTS+= -g -O0 -m32 -g -fno-inline -fno-omit-frame-pointer
 else
 	OPTS+= -g -O4 -fexpensive-optimizations -funroll-loops
 	TAG=release
