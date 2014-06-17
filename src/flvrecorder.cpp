@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "log.h"
+#include "assertions.h"
 #include "flvrecorder.h"
 
 
@@ -110,7 +111,7 @@ bool FLVRecorder::Record()
 	//Allocate memory to store data
 	DWORD size = meta->GetSize();
 	BYTE *data = (BYTE*)malloc(size);
-	
+
 	//Serialize meta
 	DWORD len = meta->Serialize(data,size);
 
@@ -216,12 +217,12 @@ bool FLVRecorder::Set(RTMPMetaData *setMetaData)
 	if (!param->CheckType(AMFData::EcmaArray))
 		//Exit
 		return false;
-	
+
 	//Get amf object
 	AMFEcmaArray *arr = (AMFEcmaArray*)param;
 	//Get metadata properties
 	AMFEcmaArray *prop = (AMFEcmaArray*)meta->GetParams(1);
-	
+
 	//Get width
 	if (arr->HasProperty(L"width"))
 		prop->AddProperty(L"width",arr->GetProperty(L"width"));
@@ -255,7 +256,7 @@ bool FLVRecorder::Set(RTMPMetaData *setMetaData)
 	//Get videodatarate
 	if (arr->HasProperty(L"videodatarate"))
 		prop->AddProperty(L"videodatarate",arr->GetProperty(L"videodatarate"));
-	
+
 	return true;
 }
 
@@ -314,9 +315,9 @@ bool FLVRecorder::Close()
         if (fd<0)
                 //Error
                 return false;
-	
+
 	//Close file
-	close(fd);
+	MCU_CLOSE(fd);
 
 	//We are not playing or recording
 	fd = -1;

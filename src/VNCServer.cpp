@@ -1,10 +1,11 @@
-/* 
+/*
  * File:   VNCServer.cpp
  * Author: Sergio
- * 
+ *
  * Created on 4 de diciembre de 2013, 15:51
  */
 #include "log.h"
+#include "assertions.h"
 #include "errno.h"
 #include "VNCServer.h"
 
@@ -54,7 +55,7 @@ extern "C"
 		sprintf(name,"/tmp/vnc_out_%p.raw",cl);
 		int fd = open(name,O_CREAT|O_WRONLY|O_APPEND, S_IRUSR | S_IWUSR, 0644);
 		write(fd,buf,len);
-		close(fd);
+		MCU_CLOSE(fd);
 */
 		Debug("-rfbWriteExact [%d]\n",len);
 		return ((VNCServer::Client*)(cl->clientData))->Write(buf,len);
@@ -243,7 +244,7 @@ int VNCServer::Init(Listener* listener)
 	this->listener = listener;
 }
 
-int VNCServer::SetEditor(int editorId) 
+int VNCServer::SetEditor(int editorId)
 {
 	Debug(">VNCServer::SetEditor [partId:%d]\n",editorId);
 
@@ -310,13 +311,13 @@ int VNCServer::Connect(int partId,WebSocket *socket)
 		//Append to client list
 		clients[partId] = client;
 	}
-	
+
 	//Unlock clients list
 	use.Unlock();
 
 	//Accept incoming connection and add us as listeners
 	socket->Accept(this);
-	
+
 	//Connect to socket
 	return client->Connect(socket);
 }
@@ -332,7 +333,7 @@ int VNCServer::Disconnect(WebSocket *socket)
 	if (!client)
 		//Nothing more
 		return 0;
-	
+
 	//Lock
 	use.WaitUnusedAndLock();
 	//Remove it
@@ -380,7 +381,7 @@ int VNCServer::SetSize(int width,int height)
 	if (width*height>4096*3072)
 		//Error
 		return Error("-Size bigger than max size allowed (4096*3072)\n");
-	
+
 	//Lock
 	use.WaitUnusedAndLock();
 
@@ -400,7 +401,7 @@ int VNCServer::SetSize(int width,int height)
 		if (screen->width>width)
 			//Old one biggerC than this one so cap it
 			n = width*4;
-	
+
 		//Copy each line
 		for (int i=0;i<height && i<screen->height; ++i)
 			//Copy
@@ -420,7 +421,7 @@ int VNCServer::SetSize(int width,int height)
 	for (Clients::iterator it=clients.begin(); it!=clients.end(); ++it)
 		//Update it
 		it->second->ResizeScreen();
-	
+
 	//Unlock
 	use.Unlock();
 
@@ -439,7 +440,7 @@ int VNCServer::FrameBufferUpdateDone()
 	for (Clients::iterator it=clients.begin(); it!=clients.end(); ++it)
 		//Update it
 		it->second->Update();
-	
+
 	//Unlock
 	use.Unlock();
 }
@@ -486,7 +487,7 @@ int VNCServer::FrameBufferUpdate(BYTE *data,int x,int y,int width,int height)
 int VNCServer::CopyRect(BYTE *data,int x, int y, int width, int height, int dest_x, int dest_y)
 {
 	Debug("-CopyRect from [%d,%d] to [%d,%d] size [%d,%d]\n",x,y,dest_x,dest_y,width,height);
-	
+
 	//LOck
 	use.IncUse();
 
@@ -571,7 +572,7 @@ void VNCServer::onMouseEvent(int buttonMask, int x, int y, rfbClientRec* cl)
 
 void VNCServer::onUpdateDone(rfbClientRec* cl, int result)
 {
-	
+
 }
 
 
@@ -581,7 +582,7 @@ void VNCServer::onDisplay(rfbClientRec* cl)
 	Client *client = (Client *)cl->clientData;
 	//Get server
 	VNCServer* server  = client->GetServer();
-	
+
 	//Block use, so we cannot change framebuffer while sending frame buffer updates
 	Debug(">onDisplay\n");
 	server->use.IncUse();
@@ -936,7 +937,7 @@ int VNCServer::Client::Read(char *out, int size, int timeout)
 {
 	//Bytes read
 	int num = 0;
-	
+
 	//Debug(">Read requested:%d,buffered:%d\n",size,buffer.length());
 
 	//Lock
@@ -977,7 +978,7 @@ int VNCServer::Client::ProcessMessage()
 	while(buffer.length() && !wait.IsCanceled())
 		//Process message
 		rfbProcessClientMessage(cl);
-	
+
 	//OK
 	return 1;
 }
@@ -991,7 +992,7 @@ int VNCServer::Client::Run()
 
 	//Set new modified region
 	cl->modifiedRegion = sraRgnCreateRect(0,0,cl->screen->width,cl->screen->height);
-	
+
 	//Until ended
 	while (!wait.IsCanceled())
 	{
@@ -1021,7 +1022,7 @@ int VNCServer::Client::Run()
 				cl->modifiedRegion = sraRgnCreateRect(0,0,cl->screen->width,cl->screen->height);
 			}
 		*/
-			
+
 			//We need to update by default
 			bool haveUpdate = true;
 
@@ -1038,7 +1039,7 @@ int VNCServer::Client::Run()
 
 			//Clean modified region
 			sraRgnMakeEmpty(cl->modifiedRegion);
-				
+
 			//Unlock region
 			UNLOCK(cl->updateMutex);
 
@@ -1074,7 +1075,7 @@ int VNCServer::Client::Run()
 	UNLOCK(cl->updateMutex);
 
 	Log("<VNCServer::Client::Run [this:%p]\n",this);
-	
+
 	//OK
 	return 0;
 }

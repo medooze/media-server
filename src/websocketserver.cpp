@@ -2,12 +2,13 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <arpa/inet.h> 
+#include <arpa/inet.h>
 #include <errno.h>
 #include <sys/poll.h>
 #include <fcntl.h>
 #include "tools.h"
 #include "log.h"
+#include "assertions.h"
 #include "websocketserver.h"
 
 /************************
@@ -76,13 +77,13 @@ int WebSocketServer::Init(int port)
 
 /***************************
  * Run
- * 	Server running thread 
+ * 	Server running thread
  ***************************/
 int WebSocketServer::Run()
 {
 	sockaddr_in addr;
 	pollfd ufds[1];
-	
+
 init:
 	//Log
 	Log(">Run WebSocket Server [%p,port:%d]\n",this,serverPort);
@@ -137,7 +138,7 @@ init:
 				//Exit
 				break;
 			//Close socket just in case
-			close(server);
+			MCU_CLOSE(server);
 			//Invalidate
 			server = FD_INVALID;
 			//Re-init
@@ -154,7 +155,7 @@ init:
 				//Exit
 				break;
 			//Close socket just in case
-			close(server);
+			MCU_CLOSE(server);
 			//Invalidate
 			server = FD_INVALID;
 			//Re-init
@@ -174,7 +175,7 @@ init:
 				//Exit
 				break;
 			//Close socket just in case
-			close(server);
+			MCU_CLOSE(server);
 			//Invalidate
 			server = FD_INVALID;
 			//Re-init
@@ -237,7 +238,7 @@ void WebSocketServer::CleanZombies()
 
 	//Unlock list
 	pthread_mutex_unlock(&sessionMutex);
-	
+
 }
 
 /***********************
@@ -280,7 +281,7 @@ int WebSocketServer::End()
 	//Close server socket
 	shutdown(server,SHUT_RDWR);
 	//Will cause poll function to exit
-	close(server);
+	MCU_CLOSE(server);
 	//Invalidate
 	server = FD_INVALID;
 

@@ -1,10 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <log.h>
 #include <xmlrpc-c/abyss.h>
-#include "xmlrpcserver.h"
 #include <errno.h>
+#include "xmlrpcserver.h"
+#include "log.h"
+#include "assertions.h"
 
 #define ERRORMSG "MCU Error."
 #define SHUTDOWNMSG "Shutting down."
@@ -47,7 +48,7 @@ int XmlRpcServer::Start()
 
 	//And run
 	Run();
-	
+
 	return 1;
 }
 
@@ -90,7 +91,7 @@ int XmlRpcServer::Run()
 	{
 		//LOg
 		Log(">Run XML RPC Server [%s:%d]\n",inet_ntoa(addr.sin_addr),port);
-		
+
 		//Le pasamos como nombre un puntero a nosotros mismos
 		sprintf(name,"%p",this);
 
@@ -133,7 +134,7 @@ int XmlRpcServer::Run()
 	shutdown(server,SHUT_RDWR);
 
 	//Close it
-	close(server);
+	MCU_CLOSE(server);
 
 	return 1;
 }
@@ -150,11 +151,11 @@ int XmlRpcServer::Stop()
 
 	//Stop sercer
 	ServerTerminate(&srv);
-	
+
 	return 1;
 }
 /**************************************
-* AddHandler 
+* AddHandler
 *	A�ade un handler para una uri
 **************************************/
 int XmlRpcServer::AddHandler(std::string base,Handler* hnd)
@@ -209,9 +210,9 @@ int XmlRpcServer::DispatchRequest(TSession *ses)
 		//Exit
 		return 1;
 	}
-	
+
 	//Recorremos la lista
-	for (it=lstHandlers.rbegin();it!=lstHandlers.rend();it++)	
+	for (it=lstHandlers.rbegin();it!=lstHandlers.rend();it++)
 	{
 		//Si la uri empieza por la base del handler
 		if (uri.find((*it).first)==0)
@@ -282,7 +283,7 @@ int XmlRpcServer::SendResponse(TSession *r, short code, const char *msg, int len
 
 	//Escribimos la respuesta
 	ResponseWriteStart(r);
-	
+
 	//La mandamos
 	ResponseWriteBody(r,(char*)msg,length);
 
@@ -296,7 +297,7 @@ int XmlRpcServer::SendResponse(TSession *r, short code, const char *msg, int len
 * SendError
 *	Devuelve el html con el error
 **************************************/
-int XmlRpcServer::SendError(TSession * r, short code) 
+int XmlRpcServer::SendError(TSession * r, short code)
 {
 	Log("-XmlRpcServer::SendError [code:%d]\n",code);
 

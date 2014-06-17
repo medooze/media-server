@@ -7,12 +7,13 @@
 #include <errno.h>
 #include <stdio.h>
 #include "log.h"
+#include "assertions.h"
 #include "tools.h"
 #include "rtmphandshake.h"
 #include "rtmpconnection.h"
 
 /********************************
- * RTMP connection demultiplex buffers streams from incoming raw data 
+ * RTMP connection demultiplex buffers streams from incoming raw data
  * extracting the individual buffers and passes the message fragments
  * to the message layer.
  *******************************************************************/
@@ -96,7 +97,7 @@ void RTMPConnection::Start()
 {
 	//We are running
 	running = true;
-	
+
 	//Create thread
 	createPriorityThread(&thread,run,this,0);
 }
@@ -111,7 +112,7 @@ void RTMPConnection::Stop()
 		//Close socket
 		shutdown(socket,SHUT_RDWR);
 		//Will cause poll to return
-		close(socket);
+		MCU_CLOSE(socket);
 		//No socket
 		socket = FD_INVALID;
 	}
@@ -186,7 +187,7 @@ void * RTMPConnection::run(void *par)
 
 /***************************
  * Run
- * 	Server running thread 
+ * 	Server running thread
  ***************************/
 int RTMPConnection::Run()
 {
@@ -219,7 +220,7 @@ int RTMPConnection::Run()
 			//Check again
 			continue;
 
-		if (ufds[0].revents & POLLOUT) 
+		if (ufds[0].revents & POLLOUT)
 		{
 			//Write data buffer
 			DWORD len = SerializeChunkData(data,size);
@@ -231,12 +232,12 @@ int RTMPConnection::Run()
 				//Increase sent bytes
 				outBytes += len;
 			}
-		} 
+		}
 
-		if (ufds[0].revents & POLLIN) 
+		if (ufds[0].revents & POLLIN)
 		{
 			//Read data from connection
-			int len = read(socket,data,size);	
+			int len = read(socket,data,size);
 			if (len<=0)
 			{
 				//Error
@@ -258,7 +259,7 @@ int RTMPConnection::Run()
 				//Break on any error
 				break;
 			}
-		} 
+		}
 
 		if ((ufds[0].revents & POLLHUP) || (ufds[0].revents & POLLERR))
 		{
@@ -319,7 +320,7 @@ DWORD RTMPConnection::SerializeChunkData(BYTE *data,DWORD size)
 		//Get stream
 		RTMPChunkOutputStream* chunkOutputStream = it->second;
 
-		//Check it it has data pending	
+		//Check it it has data pending
 		while (chunkOutputStream->HasData())
 		{
 			//Check if we do not have enought space left for more
@@ -337,7 +338,7 @@ DWORD RTMPConnection::SerializeChunkData(BYTE *data,DWORD size)
 		}
 	}
 
-	
+
 end:
 	//Add size
 	bandSize += len;
@@ -348,7 +349,7 @@ end:
 	{
 		//Do not wait for write anymore
 		ufds[0].events = POLLIN | POLLERR | POLLHUP;
-		
+
 		//Check
 		if (elapsed)
 		{
@@ -369,11 +370,11 @@ end:
 			bandSize = 0;
 		}
 	}
-		
+
 	//Un Lock mutex
 	pthread_mutex_unlock(&mutex);
 
-	//Return chunks data length	
+	//Return chunks data length
 	return len;
 }
 
@@ -396,7 +397,7 @@ void RTMPConnection::ParseData(BYTE *data,const DWORD size)
 	curWindowSize += size;
 	//And total size
 	recvSize += size;
-	
+
 	//Check current window
 	if (windowSize && curWindowSize>windowSize)
 	{
@@ -467,7 +468,7 @@ void RTMPConnection::ParseData(BYTE *data,const DWORD size)
 						//calculate digest for s1 only, skipping s0
 						digestPosServer = GenerateS1Data(digesOffsetMethod,s01.GetData()+1,s01.GetSize()-1);
 					//Send S01 data
-					WriteData(s01.GetData(),s01.GetSize());	
+					WriteData(s01.GetData(),s01.GetSize());
 					//Move to next state
 					state = HEADER_C2_WAIT;
 					//Debug
@@ -483,7 +484,7 @@ void RTMPConnection::ParseData(BYTE *data,const DWORD size)
 						//calculate digest for s1
 						GenerateS2Data(digesOffsetMethod,s2.GetData(),s2.GetSize());
 					//Send S2 data
-					WriteData(s2.GetData(),s2.GetSize());	
+					WriteData(s2.GetData(),s2.GetSize());
 					//Debug
 					Log("Sending c2.\n");
 				}
@@ -537,8 +538,8 @@ void RTMPConnection::ParseData(BYTE *data,const DWORD size)
 					//Create it
 					chunkInputStream = new RTMPChunkInputStream();
 					//Append it
-					chunkInputStreams[chunkStreamId] = chunkInputStream;	
-				} else 
+					chunkInputStreams[chunkStreamId] = chunkInputStream;
+				} else
 					//Set the stream
 					chunkInputStream = it->second;
 				//Switch type
@@ -573,7 +574,7 @@ void RTMPConnection::ParseData(BYTE *data,const DWORD size)
 							chunkInputStream->StartChunkData();
 							//Reset sent bytes in buffer
 							chunkLen = 0;
-						}	
+						}
 						break;
 					case 1:
 						//Check if the buffer type has been parsed
@@ -603,7 +604,7 @@ void RTMPConnection::ParseData(BYTE *data,const DWORD size)
 							chunkInputStream->StartChunkData();
 							//Reset sent bytes in buffer
 							chunkLen = 0;
-						}	
+						}
 						break;
 					case 2:
 						//Check if the buffer type has been parsed
@@ -630,7 +631,7 @@ void RTMPConnection::ParseData(BYTE *data,const DWORD size)
 							chunkInputStream->StartChunkData();
 							//Reset sent bytes in buffer
 							chunkLen = 0;
-						}	
+						}
 						break;
 					case 3:
 						//Debug("Got type 3 header\n");
@@ -737,7 +738,7 @@ void RTMPConnection::ParseData(BYTE *data,const DWORD size)
 					//Delete msg
 					delete(msg);
 					//Move to next chunck
-					state = CHUNK_HEADER_WAIT;	
+					state = CHUNK_HEADER_WAIT;
 					//Clean header
 					header.Reset();
 				}
@@ -771,7 +772,7 @@ int RTMPConnection::WriteData(BYTE *data,const DWORD size)
 	sprintf(name,"/tmp/mcu_out_%p.raw",this);
 	int fd = open(name,O_CREAT|O_WRONLY|O_APPEND, S_IRUSR | S_IWUSR, 0644);
 	write(fd,data,size);
-	close(fd);*/
+	MCU_CLOSE(fd);*/
 #endif
 	return write(socket,data,size);
 }
@@ -829,7 +830,7 @@ void RTMPConnection::ProcessControlMessage(DWORD streamId,BYTE type,RTMPObject* 
 					DWORD delay = getDifTime(&startTime)/1000-ping;
 					Log("PingResponse [ping:%d,delay:%d]\n",ping,delay);
 					break;
-				
+
 			}
 			break;
 		case RTMPMessage::WindowAcknowledgementSize:
@@ -852,7 +853,7 @@ void RTMPConnection::ProcessCommandMessage(DWORD streamId,RTMPCommandMessage* cm
 	//Get message values
 	std::wstring name 	= cmd->GetName();
 	QWORD transId 		= cmd->GetTransId();
-	AMFData* params 	= cmd->GetParams();	
+	AMFData* params 	= cmd->GetParams();
 
 	//Log
 	Log("-ProcessCommandMessage [streamId:%d,name:\"%ls\",transId:%ld]\n",streamId,name.c_str(),transId);
@@ -867,7 +868,7 @@ void RTMPConnection::ProcessCommandMessage(DWORD streamId,RTMPCommandMessage* cm
 		if (it==streams.end())
 			//Send error
 			return SendCommandError(streamId,transId,NULL,NULL);
-		
+
 		//Get media stream
 		RTMPNetStream* stream = it->second;
 
@@ -954,7 +955,7 @@ void RTMPConnection::ProcessCommandMessage(DWORD streamId,RTMPCommandMessage* cm
 		app = listener->OnConnect(appName,this);
 
 		//If it is null
-		if (!app) 
+		if (!app)
 			//Send error
 			return SendCommandError(streamId,transId);
 
@@ -972,7 +973,7 @@ void RTMPConnection::ProcessCommandMessage(DWORD streamId,RTMPCommandMessage* cm
 		//Create params & extra info
 		AMFObject* params = new AMFObject();
 		AMFObject* extra = new AMFObject();
-		AMFEcmaArray* data = new AMFEcmaArray();	
+		AMFEcmaArray* data = new AMFEcmaArray();
 		objectEncoding = 3;
 		//Add properties
 		params->AddProperty(L"fmsVer"		,L"FMS/3,5,1,525");
@@ -984,7 +985,7 @@ void RTMPConnection::ProcessCommandMessage(DWORD streamId,RTMPCommandMessage* cm
 		extra->AddProperty(L"data"		,data);
 		extra->AddProperty(L"objectEncoding"	,objectEncoding);
 		data->AddProperty(L"version"           	,L"3,5,1,525");
-		//Create 
+		//Create
 		SendCommandResult(streamId,transId,params,extra);
 		//Ping
 		PingRequest();
@@ -1007,7 +1008,7 @@ void RTMPConnection::ProcessCommandMessage(DWORD streamId,RTMPCommandMessage* cm
 
 		//Add to the streams vector
 		streams[mediaStreamId] = stream;
-		//Create 
+		//Create
 		SendCommandResult(streamId,transId,new AMFNull(),new AMFNumber((double)mediaStreamId));
 	} else if (name.compare(L"deleteStream")==0) {
 		//Get
@@ -1050,7 +1051,7 @@ void RTMPConnection::ProcessMediaData(DWORD streamId,RTMPMediaFrame *frame)
 			//Exit (Should close connection??)
 			return;
 		}
-		
+
 		//Publish frame
 		it->second->SendMediaFrame(frame);
 	}
@@ -1073,7 +1074,7 @@ void RTMPConnection::ProcessMetaData(DWORD streamId,RTMPMetaData *meta)
 			//Exit (Should close connection??)
 			return;
 		}
-		
+
 		//Publish frame
 		it->second->SendMetaData(meta);
 	}
@@ -1193,9 +1194,9 @@ void RTMPConnection::onMediaFrame(DWORD streamId,RTMPMediaFrame *frame)
 	switch(frame->GetType())
 	{
 		case RTMPMediaFrame::Audio:
-			//Append to the audio trunk	
+			//Append to the audio trunk
 			chunkOutputStreams[4]->SendMessage(new RTMPMessage(streamId,ts,frame->Clone()));
-			break;	
+			break;
 		case RTMPMediaFrame::Video:
 			chunkOutputStreams[5]->SendMessage(new RTMPMessage(streamId,ts,frame->Clone()));
 			break;
@@ -1215,7 +1216,7 @@ void RTMPConnection::onMetaData(DWORD streamId,RTMPMetaData *meta)
 		//Calculate timestamp based on current time
 		ts = getDifTime(&startTime)/1000;
 
-	//Append to the comand trunk	
+	//Append to the comand trunk
 	chunkOutputStreams[3]->SendMessage(new RTMPMessage(streamId,ts,meta->Clone()));
 	//Signal frames
 	SignalWriteNeeded();
@@ -1238,10 +1239,10 @@ void RTMPConnection::onStreamReset(DWORD id)
 			//Send Abort message
 			SendControlMessage(RTMPMessage::AbortMessage, RTMPAbortMessage::Create(chunkId));
 	}
-	
+
 	//Lock mutex
 	pthread_mutex_unlock(&mutex);
-	
+
 	//We need to write
 	SignalWriteNeeded();
 }
@@ -1249,7 +1250,7 @@ void RTMPConnection::onStreamReset(DWORD id)
 void RTMPConnection::onNetStreamDestroyed(DWORD streamId)
 {
 	Log("-Releasing stream [id:%d]\n",streamId);
-	
+
 	//Find stream
 	RTMPNetStreams::iterator it = streams.find(streamId);
 
@@ -1269,7 +1270,7 @@ void RTMPConnection::onNetConnectionStatus(const RTMPNetStatusEventInfo &info,co
 void RTMPConnection::onNetConnectionDisconnected()
 {
 	Log("-onNetConnectionDisconnected [0x%x]\n",this);
-	
+
 	//Delete app
 	app = NULL;
 

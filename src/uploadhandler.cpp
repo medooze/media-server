@@ -1,7 +1,7 @@
-/* 
+/*
  * File:   uploadhandler.cpp
  * Author: Sergio
- * 
+ *
  * Created on 10 de enero de 2013, 11:33
  */
 #include <stdio.h>
@@ -16,6 +16,7 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#include "assertions.h"
 #include "uploadhandler.h"
 #include "http.h"
 #include "stringparser.h"
@@ -103,7 +104,7 @@ int UploadHandler::ProcessRequest(TRequestInfo *req,TSession * const ses)
 	if (!parser.CheckString(boundary))
 		//Error
 		goto error;
-	
+
 	//Get first line
 	if (!parser.ParseLine())
 		//error
@@ -127,7 +128,7 @@ int UploadHandler::ProcessRequest(TRequestInfo *req,TSession * const ses)
 			goto error;
 		//Get header line
 		line = parser.GetValue();
-		
+
 		//Read headers
 		while(!line.empty())
 		{
@@ -161,7 +162,7 @@ int UploadHandler::ProcessRequest(TRequestInfo *req,TSession * const ses)
 				fd = open(filename,O_CREAT|O_WRONLY|O_TRUNC, 0664);
 			}
 		}
-		
+
 		//Read content
 		while(!parser.CheckString(boundary))
 		{
@@ -175,13 +176,13 @@ int UploadHandler::ProcessRequest(TRequestInfo *req,TSession * const ses)
 			if (fd>0)
 				//Write
 				write(fd,s,parser.Mark()-s);
-			
+
 		}
 		//close file
 		if (fd>0)
 		{
 			//Close
-			close(fd);
+			MCU_CLOSE(fd);
 			//Check listener
 			if (listener)
 			{
@@ -204,7 +205,7 @@ int UploadHandler::ProcessRequest(TRequestInfo *req,TSession * const ses)
 
 	//Delete content type
 	delete (contentType);
-	
+
 	//Free buffer
 	free(buffer);
 

@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <list>
 #include "log.h"
+#include "assertions.h"
 #include "tools.h"
 #include "websocketconnection.h"
 #include "amf.h"
@@ -112,7 +113,7 @@ void WebSocketConnection::Stop()
 	//Close socket
 	shutdown(socket,SHUT_RDWR);
 	//Will cause poll to return
-	close(socket);
+	MCU_CLOSE(socket);
 	//No socket
 	socket = FD_INVALID;
 }
