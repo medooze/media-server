@@ -16,6 +16,7 @@
 #include <srtp/srtp.h>
 #include <time.h>
 #include "log.h"
+#include "assertions.h"
 #include "tools.h"
 #include "codecs.h"
 #include "rtp.h"
@@ -222,7 +223,7 @@ RTPSession::~RTPSession()
 		free(cname);
 	//Empty queue
 	FlushRTXPackets();
-	
+
 }
 
 void RTPSession::FlushRTXPackets()
@@ -238,7 +239,7 @@ void RTPSession::FlushRTXPackets()
 		//Delete object
 		delete(pkt);
 	}
-	
+
 	//Clear list
 	rtxs.clear();
 }
@@ -626,7 +627,7 @@ void RTPSession::SendEmptyPacket()
 	//Open rtp
 	sendto(simSocket,rtpEmpty,sizeof(rtpEmpty),0,(sockaddr *)&sendAddr,sizeof(struct sockaddr_in));
 	//If not muxing
-	if (!muxRTCP)	
+	if (!muxRTCP)
 		//Send
 		sendto(simRtcpSocket,rtpEmpty,sizeof(rtpEmpty),0,(sockaddr *)&sendRtcpAddr,sizeof(struct sockaddr_in));
 }
@@ -666,7 +667,7 @@ int RTPSession::Init()
 		if (simSocket!=FD_INVALID)
 		{
 			// Close first socket
-			close(simSocket);
+			MCU_CLOSE(simSocket);
 			//No socket
 			simSocket = FD_INVALID;
 		}
@@ -674,7 +675,7 @@ int RTPSession::Init()
 		if (simRtcpSocket!=FD_INVALID)
 		{
 			///Close it
-			close(simRtcpSocket);
+			MCU_CLOSE(simRtcpSocket);
 			//No socket
 			simRtcpSocket = FD_INVALID;
 		}
@@ -760,14 +761,14 @@ int RTPSession::End()
 	if (simSocket!=FD_INVALID)
 	{
 		//Will cause poll to return
-		close(simSocket);
+		MCU_CLOSE(simSocket);
 		//No sockets
 		simSocket = FD_INVALID;
 	}
 	if (simRtcpSocket!=FD_INVALID)
 	{
 		//Will cause poll to return
-		close(simRtcpSocket);
+		MCU_CLOSE(simRtcpSocket);
 		//No sockets
 		simRtcpSocket = FD_INVALID;
 	}
@@ -1610,7 +1611,7 @@ int RTPSession::ReadRTP()
 	{
 		//Append to the FEC decoder
 		fec.AddPacket(packet);
-			
+
 		//Try to recover
 		RTPTimedPacket* recovered = fec.Recover();
 		//If we have recovered a pacekt
@@ -1632,8 +1633,8 @@ int RTPSession::ReadRTP()
 			//Try to recover another one (yuhu!)
 			recovered = fec.Recover();
 		}
-	} 
-	
+	}
+
 	//Append packet
 	packets.Add(packet);
 
@@ -2208,7 +2209,7 @@ int RTPSession::ReSendPacket(int seq)
 	{
 		//Get packet
 		RTPTimedPacket* packet = it->second;
-		
+
 		//Data
 		BYTE data[RTPPAYLOADSIZE+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
 		DWORD size = RTPPAYLOADSIZE;

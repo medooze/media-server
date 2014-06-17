@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include "log.h"
+#include "assertions.h"
 #include "flv.h"
 #include "rtmpflvstream.h"
 
@@ -46,7 +47,7 @@ bool RTMPFLVStream::Play(std::wstring& url)
 		//exit
 		return Error("-Could not open file [%d,%s]\n",errno,filename);
 	}
-	
+
 	//We are playing
 	playing = true;
 
@@ -55,7 +56,7 @@ bool RTMPFLVStream::Play(std::wstring& url)
 
 	//Send play comand
 	playListener->OnCommand(id,L"onStatus", new RTMPNetStatusEvent(L"NetStream.Play.Start",L"status",L"Playback started") );
-	
+
 	//Start thread
 	createPriorityThread(&thread,play,this,0);
 
@@ -101,7 +102,7 @@ bool RTMPFLVStream::Publish(std::wstring& url)
 	//write header and tag size
 	write(fd,header.GetData(),header.GetSize());
 	write(fd,tagSize.GetData(),tagSize.GetSize());
-	
+
 	return true;
 }
 
@@ -113,12 +114,12 @@ void RTMPFLVStream::PublishMediaFrame(RTMPMediaFrame *frame)
 	//If we are not recording
 	if (!recording)
 		//exit
-		return;	
+		return;
 
 	//If it is the first frame
 	if (!first)
 		//Get timestamp
-		first = frame->GetTimestamp();		
+		first = frame->GetTimestamp();
 
 	//Create tag
 	tag.SetType(frame->GetType());
@@ -126,7 +127,7 @@ void RTMPFLVStream::PublishMediaFrame(RTMPMediaFrame *frame)
         tag.SetTimestamp(frame->GetTimestamp()-first);
         tag.SetTimestampExt(0);
         tag.SetStreamId(0);
-	
+
 	//Set tag size
 	tagSize.SetTagSize(frame->GetSize()+tag.GetSize());
 
@@ -145,7 +146,7 @@ void RTMPFLVStream::PublishMetaData(RTMPMetaData *meta)
 	//If we are not recording
 	if (!recording)
 		//exit
-		return;	
+		return;
 
 	//Check number of objet
 	if (!meta->GetParamsLength())
@@ -185,7 +186,7 @@ void RTMPFLVStream::PublishMetaData(RTMPMetaData *meta)
         tag.SetTimestamp(0);
         tag.SetTimestampExt(0);
         tag.SetStreamId(0);
-	
+
 	//Write header
 	write(fd,tag.GetData(),tag.GetSize());
 
@@ -207,17 +208,17 @@ bool RTMPFLVStream::Close()
 	//Check if it is playing or recording
 	if (recording)
 	{
-		//Stop	
+		//Stop
 		recording = false;
 	} else {
-		//Stop	
+		//Stop
 		playing = false;
 		//Join thread
 		pthread_join(thread,NULL);
 	}
 
 	//Close file
-	close(fd);
+	MCU_CLOSE(fd);
 
 	//We are not playing or recording
 	fd = -1;
@@ -228,7 +229,7 @@ int RTMPFLVStream::PlayFLV()
 	BYTE data[1024];
 	int len = 0;
 	DWORD state = 0;
-	
+
 	FLVHeader header;
 	FLVTag	tag;
 	FLVTagSize tagSize;
@@ -304,7 +305,7 @@ int RTMPFLVStream::PlayFLV()
 								playListener->OnPlayedMetaData(id,meta);
 						} else if (msg->IsMedia()) {
 							//Get media frame
-							RTMPMediaFrame *frame = msg->GetMediaFrame();	
+							RTMPMediaFrame *frame = msg->GetMediaFrame();
 
 							//Get timestamp
 							QWORD ts = frame->GetTimestamp();
@@ -332,7 +333,7 @@ int RTMPFLVStream::PlayFLV()
 			//Move pointers
 			buffer += len;
 			bufferLen -= len;
-		}	
+		}
 	}
 
 	//Check if we were already playing
