@@ -34,6 +34,8 @@ WebSocketConnection::WebSocketConnection(Listener *listener)
 	upgraded = false;
 	//No incoming frame yet
 	incomingFrameLength = 0;
+	//NO outgoing
+	outgoingFramesLength = 0;
 	//No request or response
 	request = NULL;
 	response = NULL;
@@ -192,6 +194,8 @@ void WebSocketConnection::Close(const WORD code, const std::wstring& reason)
 	pthread_mutex_lock(&mutex);
 	//Push pong frame
 	frames.push_back(frame);
+	//Add size
+	outgoingFramesLength += frame->GetPayloadSize();
 	//Un Lock mutex
 	pthread_mutex_unlock(&mutex);
 	//We need to write data!
@@ -420,6 +424,9 @@ WebSocketConnection::Frame* WebSocketConnection::GetNextFrame()
 	{
 		//Write next chunk from this stream
 		frame = frames.front();
+
+		//remove size
+		outgoingFramesLength -= frame->GetPayloadSize();
 
 		//Remove it
 		frames.pop_front();
@@ -651,6 +658,9 @@ void WebSocketConnection::SendMessage(const std::wstring& message)
 	//Push frame
 	frames.push_back(frame);
 
+	//Add size
+	outgoingFramesLength += frame->GetPayloadSize();
+
 	//Un Lock mutex
 	pthread_mutex_unlock(&mutex);
 
@@ -703,6 +713,9 @@ void WebSocketConnection::SendMessage(const BYTE* data, const DWORD size)
 		//Push frame
 		frames.push_back(frame);
 
+		//Add size
+		outgoingFramesLength += frame->GetPayloadSize();
+
 		//Next is always a continuation frame
 		code = WebSocketFrameHeader::ContinuationFrame;
 
@@ -720,12 +733,8 @@ void WebSocketConnection::SendMessage(const BYTE* data, const DWORD size)
 
 DWORD WebSocketConnection::GetWriteBufferLength()
 {
-	//Lock mutex
-	pthread_mutex_lock(&mutex);
-	//Get size
-	DWORD size = frames.size();
-	//Un Lock mutex
-	pthread_mutex_unlock(&mutex);
+	//Don't block!!!
+	return outgoingFramesLength;
 }
 
 bool WebSocketConnection::IsWriteBufferEmtpy()
