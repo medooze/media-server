@@ -351,6 +351,7 @@ private:
 
 	pthread_t thread;
 	pthread_mutex_t mutex;
+	pthread_mutex_t mutexListener;
 
 	timeval startTime;
 	Listener *listener;

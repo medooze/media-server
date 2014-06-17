@@ -48,6 +48,7 @@ WebSocketConnection::WebSocketConnection(Listener *listener)
 	pthread_mutexattr_init(&attr);
 	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
 	pthread_mutex_init(&mutex,&attr);
+	pthread_mutex_init(&mutexListener,&attr);
 }
 
 WebSocketConnection::~WebSocketConnection()
@@ -69,6 +70,7 @@ WebSocketConnection::~WebSocketConnection()
 	if (pong)     delete(pong);
 	//Destroy mutex
 	pthread_mutex_destroy(&mutex);
+	pthread_mutex_destroy(&mutexListener);
 }
 
 int WebSocketConnection::Init(int fd)
@@ -130,11 +132,11 @@ void WebSocketConnection::Detach()
 	}
 
 	//Lock mutex
-	pthread_mutex_lock(&mutex);
+	pthread_mutex_lock(&mutexListener);
 	//Remove websocket listener
 	wsl = NULL;
 	//Un Lock mutex
-	pthread_mutex_unlock(&mutex);
+	pthread_mutex_unlock(&mutexListener);
 }
 
 void WebSocketConnection::ForceClose()
@@ -364,13 +366,13 @@ int WebSocketConnection::Run()
 	}
 
 	//lock now
-	pthread_mutex_lock(&mutex);
+	pthread_mutex_lock(&mutexListener);
 	//If we were opened
 	if (upgraded && wsl)
 		//Send close
 		wsl->onClose(this);
 	//unlock now
-	pthread_mutex_unlock(&mutex);
+	pthread_mutex_unlock(&mutexListener);
 
 	//If got listener
 	if (listener)
@@ -454,14 +456,22 @@ WebSocketConnection::Frame* WebSocketConnection::GetNextFrame()
 		if (elapsed)
 			//Calculate bandwith in kbps
 			bandCalc = bandSize*8000/elapsed;
+		//No size
+		outgoingFramesLength = 0;
+		
+		//Lock mutex
+		pthread_mutex_lock(&mutexListener);
 		//Check listener
 		if (wsl)
 			//We have emptied the writ buffer
 			wsl->onWriteBufferEmpty(this);
+		//Un Lock mutex
+		pthread_mutex_unlock(&mutexListener);
 	}
 
 	//Un Lock mutex
 	pthread_mutex_unlock(&mutex);
+	
 
 	//Return frame
 	return frame;
@@ -509,13 +519,13 @@ void WebSocketConnection::ProcessData(BYTE *data,DWORD size)
 							break;
 						case WebSocketFrameHeader::TextFrame:
 							//lock now
-							pthread_mutex_lock(&mutex);
+							pthread_mutex_lock(&mutexListener);
 							//Check listener
 							if (wsl)
 								//Start frame
 								wsl->onMessageStart(this,WebSocket::Text,header->GetPayloadLength());
 							//unlock now
-							pthread_mutex_unlock(&mutex);
+							pthread_mutex_unlock(&mutexListener);
 							break;
 						case WebSocketFrameHeader::Close:
 							//Log
@@ -525,13 +535,13 @@ void WebSocketConnection::ProcessData(BYTE *data,DWORD size)
 							break;
 						case WebSocketFrameHeader::BinaryFrame:
 							//lock now
-							pthread_mutex_lock(&mutex);
+							pthread_mutex_lock(&mutexListener);
 							//Check listener
 							if (wsl)
 								//Start frame
 								wsl->onMessageStart(this,WebSocket::Binary,header->GetPayloadLength());
 							//unlock now
-							pthread_mutex_unlock(&mutex);
+							pthread_mutex_unlock(&mutexListener);
 							break;
 						case WebSocketFrameHeader::Ping:
 							//Debug
@@ -568,13 +578,13 @@ void WebSocketConnection::ProcessData(BYTE *data,DWORD size)
 					case WebSocketFrameHeader::TextFrame:
 					case WebSocketFrameHeader::BinaryFrame:
 						//lock now
-						pthread_mutex_lock(&mutex);
+						pthread_mutex_lock(&mutexListener);
 						//Check listener
 						if (wsl)
 							//Send data
 							wsl->onMessageData(this,data,len);
 						//unlock now
-						pthread_mutex_unlock(&mutex);
+						pthread_mutex_unlock(&mutexListener);
 						break;
 					case WebSocketFrameHeader::Ping:
 						//data here to the PONG
@@ -599,13 +609,13 @@ void WebSocketConnection::ProcessData(BYTE *data,DWORD size)
 							if (header->IsFin())
 							{
 								//lock now
-								pthread_mutex_lock(&mutex);
+								pthread_mutex_lock(&mutexListener);
 								//check listener
 								if (wsl)
 									//Send data
 									wsl->onMessageEnd(this);
 								//Un Lock mutex
-								pthread_mutex_unlock(&mutex);
+								pthread_mutex_unlock(&mutexListener);
 							}
 
 							break;
@@ -853,7 +863,7 @@ void WebSocketConnection::Accept(WebSocket::Listener *wsl)
 	upgraded = true;
 
 	//lock now
-	pthread_mutex_lock(&mutex);
+	pthread_mutex_lock(&mutexListener);
 	//Store websocket listener
 	this->wsl = wsl;
 	//check listener
@@ -861,7 +871,7 @@ void WebSocketConnection::Accept(WebSocket::Listener *wsl)
 		//We are opened
 		wsl->onOpen(this);
 	//Un Lock mutex
-	pthread_mutex_unlock(&mutex);
+	pthread_mutex_unlock(&mutexListener);
 
 	//Signal write needed
 	SignalWriteNeeded();
