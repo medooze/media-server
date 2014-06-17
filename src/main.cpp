@@ -1,4 +1,5 @@
 #include "log.h"
+#include "assertions.h"
 #include "xmlrpcserver.h"
 #include "xmlhandler.h"
 #include "xmlstreaminghandler.h"
@@ -19,6 +20,7 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <cerrno>
 #include "CPUMonitor.h"
 extern "C" {
 #include "libavcodec/avcodec.h"
@@ -202,8 +204,17 @@ int main(int argc,char **argv)
 				close(i);
 			//Redirect stdout and stderr
 			int fd = open(logfile, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-			dup(fd);
-			dup2(1,2);
+			int ret;
+			ret = dup(fd);
+			if (ret < 0) {
+				fprintf(stderr, "ERROR: dup(fd=%d) failed: %s\n", fd, strerror(errno));
+				MCU_ASSERT(ret >= 0);
+			}
+			ret = dup2(1,2);
+			if (ret < 0) {
+				fprintf(stderr, "ERROR: dup2(1,2) failed: %s\n", strerror(errno));
+				MCU_ASSERT(ret >= 0);
+			}
 			close(fd);
 			//And continule
 			break;

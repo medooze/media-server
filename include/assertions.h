@@ -18,13 +18,25 @@
 #define MCU_CLOSE(fd)  \
 	({ do {  \
 		if (fd <= 2) {  \
-			fprintf(stderr, "close(fd) called with fd == %d, aborting!\n", fd);  \
+			fprintf(stderr, "FATAL: close(fd) called with fd == %d, aborting!\n", fd);  \
 			assert(fd > 2);  \
 			abort();  \
 		}  \
 	} while(0); close(fd); })
 #else
 #define MCU_CLOSE(fd)  close(fd)
+#endif
+
+
+#ifdef ENABLE_MCU_ASSERTIONS
+#define MCU_ASSERT(condition)  \
+	if (! (condition)) {  \
+		fprintf(stderr, "FATAL: assertion failed: '%s', aborting!\n", #condition);  \
+		assert(condition);  \
+		abort();  \
+	}
+#else
+#define MCU_ASSERT(condition)
 #endif
 
 
