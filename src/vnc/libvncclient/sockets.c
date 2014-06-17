@@ -51,6 +51,7 @@
 #include <netdb.h>
 #endif
 #include "tls.h"
+#include "assertions.h"
 
 void PrintInHex(char *buf, int len);
 
@@ -110,10 +111,10 @@ ReadFromRFBServer(rfbClient* client, char *out, unsigned int n)
 
       rec->tv=tv;
     }
-    
+
     return (fread(out,1,n,rec->file)<0?FALSE:TRUE);
   }
-  
+
   if (n <= client->buffered) {
     memcpy(out, client->bufoutptr, n);
     client->bufoutptr += n;
@@ -323,14 +324,14 @@ ConnectClientToTcpAddr(unsigned int host, int port)
 
   if (connect(sock, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
     rfbClientErr("ConnectToTcpAddr: connect\n");
-    close(sock);
+    MCU_CLOSE(sock);
     return -1;
   }
 
   if (setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,
 		 (char *)&one, sizeof(one)) < 0) {
     rfbClientErr("ConnectToTcpAddr: setsockopt\n");
-    close(sock);
+    MCU_CLOSE(sock);
     return -1;
   }
 
@@ -369,7 +370,7 @@ ConnectClientToTcpAddr6(const char *hostname, int port)
     {
       if (connect(sock, res->ai_addr, res->ai_addrlen) == 0)
         break;
-      close(sock);
+      MCU_CLOSE(sock);
       sock = -1;
     }
     res = res->ai_next;
@@ -385,7 +386,7 @@ ConnectClientToTcpAddr6(const char *hostname, int port)
   if (setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,
 		 (char *)&one, sizeof(one)) < 0) {
     rfbClientErr("ConnectToTcpAddr: setsockopt\n");
-    close(sock);
+    MCU_CLOSE(sock);
     return -1;
   }
 
@@ -419,7 +420,7 @@ ConnectClientToUnixSock(const char *sockFile)
 
   if (connect(sock, (struct sockaddr *)&addr, sizeof(addr.sun_family) + strlen(addr.sun_path)) < 0) {
     rfbClientErr("ConnectToUnixSock: connect\n");
-    close(sock);
+    MCU_CLOSE(sock);
     return -1;
   }
 
@@ -455,12 +456,12 @@ FindFreeTcpPort(void)
   for (port = TUNNEL_PORT_OFFSET + 99; port > TUNNEL_PORT_OFFSET; port--) {
     addr.sin_port = htons((unsigned short)port);
     if (bind(sock, (struct sockaddr *)&addr, sizeof(addr)) == 0) {
-      close(sock);
+      MCU_CLOSE(sock);
       return port;
     }
   }
 
-  close(sock);
+  MCU_CLOSE(sock);
   return 0;
 }
 
@@ -510,13 +511,13 @@ ListenAtTcpPortAndAddress(int port, const char *address)
   if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
 		 (const char *)&one, sizeof(one)) < 0) {
     rfbClientErr("ListenAtTcpPort: setsockopt\n");
-    close(sock);
+    MCU_CLOSE(sock);
     return -1;
   }
 
   if (bind(sock, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
     rfbClientErr("ListenAtTcpPort: bind\n");
-    close(sock);
+    MCU_CLOSE(sock);
     return -1;
   }
 
@@ -550,7 +551,7 @@ ListenAtTcpPortAndAddress(int port, const char *address)
     /* we have seperate IPv4 and IPv6 sockets since some OS's do not support dual binding */
     if (p->ai_family == AF_INET6 && setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, (char *)&one, sizeof(one)) < 0) {
       rfbClientErr("ListenAtTcpPortAndAddress: error in setsockopt IPV6_V6ONLY: %s\n", strerror(errno));
-      close(sock);
+      MCU_CLOSE(sock);
       freeaddrinfo(servinfo);
       return -1;
     }
@@ -558,13 +559,13 @@ ListenAtTcpPortAndAddress(int port, const char *address)
 
     if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *)&one, sizeof(one)) < 0) {
       rfbClientErr("ListenAtTcpPortAndAddress: error in setsockopt SO_REUSEADDR: %s\n", strerror(errno));
-      close(sock);
+      MCU_CLOSE(sock);
       freeaddrinfo(servinfo);
       return -1;
     }
 
     if (bind(sock, p->ai_addr, p->ai_addrlen) < 0) {
-      close(sock);
+      MCU_CLOSE(sock);
       continue;
     }
 
@@ -582,7 +583,7 @@ ListenAtTcpPortAndAddress(int port, const char *address)
 
   if (listen(sock, 5) < 0) {
     rfbClientErr("ListenAtTcpPort: listen\n");
-    close(sock);
+    MCU_CLOSE(sock);
     return -1;
   }
 
@@ -611,7 +612,7 @@ AcceptTcpConnection(int listenSock)
   if (setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,
 		 (char *)&one, sizeof(one)) < 0) {
     rfbClientErr("AcceptTcpConnection: setsockopt\n");
-    close(sock);
+    MCU_CLOSE(sock);
     return -1;
   }
 
@@ -792,7 +793,7 @@ int WaitForMessage(rfbClient* client,unsigned int usecs)
   if (client->serverPort==-1)
     /* playing back vncrec file */
     return 1;
-  
+
   timeout.tv_sec=(usecs/1000000);
   timeout.tv_usec=(usecs%1000000);
 

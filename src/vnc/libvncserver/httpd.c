@@ -60,6 +60,8 @@
 #include <tcpd.h>
 #endif
 
+#include "assertions.h"
+
 
 #define NOT_FOUND_STR "HTTP/1.0 404 Not found\r\nConnection: close\r\n\r\n" \
     "<HEAD><TITLE>File Not Found</TITLE></HEAD>\n" \
@@ -128,19 +130,19 @@ rfbHttpInitSockets(rfbScreenInfoPtr rfbScreen)
 
 void rfbHttpShutdownSockets(rfbScreenInfoPtr rfbScreen) {
     if(rfbScreen->httpSock>-1) {
-	close(rfbScreen->httpSock);
+	MCU_CLOSE(rfbScreen->httpSock);
 	FD_CLR(rfbScreen->httpSock,&rfbScreen->allFds);
 	rfbScreen->httpSock=-1;
     }
 
     if(rfbScreen->httpListenSock>-1) {
-	close(rfbScreen->httpListenSock);
+	MCU_CLOSE(rfbScreen->httpListenSock);
 	FD_CLR(rfbScreen->httpListenSock,&rfbScreen->allFds);
 	rfbScreen->httpListenSock=-1;
     }
 
     if(rfbScreen->httpListen6Sock>-1) {
-	close(rfbScreen->httpListen6Sock);
+	MCU_CLOSE(rfbScreen->httpListen6Sock);
 	FD_CLR(rfbScreen->httpListen6Sock,&rfbScreen->allFds);
 	rfbScreen->httpListen6Sock=-1;
     }
@@ -198,7 +200,7 @@ rfbHttpCheckFds(rfbScreenInfoPtr rfbScreen)
     }
 
     if (FD_ISSET(rfbScreen->httpListenSock, &fds) || FD_ISSET(rfbScreen->httpListen6Sock, &fds)) {
-	if (rfbScreen->httpSock >= 0) close(rfbScreen->httpSock);
+	if (rfbScreen->httpSock >= 0) MCU_CLOSE(rfbScreen->httpSock);
 
 	if(FD_ISSET(rfbScreen->httpListenSock, &fds)) {
 	    if ((rfbScreen->httpSock = accept(rfbScreen->httpListenSock, (struct sockaddr *)&addr, &addrlen)) < 0) {
@@ -227,13 +229,13 @@ rfbHttpCheckFds(rfbScreenInfoPtr rfbScreen)
 		      STRING_UNKNOWN)) {
 	  rfbLog("Rejected HTTP connection from client %s\n",
 		 host);
-	  close(rfbScreen->httpSock);
+	  MCU_CLOSE(rfbScreen->httpSock);
 	  rfbScreen->httpSock=-1;
 	  return;
 	}
 #endif
         if(!rfbSetNonBlocking(rfbScreen->httpSock)) {
-	    close(rfbScreen->httpSock);
+	    MCU_CLOSE(rfbScreen->httpSock);
 	    rfbScreen->httpSock=-1;
 	    return;
 	}
@@ -245,7 +247,7 @@ rfbHttpCheckFds(rfbScreenInfoPtr rfbScreen)
 static void
 httpCloseSock(rfbScreenInfoPtr rfbScreen)
 {
-    close(rfbScreen->httpSock);
+    MCU_CLOSE(rfbScreen->httpSock);
     rfbScreen->httpSock = -1;
     buf_filled = 0;
 }
@@ -276,7 +278,7 @@ httpProcessInput(rfbScreenInfoPtr rfbScreen)
 #ifndef WIN32
     char* user=getenv("USER");
 #endif
-   
+
     cl.sock=rfbScreen->httpSock;
 
     if (strlen(rfbScreen->httpDir) > 255) {
@@ -353,7 +355,7 @@ httpProcessInput(rfbScreenInfoPtr rfbScreen)
 	    rfbNewClientConnection(rfbScreen,rfbScreen->httpSock);
 	    rfbScreen->httpSock = -1;
 	    return;
-	}	   
+	}
     }
 
     if (strncmp(buf, "GET ", 4)) {

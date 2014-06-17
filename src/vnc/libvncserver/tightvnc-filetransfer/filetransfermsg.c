@@ -15,13 +15,13 @@
  * along with this program; if not, contact Novell, Inc.
  *
  * To contact Novell about this file by physical or electronic mail,
- * you may find current contact information at www.novell.com 
+ * you may find current contact information at www.novell.com
  *
  * Author		: Rohit Kumar
  * Email ID	: rokumar@novell.com
  * Date		: 14th July 2005
  */
- 
+
 
 #include <stdio.h>
 #include <string.h>
@@ -39,6 +39,8 @@
 #include "filelistinfo.h"
 #include "filetransfermsg.h"
 #include "handlefiletransferrequest.h"
+
+#include "assertions.h"
 
 #define SZ_RFBBLOCKSIZE 8192
 
@@ -70,18 +72,18 @@ FileTransferMsg CreateFileListMsg(FileListInfo fileListInfo, char flags);
  * This is the method called by HandleFileListRequest to get the file list
  */
 
-FileTransferMsg 
+FileTransferMsg
 GetFileListResponseMsg(char* path, char flags)
 {
 	FileTransferMsg fileListMsg;
 	FileListInfo fileListInfo;
 	int status = -1;
-	
+
 	memset(&fileListMsg, 0, sizeof(FileTransferMsg));
 	memset(&fileListInfo, 0, sizeof(FileListInfo));
 
-	
-	 /* fileListInfo can have null data if the folder is Empty 
+
+	 /* fileListInfo can have null data if the folder is Empty
     	or if some error condition has occured.
     	The return value is 'failure' only if some error condition has occured.
 	 */
@@ -92,11 +94,11 @@ GetFileListResponseMsg(char* path, char flags)
 	}
 	else {
 		/* DisplayFileList(fileListInfo); For Debugging  */
-		
+
 		fileListMsg = CreateFileListMsg(fileListInfo, flags);
 		FreeFileListInfo(fileListInfo);
 	}
-	
+
 	return fileListMsg;
 }
 
@@ -109,7 +111,7 @@ CreateFileListInfo(FileListInfoPtr pFileListInfo, char* path, int flag)
 {
 	DIR* pDir = NULL;
 	struct dirent* pDirent = NULL;
-	
+
 	if((path == NULL) || (strlen(path) == 0)) {
 		/* In this case we will send the list of entries in ftp root*/
 		sprintf(path, "%s%s", GetFtpRoot(), "/");
@@ -118,7 +120,7 @@ CreateFileListInfo(FileListInfoPtr pFileListInfo, char* path, int flag)
 	if((pDir = opendir(path)) == NULL) {
 		rfbLog("File [%s]: Method [%s]: not able to open the dir\n",
 				__FILE__, __FUNCTION__);
-		return FAILURE; 		
+		return FAILURE;
 	}
 
 	while((pDirent = readdir(pDir))) {
@@ -137,7 +139,7 @@ CreateFileListInfo(FileListInfoPtr pFileListInfo, char* path, int flag)
 			strcat(fullpath, pDirent->d_name);
 
 			if(stat(fullpath, &stat_buf) < 0) {
-				rfbLog("File [%s]: Method [%s]: Reading stat for file %s failed\n", 
+				rfbLog("File [%s]: Method [%s]: Reading stat for file %s failed\n",
 						__FILE__, __FUNCTION__, fullpath);
 				continue;
 			}
@@ -151,13 +153,13 @@ CreateFileListInfo(FileListInfoPtr pFileListInfo, char* path, int flag)
 			}
 			else {
 				if(flag) {
-					if(AddFileListItemInfo(pFileListInfo, pDirent->d_name, 
-												stat_buf.st_size, 
+					if(AddFileListItemInfo(pFileListInfo, pDirent->d_name,
+												stat_buf.st_size,
 												stat_buf.st_mtime) == 0) {
 						rfbLog("File [%s]: Method [%s]: Add file %s in the "
 								"list failed\n", __FILE__, __FUNCTION__, fullpath);
 						continue;
-					}			
+					}
 				}
 			}
 		}
@@ -166,7 +168,7 @@ CreateFileListInfo(FileListInfoPtr pFileListInfo, char* path, int flag)
 	    rfbLog("File [%s]: Method [%s]: ERROR Couldn't close dir\n",
 	    	__FILE__, __FUNCTION__);
 	}
-	
+
 	return SUCCESS;
 }
 
@@ -187,7 +189,7 @@ CreateFileListErrMsg(char flags)
 	}
 	length = sizeof(rfbFileListDataMsg) * sizeof(char);
 	pFLD = (rfbFileListDataMsg*) data;
-	
+
 	pFLD->type = rfbFileListData;
 	pFLD->numFiles = Swap16IfLE(0);
 	pFLD->dataSize = Swap16IfLE(0);
@@ -212,8 +214,8 @@ CreateFileListMsg(FileListInfo fileListInfo, char flags)
 
 	memset(&fileListMsg, 0, sizeof(FileTransferMsg));
 	dsSize = fileListInfo.numEntries * 8;
-	length = sz_rfbFileListDataMsg + dsSize + 
-			GetSumOfFileNamesLength(fileListInfo) + 
+	length = sz_rfbFileListDataMsg + dsSize +
+			GetSumOfFileNamesLength(fileListInfo) +
 			fileListInfo.numEntries;
 
 	data = (char*) calloc(length, sizeof(char));
@@ -227,7 +229,7 @@ CreateFileListMsg(FileListInfo fileListInfo, char flags)
 	pFLD->type            = rfbFileListData;
     pFLD->flags 		  = flags & 0xF0;
     pFLD->numFiles 		  = Swap16IfLE(fileListInfo.numEntries);
-    pFLD->dataSize 		  = Swap16IfLE(GetSumOfFileNamesLength(fileListInfo) + 
+    pFLD->dataSize 		  = Swap16IfLE(GetSumOfFileNamesLength(fileListInfo) +
     									fileListInfo.numEntries);
     pFLD->compressedSize  = pFLD->dataSize;
 
@@ -235,7 +237,7 @@ CreateFileListMsg(FileListInfo fileListInfo, char flags)
 		pFileListItemSize[i].size = Swap32IfLE(GetFileSizeAt(fileListInfo, i));
 		pFileListItemSize[i].data = Swap32IfLE(GetFileDataAt(fileListInfo, i));
 		strcpy(pFileNames, GetFileNameAt(fileListInfo, i));
-		
+
 		if(i+1 < fileListInfo.numEntries)
 			pFileNames += strlen(pFileNames) + 1;
 	}
@@ -255,7 +257,7 @@ FileTransferMsg CreateFileDownloadErrMsg(char* reason, unsigned int reasonLen);
 FileTransferMsg CreateFileDownloadZeroSizeDataMsg(unsigned long mTime);
 FileTransferMsg CreateFileDownloadBlockSizeDataMsg(unsigned short sizeFile, char *pFile);
 
-FileTransferMsg 
+FileTransferMsg
 GetFileDownLoadErrMsg()
 {
 	FileTransferMsg fileDownloadErrMsg;
@@ -264,7 +266,7 @@ GetFileDownLoadErrMsg()
 	int reasonLen = strlen(reason);
 
 	memset(&fileDownloadErrMsg, 0, sizeof(FileTransferMsg));
-	
+
 	fileDownloadErrMsg = CreateFileDownloadErrMsg(reason, reasonLen);
 
 	return fileDownloadErrMsg;
@@ -304,7 +306,7 @@ GetFileDownloadResponseMsgInBlocks(rfbClientPtr cl, rfbTightClientPtr rtcp)
 
 	if((rtcp->rcft.rcfd.downloadInProgress == FALSE) && (rtcp->rcft.rcfd.downloadFD == -1)) {
 		if((rtcp->rcft.rcfd.downloadFD = open(path, O_RDONLY)) == -1) {
-			rfbLog("File [%s]: Method [%s]: Error: Couldn't open file\n", 
+			rfbLog("File [%s]: Method [%s]: Error: Couldn't open file\n",
 					__FILE__, __FUNCTION__);
 			return GetFileDownloadReadDataErrMsg();
 		}
@@ -312,12 +314,12 @@ GetFileDownloadResponseMsgInBlocks(rfbClientPtr cl, rfbTightClientPtr rtcp)
 	}
 	if((rtcp->rcft.rcfd.downloadInProgress == TRUE) && (rtcp->rcft.rcfd.downloadFD != -1)) {
 		if( (numOfBytesRead = read(rtcp->rcft.rcfd.downloadFD, pBuf, SZ_RFBBLOCKSIZE)) <= 0) {
-			close(rtcp->rcft.rcfd.downloadFD);
+			MCU_CLOSE(rtcp->rcft.rcfd.downloadFD);
 			rtcp->rcft.rcfd.downloadFD = -1;
 			rtcp->rcft.rcfd.downloadInProgress = FALSE;
 			if(numOfBytesRead == 0) {
 				return CreateFileDownloadZeroSizeDataMsg(rtcp->rcft.rcfd.mTime);
-			}			
+			}
 			return GetFileDownloadReadDataErrMsg();
 		}
 	return CreateFileDownloadBlockSizeDataMsg(numOfBytesRead, pBuf);
@@ -342,9 +344,9 @@ ChkFileDownloadErr(rfbClientPtr cl, rfbTightClientPtr rtcp)
 			char reason[] = "Cannot open file, perhaps it is absent or is not a regular file";
 			int reasonLen = strlen(reason);
 
-			rfbLog("File [%s]: Method [%s]: Reading stat for path %s failed\n", 
-					__FILE__, __FUNCTION__, path);	
-			
+			rfbLog("File [%s]: Method [%s]: Reading stat for path %s failed\n",
+					__FILE__, __FUNCTION__, path);
+
 			fileDownloadMsg = CreateFileDownloadErrMsg(reason, reasonLen);
 	}
 	else {
@@ -366,18 +368,18 @@ CreateFileDownloadErrMsg(char* reason, unsigned int reasonLen)
 	int length = sz_rfbFileDownloadFailedMsg + reasonLen + 1;
 	rfbFileDownloadFailedMsg *pFDF = NULL;
 	char *pFollow = NULL;
-	
+
 	char *pData = (char*) calloc(length, sizeof(char));
 	memset(&fileDownloadErrMsg, 0, sizeof(FileTransferMsg));
 	if(pData == NULL) {
 		rfbLog("File [%s]: Method [%s]: pData is NULL\n",
-				__FILE__, __FUNCTION__);	
+				__FILE__, __FUNCTION__);
 		return fileDownloadErrMsg;
 	}
 
 	pFDF = (rfbFileDownloadFailedMsg *) pData;
 	pFollow = &pData[sz_rfbFileDownloadFailedMsg];
-	
+
 	pFDF->type = rfbFileDownloadFailed;
 	pFDF->reasonLen = Swap16IfLE(reasonLen);
 	memcpy(pFollow, reason, reasonLen);
@@ -396,23 +398,23 @@ CreateFileDownloadZeroSizeDataMsg(unsigned long mTime)
 	int length = sz_rfbFileDownloadDataMsg + sizeof(unsigned long);
 	rfbFileDownloadDataMsg *pFDD = NULL;
 	char *pFollow = NULL;
-	
+
 	char *pData = (char*) calloc(length, sizeof(char));
 	memset(&fileDownloadZeroSizeDataMsg, 0, sizeof(FileTransferMsg));
 	if(pData == NULL) {
 		rfbLog("File [%s]: Method [%s]: pData is NULL\n",
-				__FILE__, __FUNCTION__);	
+				__FILE__, __FUNCTION__);
 		return fileDownloadZeroSizeDataMsg;
 	}
 
 	pFDD = (rfbFileDownloadDataMsg *) pData;
 	pFollow = &pData[sz_rfbFileDownloadDataMsg];
-	
+
 	pFDD->type = rfbFileDownloadData;
 	pFDD->compressLevel = 0;
 	pFDD->compressedSize = Swap16IfLE(0);
 	pFDD->realSize = Swap16IfLE(0);
-	
+
 	memcpy(pFollow, &mTime, sizeof(unsigned long));
 
 	fileDownloadZeroSizeDataMsg.data	= pData;
@@ -430,23 +432,23 @@ CreateFileDownloadBlockSizeDataMsg(unsigned short sizeFile, char *pFile)
 	int length = sz_rfbFileDownloadDataMsg + sizeFile;
 	rfbFileDownloadDataMsg *pFDD = NULL;
 	char *pFollow = NULL;
-	
+
 	char *pData = (char*) calloc(length, sizeof(char));
 	memset(&fileDownloadBlockSizeDataMsg, 0, sizeof(FileTransferMsg));
 	if(NULL == pData) {
 		rfbLog("File [%s]: Method [%s]: pData is NULL\n",
-				__FILE__, __FUNCTION__);	
+				__FILE__, __FUNCTION__);
 		return fileDownloadBlockSizeDataMsg;
 	}
 
 	pFDD = (rfbFileDownloadDataMsg *) pData;
 	pFollow = &pData[sz_rfbFileDownloadDataMsg];
-	
+
 	pFDD->type = rfbFileDownloadData;
 	pFDD->compressLevel = 0;
 	pFDD->compressedSize = Swap16IfLE(sizeFile);
 	pFDD->realSize = Swap16IfLE(sizeFile);
-	
+
 	memcpy(pFollow, pFile, sizeFile);
 
 	fileDownloadBlockSizeDataMsg.data	= pData;
@@ -463,7 +465,7 @@ CreateFileDownloadBlockSizeDataMsg(unsigned short sizeFile, char *pFile)
 
 FileTransferMsg CreateFileUploadErrMsg(char* reason, unsigned int reasonLen);
 
-FileTransferMsg 
+FileTransferMsg
 GetFileUploadLengthErrResponseMsg()
 {
 	char reason [] = "Path length exceeds PATH_MAX (4096) bytes";
@@ -481,7 +483,7 @@ ChkFileUploadErr(rfbClientPtr cl, rfbTightClientPtr rtcp)
 	memset(&fileUploadErrMsg, 0, sizeof(FileTransferMsg));
 	if( (rtcp->rcft.rcfu.fName == NULL) ||
 		(strlen(rtcp->rcft.rcfu.fName) == 0) ||
-		((rtcp->rcft.rcfu.uploadFD = creat(rtcp->rcft.rcfu.fName, 
+		((rtcp->rcft.rcfu.uploadFD = creat(rtcp->rcft.rcfu.fName,
 		S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) == -1)) {
 
 			char reason[] = "Could not create file";
@@ -490,7 +492,7 @@ ChkFileUploadErr(rfbClientPtr cl, rfbTightClientPtr rtcp)
 	}
 	else
 		rtcp->rcft.rcfu.uploadInProgress = TRUE;
-	
+
 	return fileUploadErrMsg;
 }
 
@@ -515,12 +517,12 @@ ChkFileUploadWriteErr(rfbClientPtr cl, rfbTightClientPtr rtcp, char* pBuf)
 
 	numOfBytesWritten = write(rtcp->rcft.rcfu.uploadFD, pBuf, rtcp->rcft.rcfu.fSize);
 
-	if(numOfBytesWritten != rtcp->rcft.rcfu.fSize) {		
+	if(numOfBytesWritten != rtcp->rcft.rcfu.fSize) {
 		char reason[] = "Error writing file data";
 		int reasonLen = strlen(reason);
 		ftm = CreateFileUploadErrMsg(reason, reasonLen);
 		CloseUndoneFileTransfer(cl, rtcp);
-	}		
+	}
 	return ftm;
 }
 
@@ -535,12 +537,12 @@ FileUpdateComplete(rfbClientPtr cl, rfbTightClientPtr rtcp)
 	utb.actime = utb.modtime = rtcp->rcft.rcfu.mTime;
 	if(utime(rtcp->rcft.rcfu.fName, &utb) == -1) {
 		rfbLog("File [%s]: Method [%s]: Setting the modification/access"
-				" time for the file <%s> failed\n", __FILE__, 
+				" time for the file <%s> failed\n", __FILE__,
 				__FUNCTION__, rtcp->rcft.rcfu.fName);
 	}
 
 	if(rtcp->rcft.rcfu.uploadFD != -1) {
-		close(rtcp->rcft.rcfu.uploadFD);
+		MCU_CLOSE(rtcp->rcft.rcfu.uploadFD);
 		rtcp->rcft.rcfu.uploadFD = -1;
 		rtcp->rcft.rcfu.uploadInProgress = FALSE;
 	}
@@ -554,18 +556,18 @@ CreateFileUploadErrMsg(char* reason, unsigned int reasonLen)
 	int length = sz_rfbFileUploadCancelMsg + reasonLen;
 	rfbFileUploadCancelMsg *pFDF = NULL;
 	char *pFollow = NULL;
-	
+
 	char *pData = (char*) calloc(length, sizeof(char));
 	memset(&fileUploadErrMsg, 0, sizeof(FileTransferMsg));
 	if(pData == NULL) {
 		rfbLog("File [%s]: Method [%s]: pData is NULL\n",
-				__FILE__, __FUNCTION__);	
+				__FILE__, __FUNCTION__);
 		return fileUploadErrMsg;
 	}
 
 	pFDF = (rfbFileUploadCancelMsg *) pData;
 	pFollow = &pData[sz_rfbFileUploadCancelMsg];
-	
+
 	pFDF->type = rfbFileUploadCancel;
 	pFDF->reasonLen = Swap16IfLE(reasonLen);
 	memcpy(pFollow, reason, reasonLen);
@@ -590,28 +592,28 @@ CloseUndoneFileTransfer(rfbClientPtr cl, rfbTightClientPtr rtcp)
 	if(cl == NULL)
 		return;
 
-	
+
 	if(rtcp->rcft.rcfu.uploadInProgress == TRUE) {
 		rtcp->rcft.rcfu.uploadInProgress = FALSE;
 
 		if(rtcp->rcft.rcfu.uploadFD != -1) {
-			close(rtcp->rcft.rcfu.uploadFD);
+			MCU_CLOSE(rtcp->rcft.rcfu.uploadFD);
 			rtcp->rcft.rcfu.uploadFD = -1;
 		}
 
 		if(unlink(rtcp->rcft.rcfu.fName) == -1) {
-			rfbLog("File [%s]: Method [%s]: Delete operation on file <%s> failed\n", 
+			rfbLog("File [%s]: Method [%s]: Delete operation on file <%s> failed\n",
 					__FILE__, __FUNCTION__, rtcp->rcft.rcfu.fName);
 		}
 
 		memset(rtcp->rcft.rcfu.fName, 0 , PATH_MAX);
 	}
-	
+
 	if(rtcp->rcft.rcfd.downloadInProgress == TRUE) {
 		rtcp->rcft.rcfd.downloadInProgress = FALSE;
 
-		if(rtcp->rcft.rcfd.downloadFD != -1) {			
-			close(rtcp->rcft.rcfd.downloadFD);
+		if(rtcp->rcft.rcfd.downloadFD != -1) {
+			MCU_CLOSE(rtcp->rcft.rcfd.downloadFD);
 			rtcp->rcft.rcfd.downloadFD = -1;
 		}
 		memset(rtcp->rcft.rcfd.fName, 0 , PATH_MAX);
@@ -629,7 +631,7 @@ CreateDirectory(char* dirName)
 	if(dirName == NULL) return;
 
 	if(mkdir(dirName, 0700) == -1) {
-		rfbLog("File [%s]: Method [%s]: Create operation for directory <%s> failed\n", 
+		rfbLog("File [%s]: Method [%s]: Create operation for directory <%s> failed\n",
 				__FILE__, __FUNCTION__, dirName);
 	}
 }

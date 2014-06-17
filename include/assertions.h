@@ -9,16 +9,16 @@
 #define ENABLE_MCU_ASSERTIONS
 
 
-#include "log.h"
-#include <cstdlib>  // _Exit(), abort()
-#include <cassert>  // assert()
+#include <stdio.h>
+#include <stdlib.h>  // _Exit(), abort()
+#include <assert.h>  // assert()
 
 
 #ifdef ENABLE_MCU_ASSERTIONS
 #define MCU_CLOSE(fd)  \
 	({ do {  \
 		if (fd <= 2) {  \
-			::Error("close(fd) called with fd == %d, aborting!\n", fd);  \
+			fprintf(stderr, "close(fd) called with fd == %d, aborting!\n", fd);  \
 			assert(fd > 2);  \
 			abort();  \
 		}  \
