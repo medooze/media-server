@@ -378,6 +378,7 @@ private:
 	WORD		 incomingFrameLength;
 
 	std::list<Frame*>  frames;
+	DWORD		   outgoingFramesLength;
 	Frame*		   pong;
 };
 
