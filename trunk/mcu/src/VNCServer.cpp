@@ -764,6 +764,9 @@ VNCServer::Client::Client(int id,VNCServer* server)
 
 VNCServer::Client::~Client()
 {
+	//Close just in case
+	Close();
+
 	if (cl->prev)
 		cl->prev->next = cl->next;
 	else
@@ -861,23 +864,31 @@ int VNCServer::Client::Disconnect()
 {
 	Debug(">VNCServer::Client::Disconnect [this:%p]\n",this);
 
-	//Detach listeners
-	ws->Detach();
-	//Remove ws data
-	ws->SetUserData(NULL);
+	//Lock wait
+	wait.Lock();
 
-	Debug("-VNCServer::Client::Disconnect cancel wait [this:%p]\n",this);
+	//If we did had a ws
+	if (ws)
+	{
+		//Detach listeners
+		ws->Detach();
+		//Remove ws data
+		ws->SetUserData(NULL);
+		//Close just in cae
+		ws->ForceClose();
+		//Unset websocket
+		ws = NULL;
+	}
+	
+	//Unlock
+	wait.Unlock();
 
 	//Cancel read wait
 	wait.Cancel();
+
 	//Signal cond to exit update loop
 	TSIGNAL(cl->updateCond);
 
-	Debug("-VNCServer::Client::Disconnect cancel join [this:%p]\n",this);
-	//Join thread
-	pthread_join(thread,NULL);
-
-	//Wait
 	Debug("<VNCServer::Client::Disconnect [this:%p]\n",this);
 
 	//OK
@@ -914,10 +925,12 @@ int VNCServer::Client::WaitForData(DWORD usecs)
 void VNCServer::Client::Close()
 {
 	Log("-VNCServer::Client::Close\n");
+
 	//Disconnect
 	Disconnect();
-	//Close
-	ws->Close();
+
+	//Wait thread
+	pthread_join(thread,NULL);
 }
 
 void *VNCServer::Client::run(void *par)
