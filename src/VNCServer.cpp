@@ -1068,7 +1068,7 @@ int VNCServer::Client::Run()
 				rfbSendFramebufferUpdate(cl, updateRegion);
 				//UNLOCK(cl->sendMutex);
 				rfbDecrClientRef(cl);
-				Debug("<VNCServer::Clietn SendFramebufferUpdate [%p]\n",this);
+				Debug("<VNCServer::Client SendFramebufferUpdate [%p]\n",this);
 			}
 
 			//Destroy region
@@ -1077,11 +1077,15 @@ int VNCServer::Client::Run()
 			//Lock again
 			LOCK(cl->updateMutex);
 		}
-		Debug("<VNCServer::Client going to sleep [this:%p]\n",this);
+
+		//Check if we have been cancelled
+		if (wait.IsCanceled())
+			//Exit
+			break;
 
 		//Wait cond
+		Debug("<VNCServer::Client going to sleep [this:%p]\n",this);
 		WAIT(cl->updateCond,cl->updateMutex);
-
 		Debug(">VNCServer::Client waked up from wait mutex[this:%p,isCanceled:%d]\n",this,wait.IsCanceled());
 	}
 	//Unlock
