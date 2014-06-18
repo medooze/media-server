@@ -3,6 +3,7 @@
 #include <pthread.h>
 #include "tools.h"
 #include "log.h"
+#include <map>
 
 class Use
 {
@@ -59,6 +60,12 @@ private:
 	pthread_cond_t 	cond;
 	int		cont;
 
+};
+
+template<class Key, class T> class UseMap :
+	public Use,
+	public std::map<Key,T>
+{
 };
 
 
