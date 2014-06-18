@@ -43,23 +43,28 @@ int BFCPFloorControlServer::GetConferenceId()
 
 bool BFCPFloorControlServer::AddUser(int userId)
 {
-	if (this->ending) { return false; }
+	if (this->ending)
+		return ::Error("BFCPFloorControlServer::AddUser() already ended\n");
 
 	if (userId < 1) {
 		::Error("BFCPFloorControlServer::AddUser() | userId must be > 0\n");
 		return false;
 	}
 
-	BFCPUser *user = this->GetUser(userId);
-
-	// If the userId did already exist then abort.
-	if (user) {
-		::Error("BFCPFloorControlServer::AddUser() | userId '%d' already exists in conference '%d'\n", userId, this->conferenceId);
-		return false;
-	}
-
-	//Lock for writing
+	//Lock users for writting
 	users.WaitUnusedAndLock();
+
+	//Find user
+	Users::iterator it = users.find(userId);
+
+	// If the userId already exists then abort.
+	if (it != users.end())
+	{
+		//Unlock
+		users.Unlock();
+		//Error
+		return ::Error("BFCPFloorControlServer::AddUser() | userId '%d' already exists in conference '%d'\n", userId, this->conferenceId);
+	}
 
 	// Add to the Users map.
 	this->users[userId] = new BFCPUser(userId, this->conferenceId);
@@ -74,7 +79,7 @@ bool BFCPFloorControlServer::AddUser(int userId)
 
 bool BFCPFloorControlServer::RemoveUser(int userId)
 {
-	if (this->ending) 
+	if (this->ending)
 		return ::Error("BFCPFloorControlServer::RemoveUser() already ended\n");
 
 	//Lock users for writting
@@ -456,7 +461,7 @@ void BFCPFloorControlServer::End()
 		// Delete user.
 		delete user;
 	}
-	
+
 	//Unlock map
 	users.Unlock();
 }
