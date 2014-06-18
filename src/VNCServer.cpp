@@ -979,10 +979,23 @@ end:
 }
 int VNCServer::Client::Write(const char *buf, int size)
 {
-	//Send data
-	ws->SendMessage((BYTE*)buf,size);
+	int ret = 0;
+	
+	//Lock
+	wait.Lock();
+	//Check that we have ws
+	if (ws)
+	{
+		//Send data
+		ws->SendMessage((BYTE*)buf,size);
+		//Ok
+		ret = size;
+	}
+	//Unlock
+	wait.Unlock();
+	
 	//OK
-	return size;
+	return ret;
 }
 
 int VNCServer::Client::ProcessMessage()
@@ -1021,7 +1034,9 @@ int VNCServer::Client::Run()
 				//Reset message
 				char msg[] = {16};
 				//Write it
-				Write(msg,sizeof(msg));
+				if (!Write(msg,sizeof(msg)))
+					//WS closed
+					break;
 				//Clear reset flag
 				reset = false;
 			}
@@ -1099,16 +1114,6 @@ int VNCServer::Client::Run()
 
 void VNCServer::Client::Update()
 {
-	//Check if we are already connected
-	if (!ws)
-	{
-		//Error
-		Error("-VNCServer::Client::Update not connected [this:%p]\n",this);
-		//Exit
-		return;
-	}
-	//Debug
-	Debug("-VNCServer::Client::Update [buffer:%d]\n",ws->GetWriteBufferLength());
 	//Signal cond
 	TSIGNAL(cl->updateCond);
 }
