@@ -12,6 +12,7 @@
 #include <set>
 #include <vector>
 #include <string>
+#include "use.h"
 
 
 /**
@@ -111,15 +112,16 @@ private:
 	void SendMessage(BFCPMessage *msg);
 	void ReplyError(BFCPMessage *msg, BFCPAttrErrorCode::ErrorCode errorCode);
 	void ReplyError(BFCPMessage *msg, BFCPAttrErrorCode::ErrorCode errorCode, std::wstring errorInfo);
+private:
+	typedef UseMap<int, BFCPUser *> Users;
+	typedef std::set<int> Floors;
+	typedef UseMap<int, BFCPFloorRequest*> FloorRequests;
 
 private:
 	Listener *listener;
 	int conferenceId;
-	typedef std::map<int, BFCPUser *> Users;
 	Users users;
-	typedef std::set<int> Floors;
 	Floors floors;
-	typedef std::map<int, BFCPFloorRequest*> FloorRequests;
 	FloorRequests floorRequests;
 	int floorRequestCounter;
 	bool ending;

@@ -2,6 +2,7 @@
 #include "bfcp/messages.h"
 #include "bfcp/attributes.h"
 #include "log.h"
+#include "use.h"
 
 
 BFCPFloorControlServer::BFCPFloorControlServer(int conferenceId, BFCPFloorControlServer::Listener *listener) :
@@ -17,11 +18,15 @@ BFCPFloorControlServer::~BFCPFloorControlServer()
 {
 	::Debug("BFCPFloorControlServer::~BFCPFloorControlServer()\n");
 
+	//Lock
+	users.WaitUnusedAndLock();
 	// Clear Users, Floors and FloorRequests.
 	for (BFCPFloorControlServer::Users::iterator it = this->users.begin() ; it != this->users.end(); ++it) {
 		delete it->second;
 	}
 	this->users.clear();
+	//Unlock
+	users.Unlock();
 	this->floors.clear();
 	for (BFCPFloorControlServer::FloorRequests::iterator it = this->floorRequests.begin() ; it != this->floorRequests.end(); ++it) {
 		delete it->second;
@@ -53,8 +58,14 @@ bool BFCPFloorControlServer::AddUser(int userId)
 		return false;
 	}
 
+	//Lock for writing
+	users.WaitUnusedAndLock();
+
 	// Add to the Users map.
 	this->users[userId] = new BFCPUser(userId, this->conferenceId);
+
+	//Unlock
+	users.Unlock();
 
 	::Log("BFCPFloorControlServer::AddUser() | user '%d' added to conference '%d'\n", userId, this->conferenceId);
 	return true;
@@ -63,15 +74,32 @@ bool BFCPFloorControlServer::AddUser(int userId)
 
 bool BFCPFloorControlServer::RemoveUser(int userId)
 {
-	if (this->ending) { return false; }
+	if (this->ending) 
+		return ::Error("BFCPFloorControlServer::RemoveUser() already ended\n");
 
-	BFCPUser *user = this->GetUser(userId);
+	//Lock users for writting
+	users.WaitUnusedAndLock();
+
+	//Find user
+	Users::iterator it = users.find(userId);
 
 	// If the userId did not exist then abort.
-	if (! user) {
-		::Error("BFCPFloorControlServer::RemoveUser() | userId '%d' does not exist in conference '%d'\n", userId, this->conferenceId);
-		return false;
+	if (it == users.end())
+	{
+		//Unlock
+		users.Unlock();
+		//Error
+		return ::Error("BFCPFloorControlServer::RemoveUser() | userId '%d' does not exist in conference '%d'\n", userId, this->conferenceId);
 	}
+
+	//Get user
+	BFCPUser* user = it->second;
+
+	//Delete from map
+	users.erase(it);
+
+	//Unlock
+	users.Unlock();
 
 	// Revoke user's ongoing FloorRequests.
 	::Debug("BFCPFloorControlServer::RemoveUser() | calling RevokeUserFloorRequests(%d)\n", userId);
@@ -82,8 +110,7 @@ bool BFCPFloorControlServer::RemoveUser(int userId)
 	// TODO: log?
 	user->CloseTransport(4001, L"you have been removed from the BFCP conference");
 
-	// Delete user.
-	this->users.erase(userId);
+	//Delete user
 	delete user;
 
 	::Log("BFCPFloorControlServer::RemoveUser() | user '%d' removed from conference '%d'\n", userId, this->conferenceId);
@@ -102,6 +129,9 @@ bool BFCPFloorControlServer::SetChair(int userId)
 		return false;
 	}
 
+	//As we are setting also the chair, lock for writting
+	users.WaitUnusedAndLock();
+
 	// Unset the current chair.
 	for (BFCPFloorControlServer::Users::iterator it=this->users.begin(); it!=this->users.end(); ++it) {
 		BFCPUser* otherUser = it->second;
@@ -110,6 +140,9 @@ bool BFCPFloorControlServer::SetChair(int userId)
 
 	::Log("BFCPFloorControlServer::SetChair() | user '%d' becomes chair\n", userId);
 	user->SetChair();
+
+	//Unlock after chair is set
+	users.Unlock();
 
 	return true;
 }
@@ -400,20 +433,32 @@ void BFCPFloorControlServer::End()
 	// Disconect all the users.
 	::Log("BFCPFloorControlServer::End() | disconnecting users in conference '%d'\n", this->conferenceId);
 
-	BFCPFloorControlServer::Users::iterator it2;
-	while(this->users.size() > 0) {
+	//Lock users from writing
+	users.WaitUnusedAndLock();
+
+	//Close all user's transports and erase map
+	Users::iterator it2 = users.begin();
+
+	//Until the end
+	while( it2!=users.end())
+	{
 		::Debug("BFCPFloorControlServer::End() | [number of users: %d]\n", this->users.size());
 
-		it2 = this->users.begin();
+		//Get users
 		BFCPUser* user = it2->second;
+
+		//erase from map and move forward iterator
+		users.erase(it2++);
 
 		// Close its transport (if connected).
 		user->CloseTransport(4000, L"the BFCP conference has ended");
 
 		// Delete user.
-		this->users.erase(user->GetUserId());
 		delete user;
 	}
+	
+	//Unlock map
+	users.Unlock();
 }
 
 
@@ -596,17 +641,31 @@ void BFCPFloorControlServer::MessageReceived(BFCPMessage *msg)
 
 bool BFCPFloorControlServer::HasUser(int userId)
 {
-	return (this->users.find(userId) != this->users.end() ? true : false);
+	return GetUser(userId)!=NULL;
 }
 
 
 BFCPUser* BFCPFloorControlServer::GetUser(int userId)
 {
-	BFCPFloorControlServer::Users::iterator it = this->users.find(userId);
-	if (it != this->users.end())
-		return it->second;
-	else
-		return NULL;
+	//NO User yet
+	BFCPUser* user = NULL;
+
+	//Lock users
+	users.IncUse();
+
+	//Find user
+	Users::iterator it = users.find(userId);
+
+	//If found
+	if (it != users.end())
+		//Get it
+		user = it->second;
+
+	//Unlock
+	users.DecUse();
+
+	//Return user
+	return user;
 }
 
 
@@ -666,6 +725,9 @@ void BFCPFloorControlServer::NotifyForFloorRequest(BFCPFloorRequest* floorReques
 	std::map<BFCPUser*, std::set<int> > mapUsersAffectedFloorIds;
 	std::set<int> affectedFloorIds = floorRequest->GetFloorIds();
 
+	//Lock user map
+	users.IncUse();
+
 	// Fill the map.
 	for (BFCPFloorControlServer::Users::iterator it=this->users.begin(); it!=this->users.end(); ++it) {
 		BFCPUser* user = it->second;
@@ -682,6 +744,8 @@ void BFCPFloorControlServer::NotifyForFloorRequest(BFCPFloorRequest* floorReques
 		if (! userAffectedfloorIds.empty())
 			mapUsersAffectedFloorIds[user] = userAffectedfloorIds;
 	}
+	//Unlock user map
+	users.DecUse();
 
 	// Create a single FloorStatus notification and modify it for each user and floor.
 	BFCPMsgFloorStatus* floorStatus = new BFCPMsgFloorStatus(0, this->GetConferenceId(), 0);
