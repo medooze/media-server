@@ -172,7 +172,7 @@ DTLSConnection::DTLSConnection(Listener& listener) : listener(listener)
 	ssl				= NULL;		/*!< SSL session */
 	read_bio		= NULL;		/*!< Memory buffer for reading */
 	write_bio		= NULL;		/*!< Memory buffer for writing */
-	ssl_is_ready    = false;
+	inited          = false;
 }
 
 DTLSConnection::~DTLSConnection()
@@ -224,7 +224,7 @@ int DTLSConnection::Init()
 	SSL_do_handshake(ssl);
 
 	//Now we are ready to read and write DTLS packets.
-	ssl_is_ready = true;
+	inited = true;
 
 	Log("<DTLSConnection::Init()\n");
 
@@ -337,7 +337,7 @@ int DTLSConnection::Read(BYTE* data,int size)
 		return 0;
 	}
 
-	if (! ssl_is_ready) {
+	if (! inited) {
 		return Error("-DTLSConnection::Read() | SSL not yet ready\n");
 	}
 
@@ -429,7 +429,7 @@ int DTLSConnection::Write(BYTE *buffer,int size)
 	if (! DTLSConnection::hasDTLS)
 		return Error("-DTLSConnection::Write() | no DTLS\n");
 
-	if (! ssl_is_ready) {
+	if (! inited) {
 		return Error("-DTLSConnection::Write() | SSL not yet ready\n");
 	}
 
