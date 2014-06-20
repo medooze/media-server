@@ -20,6 +20,57 @@
 #ifdef LIBVNCSERVER_HAVE_LIBZ
 #ifdef LIBVNCSERVER_HAVE_LIBJPEG
 
+#include <setjmp.h>
+/*
+ * ERROR HANDLING:
+ *
+ * The JPEG library's standard error handler (jerror.c) is divided into
+ * several "methods" which you can override individually.  This lets you
+ * adjust the behavior without duplicating a lot of code, which you might
+ * have to update with each future release.
+ *
+ * Our example here shows how to override the "error_exit" method so that
+ * control is returned to the library's caller when a fatal error occurs,
+ * rather than calling exit() as the standard error_exit method does.
+ *
+ * We use C's setjmp/longjmp facility to return control.  This means that the
+ * routine which calls the JPEG library must first execute a setjmp() call to
+ * establish the return point.  We want the replacement error_exit to do a
+ * longjmp().  But we need to make the setjmp buffer accessible to the
+ * error_exit routine.  To do this, we make a private extension of the
+ * standard JPEG error handler object.  (If we were using C++, we'd say we
+ * were making a subclass of the regular error handler.)
+ *
+ * Here's the extended error handler struct:
+ */
+
+struct my_error_mgr {
+  struct jpeg_error_mgr pub;	/* "public" fields */
+
+  jmp_buf setjmp_buffer;	/* for return to caller */
+};
+
+typedef struct my_error_mgr * my_error_ptr;
+
+/*
+ * Here's the routine that will replace the standard error_exit method:
+ */
+
+METHODDEF(void)
+my_error_exit (j_common_ptr cinfo)
+{
+  /* cinfo->err really points to a my_error_mgr struct, so coerce pointer */
+  my_error_ptr myerr = (my_error_ptr) cinfo->err;
+
+  /* Always display the message. */
+  /* We could postpone this until after returning, if we chose. */
+  (*cinfo->err->output_message) (cinfo);
+
+  /* Return control to the setjmp point */
+  longjmp(myerr->setjmp_buffer, 1);
+}
+
+
 /*
  * tight.c - handle ``tight'' encoding.
  *
@@ -523,7 +574,7 @@ static rfbBool
 DecompressJpegRectBPP(rfbClient* client, int x, int y, int w, int h)
 {
   struct jpeg_decompress_struct cinfo;
-  struct jpeg_error_mgr jerr;
+  struct my_error_mgr  jerr;
   int compressedLen;
   uint8_t *compressedData;
   CARDBPP *pixelPtr;
@@ -547,8 +598,20 @@ DecompressJpegRectBPP(rfbClient* client, int x, int y, int w, int h)
     return FALSE;
   }
 
-  cinfo.err = jpeg_std_error(&jerr);
+  cinfo.err = jpeg_std_error(&jerr.pub);
   cinfo.client_data = client;
+  jerr.pub.error_exit = my_error_exit;
+  /* Establish the setjmp return context for my_error_exit to use. */
+  if (setjmp(jerr.setjmp_buffer)) {
+    /* If we get here, the JPEG code has signaled an error.
+     * We need to clean up the JPEG object, close the input file, and return.
+     */
+    jpeg_destroy_decompress(&cinfo);
+    rfbClientLog("Tight Encoding: Wrong JPEG data received.\n");
+    jpeg_destroy_decompress(&cinfo);
+    free(compressedData);
+    return FALSE;
+  }
   jpeg_create_decompress(&cinfo);
 
   JpegSetSrcManager(&cinfo, compressedData, compressedLen);
