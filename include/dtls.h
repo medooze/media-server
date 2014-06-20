@@ -108,6 +108,7 @@ private:
 	Connection connection;		/*!< Whether this is a new or existing connection */
 	unsigned int rekey;	/*!< Interval at which to renegotiate and rekey */
 	int rekeyid;		/*!< Scheduled item id for rekeying */
+	bool inited;        /*!< Set to true once the SSL stuff is set for this DTLS session */
 };
 
 #endif	/* DTLS_H */
