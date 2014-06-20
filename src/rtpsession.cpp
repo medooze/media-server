@@ -1245,8 +1245,10 @@ int RTPSession::ReadRTP()
 
 				// Needed for DTLS in client mode (otherwise the DTLS "Client Hello" is not sent over the wire)
 				len = dtls.Read(buffer,MTU);
-				//Send back
-				sendto(simSocket,buffer,len,0,(sockaddr *)&from_addr,sizeof(struct sockaddr_in));
+				//Check it
+				if (len>0)
+					//Send back
+					sendto(simSocket,buffer,len,0,(sockaddr *)&from_addr,sizeof(struct sockaddr_in));
 			}
 		}
 
@@ -1293,8 +1295,11 @@ int RTPSession::ReadRTP()
 			return 0;
 		//Read
 		int len = dtls.Read(buffer,MTU);
-		//Send it back
-		sendto(simSocket,buffer,len,0,(sockaddr *)&from_addr,sizeof(struct sockaddr_in));
+		
+		//Check it
+		if (len>0)
+			//Send it back
+			sendto(simSocket,buffer,len,0,(sockaddr *)&from_addr,sizeof(struct sockaddr_in));
 		//Exit
 		return 1;
 	}
