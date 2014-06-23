@@ -49,7 +49,7 @@ public:
 		VNCServer* server;
 		rfbClientRec* cl;
 		WebSocket* ws;
-		fifo<BYTE,65535> buffer;
+		fifo<BYTE,512*1024> buffer;
 		Wait wait;
 		int reset;
 		pthread_t thread;

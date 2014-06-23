@@ -454,7 +454,7 @@ int VNCViewer::ResetSize()
 
 int VNCViewer::SendMouseEvent(int buttonMask, int x, int y)
 {
-	Log("-SendMouseEvent [x:%,y:%d,mask:0x%x]\n",x,y,buttonMask);
+	Log("-SendMouseEvent [x:%d,y:%d,mask:0x%x]\n",x,y,buttonMask);
 	return SendPointerEvent(client,x,y,buttonMask);
 }
 
