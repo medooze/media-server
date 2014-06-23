@@ -901,7 +901,8 @@ int VNCServer::Client::Process(const BYTE* data,DWORD size)
 	//Lock buffer
 	wait.Lock();
 	//Puss to buffer
-	buffer.push(data,size);
+	if (!buffer.push(data,size))
+		Error("-VNCServer::Client::Process not enought size %d\n",buffer.length());
 	//Unlock
 	wait.Unlock();
 	//Signal
@@ -1041,7 +1042,7 @@ int VNCServer::Client::Run()
 				reset = false;
 			}
 
-		/*	//If the scren has been resized
+			//If the scren has been resized
 			if (cl->newFBSizePending)
 			{
 				//Free region
@@ -1049,7 +1050,7 @@ int VNCServer::Client::Run()
 				//Set new modified region
 				cl->modifiedRegion = sraRgnCreateRect(0,0,cl->screen->width,cl->screen->height);
 			}
-		*/
+		
 
 			//We need to update by default
 			bool haveUpdate = true;

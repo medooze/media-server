@@ -17,7 +17,7 @@
 #ifdef ENABLE_MCU_ASSERTIONS
 #define MCU_CLOSE(fd)  \
 	({ do {  \
-		if (fd <= 2) {  \
+		if (fd>=0 && fd <= 2) {  \
 			fprintf(stderr, "FATAL: close(fd) called with fd == %d, aborting!\n", fd);  \
 			assert(fd > 2);  \
 			abort();  \
