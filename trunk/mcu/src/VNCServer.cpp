@@ -450,14 +450,13 @@ int VNCServer::FrameBufferUpdate(BYTE *data,int x,int y,int width,int height)
 	Debug("-FrameBufferUpdate [x:%d,y:%d,w:%d,h:%d]\n",x,y,width,height);
 
 	//LOck
-	use.IncUse();
+	use.WaitUnusedAndLock();
 
 	//Update frame
 	for (int j=y;j<y+height;++j)
 		//Copy
 		memcpy(screen->frameBuffer+(x+j*screen->width)*4,data+(x+j*screen->width)*4,width*4);
 
-	/*
 	{
 		screen->frameBuffer[(x+j*screen->width)*4] = 0xFF;
 		screen->frameBuffer[(x+j*screen->width)*4+1] = 00;
@@ -475,13 +474,12 @@ int VNCServer::FrameBufferUpdate(BYTE *data,int x,int y,int width,int height)
 		screen->frameBuffer[(i+(y+height-1)*screen->width)*4+1] = 00;
 		screen->frameBuffer[(i+(y+height-1)*screen->width)*4+2] = 0xFF;
 	}
-	*/
 
 	//Set modified region
 	rfbMarkRectAsModified(screen,x,y,x+width,y+height);
 
 	//Unlock
-	use.DecUse();
+	use.Unlock();
 }
 
 int VNCServer::CopyRect(BYTE *data,int x, int y, int width, int height, int dest_x, int dest_y)
@@ -489,7 +487,7 @@ int VNCServer::CopyRect(BYTE *data,int x, int y, int width, int height, int dest
 	Debug("-CopyRect from [%d,%d] to [%d,%d] size [%d,%d]\n",x,y,dest_x,dest_y,width,height);
 
 	//LOck
-	use.IncUse();
+	use.WaitUnusedAndLock();
 
 	//Update frame
 	for (int j=0;j<height;++j)
@@ -503,7 +501,7 @@ int VNCServer::CopyRect(BYTE *data,int x, int y, int width, int height, int dest
 	rfbMarkRectAsModified(screen,dest_x,dest_y,dest_x+width,dest_y+height);
 
 	//Unlock
-	use.DecUse();
+	use.Unlock();
 }
 
 int VNCServer::End()
