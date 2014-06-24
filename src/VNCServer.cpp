@@ -457,6 +457,7 @@ int VNCServer::FrameBufferUpdate(BYTE *data,int x,int y,int width,int height)
 		//Copy
 		memcpy(screen->frameBuffer+(x+j*screen->width)*4,data+(x+j*screen->width)*4,width*4);
 
+	/*
 	{
 		screen->frameBuffer[(x+j*screen->width)*4] = 0xFF;
 		screen->frameBuffer[(x+j*screen->width)*4+1] = 00;
@@ -474,6 +475,7 @@ int VNCServer::FrameBufferUpdate(BYTE *data,int x,int y,int width,int height)
 		screen->frameBuffer[(i+(y+height-1)*screen->width)*4+1] = 00;
 		screen->frameBuffer[(i+(y+height-1)*screen->width)*4+2] = 0xFF;
 	}
+	*/
 
 	//Set modified region
 	rfbMarkRectAsModified(screen,x,y,x+width,y+height);
