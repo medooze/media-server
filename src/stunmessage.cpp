@@ -97,7 +97,7 @@ STUNMessage* STUNMessage::Parse(BYTE* data,DWORD size)
 
 	//Read atributes
 	//Ensure there are at least 4 remaining bytes (attribute with 0 length).
-	while (i+4 <= size) {
+	while (i+4 <= size)
 	{
 		//Get attribute type
 		WORD attrType = get2(data,i);
