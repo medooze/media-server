@@ -12,7 +12,13 @@
 #include "mediagateway.h"
 #include "jsr309/JSR309Manager.h"
 #include "websocketserver.h"
+#include "OpenSSL.h"
 #include "dtls.h"
+#include "bfcp.h"
+#include "CPUMonitor.h"
+extern "C" {
+	#include "libavcodec/avcodec.h"
+}
 #include <signal.h>
 #include <sys/time.h>
 #include <sys/resource.h>
@@ -21,11 +27,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <cerrno>
-#include "CPUMonitor.h"
-extern "C" {
-#include "libavcodec/avcodec.h"
-}
-#include "bfcp.h"
 
 
 extern XmlHandlerCmd mcuCmdList[];
@@ -91,10 +92,6 @@ int main(int argc,char **argv)
 {
 	//Init random
 	srand (time(NULL));
-
-	//Init open ssl lib
-    SSL_load_error_strings();
-    SSL_library_init();
 
 	//Set default values
 	bool forking = false;
@@ -254,8 +251,9 @@ int main(int argc,char **argv)
 
 	//Dump core on fault
 	rlimit l = {RLIM_INFINITY,RLIM_INFINITY};
+
 	//Set new limit
-        setrlimit(RLIMIT_CORE, &l);
+	setrlimit(RLIMIT_CORE, &l);
 
 	//Register mutext for ffmpeg
 	av_lockmgr_register(lock_ffmpeg);
@@ -277,6 +275,12 @@ int main(int argc,char **argv)
 
 	//Log version
 	Log("-MCU Version %s %s\r\n",MCUVERSION,MCUDATE);
+
+	//Init OpenSSL lib
+	if (! OpenSSL::ClassInit()) {
+		Error("-OpenSSL failed to initialize, exiting\n");
+		exit(1);
+	}
 
 	//Set default video mixer vad period
 	VideoMixer::SetVADDefaultChangePeriod(vadPeriod);
