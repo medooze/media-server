@@ -112,15 +112,19 @@ private:
 	void SendMessage(BFCPMessage *msg);
 	void ReplyError(BFCPMessage *msg, BFCPAttrErrorCode::ErrorCode errorCode);
 	void ReplyError(BFCPMessage *msg, BFCPAttrErrorCode::ErrorCode errorCode, std::wstring errorInfo);
+
 private:
-	typedef UseMap<int, BFCPUser *> Users;
+	typedef UseMap<int, BFCPUser*> Users;
 	typedef std::set<int> Floors;
 	typedef UseMap<int, BFCPFloorRequest*> FloorRequests;
+	// A vector to store removed users.
+	typedef std::vector<BFCPUser*> RemovedUsers;
 
 private:
 	Listener *listener;
 	int conferenceId;
 	Users users;
+	RemovedUsers removedUsers;
 	Floors floors;
 	FloorRequests floorRequests;
 	int floorRequestCounter;
