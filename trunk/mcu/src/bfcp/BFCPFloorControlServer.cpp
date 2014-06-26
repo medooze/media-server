@@ -27,7 +27,14 @@ BFCPFloorControlServer::~BFCPFloorControlServer()
 	this->users.clear();
 	//Unlock
 	users.Unlock();
+
+	for (BFCPFloorControlServer::RemovedUsers::iterator it = this->removedUsers.begin() ; it != this->removedUsers.end(); ++it) {
+		delete *it;
+	}
+	this->removedUsers.clear();
+
 	this->floors.clear();
+
 	for (BFCPFloorControlServer::FloorRequests::iterator it = this->floorRequests.begin() ; it != this->floorRequests.end(); ++it) {
 		delete it->second;
 	}
@@ -115,8 +122,8 @@ bool BFCPFloorControlServer::RemoveUser(int userId)
 	// TODO: log?
 	user->CloseTransport(4001, L"you have been removed from the BFCP conference");
 
-	//Delete user
-	delete user;
+	// Don't delete the user (as other thread may have retrieved it before). Instead move it to removedUsers.
+	removedUsers.push_back(user);
 
 	::Log("BFCPFloorControlServer::RemoveUser() | user '%d' removed from conference '%d'\n", userId, this->conferenceId);
 	return true;
