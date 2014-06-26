@@ -14,9 +14,18 @@
                 <sourceRootElem>.</sourceRootElem>
             </sourceRootList>
             <confList>
-                <confElem>Default</confElem>
-                <confElem>rtmpdebug</confElem>
+                <confElem>
+                    <name>Default</name>
+                    <type>0</type>
+                </confElem>
+                <confElem>
+                    <name>rtmpdebug</name>
+                    <type>0</type>
+                </confElem>
             </confList>
+            <formatting>
+                <project-formatting-style>false</project-formatting-style>
+            </formatting>
         </data>
     </configuration>
 </project>

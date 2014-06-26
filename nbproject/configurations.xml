@@ -1,14 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configurationDescriptor version="69">
-  <logicalFolder name="root" displayName="root" projectFiles="true">
-    <df name="Media Mixer" root=".">
-      <df name="bin">
-        <df name="debug" kind="SOURCE_LOGICAL_FOLDER">
-        </df>
-      </df>
-      <df name="include" kind="SOURCE_LOGICAL_FOLDER">
+<configurationDescriptor version="94">
+  <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
+    <df root="." name="0">
+      <df name="include">
         <df name="bfcp">
-          <df name="attributes" kind="SOURCE_LOGICAL_FOLDER">
+          <df name="attributes">
             <in>BFCPAttrBeneficiaryId.h</in>
             <in>BFCPAttrBeneficiaryInformation.h</in>
             <in>BFCPAttrErrorCode.h</in>
@@ -23,7 +19,7 @@
             <in>BFCPAttrRequestedByInformation.h</in>
             <in>BFCPAttrStatusInfo.h</in>
           </df>
-          <df name="messages" kind="SOURCE_LOGICAL_FOLDER">
+          <df name="messages">
             <in>BFCPMsgError.h</in>
             <in>BFCPMsgFloorQuery.h</in>
             <in>BFCPMsgFloorRelease.h</in>
@@ -60,6 +56,7 @@
         <in>acumulator.h</in>
         <in>amf.h</in>
         <in>appmixer.h</in>
+        <in>assertions.h</in>
         <in>asymmetricmosaic.h</in>
         <in>audio.h</in>
         <in>audiodecoder.h</in>
@@ -163,19 +160,17 @@
         <in>xmlrpcserver.h</in>
         <in>xmlstreaminghandler.h</in>
       </df>
-      <df name="lib" kind="SOURCE_LOGICAL_FOLDER">
+      <df name="lib">
         <in>mediamixer.cpp</in>
         <in>mediamixer.h</in>
       </df>
-      <df name="scripts">
-      </df>
-      <df name="src" kind="SOURCE_LOGICAL_FOLDER">
+      <df name="src">
         <df name="aac">
           <in>aacencoder.cpp</in>
           <in>aacencoder.h</in>
         </df>
         <df name="bfcp">
-          <df name="attributes" kind="SOURCE_LOGICAL_FOLDER">
+          <df name="attributes">
             <in>BFCPAttrBeneficiaryId.cpp</in>
             <in>BFCPAttrBeneficiaryInformation.cpp</in>
             <in>BFCPAttrErrorCode.cpp</in>
@@ -190,7 +185,7 @@
             <in>BFCPAttrRequestedByInformation.cpp</in>
             <in>BFCPAttrStatusInfo.cpp</in>
           </df>
-          <df name="messages" kind="SOURCE_LOGICAL_FOLDER">
+          <df name="messages">
             <in>BFCPMsgError.cpp</in>
             <in>BFCPMsgFloorQuery.cpp</in>
             <in>BFCPMsgFloorRelease.cpp</in>
@@ -205,11 +200,11 @@
           <in>BFCPMessage.cpp</in>
           <in>BFCPUser.cpp</in>
         </df>
-        <df name="flv1" kind="SOURCE_LOGICAL_FOLDER">
+        <df name="flv1">
           <in>flv1codec.cpp</in>
           <in>flv1codec.h</in>
         </df>
-        <df name="g711" kind="SOURCE_LOGICAL_FOLDER">
+        <df name="g711">
           <in>g711.c</in>
           <in>g711.h</in>
           <in>g711codec.h</in>
@@ -220,11 +215,11 @@
           <in>g722codec.cpp</in>
           <in>g722codec.h</in>
         </df>
-        <df name="gsm" kind="SOURCE_LOGICAL_FOLDER">
+        <df name="gsm">
           <in>gsmcodec.cpp</in>
           <in>gsmcodec.h</in>
         </df>
-        <df name="h263" kind="SOURCE_LOGICAL_FOLDER">
+        <df name="h263">
           <in>h263-1996codec.cpp</in>
           <in>h263.cpp</in>
           <in>h263.h</in>
@@ -233,7 +228,7 @@
           <in>mpeg4codec.cpp</in>
           <in>mpeg4codec.h</in>
         </df>
-        <df name="h264" kind="SOURCE_LOGICAL_FOLDER">
+        <df name="h264">
           <in>h264.h</in>
           <in>h264decoder.cpp</in>
           <in>h264decoder.h</in>
@@ -242,7 +237,7 @@
           <in>h264encoder.cpp</in>
           <in>h264encoder.h</in>
         </df>
-        <df name="jsr309" kind="SOURCE_LOGICAL_FOLDER">
+        <df name="jsr309">
           <in>AudioDecoderWorker.cpp</in>
           <in>AudioDecoderWorker.h</in>
           <in>AudioEncoderWorker.cpp</in>
@@ -278,7 +273,7 @@
           <in>VideoTranscoder.h</in>
           <in>xmlrpcjsr309.cpp</in>
         </df>
-        <df name="nelly" kind="SOURCE_LOGICAL_FOLDER">
+        <df name="nelly">
           <in>NellyCodec.cpp</in>
           <in>NellyCodec.h</in>
         </df>
@@ -288,7 +283,7 @@
           <in>opusencoder.cpp</in>
           <in>opusencoder.h</in>
         </df>
-        <df name="speex" kind="SOURCE_LOGICAL_FOLDER">
+        <df name="speex">
           <in>arch.h</in>
           <in>cpusupport.h</in>
           <in>os_support.h</in>
@@ -300,7 +295,7 @@
           <in>stack_alloc.h</in>
         </df>
         <df name="vnc">
-          <df name="common" kind="SOURCE_LOGICAL_FOLDER">
+          <df name="common">
             <in>d3des.c</in>
             <in>d3des.h</in>
             <in>lzoconf.h</in>
@@ -316,7 +311,7 @@
             <in>vncauth.c</in>
             <in>zywrletemplate.c</in>
           </df>
-          <df name="libvncclient" kind="SOURCE_LOGICAL_FOLDER">
+          <df name="libvncclient">
             <in>corre.c</in>
             <in>cursor.c</in>
             <in>hextile.c</in>
@@ -334,7 +329,7 @@
             <in>zlib.c</in>
             <in>zrle.c</in>
           </df>
-          <df name="libvncserver" kind="SOURCE_LOGICAL_FOLDER">
+          <df name="libvncserver">
             <df name="tightvnc-filetransfer">
               <in>filelistinfo.c</in>
               <in>filelistinfo.h</in>
@@ -511,51 +506,2692 @@
   <confs>
     <conf name="Default" type="0">
       <toolsSet>
-        <developmentServer>root@192.168.64.128:22</developmentServer>
         <compilerSet>GNU|GNU</compilerSet>
-        <platform>2</platform>
+        <dependencyChecking>false</dependencyChecking>
+        <rebuildPropChanged>false</rebuildPropChanged>
       </toolsSet>
+      <flagsDictionary>
+        <element flagsID="0" commonFlags="-fPIC -msse3 -fopenmp"/>
+      </flagsDictionary>
+      <codeAssistance>
+      </codeAssistance>
       <makefileType>
         <makeTool>
-          <buildCommandWorkingDir>/usr/local/src/mcu/</buildCommandWorkingDir>
+          <buildCommandWorkingDir>R:/usr/local/src/mcu</buildCommandWorkingDir>
           <buildCommand>${MAKE} -f Makefile</buildCommand>
           <cleanCommand>${MAKE} -f Makefile clean</cleanCommand>
           <executablePath>bin/debug/mcu</executablePath>
           <cTool>
             <incDir>
               <pElem>src</pElem>
-              <pElem>.</pElem>
+              <pElem></pElem>
               <pElem>include</pElem>
             </incDir>
           </cTool>
-          <ccTool>
-            <incDir>
-              <pElem>.</pElem>
-              <pElem>include</pElem>
-              <pElem>src</pElem>
-              <pElem>src/jsr309</pElem>
-              <pElem>R:/usr/local/include</pElem>
-              <pElem>R:/usr/local/src/ffmpeg/libavcodec</pElem>
-              <pElem>R:/usr/local/src/ffmpeg/libavutil</pElem>
-              <pElem>R:/usr/local/src/ffmpeg/libswscale</pElem>
-              <pElem>R:/usr/local/src/mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
-              <pElem>R:/usr/local/src/mpeg4ip-1.5.0.1/lib/mp4</pElem>
-              <pElem>R:/usr/local/src/x264/encoder</pElem>
-              <pElem>R:/usr/include</pElem>
-              <pElem>R:/usr/local/include</pElem>
-            </incDir>
-          </ccTool>
         </makeTool>
       </makefileType>
-      <item path="src/flvdump.cpp" ex="false" tool="0">
+      <folder path="0/lib">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+            <pElem>lib</pElem>
+          </incDir>
+        </ccTool>
+      </folder>
+      <folder path="0/src/aac">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+            <pElem>src/aac</pElem>
+          </incDir>
+        </ccTool>
+      </folder>
+      <folder path="0/src/bfcp/attributes">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+            <pElem>src/bfcp/attributes</pElem>
+          </incDir>
+        </ccTool>
+      </folder>
+      <folder path="0/src/bfcp/messages">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+            <pElem>src/bfcp/messages</pElem>
+          </incDir>
+        </ccTool>
+      </folder>
+      <folder path="0/src/flv1">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+            <pElem>src/flv1</pElem>
+          </incDir>
+        </ccTool>
+      </folder>
+      <folder path="0/src/g711">
+        <cTool>
+          <incDir>
+            <pElem>src/g711</pElem>
+          </incDir>
+        </cTool>
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+            <pElem>src/g711</pElem>
+          </incDir>
+        </ccTool>
+      </folder>
+      <folder path="0/src/g722">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+            <pElem>src/g722</pElem>
+          </incDir>
+        </ccTool>
+      </folder>
+      <folder path="0/src/gsm">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+            <pElem>src/gsm</pElem>
+          </incDir>
+        </ccTool>
+      </folder>
+      <folder path="0/src/h263">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+            <pElem>src/h263</pElem>
+          </incDir>
+        </ccTool>
+      </folder>
+      <folder path="0/src/h264">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+            <pElem>src/h264</pElem>
+          </incDir>
+        </ccTool>
+      </folder>
+      <folder path="0/src/jsr309">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </folder>
+      <folder path="0/src/nelly">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+            <pElem>src/nelly</pElem>
+          </incDir>
+        </ccTool>
+      </folder>
+      <folder path="0/src/opus">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+            <pElem>src/opus</pElem>
+          </incDir>
+        </ccTool>
+      </folder>
+      <folder path="0/src/speex">
+        <cTool>
+          <incDir>
+            <pElem>src/speex</pElem>
+          </incDir>
+        </cTool>
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+            <pElem>src/speex</pElem>
+          </incDir>
+        </ccTool>
+      </folder>
+      <folder path="0/src/vnc/common">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/common</pElem>
+          </incDir>
+        </cTool>
+      </folder>
+      <folder path="0/src/vnc/libvncclient">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncclient</pElem>
+          </incDir>
+        </cTool>
+      </folder>
+      <folder path="0/src/vnc/libvncserver/tightvnc-filetransfer">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver/tightvnc-filetransfer</pElem>
+          </incDir>
+        </cTool>
+      </folder>
+      <folder path="0/src/vp6">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+            <pElem>src/vp6</pElem>
+          </incDir>
+        </ccTool>
+      </folder>
+      <folder path="0/src/vp8">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+            <pElem>src/vp8</pElem>
+          </incDir>
+        </ccTool>
+      </folder>
+      <item path="lib/mediamixer.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/CPUMonitor.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/FLVEncoder.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/FlashPlayer.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/FlashSoundHandler.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/RTPSmoother.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/VNCServer.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/VNCViewer.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/aac/aacencoder.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/amf.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/appmixer.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/asymmetricmosaic.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/audio.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/audiodecoder.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/audioencoder.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/audiomixer.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/audiostream.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/audiotransrater.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/avcdescriptor.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/bfcp.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/bfcp/BFCPAttribute.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+            <pElem>src/bfcp</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/bfcp/BFCPFloorControlServer.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+        <ccTool flags="0">
+          <incDir>
+            <pElem>include</pElem>
+            <pElem>src/vnc/common</pElem>
+            <pElem>src/vnc/libvncserver</pElem>
+            <pElem>../../include/ImageMagick-6</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/bfcp/BFCPFloorRequest.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+            <pElem>src/bfcp</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/bfcp/BFCPMessage.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+            <pElem>src/bfcp</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/bfcp/BFCPUser.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+            <pElem>src/bfcp</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/bfcp/attributes/BFCPAttrBeneficiaryId.cpp"
+            ex="false"
+            tool="1"
+            flavor2="4">
+      </item>
+      <item path="src/bfcp/attributes/BFCPAttrBeneficiaryInformation.cpp"
+            ex="false"
+            tool="1"
+            flavor2="4">
+      </item>
+      <item path="src/bfcp/attributes/BFCPAttrErrorCode.cpp"
+            ex="false"
+            tool="1"
+            flavor2="4">
+      </item>
+      <item path="src/bfcp/attributes/BFCPAttrErrorInfo.cpp"
+            ex="false"
+            tool="1"
+            flavor2="4">
+      </item>
+      <item path="src/bfcp/attributes/BFCPAttrFloorId.cpp"
+            ex="false"
+            tool="1"
+            flavor2="4">
+      </item>
+      <item path="src/bfcp/attributes/BFCPAttrFloorRequestId.cpp"
+            ex="false"
+            tool="1"
+            flavor2="4">
+      </item>
+      <item path="src/bfcp/attributes/BFCPAttrFloorRequestInformation.cpp"
+            ex="false"
+            tool="1"
+            flavor2="4">
+      </item>
+      <item path="src/bfcp/attributes/BFCPAttrFloorRequestStatus.cpp"
+            ex="false"
+            tool="1"
+            flavor2="4">
+      </item>
+      <item path="src/bfcp/attributes/BFCPAttrOverallRequestStatus.cpp"
+            ex="false"
+            tool="1"
+            flavor2="4">
+      </item>
+      <item path="src/bfcp/attributes/BFCPAttrParticipantProvidedInfo.cpp"
+            ex="false"
+            tool="1"
+            flavor2="4">
+      </item>
+      <item path="src/bfcp/attributes/BFCPAttrRequestStatus.cpp"
+            ex="false"
+            tool="1"
+            flavor2="4">
+      </item>
+      <item path="src/bfcp/attributes/BFCPAttrRequestedByInformation.cpp"
+            ex="false"
+            tool="1"
+            flavor2="4">
+      </item>
+      <item path="src/bfcp/attributes/BFCPAttrStatusInfo.cpp"
+            ex="false"
+            tool="1"
+            flavor2="4">
+      </item>
+      <item path="src/bfcp/messages/BFCPMsgError.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/bfcp/messages/BFCPMsgFloorQuery.cpp"
+            ex="false"
+            tool="1"
+            flavor2="4">
+      </item>
+      <item path="src/bfcp/messages/BFCPMsgFloorRelease.cpp"
+            ex="false"
+            tool="1"
+            flavor2="4">
+      </item>
+      <item path="src/bfcp/messages/BFCPMsgFloorRequest.cpp"
+            ex="false"
+            tool="1"
+            flavor2="4">
+      </item>
+      <item path="src/bfcp/messages/BFCPMsgFloorRequestStatus.cpp"
+            ex="false"
+            tool="1"
+            flavor2="4">
+      </item>
+      <item path="src/bfcp/messages/BFCPMsgFloorStatus.cpp"
+            ex="false"
+            tool="1"
+            flavor2="4">
+      </item>
+      <item path="src/bfcp/messages/BFCPMsgHello.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/broadcaster.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/broadcastsession.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/crc32calc.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/dtls.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/eventstreaminghandler.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/fecdecoder.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/flash.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/flashstreamer.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/flv1/flv1codec.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/flvdump.cpp" ex="false" tool="0" flavor2="2">
+      </item>
+      <item path="src/flvplayer.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/flvrecorder.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/framescaler.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/g711/g711.c" ex="false" tool="0" flavor2="2">
+      </item>
+      <item path="src/g711/pcmacodec.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/g711/pcmucodec.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/g722/g722codec.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/gsm/gsmcodec.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/h263/h263-1996codec.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/h263/h263.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/h263/h263codec.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/h263/mpeg4codec.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/h264/h264decoder.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/h264/h264depacketizer.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/h264/h264encoder.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/http.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/httpparser.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/jsr309/AudioDecoderWorker.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/jsr309/AudioEncoderWorker.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/jsr309/AudioMixerResource.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/jsr309/AudioTranscoder.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/jsr309/Endpoint.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/jsr309/JSR309Manager.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/jsr309/MediaSession.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/jsr309/Player.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/jsr309/RTPEndpoint.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/jsr309/RTPMultiplexer.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/jsr309/RTPMultiplexerSmoother.cpp"
+            ex="false"
+            tool="1"
+            flavor2="4">
+      </item>
+      <item path="src/jsr309/Recorder.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/jsr309/VideoDecoderWorker.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/jsr309/VideoEncoderWorker.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/jsr309/VideoMixerResource.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/jsr309/VideoTranscoder.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/jsr309/xmlrpcjsr309.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/logo.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/main.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/mcu.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/mediabridgesession.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/mediagateway.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/mosaic.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/mp4player.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/mp4recorder.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/mp4streamer.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/multiconf.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/nelly/NellyCodec.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/opus/opusdecoder.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/opus/opusencoder.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/overlay.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/partedmosaic.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/pipeaudioinput.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/pipeaudiooutput.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/pipetextinput.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/pipetextoutput.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/pipevideoinput.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/pipevideooutput.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/pipmosaic.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/remoteratecontrol.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/remoterateestimator.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/rtmpchunk.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/rtmpclientconnection.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/rtmpconnection.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/rtmpdebug.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/rtmpflvstream.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/rtmpmessage.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/rtmpmp4stream.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/rtmpnetconnection.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/rtmpparticipant.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/rtmpserver.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/rtmpstream.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/rtp.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/rtpparticipant.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/rtpsession.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/sidebar.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/speex/resample.c" ex="false" tool="0" flavor2="2">
+      </item>
+      <item path="src/speex/speexcodec.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/statushandler.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/stunmessage.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/tcpsocketserver.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/textencoder.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/textmixer.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/textmixerworker.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/textstream.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/uploadhandler.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/vad.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/video.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/videomixer.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/videopipe.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/videostream.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/vnc/common/d3des.c" ex="false" tool="0" flavor2="2">
+      </item>
+      <item path="src/vnc/common/md5.c" ex="false" tool="0" flavor2="2">
+      </item>
+      <item path="src/vnc/common/minilzo.c" ex="false" tool="0" flavor2="2">
+      </item>
+      <item path="src/vnc/common/sha1.c" ex="false" tool="0" flavor2="2">
+      </item>
+      <item path="src/vnc/common/turbojpeg.c" ex="false" tool="0" flavor2="2">
+      </item>
+      <item path="src/vnc/common/vncauth.c" ex="false" tool="0" flavor2="2">
+      </item>
+      <item path="src/vnc/common/zywrletemplate.c" ex="false" tool="0" flavor2="2">
+      </item>
+      <item path="src/vnc/libvncclient/corre.c" ex="false" tool="0" flavor2="2">
+      </item>
+      <item path="src/vnc/libvncclient/cursor.c" ex="false" tool="0" flavor2="2">
+      </item>
+      <item path="src/vnc/libvncclient/hextile.c" ex="false" tool="0" flavor2="2">
+      </item>
+      <item path="src/vnc/libvncclient/listen.c" ex="false" tool="0" flavor2="2">
+      </item>
+      <item path="src/vnc/libvncclient/rfbproto.c" ex="false" tool="0" flavor2="2">
+      </item>
+      <item path="src/vnc/libvncclient/rre.c" ex="false" tool="0" flavor2="2">
+      </item>
+      <item path="src/vnc/libvncclient/sockets.c" ex="false" tool="0" flavor2="2">
+      </item>
+      <item path="src/vnc/libvncclient/tight.c" ex="false" tool="0" flavor2="2">
+      </item>
+      <item path="src/vnc/libvncclient/tls_gnutls.c" ex="false" tool="0" flavor2="2">
+      </item>
+      <item path="src/vnc/libvncclient/tls_none.c" ex="false" tool="0" flavor2="2">
+      </item>
+      <item path="src/vnc/libvncclient/tls_openssl.c" ex="false" tool="0" flavor2="2">
+      </item>
+      <item path="src/vnc/libvncclient/ultra.c" ex="false" tool="0" flavor2="2">
+      </item>
+      <item path="src/vnc/libvncclient/vncviewer.c" ex="false" tool="0" flavor2="2">
+      </item>
+      <item path="src/vnc/libvncclient/zlib.c" ex="false" tool="0" flavor2="2">
+      </item>
+      <item path="src/vnc/libvncclient/zrle.c" ex="false" tool="0" flavor2="2">
+      </item>
+      <item path="src/vnc/libvncserver/auth.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/vnc/libvncserver/cargs.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/vnc/libvncserver/corre.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/vnc/libvncserver/cutpaste.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/vnc/libvncserver/draw.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/vnc/libvncserver/font.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/vnc/libvncserver/hextile.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/vnc/libvncserver/httpd.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/vnc/libvncserver/rfbcrypto_gnutls.c"
+            ex="false"
+            tool="0"
+            flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/vnc/libvncserver/rfbcrypto_included.c"
+            ex="false"
+            tool="0"
+            flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/vnc/libvncserver/rfbcrypto_openssl.c"
+            ex="false"
+            tool="0"
+            flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/vnc/libvncserver/rfbregion.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/vnc/libvncserver/rfbserver.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/vnc/libvncserver/rfbssl_gnutls.c"
+            ex="false"
+            tool="0"
+            flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/vnc/libvncserver/rfbssl_none.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/vnc/libvncserver/rfbssl_openssl.c"
+            ex="false"
+            tool="0"
+            flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/vnc/libvncserver/rre.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/vnc/libvncserver/scale.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/vnc/libvncserver/selbox.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/vnc/libvncserver/server.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/vnc/libvncserver/server_cursor.c"
+            ex="false"
+            tool="0"
+            flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/vnc/libvncserver/sockets.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/vnc/libvncserver/stats.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/vnc/libvncserver/tableinit24.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/vnc/libvncserver/tableinitcmtemplate.c"
+            ex="false"
+            tool="0"
+            flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/vnc/libvncserver/tableinittctemplate.c"
+            ex="false"
+            tool="0"
+            flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/vnc/libvncserver/tabletrans24template.c"
+            ex="false"
+            tool="0"
+            flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/vnc/libvncserver/tabletranstemplate.c"
+            ex="false"
+            tool="0"
+            flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/vnc/libvncserver/tight.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/vnc/libvncserver/tightvnc-filetransfer/filelistinfo.c"
+            ex="false"
+            tool="0"
+            flavor2="2">
+      </item>
+      <item path="src/vnc/libvncserver/tightvnc-filetransfer/filetransfermsg.c"
+            ex="false"
+            tool="0"
+            flavor2="2">
+      </item>
+      <item path="src/vnc/libvncserver/tightvnc-filetransfer/handlefiletransferrequest.c"
+            ex="false"
+            tool="0"
+            flavor2="2">
+      </item>
+      <item path="src/vnc/libvncserver/tightvnc-filetransfer/rfbtightserver.c"
+            ex="false"
+            tool="0"
+            flavor2="2">
+      </item>
+      <item path="src/vnc/libvncserver/translate.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/vnc/libvncserver/ultra.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/vnc/libvncserver/websockets.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/vnc/libvncserver/zlib.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/vnc/libvncserver/zrle.c" ex="false" tool="0" flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/vnc/libvncserver/zrleencodetemplate.c"
+            ex="false"
+            tool="0"
+            flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/vnc/libvncserver/zrleoutstream.c"
+            ex="false"
+            tool="0"
+            flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/vnc/libvncserver/zrlepalettehelper.c"
+            ex="false"
+            tool="0"
+            flavor2="2">
+        <cTool>
+          <incDir>
+            <pElem>src/vnc/libvncserver</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="src/vp6/vp6decoder.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/vp8/vp8decoder.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/vp8/vp8encoder.cpp" ex="false" tool="1" flavor2="4">
+      </item>
+      <item path="src/websocketconnection.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/websocketserver.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/websocketshandler.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/xmlhandler.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/xmlrpcbroadcaster.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/xmlrpcclient.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/xmlrpcflash.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/xmlrpcflv.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/xmlrpcmcu.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/xmlrpcmediagateway.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/xmlrpcrtmp.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/xmlrpcserver.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="src/xmlstreaminghandler.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem></pElem>
+            <pElem>include</pElem>
+            <pElem>src</pElem>
+            <pElem>src/jsr309</pElem>
+            <pElem>../../include</pElem>
+            <pElem>../ffmpeg/libavcodec</pElem>
+            <pElem>../ffmpeg/libavutil</pElem>
+            <pElem>../ffmpeg/libswscale</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
+            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
+            <pElem>../x264/encoder</pElem>
+            <pElem>../../../include</pElem>
+          </incDir>
+        </ccTool>
       </item>
     </conf>
     <conf name="rtmpdebug" type="0">
       <toolsSet>
-        <developmentServer>root@192.168.64.128:22</developmentServer>
         <compilerSet>GNU|GNU</compilerSet>
-        <platform>2</platform>
+        <dependencyChecking>false</dependencyChecking>
+        <rebuildPropChanged>false</rebuildPropChanged>
       </toolsSet>
+      <codeAssistance>
+      </codeAssistance>
       <makefileType>
         <makeTool>
           <buildCommandWorkingDir>/usr/local/src/mcu/media</buildCommandWorkingDir>
@@ -570,6 +3206,1069 @@
           </ccTool>
         </makeTool>
       </makefileType>
+      <item path="include/CPUMonitor.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/FLVEncoder.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/FlashSoundHandler.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/RTPSmoother.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/VNCServer.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/VNCViewer.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/aacconfig.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/acumulator.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/amf.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/appmixer.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/assertions.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/asymmetricmosaic.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/audio.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/audiodecoder.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/audioencoder.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/audiomixer.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/audiostream.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/audiotransrater.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/avcdescriptor.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/bfcp.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/bfcp/BFCPAttribute.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/bfcp/BFCPFloorControlServer.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="include/bfcp/BFCPFloorRequest.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/bfcp/BFCPMessage.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/bfcp/BFCPUser.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/bfcp/attributes.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/bfcp/attributes/BFCPAttrBeneficiaryId.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="include/bfcp/attributes/BFCPAttrBeneficiaryInformation.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="include/bfcp/attributes/BFCPAttrErrorCode.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="include/bfcp/attributes/BFCPAttrErrorInfo.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="include/bfcp/attributes/BFCPAttrFloorId.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="include/bfcp/attributes/BFCPAttrFloorRequestId.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="include/bfcp/attributes/BFCPAttrFloorRequestInformation.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="include/bfcp/attributes/BFCPAttrFloorRequestStatus.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="include/bfcp/attributes/BFCPAttrOverallRequestStatus.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="include/bfcp/attributes/BFCPAttrParticipantProvidedInfo.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="include/bfcp/attributes/BFCPAttrRequestStatus.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="include/bfcp/attributes/BFCPAttrRequestedByInformation.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="include/bfcp/attributes/BFCPAttrStatusInfo.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="include/bfcp/messages.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/bfcp/messages/BFCPMsgError.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="include/bfcp/messages/BFCPMsgFloorQuery.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="include/bfcp/messages/BFCPMsgFloorRelease.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="include/bfcp/messages/BFCPMsgFloorRequest.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="include/bfcp/messages/BFCPMsgFloorRequestStatus.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="include/bfcp/messages/BFCPMsgFloorStatus.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="include/bfcp/messages/BFCPMsgHello.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="include/bitstream.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/broadcaster.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/broadcastsession.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/codecs.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/config.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/crc32calc.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/dtls.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/eventstreaminghandler.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/fecdecoder.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/fifo.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/flash.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/flv.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/flvrecorder.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/framescaler.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/http.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/httpparser.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/log.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/logo.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/mcu.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/mcurtmpstream.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/media.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/mediabridgesession.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/mediagateway.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/mosaic.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/mp4player.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/mp4recorder.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/mp4streamer.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/multiconf.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/overlay.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/partedmosaic.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/participant.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/pipeaudioinput.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/pipeaudiooutput.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/pipetextinput.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/pipetextoutput.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/pipevideoinput.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/pipevideooutput.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/pipmosaic.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/recordercontrol.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/remoteratecontrol.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/remoterateestimator.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/rfb/default8x16.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/rfb/keysym.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/rfb/rfb.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/rfb/rfbclient.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/rfb/rfbconfig.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/rfb/rfbint.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/rfb/rfbproto.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/rfb/rfbregion.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/rtmp.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/rtmpapplication.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/rtmpbroadcaster.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/rtmpchunk.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/rtmpclientconnection.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/rtmpconnection.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/rtmpflvstream.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/rtmphandshake.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/rtmpmessage.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/rtmpmp4stream.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/rtmpnetconnection.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/rtmpparticipant.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/rtmpserver.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/rtmpstream.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/rtmptranscoder.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/rtp.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/rtpbuffer.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/rtpparticipant.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/rtpsession.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/sidebar.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/statushandler.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/stringparser.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/stunmessage.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/tcpsocketserver.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/text.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/textencoder.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/textmixer.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/textmixerworker.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/textstream.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/tools.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/uploadhandler.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/use.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/vad.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/version.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/video.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/videomixer.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/videopipe.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/videostream.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/videotranscoder.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/wait.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/waitqueue.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/websocketconnection.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/websockets.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/websocketserver.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/websocketshandler.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/xmlhandler.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/xmlrpcclient.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/xmlrpcflashclient.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/xmlrpcmcuclient.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/xmlrpcproxyclient.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/xmlrpcserver.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/xmlstreaminghandler.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="lib/mediamixer.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="lib/mediamixer.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/CPUMonitor.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/FLVEncoder.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/FlashPlayer.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/FlashSoundHandler.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/RTPSmoother.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/VNCServer.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/VNCViewer.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/aac/aacencoder.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/aac/aacencoder.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/amf.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/appmixer.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/asymmetricmosaic.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/audio.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/audiodecoder.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/audioencoder.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/audiomixer.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/audiostream.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/audiotransrater.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/avcdescriptor.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/bfcp.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/bfcp/BFCPAttribute.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/bfcp/BFCPFloorControlServer.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="src/bfcp/BFCPFloorRequest.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/bfcp/BFCPMessage.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/bfcp/BFCPUser.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/bfcp/attributes/BFCPAttrBeneficiaryId.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="src/bfcp/attributes/BFCPAttrBeneficiaryInformation.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="src/bfcp/attributes/BFCPAttrErrorCode.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="src/bfcp/attributes/BFCPAttrErrorInfo.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="src/bfcp/attributes/BFCPAttrFloorId.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="src/bfcp/attributes/BFCPAttrFloorRequestId.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="src/bfcp/attributes/BFCPAttrFloorRequestInformation.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="src/bfcp/attributes/BFCPAttrFloorRequestStatus.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="src/bfcp/attributes/BFCPAttrOverallRequestStatus.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="src/bfcp/attributes/BFCPAttrParticipantProvidedInfo.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="src/bfcp/attributes/BFCPAttrRequestStatus.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="src/bfcp/attributes/BFCPAttrRequestedByInformation.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="src/bfcp/attributes/BFCPAttrStatusInfo.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="src/bfcp/messages/BFCPMsgError.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/bfcp/messages/BFCPMsgFloorQuery.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="src/bfcp/messages/BFCPMsgFloorRelease.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="src/bfcp/messages/BFCPMsgFloorRequest.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="src/bfcp/messages/BFCPMsgFloorRequestStatus.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="src/bfcp/messages/BFCPMsgFloorStatus.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="src/bfcp/messages/BFCPMsgHello.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/broadcaster.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/broadcastsession.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/crc32calc.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/dtls.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/eventstreaminghandler.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/fecdecoder.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/flash.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/flashstreamer.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/flv1/flv1codec.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/flv1/flv1codec.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/flvdump.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/flvplayer.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/flvrecorder.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/framescaler.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/g711/g711.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/g711/g711.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/g711/g711codec.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/g711/pcmacodec.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/g711/pcmucodec.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/g722/g722codec.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/g722/g722codec.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/gsm/gsmcodec.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/gsm/gsmcodec.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/h263/h263-1996codec.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/h263/h263.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/h263/h263.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/h263/h263codec.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/h263/h263codec.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/h263/mpeg4codec.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/h263/mpeg4codec.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/h264/h264.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/h264/h264decoder.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/h264/h264decoder.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/h264/h264depacketizer.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/h264/h264depacketizer.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/h264/h264encoder.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/h264/h264encoder.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/http.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/httpparser.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/jsr309/AudioDecoderWorker.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/jsr309/AudioDecoderWorker.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/jsr309/AudioEncoderWorker.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/jsr309/AudioEncoderWorker.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/jsr309/AudioMixerResource.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/jsr309/AudioMixerResource.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/jsr309/AudioTranscoder.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/jsr309/AudioTranscoder.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/jsr309/Endpoint.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/jsr309/Endpoint.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/jsr309/JSR309Manager.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/jsr309/JSR309Manager.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/jsr309/Joinable.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/jsr309/MediaSession.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/jsr309/MediaSession.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/jsr309/Player.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/jsr309/Player.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/jsr309/RTPEndpoint.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/jsr309/RTPEndpoint.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/jsr309/RTPMultiplexer.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/jsr309/RTPMultiplexer.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/jsr309/RTPMultiplexerSmoother.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
+      <item path="src/jsr309/RTPMultiplexerSmoother.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="src/jsr309/Recorder.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/jsr309/Recorder.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/jsr309/VideoDecoderWorker.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/jsr309/VideoDecoderWorker.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/jsr309/VideoEncoderWorker.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/jsr309/VideoEncoderWorker.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/jsr309/VideoMixerResource.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/jsr309/VideoMixerResource.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/jsr309/VideoTranscoder.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/jsr309/VideoTranscoder.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/jsr309/xmlrpcjsr309.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/logo.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/main.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/mcu.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/mediabridgesession.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/mediagateway.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/mosaic.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/mp4player.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/mp4recorder.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/mp4streamer.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/multiconf.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/nelly/NellyCodec.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/nelly/NellyCodec.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/opus/opusdecoder.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/opus/opusdecoder.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/opus/opusencoder.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/opus/opusencoder.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/overlay.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/partedmosaic.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/pipeaudioinput.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/pipeaudiooutput.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/pipetextinput.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/pipetextoutput.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/pipevideoinput.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/pipevideooutput.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/pipmosaic.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/remoteratecontrol.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/remoterateestimator.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/rtmpchunk.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/rtmpclientconnection.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/rtmpconnection.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/rtmpdebug.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/rtmpflvstream.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/rtmpmessage.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/rtmpmp4stream.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/rtmpnetconnection.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/rtmpparticipant.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/rtmpserver.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/rtmpstream.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/rtp.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/rtpparticipant.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/rtpsession.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/sidebar.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/speex/arch.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/speex/cpusupport.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/speex/os_support.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/speex/resample.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/speex/resample_sse.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/speex/speex_resampler.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/speex/speexcodec.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/speex/speexcodec.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/speex/stack_alloc.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/statushandler.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/stunmessage.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/tcpsocketserver.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/textencoder.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/textmixer.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/textmixerworker.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/textstream.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/uploadhandler.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/vad.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/video.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/videomixer.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/videopipe.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/videostream.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/vnc/common/d3des.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/common/d3des.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/vnc/common/lzoconf.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/vnc/common/lzodefs.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/vnc/common/md5.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/common/md5.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/vnc/common/minilzo.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/common/minilzo.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/vnc/common/sha1.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/common/sha1.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/vnc/common/turbojpeg.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/common/turbojpeg.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/vnc/common/vncauth.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/common/zywrletemplate.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncclient/corre.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncclient/cursor.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncclient/hextile.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncclient/listen.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncclient/rfbproto.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncclient/rre.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncclient/sockets.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncclient/tight.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncclient/tls.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncclient/tls_gnutls.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncclient/tls_none.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncclient/tls_openssl.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncclient/ultra.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncclient/vncviewer.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncclient/zlib.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncclient/zrle.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/auth.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/cargs.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/corre.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/cutpaste.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/draw.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/font.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/hextile.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/httpd.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/private.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/rfbcrypto.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/rfbcrypto_gnutls.c"
+            ex="false"
+            tool="0"
+            flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/rfbcrypto_included.c"
+            ex="false"
+            tool="0"
+            flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/rfbcrypto_openssl.c"
+            ex="false"
+            tool="0"
+            flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/rfbregion.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/rfbserver.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/rfbssl.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/rfbssl_gnutls.c"
+            ex="false"
+            tool="0"
+            flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/rfbssl_none.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/rfbssl_openssl.c"
+            ex="false"
+            tool="0"
+            flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/rre.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/scale.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/scale.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/selbox.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/server.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/server_cursor.c"
+            ex="false"
+            tool="0"
+            flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/sockets.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/stats.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/tableinit24.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/tableinitcmtemplate.c"
+            ex="false"
+            tool="0"
+            flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/tableinittctemplate.c"
+            ex="false"
+            tool="0"
+            flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/tabletrans24template.c"
+            ex="false"
+            tool="0"
+            flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/tabletranstemplate.c"
+            ex="false"
+            tool="0"
+            flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/tight.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/tightvnc-filetransfer/filelistinfo.c"
+            ex="false"
+            tool="0"
+            flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/tightvnc-filetransfer/filelistinfo.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/tightvnc-filetransfer/filetransfermsg.c"
+            ex="false"
+            tool="0"
+            flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/tightvnc-filetransfer/filetransfermsg.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/tightvnc-filetransfer/handlefiletransferrequest.c"
+            ex="false"
+            tool="0"
+            flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/tightvnc-filetransfer/handlefiletransferrequest.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/tightvnc-filetransfer/rfbtightproto.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/tightvnc-filetransfer/rfbtightserver.c"
+            ex="false"
+            tool="0"
+            flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/translate.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/ultra.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/websockets.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/zlib.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/zrle.c" ex="false" tool="0" flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/zrleencodetemplate.c"
+            ex="false"
+            tool="0"
+            flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/zrleoutstream.c"
+            ex="false"
+            tool="0"
+            flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/zrleoutstream.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/zrlepalettehelper.c"
+            ex="false"
+            tool="0"
+            flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/zrlepalettehelper.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="src/vnc/libvncserver/zrletypes.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/vp6/vp6decoder.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/vp6/vp6decoder.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/vp8/vp8.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/vp8/vp8decoder.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/vp8/vp8decoder.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/vp8/vp8encoder.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/vp8/vp8encoder.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/websocketconnection.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/websocketserver.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/websocketshandler.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/xmlhandler.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/xmlrpcbroadcaster.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/xmlrpcclient.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/xmlrpcflash.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/xmlrpcflv.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/xmlrpcmcu.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/xmlrpcmediagateway.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/xmlrpcrtmp.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/xmlrpcserver.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/xmlstreaminghandler.cpp" ex="false" tool="1" flavor2="0">
+      </item>
     </conf>
   </confs>
 </configurationDescriptor>
