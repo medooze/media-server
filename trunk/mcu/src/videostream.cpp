@@ -610,13 +610,13 @@ int VideoStream::RecVideo()
 	timeval 	before;
 	timeval		lastFPURequest;
 	DWORD		lostCount=0;
-	DWORD		frameSeqNum = RTPPacket::MaxExtSeqNum;
+	DWORD		ts = (DWORD)-1;
 	DWORD		lastSeq = RTPPacket::MaxExtSeqNum;
 	bool		waitIntra = false;
 	
 	Log(">RecVideo\n");
 	
-	//Inicializamos el tiempo
+	//Get now
 	gettimeofday(&before,NULL);
 
 	//Not sent FPU yet
@@ -625,7 +625,7 @@ int VideoStream::RecVideo()
 	//Mientras tengamos que capturar
 	while(receivingVideo)
 	{
-		//Obtenemos el paquete
+		//Get RTP packet
 		RTPPacket* packet = rtp.GetPacket();
 
 		//Check
@@ -633,8 +633,9 @@ int VideoStream::RecVideo()
 			//Next
 			continue;
 
-		//Get extended sequence number
+		//Get extended sequence number and timestamp
 		DWORD seq = packet->GetExtSeqNum();
+		DWORD ts = packet->GetTimestamp();
 
 		//Get packet data
 		BYTE* buffer = packet->GetMediaData();
@@ -657,8 +658,8 @@ int VideoStream::RecVideo()
 		//Update last sequence number
 		lastSeq = seq;
 
-		//Si hemos perdido un paquete or still have not got an iframe
-		if(lostCount>1 || waitIntra)
+		//If lost some packets or still have not got an iframe
+		if(lostCount || waitIntra)
 		{
 			//Check if we got listener and more than 1/2 second have elapsed from last request
 			if (listener && getDifTime(&lastFPURequest)>500000)
@@ -698,17 +699,18 @@ int VideoStream::RecVideo()
 			size = red->GetPrimaryPayloadSize();
 		}
 		
-		//Comprobamos el tipo
+		//Check codecs
 		if ((videoDecoder==NULL) || (type!=videoDecoder->type))
 		{
-			//Si habia uno nos lo cargamos
+			//If we already got one
 			if (videoDecoder!=NULL)
+				//Delete it
 				delete videoDecoder;
 
-			//Creamos uno dependiendo del tipo
+			//Create video decorder for codec
 			videoDecoder = VideoCodecFactory::CreateDecoder(type);
 
-			//Si es nulo
+			//Check
 			if (videoDecoder==NULL)
 			{
 				Error("Error creando nuevo decodificador de video [%d]\n",type);
@@ -719,8 +721,8 @@ int VideoStream::RecVideo()
 			}
 		}
 
-		//Check if we have lost the last packet from the previous frame
-		if (seq>frameSeqNum)
+		//Check if we have lost the last packet from the previous frame by comparing both timestamps
+		if (time>ts)
 		{
 			//Try to decode what is in the buffer
 			videoDecoder->DecodePacket(NULL,0,1,1);
@@ -741,7 +743,10 @@ int VideoStream::RecVideo()
 			}
 		}
 		
-		//Lo decodificamos
+		//Update frame time
+		frameTime = ts;
+		
+		//Decode packet
 		if(!videoDecoder->DecodePacket(buffer,size,lost,packet->GetMark()))
 		{
 			//Check if we got listener and more than 1/2 seconds have elapsed from last request
@@ -766,14 +771,14 @@ int VideoStream::RecVideo()
 			continue;
 		}
 
-		//Si es el ultimo
+		//Check if it is the last packet of a frame
 		if(packet->GetMark())
 		{
 			if (videoDecoder->IsKeyFrame())
 				Debug("-Got Intra\n");
 			
-			//No seq number for frame
-			frameSeqNum = RTPPacket::MaxExtSeqNum; //TODO: Check, shouldn't it be packet->GetExtSeqNum() ??? 
+			//No frame time yet for next frame
+			frameTime = (DWORD)-1;
 
 			//Get picture
 			BYTE *frame = videoDecoder->GetFrame();
@@ -799,7 +804,7 @@ int VideoStream::RecVideo()
 		delete(packet);
 	}
 
-	//Borramos el encoder
+	//Delete encoder
 	delete videoDecoder;
 
 	Log("<RecVideo\n");
