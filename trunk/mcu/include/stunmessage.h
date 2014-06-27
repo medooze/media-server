@@ -97,10 +97,12 @@ public:
 		BYTE *attr;
 	};
 public:
+	static bool IsSTUN(BYTE* data,DWORD size);
+	static STUNMessage* Parse(BYTE* data,DWORD size);
+public:
 	STUNMessage(Type type,Method method,BYTE* transId);
 	~STUNMessage();
 	STUNMessage* CreateResponse();
-	static STUNMessage* Parse(BYTE* data,DWORD size);
 	DWORD AuthenticatedFingerPrint(BYTE* data,DWORD size,const char* pwd);
 	DWORD NonAuthenticatedFingerPrint(BYTE* data,DWORD size);
 	DWORD GetSize();

@@ -610,7 +610,7 @@ int VideoStream::RecVideo()
 	timeval 	before;
 	timeval		lastFPURequest;
 	DWORD		lostCount=0;
-	DWORD		ts = (DWORD)-1;
+	DWORD		frameTime = (DWORD)-1;
 	DWORD		lastSeq = RTPPacket::MaxExtSeqNum;
 	bool		waitIntra = false;
 	
@@ -722,8 +722,9 @@ int VideoStream::RecVideo()
 		}
 
 		//Check if we have lost the last packet from the previous frame by comparing both timestamps
-		if (time>ts)
+		if (ts>frameTime)
 		{
+			Debug("-lost mark packet\n");
 			//Try to decode what is in the buffer
 			videoDecoder->DecodePacket(NULL,0,1,1);
 			//Get picture
