@@ -1042,12 +1042,18 @@ int RTPSession::ReadRTCP()
 	//Read rtcp socket
 	int size = recvfrom(simRtcpSocket,buffer,MTU,MSG_DONTWAIT,(sockaddr*)&from_addr, &from_len);
 
-	//Check if it is an STUN request
-	STUNMessage *stun = STUNMessage::Parse(buffer,size);
-
-	//If it was
-	if (stun)
+	//Check if it looks like a STUN message
+	if (STUNMessage::IsSTUN(buffer,size)) 
 	{
+		//Parse message
+		STUNMessage *stun = STUNMessage::Parse(buffer,size);
+
+		//It was not a valid STUN message
+		if (! stun)
+			//Error
+			return Error("-RTPSession::ReadRTCP() | failed to parse STUN message\n");
+
+		//Get type and method
 		STUNMessage::Type type = stun->GetType();
 		STUNMessage::Method method = stun->GetMethod();
 
@@ -1152,12 +1158,17 @@ int RTPSession::ReadRTP()
 	//Leemos del socket
 	int size = recvfrom(simSocket,buffer,MTU,MSG_DONTWAIT,(sockaddr*)&from_addr, &from_len);
 
-	//Check if it is an STUN request
-	STUNMessage *stun = STUNMessage::Parse(buffer,size);
-
-	//If it was
-	if (stun)
+	//Check if it looks like a STUN message
+	if (STUNMessage::IsSTUN(buffer,size)) 
 	{
+		//Parse it
+		STUNMessage *stun = STUNMessage::Parse(buffer,size);
+
+		//It was not a valid STUN message
+		if (!stun)
+			//Error
+			return Error("-RTPSession::ReadRTP() | failed to parse STUN message\n");
+
 		STUNMessage::Type type = stun->GetType();
 		STUNMessage::Method method = stun->GetMethod();
 

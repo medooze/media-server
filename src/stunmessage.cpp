@@ -31,20 +31,24 @@ STUNMessage::~STUNMessage()
 		delete (*it);
 }
 
+bool STUNMessage::IsSTUN(BYTE* data,DWORD size)
+{
+	return (
+		// STUN headers are 20 bytes.
+		(size >= 20) &&
+		// First two bits must be zero.
+		!(data[0] & 0xC0) &&
+		// Magic cookie must match.
+		(! memcmp(MagicCookie,data+4,4))
+	);
+}
+
 STUNMessage* STUNMessage::Parse(BYTE* data,DWORD size)
 {
-	//Check size
-	if (size < 20)
-		//It is not
+	//Ensure it looks like a STUN message.
+	if (! IsSTUN(data, size))
 		return NULL;
-	//Check first two bits are cero
-	if (data[0] & 0xC0)
-		//It is not
-		return NULL;
-	//Check magic cooke
-	if (memcmp(MagicCookie,data+4,4))
-		//It is not
-		return NULL;
+
 	/*
 	 * The message type field is decomposed further into the following
 	   structure:
@@ -74,9 +78,6 @@ STUNMessage* STUNMessage::Parse(BYTE* data,DWORD size)
 	//Create new message
 	STUNMessage* msg = new STUNMessage((Type)type,(Method)method,data+8);
 
-
-	//Start looking for attributes after STUN header (byte #20).
-	int i = 20;
 	/*
 	  STUN Attributes
 
@@ -95,6 +96,15 @@ STUNMessage* STUNMessage::Parse(BYTE* data,DWORD size)
 
 	 */
 
+	//Start looking for attributes after STUN header (byte #20).
+	size_t i = 20;
+
+	// Flags (positions) for special MESSAGE-INTEGRITY and FINGERPRINT attributes.
+	bool hasMessageIntegrity = false;
+	bool hasFingerprint = false;
+	DWORD posMessageIntegrity = 0;
+	DWORD posFingerprint = 0;
+
 	//Read atributes
 	//Ensure there are at least 4 remaining bytes (attribute with 0 length).
 	while (i+4 <= size)
@@ -102,15 +112,80 @@ STUNMessage* STUNMessage::Parse(BYTE* data,DWORD size)
 		//Get attribute type
 		WORD attrType = get2(data,i);
 		WORD attrLen = get2(data,i+2);
-		//Check size
-		if (size<i+4+attrLen)
-			//Skip
-			break;
+
+		//Ensure the attribute length is not greater than the remaining size.
+		if (size<i+4+attrLen) 
+		{
+			::Debug("-STUNMessage::Parse() | the attribute length exceeds the remaining size | message discarded\n");
+			delete msg;
+			return NULL;
+		}
+
+		//FINGERPRINT must be the last attribute.
+		if (hasFingerprint) 
+		{
+			::Debug("-STUNMessage::Parse() | attribute after FINGERPRINT is not allowed | message discarded\n");
+			delete msg;
+			return NULL;
+		}
+
+		//After a MESSAGE-INTEGRITY attribute just FINGERPRINT is allowed.
+		if (hasMessageIntegrity && attrType != Attribute::FingerPrint) 
+		{
+			::Debug("-STUNMessage::Parse() | attribute after MESSAGE_INTEGRITY other than FINGERPRINT is not allowed | message discarded\n");
+			delete msg;
+			return NULL;
+		}
+
+		switch(attrType) 
+		{
+			case Attribute::MessageIntegrity:
+				hasMessageIntegrity = true;
+				posMessageIntegrity = i;
+				break;
+			case Attribute::FingerPrint:
+				hasFingerprint = true;
+				posFingerprint = i;
+				break;
+			default:
+				break;
+		}
+
 		//Add it
 		msg->AddAttribute((Attribute::Type)attrType,data+i+4,attrLen);
 
 		//Next
 		i = pad32(i+4+attrLen);
+	}
+
+	//Ensure current position matches the total length.
+	if ((DWORD)i != size) 
+	{
+		::Debug("-STUNMessage::Parse() | computed message size does not match total size | message discarded\n");
+		delete msg;
+		return NULL;
+	}
+
+	// If it has FINGERPRINT attribute then verify it.
+	if (hasFingerprint) 
+	{
+		// The announced CRC value is 4 bytes long and it is located after 4 bytes
+		// from the beginning of the FINGERPRINT attribute.
+		// NOTE: Store it into a DWORD variable to avoid endian problems.
+		DWORD announced = get4(data, posFingerprint + 4);
+
+		// Compute the CRC32 of the received message up to (but excluding) the
+		// FINGERPRINT attribute and XOR it with 0x5354554e.
+		CRC32Calc crc32calc;
+		DWORD computed = crc32calc.Update(data, posFingerprint) ^ 0x5354554e;
+
+		// Compare them.
+		if (announced != computed)
+		{
+			::Debug("-STUNMessage::Parse() | computed FINGERPRINT value does not match the value in the message | message discarded\n");
+			delete msg;
+			return NULL;
+		}
 	}
 
 	//Return it
