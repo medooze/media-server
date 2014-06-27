@@ -2,6 +2,7 @@
 #define _TOOLS_H_
 
 #include "config.h"
+#include <cstddef>  // size_t
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -215,35 +216,35 @@ inline void calcTimout(struct timespec *ts,DWORD timeout)
 
 
 inline void EmptyCatch(int){};
-inline BYTE  get1(const BYTE *data,BYTE i) { return data[i]; }
-inline DWORD get2(const BYTE *data,BYTE i) { return (DWORD)(data[i+1]) | ((DWORD)(data[i]))<<8; }
-inline DWORD get3(const BYTE *data,BYTE i) { return (DWORD)(data[i+2]) | ((DWORD)(data[i+1]))<<8 | ((DWORD)(data[i]))<<16; }
-inline DWORD get4(const BYTE *data,BYTE i) { return (DWORD)(data[i+3]) | ((DWORD)(data[i+2]))<<8 | ((DWORD)(data[i+1]))<<16 | ((DWORD)(data[i]))<<24; }
-inline QWORD get8(const BYTE *data,BYTE i) { return ((QWORD)get4(data,i))<<32 | get4(data,i+4);	}
+inline BYTE  get1(const BYTE *data,size_t i) { return data[i]; }
+inline DWORD get2(const BYTE *data,size_t i) { return (DWORD)(data[i+1]) | ((DWORD)(data[i]))<<8; }
+inline DWORD get3(const BYTE *data,size_t i) { return (DWORD)(data[i+2]) | ((DWORD)(data[i+1]))<<8 | ((DWORD)(data[i]))<<16; }
+inline DWORD get4(const BYTE *data,size_t i) { return (DWORD)(data[i+3]) | ((DWORD)(data[i+2]))<<8 | ((DWORD)(data[i+1]))<<16 | ((DWORD)(data[i]))<<24; }
+inline QWORD get8(const BYTE *data,size_t i) { return ((QWORD)get4(data,i))<<32 | get4(data,i+4);	}
 
-inline void set1(BYTE *data,BYTE i,BYTE val)
+inline void set1(BYTE *data,size_t i,BYTE val)
 {
 	data[i] = val;
 }
-inline void set2(BYTE *data,BYTE i,DWORD val)
+inline void set2(BYTE *data,size_t i,DWORD val)
 {
 	data[i+1] = (BYTE)(val);
 	data[i]   = (BYTE)(val>>8);
 }
-inline void set3(BYTE *data,BYTE i,DWORD val)
+inline void set3(BYTE *data,size_t i,DWORD val)
 {
 	data[i+2] = (BYTE)(val);
 	data[i+1] = (BYTE)(val>>8);
 	data[i]   = (BYTE)(val>>16);
 }
-inline void set4(BYTE *data,BYTE i,DWORD val)
+inline void set4(BYTE *data,size_t i,DWORD val)
 {
 	data[i+3] = (BYTE)(val);
 	data[i+2] = (BYTE)(val>>8);
 	data[i+1] = (BYTE)(val>>16);
 	data[i]   = (BYTE)(val>>24);
 }
-inline void set8(BYTE *data,BYTE i,QWORD val)
+inline void set8(BYTE *data,size_t i,QWORD val)
 {
 	data[i+7] = (BYTE)(val);
 	data[i+6] = (BYTE)(val>>8);
