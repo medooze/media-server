@@ -382,6 +382,11 @@ int VNCServer::SetSize(int width,int height)
 		//Error
 		return Error("-Size bigger than max size allowed (4096*3072)\n");
 
+	//Check that it is not same size than before
+	if (width==screen->width && height==screen->height)
+		//error
+		return Error("-Settign same size, skiping\n");
+
 	//Lock
 	use.WaitUnusedAndLock();
 
@@ -1041,6 +1046,7 @@ int VNCServer::Client::Run()
 				//Clear reset flag
 				reset = false;
 			}
+/*
 
 			//If the scren has been resized
 			if (cl->newFBSizePending)
@@ -1050,6 +1056,7 @@ int VNCServer::Client::Run()
 				//Set new modified region
 				cl->modifiedRegion = sraRgnCreateRect(0,0,cl->screen->width,cl->screen->height);
 			}
+*/
 		
 
 			//We need to update by default
