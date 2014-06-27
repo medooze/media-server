@@ -2,6 +2,7 @@
 #define _CONFIG_H_
 #include <stdint.h>
 #include <stdlib.h>
+#include <cstddef>  // size_t
 #include <map>
 #include <string>
 #include <malloc.h>
@@ -126,7 +127,7 @@ public:
 	{
 		insert(std::pair<std::string,std::string>(std::string(key),std::string(val)));
 	}
-	
+
 	const char* GetProperty(const char* key) const
 	{
 		return GetProperty(key,"");
@@ -143,7 +144,7 @@ public:
 		//Return value
 		return it->second;
 	}
-	
+
 	std::string GetProperty(const std::string key,const std::string defaultValue) const
 	{
 		//Find item
@@ -191,7 +192,7 @@ public:
 		//Return value
 		return atoi(it->second.c_str());
 	}
-	
+
 	int GetProperty(const std::string key,int defaultValue) const
 	{
 		//Find item
