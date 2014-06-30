@@ -77,19 +77,18 @@ int FLVEncoder::Init(AudioInput* audioInput,VideoInput *videoInput,const Propert
 	if (properties.HasProperty("broadcast.audio.codec"))
 	{
 		//Get it
-		const char* codec = properties.GetProperty("broadcast.codecs.audio");
+		const char* codec = properties.GetProperty("broadcast.audio.codec");
 		//Get audio codec
 		audioCodec = AudioCodec::GetCodecForName(codec);
-		
 	}
+	
 	//Check video codec
 	if (properties.HasProperty("broadcast.video.codec"))
 	{
 		//Get it
-		const char* codec = properties.GetProperty("broadcast.codecs.audio");
+		const char* codec = properties.GetProperty("broadcast.video.codec");
 		//Get audio codec
 		videoCodec = VideoCodec::GetCodecForName(codec);
-
 	}
 	
 	//Set values for video
@@ -105,7 +104,6 @@ int FLVEncoder::Init(AudioInput* audioInput,VideoInput *videoInput,const Propert
 	
 	//Set video properties
 	videoProperties.SetProperty("streaming","true");
-	
 
 	//We are initer
 	inited = 1;
