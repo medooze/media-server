@@ -104,15 +104,15 @@ int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 		{
 			//Frame not complete
 			completeFrame = false;
-			//Error
-			return Error("First packet lost of VP8 frame");
+			//Error but continue to handle last mark
+			Error("First packet lost of VP8 frame");
 		}
 
 		//Next is not first frame
 		first = false;
 
 		//If it is first of the partition
-		if (desc.startOfPartition && bufLen)
+		if (desc.startOfPartition && bufLen && completeFrame)
 		{
 			//Decode previous partition
 			err = vpx_codec_decode(&decoder,buffer,bufLen,NULL,0);
@@ -123,24 +123,23 @@ int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 			//Check error
 			if (err!=VPX_CODEC_OK)
 				//Error
-				return Error("Error decoding VP8 partition [error %d:%s]\n",decoder.err,decoder.err_detail);
+				Error("Error decoding VP8 partition [error %d:%s]\n",decoder.err,decoder.err_detail);
 
 		}
 
 		//Check size
-		if (bufLen+inLen-pos>bufSize)
+		if (bufLen+inLen-pos<=bufSize)
 		{
-			//Reset
-			bufLen = 0;
+			//Append
+			memcpy(buffer+bufLen,in+pos,inLen-pos);
+			//Increase size
+			bufLen+=inLen-pos;
+		} else {
+			//Frame not complete
+			completeFrame = false;
 			//Error
-			return Error("too much data in vp8 partition\n");
+			Error("too much data in vp8 partition\n");
 		}
-
-		//Append
-		memcpy(buffer+bufLen,in+pos,inLen-pos);
-
-		//Increase size
-		bufLen+=inLen-pos;
 	}
 
 	//Si es el ultimo

@@ -74,10 +74,12 @@ struct VP8PayloadDescriptor
 		{
 			len++;
 			if (pictureIdPresent)
+			{
 				if (pictureId>7)
 					len+=2;
 				else
 					len+=1;
+			}
 			if (temporalLevelZeroIndexPresent)
 				len++;
 			if (temporalLayerIndexPreset || keyIndexPresent)

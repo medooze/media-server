@@ -724,7 +724,7 @@ int VideoStream::RecVideo()
 		//Check if we have lost the last packet from the previous frame by comparing both timestamps
 		if (ts>frameTime)
 		{
-			Debug("-lost mark packet\n");
+			Debug("-lost mark packet ts:%d frameTime:%d\n",ts,frameTime);
 			//Try to decode what is in the buffer
 			videoDecoder->DecodePacket(NULL,0,1,1);
 			//Get picture
@@ -766,10 +766,6 @@ int VideoStream::RecVideo()
 				//Waiting for refresh
 				waitIntra = true;
 			}
-			//Delete packet
-			delete(packet);
-			//Next frame
-			continue;
 		}
 
 		//Check if it is the last packet of a frame
