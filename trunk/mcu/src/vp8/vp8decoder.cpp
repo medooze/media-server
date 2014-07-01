@@ -129,7 +129,7 @@ int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 		//If it is first of the partition
 		if (desc.startOfPartition && bufLen )
 		{
-			Debug("-Decoding partition %d %d\n",desc.partitionIndex-1,bufLen);
+			//Debug("-Decoding partition %d %d\n",desc.partitionIndex-1,bufLen);
 			//Discard not compelete partitions
 			if (completeFrame)
 				//Decode previous partition
@@ -173,7 +173,7 @@ int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 		//Clean next frame
 		completeFrame = true;
 		
-		Debug("-Decoding last partition %d %d %d\n",inLen,len,bufLen);
+		//Debug("-Decoding last partition %d %d %d\n",inLen,len,bufLen);
 		
 		//Resetamos el buffer
 		bufLen=0;
@@ -238,7 +238,6 @@ int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 			frame = (BYTE*) malloc(size);
 			frameSize = size;
 		}
-
 
 		//Copaamos  el Cy
 		for(int i=0;i<height;i++)
