@@ -183,7 +183,6 @@ int VP8Encoder::OpenCodec()
 	//	bits/bytes, if necessary.
 	config.rc_buf_optimal_sz = 600;
 	
-
 	//Check result
 	if (vpx_codec_enc_init(&encoder, interface, &config, VPX_CODEC_USE_OUTPUT_PARTITION)!=VPX_CODEC_OK)
 		//Error
