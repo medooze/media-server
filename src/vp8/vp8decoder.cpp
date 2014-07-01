@@ -39,7 +39,22 @@ VP8Decoder::VP8Decoder()
 	vpx_codec_flags_t flags = 0;
 	/**< Postprocess decoded frame */
 	flags |= VPX_CODEC_USE_POSTPROC;
+	
+	//Get codec capatbilities
+	vpx_codec_caps_t caps = vpx_codec_get_caps(interface);
 
+        if (caps & VPX_CODEC_CAP_INPUT_FRAGMENTS)
+	{
+		Debug("-VPX_CODEC_USE_INPUT_FRAGMENTS enabled\n");
+		flags |= VPX_CODEC_USE_INPUT_FRAGMENTS;
+	}
+        
+        if (caps & VPX_CODEC_CAP_ERROR_CONCEALMENT) 
+	{
+		Debug("-VPX_CODEC_USE_INPUT_FRAGMENTS enabled\n");
+                flags |= VPX_CODEC_USE_ERROR_CONCEALMENT;
+	}
+	
 	//Init decoder
 	if(vpx_codec_dec_init(&decoder, interface, NULL, flags)!=VPX_CODEC_OK)
 		Error("Error initing VP8 decoder [error %d:%s]\n",decoder.err,decoder.err_detail);
@@ -89,6 +104,8 @@ int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 
 		//Decode payload descriptr
 		DWORD pos = desc.Parse(in,inLen);
+		
+		desc.Dump();
 
 		//Check if we have been able to parse frame
 		if (!pos)
@@ -112,11 +129,14 @@ int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 		first = false;
 
 		//If it is first of the partition
-		if (desc.startOfPartition && bufLen && completeFrame)
+		if (desc.startOfPartition && bufLen )
 		{
-			//Decode previous partition
-			err = vpx_codec_decode(&decoder,buffer,bufLen,NULL,0);
-
+			Debug("-Decoding partition %d %d\n",desc.partitionIndex-1,bufLen);
+			//Discard not compelete partitions
+			if (completeFrame)
+				//Decode previous partition
+				err = vpx_codec_decode(&decoder,buffer,bufLen,NULL,0);
+			
 			//Reset length
 			bufLen = 0;
 
@@ -124,7 +144,6 @@ int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 			if (err!=VPX_CODEC_OK)
 				//Error
 				Error("Error decoding VP8 partition [error %d:%s]\n",decoder.err,decoder.err_detail);
-
 		}
 
 		//Check size
@@ -150,9 +169,16 @@ int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 
 		//Check if it is not compete
 		int corrupted = !completeFrame;
+		//Get len
+		DWORD len = bufLen;
 
 		//Clean next frame
 		completeFrame = true;
+		
+		Debug("-Decoding last partition %d %d %d\n",inLen,len,bufLen);
+		
+		//Resetamos el buffer
+		bufLen=0;
 
 		//Check it is corrupted
 		if (corrupted)
@@ -160,17 +186,22 @@ int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 			return Error("-Not complete VP8 frame\n");
 
 		//If got last partition
-		if (bufLen)
+		if (len)
 			//Decode last partition
-			err = vpx_codec_decode(&decoder,buffer,bufLen,NULL,0);
-
-		//Y resetamos el buffer
-		bufLen=0;
-
+			err = vpx_codec_decode(&decoder,buffer,len,NULL,0);
+		
 		//Check error
 		if (err!=VPX_CODEC_OK)
 			//Error
 			return Error("Error decoding VP8 last [error %d:%s]\n",decoder.err,decoder.err_detail);
+
+		//Decode end of frame
+		err = vpx_codec_decode(&decoder,NULL,0,NULL,0);
+		
+		//Check error
+		if (err!=VPX_CODEC_OK)
+			//Error
+			return Error("Error decoding VP8 empty [error %d:%s]\n",decoder.err,decoder.err_detail);
 
 		//Check if it is corrupted even if completed
 		if (vpx_codec_control(&decoder, VP8D_GET_FRAME_CORRUPTED, &corrupted)==VPX_CODEC_OK)
@@ -189,7 +220,7 @@ int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 		//Check img
 		if (!img)
 			//Do nothing
-			return 0;
+			return Error("-No image\n");
 		
 		//Get dimensions
 		width = img->d_w;
