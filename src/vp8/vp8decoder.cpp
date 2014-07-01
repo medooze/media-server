@@ -104,8 +104,6 @@ int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 
 		//Decode payload descriptr
 		DWORD pos = desc.Parse(in,inLen);
-		
-		desc.Dump();
 
 		//Check if we have been able to parse frame
 		if (!pos)
