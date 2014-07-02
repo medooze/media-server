@@ -1042,8 +1042,12 @@ int RTPSession::ReadRTCP()
 	//Read rtcp socket
 	int size = recvfrom(simRtcpSocket,buffer,MTU,MSG_DONTWAIT,(sockaddr*)&from_addr, &from_len);
 
+	// Ignore empty datagrams.
+	if (size == 0)
+		return 0;
+
 	//Check if it looks like a STUN message
-	if (STUNMessage::IsSTUN(buffer,size)) 
+	if (STUNMessage::IsSTUN(buffer,size))
 	{
 		//Parse message
 		STUNMessage *stun = STUNMessage::Parse(buffer,size);
@@ -1158,8 +1162,12 @@ int RTPSession::ReadRTP()
 	//Leemos del socket
 	int size = recvfrom(simSocket,buffer,MTU,MSG_DONTWAIT,(sockaddr*)&from_addr, &from_len);
 
+	// Ignore empty datagrams.
+	if (size == 0)
+		return 0;
+
 	//Check if it looks like a STUN message
-	if (STUNMessage::IsSTUN(buffer,size)) 
+	if (STUNMessage::IsSTUN(buffer,size))
 	{
 		//Parse it
 		STUNMessage *stun = STUNMessage::Parse(buffer,size);
@@ -1306,7 +1314,7 @@ int RTPSession::ReadRTP()
 			return 0;
 		//Read
 		int len = dtls.Read(buffer,MTU);
-		
+
 		//Check it
 		if (len>0)
 			//Send it back
