@@ -6,15 +6,15 @@
 # Required-Stop:     $network
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: start/stop Meedoze MCU MediaMixer
-# Description:       start/stop Meedoze MCU MediaMixer
+# Short-Description: start/stop Medooze MCU MediaMixer
+# Description:       start/stop Medooze MCU MediaMixer
 ### END INIT INFO
 
 
 # NAME affects the PID file and log file names. The configuration file under /etc/default/
 # must also be called $NAME (otherwise it is not loaded).
 NAME=mcu
-DESC="Meedoze MCU MediaMixer"
+DESC="Medooze MCU MediaMixer"
 HOMEDIR=/var/run/$NAME
 
 # Those may be overriden in /etc/defaul/$NAME.
@@ -129,8 +129,10 @@ start() {
       ;;
   esac
 
-  start-stop-daemon --start --quiet --pidfile $PIDFILE --quiet \
-    --exec $DAEMON -- $OPTIONS
+  # Generate core dumps (TODO: set core path and format).
+  ulimit -c unlimited
+
+  start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON -- $OPTIONS
   res=$?
 
   if [ $res -eq 0 ] ; then
