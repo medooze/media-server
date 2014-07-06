@@ -26,7 +26,7 @@ typedef struct {
     DWORD ssrc;        /* synchronization source */
 } rtp_hdr_t;
 
-/* RTP Header Extension 
+/* RTP Header Extension
  */
 typedef struct {
     WORD ext_type;         /* defined by profile */
@@ -126,7 +126,7 @@ public:
 				clockRate = 1000;
 		}
 	}
-	
+
 	RTPPacket(MediaFrame::Type media,BYTE *data,DWORD size)
 	{
 		this->media = media;
@@ -194,7 +194,7 @@ public:
 		//Return it
 		return cloned;
 	}
-	
+
 	//Setters
 	void SetMediaLength(DWORD len)	{ this->len = len;			}
 	void SetTimestamp(DWORD ts)	{ header->ts = htonl(ts);		}
@@ -210,14 +210,14 @@ public:
 	void SetSize(DWORD size)	{ len = size-GetRTPHeaderLen();		}
 	void SetSeqCycles(WORD cycles)	{ this->cycles = cycles;		}
 	void SetClockRate(DWORD rate)	{ this->clockRate = rate;		}
-	
+
 	//Getters
 	MediaFrame::Type GetMedia()	const { return media;			}
 	rtp_hdr_t*	GetRTPHeader()		const { return (rtp_hdr_t*)buffer;	}
 	rtp_hdr_ext_t*	GeExtensionHeader()	const { return  GetX() ? (rtp_hdr_ext_t*)(buffer+sizeof(rtp_hdr_t)+4*header->cc) : NULL;	}
 	DWORD GetRTPHeaderLen()		const { return sizeof(rtp_hdr_t)+4*header->cc+GetExtensionSize();	}
 	WORD  GetExtensionType()	const { return GeExtensionHeader()->ext_type;				}
-	WORD  GetExtensionLength()	const { return GetX() ? htons(GeExtensionHeader()->len)*4 : 0;		}
+	WORD  GetExtensionLength()	const { return GetX() ? ntohs(GeExtensionHeader()->len)*4 : 0;		}
 	const BYTE* GetExtensionData()	const { return GetX() ? buffer+sizeof(rtp_hdr_t)+4*header->cc+sizeof(rtp_hdr_ext_t) : NULL;		}
 	DWORD GetExtensionSize()	const { return GetX() ? GetExtensionLength()+sizeof(rtp_hdr_ext_t) : 0; };
 	DWORD GetCodec()		const { return codec;				}
@@ -254,7 +254,7 @@ public:
 	bool  HasAbsSentTime()		const	{ return extension.hasAbsSentTime;	}
 	bool  HasTimeOffeset()		const   { return extension.hasTimeOffset;	}
 
-	
+
 	bool SetPayload(BYTE *data,DWORD size)
 	{
 		//Check size
@@ -342,7 +342,7 @@ public:
 		//Set sending type
 		sendingTime = 0;
 	}
-	
+
 	void	SetSendingTime(DWORD sendingTime)	{ this->sendingTime = sendingTime;	}
 	DWORD	GetSendingTime()			{ return sendingTime;			}
 private:
@@ -416,7 +416,7 @@ public:
 	void  SetPrimaryCodec(BYTE codec)	      { primaryCodec = codec;	}
 
 	RTPTimedPacket* CreatePrimaryPacket();
-	
+
 	BYTE  GetRedundantCount()		const { return headers.size();	}
 	BYTE* GetRedundantPayloadData(int i)	const { return i<headers.size()?redundantData+headers[i].ini:NULL;	}
 	DWORD GetRedundantPayloadSize(int i) 	const { return i<headers.size()?headers[i].size:0;			}
@@ -628,7 +628,7 @@ public:
 	void SetSSRC(DWORD ssrc)		{ this->ssrc = ssrc;			}
 	void SetNTPFrac(DWORD ntpFrac)		{ this->ntpFrac = ntpFrac;		}
 	void SetNTPSec(DWORD ntpSec)		{ this->ntpSec = ntpSec;		}
-	
+
 	DWORD GetOctectsSent()	const		{ return octectsSent;		}
 	DWORD GetPacketsSent()	const		{ return packetsSent;		}
 	DWORD GetRTPTimestamp() const		{ return rtpTimestamp;		}
@@ -643,7 +643,7 @@ public:
 	void  SetTimestamp(timeval *tv);
 	QWORD GetTimestamp() const;
 	void  GetTimestamp(timeval *tv) const;
-	
+
 private:
 	DWORD ssrc;           /* sender generating this report */
 	DWORD ntpSec;	      /* NTP timestamp */
@@ -665,7 +665,7 @@ public:
 	virtual DWORD GetSize();
 	virtual DWORD Parse(BYTE* data,DWORD size);
 	virtual DWORD Serialize(BYTE* data,DWORD size);
-	
+
 	DWORD GetCount()	const		{ return reports.size();	}
 	RTCPReport* GetReport(BYTE i) const	{ return reports[i];		}
 	void  AddReport(RTCPReport* report)	{ reports.push_back(report);	}
@@ -732,7 +732,7 @@ private:
 class RTCPSDES : public RTCPPacket
 {
 public:
-	
+
 public:
 	class Item
 	{
@@ -877,7 +877,7 @@ public:
 		}
 		return "Unknown";
 	}
-	
+
 	static RTCPRTPFeedback* Create(FeedbackType type,DWORD senderSSRC,DWORD mediaSSRC)
 	{
 		//Create
@@ -1012,18 +1012,18 @@ public:
 			//Get mantisa
 			maxTotalBitrateMantissa = (bitrate >> maxTotalBitrateExp);
 		}
-		
+
 		DWORD GetBitrate() const
 		{
 			return maxTotalBitrateMantissa << maxTotalBitrateExp;
 		}
-		
+
 		void SetSSRC(WORD ssrc)		{ this->ssrc = ssrc;		}
 		void SetOverhead(WORD overhead)	{ this->overhead = overhead;	}
 		DWORD GetSSRC() const		{ return ssrc;			}
 		WORD GetOverhead() const	{ return overhead;		}
 	};
-	
+
 public:
 	RTCPRTPFeedback();
 	virtual ~RTCPRTPFeedback();
@@ -1041,7 +1041,7 @@ public:
 	FeedbackType	GetFeedbackType() const	{ return feedbackType;		}
 	DWORD		GetFieldCount() const	{ return fields.size();		}
 	Field*		GetField(BYTE i) const	{ return fields[i];		}
-	
+
 private:
 	typedef std::vector<Field*> Fields;
 private:
@@ -1055,7 +1055,7 @@ class RTCPPayloadFeedback : public RTCPPacket
 {
 public:
 	enum FeedbackType {
-		PictureLossIndication =1, 
+		PictureLossIndication =1,
 		SliceLossIndication = 2,
 		ReferencePictureSelectionIndication = 3,
 		FullIntraRequest = 4,
@@ -1064,7 +1064,7 @@ public:
 		VideoBackChannelMessage = 7,
 		ApplicationLayerFeeedbackMessage = 15
 	};
-	
+
 	static const char* TypeToString(FeedbackType type)
 	{
 		switch(type)
@@ -1167,12 +1167,12 @@ public:
 			payload = NULL;
 			length = 0;
 		}
-		
+
 		~ReferencePictureSelectionField()
 		{
 			if (payload) free(payload);
 		}
-		
+
 		virtual DWORD GetSize() { return 2+length+padding;}
 		virtual DWORD Parse(BYTE* data,DWORD size)
 		{
@@ -1205,7 +1205,7 @@ public:
 			return 2+padding+length;
 		}
 	};
-	
+
 	struct FullIntraRequestField : public Field
 	{
 		/*
@@ -1498,7 +1498,7 @@ public:
 		//RTCP
 		return 1;
 	}
-	
+
 	~RTCPCompoundPacket()
 	{
 		//Fir each oen
@@ -1539,7 +1539,7 @@ public:
 	void	    AddRTCPacket(RTCPPacket* packet)	{ packets.push_back(packet);	}
 	DWORD	    GetPacketCount()			{ return packets.size();	}
 	RTCPPacket* GetPacket(DWORD num)		{ return packets[num];		}
-	
+
 	static RTCPCompoundPacket* Parse(BYTE *data,DWORD size);
 private:
 	typedef std::vector<RTCPPacket*> RTCPPackets;
