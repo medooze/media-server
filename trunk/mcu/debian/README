@@ -1,0 +1,208 @@
+Debian Scripts for Medooze MCU Media Server
+###########################################
+
+
+
+## Overview
+
+This folder contains varios scripts and configuration files for setting the MCU under the Debian rules:
+
+* mcu.init: The MCU init script.
+* mcu.default: A default configuration file for the MCU.
+* mcu.logrotate: A logrotate file for MCU's logs.
+
+
+
+## Usage
+
+In sections below we assume we want two instances of the MCU running in the same host, the first one for testing and the second one for production. Let's name them "mcu-dev" and "mcu-prod". Due to this scenario, we need two init scripts and two different default configuration files.
+
+
+
+## mcu.init
+
+Copy this file under /etc/init.d/ directory by renaming it to mcu-dev and mcu-prod, and make them executable:
+```
+chmod +x mcu-dev mcu-prod
+```
+
+Edit /etc/init.d./mcu-dev:
+
+* Replace "mcu" with "mcu-dev" in the "Provides:" line within the "INIT INFO" section at the top of the script (this is needed for the init system so both scripts are known as providers of different services).
+* Replace "mcu" with "mcu-dev" in the NAME variable.
+* Add both services to the init runlevels so they are automatically started upon system restart:
+```
+update-rc.d mcu-xxx defaults
+```
+
+
+### Init script actions
+
+The actions provided by the MCU init script adheres to the LSB [*] specification, making it suitable for being managed by daemon handlers like HeartBeat.
+
+[*] http://refspecs.linuxfoundation.org/LSB_4.1.0/LSB-Core-generic/LSB-Core-generic/iniscrptact.html
+
+
+* service mcu-xxx start: Start the service. Return values:
+   * 0: The service has been correctly started, or it was already running.
+   * 1: The service failed to be started.
+
+* service mcu-xxx stop: Stop the service. Return values:
+   * 0: The service has been correctly stoped, or it was not running.
+
+* service mcu-xxx restart|force-reload: Restart the service. Return values:
+   * 0: The service has been correctly restarted, or it was not running and now it is.
+   * 1: The service failed to be restarted.
+
+* service mcu-xxx status: Get current status of the service. Return values:
+   * 0: The service is running.
+   * 1: The service is not running but a PID file exists.
+   * 3: The service is not running.
+
+
+## mcu.default
+
+This file must be placed in /etc/default/. Within this file the user defines some environment variables which will be passed as command line arguments to the daemon when executing the corresponding init script.
+
+Copy this file under /etc/default/ directory by renaming it to mcu-dev and mcu-prod.
+
+Let's assume that we run two different binaries for both services (the testing MCU instance runs with debug symbols) so we need different settings for both files.
+
+In both of them we must set RUN=yes (otherwise the init script will refuse to run the service).
+
+
+### /etc/mcu-dev
+
+```
+RUN=yes
+
+# Executable file (default: mcu).
+DAEMON=/usr/local/src/medooze/mcu/bin/debug/mcu
+
+# Debug logging (default: no).
+DEBUG=yes
+
+# Log directory (default: /var/log).
+LOG_DIR=/var/log/mcu-dev
+
+# TLS certificate public key (default: none).
+TLS_CRT=/etc/mcu/mydomain.com.crt
+
+# TLS certificate private key (default: none).
+TLS_KEY=/etc/mcu/mydomain.com.key
+
+# XMLRPC listening IP (default: 0.0.0.0).
+#XMLRPC_IP=
+
+# XMLRPC listening port (default: 8080).
+XMLRPC_PORT=8090
+
+# RTP min port (default: 49152).
+#RTP_MIN_PORT=
+
+# RTP max port (default: 65535).
+#RTP_MAX_PORT=
+
+# RTMP listening port (default: 1935).
+RTMP_PORT=1936
+
+# WebSocket listening port (default: 9090).
+WEBSOCKET_PORT=9091
+
+# VAD period (default: 2000).
+#VAR_PERIOD=
+```
+
+The init script at /etc/init.d/mcu-dev will read this configuration file and run the testing MCU binary with the specified settings.
+* The log file will be placed at /var/log/mcu-dev/mcu-dev.log.
+* The XMLRPC server will log into /var/log/mcu-dev/http.log.
+* The PID file will be written into /var/run/mcu-dev/mcu-dev.pid.
+
+
+### /etc/mcu-prod
+
+```
+# Set to 'yes' when configured.
+RUN=yes
+
+# Executable file (default: mcu).
+DAEMON=/usr/local/src/medooze/mcu/bin/release/mcu
+
+# Debug logging (default: no).
+DEBUG=no
+
+# Log directory (default: /var/log).
+LOG_DIR=/var/log/mcu-prod
+
+# TLS certificate public key (default: none).
+TLS_CRT=/etc/mcu/mydomain.com.crt
+
+# TLS certificate private key (default: none).
+TLS_KEY=/etc/mcu/mydomain.com.key
+
+# XMLRPC listening IP (default: 0.0.0.0).
+#XMLRPC_IP=
+
+# XMLRPC listening port (default: 8080).
+XMLRPC_PORT=8080
+
+# RTP min port (default: 49152).
+#RTP_MIN_PORT=
+
+# RTP max port (default: 65535).
+#RTP_MAX_PORT=
+
+# RTMP listening port (default: 1935).
+RTMP_PORT=1935
+
+# WebSocket listening port (default: 9090).
+WEBSOCKET_PORT=9090
+
+# VAD period (default: 2000).
+#VAR_PERIOD=
+```
+
+The init script at /etc/init.d/mcu-prod will read this configuration file and run the testing MCU binary with the specified settings.
+* The log file will be placed at /var/log/mcu-prod/mcu-prod.log.
+* The XMLRPC server will log into /var/log/mcu-prod/http.log.
+* The PID file will be written into /var/run/mcu-prod/mcu-prod.pid.
+
+
+
+## mcu.logrotate
+
+Copy this file under /etc/logrotate.d/ directory by renaming it to mcu-dev and mcu-prod.
+
+When the logrotate daemon read both files it will rotate the mcu-xxx.log and http.log files. The option `copytruncate` is required to force the MCU to stop writing into the same file descriptor.
+
+
+### /etc/logrotate.d/mcu-dev
+
+```
+/var/log/mcu-dev/*.log
+{
+  rotate 14
+  daily
+  delaycompress
+  compress
+  missingok
+  copytruncate
+  nocreate
+}
+```
+
+
+### /etc/logrotate.d/mcu-dev
+
+```
+/var/log/mcu-prod/*.log
+{
+  rotate 14
+  daily
+  delaycompress
+  compress
+  missingok
+  copytruncate
+  nocreate
+}
+```
