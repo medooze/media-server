@@ -192,7 +192,7 @@ When the logrotate daemon read both files it will rotate the mcu-xxx.log and htt
 ```
 
 
-### /etc/logrotate.d/mcu-dev
+### /etc/logrotate.d/mcu-prod
 
 ```
 /var/log/mcu-prod/*.log
