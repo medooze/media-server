@@ -11,7 +11,7 @@ RUN=no
 # Debug logging (default: no).
 #DEBUG=yes
 
-# Log directory (default: /var/log).
+# Log directory (default: /var/log/mcu).
 #LOG_DIR=
 
 # TLS certificate public key (default: none).
