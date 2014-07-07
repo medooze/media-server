@@ -20,7 +20,7 @@ HOME_DIR=/var/run/$NAME
 # Those may be overriden in /etc/defaul/$NAME.
 DAEMON=mcu
 RUN=no
-LOG_DIR=/var/log
+LOG_DIR=/var/log/$NAME
 
 
 # Load configuration.

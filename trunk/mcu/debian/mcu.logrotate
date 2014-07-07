@@ -1,4 +1,4 @@
-/var/log/mcu.log
+/var/log/mcu/*.log
 {
   rotate 14
   daily
