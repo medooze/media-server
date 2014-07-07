@@ -15,7 +15,7 @@
 # must also be called $NAME (otherwise it is not loaded).
 NAME=mcu
 DESC="Medooze MCU MediaMixer"
-HOMEDIR=/var/run/$NAME
+HOME_DIR=/var/run/$NAME
 
 # Those may be overriden in /etc/defaul/$NAME.
 DAEMON=mcu
@@ -63,7 +63,7 @@ if [ ! -x "$DAEMON" ] ; then
   esac
 fi
 
-PIDFILE="${HOMEDIR}/${NAME}.pid"
+PIDFILE="${HOME_DIR}/${NAME}.pid"
 OPTIONS="-f --mcu-pid ${PIDFILE}"
 
 if [ "$DEBUG" == "yes" ]     ; then  OPTIONS="$OPTIONS -d"                                ; fi
@@ -79,11 +79,18 @@ if [ -n "$WEBSOCKET_PORT" ]  ; then  OPTIONS="$OPTIONS --websocket-port $WEBSOCK
 if [ -n "$VAD_PERIOD" ]      ; then  OPTIONS="$OPTIONS --vad-period $VAD_PERIOD"          ; fi
 
 
+# Create HOME_DIR directory in case it doesn't exist.
+# Useful in Ubuntu as /var/run/ content is deleted in shutdown.
 check_homedir()
 {
-  # Create HOMEDIR directory in case it doesn't exist.
-  # Useful in Ubuntu as /var/run/ content is deleted in shutdown.
-  if [ ! -d $HOMEDIR ] ; then mkdir $HOMEDIR ; fi
+  if [ ! -d $HOME_DIR ] ; then mkdir $HOME_DIR ; fi
+}
+
+
+# Create LOG_DIR directory in case it doesn't exist.
+check_logdir()
+{
+  if [ ! -d $LOG_DIR ] ; then mkdir $LOG_DIR ; fi
 }
 
 
@@ -115,6 +122,11 @@ get_status() {
 # - 0: running.
 # - 1: failed to start.
 start() {
+  set -e
+  check_homedir
+  check_logdir
+  set +e
+
   get_status
   case $? in
     0)  # Already running, do nothing.
@@ -132,7 +144,7 @@ start() {
   # Generate core dumps (TODO: set core path and format).
   ulimit -c unlimited
 
-  start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON -- $OPTIONS
+  start-stop-daemon --start --quiet --pidfile $PIDFILE --chdir $LOG_DIR --exec $DAEMON -- $OPTIONS
   res=$?
 
   if [ $res -eq 0 ] ; then
@@ -172,7 +184,6 @@ stop() {
 case "$1" in
 
   start)
-    check_homedir
     log_daemon_msg "Starting $DESC ($NAME)"
     echo
 
@@ -212,7 +223,6 @@ case "$1" in
     echo
 
     stop
-    check_homedir
     start
     case $? in
       0)  # Running.
