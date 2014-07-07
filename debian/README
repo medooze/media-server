@@ -71,7 +71,7 @@ Let's assume that we run two different binaries for both services (the testing M
 In both of them we must set RUN=yes (otherwise the init script will refuse to run the service).
 
 
-### /etc/mcu-dev
+### /etc/default/mcu-dev
 
 ```
 RUN=yes
@@ -119,7 +119,7 @@ The init script at /etc/init.d/mcu-dev will read this configuration file and run
 * The PID file will be written into /var/run/mcu-dev/mcu-dev.pid.
 
 
-### /etc/mcu-prod
+### /etc/default/mcu-prod
 
 ```
 # Set to 'yes' when configured.
