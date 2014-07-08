@@ -238,7 +238,7 @@ void RTPEndpoint::onEndStream()
 
 int RTPEndpoint::Run()
 {
-        while(inited)
+        while(receiving)
         {
                 //Get the packet
 		RTPPacket* packet = RTPSession::GetPacket();

@@ -110,7 +110,7 @@ public:
 	int VideoMixerDelete(int mixerId);
 	//Video mixer port management
 	int VideoMixerPortCreate(int mixerId,std::wstring tag,int mosiacId);
-	int VideoMixerPortSetCodec(int mixerId,int portId,VideoCodec::Type codec,int size,int fps,int bitrate,int intraPeriod);
+	int VideoMixerPortSetCodec(int mixerId,int portId,VideoCodec::Type codec,int size,int fps,int bitrate,int intraPeriod,const Properties& properties);
 	int VideoMixerPortDelete(int mixerId,int porId);
 	int VideoMixerPortAttachToEndpoint(int mixerId,int portId,int endpointId);
 	int VideoMixerPortAttachToPlayer(int mixerId,int portId,int playerId);
@@ -127,7 +127,7 @@ public:
 
 	int VideoTranscoderCreate(std::wstring tag);
 	int VideoTranscoderDelete(int transcoderId);
-	int VideoTranscoderSetCodec(int transcoderId,VideoCodec::Type codec,int size,int fps,int bitrate,int intraPeriod);
+	int VideoTranscoderSetCodec(int transcoderId,VideoCodec::Type codec,int size,int fps,int bitrate,int intraPeriod,Properties & props);
 	int VideoTranscoderFPU(int transcoderId);
 	int VideoTranscoderAttachToEndpoint(int transcoderId,int endpointId);
 	int VideoTranscoderDettach(int transcoderId);

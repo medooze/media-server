@@ -37,7 +37,7 @@ public:
 
 	int Init(Mosaic::Type comp,int size);
 	int CreatePort(std::wstring &tag,int mosaicId);
-	int SetPortCodec(int portId,VideoCodec::Type codec,int mode,int fps,int bitrate,int intraPeriod);
+	int SetPortCodec(int portId,VideoCodec::Type codec,int mode,int fps,int bitrate,int intraPeriod,const Properties &properties);
 	int DeletePort(int portId);
 	int CreateMosaic(Mosaic::Type comp,int size);
 	int AddMosaicParticipant(int mosaicId,int portId);

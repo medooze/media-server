@@ -67,7 +67,7 @@ int VideoMixerResource::CreatePort(std::wstring &tag, int mosaicId)
 	return portId;
 }
 
-int VideoMixerResource::SetPortCodec(int portId,VideoCodec::Type codec,int mode,int fps,int bitrate,int intraPeriod)
+int VideoMixerResource::SetPortCodec(int portId,VideoCodec::Type codec,int mode,int fps,int bitrate,int intraPeriod, const Properties &properties)
 {
 	//Find port
 	Ports::iterator it = ports.find(portId);
@@ -81,7 +81,7 @@ int VideoMixerResource::SetPortCodec(int portId,VideoCodec::Type codec,int mode,
 	Port *port = it->second;
 
 	//Set codec
-	port->encoder.SetCodec(codec,mode,fps,bitrate,intraPeriod);
+	port->encoder.SetCodec(codec,mode,fps,bitrate,intraPeriod,properties);
 
 	//Start
 	return 1;

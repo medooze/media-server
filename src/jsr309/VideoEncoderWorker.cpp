@@ -37,7 +37,7 @@ int VideoEncoderMultiplexerWorker::Init(VideoInput *input)
 	this->input = input;
 }
 
-int VideoEncoderMultiplexerWorker::SetCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int intraPeriod)
+int VideoEncoderMultiplexerWorker::SetCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int intraPeriod, const Properties& properties)
 {
 	Log("-SetVideoCodec [%s,%d,%d,%d,%d,]\n",VideoCodec::GetNameFor(codec),codec,fps,bitrate,intraPeriod);
 
@@ -50,6 +50,8 @@ int VideoEncoderMultiplexerWorker::SetCodec(VideoCodec::Type codec,int mode,int 
 	//Init limits
 	this->videoBitrateLimit		= bitrate;
 	this->videoBitrateLimitCount	= fps;
+        //Store properties
+        this->properties  = properties;
 
 	//Get width and height
 	width = GetWidth(mode);
@@ -189,6 +191,8 @@ int VideoEncoderMultiplexerWorker::Encode()
 {
 	timeval first;
 	timeval prev;
+	timeval lastFPU;
+	
 	DWORD num = 0;
 	QWORD overslept = 0;
 
@@ -198,7 +202,7 @@ int VideoEncoderMultiplexerWorker::Encode()
 	Log(">SendVideo [width:%d,size:%d,bitrate:%d,fps:%d,intra:%d]\n",width,height,bitrate,fps,intraPeriod);
 
 	//Creamos el encoder
-	VideoEncoder* videoEncoder = VideoCodecFactory::CreateEncoder(codec);
+	VideoEncoder* videoEncoder = VideoCodecFactory::CreateEncoder(codec,properties);
 
 	//Comprobamos que se haya creado correctamente
 	if (videoEncoder == NULL)
@@ -231,6 +235,9 @@ int VideoEncoderMultiplexerWorker::Encode()
 	//The time of the previos one
 	gettimeofday(&prev,NULL);
 
+	//Fist FPU
+	gettimeofday(&lastFPU,NULL);
+
 	//Started
 	Log("-Sending video\n");
 
@@ -248,12 +255,16 @@ int VideoEncoderMultiplexerWorker::Encode()
 		//Check if we need to send intra
 		if (sendFPU)
 		{
-			//Log
-			Log("-FastPictureUpdate\n");
-			//Set it
-			videoEncoder->FastPictureUpdate();
 			//Do not send anymore
 			sendFPU = false;
+			//Do not send if just send one (100ms)
+			if (getDifTime(&lastFPU)/100>100)
+			{
+				//Set it
+				videoEncoder->FastPictureUpdate();
+				//Update last FPU
+				getUpdDifTime(&lastFPU);
+			}
 		}
 		//Calculate target bitrate
 		int target = current;
@@ -299,6 +310,9 @@ int VideoEncoderMultiplexerWorker::Encode()
 		if (!videoFrame)
 			//Next
 			continue;
+
+		//Increase frame counter
+		fpsAcu.Update(getTime()/1000,1);
 
 		//Check
 		if (frameTime)
@@ -351,9 +365,6 @@ int VideoEncoderMultiplexerWorker::Encode()
 		//Add frame size in bits to bitrate calculator
 	        bitrateAcu.Update(getDifTime(&first)/1000,videoFrame->GetLength()*8);
 
-		//Update fps count
-		fpsAcu.Update(getDifTime(&first)/1000,1);
-
 		//Set frame timestamp
 		videoFrame->SetTimestamp(getDifTime(&first)/1000);
 
@@ -367,6 +378,14 @@ int VideoEncoderMultiplexerWorker::Encode()
 		if (sendingTime>frameTime/1000)
 			//Cap it
 			sendingTime = frameTime/1000;
+
+                
+		/**
+                //If it was a I frame
+                if (videoFrame->IsIntra())
+			//Clean rtp rtx buffer
+			FlushRTXPackets();
+                */
 
 		//Send it smoothly
 		SmoothFrame(videoFrame,sendingTime);
