@@ -307,7 +307,8 @@ void RemoteRateEstimator::Update(RemoteRateControl::BandwidthUsage usage,bool re
 	eventSource.SendEvent
 	(
 		"rre",
-		"[\"%s\",\"%s\",%d,%d,%d,%d,%d]",
+		"[%llu,\"%s\",\"%s\",%d,%d,%d,%d,%d]",
+                (QWORD)time(NULL),
 		GetName(state),
 		RemoteRateControl::GetName(region),
 		(DWORD)currentBitRate/1000,
