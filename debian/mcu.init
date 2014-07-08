@@ -223,6 +223,7 @@ case "$1" in
     echo
 
     stop
+    sleep 1
     start
     case $? in
       0)  # Running.
