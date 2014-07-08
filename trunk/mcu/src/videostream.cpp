@@ -444,7 +444,6 @@ int VideoStream::SendVideo()
 				//Update last FPU
 				getUpdDifTime(&lastFPU);
 			}
-
 		}
 
 		//Calculate target bitrate

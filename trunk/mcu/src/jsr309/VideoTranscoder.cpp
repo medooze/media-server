@@ -40,9 +40,9 @@ int VideoTranscoder::Init()
 	//OK
 	return 1;
 }
-int VideoTranscoder::SetCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int intraPeriod)
+int VideoTranscoder::SetCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int intraPeriod,const Properties& properties)
 {
-	return encoder.SetCodec(codec,mode,fps,bitrate,intraPeriod);
+	return encoder.SetCodec(codec,mode,fps,bitrate,intraPeriod,properties);
 }
 int VideoTranscoder::End()
 {

@@ -43,7 +43,7 @@ VP8Decoder::VP8Decoder()
 	//Get codec capatbilities
 	vpx_codec_caps_t caps = vpx_codec_get_caps(interface);
 
-        if (caps & VPX_CODEC_CAP_INPUT_FRAGMENTS)
+        /*if (caps & VPX_CODEC_CAP_INPUT_FRAGMENTS)
 	{
 		Debug("-VPX_CODEC_USE_INPUT_FRAGMENTS enabled\n");
 		flags |= VPX_CODEC_USE_INPUT_FRAGMENTS;
@@ -53,7 +53,7 @@ VP8Decoder::VP8Decoder()
 	{
 		Debug("-VPX_CODEC_USE_INPUT_FRAGMENTS enabled\n");
                 flags |= VPX_CODEC_USE_ERROR_CONCEALMENT;
-	}
+	}*/
 	
 	//Init decoder
 	if(vpx_codec_dec_init(&decoder, interface, NULL, flags)!=VPX_CODEC_OK)
@@ -187,7 +187,7 @@ int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 		if (len)
 			//Decode last partition
 			err = vpx_codec_decode(&decoder,buffer,len,NULL,0);
-		
+		/*
 		//Check error
 		if (err!=VPX_CODEC_OK)
 			//Error
@@ -195,6 +195,7 @@ int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 
 		//Decode end of frame
 		err = vpx_codec_decode(&decoder,NULL,0,NULL,0);
+		*/
 		
 		//Check error
 		if (err!=VPX_CODEC_OK)

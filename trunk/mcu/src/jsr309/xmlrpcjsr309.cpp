@@ -738,11 +738,10 @@ xmlrpc_value* EndpointSetRemoteCryptoDTLS(xmlrpc_env *env, xmlrpc_value *param_a
 	int sessionId;
 	int endpointId;
 	int media;
-	char *suite;
 	char *setup;
 	char *hash;
 	char *fingerprint;
-	xmlrpc_parse_value(env, param_array, "(iiissss)", &sessionId,&endpointId,&media,&suite,&setup,&hash,&fingerprint);
+	xmlrpc_parse_value(env, param_array, "(iiisss)", &sessionId,&endpointId,&media,&setup,&hash,&fingerprint);
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
@@ -1469,6 +1468,9 @@ xmlrpc_value* AudioMixerPortSetCodec(xmlrpc_env *env, xmlrpc_value *param_array,
 	int mixerId;
 	int portId;
 	int codec;
+	Properties properties;
+	xmlrpc_value *map;
+
 	xmlrpc_parse_value(env, param_array, "(iiii)", &sessionId, &mixerId, &portId, &codec);
 
 	//Comprobamos si ha habido error
@@ -1783,18 +1785,46 @@ xmlrpc_value* VideoMixerPortSetCodec(xmlrpc_env *env, xmlrpc_value *param_array,
 	int fps;
 	int bitrate;
 	int intraPeriod;
-	xmlrpc_parse_value(env, param_array, "(iiiiiiii)", &sessionId, &mixerId, &portId, &codec, &size, &fps, &bitrate, &intraPeriod);
+	Properties properties;
+	xmlrpc_value *map;
+	xmlrpc_parse_value(env, param_array, "(iiiiiiiiS)", &sessionId, &mixerId, &portId, &codec, &size, &fps, &bitrate, &intraPeriod);
 
 	//Comprobamos si ha habido error
 	if(env->fault_occurred)
 		return 0;
 
+        //Get map size
+        int j = xmlrpc_struct_size(env,map);
+
+        //Parse rtp map
+        for (int i=0;i<j;i++)
+        {
+                xmlrpc_value *key, *val;
+                const char *strKey;
+                const char *strVal;
+                //Read member
+                xmlrpc_struct_read_member(env,map,i,&key,&val);
+                //Read name
+                xmlrpc_parse_value(env,key,"s",&strKey);
+                //Read value
+                xmlrpc_parse_value(env,val,"s",&strVal);
+                //Add to map
+                properties[strKey] = strVal;
+                //Decrement ref counter
+                xmlrpc_DECREF(key);
+                xmlrpc_DECREF(val);
+        }
+
+        //Comprobamos si ha habido error
+	if(env->fault_occurred)
+		return 0;
+        
 	//Obtenemos la referencia
 	if(!jsr->GetMediaSessionRef(sessionId,&session))
 		return xmlerror(env,"The media Session does not exist");
 
 	//Create player
-	int res = session->VideoMixerPortSetCodec(mixerId,portId,(VideoCodec::Type)codec,size,fps,bitrate,intraPeriod);
+	int res = session->VideoMixerPortSetCodec(mixerId,portId,(VideoCodec::Type)codec,size,fps,bitrate,intraPeriod,properties);
 	
 	//Liberamos la referencia
 	jsr->ReleaseMediaSessionRef(sessionId);
@@ -2297,9 +2327,38 @@ xmlrpc_value* VideoTranscoderSetCodec(xmlrpc_env *env, xmlrpc_value *param_array
 	int fps;
 	int bitrate;
 	int intraPeriod;
-	xmlrpc_parse_value(env, param_array, "(iiiiiii)", &sessionId, &videoTranscoderId, &codec, &size, &fps, &bitrate, &intraPeriod);
+	Properties properties;
+	xmlrpc_value *map;
+
+	xmlrpc_parse_value(env, param_array, "(iiiiiiiS)", &sessionId, &videoTranscoderId, &codec, &size, &fps, &bitrate, &intraPeriod, &map);
 
 	//Comprobamos si ha habido error
+	if(env->fault_occurred)
+		return 0;
+
+        //Get map size
+        int j = xmlrpc_struct_size(env,map);
+
+        //Parse rtp map
+        for (int i=0;i<j;i++)
+        {
+                xmlrpc_value *key, *val;
+                const char *strKey;
+                const char *strVal;
+                //Read member
+                xmlrpc_struct_read_member(env,map,i,&key,&val);
+                //Read name
+                xmlrpc_parse_value(env,key,"s",&strKey);
+                //Read value
+                xmlrpc_parse_value(env,val,"s",&strVal);
+                //Add to map
+                properties[strKey] = strVal;
+                //Decrement ref counter
+                xmlrpc_DECREF(key);
+                xmlrpc_DECREF(val);
+        }
+
+        //Comprobamos si ha habido error
 	if(env->fault_occurred)
 		return 0;
 
@@ -2308,7 +2367,7 @@ xmlrpc_value* VideoTranscoderSetCodec(xmlrpc_env *env, xmlrpc_value *param_array
 		return xmlerror(env,"The media Session does not exist");
 
 	//Create player
-	int res = session->VideoTranscoderSetCodec(videoTranscoderId,(VideoCodec::Type)codec,size,fps,bitrate,intraPeriod);
+	int res = session->VideoTranscoderSetCodec(videoTranscoderId,(VideoCodec::Type)codec,size,fps,bitrate,intraPeriod, properties);
 
 	//Liberamos la referencia
 	jsr->ReleaseMediaSessionRef(sessionId);

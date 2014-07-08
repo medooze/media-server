@@ -975,7 +975,7 @@ int MediaSession::VideoMixerPortCreate(int mixerId,std::wstring tag, int mosaicI
 	return videoMixer->CreatePort(tag,mosaicId);
 }
 
-int MediaSession::VideoMixerPortSetCodec(int mixerId,int portId,VideoCodec::Type codec,int size,int fps,int bitrate,int intraPeriod)
+int MediaSession::VideoMixerPortSetCodec(int mixerId,int portId,VideoCodec::Type codec,int size,int fps,int bitrate,int intraPeriod,const Properties& properties)
 {
 	//Get Player
         VideoMixers::iterator it = videoMixers.find(mixerId);
@@ -988,7 +988,7 @@ int MediaSession::VideoMixerPortSetCodec(int mixerId,int portId,VideoCodec::Type
         VideoMixerResource* videoMixer = it->second;
 
 	//Execute
-	return videoMixer->SetPortCodec(portId,codec,size,fps,bitrate,intraPeriod);
+	return videoMixer->SetPortCodec(portId,codec,size,fps,bitrate,intraPeriod,properties);
 }
 
 int MediaSession::VideoMixerPortDelete(int mixerId,int portId)
@@ -1242,7 +1242,7 @@ int MediaSession::VideoTranscoderFPU(int videoTranscoderId)
 	return 1;
 }
 
-int MediaSession::VideoTranscoderSetCodec(int videoTranscoderId,VideoCodec::Type codec,int size,int fps,int bitrate,int intraPeriod)
+int MediaSession::VideoTranscoderSetCodec(int videoTranscoderId,VideoCodec::Type codec,int size,int fps,int bitrate,int intraPeriod,Properties & props)
 {
 	//Get Player
         VideoTranscoders::iterator it = videoTranscoders.find(videoTranscoderId);
@@ -1255,7 +1255,7 @@ int MediaSession::VideoTranscoderSetCodec(int videoTranscoderId,VideoCodec::Type
         VideoTranscoder* videoTranscoder = it->second;
 
 	//Execute
-	return videoTranscoder->SetCodec(codec,size,fps,bitrate,intraPeriod);
+	return videoTranscoder->SetCodec(codec,size,fps,bitrate,intraPeriod,props);
 }
 
 int MediaSession::VideoTranscoderDelete(int videoTranscoderId)

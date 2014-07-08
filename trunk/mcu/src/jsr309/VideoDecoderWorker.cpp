@@ -66,7 +66,7 @@ int VideoDecoderJoinableWorker::Start()
 }
 void * VideoDecoderJoinableWorker::startDecoding(void *par)
 {
-	Log("VideoDecoderJoinableWorkerThread [%p]\n",pthread_self());
+	Log("VideoDecoderJoinableWorkerThread [%d]\n",getpid());
 	//Get worker
 	VideoDecoderJoinableWorker *worker = (VideoDecoderJoinableWorker *)par;
 	//Block all signals
@@ -329,7 +329,7 @@ int VideoDecoderJoinableWorker::Attach(Joinable *join)
 	//Store new one
 	joined = join;
 	//If it is not null
-	if (joined)
+	if (join)
 	{
 		//Start
 		Start();

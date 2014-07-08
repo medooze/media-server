@@ -21,7 +21,7 @@ public:
 	virtual ~VideoTranscoder();
 
 	int Init();
-	int SetCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int intraPeriod);
+	int SetCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int intraPeriod, const Properties & properties);
 	int End();
 
 	//Joinable interface

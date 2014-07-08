@@ -23,7 +23,7 @@ public:
 	virtual ~VideoEncoderMultiplexerWorker();
 
 	int Init(VideoInput *input);
-	int SetCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int intraPeriod);
+	int SetCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int intraPeriod,const Properties & properties);
 	int End();
 	
 	//Joinable interface
@@ -53,6 +53,7 @@ private:
 	int intraPeriod;
 	int videoBitrateLimit;
 	int videoBitrateLimitCount;
+	Properties properties;
 
 	pthread_t	thread;
 	pthread_mutex_t mutex;
