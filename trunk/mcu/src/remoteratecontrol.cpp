@@ -228,7 +228,7 @@ void RemoteRateControl::UpdateKalman(QWORD now,int deltaTime, int deltaTS, int d
 			overUseCount=0;
 		}
 	}
-	if (eventSource) eventSource->SendEvent("rrc.lost","[%llu,\"%s\",\"%d\"]",(QWORD)time(NULL),GetName(hypothesis),rtt);
+	if (eventSource) eventSource->SendEvent("rrc.lost","[%llu,\"%s\",\"%d\"]",getTimeMS(),GetName(hypothesis),rtt);
 }
 
 bool RemoteRateControl::UpdateRTT(DWORD rtt)
@@ -248,7 +248,7 @@ bool RemoteRateControl::UpdateRTT(DWORD rtt)
 	//Debug
 	Debug("BWE: UpdateRTT rtt:%d hipothesis:%s\n",rtt,GetName(hypothesis));
 
-	if (eventSource) eventSource->SendEvent("rrc.rtt","[%llu,\"%s\",\"%d\"]",(QWORD)time(NULL),GetName(hypothesis),rtt);
+	if (eventSource) eventSource->SendEvent("rrc.rtt","[%llu,\"%s\",\"%d\"]",getTimeMS(),GetName(hypothesis),rtt);
 
 	//Return if we are overusing now
 	return hypothesis==OverUsing;
@@ -268,7 +268,7 @@ bool RemoteRateControl::UpdateLost(DWORD num)
 	//Debug
 	Debug("BWE: UpdateLostlost:%d hipothesis:%s\n",num,GetName(hypothesis));
 
-	if (eventSource) eventSource->SendEvent("rrc.lost","[%llu,\"%s\",\"%d\"]",(QWORD)time(NULL),GetName(hypothesis),rtt);
+	if (eventSource) eventSource->SendEvent("rrc.lost","[%llu,\"%s\",\"%d\"]",getTimeMS(),GetName(hypothesis),rtt);
 
 	//true if overusing
 	return hypothesis==OverUsing;
