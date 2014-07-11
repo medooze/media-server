@@ -397,7 +397,7 @@ int DTLSConnection::SetupSRTP()
 					break;
 				default:
 					X509_free(certificate);
-					return Error("-DTLSConnection::SetupSRTP() | fingerprint in remote SDP does not use SHA-1 or SHA-2 hash, cannot verify it\n");
+					return Error("-DTLSConnection::SetupSRTP() | fingerprint in remote SDP does not use SHA-1 or SHA-256 hash, cannot verify it\n");
 			}
 		}
 
