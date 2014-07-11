@@ -74,7 +74,10 @@ int DTLSConnection::ClassInit()
 
 	// Fill the DTLSConnection::availableHashes vector.
 	DTLSConnection::availableHashes.push_back(SHA1);
+	DTLSConnection::availableHashes.push_back(SHA224);
 	DTLSConnection::availableHashes.push_back(SHA256);
+	DTLSConnection::availableHashes.push_back(SHA384);
+	DTLSConnection::availableHashes.push_back(SHA512);
 
 	// Create BIO for certificate file.
 	certbio = BIO_new(BIO_s_file());
@@ -99,10 +102,19 @@ int DTLSConnection::ClassInit()
 
 		switch (hash) {
 			case SHA1:
-				X509_digest(cert, EVP_sha(), fingerprint, &size);
+				X509_digest(cert, EVP_sha1(), fingerprint, &size);
+				break;
+			case SHA224:
+				X509_digest(cert, EVP_sha224(), fingerprint, &size);
 				break;
 			case SHA256:
 				X509_digest(cert, EVP_sha256(), fingerprint, &size);
+				break;
+			case SHA384:
+				X509_digest(cert, EVP_sha384(), fingerprint, &size);
+				break;
+			case SHA512:
+				X509_digest(cert, EVP_sha512(), fingerprint, &size);
 				break;
 		}
 
@@ -388,11 +400,32 @@ int DTLSConnection::SetupSRTP()
 						return Error("-DTLSConnection::SetupSRTP() | fingerprint in remote SDP does not match that of peer certificate (hash SHA-1)\n");
 					}
 					break;
+				case SHA224:
+					if (!X509_digest(certificate, EVP_sha224(), fingerprint, &size) || !size || memcmp(fingerprint, remoteFingerprint, size))
+					{
+						X509_free(certificate);
+						return Error("-DTLSConnection::SetupSRTP() | fingerprint in remote SDP does not match that of peer certificate (hash SHA-224)\n");
+					}
+					break;
 				case SHA256:
 					if (!X509_digest(certificate, EVP_sha256(), fingerprint, &size) || !size || memcmp(fingerprint, remoteFingerprint, size))
 					{
 						X509_free(certificate);
 						return Error("-DTLSConnection::SetupSRTP() | fingerprint in remote SDP does not match that of peer certificate (hash SHA-256)\n");
+					}
+					break;
+				case SHA384:
+					if (!X509_digest(certificate, EVP_sha384(), fingerprint, &size) || !size || memcmp(fingerprint, remoteFingerprint, size))
+					{
+						X509_free(certificate);
+						return Error("-DTLSConnection::SetupSRTP() | fingerprint in remote SDP does not match that of peer certificate (hash SHA-384)\n");
+					}
+					break;
+				case SHA512:
+					if (!X509_digest(certificate, EVP_sha512(), fingerprint, &size) || !size || memcmp(fingerprint, remoteFingerprint, size))
+					{
+						X509_free(certificate);
+						return Error("-DTLSConnection::SetupSRTP() | fingerprint in remote SDP does not match that of peer certificate (hash SHA-512)\n");
 					}
 					break;
 				default:

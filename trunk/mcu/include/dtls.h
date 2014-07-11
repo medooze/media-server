@@ -38,7 +38,10 @@ public:
 	enum Hash
 	{
 		SHA1,
-		SHA256
+		SHA224,
+		SHA256,
+		SHA384,
+		SHA512
 	};
 
 	enum Connection {
