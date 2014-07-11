@@ -439,8 +439,14 @@ int RTPSession::SetRemoteCryptoDTLS(const char *setup,const char *hash,const cha
 	//Set fingerprint
 	if (strcasecmp(hash,"SHA-1")==0)
 		dtls.SetRemoteFingerprint(DTLSConnection::SHA1,fingerprint);
+	else if (strcasecmp(hash,"SHA-224")==0)
+		dtls.SetRemoteFingerprint(DTLSConnection::SHA224,fingerprint);
 	else if (strcasecmp(hash,"SHA-256")==0)
 		dtls.SetRemoteFingerprint(DTLSConnection::SHA256,fingerprint);
+	else if (strcasecmp(hash,"SHA-384")==0)
+		dtls.SetRemoteFingerprint(DTLSConnection::SHA384,fingerprint);
+	else if (strcasecmp(hash,"SHA-512")==0)
+		dtls.SetRemoteFingerprint(DTLSConnection::SHA512,fingerprint);
 	else
 		return Error("-RTPSession::SetRemoteCryptoDTLS | Unknown hash");
 
