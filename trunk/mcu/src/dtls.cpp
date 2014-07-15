@@ -214,6 +214,7 @@ int DTLSConnection::Init()
 	BIO_set_mem_eof_return(read_bio, -1);
 
 	if (!(write_bio = BIO_new(BIO_s_mem()))) {
+		BIO_free(read_bio);
 		SSL_free(ssl);
 		return Error("-DTLSConnection::Init() | Failed to allocate memory for outbound SSL traffic on \n");
 	}
