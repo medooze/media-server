@@ -9,6 +9,10 @@ OPTS+= -fPIC -DPIC -msse -msse2 -msse3 -DSPX_RESAMPLE_EXPORT= -DRANDOM_PREFIX=mc
 ifeq ($(DEBUG),yes)
 	TAG=debug
 	OPTS+= -g -O0
+	#SANITIZE
+	ifeq ($(SANITIZE),yes)
+		OPTS+= -fsanitize=address -fno-omit-frame-pointer
+	endif
 else
 	OPTS+= -g -O4 -fexpensive-optimizations -funroll-loops
 	TAG=release
