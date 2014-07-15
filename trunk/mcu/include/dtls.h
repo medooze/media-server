@@ -67,8 +67,8 @@ public:
 
 public:
 	// Static callbacks for OpenSSL.
-	static void dtls_info_callback(const SSL *ssl, int where, int ret);
-	static int fakeDtlsVerifyCallback(int preverify_ok, X509_STORE_CTX *ctx);
+	static void onSSLInfo(const SSL *ssl, int where, int ret);
+	static int onSSLVerify(int preverify_ok, X509_STORE_CTX *ctx);
 
 private:
 	static std::string certfile;	/*!< Certificate file */

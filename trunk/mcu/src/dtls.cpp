@@ -42,7 +42,7 @@ int DTLSConnection::ClassInit()
 	}
 
 	// Require cert from client (mandatory for WebRTC).
-	SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, DTLSConnection::fakeDtlsVerifyCallback);
+	SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, DTLSConnection::onSSLVerify);
 
 	// Set certificate.
 	if (! SSL_CTX_use_certificate_file(ssl_ctx, certfile.c_str(), SSL_FILETYPE_PEM))
@@ -146,19 +146,20 @@ std::string DTLSConnection::GetCertificateFingerPrint(Hash hash)
 	return DTLSConnection::localFingerPrints[hash];
 }
 
-void DTLSConnection::dtls_info_callback(const SSL *ssl, int where, int ret)
+inline
+void DTLSConnection::onSSLInfo(const SSL *ssl, int where, int ret)
 {
 	DTLSConnection *con = (DTLSConnection*) SSL_get_ex_data(ssl, 0);
 
-	Debug("-DTLSConnection::dtls_info_callback() | [where:%d, ret:%d] | SSL status: %s | SSL_is_init_finished: %d\n", where, ret, SSL_state_string_long(ssl), SSL_is_init_finished(ssl));
+	Debug("-DTLSConnection::onSSLInfo() | [where:%d, ret:%d] | SSL status: %s | SSL_is_init_finished: %d\n", where, ret, SSL_state_string_long(ssl), SSL_is_init_finished(ssl));
 	if (where & SSL_CB_HANDSHAKE_START) {
-		Debug("-DTLSConnection::dtls_info_callback() | SSL_CB_HANDSHAKE_START\n");
+		Debug("-DTLSConnection::onSSLInfo() | SSL_CB_HANDSHAKE_START\n");
 	}
 	if (where & SSL_CB_HANDSHAKE_DONE) {
-		Log("-DTLSConnection::dtls_info_callback() | SSL_CB_HANDSHAKE_DONE\n");
+		Log("-DTLSConnection::onSSLInfo() | SSL_CB_HANDSHAKE_DONE\n");
 	}
 	if (!ret) {
-		Log("-DTLSConnection::dtls_info_callback() | alert: %s (%s)\n", SSL_alert_type_string_long(ret), SSL_alert_desc_string_long(ret)); }
+		Log("-DTLSConnection::onSSLInfo() | alert: %s (%s)\n", SSL_alert_type_string_long(ret), SSL_alert_desc_string_long(ret)); }
 
 	/* We only care about alerts */
 	if (where & SSL_CB_ALERT) {
@@ -166,7 +167,8 @@ void DTLSConnection::dtls_info_callback(const SSL *ssl, int where, int ret)
 	}
 }
 
-int DTLSConnection::fakeDtlsVerifyCallback(int preverify_ok, X509_STORE_CTX *ctx) {
+inline
+int DTLSConnection::onSSLVerify(int preverify_ok, X509_STORE_CTX *ctx) {
 	/* We just use the verify_callback to request a certificate from the client */
 	return 1;
 }
@@ -180,7 +182,7 @@ DTLSConnection::DTLSConnection(Listener& listener) : listener(listener)
 	rekey			= 0;
 	dtls_setup		= SETUP_PASSIVE;
 	connection		= CONNECTION_NEW;
-	dtls_failure	=  false;	/*!< Failure occurred during DTLS negotiation */
+	dtls_failure	= false;	/*!< Failure occurred during DTLS negotiation */
 	ssl				= NULL;		/*!< SSL session */
 	read_bio		= NULL;		/*!< Memory buffer for reading */
 	write_bio		= NULL;		/*!< Memory buffer for writing */
@@ -203,16 +205,18 @@ int DTLSConnection::Init()
 		return Error("-DTLSConnection::Init() | Failed to allocate memory for SSL context on \n");
 
 	SSL_set_ex_data(ssl, 0, this);
-	SSL_set_info_callback(ssl, DTLSConnection::dtls_info_callback);
+	SSL_set_info_callback(ssl, DTLSConnection::onSSLInfo);
 
-	if (!(read_bio = BIO_new(BIO_s_mem())))
+	if (!(read_bio = BIO_new(BIO_s_mem()))) {
+		SSL_free(ssl);
 		return Error("-DTLSConnection::Init() | Failed to allocate memory for inbound SSL traffic on \n");
-
+	}
 	BIO_set_mem_eof_return(read_bio, -1);
 
-	if (!(write_bio = BIO_new(BIO_s_mem())))
+	if (!(write_bio = BIO_new(BIO_s_mem()))) {
+		SSL_free(ssl);
 		return Error("-DTLSConnection::Init() | Failed to allocate memory for outbound SSL traffic on \n");
-
+	}
 	BIO_set_mem_eof_return(write_bio, -1);
 
 	SSL_set_bio(ssl, read_bio, write_bio);
@@ -242,7 +246,6 @@ int DTLSConnection::Init()
 
 	return 1;
 }
-
 
 void DTLSConnection::End()
 {
