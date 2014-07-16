@@ -1,7 +1,7 @@
-/* 
+/*
  * File:   fecdecoder.cpp
  * Author: Sergio
- * 
+ *
  * Created on 6 de febrero de 2013, 10:30
  */
 
@@ -35,7 +35,7 @@ bool FECDecoder::AddPacket(RTPTimedPacket* packet)
 	{
 		//Get the redundant packet
 		RTPRedundantPacket *red = (RTPRedundantPacket *)packet;
-		
+
 		//Check primary redundant type
 		if (red->GetPrimaryCodec()==VideoCodec::ULPFEC)
 		{
@@ -81,7 +81,7 @@ bool FECDecoder::AddPacket(RTPTimedPacket* packet)
 	}
 	//Get last seq number
 	DWORD seq = medias.rbegin()->first;
-	
+
 	//Remove unused packets
 	RTPOrderedPackets::iterator it = medias.begin();
 	//Delete everything until seq-63
@@ -92,7 +92,7 @@ bool FECDecoder::AddPacket(RTPTimedPacket* packet)
 		//Erase it
 		medias.erase(it++);
 	}
-	
+
 	//Now clean recovery codes
 	FECOrderedData::iterator it2 = codes.begin();
 	//Check base sequence
@@ -260,13 +260,13 @@ RTPTimedPacket* FECDecoder::Recover()
 					//Delete packet
 					delete(packet);
 					//Error
-					Error("-FEC payload of recovered packet to big [%l]\n",l);
+					Error("-FEC payload of recovered packet to big [%u]\n",(unsigned int)l);
 					//Skip
 					continue;
 				}
 
 				Debug("-recovered packet len:%u ts:%u pts:%u seq:%d\n",l,ts,packet->GetTimestamp() ,packet->GetSeqNum());
-				
+
 				//Append the packet to the media packet list
 				if (AddPacket(packet))
 					//Return it if contained media
