@@ -12,6 +12,7 @@ ifeq ($(DEBUG),yes)
 	#SANITIZE
 	ifeq ($(SANITIZE),yes)
 		OPTS+= -fsanitize=address -fno-omit-frame-pointer
+		LDFLAGS+= -fsanitize=address
 	endif
 else
 	OPTS+= -g -O4 -fexpensive-optimizations -funroll-loops
