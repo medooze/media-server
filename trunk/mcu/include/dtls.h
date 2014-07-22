@@ -65,11 +65,6 @@ public:
 	static std::string GetCertificateFingerPrint(Hash hash);
 	static bool IsDTLS(BYTE* buffer,int size)		{ return buffer[0]>=20 && buffer[0]<=64; }
 
-public:
-	// Static callbacks for OpenSSL.
-	static void onSSLInfo(const SSL *ssl, int where, int ret);
-	static int onSSLVerify(int preverify_ok, X509_STORE_CTX *ctx);
-
 private:
 	static std::string certfile;	/*!< Certificate file */
 	static std::string pvtfile;		/*!< Private key file */
@@ -95,11 +90,14 @@ public:
 	int  Read(BYTE* data,int size);
 	int  Write(BYTE *buffer,int size);
 	int  Renegotiate();
+
+/* Callbacks fired by OpenSSL events. */
+public:
+	void onSSLInfo(int where, int ret);
+
 protected:
 	int  SetupSRTP();
 	int  CheckPending();
-public:
-	bool dtls_failure;		/*!< Failure occurred during DTLS negotiation */
 private:
 	Listener& listener;
 	SSL *ssl;			/*!< SSL session */
