@@ -67,7 +67,7 @@ bool OpenSSL::SetThreadSafe()
 
 void OpenSSL::SetThreadId(CRYPTO_THREADID* thread_id)
 {
-	::Debug("-OpenSSL::SetThreadId() [thread_id: 0x%lx]\n", (long)thread_id);
+	// ::Debug("-OpenSSL::SetThreadId() [thread_id: 0x%lx]\n", (long)thread_id);
 	// Let's assume pthread_self() is an unsigned long (otherwise this won't compile anyway).
 	CRYPTO_THREADID_set_numeric(thread_id, (unsigned long)pthread_self());
 }
@@ -86,7 +86,7 @@ void OpenSSL::LockingFunction(int mode, int n, const char *file, int line)
 	 * - line:  line in the source file calling this function.
 	 */
 
-	::Debug("-OpenSSL::LockingFunction() [mode: LOCK:%u|UNLOCK:%u|READ:%u|WRITE:%u, mutex number: %d, file: %s, line: %d]\n", mode & CRYPTO_LOCK ?1:0, mode & CRYPTO_UNLOCK ?1:0, mode & CRYPTO_READ ?1:0, mode & CRYPTO_WRITE ?1:0, n, file, line);
+	// ::Debug("-OpenSSL::LockingFunction() [mode: LOCK:%u|UNLOCK:%u|READ:%u|WRITE:%u, mutex number: %d, file: %s, line: %d]\n", mode & CRYPTO_LOCK ?1:0, mode & CRYPTO_UNLOCK ?1:0, mode & CRYPTO_READ ?1:0, mode & CRYPTO_WRITE ?1:0, n, file, line);
 
 	if (mode & CRYPTO_LOCK)
 		pthread_mutex_lock(&mutexArray[n]);
