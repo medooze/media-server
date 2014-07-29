@@ -5,6 +5,7 @@
 #include "websockets.h"
 #include "websocketconnection.h"
 #include "amf.h"
+#include "cpim.h"
 
 
 class WebSocketServer : public WebSocketConnection::Listener

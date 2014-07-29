@@ -12,7 +12,7 @@
 * MultiConf
 * 	Constructor
 *************************/
-MultiConf::MultiConf(const std::wstring &tag) : broadcast(tag),videoMixer(tag)
+MultiConf::MultiConf(const std::wstring &tag) : broadcast(tag),videoMixer(tag),chat(tag)
 {
 	//Guardamos el nombre
 	this->tag = tag;
@@ -133,6 +133,9 @@ int MultiConf::Init(int vad, DWORD rate)
 	//Create floors
 	floorServer->AddFloor(1);	//Presenter
 	floorServer->AddFloor(2);	//Editor
+	
+	//Start chat
+	chat.Init();
 
 	return res;
 }
@@ -744,6 +747,9 @@ int MultiConf::End()
 	audioMixer.End();
 	textMixer.End();
 
+	//End chat
+	chat.End();
+	
 	//No inicado
 	inited = 0;
 
@@ -1915,6 +1921,9 @@ int MultiConf::WebsocketConnectRequest(WebSocket *ws,int partId,const std::strin
 	else if (to.compare("vnc-server")==0)
 		//Connect to app mixer vnc server
 		appMixer.WebsocketConnectRequest(partId,ws,1);
+	else if (to.compare("chat")==0)
+		//Connect to chat
+		chat.WebsocketConnectRequest(partId,ws);
 	else
 		//Exit
 		goto forbiden;

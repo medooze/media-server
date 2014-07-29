@@ -312,6 +312,7 @@ public:
 	//Weksocket
 	virtual void Accept(WebSocket::Listener *listener);
 	virtual void Reject(const WORD code, const char* reason);
+	virtual void SendMessage(MessageType type,const BYTE* data, const DWORD size);
 	virtual void SendMessage(const std::wstring& message);
 	virtual void SendMessage(const BYTE* data, const DWORD size);
 	virtual DWORD GetWriteBufferLength();

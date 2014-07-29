@@ -819,7 +819,6 @@ int RTPSession::SendPacket(RTCPCompoundPacket &rtcp)
 		//Check  session
 		if (!sendSRTPSession)
 			return Error("-RTPSession::SendPacket() | no sendSRTPSession\n");
-		Debug("-srtp_protect_rtcp for %s [len:%d,size:%d]\n",MediaFrame::TypeToString(media),len,size);
 		//Protect
 		err_status_t err = srtp_protect_rtcp(sendSRTPSession,data,&len);
 		//Check error
@@ -2241,14 +2240,14 @@ int RTPSession::ReSendPacket(int seq)
 		RTPTimedPacket* packet = it->second;
 
 		//Data
-		BYTE data[RTPPAYLOADSIZE+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
-		DWORD size = RTPPAYLOADSIZE;
+		BYTE data[MTU+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
+		DWORD size = MTU;
 		int len = packet->GetSize();
 
 		//Check size
 		if (len>size)
 			//Error
-			return Error("-RTPSession::ReSendPacket() | so enought size for copying pacekt[len:%d]\n",len);
+			return Error("-RTPSession::ReSendPacket() | not enougth size for copying packet [len:%d]\n",len);
 
 		//Copy
 		memcpy(data,packet->GetData(),packet->GetSize());
