@@ -64,6 +64,10 @@ public:
 	DWORD GetSize();
 	std::string GetType()		const { return type;	}
 	std::string GetSubType()	const { return subtype;	}
+        bool Equals(const std::string &type,const std::string &subtype)
+        {
+            return this->type.compare(type)==0 && this->subtype.compare(subtype)==0;
+        }
 private:
 	std::string type;
 	std::string subtype;

@@ -11,6 +11,7 @@
 #include <cstring>
 #include <errno.h>
 #include <math.h>
+#include <wchar.h>
 #include "config.h"
 
 template <typename _CharT, typename _StringT>
@@ -139,27 +140,6 @@ public:
 		//founr
 		return true;
 
-	}
-
-	bool  ParseToken()
-	{
-		//Check ended
-		if (IsEnded())
-			//Not found
-			return false;
-		//Get init
-		_CharT *start = c;
-		//Wheck it is a token
-		while (!IsEnded() && *c>32 && *c<127 && !CheckCharSet("()<>@,;:\\\"/[]?={}"))
-			Next();
-		//If we don't have any _CharT
-		if (start==c)
-			//No token found
-			return false;
-		//Set value string
-		value = _StringT(start,c-start);
-		//Done
-		return true;
 	}
 
 	bool  ParseQuotedString()
@@ -305,6 +285,11 @@ public:
 	{
 		c +=num;
 	}
+        
+        DWORD GetPos() 
+        {
+            return c-buffer;
+        }
 
 protected:
 	_CharT* buffer;
@@ -408,6 +393,29 @@ public:
 		//Error
 		return false;
 	}
+	
+	bool  ParseToken()
+	{
+		//Check ended
+		if (IsEnded())
+			//Not found
+			return false;
+		//Get init
+		char *start = c;
+		
+		//Wheck it is a token
+		while (!IsEnded() && *c>32 && *c<127 && !CheckCharSet("()<>@,;:\\\"/[]?={}"))
+			Next();
+		
+		//If we don't have any _CharT
+		if (start==c)
+			//No token found
+			return false;
+		//Set value string
+		value = std::string(start,c-start);
+		//Done
+		return true;
+	}
 
 	long int GetIntegerValue()
 	{
@@ -476,6 +484,72 @@ public:
 		//Found
 		return true;
 	}
+	
+	bool  ParseToken()
+	{
+		//Check ended
+		if (IsEnded())
+			//Not found
+			return false;
+		//Get init
+		wchar_t *start = c;
+		
+		//Wheck it is a token
+		while (!IsEnded() && *c>32 && !CheckCharSet(L"()<>@,;:\\\"/[]?={}"))
+			Next();
+		
+		//If we don't have any _CharT
+		if (start==c)
+			//No token found
+			return false;
+		//Set value string
+		value = std::wstring(start,c-start);
+		//Done
+		return true;
+	}
+	
+	bool CheckInteger()
+	{
+		return CheckChar('-') || CheckChar('+') || CheckDigit();
+	}
+	
+	bool ParseInteger()
+	{
+		if (! CheckInteger())
+			return false;
+
+		//Mark
+		wchar_t* ini = Mark();
+		wchar_t* end = NULL;
+
+		//Parse long
+		number = wcstol(ini,&end,10);
+
+		//Check conversion
+		if (!number && (errno==EINVAL || errno==ERANGE || ini==end))
+			//error
+			goto error;
+
+		//Goto end of number
+		Move(end-ini);
+
+		//Done
+		return true;
+
+	error:
+		//Reset pos
+		Reset(ini);
+
+		//Error
+		return false;
+	}
+	
+	long int GetIntegerValue()
+	{
+		return number;
+	}
+private:
+	long int number;
 };
 
 class JSONParser : public WideStringParser

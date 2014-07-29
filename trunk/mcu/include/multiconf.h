@@ -16,6 +16,7 @@
 #include "rtmpnetconnection.h"
 #include "websockets.h"
 #include "appmixer.h"
+#include "groupchat.h"
 #include "bfcp/BFCPFloorControlServer.h"
 
 class MultiConf :
@@ -205,6 +206,7 @@ private:
 
 	Use			participantsLock;
 
+	GroupChat		chat;
 	BFCPFloorControlServer* floorServer;
 	int			chairId;
 };

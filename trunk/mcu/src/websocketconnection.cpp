@@ -644,45 +644,10 @@ void WebSocketConnection::ProcessData(BYTE *data,DWORD size)
 	}
 }
 
-void WebSocketConnection::SendMessage(const std::wstring& message)
+void WebSocketConnection::SendMessage(MessageType type,const BYTE* data, const DWORD size)
 {
-	Log("-WebSocket Connection SendMessage\n");
-
-	if (!this->running) {
-		Error("WebSocketConnection::SendMessage() called when not running\n");
-		return;
-	}
-
-	//Convert to UTF8 before sending
-	UTF8Parser utf8(message);
-
-	//Create new frame with no data yet
-	Frame *frame = new Frame(true,WebSocketFrameHeader::TextFrame,NULL,utf8.GetUTF8Size());
-
-	//Serialize
-	utf8.Serialize(frame->GetPayloadData(),frame->GetPayloadSize());
-
-	//Lock mutex
-	pthread_mutex_lock(&mutex);
-
-	//Push frame
-	frames.push_back(frame);
-
-	//Add size
-	outgoingFramesLength += frame->GetPayloadSize();
-
-	//Un Lock mutex
-	pthread_mutex_unlock(&mutex);
-
-	//We need to write data!
-	SignalWriteNeeded();
-}
-
-void WebSocketConnection::SendMessage(const BYTE* data, const DWORD size)
-{
-	Log("-WebSocket Connection SendMessage\n");
-
-	if (!this->running) {
+    
+    if (!this->running) {
 		Error("WebSocketConnection::SendMessage() called when not running\n");
 		return;
 	}
@@ -695,7 +660,19 @@ void WebSocketConnection::SendMessage(const BYTE* data, const DWORD size)
 	bool last = false;
 
 	//Binary type
-	WebSocketFrameHeader::OpCode code  = WebSocketFrameHeader::BinaryFrame;
+	WebSocketFrameHeader::OpCode code;
+        
+        switch (type)
+        {
+            case Binary:
+                code = WebSocketFrameHeader::BinaryFrame;
+                break;
+            case Text:
+                code = WebSocketFrameHeader::TextFrame;
+                break;
+            default:
+                Error("Unknown type %d\n",type);
+        }
 
 	//Sent length
 	DWORD pos = 0;
@@ -739,6 +716,47 @@ void WebSocketConnection::SendMessage(const BYTE* data, const DWORD size)
 
 	//We need to write data!
 	SignalWriteNeeded();
+}
+
+void WebSocketConnection::SendMessage(const std::wstring& message)
+{
+	Log("-WebSocket Connection SendMessage\n");
+
+	if (!this->running) {
+		Error("WebSocketConnection::SendMessage() called when not running\n");
+		return;
+	}
+
+	//Convert to UTF8 before sending
+	UTF8Parser utf8(message);
+
+	//Create new frame with no data yet
+	Frame *frame = new Frame(true,WebSocketFrameHeader::TextFrame,NULL,utf8.GetUTF8Size());
+
+	//Serialize
+	utf8.Serialize(frame->GetPayloadData(),frame->GetPayloadSize());
+
+	//Lock mutex
+	pthread_mutex_lock(&mutex);
+
+	//Push frame
+	frames.push_back(frame);
+
+	//Add size
+	outgoingFramesLength += frame->GetPayloadSize();
+
+	//Un Lock mutex
+	pthread_mutex_unlock(&mutex);
+
+	//We need to write data!
+	SignalWriteNeeded();
+}
+
+void WebSocketConnection::SendMessage(const BYTE* data, const DWORD size)
+{
+	Log("-WebSocket Connection SendMessage\n");
+
+	
 }
 
 DWORD WebSocketConnection::GetWriteBufferLength()
