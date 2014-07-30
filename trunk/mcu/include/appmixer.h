@@ -50,7 +50,7 @@ private:
 		virtual void Close();
 	public:
 		WebSocket* ws;
-		fifo<BYTE,65535> buffer;
+		fifo<BYTE,512*1024> buffer;
 		Wait wait;
 		VNCViewer viewer;
 	};
