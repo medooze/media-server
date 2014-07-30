@@ -342,7 +342,9 @@ int AppMixer::Presenter::Process(const BYTE* data,DWORD size)
 	//Lock
 	wait.Lock();
 	//Puss to buffer
-	buffer.push(data,size);
+	if(!buffer.push(data,size))
+		//Print error
+		Error("-AppMixer::Presenter::Process not enought free space length:%d size:%d\n",buffer.length(),size);
 	//Lock
 	wait.Unlock();
 	//Signal
@@ -375,26 +377,26 @@ void AppMixer::Presenter::CancelWaitForMessage()
 
 bool  AppMixer::Presenter::ReadFromRFBServer(char *out, unsigned int size)
 {
-	//Debug(">ReadFromRFBServer requested:%d,buffered:%d\n",size,buffer.length());
+	int num = 0;
 
-	//Bytes to read
-	int num = size;
+	//Debug(">ReadFromRFBServer requested:%d,buffered:%d\n",size,buffer.length());
 
 	//Lock buffer access
 	wait.Lock();
 
 	//Check if we have enought data
-	while(buffer.length()<num)
+	while(buffer.length()<size)
 	{
 		//Wait for mor data
 		if (!wait.PreLockedWaitSignal(0))
 			//Error
-			return 0;
+			goto end;
 	}
 
 	//Read
-	buffer.pop((BYTE*)out,num);
+	num = buffer.pop((BYTE*)out,size);
 
+end:
 	//Unlock
 	wait.Unlock();
 
