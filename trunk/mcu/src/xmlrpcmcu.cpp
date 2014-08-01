@@ -16,6 +16,7 @@ xmlrpc_value* CreateConference(xmlrpc_env *env, xmlrpc_value *param_array, void 
 	int vad = 0;
 	int queueId = 0;
 	int rate = 8000;
+	int init = true;
 	xmlrpc_parse_value(env, param_array, "(siii)", &str, &vad, &rate, &queueId);
 
 	//Comprobamos si ha habido error
@@ -30,8 +31,25 @@ xmlrpc_value* CreateConference(xmlrpc_env *env, xmlrpc_value *param_array, void 
 
 		//Comprobamos si ha habido error
 		if(env->fault_occurred)
-			//Send errro
-			return xmlerror(env,"Fault occurred");
+		{
+			//Comprobamos si ha habido error
+			if(env->fault_occurred)
+			{
+				//Clean error
+				xmlrpc_env_clean(env);
+				xmlrpc_env_init(env);
+
+				//Try again without init
+				xmlrpc_parse_value(env, param_array, "(si)", &str, &queueId);
+				
+				//Comprobamos si ha habido error
+				if(env->fault_occurred)
+					//Send errro
+					return xmlerror(env,"Fault occurred");
+				//Don't init, init will be called later
+				init = false;
+			}
+		}
 	}
 
 	//Parse string
@@ -44,14 +62,85 @@ xmlrpc_value* CreateConference(xmlrpc_env *env, xmlrpc_value *param_array, void 
 	if (!confId>0)
 		return xmlerror(env,"Error creating conference");
 
-	//Obtenemos la referencia
+	//If we need to init (due to old mcuWeb), if not InitConference will be called later
+	if (init)
+	{
+		Properties properties;
+			
+		//Get conference reference
+		if(!mcu->GetConferenceRef(confId,&conf))
+			return xmlerror(env,"Conference deleted before initing");
+
+		//Set vad and rate propertyes
+		properties.SetProperty("vad-mode",vad);
+		properties.SetProperty("audio.mixer.rate",rate);
+		
+		//Init conference
+		int res = conf->Init(properties);
+
+		//Free conference reference
+		mcu->ReleaseConferenceRef(confId);
+
+		//Salimos
+		if(!res)
+			return xmlerror(env,"Could not create conference");
+	}
+
+	//Devolvemos el resultado
+	return xmlok(env,xmlrpc_build_value(env,"(i)",confId));
+}
+	
+xmlrpc_value* InitConference(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+	MCU *mcu = (MCU *)user_data;
+	MultiConf *conf = NULL;
+
+	 //Parseamos
+	int confId;
+	Properties properties;
+	xmlrpc_value *map;
+	xmlrpc_parse_value(env, param_array, "(iS)", &confId,&map);
+
+	//Check if it is new api
+	if(!env->fault_occurred)
+	{
+		//Get map size
+		int j = xmlrpc_struct_size(env,map);
+
+		//Parse rtp map
+		for (int i=0;i<j;i++)
+		{
+			xmlrpc_value *key, *val;
+			const char *strKey;
+			const char *strVal;
+			//Read member
+			xmlrpc_struct_read_member(env,map,i,&key,&val);
+			//Read name
+			xmlrpc_parse_value(env,key,"s",&strKey);
+			//Read value
+			xmlrpc_parse_value(env,val,"s",&strVal);
+			//Add to map
+			properties[strKey] = strVal;
+			//Decrement ref counter
+			xmlrpc_DECREF(key);
+			xmlrpc_DECREF(val);
+		}
+	} else {
+		//Clean error
+		xmlrpc_env_clean(env);
+		xmlrpc_env_init(env);
+		//Parse old values,
+		xmlrpc_parse_value(env, param_array, "(i)", &confId);
+	}
+
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference deleted before initing");
 
-	//La iniciamos
-	int res = conf->Init(vad,rate);
+	//Init conference
+	int res = conf->Init(properties);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -59,7 +148,34 @@ xmlrpc_value* CreateConference(xmlrpc_env *env, xmlrpc_value *param_array, void 
 		return xmlerror(env,"Could not create conference");
 
 	//Devolvemos el resultado
-	return xmlok(env,xmlrpc_build_value(env,"(i)",confId));
+	return xmlok(env);
+}
+
+xmlrpc_value* EndConference(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+	MCU *mcu = (MCU *)user_data;
+	MultiConf *conf = NULL;
+
+	 //Parseamos
+	int confId;
+	xmlrpc_parse_value(env, param_array, "(i)", &confId);
+
+	//Get conference reference
+	if(!mcu->GetConferenceRef(confId,&conf))
+		return xmlerror(env,"Conference deleted before initing");
+
+	//La iniciamos
+	int res = conf->End();
+
+	//Free conference reference
+	mcu->ReleaseConferenceRef(confId);
+
+	//Salimos
+	if(!res)
+		return xmlerror(env,"Could not create conference");
+
+	//Devolvemos el resultado
+	return xmlok(env);
 }
 
 xmlrpc_value* DeleteConference(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
@@ -88,7 +204,7 @@ xmlrpc_value* GetConferences(xmlrpc_env *env, xmlrpc_value *param_array, void *u
 	MCU *mcu = (MCU *)user_data;
 	MCU::ConferencesInfo list;
 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceList(list))
 		return xmlerror(env,"Could not retreive conference info list");
 
@@ -125,14 +241,14 @@ xmlrpc_value* CreateMosaic(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 	 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	int mosaicId = conf->CreateMosaic((Mosaic::Type)comp,size);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -158,14 +274,14 @@ xmlrpc_value* SetMosaicOverlayImage(xmlrpc_env *env, xmlrpc_value *param_array, 
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	int res = conf->SetMosaicOverlayImage(mosaicId,filename);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -190,14 +306,14 @@ xmlrpc_value* ResetMosaicOverlay(xmlrpc_env *env, xmlrpc_value *param_array, voi
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	int res = conf->ResetMosaicOverlay(mosaicId);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -221,14 +337,14 @@ xmlrpc_value* DeleteMosaic(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	int res = conf->DeleteMosaic(mosaicId);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -251,14 +367,14 @@ xmlrpc_value* CreateSidebar(xmlrpc_env *env, xmlrpc_value *param_array, void *us
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	int sidebarId = conf->CreateSidebar();
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -283,14 +399,14 @@ xmlrpc_value* DeleteSidebar(xmlrpc_env *env, xmlrpc_value *param_array, void *us
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	int res = conf->DeleteSidebar(sidebarId);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -335,7 +451,7 @@ xmlrpc_value* CreateParticipant(xmlrpc_env *env, xmlrpc_value *param_array, void
 			return xmlerror(env,"Fault occurred");
 	}
 	 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
@@ -357,7 +473,7 @@ xmlrpc_value* CreateParticipant(xmlrpc_env *env, xmlrpc_value *param_array, void
 	//La borramos
 	int partId = conf->CreateParticipant(mosaicId,sidebarId,name,token,(Participant::Type)type);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -382,14 +498,14 @@ xmlrpc_value* DeleteParticipant(xmlrpc_env *env, xmlrpc_value *param_array, void
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 	 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	int res = conf->DeleteParticipant(partId);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -417,14 +533,14 @@ xmlrpc_value* AddConferenceToken(xmlrpc_env *env, xmlrpc_value *param_array, voi
 	//Parse string
 	parser.Parse((BYTE*)str,strlen(str));
 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	bool res  = conf->AddBroadcastToken(parser.GetWString());
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -453,14 +569,14 @@ xmlrpc_value* AddParticipantInputToken(xmlrpc_env *env, xmlrpc_value *param_arra
 	//Parse string
 	parser.Parse((BYTE*)str,strlen(str));
 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	bool res  = conf->AddParticipantInputToken(partId,parser.GetWString());
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -489,14 +605,14 @@ xmlrpc_value* AddParticipantOutputToken(xmlrpc_env *env, xmlrpc_value *param_arr
 	//Parse string
 	parser.Parse((BYTE*)str,strlen(str));
 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	bool res  = conf->AddParticipantOutputToken(partId,parser.GetWString());
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -554,14 +670,14 @@ xmlrpc_value* StartBroadcaster(xmlrpc_env *env, xmlrpc_value *param_array, void 
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 	 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	int port = conf->StartBroadcaster(properties);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -585,14 +701,14 @@ xmlrpc_value* StopBroadcaster(xmlrpc_env *env, xmlrpc_value *param_array, void *
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 	 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	int res = conf->StopBroadcaster();
 	
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -620,14 +736,14 @@ xmlrpc_value* StartPublishing(xmlrpc_env *env, xmlrpc_value *param_array, void *
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//Publish it
 	int id = conf->StartPublishing(server,port,app,stream);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -652,14 +768,14 @@ xmlrpc_value* StopPublishing(xmlrpc_env *env, xmlrpc_value *param_array, void *u
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//Stop publishing
 	int res = conf->StopPublishing(id);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -725,14 +841,14 @@ xmlrpc_value* SetVideoCodec(xmlrpc_env *env, xmlrpc_value *param_array, void *us
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 	 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	int res = conf->SetVideoCodec(partId,codec,mode,fps,bitrate,intraPeriod,properties);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -792,14 +908,14 @@ xmlrpc_value* SetAudioCodec(xmlrpc_env *env, xmlrpc_value *param_array, void *us
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 	 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	int res = conf->SetAudioCodec(partId,codec,properties);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -826,14 +942,14 @@ xmlrpc_value* SetTextCodec(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	int res = conf->SetTextCodec(partId,codec);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -860,14 +976,14 @@ xmlrpc_value* SetCompositionType(xmlrpc_env *env, xmlrpc_value *param_array, voi
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 	 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	int res = conf->SetCompositionType(mosaicId,(Mosaic::Type)comp,size);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -893,14 +1009,14 @@ xmlrpc_value* SetParticipantMosaic(xmlrpc_env *env, xmlrpc_value *param_array, v
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	int res = conf->SetParticipantMosaic(partId,mosaicId);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -926,14 +1042,14 @@ xmlrpc_value* SetParticipantSidebar(xmlrpc_env *env, xmlrpc_value *param_array, 
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	int res = conf->SetParticipantSidebar(partId,sidebarId);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -960,14 +1076,14 @@ xmlrpc_value* SetMosaicSlot(xmlrpc_env *env, xmlrpc_value *param_array, void *us
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 	 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//Set slot
 	int res = conf->SetMosaicSlot(mosaicId,num,id);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -993,14 +1109,14 @@ xmlrpc_value* AddMosaicParticipant(xmlrpc_env *env, xmlrpc_value *param_array, v
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//Set slot
 	int res = conf->AddMosaicParticipant(mosaicId,partId);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -1026,14 +1142,14 @@ xmlrpc_value* RemoveMosaicParticipant(xmlrpc_env *env, xmlrpc_value *param_array
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//Set slot
 	int res = conf->RemoveMosaicParticipant(mosaicId,partId);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -1059,14 +1175,14 @@ xmlrpc_value* AddSidebarParticipant(xmlrpc_env *env, xmlrpc_value *param_array, 
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//Set slot
 	int res = conf->AddSidebarParticipant(sidebarId,partId);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -1092,14 +1208,14 @@ xmlrpc_value* RemoveSidebarParticipant(xmlrpc_env *env, xmlrpc_value *param_arra
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//Set slot
 	int res = conf->RemoveSidebarParticipant(sidebarId,partId);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -1126,7 +1242,7 @@ xmlrpc_value* CreatePlayer(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
@@ -1136,7 +1252,7 @@ xmlrpc_value* CreatePlayer(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 	//La borramos
 	int playerId = conf->CreatePlayer(privateId,parser.GetWString());
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -1161,14 +1277,14 @@ xmlrpc_value* DeletePlayer(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	int res = conf->DeletePlayer(playerId);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -1195,14 +1311,14 @@ xmlrpc_value* StartPlaying(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	int res = conf->StartPlaying(playerId,filename,loop);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -1227,14 +1343,14 @@ xmlrpc_value* StopPlaying(xmlrpc_env *env, xmlrpc_value *param_array, void *user
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	int res = conf->StopPlaying(playerId);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -1260,14 +1376,14 @@ xmlrpc_value* StartRecordingParticipant(xmlrpc_env *env, xmlrpc_value *param_arr
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	int res = conf->StartRecordingParticipant(playerId,filename);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -1292,14 +1408,14 @@ xmlrpc_value* StopRecordingParticipant(xmlrpc_env *env, xmlrpc_value *param_arra
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	int res = conf->StopRecordingParticipant(playerId);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -1324,14 +1440,14 @@ xmlrpc_value* StartRecordingBroadcaster(xmlrpc_env *env, xmlrpc_value *param_arr
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	int res = conf->StartRecordingBroadcaster(filename);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -1355,14 +1471,14 @@ xmlrpc_value* StopRecordingBroadcaster(xmlrpc_env *env, xmlrpc_value *param_arra
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	int res = conf->StopRecordingBroadcaster();
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -1387,14 +1503,14 @@ xmlrpc_value* SendFPU(xmlrpc_env *env, xmlrpc_value *param_array, void *user_dat
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	int res = conf->SendFPU(partId);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -1421,14 +1537,14 @@ xmlrpc_value* SetMute(xmlrpc_env *env, xmlrpc_value *param_array, void *user_dat
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	int res = conf->SetMute(partId,(MediaFrame::Type)media,isMuted);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -1453,14 +1569,14 @@ xmlrpc_value* SetChair(xmlrpc_env *env, xmlrpc_value *param_array, void *user_da
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	int res = conf->SetChair(partId);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -1485,14 +1601,14 @@ xmlrpc_value* GetParticipantStatistics(xmlrpc_env *env, xmlrpc_value *param_arra
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//Get statistics
 	MultiConf::ParticipantStatistics *partStats = conf->GetParticipantStatistic(partId);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -1538,14 +1654,14 @@ xmlrpc_value* GetMosaicPositions(xmlrpc_env *env, xmlrpc_value *param_array, voi
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//Get statistics
 	conf->GetMosaicPositions(mosaicId,positions);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Create array
@@ -1644,14 +1760,14 @@ xmlrpc_value* StartSending(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 	if(env->fault_occurred)
 		return 0;
 
-		//Obtenemos la referencia
+		//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	int res = conf->StartSending(partId,(MediaFrame::Type)media,sendIp,sendPort,map);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -1703,14 +1819,14 @@ xmlrpc_value* SetRTPProperties(xmlrpc_env *env, xmlrpc_value *param_array, void 
 	if(env->fault_occurred)
 		return 0;
 
-		//Obtenemos la referencia
+		//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	int res = conf->SetRTPProperties(partId,(MediaFrame::Type)media,properties);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -1738,14 +1854,14 @@ xmlrpc_value* SetLocalCryptoSDES(xmlrpc_env *env, xmlrpc_value *param_array, voi
 	if(env->fault_occurred)
 		return 0;
 
-		//Obtenemos la referencia
+		//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	int res = conf->SetLocalCryptoSDES(partId,(MediaFrame::Type)media,suite,key);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -1774,14 +1890,14 @@ xmlrpc_value* SetRemoteCryptoSDES(xmlrpc_env *env, xmlrpc_value *param_array, vo
 	if(env->fault_occurred)
 		return 0;
 
-		//Obtenemos la referencia
+		//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	int res = conf->SetRemoteCryptoSDES(partId,(MediaFrame::Type)media,suite,key);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -1809,14 +1925,14 @@ xmlrpc_value* SetRemoteCryptoDTLS(xmlrpc_env *env, xmlrpc_value *param_array, vo
 	if(env->fault_occurred)
 		return 0;
 
-		//Obtenemos la referencia
+		//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	int res = conf->SetRemoteCryptoDTLS(partId,(MediaFrame::Type)media,setup,hash,fingerprint);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -1871,14 +1987,14 @@ xmlrpc_value* SetLocalSTUNCredentials(xmlrpc_env *env, xmlrpc_value *param_array
 	if(env->fault_occurred)
 		return 0;
 
-		//Obtenemos la referencia
+		//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	int res = conf->SetLocalSTUNCredentials(partId,(MediaFrame::Type)media,username,pwd);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -1907,14 +2023,14 @@ xmlrpc_value* SetRemoteSTUNCredentials(xmlrpc_env *env, xmlrpc_value *param_arra
 	if(env->fault_occurred)
 		return 0;
 
-		//Obtenemos la referencia
+		//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	int res = conf->SetRemoteSTUNCredentials(partId,(MediaFrame::Type)media,username,pwd);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -1940,14 +2056,14 @@ xmlrpc_value* StopSending(xmlrpc_env *env, xmlrpc_value *param_array, void *user
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	int res = conf->StopSending(partId,(MediaFrame::Type)media);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -2000,14 +2116,14 @@ MCU *mcu = (MCU *)user_data;
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	int recVideoPort = conf->StartReceiving(partId,(MediaFrame::Type)media,map);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -2033,14 +2149,14 @@ xmlrpc_value* StopReceiving(xmlrpc_env *env, xmlrpc_value *param_array, void *us
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 
-	//Obtenemos la referencia
+	//Get conference reference
 	if(!mcu->GetConferenceRef(confId,&conf))
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
 	int res = conf->StopReceiving(partId,(MediaFrame::Type)media);
 
-	//Liberamos la referencia
+	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
 
 	//Salimos
@@ -2056,6 +2172,8 @@ XmlHandlerCmd mcuCmdList[] =
 	{"EventQueueCreate",MCUEventQueueCreate},
 	{"EventQueueDelete",MCUEventQueueDelete},
 	{"CreateConference",CreateConference},
+	{"InitConference",InitConference},
+	{"EndConference",EndConference},
 	{"DeleteConference",DeleteConference},
 	{"GetConferences",GetConferences},
 	{"CreateMosaic",CreateMosaic},

@@ -186,19 +186,25 @@ int AudioMixer::MixAudio()
 	return 1;
 }
 
+int AudioMixer::SetCalculateVAD(bool vad)
+{
+	Log(".SetCalculateVAD [vad:%d]\n",vad);
+	//Store
+	this->vad = vad;	
+}
+
+
 /***********************
 * Init
 *	Inicializa el mezclado de audio
 ************************/
-int AudioMixer::Init(bool vad,DWORD rate)
+int AudioMixer::Init(const Properties &properties)
 {
-	Log("-Init audio mixer [vad:%d,rate:%d]\n",vad,rate);
-
-	//Store if we need to use vad or not
-	this->vad = vad;
-
 	//Store rate
-	this->rate = rate;
+	this->rate = properties.GetProperty("rate",8000);
+
+	//Log
+	Log("-Init audio mixer [rate: %d]\n",vad,rate);
 
 	// Estamos mzclando
 	mixingAudio = true;

@@ -27,7 +27,7 @@ int AudioMixerResource::Init()
 	Log("-Init AudioMixerResource\n");
 
 	//Init audio mixer without vad
-	inited = mixer.Init(false);
+	inited = mixer.Init(Properties());
 
 	//Exti
 	return inited;

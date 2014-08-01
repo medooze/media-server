@@ -49,7 +49,7 @@ H264Encoder::H264Encoder(const Properties& properties)
 	h264ProfileLevelId = properties.GetProperty("h264.profile-level-id",std::string("42801F"));
 
 	//Check mode
-	streaming = properties.HasProperty("streamin");
+	streaming = properties.HasProperty("streaming");
 
 	//Reste values
 	enc = NULL;

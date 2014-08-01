@@ -73,22 +73,30 @@ void MultiConf::SetListener(Listener *listener,void* param)
 * Init
 * 	Constructo
 *************************/
-int MultiConf::Init(int vad, DWORD rate)
+int MultiConf::Init(const Properties &properties)
 {
-	Log("-Init multiconf [vad:%d,rate:%d]\n",vad,rate);
+	//Get vad and rate properties
+	VideoMixer::VADMode vad = (VideoMixer::VADMode) properties.GetProperty("vad-mode",0);
+	
+	Log("-Init multiconf [vad:%d]\n",vad);
 
 	//We are inited
 	inited = true;
-	//Init audio mixers
-	int res = audioMixer.Init(vad,rate);
-	//Set vad mode
-	videoMixer.SetVADMode((VideoMixer::VADMode)vad);
+	
 	//Check if we need to use vad
 	if (vad)
-		//Set VAD proxyG
+	{
+		//Set vad mode
+		videoMixer.SetVADMode(vad);
+		//Calculate vad
+		audioMixer.SetCalculateVAD(true);
+		//Set VAD proxy
 		videoMixer.SetVADProxy(&audioMixer);
+	}
+	//Init audio mixers
+	int res = audioMixer.Init(properties.GetChildren("audio.mixer"));
 	//Init video mixer with dedault parameters
-	res &= videoMixer.Init(Mosaic::mosaic2x2,CIF);
+	res &= videoMixer.Init(properties.GetChildren("video.mixer"));
 	//Init text mixer
 	res &= textMixer.Init();
 
