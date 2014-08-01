@@ -44,7 +44,7 @@ VideoMixer::VideoMixer(const std::wstring &tag) : eventSource(tag)
 	keepAspectRatio = true;
 
 	//Don't show display names by default
-	displayNames = true;
+	displayNames = false;
 
 	//Inciamos lso mutex y la condicion
 	pthread_mutex_init(&mixVideoMutex,0);
@@ -256,8 +256,12 @@ int VideoMixer::MixVideo()
 					
 					//If we are displaying names
 					if (displayNames && !it->second->name.empty())
+					{
+						//Get
+						int height = overlay.GetProperty("height",30);
 						//Set name
-						mosaic->RenderOverlayText(it->second->name,mosaic->GetLeft(i),mosaic->GetTop(i)+mosaic->GetHeight(i)-30,mosaic->GetWidth(i),30);
+						mosaic->RenderOverlayText(it->second->name,mosaic->GetLeft(i),mosaic->GetTop(i)+mosaic->GetHeight(i)-30,mosaic->GetWidth(i),height,overlay);
+					}
 
 					//Get output
 					PipeVideoOutput *output = it->second->output;
@@ -406,10 +410,21 @@ int VideoMixer::GetMosaicPositions(int mosaicId,std::list<int> &positions)
 * Init
 *	Inicializa el mezclado de video
 ************************/
-int VideoMixer::Init(Mosaic::Type comp,int size)
+int VideoMixer::Init(const Properties &properties)
 {
-	//Allocamos para el logo
-	logo.Load("logo.png");
+	//Get properties
+	Mosaic::Type comp	= (Mosaic::Type) properties.GetProperty("mosaics.default.compType"	, (int)Mosaic::mosaic2x2);
+	int size		= properties.GetProperty("mosaics.default.size"		, CIF);
+	const char *logoFile	= properties.GetProperty("logo"				, "logo.png");
+	
+	//Should we display names?
+	displayNames = properties.GetProperty("displayNames", false);
+	
+	//Get overlay children properties
+	properties.GetChildren("overlay",overlay);
+		
+	//Load file
+	logo.Load(logoFile);
 
 	//Create default misxer
 	int id = CreateMosaic(comp,size);

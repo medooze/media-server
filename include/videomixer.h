@@ -25,7 +25,7 @@ public:
 	VideoMixer(const std::wstring &tag);
 	~VideoMixer();
 
-	int Init(Mosaic::Type comp,int size);
+	int Init(const Properties &properties);
 	void SetKeepAspectRatio(bool keepAspectRatio);
 	void SetDiplayNames(bool displayNames);
 	void SetVADMode(VADMode vadMode);
@@ -112,6 +112,8 @@ private:
 	VADMode		vadMode;
 	bool		keepAspectRatio;
 	bool		displayNames;
+	
+	Properties	overlay;
 };
 
 #endif

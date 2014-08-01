@@ -60,7 +60,7 @@ public:
 	MultiConf(const std::wstring& tag);
 	~MultiConf();
 
-	int Init(int vad,DWORD rate);
+	int Init(const Properties &properties);
 	int End();
 
 	void SetFloorControlServer(BFCPFloorControlServer* floorServer);

@@ -283,20 +283,26 @@ int Overlay::LoadSVG(const char* svg)
     //OK
     return 1;
 }
-
 int Overlay::RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWORD height)
+{
+	return RenderText(text,x,y,width,height,Properties());
+}
+
+int Overlay::RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWORD height,const Properties& properties)
 {
 #ifdef HAVE_IMAGEMAGICK
 	//Colors in RGBA
-	char strokeColor[] = "#40404040";
-	char fillColor[] = "#11111140";
-	char color[] = "white";
-	bool drawBackground = true;
-	BYTE strokeWidth = 2;
-	char font[] = "OrbitronB";
-	BYTE fontSize = 14;
-	BYTE padding = 2;
-	BYTE margin = 2;
+	const char *strokeColor	= properties.GetProperty("strokeColor"		,"#40404040"	);
+	const char *fillColor	= properties.GetProperty("fillColor"		,"#11111140"	);
+	const char *color	= properties.GetProperty("color"		,"white"	);
+	bool drawBackground	= properties.GetProperty("drawBackground"	,true		);
+	BYTE strokeWidth	= properties.GetProperty("strokeWidth"		,2		);
+	const char *font	= properties.GetProperty("font"			,"OrbitronB"	);
+	BYTE fontSize		= properties.GetProperty("fontSize"		,14		);
+	BYTE padding		= properties.GetProperty("padding"		,2		);
+	BYTE margin		= properties.GetProperty("margin"		,2		);
+	BYTE cornerWidth	= properties.GetProperty("cornerWidth"		,2		);
+	BYTE cornerHeight	= properties.GetProperty("cornerHeight"		,2		);
 
 	try
 	{
@@ -318,7 +324,7 @@ int Overlay::RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWO
 				render.strokeWidth(strokeWidth);
 			}
 			// Check if it can be printed witthout be truncated
-			render.draw(Magick::DrawableRoundRectangle(margin, margin, width-margin*2, height-margin*2, 5, 5) );
+			render.draw(Magick::DrawableRoundRectangle(margin, margin, width-margin*2, height-margin*2, cornerWidth, cornerHeight) );
 		}
 
 		//Set font

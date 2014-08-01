@@ -14,10 +14,11 @@ public:
 	AudioMixer();
 	~AudioMixer();
 
-	int Init(bool vad,DWORD rate = 8000);
+	int Init(const Properties &properties);
 	int CreateMixer(int id);
 	int InitMixer(int id,int sidebarId);
 	int SetMixerSidebar(int id,int sidebarId);
+	
 	int EndMixer(int id);
 	int DeleteMixer(int id);
 	AudioInput*  GetInput(int id);
@@ -32,6 +33,8 @@ public:
 
 	//VAD proxy interface
 	virtual DWORD GetVAD(int id);
+	
+	int SetCalculateVAD(bool vad);
 
 protected:
 	//Mix thread

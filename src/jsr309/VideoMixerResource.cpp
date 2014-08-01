@@ -26,8 +26,12 @@ int VideoMixerResource::Init(Mosaic::Type comp,int size)
 
 	Log("-Init VideoMixerResource\n");
 
+	Properties properties;
+	//Set them
+	properties.SetProperty("mosaics.default.compType"	, (int)comp);
+	properties.SetProperty("mosaics.default.size"		, size);
 	//Init video mixer
-	inited = mixer.Init(comp,size);
+	inited = mixer.Init(properties);
 
 	//Exti
 	return inited;

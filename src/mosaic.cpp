@@ -632,14 +632,14 @@ int Mosaic::SetOverlayText()
 	return 1;
 }
 
-int Mosaic::RenderOverlayText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWORD height)
+int Mosaic::RenderOverlayText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWORD height, const Properties& properties)
 {
 	//Check overlay
 	if (!overlay)
 		//Error
 		return Error("-no overlay\n");
 	//Render text
-	return overlay->RenderText(text,x,y,width,height);
+	return overlay->RenderText(text,x,y,width,height,properties);
 }
 
 int Mosaic::ResetOverlay()

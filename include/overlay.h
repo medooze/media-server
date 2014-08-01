@@ -17,6 +17,7 @@ public:
 	int LoadPNG(const char* png);
 	int LoadSVG(const char* svg);
 	int RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWORD height);
+	int RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWORD height,const Properties& properties);
 	BYTE* Display(BYTE* frame);
 	BYTE* GetOverlay() { return overlay; }
 private:
