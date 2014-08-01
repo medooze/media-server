@@ -289,7 +289,7 @@ xmlrpc_value* SetMosaicOverlayImage(xmlrpc_env *env, xmlrpc_value *param_array, 
 		return xmlerror(env,"Could set overlay image");
 
 	//Devolvemos el resultado
-	return xmlok(env,xmlrpc_build_value(env,"(i)",mosaicId));
+	return xmlok(env);
 }
 
 xmlrpc_value* ResetMosaicOverlay(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
@@ -321,7 +321,7 @@ xmlrpc_value* ResetMosaicOverlay(xmlrpc_env *env, xmlrpc_value *param_array, voi
 		return xmlerror(env,"Could reset overlay image");
 
 	//Devolvemos el resultado
-	return xmlok(env,xmlrpc_build_value(env,"(i)",mosaicId));
+	return xmlok(env);
 }
 xmlrpc_value* DeleteMosaic(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
@@ -352,7 +352,7 @@ xmlrpc_value* DeleteMosaic(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 		return xmlerror(env,"Could delete mosaic");
 
 	//Devolvemos el resultado
-	return xmlok(env,xmlrpc_build_value(env,"(i)",mosaicId));
+	return xmlok(env);
 }
 xmlrpc_value* CreateSidebar(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
@@ -414,7 +414,7 @@ xmlrpc_value* DeleteSidebar(xmlrpc_env *env, xmlrpc_value *param_array, void *us
 		return xmlerror(env,"Could delete sidebar");
 
 	//Devolvemos el resultado
-	return xmlok(env,xmlrpc_build_value(env,"(i)",sidebarId));
+	return xmlok(env);
 }
 
 xmlrpc_value* CreateParticipant(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
