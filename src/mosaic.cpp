@@ -588,7 +588,7 @@ int Mosaic::SetOverlayPNG(const char* filename)
 	//And load it
 	if(!overlay->LoadPNG(filename))
 		//Error
-		return Error("Error loading png image");
+		return Error("Error loading png image\n");
 	//Display it
 	overlayNeedsUpdate = true;
 

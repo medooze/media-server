@@ -1140,8 +1140,6 @@
         </ccTool>
       </item>
       <item path="src/aac/aacencoder.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
       </item>
       <item path="src/amf.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
@@ -1725,8 +1723,6 @@
         </ccTool>
       </item>
       <item path="src/flv1/flv1codec.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
       </item>
       <item path="src/flvdump.cpp" ex="false" tool="0" flavor2="2">
         <cTool>
@@ -1810,20 +1806,12 @@
         </ccTool>
       </item>
       <item path="src/g711/g711.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
-        </cTool>
       </item>
       <item path="src/g711/pcmacodec.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
       </item>
       <item path="src/g711/pcmucodec.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
       </item>
       <item path="src/g722/g722codec.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
       </item>
       <item path="src/groupchat.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
@@ -1850,36 +1838,20 @@
         </ccTool>
       </item>
       <item path="src/gsm/gsmcodec.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
       </item>
       <item path="src/h263/h263-1996codec.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
       </item>
       <item path="src/h263/h263.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
       </item>
       <item path="src/h263/h263codec.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
       </item>
       <item path="src/h263/mpeg4codec.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
       </item>
       <item path="src/h264/h264decoder.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
       </item>
       <item path="src/h264/h264depacketizer.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
       </item>
       <item path="src/h264/h264encoder.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
       </item>
       <item path="src/http.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
@@ -2578,16 +2550,10 @@
         </ccTool>
       </item>
       <item path="src/nelly/NellyCodec.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
       </item>
       <item path="src/opus/opusdecoder.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
       </item>
       <item path="src/opus/opusencoder.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
       </item>
       <item path="src/overlay.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
@@ -3211,12 +3177,8 @@
         </ccTool>
       </item>
       <item path="src/speex/resample.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
-        </cTool>
       </item>
       <item path="src/speex/speexcodec.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
       </item>
       <item path="src/statushandler.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
@@ -4565,16 +4527,10 @@
         </cTool>
       </item>
       <item path="src/vp6/vp6decoder.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
       </item>
       <item path="src/vp8/vp8decoder.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
       </item>
       <item path="src/vp8/vp8encoder.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
       </item>
       <item path="src/websocketconnection.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">

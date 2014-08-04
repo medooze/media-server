@@ -160,8 +160,9 @@ int VideoMixer::MixVideo()
 			//Get Mosaic
 			Mosaic *mosaic = itMosaic->second;
 
-			//FIX: Reset text overlay
-			mosaic->SetOverlayText();
+			if (displayNames) 
+				//FIX: Reset text overlay
+				mosaic->SetOverlayText();
 
 			//Get number of slots
 			int numSlots = mosaic->GetNumSlots();
