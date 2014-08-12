@@ -60,19 +60,15 @@ int UploadHandler::ProcessRequest(TRequestInfo *req,TSession * const ses)
 		//Error
 		return XmlRpcServer::SendError(ses,500,"Content-Length header value invalid");
 
-	//Creamos un buffer para el body
-	buffer = (char*) malloc(size);
-
-	//Create string parser
-	StringParser parser(buffer,size);
-
+	
 	//Get content type
 	type = RequestHeaderValue(ses, (char*)"content-type");
 
 	//Check type
 	if (!type)
 		//Error
-		goto error;
+		return XmlRpcServer::SendError(ses,500,"No content type header found");
+
 
 	//Parse content type
 	contentType = ContentType::Parse(type,strlen(type));
@@ -80,35 +76,53 @@ int UploadHandler::ProcessRequest(TRequestInfo *req,TSession * const ses)
 	//Check parsing
 	if (!contentType)
 		//Error
-		goto error;
+		return XmlRpcServer::SendError(ses,500,"Could not parse content type");
 
 	//Ensure it is a multipart/form-data
 	if (contentType->GetType().compare("multipart")!=0 || contentType->GetSubType().compare("form-data"))
-		//goto error
-		goto error;
+		//Error
+		return XmlRpcServer::SendError(ses,500,"Content type not multipart/form-data");
 
 	//Check it has boundary param
 	if (!contentType->HasParameter("boundary"))
-		//goto error
-		goto error;
+		//Error
+		return XmlRpcServer::SendError(ses,500,"COntent type has no boundary parameter\n");
+
 
 	//Get boundary and prepend the t
 	boundary = "--" + contentType->GetParameter("boundary");
 
+	//Creamos un buffer para el body
+	buffer = (char*) malloc(size);
+
+	//Create string parser
+	StringParser parser(buffer,size);
+	
 	//Get body
 	if (!XmlRpcServer::GetBody(ses,buffer,size))
+	{
+		Debug("Could not get body\n");
 		//error
 		goto error;
+	}
 
 	//First line shall start with a boundary
 	if (!parser.CheckString(boundary))
+	{
+		//Dump error
+		parser.Dump("boundary not found at start of body");
 		//Error
 		goto error;
+	}
 
 	//Get first line
 	if (!parser.ParseLine())
+	{
+		//Dump error
+		parser.Dump("Could not get first line\n");
 		//error
 		goto error;
+	}
 
 	//Get line
 	line = parser.GetValue();
@@ -124,8 +138,13 @@ int UploadHandler::ProcessRequest(TRequestInfo *req,TSession * const ses)
 
 		//Check next line
 		if (!parser.ParseLine())
+		{
+			//Dump error
+			parser.Dump("Could not parse line\n");
 			//error
 			goto error;
+		}
+
 		//Get header line
 		line = parser.GetValue();
 
@@ -134,12 +153,19 @@ int UploadHandler::ProcessRequest(TRequestInfo *req,TSession * const ses)
 		{
 			//Parse header line
 			if (!headers.ParseHeader(line))
+			{
+				Debug("Could not parse header [%s]\n",line.c_str());
 				//error
 				goto error;
+			}
 			//Check next line
 			if (!parser.ParseLine())
+			{
+				//Dump error
+				parser.Dump("Could not parse line\n");
 				//error
 				goto error;
+			}
 			//Get next header line
 			line = parser.GetValue();
 		}
@@ -170,8 +196,12 @@ int UploadHandler::ProcessRequest(TRequestInfo *req,TSession * const ses)
 			char* s = parser.Mark();
 			//Get next line
 			if (!parser.ParseLine())
+			{
+				//Dump error
+				parser.Dump("Could not parse line\n");
 				//error
 				goto error;
+			}
 			//Check if content is a file
 			if (fd>0)
 				//Write
@@ -194,8 +224,12 @@ int UploadHandler::ProcessRequest(TRequestInfo *req,TSession * const ses)
 		}
 		//Get next line
 		if (!parser.ParseLine())
+		{
+			//Dump error
+			parser.Dump("Could not parse line\n");
 			//error
 			goto error;
+		}
 		//Get last line (boundary)
 		line = parser.GetValue();
 	}
@@ -224,4 +258,3 @@ error:
 	//Send Error
 	return XmlRpcServer::SendError(ses,500,"Error processing request");
 }
-

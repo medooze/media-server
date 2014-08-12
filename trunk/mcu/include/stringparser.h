@@ -13,6 +13,7 @@
 #include <math.h>
 #include <wchar.h>
 #include "config.h"
+#include "log.h"
 
 template <typename _CharT, typename _StringT>
 class  BaseStringParser
@@ -279,8 +280,6 @@ public:
 		return _StringT(c,size-(c-buffer));
 	}
 
-
-
 	void Move(DWORD num)
 	{
 		c +=num;
@@ -290,6 +289,12 @@ public:
         {
             return c-buffer;
         }
+	
+	void Dump(const char *msg)
+	{
+		Debug(msg);
+		::Dump((BYTE*)buffer,16>size*sizeof(_CharT)?size*sizeof(_CharT):16);
+	}
 
 protected:
 	_CharT* buffer;
