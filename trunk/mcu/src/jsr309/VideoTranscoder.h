@@ -7,7 +7,7 @@
 
 #ifndef VIDEOTRANSCODER_H
 #define	VIDEOTRANSCODER_H
-#include "VideoEncoderWorker.h"
+#include "VideoEncoderWorkerMultiplexer.h"
 #include "VideoDecoderWorker.h"
 #include "videopipe.h"
 #include <string>

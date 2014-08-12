@@ -27,6 +27,7 @@ class MultiConf :
 {
 public:
 	static const int AppMixerId = 1;
+	static const int AppMixerBroadcasterId = 2;
 public:
 	typedef std::map<std::string,MediaStatistics> ParticipantStatistics;
 public:
@@ -197,8 +198,16 @@ private:
 	int			watcherId;
 	int			broadcastId;
 	FLVEncoder		flvEncoder;
+	
+	//TODO: Fix this, it is used for recording appmixer
+	bool			appMixerBroadcastEnabled;
+	FLVEncoder		appMixerEncoder;
+	int			appMixerEncoderPrivateMosaicId;
+	
+	//TODO: Fix this, it is used for recording participants
 	AudioEncoderWorker	audioEncoder;
 	TextEncoder		textEncoder;
+	
 	BroadcastSession	broadcast;
 	RecorderControl*	recorder;
 	Publishers		publishers;

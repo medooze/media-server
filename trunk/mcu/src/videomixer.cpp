@@ -261,7 +261,7 @@ int VideoMixer::MixVideo()
 						//Get
 						int height = overlay.GetProperty("height",30);
 						//Set name
-						mosaic->RenderOverlayText(it->second->name,mosaic->GetLeft(i),mosaic->GetTop(i)+mosaic->GetHeight(i)-30,mosaic->GetWidth(i),height,overlay);
+						mosaic->RenderOverlayText(it->second->name,mosaic->GetLeft(i),mosaic->GetTop(i)+mosaic->GetHeight(i)-height,mosaic->GetWidth(i),height,overlay);
 					}
 
 					//Get output

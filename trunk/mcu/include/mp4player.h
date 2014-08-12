@@ -23,6 +23,7 @@ public:
 	virtual void onRTPPacket(RTPPacket &packet);
 	virtual void onTextFrame(TextFrame &text);
 	virtual void onMediaFrame(MediaFrame &frame);
+	virtual void onMediaFrame(DWORD ssrc, MediaFrame &frame);
 	virtual void onEnd();
 
 private:

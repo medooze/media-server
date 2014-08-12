@@ -7,8 +7,6 @@
 #include "h264/h264.h"
 #include "aacconfig.h"
 
-
-
 mp4track::mp4track(MP4FileHandle mp4)
 {
 	// Set struct info
@@ -196,11 +194,11 @@ int mp4track::FlushVideoFrame(VideoFrame* frame,DWORD duration)
 	if (frame->HasRtpPacketizationInfo())
 	{
 		//Get list
-		MediaFrame::RtpPacketizationInfo& rtpInfo = frame->GetRtpPacketizationInfo();
+		const MediaFrame::RtpPacketizationInfo& rtpInfo = frame->GetRtpPacketizationInfo();
 		//Add hint for frame
 		MP4AddRtpHint(mp4, hint);
 		//Get iterator
-		MediaFrame::RtpPacketizationInfo::iterator it = rtpInfo.begin();
+		MediaFrame::RtpPacketizationInfo::const_iterator it = rtpInfo.begin();
 		//Latest?
 		bool last = (it==rtpInfo.end());
 
@@ -403,9 +401,6 @@ MP4Recorder::MP4Recorder()
 {
 	recording = false;
 	mp4 = MP4_INVALID_FILE_HANDLE;
-	audioTrack = NULL;
-	videoTrack = NULL;
-	textTrack = NULL;
 	//Create mutex
 	pthread_mutex_init(&mutex,0);
 }
@@ -415,18 +410,18 @@ MP4Recorder::~MP4Recorder()
         //Close just in case
         Close();
         
-	//If has audio track
-	if (audioTrack)
-		//Delete it
-		delete(audioTrack);
-	//If has video track
-	if (videoTrack)
-		//Delete it
-		delete(videoTrack);
-	//If has text track
-	if (textTrack)
-		//Delete it
-		delete(textTrack);;
+	//For each audio track
+	for (Tracks::iterator it = audioTracks.begin(); it!=audioTracks.end(); ++it)
+		//delete it
+		delete(it->second);
+	//For each video track
+	for (Tracks::iterator it = videoTracks.begin(); it!=videoTracks.end(); ++it)
+		//delete it
+		delete(it->second);
+	//For each text track
+	for (Tracks::iterator it = textTracks.begin(); it!=textTracks.end(); ++it)
+		//delete it
+		delete(it->second);
 	//Liberamos los mutex
 	pthread_mutex_destroy(&mutex);
 }
@@ -485,19 +480,18 @@ bool MP4Recorder::Close()
         //Stop always
         Stop();
 
-	//If has audio track
-	if (audioTrack)
+	//For each audio track
+	for (Tracks::iterator it = audioTracks.begin(); it!=audioTracks.end(); ++it)
 		//Close it
-		audioTrack->Close();
-	//If has video track
-	if (videoTrack)
+		it->second->Close();
+	//For each video track
+	for (Tracks::iterator it = videoTracks.begin(); it!=videoTracks.end(); ++it)
 		//Close it
-		videoTrack->Close();
-	//If has audio track
-	if (textTrack)
+		it->second->Close();
+	//For each text track
+	for (Tracks::iterator it = textTracks.begin(); it!=textTracks.end(); ++it)
 		//Close it
-		textTrack->Close();
-
+		it->second->Close();
 	// Close file
 	MP4Close(mp4);
 
@@ -509,6 +503,11 @@ bool MP4Recorder::Close()
 }
 
 void MP4Recorder::onMediaFrame(MediaFrame &frame)
+{
+	onMediaFrame(0,frame);
+}
+
+void MP4Recorder::onMediaFrame(DWORD ssrc, MediaFrame &frame)
 {
 	//If not recording
 	if (!recording)
@@ -527,6 +526,14 @@ void MP4Recorder::onMediaFrame(MediaFrame &frame)
 	{
 		case MediaFrame::Audio:
 		{
+			//It is an audio track
+			mp4track* audioTrack = NULL;
+			//Find the ssrc
+			Tracks::iterator it = audioTracks.find(ssrc);
+			//If found
+			if (it!=audioTracks.end())
+				//Get it
+				audioTrack = it->second;
 			//Convert to audio frame
 			AudioFrame &audioFrame = (AudioFrame&) frame;
 			// Calculate new timestamp
@@ -547,6 +554,8 @@ void MP4Recorder::onMediaFrame(MediaFrame &frame)
 				empty.SetDuration(timestamp);
 				//Send first empty packet
 				audioTrack->WriteAudioFrame(empty);
+				//Add it to map
+				audioTracks[ssrc] = audioTrack;
 			}
 
 			//Update timestamp
@@ -557,6 +566,14 @@ void MP4Recorder::onMediaFrame(MediaFrame &frame)
 		}
 		case MediaFrame::Video:
 		{
+			//It is an video track
+			mp4track* videoTrack = NULL;
+			//Find the ssrc
+			Tracks::iterator it = videoTracks.find(ssrc);
+			//If found
+			if (it!=videoTracks.end())
+				//Get it
+				videoTrack = it->second;
 			//Convert to video frame
 			VideoFrame &videoFrame = (VideoFrame&) frame;
 
@@ -586,6 +603,8 @@ void MP4Recorder::onMediaFrame(MediaFrame &frame)
 					videoTrack = new mp4track(mp4);
 					//Create track
 					videoTrack->CreateVideoTrack(videoFrame.GetCodec(),videoFrame.GetWidth(),videoFrame.GetHeight());
+					//Add it to map
+					videoTracks[ssrc] = videoTrack;
 				}
 
 				// Save audio rtp packet
@@ -595,6 +614,14 @@ void MP4Recorder::onMediaFrame(MediaFrame &frame)
 		}
 		case MediaFrame::Text:
 		{
+			//It is an text track
+			mp4track* textTrack = NULL;
+			//Find the ssrc
+			Tracks::iterator it = textTracks.find(ssrc);
+			//If found
+			if (it!=textTracks.end())
+				//Get it
+				textTrack = it->second;
 			//Convert to audio frame
 			TextFrame &textFrame = (TextFrame&) frame;
 
@@ -609,6 +636,8 @@ void MP4Recorder::onMediaFrame(MediaFrame &frame)
 				TextFrame empty(0,(BYTE*)NULL,0);
 				//Send first empty packet
 				textTrack->WriteTextFrame(empty);
+				//Add it to map
+				textTracks[ssrc] = textTrack;
 			}
 
 			// Calculate new timestamp in 1000 clock

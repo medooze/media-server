@@ -82,3 +82,8 @@ void Player::onMediaFrame(MediaFrame &frame)
 	
 }
 
+void Player::onMediaFrame(DWORD ssrc, MediaFrame &frame)
+{
+	
+}
+

@@ -56,12 +56,15 @@ public:
 	virtual RecorderControl::Type GetType()	{ return RecorderControl::MP4;	}
 
 	virtual void onMediaFrame(MediaFrame &frame);
+	virtual void onMediaFrame(DWORD ssrc,MediaFrame &frame);
+private:
+	typedef std::map<DWORD,mp4track*>	Tracks;
 private:
 
 	MP4FileHandle	mp4;
-	mp4track*	audioTrack;
-	mp4track*	videoTrack;
-	mp4track*	textTrack;
+	Tracks		audioTracks;
+	Tracks		videoTracks;
+	Tracks		textTracks;
 	bool		recording;
 	int		waitVideo;
 	pthread_mutex_t mutex;

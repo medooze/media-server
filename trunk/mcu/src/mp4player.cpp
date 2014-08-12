@@ -144,6 +144,10 @@ void MP4Player::onMediaFrame(MediaFrame &frame)
 {
 	//Do nothing now
 }
+void MP4Player::onMediaFrame(DWORD ssrc, MediaFrame &frame)
+{
+	//Do nothing now
+}
 
 void MP4Player::onEnd()
 {

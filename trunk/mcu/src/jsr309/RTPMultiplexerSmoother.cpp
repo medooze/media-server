@@ -56,7 +56,7 @@ int RTPMultiplexerSmoother::Start()
 	return 1;
 }
 
-int RTPMultiplexerSmoother::SmoothFrame(MediaFrame* frame,DWORD duration)
+int RTPMultiplexerSmoother::SmoothFrame(const MediaFrame* frame,DWORD duration)
 {
 	//Check
 	if (!frame || !frame->HasRtpPacketizationInfo())
@@ -64,7 +64,7 @@ int RTPMultiplexerSmoother::SmoothFrame(MediaFrame* frame,DWORD duration)
 		return Error("Frame do not has packetization info");
 
 	//Get info
-	MediaFrame::RtpPacketizationInfo& info = frame->GetRtpPacketizationInfo();
+	const MediaFrame::RtpPacketizationInfo& info = frame->GetRtpPacketizationInfo();
 
 	DWORD codec = 0;
 	BYTE *frameData = NULL;
