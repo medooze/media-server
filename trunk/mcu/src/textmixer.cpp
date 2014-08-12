@@ -159,8 +159,7 @@ int TextMixer::End()
 	Log(">End textmixer\n");
 
 	//Borramos los texts
-	TextSources::iterator it;
-
+	
 	//Terminamos con la mezcla
 	if (mixingText)
 	{
@@ -170,11 +169,31 @@ int TextMixer::End()
 		//Y esperamos
 		pthread_join(mixTextThread,NULL);
 	}
+	
+	//Lock
+	lstTextsUse.WaitUnusedAndLock();
 
+	//Get first
+	TextSources::iterator it = sources.begin();
+	
 	//Recorremos la lista
-	for (it =sources.begin();it!=sources.end();it++)
-		//Borramos el text
-		DeleteMixer((*it).first);
+	while (it!=sources.end())
+	{
+		//Get text
+		TextSource *text = it->second;
+		
+		//delete from list and move to next
+		sources.erase(it++);
+		
+		//Delete objects
+		delete text->input;
+		delete text->output;
+		delete text->worker;
+		delete text;
+	}
+	
+	//Desprotegemos la lista
+	lstTextsUse.Unlock();
 
 	Log("<End textmixer\n");
 	
