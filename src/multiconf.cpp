@@ -8,11 +8,17 @@
 #include "bfcp/BFCPFloorControlServer.h"
 #include "bfcp.h"
 
+
 /************************
 * MultiConf
 * 	Constructor
 *************************/
-MultiConf::MultiConf(const std::wstring &tag) : broadcast(tag),videoMixer(tag),chat(tag)
+MultiConf::MultiConf(const std::wstring &tag) : 
+	broadcast(tag),
+	videoMixer(tag),
+	chat(tag),
+	flvEncoder(0),
+	appMixerEncoder(1)
 {
 	//Guardamos el nombre
 	this->tag = tag;
@@ -32,7 +38,9 @@ MultiConf::MultiConf(const std::wstring &tag) : broadcast(tag),videoMixer(tag),c
 
         //No recorder
         recorder = NULL;
-
+	appMixerBroadcastEnabled = false;
+	appMixerEncoderPrivateMosaicId = 0;
+	
 	//Nothing else
 	floorServer = NULL;
 	listener = NULL;
@@ -187,7 +195,7 @@ int MultiConf::StartBroadcaster(const Properties &properties)
 	broadcast.Init(0,0);
 
 	//Init it flv encoder
-	flvEncoder.Init(audioMixer.GetInput(broadcastId),videoMixer.GetInput(broadcastId),properties);
+	flvEncoder.Init(audioMixer.GetInput(broadcastId),videoMixer.GetInput(broadcastId),properties.GetChildren("broadcast"));
 
 	//Init mixers
 	videoMixer.InitMixer(broadcastId,0);
@@ -196,6 +204,34 @@ int MultiConf::StartBroadcaster(const Properties &properties)
 
 	//Start encoding
 	flvEncoder.StartEncoding();
+	
+	//If we are broadcasting the appmixer as a separate stream
+	if (properties.HasProperty("broadcast.appmixer.enabled"))
+	{
+		Log("-Enabling appmixer broadcast\n");
+		
+		//Enable
+		appMixerBroadcastEnabled = true;
+		//Get size
+		DWORD size = properties.GetProperty("broadcast.appmixer.size",HD720P);
+		
+		//Create private mosaic 
+		appMixerEncoderPrivateMosaicId = videoMixer.CreateMosaic(Mosaic::mosaic1x1,size);
+		//Add app mixer to it
+		videoMixer.AddMosaicParticipant(appMixerEncoderPrivateMosaicId,AppMixerId);
+		//Display the app mixer on if
+		videoMixer.SetSlot(appMixerEncoderPrivateMosaicId,0,AppMixerId);
+		
+		//Create mixers for broadcaster
+		videoMixer.CreateMixer(AppMixerBroadcasterId,L"appMixerBroadcast");
+		//Init the flv encoder for the app mixer
+		appMixerEncoder.Init(NULL,videoMixer.GetInput(AppMixerBroadcasterId),properties.GetChildren("broadcast.appmixer"));
+		//Init mixers
+		videoMixer.InitMixer(AppMixerBroadcasterId,appMixerEncoderPrivateMosaicId);
+		
+		//Start encoding
+		appMixerEncoder.StartEncoding();
+	}
 
 	Log("<StartBroadcaster\n");
 
@@ -240,12 +276,16 @@ int MultiConf::StartRecordingBroadcaster(const char* filename)
 	switch (recorder->GetType())
 	{
 		case RecorderControl::FLV:
-			//Set RTMP listener
+			//Set RTMP listeners
 			flvEncoder.AddMediaListener((FLVRecorder*)recorder);
+			if (appMixerBroadcastEnabled)
+				appMixerEncoder.AddMediaListener((FLVRecorder*)recorder);
 			break;
 		case RecorderControl::MP4:
 			//Set RTMP listener
 			flvEncoder.AddMediaFrameListener((MP4Recorder*)recorder);
+			if (appMixerBroadcastEnabled)
+				appMixerEncoder.AddMediaFrameListener((MP4Recorder*)recorder);
 			break;
 	}
 
@@ -262,10 +302,14 @@ int MultiConf::StopRecordingBroadcaster()
 		case RecorderControl::FLV:
 			//Set RTMP listener
 			flvEncoder.RemoveMediaListener((FLVRecorder*)recorder);
+			if (appMixerBroadcastEnabled)
+				flvEncoder.RemoveMediaListener((FLVRecorder*)recorder);
 			break;
 		case RecorderControl::MP4:
 			//Set RTMP listener
 			flvEncoder.RemoveMediaFrameListener((MP4Recorder*)recorder);
+			if (appMixerBroadcastEnabled)
+				appMixerEncoder.RemoveMediaFrameListener((MP4Recorder*)recorder);
 			break;
 	}
 
@@ -306,11 +350,11 @@ int MultiConf::StopBroadcaster()
 	videoMixer.EndMixer(broadcastId);
 	audioMixer.EndMixer(broadcastId);
 	textMixer.EndMixer(broadcastId);
-
+		
 	Log("flvEncoder.End\n");
 	//End Transmiter
 	flvEncoder.End();
-
+		
 	Log("Ending publishers");
 	//For each publisher
 	Publishers::iterator it = publishers.begin();
@@ -346,10 +390,27 @@ int MultiConf::StopBroadcaster()
 	//End mixers
 	videoMixer.DeleteMixer(broadcastId);
 	audioMixer.DeleteMixer(broadcastId);
-	textMixer.DeleteMixer(broadcastId);
-
+	
 	//Unset watcher id
 	broadcastId = 0;
+	
+	//Stop app mixer broadcaster
+	if (appMixerBroadcastEnabled)
+	{
+		//Stop encofing
+		appMixerEncoder.StopEncoding();
+		//End mixer
+		videoMixer.EndMixer(AppMixerBroadcasterId);
+		//End encoder
+		appMixerEncoder.End();
+		//And delete mixer
+		videoMixer.DeleteMixer(AppMixerBroadcasterId);
+		//Delete private mosaic
+		videoMixer.DeleteMosaic(appMixerEncoderPrivateMosaicId);
+		//And reset
+		appMixerEncoderPrivateMosaicId = 0;
+		appMixerBroadcastEnabled = false;
+	}
 
 	Log("<StopBroadcaster\n");
 

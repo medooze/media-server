@@ -9,7 +9,7 @@
 class FLVEncoder : public RTMPMediaStream
 {
 public:
-	FLVEncoder();
+	FLVEncoder(DWORD id);
 	~FLVEncoder();
 
 	int Init(AudioInput* audioInput,VideoInput *videoInput,const Properties &properties);
@@ -53,7 +53,6 @@ private:
 	int		bitrate;
 	int		fps;
 	int		intra;
-
 
 	int		inited;
 	bool		sendFPU;

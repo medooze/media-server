@@ -21,7 +21,7 @@ public:
 	RTPMultiplexerSmoother();
 	virtual ~RTPMultiplexerSmoother();
 	int Start();
-	int SmoothFrame(MediaFrame* frame,DWORD duration);
+	int SmoothFrame(const MediaFrame* frame,DWORD duration);
 	int Cancel();
 	int Wait();
 	int Stop();

@@ -16,6 +16,7 @@ public:
 	public:
 		//Interface
 		virtual void onMediaFrame(MediaFrame &frame) = 0;
+		virtual void onMediaFrame(DWORD ssrc, MediaFrame &frame) = 0;
 	};
 
 	class RtpPacketization
@@ -107,22 +108,22 @@ public:
 		rtpInfo.push_back(new RtpPacketization(pos,size,prefix,prefixLen));
 	}
 	
-	Type	GetType()		{ return type;	}
-	DWORD	GetTimeStamp()		{ return ts;	}
+	Type	GetType() const		{ return type;	}
+	DWORD	GetTimeStamp() const	{ return ts;	}
 	DWORD	SetTimestamp(DWORD ts)	{ this->ts = ts; }
 
-	bool	HasRtpPacketizationInfo()		{ return !rtpInfo.empty();	}
-	RtpPacketizationInfo& GetRtpPacketizationInfo()	{ return rtpInfo;		}
+	bool	HasRtpPacketizationInfo() const		{ return !rtpInfo.empty();	}
+	const RtpPacketizationInfo& GetRtpPacketizationInfo() const { return rtpInfo;		}
 	virtual MediaFrame* Clone() = 0;
 
-	DWORD GetDuration()			{ return duration;		}
+	DWORD GetDuration() const		{ return duration;		}
 	void SetDuration(DWORD duration)	{ this->duration = duration;	}
 
-	BYTE* GetData()			{ return buffer;		}
-	DWORD GetLength()		{ return length;		}
-	DWORD GetMaxMediaLength()	{ return bufferSize;		}
+	BYTE* GetData() const			{ return buffer;		}
+	DWORD GetLength() const			{ return length;		}
+	DWORD GetMaxMediaLength() const		{ return bufferSize;		}
 
-	void SetLength(DWORD length)	{ this->length = length;	}
+	void SetLength(DWORD length)		{ this->length = length;	}
 
 	bool Alloc(DWORD size)
 	{

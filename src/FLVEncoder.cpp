@@ -11,7 +11,7 @@
 #include "audioencoder.h"
 #include "aacconfig.h"
 
-FLVEncoder::FLVEncoder()
+FLVEncoder::FLVEncoder(DWORD id) : RTMPMediaStream(id)
 {
 	//Not inited
 	inited = 0;
@@ -74,33 +74,33 @@ int FLVEncoder::Init(AudioInput* audioInput,VideoInput *videoInput,const Propert
 	encodingVideo = 0;
 	
 	//Check audio codec
-	if (properties.HasProperty("broadcast.audio.codec"))
+	if (properties.HasProperty("audio.codec"))
 	{
 		//Get it
-		const char* codec = properties.GetProperty("broadcast.audio.codec");
+		const char* codec = properties.GetProperty("audio.codec");
 		//Get audio codec
 		audioCodec = AudioCodec::GetCodecForName(codec);
 	}
 	
 	//Check video codec
-	if (properties.HasProperty("broadcast.video.codec"))
+	if (properties.HasProperty("video.codec"))
 	{
 		//Get it
-		const char* codec = properties.GetProperty("broadcast.video.codec");
+		const char* codec = properties.GetProperty("video.codec");
 		//Get audio codec
 		videoCodec = VideoCodec::GetCodecForName(codec);
 	}
 	
 	//Set values for video
-	width	= properties.GetProperty("broadcast.video.width",width);
-	height	= properties.GetProperty("broadcast.video.height",height);
-	bitrate = properties.GetProperty("broadcast.video.bitrate",bitrate);
-	fps	= properties.GetProperty("broadcast.video.fps",fps);
-	intra	= properties.GetProperty("broadcast.video.intra",intra);
+	width	= properties.GetProperty("video.width",width);
+	height	= properties.GetProperty("video.height",height);
+	bitrate = properties.GetProperty("video.bitrate",bitrate);
+	fps	= properties.GetProperty("video.fps",fps);
+	intra	= properties.GetProperty("video.intra",intra);
 
 	//Set audio properties
-	audioProperties.SetProperty("aac.samplerate",properties.GetProperty("broadcast.audio.codec.aac.samplerate","48000"));
-	audioProperties.SetProperty("aac.bitrate",properties.GetProperty("broadcast.audio.codec.aac.bitrate","288000"));
+	audioProperties.SetProperty("aac.samplerate",properties.GetProperty("audio.codec.aac.samplerate","48000"));
+	audioProperties.SetProperty("aac.bitrate",properties.GetProperty("audio.codec.aac.bitrate","288000"));
 	
 	//Set video properties
 	videoProperties.SetProperty("streaming","true");
@@ -214,22 +214,15 @@ DWORD FLVEncoder::RemoveMediaFrameListener(MediaFrame::Listener* listener)
 	//return number of listeners
 	return num;
 }
-/***************************************
-* StartEncoding
-*	Comienza a mandar a la ip y puertos especificados
-***************************************/
+
 int FLVEncoder::StartEncoding()
 {
-	Log(">Start encoding FLV\n");
-
+	Log(">Start encoding FLV [id:%d]\n",id);
+	
 	//Si estabamos mandando tenemos que parar
 	if (encodingAudio || encodingVideo)
 		//paramos
 		StopEncoding();
-
-	//We are enconding
-	encodingAudio = 1;
-	encodingVideo = 1;
 
 	//Set init time
 	getUpdDifTime(&first);
@@ -289,10 +282,23 @@ int FLVEncoder::StartEncoding()
 	//Send metadata
 	SendMetaData(meta);
 
-	//Start thread
-	createPriorityThread(&encodingAudioThread,startEncodingAudio,this,1);
-	//Start thread
-	createPriorityThread(&encodingVideoThread,startEncodingVideo,this,1);
+	//If got audio
+	if (audioInput)
+	{
+		//We are enconding
+		encodingAudio = 1;
+		//Start thread
+		createPriorityThread(&encodingAudioThread,startEncodingAudio,this,1);
+	}
+	
+	//If got video
+	if (videoInput)
+	{
+		//We are enconding
+		encodingVideo = 1;
+		//Start thread
+		createPriorityThread(&encodingVideoThread,startEncodingVideo,this,1);
+	}
 
 	Log("<Stop encoding FLV [%d]\n",encodingAudio);
 
@@ -498,7 +504,7 @@ int FLVEncoder::EncodeAudio()
 			//For each listener
 			for(MediaFrameListeners::iterator it = mediaListeners.begin(); it!=mediaListeners.end(); ++it)
 				//Send it
-				(*it)->onMediaFrame(frame);
+				(*it)->onMediaFrame(RTMPMediaStream::id,frame);
 			//unlock
 			pthread_mutex_unlock(&mutex);
 		}
@@ -685,7 +691,7 @@ int FLVEncoder::EncodeVideo()
 		//For each listener
 		for(MediaFrameListeners::iterator it = mediaListeners.begin(); it!=mediaListeners.end(); ++it)
 			//Send it
-			(*it)->onMediaFrame(*encoded);
+			(*it)->onMediaFrame(RTMPMediaStream::id,*encoded);
 		//unlock
 		pthread_mutex_unlock(&mutex);
 	}

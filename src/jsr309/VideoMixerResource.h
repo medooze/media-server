@@ -12,7 +12,7 @@
 #include "mosaic.h"
 #include "videomixer.h"
 #include "Joinable.h"
-#include "VideoEncoderWorker.h"
+#include "VideoEncoderWorkerMultiplexer.h"
 #include "VideoDecoderWorker.h"
 #include <string>
 
