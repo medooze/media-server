@@ -36,6 +36,9 @@
           <in>attributes.h</in>
           <in>messages.h</in>
         </df>
+        <df name="core">
+          <in>VideoEncoderWorker.h</in>
+        </df>
         <df name="rfb">
           <in>default8x16.h</in>
           <in>keysym.h</in>
@@ -202,6 +205,9 @@
           <in>BFCPMessage.cpp</in>
           <in>BFCPUser.cpp</in>
         </df>
+        <df name="core">
+          <in>VideoEncoderWorker.cpp</in>
+        </df>
         <df name="flv1">
           <in>flv1codec.cpp</in>
           <in>flv1codec.h</in>
@@ -267,8 +273,8 @@
           <in>Recorder.h</in>
           <in>VideoDecoderWorker.cpp</in>
           <in>VideoDecoderWorker.h</in>
-          <in>VideoEncoderWorker.cpp</in>
-          <in>VideoEncoderWorker.h</in>
+          <in>VideoEncoderWorkerMultiplexer.cpp</in>
+          <in>VideoEncoderWorkerMultiplexer.h</in>
           <in>VideoMixerResource.cpp</in>
           <in>VideoMixerResource.h</in>
           <in>VideoTranscoder.cpp</in>
@@ -587,6 +593,30 @@
         </ccTool>
       </folder>
       <folder path="0/src/bfcp">
+        <ccTool>
+          <incDir>
+            <pElem>src/vnc/common</pElem>
+            <pElem>src/vnc/libvncserver</pElem>
+            <pElem>../../include/ImageMagick-6</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="0/src/core">
         <ccTool>
           <incDir>
             <pElem>src/vnc/common</pElem>
@@ -1140,6 +1170,8 @@
         </ccTool>
       </item>
       <item path="src/aac/aacencoder.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/amf.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
@@ -1406,111 +1438,161 @@
         </ccTool>
       </item>
       <item path="src/bfcp/BFCPAttribute.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/BFCPFloorControlServer.cpp"
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/BFCPFloorRequest.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/BFCPMessage.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/BFCPUser.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/attributes/BFCPAttrBeneficiaryId.cpp"
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/attributes/BFCPAttrBeneficiaryInformation.cpp"
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/attributes/BFCPAttrErrorCode.cpp"
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/attributes/BFCPAttrErrorInfo.cpp"
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/attributes/BFCPAttrFloorId.cpp"
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/attributes/BFCPAttrFloorRequestId.cpp"
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/attributes/BFCPAttrFloorRequestInformation.cpp"
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/attributes/BFCPAttrFloorRequestStatus.cpp"
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/attributes/BFCPAttrOverallRequestStatus.cpp"
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/attributes/BFCPAttrParticipantProvidedInfo.cpp"
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/attributes/BFCPAttrRequestStatus.cpp"
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/attributes/BFCPAttrRequestedByInformation.cpp"
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/attributes/BFCPAttrStatusInfo.cpp"
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/messages/BFCPMsgError.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/messages/BFCPMsgFloorQuery.cpp"
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/messages/BFCPMsgFloorRelease.cpp"
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/messages/BFCPMsgFloorRequest.cpp"
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/messages/BFCPMsgFloorRequestStatus.cpp"
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/messages/BFCPMsgFloorStatus.cpp"
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/messages/BFCPMsgHello.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/broadcaster.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
@@ -1558,6 +1640,10 @@
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
           </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/core/VideoEncoderWorker.cpp" ex="false" tool="1" flavor2="0">
+        <ccTool flags="0">
         </ccTool>
       </item>
       <item path="src/cpim.cpp" ex="false" tool="1" flavor2="4">
@@ -1723,6 +1809,8 @@
         </ccTool>
       </item>
       <item path="src/flv1/flv1codec.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/flvdump.cpp" ex="false" tool="0" flavor2="2">
         <cTool>
@@ -1806,12 +1894,20 @@
         </ccTool>
       </item>
       <item path="src/g711/g711.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="1">
+        </cTool>
       </item>
       <item path="src/g711/pcmacodec.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/g711/pcmucodec.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/g722/g722codec.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/groupchat.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
@@ -1838,20 +1934,36 @@
         </ccTool>
       </item>
       <item path="src/gsm/gsmcodec.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/h263/h263-1996codec.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/h263/h263.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/h263/h263codec.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/h263/mpeg4codec.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/h264/h264decoder.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/h264/h264depacketizer.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/h264/h264encoder.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/http.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
@@ -2213,7 +2325,10 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="src/jsr309/VideoEncoderWorker.cpp" ex="false" tool="1" flavor2="4">
+      <item path="src/jsr309/VideoEncoderWorkerMultiplexer.cpp"
+            ex="false"
+            tool="1"
+            flavor2="4">
         <ccTool flags="0">
           <incDir>
             <pElem>src/vnc/common</pElem>
@@ -2550,10 +2665,16 @@
         </ccTool>
       </item>
       <item path="src/nelly/NellyCodec.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/opus/opusdecoder.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/opus/opusencoder.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/overlay.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
@@ -3177,8 +3298,12 @@
         </ccTool>
       </item>
       <item path="src/speex/resample.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="1">
+        </cTool>
       </item>
       <item path="src/speex/speexcodec.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/statushandler.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
@@ -3490,18 +3615,32 @@
         </ccTool>
       </item>
       <item path="src/vnc/common/d3des.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="1">
+        </cTool>
       </item>
       <item path="src/vnc/common/md5.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="1">
+        </cTool>
       </item>
       <item path="src/vnc/common/minilzo.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="1">
+        </cTool>
       </item>
       <item path="src/vnc/common/sha1.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="1">
+        </cTool>
       </item>
       <item path="src/vnc/common/turbojpeg.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="1">
+        </cTool>
       </item>
       <item path="src/vnc/common/vncauth.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="1">
+        </cTool>
       </item>
       <item path="src/vnc/common/zywrletemplate.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="1">
+        </cTool>
       </item>
       <item path="src/vnc/libvncclient/corre.c" ex="false" tool="0" flavor2="2">
         <cTool>
@@ -4527,10 +4666,16 @@
         </cTool>
       </item>
       <item path="src/vp6/vp6decoder.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/vp8/vp8decoder.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/vp8/vp8encoder.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/websocketconnection.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
@@ -5019,6 +5164,8 @@
       </item>
       <item path="include/config.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="include/core/VideoEncoderWorker.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="include/cpim.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/crc32calc.h" ex="false" tool="3" flavor2="0">
@@ -5370,6 +5517,8 @@
       </item>
       <item path="src/broadcastsession.cpp" ex="false" tool="1" flavor2="0">
       </item>
+      <item path="src/core/VideoEncoderWorker.cpp" ex="false" tool="1" flavor2="0">
+      </item>
       <item path="src/cpim.cpp" ex="false" tool="0" flavor2="0">
       </item>
       <item path="src/crc32calc.cpp" ex="false" tool="1" flavor2="0">
@@ -5508,9 +5657,15 @@
       </item>
       <item path="src/jsr309/VideoDecoderWorker.h" ex="false" tool="3" flavor2="0">
       </item>
-      <item path="src/jsr309/VideoEncoderWorker.cpp" ex="false" tool="1" flavor2="0">
+      <item path="src/jsr309/VideoEncoderWorkerMultiplexer.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
       </item>
-      <item path="src/jsr309/VideoEncoderWorker.h" ex="false" tool="3" flavor2="0">
+      <item path="src/jsr309/VideoEncoderWorkerMultiplexer.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
       </item>
       <item path="src/jsr309/VideoMixerResource.cpp" ex="false" tool="1" flavor2="0">
       </item>
