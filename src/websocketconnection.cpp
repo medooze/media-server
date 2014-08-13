@@ -647,7 +647,7 @@ void WebSocketConnection::ProcessData(BYTE *data,DWORD size)
 void WebSocketConnection::SendMessage(MessageType type,const BYTE* data, const DWORD size)
 {
     
-    if (!this->running) {
+	if (!this->running) {
 		Error("WebSocketConnection::SendMessage() called when not running\n");
 		return;
 	}
@@ -720,8 +720,6 @@ void WebSocketConnection::SendMessage(MessageType type,const BYTE* data, const D
 
 void WebSocketConnection::SendMessage(const std::wstring& message)
 {
-	Log("-WebSocket Connection SendMessage\n");
-
 	if (!this->running) {
 		Error("WebSocketConnection::SendMessage() called when not running\n");
 		return;
@@ -754,9 +752,8 @@ void WebSocketConnection::SendMessage(const std::wstring& message)
 
 void WebSocketConnection::SendMessage(const BYTE* data, const DWORD size)
 {
-	Log("-WebSocket Connection SendMessage\n");
-
-	
+	//Send binary frame
+	SendMessage(Binary,data,size);
 }
 
 DWORD WebSocketConnection::GetWriteBufferLength()
