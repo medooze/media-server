@@ -579,8 +579,8 @@ int AppMixer::onFinishedFrameBufferUpdate(VNCViewer *viewer)
 			//If we got one
 			if (!editor.empty())
 			{
-				DWORD x = lastX+32;
-				DWORD y = lastY+32;
+				DWORD x = lastX+16;
+				DWORD y = lastY+16;
 				DWORD w = 180;
 				DWORD h = 36;
 				DWORD m = 10;
