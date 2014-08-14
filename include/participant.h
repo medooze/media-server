@@ -77,12 +77,16 @@ public:
 
 	virtual int Init() = 0;
 	virtual int End() = 0;
+	
+	void SetName(const std::wstring& name)  { this->name.assign(name);	}
+	std::wstring GetName()			{ return name;			}
 
 protected:
 	Type type;
 	Listener *listener;
 	DWORD partId;
 	std::wstring token;
+	std::wstring name;
 };
 
 #endif	/* PARTICIPANT_H */

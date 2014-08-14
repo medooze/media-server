@@ -389,6 +389,12 @@ int main(int argc,char **argv)
 
 	//Start cpu monitor
 	monitor.Start(10000);
+	
+	int confId = mcu.CreateConference(L"5555-63b9dde9-367c-4bf3-9ebc-64fa14e3cd3",0);
+	
+	MultiConf* conf;
+	mcu.GetConferenceRef(confId,&conf);
+	conf->Init(Properties());
 
 	//Run it
 	server.Start();
