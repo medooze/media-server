@@ -102,7 +102,7 @@ private:
 	DWORD		height;
 	int		presenterId;
 	int		editorId;
-	Overlay		*overlay;
+	Canvas		*canvas;
 	DWORD		lastX;
 	DWORD		lastY;
 };
