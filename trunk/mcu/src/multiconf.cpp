@@ -593,6 +593,9 @@ int MultiConf::CreateParticipant(int mosaicId,int sidebarId,const std::wstring &
 			//Create RTP Participant
 			break;
 	}
+	
+	//Set name
+	part->SetName(name);
 
 	//Set inputs and outputs
 	part->SetVideoInput(videoMixer.GetInput(partId));
@@ -1961,6 +1964,8 @@ int MultiConf::AppMixerDisplayImage(const char* filename)
 
 int MultiConf::WebsocketConnectRequest(WebSocket *ws,int partId,const std::string &token,const std::string &to)
 {
+	Participant* part = NULL;
+	
 	//Convert token to wstring
 	UTF8Parser utf8(token);
 
@@ -1974,6 +1979,9 @@ int MultiConf::WebsocketConnectRequest(WebSocket *ws,int partId,const std::strin
 	if (it==participants.end())
 		//Exit
 		goto forbiden;
+	
+	//Get participant
+	part = it->second;
 
 	//compare token
 	if (utf8.GetWString().compare(it->second->GetToken())!=0)
@@ -1986,10 +1994,10 @@ int MultiConf::WebsocketConnectRequest(WebSocket *ws,int partId,const std::strin
 		BFCP::getInstance().ConnectTransport(ws,floorServer,partId);
 	else if (to.compare("vnc")==0)
 		//Connect to app mixer vnc viewer
-		appMixer.WebsocketConnectRequest(partId,ws,0);
+		appMixer.WebsocketConnectRequest(partId,part->GetName(),ws,0);
 	else if (to.compare("vnc-server")==0)
 		//Connect to app mixer vnc server
-		appMixer.WebsocketConnectRequest(partId,ws,1);
+		appMixer.WebsocketConnectRequest(partId,part->GetName(),ws,1);
 	else if (to.compare("chat")==0)
 		//Connect to chat
 		chat.WebsocketConnectRequest(partId,ws);

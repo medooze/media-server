@@ -9,17 +9,21 @@
 #include "log.h"
 #include "fifo.h"
 #include "use.h"
+#include "overlay.h"
 
 
 AppMixer::AppMixer()
 {
 	//No output
 	output = NULL;
+	overlay = NULL;
 	//No presenter
 	presenter = NULL;
 	presenterId = 0;
 	//NO editor
 	editorId = 0;
+	lastX = 0;
+	lastY = 0;
 	//No img
 	img = NULL;
 	// Create YUV rescaller cotext
@@ -31,6 +35,10 @@ AppMixer::~AppMixer()
 	End();
 	//Clean mem
 	if (img) free(img);
+	//If got overlay
+	if (overlay)
+		//Delete it
+		delete(overlay);
 	//Free sws contes
 	sws_freeContext(sws);
 }
@@ -100,14 +108,14 @@ int AppMixer::End()
 	Log("<AppMixer::End\n");
 }
 
-int AppMixer::WebsocketConnectRequest(int partId,WebSocket *ws,bool isPresenter)
+int AppMixer::WebsocketConnectRequest(int partId,const std::wstring &name,WebSocket *ws,bool isPresenter)
 {
 	Log("-WebsocketConnectRequest [partId:%d,isPresenter:%d]\n",partId,isPresenter);
 
 	//Check if it is a viewer
 	if (!isPresenter)
 		//Let the server handle it
-		return server.Connect(partId,ws);
+		return server.Connect(partId,name,ws);
 
 	//Check if we have presenter
 	if (presenterId!=partId)
@@ -131,7 +139,7 @@ int AppMixer::WebsocketConnectRequest(int partId,WebSocket *ws,bool isPresenter)
 	}
 
 	//Create new presenter
-	presenter = new Presenter(ws);
+	presenter = new Presenter(ws,name);
 	//Init it
 	presenter->Init(this);
 	
@@ -298,10 +306,11 @@ void AppMixer::onError(WebSocket *ws)
 }
 
 
-AppMixer::Presenter::Presenter(WebSocket *ws)
+AppMixer::Presenter::Presenter(WebSocket *ws,const std::wstring &name)
 {
-	//Store ws
+	//Store ws and name
 	this->ws = ws;
+	this->name.assign(name);
 }
 
 AppMixer::Presenter::~Presenter()
@@ -488,6 +497,14 @@ int AppMixer::onFrameBufferSizeChanged(VNCViewer *viewer, int width, int height)
 
 	//Set size
 	if (output) output->SetVideoSize(width,height);
+	
+	//If got overlay
+	if (overlay)
+		//Delete it
+		delete(overlay);
+	
+	//And create a new one
+	overlay = new Overlay(width,height);
 
 	return 1;
 }
@@ -546,6 +563,27 @@ int AppMixer::onFinishedFrameBufferUpdate(VNCViewer *viewer)
 		//Convert
 		if (sws) sws_scale(sws, in->data, in->linesize, 0, height, out->data, out->linesize);
 
+		//If we had overlay
+		if (overlay)
+		{
+			//Get editor name
+			std::wstring editor = server.GetEditorName();
+			
+			//If we got one
+			if (!editor.empty())
+			{
+				//Draw editor name on overlay
+				overlay->RenderText(editor,lastX,lastY,20,150);
+				
+				//Draw it
+				overlay->Display(img);
+				
+				//Draw mouse pointer
+				out->data[0][lastY*out->linesize[0]+lastX] = 0;
+				out->data[1][lastY/2*out->linesize[1]+lastX/2] = 0;
+				out->data[2][lastY/2*out->linesize[2]+lastX/2] = 0;
+			}
+		}
 		//Put new frame
 		output->NextFrame(img);
 
@@ -574,6 +612,11 @@ int AppMixer::onHandleCursorPos(VNCViewer *viewer,int x, int y)
 	if (presenter)
 		//Send ley
 		presenter->SendMouseEvent(buttonMask,x,y);
+	
+	//Store latest coordinates
+	lastX = x;
+	lastY = y;
+	
 	//Unlock
 	use.Unlock();
 }

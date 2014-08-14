@@ -18,6 +18,7 @@
 #include "wait.h"
 #include "VNCViewer.h"
 #include "VNCServer.h"
+#include "overlay.h"
 extern "C" {
 #include <libswscale/swscale.h>
 #include <libavcodec/avcodec.h>
@@ -36,7 +37,7 @@ private:
 		public VNCViewer
 	{
 	public:
-		Presenter(WebSocket *ws);
+		Presenter(WebSocket *ws,const std::wstring &name);
 		virtual ~Presenter();
 		int Init(VNCViewer::Listener *listener);
 		int Process(const BYTE* data,DWORD size);
@@ -53,6 +54,7 @@ private:
 		fifo<BYTE,512*1024> buffer;
 		Wait wait;
 		VNCViewer viewer;
+		std::wstring name;
 	};
 
 	
@@ -62,7 +64,7 @@ public:
 
 	int Init(VideoOutput *output);
 	int DisplayImage(const char* filename);
-	int WebsocketConnectRequest(int partId,WebSocket *ws,bool isPresenter);
+	int WebsocketConnectRequest(int partId,const std::wstring &name,WebSocket *ws,bool isPresenter);
 	int SetPresenter(int partId);
 	int SetEditor(int partId);
 	int GetPresenter()	{ return presenterId;	}
@@ -100,6 +102,9 @@ private:
 	DWORD		height;
 	int		presenterId;
 	int		editorId;
+	Overlay		*overlay;
+	DWORD		lastX;
+	DWORD		lastY;
 };
 
 #endif	/* APPMIXER_H */

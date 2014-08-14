@@ -128,4 +128,42 @@ public:
 private:
 	Mutex &mutex;
 };
+
+class  ScopedUseLock
+{
+public:
+	ScopedUseLock(Use &u) : use(u)
+	{
+		//Lock it
+		use.WaitUnusedAndLock();
+	}
+
+	~ScopedUseLock()
+	{
+		//Unlock it
+		use.Unlock();
+	}
+	
+private:
+	Use &use;
+};
+
+class  ScopedUse
+{
+public:
+	ScopedUse(Use &u) : use(u)
+	{
+		//IncUse it
+		use.IncUse();
+	}
+
+	~ScopedUse()
+	{
+		//DecUs it
+		use.DecUse();
+	}
+	
+private:
+	Use &use;
+};
 #endif

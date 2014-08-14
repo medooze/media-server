@@ -21,7 +21,7 @@ public:
 	class Client
 	{
 	public:
-		Client(int id,VNCServer* server);
+		Client(int id,const std::wstring &name,VNCServer* server);
 		virtual ~Client();
 		int Connect(WebSocket* ws);
 		int Disconnect();
@@ -33,7 +33,8 @@ public:
 		void Reset();
 		void SetViewOnly(bool viewOnly);
 		VNCServer* GetServer() { return server; }
-
+		std::wstring GetName() { return name;	}
+		
 		//Socket functionas
 		 void Close();
 		 int WaitForData(DWORD usecs);
@@ -53,6 +54,7 @@ public:
 		Wait wait;
 		int reset;
 		pthread_t thread;
+		std::wstring name;
 	};
 
 	class Listener
@@ -67,7 +69,8 @@ public:
 
 	int Init(Listener* listener);
 	int SetEditor(int editorId);
-	int Connect(int partId,WebSocket *socket);
+	std::wstring GetEditorName();
+	int Connect(int partId,const std::wstring &name,WebSocket *socket);
 	int Disconnect(WebSocket *socket);
 	int Reset();
 	int SetSize(int width,int height);

@@ -282,7 +282,26 @@ int VNCServer::SetEditor(int editorId)
 	return true;
 }
 
-int VNCServer::Connect(int partId,WebSocket *socket)
+std::wstring VNCServer::GetEditorName()
+{
+	//Increase usage while in method
+	ScopedUse scoped(use);
+	
+	//If we got another editor
+	if (this->editorId)
+	{
+		//Find it
+		Clients::iterator it = clients.find(this->editorId);
+		//If found
+		if (it!=clients.end())
+			//Set client view onlu
+			return it->second->GetName();
+	}
+	//Empty
+	return std::wstring();
+}
+
+int VNCServer::Connect(int partId,const std::wstring &name,WebSocket *socket)
 {
 	Log(">VNCServer connecting participant viewer [id:%d]\n",partId);
 
@@ -290,7 +309,7 @@ int VNCServer::Connect(int partId,WebSocket *socket)
 	use.WaitUnusedAndLock();
 
 	//Create new client
-	Client *client = new Client(partId,this);
+	Client *client = new Client(partId,name,this);
 	//Set client as as user data
 	socket->SetUserData(client);
 
@@ -655,10 +674,11 @@ void VNCServer::onWriteBufferEmpty(WebSocket *ws)
 	client->Update();
 }
 
-VNCServer::Client::Client(int id,VNCServer* server)
+VNCServer::Client::Client(int id,const std::wstring &name,VNCServer* server)
 {
-	//Store id
+	//Store id and name
 	this->id = id;
+	this->name.assign(name);
 	//Store server
 	this->server = server;
 
