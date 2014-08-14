@@ -16,7 +16,7 @@ AppMixer::AppMixer()
 {
 	//No output
 	output = NULL;
-	overlay = NULL;
+	canvas = NULL;
 	//No presenter
 	presenter = NULL;
 	presenterId = 0;
@@ -35,10 +35,10 @@ AppMixer::~AppMixer()
 	End();
 	//Clean mem
 	if (img) free(img);
-	//If got overlay
-	if (overlay)
+	//If got canvas
+	if (canvas)
 		//Delete it
-		delete(overlay);
+		delete(canvas);
 	//Free sws contes
 	sws_freeContext(sws);
 }
@@ -502,13 +502,13 @@ int AppMixer::onFrameBufferSizeChanged(VNCViewer *viewer, int width, int height)
 	//Set size
 	if (output) output->SetVideoSize(width,height);
 	
-	//If got overlay
-	if (overlay)
+	//If got canvas
+	if (canvas)
 		//Delete it
-		delete(overlay);
+		delete(canvas);
 	
 	//And create a new one
-	overlay = new Overlay(width,height);
+	canvas = new Canvas(width,height);
 
 	return 1;
 }
@@ -567,8 +567,8 @@ int AppMixer::onFinishedFrameBufferUpdate(VNCViewer *viewer)
 		//Convert
 		if (sws) sws_scale(sws, in->data, in->linesize, 0, height, out->data, out->linesize);
 
-		//If we had overlay
-		if (overlay)
+		//If we had canvas
+		if (canvas)
 		{
 			//Get editor name
 			std::wstring editor = server.GetEditorName();
@@ -576,11 +576,30 @@ int AppMixer::onFinishedFrameBufferUpdate(VNCViewer *viewer)
 			//If we got one
 			if (!editor.empty())
 			{
-				//Draw editor name on overlay
-				overlay->RenderText(editor,lastX,lastY,20,150);
+				DWORD x = lastX;
+				DWORD y = lastY;
+				DWORD w = 150;
+				DWORD h = 20;
+				DWORD m = 10;
 				
-				//Draw it
-				overlay->Display(img);
+				//Ensure the window is big enought
+				if (width>w+m && height>h+m)
+				{
+					//Check overlay would be out of the image
+					if (x+w+m>width)
+						//Move to the left of the pointer
+						x = x-w;
+					//Check overlay would be out of the image
+					if (y+h+m>height)
+						//Move position
+						y = y-h;	
+					//Check if 
+					//Draw editor name on canvas
+					canvas->RenderText(editor,x,y,w,h);
+
+					//Draw it on top of the image
+					canvas->Draw(img,img);
+				}
 				
 				//Check coordinates
 				if (lastX<width && lastY<height)

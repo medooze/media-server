@@ -19,7 +19,7 @@ extern "C" {
 #endif
 
 
-Overlay::Overlay(DWORD width,DWORD height)
+Canvas::Canvas(DWORD width,DWORD height)
 {
 	//Store values
 	this->width = width;
@@ -30,22 +30,30 @@ Overlay::Overlay(DWORD width,DWORD height)
 	overlay = (BYTE*)malloc32(overlaySize);
 	//Clean it
 	memset(overlay,0,overlaySize);
-	//Calculate size for final image i.e. without alpha
-	imageSize = width*height*3/2+FF_INPUT_BUFFER_PADDING_SIZE+32;
-	//Create final image
-	image = (BYTE*)malloc32(imageSize);
 	//Do not display
 	display = false;
 }
 
-Overlay::~Overlay()
+Overlay::Overlay(DWORD width,DWORD height) : Canvas(width,height)
+{
+	//Calculate size for final image i.e. without alpha
+	imageSize = width*height*3/2+FF_INPUT_BUFFER_PADDING_SIZE+32;
+	//Create final image
+	image = (BYTE*)malloc32(imageSize);
+}
+
+Canvas::~Canvas()
 {
 	//Free memor
 	free(overlay);
+}
+
+Overlay::~Overlay()
+{
 	free(image);
 }
 
-int Overlay::LoadPNG(const char* filename)
+int Canvas::LoadPNG(const char* filename)
 {
 	AVFormatContext *fctx = NULL;
 	AVCodecContext *ctx = NULL;
@@ -218,13 +226,13 @@ end:
 	return res;
 }
 
-int Overlay::LoadSVG(const char* svg)
+int Canvas::LoadSVG(const char* svg)
 {
 #ifdef HAVE_IMAGEMAGICK
 	//CHeck input
 	if (!svg)
 		//ERROR
-		return Error("-Overlay::RenderSVG is null\n");
+		return Error("-Canvas::RenderSVG is null\n");
 	try
 	{
 		//Get renderer object
@@ -277,21 +285,21 @@ int Overlay::LoadSVG(const char* svg)
 		display = true;
 	} catch ( Magick::Exception &error ) {
 		display = false;
-		return Error("-Overlay: failed to load picture file %s: %s.\n", svg, error.what() );
+		return Error("-Canvas: failed to load picture file %s: %s.\n", svg, error.what() );
 	} catch ( std::exception &error2 ) {
 		display = false;
-		return Error("-Overlay: failed to load picture file %s: %s.\n", svg, error2.what() );
+		return Error("-Canvas: failed to load picture file %s: %s.\n", svg, error2.what() );
 	}
 #endif
     //OK
     return 1;
 }
-int Overlay::RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWORD height)
+int Canvas::RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWORD height)
 {
 	return RenderText(text,x,y,width,height,Properties());
 }
 
-int Overlay::RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWORD height,const Properties& properties)
+int Canvas::RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWORD height,const Properties& properties)
 {
 #ifdef HAVE_IMAGEMAGICK
 	//Colors in RGBA
@@ -354,7 +362,7 @@ int Overlay::RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWO
 			if ( text.Truncate(1) == 0)
 			{
 				contentType = NONE;
-				Error("-Overlay: not enough width to render text in slot.\n");
+				Error("-Canvas: not enough width to render text in slot.\n");
 				return 0;
 			}
 
@@ -421,19 +429,28 @@ int Overlay::RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWO
 		display = true;
 	} catch ( Magick::Exception &error ) {
 		display = false;
-		return Error("-Overlay: failed to render text %ls: %s.\n", text.c_str(), error.what() );
+		return Error("-Canvas: failed to render text %ls: %s.\n", text.c_str(), error.what() );
 	}
 #endif
 	//OK
 	return 1;
 }
 
-BYTE* Overlay::Display(BYTE* frame)
+BYTE* Overlay::Display(uint8_t* frame)
 {
 	//check if we have overlay
 	if (!display)
 		//Return the same frame
 		return frame;
+	//Draw
+	Draw(image,frame);
+	
+	//Return internal image
+	return image;
+}
+
+void Canvas::Draw(BYTE*image,BYTE* frame)
+{
 	//Get source
 	BYTE* srcY1 = frame;
 	BYTE* srcY2 = frame+width;
@@ -583,7 +600,4 @@ BYTE* Overlay::Display(BYTE* frame)
 		ovrA1 += width;
 		ovrA2 += width;
 	}
-
-	//And return overlay
-	return image;
 }

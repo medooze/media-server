@@ -9,27 +9,39 @@
 #define	OVERLAY_H
 #include "config.h"
 
-class Overlay
+
+class Canvas
 {
 public:
-	Overlay(DWORD width,DWORD height);
-	~Overlay();
+	Canvas(DWORD width,DWORD height);
+	~Canvas();
 	int LoadPNG(const char* png);
 	int LoadSVG(const char* svg);
 	int RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWORD height);
 	int RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWORD height,const Properties& properties);
-	BYTE* Display(BYTE* frame);
-	BYTE* GetOverlay() { return overlay; }
-private:
+	void Draw(BYTE*image, BYTE* frame);
+	BYTE* GetCanvas()	{ return overlay;	}
+protected:
 	DWORD overlaySize;
 	BYTE* overlay;
-	DWORD imageSize;
-	BYTE* image;
-
 	DWORD width;
 	DWORD height;
-	bool display;
+	bool display;	
 };
+
+class Overlay : public Canvas
+{
+public:
+	Overlay(DWORD width,DWORD height);
+	~Overlay();
+
+	BYTE* Display(BYTE* frame);
+	BYTE* GetOverlay() { return GetCanvas(); }
+private:
+	DWORD imageSize;
+	BYTE* image;
+};
+
 
 #endif	/* OVERLAY_H */
 
