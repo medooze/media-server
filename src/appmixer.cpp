@@ -197,6 +197,10 @@ int AppMixer::SetEditor(int partId)
 
 	//Set it to the vnc server
 	server.SetEditor(editorId);
+	
+	//Reset coordinates from mouse
+	lastX = 0;
+	lastY = 0;
 
 	Log("<AppMixer::SetEditor [%d]\n",partId);
 	
@@ -578,10 +582,14 @@ int AppMixer::onFinishedFrameBufferUpdate(VNCViewer *viewer)
 				//Draw it
 				overlay->Display(img);
 				
-				//Draw mouse pointer
-				out->data[0][lastY*out->linesize[0]+lastX] = 0;
-				out->data[1][lastY/2*out->linesize[1]+lastX/2] = 0;
-				out->data[2][lastY/2*out->linesize[2]+lastX/2] = 0;
+				//Check coordinates
+				if (lastX<width && lastY<height)
+				{
+					//Draw mouse pointer
+					out->data[0][lastY*out->linesize[0]+lastX] = 0;
+					out->data[1][lastY/2*out->linesize[1]+lastX/2] = 0;
+					out->data[2][lastY/2*out->linesize[2]+lastX/2] = 0;
+				}
 			}
 		}
 		//Put new frame
