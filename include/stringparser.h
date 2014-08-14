@@ -317,7 +317,7 @@ public:
 
 	bool MatchString(const std::string &str)
 	{
-		MatchString(str.c_str());
+		return MatchString(str.c_str());
 	}
 
 	bool MatchString(const char* str)
@@ -344,7 +344,7 @@ public:
 
 	bool CheckString(const std::string &str)
 	{
-		CheckString(str.c_str());
+		return CheckString(str.c_str());
 	}
 
 	bool CheckString(const char* str)
@@ -444,7 +444,7 @@ public:
 
 	bool MatchString(const std::wstring &str)
 	{
-		MatchString(str.c_str());
+		return MatchString(str.c_str());
 	}
 
 	bool MatchString(const wchar_t* str)
@@ -471,7 +471,7 @@ public:
 
 	bool CheckString(const std::wstring &str)
 	{
-		CheckString(str.c_str());
+		return CheckString(str.c_str());
 	}
 
 	bool CheckString(const wchar_t* str)
