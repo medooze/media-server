@@ -579,10 +579,10 @@ int AppMixer::onFinishedFrameBufferUpdate(VNCViewer *viewer)
 			//If we got one
 			if (!editor.empty())
 			{
-				DWORD x = lastX;
-				DWORD y = lastY;
+				DWORD x = lastX+32;
+				DWORD y = lastY+32;
 				DWORD w = 150;
-				DWORD h = 20;
+				DWORD h = 30;
 				DWORD m = 10;
 				
 				//Ensure the window is big enought
@@ -597,8 +597,16 @@ int AppMixer::onFinishedFrameBufferUpdate(VNCViewer *viewer)
 						//Move position
 						y = y-h;	
 					
+					//Set text properties
+					Properties properties;
+					properties.SetProperty("fillColor"	,"#11FF1140");
+					properties.SetProperty("strokeColor"	,"#11FF1100");
+					properties.SetProperty("color"		,"black");
+					properties.SetProperty("font"		,"Verdana-Regular");
+					properties.SetProperty("fontSize"	,20);
+					
 					//Draw editor name on canvas
-					canvas->RenderText(editor,x,y,w,h);
+					canvas->RenderText(editor,x,y,w,h,properties);
 
 					//Draw it on top of the image
 					canvas->Draw(img,img);
