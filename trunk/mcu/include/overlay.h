@@ -20,6 +20,7 @@ public:
 	int RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWORD height);
 	int RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWORD height,const Properties& properties);
 	void Draw(BYTE*image, BYTE* frame);
+	void Reset();
 	BYTE* GetCanvas()	{ return overlay;	}
 protected:
 	DWORD overlaySize;
