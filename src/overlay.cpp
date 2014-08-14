@@ -449,6 +449,12 @@ BYTE* Overlay::Display(uint8_t* frame)
 	return image;
 }
 
+void Canvas::Reset()
+{
+	//Clean overlay memory
+	memset(overlay,0,overlaySize);
+}
+
 void Canvas::Draw(BYTE*image,BYTE* frame)
 {
 	//Get source

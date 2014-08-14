@@ -570,6 +570,9 @@ int AppMixer::onFinishedFrameBufferUpdate(VNCViewer *viewer)
 		//If we had canvas
 		if (canvas)
 		{
+			//reset it
+			canvas->Reset();
+					
 			//Get editor name
 			std::wstring editor = server.GetEditorName();
 			
@@ -593,7 +596,7 @@ int AppMixer::onFinishedFrameBufferUpdate(VNCViewer *viewer)
 					if (y+h+m>height)
 						//Move position
 						y = y-h;	
-					//Check if 
+					
 					//Draw editor name on canvas
 					canvas->RenderText(editor,x,y,w,h);
 
