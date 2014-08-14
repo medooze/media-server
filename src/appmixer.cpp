@@ -581,8 +581,8 @@ int AppMixer::onFinishedFrameBufferUpdate(VNCViewer *viewer)
 			{
 				DWORD x = lastX+32;
 				DWORD y = lastY+32;
-				DWORD w = 150;
-				DWORD h = 30;
+				DWORD w = 180;
+				DWORD h = 36;
 				DWORD m = 10;
 				
 				//Ensure the window is big enought
@@ -600,10 +600,10 @@ int AppMixer::onFinishedFrameBufferUpdate(VNCViewer *viewer)
 					//Set text properties
 					Properties properties;
 					properties.SetProperty("fillColor"	,"#11FF1140");
-					properties.SetProperty("strokeColor"	,"#11FF1100");
+					properties.SetProperty("strokeColor"	,"#40FF40A0");
 					properties.SetProperty("color"		,"black");
 					properties.SetProperty("font"		,"Verdana-Regular");
-					properties.SetProperty("fontSize"	,20);
+					properties.SetProperty("fontSize"	,18);
 					
 					//Draw editor name on canvas
 					canvas->RenderText(editor,x,y,w,h,properties);
@@ -613,10 +613,13 @@ int AppMixer::onFinishedFrameBufferUpdate(VNCViewer *viewer)
 				}
 				
 				//Check coordinates
-				if (lastX<width && lastY<height)
+				if (lastX<width-1 && lastY<height-1)
 				{
 					//Draw mouse pointer
 					out->data[0][lastY*out->linesize[0]+lastX] = 0;
+					out->data[0][(lastY+1)*out->linesize[0]+lastX] = 0;
+					out->data[0][lastY*out->linesize[0]+lastX+1] = 0;
+					out->data[0][(lastY+1)*out->linesize[0]+lastX+1] = 0;
 					out->data[1][lastY/2*out->linesize[1]+lastX/2] = 0;
 					out->data[2][lastY/2*out->linesize[2]+lastX/2] = 0;
 				}
