@@ -132,7 +132,7 @@ public:
 	EvenSource(const char* str)
 	{
 		//Duplicate
-		source = strdupa(str);
+		source = strdup(str);
 		//Create source
 		getInstance().CreateEvenSource(source);
 	}
