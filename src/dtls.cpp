@@ -333,7 +333,7 @@ void DTLSConnection::SetRemoteFingerprint(Hash hash, const char *fingerprint)
 	}
 
 	remoteHash = hash;
-	char* tmp = strdupa(fingerprint);
+	char* tmp = strdup(fingerprint);
 	char* value;
 	int pos = 0;
 
