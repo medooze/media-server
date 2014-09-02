@@ -271,7 +271,7 @@ int RTPSession::SetLocalCryptoSDES(const char* suite,const BYTE* key,const DWORD
 	} else if (strcmp(suite,"AES_CM_128_HMAC_SHA1_32")==0) {
 		Log("-RTPSession::SetLocalCryptoSDES() | suite: AES_CM_128_HMAC_SHA1_32\n");
 		crypto_policy_set_aes_cm_128_hmac_sha1_32(&policy.rtp);
-		crypto_policy_set_aes_cm_128_hmac_sha1_32(&policy.rtcp);
+		crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtcp);  // NOTE: Must be 80 for RTCP!
 	} else if (strcmp(suite,"AES_CM_128_NULL_AUTH")==0) {
 		Log("-RTPSession::SetLocalCryptoSDES() | suite: AES_CM_128_NULL_AUTH\n");
 		crypto_policy_set_aes_cm_128_null_auth(&policy.rtp);
@@ -470,7 +470,7 @@ int RTPSession::SetRemoteCryptoSDES(const char* suite, const BYTE* key, const DW
 	} else if (strcmp(suite,"AES_CM_128_HMAC_SHA1_32")==0) {
 		Log("-RTPSession::SetRemoteCryptoSDES() | suite: AES_CM_128_HMAC_SHA1_32\n");
 		crypto_policy_set_aes_cm_128_hmac_sha1_32(&policy.rtp);
-		crypto_policy_set_aes_cm_128_hmac_sha1_32(&policy.rtcp);
+		crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtcp);  // NOTE: Must be 80 for RTCP!
 	} else if (strcmp(suite,"AES_CM_128_NULL_AUTH")==0) {
 		Log("-RTPSession::SetRemoteCryptoSDES() | suite: AES_CM_128_NULL_AUTH\n");
 		crypto_policy_set_aes_cm_128_null_auth(&policy.rtp);
