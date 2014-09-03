@@ -304,11 +304,11 @@ int Canvas::RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWOR
 #ifdef HAVE_IMAGEMAGICK
 	//Colors in RGBA
 	const char *strokeColor	= properties.GetProperty("strokeColor"		,"#40404040"	);
-	const char *fillColor	= properties.GetProperty("fillColor"		,"#11111140"	);
+	const char *fillColor	= properties.GetProperty("fillColor"		,"#11FF1140"	);
 	const char *color	= properties.GetProperty("color"		,"white"	);
 	bool drawBackground	= properties.GetProperty("drawBackground"	,true		);
 	BYTE strokeWidth	= properties.GetProperty("strokeWidth"		,2		);
-	const char *font	= properties.GetProperty("font"			,"OrbitronB"	);
+	const char *font	= properties.GetProperty("font"			,"Verdana-Regular"	);
 	BYTE fontSize		= properties.GetProperty("fontSize"		,14		);
 	BYTE padding		= properties.GetProperty("padding"		,2		);
 	BYTE margin		= properties.GetProperty("margin"		,2		);
