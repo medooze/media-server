@@ -984,6 +984,9 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 		rtxs[rtx->GetExtSeqNum()] = rtx;
 	}
 
+	//No error yet, send packet
+	int err = 0;
+
 	//Check if we ar encripted
 	if (encript)
 	{
@@ -991,19 +994,32 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 		if (sendSRTPSession)
 		{
 			//Encript
-			err_status_t err = srtp_protect(sendSRTPSession,sendPacket,&len);
+			err_status_t err_status = srtp_protect(sendSRTPSession,sendPacket,&len);
 			//Check error
-			if (err!=err_status_ok)
+			if (err_status!=err_status_ok)
+			{
+				//Error
+				Error("-RTPSession::SendPacket() | Error protecting RTP packet [%d]\n",err);
 				//Don't send
-				len = Error("-RTPSession::SendPacket() | Error protecting RTP packet [%d]\n",err);
+				err = 1;
+			}
 		} else {
-			//Error
-			Error("-RTPSession::SendPacket() | no sendSRTPSession\n");
+			//Log
+			Debug("-RTPSession::SendPacket() | no sendSRTPSession\n");
+			//Don't send
+			err = 1;
 		}
 	}
 
-	if (len)
+	//If got packet to send
+	if (len && !err)
+	{
+		//Send packet
 		ret = !sendto(simSocket,sendPacket,len,0,(sockaddr *)&sendAddr,sizeof(struct sockaddr_in));
+		//Inc stats
+		numSendPackets++;
+		totalSendBytes += packet.GetMediaLength();
+	}
 
 	//Get time for packets to discard
 	QWORD until = getTime()/1000 - fmin(rtt*2,300);
@@ -1023,10 +1039,6 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 		//Delete object
 		delete(pkt);
 	}
-
-	//Inc stats
-	numSendPackets++;
-	totalSendBytes += packet.GetMediaLength();
 
 	//Unlock
 	sendMutex.Unlock();
