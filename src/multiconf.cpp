@@ -1956,6 +1956,12 @@ void MultiConf::onRequestFPU(Participant *part)
 		listener->onParticipantRequestFPU(this,part->GetPartId(),this->param);
 }
 
+int MultiConf::SetAppMixerViewer(int viewerId)
+{
+	//Set it
+	return appMixer.SetViewer(viewerId);
+}
+
 int MultiConf::AppMixerDisplayImage(const char* filename)
 {
 	//Display it

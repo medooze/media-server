@@ -67,6 +67,7 @@ public:
 	int WebsocketConnectRequest(int partId,const std::wstring &name,WebSocket *ws,bool isPresenter);
 	int SetPresenter(int partId);
 	int SetEditor(int partId);
+	int SetViewer(int partId);
 	int GetPresenter()	{ return presenterId;	}
 	int GetEditor()		{ return editorId;	}
 	int End();

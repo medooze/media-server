@@ -188,6 +188,13 @@ int AppMixer::SetPresenter(int partId)
 	return 1;
 }
 
+int AppMixer::SetViewer(int viewerId)
+{
+	Log("-AppMixer::SetViewer [%d]\n",viewerId);
+	
+	return server.SetViewer(viewerId);
+}
+
 int AppMixer::SetEditor(int partId)
 {
 	Log(">AppMixer::SetEditor [%d]\n",partId);

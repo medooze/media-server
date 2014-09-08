@@ -90,6 +90,7 @@ public:
 	int DeletePlayer(int playerId);
 
 	int AppMixerDisplayImage(const char* filename);
+	int SetAppMixerViewer(int viewerId);
 	int WebsocketConnectRequest(WebSocket *ws,int partId,const std::string &token,const std::string &to);
 
 	int SetCompositionType(int mosaicId,Mosaic::Type comp,int size);
