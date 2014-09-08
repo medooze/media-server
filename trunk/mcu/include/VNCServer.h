@@ -69,6 +69,7 @@ public:
 
 	int Init(Listener* listener);
 	int SetEditor(int editorId);
+	int SetViewer(int viewerId);
 	std::wstring GetEditorName();
 	int Connect(int partId,const std::wstring &name,WebSocket *socket);
 	int Disconnect(WebSocket *socket);
@@ -105,6 +106,7 @@ private:
 	rfbScreenInfo* screen;
 	Clients clients;
 	Use use;
+	int viewerId;
 };
 
 #endif	/* VNCSERVER_H */

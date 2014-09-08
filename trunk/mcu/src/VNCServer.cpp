@@ -112,8 +112,9 @@ static rfbCursor myCursor =
 
 VNCServer::VNCServer()
 {
-	//NO editor
+	//NO editor or private viewer
 	editorId = 0;
+	viewerId = 0;
 
 	//NO listener yet
 	listener = NULL;
@@ -242,6 +243,48 @@ int VNCServer::Init(Listener* listener)
 {
 	//Store listener
 	this->listener = listener;
+}
+
+int VNCServer::SetViewer(int viewerId)
+{
+	Debug(">VNCServer::SetViewer [partId:%d]\n",editorId);
+	
+	//Lock viewers
+	use.WaitUnusedAndLock();
+	
+	//Lock
+	use.IncUse();
+	
+	//If we are setting a private view
+	if (viewerId)
+	{
+		//Reset all viewers
+		for (Clients::iterator it=clients.begin(); it!=clients.end(); ++it)
+			//Except new viewer
+			if (it->first!=viewerId)
+				//Send sharing stoped event
+				it->second->Reset();
+		
+	} else {
+		//If it was in private view
+		if (this->viewerId)
+			//Set again new size
+			for (Clients::iterator it=clients.begin(); it!=clients.end(); ++it)
+				//Except old viewer
+				if (it->first!=this->viewerId)
+					//Put back screen size
+					it->second->ResizeScreen();
+	}
+
+	//Store new viewer
+	this->viewerId = viewerId;
+	
+	//UnLock viewers
+	use.WaitUnusedAndLock();
+	
+	Debug("<VNCServer::SetViewer\n");
+	
+	return 1;
 }
 
 int VNCServer::SetEditor(int editorId)
@@ -443,8 +486,10 @@ int VNCServer::SetSize(int width,int height)
 
 	//Resize all viewers
 	for (Clients::iterator it=clients.begin(); it!=clients.end(); ++it)
-		//Update it
-		it->second->ResizeScreen();
+		//Check it is only sent to the viewer if in private mode
+		if (viewerId && it->first==viewerId)
+			//Update it
+			it->second->ResizeScreen();
 
 	//Unlock
 	use.Unlock();
@@ -462,8 +507,10 @@ int VNCServer::FrameBufferUpdateDone()
 
 	//Send and update to all viewers
 	for (Clients::iterator it=clients.begin(); it!=clients.end(); ++it)
-		//Update it
-		it->second->Update();
+		//Check it is only sent to the viewer if in private mode
+		if (viewerId && it->first==viewerId)
+			//Update it
+			it->second->Update();
 
 	//Unlock
 	use.Unlock();

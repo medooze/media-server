@@ -1587,6 +1587,38 @@ xmlrpc_value* SetChair(xmlrpc_env *env, xmlrpc_value *param_array, void *user_da
 	return xmlok(env);
 }
 
+xmlrpc_value* SetAppMixerViewer(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+	MCU *mcu = (MCU *)user_data;
+	MultiConf *conf = NULL;
+
+	 //Parseamos
+	int confId;
+	int viewerId;
+	xmlrpc_parse_value(env, param_array, "(ii)", &confId, &viewerId);
+
+	//Comprobamos si ha habido error
+	if(env->fault_occurred)
+		return xmlerror(env,"Fault occurred");
+
+	//Get conference reference
+	if(!mcu->GetConferenceRef(confId,&conf))
+		return xmlerror(env,"Conference does not exist");
+
+	//La borramos
+	int res = conf->SetAppMixerViewer(viewerId);
+
+	//Free conference reference
+	mcu->ReleaseConferenceRef(confId);
+
+	//Salimos
+	if(!res)
+		return xmlerror(env,"Could not start playback");
+
+	//Devolvemos el resultado
+	return xmlok(env);
+}
+
 xmlrpc_value* GetParticipantStatistics(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
@@ -2213,6 +2245,7 @@ XmlHandlerCmd mcuCmdList[] =
 	{"SendFPU",SendFPU},
 	{"SetMute",SetMute},
 	{"SetChair",SetChair},
+	{"SetAppMixerViewer",SetAppMixerViewer},
 	{"GetParticipantStatistics",GetParticipantStatistics},
 	{"AddParticipantInputToken",AddParticipantInputToken},
 	{"AddParticipantOutputToken",AddParticipantOutputToken},
