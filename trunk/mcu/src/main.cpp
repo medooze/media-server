@@ -281,6 +281,9 @@ int main(int argc,char **argv)
 		Error("-OpenSSL failed to initialize, exiting\n");
 		exit(1);
 	}
+	
+	//Init avcodecs
+	avcodec_register_all();
 
 	//Set default video mixer vad period
 	VideoMixer::SetVADDefaultChangePeriod(vadPeriod);

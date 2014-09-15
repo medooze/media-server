@@ -24,9 +24,6 @@ H263Decoder1996::H263Decoder1996()
 	codec = NULL;
 	type = VideoCodec::H263_1996;
 	bufLen = 0;
-	
-	//Registramos todo
-	avcodec_register_all();
 
 	//Encotramos el codec
 	codec = avcodec_find_decoder(AV_CODEC_ID_H263);
@@ -234,9 +231,6 @@ H263Encoder1996::H263Encoder1996(const Properties& properties)
 
 	// Init framerate
 	SetFrameRate(5,300,20);
-
-	//Register all
-	avcodec_register_all();
 
 	// Get encoder
 	codec = avcodec_find_encoder(AV_CODEC_ID_H263);

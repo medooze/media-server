@@ -16,9 +16,6 @@ AACEncoder::AACEncoder(const Properties &properties)
 	///Set type
 	type = AudioCodec::AAC;
 
-	//Register all
-	avcodec_register_all();
-
 	// Get encoder
 	codec = avcodec_find_encoder(AV_CODEC_ID_AAC);
 

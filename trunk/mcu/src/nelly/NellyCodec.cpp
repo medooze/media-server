@@ -20,9 +20,6 @@ NellyEncoder::NellyEncoder(const Properties &properties)
 	ctx = NULL;
 	///Set type
 	type = AudioCodec::NELLY8;
-	
-	//Register all
-	avcodec_register_all();
 
 	// Get encoder
 	codec = avcodec_find_encoder(AV_CODEC_ID_NELLYMOSER);
@@ -89,9 +86,6 @@ NellyEncoder11Khz::NellyEncoder11Khz(const Properties &properties)
 	resampler = NULL;
 	///Set type
 	type = AudioCodec::NELLY11;
-
-	//Register all
-	avcodec_register_all();
 
 	// Get encoder
 	codec = avcodec_find_encoder(AV_CODEC_ID_NELLYMOSER);
@@ -187,9 +181,6 @@ NellyDecoder11Khz::NellyDecoder11Khz()
 	resampler = NULL;
 	///Set type
 	type = AudioCodec::NELLY11;
-
-	//Register all
-	avcodec_register_all();
 
 	// Get encoder
 	codec = avcodec_find_decoder(AV_CODEC_ID_NELLYMOSER);

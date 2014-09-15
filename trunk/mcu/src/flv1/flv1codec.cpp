@@ -30,9 +30,6 @@ FLV1Encoder::FLV1Encoder(const Properties& properties)
 	// Init framerate
 	SetFrameRate(5,300,20);
 
-	//Register all
-	avcodec_register_all();
-
 	// Get encoder
 	codec = avcodec_find_encoder(AV_CODEC_ID_FLV1);
 
@@ -262,9 +259,6 @@ FLV1Decoder::FLV1Decoder()
 	type = VideoCodec::SORENSON;
 	bufLen = 0;
 	
-	//Registramos todo
-	avcodec_register_all();
-
 	//Encotramos el codec
 	codec = avcodec_find_decoder(AV_CODEC_ID_FLV1);
 

@@ -22,9 +22,6 @@ G722Encoder::G722Encoder(const Properties &properties)
 	///Set type
 	type = AudioCodec::G722;
 
-	//Register all
-	avcodec_register_all();
-
 	// Get encoder
 	codec = avcodec_find_encoder(AV_CODEC_ID_ADPCM_G722);
 
@@ -99,9 +96,6 @@ G722Decoder::G722Decoder()
 	ctx = NULL;
 	///Set type
 	type = AudioCodec::G722;
-
-	//Register all
-	avcodec_register_all();
 
 	// Get encoder
 	codec = avcodec_find_decoder(AV_CODEC_ID_ADPCM_G722);
