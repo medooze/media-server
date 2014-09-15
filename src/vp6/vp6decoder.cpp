@@ -17,9 +17,6 @@ VP6Decoder::VP6Decoder()
 	codec = NULL;
 	type = VideoCodec::VP6;
 	bufLen = 0;
-	
-	//Registramos todo
-	avcodec_register_all();
 
 	//Encotramos el codec - note the F flash version
 	codec = avcodec_find_decoder(AV_CODEC_ID_VP6F);
