@@ -972,7 +972,7 @@ int VideoMixer::SetCompositionType(int mosaicId,Mosaic::Type comp, int size)
 }
 
 /************************
-* SetSlot
+/* SetSlot
 *	Set slot participant
 *************************/
 int VideoMixer::SetSlot(int mosaicId,int num,int id)
@@ -1128,6 +1128,23 @@ int VideoMixer::DumpMosaic(DWORD id,Mosaic* mosaic)
 	Log("-MosaicSlots %d [%s]\n",id,line1);
 	Log("-MosaicPos   %d [%s]\n",id,line2);
 
+	const Mosaic::Participants& participants = mosaic->GetParticipants();
+	Mosaic::Participants::const_iterator it = participants.begin();
+
+	while(it!=participants.end())
+	{
+		Log("-MosaicPart %d score:%llu isFixed:%d\n",it->second->GetId(),it->second->GetScore(),it->second->GetIsFixed());
+		it++;
+	}	
+	const Mosaic::ParticipantsOrder& order =  mosaic->GetParticipantsOrder();
+
+	Mosaic::ParticipantsOrder::const_iterator ite = order.begin();
+
+	while(ite!=order.end())
+	{
+		Log("-MosaicOrder %d\n",(*ite)->GetId());
+		ite++;
+	}	
 	//Send event
 	eventSource.SendEvent("mosaic","{id:%d,slots:[%s],pos:[%s]}",id,line1,line2);
 
