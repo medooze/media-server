@@ -47,9 +47,6 @@ int Logo::Load(const char* fileName)
 	int numpixels = 0;
 	int size = 0;
 
-	//Init ffmpeg in case it wasn't
-	av_register_all();	
-	
 	//Create context from file
 	if(avformat_open_input(&fctx, fileName, NULL, NULL)<0)
 		return Error("Couldn't open the logo image file [%s]\n",fileName);
@@ -80,6 +77,8 @@ int Logo::Load(const char* fileName)
 		//Free resources
 		goto end;
 	}
+	//Only one thread
+	ctx->thread_count	= 1;
 	
 	//Open codec
 	if (avcodec_open2(ctx, codec, NULL)<0)
