@@ -42,6 +42,7 @@ AACEncoder::AACEncoder(const Properties &properties)
 	//Set parames
 	ctx->sample_rate	= properties.GetProperty("aac.samplerate"	,8000);
 	ctx->bit_rate		= properties.GetProperty("aac.bitrate"		,ctx->sample_rate*3);
+	ctx->thread_count	= 1;
 
 	//Allow experimental codecs
 	ctx->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;

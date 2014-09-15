@@ -283,6 +283,7 @@ int main(int argc,char **argv)
 	}
 	
 	//Init avcodecs
+	av_register_all();	
 	avcodec_register_all();
 
 	//Set default video mixer vad period

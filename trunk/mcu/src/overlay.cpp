@@ -66,9 +66,6 @@ int Canvas::LoadPNG(const char* filename)
 	int gotLogo = 0;
 	int numpixels = width*height;
 
-	//Init ffmpeg in case it wasn't
-	av_register_all();
-
 	//Create context from file
 	if(avformat_open_input(&fctx, filename, NULL, NULL)<0)
 		//Exit
@@ -100,6 +97,9 @@ int Canvas::LoadPNG(const char* filename)
 		//Free resources
 		goto end;
 	}
+	
+	//Only one thread
+	ctx->thread_count	= 1;
 
 	//Open codec
 	if (avcodec_open2(ctx, codec, NULL)<0)
