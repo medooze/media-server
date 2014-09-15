@@ -57,6 +57,10 @@ public:
 		QWORD	score;		//Score SHALL be unique
 		int	isFixed;
 
+		int	GetId() const 		{ return id;	}
+		QWORD	GetScore() const	{ return score;		}
+		int	GetIsFixed() const	{ return isFixed;	} 
+
 		struct Short
 		{
 			//Bigger score first
@@ -66,6 +70,9 @@ public:
 			}
 		};
 	};
+public:
+	typedef std::map<int,PartInfo*> Participants;
+	typedef std::set<PartInfo*,PartInfo::Short> ParticipantsOrder;
 
 public:
 	static int GetNumSlotsForType(Type type);
@@ -126,12 +133,11 @@ public:
 	virtual int GetHeight(int pos) = 0;
 	virtual int GetTop(int pos) = 0;
 	virtual int GetLeft(int pos) = 0;
+	const Participants& GetParticipants() { return participants; }
+	const ParticipantsOrder& GetParticipantsOrder()	{ return order; }
 protected:
 	void SetChanged()	{ mosaicChanged = true; overlayNeedsUpdate = true; }
 
-protected:
-	typedef std::map<int,PartInfo*> Participants;
-	typedef std::set<PartInfo*,PartInfo::Short> ParticipantsOrder;
 
 protected:
 	Participants		participants;

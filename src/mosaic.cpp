@@ -214,6 +214,17 @@ int Mosaic::SetSlot(int num,int id)
 			//It is fixed
 			it->second->isFixed--;
 	}
+	
+	//If it was an the VAD and now VAD is not shown
+	if (oldId==SlotVAD && !IsVADShown())
+	{
+		//No vad particpant
+		vadParticipant = 0;
+		//Not blocked
+		vadBlockingTime = 0;
+		//Don't' hide
+		hideVadParticipant = false;
+	}
 
 	//Evirything ok
 	return 1;
@@ -425,8 +436,11 @@ int Mosaic::CalculatePositions()
 					++it;
 					//Check if it is the VAD participnat and we have to hide it or if it is fixed
 					if ((info->id==vadParticipant && hideVadParticipant) || info->isFixed>0)
+					{
+						Log("-skiping part %d %d %d %d\n",info->id,vadParticipant,hideVadParticipant,info->isFixed);
 						//Next one
 						continue;
+					}
 					//Put it in the position
 					mosaicPos[i] = info->id;
 					//found
