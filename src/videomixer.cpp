@@ -1146,7 +1146,7 @@ int VideoMixer::DumpMosaic(DWORD id,Mosaic* mosaic)
 		ite++;
 	}	
 	//Send event
-	eventSource.SendEvent("mosaic","{id:%d,slots:[%s],pos:[%s]}",id,line1,line2);
+	eventSource.SendEvent("mosaic","{id:%d,type:%d,slots:[%s],pos:[%s]}",id,mosaic->GetType(),line1,line2);
 
 	//OK
 	return 1;

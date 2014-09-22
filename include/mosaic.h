@@ -135,6 +135,7 @@ public:
 	virtual int GetLeft(int pos) = 0;
 	const Participants& GetParticipants() { return participants; }
 	const ParticipantsOrder& GetParticipantsOrder()	{ return order; }
+	Type  GetType() { return mosaicType;	}
 protected:
 	void SetChanged()	{ mosaicChanged = true; overlayNeedsUpdate = true; }
 
