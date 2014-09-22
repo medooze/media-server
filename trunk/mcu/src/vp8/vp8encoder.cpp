@@ -14,6 +14,17 @@
 
 #define interface (vpx_codec_vp8_cx())
 
+#ifndef VPX_PLANE_Y
+#define VPX_PLANE_Y   0
+#endif
+#ifndef VPX_PLANE_U
+#define VPX_PLANE_U   1
+#endif
+#ifndef VPX_PLANE_V
+#define VPX_PLANE_V   2
+#endif
+
+
 VP8Encoder::VP8Encoder(const Properties& properties)
 {
 	// Set default values
@@ -116,7 +127,7 @@ int VP8Encoder::OpenCodec()
 		return Error("");
 
 	//Create image
-	pic = vpx_img_alloc(NULL, IMG_FMT_I420, width, height, 0);
+	pic = vpx_img_alloc(NULL, VPX_IMG_FMT_I420, width, height, 0);
 
 	//Set parameters
 	config.g_profile = 1;
@@ -232,9 +243,9 @@ VideoFrame* VP8Encoder::EncodeFrame(BYTE *buffer,DWORD bufferSize)
 	}
 	
 	//Set data
-	pic->planes[PLANE_Y] = buffer;
-	pic->planes[PLANE_U] = buffer+numPixels;
-	pic->planes[PLANE_V] = buffer+numPixels*5/4;
+	pic->planes[VPX_PLANE_Y] = buffer;
+	pic->planes[VPX_PLANE_U] = buffer+numPixels;
+	pic->planes[VPX_PLANE_V] = buffer+numPixels*5/4;
 
 	int flags = 0;
 
