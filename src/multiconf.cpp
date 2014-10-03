@@ -296,6 +296,11 @@ int MultiConf::StartRecordingBroadcaster(const char* filename)
 
 int MultiConf::StopRecordingBroadcaster()
 {
+	//Check recording
+	if (!recorder)
+		//Error
+		return Error("Recorder not started");
+	
 	//Check type
 	switch (recorder->GetType())
 	{
@@ -318,6 +323,12 @@ int MultiConf::StopRecordingBroadcaster()
 
 	//Close recorder
 	recorder->Close();
+	
+	//Delete it
+	delete(recorder);
+	
+	//And set to null
+	recorder = NULL;
 
 	//Exit
 	return 1;

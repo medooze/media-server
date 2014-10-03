@@ -466,37 +466,49 @@ bool MP4Recorder::Record()
 
 bool MP4Recorder::Stop()
 {
+	//L0ck the  access to the file
+	pthread_mutex_lock(&mutex);
+	
         //not recording anymore
 	recording = false;
+	
+	//L0ck the  access to the file
+	pthread_mutex_unlock(&mutex);
 }
 
 bool MP4Recorder::Close()
 {
-        //Check mp4 file is opened
-        if (mp4 == MP4_INVALID_FILE_HANDLE)
-                //Error
-                return false;
-        
+       
         //Stop always
         Stop();
+	
+	//L0ck the  access to the file
+	pthread_mutex_lock(&mutex);
 
-	//For each audio track
-	for (Tracks::iterator it = audioTracks.begin(); it!=audioTracks.end(); ++it)
-		//Close it
-		it->second->Close();
-	//For each video track
-	for (Tracks::iterator it = videoTracks.begin(); it!=videoTracks.end(); ++it)
-		//Close it
-		it->second->Close();
-	//For each text track
-	for (Tracks::iterator it = textTracks.begin(); it!=textTracks.end(); ++it)
-		//Close it
-		it->second->Close();
-	// Close file
-	MP4Close(mp4);
+	//Check mp4 file is opened
+        if (mp4!=MP4_INVALID_FILE_HANDLE)
+	{
+		//For each audio track
+		for (Tracks::iterator it = audioTracks.begin(); it!=audioTracks.end(); ++it)
+			//Close it
+			it->second->Close();
+		//For each video track
+		for (Tracks::iterator it = videoTracks.begin(); it!=videoTracks.end(); ++it)
+			//Close it
+			it->second->Close();
+		//For each text track
+		for (Tracks::iterator it = textTracks.begin(); it!=textTracks.end(); ++it)
+			//Close it
+			it->second->Close();
+		// Close file
+		MP4Close(mp4);
 
-        //Empty file
-        mp4 = MP4_INVALID_FILE_HANDLE;
+		//Empty file
+		mp4 = MP4_INVALID_FILE_HANDLE;
+	}
+	
+	//L0ck the  access to the file
+	pthread_mutex_unlock(&mutex);
 	
 	//NOthing more
 	return true;
@@ -509,10 +521,6 @@ void MP4Recorder::onMediaFrame(MediaFrame &frame)
 
 void MP4Recorder::onMediaFrame(DWORD ssrc, MediaFrame &frame)
 {
-	//If not recording
-	if (!recording)
-		return;
-	
 	// Check if we have to wait for video
 	if (waitVideo && (frame.GetType()!=MediaFrame::Video))
 		//Do nothing yet
@@ -521,133 +529,137 @@ void MP4Recorder::onMediaFrame(DWORD ssrc, MediaFrame &frame)
 	//L0ck the  access to the file
 	pthread_mutex_lock(&mutex);
 
-	//Depending on the codec type
-	switch (frame.GetType())
+	//Check we are recording
+	if (recording)
 	{
-		case MediaFrame::Audio:
+		//Depending on the codec type
+		switch (frame.GetType())
 		{
-			//It is an audio track
-			mp4track* audioTrack = NULL;
-			//Find the ssrc
-			Tracks::iterator it = audioTracks.find(ssrc);
-			//If found
-			if (it!=audioTracks.end())
-				//Get it
-				audioTrack = it->second;
-			//Convert to audio frame
-			AudioFrame &audioFrame = (AudioFrame&) frame;
-			// Calculate new timestamp
-			QWORD timestamp = getDifTime(&first)/1000;
-			// Check if we have the audio track
-			if (!audioTrack)
+			case MediaFrame::Audio:
 			{
-				//Create object
-				audioTrack = new mp4track(mp4);
-				//Create track
-				audioTrack->CreateAudioTrack(audioFrame.GetCodec(),audioFrame.GetRate());
-				//Create empty text frame
-				AudioFrame empty(audioFrame.GetCodec(),audioFrame.GetRate());
-				//Set empty data
-				empty.SetTimestamp(0);
-				empty.SetLength(0);
-				//Set duration until first real frame
-				empty.SetDuration(timestamp);
-				//Send first empty packet
-				audioTrack->WriteAudioFrame(empty);
-				//Add it to map
-				audioTracks[ssrc] = audioTrack;
-			}
-
-			//Update timestamp
-			audioFrame.SetTimestamp(timestamp);
-			// Save audio rtp packet
-			audioTrack->WriteAudioFrame(audioFrame);
-			break;
-		}
-		case MediaFrame::Video:
-		{
-			//It is an video track
-			mp4track* videoTrack = NULL;
-			//Find the ssrc
-			Tracks::iterator it = videoTracks.find(ssrc);
-			//If found
-			if (it!=videoTracks.end())
-				//Get it
-				videoTrack = it->second;
-			//Convert to video frame
-			VideoFrame &videoFrame = (VideoFrame&) frame;
-
-			//If it is intra
-			if (waitVideo  && videoFrame.IsIntra())
-			{
-				//Don't wait more
-				waitVideo = 0;
-				//Set first timestamp
-				getUpdDifTime(&first);
-				//And set it to be the first
-				videoFrame.SetTimestamp(0);
-			} else {
+				//It is an audio track
+				mp4track* audioTrack = NULL;
+				//Find the ssrc
+				Tracks::iterator it = audioTracks.find(ssrc);
+				//If found
+				if (it!=audioTracks.end())
+					//Get it
+					audioTrack = it->second;
+				//Convert to audio frame
+				AudioFrame &audioFrame = (AudioFrame&) frame;
 				// Calculate new timestamp
 				QWORD timestamp = getDifTime(&first)/1000;
-				//Update timestamp
-				videoFrame.SetTimestamp(timestamp);
-			}
-
-			//Check if we have to write or not
-			if (!waitVideo)
-			{
 				// Check if we have the audio track
-				if (!videoTrack)
+				if (!audioTrack)
 				{
 					//Create object
-					videoTrack = new mp4track(mp4);
+					audioTrack = new mp4track(mp4);
 					//Create track
-					videoTrack->CreateVideoTrack(videoFrame.GetCodec(),videoFrame.GetWidth(),videoFrame.GetHeight());
+					audioTrack->CreateAudioTrack(audioFrame.GetCodec(),audioFrame.GetRate());
+					//Create empty text frame
+					AudioFrame empty(audioFrame.GetCodec(),audioFrame.GetRate());
+					//Set empty data
+					empty.SetTimestamp(0);
+					empty.SetLength(0);
+					//Set duration until first real frame
+					empty.SetDuration(timestamp);
+					//Send first empty packet
+					audioTrack->WriteAudioFrame(empty);
 					//Add it to map
-					videoTracks[ssrc] = videoTrack;
+					audioTracks[ssrc] = audioTrack;
 				}
 
+				//Update timestamp
+				audioFrame.SetTimestamp(timestamp);
 				// Save audio rtp packet
-				videoTrack->WriteVideoFrame(videoFrame);
+				audioTrack->WriteAudioFrame(audioFrame);
+				break;
 			}
-			break;
-		}
-		case MediaFrame::Text:
-		{
-			//It is an text track
-			mp4track* textTrack = NULL;
-			//Find the ssrc
-			Tracks::iterator it = textTracks.find(ssrc);
-			//If found
-			if (it!=textTracks.end())
-				//Get it
-				textTrack = it->second;
-			//Convert to audio frame
-			TextFrame &textFrame = (TextFrame&) frame;
-
-			// Check if we have the audio track
-			if (!textTrack)
+			case MediaFrame::Video:
 			{
-				//Create object
-				textTrack = new mp4track(mp4);
-				//Create track
-				textTrack->CreateTextTrack();
-				//Create empty text frame
-				TextFrame empty(0,(BYTE*)NULL,0);
-				//Send first empty packet
-				textTrack->WriteTextFrame(empty);
-				//Add it to map
-				textTracks[ssrc] = textTrack;
-			}
+				//It is an video track
+				mp4track* videoTrack = NULL;
+				//Find the ssrc
+				Tracks::iterator it = videoTracks.find(ssrc);
+				//If found
+				if (it!=videoTracks.end())
+					//Get it
+					videoTrack = it->second;
+				//Convert to video frame
+				VideoFrame &videoFrame = (VideoFrame&) frame;
 
-			// Calculate new timestamp in 1000 clock
-			QWORD timestamp = getDifTime(&first)/1000;
-			//Update timestamp
-			textFrame.SetTimestamp(timestamp);
-			
-			// Save audio rtp packet
-			textTrack->WriteTextFrame(textFrame);
-			break;
+				//If it is intra
+				if (waitVideo  && videoFrame.IsIntra())
+				{
+					//Don't wait more
+					waitVideo = 0;
+					//Set first timestamp
+					getUpdDifTime(&first);
+					//And set it to be the first
+					videoFrame.SetTimestamp(0);
+				} else {
+					// Calculate new timestamp
+					QWORD timestamp = getDifTime(&first)/1000;
+					//Update timestamp
+					videoFrame.SetTimestamp(timestamp);
+				}
+
+				//Check if we have to write or not
+				if (!waitVideo)
+				{
+					// Check if we have the audio track
+					if (!videoTrack)
+					{
+						//Create object
+						videoTrack = new mp4track(mp4);
+						//Create track
+						videoTrack->CreateVideoTrack(videoFrame.GetCodec(),videoFrame.GetWidth(),videoFrame.GetHeight());
+						//Add it to map
+						videoTracks[ssrc] = videoTrack;
+					}
+
+					// Save audio rtp packet
+					videoTrack->WriteVideoFrame(videoFrame);
+				}
+				break;
+			}
+			case MediaFrame::Text:
+			{
+				//It is an text track
+				mp4track* textTrack = NULL;
+				//Find the ssrc
+				Tracks::iterator it = textTracks.find(ssrc);
+				//If found
+				if (it!=textTracks.end())
+					//Get it
+					textTrack = it->second;
+				//Convert to audio frame
+				TextFrame &textFrame = (TextFrame&) frame;
+
+				// Check if we have the audio track
+				if (!textTrack)
+				{
+					//Create object
+					textTrack = new mp4track(mp4);
+					//Create track
+					textTrack->CreateTextTrack();
+					//Create empty text frame
+					TextFrame empty(0,(BYTE*)NULL,0);
+					//Send first empty packet
+					textTrack->WriteTextFrame(empty);
+					//Add it to map
+					textTracks[ssrc] = textTrack;
+				}
+
+				// Calculate new timestamp in 1000 clock
+				QWORD timestamp = getDifTime(&first)/1000;
+				//Update timestamp
+				textFrame.SetTimestamp(timestamp);
+
+				// Save audio rtp packet
+				textTrack->WriteTextFrame(textFrame);
+				break;
+			}
 		}
 	}
 
