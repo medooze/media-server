@@ -222,8 +222,6 @@ int Mosaic::SetSlot(int num,int id)
 		vadParticipant = 0;
 		//Not blocked
 		vadBlockingTime = 0;
-		//Don't' hide
-		hideVadParticipant = false;
 	}
 
 	//Evirything ok
