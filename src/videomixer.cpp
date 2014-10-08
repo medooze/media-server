@@ -329,19 +329,32 @@ int VideoMixer::SetMosaicOverlayImage(int mosaicId,const char* filename)
 {
 	Log("-SetMosaicOverlayImage [id:%d,\"%s\"]\n",mosaicId,filename);
 
+	//Protegemos la lista
+	lstVideosUse.IncUse();
+	
 	//Get mosaic from id
 	Mosaics::iterator it = mosaics.find(mosaicId);
 
 	//Check if we have found it
 	if (it==mosaics.end())
+	{
+		//Unlock
+		lstVideosUse.DecUse();
 		//error
 		return Error("Mosaic not found [id:%d]\n",mosaicId);
+	}
 
 	//Get the old mosaic
 	Mosaic *mosaic = it->second;
 
+	//Set overlay
+	int ret =  mosaic->SetOverlayPNG(filename);
+	
+	//Unlock
+	lstVideosUse.DecUse();
+	
 	//Exit
-	return mosaic->SetOverlayPNG(filename);
+	return ret;
 }
 
 /*******************************
@@ -352,19 +365,32 @@ int VideoMixer::ResetMosaicOverlay(int mosaicId)
 {
 	Log("-ResetMosaicOverlay [id:%d]\n",mosaicId);
 
+	//Protegemos la lista
+	lstVideosUse.IncUse();
+	
 	//Get mosaic from id
 	Mosaics::iterator it = mosaics.find(mosaicId);
 
 	//Check if we have found it
 	if (it==mosaics.end())
+	{
+		//Unlock
+		lstVideosUse.DecUse();
 		//error
 		return Error("Mosaic not found [id:%d]\n",mosaicId);
+	}
 
 	//Get the old mosaic
 	Mosaic *mosaic = it->second;
 
+	//REset overlay
+	int ret =  mosaic->ResetOverlay();
+	
+	//Unlock
+	lstVideosUse.DecUse();
+	
 	//Exit
-	return mosaic->ResetOverlay();
+	return ret;
 }
 
 int VideoMixer::GetMosaicPositions(int mosaicId,std::list<int> &positions)
