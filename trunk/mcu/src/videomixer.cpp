@@ -204,7 +204,7 @@ int VideoMixer::MixVideo()
 				if (oldVad!=vadId)
 				{
 					//Do we need to hide it?
-					bool hide = (vadMode==FullVAD && mosaic->IsVADShown());
+					bool hide = (vadMode==FullVAD);
 					// set the VAD participant
 					mosaic->SetVADParticipant(vadId,hide,getTime() + vadDefaultChangePeriod*1000);
 					//If there was a previous active spearkc and wein FULL vad
