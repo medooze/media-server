@@ -182,7 +182,19 @@ int MultiConf::StartBroadcaster(const Properties &properties)
 	if (!inited)
 		//Exit
 		return Error("-Not inited\n");
+	
+	//Lock it
+	broacasterLock.WaitUnusedAndLock();
 
+	//Check we don't have one already
+	if (broadcastId>0)
+	{
+		//Unlcok
+		broacasterLock.Unlock();
+		//Error
+		return Error("We already have one broadaster");
+	}
+	
 	//Get the id
 	broadcastId = maxId++;
 
@@ -232,6 +244,9 @@ int MultiConf::StartBroadcaster(const Properties &properties)
 		//Start encoding
 		appMixerEncoder.StartEncoding();
 	}
+	
+	//Unlcok
+	broacasterLock.Unlock();
 
 	Log("<StartBroadcaster\n");
 
@@ -251,26 +266,32 @@ int MultiConf::StartRecordingBroadcaster(const char* filename)
 		//Error
 		return Error("Extension not found for [file:\"%s\"]\n",filename);
 
+	//Lock it
+	broacasterLock.WaitUnusedAndLock();
+	
 	//Check file name
-	if (strncasecmp(ext,".flv",4)==0)
+	if (strncasecmp(ext,".flv",4)==0) {
 		//FLV
 		recorder = new FLVRecorder();
-	else if (strncasecmp(ext,".mp4",4)==0)
+	} else if (strncasecmp(ext,".mp4",4)==0) {
 		//MP4
 		recorder = new MP4Recorder();
-	else
+	} else {
+		//Unlcok
+		broacasterLock.Unlock();
 		//Error
 		return Error("Not known extension [ext:\"%s\"]\n",ext);
+	}
 
 	//Open file for recording
 	if (!recorder->Create(filename))
 		//Fail
-		return 0;
+		goto error;
 
 	//And start recording
 	if (!recorder->Record())
-		//Exit
-		return 0;
+		//Fail
+		goto error;
 
 	//Check type
 	switch (recorder->GetType())
@@ -289,17 +310,34 @@ int MultiConf::StartRecordingBroadcaster(const char* filename)
 			break;
 	}
 
-
 	//OK
 	return 1;
+error:
+	
+	//Delete recorder
+	delete(recorder);
+	//NUL
+	recorder = NULL;
+	//Unlcok
+	broacasterLock.Unlock();
+	//Error
+	return 0;
+	
 }
 
 int MultiConf::StopRecordingBroadcaster()
 {
+	//Lock it
+	broacasterLock.WaitUnusedAndLock();
+	
 	//Check recording
 	if (!recorder)
+	{
+		//Unlcok
+		broacasterLock.Unlock();
 		//Error
 		return Error("Recorder not started");
+	}
 	
 	//Check type
 	switch (recorder->GetType())
@@ -329,6 +367,9 @@ int MultiConf::StopRecordingBroadcaster()
 	
 	//And set to null
 	recorder = NULL;
+	
+	//Unlcok
+	broacasterLock.Unlock();
 
 	//Exit
 	return 1;
@@ -348,9 +389,10 @@ int MultiConf::StopBroadcaster()
 	Log(">StopBroadcaster\n");
 
 	//Check recorder
-	if (recorder)
-		//Close it
-		recorder->Close();
+	StopRecordingBroadcaster();
+	
+	//Lock it
+	broacasterLock.WaitUnusedAndLock();
 
 	Log("-flvEncoder.StopEncoding\n");
 	//Stop endoding
@@ -422,6 +464,9 @@ int MultiConf::StopBroadcaster()
 		appMixerEncoderPrivateMosaicId = 0;
 		appMixerBroadcastEnabled = false;
 	}
+	
+	//Unlcok
+	broacasterLock.Unlock();
 
 	Log("<StopBroadcaster\n");
 

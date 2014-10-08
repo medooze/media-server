@@ -247,7 +247,7 @@ int VNCServer::Init(Listener* listener)
 
 int VNCServer::SetViewer(int viewerId)
 {
-	Debug(">VNCServer::SetViewer [partId:%d]\n",editorId);
+	Debug(">VNCServer::SetViewer [partId:%d]\n",viewerId);
 	
 	//Lock viewers
 	use.WaitUnusedAndLock();
