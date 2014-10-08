@@ -433,7 +433,7 @@ int Mosaic::CalculatePositions()
 					//Move to next participant
 					++it;
 					//Check if it is the VAD participnat and we have to hide it or if it is fixed
-					if ((info->id==vadParticipant && hideVadParticipant) || info->isFixed>0)
+					if ((info->id==vadParticipant && hideVadParticipant && IsVADShown()) || info->isFixed>0)
 					{
 						Log("-skiping part %d %d %d %d\n",info->id,vadParticipant,hideVadParticipant,info->isFixed);
 						//Next one
@@ -471,7 +471,7 @@ int Mosaic::CalculatePositions()
 						//Move to next participant
 						++it;
 						//Check if it is the VAD participnat and we have to hide it or if it is fixed
-						if ((info->id==vadParticipant && hideVadParticipant) || info->isFixed>0)
+						if ((info->id==vadParticipant && hideVadParticipant && IsVADShown()) || info->isFixed>0)
 							//Next one
 							continue;
 						//Put it in the position
