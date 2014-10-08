@@ -252,9 +252,6 @@ int VNCServer::SetViewer(int viewerId)
 	//Lock viewers
 	use.WaitUnusedAndLock();
 	
-	//Lock
-	use.IncUse();
-	
 	//If we are setting a private view
 	if (viewerId)
 	{
@@ -280,7 +277,7 @@ int VNCServer::SetViewer(int viewerId)
 	this->viewerId = viewerId;
 	
 	//UnLock viewers
-	use.WaitUnusedAndLock();
+	use.Unlock();
 	
 	Debug("<VNCServer::SetViewer\n");
 	
@@ -487,7 +484,7 @@ int VNCServer::SetSize(int width,int height)
 	//Resize all viewers
 	for (Clients::iterator it=clients.begin(); it!=clients.end(); ++it)
 		//Check it is only sent to the viewer if in private mode
-		if (viewerId && it->first==viewerId)
+		if (!viewerId || it->first==viewerId)
 			//Update it
 			it->second->ResizeScreen();
 
@@ -508,7 +505,7 @@ int VNCServer::FrameBufferUpdateDone()
 	//Send and update to all viewers
 	for (Clients::iterator it=clients.begin(); it!=clients.end(); ++it)
 		//Check it is only sent to the viewer if in private mode
-		if (viewerId && it->first==viewerId)
+		if (!viewerId || it->first==viewerId)
 			//Update it
 			it->second->Update();
 
