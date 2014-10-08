@@ -215,6 +215,7 @@ private:
 	int			maxPublisherId;
 
 	Use			participantsLock;
+	Use			broacasterLock;
 
 	GroupChat		chat;
 	BFCPFloorControlServer* floorServer;
