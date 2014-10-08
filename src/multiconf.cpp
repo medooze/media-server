@@ -310,6 +310,9 @@ int MultiConf::StartRecordingBroadcaster(const char* filename)
 			break;
 	}
 
+	//Unlcok
+	broacasterLock.Unlock();
+
 	//OK
 	return 1;
 error:
