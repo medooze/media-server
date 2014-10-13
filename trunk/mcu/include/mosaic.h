@@ -5,6 +5,7 @@
 #include "overlay.h"
 #include "vad.h"
 #include "logo.h"
+#include "use.h"
 #include <map>
 #include <set>
 
@@ -141,6 +142,7 @@ protected:
 
 
 protected:
+	Mutex			mutex;
 	Participants		participants;
 	ParticipantsOrder	order;
 	int mosaicChanged;
