@@ -314,6 +314,7 @@ int Canvas::RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWOR
 	BYTE margin		= properties.GetProperty("margin"		,2		);
 	BYTE cornerWidth	= properties.GetProperty("cornerWidth"		,2		);
 	BYTE cornerHeight	= properties.GetProperty("cornerHeight"		,2		);
+	char str[1024];
 
 	try
 	{
@@ -344,11 +345,15 @@ int Canvas::RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWOR
 
 		//Convert text to tuf8
 		UTF8Parser utf8(text);
-		//Create utf8 string
-		char *str = (char*)malloc(utf8.GetUTF8Size()+1);
+		//Get mas length
+		DWORD len = utf8.GetUTF8Size();
+		//Check size
+		if (len+1>1024)
+			//reduce
+			len = 1024-1;
 		//Serialize it
-		utf8.Serialize((BYTE*)str,utf8.GetUTF8Size());
-		str[utf8.GetUTF8Size()] = 0;
+		utf8.Serialize((BYTE*)str,len);
+		str[len+1] = 0;
 /*
 		Magick::TypeMetric textSize;
 		render.fontTypeMetrics( txt, &textSize );
@@ -376,29 +381,30 @@ int Canvas::RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWOR
 		render.draw( Magick::DrawableText(margin+padding+strokeWidth, margin+padding+strokeWidth+fontSize, str, "UTF-8"));
 		render.magick("RGBA");
 		render.write(&rgbablob);
+		
 
 		//First from to RGBA to YUVB
 		SwsContext *sws = sws_getContext(
-							width,
-							height,
-							AV_PIX_FMT_RGBA,
-							width,
-							height,
-							PIX_FMT_YUVA420P,
-							SWS_FAST_BILINEAR,
-							0,
-							0,
-							0
-						);
-
-		//Create new frames for converting  RGBA->YUVA
-		AVFrame* rgba = av_frame_alloc();
-		AVFrame* yuva = av_frame_alloc();
-
+						width,
+						height,
+						AV_PIX_FMT_RGBA,
+						width,
+						height,
+						PIX_FMT_YUVA420P,
+						SWS_FAST_BILINEAR,
+						0,
+						0,
+						0
+					);
+		
 		//Check
 		if (!sws)
 			//Set errror
 			return  Error("Couldn't alloc sws context\n");
+
+		//Create new frames for converting  RGBA->YUVA
+		AVFrame* rgba = av_frame_alloc();
+		AVFrame* yuva = av_frame_alloc();
 
 		//Set data origin data
 		rgba->data[0] = (BYTE *) rgbablob.data();
