@@ -353,7 +353,7 @@ int Canvas::RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWOR
 			len = 1024-1;
 		//Serialize it
 		utf8.Serialize((BYTE*)str,len);
-		str[len+1] = 0;
+		str[len] = 0;
 /*
 		Magick::TypeMetric textSize;
 		render.fontTypeMetrics( txt, &textSize );
