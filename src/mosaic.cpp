@@ -412,6 +412,9 @@ void Mosaic::SetVADParticipant(int id,bool hide,QWORD blockedUntil)
 
 int Mosaic::CalculatePositions()
 {
+	//Lock method
+	ScopedLock scoped(mutex);
+	
 	//Clean all positions
 	memset(mosaicPos,0,numSlots*sizeof(int));
 
@@ -565,6 +568,9 @@ Mosaic* Mosaic::CreateMosaic(Type type,DWORD size)
 
 BYTE* Mosaic::GetFrame()
 {
+	//Lock method
+	ScopedLock scoped(mutex); 
+	
 	//Check if there is a overlay
 	if (!overlay)
 		//Return mosaic without change
@@ -588,6 +594,9 @@ void Mosaic::Reset()
 
 int Mosaic::SetOverlayPNG(const char* filename)
 {
+	//Lock method
+	ScopedLock scoped(mutex);
+	
 	//Log
 	Log("-SetOverlay [%s]\n",filename);
 
@@ -610,6 +619,9 @@ int Mosaic::SetOverlayPNG(const char* filename)
 
 int Mosaic::SetOverlaySVG(const char* svg)
 {
+	//Lock method
+	ScopedLock scoped(mutex);
+	
 	//Log
 	Log("-SetOverlay [%s]\n",svg);
 
@@ -631,6 +643,9 @@ int Mosaic::SetOverlaySVG(const char* svg)
 
 int Mosaic::SetOverlayText()
 {
+	//Lock method
+	ScopedLock scoped(mutex);
+	
 	//Reset any previous one
 	if (overlay)
 		//Delete it
@@ -646,6 +661,9 @@ int Mosaic::SetOverlayText()
 
 int Mosaic::RenderOverlayText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWORD height, const Properties& properties)
 {
+	//Lock method
+	ScopedLock scoped(mutex);
+	
 	//Check overlay
 	if (!overlay)
 		//Error
@@ -656,6 +674,9 @@ int Mosaic::RenderOverlayText(const std::wstring& text,DWORD x,DWORD y,DWORD wid
 
 int Mosaic::ResetOverlay()
 {
+	//Lock method
+	ScopedLock scoped(mutex);
+	
 	//Log
 	Log("-Reset overaly\n");
 	//Reset any previous one
@@ -670,6 +691,9 @@ int Mosaic::ResetOverlay()
 
 int Mosaic::DrawVUMeter(int pos,DWORD val,DWORD size)
 {
+	//Lock method
+	ScopedLock scoped(mutex);
+	
 	//Get dimensions for slot
 	DWORD width = GetWidth(pos);
 	DWORD height = GetHeight(pos);
