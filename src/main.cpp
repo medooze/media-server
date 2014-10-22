@@ -396,6 +396,9 @@ int main(int argc,char **argv)
 	
 	//Run it
 	server.Start();
+	
+	//Stop monitor
+	monitor.Stop();
 
 	//End the rtmp server
 	rtmpServer.End();

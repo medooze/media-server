@@ -246,7 +246,7 @@ bool RemoteRateControl::UpdateRTT(DWORD rtt)
 	this->rtt = rtt;
 
 	//Debug
-	Debug("BWE: UpdateRTT rtt:%d hipothesis:%s\n",rtt,GetName(hypothesis));
+	Debug("BWE: UpdateRTT rtt:%dms hipothesis:%s\n",rtt,GetName(hypothesis));
 
 	if (eventSource) eventSource->SendEvent("rrc.rtt","[%llu,\"%s\",\"%d\"]",getTimeMS(),GetName(hypothesis),rtt);
 

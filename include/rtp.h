@@ -58,7 +58,19 @@ public:
 			return NotFound;
 		//It is our codec
 		return it->second;
-	};
+	}
+	
+	BYTE GetTypeForCodec(BYTE codec) const
+	{
+		//Try to find it in the map
+		for (const_iterator it = begin(); it!=end(); ++it)
+			//Is it ourr codec
+			if (it->second==codec)
+				//return it
+				return it->first;
+		//Exit
+		return NotFound;
+	}
 public:
 	static const BYTE NotFound = -1;
 };
@@ -397,7 +409,7 @@ public:
 		return cloned;
 	}
 
-	QWORD GetTime()			{ return time;		}
+	QWORD GetTime()	const		{ return time;		}
 	void  SetTime(QWORD time )	{ this->time = time;	}
 private:
 	QWORD time;
@@ -924,6 +936,11 @@ public:
 			this->pid = pid;
 			this->blp = blp;
 		}
+		NACKField(WORD pid,BYTE blp[2])
+		{
+			this->pid = pid;
+			this->blp = get2(blp,0);
+		}
 		virtual DWORD GetSize() { return 4;}
 		virtual DWORD Parse(BYTE* data,DWORD size)
 		{
@@ -1030,6 +1047,7 @@ public:
 	virtual DWORD GetSize();
 	virtual DWORD Parse(BYTE* data,DWORD size);
 	virtual DWORD Serialize(BYTE* data,DWORD size);
+	virtual void Dump();
 
 	void SetSenderSSRC(DWORD ssrc)		{ senderSSRC = ssrc;		}
 	void SetMediaSSRC(DWORD ssrc)		{ mediaSSRC = ssrc;		}
@@ -1545,5 +1563,129 @@ private:
 	typedef std::vector<RTCPPacket*> RTCPPackets;
 private:
 	RTCPPackets packets;
+};
+
+struct RTPSource 
+{
+	DWORD	SSRC;
+	DWORD   extSeq;
+	DWORD	cycles;
+	DWORD	jitter;
+	DWORD	numPackets;
+	DWORD	numRTCPPackets;
+	DWORD	totalBytes;
+	DWORD	totalRTCPBytes;
+	
+	RTPSource()
+	{
+		SSRC		= 0;
+		extSeq		= 0;
+		cycles		= 0;
+		numPackets	= 0;
+		numRTCPPackets	= 0;
+		totalBytes	= 0;
+		totalRTCPBytes	= 0;
+		jitter		= 0;
+	}
+	
+	RTCPCompoundPacket* CreateSenderReport();
+};
+
+struct RTPIncomingSource : public RTPSource
+{
+	
+	DWORD	lostPackets;
+	DWORD	totalPacketsSinceLastSR;
+	DWORD   nackedPacketsSinceLastSR;
+	DWORD	totalBytesSinceLastSR;
+	DWORD	minExtSeqNumSinceLastSR ;
+	DWORD   lostPacketsSinceLastSR;
+	
+	RTPIncomingSource() : RTPSource()
+	{
+		lostPackets		 = 0;
+		totalPacketsSinceLastSR	 = 0;
+		nackedPacketsSinceLastSR = 0;
+		totalBytesSinceLastSR	 = 0;
+		minExtSeqNumSinceLastSR  = RTPPacket::MaxExtSeqNum;
+	}
+};
+
+struct RTPOutgoingSource : public RTPSource
+{
+	DWORD   time;
+	DWORD   lastTime;
+	DWORD	numPackets;
+	DWORD	numRTCPPackets;
+	DWORD	totalBytes;
+	DWORD	totalRTCPBytes;
+	
+	RTPOutgoingSource() : RTPSource()
+	{
+		time		= random();
+		lastTime	= 0;
+		numPackets	= 0;
+		numRTCPPackets	= 0;
+		totalBytes	= 0;
+		totalRTCPBytes	= 0;
+	}
+	
+	RTCPSenderReport* CreateSenderReport(timeval *tv)
+	{
+		//Create Sender report
+		RTCPSenderReport *sr = new RTCPSenderReport();
+
+		//Append data
+		sr->SetSSRC(SSRC);
+		sr->SetTimestamp(tv);
+		sr->SetRtpTimestamp(lastTime);
+		sr->SetOctectsSent(totalBytes);
+		sr->SetPacketsSent(numPackets);
+		
+		//Return it
+		return sr;
+	}
+	
+};
+
+struct RTPIncomingRtxSource : public RTPIncomingSource
+{
+	int apt;
+	RTPIncomingSource* original;
+
+	RTPIncomingRtxSource() : RTPIncomingSource()
+	{
+		apt = -1;
+		original = NULL;
+	}
+};
+
+struct RTPOutgoingRtxSource : public RTPOutgoingSource
+{
+	int apt;
+	RTPIncomingSource* original;
+
+	RTPOutgoingRtxSource() : RTPOutgoingSource()
+	{
+		apt = -1;
+		original = NULL;
+	}
+};
+
+class RTPLostPackets
+{
+public:
+	RTPLostPackets(WORD num);
+	~RTPLostPackets();
+	void Reset();
+	WORD AddPacket(const RTPTimedPacket *packet);
+	std::list<RTCPRTPFeedback::NACKField*>  GetNacks();
+	void Dump();
+	
+private:
+	QWORD *packets;
+	WORD size;
+	WORD len;
+	DWORD first;
 };
 #endif

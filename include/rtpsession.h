@@ -78,11 +78,11 @@ public:
 
 	RTPPacket* GetPacket();
 	void CancelGetPacket();
-	DWORD GetNumRecvPackets()	const { return numRecvPackets+numRTCPRecvPackets;	}
-	DWORD GetNumSendPackets()	const { return numSendPackets+numRTCPSendPackets;	}
-	DWORD GetTotalRecvBytes()	const { return totalRecvBytes+totalRTCPRecvBytes;	}
-	DWORD GetTotalSendBytes()	const { return totalSendBytes+totalRTCPSendBytes;	}
-	DWORD GetLostRecvPackets()	const { return lostRecvPackets;	}
+	DWORD GetNumRecvPackets()	const { return recv.numPackets+recv.numRTCPPackets;	}
+	DWORD GetNumSendPackets()	const { return send.numPackets+send.numRTCPPackets;	}
+	DWORD GetTotalRecvBytes()	const { return recv.totalBytes+recv.totalRTCPBytes;	}
+	DWORD GetTotalSendBytes()	const { return send.totalBytes+send.totalRTCPBytes;	}
+	DWORD GetLostRecvPackets()	const { return recv.lostPackets;	}
 
 
 	MediaFrame::Type GetMediaType()	const { return media;		}
@@ -144,7 +144,6 @@ private:
 	bool	decript;
 	srtp_t	sendSRTPSession;
 	srtp_t	recvSRTPSession;
-	srtp_t	recvSRTPSessionRTX;
 
 	char*	cname;
 	char*	iceRemoteUsername;
@@ -153,29 +152,25 @@ private:
 	char*	iceLocalPwd;
 	pthread_t thread;
 
-	//Tipos
-	int 	sendType;
-
 	//Transmision
 	sockaddr_in sendAddr;
 	sockaddr_in sendRtcpAddr;
 	BYTE 	sendPacket[MTU+SRTP_MAX_TRAILER_LEN] ALIGNEDTO32;
-	DWORD   sendExtSeq;
-	DWORD	sendCycles;
-	DWORD   sendTime;
-	DWORD	sendLastTime;
-	DWORD	sendSSRC;
+	
+	RTPOutgoingSource send;
+	RTPIncomingSource recv;
+	RTPOutgoingRtxSource sendRTX;
+	RTPIncomingRtxSource recvRTX;
+
+	DWORD  	sendType;
 	DWORD	sendSR;
 	Mutex	sendMutex;
 
 	//Recepcion
 	BYTE	recBuffer[MTU+SRTP_MAX_TRAILER_LEN] ALIGNEDTO32;
-	DWORD	recExtSeq;
-	DWORD	recSSRC;
 	DWORD	recTimestamp;
 	timeval recTimeval;
 	DWORD	recSR;
-	DWORD   recCycles;
 	in_addr_t recIP;
 	DWORD	  recPort;
 
@@ -184,22 +179,6 @@ private:
 	RTPMap* rtpMapOut;
 
 	RTPMap	extMap;
-
-	//Statistics
-	DWORD	numRecvPackets;
-	DWORD	numRTCPRecvPackets;
-	DWORD	numSendPackets;
-	DWORD	numRTCPSendPackets;
-	DWORD	totalRecvBytes;
-	DWORD	totalRTCPRecvBytes;
-	DWORD	totalSendBytes;
-	DWORD	totalRTCPSendBytes;
-	DWORD	lostRecvPackets;
-	DWORD	totalRecvPacketsSinceLastSR;
-	DWORD   nackedPacketsSinceLastSR;
-	DWORD	totalRecvBytesSinceLastSR;
-	DWORD   minRecvExtSeqNumSinceLastSR;
-	DWORD	jitter;
 
 	BYTE	firReqNum;
 
@@ -212,8 +191,10 @@ private:
 	DWORD	pendingTMBBitrate;
 
 	FECDecoder		fec;
+	RTPLostPackets		losts;
 	bool			useFEC;
 	bool			useNACK;
+	bool			useRTX;
 	bool			isNACKEnabled;
 	bool			useAbsTime;
 

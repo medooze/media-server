@@ -504,6 +504,13 @@
         <in>xmlstreaminghandler.cpp</in>
       </df>
     </df>
+    <df root="." name="1">
+    </df>
+    <logicalFolder name="ExternalFiles"
+                   displayName="Important Files"
+                   projectFiles="false"
+                   kind="IMPORTANT_FILES_FOLDER">
+    </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
                    projectFiles="false"
@@ -511,6 +518,7 @@
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
+    <Elem>.</Elem>
     <Elem>.</Elem>
   </sourceRootList>
   <projectmakefile>media-Makefile.mk</projectmakefile>
