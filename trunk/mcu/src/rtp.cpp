@@ -1,8 +1,10 @@
 #include <arpa/inet.h>
+#include <stdlib.h>
 #include "log.h"
 #include "rtp.h"
 #include "audio.h"
 #include "h264/h264depacketizer.h"
+#include "bitstream.h"
 
 void RTPPacket::ProcessExtensions(const RTPMap &extMap)
 {
@@ -837,6 +839,38 @@ DWORD RTCPRTPFeedback::Parse(BYTE* data,DWORD size)
 	return len+12;
 }
 
+void RTCPRTPFeedback::Dump()
+{
+	Debug("\t[RTCPPacket Feedback %s sender:%x media:%x]\n",TypeToString(feedbackType),senderSSRC,mediaSSRC);
+	for (int i=0;i<fields.size();i++)
+	{
+		//Check type
+		switch(feedbackType)
+		{
+			case RTCPRTPFeedback::NACK:
+			{
+				BYTE blp[2];
+				char str[16];
+				//Get field
+				NACKField* field = (NACKField*)fields[i];
+				//Get BLP in BYTE[]
+				set2(blp,0,field->blp);
+				//Convert to binary
+				BitReader r(blp,2);
+				for (int j=0;j<16;j++)
+					str[j] = r.Get(1) ? '1' : '0';
+				//Debug
+				Debug("\t\t[NACK pid:%d blp:%s /]\n",field->pid,str);
+				break;
+			}
+			
+			case RTCPRTPFeedback::TempMaxMediaStreamBitrateRequest:
+			case RTCPRTPFeedback::TempMaxMediaStreamBitrateNotification:
+				break;
+		}
+	}
+	Debug("\t[/RTCPPacket Feedback %s]\n",TypeToString(feedbackType));
+}
 DWORD RTCPRTPFeedback::Serialize(BYTE* data,DWORD size)
 {
 	//Get packet size
@@ -1433,4 +1467,158 @@ RTPTimedPacket* RTPRedundantPacket::CreatePrimaryPacket()
 	packet->SetTime(packet->GetTime());
 	//Return it
 	return packet;
+}
+
+
+RTPLostPackets::RTPLostPackets(WORD num)
+{
+	//Store number of packets
+	size = num;
+	//Create buffer
+	packets = (QWORD*) malloc(num*sizeof(QWORD));
+	//Set to 0
+	memset(packets,0,num*sizeof(QWORD));
+	//No first packet
+	first = 0;
+	//None yet
+	len = 0;
+}
+
+void RTPLostPackets::Reset()
+{
+	//Set to 0
+	memset(packets,0,size*sizeof(QWORD));
+	//No first packet
+	first = 0;
+	//None yet
+	len = 0;
+}
+
+RTPLostPackets::~RTPLostPackets()
+{
+	free(packets);
+}
+
+WORD RTPLostPackets::AddPacket(const RTPTimedPacket *packet)
+{
+	int lost = 0;
+	
+	//Get the packet number
+	DWORD extSeq = packet->GetExtSeqNum();
+	
+	//Check if is befor first
+	if (extSeq<first)
+	{
+		//Exit, very old packet
+		return Debug("Very old packet received [first:%d,seq:%d]\n",first,extSeq);
+	} 
+	//If we are first
+	else if (!first)
+	{
+		//Set to us
+		first = extSeq;
+	       
+	} 
+	//Check if we are still in window
+	else if (first && extSeq-first+1>size) 
+	{
+		//How much do we need to remove?
+		int n = extSeq-first-size+1;
+		//Check if we have to much
+		if (n>size)
+			//cap it
+			n = size;
+		//Move
+		memmove(packets,packets+n,(size-n)*sizeof(QWORD));
+		//Fill with 0 the new ones
+		memset(packets+(size-n),0,n*sizeof(QWORD));
+		//Move first
+		first+=n;
+		//Remove form length
+		len -= n;
+	} 
+	
+	//Get position
+	WORD pos = extSeq-first;
+		
+	//Check if it is last
+	if (len<pos+1)
+	{
+		//lock until we find a non lost and increase counter in the meanwhile
+		for (int i=pos-1;i>=0 && !packets[i];--i)
+			//Lost
+			lost++;
+		//Update last
+		len = pos+1;
+	}
+	
+	//Set
+	packets[pos] = packet->GetTime();
+	
+	//Return lost ones
+	return lost;
+}
+
+
+std::list<RTCPRTPFeedback::NACKField*> RTPLostPackets::GetNacks()
+{
+	std::list<RTCPRTPFeedback::NACKField*> nacks;
+	WORD lost = 0;
+	BYTE mask[2];
+	BitWritter w(mask,2);
+	int n = 0;
+	
+	//Iterate packets
+	for(WORD i=0;i<len;i++)
+	{
+		//Are we in a lost count?
+		if (lost)
+		{
+			//It was lost?
+			w.Put(1,packets[i]==0);
+			//Increase mask len
+			n++;
+			//If we are enought
+			if (n==16)
+			{
+				//Flush
+				w.Flush();
+				//Add new NACK field to list
+				nacks.push_back(new RTCPRTPFeedback::NACKField(lost,mask));
+				//Empty for next
+				w.Reset();
+				//Reset counters
+				n = 0;
+				lost = 0;
+			}
+		}
+		//Is this the first one lost
+		else if (!packets[i]) {
+			//This is the first one
+			lost = first+i;
+		}
+		
+	}
+	
+	//Are we in a lost count?
+	if (lost)
+	{
+		//Fill reset with 0
+		w.Put(16-n,0);
+		//Flush
+		w.Flush();
+		//Add new NACK field to list
+		nacks.push_back(new RTCPRTPFeedback::NACKField(lost,mask));
+	}
+	
+	
+	return nacks;
+}
+
+void  RTPLostPackets::Dump()
+{
+	Debug("[RTPLostPackets size=%d first=%d len=%d]\n",size,first,len);
+	for(int i=0;i<len;i++)
+		Debug("[%.3d,%.8d]\n",i,packets[i]);
+	Debug("[/RTPLostPackets]\n");
 }
