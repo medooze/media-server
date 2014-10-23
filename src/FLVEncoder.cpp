@@ -119,12 +119,17 @@ int FLVEncoder::End()
 		//error
 		return 0;
 
+	//Stop Encodings
+	StopEncoding();
+	
+	//Lock mutexk
+	pthread_mutex_lock(&mutex);
 	//Remove all rmpt media listenere
 	RTMPMediaStream::RemoveAllMediaListeners();
 	//Clear media listeners
 	mediaListeners.clear();
-	//Stop Encodings
-	StopEncoding();
+	//Unlock
+	pthread_mutex_unlock(&mutex);
 
 	//Not inited
 	inited = 0;
