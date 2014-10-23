@@ -66,6 +66,7 @@ public:
 	int SetLocalPort(int recvPort);
 	int GetLocalPort();
 	int SetRemotePort(char *ip,int sendPort);
+	void Reset();
 	int End();
 
 	void SetSendingRTPMap(RTPMap &map);

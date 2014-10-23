@@ -260,6 +260,9 @@ int VideoStream::StartReceiving(RTPMap& rtpMap)
 	if (receivingVideo)
 		StopReceiving();	
 
+	//Reset RTP
+	rtp.Reset();
+	
 	//Iniciamos las sesiones rtp de recepcion
 	int recVideoPort= rtp.GetLocalPort();
 

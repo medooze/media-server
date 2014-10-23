@@ -166,10 +166,20 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) : dtls(*this),
 **************************/
 RTPSession::~RTPSession()
 {
+	//Reset
+	Reset();
+	
 	//Check listener
 	if (remoteRateEstimator)
 		//Add as listener
 		remoteRateEstimator->SetListener(NULL);
+}
+
+void RTPSession::Reset()
+{
+	Log("-RTPSession reset\n");
+	
+	//Free mem
 	if (rtpMapIn)
 		delete(rtpMapIn);
 	if (rtpMapOut)
@@ -197,7 +207,61 @@ RTPSession::~RTPSession()
 		free(cname);
 	//Empty queue
 	FlushRTXPackets();
-
+	//Init values
+	sendType = -1;
+	useAbsTime = false;
+	sendSR = 0;
+	recTimestamp = 0;
+	recSR = 0;
+	setZeroTime(&recTimeval);
+	recIP = INADDR_ANY;
+	recPort = 0;
+	firReqNum = 0;
+	requestFPU = false;
+	pendingTMBR = false;
+	pendingTMBBitrate = 0;
+	//Not muxing
+	muxRTCP = false;
+	//Default cname
+	cname = strdup("default@localhost");
+	//Empty types by defauilt
+	rtpMapIn = NULL;
+	rtpMapOut = NULL;
+	//No reports
+	setZeroTime(&lastFPU);
+	setZeroTime(&lastSR);
+	setZeroTime(&lastReceivedSR);
+	rtt = 0;
+	//No cripto
+	encript = false;
+	decript = false;
+	sendSRTPSession = NULL;
+	recvSRTPSession = NULL;
+	//No ice
+	iceLocalUsername = NULL;
+	iceLocalPwd = NULL;
+	iceRemoteUsername = NULL;
+	iceRemotePwd = NULL;
+	//NO FEC
+	useFEC = false;
+	useNACK = false;
+	useAbsTime = false;
+	isNACKEnabled = false;
+	//Reduce jitter buffer to min
+	packets.SetMaxWaitTime(60);
+	//Fill with 0
+	memset(sendPacket,0,MTU+SRTP_MAX_TRAILER_LEN);
+	//Preparamos las direcciones de envio
+	memset(&sendAddr,       0,sizeof(struct sockaddr_in));
+	memset(&sendRtcpAddr,   0,sizeof(struct sockaddr_in));
+	//Set family
+	sendAddr.sin_family     = AF_INET;
+	sendRtcpAddr.sin_family = AF_INET;
+	//Reset stream soutces
+	send.Reset();
+	recv.Reset();
+	sendRTX.Reset();
+	recv.Reset();
 }
 
 void RTPSession::FlushRTXPackets()
@@ -278,6 +342,11 @@ int RTPSession::SetLocalCryptoSDES(const char* suite,const BYTE* key,const DWORD
 	if (err!=err_status_ok)
 		//Error
 		return Error("-RTPSession::SetLocalCryptoSDES() | Failed to create local SRTP session | err:%d\n", err);
+	
+	//if we already got a send session don't leak it
+	if (sendSRTPSession)
+		//Dealoacate
+		srtp_dealloc(sendSRTPSession);
 
 	//Set send SSRTP sesion
 	sendSRTPSession = session;
@@ -485,6 +554,11 @@ int RTPSession::SetRemoteCryptoSDES(const char* suite, const BYTE* key, const DW
 	if (err!=err_status_ok)
 		//Error
 		return Error("-RTPSession::SetRemoteCryptoSDES() | Failed to create remote SRTP session | err:%d\n", err);
+	
+	//if we already got a recv session don't leak it
+	if (recvSRTPSession)
+		//Dealoacate
+		srtp_dealloc(recvSRTPSession);
 	//Set it
 	recvSRTPSession = session;
 

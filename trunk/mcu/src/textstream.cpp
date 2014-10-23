@@ -201,6 +201,9 @@ int TextStream::StartReceiving(RTPMap& rtpMap)
 		//Stop it
 		StopReceiving();
 
+	//Reset RTP
+	rtp.Reset();
+	
 	//Get local rtp port
 	int recTextPort = rtp.GetLocalPort();
 

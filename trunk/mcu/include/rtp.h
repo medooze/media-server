@@ -1589,11 +1589,22 @@ struct RTPSource
 	}
 	
 	RTCPCompoundPacket* CreateSenderReport();
+	
+	virtual void Reset()
+	{
+		SSRC		= 0;
+		extSeq		= 0;
+		cycles		= 0;
+		numPackets	= 0;
+		numRTCPPackets	= 0;
+		totalBytes	= 0;
+		totalRTCPBytes	= 0;
+		jitter		= 0;
+	}
 };
 
 struct RTPIncomingSource : public RTPSource
 {
-	
 	DWORD	lostPackets;
 	DWORD	totalPacketsSinceLastSR;
 	DWORD   nackedPacketsSinceLastSR;
@@ -1603,6 +1614,16 @@ struct RTPIncomingSource : public RTPSource
 	
 	RTPIncomingSource() : RTPSource()
 	{
+		lostPackets		 = 0;
+		totalPacketsSinceLastSR	 = 0;
+		nackedPacketsSinceLastSR = 0;
+		totalBytesSinceLastSR	 = 0;
+		minExtSeqNumSinceLastSR  = RTPPacket::MaxExtSeqNum;
+	}
+	
+	virtual void Reset()
+	{
+		RTPSource::Reset();
 		lostPackets		 = 0;
 		totalPacketsSinceLastSR	 = 0;
 		nackedPacketsSinceLastSR = 0;
@@ -1644,6 +1665,17 @@ struct RTPOutgoingSource : public RTPSource
 		
 		//Return it
 		return sr;
+	}
+	
+	virtual void Reset()
+	{
+		RTPSource::Reset();
+		time		= random();
+		lastTime	= 0;
+		numPackets	= 0;
+		numRTCPPackets	= 0;
+		totalBytes	= 0;
+		totalRTCPBytes	= 0;
 	}
 	
 };
