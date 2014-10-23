@@ -188,9 +188,6 @@ int AudioStream::StartReceiving(RTPMap& rtpMap)
 		//Stop it
 		StopReceiving();
 	
-	//Reset RTP
-	rtp.Reset();
-
 	//Get local rtp port
 	int recAudioPort = rtp.GetLocalPort();
 
@@ -248,6 +245,9 @@ int AudioStream::StopReceiving()
 		
 		//Y unimos
 		pthread_join(recAudioThread,NULL);
+		
+		//Reset RTP
+		rtp.Reset();
 	}
 
 	Log("<StopReceiving Audio\n");
