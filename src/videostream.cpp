@@ -258,10 +258,7 @@ int VideoStream::StartReceiving(RTPMap& rtpMap)
 {
 	//Si estabamos reciviendo tenemos que parar
 	if (receivingVideo)
-		StopReceiving();	
-
-	//Reset RTP
-	rtp.Reset();
+		StopReceiving();
 	
 	//Iniciamos las sesiones rtp de recepcion
 	int recVideoPort= rtp.GetLocalPort();
@@ -358,6 +355,9 @@ int VideoStream::StopReceiving()
 		
 		//Esperamos
 		pthread_join(recVideoThread,NULL);
+		
+		//Reset RTP
+		rtp.Reset();
 	}
 
 	Log("<StopReceiving\n");
