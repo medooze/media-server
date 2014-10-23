@@ -1508,23 +1508,23 @@ WORD RTPLostPackets::AddPacket(const RTPTimedPacket *packet)
 	
 	//Check if is befor first
 	if (extSeq<first)
-	{
 		//Exit, very old packet
 		return Debug("Very old packet received [first:%d,seq:%d]\n",first,extSeq);
-	} 
+
 	//If we are first
-	else if (!first)
-	{
+	if (!first)
 		//Set to us
 		first = extSeq;
 	       
-	} 
+	//Get our position
+	WORD pos = extSeq-first;
+	
 	//Check if we are still in window
-	else if (first && extSeq-first+1>size) 
+	if (pos+1>size) 
 	{
 		//How much do we need to remove?
-		int n = extSeq-first-size+1;
-		//Check if we have to much
+		int n = pos+1-size;
+		//Check if we have to much to remove
 		if (n>size)
 			//cap it
 			n = size;
@@ -1532,15 +1532,14 @@ WORD RTPLostPackets::AddPacket(const RTPTimedPacket *packet)
 		memmove(packets,packets+n,(size-n)*sizeof(QWORD));
 		//Fill with 0 the new ones
 		memset(packets+(size-n),0,n*sizeof(QWORD));
-		//Move first
-		first+=n;
-		//Remove form length
-		len -= n;
+		//Set first
+		first = extSeq-size+1;
+		//Full
+		len = size;
+		//We are last
+		pos = size-1;
 	} 
 	
-	//Get position
-	WORD pos = extSeq-first;
-		
 	//Check if it is last
 	if (len<pos+1)
 	{
