@@ -187,6 +187,9 @@ int AudioStream::StartReceiving(RTPMap& rtpMap)
 	if (receivingAudio)
 		//Stop it
 		StopReceiving();
+	
+	//Reset RTP
+	rtp.Reset();
 
 	//Get local rtp port
 	int recAudioPort = rtp.GetLocalPort();

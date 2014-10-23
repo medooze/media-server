@@ -95,10 +95,13 @@ int PipeAudioInput::StopRecording()
 	
 	//Bloqueamos
 	pthread_mutex_lock(&mutex);
-
+	
 	//Estamos grabando
 	recording = false;
 
+	//Close transrater
+	transrater.Close();
+	
 	//Se�alamos
 	pthread_cond_signal(&cond);
 
@@ -113,20 +116,25 @@ int PipeAudioInput::PutSamples(SWORD *buffer,DWORD size)
 	SWORD resampled[4096];
 	DWORD resampledSize = 4096;
 
+	
+	//Block
+	pthread_mutex_lock(&mutex);
+	
 	//If we need to transrate
 	if (transrater.IsOpen())
 	{
 		//Transrate
 		if (!transrater.ProcessBuffer(buffer, size, resampled, &resampledSize))
+		{
+			//Desbloqueamos
+			pthread_mutex_unlock(&mutex);
 			//Error
 			return Error("-PipeAudioInput could not transrate\n");
+		}
 		//Swith input parameters to resample ones
 		buffer = resampled;
 		size = resampledSize;
 	}
-
-	//Block
-	pthread_mutex_lock(&mutex);
 
 	//Si estamos reproduciendo
 	if (recording)

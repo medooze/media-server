@@ -63,10 +63,10 @@ public:
 	virtual void onWebSocketConnection(const HTTPRequest& request,WebSocket *ws);
 
 private:
-	struct ConferenceEntry
+	class ConferenceEntry : public Use
 	{
+	public:
 		int id;
-		int numRef;
 		int enabled;
 		int queueId;
 		MultiConf* conf;
@@ -80,7 +80,7 @@ private:
 	Conferences		conferences;
 	ConferenceTags		tags;
 	int			maxId;
-	pthread_mutex_t		mutex;
+	Use			use;
 	int inited;
 	EventQueues		eventQueues;
 };
