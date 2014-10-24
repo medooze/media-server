@@ -318,6 +318,8 @@ int FLVEncoder::StopEncoding()
 {
 	Log(">Stop Encoding FLV\n");
 
+	Debug("-Stop ending audio\n");
+	
 	//Esperamos a que se cierren las threads de envio
 	if (encodingAudio)
 	{
@@ -331,6 +333,8 @@ int FLVEncoder::StopEncoding()
 		pthread_join(encodingAudioThread,NULL);
 	}
 
+	Debug("-Stop ending video\n");
+	
 	//Esperamos a que se cierren las threads de envio
 	if (encodingVideo)
 	{
@@ -339,6 +343,9 @@ int FLVEncoder::StopEncoding()
 
 		//Cancel any pending grab
 		videoInput->CancelGrabFrame();
+		
+		//Signal cancel
+		pthread_cond_signal(&cond);
 
 		//Y esperamos
 		pthread_join(encodingVideoThread,NULL);	
@@ -586,6 +593,10 @@ int FLVEncoder::EncodeVideo()
 	{
 		//Nos quedamos con el puntero antes de que lo cambien
 		BYTE* pic=videoInput->GrabFrame(frameTime);
+		
+		//Ensure we are still encoding
+		if (!encodingVideo)
+			break;
 
 		//Check pic
 		if (!pic)
