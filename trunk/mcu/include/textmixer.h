@@ -1,7 +1,8 @@
 #ifndef _TEXTMIXER_H_
 #define _TEXTMIXER_H_
 #include <pthread.h>
-#include <use.h>
+#include "use.h"
+#include "wait.h"
 #include "text.h"
 #include "textmixerworker.h"
 #include "pipetextinput.h"
@@ -75,6 +76,7 @@ private:
 	pthread_mutex_t	mixTextMutex;
 	int		mixingText;
 	Use		lstTextsUse;
+	Wait		cancel;
 };
 
 #endif

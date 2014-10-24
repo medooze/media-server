@@ -7,6 +7,7 @@
 #include "textmixer.h"
 #include "pipetextinput.h"
 #include "pipetextoutput.h"
+#include "wait.h"
 
 
 /***********************
@@ -60,12 +61,12 @@ int TextMixer::MixText()
 
 	Log(">MixText\n");
 
+	//Lock list of text mixers
+	lstTextsUse.WaitUnusedAndLock();
+		
 	//Mientras estemos mezclando
 	while(mixingText)
 	{
-		//Lock list of text mixers
-		lstTextsUse.WaitUnusedAndLock();
-
 		//Send to all participants
 		for (TextSources::iterator it=sources.begin();it!=sources.end();++it)
 		{
@@ -115,18 +116,24 @@ int TextMixer::MixText()
 		for (TextWorkers::iterator w=workers.begin();w!=workers.end();++w)
 			//Process it
 			(*w)->ProcessText();
-
+		
 		//Un lock
 		lstTextsUse.Unlock();
+	
+		//Check if we are canceled
+		cancel.WaitSignal(200);
 		
-		//Sleep 200 ms
-		msleep(200*1000);
+		//Lock list of text mixers
+		lstTextsUse.WaitUnusedAndLock();
 	}
-
+	
 	//Know for each worker
 	for (TextWorkers::iterator w=workers.begin();w!=workers.end();++w)
 		//Flush any text in the queue
 		(*w)->FlushText();
+	
+	//Un lock
+	lstTextsUse.Unlock();
 
 	//Logeamos
 	Log("<MixText\n");
@@ -165,6 +172,9 @@ int TextMixer::End()
 	{
 		//Terminamos la mezcla
 		mixingText = 0;
+		
+		//Stop waiting
+		cancel.Signal();
 
 		//Y esperamos
 		pthread_join(mixTextThread,NULL);
