@@ -440,7 +440,7 @@ int VideoStream::SendVideo()
 			//Do not send anymore
 			sendFPU = false;
 			//Do not send if just send one (100ms)
-			if (getDifTime(&lastFPU)/100>100)
+			if (getDifTime(&lastFPU)/1000>100)
 			{
 				//Set it
 				videoEncoder->FastPictureUpdate();
@@ -726,7 +726,7 @@ int VideoStream::RecVideo()
 		//Check if we have lost the last packet from the previous frame by comparing both timestamps
 		if (ts>frameTime)
 		{
-			Debug("-lost mark packet ts:%d frameTime:%d\n",ts,frameTime);
+			Debug("-lost mark packet ts:%u frameTime:%u\n",ts,frameTime);
 			//Try to decode what is in the buffer
 			videoDecoder->DecodePacket(NULL,0,1,1);
 			//Get picture

@@ -92,7 +92,7 @@ bool RTPSession::SetPortRange(int minPort, int maxPort)
 * RTPSession
 * 	Constructro
 **************************/
-RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) : dtls(*this), losts(32)
+RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) : dtls(*this), losts(640)
 {
 	//Store listener
 	this->listener = listener;
@@ -268,6 +268,8 @@ void RTPSession::FlushRTXPackets()
 {
 	//Lock mutex inside the method
 	ScopedLock method(sendMutex);
+	
+	Debug("-FlushRTXPackets\n");
 
 	//Delete rtx packets
 	for (RTPOrderedPackets::iterator it = rtxs.begin(); it!=rtxs.end();++it)
