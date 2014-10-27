@@ -1477,7 +1477,7 @@ RTPLostPackets::RTPLostPackets(WORD num)
 	//Create buffer
 	packets = (QWORD*) malloc(num*sizeof(QWORD));
 	//Set to 0
-	memset(packets,0,num*sizeof(QWORD));
+	memset(packets,0,size*sizeof(QWORD));
 	//No first packet
 	first = 0;
 	//None yet
@@ -1509,7 +1509,7 @@ WORD RTPLostPackets::AddPacket(const RTPTimedPacket *packet)
 	//Check if is befor first
 	if (extSeq<first)
 		//Exit, very old packet
-		return Debug("Very old packet received [first:%d,seq:%d]\n",first,extSeq);
+		return 0;
 
 	//If we are first
 	if (!first)
@@ -1541,7 +1541,7 @@ WORD RTPLostPackets::AddPacket(const RTPTimedPacket *packet)
 	} 
 	
 	//Check if it is last
-	if (len<pos+1)
+	if (len-1<=pos)
 	{
 		//lock until we find a non lost and increase counter in the meanwhile
 		for (int i=pos-1;i>=0 && !packets[i];--i)
