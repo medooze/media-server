@@ -35,6 +35,7 @@ public:
 	
 	static bool EnableUltraDebug(bool ultradebug)
 	{
+		if (ultradebug) EnableDebug(ultradebug);
 		return getInstance().ultradebug = ultradebug;
 	}
 
@@ -86,6 +87,22 @@ inline int Log2(const char* prefix,const char *msg, ...)
 	vprintf(msg, ap);
 	va_end(ap);
 	fflush(stdout);
+	return 1;
+}
+
+inline int UltraDebug(const char *msg, ...)
+{
+	if (Logger::IsUltraDebugEnabled())
+	{
+		struct timeval tv;
+		va_list ap;
+		gettimeofday(&tv,NULL);
+		printf("[0x%lx][%.10ld.%.3ld][DBG]", (long) pthread_self(),(long)tv.tv_sec,(long)tv.tv_usec/1000);
+		va_start(ap, msg);
+		vprintf(msg, ap);
+		va_end(ap);
+		fflush(stdout);
+	}
 	return 1;
 }
 

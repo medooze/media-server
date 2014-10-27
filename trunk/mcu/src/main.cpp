@@ -90,9 +90,6 @@ int lock_ffmpeg(void **param, enum AVLockOp op)
 
 int main(int argc,char **argv)
 {
-	//Init random
-	srand (time(NULL));
-
 	//Set default values
 	bool forking = false;
 	int port = 8080;
@@ -139,6 +136,9 @@ int main(int argc,char **argv)
 		else if (strcmp(argv[i],"-d")==0)
 			//Enable debug
 			Logger::EnableDebug(true);
+		else if (strcmp(argv[i],"-dd")==0)
+			//Enable debug
+			Logger::EnableUltraDebug(true);
 		else if (strcmp(argv[i],"--http-port")==0 && (i+1<argc))
 			//Get port
 			port = atoi(argv[++i]);

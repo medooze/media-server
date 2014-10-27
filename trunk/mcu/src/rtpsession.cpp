@@ -1498,7 +1498,7 @@ int RTPSession::ReadRTP()
 			//Get original sequence number
 			WORD osn = get2(buffer,tmp.GetRTPHeaderLen());
 			
-			Debug("RTX: Got   %.d:RTX for #%d ts:%u\n",type,osn,tmp.GetTimestamp());
+			UltraDebug("RTX: Got   %.d:RTX for #%d ts:%u\n",type,osn,tmp.GetTimestamp());
 			
 			//Move origin
 			for (int i=tmp.GetRTPHeaderLen()-1;i>=0;--i)
@@ -1549,7 +1549,7 @@ int RTPSession::ReadRTP()
 			return Error("-RTPSession::ReadRTP() | RTP packet type unknown for primary type of redundant data [%d,rd:%d]\n",t,codec);
 		}
 		
-		if (media==MediaFrame::Video && !isRTX) Debug("RTX: Got  %d:%s primary %d:%s packet #%d ts:%u\n",type,VideoCodec::GetNameFor((VideoCodec::Type)codec),t,VideoCodec::GetNameFor((VideoCodec::Type)c),red->GetSeqNum(),red->GetTimestamp());
+		if (media==MediaFrame::Video && !isRTX) UltraDebug("RTX: Got  %d:%s primary %d:%s packet #%d ts:%u\n",type,VideoCodec::GetNameFor((VideoCodec::Type)codec),t,VideoCodec::GetNameFor((VideoCodec::Type)c),red->GetSeqNum(),red->GetTimestamp());
 		
 		//Set it
 		red->SetPrimaryCodec(c);
@@ -1576,7 +1576,7 @@ int RTPSession::ReadRTP()
 	} else {
 		//Create normal packet
 		packet = new RTPTimedPacket(media,buffer,size);
-		if (media==MediaFrame::Video && !isRTX) Debug("RTX: Got  %d:%s packet #%d ts:%u\n",type,VideoCodec::GetNameFor((VideoCodec::Type)codec),packet->GetSeqNum(),packet->GetTimestamp());
+		if (media==MediaFrame::Video && !isRTX) UltraDebug("RTX: Got  %d:%s packet #%d ts:%u\n",type,VideoCodec::GetNameFor((VideoCodec::Type)codec),packet->GetSeqNum(),packet->GetTimestamp());
 	}
 
 	//Set codec & type again
@@ -1603,7 +1603,7 @@ int RTPSession::ReadRTP()
 	//Update lost packets
 	int lost = losts.AddPacket(packet);
 
-	if (lost) Debug("RTX: Missing %d [nack:%d,diff:%llu,rtt:%llu]\n",lost,isNACKEnabled,getDifTime(&lastFPU),rtt);
+	if (lost) UltraDebug("RTX: Missing %d [nack:%d,diff:%llu,rtt:%llu]\n",lost,isNACKEnabled,getDifTime(&lastFPU),rtt);
 	
 	//If nack is enable t waiting for a PLI/FIR response (to not oeverflow)
 	if (isNACKEnabled && getDifTime(&lastFPU)/1000>rtt/2 && lost)
@@ -1631,8 +1631,6 @@ int RTPSession::ReadRTP()
 		//Send packet
 		SendPacket(*rtcp);
 
-		rtcp->Dump();
-		
 		//Delete it
 		delete(rtcp);
 	}
@@ -2262,12 +2260,12 @@ void RTPSession::SetRTT(DWORD rtt)
 		packets.SetMaxWaitTime(60);
 	}
 	//Debug
-	Debug("-RTPSession::SetRTT() | [%dms,nack:%d]\n",rtt,isNACKEnabled);
+	UltraDebug("-RTPSession::SetRTT() | [%dms,nack:%d]\n",rtt,isNACKEnabled);
 }
 
 void RTPSession::onTargetBitrateRequested(DWORD bitrate)
 {
-	Debug("-RTPSession::onTargetBitrateRequested() | [%d]\n",bitrate);
+	UltraDebug("-RTPSession::onTargetBitrateRequested() | [%d]\n",bitrate);
 
 	//Create rtcp sender retpor
 	RTCPCompoundPacket* rtcp = CreateSenderReport();
