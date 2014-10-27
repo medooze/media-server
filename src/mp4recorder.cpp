@@ -476,9 +476,18 @@ bool MP4Recorder::Stop()
 	pthread_mutex_unlock(&mutex);
 }
 
+void* mp4close(void *mp4)
+{
+	timeval tv;
+	getUpdDifTime(&tv);
+	Log(">mp4close [%p]\n",mp4);
+	// Close file
+	MP4Close(mp4);
+	Log("<mp4close [%p,time:%llu]\n",mp4,getDifTime(&tv)/1000);
+}
+
 bool MP4Recorder::Close()
 {
-       
         //Stop always
         Stop();
 	
@@ -500,8 +509,9 @@ bool MP4Recorder::Close()
 		for (Tracks::iterator it = textTracks.begin(); it!=textTracks.end(); ++it)
 			//Close it
 			it->second->Close();
-		// Close file
-		MP4Close(mp4);
+		//Launch MP4Close in another thread
+		pthread_t 	mp4CloseThread;
+		createPriorityThread(&mp4CloseThread,mp4close,mp4,0);
 
 		//Empty file
 		mp4 = MP4_INVALID_FILE_HANDLE;
