@@ -1603,6 +1603,8 @@ int RTPSession::ReadRTP()
 	//Update lost packets
 	int lost = losts.AddPacket(packet);
 
+	if (lost) Debug("RTX: Missing %d [nack:%d,diff:%llu,rtt:%llu]\n",lost,isNACKEnabled,getDifTime(&lastFPU),rtt);
+	
 	//If nack is enable t waiting for a PLI/FIR response (to not oeverflow)
 	if (isNACKEnabled && getDifTime(&lastFPU)/1000>rtt/2 && lost)
 	{
@@ -2239,8 +2241,6 @@ int RTPSession::RequestFPU()
 
 void RTPSession::SetRTT(DWORD rtt)
 {
-	//Debug
-	//Debug("-RTPSession::SetRTT() | [%dms]\n",rtt);
 	//Set it
 	this->rtt = rtt;
 	//if got estimator
@@ -2261,6 +2261,8 @@ void RTPSession::SetRTT(DWORD rtt)
 		//Reduce jitter buffer as we don't use NACK
 		packets.SetMaxWaitTime(60);
 	}
+	//Debug
+	Debug("-RTPSession::SetRTT() | [%dms,nack:%d]\n",rtt,isNACKEnabled);
 }
 
 void RTPSession::onTargetBitrateRequested(DWORD bitrate)
