@@ -1498,7 +1498,7 @@ int RTPSession::ReadRTP()
 			//Get original sequence number
 			WORD osn = get2(buffer,tmp.GetRTPHeaderLen());
 			
-			//Debug("RTX: Got   %.d:RTX for #%d\n",type,osn);
+			Debug("RTX: Got   %.d:RTX for #%d ts:%u\n",type,osn,tmp.GetTimestamp());
 			
 			//Move origin
 			for (int i=tmp.GetRTPHeaderLen()-1;i>=0;--i)
@@ -1549,7 +1549,7 @@ int RTPSession::ReadRTP()
 			return Error("-RTPSession::ReadRTP() | RTP packet type unknown for primary type of redundant data [%d,rd:%d]\n",t,codec);
 		}
 		
-		//if (media==MediaFrame::Video && !isRTX) Debug("RTX: Got  %d:%s primary %d:%s packet #%d\n",type,VideoCodec::GetNameFor((VideoCodec::Type)codec),t,VideoCodec::GetNameFor((VideoCodec::Type)c),red->GetSeqNum());
+		if (media==MediaFrame::Video && !isRTX) Debug("RTX: Got  %d:%s primary %d:%s packet #%d ts:%u\n",type,VideoCodec::GetNameFor((VideoCodec::Type)codec),t,VideoCodec::GetNameFor((VideoCodec::Type)c),red->GetSeqNum(),red->GetTimestamp());
 		
 		//Set it
 		red->SetPrimaryCodec(c);
@@ -1576,7 +1576,7 @@ int RTPSession::ReadRTP()
 	} else {
 		//Create normal packet
 		packet = new RTPTimedPacket(media,buffer,size);
-		//if (media==MediaFrame::Video && !isRTX) Debug("RTX: Got  %d:%s packet #%d\n",type,VideoCodec::GetNameFor((VideoCodec::Type)codec),packet->GetSeqNum());
+		if (media==MediaFrame::Video && !isRTX) Debug("RTX: Got  %d:%s packet #%d ts:%u\n",type,VideoCodec::GetNameFor((VideoCodec::Type)codec),packet->GetSeqNum(),packet->GetTimestamp());
 	}
 
 	//Set codec & type again
@@ -1597,8 +1597,8 @@ int RTPSession::ReadRTP()
 	//Set cycles
 	packet->SetSeqCycles(recv.cycles);
 	
-	//if (media==MediaFrame::Video && !isRTX && seq % 4 ==0)
-	//	return Error("RTX: Drop %d %s packet #%d\n",type,VideoCodec::GetNameFor((VideoCodec::Type)codec),packet->GetSeqNum());
+	//if (media==MediaFrame::Video && !isRTX && seq % 40 ==0)
+	//	return Error("RTX: Drop %d %s packet #%d ts:%u\n",type,VideoCodec::GetNameFor((VideoCodec::Type)codec),packet->GetSeqNum(),packet->GetTimestamp());
 		
 	//Update lost packets
 	int lost = losts.AddPacket(packet);
@@ -1629,6 +1629,8 @@ int RTPSession::ReadRTP()
 		//Send packet
 		SendPacket(*rtcp);
 
+		rtcp->Dump();
+		
 		//Delete it
 		delete(rtcp);
 	}
