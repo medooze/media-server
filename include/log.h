@@ -17,6 +17,12 @@ public:
             static Logger   instance;
             return instance;
         }
+	
+	static bool IsUltraDebugEnabled()
+	{
+		return getInstance().ultradebug;
+	}
+	
 	static bool IsDebugEnabled()
 	{
 		return getInstance().debug;
@@ -25,6 +31,11 @@ public:
 	static bool EnableDebug(bool debug)
 	{
 		return getInstance().debug = debug;
+	}
+	
+	static bool EnableUltraDebug(bool ultradebug)
+	{
+		return getInstance().ultradebug = ultradebug;
 	}
 
 	inline int Log(const char *msg, ...)
@@ -38,10 +49,12 @@ public:
 	}
 protected:
 	bool debug;
+	bool ultradebug;
 private:
         Logger()
 	{
 		debug = false;
+		ultradebug = false;
 	}
         // Dont forget to declare these two. You want to make sure they
         // are unaccessable otherwise you may accidently get copies of
