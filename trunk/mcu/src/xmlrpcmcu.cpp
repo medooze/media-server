@@ -715,7 +715,7 @@ xmlrpc_value* StopBroadcaster(xmlrpc_env *env, xmlrpc_value *param_array, void *
 	if(!res)
 		return xmlerror(env,"Error stoping broadcaster");
 
-	//Devolvemos el resultado
+	//Devolvemos el resultadoOut of order non recoverable pack
 	return xmlok(env);
 }
 
