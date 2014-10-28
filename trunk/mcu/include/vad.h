@@ -17,7 +17,7 @@ public:
 
 #ifdef VADWEBRTC
 extern "C" {
-#include <common_audio/vad/vad_core.h>
+#include <webrtc/common_audio/vad/vad_core.h>
 }
 
 class VAD
