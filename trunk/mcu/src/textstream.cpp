@@ -258,9 +258,6 @@ int TextStream::StopReceiving()
 		
 		//Y unimos
 		pthread_join(recTextThread,NULL);
-		
-		//Reset RTP
-		rtp.Reset();
 	}
 
 	Log("<StopReceiving Text\n");
