@@ -71,6 +71,7 @@ private:
 		PipeVideoOutput *output;
 		Mosaic *mosaic;
 		std::wstring name;
+		bool refresh;
 		
 		VideoSource(const std::wstring &name)
 		{
@@ -80,6 +81,7 @@ private:
 			input = NULL;
 			output = NULL;
 			mosaic = NULL;
+			refresh = true;
 			
 		}
 	};
