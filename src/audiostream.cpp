@@ -245,9 +245,6 @@ int AudioStream::StopReceiving()
 		
 		//Y unimos
 		pthread_join(recAudioThread,NULL);
-		
-		//Reset RTP
-		rtp.Reset();
 	}
 
 	Log("<StopReceiving Audio\n");

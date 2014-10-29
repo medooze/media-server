@@ -356,8 +356,6 @@ int VideoStream::StopReceiving()
 		//Esperamos
 		pthread_join(recVideoThread,NULL);
 		
-		//Reset RTP
-		rtp.Reset();
 	}
 
 	Log("<StopReceiving\n");
