@@ -108,16 +108,20 @@ int VideoMixer::MixVideo()
 		//For each video
 		for (Videos::iterator it=lstVideos.begin();it!=lstVideos.end();++it)
 		{
+			//Get Source
+			VideoSource *source = it->second;
 			//Get input
-			PipeVideoInput *input = it->second->input;
+			PipeVideoInput *input = source->input;
 
 			//Get mosaic
-			Mosaic *mosaic = it->second->mosaic;
+			Mosaic *mosaic = source->mosaic;
 
 			//Si no ha cambiado el frame volvemos al principio
-			if (input && mosaic && (mosaic->HasChanged() || forceUpdate))
+			if (input && mosaic && (source->refresh || mosaic->HasChanged() || forceUpdate))
 				//Colocamos el frame
 				input->SetFrame(mosaic->GetFrame(),mosaic->GetWidth(),mosaic->GetHeight());
+			//Reset refresh 
+			source->refresh = true;
 		}
 
 		//Desprotege la lista
@@ -133,13 +137,13 @@ int VideoMixer::MixVideo()
 		gettimeofday(&tp, NULL);
 
 		//Calculate timeout
-		calcAbsTimeout(&ts,&tp,50);
+		calcAbsTimeout(&ts,&tp,100);
 
 		//Wait for new images or timeout and adquire mutex on exit
 		if (pthread_cond_timedwait(&mixVideoCond,&mixVideoMutex,&ts)==ETIMEDOUT)
 		{
 
-			//Force an update each second
+			//Force an update each 1/10 of second
 			forceUpdate = 1;
 			//Desbloqueamos
 			pthread_mutex_unlock(&mixVideoMutex);
@@ -352,6 +356,9 @@ int VideoMixer::SetMosaicOverlayImage(int mosaicId,const char* filename)
 	
 	//Unlock
 	lstVideosUse.DecUse();
+	
+	//Signal for new video
+	pthread_cond_signal(&mixVideoCond);
 	
 	//Exit
 	return ret;
@@ -619,6 +626,9 @@ int VideoMixer::InitMixer(int id,int mosaicId)
 
 	//Desprotegemos
 	lstVideosUse.DecUse();
+	
+	//Signal for new video
+	pthread_cond_signal(&mixVideoCond);
 
 	Log("<Init mixer [%d]\n",id);
 
@@ -668,9 +678,15 @@ int VideoMixer::SetMixerMosaic(int id,int mosaicId)
 
 	//Set mosaic
 	video->mosaic = mosaic;
+	
+	//Refresh it
+	video->refresh = true;
 
 	//Desprotegemos
 	lstVideosUse.DecUse();
+	
+	//Signal for new video
+	pthread_cond_signal(&mixVideoCond);
 
 	Log("<SetMixerMosaic [%d]\n",id);
 
@@ -1048,6 +1064,9 @@ int VideoMixer::SetSlot(int mosaicId,int num,int id)
 
 	//Desprotegemos la lista
 	lstVideosUse.DecUse();
+	
+	//Signal for new video
+	pthread_cond_signal(&mixVideoCond);
 
 	Log("<SetSlot\n");
 
