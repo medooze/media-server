@@ -336,7 +336,7 @@ int Canvas::RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWOR
 				render.strokeWidth(strokeWidth);
 			}
 			// Check if it can be printed witthout be truncated
-			render.draw(Magick::DrawableRoundRectangle(margin, margin, width-margin*2, height-margin*2, cornerWidth, cornerHeight) );
+			render.draw(Magick::DrawableRoundRectangle(margin, margin, width-margin*2, height-margin, cornerWidth, cornerHeight) );
 		}
 
 		//Set font
@@ -378,7 +378,8 @@ int Canvas::RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWOR
 		}
  */
 		render.fillColor(Magick::Color(color));
-		render.draw( Magick::DrawableText(margin+padding+strokeWidth, margin+padding+strokeWidth+fontSize, str, "UTF-8"));
+		render.strokeWidth(0);
+		render.draw( Magick::DrawableText(margin+padding+strokeWidth, height-padding-strokeWidth-fontSize/2, str, "UTF-8"));
 		render.magick("RGBA");
 		render.write(&rgbablob);
 		
