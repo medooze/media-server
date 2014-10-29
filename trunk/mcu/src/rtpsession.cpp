@@ -827,8 +827,6 @@ int RTPSession::End()
 	if (remoteRateEstimator && recv.SSRC)
 		//Remove stream
 		remoteRateEstimator->RemoveStream(recv.SSRC);
-	//Reset
-	Reset();
 
 	Log("<RTPSession::End()\n");
 
