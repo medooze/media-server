@@ -523,6 +523,9 @@ int VideoMixer::End()
 
 	//Clean list
 	mosaics.clear();
+	
+	//Close logo
+	logo.Close();
 
 	//Desprotegemos la lista
 	lstVideosUse.Unlock();

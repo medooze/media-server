@@ -64,6 +64,15 @@ int AppMixer::DisplayImage(const char* filename)
 	if (!output)
 		//Error
 		return Error("-No output");
+	
+	//Check max size
+	if (logo.GetWidth()*logo.GetHeight()>4096*3072)
+	{
+		//CLose
+		logo.Close();
+		//Error
+		return Error("-Size bigger than max size allowed (4096*3072)\n");
+	}
 
 	//Set size
 	output->SetVideoSize(logo.GetWidth(),logo.GetHeight());
@@ -74,6 +83,9 @@ int AppMixer::DisplayImage(const char* filename)
 	server.SetSize(logo.GetWidth(),logo.GetHeight());
 	//Set new frame
 	server.FrameBufferUpdate(logo.GetFrameRGBA(),0,0,logo.GetWidth(),logo.GetHeight());
+	
+	//CLose
+	logo.Close();
 
 	//Everything ok
 	return true;

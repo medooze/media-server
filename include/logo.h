@@ -14,6 +14,7 @@ public:
 	Logo();
 	~Logo();
 	int Load(const char *filename);
+	int Close();
 
 	BYTE* GetFrame() const;
 	BYTE* GetFrameRGBA() const;

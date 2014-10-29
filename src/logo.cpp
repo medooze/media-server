@@ -23,6 +23,11 @@ Logo::Logo()
 ************************/
 Logo::~Logo()
 {
+	//Close logo
+	Close();
+}
+int Logo::Close()
+{
 	//If we have open a gile
 	if(frame)
 		//Free it
@@ -31,6 +36,11 @@ Logo::~Logo()
 	if(frameRGBA)
 		//Free it
 		free(frameRGBA);
+	//No logo
+	frame = NULL;
+	frameRGBA = NULL;
+	width = 0;
+	height = 0;
 }
 
 int Logo::Load(const char* fileName)
