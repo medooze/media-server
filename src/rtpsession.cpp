@@ -179,9 +179,6 @@ void RTPSession::Reset()
 {
 	Log("-RTPSession reset\n");
 	
-	//Lock mutex inside the method
-	ScopedLock method(sendMutex);
-	
 	//Free mem
 	if (rtpMapIn)
 		delete(rtpMapIn);
