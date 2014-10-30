@@ -634,6 +634,8 @@ int AppMixer::onFinishedFrameBufferUpdate(VNCViewer *viewer)
 					properties.SetProperty("font"		,"Verdana-Regular");
 					properties.SetProperty("fontSize"	,18);
 					
+					Debug("-RenderText [x:%d,y:%d,w:%d,h:%d,width:%d,height:%d\n",x,y,w,y,width,height);
+					
 					//Draw editor name on canvas
 					canvas->RenderText(editor,x,y,w,h,properties);
 
