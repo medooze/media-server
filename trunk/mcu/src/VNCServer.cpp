@@ -385,16 +385,21 @@ int VNCServer::Disconnect(WebSocket *socket)
 {
 	Log("-VNCServer::Disconnect [ws:%p]\n",socket);
 
+	//Lock
+	use.WaitUnusedAndLock();
+	
 	//Get client
 	Client *client = (Client *)socket->GetUserData();
 
 	//If no client was attached
 	if (!client)
+	{
+		//Unlock
+		use.Unlock();
 		//Nothing more
-		return 0;
-
-	//Lock
-	use.WaitUnusedAndLock();
+		return Error("Already deleted");
+	}
+	
 	//Remove it
 	clients.erase(client->GetId());
 	//Unlock
