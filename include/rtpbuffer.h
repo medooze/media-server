@@ -58,6 +58,19 @@ public:
 			//Skip it and lost forever
 			return 0;
 		}
+		
+		//Check if we already have it
+		if (packets.find(seq)!=packets.end())
+		{
+			//Error
+			Debug("-Already have that packet [next:%d,seq:%d,maxWaitTime=%d,%d,%d]\n",next,seq,maxWaitTime,rtp->GetSeqCycles(),rtp->GetSeqNum());
+			//Delete pacekt
+			delete(rtp);
+			//Unlock
+			pthread_mutex_unlock(&mutex);
+			//Skip it and lost forever
+			return 0;
+		}
 
 		//Add event
 		packets[seq] = rtp;
