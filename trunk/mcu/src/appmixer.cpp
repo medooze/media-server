@@ -598,23 +598,33 @@ int AppMixer::onFinishedFrameBufferUpdate(VNCViewer *viewer)
 			//If we got one
 			if (!editor.empty())
 			{
-				DWORD x = lastX+16;
-				DWORD y = lastY+16;
 				DWORD w = 180;
 				DWORD h = 36;
-				DWORD m = 10;
+				DWORD o = 16;		//Offset
+				DWORD m = 10;		//Margin
 				
 				//Ensure the window is big enought
 				if (width>w+m && height>h+m)
 				{
+					//Add offset
+					DWORD x = lastX+o;
+					DWORD y = lastY+o;
 					//Check overlay would be out of the image
-					if (x+w+m>width)
+					if (x+w+m>=width)
 						//Move to the left of the pointer
-						x = x-w;
+						x = lastX-o-w;
+					//If we are not big enought
+					if (x<0)
+						//Reset to margin
+						x = m-1;
 					//Check overlay would be out of the image
-					if (y+h+m>height)
+					if (y+h+m>=height)
 						//Move position
-						y = y-h;	
+						y = lastY-o-h;
+					//If we are not big enought
+					if (y<0)
+						//Reset to margin
+						y = m-1;
 					
 					//Set text properties
 					Properties properties;
