@@ -607,8 +607,8 @@ int AppMixer::onFinishedFrameBufferUpdate(VNCViewer *viewer)
 				if (width>w+m && height>h+m)
 				{
 					//Add offset
-					DWORD x = lastX+o;
-					DWORD y = lastY+o;
+					int x = lastX+o;
+					int y = lastY+o;
 					//Check overlay would be out of the image
 					if (x+w+m>=width)
 						//Move to the left of the pointer
@@ -634,7 +634,7 @@ int AppMixer::onFinishedFrameBufferUpdate(VNCViewer *viewer)
 					properties.SetProperty("font"		,"Verdana-Regular");
 					properties.SetProperty("fontSize"	,18);
 					
-					Debug("-RenderText [x:%d,y:%d,w:%d,h:%d,width:%d,height:%d\n",x,y,w,y,width,height);
+					Debug("-RenderText [x:%d,y:%d,w:%d,h:%d,width:%d,height:%d,lastX:%d,lastY:%d]\n",x,y,w,h,width,height,lastX,lastY);
 					
 					//Draw editor name on canvas
 					canvas->RenderText(editor,x,y,w,h,properties);
