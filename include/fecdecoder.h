@@ -119,7 +119,7 @@ public:
 	RTPTimedPacket* Recover();
 private:
 	typedef std::map<DWORD,RTPTimedPacket*> RTPOrderedPackets;
-	typedef std::map<DWORD,FECData*> FECOrderedData;
+	typedef std::multimap<DWORD,FECData*> FECOrderedData;
 private:
 	RTPOrderedPackets	medias;
 	FECOrderedData		codes;

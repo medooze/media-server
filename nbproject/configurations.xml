@@ -583,6 +583,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src/aac</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -602,12 +603,6 @@
       </folder>
       <folder path="0/src/bfcp">
         <ccTool>
-          <incDir>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-          </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
             <Elem>HAVE_IMAGEMAGICK</Elem>
@@ -624,9 +619,32 @@
           </preprocessorList>
         </ccTool>
       </folder>
+      <folder path="0/src/bfcp/attributes">
+        <ccTool>
+          <incDir>
+            <pElem>src/vnc/common</pElem>
+            <pElem>src/vnc/libvncserver</pElem>
+            <pElem>../../include/ImageMagick-6</pElem>
+            <pElem></pElem>
+            <pElem>src/bfcp/attributes</pElem>
+          </incDir>
+        </ccTool>
+      </folder>
+      <folder path="0/src/bfcp/messages">
+        <ccTool>
+          <incDir>
+            <pElem>src/vnc/common</pElem>
+            <pElem>src/vnc/libvncserver</pElem>
+            <pElem>../../include/ImageMagick-6</pElem>
+            <pElem></pElem>
+            <pElem>src/bfcp/messages</pElem>
+          </incDir>
+        </ccTool>
+      </folder>
       <folder path="0/src/core">
         <ccTool>
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -642,6 +660,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -655,6 +674,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src/flv1</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -679,6 +699,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src/g711</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -701,6 +722,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src/g711</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -725,6 +747,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src/g722</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -749,6 +772,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src/gsm</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -773,6 +797,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src/h263</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -797,6 +822,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src/h264</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -821,6 +847,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src/nelly</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -845,6 +872,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src/opus</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -869,6 +897,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src/speex</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -891,6 +920,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src/speex</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -948,6 +978,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src/vp6</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -972,6 +1003,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src/vp8</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -998,6 +1030,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1022,6 +1055,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1088,6 +1122,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1112,6 +1147,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1136,6 +1172,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1160,6 +1197,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1186,6 +1224,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1210,6 +1249,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1234,6 +1274,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1258,6 +1299,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1282,6 +1324,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1306,6 +1349,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1330,6 +1374,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1354,6 +1399,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1378,6 +1424,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1402,6 +1449,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1422,6 +1470,7 @@
       <item path="src/bfcp.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -1437,6 +1486,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -1444,17 +1494,65 @@
         </ccTool>
       </item>
       <item path="src/bfcp/BFCPAttribute.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem>src/vnc/common</pElem>
+            <pElem>src/vnc/libvncserver</pElem>
+            <pElem>../../include/ImageMagick-6</pElem>
+            <pElem></pElem>
+            <pElem>src/bfcp</pElem>
+          </incDir>
+        </ccTool>
       </item>
       <item path="src/bfcp/BFCPFloorControlServer.cpp"
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+          <incDir>
+            <pElem>ext</pElem>
+            <pElem>src/vnc/common</pElem>
+            <pElem>src/vnc/libvncserver</pElem>
+            <pElem>../../include/ImageMagick-6</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>VADWEBRTC</Elem>
+          </preprocessorList>
+        </ccTool>
       </item>
       <item path="src/bfcp/BFCPFloorRequest.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem>src/vnc/common</pElem>
+            <pElem>src/vnc/libvncserver</pElem>
+            <pElem>../../include/ImageMagick-6</pElem>
+            <pElem></pElem>
+            <pElem>src/bfcp</pElem>
+          </incDir>
+        </ccTool>
       </item>
       <item path="src/bfcp/BFCPMessage.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem>src/vnc/common</pElem>
+            <pElem>src/vnc/libvncserver</pElem>
+            <pElem>../../include/ImageMagick-6</pElem>
+            <pElem></pElem>
+            <pElem>src/bfcp</pElem>
+          </incDir>
+        </ccTool>
       </item>
       <item path="src/bfcp/BFCPUser.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool>
+          <incDir>
+            <pElem>src/vnc/common</pElem>
+            <pElem>src/vnc/libvncserver</pElem>
+            <pElem>../../include/ImageMagick-6</pElem>
+            <pElem></pElem>
+            <pElem>src/bfcp</pElem>
+          </incDir>
+        </ccTool>
       </item>
       <item path="src/bfcp/attributes/BFCPAttrBeneficiaryId.cpp"
             ex="false"
@@ -1557,6 +1655,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1581,6 +1680,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1598,7 +1698,9 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="src/core/VideoEncoderWorker.cpp" ex="false" tool="1" flavor2="0">
+      <item path="src/core/VideoEncoderWorker.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/cpim.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
@@ -1607,6 +1709,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1631,6 +1734,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1655,6 +1759,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1679,6 +1784,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1699,10 +1805,12 @@
       <item path="src/fecdecoder.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1714,6 +1822,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -1804,6 +1913,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1828,6 +1938,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1860,6 +1971,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1900,6 +2012,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1924,6 +2037,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1948,6 +2062,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1972,6 +2087,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1996,6 +2112,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2041,6 +2158,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2065,6 +2183,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2089,6 +2208,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2113,6 +2233,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2137,6 +2258,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2161,6 +2283,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2188,6 +2311,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2212,6 +2336,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2236,6 +2361,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2263,6 +2389,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2287,6 +2414,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2311,6 +2439,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2335,6 +2464,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2359,6 +2489,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2383,6 +2514,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2407,6 +2539,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2431,6 +2564,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2455,6 +2589,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2479,6 +2614,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2503,6 +2639,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2527,6 +2664,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2551,6 +2689,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2575,6 +2714,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2605,6 +2745,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2629,6 +2770,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2653,6 +2795,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2677,6 +2820,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2701,6 +2845,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2725,6 +2870,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2749,6 +2895,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2773,6 +2920,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2797,6 +2945,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2821,6 +2970,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2845,6 +2995,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2869,6 +3020,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2893,6 +3045,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2917,6 +3070,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2962,6 +3116,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2986,6 +3141,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -3010,6 +3166,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -3034,6 +3191,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -3058,6 +3216,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -3082,6 +3241,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -3106,6 +3266,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -3130,6 +3291,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -3154,6 +3316,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -3178,6 +3341,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -3202,6 +3366,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -3230,6 +3395,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -3254,6 +3420,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -3299,6 +3466,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -3323,6 +3491,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -3347,6 +3516,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -3371,6 +3541,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -3395,6 +3566,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -3419,6 +3591,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -3443,6 +3616,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -3467,6 +3641,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -3491,6 +3666,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -3515,6 +3691,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -3566,6 +3743,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src/vnc/libvncclient</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -3616,6 +3794,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src/vnc/libvncclient</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -3692,6 +3871,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src/vnc/libvncclient</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -4582,6 +4762,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -4606,6 +4787,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -4651,6 +4833,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -4675,6 +4858,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -4762,6 +4946,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -4786,6 +4971,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -4831,6 +5017,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -4855,6 +5042,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
