@@ -12,6 +12,7 @@
 #include "codecs.h"
 #include "bitstream.h"
 
+
 FECDecoder::FECDecoder()
 {
 }
@@ -41,10 +42,12 @@ bool FECDecoder::AddPacket(RTPTimedPacket* packet)
 		{
 			//Create new FEC data
 			FECData *fec = new FECData(red->GetPrimaryPayloadData(),red->GetPrimaryPayloadSize());
+			//Double check we didn't had that already
+			
 			//Log
 			Debug("-fec primary red data at %d\n",fec->GetBaseExtSeq());
 			//Append it
-			codes[fec->GetBaseExtSeq()] = fec;
+			codes.insert(std::pair<DWORD,FECData*>(fec->GetBaseExtSeq(),fec));
 			//Packet contained no media
 			return false;
 		}
@@ -63,7 +66,7 @@ bool FECDecoder::AddPacket(RTPTimedPacket* packet)
 				//Log
 				Debug("-fec red data at %d\n",fec->GetBaseExtSeq());
 				//Append it
-				codes[fec->GetBaseExtSeq()] = fec;
+				codes.insert(std::pair<DWORD,FECData*>(fec->GetBaseExtSeq(),fec));
 			}
 		}
 	} else if (packet->GetCodec()==VideoCodec::ULPFEC) {
@@ -72,7 +75,7 @@ bool FECDecoder::AddPacket(RTPTimedPacket* packet)
 		//Log
 		Debug("-fec data at %d\n",fec->GetBaseExtSeq());
 		//Append it
-		codes[fec->GetBaseExtSeq()] = fec;
+		codes.insert(std::pair<DWORD,FECData*>(fec->GetBaseExtSeq(),fec));
 		//Packet contained no media
 		return false;
 	} else {
