@@ -579,11 +579,11 @@
       <folder path="0/src/aac">
         <ccTool>
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src/aac</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -595,6 +595,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -602,46 +603,6 @@
         </ccTool>
       </folder>
       <folder path="0/src/bfcp">
-        <ccTool>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </folder>
-      <folder path="0/src/bfcp/attributes">
-        <ccTool>
-          <incDir>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-            <pElem>src/bfcp/attributes</pElem>
-          </incDir>
-        </ccTool>
-      </folder>
-      <folder path="0/src/bfcp/messages">
-        <ccTool>
-          <incDir>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-            <pElem>src/bfcp/messages</pElem>
-          </incDir>
-        </ccTool>
-      </folder>
-      <folder path="0/src/core">
         <ccTool>
           <incDir>
             <pElem>ext</pElem>
@@ -667,14 +628,29 @@
           </preprocessorList>
         </ccTool>
       </folder>
-      <folder path="0/src/flv1">
+      <folder path="0/src/bfcp/attributes">
         <ccTool>
           <incDir>
+            <pElem>src/bfcp/attributes</pElem>
+          </incDir>
+        </ccTool>
+      </folder>
+      <folder path="0/src/bfcp/messages">
+        <ccTool>
+          <incDir>
+            <pElem>src/bfcp/messages</pElem>
+          </incDir>
+        </ccTool>
+      </folder>
+      <folder path="0/src/core">
+        <ccTool>
+          <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src/flv1</pElem>
+            <pElem>src/core</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -686,6 +662,33 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="0/src/flv1">
+        <ccTool>
+          <incDir>
+            <pElem>ext</pElem>
+            <pElem>src/vnc/common</pElem>
+            <pElem>src/vnc/libvncserver</pElem>
+            <pElem>../../include/ImageMagick-6</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -695,11 +698,11 @@
       <folder path="0/src/g711">
         <cTool>
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src/g711</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -711,6 +714,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -718,11 +722,11 @@
         </cTool>
         <ccTool>
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src/g711</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -734,6 +738,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -743,11 +748,11 @@
       <folder path="0/src/g722">
         <ccTool>
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src/g722</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -759,6 +764,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -768,11 +774,11 @@
       <folder path="0/src/gsm">
         <ccTool>
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src/gsm</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -784,6 +790,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -793,11 +800,11 @@
       <folder path="0/src/h263">
         <ccTool>
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src/h263</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -809,6 +816,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -818,11 +826,11 @@
       <folder path="0/src/h264">
         <ccTool>
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src/h264</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -834,6 +842,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -843,11 +852,11 @@
       <folder path="0/src/nelly">
         <ccTool>
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src/nelly</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -859,6 +868,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -868,11 +878,11 @@
       <folder path="0/src/opus">
         <ccTool>
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src/opus</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -884,6 +894,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -893,11 +904,11 @@
       <folder path="0/src/speex">
         <cTool>
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src/speex</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -909,6 +920,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -916,11 +928,11 @@
         </cTool>
         <ccTool>
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src/speex</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -932,6 +944,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -941,6 +954,7 @@
       <folder path="0/src/vnc/common">
         <cTool>
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -956,6 +970,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -974,11 +989,11 @@
       <folder path="0/src/vp6">
         <ccTool>
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src/vp6</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -990,6 +1005,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -999,11 +1015,11 @@
       <folder path="0/src/vp8">
         <ccTool>
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src/vp8</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1015,6 +1031,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -1026,11 +1043,11 @@
       <item path="src/CPUMonitor.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1042,6 +1059,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -1051,6 +1069,7 @@
       <item path="src/FLVEncoder.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -1067,6 +1086,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -1118,11 +1138,11 @@
       <item path="src/OpenSSL.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1134,6 +1154,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -1143,6 +1164,7 @@
       <item path="src/RTPSmoother.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -1159,6 +1181,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -1168,6 +1191,7 @@
       <item path="src/VNCServer.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -1184,6 +1208,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -1193,6 +1218,7 @@
       <item path="src/VNCViewer.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -1209,6 +1235,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -1216,10 +1243,13 @@
         </ccTool>
       </item>
       <item path="src/aac/aacencoder.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/amf.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -1236,6 +1266,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -1245,11 +1276,11 @@
       <item path="src/appmixer.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1261,6 +1292,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -1270,6 +1302,7 @@
       <item path="src/asymmetricmosaic.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -1286,6 +1319,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -1295,6 +1329,7 @@
       <item path="src/audio.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -1311,6 +1346,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -1320,6 +1356,7 @@
       <item path="src/audiodecoder.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -1336,6 +1373,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -1345,6 +1383,7 @@
       <item path="src/audioencoder.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -1361,6 +1400,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -1370,6 +1410,7 @@
       <item path="src/audiomixer.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -1386,6 +1427,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -1395,6 +1437,7 @@
       <item path="src/audiostream.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -1411,6 +1454,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -1420,6 +1464,7 @@
       <item path="src/audiotransrater.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -1436,6 +1481,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -1445,6 +1491,7 @@
       <item path="src/avcdescriptor.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -1461,6 +1508,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -1475,6 +1523,7 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
+            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1494,12 +1543,8 @@
         </ccTool>
       </item>
       <item path="src/bfcp/BFCPAttribute.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool>
+        <ccTool flags="0">
           <incDir>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
             <pElem>src/bfcp</pElem>
           </incDir>
         </ccTool>
@@ -1510,46 +1555,27 @@
             flavor2="4">
         <ccTool flags="0">
           <incDir>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>src/bfcp</pElem>
           </incDir>
-          <preprocessorList>
-            <Elem>VADWEBRTC</Elem>
-          </preprocessorList>
         </ccTool>
       </item>
       <item path="src/bfcp/BFCPFloorRequest.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool>
+        <ccTool flags="0">
           <incDir>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
             <pElem>src/bfcp</pElem>
           </incDir>
         </ccTool>
       </item>
       <item path="src/bfcp/BFCPMessage.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool>
+        <ccTool flags="0">
           <incDir>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
             <pElem>src/bfcp</pElem>
           </incDir>
         </ccTool>
       </item>
       <item path="src/bfcp/BFCPUser.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool>
+        <ccTool flags="0">
           <incDir>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
             <pElem>src/bfcp</pElem>
           </incDir>
         </ccTool>
@@ -1558,99 +1584,140 @@
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/attributes/BFCPAttrBeneficiaryInformation.cpp"
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/attributes/BFCPAttrErrorCode.cpp"
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/attributes/BFCPAttrErrorInfo.cpp"
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/attributes/BFCPAttrFloorId.cpp"
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/attributes/BFCPAttrFloorRequestId.cpp"
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/attributes/BFCPAttrFloorRequestInformation.cpp"
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/attributes/BFCPAttrFloorRequestStatus.cpp"
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/attributes/BFCPAttrOverallRequestStatus.cpp"
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/attributes/BFCPAttrParticipantProvidedInfo.cpp"
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/attributes/BFCPAttrRequestStatus.cpp"
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/attributes/BFCPAttrRequestedByInformation.cpp"
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/attributes/BFCPAttrStatusInfo.cpp"
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/messages/BFCPMsgError.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/messages/BFCPMsgFloorQuery.cpp"
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/messages/BFCPMsgFloorRelease.cpp"
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/messages/BFCPMsgFloorRequest.cpp"
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/messages/BFCPMsgFloorRequestStatus.cpp"
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/messages/BFCPMsgFloorStatus.cpp"
             ex="false"
             tool="1"
             flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/bfcp/messages/BFCPMsgHello.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/broadcaster.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -1667,6 +1734,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -1676,6 +1744,7 @@
       <item path="src/broadcastsession.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -1692,6 +1761,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -1705,6 +1775,7 @@
       <item path="src/cpim.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -1721,6 +1792,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -1730,11 +1802,11 @@
       <item path="src/crc32calc.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1746,6 +1818,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -1755,11 +1828,11 @@
       <item path="src/dtls.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1771,6 +1844,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -1780,11 +1854,11 @@
       <item path="src/eventstreaminghandler.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1796,6 +1870,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -1810,7 +1885,6 @@
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1872,6 +1946,8 @@
         </ccTool>
       </item>
       <item path="src/flv1/flv1codec.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/flvdump.cpp" ex="false" tool="0" flavor2="2">
         <cTool>
@@ -1909,6 +1985,7 @@
       <item path="src/flvrecorder.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -1925,6 +2002,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -1934,6 +2012,7 @@
       <item path="src/framescaler.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -1950,6 +2029,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -1957,16 +2037,25 @@
         </ccTool>
       </item>
       <item path="src/g711/g711.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="1">
+        </cTool>
       </item>
       <item path="src/g711/pcmacodec.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/g711/pcmucodec.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/g722/g722codec.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/groupchat.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -1983,6 +2072,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -1990,29 +2080,45 @@
         </ccTool>
       </item>
       <item path="src/gsm/gsmcodec.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/h263/h263-1996codec.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/h263/h263.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/h263/h263codec.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/h263/mpeg4codec.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/h264/h264decoder.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/h264/h264depacketizer.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/h264/h264encoder.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/http.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2024,6 +2130,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2033,6 +2140,7 @@
       <item path="src/httpparser.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -2049,6 +2157,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2058,11 +2167,11 @@
       <item path="src/jsr309/AudioDecoderWorker.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2074,6 +2183,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2083,11 +2193,11 @@
       <item path="src/jsr309/AudioEncoderWorker.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2099,6 +2209,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2108,11 +2219,11 @@
       <item path="src/jsr309/AudioMixerResource.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2124,6 +2235,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2154,11 +2266,11 @@
       <item path="src/jsr309/Endpoint.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2170,6 +2282,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2179,11 +2292,11 @@
       <item path="src/jsr309/JSR309Manager.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2195,6 +2308,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2204,11 +2318,11 @@
       <item path="src/jsr309/MediaSession.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2220,6 +2334,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2229,11 +2344,11 @@
       <item path="src/jsr309/Player.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2245,6 +2360,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2254,11 +2370,11 @@
       <item path="src/jsr309/RTPEndpoint.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2270,6 +2386,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2279,11 +2396,11 @@
       <item path="src/jsr309/RTPMultiplexer.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2295,6 +2412,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2307,11 +2425,11 @@
             flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2323,6 +2441,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2332,11 +2451,11 @@
       <item path="src/jsr309/Recorder.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2348,6 +2467,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2357,11 +2477,11 @@
       <item path="src/jsr309/VideoDecoderWorker.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2373,6 +2493,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2385,11 +2506,11 @@
             flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2401,6 +2522,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2410,11 +2532,11 @@
       <item path="src/jsr309/VideoMixerResource.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2426,6 +2548,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2435,11 +2558,11 @@
       <item path="src/jsr309/VideoTranscoder.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2451,6 +2574,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2460,11 +2584,11 @@
       <item path="src/jsr309/xmlrpcjsr309.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2476,6 +2600,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2485,6 +2610,7 @@
       <item path="src/logo.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -2501,6 +2627,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2510,11 +2637,11 @@
       <item path="src/main.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2526,6 +2653,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2535,6 +2663,7 @@
       <item path="src/mcu.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -2551,6 +2680,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2560,6 +2690,7 @@
       <item path="src/mediabridgesession.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -2576,6 +2707,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2585,6 +2717,7 @@
       <item path="src/mediagateway.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -2601,6 +2734,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2610,6 +2744,7 @@
       <item path="src/mosaic.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -2626,6 +2761,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2635,6 +2771,7 @@
       <item path="src/mp4player.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -2651,6 +2788,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2660,6 +2798,7 @@
       <item path="src/mp4recorder.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -2676,6 +2815,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2685,6 +2825,7 @@
       <item path="src/mp4streamer.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -2701,6 +2842,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2710,6 +2852,7 @@
       <item path="src/multiconf.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -2726,6 +2869,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2733,14 +2877,21 @@
         </ccTool>
       </item>
       <item path="src/nelly/NellyCodec.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/opus/opusdecoder.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/opus/opusencoder.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/overlay.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -2757,6 +2908,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2766,6 +2918,7 @@
       <item path="src/partedmosaic.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -2782,6 +2935,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2791,6 +2945,7 @@
       <item path="src/pipeaudioinput.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -2807,6 +2962,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2816,6 +2972,7 @@
       <item path="src/pipeaudiooutput.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -2832,6 +2989,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2841,6 +2999,7 @@
       <item path="src/pipetextinput.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -2857,6 +3016,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2866,6 +3026,7 @@
       <item path="src/pipetextoutput.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -2882,6 +3043,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2891,6 +3053,7 @@
       <item path="src/pipevideoinput.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -2907,6 +3070,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2916,6 +3080,7 @@
       <item path="src/pipevideooutput.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -2932,6 +3097,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2941,6 +3107,7 @@
       <item path="src/pipmosaic.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -2957,6 +3124,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2966,11 +3134,11 @@
       <item path="src/remoteratecontrol.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2982,6 +3150,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -2991,11 +3160,11 @@
       <item path="src/remoterateestimator.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -3007,6 +3176,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -3016,6 +3186,7 @@
       <item path="src/rtmpchunk.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -3032,6 +3203,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -3041,11 +3213,11 @@
       <item path="src/rtmpclientconnection.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -3057,6 +3229,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -3066,6 +3239,7 @@
       <item path="src/rtmpconnection.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -3082,6 +3256,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -3112,6 +3287,7 @@
       <item path="src/rtmpflvstream.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -3128,6 +3304,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -3137,6 +3314,7 @@
       <item path="src/rtmpmessage.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -3153,6 +3331,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -3162,6 +3341,7 @@
       <item path="src/rtmpmp4stream.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -3178,6 +3358,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -3187,6 +3368,7 @@
       <item path="src/rtmpnetconnection.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -3203,6 +3385,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -3212,6 +3395,7 @@
       <item path="src/rtmpparticipant.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -3228,6 +3412,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -3237,6 +3422,7 @@
       <item path="src/rtmpserver.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -3253,6 +3439,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -3262,6 +3449,7 @@
       <item path="src/rtmpstream.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -3278,6 +3466,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -3287,11 +3476,11 @@
       <item path="src/rtp.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -3303,6 +3492,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -3312,6 +3502,7 @@
       <item path="src/rtpparticipant.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -3328,6 +3519,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -3337,11 +3529,11 @@
       <item path="src/rtpsession.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -3353,6 +3545,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -3362,6 +3555,7 @@
       <item path="src/sidebar.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -3378,6 +3572,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -3385,12 +3580,17 @@
         </ccTool>
       </item>
       <item path="src/speex/resample.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="1">
+        </cTool>
       </item>
       <item path="src/speex/speexcodec.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/statushandler.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -3407,6 +3607,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -3416,11 +3617,11 @@
       <item path="src/stunmessage.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -3432,6 +3633,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -3462,6 +3664,7 @@
       <item path="src/textencoder.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -3478,6 +3681,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -3487,6 +3691,7 @@
       <item path="src/textmixer.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -3503,6 +3708,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -3512,6 +3718,7 @@
       <item path="src/textmixerworker.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -3528,6 +3735,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -3537,6 +3745,7 @@
       <item path="src/textstream.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -3553,6 +3762,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -3562,11 +3772,11 @@
       <item path="src/uploadhandler.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -3578,6 +3788,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -3587,11 +3798,11 @@
       <item path="src/vad.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -3603,6 +3814,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -3612,6 +3824,7 @@
       <item path="src/video.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -3628,6 +3841,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -3637,6 +3851,7 @@
       <item path="src/videomixer.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -3653,6 +3868,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -3662,11 +3878,11 @@
       <item path="src/videopipe.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
             <pElem></pElem>
-            <pElem>src</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -3678,6 +3894,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -3687,6 +3904,7 @@
       <item path="src/videostream.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -3703,6 +3921,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -3710,18 +3929,32 @@
         </ccTool>
       </item>
       <item path="src/vnc/common/d3des.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="1">
+        </cTool>
       </item>
       <item path="src/vnc/common/md5.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="1">
+        </cTool>
       </item>
       <item path="src/vnc/common/minilzo.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="1">
+        </cTool>
       </item>
       <item path="src/vnc/common/sha1.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="1">
+        </cTool>
       </item>
       <item path="src/vnc/common/turbojpeg.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="1">
+        </cTool>
       </item>
       <item path="src/vnc/common/vncauth.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="1">
+        </cTool>
       </item>
       <item path="src/vnc/common/zywrletemplate.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="1">
+        </cTool>
       </item>
       <item path="src/vnc/libvncclient/corre.c" ex="false" tool="0" flavor2="2">
         <cTool>
@@ -3739,6 +3972,7 @@
       <item path="src/vnc/libvncclient/cursor.c" ex="false" tool="0" flavor2="2">
         <cTool flags="1">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -3755,6 +3989,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -3790,6 +4025,7 @@
       <item path="src/vnc/libvncclient/rfbproto.c" ex="false" tool="0" flavor2="2">
         <cTool flags="1">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -3806,6 +4042,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -3867,6 +4104,7 @@
       <item path="src/vnc/libvncclient/tls_none.c" ex="false" tool="0" flavor2="2">
         <cTool flags="1">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -3883,6 +4121,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -3957,6 +4196,7 @@
       <item path="src/vnc/libvncserver/auth.c" ex="false" tool="0" flavor2="2">
         <cTool flags="1">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -3972,6 +4212,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -3981,6 +4222,7 @@
       <item path="src/vnc/libvncserver/cargs.c" ex="false" tool="0" flavor2="2">
         <cTool flags="1">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -3996,6 +4238,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -4005,6 +4248,7 @@
       <item path="src/vnc/libvncserver/corre.c" ex="false" tool="0" flavor2="2">
         <cTool flags="1">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -4020,6 +4264,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -4042,6 +4287,7 @@
       <item path="src/vnc/libvncserver/draw.c" ex="false" tool="0" flavor2="2">
         <cTool flags="1">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -4057,6 +4303,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -4066,6 +4313,7 @@
       <item path="src/vnc/libvncserver/font.c" ex="false" tool="0" flavor2="2">
         <cTool flags="1">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -4081,6 +4329,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -4090,6 +4339,7 @@
       <item path="src/vnc/libvncserver/hextile.c" ex="false" tool="0" flavor2="2">
         <cTool flags="1">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -4105,6 +4355,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -4175,6 +4426,7 @@
       <item path="src/vnc/libvncserver/rfbregion.c" ex="false" tool="0" flavor2="2">
         <cTool flags="1">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -4190,6 +4442,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -4199,6 +4452,7 @@
       <item path="src/vnc/libvncserver/rfbserver.c" ex="false" tool="0" flavor2="2">
         <cTool flags="1">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -4214,6 +4468,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -4268,6 +4523,7 @@
       <item path="src/vnc/libvncserver/rre.c" ex="false" tool="0" flavor2="2">
         <cTool flags="1">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -4283,6 +4539,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -4292,6 +4549,7 @@
       <item path="src/vnc/libvncserver/scale.c" ex="false" tool="0" flavor2="2">
         <cTool flags="1">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -4307,6 +4565,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -4316,6 +4575,7 @@
       <item path="src/vnc/libvncserver/selbox.c" ex="false" tool="0" flavor2="2">
         <cTool flags="1">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -4331,6 +4591,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -4340,6 +4601,7 @@
       <item path="src/vnc/libvncserver/server.c" ex="false" tool="0" flavor2="2">
         <cTool flags="1">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -4355,6 +4617,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -4367,6 +4630,7 @@
             flavor2="2">
         <cTool flags="1">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -4382,6 +4646,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -4404,6 +4669,7 @@
       <item path="src/vnc/libvncserver/stats.c" ex="false" tool="0" flavor2="2">
         <cTool flags="1">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -4419,6 +4685,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -4505,6 +4772,7 @@
       <item path="src/vnc/libvncserver/tight.c" ex="false" tool="0" flavor2="2">
         <cTool flags="1">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -4520,6 +4788,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -4573,6 +4842,7 @@
       <item path="src/vnc/libvncserver/translate.c" ex="false" tool="0" flavor2="2">
         <cTool flags="1">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -4588,6 +4858,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -4597,6 +4868,7 @@
       <item path="src/vnc/libvncserver/ultra.c" ex="false" tool="0" flavor2="2">
         <cTool flags="1">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -4612,6 +4884,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -4634,6 +4907,7 @@
       <item path="src/vnc/libvncserver/zlib.c" ex="false" tool="0" flavor2="2">
         <cTool flags="1">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -4649,6 +4923,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -4658,6 +4933,7 @@
       <item path="src/vnc/libvncserver/zrle.c" ex="false" tool="0" flavor2="2">
         <cTool flags="1">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -4673,6 +4949,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -4701,6 +4978,7 @@
             flavor2="2">
         <cTool flags="1">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -4716,6 +4994,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -4728,6 +5007,7 @@
             flavor2="2">
         <cTool flags="1">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -4743,6 +5023,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -4750,14 +5031,21 @@
         </cTool>
       </item>
       <item path="src/vp6/vp6decoder.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/vp8/vp8decoder.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/vp8/vp8encoder.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/websocketconnection.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -4774,6 +5062,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -4783,6 +5072,7 @@
       <item path="src/websocketserver.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -4799,6 +5089,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -4829,6 +5120,7 @@
       <item path="src/xmlhandler.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -4845,6 +5137,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -4854,6 +5147,7 @@
       <item path="src/xmlrpcbroadcaster.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -4870,6 +5164,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -4942,6 +5237,7 @@
       <item path="src/xmlrpcmcu.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -4958,6 +5254,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -4967,6 +5264,7 @@
       <item path="src/xmlrpcmediagateway.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -4983,6 +5281,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -5013,6 +5312,7 @@
       <item path="src/xmlrpcserver.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -5029,6 +5329,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
@@ -5038,6 +5339,7 @@
       <item path="src/xmlstreaminghandler.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem>../../include/ImageMagick-6</pElem>
@@ -5054,6 +5356,7 @@
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
             <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
             <Elem>_UNIX</Elem>
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>

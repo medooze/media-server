@@ -613,7 +613,7 @@ protected:
 public:
 	// Must have virtual destructor to ensure child class's destructor is called
 	virtual ~RTCPPacket(){};
-	Type GetType()	{return type; }
+	Type GetType() const {return type; }
 	virtual void Dump();
 	virtual DWORD GetSize() = 0;
 	virtual DWORD Parse(BYTE* data,DWORD size) = 0;
@@ -1383,8 +1383,8 @@ public:
 		{
 			if (payload) free(payload);
 		}
-		BYTE* GetPayload()	{ return payload;	}
-		DWORD GetLength()	{ return length;	}
+		const BYTE* GetPayload() const	{ return payload;	}
+		DWORD GetLength() const	{ return length;	}
 		virtual DWORD GetSize() { return pad32(length); }
 		virtual DWORD Parse(BYTE* data,DWORD size)
 		{
@@ -1527,11 +1527,11 @@ public:
 		packets.clear();
 	}
 
-	DWORD GetSize()
+	DWORD GetSize() const
 	{
 		DWORD size = 0;
 		//Calculate
-		for(RTCPPackets::iterator it = packets.begin(); it!=packets.end(); ++it)
+		for(RTCPPackets::const_iterator it = packets.begin(); it!=packets.end(); ++it)
 			//Append size
 			size = sizeof(rtcp_common_t)+(*it)->GetSize();
 		//Return total size
@@ -1555,8 +1555,8 @@ public:
 	void Dump();
 
 	void	    AddRTCPacket(RTCPPacket* packet)	{ packets.push_back(packet);	}
-	DWORD	    GetPacketCount()			{ return packets.size();	}
-	RTCPPacket* GetPacket(DWORD num)		{ return packets[num];		}
+	DWORD	    GetPacketCount()	const		{ return packets.size();	}
+	const RTCPPacket* GetPacket(DWORD num) const		{ return packets[num];		}
 
 	static RTCPCompoundPacket* Parse(BYTE *data,DWORD size);
 private:

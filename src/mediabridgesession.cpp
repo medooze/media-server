@@ -573,7 +573,10 @@ int MediaBridgeSession::RecVideo()
 
 			//Check
 			if (!decoder)
+			{
+				delete(packet);
 				continue;
+			}
 		}
 
 		//Lo decodificamos

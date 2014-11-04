@@ -1195,10 +1195,13 @@ int RTPSession::ReadRTCP()
 	//Parse it
 	RTCPCompoundPacket* rtcp = RTCPCompoundPacket::Parse(buffer,size);
 	//Check packet
-	if (rtcp)
-		//Handle incomming rtcp packets
-		ProcessRTCPPacket(rtcp);
-
+	if (!rtcp)
+		//Error
+		return 0;
+	//Handle incomming rtcp packets
+	ProcessRTCPPacket(rtcp);
+	//Delete it
+	delete(rtcp);
 	//OK
 	return 1;
 }
@@ -1356,10 +1359,14 @@ int RTPSession::ReadRTP()
 		//Parse it
 		RTCPCompoundPacket* rtcp = RTCPCompoundPacket::Parse(buffer,size);
 		//Check packet
-		if (rtcp)
-			//Handle incomming rtcp packets
-			ProcessRTCPPacket(rtcp);
-
+		if (!rtcp)
+			//Error
+			return 0;
+		
+		//Handle incomming rtcp packets
+		ProcessRTCPPacket(rtcp);
+		//delete it
+		delete(rtcp);
 		//Skip
 		return 1;
 	}
@@ -1723,8 +1730,6 @@ int RTPSession::ReadRTP()
 			else
 				//Set type for passtrhought
 				recovered->SetCodec(t);
-			//add recovered packet
-			packets.Add(recovered);
 			//Try to recover another one (yuhu!)
 			recovered = fec.Recover();
 		}
@@ -1853,7 +1858,7 @@ void RTPSession::CancelGetPacket()
 	packets.Cancel();
 }
 
-void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
+void RTPSession::ProcessRTCPPacket(const RTCPCompoundPacket *rtcp)
 {
 	//Increase stats
 	recv.numRTCPPackets++;
@@ -1863,13 +1868,13 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 	for (int i = 0; i<rtcp->GetPacketCount();i++)
 	{
 		//Get pacekt
-		RTCPPacket* packet = rtcp->GetPacket(i);
+		const RTCPPacket* packet = rtcp->GetPacket(i);
 		//Check packet type
 		switch (packet->GetType())
 		{
 			case RTCPPacket::SenderReport:
 			{
-				RTCPSenderReport* sr = (RTCPSenderReport*)packet;
+				const RTCPSenderReport* sr = (const RTCPSenderReport*)packet;
 				//Get Timestamp, the middle 32 bits out of 64 in the NTP timestamp (as explained in Section 4) received as part of the most recent RTCP sender report (SR) packet from source SSRC_n. If no SR has been received yet, the field is set to zero.
 				recSR = sr->GetTimestamp() >> 16;
 				//Uptade last received SR
@@ -1896,7 +1901,7 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 			}
 			case RTCPPacket::ReceiverReport:
 			{
-				RTCPReceiverReport* rr = (RTCPReceiverReport*)packet;
+				const RTCPReceiverReport* rr = (const RTCPReceiverReport*)packet;
 				//Check recievd report
 				for (int j=0;j<rr->GetCount();j++)
 				{
@@ -1927,7 +1932,7 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 			case RTCPPacket::RTPFeedback:
 			{
 				//Get feedback packet
-				RTCPRTPFeedback *fb = (RTCPRTPFeedback*) packet;
+				const RTCPRTPFeedback *fb = (const RTCPRTPFeedback*) packet;
 				//Check feedback type
 				switch(fb->GetFeedbackType())
 				{
@@ -1935,7 +1940,7 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 						for (BYTE i=0;i<fb->GetFieldCount();i++)
 						{
 							//Get field
-							RTCPRTPFeedback::NACKField *field = (RTCPRTPFeedback::NACKField*) fb->GetField(i);
+							const RTCPRTPFeedback::NACKField *field = (const RTCPRTPFeedback::NACKField*) fb->GetField(i);
 							//Resent it
 							ReSendPacket(field->pid);
 							//Check each bit of the mask
@@ -1951,7 +1956,7 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 						for (BYTE i=0;i<fb->GetFieldCount();i++)
 						{
 							//Get field
-							RTCPRTPFeedback::TempMaxMediaStreamBitrateField *field = (RTCPRTPFeedback::TempMaxMediaStreamBitrateField*) fb->GetField(i);
+							const RTCPRTPFeedback::TempMaxMediaStreamBitrateField *field = (const RTCPRTPFeedback::TempMaxMediaStreamBitrateField*) fb->GetField(i);
 							//Check if it is for us
 							if (listener && field->GetSSRC()==send.SSRC)
 								//call listener
@@ -1969,7 +1974,7 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 						for (BYTE i=0;i<fb->GetFieldCount();i++)
 						{
 							//Get field
-							RTCPRTPFeedback::TempMaxMediaStreamBitrateField *field = (RTCPRTPFeedback::TempMaxMediaStreamBitrateField*) fb->GetField(i);
+							const RTCPRTPFeedback::TempMaxMediaStreamBitrateField *field = (const RTCPRTPFeedback::TempMaxMediaStreamBitrateField*) fb->GetField(i);
 						}
 
 						break;
@@ -1979,7 +1984,7 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 			case RTCPPacket::PayloadFeedback:
 			{
 				//Get feedback packet
-				RTCPPayloadFeedback *fb = (RTCPPayloadFeedback*) packet;
+				const RTCPPayloadFeedback *fb = (const RTCPPayloadFeedback*) packet;
 				//Check feedback type
 				switch(fb->GetFeedbackType())
 				{
@@ -2010,10 +2015,10 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 						for (BYTE i=0;i<fb->GetFieldCount();i++)
 						{
 							//Get feedback
-							RTCPPayloadFeedback::ApplicationLayerFeeedbackField* msg = (RTCPPayloadFeedback::ApplicationLayerFeeedbackField*)fb->GetField(i);
+							const RTCPPayloadFeedback::ApplicationLayerFeeedbackField* msg = (const RTCPPayloadFeedback::ApplicationLayerFeeedbackField*)fb->GetField(i);
 							//Get size and payload
-							DWORD len	= msg->GetLength();
-							BYTE* payload	= msg->GetPayload();
+							DWORD len		= msg->GetLength();
+							const BYTE* payload	= msg->GetPayload();
 							//Check if it is a REMB
 							if (len>8 && payload[0]=='R' && payload[1]=='E' && payload[2]=='M' && payload[3]=='B')
 							{
@@ -2046,8 +2051,6 @@ void RTPSession::ProcessRTCPPacket(RTCPCompoundPacket *rtcp)
 				break;
 		}
 	}
-	//Delete pacekt
-	delete(rtcp);
 }
 
 RTCPCompoundPacket* RTPSession::CreateSenderReport()
