@@ -110,7 +110,7 @@ private:
 	void Stop();
 	int  ReadRTP();
 	int  ReadRTCP();
-	void ProcessRTCPPacket(RTCPCompoundPacket *packet);
+	void ProcessRTCPPacket(const RTCPCompoundPacket *packet);
 	int ReSendPacket(int seq);
 	int Run();
 private:

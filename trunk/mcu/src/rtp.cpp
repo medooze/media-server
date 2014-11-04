@@ -937,8 +937,8 @@ void RTCPPayloadFeedback::Dump()
 				//Get field
 				ApplicationLayerFeeedbackField* field = (ApplicationLayerFeeedbackField*)fields[i];
 				//Get size and payload
-				DWORD len	= field->GetLength();
-				BYTE* payload	= field->GetPayload();
+				DWORD len		= field->GetLength();
+				const BYTE* payload	= field->GetPayload();
 				//Dump it
 				::Dump(payload,len);
 				//Check if it is a REMB

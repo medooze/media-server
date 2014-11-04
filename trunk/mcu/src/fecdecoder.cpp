@@ -42,8 +42,6 @@ bool FECDecoder::AddPacket(RTPTimedPacket* packet)
 		{
 			//Create new FEC data
 			FECData *fec = new FECData(red->GetPrimaryPayloadData(),red->GetPrimaryPayloadSize());
-			//Double check we didn't had that already
-			
 			//Log
 			Debug("-fec primary red data at %d\n",fec->GetBaseExtSeq());
 			//Append it
@@ -79,8 +77,10 @@ bool FECDecoder::AddPacket(RTPTimedPacket* packet)
 		//Packet contained no media
 		return false;
 	} else {
-		//Add media packet
-		medias[packet->GetExtSeqNum()] = packet->Clone();
+		//Ensure we don't have it already
+		if (medias.find(packet->GetExtSeqNum())!=medias.end())
+			//Add media packet
+			medias[packet->GetExtSeqNum()] = packet->Clone();
 	}
 	//Get last seq number
 	DWORD seq = medias.rbegin()->first;
