@@ -78,7 +78,7 @@ bool FECDecoder::AddPacket(RTPTimedPacket* packet)
 		return false;
 	} else {
 		//Ensure we don't have it already
-		if (medias.find(packet->GetExtSeqNum())!=medias.end())
+		if (medias.find(packet->GetExtSeqNum())==medias.end())
 			//Add media packet
 			medias[packet->GetExtSeqNum()] = packet->Clone();
 	}
