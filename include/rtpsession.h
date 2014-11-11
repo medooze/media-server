@@ -200,6 +200,7 @@ private:
 	bool			useAbsTime;
 
 	RTPOrderedPackets	rtxs;
+	bool			usePLI;
 };
 
 #endif

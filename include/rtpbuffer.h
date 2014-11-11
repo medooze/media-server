@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <pthread.h>
 #include "rtp.h"
+#include "use.h"
 
 class RTPBuffer 
 {
@@ -50,7 +51,7 @@ public:
 		if (next!=(DWORD)-1 && seq<next)
 		{
 			//Error
-			Error("-Out of order non recoverable packet [next:%d,seq:%d,maxWaitTime=%d,%d,%d]\n",next,seq,maxWaitTime,rtp->GetSeqCycles(),rtp->GetSeqNum());
+			Debug("-Out of order non recoverable packet [next:%d,seq:%d,maxWaitTime=%d,%d,%d]\n",next,seq,maxWaitTime,rtp->GetSeqCycles(),rtp->GetSeqNum());
 			//Delete pacekt
 			delete(rtp);
 			//Unlock
@@ -72,8 +73,18 @@ public:
 			return 0;
 		}
 
-		//Add event
-		packets[seq] = rtp;
+		//Add packet
+		if (!packets.insert(std::pair<DWORD,RTPTimedPacket*>(seq,rtp)).second)
+		{
+			//Error
+			Debug("-Error inserting packet [next:%d,seq:%d,maxWaitTime=%d,%d,%d]\n",next,seq,maxWaitTime,rtp->GetSeqCycles(),rtp->GetSeqNum());
+			//Delete pacekt
+			delete(rtp);
+			//Unlock
+			pthread_mutex_unlock(&mutex);
+			//Skip it and lost forever
+			return 0;
+		}
 
 		//Unlock
 		pthread_mutex_unlock(&mutex);
