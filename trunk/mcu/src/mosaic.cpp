@@ -171,6 +171,10 @@ Mosaic::~Mosaic()
 	for(Participants::iterator it = participants.begin(); it!=participants.end(); it++)
 		//Delete participant info
 		delete (it->second);
+	//Reset any previous one
+	if (overlay)
+		//Delete it
+		delete(overlay);
 }
 
 /************************

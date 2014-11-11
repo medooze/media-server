@@ -115,6 +115,8 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) : dtls(*this),
 	requestFPU = false;
 	pendingTMBR = false;
 	pendingTMBBitrate = 0;
+	//Don't use PLI by default
+	usePLI = false;
 	//Not muxing
 	muxRTCP = false;
 	//Default cname
@@ -418,6 +420,9 @@ int RTPSession::SetProperties(const Properties& properties)
 			useNACK = atoi(it->second.c_str());
 			//Enable NACK until first RTT
 			isNACKEnabled = useNACK;
+		} else if (it->first.compare("usePLI")==0) {
+			//Set rtx
+			usePLI = atoi(it->second.c_str());
 		} else if (it->first.compare("useRTX")==0) {
 			//Set rtx
 			useRTX = atoi(it->second.c_str());
@@ -2191,17 +2196,21 @@ int RTPSession::SendFIR()
 	//Create rtcp sender retpor
 	RTCPCompoundPacket* rtcp = CreateSenderReport();
 
-	//Create fir request
-	RTCPPayloadFeedback *fir = RTCPPayloadFeedback::Create(RTCPPayloadFeedback::FullIntraRequest,send.SSRC,recv.SSRC);
-	//ADD field
-	fir->AddField(new RTCPPayloadFeedback::FullIntraRequestField(recv.SSRC,firReqNum++));
-	//Add to rtcp
-	rtcp->AddRTCPacket(fir);
-
-	//Add PLI
-	//RTCPPayloadFeedback *pli = RTCPPayloadFeedback::Create(RTCPPayloadFeedback::PictureLossIndication,send.SSRC,recv.SSRC);
-	//Add to rtcp
-	//rtcp->AddRTCPacket(pli);
+	//Check mode
+	if (!usePLI) 
+	{
+		//Create fir request
+		RTCPPayloadFeedback *fir = RTCPPayloadFeedback::Create(RTCPPayloadFeedback::FullIntraRequest,send.SSRC,recv.SSRC);
+		//ADD field
+		fir->AddField(new RTCPPayloadFeedback::FullIntraRequestField(recv.SSRC,firReqNum++));
+		//Add to rtcp
+		rtcp->AddRTCPacket(fir);
+	} else {
+		//Add PLI
+		RTCPPayloadFeedback *pli = RTCPPayloadFeedback::Create(RTCPPayloadFeedback::PictureLossIndication,send.SSRC,recv.SSRC);
+		//Add to rtcp
+		rtcp->AddRTCPacket(pli);
+	}
 
 	//Send packet
 	int ret = SendPacket(*rtcp);
