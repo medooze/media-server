@@ -1578,8 +1578,8 @@ struct RTPSource
 	
 	RTPSource()
 	{
-		SSRC		= 0;
-		extSeq		= 0;
+		SSRC		= random();
+		extSeq		= random();
 		cycles		= 0;
 		numPackets	= 0;
 		numRTCPPackets	= 0;
@@ -1592,8 +1592,8 @@ struct RTPSource
 	
 	virtual void Reset()
 	{
-		SSRC		= 0;
-		extSeq		= 0;
+		SSRC		= random();
+		extSeq		= random();
 		cycles		= 0;
 		numPackets	= 0;
 		numRTCPPackets	= 0;
