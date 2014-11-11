@@ -187,6 +187,8 @@ int UploadHandler::ProcessRequest(TRequestInfo *req,TSession * const ses)
 				//Open
 				fd = open(filename,O_CREAT|O_WRONLY|O_TRUNC, 0664);
 			}
+			if (bodyType) delete(bodyType);
+			if (bodyDisposition) delete (bodyDisposition);
 		}
 
 		//Read content

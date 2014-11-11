@@ -78,9 +78,11 @@ bool FECDecoder::AddPacket(RTPTimedPacket* packet)
 		return false;
 	} else {
 		//Ensure we don't have it already
-		if (medias.find(packet->GetExtSeqNum())==medias.end())
-			//Add media packet
-			medias[packet->GetExtSeqNum()] = packet->Clone();
+		if (medias.find(packet->GetExtSeqNum())!=medias.end())
+			//Do nothing
+			return false;
+		//Add media packet
+		medias[packet->GetExtSeqNum()] = packet->Clone();
 	}
 	//Get last seq number
 	DWORD seq = medias.rbegin()->first;
@@ -274,6 +276,9 @@ RTPTimedPacket* FECDecoder::Recover()
 				if (AddPacket(packet))
 					//Return it if contained media
 					return packet;
+				else
+					//Discard and continue
+					delete(packet);
 			}
 		}
 	}

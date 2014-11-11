@@ -41,7 +41,7 @@ G722Encoder::G722Encoder(const Properties &properties)
 	//Set params
 	ctx->channels		= 1;
 	ctx->sample_rate	= 16000;
-	ctx->sample_fmt		=  AV_SAMPLE_FMT_S16;
+	ctx->sample_fmt		= AV_SAMPLE_FMT_S16;
 
 	//OPEN it
 	if (avcodec_open2(ctx, codec, NULL) < 0)
@@ -106,6 +106,7 @@ G722Decoder::G722Decoder()
 
 	//Alocamos el conto y el picture
 	ctx = avcodec_alloc_context3(codec);
+	frame = av_frame_alloc();
 
 	//The resampler to convert to 8Khz
 	int err;
@@ -140,14 +141,14 @@ G722Decoder::~G722Decoder()
 		avcodec_close(ctx);
 		av_free(ctx);
 	}
+	
+	if (frame)
+		av_free(frame);
 }
 
 int G722Decoder::Decode(BYTE *in, int inLen, SWORD* out, int outLen)
 {
-	AVFrame frame;
 	int got_frame;
-	SWORD buffer8[512];
-	DWORD len8 = 512;
 	
 	//If we have input
 	if (inLen>0)
@@ -163,7 +164,7 @@ int G722Decoder::Decode(BYTE *in, int inLen, SWORD* out, int outLen)
 		packet.size = inLen;
 
 		//Decode it
-		if (avcodec_decode_audio4(ctx,&frame,&got_frame,&packet)<0)
+		if (avcodec_decode_audio4(ctx,frame,&got_frame,&packet)<0)
 			//nothing
 			return Error("Error decoding G.722\n");
 
@@ -171,13 +172,16 @@ int G722Decoder::Decode(BYTE *in, int inLen, SWORD* out, int outLen)
 		if (got_frame)
 		{
 			//Get data
-			SWORD *buffer16 = (SWORD *)frame.extended_data[0];
-			DWORD len16 = frame.nb_samples;
-
+			SWORD *buffer16 = (SWORD *)frame->extended_data[0];
+			DWORD len16 = frame->nb_samples;
+			//Push decoded
 			samples.push(buffer16,len16);
 		}
-
+		
+		//Release frame
+		av_frame_unref(frame);
 	}
+
 	//Check size
 	if (samples.length()<numFrameSamples)
 		//Nothing yet

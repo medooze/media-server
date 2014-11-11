@@ -33,6 +33,7 @@ public:
 private:
 	AVCodec 	*codec;
 	AVCodecContext	*ctx;
+	AVFrame		*frame;
 	fifo<SWORD,1024>  samples;
 };
 
