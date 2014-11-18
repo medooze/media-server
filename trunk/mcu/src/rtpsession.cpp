@@ -1735,6 +1735,8 @@ int RTPSession::ReadRTP()
 			else
 				//Set type for passtrhought
 				recovered->SetCodec(t);
+			//Append recovered packet
+			packets.Add(recovered);
 			//Try to recover another one (yuhu!)
 			recovered = fec.Recover();
 		}
