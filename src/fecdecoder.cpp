@@ -50,8 +50,10 @@ bool FECDecoder::AddPacket(RTPTimedPacket* packet)
 			return false;
 		}
 
-		//Add media packet
-		medias[packet->GetExtSeqNum()] = red->CreatePrimaryPacket();
+		//Ensure we don't have it already
+		if (medias.find(packet->GetExtSeqNum())==medias.end())
+			//Add media packet
+			medias[packet->GetExtSeqNum()] = red->CreatePrimaryPacket();
 
 		//For each redundant data
 		for (int i=0;i<red->GetRedundantCount();++i)
@@ -77,7 +79,7 @@ bool FECDecoder::AddPacket(RTPTimedPacket* packet)
 		//Packet contained no media
 		return false;
 	} else {
-		//Ensure we don't have it already
+		//Check if we have it already
 		if (medias.find(packet->GetExtSeqNum())!=medias.end())
 			//Do nothing
 			return false;
