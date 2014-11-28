@@ -73,7 +73,7 @@ public:
 			return 0;
 		}
 
-		//Add packet
+		//Add packet, check if it was already there
 		if (!packets.insert(std::pair<DWORD,RTPTimedPacket*>(seq,rtp)).second)
 		{
 			//Error
