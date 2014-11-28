@@ -32,7 +32,8 @@ public:
 	enum Suite {
 		AES_CM_128_HMAC_SHA1_80 = 1,
 		AES_CM_128_HMAC_SHA1_32 = 2,
-		F8_128_HMAC_SHA1_80     = 3
+		F8_128_HMAC_SHA1_80     = 3,
+		UNKNOWN_SUITE
 	};
 
 	enum Hash
@@ -41,12 +42,13 @@ public:
 		SHA224,
 		SHA256,
 		SHA384,
-		SHA512
+		SHA512,
+		UNKNOWN_HASH
 	};
 
 	enum Connection {
 		CONNECTION_NEW,      /*!< Endpoint wants to use a new connection */
-		CONNECTION_EXISTING, /*!< Endpoint wishes to use existing connection */
+		CONNECTION_EXISTING /*!< Endpoint wishes to use existing connection */
 	};
 public:
 	class Listener

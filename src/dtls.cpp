@@ -177,12 +177,14 @@ DTLSConnection::DTLSConnection(Listener& listener) : listener(listener)
 	//Set default values
 	rekey		  	     = 0;
 	dtls_setup		     = SETUP_PASSIVE;
-	remoteFingerprint[0] = '\0';
 	connection		     = CONNECTION_NEW;
-	ssl				     = NULL;		/*!< SSL session */
+	ssl			     = NULL;		/*!< SSL session */
 	read_bio		     = NULL;		/*!< Memory buffer for reading */
 	write_bio		     = NULL;		/*!< Memory buffer for writing */
-	inited               = false;
+	inited			     = false;
+	remoteHash		     = UNKNOWN_HASH;
+	//Reset remote fingerprint
+	memset(remoteFingerprint,0,EVP_MAX_MD_SIZE);
 }
 
 DTLSConnection::~DTLSConnection()
@@ -407,11 +409,6 @@ int DTLSConnection::SetupSRTP()
 	BYTE localMasterKey[SRTP_MASTER_LENGTH];
 	BYTE remoteMasterKey[SRTP_MASTER_LENGTH];
 	BYTE *local_key, *local_salt, *remote_key, *remote_salt;
-
-	/* Verify the certificate fingerprint and match it with the value in the remote SDP. */
-
-	if (! remoteFingerprint[0])
-		return Error("-DTLSConnection::SetupSRTP() | no remote fingerprint provided\n");
 
 	if (!(certificate = SSL_get_peer_certificate(ssl)))
 		return Error("-DTLSConnection::SetupSRTP() | no certificate was provided by the peer\n");
