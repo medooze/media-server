@@ -63,6 +63,28 @@ int PipeVideoOutput::NextFrame(BYTE *pic)
 	return true;
 }
 
+void PipeVideoOutput::ClearFrame()
+{
+	//Bloqueamos
+	pthread_mutex_lock(videoMixerMutex);
+
+	//Get number of pixels
+	DWORD num = videoWidth*videoHeight;
+
+	// paint the background in black for YUV
+	memset(buffer		, 0		, num);
+	memset(buffer+num	, (BYTE) -128	, num/2);
+
+	//Ponemos el cambio
+	isChanged = true;
+
+	//Se�alizamos
+	pthread_cond_signal(videoMixerCond);
+
+	//Y desbloqueamos
+	pthread_mutex_unlock(videoMixerMutex);
+}
+
 int PipeVideoOutput::SetVideoSize(int width,int height)
 {
 	//Check it it is the same size

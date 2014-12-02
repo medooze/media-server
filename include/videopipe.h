@@ -28,6 +28,7 @@ public:
 	virtual int   StopVideoCapture();
 	/** VideoOutput */
 	virtual int NextFrame(BYTE *pic);
+	virtual void ClearFrame();
 	virtual int SetVideoSize(int width,int height);
 	int End();
 private:

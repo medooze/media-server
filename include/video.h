@@ -77,6 +77,7 @@ public:
 class VideoOutput
 {
 public:
+	virtual void ClearFrame() = 0;
 	virtual int NextFrame(BYTE *pic)=0;
 	virtual int SetVideoSize(int width,int height)=0;
 };

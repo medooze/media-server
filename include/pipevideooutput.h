@@ -11,6 +11,7 @@ public:
 	~PipeVideoOutput();
 
 	virtual int NextFrame(BYTE *pic);
+	virtual void ClearFrame();
 	virtual int SetVideoSize(int width,int height);
 
 	BYTE*	GetFrame();
