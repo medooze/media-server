@@ -182,7 +182,8 @@ int VideoMixer::MixVideo()
 
 			//If VAD is set and we have the VAD proxy enabled do the "VAD thing"!
 			//If there was no previous speaker or the vad slot is not blocked
-			if (vadMode!=NoVAD && proxy && (oldVad==0 || mosaic->GetVADBlockingTime()<=getTime()))
+			//If vad is not shown do nothing
+			if (vadMode!=NoVAD && proxy && mosaic->IsVADShown() && (oldVad==0 || mosaic->GetVADBlockingTime()<=getTime()))
 			{
 				//Update VAD info for each participant
 				for (Videos::iterator it=lstVideos.begin();it!=lstVideos.end();++it)
