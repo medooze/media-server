@@ -70,6 +70,7 @@ public:
 	int SetViewer(int partId);
 	int GetPresenter()	{ return presenterId;	}
 	int GetEditor()		{ return editorId;	}
+	int Reset();
 	int End();
 
 	virtual void onOpen(WebSocket *ws);
@@ -99,8 +100,6 @@ private:
 	Use		use;
 	SwsContext*	sws;
 	BYTE*		img;
-	DWORD		width;
-	DWORD		height;
 	int		presenterId;
 	int		editorId;
 	Canvas		*canvas;

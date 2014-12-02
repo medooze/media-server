@@ -33,14 +33,6 @@ AppMixer::~AppMixer()
 {
 	//End just in case
 	End();
-	//Clean mem
-	if (img) free(img);
-	//If got canvas
-	if (canvas)
-		//Delete it
-		delete(canvas);
-	//Free sws contes
-	sws_freeContext(sws);
 }
 
 int AppMixer::Init(VideoOutput* output)
@@ -95,6 +87,9 @@ int AppMixer::End()
 {
 	Log(">AppMixer::End\n");
 
+	//Reset 
+	Reset();
+	
 	//Reset output
 	output = NULL;
 
@@ -116,8 +111,38 @@ int AppMixer::End()
 
 	//End VNC server
 	server.End();
-
+	
 	Log("<AppMixer::End\n");
+}
+
+int AppMixer::Reset()
+{
+	Log("-AppMixer::Reset\n");
+	
+	//Check if we already have a context
+	if (sws)
+	{
+		//Free sws contes
+		sws_freeContext(sws);
+		//Null it
+		sws = NULL;
+	}
+	//If already got memory
+	if (img)
+	{
+		//Free it
+		free(img);
+		//Null it
+		img = NULL;
+	}
+	//If got canvas
+	if (canvas)
+	{
+		//Delete it
+		delete(canvas);
+		//null it
+		canvas = NULL;
+	}
 }
 
 int AppMixer::WebsocketConnectRequest(int partId,const std::wstring &name,WebSocket *ws,bool isPresenter)
@@ -463,6 +488,12 @@ int AppMixer::onSharingEnded(VNCViewer *viewer)
 	Log("-onSharingEnded\n");
 	//End sharing
 	server.Reset();
+	//Reset
+	Reset();
+	//Emulate frame buffer update
+	if (output)
+		//Clear frame
+		output->ClearFrame();
 }
 
 int AppMixer::onFrameBufferSizeChanged(VNCViewer *viewer, int width, int height)
@@ -471,14 +502,8 @@ int AppMixer::onFrameBufferSizeChanged(VNCViewer *viewer, int width, int height)
 	//Change server size
 	server.SetSize(width,height);
 
-	//Check if we already have a context
-	if (sws)
-	{
-		//Free sws contes
-		sws_freeContext(sws);
-		//Null it
-		sws = NULL;
-	}
+	//REset us
+	Reset();
 
 	//If got size
 	if (width && height)
@@ -502,11 +527,6 @@ int AppMixer::onFrameBufferSizeChanged(VNCViewer *viewer, int width, int height)
 			return  Error("Couldn't init sws context\n");
 	}
 
-	//If already got memory
-	if (img)
-		//Free it
-		free(img);
-
 	//Create number of pixels
 	DWORD num = width*height;
 	//Get size with padding
@@ -520,11 +540,6 @@ int AppMixer::onFrameBufferSizeChanged(VNCViewer *viewer, int width, int height)
 
 	//Set size
 	if (output) output->SetVideoSize(width,height);
-	
-	//If got canvas
-	if (canvas)
-		//Delete it
-		delete(canvas);
 	
 	//And create a new one
 	canvas = new Canvas(width,height);

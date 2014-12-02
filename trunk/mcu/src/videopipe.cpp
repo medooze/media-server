@@ -225,3 +225,31 @@ int VideoPipe::NextFrame(BYTE * buffer)
 
 	return 1;
 }
+
+void VideoPipe::ClearFrame()
+{
+	//Protegemos
+	pthread_mutex_lock(&newPicMutex);
+	
+	//Actualizamos el grabPic
+	grabPic = imgBuffer[imgPos];
+
+	//Pasamos al siguiente
+	imgPos = !imgPos;
+
+	//Get number of pixels
+	DWORD num = videoWidth*videoHeight;
+
+	// paint the background in black for YUV
+	memset(grabPic		, 0		, num);
+	memset(grabPic+num	, (BYTE) -128	, num/2);
+
+	//Ponemos el cambio
+	imgNew = true;
+
+	//Se�alizamos
+	pthread_cond_signal(&newPicCond);
+
+	//Y desbloqueamos
+	pthread_mutex_unlock(&newPicMutex);
+}
