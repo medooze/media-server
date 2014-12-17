@@ -480,6 +480,7 @@ int AppMixer::onSharingStarted(VNCViewer *viewer)
 {
 	//Nothing
 	Log("-onSharingStarted\n");
+	return 1;
 }
 
 int AppMixer::onSharingEnded(VNCViewer *viewer)
@@ -494,6 +495,7 @@ int AppMixer::onSharingEnded(VNCViewer *viewer)
 	if (output)
 		//Clear frame
 		output->ClearFrame();
+	return 1;
 }
 
 int AppMixer::onFrameBufferSizeChanged(VNCViewer *viewer, int width, int height)
