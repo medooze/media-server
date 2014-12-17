@@ -780,22 +780,22 @@ int WebSocketConnection::on_url (HTTPParser* parser, const char *at, DWORD lengt
 }
 int WebSocketConnection::on_header_field (HTTPParser*, const char *at, DWORD length)
 {
-	//Get field
+	//Check if he have a previous header
+	if (request && !headerField.empty() && !headerValue.empty())
+		//Add to request
+		request->AddHeader(headerField,headerValue);
+	//Get heade field
 	headerField = std::string(at,length);
+	//Clean value
+	headerValue.clear();
 	//OK
 	return 0;
 }
 
 int WebSocketConnection::on_header_value (HTTPParser*, const char *at, DWORD length)
 {
-	//double check
-	if (!request)
-		//Error
-		return 1;
-	//Get value
-	headerValue = std::string(at,length);
-	//Add to request
-	request->AddHeader(headerField,headerValue);
+	//Append value
+	headerValue.append(at,length);
 	//OK
 	return 0;
 }
@@ -819,6 +819,11 @@ int WebSocketConnection::on_headers_complete (HTTPParser*)
 }
 int WebSocketConnection::on_message_complete (HTTPParser*)
 {
+	//Check if he have a previous header
+	if (request && !headerField.empty() && !headerValue.empty())
+		//Add to request
+		request->AddHeader(headerField,headerValue);
+	
 	//Debug
 	Log("-Incoming websocket connection for url:%s\n",request->GetRequestURI().c_str());
 
