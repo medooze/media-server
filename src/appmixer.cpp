@@ -628,16 +628,16 @@ int AppMixer::onFinishedFrameBufferUpdate(VNCViewer *viewer)
 					int y = lastY+o;
 					//Check overlay would be out of the image
 					if (x+w+m>=width)
-						//Move to the left of the pointer
-						x = lastX-o-w;
+						//Move to the left of the pointer or width
+						x = fmin(lastX,width)-o-w;
 					//If we are not big enought
 					if (x<0)
 						//Reset to margin
 						x = m-1;
 					//Check overlay would be out of the image
 					if (y+h+m>=height)
-						//Move position
-						y = lastY-o-h;
+						//Move position to up the last pointer of height
+						y = fmin(lastY,height)-o-h;
 					//If we are not big enought
 					if (y<0)
 						//Reset to margin
