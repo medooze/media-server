@@ -70,6 +70,10 @@ int DTLSConnection::ClassInit()
 
 	// Don't use session cache.
 	SSL_CTX_set_session_cache_mode(ssl_ctx, SSL_SESS_CACHE_OFF);
+	
+	// Set look ahead
+	// See -> https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=775502
+	SSL_CTX_set_read_ahead(ssl_ctx,true);
 
 	// Require cert from client (mandatory for WebRTC).
 	SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, on_ssl_certificate_verify);
