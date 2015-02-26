@@ -48,6 +48,7 @@ int DTLSConnection::ClassInit()
 {
 	Log("-DTLSConnection::ClassInit()\n");
 
+	EC_KEY* ecdh = NULL;
 
 	/* Create a single SSL context. */
 
@@ -68,9 +69,27 @@ int DTLSConnection::ClassInit()
 	if (! SSL_CTX_set_cipher_list(ssl_ctx, cipher.c_str()))
 		return Error("-DTLSConnection::ClassInit() | Invalid cipher specified in cipher list '%s' for DTLS-SRTP\n",cipher.c_str());
 
+	// Enable ECDH ciphers.
+	// DOC: http://en.wikibooks.org/wiki/OpenSSL/Diffie-Hellman_parameters
+	// NOTE: https://code.google.com/p/chromium/issues/detail?id=406458
+	// For OpenSSL >= 1.0.2:
+	#if (OPENSSL_VERSION_NUMBER >= 0x10002000L)
+		SSL_CTX_set_ecdh_auto(ssl_ctx, 1);
+	#else
+		ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
+		if (! ecdh) {
+			return Error("-DTLSConnection::ClassInit() | EC_KEY_new_by_curve_name() failed\n");
+		}
+		if (SSL_CTX_set_tmp_ecdh(ssl_ctx, ecdh) != 1) {
+			return Error("-DTLSConnection::ClassInit() | SSL_CTX_set_tmp_ecdh() failed\n");
+		}
+		EC_KEY_free(ecdh);
+		ecdh = NULL;
+	#endif
+
 	// Don't use session cache.
 	SSL_CTX_set_session_cache_mode(ssl_ctx, SSL_SESS_CACHE_OFF);
-	
+
 	// Set look ahead
 	// See -> https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=775502
 	SSL_CTX_set_read_ahead(ssl_ctx,true);
