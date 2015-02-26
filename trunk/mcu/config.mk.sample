@@ -1,0 +1,13 @@
+#################################
+# Config file
+##################################
+LOG		= yes
+DEBUG 		= yes
+STATIC		= no
+SANITIZE    = yes
+VADWEBRTC	= no
+WEBRTCINCLUDE	= /usr/local/src/webrtc/trunk/
+WEBRTDIROBJ	= /usr/local/src/webrtc/trunk/out/Debug/obj/webrtc
+SRCDIR		= /root/src/mcumediaserver/trunk/mcu
+TARGET		= /usr/local
+
