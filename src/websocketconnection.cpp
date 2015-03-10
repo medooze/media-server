@@ -831,12 +831,16 @@ int WebSocketConnection::on_header_field (HTTPParser*, const char *at, DWORD len
 {
 	//Check if he have a previous header
 	if (request && !headerField.empty() && !headerValue.empty())
+	{
 		//Add to request
 		request->AddHeader(headerField,headerValue);
+		//Cleaning header
+		headerField.clear();
+		//Clean value
+		headerValue.clear();
+	}
 	//Get heade field
-	headerField = std::string(at,length);
-	//Clean value
-	headerValue.clear();
+	headerField.append(at,length);
 	//OK
 	return 0;
 }
