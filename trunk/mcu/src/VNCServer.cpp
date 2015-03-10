@@ -427,9 +427,17 @@ int VNCServer::Reset()
 	screen->paddedWidthInBytes = 0;
 
 	//Reset all viewers
+	//
 	for (Clients::iterator it=clients.begin(); it!=clients.end(); ++it)
 		//Send sharing stoped event
 		it->second->Reset();
+	/* 
+	 * TODO: maybe reseting is too much, just a window size change could be enought 
+		//Check it is only sent to the viewer if in private mode
+		if (!viewerId || it->first==viewerId)
+			//Update it
+			it->second->ResizeScreen();
+	 */
 
 	//Unlock
 	use.DecUse();

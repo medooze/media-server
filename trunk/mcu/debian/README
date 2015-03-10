@@ -1,27 +1,23 @@
-Debian Scripts for Medooze MCU Media Server
-###########################################
-
-
-
+# Debian Scripts for Medooze MCU Media Server
 ## Overview
 
-This folder contains varios scripts and configuration files for setting the MCU under the Debian rules:
+The `debian` folder contains varios scripts and configuration files for setting the MCU under the Debian rules:
 
-* mcu.init: The MCU init script.
-* mcu.default: A default configuration file for the MCU.
-* mcu.logrotate: A logrotate file for MCU's logs.
+* `mcu.init`: The MCU init script.
+* `mcu.default`: A default configuration file for the MCU.
+* `mcu.logrotate`: A logrotate file for MCU's logs.
 
 
 
-## mcu.init
+## MCU init script
 
-Copy this file under /etc/init.d/ directory by renaming it to mcu, and make it executable:
-```
+Copy `mcu.init` file under `/etc/init.d/` directory by renaming it to mcu, and make it executable:
+```shell
 chmod +x /etc/init.d/mcu
 ```
 
 Add the service to the init runlevels so it is automatically started upon system restart:
-```
+```shell
 update-rc.d mcu defaults
 ```
 
@@ -33,33 +29,41 @@ The actions provided by the MCU init script adheres to the LSB [*] specification
 [*] http://refspecs.linuxfoundation.org/LSB_4.1.0/LSB-Core-generic/LSB-Core-generic/iniscrptact.html
 
 
-* service mcu start: Start the service. Return values:
-   * 0: The service has been correctly started, or it was already running.
-   * 1: The service failed to be started.
+####service mcu start: Start the service.
+Return values:
 
-* service mcu stop: Stop the service. Return values:
-   * 0: The service has been correctly stoped, or it was not running.
+  * 0: The service has been correctly started, or it was already running.
+  * 1: The service failed to be started.
 
-* service mcu restart|force-reload: Restart the service. Return values:
-   * 0: The service has been correctly restarted, or it was not running and now it is.
-   * 1: The service failed to be restarted.
+####service mcu stop: Stop the service.
+Return values:
 
-* service mcu status: Get current status of the service. Return values:
-   * 0: The service is running.
-   * 1: The service is not running but a PID file exists.
-   * 3: The service is not running.
+  * 0: The service has been correctly stoped, or it was not running.
+
+####service mcu restart|force-reload: Restart the service.
+Return values:
+
+  * 0: The service has been correctly restarted, or it was not running and now it is.
+  * 1: The service failed to be restarted.
+
+####service mcu status: Get current status of the service.
+Return values:
+
+  * 0: The service is running.
+  * 1: The service is not running but a PID file exists.
+  * 3: The service is not running.
 
 
-## mcu.default
+## MCU settings
 
-Within this file the user defines some environment variables which will be passed as command line arguments to the daemon when executing the corresponding init script.
+Within the `mcu.defaul`t file the user defines some environment variables which will be passed as command line arguments to the daemon when executing the corresponding init script.
 
-Copy this file under /etc/default/ directory by renaming it to mcu and set RUN=yes (otherwise the init script will refuse to run the service).
+Copy the `mcu.defaul`t file under `/etc/default/` directory by renaming it to mcu and set *RUN=yes* (otherwise the init script will refuse to run the service).
 
 
 ### /etc/default/mcu
 
-```
+```config
 RUN=yes
 
 # Executable file (default: mcu).
@@ -99,16 +103,17 @@ TLS_KEY=/etc/mcu/mydomain.com.key
 #VAR_PERIOD=
 ```
 
-The init script at /etc/init.d/mcu will read this configuration file and run the MCU daemon with the specified settings.
-* The log file will be placed at /var/log/mcu/mcu.log.
-* The XMLRPC server will log into /var/log/mcu/http.log.
-* The PID file will be written into /var/run/mcu/mcu.pid.
+The init script at `/etc/init.d/mcu` will read this configuration file and run the MCU daemon with the specified settings.
+
+* The log file will be placed at `/var/log/mcu/mcu.log`
+* The XMLRPC server will log into `/var/log/mcu/http.log`
+* The PID file will be written into `/var/run/mcu/mcu.pid`
 
 
 
-## mcu.logrotate
+## MCU logrotate config
 
-Copy this file under /etc/logrotate.d/ directory by renaming it to mcu.
+Copy `mcu.logrotate` file under `/etc/logrotate.d/` directory by renaming it to mcu.
 
 When the logrotate daemon reads this file it will rotate the mcu.log and http.log files. The option `copytruncate` is required to force the MCU to stop writing into the same file descriptor.
 
