@@ -18,6 +18,8 @@
 #include "websocketconnection.h"
 #include "amf.h"
 
+int KEEP_ALIVE = 4*60*1000; //Each 4 minutes
+
 
 WebSocketConnection::WebSocketConnection(Listener *listener)
 {
@@ -75,7 +77,7 @@ WebSocketConnection::~WebSocketConnection()
 
 int WebSocketConnection::Init(int fd)
 {
-	Log(">WebSocket Connection init [%d]\n",fd);
+	Log(">WebSocket Connection init [ws:%p,%d]\n",this,fd);
 
 	//Store socket
 	socket = fd;
@@ -105,7 +107,7 @@ void WebSocketConnection::Start()
 
 void WebSocketConnection::Stop()
 {
-	Log("-WebSocketConnection Stop\n");
+	Log("-WebSocketConnection Stop [ws:%p]\n",this);
 
 	if (!this->running) {
 		Error("WebSocketConnection::Stop() called when not running\n");
@@ -124,7 +126,7 @@ void WebSocketConnection::Stop()
 
 void WebSocketConnection::Detach()
 {
-	Log("-WebSocketConnection Detach\n");
+	Log("-WebSocketConnection Detach [ws:%p]\n",this);
 
 	if (!this->running) {
 		Error("WebSocketConnection::Detach() called when not running\n");
@@ -141,7 +143,7 @@ void WebSocketConnection::Detach()
 
 void WebSocketConnection::ForceClose()
 {
-	Log("-WebSocketConnection ForceClose\n");
+	Log("-WebSocketConnection ForceClose [ws:%p]\n",this);
 
 	if (!this->running) {
 		Error("WebSocketConnection::ForceClose() called when not running\n");
@@ -156,7 +158,7 @@ void WebSocketConnection::ForceClose()
 
 void WebSocketConnection::Close()
 {
-	Log("-WebSocketConnection Close\n");
+	Log("-WebSocketConnection Close [ws:%p]\n",this);
 
 	if (!this->running) {
 		Error("WebSocketConnection::Close() called when not running\n");
@@ -175,7 +177,7 @@ void WebSocketConnection::Close()
 
 void WebSocketConnection::Close(const WORD code, const std::wstring& reason)
 {
-	Log("-WebSocketConnection Close [%d %ls]\n",code,reason.c_str());
+	Log("-WebSocketConnection Close [ws:%p,%d %ls]\n",this,code,reason.c_str());
 
 	if (!this->running) {
 		Error("WebSocketConnection::Close() called when not running\n");
@@ -211,7 +213,7 @@ int WebSocketConnection::End()
 		//Exit
 		return 0;
 
-	Log(">End WebSocket connection\n");
+	Log(">End WebSocket connection [ws:%p]\n",this);
 
 	//Not inited any more
 	inited = false;
@@ -240,7 +242,7 @@ int WebSocketConnection::End()
 ************************/
 void * WebSocketConnection::run(void *par)
 {
-	Log("-WebSocket Connecttion Thread [%d,0x%x]\n",getpid(),par);
+	Log("-WebSocket Connecttion Thread [ws:%p,pid:%d]\n",par,getpid());
 
 	//Block signals to avoid exiting on SIGUSR1
 	blocksignals();
@@ -248,8 +250,8 @@ void * WebSocketConnection::run(void *par)
 	//Obtenemos el parametro
 	WebSocketConnection *con = (WebSocketConnection *)par;
 
-    //Ejecutamos
-    con->Run();
+	//Ejecutamos
+	con->Run();
 
 	//OK
 	return 0;
@@ -261,7 +263,7 @@ void * WebSocketConnection::run(void *par)
  ***************************/
 int WebSocketConnection::Run()
 {
-	Log("-WebSocket Connecttion Run [%p]\n", this);
+	Log("-WebSocket Connecttion Run [ws:%p]\n", this);
 
 	if (!this->running) {
 		Error("WebSocketConnection::Run() called when not running\n");
@@ -285,12 +287,16 @@ int WebSocketConnection::Run()
         setsockopt(socket, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(int));
 	//Catch all IO errors
 	signal(SIGIO,EmptyCatch);
+	
+	//Get first activity time
+	timeval last;
+	getUpdDifTime(&last);
 
 	//Run until ended
 	while(running)
 	{
 		//Wait for events
-		if(poll(ufds,1,-1)<0)
+		if(poll(ufds,1,KEEP_ALIVE/2)<0)
 			//Check again
 			continue;
 
@@ -342,6 +348,8 @@ int WebSocketConnection::Run()
 			}
 			//Increase in bytes
 			inBytes += len;
+			//Update last received time
+			getUpdDifTime(&last);
 
 			try {
 				//Parse data
@@ -363,6 +371,22 @@ int WebSocketConnection::Run()
 			//Exit
 			break;
 		}
+		
+		//Check last read activity
+		if (getDifTime(&last)/1000>KEEP_ALIVE)
+		{
+			//Debug
+			Debug("-Inactivity timer on ws:%p\n",this);
+			//Update last received time
+			getUpdDifTime(&last);
+			//Check if it has been already upgraded or not
+			if (upgraded)
+				//Send ping
+				Ping();
+			else
+				//Stop
+				Stop();
+		}
 	}
 
 	//lock now
@@ -382,7 +406,7 @@ int WebSocketConnection::Run()
 	//Don't send more events
 	listener = NULL;
 
-	Log("<Run WebSocket connection\n");
+	Log("<Run WebSocket connection [ws:%p]\n", this);
 }
 
 void WebSocketConnection::SignalWriteNeeded()
@@ -550,6 +574,8 @@ void WebSocketConnection::ProcessData(BYTE *data,DWORD size)
 							pong = new Frame(true,WebSocketFrameHeader::Pong,NULL,header->GetPayloadLength());
 							break;
 						case WebSocketFrameHeader::Pong:
+							//Debug
+							Debug("-Received pong\n");
 							break;
 					}
 				}
@@ -717,6 +743,29 @@ void WebSocketConnection::SendMessage(MessageType type,const BYTE* data, const D
 	//We need to write data!
 	SignalWriteNeeded();
 }
+void WebSocketConnection::Ping()
+{
+	Debug("-Sending ping [ws:%p]\n",this);
+	
+	//Create ping frame
+	Frame *frame = new Frame(true,WebSocketFrameHeader::Ping,NULL,0);
+	
+	//Lock mutex
+	pthread_mutex_lock(&mutex);
+
+	//Push frame
+	frames.push_back(frame);
+
+	//Add size
+	outgoingFramesLength += frame->GetPayloadSize();
+
+	//Un Lock mutex
+	pthread_mutex_unlock(&mutex);
+
+	//We need to write data!
+	SignalWriteNeeded();
+}
+
 
 void WebSocketConnection::SendMessage(const std::wstring& message)
 {

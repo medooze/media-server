@@ -343,7 +343,7 @@ private:
 	void   ProcessData(BYTE *data,DWORD size);
 	int    WriteData(BYTE *data,const DWORD size);
 	void   SignalWriteNeeded();
-
+	void   Ping();
 private:
 	int socket;
 	pollfd ufds[1];
