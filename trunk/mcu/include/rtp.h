@@ -1720,4 +1720,5 @@ private:
 	WORD len;
 	DWORD first;
 };
+
 #endif

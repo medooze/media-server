@@ -446,6 +446,7 @@ int MultiConf::StopBroadcaster()
 	//End mixers
 	videoMixer.DeleteMixer(broadcastId);
 	audioMixer.DeleteMixer(broadcastId);
+	textMixer.DeleteMixer(broadcastId);
 	
 	//Unset watcher id
 	broadcastId = 0;
