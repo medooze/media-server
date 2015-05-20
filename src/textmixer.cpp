@@ -350,13 +350,8 @@ int TextMixer::EndMixer(int id)
 	//Obtenemos el text source
 	TextSource *text = it->second;
 
-	//Remove as writter to all the other participants
-	for (TextWorkers::iterator it=workers.begin();it!=workers.end();++it)
-		//Add writter
-		(*it)->RemoveWritter(text->id);
-
-	//Remove from the workers
-	workers.erase(text->worker);
+	//Desprotegemos
+	lstTextsUse.DecUse();
 
 	//End the mixer
 	text->worker->End();
@@ -365,11 +360,8 @@ int TextMixer::EndMixer(int id)
 	text->input->End();
 	text->output->End();
 
-	//Desprotegemos
-	lstTextsUse.DecUse();
-
 	//Si esta devolvemos el input
-	return true;;
+	return true;
 }
 
 /***********************
@@ -398,9 +390,17 @@ int TextMixer::DeleteMixer(int id)
 	//Obtenemos el text source
 	TextSource *text = it->second;
 
-	//Lo quitamos de la lista
-	sources.erase(it);
+	//Remove from the workers
+	workers.erase(text->worker);
+	
+	//Remove as writter to all the other participants
+	for (TextWorkers::iterator it=workers.begin();it!=workers.end();++it)
+		//Remove writter
+		(*it)->RemoveWritter(text->id);
 
+	//Remove from source list
+	sources.erase(it);
+	
 	//Desprotegemos la lista
 	lstTextsUse.Unlock();
 
@@ -593,19 +593,11 @@ int TextMixer::EndPrivate(int id)
 	//Obtenemos el text source
 	TextPrivate *priv = it->second;
 
-	//Find private target
-	TextSources::iterator itSource=sources.find(priv->to);
-
-	//If target found
-	if (itSource!=sources.end())
-		//Add writer
-		itSource->second->worker->RemoveWritter(priv->id);
-
-	//Terminamos
-	priv->output->End();
-
 	//Desprotegemos
 	lstTextsUse.DecUse();
+	
+	//Terminamos
+	priv->output->End();
 
 	//Si esta devolvemos el input
 	return true;;
@@ -639,6 +631,14 @@ int TextMixer::DeletePrivate(int id)
 
 	//Lo quitamos de la lista
 	privates.erase(it);
+	
+	//Find private target
+	TextSources::iterator itSource=sources.find(priv->to);
+
+	//If target found
+	if (itSource!=sources.end())
+		//Add writer
+		itSource->second->worker->RemoveWritter(priv->id);
 
 	//Desprotegemos la lista
 	lstTextsUse.Unlock();

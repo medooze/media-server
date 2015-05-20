@@ -111,13 +111,14 @@ int TextMixerWorker::WriteText(DWORD id,const wchar_t *data,DWORD size)
 
 int TextMixerWorker::RemoveWritter(DWORD id)
 {
+	Log("-RemoveWritter [id:%d]\n",id);
 	//find it
 	Writters::iterator it = writters.find(id);
 
 	//Check if we have it
 	if (it==writters.end())
 		//Error
-		return 0;
+		return Error("Writter not found");
 	
 	//Get writter
 	TextWritter *writter = it->second;
