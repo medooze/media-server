@@ -92,6 +92,7 @@ int main(int argc,char **argv)
 {
 	//Set default values
 	bool forking = false;
+	bool dump = false;
 	int port = 8080;
 	char* iface = NULL;
 	int wsPort = 9090;
@@ -117,6 +118,8 @@ int main(int argc,char **argv)
 				" -h,--help        Print help\r\n"
 				" -f               Run as daemon in safe mode\r\n"
 				" -d               Enable debug logging\r\n"
+				" -dd              Enable more debug logging\r\n"
+				" -g               Dump core on SEG FAULT\r\n"
 				" --mcu-log        Set mcu log file path (default: mcu.log)\r\n"
 				" --mcu-pid        Set mcu pid file path (default: mcu.pid)\r\n"
 				" --mcu-crt        Set mcu SSL certificate file path (default: mcu.crt)\r\n"
@@ -133,6 +136,9 @@ int main(int argc,char **argv)
 		} else if (strcmp(argv[i],"-f")==0)
 			//Fork
 			forking = true;
+		else if (strcmp(argv[i],"-g")==0)
+			//Dump core
+			dump = true;
 		else if (strcmp(argv[i],"-d")==0)
 			//Enable debug
 			Logger::EnableDebug(true);
@@ -249,11 +255,14 @@ int main(int argc,char **argv)
 		} while (!WIFEXITED(status) && !WIFSIGNALED(status));
 	}
 
-	//Dump core on fault
-	rlimit l = {RLIM_INFINITY,RLIM_INFINITY};
+	//If we have to dump on SEG FAULT
+	if (dump) {
+		//Dump core on fault
+		rlimit l = {RLIM_INFINITY,RLIM_INFINITY};
 
-	//Set new limit
-	setrlimit(RLIMIT_CORE, &l);
+		//Set new limit
+		setrlimit(RLIMIT_CORE, &l);
+	}
 
 	//Register mutext for ffmpeg
 	av_lockmgr_register(lock_ffmpeg);
