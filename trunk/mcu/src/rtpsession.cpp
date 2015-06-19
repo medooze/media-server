@@ -1285,7 +1285,14 @@ int RTPSession::ReadRTP()
 				//Get also port
 				recPort = ntohs(from_addr.sin_port);
 				//Log
-				Log("-RTPSession::ReadRTP() | NAT: received bind request from [%s:%d]\n", inet_ntoa(from_addr.sin_addr), recPort);
+				Log("-RTPSession::ReadRTP() | ICE: received bind request from [%s:%d]\n", inet_ntoa(from_addr.sin_addr), recPort);
+				//Do NAT
+				sendAddr.sin_addr.s_addr = recIP;
+				//Set port
+				sendAddr.sin_port = htons(recPort);
+				//Log
+				Log("-RTPSession::ReadRTP() | ICE: Now sending %s to [%s:%d].\n", MediaFrame::TypeToString(media),inet_ntoa(sendAddr.sin_addr), recPort);
+				
 				//Check if got listener
 				if (listener)
 					//Request a I frame

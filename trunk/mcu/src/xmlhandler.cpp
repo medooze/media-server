@@ -154,17 +154,27 @@ int XmlHandler::ProcessRequest(TRequestInfo *req,TSession * const ses)
 	{
 		//LIberamos el buffer
 		free(buffer);
-
 		//Y salimos sin devolver nada
-		Log("Operation timedout\n");
-		return 1;
+		Error("Operation timedout\n");
+		//Error
+		return 0;
 	}
 
 	//Get method name
 	xmlrpc_parse_call(&env,buffer,inputLen,(const char**)&method,&params);
 
+	//Ensure that we have parsed it correclty
+	if (env.fault_occurred) {
+		//Error
+		Error("Error processing requests [%s]\n",env.fault_string);
+		//Send Error
+		XmlRpcServer::SendError(ses,500);
+		//Error
+		return 0;
+	}
+	
+	//Log
 	Log("-ProcessRequest [method:%s]\n",method);
-
 	//Free name and params
 	free(method);
 	xmlrpc_DECREF(params);
