@@ -247,6 +247,7 @@ int DTLSConnection::Init()
 
 	//Set MTU of datagrams so it fits in an UDP packet
 	SSL_set_mtu(ssl, RTPPAYLOADSIZE);
+	//DTLS_set_link_mtu(ssl, MTU);
 	BIO_ctrl(write_bio, BIO_CTRL_DGRAM_SET_MTU, RTPPAYLOADSIZE, NULL);
 
 	SSL_set_bio(ssl, read_bio, write_bio);
@@ -522,6 +523,20 @@ int DTLSConnection::Write(BYTE *buffer,int size)
 	}
 
 	BIO_write(read_bio, buffer, size);
+
+	//Check MTU error
+	if (!ssl->d1->mtu) {
+		//Try to set it again
+		Log("-DTLSConnection::Write() | No mtu set, trying to set it again\n");
+		//Set MTU of datagrams so it fits in an UDP packet
+		SSL_set_mtu(ssl, RTPPAYLOADSIZE);
+		//DTLS_set_link_mtu(ssl, MTU);
+		BIO_ctrl(write_bio, BIO_CTRL_DGRAM_SET_MTU, RTPPAYLOADSIZE, NULL);
+		//If still didn't work
+		if (!ssl->d1->mtu)
+			//Error
+			return Error("-DTLSConnection::Write() | mtu still 0\n");
+	}
 
 	SSL_read(ssl, buffer, size);
 
