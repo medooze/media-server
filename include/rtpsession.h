@@ -174,6 +174,7 @@ private:
 	DWORD	recSR;
 	in_addr_t recIP;
 	DWORD	  recPort;
+	DWORD     prio;
 
 	//RTP Map types
 	RTPMap* rtpMapIn;
