@@ -111,6 +111,7 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) : dtls(*this),
 	setZeroTime(&recTimeval);
 	recIP = INADDR_ANY;
 	recPort = 0;
+	prio = 0;
 	firReqNum = 0;
 	requestFPU = false;
 	pendingTMBR = false;
@@ -1277,15 +1278,35 @@ int RTPSession::ReadRTP()
 			//Clean response
 			delete(resp);
 
+			//Candidate priority
+			DWORD candPrio = 0;
+
+			//Check if it has the prio attribute
+			if (stun->HasAttribute(STUNMessage::Attribute::Priority)) 
+			{
+				//Get attribute
+				STUNMessage::Attribute* priority = stun->GetAttribute(STUNMessage::Attribute::Priority);
+				//Check size
+				if (priority ->size==4)
+					//Get prio
+					candPrio = get4(priority->attr,0);
+			}
+
+			//Debug
+			Debug("-RTPSession::ReadRTP() | ICE: candidate prio:%d previous prio: %d\n",candPrio,prio);
+	
+
 			//If use candidate to a differentIP  is set or we don't have another IP address
-			if (recIP==INADDR_ANY || (recIP!=from_addr.sin_addr.s_addr && stun->HasAttribute(STUNMessage::Attribute::UseCandidate)))
+			if (recIP==INADDR_ANY || (recIP!=from_addr.sin_addr.s_addr && stun->HasAttribute(STUNMessage::Attribute::UseCandidate) && candPrio>prio))
 			{
 				//Bind it to received packet ip
 				recIP = from_addr.sin_addr.s_addr;
 				//Get also port
 				recPort = ntohs(from_addr.sin_port);
+				//Update prio
+				prio = candPrio;
 				//Log
-				Log("-RTPSession::ReadRTP() | ICE: received bind request from [%s:%d]\n", inet_ntoa(from_addr.sin_addr), recPort);
+				Log("-RTPSession::ReadRTP() | ICE: received bind request from [%s:%d] with prio %d\n", inet_ntoa(from_addr.sin_addr), recPort,candPrio);
 				//Do NAT
 				sendAddr.sin_addr.s_addr = recIP;
 				//Set port
