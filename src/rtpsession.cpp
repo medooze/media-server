@@ -1408,9 +1408,8 @@ int RTPSession::ReadRTP()
 	if (DTLSConnection::IsDTLS(buffer,size))
 	{
 		//Feed it
-		if (!dtls.Write(buffer,size))
-			//Exit
-			return 0;
+		dtls.Write(buffer,size);
+
 		//Read
 		int len = dtls.Read(buffer,MTU);
 
