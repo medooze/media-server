@@ -183,7 +183,15 @@ VPATH +=  %.cpp $(SRCDIR)/src/$(COREDIR)
 
 
 INCLUDE+= -I$(SRCDIR)/include/ $(VADINCLUDE) -I$(SRCDIR)/src/vnc/common -I$(SRCDIR)/src/vnc/libvncserver
-LDFLAGS+= -lgsm -lpthread -lssl -lcrypto -lsrtp
+LDFLAGS+= -lgsm -lpthread -lsrtp
+
+ifeq ($(STATIC_OPENSSL),yes)
+	INCLUDE+= -I$(OPENSSL_DIR)/include
+	LDFLAGS+= $(OPENSSL_DIR)/libssl.a $(OPENSSL_DIR)/libcrypto.a
+else
+	LDFLAGS+= -lssl -lcrypto
+endif
+
 
 ifeq ($(IMAGEMAGICK),yes)
 	OPTS+=-DHAVE_IMAGEMAGICK `pkg-config --cflags ImageMagick++`
@@ -205,7 +213,7 @@ else
 	LDFLAGS+= -lavcodec -lswscale -lavformat -lavutil -lavresample -lx264 -lmp4v2 -lspeex -lvpx -lopus
 endif
 
-LDFLAGS+= -lxmlrpc -lxmlrpc_xmlparse -lxmlrpc_xmltok -lxmlrpc_abyss -lxmlrpc_server -lxmlrpc_util -lnsl -lpthread -lz -ljpeg -lpng -lresolv -lssl -lcrypto -L/lib/i386-linux-gnu -lgcrypt
+LDFLAGS+= -lxmlrpc -lxmlrpc_xmlparse -lxmlrpc_xmltok -lxmlrpc_abyss -lxmlrpc_server -lxmlrpc_util -lnsl -lpthread -lz -ljpeg -lpng -lresolv -L/lib/i386-linux-gnu -lgcrypt
 
 #For abyss
 OPTS 	+= -D_UNIX -D__STDC_CONSTANT_MACROS
