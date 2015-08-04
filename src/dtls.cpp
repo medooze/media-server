@@ -188,6 +188,9 @@ int DTLSConnection::ClassInit()
 
 	// OK, we have DTLS.
 	DTLSConnection::hasDTLS = true;
+
+	//OK
+	return 1;
 }
 
 std::string DTLSConnection::GetCertificateFingerPrint(Hash hash)
