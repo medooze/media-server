@@ -256,7 +256,7 @@ install:
 certs:
 ifeq ($(wildcard $(BIN)/mcu.crt), )
 	@echo "Generating DTLS certificate files"
-	@openssl req -nodes -new -x509 -keyout $(BIN)/mcu.key -out $(BIN)/mcu.crt
+	@openssl req -sha256 -days 3650 -newkey rsa:1024 -nodes -new -x509 -keyout $(BIN)/mcu.key -out $(BIN)/mcu.crt
 endif
 
 ############################################
