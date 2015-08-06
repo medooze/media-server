@@ -1287,32 +1287,32 @@ int RTPSession::ReadRTP()
 				//Get attribute
 				STUNMessage::Attribute* priority = stun->GetAttribute(STUNMessage::Attribute::Priority);
 				//Check size
-				if (priority ->size==4)
+				if (priority->size==4)
 					//Get prio
 					candPrio = get4(priority->attr,0);
 			}
 
 			//Debug
-			Debug("-RTPSession::ReadRTP() | ICE: candidate prio:%d previous prio: %d\n",candPrio,prio);
+			Debug("-RTPSession::ReadRTP() | ICE: received bind request from [%s:%d] with candidate [prio:%d,use:%d] current:%d\n", inet_ntoa(from_addr.sin_addr), ntohs(from_addr.sin_port),candPrio,stun->HasAttribute(STUNMessage::Attribute::UseCandidate),prio);
 	
 
 			//If use candidate to a differentIP  is set or we don't have another IP address
-			if (recIP==INADDR_ANY || (recIP!=from_addr.sin_addr.s_addr && stun->HasAttribute(STUNMessage::Attribute::UseCandidate) && candPrio>prio))
+			if (recIP==INADDR_ANY || 
+				(recIP==from_addr.sin_addr.s_addr && sendAddr.sin_addr.s_addr!=from_addr.sin_addr.s_addr) || 
+				(stun->HasAttribute(STUNMessage::Attribute::UseCandidate) && candPrio>prio)
+			)
 			{
-				//Bind it to received packet ip
-				recIP = from_addr.sin_addr.s_addr;
-				//Get also port
-				recPort = ntohs(from_addr.sin_port);
-				//Update prio
-				prio = candPrio;
-				//Log
-				Log("-RTPSession::ReadRTP() | ICE: received bind request from [%s:%d] with prio %d\n", inet_ntoa(from_addr.sin_addr), recPort,candPrio);
+				//Check if nominated
+				if (stun->HasAttribute(STUNMessage::Attribute::UseCandidate))
+					//Update prio
+					prio = candPrio;
+
 				//Do NAT
-				sendAddr.sin_addr.s_addr = recIP;
+				sendAddr.sin_addr.s_addr = from_addr.sin_addr.s_addr;
 				//Set port
-				sendAddr.sin_port = htons(recPort);
+				sendAddr.sin_port = from_addr.sin_port;
 				//Log
-				Log("-RTPSession::ReadRTP() | ICE: Now sending %s to [%s:%d].\n", MediaFrame::TypeToString(media),inet_ntoa(sendAddr.sin_addr), recPort);
+				Log("-RTPSession::ReadRTP() | ICE: Now sending %s to [%s:%d:%d] prio:%d\n", MediaFrame::TypeToString(media),inet_ntoa(sendAddr.sin_addr), ntohs(sendAddr.sin_port),recIP, prio);
 				
 				//Check if got listener
 				if (listener)
@@ -1432,20 +1432,21 @@ int RTPSession::ReadRTP()
 		return 1;
 	}
 
-	//If we don't have originating IP
-	if (recIP==INADDR_ANY)
+	//If we start receiving from a drifferent ip address or it is the first one
+	if (recIP!=from_addr.sin_addr.s_addr)
 	{
-		//Bind it to first received packet ip
-		recIP = from_addr.sin_addr.s_addr;
-		//Get also port
-		recPort = ntohs(from_addr.sin_port);
 		//Log
-		Log("-RTPSession::ReadRTP() | NAT: received packet from [%s:%d]\n", inet_ntoa(from_addr.sin_addr), ntohs(from_addr.sin_port));
+		Log("-RTPSession::ReadRTP() | NAT: received packet from new source [%s:%d]\n", inet_ntoa(from_addr.sin_addr), ntohs(from_addr.sin_port));
 		//Check if got listener
 		if (listener)
-			//Request a I frame
+			//Request a I frame for start sending
 			listener->onFPURequested(this);
 	}
+
+	//Get receiving ip address
+	recIP = from_addr.sin_addr.s_addr;
+	//Get also port
+	recPort = ntohs(from_addr.sin_port);
 	
 	//Check rtp map
 	if (!rtpMapIn)
