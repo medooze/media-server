@@ -123,76 +123,94 @@ int GroupChat::Disconnect(WebSocket *socket)
 
 void GroupChat::onIncomingMessage(Client* client,CPIMMessage *msg)
 {
-    //Get from and to uris
-    WideStringParser fromParser(msg->GetFrom().GetURI());
-    WideStringParser toParser(msg->GetTo().GetURI());
-    //Get text
-    std::wstring text = ((MIMETextWrapper*)msg->GetContent())->GetText();
-    
-    //Parse scheme
-    if (!fromParser.MatchString(L"im:"))
-        return;
-    
-    //Get from participant id
-    if (!fromParser.ParseInteger())
-        return;
-    
-    //Get value
-    int from = fromParser.GetIntegerValue();
-    
-    //Parse scheme
-    if (!toParser.MatchString(L"im:"))
-        return;
-    
-    //Get from participant id
-    if (!toParser.ParseInteger())
-        return;
-    
-    //Get value
-    int to = toParser.GetIntegerValue();
-    
-    //Send message
-    SendMessage(from,to,text);
+	//Get from and to uris
+	WideStringParser fromParser(msg->GetFrom().GetURI());
+	WideStringParser toParser(msg->GetTo().GetURI());
+
+	//Parse scheme
+	if (!fromParser.MatchString(L"im:"))
+	{
+		Error("-GroupChat::onIncomingMessage Incorrect message received: from schema not im [from:%ls]\n",fromParser.GetBuffer());
+		return;
+	}
+
+	//Get from participant id
+	if (!fromParser.ParseInteger())
+	{
+		Error("-GroupChat::onIncomingMessage Incorrect message received: from username is not an integer [from:%ls]\n",fromParser.GetBuffer());
+		return;
+	}
+
+	//Get value
+	int from = fromParser.GetIntegerValue();
+	
+	//Ensure it is from the client
+	if (from!=client->GetId())
+		return;
+
+	//Parse scheme
+	if (!toParser.MatchString(L"im:"))
+	{
+		Error("-GroupChat::onIncomingMessage Incorrect message received: to schema not im [from:%ls]\n",toParser.GetBuffer());
+		return;
+	}
+
+	//Get from participant id
+	if (!toParser.ParseInteger())
+	{
+		Error("-GroupChat::onIncomingMessage Incorrect message received: to username is not an integer [from:%ls]\n",toParser.GetBuffer());
+		return;
+	}
+
+	//Get value
+	int to = toParser.GetIntegerValue();
+
+	//Send message
+	Send(from,to,msg->GetContent()->Clone());
 }
 
 bool GroupChat::SendMessage(int from, int to,std::wstring text)
 {
-    
-    std::wstringstream  fromUri;
-    std::wstringstream  toUri;
-    
-    //Create uris
-    fromUri << L"im:" << from << L"@" << tag;
-    toUri  << L"im:"<< to << L"@" << tag;
-    
-    //Create message
-    CPIMMessage msg(fromUri.str(),toUri.str(),text);
-    
-    //Lock list
-    use.IncUse();
-    
-    //If it is a private 
-    if (to>0)
-    {
-        //Find it
-        Clients::iterator it = clients.find(to);
-        //If found
-        if (it!=clients.end())
-            //Send it
-            it->second->Send(msg);
-    } else {
-        //Send to all
-        for  (Clients::iterator it = clients.begin(); it!=clients.end(); ++it)
-            //Send
-            it->second->Send(msg);
-    }
-    
-    //Free list
-    use.DecUse();
-    
-    //Ok
-    return 1;
-    
+	return Send(from,to,new MIMETextWrapper(text));  
+}
+
+bool GroupChat::Send(int from, int to,MIMEWrapper *content)
+{
+	std::wstringstream  fromUri;
+	std::wstringstream  toUri;
+
+	//Create uris
+	fromUri << L"im:" << from << L"@" << tag;
+	toUri  << L"im:"<< to << L"@" << tag;
+
+	//Create message
+	CPIMMessage msg(fromUri.str(),toUri.str(),content->Clone());
+
+	//Lock list
+	use.IncUse();
+
+	//If it is a private 
+	if (to>0)
+	{
+	    //Find it
+	    Clients::iterator it = clients.find(to);
+	    //If found
+	    if (it!=clients.end())
+		//Send it
+		it->second->Send(msg);
+	} else {
+	    //Send to all
+	    for  (Clients::iterator it = clients.begin(); it!=clients.end(); ++it)
+		//Send
+		it->second->Send(msg);
+	}
+
+	//Free list
+	use.DecUse();
+
+	//Ok
+	return 1;
+
 }
 void GroupChat::onOpen(WebSocket *ws)
 {
@@ -339,7 +357,7 @@ int GroupChat::Client::Send(const CPIMMessage &msg)
 	//Check if we have ws
 	if (ws)
 		//Send it
-		ws->SendMessage(WebSocket::Text,aux,len);
+		ws->SendMessage(WebSocket::Binary,aux,len);
 	
 	//Unlock
 	lock.Unlock();

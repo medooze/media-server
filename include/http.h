@@ -35,6 +35,9 @@ public:
 	std::string GetHeader(const std::string& key) const;
 	int  GetIntHeader(const std::string& key,int defaultValue) const;
 	std::vector<std::string> GetHeaders(const std::string& key) const;
+	DWORD Serialize(char* buffer,DWORD size) const;
+	DWORD GetSize()  const;
+	void Dump() const;
 };
 
 class ContentDisposition : public Parameters

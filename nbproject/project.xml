@@ -12,7 +12,6 @@
             <make-dep-projects/>
             <sourceRootList>
                 <sourceRootElem>.</sourceRootElem>
-                <sourceRootElem>.</sourceRootElem>
             </sourceRootList>
             <confList>
                 <confElem>
@@ -20,7 +19,7 @@
                     <type>0</type>
                 </confElem>
                 <confElem>
-                    <name>rtmpdebug</name>
+                    <name>test</name>
                     <type>0</type>
                 </confElem>
             </confList>

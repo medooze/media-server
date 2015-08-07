@@ -192,6 +192,84 @@ std::vector<std::string> Headers::GetHeaders(const std::string &key) const
 	return it->second;
 }
 
+DWORD Headers::Serialize(char* buffer,DWORD size) const
+{
+	//Check size
+	if (size<GetSize())
+		//error
+		return 0;
+
+	//Set size
+	DWORD len = 0;
+	//For each key
+	for (Headers::const_iterator it = begin(); it!=end(); ++it)
+	{
+		//get values vector
+		std::vector<std::string> values = it->second;
+		//For each value
+		for (std::vector<std::string>::const_iterator vit = values.begin(); vit!=values.end(); ++vit)
+		{
+			//if also got param
+			if (!vit->empty())
+			{
+				//Print
+				sprintf(buffer+len,"%s: %s",it->first.c_str(),vit->c_str());
+				//add value size and =
+				len += it->first.size()+vit->size()+2;
+			}
+		}
+ 	}
+
+	return len;
+}
+
+void Headers::Dump() const
+{
+	Debug("[Headers]\r\n");
+	//For each key
+	for (Headers::const_iterator it = begin(); it!=end(); ++it)
+	{
+		//get values vector
+		std::vector<std::string> values = it->second;
+		//For each value
+		for (std::vector<std::string>::const_iterator vit = values.begin(); vit!=values.end(); ++vit)
+		{
+			//if also got param
+			if (!vit->empty())
+			{
+				//Print
+				Debug("\t[Header key:%s value:\"%s\"/]\r\n",it->first.c_str(),vit->c_str());
+				
+			}
+		}
+ 	}
+	Debug("[Headers/]\r\n");
+}
+
+DWORD Headers::GetSize() const
+{
+	DWORD size = 0;
+
+	//For each key
+	for (Headers::const_iterator it = begin(); it!=end(); ++it)
+	{
+		//get values vector
+		std::vector<std::string> values = it->second;
+		//For each value
+		for (std::vector<std::string>::const_iterator vit = values.begin(); vit!=values.end(); ++vit)
+		{
+			//if also got param
+			if (!vit->empty())
+			{
+				//add value size and ': '
+				size += it->first.size()+vit->size()+2;
+			}
+		}
+ 	}
+
+	return size;
+}
+
 /************************
  *
  * HTTP 1.1. ABNF

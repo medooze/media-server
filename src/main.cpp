@@ -15,6 +15,7 @@
 #include "OpenSSL.h"
 #include "dtls.h"
 #include "bfcp.h"
+#include "groupchat.h"
 #include "CPUMonitor.h"
 extern "C" {
 	#include "libavcodec/avcodec.h"
@@ -87,6 +88,59 @@ int lock_ffmpeg(void **param, enum AVLockOp op)
 	}
 	return 0;
 }
+
+
+class GroupChatTestHandler :
+	public WebSocketServer::Handler
+{
+public:
+	GroupChatTestHandler() : chat(L"test")
+	{
+		chat.Init();
+	}
+	
+	~GroupChatTestHandler()
+	{
+		chat.End();
+	}
+	
+	virtual void onWebSocketConnection(const HTTPRequest& request,WebSocket *ws)
+	{
+		Debug("-onUpgradeRequest %s\n", request.GetRequestURI().c_str());
+		
+		//Get url
+		std::string url = request.GetRequestURI();
+
+		StringParser parser(url);
+
+		//Check it is for us
+		if (!parser.MatchString("/gct/"))
+			//reject
+			return ws->Reject(400,"Bad request");
+
+		//Get until next /
+		if (!parser.ParseUntilCharset("/"))
+			//reject
+			return ws->Reject(400,"Bad request");
+
+		//Get conf id value
+		std::string value = parser.GetValue();
+
+		//Get id by tag
+		int partId = atoi(value.c_str());
+		
+		//Check int
+		if (partId<=0)
+			//reject
+			return ws->Reject(400,"Bad request");
+
+	
+		//Accept request
+		chat.WebsocketConnectRequest(partId,ws);
+	}
+	
+	GroupChat chat;
+};
 
 int main(int argc,char **argv)
 {
@@ -349,6 +403,7 @@ int main(int argc,char **argv)
 	//And default status hanlder
 	StatusHandler status;
 	TextEchoWebsocketHandler echo;
+	GroupChatTestHandler gct;
 
 	//Init de mcu
 	mcu.Init(&xmleventmcu);
@@ -386,6 +441,7 @@ int main(int argc,char **argv)
 	//Add websocket handlers
 	wsServer.AddHandler("/echo", &echo);
 	wsServer.AddHandler("/mcu", &mcu);
+	wsServer.AddHandler("/gct", &gct);
 	wsServer.AddHandler("/bfcp", &BFCP::getInstance());
 
 	//Add the html status handler
