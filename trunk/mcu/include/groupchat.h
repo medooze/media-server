@@ -60,6 +60,7 @@ public:
 	int Disconnect(WebSocket *socket);
 	
 protected:
+	bool Send(int from, int to, MIMEWrapper *mime);
 	void onIncomingMessage(Client* client,CPIMMessage *msg);
 	
 private:

@@ -15,8 +15,10 @@
 class MIMEObject
 {
 public:
-	virtual DWORD Serialize(BYTE* buffer,DWORD size) = 0;
+	virtual DWORD Serialize(BYTE* buffer,DWORD size) const = 0;
 	virtual ~MIMEObject() {};
+	virtual MIMEObject* Clone() const = 0;
+	virtual void Dump() const = 0;
 };
 
 class MIMEText : public std::wstring, public MIMEObject
@@ -24,14 +26,30 @@ class MIMEText : public std::wstring, public MIMEObject
 public:
 	MIMEText()	{}
 	MIMEText(const std::wstring &text) : std::wstring(text)	{}
-	
-	virtual DWORD Serialize(BYTE* buffer,DWORD size);
+	virtual MIMEObject* Clone() const { return new MIMEText(*this); }
+	virtual DWORD Serialize(BYTE* buffer,const DWORD size) const;
+	virtual void Dump() const;
 	
 public:
-	static MIMEText* Parse(const BYTE* buffer,DWORD size);
+	static MIMEText* Parse(const BYTE* buffer,const DWORD size);
 };
 
-class MIMEWrapper
+class MIMEBinary : public ByteBuffer, public MIMEObject
+{
+public:
+	MIMEBinary()	{}
+	MIMEBinary(const ByteBuffer buffer) : ByteBuffer(buffer)	{}
+	MIMEBinary(const BYTE* data, const DWORD size) : ByteBuffer(data,size)	{}
+	virtual MIMEObject* Clone() const { return new MIMEBinary(this); }
+	virtual DWORD Serialize(BYTE* buffer,const DWORD size) const;
+	virtual void Dump() const;
+	
+public:
+	static MIMEBinary* Parse(const BYTE* buffer,const DWORD size);
+};
+
+class MIMEWrapper :
+	public Headers
 {
 protected:
 	MIMEWrapper() 
@@ -58,7 +76,12 @@ public:
 		if (object)	 delete object;
 	}
 	
-	DWORD Serialize(BYTE* buffer,DWORD size);
+	MIMEWrapper* Clone() const
+	{
+		return new MIMEWrapper(contentType->GetType(),contentType->GetSubType(),object->Clone());
+	}
+	DWORD Serialize(BYTE* buffer,DWORD size) const;
+	void Dump() const;
 public:	
 	 static MIMEWrapper* Parse(const BYTE* data,DWORD size);
 
@@ -123,7 +146,7 @@ public:
 	}
     
 	DWORD Serialize(BYTE* buffer,DWORD size) const;
-	
+	void Dump() const;
 private:
     std::wstring displayName;
     std::wstring uri;
@@ -132,39 +155,40 @@ private:
 class CPIMMessage
 {
 public:
-    CPIMMessage(const std::wstring &fromURI, const std::wstring &toURI, const std::wstring &text) : from(fromURI), to(toURI)
-    {
-        mime = new MIMETextWrapper(text);
-    }
-    ~CPIMMessage()
-    {
-        if (mime)
-            delete(mime);
-    }
-    
-    const Address&	GetFrom()	const { return from;	}
-    const Address&	GetTo()		const { return from;	}
-    const MIMEWrapper*	GetContent()	const { return mime;	}
-   
-   DWORD Serialize(BYTE* buffer,DWORD size) const;
-public:
-    static CPIMMessage* Parse(const BYTE* data,DWORD size);
+	CPIMMessage(const std::wstring &fromURI, const std::wstring &toURI, MIMEWrapper* body) : from(fromURI), to(toURI)
+	{
+		mime = body;
+	}
+
+	~CPIMMessage()
+	{
+		if (mime)
+			delete(mime);
+	}
+
+	const Address&	GetFrom()	const { return from;	}
+	const Address&	GetTo()		const { return from;	}
+	const MIMEWrapper*	GetContent()	const { return mime;	}
+
+	DWORD Serialize(BYTE* buffer,DWORD size) const;
+	void Dump() const;
+	static CPIMMessage* Parse(const BYTE* data,DWORD size);
 
 private:
-    CPIMMessage()
-    {
-        mime = NULL;
-    }
+	CPIMMessage()
+	{
+		mime = NULL;
+	}
 private:    
-    CPIMMessage(Address fromAddr,Address toAddr,MIMEWrapper *mime) : from(fromAddr), to(toAddr)
-    {
-        this->mime = mime;
-    }
+	CPIMMessage(Address fromAddr,Address toAddr,MIMEWrapper *mime) : from(fromAddr), to(toAddr)
+	{
+		this->mime = mime;
+	}
 
 private:
-    Address from;
-    Address to;
-    MIMEWrapper *mime;
+	Address from;
+	Address to;
+	MIMEWrapper *mime;
 };
 
 #endif	/* CPIM_H */

@@ -11,8 +11,8 @@ ifeq ($(DEBUG),yes)
 	OPTS+= -g -O0
 	#SANITIZE
 	ifeq ($(SANITIZE),yes)
-		OPTS+= -fsanitize=address -fno-omit-frame-pointer
-		LDFLAGS+= -fsanitize=address
+		OPTS+= -fsanitize=leak -fno-omit-frame-pointer
+		LDFLAGS+= -fsanitize=leak
 	endif
 else
 	OPTS+= -g -O4 -fexpensive-optimizations -funroll-loops
@@ -117,7 +117,7 @@ COREDIR=core
 
 OBJS=  $(COREOBJ) $(BFCPOBJ) $(VNCOBJ) cpim.o  groupchat.o httpparser.o websocketserver.o websocketconnection.o audio.o video.o mcu.o rtpparticipant.o multiconf.o  rtmpparticipant.o videomixer.o audiomixer.o xmlrpcserver.o xmlhandler.o xmlstreaminghandler.o statushandler.o xmlrpcmcu.o   rtpsession.o audiostream.o videostream.o audiotransrater.o pipeaudioinput.o pipeaudiooutput.o pipevideoinput.o pipevideooutput.o framescaler.o sidebar.o mosaic.o partedmosaic.o asymmetricmosaic.o pipmosaic.o logo.o overlay.o amf.o rtmpmessage.o rtmpchunk.o rtmpstream.o rtmpconnection.o  rtmpserver.o broadcaster.o broadcastsession.o rtmpflvstream.o flvrecorder.o FLVEncoder.o xmlrpcbroadcaster.o mediagateway.o mediabridgesession.o xmlrpcmediagateway.o textmixer.o textmixerworker.o textstream.o pipetextinput.o pipetextoutput.o mp4player.o mp4streamer.o audioencoder.o audiodecoder.o textencoder.o mp4recorder.o rtmpmp4stream.o rtmpnetconnection.o avcdescriptor.o RTPSmoother.o rtp.o rtmpclientconnection.o vad.o stunmessage.o crc32calc.o remoteratecontrol.o remoterateestimator.o uploadhandler.o http.o appmixer.o fecdecoder.o videopipe.o eventstreaminghandler.o dtls.o CPUMonitor.o OpenSSL.o
 OBJS+= $(G711OBJ) $(H263OBJ) $(GSMOBJ)  $(H264OBJ) ${FLV1OBJ} $(SPEEXOBJ) $(NELLYOBJ) $(G722OBJ) $(JSR309OBJ) $(VADOBJ) $(VP6OBJ) $(VP8OBJ) $(OPUSOBJ) $(AACOBJ)
-TARGETS=mcu
+TARGETS=mcu test
 
 ifeq ($(FLASHSTREAMER),yes)
 	GNASHINCLUDE = -I$(GNASHBASE) -I$(GNASHBASE)/server -I$(GNASHBASE)/libbase -I$(GNASHBASE)/libgeometry -I$(GNASHBASE)/server/parser -I$(GNASHBASE)/server/vm -I$(GNASHBASE)/backend -I$(GNASHBASE)/libmedia -DFLASHSTREAMER
@@ -139,13 +139,13 @@ endif
 
 OBJSMCU = $(OBJS) main.o
 OBJSLIB = $(OBJS)
-OBJSMCUCLIENT = xmlrpcclient.o xmlrpcmcuclient.o
+OBJSTEST = $(OBJS) test/main.o test/test.o test/cpim.o
 OBJSRTMPDEBUG = $(OBJS) rtmpdebug.o
 OBJSFLVDUMP = $(OBJS) flvdump.o
 
 BUILDOBJSMCU = $(addprefix $(BUILD)/,$(OBJSMCU))
 BUILDOBJOBJSLIB = $(addprefix $(BUILD)/,$(OBJSLIB))
-BUILDOBJSMCUCLIENT= $(addprefix $(BUILD)/,$(OBJSMCUCLIENT))
+BUILDOBJSTEST= $(addprefix $(BUILD)/,$(OBJSTEST))
 BUILDOBJSRTMPDEBUG= $(addprefix $(BUILD)/,$(OBJSRTMPDEBUG))
 BUILDOBJSFLVDUMP= $(addprefix $(BUILD)/,$(OBJSFLVDUMP))
 BUILDOBJSFS= $(addprefix $(BUILD)/,$(OBJSFS))
@@ -238,6 +238,7 @@ touch:
 	svn propset builtime "`date`" $(SRCDIR)/include/version.h || true
 mkdirs:
 	mkdir -p $(BUILD)
+	mkdir -p $(BUILD)/test
 	mkdir -p $(BUILD)/libvncserver
 	mkdir -p $(BIN)
 ifeq ($(wildcard $(BIN)/logo.png), )
@@ -246,6 +247,7 @@ endif
 clean:
 	rm -f $(BUILDOBJSMCU)
 	rm -f $(BUILDOBJSFS)
+	rm -f $(BUILDOBJSTEST)
 	rm -f "$(BIN)/mcu"
 	rm -f "$(BIN)/flashstreamer"
 
@@ -267,6 +269,12 @@ endif
 mcu: $(OBJSMCU)
 	@$(CXX) -o $(BIN)/$@ $(BUILDOBJSMCU) $(LDFLAGS) $(VADLD)
 	@echo [OUT] $(TAG) $(BIN)/$@
+	
+buildtest: $(OBJSTEST)
+	$(CXX) -o $(BIN)/test $(BUILDOBJSTEST) $(LDFLAGS) $(VADLD)
+	
+test: buildtest
+	$(BIN)/$@
 
 rtmpdebug: $(OBJSRTMPDEBUG)
 	$(CXX) -o $(BIN)/$@ $(BUILDOBJSRTMPDEBUG) $(LDFLAGS) $(VADLD)

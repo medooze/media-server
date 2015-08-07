@@ -6,6 +6,7 @@
 #include <map>
 #include <sstream>
 #include <string>
+#include <string.h>
 #include <strings.h>
 #include <malloc.h>
 #include "version.h"
@@ -266,4 +267,118 @@ inline void* malloc32(size_t size)
 {
 	return memalign(32,size);
 }
+
+class ByteBuffer
+{
+public:
+	ByteBuffer()
+	{
+		//Set buffer size
+		size = 0;
+		//Allocate memory
+		buffer = NULL;
+		//NO length
+		length = 0;
+	}
+	
+	ByteBuffer(const DWORD size)
+	{
+		//NO length
+		length = 0;
+		//Calculate new size
+		this->size = size;
+		//Realloc
+		buffer = (BYTE*) malloc32(size);
+	}
+	
+	ByteBuffer(const BYTE* data,const DWORD size)
+	{
+		//Calculate new size
+		this->size = size;
+		//Realloc
+		buffer = (BYTE*) malloc32(size);
+		//Copy
+		memcpy(buffer,data,size);
+		//Increase length
+		length=size;
+	}
+	
+	ByteBuffer(const ByteBuffer* bytes)
+	{
+		//Calculate new size
+		size = bytes->GetSize();
+		//Realloc
+		buffer = (BYTE*) malloc32(size);
+		//Copy
+		memcpy(buffer,bytes->GetData(),size);
+		//Increase length
+		length=size;
+	}
+	
+	ByteBuffer* Clone() const {
+		return new ByteBuffer(buffer,size);
+	}
+
+	virtual ~ByteBuffer()
+	{
+		//Clear memory
+		if(buffer) free(buffer);
+	}
+
+
+	bool Alloc(const DWORD size)
+	{
+		//Calculate new size
+		this->size = size;
+		//Realloc
+		buffer = (BYTE*) realloc(buffer,size);
+	}
+
+	bool Set(const BYTE* data,const DWORD size)
+	{
+		//Check size
+		if (size>size)
+			//Allocate new size
+			Alloc(size*3/2);
+		//Copy
+		memcpy(buffer,data,size);
+		//Increase length
+		length=size;
+	}
+
+	DWORD Append(const BYTE* data,const DWORD size)
+	{
+		DWORD pos = length;
+		//Check size
+		if (size+length>size)
+			//Allocate new size
+			Alloc((size+length)*3/2);
+		//Copy
+		memcpy(buffer+length,data,size);
+		//Increase length
+		length+=size;
+		//Return previous pos
+		return pos;
+	}
+	
+	const BYTE* GetData() const
+	{
+		return buffer;
+	}
+	
+	DWORD GetSize() const
+	{
+		return size;
+	}
+	
+	DWORD GetLength() const
+	{
+		return length;
+	}
+	
+protected:
+	BYTE	*buffer;
+	DWORD	length;
+	DWORD	size;
+};
 #endif

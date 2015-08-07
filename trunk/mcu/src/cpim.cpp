@@ -12,15 +12,46 @@ MIMEText* MIMEText::Parse(const BYTE* buffer,DWORD size)
         return new MIMEText(utf8.GetWString());
 }
 
-DWORD MIMEText::Serialize(BYTE* buffer,DWORD size)
+DWORD MIMEText::Serialize(BYTE* buffer,DWORD size) const
 {
         //Convert to utf8
         UTF8Parser utf8(*this);
         //Serialize
         return utf8.Serialize(buffer,size);
 }
+void MIMEText::Dump() const
+{
+	Debug("[MIMEText]\r\n");
+	Debug("%ls\r\n",c_str());
+	Debug("[MIMEText/]\r\n");
+}
 
-DWORD MIMEWrapper::Serialize(BYTE* buffer,DWORD size)
+MIMEBinary* MIMEBinary::Parse(const BYTE* buffer,const DWORD size)
+{
+        //Create new
+        return new MIMEBinary(buffer,size);
+}
+
+DWORD MIMEBinary::Serialize(BYTE* buffer,DWORD size)  const
+{
+	//check length
+	if (size<GetLength())
+		//Return error
+		return 0;
+        //Copy
+        memcpy(buffer,GetData(),GetLength());
+        //Serialize
+        return GetLength();
+}
+void MIMEBinary::Dump()  const
+{
+	Debug("[MIMEBinary]\r\n");
+	::Dump(GetData(),GetLength());
+	Debug("[MIMEBinary/]\r\n");
+}
+
+
+DWORD MIMEWrapper::Serialize(BYTE* buffer,DWORD size) const
 {
         //Check nulls
         if (!contentType || !object)
@@ -28,8 +59,9 @@ DWORD MIMEWrapper::Serialize(BYTE* buffer,DWORD size)
 
         DWORD pos = 0;
 
-        //Serialize content type
-        DWORD len = contentType->Serialize((char*)buffer+pos,size-pos);
+        //Serialize headers
+        DWORD len = Headers::Serialize((char*)buffer+pos,size-pos);
+	
         //Check
         if (!len) return 0;
         //move
@@ -54,48 +86,45 @@ DWORD MIMEWrapper::Serialize(BYTE* buffer,DWORD size)
         return pos;
 }
 
+void MIMEWrapper::Dump() const
+{
+	Debug("[MIMEWrapper]\r\n");
+        Headers::Dump();
+	object->Dump();
+        Debug("[MIMEWrapper/]\r\n");
+}
+
+
+
 MIMEWrapper* MIMEWrapper::Parse(const BYTE* data,DWORD size)
 {
-       MIMEWrapper* wrapper = new MIMEWrapper();
-       UTF8Parser utf8;
-       DWORD pos = 0;
-       std::string header;
-       
-       //Get first line
-       StringParser parser((char*)data,size);
+	MIMEWrapper* wrapper = new MIMEWrapper();
+	UTF8Parser utf8;
+	DWORD pos = 0;
+	std::string header;
 
-       while(!parser.CheckString("\r\n") && parser.Left()>2)
-       {
-            //Parse line
-            if (!parser.ParseToken())
-                    //error
-                    goto error;
-            
-            //Get value
-            header = parser.GetValue();
-            
-            //Match sparator
-            if (!parser.MatchString(": "))
-                    //error
-                    goto error;
-            
-            //Check header case insensitive
-            if (strcasecmp("content-type",header.c_str())==0)
-            {
-                //Get until end of line
-                if (!parser.ParseLine())
-                     //error
-                       goto error;
-                //Parse content type
-                wrapper->contentType = ContentType::Parse(parser.GetValue());
-           } else {
-                //Get until end of line
-                if (!parser.ParseLine())
-                     //error
-                       goto error;
-           }
-       }
-       
+	//Get first line
+	StringParser parser((char*)data,size);
+
+	while(!parser.CheckString("\r\n") && parser.Left()>2)
+	{
+		//Parse line
+		if (!parser.ParseLine())
+			//error
+			goto error;
+
+		//Parse header
+		if (!wrapper->ParseHeader(parser.GetValue()))
+			//error
+			goto error;
+	}
+	//Check we have a content type header
+	if (!wrapper->HasHeader("Content-Type"))
+		//error
+                goto error;
+	//Pare content type
+	wrapper->contentType = ContentType::Parse(wrapper->GetHeader("Content-Type"));
+	
         //If not found
         if (!wrapper->contentType)
                 //error
@@ -119,9 +148,12 @@ MIMEWrapper* MIMEWrapper::Parse(const BYTE* data,DWORD size)
                        //error
                        goto error;
        } else {
-               //Not handled yet
-               //error
-               goto error;
+               //Create binary object
+               wrapper->object =  MIMEBinary::Parse(data+pos,size-pos);
+               //Check it
+               if (!wrapper->object)
+                       //error
+                       goto error;
        }
 
        //return object
@@ -180,6 +212,11 @@ DWORD Address::Serialize(BYTE* buffer,DWORD size) const
         buffer[pos++] = '>';
 
         return pos;
+}
+
+void Address::Dump() const
+{
+	Debug("[Address diplayName:\"%ls\" uri:\"%ls\"/]\r\n",displayName.c_str(),uri.c_str());
 }
 
 CPIMMessage* CPIMMessage::Parse(const BYTE* data,DWORD size)
@@ -335,7 +372,7 @@ CPIMMessage* CPIMMessage::Parse(const BYTE* data,DWORD size)
             //Set them
             to.SetAddress(display,uri);
         } else {
-            //Ignore the rest fornow
+            //Ignore the rest for now
         }
     }
     //Check two chars still on buffer
@@ -359,45 +396,58 @@ CPIMMessage* CPIMMessage::Parse(const BYTE* data,DWORD size)
 
 DWORD CPIMMessage::Serialize(BYTE* buffer,DWORD size) const
 {
-    DWORD pos = 0;
-    DWORD len = 0;
+	DWORD pos = 0;
+	DWORD len = 0;
 
-    //Write from header
-    if (pos+6>size) return 0;
-    memcpy(buffer+pos,"From: ",6);
-    pos+=6;
-    //serialize value
-    len = from.Serialize(buffer+pos,size-pos);
-    if (!len) return 0;
-    pos+=len;
-    //Add end line
-    if (pos+2>size)  return 0;
-    memcpy(buffer+pos,"\r\n",2);
-    pos+=2;
+	//Write from header
+	if (pos+6>size) return 0;
+	memcpy(buffer+pos,"From: ",6);
+	pos+=6;
+	//serialize value
+	len = from.Serialize(buffer+pos,size-pos);
+	if (!len) return 0;
+	pos+=len;
+	//Add end line
+	if (pos+2>size)  return 0;
+	memcpy(buffer+pos,"\r\n",2);
+	pos+=2;
 
-    //Write to header
-    if (pos+6>size) return 0;
-    memcpy(buffer+pos,"From: ",6);
-    pos+=6;
-    //serialize value
-    len = from.Serialize(buffer+pos,size-pos);
-    if (!len)  return 0;
-    pos+=len;
-     //Add end line
-    if (pos+2>size) return 0;
-    memcpy(buffer+pos,"\r\n",2);
-    pos+=2;
+	//Write to header
+	if (pos+6>size) return 0;
+	memcpy(buffer+pos,"To: ",6);
+	pos+=6;
+	//serialize value
+	len = to.Serialize(buffer+pos,size-pos);
+	if (!len)  return 0;
+	pos+=len;
+	 //Add end line
+	if (pos+2>size) return 0;
+	memcpy(buffer+pos,"\r\n",2);
+	pos+=2;
 
-    //Add emtpy line
-     if (pos+2>size) return 0;
-     memcpy(buffer+pos,"\r\n",2);
-     pos+=2;
+	//Add emtpy line
+	 if (pos+2>size) return 0;
+	 memcpy(buffer+pos,"\r\n",2);
+	 pos+=2;
 
-     //Now write mime wrapper
-     len = mime->Serialize(buffer+pos,size-pos);
-     if (!len) return 0;
-     pos+=len;
+	 //Now write mime wrapper
+	 len = mime->Serialize(buffer+pos,size-pos);
+	 if (!len) return 0;
+	 pos+=len;
 
-     //OK
-     return pos;
+	 //OK
+	 return pos;
+}
+
+void CPIMMessage::Dump() const
+{
+	Debug("[CPIMMessage]\r\n");
+	Debug("[From]\r\n");
+	from.Dump();
+	Debug("[/From]\r\n");
+	Debug("[To]\r\n");
+	to.Dump();
+	Debug("[/To]\r\n");
+	mime->Dump();
+	Debug("[/CPIMMessage]\r\n");
 }

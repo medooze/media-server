@@ -295,6 +295,11 @@ public:
 		Debug(msg);
 		::Dump((BYTE*)buffer,16>size*sizeof(_CharT)?size*sizeof(_CharT):16);
 	}
+	
+	_CharT* GetBuffer() 
+	{
+		return buffer;
+	}
 
 protected:
 	_CharT* buffer;
