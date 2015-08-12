@@ -337,6 +337,8 @@ void GroupChat::Client::MessageEnd()
         //Exit
         return;
     }
+    Debug("-GroupChat::Client::MessageEnd Got message from: %d\n",id);
+    msg->Dump();
     
     //send to server
     server->onIncomingMessage(this,msg);

@@ -137,9 +137,20 @@ else
 	VADLD =
 endif
 
+ifeq ($(CEF),yes)
+	CEFINCLUDE = -I$(CEF_DIR)
+	CEFLD = $(CEF_DIR)/build/libcef_dll/libcef_dll_wrapper.a -lcef -L$(CEF_DIR)/Debug
+	OBJS+= Browser.o Client.o
+	OPTS+= -DCEF
+else
+	CEFINCLUDE =
+	CEFLD = 
+endif
+
+
 OBJSMCU = $(OBJS) main.o
 OBJSLIB = $(OBJS)
-OBJSTEST = $(OBJS) test/main.o test/test.o test/cpim.o
+OBJSTEST = $(OBJS) test/main.o test/test.o test/cpim.o test/cef.o
 OBJSRTMPDEBUG = $(OBJS) rtmpdebug.o
 OBJSFLVDUMP = $(OBJS) flvdump.o
 
@@ -158,6 +169,7 @@ VPATH  =  %.o $(BUILD)/
 VPATH +=  %.c $(SRCDIR)/lib/
 VPATH +=  %.c $(SRCDIR)/src/
 VPATH +=  %.cpp $(SRCDIR)/src/
+VPATH +=  %.cpp $(SRCDIR)/src/cef
 VPATH +=  %.cpp $(SRCDIR)/src/$(G711DIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(GSMDIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(H263DIR)
@@ -182,7 +194,7 @@ VPATH +=  %.cpp $(SRCDIR)/src/$(COREDIR)
 
 
 
-INCLUDE+= -I$(SRCDIR)/include/ $(VADINCLUDE) -I$(SRCDIR)/src/vnc/common -I$(SRCDIR)/src/vnc/libvncserver
+INCLUDE+= -I$(SRCDIR)/src -I$(SRCDIR)/include/ $(VADINCLUDE) $(CEFINCLUDE) -I$(SRCDIR)/src/vnc/common -I$(SRCDIR)/src/vnc/libvncserver
 LDFLAGS+= -lgsm -lpthread -lsrtp
 
 ifeq ($(STATIC_OPENSSL),yes)
@@ -267,11 +279,11 @@ endif
 
 
 mcu: $(OBJSMCU)
-	@$(CXX) -o $(BIN)/$@ $(BUILDOBJSMCU) $(LDFLAGS) $(VADLD)
+	$(CXX) -o $(BIN)/$@ $(BUILDOBJSMCU) $(LDFLAGS) $(VADLD) $(CEFLD)
 	@echo [OUT] $(TAG) $(BIN)/$@
 	
 buildtest: $(OBJSTEST)
-	$(CXX) -o $(BIN)/test $(BUILDOBJSTEST) $(LDFLAGS) $(VADLD)
+	$(CXX) -o $(BIN)/test $(BUILDOBJSTEST) $(LDFLAGS) $(VADLD) $(CEFLD)
 	
 test: buildtest
 	$(BIN)/$@
@@ -285,7 +297,7 @@ flvdump: $(OBJSFLVDUMP)
 
 libmediamixer: $(OBJSLIB)
 	gcc $(CXXFLAGS) -c lib/mediamixer.cpp -o $(BUILD)/mediamixer.o -DPIC -fPIC
-	gcc -shared -o $(BIN)/$@.so $(BUILDOBJOBJSLIB) $(BUILD)/mediamixer.o $(LDFLAGS) $(VADLD)
+	gcc -shared -o $(BIN)/$@.so $(BUILDOBJOBJSLIB) $(BUILD)/mediamixer.o $(LDFLAGS) $(VADLD)  $(CEFLD)
 flashstreamer: $(OBJSFS) $(OBJS)
 	g++ -o $(BIN)/$@ $(BUILDOBJSFS) $(BUILDOBJS) $(GNASHBASE)/backend/.libs/libgnashagg.a /usr/lib/libagg.a $(LDFLAGS) $(GNASHLD)
 
