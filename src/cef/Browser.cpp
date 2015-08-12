@@ -1,0 +1,233 @@
+#include <X11/Xlib.h>
+#include <include/internal/cef_types.h>
+#include <include/internal/cef_linux.h>
+#include "Browser.h"
+#include "Client.h"
+
+int XErrorHandlerImpl(Display *display, XErrorEvent *event) {
+	return Error("X error received [code:%d,request:%d,minor:%d]\n",static_cast<int>(event->error_code),static_cast<int>(event->request_code),static_cast<int>(event->minor_code));
+}
+
+int XIOErrorHandlerImpl(Display *display) {
+	return  Error("X IO error received\n");
+}
+
+//CEF library initializers
+class BrowserLib
+{
+public:
+	BrowserLib()	{ 
+		// Install xlib error handlers so that the application won't be terminated
+		// on non-fatal errors.
+		XSetErrorHandler(XErrorHandlerImpl);
+		XSetIOErrorHandler(XIOErrorHandlerImpl);
+	}
+};
+
+BrowserLib cfe;
+
+	
+
+Browser::Browser()
+{
+	//Y no tamos iniciados
+	inited = 0;
+}
+
+
+/************************
+* ~ Browser
+* 	Destructor
+*************************/
+Browser::~Browser()
+{
+	//Check we have been correctly ended
+	if (inited)
+		//End it anyway
+		End();
+}
+
+
+/************************
+* Init
+* 	
+*************************/
+int Browser::Init()
+{
+	//Check not already inited
+	if (inited)
+		//Error
+		return Error("-Init: CEF Browser Server is already running.\n");
+
+	Log(">Init CEF Browser\n");
+	
+	CefMainArgs main_args;
+	CefRefPtr<Browser> app(this);
+
+	// CEF applications have multiple sub-processes (render, plugin, GPU, etc)
+	// that share the same executable. This function checks the command-line and,
+	// if this is a sub-process, executes the appropriate logic.
+	Debug("-Init CEF Browser, CefExecuteProcess\n");
+	int exit_code = CefExecuteProcess(main_args, app.get(), NULL);
+	if (exit_code >= 0) {
+		// The sub-process has completed so return here.
+		return Error("Error executing CEF Borwser [exit:%d]\n",exit_code);
+	}
+	
+	///
+	// Set to true (1) to enable windowless (off-screen) rendering support. Do not
+	// enable this value if the application does not use windowless rendering as
+	// it may reduce rendering performance on some systems.
+	///
+	settings.windowless_rendering_enabled = true;
+	
+	///
+	// Set to true (1) to use a single process for the browser and renderer. This
+	// run mode is not officially supported by Chromium and is less stable than
+	// the multi-process default. Also configurable using the "single-process"
+	// command-line switch.
+	///
+	settings.single_process = true;
+	
+	///
+	// Set to true (1) to disable the sandbox for sub-processes. See
+	// cef_sandbox_win.h for requirements to enable the sandbox on Windows. Also
+	// configurable using the "no-sandbox" command-line switch.
+	///
+	settings.no_sandbox = true;
+	
+	///
+	// Set to true (1) to have the browser process message loop run in a separate
+	// thread. If false (0) than the CefDoMessageLoopWork() function must be
+	// called from your application message loop. This option is only supported on
+	// Windows.
+	///
+	settings.multi_threaded_message_loop = false;
+
+	// Initialize CEF for the browser process.
+	Debug("-Init CEF Browser, CefInitialize\n");
+	CefInitialize(main_args, settings, app.get(), NULL);
+	
+	//I am inited
+	inited = 1;
+
+	//Create threads
+	createPriorityThread(&serverThread,run,this,0);
+
+	Log("<Inited CEF Browser\n");
+	//Return ok
+	return 1;
+}
+
+/***************************
+ * Run
+ * 	Server running thread
+ ***************************/
+int Browser::Run()
+{
+	//Log
+	Log(">Run CEF Browser [%p]\n",this);
+	
+	// Run the CEF message loop. This will block until CefQuitMessageLoop() is called.
+	CefRunMessageLoop();
+	
+	Log("<Run CEF Browser\n");
+
+	return 0;
+}
+
+/***********************
+* run
+*       Helper thread function
+************************/
+void * Browser::run(void *par)
+{
+        Log("-CEF Browser Thread [%d]\n",pthread_self());
+
+        //Obtenemos el parametro
+        Browser *browser = (Browser *)par;
+
+        //Bloqueamos las señales
+        blocksignals();
+
+        //Ejecutamos
+        browser->Run();
+	//Exit
+	return NULL;
+}
+
+
+/************************
+* End
+* 	End server and close all connections
+*************************/
+int Browser::End()
+{
+	Log(">End CEF Browser\n");
+
+	//Check we have been inited
+	if (!inited)
+		//Do nothing
+		return 0;
+
+	//Stop thread
+	inited = 0;
+
+	//Quite message loop 
+	CefQuitMessageLoop();
+	
+
+	//Wait for server thread to close
+        Log("Joining server thread [%d,%d]\n",serverThread,inited);
+        pthread_join(serverThread,NULL);
+        Log("Joined server thread [%d]\n",serverThread);
+	
+	// Shut down CEF.
+	CefShutdown();
+
+
+	Log("<End CEF Browser\n");
+}
+
+int Browser::CreateFrame(std::string url,DWORD width, DWORD height) {
+	// Information about the window that will be created including parenting, size, etc.
+	CefWindowInfo info;
+	
+	//Without parent and white solid background
+	info.SetAsWindowless(0,0);
+	//Set dimeensions
+	info.x = 0;
+	info.y = 0;
+	info.width = width;
+	info.height = height;
+	
+	 // SimpleHandler implements browser-level callbacks.
+	CefRefPtr<Client> handler(new Client());
+
+	// Specify CEF browser settings here.
+	CefBrowserSettings browser_settings;
+	
+	// Create the first browser window.
+	CefBrowserHost::CreateBrowser(info, handler.get(), url, browser_settings, NULL);
+}
+
+
+/*Off-Screen Rendering
+ * With off-screen rendering CEF does not create a native browser window. 
+ * Instead, CEF provides the host application with invalidated regions and a 
+ * pixel buffer and the host application notifies CEF of mouse, keyboard and 
+ * focus events. Off-screen rendering does not currently support accelerated 
+ * compositing so performance may suffer as compared to a windowed browser.
+ * Off-screen browsers will receive the same notifications as windowed browsers 
+ * including the life span notifications described in the previous section.
+ * To use off-screen rendering:
+ *  Implement the CefRenderHandler interface. All methods are required unless otherwise indicated.
+ *  Call CefWindowInfo::SetAsOffScreen() and optionally CefWindowInfo::SetTransparentPainting() before passing the CefWindowInfo structure to CefBrowserHost::CreateBrowser().
+ *  If no parent window is passed to SetAsOffScreen some functionality like ontext menus may not be available.
+ *  The CefRenderHandler::GetViewRect() method will be called to retrieve the desired view rectangle.
+ *  The CefRenderHandler::OnPaint() method will be called to provide invalid regions and the updated pixel buffer.
+ *  The cefclient application draws the buffer using OpenGL but your application can use whatever technique you prefer.
+ *  To resize the browser call CefBrowserHost::WasResized(). This will result in a call to GetViewRect() to retrieve the new size followed by a call to OnPaint().
+ *  Call the CefBrowserHost::SendXXX() methods to notify the browser of mouse, keyboard and focus events.
+ *  Call CefBrowserHost::CloseBrowser() to destroy browser.
+ */

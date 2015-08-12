@@ -4,10 +4,13 @@
 LOG		= yes
 DEBUG 		= yes
 STATIC		= no
-SANITIZE    = yes
+SANITIZE        = yes
 VADWEBRTC	= no
-WEBRTCINCLUDE	= /usr/local/src/webrtc/trunk/
-WEBRTDIROBJ	= /usr/local/src/webrtc/trunk/out/Debug/obj/webrtc
+IMAGEMAGICK	= yes
+STATIC_OPENSSL  = yes
+OPENSSL_DIR     = /usr/local/src/openssl
+CEF             = yes
+CEF_DIR         = /usr/local/src/cef
 SRCDIR		= /root/src/mcumediaserver/trunk/mcu
 TARGET		= /usr/local
 
