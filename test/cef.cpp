@@ -1,6 +1,9 @@
 #include "test.h"
-#include "cef/Browser.h"
 
+
+#ifdef CEF
+
+#include "cef/Browser.h"
 
 class CEFTestPlan: public TestPlan
 {
@@ -34,3 +37,4 @@ public:
 };
 
 CEFTestPlan cefp;
+#endif 

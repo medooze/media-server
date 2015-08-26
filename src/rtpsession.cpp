@@ -432,13 +432,13 @@ int RTPSession::SetProperties(const Properties& properties)
 			recvRTX.apt = atoi(it->second.c_str());
 		} else if (it->first.compare("urn:ietf:params:rtp-hdrext:ssrc-audio-level")==0) {
 			//Set extension
-			extMap[RTPPacket::HeaderExtension::SSRCAudioLevel] =  atoi(it->second.c_str());
+			extMap[atoi(it->second.c_str())] = RTPPacket::HeaderExtension::SSRCAudioLevel;
 		} else if (it->first.compare("urn:ietf:params:rtp-hdrext:toffset")==0) {
 			//Set extension
-			extMap[RTPPacket::HeaderExtension::TimeOffset] =  atoi(it->second.c_str());
+			extMap[atoi(it->second.c_str())] = RTPPacket::HeaderExtension::TimeOffset;
 		} else if (it->first.compare("http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time")==0) {
 			//Set extension
-			extMap[RTPPacket::HeaderExtension::AbsoluteSendTime] =  atoi(it->second.c_str());
+			extMap[atoi(it->second.c_str())] = RTPPacket::HeaderExtension::AbsoluteSendTime;
 			//Use timestamsp
 			useAbsTime = true;
 		} else {
@@ -1001,7 +1001,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 		// Encoding: Timestamp is in seconds, 24 bit 6.18 fixed point, yielding 64s wraparound and 3.8us resolution (one increment for each 477 bytes going out on a 1Gbps interface).
 		DWORD abs = ((getTimeMS() << 18) / 1000) & 0x00ffffff;
 		//Set header
-		sendPacket[ini] = extMap.GetCodecForType(RTPPacket::HeaderExtension::AbsoluteSendTime) << 4 | 0x02;
+		sendPacket[ini] = extMap.GetTypeForCodec(RTPPacket::HeaderExtension::AbsoluteSendTime) << 4 | 0x02;
 		//Set data
 		set3(sendPacket,ini+1,abs);
 		//Increase ini
@@ -1107,8 +1107,8 @@ int RTPSession::ReadRTCP()
 	//Read rtcp socket
 	int size = recvfrom(simRtcpSocket,buffer,MTU,MSG_DONTWAIT,(sockaddr*)&from_addr, &from_len);
 
-	// Ignore empty datagrams.
-	if (size == 0)
+	// Ignore empty datagrams and errors
+	if (size <= 0)
 		return 0;
 
 	//Check if it looks like a STUN message
@@ -1230,8 +1230,8 @@ int RTPSession::ReadRTP()
 	//Leemos del socket
 	int size = recvfrom(simSocket,buffer,MTU,MSG_DONTWAIT,(sockaddr*)&from_addr, &from_len);
 
-	// Ignore empty datagrams.
-	if (size == 0)
+	// Ignore empty datagrams and errors
+	if (size <= 0)
 		return 0;
 
 	//Check if it looks like a STUN message
@@ -1763,6 +1763,8 @@ int RTPSession::ReadRTP()
 			else
 				//Set type for passtrhought
 				recovered->SetCodec(t);
+			//Process extensions
+			recovered->ProcessExtensions(extMap);
 			//Append recovered packet
 			packets.Add(recovered);
 			//Try to recover another one (yuhu!)

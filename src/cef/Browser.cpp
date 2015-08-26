@@ -79,7 +79,7 @@ int Browser::Init()
 	// enable this value if the application does not use windowless rendering as
 	// it may reduce rendering performance on some systems.
 	///
-	settings.windowless_rendering_enabled = true;
+	//settings.windowless_rendering_enabled = true;
 	
 	///
 	// Set to true (1) to use a single process for the browser and renderer. This
@@ -87,7 +87,7 @@ int Browser::Init()
 	// the multi-process default. Also configurable using the "single-process"
 	// command-line switch.
 	///
-	settings.single_process = true;
+	//settings.single_process = true;
 	
 	///
 	// Set to true (1) to disable the sandbox for sub-processes. See
@@ -102,12 +102,13 @@ int Browser::Init()
 	// called from your application message loop. This option is only supported on
 	// Windows.
 	///
-	settings.multi_threaded_message_loop = false;
+	//settings.multi_threaded_message_loop = false;
 
 	// Initialize CEF for the browser process.
 	Debug("-Init CEF Browser, CefInitialize\n");
 	CefInitialize(main_args, settings, app.get(), NULL);
-	
+	Debug("-Inited CEF Browser, CefInitialize\n");
+	CefRunMessageLoop();
 	//I am inited
 	inited = 1;
 

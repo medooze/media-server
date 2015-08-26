@@ -262,7 +262,7 @@ RTPTimedPacket* FECDecoder::Recover()
 				//Set ssrc
 				packet->SetSSRC(ssrc);
 				//Set payload and recovered length
-				if (!packet->SetPayload(recovered,l))
+				if (!packet->SetPayloadWithExtensionData(recovered,l))
 				{
 					//Delete packet
 					delete(packet);

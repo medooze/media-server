@@ -222,6 +222,7 @@ public:
 	void SetSize(DWORD size)	{ len = size-GetRTPHeaderLen();		}
 	void SetSeqCycles(WORD cycles)	{ this->cycles = cycles;		}
 	void SetClockRate(DWORD rate)	{ this->clockRate = rate;		}
+	
 
 	//Getters
 	MediaFrame::Type GetMedia()	const { return media;			}
@@ -230,7 +231,6 @@ public:
 	DWORD GetRTPHeaderLen()		const { return sizeof(rtp_hdr_t)+4*header->cc+GetExtensionSize();	}
 	WORD  GetExtensionType()	const { return GeExtensionHeader()->ext_type;				}
 	WORD  GetExtensionLength()	const { return GetX() ? ntohs(GeExtensionHeader()->len)*4 : 0;		}
-	const BYTE* GetExtensionData()	const { return GetX() ? buffer+sizeof(rtp_hdr_t)+4*header->cc+sizeof(rtp_hdr_ext_t) : NULL;		}
 	DWORD GetExtensionSize()	const { return GetX() ? GetExtensionLength()+sizeof(rtp_hdr_ext_t) : 0; };
 	DWORD GetCodec()		const { return codec;				}
 	BYTE  GetVersion()		const { return header->version;			}
@@ -266,7 +266,68 @@ public:
 	bool  HasAbsSentTime()		const	{ return extension.hasAbsSentTime;	}
 	bool  HasTimeOffeset()		const   { return extension.hasTimeOffset;	}
 
+	DWORD SetExtensionHeader(BYTE* data,DWORD size)
+	{
+		//Get the length of the header extesion
+		int len = sizeof(rtp_hdr_ext_t);
+		//Check there is at least minimum size
+		if (size<len)
+			//Error
+			return 0;
+		//Get the header
+		rtp_hdr_ext_t* headers = GeExtensionHeader();
+		//Set it
+		memcpy((BYTE*)headers,data,len);
+		//The amount of consumed data	
+		return len;
+	}
+	
+	DWORD SetExtensionData(BYTE* data,DWORD size)
+	{
+		//Get extension data
+		BYTE* ext = GetExtensionData();
+		//Get extesnion lenght
+		WORD length = GetExtensionLength();
+		//Check sizes
+		if (size<length)
+			//Error
+			return 0;
+		//Copy it
+		memcpy(ext,data,length);
+		//Consumed data
+		return length;
+	}
 
+	bool SetPayloadWithExtensionData(BYTE* data,DWORD size)
+	{
+		BYTE *d = data;
+		DWORD s = size;
+		
+		//If extensions are enabled
+		if (GetX()) 
+		{
+			//Set the extension header 
+			int len = SetExtensionHeader(d,s);
+			//Ensure we have copied something
+			if (!len)
+				return false;
+			//Move pointer
+			d+=len;
+			s-=len;
+			//Set the extension header 
+			len = SetExtensionData(d,s);
+			//Ensure we have copied something
+			if (!len)
+				return false;
+			//Move pointer
+			d+=len;
+			s-=len;
+		}
+		//Now set payload
+		return SetPayload(d,s);
+		
+	}
+	
 	bool SetPayload(BYTE *data,DWORD size)
 	{
 		//Check size
@@ -307,14 +368,16 @@ public:
 				Log("\t\t\t[AudioLevel vad=%d level=%d]\n",GetVAD(),GetLevel());
 			if (extension.hasTimeOffset)
 				Log("\t\t\t[TimeOffset offset=%d]\n",GetTimeOffset());
-			if (extension.hasAudioLevel)
-				Log("\t\t\t[AudioLevel ts=%lld]\n",GetAbsSendTime());
-			Log("\t\t[\Extension]");
+			if (extension.hasAbsSentTime)
+				Log("\t\t\t[AbsSentTime ts=%lld]\n",GetAbsSendTime());
+			Log("\t\t[/Extension]\n");
 
 		}
 		::Dump(GetMediaData(),16);
 		Log("[[/RTPPacket]\n");
 	}
+protected:
+	BYTE* GetExtensionData()  { return GetX() ? buffer+sizeof(rtp_hdr_t)+4*header->cc+sizeof(rtp_hdr_ext_t) : NULL;		}
 public:
 	static BYTE  GetType(const BYTE* data)		{ return ((rtp_hdr_t*)data)->pt;		}
 	static DWORD GetSSRC(const BYTE* data)		{ return ntohl(((rtp_hdr_t*)data)->ssrc);	}

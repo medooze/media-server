@@ -2,146 +2,6 @@
 <configurationDescriptor version="95">
   <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
     <df root="." name="0">
-      <df name="ext">
-        <df name="webrtc">
-          <df name="common_audio">
-            <df name="resampler">
-              <in>push_resampler.cc</in>
-              <in>push_resampler_unittest.cc</in>
-              <in>push_sinc_resampler.cc</in>
-              <in>push_sinc_resampler_unittest.cc</in>
-              <in>resampler.cc</in>
-              <in>resampler_unittest.cc</in>
-              <in>sinc_resampler.cc</in>
-              <in>sinc_resampler_neon.cc</in>
-              <in>sinc_resampler_sse.cc</in>
-              <in>sinc_resampler_unittest.cc</in>
-              <in>sinusoidal_linear_chirp_source.cc</in>
-            </df>
-            <df name="signal_processing">
-              <in>auto_corr_to_refl_coef.c</in>
-              <in>auto_correlation.c</in>
-              <in>complex_bit_reverse.c</in>
-              <in>complex_bit_reverse_mips.c</in>
-              <in>complex_fft.c</in>
-              <in>complex_fft_mips.c</in>
-              <in>copy_set_operations.c</in>
-              <in>cross_correlation.c</in>
-              <in>division_operations.c</in>
-              <in>dot_product_with_scale.c</in>
-              <in>downsample_fast.c</in>
-              <in>downsample_fast_mips.c</in>
-              <in>energy.c</in>
-              <in>filter_ar.c</in>
-              <in>filter_ar_fast_q12.c</in>
-              <in>filter_ar_fast_q12_mips.c</in>
-              <in>filter_ma_fast_q12.c</in>
-              <in>get_hanning_window.c</in>
-              <in>get_scaling_square.c</in>
-              <in>ilbc_specific_functions.c</in>
-              <in>levinson_durbin.c</in>
-              <in>lpc_to_refl_coef.c</in>
-              <in>min_max_operations.c</in>
-              <in>min_max_operations_mips.c</in>
-              <in>randomization_functions.c</in>
-              <in>real_fft.c</in>
-              <in>real_fft_unittest.cc</in>
-              <in>refl_coef_to_lpc.c</in>
-              <in>resample.c</in>
-              <in>resample_48khz.c</in>
-              <in>resample_by_2.c</in>
-              <in>resample_by_2_internal.c</in>
-              <in>resample_by_2_mips.c</in>
-              <in>resample_fractional.c</in>
-              <in>signal_processing_unittest.cc</in>
-              <in>spl_init.c</in>
-              <in>spl_sqrt.c</in>
-              <in>spl_sqrt_floor.c</in>
-              <in>spl_version.c</in>
-              <in>splitting_filter.c</in>
-              <in>sqrt_of_one_minus_x_squared.c</in>
-              <in>vector_scaling_operations.c</in>
-            </df>
-            <df name="vad">
-              <in>vad_core.c</in>
-              <in>vad_core_unittest.cc</in>
-              <in>vad_filterbank.c</in>
-              <in>vad_filterbank_unittest.cc</in>
-              <in>vad_gmm.c</in>
-              <in>vad_gmm_unittest.cc</in>
-              <in>vad_sp.c</in>
-              <in>vad_sp_unittest.cc</in>
-              <in>vad_unittest.cc</in>
-              <in>webrtc_vad.c</in>
-            </df>
-            <in>audio_util.cc</in>
-            <in>audio_util_unittest.cc</in>
-          </df>
-          <df name="system_wrappers">
-            <df name="source">
-              <df name="android">
-                <in>cpu-features.c</in>
-              </df>
-              <in>aligned_malloc.cc</in>
-              <in>aligned_malloc_unittest.cc</in>
-              <in>atomic32_mac.cc</in>
-              <in>atomic32_posix.cc</in>
-              <in>atomic32_win.cc</in>
-              <in>clock.cc</in>
-              <in>clock_unittest.cc</in>
-              <in>condition_variable.cc</in>
-              <in>condition_variable_event_win.cc</in>
-              <in>condition_variable_native_win.cc</in>
-              <in>condition_variable_posix.cc</in>
-              <in>condition_variable_unittest.cc</in>
-              <in>cpu_features.cc</in>
-              <in>cpu_features_android.c</in>
-              <in>cpu_info.cc</in>
-              <in>critical_section.cc</in>
-              <in>critical_section_posix.cc</in>
-              <in>critical_section_unittest.cc</in>
-              <in>critical_section_win.cc</in>
-              <in>data_log.cc</in>
-              <in>data_log_c.cc</in>
-              <in>data_log_c_helpers_unittest.c</in>
-              <in>data_log_helpers_unittest.cc</in>
-              <in>data_log_no_op.cc</in>
-              <in>data_log_unittest.cc</in>
-              <in>data_log_unittest_disabled.cc</in>
-              <in>event.cc</in>
-              <in>event_posix.cc</in>
-              <in>event_tracer.cc</in>
-              <in>event_tracer_unittest.cc</in>
-              <in>event_win.cc</in>
-              <in>file_impl.cc</in>
-              <in>list_no_stl.cc</in>
-              <in>list_stl.cc</in>
-              <in>list_unittest.cc</in>
-              <in>logging.cc</in>
-              <in>logging_no_op.cc</in>
-              <in>logging_unittest.cc</in>
-              <in>rw_lock.cc</in>
-              <in>rw_lock_generic.cc</in>
-              <in>rw_lock_posix.cc</in>
-              <in>rw_lock_win.cc</in>
-              <in>sleep.cc</in>
-              <in>sort.cc</in>
-              <in>stringize_macros_unittest.cc</in>
-              <in>thread.cc</in>
-              <in>thread_posix.cc</in>
-              <in>thread_posix_unittest.cc</in>
-              <in>thread_unittest.cc</in>
-              <in>thread_win.cc</in>
-              <in>tick_util.cc</in>
-              <in>trace_impl.cc</in>
-              <in>trace_impl_no_op.cc</in>
-              <in>trace_posix.cc</in>
-              <in>trace_win.cc</in>
-              <in>unittest_utilities_unittest.cc</in>
-            </df>
-          </df>
-        </df>
-      </df>
       <df name="lib">
         <in>mediamixer.cpp</in>
       </df>
@@ -324,8 +184,6 @@
         </df>
         <in>CPUMonitor.cpp</in>
         <in>FLVEncoder.cpp</in>
-        <in>FlashPlayer.cpp</in>
-        <in>FlashSoundHandler.cpp</in>
         <in>OpenSSL.cpp</in>
         <in>RTPSmoother.cpp</in>
         <in>VNCServer.cpp</in>
@@ -348,10 +206,6 @@
         <in>dtls.cpp</in>
         <in>eventstreaminghandler.cpp</in>
         <in>fecdecoder.cpp</in>
-        <in>flash.cpp</in>
-        <in>flashstreamer.cpp</in>
-        <in>flvdump.cpp</in>
-        <in>flvplayer.cpp</in>
         <in>flvrecorder.cpp</in>
         <in>framescaler.cpp</in>
         <in>groupchat.cpp</in>
@@ -381,7 +235,6 @@
         <in>rtmpchunk.cpp</in>
         <in>rtmpclientconnection.cpp</in>
         <in>rtmpconnection.cpp</in>
-        <in>rtmpdebug.cpp</in>
         <in>rtmpflvstream.cpp</in>
         <in>rtmpmessage.cpp</in>
         <in>rtmpmp4stream.cpp</in>
@@ -392,11 +245,9 @@
         <in>rtp.cpp</in>
         <in>rtpparticipant.cpp</in>
         <in>rtpsession.cpp</in>
-        <in>rtptransport.cpp</in>
         <in>sidebar.cpp</in>
         <in>statushandler.cpp</in>
         <in>stunmessage.cpp</in>
-        <in>tcpsocketserver.cpp</in>
         <in>textencoder.cpp</in>
         <in>textmixer.cpp</in>
         <in>textmixerworker.cpp</in>
@@ -409,21 +260,16 @@
         <in>videostream.cpp</in>
         <in>websocketconnection.cpp</in>
         <in>websocketserver.cpp</in>
-        <in>websocketshandler.cpp</in>
         <in>xmlhandler.cpp</in>
         <in>xmlrpcbroadcaster.cpp</in>
-        <in>xmlrpcclient.cpp</in>
-        <in>xmlrpcflash.cpp</in>
-        <in>xmlrpcflv.cpp</in>
         <in>xmlrpcmcu.cpp</in>
         <in>xmlrpcmediagateway.cpp</in>
-        <in>xmlrpcrtmp.cpp</in>
         <in>xmlrpcserver.cpp</in>
         <in>xmlstreaminghandler.cpp</in>
       </df>
       <df name="test">
-        <in>cpim.cpp</in>
-        <in>main.cpp</in>
+        <in>fec.cpp</in>
+        <in>rtp.cpp</in>
         <in>test.cpp</in>
         <in>test.h</in>
       </df>
@@ -4965,6 +4811,10 @@
           </preprocessorList>
         </ccTool>
       </item>
+      <item path="test/fec.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="test/rtp.cpp" ex="false" tool="1" flavor2="0">
+      </item>
       <item path="test/test.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="test/test.h" ex="false" tool="3" flavor2="0">
@@ -9494,6 +9344,10 @@
             <Elem>__STDC_CONSTANT_MACROS</Elem>
           </preprocessorList>
         </ccTool>
+      </item>
+      <item path="test/fec.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="test/rtp.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="test/test.cpp" ex="false" tool="1" flavor2="9">
       </item>

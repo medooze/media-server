@@ -36,6 +36,7 @@ void RTPPacket::ProcessExtensions(const RTPMap &extMap)
 				break;
 			//Get mapped extension
 			BYTE t = extMap.GetCodecForType(id);
+			//Debug("-RTPExtension [type:%d,codec:%d]\n",id,t);
 			//Check type
 			switch (t)
 			{
