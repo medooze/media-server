@@ -7,7 +7,7 @@
 #include <map>
 #include <string>
 #include <poll.h>
-#include <srtp/srtp.h>
+#include <srtp2/srtp.h>
 #include "config.h"
 #include "use.h"
 #include "rtp.h"

@@ -128,10 +128,10 @@ int FrameScaler::SetResize(int srcWidth,int srcHeight,int srcLineWidth,int dstWi
 	av_opt_set_defaults(resizeCtx);
 	av_opt_set_int(resizeCtx, "srcw",       srcWidth		,AV_OPT_SEARCH_CHILDREN);
 	av_opt_set_int(resizeCtx, "srch",       srcHeight		,AV_OPT_SEARCH_CHILDREN);
-	av_opt_set_int(resizeCtx, "src_format", PIX_FMT_YUV420P		,AV_OPT_SEARCH_CHILDREN);
+	av_opt_set_int(resizeCtx, "src_format", AV_PIX_FMT_YUV420P	,AV_OPT_SEARCH_CHILDREN);
 	av_opt_set_int(resizeCtx, "dstw",       resizeDstAdjustedWidth	,AV_OPT_SEARCH_CHILDREN);
 	av_opt_set_int(resizeCtx, "dsth",       resizeDstAdjustedHeight	,AV_OPT_SEARCH_CHILDREN);
-	av_opt_set_int(resizeCtx, "dst_format", PIX_FMT_YUV420P		,AV_OPT_SEARCH_CHILDREN);
+	av_opt_set_int(resizeCtx, "dst_format", AV_PIX_FMT_YUV420P	,AV_OPT_SEARCH_CHILDREN);
 	av_opt_set_int(resizeCtx, "sws_flags",  resizeFlags		,AV_OPT_SEARCH_CHILDREN);
 	
 	// Init context

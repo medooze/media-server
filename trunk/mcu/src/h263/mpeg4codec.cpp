@@ -4,6 +4,8 @@
 #include "log.h"
 #include "mpeg4codec.h"
 #include "video.h"
+#include "av_codec_encode_video.h"
+
 
 DWORD Mpeg4Decoder::bufSize = 4096*16;
 
@@ -212,7 +214,7 @@ int Mpeg4Encoder::SetSize(int width, int height)
 	Log("-SetSize [%d,%d]\n",width,height);
 
 	// Set pixel format 
-	ctx->pix_fmt		= PIX_FMT_YUV420P;
+	ctx->pix_fmt		= AV_PIX_FMT_YUV420P;
 	ctx->width 		= width;
 	ctx->height 		= height;
 

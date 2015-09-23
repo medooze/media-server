@@ -7,6 +7,7 @@
 
 #include "aacencoder.h"
 #include "log.h"
+#include "avcodec_encode_audio.h"
 
 
 AACEncoder::AACEncoder(const Properties &properties)

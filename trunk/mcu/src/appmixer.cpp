@@ -520,7 +520,7 @@ int AppMixer::onFrameBufferSizeChanged(VNCViewer *viewer, int width, int height)
 		av_opt_set_int(sws, "src_format", AV_PIX_FMT_RGBA	,AV_OPT_SEARCH_CHILDREN);
 		av_opt_set_int(sws, "dstw",       width			,AV_OPT_SEARCH_CHILDREN);
 		av_opt_set_int(sws, "dsth",       height		,AV_OPT_SEARCH_CHILDREN);
-		av_opt_set_int(sws, "dst_format", PIX_FMT_YUV420P	,AV_OPT_SEARCH_CHILDREN);
+		av_opt_set_int(sws, "dst_format", AV_PIX_FMT_YUV420P	,AV_OPT_SEARCH_CHILDREN);
 		av_opt_set_int(sws, "sws_flags",  SWS_FAST_BILINEAR	,AV_OPT_SEARCH_CHILDREN);
 	
 		// Init YUV rescaller context

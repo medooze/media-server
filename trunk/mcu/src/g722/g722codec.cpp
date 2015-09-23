@@ -13,6 +13,7 @@
 #include "g722codec.h"
 #include "fifo.h"
 #include "log.h"
+#include "avcodec_encode_audio.h"
 
 
 G722Encoder::G722Encoder(const Properties &properties)
