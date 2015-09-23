@@ -11,6 +11,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include "h263codec.h"
+#include "av_codec_encode_video.h"
 
 DWORD H263Decoder1996::bufSize = 4096*16;
 
@@ -286,7 +287,7 @@ int H263Encoder1996::SetSize(int width, int height)
 		return Error("Size not supported for H263");
 
 	// Set pixel format
-	ctx->pix_fmt		= PIX_FMT_YUV420P;
+	ctx->pix_fmt		= AV_PIX_FMT_YUV420P;
 	ctx->width 		= width;
 	ctx->height 		= height;
 

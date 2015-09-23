@@ -195,7 +195,7 @@ VPATH +=  %.cpp $(SRCDIR)/src/$(COREDIR)
 
 
 INCLUDE+= -I$(SRCDIR)/src -I$(SRCDIR)/include/ $(VADINCLUDE) $(CEFINCLUDE) -I$(SRCDIR)/src/vnc/common -I$(SRCDIR)/src/vnc/libvncserver
-LDFLAGS+= -lgsm -lpthread -lsrtp
+LDFLAGS+= -lgsm -lpthread -lsrtp2
 
 ifeq ($(STATIC_OPENSSL),yes)
 	INCLUDE+= -I$(OPENSSL_DIR)/include

@@ -13,6 +13,8 @@
 #include "NellyCodec.h"
 #include "fifo.h"
 #include "log.h"
+#include "avcodec_encode_audio.h"
+
 
 NellyEncoder::NellyEncoder(const Properties &properties)
 {
