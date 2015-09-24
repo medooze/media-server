@@ -39,17 +39,40 @@ XmlRpcServer::~XmlRpcServer()
 * Start
 *	Arranca el servidor
 **************************************/
-int XmlRpcServer::Start()
+int XmlRpcServer::Start(bool async)
 {
+	pthread_t thread;
+
 	Log("-Start XmlRpcServer [%p]\n",this);
 
 	//Start it
 	running = 1;
 
-	//And run
-	Run();
+	//If we run it async
+	if (async)
+		createPriorityThread(&thread,run,this,0);
+	else
+		//And run
+		Run();
+		
 
 	return 1;
+}
+
+void* XmlRpcServer::run(void *par)
+{
+	Log("-XmlRpcServer running async [%p]\n",pthread_self());
+
+	//Get server
+	XmlRpcServer *server = (XmlRpcServer *)par;
+
+	//Don't break on signals
+	blocksignals();
+	
+	//Run
+	server->Run();
+	//Exit
+	return NULL;
 }
 
 /**************************************

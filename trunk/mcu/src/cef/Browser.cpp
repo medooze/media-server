@@ -52,8 +52,21 @@ Browser::~Browser()
 * Init
 * 	
 *************************/
-int Browser::Init()
+int Browser::Init(int argc, char** argv)
 {
+
+	CefMainArgs main_args(argc,argv);
+	CefRefPtr<Browser> app(this);
+
+	// CEF applications have multiple sub-processes (render, plugin, GPU, etc)
+	// that share the same executable. This function checks the command-line and,
+	// if this is a sub-process, executes the appropriate logic.
+	Log("-CefExecuteProcess\n");
+	int exit_code = CefExecuteProcess(main_args, app.get(), NULL);
+	if (exit_code >= 0) 
+		// The sub-process has completed so return here.
+		return Error("Error executing CEF Borwser [exit:%d]\n",exit_code);
+
 	//Check not already inited
 	if (inited)
 		//Error
@@ -61,25 +74,12 @@ int Browser::Init()
 
 	Log(">Init CEF Browser\n");
 	
-	CefMainArgs main_args;
-	CefRefPtr<Browser> app(this);
-
-	// CEF applications have multiple sub-processes (render, plugin, GPU, etc)
-	// that share the same executable. This function checks the command-line and,
-	// if this is a sub-process, executes the appropriate logic.
-	Debug("-Init CEF Browser, CefExecuteProcess\n");
-	int exit_code = CefExecuteProcess(main_args, app.get(), NULL);
-	if (exit_code >= 0) {
-		// The sub-process has completed so return here.
-		return Error("Error executing CEF Borwser [exit:%d]\n",exit_code);
-	}
-	
 	///
 	// Set to true (1) to enable windowless (off-screen) rendering support. Do not
 	// enable this value if the application does not use windowless rendering as
 	// it may reduce rendering performance on some systems.
 	///
-	//settings.windowless_rendering_enabled = true;
+	settings.windowless_rendering_enabled = true;
 	
 	///
 	// Set to true (1) to use a single process for the browser and renderer. This
@@ -87,7 +87,7 @@ int Browser::Init()
 	// the multi-process default. Also configurable using the "single-process"
 	// command-line switch.
 	///
-	//settings.single_process = true;
+	settings.single_process = true;
 	
 	///
 	// Set to true (1) to disable the sandbox for sub-processes. See
@@ -95,27 +95,20 @@ int Browser::Init()
 	// configurable using the "no-sandbox" command-line switch.
 	///
 	settings.no_sandbox = true;
-	
-	///
-	// Set to true (1) to have the browser process message loop run in a separate
-	// thread. If false (0) than the CefDoMessageLoopWork() function must be
-	// called from your application message loop. This option is only supported on
-	// Windows.
-	///
-	//settings.multi_threaded_message_loop = false;
+
+	//Verbose logs	
+	settings.log_severity = LOGSEVERITY_VERBOSE;
 
 	// Initialize CEF for the browser process.
-	Debug("-Init CEF Browser, CefInitialize\n");
+	Debug("-Init CEF Browser, CefInitialize----------------\n");
 	CefInitialize(main_args, settings, app.get(), NULL);
-	Debug("-Inited CEF Browser, CefInitialize\n");
-	CefRunMessageLoop();
+	Debug("-Inited CEF Browser, CefInitialize--------------------\n");
 	//I am inited
 	inited = 1;
 
-	//Create threads
-	createPriorityThread(&serverThread,run,this,0);
-
+	//Log
 	Log("<Inited CEF Browser\n");
+
 	//Return ok
 	return 1;
 }
@@ -124,7 +117,7 @@ int Browser::Init()
  * Run
  * 	Server running thread
  ***************************/
-int Browser::Run()
+void Browser::Run()
 {
 	//Log
 	Log(">Run CEF Browser [%p]\n",this);
@@ -134,28 +127,8 @@ int Browser::Run()
 	
 	Log("<Run CEF Browser\n");
 
-	return 0;
 }
 
-/***********************
-* run
-*       Helper thread function
-************************/
-void * Browser::run(void *par)
-{
-        Log("-CEF Browser Thread [%d]\n",pthread_self());
-
-        //Obtenemos el parametro
-        Browser *browser = (Browser *)par;
-
-        //Bloqueamos las señales
-        blocksignals();
-
-        //Ejecutamos
-        browser->Run();
-	//Exit
-	return NULL;
-}
 
 
 /************************
@@ -202,7 +175,7 @@ int Browser::CreateFrame(std::string url,DWORD width, DWORD height) {
 	info.width = width;
 	info.height = height;
 	
-	 // SimpleHandler implements browser-level callbacks.
+	 // Client implements browser-level callbacks and RenderHandler
 	CefRefPtr<Client> handler(new Client());
 
 	// Specify CEF browser settings here.

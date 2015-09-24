@@ -3,6 +3,10 @@
 #include <string.h>
 #include <log.h>
 #include "statushandler.h"
+#ifdef CEF
+#include "cef/Browser.h"
+#endif
+
 
 
 #define STATUS "System is running\n"
@@ -50,6 +54,8 @@ int StatusHandler::ProcessRequest(TRequestInfo *req,TSession * const ses)
 
 	//Y escribimos
 	XmlRpcServer::SendResponse(ses,200,STATUS,strlen(STATUS));
+
+	Browser::getInstance().CreateFrame(std::string("http://www.google.es"),1200,1200);
 
 	//Liberamos el buffer
 	if (buffer != NULL)

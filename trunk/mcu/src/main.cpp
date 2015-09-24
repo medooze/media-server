@@ -29,6 +29,10 @@ extern "C" {
 #include <sys/wait.h>
 #include <cerrno>
 
+#ifdef CEF
+#include "cef/Browser.h"	
+#endif 
+
 
 extern XmlHandlerCmd mcuCmdList[];
 extern XmlHandlerCmd broadcasterCmdList[];
@@ -317,6 +321,15 @@ int main(int argc,char **argv)
 		//Set new limit
 		setrlimit(RLIMIT_CORE, &l);
 	}
+#ifdef CEF
+			//Enable debug
+			Logger::EnableDebug(true);
+	//Initialize CEF browser singleton
+	Browser& browser = Browser::getInstance();
+
+	//Pass the args so it can detect if it is a child process or not
+	browser.Init(argc,argv);
+#endif
 
 	//Register mutext for ffmpeg
 	av_lockmgr_register(lock_ffmpeg);
@@ -458,9 +471,20 @@ int main(int argc,char **argv)
 
 	//Start cpu monitor
 	monitor.Start(10000);
+
+#ifdef CEF
+	//Run the server async
+	server.Start(true);
 	
-	//Run it
-	server.Start();
+	//Run the browser sync
+	browser.Run();
+	
+	//Shutdown browser
+	browser.End();
+#else
+	//Run it sync
+	server.Start(false);
+#endif
 	
 	//Stop monitor
 	monitor.Stop();

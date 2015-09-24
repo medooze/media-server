@@ -10,7 +10,8 @@ public:
 		
 	}
 	
-	int message() {
+	int message() 
+	{
 		const char* msg = 
 			"From: Inaki Baz Castillo <im:inaki.baz@eface2face.com>\r\n" 
 			"To: Alicia <im:alicia@atlanta.com>\r\n" 
