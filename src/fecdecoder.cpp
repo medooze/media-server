@@ -6,7 +6,7 @@
  */
 
 #include <set>
-#include <srtp/srtp.h>
+#include <srtp2/srtp.h>
 
 #include "fecdecoder.h"
 #include "codecs.h"

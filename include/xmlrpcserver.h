@@ -24,8 +24,7 @@ public:
 	~XmlRpcServer();
 	int AddHandler(std::string base,Handler* hnd);
 
-	int Start();
-	int Run();
+	int Start(bool async);
 	int Stop();
 
 	static void RequestHandler(void *par,TSession *ses, abyss_bool *ret);
@@ -36,7 +35,9 @@ public:
 
 protected:
 	int DispatchRequest(TSession *ses);
-
+	int Run();
+private:
+	static void * run(void *par);
 private:
 	typedef std::map<std::string,Handler *> LstHandlers;
 	int running;

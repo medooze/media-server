@@ -27,12 +27,26 @@ class Browser :
         public CefRenderProcessHandler 
 {
 public:
+        static Browser& getInstance()
+        {
+            static Browser instance;
+            return instance;
+        }
+	
+private:
+        // Dont forget to declare these two. You want to make sure they
+        // are unaccessable otherwise you may accidently get copies of
+        // your singelton appearing.
 	Browser();
-	~Browser();
+        Browser(Browser const&);                  // Don't Implement
+        void operator=(Browser const&);           // Don't implement
 
-	int Init();
+public:
+	int Init(int argc, char** argv);
+	void Run();
 	int CreateFrame(std::string url,DWORD width, DWORD height);
 	int End();
+	virtual ~Browser();	
 
 	//Override Methods
 	
@@ -43,14 +57,14 @@ public:
 	virtual void OnRegisterCustomSchemes(CefRefPtr<CefSchemeRegistrar> registrar)	{
 		Debug("OnRegisterCustomSchemes...\n");
 	}
-	virtual CefRefPtr<CefBrowserProcessHandler> GetBrowserProcessHandler()		{ 
+	/*virtual CefRefPtr<CefBrowserProcessHandler> GetBrowserProcessHandler()		{ 
 		Debug("GetBrowserProcessHandler...\n");
 		return this; 
-	}
-	virtual CefRefPtr<CefRenderProcessHandler> GetRenderProcessHandler()		{ 
+	}*/
+	/*virtual CefRefPtr<CefRenderProcessHandler> GetRenderProcessHandler()		{ 
 		Debug("GetRenderProcessHandler...\n");
 		return this; 
-	}
+	}*/
 
 	// CefBrowserProcessHandler methods.
 	virtual void OnContextInitialized() {
@@ -75,6 +89,7 @@ public:
 	}
 	virtual bool OnBeforeNavigation(CefRefPtr<CefBrowser> browser, CefRefPtr<CefFrame> frame, CefRefPtr<CefRequest> request, NavigationType navigation_type, bool is_redirect) {
 		Debug("Allow or block different types of navigation...\n");
+		return true;
 	}
 	virtual void OnContextCreated(CefRefPtr<CefBrowser> browser, CefRefPtr<CefFrame> frame, CefRefPtr<CefV8Context> context) {
 		Debug("JavaScript context created, add V8 bindings here...\n");
@@ -87,11 +102,6 @@ public:
 	}
 
 	IMPLEMENT_REFCOUNTING(Browser);
-protected:
-        int Run();
-
-private:
-        static void * run(void *par);
 
 private:
 	bool	inited;

@@ -139,7 +139,7 @@ endif
 
 ifeq ($(CEF),yes)
 	CEFINCLUDE = -I$(CEF_DIR) -DCEF
-	CEFLD = $(CEF_DIR)/build/libcef_dll/libcef_dll_wrapper.a -lcef -L$(CEF_DIR)/Debug
+	CEFLD = $(CEF_DIR)/libcef_dll/libcef_dll_wrapper.a -lcef -L$(CEF_DIR)/Release  -lX11
 	OBJS+= Browser.o Client.o
 	OPTS+= -DCEF
 else
@@ -150,7 +150,7 @@ endif
 
 OBJSMCU = $(OBJS) main.o
 OBJSLIB = $(OBJS)
-OBJSTEST = $(OBJS) test/main.o test/test.o test/cpim.o test/cef.o test/rtp.o test/fec.o
+OBJSTEST = $(OBJS) test/main.o test/test.o test/cpim.o test/rtp.o test/fec.o
 OBJSRTMPDEBUG = $(OBJS) rtmpdebug.o
 OBJSFLVDUMP = $(OBJS) flvdump.o
 
