@@ -8,23 +8,25 @@
 #include "Client.h"
 #include "log.h"
 
-Client::Client()
+Client::Client(Listener* listener)
 { 
+	//Store
+	this->listener = listener;
 }
-
 
 Client::~Client()
 {
 }
 
-bool Client::Client::GetViewRect(CefRefPtr<CefBrowser>, CefRect& rect)
+bool Client::Client::GetViewRect(CefRefPtr<CefBrowser> browser, CefRect& rect)
 {
-	Log("GetViewRect\n");
-	rect = CefRect(0, 0, 800, 600);
-	return true;
+	//Call listener
+	return listener && listaner->GetViewRect(rect);
 }
-void Client::OnPaint(CefRefPtr<CefBrowser>, CefRenderHandler::PaintElementType, const RectList&, const void*, int, int)
+
+void Client::OnPaint(CefRefPtr<CefBrowser>, CefRenderHandler::PaintElementType type, const RectList& rects, const void* buffer, int width, int height)
 {
-	Log("OnPaint\n");
+	//Call listener
+	listener && listener->OnPaint(type,rects,buffer,width,height);
 }
 	

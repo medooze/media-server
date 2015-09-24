@@ -5,11 +5,14 @@
  * Created on 15 de enero de 2013, 15:38
  */
 
+#include <netdb.h>
+
 #include "appmixer.h"
 #include "log.h"
 #include "fifo.h"
 #include "use.h"
 #include "overlay.h"
+#include "cef/Browser.h"
 
 
 AppMixer::AppMixer()
@@ -571,12 +574,15 @@ int AppMixer::onFinishedFrameBufferUpdate(VNCViewer *viewer)
 {
 	//Signal server
 	server.FrameBufferUpdateDone();
+	//Display image
+	return Display(viewer->GetFrameBuffer(),viewer->GetWidth(),viewer->GetHeight());
+}
 
+
+int AppMixer::Display(BYTE* frame,int width,int height)
+{
 	if (output)
 	{
-		DWORD width = viewer->GetWidth();
-		DWORD height = viewer->GetHeight();
-
 		//Calc num pixels
 		DWORD numpixels = width*height;
 
@@ -585,7 +591,7 @@ int AppMixer::onFinishedFrameBufferUpdate(VNCViewer *viewer)
 		AVFrame* out = av_frame_alloc();
 
 		//Set in frame
-		in->data[0] = viewer->GetFrameBuffer();
+		in->data[0] = frame;
 
 		//Set size
 		in->linesize[0] = width*4;
@@ -722,3 +728,58 @@ void AppMixer::onKeyboardEvent(bool down, DWORD keySym)
 	//Unlock
 	use.Unlock();
 }
+
+#define CEF
+#ifdef CEF
+
+void AppMixer::DisplayURL(const char* url)
+{
+	//Get browser instance
+	Browser& browser = Browser::getInstance();
+	
+	//Create the new window
+	browser.CreateFrame(url,server->GetWidth(), server->GetHeight(),this);
+}
+
+void AppMixer::CloseURL()
+{
+}
+
+bool AppMixer::GetViewRect(CefRect& rect);
+{
+	Debug("-AppMixer::GetViewRect\n");
+	//Set server dimensions
+	rect = CefRect(0, 0,server->GetWidth(), server->GetHeight());
+	//Changed
+	return true;
+}
+
+void AppMixer::OnPaintOnPaint(CefRenderHandler::PaintElementType type, const RectList& rects, const void* buffer, int width, int height)
+{
+	Debug("-AppMixer::OnPaint [pet:%d,popup:%d]\n",type==PET_VIEW,type==PET_POPUP);
+	
+	//Dont' paint popup
+	if (type != PET_VIEW)
+		 //Exit
+		 return;
+	
+	//UPdate vnc server frame buffer
+	server.FrameBufferUpdate(viewer->GetFrameBuffer(),x,y,w,h);
+	
+	 // Update just the dirty rectangles.
+	for (CefRenderHandler::RectList::const_iterator i = dirtyRects.begin() ; i != dirtyRects.end(); ++i) 
+	{
+		//Get rectangle
+		const CefRect& rect = *i;
+		//UPdate vnc server frame buffer
+		server.FrameBufferUpdate(buffer, rect.x, rect.y, rect.width, rect.height)
+	}
+	
+	//Signal server
+	server.FrameBufferUpdateDone();
+	
+	//And display image
+	Display(buffer,width,height);
+}
+
+#endif

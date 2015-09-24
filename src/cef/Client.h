@@ -8,6 +8,8 @@
 #ifndef CLIENT_H
 #define	CLIENT_H
 
+#define CEF
+
 #include "include/cef_client.h"
 
 class Client : 
@@ -16,10 +18,11 @@ class Client :
 {
 public:
 	class Listener {
-		
+		virtual bool GetViewRect(CefRect& rect) = 0;
+		virtual void OnPaint(CefRenderHandler::PaintElementType type, const RectList& rects, const void* buffer, int width, int height)  = 0;
 	};
 public:
-	Client();
+	Client(Listener *listener);
 	virtual ~Client();
 	
 	//Overrride
@@ -28,11 +31,13 @@ public:
 		return this;
 	}
 	
-	virtual bool GetViewRect(CefRefPtr<CefBrowser>, CefRect&);
-	virtual void OnPaint(CefRefPtr<CefBrowser>, CefRenderHandler::PaintElementType, const RectList&, const void*, int, int);
+	virtual bool GetViewRect(CefRefPtr<CefBrowser> browser, CefRect& rect);
+	virtual void OnPaint(CefRefPtr<CefBrowser> browser, CefRenderHandler::PaintElementType type, const RectList& rects, const void* buffer, int width, int height);
 	
 
 	IMPLEMENT_REFCOUNTING(Client);
+private:
+	Listener* listener;
 };
 
 #endif	/* CLIENT_H */

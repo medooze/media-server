@@ -24,8 +24,14 @@ extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavutil/opt.h>
 }
+#ifdef CEF
+#include "cef/Browser.h"
+#endif 
 
 class AppMixer : 
+#ifdef CEF
+	public Client::Listener,
+#endif 
 	public WebSocket::Listener,
 	public VNCViewer::Listener,
 	public VNCServer::Listener
@@ -93,6 +99,8 @@ public:
 	virtual void onMouseEvent(int buttonMask, int x, int y);
 	virtual void onKeyboardEvent(bool down, DWORD keySym);
 private:
+	int Display(BYTE* frame,int width,int height);
+private:
 	Logo		logo;
 	VideoOutput*	output;
 	Presenter*	presenter;
@@ -105,7 +113,22 @@ private:
 	Canvas		*canvas;
 	DWORD		lastX;
 	DWORD		lastY;
+	
+#ifdef CEF
+public:
+	void DisplayURL(const char* url);
+	void CloseURL();
+	
+	//From client listener
+	virtual bool GetViewRect(CefRect& rect);
+	virtual void OnPaint(CefRenderHandler::PaintElementType type, const RectList& rects, const void* buffer, int width, int height);
+	
+private:
+
+#endif	
+
 };
+
 
 #endif	/* APPMIXER_H */
 

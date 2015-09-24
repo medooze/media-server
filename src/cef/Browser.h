@@ -9,6 +9,7 @@
 #define	CEFBROWSER_H
 
 #include "include/cef_app.h"
+#include "include/cef_client.h"
 #include "config.h"
 #include "log.h"
 
@@ -44,7 +45,7 @@ private:
 public:
 	int Init(int argc, char** argv);
 	void Run();
-	int CreateFrame(std::string url,DWORD width, DWORD height);
+	int CreateFrame(std::string url,DWORD width, DWORD height,CefRenderHandler *renderer);
 	int End();
 	virtual ~Browser();	
 

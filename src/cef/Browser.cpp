@@ -163,7 +163,7 @@ int Browser::End()
 	Log("<End CEF Browser\n");
 }
 
-int Browser::CreateFrame(std::string url,DWORD width, DWORD height) {
+int Browser::CreateFrame(std::string url,DWORD width, DWORD height,CefRenderHandler *renderer) {
 	// Information about the window that will be created including parenting, size, etc.
 	CefWindowInfo info;
 	
@@ -176,7 +176,7 @@ int Browser::CreateFrame(std::string url,DWORD width, DWORD height) {
 	info.height = height;
 	
 	 // Client implements browser-level callbacks and RenderHandler
-	CefRefPtr<Client> handler(new Client());
+	CefRefPtr<Client> handler(new Client(renderer));
 
 	// Specify CEF browser settings here.
 	CefBrowserSettings browser_settings;
