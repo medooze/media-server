@@ -78,6 +78,8 @@ public:
 	int CopyRect(BYTE *data,int src_x, int src_y, int w, int h, int dest_x, int dest_y);
 	int FrameBufferUpdate(BYTE *data,int x,int y,int width,int height);
 	int FrameBufferUpdateDone();
+	int GetWidth() { return screen && screen->width; }
+	int GetHeight() { return screen && screen->height; }
 	int End();
 
 	virtual void onOpen(WebSocket *ws);
