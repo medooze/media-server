@@ -307,6 +307,7 @@ int WebSocketConnection::Run()
 			{
 				//Serialize
 				std::string out = response->Serialize();
+				Debug("WS RESPONSE:%s\n",out.c_str());
 				//Send it
 				outBytes += write(socket,out.c_str(),out.length());
 				//Chec if it is not upgrade

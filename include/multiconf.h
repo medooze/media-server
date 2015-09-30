@@ -90,6 +90,8 @@ public:
 	int DeletePlayer(int playerId);
 
 	int AppMixerDisplayImage(const char* filename);
+	int AppMixerOpenURL(const char* url);
+	int AppMixerCloseURL();
 	int SetAppMixerViewer(int viewerId);
 	int WebsocketConnectRequest(WebSocket *ws,int partId,const std::string &token,const std::string &to);
 

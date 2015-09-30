@@ -55,7 +55,7 @@ void log_ffmpeg(void* ptr, int level, const char* fmt, va_list vl)
 		//exit
 		return;
 	//Log
-	Log(line);
+	//Log(line);
 }
 
 int lock_ffmpeg(void **param, enum AVLockOp op)
@@ -144,6 +144,33 @@ public:
 	}
 	
 	GroupChat chat;
+};
+
+class CEFTestHandler :
+	public WebSocketServer::Handler
+{
+public:
+	CEFTestHandler()
+	{
+		appMixer.Init(NULL);
+		appMixer.OpenURL("http://www.google.com");
+	}
+	
+	~CEFTestHandler()
+	{
+		appMixer.CloseURL();
+		appMixer.End();
+	}
+	
+	virtual void onWebSocketConnection(const HTTPRequest& request,WebSocket *ws)
+	{
+		Debug("-onUpgradeRequest %s\n", request.GetRequestURI().c_str());
+		//Accept request
+		appMixer.WebsocketConnectRequest(1,std::wstring(L"test-viewer"),ws,0);
+		appMixer.SetEditor(1);
+	}
+	
+	AppMixer appMixer;
 };
 
 int main(int argc,char **argv)
@@ -236,6 +263,13 @@ int main(int argc,char **argv)
 		else if (strcmp(argv[i],"--vad-period")==0 && (i+1<=argc))
 			//Get rtmp port
 			vadPeriod = atoi(argv[++i]);
+		else if (strcmp(argv[i],"--type=zygote")==0) {
+			//Exit process
+			Log("Exting zygote process\n");
+			//Exit
+			exit(0);
+		}
+		
 	}
 
 	//Loop
@@ -322,13 +356,15 @@ int main(int argc,char **argv)
 		setrlimit(RLIMIT_CORE, &l);
 	}
 #ifdef CEF
-			//Enable debug
-			Logger::EnableDebug(true);
+	//Enable debug
+	Logger::EnableDebug(true);
+
 	//Initialize CEF browser singleton
 	Browser& browser = Browser::getInstance();
 
+
 	//Pass the args so it can detect if it is a child process or not
-	browser.Init(argc,argv);
+	browser.Init();
 #endif
 
 	//Register mutext for ffmpeg
@@ -415,8 +451,11 @@ int main(int argc,char **argv)
 
 	//And default status hanlder
 	StatusHandler status;
+	
+	//TODO: Remove, they are just for testing, should not be enabled on production
 	TextEchoWebsocketHandler echo;
 	GroupChatTestHandler gct;
+	CEFTestHandler cef;
 
 	//Init de mcu
 	mcu.Init(&xmleventmcu);
@@ -455,6 +494,7 @@ int main(int argc,char **argv)
 	wsServer.AddHandler("/echo", &echo);
 	wsServer.AddHandler("/mcu", &mcu);
 	wsServer.AddHandler("/gct", &gct);
+	wsServer.AddHandler("/cef", &cef);
 	wsServer.AddHandler("/bfcp", &BFCP::getInstance());
 
 	//Add the html status handler

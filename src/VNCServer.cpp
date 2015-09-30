@@ -371,6 +371,11 @@ int VNCServer::Connect(int partId,const std::wstring &name,WebSocket *socket)
 		clients[partId] = client;
 	}
 
+	//If it was editor
+	if (partId==editorId)
+		//Set client editor
+		client->SetViewOnly(false);
+
 	//Unlock clients list
 	use.Unlock();
 
@@ -526,7 +531,7 @@ int VNCServer::FrameBufferUpdateDone()
 	use.Unlock();
 }
 
-int VNCServer::FrameBufferUpdate(BYTE *data,int x,int y,int width,int height)
+int VNCServer::FrameBufferUpdate(const BYTE *data,int x,int y,int width,int height)
 {
 	Debug("-FrameBufferUpdate [x:%d,y:%d,w:%d,h:%d]\n",x,y,width,height);
 

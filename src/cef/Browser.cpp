@@ -3,6 +3,8 @@
 #include <include/internal/cef_linux.h>
 #include "Browser.h"
 #include "Client.h"
+#include <signal.h>
+
 
 int XErrorHandlerImpl(Display *display, XErrorEvent *event) {
 	return Error("X error received [code:%d,request:%d,minor:%d]\n",static_cast<int>(event->error_code),static_cast<int>(event->request_code),static_cast<int>(event->minor_code));
@@ -52,10 +54,10 @@ Browser::~Browser()
 * Init
 * 	
 *************************/
-int Browser::Init(int argc, char** argv)
+int Browser::Init()
 {
 
-	CefMainArgs main_args(argc,argv);
+	CefMainArgs main_args;
 	CefRefPtr<Browser> app(this);
 
 	// CEF applications have multiple sub-processes (render, plugin, GPU, etc)
@@ -73,6 +75,9 @@ int Browser::Init(int argc, char** argv)
 		return Error("-Init: CEF Browser Server is already running.\n");
 
 	Log(">Init CEF Browser\n");
+
+	//Enable remote debugging
+	settings.remote_debugging_port=2012;
 	
 	///
 	// Set to true (1) to enable windowless (off-screen) rendering support. Do not
@@ -163,7 +168,8 @@ int Browser::End()
 	Log("<End CEF Browser\n");
 }
 
-int Browser::CreateFrame(std::string url,DWORD width, DWORD height,CefRenderHandler *renderer) {
+int Browser::CreateFrame(std::string url,DWORD width, DWORD height,Client::Listener *listener)
+{
 	// Information about the window that will be created including parenting, size, etc.
 	CefWindowInfo info;
 	
@@ -176,7 +182,7 @@ int Browser::CreateFrame(std::string url,DWORD width, DWORD height,CefRenderHand
 	info.height = height;
 	
 	 // Client implements browser-level callbacks and RenderHandler
-	CefRefPtr<Client> handler(new Client(renderer));
+	CefRefPtr<Client> handler(new Client(listener));
 
 	// Specify CEF browser settings here.
 	CefBrowserSettings browser_settings;
