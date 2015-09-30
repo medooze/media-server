@@ -12,7 +12,10 @@
 #include "fifo.h"
 #include "use.h"
 #include "overlay.h"
+#ifdef CEF
 #include "cef/Browser.h"
+#include "cef/keyboard.h"
+#endif
 
 
 AppMixer::AppMixer()
@@ -27,6 +30,7 @@ AppMixer::AppMixer()
 	editorId = 0;
 	lastX = 0;
 	lastY = 0;
+	lastMask = 0;
 	//No img
 	img = NULL;
 	// Create YUV rescaller cotext
@@ -74,10 +78,12 @@ int AppMixer::DisplayImage(const char* filename)
 	//Set image
 	output->NextFrame(logo.GetFrame());
 
-	//Set size to the vnc
-	server.SetSize(logo.GetWidth(),logo.GetHeight());
+	//Set size 
+	SetSize(logo.GetWidth(),logo.GetHeight());
 	//Set new frame
 	server.FrameBufferUpdate(logo.GetFrameRGBA(),0,0,logo.GetWidth(),logo.GetHeight());
+	//End update
+	server.FrameBufferUpdateDone();
 	
 	//CLose
 	logo.Close();
@@ -109,6 +115,17 @@ int AppMixer::End()
 		//Remove presneter
 		presenter = NULL;
 	}
+
+#ifdef CEF
+	//If still showing the browser
+	if (browser.get())
+	{
+		//Force Close
+		browser->GetHost()->CloseBrowser(true);
+		//Stop listening events
+		browser = NULL;
+	}
+#endif
 	//Unlock
 	use.Unlock();
 
@@ -116,6 +133,7 @@ int AppMixer::End()
 	server.End();
 	
 	Log("<AppMixer::End\n");
+
 }
 
 int AppMixer::Reset()
@@ -504,6 +522,13 @@ int AppMixer::onSharingEnded(VNCViewer *viewer)
 int AppMixer::onFrameBufferSizeChanged(VNCViewer *viewer, int width, int height)
 {
 	Log("-onFrameBufferSizeChanged [%d,%d]\n",width,height);
+	//Setting size
+	return SetSize(width,height);
+}
+
+int AppMixer::SetSize(int width,int height) 
+{
+	Log("-AppMixer::SetSize [%dx%d]\n",width,height);
 	//Change server size
 	server.SetSize(width,height);
 
@@ -579,7 +604,7 @@ int AppMixer::onFinishedFrameBufferUpdate(VNCViewer *viewer)
 }
 
 
-int AppMixer::Display(BYTE* frame,int width,int height)
+int AppMixer::Display(const BYTE* frame,int width,int height)
 {
 	if (output)
 	{
@@ -591,7 +616,7 @@ int AppMixer::Display(BYTE* frame,int width,int height)
 		AVFrame* out = av_frame_alloc();
 
 		//Set in frame
-		in->data[0] = frame;
+		in->data[0] = (BYTE*)frame;
 
 		//Set size
 		in->linesize[0] = width*4;
@@ -700,6 +725,18 @@ int AppMixer::onHandleCursorPos(VNCViewer *viewer,int x, int y)
 //** Client -> Server */
  void AppMixer::onMouseEvent(int buttonMask, int x, int y)
 {
+
+	Debug("-AppMixer::onMouseEvent [x:%d,y:%d,mask:%d]\n",x,y,buttonMask);
+	/*
+	* Indicates either pointer movement or a pointer button press or release. The pointer is
+	* now at (x-position, y-position), and the current state of buttons 1 to 8 are represented
+	* by bits 0 to 7 of button-mask respectively, 0 meaning up, 1 meaning down (pressed).
+	* On a conventional mouse, buttons 1, 2 and 3 correspond to the left, middle and right
+	* buttons on the mouse. On a wheel mouse, each step of the wheel upwards is represented
+	* by a press and release of button 4, and each step downwards is represented by
+	* a press and release of button 5.
+	*/
+
 	//Lock
 	use.WaitUnusedAndLock();
 
@@ -707,10 +744,109 @@ int AppMixer::onHandleCursorPos(VNCViewer *viewer,int x, int y)
 	if (presenter)
 		//Send ley
 		presenter->SendMouseEvent(buttonMask,x,y);
+#ifdef CEF
+	//If doing in-server web browsing
+	if (browser.get())
+	{
+		Debug("-AppMixer::onMouseEvent  [last:%d,mask:%d]\n",lastMask,buttonMask);
+		CefMouseEvent event;
+		//Set coordinates
+		event.x = x;
+		event.y = y;
+		//Set modifiers
+
+		//Check if any button has changed
+		if (lastMask!=buttonMask) 
+		{
+			//For each button
+			for (int i=1;i<6;i++) 
+			{
+				//Get old and new states
+				BYTE oldState = lastMask   & (1<<(i-1));
+				BYTE newState = buttonMask & (1<<(i-1)); 
+
+				Debug("-CEF Mouse button [%d,%d] up [from:%d,to:%d]\n",i,(1<<(i-1)),oldState,newState);
+				//If it has changed
+				if (oldState!=newState)
+				{
+					//It is a click
+					CefBrowserHost::MouseButtonType button;
+					//Check which button
+					switch (i)
+					{
+						case 1:
+							//Check if now we are clicked
+							if (newState)
+								//Change modifiers
+								modifiers |= EVENTFLAG_LEFT_MOUSE_BUTTON;
+							else
+								//Unset modifiers
+								modifiers &= ~EVENTFLAG_LEFT_MOUSE_BUTTON;
+							//Set event modifiers
+							event.modifiers = modifiers;
+							//Left button clicked 
+							browser->GetHost()->SendMouseClickEvent(event,MBT_LEFT,!newState,1);
+							break;
+						case 2:	
+							//Check if now we are clicked
+							if (newState)
+								//Change modifiers
+								modifiers |= EVENTFLAG_MIDDLE_MOUSE_BUTTON;
+							else
+								//Unset modifiers
+								modifiers &= ~EVENTFLAG_MIDDLE_MOUSE_BUTTON;
+							//Set event modifiers
+							event.modifiers = modifiers;
+							//Middle button
+							browser->GetHost()->SendMouseClickEvent(event,MBT_MIDDLE,!newState,1);
+							break;
+						case 3:
+							//Check if now we are clicked
+							if (newState)
+								//Change modifiers
+								modifiers |= EVENTFLAG_RIGHT_MOUSE_BUTTON;
+							else
+								//Unset modifiers
+								modifiers &= ~EVENTFLAG_RIGHT_MOUSE_BUTTON;
+							//Set event modifiers
+							event.modifiers = modifiers;
+							//Right button
+							browser->GetHost()->SendMouseClickEvent(event,MBT_RIGHT,!newState,1);
+							break;
+						case 4: 
+							//Set event modifiers
+							event.modifiers = modifiers;
+							//Only on down event
+							if (newState)
+								//Mouse wheel up
+								browser->GetHost()->SendMouseWheelEvent(event,0,40);
+							break;
+						case 5:
+							//Set event modifiers
+							event.modifiers = modifiers;
+							//Only on down event
+							if (newState)
+								//MOuse wheel down
+								browser->GetHost()->SendMouseWheelEvent(event,0,-40);
+							break;
+					}
+				}
+			}
+		} else {
+			Debug("-CEF Mouse move [x:%d,y:%d]\n",x,y);
+			//Set event modifiers
+			event.modifiers = modifiers;
+			//Send only a mouse move
+			browser->GetHost()->SendMouseMoveEvent(event,false);
+		}
+		
+	}
+#endif
 	
 	//Store latest coordinates
 	lastX = x;
 	lastY = y;
+	lastMask = buttonMask;
 	
 	//Unlock
 	use.Unlock();
@@ -723,38 +859,166 @@ void AppMixer::onKeyboardEvent(bool down, DWORD keySym)
 
 	//Send to server
 	if (presenter)
-		//Send ley
+		//Send key
 		presenter->SendKeyboardEvent(down,keySym);
+
+#ifdef CEF
+	//If doing in-server web browsing
+	if (browser.get())
+	{
+  		CefKeyEvent key_event;
+		//Get host
+		CefRefPtr<CefBrowserHost> host = browser->GetHost();
+
+		//Get keycode from keysym
+  		KeyboardCode windows_key_code = KeyboardCodeFromXKeysym(keySym);
+		//Set event values
+  		key_event.windows_key_code = GetWindowsKeyCodeWithoutLocation(windows_key_code);
+  		key_event.native_key_code = windows_key_code;
+		key_event.character = windows_key_code;
+		// We need to treat the enter key as a key press of character \r.  This
+		// is apparently just how webkit handles it and what it expects.
+		if (windows_key_code == VKEY_RETURN) 
+			key_event.unmodified_character = '\r';
+		else
+			key_event.unmodified_character = windows_key_code;
+
+		//Calculate modifiers
+		DWORD mod = 0;
+		switch(windows_key_code)
+		{
+			case VKEY_CAPITAL:
+				mod = EVENTFLAG_CAPS_LOCK_ON;
+				break;
+			case VKEY_SHIFT:
+				mod = EVENTFLAG_SHIFT_DOWN;
+				break;
+			case VKEY_CONTROL:
+				mod = EVENTFLAG_CONTROL_DOWN;
+				break;
+			case VKEY_MENU:
+				mod = EVENTFLAG_ALT_DOWN;
+				break; 
+			case VKEY_COMMAND:
+				mod = EVENTFLAG_COMMAND_DOWN;
+				break;
+			case VKEY_NUMLOCK:
+				mod = EVENTFLAG_NUM_LOCK_ON;
+				break;
+		}
+
+		//Check if it is a keypad what we are pressing
+		if (IsXKeysymKeyPad(keySym))
+			//It is a keypad
+			mod = EVENTFLAG_IS_KEY_PAD;
+
+		//Modify modifiers
+		if (down)
+			//Add it
+			modifiers |= mod;
+		else
+			//Remove it
+			modifiers &= ~mod;
+		
+		//Check if ALT is pressed
+  		if (key_event.modifiers & EVENTFLAG_ALT_DOWN)
+			//It is a system key
+    			key_event.is_system_key = true;
+
+		//Set event modifiers
+		key_event.modifiers = modifiers;
+
+		Debug("-Sending Key: code:%d,keySym:%d\n", key_event.windows_key_code,keySym);
+		//Check if it is keydown or up	
+		if (down) {
+			//Send down & char
+			key_event.type = KEYEVENT_RAWKEYDOWN;
+			host->SendKeyEvent(key_event);
+			key_event.type = KEYEVENT_CHAR;
+			host->SendKeyEvent(key_event);
+		} else {
+			//Send only up
+			key_event.type = KEYEVENT_KEYUP;
+			host->SendKeyEvent(key_event);
+		}
+	}
+#endif
+
 	//Unlock
 	use.Unlock();
 }
 
-#define CEF
+
+int AppMixer::OpenURL(const char* url)
+{
 #ifdef CEF
+	//Lock
+	use.WaitUnusedAndLock();
 
-void AppMixer::DisplayURL(const char* url)
-{
-	//Get browser instance
-	Browser& browser = Browser::getInstance();
-	
-	//Create the new window
-	browser.CreateFrame(url,server->GetWidth(), server->GetHeight(),this);
+	//Set size
+	SetSize(800,600);
+
+	//If we don't have a browser instance yet
+	if (!browser.get())
+	{
+		//Get browser instance
+		Browser& instance = Browser::getInstance();
+		
+		//Create the new window
+		instance.CreateFrame(url,server.GetWidth(), server.GetHeight(),this);
+	} else {
+		//Navigate to that URL
+		browser->GetMainFrame()->LoadURL(url);
+	}
+
+	//Unlock
+	use.Unlock();
+	//Ok
+	return true;
+#else
+	//Error	
+	return Error("CEF nor supported\n");
+#endif
 }
 
-void AppMixer::CloseURL()
+int AppMixer::CloseURL()
 {
+#ifdef CEF
+	//Reset size
+	server.Reset();
+
+	//Lock
+	use.WaitUnusedAndLock();
+
+	//Ensure we have a browser
+	if (browser.get())
+		//Force Close
+		browser->GetHost()->CloseBrowser(true);
+	//Unlock
+	use.Unlock();
+
+	//OK
+	return true;
+#else
+	//Error
+	return Error("CEF nor supported\n");
+#endif
 }
 
-bool AppMixer::GetViewRect(CefRect& rect);
+#ifdef CEF
+bool AppMixer::GetViewRect(CefRect& rect)
 {
-	Debug("-AppMixer::GetViewRect\n");
+	Debug("-AppMixer::GetViewRect [%d,%d]\n",server.GetWidth(),server.GetHeight());
 	//Set server dimensions
-	rect = CefRect(0, 0,server->GetWidth(), server->GetHeight());
+	rect = CefRect(0, 0,800,600);//server.GetWidth(), server.GetHeight());
+	//Send focus event
+	browser->GetHost()->SetFocus(true);
+	browser->GetHost()->SendFocusEvent(true);
 	//Changed
 	return true;
 }
 
-void AppMixer::OnPaintOnPaint(CefRenderHandler::PaintElementType type, const RectList& rects, const void* buffer, int width, int height)
+void AppMixer::OnPaint(CefRenderHandler::PaintElementType type, const CefRenderHandler::RectList& rects, const BYTE* buffer, int width, int height)
 {
 	Debug("-AppMixer::OnPaint [pet:%d,popup:%d]\n",type==PET_VIEW,type==PET_POPUP);
 	
@@ -763,16 +1027,13 @@ void AppMixer::OnPaintOnPaint(CefRenderHandler::PaintElementType type, const Rec
 		 //Exit
 		 return;
 	
-	//UPdate vnc server frame buffer
-	server.FrameBufferUpdate(viewer->GetFrameBuffer(),x,y,w,h);
-	
-	 // Update just the dirty rectangles.
-	for (CefRenderHandler::RectList::const_iterator i = dirtyRects.begin() ; i != dirtyRects.end(); ++i) 
+	// Update just the dirty rectangles.
+	for (CefRenderHandler::RectList::const_iterator i = rects.begin() ; i != rects.end(); ++i) 
 	{
 		//Get rectangle
 		const CefRect& rect = *i;
 		//UPdate vnc server frame buffer
-		server.FrameBufferUpdate(buffer, rect.x, rect.y, rect.width, rect.height)
+		server.FrameBufferUpdate(buffer, rect.x, rect.y, rect.width, rect.height);
 	}
 	
 	//Signal server
@@ -782,4 +1043,35 @@ void AppMixer::OnPaintOnPaint(CefRenderHandler::PaintElementType type, const Rec
 	Display(buffer,width,height);
 }
 
+void AppMixer::OnBrowserCreated(CefRefPtr<CefBrowser> browser)
+{  
+	Log("-AppMixer::OnBrowserCreated [host:%p]\n",browser.get()->GetHost().get());
+
+	//Lock
+	use.WaitUnusedAndLock();
+		
+	//Set it
+	this->browser = browser;
+
+	//Send focus event
+	browser->GetHost()->SetFocus(true);
+	browser->GetHost()->SendFocusEvent(true);
+
+	//Unlock
+	use.Unlock();
+	
+}
+
+void AppMixer::OnBrowserDestroyed()
+{
+	Log("-AppMixer::OnBrowserDestroyed\n");
+	//Lock
+	use.WaitUnusedAndLock();
+		
+	//Release ref
+	this->browser = NULL;
+
+	//Unlock
+	use.Unlock();
+}
 #endif

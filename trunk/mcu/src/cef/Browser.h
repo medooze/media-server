@@ -12,6 +12,7 @@
 #include "include/cef_client.h"
 #include "config.h"
 #include "log.h"
+#include "Client.h"
 
 /*
  * Application Structure
@@ -25,7 +26,7 @@
 class Browser :
 	public CefApp,
         public CefBrowserProcessHandler,
-        public CefRenderProcessHandler 
+        public CefRenderProcessHandler
 {
 public:
         static Browser& getInstance()
@@ -43,9 +44,9 @@ private:
         void operator=(Browser const&);           // Don't implement
 
 public:
-	int Init(int argc, char** argv);
+	int Init();
 	void Run();
-	int CreateFrame(std::string url,DWORD width, DWORD height,CefRenderHandler *renderer);
+	int CreateFrame(std::string url,DWORD width, DWORD height,Client::Listener *listener);
 	int End();
 	virtual ~Browser();	
 
@@ -62,7 +63,8 @@ public:
 		Debug("GetBrowserProcessHandler...\n");
 		return this; 
 	}*/
-	/*virtual CefRefPtr<CefRenderProcessHandler> GetRenderProcessHandler()		{ 
+	/*
+	virtual CefRefPtr<CefRenderProcessHandler> GetRenderProcessHandler()		{ 
 		Debug("GetRenderProcessHandler...\n");
 		return this; 
 	}*/
@@ -83,7 +85,7 @@ public:
 		Debug("WebKit has been initialized, register V8 extensions...\n");
 	}
 	virtual void OnBrowserCreated(CefRefPtr<CefBrowser> browser) {
-		Debug("Browser created in this render process...\n");
+		Debug("Browser created in this render process...browser:%p host:%p\n",browser.get(),browser.get()->GetHost().get());
 	}
 	virtual void OnBrowserDestroyed(CefRefPtr<CefBrowser> browser) {
 		Debug("Browser destroyed in this render process...\n");

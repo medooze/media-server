@@ -26,6 +26,7 @@ extern "C" {
 }
 #ifdef CEF
 #include "cef/Browser.h"
+#include "cef/Client.h"
 #endif 
 
 class AppMixer : 
@@ -70,6 +71,8 @@ public:
 
 	int Init(VideoOutput *output);
 	int DisplayImage(const char* filename);
+	int OpenURL(const char* url);
+	int CloseURL();
 	int WebsocketConnectRequest(int partId,const std::wstring &name,WebSocket *ws,bool isPresenter);
 	int SetPresenter(int partId);
 	int SetEditor(int partId);
@@ -77,6 +80,7 @@ public:
 	int GetPresenter()	{ return presenterId;	}
 	int GetEditor()		{ return editorId;	}
 	int Reset();
+	int SetSize(int width,int height);
 	int End();
 
 	virtual void onOpen(WebSocket *ws);
@@ -99,7 +103,7 @@ public:
 	virtual void onMouseEvent(int buttonMask, int x, int y);
 	virtual void onKeyboardEvent(bool down, DWORD keySym);
 private:
-	int Display(BYTE* frame,int width,int height);
+	int Display(const BYTE* frame,int width,int height);
 private:
 	Logo		logo;
 	VideoOutput*	output;
@@ -113,22 +117,20 @@ private:
 	Canvas		*canvas;
 	DWORD		lastX;
 	DWORD		lastY;
+	BYTE		lastMask;
+	DWORD		modifiers;
 	
 #ifdef CEF
 public:
-	void DisplayURL(const char* url);
-	void CloseURL();
 	
 	//From client listener
+	virtual void OnBrowserCreated(CefRefPtr<CefBrowser> browser);
 	virtual bool GetViewRect(CefRect& rect);
-	virtual void OnPaint(CefRenderHandler::PaintElementType type, const RectList& rects, const void* buffer, int width, int height);
-	
+	virtual void OnPaint(CefRenderHandler::PaintElementType type, const CefRenderHandler::RectList& rects, const BYTE* buffer, int width, int height);
+	virtual void OnBrowserDestroyed();
 private:
-
-#endif	
-
-};
-
-
+	CefRefPtr<CefBrowser> browser;
+#endif
+};	
 #endif	/* APPMIXER_H */
 

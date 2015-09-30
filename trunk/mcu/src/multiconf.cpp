@@ -2027,6 +2027,17 @@ int MultiConf::AppMixerDisplayImage(const char* filename)
 	//Display it
 	return appMixer.DisplayImage(filename);
 }
+int MultiConf::AppMixerOpenURL(const char* url)
+{
+	//Start brwosing
+	return appMixer.OpenURL(url);
+}
+int MultiConf::AppMixerCloseURL()
+{
+	//Stop browsing
+	return appMixer.CloseURL();
+}
+
 
 int MultiConf::WebsocketConnectRequest(WebSocket *ws,int partId,const std::string &token,const std::string &to)
 {

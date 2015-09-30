@@ -786,6 +786,69 @@ xmlrpc_value* StopPublishing(xmlrpc_env *env, xmlrpc_value *param_array, void *u
 	return xmlok(env);
 }
 
+xmlrpc_value* StartBrowsing(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+	MCU *mcu = (MCU *)user_data;
+	MultiConf *conf = NULL;
+
+	 //Parseamos
+	int confId;
+	char *url;
+	xmlrpc_parse_value(env, param_array, "(is)", &confId,&url);
+
+	//Comprobamos si ha habido error
+	if(env->fault_occurred)
+		return xmlerror(env,"Fault occurred");
+
+	//Get conference reference
+	if(!mcu->GetConferenceRef(confId,&conf))
+		return xmlerror(env,"Conference does not exist");
+
+	//Publish it
+	int res = conf->AppMixerOpenURL(url);
+
+	//Free conference reference
+	mcu->ReleaseConferenceRef(confId);
+
+	//Salimos
+	if(!res)
+		return xmlerror(env,"Could not start browsing");
+
+	//Devolvemos el resultado
+	return xmlok(env);
+}
+
+xmlrpc_value* StopBrowsing(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+	MCU *mcu = (MCU *)user_data;
+	MultiConf *conf = NULL;
+
+	 //Parseamos
+	int confId;
+	xmlrpc_parse_value(env, param_array, "(i)", &confId);
+
+	//Comprobamos si ha habido error
+	if(env->fault_occurred)
+		return xmlerror(env,"Fault occurred");
+
+	//Get conference reference
+	if(!mcu->GetConferenceRef(confId,&conf))
+		return xmlerror(env,"Conference does not exist");
+
+	//Stop publishing
+	int res = conf->AppMixerCloseURL();
+
+	//Free conference reference
+	mcu->ReleaseConferenceRef(confId);
+
+	//Salimos
+	if(!res)
+		return xmlerror(env,"Error stoping browsing");
+
+	//Devolvemos el resultado
+	return xmlok(env);
+}
+
 xmlrpc_value* SetVideoCodec(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
@@ -2220,6 +2283,8 @@ XmlHandlerCmd mcuCmdList[] =
 	{"StopBroadcaster",StopBroadcaster},
 	{"StartPublishing",StartPublishing},
 	{"StopPublishing",StopPublishing},
+	{"StartBrowsing",StartBrowsing},
+	{"StopBrowsing",StopBrowsing},
 	{"StartRecordingBroadcaster",StartRecordingBroadcaster},
 	{"StopRecordingBroadcaster",StopRecordingBroadcaster},
 	{"StartRecordingParticipant",StartRecordingParticipant},
