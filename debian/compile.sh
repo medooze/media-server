@@ -1,4 +1,4 @@
-#!/bin/sh
+!/bin/sh
 
 #Get number of processors available
 PROCS=´nproc´
