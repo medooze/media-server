@@ -426,6 +426,10 @@ int VNCServer::Reset()
 	//Lock
 	use.IncUse();
 
+	//Reset
+	memset(screen->frameBuffer,0xFF,screen->width*screen->height*4);
+
+
 	//Reset size
 	screen->width = 0;
 	screen->height = 0;
@@ -472,6 +476,9 @@ int VNCServer::SetSize(int width,int height)
 
 	//Alloc new framebuffer
 	char *fb = (char*)malloc32(width*height*4);
+	
+	//Empty
+	memset(fb,0xFF,width*height*4);
 
 	//If we got and old one
 	if (screen->frameBuffer)

@@ -23,6 +23,7 @@ public:
 	bool HasParameter (const std::string& key);
 	std::string GetParameter(const std::string& key) const;
 	std::vector<std::string> GetParameters(const std::string& key) const;
+	std::string ToString() const;
 };
 
 class Headers :
@@ -30,6 +31,7 @@ class Headers :
 {
 public:
 	void AddHeader(const std::string& key,const std::string& value);
+	void AddHeader(const std::string& key,const int value);
 	bool HasHeader (const std::string& key);
 	bool ParseHeader(const std::string &line);
 	std::string GetHeader(const std::string& key) const;
@@ -71,6 +73,8 @@ public:
         {
             return this->type.compare(type)==0 && this->subtype.compare(subtype)==0;
         }
+	std::string ToString() const;
+	ContentType* Clone() const;
 private:
 	std::string type;
 	std::string subtype;

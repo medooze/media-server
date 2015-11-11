@@ -25,6 +25,13 @@ void MIMEText::Dump() const
 	Debug("%ls\r\n",c_str());
 	Debug("[MIMEText/]\r\n");
 }
+DWORD MIMEText::GetLength() const
+{
+        //Convert to utf8
+        UTF8Parser utf8(*this);
+        //Serialize
+        return utf8.GetUTF8Size();
+}
 
 MIMEBinary* MIMEBinary::Parse(const BYTE* buffer,const DWORD size)
 {
@@ -37,7 +44,7 @@ DWORD MIMEBinary::Serialize(BYTE* buffer,DWORD size)  const
 	//check length
 	if (size<GetLength())
 		//Return error
-		return 0;
+		return Error("MIMEBinary::Serialize not enought size\n");
         //Copy
         memcpy(buffer,GetData(),GetLength());
         //Serialize
@@ -55,7 +62,7 @@ DWORD MIMEWrapper::Serialize(BYTE* buffer,DWORD size) const
 {
         //Check nulls
         if (!contentType || !object)
-                return 0;
+		return Error("MIMEWrapper::Serialize no content or object\n");
 
         DWORD pos = 0;
 
@@ -316,7 +323,7 @@ CPIMMessage* CPIMMessage::Parse(const BYTE* data,DWORD size)
                 return 0;
 
             //Get uri
-           uri = wp.GetValue();
+            uri = wp.GetValue();
 
             //Set them
             from.SetAddress(display,uri);
@@ -413,9 +420,9 @@ DWORD CPIMMessage::Serialize(BYTE* buffer,DWORD size) const
 	pos+=2;
 
 	//Write to header
-	if (pos+6>size) return 0;
-	memcpy(buffer+pos,"To: ",6);
-	pos+=6;
+	if (pos+4>size) return 0;
+	memcpy(buffer+pos,"To: ",4);
+	pos+=4;
 	//serialize value
 	len = to.Serialize(buffer+pos,size-pos);
 	if (!len)  return 0;

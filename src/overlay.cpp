@@ -246,7 +246,7 @@ int Canvas::LoadSVG(const char* svg)
 		int numpixels = width*height;
 		
 		//First from to RGBA to YUVB
-		SwsContext *sws = sws_getContext( width, height, AV_PIX_FMT_RGBA,width, height, PIX_FMT_YUVA420P,SWS_FAST_BILINEAR, 0, 0, 0);
+		SwsContext *sws = sws_getContext( width, height, AV_PIX_FMT_RGBA,width, height, AV_PIX_FMT_YUVA420P,SWS_FAST_BILINEAR, 0, 0, 0);
 
 		if (!sws)
 			return Error("Couldn't alloc sws context\n");
@@ -391,7 +391,7 @@ int Canvas::RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWOR
 						AV_PIX_FMT_RGBA,
 						width,
 						height,
-						PIX_FMT_YUVA420P,
+						AV_PIX_FMT_YUVA420P,
 						SWS_FAST_BILINEAR,
 						0,
 						0,

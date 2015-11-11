@@ -21,8 +21,11 @@ bool Parameters::Parse(StringParser parser)
 		if (!parser.ParseToken())
 			//error
 			return false;
+		//Skip any whitspace (just in case)
+		parser.SkipSpaces();
 		//Get type
 		std::string key = parser.GetValue();
+
 		//Check if we have a value
 		if (parser.ParseChar('='))
 		{
@@ -105,6 +108,44 @@ std::vector<std::string> Parameters::GetParameters(const std::string &key) const
 		return std::vector<std::string>();
 	//Return parameters
 	return it->second;
+}
+
+std::string Parameters::ToString() const
+{
+	//Set size
+	std::ostringstream stream;
+	//For each key
+	for (Parameters::const_iterator it = begin(); it!=end(); ++it)
+	{
+		//get values vector
+		std::vector<std::string> values = it->second;
+		//For each value
+		for (std::vector<std::string>::const_iterator vit = values.begin(); vit!=values.end(); ++vit)
+		{
+			//Check if not first
+			if (vit!=values.begin())
+				//Add ;
+				stream << ";";
+			//if also got param
+			if (!vit->empty())
+				//Print
+				stream << it->first.c_str() << "=" << vit->c_str();
+			else
+				//Print
+				stream << it->first.c_str();
+		}
+ 	}
+
+	return stream.str();
+}
+
+void Headers::AddHeader(const std::string& key,const int value)
+{
+	std::ostringstream stream;
+	//Convert
+	stream << value;
+	//Add header
+	AddHeader(key,stream.str());
 }
 
 void Headers::AddHeader(const std::string& key,const std::string& value)
@@ -213,9 +254,9 @@ DWORD Headers::Serialize(char* buffer,DWORD size) const
 			if (!vit->empty())
 			{
 				//Print
-				sprintf(buffer+len,"%s: %s",it->first.c_str(),vit->c_str());
+				sprintf(buffer+len,"%s: %s\r\n",it->first.c_str(),vit->c_str());
 				//add value size and =
-				len += it->first.size()+vit->size()+2;
+				len += it->first.size()+vit->size()+4;
 			}
 		}
  	}
@@ -331,6 +372,19 @@ ContentType::ContentType(const std::string &type,const std::string &subtype)
 	this->type = type;
 	this->subtype = subtype;
 }
+std::string ContentType::ToString() const
+{
+	//Set size
+	std::ostringstream stream;
+	//Create
+	stream << type << "/" << subtype;
+	//If got params
+	if (!Parameters::empty())
+		//Append
+		stream << ";" << Parameters::ToString();
+	//Convert to string and return
+	return stream.str();
+}
 
 DWORD ContentType::Serialize(char* buffer,DWORD size)
 {
@@ -368,6 +422,28 @@ DWORD ContentType::Serialize(char* buffer,DWORD size)
  	}
 
 	return len;
+}
+
+ContentType* ContentType::Clone() const
+{
+	ContentType* cloned =  new ContentType(type,subtype);
+	//For each key
+	for (Parameters::const_iterator it = begin(); it!=end(); ++it)
+	{
+		//get values vector
+		const Parameters::mapped_type& values = it->second;
+		//If it is empty
+		if (values.begin()==values.end())
+			//Add empty param
+			cloned->AddParameter(it->first);
+		else 
+			//For each value
+			for (Parameters::mapped_type::const_iterator vit = values.begin(); vit!=values.end(); ++vit)
+				//Add it
+				cloned->AddParameter(it->first,*vit);
+ 	}
+	//Return it
+	return cloned;
 }
 
 DWORD ContentType::GetSize()

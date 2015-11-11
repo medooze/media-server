@@ -526,7 +526,8 @@ int AppMixer::onFrameBufferSizeChanged(VNCViewer *viewer, int width, int height)
 	return SetSize(width,height);
 }
 
-int AppMixer::SetSize(int width,int height) 
+
+int AppMixer::SetSize(int width,int height)
 {
 	Log("-AppMixer::SetSize [%dx%d]\n",width,height);
 	//Change server size
@@ -956,7 +957,7 @@ int AppMixer::OpenURL(const char* url)
 	use.WaitUnusedAndLock();
 
 	//Set size
-	SetSize(800,600);
+	SetSize(1024,800);
 
 	//If we don't have a browser instance yet
 	if (!browser.get())
@@ -1008,9 +1009,9 @@ int AppMixer::CloseURL()
 #ifdef CEF
 bool AppMixer::GetViewRect(CefRect& rect)
 {
-	Debug("-AppMixer::GetViewRect [%d,%d]\n",server.GetWidth(),server.GetHeight());
+	Log("-AppMixer::GetViewRect [%d,%d]\n",server.GetWidth(),server.GetHeight());
 	//Set server dimensions
-	rect = CefRect(0, 0,800,600);//server.GetWidth(), server.GetHeight());
+	rect = CefRect(0, 0, server.GetWidth(), server.GetHeight());
 	//Send focus event
 	browser->GetHost()->SetFocus(true);
 	browser->GetHost()->SendFocusEvent(true);
@@ -1032,6 +1033,23 @@ void AppMixer::OnPaint(CefRenderHandler::PaintElementType type, const CefRenderH
 	{
 		//Get rectangle
 		const CefRect& rect = *i;
+		//BGRA to RGBA
+		for (int j=rect.y;j<rect.y+rect.height;++j)
+		{
+			//Get start of line
+			BYTE *line = (BYTE*)buffer+j*width*4;
+			//Each pixel
+			for (int i=rect.x;i<rect.x+rect.width;++i)
+			{	
+				//Get red and blue
+				BYTE *R = line+i*4;
+				BYTE *B = R+2;
+				//Swap
+				BYTE aux = *R;
+				*R = *B;
+				*B = aux;
+			}
+		}
 		//UPdate vnc server frame buffer
 		server.FrameBufferUpdate(buffer, rect.x, rect.y, rect.width, rect.height);
 	}

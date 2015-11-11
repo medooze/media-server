@@ -19,6 +19,7 @@ public:
 	virtual ~MIMEObject() {};
 	virtual MIMEObject* Clone() const = 0;
 	virtual void Dump() const = 0;
+	virtual DWORD GetLength() const = 0;
 };
 
 class MIMEText : public std::wstring, public MIMEObject
@@ -29,6 +30,7 @@ public:
 	virtual MIMEObject* Clone() const { return new MIMEText(*this); }
 	virtual DWORD Serialize(BYTE* buffer,const DWORD size) const;
 	virtual void Dump() const;
+	virtual DWORD GetLength() const;
 	
 public:
 	static MIMEText* Parse(const BYTE* buffer,const DWORD size);
@@ -38,11 +40,12 @@ class MIMEBinary : public ByteBuffer, public MIMEObject
 {
 public:
 	MIMEBinary()	{}
-	MIMEBinary(const ByteBuffer buffer) : ByteBuffer(buffer)	{}
+	MIMEBinary(const ByteBuffer &buffer) : ByteBuffer(buffer)	{}
 	MIMEBinary(const BYTE* data, const DWORD size) : ByteBuffer(data,size)	{}
-	virtual MIMEObject* Clone() const { return new MIMEBinary(this); }
+	virtual MIMEObject* Clone() const { return new MIMEBinary(*this); }
 	virtual DWORD Serialize(BYTE* buffer,const DWORD size) const;
 	virtual void Dump() const;
+	virtual DWORD GetLength() const { return ByteBuffer::GetLength(); }
 	
 public:
 	static MIMEBinary* Parse(const BYTE* buffer,const DWORD size);
@@ -62,23 +65,34 @@ public:
 	{
 	    contentType = new ContentType(type,subtype);
 	    object = NULL;
+	    AddHeader("Content-Type",type+"/"+subtype);
+	}
+
+	MIMEWrapper(ContentType* contentType, MIMEObject* object) 
+	{
+		this->contentType = contentType;
+		this->object = object;
+	    	AddHeader("Content-Type",contentType->ToString());
+		AddHeader("Content-Length",object->GetLength());
 	}
 	
 	MIMEWrapper(const std::string &type,const std::string &subtype, MIMEObject* object) 
 	{
-		contentType = new ContentType(type,subtype);
+		this->contentType = new ContentType(type,subtype);
 		this->object = object;
+	    	AddHeader("Content-Type",type+"/"+subtype);
+		AddHeader("Content-Length",object->GetLength());
 	}
 	
 	virtual ~MIMEWrapper()
 	{
 		if (contentType) delete contentType;
-		if (object)	 delete object;
+		if (object) 	 delete object;
 	}
 	
 	MIMEWrapper* Clone() const
 	{
-		return new MIMEWrapper(contentType->GetType(),contentType->GetSubType(),object->Clone());
+		return new MIMEWrapper(contentType->Clone(),object->Clone());
 	}
 	DWORD Serialize(BYTE* buffer,DWORD size) const;
 	void Dump() const;
@@ -167,7 +181,7 @@ public:
 	}
 
 	const Address&	GetFrom()	const { return from;	}
-	const Address&	GetTo()		const { return from;	}
+	const Address&	GetTo()		const { return to;	}
 	const MIMEWrapper*	GetContent()	const { return mime;	}
 
 	DWORD Serialize(BYTE* buffer,DWORD size) const;
