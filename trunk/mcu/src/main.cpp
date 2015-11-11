@@ -153,7 +153,6 @@ public:
 	CEFTestHandler()
 	{
 		appMixer.Init(NULL);
-		appMixer.OpenURL("http://www.google.com");
 	}
 	
 	~CEFTestHandler()
@@ -166,6 +165,7 @@ public:
 	{
 		Debug("-onUpgradeRequest %s\n", request.GetRequestURI().c_str());
 		//Accept request
+		appMixer.OpenURL("http://www.google.com");
 		appMixer.WebsocketConnectRequest(1,std::wstring(L"test-viewer"),ws,0);
 		appMixer.SetEditor(1);
 	}
@@ -356,8 +356,6 @@ int main(int argc,char **argv)
 		setrlimit(RLIMIT_CORE, &l);
 	}
 #ifdef CEF
-	//Enable debug
-	Logger::EnableDebug(true);
 
 	//Initialize CEF browser singleton
 	Browser& browser = Browser::getInstance();

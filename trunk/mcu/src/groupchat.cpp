@@ -123,6 +123,7 @@ int GroupChat::Disconnect(WebSocket *socket)
 
 void GroupChat::onIncomingMessage(Client* client,CPIMMessage *msg)
 {
+	Debug("-GroupChat::onIncomingMessage [from:%ls,to:%ls]\n",msg->GetFrom().GetURI().c_str(),msg->GetTo().GetURI().c_str());
 	//Get from and to uris
 	WideStringParser fromParser(msg->GetFrom().GetURI());
 	WideStringParser toParser(msg->GetTo().GetURI());
@@ -176,6 +177,8 @@ bool GroupChat::SendMessage(int from, int to,std::wstring text)
 
 bool GroupChat::Send(int from, int to,MIMEWrapper *content)
 {
+	Debug("-Sending message from:%d to:%d\n",from,to);
+
 	std::wstringstream  fromUri;
 	std::wstringstream  toUri;
 
@@ -184,7 +187,7 @@ bool GroupChat::Send(int from, int to,MIMEWrapper *content)
 	toUri  << L"im:"<< to << L"@" << tag;
 
 	//Create message
-	CPIMMessage msg(fromUri.str(),toUri.str(),content->Clone());
+	CPIMMessage msg(fromUri.str(),toUri.str(),content);
 
 	//Lock list
 	use.IncUse();
@@ -201,8 +204,10 @@ bool GroupChat::Send(int from, int to,MIMEWrapper *content)
 	} else {
 	    //Send to all
 	    for  (Clients::iterator it = clients.begin(); it!=clients.end(); ++it)
-		//Send
-		it->second->Send(msg);
+		//Except himself
+		if (it->second->GetId()!=from)
+			//Send
+			it->second->Send(msg);
 	}
 
 	//Free list
@@ -337,6 +342,7 @@ void GroupChat::Client::MessageEnd()
         //Exit
         return;
     }
+
     Debug("-GroupChat::Client::MessageEnd Got message from: %d\n",id);
     msg->Dump();
     
@@ -348,19 +354,23 @@ void GroupChat::Client::MessageEnd()
 
 int GroupChat::Client::Send(const CPIMMessage &msg)
 {
+	Debug("-GroupChat::Client::Send [id:%d]\n",id);
+
 	BYTE aux[65535];
 	
 	//Serialize
 	DWORD len = msg.Serialize(aux,65535);
+
+	msg.Dump();
 	
 	//Lock
 	lock.Lock();
-	
+
 	//Check if we have ws
 	if (ws)
 		//Send it
-		ws->SendMessage(WebSocket::Binary,aux,len);
-	
+		ws->SendMessage(WebSocket::Text,aux,len);
+
 	//Unlock
 	lock.Unlock();
 	

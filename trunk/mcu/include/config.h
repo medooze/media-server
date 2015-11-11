@@ -33,6 +33,7 @@
 #define	SD480P	19	// 480  x 360	AR:	1,333333333
 #define	SQCIF	20	// 128  x 96	AR:	1,333333333
 #define	SCIF	21	// 256  x 192	AR:	1,333333333
+#define	HD1080P	22	// 1920 x 1080  AR:     1,777777778
 
 
 
@@ -81,6 +82,7 @@ inline DWORD GetWidth(DWORD size)
 		case SD480P:	return 480;
 		case SQCIF:	return 128;
 		case SCIF:	return 256;
+		case HD1080P:	return 1920;
 	}
 	//Nothing
 	return 0;
@@ -113,6 +115,7 @@ inline DWORD GetHeight(DWORD size)
 		case SD480P:	return 360;
 		case SQCIF:	return 96;
 		case SCIF:	return 192;
+		case HD1080P:	return 1080;
 	}
 	//Nothing
 	return 0;
@@ -306,7 +309,7 @@ public:
 	ByteBuffer(const ByteBuffer* bytes)
 	{
 		//Calculate new size
-		size = bytes->GetSize();
+		size = bytes->GetLength();
 		//Realloc
 		buffer = (BYTE*) malloc32(size);
 		//Copy
@@ -314,9 +317,21 @@ public:
 		//Increase length
 		length=size;
 	}
+
+	ByteBuffer(const ByteBuffer& bytes)
+	{
+		//Calculate new size
+		size = bytes.GetLength();
+		//Realloc
+		buffer = (BYTE*) malloc32(size);
+		//Copy
+		memcpy(buffer,bytes.GetData(),size);
+		//Increase length
+		length=size;
+	}
 	
 	ByteBuffer* Clone() const {
-		return new ByteBuffer(buffer,size);
+		return new ByteBuffer(buffer,length);
 	}
 
 	virtual ~ByteBuffer()
