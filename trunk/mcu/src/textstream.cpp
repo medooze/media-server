@@ -486,7 +486,7 @@ int TextStream::SendText()
 				//Add packet payload
 				redLen = (*it)->GetLength();
 			//Now remove until it fits in an rtp payload (taking red headers into account)
-			while (redLen+frame->GetLength()+8>RTPPAYLOADSIZE)
+			while (frame && redLen+frame->GetLength()+8>RTPPAYLOADSIZE)
 			{
 				//Get packe
 				TextFrame* r = reds.front();
