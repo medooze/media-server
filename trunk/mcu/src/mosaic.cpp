@@ -602,7 +602,7 @@ int Mosaic::SetOverlayPNG(const char* filename)
 	ScopedLock scoped(mutex);
 	
 	//Log
-	Log("-SetOverlay [%s]\n",filename);
+	Log("-SetOverlay [%s,%d,%d]\n",filename,mosaicTotalWidth,mosaicTotalHeight);
 
 	//Reset any previous one
 	if (overlay)

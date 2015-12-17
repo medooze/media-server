@@ -25,7 +25,7 @@ Canvas::Canvas(DWORD width,DWORD height)
 	this->width = width;
 	this->height = height;
 	//Calculate size for overlay iage with alpha
-	overlaySize = width*height*5/2+FF_INPUT_BUFFER_PADDING_SIZE+32;
+	overlaySize = width*height*4+FF_INPUT_BUFFER_PADDING_SIZE+32;
 	//Create overlay image
 	overlay = (BYTE*)malloc32(overlaySize);
 	//Clean it
@@ -37,7 +37,7 @@ Canvas::Canvas(DWORD width,DWORD height)
 Overlay::Overlay(DWORD width,DWORD height) : Canvas(width,height)
 {
 	//Calculate size for final image i.e. without alpha
-	imageSize = width*height*3/2+FF_INPUT_BUFFER_PADDING_SIZE+32;
+	imageSize = width*height*4+FF_INPUT_BUFFER_PADDING_SIZE+32;
 	//Create final image
 	image = (BYTE*)malloc32(imageSize);
 }
@@ -308,7 +308,7 @@ int Canvas::RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWOR
 	const char *color	= properties.GetProperty("color"		,"white"	);
 	bool drawBackground	= properties.GetProperty("drawBackground"	,true		);
 	BYTE strokeWidth	= properties.GetProperty("strokeWidth"		,2		);
-	const char *font	= properties.GetProperty("font"			,"Verdana-Regular"	);
+	const char *font	= properties.GetProperty("font"			,"Verdana"	);
 	BYTE fontSize		= properties.GetProperty("fontSize"		,14		);
 	BYTE padding		= properties.GetProperty("padding"		,2		);
 	BYTE margin		= properties.GetProperty("margin"		,2		);
