@@ -33,6 +33,9 @@ AppMixer::AppMixer()
 	lastMask = 0;
 	//No img
 	img = NULL;
+	
+	//No modifiers for key/mouse
+	modifiers = 0;
 	// Create YUV rescaller cotext
 	sws = sws_alloc_context();
 }
@@ -680,7 +683,7 @@ int AppMixer::Display(const BYTE* frame,int width,int height)
 					properties.SetProperty("fillColor"	,"#11FF1140");
 					properties.SetProperty("strokeColor"	,"#40FF40A0");
 					properties.SetProperty("color"		,"black");
-					properties.SetProperty("font"		,"Verdana-Regular");
+					properties.SetProperty("font"		,"Verdana");
 					properties.SetProperty("fontSize"	,18);
 					
 					Debug("-RenderText [x:%d,y:%d,w:%d,h:%d,width:%d,height:%d,lastX:%d,lastY:%d]\n",x,y,w,h,width,height,lastX,lastY);
@@ -855,6 +858,7 @@ int AppMixer::onHandleCursorPos(VNCViewer *viewer,int x, int y)
 
 void AppMixer::onKeyboardEvent(bool down, DWORD keySym)
 {
+	Debug("-AppMixer::onKeyboardEvent [down:%d,keySym:%d]\n",down,keySym);
 	//Lock
 	use.WaitUnusedAndLock();
 
@@ -876,42 +880,51 @@ void AppMixer::onKeyboardEvent(bool down, DWORD keySym)
 		//Set event values
   		key_event.windows_key_code = GetWindowsKeyCodeWithoutLocation(windows_key_code);
   		key_event.native_key_code = windows_key_code;
-		key_event.character = windows_key_code;
+		key_event.character = keySym;
 		// We need to treat the enter key as a key press of character \r.  This
 		// is apparently just how webkit handles it and what it expects.
 		if (windows_key_code == VKEY_RETURN) 
 			key_event.unmodified_character = '\r';
 		else
-			key_event.unmodified_character = windows_key_code;
+			key_event.unmodified_character = keySym;
 
 		//Calculate modifiers
 		DWORD mod = 0;
 		switch(windows_key_code)
 		{
 			case VKEY_CAPITAL:
+				Debug("-AppMixer::onKeyboardEvent VKEY_CAPITAL mod EVENTFLAG_CAPS_LOCK_ON\n");
 				mod = EVENTFLAG_CAPS_LOCK_ON;
 				break;
 			case VKEY_SHIFT:
+				Debug("-AppMixer::onKeyboardEvent VKEY_SHIFT mod EVENTFLAG_SHIFT_DOWN\n");
 				mod = EVENTFLAG_SHIFT_DOWN;
 				break;
 			case VKEY_CONTROL:
+				Debug("-AppMixer::onKeyboardEvent VKEY_CONTROL mod EVENTFLAG_CONTROL_DOWN\n");
 				mod = EVENTFLAG_CONTROL_DOWN;
 				break;
 			case VKEY_MENU:
+				Debug("-AppMixer::onKeyboardEvent VKEY_MENU mod EVENTFLAG_ALT_DOWN\n");
 				mod = EVENTFLAG_ALT_DOWN;
 				break; 
 			case VKEY_COMMAND:
+				Debug("-AppMixer::onKeyboardEvent VKEY_COMMAND mod EVENTFLAG_COMMAND_DOWN\n");
 				mod = EVENTFLAG_COMMAND_DOWN;
 				break;
 			case VKEY_NUMLOCK:
+				Debug("-AppMixer::onKeyboardEvent VKEY_NUMLOCK mod EVENTFLAG_NUM_LOCK_ON\n");
 				mod = EVENTFLAG_NUM_LOCK_ON;
 				break;
 		}
 
 		//Check if it is a keypad what we are pressing
 		if (IsXKeysymKeyPad(keySym))
+		{
+			Debug("-AppMixer::onKeyboardEvent mod EVENTFLAG_IS_KEY_PAD\n");
 			//It is a keypad
 			mod = EVENTFLAG_IS_KEY_PAD;
+		}
 
 		//Modify modifiers
 		if (down)
@@ -929,7 +942,7 @@ void AppMixer::onKeyboardEvent(bool down, DWORD keySym)
 		//Set event modifiers
 		key_event.modifiers = modifiers;
 
-		Debug("-Sending Key: code:%d,keySym:%d\n", key_event.windows_key_code,keySym);
+		Debug("-AppMixer::onKeyboardEvent sending key: [code:%d,keySym:%d,modifiers:%d,system:%d]\n", key_event.windows_key_code,keySym,key_event.modifiers,key_event.is_system_key);
 		//Check if it is keydown or up	
 		if (down) {
 			//Send down & char
