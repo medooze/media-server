@@ -77,6 +77,9 @@ int RTPEndpoint::Init()
 	
 	//Init time
 	getUpdDifTime(&prev);
+	
+	//OK
+	return 1;
 }
 
 int RTPEndpoint::End()
@@ -99,6 +102,9 @@ int RTPEndpoint::End()
 	if (receiving)
 		//Stop it
 		StopReceiving();
+	
+	//OK
+	return 1;
 }
 
 int RTPEndpoint::StartReceiving()
@@ -314,6 +320,9 @@ int RTPEndpoint::Dettach()
 		joined->RemoveListener(this);
 	//Not joined anymore
 	joined = NULL;
+	
+	//OK
+	return 1;
 }
 
 void RTPEndpoint::onFPURequested(RTPSession *session)
@@ -359,5 +368,5 @@ void RTPEndpoint::SetREMB(DWORD estimation)
 int RTPEndpoint::RequestUpdate()
 {
 	//Request FIR
-	RequestFPU();
+	return RequestFPU();
 }
