@@ -20,6 +20,7 @@ public:
 private:
 	AVCodec 	*codec;
 	AVCodecContext	*ctx;
+	AVFrame 	*frame;
 };
 
 class G722Decoder : public AudioDecoder
