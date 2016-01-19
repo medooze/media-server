@@ -29,6 +29,7 @@ public:
 		int ProcessMessage();
 		int GetId(){return id;}
 		void Update();
+		void FreezeUpdate(bool freeze);
 		void ResizeScreen();
 		void Reset();
 		void SetViewOnly(bool viewOnly);
@@ -53,6 +54,7 @@ public:
 		fifo<BYTE,512*1024> buffer;
 		Wait wait;
 		int reset;
+		int freeze;
 		pthread_t thread;
 		std::wstring name;
 	};
@@ -71,7 +73,7 @@ public:
 	int SetEditor(int editorId);
 	int SetViewer(int viewerId);
 	std::wstring GetEditorName();
-	int Connect(int partId,const std::wstring &name,WebSocket *socket);
+	int Connect(int partId,const std::wstring &name,WebSocket *socket,const std::string &to);
 	int Disconnect(WebSocket *socket);
 	int Reset();
 	int SetSize(int width,int height);

@@ -166,7 +166,7 @@ public:
 		Debug("-onUpgradeRequest %s\n", request.GetRequestURI().c_str());
 		//Accept request
 		appMixer.OpenURL("http://www.google.com");
-		appMixer.WebsocketConnectRequest(1,std::wstring(L"test-viewer"),ws,0);
+		appMixer.WebsocketConnectRequest(1,std::wstring(L"test-viewer"),ws,0,"");
 		appMixer.SetEditor(1);
 	}
 	

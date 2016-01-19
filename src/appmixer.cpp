@@ -169,14 +169,14 @@ int AppMixer::Reset()
 	}
 }
 
-int AppMixer::WebsocketConnectRequest(int partId,const std::wstring &name,WebSocket *ws,bool isPresenter)
+int AppMixer::WebsocketConnectRequest(int partId,const std::wstring &name,WebSocket *ws,bool isPresenter,const std::string &to)
 {
 	Log("-WebsocketConnectRequest [partId:%d,isPresenter:%d]\n",partId,isPresenter);
 
 	//Check if it is a viewer
 	if (!isPresenter)
 		//Let the server handle it
-		return server.Connect(partId,name,ws);
+		return server.Connect(partId,name,ws,to);
 
 	//Check if we have presenter
 	if (presenterId!=partId)
@@ -970,7 +970,7 @@ int AppMixer::OpenURL(const char* url)
 	use.WaitUnusedAndLock();
 
 	//Set size
-	SetSize(1024,800);
+	SetSize(1024,768);
 
 	//If we don't have a browser instance yet
 	if (!browser.get())

@@ -341,9 +341,9 @@ std::wstring VNCServer::GetEditorName()
 	return std::wstring();
 }
 
-int VNCServer::Connect(int partId,const std::wstring &name,WebSocket *socket)
+int VNCServer::Connect(int partId,const std::wstring &name,WebSocket *socket,const std::string &to)
 {
-	Log(">VNCServer connecting participant viewer [id:%d]\n",partId);
+	Log(">VNCServer connecting participant viewer [id:%d,to:%s]\n",partId,to.c_str());
 
 	//Lock
 	use.WaitUnusedAndLock();
@@ -375,6 +375,11 @@ int VNCServer::Connect(int partId,const std::wstring &name,WebSocket *socket)
 	if (partId==editorId)
 		//Set client editor
 		client->SetViewOnly(false);
+
+	//Check if it is freezed
+	if (to.rfind("vnc-freeze")!=std::string::npos)
+		//Freeze
+		client->FreezeUpdate(true);
 
 	//Unlock clients list
 	use.Unlock();
@@ -753,6 +758,8 @@ VNCServer::Client::Client(int id,const std::wstring &name,VNCServer* server)
 
 	//Not reseted
 	reset = false;
+	//Not freezed
+	freeze = false;
 
 	//No websocket yet
 	this->ws = NULL;
@@ -1162,6 +1169,11 @@ int VNCServer::Client::Run()
 				//Check it is inside requested region
 				haveUpdate = !sraRgnEmpty(cl->modifiedRegion);//sraRgnAnd(updateRegion,cl->requestedRegion);
 
+			//IF we are freezed
+			if (freeze)
+				//Don't send any change
+				sraRgnMakeEmpty(updateRegion);
+
 			//Clean modified region
 			sraRgnMakeEmpty(cl->modifiedRegion);
 
@@ -1170,7 +1182,7 @@ int VNCServer::Client::Run()
 
 			Debug("-VNCServer::Client update [this:%p,update:%d,mod:%d,req:%d]\n",this,haveUpdate,sraRgnEmpty(cl->modifiedRegion),sraRgnEmpty(cl->requestedRegion));
 
-			//If we have to update
+			//If we have to update and not freezed
 			if (haveUpdate)
 			{
 				Debug(">VNCServer::Client SendFramebufferUpdate [%p]\n",this);
@@ -1244,4 +1256,8 @@ void VNCServer::Client::SetViewOnly(bool viewOnly)
 	this->cl->viewOnly = viewOnly;
 }
 
-
+void VNCServer::Client::FreezeUpdate(bool freeze)
+{
+	Log("-VNCServer::Client::FreezeUpdate [freeze:%p]\n",freeze);
+	this->freeze = freeze;
+}

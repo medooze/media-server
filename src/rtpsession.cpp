@@ -104,6 +104,7 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) : dtls(*this),
 	simRtcpSocket = FD_INVALID;
 	simPort = 0;
 	simRtcpPort = 0;
+	useRTCP = true;
 	useAbsTime = false;
 	sendSR = 0;
 	recTimestamp = 0;
@@ -396,6 +397,9 @@ int RTPSession::SetProperties(const Properties& properties)
 		{
 			//Set rtcp muxing
 			muxRTCP = atoi(it->second.c_str());
+		} else if (it->first.compare("useRTCP")==0) {
+			//Set rtx
+			useRTCP = atoi(it->second.c_str());
 		} else if (it->first.compare("secure")==0) {
 			//Encript and decript
 			encript = true;
@@ -953,7 +957,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 	}
 
 	//Check if we need to send SR
-	if (isZeroTime(&lastSR) || getDifTime(&lastSR)>1000000)
+	if (useRTCP && (isZeroTime(&lastSR) || getDifTime(&lastSR)>1000000))
 		//Send it
 		SendSenderReport();
 
@@ -1776,7 +1780,7 @@ int RTPSession::ReadRTP()
 	packets.Add(packet);
 
 	//Check if we need to send SR
-	if (isZeroTime(&lastSR) || getDifTime(&lastSR)>1000000)
+	if (useRTCP && (isZeroTime(&lastSR) || getDifTime(&lastSR)>1000000))
 		//Send it
 		SendSenderReport();
 
@@ -2174,7 +2178,7 @@ RTCPCompoundPacket* RTPSession::CreateSenderReport()
 	sdes->AddDescription(desc);
 
 	//Add to rtcp
-	rtcp->AddRTCPacket(sdes);
+	//rtcp->AddRTCPacket(sdes);
 
 	//Return it
 	return rtcp;
@@ -2212,7 +2216,7 @@ int RTPSession::SendSenderReport()
 	}
 
 	//Send packet
-	int ret = SendPacket(*rtcp);
+	int ret =  SendPacket(*rtcp);
 
 	//Delete it
 	delete(rtcp);

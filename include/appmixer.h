@@ -73,7 +73,7 @@ public:
 	int DisplayImage(const char* filename);
 	int OpenURL(const char* url);
 	int CloseURL();
-	int WebsocketConnectRequest(int partId,const std::wstring &name,WebSocket *ws,bool isPresenter);
+	int WebsocketConnectRequest(int partId,const std::wstring &name,WebSocket *ws,bool isPresenter,const std::string &to);
 	int SetPresenter(int partId);
 	int SetEditor(int partId);
 	int SetViewer(int partId);

@@ -200,6 +200,8 @@ private:
 	bool			isNACKEnabled;
 	bool			useAbsTime;
 
+	bool 			useRTCP;
+
 	RTPOrderedPackets	rtxs;
 	bool			usePLI;
 };
