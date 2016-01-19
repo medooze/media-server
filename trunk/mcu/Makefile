@@ -11,8 +11,8 @@ ifeq ($(DEBUG),yes)
 	OPTS+= -g -O0
 	#SANITIZE
 	ifeq ($(SANITIZE),yes)
-		OPTS+= -fsanitize=leak -fno-omit-frame-pointer
-		LDFLAGS+= -fsanitize=leak
+		OPTS+= -fsanitize=address -fsanitize=leak -fno-omit-frame-pointer
+		LDFLAGS+= -fsanitize=leak  -fsanitize=address
 	endif
 else
 	OPTS+= -g -O4 -fexpensive-optimizations -funroll-loops
@@ -150,7 +150,7 @@ endif
 
 OBJSMCU = $(OBJS) main.o
 OBJSLIB = $(OBJS)
-OBJSTEST = $(OBJS) test/main.o test/test.o test/cpim.o test/rtp.o test/fec.o
+OBJSTEST = $(OBJS) test/main.o test/test.o test/cpim.o test/rtp.o test/fec.o test/overlay.o
 OBJSRTMPDEBUG = $(OBJS) rtmpdebug.o
 OBJSFLVDUMP = $(OBJS) flvdump.o
 
@@ -286,7 +286,7 @@ buildtest: $(OBJSTEST)
 	$(CXX) -o $(BIN)/test $(BUILDOBJSTEST) $(LDFLAGS) $(VADLD) $(CEFLD)
 	
 test: buildtest
-	$(BIN)/$@
+	$(BIN)/$@ -lavcodec
 
 rtmpdebug: $(OBJSRTMPDEBUG)
 	$(CXX) -o $(BIN)/$@ $(BUILDOBJSRTMPDEBUG) $(LDFLAGS) $(VADLD)

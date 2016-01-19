@@ -1228,6 +1228,12 @@ int MultiConf::SetParticipantMosaic(int partId,int mosaicId)
 	//Get the participant
 	Participant *part = GetParticipant(partId);
 
+	//If it is the app mixer mosaic
+	if (mosaicId==-1)
+		//Get it
+		mosaicId = appMixerEncoderPrivateMosaicId;
+		
+
 	//Check particpant
 	if (part)
 		//Set it in the video mixer
@@ -2069,12 +2075,12 @@ int MultiConf::WebsocketConnectRequest(WebSocket *ws,int partId,const std::strin
 	if (to.compare("bfcp")==0)
 		//Connect to bfcp
 		BFCP::getInstance().ConnectTransport(ws,floorServer,partId);
-	else if (to.compare("vnc")==0)
+	else if (to.compare("vnc")==0 || to.compare("vnc-freeze")==0)
 		//Connect to app mixer vnc viewer
-		appMixer.WebsocketConnectRequest(partId,part->GetName(),ws,0);
+		appMixer.WebsocketConnectRequest(partId,part->GetName(),ws,0,to);
 	else if (to.compare("vnc-server")==0)
 		//Connect to app mixer vnc server
-		appMixer.WebsocketConnectRequest(partId,part->GetName(),ws,1);
+		appMixer.WebsocketConnectRequest(partId,part->GetName(),ws,1,to);
 	else if (to.compare("chat")==0)
 		//Connect to chat
 		chat.WebsocketConnectRequest(partId,ws);
