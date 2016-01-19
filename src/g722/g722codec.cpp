@@ -13,13 +13,12 @@
 #include "g722codec.h"
 #include "fifo.h"
 #include "log.h"
-#include "avcodec_encode_audio.h"
-
 
 G722Encoder::G722Encoder(const Properties &properties)
 {
 	//NO ctx yet
 	ctx = NULL;
+	frame = NULL;
 	///Set type
 	type = AudioCodec::G722;
 
@@ -43,6 +42,7 @@ G722Encoder::G722Encoder(const Properties &properties)
 	ctx->channels		= 1;
 	ctx->sample_rate	= 16000;
 	ctx->sample_fmt		= AV_SAMPLE_FMT_S16;
+	
 
 	//OPEN it
 	if (avcodec_open2(ctx, codec, NULL) < 0)
@@ -61,6 +61,13 @@ G722Encoder::G722Encoder(const Properties &properties)
 			numFrameSamples = 20 * 16; // 20 ms @ 16 Khz = 320 samples
 			ctx->frame_size = numFrameSamples;
 		}
+		//Create frame
+		frame = av_frame_alloc();
+		//Set defaults
+		frame->nb_samples     = ctx->frame_size;
+    		frame->format         = ctx->sample_fmt;
+    		frame->channel_layout = ctx->channel_layout;
+
 		Log("G722: Encoder open with frame size %d.\n", numFrameSamples);
 	}
 }
@@ -74,10 +81,15 @@ G722Encoder::~G722Encoder()
 		avcodec_close(ctx);
 		av_free(ctx);
 	}
+	if (frame)
+		  av_frame_free(&frame);
 }
 
 int G722Encoder::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 {
+	AVPacket pkt;
+	int got_output;
+
 	if (ctx == NULL)
 		return Error("G722: no context.\n");
 
@@ -86,9 +98,27 @@ int G722Encoder::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 		//Exit
 		return Error("G722: sample size %d is not correct. Should be %d\n", inLen, numFrameSamples);
 
-		//For each one
-	//Encode
-	return avcodec_encode_audio(ctx, out, inLen, in);
+	//Fill data
+	if ( avcodec_fill_audio_frame(frame, ctx->channels, ctx->sample_fmt, (BYTE*)in, inLen*sizeof(SWORD), 0)<0)
+		//Exit
+		return Error("G722: could not fill audio frame\n");
+
+	//Set output
+	pkt.data = out;
+	pkt.size = outLen;
+
+	//Encode audio
+	if (avcodec_encode_audio2(ctx, &pkt, frame, &got_output)<0)
+		//Exit
+		return Error("G722: could not encode audio frame\n");
+
+	//Check if we got output
+	if (!got_output)
+		//Exit
+		return Error("G722: could not get output packet\n");
+		
+	//Return encoded size
+	return pkt.size;
 }
 
 G722Decoder::G722Decoder()

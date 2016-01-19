@@ -7,13 +7,12 @@
 
 #include "aacencoder.h"
 #include "log.h"
-#include "avcodec_encode_audio.h"
-
 
 AACEncoder::AACEncoder(const Properties &properties)
 {
 	//NO ctx yet
 	ctx = NULL;
+	frame = NULL;
 	///Set type
 	type = AudioCodec::AAC;
 
@@ -80,6 +79,13 @@ AACEncoder::AACEncoder(const Properties &properties)
 	//Allocate float samples
 	av_samples_alloc(&samples, &samplesSize, 1, samplesNum, AV_SAMPLE_FMT_FLTP, 0);
 
+	//Create frame
+	frame = av_frame_alloc();
+	//Set defaults
+	frame->nb_samples     = ctx->frame_size;
+	frame->format         = ctx->sample_fmt;
+	frame->channel_layout = ctx->channel_layout;
+
 	//Log
 	Log("AAC: Encoder open with frame size %d.\n", numFrameSamples);
 }
@@ -100,10 +106,15 @@ AACEncoder::~AACEncoder()
 	}
 	if (samples)
 		av_freep(&samples);
+	if (frame)
+		av_frame_free(&frame);
 }
 
 int AACEncoder::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 {
+	AVPacket pkt;
+	int got_output;
+
 	if (!inLen)
 		return 0;
 	
@@ -118,6 +129,25 @@ int AACEncoder::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 	//Convert
 	int len = avresample_convert(avr, &samples, samplesSize, samplesNum, (BYTE**)&in, inLen*sizeof(SWORD), inLen);
 
-	//Encode
-	return avcodec_encode_audio(ctx, out,outLen,(short *)samples);
+	//Fill data
+        if ( avcodec_fill_audio_frame(frame, ctx->channels, ctx->sample_fmt, (BYTE*)samples, samplesSize, 0)<0)
+                //Exit
+                return Error("AAC: could not fill audio frame\n");
+
+        //Set output
+        pkt.data = out;
+        pkt.size = outLen;
+
+        //Encode audio
+        if (avcodec_encode_audio2(ctx, &pkt, frame, &got_output)<0)
+                //Exit
+                return Error("AAC: could not encode audio frame\n");
+
+        //Check if we got output
+        if (!got_output)
+                //Exit
+                return Error("AAC: could not get output packet\n");
+
+        //Return encoded size
+        return pkt.size;
 } 

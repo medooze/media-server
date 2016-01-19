@@ -30,6 +30,7 @@ private:
 	AVCodec 	*codec;
 	AVCodecContext	*ctx;
 	AVAudioResampleContext *avr;
+	AVFrame         *frame;
 	BYTE *samples;
 	int samplesSize;
 	int samplesNum;
