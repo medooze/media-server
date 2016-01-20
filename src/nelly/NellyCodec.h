@@ -28,6 +28,7 @@ public:
 private:
 	AVCodec 	*codec;
 	AVCodecContext	*ctx;
+	AVFrame         *frame;
 	fifo<SWORD,512>  samples;
 };
 
@@ -44,6 +45,7 @@ private:
 	SpeexResamplerState *resampler;
 	AVCodec 	*codec;
 	AVCodecContext	*ctx;
+	AVFrame         *frame;
 	fifo<SWORD,1024>  samples8;
 	fifo<SWORD,1024>  samples11;
 };
