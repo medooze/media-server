@@ -13,13 +13,12 @@
 #include "NellyCodec.h"
 #include "fifo.h"
 #include "log.h"
-#include "avcodec_encode_audio.h"
-
 
 NellyEncoder::NellyEncoder(const Properties &properties)
 {
 	//NO ctx yet
 	ctx = NULL;
+	frame = NULL;
 	///Set type
 	type = AudioCodec::NELLY8;
 
@@ -44,6 +43,13 @@ NellyEncoder::NellyEncoder(const Properties &properties)
 
 	//Get the number of samples
 	numFrameSamples = ctx->frame_size;
+
+	//Create frame
+	frame = av_frame_alloc();
+	//Set defaults
+	frame->nb_samples     = ctx->frame_size;
+	frame->format         = ctx->sample_fmt;
+	frame->channel_layout = ctx->channel_layout;
 }
 
 NellyEncoder::~NellyEncoder()
@@ -55,10 +61,15 @@ NellyEncoder::~NellyEncoder()
 		av_free(ctx);
 		ctx = NULL;
 	}
+	if (frame)
+		av_frame_free(&frame);
 }
 
 int NellyEncoder::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 {
+	AVPacket pkt;
+	int got_output;
+
 	SWORD buffer[512];
 	DWORD len = 512;
 	float bufferf[512];
@@ -76,8 +87,30 @@ int NellyEncoder::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 		//Convert to float
 		bufferf[i] = buffer[i] * (1.0 / (1<<15));
 
-	//Encode
-	return avcodec_encode_audio(ctx, out, outLen, (SWORD*)bufferf);
+	//Fill data
+	if ( avcodec_fill_audio_frame(frame, ctx->channels, ctx->sample_fmt, (BYTE*)bufferf, ctx->frame_size*sizeof(SWORD), 0)<0)
+		//Exit
+		return Error("NELLY: could not fill audio frame\n");
+
+	//Reset packet
+	av_init_packet(&pkt);
+
+	//Set output
+	pkt.data = out;
+	pkt.size = outLen;
+
+	//Encode audio
+	if (avcodec_encode_audio2(ctx, &pkt, frame, &got_output)<0)
+		//Exit
+		return Error("NELLY: could not encode audio frame\n");
+
+	//Check if we got output
+	if (!got_output)
+		//Exit
+		return Error("NELLY: could not get output packet\n");
+
+	//Return encoded size
+	return pkt.size;
 }
 
 
@@ -86,6 +119,7 @@ NellyEncoder11Khz::NellyEncoder11Khz(const Properties &properties)
 	//NO ctx yet
 	ctx = NULL;
 	resampler = NULL;
+	frame = NULL;
 	///Set type
 	type = AudioCodec::NELLY11;
 
@@ -119,6 +153,13 @@ NellyEncoder11Khz::NellyEncoder11Khz(const Properties &properties)
 
 	//Get the number of samples
 	numFrameSamples = ctx->frame_size;
+
+	//Create frame
+	frame = av_frame_alloc();
+	//Set defaults
+	frame->nb_samples     = ctx->frame_size;
+	frame->format         = ctx->sample_fmt;
+	frame->channel_layout = ctx->channel_layout;
 }
 
 NellyEncoder11Khz::~NellyEncoder11Khz()
@@ -135,10 +176,15 @@ NellyEncoder11Khz::~NellyEncoder11Khz()
 		mcu_resampler_destroy(resampler);
 		resampler = NULL;
 	}
+	if (frame)
+		av_frame_free(&frame);
 }
 
 int NellyEncoder11Khz::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 {
+	AVPacket pkt;
+	int got_output;
+
 	SWORD buffer8[512];
 	SWORD buffer11[512];
 	DWORD len8 = 512;
@@ -172,8 +218,30 @@ int NellyEncoder11Khz::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 	for (int i=0;i<ctx->frame_size;++i)
 		//Convert to float
 		bufferf[i] = buffer11[i] * (1.0 / (1<<15));
-	//Encode
-	return avcodec_encode_audio(ctx, out, outLen, (SWORD*)bufferf);
+	//Fill data
+	if ( avcodec_fill_audio_frame(frame, ctx->channels, ctx->sample_fmt, (BYTE*)bufferf, ctx->frame_size*sizeof(SWORD), 0)<0)
+		//Exit
+		return Error("NELLY: could not fill audio frame\n");
+
+	//Reset packet
+	av_init_packet(&pkt);
+	
+	//Set output
+	pkt.data = out;
+	pkt.size = outLen;
+
+	//Encode audio
+	if (avcodec_encode_audio2(ctx, &pkt, frame, &got_output)<0)
+		//Exit
+		return Error("NELLY: could not encode audio frame\n");
+
+	//Check if we got output
+	if (!got_output)
+		//Exit
+		return Error("NELLY: could not get output packet\n");
+
+	//Return encoded size
+	return pkt.size;
 }
 
 NellyDecoder11Khz::NellyDecoder11Khz()

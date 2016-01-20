@@ -103,6 +103,10 @@ int G722Encoder::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 		//Exit
 		return Error("G722: could not fill audio frame\n");
 
+	//Reset packet
+	av_init_packet(&pkt);
+
+
 	//Set output
 	pkt.data = out;
 	pkt.size = outLen;

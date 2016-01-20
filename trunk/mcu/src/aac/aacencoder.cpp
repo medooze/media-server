@@ -74,7 +74,7 @@ AACEncoder::AACEncoder(const Properties &properties)
 	avresample_open(avr);
 
 	//Temporal buffer samples
-	samplesNum = 2048;
+	samplesNum = numFrameSamples;
 
 	//Allocate float samples
 	av_samples_alloc(&samples, &samplesSize, 1, samplesNum, AV_SAMPLE_FMT_FLTP, 0);
@@ -129,10 +129,13 @@ int AACEncoder::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 	//Convert
 	int len = avresample_convert(avr, &samples, samplesSize, samplesNum, (BYTE**)&in, inLen*sizeof(SWORD), inLen);
 
-	//Fill data
-        if ( avcodec_fill_audio_frame(frame, ctx->channels, ctx->sample_fmt, (BYTE*)samples, samplesSize, 0)<0)
+	//Check 
+	if (avcodec_fill_audio_frame(frame, ctx->channels, ctx->sample_fmt, (BYTE*)samples, samplesSize, 0)<0)
                 //Exit
-                return Error("AAC: could not fill audio frame\n");
+                return Error("AAC: could not fill audio frame \n");
+
+	//Reset packet
+	av_init_packet(&pkt);
 
         //Set output
         pkt.data = out;
