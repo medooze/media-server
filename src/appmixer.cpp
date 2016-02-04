@@ -1025,9 +1025,13 @@ bool AppMixer::GetViewRect(CefRect& rect)
 	Log("-AppMixer::GetViewRect [%d,%d]\n",server.GetWidth(),server.GetHeight());
 	//Set server dimensions
 	rect = CefRect(0, 0, server.GetWidth(), server.GetHeight());
-	//Send focus event
-	browser->GetHost()->SetFocus(true);
-	browser->GetHost()->SendFocusEvent(true);
+	//Ensure we have a browser
+	if (browser.get())
+	{
+		//Send focus event
+		browser->GetHost()->SetFocus(true);
+		browser->GetHost()->SendFocusEvent(true);
+	}
 	//Changed
 	return true;
 }
