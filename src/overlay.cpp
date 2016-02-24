@@ -199,7 +199,7 @@ int Canvas::LoadPNG(const char* filename)
 	logo->data[3] = logo->data[2] + numpixels / 4;
 
 	//Convert
-	sws_scale(sws, logoRGB->data, logoRGB->linesize, 0, height, logo->data, logo->linesize);
+	sws_scale(sws, logoRGB->data, logoRGB->linesize, 0, ctx->height, logo->data, logo->linesize);
 
 	//Everything was ok
 	res = 1;
@@ -426,7 +426,7 @@ int Canvas::RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWOR
 		yuva->data[3] = overlay + numpixels*3/2 +x  +y*this->width;
 
 		//Convert
-		sws_scale(sws, rgba->data, rgba->linesize, 0, height, yuva->data, yuva->linesize);
+		sws_scale(sws, rgba->data, rgba->linesize, 0, this->height, yuva->data, yuva->linesize);
 
 		//Free memory
 		av_free(rgba);
