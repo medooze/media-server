@@ -543,37 +543,17 @@ int VNCServer::FrameBufferUpdateDone()
 	use.Unlock();
 }
 
-int VNCServer::FrameBufferUpdate(const BYTE *data,int x,int y,int width,int height)
+int VNCServer::FrameBufferUpdate(const BYTE *data,int srcX,int srcY,int srcLineSize,int x,int y,int width,int height)
 {
-	Debug("-FrameBufferUpdate [x:%d,y:%d,w:%d,h:%d]\n",x,y,width,height);
+	Debug("-FrameBufferUpdate [srcX:%d,srcY:%d,srcLIneSize:%d,x:%d,y:%d,w:%d,h:%d]\n",srcX,srcY,srcLineSize,x,y,width,height);
 
 	//LOck
 	use.WaitUnusedAndLock();
 
 	//Update frame
-	for (int j=y;j<y+height;++j)
+	for (int j=y,k=srcY;j<y+height;++j,++k)
 		//Copy
-		memcpy(screen->frameBuffer+(x+j*screen->width)*4,data+(x+j*screen->width)*4,width*4);
-
-	/*
-	{
-		screen->frameBuffer[(x+j*screen->width)*4] = 0xFF;
-		screen->frameBuffer[(x+j*screen->width)*4+1] = 00;
-		screen->frameBuffer[(x+j*screen->width)*4+2] = 00;
-		screen->frameBuffer[(x+j*screen->width+width-1)*4] = 0x00;
-		screen->frameBuffer[(x+j*screen->width+width-1)*4+1] = 0xFF;
-		screen->frameBuffer[(x+j*screen->width+width-1)*4+2] = 00;
-	}
-	for (int i=x;i<x+width;i++)
-	{
-		screen->frameBuffer[(i+y*screen->width)*4] = 0xFF;
-		screen->frameBuffer[(i+y*screen->width)*4+1] = 00;
-		screen->frameBuffer[(i+y*screen->width)*4+2] = 00;
-		screen->frameBuffer[(i+(y+height-1)*screen->width)*4] = 0x00;
-		screen->frameBuffer[(i+(y+height-1)*screen->width)*4+1] = 00;
-		screen->frameBuffer[(i+(y+height-1)*screen->width)*4+2] = 0xFF;
-	}
-	*/
+		memcpy(screen->frameBuffer+(x+j*screen->width)*4,data+(srcX+k*srcLineSize)*4,width*4);
 
 	//Set modified region
 	rfbMarkRectAsModified(screen,x,y,x+width,y+height);
@@ -641,7 +621,7 @@ void VNCServer::onKeyboardEvent(rfbBool down, rfbKeySym keySym, rfbClientPtr cl)
 	//Get server
 	VNCServer* server  = client->GetServer();
 
-	Log("-onKeyboardEvent [key:%d,down:%d,client:%d,editor:%d,listener:%p]\n",keySym,down,server->editorId,client->GetId(),server->listener);
+	Debug("-onKeyboardEvent [key:%d,down:%d,client:%d,editor:%d,listener:%p]\n",keySym,down,server->editorId,client->GetId(),server->listener);
 
 	//Double check it is the editor
 	if (server->editorId==client->GetId())
@@ -658,7 +638,7 @@ void VNCServer::onMouseEvent(int buttonMask, int x, int y, rfbClientRec* cl)
 	//Get server
 	VNCServer* server  = client->GetServer();
 
-	Log("-onMouseEvent [x:%d,y:%d,mask:%x,client:%d,editor:%d,listener:%p]\n",x,y,buttonMask,server->editorId,client->GetId(),server->listener);
+	Debug("-onMouseEvent [x:%d,y:%d,mask:%x,client:%d,editor:%d,listener:%p]\n",x,y,buttonMask,server->editorId,client->GetId(),server->listener);
 
 	//Double check it is the editor
 	if (server->editorId==client->GetId())
@@ -1124,7 +1104,7 @@ int VNCServer::Client::Run()
 	//Until ended
 	while (!wait.IsCanceled())
 	{
-		Debug("-VNCServer::Client lopp [this:%p,state:%d,empty:%d]\n",this,cl->state,sraRgnEmpty(cl->requestedRegion));
+		Debug("-VNCServer::Client loop [this:%p,state:%d,empty:%d]\n",this,cl->state,sraRgnEmpty(cl->requestedRegion));
 
 		//If connected, always require a FB Update Request (otherwise can crash.)
 		if (cl->state == rfbClientRec::RFB_NORMAL && !sraRgnEmpty(cl->requestedRegion))

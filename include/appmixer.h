@@ -103,7 +103,7 @@ public:
 	virtual void onMouseEvent(int buttonMask, int x, int y);
 	virtual void onKeyboardEvent(bool down, DWORD keySym);
 private:
-	int Display(const BYTE* frame,int width,int height);
+	int Display(const BYTE* frame,int x,int y,int width,int height,int lineSize);
 private:
 	Logo		logo;
 	VideoOutput*	output;
@@ -119,6 +119,11 @@ private:
 	DWORD		lastY;
 	BYTE		lastMask;
 	DWORD		modifiers;
+	bool		popUpShown;
+	DWORD		popUpX;
+	DWORD		popUpY;
+	DWORD		popUpWidth;
+	DWORD		popUpHeight;
 	
 #ifdef CEF
 public:
@@ -128,6 +133,9 @@ public:
 	virtual bool GetViewRect(CefRect& rect);
 	virtual void OnPaint(CefRenderHandler::PaintElementType type, const CefRenderHandler::RectList& rects, const BYTE* buffer, int width, int height);
 	virtual void OnBrowserDestroyed();
+	virtual void OnPopupShow(bool show);
+	virtual void OnPopupSize(const CefRect& rect);
+
 private:
 	CefRefPtr<CefBrowser> browser;
 #endif
