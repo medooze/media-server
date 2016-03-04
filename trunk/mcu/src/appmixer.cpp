@@ -33,6 +33,12 @@ AppMixer::AppMixer()
 	lastMask = 0;
 	//No img
 	img = NULL;
+	//Clean popup
+	popUpShown = false;
+	popUpX = 0;
+	popUpY = 0;
+	popUpWidth = 0;
+	popUpHeight = 0;
 	
 	//No modifiers for key/mouse
 	modifiers = 0;
@@ -84,7 +90,7 @@ int AppMixer::DisplayImage(const char* filename)
 	//Set size 
 	SetSize(logo.GetWidth(),logo.GetHeight());
 	//Set new frame
-	server.FrameBufferUpdate(logo.GetFrameRGBA(),0,0,logo.GetWidth(),logo.GetHeight());
+	server.FrameBufferUpdate(logo.GetFrameRGBA(),0,0,logo.GetWidth(),0,0,logo.GetWidth(),logo.GetHeight());
 	//End update
 	server.FrameBufferUpdateDone();
 	
@@ -586,7 +592,7 @@ int AppMixer::onFrameBufferUpdate(VNCViewer *viewer,int x, int y, int w, int h)
 	//Log("-onFrameBufferUpdate [%d,%d,%d,%d]\n",x,y,w,h);
 
 	//UPdate vnc server frame buffer
-	server.FrameBufferUpdate(viewer->GetFrameBuffer(),x,y,w,h);
+	server.FrameBufferUpdate(viewer->GetFrameBuffer(),0,0,w,x,y,w,h);
 
 	return 1;
 }
@@ -604,16 +610,19 @@ int AppMixer::onFinishedFrameBufferUpdate(VNCViewer *viewer)
 	//Signal server
 	server.FrameBufferUpdateDone();
 	//Display image
-	return Display(viewer->GetFrameBuffer(),viewer->GetWidth(),viewer->GetHeight());
+	return Display(viewer->GetFrameBuffer(),0,0,viewer->GetWidth(),viewer->GetHeight(),viewer->GetWidth());
 }
 
 
-int AppMixer::Display(const BYTE* frame,int width,int height)
+int AppMixer::Display(const BYTE* frame,int x, int y, int width,int height, int lineSize)
 {
 	if (output)
 	{
+		//Get server size
+		DWORD w = server.GetWidth();
+		DWORD h = server.GetHeight();
 		//Calc num pixels
-		DWORD numpixels = width*height;
+		DWORD numpixels = w*h;
 
 		//Alloc data
 		AVFrame* in = av_frame_alloc();
@@ -623,17 +632,17 @@ int AppMixer::Display(const BYTE* frame,int width,int height)
 		in->data[0] = (BYTE*)frame;
 
 		//Set size
-		in->linesize[0] = width*4;
+		in->linesize[0] = lineSize*4;
 
 		//Alloc data
-		out->data[0] = img;
-		out->data[1] = out->data[0] + numpixels;
-		out->data[2] = out->data[1] + numpixels / 4;
+		out->data[0] = img + x + y*w;
+		out->data[1] = img + numpixels + x/2 + y*w/4;
+		out->data[2] = img + numpixels*5/4  + x/2 + y*w/4;
 
 		//Set size for planes
-		out->linesize[0] = width;
-		out->linesize[1] = width/2;
-		out->linesize[2] = width/2;
+		out->linesize[0] = w;
+		out->linesize[1] = w/2;
+		out->linesize[2] = w/2;
 
 		//Convert
 		if (sws) sws_scale(sws, in->data, in->linesize, 0, height, out->data, out->linesize);
@@ -881,6 +890,8 @@ void AppMixer::onKeyboardEvent(bool down, DWORD keySym)
   		key_event.windows_key_code = GetWindowsKeyCodeWithoutLocation(windows_key_code);
   		key_event.native_key_code = windows_key_code;
 		key_event.character = keySym;
+		//Always false on no-Windows
+    		key_event.is_system_key = false;
 		// We need to treat the enter key as a key press of character \r.  This
 		// is apparently just how webkit handles it and what it expects.
 		if (windows_key_code == VKEY_RETURN) 
@@ -926,6 +937,10 @@ void AppMixer::onKeyboardEvent(bool down, DWORD keySym)
 			mod = EVENTFLAG_IS_KEY_PAD;
 		}
 
+		// If ctrl key is pressed down, then control character shall be input.
+		if (key_event.modifiers & EVENTFLAG_CONTROL_DOWN)
+			key_event.character = GetControlCharacter(windows_key_code, key_event.modifiers & EVENTFLAG_SHIFT_DOWN);
+
 		//Modify modifiers
 		if (down)
 			//Add it
@@ -934,10 +949,6 @@ void AppMixer::onKeyboardEvent(bool down, DWORD keySym)
 			//Remove it
 			modifiers &= ~mod;
 		
-		//Check if ALT is pressed
-  		if (key_event.modifiers & EVENTFLAG_ALT_DOWN)
-			//It is a system key
-    			key_event.is_system_key = true;
 
 		//Set event modifiers
 		key_event.modifiers = modifiers;
@@ -945,11 +956,145 @@ void AppMixer::onKeyboardEvent(bool down, DWORD keySym)
 		Debug("-AppMixer::onKeyboardEvent sending key: [code:%d,keySym:%d,modifiers:%d,system:%d]\n", key_event.windows_key_code,keySym,key_event.modifiers,key_event.is_system_key);
 		//Check if it is keydown or up	
 		if (down) {
-			//Send down & char
+			//Send down 
 			key_event.type = KEYEVENT_RAWKEYDOWN;
 			host->SendKeyEvent(key_event);
-			key_event.type = KEYEVENT_CHAR;
-			host->SendKeyEvent(key_event);
+			//Check if it is char key
+			switch(key_event.windows_key_code)
+			{
+				case VKEY_BACK :
+				case VKEY_TAB :
+				case VKEY_BACKTAB :
+				case VKEY_CLEAR :
+				case VKEY_RETURN :
+				case VKEY_SHIFT :
+				case VKEY_CONTROL :
+				case VKEY_MENU :
+				case VKEY_PAUSE :
+				case VKEY_CAPITAL :
+				case VKEY_KANA :
+				case VKEY_FINAL :
+				case VKEY_HANJA :
+				case VKEY_ESCAPE :
+				case VKEY_CONVERT :
+				case VKEY_NONCONVERT :
+				case VKEY_ACCEPT :
+				case VKEY_MODECHANGE :
+				case VKEY_PRIOR :
+				case VKEY_NEXT :
+				case VKEY_END :
+				case VKEY_HOME :
+				case VKEY_LEFT :
+				case VKEY_UP :
+				case VKEY_RIGHT :
+				case VKEY_DOWN :
+				case VKEY_SELECT :
+				case VKEY_PRINT :
+				case VKEY_EXECUTE :
+				case VKEY_SNAPSHOT :
+				case VKEY_INSERT :
+				case VKEY_DELETE :
+				case VKEY_HELP :
+				case VKEY_LWIN :
+				case VKEY_RWIN :
+				case VKEY_APPS :
+				case VKEY_SLEEP :
+				case VKEY_NUMPAD0 :
+				case VKEY_NUMPAD1 :
+				case VKEY_NUMPAD2 :
+				case VKEY_NUMPAD3 :
+				case VKEY_NUMPAD4 :
+				case VKEY_NUMPAD5 :
+				case VKEY_NUMPAD6 :
+				case VKEY_NUMPAD7 :
+				case VKEY_NUMPAD8 :
+				case VKEY_NUMPAD9 :
+				case VKEY_F1 :
+				case VKEY_F2 :
+				case VKEY_F3 :
+				case VKEY_F4 :
+				case VKEY_F5 :
+				case VKEY_F6 :
+				case VKEY_F7 :
+				case VKEY_F8 :
+				case VKEY_F9 :
+				case VKEY_F10 :
+				case VKEY_F11 :
+				case VKEY_F12 :
+				case VKEY_F13 :
+				case VKEY_F14 :
+				case VKEY_F15 :
+				case VKEY_F16 :
+				case VKEY_F17 :
+				case VKEY_F18 :
+				case VKEY_F19 :
+				case VKEY_F20 :
+				case VKEY_F21 :
+				case VKEY_F22 :
+				case VKEY_F23 :
+				case VKEY_F24 :
+				case VKEY_NUMLOCK :
+				case VKEY_SCROLL :
+				case VKEY_LSHIFT :
+				case VKEY_RSHIFT :
+				case VKEY_LCONTROL :
+				case VKEY_RCONTROL :
+				case VKEY_LMENU :
+				case VKEY_RMENU :
+				case VKEY_BROWSER_BACK :
+				case VKEY_BROWSER_FORWARD :
+				case VKEY_BROWSER_REFRESH :
+				case VKEY_BROWSER_STOP :
+				case VKEY_BROWSER_SEARCH :
+				case VKEY_BROWSER_FAVORITES :
+				case VKEY_BROWSER_HOME :
+				case VKEY_VOLUME_MUTE :
+				case VKEY_VOLUME_DOWN :
+				case VKEY_VOLUME_UP :
+				case VKEY_MEDIA_NEXT_TRACK :
+				case VKEY_MEDIA_PREV_TRACK :
+				case VKEY_MEDIA_STOP :
+				case VKEY_MEDIA_PLAY_PAUSE :
+				case VKEY_MEDIA_LAUNCH_MAIL :
+				case VKEY_MEDIA_LAUNCH_MEDIA_SELECT :
+				case VKEY_MEDIA_LAUNCH_APP1 :
+				case VKEY_MEDIA_LAUNCH_APP2 :
+				case VKEY_PROCESSKEY :
+				case VKEY_PACKET :
+				case VKEY_DBE_SBCSCHAR :
+				case VKEY_DBE_DBCSCHAR :
+				case VKEY_ATTN :
+				case VKEY_CRSEL :
+				case VKEY_EXSEL :
+				case VKEY_EREOF :
+				case VKEY_PLAY :
+				case VKEY_ZOOM :
+				case VKEY_NONAME :
+				case VKEY_PA1 :
+				case VKEY_OEM_CLEAR :
+				// POSIX specificcase VKEYs. Note that as of Windows SDK 7.1, 0x97-9F, 0xD8-DA,
+				// and 0xE8 are unassigned.
+				case VKEY_WLAN :
+				case VKEY_POWER :
+				case VKEY_BRIGHTNESS_DOWN :
+				case VKEY_BRIGHTNESS_UP :
+				case VKEY_KBD_BRIGHTNESS_DOWN :
+				case VKEY_KBD_BRIGHTNESS_UP :
+				// Windows does not have a specific key code for AltGr. We use the unused 0xE1
+				// (VK_OEM_AX) code to represent AltGr, matching the behaviour of Firefox on
+				// Linux.
+				case VKEY_ALTGR :
+				// Windows does not have a specific key code for Compose. We use the unused
+				// 0xE6 (VK_ICO_CLEAR) code to represent Compose.
+				case VKEY_COMPOSE :
+					//Skip
+					Debug("-Skiping char\n");
+					break;
+				default:
+					//Send char
+					key_event.type = KEYEVENT_CHAR;
+					host->SendKeyEvent(key_event);
+			}
 		} else {
 			//Send only up
 			key_event.type = KEYEVENT_KEYUP;
@@ -984,6 +1129,12 @@ int AppMixer::OpenURL(const char* url)
 		//Navigate to that URL
 		browser->GetMainFrame()->LoadURL(url);
 	}
+	//Clean popup
+	popUpShown = false;
+	popUpX = 0;
+	popUpY = 0;
+	popUpWidth = 0;
+	popUpHeight = 0;
 
 	//Unlock
 	use.Unlock();
@@ -1010,6 +1161,13 @@ int AppMixer::CloseURL()
 		browser->GetHost()->CloseBrowser(true);
 	//Unlock
 	use.Unlock();
+
+	//Clean popup
+	popUpShown = false;
+	popUpX = 0;
+	popUpY = 0;
+	popUpWidth = 0;
+	popUpHeight = 0;
 
 	//OK
 	return true;
@@ -1038,12 +1196,18 @@ bool AppMixer::GetViewRect(CefRect& rect)
 
 void AppMixer::OnPaint(CefRenderHandler::PaintElementType type, const CefRenderHandler::RectList& rects, const BYTE* buffer, int width, int height)
 {
-	Debug("-AppMixer::OnPaint [pet:%d,popup:%d]\n",type==PET_VIEW,type==PET_POPUP);
+	DWORD x = 0;
+	DWORD y = 0;
+
+	Debug("-AppMixer::OnPaint [view:%d,popup:%d,width:%d,height:%d,popUpX:%d,popUpY:%d]\n",type==PET_VIEW,type==PET_POPUP,width,height,popUpX,popUpY);
 	
-	//Dont' paint popup
-	if (type != PET_VIEW)
-		 //Exit
-		 return;
+	//If it is the pop uyp
+	if (type == PET_POPUP)
+	{
+		//Set pop up offset
+		x = popUpX;
+		y = popUpY;
+	}
 	
 	// Update just the dirty rectangles.
 	for (CefRenderHandler::RectList::const_iterator i = rects.begin() ; i != rects.end(); ++i) 
@@ -1068,14 +1232,31 @@ void AppMixer::OnPaint(CefRenderHandler::PaintElementType type, const CefRenderH
 			}
 		}
 		//UPdate vnc server frame buffer
-		server.FrameBufferUpdate(buffer, rect.x, rect.y, rect.width, rect.height);
+		server.FrameBufferUpdate(buffer, rect.x, rect.y, width, rect.x+x, rect.y+y, rect.width, rect.height);
+
+		//If the main window has been updated and covered the pop up
+		if (popUpShown && type==PET_VIEW && 
+			//OVerlaps in X
+			( 
+				(rect.x<popUpX  && rect.x+rect.width>=popUpX) || 
+				(rect.x>=popUpX && rect.x<=popUpX+popUpWidth)
+			) && 
+			//Overlaps in Y
+			( 
+				(rect.y<popUpY  && rect.y+rect.height>=popUpY) || 
+				(rect.y>=popUpY && rect.y<=popUpY+popUpHeight)
+			) 
+		)
+			//We are drawing under the pop up, redraw it
+			browser->GetHost()->Invalidate(PET_POPUP);
 	}
 	
 	//Signal server
 	server.FrameBufferUpdateDone();
-	
+
 	//And display image
-	Display(buffer,width,height);
+	Display(buffer,x,y,width,height,width);
+
 }
 
 void AppMixer::OnBrowserCreated(CefRefPtr<CefBrowser> browser)
@@ -1108,5 +1289,25 @@ void AppMixer::OnBrowserDestroyed()
 
 	//Unlock
 	use.Unlock();
+}
+void AppMixer::OnPopupShow(bool show)
+{
+	 Log("-AppMixer::OnPopupShow [%d]\n",show);
+	//Store it
+	popUpShown = show;
+	//If hiden it
+	if (!popUpShown)
+		//Refresh the whole view
+		browser->GetHost()->Invalidate(PET_VIEW);
+}
+
+void AppMixer::OnPopupSize(const CefRect& rect)
+{
+	 Log("-AppMixer::OnPopupSize [%d,%d,%d,%d]\n",rect.x,rect.y,rect.width,rect.height);
+	//Store popup position
+	popUpX = rect.x;
+	popUpY = rect.y;
+	popUpWidth = rect.width;
+	popUpHeight = rect.height;
 }
 #endif

@@ -25,6 +25,8 @@ public:
 		virtual bool GetViewRect(CefRect& rect) = 0;
 		virtual void OnPaint(CefRenderHandler::PaintElementType type, const CefRenderHandler::RectList& rects, const BYTE* buffer, int width, int height)  = 0;
 		virtual void OnBrowserDestroyed() = 0;
+		virtual void OnPopupShow(bool show) = 0;
+		virtual void OnPopupSize(const CefRect& rect) = 0;
 	};
 public:
 	Client(Listener *listener);
@@ -44,21 +46,18 @@ public:
 	virtual void OnPaint(CefRefPtr<CefBrowser> browser, CefRenderHandler::PaintElementType type, const RectList& rects, const void* buffer, int width, int height);
 
 	//Called only from Browser
-	virtual void OnAfterCreated(CefRefPtr<CefBrowser> browser) 
-	{
-		 Log("-BrowserCreated browser:%p host:%p\n",browser.get(),browser.get()->GetHost().get());
-		//Set focus
-		browser->GetHost()->SetFocus(true);
-		//Call listener
-		if (listener) listener->OnBrowserCreated(browser);
-	}
+	virtual void OnAfterCreated(CefRefPtr<CefBrowser> browser);
+	virtual void OnBeforeClose(CefRefPtr<CefBrowser> browser);
 
-	virtual void OnBeforeClose(CefRefPtr<CefBrowser> browser)
-	{
-		 Log("-BrowserDestroyed\n");
-		//Call Listener
-		if (listener) listener->OnBrowserDestroyed();
-	}
+	///
+	// Called when the browser wants to show or hide the popup widget. The popup
+	// should be shown if |show| is true and hidden if |show| is false.
+	virtual void OnPopupShow(CefRefPtr<CefBrowser> browser, bool show);
+	///
+	// Called when the browser wants to move or resize the popup widget. |rect|
+	// contains the new location and size in view coordinates.
+	virtual void OnPopupSize(CefRefPtr<CefBrowser> browser, const CefRect& rect);
+
 
 	IMPLEMENT_REFCOUNTING(Client);
 private:
