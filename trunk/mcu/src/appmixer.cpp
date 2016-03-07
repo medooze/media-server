@@ -42,8 +42,6 @@ AppMixer::AppMixer()
 	
 	//No modifiers for key/mouse
 	modifiers = 0;
-	// Create YUV rescaller cotext
-	sws = sws_alloc_context();
 }
 AppMixer::~AppMixer()
 {
@@ -149,14 +147,6 @@ int AppMixer::Reset()
 {
 	Log("-AppMixer::Reset\n");
 	
-	//Check if we already have a context
-	if (sws)
-	{
-		//Free sws contes
-		sws_freeContext(sws);
-		//Null it
-		sws = NULL;
-	}
 	//If already got memory
 	if (img)
 	{
@@ -548,23 +538,6 @@ int AppMixer::SetSize(int width,int height)
 	//If got size
 	if (width && height)
 	{
-		// Create YUV rescaller cotext
-		sws = sws_alloc_context();
-
-		// Set property's of YUV rescaller context
-		av_opt_set_defaults(sws);
-		av_opt_set_int(sws, "srcw",       width			,AV_OPT_SEARCH_CHILDREN);
-		av_opt_set_int(sws, "srch",       height		,AV_OPT_SEARCH_CHILDREN);
-		av_opt_set_int(sws, "src_format", AV_PIX_FMT_RGBA	,AV_OPT_SEARCH_CHILDREN);
-		av_opt_set_int(sws, "dstw",       width			,AV_OPT_SEARCH_CHILDREN);
-		av_opt_set_int(sws, "dsth",       height		,AV_OPT_SEARCH_CHILDREN);
-		av_opt_set_int(sws, "dst_format", AV_PIX_FMT_YUV420P	,AV_OPT_SEARCH_CHILDREN);
-		av_opt_set_int(sws, "sws_flags",  SWS_FAST_BILINEAR	,AV_OPT_SEARCH_CHILDREN);
-	
-		// Init YUV rescaller context
-		if (sws_init_context(sws, NULL, NULL) < 0)
-			//Set errror
-			return  Error("Couldn't init sws context\n");
 	}
 
 	//Create number of pixels
@@ -618,6 +591,7 @@ int AppMixer::Display(const BYTE* frame,int x, int y, int width,int height, int 
 {
 	if (output)
 	{
+		Debug("-Display [x:%d,y:%d,width:%d,height:%d,lineSize:%d]\n",x,y,width, height, lineSize);
 		//Get server size
 		DWORD w = server.GetWidth();
 		DWORD h = server.GetHeight();
@@ -644,8 +618,33 @@ int AppMixer::Display(const BYTE* frame,int x, int y, int width,int height, int 
 		out->linesize[1] = w/2;
 		out->linesize[2] = w/2;
 
+		// Create YUV rescaller cotext
+		SwsContext* sws = sws_alloc_context();
+
+		// Set property's of YUV rescaller context
+		av_opt_set_defaults(sws);
+		av_opt_set_int(sws, "srcw",       width			,AV_OPT_SEARCH_CHILDREN);
+		av_opt_set_int(sws, "srch",       height		,AV_OPT_SEARCH_CHILDREN);
+		av_opt_set_int(sws, "src_format", AV_PIX_FMT_RGBA	,AV_OPT_SEARCH_CHILDREN);
+		av_opt_set_int(sws, "dstw",       width			,AV_OPT_SEARCH_CHILDREN);
+		av_opt_set_int(sws, "dsth",       height		,AV_OPT_SEARCH_CHILDREN);
+		av_opt_set_int(sws, "dst_format", AV_PIX_FMT_YUV420P	,AV_OPT_SEARCH_CHILDREN);
+		av_opt_set_int(sws, "sws_flags",  SWS_FAST_BILINEAR	,AV_OPT_SEARCH_CHILDREN);
+	
+		// Init YUV rescaller context
+		if (sws_init_context(sws, NULL, NULL) < 0)
+		{
+			//Clear context
+			sws_freeContext(sws);
+			//Set errror
+			return  Error("Couldn't init sws context\n");
+		}
+
 		//Convert
-		if (sws) sws_scale(sws, in->data, in->linesize, 0, height, out->data, out->linesize);
+		sws_scale(sws, in->data, in->linesize, 0, height, out->data, out->linesize);
+
+		//Clear context
+		sws_freeContext(sws);
 
 		//If we had canvas
 		if (canvas)
@@ -1208,29 +1207,30 @@ void AppMixer::OnPaint(CefRenderHandler::PaintElementType type, const CefRenderH
 		x = popUpX;
 		y = popUpY;
 	}
+
+	//BGRA to RGBA
+	for (int j=0;j<height;++j)
+	{
+		//Get start of line
+		BYTE *line = (BYTE*)buffer+j*width*4;
+		//Each pixel
+		for (int i=0;i<width;++i)
+		{	
+			//Get red and blue
+			BYTE *R = line+i*4;
+			BYTE *B = R+2;
+			//Swap
+			BYTE aux = *R;
+			*R = *B;
+			*B = aux;
+		}
+	}
 	
 	// Update just the dirty rectangles.
 	for (CefRenderHandler::RectList::const_iterator i = rects.begin() ; i != rects.end(); ++i) 
 	{
 		//Get rectangle
 		const CefRect& rect = *i;
-		//BGRA to RGBA
-		for (int j=rect.y;j<rect.y+rect.height;++j)
-		{
-			//Get start of line
-			BYTE *line = (BYTE*)buffer+j*width*4;
-			//Each pixel
-			for (int i=rect.x;i<rect.x+rect.width;++i)
-			{	
-				//Get red and blue
-				BYTE *R = line+i*4;
-				BYTE *B = R+2;
-				//Swap
-				BYTE aux = *R;
-				*R = *B;
-				*B = aux;
-			}
-		}
 		//UPdate vnc server frame buffer
 		server.FrameBufferUpdate(buffer, rect.x, rect.y, width, rect.x+x, rect.y+y, rect.width, rect.height);
 
