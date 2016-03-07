@@ -19,11 +19,6 @@
 #include "VNCViewer.h"
 #include "VNCServer.h"
 #include "overlay.h"
-extern "C" {
-#include <libswscale/swscale.h>
-#include <libavcodec/avcodec.h>
-#include <libavutil/opt.h>
-}
 #ifdef CEF
 #include "cef/Browser.h"
 #include "cef/Client.h"
@@ -110,7 +105,6 @@ private:
 	Presenter*	presenter;
 	VNCServer	server;
 	Use		use;
-	SwsContext*	sws;
 	BYTE*		img;
 	int		presenterId;
 	int		editorId;
