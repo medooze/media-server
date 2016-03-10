@@ -1,0 +1,10 @@
+/var/log/mcu/*.log
+{
+  rotate 14
+  daily
+  delaycompress
+  compress
+  missingok
+  copytruncate
+  nocreate
+}

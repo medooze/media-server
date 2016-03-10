@@ -60,6 +60,8 @@ int Browser::Init()
 	CefMainArgs main_args;
 	CefRefPtr<Browser> app(this);
 
+	Log(">Init CEF Browser\n");
+
 	// CEF applications have multiple sub-processes (render, plugin, GPU, etc)
 	// that share the same executable. This function checks the command-line and,
 	// if this is a sub-process, executes the appropriate logic.
@@ -73,8 +75,6 @@ int Browser::Init()
 	if (inited)
 		//Error
 		return Error("-Init: CEF Browser Server is already running.\n");
-
-	Log(">Init CEF Browser\n");
 
 	//Enable remote debugging
 	settings.remote_debugging_port=2012;
@@ -105,9 +105,8 @@ int Browser::Init()
 	settings.log_severity = LOGSEVERITY_VERBOSE;
 
 	// Initialize CEF for the browser process.
-	Debug("-Init CEF Browser, CefInitialize----------------\n");
+	Debug("-Init CEF Browser\n");
 	CefInitialize(main_args, settings, app.get(), NULL);
-	Debug("-Inited CEF Browser, CefInitialize--------------------\n");
 	//I am inited
 	inited = 1;
 
@@ -135,6 +134,17 @@ void Browser::Run()
 }
 
 
+/************************
+* Stop
+* 	Exit message loop only
+*************************/
+void Browser::Stop()
+{
+	//Quite message loop 
+	CefQuitMessageLoop();
+}
+
+
 
 /************************
 * End
@@ -151,19 +161,9 @@ int Browser::End()
 
 	//Stop thread
 	inited = 0;
-
-	//Quite message loop 
-	CefQuitMessageLoop();
-	
-
-	//Wait for server thread to close
-        Log("Joining server thread [%d,%d]\n",serverThread,inited);
-        pthread_join(serverThread,NULL);
-        Log("Joined server thread [%d]\n",serverThread);
 	
 	// Shut down CEF.
 	CefShutdown();
-
 
 	Log("<End CEF Browser\n");
 }

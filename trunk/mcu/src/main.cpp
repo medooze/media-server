@@ -55,7 +55,7 @@ void log_ffmpeg(void* ptr, int level, const char* fmt, va_list vl)
 		//exit
 		return;
 	//Log
-	//Log(line);
+	Log(line);
 }
 
 int lock_ffmpeg(void **param, enum AVLockOp op)
@@ -173,6 +173,12 @@ public:
 	AppMixer appMixer;
 };
 
+void stopBrowser(int signo) 
+{
+	//Exit browser loop
+	Browser::getInstance().Stop();
+}
+
 int main(int argc,char **argv)
 {
 	//Set default values
@@ -272,8 +278,8 @@ int main(int argc,char **argv)
 		
 	}
 
-	//Loop
-	while(forking)
+	//If we need to fork
+	if(forking)
 	{
 		//Create the chld
 		pid_t pid = fork();
@@ -281,70 +287,73 @@ int main(int argc,char **argv)
 		if (pid<0) exit(1);
 		// parent exits
 		if (pid>0) exit(0);
-
-		//Log
-		printf("MCU started\r\n");
-
-		//Create the safe child
-		pid = fork();
-
-		//Check pid
-		if (pid==0)
+		
+		//Loop
+		while(true) 
 		{
-			//It is the child obtain a new process group
-			setsid();
-			//for each descriptor opened
-			for (int i=getdtablesize();i>=0;--i)
-				//Close it
-				close(i);
-			//Redirect stdout and stderr
-			int fd = open(logfile, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-			int ret;
-			ret = dup(fd);
-			if (ret < 0) {
-				fprintf(stderr, "ERROR: dup(fd=%d) failed: %s\n", fd, strerror(errno));
-				MCU_ASSERT(ret >= 0);
-			}
-			ret = dup2(1,2);
-			if (ret < 0) {
-				fprintf(stderr, "ERROR: dup2(1,2) failed: %s\n", strerror(errno));
-				MCU_ASSERT(ret >= 0);
-			}
-			close(fd);
-			//And continule
-			break;
-		} else if (pid<0)
-			//Error
-			return 0;
+			//Create the safe child
+			pid = fork();
 
-		//Pid string
-		char spid[16];
-		//Print it
-		sprintf(spid,"%d",pid);
-
-		//Write pid to file
-		int pfd = open(pidfile, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-		//Write it
-		write(pfd,spid,strlen(spid));
-		//Close it
-		close(pfd);
-
-		int status;
-
-		do
-		{
-			//Wait for child
-			if (waitpid(pid, &status, WUNTRACED | WCONTINUED)<0)
-				return -1;
-			//If it has exited or stopped
-			if (WIFEXITED(status) || WIFSTOPPED(status))
-				//Exit
+			//Check child pid
+			if (pid==0)
+			{
+				//It is the child obtain a new process group
+				setsid();
+				//for each descriptor opened
+				for (int i=getdtablesize();i>=0;--i)
+					//Close it
+					close(i);
+				//Redirect stdout and stderr
+				int fd = open(logfile, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+				int ret;
+				ret = dup(fd);
+				if (ret < 0) {
+					fprintf(stderr, "ERROR: dup(fd=%d) failed: %s\n", fd, strerror(errno));
+					MCU_ASSERT(ret >= 0);
+				}
+				ret = dup2(1,2);
+				if (ret < 0) {
+					fprintf(stderr, "ERROR: dup2(1,2) failed: %s\n", strerror(errno));
+					MCU_ASSERT(ret >= 0);
+				}
+				close(fd);
+				//And continule
+				break;
+			} else if (pid<0)
+				//Error
 				return 0;
-			//If we have been  killed
-			if (WIFSIGNALED(status) && WTERMSIG(status)==9)
-				//Exit
-				return 0;
-		} while (!WIFEXITED(status) && !WIFSIGNALED(status));
+			//Log
+			printf("MCU started [pid:%d,child:%d]\r\n",getpid(),pid);
+
+			//Pid string
+			char spid[16];
+			//Print it
+			sprintf(spid,"%d",pid);
+
+			//Write pid to file
+			int pfd = open(pidfile, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+			//Write it
+			int len = write(pfd,spid,strlen(spid));
+			//Close it
+			close(pfd);
+
+			int status;
+
+			do
+			{
+				//Wait for child
+				if (waitpid(pid, &status, WUNTRACED | WCONTINUED)<0)
+					return -1;
+				//If it has exited or stopped
+				if (WIFEXITED(status) || WIFSTOPPED(status))
+					//Exit
+					return 0;
+				//If we have been  killed
+				if (WIFSIGNALED(status) && WTERMSIG(status)==9)
+					//Exit
+					return 0;
+			} while (!WIFEXITED(status) && !WIFSIGNALED(status));
+		}
 	}
 
 	//If we have to dump on SEG FAULT
@@ -355,11 +364,13 @@ int main(int argc,char **argv)
 		//Set new limit
 		setrlimit(RLIMIT_CORE, &l);
 	}
+	//Log version
+	Log("-MCU Version %s %s [pid:%d,ppid:%d]\r\n",MCUVERSION,MCUDATE,getpid(),getppid());
+
 #ifdef CEF
 
 	//Initialize CEF browser singleton
 	Browser& browser = Browser::getInstance();
-
 
 	//Pass the args so it can detect if it is a child process or not
 	browser.Init();
@@ -374,6 +385,7 @@ int main(int argc,char **argv)
 	//Ignore SIGPIPE
 	signal( SIGPIPE, SIG_IGN );
 
+
 	//Hack to allocate fd =0 and avoid bug closure
 	int fdzero = socket(AF_INET, SOCK_STREAM, 0);
 	//Create monitor
@@ -382,9 +394,6 @@ int main(int argc,char **argv)
 	XmlRpcServer	server(port,iface);
 	RTMPServer	rtmpServer;
 	WebSocketServer wsServer;
-
-	//Log version
-	Log("-MCU Version %s %s\r\n",MCUVERSION,MCUDATE);
 
 	//Init OpenSSL lib
 	if (! OpenSSL::ClassInit()) {
@@ -513,12 +522,12 @@ int main(int argc,char **argv)
 #ifdef CEF
 	//Run the server async
 	server.Start(true);
+
+	//Set signal handler
+	signal( SIGTERM, stopBrowser );
 	
 	//Run the browser sync
 	browser.Run();
-	
-	//Shutdown browser
-	browser.End();
 #else
 	//Run it sync
 	server.Start(false);
@@ -542,5 +551,16 @@ int main(int argc,char **argv)
 	rtmpServer.End();
 	//ENd ws server
 	wsServer.End();
+#ifdef CEF
+	//CEF crashes on end so disabling signal/core
+	//Ignore SIGSEGV
+	signal( SIGSEGV, SIG_IGN );
+	//Dump core on fault
+	rlimit l = {0,0};
+	//Set new limit
+	setrlimit(RLIMIT_CORE, &l);
+	//End browser
+	browser.End();
+#endif
 }
 

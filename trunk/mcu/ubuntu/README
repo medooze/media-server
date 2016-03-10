@@ -1,0 +1,50 @@
+# Ubuntu Scripts for Medooze MCU Media Server
+
+
+## Overview
+
+* `mcu.service`: systemd service unit file.
+* `mcu.logrotate`: Logrotate file.
+
+
+## MCU systemd
+
+Copy `mcu.service` file under `/etc/systemd/system/` directory.
+
+Enable daemon start on system boot:
+
+```shell
+$ systemctl enable mcu
+```
+
+
+### Usage
+
+Manage the daemon:
+
+```shell
+$ systemctl start/stop/restart mcu
+```
+
+
+## MCU logrotate config
+
+Copy `mcu.logrotate` file under `/etc/logrotate.d/` directory by renaming it to mcu.
+
+When the logrotate daemon reads this file it will rotate the mcu.log and http.log files. The option `copytruncate` is required to force the MCU to stop writing into the same file descriptor.
+
+
+### /etc/logrotate.d/mcu
+
+```
+/var/log/mcu/*.log
+{
+  rotate 14
+  daily
+  delaycompress
+  compress
+  missingok
+  copytruncate
+  nocreate
+}
+```

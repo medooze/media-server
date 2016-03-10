@@ -1,0 +1,16 @@
+[Unit]
+Description=Medooze MCU Media Server
+After=network.target
+
+[Service]
+Type=forking
+PIDFile=/var/run/mcu.pid
+Environment=LD_LIBRARY_PATH=/usr/local/src/medooze/mcu/bin/release/
+Environment=DISPLAY=:0
+ExecStart=/usr/local/src/medooze/mcu/bin/release/mcu --mcu-log /var/log/mcu/mcu.log --mcu-pid /var/run/mcu.pid --mcu-crt /usr/local/src/medooze/mcu/bin/release/mcu.crt --mcu-key /usr/local/src/medooze/mcu/bin/release/mcu.key --websocket-port 9091 -f -g -d
+KillMode=process
+# Restart=on-failure
+IgnoreSIGPIPE=yes
+
+[Install]
+WantedBy=multi-user.target
