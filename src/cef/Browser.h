@@ -46,6 +46,7 @@ private:
 public:
 	int Init();
 	void Run();
+	void Stop();
 	int CreateFrame(std::string url,DWORD width, DWORD height,Client::Listener *listener);
 	int End();
 	virtual ~Browser();	
@@ -108,7 +109,6 @@ public:
 
 private:
 	bool	inited;
-	pthread_t serverThread;
 	 // Specify CEF global settings here.
 	CefSettings settings;
 };

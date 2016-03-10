@@ -16,13 +16,13 @@ public:
 	int init() 
 	{
 		Log("CEFTestPlan::Init\n");
-		return browser.Init();
+		return Browser::getInstance().Init();
 	}
 	
 	int end()
 	{
 		Log("CEFTestPlan::End\n");
-		return browser.End();
+		return Browser::getInstance().End();
 	}
 	
 	
@@ -31,8 +31,6 @@ public:
 		init();
 		end();
 	}
-	
-	Browser browser;
 	
 };
 
