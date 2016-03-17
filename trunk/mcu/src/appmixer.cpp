@@ -538,24 +538,24 @@ int AppMixer::SetSize(int width,int height)
 	//If got size
 	if (width && height)
 	{
+		//Create number of pixels
+		DWORD num = width*height;
+		//Get size with padding
+		DWORD size = (((width/32+1)*32)*((height/32+1)*32)*3)/2+FF_INPUT_BUFFER_PADDING_SIZE+32;
+		//Allocate memory
+		img = (BYTE*) malloc32(size);
+
+		// paint the background in black for YUV
+		memset(img	, 0		, num);
+		memset(img+num	, (BYTE) -128	, num/2);
+
+		//Set size
+		if (output) output->SetVideoSize(width,height);
+		
+		//And create a new one
+		canvas = new Canvas(width,height);
 	}
 
-	//Create number of pixels
-	DWORD num = width*height;
-	//Get size with padding
-	DWORD size = (((width/32+1)*32)*((height/32+1)*32)*3)/2+FF_INPUT_BUFFER_PADDING_SIZE+32;
-	//Allocate memory
-	img = (BYTE*) malloc32(size);
-
-	// paint the background in black for YUV
-	memset(img	, 0		, num);
-	memset(img+num	, (BYTE) -128	, num/2);
-
-	//Set size
-	if (output) output->SetVideoSize(width,height);
-	
-	//And create a new one
-	canvas = new Canvas(width,height);
 
 	return 1;
 }
@@ -565,7 +565,7 @@ int AppMixer::onFrameBufferUpdate(VNCViewer *viewer,int x, int y, int w, int h)
 	//Log("-onFrameBufferUpdate [%d,%d,%d,%d]\n",x,y,w,h);
 
 	//UPdate vnc server frame buffer
-	server.FrameBufferUpdate(viewer->GetFrameBuffer(),0,0,w,x,y,w,h);
+	server.FrameBufferUpdate(viewer->GetFrameBuffer(),x,y,server.GetWidth(),x,y,w,h);
 
 	return 1;
 }
