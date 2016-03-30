@@ -126,7 +126,7 @@ public:
 	virtual void OnBrowserCreated(CefRefPtr<CefBrowser> browser);
 	virtual bool GetViewRect(CefRect& rect);
 	virtual void OnPaint(CefRenderHandler::PaintElementType type, const CefRenderHandler::RectList& rects, const BYTE* buffer, int width, int height);
-	virtual void OnBrowserDestroyed();
+	virtual void OnBrowserDestroyed(CefRefPtr<CefBrowser> browser);
 	virtual void OnPopupShow(bool show);
 	virtual void OnPopupSize(const CefRect& rect);
 

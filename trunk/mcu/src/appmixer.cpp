@@ -1261,31 +1261,40 @@ void AppMixer::OnPaint(CefRenderHandler::PaintElementType type, const CefRenderH
 
 void AppMixer::OnBrowserCreated(CefRefPtr<CefBrowser> browser)
 {  
-	Log("-AppMixer::OnBrowserCreated [host:%p]\n",browser.get()->GetHost().get());
+	Log("-AppMixer::OnBrowserCreated [browser:%p,id:%d]\n",browser.get(),browser.get()->GetIdentifier());
 
 	//Lock
 	use.WaitUnusedAndLock();
-		
-	//Set it
-	this->browser = browser;
+	
+	//Only if we don't have a browser yet
+	if (!this->browser.get())	
+	{
+		//Set it
+		this->browser = browser;
 
-	//Send focus event
-	browser->GetHost()->SetFocus(true);
-	browser->GetHost()->SendFocusEvent(true);
+		//Send focus event
+		browser->GetHost()->SetFocus(true);
+		browser->GetHost()->SendFocusEvent(true);
+	} else {
+		//Force Close
+		browser->GetHost()->CloseBrowser(true);
+	}
 
 	//Unlock
 	use.Unlock();
 	
 }
 
-void AppMixer::OnBrowserDestroyed()
+void AppMixer::OnBrowserDestroyed(CefRefPtr<CefBrowser> browser)
 {
-	Log("-AppMixer::OnBrowserDestroyed\n");
+	Log("-AppMixer::OnBrowserDestroyed [browser:%p,id:%d]\n",browser.get(),browser.get()->GetIdentifier());
 	//Lock
 	use.WaitUnusedAndLock();
-		
-	//Release ref
-	this->browser = NULL;
+
+	//If it was ours
+	if (this->browser.get() && this->browser.get()->GetIdentifier()==browser.get()->GetIdentifier())
+		//Release ref
+		this->browser = NULL;
 
 	//Unlock
 	use.Unlock();
