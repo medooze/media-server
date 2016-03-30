@@ -24,7 +24,7 @@ public:
 		virtual void OnBrowserCreated(CefRefPtr<CefBrowser> browser) = 0;
 		virtual bool GetViewRect(CefRect& rect) = 0;
 		virtual void OnPaint(CefRenderHandler::PaintElementType type, const CefRenderHandler::RectList& rects, const BYTE* buffer, int width, int height)  = 0;
-		virtual void OnBrowserDestroyed() = 0;
+		virtual void OnBrowserDestroyed(CefRefPtr<CefBrowser> browser) = 0;
 		virtual void OnPopupShow(bool show) = 0;
 		virtual void OnPopupSize(const CefRect& rect) = 0;
 	};

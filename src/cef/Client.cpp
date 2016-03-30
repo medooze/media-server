@@ -43,9 +43,9 @@ void Client::OnAfterCreated(CefRefPtr<CefBrowser> browser)
 
 void Client::OnBeforeClose(CefRefPtr<CefBrowser> browser)
 {
-	 Log("-BrowserDestroyed\n");
+	 Log("-BrowserDestroyed browser:%p host:%p\n",browser.get(),browser.get()->GetHost().get());
 	//Call Listener
-	if (listener) listener->OnBrowserDestroyed();
+	if (listener) listener->OnBrowserDestroyed(browser);
 }
 
 ///

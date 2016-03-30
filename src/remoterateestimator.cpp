@@ -251,7 +251,7 @@ void RemoteRateEstimator::Update(RemoteRateControl::BandwidthUsage usage,bool re
 			}
 
 			maxHoldRate = 0;
-			Debug("BWE: Increase rate to current = %u kbps\n", current / 1000);
+			UltraDebug("BWE: Increase rate to current = %u kbps\n", current / 1000);
 			lastBitRateChange = now;
 			break;
 		}
@@ -276,7 +276,7 @@ void RemoteRateEstimator::Update(RemoteRateControl::BandwidthUsage usage,bool re
 				ChangeRegion(RemoteRateControl::BelowMax);
 			}	
 
-			Debug("BWE: Decrease rate to current = %u kbps\n", current / 1000);
+			UltraDebug("BWE: Decrease rate to current = %u kbps\n", current / 1000);
 		
 			lastBitRateChange = now;
 			break;
@@ -302,7 +302,7 @@ void RemoteRateEstimator::Update(RemoteRateControl::BandwidthUsage usage,bool re
 		//Set maximum
 		currentBitRate = maxConfiguredBitRate;
 
-	Debug("BWE: estimation state=%s region=%s usage=%s currentBitRate=%d current=%d incoming=%f min=%llf max=%llf\n",GetName(state),RemoteRateControl::GetName(region),RemoteRateControl::GetName(usage),currentBitRate/1000,current/1000,incomingBitRate/1000,bitrateAcu.GetMinAvg()/1000,bitrateAcu.GetMaxAvg()/1000);
+	UltraDebug("BWE: estimation state=%s region=%s usage=%s currentBitRate=%d current=%d incoming=%f min=%llf max=%llf\n",GetName(state),RemoteRateControl::GetName(region),RemoteRateControl::GetName(usage),currentBitRate/1000,current/1000,incomingBitRate/1000,bitrateAcu.GetMinAvg()/1000,bitrateAcu.GetMaxAvg()/1000);
 
 	eventSource.SendEvent
 	(
@@ -404,7 +404,7 @@ void RemoteRateEstimator::GetSSRCs(std::list<DWORD> &ssrcs)
 }
 void RemoteRateEstimator::ChangeState(State newState)
 {
-	Debug("BWE: ChangeState from:%s to:%s\n",GetName(state),GetName(newState));
+	UltraDebug("BWE: ChangeState from:%s to:%s\n",GetName(state),GetName(newState));
 	//Store values
 	cameFromState = state;
 	state = newState;
@@ -412,7 +412,7 @@ void RemoteRateEstimator::ChangeState(State newState)
 
 void RemoteRateEstimator::ChangeRegion(RemoteRateControl::Region newRegion)
 {
-	Debug("BWE: Change region to:%s\n",RemoteRateControl::GetName(newRegion));
+	UltraDebug("BWE: Change region to:%s\n",RemoteRateControl::GetName(newRegion));
 	//Store new region
 	region = newRegion;
 	//Calculate new beta

@@ -44,7 +44,7 @@ void log_ffmpeg(void* ptr, int level, const char* fmt, va_list vl)
 	static int print_prefix = 1;
 	char line[1024];
 
-	if (!Logger::IsDebugEnabled() && level > AV_LOG_ERROR)
+	if (!Logger::IsUltraDebugEnabled() && level > AV_LOG_ERROR)
 		return;
 
 	//Format the

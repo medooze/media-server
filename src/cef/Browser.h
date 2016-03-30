@@ -55,54 +55,58 @@ public:
 	
 	// CefApp methods. Important to return |this| for the handler callbacks.
 	virtual void OnBeforeCommandLineProcessing(const CefString& process_type,CefRefPtr<CefCommandLine> command_line) {
-		Debug("OnBeforeCommandLineProcessing...\n");
+		Debug("[CEF]OnBeforeCommandLineProcessing...\n");
 	}
 	virtual void OnRegisterCustomSchemes(CefRefPtr<CefSchemeRegistrar> registrar)	{
-		Debug("OnRegisterCustomSchemes...\n");
+		Debug("[CEF]OnRegisterCustomSchemes...\n");
 	}
-	/*virtual CefRefPtr<CefBrowserProcessHandler> GetBrowserProcessHandler()		{ 
-		Debug("GetBrowserProcessHandler...\n");
+	virtual CefRefPtr<CefBrowserProcessHandler> GetBrowserProcessHandler()		{ 
+		Debug("[CEF]GetBrowserProcessHandler...\n");
 		return this; 
-	}*/
-	/*
+	}
+	
 	virtual CefRefPtr<CefRenderProcessHandler> GetRenderProcessHandler()		{ 
-		Debug("GetRenderProcessHandler...\n");
+		Debug("[CEF]GetRenderProcessHandler...\n");
 		return this; 
-	}*/
+	}
 
 	// CefBrowserProcessHandler methods.
 	virtual void OnContextInitialized() {
-		Debug("The browser process UI thread has been initialized...\n");
+		Debug("[CEF]The browser process UI thread has been initialized...\n");
 	}
 	virtual void OnRenderProcessThreadCreated(CefRefPtr<CefListValue> extra_info) {
-		Debug("Send startup information to a new render process...\n");
+		Debug("[CEF]Send startup information to a new render process...\n");
 	}
 
 	// CefRenderProcessHandler methods.
 	virtual void OnRenderThreadCreated(CefRefPtr<CefListValue> extra_info) {
-		Debug("The render process main thread has been initialized...\n");
+		Debug("[CEF]The render process main thread has been initialized...\n");
 	}
 	virtual void OnWebKitInitialized(CefRefPtr<Browser> app) {
-		Debug("WebKit has been initialized, register V8 extensions...\n");
+		Debug("[CEF]WebKit has been initialized, register V8 extensions...\n");
 	}
 	virtual void OnBrowserCreated(CefRefPtr<CefBrowser> browser) {
-		Debug("Browser created in this render process...browser:%p host:%p\n",browser.get(),browser.get()->GetHost().get());
+		Debug("[CEF]Browser created in this render process...browser:%p host:%p\n",browser.get(),browser.get()->GetHost().get());
 	}
 	virtual void OnBrowserDestroyed(CefRefPtr<CefBrowser> browser) {
-		Debug("Browser destroyed in this render process...\n");
+		Debug("[CEF]Browser destroyed in this render process...\n");
 	}
+	///
+	// Called before browser navigation. Return true to cancel the navigation or
+	// false to allow the navigation to proceed. The |request| object cannot be
+	// modified in this callback.
 	virtual bool OnBeforeNavigation(CefRefPtr<CefBrowser> browser, CefRefPtr<CefFrame> frame, CefRefPtr<CefRequest> request, NavigationType navigation_type, bool is_redirect) {
-		Debug("Allow or block different types of navigation...\n");
-		return true;
+		Debug("[CEF]Requested navigation [browser:%p,frame:%p,type:%d,redirect:%d]\n",browser.get(),frame.get(),navigation_type,is_redirect);
+		return false;
 	}
 	virtual void OnContextCreated(CefRefPtr<CefBrowser> browser, CefRefPtr<CefFrame> frame, CefRefPtr<CefV8Context> context) {
-		Debug("JavaScript context created, add V8 bindings here...\n");
+		Debug("[CEF]JavaScript context created, add V8 bindings here...\n");
 	}
 	virtual void OnContextReleased(CefRefPtr<CefBrowser> browser, CefRefPtr<CefFrame> frame,CefRefPtr<CefV8Context> context) {
-		Debug("JavaScript context released, release V8 references here...\n");
+		Debug("[CEF]JavaScript context released, release V8 references here...\n");
 	}
 	virtual bool OnProcessMessageReceived(CefRefPtr<CefBrowser> browser, CefProcessId source_process, CefRefPtr<CefProcessMessage> message) {
-		Debug("Handle IPC messages from the browser process...\n");
+		Debug("[CEF]Handle IPC messages from the browser process...\n");
 	}
 
 	IMPLEMENT_REFCOUNTING(Browser);
