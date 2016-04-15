@@ -173,11 +173,13 @@ public:
 	AppMixer appMixer;
 };
 
+#ifdef CEF
 void stopBrowser(int signo) 
 {
 	//Exit browser loop
 	Browser::getInstance().Stop();
 }
+#endif
 
 int main(int argc,char **argv)
 {
