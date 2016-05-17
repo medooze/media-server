@@ -709,6 +709,7 @@ public:
 	DWORD GetRTPTimestamp() const		{ return rtpTimestamp;		}
 	DWORD GetNTPFrac()	const		{ return ntpFrac;		}
 	DWORD GetNTPSec()	const		{ return ntpSec;		}
+	QWORD GetNTPTimestamp()	const		{ return ((QWORD)ntpSec)<<32 | ntpFrac ;	}
 	DWORD GetSSRC()		const		{ return ssrc;			}
 
 	DWORD GetCount()	const		{ return reports.size();	}
@@ -1707,7 +1708,7 @@ struct RTPOutgoingSource : public RTPSource
 	RTPOutgoingSource() : RTPSource()
 	{
 		time		= random();
-		lastTime	= 0;
+		lastTime	= time;
 		numPackets	= 0;
 		numRTCPPackets	= 0;
 		totalBytes	= 0;
@@ -1734,7 +1735,7 @@ struct RTPOutgoingSource : public RTPSource
 	{
 		RTPSource::Reset();
 		time		= random();
-		lastTime	= 0;
+		lastTime	= time;
 		numPackets	= 0;
 		numRTCPPackets	= 0;
 		totalBytes	= 0;
