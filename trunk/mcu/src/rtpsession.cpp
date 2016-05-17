@@ -1391,6 +1391,7 @@ int RTPSession::ReadRTP()
 			if (err!=srtp_err_status_ok)
 				return Error("-RTPSession::ReadRTP() | Error unprotecting rtcp packet [%d]\n",err);
 		}
+
 		//RTCP mux enabled
 		muxRTCP = true;
 		//Parse it
@@ -1917,7 +1918,8 @@ void RTPSession::ProcessRTCPPacket(const RTCPCompoundPacket *rtcp)
 			{
 				const RTCPSenderReport* sr = (const RTCPSenderReport*)packet;
 				//Get Timestamp, the middle 32 bits out of 64 in the NTP timestamp (as explained in Section 4) received as part of the most recent RTCP sender report (SR) packet from source SSRC_n. If no SR has been received yet, the field is set to zero.
-				recSR = sr->GetTimestamp() >> 16;
+				recSR = sr->GetNTPTimestamp() >> 16;
+
 				//Uptade last received SR
 				getUpdDifTime(&lastReceivedSR);
 				//Check recievd report
@@ -2178,7 +2180,7 @@ RTCPCompoundPacket* RTPSession::CreateSenderReport()
 	sdes->AddDescription(desc);
 
 	//Add to rtcp
-	//rtcp->AddRTCPacket(sdes);
+	rtcp->AddRTCPacket(sdes);
 
 	//Return it
 	return rtcp;
