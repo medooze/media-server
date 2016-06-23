@@ -29,27 +29,6 @@ struct MediaStatistics
 	DWORD		totalSendBytes;
 };
 
-class SenderReportTimestamp
-{
-public:
-	SenderReportTimestamps(DWORD ntp)
-	{
-		this->ntp = ntp;
-		getUpdDifTime(&this->ts);
-	}
-	bool equals(DWORD ntp) const
-	{ 
-		return this->ntp==ntp; 
-	}
-	DWORD getDifTimeMilis() const
-	{ 
-		return getDifTime(&ts)/1000; 
-	}
-private:		
-	DWORD ntp;
-	timeval ts;
-};
-
 class RTPSession :
 	public RemoteRateEstimator::Listener,
 	public DTLSConnection::Listener
@@ -145,7 +124,6 @@ protected:
 	RTCPCompoundPacket* CreateSenderReport();
 private:
 	typedef std::map<DWORD,RTPTimedPacket*> RTPOrderedPackets;
-	typedef std::list<SenderReportTimestamp*> SenderReportTimestamps;
 protected:
 	RemoteRateEstimator*	remoteRateEstimator;
 private:
@@ -186,6 +164,8 @@ private:
 	RTPIncomingRtxSource recvRTX;
 
 	DWORD  	sendType;
+	DWORD	sendSR;
+	DWORD   sendSRRev;
 	Mutex	sendMutex;
 
 	//Recepcion
@@ -212,7 +192,6 @@ private:
 	bool	requestFPU;
 	bool	pendingTMBR;
 	DWORD	pendingTMBBitrate;
-	SenderReportTimestamps senderReportTimestamps;
 
 	FECDecoder		fec;
 	RTPLostPackets		losts;
