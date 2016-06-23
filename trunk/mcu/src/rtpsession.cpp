@@ -106,7 +106,6 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) : dtls(*this),
 	simRtcpPort = 0;
 	useRTCP = true;
 	useAbsTime = false;
-	sendSR = 0;
 	recTimestamp = 0;
 	recSR = 0;
 	setZeroTime(&recTimeval);
@@ -214,7 +213,6 @@ void RTPSession::Reset()
 	//Init values
 	sendType = -1;
 	useAbsTime = false;
-	sendSR = 0;
 	recTimestamp = 0;
 	recSR = 0;
 	setZeroTime(&recTimeval);
@@ -266,6 +264,16 @@ void RTPSession::Reset()
 	recv.Reset();
 	sendRTX.Reset();
 	recv.Reset();
+	//Clean sender report info
+	while (senderReportTimestamps.size())
+	{
+		//Get sender report info
+		SenderReportTimestamp *srt = *(senderReportTimestamps.begin());
+		//Delete it
+		delete (srt);
+		//remove from list
+		senderReportTimestamps.pop_front();
+	}
 }
 
 void RTPSession::FlushRTXPackets()
@@ -1650,8 +1658,8 @@ int RTPSession::ReadRTP()
 
 	if (lost) UltraDebug("RTX: Missing %d [nack:%d,diff:%llu,rtt:%llu]\n",lost,isNACKEnabled,getDifTime(&lastFPU),rtt);
 	
-	//If nack is enable t waiting for a PLI/FIR response (to not oeverflow)
-	if (isNACKEnabled && getDifTime(&lastFPU)/1000>rtt/2 && lost)
+	//If nack is enable t waiting for a PLI/FIR response (to not overflow)
+	if (isNACKEnabled && (!rtt || getDifTime(&lastFPU)/1000>rtt/2) && lost)
 	{
 		//Inc nacked count
 		recv.nackedPacketsSinceLastSR += lost;
@@ -1930,13 +1938,19 @@ void RTPSession::ProcessRTCPPacket(const RTCPCompoundPacket *rtcp)
 					//Check ssrc
 					if (report->GetSSRC()==send.SSRC)
 					{
-						//Calculate RTT
-						if (!isZeroTime(&lastSR) && report->GetLastSR() == sendSR)
+						//Chech sent reports in backward order
+						for (SenderReportTimestamps::const_reverse_iterator it = senderReportTimestamps.rend(); it!=senderReportsTimestamps.rbegin(); ++it)
 						{
-							//Calculate new rtt
-							DWORD rtt = getDifTime(&lastSR)/1000-report->GetDelaySinceLastSRMilis();
-							//Set it
-							SetRTT(rtt);
+							//Get sent report
+							SenderReportTimestamp *srt = *it;
+							//Calculate RTT
+							if (!isZeroTime(&lastSR) && srt.equals(report->GetLastSR()))
+							{
+								//Calculate new rtt
+								DWORD rtt = srt->getDifTimeMilis()-report->GetDelaySinceLastSRMilis();
+								//Set it
+								SetRTT(rtt);
+							}
 						}
 					}
 				}
@@ -1953,13 +1967,19 @@ void RTPSession::ProcessRTCPPacket(const RTCPCompoundPacket *rtcp)
 					//Check ssrc
 					if (report->GetSSRC()==send.SSRC)
 					{
-						//Calculate RTT
-						if (!isZeroTime(&lastSR) && report->GetLastSR() == sendSR)
+						//Chech sent reports in backward order
+						for (SenderReportTimestamps::const_reverse_iterator it = senderReportTimestamps.rend(); it!=senderReportTimestamps.rbegin(); ++it)
 						{
-							//Calculate new rtt
-							DWORD rtt = getDifTime(&lastSR)/1000-report->GetDelaySinceLastSRMilis();
-							//Set it
-							SetRTT(rtt);
+							//Get sent report
+							SenderReportTimestamp *srt = *it;
+							//Calculate RTT
+							if (!isZeroTime(&lastSR) && srt.equals(report->GetLastSR()))
+							{
+								//Calculate new rtt
+								DWORD rtt = srt->getDifTimeMilis()-report->GetDelaySinceLastSRMilis();
+								//Set it
+								SetRTT(rtt);
+							}
 						}
 					}
 				}
@@ -2164,7 +2184,18 @@ RTCPCompoundPacket* RTPSession::CreateSenderReport()
 	//rtcp->AddRTCPacket(rtx);
 
 	//Store last send SR 32 middle bits
-	sendSR = sr->GetNTPSec() << 16 | sr->GetNTPFrac() >> 16;
+	senderReportTimestamps.push_back(new SenderReportTimestamp(SenderReportTimestamp  srt = new SenderReportTimestamp()));
+	
+	//Don'r store more than 10 sr
+	while (senderReportTimestamps.size()>10)
+	{
+		//Get sender report info
+		SenderReportTimestamp *srt = *(senderReportTimestamps.begin());
+		//Delete it
+		delete (srt);
+		//remove from list
+		senderReportTimestamps.pop_front();
+	}
 
 	//Create SDES
 	RTCPSDES* sdes = new RTCPSDES();
