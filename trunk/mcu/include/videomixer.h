@@ -47,6 +47,7 @@ public:
 	int RemoveMosaicParticipant(int mosaicId,int partId);
 	int GetMosaicPositions(int mosaicId,std::list<int> &positions);
 	int SetSlot(int mosaicId,int num,int id);
+	int ResetSlots(int mosaicId);
 	int SetCompositionType(int mosaicId,Mosaic::Type comp,int size);
 	int DeleteMosaic(int mosaicId);
 

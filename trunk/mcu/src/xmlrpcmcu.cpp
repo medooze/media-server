@@ -1157,6 +1157,40 @@ xmlrpc_value* SetMosaicSlot(xmlrpc_env *env, xmlrpc_value *param_array, void *us
 	return xmlok(env);
 }
 
+
+xmlrpc_value* ResetMosaicSlots(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
+{
+	MCU *mcu = (MCU *)user_data;
+	MultiConf *conf = NULL;
+
+	 //Parseamos
+	int confId;
+	int mosaicId;
+	xmlrpc_parse_value(env, param_array, "(ii)", &confId,&mosaicId);
+
+	//Comprobamos si ha habido error
+	if(env->fault_occurred)
+		return xmlerror(env,"Fault occurred");
+	 
+	//Get conference reference
+	if(!mcu->GetConferenceRef(confId,&conf))
+		return xmlerror(env,"Conference does not exist");
+
+	//Set slot
+	int res = conf->ResetMosaicSlots(mosaicId);
+
+	//Free conference reference
+	mcu->ReleaseConferenceRef(confId);
+
+	//Salimos
+	if(!res)
+		return xmlerror(env,"Error");
+
+	//Devolvemos el resultado
+	return xmlok(env);
+}
+
+
 xmlrpc_value* AddMosaicParticipant(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
@@ -2298,6 +2332,7 @@ XmlHandlerCmd mcuCmdList[] =
 	{"SetTextCodec",SetTextCodec},
 	{"SetCompositionType",SetCompositionType},
 	{"SetMosaicSlot",SetMosaicSlot},
+	{"ResetMosaicSlots",ResetMosaicSlots},
 	{"AddConferenceToken",AddConferenceToken},
 	{"AddMosaicParticipant",AddMosaicParticipant},
 	{"RemoveMosaicParticipant",RemoveMosaicParticipant},
