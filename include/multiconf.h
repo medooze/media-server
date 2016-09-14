@@ -97,6 +97,7 @@ public:
 
 	int SetCompositionType(int mosaicId,Mosaic::Type comp,int size);
 	int SetMosaicSlot(int mosaicId,int num,int id);
+	int ResetMosaicSlots(int mosaicIdd);
 	int AddMosaicParticipant(int mosaicId,int partId);
 	int RemoveMosaicParticipant(int mosaicId,int partId);
 	int AddSidebarParticipant(int sidebar,int partId);

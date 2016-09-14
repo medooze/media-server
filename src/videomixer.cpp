@@ -1074,6 +1074,55 @@ int VideoMixer::SetSlot(int mosaicId,int num,int id)
 	return 1;
 }
 
+
+/************************
+/* ResetSlots
+*	Free all slots
+*************************/
+int VideoMixer::ResetSlots(int mosaicId)
+{
+	Log(">ResetSlots [mosaicId:%d]\n",mosaicId);
+
+	//Protegemos la lista
+	lstVideosUse.IncUse();
+
+	//Get mosaic from id
+	Mosaics::iterator it = mosaics.find(mosaicId);
+
+	//Check if we have found it
+	if (it==mosaics.end())
+	{
+		//Unblock
+		lstVideosUse.DecUse();
+		//error
+		return Error("Mosaic not found [id:%d]\n",mosaicId);
+	}
+
+	//Get the  mosaic
+	Mosaic *mosaic = it->second;
+
+	//For each slot
+	for (int i=0; i<mosaic->GetNumSlots();++i)
+		//Set it in the mosaic
+		mosaic->SetSlot(i,Mosaic::SlotFree);
+
+	//Recalculate positions
+	mosaic->CalculatePositions();
+
+	//Dump positions
+	DumpMosaic(mosaicId,mosaic);
+
+	//Desprotegemos la lista
+	lstVideosUse.DecUse();
+	
+	//Signal for new video
+	pthread_cond_signal(&mixVideoCond);
+
+	Log("<SetSlot\n");
+
+	return 1;
+}
+
 int VideoMixer::DeleteMosaic(int mosaicId)
 {
 	Log("-Delete mosaic [id;%d]\n",mosaicId);

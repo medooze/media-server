@@ -489,6 +489,20 @@ int MultiConf::SetMosaicSlot(int mosaicId,int slot,int id)
 	return videoMixer.SetSlot(mosaicId,slot,id);
 }
 
+/************************
+* ResetMosaicSlots
+* 	Free all mosaic slots
+*************************/
+int MultiConf::ResetMosaicSlots(int mosaicId)
+{
+	Log("-ResetMosaicSlots [mosaic:%d]\n",mosaicId);
+
+	//Set it
+	return videoMixer.ResetSlots(mosaicId);
+}
+
+
+
 int MultiConf::GetMosaicPositions(int mosaicId,std::list<int> &positions)
 {
 	//Set it
