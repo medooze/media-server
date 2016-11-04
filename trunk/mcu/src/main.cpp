@@ -190,15 +190,15 @@ int main(int argc,char **argv)
 	char* iface = NULL;
 	int wsPort = 9090;
 	int rtmpPort = 1935;
-	int minPort = RTPSession::GetMinPort();
-	int maxPort = RTPSession::GetMaxPort();
+	int minPort = RTPTransport::GetMinPort();
+	int maxPort = RTPTransport::GetMaxPort();
 	int vadPeriod = 2000;
 	const char *logfile = "mcu.log";
 	const char *pidfile = "mcu.pid";
 	const char *crtfile = "mcu.crt";
 	const char *keyfile = "mcu.key";
-
-	//Get all
+    
+    //Get all
 	for(int i=1;i<argc;i++)
 	{
 		//Check options
@@ -411,9 +411,9 @@ int main(int argc,char **argv)
 	VideoMixer::SetVADDefaultChangePeriod(vadPeriod);
 
 	//Set port ramge
-	if (!RTPSession::SetPortRange(minPort,maxPort))
+	if (!RTPTransport::SetPortRange(minPort,maxPort))
 		//Using default ones
-		Log("-RTPSession using default port range [%d,%d]\n",RTPSession::GetMinPort(),RTPSession::GetMaxPort());
+		Log("-RTPSession using default port range [%d,%d]\n",RTPTransport::GetMinPort(),RTPTransport::GetMaxPort());
 
 	//Set DTLS certificate
 	DTLSConnection::SetCertificate(crtfile,keyfile);

@@ -2,6 +2,9 @@
 <configurationDescriptor version="95">
   <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
     <df root="." name="0">
+      <df name="include">
+        <in>RTPTransport.h</in>
+      </df>
       <df name="lib">
         <in>mediamixer.cpp</in>
       </df>
@@ -186,6 +189,7 @@
         <in>FLVEncoder.cpp</in>
         <in>OpenSSL.cpp</in>
         <in>RTPSmoother.cpp</in>
+        <in>RTPTransport.cpp</in>
         <in>VNCServer.cpp</in>
         <in>VNCViewer.cpp</in>
         <in>amf.cpp</in>
@@ -274,6 +278,17 @@
         <in>test.h</in>
       </df>
     </df>
+    <logicalFolder name="test"
+                   displayName="test"
+                   projectFiles="true"
+                   root="../../mcu/test">
+      <itemPath>../../mcu/test/cpim.cpp</itemPath>
+      <itemPath>../../mcu/test/fec.cpp</itemPath>
+      <itemPath>../../mcu/test/main.cpp</itemPath>
+      <itemPath>../../mcu/test/overlay.cpp</itemPath>
+      <itemPath>../../mcu/test/rtp.cpp</itemPath>
+      <itemPath>../../mcu/test/test.cpp</itemPath>
+    </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
                    projectFiles="false"
@@ -293,33 +308,49 @@
         <rebuildPropChanged>false</rebuildPropChanged>
       </toolsSet>
       <flagsDictionary>
-        <element flagsID="0" commonFlags="-fPIC -msse3 -fopenmp"/>
-        <element flagsID="1" commonFlags="-fPIC -msse3 -g -fopenmp"/>
+        <element flagsID="0" commonFlags="-fPIC -msse3"/>
+        <element flagsID="1" commonFlags="-fPIC -msse3 -fopenmp"/>
+        <element flagsID="2" commonFlags="-fPIC -msse3 -g"/>
       </flagsDictionary>
       <codeAssistance>
         <includeAdditional>true</includeAdditional>
       </codeAssistance>
       <makefileType>
         <makeTool>
-          <buildCommandWorkingDir>R:/usr/local/src/mcu</buildCommandWorkingDir>
-          <buildCommand>${MAKE} -f Makefile</buildCommand>
+          <buildCommandWorkingDir>R:/usr/local/src/medooze/mcu</buildCommandWorkingDir>
+          <buildCommand>${MAKE} -f Makefile -j 2</buildCommand>
           <cleanCommand>${MAKE} -f Makefile clean</cleanCommand>
           <executablePath>bin/debug/mcu</executablePath>
-          <cTool>
-            <incDir>
-              <pElem>include</pElem>
-            </incDir>
-          </cTool>
-          <ccTool>
-            <incDir>
-              <pElem>include</pElem>
-            </incDir>
-          </ccTool>
         </makeTool>
       </makefileType>
+      <item path="../../mcu/test/cpim.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
+      </item>
+      <item path="../../mcu/test/fec.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
+      </item>
+      <item path="../../mcu/test/main.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
+      </item>
+      <item path="../../mcu/test/overlay.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
+      </item>
+      <item path="../../mcu/test/rtp.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
+      </item>
+      <item path="../../mcu/test/test.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
+      </item>
       <folder path="0/lib">
         <ccTool>
           <incDir>
+            <pElem>include</pElem>
             <pElem>src</pElem>
             <pElem></pElem>
             <pElem>src/jsr309</pElem>
@@ -342,18 +373,17 @@
       <folder path="0/src/aac">
         <ccTool>
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
+            <pElem>src/aac</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -368,18 +398,16 @@
       <folder path="0/src/bfcp">
         <ccTool>
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -408,6 +436,7 @@
       <folder path="0/src/cef">
         <ccTool>
           <incDir>
+            <pElem>include</pElem>
             <pElem>src/cef</pElem>
           </incDir>
         </ccTool>
@@ -415,19 +444,17 @@
       <folder path="0/src/core">
         <ccTool>
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
             <pElem>src/core</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -442,18 +469,17 @@
       <folder path="0/src/flv1">
         <ccTool>
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
+            <pElem>src/flv1</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -468,18 +494,17 @@
       <folder path="0/src/g711">
         <cTool>
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
+            <pElem>src/g711</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -492,18 +517,17 @@
         </cTool>
         <ccTool>
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
+            <pElem>src/g711</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -518,18 +542,17 @@
       <folder path="0/src/g722">
         <ccTool>
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
+            <pElem>src/g722</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -544,18 +567,17 @@
       <folder path="0/src/gsm">
         <ccTool>
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
+            <pElem>src/gsm</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -570,18 +592,17 @@
       <folder path="0/src/h263">
         <ccTool>
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
+            <pElem>src/h263</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -596,18 +617,17 @@
       <folder path="0/src/h264">
         <ccTool>
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
+            <pElem>src/h264</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -622,18 +642,17 @@
       <folder path="0/src/nelly">
         <ccTool>
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
+            <pElem>src/nelly</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -648,18 +667,17 @@
       <folder path="0/src/opus">
         <ccTool>
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
+            <pElem>src/opus</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -674,18 +692,17 @@
       <folder path="0/src/speex">
         <cTool>
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
+            <pElem>src/speex</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -698,18 +715,17 @@
         </cTool>
         <ccTool>
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
+            <pElem>src/speex</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -724,18 +740,16 @@
       <folder path="0/src/vnc/common">
         <cTool>
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -750,6 +764,7 @@
       <folder path="0/src/vnc/libvncserver/tightvnc-filetransfer">
         <cTool>
           <incDir>
+            <pElem>include</pElem>
             <pElem>src</pElem>
             <pElem></pElem>
             <pElem>src/vnc/libvncserver/tightvnc-filetransfer</pElem>
@@ -759,18 +774,17 @@
       <folder path="0/src/vp6">
         <ccTool>
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
+            <pElem>src/vp6</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -785,18 +799,50 @@
       <folder path="0/src/vp8">
         <ccTool>
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
+            <pElem>src/vp8</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="0/test">
+        <ccTool>
+          <incDir>
+            <pElem>include</pElem>
+            <pElem>test</pElem>
+          </incDir>
+        </ccTool>
+      </folder>
+      <folder path="test">
+        <ccTool>
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>src/vnc/common</pElem>
+            <pElem>src/vnc/libvncserver</pElem>
+            <pElem>../../mcu</pElem>
+            <pElem>../../mcu/test</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>LOG_</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -813,18 +859,16 @@
       <item path="src/CPUMonitor.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -839,18 +883,16 @@
       <item path="src/FLVEncoder.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -865,18 +907,16 @@
       <item path="src/OpenSSL.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -891,10 +931,36 @@
       <item path="src/RTPSmoother.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
+            <pElem>../../mcu</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/RTPTransport.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="1">
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>src/vnc/common</pElem>
+            <pElem>src/vnc/libvncserver</pElem>
+            <pElem>../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
@@ -917,19 +983,16 @@
       <item path="src/VNCServer.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-            <pElem>src</pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -944,19 +1007,16 @@
       <item path="src/VNCViewer.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-            <pElem>src</pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -975,18 +1035,16 @@
       <item path="src/amf.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -1001,18 +1059,16 @@
       <item path="src/appmixer.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -1027,18 +1083,16 @@
       <item path="src/asymmetricmosaic.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -1053,18 +1107,16 @@
       <item path="src/audio.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -1079,18 +1131,16 @@
       <item path="src/audiodecoder.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -1105,18 +1155,16 @@
       <item path="src/audioencoder.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -1131,18 +1179,16 @@
       <item path="src/audiomixer.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -1157,18 +1203,16 @@
       <item path="src/audiostream.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -1183,18 +1227,16 @@
       <item path="src/audiotransrater.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -1209,18 +1251,16 @@
       <item path="src/avcdescriptor.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -1235,19 +1275,16 @@
       <item path="src/bfcp.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-            <pElem>src</pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -1434,18 +1471,16 @@
       <item path="src/broadcaster.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -1460,18 +1495,16 @@
       <item path="src/broadcastsession.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -1494,19 +1527,16 @@
       <item path="src/cpim.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-            <pElem>src</pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -1521,18 +1551,16 @@
       <item path="src/crc32calc.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -1547,18 +1575,16 @@
       <item path="src/dtls.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -1573,18 +1599,16 @@
       <item path="src/eventstreaminghandler.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -1599,18 +1623,16 @@
       <item path="src/fecdecoder.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -1629,18 +1651,16 @@
       <item path="src/flvrecorder.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -1655,18 +1675,16 @@
       <item path="src/framescaler.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -1679,7 +1697,7 @@
         </ccTool>
       </item>
       <item path="src/g711/g711.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
+        <cTool flags="2">
         </cTool>
       </item>
       <item path="src/g711/pcmacodec.cpp" ex="false" tool="1" flavor2="4">
@@ -1697,18 +1715,16 @@
       <item path="src/groupchat.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -1755,18 +1771,16 @@
       <item path="src/http.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -1781,18 +1795,16 @@
       <item path="src/httpparser.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -1807,18 +1819,17 @@
       <item path="src/jsr309/AudioDecoderWorker.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -1833,18 +1844,17 @@
       <item path="src/jsr309/AudioEncoderWorker.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -1859,18 +1869,17 @@
       <item path="src/jsr309/AudioMixerResource.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -1885,6 +1894,7 @@
       <item path="src/jsr309/AudioTranscoder.cpp" ex="false" tool="1" flavor2="4">
         <ccTool>
           <incDir>
+            <pElem>include</pElem>
             <pElem>src</pElem>
             <pElem></pElem>
             <pElem>src/jsr309</pElem>
@@ -1906,18 +1916,17 @@
       <item path="src/jsr309/Endpoint.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -1932,18 +1941,17 @@
       <item path="src/jsr309/JSR309Manager.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -1958,18 +1966,17 @@
       <item path="src/jsr309/MediaSession.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -1984,18 +1991,17 @@
       <item path="src/jsr309/Player.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2010,18 +2016,17 @@
       <item path="src/jsr309/RTPEndpoint.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2036,18 +2041,17 @@
       <item path="src/jsr309/RTPMultiplexer.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2065,18 +2069,17 @@
             flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2091,18 +2094,17 @@
       <item path="src/jsr309/Recorder.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2117,18 +2119,17 @@
       <item path="src/jsr309/VideoDecoderWorker.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2146,18 +2147,17 @@
             flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2172,18 +2172,17 @@
       <item path="src/jsr309/VideoMixerResource.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2198,18 +2197,17 @@
       <item path="src/jsr309/VideoTranscoder.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2224,18 +2222,17 @@
       <item path="src/jsr309/xmlrpcjsr309.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2250,18 +2247,16 @@
       <item path="src/logo.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2276,18 +2271,16 @@
       <item path="src/main.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2302,18 +2295,16 @@
       <item path="src/mcu.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2328,18 +2319,16 @@
       <item path="src/mediabridgesession.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2354,18 +2343,16 @@
       <item path="src/mediagateway.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2380,18 +2367,16 @@
       <item path="src/mosaic.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2406,18 +2391,16 @@
       <item path="src/mp4player.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2432,18 +2415,16 @@
       <item path="src/mp4recorder.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2458,18 +2439,16 @@
       <item path="src/mp4streamer.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2484,18 +2463,16 @@
       <item path="src/multiconf.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2522,18 +2499,16 @@
       <item path="src/overlay.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2548,18 +2523,16 @@
       <item path="src/partedmosaic.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2574,18 +2547,16 @@
       <item path="src/pipeaudioinput.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2600,18 +2571,16 @@
       <item path="src/pipeaudiooutput.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2626,18 +2595,16 @@
       <item path="src/pipetextinput.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2652,18 +2619,16 @@
       <item path="src/pipetextoutput.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2678,18 +2643,16 @@
       <item path="src/pipevideoinput.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2704,18 +2667,16 @@
       <item path="src/pipevideooutput.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2730,18 +2691,16 @@
       <item path="src/pipmosaic.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2756,18 +2715,16 @@
       <item path="src/remoteratecontrol.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2782,18 +2739,16 @@
       <item path="src/remoterateestimator.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2808,18 +2763,16 @@
       <item path="src/rtmpchunk.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2834,18 +2787,16 @@
       <item path="src/rtmpclientconnection.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2860,18 +2811,16 @@
       <item path="src/rtmpconnection.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2886,18 +2835,16 @@
       <item path="src/rtmpflvstream.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2912,18 +2859,16 @@
       <item path="src/rtmpmessage.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2938,18 +2883,16 @@
       <item path="src/rtmpmp4stream.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2964,18 +2907,16 @@
       <item path="src/rtmpnetconnection.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2990,18 +2931,16 @@
       <item path="src/rtmpparticipant.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3016,18 +2955,16 @@
       <item path="src/rtmpserver.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3042,18 +2979,16 @@
       <item path="src/rtmpstream.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3068,18 +3003,16 @@
       <item path="src/rtp.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3094,18 +3027,16 @@
       <item path="src/rtpparticipant.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3120,18 +3051,16 @@
       <item path="src/rtpsession.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3146,18 +3075,16 @@
       <item path="src/sidebar.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3170,7 +3097,7 @@
         </ccTool>
       </item>
       <item path="src/speex/resample.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
+        <cTool flags="2">
         </cTool>
       </item>
       <item path="src/speex/speexcodec.cpp" ex="false" tool="1" flavor2="4">
@@ -3180,18 +3107,16 @@
       <item path="src/statushandler.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3206,18 +3131,16 @@
       <item path="src/stunmessage.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3232,18 +3155,16 @@
       <item path="src/textencoder.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3258,18 +3179,16 @@
       <item path="src/textmixer.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3284,18 +3203,16 @@
       <item path="src/textmixerworker.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3310,18 +3227,16 @@
       <item path="src/textstream.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3336,18 +3251,16 @@
       <item path="src/uploadhandler.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3362,18 +3275,16 @@
       <item path="src/vad.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3388,18 +3299,16 @@
       <item path="src/video.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3414,18 +3323,16 @@
       <item path="src/videomixer.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3440,18 +3347,16 @@
       <item path="src/videopipe.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3466,18 +3371,16 @@
       <item path="src/videostream.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3490,36 +3393,37 @@
         </ccTool>
       </item>
       <item path="src/vnc/common/d3des.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
+        <cTool flags="2">
         </cTool>
       </item>
       <item path="src/vnc/common/md5.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
+        <cTool flags="2">
         </cTool>
       </item>
       <item path="src/vnc/common/minilzo.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
+        <cTool flags="2">
         </cTool>
       </item>
       <item path="src/vnc/common/sha1.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
+        <cTool flags="2">
         </cTool>
       </item>
       <item path="src/vnc/common/turbojpeg.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
+        <cTool flags="2">
         </cTool>
       </item>
       <item path="src/vnc/common/vncauth.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
+        <cTool flags="2">
         </cTool>
       </item>
       <item path="src/vnc/common/zywrletemplate.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
+        <cTool flags="2">
         </cTool>
       </item>
       <item path="src/vnc/libvncclient/corre.c" ex="false" tool="0" flavor2="2">
         <cTool>
           <incDir>
+            <pElem>include</pElem>
             <pElem>src</pElem>
             <pElem></pElem>
             <pElem>src/vnc/libvncclient</pElem>
@@ -3531,21 +3435,19 @@
         </cTool>
       </item>
       <item path="src/vnc/libvncclient/cursor.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
+        <cTool flags="2">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
             <pElem>src/vnc/libvncclient</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3560,6 +3462,7 @@
       <item path="src/vnc/libvncclient/hextile.c" ex="false" tool="0" flavor2="2">
         <cTool>
           <incDir>
+            <pElem>include</pElem>
             <pElem>src</pElem>
             <pElem></pElem>
             <pElem>src/vnc/libvncclient</pElem>
@@ -3573,6 +3476,7 @@
       <item path="src/vnc/libvncclient/listen.c" ex="false" tool="0" flavor2="2">
         <cTool>
           <incDir>
+            <pElem>include</pElem>
             <pElem>src</pElem>
             <pElem></pElem>
             <pElem>src/vnc/libvncclient</pElem>
@@ -3584,21 +3488,19 @@
         </cTool>
       </item>
       <item path="src/vnc/libvncclient/rfbproto.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
+        <cTool flags="2">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
             <pElem>src/vnc/libvncclient</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3613,6 +3515,7 @@
       <item path="src/vnc/libvncclient/rre.c" ex="false" tool="0" flavor2="2">
         <cTool>
           <incDir>
+            <pElem>include</pElem>
             <pElem>src</pElem>
             <pElem></pElem>
             <pElem>src/vnc/libvncclient</pElem>
@@ -3626,6 +3529,7 @@
       <item path="src/vnc/libvncclient/sockets.c" ex="false" tool="0" flavor2="2">
         <cTool>
           <incDir>
+            <pElem>include</pElem>
             <pElem>src</pElem>
             <pElem></pElem>
             <pElem>src/vnc/libvncclient</pElem>
@@ -3639,6 +3543,7 @@
       <item path="src/vnc/libvncclient/tight.c" ex="false" tool="0" flavor2="2">
         <cTool>
           <incDir>
+            <pElem>include</pElem>
             <pElem>src</pElem>
             <pElem></pElem>
             <pElem>src/vnc/libvncclient</pElem>
@@ -3652,6 +3557,7 @@
       <item path="src/vnc/libvncclient/tls_gnutls.c" ex="false" tool="0" flavor2="2">
         <cTool>
           <incDir>
+            <pElem>include</pElem>
             <pElem>src</pElem>
             <pElem></pElem>
             <pElem>src/vnc/libvncclient</pElem>
@@ -3663,21 +3569,19 @@
         </cTool>
       </item>
       <item path="src/vnc/libvncclient/tls_none.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
+        <cTool flags="2">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
             <pElem>src/vnc/libvncclient</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3692,6 +3596,7 @@
       <item path="src/vnc/libvncclient/tls_openssl.c" ex="false" tool="0" flavor2="2">
         <cTool>
           <incDir>
+            <pElem>include</pElem>
             <pElem>src</pElem>
             <pElem></pElem>
             <pElem>src/vnc/libvncclient</pElem>
@@ -3705,6 +3610,7 @@
       <item path="src/vnc/libvncclient/ultra.c" ex="false" tool="0" flavor2="2">
         <cTool>
           <incDir>
+            <pElem>include</pElem>
             <pElem>src</pElem>
             <pElem></pElem>
             <pElem>src/vnc/libvncclient</pElem>
@@ -3718,6 +3624,7 @@
       <item path="src/vnc/libvncclient/vncviewer.c" ex="false" tool="0" flavor2="2">
         <cTool>
           <incDir>
+            <pElem>include</pElem>
             <pElem>src</pElem>
             <pElem></pElem>
             <pElem>src/vnc/libvncclient</pElem>
@@ -3731,6 +3638,7 @@
       <item path="src/vnc/libvncclient/zlib.c" ex="false" tool="0" flavor2="2">
         <cTool>
           <incDir>
+            <pElem>include</pElem>
             <pElem>src</pElem>
             <pElem></pElem>
             <pElem>src/vnc/libvncclient</pElem>
@@ -3744,6 +3652,7 @@
       <item path="src/vnc/libvncclient/zrle.c" ex="false" tool="0" flavor2="2">
         <cTool>
           <incDir>
+            <pElem>include</pElem>
             <pElem>src</pElem>
             <pElem></pElem>
             <pElem>src/vnc/libvncclient</pElem>
@@ -3755,20 +3664,18 @@
         </cTool>
       </item>
       <item path="src/vnc/libvncserver/auth.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
+        <cTool flags="2">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3781,20 +3688,18 @@
         </cTool>
       </item>
       <item path="src/vnc/libvncserver/cargs.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
+        <cTool flags="2">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3807,20 +3712,18 @@
         </cTool>
       </item>
       <item path="src/vnc/libvncserver/corre.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
+        <cTool flags="2">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3835,6 +3738,7 @@
       <item path="src/vnc/libvncserver/cutpaste.c" ex="false" tool="0" flavor2="2">
         <cTool>
           <incDir>
+            <pElem>include</pElem>
             <pElem>src</pElem>
             <pElem></pElem>
             <pElem>src/vnc/libvncserver</pElem>
@@ -3846,20 +3750,18 @@
         </cTool>
       </item>
       <item path="src/vnc/libvncserver/draw.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
+        <cTool flags="2">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3872,20 +3774,18 @@
         </cTool>
       </item>
       <item path="src/vnc/libvncserver/font.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
+        <cTool flags="2">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3898,20 +3798,18 @@
         </cTool>
       </item>
       <item path="src/vnc/libvncserver/hextile.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
+        <cTool flags="2">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3926,6 +3824,7 @@
       <item path="src/vnc/libvncserver/httpd.c" ex="false" tool="0" flavor2="2">
         <cTool>
           <incDir>
+            <pElem>include</pElem>
             <pElem>src</pElem>
             <pElem></pElem>
             <pElem>src/vnc/libvncserver</pElem>
@@ -3942,6 +3841,7 @@
             flavor2="2">
         <cTool>
           <incDir>
+            <pElem>include</pElem>
             <pElem>src</pElem>
             <pElem></pElem>
             <pElem>src/vnc/libvncserver</pElem>
@@ -3958,6 +3858,7 @@
             flavor2="2">
         <cTool>
           <incDir>
+            <pElem>include</pElem>
             <pElem>src</pElem>
             <pElem></pElem>
             <pElem>src/vnc/libvncserver</pElem>
@@ -3974,6 +3875,7 @@
             flavor2="2">
         <cTool>
           <incDir>
+            <pElem>include</pElem>
             <pElem>src</pElem>
             <pElem></pElem>
             <pElem>src/vnc/libvncserver</pElem>
@@ -3985,20 +3887,18 @@
         </cTool>
       </item>
       <item path="src/vnc/libvncserver/rfbregion.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
+        <cTool flags="2">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4011,20 +3911,18 @@
         </cTool>
       </item>
       <item path="src/vnc/libvncserver/rfbserver.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
+        <cTool flags="2">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4042,6 +3940,7 @@
             flavor2="2">
         <cTool>
           <incDir>
+            <pElem>include</pElem>
             <pElem>src</pElem>
             <pElem></pElem>
             <pElem>src/vnc/libvncserver</pElem>
@@ -4055,6 +3954,7 @@
       <item path="src/vnc/libvncserver/rfbssl_none.c" ex="false" tool="0" flavor2="2">
         <cTool>
           <incDir>
+            <pElem>include</pElem>
             <pElem>src</pElem>
             <pElem></pElem>
             <pElem>src/vnc/libvncserver</pElem>
@@ -4071,6 +3971,7 @@
             flavor2="2">
         <cTool>
           <incDir>
+            <pElem>include</pElem>
             <pElem>src</pElem>
             <pElem></pElem>
             <pElem>src/vnc/libvncserver</pElem>
@@ -4082,20 +3983,18 @@
         </cTool>
       </item>
       <item path="src/vnc/libvncserver/rre.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
+        <cTool flags="2">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4108,20 +4007,18 @@
         </cTool>
       </item>
       <item path="src/vnc/libvncserver/scale.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
+        <cTool flags="2">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4134,20 +4031,18 @@
         </cTool>
       </item>
       <item path="src/vnc/libvncserver/selbox.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
+        <cTool flags="2">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4160,20 +4055,18 @@
         </cTool>
       </item>
       <item path="src/vnc/libvncserver/server.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
+        <cTool flags="2">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4189,20 +4082,18 @@
             ex="false"
             tool="0"
             flavor2="2">
-        <cTool flags="1">
+        <cTool flags="2">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4217,6 +4108,7 @@
       <item path="src/vnc/libvncserver/sockets.c" ex="false" tool="0" flavor2="2">
         <cTool>
           <incDir>
+            <pElem>include</pElem>
             <pElem>src</pElem>
             <pElem></pElem>
             <pElem>src/vnc/libvncserver</pElem>
@@ -4228,20 +4120,18 @@
         </cTool>
       </item>
       <item path="src/vnc/libvncserver/stats.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
+        <cTool flags="2">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4256,6 +4146,7 @@
       <item path="src/vnc/libvncserver/tableinit24.c" ex="false" tool="0" flavor2="2">
         <cTool>
           <incDir>
+            <pElem>include</pElem>
             <pElem>src</pElem>
             <pElem></pElem>
             <pElem>src/vnc/libvncserver</pElem>
@@ -4272,6 +4163,7 @@
             flavor2="2">
         <cTool>
           <incDir>
+            <pElem>include</pElem>
             <pElem>src</pElem>
             <pElem></pElem>
             <pElem>src/vnc/libvncserver</pElem>
@@ -4288,6 +4180,7 @@
             flavor2="2">
         <cTool>
           <incDir>
+            <pElem>include</pElem>
             <pElem>src</pElem>
             <pElem></pElem>
             <pElem>src/vnc/libvncserver</pElem>
@@ -4304,6 +4197,7 @@
             flavor2="2">
         <cTool>
           <incDir>
+            <pElem>include</pElem>
             <pElem>src</pElem>
             <pElem></pElem>
             <pElem>src/vnc/libvncserver</pElem>
@@ -4320,6 +4214,7 @@
             flavor2="2">
         <cTool>
           <incDir>
+            <pElem>include</pElem>
             <pElem>src</pElem>
             <pElem></pElem>
             <pElem>src/vnc/libvncserver</pElem>
@@ -4331,20 +4226,18 @@
         </cTool>
       </item>
       <item path="src/vnc/libvncserver/tight.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
+        <cTool flags="2">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4401,20 +4294,18 @@
         </cTool>
       </item>
       <item path="src/vnc/libvncserver/translate.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
+        <cTool flags="2">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4427,20 +4318,18 @@
         </cTool>
       </item>
       <item path="src/vnc/libvncserver/ultra.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
+        <cTool flags="2">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4455,6 +4344,7 @@
       <item path="src/vnc/libvncserver/websockets.c" ex="false" tool="0" flavor2="2">
         <cTool>
           <incDir>
+            <pElem>include</pElem>
             <pElem>src</pElem>
             <pElem></pElem>
             <pElem>src/vnc/libvncserver</pElem>
@@ -4466,20 +4356,18 @@
         </cTool>
       </item>
       <item path="src/vnc/libvncserver/zlib.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
+        <cTool flags="2">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4492,20 +4380,18 @@
         </cTool>
       </item>
       <item path="src/vnc/libvncserver/zrle.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
+        <cTool flags="2">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4523,6 +4409,7 @@
             flavor2="2">
         <cTool>
           <incDir>
+            <pElem>include</pElem>
             <pElem>src</pElem>
             <pElem></pElem>
             <pElem>src/vnc/libvncserver</pElem>
@@ -4537,20 +4424,18 @@
             ex="false"
             tool="0"
             flavor2="2">
-        <cTool flags="1">
+        <cTool flags="2">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4566,20 +4451,18 @@
             ex="false"
             tool="0"
             flavor2="2">
-        <cTool flags="1">
+        <cTool flags="2">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4606,18 +4489,16 @@
       <item path="src/websocketconnection.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4632,18 +4513,16 @@
       <item path="src/websocketserver.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4658,18 +4537,16 @@
       <item path="src/xmlhandler.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4684,18 +4561,16 @@
       <item path="src/xmlrpcbroadcaster.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4710,18 +4585,16 @@
       <item path="src/xmlrpcmcu.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4736,18 +4609,16 @@
       <item path="src/xmlrpcmediagateway.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4762,18 +4633,16 @@
       <item path="src/xmlrpcserver.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4788,18 +4657,16 @@
       <item path="src/xmlstreaminghandler.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
+            <pElem>../../mcu</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4811,13 +4678,11 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="test/fec.cpp" ex="false" tool="1" flavor2="0">
+      <item path="test/fec.cpp" ex="false" tool="1" flavor2="4">
       </item>
-      <item path="test/rtp.cpp" ex="false" tool="1" flavor2="0">
+      <item path="test/rtp.cpp" ex="false" tool="1" flavor2="4">
       </item>
-      <item path="test/test.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="test/test.h" ex="false" tool="3" flavor2="0">
+      <item path="test/test.cpp" ex="false" tool="1" flavor2="4">
       </item>
     </conf>
     <conf name="test" type="0">
@@ -5342,6 +5207,8 @@
           </preprocessorList>
         </ccTool>
       </folder>
+      <item path="include/RTPTransport.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="lib/mediamixer.cpp" ex="false" tool="1" flavor2="4">
       </item>
       <item path="src/CPUMonitor.cpp" ex="false" tool="1" flavor2="4">
@@ -5447,6 +5314,8 @@
             <Elem>__STDC_CONSTANT_MACROS</Elem>
           </preprocessorList>
         </ccTool>
+      </item>
+      <item path="src/RTPTransport.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/VNCServer.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
