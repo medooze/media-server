@@ -676,7 +676,7 @@ void RTPSession::onRTPPacket(BYTE* buffer, DWORD size)
 			return;
 		}
 		
-		if (media==MediaFrame::Video && !isRTX) UltraDebug("RTX: Got  %d:%s primary %d:%s packet #%d ts:%u\n",type,VideoCodec::GetNameFor((VideoCodec::Type)codec),t,VideoCodec::GetNameFor((VideoCodec::Type)c),red->GetSeqNum(),red->GetTimestamp());
+		//if (media==MediaFrame::Video && !isRTX) UltraDebug("RTX: Got  %d:%s primary %d:%s packet #%d ts:%u\n",type,VideoCodec::GetNameFor((VideoCodec::Type)codec),t,VideoCodec::GetNameFor((VideoCodec::Type)c),red->GetSeqNum(),red->GetTimestamp());
 		
 		//Set it
 		red->SetPrimaryCodec(c);
@@ -1122,7 +1122,7 @@ RTCPCompoundPacket* RTPSession::CreateSenderReport()
 		//Get number of total packtes
 		DWORD total = recv.extSeq - recv.minExtSeqNumSinceLastSR + 1;
 		//Calculate lost
-		DWORD lostPacketsSinceLastSR = total - recv.totalPacketsSinceLastSR + recv.nackedPacketsSinceLastSR;
+		DWORD lostPacketsSinceLastSR = total - recv.totalPacketsSinceLastSR;
 		//Add to total lost count
 		recv.lostPackets += lostPacketsSinceLastSR;
 		//Calculate fraction lost
@@ -1427,6 +1427,18 @@ int RTPSession::ReSendPacket(int seq)
 		if (listener)
 			//Request a I frame
 			listener->onFPURequested(this);
+		//Empty queue without locking again
+		//Delete rtx packets
+		for (RTPOrderedPackets::iterator it = rtxs.begin(); it!=rtxs.end();++it)
+		{
+			//Get pacekt
+			RTPTimedPacket *pkt = it->second;
+			//Delete object
+			delete(pkt);
+		}
+
+		//Clear list
+		rtxs.clear();
 	}
 }
 
