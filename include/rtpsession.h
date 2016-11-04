@@ -16,7 +16,7 @@
 #include "fecdecoder.h"
 #include "stunmessage.h"
 #include "remoterateestimator.h"
-#include "dtls.h"
+#include "RTPTransport.h"
 
 struct MediaStatistics
 {
@@ -31,7 +31,7 @@ struct MediaStatistics
 
 class RTPSession :
 	public RemoteRateEstimator::Listener,
-	public DTLSConnection::Listener
+	public RTPTransport::Listener
 {
 public:
 	class Listener
@@ -46,17 +46,6 @@ public:
 		virtual void onTempMaxMediaStreamBitrateRequest(RTPSession *session,DWORD bitrate,DWORD overhead) = 0;
 	};
 public:
-
-public:
-	static bool SetPortRange(int minPort, int maxPort);
-	static DWORD GetMinPort() { return minLocalPort; }
-	static DWORD GetMaxPort() { return maxLocalPort; }
-
-private:
-	// Admissible port range
-	static DWORD minLocalPort;
-	static DWORD maxLocalPort;
-	static int minLocalPortRange;
 
 public:
 	RTPSession(MediaFrame::Type media,Listener *listener);
@@ -83,7 +72,7 @@ public:
 	DWORD GetNumSendPackets()	const { return send.numPackets+send.numRTCPPackets;	}
 	DWORD GetTotalRecvBytes()	const { return recv.totalBytes+recv.totalRTCPBytes;	}
 	DWORD GetTotalSendBytes()	const { return send.totalBytes+send.totalRTCPBytes;	}
-	DWORD GetLostRecvPackets()	const { return recv.lostPackets;	}
+	DWORD GetLostRecvPackets()	const { return recv.lostPackets;			}
 
 
 	MediaFrame::Type GetMediaType()	const { return media;		}
@@ -101,23 +90,15 @@ public:
 
 	virtual void onTargetBitrateRequested(DWORD bitrate);
 
-	virtual void onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMasterKey,DWORD localMasterKeySize,BYTE* remoteMasterKey,DWORD remoteMasterKeySize);
+public:	
+	virtual void onRemotePeer(const char* ip, const short port);
+	virtual void onRTPPacket(BYTE* buffer, DWORD size);
+	virtual void onRTCPPacket(BYTE* buffer, DWORD size);
 private:
-	int SetLocalCryptoSDES(const char* suite, const BYTE* key, const DWORD len);
-	int SetRemoteCryptoSDES(const char* suite, const BYTE* key, const DWORD len);
 	void SetRTT(DWORD rtt);
-	void Start();
-	void Stop();
-	int  ReadRTP();
-	int  ReadRTCP();
-	void ProcessRTCPPacket(const RTCPCompoundPacket *packet);
 	int ReSendPacket(int seq);
-	int Run();
-private:
-	static  void* run(void *par);
 protected:
 	//Envio y recepcion de rtcp
-	int RecvRtcp();
 	int SendPacket(RTCPCompoundPacket &rtcp);
 	int SendSenderReport();
 	int SendFIR();
@@ -130,32 +111,10 @@ private:
 	MediaFrame::Type media;
 	Listener* listener;
 	RTPBuffer packets;
-	bool muxRTCP;
-	//Sockets
-	int 	simSocket;
-	int 	simRtcpSocket;
-	int 	simPort;
-	int	simRtcpPort;
-	pollfd	ufds[2];
-	bool	inited;
-	bool	running;
-
-	DTLSConnection dtls;
-	bool	encript;
-	bool	decript;
-	srtp_t	sendSRTPSession;
-	srtp_t	recvSRTPSession;
-
+	RTPTransport transport;
+	
 	char*	cname;
-	char*	iceRemoteUsername;
-	char*	iceRemotePwd;
-	char*	iceLocalUsername;
-	char*	iceLocalPwd;
-	pthread_t thread;
-
 	//Transmision
-	sockaddr_in sendAddr;
-	sockaddr_in sendRtcpAddr;
 	BYTE 	sendPacket[MTU+SRTP_MAX_TRAILER_LEN] ALIGNEDTO32;
 	
 	RTPOutgoingSource send;
@@ -173,9 +132,6 @@ private:
 	DWORD	recTimestamp;
 	timeval recTimeval;
 	DWORD	recSR;
-	in_addr_t recIP;
-	DWORD	  recPort;
-	DWORD     prio;
 
 	//RTP Map types
 	RTPMap* rtpMapIn;

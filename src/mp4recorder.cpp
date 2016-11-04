@@ -42,7 +42,6 @@ int mp4track::CreateAudioTrack(AudioCodec::Type codec,DWORD rate)
 			MP4SetTrackIntegerProperty(mp4, track, "mdia.minf.stbl.stsd.ulaw.sampleSize", 8);
 			break;
 		}
-		break;
 		case AudioCodec::PCMA:
 		{
 			// Create audio track
@@ -57,7 +56,17 @@ int mp4track::CreateAudioTrack(AudioCodec::Type codec,DWORD rate)
 			MP4SetHintTrackRtpPayload(mp4, hint, "PCMA", &type, 0, NULL, 1, 0);
 			break;
 		}
-		break;
+		case AudioCodec::OPUS:
+		{
+			// Create audio track
+			track = MP4AddAudioTrack(mp4, rate, 1024, MP4_PRIVATE_AUDIO_TYPE);
+			// Create audio hint track
+			hint = MP4AddHintTrack(mp4, track);
+			// Set payload type for hint track
+			type = 102;
+			MP4SetHintTrackRtpPayload(mp4, hint, "OPUS", &type, 0, NULL, 1, 0);
+			break;
+		}
 		case AudioCodec::AAC:
 		{
 			// Create audio track
@@ -70,7 +79,6 @@ int mp4track::CreateAudioTrack(AudioCodec::Type codec,DWORD rate)
 			hint = 0;
 			break;
 		}
-		break;
 		default:
 			return 0;
 	}
@@ -121,6 +129,24 @@ int mp4track::CreateVideoTrack(VideoCodec::Type codec,int width, int height)
 			// Set payload type for hint track
 			type = 99;
 			MP4SetHintTrackRtpPayload(mp4, hint, "H264", &type, 0, NULL, 1, 0);
+			break;
+		}
+		case VideoCodec::VP8:
+		{
+			// Should parse video packet to get this values
+			MP4Duration h264FrameDuration	= 1.0/30;
+#ifdef MP4_VP8_VIDEO_TYPE      
+			// Create video track
+			track = MP4AddVP8VideoTrack(mp4, 90000, h264FrameDuration, width, height);
+#else
+			// Create video track
+			track = MP4AddVideoTrack(mp4, 90000, h264FrameDuration, width, height, MP4_PRIVATE_VIDEO_TYPE);
+#endif
+			// Create video hint track
+			hint = MP4AddHintTrack(mp4, track);
+			// Set payload type for hint track
+			type = 101;
+			MP4SetHintTrackRtpPayload(mp4, hint, "VP8", &type, 0, NULL, 1, 0);
 			break;
 		}
 	}
@@ -482,6 +508,7 @@ void* mp4close(void *mp4)
 	getUpdDifTime(&tv);
 	Log(">mp4close [%p]\n",mp4);
 	// Close file
+    MP4Dump(mp4,true);
 	MP4Close(mp4);
 	Log("<mp4close [%p,time:%llu]\n",mp4,getDifTime(&tv)/1000);
 }

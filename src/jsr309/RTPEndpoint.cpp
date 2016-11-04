@@ -229,9 +229,6 @@ void RTPEndpoint::onResetStream()
 	//Reseted
 	reseted = true;
 
-	//Send emptu packet
-	RTPSession::SendEmptyPacket();
-
 	//Remove codec
 	codec = -1;
 }

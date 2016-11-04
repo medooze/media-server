@@ -127,6 +127,9 @@ int MP4Streamer::Open(const char *filename)
 				else if (strcmp("PCMA", name) == 0)
 					//Create new audio track
 					audio = new MP4RtpTrack(MediaFrame::Audio,AudioCodec::PCMA,payload);
+				else if (strcmp("OPUS", name) == 0)
+					//Create new audio track
+					audio = new MP4RtpTrack(MediaFrame::Audio,AudioCodec::OPUS,payload);
 				else
 					//Skip
 					continue;
@@ -155,6 +158,9 @@ int MP4Streamer::Open(const char *filename)
 				else if (strcmp("H264", name) == 0)
 					//Create new video track
 					video = new MP4RtpTrack(MediaFrame::Video,VideoCodec::H264,payload);
+				else if (strcmp("VP8", name) == 0)
+					//Create new video track
+					video = new MP4RtpTrack(MediaFrame::Video,VideoCodec::VP8,payload);
 				else
 					continue;
 					
