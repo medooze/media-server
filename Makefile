@@ -54,7 +54,7 @@ else
 endif
 
 H264DIR=h264
-H264OBJ=h264encoder.o h264decoder.o 
+H264OBJ=h264encoder.o h264decoder.o h264depacketizer.o
 
 VP6DIR=vp6
 VP6OBJ=vp6decoder.o
