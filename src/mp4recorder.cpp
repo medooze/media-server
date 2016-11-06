@@ -58,8 +58,13 @@ int mp4track::CreateAudioTrack(AudioCodec::Type codec,DWORD rate)
 		}
 		case AudioCodec::OPUS:
 		{
+#ifdef MP4_OPUS_AUDIO_TYPE
+            // Create audio track
+			track = MP4AddOpusAudioTrack(mp4, rate, 2, 640);
+#else      
 			// Create audio track
 			track = MP4AddAudioTrack(mp4, rate, 1024, MP4_PRIVATE_AUDIO_TYPE);
+#endif       
 			// Create audio hint track
 			hint = MP4AddHintTrack(mp4, track);
 			// Set payload type for hint track

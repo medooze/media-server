@@ -3,7 +3,7 @@
 ###########################################
 include config.mk
 
-OPTS+= -fPIC -DPIC -msse -msse2 -msse3 -DSPX_RESAMPLE_EXPORT= -DRANDOM_PREFIX=mcu -DOUTSIDE_SPEEX -DFLOATING_POINT -D__SSE2__
+OPTS+= -fPIC -DPIC -msse -msse2 -msse3 -DSPX_RESAMPLE_EXPORT= -DRANDOM_PREFIX=mcu -DOUTSIDE_SPEEX -DFLOATING_POINT -D__SSE2__ -Wno-narrowing
 
 #DEBUG
 ifeq ($(DEBUG),yes)
@@ -54,13 +54,13 @@ else
 endif
 
 H264DIR=h264
-H264OBJ=h264encoder.o h264decoder.o h264depacketizer.o
+H264OBJ=h264encoder.o h264decoder.o 
 
 VP6DIR=vp6
 VP6OBJ=vp6decoder.o
 
 VP8DIR=vp8
-VP8OBJ=vp8encoder.o vp8decoder.o
+VP8OBJ=vp8encoder.o vp8decoder.o vp8depacketizer.o
 
 GSMDIR=gsm
 GSMOBJ=gsmcodec.o
@@ -222,7 +222,7 @@ ifeq ($(STATIC),yes)
 	LDFLAGS+=/usr/local/src/libvpx/libvpx.a
 	LDFLAGS+=/usr/local/lib/libmp4v2.a
 else
-	LDFLAGS+= -lavcodec -lswscale -lavformat -lavutil -lavresample  -lmp4v2 -lspeex -lvpx -lopus -lmp4v2
+	LDFLAGS+= -lavcodec -lswscale -lavformat -lavutil -lavresample  -lmp4v2 -lspeex -lvpx -lopus -lmp4v2 -lx264
 endif
 
 LDFLAGS+= -lxmlrpc -lxmlrpc_xmlparse -lxmlrpc_xmltok -lxmlrpc_abyss -lxmlrpc_server -lxmlrpc_util -lnsl -lpthread -lz -ljpeg -lpng -lresolv -L/lib/i386-linux-gnu -lgcrypt
