@@ -161,6 +161,8 @@ RTPDepacketizer* RTPDepacketizer::Create(MediaFrame::Type mediaType,DWORD codec)
 			 {
 				 case VideoCodec::H264:
 					 return new H264Depacketizer();
+				 case VideoCodec::VP8:
+					 return new VP8Depacketizer();                
 			 }
 			 break;
 		 case MediaFrame::Audio:
