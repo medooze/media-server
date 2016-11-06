@@ -1,12 +1,12 @@
 /* 
- * File:   h264depacketizer.h
+ * File:   vp8depacketizer.h
  * Author: Sergio
  *
  * Created on 26 de enero de 2012, 9:46
  */
 
-#ifndef H264DEPACKETIZER_H
-#define	H264DEPACKETIZER_H
+#ifndef VP8DEPACKETIZER_H
+#define	VP8DEPACKETIZER_H
 #include "rtp.h"
 #include "video.h"
 
@@ -24,5 +24,5 @@ private:
 	DWORD iniFragNALU;
 };
 
-#endif	/* H264DEPACKETIZER_H */
+#endif	/* VP8DEPACKETIZER_H */
 

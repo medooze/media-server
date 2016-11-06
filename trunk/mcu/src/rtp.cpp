@@ -4,6 +4,7 @@
 #include "rtp.h"
 #include "audio.h"
 #include "h264/h264depacketizer.h"
+#include "vp8/vp8depacketizer.h"
 #include "bitstream.h"
 
 void RTPPacket::ProcessExtensions(const RTPMap &extMap)
