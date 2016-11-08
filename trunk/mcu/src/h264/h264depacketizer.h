@@ -19,6 +19,10 @@ public:
 	virtual MediaFrame* AddPacket(RTPPacket *packet);
 	virtual MediaFrame* AddPayload(BYTE* payload,DWORD payload_len);
 	virtual void ResetFrame();
+	virtual DWORD GetTimestamp() 
+	{
+		return frame.GetTimeStamp();
+	}
 private:
 	VideoFrame frame;
 	DWORD iniFragNALU;

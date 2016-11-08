@@ -88,7 +88,6 @@ public:
 		
 		//Dump
 		cpim->Dump();
-		cpim->Dump();
 		
 		//Test serialization
 		DWORD size = strlen(msg);

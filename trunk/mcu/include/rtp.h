@@ -190,6 +190,8 @@ public:
 				clockRate = 1000;
 		}
 	}
+	
+	virtual ~RTPPacket(){}
 
 	RTPPacket* Clone()
 	{
@@ -548,6 +550,7 @@ public:
 	virtual MediaFrame* AddPacket(RTPPacket *packet) = 0;
 	virtual MediaFrame* AddPayload(BYTE* payload,DWORD payload_len) = 0;
 	virtual void ResetFrame() = 0;
+	virtual DWORD GetTimestamp() = 0;
 private:
 	MediaFrame::Type	mediaType;
 	DWORD			codec;

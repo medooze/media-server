@@ -19,6 +19,11 @@ Recorder::Recorder(std::wstring tag)
 
 Recorder::~Recorder()
 {
+	//Dettach all media
+	Dettach(MediaFrame::Audio);
+	Dettach(MediaFrame::Video);
+	Dettach(MediaFrame::Text);
+	
 	//If we have an audio depacketizer
 	if (audio)
 		//Delete it
@@ -35,6 +40,22 @@ void Recorder::onRTPPacket(RTPPacket &packet)
 	switch(packet.GetMedia())
 	{
 		case MediaFrame::Audio:
+			//Do we have video depacketizer
+			if (!audio)
+				//Create new
+				audio = RTPDepacketizer::Create(packet.GetMedia(),packet.GetCodec());
+			//Check again
+			if (audio)
+			{
+				//Append to frame
+				AudioFrame *frame = (AudioFrame*)audio->AddPacket(&packet);
+				//If got frame
+				if (frame)
+					//Record frame
+					onMediaFrame(packet.GetSSRC(),*frame);
+				//Clear frame
+				audio->ResetFrame();
+			}
 			break;
 		case MediaFrame::Video:
 			//Do we have video depacketizer
@@ -52,7 +73,7 @@ void Recorder::onRTPPacket(RTPPacket &packet)
 					//If got frame
 					if (frame)
 						//Record frame
-						onMediaFrame(*frame);
+						onMediaFrame(packet.GetSSRC(),*frame);
 					//Clear frame
 					video->ResetFrame();
 				}
@@ -95,7 +116,7 @@ int Recorder::Attach(MediaFrame::Type media, Joinable *join)
 	if (join)
 	{
 		//Set in map
-		joined[media] = join,
+		joined[media] = join;
 		//Join to the new one
 		join->AddListener(this);
 	}
