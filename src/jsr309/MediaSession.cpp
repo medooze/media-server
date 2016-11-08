@@ -329,6 +329,9 @@ int MediaSession::RecorderAttachToEndpoint(int recorderId,int endpointId,MediaFr
                 return Error("Endpoint not found\n");
         //Get it
         Endpoint* source = itEndpoints->second;
+	
+	//Request iframe
+	source->RequestUpdate(media);
 
 	//Attach
 	return recorder->Attach(media,source->GetJoinable(media));

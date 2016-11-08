@@ -23,6 +23,8 @@ mp4track::mp4track(MP4FileHandle mp4)
 
 int mp4track::CreateAudioTrack(AudioCodec::Type codec,DWORD rate)
 {
+	Log("mp4track::CreateAudioTrack [codec:%d]",codec);
+	
 	BYTE type;
 
 	//Check the codec
@@ -59,7 +61,7 @@ int mp4track::CreateAudioTrack(AudioCodec::Type codec,DWORD rate)
 		case AudioCodec::OPUS:
 		{
 #ifdef MP4_OPUS_AUDIO_TYPE
-            // Create audio track
+			// Create audio track
 			track = MP4AddOpusAudioTrack(mp4, rate, 2, 640);
 #else      
 			// Create audio track
@@ -93,6 +95,9 @@ int mp4track::CreateAudioTrack(AudioCodec::Type codec,DWORD rate)
 
 int mp4track::CreateVideoTrack(VideoCodec::Type codec,int width, int height)
 {
+	
+	Log("mp4track::CreateVideoTrack [codec:%d]",codec);
+	
 	BYTE type;
 
 	//Check the codec
@@ -268,8 +273,6 @@ int mp4track::FlushVideoFrame(VideoFrame* frame,DWORD duration)
 					H264SeqParameterSet sps;
 					//DEcode SPS
 					sps.Decode(nalData,nalSize);
-					//Dump
-					sps.Dump();
 					//Update widht an ehight
 					MP4SetTrackIntegerProperty(mp4,track,"mdia.minf.stbl.stsd.avc1.width", sps.GetWidth());
 					MP4SetTrackIntegerProperty(mp4,track,"mdia.minf.stbl.stsd.avc1.height", sps.GetHeight());
@@ -513,7 +516,6 @@ void* mp4close(void *mp4)
 	getUpdDifTime(&tv);
 	Log(">mp4close [%p]\n",mp4);
 	// Close file
-    MP4Dump(mp4,true);
 	MP4Close(mp4);
 	Log("<mp4close [%p,time:%llu]\n",mp4,getDifTime(&tv)/1000);
 }

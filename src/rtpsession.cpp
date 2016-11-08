@@ -704,7 +704,7 @@ void RTPSession::onRTPPacket(BYTE* buffer, DWORD size)
 	} else {
 		//Create normal packet
 		packet = new RTPTimedPacket(media,buffer,size);
-		if (media==MediaFrame::Video && !isRTX) UltraDebug("RTX: Got  %d:%s packet #%d ts:%u\n",type,VideoCodec::GetNameFor((VideoCodec::Type)codec),packet->GetSeqNum(),packet->GetTimestamp());
+		//if (media==MediaFrame::Video && !isRTX) UltraDebug("RTX: Got  %d:%s packet #%d ts:%u\n",type,VideoCodec::GetNameFor((VideoCodec::Type)codec),packet->GetSeqNum(),packet->GetTimestamp());
 	}
 
 	//Set codec & type again

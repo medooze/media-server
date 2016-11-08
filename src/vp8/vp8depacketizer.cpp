@@ -6,6 +6,7 @@
  */
 
 #include "vp8depacketizer.h"
+#include "vp8.h"
 #include "media.h"
 #include "codecs.h"
 #include "rtp.h"
@@ -43,26 +44,40 @@ MediaFrame* VP8Depacketizer::AddPacket(RTPPacket *packet)
 	return AddPayload(packet->GetMediaData(),packet->GetMediaLength());
 }
 
-MediaFrame* VP8Depacketizer::AddPayload(BYTE* payload, DWORD payload_len)
+MediaFrame* VP8Depacketizer::AddPayload(BYTE* payload, DWORD len)
 {
 	//Check lenght
-	if (!payload_len)
+	if (!len)
 		//Exit
 		return NULL;
     
-    //Is first?
-    int first = frame.GetMaxMediaLength(); 
+	//Is first?
+	int first = !frame.GetLength(); 
     
-    //Skip desc
-	DWORD pos = frame.AppendMedia(payload+6, payload_len-6);
+	VP8PayloadDescriptor desc;
+
+	//Decode payload descriptr
+	DWORD descLen = desc.Parse(payload,len);
+
+	
+	//Skip desc
+	DWORD pos = frame.AppendMedia(payload+descLen, len-descLen);
+	
 	//Add RTP packet
-	frame.AddRtpPacket(pos,payload_len-6,payload,6);
+	frame.AddRtpPacket(pos,len-descLen,payload,descLen);
+	
+	//If it is first
+	if (first)
+	{
+		//calculate if it is an iframe
+		frame.SetIntra(!(payload[descLen] & 0x01));
+		//Fakse size
+		frame.SetWidth(640);
+		frame.SetHeight(480);
+	}
     
-    //If it is first
-    if (first)
-        //calculate if it is an iframe
-        frame.SetIntra(payload[6] & 0x01);
-    
+
+		
 	return &frame;
 }
 

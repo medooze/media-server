@@ -130,10 +130,8 @@ public:
 	}
 	virtual MediaFrame* AddPayload(BYTE* payload,DWORD payload_len)
 	{
-		//Get current position in frame
-		DWORD pos = frame.GetLength();
 		//And data
-		frame.AppendMedia(payload, payload_len);
+		DWORD pos = frame.AppendMedia(payload, payload_len);
 		//Add RTP packet
 		frame.AddRtpPacket(pos,payload_len,NULL,0);
 		//Return it
@@ -147,6 +145,10 @@ public:
 		memset(frame.GetData(),0,frame.GetMaxMediaLength());
 		//Clear length
 		frame.SetLength(0);
+	}
+	virtual DWORD GetTimestamp() 
+	{
+		return frame.GetTimeStamp();
 	}
 private:
 	AudioFrame frame;
