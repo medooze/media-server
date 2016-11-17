@@ -920,7 +920,7 @@ int RTPTransport::ReadRTP()
 			//If use candidate to a differentIP  is set or we don't have another IP address
 			if (recIP==INADDR_ANY || 
 				(recIP==from_addr.sin_addr.s_addr && sendAddr.sin_addr.s_addr!=from_addr.sin_addr.s_addr) || 
-				(stun->HasAttribute(STUNMessage::Attribute::UseCandidate) && candPrio>prio)
+				(stun->HasAttribute(STUNMessage::Attribute::UseCandidate) && candPrio>=prio)
 			)
 			{
 				//Check if nominated
