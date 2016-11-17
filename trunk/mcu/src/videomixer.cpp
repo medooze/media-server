@@ -1103,8 +1103,10 @@ int VideoMixer::ResetSlots(int mosaicId)
 
 	//For each slot
 	for (int i=0; i<mosaic->GetNumSlots();++i)
-		//Set it in the mosaic
-		mosaic->SetSlot(i,Mosaic::SlotFree);
+		//If it was not VAD
+		if ( mosaic->GetSlots()[i]!=Mosaic::SlotVAD)
+			//Free it
+			mosaic->SetSlot(i,Mosaic::SlotFree);
 
 	//Recalculate positions
 	mosaic->CalculatePositions();
