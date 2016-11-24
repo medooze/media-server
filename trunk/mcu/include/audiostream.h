@@ -59,5 +59,7 @@ private:
 	volatile int 	receivingAudio;
 
 	bool		muted;
+	
+	DWORD		frameTime;
 };
 #endif

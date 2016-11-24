@@ -183,6 +183,7 @@
         </df>
         <df name="vp8">
           <in>vp8decoder.cpp</in>
+          <in>vp8depacketizer.cpp</in>
           <in>vp8encoder.cpp</in>
         </df>
         <in>CPUMonitor.cpp</in>
@@ -4479,6 +4480,10 @@
         </ccTool>
       </item>
       <item path="src/vp8/vp8decoder.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
+      </item>
+      <item path="src/vp8/vp8depacketizer.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
         </ccTool>
       </item>
@@ -8999,6 +9004,10 @@
         </ccTool>
       </item>
       <item path="src/vp8/vp8decoder.cpp" ex="false" tool="1" flavor2="4">
+        <ccTool flags="0">
+        </ccTool>
+      </item>
+      <item path="src/vp8/vp8depacketizer.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
         </ccTool>
       </item>

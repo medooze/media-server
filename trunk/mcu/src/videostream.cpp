@@ -132,6 +132,9 @@ int VideoStream::Init(VideoInput *input,VideoOutput *output)
 	videoInput  = input;
 	videoOutput = output;
 	
+	//The time of the first one
+	gettimeofday(&first,NULL);
+	
 	//No estamos haciendo nada
 	sendingVideo=0;
 	receivingVideo=0;
@@ -369,7 +372,6 @@ int VideoStream::StopReceiving()
 *******************************************/
 int VideoStream::SendVideo()
 {
-	timeval first;
 	timeval prev;
 	timeval lastFPU;
 	
@@ -408,9 +410,6 @@ int VideoStream::SendVideo()
 
 	//Iniciamos el tamama�o del encoder
  	videoEncoder->SetSize(videoGrabWidth,videoGrabHeight);
-
-	//The time of the first one
-	gettimeofday(&first,NULL);
 
 	//The time of the previos one
 	gettimeofday(&prev,NULL);

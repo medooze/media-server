@@ -89,6 +89,8 @@ private:
 	bool	inited;
 	bool	sendFPU;
 	bool	muted;
+	
+	timeval first;
 };
 
 #endif
