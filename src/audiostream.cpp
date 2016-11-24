@@ -71,6 +71,8 @@ int AudioStream::Init(AudioInput *input, AudioOutput *output)
 	//Y aun no estamos mandando nada
 	sendingAudio=0;
 	receivingAudio=0;
+	
+	frameTime = 0;
 
 	Log("<Init audio stream\n");
 
@@ -388,8 +390,6 @@ int AudioStream::SendAudio()
 	SWORD 		recBuffer[1024];
 	int 		sendBytes=0;
 	struct timeval 	before;
-	;
-	DWORD		frameTime=0;
 
 	//Log
 	Log(">SendAudio\n");
