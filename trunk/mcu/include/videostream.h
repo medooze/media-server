@@ -90,7 +90,7 @@ private:
 	bool	sendFPU;
 	bool	muted;
 	
-	timeval first;
+	timeval ini;
 };
 
 #endif

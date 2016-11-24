@@ -132,12 +132,12 @@ int VideoStream::Init(VideoInput *input,VideoOutput *output)
 	videoInput  = input;
 	videoOutput = output;
 	
-	//The time of the first one
-	gettimeofday(&first,NULL);
-	
 	//No estamos haciendo nada
 	sendingVideo=0;
 	receivingVideo=0;
+	
+	//The time of init
+	gettimeofday(&ini,NULL);
 
 	Log("<Init video stream\n");
 
@@ -543,10 +543,10 @@ int VideoStream::SendVideo()
 		}
 
 		//Add frame size in bits to bitrate calculator
-		bitrateAcu.Update(getDifTime(&first)/1000,videoFrame->GetLength()*8);
+		bitrateAcu.Update(getDifTime(&ini)/1000,videoFrame->GetLength()*8);
 
 		//Set frame timestamp
-		videoFrame->SetTimestamp(getDifTime(&first)/1000);
+		videoFrame->SetTimestamp(getDifTime(&ini)/1000);
 
 		//Check if we have mediaListener
 		if (mediaListener)

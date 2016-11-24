@@ -60,6 +60,6 @@ private:
 
 	bool		muted;
 	
-	DWORD		frameTime;
+	timeval		ini;
 };
 #endif

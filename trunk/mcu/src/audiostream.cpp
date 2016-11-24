@@ -72,7 +72,8 @@ int AudioStream::Init(AudioInput *input, AudioOutput *output)
 	sendingAudio=0;
 	receivingAudio=0;
 	
-	frameTime = 0;
+	//The time of init
+	gettimeofday(&ini,NULL);
 
 	Log("<Init audio stream\n");
 
@@ -427,6 +428,9 @@ int AudioStream::SendAudio()
 
 	//Get ts multiplier
 	float multiplier = clock/rate;
+	
+	//Get initial time
+	DWORD frameTime = getDifTime(&ini);
 
 	//Mientras tengamos que capturar
 	while(sendingAudio)
