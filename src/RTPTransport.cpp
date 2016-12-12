@@ -935,8 +935,10 @@ int RTPTransport::ReadRTP()
 				//Log
 				Log("-RTPTransport::ReadRTP() | ICE: Now sending to [%s:%d:%d] prio:%d\n",inet_ntoa(sendAddr.sin_addr), ntohs(sendAddr.sin_port),recIP, prio);
 				
-				//Request a I frame
-				listener->onRemotePeer(inet_ntoa(sendAddr.sin_addr), ntohs(sendAddr.sin_port));
+				//If we start receiving from a drifferent ip address or it is the first one
+				if (recIP!=from_addr.sin_addr.s_addr)
+					//Request a I frame
+					listener->onRemotePeer(inet_ntoa(sendAddr.sin_addr), ntohs(sendAddr.sin_port));
 
 				DWORD len = 0;
 				//Create trans id
