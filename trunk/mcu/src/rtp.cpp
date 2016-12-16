@@ -254,7 +254,7 @@ RTCPCompoundPacket* RTCPCompoundPacket::Parse(BYTE *data,DWORD size)
 				break;
 			default:
 				//Skip
-				Debug("-Unknown rtcp packet type [%d]\n",header->pt);
+				Debug("Unknown rtcp packet type [%d]\n",header->pt);
 		}
 		//Get size of the packet
 		DWORD len = GetRTCPHeaderLength(header);

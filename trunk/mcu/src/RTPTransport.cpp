@@ -439,7 +439,7 @@ int RTPTransport::SetRemotePort(char *ip,int sendPort)
 		return Log("-RTPTransport::SetRemotePort() | NAT already binded sucessfully to [%s:%d]\n",inet_ntoa(sendAddr.sin_addr),recPort);
 
 	//Ok, let's et it
-	Log("-RTPTransport::SetRemotePort() | [%s:%d]\n",ip,sendPort);
+	Log("-RTPTransport::SetRemotePort() | [%s:%u]\n",ip,sendPort);
 
 	//Ip y puerto de destino
 	sendAddr.sin_addr.s_addr 	= ipAddr;
@@ -1189,7 +1189,7 @@ int RTPTransport::Run()
 
 void RTPTransport::onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMasterKey,DWORD localMasterKeySize,BYTE* remoteMasterKey,DWORD remoteMasterKeySize)
 {
-	Log("-RTPTransport::onDTLSSetup()");
+	Log("-RTPTransport::onDTLSSetup()\n");
 
 	switch (suite)
 	{
