@@ -231,7 +231,7 @@ public:
 	rtp_hdr_t*	GetRTPHeader()		const { return (rtp_hdr_t*)buffer;	}
 	rtp_hdr_ext_t*	GeExtensionHeader()	const { return  GetX() ? (rtp_hdr_ext_t*)(buffer+sizeof(rtp_hdr_t)+4*header->cc) : NULL;	}
 	DWORD GetRTPHeaderLen()		const { return sizeof(rtp_hdr_t)+4*header->cc+GetExtensionSize();	}
-	WORD  GetExtensionType()	const { return GeExtensionHeader()->ext_type;				}
+	WORD  GetExtensionType()	const { return ntohs(GeExtensionHeader()->ext_type);				}
 	WORD  GetExtensionLength()	const { return GetX() ? ntohs(GeExtensionHeader()->len)*4 : 0;		}
 	DWORD GetExtensionSize()	const { return GetX() ? GetExtensionLength()+sizeof(rtp_hdr_ext_t) : 0; };
 	DWORD GetCodec()		const { return codec;				}

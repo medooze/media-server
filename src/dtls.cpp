@@ -396,7 +396,7 @@ int DTLSConnection::Read(BYTE* data,int size)
 inline
 void DTLSConnection::onSSLInfo(int where, int ret)
 {
-	Debug("[where:%d, ret:%d] | SSL status: %s | handshake done: %s\n", where, ret, SSL_state_string_long(this->ssl), SSL_is_init_finished(this->ssl) ? "yes" : "no");
+	Debug("-DTLSConnection::onSSLInfo() | SSL status: %s [where:%d, ret:%d] | handshake done: %s\n",  SSL_state_string_long(this->ssl),where, ret, SSL_is_init_finished(this->ssl) ? "yes" : "no");
 
 	if (where & SSL_CB_HANDSHAKE_START)
 	{

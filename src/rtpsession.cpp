@@ -155,7 +155,7 @@ void RTPSession::FlushRTXPackets()
 	//Lock mutex inside the method
 	ScopedLock method(sendMutex);
 	
-	Debug("-FlushRTXPackets\n");
+	Debug("-FlushRTXPackets(%s)\n",MediaFrame::TypeToString(media));
 
 	//Delete rtx packets
 	for (RTPOrderedPackets::iterator it = rtxs.begin(); it!=rtxs.end();++it)
@@ -183,7 +183,7 @@ void RTPSession::SetSendingRTPMap(RTPMap &map)
 int RTPSession::SetLocalCryptoSDES(const char* suite, const char* key64)
 {
 	//Log
-	Log("-RTPSession::SetLocalCryptoSDES() | [key:%s,suite:%s]\n",key64,suite);
+	Log("-RTPSession::SetLocalCryptoSDES(%s) | [key:%s,suite:%s]\n",MediaFrame::TypeToString(media),key64,suite);
 
 	//Set it on transport
 	int ret = transport.SetLocalCryptoSDES(suite,key64);
@@ -205,7 +205,7 @@ int RTPSession::SetProperties(const Properties& properties)
 	//For each property
 	for (Properties::const_iterator it=properties.begin();it!=properties.end();++it)
 	{
-		Log("-RTPSession::SetProperties() | Setting RTP property [%s:%s]\n",it->first.c_str(),it->second.c_str());
+		Log("-RTPSession::SetProperties(%s) | Setting RTP property [%s:%s]\n",MediaFrame::TypeToString(media),it->first.c_str(),it->second.c_str());
 
 		//Check
 		if (it->first.compare("rtcp-mux")==0)
@@ -319,7 +319,7 @@ bool RTPSession::SetSendingCodec(DWORD codec)
 	//Check rtp map
 	if (!rtpMapOut)
 		//Error
-		return Error("-RTPSession::SetSendingCodec() | error: no out RTP map\n");
+		return Error("-RTPSession::SetSendingCodec(%s) | error: no out RTP map\n",MediaFrame::TypeToString(media));
 
 	//Try to find it in the map
 	DWORD type = rtpMapOut->GetTypeForCodec(codec);
@@ -327,9 +327,9 @@ bool RTPSession::SetSendingCodec(DWORD codec)
 	//If not found
 	if (type==RTPMap::NotFound)
 		//Not found
-		return Error("-RTPSession::SetSendingCodec() | error: codec mapping not found [codec:%s]\n",GetNameForCodec(media,codec));
+		return Error("-RTPSession::SetSendingCodec(%s) | error: codec mapping not found [codec:%s]\n",MediaFrame::TypeToString(media),GetNameForCodec(media,codec));
 	//Log it
-	Log("-RTPSession::SetSendingCodec() | [codec:%s,type:%d]\n",GetNameForCodec(media,codec),type);
+	Log("-RTPSession::SetSendingCodec(%s) | [codec:%s,type:%d]\n",MediaFrame::TypeToString(media),GetNameForCodec(media,codec),type);
 	//Set type in header
 	((rtp_hdr_t *)sendPacket)->pt = type;
 	//Set type
@@ -401,7 +401,7 @@ int RTPSession::SendPacket(RTCPCompoundPacket &rtcp)
 	//Check result
 	if (len<=0 || len>size)
 		//Error
-		return Error("-RTPSession::SendPacket() | Error serializing RTCP packet [len:%d]\n",len);
+		return Error("-RTPSession::SendPacket(%s) | Error serializing RTCP packet [len:%d]\n",MediaFrame::TypeToString(media),len);
 
 	//Send it
 	len = transport.SendRTCPPacket(data,len);
@@ -409,7 +409,7 @@ int RTPSession::SendPacket(RTCPCompoundPacket &rtcp)
 	//Check error
 	if (len<0)
 		//Return
-		return Error("-RTPSession::SendPacket() | Error sending RTCP packet [%d]\n",errno);
+		return Error("-RTPSession::SendPacket(%s) | Error sending RTCP packet [%d]\n",MediaFrame::TypeToString(media),errno);
 
 	//INcrease stats
 	send.numPackets++;
@@ -483,7 +483,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 
 	//Comprobamos que quepan
 	if (ini+packet.GetMediaLength()>MTU)
-		return Error("-RTPSession::SendPacket() | Overflow [size:%d,max:%d]\n",ini+packet.GetMediaLength(),MTU);
+		return Error("-RTPSession::SendPacket(%s) | Overflow [size:%d,max:%d]\n",MediaFrame::TypeToString(media),ini+packet.GetMediaLength(),MTU);
 
 	//Copiamos los datos
         memcpy(sendPacket+ini,packet.GetMediaData(),packet.GetMediaLength());
@@ -550,7 +550,7 @@ void RTPSession::onRTPPacket(BYTE* buffer, DWORD size)
 	if (!rtpMapIn)
 	{
 		//Error
-		Error("-RTPSession::ReadRTP() | RTP map not set\n");
+		Error("-RTPSession::ReadRTP(%s) | RTP map not set\n",MediaFrame::TypeToString(media));
 		//Exit
 		return;
 	}
@@ -566,7 +566,7 @@ void RTPSession::onRTPPacket(BYTE* buffer, DWORD size)
 	if (codec==RTPMap::NotFound)
 	{
 		//Exit
-		Error("-RTPSession::ReadRTP() | RTP packet type unknown [%d]\n",type);
+		Error("-RTPSession::ReadRTP(%s) | RTP packet type unknown [%d]\n",MediaFrame::TypeToString(media),type);
 		//Exit
 		return;
 	}
@@ -578,7 +578,7 @@ void RTPSession::onRTPPacket(BYTE* buffer, DWORD size)
 		if (codec!=VideoCodec::RTX)
 		{
 			//Log
-			Log("-RTPSession::ReadRTP() | New SSRC [new:%x,old:%x]\n",ssrc,recv.SSRC);
+			Log("-RTPSession::ReadRTP(%s) | New SSRC [new:%x,old:%x]\n",MediaFrame::TypeToString(media),ssrc,recv.SSRC);
 			//Send SR to old one
 			SendSenderReport();
 			//Reset packets
@@ -600,7 +600,7 @@ void RTPSession::onRTPPacket(BYTE* buffer, DWORD size)
 				//Store it
 				recvRTX.SSRC = ssrc;
 				//Log
-				Log("-RTPSession::ReadRTP() | Gor RTX for SSRC [rtx:%x,ssrc:%x]\n",recvRTX.SSRC,recv.SSRC);
+				Log("-RTPSession::ReadRTP(%s) | Gor RTX for SSRC [rtx:%x,ssrc:%x]\n",MediaFrame::TypeToString(media),recvRTX.SSRC,recv.SSRC);
 			}	
 			/*
 			       The format of a retransmission packet is shown below:
@@ -642,7 +642,7 @@ void RTPSession::onRTPPacket(BYTE* buffer, DWORD size)
 			if (codec==RTPMap::NotFound)
 			{
 				 //Error
-				 Error("-RTPSession::ReadRTP() | RTP RTX packet apt type unknown [%d]\n",type);
+				 Error("-RTPSession::ReadRTP(%s) | RTP RTX packet apt type unknown [%d]\n",MediaFrame::TypeToString(media),type);
 				 //Exi
 				 return;
 			}
@@ -669,10 +669,13 @@ void RTPSession::onRTPPacket(BYTE* buffer, DWORD size)
 		//Check codec
 		if (c==RTPMap::NotFound)
 		{
+			::Dump(buffer,64);
+			red->Dump();
+			
 			//Delete red packet
 			delete(red);
 			//Exit
-			Error("-RTPSession::ReadRTP() | RTP packet type unknown for primary type of redundant data [%d,rd:%d]\n",t,codec);
+			Error("-RTPSession::ReadRTP(%s) | RTP packet type unknown for primary type of redundant data [%d,rd:%d]\n",MediaFrame::TypeToString(media),t,codec);
 			return;
 		}
 		
@@ -693,7 +696,7 @@ void RTPSession::onRTPPacket(BYTE* buffer, DWORD size)
 				//Delete red packet
 				delete(red);
 				//Exit
-				Error("-RTPSession::ReadRTP() | RTP packet type unknown for primary type of secundary data [%d,%d,red:%d]\n",i,t,codec);
+				Error("-RTPSession::ReadRTP(%s) | RTP packet type unknown for primary type of secundary data [%d,%d,red:%d]\n",MediaFrame::TypeToString(media),i,t,codec);
 				return;
 			}
 			//Set it
@@ -731,7 +734,7 @@ void RTPSession::onRTPPacket(BYTE* buffer, DWORD size)
 	//Update lost packets
 	int lost = losts.AddPacket(packet);
 
-	if (lost) UltraDebug("RTX: Missing %d [nack:%d,diff:%llu,rtt:%llu]\n",lost,isNACKEnabled,getDifTime(&lastFPU),rtt);
+	if (lost) UltraDebug("RTX: Missing %d [media:%s,nack:%d,diff:%llu,rtt:%llu]\n",MediaFrame::TypeToString(media),lost,isNACKEnabled,getDifTime(&lastFPU),rtt);
 	
 	//If nack is enable t waiting for a PLI/FIR response (to not oeverflow)
 	if (isNACKEnabled && getDifTime(&lastFPU)/1000>rtt/2 && lost)
@@ -886,7 +889,7 @@ void RTPSession::CancelGetPacket()
 
 void RTPSession::onRemotePeer(const char* ip, const short port)
 {
-	Log("RTPSession::onRemotePeer [%s:%d",ip,port);
+	Log("-RTPSession::onRemotePeer(%s) [%s:%u]\n",MediaFrame::TypeToString(media),ip,port);
 	
 	if (listener)
 		//Request FPU
@@ -1316,7 +1319,7 @@ void RTPSession::SetRTT(DWORD rtt)
 		packets.SetMaxWaitTime(60);
 	}
 	//Debug
-	UltraDebug("-RTPSession::SetRTT() | [%dms,nack:%d]\n",rtt,isNACKEnabled);
+	UltraDebug("-RTPSession::SetRTT(%s) | [%dms,nack:%d]\n",MediaFrame::TypeToString(media),rtt,isNACKEnabled);
 }
 
 void RTPSession::onTargetBitrateRequested(DWORD bitrate)

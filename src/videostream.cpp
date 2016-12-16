@@ -646,6 +646,8 @@ int VideoStream::RecVideo()
 		//Lost packets since last
 		DWORD lost = 0;
 
+		Debug("-Seq: %u last: %u\n",seq,lastSeq);
+		
 		//If not first
 		if (lastSeq!=RTPPacket::MaxExtSeqNum)
 			//Calculate losts

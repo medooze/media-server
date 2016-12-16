@@ -69,7 +69,7 @@ public:
 	
 	
 	void SetMuxRTCP(int flag)	{ muxRTCP = flag; };
-	void SetSecure(int flag)	{ encript = decript = true; };
+	void SetSecure(int flag)	{ encript = true; decript = true; };
 
 	virtual void onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMasterKey,DWORD localMasterKeySize,BYTE* remoteMasterKey,DWORD remoteMasterKeySize);
 private:
