@@ -734,7 +734,7 @@ void RTPSession::onRTPPacket(BYTE* buffer, DWORD size)
 	//Update lost packets
 	int lost = losts.AddPacket(packet);
 
-	if (lost) UltraDebug("RTX: Missing %d [media:%s,nack:%d,diff:%llu,rtt:%llu]\n",MediaFrame::TypeToString(media),lost,isNACKEnabled,getDifTime(&lastFPU),rtt);
+	if (lost) UltraDebug("RTX: Missing %d [media:%s,nack:%d,diff:%llu,rtt:%llu]\n",lost,MediaFrame::TypeToString(media),isNACKEnabled,getDifTime(&lastFPU),rtt);
 	
 	//If nack is enable t waiting for a PLI/FIR response (to not oeverflow)
 	if (isNACKEnabled && getDifTime(&lastFPU)/1000>rtt/2 && lost)
@@ -745,8 +745,8 @@ void RTPSession::onRTPPacket(BYTE* buffer, DWORD size)
 		//Get nacks for lost
 		std::list<RTCPRTPFeedback::NACKField*> nacks = losts.GetNacks();
 
-		//Generate new RTCP NACK report
-		RTCPCompoundPacket* rtcp = new RTCPCompoundPacket();
+		//Create rtcp sender retpor
+		RTCPCompoundPacket* rtcp = CreateSenderReport();
 		
 		//Create NACK
 		RTCPRTPFeedback *nack = RTCPRTPFeedback::Create(RTCPRTPFeedback::NACK,send.SSRC,recv.SSRC);
