@@ -612,7 +612,7 @@ int VideoStream::RecVideo()
 	DWORD		frameTime = (DWORD)-1;
 	DWORD		lastSeq = RTPPacket::MaxExtSeqNum;
 	bool		waitIntra = false;
-	DWORD		minFPUPeriod = 500*1000;
+	DWORD		minFPUPeriod = videoProperties.GetProperty("video.minFPUPeriod",500)*1000;
 	
 	Log(">RecVideo [minFPUPeriod:%d]\n",minFPUPeriod);
 	
