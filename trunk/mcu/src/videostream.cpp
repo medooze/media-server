@@ -612,8 +612,9 @@ int VideoStream::RecVideo()
 	DWORD		frameTime = (DWORD)-1;
 	DWORD		lastSeq = RTPPacket::MaxExtSeqNum;
 	bool		waitIntra = false;
+	DWORD		minFPUPeriod = 500*1000;
 	
-	Log(">RecVideo\n");
+	Log(">RecVideo [minFPUPeriod:%d]\n",minFPUPeriod);
 	
 	//Get now
 	gettimeofday(&before,NULL);
@@ -663,7 +664,7 @@ int VideoStream::RecVideo()
 		if(lostCount || waitIntra)
 		{
 			//Check if we got listener and more than 1/2 second have elapsed from last request
-			if (listener && getDifTime(&lastFPURequest)>500000)
+			if (listener && getDifTime(&lastFPURequest)>minFPUPeriod)
 			{
 				//Debug
 				Debug("-Requesting FPU lost %d\n",lostCount);
@@ -752,7 +753,7 @@ int VideoStream::RecVideo()
 		if(!videoDecoder->DecodePacket(buffer,size,lost,packet->GetMark()))
 		{
 			//Check if we got listener and more than 1/2 seconds have elapsed from last request
-			if (listener && getDifTime(&lastFPURequest)>500000)
+			if (listener && getDifTime(&lastFPURequest)>minFPUPeriod)
 			{
 				//Debug
 				Log("-Requesting FPU decoder error\n");
