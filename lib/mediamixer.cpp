@@ -116,6 +116,7 @@ extern "C"
 	struct MP4PLayerListener {
 		void (*onRTPPacket) (void*,void*);
 		void (*onMediaFrame) (void*,void*);
+		void (*onSSRCMediaFrame) (void*,DWORD,void*);
 		void (*onEnd) (void*);
 	};
 	
@@ -138,6 +139,11 @@ extern "C"
 		{
 			if (listener->onMediaFrame)
 				listener->onMediaFrame(arg,&frame);
+		}
+		virtual void onMediaFrame(DWORD ssrc, MediaFrame &frame)
+		{
+			if (listener->onSSRCMediaFrame)
+				listener->onSSRCMediaFrame(arg,ssrc,&frame);
 		}
 		virtual void onEnd()
 		{
@@ -195,8 +201,9 @@ extern "C"
 
 	void*	AudioMixerCreate()
 	{
+		Properties properties;
 		AudioMixer* mixer = new AudioMixer();
-		mixer->Init(false);
+		mixer->Init(properties);
 		return mixer;
 	}
 
@@ -231,7 +238,7 @@ extern "C"
 
 	void*	AudioEncoderCreate(void* input,uint8_t codec)
 	{
-		AudioEncoder* enc = new AudioEncoder();
+		AudioEncoderWorker* enc = new AudioEncoderWorker();
 		enc->SetAudioCodec((AudioCodec::Type)codec);
 		enc->Init((AudioInput*)input);
 		enc->StartEncoding();
@@ -240,24 +247,24 @@ extern "C"
 
 	void	AudioEncoderAddRecorderListener(void* enc,void* recorder)
 	{
-		((AudioEncoder*)enc)->AddListener((MP4Recorder*)recorder);
+		((AudioEncoderWorker*)enc)->AddListener((MP4Recorder*)recorder);
 	}
 
 	void	AudioEncoderRemoveRecorederListener(void* enc,void* recorder)
 	{
-		((AudioEncoder*)enc)->RemoveListener((MP4Recorder*)recorder);
+		((AudioEncoderWorker*)enc)->RemoveListener((MP4Recorder*)recorder);
 	}
 
 	void	AudioEncoderDelete(void* enc)
 	{
-		((AudioEncoder*)enc)->StopEncoding();
-		((AudioEncoder*)enc)->End();
-		delete(((AudioEncoder*)enc));
+		((AudioEncoderWorker*)enc)->StopEncoding();
+		((AudioEncoderWorker*)enc)->End();
+		delete(((AudioEncoderWorker*)enc));
 	}
 
 	void*	AudioDecoderCreate(void* output)
 	{
-		AudioDecoder* dec = new AudioDecoder();
+		AudioDecoderWorker* dec = new AudioDecoderWorker();
 		dec->Init((AudioOutput*)output);
 		dec->Start();
 		return  dec;
@@ -269,14 +276,14 @@ extern "C"
 		RTPPacket pkt(MediaFrame::Audio,codec,codec);
 		pkt.SetPayload(data,size);
 		pkt.SetTimestamp(timestamp);
-		((AudioDecoder*)dec)->onRTPPacket(pkt);
+		((AudioDecoderWorker*)dec)->onRTPPacket(pkt);
 	}
 
 	void	AudioDecoderDelete(void* dec)
 	{
-		((AudioDecoder*)dec)->Stop();
-		((AudioDecoder*)dec)->End();
-		delete(((AudioDecoder*)dec));
+		((AudioDecoderWorker*)dec)->Stop();
+		((AudioDecoderWorker*)dec)->End();
+		delete(((AudioDecoderWorker*)dec));
 	}
 }
 
