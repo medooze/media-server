@@ -65,6 +65,7 @@ MP4Recorder	MP4RecorderCreate();
 int		MP4RecorderRecord(MP4Recorder recorder,const char* filename);
 int		MP4RecorderStop(MP4Recorder recorder);
 void		MP4RecorderOnMediaFrame(MP4Recorder recorder,MediaFrame frame);
+void		MP4RecorderOnMediaFrameSSRC(MP4Recorder recorder,DWORD ssrc,MediaFrame frame);
 void		MP4RecorderDelete(MP4Recorder recorder);
 
 MP4Player	MP4PlayerCreate(MP4PLayerListener* listener, void *arg);

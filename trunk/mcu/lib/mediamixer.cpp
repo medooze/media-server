@@ -106,6 +106,11 @@ extern "C"
 	{
 		((MP4Recorder*)recorder)->onMediaFrame(*(MediaFrame*)frame);
 	}
+	
+	void MP4RecorderOnMediaFrameSSRC(void* recorder,DWORD ssrc,void* frame)
+	{
+		((MP4Recorder*)recorder)->onMediaFrame(ssrc,*(MediaFrame*)frame);
+	}
 
 	void MP4RecorderDelete(void* recorder)
 	{
