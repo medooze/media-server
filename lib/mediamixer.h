@@ -43,6 +43,7 @@ typedef struct
 {
 	void (*onRTPPacket) (void*,RTPPacket);
 	void (*onMediaFrame) (void*,MediaFrame);
+	void (*onSSRCMediaFrame) (void*,DWORD,void*);
 	void (*onEnd) (void*);
 } MP4PLayerListener;
 
