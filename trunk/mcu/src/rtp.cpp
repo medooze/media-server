@@ -123,10 +123,16 @@ public:
 	}
 	virtual MediaFrame* AddPacket(RTPPacket *packet)
 	{
+		//Check it is from same packet
+		if (frame.GetTimeStamp()!=packet->GetTimestamp())
+			//Reset frame
+			ResetFrame();
 		//Set timestamp
 		frame.SetTimestamp(packet->GetTimestamp());
 		//Add payload
-		return AddPayload(packet->GetMediaData(),packet->GetMediaLength());
+		AddPayload(packet->GetMediaData(),packet->GetMediaLength());
+		//If it is last return frame
+		return packet->GetMark() ? &frame : NULL;
 	}
 	virtual MediaFrame* AddPayload(BYTE* payload,DWORD payload_len)
 	{

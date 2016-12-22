@@ -67,16 +67,10 @@ void Recorder::onRTPPacket(RTPPacket &packet)
 			{
 				//Append to frame
 				VideoFrame *frame = (VideoFrame*)video->AddPacket(&packet);
-				//Is it last
-				if (packet.GetMark())
-				{
-					//If got frame
-					if (frame)
-						//Record frame
-						onMediaFrame(packet.GetSSRC(),*frame);
-					//Clear frame
-					video->ResetFrame();
-				}
+				//If got frame
+				if (frame)
+					//Record frame
+					onMediaFrame(packet.GetSSRC(),*frame);
 			}
 			break;
 		case MediaFrame::Text:
