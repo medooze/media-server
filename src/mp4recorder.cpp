@@ -6,6 +6,9 @@
 #include "mp4recorder.h"
 #include "h264/h264.h"
 #include "aacconfig.h"
+#include "speex/speex_resampler.h"
+
+MP4Recorder* MP4Recorder::singleton;
 
 mp4track::mp4track(MP4FileHandle mp4)
 {
@@ -245,6 +248,7 @@ int mp4track::FlushVideoFrame(VideoFrame* frame,DWORD duration)
 			MediaFrame::RtpPacketization *rtp = *(it++);
 			//is last?
 			last = (it==rtpInfo.end());
+
 			//Create rtp packet
 			MP4AddRtpPacket(mp4, hint, last, 0);
 
@@ -292,7 +296,6 @@ int mp4track::FlushVideoFrame(VideoFrame* frame,DWORD duration)
 				}
 			}
 		}
-
 		//Save rtp
 		MP4WriteRtpHint(mp4, hint, duration, frame->IsIntra());
 	}
@@ -572,7 +575,7 @@ void MP4Recorder::onMediaFrame(DWORD ssrc, MediaFrame &frame)
 
 	//L0ck the  access to the file
 	pthread_mutex_lock(&mutex);
-
+	
 	//Check we are recording
 	if (recording)
 	{
@@ -639,14 +642,10 @@ void MP4Recorder::onMediaFrame(DWORD ssrc, MediaFrame &frame)
 					waitVideo = 0;
 					//Set first timestamp
 					getUpdDifTime(&first);
-					//And set it to be the first
-					videoFrame.SetTimestamp(0);
-				} else {
-					// Calculate new timestamp
-					QWORD timestamp = getDifTime(&first)/1000;
-					//Update timestamp
-					videoFrame.SetTimestamp(timestamp);
 				}
+			
+				// Calculate new timestamp
+				QWORD timestamp = getDifTime(&first)/1000;
 
 				//Check if we have to write or not
 				if (!waitVideo)
@@ -660,7 +659,23 @@ void MP4Recorder::onMediaFrame(DWORD ssrc, MediaFrame &frame)
 						videoTrack->CreateVideoTrack(videoFrame.GetCodec(),videoFrame.GetWidth(),videoFrame.GetHeight());
 						//Add it to map
 						videoTracks[ssrc] = videoTrack;
+						//If not the first one
+						if (timestamp)
+						{
+							//Create empty video frame
+							VideoFrame empty(videoFrame.GetCodec(),0);
+							//Set empty data
+							empty.SetTimestamp(0);
+							//Set duration until first real frame
+							empty.SetDuration(timestamp);
+							//Send first empty packet
+							videoTrack->WriteVideoFrame(empty);
+						}
 					}
+					
+					//Update timestamp
+					//TODO: Don't do it
+					videoFrame.SetTimestamp(timestamp);
 
 					// Save audio rtp packet
 					videoTrack->WriteVideoFrame(videoFrame);
@@ -709,6 +724,7 @@ void MP4Recorder::onMediaFrame(DWORD ssrc, MediaFrame &frame)
 
 	//Unlock the  access to the file
 	pthread_mutex_unlock(&mutex);
+	
 }
 
 

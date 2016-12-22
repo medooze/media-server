@@ -38,10 +38,16 @@ void VP8Depacketizer::ResetFrame()
 
 MediaFrame* VP8Depacketizer::AddPacket(RTPPacket *packet)
 {
+	//Check it is from same packet
+	if (frame.GetTimeStamp()!=packet->GetTimestamp())
+		//Reset frame
+		ResetFrame();
 	//Set timestamp
 	frame.SetTimestamp(packet->GetTimestamp());
 	//Add payload
-	return AddPayload(packet->GetMediaData(),packet->GetMediaLength());
+	AddPayload(packet->GetMediaData(),packet->GetMediaLength());
+	//If it is last return frame
+	return packet->GetMark() ? &frame : NULL;
 }
 
 MediaFrame* VP8Depacketizer::AddPayload(BYTE* payload, DWORD len)
