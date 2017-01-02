@@ -8,7 +8,6 @@
 #include "aacconfig.h"
 #include "speex/speex_resampler.h"
 
-MP4Recorder* MP4Recorder::singleton;
 
 mp4track::mp4track(MP4FileHandle mp4)
 {
