@@ -8,6 +8,7 @@
 #include "bfcp/BFCPFloorControlServer.h"
 #include "bfcp.h"
 
+extern MP4Recorder* recorder;
 
 /************************
 * MultiConf
@@ -48,6 +49,12 @@ MultiConf::MultiConf(const std::wstring &tag) :
 
 	//No chair
 	chairId = 0;
+	
+	MP4Recorder::singleton = new MP4Recorder();
+	
+	MP4Recorder::singleton->Create("/tmp/conf.mp4");
+	
+	MP4Recorder::singleton->Record();
 }
 
 /************************
@@ -56,6 +63,11 @@ MultiConf::MultiConf(const std::wstring &tag) :
 *************************/
 MultiConf::~MultiConf()
 {
+	
+	MP4Recorder::singleton->Stop();
+	
+	delete(MP4Recorder::singleton);
+	
 	//Pa porsi
 	if (inited)
 		End();

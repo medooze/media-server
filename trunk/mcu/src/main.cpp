@@ -11,6 +11,7 @@
 #include "broadcaster.h"
 #include "mediagateway.h"
 #include "jsr309/JSR309Manager.h"
+#include "sfu/SFUManager.h"
 #include "websocketserver.h"
 #include "OpenSSL.h"
 #include "dtls.h"
@@ -38,6 +39,7 @@ extern XmlHandlerCmd mcuCmdList[];
 extern XmlHandlerCmd broadcasterCmdList[];
 extern XmlHandlerCmd mediagatewayCmdList[];
 extern XmlHandlerCmd jsr309CmdList[];
+extern XmlHandlerCmd sfuCmdList[];
 
 void log_ffmpeg(void* ptr, int level, const char* fmt, va_list vl)
 {
@@ -198,7 +200,7 @@ int main(int argc,char **argv)
 	const char *crtfile = "mcu.crt";
 	const char *keyfile = "mcu.key";
     
-    //Get all
+	//Get all
 	for(int i=1;i<argc;i++)
 	{
 		//Check options
@@ -442,12 +444,14 @@ int main(int argc,char **argv)
 	Broadcaster	broadcaster;
 	MediaGateway	mediaGateway;
 	JSR309Manager	jsr309Manager;
+	SFUManager	sfuManager;
 
 	//Create xml cmd handlers for the mcu and broadcaster
 	XmlHandler xmlrpcmcu(mcuCmdList,(void*)&mcu);
 	XmlHandler xmlrpcbroadcaster(broadcasterCmdList,(void*)&broadcaster);
 	XmlHandler xmlrpcmediagateway(mediagatewayCmdList,(void*)&mediaGateway);
 	XmlHandler xmlrpcjsr309(jsr309CmdList,(void*)&jsr309Manager);
+	XmlHandler xmlrpcsfu(sfuCmdList,(void*)&sfuManager);
 	//Get event source handler singleton
 	EventStreamingHandler& events = EvenSource::getInstance();
 
@@ -456,6 +460,7 @@ int main(int argc,char **argv)
 
 	//Create http streaming for service events
 	XmlStreamingHandler xmleventjsr309;
+	XmlStreamingHandler xmleventsfu;
 	XmlStreamingHandler xmleventmcu;
 
 	//And default status hanlder
@@ -474,6 +479,8 @@ int main(int argc,char **argv)
 	mediaGateway.Init();
 	//Init the jsr309
 	jsr309Manager.Init(&xmleventjsr309);
+	//Init SFU
+	sfuManager.Init(&xmleventsfu);
 
 	//Add the rtmp application from the mcu to the rtmp server
 	rtmpServer.AddApplication(L"mcu/",&mcu);
@@ -491,7 +498,9 @@ int main(int argc,char **argv)
 	server.AddHandler("/broadcaster",&xmlrpcbroadcaster);
 	server.AddHandler("/mediagateway",&xmlrpcmediagateway);
 	server.AddHandler("/jsr309",&xmlrpcjsr309);
+	server.AddHandler("/sfu",&xmlrpcsfu);
 	server.AddHandler("/events/jsr309",&xmleventjsr309);
+	server.AddHandler("/events/sfu",&xmleventsfu);
 	server.AddHandler("/events/mcu",&xmleventmcu);
 	//Append stream evetns
 	server.AddHandler("/stream",&events);
@@ -549,6 +558,8 @@ int main(int argc,char **argv)
 	mediaGateway.End();
 	//End the jsr309
 	jsr309Manager.End();
+	//End SFU
+	sfuManager.End();
 	//End servers
 	rtmpServer.End();
 	//ENd ws server

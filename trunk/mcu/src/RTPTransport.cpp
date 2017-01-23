@@ -709,7 +709,7 @@ int RTPTransport::SendRTPPacket(BYTE *buffer,DWORD size)
 			//Check error
 			if (srtp_err_status!=srtp_err_status_ok)
 				//Error
-				return Error("-RTPTransport::SendPacket() | Error protecting RTP packet [%d]\n",err);
+				return Error("-RTPTransport::SendPacket() | Error protecting RTP packet [%d]\n",srtp_err_status);
 		} else {
 			//Log
 			Debug("-RTPTransport::SendPacket() | no sendSRTPSession\n");

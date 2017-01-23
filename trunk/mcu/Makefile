@@ -13,6 +13,7 @@ ifeq ($(DEBUG),yes)
 	ifeq ($(SANITIZE),yes)
 		OPTS+= -fsanitize=address -fsanitize=leak -fno-omit-frame-pointer
 		LDFLAGS+= -fsanitize=leak  -fsanitize=address
+		SFULDFLAGS+= -fsanitize=leak  -fsanitize=address
 	endif
 else
 	OPTS+= -g -O4 -fexpensive-optimizations -funroll-loops
@@ -25,7 +26,6 @@ ifeq ($(LOG),yes)
 endif
 
 
-
 ############################################
 #Directorios
 ############################################
@@ -35,6 +35,7 @@ BIN   = $(SRCDIR)/bin/$(TAG)
 ############################################
 #Objetos
 ############################################
+DEPACKETIZERSOBJ=
 G711DIR=g711
 G711OBJ=g711.o pcmucodec.o pcmacodec.o
 
@@ -54,13 +55,15 @@ else
 endif
 
 H264DIR=h264
-H264OBJ=h264encoder.o h264decoder.o h264depacketizer.o
+H264OBJ=h264encoder.o h264decoder.o 
+DEPACKETIZERSOBJ+= h264depacketizer.o
 
 VP6DIR=vp6
 VP6OBJ=vp6decoder.o
 
 VP8DIR=vp8
-VP8OBJ=vp8encoder.o vp8decoder.o vp8depacketizer.o
+VP8OBJ=vp8encoder.o vp8decoder.o 
+DEPACKETIZERSOBJ+= vp8depacketizer.o
 
 GSMDIR=gsm
 GSMOBJ=gsmcodec.o
@@ -82,6 +85,8 @@ AACOBJ=aacencoder.o
 
 VNCDIR=vnc
 VNCOBJ=VNCViewer.o VNCServer.o server.o rfbproto.o cursor.o minilzo.o tls_none.o rfbserver.o rfbregion.o scale.o ultra.o corre.o hextile.o draw.o font.o rre.o selbox.o stats.o tight.o translate.o zlib.o zrle.o zrleoutstream.o zrlepalettehelper.o zywrletemplate.o turbojpeg.o auth.o server_cursor.o vncauth.o d3des.o md5.o sha1.o cargs.o
+
+SFUDIR=sfu
 
 BFCPOBJ=\
 	bfcp.o  \
@@ -115,9 +120,11 @@ BFCPDIR=bfcp
 COREOBJ=VideoEncoderWorker.o
 COREDIR=core
 
-OBJS=  $(COREOBJ) $(BFCPOBJ) $(VNCOBJ) cpim.o  groupchat.o httpparser.o websocketserver.o websocketconnection.o audio.o video.o mcu.o rtpparticipant.o multiconf.o  rtmpparticipant.o videomixer.o audiomixer.o xmlrpcserver.o xmlhandler.o xmlstreaminghandler.o statushandler.o xmlrpcmcu.o   rtpsession.o RTPTransport.o audiostream.o videostream.o audiotransrater.o pipeaudioinput.o pipeaudiooutput.o pipevideoinput.o pipevideooutput.o framescaler.o sidebar.o mosaic.o partedmosaic.o asymmetricmosaic.o pipmosaic.o logo.o overlay.o amf.o rtmpmessage.o rtmpchunk.o rtmpstream.o rtmpconnection.o  rtmpserver.o broadcaster.o broadcastsession.o rtmpflvstream.o flvrecorder.o FLVEncoder.o xmlrpcbroadcaster.o mediagateway.o mediabridgesession.o xmlrpcmediagateway.o textmixer.o textmixerworker.o textstream.o pipetextinput.o pipetextoutput.o mp4player.o mp4streamer.o audioencoder.o audiodecoder.o textencoder.o mp4recorder.o rtmpmp4stream.o rtmpnetconnection.o avcdescriptor.o RTPSmoother.o rtp.o rtmpclientconnection.o vad.o stunmessage.o crc32calc.o remoteratecontrol.o remoterateestimator.o uploadhandler.o http.o appmixer.o fecdecoder.o videopipe.o eventstreaminghandler.o dtls.o CPUMonitor.o OpenSSL.o
-OBJS+= $(G711OBJ) $(H263OBJ) $(GSMOBJ)  $(H264OBJ) ${FLV1OBJ} $(SPEEXOBJ) $(NELLYOBJ) $(G722OBJ) $(JSR309OBJ) $(VADOBJ) $(VP6OBJ) $(VP8OBJ) $(OPUSOBJ) $(AACOBJ)
-TARGETS=mcu test
+BASE= xmlrpcserver.o xmlhandler.o xmlstreaminghandler.o statushandler.o  dtls.o CPUMonitor.o OpenSSL.o rtpsession.o RTPTransport.o   eventstreaminghandler.o httpparser.o   RTPSmoother.o rtp.o remoteratecontrol.o remoterateestimator.o stunmessage.o crc32calc.o http.o fecdecoder.o avcdescriptor.o utf8.o  
+
+OBJS=  xmlrpcsfu.o SFUManager.o Room.o SFUParticipant.o RTPBundleTransport.o DTLSICETransport.o audio.o video.o  $(BASE) $(COREOBJ) $(BFCPOBJ) $(VNCOBJ) cpim.o  groupchat.o websocketserver.o websocketconnection.o  mcu.o rtpparticipant.o multiconf.o  rtmpparticipant.o  xmlrpcmcu.o  mp4player.o mp4streamer.o mp4recorder.o  audiostream.o videostream.o amf.o rtmpmessage.o rtmpchunk.o rtmpstream.o rtmpconnection.o  rtmpserver.o broadcaster.o broadcastsession.o rtmpflvstream.o flvrecorder.o FLVEncoder.o xmlrpcbroadcaster.o mediagateway.o mediabridgesession.o xmlrpcmediagateway.o textmixer.o textmixerworker.o textstream.o pipetextinput.o pipetextoutput.o  logo.o overlay.o audioencoder.o audiodecoder.o textencoder.o rtmpmp4stream.o rtmpnetconnection.o   rtmpclientconnection.o vad.o  uploadhandler.o  appmixer.o  videopipe.o framescaler.o sidebar.o mosaic.o partedmosaic.o asymmetricmosaic.o pipmosaic.o videomixer.o audiomixer.o audiotransrater.o pipeaudioinput.o pipeaudiooutput.o pipevideoinput.o pipevideooutput.o 
+OBJS+= $(G711OBJ) $(H263OBJ) $(GSMOBJ)  $(H264OBJ) ${FLV1OBJ} $(SPEEXOBJ) $(NELLYOBJ) $(G722OBJ) $(JSR309OBJ) $(VADOBJ) $(VP6OBJ) $(VP8OBJ) $(OPUSOBJ) $(AACOBJ) $(DEPACKETIZERSOBJ)
+TARGETS=mcu test 
 
 ifeq ($(FLASHSTREAMER),yes)
 	GNASHINCLUDE = -I$(GNASHBASE) -I$(GNASHBASE)/server -I$(GNASHBASE)/libbase -I$(GNASHBASE)/libgeometry -I$(GNASHBASE)/server/parser -I$(GNASHBASE)/server/vm -I$(GNASHBASE)/backend -I$(GNASHBASE)/libmedia -DFLASHSTREAMER
@@ -147,7 +154,7 @@ else
 	CEFLD = 
 endif
 
-
+OBJSSFU = sfu.o nocodecs.o xmlrpcsfu.o SFUManager.o Room.o SFUParticipant.o RTPBundleTransport.o DTLSICETransport.o $(DEPACKETIZERSOBJ) $(BASE) 
 OBJSMCU = $(OBJS) main.o
 OBJSLIB = $(OBJS)
 OBJSTEST = $(OBJS) test/main.o test/test.o test/cpim.o test/rtp.o test/fec.o test/overlay.o
@@ -155,6 +162,7 @@ OBJSRTMPDEBUG = $(OBJS) rtmpdebug.o
 OBJSFLVDUMP = $(OBJS) flvdump.o
 
 BUILDOBJSMCU = $(addprefix $(BUILD)/,$(OBJSMCU))
+BUILDOBJSSFU = $(addprefix $(BUILD)/,$(OBJSSFU))
 BUILDOBJOBJSLIB = $(addprefix $(BUILD)/,$(OBJSLIB))
 BUILDOBJSTEST= $(addprefix $(BUILD)/,$(OBJSTEST))
 BUILDOBJSRTMPDEBUG= $(addprefix $(BUILD)/,$(OBJSRTMPDEBUG))
@@ -179,6 +187,7 @@ VPATH +=  %.cpp $(SRCDIR)/src/$(SPEEXDIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(NELLYDIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(G722DIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(JSR309DIR)
+VPATH +=  %.cpp $(SRCDIR)/src/$(SFUDIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(VP6DIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(VP8DIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(OPUSDIR)
@@ -227,6 +236,7 @@ endif
 
 LDFLAGS+= -lxmlrpc -lxmlrpc_xmlparse -lxmlrpc_xmltok -lxmlrpc_abyss -lxmlrpc_server -lxmlrpc_util -lnsl -lpthread -lz -ljpeg -lpng -lresolv -L/lib/i386-linux-gnu -lgcrypt
 
+SFULDFLAGS+= -lpthread -lsrtp2 -lxmlrpc -lxmlrpc_xmlparse -lxmlrpc_xmltok -lxmlrpc_abyss -lxmlrpc_server -lxmlrpc_util -lnsl -lpthread -lresolv -L/lib/i386-linux-gnu -lgcrypt -lssl -lcrypto
 #For abyss
 OPTS 	+= -D_UNIX -D__STDC_CONSTANT_MACROS
 CFLAGS  += $(INCLUDE) $(OPTS)
@@ -277,6 +287,9 @@ endif
 #MCU
 ############################################
 
+sfu: touch mkdirs $(OBJSSFU) certs
+	$(CXX) -o $(BIN)/$@ $(BUILDOBJSSFU) $(SFULDFLAGS)
+	@echo [OUT] $(TAG) $(BIN)/$@
 
 mcu: $(OBJSMCU)
 	$(CXX) -o $(BIN)/$@ $(BUILDOBJSMCU) $(LDFLAGS) $(VADLD) $(CEFLD)

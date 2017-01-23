@@ -16,7 +16,8 @@
 #include "tools.h"
 #include "acumulator.h"
 #include "RTPSmoother.h"
-
+#include "mp4recorder.h"
+#include "jsr309/Recorder.h"
 
 /**********************************
 * VideoStream
@@ -616,6 +617,9 @@ int VideoStream::RecVideo()
 	
 	Log(">RecVideo [minFPUPeriod:%d]\n",minFPUPeriod);
 	
+	
+	RTPDepacketizer *dep = NULL;
+	
 	//Get now
 	gettimeofday(&before,NULL);
 
@@ -632,6 +636,17 @@ int VideoStream::RecVideo()
 		if (!packet)
 			//Next
 			continue;
+		
+		if (!dep)
+			dep = RTPDepacketizer::Create(packet->GetMedia(),packet->GetCodec());
+		
+		MediaFrame* frame = dep->AddPacket(packet);
+		
+		if (frame)
+		{
+			MP4Recorder::singleton->onMediaFrame(packet->GetSSRC(),*frame);
+			dep->ResetFrame();
+		}
 
 		//Get extended sequence number and timestamp
 		DWORD seq = packet->GetExtSeqNum();
@@ -647,8 +662,6 @@ int VideoStream::RecVideo()
 		//Lost packets since last
 		DWORD lost = 0;
 
-		Debug("-Seq: %u last: %u\n",seq,lastSeq);
-		
 		//If not first
 		if (lastSeq!=RTPPacket::MaxExtSeqNum)
 			//Calculate losts
