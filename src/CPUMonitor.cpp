@@ -15,9 +15,8 @@ CPUMonitor::CPUMonitor()
 	numcpu = sysconf( _SC_NPROCESSORS_ONLN );
 	//Not started
 	started = false;
-	//No thread
-	thread = NULL;
 }
+
 void CPUMonitor::AddListener(Listener *listener)
 {
 	//Add it

@@ -450,12 +450,12 @@ void RTCPReceiverReport::Dump()
 {
 	if (reports.size())
 	{
-		Debug("\t[RTCPReceiverReport ssrc=%d count=%u]\n",ssrc,reports.size());
+		Debug("\t[RTCPReceiverReport ssrc=%u count=%u]\n",ssrc,reports.size());
 		for(Reports::iterator it = reports.begin();it!=reports.end();++it)
 			(*it)->Dump();
 		Debug("\t[/RTCPReceiverReport]\n");
 	} else
-		Debug("\t[RTCPReceiverReport ssrc=%d]\n",ssrc);
+		Debug("\t[RTCPReceiverReport ssrc=%u]\n",ssrc);
 }
 
 DWORD RTCPReceiverReport::GetSize()
@@ -853,7 +853,7 @@ DWORD RTCPRTPFeedback::Parse(BYTE* data,DWORD size)
 
 void RTCPRTPFeedback::Dump()
 {
-	Debug("\t[RTCPPacket Feedback %s sender:%x media:%x]\n",TypeToString(feedbackType),senderSSRC,mediaSSRC);
+	Debug("\t[RTCPPacket Feedback %s sender:%u media:%u]\n",TypeToString(feedbackType),senderSSRC,mediaSSRC);
 	for (int i=0;i<fields.size();i++)
 	{
 		//Check type
@@ -862,7 +862,7 @@ void RTCPRTPFeedback::Dump()
 			case RTCPRTPFeedback::NACK:
 			{
 				BYTE blp[2];
-				char str[16];
+				char str[17];
 				//Get field
 				NACKField* field = (NACKField*)fields[i];
 				//Get BLP in BYTE[]
@@ -871,6 +871,7 @@ void RTCPRTPFeedback::Dump()
 				BitReader r(blp,2);
 				for (int j=0;j<16;j++)
 					str[j] = r.Get(1) ? '1' : '0';
+				str[16] = 0;
 				//Debug
 				Debug("\t\t[NACK pid:%d blp:%s /]\n",field->pid,str);
 				break;
@@ -930,7 +931,7 @@ RTCPPayloadFeedback::~RTCPPayloadFeedback()
 
 void RTCPPayloadFeedback::Dump()
 {
-	Debug("\t[RTCPPacket PayloadFeedback %s sender:%x media:%x]\n",TypeToString(feedbackType),senderSSRC,mediaSSRC);
+	Debug("\t[RTCPPacket PayloadFeedback %s sender:%u media:%u]\n",TypeToString(feedbackType),senderSSRC,mediaSSRC);
 	for (int i=0;i<fields.size();i++)
 	{
 		//Check type
@@ -970,7 +971,7 @@ void RTCPPayloadFeedback::Dump()
 					//For each
 					for (int i=0;i<num;++i)
 						//Log
-						Debug("\t[ssrc=%x/]\n",get4(payload,8+4*i));
+						Debug("\t[ssrc=%u/]\n",get4(payload,8+4*i));
 					//Log
 					Debug("\t[/REMB]\n");
 					
@@ -1308,7 +1309,7 @@ void RTCPSDES::Description::Dump()
 			Debug("\t\t\t[%s '%.*s'/]\n",RTCPSDES::Item::TypeToString((*it)->GetType()),(*it)->GetSize(),(*it)->GetData());
 		Debug("\t\t[/Description]\n");
 	} else
-		Debug("\t\t[Description ssrc=%x/]\n",ssrc);
+		Debug("\t\t[Description ssrc=%u/]\n",ssrc);
 }
 
 DWORD RTCPSDES::Description::GetSize()

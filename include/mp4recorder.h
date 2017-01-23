@@ -44,6 +44,8 @@ class MP4Recorder :
 	public MediaFrame::Listener
 {
 public:
+	static MP4Recorder* singleton;
+
 	MP4Recorder();
 	~MP4Recorder();
 

@@ -10,7 +10,6 @@
 
 #define RTP_VERSION    2
 
-
 /*
  * RTP data header
  */
@@ -361,7 +360,7 @@ public:
 	virtual void Dump()
 	{
 		Log("[RTPPacket %s codec=%d size=%d payload=%d]\n",MediaFrame::TypeToString(GetMedia()),GetCodec(),GetSize(),GetMediaLength());
-		Log("\t[Header v=%d p=%d x=%d cc=%d m=%d pt=%d seq=%d ts=%d ssrc=%d len=%d]\n",GetVersion(),GetP(),GetX(),GetCC(),GetMark(),GetType(),GetSeqNum(),GetClockTimestamp(),GetSSRC(),GetRTPHeaderLen());
+		Log("\t[Header v=%d p=%d x=%d cc=%d m=%d pt=%d seq=%d ts=%d ssrc=%u len=%d]\n",GetVersion(),GetP(),GetX(),GetCC(),GetMark(),GetType(),GetSeqNum(),GetClockTimestamp(),GetSSRC(),GetRTPHeaderLen());
 		//If  there is an extension
 		if (GetX())
 		{

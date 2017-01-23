@@ -379,7 +379,7 @@ void DTLSConnection::SetRemoteFingerprint(Hash hash, const char *fingerprint)
 	free(tmp);
 }
 
-int DTLSConnection::Read(BYTE* data,int size)
+int DTLSConnection::Read(BYTE* data,DWORD size)
 {
 	if (! DTLSConnection::hasDTLS) 
 		return Error("-DTLSConnection::Read() | no DTLS\n");
@@ -514,7 +514,7 @@ int DTLSConnection::SetupSRTP()
 	return 1;
 }
 
-int DTLSConnection::Write(BYTE *buffer,int size)
+int DTLSConnection::Write( BYTE *buffer, DWORD size)
 {
 	if (! DTLSConnection::hasDTLS)
 		return Error("-DTLSConnection::Write() | no DTLS\n");

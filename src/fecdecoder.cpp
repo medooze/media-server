@@ -69,7 +69,7 @@ bool FECDecoder::AddPacket(RTPTimedPacket* packet)
 				codes.insert(std::pair<DWORD,FECData*>(fec->GetBaseExtSeq(),fec));
 			}
 		}
-	} else if (packet->GetCodec()==VideoCodec::ULPFEC) {
+	} else if (packet->GetCodec()==VideoCodec::ULPFEC ) {
 		//Create new FEC data
 		FECData *fec = new FECData(packet->GetMediaData(),packet->GetMediaLength());
 		//Log
@@ -77,6 +77,9 @@ bool FECDecoder::AddPacket(RTPTimedPacket* packet)
 		//Append it
 		codes.insert(std::pair<DWORD,FECData*>(fec->GetBaseExtSeq(),fec));
 		//Packet contained no media
+		return false;
+	} else if  (packet->GetCodec()==VideoCodec::FLEXFEC) {
+		//TODO
 		return false;
 	} else {
 		//Check if we have it already

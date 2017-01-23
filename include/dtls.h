@@ -65,7 +65,7 @@ public:
 	static void SetCertificate(const char* cert,const char* key);
 	static int ClassInit();
 	static std::string GetCertificateFingerPrint(Hash hash);
-	static bool IsDTLS(BYTE* buffer,int size)		{ return buffer[0]>=20 && buffer[0]<=64; }
+	static bool IsDTLS(const BYTE* buffer,const DWORD size)		{ return buffer[0]>=20 && buffer[0]<=64; }
 
 private:
 	static std::string certfile;	/*!< Certificate file */
@@ -89,8 +89,8 @@ public:
 	void End();
 	void Reset();
 
-	int  Read(BYTE* data,int size);
-	int  Write(BYTE *buffer,int size);
+	int  Read(BYTE* data,DWORD size);
+	int  Write(BYTE *buffer,DWORD size);
 	int  Renegotiate();
 
 /* Callbacks fired by OpenSSL events. */
