@@ -18,6 +18,19 @@
 
 using namespace SFU;
 
+Stream::Stream(Participant& p) : participant(p)
+{
+
+}
+
+void Stream::RequestUpdate()
+{
+	//Debug
+	Debug("-Stream::RequestUpdate() [id:%s,ssrc:%u]\n",msid.c_str(),video);
+	//Send 
+	participant.RequestUpdate();
+}
+
 Participant::Participant(DTLSICETransport* transport)
 {
 	this->transport = transport;
@@ -55,10 +68,10 @@ bool Participant::AddLocalStream(Stream* stream)
 	Log("-Participant::AddLocalStream\n");
 	
 	//Add it to the stream from the others
-	others.insert(stream);
+	others[stream->msid] = stream;
 	
 	//Create audio stream
-	RTPOutgoingSourceGroup *oa = new RTPOutgoingSourceGroup(MediaFrame::Audio,NULL);
+	RTPOutgoingSourceGroup *oa = new RTPOutgoingSourceGroup(stream->msid,MediaFrame::Audio,this);
 	//Set audio properties
 	oa->media.SSRC = stream->audio;
 	oa->fec.SSRC = 0;
@@ -68,7 +81,7 @@ bool Participant::AddLocalStream(Stream* stream)
 	transport->AddOutgoingSourceGroup(oa);
 	
 	//Create video stream
-	RTPOutgoingSourceGroup *ov = new RTPOutgoingSourceGroup(MediaFrame::Video,NULL);
+	RTPOutgoingSourceGroup *ov = new RTPOutgoingSourceGroup(stream->msid,MediaFrame::Video,this);
 	//Set audio properties
 	ov->media.SSRC = stream->video;
 	ov->fec.SSRC = stream->fec;
@@ -76,6 +89,9 @@ bool Participant::AddLocalStream(Stream* stream)
 	
 	//Add to transport
 	transport->AddOutgoingSourceGroup(ov);
+	
+	//Request update
+	stream->RequestUpdate();
 	
 	return true;
 }
@@ -115,7 +131,7 @@ bool Participant::AddRemoteStream(Properties &properties)
 	transport->AddIncomingSourceGroup(video);
 	
 	//Create stream
-	mine = new Stream();
+	mine = new Stream(*this);
 	
 	//Set data
 	mine->msid = local.GetProperty("id");
@@ -148,9 +164,35 @@ void Participant::onRTP(RTPIncomingSourceGroup* group,RTPTimedPacket* packet)
 	delete(packet);
 }
 
+void Participant::onPLIRequest(RTPOutgoingSourceGroup* group,DWORD ssrc)
+{
+	Debug("-Participant::onPLIRequest() | [id:%s,ssrc:%u]\n",msid.c_str(),ssrc);
+	//Should not happen
+	if (group->type==MediaFrame::Audio)
+		return;
+	//Get stream 
+	auto it = others.find(group->streamId);
+	
+	//Check
+	if (it==others.end())
+		return (void)Error("-No stream found for [%s]\n",group->streamId);
+	//Get stream
+	Stream* stream = it->second;
+	//Call 
+	stream->RequestUpdate();
+}
+
+
  void Participant::onMedia(Stream* stream,RTPTimedPacket* packet)
  {
 	 //Debug("-Participant::onMedia\n");
 	 //Send it
 	 transport->Send(*packet);
+ }
+ 
+ void Participant::RequestUpdate() 
+ {
+	 Debug("-Participant:RequestUpdate()\n");
+	//Send PLI on video media stream
+	 transport->SendPLI(video->media.SSRC);
  }

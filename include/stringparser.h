@@ -19,7 +19,7 @@ template <typename _CharT, typename _StringT>
 class  BaseStringParser
 {
 public:
-	BaseStringParser(const _StringT str)
+	BaseStringParser(const _StringT &str)
 	{
 		buffer = (_CharT*)str.c_str();
 		size = str.size();
@@ -439,7 +439,7 @@ private:
 class WideStringParser : public BaseStringParser<wchar_t,std::wstring>
 {
 public:
-	WideStringParser(const std::wstring str) : BaseStringParser<wchar_t,std::wstring>(str)
+	WideStringParser(const std::wstring &str) : BaseStringParser<wchar_t,std::wstring>(str)
 	{
 	}
 

@@ -36,17 +36,20 @@ public:
 	class Listener 
 	{
 		public:
+			virtual void onPLIRequest(RTPOutgoingSourceGroup* group,DWORD ssrc) = 0;
 		
 	};
 public:
-	RTPOutgoingSourceGroup(MediaFrame::Type type,Listener* listener)
+	RTPOutgoingSourceGroup(std::string &streamId,MediaFrame::Type type,Listener* listener)
 	{
+		this->streamId = streamId;
 		this->type = type;
 		this->listener = listener;
 	};
 public:
 	typedef std::map<DWORD,RTPTimedPacket*> RTPOrderedPackets;
 public:	
+	std::string streamId;
 	MediaFrame::Type type;
 	RTPOutgoingSource media;
 	RTPOutgoingSource fec;
@@ -62,7 +65,6 @@ public:
 	{
 		public:
 			virtual void onRTP(RTPIncomingSourceGroup* group,RTPTimedPacket* packet) = 0;
-		
 	};
 public:	
 	RTPIncomingSourceGroup(MediaFrame::Type type,Listener* listener) : losts(64)
@@ -98,7 +100,7 @@ public:
 	~DTLSICETransport();
 	int SetRemotePort(char *ip,int sendPort);
 	void SetProperties(const Properties& properties);
-	void Send(RTCPCompoundPacket &rtcp);
+	void SendPLI(DWORD ssrc);
 	void Send(RTPTimedPacket &packet);
 	void Reset();
 	int End();
@@ -121,6 +123,8 @@ public:
 	virtual void onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMasterKey,DWORD localMasterKeySize,BYTE* remoteMasterKey,DWORD remoteMasterKeySize);
 	virtual int onData(const ICERemoteCandidate* candidate,BYTE* data,DWORD size);
 private:
+	void onRTCP(RTCPCompoundPacket* rtcp);
+	void Send(RTCPCompoundPacket &rtcp);
 	int SetLocalCryptoSDES(const char* suite, const BYTE* key, const DWORD len);
 	int SetRemoteCryptoSDES(const char* suite, const BYTE* key, const DWORD len);
 private:
@@ -136,6 +140,7 @@ private:
 	ICERemoteCandidate* active;
 	srtp_t		sendSRTPSession;
 	srtp_t		recvSRTPSession;
+	WORD		transportSeqNum;
 	
 	OutgoingStreams outgoing;
 	IncomingStreams incoming;

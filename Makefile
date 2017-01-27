@@ -2,7 +2,6 @@
 # Fichero de configuracion
 ###########################################
 include config.mk
-
 OPTS+= -fPIC -DPIC -msse -msse2 -msse3 -DSPX_RESAMPLE_EXPORT= -DRANDOM_PREFIX=mcu -DOUTSIDE_SPEEX -DFLOATING_POINT -D__SSE2__ -Wno-narrowing
 
 #DEBUG

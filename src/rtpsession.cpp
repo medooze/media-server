@@ -250,13 +250,13 @@ int RTPSession::SetProperties(const Properties& properties)
 			recvRTX.apt = atoi(it->second.c_str());
 		} else if (it->first.compare("urn:ietf:params:rtp-hdrext:ssrc-audio-level")==0) {
 			//Set extension
-			extMap[atoi(it->second.c_str())] = RTPPacket::HeaderExtension::SSRCAudioLevel;
+			extMap[atoi(it->second.c_str())] = RTPHeaderExtension::SSRCAudioLevel;
 		} else if (it->first.compare("urn:ietf:params:rtp-hdrext:toffset")==0) {
 			//Set extension
-			extMap[atoi(it->second.c_str())] = RTPPacket::HeaderExtension::TimeOffset;
+			extMap[atoi(it->second.c_str())] = RTPHeaderExtension::TimeOffset;
 		} else if (it->first.compare("http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time")==0) {
 			//Set extension
-			extMap[atoi(it->second.c_str())] = RTPPacket::HeaderExtension::AbsoluteSendTime;
+			extMap[atoi(it->second.c_str())] = RTPHeaderExtension::AbsoluteSendTime;
 			//Use timestamsp
 			useAbsTime = true;
 		} else {
@@ -474,7 +474,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 		// Encoding: Timestamp is in seconds, 24 bit 6.18 fixed point, yielding 64s wraparound and 3.8us resolution (one increment for each 477 bytes going out on a 1Gbps interface).
 		DWORD abs = ((getTimeMS() << 18) / 1000) & 0x00ffffff;
 		//Set header
-		sendPacket[ini] = extMap.GetTypeForCodec(RTPPacket::HeaderExtension::AbsoluteSendTime) << 4 | 0x02;
+		sendPacket[ini] = extMap.GetTypeForCodec(RTPHeaderExtension::AbsoluteSendTime) << 4 | 0x02;
 		//Set data
 		set3(sendPacket,ini+1,abs);
 		//Increase ini

@@ -30,7 +30,6 @@
 #include "stunmessage.h"
 #include <openssl/ossl_typ.h>
 #include "DTLSICETransport.h"
-#include "opus/opusdecoder.h"
 
 
 
@@ -44,6 +43,8 @@ DTLSICETransport::DTLSICETransport(Sender *sender) : dtls(*this)
 	//SRTP instances
 	sendSRTPSession = NULL;
 	recvSRTPSession = NULL;
+	//Transport wide seq num
+	transportSeqNum = 0;
 	//No ice
 	iceLocalUsername = NULL;
 	iceLocalPwd = NULL;
@@ -95,7 +96,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		//Check error
 		if (err!=srtp_err_status_ok)
 			return Error("-RTPBundleTransport::onData() | Error unprotecting rtcp packet [%d]\n",err);
-		
+
 		//Parse it
 		RTCPCompoundPacket* rtcp = RTCPCompoundPacket::Parse(data,len);
 	
@@ -110,10 +111,8 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 			return 1;
 		}
 		
-		//rtcp->Dump();
-		
-		//Call listener
-		//listener->onRTCP(this,candidate,rtcp);
+		//Process it
+		this->onRTCP(rtcp);
 		
 		//Skip
 		return 1;
@@ -258,8 +257,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	packet->SetCodec(codec);
 
 	//Process extensions
-	//TODO:!!!
-	//packet->ProcessExtensions(extMap);
+	packet->ProcessExtensions(extMap);
 	
 	//Get sec number
 	WORD seq = packet->GetSeqNum();
@@ -356,7 +354,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		}
 		 */
 		
-
+/*
 		//Create rtcp sender retpor
 		RTCPCompoundPacket rtcp;
 
@@ -366,7 +364,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 
 		//Send packet
 		Send(rtcp);
-
+*/
 		//packet->Dump();
 		//Debug("<decoded [%d,%d,%d]\n",len,packet->GetSize(),packet->GetMediaLength());
 		//Check listener
@@ -429,7 +427,7 @@ void DTLSICETransport::SetProperties(const Properties& properties)
 	
 	//Get extensions headers
 	Properties headers;
-	properties.GetChildren("headers",video);
+	properties.GetChildren("ext",headers);
 	
 	//For each extension
 	for (Properties::const_iterator it=headers.begin();it!=headers.end();++it)
@@ -437,10 +435,19 @@ void DTLSICETransport::SetProperties(const Properties& properties)
 		//Set extension
 		if (it->first.compare("urn:ietf:params:rtp-hdrext:toffset")==0) {
 			//Set extension
-			extMap[atoi(it->second.c_str())] = RTPPacket::HeaderExtension::TimeOffset;
+			extMap[atoi(it->second.c_str())] = RTPHeaderExtension::TimeOffset;
 		} else if (it->first.compare("http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time")==0) {
 			//Set extension
-			extMap[atoi(it->second.c_str())] = RTPPacket::HeaderExtension::AbsoluteSendTime;
+			extMap[atoi(it->second.c_str())] = RTPHeaderExtension::AbsoluteSendTime;
+		} else if (it->first.compare("urn:ietf:params:rtp-hdrext:ssrc-audio-level")==0) {
+			//Set extension
+			extMap[atoi(it->second.c_str())] = RTPHeaderExtension::SSRCAudioLevel;
+		} else if (it->first.compare("urn:3gpp:video-orientation")==0) {
+			//Set extension
+			extMap[atoi(it->second.c_str())] = RTPHeaderExtension::CoordinationOfVideoOrientation;
+		} else if (it->first.compare("http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01")==0) {
+			//Set extension
+			extMap[atoi(it->second.c_str())] = RTPHeaderExtension::TransportWideCC;
 		} else {
 			Error("-RTPSession::SetProperties() | Unknown RTP property [%s]\n",it->first.c_str());
 		}
@@ -781,6 +788,19 @@ void DTLSICETransport::Send(RTCPCompoundPacket &rtcp)
 	sender->Send(active,data,len);
 }
 
+void DTLSICETransport::SendPLI(DWORD ssrc)
+{
+	Debug("-DTLSICETransport::SendPLI() [ssrc:%u]\n",ssrc);
+	//Create rtcp sender retpor
+	RTCPCompoundPacket rtcp;
+
+
+	//Add to rtcp
+	rtcp.AddRTCPacket( RTCPPayloadFeedback::Create(RTCPPayloadFeedback::PictureLossIndication,0,ssrc));
+
+	//Send packet
+	Send(rtcp);
+}
 
 void DTLSICETransport::Send(RTPTimedPacket &packet)
 {
@@ -838,27 +858,22 @@ void DTLSICETransport::Send(RTPTimedPacket &packet)
 	//Calculamos el inicio
 	int ini = sizeof(rtp_hdr_t);
 
-	/*
 	//Get header
 	rtp_hdr_ext_t* ext = (rtp_hdr_ext_t*)(data + ini);
+	//Increase length
+	ini += sizeof(rtp_hdr_ext_t);
 	//Set extension header
 	headers->x = 1;
 	//Set magic cookie
 	ext->ext_type = htons(0xBEDE);
 	//Set total length in 32bits words
 	ext->len = htons(1);
-	//Increase ini
-	ini += sizeof(rtp_hdr_ext_t);
-	//Calculate absolute send time field (convert ms to 24-bit unsigned with 18 bit fractional part.
-	// Encoding: Timestamp is in seconds, 24 bit 6.18 fixed point, yielding 64s wraparound and 3.8us resolution (one increment for each 477 bytes going out on a 1Gbps interface).
-	DWORD abs = ((getTimeMS() << 18) / 1000) & 0x00ffffff;
 	//Set header
-	data[ini] = extMap.GetTypeForCodec(RTPPacket::HeaderExtension::AbsoluteSendTime) << 4 | 0x02;
+	data[ini] = extMap.GetTypeForCodec(RTPHeaderExtension::TransportWideCC) << 4 | 0x01;
 	//Set data
-	set3(data,ini+1,abs);
+	set2(data,ini+1,transportSeqNum++);
 	//Increase ini
 	ini+=4;
-	*/
 	
 	//Comprobamos que quepan
 	if (ini+packet.GetMediaLength()>MTU)
@@ -918,4 +933,186 @@ void DTLSICETransport::Send(RTPTimedPacket &packet)
 	}
 
 	
+}
+
+
+void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
+{
+	//For each packet
+	for (int i = 0; i<rtcp->GetPacketCount();i++)
+	{
+		//Get pacekt
+		const RTCPPacket* packet = rtcp->GetPacket(i);
+		//Check packet type
+		switch (packet->GetType())
+		{
+			case RTCPPacket::SenderReport:
+			{
+				const RTCPSenderReport* sr = (const RTCPSenderReport*)packet;
+				//Get Timestamp, the middle 32 bits out of 64 in the NTP timestamp (as explained in Section 4) received as part of the most recent RTCP sender report (SR) packet from source SSRC_n. If no SR has been received yet, the field is set to zero.
+				DWORD ts = sr->GetNTPTimestamp() >> 16;
+
+				//Uptade last received SR
+				//getUpdDifTime(&lastReceivedSR);
+				//Check recievd report
+				for (int j=0;j<sr->GetCount();j++)
+				{
+					//Get report
+					RTCPReport *report = sr->GetReport(j);
+					//Check ssrc
+					DWORD ssrc = report->GetSSRC();
+					//TODO: Do something
+				}
+				break;
+			}
+			case RTCPPacket::ReceiverReport:
+			{
+				const RTCPReceiverReport* rr = (const RTCPReceiverReport*)packet;
+				//Check recievd report
+				for (int j=0;j<rr->GetCount();j++)
+				{
+					//Get report
+					RTCPReport *report = rr->GetReport(j);
+					//Check ssrc
+					DWORD ssrc = report->GetSSRC();
+				}
+				break;
+			}
+			case RTCPPacket::SDES:
+				break;
+			case RTCPPacket::Bye:
+				break;
+			case RTCPPacket::App:
+				break;
+			case RTCPPacket::RTPFeedback:
+			{
+				//Get feedback packet
+				RTCPRTPFeedback *fb = (RTCPRTPFeedback*) packet;
+				//Get SSRC for media
+				DWORD ssrc = fb->GetMediaSSRC();
+				//Find ouggoing source
+				auto it = outgoing.find(ssrc);
+				//If not found
+				if (it == outgoing.end())
+				{
+					//Dump
+					fb->Dump();
+					//Debug
+					Error("-Got feedback message for unknown media  [ssrc:%u]\n",ssrc);
+					//Ups! Skip
+					continue;
+				}
+				//Get media
+				RTPOutgoingSourceGroup* group = it->second;
+				//Check feedback type
+				switch(fb->GetFeedbackType())
+				{
+					case RTCPRTPFeedback::NACK:
+						for (BYTE i=0;i<fb->GetFieldCount();i++)
+						{
+							//Get field
+							const RTCPRTPFeedback::NACKField *field = (const RTCPRTPFeedback::NACKField*) fb->GetField(i);
+							
+							//TODO: Implement NACK
+							/*
+							//Resent it
+							ReSendPacket(field->pid);
+							//Check each bit of the mask
+							for (int i=0;i<16;i++)
+								//Check it bit is present to rtx the packets
+								if ((field->blp >> (15-i)) & 1)
+									//Resent it
+									ReSendPacket(field->pid+i+1);
+							*/
+						}
+						break;
+					case RTCPRTPFeedback::TempMaxMediaStreamBitrateRequest:
+						Debug("-TempMaxMediaStreamBitrateRequest\n");
+						break;
+					case RTCPRTPFeedback::TempMaxMediaStreamBitrateNotification:
+						Debug("-RTPSession::ProcessRTCPPacket() | TempMaxMediaStreamBitrateNotification\n");
+						break;
+				}
+				break;
+			}
+			case RTCPPacket::PayloadFeedback:
+			{
+				//Get feedback packet
+				RTCPPayloadFeedback *fb = (RTCPPayloadFeedback*) packet;
+				//Get SSRC for media
+				DWORD ssrc = fb->GetMediaSSRC();
+				//Find ouggoing source
+				auto it = outgoing.find(ssrc);
+				//If not found
+				if (it == outgoing.end())
+				{
+					//Dump
+					fb->Dump();
+					//Debug
+					Error("-Got feedback message for unknown media  [ssrc:%u]\n",ssrc);
+					//Ups! Skip
+					continue;
+				}
+				//Get media
+				RTPOutgoingSourceGroup* group = it->second;
+				//Check feedback type
+				switch(fb->GetFeedbackType())
+				{
+					case RTCPPayloadFeedback::PictureLossIndication:
+					case RTCPPayloadFeedback::FullIntraRequest:
+						Debug("-RTPSession::ProcessRTCPPacket() | FPU requested [ssrc:%u]\n",ssrc);
+						//Check listener
+						if (group->listener)
+							//Call listeners
+							group->listener->onPLIRequest(group,ssrc);
+						//Get media
+					case RTCPPayloadFeedback::SliceLossIndication:
+						Debug("-RTPSession::ProcessRTCPPacket() | SliceLossIndication\n");
+						break;
+					case RTCPPayloadFeedback::ReferencePictureSelectionIndication:
+						Debug("-RTPSession::ProcessRTCPPacket() | ReferencePictureSelectionIndication\n");
+						break;
+					case RTCPPayloadFeedback::TemporalSpatialTradeOffRequest:
+						Debug("-RTPSession::ProcessRTCPPacket() | TemporalSpatialTradeOffRequest\n");
+						break;
+					case RTCPPayloadFeedback::TemporalSpatialTradeOffNotification:
+						Debug("-RTPSession::ProcessRTCPPacket() | TemporalSpatialTradeOffNotification\n");
+						break;
+					case RTCPPayloadFeedback::VideoBackChannelMessage:
+						Debug("-RTPSession::ProcessRTCPPacket() | VideoBackChannelMessage\n");
+						break;
+					case RTCPPayloadFeedback::ApplicationLayerFeeedbackMessage:
+						for (BYTE i=0;i<fb->GetFieldCount();i++)
+						{
+							//Get feedback
+							const RTCPPayloadFeedback::ApplicationLayerFeeedbackField* msg = (const RTCPPayloadFeedback::ApplicationLayerFeeedbackField*)fb->GetField(i);
+							//Get size and payload
+							DWORD len		= msg->GetLength();
+							const BYTE* payload	= msg->GetPayload();
+							//Check if it is a REMB
+							if (len>8 && payload[0]=='R' && payload[1]=='E' && payload[2]=='M' && payload[3]=='B')
+							{
+								//GEt exponent
+								BYTE exp = payload[5] >> 2;
+								DWORD mantisa = payload[5] & 0x03;
+								mantisa = mantisa << 8 | payload[6];
+								mantisa = mantisa << 8 | payload[7];
+								//Get bitrate
+								DWORD bitrate = mantisa << exp;
+							}
+						}
+						break;
+				}
+				break;
+			}
+			case RTCPPacket::FullIntraRequest:
+				//THis is deprecated
+				Debug("-RTPSession::ProcessRTCPPacket() | FullIntraRequest!\n");
+				break;
+			case RTCPPacket::NACK:
+				//THis is deprecated
+				Debug("-RTPSession::ProcessRTCPPacket() | NACK!\n");
+				break;
+		}
+	}
 }

@@ -25,7 +25,9 @@ public:
 	virtual void Execute()
 	{
 		init();
+		testTransportField();
 		testExtension();
+		
 		end();
 	}
 	
@@ -33,7 +35,7 @@ public:
 	{
 		RTPMap	extMap;
 		//Set abs extension for testing
-		extMap[1] = RTPPacket::HeaderExtension::AbsoluteSendTime;
+		extMap[1] = RTPHeaderExtension::AbsoluteSendTime;
 		
 		//RTP payload data
 		BYTE recovered[1056];
@@ -52,7 +54,7 @@ public:
 		// Encoding: Timestamp is in seconds, 24 bit 6.18 fixed point, yielding 64s wraparound and 3.8us resolution (one increment for each 477 bytes going out on a 1Gbps interface).
 		DWORD abs = ((1234 << 18) / 1000) & 0x00ffffff;
 		//Set header
-		recovered[sizeof(rtp_hdr_ext_t)] = extMap.GetTypeForCodec(RTPPacket::HeaderExtension::AbsoluteSendTime) << 4 | 0x02;
+		recovered[sizeof(rtp_hdr_ext_t)] = extMap.GetTypeForCodec(RTPHeaderExtension::AbsoluteSendTime) << 4 | 0x02;
 		//Set data
 		set3(recovered,sizeof(rtp_hdr_ext_t)+1,abs);
 		//Dump
@@ -86,6 +88,43 @@ public:
 		delete packet;
 		//OK
 		return true;
+	}
+	
+	void testTransportField()
+	{
+		BYTE data[] = { 
+		0x8f,0xcd,0x00,0x05,
+		0x29,0xdd,0x06,0xa4,
+		0x00,0x00,0x27,0x50,
+		0x04,0x1e,0x00,0x02,
+		0x09,0x03,0x95,0xed,
+		0xc4,0x00,0x0c,0x00 };
+
+		DWORD size = sizeof(data);
+		
+		//Parse it
+		RTCPCompoundPacket* rtcp = RTCPCompoundPacket::Parse(data,size);
+		rtcp->Dump();
+		
+		delete(rtcp);
+		
+		BYTE data2[] = {
+		0x8f,0xcd,0x00,0x05,
+		0x97,0xb3,0x78,0x4f,
+		0x00,0x00,0x40,0x4f,
+		
+		0x00,0x45,0x00,0x01,
+		0x09,0xf9,0x73,0x00,
+		0x20,0x01,0x0c,0x00};
+
+		DWORD size2 = sizeof(data2);
+		
+		//Parse it
+		RTCPCompoundPacket* rtcp2 = RTCPCompoundPacket::Parse(data2,size2);
+		rtcp2->Dump();
+		
+		delete(rtcp2);
+		
 	}
 	
 };

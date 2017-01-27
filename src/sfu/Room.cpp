@@ -59,9 +59,14 @@ int Room::AddParticipant(std::wstring name,Properties &properties)
 	
 	//Add local stream
 	participant->AddRemoteStream(properties);
-	//Get remote self view
-	participant->AddListener(participant);
-	participant->AddLocalStream(participant->GetStream());
+	
+	//Check if we want selfview for this participant
+	if (properties.HasProperty("selfview"))
+	{
+		//Get remote self view
+		participant->AddListener(participant);
+		participant->AddLocalStream(participant->GetStream());
+	}
 	//For all other participants
 	for (auto it=participants.begin();it!=participants.end();++it)
 	{
