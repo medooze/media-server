@@ -150,4 +150,4 @@ public:
 	
 };
 
-CPIMTestPlan cpim;
+//CPIMTestPlan cpim;

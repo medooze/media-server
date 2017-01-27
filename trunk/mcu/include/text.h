@@ -3,7 +3,6 @@
 #include "config.h"
 #include "tools.h"
 #include "amf.h"
-#include "partedmosaic.h"
 #include "media.h"
 
 

@@ -6,6 +6,8 @@
 #include "media.h"
 #include <vector>
 #include <list>
+#include <utility>
+#include <map>
 #include <math.h>
 
 #define RTP_VERSION    2
@@ -74,40 +76,64 @@ public:
 	static const BYTE NotFound = -1;
 };
 
+class RTPPacket;
+class RTPHeaderExtension
+{
+friend class  RTPPacket;
+public:
+	
+	
+	enum Type {
+		SSRCAudioLevel		= 1,
+		TimeOffset		= 2,
+		AbsoluteSendTime	= 3,
+		CoordinationOfVideoOrientation	= 4,
+		TransportWideCC		= 5
+	};
+	
+	struct VideoOrientation
+	{
+		BYTE reserved: 4;
+		BYTE facing: 1;
+		BYTE flip: 1;
+		BYTE rotation: 2;
+	};
+	
+public:
+	RTPHeaderExtension()
+	{
+		absSentTime = 0;
+		timeOffset = 0;
+		vad = 0;
+		level = 0;
+		transportSeqNum = 0;
+		*((BYTE*)&cvo) = 0;
+		hasAbsSentTime = 0;
+		hasTimeOffset =  0;
+		hasAudioLevel = 0;
+		hasVideoOrientation = 0;
+		hasTransportWideCC = 0;
+	}
+protected:
+	QWORD	absSentTime;
+	int	timeOffset;
+	bool	vad;
+	BYTE	level;
+	WORD	transportSeqNum;
+	VideoOrientation cvo;
+	bool    hasAbsSentTime;
+	bool	hasTimeOffset;
+	bool	hasAudioLevel;
+	bool	hasVideoOrientation;
+	bool	hasTransportWideCC;
+};
+	
 class RTPPacket
 {
 public:
 	const static DWORD MaxExtSeqNum = 0xFFFFFFFF;
 public:
-	class HeaderExtension
-	{
-	friend class  RTPPacket;
-	public:
-		enum Type {
-			SSRCAudioLevel		= 1,
-			TimeOffset		= 2,
-			AbsoluteSendTime	= 3
-		};
-	public:
-		HeaderExtension()
-		{
-			absSentTime = 0;
-			timeOffset = 0;
-			vad = 0;
-			level = 0;
-			hasAbsSentTime = 0;
-			hasTimeOffset =  0;
-			hasAudioLevel = 0;
-		}
-	protected:
-		QWORD	absSentTime;
-		int	timeOffset;
-		bool	vad;
-		BYTE	level;
-		bool    hasAbsSentTime;
-		bool	hasTimeOffset;
-		bool	hasAudioLevel;
-	};
+	
 
 public:
 	RTPPacket(MediaFrame::Type media,DWORD codec)
@@ -393,7 +419,7 @@ private:
 	BYTE	buffer[SIZE];
 	DWORD	len;
 	rtp_hdr_t* header;
-	HeaderExtension extension;
+	RTPHeaderExtension extension;
 
 };
 
@@ -939,7 +965,8 @@ public:
 	enum FeedbackType {
 		NACK = 1,
 		TempMaxMediaStreamBitrateRequest = 3,
-		TempMaxMediaStreamBitrateNotification =4
+		TempMaxMediaStreamBitrateNotification = 4,
+		TransportWideFeedbackMessage = 15
 	};
 
 	static const char* TypeToString(FeedbackType type)
@@ -952,6 +979,8 @@ public:
 				return "TempMaxMediaStreamBitrateRequest";
 			case TempMaxMediaStreamBitrateNotification:
 				return "TempMaxMediaStreamBitrateNotification";
+			case TransportWideFeedbackMessage:
+				return "TransportWideFeedbackMessage";
 		}
 		return "Unknown";
 	}
@@ -1007,6 +1036,8 @@ public:
 			this->pid = pid;
 			this->blp = get2(blp,0);
 		}
+		virtual ~NACKField(){}
+		
 		virtual DWORD GetSize() { return 4;}
 		virtual DWORD Parse(BYTE* data,DWORD size)
 		{
@@ -1053,6 +1084,7 @@ public:
 			this->overhead = overhead;
 			SetBitrate(bitrate);
 		}
+		virtual ~TempMaxMediaStreamBitrateField(){}
 		virtual DWORD GetSize() { return 8;}
 		virtual DWORD Parse(BYTE* data,DWORD size)
 		{
@@ -1105,6 +1137,61 @@ public:
 		void SetOverhead(WORD overhead)	{ this->overhead = overhead;	}
 		DWORD GetSSRC() const		{ return ssrc;			}
 		WORD GetOverhead() const	{ return overhead;		}
+	};
+	
+	struct TransportWideFeedbackMessageField : public Field
+	{
+		enum PacketStatus
+		{
+			NotReceived = 0,
+			SmallDelta = 1,
+			LargeOrNegativeDelta = 2,
+			Reserved = 3
+		};
+		/*
+		        0                   1                   2                   3
+			0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+		       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		       |V=2|P|  FMT=15 |    PT=205     |           length              |
+		       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		       |                     SSRC of packet sender                     |
+		       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		       |                      SSRC of media source                     |
+		       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		       |      base sequence number     |      packet status count      |
+		       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		       |                 reference time                | fb pkt. count |
+		       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		       |          packet chunk         |         packet chunk          |
+		       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		       .                                                               .
+		       .                                                               .
+		       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		       |         packet chunk          |  recv delta   |  recv delta   |
+		       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		       .                                                               .
+		       .                                                               .
+		       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		       |           recv delta          |  recv delta   | zero padding  |
+		       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+
+		 */
+		TransportWideFeedbackMessageField()
+		{
+			
+		}
+		virtual ~TransportWideFeedbackMessageField(){}
+		
+		virtual DWORD GetSize();
+		virtual DWORD Parse(BYTE* data,DWORD size);
+		virtual DWORD Serialize(BYTE* data,DWORD size);
+		
+		WORD baseSeqNumber;
+		WORD packetStatusCount;
+		DWORD referenceTime;
+		BYTE feedbackPacketCount;
+		std::list<std::pair<WORD,int>> packets;
 	};
 
 public:
@@ -1456,7 +1543,7 @@ public:
 		{
 			if (size!=pad32(size)) return 0;
 			//Get values
-			length = size;
+			length = size; 
 			//allocate
 			payload = (BYTE*)malloc(length);
 			//Copy payload
@@ -1589,8 +1676,6 @@ public:
 		for(RTCPPackets::iterator it = packets.begin(); it!=packets.end(); ++it)
 			//delete
 			delete((*it));
-		//Clean
-		packets.clear();
 	}
 
 	DWORD GetSize() const

@@ -41,19 +41,26 @@ void RTPPacket::ProcessExtensions(const RTPMap &extMap)
 			//Check type
 			switch (t)
 			{
-				case RTPPacket::HeaderExtension::SSRCAudioLevel:
-					//  0                   1                   2                   3
+				case RTPHeaderExtension::SSRCAudioLevel:
+					// The payload of the audio level header extension element can be
+					// encoded using either the one-byte or two-byte 
+					// 0                   1
+					//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
+					// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+					// |  ID   | len=0 |V| level       |
+					// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+					// 0                   1                   2                   3
 					//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 					// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-					// |  ID   | len=0 |V|   level     |      0x00     |      0x00     |
-					// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+					// |  ID   | len=1 |V|   level     |      0x00     |      0x00     |
+					// +-+-+-+-+-+-+-+-+-+-+-+-+-+-s+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 					//
 					// Set extennsion
 					extension.hasAudioLevel = true;
 					extension.vad	= (*ext & 0x80) >> 7;
 					extension.level	= (*ext & 0x7f);
 					break;
-				case RTPPacket::HeaderExtension::TimeOffset:
+				case RTPHeaderExtension::TimeOffset:
 					//  0                   1                   2                   3
 					//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 					// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -68,7 +75,7 @@ void RTPPacket::ProcessExtensions(const RTPMap &extMap)
 						  // Negative offset, correct sign for Word24 to Word32.
 						extension.timeOffset |= 0xFF000000;
 					break;
-				case RTPPacket::HeaderExtension::AbsoluteSendTime:
+				case RTPHeaderExtension::AbsoluteSendTime:
 					//  0                   1                   2                   3
 					//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 					// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -79,6 +86,30 @@ void RTPPacket::ProcessExtensions(const RTPMap &extMap)
 					// Set extension
 					extension.hasAbsSentTime = true;
 					extension.absSentTime = ((QWORD)get3(ext,0))*1000 >> 18;
+					break;
+				case RTPHeaderExtension::CoordinationOfVideoOrientation:
+					// Bit#            7   6   5   4   3   2   1  0(LSB)
+					// Definition      0   0   0   0   C   F   R1 R0
+					// With the following definitions:
+					// C = Camera: indicates the direction of the camera used for this video stream. It can be used by the MTSI client in receiver to e.g. display the received video differently depending on the source camera.
+					//     0: Front-facing camera, facing the user. If camera direction is unknown by the sending MTSI client in the terminal then this is the default value used.
+					// 1: Back-facing camera, facing away from the user.
+					// F = Flip: indicates a horizontal (left-right flip) mirror operation on the video as sent on the link.
+					//     0: No flip operation. If the sending MTSI client in terminal does not know if a horizontal mirror operation is necessary, then this is the default value used.
+					//     1: Horizontal flip operation
+					// R1, R0 = Rotation: indicates the rotation of the video as transmitted on the link. The receiver should rotate the video to compensate that rotation. E.g. a 90° Counter Clockwise rotation should be compensated by the receiver with a 90° Clockwise rotation prior to displaying.
+					// Set extension
+					extension.hasVideoOrientation = true;
+					*((BYTE*)(&extension.cvo)) = *ext;
+					break;
+				case RTPHeaderExtension::TransportWideCC:
+					//  0                   1                   2       
+					//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 
+					// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+					// |  ID   | L=1   |transport-wide sequence number | 
+					// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+					extension.hasTransportWideCC = true;
+					extension.transportSeqNum = (WORD)get2(ext,0);
 					break;
 				default:
 					Debug("-Unknown or unmapped extension [%d]\n",id);
@@ -833,6 +864,9 @@ DWORD RTCPRTPFeedback::Parse(BYTE* data,DWORD size)
 			case TempMaxMediaStreamBitrateNotification:
 				field = new TempMaxMediaStreamBitrateField();
 				break;
+			case TransportWideFeedbackMessage:
+				field = new TransportWideFeedbackMessageField();
+				break;
 			default:
 				return Error("Unknown RTCPRTPFeedback type [%d]\n",header->count);
 		}
@@ -880,6 +914,13 @@ void RTCPRTPFeedback::Dump()
 			case RTCPRTPFeedback::TempMaxMediaStreamBitrateRequest:
 			case RTCPRTPFeedback::TempMaxMediaStreamBitrateNotification:
 				break;
+			case RTCPRTPFeedback::TransportWideFeedbackMessage:
+			{
+				//Get field
+				TransportWideFeedbackMessageField *tw = (TransportWideFeedbackMessageField*)fields[i];
+				//Debug
+				Debug("\tt[TransportWideFeedbackMessage seq:%u base:%d ref:%u/]\n",tw->feedbackPacketCount,tw->baseSeqNumber,tw->referenceTime);
+			}
 		}
 	}
 	Debug("\t[/RTCPPacket Feedback %s]\n",TypeToString(feedbackType));
@@ -1633,4 +1674,144 @@ void  RTPLostPackets::Dump()
 	for(int i=0;i<len;i++)
 		Debug("[%.3d,%.8d]\n",i,packets[i]);
 	Debug("[/RTPLostPackets]\n");
+}
+
+DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::GetSize()
+{
+	return 0;
+}
+DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Serialize(BYTE* data,DWORD size)
+{
+	return 0;
+}
+DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Parse(BYTE* data,DWORD size)
+{
+	//Create the  status count
+	std::vector<PacketStatus> statuses;
+	
+	if (size<8) return 0;
+	baseSeqNumber		= get2(data,0);
+	packetStatusCount	= get2(data,2);
+	referenceTime		= get3(data,4);
+	feedbackPacketCount	= get1(data,7);
+
+	//Rseserve space
+	statuses.reserve(packetStatusCount);
+	
+	//Where we are 
+	WORD len = 8;
+	//Debug("-packetcount %d\n",packetStatusCount);
+	//Get all
+	while (statuses.size()<packetStatusCount)
+	{
+		//Ensure we have enought
+		if (len+2>size)
+			return 0;
+		
+		//Get chunk
+		WORD chunk = get2(data,len);
+		//Skip it
+		len += 2;
+		
+		//Check packet type
+		if (chunk>>15) 
+		{
+			//Debug("symbol %x\n",chunk);
+			/*
+				0                   1
+				0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
+			       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+			       |T|S|       symbol list         |
+			       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				 T = 1
+			*/ 
+			//Get status size
+			if (chunk>>14 & 1)
+			{
+				//Debug("-2 bits states\n");
+				//S=1 => 7 states, 2 bits per state
+				for (int j=0;j<7;++j)
+				{
+					//Get status
+					PacketStatus status = (PacketStatus)((chunk >> 2 * (7 - 1 - j)) & 0x03);
+					//Debug("status %d\n",status);
+					//Push it back
+					statuses.push_back(status);
+					
+				}
+			} else {
+				//Debug("-1 bits states\n");
+				//S=> 14 states, 1 bit per state
+				for (int j=0;j<14;++j)
+				{
+					//Get status
+					PacketStatus status = (PacketStatus)((chunk >> (14 - 1 - j)) & 0x0);
+					//Debug("status %d\n",status);
+					//Push it back
+					statuses.push_back(status);
+					
+				}
+			}
+
+		} else {
+			
+			/*
+				0                   1
+				0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
+			       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+			       |T| S |       Run Length        |
+			       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				T = 0
+			 */
+			//Get status
+			PacketStatus status = (PacketStatus)(chunk>>13) ;
+			//Run lengh
+			WORD run = chunk & 0x1FFF;
+			//Debug("run %d status %d\n",run,status);
+			//For eachone
+			for (WORD j=0;j<run;++j)
+				//Append it
+				statuses.push_back(status);
+		}
+	}
+		
+	//For each packet
+	for (int i=0;i<packetStatusCount;++i)
+	{
+		//Depending on the status
+		switch (statuses[i])
+		{
+			case PacketStatus::SmallDelta:
+			{
+				//Check size
+				if (len+1>size)
+					return 0;
+				//Read 1 length delta
+				int delta = ((short)get1(data,len)) * 250 ;
+				//Increase delta
+				len += 1;
+				//Append it
+				packets.push_back(std::make_pair(baseSeqNumber+i,delta));
+				break;
+			}
+			case PacketStatus::LargeOrNegativeDelta:
+			{
+				//Check size
+				if (len+2>size)
+					return 0;
+				//Read 2 length delta
+				int delta = ((short)get2(data,len)) * 250 ;
+				len += 2;
+				//Append it
+				packets.push_back(std::make_pair(baseSeqNumber+i,delta));
+				break;	
+			}
+		}
+	}
+	//Skip zero padding
+	if (len%4)
+		//DWORD boundary
+		len += 4 - (len%4);
+	//Parsed
+	return len;
 }

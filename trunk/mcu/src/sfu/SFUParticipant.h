@@ -19,6 +19,7 @@
 
 namespace SFU
 {
+class Participant;
 class Stream
 {
 public:
@@ -28,23 +29,27 @@ public:
 		virtual void onMedia(Stream* stream,RTPTimedPacket* packet) = 0;
 	};
 public:
+	Stream(Participant& p);
+	void RequestUpdate();
+	
 	std::string msid;
 	DWORD audio;
 	DWORD rtx;
 	DWORD video;
 	DWORD fec;
-public:
-	//RTPIncomingSourceGroup* createOutoginSourceGroup(MediaFrame::Type type);
+private:
+	Participant &participant;
 };
 
 
 	
 class Participant :
 	public RTPIncomingSourceGroup::Listener,
+	public RTPOutgoingSourceGroup::Listener,
 	public Stream::Listener
 {
 public:
-	
+	friend Stream;
 public:
 	Participant(DTLSICETransport* transport);
 	virtual ~Participant();
@@ -55,11 +60,15 @@ public:
 	bool AddLocalStream(Stream* stream);
 	bool AddRemoteStream(Properties &prop);
 	virtual void onRTP(RTPIncomingSourceGroup* group,RTPTimedPacket* packet);
+	virtual void onPLIRequest(RTPOutgoingSourceGroup* group,DWORD ssrc);
 	virtual void onMedia(Stream* stream,RTPTimedPacket* packet);
 	Stream* GetStream() { return mine; }
+	
+	void RequestUpdate();
+	
 private:
 	typedef std::set<Stream::Listener*> Listeners;
-	typedef std::set<Stream*> Streams;
+	typedef std::map<std::string,Stream*> Streams;
 private:
 	std::string msid;
 	Listeners listeners;
