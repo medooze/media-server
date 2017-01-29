@@ -45,6 +45,8 @@ DTLSICETransport::DTLSICETransport(Sender *sender) : dtls(*this)
 	recvSRTPSession = NULL;
 	//Transport wide seq num
 	transportSeqNum = 0;
+	feedbackPacketCount = 1;
+	lastFeedbackPacketExtSeqNum = 0;
 	//No ice
 	iceLocalUsername = NULL;
 	iceLocalPwd = NULL;
@@ -354,23 +356,57 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		}
 		 */
 		
-/*
-		//Create rtcp sender retpor
-		RTCPCompoundPacket rtcp;
+		//GEt last 
+		WORD transportSeqNum = packet->GetTransportSeqNum();
 
-		
-		//Add to rtcp
-		rtcp.AddRTCPacket( RTCPPayloadFeedback::Create(RTCPPayloadFeedback::PictureLossIndication,0,ssrc));
-
-		//Send packet
-		Send(rtcp);
-*/
-		//packet->Dump();
 		//Debug("<decoded [%d,%d,%d]\n",len,packet->GetSize(),packet->GetMediaLength());
 		//Check listener
 		if (group->listener)
 			//Call listeners
 			group->listener->onRTP(group,packet);
+		
+				//Create rtcp transport wide feedback
+		RTCPCompoundPacket rtcp;
+
+		//Add to rtcp
+		RTCPRTPFeedback* feedback = RTCPRTPFeedback::Create(RTCPRTPFeedback::TransportWideFeedbackMessage,0,ssrc);
+		
+		//Create trnasport field
+		RTCPRTPFeedback::TransportWideFeedbackMessageField *field = new RTCPRTPFeedback::TransportWideFeedbackMessageField(feedbackPacketCount++);
+
+		
+		
+		//Check if we have a sequence wrap
+		if (transportSeqNum<0x0FFF && (lastFeedbackPacketExtSeqNum & 0xFFFF)>0xF000)
+			//Increase cycles
+			feedbackCycles++;
+
+		//Get extended value
+		DWORD transportExtSeqNum = feedbackCycles<<16 | transportSeqNum;
+		
+		//if not first
+		if (lastFeedbackPacketExtSeqNum)
+			//For each lost
+			for (DWORD i = lastFeedbackPacketExtSeqNum; i<transportExtSeqNum; ++i)
+				//Add it
+				field->packets.insert(std::make_pair(i,0));
+		
+		//Store last
+		lastFeedbackPacketExtSeqNum = transportExtSeqNum;
+		
+		//Add this one
+		field->packets.insert(std::make_pair(transportSeqNum,getTime()));
+		
+		//And add it
+		feedback->AddField(field);
+		 
+		//Add it
+		rtcp.AddRTCPacket(feedback);
+
+		//Send packet
+		Send(rtcp);
+
+		rtcp.Dump();
 	}
 	//Done
 	return 1;

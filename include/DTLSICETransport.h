@@ -141,7 +141,9 @@ private:
 	srtp_t		sendSRTPSession;
 	srtp_t		recvSRTPSession;
 	WORD		transportSeqNum;
-	
+	WORD		feedbackPacketCount;
+	WORD		lastFeedbackPacketExtSeqNum;
+	WORD		feedbackCycles;
 	OutgoingStreams outgoing;
 	IncomingStreams incoming;
 	
