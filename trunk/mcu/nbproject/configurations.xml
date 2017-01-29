@@ -338,7 +338,7 @@
       <makefileType>
         <makeTool>
           <buildCommandWorkingDir>R:/usr/local/src/medooze/mcu</buildCommandWorkingDir>
-          <buildCommand>${MAKE} -f Makefile -j 2</buildCommand>
+          <buildCommand>${MAKE} -f Makefile -j 4 test</buildCommand>
           <cleanCommand>${MAKE} -f Makefile clean</cleanCommand>
           <executablePath>bin/debug/mcu</executablePath>
           <ccTool>
