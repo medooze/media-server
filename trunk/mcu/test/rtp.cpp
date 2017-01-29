@@ -92,10 +92,12 @@ public:
 	
 	void testTransportField()
 	{
+		BYTE aux[1024];
 		BYTE data[] = { 
 		0x8f,0xcd,0x00,0x05,
 		0x29,0xdd,0x06,0xa4,
 		0x00,0x00,0x27,0x50,
+		
 		0x04,0x1e,0x00,0x02,
 		0x09,0x03,0x95,0xed,
 		0xc4,0x00,0x0c,0x00 };
@@ -106,7 +108,16 @@ public:
 		RTCPCompoundPacket* rtcp = RTCPCompoundPacket::Parse(data,size);
 		rtcp->Dump();
 		
+		//Serialize
+		DWORD len = rtcp->Serialize(aux,1024);
+		Dump(data,sizeof(data));
+		Dump(aux,len);
+		
+		RTCPCompoundPacket* cloned = RTCPCompoundPacket::Parse(aux,len);
+		cloned->Dump();
+		
 		delete(rtcp);
+		delete(cloned);
 		
 		BYTE data2[] = {
 		0x8f,0xcd,0x00,0x05,
@@ -123,7 +134,15 @@ public:
 		RTCPCompoundPacket* rtcp2 = RTCPCompoundPacket::Parse(data2,size2);
 		rtcp2->Dump();
 		
+
+		len = rtcp2->Serialize(aux,1024);
+		Dump(data2,sizeof(data));
+		Dump(aux,len);
+		RTCPCompoundPacket* cloned2 = RTCPCompoundPacket::Parse(aux,len);
+		cloned2->Dump();
+		
 		delete(rtcp2);
+		delete(cloned2);
 		
 	}
 	

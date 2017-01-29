@@ -286,12 +286,14 @@ public:
 	void  SetAbsSentTime(QWORD absSentTime)	{ extension.absSentTime = absSentTime;	}
 	void  SetTimeOffset(int timeOffset)     { extension.timeOffset = timeOffset;	}
 	QWORD GetAbsSendTime()		const	{ return extension.absSentTime;		}
-	int GetTimeOffset()		const	{ return extension.timeOffset;		}
+	int   GetTimeOffset()		const	{ return extension.timeOffset;		}
 	bool  GetVAD()			const	{ return extension.vad;			}
 	BYTE  GetLevel()		const	{ return extension.level;		}
+	WORD  GetTransportSeqNum()		const	{ return extension.transportSeqNum;	}
 	bool  HasAudioLevel()		const	{ return extension.hasAudioLevel;	}
 	bool  HasAbsSentTime()		const	{ return extension.hasAbsSentTime;	}
 	bool  HasTimeOffeset()		const   { return extension.hasTimeOffset;	}
+	bool  HasTransportWideCC()	const   { return extension.hasTransportWideCC;	}
 
 	DWORD SetExtensionHeader(BYTE* data,DWORD size)
 	{
@@ -1181,17 +1183,22 @@ public:
 		{
 			
 		}
+		
+		TransportWideFeedbackMessageField(DWORD feedbackPacketCount)
+		{
+			this->feedbackPacketCount = feedbackPacketCount;
+		}
 		virtual ~TransportWideFeedbackMessageField(){}
+		
+		//Pair<seqnum,us> -> us = 0, not received
+		typedef std::map<WORD,QWORD> Packets;
 		
 		virtual DWORD GetSize();
 		virtual DWORD Parse(BYTE* data,DWORD size);
 		virtual DWORD Serialize(BYTE* data,DWORD size);
 		
-		WORD baseSeqNumber;
-		WORD packetStatusCount;
-		DWORD referenceTime;
 		BYTE feedbackPacketCount;
-		std::list<std::pair<WORD,int>> packets;
+		Packets packets;
 	};
 
 public:
