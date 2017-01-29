@@ -272,7 +272,6 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	//Set cycles
 	packet->SetSeqCycles(source->cycles);
 	
-	
 	//Increase stats
 	source->numPackets++;
 	source->totalPacketsSinceLastSR++;
@@ -280,6 +279,52 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	source->totalBytesSinceLastSR += size;
 
 	//TODO: Calculate REMB and jitter
+	
+		//GEt last 
+	WORD transportSeqNum = packet->GetTransportSeqNum();
+
+	//Create rtcp transport wide feedback
+	RTCPCompoundPacket rtcp;
+
+	//Add to rtcp
+	RTCPRTPFeedback* feedback = RTCPRTPFeedback::Create(RTCPRTPFeedback::TransportWideFeedbackMessage,0,ssrc);
+
+	//Create trnasport field
+	RTCPRTPFeedback::TransportWideFeedbackMessageField *field = new RTCPRTPFeedback::TransportWideFeedbackMessageField(feedbackPacketCount++);
+
+
+
+	//Check if we have a sequence wrap
+	if (transportSeqNum<0x0FFF && (lastFeedbackPacketExtSeqNum & 0xFFFF)>0xF000)
+		//Increase cycles
+		feedbackCycles++;
+
+	//Get extended value
+	DWORD transportExtSeqNum = feedbackCycles<<16 | transportSeqNum;
+
+	//if not first
+	if (lastFeedbackPacketExtSeqNum)
+		//For each lost
+		for (DWORD i = lastFeedbackPacketExtSeqNum; i<transportExtSeqNum; ++i)
+			//Add it
+			field->packets.insert(std::make_pair(i,0));
+
+	//Store last
+	lastFeedbackPacketExtSeqNum = transportExtSeqNum;
+
+	//Add this one
+	field->packets.insert(std::make_pair(transportSeqNum,getTime()));
+
+	//And add it
+	feedback->AddField(field);
+
+	//Add it
+	rtcp.AddRTCPacket(feedback);
+
+	//Send packet
+	Send(rtcp);
+
+	rtcp.Dump();
 	
 	//Append to the FEC decoder
 	if (group->fec.SSRC)
@@ -315,101 +360,137 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 			//Try to recover another one (yuhu!)
 			recovered = group->fec.decoder.Recover();
 		}
+		//Done
+		return 1;
 	}
 	
-	//If we don't have to discard it
-	if (!discard)
+	//Update lost packets
+	int lost = group->losts.AddPacket(packet);
+
+	//Request NACK if it is media
+	if (lost && ssrc==group->media.SSRC)
 	{
-		//Update lost packets
-		int lost = group->losts.AddPacket(packet);
-		
-		//TODO: Send NACK
-		/*
-		//If nack is enable t waiting for a PLI/FIR response (to not oeverflow)
-		if (isNACKEnabled && getDifTime(&lastFPU)/1000>rtt/2 && lost)
-		{
-			//Inc nacked count
-			recv.nackedPacketsSinceLastSR += lost;
+		//Inc nacked count
+		//recv.nackedPacketsSinceLastSR += lost;
 
-			//Get nacks for lost
-			std::list<RTCPRTPFeedback::NACKField*> nacks = losts.GetNacks();
+		//Get nacks for lost
+		std::list<RTCPRTPFeedback::NACKField*> nacks = group->losts.GetNacks();
 
-			//Create rtcp sender retpor
-			RTCPCompoundPacket* rtcp = CreateSenderReport();
-
-			//Create NACK
-			RTCPRTPFeedback *nack = RTCPRTPFeedback::Create(RTCPRTPFeedback::NACK,send.SSRC,recv.SSRC);
-
-			//Add 
-			for (std::list<RTCPRTPFeedback::NACKField*>::iterator it = nacks.begin(); it!=nacks.end(); ++it)
-				//Add it
-				nack->AddField(*it);
-
-			//Add to packet
-			rtcp->AddRTCPacket(nack);
-
-			//Send packet
-			SendPacket(*rtcp);
-
-			//Delete it
-			delete(rtcp);
-		}
-		 */
-		
-		//GEt last 
-		WORD transportSeqNum = packet->GetTransportSeqNum();
-
-		//Debug("<decoded [%d,%d,%d]\n",len,packet->GetSize(),packet->GetMediaLength());
-		//Check listener
-		if (group->listener)
-			//Call listeners
-			group->listener->onRTP(group,packet);
-		
-				//Create rtcp transport wide feedback
+		//Create rtcp sender retpor
 		RTCPCompoundPacket rtcp;
 
-		//Add to rtcp
-		RTCPRTPFeedback* feedback = RTCPRTPFeedback::Create(RTCPRTPFeedback::TransportWideFeedbackMessage,0,ssrc);
-		
-		//Create trnasport field
-		RTCPRTPFeedback::TransportWideFeedbackMessageField *field = new RTCPRTPFeedback::TransportWideFeedbackMessageField(feedbackPacketCount++);
+		//Create NACK
+		RTCPRTPFeedback *nack = RTCPRTPFeedback::Create(RTCPRTPFeedback::NACK,0,ssrc);
 
-		
-		
-		//Check if we have a sequence wrap
-		if (transportSeqNum<0x0FFF && (lastFeedbackPacketExtSeqNum & 0xFFFF)>0xF000)
-			//Increase cycles
-			feedbackCycles++;
+		//Add 
+		for (std::list<RTCPRTPFeedback::NACKField*>::iterator it = nacks.begin(); it!=nacks.end(); ++it)
+			//Add it
+			nack->AddField(*it);
 
-		//Get extended value
-		DWORD transportExtSeqNum = feedbackCycles<<16 | transportSeqNum;
-		
-		//if not first
-		if (lastFeedbackPacketExtSeqNum)
-			//For each lost
-			for (DWORD i = lastFeedbackPacketExtSeqNum; i<transportExtSeqNum; ++i)
-				//Add it
-				field->packets.insert(std::make_pair(i,0));
-		
-		//Store last
-		lastFeedbackPacketExtSeqNum = transportExtSeqNum;
-		
-		//Add this one
-		field->packets.insert(std::make_pair(transportSeqNum,getTime()));
-		
-		//And add it
-		feedback->AddField(field);
-		 
-		//Add it
-		rtcp.AddRTCPacket(feedback);
+		//Add to packet
+		rtcp.AddRTCPacket(nack);
 
 		//Send packet
 		Send(rtcp);
-
-		rtcp.Dump();
 	}
+
+	//Check listener
+	if (group->listener)
+		//Call listeners
+		group->listener->onRTP(group,packet);
+	
 	//Done
 	return 1;
+}
+
+void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,int seq)
+{
+	//Calculate ext seq number
+	DWORD ext = ((DWORD)(group->media.cycles)<<16 | seq);
+
+	//Find packet to retransmit
+	auto it = group->packets.find(ext);
+
+	//If we still have it
+	if (it!=group->packets.end())
+	{
+		//Get packet
+		RTPTimedPacket* packet = it->second;
+		
+		//Get outgoing source
+		RTPOutgoingSource& source = group->rtx;
+
+		//Data
+		BYTE data[MTU+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
+		DWORD size = MTU;
+		int len = packet->GetSize();
+		
+		//Check size + osn in case of RTX
+		if (len+2>size)
+			//Error
+			return (void)Error("-RTPSession::ReSendPacket() | not enougth size for copying packet [len:%d]\n",len);
+		
+		//Copy RTP headers
+		memcpy(data,packet->GetData(),packet->GetRTPHeaderLen());
+		
+		//Get payload ini
+		BYTE *payload = data+packet->GetRTPHeaderLen();
+		
+		//Overwrite it
+		set2(data,sizeof(rtp_hdr_t)+sizeof(rtp_hdr_ext_t)+1,transportSeqNum++);
+
+		
+		rtp_hdr_t* headers = (rtp_hdr_t*)data;
+		//Set RTX ssrc
+		headers->ssrc = htonl(source.SSRC);
+		//Set payload
+		headers->pt = rtpMap.GetTypeForCodec(VideoCodec::RTX);
+		//Incrementamos el numero de secuencia
+		headers->seq = htons(source.extSeq++);
+		//Check seq wrap
+		if (source.extSeq==0)
+			//Inc cycles
+			source.cycles++;
+		//And set the original seq
+		set2(payload,0,seq);
+		//Move payload start
+		payload += 2;
+		//Increase packet len
+		len += 2;
+		
+		//Copy payload
+		memcpy(payload,packet->GetMediaData(),packet->GetMediaLength());
+		
+		Debug("-RTPSession::ReSendPacket() | %d %d\n",seq,ext);
+		
+		//Encript
+		srtp_err_status_t srtp_err_status = srtp_protect(sendSRTPSession,data,&len);
+		//Check error
+		if (srtp_err_status!=srtp_err_status_ok)
+			//Error
+			return (void)Error("-RTPTransport::SendPacket() | Error protecting RTP packet [%d]\n",srtp_err_status);
+		//No error yet, send packet
+		len = sender->Send(active,data,len);
+		
+	} else {
+		//Debug("-RTPSession::ReSendPacket() | %d:%d %d not found first %d sending intra instead\n",send.cycles,seq,ext,rtxs.size() ?  rtxs.begin()->first : 0);
+		//Check listener
+		if (group->listener)
+			//Request I frame instead
+			group->listener->onPLIRequest(group,group->media.SSRC);
+		//Empty queue without locking again
+		//Delete rtx packets
+		for (auto it = group->packets.begin(); it!=group->packets.end();++it)
+		{
+			//Get pacekt
+			RTPTimedPacket *pkt = it->second;
+			//Delete object
+			delete(pkt);
+		}
+
+		//Clear list
+		group->packets.clear();
+	}
 }
 
 
@@ -1049,17 +1130,14 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 							//Get field
 							const RTCPRTPFeedback::NACKField *field = (const RTCPRTPFeedback::NACKField*) fb->GetField(i);
 							
-							//TODO: Implement NACK
-							/*
 							//Resent it
-							ReSendPacket(field->pid);
+							ReSendPacket(group,field->pid);
 							//Check each bit of the mask
 							for (int i=0;i<16;i++)
 								//Check it bit is present to rtx the packets
 								if ((field->blp >> (15-i)) & 1)
 									//Resent it
-									ReSendPacket(field->pid+i+1);
-							*/
+									ReSendPacket(group,field->pid+i+1);
 						}
 						break;
 					case RTCPRTPFeedback::TempMaxMediaStreamBitrateRequest:
