@@ -34,7 +34,7 @@
 
 
 
-DTLSICETransport::DTLSICETransport(Sender *sender) : dtls(*this)
+DTLSICETransport::DTLSICETransport(Sender *sender) : dtls(*this), mutex(true)
 {
 	//Store sender
 	this->sender = sender;
@@ -46,6 +46,7 @@ DTLSICETransport::DTLSICETransport(Sender *sender) : dtls(*this)
 	//Transport wide seq num
 	transportSeqNum = 0;
 	feedbackPacketCount = 1;
+	feedbackCycles = 0;
 	lastFeedbackPacketExtSeqNum = 0;
 	//No ice
 	iceLocalUsername = NULL;
@@ -66,6 +67,9 @@ DTLSICETransport::~DTLSICETransport()
 }
 int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWORD size)
 {
+	//Block method
+	ScopedLock method(mutex);
+	
 	int len = size;
 	
 	//Check if it a DTLS packet
@@ -92,12 +96,12 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 
 		//Check session
 		if (!recvSRTPSession)
-			return Error("-RTPBundleTransport::onData() | No recvSRTPSession\n");
+			return Error("-DTLSICETransport::onData() | No recvSRTPSession\n");
 		//unprotect
 		srtp_err_status_t err = srtp_unprotect_rtcp(recvSRTPSession,data,&len);
 		//Check error
 		if (err!=srtp_err_status_ok)
-			return Error("-RTPBundleTransport::onData() | Error unprotecting rtcp packet [%d]\n",err);
+			return Error("-DTLSICETransport::onData() | Error unprotecting rtcp packet [%d]\n",err);
 
 		//Parse it
 		RTCPCompoundPacket* rtcp = RTCPCompoundPacket::Parse(data,len);
@@ -124,7 +128,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	if (!RTPPacket::IsRTP(data,size))
 	{
 		//Debug
-		Debug("-RTPBundleTransport::onData() | Not RTP data recevied\n");
+		Debug("-DTLSICETransport::onData() | Not RTP data recevied\n");
 		//Dump it
 		Dump(data,size);
 		//Exit
@@ -135,7 +139,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	if (size<12)
 	{
 		//Debug
-		Debug("-RTPBundleTransport::onData() | RTP data not big enought[%d]\n",size);
+		Debug("-DTLSICETransport::onData() | RTP data not big enought[%d]\n",size);
 		//Exit
 		return 1;
 	}
@@ -143,15 +147,14 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	srtp_err_status_t err;
 	//Check session
 	if (!recvSRTPSession)
-		return Error("-RTPBundleTransport::onData() | No recvSRTPSession\n");
+		return Error("-DTLSICETransport::onData() | No recvSRTPSession\n");
 	//unprotect
 	err = srtp_unprotect(recvSRTPSession,data,&len);
 	//Check status
 	if (err!=srtp_err_status_ok)
 		//Error
-		return Error("-RTPBundleTransport::onData() | Error unprotecting rtp packet [%d]\n",err);
-	//Debug(">decoded [%d]\n",len);
-	//Dump(data,64);
+		return Error("-DTLSICETransport::onData() | Error unprotecting rtp packet [%d]\n",err);
+
 	//Get ssrc
 	DWORD ssrc = RTPPacket::GetSSRC(data);
 	//Get type
@@ -165,7 +168,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	//Check codec
 	if (codec==RTPMap::NotFound)
 		//Exit
-		return Error("-RTPBundleTransport::onData() | RTP packet type unknown [%d]\n",type);
+		return Error("-DTLSICETransport::onData() | RTP packet type unknown [%d]\n",type);
 		//Exit
 
 	//Get incoming group
@@ -174,7 +177,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	//If not found
 	if (it==incoming.end())
 		//error
-		return Error("-RTPBundleTransport::onData() | Unknown ssrc [%u]\n",ssrc);
+		return Error("-DTLSICETransport::onData() | Unknown ssrc [%u]\n",ssrc);
 	
 	//Get group
 	RTPIncomingSourceGroup *group = it->second;
@@ -194,7 +197,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		//Ensure that it is a RTX codec
 		if (codec!=VideoCodec::RTX)
 			//error
-			return  Error("-RTPBundleTransport::onData() | No RTX codec on rtx sssrc:%u type:%d codec:%d\n",ssrc,type,codec);
+			return  Error("-DTLSICETransport::onData() | No RTX codec on rtx sssrc:%u type:%d codec:%d\n",ssrc,type,codec);
 		//IT is the rtx
 		source = &group->rtx;
 		/*
@@ -236,19 +239,19 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		 //Check codec
 		 if (codec==RTPMap::NotFound)
 			  //Error
-			  return Error("-RTPSession::ReadRTP(%s) | RTP RTX packet apt type unknown [%d]\n",MediaFrame::TypeToString(group->type),type);
+			  return Error("-DTLSICETransport::ReadRTP(%s) | RTP RTX packet apt type unknown [%d]\n",MediaFrame::TypeToString(group->type),type);
 		 //It is a retrasmision
 		 isRTX = true;
 	} else if (ssrc==group->fec.SSRC) {
 		//Ensure that it is a FEC codec
 		if (codec!=VideoCodec::FLEXFEC)
 			//error
-			return  Error("-RTPBundleTransport::onData() | No FLEXFEC codec on fec sssrc:%u type:%d codec:%d\n",ssrc,type,codec);
+			return  Error("-DTLSICETransport::onData() | No FLEXFEC codec on fec sssrc:%u type:%d codec:%d\n",ssrc,type,codec);
 		//IT is the rtx
 		source = &group->fec;
 	} else {
 		//error
-		return Error("-RTPBundleTransport::onData() | Group does not contain ssrc [%u]\n",ssrc);
+		return Error("-DTLSICETransport::onData() | Group does not contain ssrc [%u]\n",ssrc);
 	}
 	
 	//Create normal packet
@@ -278,53 +281,51 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	source->totalBytes += size;
 	source->totalBytesSinceLastSR += size;
 
-	//TODO: Calculate REMB and jitter
-	
+	//If it is video
+	if (group->type == MediaFrame::Video)
+	{
 		//GEt last 
-	WORD transportSeqNum = packet->GetTransportSeqNum();
+		WORD transportSeqNum = packet->GetTransportSeqNum();
 
-	//Create rtcp transport wide feedback
-	RTCPCompoundPacket rtcp;
+		//Create rtcp transport wide feedback
+		RTCPCompoundPacket rtcp;
 
-	//Add to rtcp
-	RTCPRTPFeedback* feedback = RTCPRTPFeedback::Create(RTCPRTPFeedback::TransportWideFeedbackMessage,0,ssrc);
+		//Add to rtcp
+		RTCPRTPFeedback* feedback = RTCPRTPFeedback::Create(RTCPRTPFeedback::TransportWideFeedbackMessage,0,ssrc);
 
-	//Create trnasport field
-	RTCPRTPFeedback::TransportWideFeedbackMessageField *field = new RTCPRTPFeedback::TransportWideFeedbackMessageField(feedbackPacketCount++);
+		//Create trnasport field
+		RTCPRTPFeedback::TransportWideFeedbackMessageField *field = new RTCPRTPFeedback::TransportWideFeedbackMessageField(feedbackPacketCount++);
 
+		//Check if we have a sequence wrap
+		if (transportSeqNum<0x0FFF && (lastFeedbackPacketExtSeqNum & 0xFFFF)>0xF000)
+			//Increase cycles
+			feedbackCycles++;
 
+		//Get extended value
+		DWORD transportExtSeqNum = feedbackCycles<<16 | transportSeqNum;
+		
+		//if not first
+		if (lastFeedbackPacketExtSeqNum)
+			//For each lost
+			for (DWORD i = lastFeedbackPacketExtSeqNum; i<transportExtSeqNum; ++i)
+				//Add it
+				field->packets.insert(std::make_pair(i,0));
 
-	//Check if we have a sequence wrap
-	if (transportSeqNum<0x0FFF && (lastFeedbackPacketExtSeqNum & 0xFFFF)>0xF000)
-		//Increase cycles
-		feedbackCycles++;
+		//Store last
+		lastFeedbackPacketExtSeqNum = transportExtSeqNum;
 
-	//Get extended value
-	DWORD transportExtSeqNum = feedbackCycles<<16 | transportSeqNum;
+		//Add this one
+		field->packets.insert(std::make_pair(transportSeqNum,getTime()));
 
-	//if not first
-	if (lastFeedbackPacketExtSeqNum)
-		//For each lost
-		for (DWORD i = lastFeedbackPacketExtSeqNum; i<transportExtSeqNum; ++i)
-			//Add it
-			field->packets.insert(std::make_pair(i,0));
+		//And add it
+		feedback->AddField(field);
 
-	//Store last
-	lastFeedbackPacketExtSeqNum = transportExtSeqNum;
+		//Add it
+		rtcp.AddRTCPacket(feedback);
 
-	//Add this one
-	field->packets.insert(std::make_pair(transportSeqNum,getTime()));
-
-	//And add it
-	feedback->AddField(field);
-
-	//Add it
-	rtcp.AddRTCPacket(feedback);
-
-	//Send packet
-	Send(rtcp);
-
-	rtcp.Dump();
+		//Send packet
+		Send(rtcp);
+	}
 	
 	//Append to the FEC decoder
 	if (group->fec.SSRC)
@@ -398,7 +399,6 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	if (group->listener)
 		//Call listeners
 		group->listener->onRTP(group,packet);
-	
 	//Done
 	return 1;
 }
@@ -496,17 +496,14 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,int seq)
 
 ICERemoteCandidate* DTLSICETransport::AddRemoteCandidate(const sockaddr_in addr, bool useCandidate, DWORD priority)
 {
-	BYTE data[MTU+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
+	//Block method
+	ScopedLock method(mutex);
+	
+	//Debug
+	Debug("-DTLSICETransport::AddRemoteCandidate() | Remote candidate [%s:%d,use:%d,prio:%d]\n",inet_ntoa(addr.sin_addr),ntohs(addr.sin_port),useCandidate,priority);
 	
 	//Create new candidate
 	ICERemoteCandidate* candidate = new ICERemoteCandidate(inet_ntoa(addr.sin_addr),ntohs(addr.sin_port),this);
-	
-	// Needed for DTLS in client mode (otherwise the DTLS "Client Hello" is not sent over the wire)
-	DWORD len = dtls.Read(data,MTU);
-	//Check it
-	if (len>0)
-		//Send to bundle transport
-		sender->Send(candidate,data,len);
 	
 	//Add to candidates
 	candidates.push_back(candidate);
@@ -515,6 +512,15 @@ ICERemoteCandidate* DTLSICETransport::AddRemoteCandidate(const sockaddr_in addr,
 	if (!active  || useCandidate)
 		//Send data to this one from now on
 		active = candidate;
+	
+	BYTE data[MTU+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
+	
+	// Needed for DTLS in client mode (otherwise the DTLS "Client Hello" is not sent over the wire)
+	DWORD len = dtls.Read(data,MTU);
+	//Check it
+	if (len>0)
+		//Send to bundle transport
+		sender->Send(active,data,len);
 	
 	//Return it
 	return candidate;
@@ -907,10 +913,11 @@ void DTLSICETransport::Send(RTCPCompoundPacket &rtcp)
 
 void DTLSICETransport::SendPLI(DWORD ssrc)
 {
-	Debug("-DTLSICETransport::SendPLI() [ssrc:%u]\n",ssrc);
+	//Block method
+	ScopedLock method(mutex);
+	
 	//Create rtcp sender retpor
 	RTCPCompoundPacket rtcp;
-
 
 	//Add to rtcp
 	rtcp.AddRTCPacket( RTCPPayloadFeedback::Create(RTCPPayloadFeedback::PictureLossIndication,0,ssrc));
@@ -923,6 +930,9 @@ void DTLSICETransport::Send(RTPTimedPacket &packet)
 {
 	BYTE 	data[MTU+SRTP_MAX_TRAILER_LEN] ALIGNEDTO32;
 	memset(data,0,MTU);
+	
+	//Block method
+	ScopedLock method(mutex);
 	
 	//If we don't have an active candidate yet
 	if (!active)
@@ -975,22 +985,26 @@ void DTLSICETransport::Send(RTPTimedPacket &packet)
 	//Calculamos el inicio
 	int ini = sizeof(rtp_hdr_t);
 
-	//Get header
-	rtp_hdr_ext_t* ext = (rtp_hdr_ext_t*)(data + ini);
-	//Increase length
-	ini += sizeof(rtp_hdr_ext_t);
-	//Set extension header
-	headers->x = 1;
-	//Set magic cookie
-	ext->ext_type = htons(0xBEDE);
-	//Set total length in 32bits words
-	ext->len = htons(1);
-	//Set header
-	data[ini] = extMap.GetTypeForCodec(RTPHeaderExtension::TransportWideCC) << 4 | 0x01;
-	//Set data
-	set2(data,ini+1,transportSeqNum++);
-	//Increase ini
-	ini+=4;
+	//Add transport wide cc on video
+	if (group->type == MediaFrame::Video)
+	{
+		//Get header
+		rtp_hdr_ext_t* ext = (rtp_hdr_ext_t*)(data + ini);
+		//Increase length
+		ini += sizeof(rtp_hdr_ext_t);
+		//Set extension header
+		headers->x = 1;
+		//Set magic cookie
+		ext->ext_type = htons(0xBEDE);
+		//Set total length in 32bits words
+		ext->len = htons(1);
+		//Set header
+		data[ini] = extMap.GetTypeForCodec(RTPHeaderExtension::TransportWideCC) << 4 | 0x01;
+		//Set data
+		set2(data,ini+1,transportSeqNum++);
+		//Increase ini
+		ini+=4;
+	}
 	
 	//Comprobamos que quepan
 	if (ini+packet.GetMediaLength()>MTU)
@@ -1008,8 +1022,6 @@ void DTLSICETransport::Send(RTPTimedPacket &packet)
 	rtx->SetSeqCycles(source.cycles);
 	//Add it to que
 	group->packets[rtx->GetExtSeqNum()] = rtx;
-	//Debug(">encoded [%d,%d,%d]\n",len,packet.GetSize(),packet.GetMediaLength());
-	//Dump(data,64);
 	
 	//Encript
 	srtp_err_status_t srtp_err_status = srtp_protect(sendSRTPSession,data,&len);
@@ -1017,7 +1029,7 @@ void DTLSICETransport::Send(RTPTimedPacket &packet)
 	if (srtp_err_status!=srtp_err_status_ok)
 		//Error
 		return (void)Error("-RTPTransport::SendPacket() | Error protecting RTP packet [%d]\n",srtp_err_status);
-	//Debug("<encoded [%d]\n",len);
+
 	//No error yet, send packet
 	len = sender->Send(active,data,len);
 
@@ -1048,8 +1060,6 @@ void DTLSICETransport::Send(RTPTimedPacket &packet)
 		//Delete object
 		delete(pkt);
 	}
-
-	
 }
 
 
