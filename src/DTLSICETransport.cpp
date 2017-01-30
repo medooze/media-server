@@ -181,10 +181,6 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	
 	//Get group
 	RTPIncomingSourceGroup *group = it->second;
-	
-	
-	bool isRTX = false;
-	bool discard = false;
 	RTPIncomingSource* source;
 	
 	//Get incomins source
@@ -240,8 +236,6 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		 if (codec==RTPMap::NotFound)
 			  //Error
 			  return Error("-DTLSICETransport::ReadRTP(%s) | RTP RTX packet apt type unknown [%d]\n",MediaFrame::TypeToString(group->type),type);
-		 //It is a retrasmision
-		 isRTX = true;
 	} else if (ssrc==group->fec.SSRC) {
 		//Ensure that it is a FEC codec
 		if (codec!=VideoCodec::FLEXFEC)
@@ -324,14 +318,16 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		rtcp.AddRTCPacket(feedback);
 
 		//Send packet
-		Send(rtcp);
+		//Send(rtcp);
 	}
 	
 	//Append to the FEC decoder
 	if (group->fec.SSRC)
 	{
+		//TODO: support flex fec
+		/*/
 		//Check if we need to discard it
-		discard = !group->fec.decoder.AddPacket(packet);
+		bool media = group->fec.decoder.AddPacket(packet);
 		
 		//Try to recover
 		RTPTimedPacket* recovered = group->fec.decoder.Recover();
@@ -361,8 +357,11 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 			//Try to recover another one (yuhu!)
 			recovered = group->fec.decoder.Recover();
 		}
-		//Done
-		return 1;
+		//Check if done
+		if (discard)
+			//done
+			return 0;
+		 * */
 	}
 	
 	//Update lost packets
