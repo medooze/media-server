@@ -22,7 +22,6 @@
 #include "rtp.h"
 #include "rtpsession.h"
 #include "stunmessage.h"
-#include <libavutil/base64.h>
 #include <openssl/ossl_typ.h>
 
 /*************************
