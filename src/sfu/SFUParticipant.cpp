@@ -49,16 +49,12 @@ Participant::~Participant()
 
 void Participant::AddListener(Stream::Listener *other)
 {
-	//Add his outgoing stream to transport
-	//transport->
 	//add it as listener
 	listeners.insert(other);
 }
 
 void Participant::RemoveListener(Stream::Listener *other)
 {
-	//Add his outgoing stream to transport
-	//transport->
 	//add it as listener
 	listeners.erase(other);
 }
@@ -146,8 +142,6 @@ bool Participant::AddRemoteStream(Properties &properties)
 
 void Participant::onRTP(RTPIncomingSourceGroup* group,RTPTimedPacket* packet)
 {
-	//packet->Dump();
-	
 	if (group->type==MediaFrame::Audio)
 		//Change ssrc for outgoin stream
 		packet->SetSSRC(mine->audio);
@@ -166,7 +160,6 @@ void Participant::onRTP(RTPIncomingSourceGroup* group,RTPTimedPacket* packet)
 
 void Participant::onPLIRequest(RTPOutgoingSourceGroup* group,DWORD ssrc)
 {
-	Debug("-Participant::onPLIRequest() | [id:%s,ssrc:%u]\n",msid.c_str(),ssrc);
 	//Should not happen
 	if (group->type==MediaFrame::Audio)
 		return;
@@ -185,14 +178,12 @@ void Participant::onPLIRequest(RTPOutgoingSourceGroup* group,DWORD ssrc)
 
  void Participant::onMedia(Stream* stream,RTPTimedPacket* packet)
  {
-	 //Debug("-Participant::onMedia\n");
 	 //Send it
 	 transport->Send(*packet);
  }
  
  void Participant::RequestUpdate() 
  {
-	 Debug("-Participant:RequestUpdate()\n");
 	//Send PLI on video media stream
 	 transport->SendPLI(video->media.SSRC);
  }

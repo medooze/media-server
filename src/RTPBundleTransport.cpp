@@ -222,7 +222,6 @@ int RTPBundleTransport::End()
 
 int RTPBundleTransport::Send(const ICERemoteCandidate* candidate,const BYTE *buffer,const DWORD size)
 {
-	//Debug("-RTPBundleTransport::Send size:%d\n",size);
 	//Send packet
 	return sendto(socket,buffer,size,0,candidate->GetAddress(),candidate->GetAddressLen());
 }
@@ -244,8 +243,6 @@ int RTPBundleTransport::Read()
 	//Leemos del socket
 	int len = recvfrom(socket,data,MTU,MSG_DONTWAIT,(sockaddr*)&from_addr, &from_len);
 	
-	//Debug("-RTPBundleTransport::Read() | Got %d bytes\n",len);
-
 	// Ignore empty datagrams and errors
 	if (len <= 0)
 		return 0;
@@ -285,11 +282,9 @@ int RTPBundleTransport::Read()
 			
 			//If not found
 			if (it==transports.end())
-			{
-				//Reject
+				//TODO: Reject
 				//Exit
 				return Error("-RTPBundleTransport::Read ice username not found [%s}\n",username.c_str());
-			}
 
 			//Check if it has the prio attribute
 			if (!stun->HasAttribute(STUNMessage::Attribute::Priority))
@@ -351,6 +346,7 @@ int RTPBundleTransport::Read()
 
 		//Delete message
 		delete(stun);
+
 		//Exit
 		return 1;
 	}

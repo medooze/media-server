@@ -23,6 +23,7 @@
 #include "ICERemoteCandidate.h"
 #include "rtp.h"
 #include "fecdecoder.h"
+#include "use.h"
 
 struct RTPIncomingFecSource : public RTPIncomingSource
 {
@@ -161,6 +162,8 @@ private:
 	in_addr_t recIP;
 	DWORD	  recPort;
 	DWORD     prio;
+	
+	Mutex	mutex;
 };
 
 
