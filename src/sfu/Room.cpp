@@ -118,8 +118,9 @@ int Room::RemoveParticipant(int partId)
 	{
 		//Get the other participant
 		Participant *other = it->second;
-		//Add each other as listener
+		//Remove 
 		other->RemoveListener(participant);
+		other->RemoveLocalStream(participant->GetStream());
 	}
 	
 	//Delete it

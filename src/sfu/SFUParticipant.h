@@ -58,6 +58,7 @@ public:
 	void RemoveListener(Stream::Listener *listener);
 	
 	bool AddLocalStream(Stream* stream);
+	bool RemoveLocalStream(Stream* stream);
 	bool AddRemoteStream(Properties &prop);
 	virtual void onRTP(RTPIncomingSourceGroup* group,RTPTimedPacket* packet);
 	virtual void onPLIRequest(RTPOutgoingSourceGroup* group,DWORD ssrc);
@@ -69,6 +70,7 @@ public:
 private:
 	typedef std::set<Stream::Listener*> Listeners;
 	typedef std::map<std::string,Stream*> Streams;
+	typedef std::map<DWORD,RTPOutgoingSourceGroup*> Groups;
 private:
 	std::string msid;
 	Listeners listeners;
@@ -77,9 +79,10 @@ private:
 	RTPIncomingSourceGroup *video;
 	Stream* mine;
 	Streams others;
+	Groups groups;
 	RTPDepacketizer* d;
 	
-	
+	Mutex	mutex;
 };
 
 

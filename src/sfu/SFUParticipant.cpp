@@ -39,6 +39,10 @@ Participant::Participant(DTLSICETransport* transport)
 Participant::~Participant()
 {
 	delete(transport);
+	//Delete all groups
+	for (auto it=groups.begin();it!=groups.end();++it)
+		//Delete
+		delete(it->second);
 	if (audio)
 		delete(audio);
 	if (video)
@@ -49,18 +53,27 @@ Participant::~Participant()
 
 void Participant::AddListener(Stream::Listener *other)
 {
+	//Lock method
+	ScopedLock method(mutex);
+	
 	//add it as listener
 	listeners.insert(other);
 }
 
 void Participant::RemoveListener(Stream::Listener *other)
 {
+	//Lock method
+	ScopedLock method(mutex);
+	
 	//add it as listener
 	listeners.erase(other);
 }
 
 bool Participant::AddLocalStream(Stream* stream)
 {
+	//Lock method
+	ScopedLock method(mutex);
+	
 	Log("-Participant::AddLocalStream\n");
 	
 	//Add it to the stream from the others
@@ -72,6 +85,8 @@ bool Participant::AddLocalStream(Stream* stream)
 	oa->media.SSRC = stream->audio;
 	oa->fec.SSRC = 0;
 	oa->rtx.SSRC = 0;
+	//Store group
+	groups[oa->media.SSRC] = oa;
 	
 	//Add to transport
 	transport->AddOutgoingSourceGroup(oa);
@@ -82,6 +97,8 @@ bool Participant::AddLocalStream(Stream* stream)
 	ov->media.SSRC = stream->video;
 	ov->fec.SSRC = stream->fec;
 	ov->rtx.SSRC = stream->rtx;
+	//Store group
+	groups[ov->media.SSRC] = ov;
 	
 	//Add to transport
 	transport->AddOutgoingSourceGroup(ov);
@@ -92,8 +109,39 @@ bool Participant::AddLocalStream(Stream* stream)
 	return true;
 }
 
+bool Participant::RemoveLocalStream(Stream* stream)
+{
+	//Lock method
+	ScopedLock method(mutex);
+	
+	Log("-Participant::RemoveLocalStream\n");
+	
+	//Remove local stream
+	others.erase(stream->msid);
+	
+	//Get audio group
+	RTPOutgoingSourceGroup *oa = groups[stream->audio];
+	//REmove it from transport
+	transport->RemoveOutgoingSourceGroup(oa);
+	//Delete it
+	delete (oa);
+	
+	//Get audio group
+	RTPOutgoingSourceGroup *ov = groups[stream->video];
+	//REmove it from transport
+	transport->RemoveOutgoingSourceGroup(ov);
+	//Delete it
+	delete (ov);
+	
+	//OK
+	return true;
+}
+
 bool Participant::AddRemoteStream(Properties &properties)
 {
+	//Lock method
+	ScopedLock method(mutex);
+	
 	Log("-Participant::AddRemoteStream\n");
 	
 	//Get remote end stream properties
@@ -141,7 +189,10 @@ bool Participant::AddRemoteStream(Properties &properties)
 }
 
 void Participant::onRTP(RTPIncomingSourceGroup* group,RTPTimedPacket* packet)
-{
+{	
+	//Lock method
+	ScopedLock method(mutex);
+	
 	if (group->type==MediaFrame::Audio)
 		//Change ssrc for outgoin stream
 		packet->SetSSRC(mine->audio);
@@ -160,9 +211,13 @@ void Participant::onRTP(RTPIncomingSourceGroup* group,RTPTimedPacket* packet)
 
 void Participant::onPLIRequest(RTPOutgoingSourceGroup* group,DWORD ssrc)
 {
+	//Lock method
+	ScopedLock method(mutex);
+	
 	//Should not happen
 	if (group->type==MediaFrame::Audio)
 		return;
+	
 	//Get stream 
 	auto it = others.find(group->streamId);
 	

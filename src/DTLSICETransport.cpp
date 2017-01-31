@@ -318,7 +318,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		rtcp.AddRTCPacket(feedback);
 
 		//Send packet
-		//Send(rtcp);
+		Send(rtcp);
 	}
 	
 	//Append to the FEC decoder
@@ -1124,7 +1124,7 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 					//Dump
 					fb->Dump();
 					//Debug
-					Error("-Got feedback message for unknown media  [ssrc:%u]\n",ssrc);
+					Error("-DTLSICETransport::onRTCP() | Got feedback message for unknown media  [ssrc:%u]\n",ssrc);
 					//Ups! Skip
 					continue;
 				}
@@ -1150,10 +1150,13 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 						}
 						break;
 					case RTCPRTPFeedback::TempMaxMediaStreamBitrateRequest:
-						Debug("-TempMaxMediaStreamBitrateRequest\n");
+						Debug("-DTLSICETransport::onRTCP() | TempMaxMediaStreamBitrateRequest\n");
 						break;
 					case RTCPRTPFeedback::TempMaxMediaStreamBitrateNotification:
-						Debug("-RTPSession::ProcessRTCPPacket() | TempMaxMediaStreamBitrateNotification\n");
+						Debug("-DTLSICETransport::onRTCP() | TempMaxMediaStreamBitrateNotification\n");
+						break;
+					case RTCPRTPFeedback::TransportWideFeedbackMessage:
+						Debug("-DTLSICETransport::onRTCP() | TransportWideFeedbackMessage\n");
 						break;
 				}
 				break;
@@ -1183,26 +1186,26 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 				{
 					case RTCPPayloadFeedback::PictureLossIndication:
 					case RTCPPayloadFeedback::FullIntraRequest:
-						Debug("-RTPSession::ProcessRTCPPacket() | FPU requested [ssrc:%u]\n",ssrc);
+						Debug("-DTLSICETransport::onRTCP() | FPU requested [ssrc:%u]\n",ssrc);
 						//Check listener
 						if (group->listener)
 							//Call listeners
 							group->listener->onPLIRequest(group,ssrc);
 						//Get media
 					case RTCPPayloadFeedback::SliceLossIndication:
-						Debug("-RTPSession::ProcessRTCPPacket() | SliceLossIndication\n");
+						Debug("-DTLSICETransport::onRTCP() | SliceLossIndication\n");
 						break;
 					case RTCPPayloadFeedback::ReferencePictureSelectionIndication:
-						Debug("-RTPSession::ProcessRTCPPacket() | ReferencePictureSelectionIndication\n");
+						Debug("-DTLSICETransport::onRTCP() | ReferencePictureSelectionIndication\n");
 						break;
 					case RTCPPayloadFeedback::TemporalSpatialTradeOffRequest:
-						Debug("-RTPSession::ProcessRTCPPacket() | TemporalSpatialTradeOffRequest\n");
+						Debug("-DTLSICETransport::onRTCP() | TemporalSpatialTradeOffRequest\n");
 						break;
 					case RTCPPayloadFeedback::TemporalSpatialTradeOffNotification:
-						Debug("-RTPSession::ProcessRTCPPacket() | TemporalSpatialTradeOffNotification\n");
+						Debug("-DTLSICETransport::onRTCP() | TemporalSpatialTradeOffNotification\n");
 						break;
 					case RTCPPayloadFeedback::VideoBackChannelMessage:
-						Debug("-RTPSession::ProcessRTCPPacket() | VideoBackChannelMessage\n");
+						Debug("-DTLSICETransport::onRTCP() | VideoBackChannelMessage\n");
 						break;
 					case RTCPPayloadFeedback::ApplicationLayerFeeedbackMessage:
 						for (BYTE i=0;i<fb->GetFieldCount();i++)
@@ -1230,11 +1233,11 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 			}
 			case RTCPPacket::FullIntraRequest:
 				//THis is deprecated
-				Debug("-RTPSession::ProcessRTCPPacket() | FullIntraRequest!\n");
+				Debug("-DTLSICETransport::onRTCP() | FullIntraRequest!\n");
 				break;
 			case RTCPPacket::NACK:
 				//THis is deprecated
-				Debug("-RTPSession::ProcessRTCPPacket() | NACK!\n");
+				Debug("-DTLSICETransport::onRTCP() | NACK!\n");
 				break;
 		}
 	}
