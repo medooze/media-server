@@ -16,6 +16,7 @@
 #include "SFUParticipant.h"
 #include "rtp.h"
 
+
 using namespace SFU;
 
 Stream::Stream(Participant& p) : participant(p)
@@ -31,7 +32,7 @@ void Stream::RequestUpdate()
 	participant.RequestUpdate();
 }
 
-Participant::Participant(DTLSICETransport* transport)
+Participant::Participant(DTLSICETransport* transport) : selector(2,0)
 {
 	this->transport = transport;
 }
@@ -196,7 +197,7 @@ void Participant::onRTP(RTPIncomingSourceGroup* group,RTPTimedPacket* packet)
 	if (group->type==MediaFrame::Audio)
 		//Change ssrc for outgoin stream
 		packet->SetSSRC(mine->audio);
-	else
+	else 
 		//Change ssrc for outgoin stream
 		packet->SetSSRC(mine->video);
 		
@@ -233,6 +234,21 @@ void Participant::onPLIRequest(RTPOutgoingSourceGroup* group,DWORD ssrc)
 
  void Participant::onMedia(Stream* stream,RTPTimedPacket* packet)
  {
+	 //Check media
+	 if (packet->GetMedia()==MediaFrame::Video)
+	 {
+		 DWORD extSeqNum;
+		 bool mark;
+		 //Select layer
+		if (!selector.Select(packet,extSeqNum,mark))
+			//Drop
+			return;
+		//Set them
+		packet->SetSeqNum(extSeqNum);
+		packet->SetSeqCycles(extSeqNum >> 16);
+		//Set mark
+		packet->SetMark(mark);
+	 }
 	 //Send it
 	 transport->Send(*packet);
  }

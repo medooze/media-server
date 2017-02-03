@@ -64,6 +64,10 @@ VP8DIR=vp8
 VP8OBJ=vp8encoder.o vp8decoder.o 
 DEPACKETIZERSOBJ+= vp8depacketizer.o
 
+VP9DIR=vp9
+VP9OBJ=
+DEPACKETIZERSOBJ+= VP9PayloadDescription.o VP9LayerSelector.o
+
 GSMDIR=gsm
 GSMOBJ=gsmcodec.o
 
@@ -122,7 +126,7 @@ COREDIR=core
 BASE= xmlrpcserver.o xmlhandler.o xmlstreaminghandler.o statushandler.o  dtls.o CPUMonitor.o OpenSSL.o rtpsession.o RTPTransport.o   eventstreaminghandler.o httpparser.o   RTPSmoother.o rtp.o remoteratecontrol.o remoterateestimator.o stunmessage.o crc32calc.o http.o fecdecoder.o avcdescriptor.o utf8.o  
 
 OBJS=  xmlrpcsfu.o SFUManager.o Room.o SFUParticipant.o RTPBundleTransport.o DTLSICETransport.o audio.o video.o  $(BASE) $(COREOBJ) $(BFCPOBJ) $(VNCOBJ) cpim.o  groupchat.o websocketserver.o websocketconnection.o  mcu.o rtpparticipant.o multiconf.o  rtmpparticipant.o  xmlrpcmcu.o  mp4player.o mp4streamer.o mp4recorder.o  audiostream.o videostream.o amf.o rtmpmessage.o rtmpchunk.o rtmpstream.o rtmpconnection.o  rtmpserver.o broadcaster.o broadcastsession.o rtmpflvstream.o flvrecorder.o FLVEncoder.o xmlrpcbroadcaster.o mediagateway.o mediabridgesession.o xmlrpcmediagateway.o textmixer.o textmixerworker.o textstream.o pipetextinput.o pipetextoutput.o  logo.o overlay.o audioencoder.o audiodecoder.o textencoder.o rtmpmp4stream.o rtmpnetconnection.o   rtmpclientconnection.o vad.o  uploadhandler.o  appmixer.o  videopipe.o framescaler.o sidebar.o mosaic.o partedmosaic.o asymmetricmosaic.o pipmosaic.o videomixer.o audiomixer.o audiotransrater.o pipeaudioinput.o pipeaudiooutput.o pipevideoinput.o pipevideooutput.o 
-OBJS+= $(G711OBJ) $(H263OBJ) $(GSMOBJ)  $(H264OBJ) ${FLV1OBJ} $(SPEEXOBJ) $(NELLYOBJ) $(G722OBJ) $(JSR309OBJ) $(VADOBJ) $(VP6OBJ) $(VP8OBJ) $(OPUSOBJ) $(AACOBJ) $(DEPACKETIZERSOBJ)
+OBJS+= $(G711OBJ) $(H263OBJ) $(GSMOBJ)  $(H264OBJ) ${FLV1OBJ} $(SPEEXOBJ) $(NELLYOBJ) $(G722OBJ) $(JSR309OBJ) $(VADOBJ) $(VP6OBJ) $(VP8OBJ) $(VP9OBJ) $(OPUSOBJ) $(AACOBJ) $(DEPACKETIZERSOBJ)
 TARGETS=mcu test 
 
 ifeq ($(FLASHSTREAMER),yes)
@@ -156,7 +160,7 @@ endif
 OBJSSFU = sfu.o nocodecs.o xmlrpcsfu.o SFUManager.o Room.o SFUParticipant.o RTPBundleTransport.o DTLSICETransport.o $(DEPACKETIZERSOBJ) $(BASE) 
 OBJSMCU = $(OBJS) main.o
 OBJSLIB = $(OBJS)
-OBJSTEST = $(OBJS) test/main.o test/test.o test/cpim.o test/rtp.o test/fec.o test/overlay.o
+OBJSTEST = $(OBJS) test/main.o test/test.o test/cpim.o test/rtp.o test/fec.o test/overlay.o test/vp9.o
 OBJSRTMPDEBUG = $(OBJS) rtmpdebug.o
 OBJSFLVDUMP = $(OBJS) flvdump.o
 
@@ -189,6 +193,7 @@ VPATH +=  %.cpp $(SRCDIR)/src/$(JSR309DIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(SFUDIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(VP6DIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(VP8DIR)
+VPATH +=  %.cpp $(SRCDIR)/src/$(VP9DIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(OPUSDIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(AACDIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(VNCDIR)
