@@ -5,7 +5,6 @@
 #include "mcu.h"
 #include "rtmpparticipant.h"
 #include "websockets.h"
-#include "bfcp.h"
 
 
 /**************************************
@@ -170,13 +169,6 @@ int MCU::CreateConference(std::wstring tag,int queueId)
 
 	//Set us as listeners
 	conf->SetListener(this,(void*)entry);
-
-	//Create BFCP conference
-	BFCPFloorControlServer* floorServer = BFCP::getInstance().CreateConference(confId,conf);
-
-	//Set floor server in conf
-	conf->SetFloorControlServer(floorServer);
-
 
 	Log("<CreateConference [%d]\n",confId);
 
@@ -363,9 +355,6 @@ int MCU::DeleteConference(int id)
 
 	//End conference
 	conf->End();
-
-	//Delete BFCP
-	BFCP::getInstance().RemoveConference(id);
 
 	//Delete conference
 	delete conf;

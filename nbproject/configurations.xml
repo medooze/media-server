@@ -16,41 +16,6 @@
         <df name="aac">
           <in>aacencoder.cpp</in>
         </df>
-        <df name="bfcp">
-          <df name="attributes">
-            <in>BFCPAttrBeneficiaryId.cpp</in>
-            <in>BFCPAttrBeneficiaryInformation.cpp</in>
-            <in>BFCPAttrErrorCode.cpp</in>
-            <in>BFCPAttrErrorInfo.cpp</in>
-            <in>BFCPAttrFloorId.cpp</in>
-            <in>BFCPAttrFloorRequestId.cpp</in>
-            <in>BFCPAttrFloorRequestInformation.cpp</in>
-            <in>BFCPAttrFloorRequestStatus.cpp</in>
-            <in>BFCPAttrOverallRequestStatus.cpp</in>
-            <in>BFCPAttrParticipantProvidedInfo.cpp</in>
-            <in>BFCPAttrRequestStatus.cpp</in>
-            <in>BFCPAttrRequestedByInformation.cpp</in>
-            <in>BFCPAttrStatusInfo.cpp</in>
-          </df>
-          <df name="messages">
-            <in>BFCPMsgError.cpp</in>
-            <in>BFCPMsgFloorQuery.cpp</in>
-            <in>BFCPMsgFloorRelease.cpp</in>
-            <in>BFCPMsgFloorRequest.cpp</in>
-            <in>BFCPMsgFloorRequestStatus.cpp</in>
-            <in>BFCPMsgFloorStatus.cpp</in>
-            <in>BFCPMsgHello.cpp</in>
-          </df>
-          <in>BFCPAttribute.cpp</in>
-          <in>BFCPFloorControlServer.cpp</in>
-          <in>BFCPFloorRequest.cpp</in>
-          <in>BFCPMessage.cpp</in>
-          <in>BFCPUser.cpp</in>
-        </df>
-        <df name="cef">
-          <in>Browser.cpp</in>
-          <in>Client.cpp</in>
-        </df>
         <df name="core">
           <in>VideoEncoderWorker.cpp</in>
         </df>
@@ -116,79 +81,6 @@
           <in>resample.c</in>
           <in>speexcodec.cpp</in>
         </df>
-        <df name="vnc">
-          <df name="common">
-            <in>d3des.c</in>
-            <in>md5.c</in>
-            <in>minilzo.c</in>
-            <in>sha1.c</in>
-            <in>turbojpeg.c</in>
-            <in>vncauth.c</in>
-            <in>zywrletemplate.c</in>
-          </df>
-          <df name="libvncclient">
-            <in>corre.c</in>
-            <in>cursor.c</in>
-            <in>hextile.c</in>
-            <in>listen.c</in>
-            <in>rfbproto.c</in>
-            <in>rre.c</in>
-            <in>sockets.c</in>
-            <in>tight.c</in>
-            <in>tls_gnutls.c</in>
-            <in>tls_none.c</in>
-            <in>tls_openssl.c</in>
-            <in>ultra.c</in>
-            <in>vncviewer.c</in>
-            <in>zlib.c</in>
-            <in>zrle.c</in>
-          </df>
-          <df name="libvncserver">
-            <df name="tightvnc-filetransfer">
-              <in>filelistinfo.c</in>
-              <in>filetransfermsg.c</in>
-              <in>handlefiletransferrequest.c</in>
-              <in>rfbtightserver.c</in>
-            </df>
-            <in>auth.c</in>
-            <in>cargs.c</in>
-            <in>corre.c</in>
-            <in>cutpaste.c</in>
-            <in>draw.c</in>
-            <in>font.c</in>
-            <in>hextile.c</in>
-            <in>httpd.c</in>
-            <in>rfbcrypto_gnutls.c</in>
-            <in>rfbcrypto_included.c</in>
-            <in>rfbcrypto_openssl.c</in>
-            <in>rfbregion.c</in>
-            <in>rfbserver.c</in>
-            <in>rfbssl_gnutls.c</in>
-            <in>rfbssl_none.c</in>
-            <in>rfbssl_openssl.c</in>
-            <in>rre.c</in>
-            <in>scale.c</in>
-            <in>selbox.c</in>
-            <in>server.c</in>
-            <in>server_cursor.c</in>
-            <in>sockets.c</in>
-            <in>stats.c</in>
-            <in>tableinit24.c</in>
-            <in>tableinitcmtemplate.c</in>
-            <in>tableinittctemplate.c</in>
-            <in>tabletrans24template.c</in>
-            <in>tabletranstemplate.c</in>
-            <in>tight.c</in>
-            <in>translate.c</in>
-            <in>ultra.c</in>
-            <in>websockets.c</in>
-            <in>zlib.c</in>
-            <in>zrle.c</in>
-            <in>zrleencodetemplate.c</in>
-            <in>zrleoutstream.c</in>
-            <in>zrlepalettehelper.c</in>
-          </df>
-        </df>
         <df name="vp6">
           <in>vp6decoder.cpp</in>
         </df>
@@ -204,8 +96,6 @@
         <in>RTPBundleTransport.cpp</in>
         <in>RTPSmoother.cpp</in>
         <in>RTPTransport.cpp</in>
-        <in>VNCServer.cpp</in>
-        <in>VNCViewer.cpp</in>
         <in>amf.cpp</in>
         <in>appmixer.cpp</in>
         <in>asymmetricmosaic.cpp</in>
@@ -407,6 +297,7 @@
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem></pElem>
+            <pElem>src/aac</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -420,39 +311,6 @@
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
           </preprocessorList>
-        </ccTool>
-      </folder>
-      <folder path="0/src/bfcp">
-        <ccTool>
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </folder>
-      <folder path="0/src/cef">
-        <ccTool>
-          <incDir>
-            <pElem>include</pElem>
-            <pElem>usr/include/c++/6</pElem>
-            <pElem>src/cef</pElem>
-          </incDir>
         </ccTool>
       </folder>
       <folder path="0/src/core">
@@ -464,6 +322,7 @@
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem></pElem>
+            <pElem>src/core</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -488,6 +347,7 @@
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem></pElem>
+            <pElem>src/flv1</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -512,6 +372,7 @@
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem></pElem>
+            <pElem>src/g711</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -534,6 +395,7 @@
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem></pElem>
+            <pElem>src/g711</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -558,6 +420,7 @@
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem></pElem>
+            <pElem>src/g722</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -582,6 +445,7 @@
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem></pElem>
+            <pElem>src/gsm</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -606,6 +470,7 @@
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem></pElem>
+            <pElem>src/h263</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -630,6 +495,7 @@
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem></pElem>
+            <pElem>src/h264</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -654,6 +520,7 @@
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem></pElem>
+            <pElem>src/nelly</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -678,6 +545,7 @@
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem></pElem>
+            <pElem>src/opus</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -699,12 +567,11 @@
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
@@ -726,6 +593,7 @@
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem></pElem>
+            <pElem>src/speex</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -748,6 +616,7 @@
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem></pElem>
+            <pElem>src/speex</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -763,45 +632,6 @@
           </preprocessorList>
         </ccTool>
       </folder>
-      <folder path="0/src/vnc/common">
-        <cTool>
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </folder>
-      <folder path="0/src/vnc/libvncserver/tightvnc-filetransfer">
-        <cTool>
-          <incDir>
-            <pElem>usr/include/c++/6</pElem>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncserver/tightvnc-filetransfer</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </folder>
       <folder path="0/src/vp6">
         <ccTool>
           <incDir>
@@ -811,6 +641,7 @@
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem></pElem>
+            <pElem>src/vp6</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -835,6 +666,7 @@
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem></pElem>
+            <pElem>src/vp8</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -859,6 +691,7 @@
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem></pElem>
+            <pElem>test</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -900,8 +733,6 @@
           </preprocessorList>
         </ccTool>
       </folder>
-      <item path="include/ICERemoteCandidate.h" ex="false" tool="3" flavor2="0">
-      </item>
       <item path="lib/mediamixer.cpp" ex="false" tool="1" flavor2="4">
       </item>
       <item path="src/CPUMonitor.cpp" ex="false" tool="1" flavor2="4">
@@ -928,7 +759,7 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="src/DTLSICETransport.cpp" ex="false" tool="1" flavor2="0">
+      <item path="src/DTLSICETransport.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
             <pElem>src</pElem>
@@ -1049,54 +880,6 @@
         </ccTool>
       </item>
       <item path="src/RTPTransport.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="1">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </item>
-      <item path="src/VNCServer.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="1">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </item>
-      <item path="src/VNCViewer.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="1">
           <incDir>
             <pElem>src</pElem>
@@ -1388,163 +1171,6 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="src/bfcp/BFCPAttribute.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="1">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/BFCPFloorControlServer.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="1">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/BFCPFloorRequest.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="1">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/BFCPMessage.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="1">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/BFCPUser.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="1">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/attributes/BFCPAttrBeneficiaryId.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="1">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/attributes/BFCPAttrBeneficiaryInformation.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="1">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/attributes/BFCPAttrErrorCode.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="1">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/attributes/BFCPAttrErrorInfo.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="1">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/attributes/BFCPAttrFloorId.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="1">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/attributes/BFCPAttrFloorRequestId.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="1">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/attributes/BFCPAttrFloorRequestInformation.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="1">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/attributes/BFCPAttrFloorRequestStatus.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="1">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/attributes/BFCPAttrOverallRequestStatus.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="1">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/attributes/BFCPAttrParticipantProvidedInfo.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="1">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/attributes/BFCPAttrRequestStatus.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="1">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/attributes/BFCPAttrRequestedByInformation.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="1">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/attributes/BFCPAttrStatusInfo.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="1">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/messages/BFCPMsgError.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="1">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/messages/BFCPMsgFloorQuery.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="1">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/messages/BFCPMsgFloorRelease.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="1">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/messages/BFCPMsgFloorRequest.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="1">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/messages/BFCPMsgFloorRequestStatus.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="1">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/messages/BFCPMsgFloorStatus.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="1">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/messages/BFCPMsgHello.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="1">
-        </ccTool>
-      </item>
       <item path="src/broadcaster.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="1">
           <incDir>
@@ -1592,10 +1218,6 @@
             <Elem>__STDC_CONSTANT_MACROS</Elem>
           </preprocessorList>
         </ccTool>
-      </item>
-      <item path="src/cef/Browser.cpp" ex="false" tool="1" flavor2="4">
-      </item>
-      <item path="src/cef/Client.cpp" ex="false" tool="1" flavor2="4">
       </item>
       <item path="src/core/VideoEncoderWorker.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="1">
@@ -1902,6 +1524,7 @@
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem></pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1926,6 +1549,7 @@
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem></pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1950,6 +1574,7 @@
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem></pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -1997,6 +1622,7 @@
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem></pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2021,6 +1647,7 @@
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem></pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2045,6 +1672,7 @@
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem></pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2069,6 +1697,7 @@
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem></pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2093,6 +1722,7 @@
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem></pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2117,6 +1747,7 @@
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem></pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2144,6 +1775,7 @@
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem></pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2168,6 +1800,7 @@
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem></pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2192,6 +1825,7 @@
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem></pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2219,6 +1853,7 @@
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem></pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2243,6 +1878,7 @@
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem></pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2267,6 +1903,7 @@
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem></pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -2291,6 +1928,7 @@
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
             <pElem></pElem>
+            <pElem>src/jsr309</pElem>
           </incDir>
           <preprocessorList>
             <Elem>FLOATING_POINT</Elem>
@@ -3152,19 +2790,19 @@
         </cTool>
       </item>
       <item path="src/sfu/Room.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="1">
+        <ccTool flags="0">
         </ccTool>
       </item>
       <item path="src/sfu/SFUManager.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="1">
+        <ccTool flags="0">
         </ccTool>
       </item>
       <item path="src/sfu/SFUParticipant.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/sfu/SFUParticipant.h" ex="false" tool="3" flavor2="0">
+        <ccTool flags="0">
+        </ccTool>
       </item>
       <item path="src/sfu/xmlrpcsfu.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="1">
+        <ccTool flags="0">
         </ccTool>
       </item>
       <item path="src/sidebar.cpp" ex="false" tool="1" flavor2="4">
@@ -3511,1089 +3149,6 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="src/vnc/common/d3des.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="2">
-        </cTool>
-      </item>
-      <item path="src/vnc/common/md5.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="2">
-        </cTool>
-      </item>
-      <item path="src/vnc/common/minilzo.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="2">
-        </cTool>
-      </item>
-      <item path="src/vnc/common/sha1.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="2">
-        </cTool>
-      </item>
-      <item path="src/vnc/common/turbojpeg.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="2">
-        </cTool>
-      </item>
-      <item path="src/vnc/common/vncauth.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="2">
-        </cTool>
-      </item>
-      <item path="src/vnc/common/zywrletemplate.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="2">
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncclient/corre.c" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>usr/include/c++/6</pElem>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncclient</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncclient/cursor.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncclient/hextile.c" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>usr/include/c++/6</pElem>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncclient</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncclient/listen.c" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>usr/include/c++/6</pElem>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncclient</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncclient/rfbproto.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncclient/rre.c" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>usr/include/c++/6</pElem>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncclient</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncclient/sockets.c" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>usr/include/c++/6</pElem>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncclient</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncclient/tight.c" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>usr/include/c++/6</pElem>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncclient</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncclient/tls_gnutls.c" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>usr/include/c++/6</pElem>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncclient</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncclient/tls_none.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncclient/tls_openssl.c" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>usr/include/c++/6</pElem>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncclient</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncclient/ultra.c" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>usr/include/c++/6</pElem>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncclient</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncclient/vncviewer.c" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>usr/include/c++/6</pElem>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncclient</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncclient/zlib.c" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>usr/include/c++/6</pElem>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncclient</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncclient/zrle.c" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>usr/include/c++/6</pElem>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncclient</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/auth.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/cargs.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/corre.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/cutpaste.c" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>usr/include/c++/6</pElem>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/draw.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/font.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/hextile.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/httpd.c" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>usr/include/c++/6</pElem>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/rfbcrypto_gnutls.c"
-            ex="false"
-            tool="0"
-            flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>usr/include/c++/6</pElem>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/rfbcrypto_included.c"
-            ex="false"
-            tool="0"
-            flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>usr/include/c++/6</pElem>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/rfbcrypto_openssl.c"
-            ex="false"
-            tool="0"
-            flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>usr/include/c++/6</pElem>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/rfbregion.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/rfbserver.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/rfbssl_gnutls.c"
-            ex="false"
-            tool="0"
-            flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>usr/include/c++/6</pElem>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/rfbssl_none.c" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>usr/include/c++/6</pElem>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/rfbssl_openssl.c"
-            ex="false"
-            tool="0"
-            flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>usr/include/c++/6</pElem>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/rre.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/scale.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/selbox.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/server.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/server_cursor.c"
-            ex="false"
-            tool="0"
-            flavor2="2">
-        <cTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/sockets.c" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>usr/include/c++/6</pElem>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/stats.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/tableinit24.c" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>usr/include/c++/6</pElem>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/tableinitcmtemplate.c"
-            ex="false"
-            tool="0"
-            flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>usr/include/c++/6</pElem>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/tableinittctemplate.c"
-            ex="false"
-            tool="0"
-            flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>usr/include/c++/6</pElem>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/tabletrans24template.c"
-            ex="false"
-            tool="0"
-            flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>usr/include/c++/6</pElem>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/tabletranstemplate.c"
-            ex="false"
-            tool="0"
-            flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>usr/include/c++/6</pElem>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/tight.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/tightvnc-filetransfer/filelistinfo.c"
-            ex="false"
-            tool="0"
-            flavor2="2">
-      </item>
-      <item path="src/vnc/libvncserver/tightvnc-filetransfer/filetransfermsg.c"
-            ex="false"
-            tool="0"
-            flavor2="2">
-      </item>
-      <item path="src/vnc/libvncserver/tightvnc-filetransfer/handlefiletransferrequest.c"
-            ex="false"
-            tool="0"
-            flavor2="2">
-      </item>
-      <item path="src/vnc/libvncserver/tightvnc-filetransfer/rfbtightserver.c"
-            ex="false"
-            tool="0"
-            flavor2="2">
-      </item>
-      <item path="src/vnc/libvncserver/translate.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/ultra.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/websockets.c" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>usr/include/c++/6</pElem>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/zlib.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/zrle.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/zrleencodetemplate.c"
-            ex="false"
-            tool="0"
-            flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>usr/include/c++/6</pElem>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/zrleoutstream.c"
-            ex="false"
-            tool="0"
-            flavor2="2">
-        <cTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/zrlepalettehelper.c"
-            ex="false"
-            tool="0"
-            flavor2="2">
-        <cTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
       <item path="src/vp6/vp6decoder.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="1">
         </ccTool>
@@ -4802,7 +3357,7 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="test/cpim.cpp" ex="false" tool="1" flavor2="0">
+      <item path="test/cpim.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
         </ccTool>
       </item>
@@ -4810,11 +3365,11 @@
         <ccTool flags="1">
         </ccTool>
       </item>
-      <item path="test/main.cpp" ex="false" tool="1" flavor2="0">
+      <item path="test/main.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
         </ccTool>
       </item>
-      <item path="test/overlay.cpp" ex="false" tool="1" flavor2="0">
+      <item path="test/overlay.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
         </ccTool>
       </item>
@@ -4908,53 +3463,6 @@
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
           </preprocessorList>
-        </ccTool>
-      </folder>
-      <folder path="0/src/bfcp">
-        <ccTool>
-          <incDir>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </folder>
-      <folder path="0/src/bfcp/attributes">
-        <ccTool>
-          <incDir>
-            <pElem>src/bfcp/attributes</pElem>
-          </incDir>
-        </ccTool>
-      </folder>
-      <folder path="0/src/bfcp/messages">
-        <ccTool>
-          <incDir>
-            <pElem>src/bfcp/messages</pElem>
-          </incDir>
-        </ccTool>
-      </folder>
-      <folder path="0/src/cef">
-        <ccTool>
-          <incDir>
-            <pElem>src/cef</pElem>
-          </incDir>
         </ccTool>
       </folder>
       <folder path="0/src/core">
@@ -5266,41 +3774,6 @@
           </preprocessorList>
         </ccTool>
       </folder>
-      <folder path="0/src/vnc/common">
-        <cTool>
-          <incDir>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </folder>
-      <folder path="0/src/vnc/libvncserver/tightvnc-filetransfer">
-        <cTool>
-          <incDir>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncserver/tightvnc-filetransfer</pElem>
-          </incDir>
-        </cTool>
-      </folder>
       <folder path="0/src/vp6">
         <ccTool>
           <incDir>
@@ -5474,60 +3947,6 @@
         </ccTool>
       </item>
       <item path="src/RTPTransport.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/VNCServer.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="0">
-          <incDir>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-            <pElem>src</pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </item>
-      <item path="src/VNCViewer.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="0">
-          <incDir>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-            <pElem>src</pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
       </item>
       <item path="src/aac/aacencoder.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
@@ -5820,178 +4239,6 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="src/bfcp/BFCPAttribute.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="0">
-          <incDir>
-            <pElem>src/bfcp</pElem>
-          </incDir>
-        </ccTool>
-      </item>
-      <item path="src/bfcp/BFCPFloorControlServer.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="0">
-          <incDir>
-            <pElem>src/bfcp</pElem>
-          </incDir>
-        </ccTool>
-      </item>
-      <item path="src/bfcp/BFCPFloorRequest.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="0">
-          <incDir>
-            <pElem>src/bfcp</pElem>
-          </incDir>
-        </ccTool>
-      </item>
-      <item path="src/bfcp/BFCPMessage.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="0">
-          <incDir>
-            <pElem>src/bfcp</pElem>
-          </incDir>
-        </ccTool>
-      </item>
-      <item path="src/bfcp/BFCPUser.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="0">
-          <incDir>
-            <pElem>src/bfcp</pElem>
-          </incDir>
-        </ccTool>
-      </item>
-      <item path="src/bfcp/attributes/BFCPAttrBeneficiaryId.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/attributes/BFCPAttrBeneficiaryInformation.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/attributes/BFCPAttrErrorCode.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/attributes/BFCPAttrErrorInfo.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/attributes/BFCPAttrFloorId.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/attributes/BFCPAttrFloorRequestId.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/attributes/BFCPAttrFloorRequestInformation.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/attributes/BFCPAttrFloorRequestStatus.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/attributes/BFCPAttrOverallRequestStatus.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/attributes/BFCPAttrParticipantProvidedInfo.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/attributes/BFCPAttrRequestStatus.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/attributes/BFCPAttrRequestedByInformation.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/attributes/BFCPAttrStatusInfo.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/messages/BFCPMsgError.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/messages/BFCPMsgFloorQuery.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/messages/BFCPMsgFloorRelease.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/messages/BFCPMsgFloorRequest.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/messages/BFCPMsgFloorRequestStatus.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/messages/BFCPMsgFloorStatus.cpp"
-            ex="false"
-            tool="1"
-            flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
-      </item>
-      <item path="src/bfcp/messages/BFCPMsgHello.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="0">
-        </ccTool>
-      </item>
       <item path="src/broadcaster.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
@@ -6043,10 +4290,6 @@
             <Elem>__STDC_CONSTANT_MACROS</Elem>
           </preprocessorList>
         </ccTool>
-      </item>
-      <item path="src/cef/Browser.cpp" ex="false" tool="1" flavor2="4">
-      </item>
-      <item path="src/cef/Client.cpp" ex="false" tool="1" flavor2="4">
       </item>
       <item path="src/core/VideoEncoderWorker.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
@@ -8137,1108 +6380,6 @@
             <Elem>__STDC_CONSTANT_MACROS</Elem>
           </preprocessorList>
         </ccTool>
-      </item>
-      <item path="src/vnc/common/d3des.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
-        </cTool>
-      </item>
-      <item path="src/vnc/common/md5.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
-        </cTool>
-      </item>
-      <item path="src/vnc/common/minilzo.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
-        </cTool>
-      </item>
-      <item path="src/vnc/common/sha1.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
-        </cTool>
-      </item>
-      <item path="src/vnc/common/turbojpeg.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
-        </cTool>
-      </item>
-      <item path="src/vnc/common/vncauth.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
-        </cTool>
-      </item>
-      <item path="src/vnc/common/zywrletemplate.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncclient/corre.c" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncclient</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncclient/cursor.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
-          <incDir>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncclient</pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncclient/hextile.c" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncclient</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncclient/listen.c" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncclient</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncclient/rfbproto.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
-          <incDir>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncclient</pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncclient/rre.c" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncclient</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncclient/sockets.c" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncclient</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncclient/tight.c" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncclient</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncclient/tls_gnutls.c" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncclient</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncclient/tls_none.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
-          <incDir>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncclient</pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncclient/tls_openssl.c" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncclient</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncclient/ultra.c" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncclient</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncclient/vncviewer.c" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncclient</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncclient/zlib.c" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncclient</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncclient/zrle.c" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncclient</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/auth.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
-          <incDir>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/cargs.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
-          <incDir>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/corre.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
-          <incDir>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/cutpaste.c" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/draw.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
-          <incDir>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/font.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
-          <incDir>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/hextile.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
-          <incDir>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/httpd.c" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/rfbcrypto_gnutls.c"
-            ex="false"
-            tool="0"
-            flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/rfbcrypto_included.c"
-            ex="false"
-            tool="0"
-            flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/rfbcrypto_openssl.c"
-            ex="false"
-            tool="0"
-            flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/rfbregion.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
-          <incDir>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/rfbserver.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
-          <incDir>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/rfbssl_gnutls.c"
-            ex="false"
-            tool="0"
-            flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/rfbssl_none.c" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/rfbssl_openssl.c"
-            ex="false"
-            tool="0"
-            flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/rre.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
-          <incDir>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/scale.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
-          <incDir>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/selbox.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
-          <incDir>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/server.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
-          <incDir>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/server_cursor.c"
-            ex="false"
-            tool="0"
-            flavor2="2">
-        <cTool flags="1">
-          <incDir>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/sockets.c" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/stats.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
-          <incDir>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/tableinit24.c" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/tableinitcmtemplate.c"
-            ex="false"
-            tool="0"
-            flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/tableinittctemplate.c"
-            ex="false"
-            tool="0"
-            flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/tabletrans24template.c"
-            ex="false"
-            tool="0"
-            flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/tabletranstemplate.c"
-            ex="false"
-            tool="0"
-            flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/tight.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
-          <incDir>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/tightvnc-filetransfer/filelistinfo.c"
-            ex="false"
-            tool="0"
-            flavor2="2">
-        <cTool>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/tightvnc-filetransfer/filetransfermsg.c"
-            ex="false"
-            tool="0"
-            flavor2="2">
-        <cTool>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/tightvnc-filetransfer/handlefiletransferrequest.c"
-            ex="false"
-            tool="0"
-            flavor2="2">
-        <cTool>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/tightvnc-filetransfer/rfbtightserver.c"
-            ex="false"
-            tool="0"
-            flavor2="2">
-        <cTool>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/translate.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
-          <incDir>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/ultra.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
-          <incDir>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/websockets.c" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/zlib.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
-          <incDir>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/zrle.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="1">
-          <incDir>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/zrleencodetemplate.c"
-            ex="false"
-            tool="0"
-            flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/zrleoutstream.c"
-            ex="false"
-            tool="0"
-            flavor2="2">
-        <cTool flags="1">
-          <incDir>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
-      </item>
-      <item path="src/vnc/libvncserver/zrlepalettehelper.c"
-            ex="false"
-            tool="0"
-            flavor2="2">
-        <cTool flags="1">
-          <incDir>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
       </item>
       <item path="src/vp6/vp6decoder.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">

@@ -617,9 +617,6 @@ int VideoStream::RecVideo()
 	
 	Log(">RecVideo [minFPUPeriod:%d]\n",minFPUPeriod);
 	
-	
-	RTPDepacketizer *dep = NULL;
-	
 	//Get now
 	gettimeofday(&before,NULL);
 
@@ -637,17 +634,6 @@ int VideoStream::RecVideo()
 			//Next
 			continue;
 		
-		if (!dep)
-			dep = RTPDepacketizer::Create(packet->GetMedia(),packet->GetCodec());
-		
-		MediaFrame* frame = dep->AddPacket(packet);
-		
-		if (frame)
-		{
-			MP4Recorder::singleton->onMediaFrame(packet->GetSSRC(),*frame);
-			dep->ResetFrame();
-		}
-
 		//Get extended sequence number and timestamp
 		DWORD seq = packet->GetExtSeqNum();
 		DWORD ts = packet->GetTimestamp();

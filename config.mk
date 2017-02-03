@@ -8,6 +8,4 @@ STATIC		  = no
 VADWEBRTC	  = yes
 SRCDIR		  = /usr/local/src/medooze/mcu
 TARGET		  = /usr/local
-IMAGEMAGICK       = yes
-CEF		  = no
-CEF_DIR 	  = /usr/local/src/cef_3.2478.1316/
+IMAGEMAGICK       = no

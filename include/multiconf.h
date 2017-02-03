@@ -17,13 +17,11 @@
 #include "websockets.h"
 #include "appmixer.h"
 #include "groupchat.h"
-#include "bfcp/BFCPFloorControlServer.h"
 
 class MultiConf :
 	public RTMPNetConnection,
 	public Participant::Listener,
-	public RTMPClientConnection::Listener,
-	public BFCPFloorControlServer::Listener
+	public RTMPClientConnection::Listener
 {
 public:
 	static const int AppMixerId = 1;
@@ -64,7 +62,6 @@ public:
 	int Init(const Properties &properties);
 	int End();
 
-	void SetFloorControlServer(BFCPFloorControlServer* floorServer);
 	void SetListener(Listener *listener,void* param);
 
 	int CreateMosaic(Mosaic::Type comp,int size);
@@ -74,7 +71,6 @@ public:
 	int CreateSidebar();
 	int DeleteSidebar(int sidebarId);
 	int CreateParticipant(int mosaicId,int sidebarId,const std::wstring &name,const std::wstring &token,Participant::Type type);
-	int SetChair(int partId);
 	int StartRecordingParticipant(int partId,const char* filename);
 	int StopRecordingParticipant(int partId);
 	int SendFPU(int partId);
@@ -90,11 +86,9 @@ public:
 	int DeletePlayer(int playerId);
 
 	int AppMixerDisplayImage(const char* filename);
-	int AppMixerOpenURL(const char* url);
-	int AppMixerCloseURL();
 	int SetAppMixerViewer(int viewerId);
 	int WebsocketConnectRequest(WebSocket *ws,int partId,const std::string &token,const std::string &to);
-
+	
 	int SetCompositionType(int mosaicId,Mosaic::Type comp,int size);
 	int SetMosaicSlot(int mosaicId,int num,int id);
 	int ResetMosaicSlots(int mosaicIdd);
@@ -153,11 +147,6 @@ public:
 	virtual void onCommandResponse(RTMPClientConnection* conn,DWORD id,bool isError,AMFData* param);
 	virtual void onDisconnected(RTMPClientConnection* conn);
 
-	//** BFCPFloorControlServer listener;
-	virtual void onFloorRequest(int floorRequestId, int userId, int beneficiaryId, std::set<int> floorIds);
-	// virtual void onFloorRelease(int floorRequestId, int userId, int ownerId, std::set<int> floorIds);
-	virtual void onFloorGranted(int floorRequestId, int beneficiaryId, std::set<int> floorIds);
-	virtual void onFloorReleased(int floorRequestId, int beneficiaryId, std::set<int> floorIds);
 private:
 	Participant *GetParticipant(int partId);
 	Participant *GetParticipant(int partId,Participant::Type type);
@@ -221,7 +210,6 @@ private:
 	Use			broacasterLock;
 
 	GroupChat		chat;
-	BFCPFloorControlServer* floorServer;
 	int			chairId;
 };
 

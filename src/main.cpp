@@ -14,7 +14,6 @@
 #include "websocketserver.h"
 #include "OpenSSL.h"
 #include "dtls.h"
-#include "bfcp.h"
 #include "groupchat.h"
 #include "CPUMonitor.h"
 extern "C" {
@@ -146,41 +145,6 @@ public:
 	
 	GroupChat chat;
 };
-
-class CEFTestHandler :
-	public WebSocketServer::Handler
-{
-public:
-	CEFTestHandler()
-	{
-		appMixer.Init(NULL);
-	}
-	
-	~CEFTestHandler()
-	{
-		appMixer.CloseURL();
-		appMixer.End();
-	}
-	
-	virtual void onWebSocketConnection(const HTTPRequest& request,WebSocket *ws)
-	{
-		Debug("-onUpgradeRequest %s\n", request.GetRequestURI().c_str());
-		//Accept request
-		appMixer.OpenURL("http://www.google.com");
-		appMixer.WebsocketConnectRequest(1,std::wstring(L"test-viewer"),ws,0,"");
-		appMixer.SetEditor(1);
-	}
-	
-	AppMixer appMixer;
-};
-
-#ifdef CEF
-void stopBrowser(int signo) 
-{
-	//Exit browser loop
-	Browser::getInstance().Stop();
-}
-#endif
 
 int main(int argc,char **argv)
 {
@@ -370,15 +334,6 @@ int main(int argc,char **argv)
 	//Log version
 	Log("-MCU Version %s %s [pid:%d,ppid:%d]\r\n",MCUVERSION,MCUDATE,getpid(),getppid());
 
-#ifdef CEF
-
-	//Initialize CEF browser singleton
-	Browser& browser = Browser::getInstance();
-
-	//Pass the args so it can detect if it is a child process or not
-	browser.Init();
-#endif
-
 	//Register mutext for ffmpeg
 	av_lockmgr_register(lock_ffmpeg);
 
@@ -435,9 +390,6 @@ int main(int argc,char **argv)
 		Error("DTLS initialization failed, no DTLS available\n");
 	}
 
-	//Init BFCP
-	BFCP::Init();
-
 	//Create services
 	MCU		mcu;
 	Broadcaster	broadcaster;
@@ -465,7 +417,6 @@ int main(int argc,char **argv)
 	//TODO: Remove, they are just for testing, should not be enabled on production
 	TextEchoWebsocketHandler echo;
 	GroupChatTestHandler gct;
-	CEFTestHandler cef;
 
 	//Init de mcu
 	mcu.Init(&xmleventmcu);
@@ -504,8 +455,6 @@ int main(int argc,char **argv)
 	wsServer.AddHandler("/echo", &echo);
 	wsServer.AddHandler("/mcu", &mcu);
 	wsServer.AddHandler("/gct", &gct);
-	wsServer.AddHandler("/cef", &cef);
-	wsServer.AddHandler("/bfcp", &BFCP::getInstance());
 
 	//Add the html status handler
 	server.AddHandler("/status",&status);
@@ -522,19 +471,8 @@ int main(int argc,char **argv)
 	//Start cpu monitor
 	monitor.Start(10000);
 
-#ifdef CEF
-	//Run the server async
-	server.Start(true);
-
-	//Set signal handler
-	signal( SIGTERM, stopBrowser );
-	
-	//Run the browser sync
-	browser.Run();
-#else
 	//Run it sync
 	server.Start(false);
-#endif
 	
 	//Stop monitor
 	monitor.Stop();
@@ -554,16 +492,6 @@ int main(int argc,char **argv)
 	rtmpServer.End();
 	//ENd ws server
 	wsServer.End();
-#ifdef CEF
-	//CEF crashes on end so disabling signal/core
-	//Ignore SIGSEGV
-	signal( SIGSEGV, SIG_IGN );
-	//Dump core on fault
-	rlimit l = {0,0};
-	//Set new limit
-	setrlimit(RLIMIT_CORE, &l);
-	//End browser
-	browser.End();
-#endif
+
 }
 

@@ -5,10 +5,7 @@
 #include "rtpparticipant.h"
 #include "multiconf.h"
 #include "rtmpparticipant.h"
-#include "bfcp/BFCPFloorControlServer.h"
-#include "bfcp.h"
 
-extern MP4Recorder* recorder;
 
 /************************
 * MultiConf
@@ -43,18 +40,10 @@ MultiConf::MultiConf(const std::wstring &tag) :
 	appMixerEncoderPrivateMosaicId = 0;
 	
 	//Nothing else
-	floorServer = NULL;
 	listener = NULL;
 	param = NULL;
 
-	//No chair
-	chairId = 0;
-	
-	MP4Recorder::singleton = new MP4Recorder();
-	
-	MP4Recorder::singleton->Create("/tmp/conf.mp4");
-	
-	MP4Recorder::singleton->Record();
+
 }
 
 /************************
@@ -64,10 +53,6 @@ MultiConf::MultiConf(const std::wstring &tag) :
 MultiConf::~MultiConf()
 {
 	
-	MP4Recorder::singleton->Stop();
-	
-	delete(MP4Recorder::singleton);
-	
 	//Pa porsi
 	if (inited)
 		End();
@@ -75,11 +60,6 @@ MultiConf::~MultiConf()
         if (recorder)
                 //Delete
                 delete(recorder);
-}
-
-void MultiConf::SetFloorControlServer(BFCPFloorControlServer* floorServer)
-{
-	this->floorServer = floorServer;
 }
 
 void MultiConf::SetListener(Listener *listener,void* param)
@@ -158,9 +138,6 @@ int MultiConf::Init(const Properties &properties)
 	//Init mixer for the app mixer
 	videoMixer.InitMixer(AppMixerId,-1);
 
-	//Create floors
-	floorServer->AddFloor(1);	//Presenter
-	floorServer->AddFloor(2);	//Editor
 	
 	//Start chat
 	chat.Init();
@@ -513,13 +490,12 @@ int MultiConf::ResetMosaicSlots(int mosaicId)
 	return videoMixer.ResetSlots(mosaicId);
 }
 
-
-
 int MultiConf::GetMosaicPositions(int mosaicId,std::list<int> &positions)
 {
 	//Set it
 	return videoMixer.GetMosaicPositions(mosaicId,positions);
 }
+
 /************************
 * AddMosaicParticipant
 * 	Show participant in a mosaic
@@ -708,25 +684,12 @@ int MultiConf::CreateParticipant(int mosaicId,int sidebarId,const std::wstring &
 	//Unlock
 	participantsLock.Unlock();
 
-	//Add bfcp
-	floorServer->AddUser(partId);
-
 	//Set us as listener
 	part->SetListener(this);
 
 	Log("<CreateParticipant [%d]\n",partId);
 
 	return partId;
-}
-
-int MultiConf::SetChair(int partId)
-{
-	//Log
-	Log("-SetChair [partId:%d]\n",partId);
-	//Store it
-	chairId = partId;
-	//Set it to the foor server
-	floorServer->SetChair(partId);
 }
 
 /************************
@@ -778,9 +741,6 @@ void MultiConf:: DestroyParticipant(int partId,Participant* part)
 
 	//End participant audio and video streams
 	part->End();
-
-	Log("-DestroyParticipant ending bfcp [%d]\n",partId);
-	floorServer->RemoveUser(partId);
 
 	Log("-DestroyParticipant ending mixers [%d]\n",partId);
 
@@ -2048,27 +2008,12 @@ void MultiConf::onRequestFPU(Participant *part)
 		listener->onParticipantRequestFPU(this,part->GetPartId(),this->param);
 }
 
-int MultiConf::SetAppMixerViewer(int viewerId)
-{
-	//Set it
-	return appMixer.SetViewer(viewerId);
-}
-
 int MultiConf::AppMixerDisplayImage(const char* filename)
 {
 	//Display it
 	return appMixer.DisplayImage(filename);
 }
-int MultiConf::AppMixerOpenURL(const char* url)
-{
-	//Start brwosing
-	return appMixer.OpenURL(url);
-}
-int MultiConf::AppMixerCloseURL()
-{
-	//Stop browsing
-	return appMixer.CloseURL();
-}
+
 
 
 int MultiConf::WebsocketConnectRequest(WebSocket *ws,int partId,const std::string &token,const std::string &to)
@@ -2098,16 +2043,7 @@ int MultiConf::WebsocketConnectRequest(WebSocket *ws,int partId,const std::strin
 		goto forbiden;
 
 	//Check what are they connecting to
-	if (to.compare("bfcp")==0)
-		//Connect to bfcp
-		BFCP::getInstance().ConnectTransport(ws,floorServer,partId);
-	else if (to.compare("vnc")==0 || to.compare("vnc-freeze")==0)
-		//Connect to app mixer vnc viewer
-		appMixer.WebsocketConnectRequest(partId,part->GetName(),ws,0,to);
-	else if (to.compare("vnc-server")==0)
-		//Connect to app mixer vnc server
-		appMixer.WebsocketConnectRequest(partId,part->GetName(),ws,1,to);
-	else if (to.compare("chat")==0)
+	if (to.compare("chat")==0)
 		//Connect to chat
 		chat.WebsocketConnectRequest(partId,ws);
 	else
@@ -2288,92 +2224,4 @@ void MultiConf::onDisconnected(RTMPClientConnection* conn)
 		//Remove
 		publishers.erase(it);
 	}
-}
-
-void MultiConf::onFloorRequest(int floorRequestId, int userId, int beneficiaryId, std::set<int> floorIds)
-{
-	::Log("MultiConf::onFloorRequest() | [floorRequestId:'%d',userId:'%d',beneficiaryId:'%d']\n", floorRequestId, userId, beneficiaryId);
-
-	// Grant if the requester is owner or presenter, deny otherwise.
-	// NOTE: if the requester is the chair (owner) it would be automatically granted.
-	// TODO: Must check which floor(s) is being requested.
-	if ((userId == chairId) || (userId == appMixer.GetPresenter())) {
-		::Log("MultiConf::onFloorRequest() | FloorRequest '%d' granted\n", floorRequestId);
-		floorServer->GrantFloorRequest(floorRequestId);
-	}
-	else {
-		::Log("MultiConf::onFloorRequest() | FloorRequest '%d' denied | just chair or presenter allowed\n", floorRequestId);
-		floorServer->DenyFloorRequest(floorRequestId);
-	}
-}
-
-
-void MultiConf::onFloorGranted(int floorRequestId, int beneficiaryId, std::set<int> floorIds)
-{
-	::Log("MultiConf::onFloorGranted() | [floorRequestId:%d, beneficiaryId:%d]\n", floorRequestId, beneficiaryId);
-
-	//Check if it is a Presenter floor request.
-	if (floorIds.find(1) != floorIds.end())
-	{
-		::Log("MultiConf::onFloorGranted() | FloorRequest '%d' includes Presenter Floor\n", floorRequestId);
-
-		//Set presenter.
-		appMixer.SetPresenter(beneficiaryId);
-
-		// If somebody has the Editor floor revoke it.
-		// But don't do it if the Editor floor has been granted in the current FloorRequest.
-		if (floorIds.find(2) == floorIds.end()) {
-			//Get floor request for Editor floor.
-			int editorRequestId = floorServer->GetGrantedFloorRequestId(2);
-			//If it exists
-			if (editorRequestId) {
-				::Log("MultiConf::onFloorGranted() | somebody has the Editor Floor in a previous FloorRequest '%d', revoking it due to this new granted FloorRequest '%d'\n", editorRequestId, floorRequestId);
-				//Release Editor floor.
-				floorServer->RevokeFloorRequest(editorRequestId);
-			}
-		}
-	}
-
-	//Check if it is a editor request
-	if (floorIds.find(2)!=floorIds.end()) {
-		::Log("MultiConf::onFloorGranted() | FloorRequest '%d' includes Editor Floor\n", floorRequestId);
-
-		//Set editor
-		appMixer.SetEditor(beneficiaryId);
-	}
-}
-
-void MultiConf::onFloorReleased(int floorRequestId, int beneficiaryId, std::set<int> floorIds)
-{
-	::Log("MultiConf::onFloorReleased() | [floorRequestId:%d, beneficiaryId:%d]\n", floorRequestId, beneficiaryId);
-
- 	//Check if the release includes the Presenter floor.
- 	if (floorIds.find(1) != floorIds.end())
-	{
-		::Log("MultiConf::onFloorReleased() | FloorRequest '%d' included Presenter Floor\n", floorRequestId);
-
- 		//No presenter.
- 		appMixer.SetPresenter(0);
-
- 		// If somebody has the EditorFloor revoke it.
- 		// But don't do it if the EditorFloor has been released in the current FloorRelease.
- 		if (floorIds.find(2) == floorIds.end()) {
-			//Get floor request for Editor floor.
-			int editorRequestId = floorServer->GetGrantedFloorRequestId(2);
-			//If it exists
-			if (editorRequestId) {
-				::Log("MultiConf::onFloorReleased() | somebody has the Editor Floor in previous FloorRequest '%d', revoking it due to this new granted FloorRequest '%d'\n", editorRequestId, floorRequestId);
-				//Release Editor floor.
-				floorServer->RevokeFloorRequest(editorRequestId);
-			}
-		}
-	}
-
- 	//Check if it has the editor
- 	if (floorIds.find(2)!=floorIds.end()) {
- 		::Log("MultiConf::onFloorReleased() | FloorRequest '%d' included Editor Floor\n", floorRequestId);
-
- 		//No editor
- 		appMixer.SetEditor(0);
- 	}
 }

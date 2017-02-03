@@ -86,46 +86,14 @@ G722OBJ=g722codec.o
 AACDIR=aac
 AACOBJ=aacencoder.o
 
-VNCDIR=vnc
-VNCOBJ=VNCViewer.o VNCServer.o server.o rfbproto.o cursor.o minilzo.o tls_none.o rfbserver.o rfbregion.o scale.o ultra.o corre.o hextile.o draw.o font.o rre.o selbox.o stats.o tight.o translate.o zlib.o zrle.o zrleoutstream.o zrlepalettehelper.o zywrletemplate.o turbojpeg.o auth.o server_cursor.o vncauth.o d3des.o md5.o sha1.o cargs.o
-
 SFUDIR=sfu
-
-BFCPOBJ=\
-	bfcp.o  \
-	BFCPFloorControlServer.o  \
-	BFCPUser.o  \
-	BFCPFloorRequest.o  \
-	BFCPMessage.o  \
-	BFCPAttribute.o  \
-	BFCPMsgFloorQuery.o  \
-	BFCPMsgFloorRelease.o  \
-	BFCPMsgFloorRequest.o  \
-	BFCPMsgHello.o  \
-	BFCPMsgError.o  \
-	BFCPMsgFloorRequestStatus.o  \
-	BFCPMsgFloorStatus.o  \
-	BFCPAttrBeneficiaryId.o  \
-	BFCPAttrFloorId.o  \
-	BFCPAttrFloorRequestId.o  \
-	BFCPAttrParticipantProvidedInfo.o  \
-	BFCPAttrErrorCode.o  \
-	BFCPAttrErrorInfo.o  \
-	BFCPAttrFloorRequestInformation.o  \
-	BFCPAttrOverallRequestStatus.o  \
-	BFCPAttrFloorRequestStatus.o  \
-	BFCPAttrRequestStatus.o  \
-	BFCPAttrBeneficiaryInformation.o  \
-	BFCPAttrRequestedByInformation.o  \
-	BFCPAttrStatusInfo.o
-BFCPDIR=bfcp
 
 COREOBJ=VideoEncoderWorker.o
 COREDIR=core
 
 BASE= xmlrpcserver.o xmlhandler.o xmlstreaminghandler.o statushandler.o  dtls.o CPUMonitor.o OpenSSL.o rtpsession.o RTPTransport.o   eventstreaminghandler.o httpparser.o   RTPSmoother.o rtp.o remoteratecontrol.o remoterateestimator.o stunmessage.o crc32calc.o http.o fecdecoder.o avcdescriptor.o utf8.o  
 
-OBJS=  xmlrpcsfu.o SFUManager.o Room.o SFUParticipant.o RTPBundleTransport.o DTLSICETransport.o audio.o video.o  $(BASE) $(COREOBJ) $(BFCPOBJ) $(VNCOBJ) cpim.o  groupchat.o websocketserver.o websocketconnection.o  mcu.o rtpparticipant.o multiconf.o  rtmpparticipant.o  xmlrpcmcu.o  mp4player.o mp4streamer.o mp4recorder.o  audiostream.o videostream.o amf.o rtmpmessage.o rtmpchunk.o rtmpstream.o rtmpconnection.o  rtmpserver.o broadcaster.o broadcastsession.o rtmpflvstream.o flvrecorder.o FLVEncoder.o xmlrpcbroadcaster.o mediagateway.o mediabridgesession.o xmlrpcmediagateway.o textmixer.o textmixerworker.o textstream.o pipetextinput.o pipetextoutput.o  logo.o overlay.o audioencoder.o audiodecoder.o textencoder.o rtmpmp4stream.o rtmpnetconnection.o   rtmpclientconnection.o vad.o  uploadhandler.o  appmixer.o  videopipe.o framescaler.o sidebar.o mosaic.o partedmosaic.o asymmetricmosaic.o pipmosaic.o videomixer.o audiomixer.o audiotransrater.o pipeaudioinput.o pipeaudiooutput.o pipevideoinput.o pipevideooutput.o 
+OBJS=  xmlrpcsfu.o SFUManager.o Room.o SFUParticipant.o RTPBundleTransport.o DTLSICETransport.o audio.o video.o  $(BASE) $(COREOBJ) cpim.o  groupchat.o websocketserver.o websocketconnection.o  mcu.o rtpparticipant.o multiconf.o  rtmpparticipant.o  xmlrpcmcu.o  mp4player.o mp4streamer.o mp4recorder.o  audiostream.o videostream.o amf.o rtmpmessage.o rtmpchunk.o rtmpstream.o rtmpconnection.o  rtmpserver.o broadcaster.o broadcastsession.o rtmpflvstream.o flvrecorder.o FLVEncoder.o xmlrpcbroadcaster.o mediagateway.o mediabridgesession.o xmlrpcmediagateway.o textmixer.o textmixerworker.o textstream.o pipetextinput.o pipetextoutput.o  logo.o overlay.o audioencoder.o audiodecoder.o textencoder.o rtmpmp4stream.o rtmpnetconnection.o   rtmpclientconnection.o vad.o  uploadhandler.o  appmixer.o  videopipe.o framescaler.o sidebar.o mosaic.o partedmosaic.o asymmetricmosaic.o pipmosaic.o videomixer.o audiomixer.o audiotransrater.o pipeaudioinput.o pipeaudiooutput.o pipevideoinput.o pipevideooutput.o 
 OBJS+= $(G711OBJ) $(H263OBJ) $(GSMOBJ)  $(H264OBJ) ${FLV1OBJ} $(SPEEXOBJ) $(NELLYOBJ) $(G722OBJ) $(JSR309OBJ) $(VADOBJ) $(VP6OBJ) $(VP8OBJ) $(VP9OBJ) $(OPUSOBJ) $(AACOBJ) $(DEPACKETIZERSOBJ)
 TARGETS=mcu test 
 
@@ -147,31 +115,17 @@ else
 	VADLD =
 endif
 
-ifeq ($(CEF),yes)
-	CEFINCLUDE = -I$(CEF_DIR) -DCEF
-	CEFLD = $(CEF_DIR)/libcef_dll/libcef_dll_wrapper.a -lcef -L$(CEF_DIR)/Release  -lX11
-	OBJS+= Browser.o Client.o
-	OPTS+= -DCEF
-else
-	CEFINCLUDE =
-	CEFLD = 
-endif
-
 OBJSSFU = sfu.o nocodecs.o xmlrpcsfu.o SFUManager.o Room.o SFUParticipant.o RTPBundleTransport.o DTLSICETransport.o $(DEPACKETIZERSOBJ) $(BASE) 
 OBJSMCU = $(OBJS) main.o
 OBJSLIB = $(OBJS)
 OBJSTEST = $(OBJS) test/main.o test/test.o test/cpim.o test/rtp.o test/fec.o test/overlay.o test/vp9.o
-OBJSRTMPDEBUG = $(OBJS) rtmpdebug.o
-OBJSFLVDUMP = $(OBJS) flvdump.o
+
 
 BUILDOBJSMCU = $(addprefix $(BUILD)/,$(OBJSMCU))
 BUILDOBJSSFU = $(addprefix $(BUILD)/,$(OBJSSFU))
 BUILDOBJOBJSLIB = $(addprefix $(BUILD)/,$(OBJSLIB))
 BUILDOBJSTEST= $(addprefix $(BUILD)/,$(OBJSTEST))
-BUILDOBJSRTMPDEBUG= $(addprefix $(BUILD)/,$(OBJSRTMPDEBUG))
-BUILDOBJSFLVDUMP= $(addprefix $(BUILD)/,$(OBJSFLVDUMP))
-BUILDOBJSFS= $(addprefix $(BUILD)/,$(OBJSFS))
-BUILDOBJSFSCLIENT= $(addprefix $(BUILD)/,$(OBJSFSCLIENT))
+
 
 ###################################
 #Compilacion condicional
@@ -196,18 +150,10 @@ VPATH +=  %.cpp $(SRCDIR)/src/$(VP8DIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(VP9DIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(OPUSDIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(AACDIR)
-VPATH +=  %.cpp $(SRCDIR)/src/$(VNCDIR)
-VPATH +=  %.cpp $(SRCDIR)/src/$(VNCDIR)/libvncserver
-VPATH +=  %.cpp $(SRCDIR)/src/$(VNCDIR)/libvncclient
-VPATH +=  %.cpp $(SRCDIR)/src/$(VNCDIR)/common
-VPATH +=  %.cpp $(SRCDIR)/src/$(BFCPDIR)
-VPATH +=  %.cpp $(SRCDIR)/src/$(BFCPDIR)/attributes
-VPATH +=  %.cpp $(SRCDIR)/src/$(BFCPDIR)/messages
 VPATH +=  %.cpp $(SRCDIR)/src/$(COREDIR)
 
 
-
-INCLUDE+= -I$(SRCDIR)/src -I$(SRCDIR)/include/ $(VADINCLUDE) $(CEFINCLUDE) -I$(SRCDIR)/src/vnc/common -I$(SRCDIR)/src/vnc/libvncserver
+INCLUDE+= -I$(SRCDIR)/src -I$(SRCDIR)/include/ $(VADINCLUDE)
 LDFLAGS+= -lgsm -lpthread -lsrtp2
 
 ifeq ($(STATIC_OPENSSL),yes)
@@ -265,20 +211,16 @@ touch:
 mkdirs:
 	mkdir -p $(BUILD)
 	mkdir -p $(BUILD)/test
-	mkdir -p $(BUILD)/libvncserver
 	mkdir -p $(BIN)
 ifeq ($(wildcard $(BIN)/logo.png), )
 	cp $(SRCDIR)/logo.png $(BIN)
 endif
 clean:
 	rm -f $(BUILDOBJSMCU)
-	rm -f $(BUILDOBJSFS)
 	rm -f $(BUILDOBJSTEST)
 	rm -f "$(BIN)/mcu"
-	rm -f "$(BIN)/flashstreamer"
-
 install:
-	mkdir -p  $(TARGET)/libA
+	mkdir -p  $(TARGET)/lib
 	mkdir -p  $(TARGET)/include/mcu
 
 certs:
@@ -296,25 +238,16 @@ sfu: touch mkdirs $(OBJSSFU) certs
 	@echo [OUT] $(TAG) $(BIN)/$@
 
 mcu: $(OBJSMCU)
-	$(CXX) -o $(BIN)/$@ $(BUILDOBJSMCU) $(LDFLAGS) $(VADLD) $(CEFLD)
+	$(CXX) -o $(BIN)/$@ $(BUILDOBJSMCU) $(LDFLAGS) $(VADLD)
 	@echo [OUT] $(TAG) $(BIN)/$@
 	
 buildtest: $(OBJSTEST)
-	$(CXX) -o $(BIN)/test $(BUILDOBJSTEST) $(LDFLAGS) $(VADLD) $(CEFLD)
+	$(CXX) -o $(BIN)/test $(BUILDOBJSTEST) $(LDFLAGS) $(VADLD) 
 	
 test: buildtest
 	$(BIN)/$@ -lavcodec
-
-rtmpdebug: $(OBJSRTMPDEBUG)
-	$(CXX) -o $(BIN)/$@ $(BUILDOBJSRTMPDEBUG) $(LDFLAGS) $(VADLD)
-
-flvdump: $(OBJSFLVDUMP)
-	$(CXX) -o $(BIN)/$@ $(BUILDOBJSFLVDUMP) $(LDFLAGS) $(VADLD)
-
-
+	
 libmediamixer: $(OBJSLIB)
 	gcc $(CXXFLAGS) -c lib/mediamixer.cpp -o $(BUILD)/mediamixer.o -DPIC -fPIC
-	gcc -shared -o $(BIN)/$@.so $(BUILDOBJOBJSLIB) $(BUILD)/mediamixer.o $(LDFLAGS) $(VADLD)  $(CEFLD)
-flashstreamer: $(OBJSFS) $(OBJS)
-	g++ -o $(BIN)/$@ $(BUILDOBJSFS) $(BUILDOBJS) $(GNASHBASE)/backend/.libs/libgnashagg.a /usr/lib/libagg.a $(LDFLAGS) $(GNASHLD)
+	gcc -shared -o $(BIN)/$@.so $(BUILDOBJOBJSLIB) $(BUILD)/mediamixer.o $(LDFLAGS) $(VADLD) 
 

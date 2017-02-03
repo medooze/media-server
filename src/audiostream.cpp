@@ -307,8 +307,6 @@ int AudioStream::RecAudio()
 	//Inicializamos el tiempo
 	gettimeofday(&before,NULL);
 
-	RTPDepacketizer *dep = NULL;
-	
 	//Mientras tengamos que capturar
 	while(receivingAudio)
 	{
@@ -318,14 +316,6 @@ int AudioStream::RecAudio()
 		if (!packet)
 			//Next
 			continue;
-		
-		if (!dep)
-			dep = RTPDepacketizer::Create(packet->GetMedia(),packet->GetCodec());
-		
-		MediaFrame* frame = dep->AddPacket(packet);
-		
-		if (frame)
-			MP4Recorder::singleton->onMediaFrame(packet->GetSSRC(),*frame);
 		
 		//Get type
 		type = (AudioCodec::Type)packet->GetCodec();
