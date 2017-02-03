@@ -11,11 +11,9 @@
  * Created on 3 de febrero de 2017, 11:58
  */
 
-#include "RTCPPacket.h"
+#include "rtp.h"
 
-RTCPPacket::RTCPPacket() { }
-
-RTCPPacket::RTCPPacket(const RTCPPacket& orig) { }
-
-RTCPPacket::~RTCPPacket() { }
-
+void RTCPPacket::Dump()
+{
+	Debug("\t[RTCPpacket type=%s size=%d/]\n",TypeToString(type),GetSize());
+}

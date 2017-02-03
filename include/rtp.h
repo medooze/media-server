@@ -45,6 +45,16 @@ typedef struct {
     DWORD length:16;   /* pkt len in words, w/o this word */
 } rtcp_common_t;
 
+
+static DWORD GetRTCPHeaderLength(rtcp_common_t* header)
+{
+	return (ntohs(header->length)+1)*4;
+}
+
+static void SetRTCPHeaderLength(rtcp_common_t* header,DWORD size)
+{
+	header->length = htons(size/4-1);
+}
 #include "rtp/RTPMap.h"
 
 #include "rtp/RTPHeaderExtension.h"

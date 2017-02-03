@@ -11,11 +11,5 @@
  * Created on 3 de febrero de 2017, 11:56
  */
 
-#include "RTCPReport.h"
-
-RTCPReport::RTCPReport() { }
-
-RTCPReport::RTCPReport(const RTCPReport& orig) { }
-
-RTCPReport::~RTCPReport() { }
+#include "rtp.h"
 

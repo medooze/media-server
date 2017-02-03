@@ -11,11 +11,4 @@
  * Created on 3 de febrero de 2017, 11:54
  */
 
-#include "RTPTimedPacket.h"
-
-RTPTimedPacket::RTPTimedPacket() { }
-
-RTPTimedPacket::RTPTimedPacket(const RTPTimedPacket& orig) { }
-
-RTPTimedPacket::~RTPTimedPacket() { }
-
+#include "rtp.h"

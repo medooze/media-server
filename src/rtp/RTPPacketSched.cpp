@@ -11,11 +11,5 @@
  * Created on 3 de febrero de 2017, 11:53
  */
 
-#include "RTPPacketSched.h"
-
-RTPPacketSched::RTPPacketSched() { }
-
-RTPPacketSched::RTPPacketSched(const RTPPacketSched& orig) { }
-
-RTPPacketSched::~RTPPacketSched() { }
+#include "rtp.h"
 

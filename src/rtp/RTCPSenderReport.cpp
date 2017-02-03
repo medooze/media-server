@@ -11,11 +11,154 @@
  * Created on 3 de febrero de 2017, 11:59
  */
 
-#include "RTCPSenderReport.h"
+#include "rtp.h"
 
-RTCPSenderReport::RTCPSenderReport() { }
+RTCPSenderReport::RTCPSenderReport() : RTCPPacket(RTCPPacket::SenderReport)
+{
+	ssrc = 0;
+	ntpSec = 0;
+	ntpFrac = 0;
+	rtpTimestamp = 0;
+	packetsSent = 0;
+	octectsSent = 0;
+}
 
-RTCPSenderReport::RTCPSenderReport(const RTCPSenderReport& orig) { }
+RTCPSenderReport::~RTCPSenderReport()
+{
+	for(Reports::iterator it = reports.begin();it!=reports.end();++it)
+		delete(*it);
+}
 
-RTCPSenderReport::~RTCPSenderReport() { }
+void RTCPSenderReport::SetTimestamp(timeval *tv)
+{
+	/*
+	   Wallclock time (absolute date and time) is represented using the
+	   timestamp format of the Network Time Protocol (NTP), which is in
+	   seconds relative to 0h UTC on 1 January 1900 [4].  The full
+	   resolution NTP timestamp is a 64-bit unsigned fixed-point number with
+	   the integer part in the first 32 bits and the fractional part in the
+	   last 32 bits.  In some fields where a more compact representation is
+	   appropriate, only the middle 32 bits are used; that is, the low 16
+	   bits of the integer part and the high 16 bits of the fractional part.
+	   The high 16 bits of the integer part must be determined
+	   independently.
+	 */
 
+	//Convert from ecpoch (JAN_1970) to NTP (JAN 1900);
+	SetNTPSec(tv->tv_sec + 2208988800UL);
+	//Convert microsecods to 32 bits fraction
+	SetNTPFrac(tv->tv_usec*4294.967296);
+}
+
+void RTCPSenderReport::GetTimestamp(timeval *tv) const
+{
+	//Convert to epcoh JAN_1970
+	tv->tv_sec = ntpSec - 2208988800UL;
+	//Add fraction of
+	tv->tv_usec = ntpFrac/4294.967296;
+}
+
+QWORD RTCPSenderReport::GetTimestamp() const
+{
+	//Convert to epcoh JAN_1970
+	QWORD ts = ntpSec - 2208988800UL;
+	//convert to microseconds
+	ts *=1E6;
+	//Add fraction
+	ts += ntpFrac/4294.967296;
+	//Return it
+	return ts;
+}
+
+void RTCPSenderReport::Dump()
+{
+	Debug("\t[RTCPSenderReport ssrc=%u count=%u \n",ssrc,reports.size());
+	Debug("\t\tntpSec=%u\n"		,ntpSec);
+	Debug("\t\tntpFrac=%u\n"	,ntpFrac);
+	Debug("\t\trtpTimestamp=%u\n"	,rtpTimestamp);
+	Debug("\t\tpacketsSent=%u\n"	,packetsSent);
+	Debug("\t\toctectsSent=%u\n"	,octectsSent);
+	if (reports.size())
+	{
+		Debug("\t]\n");
+		for(Reports::iterator it = reports.begin();it!=reports.end();++it)
+			(*it)->Dump();
+		Debug("\t[/RTCPSenderReport]\n");
+	} else
+		Debug("\t/]\n");
+}
+
+DWORD RTCPSenderReport::GetSize()
+{
+	return sizeof(rtcp_common_t)+24+24*reports.size();
+}
+
+DWORD RTCPSenderReport::Parse(BYTE* data,DWORD size)
+{
+	//Get header
+	rtcp_common_t * header = (rtcp_common_t *)data;
+
+	//Check size
+	if (size<GetRTCPHeaderLength(header))
+		//Exit
+		return 0;
+	//Skip headder
+	DWORD len = sizeof(rtcp_common_t);
+	//Get info
+	ssrc		= get4(data,len);
+	ntpSec		= get4(data,len+4);
+	ntpFrac		= get4(data,len+8);
+	rtpTimestamp	= get4(data,len+12);
+	packetsSent	= get4(data,len+16);
+	octectsSent	= get4(data,len+20);
+	//Move forward
+	len += 24;
+	//for each
+	for(int i=0;i<header->count&&size>=len+24;i++)
+	{
+		//New report
+		RTCPReport* report = new RTCPReport();
+		//parse
+		len += report->Parse(data+len,size-len);
+		//Add it
+		AddReport(report);
+	}
+	
+	//Return total size
+	return len;
+}
+
+DWORD RTCPSenderReport::Serialize(BYTE* data,DWORD size)
+{
+	//Get packet size
+	DWORD packetSize = GetSize();
+	//Check size
+	if (size<packetSize)
+		//error
+		return Error("Serialize RTCPSenderReport invalid size\n");
+	//Set header
+	rtcp_common_t * header = (rtcp_common_t *)data;
+	//Set values
+	header->count	= reports.size();
+	header->pt	= GetType();
+	header->p	= 0;
+	header->version = 2;
+	SetRTCPHeaderLength(header,packetSize);
+	//Skip
+	DWORD len = sizeof(rtcp_common_t);
+	//Set values
+	set4(data,len,ssrc);
+	set4(data,len+4,ntpSec);
+	set4(data,len+8,ntpFrac);
+	set4(data,len+12,rtpTimestamp);
+	set4(data,len+16,packetsSent);
+	set4(data,len+20,octectsSent);
+	//Next
+	len += 24;
+	//for each
+	for(int i=0;i<header->count;i++)
+		//Serialize
+		len += reports[i]->Serialize(data+len,size-len);
+	//return
+	return len;
+}
