@@ -16,6 +16,7 @@
 #include "ICERemoteCandidate.h"
 #include "DTLSICETransport.h"
 #include <set>
+#include "vp9/VP9LayerSelector.h"
 
 namespace SFU
 {
@@ -80,7 +81,7 @@ private:
 	Stream* mine;
 	Streams others;
 	Groups groups;
-	RTPDepacketizer* d;
+	VP9LayerSelector selector;
 	
 	Mutex	mutex;
 };
