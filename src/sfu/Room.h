@@ -32,6 +32,12 @@ public:
 	//Getters
 	std::wstring& GetTag()		{ return tag;				}
 	DWORD GetTransportPort() const	{ return bundle.GetLocalPort();	}
+	
+	//TODO: Remove!
+	void ParticipantSelectLayer(int partId,int spatialLayerId,int temporalLayerId)
+	{
+		participants[partId]->SelectLayer(spatialLayerId,temporalLayerId);
+	}
 private:
 	typedef std::map<int,Participant*> Participants;
 private:

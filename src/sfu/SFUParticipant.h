@@ -68,6 +68,13 @@ public:
 	
 	void RequestUpdate();
 	
+	//TODO: Remove!
+	void SelectLayer(int spatialLayerId,int temporalLayerId)
+	{
+		selector.SelectSpatialLayer(spatialLayerId);
+		selector.SelectTemporalLayer(temporalLayerId);
+	}
+	
 private:
 	typedef std::set<Stream::Listener*> Listeners;
 	typedef std::map<std::string,Stream*> Streams;

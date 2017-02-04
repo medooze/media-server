@@ -32,7 +32,7 @@ void Stream::RequestUpdate()
 	participant.RequestUpdate();
 }
 
-Participant::Participant(DTLSICETransport* transport) : selector(2,0)
+Participant::Participant(DTLSICETransport* transport) : selector(VP9LayerSelector::MaxLayerId,VP9LayerSelector::MaxLayerId)
 {
 	this->transport = transport;
 }
@@ -195,11 +195,28 @@ void Participant::onRTP(RTPIncomingSourceGroup* group,RTPTimedPacket* packet)
 	ScopedLock method(mutex);
 	
 	if (group->type==MediaFrame::Audio)
+	{
 		//Change ssrc for outgoin stream
 		packet->SetSSRC(mine->audio);
-	else 
+	} else {
+		 DWORD extSeqNum;
+		 bool mark;
+		 //Select layer
+		if (!selector.Select(packet,extSeqNum,mark))
+		{
+			//Delete packet
+			delete(packet);
+			//Drop
+			return;
+		}
+		//Set them
+		packet->SetSeqNum(extSeqNum);
+		packet->SetSeqCycles(extSeqNum >> 16);
+		//Set mark
+		packet->SetMark(mark);
 		//Change ssrc for outgoin stream
 		packet->SetSSRC(mine->video);
+	 }
 		
 	//For each listener
 	for (auto it = listeners.begin();it!=listeners.end();++it)
@@ -234,21 +251,6 @@ void Participant::onPLIRequest(RTPOutgoingSourceGroup* group,DWORD ssrc)
 
  void Participant::onMedia(Stream* stream,RTPTimedPacket* packet)
  {
-	 //Check media
-	 if (packet->GetMedia()==MediaFrame::Video)
-	 {
-		 DWORD extSeqNum;
-		 bool mark;
-		 //Select layer
-		if (!selector.Select(packet,extSeqNum,mark))
-			//Drop
-			return;
-		//Set them
-		packet->SetSeqNum(extSeqNum);
-		packet->SetSeqCycles(extSeqNum >> 16);
-		//Set mark
-		packet->SetMark(mark);
-	 }
 	 //Send it
 	 transport->Send(*packet);
  }
