@@ -65,7 +65,7 @@ bool VP9LayerSelector::Select(RTPPacket *packet,DWORD &extSeqNum,bool &mark)
 			//Update current layer
 			temporalLayerId = desc.temporalLayerId;
 		}
-	//Ceck if we need to downscale
+	//Check if we need to downscale
 	} else if (nextTemporalLayerId<temporalLayerId) {
 		//We can only downscale on the end of a layer to set the market bit
 		if (desc.endOfLayerFrame)
@@ -118,10 +118,10 @@ bool VP9LayerSelector::Select(RTPPacket *packet,DWORD &extSeqNum,bool &mark)
 	}
 		
 	
-	//Set ssrc
+	//Calculate new packet number removing the dropped pacekts by the selection layer
 	extSeqNum = packet->GetExtSeqNum()-dropped;
 	
-	//Mark is set for the 
+	//RTP mark is set for the last frame layer of the selected layer
 	mark = packet->GetMark() || (desc.endOfLayerFrame && spatialLayerId==desc.spatialLayerId);
 	
 	UltraDebug("-VP9LayerSelector::Select() | Accepting packet [extSegNum:%u,mark:%d,tid:%d,sid:%d]\n",extSeqNum,mark,desc.temporalLayerId,desc.spatialLayerId);
