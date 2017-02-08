@@ -36,7 +36,7 @@ RemoteRateControl::RemoteRateControl() : bitrateCalc(100), fpsCalc(1000), packet
 	absSendTimeCycles = 0;
 }
 
-void RemoteRateControl::Update(RTPTimedPacket* packet)
+void RemoteRateControl::Update(RTPPacket* packet)
 {
 	//Get packet size and time
 	QWORD time = packet->GetTime();

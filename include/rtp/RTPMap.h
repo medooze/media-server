@@ -13,7 +13,8 @@
 
 #ifndef RTPMAP_H
 #define RTPMAP_H
-
+#include "config.h"
+#include <map>
 
 class RTPMap :
 	public std::map<BYTE,BYTE>

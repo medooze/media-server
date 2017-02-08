@@ -14,6 +14,11 @@
 #ifndef RTCPPAYLOADFEEDBACK_H
 #define RTCPPAYLOADFEEDBACK_H
 
+#include "config.h"
+#include "rtp/RTCPPacket.h"
+#include "rtp/RTCPCommonHeader.h"
+#include <vector>
+#include <list>
 
 class RTCPPayloadFeedback : public RTCPPacket
 {

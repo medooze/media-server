@@ -13,6 +13,9 @@
 
 #ifndef RTCPNACK_H
 #define RTCPNACK_H
+#include "config.h"
+#include "rtp/RTCPPacket.h"
+#include "rtp/RTCPCommonHeader.h"
 
 class RTCPNACK : public RTCPPacket
 {

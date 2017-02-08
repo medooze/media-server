@@ -1056,7 +1056,7 @@ int MediaBridgeSession::SendVideo()
 int MediaBridgeSession::SendAudio()
 {
 	AudioCodec::Type rtmpAudioCodec;
-	RTPPacket	 packet(MediaFrame::Audio,rtpAudioCodec,rtpAudioCodec);
+	RTPPacket	 packet(MediaFrame::Audio,rtpAudioCodec);
 	QWORD lastAudioTs = 0;
 	DWORD frameTime=0;
 

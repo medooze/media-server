@@ -27,7 +27,7 @@ public:
 	class Listener
 	{
 	public:
-		virtual void onMedia(Stream* stream,RTPTimedPacket* packet) = 0;
+		virtual void onMedia(Stream* stream,RTPPacket* packet) = 0;
 	};
 public:
 	Stream(Participant& p);
@@ -61,9 +61,9 @@ public:
 	bool AddLocalStream(Stream* stream);
 	bool RemoveLocalStream(Stream* stream);
 	bool AddRemoteStream(Properties &prop);
-	virtual void onRTP(RTPIncomingSourceGroup* group,RTPTimedPacket* packet);
+	virtual void onRTP(RTPIncomingSourceGroup* group,RTPPacket* packet);
 	virtual void onPLIRequest(RTPOutgoingSourceGroup* group,DWORD ssrc);
-	virtual void onMedia(Stream* stream,RTPTimedPacket* packet);
+	virtual void onMedia(Stream* stream,RTPPacket* packet);
 	Stream* GetStream() { return mine; }
 	
 	void RequestUpdate();

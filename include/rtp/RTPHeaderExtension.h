@@ -13,14 +13,13 @@
 
 #ifndef RTPHEADEREXTENSION_H
 #define RTPHEADEREXTENSION_H
+#include "config.h"
+#include "tools.h"
+#include "rtp/RTPMap.h"
 
-class RTPPacket;
 class RTPHeaderExtension
 {
-friend class  RTPPacket;
 public:
-	
-	
 	enum Type {
 		SSRCAudioLevel		= 1,
 		TimeOffset		= 2,
@@ -31,10 +30,16 @@ public:
 	
 	struct VideoOrientation
 	{
-		BYTE reserved: 4;
-		BYTE facing: 1;
-		BYTE flip: 1;
-		BYTE rotation: 2;
+		bool facing;
+		bool flip;
+		BYTE rotation;
+		
+		VideoOrientation()
+		{
+			facing		= 0;
+			flip		= 0;
+			rotation	= 0;
+		}
 	};
 	
 public:
@@ -45,14 +50,17 @@ public:
 		vad = 0;
 		level = 0;
 		transportSeqNum = 0;
-		*((BYTE*)&cvo) = 0;
 		hasAbsSentTime = 0;
 		hasTimeOffset =  0;
 		hasAudioLevel = 0;
 		hasVideoOrientation = 0;
 		hasTransportWideCC = 0;
 	}
-protected:
+	
+	DWORD Parse(const RTPMap &extMap,const BYTE* data,const DWORD size);
+	DWORD Serialize(const RTPMap &extMap,BYTE* data,const DWORD size) const;
+	void  Dump() const;
+public:
 	QWORD	absSentTime;
 	int	timeOffset;
 	bool	vad;

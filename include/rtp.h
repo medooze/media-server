@@ -10,62 +10,13 @@
 #include <map>
 #include <math.h>
 
-#define RTP_VERSION    2
-
-/*
- * RTP data header
- */
-typedef struct {
-    DWORD cc:4;        /* CSRC count */
-    DWORD x:1;         /* header extension flag */
-    DWORD p:1;         /* padding flag */
-    DWORD version:2;   /* protocol version */
-    DWORD pt:7;        /* payload type */
-    DWORD m:1;         /* marker bit */
-    DWORD seq:16;      /* sequence number */
-    DWORD ts;          /* timestamp */
-    DWORD ssrc;        /* synchronization source */
-} rtp_hdr_t;
-
-/* RTP Header Extension
- */
-typedef struct {
-    WORD ext_type;         /* defined by profile */
-    WORD len;              /* extension length in 32-bit word */
-} rtp_hdr_ext_t;
-
-/*
- * RTCP common header word
- */
-typedef struct {
-    DWORD count:5;     /* varies by packet type */
-    DWORD p:1;         /* padding flag */
-    DWORD version:2;   /* protocol version */
-    DWORD pt:8;        /* RTCP packet type */
-    DWORD length:16;   /* pkt len in words, w/o this word */
-} rtcp_common_t;
-
-
-static DWORD GetRTCPHeaderLength(rtcp_common_t* header)
-{
-	return (ntohs(header->length)+1)*4;
-}
-
-static void SetRTCPHeaderLength(rtcp_common_t* header,DWORD size)
-{
-	header->length = htons(size/4-1);
-}
 #include "rtp/RTPMap.h"
-
+#include "rtp/RTPHeader.h"
 #include "rtp/RTPHeaderExtension.h"
 #include "rtp/RTPPacket.h"
-#include "rtp/RTPTimedPacket.h"
 #include "rtp/RTPPacketSched.h"
 #include "rtp/RTPRedundantPacket.h"
-
 #include "rtp/RTPDepacketizer.h"
-
-
 #include "rtp/RTCPReport.h"
 #include "rtp/RTCPPacket.h"
 #include "rtp/RTCPCompoundPacket.h"
@@ -225,15 +176,17 @@ public:
 	RTPLostPackets(WORD num);
 	~RTPLostPackets();
 	void Reset();
-	WORD AddPacket(const RTPTimedPacket *packet);
+	WORD AddPacket(const RTPPacket *packet);
 	std::list<RTCPRTPFeedback::NACKField*>  GetNacks();
 	void Dump();
+	DWORD GetTotal() {return total;}
 	
 private:
 	QWORD *packets;
 	WORD size;
 	WORD len;
 	DWORD first;
+	DWORD total;
 };
 
 #endif

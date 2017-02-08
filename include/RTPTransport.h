@@ -98,8 +98,8 @@ private:
 	DTLSConnection dtls;
 	bool	encript;
 	bool	decript;
-	srtp_t	sendSRTPSession;
-	srtp_t	recvSRTPSession;
+	srtp_t	send;
+	srtp_t	recv;
 
 	char*	iceRemoteUsername;
 	char*	iceRemotePwd;

@@ -57,8 +57,8 @@ DWORD VP9InterPictureDependency::Serialize(BYTE *data,DWORD size)
 	
 	//Set number of frames in gof
 	data[0] = temporalLayerId;
-	data[0] = data[0]<<3 | switchingPoint;
-	data[0] = data[0]<<1 | referenceIndexDiff.size() ;
+	data[0] = data[0]<<1 | switchingPoint;
+	data[0] = data[0]<<2 | referenceIndexDiff.size() ;
 	//Reserved
 	data[0] = data[0] << 2;
 	
@@ -212,7 +212,7 @@ DWORD VP9ScalabilityScructure::Serialize(BYTE *data,DWORD size)
 	
 	//Serialize header
 	data[0] = numberSpatialLayers-1;
-	data[0] = data[0] << 3 | spatialLayerFrameResolutionPresent;
+	data[0] = data[0] << 1 | spatialLayerFrameResolutionPresent;
 	data[0] = data[0] << 1 | groupOfFramesDescriptionPresent;
 	//Reserved
 	data[0] = data[0] << 3;
@@ -529,9 +529,9 @@ DWORD VP9PayloadDescription::Serialize(BYTE *data,DWORD size)
 	{
 		//Get indices
 		data[len] = temporalLayerId;
-		data[len] = data[len] << 3 | switchingPoint;
-		data[len] = data[len] << 1 | (spatialLayerId & 0x03);
-		data[len] = data[len] << 3 | interlayerDependencyUsed;
+		data[len] = data[len] << 1 | switchingPoint;
+		data[len] = data[len] << 3 | (spatialLayerId & 0x03);
+		data[len] = data[len] << 1 | interlayerDependencyUsed;
 		//Inc
 		len ++;
 		//If not on flexible mode

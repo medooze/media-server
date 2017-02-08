@@ -52,7 +52,7 @@ public:
 	void RemoveStream(DWORD ssrc);
 	void UpdateRTT(DWORD ssrc,DWORD rtt);
 	void UpdateLost(DWORD ssrc,DWORD lost);
-	void Update(DWORD ssrc,RTPTimedPacket* packet);
+	void Update(DWORD ssrc,RTPPacket* packet,DWORD size);
 	DWORD GetEstimatedBitrate();
 	void GetSSRCs(std::list<DWORD> &ssrcs);
 	void SetTemporalMaxLimit(DWORD limit);

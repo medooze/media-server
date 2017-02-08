@@ -115,10 +115,10 @@ class FECDecoder
 public:
 	FECDecoder();
 	~FECDecoder();
-	bool AddPacket(RTPTimedPacket* packet);
-	RTPTimedPacket* Recover();
+	bool AddPacket(RTPPacket* packet);
+	RTPPacket* Recover();
 private:
-	typedef std::map<DWORD,RTPTimedPacket*> RTPOrderedPackets;
+	typedef std::map<DWORD,RTPPacket*> RTPOrderedPackets;
 	typedef std::multimap<DWORD,FECData*> FECOrderedData;
 private:
 	RTPOrderedPackets	medias;

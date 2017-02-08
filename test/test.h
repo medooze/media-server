@@ -12,6 +12,8 @@
 #include <string>
 #include <ostream>  
 #include <iostream>
+#undef NDEBUG
+#include <assert.h>
 
 class TestPlan
 {

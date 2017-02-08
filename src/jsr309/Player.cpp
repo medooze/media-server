@@ -54,7 +54,7 @@ void Player::onRTPPacket(RTPPacket &packet)
 
 void Player::onTextFrame(TextFrame &frame)
 {
-	RTPPacket packet(MediaFrame::Text,TextCodec::T140,TextCodec::T140);
+	RTPPacket packet(MediaFrame::Text,TextCodec::T140);
 	//Set timestamp
 	packet.SetTimestamp(frame.GetTimeStamp());
 	//Copy

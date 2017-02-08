@@ -11,7 +11,8 @@
  * Created on 3 de febrero de 2017, 12:03
  */
 
-#include "rtp.h"
+#include "rtp/RTCPRTPFeedback.h"
+#include "rtp/RTCPCommonHeader.h"
 #include "bitstream.h"
 
 RTCPRTPFeedback::RTCPRTPFeedback() : RTCPPacket(RTCPPacket::RTPFeedback)
@@ -28,7 +29,7 @@ RTCPRTPFeedback::~RTCPRTPFeedback()
 
 DWORD RTCPRTPFeedback::GetSize()
 {
-	DWORD len = 8+sizeof(rtcp_common_t);
+	DWORD len = 8 + RTCPCommonHeader::GetSize();
 	//For each field
 	for (Fields::iterator it=fields.begin();it!=fields.end();++it)
 		//add size
@@ -39,18 +40,26 @@ DWORD RTCPRTPFeedback::GetSize()
 DWORD RTCPRTPFeedback::Parse(BYTE* data,DWORD size)
 {
 	//Get header
-	rtcp_common_t * header = (rtcp_common_t *)data;
-
-	//Get size decalred in header
-	DWORD packetSize = GetRTCPHeaderLength(header);
+	RTCPCommonHeader header;
+		
+	//Parse header
+	DWORD len = header.Parse(data,size);
+	
+	//IF error
+	if (!len)
+		return 0;
+		
+	//Get packet size
+	DWORD packetSize = header.length;
+	
 	//Check size
 	if (size<packetSize)
 		//Exit
 		return 0;
+	
 	//Get subtype
-	feedbackType = (FeedbackType)header->count;
-	//Skip headder
-	DWORD len = sizeof(rtcp_common_t);
+	feedbackType = (FeedbackType)header.count;
+	
 	//Get ssrcs
 	senderSSRC = get4(data,len);
 	mediaSSRC = get4(data,len+4);
@@ -74,7 +83,7 @@ DWORD RTCPRTPFeedback::Parse(BYTE* data,DWORD size)
 				field = new TransportWideFeedbackMessageField();
 				break;
 			default:
-				return Error("Unknown RTCPRTPFeedback type [%d]\n",header->count);
+				return Error("Unknown RTCPRTPFeedback type [%d]\n",header.count);
 		}
 		//Parse field
 		DWORD parsed = field->Parse(data+len,packetSize-len);
@@ -145,16 +154,17 @@ DWORD RTCPRTPFeedback::Serialize(BYTE* data,DWORD size)
 	if (size<packetSize)
 		//error
 		return Error("Serialize RTCPRTPFeedback invalid size [size:%d,packetSize:%d]\n",size,packetSize);
-	//Set header
-	rtcp_common_t * header = (rtcp_common_t *)data;
+
+	//RTCP common header
+	RTCPCommonHeader header;
 	//Set values
-	header->count	= feedbackType;
-	header->pt	= GetType();
-	header->p	= 0;
-	header->version = 2;
-	SetRTCPHeaderLength(header,packetSize);
-	//Set lenght
-	DWORD len = sizeof(rtcp_common_t);
+	header.count	  = feedbackType;
+	header.packetType = GetType();
+	header.padding	  = 0;
+	header.length	  = packetSize;
+	//Serialize
+	DWORD len = header.Serialize(data,size);
+	
 	//Set ssrcs
 	set4(data,len,senderSSRC);
 	set4(data,len+4,mediaSSRC);

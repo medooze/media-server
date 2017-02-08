@@ -96,7 +96,7 @@ void MP4Player::onRTPPacket(RTPPacket &packet)
 	//Get leght
 	DWORD len = packet.GetMediaLength();
 	//Get mark
-	bool mark = packet.GetRTPHeader()->m;
+	bool mark = packet.GetMark();
 	
 	//Depending on the media
 	switch (packet.GetMedia())

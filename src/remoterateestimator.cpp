@@ -75,13 +75,10 @@ void RemoteRateEstimator::RemoveStream(DWORD ssrc)
 	lock.Unlock();
 }
 
-void RemoteRateEstimator::Update(DWORD ssrc,RTPTimedPacket* packet)
+void RemoteRateEstimator::Update(DWORD ssrc,RTPPacket* packet,DWORD size)
 {
 	//Lock
 	lock.WaitUnusedAndLock();
-
-	//Get size
-	DWORD size = packet->GetSize();
 
 	//Get now
 	QWORD now = getTime()/1000;

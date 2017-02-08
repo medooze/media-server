@@ -13,6 +13,11 @@
 
 #ifndef RTCPSENDERREPORT_H
 #define RTCPSENDERREPORT_H
+#include "config.h"
+#include "rtp/RTCPPacket.h"
+#include "rtp/RTCPReport.h"
+#include "rtp/RTCPCommonHeader.h"
+#include <vector>
 
 class RTCPSenderReport : public RTCPPacket
 {

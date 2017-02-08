@@ -39,7 +39,7 @@ public:
 		pthread_mutex_destroy(&mutex);
 	}
 
-	bool Add(RTPTimedPacket *rtp)
+	bool Add(RTPPacket *rtp)
 	{
 		//Get seq num
 		DWORD seq = rtp->GetExtSeqNum();
@@ -74,7 +74,7 @@ public:
 		}
 
 		//Add packet, check if it was already there
-		if (!packets.insert(std::pair<DWORD,RTPTimedPacket*>(seq,rtp)).second)
+		if (!packets.insert(std::pair<DWORD,RTPPacket*>(seq,rtp)).second)
 		{
 			//Error
 			Debug("-Error inserting packet [next:%d,seq:%d,maxWaitTime=%d,%d,%d]\n",next,seq,maxWaitTime,rtp->GetSeqCycles(),rtp->GetSeqNum());
@@ -109,11 +109,44 @@ public:
 		//Signal condition
 		pthread_cond_signal(&cond);
 	}
+	
+	RTPPacket* GetOrdered()
+	{
+		
+		//Check if we have somethin in queue
+		if (!packets.empty())
+		{
+			//Get first
+			RTPOrderedPackets::iterator it = packets.begin();
+			//Get first seq num
+			DWORD seq = it->first;
+			//Get packet
+			RTPPacket* candidate = it->second;
+			//Get time of the packet
+			QWORD time = candidate->GetTime();
 
+			//Check if first is the one expected or wait if not
+			if (next==(DWORD)-1 || seq==next || time+maxWaitTime<getTime()/1000 || hurryUp)
+			{
+				//We have it!
+				RTPPacket* rtp = candidate;
+				//Update next
+				next = seq+1;
+				//Remove it
+				packets.erase(it);
+				//Return it
+				return rtp;
+			}
+		}
+		//Rerturn 
+		return NULL;
+	}
+	
+	
 	RTPPacket* Wait()
 	{
 		//NO packet
-		RTPTimedPacket* rtp = NULL;
+		RTPPacket* rtp = NULL;
 
 		//Get default wait time
 		DWORD timeout = maxWaitTime;
@@ -127,13 +160,13 @@ public:
 			//Check if we have somethin in queue
 			if (!packets.empty())
 			{
-
+					
 				//Get first
 				RTPOrderedPackets::iterator it = packets.begin();
 				//Get first seq num
 				DWORD seq = it->first;
 				//Get packet
-				RTPTimedPacket* candidate = it->second;
+				RTPPacket* candidate = it->second;
 				//Get time of the packet
 				QWORD time = candidate->GetTime();
 
@@ -244,7 +277,7 @@ private:
 	}
 
 private:
-	typedef std::map<DWORD,RTPTimedPacket*> RTPOrderedPackets;
+	typedef std::map<DWORD,RTPPacket*> RTPOrderedPackets;
 
 private:
 	//The event list

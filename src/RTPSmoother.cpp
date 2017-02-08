@@ -135,16 +135,10 @@ int RTPSmoother::SendFrame(MediaFrame* frame,DWORD duration)
 			continue;
 		}
 		
-		//Get pointer to media data
-		BYTE* out = packet->GetMediaData();
-		//Copy prefic
-		memcpy(out,rtp->GetPrefixData(),rtp->GetPrefixLen());
-		//Copy data
-		memcpy(out+rtp->GetPrefixLen(),frameData+rtp->GetPos(),rtp->GetSize());
-		//Set length
-		DWORD len = rtp->GetPrefixLen()+rtp->GetSize();
-		//Set length
-		packet->SetMediaLength(len);
+		//Set data
+		packet->SetPayload(frameData+rtp->GetPos(),rtp->GetSize());
+		//Add prefix
+		packet->PrefixPayload(rtp->GetPrefixData(),rtp->GetPrefixLen());
 		//Set other values
 		packet->SetTimestamp(frame->GetTimeStamp()*rate);
 		//Check
@@ -155,7 +149,7 @@ int RTPSmoother::SendFrame(MediaFrame* frame,DWORD duration)
 			//No last
 			packet->SetMark(false);
 		//Calculate partial lenght
-		current += len;
+		current += rtp->GetPrefixLen()+rtp->GetSize();
 		//Calculate sending time offset from first frame
 		packet->SetSendingTime(current*duration/frameLength);
 		//Append it

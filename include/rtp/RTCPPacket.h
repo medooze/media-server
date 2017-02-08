@@ -13,6 +13,10 @@
 
 #ifndef RTCPPACKET_H
 #define RTCPPACKET_H
+#include "config.h"
+#include "rtp/RTCPCommonHeader.h"
+#include "rtp/RTCPReport.h"
+#include <vector>
 
 class RTCPPacket
 {

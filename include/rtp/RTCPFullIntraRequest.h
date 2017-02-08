@@ -13,6 +13,9 @@
 
 #ifndef RTCPFULLINTRAREQUEST_H
 #define RTCPFULLINTRAREQUEST_H
+#include "config.h"
+#include "rtp/RTCPPacket.h"
+#include "rtp/RTCPCommonHeader.h"
 
 class RTCPFullIntraRequest : public RTCPPacket
 {

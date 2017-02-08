@@ -103,8 +103,8 @@ RTPTransport::RTPTransport(Listener *listener) : dtls(*this)
 	//No crypto
 	encript = false;
 	decript = false;
-	sendSRTPSession = NULL;
-	recvSRTPSession = NULL;
+	send = NULL;
+	recv = NULL;
 	//No ice
 	iceLocalUsername = NULL;
 	iceLocalPwd = NULL;
@@ -153,13 +153,13 @@ void RTPTransport::Reset()
 	if (iceRemotePwd)
 		free(iceRemotePwd);
 	//If secure
-	if (sendSRTPSession)
+	if (send)
 		//Dealoacate
-		srtp_dealloc(sendSRTPSession);
+		srtp_dealloc(send);
 	//If secure
-	if (recvSRTPSession)
+	if (recv)
 		//Dealoacate
-		srtp_dealloc(recvSRTPSession);
+		srtp_dealloc(recv);
 	
 	recIP = INADDR_ANY;
 	recPort = 0;
@@ -169,8 +169,8 @@ void RTPTransport::Reset()
 	//No cripto
 	encript = false;
 	decript = false;
-	sendSRTPSession = NULL;
-	recvSRTPSession = NULL;
+	send = NULL;
+	recv = NULL;
 	//No ice
 	iceLocalUsername = NULL;
 	iceLocalPwd = NULL;
@@ -236,12 +236,12 @@ int RTPTransport::SetLocalCryptoSDES(const char* suite,const BYTE* key,const DWO
 		return Error("-RTPTransport::SetLocalCryptoSDES() | Failed to create local SRTP session | err:%d\n", err);
 	
 	//if we already got a send session don't leak it
-	if (sendSRTPSession)
+	if (send)
 		//Dealoacate
-		srtp_dealloc(sendSRTPSession);
+		srtp_dealloc(send);
 
 	//Set send SSRTP sesion
-	sendSRTPSession = session;
+	send = session;
 
 	//Evrything ok
 	return 1;
@@ -379,11 +379,11 @@ int RTPTransport::SetRemoteCryptoSDES(const char* suite, const BYTE* key, const 
 		return Error("-RTPTransport::SetRemoteCryptoSDES() | Failed to create remote SRTP session | err:%d\n", err);
 	
 	//if we already got a recv session don't leak it
-	if (recvSRTPSession)
+	if (recv)
 		//Dealoacate
-		srtp_dealloc(recvSRTPSession);
+		srtp_dealloc(recv);
 	//Set it
-	recvSRTPSession = session;
+	recv = session;
 
 	//Everything ok
 	return 1;
@@ -622,10 +622,10 @@ int RTPTransport::SendRTCPPacket(BYTE*  buffer,DWORD size)
 	if (encript)
 	{
 		//Check  session
-		if (!sendSRTPSession)
-			return Error("-RTPTransport::SendPacket() | no sendSRTPSession\n");
+		if (!send)
+			return Error("-RTPTransport::SendPacket() | no send\n");
 		//Protect
-		srtp_err_status_t err = srtp_protect_rtcp(sendSRTPSession,buffer,&len);
+		srtp_err_status_t err = srtp_protect_rtcp(send,buffer,&len);
 		//Check error
 		if (err!=srtp_err_status_ok)
 			//Nothing
@@ -700,17 +700,17 @@ int RTPTransport::SendRTPPacket(BYTE *buffer,DWORD size)
 	if (encript)
 	{
 		//Check  session
-		if (sendSRTPSession)
+		if (send)
 		{
 			//Encript
-			srtp_err_status_t srtp_err_status = srtp_protect(sendSRTPSession,buffer,&len);
+			srtp_err_status_t srtp_err_status = srtp_protect(send,buffer,&len);
 			//Check error
 			if (srtp_err_status!=srtp_err_status_ok)
 				//Error
 				return Error("-RTPTransport::SendPacket() | Error protecting RTP packet [%d]\n",srtp_err_status);
 		} else {
 			//Log
-			Debug("-RTPTransport::SendPacket() | no sendSRTPSession\n");
+			Debug("-RTPTransport::SendPacket() | no send\n");
 			//Don't send
 			return 0;
 		}
@@ -814,10 +814,10 @@ int RTPTransport::ReadRTCP()
 	if (decript)
 	{
 		//Check session
-		if (!recvSRTPSession)
+		if (!recv)
 			return Error("-RTPTransport::ReadRTCP() | No recvSRTPSession\n");
 		//unprotect
-		srtp_err_status_t err = srtp_unprotect_rtcp(recvSRTPSession,buffer,&size);
+		srtp_err_status_t err = srtp_unprotect_rtcp(recv,buffer,&size);
 		//Check error
 		if (err!=srtp_err_status_ok)
 			return Error("-RTPTransport::ReadRTCP() | Error unprotecting rtcp packet [%d]\n",err);
@@ -998,10 +998,10 @@ int RTPTransport::ReadRTP()
 		if (decript)
 		{
 			//Check session
-			if (!recvSRTPSession)
+			if (!recv)
 				return Error("-RTPTransport::ReadRTP() | No recvSRTPSession\n");
 			//unprotect
-			srtp_err_status_t err = srtp_unprotect_rtcp(recvSRTPSession,buffer,&size);
+			srtp_err_status_t err = srtp_unprotect_rtcp(recv,buffer,&size);
 			//Check error
 			if (err!=srtp_err_status_ok)
 				return Error("-RTPTransport::ReadRTP() | Error unprotecting rtcp packet [%d]\n",err);
@@ -1034,17 +1034,6 @@ int RTPTransport::ReadRTP()
 		return 1;
 	}
 
-	//Double check it is an RTP packet
-	if (!RTPPacket::IsRTP(buffer,size))
-	{
-		//Debug
-		Debug("-RTPTransport::ReadRTP() | Not RTP data recevied\n");
-		//Dump it
-		Dump(buffer,size);
-		//Exit
-		return 1;
-	}
-
 	//If we start receiving from a drifferent ip address or it is the first one
 	if (recIP!=from_addr.sin_addr.s_addr)
 	{
@@ -1073,10 +1062,10 @@ int RTPTransport::ReadRTP()
 	{
 		srtp_err_status_t err;
 		//Check session
-		if (!recvSRTPSession)
+		if (!recv)
 			return Error("-RTPTransport::ReadRTP() | No recvSRTPSession\n");
 		//unprotect
-		err = srtp_unprotect(recvSRTPSession,buffer,&size);
+		err = srtp_unprotect(recv,buffer,&size);
 		//Check status
 		if (err!=srtp_err_status_ok)
 			//Error

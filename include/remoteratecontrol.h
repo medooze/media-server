@@ -62,7 +62,7 @@ public:
 	}
 public:
 	RemoteRateControl();
-	void Update(RTPTimedPacket* packet);
+	void Update(RTPPacket* packet);
 	bool UpdateRTT(DWORD rtt);
 	bool UpdateLost(DWORD num);
 	void SetRateControlRegion(Region region);

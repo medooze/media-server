@@ -16,6 +16,7 @@ RTPLostPackets::RTPLostPackets(WORD num)
 	first = 0;
 	//None yet
 	len = 0;
+	total = 0;
 }
 
 void RTPLostPackets::Reset()
@@ -26,6 +27,7 @@ void RTPLostPackets::Reset()
 	first = 0;
 	//None yet
 	len = 0;
+	total = 0;
 }
 
 RTPLostPackets::~RTPLostPackets()
@@ -33,7 +35,7 @@ RTPLostPackets::~RTPLostPackets()
 	free(packets);
 }
 
-WORD RTPLostPackets::AddPacket(const RTPTimedPacket *packet)
+WORD RTPLostPackets::AddPacket(const RTPPacket *packet)
 {
 	int lost = 0;
 	
@@ -62,7 +64,13 @@ WORD RTPLostPackets::AddPacket(const RTPTimedPacket *packet)
 		if (n>size)
 			//cap it
 			n = size;
-		//Move
+		//Caculate total count
+		for (int i=0;i<n;++i)
+			//If it was lost
+			if (!packets[i])
+				//Decrease total
+				total--;
+		//Move the rest
 		memmove(packets,packets+n,(size-n)*sizeof(QWORD));
 		//Fill with 0 the new ones
 		memset(packets+(size-n),0,n*sizeof(QWORD));
@@ -81,8 +89,15 @@ WORD RTPLostPackets::AddPacket(const RTPTimedPacket *packet)
 		for (int i=pos-1;i>=0 && !packets[i];--i)
 			//Lost
 			lost++;
+		//Increase lost
+		total += lost;
 		//Update last
 		len = pos+1;
+	} else {
+		//If it was lost
+		if (!packets[pos])
+			//One lost total less
+			total--;
 	}
 	
 	//Set

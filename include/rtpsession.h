@@ -104,7 +104,7 @@ protected:
 	int SendFIR();
 	RTCPCompoundPacket* CreateSenderReport();
 private:
-	typedef std::map<DWORD,RTPTimedPacket*> RTPOrderedPackets;
+	typedef std::map<DWORD,RTPPacket*> RTPOrderedPackets;
 protected:
 	RemoteRateEstimator*	remoteRateEstimator;
 private:
@@ -115,8 +115,6 @@ private:
 	
 	char*	cname;
 	//Transmision
-	BYTE 	sendPacket[MTU+SRTP_MAX_TRAILER_LEN] ALIGNEDTO32;
-	
 	RTPOutgoingSource send;
 	RTPIncomingSource recv;
 	RTPOutgoingRtxSource sendRTX;
@@ -149,9 +147,7 @@ private:
 	bool	pendingTMBR;
 	DWORD	pendingTMBBitrate;
 
-	FECDecoder		fec;
 	RTPLostPackets		losts;
-	bool			useFEC;
 	bool			useNACK;
 	bool			useRTX;
 	bool			isNACKEnabled;

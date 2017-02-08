@@ -38,12 +38,14 @@ struct MP4RtpTrack
 	int type;
 	RTPPacket rtp;
 
-	MP4RtpTrack(MediaFrame::Type media,int codec,int type) : rtp(media,codec,type)
+	MP4RtpTrack(MediaFrame::Type media,int codec,int type) : rtp(media,codec)
 	{
 		//Store values
 		this->media = media;
 		this->codec = codec;
 		this->type = type;
+		//Set type
+		rtp.SetType(type);
 		//Empty the rest
 		mp4		= NULL;
 		hint		= -1;

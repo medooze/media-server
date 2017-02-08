@@ -29,7 +29,7 @@ FECDecoder::~FECDecoder()
 		delete (it->second);
 }
 
-bool FECDecoder::AddPacket(RTPTimedPacket* packet)
+bool FECDecoder::AddPacket(RTPPacket* packet)
 {
 	//Check if it is a redundant packet
 	if (packet->GetCodec()==VideoCodec::RED)
@@ -118,7 +118,7 @@ bool FECDecoder::AddPacket(RTPTimedPacket* packet)
 	return true;
 }
 
-RTPTimedPacket* FECDecoder::Recover()
+RTPPacket* FECDecoder::Recover()
 {
 	BYTE aux[8];
 	QWORD lostMask = 0;
@@ -234,7 +234,7 @@ RTPTimedPacket* FECDecoder::Recover()
 					if (r.Get(1))
 					{
 						//Get media packet
-						RTPTimedPacket* media = medias[fec->GetBaseExtSeq()+r.GetPos()-1];
+						RTPPacket* media = medias[fec->GetBaseExtSeq()+r.GetPos()-1];
 						//Calculate receovered attributes
 						p  ^= media->GetP();
 						x  ^= media->GetX();
@@ -252,7 +252,7 @@ RTPTimedPacket* FECDecoder::Recover()
 					}
 				}
 				//Create new video packet
-				RTPTimedPacket* packet = new RTPTimedPacket(MediaFrame::Video,pt);
+				RTPPacket* packet = new RTPPacket(MediaFrame::Video,pt);
 				//Set values
 				packet->SetP(p);
 				packet->SetX(x);

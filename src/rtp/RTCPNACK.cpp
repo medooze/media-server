@@ -10,8 +10,8 @@
  * 
  * Created on 3 de febrero de 2017, 12:02
  */
-#include "rtp.h"
-
+#include "rtp/RTCPNACK.h"
+#include "rtp/RTCPCommonHeader.h"
 
 RTCPNACK::RTCPNACK() : RTCPPacket(RTCPPacket::NACK)
 {
@@ -20,20 +20,28 @@ RTCPNACK::RTCPNACK() : RTCPPacket(RTCPPacket::NACK)
 
 DWORD RTCPNACK::GetSize()
 {
-	return sizeof(rtcp_common_t)+8;
+	return RTCPCommonHeader::GetSize()+8;
 }
 
 DWORD RTCPNACK::Parse(BYTE* data,DWORD size)
-{
-	//Get header
-	rtcp_common_t * header = (rtcp_common_t *)data;
-
+{//Get header
+	RTCPCommonHeader header;
+		
+	//Parse header
+	DWORD len = header.Parse(data,size);
+	
+	//IF error
+	if (!len)
+		return 0;
+		
+	//Get packet size
+	DWORD packetSize = header.length;
+	
 	//Check size
-	if (size<GetRTCPHeaderLength(header))
+	if (size<packetSize)
 		//Exit
 		return 0;
-	//Skip headder
-	DWORD len = sizeof(rtcp_common_t);
+	
 	//Get ssrcs
 	ssrc = get4(data,len);
 	fsn = get2(data,len+4);
@@ -50,16 +58,17 @@ DWORD RTCPNACK::Serialize(BYTE* data,DWORD size)
 	if (size<packetSize)
 		//error
 		return Error("Serialize RTCPNACK invalid size\n");
-	//Set header
-	rtcp_common_t * header = (rtcp_common_t *)data;
+
+	//RTCP common header
+	RTCPCommonHeader header;
 	//Set values
-	header->count	= 0;
-	header->pt	= GetType();
-	header->p	= 0;
-	header->version = 2;
-	SetRTCPHeaderLength(header,packetSize);
-	//Set lenght
-	DWORD len = sizeof(rtcp_common_t);
+	header.count	  = 0;
+	header.packetType = GetType();
+	header.padding	  = 0;
+	header.length	  = packetSize;
+	//Serialize
+	DWORD len = header.Serialize(data,size);
+	
 	//Set ssrcs
 	set4(data,len,ssrc);
 	set2(data,len+4,fsn);

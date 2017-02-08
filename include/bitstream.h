@@ -14,7 +14,7 @@
 class BitReader
 {
 public:
-	BitReader(BYTE *data,DWORD size)
+	BitReader(const BYTE *data,const DWORD size)
 	{
 		//Store
 		buffer = data;
@@ -186,8 +186,8 @@ public:
 		return ret;
 	}
 
-	private:
-	BYTE* buffer;
+private:
+	const BYTE* buffer;
 	DWORD bufferLen;
 	DWORD bufferPos;
 	DWORD cache;
@@ -306,6 +306,11 @@ public:
 			//Increase cached
 			cached += n;
 		}
+		//If it is last
+		if (cached==bufferSize*8)
+			//Flush it
+			FlushCache();
+		
 		return v;
 	}
 

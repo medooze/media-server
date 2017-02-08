@@ -14,6 +14,10 @@
 #ifndef RTCPRECEIVERREPORT_H
 #define RTCPRECEIVERREPORT_H
 
+#include "config.h"
+#include "rtp/RTCPPacket.h"
+#include "rtp/RTCPCommonHeader.h"
+#include "rtp/RTCPReport.h"
 
 class RTCPReceiverReport : public RTCPPacket
 {

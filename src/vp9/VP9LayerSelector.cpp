@@ -79,7 +79,7 @@ bool VP9LayerSelector::Select(RTPPacket *packet,DWORD &extSeqNum,bool &mark)
 	//If it is from the current layer
 	if (temporalLayerId<desc.temporalLayerId)
 	{
-		UltraDebug("-VP9LayerSelector::Select() | dropping packet based on temporalLayerId [us:%d,desc:%d,mark:%d]\n",temporalLayerId,desc.temporalLayerId,packet->GetMark());
+		//UltraDebug("-VP9LayerSelector::Select() | dropping packet based on temporalLayerId [us:%d,desc:%d,mark:%d]\n",temporalLayerId,desc.temporalLayerId,packet->GetMark());
 		//INcrease dropped
 		dropped++;
 		//Drop it
@@ -110,7 +110,7 @@ bool VP9LayerSelector::Select(RTPPacket *packet,DWORD &extSeqNum,bool &mark)
 	//If it is from the current layer
 	if (spatialLayerId<desc.spatialLayerId)
 	{
-		UltraDebug("-VP9LayerSelector::Select() | dropping packet based on spatialLayerId [us:%d,desc:%d,mark:%d]\n",spatialLayerId,desc.spatialLayerId,packet->GetMark());
+		//UltraDebug("-VP9LayerSelector::Select() | dropping packet based on spatialLayerId [us:%d,desc:%d,mark:%d]\n",spatialLayerId,desc.spatialLayerId,packet->GetMark());
 		//INcrease dropped
 		dropped++;
 		//Drop it
@@ -124,7 +124,7 @@ bool VP9LayerSelector::Select(RTPPacket *packet,DWORD &extSeqNum,bool &mark)
 	//Mark is set for the 
 	mark = packet->GetMark() || (desc.endOfLayerFrame && spatialLayerId==desc.spatialLayerId);
 	
-	UltraDebug("-VP9LayerSelector::Select() | Accepting packet [extSegNum:%u,mark:%d,tid:%d,sid:%d]\n",extSeqNum,mark,desc.temporalLayerId,desc.spatialLayerId);
+	//UltraDebug("-VP9LayerSelector::Select() | Accepting packet [extSegNum:%u,mark:%d,tid:%d,sid:%d]\n",extSeqNum,mark,desc.temporalLayerId,desc.spatialLayerId);
 	//Select
 	return true;
 	

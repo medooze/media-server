@@ -13,6 +13,9 @@
 
 #ifndef RTCPAPP_H
 #define RTCPAPP_H
+#include "config.h"
+#include "rtp/RTCPPacket.h"
+#include "rtp/RTCPCommonHeader.h"
 
 class RTCPApp : public RTCPPacket
 {

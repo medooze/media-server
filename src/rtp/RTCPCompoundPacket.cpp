@@ -11,23 +11,63 @@
  * Created on 3 de febrero de 2017, 12:04
  */
 
-#include "rtp.h"
+#include "rtp/RTCPCompoundPacket.h"
+#include "rtp/RTCPReceiverReport.h"
+#include "rtp/RTCPSenderReport.h"
+#include "rtp/RTCPSDES.h"
+#include "rtp/RTCPBye.h"
+#include "rtp/RTCPApp.h"
+#include "rtp/RTCPRTPFeedback.h"
+#include "rtp/RTCPPayloadFeedback.h"
+#include "rtp/RTCPPayloadFeedback.h"
+#include "rtp/RTCPFullIntraRequest.h"
+#include "rtp/RTCPNACK.h"
+#include "rtp/RTCPExtendedJitterReport.h"
 
-void RTCPCompoundPacket::Dump()
+RTCPCompoundPacket::~RTCPCompoundPacket()
 {
-	Debug("[RTCPCompoundPacket count=%d size=%d]\n",packets.size(),GetSize());
-	//For each one
+	//Fir each oen
 	for(RTCPPackets::iterator it = packets.begin(); it!=packets.end(); ++it)
-		//Dump
-		(*it)->Dump();
-	Debug("[/RTCPCompoundPacket]\n");
+		//delete
+		delete((*it));
 }
+
+DWORD RTCPCompoundPacket::RTCPCompoundPacket::GetSize() const
+{
+	DWORD size = 0;
+	//Calculate
+	for(RTCPPackets::const_iterator it = packets.begin(); it!=packets.end(); ++it)
+		//Append size
+		size = RTCPCommonHeader::GetSize()+(*it)->GetSize();
+	//Return total size
+	return size;
+}
+
+DWORD RTCPCompoundPacket::Serialize(BYTE *data,DWORD size) const
+{
+	DWORD len = 0;
+	//Check size
+	if (size<GetSize())
+		//Error
+		return 0;
+	//For each one
+	for(RTCPPackets::const_iterator it = packets.begin(); it!=packets.end(); ++it)
+		//Serialize
+		len +=(*it)->Serialize(data+len,size-len);
+	//Exit
+	return len;
+}
+	
+
 RTCPCompoundPacket* RTCPCompoundPacket::Parse(BYTE *data,DWORD size)
 {
 	//Check if it is an RTCP valid header
 	if (!IsRTCP(data,size))
+	{
+		Error("not rtcp packet");
 		//Exit
 		return NULL;
+	}
 	//Create pacekt
 	RTCPCompoundPacket* rtcp = new RTCPCompoundPacket();
 	//Init pointers
@@ -37,12 +77,27 @@ RTCPCompoundPacket* RTCPCompoundPacket::Parse(BYTE *data,DWORD size)
 	while (bufferLen)
 	{
 		RTCPPacket *packet = NULL;
-		//Get header
-		rtcp_common_t* header = (rtcp_common_t*) buffer;
-		//Get type
-		RTCPPacket::Type type = (RTCPPacket::Type)header->pt;
+		RTCPCommonHeader header;
+		//Get type from header
+		DWORD len = header.Parse(data,size);
+		//If not parsed
+		if (!len)
+		{
+			//error
+			Error("Wrong rtcp header\n");
+			//Exit
+			return NULL;
+		}
+		//Check len
+		if (header.length>bufferLen)
+		{
+			//error
+			Error("Wrong rtcp packet size\n");
+			//Exit
+			return NULL;
+		}
 		//Create new packet
-		switch (type)
+		switch (header.packetType)
 		{
 			case RTCPPacket::SenderReport:
 				//Create packet
@@ -86,28 +141,29 @@ RTCPCompoundPacket* RTCPCompoundPacket::Parse(BYTE *data,DWORD size)
 				break;
 			default:
 				//Skip
-				Debug("Unknown rtcp packet type [%d]\n",header->pt);
+				Debug("Unknown rtcp packet type [%d]\n",header.packetType);
 		}
-		//Get size of the packet
-		DWORD len = GetRTCPHeaderLength(header);
-		//Check len
-		if (len>bufferLen)
-		{
-			//error
-			Error("Wrong rtcp packet size\n");
-			//Exit
-			return NULL;
-		}
+
 		//parse
-		if (packet && packet->Parse(buffer,len))
+		if (packet && packet->Parse(buffer,header.length))
 			//Add packet
 			rtcp->AddRTCPacket(packet);
 		//Remove size
-		bufferLen -= len;
+		bufferLen -= header.length;
 		//Increase pointer
-		buffer    += len;
+		buffer    += header.length;
 	}
 
 	//Return it
 	return rtcp;
+}
+
+void RTCPCompoundPacket::Dump() const
+{
+	Debug("[RTCPCompoundPacket count=%d size=%d]\n",packets.size(),GetSize());
+	//For each one
+	for(RTCPPackets::const_iterator it = packets.begin(); it!=packets.end(); ++it)
+		//Dump
+		(*it)->Dump();
+	Debug("[/RTCPCompoundPacket]\n");
 }

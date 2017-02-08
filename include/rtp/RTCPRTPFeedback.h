@@ -13,6 +13,12 @@
 
 #ifndef RTCPRTPFEEDBACK_H
 #define RTCPRTPFEEDBACK_H
+#include "config.h"
+#include "rtp/RTCPPacket.h"
+#include "rtp/RTCPCommonHeader.h"
+#include <vector>
+#include <list>
+#include <map>
 
 class RTCPRTPFeedback : public RTCPPacket
 {

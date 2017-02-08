@@ -13,6 +13,10 @@
 
 #ifndef RTCPCOMPOUNDPACKET_H
 #define RTCPCOMPOUNDPACKET_H
+#include "config.h"
+#include "rtp/RTCPPacket.h"
+#include "rtp/RTCPCommonHeader.h"
+#include <vector>
 
 class RTCPCompoundPacket
 {
@@ -20,61 +24,29 @@ public:
 	static bool IsRTCP(BYTE *data,DWORD size)
 	{
 		//Check size
-		if (size<sizeof(rtcp_common_t))
+		if (size<4)
 			//No
 			return 0;
-		//Get RTCP common header
-		rtcp_common_t* header = (rtcp_common_t*)data;
 		//Check version
-		if (header->version!=2)
+		if ((data[0]>>6)!=2)
 			//No
 			return 0;
 		//Check type
-		if (header->pt<200 ||  header->pt>206)
+		if (data[1]<200 ||  data[1]>206)
 			//It is no
 			return 0;
 		//RTCP
 		return 1;
 	}
 
-	~RTCPCompoundPacket()
-	{
-		//Fir each oen
-		for(RTCPPackets::iterator it = packets.begin(); it!=packets.end(); ++it)
-			//delete
-			delete((*it));
-	}
+	~RTCPCompoundPacket();
+	DWORD GetSize() const;
+	DWORD Serialize(BYTE *data,DWORD size) const;
+	void Dump() const;
 
-	DWORD GetSize() const
-	{
-		DWORD size = 0;
-		//Calculate
-		for(RTCPPackets::const_iterator it = packets.begin(); it!=packets.end(); ++it)
-			//Append size
-			size = sizeof(rtcp_common_t)+(*it)->GetSize();
-		//Return total size
-		return size;
-	}
-
-	DWORD Serialize(BYTE *data,DWORD size)
-	{
-		DWORD len = 0;
-		//Check size
-		if (size<GetSize())
-			//Error
-			return 0;
-		//For each one
-		for(RTCPPackets::iterator it = packets.begin(); it!=packets.end(); ++it)
-			//Serialize
-			len +=(*it)->Serialize(data+len,size-len);
-		//Exit
-		return len;
-	}
-	void Dump();
-
-	void	    AddRTCPacket(RTCPPacket* packet)	{ packets.push_back(packet);	}
-	DWORD	    GetPacketCount()	const		{ return packets.size();	}
-	const RTCPPacket* GetPacket(DWORD num) const		{ return packets[num];		}
+	void	    AddRTCPacket(RTCPPacket* packet)		{ packets.push_back(packet);	}
+	DWORD	    GetPacketCount()			const	{ return packets.size();	}
+	const RTCPPacket* GetPacket(DWORD num)		const	{ return packets[num];		}
 
 	static RTCPCompoundPacket* Parse(BYTE *data,DWORD size);
 private:

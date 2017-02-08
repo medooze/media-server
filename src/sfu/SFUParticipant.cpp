@@ -167,7 +167,7 @@ bool Participant::AddRemoteStream(Properties &properties)
 	
 	//Create video stream
 	video = new RTPIncomingSourceGroup(MediaFrame::Video,this);
-	//Set audio properties
+	//Set video properties
 	video->media.SSRC = remote.GetProperty("video.ssrc",0);
 	video->fec.SSRC = remote.GetProperty("video.fec.ssrc",0);
 	video->rtx.SSRC = remote.GetProperty("video.rtx.ssrc",0);
@@ -189,7 +189,7 @@ bool Participant::AddRemoteStream(Properties &properties)
 	return true;
 }
 
-void Participant::onRTP(RTPIncomingSourceGroup* group,RTPTimedPacket* packet)
+void Participant::onRTP(RTPIncomingSourceGroup* group,RTPPacket* packet)
 {	
 	//Lock method
 	ScopedLock method(mutex);
@@ -229,6 +229,7 @@ void Participant::onRTP(RTPIncomingSourceGroup* group,RTPTimedPacket* packet)
 
 void Participant::onPLIRequest(RTPOutgoingSourceGroup* group,DWORD ssrc)
 {
+	Debug("-Participant::onPLIRequest()\n");
 	//Lock method
 	ScopedLock method(mutex);
 	
@@ -249,7 +250,7 @@ void Participant::onPLIRequest(RTPOutgoingSourceGroup* group,DWORD ssrc)
 }
 
 
- void Participant::onMedia(Stream* stream,RTPTimedPacket* packet)
+ void Participant::onMedia(Stream* stream,RTPPacket* packet)
  {
 	 //Send it
 	 transport->Send(*packet);

@@ -11,8 +11,8 @@
  * Created on 3 de febrero de 2017, 12:01
  */
 
-#include "rtp.h"
-
+#include "rtp/RTCPFullIntraRequest.h"
+#include "rtp/RTCPCommonHeader.h"
 
 
 RTCPFullIntraRequest::RTCPFullIntraRequest() : RTCPPacket(RTCPPacket::FullIntraRequest)
@@ -22,20 +22,29 @@ RTCPFullIntraRequest::RTCPFullIntraRequest() : RTCPPacket(RTCPPacket::FullIntraR
 
 DWORD RTCPFullIntraRequest::GetSize()
 {
-	return sizeof(rtcp_common_t)+4;
+	return RTCPCommonHeader::GetSize()+4;
 }
 
 DWORD RTCPFullIntraRequest::Parse(BYTE* data,DWORD size)
 {
 	//Get header
-	rtcp_common_t * header = (rtcp_common_t *)data;
-
+	RTCPCommonHeader header;
+		
+	//Parse header
+	DWORD len = header.Parse(data,size);
+	
+	//IF error
+	if (!len)
+		return 0;
+		
+	//Get packet size
+	DWORD packetSize = header.length;
+	
 	//Check size
-	if (size<GetRTCPHeaderLength(header))
+	if (size<packetSize)
 		//Exit
 		return 0;
-	//Skip headder
-	DWORD len = sizeof(rtcp_common_t);
+	
 	//Get ssrcs
 	ssrc = get4(data,len);
 	//Return consumed len
@@ -50,16 +59,17 @@ DWORD RTCPFullIntraRequest::Serialize(BYTE* data,DWORD size)
 	if (size<packetSize)
 		//error
 		return Error("Serialize RTCPFullIntraRequest invalid size\n");
-	//Set header
-	rtcp_common_t * header = (rtcp_common_t *)data;
+
+	//RTCP common header
+	RTCPCommonHeader header;
 	//Set values
-	header->count	= 0;
-	header->pt	= GetType();
-	header->p	= 0;
-	header->version = 2;
-	SetRTCPHeaderLength(header,packetSize);
-	//Set lenght
-	DWORD len = sizeof(rtcp_common_t);
+	header.count	  = 0;
+	header.packetType = GetType();
+	header.padding	  = 0;
+	header.length	  = packetSize;
+	//Serialize
+	DWORD len = header.Serialize(data,size);
+	
 	//Set ssrcs
 	set4(data,len,ssrc);
 	//Retrun writed data len

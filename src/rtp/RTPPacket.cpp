@@ -11,122 +11,132 @@
  * Created on 3 de febrero de 2017, 11:52
  */
 
-#include "rtp.h"
+#include "rtp/RTPPacket.h"
+#include "log.h"
 
 
-void RTPPacket::ProcessExtensions(const RTPMap &extMap)
+RTPPacket::RTPPacket(MediaFrame::Type media,DWORD codec)
 {
-	//Check extensions
-	if (GetX())
+	this->media = media;
+	//Set coced
+	this->codec = codec;
+	//NO seq cycles
+	cycles = 0;
+	//Default clock rates
+	switch(media)
 	{
-		//Get extension data
-		const BYTE* ext = GetExtensionData();
-		//Get extesnion lenght
-		WORD length = GetExtensionLength();
-		//Read all
-		while (length)
-		{
-			//Get header
-			const BYTE header = *(ext++);
-			//Decrease lenght
-			length--;
-			//If it is padding
-			if (!header)
-				//Next
-				continue;
-			//Get extension element id
-			BYTE id = header >> 4;
-			//GEt extenion element length
-			BYTE n = (header & 0x0F) + 1;
-			//Check consistency
-			if (n>length)
-				//Exit
-				break;
-			//Get mapped extension
-			BYTE t = extMap.GetCodecForType(id);
-			//Debug("-RTPExtension [type:%d,codec:%d]\n",id,t);
-			//Check type
-			switch (t)
-			{
-				case RTPHeaderExtension::SSRCAudioLevel:
-					// The payload of the audio level header extension element can be
-					// encoded using either the one-byte or two-byte 
-					// 0                   1
-					//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
-					// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-					// |  ID   | len=0 |V| level       |
-					// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-					// 0                   1                   2                   3
-					//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-					// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-					// |  ID   | len=1 |V|   level     |      0x00     |      0x00     |
-					// +-+-+-+-+-+-+-+-+-+-+-+-+-+-s+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-					//
-					// Set extennsion
-					extension.hasAudioLevel = true;
-					extension.vad	= (*ext & 0x80) >> 7;
-					extension.level	= (*ext & 0x7f);
-					break;
-				case RTPHeaderExtension::TimeOffset:
-					//  0                   1                   2                   3
-					//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-					// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-					// |  ID   | len=2 |              transmission offset              |
-					// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-					//
-					// Set extension
-					extension.hasTimeOffset = true;
-					extension.timeOffset = get3(ext,0);
-					//Check if it is negative
-					if (extension.timeOffset & 0x800000)
-						  // Negative offset, correct sign for Word24 to Word32.
-						extension.timeOffset |= 0xFF000000;
-					break;
-				case RTPHeaderExtension::AbsoluteSendTime:
-					//  0                   1                   2                   3
-					//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-					// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-					// |  ID   | len=2 |              absolute send time               |
-					// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-					// Calculate absolute send time field (convert ms to 24-bit unsigned with 18 bit fractional part.
-					// Encoding: Timestamp is in seconds, 24 bit 6.18 fixed point, yielding 64s wraparound and 3.8us resolution (one increment for each 477 bytes going out on a 1Gbps interface).
-					// Set extension
-					extension.hasAbsSentTime = true;
-					extension.absSentTime = ((QWORD)get3(ext,0))*1000 >> 18;
-					break;
-				case RTPHeaderExtension::CoordinationOfVideoOrientation:
-					// Bit#            7   6   5   4   3   2   1  0(LSB)
-					// Definition      0   0   0   0   C   F   R1 R0
-					// With the following definitions:
-					// C = Camera: indicates the direction of the camera used for this video stream. It can be used by the MTSI client in receiver to e.g. display the received video differently depending on the source camera.
-					//     0: Front-facing camera, facing the user. If camera direction is unknown by the sending MTSI client in the terminal then this is the default value used.
-					// 1: Back-facing camera, facing away from the user.
-					// F = Flip: indicates a horizontal (left-right flip) mirror operation on the video as sent on the link.
-					//     0: No flip operation. If the sending MTSI client in terminal does not know if a horizontal mirror operation is necessary, then this is the default value used.
-					//     1: Horizontal flip operation
-					// R1, R0 = Rotation: indicates the rotation of the video as transmitted on the link. The receiver should rotate the video to compensate that rotation. E.g. a 90° Counter Clockwise rotation should be compensated by the receiver with a 90° Clockwise rotation prior to displaying.
-					// Set extension
-					extension.hasVideoOrientation = true;
-					*((BYTE*)(&extension.cvo)) = *ext;
-					break;
-				case RTPHeaderExtension::TransportWideCC:
-					//  0                   1                   2       
-					//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 
-					// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-					// |  ID   | L=1   |transport-wide sequence number | 
-					// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-					extension.hasTransportWideCC = true;
-					extension.transportSeqNum = (WORD)get2(ext,0);
-					break;
-				default:
-					Debug("-Unknown or unmapped extension [%d]\n",id);
-					break;
-			}
-			//Skip bytes
-			ext+=n;
-			length-=n;
-		}
-
-		//Debug("-RTPExtensions [vad=%d,level=%.2d,offset=%d,ts=%lld]\n",GetVAD(),GetLevel(),GetTimeOffset(),GetAbsSendTime());
+		case MediaFrame::Video:
+			clockRate = 90000;
+			break;
+		case MediaFrame::Audio:
+			clockRate = 8000;
+			break;
+		default:
+			clockRate = 1000;
 	}
+	//Reset payload
+	payload  = buffer+PREFIX;
+	payloadLen = 0;
+	//Set time
+	time = ::getTime()/1000;
+}
+RTPPacket::RTPPacket(MediaFrame::Type media,DWORD codec,const RTPHeader &header, const RTPHeaderExtension extension) :
+	header(header),
+	extension(extension)
+{
+	this->media = media;
+	//Set coced
+	this->codec = codec;
+	//NO seq cycles
+	cycles = 0;
+	//Default clock rates
+	switch(media)
+	{
+		case MediaFrame::Video:
+			clockRate = 90000;
+			break;
+		case MediaFrame::Audio:
+			clockRate = 8000;
+			break;
+		default:
+			clockRate = 1000;
+	}
+	//Reset payload
+	payload  = buffer+PREFIX;
+	payloadLen = 0;
+	//Set time
+	time = ::getTime()/1000;
+}
+
+RTPPacket::~RTPPacket()
+{
+}
+
+RTPPacket* RTPPacket::Clone()
+{
+	//New one
+	RTPPacket* cloned = new RTPPacket(GetMedia(),GetCodec(),GetRTPHeader(),GetRTPHeaderExtension());
+	//Set attrributes
+	cloned->SetClockRate(GetClockRate());
+	cloned->SetSeqCycles(GetSeqCycles());
+	cloned->SetTimestamp(GetTimestamp());
+	//Set payload
+	cloned->SetPayload(GetMediaData(),GetMediaLength());
+	//Return it
+	return cloned;
+}
+
+bool RTPPacket::SetPayload(BYTE *data,DWORD size)
+{
+	//Check size
+	if (size>GetMaxMediaLength())
+		//Error
+		return false;
+	//Reset payload
+	payload  = buffer+PREFIX;
+	//Copy
+	memcpy(payload,data,size);
+	//Set length
+	payloadLen = size;
+	//good
+	return true;
+}
+bool RTPPacket::PrefixPayload(BYTE *data,DWORD size)
+{
+	//Check size
+	if (size>payload-buffer)
+		//Error
+		return false;
+	//Copy
+	memcpy(payload-size,data,size);
+	//Set pointers
+	payload  -= size;
+	payloadLen += size;
+	//good
+	return true;
+}
+
+
+bool RTPPacket::SkipPayload(DWORD skip) {
+	//Ensure we have enough to skip
+	if (GetMaxMediaLength()<skip+(payload-buffer)+payloadLen)
+		//Error
+		return false;
+
+	//Move media data
+	payload += skip;
+	//good
+	return true;
+}
+
+void RTPPacket::Dump()
+{
+	Debug("[RTPPacket %s codec=%d payload=%d]\n",MediaFrame::TypeToString(GetMedia()),GetCodec(),GetMediaLength());
+	header.Dump();
+	//If  there is an extension
+	if (header.extension)
+		//Dump extension
+		extension.Dump();
+	::Dump(GetMediaData(),16);
+	Log("[[/RTPPacket]\n");
 }

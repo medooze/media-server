@@ -14,6 +14,8 @@
 #ifndef RTCPBYE_H
 #define RTCPBYE_H
 #include "config.h"
+#include "rtp/RTCPPacket.h"
+#include "rtp/RTCPCommonHeader.h"
 #include <vector>
 
 class RTCPBye : public RTCPPacket

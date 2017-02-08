@@ -13,25 +13,14 @@
 
 #ifndef RTPPACKETSCHED_H
 #define RTPPACKETSCHED_H
-
+#include "config.h"
+#include "rtp/RTPPacket.h"
 
 class RTPPacketSched :
 	public RTPPacket
 {
 public:
-	RTPPacketSched(MediaFrame::Type media,DWORD codec) : RTPPacket(media,codec,codec)
-	{
-		//Set sending type
-		sendingTime = 0;
-	}
-
-	RTPPacketSched(MediaFrame::Type media,BYTE *data,DWORD size) : RTPPacket(media,data,size)
-	{
-		//Set sending type
-		sendingTime = 0;
-	}
-
-	RTPPacketSched(MediaFrame::Type media,DWORD codec,DWORD type) : RTPPacket(media,codec,type)
+	RTPPacketSched(MediaFrame::Type media,DWORD codec) : RTPPacket(media,codec)
 	{
 		//Set sending type
 		sendingTime = 0;

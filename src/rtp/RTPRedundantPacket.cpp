@@ -11,9 +11,9 @@
  * Created on 3 de febrero de 2017, 11:58
  */
 
-#include "rtp.h"
+#include "rtp/RTPRedundantPacket.h"
 
-RTPRedundantPacket::RTPRedundantPacket(MediaFrame::Type media,BYTE *data,DWORD size) : RTPTimedPacket(media,data,size)
+RTPRedundantPacket::RTPRedundantPacket(MediaFrame::Type media,BYTE *data,DWORD size) : RTPPacket(media,0)
 {
 	//NO primary data yet
 	primaryCodec = 0;
@@ -88,10 +88,10 @@ RTPRedundantPacket::RTPRedundantPacket(MediaFrame::Type media,BYTE *data,DWORD s
 	primarySize = GetMediaLength()-i-skip;
 }
 
-RTPTimedPacket* RTPRedundantPacket::CreatePrimaryPacket()
+RTPPacket* RTPRedundantPacket::CreatePrimaryPacket()
 {
 	//Create new pacekt
-	RTPTimedPacket* packet = new RTPTimedPacket(GetMedia(),primaryCodec,primaryType);
+	RTPPacket* packet = new RTPPacket(GetMedia(),primaryCodec,primaryType);
 	//Set attributes
 	packet->SetClockRate(GetClockRate());
 	packet->SetMark(GetMark());

@@ -14,10 +14,11 @@
 #ifndef RTPREDUNDANTPACKET_H
 #define RTPREDUNDANTPACKET_H
 
-
+#include "config.h"
+#include "rtp/RTPPacket.h"
 
 class RTPRedundantPacket:
-	public RTPTimedPacket
+	public RTPPacket
 {
 public:
 	RTPRedundantPacket(MediaFrame::Type media,BYTE *data,DWORD size);
@@ -28,7 +29,7 @@ public:
 	BYTE  GetPrimaryCodec()			const { return primaryCodec;	}
 	void  SetPrimaryCodec(BYTE codec)	      { primaryCodec = codec;	}
 
-	RTPTimedPacket* CreatePrimaryPacket();
+	RTPPacket* CreatePrimaryPacket();
 
 	BYTE  GetRedundantCount()		const { return headers.size();	}
 	BYTE* GetRedundantPayloadData(int i)	const { return i<headers.size()?redundantData+headers[i].ini:NULL;	}

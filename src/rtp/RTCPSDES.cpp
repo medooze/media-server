@@ -11,9 +11,8 @@
  * Created on 3 de febrero de 2017, 12:02
  */
 
-#include "rtp.h"
-
-
+#include "rtp/RTCPSDES.h"
+#include "rtp/RTCPCommonHeader.h"
 
 RTCPSDES::RTCPSDES() : RTCPPacket(RTCPPacket::SDES)
 {
@@ -39,7 +38,7 @@ void RTCPSDES::Dump()
 }
 DWORD RTCPSDES::GetSize()
 {
-	DWORD len = sizeof(rtcp_common_t);
+	DWORD len = RTCPCommonHeader::GetSize();
 	//For each field
 	for (Descriptions::iterator it=descriptions.begin();it!=descriptions.end();++it)
 		//add size
@@ -49,18 +48,28 @@ DWORD RTCPSDES::GetSize()
 DWORD RTCPSDES::Parse(BYTE* data,DWORD size)
 {
 	//Get header
-	rtcp_common_t * header = (rtcp_common_t *)data;
-
+	//Get header
+	RTCPCommonHeader header;
+		
+	//Parse header
+	DWORD len = header.Parse(data,size);
+	
+	//IF error
+	if (!len)
+		return 0;
+		
+	//Get packet size
+	DWORD packetSize = header.length;
+	
 	//Check size
-	if (size<GetRTCPHeaderLength(header))
+	if (size<packetSize)
 		//Exit
 		return 0;
-	//Skip headder
-	DWORD len = sizeof(rtcp_common_t);
+	
 	//Parse fields
 	DWORD i = 0;
 	//While we have
-	while (size>len && i<header->count)
+	while (size>len && i<header.count)
 	{
 		Description *desc = new Description();
 		//Parse field
@@ -86,16 +95,17 @@ DWORD RTCPSDES::Serialize(BYTE* data,DWORD size)
 	if (size<packetSize)
 		//error
 		return Error("Serialize RTCPSDES invalid size\n");
-	//Set header
-	rtcp_common_t * header = (rtcp_common_t *)data;
+
+	//RTCP common header
+	RTCPCommonHeader header;
 	//Set values
-	header->count	= descriptions.size();
-	header->pt	= GetType();
-	header->p	= 0;
-	header->version = 2;
-	SetRTCPHeaderLength(header,packetSize);
-	//Skip headder
-	DWORD len = sizeof(rtcp_common_t);
+	header.count	  = descriptions.size();
+	header.packetType = GetType();
+	header.padding	  = 0;
+	header.length	  = packetSize;
+	//Serialize
+	DWORD len = header.Serialize(data,size);
+	
 	//For each field
 	for (Descriptions::iterator it=descriptions.begin();it!=descriptions.end();++it)
 		//Serilize it

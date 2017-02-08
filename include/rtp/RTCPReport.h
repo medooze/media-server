@@ -14,6 +14,9 @@
 #ifndef RTCPREPORT_H
 #define RTCPREPORT_H
 
+#include "config.h"
+#include "tools.h"
+#include "log.h"
 
 class RTCPReport
 {

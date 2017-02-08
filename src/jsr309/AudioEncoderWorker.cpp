@@ -113,7 +113,7 @@ int AudioEncoderMultiplexerWorker::End()
 *******************************************/
 int AudioEncoderMultiplexerWorker::Encode()
 {
-	RTPPacket	packet(MediaFrame::Audio,codec,codec);
+	RTPPacket	packet(MediaFrame::Audio,codec);
 	SWORD 		recBuffer[512];
 	AudioEncoder* 	encoder;
 	DWORD		frameTime=0;

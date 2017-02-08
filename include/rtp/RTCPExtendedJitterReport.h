@@ -13,7 +13,9 @@
 
 #ifndef RTCPEXTENDEDJITTERREPORT_H
 #define RTCPEXTENDEDJITTERREPORT_H
-
+#include "config.h"
+#include "rtp/RTCPPacket.h"
+#include <vector>
 
 class RTCPExtendedJitterReport : public RTCPPacket
 {

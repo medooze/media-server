@@ -11,8 +11,9 @@
  * Created on 3 de febrero de 2017, 12:03
  */
 
-#include "rtp.h"
-
+#include "rtp/RTCPApp.h"
+#include "rtp/RTCPCommonHeader.h"
+#include "log.h"
 
 
 RTCPApp::RTCPApp() : RTCPPacket(RTCPPacket::App)
@@ -30,7 +31,7 @@ RTCPApp::~RTCPApp()
 
 DWORD RTCPApp::GetSize()
 {
-	return sizeof(rtcp_common_t)+8+size;
+	return RTCPCommonHeader::GetSize()+8+size;
 }
 
 DWORD RTCPApp::Serialize(BYTE* data, DWORD size)
@@ -41,16 +42,17 @@ DWORD RTCPApp::Serialize(BYTE* data, DWORD size)
 	if (size<packetSize)
 		//error
 		return Error("Serialize RTCPApp invalid size\n");
-	//Set header
-	rtcp_common_t * header = (rtcp_common_t *)data;
+	
+	//RTCP common header
+	RTCPCommonHeader header;
 	//Set values
-	header->count	= subtype;
-	header->pt	= GetType();
-	header->p	= 0;
-	header->version = 2;
-	SetRTCPHeaderLength(header,packetSize);
-	//Set lenght
-	DWORD len = sizeof(rtcp_common_t);
+	header.count	  = subtype;
+	header.packetType = GetType();
+	header.padding	  = 0;
+	header.length	  = packetSize;
+	//Serialize
+	DWORD len = header.Serialize(data,size);
+	
 	//Copy
 	set4(data,len,ssrc);
 	//Move
@@ -70,18 +72,26 @@ DWORD RTCPApp::Serialize(BYTE* data, DWORD size)
 DWORD RTCPApp::Parse(BYTE* data,DWORD size)
 {
 	//Get header
-	rtcp_common_t * header = (rtcp_common_t *)data;
-
+	RTCPCommonHeader header;
+		
+	//Parse header
+	DWORD len = header.Parse(data,size);
+	
+	//IF error
+	if (!len)
+		return 0;
+		
 	//Get packet size
-	DWORD packetSize = GetRTCPHeaderLength(header);
+	DWORD packetSize = header.length;
+	
 	//Check size
 	if (size<packetSize)
 		//Exit
 		return 0;
+	
 	//Get subtype
-	subtype = header->count;
-	//Skip headder
-	DWORD len = sizeof(rtcp_common_t);
+	subtype = header.count;
+	
 	//Get ssrc
 	ssrc = get4(data,len);
 	//Move

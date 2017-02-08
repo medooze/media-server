@@ -63,15 +63,12 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) : transport(th
 	rtt = 0;
 	
 	//NO FEC
-	useFEC = false;
 	useNACK = false;
 	useAbsTime = false;
 	isNACKEnabled = false;
 	//Reduce jitter buffer to min
 	packets.SetMaxWaitTime(60);
-	//Fill with 0
-	memset(sendPacket,0,MTU+SRTP_MAX_TRAILER_LEN);
-	
+
 	//No stimator
 	remoteRateEstimator = NULL;
 
@@ -133,14 +130,11 @@ void RTPSession::Reset()
 	rtt = 0;
 	
 	//NO FEC
-	useFEC = false;
 	useNACK = false;
 	useAbsTime = false;
 	isNACKEnabled = false;
 	//Reduce jitter buffer to min
 	packets.SetMaxWaitTime(60);
-	//Fill with 0
-	memset(sendPacket,0,MTU+SRTP_MAX_TRAILER_LEN);
 	
 	//Reset stream soutces
 	send.Reset();
@@ -160,7 +154,7 @@ void RTPSession::FlushRTXPackets()
 	for (RTPOrderedPackets::iterator it = rtxs.begin(); it!=rtxs.end();++it)
 	{
 		//Get pacekt
-		RTPTimedPacket *pkt = it->second;
+		RTPPacket *pkt = it->second;
 		//Delete object
 		delete(pkt);
 	}
@@ -230,11 +224,8 @@ int RTPSession::SetProperties(const Properties& properties)
 				free(cname);
 			//Clone
 			cname = strdup(it->second.c_str());
-		} else if (it->first.compare("useFEC")==0) {
-			//Set fec decoding
-			useFEC = atoi(it->second.c_str());
 		} else if (it->first.compare("useNACK")==0) {
-			//Set fec decoding
+			//Set NACK feedback
 			useNACK = atoi(it->second.c_str());
 			//Enable NACK until first RTT
 			isNACKEnabled = useNACK;
@@ -329,8 +320,6 @@ bool RTPSession::SetSendingCodec(DWORD codec)
 		return Error("-RTPSession::SetSendingCodec(%s) | error: codec mapping not found [codec:%s]\n",MediaFrame::TypeToString(media),GetNameForCodec(media,codec));
 	//Log it
 	Log("-RTPSession::SetSendingCodec(%s) | [codec:%s,type:%d]\n",MediaFrame::TypeToString(media),GetNameForCodec(media,codec),type);
-	//Set type in header
-	((rtp_hdr_t *)sendPacket)->pt = type;
 	//Set type
 	sendType = type;
 	//and we are done
@@ -424,71 +413,73 @@ int RTPSession::SendPacket(RTPPacket &packet)
 
 int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 {
+	BYTE  data[MTU+SRTP_MAX_TRAILER_LEN] ALIGNEDTO32;
+	DWORD size = MTU;
+	
 	//Check if we need to send SR
 	if (useRTCP && (isZeroTime(&lastSR) || getDifTime(&lastSR)>1000000))
 		//Send it
 		SendSenderReport();
-
-	//Modificamos las cabeceras del packete
-	rtp_hdr_t *headers = (rtp_hdr_t *)sendPacket;
-
-	//Init send packet
-	headers->version = RTP_VERSION;
-	headers->ssrc = htonl(send.SSRC);
-
+	
 	//Calculate last timestamp
 	send.lastTime = send.time + timestamp;
 
-	//POnemos el timestamp
-	headers->ts=htonl(send.lastTime);
-
-	//Incrementamos el numero de secuencia
-	headers->seq=htons(send.extSeq++);
+	//Modificamos las cabeceras del packete
+	RTPHeader header;
+	RTPHeaderExtension extension;
+	//Init send packet
+	header.ssrc = send.SSRC;
+	header.timestamp = send.lastTime;
+	header.payloadType = sendType;
+	header.sequenceNumber = send.extSeq++;
+	header.mark = packet.GetMark();
 
 	//Check seq wrap
 	if (send.extSeq==0)
 		//Inc cycles
 		send.cycles++;
 
-	//La marca de fin de frame
-	headers->m=packet.GetMark();
-
-	//Calculamos el inicio
-	int ini = sizeof(rtp_hdr_t);
-
 	//If we have are using any sending extensions
 	if (useAbsTime)
 	{
-		//Get header
-		rtp_hdr_ext_t* ext = (rtp_hdr_ext_t*)(sendPacket + ini);
-		//Set extension header
-		headers->x = 1;
-		//Set magic cookie
-		ext->ext_type = htons(0xBEDE);
-		//Set total length in 32bits words
-		ext->len = htons(1);
-		//Increase ini
-		ini += sizeof(rtp_hdr_ext_t);
-		//Calculate absolute send time field (convert ms to 24-bit unsigned with 18 bit fractional part.
-		// Encoding: Timestamp is in seconds, 24 bit 6.18 fixed point, yielding 64s wraparound and 3.8us resolution (one increment for each 477 bytes going out on a 1Gbps interface).
-		DWORD abs = ((getTimeMS() << 18) / 1000) & 0x00ffffff;
-		//Set header
-		sendPacket[ini] = extMap.GetTypeForCodec(RTPHeaderExtension::AbsoluteSendTime) << 4 | 0x02;
-		//Set data
-		set3(sendPacket,ini+1,abs);
-		//Increase ini
-		ini+=4;
+		//Use extension
+		header.extension = true;
+		//Set abs send time
+		extension.hasAbsSentTime = true;
+		extension.absSentTime = getTimeMS();
 	}
 
-	//Comprobamos que quepan
-	if (ini+packet.GetMediaLength()>MTU)
-		return Error("-RTPSession::SendPacket(%s) | Overflow [size:%d,max:%d]\n",MediaFrame::TypeToString(media),ini+packet.GetMediaLength(),MTU);
+	//Serialize header
+	int len = header.Serialize(data,size);
+
+	//Check
+	if (len)
+		//Error
+		return Error("-RTPSession::SendPacket() | Error serializing rtp headers\n");
+
+	//If we have extension
+	if (header.extension)
+	{
+		//Serialize
+		int n = extension.Serialize(extMap,data+len,size-len);
+		//Comprobamos que quepan
+		if (!n)
+			//Error
+			return Error("-RTPSession::SendPacket() | Error serializing rtp extension headers\n");
+		//Inc len
+		len += n;
+	}
+
+	//Ensure we have enougth data
+	if (len+packet.GetMediaLength()>size)
+		//Error
+		return Error("-RTPSession::SendPacket() | Media overflow\n");
 
 	//Copiamos los datos
-        memcpy(sendPacket+ini,packet.GetMediaData(),packet.GetMediaLength());
+	memcpy(data+len,packet.GetMediaData(),packet.GetMediaLength());
 
 	//Set pateckt length
-	int len = packet.GetMediaLength()+ini;
+	len += packet.GetMediaLength();
 
 	//Block
 	sendMutex.Lock();
@@ -496,16 +487,17 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 	//Add it rtx queue before encripting
 	if (useNACK)
 	{
-		//Create new pacekt
-		RTPTimedPacket *rtx = new RTPTimedPacket(media,sendPacket,len);
-		//Set cycles
-		rtx->SetSeqCycles(send.cycles);
+		//Create new packet with this data
+		RTPPacket *rtx = new RTPPacket(packet.GetMedia(),packet.GetCodec(),header,extension);
+		//Set media
+		rtx->SetPayload(packet.GetMediaData(),packet.GetMediaLength());
 		//Add it to que
-		rtxs[rtx->GetExtSeqNum()] = rtx;
+		rtxs[packet.GetExtSeqNum()] = rtx;
 	}
+	
 
 	//No error yet, send packet
-	len = transport.SendRTPPacket(sendPacket,len);
+	len = transport.SendRTPPacket(data,len);
 
 	//If got packet to send
 	if (len>0)
@@ -523,7 +515,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 	while(it!=rtxs.end())
 	{
 		//Get pacekt
-		RTPTimedPacket *pkt = it->second;
+		RTPPacket *pkt = it->second;
 		//Check time
 		if (pkt->GetTime()>until)
 			//Keep the rest
@@ -541,34 +533,84 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 	return (len>0);
 }
 
-void RTPSession::onRTPPacket(BYTE* buffer, DWORD size)
+void RTPSession::onRTPPacket(BYTE* data, DWORD size)
 {
 	bool isRTX = false;
+	RTPHeader header;
+	RTPHeaderExtension extension;
 	
 	//Check rtp map
 	if (!rtpMapIn)
 	{
 		//Error
-		Error("-RTPSession::ReadRTP(%s) | RTP map not set\n",MediaFrame::TypeToString(media));
+		Error("-RTPSession::onRTPPacket(%s) | RTP map not set\n",MediaFrame::TypeToString(media));
 		//Exit
 		return;
 	}
-
-	//Get ssrc
-	DWORD ssrc = RTPPacket::GetSSRC(buffer);
-	//Get type
-	BYTE type = RTPPacket::GetType(buffer);
+	//Parse RTP header
+	int ini = header.Parse(data,size);
+	
+	//On error
+	if (!ini)
+	{
+		//Debug
+		Debug("-RTPSession::onRTPPacket() | Could not parse RTP header\n");
+		//Dump it
+		Dump(data,size);
+		//Exit
+		return;
+	}
+	
+	//If it has extension
+	if (header.extension)
+	{
+		//Parse extension
+		int l = extension.Parse(extMap,data+ini,size-ini);
+		//If not parsed
+		if (!l)
+		{
+			///Debug
+			Debug("-RTPSession::onRTPPacket() | Could not parse RTP header extension\n");
+			//Dump it
+			Dump(data,size);
+			//Exit
+			return;
+		}
+		//Inc ini
+		ini += l;
+	}
+	
+	//Get header data as shorcut
+	DWORD ssrc = header.ssrc;
+	BYTE type  = header.payloadType;
 	//Get initial codec
-	BYTE codec = rtpMapIn->GetCodecForType(type);
-
+	BYTE codec = rtpMapIn->GetCodecForType(header.payloadType);
+	
 	//Check codec
 	if (codec==RTPMap::NotFound)
 	{
 		//Exit
-		Error("-RTPSession::ReadRTP(%s) | RTP packet type unknown [%d]\n",MediaFrame::TypeToString(media),type);
+		Error("-RTPSession::onRTPPacket(%s) | RTP packet type unknown [%d]\n",MediaFrame::TypeToString(media),type);
 		//Exit
 		return;
 	}
+	
+	//Create normal packet
+	RTPPacket *packet = new RTPPacket(media,codec,header,extension);
+	
+	//Set the payload
+	packet->SetPayload(data+ini,len-ini);
+	
+	//Get sec number
+	WORD seq = packet->GetSeqNum();
+
+	//Check if we have a sequence wrap
+	if (seq<0x0FFF && (recv.extSeq & 0xFFFF)>0xF000)
+		//Increase cycles
+		recv.cycles++;
+
+	//Set cycles
+	packet->SetSeqCycles(recv.cycles);
 	
 	//Check if we got a different SSRC
 	if (recv.SSRC!=ssrc)
@@ -577,7 +619,7 @@ void RTPSession::onRTPPacket(BYTE* buffer, DWORD size)
 		if (codec!=VideoCodec::RTX)
 		{
 			//Log
-			Log("-RTPSession::ReadRTP(%s) | New SSRC [new:%x,old:%x]\n",MediaFrame::TypeToString(media),ssrc,recv.SSRC);
+			Log("-RTPSession::onRTPPacket(%s) | New SSRC [new:%x,old:%x]\n",MediaFrame::TypeToString(media),ssrc,recv.SSRC);
 			//Send SR to old one
 			SendSenderReport();
 			//Reset packets
@@ -599,7 +641,7 @@ void RTPSession::onRTPPacket(BYTE* buffer, DWORD size)
 				//Store it
 				recvRTX.SSRC = ssrc;
 				//Log
-				Log("-RTPSession::ReadRTP(%s) | Gor RTX for SSRC [rtx:%x,ssrc:%x]\n",MediaFrame::TypeToString(media),recvRTX.SSRC,recv.SSRC);
+				Log("-RTPSession::onRTPPacket(%s) | Gor RTX for SSRC [rtx:%x,ssrc:%x]\n",MediaFrame::TypeToString(media),recvRTX.SSRC,recv.SSRC);
 			}	
 			/*
 			       The format of a retransmission packet is shown below:
@@ -614,25 +656,11 @@ void RTPSession::onRTPPacket(BYTE* buffer, DWORD size)
 			  |                                                               |
 			  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 			*/
-			//Create temporal packet
-			RTPTimedPacket tmp(media,buffer,size);
-			//Get original sequence number
-			WORD osn = get2(buffer,tmp.GetRTPHeaderLen());
+			 //Get original sequence number
+			WORD osn = get2(packet->GetMediaData(),0);
 			
-			UltraDebug("RTX: Got   %.d:RTX for #%d ts:%u\n",type,osn,tmp.GetTimestamp());
+			UltraDebug("RTX: Got   %.d:RTX for #%d ts:%u\n",type,osn,packet->GetTimestamp());
 			
-			//Move origin
-			for (int i=tmp.GetRTPHeaderLen()-1;i>=0;--i)
-				//Move
-				buffer[i+2] = buffer[i];
-			//Move ini
-			buffer+=2;
-			//reduze size
-			size-=2;
-			//Set original seq num
-			set2(buffer,2,osn);
-			//Set original ssrc
-			set4(buffer,8,recv.SSRC);
 			//Get the associated type
 			type = recvRTX.apt;
 			//Find codec for type
@@ -641,10 +669,19 @@ void RTPSession::onRTPPacket(BYTE* buffer, DWORD size)
 			if (codec==RTPMap::NotFound)
 			{
 				 //Error
-				 Error("-RTPSession::ReadRTP(%s) | RTP RTX packet apt type unknown [%d]\n",MediaFrame::TypeToString(media),type);
+				 Error("-RTPSession::onRTPPacket(%s) | RTP RTX packet apt type unknown [%d]\n",MediaFrame::TypeToString(media),type);
 				 //Exi
 				 return;
 			}
+			 //Set original seq num
+			packet->SetSeqNum(osn);
+			//Set original ssrc
+			packet->SetSSRC(recv.SSRC);
+			//Set codec
+			packet->SetCodec(codec);
+
+			//Skip osn from payload
+			packet->SkipPayload(2);
 			//It is a retrasmision
 			isRTX = true;
 		}	
@@ -653,9 +690,7 @@ void RTPSession::onRTPPacket(BYTE* buffer, DWORD size)
 		recvRTX.apt = type;
 	}
 
-	//Create rtp packet
-	RTPTimedPacket *packet = NULL;
-
+	/*
 	//Peek type
 	if (codec==TextCodec::T140RED || codec==VideoCodec::RED)
 	{
@@ -674,7 +709,7 @@ void RTPSession::onRTPPacket(BYTE* buffer, DWORD size)
 			//Delete red packet
 			delete(red);
 			//Exit
-			Error("-RTPSession::ReadRTP(%s) | RTP packet type unknown for primary type of redundant data [%d,rd:%d]\n",MediaFrame::TypeToString(media),t,codec);
+			Error("-RTPSession::onRTPPacket(%s) | RTP packet type unknown for primary type of redundant data [%d,rd:%d]\n",MediaFrame::TypeToString(media),t,codec);
 			return;
 		}
 		
@@ -695,7 +730,7 @@ void RTPSession::onRTPPacket(BYTE* buffer, DWORD size)
 				//Delete red packet
 				delete(red);
 				//Exit
-				Error("-RTPSession::ReadRTP(%s) | RTP packet type unknown for primary type of secundary data [%d,%d,red:%d]\n",MediaFrame::TypeToString(media),i,t,codec);
+				Error("-RTPSession::onRTPPacket(%s) | RTP packet type unknown for primary type of secundary data [%d,%d,red:%d]\n",MediaFrame::TypeToString(media),i,t,codec);
 				return;
 			}
 			//Set it
@@ -705,27 +740,12 @@ void RTPSession::onRTPPacket(BYTE* buffer, DWORD size)
 		packet = red;
 	} else {
 		//Create normal packet
-		packet = new RTPTimedPacket(media,buffer,size);
+		packet = new RTPPacket(media,buffer,size);
 		//if (media==MediaFrame::Video && !isRTX) UltraDebug("RTX: Got  %d:%s packet #%d ts:%u\n",type,VideoCodec::GetNameFor((VideoCodec::Type)codec),packet->GetSeqNum(),packet->GetTimestamp());
 	}
-
-	//Set codec & type again
-	packet->SetType(type);
-	packet->SetCodec(codec);
-
-	//Process extensions
-	packet->ProcessExtensions(extMap);
+	 */
 	
-	//Get sec number
-	WORD seq = packet->GetSeqNum();
-
-	//Check if we have a sequence wrap
-	if (seq<0x0FFF && (recv.extSeq & 0xFFFF)>0xF000)
-		//Increase cycles
-		recv.cycles++;
-
-	//Set cycles
-	packet->SetSeqCycles(recv.cycles);
+	
 	
 	//if (media==MediaFrame::Video && !isRTX && seq % 40 ==0)
 	//	return Error("RTX: Drop %d %s packet #%d ts:%u\n",type,VideoCodec::GetNameFor((VideoCodec::Type)codec),packet->GetSeqNum(),packet->GetTimestamp());
@@ -772,7 +792,7 @@ void RTPSession::onRTPPacket(BYTE* buffer, DWORD size)
 		//If remote estimator
 		if (remoteRateEstimator)
 			//Update rate control
-			remoteRateEstimator->Update(recv.SSRC,packet);
+			remoteRateEstimator->Update(recv.SSRC,packet,size);
 
 		//Increase stats
 		recv.numPackets++;
@@ -830,38 +850,7 @@ void RTPSession::onRTPPacket(BYTE* buffer, DWORD size)
 			recTimestamp = packet->GetClockTimestamp();
 		}
 	}
-
-	//Check if we are using fec
-	if (useFEC)
-	{
-		//Append to the FEC decoder
-		fec.AddPacket(packet);
-
-		//Try to recover
-		RTPTimedPacket* recovered = fec.Recover();
-		//If we have recovered a pacekt
-		while(recovered)
-		{
-			//Get pacekte type
-			BYTE t = recovered->GetType();
-			//Map receovered data codec
-			BYTE c = rtpMapIn->GetCodecForType(t);
-			//Check codec
-			if (c!=RTPMap::NotFound)
-				//Set codec
-				recovered->SetCodec(c);
-			else
-				//Set type for passtrhought
-				recovered->SetCodec(t);
-			//Process extensions
-			recovered->ProcessExtensions(extMap);
-			//Append recovered packet
-			packets.Add(recovered);
-			//Try to recover another one (yuhu!)
-			recovered = fec.Recover();
-		}
-	}
-
+	
 	//Append packet
 	packets.Add(packet);
 
@@ -1362,61 +1351,78 @@ int RTPSession::ReSendPacket(int seq)
 	if (it!=rtxs.end())
 	{
 		//Get packet
-		RTPTimedPacket* packet = it->second;
+		RTPPacket* packet = it->second;
 
 		//Data
 		BYTE data[MTU+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
 		DWORD size = MTU;
-		int len = packet->GetSize();
+		int len = 0;
 		
-		//Check size + osn in case of RTX
-		if (len+2>size)
-			//Error
-			return Error("-RTPSession::ReSendPacket() | not enougth size for copying packet [len:%d]\n",len);
+		//Overrride headers
+		RTPHeader		header(packet->GetRTPHeader());
+		RTPHeaderExtension	extension(packet->GetRTPHeaderExtension());
 		
-		//Copy RTP headers
-		memcpy(data,packet->GetData(),packet->GetRTPHeaderLen());
-		
-		//Get payload ini
-		BYTE *payload = data+packet->GetRTPHeaderLen();
-		
-		//If using abs-time
-		if (useAbsTime)
+		//If usint RTX type for retransmission
+		if (useRTX) 
 		{
-			//Calculate absolute send time field (convert ms to 24-bit unsigned with 18 bit fractional part.
-			// Encoding: Timestamp is in seconds, 24 bit 6.18 fixed point, yielding 64s wraparound and 3.8us resolution (one increment for each 477 bytes going out on a 1Gbps interface).
-			DWORD abs = ((getTimeMS() << 18) / 1000) & 0x00ffffff;
-			//Overwrite it
-			set3(data,sizeof(rtp_hdr_t)+sizeof(rtp_hdr_ext_t)+1,abs);
+			//Update RTX headers
+			header.ssrc		= sendRTX.SSRC;
+			header.payloadType	= rtpMapOut->GetTypeForCodec(VideoCodec::RTX);
+			header.sequenceNumber	= sendRTX.extSeq++;
+			//Check seq wrap
+			if (sendRTX.extSeq==0)
+				//Inc cycles
+				sendRTX.cycles++;
+			//Increase counters
+			sendRTX.numPackets++;
+			sendRTX.totalBytes += packet->GetMediaLength()+2;
+			//No padding
+			header.padding		= 0;
+
+			//If using abs-time
+			if (useAbsTime)
+			{
+				header.extension = true;
+				extension.hasAbsSentTime = true;
+				extension.absSentTime = getTime();
+			}
+		}
+		
+		//Serialize header
+		int n = header.Serialize(data,size);
+
+		//Comprobamos que quepan
+		if (!n)
+			//Error
+			return Error("-RTPSession::ReSendPacket() | Error serializing rtp headers\n");
+		
+		//Inc len
+		len += n;
+		
+		//If we have extension
+		if (header.extension)
+		{
+			//Serialize
+			n = extension.Serialize(extMap,data+len,size-len);
+			//Comprobamos que quepan
+			if (!n)
+				//Error
+				return Error("-RTPSession::ReSendPacket() | Error serializing rtp extension headers\n");
+			//Inc len
+			len += n;
 		}
 		
 		//If usint RTX type for retransmission
 		if (useRTX) 
 		{
-			rtp_hdr_t* headers = (rtp_hdr_t*)data;
-			//Set RTX ssrc
-			headers->ssrc = htonl(sendRTX.SSRC);
-			//Set payload
-			headers->pt = rtpMapOut->GetTypeForCodec(VideoCodec::RTX);
-			//Incrementamos el numero de secuencia
-			headers->seq = htons(sendRTX.extSeq++);
-			//Check seq wrap
-			if (sendRTX.extSeq==0)
-				//Inc cycles
-				sendRTX.cycles++;
 			//And set the original seq
-			set2(payload,0,seq);
+			set2(data,len,seq);
 			//Move payload start
-			payload += 2;
-			//Increase packet len
 			len += 2;
-			//Increase counters
-			sendRTX.numPackets++;
-			sendRTX.totalBytes += packet->GetMediaLength()+2;
 		}
 		
-		//Copy payload
-		memcpy(payload,packet->GetMediaData(),packet->GetMediaLength());
+		//Copiamos los datos
+		memcpy(data+len,packet->GetMediaData(),packet->GetMediaLength());
 		
 		Debug("-RTPSession::ReSendPacket() | %d %d\n",seq,ext);
 		
@@ -1434,7 +1440,7 @@ int RTPSession::ReSendPacket(int seq)
 		for (RTPOrderedPackets::iterator it = rtxs.begin(); it!=rtxs.end();++it)
 		{
 			//Get pacekt
-			RTPTimedPacket *pkt = it->second;
+			RTPPacket *pkt = it->second;
 			//Delete object
 			delete(pkt);
 		}

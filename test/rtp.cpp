@@ -25,10 +25,54 @@ public:
 	virtual void Execute()
 	{
 		init();
+		Log("RTPHeader\n");
+		testRTPHeader();
+		Log("NACK\n");
+		testNack();
 		testTransportField();
 		testExtension();
 		
 		end();
+	}
+	
+	int testRTPHeader()
+	{
+		RTPHeader header;
+		RTPHeaderExtension extension;
+		RTPMap	extMap;
+		extMap[5] = RTPHeaderExtension::TransportWideCC;
+		
+		BYTE data[]= {	
+				0x90,0xe2,0x7c,0x2d,0x96,0x92,0x68,0x3a,0x00,0x00,0x62,0x32, //RTP Header
+				0xbe,0xde,0x00,0x01,0x51,0x00,0x09,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+		DWORD size = sizeof(data);
+		
+		//Parse header
+		DWORD len = header.Parse(data,size);
+		
+		//Dump
+		header.Dump();
+		
+		//Check data
+		assert(len);
+		assert(header.version==2);
+		assert(!header.padding);
+		assert(header.extension);
+		assert(header.payloadType==98);
+		assert(header.csrcs.size()==0);
+		assert(header.ssrc==0x6232);
+		assert(header.mark);
+		assert(header.timestamp=252617738);
+		
+		//Parse extensions
+		len = extension.Parse(extMap,data+len,size-len);
+		
+		//Dump
+		extension.Dump();
+		
+		//Check
+		assert(len);
+		assert(extension.hasTransportWideCC);
 	}
 	
 	int testExtension()
@@ -42,7 +86,7 @@ public:
 		DWORD size = 1056;
 		//Clean it
 		memset(recovered,0,size);
-		
+		/*/
 		//Get extension header
 		rtp_hdr_ext_t* ext = (rtp_hdr_ext_t*)recovered;
 		//Set data
@@ -60,7 +104,7 @@ public:
 		//Dump
 		Dump(recovered,16);
 		//Create new video packet
-		RTPTimedPacket* packet = new RTPTimedPacket(MediaFrame::Video,96);
+		RTPPacket* packet = new RTPPacket(MediaFrame::Video,96);
 		//Set values
 		packet->SetP(true);
 		packet->SetX(true);
@@ -86,8 +130,45 @@ public:
 			return Error("-Incorrect extension length %d, should be 1\n",packet->GetExtensionLength());
 		//Clean it
 		delete packet;
+		 */
 		//OK
 		return true;
+	}
+	
+	void testNack()
+	{
+		BYTE data[1024];
+		
+		//Create rtcp sender retpor
+		RTCPCompoundPacket rtcp;
+
+		//Create NACK
+		RTCPRTPFeedback *nack = RTCPRTPFeedback::Create(RTCPRTPFeedback::NACK,0xDDDD,0xEEEE);
+
+		//Add 
+		nack->AddField(new RTCPRTPFeedback::NACKField(100,0xAAAA));
+
+		//Add to packet
+		rtcp.AddRTCPacket(nack);
+		
+		rtcp.Dump();
+		
+		//Serialize it
+		DWORD len = rtcp.Serialize(data,1024);
+		
+		Dump(data,len);
+		
+		assert(RTCPCompoundPacket::IsRTCP(data,len));
+		
+		//parse it back
+		RTCPCompoundPacket* cloned = RTCPCompoundPacket::Parse(data,len);
+		
+		assert(cloned);
+		
+		//Dump it
+		cloned->Dump();
+		
+		delete(cloned);
 	}
 	
 	void testTransportField()

@@ -11,8 +11,8 @@
  * Created on 3 de febrero de 2017, 12:00
  */
 
-#include "rtp.h"
-
+#include "rtp/RTCPBye.h"
+#include "rtp/RTCPCommonHeader.h"
 
 
 
@@ -30,7 +30,7 @@ RTCPBye::~RTCPBye()
 }
 DWORD RTCPBye::GetSize()
 {
-	DWORD len = sizeof(rtcp_common_t)+4*ssrcs.size();
+	DWORD len =RTCPCommonHeader::GetSize()+4*ssrcs.size();
 	if (reason)
 		len += strlen(reason)+1;
 	return len;
@@ -39,17 +39,25 @@ DWORD RTCPBye::GetSize()
 DWORD RTCPBye::Parse(BYTE* data,DWORD size)
 {
 	//Get header
-	rtcp_common_t * header = (rtcp_common_t *)data;
-
-	DWORD packetSize = GetRTCPHeaderLength(header);
+	RTCPCommonHeader header;
+		
+	//Parse header
+	DWORD len = header.Parse(data,size);
+	
+	//IF error
+	if (!len)
+		return 0;
+		
+	//Get packet size
+	DWORD packetSize = header.length;
+	
 	//Check size
 	if (size<packetSize)
 		//Exit
 		return 0;
-	//Skip headder
-	DWORD len = sizeof(rtcp_common_t);
+	
 	//for each
-	for(int i=0;i<header->count;i++)
+	for(int i=0;i<header.count;i++)
 	{
 		//Get ssrc
 		ssrcs.push_back(get4(data,len));
@@ -84,16 +92,17 @@ DWORD RTCPBye::Serialize(BYTE* data,DWORD size)
 	if (size<packetSize)
 		//error
 		return Error("Serialize RTCPBye invalid size\n");
-	//Set header
-	rtcp_common_t * header = (rtcp_common_t *)data;
+
+	//RTCP common header
+	RTCPCommonHeader header;
 	//Set values
-	header->count	= ssrcs.size();
-	header->pt	= GetType();
-	header->p	= 0;
-	header->version = 2;
-	SetRTCPHeaderLength(header,packetSize);
-	//Skip
-	DWORD len = sizeof(rtcp_common_t);
+	header.count	  = ssrcs.size();
+	header.packetType = GetType();
+	header.padding	  = 0;
+	header.length	  = packetSize;
+	//Serialize
+	DWORD len = header.Serialize(data,size);
+	
 	//for each
 	for(int i=0;i<ssrcs.size();i++)
 	{

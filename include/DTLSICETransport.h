@@ -24,12 +24,7 @@
 #include "rtp.h"
 #include "fecdecoder.h"
 #include "use.h"
-
-struct RTPIncomingFecSource : public RTPIncomingSource
-{
-	FECDecoder decoder;
-};
-
+#include "rtpbuffer.h"
 
 class RTPOutgoingSourceGroup
 {
@@ -48,13 +43,13 @@ public:
 		this->listener = listener;
 	};
 public:
-	typedef std::map<DWORD,RTPTimedPacket*> RTPOrderedPackets;
+	typedef std::map<DWORD,RTPPacket*> RTPOrderedPackets;
 public:	
 	std::string streamId;
 	MediaFrame::Type type;
 	RTPOutgoingSource media;
 	RTPOutgoingSource fec;
-	RTPOutgoingRtxSource rtx;
+	RTPOutgoingSource rtx;
 	RTPOrderedPackets	packets;
 	Listener* listener;
 };
@@ -65,21 +60,35 @@ public:
 	class Listener 
 	{
 		public:
-			virtual void onRTP(RTPIncomingSourceGroup* group,RTPTimedPacket* packet) = 0;
+			virtual void onRTP(RTPIncomingSourceGroup* group,RTPPacket* packet) = 0;
 	};
 public:	
 	RTPIncomingSourceGroup(MediaFrame::Type type,Listener* listener) : losts(64)
 	{
 		this->type = type;
 		this->listener = listener;
+		//Small bufer of 20ms
+		packets.SetMaxWaitTime(20);
 	};
+	
+	RTPIncomingSource* GetSource(DWORD ssrc)
+	{
+		if (ssrc == media.SSRC)
+			return &media;
+		else if (ssrc == rtx.SSRC)
+			return &rtx;
+		else if (ssrc == fec.SSRC)
+			return &fec;
+		return NULL;
+	}
 	int onRTP(DWORD ssrc,BYTE codec,BYTE* data,DWORD size);
 public:	
 	MediaFrame::Type type;
 	RTPLostPackets	losts;
+	RTPBuffer packets;
 	RTPIncomingSource media;
-	RTPIncomingFecSource fec;
-	RTPIncomingRtxSource rtx;
+	RTPIncomingSource fec;
+	RTPIncomingSource rtx;
 	Listener* listener;
 };
 
@@ -102,7 +111,7 @@ public:
 	int SetRemotePort(char *ip,int sendPort);
 	void SetProperties(const Properties& properties);
 	void SendPLI(DWORD ssrc);
-	void Send(RTPTimedPacket &packet);
+	void Send(RTPPacket &packet);
 	void Reset();
 	int End();
 	
@@ -138,10 +147,11 @@ private:
 	DTLSConnection	dtls;
 	RTPMap		rtpMap;
 	RTPMap		extMap;
+	RTPMap		aptMap;
 	Candidates	candidates;
 	ICERemoteCandidate* active;
-	srtp_t		sendSRTPSession;
-	srtp_t		recvSRTPSession;
+	srtp_t		send;
+	srtp_t		recv;
 	WORD		transportSeqNum;
 	WORD		feedbackPacketCount;
 	WORD		lastFeedbackPacketExtSeqNum;

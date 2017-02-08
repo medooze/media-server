@@ -13,6 +13,10 @@
 
 #ifndef RTCPSDES_H
 #define RTCPSDES_H
+#include "config.h"
+#include "rtp/RTCPPacket.h"
+#include "rtp/RTCPCommonHeader.h"
+#include <vector>
 
 class RTCPSDES : public RTCPPacket
 {
