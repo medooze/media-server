@@ -55,6 +55,10 @@ bool VP9LayerSelector::Select(RTPPacket *packet,DWORD &extSeqNum,bool &mark)
 		//Error
 		return Error("-VP9LayerSelector::Select() | Cannot parse VP9PayloadDescription\n");
 	
+	//if (desc.startOfLayerFrame)
+	//	UltraDebug("-VP9LayerSelector::Select() | #%d T%dS%d P=%d D=%d S=%d %s\n", desc.pictureId-42,desc.temporalLayerId,desc.spatialLayerId,desc.interPicturePredictedLayerFrame,desc.interlayerDependencyUsed,desc.switchingPoint
+	//		,desc.interPicturePredictedLayerFrame==0 && desc.spatialLayerId==1 ? "<----------------------":"");
+	
 	//Check if we need to upscale temporally
 	if (nextTemporalLayerId>temporalLayerId)
 	{
@@ -89,8 +93,15 @@ bool VP9LayerSelector::Select(RTPPacket *packet,DWORD &extSeqNum,bool &mark)
 	//Check if we need to upscale spatially
 	if (nextSpatialLayerId>spatialLayerId)
 	{
+		/*
+			Inter-picture predicted layer frame.  When set to zero, the layer
+			frame does not utilize inter-picture prediction.  In this case,
+			up-switching to current spatial layer's frame is possible from
+			directly lower spatial layer frame.  P SHOULD also be set to zero
+			when encoding a layer synchronization frame in response to an LRR
+		 */
 		//Check if we can upscale and it is the start of the layer and it is a valid layer
-		if (desc.switchingPoint && desc.startOfLayerFrame && desc.spatialLayerId<=nextSpatialLayerId)
+		if (desc.interPicturePredictedLayerFrame==0 && desc.startOfLayerFrame && desc.spatialLayerId==spatialLayerId+1)
 		{
 			UltraDebug("-VP9LayerSelector::Select() | Upscaling spatialLayerId [ [id:%d,target:%d]\n",desc.spatialLayerId,nextSpatialLayerId);
 			//Update current layer

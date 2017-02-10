@@ -28,6 +28,9 @@ public:
 	
 	bool Select(RTPPacket *packet,DWORD &extSeqNum,bool &mark);
 	
+	BYTE GetTemporalLayer() const	{ return temporalLayerId; }
+	BYTE GetSpatialLayer()	const	{ return spatialLayerId;  }
+	
 private:
 	BYTE temporalLayerId;
 	BYTE spatialLayerId;
