@@ -68,11 +68,11 @@ public:
 
 	RTPPacket* GetPacket();
 	void CancelGetPacket();
-	DWORD GetNumRecvPackets()	const { return recv.numPackets+recv.numRTCPPackets;	}
-	DWORD GetNumSendPackets()	const { return send.numPackets+send.numRTCPPackets;	}
-	DWORD GetTotalRecvBytes()	const { return recv.totalBytes+recv.totalRTCPBytes;	}
-	DWORD GetTotalSendBytes()	const { return send.totalBytes+send.totalRTCPBytes;	}
-	DWORD GetLostRecvPackets()	const { return recv.lostPackets;			}
+	DWORD GetNumRecvPackets()	const { return recv.media.numPackets+recv.media.numRTCPPackets;	}
+	DWORD GetNumSendPackets()	const { return send.media.numPackets+send.media.numRTCPPackets;	}
+	DWORD GetTotalRecvBytes()	const { return recv.media.totalBytes+recv.media.totalRTCPBytes;	}
+	DWORD GetTotalSendBytes()	const { return send.media.totalBytes+send.media.totalRTCPBytes;	}
+	DWORD GetLostRecvPackets()	const { return recv.media.lostPackets;			}
 
 
 	MediaFrame::Type GetMediaType()	const { return media;		}
@@ -115,15 +115,14 @@ private:
 	
 	char*	cname;
 	//Transmision
-	RTPOutgoingSource send;
-	RTPIncomingSource recv;
-	RTPOutgoingRtxSource sendRTX;
-	RTPIncomingRtxSource recvRTX;
+	RTPOutgoingSourceGroup send;
+	RTPIncomingSourceGroup recv;
 
 	DWORD  	sendType;
 	DWORD	sendSR;
 	DWORD   sendSRRev;
 	Mutex	sendMutex;
+	DWORD   apt;
 
 	//Recepcion
 	BYTE	recBuffer[MTU+SRTP_MAX_TRAILER_LEN] ALIGNEDTO32;

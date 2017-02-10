@@ -14,10 +14,16 @@
 #include "rtp/RTCPReceiverReport.h"
 #include "rtp/RTCPCommonHeader.h"
 
-RTCPReceiverReport::RTCPReceiverReport() : RTCPPacket(RTCPPacket::ReceiverReport)
+RTCPReceiverReport::RTCPReceiverReport(DWORD ssrc) : RTCPPacket(RTCPPacket::ReceiverReport)
 {
-
+	this->ssrc = ssrc;
 }
+
+RTCPReceiverReport::RTCPReceiverReport()  : RTCPPacket(RTCPPacket::ReceiverReport)
+{
+	this->ssrc = 0;
+}
+
 
 RTCPReceiverReport::~RTCPReceiverReport()
 {

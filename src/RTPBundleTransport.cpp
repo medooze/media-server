@@ -222,7 +222,7 @@ int RTPBundleTransport::End()
 int RTPBundleTransport::Send(const ICERemoteCandidate* candidate,const BYTE *buffer,const DWORD size)
 {
 	//Send packet
-	return sendto(socket,buffer,size,0,candidate->GetAddress(),candidate->GetAddressLen());
+	return sendto(socket,buffer,size,MSG_DONTWAIT,candidate->GetAddress(),candidate->GetAddressLen());
 }
 
 /*********************************

@@ -79,7 +79,7 @@ RTCPCompoundPacket* RTCPCompoundPacket::Parse(BYTE *data,DWORD size)
 		RTCPPacket *packet = NULL;
 		RTCPCommonHeader header;
 		//Get type from header
-		DWORD len = header.Parse(data,size);
+		DWORD len = header.Parse(buffer,bufferLen);
 		//If not parsed
 		if (!len)
 		{
@@ -96,6 +96,7 @@ RTCPCompoundPacket* RTCPCompoundPacket::Parse(BYTE *data,DWORD size)
 			//Exit
 			return NULL;
 		}
+
 		//Create new packet
 		switch (header.packetType)
 		{

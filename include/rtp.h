@@ -30,10 +30,11 @@
 #include "rtp/RTCPNACK.h"
 #include "rtp/RTCPReceiverReport.h"
 #include "rtp/RTCPSDES.h"
+#include "rtpbuffer.h"
 
 struct RTPSource 
 {
-	DWORD	SSRC;
+	DWORD	ssrc;
 	DWORD   extSeq;
 	DWORD	cycles;
 	DWORD	jitter;
@@ -44,7 +45,7 @@ struct RTPSource
 	
 	RTPSource()
 	{
-		SSRC		= random();
+		ssrc		= random();
 		extSeq		= random();
 		cycles		= 0;
 		numPackets	= 0;
@@ -58,7 +59,7 @@ struct RTPSource
 	
 	virtual void Reset()
 	{
-		SSRC		= random();
+		ssrc		= random();
 		extSeq		= random();
 		cycles		= 0;
 		numPackets	= 0;
@@ -73,17 +74,19 @@ struct RTPIncomingSource : public RTPSource
 {
 	DWORD	lostPackets;
 	DWORD	totalPacketsSinceLastSR;
-	DWORD   nackedPacketsSinceLastSR;
 	DWORD	totalBytesSinceLastSR;
 	DWORD	minExtSeqNumSinceLastSR ;
 	DWORD   lostPacketsSinceLastSR;
+	QWORD   lastReceivedSenderNTPTimestamp;
+	QWORD   lastReceivedSenderReport;
 	
 	RTPIncomingSource() : RTPSource()
 	{
 		lostPackets		 = 0;
 		totalPacketsSinceLastSR	 = 0;
-		nackedPacketsSinceLastSR = 0;
 		totalBytesSinceLastSR	 = 0;
+		lastReceivedSenderNTPTimestamp = 0;
+		lastReceivedSenderReport = 0;
 		minExtSeqNumSinceLastSR  = RTPPacket::MaxExtSeqNum;
 	}
 	
@@ -92,10 +95,16 @@ struct RTPIncomingSource : public RTPSource
 		RTPSource::Reset();
 		lostPackets		 = 0;
 		totalPacketsSinceLastSR	 = 0;
-		nackedPacketsSinceLastSR = 0;
 		totalBytesSinceLastSR	 = 0;
+		lastReceivedSenderNTPTimestamp = 0;
+		lastReceivedSenderReport = 0;
 		minExtSeqNumSinceLastSR  = RTPPacket::MaxExtSeqNum;
 	}
+	virtual ~RTPIncomingSource()
+	{
+		
+	}
+	RTCPReport *CreateReport(QWORD now);
 };
 
 struct RTPOutgoingSource : public RTPSource
@@ -117,20 +126,9 @@ struct RTPOutgoingSource : public RTPSource
 		totalRTCPBytes	= 0;
 	}
 	
-	RTCPSenderReport* CreateSenderReport(timeval *tv)
+	virtual ~RTPOutgoingSource()
 	{
-		//Create Sender report
-		RTCPSenderReport *sr = new RTCPSenderReport();
-
-		//Append data
-		sr->SetSSRC(SSRC);
-		sr->SetTimestamp(tv);
-		sr->SetRtpTimestamp(lastTime);
-		sr->SetOctectsSent(totalBytes);
-		sr->SetPacketsSent(numPackets);
 		
-		//Return it
-		return sr;
 	}
 	
 	virtual void Reset()
@@ -144,31 +142,11 @@ struct RTPOutgoingSource : public RTPSource
 		totalRTCPBytes	= 0;
 	}
 	
+	RTCPSenderReport* CreateSenderReport(timeval *tv) const;
+
+	
 };
 
-struct RTPIncomingRtxSource : public RTPIncomingSource
-{
-	int apt;
-	RTPIncomingSource* original;
-
-	RTPIncomingRtxSource() : RTPIncomingSource()
-	{
-		apt = -1;
-		original = NULL;
-	}
-};
-
-struct RTPOutgoingRtxSource : public RTPOutgoingSource
-{
-	int apt;
-	RTPIncomingSource* original;
-
-	RTPOutgoingRtxSource() : RTPOutgoingSource()
-	{
-		apt = -1;
-		original = NULL;
-	}
-};
 
 class RTPLostPackets
 {
@@ -188,5 +166,78 @@ private:
 	DWORD first;
 	DWORD total;
 };
+
+class RTPOutgoingSourceGroup
+{
+public:
+	class Listener 
+	{
+		public:
+			virtual void onPLIRequest(RTPOutgoingSourceGroup* group,DWORD ssrc) = 0;
+		
+	};
+public:
+	RTPOutgoingSourceGroup(MediaFrame::Type type,Listener* listener)
+	{
+		this->type = type;
+		this->listener = listener;
+	};
+	RTPOutgoingSourceGroup(std::string &streamId,MediaFrame::Type type,Listener* listener)
+	{
+		this->streamId = streamId;
+		this->type = type;
+		this->listener = listener;
+	};
+public:
+	typedef std::map<DWORD,RTPPacket*> RTPOrderedPackets;
+public:	
+	std::string streamId;
+	MediaFrame::Type type;
+	RTPOutgoingSource media;
+	RTPOutgoingSource fec;
+	RTPOutgoingSource rtx;
+	RTPOrderedPackets	packets;
+	Listener* listener;
+};
+
+struct RTPIncomingSourceGroup
+{
+public:
+	class Listener 
+	{
+		public:
+			virtual void onRTP(RTPIncomingSourceGroup* group,RTPPacket* packet) = 0;
+	};
+public:	
+	RTPIncomingSourceGroup(MediaFrame::Type type,Listener* listener) : losts(64)
+	{
+		this->type = type;
+		this->listener = listener;
+		//Small bufer of 20ms
+		packets.SetMaxWaitTime(20);
+	};
+	
+	RTPIncomingSource* GetSource(DWORD ssrc)
+	{
+		if (ssrc == media.ssrc)
+			return &media;
+		else if (ssrc == rtx.ssrc)
+			return &rtx;
+		else if (ssrc == fec.ssrc)
+			return &fec;
+		return NULL;
+	}
+	int onRTP(DWORD ssrc,BYTE codec,BYTE* data,DWORD size);
+public:	
+	MediaFrame::Type type;
+	RTPLostPackets	losts;
+	RTPBuffer packets;
+	RTPIncomingSource media;
+	RTPIncomingSource fec;
+	RTPIncomingSource rtx;
+	Listener* listener;
+};
+
+
 
 #endif

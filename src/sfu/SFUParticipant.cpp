@@ -80,32 +80,40 @@ bool Participant::AddLocalStream(Stream* stream)
 	//Add it to the stream from the others
 	others[stream->msid] = stream;
 	
-	//Create audio stream
-	RTPOutgoingSourceGroup *oa = new RTPOutgoingSourceGroup(stream->msid,MediaFrame::Audio,this);
-	//Set audio properties
-	oa->media.SSRC = stream->audio;
-	oa->fec.SSRC = 0;
-	oa->rtx.SSRC = 0;
-	//Store group
-	groups[oa->media.SSRC] = oa;
+	//If it has audio
+	if (stream->audio)
+	{
+		//Create audio stream
+		RTPOutgoingSourceGroup *oa = new RTPOutgoingSourceGroup(stream->msid,MediaFrame::Audio,this);
+		//Set audio properties
+		oa->media.ssrc = stream->audio;
+		oa->fec.ssrc = 0;
+		oa->rtx.ssrc = 0;
+		//Store group
+		groups[oa->media.ssrc] = oa;
+		//Add to transport
+		transport->AddOutgoingSourceGroup(oa);
+	}
 	
-	//Add to transport
-	transport->AddOutgoingSourceGroup(oa);
-	
-	//Create video stream
-	RTPOutgoingSourceGroup *ov = new RTPOutgoingSourceGroup(stream->msid,MediaFrame::Video,this);
-	//Set audio properties
-	ov->media.SSRC = stream->video;
-	ov->fec.SSRC = stream->fec;
-	ov->rtx.SSRC = stream->rtx;
-	//Store group
-	groups[ov->media.SSRC] = ov;
-	
-	//Add to transport
-	transport->AddOutgoingSourceGroup(ov);
-	
-	//Request update
-	stream->RequestUpdate();
+	//If it has video
+	if (stream->video)
+	{
+		//Create video stream
+		RTPOutgoingSourceGroup *ov = new RTPOutgoingSourceGroup(stream->msid,MediaFrame::Video,this);
+		//Set audio properties
+		ov->media.ssrc = stream->video;
+		ov->fec.ssrc = stream->fec;
+		ov->rtx.ssrc = stream->rtx;
+		//Store group
+		groups[ov->media.ssrc] = ov;
+
+		//Add to transport
+		transport->AddOutgoingSourceGroup(ov);
+		
+		//Request update for video
+		stream->RequestUpdate();
+	}
+
 	
 	return true;
 }
@@ -158,9 +166,9 @@ bool Participant::AddRemoteStream(Properties &properties)
 	//Create audio stream
 	audio = new RTPIncomingSourceGroup(MediaFrame::Audio,this);
 	//Set audio properties
-	audio->media.SSRC = remote.GetProperty("audio.ssrc",0);
-	audio->fec.SSRC = remote.GetProperty("audio.fec.ssrc",0);
-	audio->rtx.SSRC = remote.GetProperty("audio.rtx.ssrc",0);
+	audio->media.ssrc = remote.GetProperty("audio.ssrc",0);
+	audio->fec.ssrc = remote.GetProperty("audio.fec.ssrc",0);
+	audio->rtx.ssrc = remote.GetProperty("audio.rtx.ssrc",0);
 	
 	//Add to transport
 	transport->AddIncomingSourceGroup(audio);
@@ -168,9 +176,9 @@ bool Participant::AddRemoteStream(Properties &properties)
 	//Create video stream
 	video = new RTPIncomingSourceGroup(MediaFrame::Video,this);
 	//Set video properties
-	video->media.SSRC = remote.GetProperty("video.ssrc",0);
-	video->fec.SSRC = remote.GetProperty("video.fec.ssrc",0);
-	video->rtx.SSRC = remote.GetProperty("video.rtx.ssrc",0);
+	video->media.ssrc = remote.GetProperty("video.ssrc",0);
+	video->fec.ssrc = remote.GetProperty("video.fec.ssrc",0);
+	video->rtx.ssrc = remote.GetProperty("video.rtx.ssrc",0);
 	
 	//Add to transport
 	transport->AddIncomingSourceGroup(video);
@@ -182,8 +190,8 @@ bool Participant::AddRemoteStream(Properties &properties)
 	mine->msid = local.GetProperty("id");
 	mine->audio = local.GetProperty("audio.ssrc",0);
 	mine->video = local.GetProperty("video.ssrc",0);
-	mine->fec = local.GetProperty("fec.ssrc",0);
-	mine->rtx = local.GetProperty("rtx.ssrc",0);
+	mine->fec = local.GetProperty("video.fec.ssrc",0);
+	mine->rtx = local.GetProperty("video.rtx.ssrc",0);
 	
 	//Done
 	return true;
@@ -259,5 +267,5 @@ void Participant::onPLIRequest(RTPOutgoingSourceGroup* group,DWORD ssrc)
  void Participant::RequestUpdate() 
  {
 	//Send PLI on video media stream
-	 transport->SendPLI(video->media.SSRC);
+	 transport->SendPLI(video->media.ssrc);
  }

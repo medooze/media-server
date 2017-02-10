@@ -125,14 +125,23 @@ DWORD RTCPSenderReport::Parse(BYTE* data,DWORD size)
 	//Move forward
 	len += 24;
 	//for each
-	for(int i=0;i<header.count&&size>=len+24;i++)
+	for(int i=0;i<header.count;i++)
 	{
 		//New report
 		RTCPReport* report = new RTCPReport();
 		//parse
-		len += report->Parse(data+len,size-len);
+		DWORD l = report->Parse(data+len,size-len);
+		//If not parsed correctly
+		if (!l)
+		{
+			//Delete report
+			delete(report);
+			return Error("---xxx");
+		}
 		//Add it
 		AddReport(report);
+		//INcrease len
+		len += l;
 	}
 	
 	//Return total size

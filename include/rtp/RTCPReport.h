@@ -85,7 +85,7 @@ public:
 		Debug("\t\t\tjitter=%u\n",		GetJitter());
 		Debug("\t\t\tlastSR=%u\n",		GetLastSR());
 		Debug("\t\t\tdelaySinceLastSR=%u\n",	GetDelaySinceLastSR());
-		Debug("\t\t/]");
+		Debug("\t\t/]\n");
 	}
 private:
 	BYTE buffer[24];

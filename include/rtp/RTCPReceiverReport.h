@@ -23,6 +23,7 @@ class RTCPReceiverReport : public RTCPPacket
 {
 public:
 	RTCPReceiverReport();
+	RTCPReceiverReport(DWORD ssrc);
 	virtual ~RTCPReceiverReport();
 	virtual void Dump();
 	virtual DWORD GetSize();

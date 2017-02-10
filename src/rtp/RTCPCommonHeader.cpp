@@ -58,7 +58,7 @@ DWORD RTCPCommonHeader::Serialize(BYTE* data, const DWORD size) const
 
 void RTCPCommonHeader::Dump() const
 {
-	Debug("[RTCPCommonHeader v=%d p=%d x=%d cc=%d pt=%d len=%d/]\n",
+	Debug("[RTCPCommonHeader v=%d p=%d cc=%d  pt=%d len=%u/]\n",
 		version,
 		padding,
 		count,
