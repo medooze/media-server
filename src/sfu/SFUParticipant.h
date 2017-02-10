@@ -71,6 +71,8 @@ public:
 	//TODO: Remove!
 	void SelectLayer(int spatialLayerId,int temporalLayerId)
 	{
+		if (selector.GetSpatialLayer()<spatialLayerId)
+			mine->RequestUpdate();
 		selector.SelectSpatialLayer(spatialLayerId);
 		selector.SelectTemporalLayer(temporalLayerId);
 	}

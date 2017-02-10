@@ -27,11 +27,11 @@ public:
 		init();
 		Log("RTPHeader\n");
 		testRTPHeader();
+		Log("testSenderReport\n");
+		testSenderReport();
 		Log("NACK\n");
 		testNack();
 		testTransportField();
-		testExtension();
-		
 		end();
 	}
 	
@@ -75,78 +75,72 @@ public:
 		assert(extension.hasTransportWideCC);
 	}
 	
-	int testExtension()
-	{
-		RTPMap	extMap;
-		//Set abs extension for testing
-		extMap[1] = RTPHeaderExtension::AbsoluteSendTime;
-		
-		//RTP payload data
-		BYTE recovered[1056];
-		DWORD size = 1056;
-		//Clean it
-		memset(recovered,0,size);
-		/*/
-		//Get extension header
-		rtp_hdr_ext_t* ext = (rtp_hdr_ext_t*)recovered;
-		//Set data
-		ext->ext_type = htons(0xBEDE);
-		//Set total length in 32bits words
-		ext->len = htons(1);
 
-		//Calculate absolute send time field (convert ms to 24-bit unsigned with 18 bit fractional part.
-		// Encoding: Timestamp is in seconds, 24 bit 6.18 fixed point, yielding 64s wraparound and 3.8us resolution (one increment for each 477 bytes going out on a 1Gbps interface).
-		DWORD abs = ((1234 << 18) / 1000) & 0x00ffffff;
-		//Set header
-		recovered[sizeof(rtp_hdr_ext_t)] = extMap.GetTypeForCodec(RTPHeaderExtension::AbsoluteSendTime) << 4 | 0x02;
-		//Set data
-		set3(recovered,sizeof(rtp_hdr_ext_t)+1,abs);
-		//Dump
-		Dump(recovered,16);
-		//Create new video packet
-		RTPPacket* packet = new RTPPacket(MediaFrame::Video,96);
-		//Set values
-		packet->SetP(true);
-		packet->SetX(true);
-		packet->SetMark(true);
-		packet->SetTimestamp(true);
-		//Set sequence number
-		packet->SetSeqNum(0);
-		//Set seq cycles
-		packet->SetSeqCycles(0);
-		//Set ssrc
-		packet->SetSSRC(0xffff);
-		//Set payload and recovered length
-		if (!packet->SetPayloadWithExtensionData(recovered,size))
-			//Error
-			return Error("-FEC payload of recovered packet to big [%u]\n",(unsigned int)size);
-		//Process extensions
-		packet->ProcessExtensions(extMap);
-		//Dump
-		packet->Dump();
-		//Check
-		if (ntohs(packet->GeExtensionHeader()->len)!=1)
-			//Error
-			return Error("-Incorrect extension length %d, should be 1\n",packet->GetExtensionLength());
-		//Clean it
-		delete packet;
-		 */
-		//OK
-		return true;
+	void testSenderReport()
+	{
+		BYTE msg[] = {
+			0x80,  0xc8,  0x00,  0x06,
+			
+			0x95,  0xce,  0x79,  0x1d,  //<-Sender
+			0xdc,  0x48,  0x24,  0x68,  //NTP ts
+			0xf7,  0x8e,  0xb0,  0x32, 
+			0xe3,  0x4b,  0xae,  0x04,  //RTP ts
+			0x00,  0x00,  0x00,  0xec,  //sende pc
+			0x00,  0x01,  0x97,  0x22,  //sender oc
+			
+			0x81,  0xca,  0x00,  0x06,  //SSRC 1
+			0x95,  0xce,  0x79,  0x1d,  //
+			0x01,  0x10,  0x43,  0x4a,  //
+			0x54,  0x62,  0x63,  0x47,  // 
+			0x48,  0x36,  0x50,  0x59,  // 
+			0x44,  0x4c,  0x43,  0x6c,  // 
+			0x69,  0x34,  0x00,  0x00,  //
+		};
+		
+		//Parse it
+		RTCPCompoundPacket* rtcp = RTCPCompoundPacket::Parse(msg,sizeof(msg));
+		rtcp->Dump();
+		
+		//Serialize
+		BYTE data[1024];
+		DWORD len = rtcp->Serialize(data,1024);
+		Dump(data,len);
+		
+		assert(RTCPCompoundPacket::IsRTCP(data,len));
+		assert(len==sizeof(msg));
+		assert(memcmp(msg,data,len)==0);
+		
+		//Dump it
+		rtcp->Dump();
+		
+		delete(rtcp);
+
 	}
 	
 	void testNack()
 	{
+		
+		BYTE msg[] = {
+				0x81,   0xcd,   0x00,   0x03,  0x8a,   0xd7,   0xb4,   0x92, 
+				0x00,  0x00,   0x61,   0x3b,   0x10,   0x30,   0x00,   0x00 
+		};
+			/*
+			[RTCPCompoundPacket count=1 size=20]
+			[RTCPPacket Feedback NACK sender:2329392274 media:24891]
+				   [NACK pid:4144 blp:0000000000000000 /]
+			[/RTCPPacket Feedback NACK]
+			[/RTCPCompoundPacket]
+			 */
 		BYTE data[1024];
 		
 		//Create rtcp sender retpor
 		RTCPCompoundPacket rtcp;
 
 		//Create NACK
-		RTCPRTPFeedback *nack = RTCPRTPFeedback::Create(RTCPRTPFeedback::NACK,0xDDDD,0xEEEE);
+		RTCPRTPFeedback *nack = RTCPRTPFeedback::Create(RTCPRTPFeedback::NACK,2329392274,24891);
 
 		//Add 
-		nack->AddField(new RTCPRTPFeedback::NACKField(100,0xAAAA));
+		nack->AddField(new RTCPRTPFeedback::NACKField(4144,(WORD)0));
 
 		//Add to packet
 		rtcp.AddRTCPacket(nack);
@@ -159,11 +153,22 @@ public:
 		Dump(data,len);
 		
 		assert(RTCPCompoundPacket::IsRTCP(data,len));
+		assert(len==sizeof(msg));
+		assert(memcmp(msg,data,len)==0);
 		
 		//parse it back
 		RTCPCompoundPacket* cloned = RTCPCompoundPacket::Parse(data,len);
 		
 		assert(cloned);
+		
+		//Serialize it again
+		len = rtcp.Serialize(data,1024);
+		
+		Dump(data,len);
+		
+		assert(RTCPCompoundPacket::IsRTCP(data,len));
+		assert(len==sizeof(msg));
+		assert(memcmp(msg,data,len)==0);
 		
 		//Dump it
 		cloned->Dump();
