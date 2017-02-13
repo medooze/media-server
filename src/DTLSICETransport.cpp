@@ -243,13 +243,13 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		WORD transportSeqNum = packet->GetTransportSeqNum();
 		
 		//Get source
-		DWORD source = outgoing.begin()!=outgoing.end() ? outgoing.begin()->second->media.ssrc : 1;
+		DWORD main = outgoing.begin()!=outgoing.end() ? outgoing.begin()->second->media.ssrc : 1;
 
 		//Create rtcp transport wide feedback
 		RTCPCompoundPacket rtcp;
 
 		//Add to rtcp
-		RTCPRTPFeedback* feedback = RTCPRTPFeedback::Create(RTCPRTPFeedback::TransportWideFeedbackMessage,source,ssrc);
+		RTCPRTPFeedback* feedback = RTCPRTPFeedback::Create(RTCPRTPFeedback::TransportWideFeedbackMessage,main,ssrc);
 
 		//Create trnasport field
 		RTCPRTPFeedback::TransportWideFeedbackMessageField *field = new RTCPRTPFeedback::TransportWideFeedbackMessageField(feedbackPacketCount++);
@@ -368,10 +368,10 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		RTCPReport *report = source->CreateReport(getTime());
 		
 		//Get source
-		DWORD source = outgoing.begin()!=outgoing.end() ? outgoing.begin()->second->media.ssrc : 1;
+		DWORD main = outgoing.begin()!=outgoing.end() ? outgoing.begin()->second->media.ssrc : 1;
 
 		//Create sender report for normal stream
-		RTCPReceiverReport* rr = new RTCPReceiverReport(source);
+		RTCPReceiverReport* rr = new RTCPReceiverReport(main);
 
 		//If got anything
 		if (report)
@@ -385,7 +385,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		std::list<RTCPRTPFeedback::NACKField*> nacks = group->losts.GetNacks();
 
 		//Create NACK
-		RTCPRTPFeedback *nack = RTCPRTPFeedback::Create(RTCPRTPFeedback::NACK,source,ssrc);
+		RTCPRTPFeedback *nack = RTCPRTPFeedback::Create(RTCPRTPFeedback::NACK,main,ssrc);
 
 		//Add 
 		for (std::list<RTCPRTPFeedback::NACKField*>::iterator it = nacks.begin(); it!=nacks.end(); ++it)
@@ -414,6 +414,28 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		delete(packet);
 	}
 	
+	//Check if we need to send RR (1 per second)
+	if (getTimeDiff(source->lastReport)>1E6)
+	{
+		//Create rtcp sender retpor
+		RTCPCompoundPacket rtcp;
+		
+		//Create report
+		RTCPReport *report = source->CreateReport(getTime());
+		
+		//Get source
+		DWORD main = outgoing.begin()!=outgoing.end() ? outgoing.begin()->second->media.ssrc : 1;
+
+		//Create sender report for normal stream
+		RTCPReceiverReport* rr = new RTCPReceiverReport(main);
+
+		//If got anything
+		if (report)
+			//Append it
+			rr->AddReport(report);
+		//Send it
+		Send(rtcp);
+	}
 	//Done
 	return 1;
 }
@@ -977,7 +999,7 @@ void DTLSICETransport::SendPLI(DWORD ssrc)
 	//Create rtcp sender retpor
 	RTCPCompoundPacket rtcp;
 
-	DWORD source = outgoing.begin()!=outgoing.end() ? outgoing.begin()->second->media.ssrc : 1;
+	DWORD main = outgoing.begin()!=outgoing.end() ? outgoing.begin()->second->media.ssrc : 1;
 	
 	//Find incoming source
 	auto it = incoming.find(ssrc);
@@ -991,7 +1013,7 @@ void DTLSICETransport::SendPLI(DWORD ssrc)
 	it->second->losts.Reset();
 	
 	//Add to rtcp
-	rtcp.AddRTCPacket( RTCPPayloadFeedback::Create(RTCPPayloadFeedback::PictureLossIndication,source,ssrc));
+	rtcp.AddRTCPacket( RTCPPayloadFeedback::Create(RTCPPayloadFeedback::PictureLossIndication,main,ssrc));
 
 	//Send packet
 	Send(rtcp);

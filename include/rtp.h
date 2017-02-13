@@ -79,14 +79,17 @@ struct RTPIncomingSource : public RTPSource
 	DWORD   lostPacketsSinceLastSR;
 	QWORD   lastReceivedSenderNTPTimestamp;
 	QWORD   lastReceivedSenderReport;
+	QWORD   lastReport;
 	
 	RTPIncomingSource() : RTPSource()
 	{
 		lostPackets		 = 0;
 		totalPacketsSinceLastSR	 = 0;
 		totalBytesSinceLastSR	 = 0;
+		lostPacketsSinceLastSR   = 0;
 		lastReceivedSenderNTPTimestamp = 0;
 		lastReceivedSenderReport = 0;
+		lastReport		 = 0;
 		minExtSeqNumSinceLastSR  = RTPPacket::MaxExtSeqNum;
 	}
 	
@@ -96,8 +99,10 @@ struct RTPIncomingSource : public RTPSource
 		lostPackets		 = 0;
 		totalPacketsSinceLastSR	 = 0;
 		totalBytesSinceLastSR	 = 0;
+		lostPacketsSinceLastSR   = 0;
 		lastReceivedSenderNTPTimestamp = 0;
 		lastReceivedSenderReport = 0;
+		lastReport		 = 0;
 		minExtSeqNumSinceLastSR  = RTPPacket::MaxExtSeqNum;
 	}
 	virtual ~RTPIncomingSource()

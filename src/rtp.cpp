@@ -29,7 +29,7 @@ RTCPSenderReport* RTPOutgoingSource::CreateSenderReport(QWORD now)
  
 RTCPReport *RTPIncomingSource::CreateReport(QWORD now)
 {
-		//If we have received somthing
+	//If we have received somthing
 	if (!totalPacketsSinceLastSR || !extSeq>=minExtSeqNumSinceLastSR)
 		//Nothing to report
 		return NULL;
@@ -69,6 +69,7 @@ RTCPReport *RTPIncomingSource::CreateReport(QWORD now)
 	report->SetLastSeqNum(extSeq);
 
 	//Reset data
+	lastReport = now;
 	totalPacketsSinceLastSR = 0;
 	totalBytesSinceLastSR = 0;
 	minExtSeqNumSinceLastSR = RTPPacket::MaxExtSeqNum;
