@@ -505,7 +505,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 	}
 
 	//Get time for packets to discard, always have at least 200ms, max 500ms
-	QWORD until = getTime()/1000 - (200+fmin(rtt*2,300));
+	QWORD until = getTimeMS() - (200+fmin(rtt*2,300));
 	//Delete old packets
 	RTPOrderedPackets::iterator it = rtxs.begin();
 	//Until the end

@@ -38,7 +38,7 @@ RTPPacket::RTPPacket(MediaFrame::Type media,DWORD codec)
 	payload  = buffer+PREFIX;
 	payloadLen = 0;
 	//Set time
-	time = ::getTime()/1000;
+	time = ::getTimeMS();
 }
 RTPPacket::RTPPacket(MediaFrame::Type media,DWORD codec,const RTPHeader &header, const RTPHeaderExtension extension) :
 	header(header),
@@ -65,7 +65,7 @@ RTPPacket::RTPPacket(MediaFrame::Type media,DWORD codec,const RTPHeader &header,
 	payload  = buffer+PREFIX;
 	payloadLen = 0;
 	//Set time
-	time = ::getTime()/1000;
+	time = ::getTimeMS();
 }
 
 RTPPacket::~RTPPacket()
