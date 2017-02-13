@@ -67,8 +67,8 @@ inline int msleep(long msec)
 {
 	struct timeval tv;
 
-	tv.tv_sec=(int)((float)msec/1000000);
-	tv.tv_usec=msec-tv.tv_sec*1000000;
+	tv.tv_sec=(int)((float)msec/1E6);
+	tv.tv_usec=msec-tv.tv_sec*1E6;
 	return select(0,0,0,0,&tv);
 }
 
@@ -79,7 +79,12 @@ inline QWORD getTime()
 	gettimeofday(&now,0);
 
 	//Ahora calculamos la diferencia
-	return (((QWORD)now.tv_sec)*1000000+now.tv_usec);
+	return (((QWORD)now.tv_sec)*1E6+now.tv_usec);
+}
+
+inline QWORD getTimeDiff(QWORD time)
+{
+	return getTime()-time;
 }
 
 inline QWORD getTimeMS()

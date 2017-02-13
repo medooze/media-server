@@ -42,10 +42,7 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) :
 	sendType = -1;
 	useRTCP = true;
 	useAbsTime = false;
-	sendSR = 0;
-	sendSRRev = 0;
 	recTimestamp = 0;
-	recSR = 0;
 	setZeroTime(&recTimeval);
 	firReqNum = 0;
 	requestFPU = false;
@@ -62,7 +59,6 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) :
 	rtpMapOut = NULL;
 	//No reports
 	setZeroTime(&lastFPU);
-	setZeroTime(&lastSR);
 	setZeroTime(&lastReceivedSR);
 	rtt = 0;
 	
@@ -114,10 +110,7 @@ void RTPSession::Reset()
 	//Init values
 	sendType = -1;
 	useAbsTime = false;
-	sendSR = 0;
-	sendSRRev = 0;
 	recTimestamp = 0;
-	recSR = 0;
 	setZeroTime(&recTimeval);
 	firReqNum = 0;
 	requestFPU = false;
@@ -129,7 +122,6 @@ void RTPSession::Reset()
 	rtpMapOut = NULL;
 	//No reports
 	setZeroTime(&lastFPU);
-	setZeroTime(&lastSR);
 	setZeroTime(&lastReceivedSR);
 	rtt = 0;
 	
@@ -420,8 +412,8 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 	BYTE  data[MTU+SRTP_MAX_TRAILER_LEN] ALIGNEDTO32;
 	DWORD size = MTU;
 	
-	//Check if we need to send SR
-	if (useRTCP && (isZeroTime(&lastSR) || getDifTime(&lastSR)>1000000))
+	//Check if we need to send SR (1 per second
+	if (useRTCP && (!send.media.lastSenderReport || getTimeDiff(send.media.lastSenderReport)>1E6))
 		//Send it
 		SendSenderReport();
 	
@@ -709,9 +701,6 @@ void RTPSession::onRTPPacket(BYTE* data, DWORD size)
 	//If nack is enable t waiting for a PLI/FIR response (to not oeverflow)
 	if (isNACKEnabled && getDifTime(&lastFPU)/1000>rtt/2 && lost)
 	{
-		//Inc nacked count
-		recv.media.nackedPacketsSinceLastSR += lost;
-		
 		//Get nacks for lost
 		std::list<RTCPRTPFeedback::NACKField*> nacks = losts.GetNacks();
 
@@ -804,8 +793,8 @@ void RTPSession::onRTPPacket(BYTE* data, DWORD size)
 	//Append packet
 	packets.Add(packet);
 
-	//Check if we need to send SR
-	if (useRTCP && (isZeroTime(&lastSR) || getDifTime(&lastSR)>1000000))
+	//Check if we need to send SR (1 per second
+	if (useRTCP && (!send.media.lastSenderReport || getTimeDiff(send.media.lastSenderReport)>1E6))
 		//Send it
 		SendSenderReport();
 
@@ -873,10 +862,10 @@ void RTPSession::onRTCPPacket(BYTE* buffer, DWORD size)
 					if (report->GetSSRC()==send.media.ssrc)
 					{
 						//Calculate RTT
-						if (!isZeroTime(&lastSR) && (report->GetLastSR() == sendSR || report->GetLastSR() == sendSRRev) )
+						if (send.media.lastSenderReport && send.media.IsLastSenderReportNTP(report->GetLastSR()))
 						{
-							//Calculate new rtt
-							DWORD rtt = getDifTime(&lastSR)/1000-report->GetDelaySinceLastSRMilis();
+							//Calculate new rtt in ms
+							DWORD rtt = getTimeDiff(send.media.lastSenderReport)/1000-report->GetDelaySinceLastSRMilis();
 							//Set it
 							SetRTT(rtt);
 						}
@@ -896,10 +885,10 @@ void RTPSession::onRTCPPacket(BYTE* buffer, DWORD size)
 					if (report->GetSSRC()==send.media.ssrc)
 					{
 						//Calculate RTT
-						if (!isZeroTime(&lastSR) && (report->GetLastSR() == sendSR || report->GetLastSR() == sendSRRev))
+						if (send.media.lastSenderReport && send.media.IsLastSenderReportNTP(report->GetLastSR()))
 						{
-							//Calculate new rtt
-							DWORD rtt = getDifTime(&lastSR)/1000-report->GetDelaySinceLastSRMilis();
+							//Calculate new rtt in ms
+							DWORD rtt = getTimeDiff(send.media.lastSenderReport)/1000-report->GetDelaySinceLastSRMilis();
 							//Set it
 							SetRTT(rtt);
 						}
@@ -1049,13 +1038,13 @@ RTCPCompoundPacket* RTPSession::CreateSenderReport()
 	RTCPCompoundPacket* rtcp = new RTCPCompoundPacket();
 
 	//Get now
-	gettimeofday(&tv, NULL);
+	QWORD now = getTime();
 
 	//Create sender report for normal stream
-	RTCPSenderReport* sr = send.media.CreateSenderReport(&tv);
+	RTCPSenderReport* sr = send.media.CreateSenderReport(now);
 
 	//Create report
-	RTCPReport *report = recv.media.CreateReport(getTime());
+	RTCPReport *report = recv.media.CreateReport(now);
 
 	//If got anything
 	if (report)
@@ -1070,11 +1059,6 @@ RTCPCompoundPacket* RTPSession::CreateSenderReport()
 	//RTCPSenderReport* rtx = send.rtx.CreateSenderReport(&tv);
 	//Append SR to rtcp
 	//rtcp->AddRTCPacket(rtx);
-
-	//Store last send SR 32 middle bits
-	sendSR = sr->GetNTPSec() << 16 | sr->GetNTPFrac() >> 16;
-	//Store last 16bits of each word to match cisco bug
-	sendSRRev = sr->GetNTPSec() << 16 | (sr->GetNTPFrac() | 0xFFFF);
 
 	//Create SDES
 	RTCPSDES* sdes = new RTCPSDES();

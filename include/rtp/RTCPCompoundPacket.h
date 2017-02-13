@@ -38,7 +38,8 @@ public:
 		//RTCP
 		return 1;
 	}
-
+	RTCPCompoundPacket();
+	RTCPCompoundPacket(RTCPPacket* packet);
 	~RTCPCompoundPacket();
 	DWORD GetSize() const;
 	DWORD Serialize(BYTE *data,DWORD size) const;

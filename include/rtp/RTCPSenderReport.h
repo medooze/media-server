@@ -48,9 +48,8 @@ public:
 	RTCPReport* GetReport(BYTE i) const	{ return reports[i];		}
 	void  AddReport(RTCPReport* report)	{ reports.push_back(report);	}
 
-	void  SetTimestamp(timeval *tv);
+	void  SetTimestamp(QWORD time);
 	QWORD GetTimestamp() const;
-	void  GetTimestamp(timeval *tv) const;
 
 private:
 	DWORD ssrc;           /* sender generating this report */

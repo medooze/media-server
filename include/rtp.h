@@ -115,6 +115,8 @@ struct RTPOutgoingSource : public RTPSource
 	DWORD	numRTCPPackets;
 	DWORD	totalBytes;
 	DWORD	totalRTCPBytes;
+	QWORD	lastSenderReport;
+	QWORD	lastSenderReportNTP;
 	
 	RTPOutgoingSource() : RTPSource()
 	{
@@ -124,6 +126,8 @@ struct RTPOutgoingSource : public RTPSource
 		numRTCPPackets	= 0;
 		totalBytes	= 0;
 		totalRTCPBytes	= 0;
+		lastSenderReport	= 0;
+		lastSenderReportNTP	= 0;
 	}
 	
 	virtual ~RTPOutgoingSource()
@@ -142,9 +146,16 @@ struct RTPOutgoingSource : public RTPSource
 		totalRTCPBytes	= 0;
 	}
 	
-	RTCPSenderReport* CreateSenderReport(timeval *tv) const;
+	RTCPSenderReport* CreateSenderReport(QWORD time);
 
-	
+	bool IsLastSenderReportNTP(DWORD ntp)
+	{
+		return  
+			//Check last send SR 32 middle bits
+			((lastSenderReportNTP << 16 | lastSenderReportNTP >> 16) == ntp)
+			//Check last 16bits of each word to match cisco bug
+			|| ((lastSenderReportNTP << 16 | (lastSenderReportNTP | 0xFFFF)) == ntp);
+	}
 };
 
 

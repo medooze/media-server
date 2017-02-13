@@ -3,7 +3,10 @@
 #include "SFUParticipant.h"
 
 using namespace SFU;
-
+Room::Room()
+{
+	maxId = 1;
+}
 Room::Room(std::wstring tag)
 {
 	//Store it

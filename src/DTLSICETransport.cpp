@@ -123,7 +123,6 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		//Process it
 		this->onRTCP(rtcp);
 		
-		rtcp->Dump();
 		//Skip
 		return 1;
 	}
@@ -240,8 +239,6 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	//If it is video
 	if (group->type == MediaFrame::Video)
 	{
-		Debug("<-#%u %u %u %u %u\n",packet->GetSeqNum(),packet->GetSeqCycles(),packet->GetTransportSeqNum(),source->extSeq,source->numPackets);
-		
 		//GEt last 
 		WORD transportSeqNum = packet->GetTransportSeqNum();
 		
@@ -343,7 +340,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		 }
 		 
 	} else if (ssrc==group->fec.ssrc)  {
-		Debug("-Flex fec\n");
+		UltraDebug("-Flex fec\n");
 		//Ensure that it is a FEC codec
 		if (codec!=VideoCodec::FLEXFEC)
 			//error
@@ -362,53 +359,30 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	//Request NACK if it is media
 	if (group->type == MediaFrame::Video && lost && ssrc==group->media.ssrc)
 	{
-		Debug("-lost %d\n",total);
+		UltraDebug("-lost %d\n",total);
 		
 		//Create rtcp sender retpor
 		RTCPCompoundPacket rtcp;
 		
-		//If we don't have outgoing have sources
-		if ( outgoing.begin()!=outgoing.end())
-		{
-			//Create report
-			RTCPReport *report = source->CreateReport(getTime());
-
-			//Create sender report for normal stream
-			RTCPReceiverReport* rr = new RTCPReceiverReport(1);
-
-			//If got anything
-			if (report)
-				//Append it
-				rr->AddReport(report);
-
-			//Append RR to rtcp
-			rtcp.AddRTCPacket(rr);
-		} else {
-			
-			//Create report
-			RTCPReport *report = source->CreateReport(getTime());
-
-			//Create sender report
-			timeval now;
-			//Get now
-			gettimeofday(&now, NULL);
-			//Create sender report for normal stream
-			RTCPSenderReport *sr = outgoing.begin()->second->media.CreateSenderReport(&now);
-
-			//If got anything
-			if (report)
-				//Append it
-				sr->AddReport(report);
-
-			//Append RR to rtcp
-			rtcp.AddRTCPacket(sr);
-		}
-	
-		//Get nacks for lost
-		std::list<RTCPRTPFeedback::NACKField*> nacks = group->losts.GetNacks();
+		//Create report
+		RTCPReport *report = source->CreateReport(getTime());
 		
 		//Get source
 		DWORD source = outgoing.begin()!=outgoing.end() ? outgoing.begin()->second->media.ssrc : 1;
+
+		//Create sender report for normal stream
+		RTCPReceiverReport* rr = new RTCPReceiverReport(source);
+
+		//If got anything
+		if (report)
+			//Append it
+			rr->AddReport(report);
+
+		//Append RR to rtcp
+		rtcp.AddRTCPacket(rr);
+	
+		//Get nacks for lost
+		std::list<RTCPRTPFeedback::NACKField*> nacks = group->losts.GetNacks();
 
 		//Create NACK
 		RTCPRTPFeedback *nack = RTCPRTPFeedback::Create(RTCPRTPFeedback::NACK,source,ssrc);
@@ -423,7 +397,6 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 
 		//Send packet
 		Send(rtcp);
-		rtcp.Dump();
 	}
 
 	//Check listener
@@ -447,7 +420,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 
 void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,int seq)
 {
-	Debug("-DTLSICETransport::ReSendPacket() | resending [seq:%d,ssrc:%u]\n",seq,group->rtx.ssrc);
+	UltraDebug("-DTLSICETransport::ReSendPacket() | resending [seq:%d,ssrc:%u]\n",seq,group->rtx.ssrc);
 	
 	//Calculate ext seq number
 	//TODO: consider warp
@@ -536,10 +509,6 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,int seq)
 		//Copiamos los datos
 		memcpy(data+len,packet->GetMediaData(),packet->GetMediaLength());
 
-		header.Dump();
-		extension.Dump();
-		Dump(data+len-2,16);
-		
 		//Set pateckt length
 		len += packet->GetMediaLength();
 		
@@ -902,6 +871,13 @@ bool DTLSICETransport::AddOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 	if (group->rtx.ssrc)
 		outgoing[group->rtx.ssrc] = group;
 	
+
+	//Create rtcp sender retpor
+	RTCPCompoundPacket rtcp(group->media.CreateSenderReport(getTime()));
+	//Send packet
+	Send(rtcp);
+	
+	//Done
 	return true;
 	
 }
@@ -915,6 +891,9 @@ bool DTLSICETransport::RemoveOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 	if (group->rtx.ssrc)
 		outgoing.erase(group->rtx.ssrc);
 	
+	//TODO: Send BYE
+	
+	//Done
 	return true;
 }
 
@@ -1127,18 +1106,8 @@ void DTLSICETransport::Send(RTPPacket &packet)
 		//Error
 		return (void)Error("-RTPTransport::SendPacket() | Error protecting RTP packet [%d]\n",err);
 	
-	//If it is video
-	if (group->type == MediaFrame::Video)
-		Debug("->#%u %u %u %u rtx:%u\n",packet.GetSeqNum(),source.cycles,packet.GetExtSeqNum(),source.extSeq,group->rtx.ssrc);
-
-	//if (group->type == MediaFrame::Video && source.extSeq%16!=0)
-		//No error yet, send packet
-		len = sender->Send(active,data,len);
-	/*else
-	{
-		Debug("-----droping %u len:%d\n",source.extSeq,len);
-		packet.Dump();
-	}*/
+	//No error yet, send packet
+	len = sender->Send(active,data,len);
 	
 	//If got packet to send
 	if (len>0)
@@ -1152,7 +1121,7 @@ void DTLSICETransport::Send(RTPPacket &packet)
 
 	//Get time for packets to discard, always have at least 200ms, max 500ms
 	DWORD rtt = 0;
-	QWORD until = getTime()/1000 - (200+fmin(rtt*2,300));
+	QWORD until = getTime() - (200+fmin(rtt*2,300))*1000;
 	//Delete old packets
 	auto it2 = group->packets.begin();
 	//Until the end
@@ -1168,6 +1137,15 @@ void DTLSICETransport::Send(RTPPacket &packet)
 		group->packets.erase(it2++);
 		//Delete object
 		delete(pkt);
+	}
+	
+	//Check if we need to send SR (1 per second)
+	if (getTimeDiff(source.lastSenderReport)>1E6)
+	{
+		//Create rtcp sender retpor
+		RTCPCompoundPacket rtcp(group->media.CreateSenderReport(getTime()));
+		//Send packet
+		Send(rtcp);
 	}
 }
 
@@ -1262,7 +1240,6 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 				switch(fb->GetFeedbackType())
 				{
 					case RTCPRTPFeedback::NACK:
-						fb->Dump();
 						for (BYTE i=0;i<fb->GetFieldCount();i++)
 						{
 							//Get field
@@ -1285,7 +1262,7 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 						Debug("-DTLSICETransport::onRTCP() | TempMaxMediaStreamBitrateNotification\n");
 						break;
 					case RTCPRTPFeedback::TransportWideFeedbackMessage:
-						Debug("-DTLSICETransport::onRTCP() | TransportWideFeedbackMessage\n");
+						//Debug("-DTLSICETransport::onRTCP() | TransportWideFeedbackMessage\n");
 						break;
 				}
 				break;

@@ -21,6 +21,7 @@ class Room
 {
 
 public:
+	Room();
 	Room(std::wstring tag);
 	~Room();
 

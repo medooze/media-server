@@ -31,7 +31,7 @@ RTCPSenderReport::~RTCPSenderReport()
 		delete(*it);
 }
 
-void RTCPSenderReport::SetTimestamp(timeval *tv)
+void RTCPSenderReport::SetTimestamp(QWORD time)
 {
 	/*
 	   Wallclock time (absolute date and time) is represented using the
@@ -45,19 +45,14 @@ void RTCPSenderReport::SetTimestamp(timeval *tv)
 	   The high 16 bits of the integer part must be determined
 	   independently.
 	 */
-
+	//Get seconds
+	DWORD sec = time/1E6;
+	DWORD usec = time-sec*10e6;
+	
 	//Convert from ecpoch (JAN_1970) to NTP (JAN 1900);
-	SetNTPSec(tv->tv_sec + 2208988800UL);
+	SetNTPSec(sec + 2208988800UL);
 	//Convert microsecods to 32 bits fraction
-	SetNTPFrac(tv->tv_usec*4294.967296);
-}
-
-void RTCPSenderReport::GetTimestamp(timeval *tv) const
-{
-	//Convert to epcoh JAN_1970
-	tv->tv_sec = ntpSec - 2208988800UL;
-	//Add fraction of
-	tv->tv_usec = ntpFrac/4294.967296;
+	SetNTPFrac(usec*4294.967296);
 }
 
 QWORD RTCPSenderReport::GetTimestamp() const

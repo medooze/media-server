@@ -138,7 +138,7 @@ void RTCPRTPFeedback::Dump()
 				//For each packet
 				for (RTCPRTPFeedback::TransportWideFeedbackMessageField::Packets::iterator it = tw->packets.begin(); it!=tw->packets.end(); ++it)
 					//DEbub
-					Debug("\t\t\t[Pakcet seq:%u time=%llu/]\n",it->first,it->second);
+					Debug("\t\t\t[Packet seq:%u time=%llu/]\n",it->first,it->second);
 				//Debug
 				Debug("\t\t[TransportWideFeedbackMessage/]\n");
 			}

@@ -5,22 +5,28 @@
 #include "bitstream.h"
 
 	
-RTCPSenderReport* RTPOutgoingSource::CreateSenderReport(timeval *tv) const
+RTCPSenderReport* RTPOutgoingSource::CreateSenderReport(QWORD now)
 {
 	//Create Sender report
 	RTCPSenderReport *sr = new RTCPSenderReport();
 
 	//Append data
 	sr->SetSSRC(ssrc);
-	sr->SetTimestamp(tv);
+	sr->SetTimestamp(now);
 	sr->SetRtpTimestamp(lastTime);
 	sr->SetOctectsSent(totalBytes);
 	sr->SetPacketsSent(numPackets);
-
+	
+	//Store last sending time
+	lastSenderReport = now;
+	//Store last send SR 32 middle bits
+	lastSenderReportNTP = sr->GetNTPTimestamp();
+	
 	//Return it
 	return sr;
 }
-	
+
+ 
 RTCPReport *RTPIncomingSource::CreateReport(QWORD now)
 {
 		//If we have received somthing

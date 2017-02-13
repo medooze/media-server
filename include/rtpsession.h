@@ -119,8 +119,6 @@ private:
 	RTPIncomingSourceGroup recv;
 
 	DWORD  	sendType;
-	DWORD	sendSR;
-	DWORD   sendSRRev;
 	Mutex	sendMutex;
 	DWORD   apt;
 
@@ -128,7 +126,6 @@ private:
 	BYTE	recBuffer[MTU+SRTP_MAX_TRAILER_LEN] ALIGNEDTO32;
 	DWORD	recTimestamp;
 	timeval recTimeval;
-	DWORD	recSR;
 
 	//RTP Map types
 	RTPMap* rtpMapIn;
@@ -140,7 +137,6 @@ private:
 
 	DWORD	rtt;
 	timeval lastFPU;
-	timeval lastSR;
 	timeval lastReceivedSR;
 	bool	requestFPU;
 	bool	pendingTMBR;
