@@ -122,12 +122,12 @@ public:
 		
 		BYTE msg[] = {
 				0x81,   0xcd,   0x00,   0x03,  0x8a,   0xd7,   0xb4,   0x92, 
-				0x00,  0x00,   0x61,   0x3b,   0x10,   0x30,   0x00,   0x00 
+				0x00,  0x00,   0x61,   0x3b,   0x10,   0x30,   0x3,   0x00 
 		};
 			/*
 			[RTCPCompoundPacket count=1 size=20]
 			[RTCPPacket Feedback NACK sender:2329392274 media:24891]
-				   [NACK pid:4144 blp:0000000000000000 /]
+				   [NACK pid:4144 blp:0000001100000000 /]
 			[/RTCPPacket Feedback NACK]
 			[/RTCPCompoundPacket]
 			 */
@@ -140,7 +140,7 @@ public:
 		RTCPRTPFeedback *nack = RTCPRTPFeedback::Create(RTCPRTPFeedback::NACK,2329392274,24891);
 
 		//Add 
-		nack->AddField(new RTCPRTPFeedback::NACKField(4144,(WORD)0));
+		nack->AddField(new RTCPRTPFeedback::NACKField(4144,(WORD)0x0300));
 
 		//Add to packet
 		rtcp.AddRTCPacket(nack);

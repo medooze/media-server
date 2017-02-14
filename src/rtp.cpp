@@ -186,8 +186,7 @@ std::list<RTCPRTPFeedback::NACKField*> RTPLostPackets::GetNacks()
 {
 	std::list<RTCPRTPFeedback::NACKField*> nacks;
 	WORD lost = 0;
-	BYTE mask[2];
-	BitWritter w(mask,2);
+	WORD mask = 0;
 	int n = 0;
 	
 	//Iterate packets
@@ -197,21 +196,20 @@ std::list<RTCPRTPFeedback::NACKField*> RTPLostPackets::GetNacks()
 		if (lost)
 		{
 			//It was lost?
-			w.Put(1,packets[i]==0);
+			if (packets[i]==0)
+				//Update mask
+				mask |= 1 << n;
 			//Increase mask len
 			n++;
 			//If we are enought
 			if (n==16)
 			{
-				//Flush
-				w.Flush();
 				//Add new NACK field to list
 				nacks.push_back(new RTCPRTPFeedback::NACKField(lost,mask));
-				//Empty for next
-				w.Reset();
 				//Reset counters
 				n = 0;
 				lost = 0;
+				mask = 0;
 			}
 		}
 		//Is this the first one lost
@@ -224,15 +222,8 @@ std::list<RTCPRTPFeedback::NACKField*> RTPLostPackets::GetNacks()
 	
 	//Are we in a lost count?
 	if (lost)
-	{
-		//Fill reset with 0
-		w.Put(16-n,0);
-		//Flush
-		w.Flush();
 		//Add new NACK field to list
 		nacks.push_back(new RTCPRTPFeedback::NACKField(lost,mask));
-	}
-	
 	
 	return nacks;
 }

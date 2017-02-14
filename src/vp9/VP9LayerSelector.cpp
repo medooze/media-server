@@ -48,6 +48,7 @@ void VP9LayerSelector::SelectSpatialLayer(BYTE id)
 	
 bool VP9LayerSelector::Select(RTPPacket *packet,DWORD &extSeqNum,bool &mark)
 {
+	bool nodrop = false;
 	VP9PayloadDescription desc;
 	
 	//Parse VP9 payload description
@@ -58,6 +59,9 @@ bool VP9LayerSelector::Select(RTPPacket *packet,DWORD &extSeqNum,bool &mark)
 	//if (desc.startOfLayerFrame)
 	//	UltraDebug("-VP9LayerSelector::Select() | #%d T%dS%d P=%d D=%d S=%d %s\n", desc.pictureId-42,desc.temporalLayerId,desc.spatialLayerId,desc.interPicturePredictedLayerFrame,desc.interlayerDependencyUsed,desc.switchingPoint
 	//		,desc.interPicturePredictedLayerFrame==0 && desc.spatialLayerId==1 ? "<----------------------":"");
+	
+	//Store current temporal id
+	BYTE currentTemporalLayerId = temporalLayerId;
 	
 	//Check if we need to upscale temporally
 	if (nextTemporalLayerId>temporalLayerId)
@@ -81,7 +85,7 @@ bool VP9LayerSelector::Select(RTPPacket *packet,DWORD &extSeqNum,bool &mark)
 	}
 	
 	//If it is from the current layer
-	if (temporalLayerId<desc.temporalLayerId)
+	if (currentTemporalLayerId<desc.temporalLayerId)
 	{
 		//UltraDebug("-VP9LayerSelector::Select() | dropping packet based on temporalLayerId [us:%d,desc:%d,mark:%d]\n",temporalLayerId,desc.temporalLayerId,packet->GetMark());
 		//INcrease dropped
@@ -89,6 +93,9 @@ bool VP9LayerSelector::Select(RTPPacket *packet,DWORD &extSeqNum,bool &mark)
 		//Drop it
 		return false;
 	}
+	
+	//Get current spatial layer
+	BYTE currentSpatialLayerId = spatialLayerId;
 	
 	//Check if we need to upscale spatially
 	if (nextSpatialLayerId>spatialLayerId)
@@ -103,7 +110,7 @@ bool VP9LayerSelector::Select(RTPPacket *packet,DWORD &extSeqNum,bool &mark)
 		//Check if we can upscale and it is the start of the layer and it is a valid layer
 		if (desc.interPicturePredictedLayerFrame==0 && desc.startOfLayerFrame && desc.spatialLayerId==spatialLayerId+1)
 		{
-			UltraDebug("-VP9LayerSelector::Select() | Upscaling spatialLayerId [ [id:%d,target:%d]\n",desc.spatialLayerId,nextSpatialLayerId);
+			UltraDebug("-VP9LayerSelector::Select() | Upscaling spatialLayerId [id:%d,target:%d]\n",desc.spatialLayerId,nextSpatialLayerId);
 			//Update current layer
 			spatialLayerId = desc.spatialLayerId;
 		}
@@ -119,7 +126,7 @@ bool VP9LayerSelector::Select(RTPPacket *packet,DWORD &extSeqNum,bool &mark)
 	}
 	
 	//If it is from the current layer
-	if (spatialLayerId<desc.spatialLayerId)
+	if (currentSpatialLayerId<desc.spatialLayerId)
 	{
 		//UltraDebug("-VP9LayerSelector::Select() | dropping packet based on spatialLayerId [us:%d,desc:%d,mark:%d]\n",spatialLayerId,desc.spatialLayerId,packet->GetMark());
 		//INcrease dropped
@@ -135,7 +142,7 @@ bool VP9LayerSelector::Select(RTPPacket *packet,DWORD &extSeqNum,bool &mark)
 	//RTP mark is set for the last frame layer of the selected layer
 	mark = packet->GetMark() || (desc.endOfLayerFrame && spatialLayerId==desc.spatialLayerId);
 	
-	//UltraDebug("-VP9LayerSelector::Select() | Accepting packet [extSegNum:%u,mark:%d,tid:%d,sid:%d]\n",extSeqNum,mark,desc.temporalLayerId,desc.spatialLayerId);
+	//UltraDebug("-VP9LayerSelector::Select() | Accepting packet [extSegNum:%u,mark:%d,tid:%d,sid:%d,dropped:%d,orig:%u]\n",extSeqNum,mark,desc.temporalLayerId,desc.spatialLayerId,dropped,packet->GetExtSeqNum());
 	//Select
 	return true;
 	

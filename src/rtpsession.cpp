@@ -920,7 +920,7 @@ void RTPSession::onRTCPPacket(BYTE* buffer, DWORD size)
 							//Check each bit of the mask
 							for (int i=0;i<16;i++)
 								//Check it bit is present to rtx the packets
-								if ((field->blp >> (15-i)) & 1)
+								if ((field->blp >> i) & 1)
 									//Resent it
 									ReSendPacket(field->pid+i+1);
 						}

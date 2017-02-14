@@ -997,6 +997,8 @@ void DTLSICETransport::Send(RTCPCompoundPacket &rtcp)
 
 void DTLSICETransport::SendPLI(DWORD ssrc)
 {
+	UltraDebug("-DTLSICETransport::SendPLI() | [ssrc:%u]\n",ssrc);
+	
 	//Block method
 	ScopedLock method(mutex);
 	
@@ -1063,8 +1065,8 @@ void DTLSICETransport::Send(RTPPacket &packet)
 	header.padding		= 0;
 
 	//Calculate last timestamp
-	source.lastTime = source.time + packet.GetTimestamp();
-	source.extSeq = packet.GetExtSeqNum();
+	source.lastTime		= source.time + packet.GetTimestamp();
+	source.extSeq		= packet.GetExtSeqNum();
 
 	//Check seq wrap
 	if (source.extSeq==0)
@@ -1276,7 +1278,7 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 							//Check each bit of the mask
 							for (int i=0;i<16;i++)
 								//Check it bit is present to rtx the packets
-								if ((field->blp >> (15-i)) & 1)
+								if ((field->blp >> i) & 1)
 									//Resent it
 									ReSendPacket(group,field->pid+i+1);
 						}

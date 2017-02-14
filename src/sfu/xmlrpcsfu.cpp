@@ -225,9 +225,6 @@ xmlrpc_value* RoomDelete(xmlrpc_env *env, xmlrpc_value *param_array, void *user_
 	if (!sfu->DeleteRoom(roomId))
 		return xmlerror(env,"Session does not exist");
 
-	//Liberamos la referencia
-	sfu->ReleaseRoomRef(roomId);
-	
 	//Devolvemos el resultado
 	return xmlok(env);
 }
