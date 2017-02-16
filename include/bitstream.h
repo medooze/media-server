@@ -23,6 +23,8 @@ public:
 		cached = 0;
 		cache = 0;
 		bufferPos = 0;
+		//No error
+		error = false;
 	}
 	inline DWORD Get(DWORD n)
 	{
@@ -136,8 +138,13 @@ public:
 			bufferPos++;
 			//Decrease length
 			bufferLen--;
-		} else
-			throw std::runtime_error("Reading past end of stream");
+		} else {
+			//We can't use exceptions so set error flag
+			error = true;
+			//Exit
+			return 0;
+		}
+			
 
 		//Debug("Reading int cache");
 		//BitDump(cache,cached);
@@ -162,8 +169,12 @@ public:
 		} else if (bufferLen==1) {
 			//return  cached
 			return get1(buffer,0)<<24;
-		} else
-			throw std::runtime_error("Reading past end of stream");
+		} else {
+			//We can't use exceptions so set error flag
+			error = true;
+			//Exit
+			return 0;
+		}
 	}
 
 
@@ -185,6 +196,12 @@ public:
 		//Return bits
 		return ret;
 	}
+	
+	inline bool Error()
+	{
+		//We won't use exceptions, so we need to signal errors somehow
+		return error;
+	}
 
 private:
 	const BYTE* buffer;
@@ -192,6 +209,7 @@ private:
 	DWORD bufferPos;
 	DWORD cache;
 	BYTE  cached;
+	bool  error;
 };
 
 
@@ -217,6 +235,8 @@ public:
 		//nothing in the cache
 		cached = 0;
 		cache = 0;
+		//No error
+		error = false;
 	}
 
 	inline DWORD Flush()
@@ -234,7 +254,12 @@ public:
 			return;
 		//Check size
 		if (cached>bufferSize*8)
-			throw std::runtime_error("Writing past end of bit stream");
+		{
+			//We can't use exceptions so set error flag
+			error = true;
+			//Exit
+			return;
+		}
 		//Debug("Flushing  cache");
 		//BitDump(cache,cached);
 		if (cached==32)
@@ -318,6 +343,12 @@ public:
 	{
 		return Put(n,reader.Get(n));
 	}
+	
+	inline bool Error()
+	{
+		//We won't use exceptions, so we need to signal errors somehow
+		return error;
+	}
 private:
 	BYTE* data;
 	DWORD size;
@@ -326,6 +357,7 @@ private:
 	DWORD bufferSize;
 	DWORD cache;
 	BYTE  cached;
+	bool  error;
 };
 
 template<typename T>

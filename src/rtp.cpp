@@ -30,7 +30,7 @@ RTCPSenderReport* RTPOutgoingSource::CreateSenderReport(QWORD now)
 RTCPReport *RTPIncomingSource::CreateReport(QWORD now)
 {
 	//If we have received somthing
-	if (!totalPacketsSinceLastSR || !extSeq>=minExtSeqNumSinceLastSR)
+	if (!totalPacketsSinceLastSR || !(extSeq>=minExtSeqNumSinceLastSR))
 		//Nothing to report
 		return NULL;
 	
