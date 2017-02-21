@@ -63,21 +63,27 @@ public:
 
 public:
 	static void SetCertificate(const char* cert,const char* key);
-	static int ClassInit();
+	static int Initialize();
+	static int Terminate();
 	static std::string GetCertificateFingerPrint(Hash hash);
 	static bool IsDTLS(const BYTE* buffer,const DWORD size)		{ return buffer[0]>=20 && buffer[0]<=64; }
-
 private:
-	static std::string certfile;	/*!< Certificate file */
-	static std::string pvtfile;		/*!< Private key file */
-	static std::string cipher;		/*!< Cipher to use */
-	static SSL_CTX* ssl_ctx;		/*!< SSL context */
-	static Suite suite;				/*!< SRTP crypto suite */
+	static int GenerateCertificate();
+	static int ReadCertificate();
+private:
 	typedef std::map<Hash, std::string> LocalFingerPrints;
-	static LocalFingerPrints localFingerPrints;
 	typedef std::vector<Hash> AvailableHashes;
-	static AvailableHashes availableHashes;
-	static bool hasDTLS;
+private:
+	static std::string	certfile;		/*!< Certificate file name*/
+	static std::string	pvtfile;		/*!< Private key file name*/
+	static std::string	cipher;			/*!< Cipher to use */
+	static SSL_CTX*		ssl_ctx;		/*!< SSL context */
+	static X509*		certificate;		/*!< SSL context */
+	static EVP_PKEY*	privateKey;		/*!< SSL context */
+	static Suite		suite;			/*!< SRTP crypto suite */
+	static LocalFingerPrints localFingerPrints;
+	static AvailableHashes	availableHashes;
+	static bool		hasDTLS;
 
 public:
 	DTLSConnection(Listener& listener);

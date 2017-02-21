@@ -595,6 +595,7 @@ void DTLSICETransport::SetProperties(const Properties& properties)
 	//Cleant maps
 	rtpMap.clear();
 	extMap.clear();
+	aptMap.clear();
 	
 	//Get audio codecs
 	Properties audio;

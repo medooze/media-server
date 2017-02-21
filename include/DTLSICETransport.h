@@ -41,12 +41,10 @@ public:
 public:
 	DTLSICETransport(Sender *sender);
 	~DTLSICETransport();
-	int SetRemotePort(char *ip,int sendPort);
 	void SetProperties(const Properties& properties);
 	void SendPLI(DWORD ssrc);
 	void Send(RTPPacket &packet);
 	void Reset();
-	int End();
 	
 	ICERemoteCandidate* AddRemoteCandidate(const sockaddr_in addr, bool useCandidate, DWORD priority);
 	int SetRemoteCryptoDTLS(const char *setup,const char *hash,const char *fingerprint);

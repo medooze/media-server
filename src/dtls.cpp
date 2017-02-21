@@ -7,15 +7,19 @@
 #define SRTP_MASTER_LENGTH (SRTP_MASTER_KEY_LENGTH + SRTP_MASTER_SALT_LENGTH)
 
 
-/* Initialize static data. */
-std::string DTLSConnection::certfile("mcu.crt");
-std::string DTLSConnection::pvtfile("mcy.key");
-std::string DTLSConnection::cipher("ALL:NULL:eNULL:aNULL");
-SSL_CTX* DTLSConnection::ssl_ctx = NULL;
-DTLSConnection::Suite DTLSConnection::suite = AES_CM_128_HMAC_SHA1_80;
-DTLSConnection::LocalFingerPrints DTLSConnection::localFingerPrints;
-DTLSConnection::AvailableHashes DTLSConnection::availableHashes;
-bool DTLSConnection::hasDTLS = false;
+// Initialize static data
+std::string		DTLSConnection::certfile("");
+std::string		DTLSConnection::pvtfile("");
+std::string		DTLSConnection::cipher("ALL:NULL:eNULL:aNULL");
+SSL_CTX*		DTLSConnection::ssl_ctx		= NULL;
+X509*			DTLSConnection::certificate	= NULL;
+EVP_PKEY*		DTLSConnection::privateKey	= NULL;
+DTLSConnection::Suite	DTLSConnection::suite		= AES_CM_128_HMAC_SHA1_80;
+bool			DTLSConnection::hasDTLS		= false;
+
+DTLSConnection::LocalFingerPrints	DTLSConnection::localFingerPrints;
+DTLSConnection::AvailableHashes		DTLSConnection::availableHashes;
+
 
 
 /* Static callbacks for OpenSSL. */
@@ -39,35 +43,207 @@ void on_ssl_info(const SSL* ssl, int where, int ret)
 
 void DTLSConnection::SetCertificate(const char* cert,const char* key)
 {
+	//Log
+	Log("-DTLSConnection::SetCertificate() | Set SSL certificate files [crt:\"%s\",key:\"%s\"]\n",cert,key);
 	//Set certificate files
 	DTLSConnection::certfile.assign(cert);
 	DTLSConnection::pvtfile.assign(key);
 }
 
-int DTLSConnection::ClassInit()
+int DTLSConnection::GenerateCertificate()
 {
-	Log("-DTLSConnection::ClassInit()\n");
+	Log(">DTLSConnection::GenerateCertificate()\n");
+	
+	int ret = 0;
+	BIGNUM* bne = NULL;
+	RSA* rsa_key = NULL;
+	int num_bits = 1024;
+	X509_NAME* cert_name = NULL;
 
-	EC_KEY* ecdh = NULL;
+	// Create a big number object.
+	bne = BN_new();
+	if (!bne)
+	{
+		Error("BN_new() failed");
+		goto error;
+	}
 
-	/* Create a single SSL context. */
+	ret = BN_set_word(bne, RSA_F4); // RSA_F4 == 65537.
+	if (ret == 0)
+	{
+		Error("BN_set_word() failed");
+		goto error;
+	}
 
-	DTLSConnection::ssl_ctx = SSL_CTX_new(DTLSv1_method());
-	if (! ssl_ctx) {
+	// Generate a RSA key.
+	rsa_key = RSA_new();
+	if (!rsa_key)
+	{
+		Error("RSA_new() failed");
+		goto error;
+	}
+
+	// This takes some time.
+	ret = RSA_generate_key_ex(rsa_key, num_bits, bne, NULL);
+	if (ret == 0)
+	{
+		Error("RSA_generate_key_ex() failed");
+		goto error;
+	}
+
+	// Create a private key object (needed to hold the RSA key).
+	privateKey = EVP_PKEY_new();
+	if (!privateKey)
+	{
+		Error("EVP_PKEY_new() failed");
+		goto error;
+	}
+
+	ret = EVP_PKEY_assign_RSA(privateKey, rsa_key);
+	if (ret == 0)
+	{
+		Error("EVP_PKEY_assign_RSA() failed");
+		goto error;
+	}
+	// The RSA key now belongs to the private key, so don't clean it up separately.
+	rsa_key = NULL;
+
+	// Create the X509 certificate.
+	certificate = X509_new();
+	if (!certificate)
+	{
+		Error("X509_new() failed");
+		goto error;
+	}
+
+	// Set version 3 (note that 0 means version 1).
+	X509_set_version(certificate, 2);
+
+	// Set serial number (avoid default 0).
+	ASN1_INTEGER_set(X509_get_serialNumber(certificate), (long)getTimeMS());
+
+	// Set valid period.
+	X509_gmtime_adj(X509_get_notBefore(certificate)	, -1*60*60*24*365*10); // - 10 years.
+	X509_gmtime_adj(X509_get_notAfter(certificate)	, 60*60*24*365*10); // 10 years.
+
+	// Set the public key for the certificate using the key.
+	ret = X509_set_pubkey(certificate, privateKey);
+	if (ret == 0)
+	{
+		Error("X509_set_pubkey() failed");
+		goto error;
+	}
+
+	// Set certificate fields.
+	cert_name = X509_get_subject_name(certificate);
+	if (!cert_name)
+	{
+		Error("X509_get_subject_name() failed");
+		goto error;
+	}
+	
+	X509_NAME_add_entry_by_txt(cert_name, "O", MBSTRING_ASC, (BYTE*)"Medooze Media Server", -1, -1, 0);
+	X509_NAME_add_entry_by_txt(cert_name, "CN", MBSTRING_ASC, (BYTE*)"Medooze Media Server", -1, -1, 0);
+
+	// It is self-signed so set the issuer name to be the same as the subject.
+	ret = X509_set_issuer_name(certificate, cert_name);
+	if (ret == 0)
+	{
+		Error("X509_set_issuer_name() failed");
+		goto error;
+	}
+
+	// Sign the certificate with its own private key.
+	ret = X509_sign(certificate, privateKey, EVP_sha1());
+	if (ret == 0)
+	{
+		Error("X509_sign() failed");
+		goto error;
+	}
+
+	// Free stuff and return.
+	BN_free(bne);
+	
+	Log("<DTLSConnection::GenerateCertificate()\n");
+	
+	return 1;
+
+error:
+	if (bne)
+		BN_free(bne);
+	if (rsa_key && !privateKey)
+		RSA_free(rsa_key);
+	if (privateKey)
+	{
+		EVP_PKEY_free(privateKey); // NOTE: This also frees the RSA key.
+		privateKey = NULL;
+	}
+	if (certificate)
+	{
+		X509_free(certificate);
+		certificate = NULL;
+	}
+
+	//Error
+	return Error("DTLS certificate and private key generation failed");
+	
+}
+
+int DTLSConnection::ReadCertificate()
+{
+	
+	//Open certificate file
+	FILE* file = fopen(certfile.c_str(), "r");
+	
+	//Check
+	if (!file)
+		return Error("error reading DTLS certificate file: %d\n", errno);
+	
+	//REad certificate
+	certificate = PEM_read_X509(file, NULL, NULL, NULL);
+	
+	//Close file
+	fclose(file);
+	
+	//Check certificate
+	if (!certificate)
+		return Error("PEM_read_X509() failed\n");
+	
+	//Open private kwy
+	file = fopen(pvtfile.c_str(), "r");
+	
+	//Check
+	if (!file)
+		return Error("error reading DTLS private key file: %d\n", errno);
+	
+	//Load key
+	privateKey = PEM_read_PrivateKey(file, NULL, NULL, NULL);
+	
+	//Clse file
+	fclose(file);
+	
+	//Check it is correct
+	if (!privateKey)
+		return Error("PEM_read_PrivateKey() failed");
+
+	//Done
+	return 1;
+}
+
+int DTLSConnection::Initialize()
+{
+	Log("-DTLSConnection::Initialize()\n");
+
+	// Create a single SSL context
+	ssl_ctx = SSL_CTX_new(DTLSv1_method());
+	
+	//Check result
+	if (!ssl_ctx) 
+	{
 		// Print SSL error.
 		ERR_print_errors_fp(stderr);
 		return Error("-DTLSConnection::ClassInit() | No SSL context\n");
 	}
-
-	// Set certificate.
-	if (! SSL_CTX_use_certificate_file(ssl_ctx, certfile.c_str(), SSL_FILETYPE_PEM))
-		return Error("-DTLSConnection::ClassInit() | Specified certificate file '%s' could not be used\n", certfile.c_str());
-
-	if (! SSL_CTX_use_PrivateKey_file(ssl_ctx, pvtfile.c_str(), SSL_FILETYPE_PEM) || !SSL_CTX_check_private_key(ssl_ctx))
-		return Error("-DTLSConnection::ClassInit() | Specified private key file '%s' could not be used\n",pvtfile.c_str());
-
-	if (! SSL_CTX_set_cipher_list(ssl_ctx, cipher.c_str()))
-		return Error("-DTLSConnection::ClassInit() | Invalid cipher specified in cipher list '%s' for DTLS-SRTP\n",cipher.c_str());
 
 	//Disable automatic MTU discovery
 	SSL_CTX_set_options(ssl_ctx, SSL_OP_NO_QUERY_MTU);
@@ -79,6 +255,7 @@ int DTLSConnection::ClassInit()
 	#if (OPENSSL_VERSION_NUMBER >= 0x10002000L)
 		SSL_CTX_set_ecdh_auto(ssl_ctx, 1);
 	#else
+		EC_KEY* ecdh = NULL;
 		ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
 		if (! ecdh) {
 			return Error("-DTLSConnection::ClassInit() | EC_KEY_new_by_curve_name() failed\n");
@@ -104,7 +281,8 @@ int DTLSConnection::ClassInit()
 	SSL_CTX_set_info_callback(ssl_ctx, on_ssl_info);
 
 	// Set suite.
-	switch(suite) {
+	switch(suite) 
+	{
 		case AES_CM_128_HMAC_SHA1_80:
 			SSL_CTX_set_tlsext_use_srtp(ssl_ctx, "SRTP_AES128_CM_SHA1_80");
 			break;
@@ -114,13 +292,30 @@ int DTLSConnection::ClassInit()
 		default:
 			return Error("-DTLSConnection::ClassInit() | Unsupported suite [%d] specified for DTLS-SRTP\n",suite);
 	}
+	//If we have a pre-generated certificate and private key
+	if (certfile.size()>0 && pvtfile.size()>0)
+	{
+		//Read it
+		if (!ReadCertificate())
+			return Error("Could not read SSL files\n");
+	} else {
+		//Generate them it
+		if (!GenerateCertificate())
+			return Error("Could not generate SSL certificate or private key files\n");
+	}
+	
+	// Set certificate.
+	if (! SSL_CTX_use_certificate(ssl_ctx, certificate))
+		return Error("-DTLSConnection::ClassInit() | Specified certificate file '%s' could not be used\n", certfile.c_str());
 
+	//Set private key
+	if (! SSL_CTX_use_PrivateKey(ssl_ctx, privateKey) || !SSL_CTX_check_private_key(ssl_ctx))
+		return Error("-DTLSConnection::ClassInit() | Specified private key file '%s' could not be used\n",pvtfile.c_str());
 
-	/* Map for local certificate fingerprints. */
-
-	BIO* certbio;
-	X509* cert;
-
+	//Set cipher list
+	if (! SSL_CTX_set_cipher_list(ssl_ctx, cipher.c_str()))
+		return Error("-DTLSConnection::ClassInit() | Invalid cipher specified in cipher list '%s' for DTLS-SRTP\n",cipher.c_str());
+	
 	// Fill the DTLSConnection::availableHashes vector.
 	DTLSConnection::availableHashes.push_back(SHA1);
 	DTLSConnection::availableHashes.push_back(SHA224);
@@ -128,49 +323,36 @@ int DTLSConnection::ClassInit()
 	DTLSConnection::availableHashes.push_back(SHA384);
 	DTLSConnection::availableHashes.push_back(SHA512);
 
-	// Create BIO for certificate file.
-	certbio = BIO_new(BIO_s_file());
-
-	// Read certificate filename.
-	if (! BIO_read_filename(certbio, certfile.c_str())) {
-		return Error("-DTLSConnection::ClassInit() | Could not read certificate filename [%s]\n",certfile.c_str());
-	}
-
-	// Read certificate in X509 format.
-	cert = PEM_read_bio_X509(certbio, NULL, 0, NULL);
-	if (! cert) {
-		return Error("-DTLSConnection::ClassInit() | Could not read X509 certificate from filename [%s]\n",certfile.c_str());
-	}
-
 	// Iterate the DTLSConnection::availableHashes.
-	for(int i = 0; i < availableHashes.size(); i++) {
+	for(int i = 0; i < availableHashes.size(); i++) 
+	{
 		Hash hash = availableHashes[i];
 		unsigned int size;
 		unsigned char fingerprint[EVP_MAX_MD_SIZE];
 		char hex_fingerprint[EVP_MAX_MD_SIZE*3+1] = {0};
 
-		switch (hash) {
+		switch (hash)
+		{
 			case SHA1:
-				X509_digest(cert, EVP_sha1(), fingerprint, &size);
+				X509_digest(certificate, EVP_sha1(), fingerprint, &size);
 				break;
 			case SHA224:
-				X509_digest(cert, EVP_sha224(), fingerprint, &size);
+				X509_digest(certificate, EVP_sha224(), fingerprint, &size);
 				break;
 			case SHA256:
-				X509_digest(cert, EVP_sha256(), fingerprint, &size);
+				X509_digest(certificate, EVP_sha256(), fingerprint, &size);
 				break;
 			case SHA384:
-				X509_digest(cert, EVP_sha384(), fingerprint, &size);
+				X509_digest(certificate, EVP_sha384(), fingerprint, &size);
 				break;
 			case SHA512:
-				X509_digest(cert, EVP_sha512(), fingerprint, &size);
+				X509_digest(certificate, EVP_sha512(), fingerprint, &size);
 				break;
 		}
 
 		// Check size.
-		if (! size) {
+		if (! size) 
 			return Error("-DTLSConnection::ClassInit() | Wrong X509 certificate size\n");
-		}
 
 		// Convert to hex format.
 		for (int j = 0; j < size; j++)
@@ -183,14 +365,21 @@ int DTLSConnection::ClassInit()
 		DTLSConnection::localFingerPrints[hash] = std::string(hex_fingerprint);
 	}
 
-	// Free BIO.
-	BIO_free_all(certbio);
-
 	// OK, we have DTLS.
 	DTLSConnection::hasDTLS = true;
 
 	//OK
 	return 1;
+}
+
+int DTLSConnection::Terminate()
+{
+	if (privateKey)
+		EVP_PKEY_free(privateKey);
+	if (certificate)
+		X509_free(certificate);
+	if (ssl_ctx)
+		SSL_CTX_free(ssl_ctx);
 }
 
 std::string DTLSConnection::GetCertificateFingerPrint(Hash hash)

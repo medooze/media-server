@@ -35,8 +35,8 @@ int main(int argc,char **argv)
 	int vadPeriod = 2000;
 	const char *logfile = "sfu.log";
 	const char *pidfile = "sfu.pid";
-	const char *crtfile = "sfu.crt";
-	const char *keyfile = "sfu.key";
+	const char *crtfile = NULL;
+	const char *keyfile = NULL;
     
 	//Get all
 	for(int i=1;i<argc;i++)
@@ -232,22 +232,22 @@ int main(int argc,char **argv)
 		//Using default ones
 		Log("-RTPSession using default port range [%d,%d]\n",RTPTransport::GetMinPort(),RTPTransport::GetMaxPort());
 
-	//Set DTLS certificate
-	DTLSConnection::SetCertificate(crtfile,keyfile);
-	//Log
-	Log("-Set SSL certificate files [crt:\"%s\",key:\"%s\"]\n",crtfile,keyfile);
-
+	//Check if we have certificate and key file
+	if (crtfile && keyfile)
+		//Set DTLS certificate
+		DTLSConnection::SetCertificate(crtfile,keyfile);
+	
 	//Init DTLS
-	if (DTLSConnection::ClassInit()) {
+	if (DTLSConnection::Initialize()) 
+	{
 		//Print hashes
 		Log("-DTLS SHA1   local fingerprint \"%s\"\n",DTLSConnection::GetCertificateFingerPrint(DTLSConnection::SHA1).c_str());
 		Log("-DTLS SHA224 local fingerprint \"%s\"\n",DTLSConnection::GetCertificateFingerPrint(DTLSConnection::SHA224).c_str());
 		Log("-DTLS SHA256 local fingerprint \"%s\"\n",DTLSConnection::GetCertificateFingerPrint(DTLSConnection::SHA256).c_str());
 		Log("-DTLS SHA384 local fingerprint \"%s\"\n",DTLSConnection::GetCertificateFingerPrint(DTLSConnection::SHA384).c_str());
 		Log("-DTLS SHA512 local fingerprint \"%s\"\n",DTLSConnection::GetCertificateFingerPrint(DTLSConnection::SHA512).c_str());
-	}
-	// DTLS not available.
-	else {
+	} else {
+		// DTLS not available.
 		Error("DTLS initialization failed, no DTLS available\n");
 	}
 
@@ -286,5 +286,8 @@ int main(int argc,char **argv)
 
 	//End SFU
 	sfuManager.End();
+	
+	//End DTLS
+	DTLSConnection::Terminate();
 }
 
