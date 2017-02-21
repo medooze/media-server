@@ -52,6 +52,18 @@ int Room::AddParticipant(std::wstring name,Properties &properties)
 	//Create transport
 	DTLSICETransport* transport = bundle.AddICETransport(username,properties);
 	
+	//Get locl and remote rtp properties
+	Properties local;
+	Properties remote;
+		
+	properties.GetChildren("rtp.local",local);
+	properties.GetChildren("rtp.remote",remote);
+
+	//Set the RTP properties
+	transport->SetLocalProperties(local);
+	transport->SetRemoteProperties(remote);
+	
+	
 	//If there was an error on transport parameters
 	if (!transport)
 		//Error

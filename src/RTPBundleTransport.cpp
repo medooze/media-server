@@ -58,12 +58,10 @@ DTLSICETransport* RTPBundleTransport::AddICETransport(const std::string &usernam
 	
 	Properties ice;
 	Properties dtls;
-	Properties rtp;
 		
 	//Get child properties
 	properties.GetChildren("ice",ice);
 	properties.GetChildren("dtls",dtls);
-	properties.GetChildren("rtp",rtp);
 	
 	//Ensure that we have required ICE properties
 	if (!ice.HasProperty("remoteUsername") || !ice.HasProperty("remotePassword") || !ice.HasProperty("localUsername") || !ice.HasProperty("localPassword"))
@@ -85,9 +83,6 @@ DTLSICETransport* RTPBundleTransport::AddICETransport(const std::string &usernam
 	
 	//Set remote DTLS 
 	transport->SetRemoteCryptoDTLS(dtls.GetProperty("setup"),dtls.GetProperty("hash"),dtls.GetProperty("fingerprint"));
-	
-	//Set the RTP properties
-	transport->SetProperties(rtp);
 	
 	//Add it
 	transports[username] = transport;

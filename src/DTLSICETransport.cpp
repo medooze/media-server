@@ -155,7 +155,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	if (header.extension)
 	{
 		//Parse extension
-		int l = extension.Parse(extMap,data+ini,size-ini);
+		int l = extension.Parse(recvMaps.ext,data+ini,size-ini);
 		//If not parsed
 		if (!l)
 		{
@@ -193,7 +193,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		return Error("-DTLSICETransport::onData() | Group does not contain ssrc [%u]\n",ssrc);
 
 	//Get initial codec
-	BYTE codec = rtpMap.GetCodecForType(header.payloadType);
+	BYTE codec = recvMaps.rtp.GetCodecForType(header.payloadType);
 	
 	//Check codec
 	if (codec==RTPMap::NotFound)
@@ -293,7 +293,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 			return  Error("-DTLSICETransport::onData() | No RTX codec on rtx sssrc:%u type:%d codec:%d\n",packet->GetSSRC(),packet->GetPayloadType(),packet->GetCodec());
 		
 		 //Find codec for apt type
-		 codec = aptMap.GetCodecForType(packet->GetPayloadType());
+		 codec = recvMaps.apt.GetCodecForType(packet->GetPayloadType());
 		//Check codec
 		 if (codec==RTPMap::NotFound)
 			  //Error
@@ -475,7 +475,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,int seq)
 		
 		//Update RTX headers
 		header.ssrc		= source.ssrc;
-		header.payloadType	= rtpMap.GetTypeForCodec(VideoCodec::RTX);
+		header.payloadType	= sendMaps.rtp.GetTypeForCodec(VideoCodec::RTX);
 		header.sequenceNumber	= source.extSeq++;
 		//No padding
 		header.padding		= 0;
@@ -513,7 +513,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,int seq)
 		if (header.extension)
 		{
 			//Serialize
-			n = extension.Serialize(extMap,data+len,size-len);
+			n = extension.Serialize(sendMaps.ext,data+len,size-len);
 			//Comprobamos que quepan
 			if (!n)
 				//Error
@@ -590,59 +590,190 @@ ICERemoteCandidate* DTLSICETransport::AddRemoteCandidate(const sockaddr_in addr,
 	return candidate;
 }
 
-void DTLSICETransport::SetProperties(const Properties& properties)
+void DTLSICETransport::SetLocalProperties(const Properties& properties)
 {
+	std::vector<Properties> codecs;
+	std::vector<Properties> extensions;
+	
 	//Cleant maps
-	rtpMap.clear();
-	extMap.clear();
-	aptMap.clear();
+	sendMaps.rtp.clear();
+	sendMaps.ext.clear();
+	sendMaps.apt.clear();
 	
 	//Get audio codecs
-	Properties audio;
-	properties.GetChildren("audio",audio);
+	properties.GetChildrenArray("audio.codecs",codecs);
 
-	//TODO: support all
-	rtpMap[audio.GetProperty("opus.pt",0)] = AudioCodec::OPUS;
+	//For each codec
+	for (auto it = codecs.begin(); it!=codecs.end(); ++it)
+	{
+		//Get codec by name
+		AudioCodec::Type codec = AudioCodec::GetCodecForName(it->GetProperty("codec"));
+		//Get codec type
+		BYTE type = it->GetProperty("pt",0);
+		//ADD it
+		sendMaps.rtp[type] = codec;
+	}
+	
+	//Clear codecs
+	codecs.clear();
+	
+	//Get audio codecs
+	properties.GetChildrenArray("audio.ext",extensions);
+	
+	//For each codec
+	for (auto it = extensions.begin(); it!=extensions.end(); ++it)
+	{
+		//Get Extension for name
+		RTPHeaderExtension::Type ext = RTPHeaderExtension::GetExtensionForName(it->GetProperty("uri"));
+		//Get extension id
+		BYTE id = it->GetProperty("id",0);
+		//ADD it
+		sendMaps.ext[id] = ext;
+	}
+	
+	//Clear extension
+	extensions.clear();
 	
 	//Get video codecs
-	Properties video;
-	properties.GetChildren("video",video);
+	properties.GetChildrenArray("video.codecs",codecs);
 	
-	//TODO: support all
-	rtpMap[video.GetProperty("vp9.pt",0)] = VideoCodec::VP9;
-	rtpMap[video.GetProperty("vp9.rtx",0)] = VideoCodec::RTX;
-	rtpMap[video.GetProperty("flexfec.pt",0)] = VideoCodec::FLEXFEC;
-	
-	//Add apt
-	aptMap[video.GetProperty("vp9.rtx",0)] = VideoCodec::VP9;
-	
-	//Get extensions headers
-	Properties headers;
-	properties.GetChildren("ext",headers);
-	
-	//For each extension
-	for (Properties::const_iterator it=headers.begin();it!=headers.end();++it)
+	//For each codec
+	for (auto it = codecs.begin(); it!=codecs.end(); ++it)
 	{
-		//Set extension
-		if (it->first.compare("urn:ietf:params:rtp-hdrext:toffset")==0) {
-			//Set extension
-			extMap[atoi(it->second.c_str())] = RTPHeaderExtension::TimeOffset;
-		} else if (it->first.compare("http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time")==0) {
-			//Set extension
-			extMap[atoi(it->second.c_str())] = RTPHeaderExtension::AbsoluteSendTime;
-		} else if (it->first.compare("urn:ietf:params:rtp-hdrext:ssrc-audio-level")==0) {
-			//Set extension
-			extMap[atoi(it->second.c_str())] = RTPHeaderExtension::SSRCAudioLevel;
-		} else if (it->first.compare("urn:3gpp:video-orientation")==0) {
-			//Set extension
-			extMap[atoi(it->second.c_str())] = RTPHeaderExtension::CoordinationOfVideoOrientation;
-		} else if (it->first.compare("http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01")==0) {
-			//Set extension
-			extMap[atoi(it->second.c_str())] = RTPHeaderExtension::TransportWideCC;
-		} else {
-			Error("-DTLSICETransport::SetProperties() | Unknown RTP property [%s]\n",it->first.c_str());
+		//Get codec by name
+		VideoCodec::Type codec = VideoCodec::GetCodecForName(it->GetProperty("codec"));
+		//Get codec type
+		BYTE type = it->GetProperty("pt",0);
+		//Check
+		if (type && codec!=VideoCodec::UNKNOWN)
+		{
+			//ADD it
+			sendMaps.rtp[type] = codec;
+			//Get rtx and fec
+			BYTE rtx = it->GetProperty("rtx",0);
+			//Check if it has rtx
+			if (rtx)
+			{
+				//ADD it
+				sendMaps.rtp[rtx] = VideoCodec::RTX;
+				//Add the reverse one
+				sendMaps.apt[rtx] = codec;
+			}
 		}
 	}
+	
+	//Clear codecs
+	codecs.clear();
+	
+	//Get audio codecs
+	properties.GetChildrenArray("video.ext",extensions);
+	
+	//For each codec
+	for (auto it = extensions.begin(); it!=extensions.end(); ++it)
+	{
+		//Get Extension for name
+		RTPHeaderExtension::Type ext = RTPHeaderExtension::GetExtensionForName(it->GetProperty("uri"));
+		//Get extension id
+		BYTE id = it->GetProperty("id",0);
+		//ADD it
+		sendMaps.ext[id] = ext;
+	}
+	
+	//Clear extension
+	extensions.clear();
+}
+
+void DTLSICETransport::SetRemoteProperties(const Properties& properties)
+{
+	std::vector<Properties> codecs;
+	std::vector<Properties> extensions;
+	
+	//Cleant maps
+	recvMaps.rtp.clear();
+	recvMaps.ext.clear();
+	recvMaps.apt.clear();
+	
+	//Get audio codecs
+	properties.GetChildrenArray("audio.codecs",codecs);
+
+	//For each codec
+	for (auto it = codecs.begin(); it!=codecs.end(); ++it)
+	{
+		//Get codec by name
+		AudioCodec::Type codec = AudioCodec::GetCodecForName(it->GetProperty("codec"));
+		//Get codec type
+		BYTE type = it->GetProperty("pt",0);
+		//ADD it
+		recvMaps.rtp[type] = codec;
+	}
+	
+	//Clear codecs
+	codecs.clear();
+	
+	//Get audio codecs
+	properties.GetChildrenArray("audio.ext",extensions);
+	
+	//For each codec
+	for (auto it = extensions.begin(); it!=extensions.end(); ++it)
+	{
+		//Get Extension for name
+		RTPHeaderExtension::Type ext = RTPHeaderExtension::GetExtensionForName(it->GetProperty("uri"));
+		//Get extension id
+		BYTE id = it->GetProperty("id",0);
+		//ADD it
+		recvMaps.ext[id] = ext;
+	}
+	
+	//Clear extension
+	extensions.clear();
+	
+	//Get video codecs
+	properties.GetChildrenArray("video.codecs",codecs);
+	
+	//For each codec
+	for (auto it = codecs.begin(); it!=codecs.end(); ++it)
+	{
+		//Get codec by name
+		VideoCodec::Type codec = VideoCodec::GetCodecForName(it->GetProperty("codec"));
+		//Get codec type
+		BYTE type = it->GetProperty("pt",0);
+		//Check
+		if (type && codec!=VideoCodec::UNKNOWN)
+		{
+			//ADD it
+			recvMaps.rtp[type] = codec;
+			//Get rtx and fec
+			BYTE rtx = it->GetProperty("rtx",0);
+			//Check if it has rtx
+			if (rtx)
+			{
+				//ADD it
+				recvMaps.rtp[rtx] = VideoCodec::RTX;
+				//Add the reverse one
+				recvMaps.apt[rtx] = codec;
+			}
+		}
+	}
+	
+	//Clear codecs
+	codecs.clear();
+	
+	//Get audio codecs
+	properties.GetChildrenArray("video.ext",extensions);
+	
+	//For each codec
+	for (auto it = extensions.begin(); it!=extensions.end(); ++it)
+	{
+		//Get Extension for name
+		RTPHeaderExtension::Type ext = RTPHeaderExtension::GetExtensionForName(it->GetProperty("uri"));
+		//Get extension id
+		BYTE id = it->GetProperty("id",0);
+		//ADD it
+		recvMaps.ext[id] = ext;
+	}
+	
+	//Clear extension
+	extensions.clear();
 }
 			
 void DTLSICETransport::Reset()
@@ -1061,7 +1192,7 @@ void DTLSICETransport::Send(RTPPacket &packet)
 
 	//Update RTX headers
 	header.ssrc		= source.ssrc;
-	header.payloadType	= rtpMap.GetTypeForCodec(packet.GetCodec());
+	header.payloadType	= sendMaps.rtp.GetTypeForCodec(packet.GetCodec());
 	//No padding
 	header.padding		= 0;
 
@@ -1096,7 +1227,7 @@ void DTLSICETransport::Send(RTPPacket &packet)
 	if (header.extension)
 	{
 		//Serialize
-		int n = extension.Serialize(extMap,data+len,size-len);
+		int n = extension.Serialize(sendMaps.ext,data+len,size-len);
 		//Comprobamos que quepan
 		if (!n)
 			//Error

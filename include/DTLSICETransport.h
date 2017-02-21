@@ -36,12 +36,12 @@ public:
 	public:
 		virtual int Send(const ICERemoteCandidate *candiadte, const BYTE* data,const DWORD size) = 0;
 	};
-	
-	
+
 public:
 	DTLSICETransport(Sender *sender);
 	~DTLSICETransport();
-	void SetProperties(const Properties& properties);
+	void SetRemoteProperties(const Properties& properties);
+	void SetLocalProperties(const Properties& properties);
 	void SendPLI(DWORD ssrc);
 	void Send(RTPPacket &packet);
 	void Reset();
@@ -73,12 +73,18 @@ private:
 	typedef std::list<ICERemoteCandidate*> Candidates;
 	typedef std::map<DWORD,RTPOutgoingSourceGroup*> OutgoingStreams;
 	typedef std::map<DWORD,RTPIncomingSourceGroup*> IncomingStreams;
+	
+	struct Maps
+	{
+		RTPMap		rtp;
+		RTPMap		ext;
+		RTPMap		apt;
+	};
 private:
 	Sender*		sender;
 	DTLSConnection	dtls;
-	RTPMap		rtpMap;
-	RTPMap		extMap;
-	RTPMap		aptMap;
+	Maps		sendMaps;
+	Maps		recvMaps;
 	Candidates	candidates;
 	ICERemoteCandidate* active;
 	srtp_t		send;

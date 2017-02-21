@@ -21,12 +21,36 @@ class RTPHeaderExtension
 {
 public:
 	enum Type {
+		UNKNOWN			= 0,
 		SSRCAudioLevel		= 1,
 		TimeOffset		= 2,
 		AbsoluteSendTime	= 3,
 		CoordinationOfVideoOrientation	= 4,
 		TransportWideCC		= 5
 	};
+	
+	static Type GetExtensionForName(const char* ext)
+	{
+		if	(strcasecmp(ext,"urn:ietf:params:rtp-hdrext:toffset")==0)						return TimeOffset;
+		else if (strcasecmp(ext,"http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time")==0)			return AbsoluteSendTime;
+		else if (strcasecmp(ext,"urn:ietf:params:rtp-hdrext:ssrc-audio-level")==0)					return SSRCAudioLevel;
+		else if (strcasecmp(ext,"urn:3gpp:video-orientation")==0)							return CoordinationOfVideoOrientation;
+		else if (strcasecmp(ext,"http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01")==0)	return TransportWideCC;
+		return UNKNOWN;
+	}
+
+	static const char* GetNameFor(Type ext)
+	{
+		switch (ext)
+		{
+			case TimeOffset:			return "TimeOffset";
+			case AbsoluteSendTime:			return "AbsoluteSendTime";
+			case SSRCAudioLevel:			return "SSRCAudioLevel";
+			case CoordinationOfVideoOrientation:	return "CoordinationOfVideoOrientation";
+			case TransportWideCC:			return "TransportWideCC";
+			default:				return "unknown";
+		}
+	}
 	
 	struct VideoOrientation
 	{

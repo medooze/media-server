@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <cstddef>  // size_t
 #include <map>
+#include <vector>
 #include <sstream>
 #include <string>
 #include <string.h>
@@ -146,7 +147,7 @@ public:
 		insert(std::pair<std::string,std::string>(key,val));
 	}
 	
-	void GetChildren(const char* path,Properties &children) const
+	void GetChildren(const std::string& path,Properties &children) const
 	{
 		//Create sarch string
 		std::string parent(path);
@@ -163,6 +164,20 @@ public:
 		}
 	}
 	
+	void GetChildren(const char* path,Properties &children) const
+	{
+		GetChildren(std::string(path),children);
+	}
+	
+	Properties GetChildren(const std::string& path) const
+	{
+		Properties properties;
+		//Get them
+		GetChildren(path,properties);
+		//Return
+		return properties;
+	}
+	
 	Properties GetChildren(const char* path) const
 	{
 		Properties properties;
@@ -170,6 +185,27 @@ public:
 		GetChildren(path,properties);
 		//Return
 		return properties;
+	}
+	
+	void GetChildrenArray(const char* path,std::vector<Properties> &array) const
+	{
+		//Create sarch string
+		std::string parent(path);
+		//Add the final .
+		parent += ".";
+		
+		//Get array length
+		int length = GetProperty(parent+"length",0);
+		
+		//For each element
+		for (int i=0; i<length; ++i)
+		{
+			char index[64];
+			//Print string
+			snprintf(index,sizeof(index),"%d",i);
+			//And get children
+			array.push_back(GetChildren(parent+index));
+		}
 	}
 
 	const char* GetProperty(const char* key) const
