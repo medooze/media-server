@@ -225,6 +225,15 @@ public:
 			virtual void onRTP(RTPIncomingSourceGroup* group,RTPPacket* packet) = 0;
 	};
 public:	
+	
+	RTPIncomingSourceGroup(MediaFrame::Type type) : losts(64)
+	{
+		this->type = type;
+		this->listener = NULL;
+		//Small bufer of 20ms
+		packets.SetMaxWaitTime(20);
+	};
+	
 	RTPIncomingSourceGroup(MediaFrame::Type type,Listener* listener) : losts(64)
 	{
 		this->type = type;
