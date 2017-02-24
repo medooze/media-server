@@ -1022,6 +1022,8 @@ void DTLSICETransport::onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMaster
 
 bool DTLSICETransport::AddOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 {
+	Log("-AddOutgoingSourceGroup [ssrc:%u,fec:%u,rtx:%u]\n",group->media.ssrc,group->fec.ssrc,group->rtx.ssrc);
+	
 	//Add it for each group ssrc
 	outgoing[group->media.ssrc] = group;
 	if (group->fec.ssrc)
@@ -1042,6 +1044,9 @@ bool DTLSICETransport::AddOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 
 bool DTLSICETransport::RemoveOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 {
+	Log("-RemoveOutgoingSourceGroup [ssrc:%u,fec:%u,rtx:%u]\n",group->media.ssrc,group->fec.ssrc,group->rtx.ssrc);
+
+		
 	//Remove it from each ssrc
 	outgoing.erase(group->media.ssrc);
 	if (group->fec.ssrc)

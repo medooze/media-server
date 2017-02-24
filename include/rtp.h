@@ -193,6 +193,12 @@ public:
 		
 	};
 public:
+	RTPOutgoingSourceGroup(MediaFrame::Type type)
+	{
+		this->type = type;
+		this->listener = NULL;
+	};
+	
 	RTPOutgoingSourceGroup(MediaFrame::Type type,Listener* listener)
 	{
 		this->type = type;
