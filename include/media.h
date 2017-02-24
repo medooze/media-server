@@ -65,6 +65,7 @@ public:
 			default:
 				return "Unknown";
 		}
+		return "Unknown";
 	}
 
 	MediaFrame(Type type,DWORD size)
@@ -125,7 +126,7 @@ public:
 
 	void SetLength(DWORD length)		{ this->length = length;	}
 
-	bool Alloc(DWORD size)
+	void Alloc(DWORD size)
 	{
 		//Calculate new size
 		bufferSize = size;
@@ -133,7 +134,7 @@ public:
 		buffer = (BYTE*) realloc(buffer,bufferSize);
 	}
 
-	bool SetMedia(BYTE* data,DWORD size)
+	void SetMedia(BYTE* data,DWORD size)
 	{
 		//Check size
 		if (size>bufferSize)
