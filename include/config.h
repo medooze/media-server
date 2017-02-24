@@ -377,7 +377,7 @@ public:
 	}
 
 
-	bool Alloc(const DWORD size)
+	void Alloc(const DWORD size)
 	{
 		//Calculate new size
 		this->size = size;
@@ -385,10 +385,10 @@ public:
 		buffer = (BYTE*) realloc(buffer,size);
 	}
 
-	bool Set(const BYTE* data,const DWORD size)
+	void Set(const BYTE* data,const DWORD size)
 	{
 		//Check size
-		if (size>size)
+		if (size>this->size)
 			//Allocate new size
 			Alloc(size*3/2);
 		//Copy
@@ -401,7 +401,7 @@ public:
 	{
 		DWORD pos = length;
 		//Check size
-		if (size+length>size)
+		if (size+length>this->size)
 			//Allocate new size
 			Alloc((size+length)*3/2);
 		//Copy

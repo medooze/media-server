@@ -38,9 +38,6 @@ inline int blocksignals()
 *************************************/
 inline int createPriorityThread(pthread_t *thread, void *(*function)(void *), void *arg, int priority)
 {
-	struct sched_param parametros;
-	parametros.sched_priority = priority;
-
 	//Creamos el thread
 	if (pthread_create(thread,NULL,function,arg) != 0)
 		return 0;
@@ -51,6 +48,8 @@ inline int createPriorityThread(pthread_t *thread, void *(*function)(void *), vo
 	return 1;
 	/*
 	 * //Aumentamos la prioridad
+	struct sched_param parametros;
+	parametros.sched_priority = priority;
 	if (pthread_setschedparam(*thread,SCHED_RR,&parametros) != 0)
 		return 0;
 
@@ -387,13 +386,13 @@ out0:
     return bits & 1 ? -1 : dst - out;
 }
 
-inline char *av_base64_encode(char *out, int out_size, const uint8_t *in, int in_size)
+inline char *av_base64_encode(char *out, DWORD out_size, const uint8_t *in, DWORD in_size)
 {
     static const char b64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     char *ret, *dst;
-    unsigned i_bits = 0;
+    DWORD i_bits = 0;
     int i_shift = 0;
-    int bytes_remaining = in_size;
+    DWORD bytes_remaining = in_size;
 
     if (in_size >= UINT_MAX / 4 ||
         out_size < AV_BASE64_SIZE(in_size))

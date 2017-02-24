@@ -6,7 +6,6 @@
 #include "mp4recorder.h"
 #include "h264/h264.h"
 #include "aacconfig.h"
-#include "speex/speex_resampler.h"
 
 
 mp4track::mp4track(MP4FileHandle mp4)
@@ -161,13 +160,20 @@ int mp4track::CreateVideoTrack(VideoCodec::Type codec,int width, int height)
 			MP4SetHintTrackRtpPayload(mp4, hint, "VP8", &type, 0, NULL, 1, 0);
 			break;
 		}
+		default:
+			return Error("-Codec %s not supported yet\n",VideoCodec::GetNameFor(codec));
 	}
+	//OK
+	return 1;
 }
 
 int mp4track::CreateTextTrack()
 {
 	//Create subtitle track
 	track = MP4AddSubtitleTrack(mp4,1000,0,0);
+	
+	//OK
+	return 1;
 }
 
 int mp4track::FlushAudioFrame(AudioFrame* frame,DWORD duration)
@@ -464,7 +470,7 @@ MP4Recorder::~MP4Recorder()
 
 bool MP4Recorder::Create(const char* filename)
 {
-	Log("-Opening record [%s]\n",filename);
+	Log("-MP4Recorder::Create() Opening mp4 recording [%s]\n",filename);
 
 	//If we are recording
 	if (mp4!=MP4_INVALID_FILE_HANDLE)
@@ -480,7 +486,7 @@ bool MP4Recorder::Create(const char* filename)
 	// If failed
 	if (mp4 == MP4_INVALID_FILE_HANDLE)
                 //Error
-		return Error("-Error openein mp4 file for recording\n");
+		return Error("-Error opening mp4 file for recording\n");
 
 	//Success
 	return true;
@@ -502,6 +508,8 @@ bool MP4Recorder::Record()
 
 bool MP4Recorder::Stop()
 {
+	Log("-MP4Recorder::Stop()\n");
+	
 	//L0ck the  access to the file
 	pthread_mutex_lock(&mutex);
 	

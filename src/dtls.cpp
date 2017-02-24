@@ -232,7 +232,7 @@ int DTLSConnection::ReadCertificate()
 
 int DTLSConnection::Initialize()
 {
-	Log("-DTLSConnection::Initialize()\n");
+	Log(">DTLSConnection::Initialize()\n");
 
 	// Create a single SSL context
 	ssl_ctx = SSL_CTX_new(DTLSv1_method());
@@ -242,7 +242,7 @@ int DTLSConnection::Initialize()
 	{
 		// Print SSL error.
 		ERR_print_errors_fp(stderr);
-		return Error("-DTLSConnection::ClassInit() | No SSL context\n");
+		return Error("-DTLSConnection::Initialize() | No SSL context\n");
 	}
 
 	//Disable automatic MTU discovery
@@ -258,10 +258,10 @@ int DTLSConnection::Initialize()
 		EC_KEY* ecdh = NULL;
 		ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
 		if (! ecdh) {
-			return Error("-DTLSConnection::ClassInit() | EC_KEY_new_by_curve_name() failed\n");
+			return Error("-DTLSConnection::Initialize() | EC_KEY_new_by_curve_name() failed\n");
 		}
 		if (SSL_CTX_set_tmp_ecdh(ssl_ctx, ecdh) != 1) {
-			return Error("-DTLSConnection::ClassInit() | SSL_CTX_set_tmp_ecdh() failed\n");
+			return Error("-DTLSConnection::Initialize() | SSL_CTX_set_tmp_ecdh() failed\n");
 		}
 		EC_KEY_free(ecdh);
 		ecdh = NULL;
@@ -290,7 +290,7 @@ int DTLSConnection::Initialize()
 			SSL_CTX_set_tlsext_use_srtp(ssl_ctx, "SRTP_AES128_CM_SHA1_32");
 			break;
 		default:
-			return Error("-DTLSConnection::ClassInit() | Unsupported suite [%d] specified for DTLS-SRTP\n",suite);
+			return Error("-DTLSConnection::Initialize() | Unsupported suite [%d] specified for DTLS-SRTP\n",suite);
 	}
 	//If we have a pre-generated certificate and private key
 	if (certfile.size()>0 && pvtfile.size()>0)
@@ -306,15 +306,15 @@ int DTLSConnection::Initialize()
 	
 	// Set certificate.
 	if (! SSL_CTX_use_certificate(ssl_ctx, certificate))
-		return Error("-DTLSConnection::ClassInit() | Specified certificate file '%s' could not be used\n", certfile.c_str());
+		return Error("-DTLSConnection::Initialize() | Specified certificate file '%s' could not be used\n", certfile.c_str());
 
 	//Set private key
 	if (! SSL_CTX_use_PrivateKey(ssl_ctx, privateKey) || !SSL_CTX_check_private_key(ssl_ctx))
-		return Error("-DTLSConnection::ClassInit() | Specified private key file '%s' could not be used\n",pvtfile.c_str());
+		return Error("-DTLSConnection::Initialize() | Specified private key file '%s' could not be used\n",pvtfile.c_str());
 
 	//Set cipher list
 	if (! SSL_CTX_set_cipher_list(ssl_ctx, cipher.c_str()))
-		return Error("-DTLSConnection::ClassInit() | Invalid cipher specified in cipher list '%s' for DTLS-SRTP\n",cipher.c_str());
+		return Error("-DTLSConnection::Initialize() | Invalid cipher specified in cipher list '%s' for DTLS-SRTP\n",cipher.c_str());
 	
 	// Fill the DTLSConnection::availableHashes vector.
 	DTLSConnection::availableHashes.push_back(SHA1);
@@ -352,7 +352,7 @@ int DTLSConnection::Initialize()
 
 		// Check size.
 		if (! size) 
-			return Error("-DTLSConnection::ClassInit() | Wrong X509 certificate size\n");
+			return Error("-DTLSConnection::Initialize() | Wrong X509 certificate size\n");
 
 		// Convert to hex format.
 		for (int j = 0; j < size; j++)
@@ -363,11 +363,14 @@ int DTLSConnection::Initialize()
 
 		// Store in the map.
 		DTLSConnection::localFingerPrints[hash] = std::string(hex_fingerprint);
+		
+		Debug("-LocalFingerprint %d %s\n",hash, DTLSConnection::localFingerPrints[hash].c_str());
 	}
 
 	// OK, we have DTLS.
 	DTLSConnection::hasDTLS = true;
 
+	Log("<DTLSConnection::Initialize(%d)\n",availableHashes.size());
 	//OK
 	return 1;
 }
