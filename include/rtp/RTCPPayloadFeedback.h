@@ -378,7 +378,7 @@ public:
 			//Init exp
 			BYTE bitrateExp = 0;
 			//Find 18 most significants bits
-			for(BYTE i=0;i<64;i++)
+			for(BYTE i=0;i<32;i++)
 			{
 				//If bitrate is less than
 				if(bitrate <= (0x003FFFF << i))
