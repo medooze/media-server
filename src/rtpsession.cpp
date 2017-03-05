@@ -29,8 +29,8 @@
 * 	Constructro
 **************************/
 RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) :
-	send(media,NULL),
-	recv(media,NULL),
+	send(media),
+	recv(media),
 	transport(this),
 	losts(640)
 {

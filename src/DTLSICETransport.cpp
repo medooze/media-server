@@ -399,20 +399,15 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		Send(rtcp);
 	}
 
-	//Check listener
-	if (group->listener)
-	{	
-		RTPPacket* ordered;
-		//Append it to the packets
-		group->packets.Add(packet);
-		//FOr each ordered packet
-		while(ordered=group->packets.GetOrdered())
-			//Call listeners
-			group->listener->onRTP(group,ordered);
-	} else {
-		//Drop it
-		delete(packet);
-	}
+	RTPPacket* ordered;
+	//Append it to the packets
+	group->packets.Add(packet);
+	//FOr each ordered packet
+	while(ordered=group->packets.GetOrdered())
+		//Call listeners
+		group->onRTP(ordered);
+	
+	//TODO: Fix who deletes packet
 	
 	//Check if we need to send RR (1 per second)
 	if (getTimeDiff(source->lastReport)>1E6)
@@ -1458,10 +1453,8 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 					case RTCPPayloadFeedback::PictureLossIndication:
 					case RTCPPayloadFeedback::FullIntraRequest:
 						Debug("-DTLSICETransport::onRTCP() | FPU requested [ssrc:%u]\n",ssrc);
-						//Check listener
-						if (group->listener)
-							//Call listeners
-							group->listener->onPLIRequest(group,ssrc);
+						//Call listeners
+						group->onPLIRequest(ssrc);
 						//Get media
 					case RTCPPayloadFeedback::SliceLossIndication:
 						Debug("-DTLSICETransport::onRTCP() | SliceLossIndication\n");

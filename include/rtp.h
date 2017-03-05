@@ -8,6 +8,7 @@
 #include <list>
 #include <utility>
 #include <map>
+#include <set>
 #include <math.h>
 
 #include "rtp/RTPMap.h"
@@ -196,22 +197,35 @@ public:
 	RTPOutgoingSourceGroup(MediaFrame::Type type)
 	{
 		this->type = type;
-		this->listener = NULL;
 	};
 	
-	RTPOutgoingSourceGroup(MediaFrame::Type type,Listener* listener)
-	{
-		this->type = type;
-		this->listener = listener;
-	};
-	RTPOutgoingSourceGroup(std::string &streamId,MediaFrame::Type type,Listener* listener)
+	RTPOutgoingSourceGroup(std::string &streamId,MediaFrame::Type type)
 	{
 		this->streamId = streamId;
 		this->type = type;
-		this->listener = listener;
 	};
+	
+	void AddListener(Listener* listener) 
+	{
+		ScopedLock scoped(mutex);
+		listeners.insert(listener);
+	}
+	
+	void RemoveListener(Listener* listener) 
+	{
+		ScopedLock scoped(mutex);
+		listeners.insert(listener);
+	}
+	
+	void onPLIRequest(DWORD ssrc)
+	{
+		ScopedLock scoped(mutex);
+		for (Listeners::const_iterator it=listeners.begin();it!=listeners.end();++it)
+			(*it)->onPLIRequest(this,ssrc);
+	}
 public:
 	typedef std::map<DWORD,RTPPacket*> RTPOrderedPackets;
+	typedef std::set<Listener*> Listeners;
 public:	
 	std::string streamId;
 	MediaFrame::Type type;
@@ -219,7 +233,8 @@ public:
 	RTPOutgoingSource fec;
 	RTPOutgoingSource rtx;
 	RTPOrderedPackets	packets;
-	Listener* listener;
+	Mutex mutex;
+	Listeners listeners;
 };
 
 struct RTPIncomingSourceGroup
@@ -235,15 +250,6 @@ public:
 	RTPIncomingSourceGroup(MediaFrame::Type type) : losts(64)
 	{
 		this->type = type;
-		this->listener = NULL;
-		//Small bufer of 20ms
-		packets.SetMaxWaitTime(20);
-	};
-	
-	RTPIncomingSourceGroup(MediaFrame::Type type,Listener* listener) : losts(64)
-	{
-		this->type = type;
-		this->listener = listener;
 		//Small bufer of 20ms
 		packets.SetMaxWaitTime(20);
 	};
@@ -258,7 +264,28 @@ public:
 			return &fec;
 		return NULL;
 	}
-	int onRTP(DWORD ssrc,BYTE codec,BYTE* data,DWORD size);
+	
+	void AddListener(Listener* listener) 
+	{
+		ScopedLock scoped(mutex);
+		listeners.insert(listener);
+	}
+	
+	void RemoveListener(Listener* listener) 
+	{
+		ScopedLock scoped(mutex);
+		listeners.insert(listener);
+	}
+	
+	void onRTP(RTPPacket* packet)
+	{
+		ScopedLock scoped(mutex);
+		for (Listeners::const_iterator it=listeners.begin();it!=listeners.end();++it)
+			(*it)->onRTP(this,packet);
+		delete(packet);
+	}
+public:
+	typedef std::set<Listener*> Listeners;
 public:	
 	MediaFrame::Type type;
 	RTPLostPackets	losts;
@@ -266,7 +293,8 @@ public:
 	RTPIncomingSource media;
 	RTPIncomingSource fec;
 	RTPIncomingSource rtx;
-	Listener* listener;
+	Mutex mutex;
+	Listeners listeners;
 };
 
 
