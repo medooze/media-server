@@ -73,8 +73,8 @@ public:
 		frame.SetTimestamp(packet->GetTimestamp());
 		//Add payload
 		AddPayload(packet->GetMediaData(),packet->GetMediaLength());
-		//If it is last return frame
-		return packet->GetMark() ? &frame : NULL;
+		//Return frame
+		return &frame;
 	}
 	virtual MediaFrame* AddPayload(BYTE* payload,DWORD payload_len)
 	{

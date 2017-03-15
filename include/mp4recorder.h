@@ -46,7 +46,7 @@ class MP4Recorder :
 public:
 
 	MP4Recorder();
-	~MP4Recorder();
+	virtual ~MP4Recorder();
 
 	//Recorder interface
 	virtual bool Create(const char *filename);

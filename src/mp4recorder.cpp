@@ -24,7 +24,7 @@ mp4track::mp4track(MP4FileHandle mp4)
 
 int mp4track::CreateAudioTrack(AudioCodec::Type codec,DWORD rate)
 {
-	Log("mp4track::CreateAudioTrack [codec:%d]",codec);
+	Log("mp4track::CreateAudioTrack [codec:%d]\n",codec);
 	
 	BYTE type;
 
@@ -97,7 +97,7 @@ int mp4track::CreateAudioTrack(AudioCodec::Type codec,DWORD rate)
 int mp4track::CreateVideoTrack(VideoCodec::Type codec,int width, int height)
 {
 	
-	Log("mp4track::CreateVideoTrack [codec:%d]",codec);
+	Log("mp4track::CreateVideoTrack [codec:%d]\n",codec);
 	
 	BYTE type;
 

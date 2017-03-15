@@ -590,6 +590,10 @@ void DTLSICETransport::SetLocalProperties(const Properties& properties)
 	std::vector<Properties> codecs;
 	std::vector<Properties> extensions;
 	
+	//For each property
+	for (Properties::const_iterator it=properties.begin();it!=properties.end();++it)
+		Debug("-DTLSICETransport::SetLocalProperties | Setting property [%s:%s]\n",it->first.c_str(),it->second.c_str());
+	
 	//Cleant maps
 	sendMaps.rtp.clear();
 	sendMaps.ext.clear();
@@ -680,6 +684,10 @@ void DTLSICETransport::SetLocalProperties(const Properties& properties)
 
 void DTLSICETransport::SetRemoteProperties(const Properties& properties)
 {
+	//For each property
+	for (Properties::const_iterator it=properties.begin();it!=properties.end();++it)
+		Debug("-DTLSICETransport::SetRemoteProperties | Setting property [%s:%s]\n",it->first.c_str(),it->second.c_str());
+	
 	std::vector<Properties> codecs;
 	std::vector<Properties> extensions;
 	
