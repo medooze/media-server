@@ -63,8 +63,8 @@ DTLSICETransport::~DTLSICETransport()
 {
 	//Reset
 	Reset();
-	
 }
+
 int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWORD size)
 {
 	RTPHeader header;
@@ -781,7 +781,7 @@ void DTLSICETransport::SetRemoteProperties(const Properties& properties)
 			
 void DTLSICETransport::Reset()
 {
-	Log("-RTPBundleTransport reset\n");
+	Log("-DTLSICETransport::Reset()\n");
 
 	//Clean mem
 	if (iceLocalUsername)

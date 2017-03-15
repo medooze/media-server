@@ -39,7 +39,7 @@ public:
 
 public:
 	DTLSICETransport(Sender *sender);
-	~DTLSICETransport();
+	virtual ~DTLSICETransport();
 	void SetRemoteProperties(const Properties& properties);
 	void SetLocalProperties(const Properties& properties);
 	void SendPLI(DWORD ssrc);
