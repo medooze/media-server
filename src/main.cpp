@@ -402,7 +402,7 @@ int main(int argc,char **argv)
 	XmlHandler xmlrpcmediagateway(mediagatewayCmdList,(void*)&mediaGateway);
 	XmlHandler xmlrpcjsr309(jsr309CmdList,(void*)&jsr309Manager);
 	//Get event source handler singleton
-	EventStreamingHandler& events = EvenSource::getInstance();
+	EventStreamingHandler& events = EventStreamingHandler::getInstance();
 
 	//Create upload handlers
 	UploadHandler uploadermcu(&mcu);

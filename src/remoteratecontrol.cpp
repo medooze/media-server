@@ -7,6 +7,7 @@
 
 #include "remoteratecontrol.h"
 #include <math.h>
+#include "eventstreaminghandler.h"
 
 RemoteRateControl::RemoteRateControl() : bitrateCalc(100), fpsCalc(1000), packetCalc(100)
 {

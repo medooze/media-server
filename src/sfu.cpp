@@ -257,7 +257,7 @@ int main(int argc,char **argv)
 	//Create xml cmd handlers for the sfu and broadcaster
 	XmlHandler xmlrpcsfu(sfuCmdList,(void*)&sfuManager);
 	//Get event source handler singleton
-	EventStreamingHandler& events = EvenSource::getInstance();
+	EventStreamingHandler& events = EventStreamingHandler::getInstance();
 
 	//Create http streaming for service events
 	XmlStreamingHandler xmleventsfu;

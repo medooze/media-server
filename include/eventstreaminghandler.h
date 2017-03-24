@@ -91,6 +91,12 @@ class EventStreamingHandler :
 	public Handler
 {
 public:
+	static EventStreamingHandler& getInstance()
+        {
+            static EventStreamingHandler   ev;
+            return ev;
+        }
+	
 	EventStreamingHandler();
 	~EventStreamingHandler();
 	int CreateEvenSource(const char* source);
@@ -110,69 +116,5 @@ private:
 	Use		listUse;
 };
 
-class EvenSource
-{
-public:
-	static EventStreamingHandler& getInstance()
-        {
-            static EventStreamingHandler   ev;
-            return ev;
-        }
-
-	EvenSource()
-	{
-		//alocate mem
-		source = (char*)malloc(sizeof(void*)*2+4);
-		//Create event source
-		sprintf(source,"%p",this);
-		//Create source
-		getInstance().CreateEvenSource(source);
-	}
-
-	EvenSource(const char* str)
-	{
-		//Duplicate
-		source = strdup(str);
-		//Create source
-		getInstance().CreateEvenSource(source);
-	}
-
-	EvenSource(const std::wstring &str)
-	{
-		//Convert to utf
-		UTF8Parser parser(str);
-		//Get size
-		DWORD size = parser.GetUTF8Size();
-		//alocate mem
-		source = (char*)malloc(size+1);
-		//Serialize
-		parser.Serialize((BYTE*)source,size);
-		//End it
-		source[size] = 0;
-		//Create source
-		getInstance().CreateEvenSource(source);
-	}
-	
-	~EvenSource()
-	{
-		//Destroy source
-		getInstance().DestroyEvenSource(source);
-		//Free memory
-		free(source);
-	}
-
-	void SendEvent(const char* type,const char* msg,...)
-	{
-		va_list params;
-		//Initialize parameeter list
-		va_start(params, msg);
-		//Write event
-		getInstance().WriteEvent(source,type,msg,params);
-		//End parameter list
-		va_end(params);
-	}
-private:
-	char* source;
-};
 
 #endif

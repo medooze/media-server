@@ -8,6 +8,7 @@
 #include "mosaic.h"
 #include "logo.h"
 #include "eventstreaminghandler.h"
+#include "EventSource.h"
 #include <map>
 
 class VideoMixer 

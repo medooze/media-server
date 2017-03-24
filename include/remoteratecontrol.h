@@ -11,7 +11,7 @@
 #include "config.h"
 #include "rtp.h"
 #include "acumulator.h"
-#include "eventstreaminghandler.h"
+#include "EventSource.h"
 
 class RemoteRateControl
 {
