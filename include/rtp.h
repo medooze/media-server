@@ -55,6 +55,10 @@ struct RTPSource
 		totalRTCPBytes	= 0;
 		jitter		= 0;
 	}
+	virtual ~RTPSource()
+	{
+		
+	}
 	
 	RTCPCompoundPacket* CreateSenderReport();
 	
@@ -298,5 +302,16 @@ public:
 };
 
 
+class RTPSender
+{
+public:
+		
+	virtual int Send(RTPPacket &packet) = 0;
+};
 
+class RTPReceiver
+{
+public:
+	virtual int SendPLI(DWORD ssrc) = 0;
+};
 #endif

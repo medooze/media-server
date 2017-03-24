@@ -32,13 +32,13 @@ public:
 	RTPPacket* CreatePrimaryPacket();
 
 	BYTE  GetRedundantCount()		const { return headers.size();	}
-	BYTE* GetRedundantPayloadData(int i)	const { return i<headers.size()?redundantData+headers[i].ini:NULL;	}
-	DWORD GetRedundantPayloadSize(int i) 	const { return i<headers.size()?headers[i].size:0;			}
-	BYTE  GetRedundantType(int i)		const { return i<headers.size()?headers[i].type:0;			}
-	BYTE  GetRedundantCodec(int i)		const { return i<headers.size()?headers[i].codec:0;			}
-	BYTE  GetRedundantOffser(int i)		const { return i<headers.size()?headers[i].offset:0;			}
-	BYTE  GetRedundantTimestamp(int i)	const { return i<headers.size()?GetTimestamp()-headers[i].offset:0;	}
-	void  SetRedundantCodec(int i,BYTE codec)     { if (i<headers.size()) headers[i].codec = codec;			}
+	BYTE* GetRedundantPayloadData(DWORD i)	const { return i<headers.size()?redundantData+headers[i].ini:NULL;	}
+	DWORD GetRedundantPayloadSize(DWORD i) 	const { return i<headers.size()?headers[i].size:0;			}
+	BYTE  GetRedundantType(DWORD i)		const { return i<headers.size()?headers[i].type:0;			}
+	BYTE  GetRedundantCodec(DWORD i)		const { return i<headers.size()?headers[i].codec:0;			}
+	BYTE  GetRedundantOffser(DWORD i)		const { return i<headers.size()?headers[i].offset:0;			}
+	BYTE  GetRedundantTimestamp(DWORD i)	const { return i<headers.size()?GetTimestamp()-headers[i].offset:0;	}
+	void  SetRedundantCodec(DWORD i,BYTE codec)     { if (i<headers.size()) headers[i].codec = codec;			}
 
 private:
 	struct RedHeader

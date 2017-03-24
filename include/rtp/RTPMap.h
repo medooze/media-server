@@ -14,6 +14,8 @@
 #ifndef RTPMAP_H
 #define RTPMAP_H
 #include "config.h"
+#include "log.h"
+#include "codecs.h"
 #include <map>
 
 class RTPMap :
@@ -42,6 +44,15 @@ public:
 				return it->first;
 		//Exit
 		return NotFound;
+	}
+	
+	void Dump(MediaFrame::Type media) const
+	{
+		Debug("[RTPMap]\n");
+		//Try to find it in the map
+		for (const_iterator it = begin(); it!=end(); ++it)
+			Debug("\t[Codec name=%s payload=%d/]\n",GetNameForCodec(media,it->second),it->first);
+		Debug("[/RTPMap]\n");
 	}
 public:
 	static const BYTE NotFound = -1;

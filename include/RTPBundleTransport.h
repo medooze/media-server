@@ -17,7 +17,7 @@ class RTPBundleTransport :
 {
 public:
 	RTPBundleTransport();
-	~RTPBundleTransport();
+	virtual ~RTPBundleTransport();
 	int Init();
 	DTLSICETransport* AddICETransport(const std::string &username,const Properties& properties);
 	int RemoveICETransport(const std::string &username);

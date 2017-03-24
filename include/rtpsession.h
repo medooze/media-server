@@ -49,7 +49,7 @@ public:
 
 public:
 	RTPSession(MediaFrame::Type media,Listener *listener);
-	~RTPSession();
+	virtual ~RTPSession();
 	int Init();
 	void SetRemoteRateEstimator(RemoteRateEstimator* estimator);
 	int SetLocalPort(int recvPort);
@@ -65,7 +65,7 @@ public:
 	void SendEmptyPacket();
 	int SendPacket(RTPPacket &packet,DWORD timestamp);
 	int SendPacket(RTPPacket &packet);
-
+	
 	RTPPacket* GetPacket();
 	void CancelGetPacket();
 	DWORD GetNumRecvPackets()	const { return recv.media.numPackets+recv.media.numRTCPPackets;	}
@@ -90,6 +90,9 @@ public:
 
 	virtual void onTargetBitrateRequested(DWORD bitrate);
 
+	RTPOutgoingSourceGroup* GetOutgoingSourceGroup() { return &send; }
+	RTPIncomingSourceGroup* GetIncomingSourceGroup() { return &recv; }
+	RTPPacket* GetOrderPacket()			 { return packets.GetOrdered(); }
 public:	
 	virtual void onRemotePeer(const char* ip, const short port);
 	virtual void onRTPPacket(BYTE* buffer, DWORD size);

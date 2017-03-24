@@ -1135,7 +1135,7 @@ void DTLSICETransport::Send(RTCPCompoundPacket &rtcp)
 		Debug("-Error sending RTCP packet [ret:%d,%d]\n",ret,errno);
 }
 
-void DTLSICETransport::SendPLI(DWORD ssrc)
+int DTLSICETransport::SendPLI(DWORD ssrc)
 {
 	UltraDebug("-DTLSICETransport::SendPLI() | [ssrc:%u]\n",ssrc);
 	
@@ -1152,7 +1152,7 @@ void DTLSICETransport::SendPLI(DWORD ssrc)
 	
 	//If not found
 	if (it==incoming.end())
-		return (void)Error("- DTLSICETransport::SendPLI() | no incoming source found for [ssrc:%u]\n",ssrc);
+		return Error("- DTLSICETransport::SendPLI() | no incoming source found for [ssrc:%u]\n",ssrc);
 	
 	//Drop all pending and lost packets
 	it->second->packets.Reset();
@@ -1163,9 +1163,11 @@ void DTLSICETransport::SendPLI(DWORD ssrc)
 
 	//Send packet
 	Send(rtcp);
+	
+	return 1;
 }
 
-void DTLSICETransport::Send(RTPPacket &packet)
+int DTLSICETransport::Send(RTPPacket &packet)
 {
 	BYTE 	data[MTU+SRTP_MAX_TRAILER_LEN] ALIGNEDTO32;
 	DWORD	size = MTU;
@@ -1176,10 +1178,10 @@ void DTLSICETransport::Send(RTPPacket &packet)
 	//If we don't have an active candidate yet
 	if (!active)
 		//Error
-		return (void) Debug("-DTLSICETransport::Send() | We don't have an active candidate yet\n");
+		return Debug("-DTLSICETransport::Send() | We don't have an active candidate yet\n");
 	if (!send)
 		//Error
-		return (void) Debug("-DTLSICETransport::Send() | We don't have an DTLS setup yet\n");
+		return Debug("-DTLSICETransport::Send() | We don't have an DTLS setup yet\n");
 	
 	//Find outgoing source
 	auto it = outgoing.find(packet.GetSSRC());
@@ -1187,7 +1189,7 @@ void DTLSICETransport::Send(RTPPacket &packet)
 	//If not found
 	if (it==outgoing.end())
 		//Error
-		return (void) Error("-DTLSICETransport::Send() | Outgoind source not registered for ssrc:%u\n",packet.GetSSRC());
+		return Error("-DTLSICETransport::Send() | Outgoind source not registered for ssrc:%u\n",packet.GetSSRC());
 	
 	//Get outgoing group
 	RTPOutgoingSourceGroup* group = it->second;
@@ -1229,7 +1231,7 @@ void DTLSICETransport::Send(RTPPacket &packet)
 	//Check
 	if (!len)
 		//Error
-		return (void)Error("-DTLSICETransport::SendPacket() | Error serializing rtp headers\n");
+		return Error("-DTLSICETransport::SendPacket() | Error serializing rtp headers\n");
 
 	//If we have extension
 	if (header.extension)
@@ -1239,7 +1241,7 @@ void DTLSICETransport::Send(RTPPacket &packet)
 		//Comprobamos que quepan
 		if (!n)
 			//Error
-			return (void)Error("-DTLSICETransport::SendPacket() | Error serializing rtp extension headers\n");
+			return Error("-DTLSICETransport::SendPacket() | Error serializing rtp extension headers\n");
 		//Inc len
 		len += n;
 	}
@@ -1247,7 +1249,7 @@ void DTLSICETransport::Send(RTPPacket &packet)
 	//Ensure we have enougth data
 	if (len+packet.GetMediaLength()>size)
 		//Error
-			return (void)Error("-DTLSICETransport::SendPacket() | Media overflow\n");
+		return Error("-DTLSICETransport::SendPacket() | Media overflow\n");
 
 	//Copiamos los datos
 	memcpy(data+len,packet.GetMediaData(),packet.GetMediaLength());
@@ -1272,7 +1274,7 @@ void DTLSICETransport::Send(RTPPacket &packet)
 	//Check error
 	if (err!=srtp_err_status_ok)
 		//Error
-		return (void)Error("-RTPTransport::SendPacket() | Error protecting RTP packet [%d]\n",err);
+		return Error("-RTPTransport::SendPacket() | Error protecting RTP packet [%d]\n",err);
 	
 	//No error yet, send packet
 	len = sender->Send(active,data,len);
@@ -1315,6 +1317,8 @@ void DTLSICETransport::Send(RTPPacket &packet)
 		//Send packet
 		Send(rtcp);
 	}
+	
+	return 1;
 }
 
 

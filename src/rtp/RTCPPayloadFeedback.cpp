@@ -30,7 +30,7 @@ RTCPPayloadFeedback::~RTCPPayloadFeedback()
 void RTCPPayloadFeedback::Dump()
 {
 	Debug("\t[RTCPPacket PayloadFeedback %s sender:%u media:%u]\n",TypeToString(feedbackType),senderSSRC,mediaSSRC);
-	for (int i=0;i<fields.size();i++)
+	for (DWORD i=0;i<fields.size();i++)
 	{
 		//Check type
 		switch(feedbackType)
@@ -67,7 +67,7 @@ void RTCPPayloadFeedback::Dump()
 					//Log
 					Debug("\t[REMB bitrate=%d exp=%d mantisa=%d/]\n",bitrate,exp,mantisa);
 					//For each
-					for (int i=0;i<num;++i)
+					for (DWORD i=0;i<num;++i)
 						//Log
 						Debug("\t[ssrc=%u/]\n",get4(payload,8+4*i));
 					//Log

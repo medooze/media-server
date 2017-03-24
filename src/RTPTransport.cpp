@@ -931,7 +931,7 @@ int RTPTransport::ReadRTP()
 				//Set port
 				sendAddr.sin_port = from_addr.sin_port;
 				//Log
-				Log("-RTPTransport::ReadRTP() | ICE: Now sending to [%s:%d:%d] prio:%d\n",inet_ntoa(sendAddr.sin_addr), ntohs(sendAddr.sin_port),recIP, prio);
+				Log("-RTPTransport::ReadRTP() | ICE: Now sending to [%s:%hu:%d] prio:%d\n",inet_ntoa(sendAddr.sin_addr), ntohs(sendAddr.sin_port),recIP, prio);
 				
 				//If we start receiving from a drifferent ip address or it is the first one
 				if (recIP!=from_addr.sin_addr.s_addr)

@@ -27,6 +27,8 @@
 #include "rtpbuffer.h"
 
 class DTLSICETransport : 
+	public RTPSender,
+	public RTPReceiver,
 	public DTLSConnection::Listener,
 	public ICERemoteCandidate::Listener
 {
@@ -42,8 +44,8 @@ public:
 	virtual ~DTLSICETransport();
 	void SetRemoteProperties(const Properties& properties);
 	void SetLocalProperties(const Properties& properties);
-	void SendPLI(DWORD ssrc);
-	void Send(RTPPacket &packet);
+	virtual int SendPLI(DWORD ssrc);
+	virtual int Send(RTPPacket &packet);
 	void Reset();
 	
 	ICERemoteCandidate* AddRemoteCandidate(const sockaddr_in addr, bool useCandidate, DWORD priority);

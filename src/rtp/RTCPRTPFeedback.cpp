@@ -103,7 +103,7 @@ DWORD RTCPRTPFeedback::Parse(BYTE* data,DWORD size)
 void RTCPRTPFeedback::Dump()
 {
 	Debug("\t[RTCPPacket Feedback %s sender:%u media:%u]\n",TypeToString(feedbackType),senderSSRC,mediaSSRC);
-	for (int i=0;i<fields.size();i++)
+	for (DWORD i=0;i<fields.size();i++)
 	{
 		//Check type
 		switch(feedbackType)
@@ -118,7 +118,7 @@ void RTCPRTPFeedback::Dump()
 				set2(blp,0,field->blp);
 				//Convert to binary
 				BitReader r(blp,2);
-				for (int j=0;j<16;j++)
+				for (DWORD j=0;j<16;j++)
 					str[j] = r.Get(1) ? '1' : '0';
 				str[16] = 0;
 				//Debug
@@ -424,7 +424,7 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Serialize(BYTE* data,D
 			writter.Put(1,1);
 			writter.Put(1,1);
 			//Set next 7
-			for (int i=0;i<7;++i)
+			for (DWORD i=0;i<7;++i)
 			{
 				//Write
 				writter.Put(2,(BYTE)statuses.front());
@@ -462,7 +462,7 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Serialize(BYTE* data,D
 			writter.Put(1,1);
 			writter.Put(1,0);
 			//Set next 7
-			for (int i=0;i<14;++i)
+			for (DWORD i=0;i<14;++i)
 			{
 				//Write
 				writter.Put(1,(BYTE)statuses.front());
@@ -586,7 +586,7 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Parse(BYTE* data,DWORD
 			{
 				//Debug("-2 bits states\n");
 				//S=1 => 7 states, 2 bits per state
-				for (int j=0;j<7;++j)
+				for (DWORD j=0;j<7;++j)
 				{
 					//Get status
 					PacketStatus status = (PacketStatus)((chunk >> 2 * (7 - 1 - j)) & 0x03);
@@ -598,7 +598,7 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Parse(BYTE* data,DWORD
 			} else {
 				//Debug("-1 bits states\n");
 				//S=> 14 states, 1 bit per state
-				for (int j=0;j<14;++j)
+				for (DWORD j=0;j<14;++j)
 				{
 					//Get status
 					PacketStatus status = (PacketStatus)((chunk >> (14 - 1 - j)) & 0x01);
@@ -633,7 +633,7 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Parse(BYTE* data,DWORD
 	QWORD time = referenceTime * 64000;
 		
 	//For each packet
-	for (int i=0;i<packetStatusCount;++i)
+	for (DWORD i=0;i<packetStatusCount;++i)
 	{
 		//Depending on the status
 		switch (statuses[i])

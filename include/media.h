@@ -111,7 +111,7 @@ public:
 	
 	Type	GetType() const		{ return type;	}
 	DWORD	GetTimeStamp() const	{ return ts;	}
-	DWORD	SetTimestamp(DWORD ts)	{ this->ts = ts; }
+	void	SetTimestamp(DWORD ts)	{ this->ts = ts; }
 
 	bool	HasRtpPacketizationInfo() const		{ return !rtpInfo.empty();	}
 	const RtpPacketizationInfo& GetRtpPacketizationInfo() const { return rtpInfo;		}

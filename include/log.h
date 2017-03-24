@@ -138,7 +138,7 @@ inline void BitDump(DWORD val,BYTE n)
 {
 	char line1[136];
 	char line2[136];
-	int i=0;
+	DWORD i=0;
 	if (n>24)
 	{
 		sprintf(line1,"0x%.2x     0x%.2x     0x%.2x     0x%.2x     ",(BYTE)(val>>24),(BYTE)(val>>16),(BYTE)(val>>8),(BYTE)(val));
@@ -180,9 +180,7 @@ inline void BitDump(QWORD val)
 
 inline void Dump(const BYTE *data,DWORD size)
 {
-	int i;
-
-	for(i=0;i<(size/8);i++)
+	for(DWORD i=0;i<(size/8);i++)
 		Debug("[%.4x] [0x%.2x   0x%.2x   0x%.2x   0x%.2x   0x%.2x   0x%.2x   0x%.2x   0x%.2x   %c%c%c%c%c%c%c%c]\n",8*i,data[8*i],data[8*i+1],data[8*i+2],data[8*i+3],data[8*i+4],data[8*i+5],data[8*i+6],data[8*i+7],PC(data[8*i]),PC(data[8*i+1]),PC(data[8*i+2]),PC(data[8*i+3]),PC(data[8*i+4]),PC(data[8*i+5]),PC(data[8*i+6]),PC(data[8*i+7]));
 	switch(size%8)
 	{

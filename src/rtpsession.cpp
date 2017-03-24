@@ -39,7 +39,7 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) :
 	//And media
 	this->media = media;
 	//Init values
-	sendType = -1;
+	sendType = 0xFF;
 	useRTCP = true;
 	useAbsTime = false;
 	recTimestamp = 0;
@@ -108,7 +108,7 @@ void RTPSession::Reset()
 	//Empty queue
 	FlushRTXPackets();
 	//Init values
-	sendType = -1;
+	sendType = 0xFF;
 	useAbsTime = false;
 	recTimestamp = 0;
 	setZeroTime(&recTimeval);
@@ -161,6 +161,10 @@ void RTPSession::FlushRTXPackets()
 
 void RTPSession::SetSendingRTPMap(RTPMap &map)
 {
+	//Debug
+	Debug("-RTPSession::SetSendingRTPMap\n");
+	map.Dump(media);
+	
 	//If we already have one
 	if (rtpMapOut)
 		//Delete it
@@ -280,6 +284,10 @@ int RTPSession::SetRemoteCryptoSDES(const char* suite, const char* key64)
 
 void RTPSession::SetReceivingRTPMap(RTPMap &map)
 {
+	//Debug
+	Debug("-RTPSession::SetReceivingRTPMap\n");
+	map.Dump(media);
+	
 	//If we already have one
 	if (rtpMapIn)
 		//Delete it
@@ -290,6 +298,8 @@ void RTPSession::SetReceivingRTPMap(RTPMap &map)
 
 int RTPSession::SetLocalPort(int recvPort)
 {
+	//Debug
+	Debug("-RTPSession::SetLocalPort [%d]\n",recvPort);
 	//Set it on transport
 	return transport.SetLocalPort(recvPort);
 }
@@ -328,6 +338,8 @@ bool RTPSession::SetSendingCodec(DWORD codec)
 ***********************************/
 int RTPSession::SetRemotePort(char *ip,int sendPort)
 {
+	//Debug
+	Debug("-RTPSession::SetRemotePort [%s,%d]\n",ip,sendPort);
 	//Set it on transport
 	return transport.SetRemotePort(ip,sendPort);
 }
@@ -375,13 +387,12 @@ int RTPSession::SendPacket(RTCPCompoundPacket &rtcp)
 {
 	BYTE data[RTPPAYLOADSIZE+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
 	DWORD size = RTPPAYLOADSIZE;
-	int ret = 0;
 
 	//Lock muthed inside  method
 	ScopedLock method(sendMutex);
 
 	//Serialize
-	int len = rtcp.Serialize(data,size);
+	DWORD len = rtcp.Serialize(data,size);
 	//Check result
 	if (len<=0 || len>size)
 		//Error
@@ -416,6 +427,15 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 	if (useRTCP && (!send.media.lastSenderReport || getTimeDiff(send.media.lastSenderReport)>1E6))
 		//Send it
 		SendSenderReport();
+	
+	//Check if we don't have send type yet
+	if (sendType==0xFF)
+	{
+		//Set it
+		if (!SetSendingCodec(packet.GetCodec()))
+			//Error
+			return 0;
+	}
 	
 	//Calculate last timestamp
 	send.media.lastTime = send.media.time + timestamp;
@@ -755,9 +775,7 @@ void RTPSession::onRTPPacket(BYTE* data, DWORD size)
 			{
 				//Get number of lost packets
 				WORD lost = extSeq-recv.media.extSeq-1;
-				//Base packet missing
-				WORD base = recv.media.extSeq+1;
-
+				
 				//If remote estimator
 				if (remoteRateEstimator)
 					//Update estimator
@@ -816,7 +834,7 @@ void RTPSession::CancelGetPacket()
 
 void RTPSession::onRemotePeer(const char* ip, const short port)
 {
-	Log("-RTPSession::onRemotePeer(%s) [%s:%u]\n",MediaFrame::TypeToString(media),ip,port);
+	Log("-RTPSession::onRemotePeer(%s) [%s:%hu]\n",MediaFrame::TypeToString(media),ip,port);
 	
 	if (listener)
 		//Request FPU
@@ -838,7 +856,7 @@ void RTPSession::onRTCPPacket(BYTE* buffer, DWORD size)
 	recv.media.totalRTCPBytes += rtcp->GetSize();
 
 	//For each packet
-	for (int i = 0; i<rtcp->GetPacketCount();i++)
+	for (DWORD i = 0; i<rtcp->GetPacketCount();i++)
 	{
 		//Get pacekt
 		const RTCPPacket* packet = rtcp->GetPacket(i);
@@ -854,7 +872,7 @@ void RTPSession::onRTCPPacket(BYTE* buffer, DWORD size)
 				recv.media.lastReceivedSenderReport = getTime();
 				
 				//Check recievd report
-				for (int j=0;j<sr->GetCount();j++)
+				for (DWORD j=0;j<sr->GetCount();j++)
 				{
 					//Get report
 					RTCPReport *report = sr->GetReport(j);
@@ -877,7 +895,7 @@ void RTPSession::onRTCPPacket(BYTE* buffer, DWORD size)
 			{
 				const RTCPReceiverReport* rr = (const RTCPReceiverReport*)packet;
 				//Check recievd report
-				for (int j=0;j<rr->GetCount();j++)
+				for (DWORD j=0;j<rr->GetCount();j++)
 				{
 					//Get report
 					RTCPReport *report = rr->GetReport(j);
@@ -951,6 +969,10 @@ void RTPSession::onRTCPPacket(BYTE* buffer, DWORD size)
 							const RTCPRTPFeedback::TempMaxMediaStreamBitrateField *field = (const RTCPRTPFeedback::TempMaxMediaStreamBitrateField*) fb->GetField(i);
 						}
 
+						break;
+					case RTCPRTPFeedback::TransportWideFeedbackMessage:
+						break;
+					case RTCPRTPFeedback::ExtendedJitterReport:
 						break;
 				}
 				break;
@@ -1032,8 +1054,6 @@ void RTPSession::onRTCPPacket(BYTE* buffer, DWORD size)
 
 RTCPCompoundPacket* RTPSession::CreateSenderReport()
 {
-	timeval tv;
-
 	//Create packet
 	RTCPCompoundPacket* rtcp = new RTCPCompoundPacket();
 
@@ -1179,6 +1199,8 @@ int RTPSession::RequestFPU()
 		//Wait for TMBN response to no overflow
 		requestFPU = true;
 	}*/
+	//OK
+	return 1;
 }
 
 void RTPSession::SetRTT(DWORD rtt)
@@ -1345,6 +1367,9 @@ int RTPSession::ReSendPacket(int seq)
 		//Clear list
 		rtxs.clear();
 	}
+	
+	//OK
+	return 1;
 }
 
 int RTPSession::SendTempMaxMediaStreamBitrateNotification(DWORD bitrate,DWORD overhead)

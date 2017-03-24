@@ -178,7 +178,7 @@ public:
 			for(BYTE i=0;i<32;i++)
 			{
 				//If bitrate is less than
-				if(bitrate <= (0x001FFFF << i))
+				if(bitrate <= (DWORD)(0x001FFFF << i))
 				{
 					//That's the exp
 					maxTotalBitrateExp = i;
