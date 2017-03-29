@@ -148,6 +148,57 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 				hasTransportWideCC = true;
 				transportSeqNum =  get2(ext,i);
 				break;
+				
+			case FrameMarking:
+				// For Frame Marking RTP Header Extension:
+				// 
+				// https://tools.ietf.org/html/draft-ietf-avtext-framemarking-04#page-4
+				// This extensions provides meta-information about the RTP streams outside the
+				// encrypted media payload, an RTP switch can do codec-agnostic
+				// selective forwarding without decrypting the payload
+				//
+				// for Non-Scalable Streams
+				// 
+				//     0                   1
+				//     0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
+				//    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				//    |  ID=? |  L=0  |S|E|I|D|0 0 0 0|
+				//    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				//
+				// for Scalable Streams
+				// 
+				//     0                   1                   2                   3
+				//     0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+				//    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				//    |  ID=? |  L=2  |S|E|I|D|B| TID |   LID         |    TL0PICIDX  |
+				//    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				//
+				//Set header
+				hasFrameMarking = true;
+				// Set frame marking data
+				frameMarks.startOfFrame = data[i] & 0x80;
+				frameMarks.endOfFrame = data[i] & 0x40;
+				frameMarks.independent = data[i] & 0x20;
+				frameMarks.discardable = data[i] & 0x10;
+
+				// Check variable length
+				if (length==1) {
+					// We are non-scalable
+					frameMarks.baseLayerSync = 0;
+					frameMarks.temporalLayerId = 0;
+					frameMarks.spatialLayerId = 0;
+					frameMarks.tl0PicIdx = 0;
+				} else if (length==3) {
+					// Set scalable parts
+					frameMarks.baseLayerSync = data[i] & 0x08;
+					frameMarks.temporalLayerId = data[i] & 0x07;
+					frameMarks.spatialLayerId = data[i+1];
+					frameMarks.tl0PicIdx = data[i+2]; 
+				} else {
+					// Incorrect length
+					hasFrameMarking = false;
+				} 
+				break;
 			default:
 				Debug("-Unknown or unmapped extension [%d]\n",id);
 				break;
@@ -298,6 +349,71 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 			set2(data,len,transportSeqNum);
 			//Inc length
 			len += 2;
+		}
+	}
+	
+	if (hasFrameMarking)
+	{
+		//Get id for extension
+		BYTE id = extMap.GetCodecForType(TransportWideCC);
+		
+		//If found
+		if (id)
+		{
+			// For Frame Marking RTP Header Extension:
+			// 
+			// https://tools.ietf.org/html/draft-ietf-avtext-framemarking-04#page-4
+			// This extensions provides meta-information about the RTP streams outside the
+			// encrypted media payload, an RTP switch can do codec-agnostic
+			// selective forwarding without decrypting the payload
+			//
+			// for Non-Scalable Streams
+			// 
+			//     0                   1
+			//     0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
+			//    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+			//    |  ID=? |  L=0  |S|E|I|D|0 0 0 0|
+			//    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+			//
+			// for Scalable Streams
+			// 
+			//     0                   1                   2                   3
+			//     0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+			//    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+			//    |  ID=? |  L=2  |S|E|I|D|B| TID |   LID         |    TL0PICIDX  |
+			//    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+			//
+			
+			bool scalable = false;
+			// Check if it is scalable
+			if (frameMarks.baseLayerSync || frameMarks.temporalLayerId || frameMarks.spatialLayerId || frameMarks.tl0PicIdx) 
+				//It is scalable
+				scalable = true;
+			
+			//Set id && length
+			data[len++] = id << 4 | (scalable ? 0x03 : 0x01);
+			
+			//Set common part
+			data[len] = frameMarks.startOfFrame ? 0x80 : 0x00;
+			data[len] |= frameMarks.endOfFrame ? 0x40 : 0x00;
+			data[len] |= frameMarks.independent ? 0x20 : 0x00;
+			data[len] |= frameMarks.discardable ? 0x10 : 0x00;
+			
+			//If it is scalable
+			if (scalable)
+			{
+				//Set scalable data
+				data[len] |= frameMarks.baseLayerSync ? 0x08 : 0x00;
+				data[len] |= (frameMarks.temporalLayerId & 0x07);
+				//Inc len
+				len++;
+				//Set other bytes
+				data[len++] = frameMarks.spatialLayerId;
+				data[len++] = frameMarks.tl0PicIdx;
+			} else {
+				//Inc len
+				len++;
+			}
 		}
 	}
 	
