@@ -37,7 +37,7 @@ public:
 		else if (strcasecmp(ext,"urn:ietf:params:rtp-hdrext:ssrc-audio-level")==0)					return SSRCAudioLevel;
 		else if (strcasecmp(ext,"urn:3gpp:video-orientation")==0)							return CoordinationOfVideoOrientation;
 		else if (strcasecmp(ext,"http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01")==0)	return TransportWideCC;
-		else if (strcasecmp(ext,"http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01")==0)	return FrameMarking;
+		else if (strcasecmp(ext,"urn:ietf:params:rtp-hdrext:framemarking")==0)						return FrameMarking;
 		return UNKNOWN;
 	}
 
