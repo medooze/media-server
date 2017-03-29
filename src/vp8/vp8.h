@@ -19,7 +19,7 @@ struct VP8PayloadDescriptor
 	BYTE partitionIndex;
 	bool pictureIdPresent;
 	bool temporalLevelZeroIndexPresent;
-	bool temporalLayerIndexPreset;
+	bool temporalLayerIndexPresent;
 	bool keyIndexPresent;
 	bool layerSync;
 	WORD pictureId;
@@ -36,7 +36,7 @@ struct VP8PayloadDescriptor
 		partitionIndex = 0;
 		pictureIdPresent = 0;
 		temporalLevelZeroIndexPresent = 0;
-		temporalLayerIndexPreset = 0;
+		temporalLayerIndexPresent = 0;
 		keyIndexPresent = 0;
 		layerSync = 0;
 		pictureId = 0;
@@ -54,7 +54,7 @@ struct VP8PayloadDescriptor
 		partitionIndex = 0;
 		pictureIdPresent = 0;
 		temporalLevelZeroIndexPresent = 0;
-		temporalLayerIndexPreset = 0;
+		temporalLayerIndexPresent = 0;
 		keyIndexPresent = 0;
 		layerSync = 0;
 		pictureId = 0;
@@ -82,7 +82,7 @@ struct VP8PayloadDescriptor
 			}
 			if (temporalLevelZeroIndexPresent)
 				len++;
-			if (temporalLayerIndexPreset || keyIndexPresent)
+			if (temporalLayerIndexPresent || keyIndexPresent)
 				len++;
 		}
 		return len;
@@ -103,8 +103,8 @@ struct VP8PayloadDescriptor
 			//Read second
 			pictureIdPresent		= data[1] >> 7;
 			temporalLevelZeroIndexPresent	= data[1] >> 6 & 0x01;
-			temporalLayerIndex		= data[1] >> 5 & 0x01;
-			keyIndex			= data[1] >> 4 & 0x01;
+			temporalLayerIndexPresent 	= data[1] >> 5 & 0x01;
+			keyIndexPresent			= data[1] >> 4 & 0x01;
 			//Increase len
 			len++;
 
@@ -134,10 +134,10 @@ struct VP8PayloadDescriptor
 				len++;
 			}
 			//Check present
-			if (temporalLayerIndexPreset || keyIndexPresent)
+			if (temporalLayerIndexPresent || keyIndexPresent)
 			{
 				//read it
-				temporalLevelZeroIndex	= data[len] >> 6;
+				temporalLayerIndex	= data[len] >> 6;
 				layerSync		= data[len] >> 5 & 0x01;
 				keyIndex		= data[len] & 0x1F;
 				//Inc len
@@ -184,8 +184,8 @@ struct VP8PayloadDescriptor
 			return 1;
 		data[1] = pictureIdPresent;
 		data[1] = data[1] << 1 | temporalLevelZeroIndexPresent;
-		data[1] = data[1] << 1 | temporalLayerIndexPreset;
-		data[1] = data[1] << 1 | keyIndex;
+		data[1] = data[1] << 1 | temporalLayerIndexPresent;
+		data[1] = data[1] << 1 | keyIndexPresent;
 		data[1] = data[1] << 4;
 
 		DWORD len = 2;
@@ -212,12 +212,12 @@ struct VP8PayloadDescriptor
 		if (temporalLevelZeroIndexPresent)
 		{
 			//Set picture id
-			data[len] = temporalLevelZeroIndexPresent;
+			data[len] = temporalLevelZeroIndex;
 			//Inc lenght
 			len++;
 		}
 
-		if (temporalLayerIndex || keyIndexPresent)
+		if (temporalLayerIndexPresent || keyIndexPresent)
 		{
 			//Set picture id
 			data[len] = temporalLayerIndex;
@@ -239,7 +239,7 @@ struct VP8PayloadDescriptor
 		Debug("\t partitionIndex=%d\n"			, partitionIndex);
 		Debug("\t pictureIdPresent=%d\n"		, pictureIdPresent);
 		Debug("\t temporalLevelZeroIndexPresent=%d\n"	, temporalLevelZeroIndexPresent);
-		Debug("\t temporalLayerIndexPreset=%d\n"	, temporalLayerIndexPreset);
+		Debug("\t temporalLayerIndexPreset=%d\n"	, temporalLayerIndexPresent);
 		Debug("\t keyIndexPresent=%d\n"			, keyIndexPresent);
 		Debug("\t layerSync=%d\n"			, layerSync);
 		Debug("\t pictureId=%u\n"			, pictureId);
