@@ -35,6 +35,8 @@ RTPDepacketizer* RTPDepacketizer::Create(MediaFrame::Type mediaType,DWORD codec)
 			 //Dummy depacketizer
 			 return new DummyAudioDepacketizer(codec);
 			 break;
+		 default:
+			 return NULL;
 	 }
 	 return NULL;
 }

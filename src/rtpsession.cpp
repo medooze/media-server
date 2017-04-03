@@ -29,9 +29,9 @@
 * 	Constructro
 **************************/
 RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) :
+	transport(this),
 	send(media),
 	recv(media),
-	transport(this),
 	losts(640)
 {
 	//Store listener
@@ -972,8 +972,6 @@ void RTPSession::onRTCPPacket(BYTE* buffer, DWORD size)
 						break;
 					case RTCPRTPFeedback::TransportWideFeedbackMessage:
 						break;
-					case RTCPRTPFeedback::ExtendedJitterReport:
-						break;
 				}
 				break;
 			}
@@ -1045,6 +1043,8 @@ void RTPSession::onRTCPPacket(BYTE* buffer, DWORD size)
 			case RTCPPacket::NACK:
 				Log("-RTPSession::ProcessRTCPPacket() | NACK!\n");
 				break;
+			case RTCPRTPFeedback::ExtendedJitterReport:
+				break;	
 		}
 	}
 	

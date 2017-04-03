@@ -231,8 +231,6 @@
                    projectFiles="false"
                    kind="IMPORTANT_FILES_FOLDER">
     </logicalFolder>
-    <itemPath>src/EventSource.cpp</itemPath>
-    <itemPath>include/EventSource.h</itemPath>
   </logicalFolder>
   <sourceFolderFilter>^(nbproject|build)$</sourceFolderFilter>
   <sourceRootList>
@@ -392,8 +390,6 @@
           </incDir>
         </ccTool>
       </folder>
-      <item path="include/EventSource.h" ex="false" tool="3" flavor2="0">
-      </item>
       <item path="lib/mediamixer.cpp" ex="false" tool="1" flavor2="4">
       </item>
       <item path="src/CPUMonitor.cpp" ex="false" tool="1" flavor2="4">
@@ -403,8 +399,6 @@
       <item path="src/DTLSICETransport.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="2">
         </ccTool>
-      </item>
-      <item path="src/EventSource.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/FLVEncoder.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="2">
@@ -1538,8 +1532,6 @@
       </folder>
       <item path="include/DTLSICETransport.h" ex="false" tool="3" flavor2="0">
       </item>
-      <item path="include/EventSource.h" ex="false" tool="3" flavor2="0">
-      </item>
       <item path="include/ICERemoteCandidate.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/RTPBundleTransport.h" ex="false" tool="3" flavor2="0">
@@ -1577,8 +1569,6 @@
         </ccTool>
       </item>
       <item path="src/DTLSICETransport.cpp" ex="false" tool="0" flavor2="0">
-      </item>
-      <item path="src/EventSource.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/FLVEncoder.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">

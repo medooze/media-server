@@ -32,6 +32,7 @@
 */
 DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWORD size)
 {
+  
 	//If not enought size for header
 	if (size<4)
 		//ERROR
@@ -52,10 +53,13 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 	if (size<length+4)
 		//ERROR
 		return Error("Not enought data");
+  
 	//Loop
 	WORD i = 0;
 	const BYTE* ext = data+4;
 	
+  ::Dump(ext,length);
+  
 	//Read all
 	while (i<length)
 	{
@@ -67,11 +71,13 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 			continue;
 		//Get extension element id
 		BYTE id = header >> 4;
+    //Get header size
+    BYTE len = (header & 0x0F) + 1;
 		//GEt extenion element length
 		BYTE n = (header & 0x0F) + 1;
 		//Get mapped extension
 		BYTE t = extMap.GetCodecForType(id);
-		//Debug("-RTPExtension [type:%d,codec:%d]\n",id,t);
+		Debug("-RTPExtension [type:%d,codec:%d,len:%d]\n",id,t,len);
 		//Check type
 		switch (t)
 		{
@@ -175,25 +181,25 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 				//
 				//Set header
 				hasFrameMarking = true;
-				// Set frame marking data
-				frameMarks.startOfFrame = data[i] & 0x80;
-				frameMarks.endOfFrame = data[i] & 0x40;
-				frameMarks.independent = data[i] & 0x20;
-				frameMarks.discardable = data[i] & 0x10;
+				// Set frame marking ext
+				frameMarks.startOfFrame = ext[i] & 0x80;
+				frameMarks.endOfFrame = ext[i] & 0x40;
+				frameMarks.independent = ext[i] & 0x20;
+				frameMarks.discardable = ext[i] & 0x10;
 
 				// Check variable length
-				if (length==1) {
+				if (len==1) {
 					// We are non-scalable
 					frameMarks.baseLayerSync = 0;
 					frameMarks.temporalLayerId = 0;
 					frameMarks.spatialLayerId = 0;
 					frameMarks.tl0PicIdx = 0;
-				} else if (length==3) {
+				} else if (len==3) {
 					// Set scalable parts
-					frameMarks.baseLayerSync = data[i] & 0x08;
-					frameMarks.temporalLayerId = data[i] & 0x07;
-					frameMarks.spatialLayerId = data[i+1];
-					frameMarks.tl0PicIdx = data[i+2]; 
+					frameMarks.baseLayerSync = ext[i] & 0x08;
+					frameMarks.temporalLayerId = ext[i] & 0x07;
+					frameMarks.spatialLayerId = ext[i+1];
+					frameMarks.tl0PicIdx = ext[i+2]; 
 				} else {
 					// Incorrect length
 					hasFrameMarking = false;
@@ -390,8 +396,8 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 				//It is scalable
 				scalable = true;
 			
-			//Set id && length
-			data[len++] = id << 4 | (scalable ? 0x03 : 0x01);
+			//Set id && length-1
+			data[len++] = id << 4 | ((scalable ? 0x03 : 0x01)-1);
 			
 			//Set common part
 			data[len] = frameMarks.startOfFrame ? 0x80 : 0x00;
@@ -441,5 +447,17 @@ void RTPHeaderExtension::Dump() const
 		Debug("\t\t\t[VideoOrientation facing=%d flip=%d rotation=%d]\n",cvo.facing,cvo.flip,cvo.rotation);
 	if (hasTransportWideCC)
 		Debug("\t\t\t[TransportWideCC seq=%u]\n",transportSeqNum);
+  if (hasFrameMarking)
+    Debug("\t\t\t[FrameMarking startOfFrame=%u endOfFrame=%u independent=%u discardable=%u baseLayerSync=%u temporalLayerId=%u spatialLayerId=%u tl0PicIdx=%u]\n",
+          frameMarks.startOfFrame,
+          frameMarks.endOfFrame,
+          frameMarks.independent,
+          frameMarks.discardable,
+          frameMarks.baseLayerSync,
+          frameMarks.temporalLayerId,
+          frameMarks.spatialLayerId,
+          frameMarks.tl0PicIdx
+    );
 	Log("\t\t[/RTPHeaderExtension]\n");
 }
+

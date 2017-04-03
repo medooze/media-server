@@ -235,3 +235,82 @@ void  RTPLostPackets::Dump()
 		Debug("[%.3d,%.8d]\n",i,packets[i]);
 	Debug("[/RTPLostPackets]\n");
 }
+
+
+RTPOutgoingSourceGroup::RTPOutgoingSourceGroup(MediaFrame::Type type)
+{
+	this->type = type;
+}
+
+RTPOutgoingSourceGroup::RTPOutgoingSourceGroup(std::string &streamId,MediaFrame::Type type)
+{
+	this->streamId = streamId;
+	this->type = type;
+}
+
+void RTPOutgoingSourceGroup::AddListener(Listener* listener) 
+{
+	Debug("-RTPOutgoingSourceGroup::AddListener() [listener:%p]\n",listener);
+	
+	ScopedLock scoped(mutex);
+	listeners.insert(listener);
+	
+}
+
+void RTPOutgoingSourceGroup::RemoveListener(Listener* listener) 
+{
+	Debug("-RTPOutgoingSourceGroup::RemoveListener() [listener:%p]\n",listener);
+	
+	ScopedLock scoped(mutex);
+	listeners.insert(listener);
+}
+
+void RTPOutgoingSourceGroup::onPLIRequest(DWORD ssrc)
+{
+	ScopedLock scoped(mutex);
+	for (Listeners::const_iterator it=listeners.begin();it!=listeners.end();++it)
+		(*it)->onPLIRequest(this,ssrc);
+}
+
+RTPIncomingSourceGroup::RTPIncomingSourceGroup(MediaFrame::Type type) 
+	: losts(64)
+{
+	this->type = type;
+	//Small bufer of 20ms
+	packets.SetMaxWaitTime(20);
+}
+
+RTPIncomingSource* RTPIncomingSourceGroup::GetSource(DWORD ssrc)
+{
+	if (ssrc == media.ssrc)
+		return &media;
+	else if (ssrc == rtx.ssrc)
+		return &rtx;
+	else if (ssrc == fec.ssrc)
+		return &fec;
+	return NULL;
+}
+
+void RTPIncomingSourceGroup::AddListener(Listener* listener) 
+{
+	Debug("-RTPIncomingSourceGroup::AddListener() [listener:%p]\n",listener);
+		
+	ScopedLock scoped(mutex);
+	listeners.insert(listener);
+}
+
+void RTPIncomingSourceGroup::RemoveListener(Listener* listener) 
+{
+	Debug("-RTPIncomingSourceGroup::RemoveListener() [listener:%p]\n",listener);
+		
+	ScopedLock scoped(mutex);
+	listeners.insert(listener);
+}
+
+void RTPIncomingSourceGroup::onRTP(RTPPacket* packet)
+{
+	ScopedLock scoped(mutex);
+	for (Listeners::const_iterator it=listeners.begin();it!=listeners.end();++it)
+		(*it)->onRTP(this,packet);
+	delete(packet);
+}

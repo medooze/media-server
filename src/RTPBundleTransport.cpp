@@ -48,6 +48,7 @@ RTPBundleTransport::RTPBundleTransport()
 **************************/
 RTPBundleTransport::~RTPBundleTransport()
 {
+	Debug("-RTPBundleTransport::~RTPBundleTransport()\n");
 	//End)
 	End();
 }
@@ -93,6 +94,8 @@ DTLSICETransport* RTPBundleTransport::AddICETransport(const std::string &usernam
 
 int RTPBundleTransport::RemoveICETransport(const std::string &username)
 {
+  Log("-RTPBundleTransport::RemoveICETransport() [username:%s]\n",username.c_str());
+  
 	//Get transport
 	auto it = transports.find(username);
 	
@@ -395,7 +398,7 @@ void RTPBundleTransport::Stop()
 ************************/
 void * RTPBundleTransport::run(void *par)
 {
-        Log("-RTPBundleTransport::run() | thread [%d,0x%x]\n",getpid(),par);
+	Log("-RTPBundleTransport::run() | thread [%d,0x%x]\n",getpid(),par);
 
 	//Block signals to avoid exiting on SIGUSR1
 	blocksignals();
@@ -405,6 +408,7 @@ void * RTPBundleTransport::run(void *par)
 
         //Ejecutamos
         sess->Run();
+	
 	//Exit
 	return NULL;
 }

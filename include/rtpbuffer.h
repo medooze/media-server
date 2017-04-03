@@ -148,9 +148,6 @@ public:
 		//NO packet
 		RTPPacket* rtp = NULL;
 
-		//Get default wait time
-		DWORD timeout = maxWaitTime;
-
 		//Lock
 		pthread_mutex_lock(&mutex);
 

@@ -44,7 +44,7 @@ DTLSICETransport::DTLSICETransport(Sender *sender) : dtls(*this), mutex(true)
 	send = NULL;
 	recv = NULL;
 	//Transport wide seq num
-	transportSeqNum = 0;
+	transportSeqNum = 1;
 	feedbackPacketCount = 1;
 	feedbackCycles = 0;
 	lastFeedbackPacketExtSeqNum = 0;
@@ -398,6 +398,9 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		//Send packet
 		Send(rtcp);
 	}
+  
+  //DUMP
+  packet->Dump();
 
 	RTPPacket* ordered;
 	//Append it to the packets
@@ -1099,6 +1102,7 @@ bool DTLSICETransport::RemoveIncomingSourceGroup(RTPIncomingSourceGroup *group)
 	//Done
 	return true;
 }
+
 void DTLSICETransport::Send(RTCPCompoundPacket &rtcp)
 {
 	BYTE 	data[MTU+SRTP_MAX_TRAILER_LEN] ALIGNEDTO32;

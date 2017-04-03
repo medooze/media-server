@@ -56,6 +56,8 @@ public:
 				return "FullIntraRequest";
 			case RTCPPacket::NACK:
 				return "NACK";
+			case RTCPPacket::ExtendedJitterReport:
+				return "ExtendedJitterReport";
 		}
 		return("Unknown");
 	}
