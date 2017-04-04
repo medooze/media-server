@@ -402,7 +402,7 @@ int RTPSession::SendPacket(RTCPCompoundPacket &rtcp)
 	len = transport.SendRTCPPacket(data,len);
 
 	//Check error
-	if (len<0)
+	if (!len)
 		//Return
 		return Error("-RTPSession::SendPacket(%s) | Error sending RTCP packet [%d]\n",MediaFrame::TypeToString(media),errno);
 

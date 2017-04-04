@@ -125,6 +125,8 @@ bool RTPPacket::SkipPayload(DWORD skip) {
 
 	//Move media data
 	payload += skip;
+  //Set length
+	payloadLen -= skip;
 	//good
 	return true;
 }
@@ -138,5 +140,5 @@ void RTPPacket::Dump()
 		//Dump extension
 		extension.Dump();
 	::Dump(GetMediaData(),16);
-	Log("[[/RTPPacket]\n");
+	Log("[/RTPPacket]\n");
 }

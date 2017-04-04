@@ -248,6 +248,17 @@ RTPOutgoingSourceGroup::RTPOutgoingSourceGroup(std::string &streamId,MediaFrame:
 	this->type = type;
 }
 
+RTPOutgoingSource* RTPOutgoingSourceGroup::GetSource(DWORD ssrc)
+{
+	if (ssrc == media.ssrc)
+		return &media;
+	else if (ssrc == rtx.ssrc)
+		return &rtx;
+	else if (ssrc == fec.ssrc)
+		return &fec;
+	return NULL;
+}
+
 void RTPOutgoingSourceGroup::AddListener(Listener* listener) 
 {
 	Debug("-RTPOutgoingSourceGroup::AddListener() [listener:%p]\n",listener);
@@ -276,8 +287,8 @@ RTPIncomingSourceGroup::RTPIncomingSourceGroup(MediaFrame::Type type)
 	: losts(64)
 {
 	this->type = type;
-	//Small bufer of 20ms
-	packets.SetMaxWaitTime(20);
+	//Small bufer of 60ms
+	packets.SetMaxWaitTime(60);
 }
 
 RTPIncomingSource* RTPIncomingSourceGroup::GetSource(DWORD ssrc)

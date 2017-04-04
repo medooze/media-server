@@ -22,6 +22,14 @@ RTCPBye::RTCPBye() : RTCPPacket(RTCPPacket::Bye)
 	reason = NULL;
 }
 
+RTCPBye::RTCPBye(const std::vector<DWORD> &ssrcs,const char* reason) : 
+	RTCPPacket(RTCPPacket::Bye) ,
+	ssrcs(ssrcs)
+{
+	//Store reason
+	this->reason = strdup(reason);
+}
+
 RTCPBye::~RTCPBye()
 {
 	//Free
@@ -127,4 +135,3 @@ DWORD RTCPBye::Serialize(BYTE* data,DWORD size)
 	//return
 	return len;
 }
-

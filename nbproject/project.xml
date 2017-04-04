@@ -24,7 +24,10 @@
                 </confElem>
             </confList>
             <formatting>
-                <project-formatting-style>false</project-formatting-style>
+                <project-formatting-style>true</project-formatting-style>
+                <c-style>Default|NetBeans</c-style>
+                <cpp-style>Default|NetBeans</cpp-style>
+                <header-style>Default|NetBeans</header-style>
             </formatting>
         </data>
     </configuration>

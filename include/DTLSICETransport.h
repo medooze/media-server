@@ -44,8 +44,8 @@ public:
 	virtual ~DTLSICETransport();
 	void SetRemoteProperties(const Properties& properties);
 	void SetLocalProperties(const Properties& properties);
-	virtual int SendPLI(DWORD ssrc);
-	virtual int Send(RTPPacket &packet);
+	virtual int SendPLI(DWORD ssrc) override;
+	virtual int Send(RTPPacket &packet) override;
 	void Reset();
 	
 	ICERemoteCandidate* AddRemoteCandidate(const sockaddr_in addr, bool useCandidate, DWORD priority);
@@ -63,14 +63,20 @@ public:
 	const char* GetLocalUsername()	const { return iceLocalUsername;	};
 	const char* GetLocalPwd()	const { return iceLocalPwd;		};
 	
-	virtual void onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMasterKey,DWORD localMasterKeySize,BYTE* remoteMasterKey,DWORD remoteMasterKeySize);
-	virtual int onData(const ICERemoteCandidate* candidate,BYTE* data,DWORD size);
+	virtual void onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMasterKey,DWORD localMasterKeySize,BYTE* remoteMasterKey,DWORD remoteMasterKeySize)  override;
+	virtual int onData(const ICERemoteCandidate* candidate,BYTE* data,DWORD size)  override;
 private:
 	void onRTCP(RTCPCompoundPacket* rtcp);
 	void ReSendPacket(RTPOutgoingSourceGroup *group,int seq);
 	void Send(RTCPCompoundPacket &rtcp);
 	int SetLocalCryptoSDES(const char* suite, const BYTE* key, const DWORD len);
 	int SetRemoteCryptoSDES(const char* suite, const BYTE* key, const DWORD len);
+	//Helpers
+	RTPIncomingSourceGroup* GetIncomingSourceGroup(DWORD ssrc);
+	RTPIncomingSource*	GetIncomingSource(DWORD ssrc);
+	RTPOutgoingSourceGroup* GetOutgoingSourceGroup(DWORD ssrc);
+	RTPOutgoingSource*	GetOutgoingSource(DWORD ssrc);
+
 private:
 	typedef std::list<ICERemoteCandidate*> Candidates;
 	typedef std::map<DWORD,RTPOutgoingSourceGroup*> OutgoingStreams;
@@ -98,6 +104,8 @@ private:
 	OutgoingStreams outgoing;
 	IncomingStreams incoming;
 	
+	DWORD	mainSSRC;
+	
 	char*	iceRemoteUsername;
 	char*	iceRemotePwd;
 	char*	iceLocalUsername;
@@ -113,6 +121,8 @@ private:
 	DWORD     prio;
 	
 	Mutex	mutex;
+	Use	incomingUse;
+	Use	outgoingUse;
 };
 
 

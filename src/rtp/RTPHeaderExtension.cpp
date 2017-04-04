@@ -58,7 +58,7 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 	WORD i = 0;
 	const BYTE* ext = data+4;
 	
-  ::Dump(ext,length);
+  //::Dump(ext,length);
   
 	//Read all
 	while (i<length)
@@ -77,7 +77,7 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 		BYTE n = (header & 0x0F) + 1;
 		//Get mapped extension
 		BYTE t = extMap.GetCodecForType(id);
-		Debug("-RTPExtension [type:%d,codec:%d,len:%d]\n",id,t,len);
+		//Debug("-RTPExtension [type:%d,codec:%d,len:%d]\n",id,t,len);
 		//Check type
 		switch (t)
 		{
@@ -212,7 +212,7 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 		//Skip length
 		i += n;
 	}
-	
+ 
 	return 4+length;
 }
 
@@ -349,7 +349,7 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 			// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 			// |  ID   | L=1   |transport-wide sequence number | 
 			// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-			//Set id && length
+			//Set id && length-1 
 			data[len++] = id << 4 | 0x01;
 			//Set them
 			set2(data,len,transportSeqNum);
@@ -361,7 +361,7 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 	if (hasFrameMarking)
 	{
 		//Get id for extension
-		BYTE id = extMap.GetCodecForType(TransportWideCC);
+		BYTE id = extMap.GetCodecForType(FrameMarking);
 		
 		//If found
 		if (id)
@@ -429,7 +429,7 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 	
 	//Set length
 	set2(data,2,(len/4)-1);
-	
+
 	//Return 
 	return len;
 }

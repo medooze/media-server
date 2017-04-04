@@ -22,10 +22,17 @@ class RTCPBye : public RTCPPacket
 {
 public:
 	RTCPBye();
+	RTCPBye(const std::vector<DWORD> &ssrcs,const char* reason);
 	~RTCPBye();
 	virtual DWORD GetSize();
 	virtual DWORD Parse(BYTE* data,DWORD size);
 	virtual DWORD Serialize(BYTE* data,DWORD size);
+	
+	static RTCPBye* Create(const std::vector<DWORD> &ssrcs,const char* reason)
+	{
+		return new RTCPBye(ssrcs,reason);
+	}
+	
 private:
 	typedef std::vector<DWORD> SSRCs;
 private:

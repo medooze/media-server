@@ -518,6 +518,8 @@ bool MP4Recorder::Stop()
 	
 	//L0ck the  access to the file
 	pthread_mutex_unlock(&mutex);
+	
+	return true;
 }
 
 void* mp4close(void *mp4)
@@ -528,6 +530,7 @@ void* mp4close(void *mp4)
 	// Close file
 	MP4Close(mp4);
 	Log("<mp4close [%p,time:%llu]\n",mp4,getDifTime(&tv)/1000);
+	return NULL;
 }
 
 bool MP4Recorder::Close()

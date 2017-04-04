@@ -40,7 +40,7 @@ public:
 			offset_for_non_ref_pic = ExpGolombDecoder::Decode(r); 
 			offset_for_top_to_bottom_field = ExpGolombDecoder::Decode(r); 
 			num_ref_frames_in_pic_order_cnt_cycle = ExpGolombDecoder::Decode(r);
-			for( int i = 0; i < num_ref_frames_in_pic_order_cnt_cycle; i++ )
+			for( DWORD i = 0; i < num_ref_frames_in_pic_order_cnt_cycle; i++ )
 				offset_for_ref_frame.assign(i,ExpGolombDecoder::Decode(r));
 		}
 		num_ref_frames = ExpGolombDecoder::Decode(r);
@@ -145,10 +145,10 @@ public:
 		{
 			slice_group_map_type = ExpGolombDecoder::Decode(r);
 			if( slice_group_map_type == 0 )
-				for( int iGroup = 0; iGroup <= num_slice_groups_minus1; iGroup++ )
+				for( DWORD iGroup = 0; iGroup <= num_slice_groups_minus1; iGroup++ )
 					run_length_minus1.assign(iGroup,ExpGolombDecoder::Decode(r));
 			else if( slice_group_map_type == 2 )
-				for( int iGroup = 0; iGroup < num_slice_groups_minus1; iGroup++ )
+				for( DWORD iGroup = 0; iGroup < num_slice_groups_minus1; iGroup++ )
 				{
 					top_left.assign(iGroup,ExpGolombDecoder::Decode(r));
 					bottom_right.assign(iGroup,ExpGolombDecoder::Decode(r));
@@ -159,7 +159,7 @@ public:
 				slice_group_change_rate_minus1 = ExpGolombDecoder::Decode(r);
 			} else if( slice_group_map_type == 6 ) {
 				pic_size_in_map_units_minus1 = ExpGolombDecoder::Decode(r);
-				for( int i = 0; i <= pic_size_in_map_units_minus1; i++ )
+				for( DWORD i = 0; i <= pic_size_in_map_units_minus1; i++ )
 					slice_group_id.assign(i,r.Get(ceil(log2(num_slice_groups_minus1+1))));
 			}
 		}
@@ -206,11 +206,11 @@ public:
 		Debug("[H264PictureParameterSet \n");
 		Debug("\tpic_parameter_set_id=%u\n",			pic_parameter_set_id);
 		Debug("\tseq_parameter_set_id=%u\n",			seq_parameter_set_id);
-		Debug("\tentropy_coding_mode_flag=%u\n",			entropy_coding_mode_flag);
+		Debug("\tentropy_coding_mode_flag=%u\n",		entropy_coding_mode_flag);
 		Debug("\tpic_order_present_flag=%u\n",			pic_order_present_flag);
 		Debug("\tnum_slice_groups_minus1=%u\n",			num_slice_groups_minus1);
 		Debug("\tslice_group_map_type=%u\n",			slice_group_map_type);
-		Debug("\tslice_group_change_direction_flag=%u\n",		slice_group_change_direction_flag);
+		Debug("\tslice_group_change_direction_flag=%u\n",	slice_group_change_direction_flag);
 		Debug("\tslice_group_change_rate_minus1=%u\n",		slice_group_change_rate_minus1);
 		Debug("\tpic_size_in_map_units_minus1=%u\n",		pic_size_in_map_units_minus1);
 		Debug("\tnum_ref_idx_l0_active_minus1=%u\n",		num_ref_idx_l0_active_minus1);

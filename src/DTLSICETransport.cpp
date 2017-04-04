@@ -31,9 +31,6 @@
 #include <openssl/ossl_typ.h>
 #include "DTLSICETransport.h"
 
-
-
-
 DTLSICETransport::DTLSICETransport(Sender *sender) : dtls(*this), mutex(true)
 {
 	//Store sender
@@ -53,6 +50,8 @@ DTLSICETransport::DTLSICETransport(Sender *sender) : dtls(*this), mutex(true)
 	iceLocalPwd = NULL;
 	iceRemoteUsername = NULL;
 	iceRemotePwd = NULL;
+	//Init our main ssrc
+	mainSSRC = 1;
 }
 
 /*************************
@@ -150,7 +149,14 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		//Exit
 		return 1;
 	}
-	
+	//Check size
+	if (header.padding)
+	{
+		//Get last 2 bytes
+		WORD padding = get2(data,len-2);
+		//Remove from size
+    len -= padding;
+  }
 	//If it has extension
 	if (header.extension)
 	{
@@ -169,20 +175,21 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		//Inc ini
 		ini += l;
 	}
-	
+
+	//If it is an empyt packet
+	if (ini==len)
+	{	
+    //Debug
+		Debug("-DTLSICETransport::onData() | Dropping empty packet\n");
+    //Drop it         
+		return 1;
+  }
+        
 	//Get ssrc
 	DWORD ssrc = header.ssrc;
 	
-	//Get incoming group
-	auto it = incoming.find(ssrc);
-	
-	//If not found
-	if (it==incoming.end())
-		//error
-		return Error("-DTLSICETransport::onData() | Unknown ssrc [%u]\n",ssrc);
-	
 	//Get group
-	RTPIncomingSourceGroup *group = it->second;
+	RTPIncomingSourceGroup *group = GetIncomingSourceGroup(ssrc);
 	
 	//Get source for ssrc
 	RTPIncomingSource* source = group->GetSource(ssrc);
@@ -200,7 +207,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		//Exit
 		return Error("-DTLSICETransport::onData() | RTP packet type unknown [%d]\n",header.payloadType);
 	
-	//Debug("-Got RTP on sssrc:%u type:%d codec:%d\n",ssrc,type,codec);
+	UltraDebug("-Got RTP on media:%s sssrc:%u seq:%u pt:%u codec:%s\n",MediaFrame::TypeToString(group->type),ssrc,header.sequenceNumber,header.payloadType,GetNameForCodec(group->type,codec));
 	
 	//Create normal packet
 	RTPPacket *packet = new RTPPacket(group->type,codec,header,extension);
@@ -242,14 +249,11 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		//GEt last 
 		WORD transportSeqNum = packet->GetTransportSeqNum();
 		
-		//Get source
-		DWORD main = outgoing.begin()!=outgoing.end() ? outgoing.begin()->second->media.ssrc : 1;
-
 		//Create rtcp transport wide feedback
 		RTCPCompoundPacket rtcp;
 
 		//Add to rtcp
-		RTCPRTPFeedback* feedback = RTCPRTPFeedback::Create(RTCPRTPFeedback::TransportWideFeedbackMessage,main,ssrc);
+		RTCPRTPFeedback* feedback = RTCPRTPFeedback::Create(RTCPRTPFeedback::TransportWideFeedbackMessage,mainSSRC,ssrc);
 
 		//Create trnasport field
 		RTCPRTPFeedback::TransportWideFeedbackMessageField *field = new RTCPRTPFeedback::TransportWideFeedbackMessageField(feedbackPacketCount++);
@@ -314,7 +318,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		 //Get original sequence number
 		 WORD osn = get2(packet->GetMediaData(),0);
 
-		 UltraDebug("RTX: %s got   %.d:RTX for #%d ts:%u\n",MediaFrame::TypeToString(packet->GetMedia()),packet->GetPayloadType(),osn,packet->GetTimestamp());
+		 UltraDebug("RTX: %s got   %.d:RTX for #%d ts:%u payload:%u\n",MediaFrame::TypeToString(packet->GetMedia()),packet->GetPayloadType(),osn,packet->GetTimestamp(),packet->GetMediaLength());
 		 
 		 //Set original seq num
 		 packet->SetSeqNum(osn);
@@ -329,7 +333,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		 packet->SkipPayload(2);
 		 
 		 //TODO: We should set also the original type
-		  UltraDebug("RTX: %s got   %.d:RTX for #%d ts:%u %u %u\n",MediaFrame::TypeToString(packet->GetMedia()),packet->GetPayloadType(),osn,packet->GetTimestamp(),packet->GetExtSeqNum(),group->media.extSeq);
+		  UltraDebug("RTX: %s got   %.d:RTX for #%d ts:%u %u %u payload:%u\n",MediaFrame::TypeToString(packet->GetMedia()),packet->GetPayloadType(),osn,packet->GetTimestamp(),packet->GetExtSeqNum(),group->media.extSeq,packet->GetMediaLength());
 		 //WTF! Drop RTX packets for the future (UUH)
 		 if (packet->GetExtSeqNum()>group->media.extSeq)
 		 {
@@ -367,11 +371,8 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		//Create report
 		RTCPReport *report = source->CreateReport(getTime());
 		
-		//Get source
-		DWORD main = outgoing.begin()!=outgoing.end() ? outgoing.begin()->second->media.ssrc : 1;
-
 		//Create sender report for normal stream
-		RTCPReceiverReport* rr = new RTCPReceiverReport(main);
+		RTCPReceiverReport* rr = new RTCPReceiverReport(mainSSRC);
 
 		//If got anything
 		if (report)
@@ -385,7 +386,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		std::list<RTCPRTPFeedback::NACKField*> nacks = group->losts.GetNacks();
 
 		//Create NACK
-		RTCPRTPFeedback *nack = RTCPRTPFeedback::Create(RTCPRTPFeedback::NACK,main,ssrc);
+		RTCPRTPFeedback *nack = RTCPRTPFeedback::Create(RTCPRTPFeedback::NACK,mainSSRC,ssrc);
 
 		//Add 
 		for (std::list<RTCPRTPFeedback::NACKField*>::iterator it = nacks.begin(); it!=nacks.end(); ++it)
@@ -400,7 +401,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	}
   
   //DUMP
-  packet->Dump();
+  //packet->Dump();
 
 	RTPPacket* ordered;
 	//Append it to the packets
@@ -421,11 +422,8 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		//Create report
 		RTCPReport *report = source->CreateReport(getTime());
 		
-		//Get source
-		DWORD main = outgoing.begin()!=outgoing.end() ? outgoing.begin()->second->media.ssrc : 1;
-
 		//Create sender report for normal stream
-		RTCPReceiverReport* rr = new RTCPReceiverReport(main);
+		RTCPReceiverReport* rr = new RTCPReceiverReport(mainSSRC);
 
 		//If got anything
 		if (report)
@@ -446,6 +444,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,int seq)
 {
 	UltraDebug("-DTLSICETransport::ReSendPacket() | resending [seq:%d,ssrc:%u]\n",seq,group->rtx.ssrc);
 	
+        return;
 	//Calculate ext seq number
 	//TODO: consider warp
 	DWORD ext = ((DWORD)(group->media.cycles)<<16 | seq);
@@ -498,7 +497,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,int seq)
 		
 		//Serialize header
 		int n = header.Serialize(data,size);
-
+                
 		//Comprobamos que quepan
 		if (!n)
 			//Error
@@ -543,10 +542,9 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,int seq)
 			//Error
 			return (void)Error("-RTPTransport::SendPacket() | Error protecting RTP packet [%d]\n",err);
 
-		
 		//No error yet, send packet
 		len = sender->Send(active,data,len);
-		
+
 		if (len<=0)
 			Error("-RTPTransport::SendPacket() | Error sending RTP packet [%d]\n",errno);
 		
@@ -1028,15 +1026,26 @@ void DTLSICETransport::onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMaster
 
 bool DTLSICETransport::AddOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 {
+	//Log
 	Log("-AddOutgoingSourceGroup [ssrc:%u,fec:%u,rtx:%u]\n",group->media.ssrc,group->fec.ssrc,group->rtx.ssrc);
 	
-	//Add it for each group ssrc
-	outgoing[group->media.ssrc] = group;
-	if (group->fec.ssrc)
-		outgoing[group->fec.ssrc] = group;
-	if (group->rtx.ssrc)
-		outgoing[group->rtx.ssrc] = group;
+	//Scoped sync
+	{
+		//Using outgoing
+		ScopedUse use(outgoingUse);
+		
+		//Add it for each group ssrc
+		outgoing[group->media.ssrc] = group;
+		if (group->fec.ssrc)
+			outgoing[group->fec.ssrc] = group;
+		if (group->rtx.ssrc)
+			outgoing[group->rtx.ssrc] = group;
+	}
 	
+	//If we don't have a mainSSRC
+	if (mainSSRC==1)
+		//Set it
+		mainSSRC = group->media.ssrc;
 
 	//Create rtcp sender retpor
 	RTCPCompoundPacket rtcp(group->media.CreateSenderReport(getTime()));
@@ -1052,15 +1061,34 @@ bool DTLSICETransport::RemoveOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 {
 	Log("-RemoveOutgoingSourceGroup [ssrc:%u,fec:%u,rtx:%u]\n",group->media.ssrc,group->fec.ssrc,group->rtx.ssrc);
 
+	//Scoped sync
+	{
+		//Lock outgoing
+		ScopedUseLock use(outgoingUse);
 		
-	//Remove it from each ssrc
-	outgoing.erase(group->media.ssrc);
-	if (group->fec.ssrc)
-		outgoing.erase(group->fec.ssrc);
-	if (group->rtx.ssrc)
-		outgoing.erase(group->rtx.ssrc);
+		//Remove it from each ssrc
+		outgoing.erase(group->media.ssrc);
+		if (group->fec.ssrc)
+			outgoing.erase(group->fec.ssrc);
+		if (group->rtx.ssrc)
+			outgoing.erase(group->rtx.ssrc);
+		
+		//If it was our main ssrc
+		if (mainSSRC==group->media.ssrc)
+			//Set first
+			mainSSRC = outgoing.begin()!=outgoing.end() ? outgoing.begin()->second->media.ssrc : 1;
+	}
 	
-	//TODO: Send BYE
+	//Get ssrcs
+	std::vector<DWORD> ssrcs;
+	//Add group ssrcs
+	ssrcs.push_back(group->media.ssrc);
+	if (group->fec.ssrc) ssrcs.push_back(group->fec.ssrc);
+	if (group->rtx.ssrc) ssrcs.push_back(group->rtx.ssrc);
+	//Create BYE
+	RTCPCompoundPacket rtcp(RTCPBye::Create(ssrcs,"terminated"));
+	//Send packet
+	Send(rtcp);
 	
 	//Done
 	return true;
@@ -1073,7 +1101,10 @@ bool DTLSICETransport::AddIncomingSourceGroup(RTPIncomingSourceGroup *group)
 	//It must contain media ssrc
 	if (!group->media.ssrc)
 		return Error("No media ssrc defining, stream will not be added\n");
-		
+	
+	//Use
+	ScopedUse use(incomingUse);	
+	
 	//Add it for each group ssrc	
 	incoming[group->media.ssrc] = group;
 	if (group->fec.ssrc)
@@ -1092,8 +1123,12 @@ bool DTLSICETransport::RemoveIncomingSourceGroup(RTPIncomingSourceGroup *group)
 	if (!group->media.ssrc)
 		return Error("No media ssrc defined, stream will not be removed\n");
 	
+	//Block
+	ScopedUseLock lock(incomingUse);
+	
 	//Remove it from each ssrc
 	incoming.erase(group->media.ssrc);
+	
 	if (group->fec.ssrc)
 		incoming.erase(group->fec.ssrc);
 	if (group->rtx.ssrc)
@@ -1141,29 +1176,25 @@ void DTLSICETransport::Send(RTCPCompoundPacket &rtcp)
 
 int DTLSICETransport::SendPLI(DWORD ssrc)
 {
-	UltraDebug("-DTLSICETransport::SendPLI() | [ssrc:%u]\n",ssrc);
+	//Log
+	Log("-DTLSICETransport::SendPLI() | [ssrc:%u]\n",ssrc);
 	
-	//Block method
-	ScopedLock method(mutex);
+	//Get group
+	RTPIncomingSourceGroup *group = GetIncomingSourceGroup(ssrc);
+	
+	//If not found
+	if (!group)
+		return Error("- DTLSICETransport::SendPLI() | no incoming source found for [ssrc:%u]\n",ssrc);
+		
+	//Drop all pending and lost packets
+	group->packets.Reset();
+	group->losts.Reset();
 	
 	//Create rtcp sender retpor
 	RTCPCompoundPacket rtcp;
-
-	DWORD main = outgoing.begin()!=outgoing.end() ? outgoing.begin()->second->media.ssrc : 1;
-	
-	//Find incoming source
-	auto it = incoming.find(ssrc);
-	
-	//If not found
-	if (it==incoming.end())
-		return Error("- DTLSICETransport::SendPLI() | no incoming source found for [ssrc:%u]\n",ssrc);
-	
-	//Drop all pending and lost packets
-	it->second->packets.Reset();
-	it->second->losts.Reset();
 	
 	//Add to rtcp
-	rtcp.AddRTCPacket( RTCPPayloadFeedback::Create(RTCPPayloadFeedback::PictureLossIndication,main,ssrc));
+	rtcp.AddRTCPacket( RTCPPayloadFeedback::Create(RTCPPayloadFeedback::PictureLossIndication,mainSSRC,ssrc));
 
 	//Send packet
 	Send(rtcp);
@@ -1187,16 +1218,17 @@ int DTLSICETransport::Send(RTPPacket &packet)
 		//Error
 		return Debug("-DTLSICETransport::Send() | We don't have an DTLS setup yet\n");
 	
-	//Find outgoing source
-	auto it = outgoing.find(packet.GetSSRC());
+	//Get ssrc
+	DWORD ssrc = packet.GetSSRC();
+	
+	//Get outgoing group
+	RTPOutgoingSourceGroup* group = GetOutgoingSourceGroup(ssrc);
 	
 	//If not found
-	if (it==outgoing.end())
+	if (!group)
 		//Error
 		return Error("-DTLSICETransport::Send() | Outgoind source not registered for ssrc:%u\n",packet.GetSSRC());
 	
-	//Get outgoing group
-	RTPOutgoingSourceGroup* group = it->second;
 	//Get outgoing source
 	RTPOutgoingSource& source = group->media;
 	
@@ -1325,7 +1357,6 @@ int DTLSICETransport::Send(RTPPacket &packet)
 	return 1;
 }
 
-
 void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 {
 	//For each packet
@@ -1342,21 +1373,17 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 				
 				//Get ssrc
 				DWORD ssrc = sr->GetSSRC();
-				//Get the incouming source
-				auto it = incoming.find(ssrc);
+				
+				//Get source
+				RTPIncomingSource* source = GetIncomingSource(ssrc);
 				
 				//If not found
-				if (it==incoming.end())
+				if (!source)
 				{
 					Error("-Could not find incoming source for RTCP SR [ssrc:%u]\n",ssrc);
 					rtcp->Dump();
 					continue;
 				}
-				//Get source froup
-				RTPIncomingSourceGroup *group = it->second;
-				
-				//Get source
-				RTPIncomingSource* source = group->GetSource(ssrc);
 				
 				//Store info
 				source->lastReceivedSenderNTPTimestamp = sr->GetNTPTimestamp();
@@ -1398,10 +1425,10 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 				RTCPRTPFeedback *fb = (RTCPRTPFeedback*) packet;
 				//Get SSRC for media
 				DWORD ssrc = fb->GetMediaSSRC();
-				//Find ouggoing source
-				auto it = outgoing.find(ssrc);
+				//Get media
+				RTPOutgoingSourceGroup* group = GetOutgoingSourceGroup(ssrc);
 				//If not found
-				if (it == outgoing.end())
+				if (!group)
 				{
 					//Dump
 					fb->Dump();
@@ -1410,8 +1437,6 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 					//Ups! Skip
 					continue;
 				}
-				//Get media
-				RTPOutgoingSourceGroup* group = it->second;
 				//Check feedback type
 				switch(fb->GetFeedbackType())
 				{
@@ -1449,10 +1474,10 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 				RTCPPayloadFeedback *fb = (RTCPPayloadFeedback*) packet;
 				//Get SSRC for media
 				DWORD ssrc = fb->GetMediaSSRC();
-				//Find ouggoing source
-				auto it = outgoing.find(ssrc);
+				//Get media
+				RTPOutgoingSourceGroup* group = GetOutgoingSourceGroup(ssrc);
 				//If not found
-				if (it == outgoing.end())
+				if (!group)
 				{
 					//Dump
 					fb->Dump();
@@ -1461,14 +1486,12 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 					//Ups! Skip
 					continue;
 				}
-				//Get media
-				RTPOutgoingSourceGroup* group = it->second;
 				//Check feedback type
 				switch(fb->GetFeedbackType())
 				{
 					case RTCPPayloadFeedback::PictureLossIndication:
 					case RTCPPayloadFeedback::FullIntraRequest:
-						Debug("-DTLSICETransport::onRTCP() | FPU requested [ssrc:%u]\n",ssrc);
+						Debug("-DTLSICETransport::onRTCP() | FPU requested [ssrc:%u,group:%p,this:%p]\n",ssrc,group,this);
 						//Call listeners
 						group->onPLIRequest(ssrc);
 						//Get media
@@ -1521,4 +1544,78 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 				break;
 		}
 	}
+}
+
+
+
+RTPIncomingSourceGroup* DTLSICETransport::GetIncomingSourceGroup(DWORD ssrc)
+{
+	//Using incoming
+	ScopedUse use(incomingUse);
+	
+	//Get the incouming source
+	auto it = incoming.find(ssrc);
+				
+	//If not found
+	if (it==incoming.end())
+		//Not found
+		return NULL;
+	
+	//Get source froup
+	return it->second;
+
+}
+
+RTPIncomingSource* DTLSICETransport::GetIncomingSource(DWORD ssrc)
+{
+	//Using incoming
+	ScopedUse use(incomingUse);
+	
+	//Get the incouming source
+	auto it = incoming.find(ssrc);
+				
+	//If not found
+	if (it==incoming.end())
+		//Not found
+		return NULL;
+	
+	//Get source
+	return it->second->GetSource(ssrc);
+
+}
+
+RTPOutgoingSourceGroup* DTLSICETransport::GetOutgoingSourceGroup(DWORD ssrc)
+{
+	//Using outgoing
+	ScopedUse use(outgoingUse);
+	
+	//Get the incouming source
+	auto it = outgoing.find(ssrc);
+				
+	//If not found
+	if (it==outgoing.end())
+		//Not found
+		return NULL;
+	
+	//Get source froup
+	return it->second;
+
+}
+
+RTPOutgoingSource* DTLSICETransport::GetOutgoingSource(DWORD ssrc)
+{
+	//Using outgoing
+	ScopedUse use(outgoingUse);
+	
+	//Get the incouming source
+	auto it = outgoing.find(ssrc);
+				
+	//If not found
+	if (it==outgoing.end())
+		//Not found
+		return NULL;
+	
+	//Get source
+	return it->second->GetSource(ssrc);
+
 }

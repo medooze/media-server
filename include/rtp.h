@@ -204,6 +204,8 @@ public:
 	void AddListener(Listener* listener);
 	void RemoveListener(Listener* listener);
 	void onPLIRequest(DWORD ssrc);
+	
+	RTPOutgoingSource* GetSource(DWORD ssrc);
 public:
 	typedef std::map<DWORD,RTPPacket*> RTPOrderedPackets;
 	typedef std::set<Listener*> Listeners;
