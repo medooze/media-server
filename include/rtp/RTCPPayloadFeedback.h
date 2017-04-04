@@ -149,7 +149,7 @@ public:
 			//Get values
 			padding = data[0];
 			type = data[1];
-			if (size<padding+2) return 0;
+			if (size<padding+2u) return 0;
 			//Set length
 			length = size-padding-2;
 			//allocate
@@ -381,7 +381,7 @@ public:
 			for(BYTE i=0;i<32;i++)
 			{
 				//If bitrate is less than
-				if(bitrate <= (DWORD)(0x003FFFF << i))
+				if(bitrate <= (0x003FFFFu << i))
 				{
 					//That's the exp
 					bitrateExp = i;

@@ -48,7 +48,6 @@ void VP9LayerSelector::SelectSpatialLayer(BYTE id)
 	
 bool VP9LayerSelector::Select(RTPPacket *packet,DWORD &extSeqNum,bool &mark)
 {
-	bool nodrop = false;
 	VP9PayloadDescription desc;
 	
 	//Parse VP9 payload description

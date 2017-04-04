@@ -67,7 +67,7 @@ public:
 	virtual int onData(const ICERemoteCandidate* candidate,BYTE* data,DWORD size)  override;
 private:
 	void onRTCP(RTCPCompoundPacket* rtcp);
-	void ReSendPacket(RTPOutgoingSourceGroup *group,int seq);
+	void ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq);
 	void Send(RTCPCompoundPacket &rtcp);
 	int SetLocalCryptoSDES(const char* suite, const BYTE* key, const DWORD len);
 	int SetRemoteCryptoSDES(const char* suite, const BYTE* key, const DWORD len);

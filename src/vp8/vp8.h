@@ -222,7 +222,7 @@ struct VP8PayloadDescriptor
 			//Set picture id
 			data[len] = temporalLayerIndex;
 			data[len] = data[len]<<2 | layerSync;
-			data[len] = data[len]<<1 | keyIndex & 0x1F;
+			data[len] = data[len]<<1 | (keyIndex & 0x1F);
 			//Inc lenght
 			len++;
 		}

@@ -72,7 +72,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	//Block method
 	ScopedLock method(mutex);
 	
-	int len = size;
+	DWORD len = size;
 	
 	//Check if it a DTLS packet
 	if (DTLSConnection::IsDTLS(data,size))
@@ -100,7 +100,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		if (!recv)
 			return Error("-DTLSICETransport::onData() | No recvSRTPSession\n");
 		//unprotect
-		srtp_err_status_t err = srtp_unprotect_rtcp(recv,data,&len);
+		srtp_err_status_t err = srtp_unprotect_rtcp(recv,data,(int*)&len);
 		//Check error
 		if (err!=srtp_err_status_ok)
 			return Error("-DTLSICETransport::onData() | Error unprotecting rtcp packet [%d]\n",err);
@@ -130,14 +130,14 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	if (!recv)
 		return Error("-DTLSICETransport::onData() | No recvSRTPSession\n");
 	//unprotect
-	srtp_err_status_t err = srtp_unprotect(recv,data,&len);
+	srtp_err_status_t err = srtp_unprotect(recv,data,(int*)&len);
 	//Check status
 	if (err!=srtp_err_status_ok)
 		//Error
 		return Error("-DTLSICETransport::onData() | Error unprotecting rtp packet [%d]\n",err);
 	
 	//Parse RTP header
-	int ini = header.Parse(data,size);
+	DWORD ini = header.Parse(data,size);
 	
 	//On error
 	if (!ini)
@@ -155,13 +155,13 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		//Get last 2 bytes
 		WORD padding = get2(data,len-2);
 		//Remove from size
-    len -= padding;
-  }
+		len -= padding;
+	}
 	//If it has extension
 	if (header.extension)
 	{
 		//Parse extension
-		int l = extension.Parse(recvMaps.ext,data+ini,size-ini);
+		DWORD l = extension.Parse(recvMaps.ext,data+ini,size-ini);
 		//If not parsed
 		if (!l)
 		{
@@ -179,11 +179,11 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	//If it is an empyt packet
 	if (ini==len)
 	{	
-    //Debug
+		//Debug
 		Debug("-DTLSICETransport::onData() | Dropping empty packet\n");
-    //Drop it         
+		//Drop it         
 		return 1;
-  }
+	}
         
 	//Get ssrc
 	DWORD ssrc = header.ssrc;
@@ -355,10 +355,10 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	}	
 
 	//Update lost packets
-	int lost = group->losts.AddPacket(packet);
+	DWORD lost = group->losts.AddPacket(packet);
 	
 	//Get total lost in queue
-	int total = group->losts.GetTotal();
+	DWORD total = group->losts.GetTotal();
 
 	//Request NACK if it is media
 	if (group->type == MediaFrame::Video && lost && ssrc==group->media.ssrc)
@@ -440,7 +440,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	return 1;
 }
 
-void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,int seq)
+void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 {
 	UltraDebug("-DTLSICETransport::ReSendPacket() | resending [seq:%d,ssrc:%u]\n",seq,group->rtx.ssrc);
 	
@@ -536,7 +536,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,int seq)
 		len += packet->GetMediaLength();
 		
 		//Encript
-		srtp_err_status_t err = srtp_protect(send,data,&len);
+		srtp_err_status_t err = srtp_protect(send,data,(int*)&len);
 		//Check error
 		if (err!=srtp_err_status_ok)
 			//Error
@@ -1152,7 +1152,7 @@ void DTLSICETransport::Send(RTCPCompoundPacket &rtcp)
 		return (void) Debug("-DTLSICETransport::Send() | We don't have an DTLS setup yet\n");
 	
 	//Serialize
-	int len = rtcp.Serialize(data,size);
+	DWORD len = rtcp.Serialize(data,size);
 	
 	//Check result
 	if (len<=0 || len>size)
@@ -1161,7 +1161,7 @@ void DTLSICETransport::Send(RTCPCompoundPacket &rtcp)
 
 	
 	//Encript
-	srtp_err_status_t srtp_err_status = srtp_protect_rtcp(send,data,&len);
+	srtp_err_status_t srtp_err_status = srtp_protect_rtcp(send,data,(int*)&len);
 	//Check error
 	if (srtp_err_status!=srtp_err_status_ok)
 		//Error
@@ -1360,7 +1360,7 @@ int DTLSICETransport::Send(RTPPacket &packet)
 void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 {
 	//For each packet
-	for (int i = 0; i<rtcp->GetPacketCount();i++)
+	for (DWORD i = 0; i<rtcp->GetPacketCount();i++)
 	{
 		//Get pacekt
 		const RTCPPacket* packet = rtcp->GetPacket(i);
@@ -1389,7 +1389,7 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 				source->lastReceivedSenderNTPTimestamp = sr->GetNTPTimestamp();
 				source->lastReceivedSenderReport = getTime();
 				
-				for (int j=0;j<sr->GetCount();j++)
+				for (DWORD j=0;j<sr->GetCount();j++)
 				{
 					//Get report
 					RTCPReport *report = sr->GetReport(j);
@@ -1403,7 +1403,7 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 			{
 				const RTCPReceiverReport* rr = (const RTCPReceiverReport*)packet;
 				//Check recievd report
-				for (int j=0;j<rr->GetCount();j++)
+				for (DWORD j=0;j<rr->GetCount();j++)
 				{
 					//Get report
 					RTCPReport *report = rr->GetReport(j);
@@ -1449,7 +1449,7 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 							//Resent it
 							ReSendPacket(group,field->pid);
 							//Check each bit of the mask
-							for (int i=0;i<16;i++)
+							for (BYTE i=0;i<16;i++)
 								//Check it bit is present to rtx the packets
 								if ((field->blp >> i) & 1)
 									//Resent it

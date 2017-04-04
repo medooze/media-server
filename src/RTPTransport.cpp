@@ -693,9 +693,6 @@ int RTPTransport::SendRTPPacket(BYTE *buffer,DWORD size)
 		}
 	}
 
-	//No error yet, send packet
-	int err = 0;
-
 	//Check if we ar encripted
 	if (encript)
 	{
@@ -1172,6 +1169,8 @@ int RTPTransport::Run()
 	}
 
 	Log("<RTPTransport::Run()\n");
+ 
+	return 1;
 }
 
 void RTPTransport::onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMasterKey,DWORD localMasterKeySize,BYTE* remoteMasterKey,DWORD remoteMasterKeySize)
