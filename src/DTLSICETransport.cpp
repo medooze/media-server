@@ -191,6 +191,11 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	//Get group
 	RTPIncomingSourceGroup *group = GetIncomingSourceGroup(ssrc);
 	
+	//Ensure it has a group
+	if (!group)
+		//error
+		return Error("-DTLSICETransport::onData() | Unknowing group for ssrc [%u]\n",ssrc);
+	
 	//Get source for ssrc
 	RTPIncomingSource* source = group->GetSource(ssrc);
 	
@@ -1394,7 +1399,7 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 					//Get report
 					RTCPReport *report = sr->GetReport(j);
 					//Check ssrc
-					DWORD ssrc = report->GetSSRC();
+					//DWORD ssrc = report->GetSSRC();
 					//TODO: Do something
 				}
 				break;
@@ -1408,10 +1413,12 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 					//Get report
 					RTCPReport *report = rr->GetReport(j);
 					//Check ssrc
-					DWORD ssrc = report->GetSSRC();
+					//DWORD ssrc = report->GetSSRC();
 				}
 				break;
 			}
+			case RTCPPacket::ExtendedJitterReport:
+				break;
 			case RTCPPacket::SDES:
 				break;
 			case RTCPPacket::Bye:
