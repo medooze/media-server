@@ -434,7 +434,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 		//Set it
 		if (!SetSendingCodec(packet.GetCodec()))
 			//Error
-			return 0;
+			return Error("-No send type");
 	}
 	
 	//Calculate last timestamp
@@ -470,7 +470,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 	int len = header.Serialize(data,size);
 
 	//Check
-	if (len)
+	if (!len)
 		//Error
 		return Error("-RTPSession::SendPacket() | Error serializing rtp headers\n");
 

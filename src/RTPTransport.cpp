@@ -707,7 +707,7 @@ int RTPTransport::SendRTPPacket(BYTE *buffer,DWORD size)
 				return Error("-RTPTransport::SendPacket() | Error protecting RTP packet [%d]\n",srtp_err_status);
 		} else {
 			//Log
-			Debug("-RTPTransport::SendPacket() | no send\n");
+			Debug("-RTPTransport::SendPacket() | no srtp sending session configured\n");
 			//Don't send
 			return 0;
 		}
