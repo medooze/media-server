@@ -28,13 +28,13 @@ We intent to implement support the following features:
 - [ ] Sender side BitRate estimation: algorithm not decided yet candidates are [GCC](https://tools.ietf.org/html/draft-ietf-rmcat-gcc-02), [NADA](https://tools.ietf.org/html/draft-ietf-rmcat-nada-03) or [SCREAM](https://tools.ietf.org/html/draft-ietf-rmcat-scream-cc-07)
 - [ ] [Flex FEC draft 3](https://tools.ietf.org/html/draft-ietf-payload-flexible-fec-scheme-03)
 - [x] NACK and RTX support
-- [x] [RTCP reduced size] (https://tools.ietf.org/html/rfc5506)
+- [x] [RTCP reduced size](https://tools.ietf.org/html/rfc5506)
 - [x] Bundle
 - [x] ICE lite
-- [x] [Frame Marking] (https://tools.ietf.org/html/draft-ietf-avtext-framemarking-04)
-- [x] [PERC double encryption] (https://tools.ietf.org/html/draft-ietf-perc-double-03)
+- [x] [Frame Marking](https://tools.ietf.org/html/draft-ietf-avtext-framemarking-04)
+- [x] [PERC double encryption](https://tools.ietf.org/html/draft-ietf-perc-double-03)
 - [x] Plain RTP broadcasting/streaming
-- [ ] [Layer Refresh Request (LRR) RTCP Feedback Message] (https://datatracker.ietf.org/doc/html/draft-ietf-avtext-lrr-04)
+- [ ] [Layer Refresh Request (LRR) RTCP Feedback Message](https://datatracker.ietf.org/doc/html/draft-ietf-avtext-lrr-04)
 - [ ] MPEG DASH
 - [ ] Datachannels
 
