@@ -8,8 +8,35 @@ Documentation comming soon, major refactoring ongoing. Stay tunned!
 
 ## Usage
 This repository is currently a host for the base media code used in different projects. While it may take a while to propertly encapsulate it and define reusable components to create a propper SDK, you can use the following native wrappers:
+ - [MCU] (http://medooze.com/products/mcu.aspx).
  - [Media Server for Node.js](https://github.com/medooze/media-server-node)
  - Media Server for Java (Comming soon)
+
+## Functionality
+We intent to implement support the following features:
+
+- [x] VP8 (VP6 on decoding), H264, MP4V-ES H263P, Sorenson H263 and H263 support (on the same conference)
+- [x] PCMU, PCMA, G722, GSM, SPEEX, NellyMoser, AAC (only encoding) and Opus support
+- [x] Video mixing with continuous presence
+- [x] Audio mixing in 8khz,16Khz,32khz and 48Khz
+- [x] Flash broadcasting
+- [x] VAD support
+- [x] [VP9 SVC](https://tools.ietf.org/html/draft-ietf-payload-vp9-02) layer selection
+- [ ] Simulcast
+- [x] [RTP transport wide congestion control](https://tools.ietf.org/html/draft-holmer-rmcat-transport-wide-cc-extensions-01)
+- [x] Remote Bitrate Estimation adn Adaptation Algorithm
+- [ ] Sender side BitRate estimation: algorithm not decided yet candidates are [GCC](https://tools.ietf.org/html/draft-ietf-rmcat-gcc-02), [NADA](https://tools.ietf.org/html/draft-ietf-rmcat-nada-03) or [SCREAM](https://tools.ietf.org/html/draft-ietf-rmcat-scream-cc-07)
+- [ ] [Flex FEC draft 3](https://tools.ietf.org/html/draft-ietf-payload-flexible-fec-scheme-03)
+- [x] NACK and RTX support
+- [x] [RTCP reduced size] (https://tools.ietf.org/html/rfc5506)
+- [x] Bundle
+- [x] ICE lite
+- [x] [Frame Marking] (https://tools.ietf.org/html/draft-ietf-avtext-framemarking-04)
+- [x] [PERC double encryption] (https://tools.ietf.org/html/draft-ietf-perc-double-03)
+- [x] Plain RTP broadcasting/streaming
+- [ ] [Layer Refresh Request (LRR) RTCP Feedback Message] (https://datatracker.ietf.org/doc/html/draft-ietf-avtext-lrr-04)
+- [ ] MPEG DASH
+- [ ] Datachannels
 
 ## Support
 To discuss issues related to this project or ask for help please [join the google comunity group](https://groups.google.com/forum/#!forum/medooze).
