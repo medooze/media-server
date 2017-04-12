@@ -15,8 +15,8 @@ This repository is currently a host for the base media code used in different pr
 ## Functionality
 We intent to implement support the following features:
 
-- [x] VP8 (VP6 on decoding), H264, MP4V-ES H263P, Sorenson H263 and H263 support (on the same conference)
-- [x] PCMU, PCMA, G722, GSM, SPEEX, NellyMoser, AAC (only encoding) and Opus support
+- [x] Video encoders/decoders: VP8 (VP6 on decoding), H264, MP4V-ES H263P, Sorenson H263 and H263 support
+- [x] Audio enoders/decoders: PCMU, PCMA, G722, GSM, SPEEX, NellyMoser, AAC (only encoding) and Opus support
 - [x] Video mixing with continuous presence
 - [x] Audio mixing in 8khz,16Khz,32khz and 48Khz
 - [x] Flash broadcasting
