@@ -13,7 +13,7 @@ This repository is currently a host for the base media code used in different pr
  - Media Server for Java (Comming soon)
 
 ## Functionality
-We intent to implement support the following features:
+We intend to implement support the following features:
 
 - [x] Video encoders/decoders: VP8 (VP6 on decoding), H264, MP4V-ES H263P, Sorenson H263 and H263 support
 - [x] Audio enoders/decoders: PCMU, PCMA, G722, GSM, SPEEX, NellyMoser, AAC (only encoding) and Opus support
