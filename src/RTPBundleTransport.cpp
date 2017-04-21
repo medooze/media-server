@@ -338,7 +338,7 @@ int RTPBundleTransport::Read()
 			if (it2==candidates.end())
 			{
 				//Create new candidate
-				ICERemoteCandidate* candidate = new ICERemoteCandidate(inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),transport);
+				candidate = new ICERemoteCandidate(inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),transport);
 				//Add candidate and add it to the maps
 				candidates[remote] = candidate;
 				connection->candidates.insert(candidate);
