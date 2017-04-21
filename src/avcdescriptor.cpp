@@ -46,7 +46,7 @@ bool AVCDescriptor::Parse(BYTE* buffer,DWORD bufferLen)
 	//Clean SPS
 	ClearSequenceParameterSets();
 	//Read them
-	for (int i=0;i<num;i++)
+	for (DWORD i=0;i<num;i++)
 	{
 		//Check size
 		if (pos+2>bufferLen)
@@ -72,7 +72,7 @@ bool AVCDescriptor::Parse(BYTE* buffer,DWORD bufferLen)
 	//Skip
 	pos++;
 	//Read them
-	for (int i=0;i<num;i++)
+	for (DWORD i=0;i<num;i++)
 	{
 		//Check size
 		if (pos+2>bufferLen)
@@ -212,7 +212,7 @@ DWORD AVCDescriptor::Serialize(BYTE* buffer,DWORD bufferLength) const
 	//Set size
 	DWORD pos = 6;
 	//Read them
-	for (int i=0;i<numOfSequenceParameterSets;i++)
+	for (BYTE i=0;i<numOfSequenceParameterSets;i++)
 	{
 		//Get length
 		WORD length = spsSizes[i];
@@ -229,7 +229,7 @@ DWORD AVCDescriptor::Serialize(BYTE* buffer,DWORD bufferLength) const
 	//Skip
 	pos++;
 	//Read them
-	for (int i=0;i<numOfPictureParameterSets;i++)
+	for (BYTE i=0;i<numOfPictureParameterSets;i++)
 	{
 		//Get length
 		WORD length = ppsSizes[i];
@@ -256,7 +256,7 @@ void AVCDescriptor::Dump() const
 	Debug(" NALUnitLength: %d\n",NALUnitLength);
 	Debug(" numOfSequenceParameterSets: %d\n",numOfSequenceParameterSets);
 	//Dump them
-	for (int i=0;i<numOfSequenceParameterSets;i++)
+	for (BYTE i=0;i<numOfSequenceParameterSets;i++)
 	{
 		Debug(" SequenceParameterSets[%d]\n",i);
 		H264SeqParameterSet sps;
@@ -268,7 +268,7 @@ void AVCDescriptor::Dump() const
 	
 	Debug(" numOfPictureParameterSets: %d\n",numOfPictureParameterSets);
 	//Dump them
-	for (int i=0;i<numOfPictureParameterSets;i++)
+	for (BYTE i=0;i<numOfPictureParameterSets;i++)
 	{
 		H264PictureParameterSet pps;
 		//Decode

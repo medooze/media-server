@@ -37,6 +37,7 @@ public:
 	{
 		//Store transport
 		this->listener = listener;
+
 		//Rset addr
 		memset(&addr,0,sizeof(sockaddr_in));
 		
@@ -51,8 +52,10 @@ public:
 		return listener->onData(this,data,size);
 	}
 	
-	const sockaddr* GetAddress()	const	{ return (const sockaddr*)&addr;	}
-	const DWORD     GetAddressLen() const	{ return sizeof(sockaddr_in);	}
+	const sockaddr* GetAddress()	const { return (const sockaddr*)&addr;	}
+	      DWORD     GetAddressLen() const { return sizeof(sockaddr_in);	}
+	const char*	GetIP()		const { return inet_ntoa(addr.sin_addr);}
+	      WORD	GetPort()	const {	return ntohs(addr.sin_port);	}
 
 private:
 	sockaddr_in addr;

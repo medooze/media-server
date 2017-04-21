@@ -273,7 +273,7 @@ void RTPOutgoingSourceGroup::RemoveListener(Listener* listener)
 	Debug("-RTPOutgoingSourceGroup::RemoveListener() [listener:%p]\n",listener);
 	
 	ScopedLock scoped(mutex);
-	listeners.insert(listener);
+	listeners.erase(listener);
 }
 
 void RTPOutgoingSourceGroup::onPLIRequest(DWORD ssrc)
@@ -315,7 +315,7 @@ void RTPIncomingSourceGroup::RemoveListener(Listener* listener)
 	Debug("-RTPIncomingSourceGroup::RemoveListener() [listener:%p]\n",listener);
 		
 	ScopedLock scoped(mutex);
-	listeners.insert(listener);
+	listeners.erase(listener);
 }
 
 void RTPIncomingSourceGroup::onRTP(RTPPacket* packet)

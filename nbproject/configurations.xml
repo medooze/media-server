@@ -3,6 +3,9 @@
   <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
     <df root="." name="0">
       <df name="include">
+        <df name="rtp">
+          <in>RTPStreamTransponder.h</in>
+        </df>
         <in>DTLSICETransport.h</in>
         <in>ICERemoteCandidate.h</in>
         <in>RTPBundleTransport.h</in>
@@ -92,6 +95,7 @@
           <in>RTPPacket.cpp</in>
           <in>RTPPacketSched.cpp</in>
           <in>RTPRedundantPacket.cpp</in>
+          <in>RTPStreamTransponder.cpp</in>
         </df>
         <df name="sfu">
           <in>Room.cpp</in>
@@ -390,6 +394,8 @@
           </incDir>
         </ccTool>
       </folder>
+      <item path="include/rtp/RTPStreamTransponder.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="lib/mediamixer.cpp" ex="false" tool="1" flavor2="4">
       </item>
       <item path="src/CPUMonitor.cpp" ex="false" tool="1" flavor2="4">
@@ -904,6 +910,8 @@
             <pElem>src/rtp</pElem>
           </incDir>
         </ccTool>
+      </item>
+      <item path="src/rtp/RTPStreamTransponder.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/rtpparticipant.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="2">
@@ -1537,6 +1545,8 @@
       <item path="include/RTPBundleTransport.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/RTPTransport.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/rtp/RTPStreamTransponder.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/utf8.h" ex="false" tool="3" flavor2="0">
       </item>
@@ -3616,6 +3626,8 @@
       <item path="src/rtp/RTPPacketSched.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/rtp/RTPRedundantPacket.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/rtp/RTPStreamTransponder.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/rtpparticipant.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">

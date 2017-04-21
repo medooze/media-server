@@ -918,6 +918,8 @@ void RTPSession::onRTCPPacket(BYTE* buffer, DWORD size)
 			case RTCPPacket::SDES:
 				break;
 			case RTCPPacket::Bye:
+				//Reset media
+				recv.media.Reset();
 				break;
 			case RTCPPacket::App:
 				break;
@@ -963,12 +965,13 @@ void RTPSession::onRTCPPacket(BYTE* buffer, DWORD size)
 							requestFPU = false;
 							SendFIR();
 						}
+						/*
 						for (BYTE i=0;i<fb->GetFieldCount();i++)
 						{
 							//Get field
 							const RTCPRTPFeedback::TempMaxMediaStreamBitrateField *field = (const RTCPRTPFeedback::TempMaxMediaStreamBitrateField*) fb->GetField(i);
 						}
-
+						*/
 						break;
 					case RTCPRTPFeedback::TransportWideFeedbackMessage:
 						break;

@@ -49,6 +49,7 @@ public:
 	void Reset();
 	
 	ICERemoteCandidate* AddRemoteCandidate(const sockaddr_in addr, bool useCandidate, DWORD priority);
+	void ActivateRemoteCandidate(ICERemoteCandidate* candidate);
 	int SetRemoteCryptoDTLS(const char *setup,const char *hash,const char *fingerprint);
 	int SetLocalSTUNCredentials(const char* username, const char* pwd);
 	int SetRemoteSTUNCredentials(const char* username, const char* pwd);

@@ -57,7 +57,7 @@ public:
 			    24000, 22050, 16000, 12000, 11025, 8000, 7350
 			};
 		//Search
-		for (int i=0;i<sizeof(rates);i++)
+		for (DWORD i=0;i<sizeof(rates);i++)
 			//Check rate
 			if (rates[i]==rate)
 				//Found

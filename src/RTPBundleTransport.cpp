@@ -66,13 +66,21 @@ DTLSICETransport* RTPBundleTransport::AddICETransport(const std::string &usernam
 	
 	//Ensure that we have required ICE properties
 	if (!ice.HasProperty("remoteUsername") || !ice.HasProperty("remotePassword") || !ice.HasProperty("localUsername") || !ice.HasProperty("localPassword"))
+	{
 		//Error
-		return (DTLSICETransport*)Error("-Missing ICE properties\n");
+		Error("-Missing ICE properties\n");
+		//Error
+		return NULL;
+	}
 	
 	//Ensure that we have required DTLS properties
 	if (!dtls.HasProperty("setup") || !dtls.HasProperty("fingerprint") || !dtls.HasProperty("hash"))
+	{
 		//Error
-		return (DTLSICETransport*)Error("-Missing DTLS properties\n");
+		Error("-Missing DTLS properties\n");
+		//Error
+		return NULL;
+	}
 	
 	
 	//Create new ICE transport
@@ -297,10 +305,16 @@ int RTPBundleTransport::Read()
 			//Get ice transport
 			DTLSICETransport *ice = it->second;
 			
+			//Find candidate
+			auto it2 = candidates.find(remote);
+			
 			//Check if it is not already present
-			if (candidates.find(remote)==candidates.end())
+			if (it2==candidates.end())
 				//Add candidate and add it to the map
 				candidates[remote] = ice->AddRemoteCandidate(from_addr,stun->HasAttribute(STUNMessage::Attribute::UseCandidate),prio);
+			else if (stun->HasAttribute(STUNMessage::Attribute::UseCandidate))
+				//Set it active
+				ice->ActivateRemoteCandidate(it2->second);
 			
 			//Create response
 			STUNMessage* resp = stun->CreateResponse();
@@ -455,6 +469,8 @@ int RTPBundleTransport::Run()
 	}
 
 	Log("<RTPBundleTransport::Run()\n");
+	
+	return 0;
 }
 
 

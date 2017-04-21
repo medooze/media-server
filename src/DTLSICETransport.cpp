@@ -68,10 +68,6 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 {
 	RTPHeader header;
 	RTPHeaderExtension extension;
-		
-	//Block method
-	ScopedLock method(mutex);
-	
 	DWORD len = size;
 	
 	//Check if it a DTLS packet
@@ -187,6 +183,9 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
         
 	//Get ssrc
 	DWORD ssrc = header.ssrc;
+	
+	//Using incoming
+	ScopedUse use(incomingUse);
 	
 	//Get group
 	RTPIncomingSourceGroup *group = GetIncomingSourceGroup(ssrc);
@@ -405,9 +404,6 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		Send(rtcp);
 	}
   
-  //DUMP
-  //packet->Dump();
-
 	RTPPacket* ordered;
 	//Append it to the packets
 	group->packets.Add(packet);
@@ -449,7 +445,6 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 {
 	UltraDebug("-DTLSICETransport::ReSendPacket() | resending [seq:%d,ssrc:%u]\n",seq,group->rtx.ssrc);
 	
-        return;
 	//Calculate ext seq number
 	//TODO: consider warp
 	DWORD ext = ((DWORD)(group->media.cycles)<<16 | seq);
@@ -547,8 +542,17 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 			//Error
 			return (void)Error("-RTPTransport::SendPacket() | Error protecting RTP packet [%d]\n",err);
 
-		//No error yet, send packet
-		len = sender->Send(active,data,len);
+		//Synchronized
+		{
+			//Block scope
+			ScopedLock method(mutex);
+			//If we don't have an active candidate yet
+			if (!active)
+				//Error
+				return (void)Debug("-DTLSICETransport::Send() | We don't have an active candidate yet\n");
+			//No error yet, send packet
+			len = sender->Send(active,data,len);
+		}
 
 		if (len<=0)
 			Error("-RTPTransport::SendPacket() | Error sending RTP packet [%d]\n",errno);
@@ -565,7 +569,7 @@ ICERemoteCandidate* DTLSICETransport::AddRemoteCandidate(const sockaddr_in addr,
 	ScopedLock method(mutex);
 	
 	//Debug
-	Debug("-DTLSICETransport::AddRemoteCandidate() | Remote candidate [%s:%d,use:%d,prio:%d]\n",inet_ntoa(addr.sin_addr),ntohs(addr.sin_port),useCandidate,priority);
+	Debug("-DTLSICETransport::AddRemoteCandidate() | Remote candidate [%s:%hu,use:%d,prio:%d]\n",inet_ntoa(addr.sin_addr),ntohs(addr.sin_port),useCandidate,priority);
 	
 	//Create new candidate
 	ICERemoteCandidate* candidate = new ICERemoteCandidate(inet_ntoa(addr.sin_addr),ntohs(addr.sin_port),this);
@@ -589,6 +593,18 @@ ICERemoteCandidate* DTLSICETransport::AddRemoteCandidate(const sockaddr_in addr,
 	
 	//Return it
 	return candidate;
+}
+
+void  DTLSICETransport::ActivateRemoteCandidate(ICERemoteCandidate* candidate)
+{
+	//Block method
+	ScopedLock method(mutex);
+	
+	//Debug
+	Debug("-DTLSICETransport::ActivateRemoteCandidate() | Remote candidate [%s:%hu]\n",candidate->GetIP(),candidate->GetPort());
+	
+	//Send data to this one from now on
+	active = candidate;
 }
 
 void DTLSICETransport::SetLocalProperties(const Properties& properties)
@@ -1148,10 +1164,7 @@ void DTLSICETransport::Send(RTCPCompoundPacket &rtcp)
 	BYTE 	data[MTU+SRTP_MAX_TRAILER_LEN] ALIGNEDTO32;
 	DWORD   size = MTU;
 	
-	//If we don't have an active candidate yet
-	if (!active)
-		//Error
-		return (void) Debug("-DTLSICETransport::Send() | We don't have an active candidate yet\n");
+	//Check if we have an active DTLS connection yet
 	if (!send)
 		//Error
 		return (void) Debug("-DTLSICETransport::Send() | We don't have an DTLS setup yet\n");
@@ -1163,7 +1176,6 @@ void DTLSICETransport::Send(RTCPCompoundPacket &rtcp)
 	if (len<=0 || len>size)
 		//Error
 		return (void)Error("-DTLSICETransport::Send() | Error serializing RTCP packet [len:%d]\n",len);
-
 	
 	//Encript
 	srtp_err_status_t srtp_err_status = srtp_protect_rtcp(send,data,(int*)&len);
@@ -1172,17 +1184,30 @@ void DTLSICETransport::Send(RTCPCompoundPacket &rtcp)
 		//Error
 		return (void)Error("-DTLSICETransport::Send() | Error protecting RTCP packet [%d]\n",srtp_err_status);
 
-	//No error yet, send packet
-	int ret = sender->Send(active,data,len);
-	
-	if (ret<=0)
-		Debug("-Error sending RTCP packet [ret:%d,%d]\n",ret,errno);
+	//Synchronized
+	{
+		//Block scope
+		ScopedLock method(mutex);
+		//If we don't have an active candidate yet
+		if (!active)
+			//Error
+			return (void) Debug("-DTLSICETransport::Send() | We don't have an active candidate yet\n");
+		//No error yet, send packet
+		int ret = sender->Send(active,data,len);
+		
+		//Check
+		if (ret<=0)
+			Debug("-Error sending RTCP packet [ret:%d,%d]\n",ret,errno);
+	}
 }
 
 int DTLSICETransport::SendPLI(DWORD ssrc)
 {
 	//Log
 	Log("-DTLSICETransport::SendPLI() | [ssrc:%u]\n",ssrc);
+	
+	//Using incoming
+	ScopedUse use(incomingUse);
 	
 	//Get group
 	RTPIncomingSourceGroup *group = GetIncomingSourceGroup(ssrc);
@@ -1212,19 +1237,16 @@ int DTLSICETransport::Send(RTPPacket &packet)
 	BYTE 	data[MTU+SRTP_MAX_TRAILER_LEN] ALIGNEDTO32;
 	DWORD	size = MTU;
 	
-	//Block method
-	ScopedLock method(mutex);
-	
-	//If we don't have an active candidate yet
-	if (!active)
-		//Error
-		return Debug("-DTLSICETransport::Send() | We don't have an active candidate yet\n");
+	//Check if we have an active DTLS connection yet
 	if (!send)
 		//Error
 		return Debug("-DTLSICETransport::Send() | We don't have an DTLS setup yet\n");
 	
 	//Get ssrc
 	DWORD ssrc = packet.GetSSRC();
+	
+	//Using outgoing
+	ScopedUse use(outgoingUse);
 	
 	//Get outgoing group
 	RTPOutgoingSourceGroup* group = GetOutgoingSourceGroup(ssrc);
@@ -1317,8 +1339,17 @@ int DTLSICETransport::Send(RTPPacket &packet)
 		//Error
 		return Error("-RTPTransport::SendPacket() | Error protecting RTP packet [%d]\n",err);
 	
-	//No error yet, send packet
-	len = sender->Send(active,data,len);
+	//Synchronized
+	{
+		//Block method
+		ScopedLock method(mutex);
+		//If we don't have an active candidate yet
+		if (!active)
+			//Error
+			return Debug("-DTLSICETransport::Send() | We don't have an active candidate yet\n");
+		//No error yet, send packet
+		len = sender->Send(active,data,len);
+	}
 	
 	//If got packet to send
 	if (len>0)
@@ -1364,6 +1395,11 @@ int DTLSICETransport::Send(RTPPacket &packet)
 
 void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 {
+	//Using incoming
+	ScopedUse use1(incomingUse);
+	//Using outgoing
+	ScopedUse use2(outgoingUse);
+	
 	//For each packet
 	for (DWORD i = 0; i<rtcp->GetPacketCount();i++)
 	{
@@ -1557,9 +1593,6 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 
 RTPIncomingSourceGroup* DTLSICETransport::GetIncomingSourceGroup(DWORD ssrc)
 {
-	//Using incoming
-	ScopedUse use(incomingUse);
-	
 	//Get the incouming source
 	auto it = incoming.find(ssrc);
 				
@@ -1575,9 +1608,6 @@ RTPIncomingSourceGroup* DTLSICETransport::GetIncomingSourceGroup(DWORD ssrc)
 
 RTPIncomingSource* DTLSICETransport::GetIncomingSource(DWORD ssrc)
 {
-	//Using incoming
-	ScopedUse use(incomingUse);
-	
 	//Get the incouming source
 	auto it = incoming.find(ssrc);
 				
@@ -1593,9 +1623,6 @@ RTPIncomingSource* DTLSICETransport::GetIncomingSource(DWORD ssrc)
 
 RTPOutgoingSourceGroup* DTLSICETransport::GetOutgoingSourceGroup(DWORD ssrc)
 {
-	//Using outgoing
-	ScopedUse use(outgoingUse);
-	
 	//Get the incouming source
 	auto it = outgoing.find(ssrc);
 				
@@ -1611,9 +1638,6 @@ RTPOutgoingSourceGroup* DTLSICETransport::GetOutgoingSourceGroup(DWORD ssrc)
 
 RTPOutgoingSource* DTLSICETransport::GetOutgoingSource(DWORD ssrc)
 {
-	//Using outgoing
-	ScopedUse use(outgoingUse);
-	
 	//Get the incouming source
 	auto it = outgoing.find(ssrc);
 				

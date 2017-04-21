@@ -65,7 +65,7 @@ DWORD RTCPBye::Parse(BYTE* data,DWORD size)
 		return 0;
 	
 	//for each
-	for(int i=0;i<header.count;i++)
+	for(BYTE i=0;i<header.count;i++)
 	{
 		//Get ssrc
 		ssrcs.push_back(get4(data,len));
@@ -112,7 +112,7 @@ DWORD RTCPBye::Serialize(BYTE* data,DWORD size)
 	DWORD len = header.Serialize(data,size);
 	
 	//for each
-	for(int i=0;i<ssrcs.size();i++)
+	for(DWORD i=0;i<ssrcs.size();i++)
 	{
 		//Set ssrc
 		set4(data,len,ssrcs[i]);
