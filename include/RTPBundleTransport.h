@@ -15,6 +15,17 @@
 class RTPBundleTransport :
 	public DTLSICETransport::Sender
 {
+private:
+	struct Connection
+	{
+		Connection(DTLSICETransport* transport)
+		{
+			this->transport = transport;
+		}
+		
+		DTLSICETransport* transport;
+		std::set<ICERemoteCandidate*> candidates;
+	};
 public:
 	RTPBundleTransport();
 	virtual ~RTPBundleTransport();
@@ -35,7 +46,7 @@ private:
 private:
 	static  void* run(void *par);
 private:
-	typedef std::map<std::string,DTLSICETransport*> RTPICETransports;
+	typedef std::map<std::string,Connection*> Connections;
 	typedef std::map<std::string,ICERemoteCandidate*> RTPICECandidates;
 private:
 	//Sockets
@@ -47,8 +58,9 @@ private:
 
 	pthread_t thread;
 	
-	RTPICETransports transports;
+	Connections	 connections;
 	RTPICECandidates candidates;
+	Use	use;
 };
 
 #endif

@@ -48,8 +48,7 @@ public:
 	virtual int Send(RTPPacket &packet) override;
 	void Reset();
 	
-	ICERemoteCandidate* AddRemoteCandidate(const sockaddr_in addr, bool useCandidate, DWORD priority);
-	void ActivateRemoteCandidate(ICERemoteCandidate* candidate);
+	void ActivateRemoteCandidate(ICERemoteCandidate* candidate,bool useCandidate, DWORD priority);
 	int SetRemoteCryptoDTLS(const char *setup,const char *hash,const char *fingerprint);
 	int SetLocalSTUNCredentials(const char* username, const char* pwd);
 	int SetRemoteSTUNCredentials(const char* username, const char* pwd);
@@ -79,7 +78,6 @@ private:
 	RTPOutgoingSource*	GetOutgoingSource(DWORD ssrc);
 
 private:
-	typedef std::list<ICERemoteCandidate*> Candidates;
 	typedef std::map<DWORD,RTPOutgoingSourceGroup*> OutgoingStreams;
 	typedef std::map<DWORD,RTPIncomingSourceGroup*> IncomingStreams;
 	
@@ -94,7 +92,6 @@ private:
 	DTLSConnection	dtls;
 	Maps		sendMaps;
 	Maps		recvMaps;
-	Candidates	candidates;
 	ICERemoteCandidate* active;
 	srtp_t		send;
 	srtp_t		recv;

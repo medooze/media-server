@@ -563,48 +563,29 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 }
 
 
-ICERemoteCandidate* DTLSICETransport::AddRemoteCandidate(const sockaddr_in addr, bool useCandidate, DWORD priority)
+
+void  DTLSICETransport::ActivateRemoteCandidate(ICERemoteCandidate* candidate,bool useCandidate, DWORD priority)
 {
 	//Block method
 	ScopedLock method(mutex);
 	
 	//Debug
-	Debug("-DTLSICETransport::AddRemoteCandidate() | Remote candidate [%s:%hu,use:%d,prio:%d]\n",inet_ntoa(addr.sin_addr),ntohs(addr.sin_port),useCandidate,priority);
-	
-	//Create new candidate
-	ICERemoteCandidate* candidate = new ICERemoteCandidate(inet_ntoa(addr.sin_addr),ntohs(addr.sin_port),this);
-	
-	//Add to candidates
-	candidates.push_back(candidate);
+	Debug("-DTLSICETransport::ActivateRemoteCandidate() | Remote candidate [%s:%hu,use:%d,prio:%d]\n",candidate->GetIP(),candidate->GetPort());
 	
 	//Should we set this candidate as the active one
 	if (!active  || useCandidate)
+	{
 		//Send data to this one from now on
 		active = candidate;
-	
-	BYTE data[MTU+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
-	
-	// Needed for DTLS in client mode (otherwise the DTLS "Client Hello" is not sent over the wire)
-	DWORD len = dtls.Read(data,MTU);
-	//Check it
-	if (len>0)
-		//Send to bundle transport
-		sender->Send(active,data,len);
-	
-	//Return it
-	return candidate;
-}
-
-void  DTLSICETransport::ActivateRemoteCandidate(ICERemoteCandidate* candidate)
-{
-	//Block method
-	ScopedLock method(mutex);
-	
-	//Debug
-	Debug("-DTLSICETransport::ActivateRemoteCandidate() | Remote candidate [%s:%hu]\n",candidate->GetIP(),candidate->GetPort());
-	
-	//Send data to this one from now on
-	active = candidate;
+		
+		// Needed for DTLS in client mode (otherwise the DTLS "Client Hello" is not sent over the wire)
+		BYTE data[MTU+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
+		DWORD len = dtls.Read(data,MTU);
+		//Check it
+		if (len>0)
+			//Send to bundle transport
+			sender->Send(active,data,len);
+	}
 }
 
 void DTLSICETransport::SetLocalProperties(const Properties& properties)

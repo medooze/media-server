@@ -85,7 +85,7 @@ DTLSICETransport* RTPBundleTransport::AddICETransport(const std::string &usernam
 	
 	//Create new ICE transport
 	DTLSICETransport *transport = new DTLSICETransport(this);
-
+	
 	//Set local STUN properties
 	transport->SetLocalSTUNCredentials(ice.GetProperty("localUsername"),ice.GetProperty("localPassword"));
 	transport->SetRemoteSTUNCredentials(ice.GetProperty("remoteUsername"),ice.GetProperty("remotePassword"));
@@ -93,8 +93,14 @@ DTLSICETransport* RTPBundleTransport::AddICETransport(const std::string &usernam
 	//Set remote DTLS 
 	transport->SetRemoteCryptoDTLS(dtls.GetProperty("setup"),dtls.GetProperty("hash"),dtls.GetProperty("fingerprint"));
 	
-	//Add it
-	transports[username] = transport;
+	//Synchronized
+	{
+		//Lock scope
+		ScopedUseLock scope(use);
+		//Add it
+		connections[username] = new Connection(transport);
+	}
+	
 	
 	//OK
 	return transport;
@@ -102,27 +108,42 @@ DTLSICETransport* RTPBundleTransport::AddICETransport(const std::string &usernam
 
 int RTPBundleTransport::RemoveICETransport(const std::string &username)
 {
-  Log("-RTPBundleTransport::RemoveICETransport() [username:%s]\n",username.c_str());
+	Log("-RTPBundleTransport::RemoveICETransport() [username:%s]\n",username.c_str());
   
+	//Lock method
+	ScopedUseLock scope(use);
+		
 	//Get transport
-	auto it = transports.find(username);
+	auto it = connections.find(username);
 	
 	//Check
-	if (it==transports.end())
+	if (it==connections.end())
 		//Error
 		return Error("-ICE transport not found\n");
 	
-	//Get it
-	DTLSICETransport *transport = it->second;
+	//Get connection 
+	Connection* connection = it->second;
 	
-	//REmove transport
-	transports.erase(it);
+	//REmove connection
+	connections.erase(it);
 	
-	//TODO:Remove ice candidates
+	//Get all candidates
+	for( auto it2=connection->candidates.begin(); it2!=connection->candidates.end(); ++it2)
+	{
+		//Get candidate object
+		ICERemoteCandidate* candidate = *it2;
+		//Create remote string
+		char remote[24];
+		snprintf(remote,sizeof(remote),"%s:%hu", candidate->GetIP(),candidate->GetPort());
+		//Remove from all candidates list
+		candidates.erase(std::string(remote));
+		//Delete candidate
+		delete(candidate);
+	}
 	
-	
-	//Delete it
-	delete(transport);
+	//Delete connection wrapper and transport
+	delete(connection->transport);
+	delete(connection);
 		
 	//DOne
 	return 1;
@@ -241,6 +262,9 @@ int RTPBundleTransport::Read()
 	DWORD size = MTU;
 	sockaddr_in from_addr;
 	DWORD from_len = sizeof(from_addr);
+	
+	//Inc usage
+	ScopedUse scope(use);
 
 	//Receive from everywhere
 	memset(&from_addr, 0, from_len);
@@ -253,7 +277,7 @@ int RTPBundleTransport::Read()
 		return 0;
 	
 	//Get remote ip:port address
-	char remote[20];
+	char remote[24];
 	snprintf(remote,sizeof(remote),"%s:%hu", inet_ntoa(from_addr.sin_addr), ntohs(from_addr.sin_port));
 				
 	//Get candidate
@@ -277,19 +301,24 @@ int RTPBundleTransport::Read()
 		if (type==STUNMessage::Request && method==STUNMessage::Binding)
 		{
 			//Get username
-			STUNMessage::Attribute *attr = stun->GetAttribute(STUNMessage::Attribute::Username);
+			STUNMessage::Attribute* attr = stun->GetAttribute(STUNMessage::Attribute::Username);
 
 			//Copy username string
 			std::string username((char*)attr->attr,attr->size);
 			
 			//Check if we have an ICE transport for that username
-			auto it = transports.find(username);
+			auto it = connections.find(username);
 			
 			//If not found
-			if (it==transports.end())
+			if (it==connections.end())
 				//TODO: Reject
 				//Exit
 				return Error("-RTPBundleTransport::Read ice username not found [%s}\n",username.c_str());
+			
+			//Get ice connection
+			Connection* connection = it->second;
+			DTLSICETransport* transport = connection->transport;
+			ICERemoteCandidate* candidate = NULL;
 
 			//Check if it has the prio attribute
 			if (!stun->HasAttribute(STUNMessage::Attribute::Priority))
@@ -302,19 +331,24 @@ int RTPBundleTransport::Read()
 			//Get prio
 			DWORD prio = get4(priority->attr,0);
 			
-			//Get ice transport
-			DTLSICETransport *ice = it->second;
-			
 			//Find candidate
 			auto it2 = candidates.find(remote);
 			
 			//Check if it is not already present
 			if (it2==candidates.end())
-				//Add candidate and add it to the map
-				candidates[remote] = ice->AddRemoteCandidate(from_addr,stun->HasAttribute(STUNMessage::Attribute::UseCandidate),prio);
-			else if (stun->HasAttribute(STUNMessage::Attribute::UseCandidate))
-				//Set it active
-				ice->ActivateRemoteCandidate(it2->second);
+			{
+				//Create new candidate
+				ICERemoteCandidate* candidate = new ICERemoteCandidate(inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),transport);
+				//Add candidate and add it to the maps
+				candidates[remote] = candidate;
+				connection->candidates.insert(candidate);
+			} else {
+				//Get it
+				candidate = it2->second;
+			}
+			
+			//Set it active
+			transport->ActivateRemoteCandidate(candidate,stun->HasAttribute(STUNMessage::Attribute::UseCandidate),prio);
 			
 			//Create response
 			STUNMessage* resp = stun->CreateResponse();
@@ -322,7 +356,7 @@ int RTPBundleTransport::Read()
 			resp->AddXorAddressAttribute(&from_addr);
 			
 			//Serialize and autenticate
-			len = resp->AuthenticatedFingerPrint(data,size,ice->GetLocalPwd());
+			len = resp->AuthenticatedFingerPrint(data,size,transport->GetLocalPwd());
 
 			//Send response
 			sendto(socket,data,len,0,(sockaddr *)&from_addr,sizeof(struct sockaddr_in));
@@ -340,13 +374,13 @@ int RTPBundleTransport::Read()
 			//Create binding request to send back
 			STUNMessage *request = new STUNMessage(STUNMessage::Request,STUNMessage::Binding,transId);
 			//Add username
-			request->AddUsernameAttribute(ice->GetLocalUsername(),ice->GetRemoteUsername());
+			request->AddUsernameAttribute(transport->GetLocalUsername(),transport->GetRemoteUsername());
 			//Add other attributes
 			request->AddAttribute(STUNMessage::Attribute::IceControlled,(QWORD)1);
 			request->AddAttribute(STUNMessage::Attribute::Priority,(DWORD)33554431);
 
 			//Serialize and autenticate
-			len = request->AuthenticatedFingerPrint(data,size,ice->GetRemotePwd());
+			len = request->AuthenticatedFingerPrint(data,size,transport->GetRemotePwd());
 
 			//Send it
 			sendto(socket,data,len,0,(sockaddr *)&from_addr,sizeof(struct sockaddr_in));
