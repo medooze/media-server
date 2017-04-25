@@ -57,6 +57,6 @@ int StatusHandler::ProcessRequest(TRequestInfo *req,TSession * const ses)
 
 	Log("<ProccessRequest\n");
 
-	return TRUE;
+	return 1;
 }
 

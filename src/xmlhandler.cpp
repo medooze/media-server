@@ -208,6 +208,6 @@ int XmlHandler::ProcessRequest(TRequestInfo *req,TSession * const ses)
 
 	Log("<ProcessRequest [time:%llu]\n",getDifTime(&tv)/1000);
 
-	return TRUE;
+	return 1;
 }
 
