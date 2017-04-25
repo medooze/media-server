@@ -39,6 +39,7 @@ VideoStream::VideoStream(Listener* listener) : rtp(MediaFrame::Video,listener)
 	videoIntraPeriod=0;
 	videoBitrateLimit=0;
 	videoBitrateLimitCount=0;
+	minFPUPeriod = 500;
 	sendFPU = false;
 	this->listener = listener;
 	mediaListener = NULL;
@@ -75,6 +76,9 @@ int VideoStream::SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitra
 
 	//Store properties
 	videoProperties = properties;
+	
+	//Get min FPU period
+	minFPUPeriod = videoProperties.GetProperty("video.minFPUPeriod",500)*1000;
 
 	//The intra period
 	if (intraPeriod>0)
@@ -437,9 +441,13 @@ int VideoStream::SendVideo()
 		{
 			//Do not send anymore
 			sendFPU = false;
-			//Do not send if just send one (100ms)
-			if (getDifTime(&lastFPU)/1000>100)
+			//Do not send if we just send one (100ms)
+			if (getDifTime(&lastFPU)/1000>minFPUPeriod)
 			{
+				//Send at higher bitrate first frame, but skip frames after that so sending bitrate is kept
+				videoEncoder->SetFrameRate(videoFPS,current*5,videoIntraPeriod);
+				//Reste frametime so it is calcualted afterwards
+				frameTime = 0;
 				//Set it
 				videoEncoder->FastPictureUpdate();
 				//Update last FPU
@@ -613,9 +621,9 @@ int VideoStream::RecVideo()
 	DWORD		frameTime = (DWORD)-1;
 	DWORD		lastSeq = RTPPacket::MaxExtSeqNum;
 	bool		waitIntra = false;
-	DWORD		minFPUPeriod = videoProperties.GetProperty("video.minFPUPeriod",500)*1000;
 	
-	Log(">RecVideo [minFPUPeriod:%d]\n",minFPUPeriod);
+	
+	Log(">RecVideo\n");
 	
 	//Get now
 	gettimeofday(&before,NULL);

@@ -76,6 +76,7 @@ private:
 	int 		videoBitrateLimitCount;
 	int		videoIntraPeriod;
 	Properties	videoProperties;
+	DWORD		minFPUPeriod;
 
 	//Las threads
 	pthread_t 	sendVideoThread;
