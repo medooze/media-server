@@ -191,7 +191,7 @@ SFULDFLAGS+= -lpthread -lsrtp2 -lxmlrpc -lxmlrpc_xmlparse -lxmlrpc_xmltok -lxmlr
 #For abyss
 OPTS 	+= -D_UNIX -D__STDC_CONSTANT_MACROS
 CFLAGS  += $(INCLUDE) $(OPTS)
-CXXFLAGS+= $(INCLUDE) $(OPTS)
+CXXFLAGS+= $(INCLUDE) $(OPTS) -std=c++11
 
 %.o: %.c
 	@echo "[CC ] $(TAG) $<"

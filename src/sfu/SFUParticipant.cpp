@@ -268,7 +268,7 @@ void Participant::onPLIRequest(RTPOutgoingSourceGroup* group,DWORD ssrc)
 	
 	//Check
 	if (it==others.end())
-		return (void)Error("-No stream found for [%s]\n",group->streamId);
+		return (void)Error("-No stream found for [%s]\n",group->streamId.c_str());
 	//Get stream
 	Stream* stream = it->second;
 	//Call 
