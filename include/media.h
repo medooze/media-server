@@ -42,7 +42,7 @@ public:
 		}
 		~RtpPacketization()
 		{
-			if (prefix) delete(prefix);
+			if (prefix) free(prefix);
 		}
 
 		DWORD GetPos()		{ return pos;	}

@@ -15,6 +15,7 @@
 #define RTPSTREAMTRANSPONDER_H
 
 #include "rtp.h"
+#include "waitqueue.h"
 #include "vp9/VP9LayerSelector.h"
 
 class RTPStreamTransponder : 
@@ -30,14 +31,24 @@ public:
 	virtual void onPLIRequest(RTPOutgoingSourceGroup* group,DWORD ssrc) override;
 	
 	void SelectLayer(int spatialLayerId,int temporalLayerId);
-	
+protected:
+	void Start();
+	int Run();
+	void Stop();
+		
 private:
+	static void * run(void *par);
+
+private:
+	WaitQueue<RTPPacket*> packets;
 	RTPOutgoingSourceGroup *outgoing;
 	RTPIncomingSourceGroup *incoming;
 	RTPReceiver* receiver;
 	RTPSender* sender;
 	VP9LayerSelector selector;
 	Mutex mutex;
+	pthread_t thread;
+	bool running;
 };
 
 #endif /* RTPSTREAMTRANSPONDER_H */

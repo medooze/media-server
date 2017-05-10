@@ -188,7 +188,7 @@ private:
 	DWORD total;
 };
 
-class RTPOutgoingSourceGroup
+struct RTPOutgoingSourceGroup
 {
 public:
 	class Listener 

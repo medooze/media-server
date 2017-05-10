@@ -1165,17 +1165,19 @@ void DTLSICETransport::Send(RTCPCompoundPacket &rtcp)
 		//Error
 		return (void)Error("-DTLSICETransport::Send() | Error serializing RTCP packet [len:%d]\n",len);
 	
-	//Encript
-	srtp_err_status_t srtp_err_status = srtp_protect_rtcp(send,data,(int*)&len);
-	//Check error
-	if (srtp_err_status!=srtp_err_status_ok)
-		//Error
-		return (void)Error("-DTLSICETransport::Send() | Error protecting RTCP packet [%d]\n",srtp_err_status);
-
 	//Synchronized
 	{
 		//Block scope
 		ScopedLock method(mutex);
+		//Encript
+		srtp_err_status_t srtp_err_status = srtp_protect_rtcp(send,data,(int*)&len);
+		//Check error
+		if (srtp_err_status!=srtp_err_status_ok)
+		//Error
+		return (void)Error("-DTLSICETransport::Send() | Error protecting RTCP packet [%d]\n",srtp_err_status);
+
+	
+		
 		//If we don't have an active candidate yet
 		if (!active)
 			//Error
@@ -1319,18 +1321,18 @@ int DTLSICETransport::Send(RTPPacket &packet)
 		group->packets[packet.GetExtSeqNum()] = rtx;
 	}
 	
-	
-	//Encript
-	srtp_err_status_t err = srtp_protect(send,data,&len);
-	//Check error
-	if (err!=srtp_err_status_ok)
-		//Error
-		return Error("-RTPTransport::SendPacket() | Error protecting RTP packet [%d]\n",err);
-	
 	//Synchronized
 	{
 		//Block method
 		ScopedLock method(mutex);
+		
+		//Encript
+		srtp_err_status_t err = srtp_protect(send,data,&len);
+		//Check error
+		if (err!=srtp_err_status_ok)
+			//Error
+			return Error("-RTPTransport::SendPacket() | Error protecting RTP packet [%d]\n",err);
+	
 		//If we don't have an active candidate yet
 		if (!active)
 			//Error

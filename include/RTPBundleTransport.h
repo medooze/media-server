@@ -57,6 +57,8 @@ private:
 	bool	running;
 
 	pthread_t thread;
+	pthread_mutex_t	mutex;
+	pthread_cond_t cond;
 	
 	Connections	 connections;
 	RTPICECandidates candidates;

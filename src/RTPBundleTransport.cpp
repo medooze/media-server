@@ -40,6 +40,9 @@ RTPBundleTransport::RTPBundleTransport()
 	//No thread
 	setZeroThread(&thread);
 	running = false;
+	//Mutex
+	pthread_mutex_init(&mutex,0);
+	pthread_cond_init(&cond,0);
 }
 
 /*************************
@@ -51,6 +54,9 @@ RTPBundleTransport::~RTPBundleTransport()
 	Debug("-RTPBundleTransport::~RTPBundleTransport()\n");
 	//End)
 	End();
+	//Mutex
+	pthread_mutex_destroy(&mutex);
+	pthread_cond_destroy(&cond);
 }
 
 DTLSICETransport* RTPBundleTransport::AddICETransport(const std::string &username,const Properties& properties)
@@ -248,8 +254,57 @@ int RTPBundleTransport::End()
 
 int RTPBundleTransport::Send(const ICERemoteCandidate* candidate,const BYTE *buffer,const DWORD size)
 {
+	int ret = 0;
+		
+	//Lock
+	pthread_mutex_lock(&mutex);
+	
 	//Send packet
-	return sendto(socket,buffer,size,MSG_DONTWAIT,candidate->GetAddress(),candidate->GetAddressLen());
+	while((ret=sendto(socket,buffer,size,MSG_DONTWAIT,candidate->GetAddress(),candidate->GetAddressLen()))<0)
+	{
+		//Check error
+		if (errno!=EAGAIN)
+			//Error
+			break;
+		
+		UltraDebug("->RTPBundleTransport::Send() | retry \n");
+		
+		//Get now
+		timespec ts;
+		timeval tp;
+		gettimeofday(&tp, NULL);
+
+		//Calculate 5ms timeout at most
+		calcAbsTimeout(&ts,&tp,5);
+		
+		//Set to wait also for read events
+		ufds[0].events = POLLIN | POLLOUT | POLLERR | POLLHUP;
+
+		//Check thred
+		if (!isZeroThread(thread))
+			//Signal the pthread this will cause the poll call to exit
+			pthread_kill(thread,SIGIO);
+		
+		//Wait next or stopped
+		pthread_cond_timedwait(&cond,&mutex,&ts);
+		
+		UltraDebug("<-RTPBundleTransport::Send() | retry\n");
+		
+		//IF canceled
+		if (!running)
+		{
+			Error("-RTPBundleTransport::Send() | canceled\n");
+			break;
+		}
+		
+		//Don't wait for write evetns
+		ufds[0].events = POLLIN | POLLERR | POLLHUP;
+	}
+	
+	//Unlock
+	pthread_mutex_unlock(&mutex);
+	//Done
+	return  ret;
 }
 
 /*********************************
@@ -438,6 +493,8 @@ void RTPBundleTransport::Stop()
 		//Nulifi thread
 		setZeroThread(&thread);
 	}
+	//Signal cancel
+	pthread_cond_signal(&cond);
 }
 
 /***********************
@@ -492,6 +549,10 @@ int RTPBundleTransport::Run()
 		if (ufds[0].revents & POLLIN)
 			//Read rtp data
 			Read();
+		
+		if (ufds[0].revents & POLLOUT)
+			//Signal write enable
+			pthread_cond_signal(&cond);
 
 		if ((ufds[0].revents & POLLHUP) || (ufds[0].revents & POLLERR))
 		{
@@ -506,5 +567,4 @@ int RTPBundleTransport::Run()
 	
 	return 0;
 }
-
 
