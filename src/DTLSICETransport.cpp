@@ -1350,7 +1350,6 @@ int DTLSICETransport::Send(RTPPacket &packet)
 	}
 
 	//Get time for packets to discard, always have at least 200ms, max 500ms
-	DWORD rtt = 0;
 	QWORD until = getTimeMS() - (200+fmin(rtt*2,300))*1000;
 	//Delete old packets
 	auto it2 = group->packets.begin();
