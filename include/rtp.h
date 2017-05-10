@@ -125,6 +125,7 @@ struct RTPOutgoingSource : public RTPSource
 	DWORD	numRTCPPackets;
 	DWORD	totalBytes;
 	DWORD	totalRTCPBytes;
+	DWORD	rtt;
 	QWORD	lastSenderReport;
 	QWORD	lastSenderReportNTP;
 	
@@ -136,6 +137,7 @@ struct RTPOutgoingSource : public RTPSource
 		numRTCPPackets	= 0;
 		totalBytes	= 0;
 		totalRTCPBytes	= 0;
+		rtt		= 0;
 		lastSenderReport	= 0;
 		lastSenderReportNTP	= 0;
 	}
@@ -206,6 +208,7 @@ public:
 	void onPLIRequest(DWORD ssrc);
 	
 	RTPOutgoingSource* GetSource(DWORD ssrc);
+	DWORD SetRTT(DWORD rtt);
 public:
 	typedef std::map<DWORD,RTPPacket*> RTPOrderedPackets;
 	typedef std::set<Listener*> Listeners;
@@ -215,6 +218,7 @@ public:
 	RTPOutgoingSource media;
 	RTPOutgoingSource fec;
 	RTPOutgoingSource rtx;
+	DWORD rtt;
 	RTPOrderedPackets	packets;
 	Mutex mutex;
 	Listeners listeners;

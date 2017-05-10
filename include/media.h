@@ -30,9 +30,19 @@ public:
 			this->prefixLen = prefixLen;
 			//Check size
 			if (prefixLen)
-				//Copy
+			{
+				//Allocate mem
+				this->prefix = (BYTE*) malloc(prefixLen);
+				//Copy data
 				memcpy(this->prefix,prefix,prefixLen);
+			} else {
+				this->prefix = NULL;
+			}
 
+		}
+		~RtpPacketization()
+		{
+			if (prefix) delete(prefix);
 		}
 
 		DWORD GetPos()		{ return pos;	}
@@ -44,7 +54,7 @@ public:
 	private:
 		DWORD	pos;
 		DWORD	size;
-		BYTE	prefix[16];
+		BYTE*	prefix;
 		DWORD	prefixLen;
 	};
 

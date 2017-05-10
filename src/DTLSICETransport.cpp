@@ -558,7 +558,11 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 			Error("-RTPTransport::SendPacket() | Error sending RTP packet [%d]\n",errno);
 		
 	} else {
-		Debug("-DTLSICETransport::ReSendPacket() | Packet not found  not found [seq:%u]\n",seq);
+		UltraDebug("-DTLSICETransport::ReSendPacket() | Packet not found [seq:%u,min:%u,max:%u]\n",
+			seq,
+			group->packets.begin()!=group->packets.end() ? group->packets.begin()->first : 0,
+			group->packets.rbegin()!=group->packets.rend() ? group->packets.rbegin()->first : 0
+		);
 	}
 }
 
@@ -570,11 +574,14 @@ void  DTLSICETransport::ActivateRemoteCandidate(ICERemoteCandidate* candidate,bo
 	ScopedLock method(mutex);
 	
 	//Debug
-	Debug("-DTLSICETransport::ActivateRemoteCandidate() | Remote candidate [%s:%hu,use:%d,prio:%d]\n",candidate->GetIP(),candidate->GetPort());
+	UltraDebug("-DTLSICETransport::ActivateRemoteCandidate() | Remote candidate [%s:%hu,use:%d,prio:%d]\n",candidate->GetIP(),candidate->GetPort(),useCandidate,priority);
 	
 	//Should we set this candidate as the active one
-	if (!active  || useCandidate)
+	if (!active || (useCandidate && candidate!=active))
 	{
+		//Debug
+		Debug("-DTLSICETransport::ActivateRemoteCandidate() | Activating candidate [%s:%hu,use:%d,prio:%d]\n",candidate->GetIP(),candidate->GetPort(),useCandidate,priority);	
+		
 		//Send data to this one from now on
 		active = candidate;
 		
@@ -1178,7 +1185,7 @@ void DTLSICETransport::Send(RTCPCompoundPacket &rtcp)
 		
 		//Check
 		if (ret<=0)
-			Debug("-Error sending RTCP packet [ret:%d,%d]\n",ret,errno);
+			Error("-DTLSICETransport::Send() | Error sending RTCP packet [ret:%d,%d]\n",ret,errno);
 	}
 }
 
@@ -1339,7 +1346,7 @@ int DTLSICETransport::Send(RTPPacket &packet)
 		source.numPackets++;
 		source.totalBytes += len;
 	} else {
-		Error("-ERROR SENDING packet\n");
+		Error("-DTLSICETransport::Send() | Error sending packet [len:%d,err:%d]\n",len,errno);
 	}
 
 	//Get time for packets to discard, always have at least 200ms, max 500ms
@@ -1411,26 +1418,69 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 				source->lastReceivedSenderNTPTimestamp = sr->GetNTPTimestamp();
 				source->lastReceivedSenderReport = getTime();
 				
+				//Process all the Sender Reports
 				for (DWORD j=0;j<sr->GetCount();j++)
 				{
 					//Get report
 					RTCPReport *report = sr->GetReport(j);
 					//Check ssrc
-					//DWORD ssrc = report->GetSSRC();
-					//TODO: Do something
+					DWORD ssrc = report->GetSSRC();
+					
+					//Get group
+					RTPOutgoingSourceGroup* group = GetOutgoingSourceGroup(ssrc);
+					//If found
+					if (group)
+					{
+						//Get media
+						RTPOutgoingSource* source = group->GetSource(ssrc);
+						//Check ssrc
+						if (source)
+						{
+							//Calculate RTT
+							if (source->IsLastSenderReportNTP(report->GetLastSR()))
+							{
+								//Calculate new rtt in ms
+								DWORD rtt = getTimeDiff(source->lastSenderReport)/1000-report->GetDelaySinceLastSRMilis();
+								//Update packet jitter buffer
+								SetRTT(rtt);
+							}
+						}
+					}
 				}
 				break;
 			}
 			case RTCPPacket::ReceiverReport:
 			{
 				const RTCPReceiverReport* rr = (const RTCPReceiverReport*)packet;
-				//Check recievd report
+				//Process all the receiver Reports
 				for (DWORD j=0;j<rr->GetCount();j++)
 				{
 					//Get report
 					RTCPReport *report = rr->GetReport(j);
 					//Check ssrc
-					//DWORD ssrc = report->GetSSRC();
+					DWORD ssrc = report->GetSSRC();
+					
+					//Get group
+					RTPOutgoingSourceGroup* group = GetOutgoingSourceGroup(ssrc);
+					//If found
+					if (group)
+					{
+						//Get media
+						RTPOutgoingSource* source = group->GetSource(ssrc);
+						//Check ssrc
+						if (source)
+						{
+							//Calculate RTT
+							if (source->IsLastSenderReportNTP(report->GetLastSR()))
+							{
+								//Calculate new rtt in ms
+								DWORD rtt = getTimeDiff(source->lastSenderReport)/1000-report->GetDelaySinceLastSRMilis();
+								//Set it
+								SetRTT(rtt);
+								
+							}
+						}
+					}
 				}
 				break;
 			}
@@ -1630,4 +1680,14 @@ RTPOutgoingSource* DTLSICETransport::GetOutgoingSource(DWORD ssrc)
 	//Get source
 	return it->second->GetSource(ssrc);
 
+}
+
+void DTLSICETransport::SetRTT(DWORD rtt)
+{
+	//Sore it
+	this->rtt = rtt;
+	//Update jitters
+	for (auto it = incoming.begin(); it!=incoming.end(); ++it)
+		//Update jitter
+		it->second->packets.SetMaxWaitTime(fmin(60,rtt*2));
 }

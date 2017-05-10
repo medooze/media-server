@@ -284,10 +284,10 @@ void RTPOutgoingSourceGroup::onPLIRequest(DWORD ssrc)
 }
 
 RTPIncomingSourceGroup::RTPIncomingSourceGroup(MediaFrame::Type type) 
-	: losts(64)
+	: losts(128)
 {
 	this->type = type;
-	//Small bufer of 60ms
+	//Small initial bufer of 60ms
 	packets.SetMaxWaitTime(60);
 }
 

@@ -78,7 +78,7 @@ int VideoStream::SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitra
 	videoProperties = properties;
 	
 	//Get min FPU period
-	minFPUPeriod = videoProperties.GetProperty("video.minFPUPeriod",500)*1000;
+	minFPUPeriod = videoProperties.GetProperty("video.minFPUPeriod",500);
 
 	//The intra period
 	if (intraPeriod>0)
@@ -499,7 +499,7 @@ int VideoStream::SendVideo()
 		if (!videoFrame)
 			//Next
 			continue;
-
+		
 		//Increase frame counter
 		fpsAcu.Update(getTime()/1000,1);
 		
@@ -518,6 +518,7 @@ int VideoStream::SendVideo()
 			else
 				//Do not overflow
 				sleep = 1;
+			Debug("-sleep %d\n",sleep);
 			//Calculate timeout
 			calcAbsTimeoutNS(&ts,&prev,sleep);
 			//Wait next or stopped
@@ -539,6 +540,9 @@ int VideoStream::SendVideo()
 				overslept = 0;
 		}
 
+		//Increase frame counter
+		fpsAcu.Update(getTime()/1000,1);
+		
 		//If first
 		if (!frameTime)
 		{
@@ -550,7 +554,7 @@ int VideoStream::SendVideo()
 			//Set frame time
 			frameTime = 1000000/videoFPS;
 		}
-
+		
 		//Add frame size in bits to bitrate calculator
 		bitrateAcu.Update(getDifTime(&ini)/1000,videoFrame->GetLength()*8);
 
@@ -584,7 +588,7 @@ int VideoStream::SendVideo()
 		//Dump statistics
 		if (num && ((num%videoFPS*10)==0))
 		{
-			//Debug("-Send bitrate current=%d avg=%llf rate=[%llf,%llf] fps=[%llf,%llf] limit=%d\n",current,bitrateAcu.GetInstantAvg()/1000,bitrateAcu.GetMinAvg()/1000,bitrateAcu.GetMaxAvg()/1000,fpsAcu.GetMinAvg(),fpsAcu.GetMaxAvg(),videoBitrateLimit);
+			Debug("-Send bitrate target=%d current=%d avg=%llf rate=[%llf,%llf] fps=[%llf,%llf] limit=%d\n",target,current,bitrateAcu.GetInstantAvg()/1000,bitrateAcu.GetMinAvg()/1000,bitrateAcu.GetMaxAvg()/1000,fpsAcu.GetMinAvg(),fpsAcu.GetMaxAvg(),videoBitrateLimit);
 			bitrateAcu.ResetMinMax();
 			fpsAcu.ResetMinMax();
 		}
@@ -824,6 +828,7 @@ int VideoStream::SetMediaListener(MediaFrame::Listener *listener)
 
 int VideoStream::SendFPU()
 {
+	Debug(">SendFPU\n");
 	//Next shall be an intra
 	sendFPU = true;
 	

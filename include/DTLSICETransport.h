@@ -65,7 +65,11 @@ public:
 	
 	virtual void onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMasterKey,DWORD localMasterKeySize,BYTE* remoteMasterKey,DWORD remoteMasterKeySize)  override;
 	virtual int onData(const ICERemoteCandidate* candidate,BYTE* data,DWORD size)  override;
+	
+	DWORD GetRTT() const { return rtt; }
+
 private:
+	void SetRTT(DWORD rtt);
 	void onRTCP(RTCPCompoundPacket* rtcp);
 	void ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq);
 	void Send(RTCPCompoundPacket &rtcp);
@@ -103,7 +107,7 @@ private:
 	IncomingStreams incoming;
 	
 	DWORD	mainSSRC;
-	
+	DWORD   rtt;
 	char*	iceRemoteUsername;
 	char*	iceRemotePwd;
 	char*	iceLocalUsername;

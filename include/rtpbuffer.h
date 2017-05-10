@@ -51,7 +51,7 @@ public:
 		if (next!=(DWORD)-1 && seq<next)
 		{
 			//Error
-			Debug("-Out of order non recoverable packet [next:%d,seq:%d,maxWaitTime=%d,%d,%d]\n",next,seq,maxWaitTime,rtp->GetSeqCycles(),rtp->GetSeqNum());
+			Debug("-RTPBuffer::Add() | Out of order non recoverable packet [next:%u,seq:%u,maxWaitTime=%d,cycles:%d-%u]\n",next,seq,maxWaitTime,rtp->GetSeqCycles(),rtp->GetSeqNum());
 			//Delete pacekt
 			delete(rtp);
 			//Unlock
@@ -64,7 +64,7 @@ public:
 		if (packets.find(seq)!=packets.end())
 		{
 			//Error
-			Debug("-Already have that packet [next:%d,seq:%d,maxWaitTime=%d,%d,%d]\n",next,seq,maxWaitTime,rtp->GetSeqCycles(),rtp->GetSeqNum());
+			Debug("-RTPBuffer::Add() | Already have that packet [next:%u,seq:%u,maxWaitTime=%d,cycles:%d-%u]\n",next,seq,maxWaitTime,rtp->GetSeqCycles(),rtp->GetSeqNum());
 			//Delete pacekt
 			delete(rtp);
 			//Unlock
@@ -77,7 +77,7 @@ public:
 		if (!packets.insert(std::pair<DWORD,RTPPacket*>(seq,rtp)).second)
 		{
 			//Error
-			Debug("-Error inserting packet [next:%d,seq:%d,maxWaitTime=%d,%d,%d]\n",next,seq,maxWaitTime,rtp->GetSeqCycles(),rtp->GetSeqNum());
+			Debug("-RTPBuffer::Add() | Error inserting packet [next:%u,seq:%u,maxWaitTime=%d,cycles:%d-%u]\n",next,seq,maxWaitTime,rtp->GetSeqCycles(),rtp->GetSeqNum());
 			//Delete pacekt
 			delete(rtp);
 			//Unlock

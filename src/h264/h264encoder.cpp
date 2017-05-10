@@ -121,11 +121,14 @@ int H264Encoder::SetFrameRate(int frames,int kbits,int intraPeriod)
 		params.rc.i_rc_method	    = X264_RC_ABR;
 		params.rc.i_bitrate         = bitrate;
 		params.rc.i_vbv_max_bitrate = bitrate;
-		params.rc.i_vbv_buffer_size = bitrate/params.i_fps_num;
+		params.rc.i_vbv_buffer_size = bitrate/fps;
 		params.rc.f_vbv_buffer_init = 0;
 		params.rc.f_rate_tolerance  = 0.1;
+		
 		//Reconfig
-		x264_encoder_reconfig(enc,&params);
+		if (x264_encoder_reconfig(enc,&params)!=0)
+			//reconfigure
+			return Error("-Could not reconfigure h264 codec\n");
 	}
 	
 	return 1;
