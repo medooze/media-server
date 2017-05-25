@@ -495,6 +495,7 @@ bool H263RFC2190Paquetizer::PaquetizeFrame(VideoFrame	*frame)
 			//SQCIF
 			width = 160;
 			height = 120;
+			break;
 		case 0x02:
 			//QCIF
 			width = 174;

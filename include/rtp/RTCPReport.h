@@ -23,7 +23,7 @@ class RTCPReport
 public:
 	DWORD GetSSRC()			const { return get4(buffer,0);  }
 	BYTE  GetFactionLost()		const { return get1(buffer,4);  }
-	DWORD GetLostCount()		const { return get3(buffer,5);  }
+	DWORD GetLostCount()		const { return get3(buffer,5) & 0x7FFFFF;  }
 	DWORD GetLastSeqNum()		const { return get4(buffer,8);  }
 	DWORD GetJitter()		const { return get4(buffer,12); }
 	DWORD GetLastSR()		const { return get4(buffer,16); }
@@ -32,7 +32,7 @@ public:
 
 	void SetSSRC(DWORD ssrc)		{ set4(buffer,0,ssrc);		}
 	void SetFractionLost(BYTE fraction)	{ set1(buffer,4,fraction);	}
-	void SetLostCount(DWORD count)		{ set3(buffer,5,count);		}
+	void SetLostCount(DWORD count)		{ set3(buffer,5,count & 0x7FFFFF);		}
 	void SetLastSeqNum(DWORD seq)		{ set4(buffer,8,seq);		}
 	void SetLastJitter(DWORD jitter)	{ set4(buffer,12,jitter);	}
 	void SetLastSR(DWORD last)		{ set4(buffer,16,last);		}
