@@ -70,6 +70,18 @@ int MP4Player::Stop()
 	//Close
 	streamer.Close();
 
+	//Delete codecs
+	if (audioDecoder)
+	{
+		delete (audioDecoder);
+		audioDecoder = NULL;
+	}
+	if (videoDecoder)
+	{
+		delete (videoDecoder);
+		videoDecoder = NULL;
+	}
+	
 	return 1;
 }
 
