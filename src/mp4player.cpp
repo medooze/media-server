@@ -1,9 +1,6 @@
 #include "mp4player.h"
 #include "log.h"
 #include "codecs.h"
-#include "g711/g711codec.h"
-#include "h263/h263codec.h"
-#include "h264/h264decoder.h"
 
 MP4Player::MP4Player() : streamer(this)
 {
@@ -13,11 +10,8 @@ MP4Player::MP4Player() : streamer(this)
 
 MP4Player::~MP4Player()
 {
-	//Delete codecs
-	if (audioDecoder)
-		delete (audioDecoder);
-	if (videoDecoder)
-		delete (videoDecoder);
+	//End
+	End();
 }
 
 int MP4Player::Init(AudioOutput *audioOutput,VideoOutput *videoOutput,TextOutput *textOutput)
@@ -87,6 +81,7 @@ int MP4Player::Stop()
 
 int MP4Player::End()
 {
+	Stop();
 }
 
 void MP4Player::onTextFrame(TextFrame &text)
