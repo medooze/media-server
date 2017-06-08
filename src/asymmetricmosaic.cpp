@@ -31,7 +31,7 @@ int AsymmetricMosaic::Update(int pos, BYTE *image, int imgWidth, int imgHeight,b
 		return 0;
 	
 	//Check size
-	if (!image && !imgHeight && !imgHeight)
+	if (!image && !imgWidth && !imgHeight)
 		//Clean position
 		return Clean(pos);
 
