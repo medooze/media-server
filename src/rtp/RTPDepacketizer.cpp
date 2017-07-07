@@ -32,8 +32,25 @@ RTPDepacketizer* RTPDepacketizer::Create(MediaFrame::Type mediaType,DWORD codec)
 			 }
 			 break;
 		 case MediaFrame::Audio:
-			 //Dummy depacketizer
-			 return new DummyAudioDepacketizer(codec);
+			 //Depending on the codec
+			 switch((VideoCodec::Type)codec)
+			 {
+				case AudioCodec::GSM:
+				case AudioCodec::PCMA:
+				case AudioCodec::PCMU:
+					//Dummy depacketizer
+					return new DummyAudioDepacketizer(codec);
+				case AudioCodec::SPEEX16:
+				case AudioCodec::G722:
+					//Dummy depacketizer
+					return new DummyAudioDepacketizer(codec,16000);
+				case AudioCodec::OPUS:
+					//Dummy depacketizer
+					return new DummyAudioDepacketizer(codec,48000);
+				 default:
+					//Dummy depacketizer
+					return new DummyAudioDepacketizer(codec);
+			 }
 			 break;
 		 default:
 			 return NULL;
