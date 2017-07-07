@@ -48,6 +48,10 @@ private:
 class DummyAudioDepacketizer : public RTPDepacketizer
 {
 public:
+	DummyAudioDepacketizer(DWORD codec, DWORD rate) : RTPDepacketizer(MediaFrame::Audio,codec), frame((AudioCodec::Type)codec,rate)
+	{
+
+	}
 	DummyAudioDepacketizer(DWORD codec) : RTPDepacketizer(MediaFrame::Audio,codec), frame((AudioCodec::Type)codec,8000)
 	{
 
