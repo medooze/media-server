@@ -443,6 +443,8 @@ MP4Recorder::MP4Recorder()
 {
 	recording = false;
 	mp4 = MP4_INVALID_FILE_HANDLE;
+	//No
+	first = (QWORD)-1;
 	//Create mutex
 	pthread_mutex_init(&mutex,0);
 }
@@ -478,7 +480,7 @@ bool MP4Recorder::Create(const char* filename)
 		Close();
 
 	// We have to wait for first I-Frame
-	waitVideo = 1;
+	waitVideo = 0;
 
 	// Create mp4 file
 	mp4 = MP4Create(filename,0);
@@ -494,11 +496,19 @@ bool MP4Recorder::Create(const char* filename)
 
 bool MP4Recorder::Record()
 {
+	return Record(true);
+}
+
+bool MP4Recorder::Record(bool waitVieo)
+{
         //Check mp4 file is opened
         if (mp4 == MP4_INVALID_FILE_HANDLE)
                 //Error
                 return Error("No MP4 file opened for recording\n");
         
+	//Do We have to wait for first I-Frame?
+	this->waitVideo = waitVieo;
+	
 	//Recording
 	recording = true;
 	
@@ -532,8 +542,13 @@ void* mp4close(void *mp4)
 	Log("<mp4close [%p,time:%llu]\n",mp4,getDifTime(&tv)/1000);
 	return NULL;
 }
-
 bool MP4Recorder::Close()
+{
+	//Default is async
+	return Close(true);
+}
+
+bool MP4Recorder::Close(bool async)
 {
         //Stop always
         Stop();
@@ -556,9 +571,16 @@ bool MP4Recorder::Close()
 		for (Tracks::iterator it = textTracks.begin(); it!=textTracks.end(); ++it)
 			//Close it
 			it->second->Close();
-		//Launch MP4Close in another thread
-		pthread_t 	mp4CloseThread;
-		createPriorityThread(&mp4CloseThread,mp4close,mp4,0);
+		
+		//Do we need to launch the close on another thread?
+		if (async) {
+			//Launch MP4Close in another thread
+			pthread_t 	mp4CloseThread;
+			createPriorityThread(&mp4CloseThread,mp4close,mp4,0);
+		} else {
+			//Do it here
+			mp4close(mp4);
+		}
 
 		//Empty file
 		mp4 = MP4_INVALID_FILE_HANDLE;
@@ -577,6 +599,11 @@ void MP4Recorder::onMediaFrame(MediaFrame &frame)
 }
 
 void MP4Recorder::onMediaFrame(DWORD ssrc, MediaFrame &frame)
+{
+	//Set now as timestamp
+	onMediaFrame(0,frame,getTimeMS());
+}
+void MP4Recorder::onMediaFrame(DWORD ssrc, MediaFrame &frame, QWORD time)
 {
 	// Check if we have to wait for video
 	if (waitVideo && (frame.GetType()!=MediaFrame::Video))
@@ -604,8 +631,12 @@ void MP4Recorder::onMediaFrame(DWORD ssrc, MediaFrame &frame)
 					audioTrack = it->second;
 				//Convert to audio frame
 				AudioFrame &audioFrame = (AudioFrame&) frame;
+				//Check if it is the first
+				if (first==(QWORD)-1)
+					//Set this one as first
+					first = time;
 				// Calculate new timestamp
-				QWORD timestamp = getDifTime(&first)/1000;
+				QWORD timestamp = time-first;
 				// Check if we have the audio track
 				if (!audioTrack)
 				{
@@ -613,15 +644,19 @@ void MP4Recorder::onMediaFrame(DWORD ssrc, MediaFrame &frame)
 					audioTrack = new mp4track(mp4);
 					//Create track
 					audioTrack->CreateAudioTrack(audioFrame.GetCodec(),audioFrame.GetRate());
-					//Create empty text frame
-					AudioFrame empty(audioFrame.GetCodec(),audioFrame.GetRate());
-					//Set empty data
-					empty.SetTimestamp(0);
-					empty.SetLength(0);
-					//Set duration until first real frame
-					empty.SetDuration(timestamp);
-					//Send first empty packet
-					audioTrack->WriteAudioFrame(empty);
+					//If it is not first
+					if (timestamp)
+					{
+						//Create empty text frame
+						AudioFrame empty(audioFrame.GetCodec(),audioFrame.GetRate());
+						//Set empty data
+						empty.SetTimestamp(0);
+						empty.SetLength(0);
+						//Set duration until first real frame
+						empty.SetDuration(timestamp);
+						//Send first empty packet
+						audioTrack->WriteAudioFrame(empty);
+					}
 					//Add it to map
 					audioTracks[ssrc] = audioTrack;
 				}
@@ -651,11 +686,11 @@ void MP4Recorder::onMediaFrame(DWORD ssrc, MediaFrame &frame)
 					//Don't wait more
 					waitVideo = 0;
 					//Set first timestamp
-					getUpdDifTime(&first);
+					first = time;
 				}
 			
 				// Calculate new timestamp
-				QWORD timestamp = getDifTime(&first)/1000;
+				QWORD timestamp = first-time;
 
 				//Check if we have to write or not
 				if (!waitVideo)
@@ -720,8 +755,12 @@ void MP4Recorder::onMediaFrame(DWORD ssrc, MediaFrame &frame)
 					textTracks[ssrc] = textTrack;
 				}
 
-				// Calculate new timestamp in 1000 clock
-				QWORD timestamp = getDifTime(&first)/1000;
+				//Check if it is the first
+				if (first==(QWORD)-1)
+					//Set this one as first
+					first = time;
+				// Calculate new timestamp
+				QWORD timestamp = time-first;
 				//Update timestamp
 				textFrame.SetTimestamp(timestamp);
 

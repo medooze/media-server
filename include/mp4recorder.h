@@ -51,13 +51,16 @@ public:
 	//Recorder interface
 	virtual bool Create(const char *filename);
 	virtual bool Record();
+	virtual bool Record(bool waitVideo);
 	virtual bool Stop();
 	virtual bool Close();
-
+	bool Close(bool async);
+	
 	virtual RecorderControl::Type GetType()	{ return RecorderControl::MP4;	}
 
 	virtual void onMediaFrame(MediaFrame &frame);
 	virtual void onMediaFrame(DWORD ssrc,MediaFrame &frame);
+	virtual void onMediaFrame(DWORD ssrc, MediaFrame &frame, QWORD time);
 private:
 	typedef std::map<DWORD,mp4track*>	Tracks;
 private:
@@ -69,6 +72,6 @@ private:
 	bool		recording;
 	int		waitVideo;
 	pthread_mutex_t mutex;
-	timeval		first;
+	QWORD		first;
 };
 #endif

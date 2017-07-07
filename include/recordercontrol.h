@@ -16,6 +16,7 @@ public:
 public:
 	virtual bool Create(const char *filename) = 0;
 	virtual bool Record() = 0;
+	virtual bool Record(bool waitVideo) = 0;
 	virtual bool Stop() = 0;
 	virtual bool Close() = 0;
 	virtual Type GetType() = 0;
