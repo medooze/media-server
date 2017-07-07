@@ -73,8 +73,16 @@ public:
 		if (frame.GetTimeStamp()!=packet->GetTimestamp())
 			//Reset frame
 			ResetFrame();
-		//Set timestamp
-		frame.SetTimestamp(packet->GetTimestamp());
+		//If not timestamp
+		if (frame.GetTimeStamp()==(DWORD)-1)
+			//Set timestamp
+			frame.SetTimestamp(packet->GetTimestamp());
+		//If not times
+		if (frame.GetTime()==(QWORD)-1)
+			//Set timestamp
+			frame.SetTime(packet->GetTime());
+		//Set SSRC
+		frame.SetSSRC(packet->GetSSRC());
 		//Add payload
 		AddPayload(packet->GetMediaData(),packet->GetMediaLength());
 		//Return frame
@@ -97,6 +105,9 @@ public:
 		memset(frame.GetData(),0,frame.GetMaxMediaLength());
 		//Clear length
 		frame.SetLength(0);
+		//Clear time
+		frame.SetTimestamp((DWORD)-1);
+		frame.SetTime((QWORD)-1);
 	}
 	virtual DWORD GetTimestamp() 
 	{

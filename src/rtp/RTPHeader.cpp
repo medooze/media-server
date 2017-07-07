@@ -39,7 +39,11 @@ DWORD RTPHeader::Parse(const BYTE* data,const DWORD size)
 	
 	//Bite reader
 	BitReader r(data,2); 
-		
+
+	//If not an rtp packet
+	if (r.Peek(2)!=2)
+		return 0;
+	
 	//Get data
 	version		= r.Get(2);
 	padding		= r.Get(1);

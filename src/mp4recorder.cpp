@@ -690,7 +690,7 @@ void MP4Recorder::onMediaFrame(DWORD ssrc, MediaFrame &frame, QWORD time)
 				}
 			
 				// Calculate new timestamp
-				QWORD timestamp = first-time;
+				QWORD timestamp = time-first;
 
 				//Check if we have to write or not
 				if (!waitVideo)

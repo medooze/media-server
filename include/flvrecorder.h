@@ -15,6 +15,7 @@ public:
 
 	//Recorder interface
 	virtual bool Create(const char *filename);
+	virtual bool Record(bool) { return Record(); }
 	virtual bool Record();
 	virtual bool Stop();
 	virtual bool Close();
