@@ -498,7 +498,7 @@ bool H263RFC2190Paquetizer::PaquetizeFrame(VideoFrame	*frame)
 			break;
 		case 0x02:
 			//QCIF
-			width = 174;
+			width = 176;
 			height = 144;
 			break;
 		case 0x03:
@@ -507,12 +507,12 @@ bool H263RFC2190Paquetizer::PaquetizeFrame(VideoFrame	*frame)
 			height = 288;
 			break;
 		case 0x04:
-			//4QCIF
+			//4CIF
 			width = 352*2;
 			height = 288*2;
 			break;
 		case 0x05:
-			//4QCIF
+			//16CIF
 			width = 352*4;
 			height = 288*4;
 			break;
