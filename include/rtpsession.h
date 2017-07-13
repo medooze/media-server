@@ -58,8 +58,8 @@ public:
 	void Reset();
 	int End();
 
-	void SetSendingRTPMap(RTPMap &map);
-	void SetReceivingRTPMap(RTPMap &map);
+	void SetSendingRTPMap(const RTPMap& rtpMap,const RTPMap& aptMap);
+	void SetReceivingRTPMap(const RTPMap& rtpMap,const RTPMap& aptMap);
 	bool SetSendingCodec(DWORD codec);
 
 	void SendEmptyPacket();
@@ -123,7 +123,6 @@ private:
 
 	DWORD  	sendType;
 	Mutex	sendMutex;
-	DWORD   apt;
 
 	//Recepcion
 	BYTE	recBuffer[MTU+SRTP_MAX_TRAILER_LEN] ALIGNEDTO32;
@@ -133,6 +132,8 @@ private:
 	//RTP Map types
 	RTPMap* rtpMapIn;
 	RTPMap* rtpMapOut;
+	RTPMap* aptMapIn;
+	RTPMap* aptMapOut;
 
 	RTPMap	extMap;
 

@@ -137,7 +137,6 @@
         <in>audiostream.cpp</in>
         <in>audiotransrater.cpp</in>
         <in>avcdescriptor.cpp</in>
-        <in>broadcaster.cpp</in>
         <in>broadcastsession.cpp</in>
         <in>cpim.cpp</in>
         <in>crc32calc.cpp</in>
@@ -152,8 +151,6 @@
         <in>logo.cpp</in>
         <in>main.cpp</in>
         <in>mcu.cpp</in>
-        <in>mediabridgesession.cpp</in>
-        <in>mediagateway.cpp</in>
         <in>mosaic.cpp</in>
         <in>mp4player.cpp</in>
         <in>mp4recorder.cpp</in>
@@ -202,9 +199,7 @@
         <in>websocketconnection.cpp</in>
         <in>websocketserver.cpp</in>
         <in>xmlhandler.cpp</in>
-        <in>xmlrpcbroadcaster.cpp</in>
         <in>xmlrpcmcu.cpp</in>
-        <in>xmlrpcmediagateway.cpp</in>
         <in>xmlrpcserver.cpp</in>
         <in>xmlstreaminghandler.cpp</in>
       </df>
@@ -470,10 +465,6 @@
         <ccTool flags="2">
         </ccTool>
       </item>
-      <item path="src/broadcaster.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="2">
-        </ccTool>
-      </item>
       <item path="src/broadcastsession.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="2">
         </ccTool>
@@ -682,14 +673,6 @@
         </ccTool>
       </item>
       <item path="src/mcu.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="2">
-        </ccTool>
-      </item>
-      <item path="src/mediabridgesession.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="2">
-        </ccTool>
-      </item>
-      <item path="src/mediagateway.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="2">
         </ccTool>
       </item>
@@ -1045,15 +1028,7 @@
         <ccTool flags="2">
         </ccTool>
       </item>
-      <item path="src/xmlrpcbroadcaster.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="2">
-        </ccTool>
-      </item>
       <item path="src/xmlrpcmcu.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="2">
-        </ccTool>
-      </item>
-      <item path="src/xmlrpcmediagateway.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="2">
         </ccTool>
       </item>
@@ -1926,32 +1901,6 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="src/broadcaster.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="0">
-          <incDir>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </item>
       <item path="src/broadcastsession.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
@@ -2791,58 +2740,6 @@
         </ccTool>
       </item>
       <item path="src/mcu.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="0">
-          <incDir>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </item>
-      <item path="src/mediabridgesession.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="0">
-          <incDir>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </item>
-      <item path="src/mediagateway.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
             <pElem>ext</pElem>
@@ -4207,59 +4104,7 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="src/xmlrpcbroadcaster.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="0">
-          <incDir>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </item>
       <item path="src/xmlrpcmcu.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool flags="0">
-          <incDir>
-            <pElem>ext</pElem>
-            <pElem>src/vnc/common</pElem>
-            <pElem>src/vnc/libvncserver</pElem>
-            <pElem>../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </item>
-      <item path="src/xmlrpcmediagateway.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
             <pElem>ext</pElem>

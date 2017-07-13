@@ -27,7 +27,7 @@ public:
 
 public:
 	RTPPacket(MediaFrame::Type media,DWORD codec);
-	RTPPacket(MediaFrame::Type media,DWORD codec,const RTPHeader &header, const RTPHeaderExtension extension);
+	RTPPacket(MediaFrame::Type media,DWORD codec,const RTPHeader &header, const RTPHeaderExtension &extension);
 	virtual ~RTPPacket();
 
 	RTPPacket* Clone();

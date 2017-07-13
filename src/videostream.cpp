@@ -221,7 +221,7 @@ void* VideoStream::startReceivingVideo(void *par)
 * StartSending
 *	Comienza a mandar a la ip y puertos especificados
 ***************************************/
-int VideoStream::StartSending(char *sendVideoIp,int sendVideoPort,RTPMap& rtpMap)
+int VideoStream::StartSending(char *sendVideoIp,int sendVideoPort,const RTPMap& rtpMap,const RTPMap& aptMap)
 {
 	Log(">StartSendingVideo [%s,%d]\n",sendVideoIp,sendVideoPort);
 
@@ -239,7 +239,7 @@ int VideoStream::StartSending(char *sendVideoIp,int sendVideoPort,RTPMap& rtpMap
 		return Error("Error abriendo puerto rtp\n");
 
 	//Set sending map
-	rtp.SetSendingRTPMap(rtpMap);
+	rtp.SetSendingRTPMap(rtpMap,aptMap);
 	
 	//Set video codec
 	if(!rtp.SetSendingCodec(videoCodec))
@@ -262,7 +262,7 @@ int VideoStream::StartSending(char *sendVideoIp,int sendVideoPort,RTPMap& rtpMap
 * StartReceiving
 *	Abre los sockets y empieza la recetpcion
 ****************************************/
-int VideoStream::StartReceiving(RTPMap& rtpMap)
+int VideoStream::StartReceiving(const RTPMap& rtpMap,const RTPMap& aptMap)
 {
 	//Si estabamos reciviendo tenemos que parar
 	if (receivingVideo)
@@ -272,7 +272,7 @@ int VideoStream::StartReceiving(RTPMap& rtpMap)
 	int recVideoPort= rtp.GetLocalPort();
 
 	//Set receving map
-	rtp.SetReceivingRTPMap(rtpMap);
+	rtp.SetReceivingRTPMap(rtpMap,aptMap);
 
 	//Estamos recibiendo
 	receivingVideo=1;
@@ -518,7 +518,7 @@ int VideoStream::SendVideo()
 			else
 				//Do not overflow
 				sleep = 1;
-			Debug("-sleep %d\n",sleep);
+
 			//Calculate timeout
 			calcAbsTimeoutNS(&ts,&prev,sleep);
 			//Wait next or stopped

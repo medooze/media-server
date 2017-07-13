@@ -57,6 +57,8 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) :
 	//Empty types by defauilt
 	rtpMapIn = NULL;
 	rtpMapOut = NULL;
+	aptMapIn = NULL;
+	aptMapOut = NULL;
 	//No reports
 	setZeroTime(&lastFPU);
 	setZeroTime(&lastReceivedSR);
@@ -98,6 +100,10 @@ void RTPSession::Reset()
 		delete(rtpMapIn);
 	if (rtpMapOut)
 		delete(rtpMapOut);
+	if (aptMapIn)
+		delete(aptMapIn);
+	if (aptMapOut)
+		delete(aptMapOut);
 	if (cname)
 		free(cname);
 	//Delete packets
@@ -120,6 +126,8 @@ void RTPSession::Reset()
 	//Empty types by defauilt
 	rtpMapIn = NULL;
 	rtpMapOut = NULL;
+	aptMapIn = NULL;
+	aptMapOut = NULL;
 	//No reports
 	setZeroTime(&lastFPU);
 	setZeroTime(&lastReceivedSR);
@@ -159,18 +167,24 @@ void RTPSession::FlushRTXPackets()
 	rtxs.clear();
 }
 
-void RTPSession::SetSendingRTPMap(RTPMap &map)
+void RTPSession::SetSendingRTPMap(const RTPMap& rtpMap,const RTPMap& aptMap)
 {
 	//Debug
 	Debug("-RTPSession::SetSendingRTPMap\n");
-	map.Dump(media);
+	rtpMap.Dump(media);
 	
 	//If we already have one
 	if (rtpMapOut)
 		//Delete it
 		delete(rtpMapOut);
 	//Clone it
-	rtpMapOut = new RTPMap(map);
+	rtpMapOut = new RTPMap(rtpMap);
+	//If we already have one
+	if (aptMapOut)
+		//Delete it
+		delete(aptMapOut);
+	//Clone it
+	aptMapOut = new RTPMap(aptMap);
 }
 
 int RTPSession::SetLocalCryptoSDES(const char* suite, const char* key64)
@@ -235,9 +249,6 @@ int RTPSession::SetProperties(const Properties& properties)
 		} else if (it->first.compare("useRTX")==0) {
 			//Set rtx
 			useRTX = atoi(it->second.c_str());
-		} else if (it->first.compare("rtx.apt")==0) {
-			//Set apt
-			apt = atoi(it->second.c_str());
 		} else if (it->first.compare("urn:ietf:params:rtp-hdrext:ssrc-audio-level")==0) {
 			//Set extension
 			extMap[atoi(it->second.c_str())] = RTPHeaderExtension::SSRCAudioLevel;
@@ -282,18 +293,24 @@ int RTPSession::SetRemoteCryptoSDES(const char* suite, const char* key64)
 	return transport.SetRemoteCryptoSDES(suite,key64);
 }
 
-void RTPSession::SetReceivingRTPMap(RTPMap &map)
+void RTPSession::SetReceivingRTPMap(const RTPMap& rtpMap,const RTPMap& aptMap)
 {
 	//Debug
 	Debug("-RTPSession::SetReceivingRTPMap\n");
-	map.Dump(media);
+	rtpMap.Dump(media);
 	
 	//If we already have one
 	if (rtpMapIn)
 		//Delete it
 		delete(rtpMapIn);
 	//Clone it
-	rtpMapIn = new RTPMap(map);
+	rtpMapIn = new RTPMap(rtpMap);
+	//If we already have one
+	if (aptMapIn)
+		//Delete it
+		delete(aptMapIn);
+	//Clone it
+	aptMapIn = new RTPMap(aptMap);
 }
 
 int RTPSession::SetLocalPort(int recvPort)
@@ -509,10 +526,9 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 		//Set media
 		rtx->SetPayload(packet.GetMediaData(),packet.GetMediaLength());
 		//Add it to que
-		rtxs[packet.GetExtSeqNum()] = rtx;
+		rtxs[rtx->GetExtSeqNum()] = rtx;
 	}
 	
-
 	//No error yet, send packet
 	len = transport.SendRTPPacket(data,len);
 
@@ -679,7 +695,7 @@ void RTPSession::onRTPPacket(BYTE* data, DWORD size)
 			UltraDebug("RTX: Got   %.d:RTX for #%d ts:%u\n",type,osn,packet->GetTimestamp());
 			
 			//Get the associated type
-			type = apt;
+			type = aptMapIn->GetCodecForType(type);
 			//Find codec for type
 			codec = rtpMapIn->GetCodecForType(type);
 			//Check codec
@@ -705,18 +721,15 @@ void RTPSession::onRTPPacket(BYTE* data, DWORD size)
 			//It is a retrasmision
 			isRTX = true;
 		}	
-	} else {
-		//HACK: https://code.google.com/p/webrtc/issues/detail?id=3948
-		apt = type;
 	}
 
 	//if (media==MediaFrame::Video && !isRTX && seq % 40 ==0)
-	//	return Error("RTX: Drop %d %s packet #%d ts:%u\n",type,VideoCodec::GetNameFor((VideoCodec::Type)codec),packet->GetSeqNum(),packet->GetTimestamp());
+	//	return (void)Error("RTX: Drop %d %s packet #%d ts:%u\n",type,VideoCodec::GetNameFor((VideoCodec::Type)codec),packet->GetSeqNum(),packet->GetTimestamp());
 		
 	//Update lost packets
 	int lost = losts.AddPacket(packet);
 
-	if (lost) UltraDebug("RTX: Missing %d [media:%s,nack:%d,diff:%llu,rtt:%llu]\n",lost,MediaFrame::TypeToString(media),isNACKEnabled,getDifTime(&lastFPU),rtt);
+	if (lost) UltraDebug("RTX: Missing %d [media:%s,nack:%d,diff:%llu,rtt:%llu]\n",lost,MediaFrame::TypeToString(media),isNACKEnabled,getDifTime(&lastFPU)/1000,rtt);
 	
 	//If nack is enable t waiting for a PLI/FIR response (to not oeverflow)
 	if (isNACKEnabled && getDifTime(&lastFPU)/1000>rtt/2 && lost)
@@ -1289,7 +1302,7 @@ int RTPSession::ReSendPacket(int seq)
 		{
 			//Update RTX headers
 			header.ssrc		= send.rtx.ssrc;
-			header.payloadType	= rtpMapOut->GetTypeForCodec(VideoCodec::RTX);
+			header.payloadType	= aptMapOut->GetTypeForCodec(packet->GetPayloadType());
 			header.sequenceNumber	= send.rtx.extSeq++;
 			//Check seq wrap
 			if (send.rtx.extSeq==0)
@@ -1346,7 +1359,10 @@ int RTPSession::ReSendPacket(int seq)
 		//Copiamos los datos
 		memcpy(data+len,packet->GetMediaData(),packet->GetMediaLength());
 		
-		Debug("-RTPSession::ReSendPacket() | %d %d\n",seq,ext);
+		//Increase len
+		len += packet->GetMediaLength();
+		
+		Debug("-RTPSession::ReSendPacket() | seq:%d ext:%d pt:%d rtx:%d\n",seq,ext,header.payloadType,useRTX);
 		
 		//Send packet
 		transport.SendRTPPacket(data,len);

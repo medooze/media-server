@@ -1318,7 +1318,7 @@ int DTLSICETransport::Send(RTPPacket &packet)
 		//Set media
 		rtx->SetPayload(packet.GetMediaData(),packet.GetMediaLength());
 		//Add a clone to the rtx queue
-		group->packets[packet.GetExtSeqNum()] = rtx;
+		group->packets[rtx->GetExtSeqNum()] = rtx;
 	}
 	
 	//Synchronized

@@ -105,8 +105,9 @@ int Endpoint::StartSending(MediaFrame::Type media,char *sendIp,int sendPort,RTPM
 		//Error
 		return Error("Error SetRemotePort\n");
 
+	RTPMap aptMap;
 	//Set sending map
-	rtp->SetSendingRTPMap(rtpMap);
+	rtp->SetSendingRTPMap(rtpMap,aptMap);
 
 	//And send
 	return rtp->StartSending();
@@ -138,8 +139,9 @@ int Endpoint::StartReceiving(MediaFrame::Type media,RTPMap& rtpMap)
 		//Init it
 		return Error("No media supported");
 	
+	RTPMap aptmap;
 	//Set map
-	rtp->SetReceivingRTPMap(rtpMap);
+	rtp->SetReceivingRTPMap(rtpMap,aptmap);
 	
 	//Start
 	if (!rtp->StartReceiving())

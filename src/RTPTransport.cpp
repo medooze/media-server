@@ -909,13 +909,15 @@ int RTPTransport::ReadRTP()
 			}
 
 			//Debug
-			Debug("-RTPTransport::ReadRTP() | ICE: received bind request from [%s:%d] with candidate [prio:%d,use:%d] current:%d\n", inet_ntoa(from_addr.sin_addr), ntohs(from_addr.sin_port),candPrio,stun->HasAttribute(STUNMessage::Attribute::UseCandidate),prio);
+			UltraDebug("-RTPTransport::ReadRTP() | ICE: received bind request from [%s:%d] with candidate [prio:%d,use:%d] current:%d\n", inet_ntoa(from_addr.sin_addr), ntohs(from_addr.sin_port),candPrio,stun->HasAttribute(STUNMessage::Attribute::UseCandidate),prio);
 	
 
 			//If use candidate to a differentIP  is set or we don't have another IP address
 			if (recIP==INADDR_ANY || 
-				(recIP==from_addr.sin_addr.s_addr && sendAddr.sin_addr.s_addr!=from_addr.sin_addr.s_addr) || 
-				(stun->HasAttribute(STUNMessage::Attribute::UseCandidate) && candPrio>=prio)
+				(
+					(recIP==from_addr.sin_addr.s_addr && sendAddr.sin_addr.s_addr!=from_addr.sin_addr.s_addr) && 
+					(stun->HasAttribute(STUNMessage::Attribute::UseCandidate) && candPrio>=prio)
+				)
 			)
 			{
 				//Check if nominated

@@ -40,9 +40,9 @@ public:
 	virtual int Init();
 	virtual int End();
 
-	int StartSending(MediaFrame::Type media,char *sendIp,int sendPort,RTPMap& rtpMap);
+	int StartSending(MediaFrame::Type media,char *sendIp,int sendPort,const RTPMap& rtpMap,const RTPMap& aptMap);
 	int StopSending(MediaFrame::Type media);
-	int StartReceiving(MediaFrame::Type media,RTPMap& rtpMap);
+	int StartReceiving(MediaFrame::Type media,const RTPMap& rtpMap,const RTPMap& aptMap);
 	int StopReceiving(MediaFrame::Type media);
 	int SetLocalCryptoSDES(MediaFrame::Type media,const char* suite, const char* key64);
 	int SetRemoteCryptoSDES(MediaFrame::Type media,const char* suite, const char* key64);

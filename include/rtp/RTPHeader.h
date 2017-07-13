@@ -25,7 +25,7 @@ public:
 	bool	extension;
 	bool	mark;
 	BYTE	payloadType;
-	DWORD	sequenceNumber;
+	WORD	sequenceNumber;
 	DWORD	timestamp;
 	DWORD	ssrc;
 

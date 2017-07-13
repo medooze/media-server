@@ -143,7 +143,7 @@ void * AudioStream::startReceivingAudio(void *par)
 * StartSending
 *	Comienza a mandar a la ip y puertos especificados
 ***************************************/
-int AudioStream::StartSending(char *sendAudioIp,int sendAudioPort,RTPMap& rtpMap)
+int AudioStream::StartSending(char *sendAudioIp,int sendAudioPort,const RTPMap& rtpMap,const RTPMap& aptMap)
 {
 	Log(">StartSending audio [%s,%d]\n",sendAudioIp,sendAudioPort);
 
@@ -164,7 +164,7 @@ int AudioStream::StartSending(char *sendAudioIp,int sendAudioPort,RTPMap& rtpMap
 		return Error("Error en el SetRemotePort\n");
 
 	//Set sending map
-	rtp.SetSendingRTPMap(rtpMap);
+	rtp.SetSendingRTPMap(rtpMap,aptMap);
 
 	//Set audio codec
 	if(!rtp.SetSendingCodec(audioCodec))
@@ -186,7 +186,7 @@ int AudioStream::StartSending(char *sendAudioIp,int sendAudioPort,RTPMap& rtpMap
 * StartReceiving
 *	Abre los sockets y empieza la recetpcion
 ****************************************/
-int AudioStream::StartReceiving(RTPMap& rtpMap)
+int AudioStream::StartReceiving(const RTPMap& rtpMap,const RTPMap& aptMap)
 {
 	//If already receiving
 	if (receivingAudio)
@@ -197,7 +197,7 @@ int AudioStream::StartReceiving(RTPMap& rtpMap)
 	int recAudioPort = rtp.GetLocalPort();
 
 	//Set receving map
-	rtp.SetReceivingRTPMap(rtpMap);
+	rtp.SetReceivingRTPMap(rtpMap,aptMap);
 
 	//We are reciving audio
 	receivingAudio=1;

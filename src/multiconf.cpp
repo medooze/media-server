@@ -1042,7 +1042,7 @@ int MultiConf::SetRemoteSTUNCredentials(int id,MediaFrame::Type media,const char
 	return ret;
 }
 
-int MultiConf::StartSending(int id,MediaFrame::Type media,char *sendIp,int sendPort,RTPMap& rtpMap)
+int MultiConf::StartSending(int id,MediaFrame::Type media,char *sendIp,int sendPort,const RTPMap& rtpMap,const RTPMap& aptMap)
 {
 	int ret = 0;
 
@@ -1057,7 +1057,7 @@ int MultiConf::StartSending(int id,MediaFrame::Type media,char *sendIp,int sendP
 	//Check particpant
 	if (part)
 		//Set  codec
-		ret = part->StartSending(media,sendIp,sendPort,rtpMap);
+		ret = part->StartSending(media,sendIp,sendPort,rtpMap,aptMap);
 
 	//Unlock
 	participantsLock.DecUse();
@@ -1090,7 +1090,7 @@ int MultiConf::StopSending(int id,MediaFrame::Type media)
 	return ret;
 }
 
-int MultiConf::StartReceiving(int id,MediaFrame::Type media,RTPMap& rtpMap)
+int MultiConf::StartReceiving(int id,MediaFrame::Type media,const RTPMap& rtpMap,const RTPMap& aptMap)
 {
 	int ret = 0;
 
@@ -1105,7 +1105,7 @@ int MultiConf::StartReceiving(int id,MediaFrame::Type media,RTPMap& rtpMap)
 	//Check particpant
 	if (part)
 		//Set video codec
-		ret = part->StartReceiving(media,rtpMap);
+		ret = part->StartReceiving(media,rtpMap,aptMap);
 
 	//Unlock
 	participantsLock.DecUse();

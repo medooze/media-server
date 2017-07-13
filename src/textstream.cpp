@@ -138,7 +138,7 @@ void * TextStream::startReceivingText(void *par)
 * StartSending
 *	Comienza a mandar a la ip y puertos especificados
 ***************************************/
-int TextStream::StartSending(char *sendTextIp,int sendTextPort,RTPMap& rtpMap)
+int TextStream::StartSending(char *sendTextIp,int sendTextPort,const RTPMap& rtpMap,const RTPMap& aptMap)
 {
 	Log(">StartSending text [%s,%d]\n",sendTextIp,sendTextPort);
 
@@ -159,10 +159,10 @@ int TextStream::StartSending(char *sendTextIp,int sendTextPort,RTPMap& rtpMap)
 		return Error("Error en el SetRemotePort\n");
 
 	//Set sending map
-	rtp.SetSendingRTPMap(rtpMap);
+	rtp.SetSendingRTPMap(rtpMap,aptMap);
 
 	//Get t140 for redundancy
-	for (RTPMap::iterator it = rtpMap.begin(); it!=rtpMap.end(); ++it)
+	for (RTPMap::const_iterator it = rtpMap.begin(); it!=rtpMap.end(); ++it)
 	{
 		//Is it ourr codec
 		if (it->second==TextCodec::T140)
@@ -194,7 +194,7 @@ int TextStream::StartSending(char *sendTextIp,int sendTextPort,RTPMap& rtpMap)
 * StartReceiving
 *	Abre los sockets y empieza la recetpcion
 ****************************************/
-int TextStream::StartReceiving(RTPMap& rtpMap)
+int TextStream::StartReceiving(const RTPMap& rtpMap,const RTPMap& aptMap)
 {
 	//If already receiving
 	if (receivingText)
@@ -205,7 +205,7 @@ int TextStream::StartReceiving(RTPMap& rtpMap)
 	int recTextPort = rtp.GetLocalPort();
 
 	//Set receving map
-	rtp.SetReceivingRTPMap(rtpMap);
+	rtp.SetReceivingRTPMap(rtpMap,aptMap);
 
 	//We are reciving text
 	receivingText=1;

@@ -183,16 +183,16 @@ int RTPParticipant::SetRemoteSTUNCredentials(MediaFrame::Type media,const char* 
 	return 0;
 }
 
-int RTPParticipant::StartSending(MediaFrame::Type media,char *ip, int port,RTPMap& rtpMap)
+int RTPParticipant::StartSending(MediaFrame::Type media,char *ip, int port,const RTPMap& rtpMap,const RTPMap& aptMap)
 {
 	switch (media)
 	{
 		case MediaFrame::Audio:
-			return audio.StartSending(ip,port,rtpMap);
+			return audio.StartSending(ip,port,rtpMap,aptMap);
 		case MediaFrame::Video:
-			return video.StartSending(ip,port,rtpMap);
+			return video.StartSending(ip,port,rtpMap,aptMap);
 		case MediaFrame::Text:
-			return text.StartSending(ip,port,rtpMap);
+			return text.StartSending(ip,port,rtpMap,aptMap);
 	}
 
 	return 0;
@@ -214,16 +214,16 @@ int RTPParticipant::StopSending(MediaFrame::Type media)
 
 }
 
-int RTPParticipant::StartReceiving(MediaFrame::Type media,RTPMap& rtpMap)
+int RTPParticipant::StartReceiving(MediaFrame::Type media,const RTPMap& rtpMap,const RTPMap& aptMap)
 {
-		switch (media)
+	switch (media)
 	{
 		case MediaFrame::Audio:
-			return audio.StartReceiving(rtpMap);
+			return audio.StartReceiving(rtpMap,aptMap);
 		case MediaFrame::Video:
-			return video.StartReceiving(rtpMap);
+			return video.StartReceiving(rtpMap,aptMap);
 		case MediaFrame::Text:
-			return text.StartReceiving(rtpMap);
+			return text.StartReceiving(rtpMap,aptMap);
 	}
 
 	return 0;

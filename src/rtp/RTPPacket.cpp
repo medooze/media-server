@@ -40,7 +40,7 @@ RTPPacket::RTPPacket(MediaFrame::Type media,DWORD codec)
 	//Set time
 	time = ::getTimeMS();
 }
-RTPPacket::RTPPacket(MediaFrame::Type media,DWORD codec,const RTPHeader &header, const RTPHeaderExtension extension) :
+RTPPacket::RTPPacket(MediaFrame::Type media,DWORD codec,const RTPHeader &header, const RTPHeaderExtension &extension) :
 	header(header),
 	extension(extension)
 {

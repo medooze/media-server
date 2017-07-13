@@ -99,9 +99,9 @@ public:
 
 	int GetMosaicPositions(int mosaicId,std::list<int> &positions);
 
-	int StartSending(int partId,MediaFrame::Type media,char *sendIp,int sendPort,RTPMap& rtpMap);
+	int StartSending(int partId,MediaFrame::Type media,char *sendIp,int sendPort,const RTPMap& rtpMap,const RTPMap& aptMap);
 	int StopSending(int partId,MediaFrame::Type media);
-	int StartReceiving(int partId,MediaFrame::Type media,RTPMap& rtpMap);
+	int StartReceiving(int partId,MediaFrame::Type media,const RTPMap& rtpMap,const RTPMap& aptMap);
 	int StopReceiving(int partId,MediaFrame::Type media);
 	int SetLocalCryptoSDES(int id,MediaFrame::Type media,const char *suite,const char* key);
 	int SetRemoteCryptoSDES(int id,MediaFrame::Type media,const char *suite,const char* key);
