@@ -23,7 +23,7 @@ public:
 	int DeleteMixer(int id);
 	AudioInput*  GetInput(int id);
 	AudioOutput* GetOutput(int id);
-	void Process(void);
+	void Process(DWORD numSamples);
 
 	int CreateSidebar();
 	int AddSidebarParticipant(int SidebarId,int partId);

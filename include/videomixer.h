@@ -52,6 +52,7 @@ public:
 	int SetCompositionType(int mosaicId,Mosaic::Type comp,int size);
 	int DeleteMosaic(int mosaicId);
 
+	void Process(bool forceUpdate, QWORD now);
 	int End();
 	
 public:
@@ -116,7 +117,7 @@ private:
 	VADMode		vadMode;
 	bool		keepAspectRatio;
 	bool		displayNames;
-	
+	DWORD		version;
 	Properties	overlay;
 };
 

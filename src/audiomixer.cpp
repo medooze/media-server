@@ -77,107 +77,18 @@ int AudioMixer::MixAudio()
 			//Wait until next to process again minus process time
 			msleep(step*1000-proc);
 
-		//Block list
-		lstAudiosUse.WaitUnusedAndLock();
-
 		//Get new time
 		QWORD curr = getDifTime(&tv);
-
+		
 		//Get num samples at desired rate for the time difference
 		DWORD numSamples = (curr*rate)/1000000-(prev*rate)/1000000;
 
 		//Update curr
 		prev = curr;
-
-		//At most the maximum
-		if (numSamples>Sidebar::MIXER_BUFFER_SIZE)
-		{
-			//Log
-			Log("-AudiMixer num mixing samples bigger than buffer [%d]\n",numSamples);
-			//Set it at most (shoudl never happen)
-			numSamples = Sidebar::MIXER_BUFFER_SIZE;
-		}
-
-		//For each sidepar
-		for (Sidebars::iterator sit=sidebars.begin(); sit!=sidebars.end(); ++sit)
-			//REset
-			sit->second->Reset();
 		
-		//First pass: Iterate through the audio inputs and calculate the sum of all streams
-		for(Audios::iterator it = audios.begin(); it != audios.end(); ++it)
-		{
-			//Get the source
-			AudioSource *audio = it->second;
-			//Get id
-			DWORD id = it->first;
-			//Get the samples from the fifo
-			audio->len = audio->output->GetSamples(audio->buffer,numSamples);
-			//Clean rest
-			memset(audio->buffer+audio->len,0,Sidebar::MIXER_BUFFER_SIZE-audio->len);
-			//Get VAD value
-			audio->vad = audio->output->GetVAD(numSamples);
-			//For each sidepaf
-			for (Sidebars::iterator sit = sidebars.begin(); sit!=sidebars.end(); ++sit)
-			{
-				//Get sidebar
-				Sidebar * sidebar = sit->second;
-				//Check if participant is in the sidebar
-				if (sidebar->HasParticipant(id))
-					//Mix it
-					sidebar->Update(id,audio->buffer,audio->len);
-			}
-		}
+		//Proesss them
+		Process(numSamples);
 
-		// Second pass: Calculate this stream's output
-		for(Audios::iterator it = audios.begin(); it != audios.end(); it++)
-		{
-			//Get the source
-			AudioSource *audio = it->second;
-			//Get id
-			DWORD id = it->first;
-			//Check audio
-			if (!audio)
-				//Next
-				continue;
-			//Check sidebar
-			if (!audio->sidebar)
-				//Next
-				continue;
-			//Get mixed buffer
-			SWORD *mixed = audio->sidebar->GetBuffer();
-			//And the audio buffer for participant
-			SWORD *buffer = audio->buffer;
-
-			//Check if we are also an input to the sidebar to remove ound sound
-			if (audio->sidebar->HasParticipant(id))
-			{
-				//Get pointers to buffer
-				__m128i* b = (__m128i*) buffer;
-				__m128i* m = (__m128i*) mixed;
-
-				//Sum 8 each time
-				for(DWORD n = (audio->len + 7) >> 3; n != 0; --n,++b,++m)
-				{
-					//Load data in SSE registers
-					__m128i xmm1 = _mm_load_si128(m);
-					__m128i xmm2 = _mm_load_si128(b);
-					//SSE2 sum
-					_mm_store_si128(b,  _mm_sub_epi16(xmm1,xmm2));
-				}
-				//Check length
-				if (audio->len<numSamples)
-					//Copy the rest
-					memcpy(buffer+audio->len,mixed+audio->len,(numSamples-audio->len)*sizeof(SWORD));
-				//Put the output
-				audio->input->PutSamples(buffer,numSamples);
-			} else {
-				//Copy everything as it is
-				audio->input->PutSamples((SWORD*)mixed,numSamples);
-			}
-		}
-
-		//Unblock list
-		lstAudiosUse.Unlock();
 	}
 
 	//Logeamos
@@ -186,6 +97,101 @@ int AudioMixer::MixAudio()
 	return 1;
 }
 
+void AudioMixer::Process(DWORD numSamples) 
+{
+	//Block list
+	lstAudiosUse.WaitUnusedAndLock();
+
+	//At most the maximum
+	if (numSamples>Sidebar::MIXER_BUFFER_SIZE)
+	{
+		//Log
+		Log("-AudiMixer num mixing samples bigger than buffer [%d]\n",numSamples);
+		//Set it at most (shoudl never happen)
+		numSamples = Sidebar::MIXER_BUFFER_SIZE;
+	}
+
+	//For each sidepar
+	for (Sidebars::iterator sit=sidebars.begin(); sit!=sidebars.end(); ++sit)
+		//REset
+		sit->second->Reset();
+
+	//First pass: Iterate through the audio inputs and calculate the sum of all streams
+	for(Audios::iterator it = audios.begin(); it != audios.end(); ++it)
+	{
+		//Get the source
+		AudioSource *audio = it->second;
+		//Get id
+		DWORD id = it->first;
+		//Get the samples from the fifo
+		audio->len = audio->output->GetSamples(audio->buffer,numSamples);
+		//Clean rest
+		memset(audio->buffer+audio->len,0,Sidebar::MIXER_BUFFER_SIZE-audio->len);
+		//Get VAD value
+		audio->vad = audio->output->GetVAD(numSamples);
+		//For each sidepaf
+		for (Sidebars::iterator sit = sidebars.begin(); sit!=sidebars.end(); ++sit)
+		{
+			//Get sidebar
+			Sidebar * sidebar = sit->second;
+			//Check if participant is in the sidebar
+			if (sidebar->HasParticipant(id))
+				//Mix it
+				sidebar->Update(id,audio->buffer,audio->len);
+		}
+	}
+
+	// Second pass: Calculate this stream's output
+	for(Audios::iterator it = audios.begin(); it != audios.end(); it++)
+	{
+		//Get the source
+		AudioSource *audio = it->second;
+		//Get id
+		DWORD id = it->first;
+		//Check audio
+		if (!audio)
+			//Next
+			continue;
+		//Check sidebar
+		if (!audio->sidebar)
+			//Next
+			continue;
+		//Get mixed buffer
+		SWORD *mixed = audio->sidebar->GetBuffer();
+		//And the audio buffer for participant
+		SWORD *buffer = audio->buffer;
+
+		//Check if we are also an input to the sidebar to remove ound sound
+		if (audio->sidebar->HasParticipant(id))
+		{
+			//Get pointers to buffer
+			__m128i* b = (__m128i*) buffer;
+			__m128i* m = (__m128i*) mixed;
+
+			//Sum 8 each time
+			for(DWORD n = (audio->len + 7) >> 3; n != 0; --n,++b,++m)
+			{
+				//Load data in SSE registers
+				__m128i xmm1 = _mm_load_si128(m);
+				__m128i xmm2 = _mm_load_si128(b);
+				//SSE2 sum
+				_mm_store_si128(b,  _mm_sub_epi16(xmm1,xmm2));
+			}
+			//Check length
+			if (audio->len<numSamples)
+				//Copy the rest
+				memcpy(buffer+audio->len,mixed+audio->len,(numSamples-audio->len)*sizeof(SWORD));
+			//Put the output
+			audio->input->PutSamples(buffer,numSamples);
+		} else {
+			//Copy everything as it is
+			audio->input->PutSamples((SWORD*)mixed,numSamples);
+		}
+	}
+
+	//Unblock list
+	lstAudiosUse.Unlock();
+}
 int AudioMixer::SetCalculateVAD(bool vad)
 {
 	Log(".SetCalculateVAD [vad:%d]\n",vad);
@@ -204,10 +210,7 @@ int AudioMixer::Init(const Properties &properties)
 	this->rate = properties.GetProperty("rate",8000);
 
 	//Log
-	Log("-Init audio mixer [rate: %d]\n",vad,rate);
-
-	// Estamos mzclando
-	mixingAudio = true;
+	Log("-Init audio mixer [rate:%d]\n",vad,rate);
 
 	//Create default sidebar
 	int id = CreateSidebar();
@@ -215,8 +218,14 @@ int AudioMixer::Init(const Properties &properties)
 	//Set default
 	defaultSidebar = sidebars[id];
 
-	//Y arrancamoe el thread
-	createPriorityThread(&mixAudioThread,startMixingAudio,this,0);
+	//Check if we are in online or offline mode
+	if (properties.GetProperty("online",true))
+	{
+		// Mix audio
+		mixingAudio = true;
+		//Start trhead
+		createPriorityThread(&mixAudioThread,startMixingAudio,this,0);
+	}
 
 	return 1;
 }

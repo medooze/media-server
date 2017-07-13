@@ -278,6 +278,23 @@ public:
 		return atoi(it->second.c_str());
 	}
 	
+	QWORD GetProperty(const char* key,QWORD defaultValue) const
+	{
+		return GetProperty(std::string(key),defaultValue);
+	}
+
+	QWORD GetProperty(const std::string &key,QWORD defaultValue) const
+	{
+		//Find item
+		const_iterator it = find(key);
+		//If not found
+		if (it==end())
+			//return default
+			return defaultValue;
+		//Return value
+		return atoll(it->second.c_str());
+	}
+	
 	bool GetProperty(const char* key,bool defaultValue) const
 	{
 		return GetProperty(std::string(key),defaultValue);
