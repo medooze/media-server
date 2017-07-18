@@ -36,6 +36,10 @@ public:
 	
 	int SetCalculateVAD(bool vad);
 
+public:
+	static int SidebarDefault;
+	static int NoSidebar;
+	
 protected:
 	//Mix thread
 	int MixAudio();

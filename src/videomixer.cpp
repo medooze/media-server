@@ -12,6 +12,8 @@ typedef std::set<Pair, std::greater<Pair> > RevOrderedSetOfPairs;
 
 
 DWORD VideoMixer::vadDefaultChangePeriod = 5000;
+int VideoMixer::MosaicDefault = 0;
+int VideoMixer::NoMosaic = -1;
 
 void VideoMixer::SetVADDefaultChangePeriod(DWORD ms)
 {
@@ -33,7 +35,7 @@ VideoMixer::VideoMixer(const std::wstring &tag) : eventSource(tag)
 	defaultMosaic	= NULL;
 
 	//No mosaics
-	maxMosaics = 0;
+	maxMosaics = MosaicDefault;
 
 	//Nothing yet
 	version = 0;
@@ -99,31 +101,6 @@ int VideoMixer::MixVideo()
 	//Mientras estemos mezclando
 	while(mixingVideo)
 	{
-		//Protegemos la lista
-		lstVideosUse.WaitUnusedAndLock();
-
-		//For each video
-		for (Videos::iterator it=lstVideos.begin();it!=lstVideos.end();++it)
-		{
-			//Get Source
-			VideoSource *source = it->second;
-			//Get input
-			PipeVideoInput *input = source->input;
-
-			//Get mosaic
-			Mosaic *mosaic = source->mosaic;
-
-			//Si no ha cambiado el frame volvemos al principio
-			if (input && mosaic && (source->refresh || mosaic->HasChanged() || forceUpdate))
-				//Colocamos el frame
-				input->SetFrame(mosaic->GetFrame(),mosaic->GetWidth(),mosaic->GetHeight());
-			//Reset refresh 
-			source->refresh = true;
-		}
-
-		//Desprotege la lista
-		lstVideosUse.Unlock();
-
 		//LOck the mixing
 		pthread_mutex_lock(&mixVideoMutex);
 
@@ -307,6 +284,25 @@ void VideoMixer::Process(bool forceUpdate, QWORD now)
 		free(newPos);
 	}
 
+	//For each video
+	for (Videos::iterator it=lstVideos.begin();it!=lstVideos.end();++it)
+	{
+		//Get Source
+		VideoSource *source = it->second;
+		//Get input
+		PipeVideoInput *input = source->input;
+
+		//Get mosaic
+		Mosaic *mosaic = source->mosaic;
+
+		//Si no ha cambiado el frame volvemos al principio
+		if (input && mosaic && (source->refresh || mosaic->HasChanged() || forceUpdate))
+			//Colocamos el frame
+			input->SetFrame(mosaic->GetFrame(),mosaic->GetWidth(),mosaic->GetHeight());
+		//Reset refresh 
+		source->refresh = true;
+	}
+	
 	//Desprotege la lista
 	lstVideosUse.Unlock();
 }

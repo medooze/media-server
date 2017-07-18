@@ -8,6 +8,9 @@
 #include "pipeaudiooutput.h"
 #include "sidebar.h"
 
+int AudioMixer::SidebarDefault = 0;
+int AudioMixer::NoSidebar = -1;
+
 /***********************
 * AudioMixer
 *	Constructor
@@ -17,7 +20,7 @@ AudioMixer::AudioMixer()
 	//Not mixing
 	mixingAudio = 0;
 	//No sidebars
-	numSidebars = 0;
+	numSidebars = SidebarDefault;
 	//NO vad by default
 	vad = false;
 }
@@ -207,10 +210,10 @@ int AudioMixer::SetCalculateVAD(bool vad)
 int AudioMixer::Init(const Properties &properties)
 {
 	//Store rate
-	this->rate = properties.GetProperty("rate",8000);
+	rate = properties.GetProperty("rate",8000);
 
 	//Log
-	Log("-Init audio mixer [rate:%d]\n",vad,rate);
+	Log("-Init audio mixer [vad:%d,rate:%d]\n",vad,rate);
 
 	//Create default sidebar
 	int id = CreateSidebar();

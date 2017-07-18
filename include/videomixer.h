@@ -39,7 +39,6 @@ public:
 	VideoInput*  GetInput(int id);
 	VideoOutput* GetOutput(int id);
 	int SetSlot(int num,int id);
-	int SetCompositionType(Mosaic::Type comp,int size);
 
 	int CreateMosaic(Mosaic::Type comp,int size);
 	int SetMosaicOverlayImage(int mosaicId,const char* filename);
@@ -55,6 +54,9 @@ public:
 	void Process(bool forceUpdate, QWORD now);
 	int End();
 	
+public:
+	static int MosaicDefault;
+	static int NoMosaic;	
 public:
 	static void SetVADDefaultChangePeriod(DWORD ms);
 
