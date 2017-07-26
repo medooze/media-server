@@ -145,14 +145,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		//Exit
 		return 1;
 	}
-	//Check size
-	if (header.padding)
-	{
-		//Get last 2 bytes
-		WORD padding = get2(data,len-2);
-		//Remove from size
-		len -= padding;
-	}
+	
 	//If it has extension
 	if (header.extension)
 	{
@@ -172,6 +165,23 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		ini += l;
 	}
 
+	//Check size with padding
+	if (header.padding)
+	{
+		//Get last 2 bytes
+		WORD padding = get2(data,size-2);
+		//Ensure we have enought size
+		if (len-ini<padding)
+		{
+			///Debug
+			Debug("-RTPSession::onRTPPacket() | RTP padding is bigger than size\n");
+			//Exit
+			return 1;
+		}
+		//Remove from size
+		len -= padding;
+	}
+	
 	//If it is an empyt packet
 	if (ini==len)
 	{	
