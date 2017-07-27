@@ -795,6 +795,7 @@ void RTPSession::onRTPPacket(BYTE* data, DWORD size)
 
 		//Increase stats
 		recv.media.numPackets++;
+		recv.media.totalPacketsSinceLastSR++;
 		recv.media.totalBytes += size;
 		recv.media.totalBytesSinceLastSR += size;
 
