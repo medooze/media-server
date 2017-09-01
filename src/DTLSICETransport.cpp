@@ -1548,7 +1548,8 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 						Debug("-DTLSICETransport::onRTCP() | TempMaxMediaStreamBitrateNotification\n");
 						break;
 					case RTCPRTPFeedback::TransportWideFeedbackMessage:
-						//Debug("-DTLSICETransport::onRTCP() | TransportWideFeedbackMessage\n");
+						Debug("-DTLSICETransport::onRTCP() | TransportWideFeedbackMessage\n");
+						
 						break;
 				}
 				break;

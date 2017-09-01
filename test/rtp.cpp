@@ -32,6 +32,8 @@ public:
 		Log("NACK\n");
 		testNack();
 		testTransportField();
+		Log("SDES header extensions\n");
+		testSDESHeaderExtensions();
 		end();
 	}
 	
@@ -230,6 +232,159 @@ public:
 		delete(rtcp2);
 		delete(cloned2);
 		
+	}
+	
+	void testSDESHeaderExtensions()
+	{
+		constexpr int8_t kPayloadType = 100;
+		constexpr uint16_t kSeqNum = 0x1234;
+		constexpr uint8_t kSeqNumFirstByte = kSeqNum >> 8;
+		constexpr uint8_t kSeqNumSecondByte = kSeqNum & 0xff;
+		constexpr uint8_t RTPStreamId = 0x0a;
+		constexpr uint8_t MediaStreamId = 0x0b;
+		constexpr uint8_t RepairedRTPStreamId = 0x0c;
+		constexpr char kStreamId[] = "streamid";
+		constexpr char kRepairedStreamId[] = "repairedid";
+		constexpr char kMid[] = "mid";
+		constexpr uint8_t kPacketWithRsid[] = {
+		    0x90, kPayloadType, kSeqNumFirstByte, kSeqNumSecondByte,
+		    0x65, 0x43, 0x12, 0x78,
+		    0x12, 0x34, 0x56, 0x78,
+		    0xbe, 0xde, 0x00, 0x03,
+		    0xa7, 's',  't',  'r',
+		    'e',  'a',  'm',  'i',
+		    'd' , 0x00, 0x00, 0x00};
+
+		constexpr uint8_t kPacketWithMid[] = {
+		    0x90, kPayloadType, kSeqNumFirstByte, kSeqNumSecondByte,
+		    0x65, 0x43, 0x12, 0x78,
+		    0x12, 0x34, 0x56, 0x78,
+		    0xbe, 0xde, 0x00, 0x01,
+		    0xb2, 'm',  'i',  'd'};
+		
+		constexpr uint8_t kPacketWithAll[] = {
+		    0x90, kPayloadType, kSeqNumFirstByte, kSeqNumSecondByte,
+		    0x65, 0x43, 0x12, 0x78,
+		    0x12, 0x34, 0x56, 0x78,
+		    0xbe, 0xde, 0x00, 0x06,
+		    0xb2, 'm',  'i',  'd',
+	            0xa7, 's',  't',  'r',
+		    'e',  'a',  'm',  'i',
+		    'd',  0xc9, 'r',  'e',
+		    'p',  'a',  'i',  'r',
+		    'e',  'd',  'i',  'd'};
+		
+		RTPMap	extMap;
+		extMap[RTPStreamId] = RTPHeaderExtension::RTPStreamId;
+		extMap[MediaStreamId] = RTPHeaderExtension::MediaStreamId;
+		extMap[RepairedRTPStreamId] = RTPHeaderExtension::RepairedRTPStreamId;
+		
+		//RID
+		{
+			RTPHeader header;
+			RTPHeaderExtension extension;
+			//Parse header with rid
+			const BYTE* data = kPacketWithRsid;
+			DWORD size = sizeof(kPacketWithRsid);
+			DWORD len = header.Parse(data,size);
+
+			//Dump
+			header.Dump();
+
+			//Check data
+			assert(len);
+			assert(header.version==2);
+			assert(!header.padding);
+			assert(header.extension);
+			assert(header.payloadType==kPayloadType);
+			assert(header.sequenceNumber==kSeqNum);
+
+			//Parse extensions
+			len = extension.Parse(extMap,data+len,size-len);
+
+			//Dump
+			extension.Dump();
+
+			//Check
+			assert(len);
+			assert(extension.hasRTPStreamId);
+			assert(strcmp(extension.rid.c_str(),kStreamId)==0);
+		}
+		
+		//MID
+		{
+			RTPHeader header;
+			RTPHeaderExtension extension;
+			//Parse header witn mid
+			const BYTE* data = kPacketWithMid;
+			DWORD size = sizeof(kPacketWithMid);
+			DWORD len = header.Parse(data,size);
+			//Dump
+			header.Dump();
+
+			//Check data
+			assert(len);
+			assert(header.version==2);
+			assert(!header.padding);
+			assert(header.extension);
+			assert(header.payloadType==kPayloadType);
+			assert(header.sequenceNumber==kSeqNum);
+		
+			//Parse extensions
+			len = extension.Parse(extMap,data+len,size-len);
+
+			//Dump
+			extension.Dump();
+
+			//Check
+			assert(len);
+			assert(extension.hasMediaStreamId);
+			assert(strcmp(extension.mid.c_str(),kMid)==0);
+		}
+		
+		//ALL
+		{
+			RTPHeader header;
+			RTPHeaderExtension extension;
+			//Parse header with all
+			const BYTE* data = kPacketWithAll;
+			DWORD size = sizeof(kPacketWithAll);
+			DWORD len = header.Parse(data,size);
+
+			//Dump
+			header.Dump();
+
+			//Check data
+			assert(len);
+			assert(header.version==2);
+			assert(!header.padding);
+			assert(header.extension);
+			assert(header.payloadType==kPayloadType);
+			assert(header.sequenceNumber==kSeqNum);
+
+			//Parse extensions
+			len = extension.Parse(extMap,data+len,size-len);
+
+			//Dump
+			extension.Dump();
+
+			//Check
+			assert(len);
+			assert(extension.hasRTPStreamId);
+			assert(strcmp(extension.rid.c_str(),kStreamId)==0);
+			assert(extension.hasRepairedRTPStreamId);
+			assert(strcmp(extension.repairedId.c_str(),kRepairedStreamId)==0);
+			assert(extension.hasMediaStreamId);
+			assert(strcmp(extension.mid.c_str(),kMid)==0);
+			
+			//Serialize and ensure it is the same
+			BYTE aux[128];
+			len = header.Serialize(aux,128);
+			len += extension.Serialize(extMap,aux+len,size-len);
+			Dump(data,size);
+			Dump(aux,len);
+			assert(len==size);
+		}
 	}
 	
 };
