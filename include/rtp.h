@@ -46,8 +46,8 @@ struct RTPSource
 	
 	RTPSource()
 	{
-		ssrc		= random();
-		extSeq		= random();
+		ssrc		= 0;
+		extSeq		= 0;
 		cycles		= 0;
 		numPackets	= 0;
 		numRTCPPackets	= 0;
@@ -64,8 +64,8 @@ struct RTPSource
 	
 	virtual void Reset()
 	{
-		ssrc		= random();
-		extSeq		= random();
+		ssrc		= 0;
+		extSeq		= 0;
 		cycles		= 0;
 		numPackets	= 0;
 		numRTCPPackets	= 0;
@@ -132,6 +132,8 @@ struct RTPOutgoingSource : public RTPSource
 	{
 		time		= random();
 		lastTime	= time;
+		ssrc		= random();
+		extSeq		= random();
 		numPackets	= 0;
 		numRTCPPackets	= 0;
 		totalBytes	= 0;
@@ -148,6 +150,8 @@ struct RTPOutgoingSource : public RTPSource
 	virtual void Reset()
 	{
 		RTPSource::Reset();
+		ssrc		= random();
+		extSeq		= random();
 		time		= random();
 		lastTime	= time;
 		numPackets	= 0;
@@ -239,6 +243,8 @@ public:
 public:
 	typedef std::set<Listener*> Listeners;
 public:	
+	std::string rid;
+	std::string mid;
 	MediaFrame::Type type;
 	RTPLostPackets	losts;
 	RTPBuffer packets;

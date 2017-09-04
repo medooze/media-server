@@ -457,7 +457,7 @@ int RTPBundleTransport::Read()
 	//Check if it was not registered
 	if (it==candidates.end())
 		//Error
-		return Error("-No registered ICE candidate for [%s]",remote);
+		return Error("-No registered ICE candidate for [%s]\n",remote);
 	
 	//Get ice transport
 	ICERemoteCandidate *ice = it->second;

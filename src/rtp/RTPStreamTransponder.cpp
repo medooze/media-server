@@ -15,27 +15,60 @@
 #include "waitqueue.h"
 
 
-RTPStreamTransponder::RTPStreamTransponder(RTPIncomingSourceGroup* incoming, RTPReceiver* receiver, RTPOutgoingSourceGroup* outgoing,RTPSender* sender)
+RTPStreamTransponder::RTPStreamTransponder(RTPOutgoingSourceGroup* outgoing,RTPSender* sender)
 {
 	//No thread
 	setZeroThread(&thread);
 	running = false;
 	
-	//Store streams
-	this->incoming = incoming;
+	//No packets
+	first = 0;
+	base = 0;
+	last = 0;
+	
+	//Store outgoing streams
 	this->outgoing = outgoing;
-	this->receiver = receiver;
 	this->sender = sender;
 	
+	//No incoming yet
+	this->incoming = NULL;
+	this->receiver = NULL;
+	
 	//Add us as listeners
-	incoming->AddListener(this);
 	outgoing->AddListener(this);
 
 	//Start
 	Start();
+}
+
+
+bool RTPStreamTransponder::SetIncoming(RTPIncomingSourceGroup* incoming, RTPReceiver* receiver)
+{
+	ScopedLock lock(mutex);
 	
-	//Request update on the incoming
-	if (this->receiver) this->receiver->SendPLI(this->incoming->media.ssrc);
+	//Remove listener from old stream
+	if (this->incoming) 
+		this->incoming->RemoveListener(this);
+	
+	//Store stream and receiver
+	this->incoming = incoming;
+	this->receiver = receiver;
+	
+	//Double check
+	if (this->incoming)
+	{
+		//Add us as listeners
+		incoming->AddListener(this);
+	
+		//Request update on the incoming
+		if (this->receiver) this->receiver->SendPLI(this->incoming->media.ssrc);
+	}
+	
+	//Reset packets
+	Reset();
+	
+	//OK
+	return true;
 }
 
 RTPStreamTransponder::~RTPStreamTransponder()
@@ -90,19 +123,42 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,RTPPacket* packet
 		return;
 	}
 	
+	//Get new seq number
+	DWORD extSeqNum = packet->GetExtSeqNum();
+	
+	//Check if it the first received packet
+	if (!first)
+		//Store seq number
+		first = packet->GetExtSeqNum();
+	
+	//Ensure it is not before first one
+	if (extSeqNum<first)
+	{
+		//Error
+		Error("-StreamTransponder::onRTP got packet before first [first:%lu,seq:%lu]\n",first,extSeqNum);
+		//Exit
+		return;
+	}
+	
+	//Set normalized seq num
+	extSeqNum = base + (extSeqNum - first);
+	
 	//Clone packet
 	RTPPacket* cloned = packet->Clone();
+	
+	//Set new seq numbers
+	cloned->SetSeqNum(extSeqNum);
+	cloned->SetSeqCycles(extSeqNum >> 16);
 
 	//Check if it is an VP9 packet
 	if (cloned->GetCodec()==VideoCodec::VP9)
 	{
-		DWORD extSeqNum;
 		bool mark;
 		//Select layer
 		if (!selector.Select(packet,extSeqNum,mark))
 		       //Drop
 		       return;
-	       //Set them
+	       //Reset seq num again
 	       cloned->SetSeqNum(extSeqNum);
 	       cloned->SetSeqCycles(extSeqNum >> 16);
 	       //Set mark
@@ -181,6 +237,25 @@ void * RTPStreamTransponder::run(void *par)
 	return NULL;
 }
 
+void  RTPStreamTransponder::Reset()
+{
+	//LOck packets
+	packets.WaitUnusedAndLock();
+	
+	//Delete each packet
+	while(packets.Length())
+		//Delete packet
+		delete( packets.Pop());
+	
+	//Reset first paquet seq num
+	first = 0;
+	//Store the last send one
+	base = last;
+	
+	//Unlock
+	packets.Unlock();
+	
+}
 
 int RTPStreamTransponder::Run()
 {
@@ -195,6 +270,9 @@ int RTPStreamTransponder::Run()
 		//Send it on transport
 		sender->Send(*packet);
 
+		//Get last send seq num
+		last = packet->GetExtSeqNum();
+		
 		//Free mem
 		delete(packet);
 	}

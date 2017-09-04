@@ -129,8 +129,12 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	srtp_err_status_t err = srtp_unprotect(recv,data,(int*)&len);
 	//Check status
 	if (err!=srtp_err_status_ok)
+	{
+		//Dump rtp header
+		Dump(data,12);
 		//Error
 		return Error("-DTLSICETransport::onData() | Error unprotecting rtp packet [%d]\n",err);
+	}
 	
 	//Parse RTP header
 	DWORD ini = header.Parse(data,size);
@@ -169,12 +173,14 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	if (header.padding)
 	{
 		//Get last 2 bytes
-		WORD padding = get2(data,size-2);
+		WORD padding = get1(data,len-1);
 		//Ensure we have enought size
 		if (len-ini<padding)
 		{
+			header.Dump();
+			Dump(data,len);
 			///Debug
-			Debug("-RTPSession::onRTPPacket() | RTP padding is bigger than size\n");
+			Debug("-RTPSession::onRTPPacket() | RTP padding is bigger than size [padding:%u,size%u]\n",padding,len);
 			//Exit
 			return 1;
 		}
@@ -200,10 +206,35 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	//Get group
 	RTPIncomingSourceGroup *group = GetIncomingSourceGroup(ssrc);
 	
+	
+	//If it doesn't have a group but does hava an rtp stream id
+	if (!group && extension.hasRTPStreamId)
+	{
+		Debug("-DTLSICETransport::onData() | Unknowing group for ssrc trying to retrieve by [ssrc:%u,rid:'%s']\n",ssrc,extension.rid.c_str());
+		//Try to find it on the rids
+		auto it = rids.find(extension.rid);
+		//If found
+		if (it!=rids.end())
+		{
+			Log("-DTLSICETransport::onData() | Associating rtp stream id to ssrc [ssrc:%u,rid:'%s']\n",ssrc,extension.rid.c_str());
+					
+			//Got source
+			group = it->second;
+			
+			//Set ssrc for next ones
+			//TODO: ensure it didn't had a previous ssrc
+			group->media.ssrc = ssrc;
+			
+			//Add it to the incoming list
+			incoming[group->media.ssrc] = group;
+		}
+	}
+			
 	//Ensure it has a group
-	if (!group)
+	if (!group)	
 		//error
 		return Error("-DTLSICETransport::onData() | Unknowing group for ssrc [%u]\n",ssrc);
+	
 	
 	//Get source for ssrc
 	RTPIncomingSource* source = group->GetSource(ssrc);
@@ -221,7 +252,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		//Exit
 		return Error("-DTLSICETransport::onData() | RTP packet type unknown [%d]\n",header.payloadType);
 	
-	UltraDebug("-Got RTP on media:%s sssrc:%u seq:%u pt:%u codec:%s\n",MediaFrame::TypeToString(group->type),ssrc,header.sequenceNumber,header.payloadType,GetNameForCodec(group->type,codec));
+	UltraDebug("-Got RTP on media:%s sssrc:%u seq:%u pt:%u codec:%s rid:'%s'\n",MediaFrame::TypeToString(group->type),ssrc,header.sequenceNumber,header.payloadType,GetNameForCodec(group->type,codec),group->rid.c_str());
 	
 	//Create normal packet
 	RTPPacket *packet = new RTPPacket(group->type,codec,header,extension);
@@ -1115,17 +1146,22 @@ bool DTLSICETransport::RemoveOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 
 bool DTLSICETransport::AddIncomingSourceGroup(RTPIncomingSourceGroup *group)
 {
-	Log("-AddIncomingSourceGroup [ssrc:%u,fec:%u,rtx:%u]\n",group->media.ssrc,group->fec.ssrc,group->rtx.ssrc);
+	Log("-AddIncomingSourceGroup [rid:'%s',ssrc:%u,fec:%u,rtx:%u]\n",group->rid.c_str(),group->media.ssrc,group->fec.ssrc,group->rtx.ssrc);
 	
 	//It must contain media ssrc
-	if (!group->media.ssrc)
-		return Error("No media ssrc defining, stream will not be added\n");
+	if (!group->media.ssrc && group->rid.empty())
+		return Error("No media ssrc or rid defined, stream will not be added\n");
 	
 	//Use
 	ScopedUse use(incomingUse);	
+
+	//Add rid if any
+	if (!group->rid.empty())
+		rids[group->rid] = group;
 	
-	//Add it for each group ssrc	
-	incoming[group->media.ssrc] = group;
+	//Add it for each group ssrc
+	if (group->media.ssrc)
+		incoming[group->media.ssrc] = group;
 	if (group->fec.ssrc)
 		incoming[group->fec.ssrc] = group;
 	if (group->rtx.ssrc)
@@ -1144,10 +1180,14 @@ bool DTLSICETransport::RemoveIncomingSourceGroup(RTPIncomingSourceGroup *group)
 	
 	//Block
 	ScopedUseLock lock(incomingUse);
+
+	//Remove rid if any
+	if (!group->rid.empty())
+		rids.erase(group->rid);
 	
 	//Remove it from each ssrc
-	incoming.erase(group->media.ssrc);
-	
+	if (group->media.ssrc)
+		incoming.erase(group->media.ssrc);
 	if (group->fec.ssrc)
 		incoming.erase(group->fec.ssrc);
 	if (group->rtx.ssrc)

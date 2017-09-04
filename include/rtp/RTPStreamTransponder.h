@@ -23,7 +23,8 @@ class RTPStreamTransponder :
 	public RTPOutgoingSourceGroup::Listener
 {
 public:
-	RTPStreamTransponder(RTPIncomingSourceGroup* incoming, RTPReceiver* receiver, RTPOutgoingSourceGroup* outgoing,RTPSender* sender);
+	RTPStreamTransponder(RTPOutgoingSourceGroup* outgoing,RTPSender* sender);
+	bool SetIncoming(RTPIncomingSourceGroup* incoming, RTPReceiver* receiver);
 	virtual ~RTPStreamTransponder();
 	void Close();
 	
@@ -35,7 +36,7 @@ protected:
 	void Start();
 	int Run();
 	void Stop();
-		
+	void Reset();
 private:
 	static void * run(void *par);
 
@@ -49,6 +50,9 @@ private:
 	Mutex mutex;
 	pthread_t thread;
 	bool running;
+	DWORD first;	//First seq num of incoming stream
+	DWORD base;	//Last outgoing seq num when first was set
+	DWORD last;	//Last seq num of sent packet
 };
 
 #endif /* RTPSTREAMTRANSPONDER_H */

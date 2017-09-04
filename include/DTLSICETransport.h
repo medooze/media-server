@@ -105,6 +105,7 @@ private:
 	WORD		feedbackCycles;
 	OutgoingStreams outgoing;
 	IncomingStreams incoming;
+	std::map<std::string,RTPIncomingSourceGroup*> rids;
 	
 	DWORD	mainSSRC;
 	DWORD   rtt;
