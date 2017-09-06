@@ -130,10 +130,13 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	//Check status
 	if (err!=srtp_err_status_ok)
 	{
-		//Dump rtp header
-		Dump(data,12);
 		//Error
-		return Error("-DTLSICETransport::onData() | Error unprotecting rtp packet [%d]\n",err);
+		Error("-DTLSICETransport::onData() | Error unprotecting rtp packet [%d]\n",err);
+		//Parse RTP header
+		header.Parse(data,size);
+		header.Dump();
+		//Error
+		return 0;
 	}
 	
 	//Parse RTP header
@@ -177,26 +180,15 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		//Ensure we have enought size
 		if (len-ini<padding)
 		{
-			header.Dump();
-			Dump(data,len);
 			///Debug
 			Debug("-RTPSession::onRTPPacket() | RTP padding is bigger than size [padding:%u,size%u]\n",padding,len);
 			//Exit
-			return 1;
+			return 0;
 		}
 		//Remove from size
 		len -= padding;
 	}
 	
-	//If it is an empyt packet
-	if (ini==len)
-	{	
-		//Debug
-		Debug("-DTLSICETransport::onData() | Dropping empty packet\n");
-		//Drop it         
-		return 1;
-	}
-        
 	//Get ssrc
 	DWORD ssrc = header.ssrc;
 	
@@ -205,7 +197,6 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	
 	//Get group
 	RTPIncomingSourceGroup *group = GetIncomingSourceGroup(ssrc);
-	
 	
 	//If it doesn't have a group but does hava an rtp stream id
 	if (!group && extension.hasRTPStreamId)
@@ -288,8 +279,8 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		//Store minimum
 		source->minExtSeqNumSinceLastSR = extSeq;
 	
-	//If it is video
-	if (group->type == MediaFrame::Video)
+	//If it is video and transport wide cc is used
+	if (group->type == MediaFrame::Video && packet->HasTransportWideCC())
 	{
 		//GEt last 
 		WORD transportSeqNum = packet->GetTransportSeqNum();
@@ -449,7 +440,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	//Append it to the packets
 	group->packets.Add(packet);
 	//FOr each ordered packet
-	while(ordered=group->packets.GetOrdered())
+	while((ordered=group->packets.GetOrdered()))
 		//Call listeners
 		group->onRTP(ordered);
 	
@@ -1071,6 +1062,8 @@ void DTLSICETransport::onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMaster
 			SetLocalCryptoSDES("NULL_CIPHER_HMAC_SHA1_80",localMasterKey,localMasterKeySize);
 			SetRemoteCryptoSDES("NULL_CIPHER_HMAC_SHA1_80",remoteMasterKey,remoteMasterKeySize);
 			break;
+		default:
+			Error("-RTPBundleTransport::onDTLSSetup() | Unknown suite\n");
 	}
 }
 

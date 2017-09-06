@@ -617,7 +617,7 @@ void RTPSession::onRTPPacket(BYTE* data, DWORD size)
 	if (header.padding)
 	{
 		//Get last 2 bytes
-		WORD padding = get2(data,size-2);
+		WORD padding = get1(data,size-1);
 		//Ensure we have enought size
 		if (size-ini<padding)
 		{
@@ -628,15 +628,6 @@ void RTPSession::onRTPPacket(BYTE* data, DWORD size)
 		}
 		//Remove from size
 		size -= padding;
-	}
-	
-	//If it is an empyt packet
-	if (ini==size)
-	{	
-		//Debug
-		Debug("-DTLSICETransport::onData() | Dropping empty packet\n");
-		//Drop it         
-		return;
 	}
 	
 	//Get header data as shorcut
