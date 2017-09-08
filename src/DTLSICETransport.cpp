@@ -1582,7 +1582,13 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 						break;
 					case RTCPRTPFeedback::TransportWideFeedbackMessage:
 						Debug("-DTLSICETransport::onRTCP() | TransportWideFeedbackMessage\n");
-						
+						fb->Dump();
+						//Get each fiedl
+						for (BYTE i=0;i<fb->GetFieldCount();i++)
+						{
+							//Get field
+							const RTCPRTPFeedback::TempMaxMediaStreamBitrateField *field = (const RTCPRTPFeedback::TempMaxMediaStreamBitrateField*) fb->GetField(i);
+						}
 						break;
 				}
 				break;

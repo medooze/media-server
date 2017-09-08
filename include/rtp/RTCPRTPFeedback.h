@@ -14,6 +14,7 @@
 #ifndef RTCPRTPFEEDBACK_H
 #define RTCPRTPFEEDBACK_H
 #include "config.h"
+#include "bitstream.h"
 #include "rtp/RTCPPacket.h"
 #include "rtp/RTCPCommonHeader.h"
 #include <vector>
@@ -62,9 +63,10 @@ public:
 	struct Field
 	{
 		virtual ~Field(){};
-		virtual DWORD GetSize() = 0;
+		virtual DWORD GetSize() const = 0;
 		virtual DWORD Parse(BYTE* data,DWORD size) = 0;
-		virtual DWORD Serialize(BYTE* data,DWORD size) = 0;
+		virtual DWORD Serialize(BYTE* data,DWORD size) const = 0;
+		virtual void Dump() const = 0;
 	};
 
 	struct NACKField : public Field
@@ -99,7 +101,7 @@ public:
 		}
 		virtual ~NACKField(){}
 		
-		virtual DWORD GetSize() { return 4;}
+		virtual DWORD GetSize() const { return 4;}
 		virtual DWORD Parse(BYTE* data,DWORD size)
 		{
 			if (size<4) return 0;
@@ -107,12 +109,27 @@ public:
 			blp = get2(data,2);
 			return 4;
 		}
-		virtual DWORD Serialize(BYTE* data,DWORD size)
+		virtual DWORD Serialize(BYTE* data,DWORD size) const
 		{
 			if (size<4) return 0;
 			set2(data,0,pid);
 			set2(data,2,blp);
 			return 4;
+		}
+		
+		virtual void Dump() const
+		{
+			BYTE blp[2];
+			char str[17];
+			//Get BLP in BYTE[]
+			set2(blp,0,this->blp);
+			//Convert to binary
+			BitReader r(blp,2);
+			for (DWORD j=0;j<16;j++)
+				str[j] = r.Get(1) ? '1' : '0';
+			str[16] = 0;
+			//Debug
+			Debug("\t\t[NACK pid:%d blp:0x%x:%s /]\n",pid,this->blp,str);
 		}
 	};
 
@@ -146,7 +163,7 @@ public:
 			SetBitrate(bitrate);
 		}
 		virtual ~TempMaxMediaStreamBitrateField(){}
-		virtual DWORD GetSize() { return 8;}
+		virtual DWORD GetSize() const { return 8;}
 		virtual DWORD Parse(BYTE* data,DWORD size)
 		{
 			if (size<8) return 0;
@@ -159,7 +176,7 @@ public:
 			overhead		= overhead << 8 | data[7];
 			return 8;
 		}
-		virtual DWORD Serialize(BYTE* data,DWORD size)
+		virtual DWORD Serialize(BYTE* data,DWORD size) const
 		{
 			if (size<8) return 0;
 			set4(data,0,ssrc);
@@ -168,6 +185,13 @@ public:
 			data[6] = maxTotalBitrateMantissa <<1 | (overhead>>8 & 0x01);
 			data[7] = overhead;
 			return 8;
+		}
+		
+		
+		virtual void Dump() const
+		{
+			//Debug
+			Debug("\t\t[TempMaxMediaStreamBitrateField ssrc:%u bitrate:%u exp:%u mantisa:%u overhead:%u/]\n",ssrc,GetBitrate(),maxTotalBitrateExp,maxTotalBitrateMantissa,overhead);		
 		}
 
 		void SetBitrate(DWORD bitrate)
@@ -249,12 +273,14 @@ public:
 		}
 		virtual ~TransportWideFeedbackMessageField(){}
 		
+		//From Field
+		virtual DWORD GetSize() const;
+		virtual DWORD Parse(BYTE* data,DWORD size);
+		virtual DWORD Serialize(BYTE* data,DWORD size) const;
+		virtual void Dump() const;
+		
 		//Pair<seqnum,us> -> us = 0, not received
 		typedef std::map<WORD,QWORD> Packets;
-		
-		virtual DWORD GetSize();
-		virtual DWORD Parse(BYTE* data,DWORD size);
-		virtual DWORD Serialize(BYTE* data,DWORD size);
 		
 		BYTE feedbackPacketCount;
 		Packets packets;
