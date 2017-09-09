@@ -282,46 +282,75 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	//If it is video and transport wide cc is used
 	if (group->type == MediaFrame::Video && packet->HasTransportWideCC())
 	{
-		//GEt last 
-		WORD transportSeqNum = packet->GetTransportSeqNum();
+		//Add packets to the transport wide stats
+		transportWideReceivedPacketsStats[packet->GetTransportSeqNum()] = PacketStats::Create(*packet,size,getTime());
 		
-		//Create rtcp transport wide feedback
-		RTCPCompoundPacket rtcp;
+		//If we have enought or timeout (1sec)
+		//TODO: Implement timer
+		if (transportWideReceivedPacketsStats.size()>20 || (getTime()-transportWideReceivedPacketsStats.begin()->second->time)>1E6)
+		{
+			//Create rtcp transport wide feedback
+			RTCPCompoundPacket rtcp;
 
-		//Add to rtcp
-		RTCPRTPFeedback* feedback = RTCPRTPFeedback::Create(RTCPRTPFeedback::TransportWideFeedbackMessage,mainSSRC,ssrc);
+			//Add to rtcp
+			RTCPRTPFeedback* feedback = RTCPRTPFeedback::Create(RTCPRTPFeedback::TransportWideFeedbackMessage,mainSSRC,ssrc);
 
-		//Create trnasport field
-		RTCPRTPFeedback::TransportWideFeedbackMessageField *field = new RTCPRTPFeedback::TransportWideFeedbackMessageField(feedbackPacketCount++);
+			//Create trnasport field
+			RTCPRTPFeedback::TransportWideFeedbackMessageField *field = new RTCPRTPFeedback::TransportWideFeedbackMessageField(feedbackPacketCount++);
+			
+			//And add it
+			feedback->AddField(field);
+			
+			//Add it
+			rtcp.AddRTCPacket(feedback);
 
-		//Check if we have a sequence wrap
-		if (transportSeqNum<0x0FFF && (lastFeedbackPacketExtSeqNum & 0xFFFF)>0xF000)
-			//Increase cycles
-			feedbackCycles++;
+			//For each packet stats
+			for (auto it=transportWideReceivedPacketsStats.begin();it!=transportWideReceivedPacketsStats.end();++it)
+			{
+				//Get stat
+				PacketStats* stats = it->second;
+				//Get transport seq
+				DWORD transportSeqNum = it->first;
+				//Get time
+				QWORD time = stats->time;
 
-		//Get extended value
-		DWORD transportExtSeqNum = feedbackCycles<<16 | transportSeqNum;
+				
+				//Check if we have a sequence wrap
+				if (transportSeqNum<0x0FFF && (lastFeedbackPacketExtSeqNum & 0xFFFF)>0xF000)
+					//Increase cycles
+					feedbackCycles++;
+
+				//Get extended value
+				DWORD transportExtSeqNum = feedbackCycles<<16 | transportSeqNum;
+
+				//if not first and not out of order
+				if (lastFeedbackPacketExtSeqNum && transportExtSeqNum>lastFeedbackPacketExtSeqNum)
+					//For each lost
+					for (DWORD i = lastFeedbackPacketExtSeqNum+1; i<transportExtSeqNum; ++i)
+						//Add it
+						field->packets.insert(std::make_pair(i,0));
+				//Store last
+				lastFeedbackPacketExtSeqNum = transportExtSeqNum;
+
+				//Add this one
+				field->packets.insert(std::make_pair(transportSeqNum,time));
+
+				
+				//Delete from map
+				transportWideReceivedPacketsStats.erase(it);
+				
+				//Delete stat
+				delete(stats);
+			}
 		
-		//if not first
-		if (lastFeedbackPacketExtSeqNum)
-			//For each lost
-			for (DWORD i = lastFeedbackPacketExtSeqNum+1; i<transportExtSeqNum; ++i)
-				//Add it
-				field->packets.insert(std::make_pair(i,0));
-		//Store last
-		lastFeedbackPacketExtSeqNum = transportExtSeqNum;
-		
-		//Add this one
-		field->packets.insert(std::make_pair(transportSeqNum,getTime()));
+			
+			rtcp.Dump();
+			
+			//Send packet
+			Send(rtcp);
+		}
 
-		//And add it
-		feedback->AddField(field);
 
-		//Add it
-		rtcp.AddRTCPacket(feedback);
-
-		//Send packet
-		Send(rtcp);
 	}
 	
 	//If it was an RTX packet
@@ -1390,6 +1419,10 @@ int DTLSICETransport::Send(RTPPacket &packet)
 		//Inc stats
 		source.numPackets++;
 		source.totalBytes += len;
+		//Check if we are using transport wide for this packet
+		if (packet.HasTransportWideCC())
+			//Add new stat
+			transportWideSentPacketsStats[packet.GetTransportSeqNum()] = PacketStats::Create(packet,len,getTime());
 	} else {
 		Error("-DTLSICETransport::Send() | Error sending packet [len:%d,err:%d]\n",len,errno);
 	}

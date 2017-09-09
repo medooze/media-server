@@ -25,15 +25,19 @@ public:
 	virtual void Execute()
 	{
 		init();
+		
 		Log("RTPHeader\n");
 		testRTPHeader();
 		Log("testSenderReport\n");
 		testSenderReport();
 		Log("NACK\n");
 		testNack();
-		testTransportField();
 		Log("SDES header extensions\n");
 		testSDESHeaderExtensions();
+		Log("Transport Wide Message Feedback (1)\n");
+		testTransportField();
+		Log("Transport Wide Message Feedback (2)\n");
+		testTransportWideFeedbackMessage();
 		end();
 	}
 	
@@ -385,6 +389,96 @@ public:
 			Dump(aux,len);
 			assert(len==size);
 		}
+	}
+	
+	void testTransportWideFeedbackMessage()
+	{
+		DWORD mainSSRC = 1;
+		DWORD ssrc = 2;
+		DWORD feedbackPacketCount = 1;
+		std::map<DWORD,QWORD> packets;
+		DWORD lastFeedbackPacketExtSeqNum = 0;
+		DWORD feedbackCycles = 0;
+		
+		DWORD i=1;
+		packets[i++] = 1000;
+		packets[i++] = 2000;
+		i++; //lost;
+		packets[i++] = 3000;
+		packets[i++] = 5000;
+		packets[i++] = 4000; //OOO
+		packets[i++] = 6000;
+		i++; //lost;
+		packets[i++] = 7000;
+		
+		//Create rtcp transport wide feedback
+		RTCPCompoundPacket rtcp;
+
+		//Add to rtcp
+		RTCPRTPFeedback* feedback = RTCPRTPFeedback::Create(RTCPRTPFeedback::TransportWideFeedbackMessage,mainSSRC,ssrc);
+
+		//Create trnasport field
+		RTCPRTPFeedback::TransportWideFeedbackMessageField *field = new RTCPRTPFeedback::TransportWideFeedbackMessageField(feedbackPacketCount++);
+
+		//For each packet stats
+		for (auto it=packets.begin();it!=packets.end();++it)
+		{
+			//Get transportSeqNum
+			DWORD transportSeqNum = it->first;
+			//Get time
+			QWORD time = it->second;
+
+			//Check if we have a sequence wrap
+			if (transportSeqNum<0x0FFF && (lastFeedbackPacketExtSeqNum & 0xFFFF)>0xF000)
+				//Increase cycles
+				feedbackCycles++;
+
+			//Get extended value
+			DWORD transportExtSeqNum = feedbackCycles<<16 | transportSeqNum;
+
+			//if not first and not out of order
+			if (lastFeedbackPacketExtSeqNum && transportExtSeqNum>lastFeedbackPacketExtSeqNum)
+				//For each lost
+				for (DWORD i = lastFeedbackPacketExtSeqNum+1; i<transportExtSeqNum; ++i)
+					//Add it
+					field->packets.insert(std::make_pair(i,0));
+			//Store last
+			lastFeedbackPacketExtSeqNum = transportExtSeqNum;
+
+			//Add this one
+			field->packets.insert(std::make_pair(transportSeqNum,time));
+
+			//Delete from map
+			packets.erase(it);
+		}
+
+		//And add it
+		feedback->AddField(field);
+			
+		//Add it
+		rtcp.AddRTCPacket(feedback);
+
+		rtcp.Dump();
+		
+		//Get sizze
+		DWORD size = rtcp.GetSize();
+		
+		//Create aux buffer for serializing it
+		BYTE* data = (BYTE*)malloc(size);
+		
+		//Seriaize
+		DWORD len = rtcp.Serialize(data,size);
+		
+		assert(len==size);
+		Dump4(data,len);
+		
+		//Parse it
+		RTCPCompoundPacket* parsed = RTCPCompoundPacket::Parse(data,len);
+		
+		parsed->Dump();
+		
+		free(data);
+		delete(parsed);
 	}
 	
 };

@@ -37,32 +37,13 @@ RemoteRateControl::RemoteRateControl() : bitrateCalc(100), fpsCalc(1000), packet
 	absSendTimeCycles = 0;
 }
 
-void RemoteRateControl::Update(RTPPacket* packet)
+void RemoteRateControl::Update(QWORD time,QWORD ts,DWORD size)
 {
-	//Get packet size and time
-	QWORD time = packet->GetTime();
-	DWORD size = packet->GetMediaLength();
 	//Update bitrate calculator
 	bitrateCalc.Update(time, size*8);
 	//Update packet count
 	packetCalc.Update(time, 1);
-	//Get rtp timestamp in ms
-	DWORD ts = packet->GetClockTimestamp();
-
-	/* DO NOT USE IT YET
-	if (packet->HasAbsSentTime())
-	{
-		//Use absolote time instead of rtp time for knowing timestamp at origin
-		ts = packet->GetAbsSendTime()+64000*absSendTimeCycles;
-		//Check if it has been a wrapp arround, absSendTime has 64s wraps
-		if (ts+32000<curTS)
-		{
-			//Increase cycles
-			absSendTimeCycles++;
-			//Fix wrap for this one
-			ts += 64000;
-		}
-	}*/
+	
 //	Debug("ts:%u,time:%llu,%u\n",ts,time,size);
 	
 	//If it is a our of order packet from previous frame

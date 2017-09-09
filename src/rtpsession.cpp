@@ -810,7 +810,7 @@ void RTPSession::onRTPPacket(BYTE* data, DWORD size)
 				//If remote estimator
 				if (remoteRateEstimator)
 					//Update estimator
-					remoteRateEstimator->UpdateLost(recv.media.ssrc,lost);
+					remoteRateEstimator->UpdateLost(recv.media.ssrc,lost,getTimeMS());
 			}
 			
 			//Update seq num
@@ -1244,7 +1244,7 @@ void RTPSession::SetRTT(DWORD rtt)
 	//if got estimator
 	if (remoteRateEstimator)
 		//Update estimator
-		remoteRateEstimator->UpdateRTT(recv.media.ssrc,rtt);
+		remoteRateEstimator->UpdateRTT(recv.media.ssrc,rtt,getTimeMS());
 
 	//Check RTT to enable NACK
 	if (useNACK && rtt < 240)

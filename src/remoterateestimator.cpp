@@ -22,7 +22,7 @@ RemoteRateEstimator::RemoteRateEstimator(const std::wstring& tag) :
 	varMaxBitRate		= 0.4f;
 	lastBitRateChange	= 0;
 	avgChangePeriod		= 1000.0f;
-	lastChangeMs		= 0;
+	lastChange		= 0;
 	beta			= 0.9f;
 	noiseVar 		= 0;
 	rtt			= 200;
@@ -77,11 +77,36 @@ void RemoteRateEstimator::RemoveStream(DWORD ssrc)
 
 void RemoteRateEstimator::Update(DWORD ssrc,RTPPacket* packet,DWORD size)
 {
+	//Get now
+	QWORD now = getTimeMS();
+
+	//Get rtp timestamp in ms
+	QWORD ts = packet->GetClockTimestamp();
+
+	/*
+	if (packet->HasAbsSentTime())
+	{
+		//Use absolote time instead of rtp time for knowing timestamp at origin
+		ts = packet->GetAbsSendTime()+64000*absSendTimeCycles;
+		//Check if it has been a wrapp arround, absSendTime has 64s wraps
+		if (ts+32000<curTS)
+		{
+			//Increase cycles
+			absSendTimeCycles++;
+			//Fix wrap for this one
+			ts += 64000;
+		}
+	}
+	*/
+	
+	//Update
+	Update(packet->GetSSRC(),now,ts,size);
+}
+
+void RemoteRateEstimator::Update(DWORD ssrc,QWORD now,QWORD ts,DWORD size)
+{
 	//Lock
 	lock.WaitUnusedAndLock();
-
-	//Get now
-	QWORD now = getTime()/1000;
 
 	//Acumulate bitrate
 	bitrateAcu.Update(now,size*8);
@@ -106,7 +131,7 @@ void RemoteRateEstimator::Update(DWORD ssrc,RTPPacket* packet,DWORD size)
 		if (it->first == ssrc)
 		{
 			//Update it
-			ctrl->Update(packet);
+			ctrl->Update(now,ts,size);
 			//Check if pacekt triggered overuse
 			if (streamUsage!=RemoteRateControl::OverUsing && ctrl->GetUsage()==RemoteRateControl::OverUsing)
 			{
@@ -128,15 +153,15 @@ void RemoteRateEstimator::Update(DWORD ssrc,RTPPacket* packet,DWORD size)
 	noiseVar = noiseVar/streams.size();
 
 	//If not firs update
-	if (!lastChangeMs)
+	if (!lastChange)
 		//Skip the first half second
-		lastChangeMs = now+500;
+		lastChange = now+500;
 	
 	//Only update once per second or when the stream starts to overuse
-	if (lastChangeMs+1000<now || streamOverusing)
+	if (lastChange+1000<now || streamOverusing)
 	{
 		//Update
-		Update(usage,streamOverusing);
+		Update(usage,streamOverusing,now);
 		//Reset min max
 		bitrateAcu.ResetMinMax();
 	}
@@ -146,20 +171,18 @@ void RemoteRateEstimator::Update(DWORD ssrc,RTPPacket* packet,DWORD size)
 	return;
 }
 
-void RemoteRateEstimator::Update(RemoteRateControl::BandwidthUsage usage,bool reactNow)
+void RemoteRateEstimator::Update(RemoteRateControl::BandwidthUsage usage, bool reactNow, QWORD now)
 {
 	// If it is the first estimation
 	if (!currentBitRate)
 		//Init to maximum
 		currentBitRate = bitrateAcu.GetMaxAvg();
-	//Get now
-	QWORD now = getTime()/1000;
 
 	//Calculate difference from last update
-	QWORD changePeriod = now - lastChangeMs;
+	QWORD changePeriod = now - lastChange;
 
 	//Update last changed
-	lastChangeMs = now;
+	lastChange = now;
 
 	//calculate average period
 	avgChangePeriod = 0.9f * avgChangePeriod + 0.1f * changePeriod;
@@ -305,7 +328,7 @@ void RemoteRateEstimator::Update(RemoteRateControl::BandwidthUsage usage,bool re
 	(
 		"rre",
 		"[%llu,\"%s\",\"%s\",%d,%d,%d,%d,%d]",
-                getTimeMS(),
+                now,
 		GetName(state),
 		RemoteRateControl::GetName(region),
 		(DWORD)currentBitRate/1000,
@@ -321,7 +344,7 @@ void RemoteRateEstimator::Update(RemoteRateControl::BandwidthUsage usage,bool re
 		listener->onTargetBitrateRequested(GetEstimatedBitrate());
 }
 
-double RemoteRateEstimator::RateIncreaseFactor(QWORD nowMs, QWORD lastMs, DWORD reactionTimeMs) const
+double RemoteRateEstimator::RateIncreaseFactor(QWORD now, QWORD last, DWORD reactionTime) const
 {
 	// alpha = 1.02 + B ./ (1 + exp(b*(tr - (c1*s2 + c2))))
 	// Parameters
@@ -331,15 +354,15 @@ double RemoteRateEstimator::RateIncreaseFactor(QWORD nowMs, QWORD lastMs, DWORD 
 	const double c2 = 800.0;
 	const double d = 0.85;
 
-	double alpha = 1.005 + B / (1 + exp(b * (d * reactionTimeMs - (c1 * noiseVar + c2))));
+	double alpha = 1.005 + B / (1 + exp(b * (d * reactionTime - (c1 * noiseVar + c2))));
 
 	if (alpha < 1.005)
 		alpha = 1.005;
 	else if (alpha > 1.3)
 		alpha = 1.3;
 
-	if (lastMs)
-		alpha = pow(alpha, (nowMs - lastMs) / 1000.0);
+	if (last)
+		alpha = pow(alpha, (now - last) / 1000.0);
 
 	if (region == RemoteRateControl::NearMax)
 		// We're close to our previous maximum. Try to stabilize the
@@ -353,12 +376,12 @@ double RemoteRateEstimator::RateIncreaseFactor(QWORD nowMs, QWORD lastMs, DWORD 
 	return alpha;
 }
 
-void RemoteRateEstimator::UpdateChangePeriod(QWORD nowMs)
+void RemoteRateEstimator::UpdateChangePeriod(QWORD now)
 {
 	QWORD changePeriod = 0;
-	if (lastChangeMs)
-		changePeriod = nowMs - lastChangeMs;
-	lastChangeMs = nowMs;
+	if (lastChange)
+		changePeriod = now - lastChange;
+	lastChange = now;
 	avgChangePeriod = 0.9f * avgChangePeriod + 0.1f * changePeriod;
 }
 
@@ -429,7 +452,7 @@ void RemoteRateEstimator::ChangeRegion(RemoteRateControl::Region newRegion)
 		 it->second->SetRateControlRegion(newRegion);
 }
 
-void RemoteRateEstimator::UpdateRTT(DWORD ssrc, DWORD rtt)
+void RemoteRateEstimator::UpdateRTT(DWORD ssrc, DWORD rtt, QWORD now)
 {
 	//Lock
 	lock.WaitUnusedAndLock();
@@ -442,12 +465,12 @@ void RemoteRateEstimator::UpdateRTT(DWORD ssrc, DWORD rtt)
 		//Set it
 		if (it->second->UpdateRTT(rtt))
 			//Update
-			Update(it->second->GetUsage(),true);
+			Update(it->second->GetUsage(),true, now);
 	//Unlock
 	lock.Unlock();
 }
 
-void RemoteRateEstimator::UpdateLost(DWORD ssrc, DWORD lost)
+void RemoteRateEstimator::UpdateLost(DWORD ssrc, DWORD lost, QWORD now)
 {
 	//Lock
 	lock.WaitUnusedAndLock();
@@ -458,7 +481,7 @@ void RemoteRateEstimator::UpdateLost(DWORD ssrc, DWORD lost)
 		//Set it
 		if (it->second->UpdateLost(lost))
 			//Update
-			Update(it->second->GetUsage(),true);
+			Update(it->second->GetUsage(),true, now);
 	//Unlock
 	lock.Unlock();
 }
