@@ -18,13 +18,15 @@ class RTPBundleTransport :
 private:
 	struct Connection
 	{
-		Connection(DTLSICETransport* transport)
+		Connection(DTLSICETransport* transport,bool disableSTUNKeepAlive)
 		{
 			this->transport = transport;
+			this->disableSTUNKeepAlive = disableSTUNKeepAlive;
 		}
 		
 		DTLSICETransport* transport;
 		std::set<ICERemoteCandidate*> candidates;
+		bool disableSTUNKeepAlive;
 	};
 public:
 	RTPBundleTransport();
@@ -36,8 +38,9 @@ public:
 	int End();
 	
 	int GetLocalPort() const { return port; }
+	int AddRemoteCandidate(const std::string& username,const char* ip, WORD port);
 	virtual int Send(const ICERemoteCandidate* candidate,const BYTE *buffer,const DWORD size);
-
+	
 private:
 	void Start();
 	void Stop();

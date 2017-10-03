@@ -641,18 +641,21 @@ void  DTLSICETransport::ActivateRemoteCandidate(ICERemoteCandidate* candidate,bo
 	if (!active || (useCandidate && candidate!=active))
 	{
 		//Debug
-		Debug("-DTLSICETransport::ActivateRemoteCandidate() | Activating candidate [%s:%hu,use:%d,prio:%d]\n",candidate->GetIP(),candidate->GetPort(),useCandidate,priority);	
+		Debug("-DTLSICETransport::ActivateRemoteCandidate() | Activating candidate [%s:%hu,use:%d,prio:%d,dtls:%d]\n",candidate->GetIP(),candidate->GetPort(),useCandidate,priority,dtls.GetSetup());	
 		
 		//Send data to this one from now on
 		active = candidate;
 		
 		// Needed for DTLS in client mode (otherwise the DTLS "Client Hello" is not sent over the wire)
-		BYTE data[MTU+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
-		DWORD len = dtls.Read(data,MTU);
-		//Check it
-		if (len>0)
-			//Send to bundle transport
-			sender->Send(active,data,len);
+		if (dtls.GetSetup()!=DTLSConnection::SETUP_PASSIVE) 
+		{
+			BYTE data[MTU+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
+			DWORD len = dtls.Read(data,MTU);
+			//Check it
+			if (len>0)
+				//Send to bundle transport
+				sender->Send(active,data,len);
+		}
 	}
 }
 

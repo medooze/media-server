@@ -95,6 +95,8 @@ public:
 	void End();
 	void Reset();
 
+	Setup GetSetup() const { return dtls_setup; }
+	
 	int  Read(BYTE* data,DWORD size);
 	int  Write(BYTE *buffer,DWORD size);
 	int  Renegotiate();
