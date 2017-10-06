@@ -123,13 +123,13 @@ int MP4Streamer::Open(const char *filename)
 				// Depending on the name
 				if (strcmp("PCMU", name) == 0)
 					//Create new audio track
-					audio = new MP4RtpTrack(MediaFrame::Audio,AudioCodec::PCMU,payload);
+					audio = new MP4RtpTrack(MediaFrame::Audio,AudioCodec::PCMU,payload,8000);
 				else if (strcmp("PCMA", name) == 0)
 					//Create new audio track
-					audio = new MP4RtpTrack(MediaFrame::Audio,AudioCodec::PCMA,payload);
+					audio = new MP4RtpTrack(MediaFrame::Audio,AudioCodec::PCMA,payload,8000);
 				else if (strcmp("OPUS", name) == 0)
 					//Create new audio track
-					audio = new MP4RtpTrack(MediaFrame::Audio,AudioCodec::OPUS,payload);
+					audio = new MP4RtpTrack(MediaFrame::Audio,AudioCodec::OPUS,payload,48000);
 				else
 					//Skip
 					continue;
@@ -148,19 +148,19 @@ int MP4Streamer::Open(const char *filename)
 				// Depending on the name
 				if (strcmp("H263", name) == 0)
 					//Create new video track
-					video = new MP4RtpTrack(MediaFrame::Video,VideoCodec::H263_1996,payload);
+					video = new MP4RtpTrack(MediaFrame::Video,VideoCodec::H263_1996,payload,90000);
 				else if (strcmp("H263-1998", name) == 0)
 					//Create new video track
-					video = new MP4RtpTrack(MediaFrame::Video,VideoCodec::H263_1998,payload);
+					video = new MP4RtpTrack(MediaFrame::Video,VideoCodec::H263_1998,payload,90000);
 				else if (strcmp("H263-2000", name) == 0)
 					//Create new video track
-					video = new MP4RtpTrack(MediaFrame::Video,VideoCodec::H263_1998,payload);
+					video = new MP4RtpTrack(MediaFrame::Video,VideoCodec::H263_1998,payload,90000);
 				else if (strcmp("H264", name) == 0)
 					//Create new video track
-					video = new MP4RtpTrack(MediaFrame::Video,VideoCodec::H264,payload);
+					video = new MP4RtpTrack(MediaFrame::Video,VideoCodec::H264,payload,90000);
 				else if (strcmp("VP8", name) == 0)
 					//Create new video track
-					video = new MP4RtpTrack(MediaFrame::Video,VideoCodec::VP8,payload);
+					video = new MP4RtpTrack(MediaFrame::Video,VideoCodec::VP8,payload,90000);
 				else
 					continue;
 					
@@ -725,7 +725,7 @@ QWORD MP4RtpTrack::Read(Listener *listener)
 			&isSyncSample			// bool* pIsSyncSample
 			))
 		{
-			Error("Error reading sample");
+			Error("Error reading sample [track:%d,sampleId:%d]\n",track,sampleId);
 			//Last
 			return MP4_INVALID_TIMESTAMP;
 		}
@@ -801,8 +801,12 @@ QWORD MP4RtpTrack::Read(Listener *listener)
 		return MP4_INVALID_TIMESTAMP;
 	}
 	
-	//Set lenght
+	//Set media length
 	rtp.SetMediaLength(dataLen);
+	
+	//Set seqnum
+	rtp.SetSeqNum(seqNum++);
+	
 	// Write frame
 	listener->onRTPPacket(rtp);
 

@@ -62,6 +62,27 @@ struct RTPSource
 	
 	RTCPCompoundPacket* CreateSenderReport();
 	
+	
+	virtual void Update(DWORD seqNum,DWORD size) 
+	{
+		//Check if we have a sequence wrap
+		if (seqNum<0x0FFF && (extSeq & 0xFFFF)>0xF000)
+			//Increase cycles
+			cycles++;
+
+		//Get ext seq
+		DWORD extSeq = ((DWORD)cycles)<<16 | seqNum;
+
+		//If we have a not out of order pacekt
+		if (extSeq > this->extSeq || !numPackets)
+			//Update seq num
+			this->extSeq = extSeq;
+
+		//Increase stats
+		numPackets++;
+		totalBytes += size;
+	}
+	
 	virtual void Reset()
 	{
 		ssrc		= 0;
@@ -96,6 +117,19 @@ struct RTPIncomingSource : public RTPSource
 		lastReceivedSenderReport = 0;
 		lastReport		 = 0;
 		minExtSeqNumSinceLastSR  = RTPPacket::MaxExtSeqNum;
+	}
+	
+	virtual void Update(DWORD seqNum,DWORD size)
+	{
+		RTPSource::Update(seqNum,size);
+		
+		totalPacketsSinceLastSR++;
+		totalBytesSinceLastSR += size;
+
+		//Check if it is the min for this SR
+		if (extSeq<minExtSeqNumSinceLastSR)
+			//Store minimum
+			minExtSeqNumSinceLastSR = extSeq;
 	}
 	
 	virtual void Reset()

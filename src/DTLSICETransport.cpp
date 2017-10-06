@@ -251,33 +251,11 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	//Set the payload
 	packet->SetPayload(data+ini,len-ini);
 	
-	//Check if we have a sequence wrap
-	if (header.sequenceNumber<0x0FFF && (source->extSeq & 0xFFFF)>0xF000)
-		//Increase cycles
-		source->cycles++;
+	//Update source
+	source->Update(header.sequenceNumber,size);
 	
-	//Set cycles
+	//Set cycles back
 	packet->SetSeqCycles(source->cycles);
-	
-	//Get ext seq
-	DWORD extSeq = packet->GetExtSeqNum();
-	
-	//If we have a not out of order pacekt
-	if (extSeq > source->extSeq || !source->numPackets)
-		//Update seq num
-		source->extSeq = extSeq;
-	
-	//Increase stats
-	source->numPackets++;
-	source->totalPacketsSinceLastSR++;
-	source->totalBytes += size;
-	source->totalBytesSinceLastSR += size;
-	
-
-	//Check if it is the min for this SR
-	if (extSeq<source->minExtSeqNumSinceLastSR)
-		//Store minimum
-		source->minExtSeqNumSinceLastSR = extSeq;
 	
 	//If it is video and transport wide cc is used
 	if (group->type == MediaFrame::Video && packet->HasTransportWideCC())
