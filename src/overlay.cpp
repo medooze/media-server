@@ -426,7 +426,7 @@ int Canvas::RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWOR
 		yuva->data[3] = overlay + numpixels*3/2 +x  +y*this->width;
 
 		//Convert
-		sws_scale(sws, rgba->data, rgba->linesize, 0, this->height, yuva->data, yuva->linesize);
+		sws_scale(sws, rgba->data, rgba->linesize, 0, height, yuva->data, yuva->linesize);
 
 		//Free memory
 		av_free(rgba);

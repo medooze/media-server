@@ -197,7 +197,7 @@ void AudioMixer::Process(DWORD numSamples)
 }
 int AudioMixer::SetCalculateVAD(bool vad)
 {
-	Log(".SetCalculateVAD [vad:%d]\n",vad);
+	Log("-SetCalculateVAD [vad:%d]\n",vad);
 	//Store
 	this->vad = vad;	
 }
@@ -229,6 +229,9 @@ int AudioMixer::Init(const Properties &properties)
 		//Start trhead
 		createPriorityThread(&mixAudioThread,startMixingAudio,this,0);
 	}
+	
+	//Check if we are calculatint vad
+	vad = properties.GetProperty("vad",false);
 
 	return 1;
 }

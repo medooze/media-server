@@ -11,7 +11,7 @@ typedef std::set<Pair, std::less<Pair>    > OrderedSetOfPairs;
 typedef std::set<Pair, std::greater<Pair> > RevOrderedSetOfPairs;
 
 
-DWORD VideoMixer::vadDefaultChangePeriod = 5000;
+DWORD VideoMixer::vadDefaultChangePeriod = 2000;
 int VideoMixer::MosaicDefault = 0;
 int VideoMixer::NoMosaic = -1;
 
@@ -39,6 +39,7 @@ VideoMixer::VideoMixer(const std::wstring &tag) : eventSource(tag)
 
 	//Nothing yet
 	version = 0;
+	mixingVideo = false;
 	//No proxy
 	proxy = NULL;
 	//No vad
@@ -449,8 +450,8 @@ int VideoMixer::Init(const Properties &properties)
 {
 	//Get properties
 	Mosaic::Type comp	= (Mosaic::Type) properties.GetProperty("mosaics.default.compType"	, (int)Mosaic::mosaic2x2);
-	int size		= properties.GetProperty("mosaics.default.size"		, CIF);
-	const char *logoFile	= properties.GetProperty("logo"				, "logo.png");
+	int size		= properties.GetProperty("mosaics.default.size"				, CIF);
+	const char *logoFile	= properties.GetProperty("logo"						, "logo.png");
 	
 	//Should we display names?
 	displayNames = properties.GetProperty("displayNames", false);
