@@ -19,6 +19,8 @@
 
 RTPDepacketizer* RTPDepacketizer::Create(MediaFrame::Type mediaType,DWORD codec)
 {
+	Debug("-RTPDepacketizer::Create() | Creating depacketizer for [media:%s,codec:%s]\n",MediaFrame::TypeToString(mediaType),GetNameForCodec(mediaType,codec));
+	
 	 switch (mediaType)
 	 {
 		 case MediaFrame::Video:
@@ -28,12 +30,14 @@ RTPDepacketizer* RTPDepacketizer::Create(MediaFrame::Type mediaType,DWORD codec)
 				 case VideoCodec::H264:
 					 return new H264Depacketizer();
 				 case VideoCodec::VP8:
-					 return new VP8Depacketizer();                
+					 return new VP8Depacketizer();
+				 default:
+					Error("-RTPDepacketizer::Create we don't have an RTP depacketizer for [media:%s,codec:%s]\n",MediaFrame::TypeToString(mediaType),GetNameForCodec(mediaType,codec));
 			 }
 			 break;
 		 case MediaFrame::Audio:
 			 //Depending on the codec
-			 switch((VideoCodec::Type)codec)
+			 switch((AudioCodec::Type)codec)
 			 {
 				case AudioCodec::GSM:
 				case AudioCodec::PCMA:
@@ -53,7 +57,7 @@ RTPDepacketizer* RTPDepacketizer::Create(MediaFrame::Type mediaType,DWORD codec)
 			 }
 			 break;
 		 default:
-			 return NULL;
+			 Error("-RTPDepacketizer::Create unknown media type");
 	 }
 	 return NULL;
 }

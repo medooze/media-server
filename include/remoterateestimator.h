@@ -50,17 +50,18 @@ public:
 	void SetListener(Listener *listener);
 	void AddStream(DWORD ssrc);
 	void RemoveStream(DWORD ssrc);
-	void UpdateRTT(DWORD ssrc,DWORD rtt);
-	void UpdateLost(DWORD ssrc,DWORD lost);
+	void UpdateRTT(DWORD ssrc,DWORD rtt, QWORD now);
+	void UpdateLost(DWORD ssrc,DWORD lost, QWORD now);
 	void Update(DWORD ssrc,RTPPacket* packet,DWORD size);
+	void Update(DWORD ssrc,QWORD now,QWORD ts,DWORD size);
 	DWORD GetEstimatedBitrate();
 	void GetSSRCs(std::list<DWORD> &ssrcs);
 	void SetTemporalMaxLimit(DWORD limit);
 	void SetTemporalMinLimit(DWORD limit);
 private:
-	double RateIncreaseFactor(QWORD nowMs, QWORD lastMs, DWORD reactionTimeMs) const;
-	void Update(RemoteRateControl::BandwidthUsage usage,bool reactNow);
-	void UpdateChangePeriod(QWORD nowMs);
+	double RateIncreaseFactor(QWORD now, QWORD last, DWORD reactionTime) const;
+	void Update(RemoteRateControl::BandwidthUsage usage,bool reactNow,QWORD now);
+	void UpdateChangePeriod(QWORD now);
 	void UpdateMaxBitRateEstimate(float incomingBitRateKbps);
 	void ChangeState(State newState);
 	void ChangeRegion(RemoteRateControl::Region newRegion);
@@ -85,7 +86,7 @@ private:
 	DWORD noiseVar;
 
 	float avgChangePeriod;
-	QWORD lastChangeMs;
+	QWORD lastChange;
 	float beta;
 	DWORD rtt;
 };

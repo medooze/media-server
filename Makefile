@@ -12,7 +12,6 @@ ifeq ($(DEBUG),yes)
 	ifeq ($(SANITIZE),yes)
 		OPTS+= -fsanitize=address -fsanitize=leak -fno-omit-frame-pointer
 		LDFLAGS+= -fsanitize=leak  -fsanitize=address
-		SFULDFLAGS+= -fsanitize=leak  -fsanitize=address
 	endif
 else
 	OPTS+= -g -O4 -fexpensive-optimizations -funroll-loops
@@ -86,15 +85,13 @@ G722OBJ=g722codec.o
 AACDIR=aac
 AACOBJ=aacencoder.o
 
-SFUDIR=sfu
-
 COREOBJ=VideoEncoderWorker.o
 COREDIR=core
 
 BASE= rtp.o xmlrpcserver.o xmlhandler.o xmlstreaminghandler.o statushandler.o  dtls.o CPUMonitor.o OpenSSL.o RTPTransport.o  EventSource.o eventstreaminghandler.o httpparser.o   stunmessage.o crc32calc.o http.o avcdescriptor.o utf8.o   RTPStreamTransponder.o
 BASE+= RTCPCommonHeader.o RTPHeader.o RTPHeaderExtension.o RTCPApp.o RTCPExtendedJitterReport.o RTCPPacket.o RTCPReport.o RTCPSenderReport.o RTPMap.o RTCPBye.o RTCPFullIntraRequest.o RTCPPayloadFeedback.o RTCPRTPFeedback.o RTPDepacketizer.o RTPPacket.o  RTCPCompoundPacket.o RTCPNACK.o RTCPReceiverReport.o RTCPSDES.o RTPPacketSched.o
 
-OBJS=  rtpsession.o RTPSmoother.o  remoteratecontrol.o remoterateestimator.o xmlrpcsfu.o SFUManager.o Room.o SFUParticipant.o RTPBundleTransport.o DTLSICETransport.o audio.o video.o  $(BASE) $(COREOBJ) cpim.o  groupchat.o websocketserver.o websocketconnection.o  mcu.o rtpparticipant.o multiconf.o  rtmpparticipant.o  xmlrpcmcu.o  mp4player.o mp4streamer.o mp4recorder.o  audiostream.o videostream.o amf.o rtmpmessage.o rtmpchunk.o rtmpstream.o rtmpconnection.o  rtmpserver.o  rtmpflvstream.o flvrecorder.o FLVEncoder.o textmixer.o textmixerworker.o textstream.o pipetextinput.o pipetextoutput.o  logo.o overlay.o audioencoder.o audiodecoder.o textencoder.o rtmpmp4stream.o rtmpnetconnection.o   rtmpclientconnection.o vad.o  uploadhandler.o  appmixer.o  videopipe.o framescaler.o sidebar.o mosaic.o partedmosaic.o asymmetricmosaic.o pipmosaic.o videomixer.o audiomixer.o audiotransrater.o pipeaudioinput.o pipeaudiooutput.o pipevideoinput.o pipevideooutput.o broadcastsession.o
+OBJS=  rtpsession.o RTPSmoother.o  remoteratecontrol.o remoterateestimator.o RTPBundleTransport.o DTLSICETransport.o audio.o video.o  $(BASE) $(COREOBJ) cpim.o  groupchat.o websocketserver.o websocketconnection.o  mcu.o rtpparticipant.o multiconf.o  rtmpparticipant.o  xmlrpcmcu.o  mp4player.o mp4streamer.o mp4recorder.o  audiostream.o videostream.o amf.o rtmpmessage.o rtmpchunk.o rtmpstream.o rtmpconnection.o  rtmpserver.o  rtmpflvstream.o flvrecorder.o FLVEncoder.o textmixer.o textmixerworker.o textstream.o pipetextinput.o pipetextoutput.o  logo.o overlay.o audioencoder.o audiodecoder.o textencoder.o rtmpmp4stream.o rtmpnetconnection.o   rtmpclientconnection.o vad.o  uploadhandler.o  appmixer.o  videopipe.o framescaler.o sidebar.o mosaic.o partedmosaic.o asymmetricmosaic.o pipmosaic.o videomixer.o audiomixer.o audiotransrater.o pipeaudioinput.o pipeaudiooutput.o pipevideoinput.o pipevideooutput.o broadcastsession.o
 OBJS+= $(G711OBJ) $(H263OBJ) $(GSMOBJ)  $(H264OBJ) ${FLV1OBJ} $(SPEEXOBJ) $(NELLYOBJ) $(G722OBJ) $(JSR309OBJ) $(VADOBJ) $(VP6OBJ) $(VP8OBJ) $(VP9OBJ) $(OPUSOBJ) $(AACOBJ) $(DEPACKETIZERSOBJ)
 TARGETS=mcu test 
 
@@ -116,14 +113,12 @@ else
 	VADLD =
 endif
 
-OBJSSFU = sfu.o nocodecs.o xmlrpcsfu.o SFUManager.o Room.o SFUParticipant.o RTPBundleTransport.o DTLSICETransport.o $(DEPACKETIZERSOBJ) $(BASE) 
 OBJSMCU = $(OBJS) main.o
 OBJSLIB = $(OBJS)
 OBJSTEST = $(OBJS) test/main.o test/test.o test/cpim.o test/rtp.o test/fec.o test/overlay.o test/vp9.o
 
 
 BUILDOBJSMCU = $(addprefix $(BUILD)/,$(OBJSMCU))
-BUILDOBJSSFU = $(addprefix $(BUILD)/,$(OBJSSFU))
 BUILDOBJOBJSLIB = $(addprefix $(BUILD)/,$(OBJSLIB))
 BUILDOBJSTEST= $(addprefix $(BUILD)/,$(OBJSTEST))
 
@@ -145,7 +140,6 @@ VPATH +=  %.cpp $(SRCDIR)/src/$(SPEEXDIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(NELLYDIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(G722DIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(JSR309DIR)
-VPATH +=  %.cpp $(SRCDIR)/src/$(SFUDIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(VP6DIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(VP8DIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(VP9DIR)
@@ -187,7 +181,6 @@ endif
 
 LDFLAGS+= -lxmlrpc -lxmlrpc_xmlparse -lxmlrpc_xmltok -lxmlrpc_abyss -lxmlrpc_server -lxmlrpc_util -lnsl -lpthread -lz -ljpeg -lpng -lresolv -L/lib/i386-linux-gnu -lgcrypt
 
-SFULDFLAGS+= -lpthread -lsrtp2 -lxmlrpc -lxmlrpc_xmlparse -lxmlrpc_xmltok -lxmlrpc_abyss -lxmlrpc_server -lxmlrpc_util -lnsl -lpthread -lresolv -L/lib/i386-linux-gnu -lgcrypt -lssl -lcrypto
 #For abyss
 OPTS 	+= -D_UNIX -D__STDC_CONSTANT_MACROS
 CFLAGS  += $(INCLUDE) $(OPTS)
@@ -233,10 +226,6 @@ endif
 ############################################
 #MCU
 ############################################
-
-sfu: touch mkdirs $(OBJSSFU) certs
-	$(CXX) -o $(BIN)/$@ $(BUILDOBJSSFU) $(SFULDFLAGS)
-	@echo [OUT] $(TAG) $(BIN)/$@
 
 mcu: $(OBJSMCU)
 	$(CXX) -o $(BIN)/$@ $(BUILDOBJSMCU) $(LDFLAGS) $(VADLD)

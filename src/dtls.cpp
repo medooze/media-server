@@ -324,7 +324,7 @@ int DTLSConnection::Initialize()
 	DTLSConnection::availableHashes.push_back(SHA512);
 
 	// Iterate the DTLSConnection::availableHashes.
-	for(int i = 0; i < availableHashes.size(); i++) 
+	for(DWORD i = 0; i < availableHashes.size(); i++) 
 	{
 		Hash hash = availableHashes[i];
 		unsigned int size;
@@ -348,6 +348,8 @@ int DTLSConnection::Initialize()
 			case SHA512:
 				X509_digest(certificate, EVP_sha512(), fingerprint, &size);
 				break;
+			default:
+				return Error("-DTLSConnection::Initialize() | Unknown hash [%d]\n",hash);
 		}
 
 		// Check size.
@@ -355,7 +357,7 @@ int DTLSConnection::Initialize()
 			return Error("-DTLSConnection::Initialize() | Wrong X509 certificate size\n");
 
 		// Convert to hex format.
-		for (int j = 0; j < size; j++)
+		for (DWORD j = 0; j < size; j++)
 			sprintf(hex_fingerprint+j*3, "%.2X:", fingerprint[j]);
 
 		// End string.
@@ -383,6 +385,8 @@ int DTLSConnection::Terminate()
 		X509_free(certificate);
 	if (ssl_ctx)
 		SSL_CTX_free(ssl_ctx);
+	
+	return 1;
 }
 
 std::string DTLSConnection::GetCertificateFingerPrint(Hash hash)
@@ -450,6 +454,7 @@ int DTLSConnection::Init()
 	switch(dtls_setup)
 	{
 		case SETUP_ACTIVE:
+		case SETUP_ACTPASS:
 			Debug("-DTLSConnection::Init() | we are SETUP_ACTIVE\n");
 			SSL_set_connect_state(ssl);
 			break;
@@ -457,6 +462,9 @@ int DTLSConnection::Init()
 			Debug("-DTLSConnection::Init() | we are SETUP_PASSIVE\n");
 			SSL_set_accept_state(ssl);
 			break;
+		case SETUP_HOLDCONN:
+		default:
+			return Error("-DTLSConnection::Init() | we are hold conn!");
 	}
 
 	//New connection
@@ -588,7 +596,7 @@ int DTLSConnection::Read(BYTE* data,DWORD size)
 inline
 void DTLSConnection::onSSLInfo(int where, int ret)
 {
-	Debug("-DTLSConnection::onSSLInfo() | SSL status: %s [where:%d, ret:%d] | handshake done: %s\n",  SSL_state_string_long(this->ssl),where, ret, SSL_is_init_finished(this->ssl) ? "yes" : "no");
+	UltraDebug("-DTLSConnection::onSSLInfo() | SSL status: %s [where:%d, ret:%d] | handshake done: %s\n",  SSL_state_string_long(this->ssl),where, ret, SSL_is_init_finished(this->ssl) ? "yes" : "no");
 
 	if (where & SSL_CB_HANDSHAKE_START)
 	{
@@ -708,24 +716,33 @@ int DTLSConnection::SetupSRTP()
 
 int DTLSConnection::Write( BYTE *buffer, DWORD size)
 {
-	if (! DTLSConnection::hasDTLS)
+	if (!DTLSConnection::hasDTLS)
 		return Error("-DTLSConnection::Write() | no DTLS\n");
 
-	if (! inited) {
+	if (!inited) 
 		return Error("-DTLSConnection::Write() | SSL not yet ready\n");
-	}
 
 	BIO_write(read_bio, buffer, size);
 
-	if (SSL_read(ssl, buffer, size)<0)
-		return Error("-DTLSConnection::Write() | SSL_read error\n");
+	
+	int ret = SSL_read(ssl, buffer, size);
+	
+	if (ret<0)
+	{
+		int err = SSL_get_error(ssl,ret);
+		if (err!=SSL_ERROR_WANT_READ)
+			return Error("-DTLSConnection::Write() | SSL_read error [ret:%d,err:%d]\n",ret,SSL_get_error(ssl,ret));
+		else 
+			return 0;
+	}
+		
 
 	// Check if the peer sent close alert or a fatal error happened.
 	if (SSL_get_shutdown(ssl) & SSL_RECEIVED_SHUTDOWN) {
 		Debug("-DTLSConnection::Write() | SSL_RECEIVED_SHUTDOWN on instance '%p', resetting SSL\n", this);
 
-		int err = SSL_clear(ssl);
-		if (err == 0)
+		ret = SSL_clear(ssl);
+		if (ret == 0)
 			Error("-DTLSConnection::Write() | SSL_clear() failed: %s", ERR_error_string(ERR_get_error(), NULL));
 
 		return 0;

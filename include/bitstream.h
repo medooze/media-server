@@ -178,7 +178,7 @@ public:
 	}
 
 
-	inline DWORD SkipCached(DWORD n)
+	inline void SkipCached(DWORD n)
 	{
 		//Move
 		cache = cache << n;

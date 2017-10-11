@@ -14,6 +14,8 @@
 #include <errno.h>
 #include <list>
 
+
+//TODO: refector or remove, it is kind of useless
 template<typename T> 
 class WaitQueue : public Use
 {

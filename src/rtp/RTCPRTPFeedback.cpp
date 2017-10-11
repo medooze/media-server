@@ -13,7 +13,7 @@
 
 #include "rtp/RTCPRTPFeedback.h"
 #include "rtp/RTCPCommonHeader.h"
-#include "bitstream.h"
+
 
 RTCPRTPFeedback::RTCPRTPFeedback() : RTCPPacket(RTCPPacket::RTPFeedback)
 {
@@ -27,7 +27,7 @@ RTCPRTPFeedback::~RTCPRTPFeedback()
 		delete(*it);
 }
 
-DWORD RTCPRTPFeedback::GetSize()
+DWORD RTCPRTPFeedback::GetSize() 
 {
 	DWORD len = 8 + RTCPCommonHeader::GetSize();
 	//For each field
@@ -104,48 +104,11 @@ void RTCPRTPFeedback::Dump()
 {
 	Debug("\t[RTCPPacket Feedback %s sender:%u media:%u]\n",TypeToString(feedbackType),senderSSRC,mediaSSRC);
 	for (DWORD i=0;i<fields.size();i++)
-	{
-		//Check type
-		switch(feedbackType)
-		{
-			case RTCPRTPFeedback::NACK:
-			{
-				BYTE blp[2];
-				char str[17];
-				//Get field
-				NACKField* field = (NACKField*)fields[i];
-				//Get BLP in BYTE[]
-				set2(blp,0,field->blp);
-				//Convert to binary
-				BitReader r(blp,2);
-				for (DWORD j=0;j<16;j++)
-					str[j] = r.Get(1) ? '1' : '0';
-				str[16] = 0;
-				//Debug
-				Debug("\t\t[NACK pid:%d blp:%s /]\n",field->pid,str);
-				break;
-			}
-			
-			case RTCPRTPFeedback::TempMaxMediaStreamBitrateRequest:
-			case RTCPRTPFeedback::TempMaxMediaStreamBitrateNotification:
-				break;
-			case RTCPRTPFeedback::TransportWideFeedbackMessage:
-			{
-				//Get field
-				TransportWideFeedbackMessageField *tw = (TransportWideFeedbackMessageField*)fields[i];
-				//Debug
-				Debug("\t\t[TransportWideFeedbackMessage seq:%d]\n",tw->feedbackPacketCount);
-				//For each packet
-				for (RTCPRTPFeedback::TransportWideFeedbackMessageField::Packets::iterator it = tw->packets.begin(); it!=tw->packets.end(); ++it)
-					//DEbub
-					Debug("\t\t\t[Packet seq:%u time=%llu/]\n",it->first,it->second);
-				//Debug
-				Debug("\t\t[TransportWideFeedbackMessage/]\n");
-			}
-		}
-	}
+		//Dump it
+		fields[i]->Dump();
 	Debug("\t[/RTCPPacket Feedback %s]\n",TypeToString(feedbackType));
 }
+
 DWORD RTCPRTPFeedback::Serialize(BYTE* data,DWORD size)
 {
 	//Get packet size
@@ -179,19 +142,18 @@ DWORD RTCPRTPFeedback::Serialize(BYTE* data,DWORD size)
 }
 
 
-DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::GetSize()
+DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::GetSize() const
 {
 	//If we have no packets
 	if (packets.size()==0)
 		return 0;
 	
-	//Calculate temporal info
-	WORD baseSeqNumber	= packets.begin()->first;
-	DWORD referenceTime	= 0;
-	WORD packetStatusCount	= packets.size();
-		
 	//Initial time in us
 	QWORD time = 0;
+	
+	//Calculate temporal info
+	bool firstReceived	= false;
+	QWORD referenceTime	= 0;
 	
 	//Store delta array
 	std::list<int> deltas;
@@ -204,31 +166,46 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::GetSize()
 	DWORD len = 8;
 	
 	//For each packet 
-	for (Packets::iterator it = packets.begin(); it!=packets.end(); ++it)
+	for (Packets::const_iterator it = packets.begin(); it!=packets.end(); ++it)
 	{
 		PacketStatus status = PacketStatus::NotReceived;
 		
 		//If got packet
 		if (it->second)
 		{
+			int delta = 0;
 			//If first received
-			if (!referenceTime)
+			if (!firstReceived)
 			{
+				//Got it 
+				firstReceived = true;
 				//Set it
-				referenceTime = (DWORD)(it->second/64000);
+				referenceTime = (it->second/64000);
 				//Get initial time
 				time = referenceTime * 64000;
 			}
+					
 			//Get delta
-			int delta = (it->second-time)/250;
+			if (it->second>time)
+				delta = (it->second-time)/250;
+			else
+				delta = -(int)((time-it->second)/250);
 			//If it is negative or to big
 			if (delta<0 || delta> 127)
 				//Big one
-				len += 2;
+				status = PacketStatus::LargeOrNegativeDelta;
 			else
 				//Small
-				len++;
+				status = PacketStatus::SmallDelta;
+			//Store delta
+			deltas.push_back(delta);
+			//Set next time
+			time = it->second;
 		}
+		
+		//Push back statuses, it will be handled later
+		statuses.push_back(status);
+
 		
 		//Check if they are different
 		if (allsame && lastStatus!=PacketStatus::Reserved && status!=lastStatus)
@@ -237,7 +214,7 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::GetSize()
 			if ((maxStatus==PacketStatus::LargeOrNegativeDelta && statuses.size()>7) || (maxStatus<PacketStatus::LargeOrNegativeDelta && statuses.size()>14))
 			{
 				//One chunk
-				len++;
+				len+=2;
 				//Remove all statuses
 				statuses.clear();
 				//REset
@@ -259,13 +236,17 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::GetSize()
 		if (maxStatus==PacketStatus::LargeOrNegativeDelta && statuses.size()>6)
 		{
 			//One chunk
-			len++;
+			len+=2;
+			//Remove next 7
+			for (DWORD i=0;i<7;++i)
+				//Remove
+				statuses.pop_front();
 			//REset
 			lastStatus = PacketStatus::Reserved;
 			maxStatus = PacketStatus::NotReceived;
 			allsame = true;
 			//Calculate max of the rest
-			for (Packets::iterator it=packets.begin();it!=packets.end();++it)
+			for (Packets::const_iterator it=packets.begin();it!=packets.end();++it)
 			{
 				//Check if they are different
 				if (allsame && lastStatus!=PacketStatus::Reserved && status!=lastStatus)
@@ -280,22 +261,39 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::GetSize()
 			}
 		} else if (statuses.size()>13) {
 			//One chunk
-			len++;
+			len+=2;
+			//Remove last 14
+			for (DWORD i=0;i<14;++i)
+				//Remove
+				statuses.pop_front();
 			//REset
 			lastStatus = PacketStatus::Reserved;
 			maxStatus = PacketStatus::NotReceived;
 			allsame = true;
-		} else {
-			//Push back statuses, it will be handled later
-			statuses.push_back(status);
 		}
 	}
 	
 	//If not finished yet
 	if (statuses.size()>0)
 		//One chunk more
-		len++;
+		len+=2;
 	
+	//Write now the deltas
+	for (std::list<int>::iterator it = deltas.begin(); it!=deltas.end(); ++it)
+	{
+		//Check size
+		if (*it<0 || *it>128)
+		{
+			//2 bytes
+			//Inc
+			len += 2;
+		} else {
+			//1 byte
+			//Inc
+			len ++;
+		}
+	}
+
 	//Add zero padding
 	if (len%4)
 		//DWORD boundary
@@ -305,7 +303,7 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::GetSize()
 	return len;
 }
 
-DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Serialize(BYTE* data,DWORD size)
+DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Serialize(BYTE* data,DWORD size) const
 {
 	//If we have no packets
 	if (packets.size()==0)
@@ -313,10 +311,19 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Serialize(BYTE* data,D
 	
 	//Calculate temporal info
 	WORD baseSeqNumber	= packets.begin()->first;
+	bool firstReceived	= false;
 	QWORD referenceTime	= 0;
 	WORD packetStatusCount	= packets.size();
-			
-	
+
+	/*
+		0                   1                   2                   3
+		0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+	       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	       |      base sequence number     |      packet status count      |
+	       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	       |                 reference time                | fb pkt. count |
+	       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+	
+	 */
 	//Set data
 	set2(data,0,baseSeqNumber);
 	set2(data,2,packetStatusCount);
@@ -337,27 +344,32 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Serialize(BYTE* data,D
 	BitWritter writter(data+8,size-8);
 	
 	//For each packet 
-	for (Packets::iterator it = packets.begin(); it!=packets.end(); ++it)
+	for (Packets::const_iterator it = packets.begin(); it!=packets.end(); ++it)
 	{
 		PacketStatus status = PacketStatus::NotReceived;
 		
 		//If got packet
 		if (it->second)
 		{
+			int delta = 0;
 			//If first received
-			if (!referenceTime)
+			if (!firstReceived)
 			{
+				//Got it 
+				firstReceived = true;
 				//Set it
 				referenceTime = (it->second/64000);
 				//Get initial time
 				time = referenceTime * 64000;
 				//also in bufffer
 				set3(data,4,referenceTime);
-				
 			}
 			
 			//Get delta
-			int delta = (it->second-time)/250;
+			if (it->second>time)
+				delta = (it->second-time)/250;
+			else
+				delta = -(int)((time-it->second)/250);
 			//If it is negative or to big
 			if (delta<0 || delta> 127)
 				//Big one
@@ -436,7 +448,7 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Serialize(BYTE* data,D
 			maxStatus = PacketStatus::NotReceived;
 			allsame = true;
 			//Calculate max of the rest
-			for (Packets::iterator it=packets.begin();it!=packets.end();++it)
+			for (Packets::const_iterator it=packets.begin();it!=packets.end();++it)
 			{
 				//Check if they are different
 				if (allsame && lastStatus!=PacketStatus::Reserved && status!=lastStatus)
@@ -524,12 +536,13 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Serialize(BYTE* data,D
 			//Inc
 			len += 2;
 		} else {
-			//2 bytes
+			//1 byte
 			set1(data,len,(BYTE)*it);
 			//Inc
 			len ++;
 		}
 	}
+
 	//Add zero padding
 	while (len%4)
 		//Add padding
@@ -537,6 +550,7 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Serialize(BYTE* data,D
 	//Done
 	return len;
 }
+
 DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Parse(BYTE* data,DWORD size)
 {
 	//Create the  status count
@@ -556,7 +570,6 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Parse(BYTE* data,DWORD
 	
 	//Where we are 
 	WORD len = 8;
-	//Debug("-packetcount %d\n",packetStatusCount);
 	//Get all
 	while (statuses.size()<packetStatusCount)
 	{
@@ -572,7 +585,7 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Parse(BYTE* data,DWORD
 		//Check packet type
 		if (chunk>>15) 
 		{
-			//Debug("symbol %x\n",chunk);
+			//Debug("-Chunk %x\n",chunk);
 			/*
 				0                   1
 				0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
@@ -590,7 +603,7 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Parse(BYTE* data,DWORD
 				{
 					//Get status
 					PacketStatus status = (PacketStatus)((chunk >> 2 * (7 - 1 - j)) & 0x03);
-					//Debug("status %d\n",status);
+					//Debug("-status %d\n",status);
 					//Push it back
 					statuses.push_back(status);
 					
@@ -602,7 +615,7 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Parse(BYTE* data,DWORD
 				{
 					//Get status
 					PacketStatus status = (PacketStatus)((chunk >> (14 - 1 - j)) & 0x01);
-					//Debug("status %d\n",status);
+					//Debug("-status %d\n",status);
 					//Push it back
 					statuses.push_back(status);
 					
@@ -623,7 +636,7 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Parse(BYTE* data,DWORD
 			PacketStatus status = (PacketStatus)(chunk>>13) ;
 			//Run lengh
 			WORD run = chunk & 0x1FFF;
-			//Debug("run %d status %d\n",run,status);
+			//Debug("-run %d status %d\n",run,status);
 			//For eachone
 			for (WORD j=0;j<run;++j)
 				//Append it
@@ -631,7 +644,7 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Parse(BYTE* data,DWORD
 		}
 	}
 	QWORD time = referenceTime * 64000;
-		
+	::Dump4(data+len,size-len);
 	//For each packet
 	for (DWORD i=0;i<packetStatusCount;++i)
 	{
@@ -662,8 +675,10 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Parse(BYTE* data,DWORD
 				//Check size
 				if (len+2>size)
 					return 0;
+				//Get short delta
+				short aux = get2(data,len);
 				//Read 2 length delta as signed short
-				int delta = ((short)get2(data,len)) * 250 ;
+				int delta = aux * 250 ;
 				len += 2;
 				//Increase delta
 				time += delta;
@@ -671,6 +686,9 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Parse(BYTE* data,DWORD
 				packets[baseSeqNumber+i] = time;
 				break;	
 			}
+			case PacketStatus::Reserved:
+				//Ignore
+				break;
 		}
 	}
 	//Skip zero padding
@@ -679,4 +697,16 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Parse(BYTE* data,DWORD
 		len += 4 - (len%4);
 	//Parsed
 	return len;
+}
+
+void RTCPRTPFeedback::TransportWideFeedbackMessageField::Dump() const
+{
+	//Debug
+	Debug("\t\t[TransportWideFeedbackMessage seq:%d]\n",feedbackPacketCount);
+	//For each packet
+	for (Packets::const_iterator it = packets.begin(); it!=packets.end(); ++it)
+		//DEbub
+		Debug("\t\t\t[Packet seq:%u time=%llu/]\n",it->first,it->second);
+	//Debug
+	Debug("\t\t[TransportWideFeedbackMessage/]\n");
 }

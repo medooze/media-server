@@ -48,7 +48,7 @@ DWORD RTCPCompoundPacket::RTCPCompoundPacket::GetSize() const
 	//Calculate
 	for(RTCPPackets::const_iterator it = packets.begin(); it!=packets.end(); ++it)
 		//Append size
-		size = RTCPCommonHeader::GetSize()+(*it)->GetSize();
+		size = (*it)->GetSize();
 	//Return total size
 	return size;
 }
@@ -154,7 +154,7 @@ RTCPCompoundPacket* RTCPCompoundPacket::Parse(BYTE *data,DWORD size)
 				//Skip
 				Debug("Unknown rtcp packet type [%d]\n",header.packetType);
 		}
-
+		::Dump4(buffer,header.length);
 		//parse
 		if (packet && packet->Parse(buffer,header.length))
 			//Add packet

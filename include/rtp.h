@@ -46,8 +46,8 @@ struct RTPSource
 	
 	RTPSource()
 	{
-		ssrc		= random();
-		extSeq		= random();
+		ssrc		= 0;
+		extSeq		= 0;
 		cycles		= 0;
 		numPackets	= 0;
 		numRTCPPackets	= 0;
@@ -62,10 +62,31 @@ struct RTPSource
 	
 	RTCPCompoundPacket* CreateSenderReport();
 	
+	
+	virtual void Update(DWORD seqNum,DWORD size) 
+	{
+		//Check if we have a sequence wrap
+		if (seqNum<0x0FFF && (extSeq & 0xFFFF)>0xF000)
+			//Increase cycles
+			cycles++;
+
+		//Get ext seq
+		DWORD extSeq = ((DWORD)cycles)<<16 | seqNum;
+
+		//If we have a not out of order pacekt
+		if (extSeq > this->extSeq || !numPackets)
+			//Update seq num
+			this->extSeq = extSeq;
+
+		//Increase stats
+		numPackets++;
+		totalBytes += size;
+	}
+	
 	virtual void Reset()
 	{
-		ssrc		= random();
-		extSeq		= random();
+		ssrc		= 0;
+		extSeq		= 0;
 		cycles		= 0;
 		numPackets	= 0;
 		numRTCPPackets	= 0;
@@ -96,6 +117,19 @@ struct RTPIncomingSource : public RTPSource
 		lastReceivedSenderReport = 0;
 		lastReport		 = 0;
 		minExtSeqNumSinceLastSR  = RTPPacket::MaxExtSeqNum;
+	}
+	
+	virtual void Update(DWORD seqNum,DWORD size)
+	{
+		RTPSource::Update(seqNum,size);
+		
+		totalPacketsSinceLastSR++;
+		totalBytesSinceLastSR += size;
+
+		//Check if it is the min for this SR
+		if (extSeq<minExtSeqNumSinceLastSR)
+			//Store minimum
+			minExtSeqNumSinceLastSR = extSeq;
 	}
 	
 	virtual void Reset()
@@ -132,6 +166,8 @@ struct RTPOutgoingSource : public RTPSource
 	{
 		time		= random();
 		lastTime	= time;
+		ssrc		= random();
+		extSeq		= random();
 		numPackets	= 0;
 		numRTCPPackets	= 0;
 		totalBytes	= 0;
@@ -148,6 +184,8 @@ struct RTPOutgoingSource : public RTPSource
 	virtual void Reset()
 	{
 		RTPSource::Reset();
+		ssrc		= random();
+		extSeq		= random();
 		time		= random();
 		lastTime	= time;
 		numPackets	= 0;
@@ -239,6 +277,8 @@ public:
 public:
 	typedef std::set<Listener*> Listeners;
 public:	
+	std::string rid;
+	std::string mid;
 	MediaFrame::Type type;
 	RTPLostPackets	losts;
 	RTPBuffer packets;

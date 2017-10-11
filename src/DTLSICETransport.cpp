@@ -129,8 +129,15 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	srtp_err_status_t err = srtp_unprotect(recv,data,(int*)&len);
 	//Check status
 	if (err!=srtp_err_status_ok)
+	{
 		//Error
-		return Error("-DTLSICETransport::onData() | Error unprotecting rtp packet [%d]\n",err);
+		Error("-DTLSICETransport::onData() | Error unprotecting rtp packet [%d]\n",err);
+		//Parse RTP header
+		header.Parse(data,size);
+		header.Dump();
+		//Error
+		return 0;
+	}
 	
 	//Parse RTP header
 	DWORD ini = header.Parse(data,size);
@@ -145,14 +152,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		//Exit
 		return 1;
 	}
-	//Check size
-	if (header.padding)
-	{
-		//Get last 2 bytes
-		WORD padding = get2(data,len-2);
-		//Remove from size
-		len -= padding;
-	}
+	
 	//If it has extension
 	if (header.extension)
 	{
@@ -172,15 +172,23 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		ini += l;
 	}
 
-	//If it is an empyt packet
-	if (ini==len)
-	{	
-		//Debug
-		Debug("-DTLSICETransport::onData() | Dropping empty packet\n");
-		//Drop it         
-		return 1;
+	//Check size with padding
+	if (header.padding)
+	{
+		//Get last 2 bytes
+		WORD padding = get1(data,len-1);
+		//Ensure we have enought size
+		if (len-ini<padding)
+		{
+			///Debug
+			Debug("-RTPSession::onRTPPacket() | RTP padding is bigger than size [padding:%u,size%u]\n",padding,len);
+			//Exit
+			return 0;
+		}
+		//Remove from size
+		len -= padding;
 	}
-        
+	
 	//Get ssrc
 	DWORD ssrc = header.ssrc;
 	
@@ -190,10 +198,34 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	//Get group
 	RTPIncomingSourceGroup *group = GetIncomingSourceGroup(ssrc);
 	
+	//If it doesn't have a group but does hava an rtp stream id
+	if (!group && extension.hasRTPStreamId)
+	{
+		Debug("-DTLSICETransport::onData() | Unknowing group for ssrc trying to retrieve by [ssrc:%u,rid:'%s']\n",ssrc,extension.rid.c_str());
+		//Try to find it on the rids
+		auto it = rids.find(extension.rid);
+		//If found
+		if (it!=rids.end())
+		{
+			Log("-DTLSICETransport::onData() | Associating rtp stream id to ssrc [ssrc:%u,rid:'%s']\n",ssrc,extension.rid.c_str());
+					
+			//Got source
+			group = it->second;
+			
+			//Set ssrc for next ones
+			//TODO: ensure it didn't had a previous ssrc
+			group->media.ssrc = ssrc;
+			
+			//Add it to the incoming list
+			incoming[group->media.ssrc] = group;
+		}
+	}
+			
 	//Ensure it has a group
-	if (!group)
+	if (!group)	
 		//error
 		return Error("-DTLSICETransport::onData() | Unknowing group for ssrc [%u]\n",ssrc);
+	
 	
 	//Get source for ssrc
 	RTPIncomingSource* source = group->GetSource(ssrc);
@@ -211,7 +243,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		//Exit
 		return Error("-DTLSICETransport::onData() | RTP packet type unknown [%d]\n",header.payloadType);
 	
-	UltraDebug("-Got RTP on media:%s sssrc:%u seq:%u pt:%u codec:%s\n",MediaFrame::TypeToString(group->type),ssrc,header.sequenceNumber,header.payloadType,GetNameForCodec(group->type,codec));
+	UltraDebug("-Got RTP on media:%s sssrc:%u seq:%u pt:%u codec:%s rid:'%s'\n",MediaFrame::TypeToString(group->type),ssrc,header.sequenceNumber,header.payloadType,GetNameForCodec(group->type,codec),group->rid.c_str());
 	
 	//Create normal packet
 	RTPPacket *packet = new RTPPacket(group->type,codec,header,extension);
@@ -219,77 +251,84 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	//Set the payload
 	packet->SetPayload(data+ini,len-ini);
 	
-	//Check if we have a sequence wrap
-	if (header.sequenceNumber<0x0FFF && (source->extSeq & 0xFFFF)>0xF000)
-		//Increase cycles
-		source->cycles++;
+	//Update source
+	source->Update(header.sequenceNumber,size);
 	
-	//Set cycles
+	//Set cycles back
 	packet->SetSeqCycles(source->cycles);
 	
-	//Get ext seq
-	DWORD extSeq = packet->GetExtSeqNum();
-	
-	//If we have a not out of order pacekt
-	if (extSeq > source->extSeq || !source->numPackets)
-		//Update seq num
-		source->extSeq = extSeq;
-	
-	//Increase stats
-	source->numPackets++;
-	source->totalPacketsSinceLastSR++;
-	source->totalBytes += size;
-	source->totalBytesSinceLastSR += size;
-	
-
-	//Check if it is the min for this SR
-	if (extSeq<source->minExtSeqNumSinceLastSR)
-		//Store minimum
-		source->minExtSeqNumSinceLastSR = extSeq;
-	
-	//If it is video
-	if (group->type == MediaFrame::Video)
+	//If it is video and transport wide cc is used
+	if (group->type == MediaFrame::Video && packet->HasTransportWideCC())
 	{
-		//GEt last 
-		WORD transportSeqNum = packet->GetTransportSeqNum();
+		//Add packets to the transport wide stats
+		transportWideReceivedPacketsStats[packet->GetTransportSeqNum()] = PacketStats::Create(*packet,size,getTime());
 		
-		//Create rtcp transport wide feedback
-		RTCPCompoundPacket rtcp;
+		//If we have enought or timeout (1sec)
+		//TODO: Implement timer
+		if (transportWideReceivedPacketsStats.size()>20 || (getTime()-transportWideReceivedPacketsStats.begin()->second->time)>1E6)
+		{
+			//Create rtcp transport wide feedback
+			RTCPCompoundPacket rtcp;
 
-		//Add to rtcp
-		RTCPRTPFeedback* feedback = RTCPRTPFeedback::Create(RTCPRTPFeedback::TransportWideFeedbackMessage,mainSSRC,ssrc);
+			//Add to rtcp
+			RTCPRTPFeedback* feedback = RTCPRTPFeedback::Create(RTCPRTPFeedback::TransportWideFeedbackMessage,mainSSRC,ssrc);
 
-		//Create trnasport field
-		RTCPRTPFeedback::TransportWideFeedbackMessageField *field = new RTCPRTPFeedback::TransportWideFeedbackMessageField(feedbackPacketCount++);
+			//Create trnasport field
+			RTCPRTPFeedback::TransportWideFeedbackMessageField *field = new RTCPRTPFeedback::TransportWideFeedbackMessageField(feedbackPacketCount++);
+			
+			//And add it
+			feedback->AddField(field);
+			
+			//Add it
+			rtcp.AddRTCPacket(feedback);
 
-		//Check if we have a sequence wrap
-		if (transportSeqNum<0x0FFF && (lastFeedbackPacketExtSeqNum & 0xFFFF)>0xF000)
-			//Increase cycles
-			feedbackCycles++;
+			//For each packet stats
+			for (auto it=transportWideReceivedPacketsStats.begin();it!=transportWideReceivedPacketsStats.end();++it)
+			{
+				//Get stat
+				PacketStats* stats = it->second;
+				//Get transport seq
+				DWORD transportSeqNum = it->first;
+				//Get time
+				QWORD time = stats->time;
 
-		//Get extended value
-		DWORD transportExtSeqNum = feedbackCycles<<16 | transportSeqNum;
+				
+				//Check if we have a sequence wrap
+				if (transportSeqNum<0x0FFF && (lastFeedbackPacketExtSeqNum & 0xFFFF)>0xF000)
+					//Increase cycles
+					feedbackCycles++;
+
+				//Get extended value
+				DWORD transportExtSeqNum = feedbackCycles<<16 | transportSeqNum;
+
+				//if not first and not out of order
+				if (lastFeedbackPacketExtSeqNum && transportExtSeqNum>lastFeedbackPacketExtSeqNum)
+					//For each lost
+					for (DWORD i = lastFeedbackPacketExtSeqNum+1; i<transportExtSeqNum; ++i)
+						//Add it
+						field->packets.insert(std::make_pair(i,0));
+				//Store last
+				lastFeedbackPacketExtSeqNum = transportExtSeqNum;
+
+				//Add this one
+				field->packets.insert(std::make_pair(transportSeqNum,time));
+
+				
+				//Delete from map
+				transportWideReceivedPacketsStats.erase(it);
+				
+				//Delete stat
+				delete(stats);
+			}
 		
-		//if not first
-		if (lastFeedbackPacketExtSeqNum)
-			//For each lost
-			for (DWORD i = lastFeedbackPacketExtSeqNum+1; i<transportExtSeqNum; ++i)
-				//Add it
-				field->packets.insert(std::make_pair(i,0));
-		//Store last
-		lastFeedbackPacketExtSeqNum = transportExtSeqNum;
-		
-		//Add this one
-		field->packets.insert(std::make_pair(transportSeqNum,getTime()));
+			
+			rtcp.Dump();
+			
+			//Send packet
+			Send(rtcp);
+		}
 
-		//And add it
-		feedback->AddField(field);
 
-		//Add it
-		rtcp.AddRTCPacket(feedback);
-
-		//Send packet
-		Send(rtcp);
 	}
 	
 	//If it was an RTX packet
@@ -408,7 +447,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	//Append it to the packets
 	group->packets.Add(packet);
 	//FOr each ordered packet
-	while(ordered=group->packets.GetOrdered())
+	while((ordered=group->packets.GetOrdered()))
 		//Call listeners
 		group->onRTP(ordered);
 	
@@ -580,18 +619,21 @@ void  DTLSICETransport::ActivateRemoteCandidate(ICERemoteCandidate* candidate,bo
 	if (!active || (useCandidate && candidate!=active))
 	{
 		//Debug
-		Debug("-DTLSICETransport::ActivateRemoteCandidate() | Activating candidate [%s:%hu,use:%d,prio:%d]\n",candidate->GetIP(),candidate->GetPort(),useCandidate,priority);	
+		Debug("-DTLSICETransport::ActivateRemoteCandidate() | Activating candidate [%s:%hu,use:%d,prio:%d,dtls:%d]\n",candidate->GetIP(),candidate->GetPort(),useCandidate,priority,dtls.GetSetup());	
 		
 		//Send data to this one from now on
 		active = candidate;
 		
 		// Needed for DTLS in client mode (otherwise the DTLS "Client Hello" is not sent over the wire)
-		BYTE data[MTU+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
-		DWORD len = dtls.Read(data,MTU);
-		//Check it
-		if (len>0)
-			//Send to bundle transport
-			sender->Send(active,data,len);
+		if (dtls.GetSetup()!=DTLSConnection::SETUP_PASSIVE) 
+		{
+			BYTE data[MTU+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
+			DWORD len = dtls.Read(data,MTU);
+			//Check it
+			if (len>0)
+				//Send to bundle transport
+				sender->Send(active,data,len);
+		}
 	}
 }
 
@@ -1030,6 +1072,8 @@ void DTLSICETransport::onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMaster
 			SetLocalCryptoSDES("NULL_CIPHER_HMAC_SHA1_80",localMasterKey,localMasterKeySize);
 			SetRemoteCryptoSDES("NULL_CIPHER_HMAC_SHA1_80",remoteMasterKey,remoteMasterKeySize);
 			break;
+		default:
+			Error("-RTPBundleTransport::onDTLSSetup() | Unknown suite\n");
 	}
 }
 
@@ -1105,17 +1149,22 @@ bool DTLSICETransport::RemoveOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 
 bool DTLSICETransport::AddIncomingSourceGroup(RTPIncomingSourceGroup *group)
 {
-	Log("-AddIncomingSourceGroup [ssrc:%u,fec:%u,rtx:%u]\n",group->media.ssrc,group->fec.ssrc,group->rtx.ssrc);
+	Log("-AddIncomingSourceGroup [rid:'%s',ssrc:%u,fec:%u,rtx:%u]\n",group->rid.c_str(),group->media.ssrc,group->fec.ssrc,group->rtx.ssrc);
 	
 	//It must contain media ssrc
-	if (!group->media.ssrc)
-		return Error("No media ssrc defining, stream will not be added\n");
+	if (!group->media.ssrc && group->rid.empty())
+		return Error("No media ssrc or rid defined, stream will not be added\n");
 	
 	//Use
 	ScopedUse use(incomingUse);	
+
+	//Add rid if any
+	if (!group->rid.empty())
+		rids[group->rid] = group;
 	
-	//Add it for each group ssrc	
-	incoming[group->media.ssrc] = group;
+	//Add it for each group ssrc
+	if (group->media.ssrc)
+		incoming[group->media.ssrc] = group;
 	if (group->fec.ssrc)
 		incoming[group->fec.ssrc] = group;
 	if (group->rtx.ssrc)
@@ -1134,10 +1183,14 @@ bool DTLSICETransport::RemoveIncomingSourceGroup(RTPIncomingSourceGroup *group)
 	
 	//Block
 	ScopedUseLock lock(incomingUse);
+
+	//Remove rid if any
+	if (!group->rid.empty())
+		rids.erase(group->rid);
 	
 	//Remove it from each ssrc
-	incoming.erase(group->media.ssrc);
-	
+	if (group->media.ssrc)
+		incoming.erase(group->media.ssrc);
 	if (group->fec.ssrc)
 		incoming.erase(group->fec.ssrc);
 	if (group->rtx.ssrc)
@@ -1347,6 +1400,10 @@ int DTLSICETransport::Send(RTPPacket &packet)
 		//Inc stats
 		source.numPackets++;
 		source.totalBytes += len;
+		//Check if we are using transport wide for this packet
+		if (packet.HasTransportWideCC())
+			//Add new stat
+			transportWideSentPacketsStats[packet.GetTransportSeqNum()] = PacketStats::Create(packet,len,getTime());
 	} else {
 		Error("-DTLSICETransport::Send() | Error sending packet [len:%d,err:%d]\n",len,errno);
 	}
@@ -1538,7 +1595,14 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 						Debug("-DTLSICETransport::onRTCP() | TempMaxMediaStreamBitrateNotification\n");
 						break;
 					case RTCPRTPFeedback::TransportWideFeedbackMessage:
-						//Debug("-DTLSICETransport::onRTCP() | TransportWideFeedbackMessage\n");
+						Debug("-DTLSICETransport::onRTCP() | TransportWideFeedbackMessage\n");
+						fb->Dump();
+						//Get each fiedl
+						for (BYTE i=0;i<fb->GetFieldCount();i++)
+						{
+							//Get field
+							const RTCPRTPFeedback::TempMaxMediaStreamBitrateField *field = (const RTCPRTPFeedback::TempMaxMediaStreamBitrateField*) fb->GetField(i);
+						}
 						break;
 				}
 				break;

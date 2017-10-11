@@ -34,7 +34,6 @@ RTCPReport *RTPIncomingSource::CreateReport(QWORD now)
 		//Nothing to report
 		return NULL;
 	
-
 	//Get number of total packtes
 	DWORD total = extSeq - minExtSeqNumSinceLastSR + 1;
 	//Calculate lost

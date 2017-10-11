@@ -50,7 +50,6 @@ DWORD RTCPCommonHeader::Serialize(BYTE* data, const DWORD size) const
 	data[0] = (padding ? 0xA0 : 0x80) | (count & 0x1F);
 	data[1] = packetType;
 	set2(data,2, (length/4)-1);
-	
 	//Return size
 	return 4;
 	

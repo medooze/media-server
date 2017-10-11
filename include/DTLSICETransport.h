@@ -91,6 +91,32 @@ private:
 		RTPMap		ext;
 		RTPMap		apt;
 	};
+	
+private:
+	struct PacketStats
+	{
+		static PacketStats* Create(const RTPPacket &packet, DWORD size, QWORD now)
+		{
+			PacketStats* stats = new PacketStats();
+			
+			stats->transportWideSeqNum	= packet.GetTransportSeqNum();
+			stats->ssrc			= packet.GetSSRC();
+			stats->extSeqNum		= packet.GetExtSeqNum();
+			stats->size			= size;
+			stats->payload			= packet.GetMediaLength();
+			stats->timestamp		= packet.GetTimestamp();
+			stats->time			= now;
+			
+			return stats;
+		}
+		DWORD transportWideSeqNum;
+		DWORD ssrc;
+		DWORD extSeqNum;
+		DWORD size;
+		DWORD payload;
+		DWORD timestamp;
+		QWORD time;
+	};
 private:
 	Sender*		sender;
 	DTLSConnection	dtls;
@@ -105,6 +131,7 @@ private:
 	WORD		feedbackCycles;
 	OutgoingStreams outgoing;
 	IncomingStreams incoming;
+	std::map<std::string,RTPIncomingSourceGroup*> rids;
 	
 	DWORD	mainSSRC;
 	DWORD   rtt;
@@ -125,6 +152,9 @@ private:
 	Mutex	mutex;
 	Use	incomingUse;
 	Use	outgoingUse;
+	
+	std::map<DWORD,PacketStats*> transportWideSentPacketsStats;
+	std::map<DWORD,PacketStats*> transportWideReceivedPacketsStats;
 };
 
 

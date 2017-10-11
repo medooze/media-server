@@ -75,7 +75,6 @@ MediaFrame* VP8Depacketizer::AddPayload(BYTE* payload, DWORD len)
 
 	//Decode payload descriptr
 	DWORD descLen = desc.Parse(payload,len);
-
 	
 	//Skip desc
 	DWORD pos = frame.AppendMedia(payload+descLen, len-descLen);

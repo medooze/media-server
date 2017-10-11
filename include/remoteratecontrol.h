@@ -62,7 +62,7 @@ public:
 	}
 public:
 	RemoteRateControl();
-	void Update(RTPPacket* packet);
+	void Update(QWORD time,QWORD ts,DWORD size);
 	bool UpdateRTT(DWORD rtt);
 	bool UpdateLost(DWORD num);
 	void SetRateControlRegion(Region region);
@@ -79,10 +79,10 @@ private:
 	Acumulator packetCalc;
 	DWORD rtt;
 	DWORD absSendTimeCycles;
-	DWORD prevTS;
+	QWORD prevTS;
 	QWORD prevTime;
 	DWORD prevSize;
-	DWORD curTS;
+	QWORD curTS;
 	QWORD curTime;
 	DWORD curSize;
 	DWORD prevTarget;

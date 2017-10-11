@@ -613,6 +613,23 @@ void RTPSession::onRTPPacket(BYTE* data, DWORD size)
 		ini += l;
 	}
 	
+	//Check size with padding
+	if (header.padding)
+	{
+		//Get last 2 bytes
+		WORD padding = get1(data,size-1);
+		//Ensure we have enought size
+		if (size-ini<padding)
+		{
+			///Debug
+			Debug("-RTPSession::onRTPPacket() | RTP padding is bigger than size\n");
+			//Exit
+			return;
+		}
+		//Remove from size
+		size -= padding;
+	}
+	
 	//Get header data as shorcut
 	DWORD ssrc = header.ssrc;
 	BYTE type  = header.payloadType;
@@ -646,11 +663,8 @@ void RTPSession::onRTPPacket(BYTE* data, DWORD size)
 	packet->SetSeqCycles(recv.media.cycles);
 	
 	//Check if we got a different SSRC
-	if (recv.media.ssrc!=ssrc)
+	if (recv.media.ssrc!=ssrc && codec!=VideoCodec::RTX)
 	{
-		//Check if it is a retransmission
-		if (codec!=VideoCodec::RTX)
-		{
 			//Log
 			Log("-RTPSession::onRTPPacket(%s) | New SSRC [new:%x,old:%x]\n",MediaFrame::TypeToString(media),ssrc,recv.media.ssrc);
 			//Send SR to old one
@@ -667,61 +681,64 @@ void RTPSession::onRTPPacket(BYTE* data, DWORD size)
 			if (remoteRateEstimator)
 				//Add stream
 				remoteRateEstimator->AddStream(recv.media.ssrc);
-		} else {
-			//IT is a retransmission check if we didn't had the ssrc
-			if (!recv.rtx.ssrc)
-			{
-				//Store it
-				recv.rtx.ssrc = ssrc;
-				//Log
-				Log("-RTPSession::onRTPPacket(%s) | Gor RTX for SSRC [rtx:%x,ssrc:%x]\n",MediaFrame::TypeToString(media),recv.rtx.ssrc,recv.media.ssrc);
-			}	
-			/*
-			       The format of a retransmission packet is shown below:
-			   0                   1                   2                   3
-			   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-			  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-			  |                         RTP Header                            |
-			  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-			  |            OSN                |                               |
-			  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               |
-			  |                  Original RTP Packet Payload                  |
-			  |                                                               |
-			  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-			*/
-			 //Get original sequence number
-			WORD osn = get2(packet->GetMediaData(),0);
-			
-			UltraDebug("RTX: Got   %.d:RTX for #%d ts:%u\n",type,osn,packet->GetTimestamp());
-			
-			//Get the associated type
-			type = aptMapIn->GetCodecForType(type);
-			//Find codec for type
-			codec = rtpMapIn->GetCodecForType(type);
-			//Check codec
-			if (codec==RTPMap::NotFound)
-			{
-				 //Error
-				 Error("-RTPSession::onRTPPacket(%s) | RTP RTX packet apt type unknown [%d]\n",MediaFrame::TypeToString(media),type);
-				 //Exi
-				 return;
-			}
-			
-			 //Set original seq num
-			packet->SetSeqNum(osn);
-			//Set original ssrc
-			packet->SetSSRC(recv.media.ssrc);
-			//Set original type
-			packet->SetType(type);
-			//Set codec
-			packet->SetCodec(codec);
-
-			//Skip osn from payload
-			packet->SkipPayload(2);
-			//It is a retrasmision
-			isRTX = true;
-		}	
 	}
+	
+	//Check if it is a rtx
+	if (codec==VideoCodec::RTX)
+	{
+		//IT is a retransmission check if we didn't had the ssrc
+		if (!recv.rtx.ssrc)
+		{
+			//Store it
+			recv.rtx.ssrc = ssrc;
+			//Log
+			Log("-RTPSession::onRTPPacket(%s) | Gor RTX for SSRC [rtx:%x,ssrc:%x]\n",MediaFrame::TypeToString(media),recv.rtx.ssrc,recv.media.ssrc);
+		}	
+		/*
+		       The format of a retransmission packet is shown below:
+		   0                   1                   2                   3
+		   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+		  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		  |                         RTP Header                            |
+		  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		  |            OSN                |                               |
+		  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               |
+		  |                  Original RTP Packet Payload                  |
+		  |                                                               |
+		  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		*/
+		 //Get original sequence number
+		WORD osn = get2(packet->GetMediaData(),0);
+
+		UltraDebug("RTX: Got   %.d:RTX for #%d ts:%u\n",type,osn,packet->GetTimestamp());
+
+		//Get the associated type
+		type = aptMapIn->GetCodecForType(type);
+		//Find codec for type
+		codec = rtpMapIn->GetCodecForType(type);
+		//Check codec
+		if (codec==RTPMap::NotFound)
+		{
+			 //Error
+			 Error("-RTPSession::onRTPPacket(%s) | RTP RTX packet apt type unknown [%d]\n",MediaFrame::TypeToString(media),type);
+			 //Exi
+			 return;
+		}
+
+		 //Set original seq num
+		packet->SetSeqNum(osn);
+		//Set original ssrc
+		packet->SetSSRC(recv.media.ssrc);
+		//Set original type
+		packet->SetType(type);
+		//Set codec
+		packet->SetCodec(codec);
+
+		//Skip osn from payload
+		packet->SkipPayload(2);
+		//It is a retrasmision
+		isRTX = true;
+	}	
 
 	//if (media==MediaFrame::Video && !isRTX && seq % 40 ==0)
 	//	return (void)Error("RTX: Drop %d %s packet #%d ts:%u\n",type,VideoCodec::GetNameFor((VideoCodec::Type)codec),packet->GetSeqNum(),packet->GetTimestamp());
@@ -769,6 +786,7 @@ void RTPSession::onRTPPacket(BYTE* data, DWORD size)
 
 		//Increase stats
 		recv.media.numPackets++;
+		recv.media.totalPacketsSinceLastSR++;
 		recv.media.totalBytes += size;
 		recv.media.totalBytesSinceLastSR += size;
 
@@ -792,7 +810,7 @@ void RTPSession::onRTPPacket(BYTE* data, DWORD size)
 				//If remote estimator
 				if (remoteRateEstimator)
 					//Update estimator
-					remoteRateEstimator->UpdateLost(recv.media.ssrc,lost);
+					remoteRateEstimator->UpdateLost(recv.media.ssrc,lost,getTimeMS());
 			}
 			
 			//Update seq num
@@ -1226,7 +1244,7 @@ void RTPSession::SetRTT(DWORD rtt)
 	//if got estimator
 	if (remoteRateEstimator)
 		//Update estimator
-		remoteRateEstimator->UpdateRTT(recv.media.ssrc,rtt);
+		remoteRateEstimator->UpdateRTT(recv.media.ssrc,rtt,getTimeMS());
 
 	//Check RTT to enable NACK
 	if (useNACK && rtt < 240)

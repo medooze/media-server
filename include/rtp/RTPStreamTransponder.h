@@ -23,8 +23,10 @@ class RTPStreamTransponder :
 	public RTPOutgoingSourceGroup::Listener
 {
 public:
-	RTPStreamTransponder(RTPIncomingSourceGroup* incoming, RTPReceiver* receiver, RTPOutgoingSourceGroup* outgoing,RTPSender* sender);
+	RTPStreamTransponder(RTPOutgoingSourceGroup* outgoing,RTPSender* sender);
 	virtual ~RTPStreamTransponder();
+	
+	bool SetIncoming(RTPIncomingSourceGroup* incoming, RTPReceiver* receiver);
 	void Close();
 	
 	virtual void onRTP(RTPIncomingSourceGroup* group,RTPPacket* packet) override;
@@ -35,20 +37,27 @@ protected:
 	void Start();
 	int Run();
 	void Stop();
-		
+	void Reset();
+	void RequestPLI();
 private:
 	static void * run(void *par);
 
 private:
-	WaitQueue<RTPPacket*> packets;
+	
 	RTPOutgoingSourceGroup *outgoing;
 	RTPIncomingSourceGroup *incoming;
 	RTPReceiver* receiver;
 	RTPSender* sender;
 	VP9LayerSelector selector;
 	Mutex mutex;
+	WaitCondition wait;
+	std::list<RTPPacket*> packets;
 	pthread_t thread;
 	bool running;
+	DWORD first;	//First seq num of incoming stream
+	DWORD base;	//Last outgoing seq num when first was set
+	DWORD last;	//Last seq num of sent packet
+	DWORD dropped;  //Num of empty packets dropped
 };
 
 #endif /* RTPSTREAMTRANSPONDER_H */

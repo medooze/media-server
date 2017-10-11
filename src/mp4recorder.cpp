@@ -601,7 +601,7 @@ void MP4Recorder::onMediaFrame(MediaFrame &frame)
 void MP4Recorder::onMediaFrame(DWORD ssrc, MediaFrame &frame)
 {
 	//Set now as timestamp
-	onMediaFrame(0,frame,getTimeMS());
+	onMediaFrame(ssrc,frame,getTimeMS());
 }
 void MP4Recorder::onMediaFrame(DWORD ssrc, MediaFrame &frame, QWORD time)
 {

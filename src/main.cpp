@@ -33,7 +33,6 @@ extern "C" {
 
 extern XmlHandlerCmd mcuCmdList[];
 extern XmlHandlerCmd jsr309CmdList[];
-extern XmlHandlerCmd sfuCmdList[];
 
 void log_ffmpeg(void* ptr, int level, const char* fmt, va_list vl)
 {
