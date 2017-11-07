@@ -13,6 +13,7 @@
 
 #include "rtp/RTPStreamTransponder.h"
 #include "waitqueue.h"
+#include "vp8/vp8.h"
 
 
 RTPStreamTransponder::RTPStreamTransponder(RTPOutgoingSourceGroup* outgoing,RTPSender* sender)
@@ -175,13 +176,33 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,RTPPacket* packet
 		bool mark;
 		//Select layer
 		if (!selector.Select(packet,extSeqNum,mark))
+		{
+			delete(cloned);
 		       //Drop
 		       return;
+		}
 	       //Reset seq num again
 	       cloned->SetSeqNum(extSeqNum);
 	       cloned->SetSeqCycles(extSeqNum >> 16);
 	       //Set mark
 	       cloned->SetMark(mark);
+	} else if (cloned->GetCodec()==VideoCodec::VP8) {
+		VP8PayloadDescriptor desc;
+
+		//Decode payload descriptr
+		desc.Parse(cloned->GetMediaData(),cloned->GetMediaLength());
+		
+		Log("-tl:%u\t picId:%u\t tl0picIdx:%u\t sync:%u\n",desc.temporalLayerIndex,desc.pictureId,desc.temporalLevelZeroIndex,desc.layerSync);
+		
+		if (desc.temporalLayerIndex==2)
+		{
+			Log("-Drop\n");
+			delete(cloned);
+			//One more dropperd
+			dropped++;
+		       //Drop
+		       return;
+		}
 	}
 	
 	//Change ssrc

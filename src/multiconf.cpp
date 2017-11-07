@@ -4,7 +4,7 @@
 #include "log.h"
 #include "rtpparticipant.h"
 #include "multiconf.h"
-#include "rtmpparticipant.h"
+#include "rtmp/rtmpparticipant.h"
 
 
 /************************

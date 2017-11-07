@@ -644,7 +644,7 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Parse(BYTE* data,DWORD
 		}
 	}
 	QWORD time = referenceTime * 64000;
-	::Dump4(data+len,size-len);
+	//::Dump4(data+len,size-len);
 	//For each packet
 	for (DWORD i=0;i<packetStatusCount;++i)
 	{

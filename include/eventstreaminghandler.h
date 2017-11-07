@@ -8,7 +8,7 @@
 #include "xmlrpcserver.h"
 #include "use.h"
 #include "wait.h"
-#include "amf.h"
+#include "utf8.h"
 
 class Event
 {

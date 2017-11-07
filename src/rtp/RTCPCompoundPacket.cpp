@@ -154,7 +154,7 @@ RTCPCompoundPacket* RTCPCompoundPacket::Parse(BYTE *data,DWORD size)
 				//Skip
 				Debug("Unknown rtcp packet type [%d]\n",header.packetType);
 		}
-		::Dump4(buffer,header.length);
+		//::Dump4(buffer,header.length);
 		//parse
 		if (packet && packet->Parse(buffer,header.length))
 			//Add packet

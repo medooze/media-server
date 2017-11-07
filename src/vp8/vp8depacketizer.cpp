@@ -76,6 +76,15 @@ MediaFrame* VP8Depacketizer::AddPayload(BYTE* payload, DWORD len)
 	//Decode payload descriptr
 	DWORD descLen = desc.Parse(payload,len);
 	
+	//Check
+	if (!descLen || len<descLen)
+	{
+		Dump(payload,len);
+		//Error
+		Error("- VP8Depacketizer::AddPayload() | Error decoding VP8 payload header\n");
+		return NULL;
+	}
+	
 	//Skip desc
 	DWORD pos = frame.AppendMedia(payload+descLen, len-descLen);
 	

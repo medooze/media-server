@@ -51,7 +51,7 @@ void RTCPPayloadFeedback::Dump()
 				DWORD len		= field->GetLength();
 				const BYTE* payload	= field->GetPayload();
 				//Dump it
-				::Dump(payload,len);
+				//::Dump(payload,len);
 				//Check if it is a REMB
 				if (len>8 && payload[0]=='R' && payload[1]=='E' && payload[2]=='M' && payload[3]=='B')
 				{
