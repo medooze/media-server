@@ -87,10 +87,10 @@ public:
 		Debug("\treserved_zero_5bits =%u\n",			reserved_zero_5bits );
 		Debug("\tlevel_idc=%.2x\n",				level_idc);
 		Debug("\tseq_parameter_set_id=%u\n",			seq_parameter_set_id);
-		Debug("\tlog2_max_frame_num_minus4=%u\n",			log2_max_frame_num_minus4);
+		Debug("\tlog2_max_frame_num_minus4=%u\n",		log2_max_frame_num_minus4);
 		Debug("\tpic_order_cnt_type=%u\n",			pic_order_cnt_type);
-		Debug("\tlog2_max_pic_order_cnt_lsb_minus4=%u\n",		log2_max_pic_order_cnt_lsb_minus4);
-		Debug("\t delta_pic_order_always_zero_flag=%u\n",		delta_pic_order_always_zero_flag);
+		Debug("\tlog2_max_pic_order_cnt_lsb_minus4=%u\n",	log2_max_pic_order_cnt_lsb_minus4);
+		Debug("\t delta_pic_order_always_zero_flag=%u\n",	delta_pic_order_always_zero_flag);
 		Debug("\toffset_for_non_ref_pic=%d\n",			offset_for_non_ref_pic);
 		Debug("\toffset_for_top_to_bottom_field=%d\n",		offset_for_top_to_bottom_field);
 		Debug("\tnum_ref_frames_in_pic_order_cnt_cycle=%u\n",	num_ref_frames_in_pic_order_cnt_cycle);
@@ -102,26 +102,26 @@ public:
 		Debug("/]\n");
 	}
 private:
-	BYTE			profile_idc;
-	BYTE			constraint_set0_flag;
-	BYTE			constraint_set1_flag;
-	BYTE			constraint_set2_flag;
-	BYTE			reserved_zero_5bits ;
-	BYTE			level_idc;
-	DWORD			seq_parameter_set_id;
-	DWORD			log2_max_frame_num_minus4;
-	DWORD			pic_order_cnt_type;
-	DWORD			log2_max_pic_order_cnt_lsb_minus4;
-	BYTE			delta_pic_order_always_zero_flag;
-	int			offset_for_non_ref_pic;
-	int			offset_for_top_to_bottom_field;
-	DWORD			num_ref_frames_in_pic_order_cnt_cycle;
+	BYTE			profile_idc = 0;
+	BYTE			constraint_set0_flag = 0;
+	BYTE			constraint_set1_flag = 0;
+	BYTE			constraint_set2_flag = 0;
+	BYTE			reserved_zero_5bits  = 0;
+	BYTE			level_idc = 0;
+	DWORD			seq_parameter_set_id = 0;
+	DWORD			log2_max_frame_num_minus4 = 0;
+	DWORD			pic_order_cnt_type = 0;
+	DWORD			log2_max_pic_order_cnt_lsb_minus4 = 0;
+	BYTE			delta_pic_order_always_zero_flag = 0;
+	int			offset_for_non_ref_pic = 0;
+	int			offset_for_top_to_bottom_field = 0;
+	DWORD			num_ref_frames_in_pic_order_cnt_cycle = 0;
 	std::vector<int>	offset_for_ref_frame;
-	DWORD			num_ref_frames;
-	BYTE			gaps_in_frame_num_value_allowed_flag;
-	BYTE			pic_width_in_mbs_minus1;
-	BYTE			pic_height_in_map_units_minus1;
-	BYTE			frame_mbs_only_flag;
+	DWORD			num_ref_frames = 0;
+	BYTE			gaps_in_frame_num_value_allowed_flag = 0;
+	BYTE			pic_width_in_mbs_minus1 = 0;
+	BYTE			pic_height_in_map_units_minus1 = 0;
+	BYTE			frame_mbs_only_flag = 0;
 };
 
 class H264PictureParameterSet
@@ -226,29 +226,29 @@ public:
 		Debug("/]\n");
 	}
 private:
-	DWORD			pic_parameter_set_id;
-	DWORD			seq_parameter_set_id;
-	BYTE			entropy_coding_mode_flag;
-	BYTE			pic_order_present_flag;
-	DWORD			num_slice_groups_minus1;
-	DWORD			slice_group_map_type;
+	DWORD			pic_parameter_set_id = 0;
+	DWORD			seq_parameter_set_id = 0;
+	BYTE			entropy_coding_mode_flag = 0;
+	BYTE			pic_order_present_flag = 0;
+	DWORD			num_slice_groups_minus1 = 0;
+	DWORD			slice_group_map_type = 0;
 	std::vector<DWORD>	run_length_minus1;
 	std::vector<DWORD>	top_left;
 	std::vector<DWORD>	bottom_right;
-	BYTE			slice_group_change_direction_flag;
-	DWORD			slice_group_change_rate_minus1;
-	DWORD			pic_size_in_map_units_minus1;
+	BYTE			slice_group_change_direction_flag = 0;
+	DWORD			slice_group_change_rate_minus1 = 0;
+	DWORD			pic_size_in_map_units_minus1 = 0;
 	std::vector<DWORD>	slice_group_id;
-	DWORD			num_ref_idx_l0_active_minus1;
-	DWORD			num_ref_idx_l1_active_minus1;
-	BYTE			weighted_pred_flag;
-	BYTE			weighted_bipred_idc;
-	int			pic_init_qp_minus26;
-	int			pic_init_qs_minus26;
-	int			chroma_qp_index_offset;
-	BYTE			deblocking_filter_control_present_flag;
-	BYTE			constrained_intra_pred_flag;
-	BYTE			redundant_pic_cnt_present_flag;
+	DWORD			num_ref_idx_l0_active_minus1 = 0;
+	DWORD			num_ref_idx_l1_active_minus1 = 0;
+	BYTE			weighted_pred_flag = 0;
+	BYTE			weighted_bipred_idc = 0;
+	int			pic_init_qp_minus26 = 0;
+	int			pic_init_qs_minus26 = 0;
+	int			chroma_qp_index_offset = 0;
+	BYTE			deblocking_filter_control_present_flag = 0;
+	BYTE			constrained_intra_pred_flag = 0;
+	BYTE			redundant_pic_cnt_present_flag = 0;
 };
 
 #endif	/* H264_H */

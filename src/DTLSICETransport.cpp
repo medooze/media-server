@@ -505,20 +505,24 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 		RTPHeader		header(packet->GetRTPHeader());
 		RTPHeaderExtension	extension(packet->GetRTPHeaderExtension());
 		
-		//Update RTX headers
-		header.ssrc		= source.ssrc;
-		header.payloadType	= sendMaps.rtp.GetTypeForCodec(VideoCodec::RTX);
-		header.sequenceNumber	= source.extSeq++;
-		//No padding
-		header.padding		= 0;
+		//If it is using rtx (i.e. not firefox)
+		if (source.ssrc)
+		{
+			//Update RTX headers
+			header.ssrc		= source.ssrc;
+			header.payloadType	= sendMaps.rtp.GetTypeForCodec(VideoCodec::RTX);
+			header.sequenceNumber	= source.extSeq++;
+			//No padding
+			header.padding		= 0;
 
-		//Calculate last timestamp
-		source.lastTime = source.time + packet->GetTimestamp();
+			//Calculate last timestamp
+			source.lastTime = source.time + packet->GetTimestamp();
 
-		//Check seq wrap
-		if (source.extSeq==0)
-			//Inc cycles
-			source.cycles++;
+			//Check seq wrap
+			if (source.extSeq==0)
+				//Inc cycles
+				source.cycles++;
+		}
 
 		//Add transport wide cc on video
 		if (group->type == MediaFrame::Video)

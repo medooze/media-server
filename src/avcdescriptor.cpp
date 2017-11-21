@@ -5,7 +5,7 @@
  * Created on 21 de junio de 2011, 12:21
  */
 #include "log.h"
-#include "rtmp/avcdescriptor.h"
+#include "avcdescriptor.h"
 #include "tools.h"
 #include "h264/h264.h"
 #include <string.h>

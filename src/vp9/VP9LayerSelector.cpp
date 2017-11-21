@@ -14,15 +14,12 @@
 #include "VP9LayerSelector.h"
 #include "VP9PayloadDescription.h"
 
-BYTE VP9LayerSelector::MaxLayerId = 0xFF;
-
 VP9LayerSelector::VP9LayerSelector()
 {
 	temporalLayerId = 0;
 	spatialLayerId  = 0;
 	nextTemporalLayerId = MaxLayerId;
 	nextSpatialLayerId = MaxLayerId;
-	dropped = 0;
 }
 
 VP9LayerSelector::VP9LayerSelector(BYTE temporalLayerId,BYTE spatialLayerId )
@@ -31,7 +28,6 @@ VP9LayerSelector::VP9LayerSelector(BYTE temporalLayerId,BYTE spatialLayerId )
 	this->spatialLayerId  = spatialLayerId;
 	nextTemporalLayerId = temporalLayerId;
 	nextSpatialLayerId = spatialLayerId;
-	dropped = 0;
 }
 
 void VP9LayerSelector::SelectTemporalLayer(BYTE id)
@@ -46,7 +42,7 @@ void VP9LayerSelector::SelectSpatialLayer(BYTE id)
 	nextSpatialLayerId = id;
 }
 	
-bool VP9LayerSelector::Select(RTPPacket *packet,DWORD &extSeqNum,bool &mark)
+bool VP9LayerSelector::Select(RTPPacket *packet,bool &mark)
 {
 	VP9PayloadDescription desc;
 	
@@ -87,8 +83,6 @@ bool VP9LayerSelector::Select(RTPPacket *packet,DWORD &extSeqNum,bool &mark)
 	if (currentTemporalLayerId<desc.temporalLayerId)
 	{
 		//UltraDebug("-VP9LayerSelector::Select() | dropping packet based on temporalLayerId [us:%d,desc:%d,mark:%d]\n",temporalLayerId,desc.temporalLayerId,packet->GetMark());
-		//INcrease dropped
-		dropped++;
 		//Drop it
 		return false;
 	}
@@ -128,20 +122,14 @@ bool VP9LayerSelector::Select(RTPPacket *packet,DWORD &extSeqNum,bool &mark)
 	if (currentSpatialLayerId<desc.spatialLayerId)
 	{
 		//UltraDebug("-VP9LayerSelector::Select() | dropping packet based on spatialLayerId [us:%d,desc:%d,mark:%d]\n",spatialLayerId,desc.spatialLayerId,packet->GetMark());
-		//INcrease dropped
-		dropped++;
 		//Drop it
 		return false;
 	}
-		
-	
-	//Calculate new packet number removing the dropped pacekts by the selection layer
-	extSeqNum = packet->GetExtSeqNum()-dropped;
 	
 	//RTP mark is set for the last frame layer of the selected layer
 	mark = packet->GetMark() || (desc.endOfLayerFrame && spatialLayerId==desc.spatialLayerId);
 	
-	//UltraDebug("-VP9LayerSelector::Select() | Accepting packet [extSegNum:%u,mark:%d,tid:%d,sid:%d,dropped:%d,orig:%u]\n",extSeqNum,mark,desc.temporalLayerId,desc.spatialLayerId,dropped,packet->GetExtSeqNum());
+	//UltraDebug("-VP9LayerSelector::Select() | Accepting packet [extSegNum:%u,mark:%d,tid:%d,sid:%d]\n",packet->GetExtSeqNum(),mark,desc.temporalLayerId,desc.spatialLayerId);
 	//Select
 	return true;
 	

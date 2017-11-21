@@ -52,7 +52,7 @@ VP6DIR=vp6
 VP6OBJ=vp6decoder.o
 
 VP8DIR=vp8
-VP8OBJ=vp8encoder.o vp8decoder.o 
+VP8OBJ=vp8encoder.o vp8decoder.o VP8LayerSelector.o
 DEPACKETIZERSOBJ+= vp8depacketizer.o
 
 VP9DIR=vp9
@@ -77,7 +77,7 @@ G722OBJ=g722codec.o
 AACDIR=aac
 AACOBJ=aacencoder.o
 
-BASE= rtp.o xmlrpcserver.o xmlhandler.o xmlstreaminghandler.o statushandler.o  dtls.o CPUMonitor.o OpenSSL.o RTPTransport.o  EventSource.o eventstreaminghandler.o httpparser.o   stunmessage.o crc32calc.o http.o avcdescriptor.o utf8.o   RTPStreamTransponder.o
+BASE= rtp.o xmlrpcserver.o xmlhandler.o xmlstreaminghandler.o statushandler.o  dtls.o CPUMonitor.o OpenSSL.o RTPTransport.o  EventSource.o eventstreaminghandler.o httpparser.o   stunmessage.o crc32calc.o http.o avcdescriptor.o utf8.o   RTPStreamTransponder.o VideoLayerSelector.o
 BASE+= RTCPCommonHeader.o RTPHeader.o RTPHeaderExtension.o RTCPApp.o RTCPExtendedJitterReport.o RTCPPacket.o RTCPReport.o RTCPSenderReport.o RTPMap.o RTCPBye.o RTCPFullIntraRequest.o RTCPPayloadFeedback.o RTCPRTPFeedback.o RTPDepacketizer.o RTPPacket.o  RTCPCompoundPacket.o RTCPNACK.o RTCPReceiverReport.o RTCPSDES.o RTPPacketSched.o
 
 RTMP= rtmpparticipant.o amf.o rtmpmessage.o rtmpchunk.o rtmpstream.o rtmpconnection.o  rtmpserver.o  rtmpflvstream.o flvrecorder.o flvencoder.o

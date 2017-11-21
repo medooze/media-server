@@ -657,7 +657,8 @@ int MP4RtpTrack::SendH263SEI(Listener *listener)
 		free(sequenceHeaderSize);
 	if (pictureHeaderSize)
 		free(pictureHeaderSize);
-
+	
+	return 1;
 }
 
 int MP4RtpTrack::Reset()
@@ -665,6 +666,7 @@ int MP4RtpTrack::Reset()
 	sampleId	= 1;
 	numHintSamples	= 0;
 	packetIndex	= 0;
+	return 1;
 }
 
 QWORD MP4RtpTrack::Read(Listener *listener)
@@ -844,6 +846,7 @@ QWORD MP4RtpTrack::GetNextFrameTime()
 int MP4TextTrack::Reset()
 {
 	sampleId	= 1;
+	return 1;
 }
 
 QWORD MP4TextTrack::ReadPrevious(QWORD time,Listener *listener)
@@ -915,10 +918,6 @@ QWORD MP4TextTrack::ReadPrevious(QWORD time,Listener *listener)
 
 QWORD MP4TextTrack::Read(Listener *listener)
 {
-	int next = 0;
-	int last = 0;
-	int first = 0;
-
 	// Get number of samples for this sample
 	frameSamples = MP4GetSampleDuration(mp4, track, sampleId);
 
@@ -1011,9 +1010,11 @@ AVCDescriptor* MP4Streamer::GetAVCDescriptor()
 	uint32_t *pictureHeaderSize;
 	uint32_t *sequenceHeaderSize;
 	uint32_t i;
-	uint8_t profile, level;
 	uint32_t len;
-	
+	unsigned char AVCProfileIndication 	= 0x42;	//Baseline
+	unsigned char AVCLevelIndication	= 0x0D;	//1.3
+	unsigned char AVCProfileCompat		= 0xC0;
+			
 	//Check video
 	if (!video || video->codec!=VideoCodec::H264)
 		//Nothing
@@ -1022,11 +1023,11 @@ AVCDescriptor* MP4Streamer::GetAVCDescriptor()
 	//Create descriptor
 	AVCDescriptor* desc = new AVCDescriptor();
 
-	//Set them
+	//Set default
 	desc->SetConfigurationVersion(0x01);
-	desc->SetAVCProfileIndication(profile);
-	desc->SetProfileCompatibility(0x00);
-	desc->SetAVCLevelIndication(level);
+	desc->SetAVCProfileIndication(AVCProfileIndication);
+	desc->SetProfileCompatibility(AVCProfileCompat);
+	desc->SetAVCLevelIndication(AVCLevelIndication);
 
 	//Set nalu length
 	MP4GetTrackH264LengthSize(video->mp4, video->track, &len);

@@ -3,7 +3,7 @@
 #include "xmlrpcserver.h"
 #include "xmlhandler.h"
 #include "xmlstreaminghandler.h"
-#include "websockets.h"
+#include "ws/websockets.h"
 #include "statushandler.h"
 #include "audiomixer.h"
 #include "rtmp/rtmpserver.h"

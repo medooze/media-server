@@ -5,38 +5,37 @@
  */
 
 /* 
- * File:   VP9LayerSelector.h
+ * File:   VP8LayerSelector.h
  * Author: Sergio
  *
- * Created on 1 de febrero de 2017, 21:21
+ * Created on 7 de noviembre de 2017, 19:57
  */
 
-#ifndef VP9LAYERSELECTOR_H
-#define VP9LAYERSELECTOR_H
+#ifndef VP8LAYERSELECTOR_H
+#define VP8LAYERSELECTOR_H
+
 #include "config.h"
 #include "VideoLayerSelector.h"
 
-class VP9LayerSelector : public VideoLayerSelector
+class VP8LayerSelector : public VideoLayerSelector
 {
 public:
-	VP9LayerSelector();
-	VP9LayerSelector(BYTE temporalLayerId,BYTE spatialLayerId );
-	virtual ~VP9LayerSelector() {};
+	VP8LayerSelector();
+	virtual ~VP8LayerSelector() {};
+	
 	void SelectTemporalLayer(BYTE id)		override;
 	void SelectSpatialLayer(BYTE id)		override;
 	
 	bool Select(RTPPacket *packet,bool &mark)	override;
 	
 	BYTE GetTemporalLayer()		const override { return temporalLayerId; }
-	BYTE GetSpatialLayer()		const override { return spatialLayerId;  }
-	VideoCodec::Type GetCodec()	const override { return VideoCodec::VP9; }
+	BYTE GetSpatialLayer()		const override { return MaxLayerId;	 }
+	VideoCodec::Type GetCodec()	const override { return VideoCodec::VP8; }
 	
 private:
 	BYTE temporalLayerId;
-	BYTE spatialLayerId;
 	BYTE nextTemporalLayerId;
-	BYTE nextSpatialLayerId;
 };
 
-#endif /* VP9LAYERSELECTOR_H */
+#endif /* VP8LAYERSELECTOR_H */
 
