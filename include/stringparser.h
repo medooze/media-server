@@ -9,6 +9,7 @@
 #define	STRINGPARSER_H
 #include <string>
 #include <cstring>
+#include <memory>
 #include <errno.h>
 #include <math.h>
 #include <wchar.h>
@@ -312,7 +313,7 @@ protected:
 class StringParser : public BaseStringParser<char,std::string>
 {
 public:
-	StringParser(const std::string str) : BaseStringParser<char,std::string>(str)
+	StringParser(const std::string& str) : BaseStringParser<char,std::string>(str)
 	{
 	}
 
@@ -439,7 +440,7 @@ private:
 class WideStringParser : public BaseStringParser<wchar_t,std::wstring>
 {
 public:
-	WideStringParser(const std::wstring &str) : BaseStringParser<wchar_t,std::wstring>(str)
+	WideStringParser(const std::wstring& str) : BaseStringParser<wchar_t,std::wstring>(str)
 	{
 	}
 
@@ -562,10 +563,131 @@ private:
 	long int number;
 };
 
+class JSONValue 
+{
+public:
+	enum Type { String, Number, Array, Object, Null };
+public:
+	JSONValue(Type type)
+	{
+		this->type = type;
+	}
+	~JSONValue()
+	{
+		
+	}
+	Type GetType() const { return type; }
+	
+	virtual std::wstring stringify() = 0;
+private:
+	Type type;
+};
+
+class JSONString : public JSONValue, public std::wstring
+{
+public:
+	JSONString(const std::wstring& value) : JSONValue(String), std::wstring(value) {};
+	
+	virtual std::wstring stringify() { return std::wstring(L"\"") + *this + L"\""; };
+};
+
+class JSONNumber : public JSONValue
+{
+public:
+	JSONNumber(long double value) : JSONValue(Number)
+	{
+		this->value = value;
+	}
+	
+	virtual std::wstring stringify() { 
+		//Get int value
+		int64_t integer = value;
+		if (abs(value-integer)<0.0000001)
+			return std::to_wstring(integer);
+		return std::to_wstring(value); 
+	};
+	
+	long double value;
+};
+
+
+class JSONBoolean : public JSONValue
+{
+public:
+	JSONBoolean(bool value) : JSONValue(Number)
+	{
+		this->value = value;
+	};
+	
+	virtual std::wstring stringify() { return value ? L"true":L"false"; };
+	bool value;
+};
+
+class JSONNull : public JSONValue
+{
+public:
+	JSONNull() : JSONValue(Null) {};
+	virtual std::wstring stringify() { return L"null"; };
+};
+
+
+class JSONArray : public JSONValue, public std::vector<std::unique_ptr<JSONValue>>
+{
+public:
+	JSONArray() : JSONValue(Array) {};
+	virtual std::wstring stringify() 
+	{
+		std::wstring json = L"[\n";
+		
+		for (auto it=begin(); it!=end(); ++it)
+		{
+			if (it!=begin())
+				json += L",";
+			json += (*it)->stringify();
+		}
+		json += L"]\n";
+		
+		return json;
+	};
+	
+	JSONValue* index(size_t i)
+	{
+		return at(i).get();
+	}
+};
+
+class JSONObject : public JSONValue, public std::map<std::wstring,std::unique_ptr<JSONValue>>
+{
+public:
+	JSONObject() : JSONValue(Object) {};
+	virtual std::wstring stringify() 
+	{
+		std::wstring json = L"{\n";
+		
+		for (auto it=begin(); it!=end(); ++it)
+		{
+			if (it!=begin())
+				json += L",\n";
+			json += L"\t" + it->first + L":" +it->second->stringify();
+		}
+		json += L"}\n";
+		
+		return json;
+	};
+	
+	JSONValue* attr(const std::wstring& key)
+	{
+		auto it = find(key);
+		if (it==end())
+			return NULL;
+		return it->second.get();
+	}
+};
+
 class JSONParser : public WideStringParser
 {
 public:
-	JSONParser(const std::wstring str) : WideStringParser(str)
+	JSONParser(const std::wstring& str) : WideStringParser(str)
 	{
 	}
 
@@ -979,6 +1101,100 @@ public:
 	long double GetNumberValue()
 	{
 		return number;
+	}
+	
+	std::unique_ptr<JSONValue> Parse()
+	{
+		JSONValue* parsed = NULL;
+		
+		if (ParseJSONNull())
+		{
+			//Null value
+			parsed = new JSONNull();
+		} else if (ParseJSONObjectStart()) {
+			//Create new JSON object
+			JSONObject* object = new JSONObject();
+			
+			//Until end
+			while(!ParseJSONObjectEnd())
+			{
+				 std::wstring key;
+				 
+				//Get name
+				 if(!ParseJSONString())
+				 {
+					delete(object);
+					return NULL;
+				 }
+				 
+				 //Get key
+				 key = GetValue();
+
+				 //Parse :
+				 if (!ParseDoubleDot())
+				{
+					delete(object);
+					return NULL;
+				 }
+
+				//Get value
+				auto value = Parse();
+				 
+				 //Check value
+				 if (!value)
+				{
+					delete(object);
+					return NULL;
+				 }
+				 
+				 //Add it
+				 (*object)[key] = std::move(value);
+					 
+				 //Skip comma
+				 ParseComma();
+			}
+			
+			//Got it
+			parsed = object;
+		} else if (ParseJSONArrayStart()) {
+			//Create new JSON array
+			JSONArray* array = new JSONArray();
+			
+			//Until end
+			while(!ParseJSONArrayEnd())
+			{
+				 auto value = Parse();
+				 
+				 //Check value
+				 if (!value)
+				 {
+					delete(array);
+					return NULL;
+				 }
+				 
+				 //Add it
+				 array->push_back(std::move(value));
+				 
+				 //Skip comma
+				 ParseComma();
+			}
+			//Got it
+			parsed = array;
+		} else if (ParseJSONString()) {
+			//Return value
+			parsed = new JSONString(GetValue());
+		} else if (ParseJSONNumber()) {
+			//Return value
+			parsed = new JSONNumber(GetNumberValue());
+		} else if (ParseJSONTrue()) {
+			//Return value
+			parsed = new JSONBoolean(true);
+		} else if (CheckJSONFalse()) {
+			//Return value
+			parsed = new JSONBoolean(false);
+		}
+		//Return parsed object
+		return std::unique_ptr<JSONValue>(parsed);
 	}
 
 private:

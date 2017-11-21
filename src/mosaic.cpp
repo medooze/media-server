@@ -315,7 +315,7 @@ int  Mosaic::SetScore(int id, QWORD score)
 int Mosaic::AddParticipant(int id,QWORD score)
 {
 	//Log
-	Log("-AddParticipant [id:%d,score:%lld]\n",id,score);
+	Log("-AddParticipant [id:%d,score:%llu]\n",id,score);
 
 	//Chck if allready added
 	Participants::iterator it = participants.find(id);
