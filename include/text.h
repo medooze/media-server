@@ -2,7 +2,7 @@
 #define _TEXT_H_
 #include "config.h"
 #include "tools.h"
-#include "amf.h"
+#include "utf8.h"
 #include "media.h"
 
 

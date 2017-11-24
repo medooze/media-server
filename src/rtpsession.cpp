@@ -50,7 +50,7 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) :
 	pendingTMBBitrate = 0;
 	//Don't use PLI by default
 	usePLI = false;
-	
+	useRTX = false;
 	//Default cname
 	cname = strdup("default@localhost");
 	
@@ -1380,13 +1380,13 @@ int RTPSession::ReSendPacket(int seq)
 		//Increase len
 		len += packet->GetMediaLength();
 		
-		Debug("-RTPSession::ReSendPacket() | seq:%d ext:%d pt:%d rtx:%d\n",seq,ext,header.payloadType,useRTX);
+		UltraDebug("-RTPSession::ReSendPacket() | seq:%d ext:%d pt:%d rtx:%d\n",seq,ext,header.payloadType,useRTX);
 		
 		//Send packet
 		transport.SendRTPPacket(data,len);
 		
 	} else {
-		Debug("-RTPSession::ReSendPacket() | %d:%d %d not found first %d sending intra instead\n",send.media.cycles,seq,ext,rtxs.size() ?  rtxs.begin()->first : 0);
+		UltraDebug("-RTPSession::ReSendPacket() | %d:%d %d not found first %d sending intra instead\n",send.media.cycles,seq,ext,rtxs.size() ?  rtxs.begin()->first : 0);
 		//Check if got listener
 		if (listener)
 			//Request a I frame

@@ -17,7 +17,6 @@
 #include "acumulator.h"
 #include "RTPSmoother.h"
 #include "mp4recorder.h"
-#include "jsr309/Recorder.h"
 
 /**********************************
 * VideoStream

@@ -16,7 +16,7 @@
 
 #include "rtp.h"
 #include "waitqueue.h"
-#include "vp9/VP9LayerSelector.h"
+#include "VideoLayerSelector.h"
 
 class RTPStreamTransponder : 
 	public RTPIncomingSourceGroup::Listener,
@@ -48,7 +48,7 @@ private:
 	RTPIncomingSourceGroup *incoming;
 	RTPReceiver* receiver;
 	RTPSender* sender;
-	VP9LayerSelector selector;
+	VideoLayerSelector* selector;
 	Mutex mutex;
 	WaitCondition wait;
 	std::list<RTPPacket*> packets;
@@ -58,6 +58,8 @@ private:
 	DWORD base;	//Last outgoing seq num when first was set
 	DWORD last;	//Last seq num of sent packet
 	DWORD dropped;  //Num of empty packets dropped
+	BYTE spatialLayerId;
+	BYTE temporalLayerId;
 };
 
 #endif /* RTPSTREAMTRANSPONDER_H */

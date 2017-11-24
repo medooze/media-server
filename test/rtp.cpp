@@ -74,11 +74,25 @@ public:
 		len = extension.Parse(extMap,data+len,size-len);
 		
 		//Dump
+		header.Dump();
 		extension.Dump();
 		
 		//Check
 		assert(len);
 		assert(extension.hasTransportWideCC);
+		
+		//Copy header
+		RTPHeader clone(header);
+		//Check data
+		assert(clone.version==2);
+		assert(!clone.padding);
+		assert(clone.extension);
+		assert(clone.payloadType==98);
+		assert(clone.csrcs.size()==0);
+		assert(clone.ssrc==0x6232);
+		assert(clone.mark);
+		assert(clone.timestamp=252617738);
+		clone.Dump();
 	}
 	
 

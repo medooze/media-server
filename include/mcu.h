@@ -4,11 +4,11 @@
 #include <set>
 #include "pthread.h"
 #include "multiconf.h"
-#include "rtmpstream.h"
-#include "rtmpapplication.h"
+#include "rtmp/rtmpstream.h"
+#include "rtmp/rtmpapplication.h"
 #include "xmlstreaminghandler.h"
 #include "uploadhandler.h"
-#include "websocketserver.h"
+#include "ws/websocketserver.h"
 #include "CPUMonitor.h"
 
 

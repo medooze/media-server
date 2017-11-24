@@ -3,7 +3,6 @@
 #include "bitstream.h"
 
 
-#include "amf.h"
 #include <stdlib.h>
 #include <string.h>
 extern "C" {
@@ -17,6 +16,7 @@ extern "C" {
 #ifdef HAVE_IMAGEMAGICK
 #include <Magick++.h>
 #endif
+#include "utf8.h"
 
 
 Canvas::Canvas(DWORD width,DWORD height)

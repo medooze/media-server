@@ -2,6 +2,9 @@
 <configurationDescriptor version="100">
   <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
     <df root="." name="0">
+      <df name="include">
+        <in>VideoLayerSelector.h</in>
+      </df>
       <df name="lib">
         <in>mediamixer.cpp</in>
       </df>
@@ -37,31 +40,27 @@
           <in>h264depacketizer.cpp</in>
           <in>h264encoder.cpp</in>
         </df>
-        <df name="jsr309">
-          <in>AudioDecoderWorker.cpp</in>
-          <in>AudioEncoderWorker.cpp</in>
-          <in>AudioMixerResource.cpp</in>
-          <in>AudioTranscoder.cpp</in>
-          <in>Endpoint.cpp</in>
-          <in>JSR309Manager.cpp</in>
-          <in>MediaSession.cpp</in>
-          <in>Player.cpp</in>
-          <in>RTPEndpoint.cpp</in>
-          <in>RTPMultiplexer.cpp</in>
-          <in>RTPMultiplexerSmoother.cpp</in>
-          <in>Recorder.cpp</in>
-          <in>VideoDecoderWorker.cpp</in>
-          <in>VideoEncoderWorkerMultiplexer.cpp</in>
-          <in>VideoMixerResource.cpp</in>
-          <in>VideoTranscoder.cpp</in>
-          <in>xmlrpcjsr309.cpp</in>
-        </df>
         <df name="nelly">
           <in>NellyCodec.cpp</in>
         </df>
         <df name="opus">
           <in>opusdecoder.cpp</in>
           <in>opusencoder.cpp</in>
+        </df>
+        <df name="rtmp">
+          <in>amf.cpp</in>
+          <in>flvencoder.cpp</in>
+          <in>flvrecorder.cpp</in>
+          <in>rtmpchunk.cpp</in>
+          <in>rtmpclientconnection.cpp</in>
+          <in>rtmpconnection.cpp</in>
+          <in>rtmpflvstream.cpp</in>
+          <in>rtmpmessage.cpp</in>
+          <in>rtmpmp4stream.cpp</in>
+          <in>rtmpnetconnection.cpp</in>
+          <in>rtmpparticipant.cpp</in>
+          <in>rtmpserver.cpp</in>
+          <in>rtmpstream.cpp</in>
         </df>
         <df name="rtp">
           <in>RTCPApp.cpp</in>
@@ -95,6 +94,8 @@
           <in>vp6decoder.cpp</in>
         </df>
         <df name="vp8">
+          <in>VP8LayerSelector.cpp</in>
+          <in>VP8LayerSelector.h</in>
           <in>vp8decoder.cpp</in>
           <in>vp8depacketizer.cpp</in>
           <in>vp8encoder.cpp</in>
@@ -103,15 +104,18 @@
           <in>VP9LayerSelector.cpp</in>
           <in>VP9PayloadDescription.cpp</in>
         </df>
+        <df name="ws">
+          <in>websocketconnection.cpp</in>
+          <in>websocketserver.cpp</in>
+        </df>
         <in>CPUMonitor.cpp</in>
         <in>DTLSICETransport.cpp</in>
         <in>EventSource.cpp</in>
-        <in>FLVEncoder.cpp</in>
         <in>OpenSSL.cpp</in>
         <in>RTPBundleTransport.cpp</in>
         <in>RTPSmoother.cpp</in>
         <in>RTPTransport.cpp</in>
-        <in>amf.cpp</in>
+        <in>VideoLayerSelector.cpp</in>
         <in>appmixer.cpp</in>
         <in>asymmetricmosaic.cpp</in>
         <in>audio.cpp</in>
@@ -127,7 +131,6 @@
         <in>dtls.cpp</in>
         <in>eventstreaminghandler.cpp</in>
         <in>fecdecoder.cpp</in>
-        <in>flvrecorder.cpp</in>
         <in>framescaler.cpp</in>
         <in>groupchat.cpp</in>
         <in>http.cpp</in>
@@ -152,20 +155,9 @@
         <in>pipmosaic.cpp</in>
         <in>remoteratecontrol.cpp</in>
         <in>remoterateestimator.cpp</in>
-        <in>rtmpchunk.cpp</in>
-        <in>rtmpclientconnection.cpp</in>
-        <in>rtmpconnection.cpp</in>
-        <in>rtmpflvstream.cpp</in>
-        <in>rtmpmessage.cpp</in>
-        <in>rtmpmp4stream.cpp</in>
-        <in>rtmpnetconnection.cpp</in>
-        <in>rtmpparticipant.cpp</in>
-        <in>rtmpserver.cpp</in>
-        <in>rtmpstream.cpp</in>
         <in>rtp.cpp</in>
         <in>rtpparticipant.cpp</in>
         <in>rtpsession.cpp</in>
-        <in>sfu.cpp</in>
         <in>sidebar.cpp</in>
         <in>statushandler.cpp</in>
         <in>stunmessage.cpp</in>
@@ -180,8 +172,6 @@
         <in>videomixer.cpp</in>
         <in>videopipe.cpp</in>
         <in>videostream.cpp</in>
-        <in>websocketconnection.cpp</in>
-        <in>websocketserver.cpp</in>
         <in>xmlhandler.cpp</in>
         <in>xmlrpcmcu.cpp</in>
         <in>xmlrpcserver.cpp</in>
@@ -372,6 +362,8 @@
           </incDir>
         </ccTool>
       </folder>
+      <item path="include/VideoLayerSelector.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="lib/mediamixer.cpp" ex="false" tool="1" flavor2="4">
       </item>
       <item path="src/CPUMonitor.cpp" ex="false" tool="1" flavor2="8">
@@ -383,10 +375,6 @@
         </ccTool>
       </item>
       <item path="src/EventSource.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="4">
-        </ccTool>
-      </item>
-      <item path="src/FLVEncoder.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
         </ccTool>
       </item>
@@ -406,11 +394,9 @@
         <ccTool flags="4">
         </ccTool>
       </item>
-      <item path="src/aac/aacencoder.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="4">
-        </ccTool>
+      <item path="src/VideoLayerSelector.cpp" ex="false" tool="1" flavor2="0">
       </item>
-      <item path="src/amf.cpp" ex="false" tool="1" flavor2="8">
+      <item path="src/aac/aacencoder.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
         </ccTool>
       </item>
@@ -485,10 +471,6 @@
         <ccTool flags="4">
         </ccTool>
       </item>
-      <item path="src/flvrecorder.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="4">
-        </ccTool>
-      </item>
       <item path="src/framescaler.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
         </ccTool>
@@ -550,97 +532,6 @@
         </ccTool>
       </item>
       <item path="src/httpparser.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="4">
-        </ccTool>
-      </item>
-      <item path="src/jsr309/AudioDecoderWorker.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="4">
-        </ccTool>
-      </item>
-      <item path="src/jsr309/AudioEncoderWorker.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="4">
-        </ccTool>
-      </item>
-      <item path="src/jsr309/AudioMixerResource.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="4">
-        </ccTool>
-      </item>
-      <item path="src/jsr309/AudioTranscoder.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool>
-          <incDir>
-            <pElem>src/rtp</pElem>
-            <pElem>usr/include/c++/6</pElem>
-            <pElem>src/jsr309</pElem>
-            <pElem>../../include</pElem>
-            <pElem>../ffmpeg/libavcodec</pElem>
-            <pElem>../ffmpeg/libavutil</pElem>
-            <pElem>../ffmpeg/libswscale</pElem>
-            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
-            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
-            <pElem>../x264/encoder</pElem>
-            <pElem>../../../include</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </ccTool>
-      </item>
-      <item path="src/jsr309/Endpoint.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="4">
-        </ccTool>
-      </item>
-      <item path="src/jsr309/JSR309Manager.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="4">
-        </ccTool>
-      </item>
-      <item path="src/jsr309/MediaSession.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="4">
-        </ccTool>
-      </item>
-      <item path="src/jsr309/Player.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="4">
-        </ccTool>
-      </item>
-      <item path="src/jsr309/RTPEndpoint.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="4">
-        </ccTool>
-      </item>
-      <item path="src/jsr309/RTPMultiplexer.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="4">
-        </ccTool>
-      </item>
-      <item path="src/jsr309/RTPMultiplexerSmoother.cpp"
-            ex="false"
-            tool="1"
-            flavor2="8">
-        <ccTool flags="4">
-        </ccTool>
-      </item>
-      <item path="src/jsr309/Recorder.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="4">
-        </ccTool>
-      </item>
-      <item path="src/jsr309/VideoDecoderWorker.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="4">
-        </ccTool>
-      </item>
-      <item path="src/jsr309/VideoEncoderWorkerMultiplexer.cpp"
-            ex="false"
-            tool="1"
-            flavor2="8">
-        <ccTool flags="4">
-        </ccTool>
-      </item>
-      <item path="src/jsr309/VideoMixerResource.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="4">
-        </ccTool>
-      </item>
-      <item path="src/jsr309/VideoTranscoder.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="4">
-        </ccTool>
-      </item>
-      <item path="src/jsr309/xmlrpcjsr309.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
         </ccTool>
       </item>
@@ -745,43 +636,55 @@
         <ccTool flags="4">
         </ccTool>
       </item>
-      <item path="src/rtmpchunk.cpp" ex="false" tool="1" flavor2="8">
+      <item path="src/rtmp/amf.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
         </ccTool>
       </item>
-      <item path="src/rtmpclientconnection.cpp" ex="false" tool="1" flavor2="8">
+      <item path="src/rtmp/flvencoder.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
         </ccTool>
       </item>
-      <item path="src/rtmpconnection.cpp" ex="false" tool="1" flavor2="8">
+      <item path="src/rtmp/flvrecorder.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
         </ccTool>
       </item>
-      <item path="src/rtmpflvstream.cpp" ex="false" tool="1" flavor2="8">
+      <item path="src/rtmp/rtmpchunk.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
         </ccTool>
       </item>
-      <item path="src/rtmpmessage.cpp" ex="false" tool="1" flavor2="8">
+      <item path="src/rtmp/rtmpclientconnection.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
         </ccTool>
       </item>
-      <item path="src/rtmpmp4stream.cpp" ex="false" tool="1" flavor2="8">
+      <item path="src/rtmp/rtmpconnection.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
         </ccTool>
       </item>
-      <item path="src/rtmpnetconnection.cpp" ex="false" tool="1" flavor2="8">
+      <item path="src/rtmp/rtmpflvstream.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
         </ccTool>
       </item>
-      <item path="src/rtmpparticipant.cpp" ex="false" tool="1" flavor2="8">
+      <item path="src/rtmp/rtmpmessage.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
         </ccTool>
       </item>
-      <item path="src/rtmpserver.cpp" ex="false" tool="1" flavor2="8">
+      <item path="src/rtmp/rtmpmp4stream.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
         </ccTool>
       </item>
-      <item path="src/rtmpstream.cpp" ex="false" tool="1" flavor2="8">
+      <item path="src/rtmp/rtmpnetconnection.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="4">
+        </ccTool>
+      </item>
+      <item path="src/rtmp/rtmpparticipant.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="4">
+        </ccTool>
+      </item>
+      <item path="src/rtmp/rtmpserver.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="4">
+        </ccTool>
+      </item>
+      <item path="src/rtmp/rtmpstream.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
         </ccTool>
       </item>
@@ -891,14 +794,6 @@
         <ccTool flags="4">
         </ccTool>
       </item>
-      <item path="src/sfu.cpp" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>usr/include/c++/6</pElem>
-            <pElem>src</pElem>
-          </incDir>
-        </cTool>
-      </item>
       <item path="src/sidebar.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
         </ccTool>
@@ -967,6 +862,10 @@
         <ccTool flags="4">
         </ccTool>
       </item>
+      <item path="src/vp8/VP8LayerSelector.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/vp8/VP8LayerSelector.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="src/vp8/vp8decoder.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
         </ccTool>
@@ -987,11 +886,11 @@
         <ccTool flags="4">
         </ccTool>
       </item>
-      <item path="src/websocketconnection.cpp" ex="false" tool="1" flavor2="8">
+      <item path="src/ws/websocketconnection.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
         </ccTool>
       </item>
-      <item path="src/websocketserver.cpp" ex="false" tool="1" flavor2="8">
+      <item path="src/ws/websocketserver.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
         </ccTool>
       </item>
@@ -1061,6 +960,26 @@
           <buildCommand>${MAKE} -f Makefile buildtest</buildCommand>
           <cleanCommand>${MAKE} -f Makefile clean</cleanCommand>
           <executablePath>bin/debug/test</executablePath>
+          <cTool>
+            <incDir>
+              <pElem>src</pElem>
+              <pElem>include</pElem>
+              <pElem>ext</pElem>
+              <pElem></pElem>
+            </incDir>
+            <preprocessorList>
+              <Elem>FLOATING_POINT</Elem>
+              <Elem>LOG_</Elem>
+              <Elem>OUTSIDE_SPEEX</Elem>
+              <Elem>PIC</Elem>
+              <Elem>RANDOM_PREFIX=mcu</Elem>
+              <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+              <Elem>VADWEBRTC</Elem>
+              <Elem>_UNIX</Elem>
+              <Elem>__SSE2__</Elem>
+              <Elem>__STDC_CONSTANT_MACROS</Elem>
+            </preprocessorList>
+          </cTool>
         </makeTool>
         <preBuild>
           <preBuildCommandWorkingDir>.</preBuildCommandWorkingDir>
@@ -1157,26 +1076,6 @@
         </ccTool>
       </folder>
       <folder path="0/src/g711">
-        <cTool>
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </cTool>
         <ccTool>
           <incDir>
             <pElem>src</pElem>
@@ -1330,8 +1229,8 @@
           </preprocessorList>
         </ccTool>
       </folder>
-      <folder path="0/src/speex">
-        <cTool>
+      <folder path="0/src/rtmp">
+        <ccTool>
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -1350,7 +1249,9 @@
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
           </preprocessorList>
-        </cTool>
+        </ccTool>
+      </folder>
+      <folder path="0/src/speex">
         <ccTool>
           <incDir>
             <pElem>src</pElem>
@@ -1417,6 +1318,28 @@
         </ccTool>
       </folder>
       <folder path="0/src/vp9">
+        <ccTool>
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="0/src/ws">
         <ccTool>
           <incDir>
             <pElem>src</pElem>
@@ -1528,28 +1451,6 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="src/FLVEncoder.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </item>
       <item path="src/OpenSSL.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="2">
           <incDir>
@@ -1638,11 +1539,7 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="src/aac/aacencoder.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="2">
-        </ccTool>
-      </item>
-      <item path="src/amf.cpp" ex="false" tool="1" flavor2="8">
+      <item path="src/VideoLayerSelector.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="2">
           <incDir>
             <pElem>src</pElem>
@@ -1662,6 +1559,10 @@
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
           </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/aac/aacencoder.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="2">
         </ccTool>
       </item>
       <item path="src/appmixer.cpp" ex="false" tool="1" flavor2="8">
@@ -2007,28 +1908,6 @@
         <ccTool flags="2">
         </ccTool>
       </item>
-      <item path="src/flvrecorder.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </item>
       <item path="src/framescaler.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="2">
           <incDir>
@@ -2144,386 +2023,6 @@
         </ccTool>
       </item>
       <item path="src/httpparser.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </item>
-      <item path="src/jsr309/AudioDecoderWorker.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </item>
-      <item path="src/jsr309/AudioEncoderWorker.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </item>
-      <item path="src/jsr309/AudioMixerResource.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </item>
-      <item path="src/jsr309/AudioTranscoder.cpp" ex="false" tool="1" flavor2="4">
-        <ccTool>
-          <incDir>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/jsr309</pElem>
-            <pElem>../../include</pElem>
-            <pElem>../ffmpeg/libavcodec</pElem>
-            <pElem>../ffmpeg/libavutil</pElem>
-            <pElem>../ffmpeg/libswscale</pElem>
-            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
-            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
-            <pElem>../x264/encoder</pElem>
-            <pElem>../../../include</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </ccTool>
-      </item>
-      <item path="src/jsr309/Endpoint.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </item>
-      <item path="src/jsr309/JSR309Manager.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </item>
-      <item path="src/jsr309/MediaSession.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </item>
-      <item path="src/jsr309/Player.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </item>
-      <item path="src/jsr309/RTPEndpoint.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </item>
-      <item path="src/jsr309/RTPMultiplexer.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </item>
-      <item path="src/jsr309/RTPMultiplexerSmoother.cpp"
-            ex="false"
-            tool="1"
-            flavor2="8">
-        <ccTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </item>
-      <item path="src/jsr309/Recorder.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </item>
-      <item path="src/jsr309/VideoDecoderWorker.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </item>
-      <item path="src/jsr309/VideoEncoderWorkerMultiplexer.cpp"
-            ex="false"
-            tool="1"
-            flavor2="8">
-        <ccTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </item>
-      <item path="src/jsr309/VideoMixerResource.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </item>
-      <item path="src/jsr309/VideoTranscoder.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </item>
-      <item path="src/jsr309/xmlrpcjsr309.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="2">
           <incDir>
             <pElem>src</pElem>
@@ -2987,224 +2486,56 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="src/rtmpchunk.cpp" ex="false" tool="1" flavor2="8">
+      <item path="src/rtmp/amf.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
         </ccTool>
       </item>
-      <item path="src/rtmpclientconnection.cpp" ex="false" tool="1" flavor2="8">
+      <item path="src/rtmp/flvencoder.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
         </ccTool>
       </item>
-      <item path="src/rtmpconnection.cpp" ex="false" tool="1" flavor2="8">
+      <item path="src/rtmp/flvrecorder.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
         </ccTool>
       </item>
-      <item path="src/rtmpflvstream.cpp" ex="false" tool="1" flavor2="8">
+      <item path="src/rtmp/rtmpchunk.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
         </ccTool>
       </item>
-      <item path="src/rtmpmessage.cpp" ex="false" tool="1" flavor2="8">
+      <item path="src/rtmp/rtmpclientconnection.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
         </ccTool>
       </item>
-      <item path="src/rtmpmp4stream.cpp" ex="false" tool="1" flavor2="8">
+      <item path="src/rtmp/rtmpconnection.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
         </ccTool>
       </item>
-      <item path="src/rtmpnetconnection.cpp" ex="false" tool="1" flavor2="8">
+      <item path="src/rtmp/rtmpflvstream.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
         </ccTool>
       </item>
-      <item path="src/rtmpparticipant.cpp" ex="false" tool="1" flavor2="8">
+      <item path="src/rtmp/rtmpmessage.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
         </ccTool>
       </item>
-      <item path="src/rtmpserver.cpp" ex="false" tool="1" flavor2="8">
+      <item path="src/rtmp/rtmpmp4stream.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
         </ccTool>
       </item>
-      <item path="src/rtmpstream.cpp" ex="false" tool="1" flavor2="8">
+      <item path="src/rtmp/rtmpnetconnection.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/rtmp/rtmpparticipant.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="2">
+        </ccTool>
+      </item>
+      <item path="src/rtmp/rtmpserver.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="2">
+        </ccTool>
+      </item>
+      <item path="src/rtmp/rtmpstream.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="2">
         </ccTool>
       </item>
       <item path="src/rtp.cpp" ex="false" tool="1" flavor2="8">
@@ -3745,13 +3076,6 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="src/sfu.cpp" ex="false" tool="0" flavor2="2">
-        <cTool>
-          <incDir>
-            <pElem>include</pElem>
-          </incDir>
-        </cTool>
-      </item>
       <item path="src/sidebar.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="2">
           <incDir>
@@ -4072,6 +3396,10 @@
         <ccTool flags="2">
         </ccTool>
       </item>
+      <item path="src/vp8/VP8LayerSelector.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="3">
+        </ccTool>
+      </item>
       <item path="src/vp8/vp8decoder.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="2">
         </ccTool>
@@ -4092,48 +3420,12 @@
         <ccTool flags="2">
         </ccTool>
       </item>
-      <item path="src/websocketconnection.cpp" ex="false" tool="1" flavor2="8">
+      <item path="src/ws/websocketconnection.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
         </ccTool>
       </item>
-      <item path="src/websocketserver.cpp" ex="false" tool="1" flavor2="8">
+      <item path="src/ws/websocketserver.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="2">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
         </ccTool>
       </item>
       <item path="src/xmlhandler.cpp" ex="false" tool="1" flavor2="8">

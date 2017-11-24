@@ -13,6 +13,7 @@
 
 #include "rtp/RTPStreamTransponder.h"
 #include "waitqueue.h"
+#include "vp8/vp8.h"
 
 
 RTPStreamTransponder::RTPStreamTransponder(RTPOutgoingSourceGroup* outgoing,RTPSender* sender)
@@ -26,6 +27,9 @@ RTPStreamTransponder::RTPStreamTransponder(RTPOutgoingSourceGroup* outgoing,RTPS
 	base = 0;
 	last = 0;
 	dropped = 0;
+	selector = NULL;
+	spatialLayerId = VideoLayerSelector::MaxLayerId;
+	temporalLayerId = VideoLayerSelector::MaxLayerId;
 	
 	//Store outgoing streams
 	this->outgoing = outgoing;
@@ -158,6 +162,35 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,RTPPacket* packet
 		return;
 	}
 	
+	//Check if we have a selector and it is not from the same codec
+	if (selector && selector->GetCodec()!=packet->GetCodec())
+	{
+		//Delete it and reset
+		delete(selector);
+		//Create new selector for codec
+		selector = VideoLayerSelector::Create((VideoCodec::Type)packet->GetCodec());
+		//Set prev layers
+		selector->SelectSpatialLayer(spatialLayerId);
+		selector->SelectTemporalLayer(temporalLayerId);
+	//Check if we don't have a selector yet
+	} else if (!selector) {
+		//Create new selector for codec
+		selector = VideoLayerSelector::Create((VideoCodec::Type)packet->GetCodec());
+		//Select prev layers
+		selector->SelectSpatialLayer(spatialLayerId);
+		selector->SelectTemporalLayer(temporalLayerId);
+	}
+	
+	bool mark = packet->GetMark();
+	
+	//Select layer
+	if (selector && !selector->Select(packet,mark))
+	{
+		//One more dropperd
+		dropped++;
+	       //Drop
+	       return;
+	}
 	
 	//Clone packet
 	RTPPacket* cloned = packet->Clone();
@@ -168,21 +201,9 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,RTPPacket* packet
 	//Set new seq numbers
 	cloned->SetSeqNum(extSeqNum);
 	cloned->SetSeqCycles(extSeqNum >> 16);
-
-	//Check if it is an VP9 packet
-	if (cloned->GetCodec()==VideoCodec::VP9)
-	{
-		bool mark;
-		//Select layer
-		if (!selector.Select(packet,extSeqNum,mark))
-		       //Drop
-		       return;
-	       //Reset seq num again
-	       cloned->SetSeqNum(extSeqNum);
-	       cloned->SetSeqCycles(extSeqNum >> 16);
-	       //Set mark
-	       cloned->SetMark(mark);
-	}
+	
+	//Set mark again
+	cloned->SetMark(mark);
 	
 	//Change ssrc
 	cloned->SetSSRC(outgoing->media.ssrc);
@@ -208,11 +229,17 @@ void RTPStreamTransponder::onPLIRequest(RTPOutgoingSourceGroup* group,DWORD ssrc
 
 void RTPStreamTransponder::SelectLayer(int spatialLayerId,int temporalLayerId)
 {
-	if (selector.GetSpatialLayer()<spatialLayerId)
+	this->spatialLayerId = spatialLayerId;
+	this->temporalLayerId = temporalLayerId;
+		
+	if (!selector)
+		return;
+	
+	if (selector->GetSpatialLayer()<spatialLayerId)
 		//Request update on the incoming
 		RequestPLI();
-	selector.SelectSpatialLayer(spatialLayerId);
-	selector.SelectTemporalLayer(temporalLayerId);
+	selector->SelectSpatialLayer(spatialLayerId);
+	selector->SelectTemporalLayer(temporalLayerId);
 }
 
 void RTPStreamTransponder::Start()
@@ -293,6 +320,16 @@ void  RTPStreamTransponder::Reset()
 	base = last;
 	//None dropped
 	dropped = 0;
+	//Not selecting
+	if (selector)
+	{
+		//Delete and reset
+		delete(selector);
+		selector = NULL;
+	}
+	//No layer
+	spatialLayerId = VideoLayerSelector::MaxLayerId;
+	temporalLayerId = VideoLayerSelector::MaxLayerId;
 	
 	Debug("<RTPStreamTransponder::Reset()\n");
 }

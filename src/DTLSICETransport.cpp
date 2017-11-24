@@ -313,16 +313,12 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 				//Add this one
 				field->packets.insert(std::make_pair(transportSeqNum,time));
 
-				
 				//Delete from map
 				transportWideReceivedPacketsStats.erase(it);
 				
 				//Delete stat
 				delete(stats);
 			}
-		
-			
-			rtcp.Dump();
 			
 			//Send packet
 			Send(rtcp);
@@ -509,20 +505,24 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 		RTPHeader		header(packet->GetRTPHeader());
 		RTPHeaderExtension	extension(packet->GetRTPHeaderExtension());
 		
-		//Update RTX headers
-		header.ssrc		= source.ssrc;
-		header.payloadType	= sendMaps.rtp.GetTypeForCodec(VideoCodec::RTX);
-		header.sequenceNumber	= source.extSeq++;
-		//No padding
-		header.padding		= 0;
+		//If it is using rtx (i.e. not firefox)
+		if (source.ssrc)
+		{
+			//Update RTX headers
+			header.ssrc		= source.ssrc;
+			header.payloadType	= sendMaps.rtp.GetTypeForCodec(VideoCodec::RTX);
+			header.sequenceNumber	= source.extSeq++;
+			//No padding
+			header.padding		= 0;
 
-		//Calculate last timestamp
-		source.lastTime = source.time + packet->GetTimestamp();
+			//Calculate last timestamp
+			source.lastTime = source.time + packet->GetTimestamp();
 
-		//Check seq wrap
-		if (source.extSeq==0)
-			//Inc cycles
-			source.cycles++;
+			//Check seq wrap
+			if (source.extSeq==0)
+				//Inc cycles
+				source.cycles++;
+		}
 
 		//Add transport wide cc on video
 		if (group->type == MediaFrame::Video)
@@ -893,7 +893,7 @@ int DTLSICETransport::SetLocalCryptoSDES(const char* suite,const BYTE* key,const
 	}
 
 	//Check sizes
-	if (len!=policy.rtp.cipher_key_len)
+	if (len!=(DWORD)policy.rtp.cipher_key_len)
 		//Error
 		return Error("-RTPBundleTransport::SetLocalCryptoSDES() | Key size (%d) doesn't match the selected srtp profile (required %d)\n",len,policy.rtp.cipher_key_len);
 
@@ -1021,7 +1021,7 @@ int DTLSICETransport::SetRemoteCryptoSDES(const char* suite, const BYTE* key, co
 	}
 
 	//Check sizes
-	if (len!=policy.rtp.cipher_key_len)
+	if (len!=(DWORD)policy.rtp.cipher_key_len)
 		//Error
 		return Error("-RTPBundleTransport::SetRemoteCryptoSDES() | Key size (%d) doesn't match the selected srtp profile (required %d)\n",len,policy.rtp.cipher_key_len);
 
@@ -1589,14 +1589,14 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 						}
 						break;
 					case RTCPRTPFeedback::TempMaxMediaStreamBitrateRequest:
-						Debug("-DTLSICETransport::onRTCP() | TempMaxMediaStreamBitrateRequest\n");
+						UltraDebug("-DTLSICETransport::onRTCP() | TempMaxMediaStreamBitrateRequest\n");
 						break;
 					case RTCPRTPFeedback::TempMaxMediaStreamBitrateNotification:
-						Debug("-DTLSICETransport::onRTCP() | TempMaxMediaStreamBitrateNotification\n");
+						UltraDebug("-DTLSICETransport::onRTCP() | TempMaxMediaStreamBitrateNotification\n");
 						break;
 					case RTCPRTPFeedback::TransportWideFeedbackMessage:
-						Debug("-DTLSICETransport::onRTCP() | TransportWideFeedbackMessage\n");
-						fb->Dump();
+						UltraDebug("-DTLSICETransport::onRTCP() | TransportWideFeedbackMessage\n");
+						//fb->Dump();
 						//Get each fiedl
 						for (BYTE i=0;i<fb->GetFieldCount();i++)
 						{
@@ -1660,6 +1660,8 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 							//Check if it is a REMB
 							if (len>8 && payload[0]=='R' && payload[1]=='E' && payload[2]=='M' && payload[3]=='B')
 							{
+								//TODO: Implement REMB support
+								/*
 								//GEt exponent
 								BYTE exp = payload[5] >> 2;
 								DWORD mantisa = payload[5] & 0x03;
@@ -1667,6 +1669,7 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 								mantisa = mantisa << 8 | payload[7];
 								//Get bitrate
 								DWORD bitrate = mantisa << exp;
+								*/
 							}
 						}
 						break;

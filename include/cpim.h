@@ -10,7 +10,7 @@
 
 #include "config.h"
 #include "http.h"
-#include "amf.h"
+#include "utf8.h"
 
 class MIMEObject
 {

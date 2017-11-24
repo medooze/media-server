@@ -2,7 +2,7 @@
 # Config file
 ##################################
 LOG		  = yes
-DEBUG 		  = no
+DEBUG 		  = yes
 SANITIZE          = no
 STATIC		  = no
 VADWEBRTC	  = yes

@@ -11,7 +11,7 @@
 #include "config.h"
 #include "tools.h"
 #include "cpim.h"
-#include "websockets.h"
+#include "ws/websockets.h"
 #include "use.h"
 #include "wait.h"
 
