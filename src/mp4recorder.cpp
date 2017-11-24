@@ -499,7 +499,7 @@ bool MP4Recorder::Record()
 	return Record(true);
 }
 
-bool MP4Recorder::Record(bool waitVieo)
+bool MP4Recorder::Record(bool waitVideo)
 {
         //Check mp4 file is opened
         if (mp4 == MP4_INVALID_FILE_HANDLE)
@@ -507,7 +507,7 @@ bool MP4Recorder::Record(bool waitVieo)
                 return Error("No MP4 file opened for recording\n");
         
 	//Do We have to wait for first I-Frame?
-	this->waitVideo = waitVieo;
+	this->waitVideo = waitVideo;
 	
 	//Recording
 	recording = true;
@@ -688,6 +688,11 @@ void MP4Recorder::onMediaFrame(DWORD ssrc, MediaFrame &frame, QWORD time)
 					//Set first timestamp
 					first = time;
 				}
+				
+				//Check if it is the first
+				if (first==(QWORD)-1)
+					//Set this one as first
+					first = time;
 			
 				// Calculate new timestamp
 				QWORD timestamp = time-first;
