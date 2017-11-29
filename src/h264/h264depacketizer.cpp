@@ -66,8 +66,6 @@ MediaFrame* H264Depacketizer::AddPacket(RTPPacket *packet)
 MediaFrame* H264Depacketizer::AddPayload(BYTE* payload, DWORD payload_len)
 {
 	BYTE nalHeader[4];
-	BYTE nal_unit_type;
-	BYTE nal_ref_idc;
 	BYTE S, E;
 	DWORD nalu_size;
 	DWORD pos;
@@ -84,8 +82,8 @@ MediaFrame* H264Depacketizer::AddPayload(BYTE* payload, DWORD payload_len)
 	 *
 	 * F must be 0.
 	 */
-	nal_ref_idc = (payload[0] & 0x60) >> 5;
-	nal_unit_type = payload[0] & 0x1f;
+	// BYTE nal_ref_idc = (payload[0] & 0x60) >> 5;
+	BYTE nal_unit_type = payload[0] & 0x1f;
 
 	//Debug("-H264 [NAL:%d,type:%d]\n", payload[0], nal_unit_type);
 

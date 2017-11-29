@@ -21,7 +21,7 @@ class VP8LayerSelector : public VideoLayerSelector
 {
 public:
 	VP8LayerSelector();
-	virtual ~VP8LayerSelector() {};
+	virtual ~VP8LayerSelector() = default;
 	
 	void SelectTemporalLayer(BYTE id)		override;
 	void SelectSpatialLayer(BYTE id)		override;

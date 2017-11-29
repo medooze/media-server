@@ -10,6 +10,7 @@ class VideoLayerSelector
 public:
 	static BYTE MaxLayerId;
 public:
+	virtual ~VideoLayerSelector() = default;
 	virtual void SelectTemporalLayer(BYTE id) = 0;
 	virtual void SelectSpatialLayer(BYTE id) = 0;
 	virtual bool Select(RTPPacket *packet,bool &mark) = 0;

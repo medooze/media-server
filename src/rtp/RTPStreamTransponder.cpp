@@ -163,7 +163,7 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,RTPPacket* packet
 	}
 	
 	//Check if we have a selector and it is not from the same codec
-	if (selector && selector->GetCodec()!=packet->GetCodec())
+	if (selector && (BYTE)selector->GetCodec()!=packet->GetCodec())
 	{
 		//Delete it and reset
 		delete(selector);

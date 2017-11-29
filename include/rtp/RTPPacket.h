@@ -26,8 +26,8 @@ public:
 	
 
 public:
-	RTPPacket(MediaFrame::Type media,DWORD codec);
-	RTPPacket(MediaFrame::Type media,DWORD codec,const RTPHeader &header, const RTPHeaderExtension &extension);
+	RTPPacket(MediaFrame::Type media,BYTE codec);
+	RTPPacket(MediaFrame::Type media,BYTE codec,const RTPHeader &header, const RTPHeaderExtension &extension);
 	virtual ~RTPPacket();
 
 	RTPPacket* Clone();
@@ -44,7 +44,7 @@ public:
 	void SetSSRC(DWORD ssrc)		{ header.ssrc = ssrc;			}
 	void SetType(DWORD payloadType)		{ header.payloadType = payloadType;	}
 	
-	void SetCodec(DWORD codec)		{ this->codec = codec;			}
+	void SetCodec(BYTE codec)		{ this->codec = codec;			}
 	void SetSeqCycles(WORD cycles)		{ this->cycles = cycles;		}
 	void SetClockRate(DWORD rate)		{ this->clockRate = rate;		}
 
@@ -52,7 +52,7 @@ public:
 	
 	//Getters
 	MediaFrame::Type GetMedia()	const { return media;				}
-	DWORD GetCodec()		const { return codec;				}
+	BYTE  GetCodec()		const { return codec;				}
 	
 	
 	
@@ -96,7 +96,7 @@ private:
 	static const DWORD PREFIX = 200;
 private:
 	MediaFrame::Type media;
-	DWORD		codec;
+	BYTE		codec;
 	DWORD		clockRate;
 	WORD		cycles;
 	

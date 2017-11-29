@@ -329,7 +329,7 @@ public:
 	bool MatchString(const char* str)
 	{
 		//Get str len
-		int len = strlen(str);
+		size_t len = strlen(str);
 		//Check we have enought
 		if (Left()<len)
 			//Not found
@@ -356,7 +356,7 @@ public:
 	bool CheckString(const char* str)
 	{
 		//Get str len
-		int len = strlen(str);
+		size_t len = strlen(str);
 		//Check we have enought
 		if (Left()<len)
 			//Not found
@@ -456,7 +456,7 @@ public:
 	bool MatchString(const wchar_t* str)
 	{
 		//Get str len
-		int len = wcslen(str);
+		size_t len = wcslen(str);
 		//Check we have enought
 		if (Left()<len)
 			//Not found
@@ -483,7 +483,7 @@ public:
 	bool CheckString(const wchar_t* str)
 	{
 		//Get str len
-		int len = wcslen(str);
+		size_t len = wcslen(str);
 		//Check we have enought
 		if (Left()<len)
 			//Not found
@@ -572,10 +572,7 @@ public:
 	{
 		this->type = type;
 	}
-	~JSONValue()
-	{
-		
-	}
+	virtual ~JSONValue() = default;
 	Type GetType() const { return type; }
 	
 	virtual std::wstring stringify() = 0;
@@ -587,7 +584,7 @@ class JSONString : public JSONValue, public std::wstring
 {
 public:
 	JSONString(const std::wstring& value) : JSONValue(String), std::wstring(value) {};
-	
+	virtual ~JSONString() = default;
 	virtual std::wstring stringify() { return std::wstring(L"\"") + *this + L"\""; };
 };
 
@@ -598,7 +595,7 @@ public:
 	{
 		this->value = value;
 	}
-	
+	virtual ~JSONNumber() = default;
 	virtual std::wstring stringify() { 
 		//Get int value
 		int64_t integer = value;
@@ -618,7 +615,7 @@ public:
 	{
 		this->value = value;
 	};
-	
+	virtual ~JSONBoolean() = default;
 	virtual std::wstring stringify() { return value ? L"true":L"false"; };
 	bool value;
 };
@@ -635,6 +632,7 @@ class JSONArray : public JSONValue, public std::vector<std::unique_ptr<JSONValue
 {
 public:
 	JSONArray() : JSONValue(Array) {};
+	virtual ~JSONArray() = default;
 	virtual std::wstring stringify() 
 	{
 		std::wstring json = L"[\n";
@@ -660,6 +658,7 @@ class JSONObject : public JSONValue, public std::map<std::wstring,std::unique_pt
 {
 public:
 	JSONObject() : JSONValue(Object) {};
+	virtual ~JSONObject() = default;
 	virtual std::wstring stringify() 
 	{
 		std::wstring json = L"{\n";

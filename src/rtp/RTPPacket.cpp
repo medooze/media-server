@@ -15,7 +15,7 @@
 #include "log.h"
 
 
-RTPPacket::RTPPacket(MediaFrame::Type media,DWORD codec)
+RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec)
 {
 	this->media = media;
 	//Set coced
@@ -40,7 +40,7 @@ RTPPacket::RTPPacket(MediaFrame::Type media,DWORD codec)
 	//Set time
 	time = ::getTimeMS();
 }
-RTPPacket::RTPPacket(MediaFrame::Type media,DWORD codec,const RTPHeader &header, const RTPHeaderExtension &extension) :
+RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec,const RTPHeader &header, const RTPHeaderExtension &extension) :
 	header(header),
 	extension(extension)
 {
@@ -133,7 +133,7 @@ bool RTPPacket::SkipPayload(DWORD skip) {
 
 void RTPPacket::Dump()
 {
-	Debug("[RTPPacket %s codec=%d payload=%d]\n",MediaFrame::TypeToString(GetMedia()),GetCodec(),GetMediaLength());
+	Debug("[RTPPacket %s codec=%u payload=%d]\n",MediaFrame::TypeToString(GetMedia()),GetCodec(),GetMediaLength());
 	header.Dump();
 	//If  there is an extension
 	if (header.extension)

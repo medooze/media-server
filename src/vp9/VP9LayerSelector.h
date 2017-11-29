@@ -21,7 +21,7 @@ class VP9LayerSelector : public VideoLayerSelector
 public:
 	VP9LayerSelector();
 	VP9LayerSelector(BYTE temporalLayerId,BYTE spatialLayerId );
-	virtual ~VP9LayerSelector() {};
+	virtual ~VP9LayerSelector() = default;
 	void SelectTemporalLayer(BYTE id)		override;
 	void SelectSpatialLayer(BYTE id)		override;
 	

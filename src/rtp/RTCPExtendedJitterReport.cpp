@@ -45,7 +45,7 @@ DWORD RTCPExtendedJitterReport::Parse(BYTE* data,DWORD size)
 		return 0;
 	
 	//for each
-	for(int i=0;i<header.count;i++)
+	for(DWORD i=0;i<header.count;i++)
 	{
 		//Get ssrc
 		jitters.push_back(get4(data,len));
@@ -77,7 +77,7 @@ DWORD RTCPExtendedJitterReport::Serialize(BYTE* data,DWORD size)
 	DWORD len = header.Serialize(data,size);
 	
 	//for each
-	for(int i=0;i<jitters.size();i++)
+	for(DWORD i=0;i<jitters.size();i++)
 	{
 		//Set ssrc
 		set4(data,len,jitters[i]);
