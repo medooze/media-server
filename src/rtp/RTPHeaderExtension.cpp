@@ -15,20 +15,20 @@
 #include "log.h"
 
 
-bool WriteHeaderIdAndLength(BYTE* data, DWORD pos, BYTE id, DWORD length)
+size_t WriteHeaderIdAndLength(BYTE* data, DWORD pos, BYTE id, DWORD length)
 {
 	//Check id is valid
 	if (id==RTPMap::NotFound)
-		return false;
+		return 0;
 	//Check size
 	if (!length || (length-1)>0x0f)
-		return false;
+		return 0;
 	
 	//Set id && length
 	data[pos] = id << 4 | (length-1);
 	
 	//OK
-	return true;
+	return 1;
 }
 
 /*
@@ -249,6 +249,8 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 
 DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD size) const
 {
+	size_t n;
+	
 	//If not enought size for header
 	if (size<4)
 		//ERROR
@@ -275,9 +277,13 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 		// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 		
 		//Write header 
-		if (WriteHeaderIdAndLength(data,len++,id,1))
+		if ((n = WriteHeaderIdAndLength(data,len,id,1)))
+		{
+			//Inc header len
+			len += n;
 			//Set vad
-			data[len++] = (vad ? 0x80 : 0x00) | (level & 0x07);
+			data[len] = (vad ? 0x80 : 0x00) | (level & 0x07);
+		}
 	}
 	
 	if (hasTimeOffset)
@@ -291,8 +297,10 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 		// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 		//
 		//Write header 
-		if (WriteHeaderIdAndLength(data,len++,id,3))
+		if ((n = WriteHeaderIdAndLength(data,len,id,3)))
 		{
+			//Inc header len
+			len += n;
 			//if it is negative
 			if (timeOffset<0)
 			{
@@ -322,11 +330,13 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 		// Calculate absolute send time field (convert ms to 24-bit unsigned with 18 bit fractional part.
 		// Encoding: Timestamp is in seconds, 24 bit 6.18 fixed point, yielding 64s wraparound and 3.8us resolution (one increment for each 477 bytes going out on a 1Gbps interface).
 		//If found
-		if (WriteHeaderIdAndLength(data,len++,id,3))
+		if ((n = WriteHeaderIdAndLength(data,len,id,3)))
 		{
-			
+			//Inc header len
+			len += n;
+
 			//Set id && length
-			data[len++] = id << 4 | 0x02;
+			data[len] = id << 4 | 0x02;
 			//Calculate absolute send time field (convert ms to 24-bit unsigned with 18 bit fractional part.
 			// Encoding: Timestamp is in seconds, 24 bit 6.18 fixed point, yielding 64s wraparound and 3.8us resolution (one increment for each 477 bytes going out on a 1Gbps interface).
 			//Set it
@@ -353,9 +363,13 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 		// R1, R0 = Rotation: indicates the rotation of the video as transmitted on the link. The receiver should rotate the video to compensate that rotation. E.g. a 90° Counter Clockwise rotation should be compensated by the receiver with a 90° Clockwise rotation prior to displaying.
 		
 		//Write header 
-		if (WriteHeaderIdAndLength(data,len++,id,1))
+		if ((n = WriteHeaderIdAndLength(data,len,id,1)))
+		{
+			//Inc header len
+			len += n;
 			//Get all cvo data
-			data[len++] = (cvo.facing ? 0x08 : 0x00) | (cvo.flip ? 0x04 : 0x00) | (cvo.rotation & 0x03);
+			data[len] = (cvo.facing ? 0x08 : 0x00) | (cvo.flip ? 0x04 : 0x00) | (cvo.rotation & 0x03);
+		}
 	}
 	
 	if (hasTransportWideCC)
@@ -370,8 +384,10 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 		// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 		
 		//Write header 
-		if (WriteHeaderIdAndLength(data,len++,id,2))
+		if ((n = WriteHeaderIdAndLength(data,len,id,2)))
 		{
+			//Inc header len
+			len += n;
 			//Set them
 			set2(data,len,transportSeqNum);
 			//Inc length
@@ -416,8 +432,10 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 			scalable = true;
 		
 		//Write header 
-		if (WriteHeaderIdAndLength(data,len++,id,(scalable ? 0x03 : 0x01)))
+		if ((n = WriteHeaderIdAndLength(data,len,id,(scalable ? 0x03 : 0x01))))
 		{
+			//Inc header len
+			len += n;
 			//Set common part
 			data[len] = frameMarks.startOfFrame ? 0x80 : 0x00;
 			data[len] |= frameMarks.endOfFrame ? 0x40 : 0x00;
@@ -448,10 +466,12 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 		BYTE id = extMap.GetTypeForCodec(RTPStreamId);
 		
 		//Write header 
-		if (WriteHeaderIdAndLength(data,len++,id,rid.length()))
+		if ((n = WriteHeaderIdAndLength(data,len,id,rid.length())))
 		{
+			//Inc header len
+			len += n;
 			//Copy str contents
-			memcpy(data+len,rid.data(),rid.length());
+			memcpy(data+len,rid.c_str(),rid.length());
 			//Append length
 			len+=rid.length();
 		}
@@ -463,10 +483,12 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 		BYTE id = extMap.GetTypeForCodec(RepairedRTPStreamId);
 		
 		//Write header 
-		if (WriteHeaderIdAndLength(data,len++,id,repairedId.length()))
+		if ((n = WriteHeaderIdAndLength(data,len,id,repairedId.length())))
 		{
+			//Inc header len
+			len += n;
 			//Copy str contents
-			memcpy(data+len,repairedId.data(),repairedId.length());
+			memcpy(data+len,repairedId.c_str(),repairedId.length());
 			//Append length
 			len+=repairedId.length();
 		}
@@ -478,10 +500,12 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 		BYTE id = extMap.GetTypeForCodec(MediaStreamId);
 		
 		//Write header 
-		if (WriteHeaderIdAndLength(data,len++,id,mid.length()))
+		if ((n = WriteHeaderIdAndLength(data,len,id,mid.length())))
 		{
+			//Inc header len
+			len += n;
 			//Copy str contents
-			memcpy(data+len,mid.data(),mid.length());
+			memcpy(data+len,mid.c_str(),mid.length());
 			//Append length
 			len+=mid.length();
 		}

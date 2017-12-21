@@ -327,6 +327,14 @@ public:
 			assert(len);
 			assert(extension.hasRTPStreamId);
 			assert(strcmp(extension.rid.c_str(),kStreamId)==0);
+			
+			//Serialize and ensure it is the same
+			BYTE aux[128];
+			len = header.Serialize(aux,128);
+			len += extension.Serialize(extMap,aux+len,size-len);
+			Dump4(data,size);
+			Dump4(aux,len);
+			assert(len==size);
 		}
 		
 		//MID
@@ -358,6 +366,14 @@ public:
 			assert(len);
 			assert(extension.hasMediaStreamId);
 			assert(strcmp(extension.mid.c_str(),kMid)==0);
+			
+			//Serialize and ensure it is the same
+			BYTE aux[128];
+			len = header.Serialize(aux,128);
+			len += extension.Serialize(extMap,aux+len,size-len);
+			Dump4(data,size);
+			Dump4(aux,len);
+			assert(len==size);
 		}
 		
 		//ALL
@@ -399,9 +415,46 @@ public:
 			BYTE aux[128];
 			len = header.Serialize(aux,128);
 			len += extension.Serialize(extMap,aux+len,size-len);
-			Dump(data,size);
-			Dump(aux,len);
+			Dump4(data,size);
+			Dump4(aux,len);
 			assert(len==size);
+		}
+		
+		//MIX - no serialize transport wide cc
+		{
+			RTPMap	map;
+			map[1] = RTPHeaderExtension::AbsoluteSendTime;
+			map[2] = RTPHeaderExtension::TimeOffset;
+			map[3] = RTPHeaderExtension::MediaStreamId;
+			map[4] = RTPHeaderExtension::FrameMarking;
+			
+			RTPHeaderExtension extension;
+			extension.hasTimeOffset = true;
+			extension.hasAbsSentTime = true;
+			extension.hasTransportWideCC = true;
+			extension.hasFrameMarking = true;
+			extension.hasMediaStreamId = true;
+			extension.timeOffset = 1800;
+			extension.absSentTime = 15069;
+			extension.transportSeqNum = 116;
+			extension.frameMarks.startOfFrame = 0;
+			extension.frameMarks.endOfFrame = 1;
+			extension.frameMarks.independent = 0;
+			extension.frameMarks.discardable = 0;
+			extension.frameMarks.baseLayerSync = 0;
+			extension.frameMarks.temporalLayerId = 0;
+			extension.frameMarks.spatialLayerId = 0;
+			extension.frameMarks.tl0PicIdx = 0;
+			extension.mid = "sdparta_0";
+			
+			
+			//Serialize and ensure it is the same
+			BYTE aux[128];
+			extension.Dump();
+			size_t len = extension.Serialize(map,aux,128);
+			Dump4(aux,len);
+			assert(0);
+
 		}
 	}
 	

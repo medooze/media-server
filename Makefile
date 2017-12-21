@@ -57,7 +57,7 @@ DEPACKETIZERSOBJ+= vp8depacketizer.o
 
 VP9DIR=vp9
 VP9OBJ=
-DEPACKETIZERSOBJ+= VP9PayloadDescription.o VP9LayerSelector.o
+DEPACKETIZERSOBJ+= VP9PayloadDescription.o VP9LayerSelector.o VP9Depacketizer.o
 
 GSMDIR=gsm
 GSMOBJ=gsmcodec.o

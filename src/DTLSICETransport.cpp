@@ -257,8 +257,6 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	//Set cycles back
 	packet->SetSeqCycles(source->cycles);
 	
-	packet->Dump();
-	
 	//If it is video and transport wide cc is used
 	if (group->type == MediaFrame::Video && packet->HasTransportWideCC())
 	{
@@ -1359,8 +1357,6 @@ int DTLSICETransport::Send(RTPPacket &packet)
 		//Error
 		return Error("-DTLSICETransport::SendPacket() | Media overflow\n");
 
-	header.Dump();
-	Dump(data,len);
 	//Copiamos los datos
 	memcpy(data+len,packet.GetMediaData(),packet.GetMediaLength());
 
