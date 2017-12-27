@@ -25,6 +25,7 @@
 #include "fecdecoder.h"
 #include "use.h"
 #include "rtpbuffer.h"
+#include "PCAPFile.h"
 
 class DTLSICETransport : 
 	public RTPSender,
@@ -46,6 +47,7 @@ public:
 	void SetLocalProperties(const Properties& properties);
 	virtual int SendPLI(DWORD ssrc) override;
 	virtual int Send(RTPPacket &packet) override;
+	int Dump(const char* filename);
 	void Reset();
 	
 	void ActivateRemoteCandidate(ICERemoteCandidate* candidate,bool useCandidate, DWORD priority);
@@ -155,6 +157,8 @@ private:
 	
 	std::map<DWORD,PacketStats*> transportWideSentPacketsStats;
 	std::map<DWORD,PacketStats*> transportWideReceivedPacketsStats;
+	
+	PCAPFile* pcap;
 };
 
 

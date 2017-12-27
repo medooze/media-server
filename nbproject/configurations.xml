@@ -3,6 +3,7 @@
   <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
     <df root="." name="0">
       <df name="include">
+        <in>PCAPFile.h</in>
         <in>VideoLayerSelector.h</in>
       </df>
       <df name="lib">
@@ -101,6 +102,7 @@
           <in>vp8encoder.cpp</in>
         </df>
         <df name="vp9">
+          <in>VP9Depacketizer.cpp</in>
           <in>VP9LayerSelector.cpp</in>
           <in>VP9PayloadDescription.cpp</in>
         </df>
@@ -112,6 +114,7 @@
         <in>DTLSICETransport.cpp</in>
         <in>EventSource.cpp</in>
         <in>OpenSSL.cpp</in>
+        <in>PCAPFile.cpp</in>
         <in>RTPBundleTransport.cpp</in>
         <in>RTPSmoother.cpp</in>
         <in>RTPTransport.cpp</in>
@@ -362,6 +365,8 @@
           </incDir>
         </ccTool>
       </folder>
+      <item path="include/PCAPFile.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="include/VideoLayerSelector.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="lib/mediamixer.cpp" ex="false" tool="1" flavor2="4">
@@ -381,6 +386,8 @@
       <item path="src/OpenSSL.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
         </ccTool>
+      </item>
+      <item path="src/PCAPFile.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/RTPBundleTransport.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
@@ -875,6 +882,10 @@
         </ccTool>
       </item>
       <item path="src/vp8/vp8encoder.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="4">
+        </ccTool>
+      </item>
+      <item path="src/vp9/VP9Depacketizer.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
         </ccTool>
       </item>
@@ -1383,6 +1394,8 @@
           </preprocessorList>
         </ccTool>
       </folder>
+      <item path="include/PCAPFile.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="lib/mediamixer.cpp" ex="false" tool="1" flavor2="4">
       </item>
       <item path="src/CPUMonitor.cpp" ex="false" tool="1" flavor2="8">
@@ -1472,6 +1485,8 @@
             <Elem>__STDC_CONSTANT_MACROS</Elem>
           </preprocessorList>
         </ccTool>
+      </item>
+      <item path="src/PCAPFile.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/RTPBundleTransport.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="2">
@@ -3409,6 +3424,10 @@
         </ccTool>
       </item>
       <item path="src/vp8/vp8encoder.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="2">
+        </ccTool>
+      </item>
+      <item path="src/vp9/VP9Depacketizer.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="2">
         </ccTool>
       </item>

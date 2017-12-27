@@ -1053,7 +1053,7 @@ int RTPTransport::ReadRTP()
 		//Debug
 		Debug("-RTPTransport::ReadRTP() | RTP data not big enought[%d]\n",size);
 		//Exit
-		return 1;
+		return 0;
 	}
 
 	//Check if it is encripted
@@ -1072,6 +1072,9 @@ int RTPTransport::ReadRTP()
 	}
 	
 	listener->onRTPPacket(buffer,size);
+	
+	//Done
+	return 1;
 }
 
 void RTPTransport::Start()
@@ -1196,5 +1199,7 @@ void RTPTransport::onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMasterKey,
 			SetLocalCryptoSDES("NULL_CIPHER_HMAC_SHA1_80",localMasterKey,localMasterKeySize);
 			SetRemoteCryptoSDES("NULL_CIPHER_HMAC_SHA1_80",remoteMasterKey,remoteMasterKeySize);
 			break;
+		default:
+			Error("-TPTransport::onDTLSSetup() Unknown suite\n");
 	}
 }

@@ -453,8 +453,6 @@ public:
 			extension.Dump();
 			size_t len = extension.Serialize(map,aux,128);
 			Dump4(aux,len);
-			assert(0);
-
 		}
 	}
 	

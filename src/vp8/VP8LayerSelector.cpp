@@ -39,7 +39,7 @@ bool VP8LayerSelector::Select(RTPPacket *packet,bool &mark)
 	if (nextTemporalLayerId>temporalLayerId)
 	{
 		//Check if we can upscale and it is the start of the layer and it is a valid layer
-		if ((!desc.nonReferencePicture || desc.layerSync) && desc.startOfPartition && desc.temporalLayerIndex<=nextTemporalLayerId)
+		if ((!desc.nonReferencePicture || desc.layerSync) && desc.startOfPartition && desc.temporalLayerIndex<=nextTemporalLayerId && temporalLayerId != desc.temporalLayerIndex)
 		{
 			UltraDebug("-VP8LayerSelector::Select() | Upscaling temporalLayerId [id:%d,target:%d]\n",desc.temporalLayerIndex,nextTemporalLayerId);
 			//Update current layer

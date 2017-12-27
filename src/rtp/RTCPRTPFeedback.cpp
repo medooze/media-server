@@ -447,20 +447,6 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Serialize(BYTE* data,D
 			lastStatus = PacketStatus::Reserved;
 			maxStatus = PacketStatus::NotReceived;
 			allsame = true;
-			//Calculate max of the rest
-			for (Packets::const_iterator it=packets.begin();it!=packets.end();++it)
-			{
-				//Check if they are different
-				if (allsame && lastStatus!=PacketStatus::Reserved && status!=lastStatus)
-					//Not the same
-					allsame = false;
-				//If it is bigger
-				if (status>maxStatus)
-					//Store it
-					maxStatus = status;
-				//Store las status
-				lastStatus = status;
-			}
 		} else if (statuses.size()>13) {
 			/*
 				0                   1

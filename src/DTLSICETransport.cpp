@@ -52,6 +52,8 @@ DTLSICETransport::DTLSICETransport(Sender *sender) : dtls(*this), mutex(true)
 	iceRemotePwd = NULL;
 	//Init our main ssrc
 	mainSSRC = 1;
+	//Not dumping
+	pcap = NULL;
 }
 
 /*************************
@@ -101,6 +103,11 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		if (err!=srtp_err_status_ok)
 			return Error("-DTLSICETransport::onData() | Error unprotecting rtcp packet [%d]\n",err);
 
+		//If dumping
+		if (pcap)
+			//Write udp packet
+			pcap->WriteUDP(getTimeMS(),candidate->GetIPAddress(),candidate->GetPort(),0x7F000001,5004,data,len);
+		
 		//Parse it
 		RTCPCompoundPacket* rtcp = RTCPCompoundPacket::Parse(data,len);
 	
@@ -110,7 +117,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 			//Debug
 			Debug("-RTPBundleTransport::onData() | RTCP wrong data\n");
 			//Dump it
-			Dump(data,size);
+			::Dump(data,size);
 			//Exit
 			return 1;
 		}
@@ -139,6 +146,11 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		return 0;
 	}
 	
+	//If dumping
+	if (pcap)
+		//Write udp packet
+		pcap->WriteUDP(getTimeMS(),candidate->GetIPAddress(),candidate->GetPort(),0x7F000001,5004,data,len);
+	
 	//Parse RTP header
 	DWORD ini = header.Parse(data,size);
 	
@@ -148,7 +160,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		//Debug
 		Debug("-DTLSICETransport::onData() | Could not parse RTP header\n");
 		//Dump it
-		Dump(data,size);
+		::Dump(data,size);
 		//Exit
 		return 1;
 	}
@@ -164,7 +176,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 			///Debug
 			Debug("-DTLSICETransport::onData() | Could not parse RTP header extension\n");
 			//Dump it
-			Dump(data,size);
+			::Dump(data,size);
 			//Exit
 			return 1;
 		}
@@ -260,6 +272,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	//If it is video and transport wide cc is used
 	if (group->type == MediaFrame::Video && packet->HasTransportWideCC())
 	{
+		//TODO: Calculate seqnum seq wrap here better!!!!!!!! <------------------------------------------------------------------------------ SERGIO------------------------------------------
 		//Add packets to the transport wide stats
 		transportWideReceivedPacketsStats[packet->GetTransportSeqNum()] = PacketStats::Create(*packet,size,getTime());
 		
@@ -574,23 +587,31 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 		//Set pateckt length
 		len += packet->GetMediaLength();
 		
-		//Encript
-		srtp_err_status_t err = srtp_protect(send,data,(int*)&len);
-		//Check error
-		if (err!=srtp_err_status_ok)
-			//Error
-			return (void)Error("-RTPTransport::SendPacket() | Error protecting RTP packet [%d]\n",err);
-
 		//Synchronized
 		{
 			//Block scope
 			ScopedLock method(mutex);
+			
+			//If dumping
+			if (pcap)
+				//Write udp packet
+				pcap->WriteUDP(getTimeMS(),0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len);
+
+			//Encript
+			srtp_err_status_t err = srtp_protect(send,data,(int*)&len);
+			//Check error
+			if (err!=srtp_err_status_ok)
+				//Error
+				return (void)Error("-RTPTransport::SendPacket() | Error protecting RTP packet [%d]\n",err);
+	
 			//If we don't have an active candidate yet
 			if (!active)
 				//Error
 				return (void)Debug("-DTLSICETransport::Send() | We don't have an active candidate yet\n");
 			//No error yet, send packet
 			len = sender->Send(active,data,len);
+			
+			
 		}
 
 		if (len<=0)
@@ -830,7 +851,31 @@ void DTLSICETransport::SetRemoteProperties(const Properties& properties)
 	//Clear extension
 	extensions.clear();
 }
-			
+		
+int DTLSICETransport::Dump(const char* filename)
+{
+	
+	Log("-DTLSICETransport::Dump()\n");
+	
+	if (pcap)
+		return Error("Already dumping\n");
+	
+	//Create pcap file
+	pcap = new PCAPFile();
+	
+	//Open it
+	if (!pcap->Open(filename))
+	{
+		//Error
+		delete(pcap);
+		pcap = NULL;
+		return 0;
+	}
+	
+	//Ok
+	return true;
+}
+
 void DTLSICETransport::Reset()
 {
 	Log("-DTLSICETransport::Reset()\n");
@@ -853,6 +898,11 @@ void DTLSICETransport::Reset()
 		//Dealoacate
 		srtp_dealloc(recv);
 	
+	//Check if dumping
+	if (pcap)
+		//Delete it
+		delete(pcap);
+	
 	send = NULL;
 	recv = NULL;
 	//No ice
@@ -860,6 +910,7 @@ void DTLSICETransport::Reset()
 	iceLocalPwd = NULL;
 	iceRemoteUsername = NULL;
 	iceRemotePwd = NULL;
+	pcap = NULL;
 }
 
 int DTLSICETransport::SetLocalCryptoSDES(const char* suite,const BYTE* key,const DWORD len)
@@ -1229,8 +1280,6 @@ void DTLSICETransport::Send(RTCPCompoundPacket &rtcp)
 		//Error
 		return (void)Error("-DTLSICETransport::Send() | Error protecting RTCP packet [%d]\n",srtp_err_status);
 
-	
-		
 		//If we don't have an active candidate yet
 		if (!active)
 			//Error
@@ -1378,6 +1427,11 @@ int DTLSICETransport::Send(RTPPacket &packet)
 	{
 		//Block method
 		ScopedLock method(mutex);
+		
+		//If dumping
+		if (pcap)
+			//Write udp packet
+			pcap->WriteUDP(getTimeMS(),0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len);
 		
 		//Encript
 		srtp_err_status_t err = srtp_protect(send,data,&len);

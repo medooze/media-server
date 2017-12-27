@@ -66,7 +66,7 @@ bool RTPStreamTransponder::SetIncoming(RTPIncomingSourceGroup* incoming, RTPRece
 	{
 		//Add us as listeners
 		incoming->AddListener(this);
-	
+		
 		//Request update on the incoming
 		if (this->receiver) this->receiver->SendPLI(this->incoming->media.ssrc);
 	}
@@ -150,8 +150,12 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,RTPPacket* packet
 	
 	//Check if it the first received packet
 	if (!first)
+	{
 		//Store seq number
-		first = packet->GetExtSeqNum();
+		first = extSeqNum;
+		//Reset drop counter
+		dropped = 0;
+	}
 	
 	//Ensure it is not before first one
 	if (extSeqNum<first)
@@ -188,10 +192,10 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,RTPPacket* packet
 	{
 		//One more dropperd
 		dropped++;
-	       //Drop
-	       return;
+		//Drop
+		return;
 	}
-	
+
 	//Clone packet
 	RTPPacket* cloned = packet->Clone();
 	
@@ -352,7 +356,7 @@ int RTPStreamTransponder::Run()
 
 			//Remove packet from list
 			packets.pop_front();
-
+			
 			//Send it on transport
 			sender->Send(*packet);
 
