@@ -599,7 +599,7 @@ public:
 	virtual std::wstring stringify() { 
 		//Get int value
 		int64_t integer = value;
-		if (abs(value-integer)<0.0000001)
+		if (fabs(value-integer)<0.0000001)
 			return std::to_wstring(integer);
 		return std::to_wstring(value); 
 	};
