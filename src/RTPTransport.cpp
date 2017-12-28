@@ -541,10 +541,13 @@ int RTPTransport::Init()
 			//Try again
 			continue;
 		}
+
+#ifdef SO_PRIORITY
 		//Set COS
 		int cos = 5;
 		setsockopt(simSocket,     SOL_SOCKET, SO_PRIORITY, &cos, sizeof(cos));
 		setsockopt(simRtcpSocket, SOL_SOCKET, SO_PRIORITY, &cos, sizeof(cos));
+#endif
 		//Set TOS
 		int tos = 0x2E;
 		setsockopt(simSocket,     IPPROTO_IP, IP_TOS, &tos, sizeof(tos));
