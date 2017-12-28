@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #include <sys/signal.h>
+#include <signal.h>
 #include <climits>
 #include <pthread.h>
 #include <emmintrin.h>
