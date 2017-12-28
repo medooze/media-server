@@ -460,7 +460,7 @@ int MP4Streamer::Stop()
 	playing = 0;
 
 	//Get running thread
-	pthread_t running = thread;
+	bool running = !isZeroThread(thread);
 
 	//Clean thread
 	setZeroThread(&thread);
@@ -511,7 +511,7 @@ int MP4Streamer::Close()
 		pthread_cond_signal(&cond);
 
 		//Get running thread
-		DWORD running = thread;
+		bool running = !isZeroThread(thread);
 
 		//Clean thread
 		setZeroThread(&thread);
