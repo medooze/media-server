@@ -197,9 +197,11 @@ int RTPBundleTransport::Init()
 		if(bind(socket,(struct sockaddr *)&recAddr,sizeof(struct sockaddr_in))!=0)
 			//Try again
 			continue;
+#ifdef SO_PRIORITY
 		//Set COS
 		int cos = 5;
 		setsockopt(socket, SOL_SOCKET, SO_PRIORITY, &cos, sizeof(cos));
+#endif
 		//Set TOS
 		int tos = 0x2E;
 		setsockopt(socket, IPPROTO_IP, IP_TOS, &tos, sizeof(tos));
