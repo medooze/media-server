@@ -460,7 +460,7 @@ int MP4Streamer::Stop()
 	playing = 0;
 
 	//Get running thread
-	bool running = !isZeroThread(thread);
+	pthread_t running = thread;
 
 	//Clean thread
 	setZeroThread(&thread);
@@ -472,7 +472,7 @@ int MP4Streamer::Stop()
 	pthread_mutex_unlock(&mutex);
 
 	//If got thread
-	if (running)
+	if (!isZeroThread(running))
 		//Wait for thread, will return EDEADLK if called from same thread, i.e. in from onEnd
 		pthread_join(running,NULL);
 
@@ -511,7 +511,7 @@ int MP4Streamer::Close()
 		pthread_cond_signal(&cond);
 
 		//Get running thread
-		bool running = !isZeroThread(thread);
+		pthread_t running = thread;
 
 		//Clean thread
 		setZeroThread(&thread);
@@ -520,7 +520,7 @@ int MP4Streamer::Close()
 		pthread_mutex_unlock(&mutex);
 
 		//Check thread
-		if (running)
+		if (!isZeroThread(running))
 			//Wait for running thread
 			pthread_join(running,NULL);
 	} else {

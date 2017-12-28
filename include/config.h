@@ -10,7 +10,6 @@
 #include <string.h>
 #include <strings.h>
 #include <stdlib.h>
-#include <malloc.h>
 #include "version.h"
 
 #define	QCIF	0	// 176  x 144 	AR:	1,222222222
