@@ -84,7 +84,11 @@ public:
 			//Crete recursive mutex
 			pthread_mutexattr_t   mta;
 			pthread_mutexattr_init(&mta);
+#ifdef PTHREAD_MUTEX_RECURSIVE
+			pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_RECURSIVE);
+#else
 			pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_RECURSIVE_NP);
+#endif
 			pthread_mutex_init(&mutex, &mta);
 		} else {
 			pthread_mutex_init(&mutex,NULL);
