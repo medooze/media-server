@@ -854,7 +854,7 @@ public:
 			Move(end-ini);
 
 			//Power
-			number *= pow10(e);
+			number *= pow(10.0,e);
 		}
 
 		//Done
