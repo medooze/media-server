@@ -1273,12 +1273,18 @@ void DTLSICETransport::Send(RTCPCompoundPacket &rtcp)
 	{
 		//Block scope
 		ScopedLock method(mutex);
+		
+		//If dumping
+		if (pcap)
+			//Write udp packet
+			pcap->WriteUDP(getTimeMS(),0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len);
+		
 		//Encript
 		srtp_err_status_t srtp_err_status = srtp_protect_rtcp(send,data,(int*)&len);
 		//Check error
 		if (srtp_err_status!=srtp_err_status_ok)
-		//Error
-		return (void)Error("-DTLSICETransport::Send() | Error protecting RTCP packet [%d]\n",srtp_err_status);
+			//Error
+			return (void)Error("-DTLSICETransport::Send() | Error protecting RTCP packet [%d]\n",srtp_err_status);
 
 		//If we don't have an active candidate yet
 		if (!active)
