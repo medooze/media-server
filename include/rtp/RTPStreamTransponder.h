@@ -14,6 +14,7 @@
 #ifndef RTPSTREAMTRANSPONDER_H
 #define RTPSTREAMTRANSPONDER_H
 
+#include <queue>
 #include "rtp.h"
 #include "waitqueue.h"
 #include "VideoLayerSelector.h"
@@ -51,13 +52,14 @@ private:
 	VideoLayerSelector* selector;
 	Mutex mutex;
 	WaitCondition wait;
-	std::list<RTPPacket*> packets;
+	std::queue<RTPPacket*> packets;
 	pthread_t thread;
 	bool running;
 	DWORD first;	//First seq num of incoming stream
 	DWORD base;	//Last outgoing seq num when first was set
 	DWORD last;	//Last seq num of sent packet
 	DWORD dropped;  //Num of empty packets dropped
+	DWORD ssrc;	//SSRC to rewrite to
 	BYTE spatialLayerId;
 	BYTE temporalLayerId;
 };

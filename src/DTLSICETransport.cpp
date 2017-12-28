@@ -305,7 +305,6 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 				//Get time
 				QWORD time = stats->time;
 
-				
 				//Check if we have a sequence wrap
 				if (transportSeqNum<0x0FFF && (lastFeedbackPacketExtSeqNum & 0xFFFF)>0xF000)
 					//Increase cycles

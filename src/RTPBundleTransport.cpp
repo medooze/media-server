@@ -309,10 +309,6 @@ int RTPBundleTransport::Send(const ICERemoteCandidate* candidate,const BYTE *buf
 	return  ret;
 }
 
-/*********************************
-* GetTextPacket
-*	Lee el siguiente paquete de video
-*********************************/
 int RTPBundleTransport::Read()
 {
 	BYTE data[MTU+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;

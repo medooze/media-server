@@ -34,6 +34,7 @@ RTPStreamTransponder::RTPStreamTransponder(RTPOutgoingSourceGroup* outgoing,RTPS
 	//Store outgoing streams
 	this->outgoing = outgoing;
 	this->sender = sender;
+	ssrc = outgoing->media.ssrc;
 	
 	//No incoming yet
 	this->incoming = NULL;
@@ -114,26 +115,10 @@ void RTPStreamTransponder::Close()
 
 void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,RTPPacket* packet)
 {
-	//Lock packets
-	ScopedLock lock(wait);
-	
 	//Double check
-	if (!group || !packet)
-	{
-		//Error
-		Error("-StreamTransponder::onRTP [group:%p,packet:%p]\n",group,packet);
+	if (!packet)
 		//Exit
 		return;
-	}
-	
-	//Double check
-	if (!outgoing || !sender) 
-	{
-		//Error
-		Error("-StreamTransponder::onRTP [outgoing:%p,sender:%p]\n",outgoing,sender);
-		//Exit
-		return;
-	}
 
 	//Check if it is an empty packet
 	if (!packet->GetMediaLength())
@@ -210,10 +195,16 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,RTPPacket* packet
 	cloned->SetMark(mark);
 	
 	//Change ssrc
-	cloned->SetSSRC(outgoing->media.ssrc);
+	cloned->SetSSRC(ssrc);
 
+	//Block
+	wait.Lock();
+	
 	//Add to queue for asyn processing
-	packets.push_back(cloned);
+	packets.push(cloned);
+
+	//Free them
+	wait.Unlock();
 	
 	//Signal new packet
 	wait.Signal();
@@ -305,15 +296,12 @@ void  RTPStreamTransponder::Reset()
 	ScopedLock lock(wait);
 
 	//Delete all packets
-	auto it = packets.begin();
-	
-	//Until the end
-	while(it!=packets.end())
+	while(!packets.empty())
 	{
 		//Get packet
-		RTPPacket* packet = *it;
-		//Remove from list and get next item in list
-		packets.erase(it++);
+		RTPPacket* packet = packets.front();
+		//Remove from queue
+		packets.pop();
 		//Delete packet
 		delete(packet);
 	}
@@ -344,31 +332,42 @@ int RTPStreamTransponder::Run()
 
 	//Lock for waiting for packets
 	wait.Lock();
-	
+
 	//Run until canceled
-	while(wait.Wait(0))
+	while(running)
 	{
-		//Until we have packets
-		while(packets.size())
+		//Check if we have packets
+		if (packets.empty())
 		{
-			//Get first packet
-			RTPPacket* packet = packets.front();
-
-			//Remove packet from list
-			packets.pop_front();
-			
-			//Send it on transport
-			sender->Send(*packet);
-
-			//Get last send seq num
-			last = packet->GetExtSeqNum();
-
-			//Free mem
-			delete(packet);
+			//Wait for more
+			wait.Wait(0);
+			//Try again
+			continue;
 		}
+		
+		//Get first packet
+		RTPPacket* packet = packets.front();
+
+		//Remove packet from list
+		packets.pop();
+			
+		//Unlock
+		wait.Unlock();
+			
+		//Send it on transport
+		sender->Send(*packet);
+
+		//Get last send seq num
+		last = packet->GetExtSeqNum();
+
+		//Free mem
+		delete(packet);
+		
+		//Lock for waiting for packets
+		wait.Lock();
 	}
 	
-	//Unlock packets
+	//Unlock
 	wait.Unlock();
 	
 	Log("<RTPBundleTransport::Run()\n");
