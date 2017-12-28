@@ -9,6 +9,7 @@
 #include <string>
 #include <string.h>
 #include <strings.h>
+#include <stdlib.h>
 #include <malloc.h>
 #include "version.h"
 
@@ -322,7 +323,10 @@ public:
 };
 inline void* malloc32(size_t size)
 {
-	return memalign(32,size);
+	void* ptr;
+	if(posix_memalign(&ptr,32,size))
+		return NULL;
+	return ptr;
 }
 
 class ByteBuffer
