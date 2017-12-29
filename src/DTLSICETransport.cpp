@@ -296,7 +296,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 			rtcp.AddRTCPacket(feedback);
 
 			//Proccess and delete all elements
-			for (auto it=transportWideReceivedPacketsStats.cbegin();
+			for (auto it =transportWideReceivedPacketsStats.cbegin();
 				  it!=transportWideReceivedPacketsStats.cend();
 				  it = transportWideReceivedPacketsStats.erase(it))
 			{
@@ -1467,7 +1467,7 @@ int DTLSICETransport::Send(RTPPacket &packet)
 	}
 
 	//Get time for packets to discard, always have at least 200ms, max 500ms
-	QWORD until = getTimeMS() - (200+fmin(rtt*2,300))*1000;
+	QWORD until = getTimeMS() - (200+fmin(rtt*2,300));
 	//Delete old packets
 	auto it2 = group->packets.begin();
 	//Until the end

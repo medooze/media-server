@@ -80,6 +80,7 @@ RTPPacket* RTPPacket::Clone()
 	cloned->SetClockRate(GetClockRate());
 	cloned->SetSeqCycles(GetSeqCycles());
 	cloned->SetTimestamp(GetTimestamp());
+	cloned->SetTime(GetTime());
 	//Set payload
 	cloned->SetPayload(GetMediaData(),GetMediaLength());
 	//Return it
