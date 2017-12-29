@@ -24,11 +24,6 @@
 #include "rtp/RTCPNACK.h"
 #include "rtp/RTCPExtendedJitterReport.h"
 
-RTCPCompoundPacket::RTCPCompoundPacket()
-{
-	
-}
-
 RTCPCompoundPacket::RTCPCompoundPacket(RTCPPacket* packet)
 {
 	AddRTCPacket(packet);

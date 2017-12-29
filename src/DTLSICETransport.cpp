@@ -295,8 +295,10 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 			//Add it
 			rtcp.AddRTCPacket(feedback);
 
-			//For each packet stats
-			for (auto it=transportWideReceivedPacketsStats.begin();it!=transportWideReceivedPacketsStats.end();++it)
+			//Proccess and delete all elements
+			for (auto it=transportWideReceivedPacketsStats.cbegin();
+				  it!=transportWideReceivedPacketsStats.cend();
+				  it = transportWideReceivedPacketsStats.erase(it))
 			{
 				//Get stat
 				PacketStats* stats = it->second;
@@ -325,9 +327,6 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 				//Add this one
 				field->packets.insert(std::make_pair(transportSeqNum,time));
 
-				//Delete from map
-				transportWideReceivedPacketsStats.erase(it);
-				
 				//Delete stat
 				delete(stats);
 			}

@@ -36,30 +36,29 @@ public:
 	void SetNTPFrac(DWORD ntpFrac)		{ this->ntpFrac = ntpFrac;		}
 	void SetNTPSec(DWORD ntpSec)		{ this->ntpSec = ntpSec;		}
 
-	DWORD GetOctectsSent()	const		{ return octectsSent;		}
-	DWORD GetPacketsSent()	const		{ return packetsSent;		}
-	DWORD GetRTPTimestamp() const		{ return rtpTimestamp;		}
-	DWORD GetNTPFrac()	const		{ return ntpFrac;		}
-	DWORD GetNTPSec()	const		{ return ntpSec;		}
+	DWORD GetOctectsSent()	const		{ return octectsSent;			}
+	DWORD GetPacketsSent()	const		{ return packetsSent;			}
+	DWORD GetRTPTimestamp() const		{ return rtpTimestamp;			}
+	DWORD GetNTPFrac()	const		{ return ntpFrac;			}
+	DWORD GetNTPSec()	const		{ return ntpSec;			}
 	QWORD GetNTPTimestamp()	const		{ return ((QWORD)ntpSec)<<32 | ntpFrac ;	}
-	DWORD GetSSRC()		const		{ return ssrc;			}
+	DWORD GetSSRC()		const		{ return ssrc;				}
 
-	DWORD GetCount()	const		{ return reports.size();	}
-	RTCPReport* GetReport(BYTE i) const	{ return reports[i];		}
-	void  AddReport(RTCPReport* report)	{ reports.push_back(report);	}
+	DWORD GetCount()	const		{ return reports.size();		}
+	RTCPReport* GetReport(BYTE i) const	{ return reports[i];			}
+	void  AddReport(RTCPReport* report)	{ reports.push_back(report);		}
 
 	void  SetTimestamp(QWORD time);
 	QWORD GetTimestamp() const;
 
 private:
-	DWORD ssrc;           /* sender generating this report */
-	DWORD ntpSec;	      /* NTP timestamp */
-	DWORD ntpFrac;
-	DWORD rtpTimestamp;   /* RTP timestamp */
-	DWORD packetsSent;    /* packets sent */
-	DWORD octectsSent;    /* octets sent */
+	DWORD ssrc		= 0; /* sender generating this report */
+	DWORD ntpSec		= 0; /* NTP timestamp */
+	DWORD ntpFrac		= 0;
+	DWORD rtpTimestamp	= 0; /* RTP timestamp */
+	DWORD packetsSent	= 0; /* packets sent */
+	DWORD octectsSent	= 0; /* octets sent */
 
-private:
 	Reports	reports;
 };
 

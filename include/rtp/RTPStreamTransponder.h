@@ -45,24 +45,23 @@ private:
 
 private:
 	
-	RTPOutgoingSourceGroup *outgoing;
-	RTPIncomingSourceGroup *incoming;
-	RTPReceiver* receiver;
-	RTPSender* sender;
-	VideoLayerSelector* selector;
+	RTPOutgoingSourceGroup *outgoing	= NULL;
+	RTPIncomingSourceGroup *incoming	= NULL;
+	RTPReceiver* receiver			= NULL;
+	RTPSender* sender			= NULL;
+	VideoLayerSelector* selector		= NULL;
 	Mutex mutex;
 	WaitCondition wait;
 	std::queue<RTPPacket*> packets;
-	pthread_t thread;
-	bool running;
-	DWORD first;	//First seq num of incoming stream
-	DWORD base;	//Last outgoing seq num when first was set
-	DWORD last;	//Last seq num of sent packet
-	DWORD dropped;  //Num of empty packets dropped
-	DWORD ssrc;	//SSRC to rewrite to
-	BYTE spatialLayerId;
-	BYTE temporalLayerId;
+	pthread_t thread	= {0};
+	bool running		= false;;
+	DWORD first		= 0 ;	//First seq num of incoming stream
+	DWORD base		= 0;	//Last outgoing seq num when first was set
+	DWORD last		= 0;	//Last seq num of sent packet
+	DWORD dropped		= 0;  //Num of empty packets dropped
+	DWORD ssrc		= 0;	//SSRC to rewrite to
+	BYTE spatialLayerId	= VideoLayerSelector::MaxLayerId;
+	BYTE temporalLayerId	= VideoLayerSelector::MaxLayerId;
 };
 
 #endif /* RTPSTREAMTRANSPONDER_H */
-

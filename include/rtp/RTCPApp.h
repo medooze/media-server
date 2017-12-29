@@ -26,11 +26,11 @@ public:
 	virtual DWORD Parse(BYTE* data,DWORD size);
 	virtual DWORD Serialize(BYTE* data,DWORD size);
 private:
-	BYTE subtype;
-	DWORD ssrc;
-	char name[4];
-	BYTE *data;
-	DWORD size;
+	BYTE subtype	= 0;
+	DWORD ssrc	= 0;
+	char name[4]	= {0};
+	BYTE *data	= 0;
+	DWORD size	= 0;
 };	
 	
 #endif /* RTCPAPP_H */

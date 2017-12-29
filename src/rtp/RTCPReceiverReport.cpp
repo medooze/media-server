@@ -21,7 +21,6 @@ RTCPReceiverReport::RTCPReceiverReport(DWORD ssrc) : RTCPPacket(RTCPPacket::Rece
 
 RTCPReceiverReport::RTCPReceiverReport()  : RTCPPacket(RTCPPacket::ReceiverReport)
 {
-	this->ssrc = 0;
 }
 
 

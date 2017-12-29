@@ -38,20 +38,22 @@ public:
 		//RTCP
 		return 1;
 	}
-	RTCPCompoundPacket();
+	static RTCPCompoundPacket* Parse(BYTE *data,DWORD size);
+public:
+	RTCPCompoundPacket() = default;
 	RTCPCompoundPacket(RTCPPacket* packet);
 	~RTCPCompoundPacket();
 	DWORD GetSize() const;
 	DWORD Serialize(BYTE *data,DWORD size) const;
 	void Dump() const;
 
-	void	    AddRTCPacket(RTCPPacket* packet)		{ packets.push_back(packet);	}
-	DWORD	    GetPacketCount()			const	{ return packets.size();	}
-	const RTCPPacket* GetPacket(DWORD num)		const	{ return packets[num];		}
+	void		  AddRTCPacket(RTCPPacket* packet)		{ packets.push_back(packet);	}
+	DWORD		  GetPacketCount()			const	{ return packets.size();	}
+	const RTCPPacket* GetPacket(DWORD num)			const	{ return packets[num];		}
 
-	static RTCPCompoundPacket* Parse(BYTE *data,DWORD size);
 private:
 	typedef std::vector<RTCPPacket*> RTCPPackets;
+	
 private:
 	RTCPPackets packets;
 };

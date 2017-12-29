@@ -485,8 +485,10 @@ public:
 		//Create trnasport field
 		RTCPRTPFeedback::TransportWideFeedbackMessageField *field = new RTCPRTPFeedback::TransportWideFeedbackMessageField(feedbackPacketCount++);
 
-		//For each packet stats
-		for (auto it=packets.begin();it!=packets.end();++it)
+		//For each packet stats process it and delete from map
+		for (auto it=packets.cbegin();
+			  it!=packets.cend();
+			  it=packets.erase(it))
 		{
 			//Get transportSeqNum
 			DWORD transportSeqNum = it->first;
@@ -513,8 +515,6 @@ public:
 			//Add this one
 			field->packets.insert(std::make_pair(transportSeqNum,time));
 
-			//Delete from map
-			packets.erase(it);
 		}
 
 		//And add it

@@ -13,24 +13,23 @@
 class RTPHeader
 {
 public:
-	RTPHeader();
+	RTPHeader() = default;
 
 	DWORD Parse(const BYTE* data,const DWORD size);
 	DWORD Serialize(BYTE* data,const DWORD size) const;
 	DWORD GetSize() const;
 	void Dump() const;
 public:	
-	BYTE    version;
-	bool	padding;
-	bool	extension;
-	bool	mark;
-	BYTE	payloadType;
-	WORD	sequenceNumber;
-	DWORD	timestamp;
-	DWORD	ssrc;
+	BYTE    version		= 2;
+	bool	padding		= false;
+	bool	extension	= false;
+	bool	mark		= false;
+	BYTE	payloadType	= 0;
+	WORD	sequenceNumber	= 0;
+	DWORD	timestamp	= 0;
+	DWORD	ssrc		= 0;
 
 	std::list<DWORD> csrcs;
 };
 
 #endif /* RTPHEADER_H */
-

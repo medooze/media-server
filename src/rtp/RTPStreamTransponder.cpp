@@ -20,25 +20,11 @@ RTPStreamTransponder::RTPStreamTransponder(RTPOutgoingSourceGroup* outgoing,RTPS
 {
 	//No thread
 	setZeroThread(&thread);
-	running = false;
-	
-	//No packets
-	first = 0;
-	base = 0;
-	last = 0;
-	dropped = 0;
-	selector = NULL;
-	spatialLayerId = VideoLayerSelector::MaxLayerId;
-	temporalLayerId = VideoLayerSelector::MaxLayerId;
 	
 	//Store outgoing streams
 	this->outgoing = outgoing;
 	this->sender = sender;
 	ssrc = outgoing->media.ssrc;
-	
-	//No incoming yet
-	this->incoming = NULL;
-	this->receiver = NULL;
 	
 	//Add us as listeners
 	outgoing->AddListener(this);
@@ -154,6 +140,8 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,RTPPacket* packet
 	//Check if we have a selector and it is not from the same codec
 	if (selector && (BYTE)selector->GetCodec()!=packet->GetCodec())
 	{
+		//Block packet list and selector
+		ScopedLock lock(wait);
 		//Delete it and reset
 		delete(selector);
 		//Create new selector for codec
@@ -163,6 +151,8 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,RTPPacket* packet
 		selector->SelectTemporalLayer(temporalLayerId);
 	//Check if we don't have a selector yet
 	} else if (!selector) {
+		//Block packet list and selector
+		ScopedLock lock(wait);
 		//Create new selector for codec
 		selector = VideoLayerSelector::Create((VideoCodec::Type)packet->GetCodec());
 		//Select prev layers
@@ -292,7 +282,7 @@ void  RTPStreamTransponder::Reset()
 {
 	Debug(">RTPStreamTransponder::Reset()\n");
 		
-	//Block packet list
+	//Block packet list and selector
 	ScopedLock lock(wait);
 
 	//Delete all packets

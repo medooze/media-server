@@ -17,12 +17,6 @@
 
 RTCPSenderReport::RTCPSenderReport() : RTCPPacket(RTCPPacket::SenderReport)
 {
-	ssrc = 0;
-	ntpSec = 0;
-	ntpFrac = 0;
-	rtpTimestamp = 0;
-	packetsSent = 0;
-	octectsSent = 0;
 }
 
 RTCPSenderReport::~RTCPSenderReport()

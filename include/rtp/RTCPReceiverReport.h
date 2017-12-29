@@ -34,7 +34,7 @@ public:
 	RTCPReport* GetReport(BYTE i) const	{ return reports[i];		}
 	void  AddReport(RTCPReport* report)	{ reports.push_back(report);	}
 private:
-	DWORD ssrc;     /* receiver generating this report */
+	DWORD ssrc	= 0;     /* receiver generating this report */
 
 private:
 	Reports	reports;

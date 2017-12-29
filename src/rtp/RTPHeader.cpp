@@ -2,17 +2,6 @@
 #include "bitstream.h"
 #include "log.h"
 
-RTPHeader::RTPHeader()
-{
-	version = 2;
-	padding = false;
-	extension = false;
-	mark  = false;
-	payloadType = 0;
-	sequenceNumber = 0;
-	timestamp = 0;
-	ssrc = 0;
-}
 /*
  
      0                   1                   2                   3

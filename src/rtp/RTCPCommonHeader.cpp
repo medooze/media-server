@@ -2,15 +2,6 @@
 #include "DTLSICETransport.h"
 #include "log.h"
 
-RTCPCommonHeader::RTCPCommonHeader()
-{
-	version		= 2;
-	padding		= 0;
-	count		= 0;
-	packetType	= 0;
-	length		= 0;
-	
-}
 /*
  
         0                   1                   2                   3

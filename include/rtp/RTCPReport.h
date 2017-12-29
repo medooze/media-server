@@ -88,7 +88,7 @@ public:
 		Debug("\t\t/]\n");
 	}
 private:
-	BYTE buffer[24];
+	BYTE buffer[24] = {0};
 };
 
 

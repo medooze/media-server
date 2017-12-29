@@ -18,8 +18,6 @@
 
 RTCPBye::RTCPBye() : RTCPPacket(RTCPPacket::Bye)
 {
-	//No reason
-	reason = NULL;
 }
 
 RTCPBye::RTCPBye(const std::vector<DWORD> &ssrcs,const char* reason) : 
