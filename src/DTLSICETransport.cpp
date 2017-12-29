@@ -499,137 +499,131 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	auto it = group->packets.find(ext);
 
 	//If we still have it
-	if (it!=group->packets.end())
+	if (it==group->packets.end())
+		//End
+		return;
+	
+	//Get packet
+	RTPPacket* packet = it->second;
+
+	//Get outgoing source
+	RTPOutgoingSource& source = group->rtx;
+
+	//Data
+	BYTE data[MTU+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
+	DWORD size = MTU;
+	int len = 0;
+
+	//Overrride headers
+	RTPHeader		header(packet->GetRTPHeader());
+	RTPHeaderExtension	extension(packet->GetRTPHeaderExtension());
+
+	//If it is using rtx (i.e. not firefox)
+	if (source.ssrc)
 	{
-		//Get packet
-		RTPPacket* packet = it->second;
-		
-		//Get outgoing source
-		RTPOutgoingSource& source = group->rtx;
+		//Update RTX headers
+		header.ssrc		= source.ssrc;
+		header.payloadType	= sendMaps.rtp.GetTypeForCodec(VideoCodec::RTX);
+		header.sequenceNumber	= source.extSeq++;
+		//No padding
+		header.padding		= 0;
 
-		//Data
-		BYTE data[MTU+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
-		DWORD size = MTU;
-		int len = 0;
-		
-		//Overrride headers
-		RTPHeader		header(packet->GetRTPHeader());
-		RTPHeaderExtension	extension(packet->GetRTPHeaderExtension());
-		
-		//If it is using rtx (i.e. not firefox)
-		if (source.ssrc)
-		{
-			//Update RTX headers
-			header.ssrc		= source.ssrc;
-			header.payloadType	= sendMaps.rtp.GetTypeForCodec(VideoCodec::RTX);
-			header.sequenceNumber	= source.extSeq++;
-			//No padding
-			header.padding		= 0;
+		//Calculate last timestamp
+		source.lastTime = source.time + packet->GetTimestamp();
 
-			//Calculate last timestamp
-			source.lastTime = source.time + packet->GetTimestamp();
+		//Check seq wrap
+		if (source.extSeq==0)
+			//Inc cycles
+			source.cycles++;
+	}
 
-			//Check seq wrap
-			if (source.extSeq==0)
-				//Inc cycles
-				source.cycles++;
-		}
+	//Add transport wide cc on video
+	if (group->type == MediaFrame::Video)
+	{
+		//Add extension
+		header.extension = true;
+		//Add transport
+		extension.hasTransportWideCC = true;
+		extension.transportSeqNum = transportSeqNum++;
+	}
 
-		//Add transport wide cc on video
-		if (group->type == MediaFrame::Video)
-		{
-			//Add extension
-			header.extension = true;
-			//Add transport
-			extension.hasTransportWideCC = true;
-			extension.transportSeqNum = transportSeqNum++;
-		}
-		
-		//Serialize header
-		int n = header.Serialize(data,size);
-                
+	//Serialize header
+	int n = header.Serialize(data,size);
+
+	//Comprobamos que quepan
+	if (!n)
+		//Error
+		return (void)Error("-DTLSICETransport::ReSendPacket() | Error serializing rtp headers\n");
+
+	//Inc len
+	len += n;
+
+	//If we have extension
+	if (header.extension)
+	{
+		//Serialize
+		n = extension.Serialize(sendMaps.ext,data+len,size-len);
 		//Comprobamos que quepan
 		if (!n)
 			//Error
-			return (void)Error("-DTLSICETransport::ReSendPacket() | Error serializing rtp headers\n");
-		
+			return (void)Error("-DTLSICETransport::ReSendPacket() | Error serializing rtp extension headers\n");
 		//Inc len
 		len += n;
-		
-		//If we have extension
-		if (header.extension)
-		{
-			//Serialize
-			n = extension.Serialize(sendMaps.ext,data+len,size-len);
-			//Comprobamos que quepan
-			if (!n)
-				//Error
-				return (void)Error("-DTLSICETransport::ReSendPacket() | Error serializing rtp extension headers\n");
-			//Inc len
-			len += n;
-		}
-		
-		//And set the original seq
-		set2(data,len,seq);
-		//Move payload start
-		len += 2;
-		
-		//Ensure we have enougth data
-		if (len+packet->GetMediaLength()>size)
-			//Error
-			return (void)Error("-DTLSICETransport::ReSendPacket() | Media overflow\n");
-
-		//Copiamos los datos
-		memcpy(data+len,packet->GetMediaData(),packet->GetMediaLength());
-
-		//Set pateckt length
-		len += packet->GetMediaLength();
-		
-		//Synchronized
-		{
-			//Block scope
-			ScopedLock method(mutex);
-			
-			//If dumping
-			if (pcap)
-				//Write udp packet
-				pcap->WriteUDP(getTimeMS(),0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len);
-
-			//Encript
-			srtp_err_status_t err = srtp_protect(send,data,(int*)&len);
-			//Check error
-			if (err!=srtp_err_status_ok)
-				//Error
-				return (void)Error("-RTPTransport::SendPacket() | Error protecting RTP packet [%d]\n",err);
-	
-			//If we don't have an active candidate yet
-			if (!active)
-				//Error
-				return (void)Debug("-DTLSICETransport::Send() | We don't have an active candidate yet\n");
-			//No error yet, send packet
-			len = sender->Send(active,data,len);
-			
-			
-		}
-
-		if (len<=0)
-			Error("-RTPTransport::SendPacket() | Error sending RTP packet [%d]\n",errno);
-		
-	} else {
-		UltraDebug("-DTLSICETransport::ReSendPacket() | Packet not found [seq:%u,min:%u,max:%u]\n",
-			seq,
-			group->packets.begin()!=group->packets.end() ? group->packets.begin()->first : 0,
-			group->packets.rbegin()!=group->packets.rend() ? group->packets.rbegin()->first : 0
-		);
 	}
+
+	//And set the original seq
+	set2(data,len,seq);
+	//Move payload start
+	len += 2;
+
+	//Ensure we have enougth data
+	if (len+packet->GetMediaLength()>size)
+		//Error
+		return (void)Error("-DTLSICETransport::ReSendPacket() | Media overflow\n");
+
+	//Copiamos los datos
+	memcpy(data+len,packet->GetMediaData(),packet->GetMediaLength());
+
+	//Set pateckt length
+	len += packet->GetMediaLength();
+
+	ICERemoteCandidate* candidate;
+	//Synchronized
+	{
+		//Block scope
+		ScopedLock method(mutex);
+
+		//If we don't have an active candidate yet
+		if (!active)
+			//Error
+			return (void)Debug("-DTLSICETransport::Send() | We don't have an active candidate yet\n");
+
+		//If dumping
+		if (pcap)
+			//Write udp packet
+			pcap->WriteUDP(getTimeMS(),0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len);
+
+		//Encript
+		srtp_err_status_t err = srtp_protect(send,data,(int*)&len);
+		//Check error
+		if (err!=srtp_err_status_ok)
+			//Error
+			return (void)Error("-RTPTransport::SendPacket() | Error protecting RTP packet [%d]\n",err);
+
+		//Store candidate before unlocking
+		candidate = active;
+	}
+
+	//No error yet, send packet
+	if (sender->Send(candidate,data,len)<=0)
+		//Error
+		Error("-RTPTransport::SendPacket() | Error sending RTP packet [%d]\n",errno);
 }
-
-
 
 void  DTLSICETransport::ActivateRemoteCandidate(ICERemoteCandidate* candidate,bool useCandidate, DWORD priority)
 {
-	//Block method
-	ScopedLock method(mutex);
+	//Lock
+	mutex.Lock();
 	
 	//Debug
 	UltraDebug("-DTLSICETransport::ActivateRemoteCandidate() | Remote candidate [%s:%hu,use:%d,prio:%d]\n",candidate->GetIP(),candidate->GetPort(),useCandidate,priority);
@@ -642,17 +636,20 @@ void  DTLSICETransport::ActivateRemoteCandidate(ICERemoteCandidate* candidate,bo
 		
 		//Send data to this one from now on
 		active = candidate;
-		
-		// Needed for DTLS in client mode (otherwise the DTLS "Client Hello" is not sent over the wire)
-		if (dtls.GetSetup()!=DTLSConnection::SETUP_PASSIVE) 
-		{
-			BYTE data[MTU+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
-			DWORD len = dtls.Read(data,MTU);
-			//Check it
-			if (len>0)
-				//Send to bundle transport
-				sender->Send(active,data,len);
-		}
+	}
+	
+	//Unlock
+	mutex.Unlock();
+	
+	// Needed for DTLS in client mode (otherwise the DTLS "Client Hello" is not sent over the wire)
+	if (dtls.GetSetup()!=DTLSConnection::SETUP_PASSIVE) 
+	{
+		BYTE data[MTU+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
+		DWORD len = dtls.Read(data,MTU);
+		//Check it
+		if (len>0)
+			//Send to bundle transport
+			sender->Send(active,data,len);
 	}
 }
 
@@ -1267,11 +1264,18 @@ void DTLSICETransport::Send(RTCPCompoundPacket &rtcp)
 		//Error
 		return (void)Error("-DTLSICETransport::Send() | Error serializing RTCP packet [len:%d]\n",len);
 	
+	
+	ICERemoteCandidate* candidate;
 	//Synchronized
 	{
 		//Block scope
 		ScopedLock method(mutex);
 		
+		//If we don't have an active candidate yet
+		if (!active)
+			//Error
+			return (void) Debug("-DTLSICETransport::Send() | We don't have an active candidate yet\n");
+
 		//If dumping
 		if (pcap)
 			//Write udp packet
@@ -1283,18 +1287,17 @@ void DTLSICETransport::Send(RTCPCompoundPacket &rtcp)
 		if (srtp_err_status!=srtp_err_status_ok)
 			//Error
 			return (void)Error("-DTLSICETransport::Send() | Error protecting RTCP packet [%d]\n",srtp_err_status);
-
-		//If we don't have an active candidate yet
-		if (!active)
-			//Error
-			return (void) Debug("-DTLSICETransport::Send() | We don't have an active candidate yet\n");
-		//No error yet, send packet
-		int ret = sender->Send(active,data,len);
 		
-		//Check
-		if (ret<=0)
-			Error("-DTLSICETransport::Send() | Error sending RTCP packet [ret:%d,%d]\n",ret,errno);
+		//Store active candidate
+		candidate = active;
 	}
+		
+	//No error yet, send packet
+	int ret = sender->Send(candidate,data,len);
+
+	//Check
+	if (ret<=0)
+		Error("-DTLSICETransport::Send() | Error sending RTCP packet [ret:%d,%d]\n",ret,errno);
 }
 
 int DTLSICETransport::SendPLI(DWORD ssrc)
@@ -1302,19 +1305,22 @@ int DTLSICETransport::SendPLI(DWORD ssrc)
 	//Log
 	Log("-DTLSICETransport::SendPLI() | [ssrc:%u]\n",ssrc);
 	
-	//Using incoming
-	ScopedUse use(incomingUse);
-	
-	//Get group
-	RTPIncomingSourceGroup *group = GetIncomingSourceGroup(ssrc);
-	
-	//If not found
-	if (!group)
-		return Error("- DTLSICETransport::SendPLI() | no incoming source found for [ssrc:%u]\n",ssrc);
-		
-	//Drop all pending and lost packets
-	group->packets.Reset();
-	group->losts.Reset();
+	//Sync scope
+	{
+		//Using incoming
+		ScopedUse use(incomingUse);
+
+		//Get group
+		RTPIncomingSourceGroup *group = GetIncomingSourceGroup(ssrc);
+
+		//If not found
+		if (!group)
+			return Error("- DTLSICETransport::SendPLI() | no incoming source found for [ssrc:%u]\n",ssrc);
+
+		//Drop all pending and lost packets
+		group->packets.Reset();
+		group->losts.Reset();
+	}
 	
 	//Create rtcp sender retpor
 	RTCPCompoundPacket rtcp;
@@ -1427,10 +1433,16 @@ int DTLSICETransport::Send(RTPPacket &packet)
 		group->packets[rtx->GetExtSeqNum()] = rtx;
 	}
 	
+	ICERemoteCandidate* candidate;
 	//Synchronized
 	{
 		//Block method
 		ScopedLock method(mutex);
+		
+		//If we don't have an active candidate yet
+		if (!active)
+			//Error
+			return Debug("-DTLSICETransport::Send() | We don't have an active candidate yet\n");
 		
 		//If dumping
 		if (pcap)
@@ -1444,13 +1456,12 @@ int DTLSICETransport::Send(RTPPacket &packet)
 			//Error
 			return Error("-RTPTransport::SendPacket() | Error protecting RTP packet [%d]\n",err);
 	
-		//If we don't have an active candidate yet
-		if (!active)
-			//Error
-			return Debug("-DTLSICETransport::Send() | We don't have an active candidate yet\n");
-		//No error yet, send packet
-		len = sender->Send(active,data,len);
+		//Store candidate
+		candidate = active;
 	}
+	
+	//No error yet, send packet
+	len = sender->Send(candidate,data,len);
 	
 	//If got packet to send
 	if (len>0)
