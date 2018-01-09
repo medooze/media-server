@@ -35,7 +35,7 @@ int PCAPFile::Open(const char* filename)
         set2(out, 6, 0x04);		// Minor
         set4(out, 8, 0);		// GMT to local correction
         set4(out, 12, 0);		// accuracy of timestamps
-        set4(out, 16, 0x0000ff00);	// max length of captured packets, in octets
+        set4(out, 16, 65535);		// max length of captured packets, in octets
         set4(out, 20, 1);		//data link type(ethernet)
 	
 	//Write it

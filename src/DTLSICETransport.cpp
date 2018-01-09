@@ -278,7 +278,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		
 		//If we have enought or timeout (1sec)
 		//TODO: Implement timer
-		if (transportWideReceivedPacketsStats.size()>20 || (getTime()-transportWideReceivedPacketsStats.begin()->second->time)>1E6)
+		if (transportWideReceivedPacketsStats.size()>20 || (getTime()-transportWideReceivedPacketsStats.begin()->second->time)>5E5)
 		{
 			//Create rtcp transport wide feedback
 			RTCPCompoundPacket rtcp;

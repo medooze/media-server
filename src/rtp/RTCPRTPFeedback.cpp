@@ -137,6 +137,10 @@ DWORD RTCPRTPFeedback::Serialize(BYTE* data,DWORD size)
 	for (Fields::iterator it=fields.begin();it!=fields.end();++it)
 		//Serialize it
 		len+=(*it)->Serialize(data+len,size-len);
+	
+	if (len!=packetSize)
+		return Error("-Incorrect rtcp packet size [size:%d,actual:%d]\n",packetSize,len);
+	
 	//Retrun writed data len
 	return len;
 }
@@ -203,15 +207,11 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::GetSize() const
 			time = it->second;
 		}
 		
-		//Push back statuses, it will be handled later
-		statuses.push_back(status);
-
-		
-		//Check if they are different
+		//Check if all previoues ones were equal and this one the firt different
 		if (allsame && lastStatus!=PacketStatus::Reserved && status!=lastStatus)
 		{
-			//How big was the same run
-			if ((maxStatus==PacketStatus::LargeOrNegativeDelta && statuses.size()>7) || (maxStatus<PacketStatus::LargeOrNegativeDelta && statuses.size()>14))
+			//Anything bigger is worth a run
+			if (statuses.size()>7)
 			{
 				//One chunk
 				len+=2;
@@ -221,10 +221,15 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::GetSize() const
 				lastStatus = PacketStatus::Reserved;
 				maxStatus = PacketStatus::NotReceived;
 				allsame = true;
+			} else {
+				//Not same
+				allsame = false;
 			}
-			//Not same
-			allsame = false;
 		}
+		
+		//Push back statuses, it will be handled later
+		statuses.push_back(status);
+		
 		//If it is bigger
 		if (status>maxStatus)
 			//Store it
@@ -232,44 +237,50 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::GetSize() const
 		//Store las status
 		lastStatus = status;
 
-		//Check 
-		if (maxStatus==PacketStatus::LargeOrNegativeDelta && statuses.size()>6)
+		//If they are different already
+		if (!allsame)
 		{
-			//One chunk
-			len+=2;
-			//Remove next 7
-			for (DWORD i=0;i<7;++i)
-				//Remove
-				statuses.pop_front();
-			//REset
-			lastStatus = PacketStatus::Reserved;
-			maxStatus = PacketStatus::NotReceived;
-			allsame = true;
-			//Calculate max of the rest
-			for (Packets::const_iterator it=packets.begin();it!=packets.end();++it)
+			//Check 
+			if (maxStatus==PacketStatus::LargeOrNegativeDelta && statuses.size()>6)
 			{
-				//Check if they are different
-				if (allsame && lastStatus!=PacketStatus::Reserved && status!=lastStatus)
-					//Not the same
-					allsame = false;
-				//If it is bigger
-				if (status>maxStatus)
-					//Store it
-					maxStatus = status;
-				//Store las status
-				lastStatus = status;
+				//One chunk
+				len+=2;
+				//Remove next 7
+				for (DWORD i=0;i<7;++i)
+					//Remove
+					statuses.pop_front();
+				//REset
+				lastStatus = PacketStatus::Reserved;
+				maxStatus = PacketStatus::NotReceived;
+				allsame = true;
+				// We need to restore the values, as there may be more elements on the buffer
+				for (auto it = statuses.begin(); it!=statuses.end(); ++it)
+				{
+					//Get status
+					status = *it;
+					//If it is bigger
+					if (status>maxStatus)
+						//Store it
+						maxStatus = status;
+					//Check if it is the same
+					if (allsame && lastStatus!=PacketStatus::Reserved && status!=lastStatus)
+						//not the same
+						allsame = false;
+					//Store las status
+					lastStatus = status;
+				}
+			} else if (statuses.size()>13) {
+				//One chunk
+				len+=2;
+				//Remove last 14
+				for (DWORD i=0;i<14;++i)
+					//Remove
+					statuses.pop_front();
+				//REset
+				lastStatus = PacketStatus::Reserved;
+				maxStatus = PacketStatus::NotReceived;
+				allsame = true;
 			}
-		} else if (statuses.size()>13) {
-			//One chunk
-			len+=2;
-			//Remove last 14
-			for (DWORD i=0;i<14;++i)
-				//Remove
-				statuses.pop_front();
-			//REset
-			lastStatus = PacketStatus::Reserved;
-			maxStatus = PacketStatus::NotReceived;
-			allsame = true;
 		}
 	}
 	
@@ -282,7 +293,7 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::GetSize() const
 	for (std::list<int>::iterator it = deltas.begin(); it!=deltas.end(); ++it)
 	{
 		//Check size
-		if (*it<0 || *it>128)
+		if (*it<0 || *it>127)
 		{
 			//2 bytes
 			//Inc
@@ -383,14 +394,11 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Serialize(BYTE* data,D
 			time = it->second;
 		}
 		
-		//Push back statuses, it will be handled later
-		statuses.push_back(status);
-		
-		//Check if they are different
+		//Check if all previoues ones were equal and this one the firt different
 		if (allsame && lastStatus!=PacketStatus::Reserved && status!=lastStatus)
 		{
-			//How big was the same run
-			if ((maxStatus==PacketStatus::LargeOrNegativeDelta && statuses.size()>7) || (maxStatus<PacketStatus::LargeOrNegativeDelta && statuses.size()>14))
+			//Anything bigger is worth a run
+			if (statuses.size()>7)
 			{
 				//Write run!
 				/*
@@ -402,18 +410,23 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Serialize(BYTE* data,D
 					T = 0
 				 */
 				writter.Put(1,0);
-				writter.Put(2,status);
+				writter.Put(2,lastStatus);
 				writter.Put(13,statuses.size());
 				//Remove all statuses
 				statuses.clear();
-				//REset
+				//Reset status
 				lastStatus = PacketStatus::Reserved;
 				maxStatus = PacketStatus::NotReceived;
 				allsame = true;
+			} else {
+				//Not same
+				allsame = false;
 			}
-			//Not same
-			allsame = false;
 		}
+		
+		//Push back statuses, it will be handled later
+		statuses.push_back(status);
+		
 		//If it is bigger
 		if (status>maxStatus)
 			//Store it
@@ -421,57 +434,77 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Serialize(BYTE* data,D
 		//Store las status
 		lastStatus = status;
 
-		//Check 
-		if (maxStatus==PacketStatus::LargeOrNegativeDelta && statuses.size()>6)
+		//If they are different already
+		if (!allsame)
 		{
-			/*
-				0                   1
-				0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
-			       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-			       |T|S|        Symbols            |
-			       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-				T = 1
-				S = 1
-			 */
-			writter.Put(1,1);
-			writter.Put(1,1);
-			//Set next 7
-			for (DWORD i=0;i<7;++i)
+			//Check 
+			if (maxStatus==PacketStatus::LargeOrNegativeDelta && statuses.size()>6)
 			{
-				//Write
-				writter.Put(2,(BYTE)statuses.front());
-				//Remove
-				statuses.pop_front();
-			}
-			//REset
-			lastStatus = PacketStatus::Reserved;
-			maxStatus = PacketStatus::NotReceived;
-			allsame = true;
-		} else if (statuses.size()>13) {
-			/*
-				0                   1
-				0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
-			       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-			       |T|S|       symbol list         |
-			       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-				 T = 1
-				 S = 0
-			 */
-			writter.Put(1,1);
-			writter.Put(1,0);
-			//Set next 7
-			for (DWORD i=0;i<14;++i)
-			{
-				//Write
-				writter.Put(1,(BYTE)statuses.front());
-				//Remove
-				statuses.pop_front();
-			}
-			//REset
-			lastStatus = PacketStatus::Reserved;
-			maxStatus = PacketStatus::NotReceived;
-			allsame = true;
-		} 
+				/*
+					0                   1
+					0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
+				       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				       |T|S|        Symbols            |
+				       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+					T = 1
+					S = 1
+				 */
+				writter.Put(1,1);
+				writter.Put(1,1);
+				//Set next 7
+				for (DWORD i=0;i<7;++i)
+				{
+					//Write
+					writter.Put(2,(BYTE)statuses.front());
+					//Remove
+					statuses.pop_front();
+				}
+				//REset
+				lastStatus = PacketStatus::Reserved;
+				maxStatus = PacketStatus::NotReceived;
+				allsame = true;
+				// We need to restore the values, as there may be more elements on the buffer
+				for (auto it = statuses.begin(); it!=statuses.end(); ++it)
+				{
+					//Get status
+					status = *it;
+					//If it is bigger
+					if (status>maxStatus)
+						//Store it
+						maxStatus = status;
+					//Check if it is the same
+					if (allsame && lastStatus!=PacketStatus::Reserved && status!=lastStatus)
+						//not the same
+						allsame = false;
+					//Store las status
+					lastStatus = status;
+				}
+			} else if (statuses.size()>13) {
+				/*
+					0                   1
+					0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
+				       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				       |T|S|       symbol list         |
+				       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+					 T = 1
+					 S = 0
+				 */
+				writter.Put(1,1);
+				writter.Put(1,0);
+				//Set next 7
+				for (DWORD i=0;i<14;++i)
+				{
+					//Write
+					writter.Put(1,(BYTE)statuses.front());
+					//Remove
+					statuses.pop_front();
+				}
+				//REset
+				lastStatus = PacketStatus::Reserved;
+				maxStatus = PacketStatus::NotReceived;
+				allsame = true;
+			} 
+		}
 	}
 	
 	//If not finished yet
@@ -505,7 +538,6 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Serialize(BYTE* data,D
 			//Write pending
 			writter.Put(14-statuses.size(),0);
 		}
-		
 	}
 	
 	//Flush wirtter and aling, count also header
@@ -515,7 +547,7 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Serialize(BYTE* data,D
 	for (std::list<int>::iterator it = deltas.begin(); it!=deltas.end(); ++it)
 	{
 		//Check size
-		if (*it<0 || *it>128)
+		if (*it<0 || *it>127)
 		{
 			//2 bytes
 			set2(data,len,(short)*it);
@@ -553,7 +585,7 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Parse(BYTE* data,DWORD
 
 	//Rseserve initial space
 	statuses.reserve(packetStatusCount);
-	
+
 	//Where we are 
 	WORD len = 8;
 	//Get all
@@ -687,12 +719,16 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Parse(BYTE* data,DWORD
 
 void RTCPRTPFeedback::TransportWideFeedbackMessageField::Dump() const
 {
+	QWORD prev = 0;
 	//Debug
-	Debug("\t\t[TransportWideFeedbackMessage seq:%d]\n",feedbackPacketCount);
+	Debug("\t\t[TransportWideFeedbackMessage seq:%d num:%d]\n",feedbackPacketCount,packets.size());
 	//For each packet
 	for (Packets::const_iterator it = packets.begin(); it!=packets.end(); ++it)
-		//DEbub
-		Debug("\t\t\t[Packet seq:%u time=%llu/]\n",it->first,it->second);
+	{
+		//DEbug
+		Debug("\t\t\t[Packet seq:%u time=%llu diff=%.6lld/]\n",it->first,it->second, prev && it->second ? it->second-prev : 0);
+		if (it->second>prev) prev = it->second;
+	}
 	//Debug
 	Debug("\t\t[TransportWideFeedbackMessage/]\n");
 }
