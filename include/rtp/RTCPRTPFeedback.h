@@ -99,7 +99,7 @@ public:
 			this->pid = pid;
 			this->blp = get2(blp,0);
 		}
-		virtual ~NACKField(){}
+		virtual ~NACKField() = default;
 		
 		virtual DWORD GetSize() const { return 4;}
 		virtual DWORD Parse(BYTE* data,DWORD size)
@@ -262,16 +262,13 @@ public:
 
 
 		 */
-		TransportWideFeedbackMessageField()
-		{
-			
-		}
+		TransportWideFeedbackMessageField() = default;
 		
 		TransportWideFeedbackMessageField(DWORD feedbackPacketCount)
 		{
 			this->feedbackPacketCount = feedbackPacketCount;
 		}
-		virtual ~TransportWideFeedbackMessageField(){}
+		virtual ~TransportWideFeedbackMessageField() = default;
 		
 		//From Field
 		virtual DWORD GetSize() const;
@@ -283,6 +280,7 @@ public:
 		typedef std::map<WORD,QWORD> Packets;
 		
 		BYTE feedbackPacketCount;
+		QWORD referenceTime = 0;
 		Packets packets;
 	};
 
@@ -299,11 +297,15 @@ public:
 	void SetFeedBackTtype(FeedbackType type){ feedbackType = type;		}
 	void AddField(Field* field)		{ fields.push_back(field);	}
 
-	DWORD		GetMediaSSRC() const	{ return mediaSSRC;		}
-	DWORD		GetSenderSSRC() const	{ return senderSSRC;		}
-	FeedbackType	GetFeedbackType() const	{ return feedbackType;		}
-	DWORD		GetFieldCount() const	{ return fields.size();		}
-	Field*		GetField(BYTE i) const	{ return fields[i];		}
+	DWORD		GetMediaSSRC()		const { return mediaSSRC;		}
+	DWORD		GetSenderSSRC()		const { return senderSSRC;		}
+	FeedbackType	GetFeedbackType()	const { return feedbackType;		}
+	DWORD		GetFieldCount()		const { return fields.size();		}
+	const Field*	GetField(BYTE i)	const { return fields[i];		}
+	
+	template<typename T>
+	const T*	GetField(BYTE i)	const { return (const T*)fields[i]; }
+	
 
 private:
 	typedef std::vector<Field*> Fields;

@@ -9,17 +9,19 @@
 #define PCAPFILE_H
 
 #include "config.h"
+#include "use.h"
 
 class PCAPFile
 {
 public:
-	PCAPFile();
+	PCAPFile() = default;
 	~PCAPFile();
 	int Open(const char* filename);
 	void WriteUDP(QWORD currentTimeMillis,DWORD originIp, short originPort, DWORD destIp, short destPort,BYTE* data, DWORD size);
 	void Close();
 private:
-	int fd;
+	int fd = -1;
+	Mutex mutex;
 
 };
 

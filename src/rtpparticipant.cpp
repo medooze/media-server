@@ -11,8 +11,7 @@ RTPParticipant::RTPParticipant(DWORD partId,const std::wstring &token,const std:
 	Participant(Participant::RTP,partId,token),
 	audio(NULL),
 	video(this),
-	text(NULL),
-	estimator(tag)
+	text(NULL)
 {
 	Log("-RTPParticipant [id:%d,token:%ls,tag:%ls]\n",partId,token.c_str(),tag.c_str());
 }

@@ -8,11 +8,6 @@ const size_t   PCAP_UDP_PACKET_SIZE = 58;
 const uint32_t PCAP_MAGIC_COOKIE = 0xa1b2c3d4;
 const uint32_t PCAP_MAGIC_COOKIE_REVERSED = 0xa1b2c3d4;
 
-PCAPFile::PCAPFile() 
-{
-	fd = -1;
-}
-
 PCAPFile::~PCAPFile() 
 {
 	//Close jic
@@ -21,9 +16,12 @@ PCAPFile::~PCAPFile()
 
 int PCAPFile::Open(const char* filename) 
 {
+	ScopedLock lock(mutex);
+	
 	Log("PCAPFile::open() [\"%s\"]\n",filename);
+	
 	//Open file
-	if ((fd = open(filename, O_WRONLY | O_CREAT, 0x600))<0)
+	if ((fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0x600))<0)
 		//Error
 		return Error("Could not open file [err:%d]\n",errno);
 		
@@ -72,15 +70,26 @@ void PCAPFile::WriteUDP(QWORD currentTimeMillis,DWORD originIp, short originPort
         set2(out, 54, size+8);
         set2(out, 56, 0x00);
 	
+	//Lock
+	mutex.Lock();
+
         //Write header and content
 	write(fd, out, sizeof(out));
 	write(fd, data, size);
+	
+	//unlock
+	mutex.Unlock();
 }
 
 void PCAPFile::Close()
 {
-	if (fd<0)
-		return;
+	ScopedLock lock(mutex);
+	
+	//Check not already closed
+	if (fd<0) return;
+
+	Log("PCAPFile::close()\n");
+	//Close file
 	close(fd);
 	fd = -1;
 }

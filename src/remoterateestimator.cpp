@@ -9,9 +9,7 @@
 
 #include "remoterateestimator.h"
 
-RemoteRateEstimator::RemoteRateEstimator(const std::wstring& tag) :
-	bitrateAcu(400),
-	eventSource(tag)
+RemoteRateEstimator::RemoteRateEstimator() : bitrateAcu(400)
 {
 	//Not last estimate
 	minConfiguredBitRate	= 32000;
@@ -48,7 +46,7 @@ void RemoteRateEstimator::AddStream(DWORD ssrc)
 	//Create new control
 	RemoteRateControl* ctrl = new RemoteRateControl();
 	//Set tracer
-	ctrl->SetEventSource(&eventSource);
+	ctrl->SetEventSource(eventSource);
 	//Add it
 	streams[ssrc] = ctrl;
 	//Unlock
@@ -105,6 +103,7 @@ void RemoteRateEstimator::Update(DWORD ssrc,RTPPacket* packet,DWORD size)
 
 void RemoteRateEstimator::Update(DWORD ssrc,QWORD now,QWORD ts,DWORD size)
 {
+	//UltraDebug("-Update [ssrc:%x,now:%lu,last:%u,ts:%lu,size:%u\n",ssrc,now,lastChange,ts,size);
 	//Lock
 	lock.WaitUnusedAndLock();
 
@@ -202,7 +201,10 @@ void RemoteRateEstimator::Update(RemoteRateControl::BandwidthUsage usage, bool r
 			}
 			break;
 		case RemoteRateControl::OverUsing:
-			if (state != Decrease)
+			if (state == Increase)
+				//Decrease
+				ChangeState(Hold);
+			else if (state == Hold)
 				//Decrease
 				ChangeState(Decrease);
 			break;
@@ -324,22 +326,23 @@ void RemoteRateEstimator::Update(RemoteRateControl::BandwidthUsage usage, bool r
 
 	UltraDebug("BWE: estimation state=%s region=%s usage=%s currentBitRate=%d current=%d incoming=%f min=%llf max=%llf\n",GetName(state),RemoteRateControl::GetName(region),RemoteRateControl::GetName(usage),currentBitRate/1000,current/1000,incomingBitRate/1000,bitrateAcu.GetMinAvg()/1000,bitrateAcu.GetMaxAvg()/1000);
 
-	eventSource.SendEvent
-	(
-		"rre",
-		"[%llu,\"%s\",\"%s\",%d,%d,%d,%d,%d]",
-                now,
-		GetName(state),
-		RemoteRateControl::GetName(region),
-		(DWORD)currentBitRate/1000,
-		avgMaxBitRate>0?(DWORD)avgMaxBitRate/1000:0,
-		(DWORD)incomingBitRate/1000,
-		bitrateAcu.IsInMinMaxWindow()?(DWORD)bitrateAcu.GetMinAvg()/1000:0,
-		bitrateAcu.IsInMinMaxWindow()?(DWORD)bitrateAcu.GetMaxAvg()/1000:0
-	);
+	if (eventSource)
+		eventSource->SendEvent
+		(
+			"rre",
+			"[%llu,\"%s\",\"%s\",%d,%d,%d,%d,%d]",
+			now,
+			GetName(state),
+			RemoteRateControl::GetName(region),
+			(DWORD)currentBitRate/1000,
+			avgMaxBitRate>0?(DWORD)avgMaxBitRate/1000:0,
+			(DWORD)incomingBitRate/1000,
+			bitrateAcu.IsInMinMaxWindow()?(DWORD)bitrateAcu.GetMinAvg()/1000:0,
+			bitrateAcu.IsInMinMaxWindow()?(DWORD)bitrateAcu.GetMaxAvg()/1000:0
+		);
 
 	//Check if we need to send inmediate feedback
-	if (reactNow && listener)
+	if (listener)
 		//Send it
 		listener->onTargetBitrateRequested(GetEstimatedBitrate());
 }
@@ -445,6 +448,8 @@ void RemoteRateEstimator::ChangeRegion(RemoteRateControl::Region newRegion)
 		case RemoteRateControl::NearMax:
 			beta = 0.95f;
 			break;
+		case RemoteRateControl::BelowMax:
+			beta = 0.85f;
 	}
 	//Set it on controls
 	for (Streams::iterator it = streams.begin(); it!=streams.end(); ++it)

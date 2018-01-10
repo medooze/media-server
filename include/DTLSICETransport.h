@@ -26,6 +26,7 @@
 #include "use.h"
 #include "rtpbuffer.h"
 #include "PCAPFile.h"
+#include "remoterateestimator.h"
 
 class DTLSICETransport : 
 	public RTPSender,
@@ -59,6 +60,7 @@ public:
 	bool AddIncomingSourceGroup(RTPIncomingSourceGroup *group);
 	bool RemoveIncomingSourceGroup(RTPIncomingSourceGroup *group);
 	
+	void SetSenderSideEstimatorListener(RemoteRateEstimator::Listener* listener) { senderSideEstimator.SetListener(listener); }
 	
 	const char* GetRemoteUsername() const { return iceRemoteUsername;	};
 	const char* GetRemotePwd()	const { return iceRemotePwd;		};
@@ -159,6 +161,7 @@ private:
 	std::map<DWORD,PacketStats*> transportWideReceivedPacketsStats;
 	
 	PCAPFile* pcap;
+	RemoteRateEstimator senderSideEstimator;
 };
 
 

@@ -45,7 +45,7 @@ public:
 		return "Unknown";
 	}
 public:
-	RemoteRateEstimator(const std::wstring& tag);
+	RemoteRateEstimator();
 	~RemoteRateEstimator();
 	void SetListener(Listener *listener);
 	void AddStream(DWORD ssrc);
@@ -58,6 +58,7 @@ public:
 	void GetSSRCs(std::list<DWORD> &ssrcs);
 	void SetTemporalMaxLimit(DWORD limit);
 	void SetTemporalMinLimit(DWORD limit);
+	void SetEventSource(EvenSource *eventSource) {	this->eventSource = eventSource; }
 private:
 	double RateIncreaseFactor(QWORD now, QWORD last, DWORD reactionTime) const;
 	void Update(RemoteRateControl::BandwidthUsage usage,bool reactNow,QWORD now);
@@ -68,8 +69,8 @@ private:
 private:
 	typedef std::map<DWORD,RemoteRateControl*> Streams;
 private:
-	Listener*	listener;
-	EvenSource	eventSource;
+	Listener*	listener    = NULL;
+	EvenSource*	eventSource = NULL;
 	Acumulator	bitrateAcu;
 	Streams		streams;
 	Use		lock;

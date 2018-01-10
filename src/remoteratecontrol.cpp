@@ -239,12 +239,12 @@ bool RemoteRateControl::UpdateRTT(DWORD rtt)
 bool RemoteRateControl::UpdateLost(DWORD num)
 {
 	//Check lost is more than 2.5%
-	if (packetCalc.GetInstantAvg()<num*40)
+	if (packetCalc.IsInWindow() && packetCalc.GetInstantAvg()<num*40)
 	{
 		//Overusing
 		hypothesis = OverUsing;
 		//Reset counter
-		overUseCount=0;
+		overUseCount = 0;
 	}
 
 	//Debug

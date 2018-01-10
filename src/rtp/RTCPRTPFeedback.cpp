@@ -579,7 +579,8 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Parse(BYTE* data,DWORD
 	//This are temporal, only packet list count
 	WORD baseSeqNumber	= get2(data,0);
 	WORD packetStatusCount	= get2(data,2);
-	QWORD referenceTime	= get3(data,4);
+	//Get reference time
+	referenceTime	= get3(data,4);
 	//Store packet count
 	feedbackPacketCount	= get1(data,7);
 

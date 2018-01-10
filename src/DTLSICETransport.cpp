@@ -54,6 +54,8 @@ DTLSICETransport::DTLSICETransport(Sender *sender) : dtls(*this), mutex(true)
 	mainSSRC = 1;
 	//Not dumping
 	pcap = NULL;
+	//Add dummy stream to stimator
+	senderSideEstimator.AddStream(0);
 }
 
 /*************************
@@ -255,7 +257,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		//Exit
 		return Error("-DTLSICETransport::onData() | RTP packet type unknown [%d]\n",header.payloadType);
 	
-	UltraDebug("-Got RTP on media:%s sssrc:%u seq:%u pt:%u codec:%s rid:'%s'\n",MediaFrame::TypeToString(group->type),ssrc,header.sequenceNumber,header.payloadType,GetNameForCodec(group->type,codec),group->rid.c_str());
+	//UUltraDebug("-Got RTP on media:%s sssrc:%u seq:%u pt:%u codec:%s rid:'%s'\n",MediaFrame::TypeToString(group->type),ssrc,header.sequenceNumber,header.payloadType,GetNameForCodec(group->type,codec),group->rid.c_str());
 	
 	//Create normal packet
 	RTPPacket *packet = new RTPPacket(group->type,codec,header,extension);
@@ -334,8 +336,6 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 			//Send packet
 			Send(rtcp);
 		}
-
-
 	}
 	
 	//If it was an RTX packet
@@ -1621,7 +1621,6 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 				break;
 			case RTCPPacket::RTPFeedback:
 			{
-				
 				//Get feedback packet
 				RTCPRTPFeedback *fb = (RTCPRTPFeedback*) packet;
 				//Get SSRC for media
@@ -1664,13 +1663,39 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 						UltraDebug("-DTLSICETransport::onRTCP() | TempMaxMediaStreamBitrateNotification\n");
 						break;
 					case RTCPRTPFeedback::TransportWideFeedbackMessage:
-						UltraDebug("-DTLSICETransport::onRTCP() | TransportWideFeedbackMessage\n");
-						//fb->Dump();
 						//Get each fiedl
 						for (BYTE i=0;i<fb->GetFieldCount();i++)
 						{
 							//Get field
-							//const RTCPRTPFeedback::TempMaxMediaStreamBitrateField *field = (const RTCPRTPFeedback::TempMaxMediaStreamBitrateField*) fb->GetField(i);
+							auto field = fb->GetField<RTCPRTPFeedback::TransportWideFeedbackMessageField>(i);
+							//Lost count
+							DWORD lost = 0;
+							QWORD last = field->referenceTime;
+							//For each packet
+							for (auto& remote : field->packets)
+							{
+								//Get packets stats
+								auto stat = transportWideSentPacketsStats[remote.first];
+								//If found
+								if (stat)
+								{
+									//Check if it was lsot
+									if (remote.second)
+									{
+										//Add it to sender side estimator
+										senderSideEstimator.Update(0,remote.second/1000,stat->time,stat->size);
+										//Update last
+										last = remote.second;
+									} else
+										//Update lost
+										lost++;
+										
+								}
+							}
+							//If any lost
+							if (lost)
+								//Update
+								senderSideEstimator.UpdateLost(0,lost,last/1000);
 						}
 						break;
 				}
