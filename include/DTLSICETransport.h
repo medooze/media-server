@@ -76,6 +76,7 @@ private:
 	void SetRTT(DWORD rtt);
 	void onRTCP(RTCPCompoundPacket* rtcp);
 	void ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq);
+	void SendTransportWideFeedbackMessage(DWORD ssrc);
 	void Send(RTCPCompoundPacket &rtcp);
 	int SetLocalCryptoSDES(const char* suite, const BYTE* key, const DWORD len);
 	int SetRemoteCryptoSDES(const char* suite, const BYTE* key, const DWORD len);

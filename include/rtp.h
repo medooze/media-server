@@ -32,6 +32,7 @@
 #include "rtp/RTCPReceiverReport.h"
 #include "rtp/RTCPSDES.h"
 #include "rtpbuffer.h"
+#include "acumulator.h"
 
 struct RTPSource 
 {
@@ -43,8 +44,9 @@ struct RTPSource
 	DWORD	numRTCPPackets;
 	DWORD	totalBytes;
 	DWORD	totalRTCPBytes;
+	Acumulator bitrate;
 	
-	RTPSource()
+	RTPSource() : bitrate(1000)
 	{
 		ssrc		= 0;
 		extSeq		= 0;
@@ -63,7 +65,7 @@ struct RTPSource
 	RTCPCompoundPacket* CreateSenderReport();
 	
 	
-	virtual void Update(DWORD seqNum,DWORD size) 
+	virtual void Update(QWORD now, DWORD seqNum,DWORD size) 
 	{
 		//Check if we have a sequence wrap
 		if (seqNum<0x0FFF && (extSeq & 0xFFFF)>0xF000)
@@ -81,6 +83,9 @@ struct RTPSource
 		//Increase stats
 		numPackets++;
 		totalBytes += size;
+		
+		//Update bitrate acumulator
+		bitrate.Update(now,size);
 	}
 	
 	virtual void Reset()
@@ -119,9 +124,9 @@ struct RTPIncomingSource : public RTPSource
 		minExtSeqNumSinceLastSR  = RTPPacket::MaxExtSeqNum;
 	}
 	
-	virtual void Update(DWORD seqNum,DWORD size)
+	virtual void Update(QWORD now,DWORD seqNum,DWORD size)
 	{
-		RTPSource::Update(seqNum,size);
+		RTPSource::Update(now,seqNum,size);
 		
 		totalPacketsSinceLastSR++;
 		totalBytesSinceLastSR += size;
@@ -205,7 +210,6 @@ struct RTPOutgoingSource : public RTPSource
 			|| ((lastSenderReportNTP << 16 | (lastSenderReportNTP | 0xFFFF)) == ntp);
 	}
 };
-
 
 class RTPLostPackets
 {

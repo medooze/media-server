@@ -30,6 +30,9 @@
 #include "stunmessage.h"
 #include <openssl/ossl_typ.h>
 #include "DTLSICETransport.h"
+#include "rtp/RTPMap.h"
+#include "rtp/RTPHeader.h"
+#include "rtp/RTPHeaderExtension.h"
 
 DTLSICETransport::DTLSICETransport(Sender *sender) : dtls(*this), mutex(true)
 {
@@ -58,10 +61,6 @@ DTLSICETransport::DTLSICETransport(Sender *sender) : dtls(*this), mutex(true)
 	senderSideEstimator.AddStream(0);
 }
 
-/*************************
-* ~RTPTransport
-* 	Destructor
-**************************/
 DTLSICETransport::~DTLSICETransport()
 {
 	//Reset
@@ -240,7 +239,6 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		//error
 		return Error("-DTLSICETransport::onData() | Unknowing group for ssrc [%u]\n",ssrc);
 	
-	
 	//Get source for ssrc
 	RTPIncomingSource* source = group->GetSource(ssrc);
 	
@@ -266,7 +264,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	packet->SetPayload(data+ini,len-ini);
 	
 	//Update source
-	source->Update(header.sequenceNumber,size);
+	source->Update(getTimeMS(),header.sequenceNumber,size);
 	
 	//Set cycles back
 	packet->SetSeqCycles(source->cycles);
@@ -278,64 +276,11 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		//Add packets to the transport wide stats
 		transportWideReceivedPacketsStats[packet->GetTransportSeqNum()] = PacketStats::Create(*packet,size,getTime());
 		
-		//If we have enought or timeout (1sec)
+		//If we have enought or timeout (500ms)
 		//TODO: Implement timer
 		if (transportWideReceivedPacketsStats.size()>20 || (getTime()-transportWideReceivedPacketsStats.begin()->second->time)>5E5)
-		{
-			//Create rtcp transport wide feedback
-			RTCPCompoundPacket rtcp;
-
-			//Add to rtcp
-			RTCPRTPFeedback* feedback = RTCPRTPFeedback::Create(RTCPRTPFeedback::TransportWideFeedbackMessage,mainSSRC,ssrc);
-
-			//Create trnasport field
-			RTCPRTPFeedback::TransportWideFeedbackMessageField *field = new RTCPRTPFeedback::TransportWideFeedbackMessageField(feedbackPacketCount++);
-			
-			//And add it
-			feedback->AddField(field);
-			
-			//Add it
-			rtcp.AddRTCPacket(feedback);
-
-			//Proccess and delete all elements
-			for (auto it =transportWideReceivedPacketsStats.cbegin();
-				  it!=transportWideReceivedPacketsStats.cend();
-				  it = transportWideReceivedPacketsStats.erase(it))
-			{
-				//Get stat
-				PacketStats* stats = it->second;
-				//Get transport seq
-				DWORD transportSeqNum = it->first;
-				//Get time
-				QWORD time = stats->time;
-
-				//Check if we have a sequence wrap
-				if (transportSeqNum<0x0FFF && (lastFeedbackPacketExtSeqNum & 0xFFFF)>0xF000)
-					//Increase cycles
-					feedbackCycles++;
-
-				//Get extended value
-				DWORD transportExtSeqNum = feedbackCycles<<16 | transportSeqNum;
-
-				//if not first and not out of order
-				if (lastFeedbackPacketExtSeqNum && transportExtSeqNum>lastFeedbackPacketExtSeqNum)
-					//For each lost
-					for (DWORD i = lastFeedbackPacketExtSeqNum+1; i<transportExtSeqNum; ++i)
-						//Add it
-						field->packets.insert(std::make_pair(i,0));
-				//Store last
-				lastFeedbackPacketExtSeqNum = transportExtSeqNum;
-
-				//Add this one
-				field->packets.insert(std::make_pair(transportSeqNum,time));
-
-				//Delete stat
-				delete(stats);
-			}
-			
-			//Send packet
-			Send(rtcp);
-		}
+			//Send feedback message
+			SendTransportWideFeedbackMessage(ssrc);
 	}
 	
 	//If it was an RTX packet
@@ -529,12 +474,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 		header.padding		= 0;
 
 		//Calculate last timestamp
-		source.lastTime = source.time + packet->GetTimestamp();
-
-		//Check seq wrap
-		if (source.extSeq==0)
-			//Inc cycles
-			source.cycles++;
+		source.lastTime =  packet->GetTimestamp();
 	}
 
 	//Add transport wide cc on video
@@ -571,10 +511,14 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 		len += n;
 	}
 
-	//And set the original seq
-	set2(data,len,seq);
-	//Move payload start
-	len += 2;
+	//If it is using rtx (i.e. not firefox)
+	if (source.ssrc)
+	{
+		//And set the original seq
+		set2(data,len,seq);
+		//Move payload start
+		len += 2;
+	}
 
 	//Ensure we have enougth data
 	if (len+packet->GetMediaLength()>size)
@@ -618,6 +562,11 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	if (sender->Send(candidate,data,len)<=0)
 		//Error
 		Error("-RTPTransport::SendPacket() | Error sending RTP packet [%d]\n",errno);
+	
+	//Update rtx
+	if (source.ssrc)
+		//Update stats
+		source.Update(getTimeMS(),header.sequenceNumber,len);
 }
 
 void  DTLSICETransport::ActivateRemoteCandidate(ICERemoteCandidate* candidate,bool useCandidate, DWORD priority)
@@ -1371,17 +1320,8 @@ int DTLSICETransport::Send(RTPPacket &packet)
 	//No padding
 	header.padding		= 0;
 
-	//Calculate last timestamp
-	source.lastTime		= source.time + packet.GetTimestamp();
-	source.extSeq		= packet.GetExtSeqNum();
-
-	//Check seq wrap
-	if (source.extSeq==0)
-		//Inc cycles
-		source.cycles++;
-
 	//Add transport wide cc on video
-	if (group->type == MediaFrame::Video)
+	if (group->type == MediaFrame::Video && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC))
 	{
 		//Add extension
 		header.extension = true;
@@ -1464,18 +1404,19 @@ int DTLSICETransport::Send(RTPPacket &packet)
 	len = sender->Send(candidate,data,len);
 	
 	//If got packet to send
-	if (len>0)
-	{
-		//Inc stats
-		source.numPackets++;
-		source.totalBytes += len;
-		//Check if we are using transport wide for this packet
-		if (packet.HasTransportWideCC())
-			//Add new stat
-			transportWideSentPacketsStats[packet.GetTransportSeqNum()] = PacketStats::Create(packet,len,getTime());
-	} else {
-		Error("-DTLSICETransport::Send() | Error sending packet [len:%d,err:%d]\n",len,errno);
-	}
+	if (len<=0)
+		return Error("-DTLSICETransport::Send() | Error sending packet [len:%d,err:%d]\n",len,errno);
+
+	//Calculate last timestamp
+	source.lastTime	= packet.GetTimestamp();
+	
+	//Update source
+	source.Update(getTimeMS(),packet.GetSeqNum(),len);
+
+	//Check if we are using transport wide for this packet
+	if (packet.HasTransportWideCC())
+		//Add new stat
+		transportWideSentPacketsStats[packet.GetTransportSeqNum()] = PacketStats::Create(packet,len,getTime());
 
 	//Get time for packets to discard, always have at least 200ms, max 500ms
 	QWORD until = getTimeMS() - (200+fmin(rtt*2,300));
@@ -1510,11 +1451,6 @@ int DTLSICETransport::Send(RTPPacket &packet)
 
 void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 {
-	//Using incoming
-	ScopedUse use1(incomingUse);
-	//Using outgoing
-	ScopedUse use2(outgoingUse);
-	
 	//For each packet
 	for (DWORD i = 0; i<rtcp->GetPacketCount();i++)
 	{
@@ -1525,6 +1461,11 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 		{
 			case RTCPPacket::SenderReport:
 			{
+				//Using incoming
+				ScopedUse use1(incomingUse);
+				//Using outgoing
+				ScopedUse use2(outgoingUse);
+	
 				const RTCPSenderReport* sr = (const RTCPSenderReport*)packet;
 				
 				//Get ssrc
@@ -1578,6 +1519,9 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 			}
 			case RTCPPacket::ReceiverReport:
 			{
+				//Using outgoing
+				ScopedUse use2(outgoingUse);
+				
 				const RTCPReceiverReport* rr = (const RTCPReceiverReport*)packet;
 				//Process all the receiver Reports
 				for (DWORD j=0;j<rr->GetCount();j++)
@@ -1621,6 +1565,9 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 				break;
 			case RTCPPacket::RTPFeedback:
 			{
+				//Using outgoing
+				ScopedUse use2(outgoingUse);
+				
 				//Get feedback packet
 				RTCPRTPFeedback *fb = (RTCPRTPFeedback*) packet;
 				//Get SSRC for media
@@ -1703,6 +1650,8 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 			}
 			case RTCPPacket::PayloadFeedback:
 			{
+				//Using outgoing
+				ScopedUse use2(outgoingUse);
 				//Get feedback packet
 				RTCPPayloadFeedback *fb = (RTCPPayloadFeedback*) packet;
 				//Get SSRC for media
@@ -1841,7 +1790,6 @@ RTPOutgoingSource* DTLSICETransport::GetOutgoingSource(DWORD ssrc)
 	
 	//Get source
 	return it->second->GetSource(ssrc);
-
 }
 
 void DTLSICETransport::SetRTT(DWORD rtt)
@@ -1852,4 +1800,61 @@ void DTLSICETransport::SetRTT(DWORD rtt)
 	for (auto it = incoming.begin(); it!=incoming.end(); ++it)
 		//Update jitter
 		it->second->packets.SetMaxWaitTime(fmin(60,rtt*2));
+}
+
+void DTLSICETransport::SendTransportWideFeedbackMessage(DWORD ssrc)
+{
+	//Create rtcp transport wide feedback
+	RTCPCompoundPacket rtcp;
+
+	//Add to rtcp
+	RTCPRTPFeedback* feedback = RTCPRTPFeedback::Create(RTCPRTPFeedback::TransportWideFeedbackMessage,mainSSRC,ssrc);
+
+	//Create trnasport field
+	RTCPRTPFeedback::TransportWideFeedbackMessageField *field = new RTCPRTPFeedback::TransportWideFeedbackMessageField(feedbackPacketCount++);
+
+	//And add it
+	feedback->AddField(field);
+
+	//Add it
+	rtcp.AddRTCPacket(feedback);
+
+	//Proccess and delete all elements
+	for (auto it =transportWideReceivedPacketsStats.cbegin();
+		  it!=transportWideReceivedPacketsStats.cend();
+		  it = transportWideReceivedPacketsStats.erase(it))
+	{
+		//Get stat
+		PacketStats* stats = it->second;
+		//Get transport seq
+		DWORD transportSeqNum = it->first;
+		//Get time
+		QWORD time = stats->time;
+
+		//Check if we have a sequence wrap
+		if (transportSeqNum<0x0FFF && (lastFeedbackPacketExtSeqNum & 0xFFFF)>0xF000)
+			//Increase cycles
+			feedbackCycles++;
+
+		//Get extended value
+		DWORD transportExtSeqNum = feedbackCycles<<16 | transportSeqNum;
+
+		//if not first and not out of order
+		if (lastFeedbackPacketExtSeqNum && transportExtSeqNum>lastFeedbackPacketExtSeqNum)
+			//For each lost
+			for (DWORD i = lastFeedbackPacketExtSeqNum+1; i<transportExtSeqNum; ++i)
+				//Add it
+				field->packets.insert(std::make_pair(i,0));
+		//Store last
+		lastFeedbackPacketExtSeqNum = transportExtSeqNum;
+
+		//Add this one
+		field->packets.insert(std::make_pair(transportSeqNum,time));
+
+		//Delete stat
+		delete(stats);
+	}
+
+	//Send packet
+	Send(rtcp);
 }
