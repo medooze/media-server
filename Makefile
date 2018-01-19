@@ -242,9 +242,11 @@ buildtest: $(OBJSTEST)
 test: buildtest
 	$(BIN)/$@ -lavcodec
 	
-libmediaserver: $(OBJSLIB)
-	$(CXX) -shared -o $(BIN)/$@.so $(BUILDOBJOBJSLIB) ${LDLIBFLAGS}
-	@echo [OUT] $(TAG) $(BIN)/$.so
-	${AR} rsfcT  $(BIN)/$@.a $(BUILDOBJOBJSLIB)
-	@echo [OUT] $(TAG) $(BIN)/$@.a
+libmediaserver.so: mkdirs $(OBJSLIB)
+	$(CXX) -shared -o $(BIN)/$@ $(BUILDOBJOBJSLIB) ${LDLIBFLAGS}
+	@echo [OUT] $(TAG) $(BIN)/$@
 
+libmediaserver.a: mkdirs $(OBJSLIB)
+	${AR} rscT  $(BIN)/$@ $(BUILDOBJOBJSLIB)
+	@echo [OUT] $(TAG) $(BIN)/$@
+ 

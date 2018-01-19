@@ -6,9 +6,6 @@
         <in>PCAPFile.h</in>
         <in>VideoLayerSelector.h</in>
       </df>
-      <df name="lib">
-        <in>mediamixer.cpp</in>
-      </df>
       <df name="src">
         <df name="aac">
           <in>aacencoder.cpp</in>
@@ -287,28 +284,6 @@
         <ccTool flags="0">
         </ccTool>
       </item>
-      <folder path="0/lib">
-        <ccTool>
-          <incDir>
-            <pElem>src/rtp</pElem>
-            <pElem>usr/include/c++/6</pElem>
-            <pElem>src/jsr309</pElem>
-            <pElem>../../include</pElem>
-            <pElem>../ffmpeg/libavcodec</pElem>
-            <pElem>../ffmpeg/libavutil</pElem>
-            <pElem>../ffmpeg/libswscale</pElem>
-            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
-            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
-            <pElem>../x264/encoder</pElem>
-            <pElem>../../../include</pElem>
-            <pElem>lib</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </ccTool>
-      </folder>
       <folder path="0/src/g711">
         <cTool>
           <incDir>
@@ -368,8 +343,6 @@
       <item path="include/PCAPFile.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/VideoLayerSelector.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="lib/mediamixer.cpp" ex="false" tool="1" flavor2="4">
       </item>
       <item path="src/CPUMonitor.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
@@ -997,29 +970,6 @@
           <preBuildCommand></preBuildCommand>
         </preBuild>
       </makefileType>
-      <folder path="0/lib">
-        <ccTool>
-          <incDir>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-            <pElem></pElem>
-            <pElem>src/jsr309</pElem>
-            <pElem>../../include</pElem>
-            <pElem>../ffmpeg/libavcodec</pElem>
-            <pElem>../ffmpeg/libavutil</pElem>
-            <pElem>../ffmpeg/libswscale</pElem>
-            <pElem>../mpeg4ip-1.5.0.1/lib/mp4v2</pElem>
-            <pElem>../mpeg4ip-1.5.0.1/lib/mp4</pElem>
-            <pElem>../x264/encoder</pElem>
-            <pElem>../../../include</pElem>
-            <pElem>lib</pElem>
-          </incDir>
-          <incFile>
-            <pElem>include</pElem>
-            <pElem>src</pElem>
-          </incFile>
-        </ccTool>
-      </folder>
       <folder path="0/src/aac">
         <ccTool>
           <incDir>
@@ -1395,8 +1345,6 @@
         </ccTool>
       </folder>
       <item path="include/PCAPFile.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="lib/mediamixer.cpp" ex="false" tool="1" flavor2="4">
       </item>
       <item path="src/CPUMonitor.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="2">
