@@ -105,6 +105,11 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,RTPPacket* packet
 	if (!packet)
 		//Exit
 		return;
+	
+	//If muted
+	if (muted)
+		//Skip
+		return;
 
 	//Check if it is an empty packet
 	if (!packet->GetMediaLength())
@@ -365,4 +370,16 @@ int RTPStreamTransponder::Run()
 	return 0;
 }
 
-
+void RTPStreamTransponder::Mute(bool muting)
+{
+	//Check if we are changing state
+	if (muting!=muted)
+		//Do nothing
+		return;
+	//If unmutting
+	if (!muting)
+		//Request update
+		RequestPLI();
+	//Update state
+	muted = muting;
+}

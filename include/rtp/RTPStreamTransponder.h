@@ -34,6 +34,7 @@ public:
 	virtual void onPLIRequest(RTPOutgoingSourceGroup* group,DWORD ssrc) override;
 	
 	void SelectLayer(int spatialLayerId,int temporalLayerId);
+	void Mute(bool muting);
 protected:
 	void Start();
 	int Run();
@@ -55,6 +56,7 @@ private:
 	std::queue<RTPPacket*> packets;
 	pthread_t thread	= {0};
 	bool running		= false;;
+	bool muted		= false;
 	DWORD first		= 0 ;	//First seq num of incoming stream
 	DWORD base		= 0;	//Last outgoing seq num when first was set
 	DWORD last		= 0;	//Last seq num of sent packet
