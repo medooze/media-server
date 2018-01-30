@@ -1,6 +1,7 @@
 #include <signal.h>
 #include <sys/time.h>
 #include <stdio.h>
+#include <emmintrin.h>
 #include "log.h"
 #include "tools.h"
 #include "audiomixer.h"

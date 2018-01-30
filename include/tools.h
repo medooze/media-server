@@ -11,7 +11,6 @@
 #include <signal.h>
 #include <climits>
 #include <pthread.h>
-#include <emmintrin.h>
 
 int Log(const char *msg, ...);
 
