@@ -3,6 +3,7 @@
 
 
 #include <pthread.h>
+#include <openssl/opensslconf.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 

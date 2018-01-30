@@ -9,6 +9,7 @@
 #include "tools.h"
 #include "crc32calc.h"
 #include "log.h"
+#include <openssl/opensslconf.h>
 #include <openssl/sha.h>
 #include <openssl/hmac.h>
 

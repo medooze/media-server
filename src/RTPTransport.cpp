@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <srtp2/srtp.h>
 #include <time.h>
+#include <openssl/opensslconf.h>
 #include <openssl/ossl_typ.h>
 #include "log.h"
 #include "assertions.h"

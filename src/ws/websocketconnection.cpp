@@ -5,6 +5,7 @@
 #include <netinet/in.h>
 #include <fcntl.h>
 #include <string>
+#include <openssl/opensslconf.h>
 #include <openssl/sha.h>
 #include <cassert>  // TMP
 #include "http.h"

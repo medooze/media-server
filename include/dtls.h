@@ -8,6 +8,7 @@
 #ifndef DTLS_H
 #define	DTLS_H
 
+#include <openssl/opensslconf.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <openssl/bio.h>

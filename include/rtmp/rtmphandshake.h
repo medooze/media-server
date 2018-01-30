@@ -3,6 +3,7 @@
 #include "config.h"
 #include <stdexcept>
 #include <string.h>
+#include <openssl/opensslconf.h>
 #include <openssl/sha.h>
 #include <openssl/hmac.h>
 #include "log.h"
