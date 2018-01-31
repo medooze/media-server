@@ -178,6 +178,7 @@
         <in>xmlstreaminghandler.cpp</in>
       </df>
       <df name="test">
+        <in>bundle.cpp</in>
         <in>cpim.cpp</in>
         <in>fec.cpp</in>
         <in>main.cpp</in>
@@ -893,6 +894,8 @@
       <item path="src/xmlstreaminghandler.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
         </ccTool>
+      </item>
+      <item path="test/bundle.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="test/cpim.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
@@ -3482,6 +3485,8 @@
             <Elem>__STDC_CONSTANT_MACROS</Elem>
           </preprocessorList>
         </ccTool>
+      </item>
+      <item path="test/bundle.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="test/cpim.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="2">

@@ -180,9 +180,9 @@ inline void BitDump(QWORD val)
 
 inline void Dump(const BYTE *data,DWORD size)
 {
-	for(DWORD i=0;i<(size/4);i++)
+	for(DWORD i=0;i<(size/8);i++)
 		Debug("[%.4x] [0x%.2x   0x%.2x   0x%.2x   0x%.2x   0x%.2x   0x%.2x   0x%.2x   0x%.2x   %c%c%c%c%c%c%c%c]\n",4*i,data[4*i],data[4*i+1],data[4*i+2],data[4*i+3],data[4*i+4],data[4*i+5],data[4*i+6],data[4*i+7],PC(data[4*i]),PC(data[4*i+1]),PC(data[4*i+2]),PC(data[4*i+3]),PC(data[4*i+4]),PC(data[4*i+5]),PC(data[4*i+6]),PC(data[4*i+7]));
-	switch(size%4)
+	switch(size%8)
 	{
 		case 1:
 			Debug("[%.4x] [0x%.2x                                                    %c       ]\n",size-1,data[size-1],PC(data[size-1]));

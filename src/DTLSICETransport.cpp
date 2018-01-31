@@ -1219,7 +1219,7 @@ void DTLSICETransport::Send(RTCPCompoundPacket &rtcp)
 	//Synchronized
 	{
 		//Block scope
-		ScopedLock method(mutex);
+		ScopedLock scope(mutex);
 		
 		//If we don't have an active candidate yet
 		if (!active)
@@ -1233,6 +1233,7 @@ void DTLSICETransport::Send(RTCPCompoundPacket &rtcp)
 		
 		//Encript
 		srtp_err_status_t srtp_err_status = srtp_protect_rtcp(send,data,(int*)&len);
+		
 		//Check error
 		if (srtp_err_status!=srtp_err_status_ok)
 			//Error

@@ -259,19 +259,22 @@ int RTPBundleTransport::Send(const ICERemoteCandidate* candidate,const BYTE *buf
 {
 	int ret = 0;
 		
-	//Lock
-	pthread_mutex_lock(&mutex);
-
 	//Send packet
-	while((ret=sendto(socket,buffer,size,MSG_DONTWAIT,candidate->GetAddress(),candidate->GetAddressLen()))<0)
+	while(running && (ret=sendto(socket,buffer,size,MSG_DONTWAIT,candidate->GetAddress(),candidate->GetAddressLen()))<0)
 	{
 		//Check error
 		if (errno!=EAGAIN)
+		{
+			Error("-RTPBundleTransport::Send error [errno:%d]\n",errno);
 			//Error
 			break;
+		}
 		
 		UltraDebug("->RTPBundleTransport::Send() | retry \n");
 		
+		//Lock
+		pthread_mutex_lock(&mutex);
+	
 		//Get now
 		timespec ts;
 		timeval tp;
@@ -291,21 +294,15 @@ int RTPBundleTransport::Send(const ICERemoteCandidate* candidate,const BYTE *buf
 		//Wait next or stopped
 		pthread_cond_timedwait(&cond,&mutex,&ts);
 		
-		UltraDebug("<-RTPBundleTransport::Send() | retry\n");
-		
-		//IF canceled
-		if (!running)
-		{
-			Error("-RTPBundleTransport::Send() | canceled\n");
-			break;
-		}
-		
 		//Don't wait for write evetns
 		ufds[0].events = POLLIN | POLLERR | POLLHUP;
+	
+		//Unlock
+		pthread_mutex_unlock(&mutex);
+		
+		UltraDebug("<RTPBundleTransport::Send() | retry\n");
 	}
 	
-	//Unlock
-	pthread_mutex_unlock(&mutex);
 	//Done
 	return  ret;
 }

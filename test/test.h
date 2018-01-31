@@ -15,6 +15,7 @@
 #undef NDEBUG
 #include <assert.h>
 
+
 class TestPlan
 {
 public:
@@ -29,6 +30,10 @@ public:
 public:
 	static int ExecuteAll() 
 	{
+		//Enable debug
+		Logger::EnableDebug(true);
+		Logger::EnableUltraDebug(true);
+		
 		Log(">Executing all test plan\r\n");
 		for (TestPlans::iterator it = tests.begin(); it != tests.end(); ++it)
 		{

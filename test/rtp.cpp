@@ -41,7 +41,7 @@ public:
 		end();
 	}
 	
-	int testRTPHeader()
+	void testRTPHeader()
 	{
 		RTPHeader header;
 		RTPHeaderExtension extension;
@@ -216,7 +216,7 @@ public:
 		
 		//Serialize
 		DWORD len = rtcp->Serialize(aux,1024);
-		Dump(data,sizeof(data));
+		Dump(data,size);
 		Dump(aux,len);
 		
 		RTCPCompoundPacket* cloned = RTCPCompoundPacket::Parse(aux,len);

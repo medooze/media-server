@@ -10,11 +10,11 @@ ifeq ($(DEBUG),yes)
 	OPTS+= -g -O0
 	#SANITIZE
 	ifeq ($(SANITIZE),yes)
-		OPTS+= -fsanitize=address -fsanitize=leak -fno-omit-frame-pointer
-		LDFLAGS+= -fsanitize=leak  -fsanitize=address
+		OPTS+= -fsanitize=address -fsanitize=leak -fsanitize=undefined -fno-omit-frame-pointer
+		LDFLAGS+=  -fsanitize=address -fsanitize=leak -fsanitize=undefined 
 	endif
 else
-	OPTS+= -g -O4 -fexpensive-optimizations -funroll-loops
+	OPTS+= -g -O3 -fexpensive-optimizations -funroll-loops
 	TAG=release
 endif
 
@@ -98,7 +98,7 @@ endif
 
 OBJSMCU = $(OBJS) main.o
 OBJSLIB = ${CORE} ${RTP} ${RTCP} $(DEPACKETIZERSOBJ)
-OBJSTEST = $(OBJS) test/main.o test/test.o test/cpim.o test/rtp.o test/fec.o test/overlay.o test/vp9.o
+OBJSTEST = $(OBJS) test/main.o test/test.o test/cpim.o test/rtp.o test/fec.o test/overlay.o test/vp9.o test/bundle.o
 
 
 BUILDOBJSMCU = $(addprefix $(BUILD)/,$(OBJSMCU))
