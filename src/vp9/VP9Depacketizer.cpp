@@ -95,7 +95,7 @@ MediaFrame* VP9Depacketizer::AddPayload(BYTE* payload, DWORD len)
 	if (first)
 	{
 		//calculate if it is an iframe
-		frame.SetIntra(!(payload[descLen] & 0x01));
+		frame.SetIntra(!desc.interPicturePredictedLayerFrame);
 		//Fakse size
 		frame.SetWidth(640);
 		frame.SetHeight(480);

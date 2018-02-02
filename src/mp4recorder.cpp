@@ -145,13 +145,13 @@ int mp4track::CreateVideoTrack(VideoCodec::Type codec,int width, int height)
 		case VideoCodec::VP8:
 		{
 			// Should parse video packet to get this values
-			MP4Duration h264FrameDuration	= 1.0/30;
+			MP4Duration hvp8FrameDuration	= 1.0/30;
 #ifdef MP4_VP8_VIDEO_TYPE      
 			// Create video track
-			track = MP4AddVP8VideoTrack(mp4, 90000, h264FrameDuration, width, height);
+			track = MP4AddVP8VideoTrack(mp4, 90000, hvp8FrameDuration, width, height);
 #else
 			// Create video track
-			track = MP4AddVideoTrack(mp4, 90000, h264FrameDuration, width, height, MP4_PRIVATE_VIDEO_TYPE);
+			track = MP4AddVideoTrack(mp4, 90000, hvp8FrameDuration, width, height, MP4_PRIVATE_VIDEO_TYPE);
 #endif
 			// Create video hint track
 			hint = MP4AddHintTrack(mp4, track);
@@ -160,6 +160,24 @@ int mp4track::CreateVideoTrack(VideoCodec::Type codec,int width, int height)
 			MP4SetHintTrackRtpPayload(mp4, hint, "VP8", &type, 0, NULL, 1, 0);
 			break;
 		}
+		case VideoCodec::VP9:
+		{
+			// Should parse video packet to get this values
+			MP4Duration vp9FrameDuration	= 1.0/30;
+#ifdef MP4_VP9_VIDEO_TYPE      
+			// Create video track
+			track = MP4AddVP9VideoTrack(mp4, 90000, vp9FrameDuration, width, height);
+#else
+			// Create video track
+			track = MP4AddVideoTrack(mp4, 90000, vp9FrameDuration, width, height, MP4_PRIVATE_VIDEO_TYPE);
+#endif
+			// Create video hint track
+			hint = MP4AddHintTrack(mp4, track);
+			// Set payload type for hint track
+			type = 102;
+			MP4SetHintTrackRtpPayload(mp4, hint, "VP9", &type, 0, NULL, 1, 0);
+			break;
+		}		
 		default:
 			return Error("-Codec %s not supported yet\n",VideoCodec::GetNameFor(codec));
 	}
