@@ -160,23 +160,15 @@ struct RTPOutgoingSource : public RTPSource
 {
 	DWORD   time;
 	DWORD   lastTime;
-	DWORD	numPackets;
-	DWORD	numRTCPPackets;
-	DWORD	totalBytes;
-	DWORD	totalRTCPBytes;
 	QWORD	lastSenderReport;
 	QWORD	lastSenderReportNTP;
 	
 	RTPOutgoingSource() : RTPSource()
 	{
-		time		= random();
-		lastTime	= time;
-		ssrc		= random();
-		extSeq		= random();
-		numPackets	= 0;
-		numRTCPPackets	= 0;
-		totalBytes	= 0;
-		totalRTCPBytes	= 0;
+		time			= random();
+		lastTime		= time;
+		ssrc			= random();
+		extSeq			= random();
 		lastSenderReport	= 0;
 		lastSenderReportNTP	= 0;
 	}
@@ -193,10 +185,6 @@ struct RTPOutgoingSource : public RTPSource
 		extSeq		= random();
 		time		= random();
 		lastTime	= time;
-		numPackets	= 0;
-		numRTCPPackets	= 0;
-		totalBytes	= 0;
-		totalRTCPBytes	= 0;
 	}
 	
 	RTCPSenderReport* CreateSenderReport(QWORD time);
