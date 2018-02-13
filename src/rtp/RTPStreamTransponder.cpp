@@ -38,7 +38,7 @@ bool RTPStreamTransponder::SetIncoming(RTPIncomingSourceGroup* incoming, RTPRece
 {
 	ScopedLock lock(mutex);
 	
-	Debug(">RTPStreamTransponder::SetIncoming() | [incoming:%p,receiver:%p]\n",incoming,receiver);
+	Debug(">RTPStreamTransponder::SetIncoming() | [incoming:%p,receiver:%p,ssrc:%d]\n",incoming,receiver,ssrc);
 	
 	//Remove listener from old stream
 	if (this->incoming) 

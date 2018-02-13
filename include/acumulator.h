@@ -60,7 +60,7 @@ public:
 		//Insert into the instant queue
 		values.push_back(Value(now,val));
 		//Erase old values
-		while(values.front().first+window<now)
+		while(!values.empty() && values.front().first+window<now)
 		{
 			//Remove from instant value
 			instant -= values.front().second;

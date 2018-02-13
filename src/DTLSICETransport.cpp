@@ -1076,12 +1076,20 @@ void DTLSICETransport::onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMaster
 bool DTLSICETransport::AddOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 {
 	//Log
-	Log("-AddOutgoingSourceGroup [ssrc:%u,fec:%u,rtx:%u]\n",group->media.ssrc,group->fec.ssrc,group->rtx.ssrc);
+	Log("-AddOutgoingSourceGroup [group:%p,ssrc:%u,fec:%u,rtx:%u]\n",group,group->media.ssrc,group->fec.ssrc,group->rtx.ssrc);
 	
 	//Scoped sync
 	{
 		//Using outgoing
 		ScopedUse use(outgoingUse);
+		
+		//Check they are not already assigned
+		if (outgoing.find(group->media.ssrc)!=outgoing.end())
+			return Error("-AddOutgoingSourceGroup media ssrc already assigned");
+		if (outgoing.find(group->fec.ssrc)!=outgoing.end())
+			return Error("-AddOutgoingSourceGroup fec ssrc already assigned");
+		if (outgoing.find(group->rtx.ssrc)!=outgoing.end())
+			return Error("-AddOutgoingSourceGroup rtx ssrc already assigned");
 		
 		//Add it for each group ssrc
 		outgoing[group->media.ssrc] = group;
@@ -1153,6 +1161,14 @@ bool DTLSICETransport::AddIncomingSourceGroup(RTPIncomingSourceGroup *group)
 	
 	//Use
 	ScopedUse use(incomingUse);	
+	
+	//Check they are not already assigned
+	if (group->media.ssrc && incoming.find(group->media.ssrc)!=incoming.end())
+		return Error("-AddIncomingSourceGroup media ssrc already assigned");
+	if (group->fec.ssrc && incoming.find(group->fec.ssrc)!=incoming.end())
+		return Error("-AddIncomingSourceGroup fec ssrc already assigned");
+	if (group->rtx.ssrc && incoming.find(group->rtx.ssrc)!=incoming.end())
+		return Error("-AddIncomingSourceGroup rtx ssrc already assigned");
 
 	//Add rid if any
 	if (!group->rid.empty())
@@ -1414,7 +1430,7 @@ int DTLSICETransport::Send(RTPPacket &packet)
 	
 	//Update source
 	source.Update(getTimeMS(),packet.GetSeqNum(),len);
-
+	
 	//Check if we are using transport wide for this packet
 	if (packet.HasTransportWideCC())
 		//Add new stat
@@ -1678,7 +1694,7 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 						Debug("-DTLSICETransport::onRTCP() | FPU requested [ssrc:%u,group:%p,this:%p]\n",ssrc,group,this);
 						//Call listeners
 						group->onPLIRequest(ssrc);
-						//Get media
+						break;
 					case RTCPPayloadFeedback::SliceLossIndication:
 						Debug("-DTLSICETransport::onRTCP() | SliceLossIndication\n");
 						break;
