@@ -27,6 +27,11 @@ public:
 	{
 		return getInstance().debug;
 	}
+	
+	static bool IsLogEnabled()
+	{
+		return getInstance().debug;
+	}
 
 	static bool EnableDebug(bool debug)
 	{
@@ -38,7 +43,12 @@ public:
 		if (ultradebug) EnableDebug(ultradebug);
 		return getInstance().ultradebug = ultradebug;
 	}
-
+	
+	static bool EnableLog(bool log)
+	{
+		return getInstance().log = log;
+	}
+	
 	inline int Log(const char *msg, ...)
 	{
 		return 1;
@@ -49,11 +59,13 @@ public:
 		return 0;
 	}
 protected:
+	bool log;
 	bool debug;
 	bool ultradebug;
 private:
         Logger()
 	{
+		log = false;
 		debug = false;
 		ultradebug = false;
 	}
@@ -66,27 +78,33 @@ private:
 
 inline int Log(const char *msg, ...)
 {
-	struct timeval tv;
-	va_list ap;
-	gettimeofday(&tv,NULL);
-	printf("[0x%lx][%.10ld.%.3ld][LOG]", (long) pthread_self(),(long)tv.tv_sec,(long)tv.tv_usec/1000);
-	va_start(ap, msg);
-	vprintf(msg, ap);
-	va_end(ap);
-	fflush(stdout);
+	if (Logger::IsLogEnabled())
+	{
+		struct timeval tv;
+		va_list ap;
+		gettimeofday(&tv,NULL);
+		printf("[0x%lx][%.10ld.%.3ld][LOG]", (long) pthread_self(),(long)tv.tv_sec,(long)tv.tv_usec/1000);
+		va_start(ap, msg);
+		vprintf(msg, ap);
+		va_end(ap);
+		fflush(stdout);
+	}
 	return 1;
 }
 
 inline int Log2(const char* prefix,const char *msg, ...)
 {
-	struct timeval tv;
-	va_list ap;
-	gettimeofday(&tv,NULL);
-	printf("[0x%lx][%.10ld.%.3ld][LOG]%s ", (long) pthread_self(),(long)tv.tv_sec,(long)tv.tv_usec/1000,prefix);
-	va_start(ap, msg);
-	vprintf(msg, ap);
-	va_end(ap);
-	fflush(stdout);
+	if (Logger::IsLogEnabled())
+	{
+		struct timeval tv;
+		va_list ap;
+		gettimeofday(&tv,NULL);
+		printf("[0x%lx][%.10ld.%.3ld][LOG]%s ", (long) pthread_self(),(long)tv.tv_sec,(long)tv.tv_usec/1000,prefix);
+		va_start(ap, msg);
+		vprintf(msg, ap);
+		va_end(ap);
+		fflush(stdout);
+	}
 	return 1;
 }
 
