@@ -5,10 +5,10 @@
 #include "bitstream.h"
 
 	
-RTCPSenderReport* RTPOutgoingSource::CreateSenderReport(QWORD now)
+RTCPSenderReport::shared RTPOutgoingSource::CreateSenderReport(QWORD now)
 {
 	//Create Sender report
-	RTCPSenderReport *sr = new RTCPSenderReport();
+	auto sr = std::make_shared<RTCPSenderReport>();
 
 	//Append data
 	sr->SetSSRC(ssrc);
@@ -27,7 +27,7 @@ RTCPSenderReport* RTPOutgoingSource::CreateSenderReport(QWORD now)
 }
 
  
-RTCPReport *RTPIncomingSource::CreateReport(QWORD now)
+RTCPReport::shared RTPIncomingSource::CreateReport(QWORD now)
 {
 	//If we have received somthing
 	if (!totalPacketsSinceLastSR || !(extSeq>=minExtSeqNumSinceLastSR))
@@ -50,7 +50,7 @@ RTCPReport *RTPIncomingSource::CreateReport(QWORD now)
 		//Get diff in ms
 		delaySinceLastSenderReport = (now - lastReceivedSenderReport)/1000;
 	//Create report
-	RTCPReport *report = new RTCPReport();
+	RTCPReport::shared report = std::make_shared<RTCPReport>();
 
 	//Set SSRC of incoming rtp stream
 	report->SetSSRC(ssrc);
@@ -181,9 +181,9 @@ WORD RTPLostPackets::AddPacket(const RTPPacket *packet)
 }
 
 
-std::list<RTCPRTPFeedback::NACKField*> RTPLostPackets::GetNacks()
+std::list<RTCPRTPFeedback::NACKField::shared> RTPLostPackets::GetNacks()
 {
-	std::list<RTCPRTPFeedback::NACKField*> nacks;
+	std::list<RTCPRTPFeedback::NACKField::shared> nacks;
 	WORD lost = 0;
 	WORD mask = 0;
 	int n = 0;
@@ -204,7 +204,7 @@ std::list<RTCPRTPFeedback::NACKField*> RTPLostPackets::GetNacks()
 			if (n==16)
 			{
 				//Add new NACK field to list
-				nacks.push_back(new RTCPRTPFeedback::NACKField(lost,mask));
+				nacks.push_back(std::make_shared<RTCPRTPFeedback::NACKField>(lost,mask));
 				//Reset counters
 				n = 0;
 				lost = 0;
@@ -222,7 +222,7 @@ std::list<RTCPRTPFeedback::NACKField*> RTPLostPackets::GetNacks()
 	//Are we in a lost count?
 	if (lost)
 		//Add new NACK field to list
-		nacks.push_back(new RTCPRTPFeedback::NACKField(lost,mask));
+		nacks.push_back(std::make_shared<RTCPRTPFeedback::NACKField>(lost,mask));
 	
 	return nacks;
 }

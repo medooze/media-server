@@ -936,7 +936,9 @@
         <element flagsID="0" commonFlags="-fPIC -msse3 -fopenmp"/>
         <element flagsID="1" commonFlags="-fPIC -msse3 -g"/>
         <element flagsID="2" commonFlags="-fPIC -msse3 -std=c++11"/>
-        <element flagsID="3" commonFlags="-std=c++14"/>
+        <element flagsID="3"
+                 commonFlags="-fPIC -msse3 -std=c++17 -fsanitize=address -fsanitize=leak -fsanitize=undefined -std=c++11"/>
+        <element flagsID="4" commonFlags="-std=c++14"/>
       </flagsDictionary>
       <codeAssistance>
         <includeAdditional>true</includeAdditional>
@@ -1347,8 +1349,6 @@
           </preprocessorList>
         </ccTool>
       </folder>
-      <item path="include/PCAPFile.h" ex="false" tool="3" flavor2="0">
-      </item>
       <item path="src/CPUMonitor.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="2">
           <incDir>
@@ -1372,7 +1372,7 @@
         </ccTool>
       </item>
       <item path="src/DTLSICETransport.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="2">
+        <ccTool flags="3">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -1437,7 +1437,27 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="src/PCAPFile.cpp" ex="false" tool="1" flavor2="0">
+      <item path="src/PCAPFile.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="3">
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
+        </ccTool>
       </item>
       <item path="src/RTPBundleTransport.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="2">
@@ -1462,7 +1482,7 @@
         </ccTool>
       </item>
       <item path="src/RTPSmoother.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="2">
+        <ccTool flags="3">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2126,7 +2146,7 @@
         </ccTool>
       </item>
       <item path="src/mp4recorder.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="2">
+        <ccTool flags="3">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2148,7 +2168,7 @@
         </ccTool>
       </item>
       <item path="src/mp4streamer.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="2">
+        <ccTool flags="3">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2196,7 +2216,7 @@
         </ccTool>
       </item>
       <item path="src/nocodecs.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>include</pElem>
           </incDir>
@@ -2505,7 +2525,7 @@
         </ccTool>
       </item>
       <item path="src/rtp.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="2">
+        <ccTool flags="3">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2593,7 +2613,7 @@
         </ccTool>
       </item>
       <item path="src/rtp/RTCPCompoundPacket.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="2">
+        <ccTool flags="3">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2838,7 +2858,7 @@
         </ccTool>
       </item>
       <item path="src/rtp/RTPDepacketizer.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="2">
+        <ccTool flags="3">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2904,7 +2924,7 @@
         </ccTool>
       </item>
       <item path="src/rtp/RTPMap.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="2">
+        <ccTool flags="3">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2926,7 +2946,7 @@
         </ccTool>
       </item>
       <item path="src/rtp/RTPPacket.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="2">
+        <ccTool flags="3">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2948,7 +2968,7 @@
         </ccTool>
       </item>
       <item path="src/rtp/RTPPacketSched.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="2">
+        <ccTool flags="3">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2970,7 +2990,7 @@
         </ccTool>
       </item>
       <item path="src/rtp/RTPRedundantPacket.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>include</pElem>
           </incDir>
@@ -3363,7 +3383,7 @@
         </ccTool>
       </item>
       <item path="src/vp8/VP8LayerSelector.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/vp8/vp8decoder.cpp" ex="false" tool="1" flavor2="8">
@@ -3486,7 +3506,9 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="test/bundle.cpp" ex="false" tool="1" flavor2="0">
+      <item path="test/bundle.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="4">
+        </ccTool>
       </item>
       <item path="test/cpim.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="2">

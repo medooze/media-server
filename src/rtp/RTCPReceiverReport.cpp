@@ -24,12 +24,6 @@ RTCPReceiverReport::RTCPReceiverReport()  : RTCPPacket(RTCPPacket::ReceiverRepor
 }
 
 
-RTCPReceiverReport::~RTCPReceiverReport()
-{
-	for(Reports::iterator it = reports.begin();it!=reports.end();++it)
-		delete(*it);
-}
-
 void RTCPReceiverReport::Dump()
 {
 	if (reports.size())
@@ -75,7 +69,7 @@ DWORD RTCPReceiverReport::Parse(BYTE* data,DWORD size)
 	for(int i=0;i<header.count&&size>=len+24;i++)
 	{
 		//New report
-		RTCPReport* report = new RTCPReport();
+		auto report = std::make_shared<RTCPReport>();
 		//parse
 		len += report->Parse(data+len,size-len);
 		//Add it

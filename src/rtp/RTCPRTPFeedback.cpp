@@ -17,15 +17,16 @@
 
 RTCPRTPFeedback::RTCPRTPFeedback() : RTCPPacket(RTCPPacket::RTPFeedback)
 {
-
 }
-RTCPRTPFeedback::~RTCPRTPFeedback()
+	
+RTCPRTPFeedback::RTCPRTPFeedback(RTCPRTPFeedback::FeedbackType type,DWORD senderSSRC,DWORD mediaSSRC) :  
+	RTCPPacket(RTCPPacket::RTPFeedback),
+	feedbackType(type),
+	senderSSRC(senderSSRC),
+	mediaSSRC(mediaSSRC)
 {
-	//For each field
-	for (Fields::iterator it=fields.begin();it!=fields.end();++it)
-		//delete it
-		delete(*it);
 }
+
 
 DWORD RTCPRTPFeedback::GetSize() 
 {
@@ -68,19 +69,19 @@ DWORD RTCPRTPFeedback::Parse(BYTE* data,DWORD size)
 	//While we have more
 	while (len<packetSize)
 	{
-		Field *field = NULL;
+		Field::shared field = nullptr;
 		//Depending on the type
 		switch(feedbackType)
 		{
 			case NACK:
-				field = new NACKField();
+				field = std::make_shared<NACKField>();
 				break;
 			case TempMaxMediaStreamBitrateRequest:
 			case TempMaxMediaStreamBitrateNotification:
-				field = new TempMaxMediaStreamBitrateField();
+				field = std::make_shared<TempMaxMediaStreamBitrateField>();
 				break;
 			case TransportWideFeedbackMessage:
-				field = new TransportWideFeedbackMessageField();
+				field = std::make_shared<TransportWideFeedbackMessageField>();
 				break;
 			default:
 				return Error("Unknown RTCPRTPFeedback type [%d]\n",header.count);

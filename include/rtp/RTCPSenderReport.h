@@ -18,12 +18,15 @@
 #include "rtp/RTCPReport.h"
 #include "rtp/RTCPCommonHeader.h"
 #include <vector>
+#include <memory>
 
 class RTCPSenderReport : public RTCPPacket
 {
 public:
+	using shared = std::shared_ptr<RTCPSenderReport>;
+public:
 	RTCPSenderReport();
-	virtual ~RTCPSenderReport();
+	virtual ~RTCPSenderReport() = default;
 	virtual void Dump();
 	virtual DWORD GetSize();
 	virtual DWORD Parse(BYTE* data,DWORD size);
@@ -44,9 +47,9 @@ public:
 	QWORD GetNTPTimestamp()	const		{ return ((QWORD)ntpSec)<<32 | ntpFrac ;	}
 	DWORD GetSSRC()		const		{ return ssrc;				}
 
-	DWORD GetCount()	const		{ return reports.size();		}
-	RTCPReport* GetReport(BYTE i) const	{ return reports[i];			}
-	void  AddReport(RTCPReport* report)	{ reports.push_back(report);		}
+	DWORD GetCount()	const				{ return reports.size();		}
+	RTCPReport::shared GetReport(BYTE i) const		{ return reports[i];			}
+	void  AddReport(const RTCPReport::shared& report)	{ reports.push_back(report);		}
 
 	void  SetTimestamp(QWORD time);
 	QWORD GetTimestamp() const;

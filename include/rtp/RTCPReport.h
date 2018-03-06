@@ -17,9 +17,13 @@
 #include "config.h"
 #include "tools.h"
 #include "log.h"
+#include <memory>
 
 class RTCPReport
 {
+public:
+	using shared = std::shared_ptr<RTCPReport>;
+	
 public:
 	DWORD GetSSRC()			const { return get4(buffer,0);  }
 	BYTE  GetFactionLost()		const { return get1(buffer,4);  }

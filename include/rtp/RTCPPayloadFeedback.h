@@ -19,10 +19,13 @@
 #include "rtp/RTCPCommonHeader.h"
 #include <vector>
 #include <list>
+#include <memory>
 
 class RTCPPayloadFeedback : public RTCPPacket
 {
 public:
+	using shared = std::shared_ptr<RTCPPayloadFeedback>;
+	
 	enum FeedbackType {
 		PictureLossIndication =1,
 		SliceLossIndication = 2,
@@ -58,21 +61,11 @@ public:
 		return "Unknown";
 	}
 
-	static RTCPPayloadFeedback* Create(FeedbackType type,DWORD senderSSRC,DWORD mediaSSRC)
-	{
-		//Create
-		RTCPPayloadFeedback* packet = new RTCPPayloadFeedback();
-		//Set type
-		packet->SetFeedBackTtype(type);
-		//Set ssrcs
-		packet->SetSenderSSRC(senderSSRC);
-		packet->SetMediaSSRC(mediaSSRC);
-		//return it
-		return packet;
-	}
+	
 public:
 	struct Field
 	{
+		using shared = std::shared_ptr<Field>;
 		virtual ~Field(){};
 		virtual DWORD GetSize() = 0;
 		virtual DWORD Parse(BYTE* data,DWORD size) = 0;
@@ -360,7 +353,7 @@ public:
 			return pad32(length);
 		}
 
-		static ApplicationLayerFeeedbackField* CreateReceiverEstimatedMaxBitrate(std::list<DWORD> ssrcs,DWORD bitrate)
+		static ApplicationLayerFeeedbackField::shared CreateReceiverEstimatedMaxBitrate(std::list<DWORD> ssrcs,DWORD bitrate)
 		{
 			/*
 			    0                   1                   2                   3
@@ -391,7 +384,7 @@ public:
 			//Get mantisa
 			DWORD bitrateMantissa = (bitrate >> bitrateExp);
 			//Create field
-			ApplicationLayerFeeedbackField* field = new ApplicationLayerFeeedbackField();
+			auto field = std::make_shared<ApplicationLayerFeeedbackField>();
 			//Set size of data
 			field->length = 8+4*ssrcs.size();
 			//Allocate memory
@@ -419,25 +412,40 @@ public:
 	};
 public:
 	RTCPPayloadFeedback();
-	virtual ~RTCPPayloadFeedback();
+	RTCPPayloadFeedback(FeedbackType type,DWORD senderSSRC,DWORD mediaSSRC);
+	virtual ~RTCPPayloadFeedback() = default;
 
 	virtual void Dump();
 	virtual DWORD GetSize();
 	virtual DWORD Parse(BYTE* data,DWORD size);
 	virtual DWORD Serialize(BYTE* data,DWORD size);
 
-	void SetSenderSSRC(DWORD ssrc)		{ senderSSRC = ssrc;		}
-	void SetMediaSSRC(DWORD ssrc)		{ mediaSSRC = ssrc;		}
-	void SetFeedBackTtype(FeedbackType type){ feedbackType = type;		}
-	void AddField(Field* field)		{ fields.push_back(field);	}
+	void SetSenderSSRC(DWORD ssrc)			{ senderSSRC = ssrc;		}
+	void SetMediaSSRC(DWORD ssrc)			{ mediaSSRC = ssrc;		}
+	void SetFeedBackTtype(FeedbackType type)	{ feedbackType = type;		}
+	void AddField(const Field::shared& field)	{ fields.push_back(field);	}
+	
+	template<typename Type>
+	void AddField(const std::shared_ptr<Type>& field) { AddField(std::static_pointer_cast<Field>(field));	}
+	
+	template<typename Type,class ...Args>
+	std::shared_ptr<Type> CreateField(Args... args)
+	{
+		auto field =  std::make_shared<Type>(Type{ std::forward<Args>(args)... });
+		AddField(std::static_pointer_cast<Field>(field));
+		return field;
+	}
 
 	DWORD		GetMediaSSRC() const	{ return mediaSSRC;		}
 	DWORD		GetSenderSSRC() const	{ return senderSSRC;		}
 	FeedbackType	GetFeedbackType() const	{ return feedbackType;		}
 	DWORD		GetFieldCount() const	{ return fields.size();		}
-	Field*		GetField(BYTE i) const	{ return fields[i];		}
+	Field::shared	GetField(BYTE i) const	{ return fields[i];		}
+	
+	template<typename Type>
+	const std::shared_ptr<Type>	GetField(BYTE i)	const { return std::static_pointer_cast<Type>(fields[i]); }
 private:
-	typedef std::vector<Field*> Fields;
+	typedef std::vector<Field::shared> Fields;
 private:
 	FeedbackType feedbackType;
 	DWORD senderSSRC;

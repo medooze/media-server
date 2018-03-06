@@ -62,7 +62,7 @@ struct RTPSource
 		
 	}
 	
-	RTCPCompoundPacket* CreateSenderReport();
+	RTCPCompoundPacket::shared CreateSenderReport();
 	
 	
 	virtual void Update(QWORD now, DWORD seqNum,DWORD size) 
@@ -153,7 +153,7 @@ struct RTPIncomingSource : public RTPSource
 	{
 		
 	}
-	RTCPReport *CreateReport(QWORD now);
+	RTCPReport::shared CreateReport(QWORD now);
 };
 
 struct RTPOutgoingSource : public RTPSource
@@ -187,7 +187,7 @@ struct RTPOutgoingSource : public RTPSource
 		lastTime	= time;
 	}
 	
-	RTCPSenderReport* CreateSenderReport(QWORD time);
+	RTCPSenderReport::shared CreateSenderReport(QWORD time);
 
 	bool IsLastSenderReportNTP(DWORD ntp)
 	{
@@ -206,7 +206,7 @@ public:
 	~RTPLostPackets();
 	void Reset();
 	WORD AddPacket(const RTPPacket *packet);
-	std::list<RTCPRTPFeedback::NACKField*>  GetNacks();
+	std::list<RTCPRTPFeedback::NACKField::shared>  GetNacks();
 	void Dump();
 	DWORD GetTotal() {return total;}
 	

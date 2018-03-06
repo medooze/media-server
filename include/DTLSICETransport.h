@@ -74,10 +74,10 @@ public:
 
 private:
 	void SetRTT(DWORD rtt);
-	void onRTCP(RTCPCompoundPacket* rtcp);
+	void onRTCP(const RTCPCompoundPacket::shared &rtcp);
 	void ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq);
 	void SendTransportWideFeedbackMessage(DWORD ssrc);
-	void Send(RTCPCompoundPacket &rtcp);
+	void Send(const RTCPCompoundPacket::shared& rtcp);
 	int SetLocalCryptoSDES(const char* suite, const BYTE* key, const DWORD len);
 	int SetRemoteCryptoSDES(const char* suite, const BYTE* key, const DWORD len);
 	//Helpers

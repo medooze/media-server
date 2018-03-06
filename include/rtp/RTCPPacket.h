@@ -17,11 +17,14 @@
 #include "rtp/RTCPCommonHeader.h"
 #include "rtp/RTCPReport.h"
 #include <vector>
+#include <memory>
 
 class RTCPPacket
 {
 public:
-	 enum Type{
+	using shared = std::shared_ptr<RTCPPacket>;
+	
+	enum Type{
 		FullIntraRequest	= 192,
 		NACK			= 193,
 		ExtendedJitterReport	= 195,
@@ -75,7 +78,7 @@ public:
 	virtual DWORD Parse(BYTE* data,DWORD size) = 0;
 	virtual DWORD Serialize(BYTE* data,DWORD size) = 0;
 protected:
-	typedef std::vector<RTCPReport*> Reports;
+	typedef std::vector<RTCPReport::shared> Reports;
 private:
 	Type type;
 };

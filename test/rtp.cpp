@@ -118,7 +118,7 @@ public:
 		};
 		
 		//Parse it
-		RTCPCompoundPacket* rtcp = RTCPCompoundPacket::Parse(msg,sizeof(msg));
+		auto rtcp = RTCPCompoundPacket::Parse(msg,sizeof(msg));
 		rtcp->Dump();
 		
 		//Serialize
@@ -132,8 +132,6 @@ public:
 		
 		//Dump it
 		rtcp->Dump();
-		
-		delete(rtcp);
 
 	}
 	
@@ -154,21 +152,19 @@ public:
 		BYTE data[1024];
 		
 		//Create rtcp sender retpor
-		RTCPCompoundPacket rtcp;
+		auto rtcp = RTCPCompoundPacket::Create();
 
 		//Create NACK
-		RTCPRTPFeedback *nack = RTCPRTPFeedback::Create(RTCPRTPFeedback::NACK,2329392274,24891);
+		auto nack = rtcp->CreatePacket<RTCPRTPFeedback>(RTCPRTPFeedback::NACK,2329392274,24891);
 
 		//Add 
-		nack->AddField(new RTCPRTPFeedback::NACKField(4144,(WORD)0x0300));
+		nack->CreateField<RTCPRTPFeedback::NACKField>(4144,(WORD)0x0300);
 
 		//Add to packet
-		rtcp.AddRTCPacket(nack);
-		
-		rtcp.Dump();
+		rtcp->Dump();
 		
 		//Serialize it
-		DWORD len = rtcp.Serialize(data,1024);
+		DWORD len = rtcp->Serialize(data,1024);
 		
 		Dump(data,len);
 		
@@ -177,12 +173,12 @@ public:
 		assert(memcmp(msg,data,len)==0);
 		
 		//parse it back
-		RTCPCompoundPacket* cloned = RTCPCompoundPacket::Parse(data,len);
+		auto cloned = RTCPCompoundPacket::Parse(data,len);
 		
 		assert(cloned);
 		
 		//Serialize it again
-		len = rtcp.Serialize(data,1024);
+		len = rtcp->Serialize(data,1024);
 		
 		Dump(data,len);
 		
@@ -192,8 +188,6 @@ public:
 		
 		//Dump it
 		cloned->Dump();
-		
-		delete(cloned);
 	}
 	
 	void testTransportField()
@@ -211,7 +205,7 @@ public:
 		DWORD size = sizeof(data);
 		
 		//Parse it
-		RTCPCompoundPacket* rtcp = RTCPCompoundPacket::Parse(data,size);
+		auto rtcp = RTCPCompoundPacket::Parse(data,size);
 		rtcp->Dump();
 		
 		//Serialize
@@ -219,11 +213,8 @@ public:
 		Dump(data,size);
 		Dump(aux,len);
 		
-		RTCPCompoundPacket* cloned = RTCPCompoundPacket::Parse(aux,len);
+		auto cloned = RTCPCompoundPacket::Parse(aux,len);
 		cloned->Dump();
-		
-		delete(rtcp);
-		delete(cloned);
 		
 		BYTE data2[] = {
 		0x8f,0xcd,0x00,0x05,
@@ -237,18 +228,15 @@ public:
 		DWORD size2 = sizeof(data2);
 		
 		//Parse it
-		RTCPCompoundPacket* rtcp2 = RTCPCompoundPacket::Parse(data2,size2);
+		auto rtcp2 = RTCPCompoundPacket::Parse(data2,size2);
 		rtcp2->Dump();
 		
 
 		len = rtcp2->Serialize(aux,1024);
 		Dump(data2,sizeof(data));
 		Dump(aux,len);
-		RTCPCompoundPacket* cloned2 = RTCPCompoundPacket::Parse(aux,len);
+		auto cloned2 = RTCPCompoundPacket::Parse(aux,len);
 		cloned2->Dump();
-		
-		delete(rtcp2);
-		delete(cloned2);
 		
 	}
 	
@@ -500,13 +488,13 @@ public:
 		packets[1932] = 1515507427784543;
 			
 		//Create rtcp transport wide feedback
-		RTCPCompoundPacket rtcp;
+		auto rtcp = RTCPCompoundPacket::Create();
 
 		//Add to rtcp
-		RTCPRTPFeedback* feedback = RTCPRTPFeedback::Create(RTCPRTPFeedback::TransportWideFeedbackMessage,mainSSRC,ssrc);
+		auto feedback = rtcp->CreatePacket<RTCPRTPFeedback>(RTCPRTPFeedback::TransportWideFeedbackMessage,mainSSRC,ssrc);
 
 		//Create trnasport field
-		RTCPRTPFeedback::TransportWideFeedbackMessageField *field = new RTCPRTPFeedback::TransportWideFeedbackMessageField(feedbackPacketCount++);
+		auto field = feedback->CreateField<RTCPRTPFeedback::TransportWideFeedbackMessageField>(feedbackPacketCount++);
 
 		//For each packet stats process it and delete from map
 		for (auto it=packets.cbegin();
@@ -539,34 +527,27 @@ public:
 			field->packets.insert(std::make_pair(transportSeqNum,time));
 
 		}
-
-		//And add it
-		feedback->AddField(field);
 			
-		//Add it
-		rtcp.AddRTCPacket(feedback);
-
-		rtcp.Dump();
+		rtcp->Dump();
 		
 		//Get sizze
-		DWORD size = rtcp.GetSize();
+		DWORD size = rtcp->GetSize();
 		
 		//Create aux buffer for serializing it
 		BYTE* data = (BYTE*)malloc(size);
 		
 		//Seriaize
-		DWORD len = rtcp.Serialize(data,size);
+		DWORD len = rtcp->Serialize(data,size);
 		
 		assert(len==size);
 		Dump4(data,len);
 		
 		//Parse it
-		RTCPCompoundPacket* parsed = RTCPCompoundPacket::Parse(data,len);
+		auto parsed = RTCPCompoundPacket::Parse(data,len);
 		
 		parsed->Dump();
 		
 		free(data);
-		delete(parsed);
 	}
 	
 };

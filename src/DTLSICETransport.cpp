@@ -111,7 +111,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 			pcap->WriteUDP(getTimeMS(),candidate->GetIPAddress(),candidate->GetPort(),0x7F000001,5004,data,len);
 		
 		//Parse it
-		RTCPCompoundPacket* rtcp = RTCPCompoundPacket::Parse(data,len);
+		auto rtcp = RTCPCompoundPacket::Parse(data,len);
 	
 		//Check packet
 		if (!rtcp)
@@ -362,35 +362,26 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		UltraDebug("-lost %d\n",total);
 		
 		//Create rtcp sender retpor
-		RTCPCompoundPacket rtcp;
-		
-		//Create report
-		RTCPReport *report = source->CreateReport(getTime());
+		auto rtcp = std::make_shared<RTCPCompoundPacket>();
 		
 		//Create sender report for normal stream
-		RTCPReceiverReport* rr = new RTCPReceiverReport(mainSSRC);
-
+		auto rr = rtcp->CreatePacket<RTCPReceiverReport>(mainSSRC);
+		
+		//Create report
+		auto report = source->CreateReport(getTime());
+		
 		//If got anything
 		if (report)
 			//Append it
 			rr->AddReport(report);
 
-		//Append RR to rtcp
-		rtcp.AddRTCPacket(rr);
-	
-		//Get nacks for lost
-		std::list<RTCPRTPFeedback::NACKField*> nacks = group->losts.GetNacks();
-
 		//Create NACK
-		RTCPRTPFeedback *nack = RTCPRTPFeedback::Create(RTCPRTPFeedback::NACK,mainSSRC,ssrc);
+		auto nack = rtcp->CreatePacket<RTCPRTPFeedback>(RTCPRTPFeedback::NACK,mainSSRC,ssrc);
 
-		//Add 
-		for (std::list<RTCPRTPFeedback::NACKField*>::iterator it = nacks.begin(); it!=nacks.end(); ++it)
+		//Get nacks for lost
+		for (auto field : group->losts.GetNacks())
 			//Add it
-			nack->AddField(*it);
-
-		//Add to packet
-		rtcp.AddRTCPacket(nack);
+			nack->AddField(field);
 
 		//Send packet
 		Send(rtcp);
@@ -410,22 +401,19 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	if (getTimeDiff(source->lastReport)>1E6)
 	{
 		//Create rtcp sender retpor
-		RTCPCompoundPacket rtcp;
+		auto rtcp = std::make_shared<RTCPCompoundPacket>();
+		
+		//Create receiver report for normal stream
+		auto rr = rtcp->CreatePacket<RTCPReceiverReport>(mainSSRC);
 		
 		//Create report
-		RTCPReport *report = source->CreateReport(getTime());
-		
-		//Create sender report for normal stream
-		RTCPReceiverReport* rr = new RTCPReceiverReport(mainSSRC);
+		auto report = source->CreateReport(getTime());
 
 		//If got anything
 		if (report)
 			//Append it
 			rr->AddReport(report);
-		
-		//Add report
-		rtcp.AddRTCPacket(rr);
-		
+	
 		//Send it
 		Send(rtcp);
 	}
@@ -1105,7 +1093,7 @@ bool DTLSICETransport::AddOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 		mainSSRC = group->media.ssrc;
 
 	//Create rtcp sender retpor
-	RTCPCompoundPacket rtcp(group->media.CreateSenderReport(getTime()));
+	auto rtcp = std::make_shared<RTCPCompoundPacket>(group->media.CreateSenderReport(getTime()));
 	//Send packet
 	Send(rtcp);
 	
@@ -1142,10 +1130,9 @@ bool DTLSICETransport::RemoveOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 	ssrcs.push_back(group->media.ssrc);
 	if (group->fec.ssrc) ssrcs.push_back(group->fec.ssrc);
 	if (group->rtx.ssrc) ssrcs.push_back(group->rtx.ssrc);
-	//Create BYE
-	RTCPCompoundPacket rtcp(RTCPBye::Create(ssrcs,"terminated"));
-	//Send packet
-	Send(rtcp);
+	
+	//Send BYE
+	Send(RTCPCompoundPacket::Create(RTCPBye::Create(ssrcs,"terminated")));
 	
 	//Done
 	return true;
@@ -1212,7 +1199,7 @@ bool DTLSICETransport::RemoveIncomingSourceGroup(RTPIncomingSourceGroup *group)
 	return true;
 }
 
-void DTLSICETransport::Send(RTCPCompoundPacket &rtcp)
+void DTLSICETransport::Send(const RTCPCompoundPacket::shared &rtcp)
 {
 	BYTE 	data[MTU+SRTP_MAX_TRAILER_LEN] ALIGNEDTO32;
 	DWORD   size = MTU;
@@ -1223,7 +1210,7 @@ void DTLSICETransport::Send(RTCPCompoundPacket &rtcp)
 		return (void) Debug("-DTLSICETransport::Send() | We don't have an DTLS setup yet\n");
 	
 	//Serialize
-	DWORD len = rtcp.Serialize(data,size);
+	DWORD len = rtcp->Serialize(data,size);
 	
 	//Check result
 	if (len<=0 || len>size)
@@ -1290,10 +1277,10 @@ int DTLSICETransport::SendPLI(DWORD ssrc)
 	}
 	
 	//Create rtcp sender retpor
-	RTCPCompoundPacket rtcp;
+	RTCPCompoundPacket::shared rtcp;
 	
 	//Add to rtcp
-	rtcp.AddRTCPacket( RTCPPayloadFeedback::Create(RTCPPayloadFeedback::PictureLossIndication,mainSSRC,ssrc));
+	rtcp->CreatePacket<RTCPPayloadFeedback>(RTCPPayloadFeedback::PictureLossIndication,mainSSRC,ssrc);
 
 	//Send packet
 	Send(rtcp);
@@ -1459,7 +1446,7 @@ int DTLSICETransport::Send(RTPPacket &packet)
 	if (getTimeDiff(source.lastSenderReport)>1E6)
 	{
 		//Create rtcp sender retpor
-		RTCPCompoundPacket rtcp(group->media.CreateSenderReport(getTime()));
+		auto rtcp = RTCPCompoundPacket::Create(group->media.CreateSenderReport(getTime()));
 		//Send packet
 		Send(rtcp);
 	}
@@ -1467,13 +1454,13 @@ int DTLSICETransport::Send(RTPPacket &packet)
 	return 1;
 }
 
-void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
+void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 {
 	//For each packet
 	for (DWORD i = 0; i<rtcp->GetPacketCount();i++)
 	{
 		//Get pacekt
-		const RTCPPacket* packet = rtcp->GetPacket(i);
+		auto packet = rtcp->GetPacket(i);
 		//Check packet type
 		switch (packet->GetType())
 		{
@@ -1484,7 +1471,7 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 				//Using outgoing
 				ScopedUse use2(outgoingUse);
 	
-				const RTCPSenderReport* sr = (const RTCPSenderReport*)packet;
+				auto sr = std::static_pointer_cast<RTCPSenderReport>(packet);
 				
 				//Get ssrc
 				DWORD ssrc = sr->GetSSRC();
@@ -1508,7 +1495,7 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 				for (DWORD j=0;j<sr->GetCount();j++)
 				{
 					//Get report
-					RTCPReport *report = sr->GetReport(j);
+					auto report = sr->GetReport(j);
 					//Check ssrc
 					DWORD ssrc = report->GetSSRC();
 					
@@ -1540,12 +1527,13 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 				//Using outgoing
 				ScopedUse use2(outgoingUse);
 				
-				const RTCPReceiverReport* rr = (const RTCPReceiverReport*)packet;
+				auto rr = std::static_pointer_cast<RTCPReceiverReport>(packet);
+				
 				//Process all the receiver Reports
 				for (DWORD j=0;j<rr->GetCount();j++)
 				{
 					//Get report
-					RTCPReport *report = rr->GetReport(j);
+					auto report = rr->GetReport(j);
 					//Check ssrc
 					DWORD ssrc = report->GetSSRC();
 					
@@ -1587,7 +1575,7 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 				ScopedUse use2(outgoingUse);
 				
 				//Get feedback packet
-				RTCPRTPFeedback *fb = (RTCPRTPFeedback*) packet;
+				auto fb = std::static_pointer_cast<RTCPRTPFeedback>(packet);
 				//Get SSRC for media
 				DWORD ssrc = fb->GetMediaSSRC();
 				//Get media
@@ -1609,7 +1597,7 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 						for (BYTE i=0;i<fb->GetFieldCount();i++)
 						{
 							//Get field
-							const RTCPRTPFeedback::NACKField *field = (const RTCPRTPFeedback::NACKField*) fb->GetField(i);
+							auto field = fb->GetField<RTCPRTPFeedback::NACKField>(i);
 							
 							//Resent it
 							ReSendPacket(group,field->pid);
@@ -1671,7 +1659,7 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 				//Using outgoing
 				ScopedUse use2(outgoingUse);
 				//Get feedback packet
-				RTCPPayloadFeedback *fb = (RTCPPayloadFeedback*) packet;
+				auto fb = std::static_pointer_cast<RTCPPayloadFeedback>(packet);
 				//Get SSRC for media
 				DWORD ssrc = fb->GetMediaSSRC();
 				//Get media
@@ -1714,7 +1702,7 @@ void DTLSICETransport::onRTCP(RTCPCompoundPacket* rtcp)
 						for (BYTE i=0;i<fb->GetFieldCount();i++)
 						{
 							//Get feedback
-							const RTCPPayloadFeedback::ApplicationLayerFeeedbackField* msg = (const RTCPPayloadFeedback::ApplicationLayerFeeedbackField*)fb->GetField(i);
+							auto msg = fb->GetField<RTCPPayloadFeedback::ApplicationLayerFeeedbackField>(i);
 							//Get size and payload
 							DWORD len		= msg->GetLength();
 							const BYTE* payload	= msg->GetPayload();
@@ -1822,20 +1810,14 @@ void DTLSICETransport::SetRTT(DWORD rtt)
 
 void DTLSICETransport::SendTransportWideFeedbackMessage(DWORD ssrc)
 {
-	//Create rtcp transport wide feedback
-	RTCPCompoundPacket rtcp;
+	//RTCP packet
+	auto rtcp = RTCPCompoundPacket::Create();
 
-	//Add to rtcp
-	RTCPRTPFeedback* feedback = RTCPRTPFeedback::Create(RTCPRTPFeedback::TransportWideFeedbackMessage,mainSSRC,ssrc);
+	//Create rtcp transport wide feedback
+	auto feedback = rtcp->CreatePacket<RTCPRTPFeedback>(RTCPRTPFeedback::TransportWideFeedbackMessage,mainSSRC,ssrc);
 
 	//Create trnasport field
-	RTCPRTPFeedback::TransportWideFeedbackMessageField *field = new RTCPRTPFeedback::TransportWideFeedbackMessageField(feedbackPacketCount++);
-
-	//And add it
-	feedback->AddField(field);
-
-	//Add it
-	rtcp.AddRTCPacket(feedback);
+	auto field = feedback->CreateField<RTCPRTPFeedback::TransportWideFeedbackMessageField>(feedbackPacketCount++);
 
 	//Proccess and delete all elements
 	for (auto it =transportWideReceivedPacketsStats.cbegin();

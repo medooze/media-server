@@ -102,10 +102,10 @@ private:
 	int ReSendPacket(int seq);
 protected:
 	//Envio y recepcion de rtcp
-	int SendPacket(RTCPCompoundPacket &rtcp);
+	int SendPacket(const RTCPCompoundPacket::shared &rtcp);
 	int SendSenderReport();
 	int SendFIR();
-	RTCPCompoundPacket* CreateSenderReport();
+	RTCPCompoundPacket::shared CreateSenderReport();
 private:
 	typedef std::map<DWORD,RTPPacket*> RTPOrderedPackets;
 protected:
