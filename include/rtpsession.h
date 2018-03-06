@@ -66,7 +66,7 @@ public:
 	int SendPacket(RTPPacket &packet,DWORD timestamp);
 	int SendPacket(RTPPacket &packet);
 	
-	RTPPacket* GetPacket();
+	RTPPacket::shared GetPacket();
 	void CancelGetPacket();
 	DWORD GetNumRecvPackets()	const { return recv.media.numPackets+recv.media.numRTCPPackets;	}
 	DWORD GetNumSendPackets()	const { return send.media.numPackets+send.media.numRTCPPackets;	}
@@ -92,7 +92,7 @@ public:
 
 	RTPOutgoingSourceGroup* GetOutgoingSourceGroup() { return &send; }
 	RTPIncomingSourceGroup* GetIncomingSourceGroup() { return &recv; }
-	RTPPacket* GetOrderPacket()			 { return packets.GetOrdered(); }
+	RTPPacket::shared GetOrderPacket()			 { return packets.GetOrdered(); }
 public:	
 	virtual void onRemotePeer(const char* ip, const short port);
 	virtual void onRTPPacket(BYTE* buffer, DWORD size);
@@ -107,7 +107,7 @@ protected:
 	int SendFIR();
 	RTCPCompoundPacket::shared CreateSenderReport();
 private:
-	typedef std::map<DWORD,RTPPacket*> RTPOrderedPackets;
+	typedef std::map<DWORD,RTPPacket::shared> RTPOrderedPackets;
 protected:
 	RemoteRateEstimator*	remoteRateEstimator;
 private:

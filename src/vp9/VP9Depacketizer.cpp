@@ -39,7 +39,7 @@ void VP9Depacketizer::ResetFrame()
 	frame.SetTime((QWORD)-1);
 }
 
-MediaFrame* VP9Depacketizer::AddPacket(RTPPacket *packet)
+MediaFrame* VP9Depacketizer::AddPacket(const RTPPacket::shared& packet)
 {
 	//Check it is from same packet
 	if (frame.GetTimeStamp()!=packet->GetTimestamp())

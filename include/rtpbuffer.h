@@ -39,7 +39,7 @@ public:
 		pthread_mutex_destroy(&mutex);
 	}
 
-	bool Add(RTPPacket *rtp)
+	bool Add(const RTPPacket::shared& rtp)
 	{
 		//Get seq num
 		DWORD seq = rtp->GetExtSeqNum();
@@ -52,8 +52,6 @@ public:
 		{
 			//Error
 			Debug("-RTPBuffer::Add() | Out of order non recoverable packet [next:%u,seq:%u,maxWaitTime=%d,cycles:%d-%u]\n",next,seq,maxWaitTime,rtp->GetSeqCycles(),rtp->GetSeqNum());
-			//Delete pacekt
-			delete(rtp);
 			//Unlock
 			pthread_mutex_unlock(&mutex);
 			//Skip it and lost forever
@@ -65,8 +63,6 @@ public:
 		{
 			//Error
 			Debug("-RTPBuffer::Add() | Already have that packet [next:%u,seq:%u,maxWaitTime=%d,cycles:%d-%u]\n",next,seq,maxWaitTime,rtp->GetSeqCycles(),rtp->GetSeqNum());
-			//Delete pacekt
-			delete(rtp);
 			//Unlock
 			pthread_mutex_unlock(&mutex);
 			//Skip it and lost forever
@@ -74,12 +70,10 @@ public:
 		}
 
 		//Add packet, check if it was already there
-		if (!packets.insert(std::pair<DWORD,RTPPacket*>(seq,rtp)).second)
+		if (!packets.insert(std::pair<DWORD,RTPPacket::shared>(seq,rtp)).second)
 		{
 			//Error
 			Debug("-RTPBuffer::Add() | Error inserting packet [next:%u,seq:%u,maxWaitTime=%d,cycles:%d-%u]\n",next,seq,maxWaitTime,rtp->GetSeqCycles(),rtp->GetSeqNum());
-			//Delete pacekt
-			delete(rtp);
 			//Unlock
 			pthread_mutex_unlock(&mutex);
 			//Skip it and lost forever
@@ -110,32 +104,30 @@ public:
 		pthread_cond_signal(&cond);
 	}
 	
-	RTPPacket* GetOrdered()
+	RTPPacket::shared GetOrdered()
 	{
 		
 		//Check if we have somethin in queue
 		if (!packets.empty())
 		{
 			//Get first
-			RTPOrderedPackets::iterator it = packets.begin();
+			auto it = packets.begin();
 			//Get first seq num
 			DWORD seq = it->first;
 			//Get packet
-			RTPPacket* candidate = it->second;
+			auto candidate = it->second;
 			//Get time of the packet
 			QWORD time = candidate->GetTime();
 
 			//Check if first is the one expected or wait if not
 			if (next==(DWORD)-1 || seq==next || time+maxWaitTime<getTime()/1000 || hurryUp)
 			{
-				//We have it!
-				RTPPacket* rtp = candidate;
 				//Update next
 				next = seq+1;
 				//Remove it
 				packets.erase(it);
 				//Return it
-				return rtp;
+				return candidate;
 			}
 		}
 		//Rerturn 
@@ -143,10 +135,10 @@ public:
 	}
 	
 	
-	RTPPacket* Wait()
+	RTPPacket::shared Wait()
 	{
 		//NO packet
-		RTPPacket* rtp = NULL;
+		RTPPacket::shared rtp;
 
 		//Lock
 		pthread_mutex_lock(&mutex);
@@ -159,11 +151,11 @@ public:
 			{
 					
 				//Get first
-				RTPOrderedPackets::iterator it = packets.begin();
+				auto it = packets.begin();
 				//Get first seq num
 				DWORD seq = it->first;
 				//Get packet
-				RTPPacket* candidate = it->second;
+				auto candidate = it->second;
 				//Get time of the packet
 				QWORD time = candidate->GetTime();
 
@@ -265,20 +257,13 @@ public:
 private:
 	void ClearPackets()
 	{
-		//For each item, list shall be locked before
-		for (RTPOrderedPackets::iterator it=packets.begin(); it!=packets.end(); ++it)
-			//Delete rtp
-			delete(it->second);
 		//Clear all list
 		packets.clear();
 	}
 
 private:
-	typedef std::map<DWORD,RTPPacket*> RTPOrderedPackets;
-
-private:
 	//The event list
-	RTPOrderedPackets	packets;
+	std::map<DWORD,RTPPacket::shared>	packets;
 	bool			cancel;
 	bool			hurryUp;
 	pthread_mutex_t		mutex;

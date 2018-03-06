@@ -73,7 +73,7 @@ void RemoteRateEstimator::RemoveStream(DWORD ssrc)
 	lock.Unlock();
 }
 
-void RemoteRateEstimator::Update(DWORD ssrc,RTPPacket* packet,DWORD size)
+void RemoteRateEstimator::Update(DWORD ssrc,const RTPPacket::shared& packet,DWORD size)
 {
 	//Get now
 	QWORD now = getTimeMS();

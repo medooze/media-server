@@ -310,7 +310,7 @@ int TextStream::RecText()
 	while(receivingText)
 	{
 		//Get packet
-		RTPPacket* packet = rtp.GetPacket();
+		auto packet = rtp.GetPacket();
 
 		//Check if gor anti
 		if (!packet)
@@ -344,7 +344,7 @@ int TextStream::RecText()
 			if (type==TextCodec::T140RED)
 			{
 				//Get redundant packet
-				RTPRedundantPacket* red = (RTPRedundantPacket*)packet;
+				auto red = std::static_pointer_cast<RTPRedundantPacket>(packet);
 				
 				//Timestamp of first packet (either receovered or not)
 				DWORD ts = timeStamp;
@@ -396,8 +396,6 @@ int TextStream::RecText()
 			}
 		}
 
-		//Delete rtp packet
-		delete(packet);
 	}
 
 	Log("<RecText\n");

@@ -17,20 +17,22 @@
 #include "media.h"
 #include "rtp/RTPHeader.h"
 #include "rtp/RTPHeaderExtension.h"
+#include <memory>
 
 class RTPPacket
 {
 public:
 	const static DWORD MaxExtSeqNum = 0xFFFFFFFF;
 public:
-	
+	using shared = std::shared_ptr<RTPPacket>;
+	using unique = std::unique_ptr<RTPPacket>;
 
 public:
 	RTPPacket(MediaFrame::Type media,BYTE codec);
 	RTPPacket(MediaFrame::Type media,BYTE codec,const RTPHeader &header, const RTPHeaderExtension &extension);
 	virtual ~RTPPacket();
 
-	RTPPacket* Clone();
+	RTPPacket::shared Clone();
 	
 	bool	SetPayload(BYTE *data,DWORD size);
 	bool	SkipPayload(DWORD skip);

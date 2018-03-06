@@ -205,7 +205,7 @@ public:
 	RTPLostPackets(WORD num);
 	~RTPLostPackets();
 	void Reset();
-	WORD AddPacket(const RTPPacket *packet);
+	WORD AddPacket(const RTPPacket::shared &packet);
 	std::list<RTCPRTPFeedback::NACKField::shared>  GetNacks();
 	void Dump();
 	DWORD GetTotal() {return total;}
@@ -237,7 +237,7 @@ public:
 	
 	RTPOutgoingSource* GetSource(DWORD ssrc);
 public:
-	typedef std::map<DWORD,RTPPacket*> RTPOrderedPackets;
+	typedef std::map<DWORD,RTPPacket::shared> RTPOrderedPackets;
 	typedef std::set<Listener*> Listeners;
 public:	
 	std::string streamId;
@@ -245,7 +245,7 @@ public:
 	RTPOutgoingSource media;
 	RTPOutgoingSource fec;
 	RTPOutgoingSource rtx;
-	RTPOrderedPackets	packets;
+	RTPOrderedPackets packets;
 	Mutex mutex;
 	Listeners listeners;
 };
@@ -256,7 +256,7 @@ public:
 	class Listener 
 	{
 	public:
-		virtual void onRTP(RTPIncomingSourceGroup* group,RTPPacket* packet) = 0;
+		virtual void onRTP(RTPIncomingSourceGroup* group,const RTPPacket::shared& packet) = 0;
 	};
 public:	
 	RTPIncomingSourceGroup(MediaFrame::Type type);
@@ -264,7 +264,7 @@ public:
 	RTPIncomingSource* GetSource(DWORD ssrc);
 	void AddListener(Listener* listener);
 	void RemoveListener(Listener* listener);
-	void onRTP(RTPPacket* packet);
+	void onRTP(const RTPPacket::shared& packet);
 	
 public:
 	typedef std::set<Listener*> Listeners;
@@ -284,7 +284,7 @@ public:
 class RTPSender
 {
 public:
-	virtual int Send(RTPPacket &packet) = 0;
+	virtual int Send(const RTPPacket::shared& packet) = 0;
 };
 
 class RTPReceiver

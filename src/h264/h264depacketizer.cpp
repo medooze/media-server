@@ -41,7 +41,7 @@ void H264Depacketizer::ResetFrame()
 	frame.SetTime((QWORD)-1);
 }
 
-MediaFrame* H264Depacketizer::AddPacket(RTPPacket *packet)
+MediaFrame* H264Depacketizer::AddPacket(const RTPPacket::shared& packet)
 {
 	//Check it is from same packet
 	if (frame.GetTimeStamp()!=packet->GetTimestamp())

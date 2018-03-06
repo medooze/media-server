@@ -30,7 +30,7 @@ public:
 	bool SetIncoming(RTPIncomingSourceGroup* incoming, RTPReceiver* receiver);
 	void Close();
 	
-	virtual void onRTP(RTPIncomingSourceGroup* group,RTPPacket* packet) override;
+	virtual void onRTP(RTPIncomingSourceGroup* group,const RTPPacket::shared& packet) override;
 	virtual void onPLIRequest(RTPOutgoingSourceGroup* group,DWORD ssrc) override;
 	
 	void SelectLayer(int spatialLayerId,int temporalLayerId);
@@ -53,7 +53,7 @@ private:
 	VideoLayerSelector* selector		= NULL;
 	Mutex mutex;
 	WaitCondition wait;
-	std::queue<RTPPacket*> packets;
+	std::queue<RTPPacket::shared> packets;
 	pthread_t thread	= {0};
 	bool running		= false;;
 	bool muted		= false;

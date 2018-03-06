@@ -107,7 +107,7 @@ int AudioDecoderWorker::Decode()
 			continue;
 
 		//Get packet in queue
-		RTPPacket* packet = packets.Pop();
+		auto packet = packets.Pop();
 
 		//Check
 		if (!packet)
@@ -139,8 +139,6 @@ int AudioDecoderWorker::Decode()
 		//Y lo reproducimos
 		output->PlayBuffer(raw,len,frameTime);
 
-		//Delete packet
-		delete(packet);
 	}
 
 	//End reproducing
@@ -158,8 +156,8 @@ int AudioDecoderWorker::Decode()
 	return 0;
 }
 
-void AudioDecoderWorker::onRTPPacket(RTPPacket &packet)
+void AudioDecoderWorker::onRTPPacket(const RTPPacket::shared& packet)
 {
 	//Put it on the queue
-	packets.Add(packet.Clone());
+	packets.Add(packet->Clone());
 }

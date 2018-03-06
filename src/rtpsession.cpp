@@ -155,15 +155,6 @@ void RTPSession::FlushRTXPackets()
 	
 	Debug("-FlushRTXPackets(%s)\n",MediaFrame::TypeToString(media));
 
-	//Delete rtx packets
-	for (RTPOrderedPackets::iterator it = rtxs.begin(); it!=rtxs.end();++it)
-	{
-		//Get pacekt
-		RTPPacket *pkt = it->second;
-		//Delete object
-		delete(pkt);
-	}
-
 	//Clear list
 	rtxs.clear();
 }
@@ -523,7 +514,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 	if (useNACK)
 	{
 		//Create new packet with this data
-		RTPPacket *rtx = new RTPPacket(packet.GetMedia(),packet.GetCodec(),header,extension);
+		auto rtx = std::make_shared<RTPPacket>(packet.GetMedia(),packet.GetCodec(),header,extension);
 		//Set media
 		rtx->SetPayload(packet.GetMediaData(),packet.GetMediaLength());
 		//Add it to que
@@ -548,16 +539,12 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 	//Until the end
 	while(it!=rtxs.end())
 	{
-		//Get pacekt
-		RTPPacket *pkt = it->second;
 		//Check time
-		if (pkt->GetTime()>until)
+		if (it->second->GetTime()>until)
 			//Keep the rest
 			break;
 		//DElete from queue and move next
 		rtxs.erase(it++);
-		//Delete object
-		delete(pkt);
 	}
 
 	//Unlock
@@ -647,7 +634,7 @@ void RTPSession::onRTPPacket(BYTE* data, DWORD size)
 	}
 	
 	//Create normal packet
-	RTPPacket *packet = new RTPPacket(media,codec,header,extension);
+	auto packet = std::make_shared<RTPPacket>(media,codec,header,extension);
 	
 	//Set the payload
 	packet->SetPayload(data+ini,size-ini);
@@ -843,7 +830,7 @@ void RTPSession::onRTPPacket(BYTE* data, DWORD size)
 	return;
 }
 
-RTPPacket* RTPSession::GetPacket()
+RTPPacket::shared RTPSession::GetPacket()
 {
 	//Wait for pacekts
 	return packets.Wait();
@@ -1267,7 +1254,7 @@ int RTPSession::ReSendPacket(int seq)
 	if (it!=rtxs.end())
 	{
 		//Get packet
-		RTPPacket* packet = it->second;
+		auto packet = it->second;
 
 		//Data
 		BYTE data[MTU+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
@@ -1354,17 +1341,7 @@ int RTPSession::ReSendPacket(int seq)
 		if (listener)
 			//Request a I frame
 			listener->onFPURequested(this);
-		//Empty queue without locking again
-		//Delete rtx packets
-		for (RTPOrderedPackets::iterator it = rtxs.begin(); it!=rtxs.end();++it)
-		{
-			//Get pacekt
-			RTPPacket *pkt = it->second;
-			//Delete object
-			delete(pkt);
-		}
-
-		//Clear list
+		//Empty rtx queue
 		rtxs.clear();
 	}
 	

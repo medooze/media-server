@@ -13,7 +13,7 @@ public:
 	virtual ~VideoLayerSelector() = default;
 	virtual void SelectTemporalLayer(BYTE id) = 0;
 	virtual void SelectSpatialLayer(BYTE id) = 0;
-	virtual bool Select(RTPPacket *packet,bool &mark) = 0;
+	virtual bool Select(const RTPPacket::shared& packet,bool &mark) = 0;
 	
 	virtual BYTE GetTemporalLayer()		const = 0;
 	virtual BYTE GetSpatialLayer()		const = 0;

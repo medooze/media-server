@@ -26,7 +26,7 @@ public:
 	void SelectTemporalLayer(BYTE id)		override;
 	void SelectSpatialLayer(BYTE id)		override;
 	
-	bool Select(RTPPacket *packet,bool &mark)	override;
+	bool Select(const RTPPacket::shared& packet,bool &mark)	override;
 	
 	BYTE GetTemporalLayer()		const override { return temporalLayerId; }
 	BYTE GetSpatialLayer()		const override { return MaxLayerId;	 }

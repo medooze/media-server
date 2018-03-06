@@ -99,7 +99,7 @@ void RTPStreamTransponder::Close()
 
 
 
-void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,RTPPacket* packet)
+void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,const RTPPacket::shared& packet)
 {
 	//Double check
 	if (!packet)
@@ -177,7 +177,7 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,RTPPacket* packet
 	}
 
 	//Clone packet
-	RTPPacket* cloned = packet->Clone();
+	auto cloned = packet->Clone();
 	
 	//Set normalized seq num
 	extSeqNum = base + (extSeqNum - first) - dropped;
@@ -292,14 +292,8 @@ void  RTPStreamTransponder::Reset()
 
 	//Delete all packets
 	while(!packets.empty())
-	{
-		//Get packet
-		RTPPacket* packet = packets.front();
 		//Remove from queue
 		packets.pop();
-		//Delete packet
-		delete(packet);
-	}
 	
 	//Reset first paquet seq num
 	first = 0;
@@ -341,7 +335,7 @@ int RTPStreamTransponder::Run()
 		}
 		
 		//Get first packet
-		RTPPacket* packet = packets.front();
+		auto packet = packets.front();
 
 		//Remove packet from list
 		packets.pop();
@@ -350,13 +344,10 @@ int RTPStreamTransponder::Run()
 		wait.Unlock();
 			
 		//Send it on transport
-		sender->Send(*packet);
+		sender->Send(packet);
 
 		//Get last send seq num
 		last = packet->GetExtSeqNum();
-
-		//Free mem
-		delete(packet);
 		
 		//Lock for waiting for packets
 		wait.Lock();

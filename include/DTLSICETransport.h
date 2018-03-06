@@ -47,7 +47,7 @@ public:
 	void SetRemoteProperties(const Properties& properties);
 	void SetLocalProperties(const Properties& properties);
 	virtual int SendPLI(DWORD ssrc) override;
-	virtual int Send(RTPPacket &packet) override;
+	virtual int Send(const RTPPacket::shared& packet) override;
 	int Dump(const char* filename);
 	void Reset();
 	
@@ -100,16 +100,16 @@ private:
 private:
 	struct PacketStats
 	{
-		static PacketStats* Create(const RTPPacket &packet, DWORD size, QWORD now)
+		static PacketStats* Create(const RTPPacket::shared& packet, DWORD size, QWORD now)
 		{
 			PacketStats* stats = new PacketStats();
 			
-			stats->transportWideSeqNum	= packet.GetTransportSeqNum();
-			stats->ssrc			= packet.GetSSRC();
-			stats->extSeqNum		= packet.GetExtSeqNum();
+			stats->transportWideSeqNum	= packet->GetTransportSeqNum();
+			stats->ssrc			= packet->GetSSRC();
+			stats->extSeqNum		= packet->GetExtSeqNum();
 			stats->size			= size;
-			stats->payload			= packet.GetMediaLength();
-			stats->timestamp		= packet.GetTimestamp();
+			stats->payload			= packet->GetMediaLength();
+			stats->timestamp		= packet->GetTimestamp();
 			stats->time			= now;
 			
 			return stats;

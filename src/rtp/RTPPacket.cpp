@@ -72,10 +72,10 @@ RTPPacket::~RTPPacket()
 {
 }
 
-RTPPacket* RTPPacket::Clone()
+RTPPacket::shared RTPPacket::Clone()
 {
 	//New one
-	RTPPacket* cloned = new RTPPacket(GetMedia(),GetCodec(),GetRTPHeader(),GetRTPHeaderExtension());
+	auto cloned = std::make_shared<RTPPacket>(GetMedia(),GetCodec(),GetRTPHeader(),GetRTPHeaderExtension());
 	//Set attrributes
 	cloned->SetClockRate(GetClockRate());
 	cloned->SetSeqCycles(GetSeqCycles());

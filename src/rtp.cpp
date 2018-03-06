@@ -108,7 +108,7 @@ RTPLostPackets::~RTPLostPackets()
 	free(packets);
 }
 
-WORD RTPLostPackets::AddPacket(const RTPPacket *packet)
+WORD RTPLostPackets::AddPacket(const RTPPacket::shared &packet)
 {
 	int lost = 0;
 	
@@ -317,10 +317,9 @@ void RTPIncomingSourceGroup::RemoveListener(Listener* listener)
 	listeners.erase(listener);
 }
 
-void RTPIncomingSourceGroup::onRTP(RTPPacket* packet)
+void RTPIncomingSourceGroup::onRTP(const RTPPacket::shared& packet)
 {
 	ScopedLock scoped(mutex);
 	for (Listeners::const_iterator it=listeners.begin();it!=listeners.end();++it)
 		(*it)->onRTP(this,packet);
-	delete(packet);
 }

@@ -42,7 +42,7 @@ void VP9LayerSelector::SelectSpatialLayer(BYTE id)
 	nextSpatialLayerId = id;
 }
 	
-bool VP9LayerSelector::Select(RTPPacket *packet,bool &mark)
+bool VP9LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 {
 	VP9PayloadDescription desc;
 	

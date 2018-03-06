@@ -638,7 +638,7 @@ int VideoStream::RecVideo()
 	while(receivingVideo)
 	{
 		//Get RTP packet
-		RTPPacket* packet = rtp.GetPacket();
+		auto packet = rtp.GetPacket();
 
 		//Check
 		if (!packet)
@@ -695,17 +695,13 @@ int VideoStream::RecVideo()
 		if (type==VideoCodec::RED)
 		{
 			//Get redundant packet
-			RTPRedundantPacket* red = (RTPRedundantPacket*)packet;
+			auto red = std::static_pointer_cast<RTPRedundantPacket>(packet);
 			//Get primary codec
 			type = (VideoCodec::Type)red->GetPrimaryCodec();
 			//Check it is not ULPFEC redundant packet
 			if (type==VideoCodec::ULPFEC)
-			{
-				//Delete packet
-				delete(packet);
 				//Skip
 				continue;
-			}
 			//Update primary redundant payload
 			buffer = red->GetPrimaryPayloadData();
 			size = red->GetPrimaryPayloadSize();
@@ -726,8 +722,6 @@ int VideoStream::RecVideo()
 			if (videoDecoder==NULL)
 			{
 				Error("Error creando nuevo decodificador de video [%d]\n",type);
-				//Delete packet
-				delete(packet);
 				//Next
 				continue;
 			}
@@ -809,8 +803,6 @@ int VideoStream::RecVideo()
 				//Do not wait anymore
 				waitIntra = false;
 		}
-		//Delete packet
-		delete(packet);
 	}
 
 	//Delete encoder

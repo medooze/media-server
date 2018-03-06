@@ -311,7 +311,7 @@ int AudioStream::RecAudio()
 	while(receivingAudio)
 	{
 		//Obtenemos el paquete
-		RTPPacket *packet = rtp.GetPacket();
+		auto packet = rtp.GetPacket();
 		//Check
 		if (!packet)
 			//Next
@@ -330,8 +330,6 @@ int AudioStream::RecAudio()
 			//Creamos uno dependiendo del tipo
 			if ((codec = AudioCodecFactory::CreateDecoder(type))==NULL)
 			{
-				//Delete pacekt
-				delete(packet);
 				//Next
 				Log("Error creando nuevo codec de audio [%d]\n",type);
 				continue;
@@ -366,8 +364,6 @@ int AudioStream::RecAudio()
 		//Aumentamos el numero de bytes recividos
 		recBytes+=packet->GetMediaLength();
 
-		//Delete
-		delete(packet);
 	}
 
 	//Check not null

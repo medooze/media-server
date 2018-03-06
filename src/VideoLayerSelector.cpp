@@ -17,7 +17,7 @@ public:
 	void SelectTemporalLayer(BYTE id) override {};
 	void SelectSpatialLayer(BYTE id) override {};
 	
-	bool Select(RTPPacket *packet,bool &mark)	override 
+	bool Select(const RTPPacket::shared& packet,bool &mark)	override 
 	{
 		mark = packet->GetMark();
 		return true;

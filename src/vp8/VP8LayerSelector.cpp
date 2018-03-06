@@ -21,7 +21,7 @@ void VP8LayerSelector::SelectSpatialLayer(BYTE id)
 	//Not supported
 }
 	
-bool VP8LayerSelector::Select(RTPPacket *packet,bool &mark)
+bool VP8LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 {
 	VP8PayloadDescriptor desc;
 
