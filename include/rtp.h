@@ -111,6 +111,8 @@ struct RTPIncomingSource : public RTPSource
 	QWORD   lastReceivedSenderNTPTimestamp;
 	QWORD   lastReceivedSenderReport;
 	QWORD   lastReport;
+	QWORD	lastPLI;
+	DWORD   totalPLIs;
 	
 	RTPIncomingSource() : RTPSource()
 	{
@@ -121,6 +123,8 @@ struct RTPIncomingSource : public RTPSource
 		lastReceivedSenderNTPTimestamp = 0;
 		lastReceivedSenderReport = 0;
 		lastReport		 = 0;
+		lastPLI			 = 0;
+		totalPLIs		= 0;
 		minExtSeqNumSinceLastSR  = RTPPacket::MaxExtSeqNum;
 	}
 	
@@ -147,12 +151,12 @@ struct RTPIncomingSource : public RTPSource
 		lastReceivedSenderNTPTimestamp = 0;
 		lastReceivedSenderReport = 0;
 		lastReport		 = 0;
+		lastPLI			 = 0;
+		totalPLIs		 = 0;
 		minExtSeqNumSinceLastSR  = RTPPacket::MaxExtSeqNum;
 	}
-	virtual ~RTPIncomingSource()
-	{
-		
-	}
+	virtual ~RTPIncomingSource() = default;
+	
 	RTCPReport::shared CreateReport(QWORD now);
 };
 

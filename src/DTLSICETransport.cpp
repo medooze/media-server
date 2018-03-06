@@ -1264,7 +1264,16 @@ int DTLSICETransport::SendPLI(DWORD ssrc)
 		//If not found
 		if (!group)
 			return Error("- DTLSICETransport::SendPLI() | no incoming source found for [ssrc:%u]\n",ssrc);
-
+		
+		//Check if we have sent a PLI recently (less than half a second ago
+		if (getTimeDiff(group->media.lastPLI)<10E6/2)
+			//We refuse to end more
+			return 0;
+		//Update last PLI requested time
+		group->media.lastPLI = getTime();
+		//And number of requested plis
+		group->media.totalPLIs++;
+		
 		//Drop all pending and lost packets
 		group->packets.Reset();
 		group->losts.Reset();
