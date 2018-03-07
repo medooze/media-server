@@ -240,18 +240,15 @@ public:
 	void onPLIRequest(DWORD ssrc);
 	
 	RTPOutgoingSource* GetSource(DWORD ssrc);
-public:
-	typedef std::map<DWORD,RTPPacket::shared> RTPOrderedPackets;
-	typedef std::set<Listener*> Listeners;
 public:	
 	std::string streamId;
 	MediaFrame::Type type;
 	RTPOutgoingSource media;
 	RTPOutgoingSource fec;
 	RTPOutgoingSource rtx;
-	RTPOrderedPackets packets;
 	Mutex mutex;
-	Listeners listeners;
+	std::map<DWORD,RTPPacket::shared> packets;
+	std::set<Listener*> listeners;
 };
 
 struct RTPIncomingSourceGroup
@@ -264,25 +261,32 @@ public:
 	};
 public:	
 	RTPIncomingSourceGroup(MediaFrame::Type type);
+	~RTPIncomingSourceGroup();
 	
 	RTPIncomingSource* GetSource(DWORD ssrc);
 	void AddListener(Listener* listener);
 	void RemoveListener(Listener* listener);
-	void onRTP(const RTPPacket::shared& packet);
+	DWORD AddPacket(const RTPPacket::shared &packet);
+	void ResetPackets();
+	void SetRTT(DWORD rtt);
+	std::list<RTCPRTPFeedback::NACKField::shared>  GetNacks() { return losts.GetNacks(); }
 	
-public:
-	typedef std::set<Listener*> Listeners;
+	void Start();
+	void Stop();
 public:	
 	std::string rid;
 	std::string mid;
+	DWORD rtt;
 	MediaFrame::Type type;
-	RTPLostPackets	losts;
-	RTPBuffer packets;
 	RTPIncomingSource media;
 	RTPIncomingSource fec;
 	RTPIncomingSource rtx;
+private:
+	pthread_t dispatchThread = {0};
+	RTPLostPackets	losts;
+	RTPBuffer packets;
 	Mutex mutex;
-	Listeners listeners;
+	std::set<Listener*>  listeners;
 };
 
 class RTPSender

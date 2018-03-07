@@ -55,6 +55,9 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) :
 	//Default cname
 	cname = strdup("default@localhost");
 	
+	//Do not deletage packet handling
+	delegate = false;
+	
 	//Empty types by defauilt
 	rtpMapIn = NULL;
 	rtpMapOut = NULL;
@@ -107,6 +110,8 @@ void RTPSession::Reset()
 		delete(aptMapOut);
 	if (cname)
 		free(cname);
+	//Reset group
+	recv.ResetPackets();
 	//Delete packets
 	packets.Clear();
 	//Reset transport
@@ -818,8 +823,12 @@ void RTPSession::onRTPPacket(BYTE* data, DWORD size)
 		}
 	}
 	
-	//Append packet
-	packets.Add(packet);
+	if (!delegate)
+		//Append packet
+		packets.Add(packet);
+	else 
+		//Append packet to group
+		recv.AddPacket(packet);
 
 	//Check if we need to send SR (1 per second
 	if (useRTCP && (!send.media.lastSenderReport || getTimeDiff(send.media.lastSenderReport)>1E6))
@@ -1167,6 +1176,8 @@ int RTPSession::SendFIR()
 int RTPSession::RequestFPU()
 {
 	Debug("-RTPSession::RequestFPU()\n");
+	//Reset pacekts
+	recv.ResetPackets();
 	//Drop all paquets queued, we could also hurry up
 	packets.Reset();
 	//Reset packet lost
@@ -1180,15 +1191,6 @@ int RTPSession::RequestFPU()
 	//Update last request FPU
 	getUpdDifTime(&lastFPU);
 
-	//packets.Reset();
-	/*if (!pendingTMBR)
-	{
-		//request FIR
-		SendFIR();
-	} else {
-		//Wait for TMBN response to no overflow
-		requestFPU = true;
-	}*/
 	//OK
 	return 1;
 }
@@ -1201,7 +1203,8 @@ void RTPSession::SetRTT(DWORD rtt)
 	if (remoteRateEstimator)
 		//Update estimator
 		remoteRateEstimator->UpdateRTT(recv.media.ssrc,rtt,getTimeMS());
-
+	//Set group rtt
+	recv.SetRTT(rtt);
 	//Check RTT to enable NACK
 	if (useNACK && rtt < 240)
 	{

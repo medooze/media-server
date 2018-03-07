@@ -344,16 +344,13 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		return 1;
 	}	
 
-	//Update lost packets
-	DWORD lost = group->losts.AddPacket(packet);
+	//Add packet and see if we have lost any in between
+	DWORD lost = group->AddPacket(packet);
 	
-	//Get total lost in queue
-	DWORD total = group->losts.GetTotal();
-
 	//Request NACK if it is media
 	if (group->type == MediaFrame::Video && lost && ssrc==group->media.ssrc)
 	{
-		UltraDebug("-lost %d\n",total);
+		UltraDebug("-lost %d\n",lost);
 		
 		//Create rtcp sender retpor
 		auto rtcp = RTCPCompoundPacket::Create();
@@ -373,7 +370,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		auto nack = rtcp->CreatePacket<RTCPRTPFeedback>(RTCPRTPFeedback::NACK,mainSSRC,ssrc);
 
 		//Get nacks for lost
-		for (auto field : group->losts.GetNacks())
+		for (auto field : group->GetNacks())
 			//Add it
 			nack->AddField(field);
 
@@ -381,15 +378,6 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		Send(rtcp);
 	}
   
-	RTPPacket::shared ordered;
-	//Append it to the packets
-	group->packets.Add(packet);
-	//FOr each ordered packet
-	while((ordered=group->packets.GetOrdered()))
-		//Call listeners
-		group->onRTP(ordered);
-	
-	//TODO: Fix who deletes packet
 	
 	//Check if we need to send RR (1 per second)
 	if (getTimeDiff(source->lastReport)>1E6)
@@ -1162,6 +1150,10 @@ bool DTLSICETransport::AddIncomingSourceGroup(RTPIncomingSourceGroup *group)
 		incoming[group->fec.ssrc] = group;
 	if (group->rtx.ssrc)
 		incoming[group->rtx.ssrc] = group;
+	
+	//Start distpaching
+	group->Start();
+	
 	//Done
 	return true;
 }
@@ -1173,6 +1165,9 @@ bool DTLSICETransport::RemoveIncomingSourceGroup(RTPIncomingSourceGroup *group)
 	//It must contain media ssrc
 	if (!group->media.ssrc)
 		return Error("No media ssrc defined, stream will not be removed\n");
+	
+	//Stop distpaching
+	group->Stop();
 	
 	//Block
 	ScopedUseLock lock(incomingUse);
@@ -1266,7 +1261,7 @@ int DTLSICETransport::SendPLI(DWORD ssrc)
 			return Error("- DTLSICETransport::SendPLI() | no incoming source found for [ssrc:%u]\n",ssrc);
 		
 		//Check if we have sent a PLI recently (less than half a second ago
-		if (getTimeDiff(group->media.lastPLI)<10E6/2)
+		if (getTimeDiff(group->media.lastPLI)<1E6/2)
 			//We refuse to end more
 			return 0;
 		//Update last PLI requested time
@@ -1275,8 +1270,8 @@ int DTLSICETransport::SendPLI(DWORD ssrc)
 		group->media.totalPLIs++;
 		
 		//Drop all pending and lost packets
-		group->packets.Reset();
-		group->losts.Reset();
+		group->ResetPackets();
+		
 	}
 	
 	//Create rtcp sender retpor
@@ -1808,9 +1803,9 @@ void DTLSICETransport::SetRTT(DWORD rtt)
 	//Sore it
 	this->rtt = rtt;
 	//Update jitters
-	for (auto it = incoming.begin(); it!=incoming.end(); ++it)
+	for (auto it : incoming)
 		//Update jitter
-		it->second->packets.SetMaxWaitTime(fmin(60,rtt*2));
+		it.second->SetRTT(rtt);
 }
 
 void DTLSICETransport::SendTransportWideFeedbackMessage(DWORD ssrc)

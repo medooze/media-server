@@ -278,8 +278,8 @@ void RTPOutgoingSourceGroup::RemoveListener(Listener* listener)
 void RTPOutgoingSourceGroup::onPLIRequest(DWORD ssrc)
 {
 	ScopedLock scoped(mutex);
-	for (Listeners::const_iterator it=listeners.begin();it!=listeners.end();++it)
-		(*it)->onPLIRequest(this,ssrc);
+	for (auto listener : listeners)
+		listener->onPLIRequest(this,ssrc);
 }
 
 RTPIncomingSourceGroup::RTPIncomingSourceGroup(MediaFrame::Type type) 
@@ -288,6 +288,11 @@ RTPIncomingSourceGroup::RTPIncomingSourceGroup(MediaFrame::Type type)
 	this->type = type;
 	//Small initial bufer of 60ms
 	packets.SetMaxWaitTime(60);
+}
+
+RTPIncomingSourceGroup::~RTPIncomingSourceGroup() 
+{
+	Stop();
 }
 
 RTPIncomingSource* RTPIncomingSourceGroup::GetSource(DWORD ssrc)
@@ -317,9 +322,69 @@ void RTPIncomingSourceGroup::RemoveListener(Listener* listener)
 	listeners.erase(listener);
 }
 
-void RTPIncomingSourceGroup::onRTP(const RTPPacket::shared& packet)
+DWORD RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet)
 {
-	ScopedLock scoped(mutex);
-	for (Listeners::const_iterator it=listeners.begin();it!=listeners.end();++it)
-		(*it)->onRTP(this,packet);
+	//Add to packet queue
+	packets.Add(packet);
+	//Add to lost packets and get count
+	return losts.AddPacket(packet);
+}
+
+void RTPIncomingSourceGroup::ResetPackets()
+{
+	//Reset packet queue and lost count
+	packets.Reset();
+	losts.Reset();
+	//Do not wait until next RTCP SR
+	packets.SetMaxWaitTime(0);
+}
+
+void RTPIncomingSourceGroup::SetRTT(DWORD rtt)
+{
+	//Store rtt
+	this->rtt = rtt;
+	//Set max packet wait time
+	packets.SetMaxWaitTime(fmin(60,rtt*2));
+}
+
+void RTPIncomingSourceGroup::Start()
+{
+	if (!isZeroThread(dispatchThread))
+		return;
+	
+	//Create dispatch trhead
+	createPriorityThread(&dispatchThread,[](void* arg) -> void* {
+			Log(">RTPIncomingSourceGroup dispatch %p\n",arg);
+			//Get group
+			RTPIncomingSourceGroup* group = (RTPIncomingSourceGroup*) arg;
+			//Loop until canceled
+			RTPPacket::shared packet;
+			while ((packet=group->packets.Wait()))
+			{
+				ScopedLock scoped(group->mutex);
+				//Deliver to all listeners
+				for (auto listener : group->listeners)
+					//Dispatch rtp packet
+					listener->onRTP(group,packet);
+			}
+			Log("<RTPIncomingSourceGroup dispatch\n");
+			return nullptr;
+		},
+		(void*)this,
+		0
+	);
+}
+
+void RTPIncomingSourceGroup::Stop()
+{
+	if (!isZeroThread(dispatchThread))
+		return;
+	//Cacnel packet wait
+	packets.Cancel();
+	
+	//Wait for thread
+	pthread_join(dispatchThread,NULL);
+	
+	//Clean it
+	setZeroThread(&dispatchThread);
 }

@@ -92,7 +92,6 @@ public:
 
 	RTPOutgoingSourceGroup* GetOutgoingSourceGroup() { return &send; }
 	RTPIncomingSourceGroup* GetIncomingSourceGroup() { return &recv; }
-	RTPPacket::shared GetOrderPacket()			 { return packets.GetOrdered(); }
 public:	
 	virtual void onRemotePeer(const char* ip, const short port);
 	virtual void onRTPPacket(BYTE* buffer, DWORD size);
@@ -110,12 +109,12 @@ private:
 	typedef std::map<DWORD,RTPPacket::shared> RTPOrderedPackets;
 protected:
 	RemoteRateEstimator*	remoteRateEstimator;
+	bool	delegate; // Controls if we have to delegate dispatch of packets to the incoming group or not
 private:
 	MediaFrame::Type media;
 	Listener* listener;
 	RTPBuffer packets;
 	RTPTransport transport;
-	
 	char*	cname;
 	//Transmision
 	RTPOutgoingSourceGroup send;

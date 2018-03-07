@@ -69,17 +69,9 @@ public:
 			return 0;
 		}
 
-		//Add packet, check if it was already there
-		if (!packets.insert(std::pair<DWORD,RTPPacket::shared>(seq,rtp)).second)
-		{
-			//Error
-			Debug("-RTPBuffer::Add() | Error inserting packet [next:%u,seq:%u,maxWaitTime=%d,cycles:%d-%u]\n",next,seq,maxWaitTime,rtp->GetSeqCycles(),rtp->GetSeqNum());
-			//Unlock
-			pthread_mutex_unlock(&mutex);
-			//Skip it and lost forever
-			return 0;
-		}
-
+		//Add packet
+		packets[seq] = rtp;
+		
 		//Unlock
 		pthread_mutex_unlock(&mutex);
 
