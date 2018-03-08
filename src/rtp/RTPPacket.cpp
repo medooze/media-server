@@ -118,7 +118,8 @@ bool RTPPacket::PrefixPayload(BYTE *data,DWORD size)
 }
 
 
-bool RTPPacket::SkipPayload(DWORD skip) {
+bool RTPPacket::SkipPayload(DWORD skip) 
+{
 	//Ensure we have enough to skip
 	if (GetMaxMediaLength()<skip+(payload-buffer)+payloadLen)
 		//Error
@@ -126,7 +127,7 @@ bool RTPPacket::SkipPayload(DWORD skip) {
 
 	//Move media data
 	payload += skip;
-  //Set length
+	//Set length
 	payloadLen -= skip;
 	//good
 	return true;

@@ -377,7 +377,7 @@ void RTPIncomingSourceGroup::Start()
 
 void RTPIncomingSourceGroup::Stop()
 {
-	if (!isZeroThread(dispatchThread))
+	if (isZeroThread(dispatchThread))
 		return;
 	//Cacnel packet wait
 	packets.Cancel();

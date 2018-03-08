@@ -90,7 +90,13 @@ struct VP8PayloadDescriptor
 
 	DWORD Parse(BYTE* data, DWORD size)
 	{
+		//Check size
+		if (size<1)
+			//Invalid
+			return 0;
+		//Start parsing
 		DWORD len = 1;
+		
 		//Read first
 		extendedControlBitsPresent	= data[0] >> 7;
 		nonReferencePicture		= data[0] >> 5 & 0x01;
@@ -100,6 +106,11 @@ struct VP8PayloadDescriptor
 		//check if more
 		if (extendedControlBitsPresent)
 		{
+			//Check size
+			if (size<len+1)
+				//Invalid
+				return 0;
+			
 			//Read second
 			pictureIdPresent		= data[1] >> 7;
 			temporalLevelZeroIndexPresent	= data[1] >> 6 & 0x01;
@@ -111,9 +122,17 @@ struct VP8PayloadDescriptor
 			//Check if we need to read picture id
 			if (pictureIdPresent)
 			{
+				//Check size
+				if (size<len+1)
+					//Invalid
+					return 0;
 				//Check mark
 				if (data[len] & 0x80)
 				{
+					//Check size again
+					if (size<len+2)
+						//Invalid
+						return 0;
 					//Two bytes
 					pictureId = (data[len] & 0x7F) << 8 | data[len+1];
 					//Inc len
@@ -128,6 +147,10 @@ struct VP8PayloadDescriptor
 			//check if present
 			if (temporalLevelZeroIndexPresent)
 			{
+				//Check size
+				if (size<len+1)
+					//Invalid
+					return 0;
 				//read it
 				temporalLevelZeroIndex = data[len];
 				//Inc len
@@ -136,6 +159,10 @@ struct VP8PayloadDescriptor
 			//Check present
 			if (temporalLayerIndexPresent || keyIndexPresent)
 			{
+				//Check size
+				if (size<len+1)
+					//Invalid
+					return 0;
 				//read it
 				temporalLayerIndex	= data[len] >> 6;
 				layerSync		= data[len] >> 5 & 0x01;

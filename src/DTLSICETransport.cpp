@@ -261,6 +261,13 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	//Create normal packet
 	auto packet = std::make_shared<RTPPacket>(group->type,codec,header,extension);
 	
+	//Check we have payload
+	if (ini>=len)
+	{
+		packet->Dump();
+		return Error("-DTLSICETransport::onData() | Would cause empty payload [size:%u,ini:%u,len:%u]\n",size,len,ini);
+	}
+	
 	//Set the payload
 	packet->SetPayload(data+ini,len-ini);
 	
@@ -330,6 +337,10 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		   |                                                               |
 		   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 		 */
+		 //Ensure we have enought data
+		 if (packet->GetMediaLength()<2)
+			 //error
+			return  Error("-DTLSICETransport::onData() | RTX not enough data len:%d\n",packet->GetMediaLength());
 		 //Get original sequence number
 		 WORD osn = get2(packet->GetMediaData(),0);
 
@@ -345,7 +356,9 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		 packet->SetCodec(codec);
 		 
 		 //Skip osn from payload
-		 packet->SkipPayload(2);
+		 if (!packet->SkipPayload(2))
+			//error
+			return  Error("-DTLSICETransport::onData() | Could not skip payload len:%d\n",packet->GetMediaLength());
 		 
 		 //TODO: We should set also the original type
 		  UltraDebug("RTX: %s got   %.d:RTX for #%d ts:%u %u %u payload:%u\n",MediaFrame::TypeToString(packet->GetMedia()),packet->GetPayloadType(),osn,packet->GetTimestamp(),packet->GetExtSeqNum(),group->media.extSeq,packet->GetMediaLength());
