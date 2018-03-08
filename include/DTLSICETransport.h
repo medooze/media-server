@@ -10,6 +10,7 @@
 
 #include <string>
 #include <map>
+#include <memory>
 #include <sys/socket.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -27,6 +28,7 @@
 #include "rtpbuffer.h"
 #include "PCAPFile.h"
 #include "remoterateestimator.h"
+
 
 class DTLSICETransport : 
 	public RTPSender,
@@ -100,9 +102,11 @@ private:
 private:
 	struct PacketStats
 	{
-		static PacketStats* Create(const RTPPacket::shared& packet, DWORD size, QWORD now)
+		using shared = std::shared_ptr<PacketStats>;
+		
+		static PacketStats::shared Create(const RTPPacket::shared& packet, DWORD size, QWORD now)
 		{
-			PacketStats* stats = new PacketStats();
+			auto stats = std::make_shared<PacketStats>();
 			
 			stats->transportWideSeqNum	= packet->GetTransportSeqNum();
 			stats->ssrc			= packet->GetSSRC();
@@ -158,8 +162,8 @@ private:
 	Use	incomingUse;
 	Use	outgoingUse;
 	
-	std::map<DWORD,PacketStats*> transportWideSentPacketsStats;
-	std::map<DWORD,PacketStats*> transportWideReceivedPacketsStats;
+	std::map<DWORD,PacketStats::shared> transportWideSentPacketsStats;
+	std::map<DWORD,PacketStats::shared> transportWideReceivedPacketsStats;
 	
 	PCAPFile* pcap;
 	RemoteRateEstimator senderSideEstimator;

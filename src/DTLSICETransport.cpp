@@ -273,9 +273,28 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	//If it is video and transport wide cc is used
 	if (group->type == MediaFrame::Video && packet->HasTransportWideCC())
 	{
-		//TODO: Calculate seqnum seq wrap here better!!!!!!!! <------------------------------------------------------------------------------ SERGIO------------------------------------------
+		// Get current seq mum
+		auto transportSeqNum = packet->GetTransportSeqNum();
+		
+		//Get max seq num so far, it is either last one if queue is empy or last one of the queue
+		auto maxFeedbackPacketExtSeqNum = transportWideReceivedPacketsStats.size() ? transportWideReceivedPacketsStats.cend()->first : lastFeedbackPacketExtSeqNum;
+		
+		//Check if we have a sequence wrap
+		if (transportSeqNum<0x00FF && (maxFeedbackPacketExtSeqNum & 0xFFFF)>0xFF00)
+		{
+			//Increase cycles
+			feedbackCycles++;
+			//If looping
+			if (feedbackCycles)
+				//Send feedback now
+				SendTransportWideFeedbackMessage(ssrc);
+		}
+
+		//Get extended value
+		DWORD transportExtSeqNum = feedbackCycles<<16 | transportSeqNum;
+		
 		//Add packets to the transport wide stats
-		transportWideReceivedPacketsStats[packet->GetTransportSeqNum()] = PacketStats::Create(packet,size,getTime());
+		transportWideReceivedPacketsStats[transportExtSeqNum] = PacketStats::Create(packet,size,getTime());
 		
 		//If we have enought or timeout (500ms)
 		//TODO: Implement timer
@@ -1422,8 +1441,19 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 
 		//Check if we are using transport wide for this packet
 		if (packet->HasTransportWideCC())
+		{
 			//Add new stat
 			transportWideSentPacketsStats[packet->GetTransportSeqNum()] = PacketStats::Create(packet,len,getTime());
+			//Protect against missing feedbacks, remove too old lost packets
+			for (auto it = transportWideSentPacketsStats.cbegin() ; it!=transportWideSentPacketsStats.end() ; ++it)
+				//If we have more than 1s dif
+				if (getTimeDiff(it->second->time)>1E6)
+					//Erase it
+					transportWideSentPacketsStats.erase(it);
+				else
+					//Newe
+					break;
+		}
 	} else {
 		//Error
 		Error("-DTLSICETransport::Send() | Error sending packet [len:%d,err:%d]\n",len,errno);
@@ -1628,21 +1658,25 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 							for (auto& remote : field->packets)
 							{
 								//Get packets stats
-								auto stat = transportWideSentPacketsStats[remote.first];
+								auto it = transportWideSentPacketsStats.find(remote.first);
 								//If found
-								if (stat)
+								if (it!=transportWideSentPacketsStats.end())
 								{
-									//Check if it was lsot
+									//Get stats
+									auto stat = it->second;
+									//Check if it was lost
 									if (remote.second)
 									{
 										//Add it to sender side estimator
 										senderSideEstimator.Update(0,remote.second/1000,stat->time,stat->size);
 										//Update last
 										last = remote.second;
-									} else
+									} else {
 										//Update lost
 										lost++;
-										
+									}
+									//Erase it
+									transportWideSentPacketsStats.erase(it);
 								}
 							}
 							//If any lost
@@ -1825,19 +1859,11 @@ void DTLSICETransport::SendTransportWideFeedbackMessage(DWORD ssrc)
 		  it = transportWideReceivedPacketsStats.erase(it))
 	{
 		//Get stat
-		PacketStats* stats = it->second;
+		auto stats = it->second;
 		//Get transport seq
-		DWORD transportSeqNum = it->first;
+		DWORD transportExtSeqNum = it->first;
 		//Get time
 		QWORD time = stats->time;
-
-		//Check if we have a sequence wrap
-		if (transportSeqNum<0x0FFF && (lastFeedbackPacketExtSeqNum & 0xFFFF)>0xF000)
-			//Increase cycles
-			feedbackCycles++;
-
-		//Get extended value
-		DWORD transportExtSeqNum = feedbackCycles<<16 | transportSeqNum;
 
 		//if not first and not out of order
 		if (lastFeedbackPacketExtSeqNum && transportExtSeqNum>lastFeedbackPacketExtSeqNum)
@@ -1849,10 +1875,7 @@ void DTLSICETransport::SendTransportWideFeedbackMessage(DWORD ssrc)
 		lastFeedbackPacketExtSeqNum = transportExtSeqNum;
 
 		//Add this one
-		field->packets.insert(std::make_pair(transportSeqNum,time));
-
-		//Delete stat
-		delete(stats);
+		field->packets.insert(std::make_pair(transportExtSeqNum,time));
 	}
 
 	//Send packet

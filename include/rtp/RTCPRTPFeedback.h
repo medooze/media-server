@@ -269,7 +269,7 @@ public:
 		virtual void Dump() const;
 		
 		//Pair<seqnum,us> -> us = 0, not received
-		typedef std::map<WORD,QWORD> Packets;
+		typedef std::map<DWORD,QWORD> Packets;
 		
 		BYTE feedbackPacketCount;
 		QWORD referenceTime = 0;

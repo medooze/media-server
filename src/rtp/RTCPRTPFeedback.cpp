@@ -578,7 +578,8 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Parse(BYTE* data,DWORD
 	if (size<8) return 0;
 	
 	//This are temporal, only packet list count
-	WORD baseSeqNumber	= get2(data,0);
+	//We use DWORDs instead of WORD to allow sequence wrapping without perturving maps
+	DWORD baseSeqNumber	= get2(data,0);
 	WORD packetStatusCount	= get2(data,2);
 	//Get reference time
 	referenceTime		= get3(data,4);
