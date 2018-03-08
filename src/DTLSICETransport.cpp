@@ -282,10 +282,10 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	if (group->type == MediaFrame::Video && packet->HasTransportWideCC())
 	{
 		// Get current seq mum
-		auto transportSeqNum = packet->GetTransportSeqNum();
+		WORD transportSeqNum = packet->GetTransportSeqNum();
 		
 		//Get max seq num so far, it is either last one if queue is empy or last one of the queue
-		auto maxFeedbackPacketExtSeqNum = transportWideReceivedPacketsStats.size() ? transportWideReceivedPacketsStats.cend()->first : lastFeedbackPacketExtSeqNum;
+		DWORD maxFeedbackPacketExtSeqNum = transportWideReceivedPacketsStats.size() ? transportWideReceivedPacketsStats.rbegin()->first : lastFeedbackPacketExtSeqNum;
 		
 		//Check if we have a sequence wrap
 		if (transportSeqNum<0x00FF && (maxFeedbackPacketExtSeqNum & 0xFFFF)>0xFF00)
@@ -1895,6 +1895,7 @@ void DTLSICETransport::SendTransportWideFeedbackMessage(DWORD ssrc)
 			for (DWORD i = lastFeedbackPacketExtSeqNum+1; i<transportExtSeqNum; ++i)
 				//Add it
 				field->packets.insert(std::make_pair(i,0));
+
 		//Store last
 		lastFeedbackPacketExtSeqNum = transportExtSeqNum;
 

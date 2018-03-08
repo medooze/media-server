@@ -136,7 +136,7 @@ private:
 	srtp_t		recv;
 	WORD		transportSeqNum;
 	WORD		feedbackPacketCount;
-	WORD		lastFeedbackPacketExtSeqNum;
+	DWORD		lastFeedbackPacketExtSeqNum;
 	WORD		feedbackCycles;
 	OutgoingStreams outgoing;
 	IncomingStreams incoming;
