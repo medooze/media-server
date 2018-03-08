@@ -1212,6 +1212,11 @@ void DTLSICETransport::Send(const RTCPCompoundPacket::shared &rtcp)
 	BYTE 	data[MTU+SRTP_MAX_TRAILER_LEN] ALIGNEDTO32;
 	DWORD   size = MTU;
 	
+	//Double check message
+	if (!rtcp)
+		//Error
+		return (void)Error("-DTLSICETransport::Send() | NULL rtcp message\n");
+	
 	//Check if we have an active DTLS connection yet
 	if (!send)
 		//Error
@@ -1442,10 +1447,12 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 		//Check if we are using transport wide for this packet
 		if (packet->HasTransportWideCC())
 		{
+			//Block method
+			ScopedLock method(mutex);
 			//Add new stat
 			transportWideSentPacketsStats[packet->GetTransportSeqNum()] = PacketStats::Create(packet,len,getTime());
 			//Protect against missing feedbacks, remove too old lost packets
-			for (auto it = transportWideSentPacketsStats.cbegin() ; it!=transportWideSentPacketsStats.end() ; ++it)
+			for (auto it = transportWideSentPacketsStats.begin() ; it!=transportWideSentPacketsStats.end() ; ++it)
 				//If we have more than 1s dif
 				if (getTimeDiff(it->second->time)>1E6)
 					//Erase it
@@ -1654,6 +1661,8 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 							//Lost count
 							DWORD lost = 0;
 							QWORD last = field->referenceTime;
+							//Block method
+							mutex.Lock();
 							//For each packet
 							for (auto& remote : field->packets)
 							{
@@ -1679,6 +1688,8 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 									transportWideSentPacketsStats.erase(it);
 								}
 							}
+							//UnBlock method
+							mutex.Unlock();
 							//If any lost
 							if (lost)
 								//Update
@@ -1698,22 +1709,22 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 				DWORD ssrc = fb->GetMediaSSRC();
 				//Get media
 				RTPOutgoingSourceGroup* group = GetOutgoingSourceGroup(ssrc);
-				//If not found
-				if (!group)
-				{
-					//Dump
-					fb->Dump();
-					//Debug
-					Error("-Got feedback message for unknown media  [ssrc:%u]\n",ssrc);
-					//Ups! Skip
-					continue;
-				}
 				//Check feedback type
 				switch(fb->GetFeedbackType())
 				{
 					case RTCPPayloadFeedback::PictureLossIndication:
 					case RTCPPayloadFeedback::FullIntraRequest:
 						Debug("-DTLSICETransport::onRTCP() | FPU requested [ssrc:%u,group:%p,this:%p]\n",ssrc,group,this);
+						//If not found
+						if (!group)
+						{
+							//Dump
+							fb->Dump();
+							//Debug
+							Error("-Got feedback message for unknown media  [ssrc:%u]\n",ssrc);
+							//Ups! Skip
+							continue;
+						}
 						//Call listeners
 						group->onPLIRequest(ssrc);
 						break;
@@ -1743,8 +1754,6 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 							//Check if it is a REMB
 							if (len>8 && payload[0]=='R' && payload[1]=='E' && payload[2]=='M' && payload[3]=='B')
 							{
-								//TODO: Implement REMB support
-								/*
 								//GEt exponent
 								BYTE exp = payload[5] >> 2;
 								DWORD mantisa = payload[5] & 0x03;
@@ -1752,7 +1761,8 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 								mantisa = mantisa << 8 | payload[7];
 								//Get bitrate
 								DWORD bitrate = mantisa << exp;
-								*/
+								//TODO: Implement REMB support
+								UltraDebug("-DTLSICETransport::onRTCP() | REMB:%u\n",bitrate);
 							}
 						}
 						break;
