@@ -25,7 +25,6 @@ public:
 	} 
 private:
 	VideoFrame frame;
-	DWORD iniFragNALU;
 };
 
 #endif	/* VP8DEPACKETIZER_H */

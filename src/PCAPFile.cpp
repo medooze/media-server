@@ -6,7 +6,6 @@
 const size_t   PCAP_HEADER_SIZE = 24;
 const size_t   PCAP_UDP_PACKET_SIZE = 58;
 const uint32_t PCAP_MAGIC_COOKIE = 0xa1b2c3d4;
-const uint32_t PCAP_MAGIC_COOKIE_REVERSED = 0xa1b2c3d4;
 
 PCAPFile::~PCAPFile() 
 {
@@ -28,7 +27,7 @@ int PCAPFile::Open(const char* filename)
         //PCAP file header
 	BYTE out[PCAP_HEADER_SIZE];
 	
-        set4(out, 0, 0xa1b2c3d4);	// Magic number used to detect byte order (In network order
+        set4(out, 0, PCAP_MAGIC_COOKIE);// Magic number used to detect byte order (In network order
         set2(out, 4, 0x02);		// Mayor
         set2(out, 6, 0x04);		// Minor
         set4(out, 8, 0);		// GMT to local correction

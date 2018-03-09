@@ -30,7 +30,6 @@ private:
 	MP4TrackId track;
 	MP4TrackId hint;
 	bool first;
-	bool intra;
 	int length;
 	int sampleId;
 	MediaFrame *frame;

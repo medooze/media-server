@@ -92,7 +92,6 @@ private:
 	int 	simPort;
 	int	simRtcpPort;
 	pollfd	ufds[2];
-	bool	inited;
 	bool	running;
 
 	DTLSConnection dtls;

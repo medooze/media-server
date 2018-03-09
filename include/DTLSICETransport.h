@@ -148,15 +148,6 @@ private:
 	char*	iceRemotePwd;
 	char*	iceLocalUsername;
 	char*	iceLocalPwd;
-
-	//Transmision
-	sockaddr_in sendAddr;
-	sockaddr_in sendRtcpAddr;
-
-	//Recepcion
-	in_addr_t recIP;
-	DWORD	  recPort;
-	DWORD     prio;
 	
 	Mutex	mutex;
 	Use	incomingUse;

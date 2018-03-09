@@ -56,7 +56,6 @@ private:
 	int 	socket;
 	int 	port;
 	pollfd	ufds[1];
-	bool	inited;
 	bool	running;
 
 	pthread_t thread;
