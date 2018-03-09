@@ -1128,13 +1128,13 @@ int RTPSession::SendSenderReport()
 			//Resend TMMBR
 			auto tmmbr = rtcp->CreatePacket<RTCPRTPFeedback>(RTCPRTPFeedback::TempMaxMediaStreamBitrateRequest,send.media.ssrc,recv.media.ssrc);
 			//Limit incoming bitrate
-			tmmbr->CreateField<RTCPRTPFeedback::TempMaxMediaStreamBitrateField>(recv.media.ssrc,estimation,0);
+			tmmbr->CreateField<RTCPRTPFeedback::TempMaxMediaStreamBitrateField>(recv.media.ssrc,estimation,WORD(0));
 			//Get ssrcs
 			std::list<DWORD> ssrcs;
 			remoteRateEstimator->GetSSRCs(ssrcs);
 			//Create feedback
 			// SSRC of media source (32 bits):  Always 0; this is the same convention as in [RFC5104] section 4.2.2.2 (TMMBN).
-			auto remb = rtcp->CreatePacket<RTCPPayloadFeedback>(RTCPPayloadFeedback::ApplicationLayerFeeedbackMessage,send.media.ssrc,0);
+			auto remb = rtcp->CreatePacket<RTCPPayloadFeedback>(RTCPPayloadFeedback::ApplicationLayerFeeedbackMessage,send.media.ssrc,WORD(0));
 			//Send estimation
 			remb->AddField(RTCPPayloadFeedback::ApplicationLayerFeeedbackField::CreateReceiverEstimatedMaxBitrate(ssrcs,estimation));
 		}
@@ -1231,7 +1231,7 @@ void RTPSession::onTargetBitrateRequested(DWORD bitrate)
 	//Create TMMBR
 	auto tmmbr = rtcp->CreatePacket<RTCPRTPFeedback>(RTCPRTPFeedback::TempMaxMediaStreamBitrateRequest,send.media.ssrc,recv.media.ssrc);
 	//Limit incoming bitrate
-	tmmbr->CreateField<RTCPRTPFeedback::TempMaxMediaStreamBitrateField>(recv.media.ssrc,bitrate,0);
+	tmmbr->CreateField<RTCPRTPFeedback::TempMaxMediaStreamBitrateField>(recv.media.ssrc,bitrate,WORD(0));
 
 	//We have a pending request
 	pendingTMBR = true;
@@ -1360,7 +1360,7 @@ int RTPSession::SendTempMaxMediaStreamBitrateNotification(DWORD bitrate,DWORD ov
 	//Create TMMBN
 	auto tmmbn = rtcp->CreatePacket<RTCPRTPFeedback>(RTCPRTPFeedback::TempMaxMediaStreamBitrateNotification,send.media.ssrc,recv.media.ssrc);
 	//Limit incoming bitrate
-	tmmbn->CreateField<RTCPRTPFeedback::TempMaxMediaStreamBitrateField>(send.media.ssrc,bitrate,0);
+	tmmbn->CreateField<RTCPRTPFeedback::TempMaxMediaStreamBitrateField>(send.media.ssrc,bitrate,WORD(0));
 
 	//Send packet
 	return SendPacket(rtcp);
