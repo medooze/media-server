@@ -43,6 +43,7 @@ VP8Encoder::VP8Encoder(const Properties& properties)
 	bitrate = 0;
 	fps = 0;
 	intraPeriod = 0;
+	threads = properties.GetProperty("vp8.threads",1);
 }
 
 VP8Encoder::~VP8Encoder()
@@ -88,14 +89,14 @@ int VP8Encoder::SetFrameRate(int frames,int kbits,int intraPeriod)
 		bitrate=kbits;
 
 	//Save intra period
-	if (intraPeriod>0)
-		this->intraPeriod = intraPeriod;
+	this->intraPeriod = intraPeriod;
 
 	//Check if already opened
 	if (opened)
 	{
 		//Reconfig parameters
 		config.rc_target_bitrate = bitrate;
+		config.kf_mode = intraPeriod ? VPX_KF_AUTO : VPX_KF_DISABLED;
 		config.kf_max_dist = intraPeriod;
 		//Reconfig
 		if (vpx_codec_enc_config_set(&encoder,&config)!=VPX_CODEC_OK)
@@ -145,13 +146,14 @@ int VP8Encoder::OpenCodec()
 									 predicition is still done over
 									 the partition boundary. */
 	config.g_lag_in_frames = 0; // 0- no frame lagging
-	config.g_threads = 1;
+	config.g_threads = threads;
 	// rate control settings
 	config.rc_dropframe_thresh = 0;
 	config.rc_end_usage = VPX_CBR;
 	config.g_pass = VPX_RC_ONE_PASS;
-	config.kf_mode = VPX_KF_DISABLED;
-	config.kf_min_dist = intraPeriod;
+	config.kf_mode = intraPeriod ? VPX_KF_AUTO : VPX_KF_DISABLED;
+	config.kf_min_dist = 0;
+	config.kf_max_dist = intraPeriod;
 	config.rc_resize_allowed = 0;
 	config.rc_min_quantizer = 2;
 	config.rc_max_quantizer = 56;
@@ -296,7 +298,7 @@ VideoFrame* VP8Encoder::EncodeFrame(BYTE *buffer,DWORD bufferSize)
 	{
 		//Set intra
 		frame->SetIntra(pkt->data.frame.flags & VPX_FRAME_IS_KEY);
-
+	
 		if (pkt->kind==VPX_CODEC_CX_FRAME_PKT)
 		{
 			VP8PayloadDescriptor desc;
