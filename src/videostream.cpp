@@ -809,12 +809,16 @@ int VideoStream::RecVideo()
 	delete videoDecoder;
 
 	Log("<RecVideo\n");
+
+	return 1;
 }
 
 int VideoStream::SetMediaListener(MediaFrame::Listener *listener)
 {
 	//Set it
 	this->mediaListener = listener;
+	
+	return 1;
 }
 
 int VideoStream::SendFPU()

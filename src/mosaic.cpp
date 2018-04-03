@@ -490,6 +490,8 @@ int Mosaic::CalculatePositions()
 				break;
 		}
 	}
+
+	return 1;
 }
 
 int* Mosaic::GetSlots()

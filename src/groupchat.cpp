@@ -23,7 +23,7 @@ GroupChat::~GroupChat()
 
 bool GroupChat::Init()
 {
-    
+	return true;    
 }
 
 bool GroupChat::End()

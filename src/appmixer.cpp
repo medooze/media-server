@@ -37,6 +37,7 @@ int AppMixer::Init(VideoOutput* output)
 	//Set output
 	this->output = output;
 
+	return true;
 }
 
 int AppMixer::DisplayImage(const char* filename)

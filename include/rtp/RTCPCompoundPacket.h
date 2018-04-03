@@ -69,7 +69,7 @@ public:
 	template<typename Type,class ...Args>
 	std::shared_ptr<Type> CreatePacket(Args... args)
 	{
-		auto packet =  std::make_shared<Type>(Type{ std::forward<Args>(args)... });
+		auto packet =  std::make_shared<Type>(std::forward<Args>(args)... );
 		AddPacket(std::static_pointer_cast<RTCPPacket>(packet));
 		return packet;
 	}

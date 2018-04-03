@@ -42,7 +42,9 @@ public:
 			IceControlled = 0x8029,
 			IceControlling = 0x802A
 		};
-		
+		Attribute() = delete;
+		Attribute(Attribute&&) = delete;
+		Attribute(const Attribute&) = delete;
 		Attribute(WORD type,BYTE *attr,WORD size)
 		{
 			//Copy values

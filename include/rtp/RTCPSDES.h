@@ -63,6 +63,9 @@ public:
 			return "Unknown";
 		}
 	public:
+		Item() = delete;
+		Item(Item&&) = delete;
+		Item(const Item&) = delete;
 		Item(Type type,BYTE* data,DWORD size)
 		{
 			this->type = type;
@@ -106,7 +109,7 @@ public:
 		template<class ...Args>
 		Item::shared CreateItem(Args... args)
 		{
-			auto desc =  std::make_shared<Item>(Item{ std::forward<Args>(args)... });
+			auto desc =  std::make_shared<Item>(std::forward<Args>(args)...);
 			AddItem(desc);
 			return desc;
 		}

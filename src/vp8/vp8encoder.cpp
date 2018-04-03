@@ -224,7 +224,8 @@ int VP8Encoder::OpenCodec()
 
 int VP8Encoder::FastPictureUpdate()
 {
-	 forceKeyFrame = true;
+	forceKeyFrame = true;
+	return true;
 }
 
 VideoFrame* VP8Encoder::EncodeFrame(BYTE *buffer,DWORD bufferSize)

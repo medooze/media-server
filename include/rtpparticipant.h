@@ -28,12 +28,12 @@ public:
 	virtual int SendVideoFPU();
 	virtual MediaStatistics GetStatistics(MediaFrame::Type type);
 
-	virtual int SetVideoInput(VideoInput* input)	{ videoInput	= input;	}
-	virtual int SetVideoOutput(VideoOutput* output) { videoOutput	= output;	}
-	virtual int SetAudioInput(AudioInput* input)	{ audioInput	= input;	}
-	virtual int SetAudioOutput(AudioOutput *output)	{ audioOutput	= output;	}
-	virtual int SetTextInput(TextInput* input)	{ textInput	= input;	}
-	virtual int SetTextOutput(TextOutput* output)	{ textOutput	= output;	}
+	virtual int SetVideoInput(VideoInput* input)	{ videoInput	= input; return true;	}
+	virtual int SetVideoOutput(VideoOutput* output) { videoOutput	= output; return true;	}
+	virtual int SetAudioInput(AudioInput* input)	{ audioInput	= input; return true;	}
+	virtual int SetAudioOutput(AudioOutput *output)	{ audioOutput	= output; return true;	}
+	virtual int SetTextInput(TextInput* input)	{ textInput	= input; return true;	}
+	virtual int SetTextOutput(TextOutput* output)	{ textOutput	= output; return true;	}
 
 	virtual int SetMute(MediaFrame::Type media, bool isMuted);
 
