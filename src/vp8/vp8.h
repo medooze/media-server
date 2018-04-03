@@ -279,21 +279,82 @@ struct VP8PayloadDescriptor
 
 struct VP8PayloadHeader
 {
-	DWORD size;
-	bool showFrame;
-	bool isPFrame;
-	BYTE version;
-
-	VP8PayloadHeader(BYTE profile, DWORD size,bool isPFrame)
+	bool showFrame = 0;
+	bool isKeyFrame = 0;
+	BYTE version = 0;
+	DWORD firtPartitionSize = 0;
+	WORD width = 0;
+	WORD height = 0;
+	BYTE horizontalScale = 0;
+	BYTE verticalScale = 0;
+	
+	DWORD Parse(BYTE* data, DWORD size)
 	{
-		this->size = size;
-		this->isPFrame = isPFrame;
-		showFrame = true;
-		version = profile;
-	}
+		//Check size
+		if (size<3)
+			//Invalid
+			return 0;
+		
+		//Read comon 3 bytes
+		//   0 1 2 3 4 5 6 7
+                //  +-+-+-+-+-+-+-+-+
+                //  |Size0|H| VER |P|
+                //  +-+-+-+-+-+-+-+-+
+                //  |     Size1     |
+                //  +-+-+-+-+-+-+-+-+
+                //  |     Size2     |
+                //  +-+-+-+-+-+-+-+-+
+		firtPartitionSize	= data[0] >> 5;
+		showFrame		= data[0] >> 4 & 0x01;
+		version			= data[0] >> 1 & 0x07;
+		isKeyFrame		= (data[0] & 0x0F) == 0;
 
-	DWORD GetSize() {
+		//check if more
+		if (isKeyFrame)
+		{
+			//Check size
+			if (size<10)
+				//Invalid
+				return 0;
+			//Check Start code 
+			if (get3(data,3)!=0x9d012a)
+				//Invalid
+				return 0;
+			//Get size
+			WORD hor = get2(data,6);
+			WORD ver = get2(data,8);
+			//Get dimensions and scale
+			width		= hor & 0xC0;
+			horizontalScale = hor >> 14;
+			height		= ver & 0xC0;
+			verticalScale	= ver >> 14;
+			//Key frame
+			return 10;
+		}
+		//No key frame
 		return 3;
+	}
+	
+	DWORD GetSize() 
+	{
+		return isKeyFrame ? 10 : 3;
+	}
+	
+	void Dump()
+	{
+		Debug("[VP8PayloadHeader \n");
+		Debug("\t isKeyFrame=%d\n"		, isKeyFrame);
+		Debug("\t version=%d\n"			, version);
+		Debug("\t showFrame=%d\n"		, showFrame);
+		Debug("\t firtPartitionSize=%d\n"	, firtPartitionSize);
+		if (isKeyFrame)
+		{
+			Debug("\t width=%d\n"		, width);
+			Debug("\t horizontalScale=%d\n"	, horizontalScale);
+			Debug("\t height=%d\n"		, height);
+			Debug("\t verticalScale=%d\n"	, verticalScale);
+		}
+		Debug("/]\n");
 	}
 };
 #endif	/* VP8_H */

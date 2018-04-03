@@ -39,6 +39,7 @@ private:
 	int intraPeriod;
 	int pts;
 	int num;
+	int threads;
 };
 
 #endif	/* VP8ENCODER_H */
