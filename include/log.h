@@ -30,7 +30,7 @@ public:
 	
 	static bool IsLogEnabled()
 	{
-		return getInstance().debug;
+		return getInstance().log;
 	}
 
 	static bool EnableDebug(bool debug)
@@ -65,7 +65,7 @@ protected:
 private:
         Logger()
 	{
-		log = false;
+		log = true;
 		debug = false;
 		ultradebug = false;
 	}

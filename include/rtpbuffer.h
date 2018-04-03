@@ -51,7 +51,7 @@ public:
 		if (next!=(DWORD)-1 && seq<next)
 		{
 			//Error
-			Debug("-RTPBuffer::Add() | Out of order non recoverable packet [next:%u,seq:%u,maxWaitTime=%d,cycles:%d-%u]\n",next,seq,maxWaitTime,rtp->GetSeqCycles(),rtp->GetSeqNum());
+			Debug("-RTPBuffer::Add() | Out of order non recoverable packet [next:%u,seq:%u,maxWaitTime=%d,cycles:%d-%u,time:%lld,current:%lld,hurry:%d]\n",next,seq,maxWaitTime,rtp->GetSeqCycles(),rtp->GetSeqNum(),rtp->GetTime(),GetTime(),hurryUp);
 			//Unlock
 			pthread_mutex_unlock(&mutex);
 			//Skip it and lost forever
@@ -112,12 +112,16 @@ public:
 			QWORD time = candidate->GetTime();
 
 			//Check if first is the one expected or wait if not
-			if (next==(DWORD)-1 || seq==next || time+maxWaitTime<getTime()/1000 || hurryUp)
+			if (next==(DWORD)-1 || seq==next || time+maxWaitTime<GetTime() || hurryUp)
 			{
 				//Update next
 				next = seq+1;
 				//Remove it
 				packets.erase(it);
+				//If no mor packets
+				if (packets.empty())
+					//Not hurryUp more
+					hurryUp = false;
 				//Return it
 				return candidate;
 			}
@@ -152,7 +156,7 @@ public:
 				QWORD time = candidate->GetTime();
 
 				//Check if first is the one expected or wait if not
-				if (next==(DWORD)-1 || seq==next || time+maxWaitTime<getTime()/1000 || hurryUp)
+				if (next==(DWORD)-1 || seq==next || time+maxWaitTime<GetTime() || hurryUp)
 				{
 					//We have it!
 					rtp = candidate;
@@ -237,7 +241,7 @@ public:
 		pthread_mutex_unlock(&mutex);
 	}
 
-	DWORD Length()
+	DWORD Length() const
 	{
 		//REturn objets in queu
 		return packets.size();
@@ -246,6 +250,20 @@ public:
 	{
 		this->maxWaitTime = maxWaitTime;
 	}
+	
+	// Set time in ms
+	void SetTime(QWORD ms)
+	{
+		time = ms;
+	}
+	
+	QWORD GetTime() const
+	{
+		if (!time)
+			return getTime()/1000;
+		return time;
+	}
+	
 private:
 	void ClearPackets()
 	{
@@ -262,6 +280,7 @@ private:
 	pthread_cond_t		cond;
 	DWORD			next;
 	DWORD			maxWaitTime;
+	QWORD			time = 0;
 };
 
 #endif	/* RTPBUFFER_H */
