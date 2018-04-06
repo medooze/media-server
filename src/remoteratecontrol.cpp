@@ -6,7 +6,7 @@
  */
 
 #include "remoteratecontrol.h"
-#include <cmath.h>
+#include <math.h>
 
 RemoteRateControl::RemoteRateControl() : bitrateCalc(100), fpsCalc(1000), packetCalc(100)
 {
@@ -110,13 +110,13 @@ void RemoteRateControl::UpdateKalman(QWORD now,int deltaTime, int deltaTS, int d
 	const double residual = ttsdelta-slope*h[0]-offset;
 
 	// Only update the noise estimate if we're not over-using and in stable state
-	if (hypothesis!=OverUsing && (fmin(fpsCalc.GetAcumulated(),60)*std::abs(offset)<threshold))
+	if (hypothesis!=OverUsing && (fmin(fpsCalc.GetAcumulated(),60)*std::fabs(offset)<threshold))
 	{
 		double residualFiltered = residual;
 
 		// We try to filter out very late frames. For instance periodic key
 		// frames doesn't fit the Gaussian model well.
-		if (std::abs(residual)<3*sqrt(varNoise))
+		if (std::fabs(residual)<3*sqrt(varNoise))
 			residualFiltered = 3*sqrt(varNoise);
 
 		// Faster filter during startup to faster adapt to the jitter level
@@ -159,7 +159,7 @@ void RemoteRateControl::UpdateKalman(QWORD now,int deltaTime, int deltaTS, int d
 	//Debug("BWE: Update tdelta:%d,tsdelta:%d,fsdelta:%d,t:%f,threshold:%f,slope:%f,offset:%f,scale:%f,frames:%lld,fps:%llf,residual:%f\n",deltaTime,deltaTS,deltaSize,T,threshold,slope,offset,scaleFactor,fpsCalc.GetAcumulated(),fpsCalc.GetInstantAvg(),residual);
 
 	//Compare
-	if (std::abs(T)>threshold)
+	if (std::fabs(T)>threshold)
 	{
 		///Detect overuse
 		if (offset>0)
@@ -170,13 +170,13 @@ void RemoteRateControl::UpdateKalman(QWORD now,int deltaTime, int deltaTS, int d
 				//Check 
 				if (overUseCount>2)
 				{
-					UltraDebug("BWE: Overusing bitrate:%.0llf max:%.0llf min:%.0llf T:%f,threshold:%f\n",bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg(),std::abs(T),threshold);
+					UltraDebug("BWE: Overusing bitrate:%.0llf max:%.0llf min:%.0llf T:%f,threshold:%f\n",bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg(),std::fabs(T),threshold);
 					//Overusing
 					hypothesis = OverUsing;
 					//Reset counter
 					overUseCount=0;
 				} else {
-					UltraDebug("BWE: Overusing bitrate:%.0llf max:%.0llf min:%.0llf T:%f,threshold:%f\n",overUseCount,bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg(),std::abs(T),threshold);
+					UltraDebug("BWE: Overusing bitrate:%.0llf max:%.0llf min:%.0llf T:%f,threshold:%f\n",overUseCount,bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg(),std::fabs(T),threshold);
 					//increase counter
 					overUseCount++;
 				}
@@ -185,7 +185,7 @@ void RemoteRateControl::UpdateKalman(QWORD now,int deltaTime, int deltaTS, int d
 			//If we change state
 			if (hypothesis!=UnderUsing)
 			{
-				UltraDebug("BWE:  UnderUsing bitrate:%.0llf max:%.0llf min:%.0llf T:%d\n",bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg(),std::abs(T));
+				UltraDebug("BWE:  UnderUsing bitrate:%.0llf max:%.0llf min:%.0llf T:%d\n",bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg(),std::fabs(T));
 				//Reset bitrate
 				bitrateCalc.ResetMinMax();
 				//Under using, do nothing until going back to normal
