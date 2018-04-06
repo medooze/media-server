@@ -72,7 +72,7 @@ OPUSDIR=opus
 OPUSOBJ=opusdecoder.o opusencoder.o
 
 G722DIR=g722
-G722OBJ=g722codec.o
+G722OBJ=g722codec.o g722_decode.o g722_encode.o
 
 AACDIR=aac
 AACOBJ=aacencoder.o

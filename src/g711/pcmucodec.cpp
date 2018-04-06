@@ -8,7 +8,6 @@ PCMUEncoder::PCMUEncoder(const Properties &properties)
 {
 	type=AudioCodec::PCMU;
 	numFrameSamples=NUMFRAMES;
-	frameLength=NUMFRAMES;
 }
 
 PCMUEncoder::~PCMUEncoder()
@@ -19,7 +18,6 @@ PCMUDecoder::PCMUDecoder()
 {
 	type=AudioCodec::PCMU;
 	numFrameSamples=NUMFRAMES;
-	frameLength=NUMFRAMES;
 }
 
 PCMUDecoder::~PCMUDecoder()

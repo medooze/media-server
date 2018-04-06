@@ -8,7 +8,6 @@ PCMAEncoder::PCMAEncoder(const Properties &properties)
 {
 	type=AudioCodec::PCMA;
 	numFrameSamples=NUMFRAMES;
-	frameLength=NUMFRAMES;
 }
 
 PCMAEncoder::~PCMAEncoder()
@@ -19,7 +18,6 @@ PCMADecoder::PCMADecoder()
 {
 	type=AudioCodec::PCMA;
 	numFrameSamples=NUMFRAMES;
-	frameLength=NUMFRAMES;
 }
 
 PCMADecoder::~PCMADecoder()

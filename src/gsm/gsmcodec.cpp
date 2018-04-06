@@ -1,7 +1,7 @@
 #include <string.h>
 #include "gsmcodec.h"
 
-
+#define GSM_FRAME_LENGTH 33
 GSMEncoder::GSMEncoder(const Properties &properties)
 {
 	int     fast       = 0;
@@ -9,7 +9,6 @@ GSMEncoder::GSMEncoder(const Properties &properties)
 
 	type=AudioCodec::GSM;
 	numFrameSamples=160;
-	frameLength=33;
 	g = gsm_create();
 
 //	gsm_option(g, GSM_OPT_FAST,    &fast);
@@ -24,13 +23,13 @@ GSMEncoder::~GSMEncoder()
 int GSMEncoder::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 {
 	//Comprobamos las longitudes
-	if ((inLen!=numFrameSamples) || (outLen<frameLength))
+	if ((inLen!=numFrameSamples) || (outLen<GSM_FRAME_LENGTH))
 		return 0;
 
 	//Codificamos
 	gsm_encode(g,(gsm_signal *)in,(gsm_byte *)out);
 
-	return frameLength;
+	return GSM_FRAME_LENGTH;
 }
 
 
@@ -41,7 +40,6 @@ GSMDecoder::GSMDecoder()
 
 	type=AudioCodec::GSM;
 	numFrameSamples=160;
-	frameLength=33;
 	g = gsm_create();
 
 //	gsm_option(g, GSM_OPT_FAST,    &fast);

@@ -15,7 +15,6 @@ public:
 	virtual DWORD GetClockRate()=0;
 	AudioCodec::Type	type;
 	int			numFrameSamples;
-	int			frameLength;
 };
 
 class AudioDecoder
@@ -28,7 +27,6 @@ public:
 	virtual DWORD GetRate()=0;
 	AudioCodec::Type	type;
 	int			numFrameSamples;
-	int			frameLength;
 };
 
 class AudioFrame : public MediaFrame
