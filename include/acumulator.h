@@ -51,7 +51,7 @@ public:
 		inWindow = false;
 	}
 	
-	QWORD Update(QWORD now,DWORD val)
+	QWORD Update(QWORD now,DWORD val = 0)
 	{
 		//Update acumulated value
 		acumulated += val;

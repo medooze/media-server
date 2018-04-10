@@ -114,6 +114,7 @@ struct RTPIncomingSource : public RTPSource
 	QWORD   lastReport;
 	QWORD	lastPLI;
 	DWORD   totalPLIs;
+	DWORD	totalNACKs;
 	
 	RTPIncomingSource() : RTPSource()
 	{
@@ -125,7 +126,8 @@ struct RTPIncomingSource : public RTPSource
 		lastReceivedSenderReport = 0;
 		lastReport		 = 0;
 		lastPLI			 = 0;
-		totalPLIs		= 0;
+		totalPLIs		 = 0;
+		totalNACKs		 = 0;
 		minExtSeqNumSinceLastSR  = RTPPacket::MaxExtSeqNum;
 	}
 	
@@ -269,6 +271,7 @@ public:
 	void RemoveListener(Listener* listener);
 	DWORD AddPacket(const RTPPacket::shared &packet);
 	void ResetPackets();
+	void Update(QWORD now);
 	void SetRTT(DWORD rtt);
 	std::list<RTCPRTPFeedback::NACKField::shared>  GetNacks() { return losts.GetNacks(); }
 	

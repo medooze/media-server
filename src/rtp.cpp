@@ -285,6 +285,7 @@ void RTPOutgoingSourceGroup::onPLIRequest(DWORD ssrc)
 RTPIncomingSourceGroup::RTPIncomingSourceGroup(MediaFrame::Type type) 
 	: losts(128)
 {
+	this->rtt = 0;
 	this->type = type;
 	//Small initial bufer of 60ms
 	packets.SetMaxWaitTime(60);
@@ -337,6 +338,14 @@ void RTPIncomingSourceGroup::ResetPackets()
 	losts.Reset();
 	//Do not wait until next RTCP SR
 	packets.SetMaxWaitTime(0);
+}
+
+void RTPIncomingSourceGroup::Update(QWORD now)
+{
+	//Refresh instant bitrates
+	media.bitrate.Update(now);
+	rtx.bitrate.Update(now);
+	fec.bitrate.Update(now);
 }
 
 void RTPIncomingSourceGroup::SetRTT(DWORD rtt)
