@@ -6,7 +6,7 @@
  */
 
 #include "remoteratecontrol.h"
-#include <math.h>
+#include <cstdlib>
 
 RemoteRateControl::RemoteRateControl() : bitrateCalc(100), fpsCalc(1000), packetCalc(100)
 {
