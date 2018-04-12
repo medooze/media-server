@@ -384,9 +384,9 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	DWORD lost = group->AddPacket(packet);
 	
 	//Request NACK if it is media
-	if (group->type == MediaFrame::Video && lost && ssrc==group->media.ssrc)
+	if (group->type == MediaFrame::Video && ( lost || (group->GetCurrentLost() && getTimeDiff(source->lastNACKed)>fmin(rtt,30E3)))) 
 	{
-		UltraDebug("-lost %d\n",lost);
+		UltraDebug("-lost %d total %d\n",lost,group->GetCurrentLost());
 		
 		//Create rtcp sender retpor
 		auto rtcp = RTCPCompoundPacket::Create();
@@ -413,6 +413,8 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		//Send packet
 		Send(rtcp);
 		
+		//Update last time nacked
+		source->lastNACKed = getTime();
 		//Update nacked packets
 		source->totalNACKs++;
 	}
