@@ -418,7 +418,11 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		//Update nacked packets
 		source->totalNACKs++;
 	}
-  
+	
+	//Check if is the rtx rtt packet
+	if (packet->GetSeqNum()==group->rttrtxSeq)
+		//Calculate rtt
+		group->SetRTT(getTimeDiff(group->rttrtxTime)/1000);
 	
 	//Check if we need to send RR (1 per second)
 	if (getTimeDiff(source->lastReport)>1E6)
@@ -436,9 +440,25 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		if (report)
 			//Append it
 			rr->AddReport(report);
+		
+		//If there is no outgoing stream
+		if (outgoing.empty() && group->rtx.ssrc)
+		{
+			//We try to calculate rtt based on rtx
+			auto nack = rtcp->CreatePacket<RTCPRTPFeedback>(RTCPRTPFeedback::NACK,mainSSRC,group->media.ssrc);
+			//Get max received packet, the ensure it has not been nacked
+			WORD last = group->media.extSeq & 0xffff;
+			//Request it
+			nack->AddField(std::make_shared<RTCPRTPFeedback::NACKField>(last,0));
+			//Update rtt rtx stats
+			group->rttrtxSeq = last;
+			group->rttrtxTime = getTime();
+		}
 	
 		//Send it
 		Send(rtcp);
+		
+		
 	}
 	//Done
 	return 1;

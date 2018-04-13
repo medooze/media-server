@@ -286,6 +286,8 @@ RTPIncomingSourceGroup::RTPIncomingSourceGroup(MediaFrame::Type type)
 	: losts(128)
 {
 	this->rtt = 0;
+	this->rttrtxSeq = 0;
+	this->rttrtxTime = 0;
 	this->type = type;
 	//Small initial bufer of 60ms
 	packets.SetMaxWaitTime(60);
@@ -353,7 +355,7 @@ void RTPIncomingSourceGroup::SetRTT(DWORD rtt)
 	//Store rtt
 	this->rtt = rtt;
 	//Set max packet wait time
-	packets.SetMaxWaitTime(fmin(60,rtt*2));
+	packets.SetMaxWaitTime(fmax(60,rtt*2));
 }
 
 void RTPIncomingSourceGroup::Start()

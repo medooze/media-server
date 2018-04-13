@@ -285,6 +285,8 @@ public:
 	std::string rid;
 	std::string mid;
 	DWORD rtt;
+	DWORD rttrtxSeq;
+	QWORD rttrtxTime;
 	MediaFrame::Type type;
 	RTPIncomingSource media;
 	RTPIncomingSource fec;
