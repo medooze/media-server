@@ -322,8 +322,10 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 			//error
 			return  Error("-DTLSICETransport::onData() | No RTX codec on rtx sssrc:%u type:%d codec:%d\n",packet->GetSSRC(),packet->GetPayloadType(),packet->GetCodec());
 		
-		 //Find codec for apt type
-		 codec = recvMaps.apt.GetCodecForType(packet->GetPayloadType());
+		//Find apt type
+		auto apt = recvMaps.apt.GetCodecForType(packet->GetPayloadType());
+		//Find codec 
+		codec = recvMaps.rtp.GetCodecForType(apt);
 		//Check codec
 		 if (codec==RTPMap::NotFound)
 			  //Error
@@ -349,7 +351,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		 WORD osn = get2(packet->GetMediaData(),0);
 
 		 if (osn!=group->rttrtxSeq)
-			UltraDebug("RTX: %s got   %.d:RTX for #%d ts:%u payload:%u\n",MediaFrame::TypeToString(packet->GetMedia()),packet->GetPayloadType(),osn,packet->GetTimestamp(),packet->GetMediaLength());
+			UltraDebug("RTX: %s got   %.d:RTX for #%d pt:%d ts:%u payload:%u\n",MediaFrame::TypeToString(packet->GetMedia()),packet->GetPayloadType(),osn,apt,packet->GetTimestamp(),packet->GetMediaLength());
 		 
 		 //Set original seq num
 		 packet->SetSeqNum(osn);
@@ -365,8 +367,6 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 			//error
 			return  Error("-DTLSICETransport::onData() | Could not skip payload len:%d\n",packet->GetMediaLength());
 		 
-		 //TODO: We should set also the original type
-		  UltraDebug("RTX: %s got   %.d:RTX for #%d ts:%u %u %u payload:%u\n",MediaFrame::TypeToString(packet->GetMedia()),packet->GetPayloadType(),osn,packet->GetTimestamp(),packet->GetExtSeqNum(),group->media.extSeq,packet->GetMediaLength());
 		 //WTF! Drop RTX packets for the future (UUH)
 		 if (packet->GetExtSeqNum()>group->media.extSeq)
 			//Error
@@ -387,14 +387,16 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		//Add packet and see if we have lost any in between
 		int lost = group->AddPacket(packet);
 
-		UltraDebug("-lost %d total %d\n",lost,group->GetCurrentLost());
-		
 		//Check if it was rejected
 		if (lost<0)
 		{
+			UltraDebug("-Dropped packet [ssrc:%d,seq:%d]\n",ssrc,packet->GetSeqNum());
 			//Increase rejected counter
 			source->dropPackets++;
 		} else if (group->rtx.ssrc && ( lost || (group->GetCurrentLost() && getTimeDiff(source->lastNACKed)>fmin(rtt,30E3))))  {
+			
+			UltraDebug("-Lost packets [ssrc:%d,seq:%d,lost:%d,total:%d]\n",ssrc,packet->GetSeqNum(),lost,group->GetCurrentLost());
+			
 			//Create rtcp sender retpor
 			auto rtcp = RTCPCompoundPacket::Create();
 
@@ -483,13 +485,19 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 
 	//If we still have it
 	if (it==group->packets.end())
-		//End
+	{
+		//If it is video
+		if (group->type==MediaFrame::Video)
+			//Similate a PLI request
+			group->onPLIRequest(group->media.ssrc);
+		//Simulate PLI
 		return;
+	}
 	
 	//Get packet
 	auto packet = it->second;
 
-	//Get outgoing source
+	//Get outgoing rtx source
 	RTPOutgoingSource& source = group->rtx;
 
 	//Data
@@ -506,11 +514,10 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	{
 		//Update RTX headers
 		header.ssrc		= source.ssrc;
-		header.payloadType	= sendMaps.rtp.GetTypeForCodec(VideoCodec::RTX);
+		header.payloadType	= sendMaps.apt.GetTypeForCodec(packet->GetPayloadType());
 		header.sequenceNumber	= source.extSeq++;
 		//No padding
 		header.padding		= 0;
-
 		//Calculate last timestamp
 		source.lastTime =  packet->GetTimestamp();
 	}
@@ -711,7 +718,7 @@ void DTLSICETransport::SetLocalProperties(const Properties& properties)
 				//ADD it
 				sendMaps.rtp[rtx] = VideoCodec::RTX;
 				//Add the reverse one
-				sendMaps.apt[rtx] = codec;
+				sendMaps.apt[rtx] = type;
 			}
 		}
 	}
@@ -808,7 +815,7 @@ void DTLSICETransport::SetRemoteProperties(const Properties& properties)
 				//ADD it
 				recvMaps.rtp[rtx] = VideoCodec::RTX;
 				//Add the reverse one
-				recvMaps.apt[rtx] = codec;
+				recvMaps.apt[rtx] = type;
 			}
 		}
 	}
@@ -1332,7 +1339,7 @@ int DTLSICETransport::SendPLI(DWORD ssrc)
 		if (!group)
 			return Error("- DTLSICETransport::SendPLI() | no incoming source found for [ssrc:%u]\n",ssrc);
 		
-		//Check if we have sent a PLI recently (less than half a second ago
+		//Check if we have sent a PLI recently (less than half a second ago)
 		if (getTimeDiff(group->media.lastPLI)<1E6/2)
 			//We refuse to end more
 			return 0;

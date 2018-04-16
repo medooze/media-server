@@ -341,7 +341,7 @@ void RTPIncomingSourceGroup::ResetPackets()
 	packets.Reset();
 	losts.Reset();
 	//Do not wait until next RTCP SR
-	packets.SetMaxWaitTime(0);
+	packets.SetMaxWaitTime(60);
 }
 
 void RTPIncomingSourceGroup::Update(QWORD now)
@@ -357,7 +357,7 @@ void RTPIncomingSourceGroup::SetRTT(DWORD rtt)
 	//Store rtt
 	this->rtt = rtt;
 	//Set max packet wait time
-	packets.SetMaxWaitTime(fmax(60,rtt*2));
+	packets.SetMaxWaitTime(fmin(500,fmax(60,rtt*4)+40));
 }
 
 void RTPIncomingSourceGroup::Start()
