@@ -105,6 +105,7 @@ struct RTPSource
 struct RTPIncomingSource : public RTPSource
 {
 	DWORD	lostPackets;
+	DWORD	dropPackets;
 	DWORD	totalPacketsSinceLastSR;
 	DWORD	totalBytesSinceLastSR;
 	DWORD	minExtSeqNumSinceLastSR ;
@@ -120,6 +121,7 @@ struct RTPIncomingSource : public RTPSource
 	RTPIncomingSource() : RTPSource()
 	{
 		lostPackets		 = 0;
+		dropPackets		 = 0;
 		totalPacketsSinceLastSR	 = 0;
 		totalBytesSinceLastSR	 = 0;
 		lostPacketsSinceLastSR   = 0;
@@ -150,6 +152,7 @@ struct RTPIncomingSource : public RTPSource
 	{
 		RTPSource::Reset();
 		lostPackets		 = 0;
+		dropPackets		 = 0;
 		totalPacketsSinceLastSR	 = 0;
 		totalBytesSinceLastSR	 = 0;
 		lostPacketsSinceLastSR   = 0;
@@ -272,7 +275,7 @@ public:
 	RTPIncomingSource* GetSource(DWORD ssrc);
 	void AddListener(Listener* listener);
 	void RemoveListener(Listener* listener);
-	DWORD AddPacket(const RTPPacket::shared &packet);
+	int AddPacket(const RTPPacket::shared &packet);
 	void ResetPackets();
 	void Update(QWORD now);
 	void SetRTT(DWORD rtt);

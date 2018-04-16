@@ -325,10 +325,12 @@ void RTPIncomingSourceGroup::RemoveListener(Listener* listener)
 	listeners.erase(listener);
 }
 
-DWORD RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet)
+int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet)
 {
 	//Add to packet queue
-	packets.Add(packet);
+	if (!packets.Add(packet))
+		//Rejected packet
+		return -1;
 	//Add to lost packets and get count
 	return losts.AddPacket(packet);
 }

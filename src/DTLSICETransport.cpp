@@ -348,7 +348,8 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		 //Get original sequence number
 		 WORD osn = get2(packet->GetMediaData(),0);
 
-		 UltraDebug("RTX: %s got   %.d:RTX for #%d ts:%u payload:%u\n",MediaFrame::TypeToString(packet->GetMedia()),packet->GetPayloadType(),osn,packet->GetTimestamp(),packet->GetMediaLength());
+		 if (osn!=group->rttrtxSeq)
+			UltraDebug("RTX: %s got   %.d:RTX for #%d ts:%u payload:%u\n",MediaFrame::TypeToString(packet->GetMedia()),packet->GetPayloadType(),osn,packet->GetTimestamp(),packet->GetMediaLength());
 		 
 		 //Set original seq num
 		 packet->SetSeqNum(osn);
@@ -380,49 +381,54 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		return 1;
 	}	
 
-	//Add packet and see if we have lost any in between
-	DWORD lost = group->AddPacket(packet);
-	
-	//Request NACK if it is media
-	if (group->type == MediaFrame::Video && ( lost || (group->GetCurrentLost() && getTimeDiff(source->lastNACKed)>fmin(rtt,30E3)))) 
+	//Check if is the rtx rtt packet
+	if (packet->GetSeqNum()!=group->rttrtxSeq)
 	{
+		//Add packet and see if we have lost any in between
+		int lost = group->AddPacket(packet);
+
 		UltraDebug("-lost %d total %d\n",lost,group->GetCurrentLost());
 		
-		//Create rtcp sender retpor
-		auto rtcp = RTCPCompoundPacket::Create();
-		
-		//Create sender report for normal stream
-		auto rr = rtcp->CreatePacket<RTCPReceiverReport>(mainSSRC);
-		
-		//Create report
-		auto report = source->CreateReport(getTime());
-		
-		//If got anything
-		if (report)
-			//Append it
-			rr->AddReport(report);
+		//Check if it was rejected
+		if (lost<0)
+		{
+			//Increase rejected counter
+			source->dropPackets++;
+		} else if (group->rtx.ssrc && ( lost || (group->GetCurrentLost() && getTimeDiff(source->lastNACKed)>fmin(rtt,30E3))))  {
+			//Create rtcp sender retpor
+			auto rtcp = RTCPCompoundPacket::Create();
 
-		//Create NACK
-		auto nack = rtcp->CreatePacket<RTCPRTPFeedback>(RTCPRTPFeedback::NACK,mainSSRC,ssrc);
+			//Create sender report for normal stream
+			auto rr = rtcp->CreatePacket<RTCPReceiverReport>(mainSSRC);
 
-		//Get nacks for lost
-		for (auto field : group->GetNacks())
-			//Add it
-			nack->AddField(field);
+			//Create report
+			auto report = source->CreateReport(getTime());
 
-		//Send packet
-		Send(rtcp);
-		
-		//Update last time nacked
-		source->lastNACKed = getTime();
-		//Update nacked packets
-		source->totalNACKs++;
-	}
-	
-	//Check if is the rtx rtt packet
-	if (packet->GetSeqNum()==group->rttrtxSeq)
+			//If got anything
+			if (report)
+				//Append it
+				rr->AddReport(report);
+
+			//Create NACK
+			auto nack = rtcp->CreatePacket<RTCPRTPFeedback>(RTCPRTPFeedback::NACK,mainSSRC,ssrc);
+
+			//Get nacks for lost
+			for (auto field : group->GetNacks())
+				//Add it
+				nack->AddField(field);
+
+			//Send packet
+			Send(rtcp);
+
+			//Update last time nacked
+			source->lastNACKed = getTime();
+			//Update nacked packets
+			source->totalNACKs++;
+		}
+	} else {
 		//Calculate rtt
 		group->SetRTT(getTimeDiff(group->rttrtxTime)/1000);
+	}
 	
 	//Check if we need to send RR (1 per second)
 	if (getTimeDiff(source->lastReport)>1E6)
