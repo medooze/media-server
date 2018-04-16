@@ -181,7 +181,7 @@ WORD RTPLostPackets::AddPacket(const RTPPacket::shared &packet)
 }
 
 
-std::list<RTCPRTPFeedback::NACKField::shared> RTPLostPackets::GetNacks()
+std::list<RTCPRTPFeedback::NACKField::shared> RTPLostPackets::GetNacks() const
 {
 	std::list<RTCPRTPFeedback::NACKField::shared> nacks;
 	WORD lost = 0;
@@ -227,7 +227,7 @@ std::list<RTCPRTPFeedback::NACKField::shared> RTPLostPackets::GetNacks()
 	return nacks;
 }
 
-void  RTPLostPackets::Dump()
+void  RTPLostPackets::Dump() const
 {
 	Debug("[RTPLostPackets size=%d first=%d len=%d]\n",size,first,len);
 	for(int i=0;i<len;i++)
@@ -327,12 +327,14 @@ void RTPIncomingSourceGroup::RemoveListener(Listener* listener)
 
 int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet)
 {
+	//Add to lost packets and get count regardeless if this was discarded or not
+	auto lost = losts.AddPacket(packet);
 	//Add to packet queue
 	if (!packets.Add(packet))
 		//Rejected packet
 		return -1;
-	//Add to lost packets and get count
-	return losts.AddPacket(packet);
+	//Return lost packets
+	return lost;
 }
 
 void RTPIncomingSourceGroup::ResetPackets()
@@ -340,8 +342,6 @@ void RTPIncomingSourceGroup::ResetPackets()
 	//Reset packet queue and lost count
 	packets.Reset();
 	losts.Reset();
-	//Do not wait until next RTCP SR
-	packets.SetMaxWaitTime(60);
 }
 
 void RTPIncomingSourceGroup::Update(QWORD now)
@@ -356,8 +356,10 @@ void RTPIncomingSourceGroup::SetRTT(DWORD rtt)
 {
 	//Store rtt
 	this->rtt = rtt;
-	//Set max packet wait time
-	packets.SetMaxWaitTime(fmin(500,fmax(60,rtt*4)+40));
+	//If we have a rtx stream
+	if (rtx.ssrc)
+		//Set max packet wait time
+		packets.SetMaxWaitTime(fmin(500,fmax(60,rtt*4)+40));
 }
 
 void RTPIncomingSourceGroup::Start()

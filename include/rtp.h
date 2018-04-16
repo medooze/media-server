@@ -219,9 +219,9 @@ public:
 	~RTPLostPackets();
 	void Reset();
 	WORD AddPacket(const RTPPacket::shared &packet);
-	std::list<RTCPRTPFeedback::NACKField::shared>  GetNacks();
-	void Dump();
-	DWORD GetTotal() {return total;}
+	std::list<RTCPRTPFeedback::NACKField::shared>  GetNacks() const;
+	void Dump() const;
+	DWORD GetTotal() const {return total;}
 	
 private:
 	QWORD *packets;
@@ -280,10 +280,15 @@ public:
 	void Update(QWORD now);
 	void SetRTT(DWORD rtt);
 	std::list<RTCPRTPFeedback::NACKField::shared>  GetNacks() { return losts.GetNacks(); }
-	DWORD GetCurrentLost() { return losts.GetTotal(); }
 	
 	void Start();
 	void Stop();
+	
+	DWORD GetCurrentLost()		const { return losts.GetTotal();		}
+	DWORD GetMinWaitedTime()	const { return packets.GetMinWaitedime();	}
+	DWORD GetMaxWaitedTime()	const { return packets.GetMaxWaitedTime();	}
+	long double GetAvgWaitedTime()	const {	return packets.GetAvgWaitedTime();	}
+	
 public:	
 	std::string rid;
 	std::string mid;

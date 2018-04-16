@@ -581,6 +581,8 @@ void DTLSConnection::SetRemoteFingerprint(Hash hash, const char *fingerprint)
 
 int DTLSConnection::Read(BYTE* data,DWORD size)
 {
+	HandleTimeout();
+	
 	if (! DTLSConnection::hasDTLS) 
 		return Error("-DTLSConnection::Read() | no DTLS\n");
 
@@ -615,6 +617,11 @@ void DTLSConnection::onSSLInfo(int where, int ret)
 
 	// NOTE: checking SSL_get_shutdown(this->ssl) & SSL_RECEIVED_SHUTDOWN here upon
 	// receipt of a close alert does not work.
+}
+
+int DTLSConnection::HandleTimeout()
+{
+	return DTLSv1_handle_timeout(ssl);
 }
 
 int DTLSConnection::Renegotiate()
@@ -716,6 +723,8 @@ int DTLSConnection::SetupSRTP()
 
 int DTLSConnection::Write( BYTE *buffer, DWORD size)
 {
+	HandleTimeout();
+	
 	if (!DTLSConnection::hasDTLS)
 		return Error("-DTLSConnection::Write() | no DTLS\n");
 
@@ -755,6 +764,8 @@ int DTLSConnection::CheckPending()
 {
 	if (!write_bio)
 		return 0;
+	
+	HandleTimeout();
 
 	return BIO_ctrl_pending(write_bio);
 }

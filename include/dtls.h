@@ -100,6 +100,7 @@ public:
 	
 	int  Read(BYTE* data,DWORD size);
 	int  Write(BYTE *buffer,DWORD size);
+	int  HandleTimeout();
 	int  Renegotiate();
 
 /* Callbacks fired by OpenSSL events. */

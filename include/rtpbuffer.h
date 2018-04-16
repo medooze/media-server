@@ -10,12 +10,13 @@
 #include <errno.h>
 #include <pthread.h>
 #include "rtp.h"
+#include "acumulator.h"
 #include "use.h"
 
 class RTPBuffer 
 {
 public:
-	RTPBuffer()
+	RTPBuffer() : waited(1000)
 	{
 		//NO wait time
 		maxWaitTime = 0;
@@ -154,10 +155,14 @@ public:
 				auto candidate = it->second;
 				//Get time of the packet
 				QWORD time = candidate->GetTime();
+				//Get now
+				QWORD now = GetTime();
 
 				//Check if first is the one expected or wait if not
-				if (next==(DWORD)-1 || seq==next || time+maxWaitTime<GetTime() || hurryUp)
+				if (next==(DWORD)-1 || seq==next || time+maxWaitTime<now || hurryUp)
 				{
+					//Waiting time
+					waited.Update(now,now-time);
 					//We have it!
 					rtp = candidate;
 					//Update next
@@ -239,6 +244,9 @@ public:
 		
 		//UnLock
 		pthread_mutex_unlock(&mutex);
+		
+		//Clear stats
+		waited.Reset(GetTime());
 	}
 
 	DWORD Length() const
@@ -246,6 +254,7 @@ public:
 		//REturn objets in queu
 		return packets.size();
 	}
+	
 	void SetMaxWaitTime(DWORD maxWaitTime)
 	{
 		this->maxWaitTime = maxWaitTime;
@@ -262,6 +271,21 @@ public:
 		if (!time)
 			return getTime()/1000;
 		return time;
+	}
+	
+	DWORD GetMinWaitedime() const
+	{
+		return waited.GetMinValueInWindow();
+	}
+	
+	DWORD GetMaxWaitedTime() const
+	{
+		return waited.GetMaxValueInWindow();
+	}
+	
+	long double GetAvgWaitedTime() const
+	{
+		return waited.GetInstantMedia();
 	}
 	
 private:
@@ -281,6 +305,7 @@ private:
 	DWORD			next;
 	DWORD			maxWaitTime;
 	QWORD			time = 0;
+	Acumulator		waited;
 };
 
 #endif	/* RTPBUFFER_H */
