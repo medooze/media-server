@@ -361,7 +361,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		 packet->SetSeqCycles(group->media.cycles);
 		 //Set codec
 		 packet->SetCodec(codec);
-		 
+		 packet->SetType(apt);
 		 //Skip osn from payload
 		 if (!packet->SkipPayload(2))
 			//error
