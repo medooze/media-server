@@ -212,9 +212,6 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	//Get group
 	RTPIncomingSourceGroup *group = GetIncomingSourceGroup(ssrc);
 	
-	//Update instant bitrates
-	group->Update(getTimeMS());
-	
 	//If it doesn't have a group but does hava an rtp stream id
 	if (!group && extension.hasRTPStreamId)
 	{
@@ -242,6 +239,9 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	if (!group)	
 		//error
 		return Error("-DTLSICETransport::onData() | Unknowing group for ssrc [%u]\n",ssrc);
+	
+	//Update instant bitrates
+	group->Update(getTimeMS());
 	
 	//Get source for ssrc
 	RTPIncomingSource* source = group->GetSource(ssrc);
