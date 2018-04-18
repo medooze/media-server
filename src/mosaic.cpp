@@ -84,7 +84,7 @@ Mosaic::Mosaic(Type type,DWORD size)
 	mosaicType = type;
 
 	//Calculate total size
-	mosaicSize = mosaicTotalWidth*mosaicTotalHeight*3/2+FF_INPUT_BUFFER_PADDING_SIZE+32;
+	mosaicSize = mosaicTotalWidth*mosaicTotalHeight*3/2+AV_INPUT_BUFFER_PADDING_SIZE+32;
 	//Allocate memory
 	mosaicBuffer = (BYTE *) malloc32(mosaicSize);
 	//Get aligned

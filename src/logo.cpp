@@ -192,7 +192,7 @@ int Logo::Load(const char* fileName)
 		free(frameRGBA);
 
 	//Get size with padding
-	size = (((width/32+1)*32)*((height/32+1)*32)*3)/2+FF_INPUT_BUFFER_PADDING_SIZE+32;
+	size = (((width/32+1)*32)*((height/32+1)*32)*3)/2+AV_INPUT_BUFFER_PADDING_SIZE+32;
 
 	//And numer of pixels
 	numpixels = width*height;

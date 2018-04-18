@@ -150,7 +150,7 @@ int FrameScaler::SetResize(int srcWidth,int srcHeight,int srcLineWidth,int dstWi
 	tmpHeight = (resizeDstAdjustedHeight/32 +1)*32;
 
 	//Get tmp buffer size
-	tmpBufferSize = tmpWidth*tmpHeight*3/2+FF_INPUT_BUFFER_PADDING_SIZE+32;
+	tmpBufferSize = tmpWidth*tmpHeight*3/2+AV_INPUT_BUFFER_PADDING_SIZE+32;
 
 	//Check if we had it already
 	if (tmpBuffer)

@@ -25,7 +25,7 @@ Canvas::Canvas(DWORD width,DWORD height)
 	this->width = width;
 	this->height = height;
 	//Calculate size for overlay iage with alpha
-	overlaySize = width*height*4+FF_INPUT_BUFFER_PADDING_SIZE+32;
+	overlaySize = width*height*4+AV_INPUT_BUFFER_PADDING_SIZE+32;
 	//Create overlay image
 	overlay = (BYTE*)malloc32(overlaySize);
 	//Clean it
@@ -37,7 +37,7 @@ Canvas::Canvas(DWORD width,DWORD height)
 Overlay::Overlay(DWORD width,DWORD height) : Canvas(width,height)
 {
 	//Calculate size for final image i.e. without alpha
-	imageSize = width*height*4+FF_INPUT_BUFFER_PADDING_SIZE+32;
+	imageSize = width*height*4+AV_INPUT_BUFFER_PADDING_SIZE+32;
 	//Create final image
 	image = (BYTE*)malloc32(imageSize);
 }
