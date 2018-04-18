@@ -38,11 +38,19 @@ bool RTPStreamTransponder::SetIncoming(RTPIncomingSourceGroup* incoming, RTPRece
 {
 	ScopedLock lock(mutex);
 	
+	//If they are the same
+	if (this->incoming==incoming && this->receiver==receiver)
+		//DO nothing
+		return false;
+	
 	Debug(">RTPStreamTransponder::SetIncoming() | [incoming:%p,receiver:%p,ssrc:%d]\n",incoming,receiver,ssrc);
 	
 	//Remove listener from old stream
 	if (this->incoming) 
 		this->incoming->RemoveListener(this);
+	
+	//Reset packets before start listening again
+	Reset();
 	
 	//Store stream and receiver
 	this->incoming = incoming;
@@ -57,9 +65,6 @@ bool RTPStreamTransponder::SetIncoming(RTPIncomingSourceGroup* incoming, RTPRece
 		//Request update on the incoming
 		if (this->receiver) this->receiver->SendPLI(this->incoming->media.ssrc);
 	}
-	
-	//Reset packets
-	Reset();
 	
 	Debug("<RTPStreamTransponder::SetIncoming() | [incoming:%p,receiver:%p]\n",incoming,receiver);
 	
@@ -121,32 +126,44 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,const RTPPacket::
 		return;
 	}
 	
+	//Block packet list and selector
+	ScopedLock lock(wait);
+	
 	//Get new seq number
 	DWORD extSeqNum = packet->GetExtSeqNum();
 	
 	//Check if it the first received packet
-	if (!first)
+	if (!firstExtSeqNum)
 	{
 		//Store seq number
-		first = extSeqNum;
+		firstExtSeqNum = extSeqNum;
 		//Reset drop counter
 		dropped = 0;
+		//Get first timestamp
+		firstTimestamp = packet->GetTimestamp();
+		//If we have a time offest from last sent packet
+		if (lastTime)
+		{
+			//Calculate time diff
+			QWORD offset = getTimeDiff(lastTime)/1000;
+			//convert it to rtp time and add to base timestamp
+			baseTimestamp += offset*packet->GetClockRate()/1000;
+		} else {
+			//Just clone it
+			baseTimestamp = firstTimestamp;
+		}
+		
+		//UltraDebug("-first seq:%lu ts:%llu base:%lu offset:%llu\n",firstExtSeqNum,firstTimestamp,baseExtSeqNum,baseTimestamp);
 	}
 	
 	//Ensure it is not before first one
-	if (extSeqNum<first)
-	{
-		//Error
-		Error("-StreamTransponder::onRTP got packet before first [first:%lu,seq:%lu]\n",first,extSeqNum);
+	if (extSeqNum<firstExtSeqNum)
 		//Exit
 		return;
-	}
 	
 	//Check if we have a selector and it is not from the same codec
 	if (selector && (BYTE)selector->GetCodec()!=packet->GetCodec())
 	{
-		//Block packet list and selector
-		ScopedLock lock(wait);
 		//Delete it and reset
 		delete(selector);
 		//Create new selector for codec
@@ -156,8 +173,6 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,const RTPPacket::
 		selector->SelectTemporalLayer(temporalLayerId);
 	//Check if we don't have a selector yet
 	} else if (!selector) {
-		//Block packet list and selector
-		ScopedLock lock(wait);
 		//Create new selector for codec
 		selector = VideoLayerSelector::Create((VideoCodec::Type)packet->GetCodec());
 		//Select prev layers
@@ -175,32 +190,65 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,const RTPPacket::
 		//Drop
 		return;
 	}
-
+	
 	//Clone packet
 	auto cloned = packet->Clone();
 	
 	//Set normalized seq num
-	extSeqNum = base + (extSeqNum - first) - dropped;
+	extSeqNum = baseExtSeqNum + (extSeqNum - firstExtSeqNum) - dropped;
 	
 	//Set new seq numbers
 	cloned->SetSeqNum(extSeqNum);
 	cloned->SetSeqCycles(extSeqNum >> 16);
+	
+	//Set normailized timestamp
+	cloned->SetTimestamp(baseTimestamp + (packet->GetTimestamp()-firstTimestamp));
 	
 	//Set mark again
 	cloned->SetMark(mark);
 	
 	//Change ssrc
 	cloned->SetSSRC(ssrc);
-
-	//Block
-	wait.Lock();
 	
+	//Rewrite pict id
+	//TODO: this should go into the layer selector??
+	if (rewritePicId && cloned->GetCodec()==VideoCodec::VP8)
+	{
+		VP8PayloadDescriptor desc;
+
+		//Parse VP8 payload description
+		desc.Parse(cloned->GetMediaData(),cloned->GetMediaLength());
+		
+		//Check if we have a new pictId
+		if (desc.pictureIdPresent && desc.pictureId!=lastPicId)
+		{
+			//Update ids
+			lastPicId = desc.pictureId;
+			//Increase picture id
+			picId++;
+		}
+		
+		//Check if we a new base layer
+		if (desc.temporalLevelZeroIndexPresent && desc.temporalLevelZeroIndex!=lastTl0Idx)
+		{
+			//Update ids
+			lastTl0Idx = desc.temporalLevelZeroIndex;
+			//Increase tl0 index
+			tl0Idx++;
+		}
+		
+		//Rewrite picture id wrapping to 15 or 7 bits
+		desc.pictureId = desc.pictureIdLength==2 ? picId%0x7FFF : picId%0x7F;
+		//Rewrite tl0 index
+		desc.temporalLevelZeroIndex = tl0Idx;
+		
+		//Write it back
+		desc.Serialize(cloned->GetMediaData(),cloned->GetMediaLength());
+	}
+		
 	//Add to queue for asyn processing
 	packets.push(cloned);
 
-	//Free them
-	wait.Unlock();
-	
 	//Signal new packet
 	wait.Signal();
 }
@@ -295,10 +343,12 @@ void  RTPStreamTransponder::Reset()
 		//Remove from queue
 		packets.pop();
 	
-	//Reset first paquet seq num
-	first = 0;
-	//Store the last send one
-	base = last;
+	//Reset first paquet seq num and timestamp
+	firstExtSeqNum = 0;
+	firstTimestamp = 0;
+	//Store the last send ones
+	baseExtSeqNum = lastExtSeqNum+1;
+	baseTimestamp = lastTimestamp;
 	//None dropped
 	dropped = 0;
 	//Not selecting
@@ -339,15 +389,20 @@ int RTPStreamTransponder::Run()
 
 		//Remove packet from list
 		packets.pop();
-			
+		
+		//Get last send seq num and timestamp
+		lastExtSeqNum = packet->GetExtSeqNum();
+		lastTimestamp = packet->GetTimestamp();
+		lastTime = getTime();
+		
+		//UltraDebug("-last seq:%lu ts:%llu\n",lastExtSeqNum,lastTimestamp);
+		
 		//Unlock
 		wait.Unlock();
 			
 		//Send it on transport
 		sender->Send(packet);
 
-		//Get last send seq num
-		last = packet->GetExtSeqNum();
 		
 		//Lock for waiting for packets
 		wait.Lock();

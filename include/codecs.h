@@ -43,7 +43,22 @@ public:
 		}
 	}
 
-	
+	static DWORD GetClockRate(Type codec)
+	{
+		switch (codec)
+		{
+			case PCMA:	return 8000;
+			case PCMU:	return 8000;
+			case GSM:	return 8000;
+			case SPEEX16:	return 16000;
+			case NELLY8:	return 8000;
+			case NELLY11:	return 11000;
+			case OPUS:	return 48000;
+			case G722:	return 16000;
+			case AAC:	return 90000;
+			default:	return 8000;
+		}
+	}
 
 	typedef std::map<int,Type> RTPMap;
 };

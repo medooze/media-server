@@ -29,7 +29,7 @@ RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec)
 			clockRate = 90000;
 			break;
 		case MediaFrame::Audio:
-			clockRate = 8000;
+			clockRate = AudioCodec::GetClockRate((AudioCodec::Type)codec);
 			break;
 		default:
 			clockRate = 1000;

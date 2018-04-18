@@ -185,6 +185,7 @@
         <in>overlay.cpp</in>
         <in>rtp.cpp</in>
         <in>test.cpp</in>
+        <in>vp8.cpp</in>
         <in>vp9.cpp</in>
       </df>
     </df>
@@ -916,6 +917,8 @@
       <item path="test/test.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
         </ccTool>
+      </item>
+      <item path="test/vp8.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="test/vp9.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
@@ -3530,6 +3533,8 @@
       <item path="test/test.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="3">
         </ccTool>
+      </item>
+      <item path="test/vp8.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="test/vp9.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="3">

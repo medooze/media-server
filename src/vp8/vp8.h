@@ -18,6 +18,7 @@ struct VP8PayloadDescriptor
 	bool startOfPartition;
 	BYTE partitionIndex;
 	bool pictureIdPresent;
+	BYTE pictureIdLength;
 	bool temporalLevelZeroIndexPresent;
 	bool temporalLayerIndexPresent;
 	bool keyIndexPresent;
@@ -35,6 +36,7 @@ struct VP8PayloadDescriptor
 		startOfPartition = 0;
 		partitionIndex = 0;
 		pictureIdPresent = 0;
+		pictureIdLength = 1;
 		temporalLevelZeroIndexPresent = 0;
 		temporalLayerIndexPresent = 0;
 		keyIndexPresent = 0;
@@ -53,6 +55,7 @@ struct VP8PayloadDescriptor
 		startOfPartition = 0;
 		partitionIndex = 0;
 		pictureIdPresent = 0;
+		pictureIdLength = 1;
 		temporalLevelZeroIndexPresent = 0;
 		temporalLayerIndexPresent = 0;
 		keyIndexPresent = 0;
@@ -134,11 +137,13 @@ struct VP8PayloadDescriptor
 						//Invalid
 						return 0;
 					//Two bytes
+					pictureIdLength = 2;
 					pictureId = (data[len] & 0x7F) << 8 | data[len+1];
 					//Inc len
 					len+=2;
 				} else {
 					//One byte
+					pictureIdLength = 1;
 					pictureId = data[len];
 					//Inc len
 					len++;
@@ -221,15 +226,15 @@ struct VP8PayloadDescriptor
 		if (pictureIdPresent)
 		{
 			//Check long is the picture id
-			if (pictureId>>7)
+			if (pictureIdLength == 2)
 			{
 				//Set picture id
 				data[len]  = pictureId>>8 | 0x80;
-				data[len+1] = pictureId & 0x7F;
+				data[len+1] = pictureId & 0xFF;
 				//Inc lenght
 				len+=2;
 			} else {
-				//Set picture id
+				//Set picture id 
 				data[len] = pictureId & 0x7F;
 				//Inc lenght
 				len++;
@@ -248,8 +253,9 @@ struct VP8PayloadDescriptor
 		{
 			//Set picture id
 			data[len] = temporalLayerIndex;
-			data[len] = data[len]<<2 | layerSync;
+			data[len] = data[len]<<1 | layerSync;
 			data[len] = data[len]<<1 | (keyIndex & 0x1F);
+			data[len] = data[len]<<4;
 			//Inc lenght
 			len++;
 		}
@@ -269,6 +275,7 @@ struct VP8PayloadDescriptor
 		Debug("\t temporalLayerIndexPreset=%d\n"	, temporalLayerIndexPresent);
 		Debug("\t keyIndexPresent=%d\n"			, keyIndexPresent);
 		Debug("\t layerSync=%d\n"			, layerSync);
+		Debug("\t pictureIdLength=%d\n"			, pictureIdLength);
 		Debug("\t pictureId=%u\n"			, pictureId);
 		Debug("\t temporalLevelZeroIndex=%d\n"		, temporalLevelZeroIndex);
 		Debug("\t temporalLayerIndex=%d\n"		, temporalLayerIndex);
@@ -282,7 +289,7 @@ struct VP8PayloadHeader
 	bool showFrame = 0;
 	bool isKeyFrame = 0;
 	BYTE version = 0;
-	DWORD firtPartitionSize = 0;
+	DWORD firstPartitionSize = 0;
 	WORD width = 0;
 	WORD height = 0;
 	BYTE horizontalScale = 0;
@@ -304,7 +311,7 @@ struct VP8PayloadHeader
                 //  +-+-+-+-+-+-+-+-+
                 //  |     Size2     |
                 //  +-+-+-+-+-+-+-+-+
-		firtPartitionSize	= data[0] >> 5;
+		firstPartitionSize	= data[0] >> 5;
 		showFrame		= data[0] >> 4 & 0x01;
 		version			= data[0] >> 1 & 0x07;
 		isKeyFrame		= (data[0] & 0x0F) == 0;
@@ -315,11 +322,14 @@ struct VP8PayloadHeader
 			//Check size
 			if (size<10)
 				//Invalid
-				return 0;
+				return Error("Invalid intra size [%d]\n",size);
 			//Check Start code 
 			if (get3(data,3)!=0x9d012a)
+			{
+				::Dump4(data,10);
 				//Invalid
-				return 0;
+				return Error("Invalid start code [%p]\n",get3(data,3));
+			}
 			//Get size
 			WORD hor = get2(data,6);
 			WORD ver = get2(data,8);
@@ -346,7 +356,7 @@ struct VP8PayloadHeader
 		Debug("\t isKeyFrame=%d\n"		, isKeyFrame);
 		Debug("\t version=%d\n"			, version);
 		Debug("\t showFrame=%d\n"		, showFrame);
-		Debug("\t firtPartitionSize=%d\n"	, firtPartitionSize);
+		Debug("\t firtPartitionSize=%d\n"	, firstPartitionSize);
 		if (isKeyFrame)
 		{
 			Debug("\t width=%d\n"		, width);

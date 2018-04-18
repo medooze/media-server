@@ -33,6 +33,7 @@ public:
 	VideoCodec::Type GetCodec()	const override { return VideoCodec::VP8; }
 	
 private:
+	bool waitingForIntra;
 	BYTE temporalLayerId;
 	BYTE nextTemporalLayerId;
 };

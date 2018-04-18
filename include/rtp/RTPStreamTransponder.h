@@ -57,13 +57,22 @@ private:
 	pthread_t thread	= {0};
 	bool running		= false;;
 	bool muted		= false;
-	DWORD first		= 0 ;	//First seq num of incoming stream
-	DWORD base		= 0;	//Last outgoing seq num when first was set
-	DWORD last		= 0;	//Last seq num of sent packet
+	DWORD firstExtSeqNum	= 0;  //First seq num of incoming stream
+	DWORD baseExtSeqNum	= 0;  //Base seq num of outgoing stream
+	DWORD lastExtSeqNum	= 0;  //Last seq num of sent packet
+	DWORD firstTimestamp	= 0;  //First rtp timstamp of incoming stream
+	QWORD baseTimestamp	= 0;  //Base rtp timestamp of ougogoing stream
+	QWORD lastTimestamp	= 0;  //Last rtp timestamp of outgoing stream
+	QWORD lastTime		= 0;  //Last sent time
 	DWORD dropped		= 0;  //Num of empty packets dropped
-	DWORD ssrc		= 0;	//SSRC to rewrite to
+	DWORD ssrc		= 0;  //SSRC to rewrite to
 	BYTE spatialLayerId	= VideoLayerSelector::MaxLayerId;
 	BYTE temporalLayerId	= VideoLayerSelector::MaxLayerId;
+	WORD lastPicId		= 0;
+	WORD lastTl0Idx		= 0;
+	QWORD picId		= 0;
+	WORD tl0Idx		= 0;
+	bool rewritePicId	= true;
 };
 
 #endif /* RTPSTREAMTRANSPONDER_H */

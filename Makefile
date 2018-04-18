@@ -98,7 +98,7 @@ endif
 
 OBJSMCU = $(OBJS) main.o
 OBJSLIB = ${CORE} ${RTP} ${RTCP} $(DEPACKETIZERSOBJ)
-OBJSTEST = $(OBJS) test/main.o test/test.o test/cpim.o test/rtp.o test/fec.o test/overlay.o test/vp9.o test/bundle.o
+OBJSTEST = $(OBJS) test/main.o test/test.o test/cpim.o test/rtp.o test/fec.o test/overlay.o test/vp8.o test/vp9.o test/bundle.o
 
 
 BUILDOBJSMCU = $(addprefix $(BUILD)/,$(OBJSMCU))

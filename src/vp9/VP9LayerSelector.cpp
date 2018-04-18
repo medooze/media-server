@@ -67,6 +67,7 @@ bool VP9LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 			UltraDebug("-VP9LayerSelector::Select() | Upscaling temporalLayerId [id:%d,target:%d]\n",desc.temporalLayerId,nextTemporalLayerId);
 			//Update current layer
 			temporalLayerId = desc.temporalLayerId;
+			currentTemporalLayerId = temporalLayerId;
 		}
 	//Check if we need to downscale
 	} else if (nextTemporalLayerId<temporalLayerId) {
@@ -74,7 +75,7 @@ bool VP9LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 		if (desc.endOfLayerFrame)
 		{
 			UltraDebug("-VP9LayerSelector::Select() | Downscaling temporalLayerId [id:%d,target:%d]\n",temporalLayerId,nextTemporalLayerId);
-			//Update to target layer
+			//Update to target layer for next packets
 			temporalLayerId = nextTemporalLayerId;
 		}
 	}
@@ -106,6 +107,7 @@ bool VP9LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 			UltraDebug("-VP9LayerSelector::Select() | Upscaling spatialLayerId [id:%d,target:%d]\n",desc.spatialLayerId,nextSpatialLayerId);
 			//Update current layer
 			spatialLayerId = desc.spatialLayerId;
+			currentSpatialLayerId = spatialLayerId;
 		}
 	//Ceck if we need to downscale
 	} else if (nextSpatialLayerId<spatialLayerId) {
@@ -118,7 +120,7 @@ bool VP9LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 		}
 	}
 	
-	//If it is from the current layer
+	//If it is not valid for the current layer
 	if (currentSpatialLayerId<desc.spatialLayerId)
 	{
 		//UltraDebug("-VP9LayerSelector::Select() | dropping packet based on spatialLayerId [us:%d,desc:%d,mark:%d]\n",spatialLayerId,desc.spatialLayerId,packet->GetMark());
