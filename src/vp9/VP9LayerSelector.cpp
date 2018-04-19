@@ -24,8 +24,8 @@ VP9LayerSelector::VP9LayerSelector()
 
 VP9LayerSelector::VP9LayerSelector(BYTE temporalLayerId,BYTE spatialLayerId )
 {
-	this->temporalLayerId = temporalLayerId;
-	this->spatialLayerId  = spatialLayerId;
+	temporalLayerId = 0;
+	spatialLayerId  = 0;
 	nextTemporalLayerId = temporalLayerId;
 	nextSpatialLayerId = spatialLayerId;
 }
@@ -64,7 +64,7 @@ bool VP9LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 		//Check if we can upscale and it is the start of the layer and it is a valid layer
 		if (desc.switchingPoint && desc.startOfLayerFrame && desc.temporalLayerId<=nextTemporalLayerId)
 		{
-			UltraDebug("-VP9LayerSelector::Select() | Upscaling temporalLayerId [id:%d,target:%d]\n",desc.temporalLayerId,nextTemporalLayerId);
+			//UltraDebug("-VP9LayerSelector::Select() | Upscaling temporalLayerId [id:%d,target:%d]\n",desc.temporalLayerId,nextTemporalLayerId);
 			//Update current layer
 			temporalLayerId = desc.temporalLayerId;
 			currentTemporalLayerId = temporalLayerId;
@@ -74,7 +74,7 @@ bool VP9LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 		//We can only downscale on the end of a layer to set the market bit
 		if (desc.endOfLayerFrame)
 		{
-			UltraDebug("-VP9LayerSelector::Select() | Downscaling temporalLayerId [id:%d,target:%d]\n",temporalLayerId,nextTemporalLayerId);
+			//UltraDebug("-VP9LayerSelector::Select() | Downscaling temporalLayerId [id:%d,target:%d]\n",temporalLayerId,nextTemporalLayerId);
 			//Update to target layer for next packets
 			temporalLayerId = nextTemporalLayerId;
 		}
@@ -102,19 +102,19 @@ bool VP9LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 			when encoding a layer synchronization frame in response to an LRR
 		 */
 		//Check if we can upscale and it is the start of the layer and it is a valid layer
-		if (desc.interPicturePredictedLayerFrame==0 && desc.startOfLayerFrame && desc.spatialLayerId==spatialLayerId+1)
+		if (desc.interPicturePredictedLayerFrame==0 && desc.startOfLayerFrame && desc.spatialLayerId<nextSpatialLayerId)
 		{
-			UltraDebug("-VP9LayerSelector::Select() | Upscaling spatialLayerId [id:%d,target:%d]\n",desc.spatialLayerId,nextSpatialLayerId);
 			//Update current layer
-			spatialLayerId = desc.spatialLayerId;
-			currentSpatialLayerId = spatialLayerId;
+			spatialLayerId = desc.spatialLayerId+1;
+			//UltraDebug("-VP9LayerSelector::Select() | Upscaling spatialLayerId [id:%d,to:%d,target:%d]\n",desc.spatialLayerId,spatialLayerId,nextSpatialLayerId);
+			
 		}
 	//Ceck if we need to downscale
 	} else if (nextSpatialLayerId<spatialLayerId) {
 		//We can only downscale on the end of a layer to set the market bit
 		if (desc.endOfLayerFrame)
 		{
-			UltraDebug("-VP9LayerSelector::Select() | Downscaling spatialLayerId [id:%d,target:%d]\n",spatialLayerId,nextSpatialLayerId);
+			//UltraDebug("-VP9LayerSelector::Select() | Downscaling spatialLayerId [id:%d,target:%d]\n",spatialLayerId,nextSpatialLayerId);
 			//Update to target layer
 			spatialLayerId = nextSpatialLayerId;
 		}

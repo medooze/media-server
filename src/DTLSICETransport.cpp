@@ -267,8 +267,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	//Check we have payload
 	if (ini>=len)
 	{
-		packet->Dump();
-		Debug("-DTLSICETransport::onData() | Refusing to create a pacekt with empty payload [size:%u,ini:%u,len:%u]\n",size,len,ini);
+		UltraDebug("-DTLSICETransport::onData() | Refusing to create a packet with empty payload [size:%u,ini:%u,len:%u]\n",size,len,ini);
 		return false;
 	}
 	
