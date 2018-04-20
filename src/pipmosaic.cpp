@@ -46,7 +46,7 @@ PIPMosaic::~PIPMosaic()
 int PIPMosaic::Update(int pos, BYTE *image, int imgWidth, int imgHeight,bool keepAspectRatio)
 {
 	//Check size
-	if (!image && !imgHeight && !imgHeight)
+	if (!image && !imgWidth && !imgHeight)
 	{
 		//Clean position
 		Clean(pos);
