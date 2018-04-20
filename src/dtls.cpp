@@ -1,6 +1,7 @@
 #include <srtp2/srtp.h>
 #include "dtls.h"
 #include "log.h"
+#include "use.h"
 
 #define SRTP_MASTER_KEY_LENGTH 16
 #define SRTP_MASTER_SALT_LENGTH 14

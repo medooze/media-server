@@ -253,6 +253,23 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,const RTPPacket::
 	wait.Signal();
 }
 
+void RTPStreamTransponder::onEnded(RTPIncomingSourceGroup* group)
+{
+	ScopedLock lock(mutex);
+	
+	//If they are the not same
+	if (this->incoming!=group)
+		//DO nothing
+		return;
+	
+	//Reset packets before start listening again
+	Reset();
+	
+	//Store stream and receiver
+	this->incoming = nullptr;
+	this->receiver = nullptr;
+}
+
 void RTPStreamTransponder::RequestPLI()
 {
 	ScopedLock lock(mutex);

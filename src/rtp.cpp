@@ -275,6 +275,54 @@ void RTPOutgoingSourceGroup::RemoveListener(Listener* listener)
 	listeners.erase(listener);
 }
 
+void RTPOutgoingSourceGroup::ReleasePackets(QWORD until)
+{
+	//Lock packets
+	ScopedLock scoped(mutex);
+	
+	//Delete old packets
+	auto it = packets.begin();
+	//Until the end
+	while(it!=packets.end())
+	{
+		//Check packet time
+		if (it->second->GetTime()>until)
+			//Keep the rest
+			break;
+		//Delete from queue and move next
+		packets.erase(it++);
+	}
+}
+
+void RTPOutgoingSourceGroup::AddPacket(const RTPPacket::shared& packet)
+{
+	//Lock packets
+	ScopedLock scoped(mutex);
+	
+	//Add a clone to the rtx queue
+	packets[packet->GetExtSeqNum()] = packet;
+}
+
+RTPPacket::shared RTPOutgoingSourceGroup::GetPacket(WORD seq) const
+{
+	//Lock packets
+	ScopedLock scoped(mutex);
+	
+	//Consider seq wrap
+	DWORD ext = ((DWORD)(media.cycles)<<16 | seq);
+	
+	//Find packet to retransmit
+	auto it = packets.find(ext);
+
+	//If we don't have it
+	if (it==packets.end())
+		//None
+		return nullptr;
+	
+	//Get packet
+	return  it->second;
+}
+
 void RTPOutgoingSourceGroup::onPLIRequest(DWORD ssrc)
 {
 	ScopedLock scoped(mutex);
@@ -402,4 +450,12 @@ void RTPIncomingSourceGroup::Stop()
 	
 	//Clean it
 	setZeroThread(&dispatchThread);
+	
+	ScopedLock scoped(mutex);
+	//Deliver to all listeners
+	for (auto listener : listeners)
+		//Dispatch rtp packet
+		listener->onEnded(this);
+	//Clear listeners
+	listeners.clear();
 }

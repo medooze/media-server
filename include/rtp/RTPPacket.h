@@ -34,9 +34,12 @@ public:
 
 	RTPPacket::shared Clone();
 	
+	DWORD Serialize(BYTE* data,DWORD size,const RTPMap& extMap) const;
+	
 	bool	SetPayload(BYTE *data,DWORD size);
 	bool	SkipPayload(DWORD skip);
 	bool	PrefixPayload(BYTE *data,DWORD size);
+
 	virtual void Dump();
 	
 	//Setters
@@ -45,6 +48,7 @@ public:
 	void SetMark(bool mark)			{ header.mark = mark;			}
 	void SetSSRC(DWORD ssrc)		{ header.ssrc = ssrc;			}
 	void SetType(DWORD payloadType)		{ header.payloadType = payloadType;	}
+	void SetPadding(WORD padding)		{ header.padding = padding;		}
 	
 	void SetCodec(BYTE codec)		{ this->codec = codec;			}
 	void SetSeqCycles(WORD cycles)		{ this->cycles = cycles;		}
@@ -59,6 +63,7 @@ public:
 	
 	
 	BYTE* GetMediaData()		      { return payload;				}
+	const BYTE* GetMediaData()	const { return payload;				}
 	DWORD GetMediaLength()		const { return payloadLen;			}
 	DWORD GetMaxMediaLength()	const { return SIZE;				}
 	
@@ -67,6 +72,7 @@ public:
 	WORD  GetSeqNum()		const { return header.sequenceNumber;		}
 	DWORD GetSSRC()			const { return header.ssrc;			}
 	DWORD GetPayloadType()		const { return header.payloadType;		}
+	WORD  GetPadding()		const { return header.padding;			}
 	
 	WORD  GetSeqCycles()		const { return cycles;				}
 	DWORD GetClockRate()		const { return clockRate;			}
@@ -74,8 +80,9 @@ public:
 	DWORD GetClockTimestamp()	const { return static_cast<QWORD>(GetTimestamp())*1000/clockRate;	}
 
 	//Extensions
-	void  SetAbsSentTime(QWORD absSentTime)	{ extension.absSentTime = absSentTime;	}
-	void  SetTimeOffset(int timeOffset)     { extension.timeOffset = timeOffset;	}
+	void  SetAbsSentTime(QWORD absSentTime)	{ header.extension = extension.hasAbsSentTime     = true; extension.absSentTime = absSentTime;	}
+	void  SetTimeOffset(int timeOffset)     { header.extension = extension.hasTimeOffset      = true; extension.timeOffset = timeOffset;	}
+	void  SetTransportSeqNum(DWORD seq)	{ header.extension = extension.hasTransportWideCC = true; extension.transportSeqNum = seq;	}
 	
 	QWORD GetAbsSendTime()		const	{ return extension.absSentTime;		}
 	int   GetTimeOffset()		const	{ return extension.timeOffset;		}

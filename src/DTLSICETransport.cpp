@@ -475,26 +475,17 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 {
 	UltraDebug("-DTLSICETransport::ReSendPacket() | resending [seq:%d,ssrc:%u]\n",seq,group->rtx.ssrc);
 	
-	//Calculate ext seq number
-	//TODO: consider warp
-	DWORD ext = ((DWORD)(group->media.cycles)<<16 | seq);
-
 	//Find packet to retransmit
-	auto it = group->packets.find(ext);
+	auto packet = group->GetPacket(seq);
 
 	//If we still have it
-	if (it==group->packets.end())
+	if (!packet && group->type==MediaFrame::Video)
 	{
-		//If it is video
-		if (group->type==MediaFrame::Video)
-			//Similate a PLI request
-			group->onPLIRequest(group->media.ssrc);
+		//Similate a PLI request
+		group->onPLIRequest(group->media.ssrc);
 		//Simulate PLI
 		return;
 	}
-	
-	//Get packet
-	auto packet = it->second;
 
 	//Get outgoing rtx source
 	RTPOutgoingSource& source = group->rtx;
@@ -1324,7 +1315,7 @@ void DTLSICETransport::Send(const RTCPCompoundPacket::shared &rtcp)
 int DTLSICETransport::SendPLI(DWORD ssrc)
 {
 	//Log
-	Log("-DTLSICETransport::SendPLI() | [ssrc:%u]\n",ssrc);
+	Debug("-DTLSICETransport::SendPLI() | [ssrc:%u]\n",ssrc);
 	
 	//Sync scope
 	{
@@ -1396,68 +1387,29 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 	//Get outgoing source
 	RTPOutgoingSource& source = group->media;
 	
-	//Overrride headers
-	RTPHeader		header(packet->GetRTPHeader());
-	RTPHeaderExtension	extension(packet->GetRTPHeaderExtension());
-
-	//Update RTX headers
-	header.ssrc		= source.ssrc;
-	header.payloadType	= sendMaps.rtp.GetTypeForCodec(packet->GetCodec());
+	//Clone packet
+	auto cloned = packet->Clone();
+	
+	//Update headers
+	cloned->SetSSRC(source.ssrc);
+	cloned->SetType(sendMaps.rtp.GetTypeForCodec(cloned->GetCodec()));
 	//No padding
-	header.padding		= 0;
+	cloned->SetPadding(0);
 
 	//Add transport wide cc on video
 	if (group->type == MediaFrame::Video && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC))
-	{
-		//Add extension
-		header.extension = true;
-		//Add transport
-		extension.hasTransportWideCC = true;
-		extension.transportSeqNum = transportSeqNum++;
-	}
+		//Set transport wide seq num
+		cloned->SetTransportSeqNum(transportSeqNum++);
 
-	//Serialize header
-	int len = header.Serialize(data,size);
-
-	//Check
+	//Serialize data
+	int len = cloned->Serialize(data,size,sendMaps.ext);
+	
+	//IF failed
 	if (!len)
-		//Error
-		return Error("-DTLSICETransport::SendPacket() | Error serializing rtp headers\n");
+		return 0;
 
-	//If we have extension
-	if (header.extension)
-	{
-		//Serialize
-		int n = extension.Serialize(sendMaps.ext,data+len,size-len);
-		//Comprobamos que quepan
-		if (!n)
-			//Error
-			return Error("-DTLSICETransport::SendPacket() | Error serializing rtp extension headers\n");
-		//Inc len
-		len += n;
-	}
-
-	//Ensure we have enougth data
-	if (len+packet->GetMediaLength()>size)
-		//Error
-		return Error("-DTLSICETransport::SendPacket() | Media overflow\n");
-
-	//Copiamos los datos
-	memcpy(data+len,packet->GetMediaData(),packet->GetMediaLength());
-
-	//Set pateckt length
-	len += packet->GetMediaLength();
-
-	//If there is an rtx stream
-	if (group->rtx.ssrc)
-	{
-		//Create new packet with this data
-		auto rtx = std::make_shared<RTPPacket>(packet->GetMedia(),packet->GetCodec(),header,extension);
-		//Set media
-		rtx->SetPayload(packet->GetMediaData(),packet->GetMediaLength());
-		//Add a clone to the rtx queue
-		group->packets[rtx->GetExtSeqNum()] = rtx;
-	}
+	//Add packet for RTX
+	group->AddPacket(cloned);
 	
 	ICERemoteCandidate* candidate;
 	//Synchronized
@@ -1520,21 +1472,12 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 		Error("-DTLSICETransport::Send() | Error sending packet [len:%d,err:%d]\n",len,errno);
 	}
 
+	
 	//Get time for packets to discard, always have at least 200ms, max 500ms
 	QWORD until = getTimeMS() - (200+fmin(rtt*2,300));
 	
-	//Delete old packets
-	auto it = group->packets.begin();
-	//Until the end
-	while(it!=group->packets.end())
-	{
-		//Check packet time
-		if (it->second->GetTime()>until)
-			//Keep the rest
-			break;
-		//Delete from queue and move next
-		group->packets.erase(it++);
-	}
+	//Release packets from rtx queue
+	group->ReleasePackets(until);
 	
 	//Check if we need to send SR (1 per second)
 	if (getTimeDiff(source.lastSenderReport)>1E6)

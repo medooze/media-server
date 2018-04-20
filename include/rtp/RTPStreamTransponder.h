@@ -31,6 +31,7 @@ public:
 	void Close();
 	
 	virtual void onRTP(RTPIncomingSourceGroup* group,const RTPPacket::shared& packet) override;
+	virtual void onEnded(RTPIncomingSourceGroup* group) override;
 	virtual void onPLIRequest(RTPOutgoingSourceGroup* group,DWORD ssrc) override;
 	
 	void SelectLayer(int spatialLayerId,int temporalLayerId);

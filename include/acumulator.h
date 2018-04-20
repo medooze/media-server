@@ -29,9 +29,9 @@ public:
 	DWORD GetWindow()		const { return window;				}
 	bool  IsInWindow()		const { return inWindow;			}
 	bool  IsInMinMaxWindow()	const { return inWindow && min!=(QWORD)-1;	}
-	long double GetInstantMedia()	const { return GetInstant()/GetCount();		}
+	long double GetInstantMedia()	const { return GetCount() ? GetInstant()/GetCount() : 0;	}
 	long double GetInstantAvg()	const { return GetInstant()*1000/GetWindow();	}
-	long double GetAverage()	const { return GetAcumulated()*1000/GetDiff();	}
+	long double GetAverage()	const { return GetDiff() ? GetAcumulated()*1000/GetDiff() : 0;	}
 	long double GetMinAvg()		const { return GetMin()*1000/GetWindow();	}
 	long double GetMaxAvg()		const { return GetMax()*1000/GetWindow();	}
 

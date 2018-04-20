@@ -249,13 +249,20 @@ public:
 	void onPLIRequest(DWORD ssrc);
 	
 	RTPOutgoingSource* GetSource(DWORD ssrc);
+	
+	//RTX packets
+	void AddPacket(const RTPPacket::shared& packet);
+	RTPPacket::shared GetPacket(WORD seq) const;
+	void ReleasePackets(QWORD until);
+	
 public:	
 	std::string streamId;
 	MediaFrame::Type type;
 	RTPOutgoingSource media;
 	RTPOutgoingSource fec;
 	RTPOutgoingSource rtx;
-	Mutex mutex;
+private:	
+	mutable Mutex mutex;
 	std::map<DWORD,RTPPacket::shared> packets;
 	std::set<Listener*> listeners;
 };
@@ -267,6 +274,7 @@ public:
 	{
 	public:
 		virtual void onRTP(RTPIncomingSourceGroup* group,const RTPPacket::shared& packet) = 0;
+		virtual void onEnded(RTPIncomingSourceGroup* group) = 0;
 	};
 public:	
 	RTPIncomingSourceGroup(MediaFrame::Type type);

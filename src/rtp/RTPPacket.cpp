@@ -40,6 +40,7 @@ RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec)
 	//Set time
 	time = ::getTimeMS();
 }
+
 RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec,const RTPHeader &header, const RTPHeaderExtension &extension) :
 	header(header),
 	extension(extension)
@@ -56,7 +57,7 @@ RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec,const RTPHeader &header, 
 			clockRate = 90000;
 			break;
 		case MediaFrame::Audio:
-			clockRate = 8000;
+			clockRate = AudioCodec::GetClockRate((AudioCodec::Type)codec);
 			break;
 		default:
 			clockRate = 1000;
@@ -85,6 +86,44 @@ RTPPacket::shared RTPPacket::Clone()
 	cloned->SetPayload(GetMediaData(),GetMediaLength());
 	//Return it
 	return cloned;
+}
+
+DWORD RTPPacket::Serialize(BYTE* data,DWORD size,const RTPMap& extMap) const
+{
+	//Serialize header
+	int len = header.Serialize(data,size);
+
+	//Check
+	if (!len)
+		//Error
+		return Error("-RTPPacket::Serialize() | Error serializing rtp headers\n");
+
+	//If we have extension
+	if (header.extension)
+	{
+		//Serialize
+		int n = extension.Serialize(extMap,data+len,size-len);
+		//Comprobamos que quepan
+		if (!n)
+			//Error
+			return Error("-RTPPacket::Serialize() | Error serializing rtp extension headers\n");
+		//Inc len
+		len += n;
+	}
+
+	//Ensure we have enougth data
+	if (len+GetMediaLength()>size)
+		//Error
+		return Error("-RTPPacket::Serialize() | Media overflow\n");
+
+	//Copy media payload
+	memcpy(data+len,GetMediaData(),GetMediaLength());
+	
+	//Inc payload len
+	len += GetMediaLength();
+	
+	//Return copied len
+	return len;
 }
 
 bool RTPPacket::SetPayload(BYTE *data,DWORD size)
