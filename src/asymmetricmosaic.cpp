@@ -700,10 +700,6 @@ int AsymmetricMosaic::GetTop(int pos)
 	//Check it's in the mosaic
 	if (pos >= numSlots)
 		return 0;
-
-	//Check it's in the mosaic
-	if (pos >= numSlots)
-		return 0;
 	
 	//Get values
 	switch(mosaicType)
@@ -944,10 +940,6 @@ int AsymmetricMosaic::GetLeft(int pos)
 	BYTE index;
 	BYTE rows = 1;
 	BYTE cols = 1;
-
-	//Check it's in the mosaic
-	if (pos >= numSlots)
-		return 0;
 
 	//Check it's in the mosaic
 	if (pos >= numSlots)

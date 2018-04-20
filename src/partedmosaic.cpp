@@ -76,7 +76,7 @@ int PartedMosaic::Update(int pos, BYTE *image, int imgWidth, int imgHeight,bool 
 		return 0;
 
 	//Check size
-	if (!image && !imgHeight && !imgHeight)
+	if (!image && !imgWidth && !imgHeight)
 	{
 		//Clean position
 		Clean(pos);
