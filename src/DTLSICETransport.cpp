@@ -45,8 +45,8 @@ DTLSICETransport::DTLSICETransport(Sender *sender) : dtls(*this), mutex(true)
 	send = NULL;
 	recv = NULL;
 	//Transport wide seq num
-	transportSeqNum = 1;
-	feedbackPacketCount = 1;
+	transportSeqNum = 0;
+	feedbackPacketCount = 0;
 	feedbackCycles = 0;
 	lastFeedbackPacketExtSeqNum = 0;
 	//No ice
@@ -90,7 +90,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		//Exit
 		return 1;
 	}
-	
+
 	//Check if it is RTCP
 	if (RTCPCompoundPacket::IsRTCP(data,size))
 	{
@@ -98,7 +98,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		//Check session
 		if (!recv)
 			return Error("-DTLSICETransport::onData() | No recvSRTPSession\n");
-		
+
 		//unprotect
 		srtp_err_status_t err = srtp_unprotect_rtcp(recv,data,(int*)&len);
 		//Check error
@@ -109,10 +109,10 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		if (pcap)
 			//Write udp packet
 			pcap->WriteUDP(getTimeMS(),candidate->GetIPAddress(),candidate->GetPort(),0x7F000001,5004,data,len);
-		
+
 		//Parse it
 		auto rtcp = RTCPCompoundPacket::Parse(data,len);
-	
+
 		//Check packet
 		if (!rtcp)
 		{
@@ -123,14 +123,14 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 			//Exit
 			return 1;
 		}
-		
+
 		//Process it
 		this->onRTCP(rtcp);
-		
+
 		//Skip
 		return 1;
 	}
-	
+
 	//Check session
 	if (!recv)
 		return Error("-DTLSICETransport::onData() | No recvSRTPSession\n");
@@ -259,7 +259,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		//Exit
 		return Error("-DTLSICETransport::onData() | RTP packet type unknown [%d]\n",header.payloadType);
 	
-	//UUltraDebug("-Got RTP on media:%s sssrc:%u seq:%u pt:%u codec:%s rid:'%s'\n",MediaFrame::TypeToString(group->type),ssrc,header.sequenceNumber,header.payloadType,GetNameForCodec(group->type,codec),group->rid.c_str());
+	//UltraDebug("-Got RTP on media:%s sssrc:%u seq:%u pt:%u codec:%s rid:'%s'\n",MediaFrame::TypeToString(group->type),ssrc,header.sequenceNumber,header.payloadType,GetNameForCodec(group->type,codec),group->rid.c_str());
 	
 	//Create normal packet
 	auto packet = std::make_shared<RTPPacket>(group->type,codec,header,extension);
@@ -505,7 +505,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 		//Update RTX headers
 		header.ssrc		= source.ssrc;
 		header.payloadType	= sendMaps.apt.GetTypeForCodec(packet->GetPayloadType());
-		header.sequenceNumber	= source.extSeq++;
+		header.sequenceNumber	= source.NextSeqNum();
 		//No padding
 		header.padding		= 0;
 		//Calculate last timestamp
@@ -519,7 +519,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 		header.extension = true;
 		//Add transport
 		extension.hasTransportWideCC = true;
-		extension.transportSeqNum = transportSeqNum++;
+		extension.transportSeqNum = ++transportSeqNum;
 	}
 
 	//Serialize header
@@ -1399,7 +1399,7 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 	//Add transport wide cc on video
 	if (group->type == MediaFrame::Video && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC))
 		//Set transport wide seq num
-		cloned->SetTransportSeqNum(transportSeqNum++);
+		cloned->SetTransportSeqNum(++transportSeqNum);
 
 	//Serialize data
 	int len = cloned->Serialize(data,size,sendMaps.ext);
@@ -1858,7 +1858,7 @@ void DTLSICETransport::SendTransportWideFeedbackMessage(DWORD ssrc)
 	auto feedback = rtcp->CreatePacket<RTCPRTPFeedback>(RTCPRTPFeedback::TransportWideFeedbackMessage,mainSSRC,ssrc);
 
 	//Create trnasport field
-	auto field = feedback->CreateField<RTCPRTPFeedback::TransportWideFeedbackMessageField>(feedbackPacketCount++);
+	auto field = feedback->CreateField<RTCPRTPFeedback::TransportWideFeedbackMessageField>(++feedbackPacketCount);
 
 	//Proccess and delete all elements
 	for (auto it =transportWideReceivedPacketsStats.cbegin();
