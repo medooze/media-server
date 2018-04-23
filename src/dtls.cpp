@@ -23,7 +23,7 @@ DTLSConnection::AvailableHashes		DTLSConnection::availableHashes;
 
 
 
-/* Static callbacks for OpenSSL. */
+// Static callbacks for OpenSSL. 
 
 static inline
 int on_ssl_certificate_verify(int preverify_ok, X509_STORE_CTX* ctx)
@@ -40,7 +40,7 @@ void on_ssl_info(const SSL* ssl, int where, int ret)
 }
 
 
-/* Static methods. */
+// Static methods. 
 
 void DTLSConnection::SetCertificate(const char* cert,const char* key)
 {
@@ -396,17 +396,15 @@ std::string DTLSConnection::GetCertificateFingerPrint(Hash hash)
 }
 
 
-/* Instance methods. */
-
 DTLSConnection::DTLSConnection(Listener& listener) : listener(listener)
 {
 	//Set default values
 	rekey		  	     = 0;
 	dtls_setup		     = SETUP_PASSIVE;
 	connection		     = CONNECTION_NEW;
-	ssl			     = NULL;		/*!< SSL session */
-	read_bio		     = NULL;		/*!< Memory buffer for reading */
-	write_bio		     = NULL;		/*!< Memory buffer for writing */
+	ssl			     = NULL;		//!< SSL session 
+	read_bio		     = NULL;		//!< Memory buffer for reading 
+	write_bio		     = NULL;		//!< Memory buffer for writing 
 	inited			     = false;
 	remoteHash		     = UNKNOWN_HASH;
 	//Reset remote fingerprint
@@ -439,7 +437,6 @@ int DTLSConnection::Init()
 
 	if (!(write_bio = BIO_new(BIO_s_mem())))
 	{
-		BIO_free(read_bio);
 		SSL_free(ssl);
 		return Error("-DTLSConnection::Init() | Failed to allocate memory for outbound SSL traffic on \n");
 	}
@@ -489,9 +486,12 @@ void DTLSConnection::End()
 	// NOTE: Don't use BIO_free() for write_bio and read_bio as they are
 	// automatically freed by SSL_free().
 
-	if (ssl) {
+	if (ssl) 
+	{
 		SSL_free(ssl);
 		ssl = NULL;
+		read_bio = NULL;
+		write_bio = NULL;		
 	}
 }
 
@@ -499,7 +499,7 @@ void DTLSConnection::Reset()
 {
 	Log("-DTLSConnection::Reset()\n");
 
-	/* If the SSL session is not yet finalized don't bother resetting */
+	// If the SSL session is not yet finalized don't bother resetting
 	if (!SSL_is_init_finished(ssl))
 		return;
 
@@ -528,7 +528,7 @@ void DTLSConnection::SetRemoteSetup(Setup remote)
 			dtls_setup = SETUP_ACTIVE;
 			break;
 		case SETUP_ACTPASS:
-			/* We can't respond to an actpass setup with actpass ourselves... so respond with active, as we can initiate connections */
+			// We can't respond to an actpass setup with actpass ourselves... so respond with active, as we can initiate connections 
 			if (dtls_setup == SETUP_ACTPASS)
 				dtls_setup = SETUP_ACTIVE;
 			break;
@@ -536,11 +536,11 @@ void DTLSConnection::SetRemoteSetup(Setup remote)
 			dtls_setup = SETUP_HOLDCONN;
 			break;
 		default:
-			/* This should never occur... if it does exit early as we don't know what state things are in */
+			// This should never occur... if it does exit early as we don't know what state things are in 
 			return;
 	}
 
-	/* If the setup state did not change we go on as if nothing happened */
+	// If the setup state did not change we go on as if nothing happened 
 	if (old == dtls_setup || !ssl)
 		return;
 
@@ -609,10 +609,10 @@ void DTLSConnection::onSSLInfo(int where, int ret)
 	{
 		Log("-DTLSConnection::onSSLInfo() | DTLS handshake done\n");
 
-		/* Any further connections will be existing since this is now established */
+		// Any further connections will be existing since this is now established 
 		connection = CONNECTION_EXISTING;
 
-		/* Use the keying material to set up key/salt information */
+		// Use the keying material to set up key/salt information 
 		SetupSRTP();
 	}
 
@@ -622,11 +622,16 @@ void DTLSConnection::onSSLInfo(int where, int ret)
 
 int DTLSConnection::HandleTimeout()
 {
+	if (!ssl)
+		return 0;
 	return DTLSv1_handle_timeout(ssl);
 }
 
 int DTLSConnection::Renegotiate()
 {
+	if (!ssl)
+		return 0;
+	
 	SSL_renegotiate(ssl);
 	SSL_do_handshake(ssl);
 
@@ -689,12 +694,12 @@ int DTLSConnection::SetupSRTP()
 	Debug("-DTLSConnection::SetupSRTP() | fingerprint in remote SDP matches that of peer certificate (hash %s)\n", hash_str.c_str());
 	X509_free(certificate);
 
-	/* Produce key information and set up SRTP */
+	// Produce key information and set up SRTP 
 
 	if (! SSL_export_keying_material(ssl, material, SRTP_MASTER_LENGTH * 2, "EXTRACTOR-dtls_srtp", 19, NULL, 0, 0))
 		return Error("-DTLSConnection::SetupSRTP() | Unable to extract SRTP keying material from DTLS-SRTP negotiation on RTP instance \n");
 
-	/* Whether we are acting as a server or client determines where the keys/salts are */
+	// Whether we are acting as a server or client determines where the keys/salts are 
 
 	if (dtls_setup == SETUP_ACTIVE)
 	{
@@ -750,8 +755,8 @@ int DTLSConnection::Write( BYTE *buffer, DWORD size)
 	// Check if the peer sent close alert or a fatal error happened.
 	if (SSL_get_shutdown(ssl) & SSL_RECEIVED_SHUTDOWN) {
 		Debug("-DTLSConnection::Write() | SSL_RECEIVED_SHUTDOWN on instance '%p', resetting SSL\n", this);
-
 		ret = SSL_clear(ssl);
+		ssl = nullptr;
 		if (ret == 0)
 			Error("-DTLSConnection::Write() | SSL_clear() failed: %s", ERR_error_string(ERR_get_error(), NULL));
 
