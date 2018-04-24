@@ -335,7 +335,7 @@ public:
 	std::string rid;
 	std::string mid;
 	DWORD rtt;
-	DWORD rttrtxSeq;
+	WORD  rttrtxSeq;
 	QWORD rttrtxTime;
 	MediaFrame::Type type;
 	RTPIncomingSource media;

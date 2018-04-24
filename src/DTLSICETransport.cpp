@@ -381,7 +381,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	}	
 
 	//Check if is the rtx rtt packet
-	if (packet->GetSeqNum()!=group->rttrtxSeq)
+	if (packet->GetSeqNum()!=group->rttrtxSeq || !group->rttrtxTime)
 	{
 		//Add packet and see if we have lost any in between
 		int lost = group->AddPacket(packet);
@@ -478,7 +478,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	//Find packet to retransmit
 	auto packet = group->GetPacket(seq);
 
-	//If we still have it
+	//If we don't have it anymore
 	if (!packet && group->type==MediaFrame::Video)
 	{
 		//Similate a PLI request
