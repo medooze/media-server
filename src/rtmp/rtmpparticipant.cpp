@@ -758,7 +758,7 @@ int RTMPParticipant::SendAudio()
 		//Check clock drift, do not allow to exceed 4 frames
 		if (ini+(samples+encoder->numFrameSamples*4)*1000/encoder->GetClockRate()<getDifTime(&first)/1000)
 		{
-			Log("-RTMPParticipant clock drift, dropping audio and reseting init time\n");
+			Debug("-RTMPParticipant clock drift, dropping audio and reseting init time\n");
 			//Clear buffer
 			audioInput->ClearBuffer();
 			//Reser timestam

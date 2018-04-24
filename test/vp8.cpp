@@ -46,7 +46,6 @@ public:
 		desc.Dump();
 		len = desc.Serialize(aux,1024);
 		Dump(aux,len);
-		exit(0);
 	}
 	
 };

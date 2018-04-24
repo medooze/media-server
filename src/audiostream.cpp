@@ -425,39 +425,33 @@ int AudioStream::SendAudio()
 	//Set it
 	packet.SetClockRate(clock);
 
-	//Get ts multiplier
-	float multiplier = clock/rate;
-	
 	//Get initial time
-	DWORD frameTime = getDifTime(&ini);
+	DWORD frameTime = getDifTime(&ini)*clock/10E6;
 
-	//Mientras tengamos que capturar
+	//Send audio
 	while(sendingAudio)
 	{
-		//Incrementamos el tiempo de envio
-		frameTime += codec->numFrameSamples*multiplier;
+		//Increment rtp timestamp
+		frameTime += codec->numFrameSamples*clock/rate;
 
-		//Capturamos 
+		//Capture audio data
 		if (audioInput->RecBuffer(recBuffer,codec->numFrameSamples)==0)
-		{
-			Log("-sendingAudio cont\n");
 			continue;
-		}
 
-		//Lo codificamos
+		//Encode it
 		int len = codec->Encode(recBuffer,codec->numFrameSamples,packet.GetMediaData(),packet.GetMaxMediaLength());
 
-		//Comprobamos que ha sido correcto
+		//check result
 		if(len<=0)
 			continue;
 
-		//Set length
+		//Set lengths
 		packet.SetMediaLength(len);
 
-		//Set frametiem
+		//Set frametime
 		packet.SetTimestamp(frameTime);
 
-		//Lo enviamos
+		//Send it
 		rtp.SendPacket(packet,frameTime);
 	}
 
