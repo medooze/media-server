@@ -98,7 +98,7 @@ endif
 
 OBJSMCU = $(OBJS) main.o
 OBJSLIB = ${CORE} ${RTP} ${RTCP} $(DEPACKETIZERSOBJ)
-OBJSTEST = $(OBJS) test/main.o test/test.o test/cpim.o test/rtp.o test/fec.o test/overlay.o test/vp8.o test/vp9.o test/bundle.o
+OBJSTEST = $(OBJS) test/main.o test/test.o test/aac.o test/cpim.o test/rtp.o test/fec.o test/overlay.o test/vp8.o test/vp9.o test/bundle.o
 
 
 BUILDOBJSMCU = $(addprefix $(BUILD)/,$(OBJSMCU))
@@ -205,8 +205,8 @@ CXXFLAGS+= $(INCLUDE) $(OPTS) -std=c++11
 all: touch mkdirs $(TARGETS) certs
 
 touch:
-	touch $(SRCDIR)/include/version.h
-	svn propset builtime "`date`" $(SRCDIR)/include/version.h || true
+	@touch $(SRCDIR)/include/version.h
+	@(git log -1 --pretty=tformat:"#ifndef VERSION_H\r\n#define VERSION_H\r\n#define MCUVERSION \"%h\"\r\n#define MCUDATE \"%cd\"\r\n#endif\r\n" | sed 's/\\r\\n/\r\n/g' >  $(SRCDIR)/include/version.h) || true
 mkdirs:
 	mkdir -p $(BUILD)
 	mkdir -p $(BUILD)/test

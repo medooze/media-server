@@ -11,6 +11,7 @@
 AACEncoder::AACEncoder(const Properties &properties)
 {
 	//NO ctx yet
+	avr = NULL;
 	ctx = NULL;
 	frame = NULL;
 	///Set type
@@ -37,6 +38,7 @@ AACEncoder::AACEncoder(const Properties &properties)
 
 	//Set params
 	ctx->channels		= 1;
+	ctx->channel_layout	= AV_CH_LAYOUT_MONO;
 	ctx->sample_fmt		= AV_SAMPLE_FMT_FLTP;
 
 	//Set parames
@@ -100,10 +102,7 @@ AACEncoder::~AACEncoder()
 		av_free(ctx);
 	}
 	if(avr)
-	{
-		avresample_close(avr);
 		avresample_free(&avr);
-	}
 	if (samples)
 		av_freep(&samples);
 	if (frame)
