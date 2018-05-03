@@ -431,7 +431,7 @@ public:
 			extension.frameMarks.discardable = 0;
 			extension.frameMarks.baseLayerSync = 0;
 			extension.frameMarks.temporalLayerId = 0;
-			extension.frameMarks.spatialLayerId = 0;
+			extension.frameMarks.layerId = 0;
 			extension.frameMarks.tl0PicIdx = 0;
 			extension.mid = "sdparta_0";
 			
