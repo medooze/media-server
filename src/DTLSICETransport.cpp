@@ -481,6 +481,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	//If we don't have it anymore
 	if (!packet && group->type==MediaFrame::Video)
 	{
+		Debug("-DTLSICETransport::ReSendPacket() | packet not found, requesting PLI instead [seq:%d,ssrc:%u]\n",seq,group->rtx.ssrc);
 		//Similate a PLI request
 		group->onPLIRequest(group->media.ssrc);
 		//Simulate PLI

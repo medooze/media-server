@@ -89,10 +89,12 @@ public:
 	bool  GetVAD()			const	{ return extension.vad;			}
 	BYTE  GetLevel()		const	{ return extension.level;		}
 	WORD  GetTransportSeqNum()	const	{ return extension.transportSeqNum;	}
+	const RTPHeaderExtension::FrameMarks& GetFrameMarks() const { return extension.frameMarks; }
 	bool  HasAudioLevel()		const	{ return extension.hasAudioLevel;	}
 	bool  HasAbsSentTime()		const	{ return extension.hasAbsSentTime;	}
 	bool  HasTimeOffeset()		const   { return extension.hasTimeOffset;	}
 	bool  HasTransportWideCC()	const   { return extension.hasTransportWideCC;	}
+	bool  HasFrameMarkings()	const   { return extension.hasFrameMarking;	}
 	
 	QWORD GetTime()	const		{ return time;		}
 	void  SetTime(QWORD time )	{ this->time = time;	}

@@ -1,14 +1,6 @@
-/* 
- * File:   version.h
- * Author: Sergio
- *
- * Created on 3 de diciembre de 2012, 18:11
- */
-
 #ifndef VERSION_H
-#define	VERSION_H
+#define VERSION_H
+#define MCUVERSION "3905e7a"
+#define MCUDATE "Tue Apr 24 19:35:31 2018 +0200"
+#endif
 
-#define MCUVERSION	"$Rev$"
-#define MCUDATE		"$Date$"
-
-#endif	/* VERSION_H */

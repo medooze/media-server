@@ -44,10 +44,30 @@ void VP9LayerSelector::SelectSpatialLayer(BYTE id)
 	
 bool VP9LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 {
-	VP9PayloadDescription desc;
+	VP9PayloadDescription desc = {};
 	
+	//If packet has frame markings
+	if (packet->HasFrameMarkings())
+	{
+		//Get it from frame markings
+		const auto& fm = packet->GetFrameMarks();
+		//Import data
+		desc.pictureIdPresent			= false;
+		desc.interPicturePredictedLayerFrame	= !fm.independent;
+		desc.layerIndicesPresent		= 0;
+		desc.flexibleMode			= 0;
+		desc.startOfLayerFrame			= fm.startOfFrame;
+		desc.endOfLayerFrame			= fm.endOfFrame;
+		desc.scalabiltiyStructureDataPresent	= 0;
+		desc.pictureId				= 0;
+		desc.temporalLayerId			= fm.temporalLayerId;
+		desc.switchingPoint			= fm.baseLayerSync;
+		desc.spatialLayerId			= fm.layerId;
+		desc.interlayerDependencyUsed		= fm.discardable;
+		desc.temporalLayer0Index		= fm.tl0PicIdx;
+		
 	//Parse VP9 payload description
-	if (!desc.Parse(packet->GetMediaData(),packet->GetMaxMediaLength()))
+	} else if (!desc.Parse(packet->GetMediaData(),packet->GetMaxMediaLength()))
 		//Error
 		return Error("-VP9LayerSelector::Select() | Cannot parse VP9PayloadDescription\n");
 	

@@ -113,7 +113,7 @@ public:
 		bool discardable;
 		bool baseLayerSync;
 		BYTE temporalLayerId;
-		BYTE spatialLayerId;
+		BYTE layerId;
 		BYTE tl0PicIdx;
 	  
 		FrameMarks()
@@ -124,7 +124,7 @@ public:
 			discardable = false;
 			baseLayerSync = false;
 			temporalLayerId = 0;
-			spatialLayerId = 0;
+			layerId = 0;
 			tl0PicIdx = 0;
 		}
 	};

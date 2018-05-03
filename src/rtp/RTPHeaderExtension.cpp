@@ -209,13 +209,13 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 					// We are non-scalable
 					frameMarks.baseLayerSync = 0;
 					frameMarks.temporalLayerId = 0;
-					frameMarks.spatialLayerId = 0;
+					frameMarks.layerId = 0;
 					frameMarks.tl0PicIdx = 0;
 				} else if (len==3) {
 					// Set scalable parts
 					frameMarks.baseLayerSync = ext[i] & 0x08;
 					frameMarks.temporalLayerId = ext[i] & 0x07;
-					frameMarks.spatialLayerId = ext[i+1];
+					frameMarks.layerId = ext[i+1];
 					frameMarks.tl0PicIdx = ext[i+2]; 
 				} else {
 					// Incorrect length
@@ -427,7 +427,7 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 
 		bool scalable = false;
 		// Check if it is scalable
-		if (frameMarks.baseLayerSync || frameMarks.temporalLayerId || frameMarks.spatialLayerId || frameMarks.tl0PicIdx) 
+		if (frameMarks.baseLayerSync || frameMarks.temporalLayerId || frameMarks.layerId || frameMarks.tl0PicIdx) 
 			//It is scalable
 			scalable = true;
 		
@@ -451,7 +451,7 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 				//Inc len
 				len++;
 				//Set other bytes
-				data[len++] = frameMarks.spatialLayerId;
+				data[len++] = frameMarks.layerId;
 				data[len++] = frameMarks.tl0PicIdx;
 			} else {
 				//Inc len
@@ -543,7 +543,7 @@ void RTPHeaderExtension::Dump() const
 			frameMarks.discardable,
 			frameMarks.baseLayerSync,
 			frameMarks.temporalLayerId,
-			frameMarks.spatialLayerId,
+			frameMarks.layerId,
 			frameMarks.tl0PicIdx
 		);
 	

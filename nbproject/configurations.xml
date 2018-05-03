@@ -178,8 +178,10 @@
         <in>xmlstreaminghandler.cpp</in>
       </df>
       <df name="test">
+        <in>aac.cpp</in>
         <in>bundle.cpp</in>
         <in>cpim.cpp</in>
+        <in>encoders.cpp</in>
         <in>fec.cpp</in>
         <in>main.cpp</in>
         <in>overlay.cpp</in>
@@ -892,11 +894,15 @@
         <ccTool flags="4">
         </ccTool>
       </item>
+      <item path="test/aac.cpp" ex="false" tool="1" flavor2="0">
+      </item>
       <item path="test/bundle.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="test/cpim.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
         </ccTool>
+      </item>
+      <item path="test/encoders.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="test/fec.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
@@ -3506,6 +3512,8 @@
           </preprocessorList>
         </ccTool>
       </item>
+      <item path="test/aac.cpp" ex="false" tool="1" flavor2="0">
+      </item>
       <item path="test/bundle.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="3">
         </ccTool>
@@ -3513,6 +3521,8 @@
       <item path="test/cpim.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="3">
         </ccTool>
+      </item>
+      <item path="test/encoders.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="test/fec.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="3">
