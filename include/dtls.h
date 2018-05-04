@@ -1,10 +1,3 @@
-/*
- * File:   dtls.h
- * Author: Sergio
- *
- * Created on 19 de septiembre de 2013, 11:18
- */
-
 #ifndef DTLS_H
 #define	DTLS_H
 
@@ -24,17 +17,18 @@ class DTLSConnection
 public:
 	enum Setup
 	{
-		SETUP_ACTIVE,   /*!< Endpoint is willing to inititate connections */
-		SETUP_PASSIVE,  /*!< Endpoint is willing to accept connections */
-		SETUP_ACTPASS,  /*!< Endpoint is willing to both accept and initiate connections */
-		SETUP_HOLDCONN, /*!< Endpoint does not want the connection to be established right now */
+		SETUP_ACTIVE,   // Endpoint is willing to inititate connections 
+		SETUP_PASSIVE,  // Endpoint is willing to accept connections 
+		SETUP_ACTPASS,  // Endpoint is willing to both accept and initiate connections 
+		SETUP_HOLDCONN, // Endpoint does not want the connection to be established right now 
 	};
 
 	enum Suite {
 		AES_CM_128_HMAC_SHA1_80 = 1,
 		AES_CM_128_HMAC_SHA1_32 = 2,
-		F8_128_HMAC_SHA1_80     = 3,
-		UNKNOWN_SUITE
+		AEAD_AES_128_GCM	= 7,
+		AEAD_AES_256_GCM	= 8,
+		UNKNOWN_SUITE		= 0
 	};
 
 	enum Hash
@@ -48,8 +42,8 @@ public:
 	};
 
 	enum Connection {
-		CONNECTION_NEW,      /*!< Endpoint wants to use a new connection */
-		CONNECTION_EXISTING /*!< Endpoint wishes to use existing connection */
+		CONNECTION_NEW,		// Endpoint wants to use a new connection 
+		CONNECTION_EXISTING	// Endpoint wishes to use existing connection 
 	};
 public:
 	class Listener
@@ -68,6 +62,42 @@ public:
 	static int Terminate();
 	static std::string GetCertificateFingerPrint(Hash hash);
 	static bool IsDTLS(const BYTE* buffer,const DWORD size)		{ return buffer[0]>=20 && buffer[0]<=64; }
+	static Suite SuiteFromName(const char* suite) 
+	{
+		if (strcmp(suite,"SRTP_AES128_CM_SHA1_80")==0)
+			return AES_CM_128_HMAC_SHA1_80;
+		else if (strcmp(suite,"SRTP_AES128_CM_SHA1_80")==0) 
+			return AES_CM_128_HMAC_SHA1_32;
+		else if (strcmp(suite,"AEAD_AES_128_GCM")==0)
+			return AEAD_AES_128_GCM;
+		else if (strcmp(suite,"AEAD_AES_256_GCM")==0)
+			return AEAD_AES_256_GCM;
+		return UNKNOWN_SUITE;
+	}
+
+	static std::pair<size_t,size_t> SuiteKeySaltLength(const Suite suite)
+	{
+		switch (suite)
+		{
+			case AES_CM_128_HMAC_SHA1_80:
+			case AES_CM_128_HMAC_SHA1_32:
+				// SRTP_AES128_CM_HMAC_SHA1_32 and SRTP_AES128_CM_HMAC_SHA1_80 are defined
+				// in RFC 5764 to use a 128 bits key and 112 bits salt for the cipher.
+				return std::make_pair(16,14);
+			case AEAD_AES_128_GCM:
+				// SRTP_AEAD_AES_128_GCM is defined in RFC 7714 to use a 128 bits key and
+				// a 96 bits salt for the cipher.
+				return std::make_pair(16,12);
+			case AEAD_AES_256_GCM:
+				// SRTP_AEAD_AES_256_GCM is defined in RFC 7714 to use a 256 bits key and
+				// a 96 bits salt for the cipher.
+				return std::make_pair(32,12);
+			default:
+				return std::make_pair(0,0);
+		}
+		return std::make_pair(0,0);
+	}
+
 private:
 	static int GenerateCertificate();
 	static int ReadCertificate();
@@ -75,13 +105,12 @@ private:
 	typedef std::map<Hash, std::string> LocalFingerPrints;
 	typedef std::vector<Hash> AvailableHashes;
 private:
-	static std::string	certfile;		/*!< Certificate file name*/
-	static std::string	pvtfile;		/*!< Private key file name*/
-	static std::string	cipher;			/*!< Cipher to use */
-	static SSL_CTX*		ssl_ctx;		/*!< SSL context */
-	static X509*		certificate;		/*!< SSL context */
-	static EVP_PKEY*	privateKey;		/*!< SSL context */
-	static Suite		suite;			/*!< SRTP crypto suite */
+	static std::string	certfile;		// Certificate file name
+	static std::string	pvtfile;		// Private key file name
+	static std::string	cipher;			// Cipher to use 
+	static SSL_CTX*		ssl_ctx;		// SSL context 
+	static X509*		certificate;		// SSL context 
+	static EVP_PKEY*	privateKey;		// SSL context 
 	static LocalFingerPrints localFingerPrints;
 	static AvailableHashes	availableHashes;
 	static bool		hasDTLS;
@@ -96,14 +125,14 @@ public:
 	void End();
 	void Reset();
 
-	Setup GetSetup() const { return dtls_setup; }
+	Setup GetSetup() const { return setup; }
 	
 	int  Read(BYTE* data,DWORD size);
 	int  Write(BYTE *buffer,DWORD size);
 	int  HandleTimeout();
 	int  Renegotiate();
 
-/* Callbacks fired by OpenSSL events. */
+// Callbacks fired by OpenSSL events. 
 public:
 	void onSSLInfo(int where, int ret);
 
@@ -112,17 +141,17 @@ protected:
 	int  CheckPending();
 private:
 	Listener& listener;
-	SSL *ssl;			/*!< SSL session */
-	BIO *read_bio;			/*!< Memory buffer for reading */
-	BIO *write_bio;			/*!< Memory buffer for writing */
-	Setup dtls_setup;		/*!< Current setup state */
-	unsigned char remoteFingerprint[EVP_MAX_MD_SIZE];	/*!< Fingerprint of the peer certificate */
-	Hash remoteHash;		/*!< Hash of the peer fingerprint */
-	Connection connection;		/*!< Whether this is a new or existing connection */
-	unsigned int rekey;	/*!< Interval at which to renegotiate and rekey */
-	int rekeyid;		/*!< Scheduled item id for rekeying */
-	bool inited;        /*!< Set to true once the SSL stuff is set for this DTLS session */
+	SSL *ssl;			// SSL session 
+	BIO *read_bio;			// Memory buffer for reading 
+	BIO *write_bio;			// Memory buffer for writing 
+	Setup setup;			// Current setup state 
+	unsigned char remoteFingerprint[EVP_MAX_MD_SIZE];	// Fingerprint of the peer certificate 
+	Hash remoteHash;		// Hash of the peer fingerprint 
+	Connection connection;		// Whether this is a new or existing connection 
+	unsigned int rekey;		// Interval at which to renegotiate and rekey 
+	int rekeyid;			// Scheduled item id for rekeying 
+	bool inited;			// Set to true once the SSL stuff is set for this DTLS session 
 };
 
-#endif	/* DTLS_H */
+#endif
 

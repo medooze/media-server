@@ -3,11 +3,6 @@
 #include "log.h"
 #include "use.h"
 
-#define SRTP_MASTER_KEY_LENGTH 16
-#define SRTP_MASTER_SALT_LENGTH 14
-#define SRTP_MASTER_LENGTH (SRTP_MASTER_KEY_LENGTH + SRTP_MASTER_SALT_LENGTH)
-
-
 // Initialize static data
 std::string		DTLSConnection::certfile("");
 std::string		DTLSConnection::pvtfile("");
@@ -15,7 +10,6 @@ std::string		DTLSConnection::cipher("ALL:NULL:eNULL:aNULL");
 SSL_CTX*		DTLSConnection::ssl_ctx		= NULL;
 X509*			DTLSConnection::certificate	= NULL;
 EVP_PKEY*		DTLSConnection::privateKey	= NULL;
-DTLSConnection::Suite	DTLSConnection::suite		= AES_CM_128_HMAC_SHA1_80;
 bool			DTLSConnection::hasDTLS		= false;
 
 DTLSConnection::LocalFingerPrints	DTLSConnection::localFingerPrints;
@@ -41,7 +35,6 @@ void on_ssl_info(const SSL* ssl, int where, int ret)
 
 
 // Static methods. 
-
 void DTLSConnection::SetCertificate(const char* cert,const char* key)
 {
 	//Log
@@ -250,23 +243,7 @@ int DTLSConnection::Initialize()
 	SSL_CTX_set_options(ssl_ctx, SSL_OP_NO_QUERY_MTU);
 
 	// Enable ECDH ciphers.
-	// DOC: http://en.wikibooks.org/wiki/OpenSSL/Diffie-Hellman_parameters
-	// NOTE: https://code.google.com/p/chromium/issues/detail?id=406458
-	// For OpenSSL >= 1.0.2:
-	#if (OPENSSL_VERSION_NUMBER >= 0x10002000L)
-		SSL_CTX_set_ecdh_auto(ssl_ctx, 1);
-	#else
-		EC_KEY* ecdh = NULL;
-		ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
-		if (! ecdh) {
-			return Error("-DTLSConnection::Initialize() | EC_KEY_new_by_curve_name() failed\n");
-		}
-		if (SSL_CTX_set_tmp_ecdh(ssl_ctx, ecdh) != 1) {
-			return Error("-DTLSConnection::Initialize() | SSL_CTX_set_tmp_ecdh() failed\n");
-		}
-		EC_KEY_free(ecdh);
-		ecdh = NULL;
-	#endif
+	SSL_CTX_set_ecdh_auto(ssl_ctx, 1);
 
 	// Don't use session cache.
 	SSL_CTX_set_session_cache_mode(ssl_ctx, SSL_SESS_CACHE_OFF);
@@ -281,18 +258,11 @@ int DTLSConnection::Initialize()
 	// Set SSL info callback.
 	SSL_CTX_set_info_callback(ssl_ctx, on_ssl_info);
 
-	// Set suite.
-	switch(suite) 
-	{
-		case AES_CM_128_HMAC_SHA1_80:
-			SSL_CTX_set_tlsext_use_srtp(ssl_ctx, "SRTP_AES128_CM_SHA1_80");
-			break;
-		case AES_CM_128_HMAC_SHA1_32:
-			SSL_CTX_set_tlsext_use_srtp(ssl_ctx, "SRTP_AES128_CM_SHA1_32");
-			break;
-		default:
-			return Error("-DTLSConnection::Initialize() | Unsupported suite [%d] specified for DTLS-SRTP\n",suite);
-	}
+	// Try to use GCM suite
+	if (SSL_CTX_set_tlsext_use_srtp(ssl_ctx, "SRTP_AES128_CM_SHA1_80;SRTP_AEAD_AES_128_GCM;SRTP_AEAD_AES_256_GCM")!=0)
+		//Set it without GCM
+		SSL_CTX_set_tlsext_use_srtp(ssl_ctx, "SRTP_AES128_CM_SHA1_80");
+	
 	//If we have a pre-generated certificate and private key
 	if (certfile.size()>0 && pvtfile.size()>0)
 	{
@@ -400,11 +370,11 @@ DTLSConnection::DTLSConnection(Listener& listener) : listener(listener)
 {
 	//Set default values
 	rekey		  	     = 0;
-	dtls_setup		     = SETUP_PASSIVE;
+	setup			     = SETUP_PASSIVE;
 	connection		     = CONNECTION_NEW;
-	ssl			     = NULL;		//!< SSL session 
-	read_bio		     = NULL;		//!< Memory buffer for reading 
-	write_bio		     = NULL;		//!< Memory buffer for writing 
+	ssl			     = NULL;		// SSL session 
+	read_bio		     = NULL;		// Memory buffer for reading 
+	write_bio		     = NULL;		// Memory buffer for writing 
 	inited			     = false;
 	remoteHash		     = UNKNOWN_HASH;
 	//Reset remote fingerprint
@@ -427,7 +397,7 @@ int DTLSConnection::Init()
 		return Error("-DTLSConnection::Init() | Failed to allocate memory for SSL context on \n");
 
 	SSL_set_ex_data(ssl, 0, this);
-
+	
 	if (!(read_bio = BIO_new(BIO_s_mem())))
 	{
 		SSL_free(ssl);
@@ -449,7 +419,7 @@ int DTLSConnection::Init()
 
 	SSL_set_bio(ssl, read_bio, write_bio);
 
-	switch(dtls_setup)
+	switch(setup)
 	{
 		case SETUP_ACTIVE:
 		case SETUP_ACTPASS:
@@ -464,7 +434,7 @@ int DTLSConnection::Init()
 		default:
 			return Error("-DTLSConnection::Init() | we are hold conn!");
 	}
-
+	
 	//New connection
 	connection = CONNECTION_NEW;
 
@@ -517,23 +487,23 @@ void DTLSConnection::SetRemoteSetup(Setup remote)
 		return;
 	}
 
-	Setup old = dtls_setup;
+	Setup old = setup;
 
 	switch (remote)
 	{
 		case SETUP_ACTIVE:
-			dtls_setup = SETUP_PASSIVE;
+			setup = SETUP_PASSIVE;
 			break;
 		case SETUP_PASSIVE:
-			dtls_setup = SETUP_ACTIVE;
+			setup = SETUP_ACTIVE;
 			break;
 		case SETUP_ACTPASS:
 			// We can't respond to an actpass setup with actpass ourselves... so respond with active, as we can initiate connections 
-			if (dtls_setup == SETUP_ACTPASS)
-				dtls_setup = SETUP_ACTIVE;
+			if (setup == SETUP_ACTPASS)
+				setup = SETUP_ACTIVE;
 			break;
 		case SETUP_HOLDCONN:
-			dtls_setup = SETUP_HOLDCONN;
+			setup = SETUP_HOLDCONN;
 			break;
 		default:
 			// This should never occur... if it does exit early as we don't know what state things are in 
@@ -541,10 +511,10 @@ void DTLSConnection::SetRemoteSetup(Setup remote)
 	}
 
 	// If the setup state did not change we go on as if nothing happened 
-	if (old == dtls_setup || !ssl)
+	if (old == setup || !ssl)
 		return;
 
-	switch (dtls_setup)
+	switch (setup)
 	{
 		case SETUP_ACTIVE:
 			Debug("-DTLSConnection::SetRemoteSetup() | we are SETUP_ACTIVE\n");
@@ -604,9 +574,7 @@ void DTLSConnection::onSSLInfo(int where, int ret)
 	if (where & SSL_CB_HANDSHAKE_START)
 	{
 		Debug("-DTLSConnection::onSSLInfo() | DTLS handshake starts\n");
-	}
-	else if (where & SSL_CB_HANDSHAKE_DONE)
-	{
+	} else if (where & SSL_CB_HANDSHAKE_DONE) {
 		Log("-DTLSConnection::onSSLInfo() | DTLS handshake done\n");
 
 		// Any further connections will be existing since this is now established 
@@ -647,13 +615,14 @@ int DTLSConnection::SetupSRTP()
 	X509* certificate;
 	unsigned char fingerprint[EVP_MAX_MD_SIZE];
 	unsigned int size=0;
-	const EVP_MD* hash_function;
-	std::string hash_str;
+	const EVP_MD* hashFunction;
+	std::string hashStr;
 
-	BYTE material[SRTP_MASTER_LENGTH * 2];
-	BYTE localMasterKey[SRTP_MASTER_LENGTH];
-	BYTE remoteMasterKey[SRTP_MASTER_LENGTH];
-	BYTE *local_key, *local_salt, *remote_key, *remote_salt;
+	size_t MaxLength = 44;
+	BYTE material[MaxLength*2];
+	BYTE localMasterKey[MaxLength];
+	BYTE remoteMasterKey[MaxLength];
+	BYTE *localKey, *localSalt, *remoteKey, *remoteSalt;
 
 	if (!(certificate = SSL_get_peer_certificate(ssl)))
 		return Error("-DTLSConnection::SetupSRTP() | no certificate was provided by the peer\n");
@@ -661,68 +630,84 @@ int DTLSConnection::SetupSRTP()
 	switch (remoteHash)
 	{
 		case SHA1:
-			hash_function = EVP_sha1();
-			hash_str = "SHA-1";
+			hashFunction = EVP_sha1();
+			hashStr = "SHA-1";
 			break;
 		case SHA224:
-			hash_function = EVP_sha224();
-			hash_str = "SHA-224";
+			hashFunction = EVP_sha224();
+			hashStr = "SHA-224";
 			break;
 		case SHA256:
-			hash_function = EVP_sha256();
-			hash_str = "SHA-256";
+			hashFunction = EVP_sha256();
+			hashStr = "SHA-256";
 			break;
 		case SHA384:
-			hash_function = EVP_sha384();
-			hash_str = "SHA-384";
+			hashFunction = EVP_sha384();
+			hashStr = "SHA-384";
 			break;
 		case SHA512:
-			hash_function = EVP_sha512();
-			hash_str = "SHA-512";
+			hashFunction = EVP_sha512();
+			hashStr = "SHA-512";
 			break;
 		default:
 			X509_free(certificate);
 			return Error("-DTLSConnection::SetupSRTP() | unknown remote hash, cannot verify remote fingerprint\n");
 	}
 
-	if (!X509_digest(certificate, hash_function, fingerprint, &size) || !size || memcmp(fingerprint, remoteFingerprint, size))
+	if (!X509_digest(certificate, hashFunction, fingerprint, &size) || !size || memcmp(fingerprint, remoteFingerprint, size))
 	{
 		X509_free(certificate);
-		return Error("-DTLSConnection::SetupSRTP() | fingerprint in remote SDP does not match that of peer certificate (hash %s)\n", hash_str.c_str());
+		return Error("-DTLSConnection::SetupSRTP() | fingerprint in remote SDP does not match that of peer certificate (hash %s)\n", hashStr.c_str());
 	}
 
-	Debug("-DTLSConnection::SetupSRTP() | fingerprint in remote SDP matches that of peer certificate (hash %s)\n", hash_str.c_str());
+	Debug("-DTLSConnection::SetupSRTP() | fingerprint in remote SDP matches that of peer certificate (hash %s)\n", hashStr.c_str());
 	X509_free(certificate);
 
 	// Produce key information and set up SRTP 
-
-	if (! SSL_export_keying_material(ssl, material, SRTP_MASTER_LENGTH * 2, "EXTRACTOR-dtls_srtp", 19, NULL, 0, 0))
+	if (! SSL_export_keying_material(ssl, material, MaxLength*2, "EXTRACTOR-dtls_srtp", 19, NULL, 0, 0))
 		return Error("-DTLSConnection::SetupSRTP() | Unable to extract SRTP keying material from DTLS-SRTP negotiation on RTP instance \n");
-
+	
+	//Get negotiated srtp profile
+	auto profile = SSL_get_selected_srtp_profile(ssl);
+		
+	//Check it
+	if (!profile)
+		return Error("-DTLSConnection::SetupSRTP() | Unable to retrieve negotiated SRTP suite\n");
+	
+	//Get suite
+	Suite suite = SuiteFromName(profile->name);
+	
+	//Check we know it
+	if (suite==UNKNOWN_SUITE)
+		return Error("-DTLSConnection::SetupSRTP() | Unknown negotiated SRTP suite [id:%d,name:'%s']\n",profile->id,profile->name);
+	
+	//Get key & salt lengths
+	auto keysalt = SuiteKeySaltLength(suite);
+	size_t total = keysalt.first+keysalt.second;
+	
 	// Whether we are acting as a server or client determines where the keys/salts are 
-
-	if (dtls_setup == SETUP_ACTIVE)
+	if (setup == SETUP_ACTIVE)
 	{
-		local_key = material;
-		remote_key = local_key + SRTP_MASTER_KEY_LENGTH;
-		local_salt = remote_key + SRTP_MASTER_KEY_LENGTH;
-		remote_salt = local_salt + SRTP_MASTER_SALT_LENGTH;
+		localKey	= material;
+		remoteKey	= localKey  + keysalt.first;
+		localSalt	= remoteKey + keysalt.first;
+		remoteSalt	= localSalt + keysalt.second;
 	} else	{
-		remote_key = material;
-		local_key = remote_key + SRTP_MASTER_KEY_LENGTH;
-		remote_salt = local_key + SRTP_MASTER_KEY_LENGTH;
-		local_salt = remote_salt + SRTP_MASTER_SALT_LENGTH;
+		remoteKey	= material;
+		localKey	= remoteKey  + keysalt.first;
+		remoteSalt	= localKey   + keysalt.first;
+		localSalt	= remoteSalt + keysalt.second;
 	}
-
+	
 	//Create local master key
-	memcpy(localMasterKey,local_key,SRTP_MASTER_KEY_LENGTH);
-	memcpy(localMasterKey+SRTP_MASTER_KEY_LENGTH,local_salt,SRTP_MASTER_SALT_LENGTH);
+	memcpy(localMasterKey			,localKey	,keysalt.first);
+	memcpy(localMasterKey+keysalt.first	,localSalt	,keysalt.second);
 	//Create remote master key
-	memcpy(remoteMasterKey,remote_key,SRTP_MASTER_KEY_LENGTH);
-	memcpy(remoteMasterKey+SRTP_MASTER_KEY_LENGTH,remote_salt,SRTP_MASTER_SALT_LENGTH);
+	memcpy(remoteMasterKey			,remoteKey	,keysalt.first);
+	memcpy(remoteMasterKey+keysalt.first	,remoteSalt	,keysalt.second);
 
-	//Fire event
-	listener.onDTLSSetup(suite,localMasterKey,SRTP_MASTER_LENGTH,remoteMasterKey,SRTP_MASTER_LENGTH);
+	//Fire eventº
+	listener.onDTLSSetup(suite,localMasterKey,total,remoteMasterKey,total);
 
 	return 1;
 }
@@ -739,7 +724,6 @@ int DTLSConnection::Write( BYTE *buffer, DWORD size)
 
 	BIO_write(read_bio, buffer, size);
 
-	
 	int ret = SSL_read(ssl, buffer, size);
 	
 	if (ret<0)
@@ -753,7 +737,8 @@ int DTLSConnection::Write( BYTE *buffer, DWORD size)
 		
 
 	// Check if the peer sent close alert or a fatal error happened.
-	if (SSL_get_shutdown(ssl) & SSL_RECEIVED_SHUTDOWN) {
+	if (SSL_get_shutdown(ssl) & SSL_RECEIVED_SHUTDOWN)
+	{
 		Debug("-DTLSConnection::Write() | SSL_RECEIVED_SHUTDOWN on instance '%p', resetting SSL\n", this);
 		ret = SSL_clear(ssl);
 		ssl = nullptr;

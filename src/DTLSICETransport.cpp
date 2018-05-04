@@ -1084,7 +1084,7 @@ int DTLSICETransport::SetRemoteCryptoSDES(const char* suite, const BYTE* key, co
 
 void DTLSICETransport::onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMasterKey,DWORD localMasterKeySize,BYTE* remoteMasterKey,DWORD remoteMasterKeySize)
 {
-	Log("-RTPBundleTransport::onDTLSSetup()\n");
+	Log("-RTPBundleTransport::onDTLSSetup() [suite:%d]\n",suite);
 
 	switch (suite)
 	{
@@ -1098,10 +1098,15 @@ void DTLSICETransport::onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMaster
 			SetLocalCryptoSDES("AES_CM_128_HMAC_SHA1_32",localMasterKey,localMasterKeySize);
 			SetRemoteCryptoSDES("AES_CM_128_HMAC_SHA1_32",remoteMasterKey,remoteMasterKeySize);
 			break;
-		case DTLSConnection::F8_128_HMAC_SHA1_80:
+		case DTLSConnection::AEAD_AES_128_GCM:
 			//Set keys
-			SetLocalCryptoSDES("NULL_CIPHER_HMAC_SHA1_80",localMasterKey,localMasterKeySize);
-			SetRemoteCryptoSDES("NULL_CIPHER_HMAC_SHA1_80",remoteMasterKey,remoteMasterKeySize);
+			SetLocalCryptoSDES("AEAD_AES_128_GCM",localMasterKey,localMasterKeySize);
+			SetRemoteCryptoSDES("AEAD_AES_128_GCM",remoteMasterKey,remoteMasterKeySize);
+			break;
+		case DTLSConnection::AEAD_AES_256_GCM:
+			//Set keys
+			SetLocalCryptoSDES("AEAD_AES_256_GCM",localMasterKey,localMasterKeySize);
+			SetRemoteCryptoSDES("AEAD_AES_256_GCM",remoteMasterKey,remoteMasterKeySize);
 			break;
 		default:
 			Error("-RTPBundleTransport::onDTLSSetup() | Unknown suite\n");
