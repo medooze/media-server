@@ -117,7 +117,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		if (!rtcp)
 		{
 			//Debug
-			Debug("-RTPBundleTransport::onData() | RTCP wrong data\n");
+			Debug("-DTLSICETransport::onData() | RTCP wrong data\n");
 			//Dump it
 			::Dump(data,size);
 			//Exit
@@ -909,29 +909,39 @@ int DTLSICETransport::SetLocalCryptoSDES(const char* suite,const BYTE* key,const
 	//Get cypher
 	if (strcmp(suite,"AES_CM_128_HMAC_SHA1_80")==0)
 	{
-		Log("-RTPBundleTransport::SetLocalCryptoSDES() | suite: AES_CM_128_HMAC_SHA1_80\n");
+		Log("-DTLSICETransport::SetLocalCryptoSDES() | suite: AES_CM_128_HMAC_SHA1_80\n");
 		srtp_crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtp);
 		srtp_crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtcp);
 	} else if (strcmp(suite,"AES_CM_128_HMAC_SHA1_32")==0) {
-		Log("-RTPBundleTransport::SetLocalCryptoSDES() | suite: AES_CM_128_HMAC_SHA1_32\n");
+		Log("-DTLSICETransport::SetLocalCryptoSDES() | suite: AES_CM_128_HMAC_SHA1_32\n");
 		srtp_crypto_policy_set_aes_cm_128_hmac_sha1_32(&policy.rtp);
 		srtp_crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtcp);  // NOTE: Must be 80 for RTCP!
 	} else if (strcmp(suite,"AES_CM_128_NULL_AUTH")==0) {
-		Log("-RTPBundleTransport::SetLocalCryptoSDES() | suite: AES_CM_128_NULL_AUTH\n");
+		Log("-DTLSICETransport::SetLocalCryptoSDES() | suite: AES_CM_128_NULL_AUTH\n");
 		srtp_crypto_policy_set_aes_cm_128_null_auth(&policy.rtp);
 		srtp_crypto_policy_set_aes_cm_128_null_auth(&policy.rtcp);
 	} else if (strcmp(suite,"NULL_CIPHER_HMAC_SHA1_80")==0) {
-		Log("-RTPBundleTransport::SetLocalCryptoSDES() | suite: NULL_CIPHER_HMAC_SHA1_80\n");
+		Log("-DTLSICETransport::SetLocalCryptoSDES() | suite: NULL_CIPHER_HMAC_SHA1_80\n");
 		srtp_crypto_policy_set_null_cipher_hmac_sha1_80(&policy.rtp);
 		srtp_crypto_policy_set_null_cipher_hmac_sha1_80(&policy.rtcp);
+#ifdef SRTP_GCM
+	} else if (strcmp(suite,"AEAD_AES_256_GCM")==0) {
+		Log("-DTLSICETransport::SetLocalCryptoSDES() | suite: AEAD_AES_256_GCM\n");
+		srtp_crypto_policy_set_aes_gcm_256_16_auth(&policy.rtp);
+		srtp_crypto_policy_set_aes_gcm_256_16_auth(&policy.rtcp);
+	} else if (strcmp(suite,"AEAD_AES_128_GCM")==0) {
+		Log("-DTLSICETransport::SetLocalCryptoSDES() | suite: AEAD_AES_128_GCM\n");
+		srtp_crypto_policy_set_aes_gcm_128_16_auth(&policy.rtp);
+		srtp_crypto_policy_set_aes_gcm_128_16_auth(&policy.rtcp);
+#endif
 	} else {
-		return Error("-RTPBundleTransport::SetLocalCryptoSDES() | Unknown cipher suite: %s", suite);
+		return Error("-DTLSICETransport::SetLocalCryptoSDES() | Unknown cipher suite: %s", suite);
 	}
 
 	//Check sizes
 	if (len!=(DWORD)policy.rtp.cipher_key_len)
 		//Error
-		return Error("-RTPBundleTransport::SetLocalCryptoSDES() | Key size (%d) doesn't match the selected srtp profile (required %d)\n",len,policy.rtp.cipher_key_len);
+		return Error("-DTLSICETransport::SetLocalCryptoSDES() | Key size (%d) doesn't match the selected srtp profile (required %d)\n",len,policy.rtp.cipher_key_len);
 
 	//Set polciy values
 	policy.ssrc.type	= ssrc_any_outbound;
@@ -947,7 +957,7 @@ int DTLSICETransport::SetLocalCryptoSDES(const char* suite,const BYTE* key,const
 	//Check error
 	if (err!=srtp_err_status_ok)
 		//Error
-		return Error("-RTPBundleTransport::SetLocalCryptoSDES() | Failed to create local SRTP session | err:%d\n", err);
+		return Error("-DTLSICETransport::SetLocalCryptoSDES() | Failed to create local SRTP session | err:%d\n", err);
 	
 	//if we already got a send session don't leak it
 	if (send)
@@ -964,7 +974,7 @@ int DTLSICETransport::SetLocalCryptoSDES(const char* suite,const BYTE* key,const
 
 int DTLSICETransport::SetLocalSTUNCredentials(const char* username, const char* pwd)
 {
-	Log("-RTPBundleTransport::SetLocalSTUNCredentials() | [frag:%s,pwd:%s]\n",username,pwd);
+	Log("-DTLSICETransport::SetLocalSTUNCredentials() | [frag:%s,pwd:%s]\n",username,pwd);
 	//Clean mem
 	if (iceLocalUsername)
 		free(iceLocalUsername);
@@ -980,7 +990,7 @@ int DTLSICETransport::SetLocalSTUNCredentials(const char* username, const char* 
 
 int DTLSICETransport::SetRemoteSTUNCredentials(const char* username, const char* pwd)
 {
-	Log("-RTPBundleTransport::SetRemoteSTUNCredentials() |  [frag:%s,pwd:%s]\n",username,pwd);
+	Log("-DTLSICETransport::SetRemoteSTUNCredentials() |  [frag:%s,pwd:%s]\n",username,pwd);
 	//Clean mem
 	if (iceRemoteUsername)
 		free(iceRemoteUsername);
@@ -995,7 +1005,7 @@ int DTLSICETransport::SetRemoteSTUNCredentials(const char* username, const char*
 
 int DTLSICETransport::SetRemoteCryptoDTLS(const char *setup,const char *hash,const char *fingerprint)
 {
-	Log("-RTPBundleTransport::SetRemoteCryptoDTLS | [setup:%s,hash:%s,fingerprint:%s]\n",setup,hash,fingerprint);
+	Log("-DTLSICETransport::SetRemoteCryptoDTLS | [setup:%s,hash:%s,fingerprint:%s]\n",setup,hash,fingerprint);
 
 	//Set Suite
 	if (strcasecmp(setup,"active")==0)
@@ -1007,7 +1017,7 @@ int DTLSICETransport::SetRemoteCryptoDTLS(const char *setup,const char *hash,con
 	else if (strcasecmp(setup,"holdconn")==0)
 		dtls.SetRemoteSetup(DTLSConnection::SETUP_HOLDCONN);
 	else
-		return Error("-RTPBundleTransport::SetRemoteCryptoDTLS | Unknown setup");
+		return Error("-DTLSICETransport::SetRemoteCryptoDTLS | Unknown setup");
 
 	//Set fingerprint
 	if (strcasecmp(hash,"SHA-1")==0)
@@ -1021,7 +1031,7 @@ int DTLSICETransport::SetRemoteCryptoDTLS(const char *setup,const char *hash,con
 	else if (strcasecmp(hash,"SHA-512")==0)
 		dtls.SetRemoteFingerprint(DTLSConnection::SHA512,fingerprint);
 	else
-		return Error("-RTPBundleTransport::SetRemoteCryptoDTLS | Unknown hash");
+		return Error("-DTLSICETransport::SetRemoteCryptoDTLS | Unknown hash");
 
 	//Init DTLS
 	return dtls.Init();
@@ -1037,29 +1047,39 @@ int DTLSICETransport::SetRemoteCryptoSDES(const char* suite, const BYTE* key, co
 
 	if (strcmp(suite,"AES_CM_128_HMAC_SHA1_80")==0)
 	{
-		Log("-RTPBundleTransport::SetRemoteCryptoSDES() | suite: AES_CM_128_HMAC_SHA1_80\n");
+		Log("-DTLSICETransport::SetRemoteCryptoSDES() | suite: AES_CM_128_HMAC_SHA1_80\n");
 		srtp_crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtp);
 		srtp_crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtcp);
 	} else if (strcmp(suite,"AES_CM_128_HMAC_SHA1_32")==0) {
-		Log("-RTPBundleTransport::SetRemoteCryptoSDES() | suite: AES_CM_128_HMAC_SHA1_32\n");
+		Log("-DTLSICETransport::SetRemoteCryptoSDES() | suite: AES_CM_128_HMAC_SHA1_32\n");
 		srtp_crypto_policy_set_aes_cm_128_hmac_sha1_32(&policy.rtp);
 		srtp_crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtcp);  // NOTE: Must be 80 for RTCP!
 	} else if (strcmp(suite,"AES_CM_128_NULL_AUTH")==0) {
-		Log("-RTPBundleTransport::SetRemoteCryptoSDES() | suite: AES_CM_128_NULL_AUTH\n");
+		Log("-DTLSICETransport::SetRemoteCryptoSDES() | suite: AES_CM_128_NULL_AUTH\n");
 		srtp_crypto_policy_set_aes_cm_128_null_auth(&policy.rtp);
 		srtp_crypto_policy_set_aes_cm_128_null_auth(&policy.rtcp);
 	} else if (strcmp(suite,"NULL_CIPHER_HMAC_SHA1_80")==0) {
-		Log("-RTPBundleTransport::SetRemoteCryptoSDES() | suite: NULL_CIPHER_HMAC_SHA1_80\n");
+		Log("-DTLSICETransport::SetRemoteCryptoSDES() | suite: NULL_CIPHER_HMAC_SHA1_80\n");
 		srtp_crypto_policy_set_null_cipher_hmac_sha1_80(&policy.rtp);
 		srtp_crypto_policy_set_null_cipher_hmac_sha1_80(&policy.rtcp);
+#ifdef SRTP_GCM
+	} else if (strcmp(suite,"AEAD_AES_256_GCM")==0) {
+		Log("-DTLSICETransport::SetRemoteCryptoSDES() | suite: AEAD_AES_256_GCM\n");
+		srtp_crypto_policy_set_aes_gcm_256_16_auth(&policy.rtp);
+		srtp_crypto_policy_set_aes_gcm_256_16_auth(&policy.rtcp);
+	} else if (strcmp(suite,"AEAD_AES_128_GCM")==0) {
+		Log("-DTLSICETransport::SetRemoteCryptoSDES() | suite: AEAD_AES_128_GCM\n");
+		srtp_crypto_policy_set_aes_gcm_128_16_auth(&policy.rtp);
+		srtp_crypto_policy_set_aes_gcm_128_16_auth(&policy.rtcp);
+#endif
 	} else {
-		return Error("-RTPBundleTransport::SetRemoteCryptoSDES() | Unknown cipher suite %s", suite);
+		return Error("-DTLSICETransport::SetRemoteCryptoSDES() | Unknown cipher suite %s", suite);
 	}
 
 	//Check sizes
 	if (len!=(DWORD)policy.rtp.cipher_key_len)
 		//Error
-		return Error("-RTPBundleTransport::SetRemoteCryptoSDES() | Key size (%d) doesn't match the selected srtp profile (required %d)\n",len,policy.rtp.cipher_key_len);
+		return Error("-DTLSICETransport::SetRemoteCryptoSDES() | Key size (%d) doesn't match the selected srtp profile (required %d)\n",len,policy.rtp.cipher_key_len);
 
 	//Set polciy values
 	policy.ssrc.type	= ssrc_any_inbound;
@@ -1074,7 +1094,7 @@ int DTLSICETransport::SetRemoteCryptoSDES(const char* suite, const BYTE* key, co
 	//Check error
 	if (err!=srtp_err_status_ok)
 		//Error
-		return Error("-RTPBundleTransport::SetRemoteCryptoSDES() | Failed to create remote SRTP session | err:%d\n", err);
+		return Error("-DTLSICETransport::SetRemoteCryptoSDES() | Failed to create remote SRTP session | err:%d\n", err);
 	
 	//if we already got a recv session don't leak it
 	if (recv)
@@ -1089,7 +1109,7 @@ int DTLSICETransport::SetRemoteCryptoSDES(const char* suite, const BYTE* key, co
 
 void DTLSICETransport::onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMasterKey,DWORD localMasterKeySize,BYTE* remoteMasterKey,DWORD remoteMasterKeySize)
 {
-	Log("-RTPBundleTransport::onDTLSSetup() [suite:%d]\n",suite);
+	Log("-DTLSICETransport::onDTLSSetup() [suite:%d]\n",suite);
 
 	switch (suite)
 	{
@@ -1114,7 +1134,7 @@ void DTLSICETransport::onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMaster
 			SetRemoteCryptoSDES("AEAD_AES_256_GCM",remoteMasterKey,remoteMasterKeySize);
 			break;
 		default:
-			Error("-RTPBundleTransport::onDTLSSetup() | Unknown suite\n");
+			Error("-DTLSICETransport::onDTLSSetup() | Unknown suite\n");
 	}
 }
 

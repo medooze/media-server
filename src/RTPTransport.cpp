@@ -211,6 +211,16 @@ int RTPTransport::SetLocalCryptoSDES(const char* suite,const BYTE* key,const DWO
 		Log("-RTPTransport::SetLocalCryptoSDES() | suite: NULL_CIPHER_HMAC_SHA1_80\n");
 		srtp_crypto_policy_set_null_cipher_hmac_sha1_80(&policy.rtp);
 		srtp_crypto_policy_set_null_cipher_hmac_sha1_80(&policy.rtcp);
+#ifdef SRTP_GCM
+	} else if (strcmp(suite,"AEAD_AES_256_GCM")==0) {
+		Log("-RTPTransport::SetLocalCryptoSDES() | suite: AEAD_AES_256_GCM\n");
+		srtp_crypto_policy_set_aes_gcm_256_16_auth(&policy.rtp);
+		srtp_crypto_policy_set_aes_gcm_256_16_auth(&policy.rtcp);
+	} else if (strcmp(suite,"AEAD_AES_128_GCM")==0) {
+		Log("-RTPTransport::SetLocalCryptoSDES() | suite: AEAD_AES_128_GCM\n");
+		srtp_crypto_policy_set_aes_gcm_128_16_auth(&policy.rtp);
+		srtp_crypto_policy_set_aes_gcm_128_16_auth(&policy.rtcp);
+#endif
 	} else {
 		return Error("-RTPTransport::SetLocalCryptoSDES() | Unknown cipher suite: %s", suite);
 	}
@@ -355,6 +365,16 @@ int RTPTransport::SetRemoteCryptoSDES(const char* suite, const BYTE* key, const 
 		Log("-RTPTransport::SetRemoteCryptoSDES() | suite: NULL_CIPHER_HMAC_SHA1_80\n");
 		srtp_crypto_policy_set_null_cipher_hmac_sha1_80(&policy.rtp);
 		srtp_crypto_policy_set_null_cipher_hmac_sha1_80(&policy.rtcp);
+#ifdef SRTP_GCM		
+	} else if (strcmp(suite,"AEAD_AES_256_GCM")==0) {
+		Log("-RTPTransport::SetLocalCryptoSDES() | suite: AEAD_AES_256_GCM\n");
+		srtp_crypto_policy_set_aes_gcm_256_16_auth(&policy.rtp);
+		srtp_crypto_policy_set_aes_gcm_256_16_auth(&policy.rtcp);
+	} else if (strcmp(suite,"AEAD_AES_128_GCM")==0) {
+		Log("-RTPTransport::SetLocalCryptoSDES() | suite: AEAD_AES_128_GCM\n");
+		srtp_crypto_policy_set_aes_gcm_128_16_auth(&policy.rtp);
+		srtp_crypto_policy_set_aes_gcm_128_16_auth(&policy.rtcp);
+#endif
 	} else {
 		return Error("-RTPTransport::SetRemoteCryptoSDES() | Unknown cipher suite %s", suite);
 	}

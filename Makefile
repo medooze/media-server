@@ -154,13 +154,17 @@ else
 	LDLIBFLAGS+= -lsrtp2
 endif
 
+ifeq ($(LIBSRTP_GCM),yes)
+	OPTS+= -DSRTP_GCM
+endif
+
 ifeq ($(STATIC_LIBMP4),yes)
 	INCLUDE+= -I$(LIBMP4_DIR)/include
 	LDFLAGS+= $(LIBMP4_DIR)/.libs/libmp4v2.a
 	ARLIBFLAGS+= $(LIBMP4_DIR)/.libs/libmp4v2.a
 else
 	LDFLAGS+= -lmp4v2
-	LDLIBFLAGS+= -lsrtp2
+	LDLIBFLAGS+= -lmp4v2
 endif
 
 ifeq ($(IMAGEMAGICK),yes)
