@@ -155,7 +155,7 @@ else
 endif
 
 ifeq ($(STATIC_LIBMP4),yes)
-	INCLUDE+= -I$(LIBMP4_DIR)
+	INCLUDE+= -I$(LIBMP4_DIR)/include
 	LDFLAGS+= $(LIBMP4_DIR)/.libs/libmp4v2.a
 	ARLIBFLAGS+= $(LIBMP4_DIR)/.libs/libmp4v2.a
 else
