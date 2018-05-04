@@ -46,6 +46,7 @@ public:
 public:
 	DTLSICETransport(Sender *sender);
 	virtual ~DTLSICETransport();
+	void SetSRTPProtectionProfiles(const std::string& profiles);
 	void SetRemoteProperties(const Properties& properties);
 	void SetLocalProperties(const Properties& properties);
 	virtual int SendPLI(DWORD ssrc) override;

@@ -735,6 +735,11 @@ void DTLSICETransport::SetLocalProperties(const Properties& properties)
 	extensions.clear();
 }
 
+void DTLSICETransport::SetSRTPProtectionProfiles(const std::string& profiles)
+{
+	dtls.SetSRTPProtectionProfiles(profiles);
+}
+
 void DTLSICETransport::SetRemoteProperties(const Properties& properties)
 {
 	//For each property

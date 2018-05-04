@@ -119,6 +119,7 @@ public:
 	DTLSConnection(Listener& listener);
 	~DTLSConnection();
 
+	void SetSRTPProtectionProfiles(const std::string& profiles);
 	int  Init();
 	void SetRemoteSetup(Setup setup);
 	void SetRemoteFingerprint(Hash hash, const char *fingerprint);
@@ -151,6 +152,7 @@ private:
 	unsigned int rekey;		// Interval at which to renegotiate and rekey 
 	int rekeyid;			// Scheduled item id for rekeying 
 	bool inited;			// Set to true once the SSL stuff is set for this DTLS session 
+	std::string profiles;		// Overrriden list of srtp profiles
 };
 
 #endif

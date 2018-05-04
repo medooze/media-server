@@ -229,7 +229,7 @@ int DTLSConnection::Initialize()
 	Log(">DTLSConnection::Initialize()\n");
 
 	// Create a single SSL context
-	ssl_ctx = SSL_CTX_new(DTLSv1_method());
+	ssl_ctx = SSL_CTX_new(DTLS_method());
 	
 	//Check result
 	if (!ssl_ctx) 
@@ -386,6 +386,13 @@ DTLSConnection::~DTLSConnection()
 	End();
 }
 
+void DTLSConnection::SetSRTPProtectionProfiles(const std::string& profiles)
+{
+	Log("-DTLSConnection::SetSRTPProtectionProfiles() [profiles:'%s']\n",profiles.c_str());
+	//Store them
+	this->profiles = profiles;
+}
+
 int DTLSConnection::Init()
 {
 	Log(">DTLSConnection::Init()\n");
@@ -395,20 +402,35 @@ int DTLSConnection::Init()
 
 	if (!(ssl = SSL_new(ssl_ctx)))
 		return Error("-DTLSConnection::Init() | Failed to allocate memory for SSL context on \n");
+	
+	//Overrride default profiles if eny
+	if (!profiles.empty())
+	{
+		//Set them
+		if (SSL_CTX_set_tlsext_use_srtp(ssl_ctx, profiles.c_str()))
+		{
+			SSL_free(ssl);
+			ssl = nullptr;
+			return Error("-DTLSConnection::Init() | Failed to override SRTP profiles [profiles:'%s']\n",profiles.c_str());
+		}
+	}
 
 	SSL_set_ex_data(ssl, 0, this);
 	
 	if (!(read_bio = BIO_new(BIO_s_mem())))
 	{
 		SSL_free(ssl);
-		return Error("-DTLSConnection::Init() | Failed to allocate memory for inbound SSL traffic on \n");
+		ssl = nullptr;
+		return Error("-DTLSConnection::Init() | Failed to allocate memory for inbound SSL traffic\n");
 	}
+	
 	BIO_set_mem_eof_return(read_bio, -1);
 
 	if (!(write_bio = BIO_new(BIO_s_mem())))
 	{
 		SSL_free(ssl);
-		return Error("-DTLSConnection::Init() | Failed to allocate memory for outbound SSL traffic on \n");
+		ssl = nullptr;
+		return Error("-DTLSConnection::Init() | Failed to allocate memory for outbound SSL traffic\n");
 	}
 	BIO_set_mem_eof_return(write_bio, -1);
 

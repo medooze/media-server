@@ -89,9 +89,12 @@ DTLSICETransport* RTPBundleTransport::AddICETransport(const std::string &usernam
 		return NULL;
 	}
 	
-	
 	//Create new ICE transport
 	DTLSICETransport *transport = new DTLSICETransport(this);
+	
+	//Set SRTP protection profiles
+	std::string profiles = properties.GetProperty("srtpProtectionProfiles","");
+	transport->SetSRTPProtectionProfiles(profiles);
 	
 	//Set local STUN properties
 	transport->SetLocalSTUNCredentials(ice.GetProperty("localUsername"),ice.GetProperty("localPassword"));
