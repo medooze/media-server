@@ -53,7 +53,6 @@ bool VP9LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 		const auto& fm = packet->GetFrameMarks();
 		//Import data
 		desc.pictureIdPresent			= false;
-		desc.interPicturePredictedLayerFrame	= !fm.independent;
 		desc.layerIndicesPresent		= 0;
 		desc.flexibleMode			= 0;
 		desc.startOfLayerFrame			= fm.startOfFrame;
@@ -61,11 +60,21 @@ bool VP9LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 		desc.scalabiltiyStructureDataPresent	= 0;
 		desc.pictureId				= 0;
 		desc.temporalLayerId			= fm.temporalLayerId;
-		desc.switchingPoint			= fm.baseLayerSync;
-		desc.spatialLayerId			= fm.layerId;
-		desc.interlayerDependencyUsed		= fm.discardable;
+		// The following  shows VP9 Layer encoding information (3 bits for
+		// spatial and temporal layer) mapped to the generic LID and TID fields.
+		// The P and U bits MUST match the corresponding bits in the VP9 Payload
+		// Description.
+		//    0                
+		//    0 1 2 3 4 5 6 7
+		//   +-+-+-+-+-+-+-+-+
+		//   |0|0|0|P|U| SID |
+		//   +-+-+-+-+-+-+-+-+
+		desc.interPicturePredictedLayerFrame	= fm.layerId & 0x20;
+		desc.switchingPoint			= fm.layerId & 0x10;
+		desc.spatialLayerId			= fm.layerId & 0x07;
+		desc.interlayerDependencyUsed		= false;
 		desc.temporalLayer0Index		= fm.tl0PicIdx;
-		
+
 	//Parse VP9 payload description
 	} else if (!desc.Parse(packet->GetMediaData(),packet->GetMaxMediaLength()))
 		//Error

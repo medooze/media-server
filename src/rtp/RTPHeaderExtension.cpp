@@ -88,10 +88,8 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 			continue;
 		//Get extension element id
 		BYTE id = header >> 4;
-		//Get header size
+		//Get extenion element length
 		BYTE len = (header & 0x0F) + 1;
-		//GEt extenion element length
-		BYTE n = (header & 0x0F) + 1;
 		//Get mapped extension
 		BYTE t = extMap.GetCodecForType(id);
 		//Debug("-RTPExtension [type:%d,codec:%d,len:%d]\n",id,t,len);
@@ -182,7 +180,7 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 				//
 				// for Non-Scalable Streams
 				// 
-				//     0			 1
+				//     0                   1
 				//     0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
 				//    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 				//    |  ID=? |  L=0  |S|E|I|D|0 0 0 0|
@@ -190,33 +188,33 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 				//
 				// for Scalable Streams
 				// 
-				//     0			 1			 2			 3
+				//     0                   1                   2                   3
 				//     0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 				//    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-				//    |  ID=? |  L=2  |S|E|I|D|B| TID |   LID	   |    TL0PICIDX  |
+				//    |  ID=? |  L=2  |S|E|I|D|B| TID |   LID         |    TL0PICIDX  |
 				//    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 				//
 				//Set header
 				hasFrameMarking = true;
 				// Set frame marking ext
-				frameMarks.startOfFrame = ext[i] & 0x80;
-				frameMarks.endOfFrame = ext[i] & 0x40;
-				frameMarks.independent = ext[i] & 0x20;
-				frameMarks.discardable = ext[i] & 0x10;
+				frameMarks.startOfFrame	= ext[i] & 0x80;
+				frameMarks.endOfFrame	= ext[i] & 0x40;
+				frameMarks.independent	= ext[i] & 0x20;
+				frameMarks.discardable	= ext[i] & 0x10;
 
 				// Check variable length
 				if (len==1) {
 					// We are non-scalable
-					frameMarks.baseLayerSync = 0;
-					frameMarks.temporalLayerId = 0;
-					frameMarks.layerId = 0;
-					frameMarks.tl0PicIdx = 0;
+					frameMarks.baseLayerSync	= 0;
+					frameMarks.temporalLayerId	= 0;
+					frameMarks.layerId		= 0;
+					frameMarks.tl0PicIdx		= 0;
 				} else if (len==3) {
 					// Set scalable parts
-					frameMarks.baseLayerSync = ext[i] & 0x08;
-					frameMarks.temporalLayerId = ext[i] & 0x07;
-					frameMarks.layerId = ext[i+1];
-					frameMarks.tl0PicIdx = ext[i+2]; 
+					frameMarks.baseLayerSync	= ext[i] & 0x08;
+					frameMarks.temporalLayerId	= ext[i] & 0x07;
+					frameMarks.layerId		= ext[i+1];
+					frameMarks.tl0PicIdx		= ext[i+2]; 
 				} else {
 					// Incorrect length
 					hasFrameMarking = false;
@@ -225,22 +223,22 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 			// SDES string items
 			case RTPStreamId:
 				hasRTPStreamId = true;
-				rid.assign((const char*)ext+i,n);
+				rid.assign((const char*)ext+i,len);
 				break;	
 			case RepairedRTPStreamId:
 				hasRepairedRTPStreamId = true;
-				repairedId.assign((const char*)ext+i,n);
+				repairedId.assign((const char*)ext+i,len);
 				break;	
 			case MediaStreamId:
 				hasMediaStreamId = true;
-				mid.assign((const char*)ext+i,n);
+				mid.assign((const char*)ext+i,len);
 				break;	
 			default:
 				Debug("-Unknown or unmapped extension [%d]\n",id);
 				break;
 		}
 		//Skip length
-		i += n;
+		i += len;
 	}
  
 	return 4+length;
@@ -536,7 +534,7 @@ void RTPHeaderExtension::Dump() const
 	if (hasTransportWideCC)
 		Debug("\t\t\t[TransportWideCC seq=%u]\n",transportSeqNum);
 	if (hasFrameMarking)
-		Debug("\t\t\t[FrameMarking startOfFrame=%u endOfFrame=%u independent=%u discardable=%u baseLayerSync=%u temporalLayerId=%u spatialLayerId=%u tl0PicIdx=%u]\n",
+		Debug("\t\t\t[FrameMarking startOfFrame=%u endOfFrame=%u independent=%u discardable=%u baseLayerSync=%u temporalLayerId=%u layerId=%u tl0PicIdx=%u]\n",
 			frameMarks.startOfFrame,
 			frameMarks.endOfFrame,
 			frameMarks.independent,

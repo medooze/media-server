@@ -63,7 +63,7 @@ MediaFrame* VP9Depacketizer::AddPacket(const RTPPacket::shared& packet)
 
 MediaFrame* VP9Depacketizer::AddPayload(BYTE* payload, DWORD len)
 {
-	//Check lenght
+	//Check length
 	if (!len)
 		//Exit
 		return NULL;
@@ -79,9 +79,8 @@ MediaFrame* VP9Depacketizer::AddPayload(BYTE* payload, DWORD len)
 	//Check
 	if (!descLen || len<descLen)
 	{
-		Dump(payload,len);
 		//Error
-		Error("-VP9Depacketizer::AddPayload() | Error decoding VP9 payload header\n");
+		UltraDebug("-VP9Depacketizer::AddPayload() | Error decoding VP9 payload header\n");
 		return NULL;
 	}
 	
@@ -101,8 +100,6 @@ MediaFrame* VP9Depacketizer::AddPayload(BYTE* payload, DWORD len)
 		frame.SetHeight(480);
 	}
     
-
-		
 	return &frame;
 }
 

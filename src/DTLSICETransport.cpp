@@ -389,12 +389,12 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		//Check if it was rejected
 		if (lost<0)
 		{
-			UltraDebug("-Dropped packet [ssrc:%d,seq:%d]\n",ssrc,packet->GetSeqNum());
+			UltraDebug("-Dropped packet [ssrc:%u,seq:%d]\n",ssrc,packet->GetSeqNum());
 			//Increase rejected counter
 			source->dropPackets++;
 		} else if (group->rtx.ssrc && ( lost || (group->GetCurrentLost() && getTimeDiff(source->lastNACKed)>fmin(rtt,30E3))))  {
 			
-			UltraDebug("-Lost packets [ssrc:%d,seq:%d,lost:%d,total:%d]\n",ssrc,packet->GetSeqNum(),lost,group->GetCurrentLost());
+			UltraDebug("-Lost packets [ssrc:%u,seq:%d,lost:%d,total:%d]\n",ssrc,packet->GetSeqNum(),lost,group->GetCurrentLost());
 			
 			//Create rtcp sender retpor
 			auto rtcp = RTCPCompoundPacket::Create();
@@ -464,9 +464,8 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	
 		//Send it
 		Send(rtcp);
-		
-		
 	}
+	
 	//Done
 	return 1;
 }
