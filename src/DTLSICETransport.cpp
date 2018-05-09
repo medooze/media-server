@@ -1488,14 +1488,11 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 			//Add new stat
 			transportWideSentPacketsStats[packet->GetTransportSeqNum()] = PacketStats::Create(packet,len,getTime());
 			//Protect against missing feedbacks, remove too old lost packets
-			for (auto it = transportWideSentPacketsStats.begin() ; it!=transportWideSentPacketsStats.end() ; ++it)
-				//If we have more than 1s dif
-				if (getTimeDiff(it->second->time)>1E6)
-					//Erase it
-					transportWideSentPacketsStats.erase(it);
-				else
-					//Newe
-					break;
+			auto it = transportWideSentPacketsStats.begin();
+			//If we have more than 1s diff
+			while(it!=transportWideSentPacketsStats.end() && getTimeDiff(it->second->time)>1E6)
+				//Erase it and move iterator
+				it = transportWideSentPacketsStats.erase(it);
 		}
 	} else {
 		//Error
