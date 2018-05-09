@@ -210,6 +210,10 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,const RTPPacket::
 	//Change ssrc
 	cloned->SetSSRC(ssrc);
 	
+	//Disable frame markings
+	//TODO: we should change this so the header extension is recvonly and stripted when sending it instead
+	cloned->DisableFrameMarkings();
+	
 	//Rewrite pict id
 	//TODO: this should go into the layer selector??
 	if (rewritePicId && cloned->GetCodec()==VideoCodec::VP8)

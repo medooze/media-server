@@ -83,6 +83,14 @@ public:
 	void  SetAbsSentTime(QWORD absSentTime)	{ header.extension = extension.hasAbsSentTime     = true; extension.absSentTime = absSentTime;	}
 	void  SetTimeOffset(int timeOffset)     { header.extension = extension.hasTimeOffset      = true; extension.timeOffset = timeOffset;	}
 	void  SetTransportSeqNum(DWORD seq)	{ header.extension = extension.hasTransportWideCC = true; extension.transportSeqNum = seq;	}
+	void  SetFrameMarkings(const RTPHeaderExtension::FrameMarks& frameMarks ) { header.extension = extension.hasFrameMarking = true; extension.frameMarks = frameMarks;	}
+	
+	//Disable extensions
+	void  DisableAbsSentTime()	{ extension.hasAbsSentTime     = false; CheckExtensionMark(); }
+	void  DisableTimeOffset()	{ extension.hasTimeOffset      = false; CheckExtensionMark(); }
+	void  DisableTransportSeqNum()	{ extension.hasTransportWideCC = false; CheckExtensionMark(); }
+	void  DisableFrameMarkings()	{ extension.hasFrameMarking    = false; CheckExtensionMark(); }
+
 	
 	QWORD GetAbsSendTime()		const	{ return extension.absSentTime;		}
 	int   GetTimeOffset()		const	{ return extension.timeOffset;		}
@@ -101,6 +109,9 @@ public:
 	
 	const RTPHeader&		GetRTPHeader()		const { return header;		}
 	const RTPHeaderExtension&	GetRTPHeaderExtension()	const { return extension;	}
+	
+protected:
+	void  CheckExtensionMark()	{ header.extension =  extension.hasAbsSentTime || extension.hasTimeOffset  || extension.hasTransportWideCC ||  extension.hasFrameMarking; }
 
 private:
 	static const DWORD SIZE = 1700;
