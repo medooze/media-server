@@ -130,7 +130,7 @@ void AudioMixer::Process(DWORD numSamples)
 		//Get the samples from the fifo
 		audio->len = audio->output->GetSamples(audio->buffer,numSamples);
 		//Clean rest
-		memset(audio->buffer+audio->len,0,Sidebar::MIXER_BUFFER_SIZE-audio->len);
+		memset(audio->buffer+audio->len,0,(Sidebar::MIXER_BUFFER_SIZE-audio->len)*sizeof(SWORD));
 		//Get VAD value
 		audio->vad = audio->output->GetVAD(numSamples);
 		//For each sidepaf
