@@ -295,9 +295,6 @@ int XmlRpcServer::GetBody(TSession *ses,char *body,DWORD bodyLen)
 **************************************/
 int XmlRpcServer::SendResponse(TSession *r, short code, const char *msg, int length)
 {
-	//Chunked output
-	ResponseChunked(r);
-
 	//POnemos el codigo
 	ResponseStatus(r,code);
 
