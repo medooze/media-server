@@ -7,7 +7,7 @@ VP8LayerSelector::VP8LayerSelector()
 {
 	waitingForIntra = true;
 	temporalLayerId = 0;
-	nextTemporalLayerId = MaxLayerId;
+	nextTemporalLayerId = LayerInfo::MaxLayerId;
 }
 
 
@@ -94,4 +94,17 @@ bool VP8LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 	//Select
 	return true;
 	
+}
+
+ LayerInfo VP8LayerSelector::GetLayerIds(const RTPPacket::shared& packet)
+{
+	LayerInfo info;
+	VP8PayloadDescriptor desc;
+	
+	//Parse VP8 payload description
+	if (desc.Parse(packet->GetMediaData(),packet->GetMediaLength()))
+		//Set temporal layer info
+		info.temporalLayerId = desc.temporalLayerIndex;
+	
+	return info;
 }

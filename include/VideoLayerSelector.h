@@ -8,8 +8,6 @@
 class VideoLayerSelector
 {
 public:
-	static BYTE MaxLayerId;
-public:
 	virtual ~VideoLayerSelector() = default;
 	virtual void SelectTemporalLayer(BYTE id) = 0;
 	virtual void SelectSpatialLayer(BYTE id) = 0;
@@ -18,9 +16,11 @@ public:
 	virtual BYTE GetTemporalLayer()		const = 0;
 	virtual BYTE GetSpatialLayer()		const = 0;
 	virtual VideoCodec::Type GetCodec()	const = 0;
+	
 public:
 	//Factory method
 	static VideoLayerSelector* Create(VideoCodec::Type codec);
+	static LayerInfo GetLayerIds(const RTPPacket::shared& packet);
 };
 
 #endif /* VIDEOLAYERSELECTOR_H */

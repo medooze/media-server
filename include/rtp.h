@@ -35,6 +35,40 @@
 #include "acumulator.h"
 #include "use.h"
 
+
+struct LayerInfo
+{
+	static BYTE MaxLayerId; 
+	BYTE temporalLayerId = MaxLayerId;
+	BYTE spatialLayerId  = MaxLayerId;
+	
+	bool IsValid() { return temporalLayerId!=MaxLayerId && spatialLayerId != MaxLayerId;	}
+	WORD GetId()   { return ((WORD)spatialLayerId)<<8 | spatialLayerId;			}
+};
+struct LayerSource
+{
+	LayerInfo	info;
+	DWORD		numPackets;
+	DWORD		totalBytes;
+	Acumulator	bitrate;
+	
+	LayerSource() : bitrate(1000)
+	{
+		numPackets	= 0;
+		totalBytes	= 0;
+	}
+	
+	void Update(QWORD now, DWORD size) 
+	{
+		//Increase stats
+		numPackets++;
+		totalBytes += size;
+		
+		//Update bitrate acumulator
+		bitrate.Update(now,size);
+	}
+};
+
 struct RTPSource 
 {
 	DWORD	ssrc;
@@ -119,6 +153,7 @@ struct RTPIncomingSource : public RTPSource
 	DWORD   totalPLIs;
 	DWORD	totalNACKs;
 	QWORD	lastNACKed;
+	std::map<WORD,LayerSource> layers;
 	
 	RTPIncomingSource() : RTPSource()
 	{
@@ -135,6 +170,16 @@ struct RTPIncomingSource : public RTPSource
 		totalNACKs		 = 0;
 		lastNACKed		 = 0;
 		minExtSeqNumSinceLastSR  = RTPPacket::MaxExtSeqNum;
+	}
+	
+	void Update(QWORD now,DWORD seqNum,DWORD size, LayerInfo layerInfo)
+	{
+		//Update source normally
+		RTPIncomingSource::Update(now,seqNum,size);
+		//Check layer info is present
+		if (layerInfo.IsValid())
+			//Update also layer
+			layers[layerInfo.GetId()].Update(now,size);
 	}
 	
 	virtual void Update(QWORD now,DWORD seqNum,DWORD size)

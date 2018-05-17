@@ -67,8 +67,8 @@ private:
 	QWORD lastTime		= 0;  //Last sent time
 	DWORD dropped		= 0;  //Num of empty packets dropped
 	DWORD ssrc		= 0;  //SSRC to rewrite to
-	BYTE spatialLayerId	= VideoLayerSelector::MaxLayerId;
-	BYTE temporalLayerId	= VideoLayerSelector::MaxLayerId;
+	BYTE spatialLayerId	= LayerInfo::MaxLayerId;
+	BYTE temporalLayerId	= LayerInfo::MaxLayerId;
 	WORD lastPicId		= 0;
 	WORD lastTl0Idx		= 0;
 	QWORD picId		= 0;

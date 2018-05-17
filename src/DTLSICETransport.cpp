@@ -34,6 +34,7 @@
 #include "rtp/RTPMap.h"
 #include "rtp/RTPHeader.h"
 #include "rtp/RTPHeaderExtension.h"
+#include "VideoLayerSelector.h"
 
 DTLSICETransport::DTLSICETransport(Sender *sender) : dtls(*this), mutex(true)
 {
@@ -274,8 +275,17 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	//Set the payload
 	packet->SetPayload(data+ini,len-ini);
 	
-	//Update source
-	source->Update(getTimeMS(),header.sequenceNumber,size);
+	//if it is video
+	if (group->type == MediaFrame::Video)
+	{
+		//Check if we can ge the layer info
+		auto info = VideoLayerSelector::GetLayerIds(packet);
+		//Update source and layer info
+		source->Update(getTimeMS(),header.sequenceNumber,size, info);
+	} else {
+		//Update source and layer info
+		source->Update(getTimeMS(),header.sequenceNumber,size);
+	}
 	
 	//Set cycles back
 	packet->SetSeqCycles(source->cycles);
@@ -1498,7 +1508,6 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 		//Error
 		Error("-DTLSICETransport::Send() | Error sending packet [len:%d,err:%d]\n",len,errno);
 	}
-
 	
 	//Get time for packets to discard, always have at least 200ms, max 500ms
 	QWORD until = getTimeMS() - (200+fmin(rtt*2,300));

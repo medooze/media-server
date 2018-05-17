@@ -4,7 +4,8 @@
 #include "rtp.h"
 #include "bitstream.h"
 
-	
+BYTE LayerInfo::MaxLayerId = 0xFF;
+
 RTCPSenderReport::shared RTPOutgoingSource::CreateSenderReport(QWORD now)
 {
 	//Create Sender report
@@ -398,6 +399,10 @@ void RTPIncomingSourceGroup::Update(QWORD now)
 	media.bitrate.Update(now);
 	rtx.bitrate.Update(now);
 	fec.bitrate.Update(now);
+	//Update also all media layers
+	for (auto& entry : media.layers)
+		//Update bitrate also
+		entry.second.bitrate.Update(now);
 }
 
 void RTPIncomingSourceGroup::SetRTT(DWORD rtt)

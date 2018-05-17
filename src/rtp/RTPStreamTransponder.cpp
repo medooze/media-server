@@ -380,8 +380,8 @@ void  RTPStreamTransponder::Reset()
 		selector = NULL;
 	}
 	//No layer
-	spatialLayerId = VideoLayerSelector::MaxLayerId;
-	temporalLayerId = VideoLayerSelector::MaxLayerId;
+	spatialLayerId = LayerInfo::MaxLayerId;
+	temporalLayerId = LayerInfo::MaxLayerId;
 	
 	Debug("<RTPStreamTransponder::Reset()\n");
 }

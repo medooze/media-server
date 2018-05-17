@@ -16,18 +16,18 @@
 
 VP9LayerSelector::VP9LayerSelector()
 {
-	temporalLayerId = 0;
-	spatialLayerId  = 0;
-	nextTemporalLayerId = MaxLayerId;
-	nextSpatialLayerId = MaxLayerId;
+	temporalLayerId		= 0;
+	spatialLayerId		= 0;
+	nextTemporalLayerId	= LayerInfo::MaxLayerId;
+	nextSpatialLayerId	= LayerInfo::MaxLayerId;
 }
 
 VP9LayerSelector::VP9LayerSelector(BYTE temporalLayerId,BYTE spatialLayerId )
 {
-	temporalLayerId = 0;
-	spatialLayerId  = 0;
-	nextTemporalLayerId = temporalLayerId;
-	nextSpatialLayerId = spatialLayerId;
+	temporalLayerId		= 0;
+	spatialLayerId		= 0;
+	nextTemporalLayerId	= temporalLayerId;
+	nextSpatialLayerId	= spatialLayerId;
 }
 
 void VP9LayerSelector::SelectTemporalLayer(BYTE id)
@@ -164,4 +164,27 @@ bool VP9LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 	//Select
 	return true;
 	
+}
+
+ LayerInfo VP9LayerSelector::GetLayerIds(const RTPPacket::shared& packet)
+{
+	LayerInfo info;
+	VP9PayloadDescription desc;
+	
+	//If packet has frame markings
+	if (packet->HasFrameMarkings())
+	{
+		//Get it from frame markings
+		const auto& fm = packet->GetFrameMarks();
+		//Import data
+		info.temporalLayerId			= fm.temporalLayerId;
+		info.spatialLayerId			= fm.layerId & 0x07;
+	//Parse VP9 payload description
+	} else if (desc.Parse(packet->GetMediaData(),packet->GetMaxMediaLength())) {
+		//Get data
+		info.temporalLayerId			= desc.temporalLayerId;
+		info.spatialLayerId			= desc.spatialLayerId;
+	}
+	//Return layer info
+	return info;
 }

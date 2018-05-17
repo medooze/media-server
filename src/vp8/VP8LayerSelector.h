@@ -28,9 +28,11 @@ public:
 	
 	bool Select(const RTPPacket::shared& packet,bool &mark)	override;
 	
-	BYTE GetTemporalLayer()		const override { return temporalLayerId; }
-	BYTE GetSpatialLayer()		const override { return MaxLayerId;	 }
-	VideoCodec::Type GetCodec()	const override { return VideoCodec::VP8; }
+	BYTE GetTemporalLayer()		const override { return temporalLayerId;	}
+	BYTE GetSpatialLayer()		const override { return LayerInfo::MaxLayerId;	}
+	VideoCodec::Type GetCodec()	const override { return VideoCodec::VP8;	}
+	
+	static LayerInfo GetLayerIds(const RTPPacket::shared& packet);
 	
 private:
 	bool waitingForIntra;

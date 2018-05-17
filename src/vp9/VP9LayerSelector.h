@@ -31,6 +31,7 @@ public:
 	BYTE GetSpatialLayer()		const override { return spatialLayerId;  }
 	VideoCodec::Type GetCodec()	const override { return VideoCodec::VP9; }
 	
+	static LayerInfo GetLayerIds(const RTPPacket::shared& packet);
 private:
 	BYTE temporalLayerId;
 	BYTE spatialLayerId;

@@ -181,7 +181,6 @@
         <in>aac.cpp</in>
         <in>bundle.cpp</in>
         <in>cpim.cpp</in>
-        <in>encoders.cpp</in>
         <in>fec.cpp</in>
         <in>main.cpp</in>
         <in>overlay.cpp</in>
@@ -901,8 +900,6 @@
       <item path="test/cpim.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
         </ccTool>
-      </item>
-      <item path="test/encoders.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="test/fec.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
@@ -3521,8 +3518,6 @@
       <item path="test/cpim.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="3">
         </ccTool>
-      </item>
-      <item path="test/encoders.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="test/fec.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="3">

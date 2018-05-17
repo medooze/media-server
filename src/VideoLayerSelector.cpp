@@ -4,8 +4,6 @@
 #include "vp8/VP8LayerSelector.h"
 
 
-BYTE VideoLayerSelector::MaxLayerId = 0xFF;
-
 class DummyVideoLayerSelector : public VideoLayerSelector
 {
 public:
@@ -23,8 +21,8 @@ public:
 		return true;
 	}
 	
-	BYTE GetTemporalLayer() const override { return MaxLayerId; }
-	BYTE GetSpatialLayer()	const override { return MaxLayerId;  }
+	BYTE GetTemporalLayer() const override { return LayerInfo::MaxLayerId;  }
+	BYTE GetSpatialLayer()	const override { return LayerInfo::MaxLayerId;  }
 	VideoCodec::Type GetCodec()	const override { return codec; }
 private:
 	VideoCodec::Type codec;
@@ -42,5 +40,18 @@ VideoLayerSelector* VideoLayerSelector::Create(VideoCodec::Type codec)
 			return new VP8LayerSelector();
 		default:
 			return new DummyVideoLayerSelector(codec);
+	}
+}
+
+ LayerInfo VideoLayerSelector::GetLayerIds(const RTPPacket::shared& packet)
+{
+	switch(packet->GetCodec())
+	{
+		case VideoCodec::VP9:
+			return VP9LayerSelector::GetLayerIds(packet);
+		case VideoCodec::VP8:
+			return VP8LayerSelector::GetLayerIds(packet);
+		default:
+			return LayerInfo();
 	}
 }
