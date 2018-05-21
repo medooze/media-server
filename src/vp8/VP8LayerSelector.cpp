@@ -105,6 +105,6 @@ bool VP8LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 	if (desc.Parse(packet->GetMediaData(),packet->GetMediaLength()))
 		//Set temporal layer info
 		info.temporalLayerId = desc.temporalLayerIndex;
-	
+	//UltraDebug("-VP8LayerSelector::GetLayerIds() | [tid:%u,sid:%u]\n",info.temporalLayerId,info.spatialLayerId);
 	return info;
 }

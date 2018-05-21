@@ -42,20 +42,25 @@ struct LayerInfo
 	BYTE temporalLayerId = MaxLayerId;
 	BYTE spatialLayerId  = MaxLayerId;
 	
-	bool IsValid() { return temporalLayerId!=MaxLayerId && spatialLayerId != MaxLayerId;	}
-	WORD GetId()   { return ((WORD)spatialLayerId)<<8 | spatialLayerId;			}
+	bool IsValid() { return spatialLayerId!=MaxLayerId || temporalLayerId != MaxLayerId;	}
+	WORD GetId()   { return ((WORD)spatialLayerId)<<8  | temporalLayerId;			}
 };
-struct LayerSource
+
+struct LayerSource : LayerInfo
 {
-	LayerInfo	info;
-	DWORD		numPackets;
-	DWORD		totalBytes;
+	DWORD		numPackets = 0;
+	DWORD		totalBytes = 0;
 	Acumulator	bitrate;
 	
 	LayerSource() : bitrate(1000)
 	{
-		numPackets	= 0;
-		totalBytes	= 0;
+		
+	}
+	
+	LayerSource(const LayerInfo& layerInfo) : bitrate(1000)
+	{
+		spatialLayerId  = layerInfo.spatialLayerId;
+		temporalLayerId = layerInfo.temporalLayerId; 
 	}
 	
 	void Update(QWORD now, DWORD size) 
@@ -178,8 +183,16 @@ struct RTPIncomingSource : public RTPSource
 		RTPIncomingSource::Update(now,seqNum,size);
 		//Check layer info is present
 		if (layerInfo.IsValid())
-			//Update also layer
-			layers[layerInfo.GetId()].Update(now,size);
+		{
+			//Find layer
+			auto it = layers.find(layerInfo.GetId());
+			//If not found
+			if (it==layers.end())
+				//Add new entry
+				it = layers.emplace(layerInfo.GetId(),LayerSource(layerInfo)).first;
+			//Update layer source
+			it->second.Update(now,size);
+		}
 	}
 	
 	virtual void Update(QWORD now,DWORD seqNum,DWORD size)

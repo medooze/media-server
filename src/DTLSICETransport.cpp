@@ -280,6 +280,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	{
 		//Check if we can ge the layer info
 		auto info = VideoLayerSelector::GetLayerIds(packet);
+		//UltraDebug("-VideoLayerSelector::GetLayerIds() | [id:%x,tid:%u,sid:%u]\n",info.GetId(),info.temporalLayerId,info.spatialLayerId);
 		//Update source and layer info
 		source->Update(getTimeMS(),header.sequenceNumber,size, info);
 	} else {

@@ -185,6 +185,7 @@ bool VP9LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 		info.temporalLayerId			= desc.temporalLayerId;
 		info.spatialLayerId			= desc.spatialLayerId;
 	}
+	//UltraDebug("-VP9LayerSelector::GetLayerIds() | [tid:%u,sid:%u]\n",info.temporalLayerId,info.spatialLayerId);
 	//Return layer info
 	return info;
 }
