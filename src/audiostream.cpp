@@ -426,7 +426,7 @@ int AudioStream::SendAudio()
 	packet.SetClockRate(clock);
 
 	//Get initial time
-	DWORD frameTime = getDifTime(&ini)*clock/10E6;
+	DWORD frameTime = getDifTime(&ini)*clock/1E6;
 
 	//Send audio
 	while(sendingAudio)
