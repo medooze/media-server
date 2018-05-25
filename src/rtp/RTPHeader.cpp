@@ -2,17 +2,6 @@
 #include "bitstream.h"
 #include "log.h"
 
-RTPHeader::RTPHeader()
-{
-	version = 2;
-	padding = false;
-	extension = false;
-	mark  = false;
-	payloadType = 0;
-	sequenceNumber = 0;
-	timestamp = 0;
-	ssrc = 0;
-}
 /*
  
      0                   1                   2                   3
@@ -39,7 +28,11 @@ DWORD RTPHeader::Parse(const BYTE* data,const DWORD size)
 	
 	//Bite reader
 	BitReader r(data,2); 
-		
+
+	//If not an rtp packet
+	if (r.Peek(2)!=2)
+		return 0;
+	
 	//Get data
 	version		= r.Get(2);
 	padding		= r.Get(1);

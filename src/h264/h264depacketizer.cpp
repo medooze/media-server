@@ -36,16 +36,27 @@ void H264Depacketizer::ResetFrame()
 	memset(frame.GetData(),0,frame.GetMaxMediaLength());
 	//Clear length
 	frame.SetLength(0);
+	//Clear time
+	frame.SetTimestamp((DWORD)-1);
+	frame.SetTime((QWORD)-1);
 }
 
-MediaFrame* H264Depacketizer::AddPacket(RTPPacket *packet)
+MediaFrame* H264Depacketizer::AddPacket(const RTPPacket::shared& packet)
 {
 	//Check it is from same packet
 	if (frame.GetTimeStamp()!=packet->GetTimestamp())
 		//Reset frame
 		ResetFrame();
-	//Set timestamp
-	frame.SetTimestamp(packet->GetTimestamp());
+	//If not timestamp
+	if (frame.GetTimeStamp()==(DWORD)-1)
+		//Set timestamp
+		frame.SetTimestamp(packet->GetTimestamp());
+	//If not times
+	if (frame.GetTime()==(QWORD)-1)
+		//Set timestamp
+		frame.SetTime(packet->GetTime());
+	//Set SSRC
+	frame.SetSSRC(packet->GetSSRC());
 	//Add payload
 	AddPayload(packet->GetMediaData(),packet->GetMediaLength());
 	//If it is last return frame
@@ -55,8 +66,6 @@ MediaFrame* H264Depacketizer::AddPacket(RTPPacket *packet)
 MediaFrame* H264Depacketizer::AddPayload(BYTE* payload, DWORD payload_len)
 {
 	BYTE nalHeader[4];
-	BYTE nal_unit_type;
-	BYTE nal_ref_idc;
 	BYTE S, E;
 	DWORD nalu_size;
 	DWORD pos;
@@ -73,8 +82,8 @@ MediaFrame* H264Depacketizer::AddPayload(BYTE* payload, DWORD payload_len)
 	 *
 	 * F must be 0.
 	 */
-	nal_ref_idc = (payload[0] & 0x60) >> 5;
-	nal_unit_type = payload[0] & 0x1f;
+	// BYTE nal_ref_idc = (payload[0] & 0x60) >> 5;
+	BYTE nal_unit_type = payload[0] & 0x1f;
 
 	//Debug("-H264 [NAL:%d,type:%d]\n", payload[0], nal_unit_type);
 

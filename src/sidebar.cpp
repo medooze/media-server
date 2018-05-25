@@ -5,6 +5,7 @@
  * Created on 9 de agosto de 2012, 15:26
  */
 #include <string.h>
+#include <emmintrin.h>
 #include "sidebar.h"
 #include "log.h"
 

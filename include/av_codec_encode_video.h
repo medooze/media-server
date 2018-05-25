@@ -4,7 +4,7 @@ inline int avcodec_encode_video(AVCodecContext *avctx, uint8_t *buf, int buf_siz
     AVPacket pkt;
     int ret, got_packet = 0;
 
-    if(buf_size < FF_MIN_BUFFER_SIZE){
+    if(buf_size < AV_INPUT_BUFFER_MIN_SIZE){
         av_log(avctx, AV_LOG_ERROR, "buffer smaller than minimum size\n");
         return -1;
     }

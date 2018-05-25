@@ -1,2 +1,4 @@
 /build
 /bin
+/ext/out/Release
+/nbproject/private

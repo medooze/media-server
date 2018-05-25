@@ -10,6 +10,7 @@
 
 #include <string>
 #include <map>
+#include <memory>
 #include <sys/socket.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -25,6 +26,9 @@
 #include "fecdecoder.h"
 #include "use.h"
 #include "rtpbuffer.h"
+#include "PCAPFile.h"
+#include "remoterateestimator.h"
+
 
 class DTLSICETransport : 
 	public RTPSender,
@@ -42,10 +46,12 @@ public:
 public:
 	DTLSICETransport(Sender *sender);
 	virtual ~DTLSICETransport();
+	void SetSRTPProtectionProfiles(const std::string& profiles);
 	void SetRemoteProperties(const Properties& properties);
 	void SetLocalProperties(const Properties& properties);
 	virtual int SendPLI(DWORD ssrc) override;
-	virtual int Send(RTPPacket &packet) override;
+	virtual int Send(const RTPPacket::shared& packet) override;
+	int Dump(const char* filename);
 	void Reset();
 	
 	void ActivateRemoteCandidate(ICERemoteCandidate* candidate,bool useCandidate, DWORD priority);
@@ -57,6 +63,7 @@ public:
 	bool AddIncomingSourceGroup(RTPIncomingSourceGroup *group);
 	bool RemoveIncomingSourceGroup(RTPIncomingSourceGroup *group);
 	
+	void SetSenderSideEstimatorListener(RemoteRateEstimator::Listener* listener) { senderSideEstimator.SetListener(listener); }
 	
 	const char* GetRemoteUsername() const { return iceRemoteUsername;	};
 	const char* GetRemotePwd()	const { return iceRemotePwd;		};
@@ -70,9 +77,10 @@ public:
 
 private:
 	void SetRTT(DWORD rtt);
-	void onRTCP(RTCPCompoundPacket* rtcp);
+	void onRTCP(const RTCPCompoundPacket::shared &rtcp);
 	void ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq);
-	void Send(RTCPCompoundPacket &rtcp);
+	void SendTransportWideFeedbackMessage(DWORD ssrc);
+	void Send(const RTCPCompoundPacket::shared& rtcp);
 	int SetLocalCryptoSDES(const char* suite, const BYTE* key, const DWORD len);
 	int SetRemoteCryptoSDES(const char* suite, const BYTE* key, const DWORD len);
 	//Helpers
@@ -91,6 +99,34 @@ private:
 		RTPMap		ext;
 		RTPMap		apt;
 	};
+	
+private:
+	struct PacketStats
+	{
+		using shared = std::shared_ptr<PacketStats>;
+		
+		static PacketStats::shared Create(const RTPPacket::shared& packet, DWORD size, QWORD now)
+		{
+			auto stats = std::make_shared<PacketStats>();
+			
+			stats->transportWideSeqNum	= packet->GetTransportSeqNum();
+			stats->ssrc			= packet->GetSSRC();
+			stats->extSeqNum		= packet->GetExtSeqNum();
+			stats->size			= size;
+			stats->payload			= packet->GetMediaLength();
+			stats->timestamp		= packet->GetTimestamp();
+			stats->time			= now;
+			
+			return stats;
+		}
+		DWORD transportWideSeqNum;
+		DWORD ssrc;
+		DWORD extSeqNum;
+		DWORD size;
+		DWORD payload;
+		DWORD timestamp;
+		QWORD time;
+	};
 private:
 	Sender*		sender;
 	DTLSConnection	dtls;
@@ -101,10 +137,11 @@ private:
 	srtp_t		recv;
 	WORD		transportSeqNum;
 	WORD		feedbackPacketCount;
-	WORD		lastFeedbackPacketExtSeqNum;
+	DWORD		lastFeedbackPacketExtSeqNum;
 	WORD		feedbackCycles;
 	OutgoingStreams outgoing;
 	IncomingStreams incoming;
+	std::map<std::string,RTPIncomingSourceGroup*> rids;
 	
 	DWORD	mainSSRC;
 	DWORD   rtt;
@@ -112,19 +149,16 @@ private:
 	char*	iceRemotePwd;
 	char*	iceLocalUsername;
 	char*	iceLocalPwd;
-
-	//Transmision
-	sockaddr_in sendAddr;
-	sockaddr_in sendRtcpAddr;
-
-	//Recepcion
-	in_addr_t recIP;
-	DWORD	  recPort;
-	DWORD     prio;
 	
 	Mutex	mutex;
 	Use	incomingUse;
 	Use	outgoingUse;
+	
+	std::map<DWORD,PacketStats::shared> transportWideSentPacketsStats;
+	std::map<DWORD,PacketStats::shared> transportWideReceivedPacketsStats;
+	
+	PCAPFile* pcap;
+	RemoteRateEstimator senderSideEstimator;
 };
 
 

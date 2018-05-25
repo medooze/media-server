@@ -20,7 +20,7 @@ public:
 
 	int Init(AudioOutput *output);
 	int Start();
-	void onRTPPacket(RTPPacket &packet);
+	void onRTPPacket(const RTPPacket::shared &packet);
 	int Stop();
 	int End();
 
@@ -32,7 +32,7 @@ private:
 
 private:
 	AudioOutput *output;
-	WaitQueue<RTPPacket*> packets;
+	WaitQueue<RTPPacket::shared> packets;
 	pthread_t thread;
 	bool decoding;
 };

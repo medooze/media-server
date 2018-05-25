@@ -15,9 +15,9 @@ public:
 
 	int Init(AudioInput *input,AudioOutput *output);
 	int SetAudioCodec(AudioCodec::Type codec,const Properties& properties);
-	int StartSending(char* sendAudioIp,int sendAudioPort,RTPMap& rtpMap);
+	int StartSending(char* sendAudioIp,int sendAudioPort,const RTPMap& rtpMap,const RTPMap& aptMap);
 	int StopSending();
-	int StartReceiving(RTPMap& rtpMap);
+	int StartReceiving(const RTPMap& rtpMap,const RTPMap& aptMap);
 	int StopReceiving();
 	int SetMute(bool isMuted);
 	int SetLocalCryptoSDES(const char* suite, const char* key64);

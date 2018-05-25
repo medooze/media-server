@@ -24,22 +24,9 @@
 #include "rtp/RTCPNACK.h"
 #include "rtp/RTCPExtendedJitterReport.h"
 
-RTCPCompoundPacket::RTCPCompoundPacket()
+RTCPCompoundPacket::RTCPCompoundPacket(const RTCPPacket::shared& packet)
 {
-	
-}
-
-RTCPCompoundPacket::RTCPCompoundPacket(RTCPPacket* packet)
-{
-	AddRTCPacket(packet);
-}
-
-RTCPCompoundPacket::~RTCPCompoundPacket()
-{
-	//Fir each oen
-	for(RTCPPackets::iterator it = packets.begin(); it!=packets.end(); ++it)
-		//delete
-		delete((*it));
+	AddPacket(packet);
 }
 
 DWORD RTCPCompoundPacket::RTCPCompoundPacket::GetSize() const
@@ -48,7 +35,7 @@ DWORD RTCPCompoundPacket::RTCPCompoundPacket::GetSize() const
 	//Calculate
 	for(RTCPPackets::const_iterator it = packets.begin(); it!=packets.end(); ++it)
 		//Append size
-		size = RTCPCommonHeader::GetSize()+(*it)->GetSize();
+		size = (*it)->GetSize();
 	//Return total size
 	return size;
 }
@@ -69,7 +56,7 @@ DWORD RTCPCompoundPacket::Serialize(BYTE *data,DWORD size) const
 }
 	
 
-RTCPCompoundPacket* RTCPCompoundPacket::Parse(BYTE *data,DWORD size)
+RTCPCompoundPacket::shared RTCPCompoundPacket::Parse(BYTE *data,DWORD size)
 {
 	//Check if it is an RTCP valid header
 	if (!IsRTCP(data,size))
@@ -79,14 +66,14 @@ RTCPCompoundPacket* RTCPCompoundPacket::Parse(BYTE *data,DWORD size)
 		return NULL;
 	}
 	//Create pacekt
-	RTCPCompoundPacket* rtcp = new RTCPCompoundPacket();
+	auto rtcp = RTCPCompoundPacket::Create();
 	//Init pointers
 	BYTE *buffer = data;
 	DWORD bufferLen = size;
 	//Parse
 	while (bufferLen)
 	{
-		RTCPPacket *packet = NULL;
+		RTCPPacket::shared packet;
 		RTCPCommonHeader header;
 		//Get type from header
 		DWORD len = header.Parse(buffer,bufferLen);
@@ -112,53 +99,53 @@ RTCPCompoundPacket* RTCPCompoundPacket::Parse(BYTE *data,DWORD size)
 		{
 			case RTCPPacket::SenderReport:
 				//Create packet
-				packet = new RTCPSenderReport();
+				packet = std::make_shared<RTCPSenderReport>();
 				break;
 			case RTCPPacket::ReceiverReport:
 				//Create packet
-				packet = new RTCPReceiverReport();
+				packet = std::make_shared<RTCPReceiverReport>();
 				break;
 			case RTCPPacket::SDES:
 				//Create packet
-				packet = new RTCPSDES();
+				packet = std::make_shared<RTCPSDES>();
 				break;
 			case RTCPPacket::Bye:
 				//Create packet
-				packet = new RTCPBye();
+				packet = std::make_shared<RTCPBye>();
 				break;
 			case RTCPPacket::App:
 				//Create packet
-				packet = new RTCPApp();
+				packet = std::make_shared<RTCPApp>();
 				break;
 			case RTCPPacket::RTPFeedback:
 				//Create packet
-				packet = new RTCPRTPFeedback();
+				packet = std::make_shared<RTCPRTPFeedback>();
 				break;
 			case RTCPPacket::PayloadFeedback:
 				//Create packet
-				packet = new RTCPPayloadFeedback();
+				packet = std::make_shared<RTCPPayloadFeedback>();
 				break;
 			case RTCPPacket::FullIntraRequest:
 				//Create packet
-				packet = new RTCPFullIntraRequest();
+				packet = std::make_shared<RTCPFullIntraRequest>();
 				break;
 			case RTCPPacket::NACK:
 				//Create packet
-				packet = new RTCPNACK();
+				packet = std::make_shared<RTCPNACK>();
 				break;
 			case RTCPPacket::ExtendedJitterReport:
 				//Create packet
-				packet = new RTCPExtendedJitterReport();
+				packet = std::make_shared<RTCPExtendedJitterReport>();
 				break;
 			default:
 				//Skip
 				Debug("Unknown rtcp packet type [%d]\n",header.packetType);
 		}
-
+		//::Dump4(buffer,header.length);
 		//parse
 		if (packet && packet->Parse(buffer,header.length))
 			//Add packet
-			rtcp->AddRTCPacket(packet);
+			rtcp->AddPacket(packet);
 		//Remove size
 		bufferLen -= header.length;
 		//Increase pointer

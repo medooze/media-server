@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <srtp2/srtp.h>
 #include <time.h>
+#include <openssl/opensslconf.h>
 #include <openssl/ossl_typ.h>
 #include "log.h"
 #include "assertions.h"
@@ -210,6 +211,16 @@ int RTPTransport::SetLocalCryptoSDES(const char* suite,const BYTE* key,const DWO
 		Log("-RTPTransport::SetLocalCryptoSDES() | suite: NULL_CIPHER_HMAC_SHA1_80\n");
 		srtp_crypto_policy_set_null_cipher_hmac_sha1_80(&policy.rtp);
 		srtp_crypto_policy_set_null_cipher_hmac_sha1_80(&policy.rtcp);
+#ifdef SRTP_GCM
+	} else if (strcmp(suite,"AEAD_AES_256_GCM")==0) {
+		Log("-RTPTransport::SetLocalCryptoSDES() | suite: AEAD_AES_256_GCM\n");
+		srtp_crypto_policy_set_aes_gcm_256_16_auth(&policy.rtp);
+		srtp_crypto_policy_set_aes_gcm_256_16_auth(&policy.rtcp);
+	} else if (strcmp(suite,"AEAD_AES_128_GCM")==0) {
+		Log("-RTPTransport::SetLocalCryptoSDES() | suite: AEAD_AES_128_GCM\n");
+		srtp_crypto_policy_set_aes_gcm_128_16_auth(&policy.rtp);
+		srtp_crypto_policy_set_aes_gcm_128_16_auth(&policy.rtcp);
+#endif
 	} else {
 		return Error("-RTPTransport::SetLocalCryptoSDES() | Unknown cipher suite: %s", suite);
 	}
@@ -354,6 +365,16 @@ int RTPTransport::SetRemoteCryptoSDES(const char* suite, const BYTE* key, const 
 		Log("-RTPTransport::SetRemoteCryptoSDES() | suite: NULL_CIPHER_HMAC_SHA1_80\n");
 		srtp_crypto_policy_set_null_cipher_hmac_sha1_80(&policy.rtp);
 		srtp_crypto_policy_set_null_cipher_hmac_sha1_80(&policy.rtcp);
+#ifdef SRTP_GCM		
+	} else if (strcmp(suite,"AEAD_AES_256_GCM")==0) {
+		Log("-RTPTransport::SetLocalCryptoSDES() | suite: AEAD_AES_256_GCM\n");
+		srtp_crypto_policy_set_aes_gcm_256_16_auth(&policy.rtp);
+		srtp_crypto_policy_set_aes_gcm_256_16_auth(&policy.rtcp);
+	} else if (strcmp(suite,"AEAD_AES_128_GCM")==0) {
+		Log("-RTPTransport::SetLocalCryptoSDES() | suite: AEAD_AES_128_GCM\n");
+		srtp_crypto_policy_set_aes_gcm_128_16_auth(&policy.rtp);
+		srtp_crypto_policy_set_aes_gcm_128_16_auth(&policy.rtcp);
+#endif
 	} else {
 		return Error("-RTPTransport::SetRemoteCryptoSDES() | Unknown cipher suite %s", suite);
 	}
@@ -541,10 +562,13 @@ int RTPTransport::Init()
 			//Try again
 			continue;
 		}
+
+#ifdef SO_PRIORITY
 		//Set COS
 		int cos = 5;
 		setsockopt(simSocket,     SOL_SOCKET, SO_PRIORITY, &cos, sizeof(cos));
 		setsockopt(simRtcpSocket, SOL_SOCKET, SO_PRIORITY, &cos, sizeof(cos));
+#endif
 		//Set TOS
 		int tos = 0x2E;
 		setsockopt(simSocket,     IPPROTO_IP, IP_TOS, &tos, sizeof(tos));
@@ -909,13 +933,15 @@ int RTPTransport::ReadRTP()
 			}
 
 			//Debug
-			Debug("-RTPTransport::ReadRTP() | ICE: received bind request from [%s:%d] with candidate [prio:%d,use:%d] current:%d\n", inet_ntoa(from_addr.sin_addr), ntohs(from_addr.sin_port),candPrio,stun->HasAttribute(STUNMessage::Attribute::UseCandidate),prio);
+			UltraDebug("-RTPTransport::ReadRTP() | ICE: received bind request from [%s:%d] with candidate [prio:%d,use:%d] current:%d\n", inet_ntoa(from_addr.sin_addr), ntohs(from_addr.sin_port),candPrio,stun->HasAttribute(STUNMessage::Attribute::UseCandidate),prio);
 	
 
 			//If use candidate to a differentIP  is set or we don't have another IP address
 			if (recIP==INADDR_ANY || 
-				(recIP==from_addr.sin_addr.s_addr && sendAddr.sin_addr.s_addr!=from_addr.sin_addr.s_addr) || 
-				(stun->HasAttribute(STUNMessage::Attribute::UseCandidate) && candPrio>=prio)
+				(
+					(recIP==from_addr.sin_addr.s_addr && sendAddr.sin_addr.s_addr!=from_addr.sin_addr.s_addr) && 
+					(stun->HasAttribute(STUNMessage::Attribute::UseCandidate) && candPrio>=prio)
+				)
 			)
 			{
 				//Check if nominated
@@ -1051,7 +1077,7 @@ int RTPTransport::ReadRTP()
 		//Debug
 		Debug("-RTPTransport::ReadRTP() | RTP data not big enought[%d]\n",size);
 		//Exit
-		return 1;
+		return 0;
 	}
 
 	//Check if it is encripted
@@ -1070,6 +1096,9 @@ int RTPTransport::ReadRTP()
 	}
 	
 	listener->onRTPPacket(buffer,size);
+	
+	//Done
+	return 1;
 }
 
 void RTPTransport::Start()
@@ -1189,10 +1218,17 @@ void RTPTransport::onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMasterKey,
 			SetLocalCryptoSDES("AES_CM_128_HMAC_SHA1_32",localMasterKey,localMasterKeySize);
 			SetRemoteCryptoSDES("AES_CM_128_HMAC_SHA1_32",remoteMasterKey,remoteMasterKeySize);
 			break;
-		case DTLSConnection::F8_128_HMAC_SHA1_80:
+		case DTLSConnection::AEAD_AES_128_GCM:
 			//Set keys
-			SetLocalCryptoSDES("NULL_CIPHER_HMAC_SHA1_80",localMasterKey,localMasterKeySize);
-			SetRemoteCryptoSDES("NULL_CIPHER_HMAC_SHA1_80",remoteMasterKey,remoteMasterKeySize);
+			SetLocalCryptoSDES("AEAD_AES_128_GCM",localMasterKey,localMasterKeySize);
+			SetRemoteCryptoSDES("AEAD_AES_128_GCM",remoteMasterKey,remoteMasterKeySize);
 			break;
+		case DTLSConnection::AEAD_AES_256_GCM:
+			//Set keys
+			SetLocalCryptoSDES("AEAD_AES_256_GCM",localMasterKey,localMasterKeySize);
+			SetRemoteCryptoSDES("AEAD_AES_256_GCM",remoteMasterKey,remoteMasterKeySize);
+			break;
+		default:
+			Error("-TPTransport::onDTLSSetup() Unknown suite\n");
 	}
 }

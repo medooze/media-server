@@ -11,7 +11,9 @@ typedef std::set<Pair, std::less<Pair>    > OrderedSetOfPairs;
 typedef std::set<Pair, std::greater<Pair> > RevOrderedSetOfPairs;
 
 
-DWORD VideoMixer::vadDefaultChangePeriod = 5000;
+DWORD VideoMixer::vadDefaultChangePeriod = 2000;
+int VideoMixer::MosaicDefault = 0;
+int VideoMixer::NoMosaic = -1;
 
 void VideoMixer::SetVADDefaultChangePeriod(DWORD ms)
 {
@@ -33,8 +35,11 @@ VideoMixer::VideoMixer(const std::wstring &tag) : eventSource(tag)
 	defaultMosaic	= NULL;
 
 	//No mosaics
-	maxMosaics = 0;
+	maxMosaics = MosaicDefault;
 
+	//Nothing yet
+	version = 0;
+	mixingVideo = false;
 	//No proxy
 	proxy = NULL;
 	//No vad
@@ -91,42 +96,12 @@ int VideoMixer::MixVideo()
 	struct timespec   ts;
 	struct timeval    tp;
 	int forceUpdate = 0;
-	DWORD version = 0;
-
-	//Video Iterator
-	
-	Mosaics::iterator itMosaic;
 
 	Log(">MixVideo\n");
 
 	//Mientras estemos mezclando
 	while(mixingVideo)
 	{
-		//Protegemos la lista
-		lstVideosUse.WaitUnusedAndLock();
-
-		//For each video
-		for (Videos::iterator it=lstVideos.begin();it!=lstVideos.end();++it)
-		{
-			//Get Source
-			VideoSource *source = it->second;
-			//Get input
-			PipeVideoInput *input = source->input;
-
-			//Get mosaic
-			Mosaic *mosaic = source->mosaic;
-
-			//Si no ha cambiado el frame volvemos al principio
-			if (input && mosaic && (source->refresh || mosaic->HasChanged() || forceUpdate))
-				//Colocamos el frame
-				input->SetFrame(mosaic->GetFrame(),mosaic->GetWidth(),mosaic->GetHeight());
-			//Reset refresh 
-			source->refresh = true;
-		}
-
-		//Desprotege la lista
-		lstVideosUse.Unlock();
-
 		//LOck the mixing
 		pthread_mutex_lock(&mixVideoMutex);
 
@@ -151,160 +126,186 @@ int VideoMixer::MixVideo()
 			continue;
 		}
 
-		//Protegemos la lista
-		lstVideosUse.WaitUnusedAndLock();
-
-		//New version
-		version++;
-
-		//For each mosaic
-		for (itMosaic=mosaics.begin();itMosaic!=mosaics.end();++itMosaic)
-		{
-
-			//Get Mosaic
-			Mosaic *mosaic = itMosaic->second;
-
-			if (displayNames) 
-				//FIX: Reset text overlay
-				mosaic->SetOverlayText();
-
-			//Get number of slots
-			int numSlots = mosaic->GetNumSlots();
-
-			//Max vad value
-			DWORD maxVAD = 0;
-
-			//Get old speaker participant
-			int oldVad = mosaic->GetVADParticipant();
-
-			//Keep latest speaker if no one is talking
-			int vadId = oldVad;
-
-			//If VAD is set and we have the VAD proxy enabled do the "VAD thing"!
-			//If there was no previous speaker or the vad slot is not blocked
-			//If vad is not shown do nothing
-			if (vadMode!=NoVAD && proxy && mosaic->IsVADShown() && (oldVad==0 || mosaic->GetVADBlockingTime()<=getTime()))
-			{
-				//Update VAD info for each participant
-				for (Videos::iterator it=lstVideos.begin();it!=lstVideos.end();++it)
-				{
-					//Get Id of participant
-					int id = it->first;
-					//If it is in the mosaic
-					if (mosaic->HasParticipant(id))
-					{
-						//Get vad value for participant
-						DWORD vad = proxy->GetVAD(id);
-						//Found the highest VAD participant but select at least one.
-						if (vad>maxVAD || vadId==0)
-						{
-							//Store max vad value
-							maxVAD = vad;
-							//Store speaker participant
-							vadId = id;
-						}
-					}
-				}
-				//Check if there is a different active speaker
-				if (oldVad!=vadId)
-				{
-					//Do we need to hide it?
-					bool hide = (vadMode==FullVAD);
-					// set the VAD participant
-					mosaic->SetVADParticipant(vadId,hide,getTime() + vadDefaultChangePeriod*1000);
-					//If there was a previous active spearkc and wein FULL vad
-					if (oldVad && hide)
-						//Set score of old particippant to last time on VAD slot
-						mosaic->SetScore(oldVad,getTime());
-					//Calculate participants again
-					mosaic->CalculatePositions();
-				}
-			}
-
-			//Old and new positions
-			int* newPos = (int*) malloc(numSlots*sizeof(int));
-			int* oldPos = (int*) malloc(numSlots*sizeof(int));
-
-			//Get info from mosaic
-			memcpy(oldPos,mosaic->GetOldPositions(),numSlots*sizeof(int));
-			memcpy(newPos,mosaic->GetPositions(),numSlots*sizeof(int));
-
-			//Reset the change status in the mosaic
-			mosaic->Reset();
-
-			//For each slot
-			for (int i=0;i<numSlots;i++)
-			{
-				//Get participant for slot
-				int partId = newPos[i];
-
-				//Check if it has changed
-				bool changed = (oldPos[i]!=partId);
-				
-				//If there is a participant in the slot
-				if (partId)
-				{
-					//Find  it
-					Videos::iterator it = lstVideos.find(partId);
-
-					//Double check
-					if (it==lstVideos.end())
-					{
-						//Error
-						Error("-participant not found %d for slot %d,cleaning it\n",partId,i);
-						//If it was not there previously
-						if (changed)
-							//Clean position
-							mosaic->Clean(i,logo);
-						//Next slot
-						continue;
-					}
-					
-					//If we are displaying names
-					if (displayNames && !it->second->name.empty())
-					{
-						//Get
-						int height = overlay.GetProperty("height",30);
-						//Set name
-						mosaic->RenderOverlayText(it->second->name,mosaic->GetLeft(i),mosaic->GetTop(i)+mosaic->GetHeight(i)-height,mosaic->GetWidth(i),height,overlay);
-					}
-
-					//Get output
-					PipeVideoOutput *output = it->second->output;
-
-					//If we've got a new frame or the participant image was not in slot yet
-					if ((output && output->IsChanged(version)) || changed)
-					{
-						//Change mosaic
-						mosaic->Update(i,output->GetFrame(),output->GetWidth(),output->GetHeight(),keepAspectRatio);
-
-						//Check if debug is enabled
-						if (vadMode!=NoVAD && proxy && Logger::IsDebugEnabled())
-						{
-							//Get vad
-							DWORD vad = proxy->GetVAD(partId);
-							//Set VU meter
-							mosaic->DrawVUMeter(i,vad,48000);
-						}
-					}
-				} else if (changed) {
-					//Clean position
-					mosaic->Clean(i,logo);
-				}
-			}
-			//Free mem
-			free(oldPos);
-			free(newPos);
-		}
-
-		//Desprotege la lista
-		lstVideosUse.Unlock();
+		//Process 
+		Process(forceUpdate,getTime());
 
 		//Desbloqueamos
 		pthread_mutex_unlock(&mixVideoMutex);
 	}
 
 	Log("<MixVideo\n");
+}
+
+
+void VideoMixer::Process(bool forceUpdate, QWORD now)
+{
+	//Protegemos la lista
+	lstVideosUse.WaitUnusedAndLock();
+
+	//New version
+	version++;
+
+	//For each mosaic
+	for (Mosaics::iterator itMosaic=mosaics.begin();itMosaic!=mosaics.end();++itMosaic)
+	{
+
+		//Get Mosaic
+		Mosaic *mosaic = itMosaic->second;
+
+		if (displayNames) 
+			//FIX: Reset text overlay
+			mosaic->SetOverlayText();
+
+		//Get number of slots
+		int numSlots = mosaic->GetNumSlots();
+
+		//Max vad value
+		DWORD maxVAD = 0;
+
+		//Get old speaker participant
+		int oldVad = mosaic->GetVADParticipant();
+
+		//Keep latest speaker if no one is talking
+		int vadId = oldVad;
+
+		//If VAD is set and we have the VAD proxy enabled do the "VAD thing"!
+		//If there was no previous speaker or the vad slot is not blocked
+		//If vad is not shown do nothing
+		if (vadMode!=NoVAD && proxy && mosaic->IsVADShown() && (oldVad==0 || mosaic->GetVADBlockingTime()<=now))
+		{
+			//Update VAD info for each participant
+			for (Videos::iterator it=lstVideos.begin();it!=lstVideos.end();++it)
+			{
+				//Get Id of participant
+				int id = it->first;
+				//If it is in the mosaic
+				if (mosaic->HasParticipant(id))
+				{
+					//Get vad value for participant
+					DWORD vad = proxy->GetVAD(id);
+					//Found the highest VAD participant but select at least one.
+					if (vad>maxVAD || vadId==0)
+					{
+						//Store max vad value
+						maxVAD = vad;
+						//Store speaker participant
+						vadId = id;
+					}
+				}
+			}
+			//Check if there is a different active speaker
+			if (oldVad!=vadId)
+			{
+				//Do we need to hide it?
+				bool hide = (vadMode==FullVAD);
+				// set the VAD participant
+				mosaic->SetVADParticipant(vadId,hide,now + vadDefaultChangePeriod*1000);
+				//If there was a previous active spearkc and wein FULL vad
+				if (oldVad && hide)
+					//Set score of old particippant to last time on VAD slot
+					mosaic->SetScore(oldVad,now);
+				//Calculate participants again
+				mosaic->CalculatePositions();
+			}
+		}
+
+		//Old and new positions
+		int* newPos = (int*) malloc(numSlots*sizeof(int));
+		int* oldPos = (int*) malloc(numSlots*sizeof(int));
+
+		//Get info from mosaic
+		memcpy(oldPos,mosaic->GetOldPositions(),numSlots*sizeof(int));
+		memcpy(newPos,mosaic->GetPositions(),numSlots*sizeof(int));
+
+		//Reset the change status in the mosaic
+		mosaic->Reset();
+
+		//For each slot
+		for (int i=0;i<numSlots;i++)
+		{
+			//Get participant for slot
+			int partId = newPos[i];
+
+			//Check if it has changed
+			bool changed = (oldPos[i]!=partId);
+
+			//If there is a participant in the slot
+			if (partId)
+			{
+				//Find  it
+				Videos::iterator it = lstVideos.find(partId);
+
+				//Double check
+				if (it==lstVideos.end())
+				{
+					//Error
+					Error("-participant not found %d for slot %d,cleaning it\n",partId,i);
+					//If it was not there previously
+					if (changed)
+						//Clean position
+						mosaic->Clean(i,logo);
+					//Next slot
+					continue;
+				}
+
+				//If we are displaying names
+				if (displayNames && !it->second->name.empty())
+				{
+					//Get
+					int height = overlay.GetProperty("height",30);
+					//Set name
+					mosaic->RenderOverlayText(it->second->name,mosaic->GetLeft(i),mosaic->GetTop(i)+mosaic->GetHeight(i)-height,mosaic->GetWidth(i),height,overlay);
+				}
+
+				//Get output
+				PipeVideoOutput *output = it->second->output;
+
+				//If we've got a new frame or the participant image was not in slot yet
+				if ((output && output->IsChanged(version)) || changed)
+				{
+					//Change mosaic
+					mosaic->Update(i,output->GetFrame(),output->GetWidth(),output->GetHeight(),keepAspectRatio);
+
+					//Check if debug is enabled
+					if (vadMode!=NoVAD && proxy && Logger::IsDebugEnabled())
+					{
+						//Get vad
+						DWORD vad = proxy->GetVAD(partId);
+						//Set VU meter
+						mosaic->DrawVUMeter(i,vad,48000);
+					}
+				}
+			} else if (changed) {
+				//Clean position
+				mosaic->Clean(i,logo);
+			}
+		}
+		//Free mem
+		free(oldPos);
+		free(newPos);
+	}
+
+	//For each video
+	for (Videos::iterator it=lstVideos.begin();it!=lstVideos.end();++it)
+	{
+		//Get Source
+		VideoSource *source = it->second;
+		//Get input
+		PipeVideoInput *input = source->input;
+
+		//Get mosaic
+		Mosaic *mosaic = source->mosaic;
+
+		//Si no ha cambiado el frame volvemos al principio
+		if (input && mosaic && (source->refresh || mosaic->HasChanged() || forceUpdate))
+			//Colocamos el frame
+			input->SetFrame(mosaic->GetFrame(),mosaic->GetWidth(),mosaic->GetHeight());
+		//Reset refresh 
+		source->refresh = true;
+	}
+	
+	//Desprotege la lista
+	lstVideosUse.Unlock();
 }
 /*******************************
  * CreateMosaic
@@ -449,8 +450,8 @@ int VideoMixer::Init(const Properties &properties)
 {
 	//Get properties
 	Mosaic::Type comp	= (Mosaic::Type) properties.GetProperty("mosaics.default.compType"	, (int)Mosaic::mosaic2x2);
-	int size		= properties.GetProperty("mosaics.default.size"		, CIF);
-	const char *logoFile	= properties.GetProperty("logo"				, "logo.png");
+	int size		= properties.GetProperty("mosaics.default.size"				, CIF);
+	const char *logoFile	= properties.GetProperty("logo"						, "logo.png");
 	
 	//Should we display names?
 	displayNames = properties.GetProperty("displayNames", false);
@@ -467,14 +468,17 @@ int VideoMixer::Init(const Properties &properties)
 	//Set default
 	defaultMosaic = mosaics[id];
 
-	// Estamos mzclando
-	mixingVideo = true;
-
 	//Set ini time
-	ini = getTime();
-
-	//Y arrancamoe el thread
-	createPriorityThread(&mixVideoThread,startMixingVideo,this,0);
+	ini = properties.GetProperty("ini",getTime());
+	
+	//Check if we are in online or offline mode
+	if (properties.GetProperty("online",true))
+	{
+		// Estamos mzclando
+		mixingVideo = true;
+		//Y arrancamoe el thread
+		createPriorityThread(&mixVideoThread,startMixingVideo,this,0);
+	}
 
 	return 1;
 }

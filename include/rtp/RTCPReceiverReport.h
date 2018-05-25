@@ -24,17 +24,17 @@ class RTCPReceiverReport : public RTCPPacket
 public:
 	RTCPReceiverReport();
 	RTCPReceiverReport(DWORD ssrc);
-	virtual ~RTCPReceiverReport();
+	virtual ~RTCPReceiverReport() = default;
 	virtual void Dump();
 	virtual DWORD GetSize();
 	virtual DWORD Parse(BYTE* data,DWORD size);
 	virtual DWORD Serialize(BYTE* data,DWORD size);
 
-	DWORD GetCount()	const		{ return reports.size();	}
-	RTCPReport* GetReport(BYTE i) const	{ return reports[i];		}
-	void  AddReport(RTCPReport* report)	{ reports.push_back(report);	}
+	DWORD GetCount() const				{ return reports.size();	}
+	RTCPReport::shared GetReport(BYTE i) const	{ return reports[i];		}
+	void AddReport(const RTCPReport::shared& report){ reports.push_back(report);	}
 private:
-	DWORD ssrc;     /* receiver generating this report */
+	DWORD ssrc	= 0;     /* receiver generating this report */
 
 private:
 	Reports	reports;

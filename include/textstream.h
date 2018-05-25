@@ -16,9 +16,9 @@ public:
 
 	int Init(TextInput *input,TextOutput *output);
 	int SetTextCodec(TextCodec::Type codec);
-	int StartSending(char* sendTextIp,int sendTextPort,RTPMap& rtpMap);
+	int StartSending(char* sendTextIp,int sendTextPort,const RTPMap& rtpMap,const RTPMap& aptMap);
 	int StopSending();
-	int StartReceiving(RTPMap& rtpMap);
+	int StartReceiving(const RTPMap& rtpMap,const RTPMap& aptMap);
 	int StopReceiving();
 	int SetMute(bool isMuted);
 	int SetLocalCryptoSDES(const char* suite, const char* key64);

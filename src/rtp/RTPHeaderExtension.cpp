@@ -14,20 +14,37 @@
 #include "rtp/RTPHeaderExtension.h"
 #include "log.h"
 
+
+size_t WriteHeaderIdAndLength(BYTE* data, DWORD pos, BYTE id, DWORD length)
+{
+	//Check id is valid
+	if (id==RTPMap::NotFound)
+		return 0;
+	//Check size
+	if (!length || (length-1)>0x0f)
+		return 0;
+	
+	//Set id && length
+	data[pos] = id << 4 | (length-1);
+	
+	//OK
+	return 1;
+}
+
 /*
 	https://tools.ietf.org/html/rfc5285
  
-       0                   1                   2                   3
-       0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-      |       0xBE    |    0xDE       |           length=3            |
-      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-      |  ID   | L=0   |     data      |  ID   |  L=1  |   data...
-      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-            ...data   |    0 (pad)    |    0 (pad)    |  ID   | L=3   |
-      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-      |                          data                                 |
-      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	 0			 1			 2			 3
+	 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	|	 0xBE    |    0xDE	 |	     length=3		|
+	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	|  ID   | L=0   |     data	|  ID   |  L=1  |   data...
+	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		...data   |    0 (pad)    |    0 (pad)    |  ID   | L=3   |
+	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	|				  data					   |
+	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  *  
 */
 DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWORD size)
@@ -58,7 +75,7 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 	WORD i = 0;
 	const BYTE* ext = data+4;
 	
-  //::Dump(ext,length);
+	//::Dump(ext,length);
   
 	//Read all
 	while (i<length)
@@ -71,10 +88,8 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 			continue;
 		//Get extension element id
 		BYTE id = header >> 4;
-    //Get header size
-    BYTE len = (header & 0x0F) + 1;
-		//GEt extenion element length
-		BYTE n = (header & 0x0F) + 1;
+		//Get extenion element length
+		BYTE len = (header & 0x0F) + 1;
 		//Get mapped extension
 		BYTE t = extMap.GetCodecForType(id);
 		//Debug("-RTPExtension [type:%d,codec:%d,len:%d]\n",id,t,len);
@@ -84,15 +99,15 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 			case SSRCAudioLevel:
 				// The payload of the audio level header extension element can be
 				// encoded using either the one-byte or two-byte 
-				// 0                   1
+				// 0			 1
 				//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
 				// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-				// |  ID   | len=0 |V| level       |
+				// |  ID   | len=0 |V| level	 |
 				// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-				// 0                   1                   2                   3
+				// 0			 1			 2			 3
 				//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 				// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-				// |  ID   | len=1 |V|   level     |      0x00     |      0x00     |
+				// |  ID   | len=1 |V|   level     |	0x00     |	0x00     |
 				// +-+-+-+-+-+-+-+-+-+-+-+-+-+-s+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 				//
 				// Set extennsion
@@ -101,10 +116,10 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 				level		= (ext[i] & 0x7f);
 				break;
 			case TimeOffset:
-				//  0                   1                   2                   3
+				//  0			 1			 2			 3
 				//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 				// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-				// |  ID   | len=2 |              transmission offset              |
+				// |  ID   | len=2 |		  transmission offset		  |
 				// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 				//
 				// Set extension
@@ -116,10 +131,10 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 					timeOffset = -(timeOffset & 0x7FFFFF);
 				break;
 			case AbsoluteSendTime:
-				//  0                   1                   2                   3
+				//  0			 1			 2			 3
 				//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 				// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-				// |  ID   | len=2 |              absolute send time               |
+				// |  ID   | len=2 |		  absolute send time		   |
 				// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 				// Calculate absolute send time field (convert ms to 24-bit unsigned with 18 bit fractional part.
 				// Encoding: Timestamp is in seconds, 24 bit 6.18 fixed point, yielding 64s wraparound and 3.8us resolution (one increment for each 477 bytes going out on a 1Gbps interface).
@@ -128,8 +143,8 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 				absSentTime = ((QWORD)get3(ext,i))*1000 >> 18;
 				break;
 			case CoordinationOfVideoOrientation:
-				// Bit#            7   6   5   4   3   2   1  0(LSB)
-				// Definition      0   0   0   0   C   F   R1 R0
+				// Bit#		7   6   5   4   3   2   1  0(LSB)
+				// Definition	0   0   0   0   C   F   R1 R0
 				// With the following definitions:
 				// C = Camera: indicates the direction of the camera used for this video stream. It can be used by the MTSI client in receiver to e.g. display the received video differently depending on the source camera.
 				//     0: Front-facing camera, facing the user. If camera direction is unknown by the sending MTSI client in the terminal then this is the default value used.
@@ -146,11 +161,11 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 				cvo.rotation	= ext[i] & 0x03;
 				break;
 			case TransportWideCC:
-				//  0                   1                   2       
-				//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 
-				// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-				// |  ID   | L=1   |transport-wide sequence number | 
-				// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				//  0                   1                   2                   3
+				//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+				// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				// |  ID   | L=1   |transport-wide sequence number | zero padding  |
+				// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 				hasTransportWideCC = true;
 				transportSeqNum =  get2(ext,i);
 				break;
@@ -182,35 +197,48 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 				//Set header
 				hasFrameMarking = true;
 				// Set frame marking ext
-				frameMarks.startOfFrame = ext[i] & 0x80;
-				frameMarks.endOfFrame = ext[i] & 0x40;
-				frameMarks.independent = ext[i] & 0x20;
-				frameMarks.discardable = ext[i] & 0x10;
+				frameMarks.startOfFrame	= ext[i] & 0x80;
+				frameMarks.endOfFrame	= ext[i] & 0x40;
+				frameMarks.independent	= ext[i] & 0x20;
+				frameMarks.discardable	= ext[i] & 0x10;
 
 				// Check variable length
 				if (len==1) {
 					// We are non-scalable
-					frameMarks.baseLayerSync = 0;
-					frameMarks.temporalLayerId = 0;
-					frameMarks.spatialLayerId = 0;
-					frameMarks.tl0PicIdx = 0;
+					frameMarks.baseLayerSync	= 0;
+					frameMarks.temporalLayerId	= 0;
+					frameMarks.layerId		= 0;
+					frameMarks.tl0PicIdx		= 0;
 				} else if (len==3) {
 					// Set scalable parts
-					frameMarks.baseLayerSync = ext[i] & 0x08;
-					frameMarks.temporalLayerId = ext[i] & 0x07;
-					frameMarks.spatialLayerId = ext[i+1];
-					frameMarks.tl0PicIdx = ext[i+2]; 
+					frameMarks.baseLayerSync	= ext[i] & 0x08;
+					frameMarks.temporalLayerId	= ext[i] & 0x07;
+					frameMarks.layerId		= ext[i+1];
+					frameMarks.tl0PicIdx		= ext[i+2]; 
 				} else {
 					// Incorrect length
 					hasFrameMarking = false;
 				} 
 				break;
+			// SDES string items
+			case RTPStreamId:
+				hasRTPStreamId = true;
+				rid.assign((const char*)ext+i,len);
+				break;	
+			case RepairedRTPStreamId:
+				hasRepairedRTPStreamId = true;
+				repairedId.assign((const char*)ext+i,len);
+				break;	
+			case MediaStreamId:
+				hasMediaStreamId = true;
+				mid.assign((const char*)ext+i,len);
+				break;	
 			default:
 				Debug("-Unknown or unmapped extension [%d]\n",id);
 				break;
 		}
 		//Skip length
-		i += n;
+		i += len;
 	}
  
 	return 4+length;
@@ -219,6 +247,8 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 
 DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD size) const
 {
+	size_t n;
+	
 	//If not enought size for header
 	if (size<4)
 		//ERROR
@@ -234,41 +264,41 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 	if (hasAudioLevel)
 	{
 		//Get id for extension
-		BYTE id = extMap.GetCodecForType(SSRCAudioLevel);
+		BYTE id = extMap.GetTypeForCodec(SSRCAudioLevel);
+
+		// The payload of the audio level header extension element can be
+		// encoded using either the one-byte or two-byte 
+		//  0			 1
+		//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
+		// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		// |  ID   | len=0 |V| level	   |
+		// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 		
-		//If found
-		if (id)
+		//Write header 
+		if ((n = WriteHeaderIdAndLength(data,len,id,1)))
 		{
-			// The payload of the audio level header extension element can be
-			// encoded using either the one-byte or two-byte 
-			// 0                   1
-			//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
-			// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-			// |  ID   | len=0 |V| level       |
-			// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-			//
-			//Set id && length
-			data[len++] = id << 4 | 0x01;
+			//Inc header len
+			len += n;
 			//Set vad
-			data[len++] = (vad ? 0x80 : 0x00) | (level & 0x07);
+			data[len] = (vad ? 0x80 : 0x00) | (level & 0x07);
 		}
 	}
 	
 	if (hasTimeOffset)
 	{
 		//Get id for extension
-		BYTE id = extMap.GetCodecForType(TimeOffset);
-		//If found
-		if (id)
+		BYTE id = extMap.GetTypeForCodec(TimeOffset);
+		//  0                   1                   2                   3
+		//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+		// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		// |  ID   | len=2 |		  transmission offset		   |
+		// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		//
+		//Write header 
+		if ((n = WriteHeaderIdAndLength(data,len,id,3)))
 		{
-							//  0                   1                   2                   3
-			//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-			// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-			// |  ID   | len=2 |              transmission offset              |
-			// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-			//
-			//Set id && length
-			data[len++] = id << 4 | 0x02;
+			//Inc header len
+			len += n;
 			//if it is negative
 			if (timeOffset<0)
 			{
@@ -288,20 +318,23 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 	if (hasAbsSentTime)
 	{
 		//Get id for extension
-		BYTE id = extMap.GetCodecForType(AbsoluteSendTime);
+		BYTE id = extMap.GetTypeForCodec(AbsoluteSendTime);
 		
+		//  0                   1                   2                   3
+		//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+		// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		// |  ID   | len=2 |		  absolute send time		   |
+		// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		// Calculate absolute send time field (convert ms to 24-bit unsigned with 18 bit fractional part.
+		// Encoding: Timestamp is in seconds, 24 bit 6.18 fixed point, yielding 64s wraparound and 3.8us resolution (one increment for each 477 bytes going out on a 1Gbps interface).
 		//If found
-		if (id)
+		if ((n = WriteHeaderIdAndLength(data,len,id,3)))
 		{
-			//  0                   1                   2                   3
-			//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-			// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-			// |  ID   | len=2 |              absolute send time               |
-			// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-			// Calculate absolute send time field (convert ms to 24-bit unsigned with 18 bit fractional part.
-			// Encoding: Timestamp is in seconds, 24 bit 6.18 fixed point, yielding 64s wraparound and 3.8us resolution (one increment for each 477 bytes going out on a 1Gbps interface).
+			//Inc header len
+			len += n;
+
 			//Set id && length
-			data[len++] = id << 4 | 0x02;
+			data[len] = id << 4 | 0x02;
 			//Calculate absolute send time field (convert ms to 24-bit unsigned with 18 bit fractional part.
 			// Encoding: Timestamp is in seconds, 24 bit 6.18 fixed point, yielding 64s wraparound and 3.8us resolution (one increment for each 477 bytes going out on a 1Gbps interface).
 			//Set it
@@ -314,43 +347,45 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 	if (hasVideoOrientation)
 	{
 		//Get id for extension
-		BYTE id = extMap.GetCodecForType(CoordinationOfVideoOrientation);
+		BYTE id = extMap.GetTypeForCodec(CoordinationOfVideoOrientation);
 		
-		//If found
-		if (id)
+		// Bit#		7   6   5   4   3   2   1  0(LSB)
+		// Definition	0   0   0   0   C   F   R1 R0
+		// With the following definitions:
+		// C = Camera: indicates the direction of the camera used for this video stream. It can be used by the MTSI client in receiver to e.g. display the received video differently depending on the source camera.
+		//     0: Front-facing camera, facing the user. If camera direction is unknown by the sending MTSI client in the terminal then this is the default value used.
+		// 1: Back-facing camera, facing away from the user.
+		// F = Flip: indicates a horizontal (left-right flip) mirror operation on the video as sent on the link.
+		//     0: No flip operation. If the sending MTSI client in terminal does not know if a horizontal mirror operation is necessary, then this is the default value used.
+		//     1: Horizontal flip operation
+		// R1, R0 = Rotation: indicates the rotation of the video as transmitted on the link. The receiver should rotate the video to compensate that rotation. E.g. a 90° Counter Clockwise rotation should be compensated by the receiver with a 90° Clockwise rotation prior to displaying.
+		
+		//Write header 
+		if ((n = WriteHeaderIdAndLength(data,len,id,1)))
 		{
-			// Bit#            7   6   5   4   3   2   1  0(LSB)
-			// Definition      0   0   0   0   C   F   R1 R0
-			// With the following definitions:
-			// C = Camera: indicates the direction of the camera used for this video stream. It can be used by the MTSI client in receiver to e.g. display the received video differently depending on the source camera.
-			//     0: Front-facing camera, facing the user. If camera direction is unknown by the sending MTSI client in the terminal then this is the default value used.
-			// 1: Back-facing camera, facing away from the user.
-			// F = Flip: indicates a horizontal (left-right flip) mirror operation on the video as sent on the link.
-			//     0: No flip operation. If the sending MTSI client in terminal does not know if a horizontal mirror operation is necessary, then this is the default value used.
-			//     1: Horizontal flip operation
-			// R1, R0 = Rotation: indicates the rotation of the video as transmitted on the link. The receiver should rotate the video to compensate that rotation. E.g. a 90° Counter Clockwise rotation should be compensated by the receiver with a 90° Clockwise rotation prior to displaying.
-			//Set id && length
-			data[len++] = id << 4 | 0x00;
+			//Inc header len
+			len += n;
 			//Get all cvo data
-			data[len++] = (cvo.facing ? 0x08 : 0x00) | (cvo.flip ? 0x04 : 0x00) | (cvo.rotation & 0x03);
+			data[len] = (cvo.facing ? 0x08 : 0x00) | (cvo.flip ? 0x04 : 0x00) | (cvo.rotation & 0x03);
 		}
 	}
 	
 	if (hasTransportWideCC)
 	{
 		//Get id for extension
-		BYTE id = extMap.GetCodecForType(TransportWideCC);
+		BYTE id = extMap.GetTypeForCodec(TransportWideCC);
 		
-		//If found
-		if (id)
+		//  0                   1                   2
+		//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 
+		// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		// |  ID   | L=1   |transport-wide sequence number | 
+		// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		
+		//Write header 
+		if ((n = WriteHeaderIdAndLength(data,len,id,2)))
 		{
-		        //  0                   1                   2       
-			//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 
-			// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-			// |  ID   | L=1   |transport-wide sequence number | 
-			// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-			//Set id && length-1 
-			data[len++] = id << 4 | 0x01;
+			//Inc header len
+			len += n;
 			//Set them
 			set2(data,len,transportSeqNum);
 			//Inc length
@@ -361,44 +396,44 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 	if (hasFrameMarking)
 	{
 		//Get id for extension
-		BYTE id = extMap.GetCodecForType(FrameMarking);
+		BYTE id = extMap.GetTypeForCodec(FrameMarking);
 		
-		//If found
-		if (id)
+	
+		// For Frame Marking RTP Header Extension:
+		// 
+		// https://tools.ietf.org/html/draft-ietf-avtext-framemarking-04#page-4
+		// This extensions provides meta-information about the RTP streams outside the
+		// encrypted media payload, an RTP switch can do codec-agnostic
+		// selective forwarding without decrypting the payload
+		//
+		// for Non-Scalable Streams
+		// 
+		//     0			 1
+		//     0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
+		//    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		//    |  ID=? |  L=0  |S|E|I|D|0 0 0 0|
+		//    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		//
+		// for Scalable Streams
+		// 
+		//     0                   1                   2                   3
+		//     0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+		//    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		//    |  ID=? |  L=2  |S|E|I|D|B| TID |   LID	   |    TL0PICIDX  |
+		//    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		//
+
+		bool scalable = false;
+		// Check if it is scalable
+		if (frameMarks.baseLayerSync || frameMarks.temporalLayerId || frameMarks.layerId || frameMarks.tl0PicIdx) 
+			//It is scalable
+			scalable = true;
+		
+		//Write header 
+		if ((n = WriteHeaderIdAndLength(data,len,id,(scalable ? 0x03 : 0x01))))
 		{
-			// For Frame Marking RTP Header Extension:
-			// 
-			// https://tools.ietf.org/html/draft-ietf-avtext-framemarking-04#page-4
-			// This extensions provides meta-information about the RTP streams outside the
-			// encrypted media payload, an RTP switch can do codec-agnostic
-			// selective forwarding without decrypting the payload
-			//
-			// for Non-Scalable Streams
-			// 
-			//     0                   1
-			//     0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
-			//    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-			//    |  ID=? |  L=0  |S|E|I|D|0 0 0 0|
-			//    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-			//
-			// for Scalable Streams
-			// 
-			//     0                   1                   2                   3
-			//     0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-			//    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-			//    |  ID=? |  L=2  |S|E|I|D|B| TID |   LID         |    TL0PICIDX  |
-			//    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-			//
-			
-			bool scalable = false;
-			// Check if it is scalable
-			if (frameMarks.baseLayerSync || frameMarks.temporalLayerId || frameMarks.spatialLayerId || frameMarks.tl0PicIdx) 
-				//It is scalable
-				scalable = true;
-			
-			//Set id && length-1
-			data[len++] = id << 4 | ((scalable ? 0x03 : 0x01)-1);
-			
+			//Inc header len
+			len += n;
 			//Set common part
 			data[len] = frameMarks.startOfFrame ? 0x80 : 0x00;
 			data[len] |= frameMarks.endOfFrame ? 0x40 : 0x00;
@@ -414,12 +449,63 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 				//Inc len
 				len++;
 				//Set other bytes
-				data[len++] = frameMarks.spatialLayerId;
+				data[len++] = frameMarks.layerId;
 				data[len++] = frameMarks.tl0PicIdx;
 			} else {
 				//Inc len
 				len++;
 			}
+		}
+	}
+	
+	if (hasRTPStreamId)
+	{
+		//Get id for extension
+		BYTE id = extMap.GetTypeForCodec(RTPStreamId);
+		
+		//Write header 
+		if ((n = WriteHeaderIdAndLength(data,len,id,rid.length())))
+		{
+			//Inc header len
+			len += n;
+			//Copy str contents
+			memcpy(data+len,rid.c_str(),rid.length());
+			//Append length
+			len+=rid.length();
+		}
+	}
+	
+	if (hasRepairedRTPStreamId)
+	{
+		//Get id for extension
+		BYTE id = extMap.GetTypeForCodec(RepairedRTPStreamId);
+		
+		//Write header 
+		if ((n = WriteHeaderIdAndLength(data,len,id,repairedId.length())))
+		{
+			//Inc header len
+			len += n;
+			//Copy str contents
+			memcpy(data+len,repairedId.c_str(),repairedId.length());
+			//Append length
+			len+=repairedId.length();
+		}
+	}
+	
+	if (hasMediaStreamId)
+	{
+		//Get id for extension
+		BYTE id = extMap.GetTypeForCodec(MediaStreamId);
+		
+		//Write header 
+		if ((n = WriteHeaderIdAndLength(data,len,id,mid.length())))
+		{
+			//Inc header len
+			len += n;
+			//Copy str contents
+			memcpy(data+len,mid.c_str(),mid.length());
+			//Append length
+			len+=mid.length();
 		}
 	}
 	
@@ -447,17 +533,25 @@ void RTPHeaderExtension::Dump() const
 		Debug("\t\t\t[VideoOrientation facing=%d flip=%d rotation=%d]\n",cvo.facing,cvo.flip,cvo.rotation);
 	if (hasTransportWideCC)
 		Debug("\t\t\t[TransportWideCC seq=%u]\n",transportSeqNum);
-  if (hasFrameMarking)
-    Debug("\t\t\t[FrameMarking startOfFrame=%u endOfFrame=%u independent=%u discardable=%u baseLayerSync=%u temporalLayerId=%u spatialLayerId=%u tl0PicIdx=%u]\n",
-          frameMarks.startOfFrame,
-          frameMarks.endOfFrame,
-          frameMarks.independent,
-          frameMarks.discardable,
-          frameMarks.baseLayerSync,
-          frameMarks.temporalLayerId,
-          frameMarks.spatialLayerId,
-          frameMarks.tl0PicIdx
-    );
+	if (hasFrameMarking)
+		Debug("\t\t\t[FrameMarking startOfFrame=%u endOfFrame=%u independent=%u discardable=%u baseLayerSync=%u temporalLayerId=%u layerId=%u tl0PicIdx=%u]\n",
+			frameMarks.startOfFrame,
+			frameMarks.endOfFrame,
+			frameMarks.independent,
+			frameMarks.discardable,
+			frameMarks.baseLayerSync,
+			frameMarks.temporalLayerId,
+			frameMarks.layerId,
+			frameMarks.tl0PicIdx
+		);
+	
+	if (hasRTPStreamId)
+		Debug("\t\t\t[RTPStreamId str=\"%s\"]\n",rid.c_str());
+	if (hasRepairedRTPStreamId)
+		Debug("\t\t\t[RepairedRTPStreamId str=\"%s\"]\n",repairedId.c_str());
+	if (hasMediaStreamId)
+		Debug("\t\t\t[MediaStreamId str=\"%s\"]\n",mid.c_str());
+	
 	Log("\t\t[/RTPHeaderExtension]\n");
 }
 

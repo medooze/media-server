@@ -155,12 +155,11 @@ int FLV1Encoder::OpenCodec()
 	//ctx->rc_buffer_size	= bitrate;
 	//ctx->rc_qsquish 	= 1;
 	ctx->max_b_frames	= 0;
-	ctx->me_method		= ME_EPZS;
 	ctx->mb_decision	= FF_MB_DECISION_RD;
 
 	// Flags
-	ctx->flags |= CODEC_FLAG_PASS1;
-	ctx->flags |= CODEC_FLAG_MV0;
+	//ctx->flags |= CODEC_FLAG_PASS1;
+	//ctx->flags |= CODEC_FLAG_MV0;
 
 	//Set input bits
 	ctx->bits_per_raw_sample = 8;

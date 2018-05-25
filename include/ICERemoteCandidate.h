@@ -55,6 +55,7 @@ public:
 	const sockaddr* GetAddress()	const { return (const sockaddr*)&addr;	}
 	      DWORD     GetAddressLen() const { return sizeof(sockaddr_in);	}
 	const char*	GetIP()		const { return inet_ntoa(addr.sin_addr);}
+	      DWORD     GetIPAddress()  const { return ntohl(addr.sin_addr.s_addr);	}
 	      WORD	GetPort()	const {	return ntohs(addr.sin_port);	}
 
 private:

@@ -17,15 +17,17 @@
 #include "rtp/RTCPPacket.h"
 #include "rtp/RTCPCommonHeader.h"
 #include <vector>
+#include <memory>
 
 class RTCPSDES : public RTCPPacket
 {
 public:
-
+	using shared = std::shared_ptr<RTCPSDES>;
 public:
 	class Item
 	{
 	public:
+		using shared = std::shared_ptr<Item>;
 		enum Type
 		{
 			CName = 1,
@@ -61,6 +63,9 @@ public:
 			return "Unknown";
 		}
 	public:
+		Item() = delete;
+		Item(Item&&) = delete;
+		Item(const Item&) = delete;
 		Item(Type type,BYTE* data,DWORD size)
 		{
 			this->type = type;
@@ -91,39 +96,56 @@ public:
 	class Description
 	{
 	public:
+		using shared = std::shared_ptr<Description>;
+	public:
 		Description();
 		Description(DWORD ssrc);
-		~Description();
+		~Description() = default;
 		void Dump();
 		DWORD GetSize();
 		DWORD Parse(BYTE* data,DWORD size);
 		DWORD Serialize(BYTE* data,DWORD size);
+		
+		template<class ...Args>
+		Item::shared CreateItem(Args... args)
+		{
+			auto desc =  std::make_shared<Item>(std::forward<Args>(args)...);
+			AddItem(desc);
+			return desc;
+		}
+		void		AddItem(const Item::shared& item)	{ items.push_back(item);	}
+		DWORD		GetItemCount() const			{ return items.size();		}
+		Item::shared	GetItem(BYTE i)				{ return items[i];		}
 
-		void AddItem(Item* item)	{ items.push_back(item);	}
-		DWORD GetItemCount() const	{ return items.size();		}
-		Item* GetItem(BYTE i)		{ return items[i];		}
-
-		DWORD GetSSRC()	const		{ return ssrc;			}
-		void  SetSSRC(DWORD ssrc)	{ this->ssrc = ssrc;		}
+		DWORD		GetSSRC() const				{ return ssrc;			}
+		void		SetSSRC(DWORD ssrc)			{ this->ssrc = ssrc;		}
 	private:
-		typedef std::vector<Item*> Items;
+		typedef std::vector<Item::shared> Items;
 	private:
 		DWORD ssrc;
 		Items items;
 	};
 public:
 	RTCPSDES();
-	~RTCPSDES();
+	virtual ~RTCPSDES() = default;
 	virtual void Dump();
 	virtual DWORD GetSize();
 	virtual DWORD Parse(BYTE* data,DWORD size);
 	virtual DWORD Serialize(BYTE* data,DWORD size);
 
-	void AddDescription(Description* desc)	{ descriptions.push_back(desc);	}
-	DWORD GetDescriptionCount() const	{ return descriptions.size();	}
-	Description* GetDescription(BYTE i)	{ return descriptions[i];	}
+	template<class ...Args>
+	Description::shared CreateDescription(Args... args)
+	{
+		auto desc =  std::make_shared<Description>(Description{ std::forward<Args>(args)... });
+		AddDescription(desc);
+		return desc;
+	}
+	
+	void AddDescription(const Description::shared& desc)	{ descriptions.push_back(desc);	}
+	DWORD GetDescriptionCount() const			{ return descriptions.size();	}
+	Description::shared GetDescription(BYTE i)		{ return descriptions[i];	}
 private:
-	typedef std::vector<Description*> Descriptions;
+	typedef std::vector<Description::shared> Descriptions;
 private:
 	Descriptions descriptions;
 };

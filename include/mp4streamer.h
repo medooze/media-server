@@ -28,6 +28,7 @@ struct MP4RtpTrack
 	unsigned int sampleId;
 	unsigned short numHintSamples;
 	unsigned short packetIndex;
+	unsigned short seqNum;
 	unsigned int frameSamples;
 	int frameSize;
 	int frameTime;
@@ -38,14 +39,15 @@ struct MP4RtpTrack
 	int type;
 	RTPPacket rtp;
 
-	MP4RtpTrack(MediaFrame::Type media,int codec,int type) : rtp(media,codec)
+	MP4RtpTrack(MediaFrame::Type media,int codec,int type, DWORD clockrate) : rtp(media,codec)
 	{
 		//Store values
 		this->media = media;
 		this->codec = codec;
 		this->type = type;
-		//Set type
+		//Set type and clockrate
 		rtp.SetType(type);
+		rtp.SetClockRate(clockrate);
 		//Empty the rest
 		mp4		= NULL;
 		hint		= -1;
@@ -54,6 +56,7 @@ struct MP4RtpTrack
 		sampleId	= -1;
 		numHintSamples	= 0;
 		packetIndex	= -1;
+		seqNum		= 0;
 		frame		= NULL;
 		frameSamples	= 0;
 		frameSize	= 0;
@@ -69,6 +72,9 @@ struct MP4RtpTrack
 			case MediaFrame::Audio:
 				//Create audio frame with 8Khz rate
 				frame = new AudioFrame((AudioCodec::Type)codec,8000);
+				break;
+			case MediaFrame::Text:
+				//Not supported here
 				break;
 		}
 	}

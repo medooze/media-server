@@ -1,13 +1,13 @@
 #ifndef _BROADCASTSESSION_H_
 #define _BROADCASTSESSION_H_
-#include "config.h"
-#include "rtmpnetconnection.h"
-#include "rtmpclientconnection.h"
-#include "rtmpmessage.h"
-#include "rtmpstream.h"
-#include "flvrecorder.h"
 #include <set>
 #include <map>
+#include "config.h"
+#include "rtmp/rtmpnetconnection.h"
+#include "rtmp/rtmpclientconnection.h"
+#include "rtmp/rtmpmessage.h"
+#include "rtmp/rtmpstream.h"
+#include "rtmp/flvrecorder.h"
 
 
 class BroadcastSession : public RTMPClientConnection::Listener

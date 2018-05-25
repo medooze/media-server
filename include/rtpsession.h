@@ -58,15 +58,15 @@ public:
 	void Reset();
 	int End();
 
-	void SetSendingRTPMap(RTPMap &map);
-	void SetReceivingRTPMap(RTPMap &map);
+	void SetSendingRTPMap(const RTPMap& rtpMap,const RTPMap& aptMap);
+	void SetReceivingRTPMap(const RTPMap& rtpMap,const RTPMap& aptMap);
 	bool SetSendingCodec(DWORD codec);
 
 	void SendEmptyPacket();
 	int SendPacket(RTPPacket &packet,DWORD timestamp);
 	int SendPacket(RTPPacket &packet);
 	
-	RTPPacket* GetPacket();
+	RTPPacket::shared GetPacket();
 	void CancelGetPacket();
 	DWORD GetNumRecvPackets()	const { return recv.media.numPackets+recv.media.numRTCPPackets;	}
 	DWORD GetNumSendPackets()	const { return send.media.numPackets+send.media.numRTCPPackets;	}
@@ -92,7 +92,6 @@ public:
 
 	RTPOutgoingSourceGroup* GetOutgoingSourceGroup() { return &send; }
 	RTPIncomingSourceGroup* GetIncomingSourceGroup() { return &recv; }
-	RTPPacket* GetOrderPacket()			 { return packets.GetOrdered(); }
 public:	
 	virtual void onRemotePeer(const char* ip, const short port);
 	virtual void onRTPPacket(BYTE* buffer, DWORD size);
@@ -102,20 +101,20 @@ private:
 	int ReSendPacket(int seq);
 protected:
 	//Envio y recepcion de rtcp
-	int SendPacket(RTCPCompoundPacket &rtcp);
+	int SendPacket(const RTCPCompoundPacket::shared &rtcp);
 	int SendSenderReport();
 	int SendFIR();
-	RTCPCompoundPacket* CreateSenderReport();
+	RTCPCompoundPacket::shared CreateSenderReport();
 private:
-	typedef std::map<DWORD,RTPPacket*> RTPOrderedPackets;
+	typedef std::map<DWORD,RTPPacket::shared> RTPOrderedPackets;
 protected:
 	RemoteRateEstimator*	remoteRateEstimator;
+	bool	delegate; // Controls if we have to delegate dispatch of packets to the incoming group or not
 private:
 	MediaFrame::Type media;
 	Listener* listener;
 	RTPBuffer packets;
 	RTPTransport transport;
-	
 	char*	cname;
 	//Transmision
 	RTPOutgoingSourceGroup send;
@@ -123,7 +122,6 @@ private:
 
 	DWORD  	sendType;
 	Mutex	sendMutex;
-	DWORD   apt;
 
 	//Recepcion
 	BYTE	recBuffer[MTU+SRTP_MAX_TRAILER_LEN] ALIGNEDTO32;
@@ -133,6 +131,8 @@ private:
 	//RTP Map types
 	RTPMap* rtpMapIn;
 	RTPMap* rtpMapOut;
+	RTPMap* aptMapIn;
+	RTPMap* aptMapOut;
 
 	RTPMap	extMap;
 

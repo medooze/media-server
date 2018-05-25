@@ -18,11 +18,6 @@ RTCPSDES::RTCPSDES() : RTCPPacket(RTCPPacket::SDES)
 {
 
 }
-RTCPSDES::~RTCPSDES()
-{
-	for (Descriptions::iterator it=descriptions.begin();it!=descriptions.end();++it)
-		delete(*it);
-}
 
 void RTCPSDES::Dump()
 {
@@ -71,7 +66,7 @@ DWORD RTCPSDES::Parse(BYTE* data,DWORD size)
 	//While we have
 	while (size>len && i<header.count)
 	{
-		Description *desc = new Description();
+		auto desc = std::make_shared<Description>();
 		//Parse field
 		DWORD parsed = desc->Parse(data+len,size-len);
 		//If not parsed
@@ -124,11 +119,7 @@ RTCPSDES::Description::Description(DWORD ssrc)
 {
 	this->ssrc = ssrc;
 }
-RTCPSDES::Description::~Description()
-{
-	for (Items::iterator it=items.begin();it!=items.end();++it)
-		delete(*it);
-}
+
 void RTCPSDES::Description::Dump()
 {
 	if (items.size())
@@ -174,7 +165,7 @@ DWORD RTCPSDES::Description::Parse(BYTE* data,DWORD size)
 			//Error
 			return 0;
 		//Add item
-		items.push_back( new Item(type,data+len+2,length));
+		items.push_back(std::make_shared<Item>(type,data+len+2,length));
 		//Move
 		len += length+2;
 	}
@@ -196,11 +187,9 @@ DWORD RTCPSDES::Description::Serialize(BYTE* data,DWORD size)
 	set4(data,0,ssrc);
 	//Skip headder
 	DWORD len = 4;
-	//For each field
-	for (Items::iterator it=items.begin();it!=items.end();++it)
+	//For each item
+	for (auto item : items)
 	{
-		//Get item
-		Item *item = (*it);
 		//Serilize it
 		data[len++] = item->GetType();
 		data[len++] = item->GetSize();

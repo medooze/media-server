@@ -37,6 +37,7 @@ int AppMixer::Init(VideoOutput* output)
 	//Set output
 	this->output = output;
 
+	return true;
 }
 
 int AppMixer::DisplayImage(const char* filename)
@@ -120,7 +121,7 @@ int AppMixer::SetSize(int width,int height)
 		//Create number of pixels
 		DWORD num = width*height;
 		//Get size with padding
-		DWORD size = (((width/32+1)*32)*((height/32+1)*32)*3)/2+FF_INPUT_BUFFER_PADDING_SIZE+32;
+		DWORD size = (((width/32+1)*32)*((height/32+1)*32)*3)/2+AV_INPUT_BUFFER_PADDING_SIZE+32;
 		//Allocate memory
 		img = (BYTE*) malloc32(size);
 

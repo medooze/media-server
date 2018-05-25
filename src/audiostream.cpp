@@ -143,7 +143,7 @@ void * AudioStream::startReceivingAudio(void *par)
 * StartSending
 *	Comienza a mandar a la ip y puertos especificados
 ***************************************/
-int AudioStream::StartSending(char *sendAudioIp,int sendAudioPort,RTPMap& rtpMap)
+int AudioStream::StartSending(char *sendAudioIp,int sendAudioPort,const RTPMap& rtpMap,const RTPMap& aptMap)
 {
 	Log(">StartSending audio [%s,%d]\n",sendAudioIp,sendAudioPort);
 
@@ -164,7 +164,7 @@ int AudioStream::StartSending(char *sendAudioIp,int sendAudioPort,RTPMap& rtpMap
 		return Error("Error en el SetRemotePort\n");
 
 	//Set sending map
-	rtp.SetSendingRTPMap(rtpMap);
+	rtp.SetSendingRTPMap(rtpMap,aptMap);
 
 	//Set audio codec
 	if(!rtp.SetSendingCodec(audioCodec))
@@ -186,7 +186,7 @@ int AudioStream::StartSending(char *sendAudioIp,int sendAudioPort,RTPMap& rtpMap
 * StartReceiving
 *	Abre los sockets y empieza la recetpcion
 ****************************************/
-int AudioStream::StartReceiving(RTPMap& rtpMap)
+int AudioStream::StartReceiving(const RTPMap& rtpMap,const RTPMap& aptMap)
 {
 	//If already receiving
 	if (receivingAudio)
@@ -197,7 +197,7 @@ int AudioStream::StartReceiving(RTPMap& rtpMap)
 	int recAudioPort = rtp.GetLocalPort();
 
 	//Set receving map
-	rtp.SetReceivingRTPMap(rtpMap);
+	rtp.SetReceivingRTPMap(rtpMap,aptMap);
 
 	//We are reciving audio
 	receivingAudio=1;
@@ -311,7 +311,7 @@ int AudioStream::RecAudio()
 	while(receivingAudio)
 	{
 		//Obtenemos el paquete
-		RTPPacket *packet = rtp.GetPacket();
+		auto packet = rtp.GetPacket();
 		//Check
 		if (!packet)
 			//Next
@@ -330,8 +330,6 @@ int AudioStream::RecAudio()
 			//Creamos uno dependiendo del tipo
 			if ((codec = AudioCodecFactory::CreateDecoder(type))==NULL)
 			{
-				//Delete pacekt
-				delete(packet);
 				//Next
 				Log("Error creando nuevo codec de audio [%d]\n",type);
 				continue;
@@ -366,8 +364,6 @@ int AudioStream::RecAudio()
 		//Aumentamos el numero de bytes recividos
 		recBytes+=packet->GetMediaLength();
 
-		//Delete
-		delete(packet);
 	}
 
 	//Check not null
@@ -429,39 +425,33 @@ int AudioStream::SendAudio()
 	//Set it
 	packet.SetClockRate(clock);
 
-	//Get ts multiplier
-	float multiplier = clock/rate;
-	
 	//Get initial time
-	DWORD frameTime = getDifTime(&ini);
+	DWORD frameTime = getDifTime(&ini)*clock/1E6;
 
-	//Mientras tengamos que capturar
+	//Send audio
 	while(sendingAudio)
 	{
-		//Incrementamos el tiempo de envio
-		frameTime += codec->numFrameSamples*multiplier;
+		//Increment rtp timestamp
+		frameTime += codec->numFrameSamples*clock/rate;
 
-		//Capturamos 
+		//Capture audio data
 		if (audioInput->RecBuffer(recBuffer,codec->numFrameSamples)==0)
-		{
-			Log("-sendingAudio cont\n");
 			continue;
-		}
 
-		//Lo codificamos
+		//Encode it
 		int len = codec->Encode(recBuffer,codec->numFrameSamples,packet.GetMediaData(),packet.GetMaxMediaLength());
 
-		//Comprobamos que ha sido correcto
+		//check result
 		if(len<=0)
 			continue;
 
-		//Set length
+		//Set lengths
 		packet.SetMediaLength(len);
 
-		//Set frametiem
+		//Set frametime
 		packet.SetTimestamp(frameTime);
 
-		//Lo enviamos
+		//Send it
 		rtp.SendPacket(packet,frameTime);
 	}
 

@@ -17,18 +17,6 @@
 
 RTCPSenderReport::RTCPSenderReport() : RTCPPacket(RTCPPacket::SenderReport)
 {
-	ssrc = 0;
-	ntpSec = 0;
-	ntpFrac = 0;
-	rtpTimestamp = 0;
-	packetsSent = 0;
-	octectsSent = 0;
-}
-
-RTCPSenderReport::~RTCPSenderReport()
-{
-	for(Reports::iterator it = reports.begin();it!=reports.end();++it)
-		delete(*it);
 }
 
 void RTCPSenderReport::SetTimestamp(QWORD time)
@@ -123,16 +111,12 @@ DWORD RTCPSenderReport::Parse(BYTE* data,DWORD size)
 	for(int i=0;i<header.count;i++)
 	{
 		//New report
-		RTCPReport* report = new RTCPReport();
+		auto report = std::make_shared<RTCPReport>();
 		//parse
 		DWORD l = report->Parse(data+len,size-len);
 		//If not parsed correctly
 		if (!l)
-		{
-			//Delete report
-			delete(report);
-			return Error("---xxx");
-		}
+			return 0;
 		//Add it
 		AddReport(report);
 		//INcrease len

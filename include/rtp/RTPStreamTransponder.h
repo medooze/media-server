@@ -14,42 +14,66 @@
 #ifndef RTPSTREAMTRANSPONDER_H
 #define RTPSTREAMTRANSPONDER_H
 
+#include <queue>
 #include "rtp.h"
 #include "waitqueue.h"
-#include "vp9/VP9LayerSelector.h"
+#include "VideoLayerSelector.h"
 
 class RTPStreamTransponder : 
 	public RTPIncomingSourceGroup::Listener,
 	public RTPOutgoingSourceGroup::Listener
 {
 public:
-	RTPStreamTransponder(RTPIncomingSourceGroup* incoming, RTPReceiver* receiver, RTPOutgoingSourceGroup* outgoing,RTPSender* sender);
+	RTPStreamTransponder(RTPOutgoingSourceGroup* outgoing,RTPSender* sender);
 	virtual ~RTPStreamTransponder();
+	
+	bool SetIncoming(RTPIncomingSourceGroup* incoming, RTPReceiver* receiver);
 	void Close();
 	
-	virtual void onRTP(RTPIncomingSourceGroup* group,RTPPacket* packet) override;
+	virtual void onRTP(RTPIncomingSourceGroup* group,const RTPPacket::shared& packet) override;
+	virtual void onEnded(RTPIncomingSourceGroup* group) override;
 	virtual void onPLIRequest(RTPOutgoingSourceGroup* group,DWORD ssrc) override;
 	
 	void SelectLayer(int spatialLayerId,int temporalLayerId);
+	void Mute(bool muting);
 protected:
 	void Start();
 	int Run();
 	void Stop();
-		
+	void Reset();
+	void RequestPLI();
 private:
 	static void * run(void *par);
 
 private:
-	WaitQueue<RTPPacket*> packets;
-	RTPOutgoingSourceGroup *outgoing;
-	RTPIncomingSourceGroup *incoming;
-	RTPReceiver* receiver;
-	RTPSender* sender;
-	VP9LayerSelector selector;
+	
+	RTPOutgoingSourceGroup *outgoing	= NULL;
+	RTPIncomingSourceGroup *incoming	= NULL;
+	RTPReceiver* receiver			= NULL;
+	RTPSender* sender			= NULL;
+	VideoLayerSelector* selector		= NULL;
 	Mutex mutex;
-	pthread_t thread;
-	bool running;
+	WaitCondition wait;
+	std::queue<RTPPacket::shared> packets;
+	pthread_t thread	= {0};
+	bool running		= false;;
+	bool muted		= false;
+	DWORD firstExtSeqNum	= 0;  //First seq num of incoming stream
+	DWORD baseExtSeqNum	= 0;  //Base seq num of outgoing stream
+	DWORD lastExtSeqNum	= 0;  //Last seq num of sent packet
+	DWORD firstTimestamp	= 0;  //First rtp timstamp of incoming stream
+	QWORD baseTimestamp	= 0;  //Base rtp timestamp of ougogoing stream
+	QWORD lastTimestamp	= 0;  //Last rtp timestamp of outgoing stream
+	QWORD lastTime		= 0;  //Last sent time
+	DWORD dropped		= 0;  //Num of empty packets dropped
+	DWORD ssrc		= 0;  //SSRC to rewrite to
+	BYTE spatialLayerId	= LayerInfo::MaxLayerId;
+	BYTE temporalLayerId	= LayerInfo::MaxLayerId;
+	WORD lastPicId		= 0;
+	WORD lastTl0Idx		= 0;
+	QWORD picId		= 0;
+	WORD tl0Idx		= 0;
+	bool rewritePicId	= true;
 };
 
 #endif /* RTPSTREAMTRANSPONDER_H */
-

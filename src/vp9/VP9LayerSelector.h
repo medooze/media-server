@@ -14,29 +14,29 @@
 #ifndef VP9LAYERSELECTOR_H
 #define VP9LAYERSELECTOR_H
 #include "config.h"
-#include "rtp.h"
+#include "VideoLayerSelector.h"
 
-class VP9LayerSelector
+class VP9LayerSelector : public VideoLayerSelector
 {
-public:
-	static BYTE MaxLayerId;
 public:
 	VP9LayerSelector();
 	VP9LayerSelector(BYTE temporalLayerId,BYTE spatialLayerId );
-	void SelectTemporalLayer(BYTE id);
-	void SelectSpatialLayer(BYTE id);
+	virtual ~VP9LayerSelector() = default;
+	void SelectTemporalLayer(BYTE id)		override;
+	void SelectSpatialLayer(BYTE id)		override;
 	
-	bool Select(RTPPacket *packet,DWORD &extSeqNum,bool &mark);
+	bool Select(const RTPPacket::shared& packet,bool &mark)	override;
 	
-	BYTE GetTemporalLayer() const	{ return temporalLayerId; }
-	BYTE GetSpatialLayer()	const	{ return spatialLayerId;  }
+	BYTE GetTemporalLayer()		const override { return temporalLayerId; }
+	BYTE GetSpatialLayer()		const override { return spatialLayerId;  }
+	VideoCodec::Type GetCodec()	const override { return VideoCodec::VP9; }
 	
+	static LayerInfo GetLayerIds(const RTPPacket::shared& packet);
 private:
 	BYTE temporalLayerId;
 	BYTE spatialLayerId;
 	BYTE nextTemporalLayerId;
 	BYTE nextSpatialLayerId;
-	DWORD dropped;
 };
 
 #endif /* VP9LAYERSELECTOR_H */

@@ -8,9 +8,9 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #include <sys/signal.h>
+#include <signal.h>
 #include <climits>
 #include <pthread.h>
-#include <emmintrin.h>
 
 int Log(const char *msg, ...);
 
@@ -248,6 +248,17 @@ inline void set4(BYTE *data,size_t i,DWORD val)
 	data[i+1] = (BYTE)(val>>16);
 	data[i]   = (BYTE)(val>>24);
 }
+
+inline void set6(BYTE *data,size_t i,QWORD val)
+{
+	data[i+5] = (BYTE)(val);
+	data[i+4] = (BYTE)(val>>8);
+	data[i+3] = (BYTE)(val>>16);
+	data[i+2] = (BYTE)(val>>24);
+	data[i+1] = (BYTE)(val>>32);
+	data[i]   = (BYTE)(val>>40);
+}
+
 inline void set8(BYTE *data,size_t i,QWORD val)
 {
 	data[i+7] = (BYTE)(val);

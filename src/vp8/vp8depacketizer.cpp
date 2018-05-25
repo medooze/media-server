@@ -34,16 +34,27 @@ void VP8Depacketizer::ResetFrame()
 	memset(frame.GetData(),0,frame.GetMaxMediaLength());
 	//Clear length
 	frame.SetLength(0);
+	//Clear time
+	frame.SetTimestamp((DWORD)-1);
+	frame.SetTime((QWORD)-1);
 }
 
-MediaFrame* VP8Depacketizer::AddPacket(RTPPacket *packet)
+MediaFrame* VP8Depacketizer::AddPacket(const RTPPacket::shared& packet)
 {
 	//Check it is from same packet
 	if (frame.GetTimeStamp()!=packet->GetTimestamp())
 		//Reset frame
 		ResetFrame();
-	//Set timestamp
-	frame.SetTimestamp(packet->GetTimestamp());
+	//If not timestamp
+	if (frame.GetTimeStamp()==(DWORD)-1)
+		//Set timestamp
+		frame.SetTimestamp(packet->GetTimestamp());
+	//If not times
+	if (frame.GetTime()==(QWORD)-1)
+		//Set timestamp
+		frame.SetTime(packet->GetTime());
+	//Set SSRC
+	frame.SetSSRC(packet->GetSSRC());
 	//Add payload
 	AddPayload(packet->GetMediaData(),packet->GetMediaLength());
 	//If it is last return frame
@@ -64,7 +75,15 @@ MediaFrame* VP8Depacketizer::AddPayload(BYTE* payload, DWORD len)
 
 	//Decode payload descriptr
 	DWORD descLen = desc.Parse(payload,len);
-
+	
+	//Check
+	if (!descLen || len<descLen)
+	{
+		Dump(payload,len);
+		//Error
+		Error("- VP8Depacketizer::AddPayload() | Error decoding VP8 payload header\n");
+		return NULL;
+	}
 	
 	//Skip desc
 	DWORD pos = frame.AppendMedia(payload+descLen, len-descLen);

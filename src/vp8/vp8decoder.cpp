@@ -256,9 +256,72 @@ int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 	return 1;
 }
 
-int VP8Decoder::Decode(BYTE *buffer,DWORD size)
+int VP8Decoder::Decode(BYTE *buffer,DWORD len)
 {
-	return 0;
+	vpx_codec_err_t err = VPX_CODEC_OK;
+	int corrupted = false;
+	//Not key frame
+	isKeyFrame = false;
+
+	//Decode last partition
+	err = vpx_codec_decode(&decoder,buffer,len,NULL,0);
+	
+	//Check error
+	if (err!=VPX_CODEC_OK)
+		//Error
+		return Error("Error decoding VP8 empty [error %d:%s]\n",decoder.err,decoder.err_detail);
+
+	//Check if it is corrupted even if completed
+	if (vpx_codec_control(&decoder, VP8D_GET_FRAME_CORRUPTED, &corrupted)==VPX_CODEC_OK)
+		//Set key frame flag
+		isKeyFrame =  !(buffer[0] & 1) && !corrupted;
+
+	//Check it is corrupted
+	if (corrupted)
+		//Do nothing
+		return Error("-Corrupted VP8 frame\n");
+		
+	//Ger image
+	vpx_codec_iter_t iter = NULL;
+	vpx_image_t *img = vpx_codec_get_frame(&decoder, &iter);
+
+	//Check img
+	if (!img)
+		//Do nothing
+		return Error("-No image\n");
+
+	//Get dimensions
+	width = img->d_w;
+	height = img->d_h;
+	int u = width*height;
+	int v = width*height*5/4;
+	int size = width*height*3/2;
+
+	//Check size
+	if (size>frameSize)
+	{
+		Log("-Frame size %dx%d\n",width,height);
+		//Liberamos si habia
+		if(frame!=NULL)
+			free(frame);
+		//Y allocamos de nuevo
+		frame = (BYTE*) malloc(size);
+		frameSize = size;
+	}
+
+	//Copaamos  el Cy
+	for(int i=0;i<height;i++)
+		memcpy(&frame[i*width],&img->planes[0][i*img->stride[0]],width);
+
+	//Y el Cr y Cb
+	for(int i=0;i<height/2;i++)
+	{
+		memcpy(&frame[i*width/2+u],&img->planes[1][i*img->stride[1]],width/2);
+		memcpy(&frame[i*width/2+v],&img->planes[2][i*img->stride[2]],width/2);
+	}
+
+	//Return ok
+	return 1;
 }
 
 bool VP8Decoder::IsKeyFrame()

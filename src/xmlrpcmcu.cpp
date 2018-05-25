@@ -1731,10 +1731,11 @@ xmlrpc_value* StartSending(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 	char *sendIp;
 	int sendPort;
 	xmlrpc_value *rtpMap;
-	xmlrpc_parse_value(env, param_array, "(iiisiS)", &confId,&partId,&media,&sendIp,&sendPort,&rtpMap);
+	xmlrpc_value *aptMap;
+	xmlrpc_parse_value(env, param_array, "(iiisiSS)", &confId,&partId,&media,&sendIp,&sendPort,&rtpMap,&aptMap);
 
 	//Get the rtp map
-	RTPMap map;
+	RTPMap rtp;
 
 	//Get map size
 	int j = xmlrpc_struct_size(env,rtpMap);
@@ -1752,7 +1753,32 @@ xmlrpc_value* StartSending(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 		//Read value
 		xmlrpc_parse_value(env,val,"i",&codec);
 		//Add to map
-		map[atoi(type)] = codec;
+		rtp[atoi(type)] = codec;
+		//Decrement ref counter
+		xmlrpc_DECREF(key);
+		xmlrpc_DECREF(val);
+	}
+	
+	//Get the rtp map
+	RTPMap apt;
+
+	//Get map size
+	j = xmlrpc_struct_size(env,aptMap);
+
+	//Parse rtp map
+	for (int i=0;i<j;i++)
+	{
+		xmlrpc_value *key, *val;
+		const char *type;
+		int codec;
+		//Read member
+		xmlrpc_struct_read_member(env,aptMap,i,&key,&val);
+		//Read name
+		xmlrpc_parse_value(env,key,"s",&type);
+		//Read value
+		xmlrpc_parse_value(env,val,"i",&codec);
+		//Add to map
+		apt[atoi(type)] = codec;
 		//Decrement ref counter
 		xmlrpc_DECREF(key);
 		xmlrpc_DECREF(val);
@@ -1767,7 +1793,7 @@ xmlrpc_value* StartSending(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
-	int res = conf->StartSending(partId,(MediaFrame::Type)media,sendIp,sendPort,map);
+	int res = conf->StartSending(partId,(MediaFrame::Type)media,sendIp,sendPort,rtp,apt);
 
 	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);
@@ -2087,10 +2113,11 @@ MCU *mcu = (MCU *)user_data;
 	int media;
 	int recPort = 0;
 	xmlrpc_value *rtpMap;
-	xmlrpc_parse_value(env, param_array, "(iiiS)", &confId,&partId,&media,&rtpMap);
+	xmlrpc_value *aptMap;
+	xmlrpc_parse_value(env, param_array, "(iiiSS)", &confId,&partId,&media,&rtpMap,&aptMap);
 
 	//Get the rtp map
-	RTPMap map;
+	RTPMap rtp;
 
 	//Get map size
 	int j = xmlrpc_struct_size(env,rtpMap);
@@ -2108,7 +2135,32 @@ MCU *mcu = (MCU *)user_data;
 		//Read value
 		xmlrpc_parse_value(env,val,"i",&codec);
 		//Add to map
-		map[atoi(type)] = codec;
+		rtp[atoi(type)] = codec;
+		//Decrement ref counter
+		xmlrpc_DECREF(key);
+		xmlrpc_DECREF(val);
+	}
+	
+	//Get the rtp map
+	RTPMap apt;
+
+	//Get map size
+	j = xmlrpc_struct_size(env,aptMap);
+
+	//Parse rtp map
+	for (int i=0;i<j;i++)
+	{
+		xmlrpc_value *key, *val;
+		const char *type;
+		int codec;
+		//Read member
+		xmlrpc_struct_read_member(env,aptMap,i,&key,&val);
+		//Read name
+		xmlrpc_parse_value(env,key,"s",&type);
+		//Read value
+		xmlrpc_parse_value(env,val,"i",&codec);
+		//Add to map
+		apt[atoi(type)] = codec;
 		//Decrement ref counter
 		xmlrpc_DECREF(key);
 		xmlrpc_DECREF(val);
@@ -2123,7 +2175,7 @@ MCU *mcu = (MCU *)user_data;
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
-	int recVideoPort = conf->StartReceiving(partId,(MediaFrame::Type)media,map);
+	int recVideoPort = conf->StartReceiving(partId,(MediaFrame::Type)media,rtp,apt);
 
 	//Free conference reference
 	mcu->ReleaseConferenceRef(confId);

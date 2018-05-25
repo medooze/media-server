@@ -10,12 +10,13 @@
 #include <errno.h>
 #include <pthread.h>
 #include "rtp.h"
+#include "acumulator.h"
 #include "use.h"
 
 class RTPBuffer 
 {
 public:
-	RTPBuffer()
+	RTPBuffer() : waited(1000)
 	{
 		//NO wait time
 		maxWaitTime = 0;
@@ -39,7 +40,7 @@ public:
 		pthread_mutex_destroy(&mutex);
 	}
 
-	bool Add(RTPPacket *rtp)
+	bool Add(const RTPPacket::shared& rtp)
 	{
 		//Get seq num
 		DWORD seq = rtp->GetExtSeqNum();
@@ -51,9 +52,7 @@ public:
 		if (next!=(DWORD)-1 && seq<next)
 		{
 			//Error
-			Debug("-RTPBuffer::Add() | Out of order non recoverable packet [next:%u,seq:%u,maxWaitTime=%d,cycles:%d-%u]\n",next,seq,maxWaitTime,rtp->GetSeqCycles(),rtp->GetSeqNum());
-			//Delete pacekt
-			delete(rtp);
+			Debug("-RTPBuffer::Add() | Out of order non recoverable packet [next:%u,seq:%u,maxWaitTime=%d,cycles:%d-%u,time:%lld,current:%lld,hurry:%d]\n",next,seq,maxWaitTime,rtp->GetSeqCycles(),rtp->GetSeqNum(),rtp->GetTime(),GetTime(),hurryUp);
 			//Unlock
 			pthread_mutex_unlock(&mutex);
 			//Skip it and lost forever
@@ -65,27 +64,15 @@ public:
 		{
 			//Error
 			Debug("-RTPBuffer::Add() | Already have that packet [next:%u,seq:%u,maxWaitTime=%d,cycles:%d-%u]\n",next,seq,maxWaitTime,rtp->GetSeqCycles(),rtp->GetSeqNum());
-			//Delete pacekt
-			delete(rtp);
 			//Unlock
 			pthread_mutex_unlock(&mutex);
 			//Skip it and lost forever
 			return 0;
 		}
 
-		//Add packet, check if it was already there
-		if (!packets.insert(std::pair<DWORD,RTPPacket*>(seq,rtp)).second)
-		{
-			//Error
-			Debug("-RTPBuffer::Add() | Error inserting packet [next:%u,seq:%u,maxWaitTime=%d,cycles:%d-%u]\n",next,seq,maxWaitTime,rtp->GetSeqCycles(),rtp->GetSeqNum());
-			//Delete pacekt
-			delete(rtp);
-			//Unlock
-			pthread_mutex_unlock(&mutex);
-			//Skip it and lost forever
-			return 0;
-		}
-
+		//Add packet
+		packets[seq] = rtp;
+		
 		//Unlock
 		pthread_mutex_unlock(&mutex);
 
@@ -110,32 +97,34 @@ public:
 		pthread_cond_signal(&cond);
 	}
 	
-	RTPPacket* GetOrdered()
+	RTPPacket::shared GetOrdered()
 	{
 		
 		//Check if we have somethin in queue
 		if (!packets.empty())
 		{
 			//Get first
-			RTPOrderedPackets::iterator it = packets.begin();
+			auto it = packets.begin();
 			//Get first seq num
 			DWORD seq = it->first;
 			//Get packet
-			RTPPacket* candidate = it->second;
+			auto candidate = it->second;
 			//Get time of the packet
 			QWORD time = candidate->GetTime();
 
 			//Check if first is the one expected or wait if not
-			if (next==(DWORD)-1 || seq==next || time+maxWaitTime<getTime()/1000 || hurryUp)
+			if (next==(DWORD)-1 || seq==next || time+maxWaitTime<GetTime() || hurryUp)
 			{
-				//We have it!
-				RTPPacket* rtp = candidate;
 				//Update next
 				next = seq+1;
 				//Remove it
 				packets.erase(it);
+				//If no mor packets
+				if (packets.empty())
+					//Not hurryUp more
+					hurryUp = false;
 				//Return it
-				return rtp;
+				return candidate;
 			}
 		}
 		//Rerturn 
@@ -143,10 +132,10 @@ public:
 	}
 	
 	
-	RTPPacket* Wait()
+	RTPPacket::shared Wait()
 	{
 		//NO packet
-		RTPPacket* rtp = NULL;
+		RTPPacket::shared rtp;
 
 		//Lock
 		pthread_mutex_lock(&mutex);
@@ -159,17 +148,21 @@ public:
 			{
 					
 				//Get first
-				RTPOrderedPackets::iterator it = packets.begin();
+				auto it = packets.begin();
 				//Get first seq num
 				DWORD seq = it->first;
 				//Get packet
-				RTPPacket* candidate = it->second;
+				auto candidate = it->second;
 				//Get time of the packet
 				QWORD time = candidate->GetTime();
+				//Get now
+				QWORD now = GetTime();
 
 				//Check if first is the one expected or wait if not
-				if (next==(DWORD)-1 || seq==next || time+maxWaitTime<getTime()/1000 || hurryUp)
+				if (next==(DWORD)-1 || seq==next || time+maxWaitTime<now || hurryUp)
 				{
+					//Waiting time
+					waited.Update(now,now-time);
 					//We have it!
 					rtp = candidate;
 					//Update next
@@ -251,40 +244,68 @@ public:
 		
 		//UnLock
 		pthread_mutex_unlock(&mutex);
+		
+		//Clear stats
+		waited.Reset(GetTime());
 	}
 
-	DWORD Length()
+	DWORD Length() const
 	{
 		//REturn objets in queu
 		return packets.size();
 	}
+	
 	void SetMaxWaitTime(DWORD maxWaitTime)
 	{
 		this->maxWaitTime = maxWaitTime;
 	}
+	
+	// Set time in ms
+	void SetTime(QWORD ms)
+	{
+		time = ms;
+	}
+	
+	QWORD GetTime() const
+	{
+		if (!time)
+			return getTime()/1000;
+		return time;
+	}
+	
+	DWORD GetMinWaitedime() const
+	{
+		return waited.GetMinValueInWindow();
+	}
+	
+	DWORD GetMaxWaitedTime() const
+	{
+		return waited.GetMaxValueInWindow();
+	}
+	
+	long double GetAvgWaitedTime() const
+	{
+		return waited.GetInstantMedia();
+	}
+	
 private:
 	void ClearPackets()
 	{
-		//For each item, list shall be locked before
-		for (RTPOrderedPackets::iterator it=packets.begin(); it!=packets.end(); ++it)
-			//Delete rtp
-			delete(it->second);
 		//Clear all list
 		packets.clear();
 	}
 
 private:
-	typedef std::map<DWORD,RTPPacket*> RTPOrderedPackets;
-
-private:
 	//The event list
-	RTPOrderedPackets	packets;
+	std::map<DWORD,RTPPacket::shared>	packets;
 	bool			cancel;
 	bool			hurryUp;
 	pthread_mutex_t		mutex;
 	pthread_cond_t		cond;
 	DWORD			next;
 	DWORD			maxWaitTime;
+	QWORD			time = 0;
+	Acumulator		waited;
 };
 
 #endif	/* RTPBUFFER_H */

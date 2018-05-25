@@ -18,9 +18,6 @@
 
 RTCPApp::RTCPApp() : RTCPPacket(RTCPPacket::App)
 {
-	data = NULL;
-	size = 0;
-	subtype = 0;
 }
 
 RTCPApp::~RTCPApp()

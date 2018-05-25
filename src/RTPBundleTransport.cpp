@@ -16,6 +16,7 @@
 #include <srtp2/srtp.h>
 #include <time.h>
 #include <string>
+#include <openssl/opensslconf.h>
 #include <openssl/ossl_typ.h>
 #include "log.h"
 #include "assertions.h"
@@ -88,9 +89,12 @@ DTLSICETransport* RTPBundleTransport::AddICETransport(const std::string &usernam
 		return NULL;
 	}
 	
-	
 	//Create new ICE transport
 	DTLSICETransport *transport = new DTLSICETransport(this);
+	
+	//Set SRTP protection profiles
+	std::string profiles = properties.GetProperty("srtpProtectionProfiles","");
+	transport->SetSRTPProtectionProfiles(profiles);
 	
 	//Set local STUN properties
 	transport->SetLocalSTUNCredentials(ice.GetProperty("localUsername"),ice.GetProperty("localPassword"));
@@ -104,7 +108,7 @@ DTLSICETransport* RTPBundleTransport::AddICETransport(const std::string &usernam
 		//Lock scope
 		ScopedUseLock scope(use);
 		//Add it
-		connections[username] = new Connection(transport);
+		connections[username] = new Connection(transport, properties.GetProperty("disableSTUNKeepAlive", false));
 	}
 	
 	
@@ -169,6 +173,8 @@ int RTPBundleTransport::Init()
 
 	//Clear addr
 	memset(&recAddr,0,sizeof(struct sockaddr_in));
+	//Init ramdon
+	srand (time(NULL));
 
 	//Set family
 	recAddr.sin_family     	= AF_INET;
@@ -197,9 +203,11 @@ int RTPBundleTransport::Init()
 		if(bind(socket,(struct sockaddr *)&recAddr,sizeof(struct sockaddr_in))!=0)
 			//Try again
 			continue;
+#ifdef SO_PRIORITY
 		//Set COS
 		int cos = 5;
 		setsockopt(socket, SOL_SOCKET, SO_PRIORITY, &cos, sizeof(cos));
+#endif
 		//Set TOS
 		int tos = 0x2E;
 		setsockopt(socket, IPPROTO_IP, IP_TOS, &tos, sizeof(tos));
@@ -256,19 +264,22 @@ int RTPBundleTransport::Send(const ICERemoteCandidate* candidate,const BYTE *buf
 {
 	int ret = 0;
 		
-	//Lock
-	pthread_mutex_lock(&mutex);
-	
 	//Send packet
-	while((ret=sendto(socket,buffer,size,MSG_DONTWAIT,candidate->GetAddress(),candidate->GetAddressLen()))<0)
+	while(running && (ret=sendto(socket,buffer,size,MSG_DONTWAIT,candidate->GetAddress(),candidate->GetAddressLen()))<0)
 	{
 		//Check error
 		if (errno!=EAGAIN)
+		{
+			Error("-RTPBundleTransport::Send error [errno:%d]\n",errno);
 			//Error
 			break;
+		}
 		
 		UltraDebug("->RTPBundleTransport::Send() | retry \n");
 		
+		//Lock
+		pthread_mutex_lock(&mutex);
+	
 		//Get now
 		timespec ts;
 		timeval tp;
@@ -288,29 +299,19 @@ int RTPBundleTransport::Send(const ICERemoteCandidate* candidate,const BYTE *buf
 		//Wait next or stopped
 		pthread_cond_timedwait(&cond,&mutex,&ts);
 		
-		UltraDebug("<-RTPBundleTransport::Send() | retry\n");
-		
-		//IF canceled
-		if (!running)
-		{
-			Error("-RTPBundleTransport::Send() | canceled\n");
-			break;
-		}
-		
 		//Don't wait for write evetns
 		ufds[0].events = POLLIN | POLLERR | POLLHUP;
+	
+		//Unlock
+		pthread_mutex_unlock(&mutex);
+		
+		UltraDebug("<RTPBundleTransport::Send() | retry\n");
 	}
 	
-	//Unlock
-	pthread_mutex_unlock(&mutex);
 	//Done
 	return  ret;
 }
 
-/*********************************
-* GetTextPacket
-*	Lee el siguiente paquete de video
-*********************************/
 int RTPBundleTransport::Read()
 {
 	BYTE data[MTU+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
@@ -335,9 +336,6 @@ int RTPBundleTransport::Read()
 	char remote[24];
 	snprintf(remote,sizeof(remote),"%s:%hu", inet_ntoa(from_addr.sin_addr), ntohs(from_addr.sin_port));
 				
-	//Get candidate
-	std::string candidate(remote);
-
 	//Check if it looks like a STUN message
 	if (STUNMessage::IsSTUN(data,len))
 	{
@@ -380,6 +378,9 @@ int RTPBundleTransport::Read()
 				//Error
 				return Error("-STUN Message without priority attribute");
 			
+			//Check wether we have to reply to this message or not
+			bool reply = !connection->disableSTUNKeepAlive;
+			
 			//Get attribute
 			STUNMessage::Attribute* priority = stun->GetAttribute(STUNMessage::Attribute::Priority);
 			
@@ -397,6 +398,8 @@ int RTPBundleTransport::Read()
 				//Add candidate and add it to the maps
 				candidates[remote] = candidate;
 				connection->candidates.insert(candidate);
+				//We need to reply the first always
+				reply = true;
 			} else {
 				//Get it
 				candidate = it2->second;
@@ -419,29 +422,33 @@ int RTPBundleTransport::Read()
 			//Clean response
 			delete(resp);
 			
-			len = 0;
-			//Create trans id
-			BYTE transId[12];
-			//Set first to 0
-			set4(transId,0,0);
-			//Set timestamp as trans id
-			set8(transId,4,getTime());
-			//Create binding request to send back
-			STUNMessage *request = new STUNMessage(STUNMessage::Request,STUNMessage::Binding,transId);
-			//Add username
-			request->AddUsernameAttribute(transport->GetLocalUsername(),transport->GetRemoteUsername());
-			//Add other attributes
-			request->AddAttribute(STUNMessage::Attribute::IceControlled,(QWORD)1);
-			request->AddAttribute(STUNMessage::Attribute::Priority,(DWORD)33554431);
+			//If the STUN keep alive response is not disabled
+			if (reply)
+			{
+				len = 0;
+				//Create trans id
+				BYTE transId[12];
+				//Set first to 0
+				set4(transId,0,0);
+				//Set timestamp as trans id
+				set8(transId,4,getTime());
+				//Create binding request to send back
+				STUNMessage *request = new STUNMessage(STUNMessage::Request,STUNMessage::Binding,transId);
+				//Add username
+				request->AddUsernameAttribute(transport->GetLocalUsername(),transport->GetRemoteUsername());
+				//Add other attributes
+				request->AddAttribute(STUNMessage::Attribute::IceControlled,(QWORD)1);
+				request->AddAttribute(STUNMessage::Attribute::Priority,(DWORD)33554431);
 
-			//Serialize and autenticate
-			len = request->AuthenticatedFingerPrint(data,size,transport->GetRemotePwd());
+				//Serialize and autenticate
+				len = request->AuthenticatedFingerPrint(data,size,transport->GetRemotePwd());
 
-			//Send it
-			sendto(socket,data,len,0,(sockaddr *)&from_addr,sizeof(struct sockaddr_in));
+				//Send it
+				sendto(socket,data,len,0,(sockaddr *)&from_addr,sizeof(struct sockaddr_in));
 
-			//Clean response
-			delete(request);
+				//Clean response
+				delete(request);
+			}
 		}
 
 		//Delete message
@@ -457,7 +464,7 @@ int RTPBundleTransport::Read()
 	//Check if it was not registered
 	if (it==candidates.end())
 		//Error
-		return Error("-No registered ICE candidate for [%s]",remote);
+		return Error("-RTPBundleTransport::ReadRTP() | No registered ICE candidate for [%s]\n",remote);
 	
 	//Get ice transport
 	ICERemoteCandidate *ice = it->second;
@@ -466,6 +473,68 @@ int RTPBundleTransport::Read()
 	ice->onData(data,len);
 	
 	//OK
+	return 1;
+}
+
+int RTPBundleTransport::AddRemoteCandidate(const std::string& username,const char* ip, WORD port)
+{
+	BYTE data[MTU+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
+	DWORD size = MTU;
+	DWORD len = 0;
+	
+	//Inc usage
+	ScopedUse scope(use);
+	
+	//Get remote ip:port address
+	char remote[strlen(ip)+6];
+	snprintf(remote,sizeof(remote),"%s:%hu",ip, port);
+				
+	//Check if we have an ICE transport for that username
+	auto it = connections.find(username);
+			
+	//If not found
+	if (it==connections.end())
+		//Exit
+		return Error("-RTPBundleTransport::AddRemoteCandidate:: ice username not found [%s}\n",username.c_str());
+
+	//Get ice connection
+	Connection* connection = it->second;
+	DTLSICETransport* transport = connection->transport;
+
+	//Check if it is not already present
+	if (candidates.find(remote)!=candidates.end())
+		//Do nothing
+		return Error("-RTPBundleTransport::AddRemoteCandidate already present [candidate:%s]\n",remote);
+	
+	//Create new candidate
+	ICERemoteCandidate* candidate = new ICERemoteCandidate(ip,port,transport);
+	//Add candidate and add it to the maps
+	candidates[remote] = candidate;
+	connection->candidates.insert(candidate);
+
+	//Create trans id
+	BYTE transId[12];
+	//Set first to 0
+	set4(transId,0,0);
+	//Set timestamp as trans id
+	set8(transId,4,getTime());
+	//Create binding request to send back
+	STUNMessage *request = new STUNMessage(STUNMessage::Request,STUNMessage::Binding,transId);
+	//Add username
+	request->AddUsernameAttribute(transport->GetLocalUsername(),transport->GetRemoteUsername());
+	//Add other attributes
+	request->AddAttribute(STUNMessage::Attribute::IceControlled,(QWORD)1);
+	request->AddAttribute(STUNMessage::Attribute::Priority,(DWORD)33554431);
+
+	//Serialize and autenticate
+	len = request->AuthenticatedFingerPrint(data,size,transport->GetRemotePwd());
+
+	//Send it
+	sendto(socket,data,len,MSG_DONTWAIT,candidate->GetAddress(),candidate->GetAddressLen());
+
+	//Clean request
+	delete(request);
+	
 	return 1;
 }
 

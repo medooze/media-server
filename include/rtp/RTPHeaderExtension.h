@@ -27,7 +27,10 @@ public:
 		AbsoluteSendTime	= 3,
 		CoordinationOfVideoOrientation	= 4,
 		TransportWideCC		= 5,
-		FrameMarking		= 6
+		FrameMarking		= 6,
+		RTPStreamId		= 7,
+		RepairedRTPStreamId	= 8,
+		MediaStreamId		= 9,
 	};
 	
 	static Type GetExtensionForName(const char* ext)
@@ -38,6 +41,9 @@ public:
 		else if (strcasecmp(ext,"urn:3gpp:video-orientation")==0)							return CoordinationOfVideoOrientation;
 		else if (strcasecmp(ext,"http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01")==0)	return TransportWideCC;
 		else if (strcasecmp(ext,"urn:ietf:params:rtp-hdrext:framemarking")==0)						return FrameMarking;
+		else if (strcasecmp(ext,"urn:ietf:params:rtp-hdrext:sdes:rtp-stream-id")==0)					return RTPStreamId;
+		else if (strcasecmp(ext,"urn:ietf:params:rtp-hdrext:sdes:repaired-rtp-stream-id")==0)				return RepairedRTPStreamId;
+		else if (strcasecmp(ext,"urn:ietf:params:rtp-hdrext:sdes:mid")==0)						return MediaStreamId;
 		return UNKNOWN;
 	}
 
@@ -51,6 +57,7 @@ public:
 			case CoordinationOfVideoOrientation:	return "CoordinationOfVideoOrientation";
 			case TransportWideCC:			return "TransportWideCC";
 			case FrameMarking:			return "FrameMarking";
+			case RTPStreamId:			return "RTPStreamId";
 			default:				return "unknown";
 		}
 	}
@@ -106,7 +113,7 @@ public:
 		bool discardable;
 		bool baseLayerSync;
 		BYTE temporalLayerId;
-		BYTE spatialLayerId;
+		BYTE layerId;
 		BYTE tl0PicIdx;
 	  
 		FrameMarks()
@@ -117,7 +124,7 @@ public:
 			discardable = false;
 			baseLayerSync = false;
 			temporalLayerId = 0;
-			spatialLayerId = 0;
+			layerId = 0;
 			tl0PicIdx = 0;
 		}
 	};
@@ -136,6 +143,9 @@ public:
 		hasVideoOrientation = 0;
 		hasTransportWideCC = 0;
 		hasFrameMarking = 0;
+		hasRTPStreamId = 0;
+		hasRepairedRTPStreamId = 0;
+		hasMediaStreamId = 0;
 	}
 	
 	DWORD Parse(const RTPMap &extMap,const BYTE* data,const DWORD size);
@@ -149,12 +159,18 @@ public:
 	WORD	transportSeqNum;
 	VideoOrientation cvo;
 	FrameMarks frameMarks;
+	std::string rid;
+	std::string repairedId;
+	std::string mid;
 	bool    hasAbsSentTime;
 	bool	hasTimeOffset;
 	bool	hasAudioLevel;
 	bool	hasVideoOrientation;
 	bool	hasTransportWideCC;
 	bool	hasFrameMarking;
+	bool	hasRTPStreamId;
+	bool	hasRepairedRTPStreamId;
+	bool	hasMediaStreamId;
 };
 
 #endif /* RTPHEADEREXTENSION_H */

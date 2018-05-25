@@ -21,6 +21,8 @@
 class RTCPBye : public RTCPPacket
 {
 public:
+	using shared = std::shared_ptr<RTCPBye>;
+public:
 	RTCPBye();
 	RTCPBye(const std::vector<DWORD> &ssrcs,const char* reason);
 	~RTCPBye();
@@ -28,16 +30,16 @@ public:
 	virtual DWORD Parse(BYTE* data,DWORD size);
 	virtual DWORD Serialize(BYTE* data,DWORD size);
 	
-	static RTCPBye* Create(const std::vector<DWORD> &ssrcs,const char* reason)
+	static RTCPBye::shared Create(const std::vector<DWORD> &ssrcs,const char* reason)
 	{
-		return new RTCPBye(ssrcs,reason);
+		return std::make_shared<RTCPBye>(ssrcs,reason);
 	}
 	
 private:
 	typedef std::vector<DWORD> SSRCs;
 private:
 	SSRCs ssrcs;
-	char* reason;
+	char* reason = NULL;
 };
 #endif /* RTCPBYE_H */
 

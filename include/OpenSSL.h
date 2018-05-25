@@ -3,6 +3,7 @@
 
 
 #include <pthread.h>
+#include <openssl/opensslconf.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
@@ -14,8 +15,7 @@ public:
 
 private:
 	static bool SetThreadSafe();
-	// static unsigned long GetThreadId();  //Deprecated in OpenSSL >= 1.0.0.
-	static void SetThreadId(CRYPTO_THREADID* thread_id);  // For OpenSSL >= 1.0.0.
+	static void SetThreadId(CRYPTO_THREADID* thread_id);
 	static void LockingFunction(int mode, int n, const char *file, int line);
 
 private:

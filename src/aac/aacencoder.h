@@ -24,7 +24,7 @@ public:
 	virtual ~AACEncoder();
 	virtual int Encode(SWORD *in,int inLen,BYTE* out,int outLen);
 	virtual DWORD TrySetRate(DWORD rate)	{ return GetRate();				}
-	virtual DWORD GetRate()			{ return ctx->sample_rate?ctx->sample_rate:0;	}
+	virtual DWORD GetRate()			{ return ctx->sample_rate?ctx->sample_rate:8000;}
 	virtual DWORD GetClockRate()		{ return GetRate();				}
 private:
 	AVCodec 	*codec;

@@ -14,15 +14,18 @@
 #ifndef RTCPRTPFEEDBACK_H
 #define RTCPRTPFEEDBACK_H
 #include "config.h"
+#include "bitstream.h"
 #include "rtp/RTCPPacket.h"
 #include "rtp/RTCPCommonHeader.h"
 #include <vector>
 #include <list>
 #include <map>
+#include <memory>
 
 class RTCPRTPFeedback : public RTCPPacket
 {
 public:
+	using shared = std::shared_ptr<RTCPRTPFeedback>;
 	enum FeedbackType {
 		NACK = 1,
 		TempMaxMediaStreamBitrateRequest = 3,
@@ -45,26 +48,17 @@ public:
 		}
 		return "Unknown";
 	}
-
-	static RTCPRTPFeedback* Create(FeedbackType type,DWORD senderSSRC,DWORD mediaSSRC)
-	{
-		//Create
-		RTCPRTPFeedback* packet = new RTCPRTPFeedback();
-		//Set type
-		packet->SetFeedBackTtype(type);
-		//Set ssrcs
-		packet->SetSenderSSRC(senderSSRC);
-		packet->SetMediaSSRC(mediaSSRC);
-		//return it
-		return packet;
-	}
 public:
+
 	struct Field
 	{
+		using shared = std::shared_ptr<Field>;
+		
 		virtual ~Field(){};
-		virtual DWORD GetSize() = 0;
+		virtual DWORD GetSize() const = 0;
 		virtual DWORD Parse(BYTE* data,DWORD size) = 0;
-		virtual DWORD Serialize(BYTE* data,DWORD size) = 0;
+		virtual DWORD Serialize(BYTE* data,DWORD size) const = 0;
+		virtual void Dump() const = 0;
 	};
 
 	struct NACKField : public Field
@@ -97,9 +91,9 @@ public:
 			this->pid = pid;
 			this->blp = get2(blp,0);
 		}
-		virtual ~NACKField(){}
+		virtual ~NACKField() = default;
 		
-		virtual DWORD GetSize() { return 4;}
+		virtual DWORD GetSize() const { return 4;}
 		virtual DWORD Parse(BYTE* data,DWORD size)
 		{
 			if (size<4) return 0;
@@ -107,12 +101,27 @@ public:
 			blp = get2(data,2);
 			return 4;
 		}
-		virtual DWORD Serialize(BYTE* data,DWORD size)
+		virtual DWORD Serialize(BYTE* data,DWORD size) const
 		{
 			if (size<4) return 0;
 			set2(data,0,pid);
 			set2(data,2,blp);
 			return 4;
+		}
+		
+		virtual void Dump() const
+		{
+			BYTE blp[2];
+			char str[17];
+			//Get BLP in BYTE[]
+			set2(blp,0,this->blp);
+			//Convert to binary
+			BitReader r(blp,2);
+			for (DWORD j=0;j<16;j++)
+				str[j] = r.Get(1) ? '1' : '0';
+			str[16] = 0;
+			//Debug
+			Debug("\t\t[NACK pid:%d blp:0x%x:%s /]\n",pid,this->blp,str);
 		}
 	};
 
@@ -146,7 +155,7 @@ public:
 			SetBitrate(bitrate);
 		}
 		virtual ~TempMaxMediaStreamBitrateField(){}
-		virtual DWORD GetSize() { return 8;}
+		virtual DWORD GetSize() const { return 8;}
 		virtual DWORD Parse(BYTE* data,DWORD size)
 		{
 			if (size<8) return 0;
@@ -159,7 +168,7 @@ public:
 			overhead		= overhead << 8 | data[7];
 			return 8;
 		}
-		virtual DWORD Serialize(BYTE* data,DWORD size)
+		virtual DWORD Serialize(BYTE* data,DWORD size) const
 		{
 			if (size<8) return 0;
 			set4(data,0,ssrc);
@@ -168,6 +177,13 @@ public:
 			data[6] = maxTotalBitrateMantissa <<1 | (overhead>>8 & 0x01);
 			data[7] = overhead;
 			return 8;
+		}
+		
+		
+		virtual void Dump() const
+		{
+			//Debug
+			Debug("\t\t[TempMaxMediaStreamBitrateField ssrc:%u bitrate:%u exp:%u mantisa:%u overhead:%u/]\n",ssrc,GetBitrate(),maxTotalBitrateExp,maxTotalBitrateMantissa,overhead);		
 		}
 
 		void SetBitrate(DWORD bitrate)
@@ -238,53 +254,69 @@ public:
 
 
 		 */
-		TransportWideFeedbackMessageField()
-		{
-			
-		}
+		TransportWideFeedbackMessageField() = default;
 		
 		TransportWideFeedbackMessageField(DWORD feedbackPacketCount)
 		{
 			this->feedbackPacketCount = feedbackPacketCount;
 		}
-		virtual ~TransportWideFeedbackMessageField(){}
+		virtual ~TransportWideFeedbackMessageField() = default;
+		
+		//From Field
+		virtual DWORD GetSize() const;
+		virtual DWORD Parse(BYTE* data,DWORD size);
+		virtual DWORD Serialize(BYTE* data,DWORD size) const;
+		virtual void Dump() const;
 		
 		//Pair<seqnum,us> -> us = 0, not received
-		typedef std::map<WORD,QWORD> Packets;
-		
-		virtual DWORD GetSize();
-		virtual DWORD Parse(BYTE* data,DWORD size);
-		virtual DWORD Serialize(BYTE* data,DWORD size);
+		typedef std::map<DWORD,QWORD> Packets;
 		
 		BYTE feedbackPacketCount;
+		QWORD referenceTime = 0;
 		Packets packets;
 	};
 
 public:
 	RTCPRTPFeedback();
-	virtual ~RTCPRTPFeedback();
+	RTCPRTPFeedback(FeedbackType type,DWORD senderSSRC,DWORD mediaSSRC);
+	virtual ~RTCPRTPFeedback() = default;
 	virtual DWORD GetSize();
 	virtual DWORD Parse(BYTE* data,DWORD size);
 	virtual DWORD Serialize(BYTE* data,DWORD size);
 	virtual void Dump();
 
-	void SetSenderSSRC(DWORD ssrc)		{ senderSSRC = ssrc;		}
-	void SetMediaSSRC(DWORD ssrc)		{ mediaSSRC = ssrc;		}
-	void SetFeedBackTtype(FeedbackType type){ feedbackType = type;		}
-	void AddField(Field* field)		{ fields.push_back(field);	}
+	void SetSenderSSRC(DWORD ssrc)			{ senderSSRC = ssrc;		}
+	void SetMediaSSRC(DWORD ssrc)			{ mediaSSRC = ssrc;		}
+	void SetFeedBackTtype(FeedbackType type)	{ feedbackType = type;		}
+	void AddField(const Field::shared &field)	{ fields.push_back(field);	}
+	
+	
+	template<typename Type>
+	void AddField(const std::shared_ptr<Type>& field) { AddField(std::static_pointer_cast<Field>(field));	}
 
-	DWORD		GetMediaSSRC() const	{ return mediaSSRC;		}
-	DWORD		GetSenderSSRC() const	{ return senderSSRC;		}
-	FeedbackType	GetFeedbackType() const	{ return feedbackType;		}
-	DWORD		GetFieldCount() const	{ return fields.size();		}
-	Field*		GetField(BYTE i) const	{ return fields[i];		}
-
+	template<typename Type,class ...Args>
+	std::shared_ptr<Type> CreateField(Args... args)
+	{
+		auto field =  std::make_shared<Type>(Type{ std::forward<Args>(args)... });
+		AddField(std::static_pointer_cast<Field>(field));
+		return field;
+	}
+	
+	DWORD			GetMediaSSRC()		const { return mediaSSRC;		}
+	DWORD			GetSenderSSRC()		const { return senderSSRC;		}
+	FeedbackType		GetFeedbackType()	const { return feedbackType;		}
+	DWORD			GetFieldCount()		const { return fields.size();		}
+	const Field::shared	GetField(BYTE i)	const { return fields[i];		}
+	
+	template<typename Type>
+	const std::shared_ptr<Type>	GetField(BYTE i)	const { return std::static_pointer_cast<Type>(fields[i]); }
+	
 private:
-	typedef std::vector<Field*> Fields;
+	typedef std::vector<Field::shared> Fields;
 private:
 	FeedbackType feedbackType;
-	DWORD senderSSRC;
-	DWORD mediaSSRC;
+	DWORD senderSSRC = 0;
+	DWORD mediaSSRC = 0;
 	Fields fields;
 };
 

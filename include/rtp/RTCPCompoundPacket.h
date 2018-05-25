@@ -17,9 +17,13 @@
 #include "rtp/RTCPPacket.h"
 #include "rtp/RTCPCommonHeader.h"
 #include <vector>
+#include <memory>
 
 class RTCPCompoundPacket
 {
+public:
+	using shared = std::shared_ptr<RTCPCompoundPacket>;
+	
 public:
 	static bool IsRTCP(BYTE *data,DWORD size)
 	{
@@ -38,20 +42,41 @@ public:
 		//RTCP
 		return 1;
 	}
-	RTCPCompoundPacket();
-	RTCPCompoundPacket(RTCPPacket* packet);
-	~RTCPCompoundPacket();
+	static RTCPCompoundPacket::shared Parse(BYTE *data,DWORD size);
+	static RTCPCompoundPacket::shared Create()
+	{
+		return  std::make_shared<RTCPCompoundPacket>();
+	}
+	
+	template <typename Type>
+	static RTCPCompoundPacket::shared Create(const Type& packet)
+	{
+		return  std::make_shared<RTCPCompoundPacket>(std::static_pointer_cast<RTCPPacket>(packet));
+	}
+public:
+	RTCPCompoundPacket() = default;
+	RTCPCompoundPacket(const RTCPPacket::shared& packet);
+	~RTCPCompoundPacket() = default;
 	DWORD GetSize() const;
 	DWORD Serialize(BYTE *data,DWORD size) const;
 	void Dump() const;
 
-	void	    AddRTCPacket(RTCPPacket* packet)		{ packets.push_back(packet);	}
-	DWORD	    GetPacketCount()			const	{ return packets.size();	}
-	const RTCPPacket* GetPacket(DWORD num)		const	{ return packets[num];		}
+	
+	void			 AddPacket(const RTCPPacket::shared& packet)	{ packets.push_back(packet);	}
+	DWORD			 GetPacketCount()			const	{ return packets.size();	}
+	const RTCPPacket::shared GetPacket(DWORD num)			const	{ return packets[num];		}
+	
+	template<typename Type,class ...Args>
+	std::shared_ptr<Type> CreatePacket(Args... args)
+	{
+		auto packet =  std::make_shared<Type>(std::forward<Args>(args)... );
+		AddPacket(std::static_pointer_cast<RTCPPacket>(packet));
+		return packet;
+	}
 
-	static RTCPCompoundPacket* Parse(BYTE *data,DWORD size);
 private:
-	typedef std::vector<RTCPPacket*> RTCPPackets;
+	typedef std::vector<RTCPPacket::shared> RTCPPackets;
+	
 private:
 	RTCPPackets packets;
 };

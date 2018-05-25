@@ -3,8 +3,8 @@
 #include <cstring>
 #include "log.h"
 #include "mcu.h"
-#include "rtmpparticipant.h"
-#include "websockets.h"
+#include "rtmp/rtmpparticipant.h"
+#include "ws/websockets.h"
 
 
 /**************************************

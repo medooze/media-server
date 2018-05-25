@@ -9,7 +9,7 @@
 #include <string>
 #include <string.h>
 #include <strings.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include "version.h"
 
 #define	QCIF	0	// 176  x 144 	AR:	1,222222222
@@ -35,6 +35,7 @@
 #define	SQCIF	20	// 128  x 96	AR:	1,333333333
 #define	SCIF	21	// 256  x 192	AR:	1,333333333
 #define	HD1080P	22	// 1920 x 1080  AR:     1,777777778
+
 
 
 
@@ -278,6 +279,23 @@ public:
 		return atoi(it->second.c_str());
 	}
 	
+	QWORD GetProperty(const char* key,QWORD defaultValue) const
+	{
+		return GetProperty(std::string(key),defaultValue);
+	}
+
+	QWORD GetProperty(const std::string &key,QWORD defaultValue) const
+	{
+		//Find item
+		const_iterator it = find(key);
+		//If not found
+		if (it==end())
+			//return default
+			return defaultValue;
+		//Return value
+		return atoll(it->second.c_str());
+	}
+	
 	bool GetProperty(const char* key,bool defaultValue) const
 	{
 		return GetProperty(std::string(key),defaultValue);
@@ -304,7 +322,10 @@ public:
 };
 inline void* malloc32(size_t size)
 {
-	return memalign(32,size);
+	void* ptr;
+	if(posix_memalign(&ptr,32,size))
+		return NULL;
+	return ptr;
 }
 
 class ByteBuffer

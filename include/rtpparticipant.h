@@ -28,21 +28,21 @@ public:
 	virtual int SendVideoFPU();
 	virtual MediaStatistics GetStatistics(MediaFrame::Type type);
 
-	virtual int SetVideoInput(VideoInput* input)	{ videoInput	= input;	}
-	virtual int SetVideoOutput(VideoOutput* output) { videoOutput	= output;	}
-	virtual int SetAudioInput(AudioInput* input)	{ audioInput	= input;	}
-	virtual int SetAudioOutput(AudioOutput *output)	{ audioOutput	= output;	}
-	virtual int SetTextInput(TextInput* input)	{ textInput	= input;	}
-	virtual int SetTextOutput(TextOutput* output)	{ textOutput	= output;	}
+	virtual int SetVideoInput(VideoInput* input)	{ videoInput	= input; return true;	}
+	virtual int SetVideoOutput(VideoOutput* output) { videoOutput	= output; return true;	}
+	virtual int SetAudioInput(AudioInput* input)	{ audioInput	= input; return true;	}
+	virtual int SetAudioOutput(AudioOutput *output)	{ audioOutput	= output; return true;	}
+	virtual int SetTextInput(TextInput* input)	{ textInput	= input; return true;	}
+	virtual int SetTextOutput(TextOutput* output)	{ textOutput	= output; return true;	}
 
 	virtual int SetMute(MediaFrame::Type media, bool isMuted);
 
 	virtual int Init();
 	virtual int End();
 
-	int StartSending(MediaFrame::Type media,char *sendIp,int sendPort,RTPMap& rtpMap);
+	int StartSending(MediaFrame::Type media,char *sendIp,int sendPort,const RTPMap& rtpMap,const RTPMap& aptMap);
 	int StopSending(MediaFrame::Type media);
-	int StartReceiving(MediaFrame::Type media,RTPMap& rtpMap);
+	int StartReceiving(MediaFrame::Type media,const RTPMap& rtpMap,const RTPMap& aptMap);
 	int StopReceiving(MediaFrame::Type media);
 	int SetLocalCryptoSDES(MediaFrame::Type media,const char* suite, const char* key64);
 	int SetRemoteCryptoSDES(MediaFrame::Type media,const char* suite, const char* key64);

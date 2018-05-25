@@ -137,7 +137,7 @@ int H263Decoder1996::DecodePacket(BYTE *in,DWORD len,int lost,int last)
 		delete(headers);
 
 		//Nos aseguramos que quepa
-		if (len<0 || bufLen+len+FF_INPUT_BUFFER_PADDING_SIZE>bufSize)
+		if (len<0 || bufLen+len+AV_INPUT_BUFFER_PADDING_SIZE>bufSize)
 			return Error("Wrong size of packet [%d,%d]\n",bufLen,len);
 
 		//Copiamos
@@ -151,7 +151,7 @@ int H263Decoder1996::DecodePacket(BYTE *in,DWORD len,int lost,int last)
 	if(last)
 	{
 		//Borramos el final
-		memset(buffer+bufLen,0,FF_INPUT_BUFFER_PADDING_SIZE);
+		memset(buffer+bufLen,0,AV_INPUT_BUFFER_PADDING_SIZE);
 
 		//Decode
 		ret = Decode(buffer,bufLen);
@@ -348,9 +348,9 @@ int H263Encoder1996::OpenCodec()
 	DWORD bufSize = 1.5*bitrate/fps;
 
 	//Check size
-	if (bufSize<FF_MIN_BUFFER_SIZE)
+	if (bufSize<AV_INPUT_BUFFER_MIN_SIZE)
 		//Set minimun
-		bufSize = FF_MIN_BUFFER_SIZE;
+		bufSize = AV_INPUT_BUFFER_MIN_SIZE;
 
 	//Y alocamos el buffer
 	frame = new VideoFrame(type,bufSize);
@@ -365,7 +365,6 @@ int H263Encoder1996::OpenCodec()
 	ctx->rc_max_rate	= bitrate;
 	ctx->rc_buffer_size	= bitrate/fps+1;
 	ctx->rc_initial_buffer_occupancy = 0;
-	ctx->rc_qsquish 	= 1;
 	ctx->max_b_frames	= 0;
 	
 	// Open codec

@@ -84,7 +84,7 @@ Mosaic::Mosaic(Type type,DWORD size)
 	mosaicType = type;
 
 	//Calculate total size
-	mosaicSize = mosaicTotalWidth*mosaicTotalHeight*3/2+FF_INPUT_BUFFER_PADDING_SIZE+32;
+	mosaicSize = mosaicTotalWidth*mosaicTotalHeight*3/2+AV_INPUT_BUFFER_PADDING_SIZE+32;
 	//Allocate memory
 	mosaicBuffer = (BYTE *) malloc32(mosaicSize);
 	//Get aligned
@@ -315,7 +315,7 @@ int  Mosaic::SetScore(int id, QWORD score)
 int Mosaic::AddParticipant(int id,QWORD score)
 {
 	//Log
-	Log("-AddParticipant [id:%d,score:%lld]\n",id,score);
+	Log("-AddParticipant [id:%d,score:%llu]\n",id,score);
 
 	//Chck if allready added
 	Participants::iterator it = participants.find(id);
@@ -490,6 +490,8 @@ int Mosaic::CalculatePositions()
 				break;
 		}
 	}
+
+	return 1;
 }
 
 int* Mosaic::GetSlots()

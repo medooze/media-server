@@ -28,10 +28,10 @@ public:
 	void SetRemoteRateEstimator(RemoteRateEstimator* estimator);
 	int SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int intraPeriod,const Properties& properties);
 	int SetTemporalBitrateLimit(int bitrate);
-	int StartSending(char *sendVideoIp,int sendVideoPort,RTPMap& rtpMap);
+	int StartSending(char *sendVideoIp,int sendVideoPort,const RTPMap& rtpMap,const RTPMap& aptMap);
 	int StopSending();
 	int SendFPU();
-	int StartReceiving(RTPMap& rtpMap);
+	int StartReceiving(const RTPMap& rtpMap,const RTPMap& aptMap);
 	int StopReceiving();
 	int SetMediaListener(MediaFrame::Listener *listener);
 	int SetMute(bool isMuted);

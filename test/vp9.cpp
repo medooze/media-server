@@ -15,7 +15,7 @@ public:
 		testDescriptor();
 	}
 	
-	int testDescriptor()
+	void testDescriptor()
 	{
 		
 		BYTE aux[1024];

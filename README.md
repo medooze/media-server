@@ -20,12 +20,14 @@ We intend to implement support the following features:
 - [x] Video mixing with continuous presence
 - [x] Audio mixing in 8khz,16Khz,32khz and 48Khz
 - [x] Flash broadcasting
+- [x] MP4 multitrack recording for H264, VP8, Opus, G711 and VP9 (WIP)
+- [x] MP4 playback
 - [x] VAD support
-- [x] [VP9 SVC](https://tools.ietf.org/html/draft-ietf-payload-vp9-02) layer selection
-- [ ] Simulcast
+- [x] [VP9 SVC](https://tools.ietf.org/html/draft-ietf-payload-tvp9-02) layer selection
+- [x] VP8 Simulcast
 - [x] [RTP transport wide congestion control](https://tools.ietf.org/html/draft-holmer-rmcat-transport-wide-cc-extensions-01)
-- [x] Remote Bitrate Estimation adn Adaptation Algorithm
-- [ ] Sender side BitRate estimation: algorithm not decided yet candidates are [GCC](https://tools.ietf.org/html/draft-ietf-rmcat-gcc-02), [NADA](https://tools.ietf.org/html/draft-ietf-rmcat-nada-03) or [SCREAM](https://tools.ietf.org/html/draft-ietf-rmcat-scream-cc-07)
+- [x] Remote Bitrate Estimation and Adaptation Algorithm
+- [x] Sender side BitRate estimation
 - [ ] [Flex FEC draft 3](https://tools.ietf.org/html/draft-ietf-payload-flexible-fec-scheme-03)
 - [x] NACK and RTX support
 - [x] [RTCP reduced size](https://tools.ietf.org/html/rfc5506)

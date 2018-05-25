@@ -14,18 +14,21 @@
 #include "rtp/RTCPPayloadFeedback.h"
 #include "rtp/RTCPCommonHeader.h"
 
-RTCPPayloadFeedback::RTCPPayloadFeedback() : RTCPPacket(RTCPPacket::PayloadFeedback)
+RTCPPayloadFeedback::RTCPPayloadFeedback() : 
+	RTCPPacket(RTCPPacket::PayloadFeedback)
 {
 
 }
 
-RTCPPayloadFeedback::~RTCPPayloadFeedback()
+RTCPPayloadFeedback::RTCPPayloadFeedback(RTCPPayloadFeedback::FeedbackType type,DWORD senderSSRC,DWORD mediaSSRC) : 
+	RTCPPacket(RTCPPacket::PayloadFeedback),
+	feedbackType(type),
+	senderSSRC(senderSSRC),
+	mediaSSRC(mediaSSRC)
 {
-	//For each field
-	for (Fields::iterator it=fields.begin();it!=fields.end();++it)
-		//delete it
-		delete(*it);
+	
 }
+
 
 void RTCPPayloadFeedback::Dump()
 {
@@ -46,12 +49,12 @@ void RTCPPayloadFeedback::Dump()
 			case RTCPPayloadFeedback:: ApplicationLayerFeeedbackMessage:
 			{
 				//Get field
-				ApplicationLayerFeeedbackField* field = (ApplicationLayerFeeedbackField*)fields[i];
+				auto field = std::static_pointer_cast<ApplicationLayerFeeedbackField>(fields[i]);
 				//Get size and payload
 				DWORD len		= field->GetLength();
 				const BYTE* payload	= field->GetPayload();
 				//Dump it
-				::Dump(payload,len);
+				//::Dump(payload,len);
 				//Check if it is a REMB
 				if (len>8 && payload[0]=='R' && payload[1]=='E' && payload[2]=='M' && payload[3]=='B')
 				{
@@ -122,30 +125,30 @@ DWORD RTCPPayloadFeedback::Parse(BYTE* data,DWORD size)
 	//While we have more
 	while (len<packetSize)
 	{
-		Field *field = NULL;
+		Field::shared field = nullptr;
 		//Depending on the type
 		switch(feedbackType)
 		{
 			case PictureLossIndication:
 				return Error("PictureLossIndication with body\n");
 			case SliceLossIndication:
-				field = new SliceLossIndicationField();
+				field = std::make_shared<SliceLossIndicationField>();
 				break;
 			case ReferencePictureSelectionIndication:
-				field = new ReferencePictureSelectionField();
+				field = std::make_shared<ReferencePictureSelectionField>();
 				break;
 			case FullIntraRequest:
-				field = new FullIntraRequestField();
+				field = std::make_shared<FullIntraRequestField>();
 				break;
 			case TemporalSpatialTradeOffRequest:
 			case TemporalSpatialTradeOffNotification:
-				field = new TemporalSpatialTradeOffField();
+				field = std::make_shared<TemporalSpatialTradeOffField>();
 				break;
 			case VideoBackChannelMessage:
-				field = new VideoBackChannelMessageField();
+				field = std::make_shared<VideoBackChannelMessageField>();
 				break;
 			case ApplicationLayerFeeedbackMessage:
-				field = new ApplicationLayerFeeedbackField();
+				field = std::make_shared<ApplicationLayerFeeedbackField>();
 				break;
 			default:
 				return Error("Unknown RTCPPayloadFeedback type [%d]\n",header.count);

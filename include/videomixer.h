@@ -39,7 +39,6 @@ public:
 	VideoInput*  GetInput(int id);
 	VideoOutput* GetOutput(int id);
 	int SetSlot(int num,int id);
-	int SetCompositionType(Mosaic::Type comp,int size);
 
 	int CreateMosaic(Mosaic::Type comp,int size);
 	int SetMosaicOverlayImage(int mosaicId,const char* filename);
@@ -52,8 +51,12 @@ public:
 	int SetCompositionType(int mosaicId,Mosaic::Type comp,int size);
 	int DeleteMosaic(int mosaicId);
 
+	void Process(bool forceUpdate, QWORD now);
 	int End();
 	
+public:
+	static int MosaicDefault;
+	static int NoMosaic;	
 public:
 	static void SetVADDefaultChangePeriod(DWORD ms);
 
@@ -116,7 +119,7 @@ private:
 	VADMode		vadMode;
 	bool		keepAspectRatio;
 	bool		displayNames;
-	
+	DWORD		version;
 	Properties	overlay;
 };
 

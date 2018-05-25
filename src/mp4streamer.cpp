@@ -123,13 +123,13 @@ int MP4Streamer::Open(const char *filename)
 				// Depending on the name
 				if (strcmp("PCMU", name) == 0)
 					//Create new audio track
-					audio = new MP4RtpTrack(MediaFrame::Audio,AudioCodec::PCMU,payload);
+					audio = new MP4RtpTrack(MediaFrame::Audio,AudioCodec::PCMU,payload,8000);
 				else if (strcmp("PCMA", name) == 0)
 					//Create new audio track
-					audio = new MP4RtpTrack(MediaFrame::Audio,AudioCodec::PCMA,payload);
+					audio = new MP4RtpTrack(MediaFrame::Audio,AudioCodec::PCMA,payload,8000);
 				else if (strcmp("OPUS", name) == 0)
 					//Create new audio track
-					audio = new MP4RtpTrack(MediaFrame::Audio,AudioCodec::OPUS,payload);
+					audio = new MP4RtpTrack(MediaFrame::Audio,AudioCodec::OPUS,payload,48000);
 				else
 					//Skip
 					continue;
@@ -148,19 +148,19 @@ int MP4Streamer::Open(const char *filename)
 				// Depending on the name
 				if (strcmp("H263", name) == 0)
 					//Create new video track
-					video = new MP4RtpTrack(MediaFrame::Video,VideoCodec::H263_1996,payload);
+					video = new MP4RtpTrack(MediaFrame::Video,VideoCodec::H263_1996,payload,90000);
 				else if (strcmp("H263-1998", name) == 0)
 					//Create new video track
-					video = new MP4RtpTrack(MediaFrame::Video,VideoCodec::H263_1998,payload);
+					video = new MP4RtpTrack(MediaFrame::Video,VideoCodec::H263_1998,payload,90000);
 				else if (strcmp("H263-2000", name) == 0)
 					//Create new video track
-					video = new MP4RtpTrack(MediaFrame::Video,VideoCodec::H263_1998,payload);
+					video = new MP4RtpTrack(MediaFrame::Video,VideoCodec::H263_1998,payload,90000);
 				else if (strcmp("H264", name) == 0)
 					//Create new video track
-					video = new MP4RtpTrack(MediaFrame::Video,VideoCodec::H264,payload);
+					video = new MP4RtpTrack(MediaFrame::Video,VideoCodec::H264,payload,90000);
 				else if (strcmp("VP8", name) == 0)
 					//Create new video track
-					video = new MP4RtpTrack(MediaFrame::Video,VideoCodec::VP8,payload);
+					video = new MP4RtpTrack(MediaFrame::Video,VideoCodec::VP8,payload,90000);
 				else
 					continue;
 					
@@ -472,7 +472,7 @@ int MP4Streamer::Stop()
 	pthread_mutex_unlock(&mutex);
 
 	//If got thread
-	if (running)
+	if (!isZeroThread(running))
 		//Wait for thread, will return EDEADLK if called from same thread, i.e. in from onEnd
 		pthread_join(running,NULL);
 
@@ -511,7 +511,7 @@ int MP4Streamer::Close()
 		pthread_cond_signal(&cond);
 
 		//Get running thread
-		DWORD running = thread;
+		pthread_t running = thread;
 
 		//Clean thread
 		setZeroThread(&thread);
@@ -520,7 +520,7 @@ int MP4Streamer::Close()
 		pthread_mutex_unlock(&mutex);
 
 		//Check thread
-		if (running)
+		if (!isZeroThread(running))
 			//Wait for running thread
 			pthread_join(running,NULL);
 	} else {
@@ -657,7 +657,8 @@ int MP4RtpTrack::SendH263SEI(Listener *listener)
 		free(sequenceHeaderSize);
 	if (pictureHeaderSize)
 		free(pictureHeaderSize);
-
+	
+	return 1;
 }
 
 int MP4RtpTrack::Reset()
@@ -665,6 +666,7 @@ int MP4RtpTrack::Reset()
 	sampleId	= 1;
 	numHintSamples	= 0;
 	packetIndex	= 0;
+	return 1;
 }
 
 QWORD MP4RtpTrack::Read(Listener *listener)
@@ -725,7 +727,7 @@ QWORD MP4RtpTrack::Read(Listener *listener)
 			&isSyncSample			// bool* pIsSyncSample
 			))
 		{
-			Error("Error reading sample");
+			Error("Error reading sample [track:%d,sampleId:%d]\n",track,sampleId);
 			//Last
 			return MP4_INVALID_TIMESTAMP;
 		}
@@ -801,8 +803,12 @@ QWORD MP4RtpTrack::Read(Listener *listener)
 		return MP4_INVALID_TIMESTAMP;
 	}
 	
-	//Set lenght
+	//Set media length
 	rtp.SetMediaLength(dataLen);
+	
+	//Set seqnum
+	rtp.SetSeqNum(seqNum++);
+	
 	// Write frame
 	listener->onRTPPacket(rtp);
 
@@ -840,6 +846,7 @@ QWORD MP4RtpTrack::GetNextFrameTime()
 int MP4TextTrack::Reset()
 {
 	sampleId	= 1;
+	return 1;
 }
 
 QWORD MP4TextTrack::ReadPrevious(QWORD time,Listener *listener)
@@ -911,10 +918,6 @@ QWORD MP4TextTrack::ReadPrevious(QWORD time,Listener *listener)
 
 QWORD MP4TextTrack::Read(Listener *listener)
 {
-	int next = 0;
-	int last = 0;
-	int first = 0;
-
 	// Get number of samples for this sample
 	frameSamples = MP4GetSampleDuration(mp4, track, sampleId);
 
@@ -1007,9 +1010,11 @@ AVCDescriptor* MP4Streamer::GetAVCDescriptor()
 	uint32_t *pictureHeaderSize;
 	uint32_t *sequenceHeaderSize;
 	uint32_t i;
-	uint8_t profile, level;
 	uint32_t len;
-	
+	unsigned char AVCProfileIndication 	= 0x42;	//Baseline
+	unsigned char AVCLevelIndication	= 0x0D;	//1.3
+	unsigned char AVCProfileCompat		= 0xC0;
+			
 	//Check video
 	if (!video || video->codec!=VideoCodec::H264)
 		//Nothing
@@ -1018,11 +1023,11 @@ AVCDescriptor* MP4Streamer::GetAVCDescriptor()
 	//Create descriptor
 	AVCDescriptor* desc = new AVCDescriptor();
 
-	//Set them
+	//Set default
 	desc->SetConfigurationVersion(0x01);
-	desc->SetAVCProfileIndication(profile);
-	desc->SetProfileCompatibility(0x00);
-	desc->SetAVCLevelIndication(level);
+	desc->SetAVCProfileIndication(AVCProfileIndication);
+	desc->SetProfileCompatibility(AVCProfileCompat);
+	desc->SetAVCLevelIndication(AVCLevelIndication);
 
 	//Set nalu length
 	MP4GetTrackH264LengthSize(video->mp4, video->track, &len);
