@@ -115,9 +115,9 @@ void AudioMixer::Process(DWORD numSamples)
 		numSamples = Sidebar::MIXER_BUFFER_SIZE;
 	}
 
-	//For each sidepar
+	//For each sidebar
 	for (Sidebars::iterator sit=sidebars.begin(); sit!=sidebars.end(); ++sit)
-		//REset
+		//Reset
 		sit->second->Reset();
 
 	//First pass: Iterate through the audio inputs and calculate the sum of all streams
@@ -133,7 +133,7 @@ void AudioMixer::Process(DWORD numSamples)
 		memset(audio->buffer+audio->len,0,(Sidebar::MIXER_BUFFER_SIZE-audio->len)*sizeof(SWORD));
 		//Get VAD value
 		audio->vad = audio->output->GetVAD(numSamples);
-		//For each sidepaf
+		//For each sidebar
 		for (Sidebars::iterator sit = sidebars.begin(); sit!=sidebars.end(); ++sit)
 		{
 			//Get sidebar
@@ -231,7 +231,7 @@ int AudioMixer::Init(const Properties &properties)
 		createPriorityThread(&mixAudioThread,startMixingAudio,this,0);
 	}
 	
-	//Check if we are calculatint vad
+	//Check if we are calculating vad
 	vad = properties.GetProperty("vad",false);
 
 	return 1;
