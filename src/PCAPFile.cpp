@@ -73,8 +73,9 @@ void PCAPFile::WriteUDP(QWORD currentTimeMillis,DWORD originIp, short originPort
 	mutex.Lock();
 
         //Write header and content
-	write(fd, out, sizeof(out));
-	write(fd, data, size);
+	if (write(fd, out, sizeof(out))<0 || write(fd, data, size)<0)
+		//Error
+		Error("-PCAPFile::WriteUDP()\n");
 	
 	//unlock
 	mutex.Unlock();

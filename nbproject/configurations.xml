@@ -3,8 +3,12 @@
   <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
     <df root="." name="0">
       <df name="include">
+        <in>ActiveSpeakerDectector.h</in>
         <in>PCAPFile.h</in>
         <in>VideoLayerSelector.h</in>
+      </df>
+      <df name="source">
+        <in>ActiveSpeakerDectector.cpp</in>
       </df>
       <df name="src">
         <df name="aac">
@@ -343,9 +347,13 @@
           </incDir>
         </ccTool>
       </folder>
+      <item path="include/ActiveSpeakerDectector.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="include/PCAPFile.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/VideoLayerSelector.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="source/ActiveSpeakerDectector.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/CPUMonitor.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
@@ -1352,6 +1360,10 @@
           </preprocessorList>
         </ccTool>
       </folder>
+      <item path="include/ActiveSpeakerDectector.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="source/ActiveSpeakerDectector.cpp" ex="false" tool="1" flavor2="0">
+      </item>
       <item path="src/CPUMonitor.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="3">
           <incDir>

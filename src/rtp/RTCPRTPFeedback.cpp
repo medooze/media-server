@@ -590,7 +590,7 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Parse(BYTE* data,DWORD
 	statuses.reserve(packetStatusCount);
 
 	//Where we are 
-	WORD len = 8;
+	DWORD len = 8;
 	//Get all
 	while (statuses.size()<packetStatusCount)
 	{
