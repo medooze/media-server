@@ -42,3 +42,11 @@ We intend to implement support the following features:
 
 ## Support
 To discuss issues related to this project or ask for help please [join the google comunity group](https://groups.google.com/forum/#!forum/medooze).
+
+## Contributing
+To get started, [sign the Contributor License Agreement](https://www.clahub.com/agreements/medooze/media-server).
+
+## License
+Dual:
+ - GNU General Public License v2.0 for general use.
+ - MIT for using under the [Medooze Media Server Node.](https://github.com/medooze/media-server-node)
