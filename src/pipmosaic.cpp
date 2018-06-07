@@ -108,6 +108,7 @@ int PIPMosaic::Update(int pos, BYTE *image, int imgWidth, int imgHeight,bool kee
 		//Change size
 		mosaicWidth		= SIZE4MUL(mosaicTotalWidth/4);
 		mosaicHeight		= SIZE4MUL(mosaicTotalHeight/4);
+		mosaicWidthUV		= mosaicWidth/2;
 	}
 	//Get top position
 	DWORD pipIni			= SIZE4MUL(mosaicTotalHeight-mosaicHeight-intraHeight);
