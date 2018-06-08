@@ -14,6 +14,7 @@ public:
 	ActiveSpeakerDetector(Listener *listener) : listener(listener) {}
 	virtual ~ActiveSpeakerDetector() = default;
 	void Accumulate(uint32_t id, bool vad, uint8_t level, uint64_t now);
+	void Release(uint32_t id);
 	void SetMinChangePeriod(uint32_t minChangePeriod)  { this->minChangePeriod = minChangePeriod;}
 protected:
 	void Process(uint64_t now);

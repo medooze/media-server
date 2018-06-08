@@ -17,19 +17,25 @@ void ActiveSpeakerDetector::Accumulate(uint32_t id, bool vad, uint8_t level, uin
 	//Check if we had that speakcer before
 	if (it==speakers.end())
 	{
-		//Store 1s of initial bump
-		speakers[id] = {ScorePerMiliScond*1000ul,now};
+		//Store 1s of initial bump if vad
+		speakers[id] = {vad ? ScorePerMiliScond*1000ul : 0ul,now};
 	} 
 	//Accumulate only if audio has been detected
 	else if (vad)
 	{
 		//Get time diff from last score, we consider 1s as max to coincide with initial bump
-		uint64_t diff = std::min(now-it->second.ts,1000ull);
+		uint64_t diff = std::min(now-it->second.ts,1000ul);
 		//Do not accumulate too much so we can switch faster
 		it->second.score = std::min(it->second.score+level*diff/ScorePerMiliScond,MaxScore);
 		//Set last update time
 		it->second.ts = now;
 	}
+}
+
+void ActiveSpeakerDetector::Release(uint32_t id)
+{
+	//Remove speaker
+	speakers.erase(id);
 }
 
 void ActiveSpeakerDetector::Process(uint64_t now)
@@ -50,7 +56,7 @@ void ActiveSpeakerDetector::Process(uint64_t now)
 	for (auto& entry : speakers)
 	{
 		//Decay
-		entry.second.score = std::max(entry.second.score-decay,0ull);
+		entry.second.score = std::max(entry.second.score-decay,(uint64_t)0ul);
 		//Check if it is active speaker
 		if (maxScore<entry.second.score)
 		{
