@@ -210,7 +210,7 @@ all: touch mkdirs $(TARGETS) certs
 
 touch:
 	@touch $(SRCDIR)/include/version.h
-	@(git log -1 --pretty=tformat:"#ifndef VERSION_H\r\n#define VERSION_H\r\n#define MCUVERSION \"%h\"\r\n#define MCUDATE \"%cd\"\r\n#endif\r\n" | sed 's/\\r\\n/\r\n/g' >  $(SRCDIR)/include/version.h) || true
+	@(git log -1 --pretty=tformat:"#ifndef VERSION_H%n#define VERSION_H%n#define MCUVERSION \"%h\"%n#define MCUDATE \"%cd\"%n#endif%n" | sed 's/\\r\\n/\r\n/g' >  $(SRCDIR)/include/version.h) || true
 mkdirs:
 	mkdir -p $(BUILD)
 	mkdir -p $(BUILD)/test
@@ -246,11 +246,11 @@ buildtest: $(OBJSTEST)
 test: buildtest
 	$(BIN)/$@ -lavcodec
 	
-libmediaserver.so: mkdirs $(OBJSLIB)
+libmediaserver.so: touch mkdirs $(OBJSLIB)
 	$(CXX) -shared -o $(BIN)/$@ $(BUILDOBJOBJSLIB) ${LDLIBFLAGS}
 	@echo [OUT] $(TAG) $(BIN)/$@
 
-libmediaserver.a: mkdirs $(OBJSLIB)
+libmediaserver.a: touch mkdirs $(OBJSLIB)
 	${AR} rscT  $(BIN)/$@ $(BUILDOBJOBJSLIB)
 	@echo [OUT] $(TAG) $(BIN)/$@
  
