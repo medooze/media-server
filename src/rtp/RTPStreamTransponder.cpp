@@ -388,7 +388,7 @@ void  RTPStreamTransponder::Reset()
 
 int RTPStreamTransponder::Run()
 {
-	Log(">RTPBundleTransport::Run() | [%p]\n",this);
+	Log(">RTPStreamTransponder::Run() | [%p]\n",this);
 
 	//Lock for waiting for packets
 	wait.Lock();
@@ -432,7 +432,7 @@ int RTPStreamTransponder::Run()
 	//Unlock
 	wait.Unlock();
 	
-	Log("<RTPBundleTransport::Run()\n");
+	Log("<RTPStreamTransponder::Run()\n");
 	
 	return 0;
 }
