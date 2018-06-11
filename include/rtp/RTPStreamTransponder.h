@@ -38,6 +38,7 @@ public:
 	void SelectLayer(int spatialLayerId,int temporalLayerId);
 	void Mute(bool muting);
 protected:
+	//TODO: I don't like it
 	void Start();
 	int Run();
 	void Stop();

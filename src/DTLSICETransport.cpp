@@ -1741,14 +1741,18 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 				auto fb = std::static_pointer_cast<RTCPPayloadFeedback>(packet);
 				//Get SSRC for media
 				DWORD ssrc = fb->GetMediaSSRC();
-				//Get media
-				RTPOutgoingSourceGroup* group = GetOutgoingSourceGroup(ssrc);
 				//Check feedback type
 				switch(fb->GetFeedbackType())
 				{
 					case RTCPPayloadFeedback::PictureLossIndication:
 					case RTCPPayloadFeedback::FullIntraRequest:
+					{
+						//Get media
+						RTPOutgoingSourceGroup* group = GetOutgoingSourceGroup(ssrc);
+						
+						//Dbug
 						Debug("-DTLSICETransport::onRTCP() | FPU requested [ssrc:%u,group:%p,this:%p]\n",ssrc,group,this);
+						
 						//If not found
 						if (!group)
 						{
@@ -1762,6 +1766,7 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 						//Call listeners
 						group->onPLIRequest(ssrc);
 						break;
+					}
 					case RTCPPayloadFeedback::SliceLossIndication:
 						Debug("-DTLSICETransport::onRTCP() | SliceLossIndication\n");
 						break;
@@ -1778,6 +1783,7 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 						Debug("-DTLSICETransport::onRTCP() | VideoBackChannelMessage\n");
 						break;
 					case RTCPPayloadFeedback::ApplicationLayerFeeedbackMessage:
+						//For all message fields
 						for (BYTE i=0;i<fb->GetFieldCount();i++)
 						{
 							//Get feedback
@@ -1788,6 +1794,8 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 							//Check if it is a REMB
 							if (len>8 && payload[0]=='R' && payload[1]=='E' && payload[2]=='M' && payload[3]=='B')
 							{
+								//Get SSRC count
+								BYTE num = payload[4];
 								//GEt exponent
 								BYTE exp = payload[5] >> 2;
 								DWORD mantisa = payload[5] & 0x03;
@@ -1795,8 +1803,19 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 								mantisa = mantisa << 8 | payload[7];
 								//Get bitrate
 								DWORD bitrate = mantisa << exp;
-								//Call listener
-								group->onREMB(ssrc,bitrate);
+								//For each
+								for (DWORD i=0;i<num;++i)
+								{
+									//Get ssrc
+									DWORD target = get4(payload,8+4*i);
+									//Get media
+									RTPOutgoingSourceGroup* group = GetOutgoingSourceGroup(target);
+									UltraDebug("-DTLSICETransport::onRTCP() | ApplicationLayerFeeedbackMessage | REMB  [ssrc:%u,target:%u,group:%p]\n",ssrc,target,group);
+									//If found
+									if (group)
+										//Call listener
+										group->onREMB(target,bitrate);
+								}
 							}
 						}
 						break;
