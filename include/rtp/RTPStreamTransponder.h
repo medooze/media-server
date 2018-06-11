@@ -33,6 +33,7 @@ public:
 	virtual void onRTP(RTPIncomingSourceGroup* group,const RTPPacket::shared& packet) override;
 	virtual void onEnded(RTPIncomingSourceGroup* group) override;
 	virtual void onPLIRequest(RTPOutgoingSourceGroup* group,DWORD ssrc) override;
+	virtual void onREMB(RTPOutgoingSourceGroup* group,DWORD ssrc,DWORD bitrate) override;
 	
 	void SelectLayer(int spatialLayerId,int temporalLayerId);
 	void Mute(bool muting);

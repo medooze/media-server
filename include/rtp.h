@@ -330,6 +330,7 @@ public:
 	{
 		public:
 			virtual void onPLIRequest(RTPOutgoingSourceGroup* group,DWORD ssrc) = 0;
+			virtual void onREMB(RTPOutgoingSourceGroup* group,DWORD ssrc,DWORD bitrate) = 0;
 		
 	};
 public:
@@ -339,6 +340,7 @@ public:
 	void AddListener(Listener* listener);
 	void RemoveListener(Listener* listener);
 	void onPLIRequest(DWORD ssrc);
+	void onREMB(DWORD ssrc,DWORD bitrate);
 	
 	RTPOutgoingSource* GetSource(DWORD ssrc);
 	

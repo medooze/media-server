@@ -1795,8 +1795,8 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 								mantisa = mantisa << 8 | payload[7];
 								//Get bitrate
 								DWORD bitrate = mantisa << exp;
-								//TODO: Implement REMB support
-								UltraDebug("-DTLSICETransport::onRTCP() | REMB:%u\n",bitrate);
+								//Call listener
+								group->onREMB(ssrc,bitrate);
 							}
 						}
 						break;

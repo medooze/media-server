@@ -331,6 +331,13 @@ void RTPOutgoingSourceGroup::onPLIRequest(DWORD ssrc)
 		listener->onPLIRequest(this,ssrc);
 }
 
+void RTPOutgoingSourceGroup::onREMB(DWORD ssrc, DWORD bitrate)
+{
+	ScopedLock scoped(mutex);
+	for (auto listener : listeners)
+		listener->onREMB(this,ssrc,bitrate);
+}
+
 RTPIncomingSourceGroup::RTPIncomingSourceGroup(MediaFrame::Type type) 
 	: losts(128)
 {
