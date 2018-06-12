@@ -524,13 +524,23 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	}
 
 	//Add transport wide cc on video
-	if (group->type == MediaFrame::Video)
+	if (group->type == MediaFrame::Video && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC))
 	{
 		//Add extension
 		header.extension = true;
 		//Add transport
 		extension.hasTransportWideCC = true;
 		extension.transportSeqNum = ++transportSeqNum;
+	}
+	
+	//If we are using abs send time for sending
+	if (sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::AbsoluteSendTime))
+	{
+		//Use extension
+		header.extension = true;
+		//Set abs send time
+		extension.hasAbsSentTime = true;
+		extension.absSentTime = getTimeMS();
 	}
 
 	//Serialize header
@@ -1442,6 +1452,14 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 		//Set transport wide seq num
 		cloned->SetTransportSeqNum(++transportSeqNum);
 
+	//If we are using abs send time for sending
+	if (sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::AbsoluteSendTime))
+		//Set abs send time
+		cloned->SetAbsSentTime(getTimeMS());
+	else
+		//Disable it
+		cloned->DisableAbsSentTime();
+			
 	//Serialize data
 	int len = cloned->Serialize(data,size,sendMaps.ext);
 	
