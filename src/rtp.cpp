@@ -400,6 +400,11 @@ void RTPIncomingSourceGroup::ResetPackets()
 	losts.Reset();
 }
 
+void RTPIncomingSourceGroup::Update()
+{
+	Update(getTimeMS());
+}
+
 void RTPIncomingSourceGroup::Update(QWORD now)
 {
 	//Refresh instant bitrates

@@ -379,6 +379,7 @@ public:
 	void RemoveListener(Listener* listener);
 	int AddPacket(const RTPPacket::shared &packet);
 	void ResetPackets();
+	void Update();
 	void Update(QWORD now);
 	void SetRTT(DWORD rtt);
 	std::list<RTCPRTPFeedback::NACKField::shared>  GetNacks() { return losts.GetNacks(); }
