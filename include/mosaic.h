@@ -167,7 +167,8 @@ protected:
 	Type	mosaicType;
 	int     mosaicSize;
 
-	Overlay* overlay;
+	Overlay  overlay;
+	bool	 overlayUsed;
 	bool	 overlayNeedsUpdate;
 };
 

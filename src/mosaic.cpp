@@ -74,7 +74,7 @@ int Mosaic::GetNumSlotsForType(Mosaic::Type type)
 	return Error("-Unknown mosaic type %d\n",type);
 }
 
-Mosaic::Mosaic(Type type,DWORD size)
+Mosaic::Mosaic(Type type,DWORD size) : overlay(::GetWidth(size),::GetHeight(size))
 {
 	//Get width and height
 	mosaicTotalWidth = ::GetWidth(size);
@@ -130,7 +130,7 @@ Mosaic::Mosaic(Type type,DWORD size)
 	overlayNeedsUpdate = false;
 
 	//No overlay
-	overlay = NULL;;
+	overlayUsed = false;
 
 	//No vad particpant
 	vadParticipant = 0;
@@ -171,10 +171,6 @@ Mosaic::~Mosaic()
 	for(Participants::iterator it = participants.begin(); it!=participants.end(); it++)
 		//Delete participant info
 		delete (it->second);
-	//Reset any previous one
-	if (overlay)
-		//Delete it
-		delete(overlay);
 }
 
 /************************
@@ -578,15 +574,15 @@ BYTE* Mosaic::GetFrame()
 	ScopedLock scoped(mutex); 
 	
 	//Check if there is a overlay
-	if (!overlay)
+	if (!overlayUsed)
 		//Return mosaic without change
 		return mosaic;
 	//Check if we need to change
 	if (overlayNeedsUpdate)
 		//Calculate and return
-		return overlay->Display(mosaic);
+		return overlay.Display(mosaic);
 	//Return overlay
-	return overlay->GetOverlay();
+	return overlay.GetOverlay();
 }
 
 void Mosaic::Reset()
@@ -606,16 +602,12 @@ int Mosaic::SetOverlayPNG(const char* filename)
 	//Log
 	Log("-SetOverlay [%s,%d,%d]\n",filename,mosaicTotalWidth,mosaicTotalHeight);
 
-	//Reset any previous one
-	if (overlay)
-		//Delete it
-		delete(overlay);
-	//Create new one
-	overlay = new Overlay(mosaicTotalWidth,mosaicTotalHeight);
 	//And load it
-	if(!overlay->LoadPNG(filename))
+	if(!overlay.LoadPNG(filename))
 		//Error
 		return Error("Error loading png image\n");
+	//Using overlay
+	overlayUsed = true;
 	//Display it
 	overlayNeedsUpdate = true;
 
@@ -631,16 +623,12 @@ int Mosaic::SetOverlaySVG(const char* svg)
 	//Log
 	Log("-SetOverlay [%s]\n",svg);
 
-	//Reset any previous one
-	if (overlay)
-		//Delete it
-		delete(overlay);
-	//Create new one
-	overlay = new Overlay(mosaicTotalWidth,mosaicTotalHeight);
 	//And load it
-	if(!overlay->LoadSVG(svg))
+	if(!overlay.LoadSVG(svg))
 		//Error
 		return Error("Error loading png image");
+	//Using overlay
+	overlayUsed = true;
 	//Display it
 	overlayNeedsUpdate = true;
 	//OK
@@ -652,13 +640,10 @@ int Mosaic::SetOverlayText()
 	//Lock method
 	ScopedLock scoped(mutex);
 	
-	//Reset any previous one
-	if (overlay)
-		//Delete it
-		delete(overlay);
-	//Create new one
-	overlay = new Overlay(mosaicTotalWidth,mosaicTotalHeight);
-	
+	//Clean it
+	overlay.Reset();
+	//Using overlay
+	overlayUsed = true;
 	//Display it
 	overlayNeedsUpdate = true;
 	//OK
@@ -670,12 +655,8 @@ int Mosaic::RenderOverlayText(const std::wstring& text,DWORD x,DWORD y,DWORD wid
 	//Lock method
 	ScopedLock scoped(mutex);
 	
-	//Check overlay
-	if (!overlay)
-		//Error
-		return Error("-no overlay\n");
 	//Render text
-	return overlay->RenderText(text,x,y,width,height,properties);
+	return overlay.RenderText(text,x,y,width,height,properties);
 }
 
 int Mosaic::ResetOverlay()
@@ -685,12 +666,12 @@ int Mosaic::ResetOverlay()
 	
 	//Log
 	Log("-Reset overaly\n");
-	//Reset any previous one
-	if (overlay)
-		//Delete it
-		delete(overlay);
-	//remove it
-	overlay = NULL;
+	//Clean it
+	overlay.Reset();
+	//Not using overlay
+	overlayUsed = false;
+	//Display it
+	overlayNeedsUpdate = false;
 	//OK
 	return 1;
 }
