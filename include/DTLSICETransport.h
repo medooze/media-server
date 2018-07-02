@@ -51,7 +51,7 @@ public:
 	void SetLocalProperties(const Properties& properties);
 	virtual int SendPLI(DWORD ssrc) override;
 	virtual int Send(const RTPPacket::shared& packet) override;
-	int Dump(const char* filename);
+	int Dump(const char* filename, bool inbound = true, bool outbound = true, bool rtcp = true);
 	void Reset();
 	
 	void ActivateRemoteCandidate(ICERemoteCandidate* candidate,bool useCandidate, DWORD priority);
@@ -132,23 +132,23 @@ private:
 	DTLSConnection	dtls;
 	Maps		sendMaps;
 	Maps		recvMaps;
-	ICERemoteCandidate* active;
-	srtp_t		send;
-	srtp_t		recv;
-	WORD		transportSeqNum;
-	WORD		feedbackPacketCount;
-	DWORD		lastFeedbackPacketExtSeqNum;
-	WORD		feedbackCycles;
+	ICERemoteCandidate* active			= nullptr;
+	srtp_t		send				= nullptr;
+	srtp_t		recv				= nullptr;
+	WORD		transportSeqNum			= 0;
+	WORD		feedbackPacketCount		= 0;
+	DWORD		lastFeedbackPacketExtSeqNum	= 0;
+	WORD		feedbackCycles			= 0;
 	OutgoingStreams outgoing;
 	IncomingStreams incoming;
 	std::map<std::string,RTPIncomingSourceGroup*> rids;
 	
-	DWORD	mainSSRC;
-	DWORD   rtt;
-	char*	iceRemoteUsername;
-	char*	iceRemotePwd;
-	char*	iceLocalUsername;
-	char*	iceLocalPwd;
+	DWORD	mainSSRC		= 1;
+	DWORD   rtt			= 0;
+	char*	iceRemoteUsername	= nullptr;
+	char*	iceRemotePwd		= nullptr;
+	char*	iceLocalUsername	= nullptr;
+	char*	iceLocalPwd		= nullptr;
 	
 	Mutex	mutex;
 	Use	incomingUse;
@@ -157,7 +157,11 @@ private:
 	std::map<DWORD,PacketStats::shared> transportWideSentPacketsStats;
 	std::map<DWORD,PacketStats::shared> transportWideReceivedPacketsStats;
 	
-	PCAPFile* pcap;
+	PCAPFile* pcap	= nullptr;
+	bool dumpInRTP	= false;
+	bool dumpOutRTP = false;
+	bool dumpRTCP	= false;
+	
 	RemoteRateEstimator senderSideEstimator;
 };
 

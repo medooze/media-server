@@ -40,25 +40,6 @@ DTLSICETransport::DTLSICETransport(Sender *sender) : dtls(*this), mutex(true)
 {
 	//Store sender
 	this->sender = sender;
-	//No active candidate
-	active = NULL;
-	//SRTP instances
-	send = NULL;
-	recv = NULL;
-	//Transport wide seq num
-	transportSeqNum = 0;
-	feedbackPacketCount = 0;
-	feedbackCycles = 0;
-	lastFeedbackPacketExtSeqNum = 0;
-	//No ice
-	iceLocalUsername = NULL;
-	iceLocalPwd = NULL;
-	iceRemoteUsername = NULL;
-	iceRemotePwd = NULL;
-	//Init our main ssrc
-	mainSSRC = 1;
-	//Not dumping
-	pcap = NULL;
 	//Add dummy stream to stimator
 	senderSideEstimator.AddStream(0);
 }
@@ -107,7 +88,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 			return Error("-DTLSICETransport::onData() | Error unprotecting rtcp packet [%d]\n",err);
 
 		//If dumping
-		if (pcap)
+		if (pcap && dumpRTCP)
 			//Write udp packet
 			pcap->WriteUDP(getTimeMS(),candidate->GetIPAddress(),candidate->GetPort(),0x7F000001,5004,data,len);
 
@@ -150,7 +131,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	}
 	
 	//If dumping
-	if (pcap)
+	if (pcap && dumpInRTP)
 		//Write udp packet
 		pcap->WriteUDP(getTimeMS(),candidate->GetIPAddress(),candidate->GetPort(),0x7F000001,5004,data,len);
 	
@@ -599,7 +580,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 			return (void)Debug("-DTLSICETransport::Send() | We don't have an active candidate yet\n");
 
 		//If dumping
-		if (pcap)
+		if (pcap && dumpOutRTP)
 			//Write udp packet
 			pcap->WriteUDP(getTimeMS(),0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len);
 
@@ -857,9 +838,8 @@ void DTLSICETransport::SetRemoteProperties(const Properties& properties)
 	extensions.clear();
 }
 		
-int DTLSICETransport::Dump(const char* filename)
+int DTLSICETransport::Dump(const char* filename, bool inbound, bool outbound, bool rtcp)
 {
-	
 	Log("-DTLSICETransport::Dump()\n");
 	
 	if (pcap)
@@ -876,7 +856,10 @@ int DTLSICETransport::Dump(const char* filename)
 		pcap = NULL;
 		return 0;
 	}
-	
+	//What to dumo
+	dumpInRTP	= inbound;
+	dumpOutRTP	= outbound;
+	dumpRTCP	= rtcp;
 	//Ok
 	return true;
 }
@@ -916,6 +899,9 @@ void DTLSICETransport::Reset()
 	iceRemoteUsername = NULL;
 	iceRemotePwd = NULL;
 	pcap = NULL;
+	dumpInRTP = false;
+	dumpOutRTP = false;
+	dumpRTCP = false;
 }
 
 int DTLSICETransport::SetLocalCryptoSDES(const char* suite,const BYTE* key,const DWORD len)
@@ -1339,7 +1325,7 @@ void DTLSICETransport::Send(const RTCPCompoundPacket::shared &rtcp)
 			return (void) Debug("-DTLSICETransport::Send() | We don't have an active candidate yet\n");
 
 		//If dumping
-		if (pcap)
+		if (pcap && dumpRTCP)
 			//Write udp packet
 			pcap->WriteUDP(getTimeMS(),0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len);
 		
@@ -1482,7 +1468,7 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 			return Debug("-DTLSICETransport::Send() | We don't have an active candidate yet\n");
 		
 		//If dumping
-		if (pcap)
+		if (pcap && dumpOutRTP)
 			//Write udp packet
 			pcap->WriteUDP(getTimeMS(),0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len);
 		
