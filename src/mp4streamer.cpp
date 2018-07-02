@@ -161,6 +161,9 @@ int MP4Streamer::Open(const char *filename)
 				else if (strcmp("VP8", name) == 0)
 					//Create new video track
 					video = new MP4RtpTrack(MediaFrame::Video,VideoCodec::VP8,payload,90000);
+				else if (strcmp("VP9", name) == 0)
+					//Create new video track
+					video = new MP4RtpTrack(MediaFrame::Video,VideoCodec::VP9,payload,90000);
 				else
 					continue;
 					
