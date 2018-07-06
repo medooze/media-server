@@ -36,9 +36,7 @@ public:
 	}
 	
 private:
-	typedef std::vector<DWORD> SSRCs;
-private:
-	SSRCs ssrcs;
+	std::vector<DWORD> ssrcs;
 	char* reason = NULL;
 };
 #endif /* RTCPBYE_H */
