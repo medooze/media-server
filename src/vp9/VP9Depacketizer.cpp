@@ -15,6 +15,9 @@
 
 VP9Depacketizer::VP9Depacketizer() : RTPDepacketizer(MediaFrame::Video,VideoCodec::VP9), frame(VideoCodec::VP9,0)
 {
+	//Fakse initial size
+	frame.SetWidth(640);
+	frame.SetHeight(480);
 }
 
 VP9Depacketizer::~VP9Depacketizer()
@@ -87,18 +90,35 @@ MediaFrame* VP9Depacketizer::AddPayload(BYTE* payload, DWORD len)
 	//Skip desc
 	DWORD pos = frame.AppendMedia(payload+descLen, len-descLen);
 	
+	
+	BYTE inmediate[14];
+	
+	//If it has the scalability structure
+	if (desc.scalabiltiyStructureDataPresent)
+	{
+		//Get topmost spatial layer
+		auto it = desc.scalabilityStructure.spatialLayerFrameResolutions.rbegin();
+		//Ensure we have sizes
+		if (it!=desc.scalabilityStructure.spatialLayerFrameResolutions.rend())
+		{
+			//Set sizes
+			frame.SetWidth(it->first);
+			frame.SetHeight(it->second);
+		}
+		//Disable it, as it can't be bigger than 14 buytes
+		desc.scalabiltiyStructureDataPresent = false;
+	}
+	
+	//Serialize it
+	DWORD size = desc.Serialize(inmediate,sizeof(inmediate));
+	
 	//Add RTP packet
-	frame.AddRtpPacket(pos,len-descLen,payload,descLen);
+	frame.AddRtpPacket(pos,len-descLen,inmediate,size);
 	
 	//If it is first
 	if (first)
-	{
 		//calculate if it is an iframe
 		frame.SetIntra(!desc.interPicturePredictedLayerFrame);
-		//Fakse size
-		frame.SetWidth(640);
-		frame.SetHeight(480);
-	}
     
 	return &frame;
 }

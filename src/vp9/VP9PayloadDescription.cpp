@@ -320,12 +320,14 @@ void VP9ScalabilityScructure::Dump()
 VP9PayloadDescription::VP9PayloadDescription()
 {
 	pictureIdPresent = 0;
+	extendedPictureIdPresent = 0;
 	interPicturePredictedLayerFrame = 0;
 	layerIndicesPresent = 0;
 	flexibleMode = 0;
 	startOfLayerFrame = 0;
 	endOfLayerFrame = 0;
 	scalabiltiyStructureDataPresent = 0;
+	reserved = false;
 	pictureId = 0;
 	temporalLayerId = 0;
 	switchingPoint = 0;
@@ -342,7 +344,7 @@ DWORD VP9PayloadDescription::GetSize()
 	
 	if (pictureIdPresent)
 		//2 or 1 byte?
-		len += pictureId>0x7F ? 2 : 1;
+		len += extendedPictureIdPresent ? 2 : 1;
 	
 	//if we have layer index
 	if (layerIndicesPresent)
@@ -390,6 +392,7 @@ DWORD VP9PayloadDescription::Parse(BYTE* data, DWORD size)
 	startOfLayerFrame		= data[0] >> 3 & 0x01;
 	endOfLayerFrame			= data[0] >> 2 & 0x01;
 	scalabiltiyStructureDataPresent = data[0] >> 1 & 0x01;
+	reserved			= data[0]      & 0x01;
 	
 	//Heder
 	DWORD len =  1;
@@ -397,8 +400,10 @@ DWORD VP9PayloadDescription::Parse(BYTE* data, DWORD size)
 	//Check pictrure id
 	if (pictureIdPresent)
 	{
-		//If marker bit present
-		if (data[len]>>7)
+		//Get extended bit p
+		extendedPictureIdPresent = data[len]>>7;
+		//Get picture id
+		if (extendedPictureIdPresent)
 		{
 			//Check kength
 			if (size<len+2)
@@ -492,13 +497,12 @@ DWORD VP9PayloadDescription::Serialize(BYTE *data,DWORD size)
 	//Parse header
 	data[0] = pictureIdPresent;
 	data[0] = data[0] << 1 | interPicturePredictedLayerFrame;
-	data[0] = data[0] << 1 |layerIndicesPresent;
-	data[0] = data[0] << 1 |flexibleMode;
-	data[0] = data[0] << 1 |startOfLayerFrame;
-	data[0] = data[0] << 1 |endOfLayerFrame;
-	data[0] = data[0] << 1 |scalabiltiyStructureDataPresent;
-	//reserved
-	data[0] = data[0] << 1;
+	data[0] = data[0] << 1 | layerIndicesPresent;
+	data[0] = data[0] << 1 | flexibleMode;
+	data[0] = data[0] << 1 | startOfLayerFrame;
+	data[0] = data[0] << 1 | endOfLayerFrame;
+	data[0] = data[0] << 1 | scalabiltiyStructureDataPresent;
+	data[0] = data[0] << 1 | reserved;
 	
 	//Heder
 	DWORD len =  1;
@@ -507,17 +511,17 @@ DWORD VP9PayloadDescription::Serialize(BYTE *data,DWORD size)
 	if (pictureIdPresent)
 	{
 		//Check size
-		if (pictureId > 0x7F)
+		if (extendedPictureIdPresent)
 		{
 			//1 bit mark + 15 bits 
 			set2(data,len,pictureId);
 			//Set martk
-			data[len] = data[len] | 0x80000;
+			data[len] = data[len] | 0x80;
 			//Inc len
 			len += 2;
 		} else {
 			//1 bit
-			data[len] = pictureId;
+			data[len] = pictureId & 0x7F;
 			//Inc len
 			len ++;
 		}
@@ -581,6 +585,7 @@ void VP9PayloadDescription::Dump()
 {
 	Debug("[VP9PayloadDescription \n");
 	Debug("\t pictureIdPresent=%d\n"		, pictureIdPresent);
+	Debug("\t extendedPictureIdPresent=%d\n"	, extendedPictureIdPresent);
 	Debug("\t interPicturePredictedLayerFrame=%d\n"	, interPicturePredictedLayerFrame);
 	Debug("\t layerIndicesPresent=%d\n"		, layerIndicesPresent);
 	Debug("\t flexibleMode=%d\n"			, flexibleMode);

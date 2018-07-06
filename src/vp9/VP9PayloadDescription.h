@@ -192,8 +192,15 @@ struct VP9PayloadDescription
 	-: Bit reserved for future use.  MUST be set to zero and MUST be
 	   ignored by the receiver.
 	 */
+	bool reserved;
 	
-	//reserved
+	/*	
+	   M: The most significant bit of the first octet is an extension flag.
+	      The field MUST be present if the I bit is equal to one.  If set,
+	      the PID field MUST contain 15 bits; otherwise, it MUST contain 7
+	      bits.  See PID below.
+	*/
+	bool extendedPictureIdPresent;
 	
 	/*
 	Picture ID (PID):  Picture ID represented in 7 or 15 bits, depending

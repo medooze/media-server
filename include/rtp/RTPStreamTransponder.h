@@ -67,8 +67,13 @@ private:
 	QWORD baseTimestamp	= 0;  //Base rtp timestamp of ougogoing stream
 	QWORD lastTimestamp	= 0;  //Last rtp timestamp of outgoing stream
 	QWORD lastTime		= 0;  //Last sent time
+	bool  lastCompleted	= true; //Last packet enqueued had the M bit
 	DWORD dropped		= 0;  //Num of empty packets dropped
+	DWORD source		= 0;  //SSRC of the incoming rtp
 	DWORD ssrc		= 0;  //SSRC to rewrite to
+	MediaFrame::Type media;
+	BYTE codec		= 0;
+	BYTE type		= 0;
 	BYTE spatialLayerId	= LayerInfo::MaxLayerId;
 	BYTE temporalLayerId	= LayerInfo::MaxLayerId;
 	WORD lastPicId		= 0;

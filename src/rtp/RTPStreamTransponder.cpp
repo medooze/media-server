@@ -125,32 +125,66 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,const RTPPacket::
 	
 	//Block packet list and selector
 	ScopedLock lock(wait);
+	//Check if the source has changed
+	if (source && packet->GetSSRC()!=source)
+	{
+		//IF last was not completed
+		if (!lastCompleted && type==MediaFrame::Video)
+		{
+			//Create new RTP packet
+			RTPPacket::shared rtp = std::make_shared<RTPPacket>(media,codec);
+			//Set data
+			rtp->SetPayloadType(type);
+			rtp->SetSSRC(source);
+			rtp->SetExtSeqNum(lastExtSeqNum++);
+			rtp->SetMark(true);
+			rtp->SetTimestamp(lastTimestamp);
+			//Append
+			packets.push(rtp);
+		}
+		//Reset first paquet
+		firstExtSeqNum = 0;
+		//Not selecting
+		if (selector)
+		{
+			//Delete and reset
+			delete(selector);
+			selector = NULL;
+			//TODO: Reset instead?
+		}
+	}
 	
+	//Update source
+	source = packet->GetSSRC();
 	//Get new seq number
 	DWORD extSeqNum = packet->GetExtSeqNum();
 	
 	//Check if it the first received packet
 	if (!firstExtSeqNum)
 	{
-		//Store seq number
-		firstExtSeqNum = extSeqNum;
-		//Reset drop counter
-		dropped = 0;
-		//Get first timestamp
-		firstTimestamp = packet->GetTimestamp();
 		//If we have a time offest from last sent packet
 		if (lastTime)
 		{
 			//Calculate time diff
 			QWORD offset = getTimeDiff(lastTime)/1000;
-			//convert it to rtp time and add to base timestamp
-			baseTimestamp += offset*packet->GetClockRate()/1000;
+			//Get timestamp diff on correct clock rate
+			QWORD diff = offset*packet->GetClockRate()/1000;
+			//convert it to rtp time and add to the last sent timestamp
+			baseTimestamp += (lastTimestamp - firstTimestamp) + diff + 1;
 		} else {
-			//Just clone it
-			baseTimestamp = firstTimestamp;
+			//Ini from 0 (We could random, but who cares, this way it is easier to debug)
+			baseTimestamp = 0;
 		}
+		//Store seq number
+		firstExtSeqNum = extSeqNum;
+		//Store the last send ones as base for new stream
+		baseExtSeqNum = lastExtSeqNum+1;
+		//Reset drop counter
+		dropped = 0;
+		//Get first timestamp
+		firstTimestamp = packet->GetTimestamp();
 		
-		//UltraDebug("-first seq:%lu ts:%llu base:%lu offset:%llu\n",firstExtSeqNum,firstTimestamp,baseExtSeqNum,baseTimestamp);
+		//UltraDebug("-first seq:%lu ts:%llu baseSeq:%lu baseTimestamp:%llu lastTimestamp:%llu\n",firstExtSeqNum,firstTimestamp,baseExtSeqNum,baseTimestamp,lastTimestamp);
 	}
 	
 	//Ensure it is not before first one
@@ -195,8 +229,7 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,const RTPPacket::
 	extSeqNum = baseExtSeqNum + (extSeqNum - firstExtSeqNum) - dropped;
 	
 	//Set new seq numbers
-	cloned->SetSeqNum(extSeqNum);
-	cloned->SetSeqCycles(extSeqNum >> 16);
+	cloned->SetExtSeqNum(extSeqNum);
 	
 	//Set normailized timestamp
 	cloned->SetTimestamp(baseTimestamp + (packet->GetTimestamp()-firstTimestamp));
@@ -246,7 +279,15 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,const RTPPacket::
 		//Write it back
 		desc.Serialize(cloned->GetMediaData(),cloned->GetMediaLength());
 	}
-		
+	//UPdate media codec and type
+	media = packet->GetMedia();
+	codec = packet->GetCodec();
+	type  = packet->GetPayloadType();
+	//Get last send seq num and timestamp
+	lastExtSeqNum = packet->GetExtSeqNum();
+	lastTimestamp = packet->GetTimestamp();
+	//Update last sent time
+	lastTime = getTime();
 	//Add to queue for asyn processing
 	packets.push(cloned);
 
@@ -366,7 +407,9 @@ void  RTPStreamTransponder::Reset()
 	while(!packets.empty())
 		//Remove from queue
 		packets.pop();
-	
+	//No source
+	lastCompleted = true;
+	source = 0;
 	//Reset first paquet seq num and timestamp
 	firstExtSeqNum = 0;
 	firstTimestamp = 0;
@@ -414,19 +457,13 @@ int RTPStreamTransponder::Run()
 		//Remove packet from list
 		packets.pop();
 		
-		//Get last send seq num and timestamp
-		lastExtSeqNum = packet->GetExtSeqNum();
-		lastTimestamp = packet->GetTimestamp();
-		lastTime = getTime();
-		
 		//UltraDebug("-last seq:%lu ts:%llu\n",lastExtSeqNum,lastTimestamp);
 		
 		//Unlock
 		wait.Unlock();
-			
+		
 		//Send it on transport
 		sender->Send(packet);
-
 		
 		//Lock for waiting for packets
 		wait.Lock();

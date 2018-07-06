@@ -119,7 +119,7 @@ class WaitCondition :
 	public Mutex
 {
 public:
-	WaitCondition()
+	WaitCondition(bool recursive = false) : Mutex(recursive)
 	{
 		//No canceled
 		cancel = false;

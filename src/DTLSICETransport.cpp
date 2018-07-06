@@ -352,7 +352,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		 packet->SetSeqCycles(group->media.cycles);
 		 //Set codec
 		 packet->SetCodec(codec);
-		 packet->SetType(apt);
+		 packet->SetPayloadType(apt);
 		 //Skip osn from payload
 		 if (!packet->SkipPayload(2))
 			//error
@@ -1429,7 +1429,7 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 	
 	//Update headers
 	cloned->SetSSRC(source.ssrc);
-	cloned->SetType(sendMaps.rtp.GetTypeForCodec(cloned->GetCodec()));
+	cloned->SetPayloadType(sendMaps.rtp.GetTypeForCodec(cloned->GetCodec()));
 	//No padding
 	cloned->SetPadding(0);
 
@@ -1445,6 +1445,8 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 	else
 		//Disable it
 		cloned->DisableAbsSentTime();
+	
+	//if (group->type==MediaFrame::Video) UltraDebug("-Sending RTP on media:%s sssrc:%u seq:%u pt:%u ts:%lu codec:%s\n",MediaFrame::TypeToString(group->type),source.ssrc,cloned->GetSeqNum(),cloned->GetPayloadType(),cloned->GetTimestamp(),GetNameForCodec(group->type,cloned->GetCodec()));
 			
 	//Serialize data
 	int len = cloned->Serialize(data,size,sendMaps.ext);

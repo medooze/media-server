@@ -45,9 +45,11 @@ public:
 	//Setters
 	void SetTimestamp(DWORD timestamp)	{ header.timestamp = timestamp;		}
 	void SetSeqNum(WORD seq)		{ header.sequenceNumber = seq;		}
+	void SetExtSeqNum(DWORD extSeq)		{ header.sequenceNumber = (WORD)extSeq; this->cycles = extSeq >> 16;	}
 	void SetMark(bool mark)			{ header.mark = mark;			}
 	void SetSSRC(DWORD ssrc)		{ header.ssrc = ssrc;			}
-	void SetType(DWORD payloadType)		{ header.payloadType = payloadType;	}
+	void SetPayloadType(DWORD payloadType)	{ header.payloadType = payloadType;	}
+	void SetType(DWORD payloadType)		{ SetType(payloadType);			} //Deprecated
 	void SetPadding(WORD padding)		{ header.padding = padding;		}
 	
 	void SetCodec(BYTE codec)		{ this->codec = codec;			}

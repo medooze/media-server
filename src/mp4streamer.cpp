@@ -182,11 +182,10 @@ int MP4Streamer::Open(const char *filename)
 	// Get the first text
 	MP4TrackId textId = MP4FindTrackId(mp4, 0, MP4_TEXT_TRACK_TYPE, 0);
 
-	Log("-Found text track [%d]\n",textId);
-
 	// Iterate hint tracks
 	if (textId != MP4_INVALID_TRACK_ID)
 	{
+		Log("-Found text track [%d]\n",textId);
 		//We have it
 		text = new MP4TextTrack();
 		//Set values
@@ -666,9 +665,15 @@ int MP4RtpTrack::SendH263SEI(Listener *listener)
 
 int MP4RtpTrack::Reset()
 {
+	Debug("-MP4RtpTrack::Reset()\n");
+	
 	sampleId	= 1;
 	numHintSamples	= 0;
 	packetIndex	= 0;
+	
+	//Reset ssrc on rtp
+	rtp.SetSSRC(hint);
+	
 	return 1;
 }
 
@@ -734,7 +739,9 @@ QWORD MP4RtpTrack::Read(Listener *listener)
 			//Last
 			return MP4_INVALID_TIMESTAMP;
 		}
-
+		
+		//UltraDebug("Got frame [time:%d,start:%d,duration:%d,lenght:%d,offset:%d,sinc:%d\n",frameTime,startTime,duration,dataLen,renderingOffset,isSyncSample);
+		
 		//Check type
 		if (media == MediaFrame::Video)
 		{
@@ -743,7 +750,7 @@ QWORD MP4RtpTrack::Read(Listener *listener)
 			//Set lenght
 			video->SetLength(dataLen);
 			//Timestamp
-			video->SetTimestamp(startTime*90000/timeScale);
+			video->SetTimestamp(startTime);
 			//Set intra
 			video->SetIntra(isSyncSample);
 			//Set video duration (informative)
@@ -754,11 +761,14 @@ QWORD MP4RtpTrack::Read(Listener *listener)
 			//Set lenght
 			audio->SetLength(dataLen);
 			//Timestamp
-			audio->SetTimestamp(startTime*8000/timeScale);
+			audio->SetTimestamp(startTime);
 			//Set audio duration (informative)
 			audio->SetDuration(duration);
 		}
-
+		
+		//Set rtp timestamp
+		rtp.SetTimestamp(startTime);
+		
 		//Check listener
 		if (listener)
 			//Frame callback
@@ -811,7 +821,7 @@ QWORD MP4RtpTrack::Read(Listener *listener)
 	
 	//Set seqnum
 	rtp.SetSeqNum(seqNum++);
-	
+
 	// Write frame
 	listener->onRTPPacket(rtp);
 

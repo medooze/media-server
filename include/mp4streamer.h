@@ -46,7 +46,7 @@ struct MP4RtpTrack
 		this->codec = codec;
 		this->type = type;
 		//Set type and clockrate
-		rtp.SetType(type);
+		rtp.SetPayloadType(type);
 		rtp.SetClockRate(clockrate);
 		//Empty the rest
 		mp4		= NULL;

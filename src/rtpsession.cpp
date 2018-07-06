@@ -723,7 +723,7 @@ void RTPSession::onRTPPacket(BYTE* data, DWORD size)
 		//Set original ssrc
 		packet->SetSSRC(recv.media.ssrc);
 		//Set original type
-		packet->SetType(type);
+		packet->SetPayloadType(type);
 		//Set codec
 		packet->SetCodec(codec);
 
