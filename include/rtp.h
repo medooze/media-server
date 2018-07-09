@@ -413,7 +413,7 @@ private:
 class RTPSender
 {
 public:
-	virtual int Send(const RTPPacket::shared& packet) = 0;
+	virtual int Enqueue(const RTPPacket::shared& packet) = 0;
 };
 
 class RTPReceiver

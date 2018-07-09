@@ -14,9 +14,7 @@
 #ifndef RTPSTREAMTRANSPONDER_H
 #define RTPSTREAMTRANSPONDER_H
 
-#include <queue>
 #include "rtp.h"
-#include "waitqueue.h"
 #include "VideoLayerSelector.h"
 
 class RTPStreamTransponder : 
@@ -38,14 +36,9 @@ public:
 	void SelectLayer(int spatialLayerId,int temporalLayerId);
 	void Mute(bool muting);
 protected:
-	//TODO: I don't like it
-	void Start();
-	int Run();
-	void Stop();
+	
 	void Reset();
 	void RequestPLI();
-private:
-	static void * run(void *par);
 
 private:
 	
@@ -55,10 +48,8 @@ private:
 	RTPSender* sender			= NULL;
 	VideoLayerSelector* selector		= NULL;
 	Mutex mutex;
-	WaitCondition wait;
-	std::queue<RTPPacket::shared> packets;
-	pthread_t thread	= {0};
-	bool running		= false;;
+	
+	
 	bool muted		= false;
 	DWORD firstExtSeqNum	= 0;  //First seq num of incoming stream
 	DWORD baseExtSeqNum	= 0;  //Base seq num of outgoing stream

@@ -111,6 +111,8 @@ DTLSICETransport* RTPBundleTransport::AddICETransport(const std::string &usernam
 		connections[username] = new Connection(transport, properties.GetProperty("disableSTUNKeepAlive", false));
 	}
 	
+	//Start it
+	transport->Start();
 	
 	//OK
 	return transport;
@@ -120,23 +122,23 @@ int RTPBundleTransport::RemoveICETransport(const std::string &username)
 {
 	Log("-RTPBundleTransport::RemoveICETransport() [username:%s]\n",username.c_str());
   
-	//Lock method
-	ScopedUseLock scope(use);
-		
+	//Lock
+	use.WaitUnusedAndLock();
+
 	//Get transport
 	auto it = connections.find(username);
-	
+
 	//Check
 	if (it==connections.end())
 		//Error
 		return Error("-ICE transport not found\n");
-	
+
 	//Get connection 
 	Connection* connection = it->second;
-	
+
 	//REmove connection
 	connections.erase(it);
-	
+
 	//Get all candidates
 	for( auto it2=connection->candidates.begin(); it2!=connection->candidates.end(); ++it2)
 	{
@@ -150,6 +152,12 @@ int RTPBundleTransport::RemoveICETransport(const std::string &username)
 		//Delete candidate
 		delete(candidate);
 	}
+	
+	//Unlock
+	use.Unlock();
+	
+	//Stop transport
+	connection->transport->Stop();
 	
 	//Delete connection wrapper and transport
 	delete(connection->transport);

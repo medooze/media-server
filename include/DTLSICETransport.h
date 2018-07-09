@@ -18,6 +18,8 @@
 #include <poll.h>
 #include <list>
 #include <srtp2/srtp.h>
+#include <queue>
+
 #include "config.h"
 #include "stunmessage.h"
 #include "dtls.h"
@@ -28,6 +30,8 @@
 #include "rtpbuffer.h"
 #include "PCAPFile.h"
 #include "remoterateestimator.h"
+#include "waitqueue.h"
+
 
 
 class DTLSICETransport : 
@@ -46,11 +50,15 @@ public:
 public:
 	DTLSICETransport(Sender *sender);
 	virtual ~DTLSICETransport();
+	
+	void Start();
+	void Stop();
+	
 	void SetSRTPProtectionProfiles(const std::string& profiles);
 	void SetRemoteProperties(const Properties& properties);
 	void SetLocalProperties(const Properties& properties);
 	virtual int SendPLI(DWORD ssrc) override;
-	virtual int Send(const RTPPacket::shared& packet) override;
+	virtual int Enqueue(const RTPPacket::shared& packet) override;
 	int Dump(const char* filename, bool inbound = true, bool outbound = true, bool rtcp = true);
 	void Reset();
 	
@@ -76,6 +84,8 @@ public:
 	DWORD GetRTT() const { return rtt; }
 
 private:
+	int Run();
+	int Send(const RTPPacket::shared& packet);
 	void SetRTT(DWORD rtt);
 	void onRTCP(const RTCPCompoundPacket::shared &rtcp);
 	void ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq);
@@ -142,6 +152,11 @@ private:
 	OutgoingStreams outgoing;
 	IncomingStreams incoming;
 	std::map<std::string,RTPIncomingSourceGroup*> rids;
+	
+	WaitCondition wait;
+	std::queue<RTPPacket::shared> packets;
+	pthread_t thread	= {0};
+	bool running		= false;
 	
 	DWORD	mainSSRC		= 1;
 	DWORD   rtt			= 0;

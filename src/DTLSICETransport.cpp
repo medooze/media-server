@@ -30,11 +30,13 @@
 #include "stunmessage.h"
 #include <openssl/opensslconf.h>
 #include <openssl/ossl_typ.h>
+#include <queue>
 #include "DTLSICETransport.h"
 #include "rtp/RTPMap.h"
 #include "rtp/RTPHeader.h"
 #include "rtp/RTPHeaderExtension.h"
 #include "VideoLayerSelector.h"
+#include "aac/aacencoder.h"
 
 DTLSICETransport::DTLSICETransport(Sender *sender) : dtls(*this), mutex(true)
 {
@@ -46,8 +48,9 @@ DTLSICETransport::DTLSICETransport(Sender *sender) : dtls(*this), mutex(true)
 
 DTLSICETransport::~DTLSICETransport()
 {
-	//Reset
+	//Reset & stop
 	Reset();
+	Stop();
 }
 
 int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWORD size)
@@ -1950,4 +1953,110 @@ void DTLSICETransport::SendTransportWideFeedbackMessage(DWORD ssrc)
 
 	//Send packet
 	Send(rtcp);
+}
+
+void DTLSICETransport::Start()
+{
+	Debug("-DTLSICETransport::Start()\n");
+	
+	//We are running
+	running = true;
+
+	//Reset packet wait
+	wait.Reset();
+	
+	//Create thread
+	createPriorityThread(&thread,[](void* par)->void*{
+		//Block signals to avoid exiting on SIGUSR1
+		blocksignals();
+
+		//Obtenemos el parametro
+		DTLSICETransport *transport = (DTLSICETransport *)par;
+
+		//Ejecutamos
+		transport->Run();
+
+		//Exit
+		return NULL;
+	},this,0);
+}
+
+void DTLSICETransport::Stop()
+{
+	Debug(">DTLSICETransport::Stop()\n");
+	
+	//Check thred
+	if (!isZeroThread(thread))
+	{
+		//Not running
+		running = false;
+		
+		//Cancel packets wait queue
+		wait.Cancel();
+		
+		//Wait thread to close
+		pthread_join(thread,NULL);
+		//Nulifi thread
+		setZeroThread(&thread);
+	}
+	
+	Debug("<DTLSICETransport::Stop()\n");
+}
+
+int DTLSICETransport::Enqueue(const RTPPacket::shared& packet)
+{
+	ScopedLock lock(wait);
+	
+	//Add packet
+	packets.push(packet);
+		
+	//Signal new element
+	wait.Signal();
+	
+	return 1;
+}
+
+int DTLSICETransport::Run()
+{
+	Log(">DTLSICETransport::Run() | [%p]\n",this);
+
+	//Lock for waiting for packets
+	wait.Lock();
+
+	//Run until canceled
+	while(running)
+	{
+		//Check if we have packets
+		if (packets.empty())
+		{
+			//Wait for more
+			wait.Wait(0);
+			//Try again
+			continue;
+		}
+		
+		//Get first packet
+		auto packet = packets.front();
+
+		//Remove packet from list
+		packets.pop();
+		
+		//UltraDebug("-last seq:%lu ts:%llu\n",lastExtSeqNum,lastTimestamp);
+		
+		//Unlock
+		wait.Unlock();
+		
+		//Send it on transport
+		Send(packet);
+		
+		//Lock for waiting for packets
+		wait.Lock();
+	}
+	
+	//Unlock
+	wait.Unlock();
+	
+	Log("<DTLSICETransport::Run()\n");
+	
+	return 0;
 }

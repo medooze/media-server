@@ -16,11 +16,9 @@
 #include "vp8/vp8.h"
 
 
-RTPStreamTransponder::RTPStreamTransponder(RTPOutgoingSourceGroup* outgoing,RTPSender* sender)
+RTPStreamTransponder::RTPStreamTransponder(RTPOutgoingSourceGroup* outgoing,RTPSender* sender) :
+	mutex(true)
 {
-	//No thread
-	setZeroThread(&thread);
-	
 	//Store outgoing streams
 	this->outgoing = outgoing;
 	this->sender = sender;
@@ -28,6 +26,8 @@ RTPStreamTransponder::RTPStreamTransponder(RTPOutgoingSourceGroup* outgoing,RTPS
 	
 	//Add us as listeners
 	outgoing->AddListener(this);
+	
+	Debug(">RTPStreamTransponder() | [outgoing:%p,sender:%p,ssrc:%d]\n",outgoing,sender,ssrc);
 }
 
 
@@ -71,10 +71,10 @@ bool RTPStreamTransponder::SetIncoming(RTPIncomingSourceGroup* incoming, RTPRece
 
 RTPStreamTransponder::~RTPStreamTransponder()
 {
-	//Stop listeneing
-	Close();
 	//Clean all pending packets in queue
 	Reset();
+	//Stop listeneing
+	Close();
 }
 
 void RTPStreamTransponder::Close()
@@ -87,9 +87,6 @@ void RTPStreamTransponder::Close()
 	if (outgoing) outgoing->RemoveListener(this);
 	if (incoming) incoming->RemoveListener(this);
 
-	//Stop main loop
-	Stop();
-	
 	//Remove sources
 	outgoing = NULL;
 	incoming = NULL;
@@ -98,7 +95,6 @@ void RTPStreamTransponder::Close()
 	
 	Debug("<RTPStreamTransponder::Close()\n");
 }
-
 
 
 void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,const RTPPacket::shared& packet)
@@ -123,8 +119,8 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,const RTPPacket::
 		return;
 	}
 	
-	//Block packet list and selector
-	ScopedLock lock(wait);
+	ScopedLock lock(mutex);
+	
 	//Check if the source has changed
 	if (source && packet->GetSSRC()!=source)
 	{
@@ -139,8 +135,8 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,const RTPPacket::
 			rtp->SetExtSeqNum(lastExtSeqNum++);
 			rtp->SetMark(true);
 			rtp->SetTimestamp(lastTimestamp);
-			//Append
-			packets.push(rtp);
+			//Send it
+			sender->Enqueue(rtp);
 		}
 		//Reset first paquet
 		firstExtSeqNum = 0;
@@ -150,7 +146,6 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,const RTPPacket::
 			//Delete and reset
 			delete(selector);
 			selector = NULL;
-			//TODO: Reset instead?
 		}
 	}
 	
@@ -288,11 +283,9 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,const RTPPacket::
 	lastTimestamp = packet->GetTimestamp();
 	//Update last sent time
 	lastTime = getTime();
-	//Add to queue for asyn processing
-	packets.push(cloned);
 
-	//Signal new packet
-	wait.Signal();
+	//Send packet
+	sender->Enqueue(cloned);
 }
 
 void RTPStreamTransponder::onEnded(RTPIncomingSourceGroup* group)
@@ -332,6 +325,8 @@ void RTPStreamTransponder::onREMB(RTPOutgoingSourceGroup* group,DWORD ssrc, DWOR
 
 void RTPStreamTransponder::SelectLayer(int spatialLayerId,int temporalLayerId)
 {
+	ScopedLock lock(mutex);
+		
 	this->spatialLayerId = spatialLayerId;
 	this->temporalLayerId = temporalLayerId;
 		
@@ -345,68 +340,12 @@ void RTPStreamTransponder::SelectLayer(int spatialLayerId,int temporalLayerId)
 	selector->SelectTemporalLayer(temporalLayerId);
 }
 
-void RTPStreamTransponder::Start()
-{
-	//We are running
-	running = true;
-
-	//Reset packet wait
-	wait.Reset();
-	
-	//Create thread
-	createPriorityThread(&thread,run,this,0);
-}
-
-void RTPStreamTransponder::Stop()
-{
-	Debug(">RTPStreamTransponder::Stop()\n");
-	
-	//Check thred
-	if (!isZeroThread(thread))
-	{
-		//Not running
-		running = false;
-		
-		//Cancel packets wait queue
-		wait.Cancel();
-		
-		//Wait thread to close
-		pthread_join(thread,NULL);
-		//Nulifi thread
-		setZeroThread(&thread);
-	}
-	
-	Debug("<RTPStreamTransponder::Stop()\n");
-}
-
-void * RTPStreamTransponder::run(void *par)
-{
-	Log("-RTPStreamTransponder::run() | thread [%d,0x%x]\n",getpid(),par);
-
-	//Block signals to avoid exiting on SIGUSR1
-	blocksignals();
-
-        //Obtenemos el parametro
-        RTPStreamTransponder *transponder = (RTPStreamTransponder *)par;
-
-        //Ejecutamos
-        transponder->Run();
-	
-	//Exit
-	return NULL;
-}
-
 void  RTPStreamTransponder::Reset()
 {
+	ScopedLock lock(mutex);
+		
 	Debug(">RTPStreamTransponder::Reset()\n");
 		
-	//Block packet list and selector
-	ScopedLock lock(wait);
-
-	//Delete all packets
-	while(!packets.empty())
-		//Remove from queue
-		packets.pop();
 	//No source
 	lastCompleted = true;
 	source = 0;
@@ -430,51 +369,6 @@ void  RTPStreamTransponder::Reset()
 	temporalLayerId = LayerInfo::MaxLayerId;
 	
 	Debug("<RTPStreamTransponder::Reset()\n");
-}
-
-int RTPStreamTransponder::Run()
-{
-	Log(">RTPStreamTransponder::Run() | [%p]\n",this);
-
-	//Lock for waiting for packets
-	wait.Lock();
-
-	//Run until canceled
-	while(running)
-	{
-		//Check if we have packets
-		if (packets.empty())
-		{
-			//Wait for more
-			wait.Wait(0);
-			//Try again
-			continue;
-		}
-		
-		//Get first packet
-		auto packet = packets.front();
-
-		//Remove packet from list
-		packets.pop();
-		
-		//UltraDebug("-last seq:%lu ts:%llu\n",lastExtSeqNum,lastTimestamp);
-		
-		//Unlock
-		wait.Unlock();
-		
-		//Send it on transport
-		sender->Send(packet);
-		
-		//Lock for waiting for packets
-		wait.Lock();
-	}
-	
-	//Unlock
-	wait.Unlock();
-	
-	Log("<RTPStreamTransponder::Run()\n");
-	
-	return 0;
 }
 
 void RTPStreamTransponder::Mute(bool muting)
