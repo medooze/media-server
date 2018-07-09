@@ -36,7 +36,6 @@
 #include "rtp/RTPHeader.h"
 #include "rtp/RTPHeaderExtension.h"
 #include "VideoLayerSelector.h"
-#include "aac/aacencoder.h"
 
 DTLSICETransport::DTLSICETransport(Sender *sender) : dtls(*this), mutex(true)
 {
