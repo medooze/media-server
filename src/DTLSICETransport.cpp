@@ -394,17 +394,6 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 			//Create rtcp sender retpor
 			auto rtcp = RTCPCompoundPacket::Create();
 
-			//Create sender report for normal stream
-			auto rr = rtcp->CreatePacket<RTCPReceiverReport>(mainSSRC);
-
-			//Create report
-			auto report = source->CreateReport(getTime());
-
-			//If got anything
-			if (report)
-				//Append it
-				rr->AddReport(report);
-
 			//Create NACK
 			auto nack = rtcp->CreatePacket<RTCPRTPFeedback>(RTCPRTPFeedback::NACK,mainSSRC,ssrc);
 
