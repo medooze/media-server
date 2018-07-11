@@ -318,7 +318,7 @@ RTPPacket::shared RTPOutgoingSourceGroup::GetPacket(WORD seq) const
 	WORD cycles = media.cycles;
 	
 	//IF there is too much difference between first in queue and requested sequence
-	if ((packets.begin()->first & 0xFFFF)<0x0FFF seq>0xF000)
+	if ((packets.begin()->first & 0xFFFF)<0x0FFF && seq>0xF000)
 		//It was from the past cycle
 		cycles--;
 	
