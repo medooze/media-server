@@ -309,16 +309,31 @@ RTPPacket::shared RTPOutgoingSourceGroup::GetPacket(WORD seq) const
 	//Lock packets
 	ScopedLock scoped(mutex);
 	
-	//Consider seq wrap
-	DWORD ext = ((DWORD)(media.cycles)<<16 | seq);
+	//If there are no packets
+	if (packets.empty())
+		//Done
+		return nullptr;
+	
+	//Check sequence wrap
+	WORD cycles = media.cycles;
+	
+	//IF there is too much difference between first in queue and requested sequence
+	if ((packets.begin()->first & 0xFFFF)<0x0FFF seq>0xF000)
+		//It was from the past cycle
+		cycles--;
+	
+	//Get normal sequence
+	DWORD ext = ((DWORD)(cycles)<<16 | seq);
 	
 	//Find packet to retransmit
 	auto it = packets.find(ext);
 
 	//If we don't have it
 	if (it==packets.end())
+	{
 		//None
 		return nullptr;
+	}
 	
 	//Get packet
 	return  it->second;
