@@ -181,5 +181,5 @@ void RTPPacket::Dump()
 		//Dump extension
 		extension.Dump();
 	::Dump(GetMediaData(),16);
-	Log("[/RTPPacket]\n");
+	Debug("[/RTPPacket]\n");
 }

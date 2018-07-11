@@ -97,6 +97,7 @@ struct RTPSource
 		totalRTCPBytes	= 0;
 		jitter		= 0;
 	}
+	
 	virtual ~RTPSource()
 	{
 		
@@ -104,7 +105,7 @@ struct RTPSource
 	
 	RTCPCompoundPacket::shared CreateSenderReport();
 	
-	void SetSeqNum(WORD seqNum)
+	WORD SetSeqNum(WORD seqNum)
 	{
 		//Check if we have a sequence wrap
 		if (seqNum<0x0FFF && (extSeq & 0xFFFF)>0xF000)
@@ -118,6 +119,9 @@ struct RTPSource
 		if (extSeq > this->extSeq || !numPackets)
 			//Update seq num
 			this->extSeq = extSeq;
+		
+		//Return seq cycles count
+		return cycles;
 	}
 	
 	virtual void Update(QWORD now, DWORD seqNum,DWORD size) 

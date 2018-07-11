@@ -234,7 +234,7 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 				mid.assign((const char*)ext+i,len);
 				break;	
 			default:
-				Debug("-Unknown or unmapped extension [%d]\n",id);
+				UltraDebug("-Unknown or unmapped extension [%d]\n",id);
 				break;
 		}
 		//Skip length
@@ -552,6 +552,6 @@ void RTPHeaderExtension::Dump() const
 	if (hasMediaStreamId)
 		Debug("\t\t\t[MediaStreamId str=\"%s\"]\n",mid.c_str());
 	
-	Log("\t\t[/RTPHeaderExtension]\n");
+	Debug("\t\t[/RTPHeaderExtension]\n");
 }
 

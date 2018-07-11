@@ -465,11 +465,6 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 	header.sequenceNumber	= send.media.extSeq++;
 	header.mark		= packet.GetMark();
 
-	//Check seq wrap
-	if (send.media.extSeq==0)
-		//Inc cycles
-		send.media.cycles++;
-
 	//If we have are using any sending extensions
 	if (useAbsTime)
 	{
@@ -647,33 +642,31 @@ void RTPSession::onRTPPacket(BYTE* data, DWORD size)
 	//Get sec number
 	WORD seq = packet->GetSeqNum();
 
-	//Check if we have a sequence wrap
-	if (seq<0x0FFF && (recv.media.extSeq & 0xFFFF)>0xF000)
-		//Increase cycles
-		recv.media.cycles++;
+	//Update media and get cycles
+	WORD cycles = recv.media.SetSeqNum(seq);
 
-	//Set cycles
-	packet->SetSeqCycles(recv.media.cycles);
+	//Set extended secuence number
+	packet->SetSeqCycles(cycles);
 	
 	//Check if we got a different SSRC
 	if (recv.media.ssrc!=ssrc && codec!=VideoCodec::RTX)
 	{
-			//Log
-			Log("-RTPSession::onRTPPacket(%s) | New SSRC [new:%x,old:%x]\n",MediaFrame::TypeToString(media),ssrc,recv.media.ssrc);
-			//Send SR to old one
-			SendSenderReport();
-			//Reset packets
-			packets.Reset();
-			//Reset cycles
-			recv.media.cycles = 0;
-			//Reset
-			recv.media.extSeq = 0;
-			//Update ssrc
-			recv.media.ssrc = ssrc;
-			//If remote estimator
-			if (remoteRateEstimator)
-				//Add stream
-				remoteRateEstimator->AddStream(recv.media.ssrc);
+		//Log
+		Log("-RTPSession::onRTPPacket(%s) | New SSRC [new:%x,old:%x]\n",MediaFrame::TypeToString(media),ssrc,recv.media.ssrc);
+		//Send SR to old one
+		SendSenderReport();
+		//Reset packets
+		packets.Reset();
+		//Reset cycles
+		recv.media.cycles = 0;
+		//Reset
+		recv.media.extSeq = 0;
+		//Update ssrc
+		recv.media.ssrc = ssrc;
+		//If remote estimator
+		if (remoteRateEstimator)
+			//Add stream
+			remoteRateEstimator->AddStream(recv.media.ssrc);
 	}
 	
 	//Check if it is a rtx
@@ -1274,11 +1267,7 @@ int RTPSession::ReSendPacket(int seq)
 			//Update RTX headers
 			header.ssrc		= send.rtx.ssrc;
 			header.payloadType	= aptMapOut->GetTypeForCodec(packet->GetPayloadType());
-			header.sequenceNumber	= send.rtx.extSeq++;
-			//Check seq wrap
-			if (send.rtx.extSeq==0)
-				//Inc cycles
-				send.rtx.cycles++;
+			header.sequenceNumber	= send.rtx.NextSeqNum();
 			//Increase counters
 			send.rtx.numPackets++;
 			send.rtx.totalBytes += packet->GetMediaLength()+2;

@@ -271,8 +271,11 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		source->Update(getTimeMS(),header.sequenceNumber,size);
 	}
 	
+	//Update source sequence number and get cycles
+	WORD cycles = source->SetSeqNum(packet->GetSeqNum());
+
 	//Set cycles back
-	packet->SetSeqCycles(source->cycles);
+	packet->SetSeqCycles(cycles);
 	
 	//If it is video and transport wide cc is used
 	if (group->type == MediaFrame::Video && packet->HasTransportWideCC())
@@ -350,8 +353,13 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		 packet->SetSeqNum(osn);
 		 //Set original ssrc
 		 packet->SetSSRC(group->media.ssrc);
-		 //Set cycles
-		 packet->SetSeqCycles(group->media.cycles);
+		 //Check secuence wrap
+		if ((group->media.extSeq & 0xFFFF)<0x0FFF && (osn>0xF000))
+			//Set past cycles
+			packet->SetSeqCycles(group->media.cycles - 1);
+		else
+			//Set cycles
+			packet->SetSeqCycles(group->media.cycles);
 		 //Set codec
 		 packet->SetCodec(codec);
 		 packet->SetPayloadType(apt);
