@@ -60,7 +60,7 @@ public:
 
 	typedef std::vector<RtpPacketization*> RtpPacketizationInfo;
 public:
-	enum Type {Audio=0,Video=1,Text=2};
+	enum Type {Audio=0,Video=1,Text=2,Unknown=-1};
 
 	static const char * TypeToString(Type type)
 	{

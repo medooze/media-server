@@ -79,7 +79,7 @@ AACOBJ=aacencoder.o
 
 RTP=  RTPMap.o  RTPDepacketizer.o RTPPacket.o   RTPPacketSched.o rtp.o RTPSmoother.o  
 RTCP= RTCPCompoundPacket.o RTCPNACK.o RTCPReceiverReport.o RTCPCommonHeader.o RTPHeader.o RTPHeaderExtension.o RTCPApp.o RTCPExtendedJitterReport.o RTCPPacket.o RTCPReport.o RTCPSenderReport.o RTCPBye.o RTCPFullIntraRequest.o RTCPPayloadFeedback.o RTCPRTPFeedback.o RTCPSDES.o 
-CORE= dtls.o OpenSSL.o RTPTransport.o  stunmessage.o crc32calc.o http.o httpparser.o avcdescriptor.o utf8.o rtpsession.o RTPStreamTransponder.o VideoLayerSelector.o remoteratecontrol.o remoterateestimator.o RTPBundleTransport.o DTLSICETransport.o PCAPFile.o mp4streamer.o mp4recorder.o ActiveSpeakerDetector.o
+CORE= dtls.o OpenSSL.o RTPTransport.o  stunmessage.o crc32calc.o http.o httpparser.o avcdescriptor.o utf8.o rtpsession.o RTPStreamTransponder.o VideoLayerSelector.o remoteratecontrol.o remoterateestimator.o RTPBundleTransport.o DTLSICETransport.o PCAPFile.o PCAPReader.o mp4streamer.o mp4recorder.o ActiveSpeakerDetector.o
 
 RTMP= rtmpparticipant.o amf.o rtmpmessage.o rtmpchunk.o rtmpstream.o rtmpconnection.o  rtmpserver.o  rtmpflvstream.o flvrecorder.o flvencoder.o
 

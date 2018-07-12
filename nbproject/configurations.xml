@@ -115,6 +115,7 @@
         <in>EventSource.cpp</in>
         <in>OpenSSL.cpp</in>
         <in>PCAPFile.cpp</in>
+        <in>PCAPReader.cpp</in>
         <in>RTPBundleTransport.cpp</in>
         <in>RTPSmoother.cpp</in>
         <in>RTPTransport.cpp</in>
@@ -942,11 +943,12 @@
       <flagsDictionary>
         <element flagsID="0" commonFlags="-fPIC -msse3 -fopenmp"/>
         <element flagsID="1" commonFlags="-fPIC -msse3 -std=c++11"/>
-        <element flagsID="2"
-                 commonFlags="-fPIC -msse3 -std=c++17 -fsanitize=address -fsanitize=leak -fsanitize=undefined"/>
+        <element flagsID="2" commonFlags="-fPIC -msse3 -std=c++14 -std=c++11"/>
         <element flagsID="3"
+                 commonFlags="-fPIC -msse3 -std=c++17 -fsanitize=address -fsanitize=leak -fsanitize=undefined"/>
+        <element flagsID="4"
                  commonFlags="-fPIC -msse3 -std=c++17 -fsanitize=address -fsanitize=leak -fsanitize=undefined -std=c++11"/>
-        <element flagsID="4" commonFlags="-std=c++14"/>
+        <element flagsID="5" commonFlags="-std=c++14"/>
       </flagsDictionary>
       <codeAssistance>
         <includeAdditional>true</includeAdditional>
@@ -1357,10 +1359,12 @@
           </preprocessorList>
         </ccTool>
       </folder>
-      <item path="source/ActiveSpeakerDectector.cpp" ex="false" tool="1" flavor2="0">
+      <item path="source/ActiveSpeakerDectector.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="5">
+        </ccTool>
       </item>
       <item path="src/CPUMonitor.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -1382,7 +1386,7 @@
         </ccTool>
       </item>
       <item path="src/DTLSICETransport.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -1404,7 +1408,7 @@
         </ccTool>
       </item>
       <item path="src/EventSource.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -1426,7 +1430,7 @@
         </ccTool>
       </item>
       <item path="src/OpenSSL.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -1448,7 +1452,29 @@
         </ccTool>
       </item>
       <item path="src/PCAPFile.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/PCAPReader.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="2">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -1470,7 +1496,7 @@
         </ccTool>
       </item>
       <item path="src/RTPBundleTransport.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -1492,7 +1518,7 @@
         </ccTool>
       </item>
       <item path="src/RTPSmoother.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -1514,7 +1540,7 @@
         </ccTool>
       </item>
       <item path="src/RTPTransport.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -1536,7 +1562,7 @@
         </ccTool>
       </item>
       <item path="src/VideoLayerSelector.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -1558,11 +1584,11 @@
         </ccTool>
       </item>
       <item path="src/aac/aacencoder.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/appmixer.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -1584,7 +1610,7 @@
         </ccTool>
       </item>
       <item path="src/asymmetricmosaic.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -1606,7 +1632,7 @@
         </ccTool>
       </item>
       <item path="src/audio.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -1628,7 +1654,7 @@
         </ccTool>
       </item>
       <item path="src/audiodecoder.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -1650,7 +1676,7 @@
         </ccTool>
       </item>
       <item path="src/audioencoder.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -1672,7 +1698,7 @@
         </ccTool>
       </item>
       <item path="src/audiomixer.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -1694,7 +1720,7 @@
         </ccTool>
       </item>
       <item path="src/audiostream.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -1716,7 +1742,7 @@
         </ccTool>
       </item>
       <item path="src/audiotransrater.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -1738,7 +1764,7 @@
         </ccTool>
       </item>
       <item path="src/avcdescriptor.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -1760,7 +1786,7 @@
         </ccTool>
       </item>
       <item path="src/broadcastsession.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -1786,7 +1812,7 @@
         </ccTool>
       </item>
       <item path="src/cpim.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -1808,7 +1834,7 @@
         </ccTool>
       </item>
       <item path="src/crc32calc.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -1830,7 +1856,7 @@
         </ccTool>
       </item>
       <item path="src/dtls.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -1852,7 +1878,7 @@
         </ccTool>
       </item>
       <item path="src/eventstreaminghandler.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -1901,11 +1927,11 @@
         </ccTool>
       </item>
       <item path="src/flv1/flv1codec.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/framescaler.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -1927,23 +1953,23 @@
         </ccTool>
       </item>
       <item path="src/g711/g711.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/g711/pcmacodec.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/g711/pcmucodec.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/g722/g722codec.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/groupchat.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -1965,39 +1991,39 @@
         </ccTool>
       </item>
       <item path="src/gsm/gsmcodec.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/h263/h263-1996codec.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/h263/h263.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/h263/h263codec.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/h263/mpeg4codec.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/h264/h264decoder.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/h264/h264depacketizer.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/h264/h264encoder.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/http.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2019,7 +2045,7 @@
         </ccTool>
       </item>
       <item path="src/httpparser.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2041,7 +2067,7 @@
         </ccTool>
       </item>
       <item path="src/logo.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2090,7 +2116,7 @@
         </ccTool>
       </item>
       <item path="src/mcu.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2112,7 +2138,7 @@
         </ccTool>
       </item>
       <item path="src/mosaic.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2134,7 +2160,7 @@
         </ccTool>
       </item>
       <item path="src/mp4player.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2156,7 +2182,7 @@
         </ccTool>
       </item>
       <item path="src/mp4recorder.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2178,7 +2204,7 @@
         </ccTool>
       </item>
       <item path="src/mp4streamer.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2200,7 +2226,7 @@
         </ccTool>
       </item>
       <item path="src/multiconf.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2222,26 +2248,26 @@
         </ccTool>
       </item>
       <item path="src/nelly/NellyCodec.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/nocodecs.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="4">
+        <ccTool flags="5">
           <incDir>
             <pElem>include</pElem>
           </incDir>
         </ccTool>
       </item>
       <item path="src/opus/opusdecoder.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/opus/opusencoder.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/overlay.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2263,7 +2289,7 @@
         </ccTool>
       </item>
       <item path="src/partedmosaic.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2285,7 +2311,7 @@
         </ccTool>
       </item>
       <item path="src/pipeaudioinput.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2307,7 +2333,7 @@
         </ccTool>
       </item>
       <item path="src/pipeaudiooutput.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2329,7 +2355,7 @@
         </ccTool>
       </item>
       <item path="src/pipetextinput.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2351,7 +2377,7 @@
         </ccTool>
       </item>
       <item path="src/pipetextoutput.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2373,7 +2399,7 @@
         </ccTool>
       </item>
       <item path="src/pipevideoinput.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2395,7 +2421,7 @@
         </ccTool>
       </item>
       <item path="src/pipevideooutput.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2417,7 +2443,7 @@
         </ccTool>
       </item>
       <item path="src/pipmosaic.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2439,7 +2465,7 @@
         </ccTool>
       </item>
       <item path="src/remoteratecontrol.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2461,7 +2487,7 @@
         </ccTool>
       </item>
       <item path="src/remoterateestimator.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2483,59 +2509,59 @@
         </ccTool>
       </item>
       <item path="src/rtmp/amf.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/rtmp/flvencoder.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/rtmp/flvrecorder.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/rtmp/rtmpchunk.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/rtmp/rtmpclientconnection.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/rtmp/rtmpconnection.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/rtmp/rtmpflvstream.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/rtmp/rtmpmessage.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/rtmp/rtmpmp4stream.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/rtmp/rtmpnetconnection.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/rtmp/rtmpparticipant.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/rtmp/rtmpserver.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/rtmp/rtmpstream.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/rtp.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2557,7 +2583,7 @@
         </ccTool>
       </item>
       <item path="src/rtp/RTCPApp.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2579,7 +2605,7 @@
         </ccTool>
       </item>
       <item path="src/rtp/RTCPBye.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2601,7 +2627,7 @@
         </ccTool>
       </item>
       <item path="src/rtp/RTCPCommonHeader.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2623,7 +2649,7 @@
         </ccTool>
       </item>
       <item path="src/rtp/RTCPCompoundPacket.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2648,7 +2674,7 @@
             ex="false"
             tool="1"
             flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2670,7 +2696,7 @@
         </ccTool>
       </item>
       <item path="src/rtp/RTCPFullIntraRequest.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2692,7 +2718,7 @@
         </ccTool>
       </item>
       <item path="src/rtp/RTCPNACK.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2714,7 +2740,7 @@
         </ccTool>
       </item>
       <item path="src/rtp/RTCPPacket.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2736,7 +2762,7 @@
         </ccTool>
       </item>
       <item path="src/rtp/RTCPPayloadFeedback.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2758,7 +2784,7 @@
         </ccTool>
       </item>
       <item path="src/rtp/RTCPRTPFeedback.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2780,7 +2806,7 @@
         </ccTool>
       </item>
       <item path="src/rtp/RTCPReceiverReport.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2802,7 +2828,7 @@
         </ccTool>
       </item>
       <item path="src/rtp/RTCPReport.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2824,7 +2850,7 @@
         </ccTool>
       </item>
       <item path="src/rtp/RTCPSDES.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2846,7 +2872,7 @@
         </ccTool>
       </item>
       <item path="src/rtp/RTCPSenderReport.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2868,7 +2894,7 @@
         </ccTool>
       </item>
       <item path="src/rtp/RTPDepacketizer.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2890,7 +2916,7 @@
         </ccTool>
       </item>
       <item path="src/rtp/RTPHeader.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2912,7 +2938,7 @@
         </ccTool>
       </item>
       <item path="src/rtp/RTPHeaderExtension.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2934,7 +2960,7 @@
         </ccTool>
       </item>
       <item path="src/rtp/RTPMap.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2956,7 +2982,7 @@
         </ccTool>
       </item>
       <item path="src/rtp/RTPPacket.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -2978,7 +3004,7 @@
         </ccTool>
       </item>
       <item path="src/rtp/RTPPacketSched.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -3000,14 +3026,14 @@
         </ccTool>
       </item>
       <item path="src/rtp/RTPRedundantPacket.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="4">
+        <ccTool flags="5">
           <incDir>
             <pElem>include</pElem>
           </incDir>
         </ccTool>
       </item>
       <item path="src/rtp/RTPStreamTransponder.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -3029,7 +3055,7 @@
         </ccTool>
       </item>
       <item path="src/rtpparticipant.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -3051,7 +3077,7 @@
         </ccTool>
       </item>
       <item path="src/rtpsession.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -3073,7 +3099,7 @@
         </ccTool>
       </item>
       <item path="src/sidebar.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -3095,15 +3121,15 @@
         </ccTool>
       </item>
       <item path="src/speex/resample.c" ex="false" tool="0" flavor2="2">
-        <cTool flags="2">
+        <cTool flags="3">
         </cTool>
       </item>
       <item path="src/speex/speexcodec.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/statushandler.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -3125,7 +3151,7 @@
         </ccTool>
       </item>
       <item path="src/stunmessage.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -3147,7 +3173,7 @@
         </ccTool>
       </item>
       <item path="src/textencoder.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -3169,7 +3195,7 @@
         </ccTool>
       </item>
       <item path="src/textmixer.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -3191,7 +3217,7 @@
         </ccTool>
       </item>
       <item path="src/textmixerworker.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -3213,7 +3239,7 @@
         </ccTool>
       </item>
       <item path="src/textstream.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -3235,7 +3261,7 @@
         </ccTool>
       </item>
       <item path="src/uploadhandler.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -3257,7 +3283,7 @@
         </ccTool>
       </item>
       <item path="src/utf8.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -3279,7 +3305,7 @@
         </ccTool>
       </item>
       <item path="src/vad.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -3301,7 +3327,7 @@
         </ccTool>
       </item>
       <item path="src/video.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -3323,7 +3349,7 @@
         </ccTool>
       </item>
       <item path="src/videomixer.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -3345,7 +3371,7 @@
         </ccTool>
       </item>
       <item path="src/videopipe.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -3367,7 +3393,7 @@
         </ccTool>
       </item>
       <item path="src/videostream.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -3389,47 +3415,47 @@
         </ccTool>
       </item>
       <item path="src/vp6/vp6decoder.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/vp8/VP8LayerSelector.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/vp8/vp8decoder.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/vp8/vp8depacketizer.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/vp8/vp8encoder.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/vp9/VP9Depacketizer.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/vp9/VP9LayerSelector.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/vp9/VP9PayloadDescription.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/ws/websocketconnection.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/ws/websocketserver.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="src/xmlhandler.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -3451,7 +3477,7 @@
         </ccTool>
       </item>
       <item path="src/xmlrpcmcu.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -3473,7 +3499,7 @@
         </ccTool>
       </item>
       <item path="src/xmlrpcserver.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -3495,7 +3521,7 @@
         </ccTool>
       </item>
       <item path="src/xmlstreaminghandler.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -3516,40 +3542,44 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="test/aac.cpp" ex="false" tool="1" flavor2="0">
+      <item path="test/aac.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="5">
+        </ccTool>
       </item>
       <item path="test/bundle.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="test/cpim.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="test/fec.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="test/main.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="test/overlay.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="test/rtp.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
       <item path="test/test.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
-      <item path="test/vp8.cpp" ex="false" tool="1" flavor2="0">
+      <item path="test/vp8.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="5">
+        </ccTool>
       </item>
       <item path="test/vp9.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
+        <ccTool flags="4">
         </ccTool>
       </item>
     </conf>
