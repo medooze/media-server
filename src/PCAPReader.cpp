@@ -36,11 +36,16 @@ void PCAPReader::Rewind()
 {
 	//Go just after header
 	lseek(fd, PCAP_HEADER_SIZE, SEEK_SET);
+	
+	//Debug
+	UltraDebug("-PCAPReader::Rewind() | retry at [pos:%d]\n",lseek(fd, 0, SEEK_CUR));
 }
 
-RTPPacket::shared PCAPReader::GetNextPacket()
+RTPPacket::shared PCAPReader::GetNextPacket(const RTPMap& rtpMap,const RTPMap& extMap)
 {
 retry:
+	//UltraDebug("-PCAPReader::GetNextPacket() | retry at [pos:%d]\n",lseek(fd, 0, SEEK_CUR));
+
 	//read header
 	if (read(fd,data,PCAP_PACKET_HEADER_SIZE)!=PCAP_PACKET_HEADER_SIZE)
 		//Error
@@ -57,7 +62,7 @@ retry:
 	//Read the packet
 	if (read(fd,data,packetSize)!=packetSize) 
 	{
-		Error("Short read\n");
+		Error("-PCAPReader::GetNextPacket() | Short read\n");
 		//retry
 		goto retry;
 	}
@@ -67,7 +72,7 @@ retry:
 
 	if (packetSize!=packetLen || udpLen!=(packetSize-34) || udpLen<8)
 	{
-		Error("Wrong UDP packet len:%u\n",udpLen);
+		Error("-PCAPReader::GetNextPacket() | Wrong UDP packet len:%u\n",udpLen);
 		//retry
 		goto retry;
 	}
@@ -77,25 +82,30 @@ retry:
 	
 	//Check it is not RTCP
 	if (RTCPCompoundPacket::IsRTCP(buffer,bufferLen))
+	{
+		//Debug
+		UltraDebug("-PCAPReader::GetNextPacket() | skipping rtcp\n");
 		//Ignore this try again
 		goto retry;
+	}
 	
 	RTPHeader header;
 	RTPHeaderExtension extension;
 
 	//Parse RTP header
-	int ini = header.Parse(buffer,bufferLen);
+	uint32_t ini = header.Parse(buffer,bufferLen);
+	
 	//On error
 	if (!ini)
 	{
 		//Debug
-		Error("-Could not parse RTP header ini=%u len=%d udp=%u packet=%u\n",ini,bufferLen-ini,udpLen,packetSize);
+		Error("-PCAPReader::GetNextPacket() | Could not parse RTP header ini=%u len=%d udp=%u packet=%u\n",ini,bufferLen-ini,udpLen,packetSize);
 		//Dump it
 		Dump(buffer+ini,bufferLen-ini);
 		//Ignore this try again
 		goto retry;
 	}
-
+	
 	//If it has extension
 	if (header.extension)
 	{
@@ -105,7 +115,7 @@ retry:
 		if (!l)
 		{
 			///Debug
-			Error("-Could not parse RTP header extension ini=%u len=%d udp=%u packet=%u\n",ini,bufferLen-ini,udpLen,packetSize);
+			Error("-PCAPReader::GetNextPacket() | Could not parse RTP header extension ini=%u len=%d udp=%u packet=%u\n",ini,bufferLen-ini,udpLen,packetSize);
 			//Dump it
 			Dump(buffer+ini,bufferLen-ini);
 			//retry
@@ -113,6 +123,32 @@ retry:
 		}
 		//Inc ini
 		ini += l;
+	}
+	
+	//Check size with padding
+	if (header.padding)
+	{
+		//Get last 2 bytes
+		WORD padding = get1(buffer,bufferLen-1);
+		//Ensure we have enought size
+		if (bufferLen-ini<padding)
+		{
+			///Debug
+			Debug("-PCAPReader::GetNextPacket() | RTP padding is bigger than size [padding:%u,size%u]\n",padding,len);
+			//Ignore this try again
+			goto retry;
+		}
+		//Remove from size
+		bufferLen -= padding;
+	}
+
+	//Check we have payload
+	if (ini>=bufferLen)
+	{
+		///Debug
+		UltraDebug("-PCAPReader::GetNextPacket() | Refusing to create a packet with empty payload [size:%u,ini:%u,len:%u]\n",size,len,ini);
+		//Ignore this try again
+		goto retry;
 	}
 	
 
@@ -123,13 +159,16 @@ retry:
 	if (codec==RTPMap::NotFound)
 	{
 		//Error
-		Error("-DTLSICETransport::onData() | RTP packet type unknown [%d]\n",header.payloadType);
+		Error("-PCAPReader::GetNextPacket() | RTP packet type unknown [%d]\n",header.payloadType);
 		//retry
 		goto retry;
 	}
 	
+	//Get media
+	MediaFrame::Type media = GetMediaForCodec(codec);
+	
 	//Create normal packet
-	auto packet = std::make_shared<RTPPacket>(MediaFrame::Unknown,codec,header,extension);
+	auto packet = std::make_shared<RTPPacket>(media,codec,header,extension);
 
 	//Set the payload
 	packet->SetPayload(buffer+ini,bufferLen-ini);
@@ -142,8 +181,6 @@ retry:
 
 uint64_t PCAPReader::Seek(const uint64_t time)
 {
-	uint64_t current;
-	
 	//Go to the beginning
 	Rewind();
 	
@@ -188,7 +225,11 @@ uint64_t PCAPReader::Seek(const uint64_t time)
 
 bool PCAPReader::Close()
 {
-	Log("-Closing pcap file\n");
+	Log("-PCAPReader::Close()\n");
+	
 	//Close pcapc file
 	close(fd);
+	
+	//Done
+	return true;
 }

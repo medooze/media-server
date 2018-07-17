@@ -172,9 +172,45 @@ bool RTPPacket::SkipPayload(DWORD skip)
 	return true;
 }
 
+
+bool RTPPacket::RecoverOSN()
+{
+	/*
+	The format of a retransmission packet is shown below:
+	 0                   1                   2                   3
+	 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	|                         RTP Header                            |
+	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	|            OSN                |                               |
+	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               |
+	|                  Original RTP Packet Payload                  |
+	|                                                               |
+	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	*/
+	//Ensure we have enought data
+	if (GetMediaLength()<2)
+		//error
+	       return false;
+	
+	//Get original sequence number
+	WORD osn = get2(GetMediaData(),0);
+	
+	 //Skip osn from payload
+	if (!SkipPayload(2))
+		//error
+		return false;
+
+	//Set original seq num
+	SetSeqNum(osn);
+	
+	//Done
+	return true;
+}
+
 void RTPPacket::Dump()
 {
-	Debug("[RTPPacket %s codec=%u payload=%d]\n",MediaFrame::TypeToString(GetMedia()),GetCodec(),GetMediaLength());
+	Debug("[RTPPacket %s codec=%s payload=%d extSeqNum=%u(%u)]\n",MediaFrame::TypeToString(GetMedia()),GetNameForCodec(GetMedia(),GetCodec()),GetMediaLength(),GetExtSeqNum(),GetSeqCycles());
 	header.Dump();
 	//If  there is an extension
 	if (header.extension)

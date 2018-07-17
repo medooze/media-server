@@ -11,7 +11,6 @@
 #include "config.h"
 #include "use.h"
 #include "rtp.h"
-#include "rtpbuffer.h"
 #include "remoteratecontrol.h"
 #include "fecdecoder.h"
 #include "stunmessage.h"

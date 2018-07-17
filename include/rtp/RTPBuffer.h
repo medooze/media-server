@@ -1,17 +1,14 @@
-/* 
- * File:   rtpbuffer.h
- * Author: Sergio
- *
- * Created on 24 de diciembre de 2012, 10:27
- */
-
 #ifndef RTPBUFFER_H
 #define	RTPBUFFER_H
+
 #include <errno.h>
 #include <pthread.h>
-#include "rtp.h"
+#include <map>
+
+#include "config.h"
 #include "acumulator.h"
 #include "use.h"
+#include "rtp/RTPPacket.h"
 
 class RTPBuffer 
 {
@@ -44,6 +41,9 @@ public:
 	{
 		//Get seq num
 		DWORD seq = rtp->GetExtSeqNum();
+		
+		//Log
+		//UltraDebug("-RTPBuffer::Add() | rtp packet [next:%u,seq:%u,maxWaitTime=%d,cycles:%d-%u,time:%lld,current:%lld,hurry:%d]\n",next,seq,maxWaitTime,rtp->GetSeqCycles(),rtp->GetSeqNum(),rtp->GetTime(),GetTime(),hurryUp);
 		
 		//Lock
 		pthread_mutex_lock(&mutex);

@@ -35,7 +35,6 @@
 #include "rtp/RTPMap.h"
 #include "rtp/RTPHeader.h"
 #include "rtp/RTPHeaderExtension.h"
-#include "VideoLayerSelector.h"
 
 DTLSICETransport::DTLSICETransport(Sender *sender) : dtls(*this), mutex(true)
 {
@@ -179,7 +178,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		if (len-ini<padding)
 		{
 			///Debug
-			Debug("-RTPSession::onRTPPacket() | RTP padding is bigger than size [padding:%u,size%u]\n",padding,len);
+			Debug("-DTLSICETransport::onData() | RTP padding is bigger than size [padding:%u,size%u]\n",padding,len);
 			//Exit
 			return 0;
 		}
@@ -187,8 +186,31 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		len -= padding;
 	}
 	
+	//Check we have payload
+	if (ini>=len)
+	{
+		UltraDebug("-DTLSICETransport::onData() | Refusing to create a packet with empty payload [size:%u,ini:%u,len:%u]\n",size,len,ini);
+		return false;
+	}
+	
 	//Get ssrc
 	DWORD ssrc = header.ssrc;
+	
+	//Get initial codec
+	BYTE codec = recvMaps.rtp.GetCodecForType(header.payloadType);
+	
+	//Check codec
+	if (codec==RTPMap::NotFound)
+		//Exit
+		return Error("-DTLSICETransport::onData() | RTP packet payload type unknown [%d]\n",header.payloadType);
+	//Get media
+	MediaFrame::Type media = GetMediaForCodec(codec);
+	
+	//Create normal packet
+	auto packet = std::make_shared<RTPPacket>(media,codec,header,extension);
+	
+	//Set the payload
+	packet->SetPayload(data+ini,len-ini);
 	
 	//Using incoming
 	ScopedUse use(incomingUse);
@@ -224,59 +246,16 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		//error
 		return Error("-DTLSICETransport::onData() | Unknowing group for ssrc [%u]\n",ssrc);
 	
-	//Update instant bitrates
-	group->Update(getTimeMS());
+	//UltraDebug("-Got RTP on media:%s sssrc:%u seq:%u pt:%u codec:%s rid:'%s'\n",MediaFrame::TypeToString(group->type),ssrc,header.sequenceNumber,header.payloadType,GetNameForCodec(group->type,codec),group->rid.c_str());
 	
-	//Get source for ssrc
-	RTPIncomingSource* source = group->GetSource(ssrc);
+	//Process packet and get source
+	RTPIncomingSource* source = group->Process(packet);
 	
 	//Ensure it has a source
 	if (!source)
 		//error
 		return Error("-DTLSICETransport::onData() | Group does not contain ssrc [%u]\n",ssrc);
 
-	//Get initial codec
-	BYTE codec = recvMaps.rtp.GetCodecForType(header.payloadType);
-	
-	//Check codec
-	if (codec==RTPMap::NotFound)
-		//Exit
-		return Error("-DTLSICETransport::onData() | RTP packet type unknown [%d]\n",header.payloadType);
-	
-	//UltraDebug("-Got RTP on media:%s sssrc:%u seq:%u pt:%u codec:%s rid:'%s'\n",MediaFrame::TypeToString(group->type),ssrc,header.sequenceNumber,header.payloadType,GetNameForCodec(group->type,codec),group->rid.c_str());
-	
-	//Create normal packet
-	auto packet = std::make_shared<RTPPacket>(group->type,codec,header,extension);
-	
-	//Check we have payload
-	if (ini>=len)
-	{
-		UltraDebug("-DTLSICETransport::onData() | Refusing to create a packet with empty payload [size:%u,ini:%u,len:%u]\n",size,len,ini);
-		return false;
-	}
-	
-	//Set the payload
-	packet->SetPayload(data+ini,len-ini);
-	
-	//if it is video
-	if (group->type == MediaFrame::Video)
-	{
-		//Check if we can ge the layer info
-		auto info = VideoLayerSelector::GetLayerIds(packet);
-		//UltraDebug("-VideoLayerSelector::GetLayerIds() | [id:%x,tid:%u,sid:%u]\n",info.GetId(),info.temporalLayerId,info.spatialLayerId);
-		//Update source and layer info
-		source->Update(getTimeMS(),header.sequenceNumber,size, info);
-	} else {
-		//Update source and layer info
-		source->Update(getTimeMS(),header.sequenceNumber,size);
-	}
-	
-	//Update source sequence number and get cycles
-	WORD cycles = source->SetSeqNum(packet->GetSeqNum());
-
-	//Set cycles back
-	packet->SetSeqCycles(cycles);
-	
 	//If it is video and transport wide cc is used
 	if (group->type == MediaFrame::Video && packet->HasTransportWideCC())
 	{
@@ -317,7 +296,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		if (codec!=VideoCodec::RTX)
 			//error
 			return  Error("-DTLSICETransport::onData() | No RTX codec on rtx sssrc:%u type:%d codec:%d\n",packet->GetSSRC(),packet->GetPayloadType(),packet->GetCodec());
-		
+	
 		//Find apt type
 		auto apt = recvMaps.apt.GetCodecForType(packet->GetPayloadType());
 		//Find codec 
@@ -325,53 +304,21 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		//Check codec
 		 if (codec==RTPMap::NotFound)
 			  //Error
-			  return Error("-DTLSICETransport::ReadRTP(%s) | RTP RTX packet apt type unknown [%d]\n",MediaFrame::TypeToString(packet->GetMedia()),packet->GetPayloadType());
-		/*
-		   The format of a retransmission packet is shown below:
-		    0                   1                   2                   3
-		    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-		   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-		   |                         RTP Header                            |
-		   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-		   |            OSN                |                               |
-		   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               |
-		   |                  Original RTP Packet Payload                  |
-		   |                                                               |
-		   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-		 */
-		 //Ensure we have enought data
-		 if (packet->GetMediaLength()<2)
-			 //error
-			return  Error("-DTLSICETransport::onData() | RTX not enough data len:%d\n",packet->GetMediaLength());
-		 //Get original sequence number
-		 WORD osn = get2(packet->GetMediaData(),0);
-
-		 if (osn!=group->rttrtxSeq)
-			UltraDebug("RTX: %s got   %.d:RTX for #%d pt:%d ts:%u payload:%u\n",MediaFrame::TypeToString(packet->GetMedia()),packet->GetPayloadType(),osn,apt,packet->GetTimestamp(),packet->GetMediaLength());
-		 
-		 //Set original seq num
-		 packet->SetSeqNum(osn);
+			  return Error("-DTLSICETransport::onData() | RTP RTX packet apt type unknown [%d]\n",MediaFrame::TypeToString(packet->GetMedia()),packet->GetPayloadType());
+		
+		//Remove OSN and restore seq num
+		if (!packet->RecoverOSN())
+			//Error
+			return Error("-DTLSICETransport::onData() | RTP Could not recoever OSX\n");
+		
 		 //Set original ssrc
 		 packet->SetSSRC(group->media.ssrc);
-		 //Check secuence wrap
-		if ((group->media.extSeq & 0xFFFF)<0x0FFF && (osn>0xF000))
-			//Set past cycles
-			packet->SetSeqCycles(group->media.cycles - 1);
-		else
-			//Set cycles
-			packet->SetSeqCycles(group->media.cycles);
+		 //Set corrected seq num cycles
+		 packet->SetSeqCycles(group->media.RecoverSeqNum(packet->GetSeqNum()));
 		 //Set codec
 		 packet->SetCodec(codec);
 		 packet->SetPayloadType(apt);
-		 //Skip osn from payload
-		 if (!packet->SkipPayload(2))
-			//error
-			return  Error("-DTLSICETransport::onData() | Could not skip payload len:%d\n",packet->GetMediaLength());
-		 
-		 //WTF! Drop RTX packets for the future (UUH)
-		 if (packet->GetExtSeqNum()>group->media.extSeq)
-			//Error
-			return Error("Drop RTX future packet [osn:%u,max:%u]\n",osn,group->media.extSeq>>16);
+	 
 	} else if (ssrc==group->fec.ssrc)  {
 		UltraDebug("-Flex fec\n");
 		//Ensure that it is a FEC codec
@@ -382,44 +329,37 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		return 1;
 	}	
 
-	//Check if is the rtx rtt packet
-	if (packet->GetSeqNum()!=group->rttrtxSeq || !group->rttrtxTime)
+	//Add packet and see if we have lost any in between
+	int lost = group->AddPacket(packet);
+
+	//Check if it was rejected
+	if (lost<0)
 	{
-		//Add packet and see if we have lost any in between
-		int lost = group->AddPacket(packet);
+		UltraDebug("-DTLSICETransport::onData() | Dropped packet [ssrc:%u,seq:%d]\n",ssrc,packet->GetSeqNum());
+		//Increase rejected counter
+		source->dropPackets++;
+	} else if (group->rtx.ssrc && ( lost || (group->GetCurrentLost() && getTimeDiff(source->lastNACKed)/1000>fmax(rtt,10))))  {
 
-		//Check if it was rejected
-		if (lost<0)
-		{
-			UltraDebug("-Dropped packet [ssrc:%u,seq:%d]\n",ssrc,packet->GetSeqNum());
-			//Increase rejected counter
-			source->dropPackets++;
-		} else if (group->rtx.ssrc && ( lost || (group->GetCurrentLost() && getTimeDiff(source->lastNACKed)/1000>fmax(rtt,10))))  {
-			
-			UltraDebug("-Lost packets [ssrc:%u,seq:%d,lost:%d,total:%d]\n",ssrc,packet->GetSeqNum(),lost,group->GetCurrentLost());
-			
-			//Create rtcp sender retpor
-			auto rtcp = RTCPCompoundPacket::Create();
+		UltraDebug("-DTLSICETransport::onData() | Lost packets [ssrc:%u,seq:%d,lost:%d,total:%d]\n",ssrc,packet->GetSeqNum(),lost,group->GetCurrentLost());
 
-			//Create NACK
-			auto nack = rtcp->CreatePacket<RTCPRTPFeedback>(RTCPRTPFeedback::NACK,mainSSRC,ssrc);
+		//Create rtcp sender retpor
+		auto rtcp = RTCPCompoundPacket::Create();
 
-			//Get nacks for lost
-			for (auto field : group->GetNacks())
-				//Add it
-				nack->AddField(field);
+		//Create NACK
+		auto nack = rtcp->CreatePacket<RTCPRTPFeedback>(RTCPRTPFeedback::NACK,mainSSRC,ssrc);
 
-			//Send packet
-			Send(rtcp);
+		//Get nacks for lost
+		for (auto field : group->GetNacks())
+			//Add it
+			nack->AddField(field);
 
-			//Update last time nacked
-			source->lastNACKed = getTime();
-			//Update nacked packets
-			source->totalNACKs++;
-		}
-	} else {
-		//Calculate rtt
-		group->SetRTT(getTimeDiff(group->rttrtxTime)/1000);
+		//Send packet
+		Send(rtcp);
+
+		//Update last time nacked
+		source->lastNACKed = getTime();
+		//Update nacked packets
+		source->totalNACKs++;
 	}
 	
 	//Check if we need to send RR (1 per second)
@@ -444,13 +384,10 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		{
 			//We try to calculate rtt based on rtx
 			auto nack = rtcp->CreatePacket<RTCPRTPFeedback>(RTCPRTPFeedback::NACK,mainSSRC,group->media.ssrc);
-			//Get max received packet, the ensure it has not been nacked
-			WORD last = group->media.extSeq & 0xffff;
+			//Get last seq num for calculating rtt based on rtx
+			WORD last = group->SetRTTRTX(getTime());
 			//Request it
 			nack->AddField(std::make_shared<RTCPRTPFeedback::NACKField>(last,0));
-			//Update rtt rtx stats
-			group->rttrtxSeq = last;
-			group->rttrtxTime = getTime();
 		}
 	
 		//Send it
@@ -1853,7 +1790,6 @@ RTPIncomingSourceGroup* DTLSICETransport::GetIncomingSourceGroup(DWORD ssrc)
 	
 	//Get source froup
 	return it->second;
-
 }
 
 RTPIncomingSource* DTLSICETransport::GetIncomingSource(DWORD ssrc)

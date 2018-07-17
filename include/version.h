@@ -1,6 +1,6 @@
 #ifndef VERSION_H
 #define VERSION_H
-#define MCUVERSION "51d85d1"
-#define MCUDATE "Wed Jul 11 17:11:52 2018 +0200"
+#define MCUVERSION "f00fd54"
+#define MCUDATE "Thu Jul 12 15:04:35 2018 +0200"
 #endif
 

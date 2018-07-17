@@ -39,6 +39,8 @@ public:
 	bool	SetPayload(BYTE *data,DWORD size);
 	bool	SkipPayload(DWORD skip);
 	bool	PrefixPayload(BYTE *data,DWORD size);
+	
+	bool	RecoverOSN();
 
 	virtual void Dump();
 	
@@ -51,7 +53,7 @@ public:
 	void SetPayloadType(DWORD payloadType)	{ header.payloadType = payloadType;	}
 	void SetType(DWORD payloadType)		{ SetType(payloadType);			} //Deprecated
 	void SetPadding(WORD padding)		{ header.padding = padding;		}
-	
+	void SetMediaTpe(MediaFrame::Type media){ this->media = media;			}
 	void SetCodec(BYTE codec)		{ this->codec = codec;			}
 	void SetSeqCycles(WORD cycles)		{ this->cycles = cycles;		}
 	void SetClockRate(DWORD rate)		{ this->clockRate = rate;		}
@@ -59,7 +61,8 @@ public:
 	void SetMediaLength(DWORD len)		{ this->payloadLen = len;		}
 	
 	//Getters
-	MediaFrame::Type GetMedia()	const { return media;				}
+	MediaFrame::Type GetMedia()	const { return media;				} //Deprecated
+	MediaFrame::Type GetMediaType()	const { return media;				}
 	BYTE  GetCodec()		const { return codec;				}
 	
 	
