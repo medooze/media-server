@@ -11,8 +11,8 @@ RTPIncomingSourceGroup::RTPIncomingSourceGroup(MediaFrame::Type type)
 	this->rttrtxSeq = 0;
 	this->rttrtxTime = 0;
 	this->type = type;
-	//Small initial bufer of 60ms
-	packets.SetMaxWaitTime(60);
+	//Small initial bufer of 100ms
+	packets.SetMaxWaitTime(100);
 }
 
 RTPIncomingSourceGroup::~RTPIncomingSourceGroup() 
@@ -102,10 +102,8 @@ void RTPIncomingSourceGroup::SetRTT(DWORD rtt)
 {
 	//Store rtt
 	this->rtt = rtt;
-	//If we have a rtx stream
-	if (rtx.ssrc)
-		//Set max packet wait time
-		packets.SetMaxWaitTime(fmin(500,fmax(60,rtt*4)+40));
+	//Set max packet wait time
+	packets.SetMaxWaitTime(fmin(500,fmax(60,rtt*4)+40));
 }
 
 void RTPIncomingSourceGroup::Start()

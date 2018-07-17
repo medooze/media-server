@@ -43,7 +43,7 @@ public:
 		DWORD seq = rtp->GetExtSeqNum();
 		
 		//Log
-		//UltraDebug("-RTPBuffer::Add() | rtp packet [next:%u,seq:%u,maxWaitTime=%d,cycles:%d-%u,time:%lld,current:%lld,hurry:%d]\n",next,seq,maxWaitTime,rtp->GetSeqCycles(),rtp->GetSeqNum(),rtp->GetTime(),GetTime(),hurryUp);
+		//UltraDebug("-RTPBuffer::Add()  | rtp packet [next:%u,seq:%u,maxWaitTime=%d,cycles:%d-%u,time:%lld,current:%lld,hurry:%d]\n",next,seq,maxWaitTime,rtp->GetSeqCycles(),rtp->GetSeqNum(),rtp->GetTime(),GetTime(),hurryUp);
 		
 		//Lock
 		pthread_mutex_lock(&mutex);
@@ -143,10 +143,9 @@ public:
 		//While we have to wait
 		while (!cancel)
 		{
-			//Check if we have somethin in queue
+			//Check if we have something in queue
 			if (!packets.empty())
 			{
-					
 				//Get first
 				auto it = packets.begin();
 				//Get first seq num
@@ -165,6 +164,8 @@ public:
 					waited.Update(now,now-time);
 					//We have it!
 					rtp = candidate;
+					//Log
+					//UltraDebug("-RTPBuffer::Wait() | rtp packet [next:%u,seq:%u,maxWaitTime=%d,cycles:%d-%u,time:%lld,current:%lld,hurry:%d]\n",next,seq,maxWaitTime,rtp->GetSeqCycles(),rtp->GetSeqNum(),rtp->GetTime(),GetTime(),hurryUp);
 					//Update next
 					next = seq+1;
 					//Remove it

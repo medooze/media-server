@@ -652,7 +652,7 @@ void RTPSession::onRTPPacket(BYTE* data, DWORD size)
 	if (recv.media.ssrc!=ssrc && codec!=VideoCodec::RTX)
 	{
 		//Log
-		Log("-RTPSession::onRTPPacket(%s) | New SSRC [new:%x,old:%x]\n",MediaFrame::TypeToString(media),ssrc,recv.media.ssrc);
+		Log("-RTPSession::onRTPPacket(%s) | New SSRC [new:%u,old:%u]\n",MediaFrame::TypeToString(media),ssrc,recv.media.ssrc);
 		//Send SR to old one
 		SendSenderReport();
 		//Reset packets
@@ -678,7 +678,7 @@ void RTPSession::onRTPPacket(BYTE* data, DWORD size)
 			//Store it
 			recv.rtx.ssrc = ssrc;
 			//Log
-			Log("-RTPSession::onRTPPacket(%s) | Gor RTX for SSRC [rtx:%x,ssrc:%x]\n",MediaFrame::TypeToString(media),recv.rtx.ssrc,recv.media.ssrc);
+			Log("-RTPSession::onRTPPacket(%s) | Gor RTX for SSRC [rtx:%u,ssrc:%u]\n",MediaFrame::TypeToString(media),recv.rtx.ssrc,recv.media.ssrc);
 		}	
 		/*
 		       The format of a retransmission packet is shown below:

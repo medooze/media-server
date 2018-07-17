@@ -27,7 +27,7 @@ RTPStreamTransponder::RTPStreamTransponder(RTPOutgoingSourceGroup* outgoing,RTPS
 	//Add us as listeners
 	outgoing->AddListener(this);
 	
-	Debug(">RTPStreamTransponder() | [outgoing:%p,sender:%p,ssrc:%d]\n",outgoing,sender,ssrc);
+	Debug(">RTPStreamTransponder() | [outgoing:%p,sender:%p,ssrc:%u]\n",outgoing,sender,ssrc);
 }
 
 
@@ -40,7 +40,7 @@ bool RTPStreamTransponder::SetIncoming(RTPIncomingSourceGroup* incoming, RTPRece
 		//DO nothing
 		return false;
 	
-	Debug(">RTPStreamTransponder::SetIncoming() | [incoming:%p,receiver:%p,ssrc:%d]\n",incoming,receiver,ssrc);
+	Debug(">RTPStreamTransponder::SetIncoming() | [incoming:%p,receiver:%p,ssrc:%u]\n",incoming,receiver,ssrc);
 	
 	//Remove listener from old stream
 	if (this->incoming) 

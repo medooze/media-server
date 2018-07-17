@@ -35,7 +35,7 @@ void RTCPSenderReport::SetTimestamp(QWORD time)
 	 */
 	//Get seconds
 	DWORD sec = time/1E6;
-	DWORD usec = time-sec*10e6;
+	DWORD usec = time-sec*1E6;
 	
 	//Convert from ecpoch (JAN_1970) to NTP (JAN 1900);
 	SetNTPSec(sec + 2208988800UL);

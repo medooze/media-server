@@ -75,8 +75,12 @@ RTPPacket::shared RTPOutgoingSourceGroup::GetPacket(WORD seq) const
 	
 	//If there are no packets
 	if (packets.empty())
-		//Done
+	{
+		//Debug
+		UltraDebug("-RTPOutgoingSourceGroup::GetPacket() | no packets available\n");
+		//Not found
 		return nullptr;
+	}
 	
 	//Check sequence wrap
 	WORD cycles = media.cycles;
@@ -95,7 +99,9 @@ RTPPacket::shared RTPOutgoingSourceGroup::GetPacket(WORD seq) const
 	//If we don't have it
 	if (it==packets.end())
 	{
-		//None
+		//Debug
+		UltraDebug("-RTPOutgoingSourceGroup::GetPacket() | packet not found [seqNum:%u,extSeqNum:%u,cycles:%u,media:%u,first:%u,num:%u]\n",seq,ext,cycles,media.cycles,packets.begin()->first,packets.size());
+		//Not found
 		return nullptr;
 	}
 	

@@ -44,7 +44,7 @@ public:
 	DWORD GetRTPTimestamp() const		{ return rtpTimestamp;			}
 	DWORD GetNTPFrac()	const		{ return ntpFrac;			}
 	DWORD GetNTPSec()	const		{ return ntpSec;			}
-	QWORD GetNTPTimestamp()	const		{ return ((QWORD)ntpSec)<<32 | ntpFrac ;	}
+	QWORD GetNTPTimestamp()	const		{ return ((QWORD)ntpSec)<<32 | ntpFrac; }
 	DWORD GetSSRC()		const		{ return ssrc;				}
 
 	DWORD GetCount()	const				{ return reports.size();		}

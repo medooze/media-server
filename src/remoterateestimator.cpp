@@ -39,7 +39,7 @@ RemoteRateEstimator::~RemoteRateEstimator()
 }
 void RemoteRateEstimator::AddStream(DWORD ssrc)
 {
-	Log("-RemoteRateEstimator adding stream [ssrc:%x]\n",ssrc);
+	Log("-RemoteRateEstimator adding stream [ssrc:%u]\n",ssrc);
 
 	//Lock
 	lock.WaitUnusedAndLock();
@@ -54,7 +54,7 @@ void RemoteRateEstimator::AddStream(DWORD ssrc)
 }
 void RemoteRateEstimator::RemoveStream(DWORD ssrc)
 {
-	Log("-RemoteRateEstimator removing stream [ssrc:%x]\n",ssrc);
+	Log("-RemoteRateEstimator removing stream [ssrc:%u]\n",ssrc);
 	
 	//Lock
 	lock.WaitUnusedAndLock();
@@ -103,7 +103,7 @@ void RemoteRateEstimator::Update(DWORD ssrc,const RTPPacket::shared& packet,DWOR
 
 void RemoteRateEstimator::Update(DWORD ssrc,QWORD now,QWORD ts,DWORD size)
 {
-	//UltraDebug("-Update [ssrc:%x,now:%lu,last:%u,ts:%lu,size:%u\n",ssrc,now,lastChange,ts,size);
+	//UltraDebug("-Update [ssrc:%u,now:%lu,last:%u,ts:%lu,size:%u\n",ssrc,now,lastChange,ts,size);
 	//Lock
 	lock.WaitUnusedAndLock();
 

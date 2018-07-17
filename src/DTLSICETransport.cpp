@@ -338,8 +338,10 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		UltraDebug("-DTLSICETransport::onData() | Dropped packet [ssrc:%u,seq:%d]\n",ssrc,packet->GetSeqNum());
 		//Increase rejected counter
 		source->dropPackets++;
-	} else if (group->rtx.ssrc && ( lost || (group->GetCurrentLost() && getTimeDiff(source->lastNACKed)/1000>fmax(rtt,10))))  {
-
+	} 
+	
+	if (lost>0 || (group->GetCurrentLost() && getTimeDiff(source->lastNACKed)/1000>fmax(rtt,10)))  
+	{
 		UltraDebug("-DTLSICETransport::onData() | Lost packets [ssrc:%u,seq:%d,lost:%d,total:%d]\n",ssrc,packet->GetSeqNum(),lost,group->GetCurrentLost());
 
 		//Create rtcp sender retpor
@@ -352,7 +354,6 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		for (auto field : group->GetNacks())
 			//Add it
 			nack->AddField(field);
-
 		//Send packet
 		Send(rtcp);
 
@@ -406,11 +407,10 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	auto packet = group->GetPacket(seq);
 
 	//If we don't have it anymore
-	if (!packet && group->type==MediaFrame::Video)
+	if (!packet)
 	{
+		//Debug
 		Debug("-DTLSICETransport::ReSendPacket() | packet not found, requesting PLI instead [seq:%d,ssrc:%u]\n",seq,group->rtx.ssrc);
-		//Similate a PLI request
-		group->onPLIRequest(group->media.ssrc);
 		//Simulate PLI
 		return;
 	}
@@ -1838,6 +1838,8 @@ RTPOutgoingSource* DTLSICETransport::GetOutgoingSource(DWORD ssrc)
 
 void DTLSICETransport::SetRTT(DWORD rtt)
 {
+	//Debug
+	UltraDebug("-DTLSICETransport::SetRTT() [rtt:%d]\n",rtt);
 	//Sore it
 	this->rtt = rtt;
 	//Update jitters
