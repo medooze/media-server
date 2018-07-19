@@ -84,7 +84,7 @@ retry:
 	if (RTCPCompoundPacket::IsRTCP(buffer,bufferLen))
 	{
 		//Debug
-		UltraDebug("-PCAPReader::GetNextPacket() | skipping rtcp\n");
+		//UltraDebug("-PCAPReader::GetNextPacket() | skipping rtcp\n");
 		//Ignore this try again
 		goto retry;
 	}

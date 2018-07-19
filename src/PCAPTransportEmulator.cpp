@@ -233,21 +233,21 @@ bool PCAPTransportEmulator::Play()
 
 uint64_t PCAPTransportEmulator::Seek(uint64_t time)
 {
+	Debug("-PCAPTransportEmulator::Seek() [time:%llu]\n",time);
+	
 	//Block condition
 	ScopedLock lock(cond);
 	
-	//Get first timestamp to start playing from
-	first = reader.Seek(time)/1000;
+	//Set first timestamp to start playing from
+	first = time;
 	
-	return first;
+	//Seek it and return which is the first packet that will be played
+	return reader.Seek(first*1000)/100;
 }
 
 bool PCAPTransportEmulator::Stop()
 {
 	Debug(">PCAPTransportEmulator::Stop()\n");
-	
-	//Block condition
-	ScopedLock lock(cond);
 	
 	//Check thred
 	if (!isZeroThread(thread))
@@ -271,7 +271,7 @@ bool PCAPTransportEmulator::Stop()
 
 int PCAPTransportEmulator::Run()
 {
-	Log(">PCAPTransportEmulator::Run() | [%p]\n",this);
+	Log(">PCAPTransportEmulator::Run() | [first:%llu,this:%p]\n",first,this);
 	
 	//Start play timestamp
 	uint64_t ini  = getTime();
@@ -296,8 +296,6 @@ int PCAPTransportEmulator::Run()
 			//exit
 			break;
 		}
-		
-		packet->Dump();
 		
 		//Get the packet relative time in ns
 		auto time = packet->GetTime() - first;
@@ -391,7 +389,6 @@ int PCAPTransportEmulator::Run()
 				//Skip
 				continue;
 			}
-			packet->Dump();
 			//Set original ssrc
 			packet->SetSSRC(group->media.ssrc);
 			//Set corrected seq num cycles
@@ -399,8 +396,7 @@ int PCAPTransportEmulator::Run()
 			//Set codec
 			packet->SetCodec(codec);
 			packet->SetPayloadType(apt);
-			packet->Dump();
-			
+	
 		} else if (ssrc==group->fec.ssrc)  {
 			UltraDebug("-Flex fec\n");
 			//Ensure that it is a FEC codec
