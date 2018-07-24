@@ -255,9 +255,12 @@ bool PCAPTransportEmulator::Stop()
 		//Not running
 		running = false;
 		
+		Debug("-PCAPTransportEmulator::Stop() | cond cancel()\n");
+		
 		//Cancel packets wait queue
 		cond.Cancel();
 		
+		Debug("-PCAPTransportEmulator::Stop() | join\n");
 		//Wait thread to close
 		pthread_join(thread,NULL);
 		//Nulifi thread
@@ -284,7 +287,7 @@ int PCAPTransportEmulator::Run()
 	cond.Lock();
 
 	//Run until canceled
-	while(running)
+outher:	while(running)
 	{
 		//Get next packet from pcap
 		auto packet = reader.GetNextPacket(rtpMap,extMap);
@@ -313,8 +316,11 @@ int PCAPTransportEmulator::Run()
 				
 			//Wait the difference
 			if (!cond.Wait(diff))
+			{
+				Debug("-PCAPTransportEmulator::Run() | canceled\n");
 				//Check if we have been stoped
-				continue;
+				goto outher;
+			}
 			
 			//Get relative play times since start in ns
 			now = getTimeDiff(ini);
@@ -331,7 +337,7 @@ int PCAPTransportEmulator::Run()
 		if (it==incoming.end())
 		{
 			//error
-			Error("-PCAPTransportEmulator::Run() | Unknowing group for ssrc [%u]\n",ssrc);
+			Debug("-PCAPTransportEmulator::Run() | Unknowing source for ssrc [%u]\n",ssrc);
 			//Continue
 			continue;
 		}
@@ -343,8 +349,12 @@ int PCAPTransportEmulator::Run()
 
 		//Ensure it has a group
 		if (!group)	
+		{
 			//error
-			return Error("-PCAPTransportEmulator::Run()| Unknowing group for ssrc [%u]\n",ssrc);
+			Debug("-PCAPTransportEmulator::Run()| Unknowing group for ssrc [%u]\n",ssrc);
+			//Skip
+			continue;
+		}
 
 		//UltraDebug("-PCAPTransportEmulator::Run() | Got RTP on media:%s sssrc:%u seq:%u pt:%u codec:%s rid:'%s'\n",MediaFrame::TypeToString(group->type),ssrc,packet->GetSeqNum(),packet->GetPayloadType(),GetNameForCodec(group->type,codec),group->rid.c_str());
 
@@ -353,8 +363,12 @@ int PCAPTransportEmulator::Run()
 
 		//Ensure it has a source
 		if (!source)
+		{
 			//error
-			return Error("-PCAPTransportEmulator::Run()| Group does not contain ssrc [%u]\n",ssrc);
+			Debug("-PCAPTransportEmulator::Run()| Group does not contain ssrc [%u]\n",ssrc);
+			//Continue
+			continue;
+		}
 		
 		//If it was an RTX packet
 		if (ssrc==group->rtx.ssrc) 
@@ -363,7 +377,7 @@ int PCAPTransportEmulator::Run()
 			if (packet->GetCodec()!=VideoCodec::RTX)
 			{
 				//error
-				Error("-PCAPTransportEmulator::Run()| No RTX codec on rtx sssrc:%u type:%d codec:%d\n",packet->GetSSRC(),packet->GetPayloadType(),packet->GetCodec());
+				Debug("-PCAPTransportEmulator::Run()| No RTX codec on rtx sssrc:%u type:%d codec:%d\n",packet->GetSSRC(),packet->GetPayloadType(),packet->GetCodec());
 				//Skip
 				continue;
 			}
@@ -376,7 +390,7 @@ int PCAPTransportEmulator::Run()
 			if (codec==RTPMap::NotFound)
 			{
 				//Error
-				Error("-PCAPTransportEmulator::Run() | RTP RTX packet apt type unknown [%d]\n",MediaFrame::TypeToString(packet->GetMedia()),packet->GetPayloadType());
+				Debug("-PCAPTransportEmulator::Run() | RTP RTX packet apt type unknown [%d]\n",MediaFrame::TypeToString(packet->GetMedia()),packet->GetPayloadType());
 				//Skip
 				continue;
 			}
@@ -385,7 +399,7 @@ int PCAPTransportEmulator::Run()
 			if (!packet->RecoverOSN())
 			{
 				//error
-				Error("-PCAPTransportEmulator::Run() | RTX not enough data len:%d\n",packet->GetMediaLength());
+				Debug("-PCAPTransportEmulator::Run() | RTX not enough data len:%d\n",packet->GetMediaLength());
 				//Skip
 				continue;
 			}
@@ -402,7 +416,7 @@ int PCAPTransportEmulator::Run()
 			//Ensure that it is a FEC codec
 			if (codec!=VideoCodec::FLEXFEC)
 				//error
-				Error("-PCAPTransportEmulator::Run()| No FLEXFEC codec on fec sssrc:%u type:%d codec:%d\n",MediaFrame::TypeToString(packet->GetMedia()),packet->GetPayloadType(),packet->GetSSRC());
+				Debug("-PCAPTransportEmulator::Run()| No FLEXFEC codec on fec sssrc:%u type:%d codec:%d\n",MediaFrame::TypeToString(packet->GetMedia()),packet->GetPayloadType(),packet->GetSSRC());
 			//DO NOTHING with it yet
 			continue;
 		}	
