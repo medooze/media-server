@@ -113,7 +113,7 @@ bool RTMPFLVStream::Publish(std::wstring& url)
 	snprintf(filename,1024,"%ls",url.c_str());
 
 	//Open file
-	fd = open(filename,O_CREAT|O_WRONLY|O_TRUNC,0x666);
+	fd = open(filename,O_CREAT|O_WRONLY|O_TRUNC,0666);
 
 	//Check fd
 	if (!fd)

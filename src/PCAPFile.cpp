@@ -20,7 +20,7 @@ int PCAPFile::Open(const char* filename)
 	Log("PCAPFile::open() [\"%s\"]\n",filename);
 	
 	//Open file
-	if ((fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0x600))<0)
+	if ((fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0600))<0)
 		//Error
 		return Error("Could not open file [err:%d]\n",errno);
 		
