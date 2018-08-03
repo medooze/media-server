@@ -87,14 +87,8 @@ Resampler::~Resampler()
     {
         free(out_buffer_);
     }
-    if (slave_left_)
-    {
-        delete slave_left_;
-    }
-    if (slave_right_)
-    {
-        delete slave_right_;
-    }
+    delete slave_left_;
+    delete slave_right_;
 }
 
 int Resampler::ResetIfNeeded(int inFreq, int outFreq, ResamplerType type)
@@ -140,16 +134,10 @@ int Resampler::Reset(int inFreq, int outFreq, ResamplerType type)
         free(out_buffer_);
         out_buffer_ = NULL;
     }
-    if (slave_left_)
-    {
-        delete slave_left_;
-        slave_left_ = NULL;
-    }
-    if (slave_right_)
-    {
-        delete slave_right_;
-        slave_right_ = NULL;
-    }
+    delete slave_left_;
+    slave_left_ = NULL;
+    delete slave_right_;
+    slave_right_ = NULL;
 
     in_buffer_size_ = 0;
     out_buffer_size_ = 0;

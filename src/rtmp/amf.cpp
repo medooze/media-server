@@ -177,8 +177,7 @@ AMFParser::AMFParser()
 
 AMFParser::~AMFParser()
 {
-	if (object)
-		delete object;
+	delete object;
 }
 
 DWORD AMFParser::Parse(BYTE *data,DWORD size)
@@ -292,10 +291,7 @@ bool AMFParser::IsParsed()
 
 void AMFParser::Reset()
 {
-	//Check if it's an object already been parsed
-	if (object)
-		//Delete it
-		delete (object);
+	delete (object);
 	//And set it to null
 	object = NULL;
 }
@@ -789,8 +785,7 @@ AMFData* AMFObject::Clone()
 AMFObject::~AMFObject()
 {
 	for (AMFObjectMap::iterator it=properties.begin(); it!=properties.end(); it++)
-		if (it->second)
-			delete(it->second);
+		delete(it->second);
 }
 
 DWORD AMFObject::Parse(BYTE *data,DWORD size)
@@ -1100,8 +1095,7 @@ AMFEcmaArray::AMFEcmaArray()
 AMFEcmaArray::~AMFEcmaArray()
 {
 	for (AMFObjectMap::iterator it=elements.begin(); it!=elements.end(); it++)
-		if (it->second)
-			delete(it->second);
+		delete(it->second);
 }
 
 DWORD AMFEcmaArray::Parse(BYTE *data,DWORD size)
@@ -1334,9 +1328,7 @@ AMFStrictArray::~AMFStrictArray()
 	{
 		//For each property
 		for (DWORD i=0;i<num.GetSize();i++)
-			if (elements[i])
-				//delete object
-				delete(elements[i]);
+			delete(elements[i]);
 		//Free array memory
 		free(elements);
 	}

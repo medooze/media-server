@@ -80,10 +80,7 @@ struct MP4RtpTrack
 	}
 	~MP4RtpTrack()
 	{
-		//If media
-		if (frame)
-			//Delete it
-			delete(frame);
+		delete(frame);
 	}
 	int Reset();
 	QWORD Read(Listener *listener);

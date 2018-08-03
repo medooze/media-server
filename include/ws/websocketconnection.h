@@ -48,7 +48,7 @@ public:
 
 			~Parser()
 			{
-				if (header) delete(header);
+				delete(header);
 			}
 
 			int Parse(BYTE* data,DWORD size)

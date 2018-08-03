@@ -176,8 +176,7 @@ public:
 
 	~CPIMMessage()
 	{
-		if (mime)
-			delete(mime);
+		delete(mime);
 	}
 
 	const Address&	GetFrom()	const { return from;	}

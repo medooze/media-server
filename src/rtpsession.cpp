@@ -100,14 +100,10 @@ void RTPSession::Reset()
 	Log("-RTPSession reset\n");
 	
 	//Free mem
-	if (rtpMapIn)
-		delete(rtpMapIn);
-	if (rtpMapOut)
-		delete(rtpMapOut);
-	if (aptMapIn)
-		delete(aptMapIn);
-	if (aptMapOut)
-		delete(aptMapOut);
+	delete(rtpMapIn);
+	delete(rtpMapOut);
+	delete(aptMapIn);
+	delete(aptMapOut);
 	if (cname)
 		free(cname);
 	//Reset group
@@ -169,17 +165,13 @@ void RTPSession::SetSendingRTPMap(const RTPMap& rtpMap,const RTPMap& aptMap)
 	//Debug
 	Debug("-RTPSession::SetSendingRTPMap\n");
 	rtpMap.Dump(media);
-	
-	//If we already have one
-	if (rtpMapOut)
-		//Delete it
-		delete(rtpMapOut);
+
+	//Delete it if we already have one
+	delete(rtpMapOut);
 	//Clone it
 	rtpMapOut = new RTPMap(rtpMap);
-	//If we already have one
-	if (aptMapOut)
-		//Delete it
-		delete(aptMapOut);
+	//Delete it if we already have one
+	delete(aptMapOut);
 	//Clone it
 	aptMapOut = new RTPMap(aptMap);
 }
@@ -295,17 +287,13 @@ void RTPSession::SetReceivingRTPMap(const RTPMap& rtpMap,const RTPMap& aptMap)
 	//Debug
 	Debug("-RTPSession::SetReceivingRTPMap\n");
 	rtpMap.Dump(media);
-	
-	//If we already have one
-	if (rtpMapIn)
-		//Delete it
-		delete(rtpMapIn);
+
+	//Delete it if we already have one
+	delete(rtpMapIn);
 	//Clone it
 	rtpMapIn = new RTPMap(rtpMap);
-	//If we already have one
-	if (aptMapIn)
-		//Delete it
-		delete(aptMapIn);
+	//Delete it if we already have one
+	delete(aptMapIn);
 	//Clone it
 	aptMapIn = new RTPMap(aptMap);
 }

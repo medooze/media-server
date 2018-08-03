@@ -184,17 +184,11 @@ RTMPPipedMediaStream::~RTMPPipedMediaStream()
 	//Dettach just in case
 	Detach();
 	//Delete meta
-	if (meta)
-		//Delete it
-		delete(meta);
+	delete(meta);
 	//Delete desc
-	if (desc)
-		//Delete it
-		delete(desc);
+	delete(desc);
 	//Delete aac config
-	if (aacSpecificConfig)
-		//Delete it
-		delete(aacSpecificConfig);
+	delete(aacSpecificConfig);
 }
 
 DWORD RTMPPipedMediaStream::AddMediaListener(RTMPMediaStream::Listener *listener)
@@ -302,10 +296,8 @@ void RTMPPipedMediaStream:: onMediaFrame(DWORD id,RTMPMediaFrame *frame)
 				//Check type
 				if(video->GetAVCType()==RTMPVideoFrame::AVCHEADER)
 				{
-					//Check if we already had one desc
-					if (desc)
-						//Delete it
-						delete(desc);
+					//Delete it if we already had one desc
+					delete(desc);
 					//Clone it
 					desc = (RTMPVideoFrame*)video->Clone();
 					//Set 0 timestamp
@@ -373,10 +365,8 @@ void RTMPPipedMediaStream:: onMetaData(DWORD id,RTMPMetaData *publishedMetaData)
 	//Check it
 	if (name->GetWString().compare(L"@setDataFrame")==0)
 	{
-		//If we already had one
-		if (meta)
-			//Delete if already have one
-			delete(meta);
+		//Delete if already have one
+		delete(meta);
 
 		//Create new msg
 		meta = new RTMPMetaData(0);

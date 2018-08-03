@@ -386,10 +386,8 @@ int RTMPFLVStream::PlayFLV()
 
 	Log("<PlayFLV\n");
 
-	//If we have a message yet
-	if(msg)
-		//Delete it
-		delete(msg);
+	//Delete it if we have a message yet
+	delete(msg);
 
 	return 0;
 }
