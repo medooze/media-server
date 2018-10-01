@@ -376,7 +376,7 @@ void  RTPStreamTransponder::Reset()
 void RTPStreamTransponder::Mute(bool muting)
 {
 	//Check if we are changing state
-	if (muting!=muted)
+	if (muting==muted)
 		//Do nothing
 		return;
 	//If unmutting
