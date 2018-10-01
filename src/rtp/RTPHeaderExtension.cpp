@@ -280,7 +280,7 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 			//Inc header len
 			len += n;
 			//Set vad
-			data[len] = (vad ? 0x80 : 0x00) | (level & 0x07);
+			data[len++] = (vad ? 0x80 : 0x00) | (level & 0x07);
 		}
 	}
 	
@@ -332,9 +332,6 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 		{
 			//Inc header len
 			len += n;
-
-			//Set id && length
-			data[len] = id << 4 | 0x02;
 			//Calculate absolute send time field (convert ms to 24-bit unsigned with 18 bit fractional part.
 			// Encoding: Timestamp is in seconds, 24 bit 6.18 fixed point, yielding 64s wraparound and 3.8us resolution (one increment for each 477 bytes going out on a 1Gbps interface).
 			//Set it
@@ -366,7 +363,7 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 			//Inc header len
 			len += n;
 			//Get all cvo data
-			data[len] = (cvo.facing ? 0x08 : 0x00) | (cvo.flip ? 0x04 : 0x00) | (cvo.rotation & 0x03);
+			data[len++] = (cvo.facing ? 0x08 : 0x00) | (cvo.flip ? 0x04 : 0x00) | (cvo.rotation & 0x03);
 		}
 	}
 	
