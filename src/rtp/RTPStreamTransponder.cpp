@@ -164,8 +164,11 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,const RTPPacket::
 			QWORD offset = getTimeDiff(lastTime)/1000;
 			//Get timestamp diff on correct clock rate
 			QWORD diff = offset*packet->GetClockRate()/1000;
+			
+			//UltraDebug("-ts offset:%llu diff:%llu baseTimestap:%lu firstTimestamp:%lu lastTimestamp:%llu rate:%llu\n",offset,diff,baseTimestamp,firstTimestamp,lastTimestamp,packet->GetClockRate());
+			
 			//convert it to rtp time and add to the last sent timestamp
-			baseTimestamp += (lastTimestamp - firstTimestamp) + diff + 1;
+			baseTimestamp = lastTimestamp + diff + 1;
 		} else {
 			//Ini from 0 (We could random, but who cares, this way it is easier to debug)
 			baseTimestamp = 0;
@@ -179,7 +182,7 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,const RTPPacket::
 		//Get first timestamp
 		firstTimestamp = packet->GetTimestamp();
 		
-		//UltraDebug("-first seq:%lu base:%lu last:%lu ts:%llu baseSeq:%lu baseTimestamp:%llu lastTimestamp:%llu\n",firstExtSeqNum,baseExtSeqNum,lastExtSeqNum,firstTimestamp,baseExtSeqNum,baseTimestamp,lastTimestamp);
+		//UltraDebug("-first seq:%lu base:%lu last:%lu ts:%lu baseSeq:%lu baseTimestamp:%llu lastTimestamp:%llu\n",firstExtSeqNum,baseExtSeqNum,lastExtSeqNum,firstTimestamp,baseExtSeqNum,baseTimestamp,lastTimestamp);
 	}
 	
 	//Ensure it is not before first one
