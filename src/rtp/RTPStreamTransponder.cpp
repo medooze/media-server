@@ -179,7 +179,7 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,const RTPPacket::
 		//Get first timestamp
 		firstTimestamp = packet->GetTimestamp();
 		
-		//UltraDebug("-first seq:%lu ts:%llu baseSeq:%lu baseTimestamp:%llu lastTimestamp:%llu\n",firstExtSeqNum,firstTimestamp,baseExtSeqNum,baseTimestamp,lastTimestamp);
+		//UltraDebug("-first seq:%lu base:%lu last:%lu ts:%llu baseSeq:%lu baseTimestamp:%llu lastTimestamp:%llu\n",firstExtSeqNum,baseExtSeqNum,lastExtSeqNum,firstTimestamp,baseExtSeqNum,baseTimestamp,lastTimestamp);
 	}
 	
 	//Ensure it is not before first one
@@ -222,6 +222,8 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,const RTPPacket::
 	
 	//Set normalized seq num
 	extSeqNum = baseExtSeqNum + (extSeqNum - firstExtSeqNum) - dropped;
+	
+	//UltraDebug("-ext seq:%lu base:%lu first:%lu current:%lu dropped:%lu\n",extSeqNum,baseExtSeqNum,firstExtSeqNum,packet->GetExtSeqNum(),dropped);
 	
 	//Set new seq numbers
 	cloned->SetExtSeqNum(extSeqNum);
@@ -275,15 +277,15 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,const RTPPacket::
 		desc.Serialize(cloned->GetMediaData(),cloned->GetMediaLength());
 	}
 	//UPdate media codec and type
-	media = packet->GetMedia();
-	codec = packet->GetCodec();
-	type  = packet->GetPayloadType();
+	media = cloned->GetMedia();
+	codec = cloned->GetCodec();
+	type  = cloned->GetPayloadType();
 	//Get last send seq num and timestamp
-	lastExtSeqNum = packet->GetExtSeqNum();
-	lastTimestamp = packet->GetTimestamp();
+	lastExtSeqNum = cloned->GetExtSeqNum();
+	lastTimestamp = cloned->GetTimestamp();
 	//Update last sent time
 	lastTime = getTime();
-
+	
 	//Send packet
 	sender->Enqueue(cloned);
 }
