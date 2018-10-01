@@ -38,6 +38,8 @@ public:
 		testTransportField();
 		Log("Transport Wide Message Feedback (2)\n");
 		testTransportWideFeedbackMessage();
+		Log("testBye\n");
+		testBye();
 		end();
 	}
 	
@@ -95,6 +97,34 @@ public:
 		clone.Dump();
 	}
 	
+	void testBye()
+	{
+		BYTE aux[1024];
+		BYTE data[] = { 
+		0x83,0xcb,0x00,0x06,
+		0x01,0x63,0xd0,0xfe,
+		0x59,0x97,0xef,0x7b,
+		0x0a,0x7d,0x57,0x0e,
+		0x0a,0x74,0x65,0x72,
+		0x6d,0x69,0x6e,0x61,
+		0x74,0x65,0x64,0x00 };
+
+		DWORD size = sizeof(data);
+		
+		//Parse it
+		auto rtcp = RTCPCompoundPacket::Parse(data,size);
+		rtcp->Dump();
+		
+		//Serialize
+		DWORD len = rtcp->Serialize(aux,1024);
+		Dump(data,size);
+		Dump(aux,len);
+		
+		auto cloned = RTCPCompoundPacket::Parse(aux,len);
+		cloned->Dump();
+	}
+	
+     
 
 	void testSenderReport()
 	{

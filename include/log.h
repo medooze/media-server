@@ -199,7 +199,10 @@ inline void BitDump(QWORD val)
 inline void Dump(const BYTE *data,DWORD size)
 {
 	for(DWORD i=0;i<(size/8);i++)
-		Debug("[%.4x] [0x%.2x   0x%.2x   0x%.2x   0x%.2x   0x%.2x   0x%.2x   0x%.2x   0x%.2x   %c%c%c%c%c%c%c%c]\n",4*i,data[4*i],data[4*i+1],data[4*i+2],data[4*i+3],data[4*i+4],data[4*i+5],data[4*i+6],data[4*i+7],PC(data[4*i]),PC(data[4*i+1]),PC(data[4*i+2]),PC(data[4*i+3]),PC(data[4*i+4]),PC(data[4*i+5]),PC(data[4*i+6]),PC(data[4*i+7]));
+	{
+		DWORD n = 8*i;
+		Debug("[%.4x] [0x%.2x   0x%.2x   0x%.2x   0x%.2x   0x%.2x   0x%.2x   0x%.2x   0x%.2x   %c%c%c%c%c%c%c%c]\n",n,data[n],data[n+1],data[n+2],data[n+3],data[n+4],data[n+5],data[n+6],data[n+7],PC(data[n]),PC(data[n+1]),PC(data[n+2]),PC(data[n+3]),PC(data[n+4]),PC(data[n+5]),PC(data[n+6]),PC(data[n+7]));
+	}
 	switch(size%8)
 	{
 		case 1:
@@ -230,7 +233,10 @@ inline void Dump(const BYTE *data,DWORD size)
 inline void Dump4(const BYTE *data,DWORD size)
 {
 	for(DWORD i=0;i<(size/4);i++)
-		Debug("[%.4x] [0x%.2x   0x%.2x   0x%.2x   0x%.2x   %c%c%c%c]\n",4*i,data[4*i],data[4*i+1],data[4*i+2],data[4*i+3],PC(data[4*i]),PC(data[4*i+1]),PC(data[4*i+2]),PC(data[4*i+3]));
+	{
+		DWORD n = 4*i;
+		Debug("[%.4x] [0x%.2x   0x%.2x   0x%.2x   0x%.2x   %c%c%c%c]\n",n,data[n],data[n+1],data[n+2],data[n+3],PC(data[n]),PC(data[n+1]),PC(data[n+2]),PC(data[n+3]));
+	}
 	switch(size%4)
 	{
 		case 1:

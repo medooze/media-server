@@ -39,7 +39,7 @@ RTCPBye::~RTCPBye()
 }
 DWORD RTCPBye::GetSize()
 {
-	DWORD len =RTCPCommonHeader::GetSize()+4*ssrcs.size();
+	DWORD len = RTCPCommonHeader::GetSize()+4*ssrcs.size();
 	if (reason)
 		len += strlen(reason)+1;
 	//Return
@@ -125,20 +125,26 @@ DWORD RTCPBye::Serialize(BYTE* data,DWORD size)
 	if (reason)
 	{
 		//Set reason length
-		data[len] = strlen(reason);
-
+		data[len++] = strlen(reason);
 		//Copy reason
-		memcpy(data+len+1,reason,strlen(reason));
-
+		memcpy(data+len,reason,strlen(reason));
 		//Add len
-		len +=strlen(reason)+1;
+		len += strlen(reason);
 	}
 
-	//Add null item
-	data[len++] = 0;
 	//Append nulls till pading
 	memset(data+len,0,pad32(len)-len);
 	
 	//return
-	return len;
+	return pad32(len);
+}
+
+
+void RTCPBye::Dump()
+{
+	Debug("\t[RTCPBye size=%d reason=%s]\n", GetSize(), reason ? reason : "(null)");
+	for(DWORD i=0;i<ssrcs.size();i++)
+		Debug("\t\t[ssrc=%u/]\n",ssrcs[i]);
+	Debug("\t[RTCPBye/]\n");
+		
 }
