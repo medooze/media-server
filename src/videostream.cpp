@@ -674,7 +674,7 @@ int VideoStream::RecVideo()
 		if(lostCount || waitIntra)
 		{
 			//Check if we got listener and more than 1/2 second have elapsed from last request
-			if (listener && getDifTime(&lastFPURequest)>minFPUPeriod)
+			if (listener && getDifTime(&lastFPURequest)/1000>minFPUPeriod)
 			{
 				//Debug
 				Debug("-Requesting FPU lost %d\n",lostCount);
@@ -757,7 +757,7 @@ int VideoStream::RecVideo()
 		if(!videoDecoder->DecodePacket(buffer,size,lost,packet->GetMark()))
 		{
 			//Check if we got listener and more than 1/2 seconds have elapsed from last request
-			if (listener && getDifTime(&lastFPURequest)>minFPUPeriod)
+			if (listener && getDifTime(&lastFPURequest)/1000>minFPUPeriod)
 			{
 				//Debug
 				Log("-Requesting FPU decoder error\n");
