@@ -494,7 +494,7 @@ void RemoteRateEstimator::UpdateLost(DWORD ssrc, DWORD lost, QWORD now)
 
 void RemoteRateEstimator::SetTemporalMaxLimit(DWORD limit)
 {
-	Log("-SetTemporalMaxLimit %d\n",limit);
+	Log("-RemoteRateEstimator::SetTemporalMaxLimit() %d\n",limit);
 	//Check if reseting
 	if (limit)
 		//Set maximun bitrate
@@ -506,7 +506,7 @@ void RemoteRateEstimator::SetTemporalMaxLimit(DWORD limit)
 
 void RemoteRateEstimator::SetTemporalMinLimit(DWORD limit)
 {
-	Log("-SetTemporalMinLimit %d\n",limit);
+	Log("-RemoteRateEstimator::SetTemporalMinLimit %d\n",limit);
 	//Check if reseting
 	if (limit)
 		//Set maximun bitrate

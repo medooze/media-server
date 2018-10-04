@@ -1373,6 +1373,9 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 	if (group->type == MediaFrame::Video && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC))
 		//Set transport wide seq num
 		cloned->SetTransportSeqNum(++transportSeqNum);
+	else
+		//Disable transport wide cc
+		cloned->DisableTransportSeqNum();
 
 	//If we are using abs send time for sending
 	if (sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::AbsoluteSendTime))
@@ -1428,18 +1431,18 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 	if (len>0)
 	{
 		//Calculate last timestamp
-		source.lastTime	= packet->GetTimestamp();
+		source.lastTime	= cloned->GetTimestamp();
 
 		//Update source
-		source.Update(getTimeMS(),packet->GetSeqNum(),len);
+		source.Update(getTimeMS(),cloned->GetSeqNum(),len);
 
 		//Check if we are using transport wide for this packet
-		if (packet->HasTransportWideCC())
+		if (cloned->HasTransportWideCC())
 		{
 			//Block method
 			ScopedLock method(mutex);
 			//Add new stat
-			transportWideSentPacketsStats[packet->GetTransportSeqNum()] = PacketStats::Create(packet,len,getTime());
+			transportWideSentPacketsStats[cloned->GetTransportSeqNum()] = PacketStats::Create(cloned,len,getTime());
 			//Protect against missing feedbacks, remove too old lost packets
 			auto it = transportWideSentPacketsStats.begin();
 			//If we have more than 1s diff
@@ -1752,7 +1755,6 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 									DWORD target = get4(payload,8+4*i);
 									//Get media
 									RTPOutgoingSourceGroup* group = GetOutgoingSourceGroup(target);
-									UltraDebug("-DTLSICETransport::onRTCP() | ApplicationLayerFeeedbackMessage | REMB  [ssrc:%u,target:%u,group:%p]\n",ssrc,target,group);
 									//If found
 									if (group)
 										//Call listener
