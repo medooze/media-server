@@ -231,9 +231,6 @@ int AudioMixer::Init(const Properties &properties)
 		createPriorityThread(&mixAudioThread,startMixingAudio,this,0);
 	}
 	
-	//Check if we are calculating vad
-	vad = properties.GetProperty("vad",false);
-
 	return 1;
 }
 
@@ -304,7 +301,7 @@ int AudioMixer::End()
 ************************/
 int AudioMixer::CreateMixer(int id)
 {
-	Log(">CreateMixer audio [%d]\n",id);
+	Log(">CreateMixer audio [id:%d,vad:%d]\n",id,vad);
 
 	//Protegemos la lista
 	lstAudiosUse.WaitUnusedAndLock();
