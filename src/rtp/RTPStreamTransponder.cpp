@@ -79,19 +79,20 @@ RTPStreamTransponder::~RTPStreamTransponder()
 
 void RTPStreamTransponder::Close()
 {
-	ScopedLock lock(mutex);
-	
 	Debug(">RTPStreamTransponder::Close()\n");
 	
 	//Stop listeneing
 	if (outgoing) outgoing->RemoveListener(this);
 	if (incoming) incoming->RemoveListener(this);
 
+	//Lock
+	ScopedLock lock(mutex);
+
 	//Remove sources
-	outgoing = NULL;
-	incoming = NULL;
-	receiver = NULL;
-	sender = NULL;
+	outgoing = nullptr;
+	incoming = nullptr;
+	receiver = nullptr;
+	sender   = nullptr;
 	
 	Debug("<RTPStreamTransponder::Close()\n");
 }
@@ -121,6 +122,11 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,const RTPPacket::
 	
 	ScopedLock lock(mutex);
 	
+	//Check sender
+	if (!sender)
+		//Nothing
+		return;
+	
 	//Check if the source has changed
 	if (source && packet->GetSSRC()!=source)
 	{
@@ -145,7 +151,7 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,const RTPPacket::
 		{
 			//Delete and reset
 			delete(selector);
-			selector = NULL;
+			selector = nullptr;
 		}
 	}
 	
@@ -367,7 +373,7 @@ void  RTPStreamTransponder::Reset()
 	{
 		//Delete and reset
 		delete(selector);
-		selector = NULL;
+		selector = nullptr;
 	}
 	//No layer
 	spatialLayerId = LayerInfo::MaxLayerId;
