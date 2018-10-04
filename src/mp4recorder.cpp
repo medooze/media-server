@@ -275,8 +275,8 @@ int mp4track::FlushVideoFrame(VideoFrame* frame,DWORD duration)
 			//Create rtp packet
 			MP4AddRtpPacket(mp4, hint, last, 0);
 
-			//Check rtp payload header len
-			if (rtp->GetPrefixLen())
+			//Prefix data can't be longer than 14bytes per mp4 spec
+			if (rtp->GetPrefixLen() && rtp->GetPrefixLen()<14)
 				//Add rtp data
 				MP4AddRtpImmediateData(mp4, hint, rtp->GetPrefixData(), rtp->GetPrefixLen());
 
