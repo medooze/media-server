@@ -231,6 +231,9 @@ int AudioMixer::Init(const Properties &properties)
 		createPriorityThread(&mixAudioThread,startMixingAudio,this,0);
 	}
 	
+	//Check if we are calculating vad
+	vad = properties.GetProperty("vad",vad);
+
 	return 1;
 }
 
