@@ -8,7 +8,7 @@ public:
 	class Listener
 	{
 	public:
-		virtual void onActiveSpeakerChanded(uint32_t id);
+		virtual void onActiveSpeakerChanded(uint32_t id) = 0;
 	};
 public:
 	ActiveSpeakerDetector(Listener *listener) : listener(listener) {}
