@@ -88,6 +88,9 @@ void RTPIncomingSourceGroup::Update()
 
 void RTPIncomingSourceGroup::Update(QWORD now)
 {
+	//Lock sources accumulators
+	ScopedLock scoped(mutex);
+	
 	//Refresh instant bitrates
 	media.bitrate.Update(now);
 	rtx.bitrate.Update(now);
@@ -182,9 +185,13 @@ RTPIncomingSource* RTPIncomingSourceGroup::Process(RTPPacket::shared &packet)
 		//Check if we can ge the layer info
 		auto info = VideoLayerSelector::GetLayerIds(packet);
 		//UltraDebug("-VideoLayerSelector::GetLayerIds() | [id:%x,tid:%u,sid:%u]\n",info.GetId(),info.temporalLayerId,info.spatialLayerId);
+		//Lock sources accumulators
+		ScopedLock scoped(mutex);
 		//Update source and layer info
 		source->Update(time, packet->GetSeqNum(), packet->GetRTPHeader().GetSize() + packet->GetMediaLength(), info);
 	} else {
+		//Lock sources accumulators
+		ScopedLock scoped(mutex);
 		//Update source and layer info
 		source->Update(time, packet->GetSeqNum(), packet->GetRTPHeader().GetSize() + packet->GetMediaLength());
 	}
