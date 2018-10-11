@@ -173,6 +173,7 @@ private:
 	Acumulator incomingBitrate;
 	Acumulator outgoingBitrate;
 	
+	Mutex transportWideMutex;
 	std::map<DWORD,PacketStats::shared> transportWideSentPacketsStats;
 	std::map<DWORD,PacketStats::shared> transportWideReceivedPacketsStats;
 	

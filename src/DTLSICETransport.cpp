@@ -1610,7 +1610,7 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 		if (cloned->HasTransportWideCC())
 		{
 			//Block method
-			ScopedLock method(mutex);
+			ScopedLock method(transportWideMutex);
 			//Add new stat
 			transportWideSentPacketsStats[cloned->GetTransportSeqNum()] = PacketStats::Create(cloned,len,getTime());
 			//Protect against missing feedbacks, remove too old lost packets
@@ -1811,7 +1811,7 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 							DWORD lost = 0;
 							QWORD last = field->referenceTime;
 							//Block method
-							mutex.Lock();
+							ScopedLock lock(transportWideMutex);
 							//For each packet
 							for (auto& remote : field->packets)
 							{
@@ -1830,19 +1830,13 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 										//Update last
 										last = remote.second;
 									} else {
-										//Update lost
-										lost++;
+										//Update
+										senderSideEstimator.UpdateLost(0,1,last/1000);
 									}
 									//Erase it
 									transportWideSentPacketsStats.erase(it);
 								}
 							}
-							//UnBlock method
-							mutex.Unlock();
-							//If any lost
-							if (lost)
-								//Update
-								senderSideEstimator.UpdateLost(0,lost,last/1000);
 						}
 						break;
 				}
