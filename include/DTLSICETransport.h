@@ -70,6 +70,8 @@ public:
 	bool AddIncomingSourceGroup(RTPIncomingSourceGroup *group);
 	bool RemoveIncomingSourceGroup(RTPIncomingSourceGroup *group);
 	
+	void SetBandwidthProbing(bool probe)		{ this->probe = probe;			}
+	void SetMaxProbingBitrate(DWORD bitrate)	{ this->maxProbingBitrate = bitrate;	}
 	void SetSenderSideEstimatorListener(RemoteRateEstimator::Listener* listener) { senderSideEstimator.SetListener(listener); }
 	
 	const char* GetRemoteUsername() const { return iceRemoteUsername;	};
@@ -88,6 +90,7 @@ private:
 	void SetRTT(DWORD rtt);
 	void onRTCP(const RTCPCompoundPacket::shared &rtcp);
 	void ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq);
+	void SendProbe(RTPOutgoingSourceGroup *group,BYTE padding);
 	void SendTransportWideFeedbackMessage(DWORD ssrc);
 	void Send(const RTCPCompoundPacket::shared& rtcp);
 	int SetLocalCryptoSDES(const char* suite, const BYTE* key, const DWORD len);
@@ -167,6 +170,8 @@ private:
 	Mutex	mutex;
 	Use	incomingUse;
 	Use	outgoingUse;
+	Acumulator incomingBitrate;
+	Acumulator outgoingBitrate;
 	
 	std::map<DWORD,PacketStats::shared> transportWideSentPacketsStats;
 	std::map<DWORD,PacketStats::shared> transportWideReceivedPacketsStats;
@@ -175,6 +180,8 @@ private:
 	bool dumpInRTP	= false;
 	bool dumpOutRTP = false;
 	bool dumpRTCP	= false;
+	bool probe	= false;
+	DWORD maxProbingBitrate = 1024*1000;
 	
 	RemoteRateEstimator senderSideEstimator;
 };

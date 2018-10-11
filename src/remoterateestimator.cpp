@@ -9,10 +9,10 @@
 
 #include "remoterateestimator.h"
 
-RemoteRateEstimator::RemoteRateEstimator() : bitrateAcu(400)
+RemoteRateEstimator::RemoteRateEstimator() : bitrateAcu(200)
 {
 	//Not last estimate
-	minConfiguredBitRate	= 32000;
+	minConfiguredBitRate	= 128000;
 	maxConfiguredBitRate	= 30000000;
 	currentBitRate		= 0;
 	maxHoldRate		= 0;
@@ -157,13 +157,17 @@ void RemoteRateEstimator::Update(DWORD ssrc,QWORD now,QWORD ts,DWORD size)
 		lastChange = now+500;
 	
 	//Only update once per second or when the stream starts to overuse
-	if (lastChange+1000<now || streamOverusing)
+	if (lastChange+1000<now)
 	{
 		//Update
 		Update(usage,streamOverusing,now);
 		//Reset min max
 		bitrateAcu.ResetMinMax();
+	} else if ( streamOverusing) {
+		//Update but not reset
+		Update(usage,streamOverusing,now);
 	}
+		
 	//Unloc
 	lock.Unlock();
 	//Exit

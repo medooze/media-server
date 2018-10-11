@@ -83,7 +83,7 @@ MediaFrame* VP9Depacketizer::AddPayload(BYTE* payload, DWORD len)
 	if (!descLen || len<descLen)
 	{
 		//Error
-		UltraDebug("-VP9Depacketizer::AddPayload() | Error decoding VP9 payload header\n");
+		UltraDebug("-VP9Depacketizer::AddPayload() | Error decoding VP9 payload header [desc:%d,len:%d]\n",descLen,len);
 		return NULL;
 	}
 	

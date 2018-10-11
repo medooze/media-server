@@ -31,12 +31,17 @@
 #include <openssl/opensslconf.h>
 #include <openssl/ossl_typ.h>
 #include <queue>
+#include <algorithm>
 #include "DTLSICETransport.h"
 #include "rtp/RTPMap.h"
 #include "rtp/RTPHeader.h"
 #include "rtp/RTPHeaderExtension.h"
 
-DTLSICETransport::DTLSICETransport(Sender *sender) : dtls(*this), mutex(true)
+DTLSICETransport::DTLSICETransport(Sender *sender) :
+	dtls(*this),
+	mutex(true),
+	incomingBitrate(1000),
+	outgoingBitrate(1000)
 {
 	//Store sender
 	this->sender = sender;
@@ -57,6 +62,15 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	RTPHeaderExtension extension;
 	DWORD len = size;
 	
+	
+	//Synchronized
+	{
+		//Lock
+		ScopedLock lock(mutex);
+		//Acumulate bitrate
+		incomingBitrate.Update(getTimeMS(),size);
+	}
+	
 	//Check if it a DTLS packet
 	if (DTLSConnection::IsDTLS(data,size))
 	{
@@ -65,6 +79,14 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 
 		//Read buffers are always MTU size
 		DWORD len = dtls.Read(data,MTU);
+		
+		//Synchronized
+		{
+			//Lock
+			ScopedLock lock(mutex);
+			//Acumulate bitrate
+			outgoingBitrate.Update(getTimeMS(),len);
+		}
 
 		//Check it
 		if (len>0)
@@ -399,8 +421,143 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	return 1;
 }
 
+void DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
+{
+	//Check if we have an active DTLS connection yet
+	if (!send)
+		//Error
+		return (void) Debug("-DTLSICETransport::SendProbe() | We don't have an DTLS setup yet\n");
+	
+	//Get outgoing rtx source
+	RTPOutgoingSource& source = group->rtx;
+
+	//Data
+	BYTE data[MTU+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
+	DWORD size = MTU;
+	int len = 0;
+
+	//Overrride headers
+	RTPHeader		header;
+	RTPHeaderExtension	extension;
+
+	//If it is using rtx (i.e. not firefox)
+	if (source.ssrc)
+	{
+		//Update RTX headers
+		header.ssrc		= source.ssrc;
+		header.payloadType	= sendMaps.apt.begin()->first;
+		header.sequenceNumber	= source.NextSeqNum();
+		header.timestamp	= source.lastTime++;
+		//Padding
+		header.padding		= 1;
+	}
+
+	//Add transport wide cc on video
+	if (group->type == MediaFrame::Video && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC))
+	{
+		//Add extension
+		header.extension = true;
+		//Add transport
+		extension.hasTransportWideCC = true;
+		extension.transportSeqNum = ++transportSeqNum;
+	}
+	
+	//If we are using abs send time for sending
+	if (sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::AbsoluteSendTime))
+	{
+		//Use extension
+		header.extension = true;
+		//Set abs send time
+		extension.hasAbsSentTime = true;
+		extension.absSentTime = getTimeMS();
+	}
+
+	//Serialize header
+	int n = header.Serialize(data,size);
+
+	//Comprobamos que quepan
+	if (!n)
+		//Error
+		return (void)Error("-DTLSICETransport::ReSendPacket() | Error serializing rtp headers\n");
+
+	//Inc len
+	len += n;
+
+	//If we have extension
+	if (header.extension)
+	{
+		//Serialize
+		n = extension.Serialize(sendMaps.ext,data+len,size-len);
+		//Comprobamos que quepan
+		if (!n)
+			//Error
+			return (void)Error("-DTLSICETransport::ReSendPacket() | Error serializing rtp extension headers\n");
+		//Inc len
+		len += n;
+	}
+
+	//Set 0 padding
+	memset(data+len,0,padding);
+	
+	//Set pateckt length
+	len += padding;
+	
+	//Set padding size
+	data[len++] = padding;
+
+	ICERemoteCandidate* candidate;
+	//Synchronized
+	{
+		//Block scope
+		ScopedLock method(mutex);
+
+		//If we don't have an active candidate yet
+		if (!active)
+			//Error
+			return (void)Debug("-DTLSICETransport::SendProbe() | We don't have an active candidate yet\n");
+		
+		//If dumping
+		if (pcap && dumpOutRTP)
+			//Write udp packet
+			pcap->WriteUDP(getTimeMS(),0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len);
+
+		
+		//Encript
+		srtp_err_status_t err = srtp_protect(send,data,(int*)&len);
+		//Check error
+		if (err!=srtp_err_status_ok)
+			//Error
+			return (void)Error("-RTPTransport::SendProbe() | Error protecting RTP packet [%d]\n",err);
+
+		//Store candidate before unlocking
+		candidate = active;
+		
+		//Update bitrate
+		outgoingBitrate.Update(getTimeMS(),len);
+	}
+
+	//No error yet, send packet
+	if (sender->Send(candidate,data,len)<=0)
+		//Error
+		Error("-RTPTransport::SendPacket() | Error sending RTP packet [%d]\n",errno);
+	
+	//Update rtx
+	if (source.ssrc)
+		//Update stats
+		source.Update(getTimeMS(),header.sequenceNumber,len);
+}
+
 void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 {
+	
+	//Check if we have an active DTLS connection yet
+	if (!send)
+	{
+		//Error
+		Debug("-DTLSICETransport::ReSendPacket() | We don't have an DTLS setup yet\n");
+		return;
+	}
+	
 	UltraDebug("-DTLSICETransport::ReSendPacket() | resending [seq:%d,ssrc:%u]\n",seq,group->rtx.ssrc);
 	
 	//Find packet to retransmit
@@ -411,7 +568,6 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	{
 		//Debug
 		Debug("-DTLSICETransport::ReSendPacket() | packet not found, requesting PLI instead [seq:%d,ssrc:%u]\n",seq,group->rtx.ssrc);
-		//Simulate PLI
 		return;
 	}
 
@@ -529,6 +685,9 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 
 		//Store candidate before unlocking
 		candidate = active;
+		
+		//Update bitrate
+		outgoingBitrate.Update(getTimeMS(),len);
 	}
 
 	//No error yet, send packet
@@ -572,6 +731,11 @@ void  DTLSICETransport::ActivateRemoteCandidate(ICERemoteCandidate* candidate,bo
 		if (len>0)
 			//Send to bundle transport
 			sender->Send(active,data,len);
+		
+		//Lock
+		ScopedLock lock(mutex);
+		//Update bitrate
+		outgoingBitrate.Update(getTimeMS(),len);
 	}
 }
 
@@ -1275,6 +1439,9 @@ void DTLSICETransport::Send(const RTCPCompoundPacket::shared &rtcp)
 		
 		//Store active candidate
 		candidate = active;
+		
+		//Update bitrate
+		outgoingBitrate.Update(getTimeMS(),len);
 	}
 		
 	//No error yet, send packet
@@ -1422,6 +1589,9 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 	
 		//Store candidate
 		candidate = active;
+				
+		//Update bitrate
+		outgoingBitrate.Update(getTimeMS(),len);
 	}
 	
 	//No error yet, send packet
@@ -1959,14 +2129,64 @@ int DTLSICETransport::Run()
 	//Lock for waiting for packets
 	wait.Lock();
 
+	timeval time;
+	
+	//Start probing timer
+	getUpdDifTime(&time);
+	
 	//Run until canceled
 	while(running)
 	{
+		//Get sleeping time
+		QWORD sleep = probe ? 10 : 1000;
+		//Get time since last probe
+		QWORD diff = probe ? getDifTime(&time)/1000 : 0;
+		
+		//If we are probing
+		if (probe && diff>=sleep)
+		{
+			ScopedUse use(outgoingUse);
+			//Probe size
+			BYTE size = 255;
+			//Get bitrates
+			DWORD bitrate   = static_cast<DWORD>(outgoingBitrate.GetInstantAvg());
+			DWORD estimated = senderSideEstimator.GetEstimatedBitrate();
+			
+			//If we can still send more
+			if (estimated>bitrate)
+			{
+				//Get probe padding needed
+				DWORD probingBitrate = std::min(estimated-bitrate,maxProbingBitrate);
+				
+				//Get number of probes
+				WORD num = (probingBitrate*sleep)/(8000*size);
+
+				//Check if we have an outgpoing group
+				for (auto &group : outgoing)
+				{
+					//We can only probe on rtx with video
+					if (group.second->type == MediaFrame::Video)
+					{
+						UltraDebug("-DTLSICETransport::Run() | Sending probing packets [estimated:%u,bitrate:%u,probing:%u,num:%d,sleep:%d]\n", estimated, bitrate,probingBitrate, num, sleep);
+						//Set all the probes
+						for (BYTE i=0;i<num;++i)
+							//Send probe packet
+							SendProbe(group.second,size);
+						break;
+					}
+				}
+			}
+			
+			//Reset timer
+			getUpdDifTime(&time);
+			diff = 0;
+		}
+		
 		//Check if we have packets
 		if (packets.empty())
 		{
 			//Wait for more
-			wait.Wait(0);
+			wait.Wait(sleep-diff);
 			//Try again
 			continue;
 		}
