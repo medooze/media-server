@@ -167,10 +167,6 @@ int RTPBundleTransport::RemoveICETransport(const std::string &username)
 	return 1;
 }
 
-/********************************
-* Init
-*	Inicia el control rtcp
-********************************/
 int RTPBundleTransport::Init()
 {
 	int retries = 0;
@@ -234,6 +230,62 @@ int RTPBundleTransport::Init()
 
 	//Failed
 	return 0;
+}
+
+int RTPBundleTransport::Init(int port)
+{
+	if (!port)
+		return Init();
+	
+	Log(">RTPBundleTransport::Init(%d)\n",port);
+
+	sockaddr_in recAddr;
+
+	//Clear addr
+	memset(&recAddr,0,sizeof(struct sockaddr_in));
+	//Init ramdon
+	srand (time(NULL));
+
+	//Set family
+	recAddr.sin_family     	= AF_INET;
+
+	//If we have a rtp socket
+	if (socket!=FD_INVALID)
+	{
+		// Close first socket
+		MCU_CLOSE(socket);
+		//No socket
+		socket = FD_INVALID;
+	}
+
+	//Create new sockets
+	socket = ::socket(PF_INET,SOCK_DGRAM,0);
+	//Get random
+	//Try to bind to port
+	recAddr.sin_port = htons(port);
+	//Bind the rtp socket
+	if(bind(socket,(struct sockaddr *)&recAddr,sizeof(struct sockaddr_in))!=0)
+		//Error
+		return Error("-RTPBundleTransport::Init() | could not open port\n");
+	
+#ifdef SO_PRIORITY
+	//Set COS
+	int cos = 5;
+	setsockopt(socket, SOL_SOCKET, SO_PRIORITY, &cos, sizeof(cos));
+#endif
+	//Set TOS
+	int tos = 0x2E;
+	setsockopt(socket, IPPROTO_IP, IP_TOS, &tos, sizeof(tos));
+	//Everything ok
+	Log("-RTPBundleTransport::Init() | Got port [%d]\n",port);
+	//Store local port
+	this->port = port;
+	//Start receiving
+	Start();
+	//Done
+	Log("<RTPBundleTransport::Init()\n");
+	//Opened
+	return port;
 }
 
 /*********************************

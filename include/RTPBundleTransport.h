@@ -32,6 +32,7 @@ public:
 	RTPBundleTransport();
 	virtual ~RTPBundleTransport();
 	int Init();
+	int Init(int port);
 	DTLSICETransport* AddICETransport(const std::string &username,const Properties& properties);
 	int RemoveICETransport(const std::string &username);
 	
