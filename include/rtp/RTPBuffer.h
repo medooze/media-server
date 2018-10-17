@@ -276,17 +276,38 @@ public:
 	
 	DWORD GetMinWaitedime() const
 	{
-		return waited.GetMinValueInWindow();
+		//Lock
+		pthread_mutex_lock(&mutex);
+		//Get value
+		DWORD minValueInWindow =  waited.GetMinValueInWindow();
+		//Unlock
+		pthread_mutex_unlock(&mutex);
+		//return it
+		return minValueInWindow;
 	}
 	
 	DWORD GetMaxWaitedTime() const
 	{
-		return waited.GetMaxValueInWindow();
+		//Lock
+		pthread_mutex_lock(&mutex);
+		//Get value
+		DWORD maxValueInWindow =  waited.GetMaxValueInWindow();
+		//Unlock
+		pthread_mutex_unlock(&mutex);
+		//return it
+		return maxValueInWindow;
 	}
 	
 	long double GetAvgWaitedTime() const
 	{
-		return waited.GetInstantMedia();
+		//Lock
+		pthread_mutex_lock(&mutex);
+		//Get value
+		long double media =  waited.GetInstantMedia();
+		//Unlock
+		pthread_mutex_unlock(&mutex);
+		//return it
+		return media;
 	}
 	
 private:
@@ -301,7 +322,7 @@ private:
 	std::map<DWORD,RTPPacket::shared>	packets;
 	bool			cancel;
 	bool			hurryUp;
-	pthread_mutex_t		mutex;
+	mutable pthread_mutex_t	mutex;
 	pthread_cond_t		cond;
 	DWORD			next;
 	DWORD			maxWaitTime;

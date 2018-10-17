@@ -64,6 +64,12 @@ public:
 	RTPIncomingSource media;
 	RTPIncomingSource fec;
 	RTPIncomingSource rtx;
+
+	//Stats
+	DWORD lost = 0;
+	DWORD minWaitedTime = 0;
+	DWORD maxWaitedTime = 0;
+	long double avgWaitedTime = 0;
 private:
 	pthread_t dispatchThread = {0};
 	RTPLostPackets	losts;

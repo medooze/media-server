@@ -122,3 +122,19 @@ void RTPOutgoingSourceGroup::onREMB(DWORD ssrc, DWORD bitrate)
 	for (auto listener : listeners)
 		listener->onREMB(this,ssrc,bitrate);
 }
+
+void RTPOutgoingSourceGroup::Update()
+{
+	Update(getTimeMS());
+}
+
+void RTPOutgoingSourceGroup::Update(QWORD now)
+{
+	//Lock sources accumulators
+	ScopedLock scoped(mutex);
+	
+	//Refresh instant bitrates
+	media.acumulator.Update(now);
+	rtx.acumulator.Update(now);
+	fec.acumulator.Update(now);
+}

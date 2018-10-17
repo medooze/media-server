@@ -32,6 +32,8 @@ public:
 	
 	RTPOutgoingSource* GetSource(DWORD ssrc);
 	
+	void Update(QWORD now);
+	void Update();
 	//RTX packets
 	void AddPacket(const RTPPacket::shared& packet);
 	RTPPacket::shared GetPacket(WORD seq) const;

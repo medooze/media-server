@@ -76,9 +76,17 @@ int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet)
 
 void RTPIncomingSourceGroup::ResetPackets()
 {
+	//Lock sources accumulators
+	ScopedLock scoped(mutex);
+	
 	//Reset packet queue and lost count
 	packets.Reset();
 	losts.Reset();
+	//Reset stats
+	lost = 0;
+	minWaitedTime = 0;
+	maxWaitedTime = 0;
+	avgWaitedTime = 0;
 }
 
 void RTPIncomingSourceGroup::Update()
@@ -92,17 +100,24 @@ void RTPIncomingSourceGroup::Update(QWORD now)
 	ScopedLock scoped(mutex);
 	
 	//Refresh instant bitrates
-	media.bitrate.Update(now);
-	rtx.bitrate.Update(now);
-	fec.bitrate.Update(now);
+	media.acumulator.Update(now);
+	rtx.acumulator.Update(now);
+	fec.acumulator.Update(now);
 	//Update also all media layers
 	for (auto& entry : media.layers)
 		//Update bitrate also
-		entry.second.bitrate.Update(now);
+		entry.second.acumulator.Update(now);
+	//Update stats
+	lost = GetCurrentLost();
+	minWaitedTime = GetMinWaitedTime();
+	maxWaitedTime = GetMaxWaitedTime();
+	avgWaitedTime = GetAvgWaitedTime();
 }
 
 void RTPIncomingSourceGroup::SetRTT(DWORD rtt)
 {
+	//Lock sources accumulators
+	ScopedLock scoped(mutex);
 	//Store rtt
 	this->rtt = rtt;
 	//Set max packet wait time

@@ -33,14 +33,15 @@ struct LayerSource : LayerInfo
 {
 	DWORD		numPackets = 0;
 	DWORD		totalBytes = 0;
-	Acumulator	bitrate;
+	DWORD		bitrate;
+	Acumulator	acumulator;
 	
-	LayerSource() : bitrate(1000)
+	LayerSource() : acumulator(1000)
 	{
 		
 	}
 	
-	LayerSource(const LayerInfo& layerInfo) : bitrate(1000)
+	LayerSource(const LayerInfo& layerInfo) : acumulator(1000)
 	{
 		spatialLayerId  = layerInfo.spatialLayerId;
 		temporalLayerId = layerInfo.temporalLayerId; 
@@ -53,7 +54,10 @@ struct LayerSource : LayerInfo
 		totalBytes += size;
 		
 		//Update bitrate acumulator
-		bitrate.Update(now,size);
+		acumulator.Update(now,size);
+		
+		//Update bitrate in bps
+		bitrate = acumulator.GetInstant()*8;
 	}
 };
 
@@ -67,9 +71,10 @@ struct RTPSource
 	DWORD	numRTCPPackets;
 	DWORD	totalBytes;
 	DWORD	totalRTCPBytes;
-	Acumulator bitrate;
+	DWORD   bitrate;
+	Acumulator acumulator;
 	
-	RTPSource() : bitrate(1000)
+	RTPSource() : acumulator(1000)
 	{
 		ssrc		= 0;
 		extSeq		= 0;
@@ -79,6 +84,7 @@ struct RTPSource
 		totalBytes	= 0;
 		totalRTCPBytes	= 0;
 		jitter		= 0;
+		bitrate		= 0;
 	}
 	
 	virtual ~RTPSource()
@@ -127,7 +133,10 @@ struct RTPSource
 		totalBytes += size;
 		
 		//Update bitrate acumulator
-		bitrate.Update(now,size);
+		acumulator.Update(now,size);
+		
+		//Get bitrate in bps
+		bitrate = acumulator.GetInstant()*8;
 	}
 	
 	virtual void Reset()
@@ -140,6 +149,7 @@ struct RTPSource
 		totalBytes	= 0;
 		totalRTCPBytes	= 0;
 		jitter		= 0;
+		bitrate		= 0;
 	}
 };
 
