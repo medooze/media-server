@@ -35,7 +35,7 @@ void RTPIncomingSourceGroup::AddListener(Listener* listener)
 {
 	Debug("-RTPIncomingSourceGroup::AddListener() [listener:%p]\n",listener);
 		
-	ScopedLock scoped(mutex);
+	ScopedLock scoped(listenerMutex);
 	listeners.insert(listener);
 }
 
@@ -43,7 +43,7 @@ void RTPIncomingSourceGroup::RemoveListener(Listener* listener)
 {
 	Debug("-RTPIncomingSourceGroup::RemoveListener() [listener:%p]\n",listener);
 		
-	ScopedLock scoped(mutex);
+	ScopedLock scoped(listenerMutex);
 	listeners.erase(listener);
 }
 
@@ -116,8 +116,6 @@ void RTPIncomingSourceGroup::Update(QWORD now)
 
 void RTPIncomingSourceGroup::SetRTT(DWORD rtt)
 {
-	//Lock sources accumulators
-	ScopedLock scoped(mutex);
 	//Store rtt
 	this->rtt = rtt;
 	//Set max packet wait time
@@ -138,7 +136,7 @@ void RTPIncomingSourceGroup::Start()
 			RTPPacket::shared packet;
 			while ((packet=group->packets.Wait()))
 			{
-				ScopedLock scoped(group->mutex);
+				ScopedLock scoped(group->listenerMutex);
 				//Deliver to all listeners
 				for (auto listener : group->listeners)
 					//Dispatch rtp packet
@@ -165,7 +163,7 @@ void RTPIncomingSourceGroup::Stop()
 	//Clean it
 	setZeroThread(&dispatchThread);
 	
-	ScopedLock scoped(mutex);
+	ScopedLock scoped(listenerMutex);
 	
 	//Deliver to all listeners
 	for (auto listener : listeners)

@@ -74,6 +74,7 @@ private:
 	pthread_t dispatchThread = {0};
 	RTPLostPackets	losts;
 	RTPBuffer packets;
+	Mutex listenerMutex;
 	Mutex mutex;
 	std::set<Listener*>  listeners;
 	WORD  rttrtxSeq;
