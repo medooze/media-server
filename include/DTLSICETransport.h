@@ -70,7 +70,7 @@ public:
 	bool AddIncomingSourceGroup(RTPIncomingSourceGroup *group);
 	bool RemoveIncomingSourceGroup(RTPIncomingSourceGroup *group);
 	
-	void SetBandwidthProbing(bool probe)		{ this->probe = probe;			}
+	void SetBandwidthProbing(bool probe);
 	void SetMaxProbingBitrate(DWORD bitrate)	{ this->maxProbingBitrate = bitrate;	}
 	void SetSenderSideEstimatorListener(RemoteRateEstimator::Listener* listener) { senderSideEstimator.SetListener(listener); }
 	
@@ -128,9 +128,11 @@ private:
 			stats->payload			= packet->GetMediaLength();
 			stats->timestamp		= packet->GetTimestamp();
 			stats->time			= now;
+			stats->mark			= packet->GetMark();
 			
 			return stats;
 		}
+		
 		DWORD transportWideSeqNum;
 		DWORD ssrc;
 		DWORD extSeqNum;
@@ -138,6 +140,7 @@ private:
 		DWORD payload;
 		DWORD timestamp;
 		QWORD time;
+		bool  mark;
 	};
 private:
 	Sender*		sender;

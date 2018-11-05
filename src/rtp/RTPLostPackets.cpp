@@ -154,6 +154,6 @@ void  RTPLostPackets::Dump() const
 {
 	Debug("[RTPLostPackets size=%d first=%d len=%d]\n",size,first,len);
 	for(int i=0;i<len;i++)
-		Debug("[%.3d,%.8d]\n",i,packets[i]);
+		Debug("[%.3d,%.8u]\n",i,packets[i]);
 	Debug("[/RTPLostPackets]\n");
 }

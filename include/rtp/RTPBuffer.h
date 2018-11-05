@@ -52,7 +52,7 @@ public:
 		if (next!=(DWORD)-1 && seq<next)
 		{
 			//Error
-			Debug("-RTPBuffer::Add() | Out of order non recoverable packet [next:%u,seq:%u,maxWaitTime=%d,cycles:%d-%u,time:%lld,current:%lld,hurry:%d]\n",next,seq,maxWaitTime,rtp->GetSeqCycles(),rtp->GetSeqNum(),rtp->GetTime(),GetTime(),hurryUp);
+			//UltraDebug("-RTPBuffer::Add() | Out of order non recoverable packet [next:%u,seq:%u,maxWaitTime=%d,cycles:%d-%u,time:%lld,current:%lld,hurry:%d]\n",next,seq,maxWaitTime,rtp->GetSeqCycles(),rtp->GetSeqNum(),rtp->GetTime(),GetTime(),hurryUp);
 			//Unlock
 			pthread_mutex_unlock(&mutex);
 			//Skip it and lost forever
@@ -63,7 +63,7 @@ public:
 		if (packets.find(seq)!=packets.end())
 		{
 			//Error
-			Debug("-RTPBuffer::Add() | Already have that packet [next:%u,seq:%u,maxWaitTime=%d,cycles:%d-%u]\n",next,seq,maxWaitTime,rtp->GetSeqCycles(),rtp->GetSeqNum());
+			//UltraDebug("-RTPBuffer::Add() | Already have that packet [next:%u,seq:%u,maxWaitTime=%d,cycles:%d-%u]\n",next,seq,maxWaitTime,rtp->GetSeqCycles(),rtp->GetSeqNum());
 			//Unlock
 			pthread_mutex_unlock(&mutex);
 			//Skip it and lost forever
@@ -123,6 +123,10 @@ public:
 				if (packets.empty())
 					//Not hurryUp more
 					hurryUp = false;
+				//Skip if empty
+				if (!candidate->GetMediaLength())
+					//Try next
+					return GetOrdered();
 				//Return it
 				return candidate;
 			}
@@ -160,16 +164,18 @@ public:
 				//Check if first is the one expected or wait if not
 				if (next==(DWORD)-1 || seq==next || time+maxWaitTime<now || hurryUp)
 				{
-					//Waiting time
-					waited.Update(now,now-time);
-					//We have it!
-					rtp = candidate;
-					//Log
-					//UltraDebug("-RTPBuffer::Wait() | rtp packet [next:%u,seq:%u,maxWaitTime=%d,cycles:%d-%u,time:%lld,current:%lld,hurry:%d]\n",next,seq,maxWaitTime,rtp->GetSeqCycles(),rtp->GetSeqNum(),rtp->GetTime(),GetTime(),hurryUp);
 					//Update next
 					next = seq+1;
+					//Waiting time
+					waited.Update(now,now-time);
 					//Remove it
 					packets.erase(it);
+					//If we have to skip it
+					if (!candidate->GetMediaLength())
+						//Try again
+						continue;
+					//We have it!
+					rtp = candidate;
 					//Return it!
 					break;
 				}

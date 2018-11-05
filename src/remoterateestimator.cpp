@@ -98,10 +98,10 @@ void RemoteRateEstimator::Update(DWORD ssrc,const RTPPacket::shared& packet,DWOR
 	*/
 	
 	//Update
-	Update(packet->GetSSRC(),now,ts,size);
+	Update(packet->GetSSRC(),now,ts,size, packet->GetMark());
 }
 
-void RemoteRateEstimator::Update(DWORD ssrc,QWORD now,QWORD ts,DWORD size)
+void RemoteRateEstimator::Update(DWORD ssrc,QWORD now,QWORD ts,DWORD size, bool mark)
 {
 	//UltraDebug("-Update [ssrc:%u,now:%lu,last:%u,ts:%lu,size:%u\n",ssrc,now,lastChange,ts,size);
 	//Lock
@@ -130,7 +130,7 @@ void RemoteRateEstimator::Update(DWORD ssrc,QWORD now,QWORD ts,DWORD size)
 		if (it->first == ssrc)
 		{
 			//Update it
-			ctrl->Update(now,ts,size);
+			ctrl->Update(now,ts,size, mark);
 			//Check if pacekt triggered overuse
 			if (streamUsage!=RemoteRateControl::OverUsing && ctrl->GetUsage()==RemoteRateControl::OverUsing)
 			{
@@ -376,7 +376,7 @@ double RemoteRateEstimator::RateIncreaseFactor(QWORD now, QWORD last, DWORD reac
 		// bit rate in this region, by increasing in smaller steps.
 		alpha = alpha - (alpha - 1.0) / 2.0;
 	else if (region == RemoteRateControl::MaxUnknown)
-		alpha = alpha + (alpha - 1.0) * 2.0;
+		alpha = alpha + (alpha - 1.0) * 4.0;
 	else if (region == RemoteRateControl::BelowMax)
 		alpha = alpha + (alpha - 1.0) * 2.0;
 

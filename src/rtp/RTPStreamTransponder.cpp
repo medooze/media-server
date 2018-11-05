@@ -188,7 +188,7 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,const RTPPacket::
 		//Get first timestamp
 		firstTimestamp = packet->GetTimestamp();
 		
-		//UltraDebug("-first seq:%lu base:%lu last:%lu ts:%lu baseSeq:%lu baseTimestamp:%llu lastTimestamp:%llu\n",firstExtSeqNum,baseExtSeqNum,lastExtSeqNum,firstTimestamp,baseExtSeqNum,baseTimestamp,lastTimestamp);
+		UltraDebug("-first seq:%lu base:%lu last:%lu ts:%lu baseSeq:%lu baseTimestamp:%llu lastTimestamp:%llu\n",firstExtSeqNum,baseExtSeqNum,lastExtSeqNum,firstTimestamp,baseExtSeqNum,baseTimestamp,lastTimestamp);
 	}
 	
 	//Ensure it is not before first one

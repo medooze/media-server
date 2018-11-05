@@ -9,7 +9,7 @@
 #include <cstdlib>
 #include <cmath>
 
-RemoteRateControl::RemoteRateControl() : bitrateCalc(100), fpsCalc(1000), packetCalc(100)
+RemoteRateControl::RemoteRateControl() : bitrateCalc(100), fpsCalc(1000), packetCalc(100), lostCalc(100)
 {
 	eventSource = NULL;
 	rtt = 0;
@@ -37,7 +37,7 @@ RemoteRateControl::RemoteRateControl() : bitrateCalc(100), fpsCalc(1000), packet
 	absSendTimeCycles = 0;
 }
 
-void RemoteRateControl::Update(QWORD time,QWORD ts,DWORD size)
+void RemoteRateControl::Update(QWORD time,QWORD ts,DWORD size, bool mark)
 {
 	//Update bitrate calculator
 	bitrateCalc.Update(time, size*8);
@@ -55,8 +55,8 @@ void RemoteRateControl::Update(QWORD time,QWORD ts,DWORD size)
 	if (ts > curTS)
 	{
 		//Add new frame
-		fpsCalc.Update(ts,1);
-	//	Debug("+curTime:%llu,prevTime:%llu,ts:%u,curTS:%u,prevTS:%u\n",curTime,prevTime,ts,curTS,prevTS);
+		if (mark) fpsCalc.Update(ts,1);
+		//Debug("+curTime:%llu,prevTime:%llu,ts:%u,curTS:%u,prevTS:%u\n",curTime,prevTime,ts,curTS,prevTS);
 		//If not first one
 		if (prevTime)
 			//Update Kalman filter as per google algorithm from the previous frame
@@ -81,6 +81,7 @@ void RemoteRateControl::Update(QWORD time,QWORD ts,DWORD size)
 
 void RemoteRateControl::UpdateKalman(QWORD now,int deltaTime, int deltaTS, int deltaSize)
 {
+	//UltraDebug("RemoteRateControl::UpdateKalman() deltas [time:%d ts:%d size:%d]\n",deltaTime,deltaTS,deltaSize);
 	//Calculate time to timestamp delta
 	const int ttsdelta = deltaTime-deltaTS;
 
@@ -238,17 +239,36 @@ bool RemoteRateControl::UpdateRTT(DWORD rtt)
 
 bool RemoteRateControl::UpdateLost(DWORD num)
 {
-	//Check lost is more than 2.5%
-	if (packetCalc.IsInWindow() && packetCalc.GetInstantAvg()<num*40)
+	//Update lost count
+	lostCalc.Update(getTime(),num);
+	
+	//If we are in window
+	if (packetCalc.IsInWindow() && lostCalc.IsInWindow())
 	{
-		//Overusing
-		hypothesis = OverUsing;
-		//Reset counter
-		overUseCount = 0;
+		//Get packets
+		auto packets = packetCalc.GetInstantAvg();
+		auto lost    = lostCalc.GetInstantAvg();
+		
+		//Check lost is more than 2.5%
+		if (lost*1000/(packets+lost)>25)
+		{
+			//Check 
+			if (overUseCount>2)
+			{
+				//Overusing
+				hypothesis = OverUsing;
+				//Reset counter
+				overUseCount=0;
+				//Reset lost counter
+				lostCalc.Reset(getTime());
+				//Debug
+				UltraDebug("BWE: UpdateLostlost:%d hipothesis:%s,num:%d,packets:%f,lost:%f\n",num,GetName(hypothesis),num,packets,lost);
+			} else {
+				//increase counter
+				overUseCount++;
+			}
+		}
 	}
-
-	//Debug
-	UltraDebug("BWE: UpdateLostlost:%d hipothesis:%s\n",num,GetName(hypothesis));
 
 	if (eventSource) eventSource->SendEvent("rrc.lost","[%llu,\"%s\",\"%d\"]",getTimeMS(),GetName(hypothesis),rtt);
 
