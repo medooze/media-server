@@ -185,6 +185,14 @@ bool PCAPTransportEmulator::Open(const char* filename)
 	return true;
 }
 
+bool PCAPTransportEmulator::Close()
+{
+	Debug(">PCAPTransportEmulator::Close()\n");
+	Debug("-PCAPTransportEmulator::Close() do nothing\n");
+	Debug("<PCAPTransportEmulator::Close()\n");
+	return true;
+}
+
 bool PCAPTransportEmulator::Play()
 {
 	Debug(">PCAPTransportEmulator::Play()\n");
