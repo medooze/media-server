@@ -8,9 +8,9 @@
 #ifndef REMOTERATEESTIMATOR_H
 #define	REMOTERATEESTIMATOR_H
 
-#include "remoteratecontrol.h"
 #include "use.h"
-
+#include "remoteratecontrol.h"
+#include "rtp/RTPPacket.h"
 
 class RemoteRateEstimator
 {
@@ -85,7 +85,8 @@ private:
 	RemoteRateControl::Region region;
 	QWORD lastBitRateChange;
 	DWORD noiseVar;
-
+	QWORD curTS;
+	DWORD absSendTimeCycles;
 	float avgChangePeriod;
 	QWORD lastChange;
 	float beta;

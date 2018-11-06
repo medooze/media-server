@@ -6,7 +6,8 @@
  */
 
 #include <map>
-
+#include <cstdlib>
+#include <cmath>
 #include "remoterateestimator.h"
 
 RemoteRateEstimator::RemoteRateEstimator() : bitrateAcu(200)
@@ -24,6 +25,8 @@ RemoteRateEstimator::RemoteRateEstimator() : bitrateAcu(200)
 	beta			= 0.9f;
 	noiseVar 		= 0;
 	rtt			= 200;
+	absSendTimeCycles	= 0;
+	curTS			= 0;
 	//Set initial state and region
 	cameFromState		= Decrease;
 	state			= Hold;
@@ -81,7 +84,6 @@ void RemoteRateEstimator::Update(DWORD ssrc,const RTPPacket::shared& packet,DWOR
 	//Get rtp timestamp in ms
 	QWORD ts = packet->GetClockTimestamp();
 
-	/*
 	if (packet->HasAbsSentTime())
 	{
 		//Use absolote time instead of rtp time for knowing timestamp at origin
@@ -95,10 +97,13 @@ void RemoteRateEstimator::Update(DWORD ssrc,const RTPPacket::shared& packet,DWOR
 			ts += 64000;
 		}
 	}
-	*/
+	
 	
 	//Update
 	Update(packet->GetSSRC(),now,ts,size, packet->GetMark());
+	
+	//Store current ts
+	curTS = ts;
 }
 
 void RemoteRateEstimator::Update(DWORD ssrc,QWORD now,QWORD ts,DWORD size, bool mark)

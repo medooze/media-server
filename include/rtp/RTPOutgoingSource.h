@@ -66,11 +66,12 @@ struct RTPOutgoingSource : public RTPSource
 
 	bool IsLastSenderReportNTP(DWORD ntp)
 	{
-		return  
+		return  ntp && (
 			//Check last send SR 32 middle bits
 			((DWORD)((lastSenderReportNTP >> 16) & 0xFFFFFFFF) == ntp)
 			//Check last 16bits of each word to match cisco bug
-			|| ((lastSenderReportNTP << 16 | (lastSenderReportNTP | 0xFFFF)) == ntp);
+			|| ((lastSenderReportNTP << 16 | (lastSenderReportNTP | 0xFFFF)) == ntp)
+		);
 	}
 };
 

@@ -157,6 +157,7 @@ private:
 	OutgoingStreams outgoing;
 	IncomingStreams incoming;
 	std::map<std::string,RTPIncomingSourceGroup*> rids;
+	std::map<std::string,std::set<RTPIncomingSourceGroup*>> mids;
 	
 	WaitCondition wait;
 	std::queue<RTPPacket::shared> packets;

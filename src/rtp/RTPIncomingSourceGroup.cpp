@@ -3,6 +3,7 @@
 #include <math.h>
 
 #include "VideoLayerSelector.h"
+#include "remoterateestimator.h"
 
 RTPIncomingSourceGroup::RTPIncomingSourceGroup(MediaFrame::Type type) 
 	: losts(128)
@@ -13,6 +14,8 @@ RTPIncomingSourceGroup::RTPIncomingSourceGroup(MediaFrame::Type type)
 	this->type = type;
 	//Small initial bufer of 100ms
 	packets.SetMaxWaitTime(100);
+	//LIsten remote rate events
+	remoteRateEstimator.SetListener(this);
 }
 
 RTPIncomingSourceGroup::~RTPIncomingSourceGroup() 
@@ -47,7 +50,7 @@ void RTPIncomingSourceGroup::RemoveListener(Listener* listener)
 	listeners.erase(listener);
 }
 
-int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet)
+int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet, DWORD size)
 {
 	//Check if it is the rtx packet used to calculate rtt
 	if (rttrtxTime && packet->GetSeqNum()==rttrtxSeq)
@@ -61,9 +64,18 @@ int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet)
 		//Done
 		return 0;
 	}
-		
+	
 	//Add to lost packets and get count regardeless if this was discarded or not
 	auto lost = losts.AddPacket(packet);
+	
+	//If doing remb
+	if (remb)
+	{
+		//Add estimation
+		remoteRateEstimator.Update(media.ssrc,packet,size);
+		//Update lost
+		if (lost) remoteRateEstimator.UpdateLost(media.ssrc,lost,getTimeMS());
+	}
 	
 	//Add to packet queue
 	if (!packets.Add(packet))
@@ -120,16 +132,28 @@ void RTPIncomingSourceGroup::SetRTT(DWORD rtt)
 	this->rtt = rtt;
 	//Set max packet wait time
 	packets.SetMaxWaitTime(fmin(500,fmax(60,rtt*4)+40));
+	//If using remote rate estimator
+	if (remb)
+		//Add estimation
+		remoteRateEstimator.UpdateRTT(media.ssrc,rtt,getTimeMS());
 }
 
-void RTPIncomingSourceGroup::Start()
+void RTPIncomingSourceGroup::Start(bool remb)
 {
+	Debug("-RTPIncomingSourceGroup::Start() | [remb:%d]\n",remb);
+	
 	if (!isZeroThread(dispatchThread))
 		return;
 	
+	//are we using remb?
+	this->remb = remb;
+	
+	//Add media ssrc
+	remoteRateEstimator.AddStream(media.ssrc);
+	
 	//Create dispatch trhead
 	createPriorityThread(&dispatchThread,[](void* arg) -> void* {
-			Log(">RTPIncomingSourceGroup dispatch %p\n",arg);
+			Debug(">RTPIncomingSourceGroup dispatch %p\n",arg);
 			//Get group
 			RTPIncomingSourceGroup* group = (RTPIncomingSourceGroup*) arg;
 			//Loop until canceled
@@ -142,7 +166,7 @@ void RTPIncomingSourceGroup::Start()
 					//Dispatch rtp packet
 					listener->onRTP(group,packet);
 			}
-			Log("<RTPIncomingSourceGroup dispatch\n");
+			Debug("<RTPIncomingSourceGroup dispatch\n");
 			return nullptr;
 		},
 		(void*)this,
@@ -220,3 +244,9 @@ RTPIncomingSource* RTPIncomingSourceGroup::Process(RTPPacket::shared &packet)
 }
 
 
+void RTPIncomingSourceGroup::onTargetBitrateRequested(DWORD bitrate)
+{
+	UltraDebug("-RTPIncomingSourceGroup::onTargetBitrateRequested() | [bitrate:%d]\n",bitrate);
+	//store estimation
+	remoteBitrateEstimation = bitrate;
+}

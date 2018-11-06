@@ -11,8 +11,10 @@
 #include "rtp/RTPIncomingSource.h"
 #include "rtp/RTPLostPackets.h"
 #include "rtp/RTPBuffer.h"
+#include "remoterateestimator.h"
 
-struct RTPIncomingSourceGroup
+class RTPIncomingSourceGroup :
+	public RemoteRateEstimator::Listener
 {
 public:
 	class Listener 
@@ -23,12 +25,12 @@ public:
 	};
 public:	
 	RTPIncomingSourceGroup(MediaFrame::Type type);
-	~RTPIncomingSourceGroup();
+	virtual ~RTPIncomingSourceGroup();
 	
 	RTPIncomingSource* GetSource(DWORD ssrc);
 	void AddListener(Listener* listener);
 	void RemoveListener(Listener* listener);
-	int AddPacket(const RTPPacket::shared &packet);
+	int AddPacket(const RTPPacket::shared &packet, DWORD size = 0); //Size is only used if remb is in use
 	RTPIncomingSource* Process(RTPPacket::shared &packet);
 	
 	void ResetPackets();
@@ -37,7 +39,7 @@ public:
 	void SetRTT(DWORD rtt);
 	std::list<RTCPRTPFeedback::NACKField::shared>  GetNacks() { return losts.GetNacks(); }
 	
-	void Start();
+	void Start(bool remb = false);
 	void Stop();
 	
 	WORD SetRTTRTX(uint64_t time)
@@ -51,20 +53,22 @@ public:
 		return last;
 	}
 	
-	DWORD GetCurrentLost()		const { return losts.GetTotal();		}
-	DWORD GetMinWaitedTime()	const { return packets.GetMinWaitedime();	}
-	DWORD GetMaxWaitedTime()	const { return packets.GetMaxWaitedTime();	}
-	long double GetAvgWaitedTime()	const {	return packets.GetAvgWaitedTime();	}
+	DWORD GetCurrentLost()			const { return losts.GetTotal();		}
+	DWORD GetMinWaitedTime()		const { return packets.GetMinWaitedime();	}
+	DWORD GetMaxWaitedTime()		const { return packets.GetMaxWaitedTime();	}
+	long double GetAvgWaitedTime()		const {	return packets.GetAvgWaitedTime();	}
 	
+	virtual void onTargetBitrateRequested(DWORD bitrate) override;
 public:	
 	std::string rid;
 	std::string mid;
-	DWORD rtt;
+	DWORD rtt = 0;
 	MediaFrame::Type type;
 	RTPIncomingSource media;
 	RTPIncomingSource fec;
 	RTPIncomingSource rtx;
-
+        DWORD remoteBitrateEstimation = 0;
+	
 	//Stats
 	DWORD lost = 0;
 	DWORD minWaitedTime = 0;
@@ -79,6 +83,8 @@ private:
 	std::set<Listener*>  listeners;
 	WORD  rttrtxSeq;
 	QWORD rttrtxTime;
+	RemoteRateEstimator remoteRateEstimator;
+	bool remb = false;
 };
 
 #endif /* RTPINCOMINGSOURCEGROUP_H */

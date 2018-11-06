@@ -222,11 +222,11 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 				break;
 			// SDES string items
 			case RTPStreamId:
-				hasRTPStreamId = true;
+				hasRId = true;
 				rid.assign((const char*)ext+i,len);
 				break;	
 			case RepairedRTPStreamId:
-				hasRepairedRTPStreamId = true;
+				hasRepairedId = true;
 				repairedId.assign((const char*)ext+i,len);
 				break;	
 			case MediaStreamId:
@@ -455,7 +455,7 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 		}
 	}
 	
-	if (hasRTPStreamId)
+	if (hasRId)
 	{
 		//Get id for extension
 		BYTE id = extMap.GetTypeForCodec(RTPStreamId);
@@ -472,7 +472,7 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 		}
 	}
 	
-	if (hasRepairedRTPStreamId)
+	if (hasRepairedId)
 	{
 		//Get id for extension
 		BYTE id = extMap.GetTypeForCodec(RepairedRTPStreamId);
@@ -542,10 +542,10 @@ void RTPHeaderExtension::Dump() const
 			frameMarks.tl0PicIdx
 		);
 	
-	if (hasRTPStreamId)
-		Debug("\t\t\t[RTPStreamId str=\"%s\"]\n",rid.c_str());
-	if (hasRepairedRTPStreamId)
-		Debug("\t\t\t[RepairedRTPStreamId str=\"%s\"]\n",repairedId.c_str());
+	if (hasRId)
+		Debug("\t\t\t[RId str=\"%s\"]\n",rid.c_str());
+	if (hasRepairedId)
+		Debug("\t\t\t[RepairedId str=\"%s\"]\n",repairedId.c_str());
 	if (hasMediaStreamId)
 		Debug("\t\t\t[MediaStreamId str=\"%s\"]\n",mid.c_str());
 	

@@ -23,7 +23,7 @@ public:
 	};
 public:
 	RTPOutgoingSourceGroup(MediaFrame::Type type);
-	RTPOutgoingSourceGroup(std::string &streamId,MediaFrame::Type type);
+	RTPOutgoingSourceGroup(std::string &mid,MediaFrame::Type type);
 	
 	void AddListener(Listener* listener);
 	void RemoveListener(Listener* listener);
@@ -40,7 +40,7 @@ public:
 	void ReleasePackets(QWORD until);
 	
 public:	
-	std::string streamId;
+	std::string mid;
 	MediaFrame::Type type;
 	RTPOutgoingSource media;
 	RTPOutgoingSource fec;

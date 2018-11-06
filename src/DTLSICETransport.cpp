@@ -241,7 +241,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	RTPIncomingSourceGroup *group = GetIncomingSourceGroup(ssrc);
 	
 	//If it doesn't have a group but does hava an rtp stream id
-	if (!group && extension.hasRTPStreamId)
+	if (!group && extension.hasRId)
 	{
 		Debug("-DTLSICETransport::onData() | Unknowing group for ssrc trying to retrieve by [ssrc:%u,rid:'%s']\n",ssrc,extension.rid.c_str());
 		//Try to find it on the rids
@@ -268,7 +268,25 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		//error
 		return Error("-DTLSICETransport::onData() | Unknowing group for ssrc [%u]\n",ssrc);
 	
-	//UltraDebug("-Got RTP on media:%s sssrc:%u seq:%u pt:%u codec:%s rid:'%s'\n",MediaFrame::TypeToString(group->type),ssrc,header.sequenceNumber,header.payloadType,GetNameForCodec(group->type,codec),group->rid.c_str());
+	//Assing mid if found
+	if (group->mid.empty() && extension.hasMediaStreamId)
+	{
+		//Debug
+		Debug("-DTLSICETransport::onData() | Assinging media stream id [ssrc:%u,mid:'%s']\n",ssrc,extension.mid.c_str());
+		//Set it
+		group->mid = extension.mid;
+		//Find mid 
+		auto it = mids.find(group->mid);
+		//If not there
+		if (it!=mids.end())
+			//Append
+			it->second.insert(group);
+		else
+			//Add new set
+			mids[group->mid] = { group };
+	}
+	
+	//UltraDebug("-Got RTP on media:%s sssrc:%u seq:%u pt:%u codec:%s rid:'%s', mid:'%s'\n",MediaFrame::TypeToString(group->type),ssrc,header.sequenceNumber,header.payloadType,GetNameForCodec(group->type,codec),group->rid.c_str(),group->mid.c_str());
 	
 	//Process packet and get source
 	RTPIncomingSource* source = group->Process(packet);
@@ -311,8 +329,8 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 			SendTransportWideFeedbackMessage(ssrc);
 	}
 
-	//If it was an RTX packet
-	if (ssrc==group->rtx.ssrc) 
+	//If it was an RTX packet and not a padding only one
+	if (ssrc==group->rtx.ssrc && packet->GetMediaLength()) 
 	{
 		//Ensure that it is a RTX codec
 		if (codec!=VideoCodec::RTX)
@@ -352,7 +370,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	}	
 
 	//Add packet and see if we have lost any in between
-	int lost = group->AddPacket(packet);
+	int lost = group->AddPacket(packet,size);
 
 	//Check if it was rejected
 	if (lost<0)
@@ -401,6 +419,39 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		if (report)
 			//Append it
 			rr->AddReport(report);
+		
+		//If we are using remb and have a value
+		if (group->remoteBitrateEstimation)
+		{
+			
+			//Add remb block
+			DWORD bitrate = 0;
+			std::list<DWORD> ssrcs;
+			
+			//If we haave a mid in group
+			if (!group->mid.empty())
+			{
+				//for each group of this mid
+				for (const auto& other : mids[group->mid])
+				{
+					//Append
+					ssrcs.push_back(other->media.ssrc);
+					bitrate += other->remoteBitrateEstimation;
+				}
+			} else {
+				//Just this group
+				ssrcs.push_back(group->media.ssrc);
+				bitrate = group->remoteBitrateEstimation;
+			}
+			
+			//LOg
+			Log("-REMB [ssrc:%x,mid:'%s',count:%d,bitrate:%u]\n",group->media.ssrc,group->mid.c_str(),ssrcs.size(),bitrate);
+			
+			// SSRC of media source (32 bits):  Always 0; this is the same convention as in [RFC5104] section 4.2.2.2 (TMMBN).
+			auto remb = rtcp->CreatePacket<RTCPPayloadFeedback>(RTCPPayloadFeedback::ApplicationLayerFeeedbackMessage,group->media.ssrc,WORD(0));
+			//Send estimation
+			remb->AddField(RTCPPayloadFeedback::ApplicationLayerFeeedbackField::CreateReceiverEstimatedMaxBitrate(ssrcs,bitrate));
+		}
 		
 		//If there is no outgoing stream
 		if (outgoing.empty() && group->rtx.ssrc)
@@ -457,7 +508,7 @@ void DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 	header.padding		= 1;
 
 	//Add transport wide cc on video
-	if (group->type == MediaFrame::Video && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC))
+	if (group->type == MediaFrame::Video && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC)!=RTPMap::NotFound)
 	{
 		//Add extension
 		header.extension = true;
@@ -467,7 +518,7 @@ void DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 	}
 	
 	//If we are using abs send time for sending
-	if (sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::AbsoluteSendTime))
+	if (sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::AbsoluteSendTime)!=RTPMap::NotFound)
 	{
 		//Use extension
 		header.extension = true;
@@ -632,7 +683,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	}
 
 	//Add transport wide cc on video
-	if (group->type == MediaFrame::Video && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC))
+	if (group->type == MediaFrame::Video && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC!=RTPMap::NotFound))
 	{
 		//Add extension
 		header.extension = true;
@@ -642,7 +693,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	}
 	
 	//If we are using abs send time for sending
-	if (sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::AbsoluteSendTime))
+	if (sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::AbsoluteSendTime)!=RTPMap::NotFound)
 	{
 		//Use extension
 		header.extension = true;
@@ -1384,7 +1435,7 @@ bool DTLSICETransport::RemoveOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 
 bool DTLSICETransport::AddIncomingSourceGroup(RTPIncomingSourceGroup *group)
 {
-	Log("-AddIncomingSourceGroup [rid:'%s',ssrc:%u,fec:%u,rtx:%u]\n",group->rid.c_str(),group->media.ssrc,group->fec.ssrc,group->rtx.ssrc);
+	Log("-AddIncomingSourceGroup [mid:'%s',rid:'%s',,ssrc:%u,fec:%u,rtx:%u]\n",group->mid.c_str(),group->rid.c_str(),group->media.ssrc,group->fec.ssrc,group->rtx.ssrc);
 	
 	//It must contain media ssrc
 	if (!group->media.ssrc && group->rid.empty())
@@ -1405,6 +1456,20 @@ bool DTLSICETransport::AddIncomingSourceGroup(RTPIncomingSourceGroup *group)
 	if (!group->rid.empty())
 		rids[group->rid] = group;
 	
+	//Add mid if any
+	if (!group->mid.empty())
+	{
+		//Find mid 
+		auto it = mids.find(group->mid);
+		//If not there
+		if (it!=mids.end())
+			//Append
+			it->second.insert(group);
+		else
+			//Add new set
+			mids[group->mid] = { group };
+	}
+	
 	//Add it for each group ssrc
 	if (group->media.ssrc)
 		incoming[group->media.ssrc] = group;
@@ -1413,8 +1478,11 @@ bool DTLSICETransport::AddIncomingSourceGroup(RTPIncomingSourceGroup *group)
 	if (group->rtx.ssrc)
 		incoming[group->rtx.ssrc] = group;
 	
+	//If it is video and the transport wide cc is not enabled enable remb
+	bool remb = group->type == MediaFrame::Video && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC)==RTPMap::NotFound;
+	
 	//Start distpaching
-	group->Start();
+	group->Start(remb);
 	
 	//Done
 	return true;
@@ -1437,6 +1505,25 @@ bool DTLSICETransport::RemoveIncomingSourceGroup(RTPIncomingSourceGroup *group)
 	//Remove rid if any
 	if (!group->rid.empty())
 		rids.erase(group->rid);
+	
+	//Remove mid if any
+	if (!group->rid.empty())
+	{
+		//Find mid 
+		auto it = mids.find(group->mid);
+		//If found
+		if (it!=mids.end())
+		{
+			//Erase group
+			it->second.erase(group);
+			//If it is empty now
+			if(it->second.empty())
+				//Remove from mids
+				mids.erase(it);
+		}
+		
+	}
+		
 	
 	//Remove it from each ssrc
 	if (group->media.ssrc)
@@ -1598,7 +1685,7 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 	cloned->SetPadding(0);
 
 	//Add transport wide cc on video
-	if (group->type == MediaFrame::Video && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC))
+	if (group->type == MediaFrame::Video && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC)!=RTPMap::NotFound)
 		//Set transport wide seq num
 		cloned->SetTransportSeqNum(++transportSeqNum);
 	else
@@ -1606,12 +1693,24 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 		cloned->DisableTransportSeqNum();
 
 	//If we are using abs send time for sending
-	if (sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::AbsoluteSendTime))
+	if (sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::AbsoluteSendTime)!=RTPMap::NotFound)
 		//Set abs send time
 		cloned->SetAbsSentTime(getTimeMS());
 	else
 		//Disable it
 		cloned->DisableAbsSentTime();
+	
+	//Disable rid & repair id
+	cloned->DisableRId();
+	cloned->DisableRepairedId();
+	
+	//Update mid
+	if (!group->mid.empty())
+		//Set new mid
+		cloned->SetMediaStreamId(group->mid);
+	else
+		//Disable it
+		cloned->DisableMediaStreamId();
 	
 	//if (group->type==MediaFrame::Video) UltraDebug("-Sending RTP on media:%s sssrc:%u seq:%u pt:%u ts:%lu codec:%s\n",MediaFrame::TypeToString(group->type),source.ssrc,cloned->GetSeqNum(),cloned->GetPayloadType(),cloned->GetTimestamp(),GetNameForCodec(group->type,cloned->GetCodec()));
 			
@@ -1980,6 +2079,7 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 									DWORD target = get4(payload,8+4*i);
 									//Get media
 									RTPOutgoingSourceGroup* group = GetOutgoingSourceGroup(target);
+									
 									//If found
 									if (group)
 										//Call listener

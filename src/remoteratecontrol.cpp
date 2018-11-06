@@ -8,6 +8,7 @@
 #include "remoteratecontrol.h"
 #include <cstdlib>
 #include <cmath>
+#include "log.h"
 
 RemoteRateControl::RemoteRateControl() : bitrateCalc(100), fpsCalc(1000), packetCalc(100), lostCalc(100)
 {

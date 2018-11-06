@@ -9,7 +9,6 @@
 #define	REMOTERATECONTROL_H
 
 #include "config.h"
-#include "rtp.h"
 #include "acumulator.h"
 #include "EventSource.h"
 

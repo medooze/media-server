@@ -6,9 +6,9 @@ RTPOutgoingSourceGroup::RTPOutgoingSourceGroup(MediaFrame::Type type)
 	this->type = type;
 }
 
-RTPOutgoingSourceGroup::RTPOutgoingSourceGroup(std::string &streamId,MediaFrame::Type type)
+RTPOutgoingSourceGroup::RTPOutgoingSourceGroup(std::string &mid,MediaFrame::Type type)
 {
-	this->streamId = streamId;
+	this->mid = mid;
 	this->type = type;
 }
 

@@ -143,8 +143,8 @@ public:
 		hasVideoOrientation = 0;
 		hasTransportWideCC = 0;
 		hasFrameMarking = 0;
-		hasRTPStreamId = 0;
-		hasRepairedRTPStreamId = 0;
+		hasRId = 0;
+		hasRepairedId = 0;
 		hasMediaStreamId = 0;
 	}
 	
@@ -168,8 +168,8 @@ public:
 	bool	hasVideoOrientation;
 	bool	hasTransportWideCC;
 	bool	hasFrameMarking;
-	bool	hasRTPStreamId;
-	bool	hasRepairedRTPStreamId;
+	bool	hasRId;
+	bool	hasRepairedId;
 	bool	hasMediaStreamId;
 };
 

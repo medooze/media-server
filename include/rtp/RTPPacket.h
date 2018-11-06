@@ -85,29 +85,42 @@ public:
 	DWORD GetClockTimestamp()	const { return static_cast<QWORD>(GetTimestamp())*1000/clockRate;	}
 
 	//Extensions
-	void  SetAbsSentTime(QWORD absSentTime)	{ header.extension = extension.hasAbsSentTime     = true; extension.absSentTime = absSentTime;	}
-	void  SetTimeOffset(int timeOffset)     { header.extension = extension.hasTimeOffset      = true; extension.timeOffset = timeOffset;	}
-	void  SetTransportSeqNum(DWORD seq)	{ header.extension = extension.hasTransportWideCC = true; extension.transportSeqNum = seq;	}
-	void  SetFrameMarkings(const RTPHeaderExtension::FrameMarks& frameMarks ) { header.extension = extension.hasFrameMarking = true; extension.frameMarks = frameMarks;	}
+	void  SetAbsSentTime(QWORD absSentTime)						{ header.extension = extension.hasAbsSentTime     = true; extension.absSentTime = absSentTime;	}
+	void  SetTimeOffset(int timeOffset)						{ header.extension = extension.hasTimeOffset      = true; extension.timeOffset = timeOffset;	}
+	void  SetTransportSeqNum(DWORD seq)						{ header.extension = extension.hasTransportWideCC = true; extension.transportSeqNum = seq;	}
+	void  SetFrameMarkings(const RTPHeaderExtension::FrameMarks& frameMarks )	{ header.extension = extension.hasFrameMarking    = true; extension.frameMarks = frameMarks;	}
+	void  SetRId(const std::string &rid)						{ header.extension = extension.hasRId		  = true; extension.rid = rid;			}
+	void  SetRepairedId(const std::string &repairedId)				{ header.extension = extension.hasRepairedId	  = true; extension.repairedId = repairedId;	}
+	void  SetMediaStreamId(const std::string &mid)					{ header.extension = extension.hasMediaStreamId   = true; extension.mid = mid;			}
 	
 	//Disable extensions
 	void  DisableAbsSentTime()	{ extension.hasAbsSentTime     = false; CheckExtensionMark(); }
 	void  DisableTimeOffset()	{ extension.hasTimeOffset      = false; CheckExtensionMark(); }
 	void  DisableTransportSeqNum()	{ extension.hasTransportWideCC = false; CheckExtensionMark(); }
 	void  DisableFrameMarkings()	{ extension.hasFrameMarking    = false; CheckExtensionMark(); }
-
+	void  DisableRId()		{ extension.hasRId	       = false; CheckExtensionMark(); }
+	void  DisableRepairedId()	{ extension.hasRepairedId      = false; CheckExtensionMark(); }
+	void  DisableMediaStreamId()	{ extension.hasMediaStreamId   = false; CheckExtensionMark(); }
 	
-	QWORD GetAbsSendTime()		const	{ return extension.absSentTime;		}
-	int   GetTimeOffset()		const	{ return extension.timeOffset;		}
-	bool  GetVAD()			const	{ return extension.vad;			}
-	BYTE  GetLevel()		const	{ return extension.level;		}
-	WORD  GetTransportSeqNum()	const	{ return extension.transportSeqNum;	}
+
+	QWORD GetAbsSendTime()			const	{ return extension.absSentTime;		}
+	int   GetTimeOffset()			const	{ return extension.timeOffset;		}
+	bool  GetVAD()				const	{ return extension.vad;			}
+	BYTE  GetLevel()			const	{ return extension.level;		}
+	WORD  GetTransportSeqNum()		const	{ return extension.transportSeqNum;	}
+	const std::string& GetRId()		const	{ return extension.rid;			}
+	const std::string& GetRepairedId()	const	{ return extension.repairedId;		}
+	const std::string& GetMediaStreamId()	const	{ return extension.mid;	}
 	const RTPHeaderExtension::FrameMarks& GetFrameMarks() const { return extension.frameMarks; }
-	bool  HasAudioLevel()		const	{ return extension.hasAudioLevel;	}
-	bool  HasAbsSentTime()		const	{ return extension.hasAbsSentTime;	}
-	bool  HasTimeOffeset()		const   { return extension.hasTimeOffset;	}
-	bool  HasTransportWideCC()	const   { return extension.hasTransportWideCC;	}
-	bool  HasFrameMarkings()	const   { return extension.hasFrameMarking;	}
+	bool  HasAudioLevel()			const	{ return extension.hasAudioLevel;	}
+	bool  HasAbsSentTime()			const	{ return extension.hasAbsSentTime;	}
+	bool  HasTimeOffeset()			const   { return extension.hasTimeOffset;	}
+	bool  HasTransportWideCC()		const   { return extension.hasTransportWideCC;	}
+	bool  HasFrameMarkings()		const   { return extension.hasFrameMarking;	}
+	bool  HasRId()				const   { return extension.hasRId;		}
+	bool  HasRepairedId()			const   { return extension.hasRepairedId;	}
+	bool  HasMediaStreamId()		const   { return extension.hasMediaStreamId;	}
+	
 	
 	QWORD GetTime()	const		{ return time;		}
 	void  SetTime(QWORD time )	{ this->time = time;	}

@@ -73,7 +73,7 @@ struct MP4RtpTrack
 				//Create audio frame with 8Khz rate
 				frame = new AudioFrame((AudioCodec::Type)codec,8000);
 				break;
-			case MediaFrame::Text:
+			default:
 				//Not supported here
 				break;
 		}
