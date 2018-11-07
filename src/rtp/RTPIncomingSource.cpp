@@ -3,12 +3,12 @@
 RTCPReport::shared RTPIncomingSource::CreateReport(QWORD now)
 {
 	//If we have received somthing
-	if (!totalPacketsSinceLastSR || !(extSeq>=minExtSeqNumSinceLastSR))
+	if (!totalPacketsSinceLastSR || !(extSeqNum>=minExtSeqNumSinceLastSR))
 		//Nothing to report
 		return NULL;
 	
 	//Get number of total packtes
-	DWORD total = extSeq - minExtSeqNumSinceLastSR + 1;
+	DWORD total = extSeqNum - minExtSeqNumSinceLastSR + 1;
 	//Calculate lost
 	DWORD lostPacketsSinceLastSR = total - totalPacketsSinceLastSR;
 	//Add to total lost count
@@ -38,7 +38,7 @@ RTCPReport::shared RTPIncomingSource::CreateReport(QWORD now)
 	report->SetFractionLost(frac);
 	report->SetLastJitter(jitter);
 	report->SetLostCount(lostPackets);
-	report->SetLastSeqNum(extSeq);
+	report->SetLastSeqNum(extSeqNum);
 
 	//Reset data
 	lastReport = now;

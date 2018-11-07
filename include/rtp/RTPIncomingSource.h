@@ -71,9 +71,9 @@ struct RTPIncomingSource : public RTPSource
 		totalBytesSinceLastSR += size;
 
 		//Check if it is the min for this SR
-		if (extSeq<minExtSeqNumSinceLastSR)
+		if (extSeqNum<minExtSeqNumSinceLastSR)
 			//Store minimum
-			minExtSeqNumSinceLastSR = extSeq;
+			minExtSeqNumSinceLastSR = extSeqNum;
 	}
 	
 	virtual void Reset()

@@ -15,14 +15,6 @@ class RTPBuffer
 public:
 	RTPBuffer() : waited(1000)
 	{
-		//NO wait time
-		maxWaitTime = 0;
-		//No hurring up
-		hurryUp = false;
-		//No canceled
-		cancel = false;
-		//No next
-		next = (DWORD)-1;
 		//Crete mutex
 		pthread_mutex_init(&mutex,NULL);
 		//Create condition
@@ -125,8 +117,12 @@ public:
 					hurryUp = false;
 				//Skip if empty
 				if (!candidate->GetMediaLength())
+				{
+					//This one is dropped
+					discarded++;
 					//Try next
 					return GetOrdered();
+				}
 				//Return it
 				return candidate;
 			}
@@ -172,8 +168,12 @@ public:
 					packets.erase(it);
 					//If we have to skip it
 					if (!candidate->GetMediaLength())
+					{
+						//Increase discarded packets count
+						discarded++;
 						//Try again
 						continue;
+					}
 					//We have it!
 					rtp = candidate;
 					//Return it!
@@ -240,6 +240,9 @@ public:
 		//And remove all from queue
 		ClearPackets();
 
+		//None dropped
+		discarded = 0;
+		
 		//And remove cancel
 		cancel = false;
 
@@ -316,6 +319,11 @@ public:
 		return media;
 	}
 	
+	DWORD GetNumDiscardedPackets() const
+	{
+		return discarded;
+	}
+	
 private:
 	void ClearPackets()
 	{
@@ -325,15 +333,17 @@ private:
 
 private:
 	//The event list
-	std::map<DWORD,RTPPacket::shared>	packets;
-	bool			cancel;
-	bool			hurryUp;
+	std::map<DWORD,RTPPacket::shared> packets;
 	mutable pthread_mutex_t	mutex;
-	pthread_cond_t		cond;
-	DWORD			next;
-	DWORD			maxWaitTime;
-	QWORD			time = 0;
-	Acumulator		waited;
+	pthread_cond_t cond;
+	Acumulator waited;
+	
+	bool  cancel		= false;
+	bool  hurryUp		= false;
+	DWORD next		= (DWORD)-1;
+	DWORD maxWaitTime	= 0;
+	QWORD time		= 0;
+	DWORD discarded		= 0;
 };
 
 #endif	/* RTPBUFFER_H */

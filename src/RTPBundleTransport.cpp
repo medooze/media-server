@@ -330,7 +330,7 @@ int RTPBundleTransport::Send(const ICERemoteCandidate* candidate,const BYTE *buf
 		//Check error
 		if (errno!=EAGAIN)
 		{
-			Error("-RTPBundleTransport::Send error [errno:%d]\n",errno);
+			Error("-RTPBundleTransport::Send error [errno:%d,size:%d]\n",errno,size);
 			//Error
 			break;
 		}

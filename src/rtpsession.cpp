@@ -462,7 +462,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 	header.ssrc		= send.media.ssrc;
 	header.timestamp	= send.media.lastTime;
 	header.payloadType	= sendType;
-	header.sequenceNumber	= send.media.extSeq++;
+	header.sequenceNumber	= send.media.NextSeqNum();
 	header.mark		= packet.GetMark();
 
 	//If we have are using any sending extensions
@@ -658,9 +658,7 @@ void RTPSession::onRTPPacket(BYTE* data, DWORD size)
 		//Reset packets
 		packets.Reset();
 		//Reset cycles
-		recv.media.cycles = 0;
-		//Reset
-		recv.media.extSeq = 0;
+		recv.media.Reset();
 		//Update ssrc
 		recv.media.ssrc = ssrc;
 		//If remote estimator
@@ -768,21 +766,21 @@ void RTPSession::onRTPPacket(BYTE* data, DWORD size)
 		recv.media.totalBytesSinceLastSR += size;
 
 		//Get ext seq
-		DWORD extSeq = packet->GetExtSeqNum();
+		DWORD extSeqNum = packet->GetExtSeqNum();
 
 		//Check if it is the min for this SR
-		if (extSeq<recv.media.minExtSeqNumSinceLastSR)
+		if (extSeqNum<recv.media.minExtSeqNumSinceLastSR)
 			//Store minimum
-			recv.media.minExtSeqNumSinceLastSR = extSeq;
+			recv.media.minExtSeqNumSinceLastSR = extSeqNum;
 
 		//If we have a not out of order pacekt
-		if (extSeq>recv.media.extSeq)
+		if (extSeqNum>recv.media.extSeqNum)
 		{
 			//Check possible lost pacekts
-			if (recv.media.extSeq && extSeq>(recv.media.extSeq+1))
+			if (recv.media.extSeqNum && extSeqNum>(recv.media.extSeqNum+1))
 			{
 				//Get number of lost packets
-				WORD lost = extSeq-recv.media.extSeq-1;
+				WORD lost = extSeqNum-recv.media.extSeqNum-1;
 				
 				//If remote estimator
 				if (remoteRateEstimator)
@@ -791,7 +789,7 @@ void RTPSession::onRTPPacket(BYTE* data, DWORD size)
 			}
 			
 			//Update seq num
-			recv.media.extSeq = extSeq;
+			recv.media.SetExtSeqNum(extSeqNum);
 
 			//Get diff from previous
 			DWORD diff = getUpdDifTime(&recTimeval)/1000;

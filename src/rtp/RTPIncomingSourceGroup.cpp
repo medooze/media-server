@@ -65,6 +65,11 @@ int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet, DWORD siz
 		return 0;
 	}
 	
+	//If it is not from the media ssrc
+	if (packet->GetSSRC()!=media.ssrc)
+		//Do nothing else
+		return 0;
+	
 	//Add to lost packets and get count regardeless if this was discarded or not
 	auto lost = losts.AddPacket(packet);
 	
@@ -131,11 +136,22 @@ void RTPIncomingSourceGroup::SetRTT(DWORD rtt)
 	//Store rtt
 	this->rtt = rtt;
 	//Set max packet wait time
-	packets.SetMaxWaitTime(fmin(500,fmax(60,rtt*4)+40));
+	packets.SetMaxWaitTime(fmin(500,fmax(120,rtt*4)+40));
 	//If using remote rate estimator
 	if (remb)
 		//Add estimation
 		remoteRateEstimator.UpdateRTT(media.ssrc,rtt,getTimeMS());
+}
+
+WORD RTPIncomingSourceGroup::SetRTTRTX(uint64_t time)
+{
+	//Get max received packet, the ensure it has not been nacked
+	WORD last = media.extSeqNum & 0xffff;
+	//Update sent time
+	rttrtxSeq = last;
+	rttrtxTime = time/1000;
+	//Return last
+	return last;
 }
 
 void RTPIncomingSourceGroup::Start(bool remb)
@@ -160,6 +176,8 @@ void RTPIncomingSourceGroup::Start(bool remb)
 			RTPPacket::shared packet;
 			while ((packet=group->packets.Wait()))
 			{
+				//We need to adjust the seq num due the in band probing packets
+				packet->SetExtSeqNum(packet->GetExtSeqNum() - group->packets.GetNumDiscardedPackets());
 				ScopedLock scoped(group->listenerMutex);
 				//Deliver to all listeners
 				for (auto listener : group->listeners)

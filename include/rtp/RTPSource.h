@@ -64,7 +64,7 @@ struct LayerSource : LayerInfo
 struct RTPSource 
 {
 	DWORD	ssrc;
-	DWORD   extSeq;
+	DWORD   extSeqNum;
 	DWORD	cycles;
 	DWORD	jitter;
 	DWORD	numPackets;
@@ -77,7 +77,7 @@ struct RTPSource
 	RTPSource() : acumulator(1000)
 	{
 		ssrc		= 0;
-		extSeq		= 0;
+		extSeqNum	= 0;
 		cycles		= 0;
 		numPackets	= 0;
 		numRTCPPackets	= 0;
@@ -97,21 +97,30 @@ struct RTPSource
 	WORD SetSeqNum(WORD seqNum)
 	{
 		//Check if we have a sequence wrap
-		if (seqNum<0x0FFF && (extSeq & 0xFFFF)>0xF000)
+		if (seqNum<0x0FFF && (extSeqNum & 0xFFFF)>0xF000)
 			//Increase cycles
 			cycles++;
 
 		//Get ext seq
-		DWORD extSeq = ((DWORD)cycles)<<16 | seqNum;
+		DWORD extSeqNum = ((DWORD)cycles)<<16 | seqNum;
 
 		//If we have a not out of order pacekt
-		if (extSeq > this->extSeq || !numPackets)
+		if (extSeqNum > this->extSeqNum || !numPackets)
 			//Update seq num
-			this->extSeq = extSeq;
+			this->extSeqNum = extSeqNum;
 		
 		//Return seq cycles count
 		return cycles;
 	}
+	
+	void SetExtSeqNum(DWORD extSeqNum )
+	{
+		//Updte seqNum and cycles
+		this->extSeqNum = extSeqNum;
+		cycles = extSeqNum >>16;
+		
+	}
+
 	
 	/*
 	 * Get seq num cycles from a past sequence numer
@@ -119,7 +128,7 @@ struct RTPSource
 	WORD RecoverSeqNum(WORD osn)
 	{
 		 //Check secuence wrap
-		if ((extSeq & 0xFFFF)<0x0FFF && (osn>0xF000))
+		if ((extSeqNum & 0xFFFF)<0x0FFF && (osn>0xF000))
 			//It is from the past cycle
 			return cycles - 1;
 		//It is from current cyle
@@ -142,7 +151,7 @@ struct RTPSource
 	virtual void Reset()
 	{
 		ssrc		= 0;
-		extSeq		= 0;
+		extSeqNum	= 0;
 		cycles		= 0;
 		numPackets	= 0;
 		numRTCPPackets	= 0;

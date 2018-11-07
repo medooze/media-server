@@ -118,6 +118,9 @@ void RTPOutgoingSourceGroup::onPLIRequest(DWORD ssrc)
 
 void RTPOutgoingSourceGroup::onREMB(DWORD ssrc, DWORD bitrate)
 {
+	//Update remb on media
+	media.remb = bitrate;
+	
 	ScopedLock scoped(mutex);
 	for (auto listener : listeners)
 		listener->onREMB(this,ssrc,bitrate);

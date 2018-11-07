@@ -42,16 +42,7 @@ public:
 	void Start(bool remb = false);
 	void Stop();
 	
-	WORD SetRTTRTX(uint64_t time)
-	{
-		//Get max received packet, the ensure it has not been nacked
-		WORD last = media.extSeq & 0xffff;
-		//Update sent time
-		rttrtxSeq = last;
-		rttrtxTime = time/1000;
-		//Return last
-		return last;
-	}
+	WORD SetRTTRTX(uint64_t time);
 	
 	DWORD GetCurrentLost()			const { return losts.GetTotal();		}
 	DWORD GetMinWaitedTime()		const { return packets.GetMinWaitedime();	}

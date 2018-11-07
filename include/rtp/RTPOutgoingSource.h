@@ -9,19 +9,45 @@ struct RTPOutgoingSource : public RTPSource
 {
 	bool	generatedSeqNum;
 	DWORD   time;
+	DWORD   seqGaps;
 	DWORD   lastTime;
+	DWORD   lastPayloadType;
 	QWORD	lastSenderReport;
 	QWORD	lastSenderReportNTP;
+	DWORD	remb;
 	
 	RTPOutgoingSource() : RTPSource()
 	{
 		time			= random();
 		lastTime		= time;
 		ssrc			= random();
-		extSeq			= random() & 0xFFFF;
+		extSeqNum		= random() & 0xFFFF;
 		lastSenderReport	= 0;
 		lastSenderReportNTP	= 0;
+		lastPayloadType		= 0xFF;
+		seqGaps			= 0;
 		generatedSeqNum		= false;
+		remb			= 0;
+	}
+	
+	DWORD CorrectExtSeqNum(DWORD extSeqNum) 
+	{
+		//Updte sequence number with introduced gaps
+		DWORD corrected = extSeqNum + seqGaps;
+		//Set last seq num
+		SetExtSeqNum(corrected);
+		//return corrected 
+		return corrected;
+	}
+	
+	DWORD AddGapSeqNum()
+	{
+		//Add gap
+		seqGaps++;
+		//Add seq num
+		SetExtSeqNum(++extSeqNum);
+		//Add one more
+		return extSeqNum;
 	}
 	
 	DWORD NextSeqNum()
@@ -30,7 +56,7 @@ struct RTPOutgoingSource : public RTPSource
 		generatedSeqNum = true;
 		
 		//Get next
-		DWORD next = (++extSeq) & 0xFFFF;
+		DWORD next = (++extSeqNum) & 0xFFFF;
 		
 		//Check if we have a sequence wrap
 		if (!next)
@@ -47,9 +73,11 @@ struct RTPOutgoingSource : public RTPSource
 	{
 		RTPSource::Reset();
 		ssrc		= random();
-		extSeq		= random() & 0xFFFF;
+		extSeqNum	= random() & 0xFFFF;
 		time		= random();
 		lastTime	= time;
+		lastPayloadType	= 0xFF;
+		remb		= 0;
 	}
 	
 	virtual void Update(QWORD now,DWORD seqNum,DWORD size)

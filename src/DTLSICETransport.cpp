@@ -148,7 +148,6 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		Error("-DTLSICETransport::onData() | Error unprotecting rtp packet [%d]\n",err);
 		//Parse RTP header
 		DWORD ini = header.Parse(data,size);
-		header.Dump();
 		//If it has extension
 		if (header.extension)
 		{
@@ -358,7 +357,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 		 //Set codec
 		 packet->SetCodec(codec);
 		 packet->SetPayloadType(apt);
-	 
+
 	} else if (ssrc==group->fec.ssrc)  {
 		UltraDebug("-Flex fec\n");
 		//Ensure that it is a FEC codec
@@ -375,20 +374,22 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	//Check if it was rejected
 	if (lost<0)
 	{
-		UltraDebug("-DTLSICETransport::onData() | Dropped packet [ssrc:%u,seq:%d,rtx:%d]\n",ssrc,packet->GetSeqNum(),ssrc==group->rtx.ssrc);
+		UltraDebug("-DTLSICETransport::onData() | Dropped packet [orig:%u,ssrc:%u,seq:%d,rtx:%d]\n",ssrc,packet->GetSSRC(),packet->GetSeqNum(),ssrc==group->rtx.ssrc);
 		//Increase rejected counter
 		source->dropPackets++;
 	} 
 	
-	if (lost>0 || (group->GetCurrentLost() && getTimeDiff(source->lastNACKed)/1000>fmax(rtt,10)))  
+	if ( group->type == MediaFrame::Video && 
+		( lost>0 ||  (group->GetCurrentLost() && getTimeDiff(source->lastNACKed)/1000>fmax(rtt,20)))
+	   )
 	{
-		UltraDebug("-DTLSICETransport::onData() | Lost packets [ssrc:%u,seq:%d,lost:%d,total:%d]\n",ssrc,packet->GetSeqNum(),lost,group->GetCurrentLost());
+		UltraDebug("-DTLSICETransport::onData() | Lost packets [ssrc:%u,ssrc:%u,seq:%d,lost:%d,total:%d]\n",ssrc,packet->GetSSRC(),packet->GetSeqNum(),lost,group->GetCurrentLost());
 
 		//Create rtcp sender retpor
 		auto rtcp = RTCPCompoundPacket::Create();
 
 		//Create NACK
-		auto nack = rtcp->CreatePacket<RTCPRTPFeedback>(RTCPRTPFeedback::NACK,mainSSRC,ssrc);
+		auto nack = rtcp->CreatePacket<RTCPRTPFeedback>(RTCPRTPFeedback::NACK,mainSSRC,packet->GetSSRC());
 
 		//Get nacks for lost
 		for (auto field : group->GetNacks())
@@ -479,33 +480,43 @@ void DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 		//Error
 		return (void) Debug("-DTLSICETransport::SendProbe() | We don't have an DTLS setup yet\n");
 	
-	//Get outgoing rtx source
-	RTPOutgoingSource& source = group->rtx;
-	
-	//If it is not using rtx (i.e. not firefox)
-	if (!source.ssrc ||  sendMaps.apt.empty())
-		//Do nothing
-		return;
-
 	//Data
 	BYTE data[MTU+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
 	DWORD size = MTU;
 	int len = 0;
 
 	//Overrride headers
-	DWORD extSeqNum;
 	RTPHeader		header;
 	RTPHeaderExtension	extension;
+	
+	//Check if we ar using rtx or not
+	bool rtx = group->rtx.ssrc && !sendMaps.apt.empty();
+		
+	//Check which source are we using
+	RTPOutgoingSource& source = rtx ? group->rtx : group->media;
+	
+	//Get extended sequence number
+	DWORD extSeqNum;
 
-	//Get ext seq num
-	extSeqNum		= source.NextSeqNum();
-	//Update RTX headers
-	header.ssrc		= source.ssrc;
-	header.payloadType	= sendMaps.apt.begin()->first;
-	header.sequenceNumber	= extSeqNum;
-	header.timestamp	= source.lastTime++;
-	//Padding
-	header.padding		= 1;
+	//If it is using rtx (i.e. not firefox)
+	if (rtx)
+	{
+		//Update RTX headers
+		header.ssrc		= source.ssrc;
+		header.payloadType	= sendMaps.apt.begin()->first;
+		header.sequenceNumber	= extSeqNum = source.NextSeqNum();
+		header.timestamp	= source.lastTime++;
+		//Padding
+		header.padding		= 1;
+	} else {
+		//Update normal headers
+		header.ssrc		= source.ssrc;
+		header.payloadType	= source.lastPayloadType;
+		header.sequenceNumber	= extSeqNum = source.AddGapSeqNum();
+		header.timestamp	= source.lastTime;
+		//Padding
+		header.padding		= 1;
+	}
 
 	//Add transport wide cc on video
 	if (group->type == MediaFrame::Video && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC)!=RTPMap::NotFound)
@@ -596,11 +607,12 @@ void DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 		//Error
 		Error("-RTPTransport::SendPacket() | Error sending RTP packet [%d]\n",errno);
 	
-	//Update rtx
-	if (source.ssrc)
-		//Update stats
-		source.Update(getTimeMS(),header.sequenceNumber,len);
+	//Update last send time
+	source.lastTime		= header.timestamp;
+	source.lastPayloadType  = header.payloadType;
 	
+	//Update stats
+	source.Update(getTimeMS(),header.sequenceNumber,len);
 	
 	//Add to transport wide stats
 	if (extension.hasTransportWideCC)
@@ -649,37 +661,40 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	if (!packet)
 	{
 		//Debug
-		Debug("-DTLSICETransport::ReSendPacket() | packet not found, requesting PLI instead [seq:%d,ssrc:%u]\n",seq,group->rtx.ssrc);
+		UltraDebug("-DTLSICETransport::ReSendPacket() | packet not found[seq:%d,ssrc:%u]\n",seq,group->rtx.ssrc);
 		return;
 	}
-
-	//Get outgoing rtx source
-	RTPOutgoingSource& source = group->rtx;
 
 	//Data
 	BYTE data[MTU+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
 	DWORD size = MTU;
 	int len = 0;
 
-	DWORD extSeqNum = packet->GetExtSeqNum();
-		
 	//Overrride headers
 	RTPHeader		header(packet->GetRTPHeader());
 	RTPHeaderExtension	extension(packet->GetRTPHeaderExtension());
 
+	//Try to send it via rtx
+	BYTE apt = sendMaps.apt.GetTypeForCodec(packet->GetPayloadType());
+		
+	//Check if we ar using rtx or not
+	bool rtx = group->rtx.ssrc && apt!=RTPMap::NotFound;
+		
+	//Check which source are we using
+	RTPOutgoingSource& source = rtx ? group->rtx : group->media;
+	
+	//Get extended sequence number
+	DWORD extSeqNum = packet->GetExtSeqNum();
+	
 	//If it is using rtx (i.e. not firefox)
-	if (source.ssrc)
+	if (rtx)
 	{
-		//Get next seq
-		extSeqNum		= source.NextSeqNum();
 		//Update RTX headers
 		header.ssrc		= source.ssrc;
-		header.payloadType	= sendMaps.apt.GetTypeForCodec(packet->GetPayloadType());
-		header.sequenceNumber	= extSeqNum;
+		header.payloadType	= apt;
+		header.sequenceNumber	= extSeqNum = source.NextSeqNum();
 		//No padding
 		header.padding		= 0;
-		//Calculate last timestamp
-		source.lastTime =  packet->GetTimestamp();
 	}
 
 	//Add transport wide cc on video
@@ -727,7 +742,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	}
 
 	//If it is using rtx (i.e. not firefox)
-	if (source.ssrc)
+	if (rtx)
 	{
 		//And set the original seq
 		set2(data,len,seq);
@@ -781,10 +796,12 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 		//Error
 		Error("-RTPTransport::SendPacket() | Error sending RTP packet [%d]\n",errno);
 	
-	//Update rtx
-	if (source.ssrc)
-		//Update stats
-		source.Update(getTimeMS(),header.sequenceNumber,len);
+	//Update last send time
+	source.lastTime		= packet->GetTimestamp();
+	source.lastPayloadType  = packet->GetPayloadType();
+	
+	//Update stats
+	source.Update(getTimeMS(),header.sequenceNumber,len);
 	
 	//Add to transport wide stats
 	if (extension.hasTransportWideCC)
@@ -1679,6 +1696,7 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 	auto cloned = packet->Clone();
 	
 	//Update headers
+	cloned->SetExtSeqNum(source.CorrectExtSeqNum(cloned->GetExtSeqNum()));
 	cloned->SetSSRC(source.ssrc);
 	cloned->SetPayloadType(sendMaps.rtp.GetTypeForCodec(cloned->GetCodec()));
 	//No padding
@@ -1760,8 +1778,9 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 	//If got packet to send
 	if (len>0)
 	{
-		//Calculate last timestamp
-		source.lastTime	= cloned->GetTimestamp();
+		//Update last items
+		source.lastTime		= cloned->GetTimestamp();
+		source.lastPayloadType  = cloned->GetPayloadType();
 
 		//Update source
 		source.Update(getTimeMS(),cloned->GetSeqNum(),len);
@@ -1795,6 +1814,33 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 	if (getTimeDiff(source.lastSenderReport)>1E6)
 		//Create and send rtcp sender retpor
 		Send(RTCPCompoundPacket::Create(group->media.CreateSenderReport(getTime())));
+	
+	//Do we need to send probing?
+	if (probe && group->type == MediaFrame::Video && cloned->GetMark() && source.remb)
+	{
+		//Get bitrates
+		DWORD bitrate   = static_cast<DWORD>(source.acumulator.GetInstantAvg());
+		DWORD estimated = source.remb;
+		
+					
+		//If we can still send more
+		if (estimated>bitrate)
+		{
+			BYTE size = 255;
+			//Get probe padding needed
+			DWORD probingBitrate = maxProbingBitrate ? std::min(estimated-bitrate,maxProbingBitrate) : estimated-bitrate;
+
+			//Get number of probes assuming 30 fps not send more than 5 continous packets
+			WORD num = (probingBitrate*33)/(8000*size);
+
+			//UltraDebug("-DTLSICETransport::Run() | Sending inband probing packets [at:%u,estimated:%u,bitrate:%u,probing:%u,max:%u,num:%d]\n", cloned->GetSeqNum(), estimated, bitrate,probingBitrate,maxProbingBitrate, num, sleep);
+			
+			//Set all the probes
+			for (BYTE i=0;i<num;++i)
+				//Send probe packet
+				SendProbe(group,size);
+		}
+	}
 	
 	//Did we send successfully?
 	return (len>=0);
@@ -2295,53 +2341,61 @@ int DTLSICETransport::Run()
 	while(running)
 	{
 		//Get sleeping time
-		QWORD sleep = probe ? 33 : 1000;
+		QWORD sleep = 1000;
 		//Get time since last probe
-		QWORD diff = probe ? getDifTime(&time)/1000 : 0;
-		
-		//If we are probing
-		if (probe && diff>=sleep)
+		QWORD diff = 0;
+		//Endure that transport wide cc is enabled
+		if ( probe && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC)!=RTPMap::NotFound)
 		{
-			ScopedUse use(outgoingUse);
-			//Probe size
-			BYTE size = 255;
-			//Get bitrates
-			DWORD bitrate   = static_cast<DWORD>(outgoingBitrate.GetInstantAvg());
-			DWORD estimated = senderSideEstimator.GetEstimatedBitrate();
-			
-			//Probe the first 5s to 312kbps
-			if (getTime()-ini<5E6)
-				//Increase stimation
-				estimated = std::max(estimated,bitrate+3120000);
-			
-			//If we can still send more
-			if (estimated>bitrate)
-			{
-				//Get probe padding needed
-				DWORD probingBitrate = maxProbingBitrate ? std::min(estimated-bitrate,maxProbingBitrate) : estimated-bitrate;
-				
-				//Get number of probes
-				WORD num = (probingBitrate*sleep)/(8000*size)+1;
+			//Get sleeping time
+			sleep = 33;
+			//Get time since last probe
+			diff = getDifTime(&time)/1000;
 
-				//Check if we have an outgpoing group
-				for (auto &group : outgoing)
+			//If we are probing
+			if (diff>=sleep)
+			{
+				ScopedUse use(outgoingUse);
+				//Probe size
+				BYTE size = 255;
+				//Get bitrates
+				DWORD bitrate   = static_cast<DWORD>(outgoingBitrate.GetInstantAvg());
+				DWORD estimated = senderSideEstimator.GetEstimatedBitrate();
+
+				//Probe the first 5s to 312kbps
+				if (getTime()-ini<5E6)
+					//Increase stimation
+					estimated = std::max(estimated,bitrate+3120000);
+
+				//If we can still send more
+				if (estimated>bitrate)
 				{
-					//We can only probe on rtx with video
-					if (group.second->type == MediaFrame::Video)
+					//Get probe padding needed
+					DWORD probingBitrate = maxProbingBitrate ? std::min(estimated-bitrate,maxProbingBitrate) : estimated-bitrate;
+
+					//Get number of probes, do not send more than 5 continoues packets
+					WORD num = (probingBitrate*sleep)/(8000*size);
+
+					//Check if we have an outgpoing group
+					for (auto &group : outgoing)
 					{
-						UltraDebug("-DTLSICETransport::Run() | Sending probing packets [estimated:%u,bitrate:%u,probing:%u,max:%u,num:%d,sleep:%d]\n", estimated, bitrate,probingBitrate,maxProbingBitrate, num, sleep);
-						//Set all the probes
-						for (BYTE i=0;i<num;++i)
-							//Send probe packet
-							SendProbe(group.second,size);
-						break;
+						//We can only probe on rtx with video
+						if (group.second->type == MediaFrame::Video)
+						{
+							//UltraDebug("-DTLSICETransport::Run() | Sending probing packets [estimated:%u,bitrate:%u,probing:%u,max:%u,num:%d,sleep:%d]\n", estimated, bitrate,probingBitrate,maxProbingBitrate, num, sleep);
+							//Set all the probes
+							for (BYTE i=0;i<num;++i)
+								//Send probe packet
+								SendProbe(group.second,size);
+							break;
+						}
 					}
 				}
+
+				//Reset timer
+				getUpdDifTime(&time);
+				diff = 0;
 			}
-			
-			//Reset timer
-			getUpdDifTime(&time);
-			diff = 0;
 		}
 		
 		//Check if we have packets
