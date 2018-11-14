@@ -33,6 +33,7 @@
 #include <queue>
 #include <algorithm>
 #include "DTLSICETransport.h"
+#include "PCAPFile.h"
 #include "rtp/RTPMap.h"
 #include "rtp/RTPHeader.h"
 #include "rtp/RTPHeaderExtension.h"
@@ -111,9 +112,9 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 			return Error("-DTLSICETransport::onData() | Error unprotecting rtcp packet [%d]\n",err);
 
 		//If dumping
-		if (pcap && dumpRTCP)
+		if (dumper && dumpRTCP)
 			//Write udp packet
-			pcap->WriteUDP(getTimeMS(),candidate->GetIPAddress(),candidate->GetPort(),0x7F000001,5004,data,len);
+			dumper->WriteUDP(getTimeMS(),candidate->GetIPAddress(),candidate->GetPort(),0x7F000001,5004,data,len);
 
 		//Parse it
 		auto rtcp = RTCPCompoundPacket::Parse(data,len);
@@ -160,9 +161,9 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	}
 	
 	//If dumping
-	if (pcap && dumpInRTP)
+	if (dumper && dumpInRTP)
 		//Write udp packet
-		pcap->WriteUDP(getTimeMS(),candidate->GetIPAddress(),candidate->GetPort(),0x7F000001,5004,data,len);
+		dumper->WriteUDP(getTimeMS(),candidate->GetIPAddress(),candidate->GetPort(),0x7F000001,5004,data,len);
 	
 	//Parse RTP header
 	DWORD ini = header.Parse(data,size);
@@ -583,9 +584,9 @@ void DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 			return (void)Debug("-DTLSICETransport::SendProbe() | We don't have an active candidate yet\n");
 		
 		//If dumping
-		if (pcap && dumpOutRTP)
+		if (dumper && dumpOutRTP)
 			//Write udp packet
-			pcap->WriteUDP(getTimeMS(),0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len);
+			dumper->WriteUDP(getTimeMS(),0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len);
 
 		
 		//Encript
@@ -773,9 +774,9 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 			return (void)Debug("-DTLSICETransport::Send() | We don't have an active candidate yet\n");
 
 		//If dumping
-		if (pcap && dumpOutRTP)
+		if (dumper && dumpOutRTP)
 			//Write udp packet
-			pcap->WriteUDP(getTimeMS(),0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len);
+			dumper->WriteUDP(getTimeMS(),0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len);
 
 		//Encript
 		srtp_err_status_t err = srtp_protect(send,data,(int*)&len);
@@ -1066,31 +1067,45 @@ void DTLSICETransport::SetRemoteProperties(const Properties& properties)
 	//Clear extension
 	extensions.clear();
 }
-		
-int DTLSICETransport::Dump(const char* filename, bool inbound, bool outbound, bool rtcp)
+int DTLSICETransport::Dump(UDPDumper* dumper, bool inbound, bool outbound, bool rtcp)
 {
-	Log("-DTLSICETransport::Dump()\n");
+	Debug("-DTLSICETransport::Dump() | [inbound:%d,outboud:%d,rtcp:%d]\n",inbound,outbound,rtcp);
 	
-	if (pcap)
+	if (this->dumper)
 		return Error("Already dumping\n");
 	
-	//Create pcap file
-	pcap = new PCAPFile();
+	//Store pcap as dumper
+	this->dumper = dumper;
+	
+	//What to dumo
+	dumpInRTP	= inbound;
+	dumpOutRTP	= outbound;
+	dumpRTCP	= rtcp;
+	
+	//Done
+	return 1;
+}
+
+int DTLSICETransport::Dump(const char* filename, bool inbound, bool outbound, bool rtcp)
+{
+	Log("-DTLSICETransport::Dump() | [pcap:%s]\n",filename);
+	
+	if (dumper)
+		return Error("Already dumping\n");
+	
+	//Create dumper file
+	PCAPFile* pcap = new PCAPFile();
 	
 	//Open it
 	if (!pcap->Open(filename))
 	{
 		//Error
 		delete(pcap);
-		pcap = NULL;
 		return 0;
 	}
-	//What to dumo
-	dumpInRTP	= inbound;
-	dumpOutRTP	= outbound;
-	dumpRTCP	= rtcp;
+	
 	//Ok
-	return true;
+	return Dump(pcap,inbound,outbound,rtcp);
 }
 
 void DTLSICETransport::Reset()
@@ -1116,9 +1131,13 @@ void DTLSICETransport::Reset()
 		srtp_dealloc(recv);
 	
 	//Check if dumping
-	if (pcap)
+	if (dumper)
+	{
+		//Close dumper
+		dumper->Close();
 		//Delete it
-		delete(pcap);
+		delete(dumper);
+	}
 	
 	send = NULL;
 	recv = NULL;
@@ -1127,7 +1146,7 @@ void DTLSICETransport::Reset()
 	iceLocalPwd = NULL;
 	iceRemoteUsername = NULL;
 	iceRemotePwd = NULL;
-	pcap = NULL;
+	dumper = NULL;
 	dumpInRTP = false;
 	dumpOutRTP = false;
 	dumpRTCP = false;
@@ -1590,9 +1609,9 @@ void DTLSICETransport::Send(const RTCPCompoundPacket::shared &rtcp)
 			return (void) Debug("-DTLSICETransport::Send() | We don't have an active candidate yet\n");
 
 		//If dumping
-		if (pcap && dumpRTCP)
+		if (dumper && dumpRTCP)
 			//Write udp packet
-			pcap->WriteUDP(getTimeMS(),0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len);
+			dumper->WriteUDP(getTimeMS(),0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len);
 		
 		//Encript
 		srtp_err_status_t srtp_err_status = srtp_protect_rtcp(send,data,(int*)&len);
@@ -1754,9 +1773,9 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 			return Debug("-DTLSICETransport::Send() | We don't have an active candidate yet\n");
 		
 		//If dumping
-		if (pcap && dumpOutRTP)
+		if (dumper && dumpOutRTP)
 			//Write udp packet
-			pcap->WriteUDP(getTimeMS(),0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len);
+			dumper->WriteUDP(getTimeMS(),0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len);
 		
 		//Encript
 		srtp_err_status_t err = srtp_protect(send,data,&len);

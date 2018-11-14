@@ -343,7 +343,7 @@ public:
 
 			//Check
 			assert(len);
-			assert(extension.hasRTPStreamId);
+			assert(extension.hasRId);
 			assert(strcmp(extension.rid.c_str(),kStreamId)==0);
 			
 			//Serialize and ensure it is the same
@@ -422,9 +422,9 @@ public:
 
 			//Check
 			assert(len);
-			assert(extension.hasRTPStreamId);
+			assert(extension.hasRId);
 			assert(strcmp(extension.rid.c_str(),kStreamId)==0);
-			assert(extension.hasRepairedRTPStreamId);
+			assert(extension.hasRepairedId);
 			assert(strcmp(extension.repairedId.c_str(),kRepairedStreamId)==0);
 			assert(extension.hasMediaStreamId);
 			assert(strcmp(extension.mid.c_str(),kMid)==0);

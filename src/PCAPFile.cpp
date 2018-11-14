@@ -88,7 +88,8 @@ void PCAPFile::Close()
 	//Check not already closed
 	if (fd<0) return;
 
-	Log("PCAPFile::close()\n");
+	Log("-PCAPFile::close()\n");
+	
 	//Close file
 	close(fd);
 	fd = -1;

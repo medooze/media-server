@@ -27,7 +27,7 @@
 #include "rtp.h"
 #include "fecdecoder.h"
 #include "use.h"
-#include "PCAPFile.h"
+#include "UDPDumper.h"
 #include "remoterateestimator.h"
 #include "waitqueue.h"
 
@@ -59,6 +59,7 @@ public:
 	virtual int SendPLI(DWORD ssrc) override;
 	virtual int Enqueue(const RTPPacket::shared& packet) override;
 	int Dump(const char* filename, bool inbound = true, bool outbound = true, bool rtcp = true);
+	int Dump(UDPDumper* dumper, bool inbound = true, bool outbound = true, bool rtcp = true);
 	void Reset();
 	
 	void ActivateRemoteCandidate(ICERemoteCandidate* candidate,bool useCandidate, DWORD priority);
@@ -181,11 +182,11 @@ private:
 	std::map<DWORD,PacketStats::shared> transportWideSentPacketsStats;
 	std::map<DWORD,PacketStats::shared> transportWideReceivedPacketsStats;
 	
-	PCAPFile* pcap	= nullptr;
-	bool dumpInRTP	= false;
-	bool dumpOutRTP = false;
-	bool dumpRTCP	= false;
-	bool probe	= false;
+	UDPDumper* dumper	= nullptr;
+	bool dumpInRTP		= false;
+	bool dumpOutRTP		= false;
+	bool dumpRTCP		= false;
+	bool probe		= false;
 	DWORD maxProbingBitrate = 1024*1000;
 	
 	RemoteRateEstimator senderSideEstimator;

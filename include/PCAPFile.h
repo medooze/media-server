@@ -10,15 +10,17 @@
 
 #include "config.h"
 #include "use.h"
+#include "UDPDumper.h"
 
-class PCAPFile
+class PCAPFile :
+	public UDPDumper
 {
 public:
 	PCAPFile() = default;
 	~PCAPFile();
 	int Open(const char* filename);
-	void WriteUDP(QWORD currentTimeMillis,DWORD originIp, short originPort, DWORD destIp, short destPort,BYTE* data, DWORD size);
-	void Close();
+	virtual void WriteUDP(QWORD currentTimeMillis,DWORD originIp, short originPort, DWORD destIp, short destPort,BYTE* data, DWORD size) override;
+	virtual void Close() override;
 private:
 	int fd = -1;
 	Mutex mutex;
