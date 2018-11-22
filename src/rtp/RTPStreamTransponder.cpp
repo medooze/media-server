@@ -33,8 +33,6 @@ RTPStreamTransponder::RTPStreamTransponder(RTPOutgoingSourceGroup* outgoing,RTPS
 
 bool RTPStreamTransponder::SetIncoming(RTPIncomingSourceGroup* incoming, RTPReceiver* receiver)
 {
-	ScopedLock lock(mutex);
-	
 	//If they are the same
 	if (this->incoming==incoming && this->receiver==receiver)
 		//DO nothing
@@ -45,13 +43,18 @@ bool RTPStreamTransponder::SetIncoming(RTPIncomingSourceGroup* incoming, RTPRece
 	//Remove listener from old stream
 	if (this->incoming) 
 		this->incoming->RemoveListener(this);
-	
-	//Reset packets before start listening again
-	Reset();
-	
-	//Store stream and receiver
-	this->incoming = incoming;
-	this->receiver = receiver;
+
+        //Locked
+        {
+                ScopedLock lock(mutex);
+        
+                //Reset packets before start listening again
+                Reset();
+
+                //Store stream and receiver
+                this->incoming = incoming;
+                this->receiver = receiver;
+        }
 	
 	//Double check
 	if (this->incoming)
