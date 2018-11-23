@@ -5,7 +5,8 @@
 #include "rtp/RTPSource.h"
 #include "rtp/RTCPSenderReport.h"
 
-struct RTPOutgoingSource : public RTPSource
+struct RTPOutgoingSource : 
+	public RTPSource
 {
 	bool	generatedSeqNum;
 	DWORD   time;
