@@ -2426,8 +2426,8 @@ int DTLSICETransport::Run()
 					//Get probe padding needed
 					DWORD probingBitrate = maxProbingBitrate ? std::min(estimated-bitrate,maxProbingBitrate) : estimated-bitrate;
 
-					//Get number of probes, do not send more than 5 continoues packets
-					WORD num = (probingBitrate*sleep)/(8000*size);
+					//Get number of probes, do not send more than 5 continoues packets and no more than 64 (~aprox 4mpbs)
+					BYTE num = std::min((probingBitrate*sleep)/(8000*size),32ul);
 
 					//Check if we have an outgpoing group
 					for (auto &group : outgoing)
