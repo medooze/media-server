@@ -1883,9 +1883,9 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 			//Get probe padding needed
 			DWORD probingBitrate = maxProbingBitrate ? std::min(estimated-bitrate,maxProbingBitrate) : estimated-bitrate;
 
-			//Get number of probes assuming 30 fps not send more than 5 continous packets
-			WORD num = (probingBitrate*33)/(8000*size);
-
+			//Get number of probes, do not send more than 32 continoues packets (~aprox 2mpbs)
+			BYTE num = std::min((probingBitrate*33)/(8000*size),32u);
+			
 			//UltraDebug("-DTLSICETransport::Run() | Sending inband probing packets [at:%u,estimated:%u,bitrate:%u,probing:%u,max:%u,num:%d]\n", cloned->GetSeqNum(), estimated, bitrate,probingBitrate,maxProbingBitrate, num, sleep);
 			
 			//Set all the probes
@@ -2426,7 +2426,7 @@ int DTLSICETransport::Run()
 					//Get probe padding needed
 					DWORD probingBitrate = maxProbingBitrate ? std::min(estimated-bitrate,maxProbingBitrate) : estimated-bitrate;
 
-					//Get number of probes, do not send more than 5 continoues packets and no more than 64 (~aprox 4mpbs)
+					//Get number of probes, do not send more than 32 continoues packets (~aprox 2mpbs)
 					BYTE num = std::min((probingBitrate*sleep)/(8000*size),32ul);
 
 					//Check if we have an outgpoing group
