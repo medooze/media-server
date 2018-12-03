@@ -240,27 +240,91 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	//Get group
 	RTPIncomingSourceGroup *group = GetIncomingSourceGroup(ssrc);
 	
-	//If it doesn't have a group but does hava an rtp stream id
-	if (!group && extension.hasRId)
+	//If it doesn't have a group
+	if (!group)
 	{
+		//Get rid
+		auto mid = extension.mid;
+		auto rid = extension.hasRepairedId ? extension.repairedId : extension.rid;
+			
 		Debug("-DTLSICETransport::onData() | Unknowing group for ssrc trying to retrieve by [ssrc:%u,rid:'%s']\n",ssrc,extension.rid.c_str());
-		//Try to find it on the rids
-		auto it = rids.find(extension.rid);
-		//If found
-		if (it!=rids.end())
+		
+		//If it is the repaidr stream or it has rid and it is rtx
+		if (extension.hasRepairedId || (extension.hasRId && packet->GetCodec()==VideoCodec::RTX))
 		{
-			Log("-DTLSICETransport::onData() | Associating rtp stream id to ssrc [ssrc:%u,rid:'%s']\n",ssrc,extension.rid.c_str());
-					
-			//Got source
-			group = it->second;
-			
-			//Set ssrc for next ones
-			//TODO: ensure it didn't had a previous ssrc
-			group->media.ssrc = ssrc;
-			
-			//Add it to the incoming list
-			incoming[group->media.ssrc] = group;
+			//Try to find it on the rids and mids
+			auto it = rids.find(mid+"@"+rid);
+			//If found
+			if (it!=rids.end())
+			{
+				Log("-DTLSICETransport::onData() | Associating rtx stream to ssrc [ssrc:%u,mid:'%s',rid:'%s']\n",ssrc,mid.c_str(),rid.c_str());
+
+				//Got source
+				group = it->second;
+
+				//Set ssrc for next ones
+				//TODO: ensure it didn't had a previous ssrc
+				group->rtx.ssrc = ssrc;
+
+				//Add it to the incoming list
+				incoming[ssrc] = group;
+			}
+		} else if (extension.hasRId) {
+			//Try to find it on the rids and mids
+			auto it = rids.find(mid+"@"+rid);
+			//If found
+			if (it!=rids.end())
+			{
+				Log("-DTLSICETransport::onData() | Associating rtp stream to ssrc [ssrc:%u,mid:'%s',rid:'%s']\n",ssrc,mid.c_str(),rid.c_str());
+
+				//Got source
+				group = it->second;
+
+				//Set ssrc for next ones
+				//TODO: ensure it didn't had a previous ssrc
+				group->media.ssrc = ssrc;
+
+				//Add it to the incoming list
+				incoming[ssrc] = group;
+			}
+		} else if (extension.hasMediaStreamId && packet->GetCodec()==VideoCodec::RTX) {
+			//Try to find it on the rids and mids
+			auto it = mids.find(mid);
+			//If found
+			if (it!=mids.end())
+			{
+				Log("-DTLSICETransport::onData() | Associating rtx stream id to ssrc [ssrc:%u,mid:'%s']\n",ssrc,mid.c_str());
+
+				//Get first source in set, if there was more it should have contained an rid
+				group = *it->second.begin();
+				
+				//Set ssrc for next ones
+				//TODO: ensure it didn't had a previous ssrc
+				group->rtx.ssrc = ssrc;
+
+				//Add it to the incoming list
+				incoming[ssrc] = group;
+			}
+		} else if (extension.hasMediaStreamId) {
+			//Try to find it on the rids and mids
+			auto it = mids.find(mid);
+			//If found
+			if (it!=mids.end())
+			{
+				Log("-DTLSICETransport::onData() | Associating rtp stream to ssrc [ssrc:%u,mid:'%s']\n",ssrc,mid.c_str());
+
+				//Get first source in set, if there was more it should have contained an rid
+				group = *it->second.begin();
+
+				//Set ssrc for next ones
+				//TODO: ensure it didn't had a previous ssrc
+				group->media.ssrc = ssrc;
+
+				//Add it to the incoming list
+				incoming[ssrc] = group;
+			}
 		}
+		
 	}
 			
 	//Ensure it has a group
@@ -1487,7 +1551,7 @@ bool DTLSICETransport::RemoveOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 
 bool DTLSICETransport::AddIncomingSourceGroup(RTPIncomingSourceGroup *group)
 {
-	Log("-AddIncomingSourceGroup [mid:'%s',rid:'%s',,ssrc:%u,fec:%u,rtx:%u]\n",group->mid.c_str(),group->rid.c_str(),group->media.ssrc,group->fec.ssrc,group->rtx.ssrc);
+	Log("-AddIncomingSourceGroup [mid:'%s',rid:'%s',ssrc:%u,fec:%u,rtx:%u]\n",group->mid.c_str(),group->rid.c_str(),group->media.ssrc,group->fec.ssrc,group->rtx.ssrc);
 	
 	//It must contain media ssrc
 	if (!group->media.ssrc && group->rid.empty())
@@ -1506,7 +1570,7 @@ bool DTLSICETransport::AddIncomingSourceGroup(RTPIncomingSourceGroup *group)
 
 	//Add rid if any
 	if (!group->rid.empty())
-		rids[group->rid] = group;
+		rids[group->mid + "@" + group->rid] = group;
 	
 	//Add mid if any
 	if (!group->mid.empty())
@@ -1542,11 +1606,7 @@ bool DTLSICETransport::AddIncomingSourceGroup(RTPIncomingSourceGroup *group)
 
 bool DTLSICETransport::RemoveIncomingSourceGroup(RTPIncomingSourceGroup *group)
 {
-	Log("-RemoveIncomingSourceGroup [ssrc:%u,fec:%u,rtx:%u]\n",group->media.ssrc,group->fec.ssrc,group->rtx.ssrc);
-	
-	//It must contain media ssrc
-	if (!group->media.ssrc)
-		return Error("No media ssrc defined, stream will not be removed\n");
+	Log("-RemoveIncomingSourceGroup [mid:'%s',rid:'%s',ssrc:%u,fec:%u,rtx:%u]\n",group->mid.c_str(),group->rid.c_str(),group->media.ssrc,group->fec.ssrc,group->rtx.ssrc);
 	
 	//Stop distpaching
 	group->Stop();
@@ -1556,7 +1616,7 @@ bool DTLSICETransport::RemoveIncomingSourceGroup(RTPIncomingSourceGroup *group)
 
 	//Remove rid if any
 	if (!group->rid.empty())
-		rids.erase(group->rid);
+		rids.erase(group->mid + "@" + group->rid);
 	
 	//Remove mid if any
 	if (!group->rid.empty())
