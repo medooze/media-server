@@ -2487,7 +2487,7 @@ int DTLSICETransport::Run()
 					DWORD probingBitrate = maxProbingBitrate ? std::min(estimated-bitrate,maxProbingBitrate) : estimated-bitrate;
 
 					//Get number of probes, do not send more than 32 continoues packets (~aprox 2mpbs)
-					BYTE num = std::min((probingBitrate*sleep)/(8000*size),32ul);
+					BYTE num = std::min((probingBitrate*sleep)/(8000*size),static_cast<QWORD>(32));
 
 					//Check if we have an outgpoing group
 					for (auto &group : outgoing)
