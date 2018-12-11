@@ -68,11 +68,17 @@ void RTCPPayloadFeedback::Dump()
 					//Get bitrate
 					DWORD bitrate = mantisa << exp;
 					//Log
-					Debug("\t[REMB bitrate=%d exp=%d mantisa=%d/]\n",bitrate,exp,mantisa);
+					Debug("\t[REMB bitrate=%d exp=%d mantisa=%d num=%d/]\n",bitrate,exp,mantisa,num);
 					//For each
 					for (DWORD i=0;i<num;++i)
+					{
+						//Check length
+						if (len<8+4*i+4)
+							//wrong format
+							break;
 						//Log
 						Debug("\t[ssrc=%u/]\n",get4(payload,8+4*i));
+					}
 					//Log
 					Debug("\t[/REMB]\n");
 					
