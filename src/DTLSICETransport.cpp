@@ -262,8 +262,12 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 				//Got source
 				group = it->second;
 
+				//Check if there was a previous ssrc
+				if (group->rtx.ssrc)
+					//Remove previous one
+					incoming.erase(group->rtx.ssrc);
+				
 				//Set ssrc for next ones
-				//TODO: ensure it didn't had a previous ssrc
 				group->rtx.ssrc = ssrc;
 
 				//Add it to the incoming list
@@ -280,8 +284,12 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 				//Got source
 				group = it->second;
 
+				//Check if there was a previous ssrc
+				if (group->media.ssrc)
+					//Remove previous one
+					incoming.erase(group->media.ssrc);
+				
 				//Set ssrc for next ones
-				//TODO: ensure it didn't had a previous ssrc
 				group->media.ssrc = ssrc;
 
 				//Add it to the incoming list
@@ -298,8 +306,12 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 				//Get first source in set, if there was more it should have contained an rid
 				group = *it->second.begin();
 				
+				//Check if there was a previous ssrc
+				if (group->rtx.ssrc)
+					//Remove previous one
+					incoming.erase(group->rtx.ssrc);
+				
 				//Set ssrc for next ones
-				//TODO: ensure it didn't had a previous ssrc
 				group->rtx.ssrc = ssrc;
 
 				//Add it to the incoming list
@@ -316,15 +328,18 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 				//Get first source in set, if there was more it should have contained an rid
 				group = *it->second.begin();
 
+				//Check if there was a previous ssrc
+				if (group->media.ssrc)
+					//Remove previous one
+					incoming.erase(group->media.ssrc);
+				
 				//Set ssrc for next ones
-				//TODO: ensure it didn't had a previous ssrc
 				group->media.ssrc = ssrc;
 
 				//Add it to the incoming list
 				incoming[ssrc] = group;
 			}
 		}
-		
 	}
 			
 	//Ensure it has a group
