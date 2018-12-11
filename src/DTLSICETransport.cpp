@@ -2234,6 +2234,10 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 								//For each
 								for (DWORD i=0;i<num;++i)
 								{
+									//Check length
+									if (len<8+4*i+4)
+										//wrong format
+										break;
 									//Get ssrc
 									DWORD target = get4(payload,8+4*i);
 									//Get media
