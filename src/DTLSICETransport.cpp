@@ -234,110 +234,115 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWOR
 	//Set the payload
 	packet->SetPayload(data+ini,len-ini);
 	
-	//Using incoming
-	ScopedUse use(incomingUse);
 	
-	//Get group
-	RTPIncomingSourceGroup *group = GetIncomingSourceGroup(ssrc);
-	
-	//If it doesn't have a group
-	if (!group)
+	//Synchronized
+	RTPIncomingSourceGroup *group = nullptr;
 	{
-		//Get rid
-		auto mid = extension.mid;
-		auto rid = extension.hasRepairedId ? extension.repairedId : extension.rid;
-			
-		Debug("-DTLSICETransport::onData() | Unknowing group for ssrc trying to retrieve by [ssrc:%u,rid:'%s']\n",ssrc,extension.rid.c_str());
-		
-		//If it is the repaidr stream or it has rid and it is rtx
-		if (extension.hasRepairedId || (extension.hasRId && packet->GetCodec()==VideoCodec::RTX))
+		//Lock incoming
+		ScopedUseLock lock(incomingUse);
+
+		//Get group
+		 group = GetIncomingSourceGroup(ssrc);
+
+		//If it doesn't have a group
+		if (!group)
 		{
-			//Try to find it on the rids and mids
-			auto it = rids.find(mid+"@"+rid);
-			//If found
-			if (it!=rids.end())
+			//Get rid
+			auto mid = extension.mid;
+			auto rid = extension.hasRepairedId ? extension.repairedId : extension.rid;
+
+			Debug("-DTLSICETransport::onData() | Unknowing group for ssrc trying to retrieve by [ssrc:%u,rid:'%s']\n",ssrc,extension.rid.c_str());
+
+			//If it is the repaidr stream or it has rid and it is rtx
+			if (extension.hasRepairedId || (extension.hasRId && packet->GetCodec()==VideoCodec::RTX))
 			{
-				Log("-DTLSICETransport::onData() | Associating rtx stream to ssrc [ssrc:%u,mid:'%s',rid:'%s']\n",ssrc,mid.c_str(),rid.c_str());
+				//Try to find it on the rids and mids
+				auto it = rids.find(mid+"@"+rid);
+				//If found
+				if (it!=rids.end())
+				{
+					Log("-DTLSICETransport::onData() | Associating rtx stream to ssrc [ssrc:%u,mid:'%s',rid:'%s']\n",ssrc,mid.c_str(),rid.c_str());
 
-				//Got source
-				group = it->second;
+					//Got source
+					group = it->second;
 
-				//Check if there was a previous ssrc
-				if (group->rtx.ssrc)
-					//Remove previous one
-					incoming.erase(group->rtx.ssrc);
-				
-				//Set ssrc for next ones
-				group->rtx.ssrc = ssrc;
+					//Check if there was a previous ssrc
+					if (group->rtx.ssrc)
+						//Remove previous one
+						incoming.erase(group->rtx.ssrc);
 
-				//Add it to the incoming list
-				incoming[ssrc] = group;
-			}
-		} else if (extension.hasRId) {
-			//Try to find it on the rids and mids
-			auto it = rids.find(mid+"@"+rid);
-			//If found
-			if (it!=rids.end())
-			{
-				Log("-DTLSICETransport::onData() | Associating rtp stream to ssrc [ssrc:%u,mid:'%s',rid:'%s']\n",ssrc,mid.c_str(),rid.c_str());
+					//Set ssrc for next ones
+					group->rtx.ssrc = ssrc;
 
-				//Got source
-				group = it->second;
+					//Add it to the incoming list
+					incoming[ssrc] = group;
+				}
+			} else if (extension.hasRId) {
+				//Try to find it on the rids and mids
+				auto it = rids.find(mid+"@"+rid);
+				//If found
+				if (it!=rids.end())
+				{
+					Log("-DTLSICETransport::onData() | Associating rtp stream to ssrc [ssrc:%u,mid:'%s',rid:'%s']\n",ssrc,mid.c_str(),rid.c_str());
 
-				//Check if there was a previous ssrc
-				if (group->media.ssrc)
-					//Remove previous one
-					incoming.erase(group->media.ssrc);
-				
-				//Set ssrc for next ones
-				group->media.ssrc = ssrc;
+					//Got source
+					group = it->second;
 
-				//Add it to the incoming list
-				incoming[ssrc] = group;
-			}
-		} else if (extension.hasMediaStreamId && packet->GetCodec()==VideoCodec::RTX) {
-			//Try to find it on the rids and mids
-			auto it = mids.find(mid);
-			//If found
-			if (it!=mids.end())
-			{
-				Log("-DTLSICETransport::onData() | Associating rtx stream id to ssrc [ssrc:%u,mid:'%s']\n",ssrc,mid.c_str());
+					//Check if there was a previous ssrc
+					if (group->media.ssrc)
+						//Remove previous one
+						incoming.erase(group->media.ssrc);
 
-				//Get first source in set, if there was more it should have contained an rid
-				group = *it->second.begin();
-				
-				//Check if there was a previous ssrc
-				if (group->rtx.ssrc)
-					//Remove previous one
-					incoming.erase(group->rtx.ssrc);
-				
-				//Set ssrc for next ones
-				group->rtx.ssrc = ssrc;
+					//Set ssrc for next ones
+					group->media.ssrc = ssrc;
 
-				//Add it to the incoming list
-				incoming[ssrc] = group;
-			}
-		} else if (extension.hasMediaStreamId) {
-			//Try to find it on the rids and mids
-			auto it = mids.find(mid);
-			//If found
-			if (it!=mids.end())
-			{
-				Log("-DTLSICETransport::onData() | Associating rtp stream to ssrc [ssrc:%u,mid:'%s']\n",ssrc,mid.c_str());
+					//Add it to the incoming list
+					incoming[ssrc] = group;
+				}
+			} else if (extension.hasMediaStreamId && packet->GetCodec()==VideoCodec::RTX) {
+				//Try to find it on the rids and mids
+				auto it = mids.find(mid);
+				//If found
+				if (it!=mids.end())
+				{
+					Log("-DTLSICETransport::onData() | Associating rtx stream id to ssrc [ssrc:%u,mid:'%s']\n",ssrc,mid.c_str());
 
-				//Get first source in set, if there was more it should have contained an rid
-				group = *it->second.begin();
+					//Get first source in set, if there was more it should have contained an rid
+					group = *it->second.begin();
 
-				//Check if there was a previous ssrc
-				if (group->media.ssrc)
-					//Remove previous one
-					incoming.erase(group->media.ssrc);
-				
-				//Set ssrc for next ones
-				group->media.ssrc = ssrc;
+					//Check if there was a previous ssrc
+					if (group->rtx.ssrc)
+						//Remove previous one
+						incoming.erase(group->rtx.ssrc);
 
-				//Add it to the incoming list
-				incoming[ssrc] = group;
+					//Set ssrc for next ones
+					group->rtx.ssrc = ssrc;
+
+					//Add it to the incoming list
+					incoming[ssrc] = group;
+				}
+			} else if (extension.hasMediaStreamId) {
+				//Try to find it on the rids and mids
+				auto it = mids.find(mid);
+				//If found
+				if (it!=mids.end())
+				{
+					Log("-DTLSICETransport::onData() | Associating rtp stream to ssrc [ssrc:%u,mid:'%s']\n",ssrc,mid.c_str());
+
+					//Get first source in set, if there was more it should have contained an rid
+					group = *it->second.begin();
+
+					//Check if there was a previous ssrc
+					if (group->media.ssrc)
+						//Remove previous one
+						incoming.erase(group->media.ssrc);
+
+					//Set ssrc for next ones
+					group->media.ssrc = ssrc;
+
+					//Add it to the incoming list
+					incoming[ssrc] = group;
+				}
 			}
 		}
 	}
