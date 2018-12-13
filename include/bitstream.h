@@ -438,7 +438,7 @@ public:
 		//No len yet
 		DWORD len = 0;
 		//Count zeros
-		while (!reader.Get(1))
+		while (reader.Left() && !reader.Get(1))
 			//Increase len
 			++len;
 		//Get the exp

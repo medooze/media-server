@@ -46,7 +46,7 @@ FLV1OBJ=flv1codec.o
 
 H264DIR=h264
 H264OBJ=h264encoder.o h264decoder.o 
-DEPACKETIZERSOBJ+= h264depacketizer.o
+DEPACKETIZERSOBJ+= h264depacketizer.o H264LayerSelector.o
 
 VP6DIR=vp6
 VP6OBJ=vp6decoder.o
@@ -245,6 +245,12 @@ buildtest: $(OBJSTEST)
 	
 test: buildtest
 	$(BIN)/$@ -lavcodec
+
+sender:  sender.o $(OBJSLIB) 
+	$(CXX) -o $(BIN)/$@ $(BUILDOBJOBJSLIB) $(LDLIBFLAGS) $(addprefix $(BUILD)/,$@.o)
+	
+receiver: receiver.o $(OBJSLIB) 
+	$(CXX) -o $(BIN)/$@ $(BUILDOBJOBJSLIB) $(LDLIBFLAGS) $(addprefix $(BUILD)/,$@.o)
 	
 libmediaserver.so: touch mkdirs $(OBJSLIB)
 	$(CXX) -shared -o $(BIN)/$@ $(BUILDOBJOBJSLIB) ${LDLIBFLAGS}

@@ -143,6 +143,11 @@ MediaFrame* H264Depacketizer::AddPayload(BYTE* payload, DWORD payload_len)
 				/* strip NALU size */
 				payload += 2;
 				payload_len -= 2;
+				
+				//Check
+				if (!nalu_size || nalu_size>payload_len)
+					//Error
+					break;
 
 				//Get nal type
 				BYTE nalType = payload[0] & 0x1f;
@@ -176,6 +181,10 @@ MediaFrame* H264Depacketizer::AddPayload(BYTE* payload, DWORD payload_len)
 			/* FU-B	Fragmentation unit	 5.8 */
 
 
+			//Check length
+			if (payload_len < 2)
+				return NULL;
+			
 			/* +---------------+
 			 * |0|1|2|3|4|5|6|7|
 			 * +-+-+-+-+-+-+-+-+
