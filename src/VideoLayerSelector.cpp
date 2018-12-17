@@ -39,8 +39,10 @@ VideoLayerSelector* VideoLayerSelector::Create(VideoCodec::Type codec)
 			return new VP9LayerSelector();
 		case VideoCodec::VP8:
 			return new VP8LayerSelector();
-		default:
+		case VideoCodec::H264:
 			return new H264LayerSelector();
+		default:
+			return new DummyVideoLayerSelector(codec);
 	}
 }
 
@@ -52,7 +54,9 @@ VideoLayerSelector* VideoLayerSelector::Create(VideoCodec::Type codec)
 			return VP9LayerSelector::GetLayerIds(packet);
 		case VideoCodec::VP8:
 			return VP8LayerSelector::GetLayerIds(packet);
-		default:
+		case VideoCodec::H264:
 			return H264LayerSelector::GetLayerIds(packet);
+		default:
+			return LayerInfo();
 	}
 }

@@ -67,7 +67,7 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 	WORD length = get2(data,2)*4;
 	
 	//Ensure we have enought
-	if (size<length+4)
+	if (size<length+4u)
 		//ERROR
 		return Error("Not enought data");
   

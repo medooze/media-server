@@ -80,7 +80,7 @@ bool H264LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 			{
 				/* Get NALU size */
 				BYTE nalSize = (payload[0] << 8) | payload[1];
-
+				
 				/* strip NALU size */
 				payload += 2;
 				payloadLen -= 2;
@@ -92,6 +92,10 @@ bool H264LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 
 				//Get nal type
 				BYTE nalType = payload[0] & 0x1f;
+				
+				//Get nal data
+				BYTE *nalData = payload+1;
+				
 				//Check if IDR SPS or PPS
 				switch (nalType)
 				{
@@ -103,13 +107,13 @@ bool H264LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 						//Consider it intra also
 						isIntra = true;
 						//Parse SPS
-						sps.Decode(payload,nalSize);
+						sps.Decode(nalData,nalSize-1);
 						break;
 					case 0x08:
 						//Consider it intra also
 						isIntra = true;
 						//Parse PPS
-						sps.Decode(payload,nalSize);
+						pps.Decode(nalData,nalSize-1);
 						break;
 				}
 
@@ -156,6 +160,10 @@ bool H264LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 
 				//Get nal type
 				BYTE nalType = nal_header & 0x1f;
+				
+				//Get nal data
+				BYTE *nalData = payload+1;
+				
 				//Check if IDR SPS or PPS
 				switch (nalType)
 				{
@@ -167,13 +175,13 @@ bool H264LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 						//Consider it intra also
 						isIntra = true;
 						//Parse SPS
-						sps.Decode(payload,nalSize);
+						sps.Decode(nalData,nalSize-1);
 						break;
 					case 0x08:
 						//Consider it intra also
 						isIntra = true;
 						//Parse PPS
-						sps.Decode(payload,nalSize);
+						pps.Decode(nalData,nalSize-1);
 						break;
 				}
 			}
@@ -188,6 +196,9 @@ bool H264LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 			WORD nalSize = payloadLen;
 			BYTE nalType = nal_unit_type;
 			
+			//Get nal data
+			BYTE *nalData = payload+1;
+			
 			//Check if IDR SPS or PPS
 			switch (nalType)
 			{
@@ -199,13 +210,13 @@ bool H264LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 					//Consider it intra also
 					isIntra = true;
 					//Parse SPS
-					sps.Decode(payload,nalSize);
+					sps.Decode(nalData,nalSize-1);
 					break;
 				case 0x08:
 					//Consider it intra also
 					isIntra = true;
 					//Parse PPS
-					sps.Decode(payload,nalSize);
+					pps.Decode(nalData,nalSize-1);
 					break;
 			}
 			//Done

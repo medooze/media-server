@@ -108,16 +108,16 @@ private:
 	BYTE			constraint_set2_flag = 0;
 	BYTE			reserved_zero_5bits  = 0;
 	BYTE			level_idc = 0;
-	DWORD			seq_parameter_set_id = 0;
-	DWORD			log2_max_frame_num_minus4 = 0;
-	DWORD			pic_order_cnt_type = 0;
-	DWORD			log2_max_pic_order_cnt_lsb_minus4 = 0;
+	BYTE			seq_parameter_set_id = 0;
+	BYTE			log2_max_frame_num_minus4 = 0;
+	BYTE			pic_order_cnt_type = 0;
+	BYTE			log2_max_pic_order_cnt_lsb_minus4 = 0;
 	BYTE			delta_pic_order_always_zero_flag = 0;
 	int			offset_for_non_ref_pic = 0;
 	int			offset_for_top_to_bottom_field = 0;
-	DWORD			num_ref_frames_in_pic_order_cnt_cycle = 0;
+	BYTE			num_ref_frames_in_pic_order_cnt_cycle = 0;
 	std::vector<int>	offset_for_ref_frame;
-	DWORD			num_ref_frames = 0;
+	BYTE			num_ref_frames = 0;
 	BYTE			gaps_in_frame_num_value_allowed_flag = 0;
 	BYTE			pic_width_in_mbs_minus1 = 0;
 	BYTE			pic_height_in_map_units_minus1 = 0;
@@ -145,10 +145,10 @@ public:
 		{
 			slice_group_map_type = ExpGolombDecoder::Decode(r);
 			if( slice_group_map_type == 0 )
-				for( DWORD iGroup = 0; iGroup <= num_slice_groups_minus1; iGroup++ )
+				for( int iGroup = 0; iGroup <= num_slice_groups_minus1; iGroup++ )
 					run_length_minus1.assign(iGroup,ExpGolombDecoder::Decode(r));
 			else if( slice_group_map_type == 2 )
-				for( DWORD iGroup = 0; iGroup < num_slice_groups_minus1; iGroup++ )
+				for( int iGroup = 0; iGroup < num_slice_groups_minus1; iGroup++ )
 				{
 					top_left.assign(iGroup,ExpGolombDecoder::Decode(r));
 					bottom_right.assign(iGroup,ExpGolombDecoder::Decode(r));
@@ -159,7 +159,7 @@ public:
 				slice_group_change_rate_minus1 = ExpGolombDecoder::Decode(r);
 			} else if( slice_group_map_type == 6 ) {
 				pic_size_in_map_units_minus1 = ExpGolombDecoder::Decode(r);
-				for( DWORD i = 0; i <= pic_size_in_map_units_minus1; i++ )
+				for( int i = 0; i <= pic_size_in_map_units_minus1; i++ )
 					slice_group_id.assign(i,r.Get(ceil(log2(num_slice_groups_minus1+1))));
 			}
 		}
@@ -226,21 +226,21 @@ public:
 		Debug("/]\n");
 	}
 private:
-	DWORD			pic_parameter_set_id = 0;
-	DWORD			seq_parameter_set_id = 0;
+	BYTE			pic_parameter_set_id = 0;
+	BYTE			seq_parameter_set_id = 0;
 	BYTE			entropy_coding_mode_flag = 0;
 	BYTE			pic_order_present_flag = 0;
-	DWORD			num_slice_groups_minus1 = 0;
-	DWORD			slice_group_map_type = 0;
+	int			num_slice_groups_minus1 = 0;
+	BYTE			slice_group_map_type = 0;
 	std::vector<DWORD>	run_length_minus1;
 	std::vector<DWORD>	top_left;
 	std::vector<DWORD>	bottom_right;
 	BYTE			slice_group_change_direction_flag = 0;
-	DWORD			slice_group_change_rate_minus1 = 0;
-	DWORD			pic_size_in_map_units_minus1 = 0;
+	int			slice_group_change_rate_minus1 = 0;
+	int			pic_size_in_map_units_minus1 = 0;
 	std::vector<DWORD>	slice_group_id;
-	DWORD			num_ref_idx_l0_active_minus1 = 0;
-	DWORD			num_ref_idx_l1_active_minus1 = 0;
+	BYTE			num_ref_idx_l0_active_minus1 = 0;
+	BYTE			num_ref_idx_l1_active_minus1 = 0;
 	BYTE			weighted_pred_flag = 0;
 	BYTE			weighted_bipred_idc = 0;
 	int			pic_init_qp_minus26 = 0;

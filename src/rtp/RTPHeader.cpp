@@ -51,7 +51,7 @@ DWORD RTPHeader::Parse(const BYTE* data,const DWORD size)
 	ssrc = get4(data,8);
 	
 	//Ensure size
-	if (size<12+cc*4)
+	if (size<12u+cc*4)
 		//Error
 		return 0;
 	

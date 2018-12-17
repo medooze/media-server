@@ -449,6 +449,9 @@ int mp4track::Close()
 				//Flush it
 				FlushTextFrame((TextFrame*)frame,1000);
 				break;
+			case MediaFrame::Unknown:
+				//Nothing
+				break;
 		}
 		//NO frame
 		frame = NULL;
@@ -791,6 +794,9 @@ void MP4Recorder::onMediaFrame(DWORD ssrc, MediaFrame &frame, QWORD time)
 				textTrack->WriteTextFrame(textFrame);
 				break;
 			}
+			case MediaFrame::Unknown:
+				//Nothing
+				break;
 		}
 	}
 
