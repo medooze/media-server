@@ -3,6 +3,7 @@
 #include <sys/stat.h> 
 #include <fcntl.h>
 #include <time.h>
+#include "tools.h"
 #include "PCAPReader.h"
 
 const size_t   PCAP_HEADER_SIZE = 24;
@@ -11,6 +12,11 @@ const uint32_t PCAP_MAGIC_COOKIE = 0xa1b2c3d4;
 
 PCAPReader::PCAPReader()
 {
+}
+
+PCAPReader::~PCAPReader()
+{
+	Close();
 }
 
 bool PCAPReader::Open(const char* file)
@@ -41,7 +47,7 @@ void PCAPReader::Rewind()
 	UltraDebug("-PCAPReader::Rewind() | retry at [pos:%d]\n",lseek(fd, 0, SEEK_CUR));
 }
 
-RTPPacket::shared PCAPReader::GetNextPacket(const RTPMap& rtpMap,const RTPMap& extMap)
+uint64_t PCAPReader::Next()
 {
 retry:
 	//UltraDebug("-PCAPReader::GetNextPacket() | retry at [pos:%d]\n",lseek(fd, 0, SEEK_CUR));
@@ -49,14 +55,16 @@ retry:
 	//read header
 	if (read(fd,data,PCAP_PACKET_HEADER_SIZE)!=PCAP_PACKET_HEADER_SIZE)
 		//Error
-		return nullptr;
+		return false;
 	
 	//Get packet data
 	uint32_t seconds	= get4(data,0);
 	uint32_t nanoseonds	= get4(data,4);
 	uint32_t packetSize	= get4(data,8);
 	uint32_t packetLen	= get4(data,12);
-	QWORD ts = (((QWORD)seconds)*1000000+nanoseonds);
+	
+	//Get current timestamp
+	uint64_t ts = (((uint64_t)seconds)*1000000+nanoseonds);
 
 	//Debug("-Got packet size:%u len:%d\n",packetSize,packetLen);
 	//Read the packet
@@ -76,107 +84,12 @@ retry:
 		//retry
 		goto retry;
 	}
-	//The RTP packet
-	uint8_t* buffer = data + 42;
-	uint32_t bufferLen = udpLen - 8;
+	//The udp packet
+	packet	  = data + 42;
+	packetLen = udpLen - 8;
 	
-	//Check it is not RTCP
-	if (RTCPCompoundPacket::IsRTCP(buffer,bufferLen))
-	{
-		//Debug
-		//UltraDebug("-PCAPReader::GetNextPacket() | skipping rtcp\n");
-		//Ignore this try again
-		goto retry;
-	}
-	
-	RTPHeader header;
-	RTPHeaderExtension extension;
-
-	//Parse RTP header
-	uint32_t ini = header.Parse(buffer,bufferLen);
-	
-	//On error
-	if (!ini)
-	{
-		//Debug
-		Error("-PCAPReader::GetNextPacket() | Could not parse RTP header ini=%u len=%d udp=%u packet=%u\n",ini,bufferLen-ini,udpLen,packetSize);
-		//Dump it
-		Dump(buffer+ini,bufferLen-ini);
-		//Ignore this try again
-		goto retry;
-	}
-	
-	//If it has extension
-	if (header.extension)
-	{
-		//Parse extension
-		int l = extension.Parse(extMap,buffer+ini,bufferLen-ini);
-		//If not parsed
-		if (!l)
-		{
-			///Debug
-			Error("-PCAPReader::GetNextPacket() | Could not parse RTP header extension ini=%u len=%d udp=%u packet=%u\n",ini,bufferLen-ini,udpLen,packetSize);
-			//Dump it
-			Dump(buffer+ini,bufferLen-ini);
-			//retry
-			goto retry;
-		}
-		//Inc ini
-		ini += l;
-	}
-	
-	//Check size with padding
-	if (header.padding)
-	{
-		//Get last 2 bytes
-		WORD padding = get1(buffer,bufferLen-1);
-		//Ensure we have enought size
-		if (bufferLen-ini<padding)
-		{
-			///Debug
-			Debug("-PCAPReader::GetNextPacket() | RTP padding is bigger than size [padding:%u,size%u]\n",padding,len);
-			//Ignore this try again
-			goto retry;
-		}
-		//Remove from size
-		bufferLen -= padding;
-	}
-
-	//Check we have payload
-	if (ini>=bufferLen)
-	{
-		///Debug
-		UltraDebug("-PCAPReader::GetNextPacket() | Refusing to create a packet with empty payload [size:%u,ini:%u,len:%u]\n",size,len,ini);
-		//Ignore this try again
-		goto retry;
-	}
-	
-
-	//Get initial codec
-	BYTE codec = rtpMap.GetCodecForType(header.payloadType);
-	
-	//Check codec
-	if (codec==RTPMap::NotFound)
-	{
-		//Error
-		Error("-PCAPReader::GetNextPacket() | RTP packet type unknown [%d]\n",header.payloadType);
-		//retry
-		goto retry;
-	}
-	
-	//Get media
-	MediaFrame::Type media = GetMediaForCodec(codec);
-	
-	//Create normal packet
-	auto packet = std::make_shared<RTPPacket>(media,codec,header,extension);
-
-	//Set the payload
-	packet->SetPayload(buffer+ini,bufferLen-ini);
-
-	//Set capture time in ms
-	packet->SetTime(ts/1000);
-	
-	return packet;
+	//Return timestamp of this packet
+	return ts;
 }
 
 uint64_t PCAPReader::Seek(const uint64_t time)
@@ -199,7 +112,7 @@ uint64_t PCAPReader::Seek(const uint64_t time)
 		uint32_t nanoseonds	= get4(data,4);
 		uint32_t packetSize	= get4(data,8);
 		uint32_t packetLen	= get4(data,12);
-		QWORD ts = (((QWORD)seconds)*1000000+nanoseonds);
+		uint64_t ts = (((uint64_t)seconds)*1000000+nanoseonds);
 
 		//If we have got to the correct time
 		if (ts>=time)
@@ -226,9 +139,13 @@ uint64_t PCAPReader::Seek(const uint64_t time)
 bool PCAPReader::Close()
 {
 	Log("-PCAPReader::Close()\n");
+
+	if (fd!=-1)
+		//Close pcapc file
+		close(fd);
 	
-	//Close pcapc file
-	close(fd);
+	//Closed
+	fd = -1;
 	
 	//Done
 	return true;

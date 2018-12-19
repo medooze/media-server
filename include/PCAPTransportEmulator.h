@@ -14,6 +14,8 @@
 #ifndef PCAPTRANSPORTEMULATOR_H
 #define PCAPTRANSPORTEMULATOR_H
 
+#include "config.h"
+#include "rtp.h"
 #include "PCAPReader.h"
 
 
@@ -30,6 +32,7 @@ public:
 	bool RemoveIncomingSourceGroup(RTPIncomingSourceGroup *group);
 	
 	bool Open(const char* filename);
+	bool SetReader(UDPReader* reader);
 	bool Play();
 	uint64_t Seek(uint64_t time);
 	bool Stop();
@@ -42,7 +45,7 @@ private:
 	int Run();
 	
 private:
-	PCAPReader reader;
+	std::unique_ptr<UDPReader> reader;
 	
 	RTPMap		rtpMap;
 	RTPMap		extMap;

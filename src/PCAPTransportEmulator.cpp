@@ -173,13 +173,37 @@ bool PCAPTransportEmulator::RemoveIncomingSourceGroup(RTPIncomingSourceGroup *gr
 
 bool PCAPTransportEmulator::Open(const char* filename)
 {
-	//Open pcap
-	if (!reader.Open(filename))
+	//Create new PCAP reader
+	PCAPReader* reader = new PCAPReader();
+
+	//Open pcap file
+	if (!reader->Open(filename))
+	{
+		//Delte it
+		delete reader;
+		//Error
+		return false;
+	}
+	
+	//Set reader
+	return SetReader(reader);
+}
+
+bool PCAPTransportEmulator::SetReader(UDPReader* reader)
+{
+	//Block condition
+	ScopedLock lock(cond);
+	
+	//Double check
+	if (!reader)
 		//Error
 		return false;
 	
+	//Store it
+	this->reader.reset(reader);
+	
 	//Get first timestamp to start playing from
-	first = reader.Seek(0)/1000;
+	first = reader->Seek(0)/1000;
 	
 	//Done
 	return true;
@@ -188,9 +212,16 @@ bool PCAPTransportEmulator::Open(const char* filename)
 bool PCAPTransportEmulator::Close()
 {
 	Debug(">PCAPTransportEmulator::Close()\n");
-	Debug("-PCAPTransportEmulator::Close() do nothing\n");
-	Debug("<PCAPTransportEmulator::Close()\n");
-	return true;
+	
+	//Block condition
+	ScopedLock lock(cond);
+	
+	//Check we have reader
+	if (!reader)
+		return false;
+	
+	//Close reader
+	return reader->Close();
 }
 
 bool PCAPTransportEmulator::Play()
@@ -199,6 +230,10 @@ bool PCAPTransportEmulator::Play()
 	
 	//Block condition
 	ScopedLock lock(cond);
+	
+	//Check we have reader
+	if (!reader)
+		return false;
 	
 	//Check thred
 	if (!isZeroThread(thread))
@@ -246,11 +281,15 @@ uint64_t PCAPTransportEmulator::Seek(uint64_t time)
 	//Block condition
 	ScopedLock lock(cond);
 	
+	//Check we have reader
+	if (!reader)
+		return 0;
+	
 	//Set first timestamp to start playing from
 	first = time;
 	
 	//Seek it and return which is the first packet that will be played
-	return reader.Seek(first*1000)/100;
+	return reader->Seek(first*1000)/100;
 }
 
 bool PCAPTransportEmulator::Stop()
@@ -297,16 +336,123 @@ int PCAPTransportEmulator::Run()
 	//Run until canceled
 outher:	while(running)
 	{
-		//Get next packet from pcap
-		auto packet = reader.GetNextPacket(rtpMap,extMap);
+		//ensure we have reader
+		if (!reader)
+		{
+			Debug("-PCAPTransportEmulator::Run() | no reader\n");
+			//exit
+			break;
+		}
+			
+		//Get packet
+		uint64_t ts = reader->Next();
 		
 		//If we are at the end
-		if (!packet)
+		if (!ts)
 		{
 			Debug("-PCAPTransportEmulator::Run() | no more packets\n");
 			//exit
 			break;
 		}
+		
+		//Get next packet from pcap
+		uint8_t* buffer		= reader->GetUDPData();
+		uint32_t bufferLen	= reader->GetUDPSize();
+		
+		//Check it is not RTCP
+		if (RTCPCompoundPacket::IsRTCP(buffer,bufferLen))
+		{
+			//Debug
+			//UltraDebug("-PCAPTransportEmulator::Run() | skipping rtcp\n");
+			//Ignore this try again
+			goto outher;
+		}
+	
+		RTPHeader header;
+		RTPHeaderExtension extension;
+
+		//Parse RTP header
+		uint32_t ini = header.Parse(buffer,bufferLen);
+
+		//On error
+		if (!ini)
+		{
+			//Debug
+			Error("-PCAPTransportEmulator::Run() | Could not parse RTP header ini=%u len=%d\n",ini,bufferLen-ini);
+			//Dump it
+			Dump(buffer+ini,bufferLen-ini);
+			//Ignore this try again
+			goto outher;
+		}
+	
+		//If it has extension
+		if (header.extension)
+		{
+			//Parse extension
+			int l = extension.Parse(extMap,buffer+ini,bufferLen-ini);
+			//If not parsed
+			if (!l)
+			{
+				///Debug
+				Error("-PCAPTransportEmulator::Run() | Could not parse RTP header extension ini=%u len=%d\n",ini,bufferLen-ini);
+				//Dump it
+				Dump(buffer+ini,bufferLen-ini);
+				//retry
+				goto outher;
+			}
+			//Inc ini
+			ini += l;
+		}
+	
+		//Check size with padding
+		if (header.padding)
+		{
+			//Get last 2 bytes
+			WORD padding = get1(buffer,bufferLen-1);
+			//Ensure we have enought size
+			if (bufferLen-ini<padding)
+			{
+				///Debug
+				Debug("-PCAPTransportEmulator::Run() | RTP padding is bigger than size [padding:%u,size%u]\n",padding,bufferLen);
+				//Ignore this try again
+				goto outher;
+			}
+			//Remove from size
+			bufferLen -= padding;
+		}
+
+		//Check we have payload
+		if (ini>=bufferLen)
+		{
+			///Debug
+			UltraDebug("-PCAPTransportEmulator::Run() | Refusing to create a packet with empty payload [ini:%u,len:%u]\n",ini,bufferLen,ini);
+			//Ignore this try again
+			goto outher;
+		}
+
+		//Get initial codec
+		BYTE codec = rtpMap.GetCodecForType(header.payloadType);
+
+		//Check codec
+		if (codec==RTPMap::NotFound)
+		{
+			//Error
+			Error("-PCAPTransportEmulator::Run() | RTP packet type unknown [%d]\n",header.payloadType);
+			//retry
+			goto outher;
+		}
+
+		//Get media
+		MediaFrame::Type media = GetMediaForCodec(codec);
+
+		//Create normal packet
+		auto packet = std::make_shared<RTPPacket>(media,codec,header,extension);
+
+		//Set the payload
+		packet->SetPayload(buffer+ini,bufferLen-ini);
+
+		//Set capture time in ms
+		packet->SetTime(ts/1000);
 		
 		//Get the packet relative time in ns
 		auto time = packet->GetTime() - first;
@@ -334,9 +480,8 @@ outher:	while(running)
 			now = getTimeDiff(ini);
 		}
 		
-		//Get sssrc & codec
+		//Get sssrc
 		DWORD ssrc = packet->GetSSRC();
-		BYTE codec = packet->GetCodec();
 		
 		//Get the incouming source
 		auto it = incoming.find(ssrc);

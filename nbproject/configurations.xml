@@ -13,6 +13,9 @@
         </df>
         <in>PCAPFile.h</in>
         <in>PCAPTransportEmulator.h</in>
+        <in>SendSideBandwidthEstimation.h</in>
+        <in>UDPDumper.h</in>
+        <in>UDPReader.h</in>
         <in>VideoLayerSelector.h</in>
       </df>
       <df name="src">
@@ -45,6 +48,8 @@
           <in>mpeg4codec.cpp</in>
         </df>
         <df name="h264">
+          <in>H264LayerSelector.cpp</in>
+          <in>H264LayerSelector.h</in>
           <in>h264decoder.cpp</in>
           <in>h264depacketizer.cpp</in>
           <in>h264encoder.cpp</in>
@@ -135,6 +140,7 @@
         <in>RTPBundleTransport.cpp</in>
         <in>RTPSmoother.cpp</in>
         <in>RTPTransport.cpp</in>
+        <in>SendSideBandwidthEstimation.cpp</in>
         <in>VideoLayerSelector.cpp</in>
         <in>appmixer.cpp</in>
         <in>asymmetricmosaic.cpp</in>
@@ -173,10 +179,12 @@
         <in>pipevideoinput.cpp</in>
         <in>pipevideooutput.cpp</in>
         <in>pipmosaic.cpp</in>
+        <in>receiver.cpp</in>
         <in>remoteratecontrol.cpp</in>
         <in>remoterateestimator.cpp</in>
         <in>rtpparticipant.cpp</in>
         <in>rtpsession.cpp</in>
+        <in>sender.cpp</in>
         <in>sidebar.cpp</in>
         <in>statushandler.cpp</in>
         <in>stunmessage.cpp</in>
@@ -366,6 +374,15 @@
       </item>
       <item path="include/PCAPTransportEmulator.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="include/SendSideBandwidthEstimation.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="include/UDPDumper.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/UDPReader.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="include/VideoLayerSelector.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/rtp/RTPIncomingSource.h" ex="false" tool="3" flavor2="0">
@@ -417,6 +434,11 @@
       <item path="src/RTPTransport.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
         </ccTool>
+      </item>
+      <item path="src/SendSideBandwidthEstimation.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
       </item>
       <item path="src/VideoLayerSelector.cpp" ex="false" tool="1" flavor2="0">
       </item>
@@ -535,6 +557,10 @@
         <ccTool flags="4">
         </ccTool>
       </item>
+      <item path="src/h264/H264LayerSelector.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/h264/H264LayerSelector.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="src/h264/h264decoder.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
         </ccTool>
@@ -647,6 +673,8 @@
       <item path="src/pipmosaic.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
         </ccTool>
+      </item>
+      <item path="src/receiver.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/remoteratecontrol.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
@@ -821,6 +849,8 @@
       <item path="src/rtpsession.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
         </ccTool>
+      </item>
+      <item path="src/sender.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/sidebar.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
@@ -1401,6 +1431,15 @@
           </preprocessorList>
         </ccTool>
       </folder>
+      <item path="include/SendSideBandwidthEstimation.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="include/UDPDumper.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/UDPReader.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="src/ActiveSpeakerDetector.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="3">
           <incDir>
@@ -1642,6 +1681,11 @@
             <Elem>__STDC_CONSTANT_MACROS</Elem>
           </preprocessorList>
         </ccTool>
+      </item>
+      <item path="src/SendSideBandwidthEstimation.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
       </item>
       <item path="src/VideoLayerSelector.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
@@ -2100,6 +2144,10 @@
         <ccTool flags="3">
         </ccTool>
       </item>
+      <item path="src/h264/H264LayerSelector.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/h264/H264LayerSelector.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="src/h264/h264decoder.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="3">
         </ccTool>
@@ -2553,6 +2601,8 @@
             <Elem>__STDC_CONSTANT_MACROS</Elem>
           </preprocessorList>
         </ccTool>
+      </item>
+      <item path="src/receiver.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/remoteratecontrol.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
@@ -3297,6 +3347,8 @@
             <Elem>__STDC_CONSTANT_MACROS</Elem>
           </preprocessorList>
         </ccTool>
+      </item>
+      <item path="src/sender.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/sidebar.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
