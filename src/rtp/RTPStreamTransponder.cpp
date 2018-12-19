@@ -199,23 +199,22 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,const RTPPacket::
 		//Exit
 		return;
 	
-	//Check if we have a selector and it is not from the same codec
-	if (selector && (BYTE)selector->GetCodec()!=packet->GetCodec())
+	//Only for viedo
+	if (packet->GetMedia()==MediaFrame::Video)
 	{
-		//Delete it and reset
-		delete(selector);
-		//Create new selector for codec
-		selector = VideoLayerSelector::Create((VideoCodec::Type)packet->GetCodec());
-		//Set prev layers
-		selector->SelectSpatialLayer(spatialLayerId);
-		selector->SelectTemporalLayer(temporalLayerId);
-	//Check if we don't have a selector yet
-	} else if (!selector) {
-		//Create new selector for codec
-		selector = VideoLayerSelector::Create((VideoCodec::Type)packet->GetCodec());
-		//Select prev layers
-		selector->SelectSpatialLayer(spatialLayerId);
-		selector->SelectTemporalLayer(temporalLayerId);
+		//Check if we have a selector and it is not from the same codec or if we don't have one
+		if (!selector && (BYTE)selector->GetCodec()!=packet->GetCodec())
+		{
+			//If we had one
+			if (selector)
+				//Delete it and reset
+				delete(selector);
+			//Create new selector for codec
+			selector = VideoLayerSelector::Create((VideoCodec::Type)packet->GetCodec());
+			//Set prev layers
+			selector->SelectSpatialLayer(spatialLayerId);
+			selector->SelectTemporalLayer(temporalLayerId);
+		}
 	}
 	
 	bool mark = packet->GetMark();
