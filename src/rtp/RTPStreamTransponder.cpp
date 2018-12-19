@@ -202,8 +202,8 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,const RTPPacket::
 	//Only for viedo
 	if (packet->GetMedia()==MediaFrame::Video)
 	{
-		//Check if we have a selector and it is not from the same codec or if we don't have one
-		if (!selector && (BYTE)selector->GetCodec()!=packet->GetCodec())
+		//Check if we don't have one or if we have a selector and it is not from the same codec
+		if (!selector || (BYTE)selector->GetCodec()!=packet->GetCodec())
 		{
 			//If we had one
 			if (selector)
