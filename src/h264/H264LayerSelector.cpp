@@ -107,13 +107,13 @@ bool H264LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 						//Consider it intra also
 						isIntra = true;
 						//Parse SPS
-						sps.Decode(nalData,nalSize-1);
+						//sps.Decode(nalData,nalSize-1);
 						break;
 					case 0x08:
 						//Consider it intra also
 						isIntra = true;
 						//Parse PPS
-						pps.Decode(nalData,nalSize-1);
+						//pps.Decode(nalData,nalSize-1);
 						break;
 				}
 
@@ -175,13 +175,13 @@ bool H264LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 						//Consider it intra also
 						isIntra = true;
 						//Parse SPS
-						sps.Decode(nalData,nalSize-1);
+						//sps.Decode(nalData,nalSize-1);
 						break;
 					case 0x08:
 						//Consider it intra also
 						isIntra = true;
 						//Parse PPS
-						pps.Decode(nalData,nalSize-1);
+						//pps.Decode(nalData,nalSize-1);
 						break;
 				}
 			}
@@ -210,13 +210,13 @@ bool H264LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 					//Consider it intra also
 					isIntra = true;
 					//Parse SPS
-					sps.Decode(nalData,nalSize-1);
+					//sps.Decode(nalData,nalSize-1);
 					break;
 				case 0x08:
 					//Consider it intra also
 					isIntra = true;
 					//Parse PPS
-					pps.Decode(nalData,nalSize-1);
+					//pps.Decode(nalData,nalSize-1);
 					break;
 			}
 			//Done

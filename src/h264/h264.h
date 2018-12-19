@@ -11,6 +11,7 @@
 #include "math.h"
 #include "bitstream.h"
 
+#define CHECK(r) if(r.Error()) return false;
 
 class H264SeqParameterSet
 {
@@ -24,34 +25,37 @@ public:
 		//Create bit reader
 		BitReader r(aux,len);
 		//Read SPS
-		profile_idc = r.Get(8);
-		constraint_set0_flag = r.Get(1);
-		constraint_set1_flag = r.Get(1);
-		constraint_set2_flag = r.Get(1);
-		reserved_zero_5bits  = r.Get(5);
-		level_idc = r.Get(8);
-		seq_parameter_set_id = ExpGolombDecoder::Decode(r);
-		log2_max_frame_num_minus4 = ExpGolombDecoder::Decode(r);
+		CHECK(r); profile_idc = r.Get(8);
+		CHECK(r); constraint_set0_flag = r.Get(1);
+		CHECK(r); constraint_set1_flag = r.Get(1);
+		CHECK(r); constraint_set2_flag = r.Get(1);
+		CHECK(r); reserved_zero_5bits  = r.Get(5);
+		CHECK(r); level_idc = r.Get(8);
+		CHECK(r); seq_parameter_set_id = ExpGolombDecoder::Decode(r);
+		CHECK(r); log2_max_frame_num_minus4 = ExpGolombDecoder::Decode(r);
 		pic_order_cnt_type = ExpGolombDecoder::Decode(r);
 		if( pic_order_cnt_type == 0 )
-			log2_max_pic_order_cnt_lsb_minus4 = ExpGolombDecoder::Decode(r);
-		else if( pic_order_cnt_type == 1 ) {
-			delta_pic_order_always_zero_flag = r.Get(1);
-			offset_for_non_ref_pic = ExpGolombDecoder::Decode(r); 
-			offset_for_top_to_bottom_field = ExpGolombDecoder::Decode(r); 
-			num_ref_frames_in_pic_order_cnt_cycle = ExpGolombDecoder::Decode(r);
+		{
+			CHECK(r); log2_max_pic_order_cnt_lsb_minus4 = ExpGolombDecoder::Decode(r);
+		} else if( pic_order_cnt_type == 1 ) {
+			CHECK(r); delta_pic_order_always_zero_flag = r.Get(1);
+			CHECK(r); offset_for_non_ref_pic = ExpGolombDecoder::Decode(r); 
+			CHECK(r); offset_for_top_to_bottom_field = ExpGolombDecoder::Decode(r); 
+			CHECK(r); num_ref_frames_in_pic_order_cnt_cycle = ExpGolombDecoder::Decode(r);
 			for( DWORD i = 0; i < num_ref_frames_in_pic_order_cnt_cycle; i++ )
-				offset_for_ref_frame.assign(i,ExpGolombDecoder::Decode(r));
+			{
+				CHECK(r); offset_for_ref_frame.assign(i,ExpGolombDecoder::Decode(r));
+			}
 		}
-		num_ref_frames = ExpGolombDecoder::Decode(r);
-		gaps_in_frame_num_value_allowed_flag = r.Get(1);
-		pic_width_in_mbs_minus1 = ExpGolombDecoder::Decode(r);
-		pic_height_in_map_units_minus1 = ExpGolombDecoder::Decode(r);
-		frame_mbs_only_flag = r.Get(1);
+		CHECK(r); num_ref_frames = ExpGolombDecoder::Decode(r);
+		CHECK(r); gaps_in_frame_num_value_allowed_flag = r.Get(1);
+		CHECK(r); pic_width_in_mbs_minus1 = ExpGolombDecoder::Decode(r);
+		CHECK(r); pic_height_in_map_units_minus1 = ExpGolombDecoder::Decode(r);
+		CHECK(r); frame_mbs_only_flag = r.Get(1);
 		//Free memory
 		free(aux);
 		//OK
-		return true;
+		return !r.Error();
 	}
 private:
 	inline static DWORD Escape( BYTE *dst, BYTE *src, DWORD size )
@@ -77,7 +81,7 @@ private:
 public:
 	DWORD GetWidth()	{ return (pic_width_in_mbs_minus1+1)*16; }
 	DWORD GetHeight()	{ return (pic_height_in_map_units_minus1+1)*16; }
-	void Dump()
+	void Dump() const
 	{
 		Debug("[H264SeqParameterSet \n");
 		Debug("\tprofile_idc=%.2x\n",				profile_idc);
@@ -136,43 +140,47 @@ public:
 		//Create bit reader
 		BitReader r(aux,len);
 		//Read SQS
-		pic_parameter_set_id = ExpGolombDecoder::Decode(r);
-		seq_parameter_set_id = ExpGolombDecoder::Decode(r);
-		entropy_coding_mode_flag = r.Get(1);
-		pic_order_present_flag = r.Get(1);
-		num_slice_groups_minus1 = ExpGolombDecoder::Decode(r);
+		CHECK(r); pic_parameter_set_id = ExpGolombDecoder::Decode(r);
+		CHECK(r); seq_parameter_set_id = ExpGolombDecoder::Decode(r);
+		CHECK(r); entropy_coding_mode_flag = r.Get(1);
+		CHECK(r); pic_order_present_flag = r.Get(1);
+		CHECK(r); num_slice_groups_minus1 = ExpGolombDecoder::Decode(r);
 		if( num_slice_groups_minus1 > 0 )
 		{
-			slice_group_map_type = ExpGolombDecoder::Decode(r);
+			CHECK(r); slice_group_map_type = ExpGolombDecoder::Decode(r);
 			if( slice_group_map_type == 0 )
 				for( int iGroup = 0; iGroup <= num_slice_groups_minus1; iGroup++ )
-					run_length_minus1.assign(iGroup,ExpGolombDecoder::Decode(r));
+				{
+					CHECK(r); run_length_minus1.assign(iGroup,ExpGolombDecoder::Decode(r));
+				}
 			else if( slice_group_map_type == 2 )
 				for( int iGroup = 0; iGroup < num_slice_groups_minus1; iGroup++ )
 				{
-					top_left.assign(iGroup,ExpGolombDecoder::Decode(r));
-					bottom_right.assign(iGroup,ExpGolombDecoder::Decode(r));
+					CHECK(r); top_left.assign(iGroup,ExpGolombDecoder::Decode(r));
+					CHECK(r); bottom_right.assign(iGroup,ExpGolombDecoder::Decode(r));
 				}
 			else if( slice_group_map_type == 3 || slice_group_map_type ==  4 || slice_group_map_type == 5 )
 			{
-				slice_group_change_direction_flag = r.Get(1);
-				slice_group_change_rate_minus1 = ExpGolombDecoder::Decode(r);
+				CHECK(r); slice_group_change_direction_flag = r.Get(1);
+				CHECK(r); slice_group_change_rate_minus1 = ExpGolombDecoder::Decode(r);
 			} else if( slice_group_map_type == 6 ) {
-				pic_size_in_map_units_minus1 = ExpGolombDecoder::Decode(r);
+				CHECK(r); pic_size_in_map_units_minus1 = ExpGolombDecoder::Decode(r);
 				for( int i = 0; i <= pic_size_in_map_units_minus1; i++ )
-					slice_group_id.assign(i,r.Get(ceil(log2(num_slice_groups_minus1+1))));
+				{
+					CHECK(r); slice_group_id.assign(i,r.Get(ceil(log2(num_slice_groups_minus1+1))));
+				}
 			}
 		}
-		num_ref_idx_l0_active_minus1 = ExpGolombDecoder::Decode(r);
-		num_ref_idx_l1_active_minus1 = ExpGolombDecoder::Decode(r);
-		weighted_pred_flag = r.Get(1);
-		weighted_bipred_idc = r.Get(2);
-		pic_init_qp_minus26 = ExpGolombDecoder::Decode(r); //Signed
-		pic_init_qs_minus26 = ExpGolombDecoder::Decode(r); //Signed
-		chroma_qp_index_offset = ExpGolombDecoder::Decode(r); //Signed
-		deblocking_filter_control_present_flag = r.Get(1);
-		constrained_intra_pred_flag = r.Get(1);
-		redundant_pic_cnt_present_flag = r.Get(1);
+		CHECK(r); num_ref_idx_l0_active_minus1 = ExpGolombDecoder::Decode(r);
+		CHECK(r); num_ref_idx_l1_active_minus1 = ExpGolombDecoder::Decode(r);
+		CHECK(r); weighted_pred_flag = r.Get(1);
+		CHECK(r); weighted_bipred_idc = r.Get(2);
+		CHECK(r); pic_init_qp_minus26 = ExpGolombDecoder::Decode(r); //Signed
+		CHECK(r); pic_init_qs_minus26 = ExpGolombDecoder::Decode(r); //Signed
+		CHECK(r); chroma_qp_index_offset = ExpGolombDecoder::Decode(r); //Signed
+		CHECK(r); deblocking_filter_control_present_flag = r.Get(1);
+		CHECK(r); constrained_intra_pred_flag = r.Get(1);
+		CHECK(r); redundant_pic_cnt_present_flag = r.Get(1);
 
 		//Free memory
 		free(aux);
@@ -201,20 +209,20 @@ private:
 		return len;
 	}
 public:
-	void Dump()
+	void Dump() const
 	{
 		Debug("[H264PictureParameterSet \n");
 		Debug("\tpic_parameter_set_id=%u\n",			pic_parameter_set_id);
 		Debug("\tseq_parameter_set_id=%u\n",			seq_parameter_set_id);
 		Debug("\tentropy_coding_mode_flag=%u\n",		entropy_coding_mode_flag);
 		Debug("\tpic_order_present_flag=%u\n",			pic_order_present_flag);
-		Debug("\tnum_slice_groups_minus1=%u\n",			num_slice_groups_minus1);
+		Debug("\tnum_slice_groups_minus1=%d\n",			num_slice_groups_minus1);
 		Debug("\tslice_group_map_type=%u\n",			slice_group_map_type);
 		Debug("\tslice_group_change_direction_flag=%u\n",	slice_group_change_direction_flag);
 		Debug("\tslice_group_change_rate_minus1=%u\n",		slice_group_change_rate_minus1);
-		Debug("\tpic_size_in_map_units_minus1=%u\n",		pic_size_in_map_units_minus1);
-		Debug("\tnum_ref_idx_l0_active_minus1=%u\n",		num_ref_idx_l0_active_minus1);
-		Debug("\tnum_ref_idx_l1_active_minus1=%u\n",		num_ref_idx_l1_active_minus1);
+		Debug("\tpic_size_in_map_units_minus1=%d\n",		pic_size_in_map_units_minus1);
+		Debug("\tnum_ref_idx_l0_active_minus1=%d\n",		num_ref_idx_l0_active_minus1);
+		Debug("\tnum_ref_idx_l1_active_minus1=%d\n",		num_ref_idx_l1_active_minus1);
 		Debug("\tweighted_pred_flag=%u\n",			weighted_pred_flag);
 		Debug("\tweighted_bipred_idc=%u\n",			weighted_bipred_idc);
 		Debug("\tpic_init_qp_minus26=%d\n",			pic_init_qp_minus26);
