@@ -60,15 +60,15 @@ retry:
 	//Get packet data
 	uint32_t seconds	= get4(data,0);
 	uint32_t nanoseonds	= get4(data,4);
-	uint32_t packetSize	= get4(data,8);
-	uint32_t packetLen	= get4(data,12);
+	uint32_t size		= get4(data,8);
+	uint32_t captured	= get4(data,12);
 	
 	//Get current timestamp
 	uint64_t ts = (((uint64_t)seconds)*1000000+nanoseonds);
 
-	//Debug("-Got packet size:%u len:%d\n",packetSize,packetLen);
+	//UltraDebug("-Got packet captured:%u size:%d\n",captured,size);
 	//Read the packet
-	if (read(fd,data,packetSize)!=packetSize) 
+	if (read(fd,data,captured)!=size) 
 	{
 		Error("-PCAPReader::GetNextPacket() | Short read\n");
 		//retry
@@ -78,7 +78,8 @@ retry:
 	// Get the udp size including udp headers
 	uint16_t udpLen = get2(data,38);
 
-	if (packetSize!=packetLen || udpLen!=(packetSize-34) || udpLen<8)
+	//Check length
+	if (udpLen!=(size-34) || udpLen<8)
 	{
 		Error("-PCAPReader::GetNextPacket() | Wrong UDP packet len:%u\n",udpLen);
 		//retry
@@ -87,6 +88,8 @@ retry:
 	//The udp packet
 	packet	  = data + 42;
 	packetLen = udpLen - 8;
+	
+	UltraDebug("-PCAPReader::GetNextPacket() | got packet [len:%d,pos:%d]\n",packetLen,lseek(fd, 0, SEEK_CUR));
 	
 	//Return timestamp of this packet
 	return ts;

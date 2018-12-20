@@ -356,14 +356,14 @@ outher:	while(running)
 		}
 		
 		//Get next packet from pcap
-		uint8_t* buffer		= reader->GetUDPData();
-		uint32_t bufferLen	= reader->GetUDPSize();
+		uint8_t* data = reader->GetUDPData();
+		uint32_t size = reader->GetUDPSize();
 		
 		//Check it is not RTCP
-		if (RTCPCompoundPacket::IsRTCP(buffer,bufferLen))
+		if (RTCPCompoundPacket::IsRTCP(data,size))
 		{
 			//Debug
-			//UltraDebug("-PCAPTransportEmulator::Run() | skipping rtcp\n");
+			UltraDebug("-PCAPTransportEmulator::Run() | skipping rtcp\n");
 			//Ignore this try again
 			goto outher;
 		}
@@ -372,15 +372,15 @@ outher:	while(running)
 		RTPHeaderExtension extension;
 
 		//Parse RTP header
-		uint32_t ini = header.Parse(buffer,bufferLen);
+		uint32_t len = header.Parse(data,size);
 
 		//On error
-		if (!ini)
+		if (!len)
 		{
 			//Debug
-			Error("-PCAPTransportEmulator::Run() | Could not parse RTP header ini=%u len=%d\n",ini,bufferLen-ini);
+			Error("-PCAPTransportEmulator::Run() | Could not parse RTP header ini=%u len=%d\n",len,size-len);
 			//Dump it
-			Dump(buffer+ini,bufferLen-ini);
+			Dump(data+len,size-len);
 			//Ignore this try again
 			goto outher;
 		}
@@ -389,43 +389,43 @@ outher:	while(running)
 		if (header.extension)
 		{
 			//Parse extension
-			int l = extension.Parse(extMap,buffer+ini,bufferLen-ini);
+			int l = extension.Parse(extMap,data+len,size-len);
 			//If not parsed
 			if (!l)
 			{
 				///Debug
-				Error("-PCAPTransportEmulator::Run() | Could not parse RTP header extension ini=%u len=%d\n",ini,bufferLen-ini);
+				Error("-PCAPTransportEmulator::Run() | Could not parse RTP header extension ini=%u len=%d\n",len,size-len);
 				//Dump it
-				Dump(buffer+ini,bufferLen-ini);
+				Dump(data+len,size-len);
 				//retry
 				goto outher;
 			}
 			//Inc ini
-			ini += l;
+			len += l;
 		}
 	
 		//Check size with padding
 		if (header.padding)
 		{
 			//Get last 2 bytes
-			WORD padding = get1(buffer,bufferLen-1);
+			WORD padding = get1(data,size-1);
 			//Ensure we have enought size
-			if (bufferLen-ini<padding)
+			if (size-len<padding)
 			{
 				///Debug
-				Debug("-PCAPTransportEmulator::Run() | RTP padding is bigger than size [padding:%u,size%u]\n",padding,bufferLen);
+				Debug("-PCAPTransportEmulator::Run() | RTP padding is bigger than size [padding:%u,size%u]\n",padding,size);
 				//Ignore this try again
 				goto outher;
 			}
 			//Remove from size
-			bufferLen -= padding;
+			size -= padding;
 		}
 
 		//Check we have payload
-		if (ini>=bufferLen)
+		if (len>=size)
 		{
 			///Debug
-			UltraDebug("-PCAPTransportEmulator::Run() | Refusing to create a packet with empty payload [ini:%u,len:%u]\n",ini,bufferLen,ini);
+			UltraDebug("-PCAPTransportEmulator::Run() | Refusing to create a packet with empty payload [ini:%u,len:%u]\n",len,size,len);
 			//Ignore this try again
 			goto outher;
 		}
@@ -449,7 +449,7 @@ outher:	while(running)
 		auto packet = std::make_shared<RTPPacket>(media,codec,header,extension);
 
 		//Set the payload
-		packet->SetPayload(buffer+ini,bufferLen-ini);
+		packet->SetPayload(data+len,size-len);
 
 		//Set capture time in ms
 		packet->SetTime(ts/1000);
