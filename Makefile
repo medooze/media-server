@@ -257,6 +257,6 @@ libmediaserver.so: touch mkdirs $(OBJSLIB)
 	@echo [OUT] $(TAG) $(BIN)/$@
 
 libmediaserver.a: touch mkdirs $(OBJSLIB)
-	${AR} rscT  $(BIN)/$@ $(BUILDOBJOBJSLIB)
+	${AR} rsc  $(BIN)/$@ $(BUILDOBJOBJSLIB)
 	@echo [OUT] $(TAG) $(BIN)/$@
  
