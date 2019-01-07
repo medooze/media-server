@@ -133,8 +133,10 @@ protected:
 						|| extension.hasAbsSentTime 
 						|| extension.hasTimeOffset
 						|| extension.hasTransportWideCC
-						||  extension.hasFrameMarking; }
-					// add checks for hasRId, hasRepairedId and hasMediaStreamId?
+						|| extension.hasFrameMarking
+						|| extension.hasRId
+						|| extension.hasRepairedId
+						|| extension.hasMediaStreamId; }
 
 private:
 	static const DWORD SIZE = 1700;
