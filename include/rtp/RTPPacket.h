@@ -129,7 +129,12 @@ public:
 	const RTPHeaderExtension&	GetRTPHeaderExtension()	const { return extension;	}
 	
 protected:
-	void  CheckExtensionMark()	{ header.extension =  extension.hasAbsSentTime || extension.hasTimeOffset  || extension.hasTransportWideCC ||  extension.hasFrameMarking; }
+	void  CheckExtensionMark()	{ header.extension =  extension.hasAudioLevel
+						|| extension.hasAbsSentTime 
+						|| extension.hasTimeOffset
+						|| extension.hasTransportWideCC
+						||  extension.hasFrameMarking; }
+					// add checks for hasRId, hasRepairedId and hasMediaStreamId?
 
 private:
 	static const DWORD SIZE = 1700;
