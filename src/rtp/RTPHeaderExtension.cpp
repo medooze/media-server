@@ -280,7 +280,7 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 			//Inc header len
 			len += n;
 			//Set vad
-			data[len++] = (vad ? 0x80 : 0x00) | (level & 0x07);
+			data[len++] = (vad ? 0x80 : 0x00) | (level & 0x7f);
 		}
 	}
 	
