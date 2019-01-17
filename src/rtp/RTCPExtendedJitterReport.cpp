@@ -24,7 +24,7 @@ DWORD RTCPExtendedJitterReport::GetSize()
 	return RTCPCommonHeader::GetSize()+4*jitters.size();
 }
 
-DWORD RTCPExtendedJitterReport::Parse(BYTE* data,DWORD size)
+DWORD RTCPExtendedJitterReport::Parse(const BYTE* data,DWORD size)
 {
 	//Get header
 	RTCPCommonHeader header;

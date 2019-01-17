@@ -22,7 +22,7 @@ class RTCPFullIntraRequest : public RTCPPacket
 public:
 	RTCPFullIntraRequest();
 	virtual DWORD GetSize();
-	virtual DWORD Parse(BYTE* data,DWORD size);
+	virtual DWORD Parse(const BYTE* data,DWORD size);
 	virtual DWORD Serialize(BYTE* data,DWORD size);
 private:
 	DWORD ssrc;

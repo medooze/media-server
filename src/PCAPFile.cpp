@@ -39,7 +39,7 @@ int PCAPFile::Open(const char* filename)
 	return write(fd, out, sizeof(out));
 }
     
-void PCAPFile::WriteUDP(QWORD currentTimeMillis,DWORD originIp, short originPort, DWORD destIp, short destPort,BYTE* data, DWORD size)
+void PCAPFile::WriteUDP(QWORD currentTimeMillis,DWORD originIp, short originPort, DWORD destIp, short destPort,const BYTE* data, DWORD size)
 {
 	BYTE out[PCAP_UDP_PACKET_SIZE];
 	

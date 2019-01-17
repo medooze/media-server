@@ -68,7 +68,7 @@ public:
 		using shared = std::shared_ptr<Field>;
 		virtual ~Field(){};
 		virtual DWORD GetSize() = 0;
-		virtual DWORD Parse(BYTE* data,DWORD size) = 0;
+		virtual DWORD Parse(const BYTE* data,DWORD size) = 0;
 		virtual DWORD Serialize(BYTE* data,DWORD size) = 0;
 	};
 
@@ -85,7 +85,7 @@ public:
 		WORD number; // 13 b
 		BYTE pictureId; // 6
 		virtual DWORD GetSize() { return 4;}
-		virtual DWORD Parse(BYTE* data,DWORD size)
+		virtual DWORD Parse(const BYTE* data,DWORD size)
 		{
 			if (size<4) return 0;
 			first = data[0];
@@ -136,7 +136,7 @@ public:
 		}
 
 		virtual DWORD GetSize() { return 2+length+padding;}
-		virtual DWORD Parse(BYTE* data,DWORD size)
+		virtual DWORD Parse(const BYTE* data,DWORD size)
 		{
 			if (size<2) return 0;
 			//Get values
@@ -195,7 +195,7 @@ public:
 		}
 
 		virtual DWORD GetSize() { return 8;}
-		virtual DWORD Parse(BYTE* data,DWORD size)
+		virtual DWORD Parse(const BYTE* data,DWORD size)
 		{
 			if (size<8) return 0;
 			ssrc = get4(data,0);
@@ -229,7 +229,7 @@ public:
 		BYTE seq;
 		BYTE index;
 		virtual DWORD GetSize() { return 8;}
-		virtual DWORD Parse(BYTE* data,DWORD size)
+		virtual DWORD Parse(const BYTE* data,DWORD size)
 		{
 			if (size<8) return 0;
 			//Get values
@@ -281,7 +281,7 @@ public:
 			if (payload) free(payload);
 		}
 		virtual DWORD GetSize() { return 8+length;}
-		virtual DWORD Parse(BYTE* data,DWORD size)
+		virtual DWORD Parse(const BYTE* data,DWORD size)
 		{
 			if (size<8) return 0;
 			//Get values
@@ -330,7 +330,7 @@ public:
 		const BYTE* GetPayload() const	{ return payload;	}
 		DWORD GetLength() const	{ return length;	}
 		virtual DWORD GetSize() { return pad32(length); }
-		virtual DWORD Parse(BYTE* data,DWORD size)
+		virtual DWORD Parse(const BYTE* data,DWORD size)
 		{
 			if (size!=pad32(size)) return 0;
 			//Get values
@@ -417,7 +417,7 @@ public:
 
 	virtual void Dump();
 	virtual DWORD GetSize();
-	virtual DWORD Parse(BYTE* data,DWORD size);
+	virtual DWORD Parse(const BYTE* data,DWORD size);
 	virtual DWORD Serialize(BYTE* data,DWORD size);
 
 	void SetSenderSSRC(DWORD ssrc)			{ senderSSRC = ssrc;		}

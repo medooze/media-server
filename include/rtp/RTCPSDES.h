@@ -66,7 +66,7 @@ public:
 		Item() = delete;
 		Item(Item&&) = delete;
 		Item(const Item&) = delete;
-		Item(Type type,BYTE* data,DWORD size)
+		Item(Type type,const BYTE* data,DWORD size)
 		{
 			this->type = type;
 			this->data = (BYTE*)malloc(size);
@@ -103,7 +103,7 @@ public:
 		~Description() = default;
 		void Dump();
 		DWORD GetSize();
-		DWORD Parse(BYTE* data,DWORD size);
+		DWORD Parse(const BYTE* data,DWORD size);
 		DWORD Serialize(BYTE* data,DWORD size);
 		
 		template<class ...Args>
@@ -130,7 +130,7 @@ public:
 	virtual ~RTCPSDES() = default;
 	virtual void Dump();
 	virtual DWORD GetSize();
-	virtual DWORD Parse(BYTE* data,DWORD size);
+	virtual DWORD Parse(const BYTE* data,DWORD size);
 	virtual DWORD Serialize(BYTE* data,DWORD size);
 
 	template<class ...Args>

@@ -29,7 +29,7 @@ public:
 	virtual ~RTCPSenderReport() = default;
 	virtual void Dump();
 	virtual DWORD GetSize();
-	virtual DWORD Parse(BYTE* data,DWORD size);
+	virtual DWORD Parse(const BYTE* data,DWORD size);
 	virtual DWORD Serialize(BYTE* data,DWORD size);
 
 	void SetOctectsSent(DWORD octectsSent)	{ this->octectsSent = octectsSent;	}

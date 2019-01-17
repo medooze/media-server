@@ -23,7 +23,7 @@ public:
 	RTCPApp();
 	virtual ~RTCPApp();
 	virtual DWORD GetSize();
-	virtual DWORD Parse(BYTE* data,DWORD size);
+	virtual DWORD Parse(const BYTE* data,DWORD size);
 	virtual DWORD Serialize(BYTE* data,DWORD size);
 private:
 	BYTE subtype	= 0;

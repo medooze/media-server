@@ -56,7 +56,7 @@ DWORD RTCPCompoundPacket::Serialize(BYTE *data,DWORD size) const
 }
 	
 
-RTCPCompoundPacket::shared RTCPCompoundPacket::Parse(BYTE *data,DWORD size)
+RTCPCompoundPacket::shared RTCPCompoundPacket::Parse(const BYTE *data,DWORD size)
 {
 	//Check if it is an RTCP valid header
 	if (!IsRTCP(data,size))
@@ -68,7 +68,7 @@ RTCPCompoundPacket::shared RTCPCompoundPacket::Parse(BYTE *data,DWORD size)
 	//Create pacekt
 	auto rtcp = RTCPCompoundPacket::Create();
 	//Init pointers
-	BYTE *buffer = data;
+	const BYTE *buffer = data;
 	DWORD bufferLen = size;
 	//Parse
 	while (bufferLen)

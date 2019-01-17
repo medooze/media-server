@@ -46,7 +46,7 @@ DWORD RTCPBye::GetSize()
 	return pad32(len);;
 }
 
-DWORD RTCPBye::Parse(BYTE* data,DWORD size)
+DWORD RTCPBye::Parse(const BYTE* data,DWORD size)
 {
 	//Get header
 	RTCPCommonHeader header;

@@ -70,7 +70,7 @@ public:
 		return 24;
 	}
 
-	DWORD Parse(BYTE* data,DWORD size)
+	DWORD Parse(const BYTE* data,DWORD size)
 	{
 		//Check size
 		if (size<24)
