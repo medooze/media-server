@@ -734,7 +734,7 @@ int DTLSConnection::SetupSRTP()
 	return 1;
 }
 
-int DTLSConnection::Write( BYTE *buffer, DWORD size)
+int DTLSConnection::Write(const BYTE *buffer, DWORD size)
 {
 	HandleTimeout();
 	
@@ -745,14 +745,18 @@ int DTLSConnection::Write( BYTE *buffer, DWORD size)
 		return Error("-DTLSConnection::Write() | SSL not yet ready\n");
 
 	BIO_write(read_bio, buffer, size);
-
-	int ret = SSL_read(ssl, buffer, size);
 	
-	if (ret<0)
+	BYTE msg[MTU];
+	int len = SSL_read(ssl, msg, MTU);
+	
+	if (len>0)
+		Dump(msg,len);
+	
+	if (len<0)
 	{
-		int err = SSL_get_error(ssl,ret);
+		int err = SSL_get_error(ssl,len);
 		if (err!=SSL_ERROR_WANT_READ)
-			return Error("-DTLSConnection::Write() | SSL_read error [ret:%d,err:%d]\n",ret,SSL_get_error(ssl,ret));
+			return Error("-DTLSConnection::Write() | SSL_read error [ret:%d,err:%d]\n",len,SSL_get_error(ssl,len));
 		else 
 			return 0;
 	}
@@ -762,11 +766,9 @@ int DTLSConnection::Write( BYTE *buffer, DWORD size)
 	if (SSL_get_shutdown(ssl) & SSL_RECEIVED_SHUTDOWN)
 	{
 		Debug("-DTLSConnection::Write() | SSL_RECEIVED_SHUTDOWN on instance '%p', resetting SSL\n", this);
-		ret = SSL_clear(ssl);
-		ssl = nullptr;
-		if (ret == 0)
+		if (SSL_clear(ssl)==0)
 			Error("-DTLSConnection::Write() | SSL_clear() failed: %s", ERR_error_string(ERR_get_error(), NULL));
-
+		ssl = nullptr;
 		return 0;
 	}
 

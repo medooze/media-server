@@ -30,7 +30,7 @@ public:
 	class Listener
 	{
 	public:
-		virtual int onData(const ICERemoteCandidate* candidate,BYTE* data,DWORD size) = 0;
+		virtual int onData(const ICERemoteCandidate* candidate,const BYTE* data,DWORD size) = 0;
 	};
 public:
 	ICERemoteCandidate(const char *ip,const WORD port,Listener *listener)
@@ -47,7 +47,21 @@ public:
 		addr.sin_addr.s_addr	= inet_addr(ip);
 	}
 	
-	int onData(BYTE* data, DWORD size)
+	ICERemoteCandidate(const DWORD ipAddr ,const WORD port,Listener *listener)
+	{
+		//Store transport
+		this->listener = listener;
+
+		//Rset addr
+		memset(&addr,0,sizeof(sockaddr_in));
+		
+		//Set values
+		addr.sin_family		= AF_INET;
+		addr.sin_port		= htons(port);
+		addr.sin_addr.s_addr	= htonl(ipAddr);
+	}
+	
+	int onData(const BYTE* data, DWORD size)
 	{
 		return listener->onData(this,data,size);
 	}

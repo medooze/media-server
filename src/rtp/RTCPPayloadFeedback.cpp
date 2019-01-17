@@ -100,7 +100,7 @@ DWORD RTCPPayloadFeedback::GetSize()
 	return len;
 }
 
-DWORD RTCPPayloadFeedback::Parse(BYTE* data,DWORD size)
+DWORD RTCPPayloadFeedback::Parse(const BYTE* data,DWORD size)
 {
 //Get header
 	RTCPCommonHeader header;

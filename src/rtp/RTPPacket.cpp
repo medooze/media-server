@@ -126,7 +126,7 @@ DWORD RTPPacket::Serialize(BYTE* data,DWORD size,const RTPMap& extMap) const
 	return len;
 }
 
-bool RTPPacket::SetPayload(BYTE *data,DWORD size)
+bool RTPPacket::SetPayload(const BYTE *data,DWORD size)
 {
 	//Check size
 	if (size>GetMaxMediaLength())

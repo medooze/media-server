@@ -40,7 +40,7 @@ DWORD RTCPSDES::GetSize()
 		len += (*it)->GetSize();
 	return len;
 }
-DWORD RTCPSDES::Parse(BYTE* data,DWORD size)
+DWORD RTCPSDES::Parse(const BYTE* data,DWORD size)
 {
 	//Get header
 	//Get header
@@ -144,7 +144,7 @@ DWORD RTCPSDES::Description::GetSize()
 	//Return
 	return pad32(len);
 }
-DWORD RTCPSDES::Description::Parse(BYTE* data,DWORD size)
+DWORD RTCPSDES::Description::Parse(const BYTE* data,DWORD size)
 {
 	//Check size
 	if (size<4)

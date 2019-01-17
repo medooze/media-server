@@ -15,7 +15,7 @@
 
 static const BYTE MagicCookie[4] = {0x21,0x12,0xA4,0x42};
 
-STUNMessage::STUNMessage(Type type,Method method,BYTE* transId)
+STUNMessage::STUNMessage(Type type,Method method,const BYTE* transId)
 {
 	//Store values
 	this->type = type;
@@ -32,7 +32,7 @@ STUNMessage::~STUNMessage()
 		delete (*it);
 }
 
-bool STUNMessage::IsSTUN(BYTE* data,DWORD size)
+bool STUNMessage::IsSTUN(const BYTE* data,DWORD size)
 {
 	return (
 		// STUN headers are 20 bytes.
@@ -44,7 +44,7 @@ bool STUNMessage::IsSTUN(BYTE* data,DWORD size)
 	);
 }
 
-STUNMessage* STUNMessage::Parse(BYTE* data,DWORD size)
+STUNMessage* STUNMessage::Parse(const BYTE* data,DWORD size)
 {
 	//Ensure it looks like a STUN message.
 	if (! IsSTUN(data, size))
@@ -372,7 +372,7 @@ void  STUNMessage::AddAttribute(Attribute* attr)
 	attributes.push_back(attr);
 }
 
-void  STUNMessage::AddAttribute(Attribute::Type type,BYTE *data,DWORD size)
+void  STUNMessage::AddAttribute(Attribute::Type type,const BYTE *data,DWORD size)
 {
 	//Add it
 	attributes.push_back(new Attribute(type,data,size));
@@ -425,7 +425,8 @@ void  STUNMessage::AddAddressAttribute(sockaddr_in* addr)
 	//Add it
 	AddAttribute(Attribute::MappedAddress,aux,8);
 }
-void  STUNMessage::AddXorAddressAttribute(sockaddr_in* addr)
+
+void  STUNMessage::AddXorAddressAttribute(uint32_t addr, uint16_t port)
 {
 	BYTE aux[8];
 
@@ -434,12 +435,12 @@ void  STUNMessage::AddXorAddressAttribute(sockaddr_in* addr)
 	//Family
 	aux[1] = 1;
 	//Set port
-	memcpy(aux+2,&addr->sin_port,2);
+	memcpy(aux+2,&port,2);
 	//Xor it
 	aux[2] ^= MagicCookie[0];
 	aux[3] ^= MagicCookie[1];
 	//Set addres
-	memcpy(aux+4,&addr->sin_addr.s_addr,4);
+	memcpy(aux+4,&addr,4);
 	//Xor it
 	aux[4] ^= MagicCookie[0];
 	aux[5] ^= MagicCookie[1];
@@ -447,6 +448,11 @@ void  STUNMessage::AddXorAddressAttribute(sockaddr_in* addr)
 	aux[7] ^= MagicCookie[3];
 	//Add it
 	AddAttribute(Attribute::XorMappedAddress,aux,8);
+}
+
+void  STUNMessage::AddXorAddressAttribute(sockaddr_in* addr)
+{
+	AddXorAddressAttribute(addr->sin_addr.s_addr,addr->sin_port);
 }
 
 STUNMessage* STUNMessage::CreateResponse()

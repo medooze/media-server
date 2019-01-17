@@ -66,7 +66,7 @@ DWORD RTCPApp::Serialize(BYTE* data, DWORD size)
 	return len;
 }
 
-DWORD RTCPApp::Parse(BYTE* data,DWORD size)
+DWORD RTCPApp::Parse(const BYTE* data,DWORD size)
 {
 	//Get header
 	RTCPCommonHeader header;

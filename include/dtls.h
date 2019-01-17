@@ -129,7 +129,7 @@ public:
 	Setup GetSetup() const { return setup; }
 	
 	int  Read(BYTE* data,DWORD size);
-	int  Write(BYTE *buffer,DWORD size);
+	int  Write(const BYTE *buffer,DWORD size);
 	int  HandleTimeout();
 	int  Renegotiate();
 

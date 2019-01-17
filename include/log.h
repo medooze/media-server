@@ -229,6 +229,31 @@ inline void Dump(const BYTE *data,DWORD size)
 	}
 }
 
+inline void DumpAsC(const BYTE *data,DWORD size)
+{
+	Debug("data[%d] = {\n",size);
+	for(DWORD i=0;i<(size/4)-1;i++)
+	{
+		DWORD n = 4*i;
+		Debug("\t0x%.2x, 0x%.2x, 0x%.2x, 0x%.2x,\n",data[n],data[n+1],data[n+2],data[n+3]);
+	}
+	switch(size%4)
+	{
+		case 1:
+			Debug("\t0x%.2x\n",data[size-1]);
+			break;
+		case 2:
+			Debug("\t0x%.2x, 0x%.2x\n",data[size-2],data[size-1]);
+			break;
+		case 3:
+			Debug("\t0x%.2x, 0x%.2x, 0x%.2x\n",data[size-3],data[size-2],data[size-1]);
+			break;
+		case 4:
+			Debug("\t0x%.2x, 0x%.2x, 0x%.2x, 0x%.2x\n",data[size-4],data[size-3],data[size-2],data[size-1]);
+			break;
+	}
+	Debug("};\n",size);
+}
 
 inline void Dump4(const BYTE *data,DWORD size)
 {

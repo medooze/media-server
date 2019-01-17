@@ -36,7 +36,7 @@ public:
 	
 	DWORD Serialize(BYTE* data,DWORD size,const RTPMap& extMap) const;
 	
-	bool	SetPayload(BYTE *data,DWORD size);
+	bool	SetPayload(const BYTE *data,DWORD size);
 	bool	SkipPayload(DWORD skip);
 	bool	PrefixPayload(BYTE *data,DWORD size);
 	

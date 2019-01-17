@@ -11,6 +11,7 @@
 #include <srtp2/srtp.h>
 #include "config.h"
 #include "DTLSICETransport.h"
+#include "EventLoop.h"
 
 class RTPBundleTransport :
 	public DTLSICETransport::Sender
@@ -40,29 +41,19 @@ public:
 	
 	int GetLocalPort() const { return port; }
 	int AddRemoteCandidate(const std::string& username,const char* ip, WORD port);
-	virtual int Send(const ICERemoteCandidate* candidate,const BYTE *buffer,const DWORD size);
+	virtual int Send(const ICERemoteCandidate* candidate,Buffer&& buffer) override;
 	
 private:
-	void Start();
-	void Stop();
-	int  Read();
-	int Run();
-private:
-	static  void* run(void *par);
-private:
+	int OnRead(const uint8_t* data, const size_t size, const uint32_t ip, const uint16_t port);
 	typedef std::map<std::string,Connection*> Connections;
 	typedef std::map<std::string,ICERemoteCandidate*> RTPICECandidates;
 private:
 	//Sockets
 	int 	socket;
 	int 	port;
-	pollfd	ufds[1];
-	bool	running;
-
-	pthread_t thread;
-	pthread_mutex_t	mutex;
-	pthread_cond_t cond;
 	
+	EventLoop loop;
+
 	Connections	 connections;
 	RTPICECandidates candidates;
 	Use	use;
