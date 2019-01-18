@@ -10,6 +10,7 @@ Documentation comming soon, major refactoring ongoing. Stay tunned!
 This repository is currently a host for the base media code used in different projects. While it may take a while to propertly encapsulate it and define reusable components to create a propper SDK, you can use the following native wrappers:
  - [MCU](http://medooze.com/products/mcu.aspx).
  - [Media Server for Node.js](https://github.com/medooze/media-server-node)
+ - [Media Server for Golang](https://github.com/notedit/media-server-go)
  - Media Server for Java (Comming soon)
 
 ## Functionality
