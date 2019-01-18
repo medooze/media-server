@@ -16,6 +16,9 @@ class RTPBundleTransport :
 	public DTLSICETransport::Sender
 {
 private:
+
+	// 每一个参与会议的用户只会对应一个Connection
+	// 每一个Connection对应一个DTLSICETransport*
 	struct Connection
 	{
 		Connection(DTLSICETransport* transport,bool disableSTUNKeepAlive)
@@ -50,7 +53,13 @@ private:
 private:
 	static  void* run(void *par);
 private:
+	
+	// key: username, value:Connection*
+	// 每一个参与会议的用户只会对应一个Connection
 	typedef std::map<std::string,Connection*> Connections;
+	
+	// key: remote_addr(ip:port), value: ICERemoteCandidate*
+	// 每一个连接的会对应多个candidates
 	typedef std::map<std::string,ICERemoteCandidate*> RTPICECandidates;
 private:
 	//Sockets
