@@ -32,9 +32,15 @@ bool EventLoop::Start(int fd)
 		return false;
 	
 	//Create pipe
-	if (::pipe2(pipe, O_NONBLOCK | O_CLOEXEC)!=0)
+	if (::pipe(pipe)==-1)
 		//Error
 		return false;
+	
+	//Set non blocking
+	int flags = fcntl(pipe[0], F_GETFL, 0);
+	fcntl(pipe[0], F_SETFD , flags | O_NONBLOCK);
+	flags = fcntl(pipe[1], F_GETFL, 0);
+	fcntl(pipe[1], F_SETFD , flags | O_NONBLOCK);
 	
 	//Store socket
 	this->fd = fd;
