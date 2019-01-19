@@ -37,7 +37,6 @@
 #include "rtp/RTPMap.h"
 #include "rtp/RTPHeader.h"
 #include "rtp/RTPHeaderExtension.h"
-#include "aac/aacencoder.h"
 #include "EventLoop.h"
 
 DTLSICETransport::DTLSICETransport(Sender *sender,TimeService& timeService) :
