@@ -16,7 +16,11 @@ using namespace std::chrono_literals;
 class EventLoop : public TimeService
 {
 public:
-	using ReadCallback = std::function<void (const uint8_t* data, const size_t size, const uint32_t ipAddr, const uint16_t port)>;
+	class Listener
+	{
+		virtual ~Listener = default;
+		void onRead(const uint8_t* data, const size_t size, const uint32_t ipAddr, const uint16_t port) = 0;
+	};
 private:
 	class TimerImpl : public Timer, public std::enable_shared_from_this<TimerImpl>
 	{
@@ -46,7 +50,7 @@ private:
 		std::function<void(std::chrono::milliseconds)> callback;
 	};
 public:
-	EventLoop();
+	EventLoop(Listener &listener);
 	virtual ~EventLoop();
 	
 	bool Start(int fd);
@@ -59,8 +63,6 @@ public:
 	
 	void Send(const uint32_t ipAddr, const uint16_t port, Buffer&& buffer);
 	
-	void OnRead(ReadCallback onRead) { this->onRead = onRead; }
-
 protected:
 	void CancelTimer(std::shared_ptr<TimerImpl> timer);
 private:
@@ -84,7 +86,7 @@ private:
 	
 private:	
 	std::thread thread;
-	ReadCallback onRead;
+	Listener listener;
 	int fd = 0;
 	int pipe[2] = {0};
 	pollfd	ufds[2];

@@ -15,7 +15,8 @@
 
 #include "log.h"
 
-EventLoop::EventLoop() 
+EventLoop::EventLoop(Listener &listener) :
+	listener(listener)
 {
 }
 
@@ -28,11 +29,6 @@ bool EventLoop::Start(int fd)
 	//If already started
 	if (thread.get_id()!=std::thread::id())
 		//Alredy running
-		return false;
-	
-	//Ensure we have a callback
-	if (!onRead)
-		//Error
 		return false;
 	
 	//Create pipe
@@ -285,7 +281,7 @@ void EventLoop::Run()
 			//Leemos del socket
 			int len = recvfrom(fd,data,size,MSG_DONTWAIT,(sockaddr*)&from,&fromLen);
 			//Run callback
-			onRead(data,len,ntohl(from.sin_addr.s_addr),ntohs(from.sin_port));
+			listener.onRead(data,len,ntohl(from.sin_addr.s_addr),ntohs(from.sin_port));
 		}
 		
 		//Check read is possible

@@ -33,16 +33,12 @@
 * RTPBundleTransport
 * 	Constructro
 **************************/
-RTPBundleTransport::RTPBundleTransport()
+RTPBundleTransport::RTPBundleTransport() : 
+	loop(*this)
 {
 	//Init values
 	socket = FD_INVALID;
 	port = 0;
-	
-	//Set read callback on loop
-	loop.OnRead([this](const uint8_t* data, const size_t size, const uint32_t ip, const uint16_t port){
-		OnRead(data,size,ip,port);
-	});
 }
 
 /*************************
@@ -317,7 +313,7 @@ int RTPBundleTransport::Send(const ICERemoteCandidate* candidate, Buffer&& buffe
 	return 1;
 }
 
-int RTPBundleTransport::OnRead(const uint8_t* data, const size_t size, const uint32_t ip, const uint16_t port)
+void RTPBundleTransport::OnRead(const uint8_t* data, const size_t size, const uint32_t ip, const uint16_t port)
 {
 	//Get remote ip:port address
 	char remote[24];
@@ -332,8 +328,12 @@ int RTPBundleTransport::OnRead(const uint8_t* data, const size_t size, const uin
 
 		//It was not a valid STUN message
 		if (!stun)
+		{
 			//Error
-			return Error("-RTPBundleTransport::ReadRTP() | failed to parse STUN message\n");
+			Error("-RTPBundleTransport::ReadRTP() | failed to parse STUN message\n");
+			//Done
+			return;
+		}
 
 		STUNMessage::Type type = stun->GetType();
 		STUNMessage::Method method = stun->GetMethod();
@@ -352,9 +352,13 @@ int RTPBundleTransport::OnRead(const uint8_t* data, const size_t size, const uin
 			
 			//If not found
 			if (it==connections.end())
+			{
 				//TODO: Reject
-				//Exit
-				return Error("-RTPBundleTransport::Read ice username not found [%s}\n",username.c_str());
+				//Error
+				Error("-RTPBundleTransport::Read ice username not found [%s}\n",username.c_str());
+				//Done
+				return;
+			}
 			
 			//Get ice connection
 			Connection* connection = it->second;
@@ -363,8 +367,12 @@ int RTPBundleTransport::OnRead(const uint8_t* data, const size_t size, const uin
 
 			//Check if it has the prio attribute
 			if (!stun->HasAttribute(STUNMessage::Attribute::Priority))
+			{
 				//Error
-				return Error("-STUN Message without priority attribute");
+				Error("-STUN Message without priority attribute");
+				//DOne
+				return;
+			}
 			
 			//Check wether we have to reply to this message or not
 			bool reply = !connection->disableSTUNKeepAlive;
@@ -455,7 +463,7 @@ int RTPBundleTransport::OnRead(const uint8_t* data, const size_t size, const uin
 		delete(stun);
 
 		//Exit
-		return 1;
+		return;
 	}
 	
 	//Find candidate
@@ -463,14 +471,18 @@ int RTPBundleTransport::OnRead(const uint8_t* data, const size_t size, const uin
 	
 	//Check if it was not registered
 	if (it==candidates.end())
+	{
 		//Error
-		return Error("-RTPBundleTransport::ReadRTP() | No registered ICE candidate for [%s]\n",remote);
+		Error("-RTPBundleTransport::ReadRTP() | No registered ICE candidate for [%s]\n",remote);
+		//DOne
+		return;
+	}
 	
 	//Get ice transport
 	ICERemoteCandidate *ice = it->second;
 	
 	//Send data
-	return ice->onData(data,size);
+	ice->onData(data,size);
 }
 
 int RTPBundleTransport::AddRemoteCandidate(const std::string& username,const char* ip, WORD port)

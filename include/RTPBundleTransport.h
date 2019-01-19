@@ -14,7 +14,8 @@
 #include "EventLoop.h"
 
 class RTPBundleTransport :
-	public DTLSICETransport::Sender
+	public DTLSICETransport::Sender,
+	public EventLoop::Listener
 {
 private:
 	struct Connection
