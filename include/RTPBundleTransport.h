@@ -44,8 +44,8 @@ public:
 	int AddRemoteCandidate(const std::string& username,const char* ip, WORD port);
 	virtual int Send(const ICERemoteCandidate* candidate,Buffer&& buffer) override;
 	
+	virtual void OnRead(const uint8_t* data, const size_t size, const uint32_t ip, const uint16_t port) override;
 private:
-	int OnRead(const uint8_t* data, const size_t size, const uint32_t ip, const uint16_t port);
 	typedef std::map<std::string,Connection*> Connections;
 	typedef std::map<std::string,ICERemoteCandidate*> RTPICECandidates;
 private:
