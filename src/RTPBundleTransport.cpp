@@ -512,7 +512,7 @@ int RTPBundleTransport::AddRemoteCandidate(const std::string& username,const cha
 		if (candidates.find(remote)!=candidates.end())
 		{
 			//Exit
-			Error("-RTPBundleTransport::AddRemoteCandidate already present [candidate:%s]\n",remote);
+			Error("-RTPBundleTransport::AddRemoteCandidate already present [candidate:%s]\n",remote.c_str());
 			//Done
 			return;
 		}
