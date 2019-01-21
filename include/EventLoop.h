@@ -20,7 +20,7 @@ public:
 	{
 	public:
 		virtual ~Listener() = default;
-		virtual void OnRead(const uint8_t* data, const size_t size, const uint32_t ipAddr, const uint16_t port) = 0;
+		virtual void OnRead(const int fd, const uint8_t* data, const size_t size, const uint32_t ipAddr, const uint16_t port) = 0;
 	};
 private:
 	class TimerImpl : public Timer, public std::enable_shared_from_this<TimerImpl>

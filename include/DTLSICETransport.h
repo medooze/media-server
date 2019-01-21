@@ -29,8 +29,8 @@
 #include "UDPDumper.h"
 #include "remoterateestimator.h"
 #include "EventLoop.h"
-
-
+#include "Datachannels.h"
+#include "Endpoint.h"
 
 class DTLSICETransport : 
 	public RTPSender,
@@ -144,6 +144,8 @@ private:
 	};
 private:
 	TimeService&	timeService;
+	datachannels::impl::Endpoint endpoint;
+	datachannels::Endpoint::Options dcOptions;
 	Sender*		sender;
 	DTLSConnection	dtls;
 	Maps		sendMaps;

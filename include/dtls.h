@@ -10,7 +10,7 @@
 #include <vector>
 #include "config.h"
 #include "log.h"
-
+#include "Datachannels.h"
 
 class DTLSConnection
 {
@@ -116,7 +116,7 @@ private:
 	static bool		hasDTLS;
 
 public:
-	DTLSConnection(Listener& listener);
+	DTLSConnection(Listener& listener,TimeService& timeService,datachannels::Transport& sctp);
 	~DTLSConnection();
 
 	void SetSRTPProtectionProfiles(const std::string& profiles);
@@ -139,9 +139,12 @@ public:
 
 protected:
 	int  SetupSRTP();
-	int  CheckPending();
+
 private:
 	Listener& listener;
+	TimeService& timeService;
+	Timer::shared timeout;		// DTLS timout handler
+	datachannels::Transport &sctp;	// SCTP transport
 	SSL *ssl;			// SSL session 
 	BIO *read_bio;			// Memory buffer for reading 
 	BIO *write_bio;			// Memory buffer for writing 

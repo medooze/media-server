@@ -39,7 +39,7 @@ public:
 	
 	
 	template<std::size_t N> 
-	inline size_t Set(size_t i, const std::array<uint8_t,N>& array) 
+	inline void Set(size_t i, const std::array<uint8_t,N>& array) 
 	{
 		memcpy(data+i,array.data(),N);
 	}
@@ -49,7 +49,7 @@ public:
 		memcpy(data+i,buffer.GetData(),buffer.GetSize());
 	}
 	
-	inline size_t Set(size_t i, const std::string& string)  
+	inline void Set(size_t i, const std::string& string)  
 	{
 		memcpy(data+i,string.data(),string.length());
 	}
