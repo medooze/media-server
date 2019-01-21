@@ -38,10 +38,12 @@
 #include "rtp/RTPHeader.h"
 #include "rtp/RTPHeaderExtension.h"
 #include "EventLoop.h"
+#include "Endpoint.h"
 
 DTLSICETransport::DTLSICETransport(Sender *sender,TimeService& timeService) :
 	timeService(timeService),
-	dtls(*this),
+	endpoint(timeService),
+	dtls(*this,timeService,endpoint.GetTransport()),
 	incomingBitrate(1000),
 	outgoingBitrate(1000)
 {
@@ -1047,6 +1049,9 @@ void DTLSICETransport::SetLocalProperties(const Properties& properties)
 	
 	//Clear extension
 	extensions.clear();
+	
+	//Get remote dtls info
+	
 }
 
 void DTLSICETransport::SetSRTPProtectionProfiles(const std::string& profiles)
@@ -2371,6 +2376,9 @@ void DTLSICETransport::Start()
 	//Get init time
 	getUpdDifTime(&ini);
 	
+	//Start
+	endpoint.Init(dcOptions);
+	
 	//Create new probe
 	probingTimer = timeService.CreateTimer(0ms,33ms,[this](...){
 		//Do probe
@@ -2381,6 +2389,9 @@ void DTLSICETransport::Start()
 void DTLSICETransport::Stop()
 {
 	Debug(">DTLSICETransport::Stop()\n");
+	
+	//Stop
+	endpoint.Close();
 	
 	//Stop probing
 	probingTimer->Cancel();

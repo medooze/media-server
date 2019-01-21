@@ -399,26 +399,26 @@ int RTPSession::End()
 
 int RTPSession::SendPacket(const RTCPCompoundPacket::shared &rtcp)
 {
-	BYTE data[RTPPAYLOADSIZE+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
-	DWORD size = RTPPAYLOADSIZE;
+	//Data
+	Buffer buffer(MTU);
+	BYTE* data = buffer.GetData();
+	size_t size = buffer.GetCapacity();
 
 	//Lock muthed inside  method
 	ScopedLock method(sendMutex);
 
 	//Serialize
-	DWORD len = rtcp->Serialize(data,size);
+	size_t len = rtcp->Serialize(data,size);
 	//Check result
 	if (len<=0 || len>size)
 		//Error
 		return Error("-RTPSession::SendPacket(%s) | Error serializing RTCP packet [len:%d]\n",MediaFrame::TypeToString(media),len);
 
+	//Set serialized packet size
+	buffer.SetSize(len);
+	
 	//Send it
-	len = transport.SendRTCPPacket(data,len);
-
-	//Check error
-	if (!len)
-		//Return
-		return Error("-RTPSession::SendPacket(%s) | Error sending RTCP packet [%d]\n",MediaFrame::TypeToString(media),errno);
+	transport.SendRTCPPacket(std::move(buffer));
 
 	//INcrease stats
 	send.media.numPackets++;
@@ -434,8 +434,10 @@ int RTPSession::SendPacket(RTPPacket &packet)
 
 int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 {
-	BYTE  data[MTU+SRTP_MAX_TRAILER_LEN] ALIGNEDTO32;
-	DWORD size = MTU;
+	//Data
+	Buffer buffer(MTU);
+	BYTE* data = buffer.GetData();
+	size_t size = buffer.GetCapacity();
 	
 	//Check if we need to send SR (1 per second
 	if (useRTCP && (!send.media.lastSenderReport || getTimeDiff(send.media.lastSenderReport)>1E6))
@@ -476,7 +478,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 	}
 
 	//Serialize header
-	int len = header.Serialize(data,size);
+	size_t len = header.Serialize(data,size);
 
 	//Check
 	if (!len)
@@ -521,16 +523,16 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 		rtxs[rtx->GetExtSeqNum()] = rtx;
 	}
 	
+	//Set serialized packet size
+	buffer.SetSize(len);
+	
 	//No error yet, send packet
-	len = transport.SendRTPPacket(data,len);
+	len = transport.SendRTPPacket(std::move(buffer));
 
-	//If got packet to send
-	if (len>0)
-	{
-		//Inc stats
-		send.media.numPackets++;
-		send.media.totalBytes += len;
-	}
+	//Inc stats
+	send.media.numPackets++;
+	send.media.totalBytes += len;
+
 
 	//Get time for packets to discard, always have at least 200ms, max 500ms
 	QWORD until = getTimeMS() - (200+fmin(rtt*2,300));
@@ -554,7 +556,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 	return (len>0);
 }
 
-void RTPSession::onRTPPacket(BYTE* data, DWORD size)
+void RTPSession::onRTPPacket(const BYTE* data, DWORD size)
 {
 	bool isRTX = false;
 	RTPHeader header;
@@ -851,7 +853,7 @@ void RTPSession::onRemotePeer(const char* ip, const short port)
 		listener->onFPURequested(this);
 }
 
-void RTPSession::onRTCPPacket(BYTE* buffer, DWORD size)
+void RTPSession::onRTCPPacket(const BYTE* buffer, DWORD size)
 {
 	//Parse it
 	auto rtcp = RTCPCompoundPacket::Parse(buffer,size);
@@ -1251,9 +1253,10 @@ int RTPSession::ReSendPacket(int seq)
 		auto packet = it->second;
 
 		//Data
-		BYTE data[MTU+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
-		DWORD size = MTU;
-		int len = 0;
+		Buffer buffer(MTU);
+		BYTE* data = buffer.GetData();
+		size_t size = buffer.GetCapacity();
+		size_t len = 0;
 		
 		//Overrride headers
 		RTPHeader		header(packet->GetRTPHeader());
@@ -1322,8 +1325,11 @@ int RTPSession::ReSendPacket(int seq)
 		
 		UltraDebug("-RTPSession::ReSendPacket() | seq:%d ext:%d pt:%d rtx:%d\n",seq,ext,header.payloadType,useRTX);
 		
+		//Set serialized packet size
+		buffer.SetSize(len);
+		
 		//Send packet
-		transport.SendRTPPacket(data,len);
+		transport.SendRTPPacket(std::move(buffer));
 		
 	} else {
 		UltraDebug("-RTPSession::ReSendPacket() | %d:%d %d not found first %d sending intra instead\n",send.media.cycles,seq,ext,rtxs.size() ?  rtxs.begin()->first : 0);
