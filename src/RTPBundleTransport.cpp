@@ -60,6 +60,8 @@ RTPBundleTransport::~RTPBundleTransport()
 	pthread_cond_destroy(&cond);
 }
 
+// 根据username创建connection及transport对象
+
 DTLSICETransport* RTPBundleTransport::AddICETransport(const std::string &username,const Properties& properties)
 {
 	Log("-RTPBundleTransport::AddICETransport [%s]\n",username.c_str());
@@ -118,6 +120,8 @@ DTLSICETransport* RTPBundleTransport::AddICETransport(const std::string &usernam
 	return transport;
 }
 
+// 根据username删除connection、transport和所有的candidates对象
+
 int RTPBundleTransport::RemoveICETransport(const std::string &username)
 {
 	Log("-RTPBundleTransport::RemoveICETransport() [username:%s]\n",username.c_str());
@@ -166,6 +170,9 @@ int RTPBundleTransport::RemoveICETransport(const std::string &username)
 	//DOne
 	return 1;
 }
+
+// 1. 绑定端口号，打开sokcet服务
+// 2. 启动线程开始读取rtp数据包
 
 int RTPBundleTransport::Init()
 {
@@ -320,6 +327,12 @@ int RTPBundleTransport::End()
 	return 1;
 }
 
+
+/**
+	Send Function:
+	1. 这个函数是对candidate的接口发送数据的接口的实现
+**/
+
 int RTPBundleTransport::Send(const ICERemoteCandidate* candidate,const BYTE *buffer,const DWORD size)
 {
 	int ret = 0;
@@ -371,6 +384,14 @@ int RTPBundleTransport::Send(const ICERemoteCandidate* candidate,const BYTE *buf
 	//Done
 	return  ret;
 }
+
+/*
+	Read fuction：
+	1. 是RTPBundleTransport的模块接收函数，负责接收来自其他client的udp数据包，包括stun包和rtcp+rtp包等。
+	2. 负责将接收到的数据包，负责分发给其他class模块处理: 
+	  	(2.1) stun 相关的消息，自己处理。
+	  	(2.2) rtcp+rtp 相关的数据包交给 DTLSICETransport模块处理。 
+*/
 
 int RTPBundleTransport::Read()
 {

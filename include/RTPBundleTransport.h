@@ -12,6 +12,14 @@
 #include "config.h"
 #include "DTLSICETransport.h"
 
+/*
+	RTPBundleTransport:
+	1.  负责底层udp数据包的接收和发送。
+	2.  udp数据包根据不同的类型，分发给不同的模块处理。
+	3.  维护user_name->connetcion->candidates的映射关系
+*/
+
+
 class RTPBundleTransport :
 	public DTLSICETransport::Sender
 {
@@ -36,6 +44,7 @@ public:
 	virtual ~RTPBundleTransport();
 	int Init();
 	int Init(int port);
+	
 	DTLSICETransport* AddICETransport(const std::string &username,const Properties& properties);
 	int RemoveICETransport(const std::string &username);
 	
