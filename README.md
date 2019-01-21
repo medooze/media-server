@@ -57,3 +57,4 @@ Dual:
  
  - RTPBundleTransport.h 
  - RTPBundleTransport.cpp
+ - Acumulator.h  统计单位时间内，音视频接收数据的统计类
