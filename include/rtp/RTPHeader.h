@@ -10,6 +10,11 @@
 #include "config.h"
 #include <list>
 
+/*
+	RTPHeader:
+	rtp header的解析器
+*/
+
 class RTPHeader
 {
 public:
