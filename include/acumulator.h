@@ -11,6 +11,13 @@
 #include "config.h"
 #include <list>
 
+/*
+	Acumulator类:
+		主要用于统计单位时间内，接收到的音视频数据大小(单位:字节)
+	核心成员values为list结构, 其中first : time, second : bytes大小。
+	采用的类似于queue的结构，先收到的数据存储在front,后收到的数据存储在back
+*/
+
 class Acumulator
 {
 public:
