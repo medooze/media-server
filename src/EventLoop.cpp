@@ -12,6 +12,7 @@
 #include <signal.h>
 #include <cassert>
 #include <pthread.h>
+#include <bits/stl_vector.h>
 
 #include "log.h"
 
@@ -37,10 +38,8 @@ bool EventLoop::Start(int fd)
 		return false;
 	
 	//Set non blocking
-	int flags = fcntl(pipe[0], F_GETFL, 0);
-	fcntl(pipe[0], F_SETFD , flags | O_NONBLOCK);
-	flags = fcntl(pipe[1], F_GETFL, 0);
-	fcntl(pipe[1], F_SETFD , flags | O_NONBLOCK);
+	fcntl(pipe[0], F_SETFL , O_NONBLOCK);
+	fcntl(pipe[1], F_SETFL , O_NONBLOCK);
 	
 	//Store socket
 	this->fd = fd;
@@ -97,11 +96,23 @@ void EventLoop::Send(const uint32_t ipAddr, const uint16_t port, Buffer&& buffer
 
 void EventLoop::Async(std::function<void(std::chrono::milliseconds)> func)
 {
+	//UltraDebug(">EventLoop::Async()\n");
+	
 	//Add to pending taks
 	tasks.enqueue(func);
 	
 	//Signal the pthread this will cause the poll call to exit
 	Signal();
+	
+	//UltraDebug("<EventLoop::Async()\n");
+}
+
+Timer::shared EventLoop::CreateTimer(std::function<void(std::chrono::milliseconds)> callback)
+{
+	//Create timer without scheduling it
+	auto timer = std::make_shared<TimerImpl>(*this,0ms,callback);
+	//Done
+	return std::static_pointer_cast<Timer>(timer);
 }
 
 Timer::shared EventLoop::CreateTimer(const std::chrono::milliseconds& ms, std::function<void(std::chrono::milliseconds)> callback)
@@ -143,6 +154,8 @@ void EventLoop::TimerImpl::Cancel()
 
 void EventLoop::TimerImpl::Again(const std::chrono::milliseconds& ms)
 {
+	//UltraDebug(">EventLoop::Again() | Again triggered in %u\n",ms.count());
+	
 	//Get next
 	auto next = loop.GetNow() + ms;
 	
@@ -153,32 +166,35 @@ void EventLoop::TimerImpl::Again(const std::chrono::milliseconds& ms)
 
 		//Set next tick
 		timer->next = next;
-
+		
 		//Add to timer list
 		timer->loop.timers.insert({next, timer});
 	});
+	
+	//UltraDebug("<EventLoop::Again() | timer triggered at %llu\n",next.count());
 }
 
 void EventLoop::CancelTimer(std::shared_ptr<TimerImpl> timer)
 {
+	//UltraDebug(">EventLoop::CancelTimer() \n");
 	//TODO: Asert we are on same thread than loop
 
 	//We don't have to repeat this
 	timer->repeat = 0ms;
 	
 	//If not scheduled
-	if (timer->next.count())
+	if (!timer->next.count())
 		//Nothing
 		return;
 	
-	//Reset next tick
-	timer->next = 0ms;
-			
 	//Get all timers at that tick
 	auto result = timers.equal_range(timer->next);
+	
+	//Reset next tick
+	timer->next = 0ms;
 
 	// Iterate over the range
-	for (auto it = result.first; it != result.second; it++)
+	for (auto it = result.first; it != result.second; ++it)
 	{
 		//If it is the same impl
 		if (it->second.get()==timer.get())
@@ -189,6 +205,7 @@ void EventLoop::CancelTimer(std::shared_ptr<TimerImpl> timer)
 			break;
 		}
 	}
+	//UltraDebug("<EventLoop::CancelTimer() \n");
 }
 
 const std::chrono::milliseconds EventLoop::Now()
@@ -199,6 +216,8 @@ const std::chrono::milliseconds EventLoop::Now()
 
 void EventLoop::Signal()
 {
+	//UltraDebug("-EventLoop::Signal()\r\n");
+	
 	//If we are in the same thread
 	if (std::this_thread::get_id()==thread.get_id())
 		//No need to do anything
@@ -241,20 +260,22 @@ void EventLoop::Run()
 		//If we have anything to send set to wait also for write events
 		ufds[0].events =sending.size_approx() ? POLLIN | POLLOUT | POLLERR | POLLHUP : POLLIN | POLLERR | POLLHUP;
 		
-		//Do not wait
-		int timeout = 0;
-		
 		//Get now
 		auto now = GetNow();
 		
-		//Get next timer in  queue
-		auto next = timers.size() ? timers.begin()->first : 0ms;
+		//Check if we have any pending task to wait or exit poll inmediatelly
+		int timeout = tasks.size_approx() ? 0 : -1;
 		
-		//If there are no pending tasks
-		if (!tasks.size_approx())
+		//If we have any timer
+		if (timers.size())
+		{
+			//Get first timer in  queue
+			auto next = timers.begin()->first;
 			//Override timeout
-			timeout = now > next ? std::chrono::duration_cast<std::chrono::milliseconds>(next - now).count() : -1;
-		
+			timeout = next > now ? std::chrono::duration_cast<std::chrono::milliseconds>(next - now).count() : 0;
+		}
+
+		//UltraDebug(">EventLoop::Run() | poll timeout:%d\n",timeout);
 		
 		//Wait for events
 		poll(ufds,sizeof(ufds)/sizeof(pollfd),timeout);
@@ -281,7 +302,7 @@ void EventLoop::Run()
 		//Read first
 		if (ufds[0].revents & POLLIN)
 		{
-			//UltraDebug("-EventLoop::Run() | ufds[0].revents & POLLIN\n",n);
+			//UltraDebug("-EventLoop::Run() | ufds[0].revents & POLLIN\n");
 			//Len
 			uint32_t fromLen = sizeof(from);
 			//Leemos del socket
@@ -293,7 +314,7 @@ void EventLoop::Run()
 		//Check read is possible
 		if (ufds[0].revents & POLLOUT)
 		{
-			//UltraDebug("-EventLoop::Run() | ufds[0].revents & POLLOUT\n",n);
+			//UltraDebug("-EventLoop::Run() | ufds[0].revents & POLLOUT\n");
 			
 			//Check if we had any pending item
 			if (!pending)
@@ -328,33 +349,42 @@ void EventLoop::Run()
 		//Get all pending taks
 		while (tasks.try_dequeue(task))
 		{
+			//UltraDebug("-EventLoop::Run() | task pending\n");
 			//Update now
 			auto now = Now();
 			//Execute it
 			task(now);
 		}
-		
-		//Proccess all timers
+
+		//Update now
+		now = Now();
+		//Timers triggered
+		std::vector<TimerImpl::shared> triggered;
+		//Get all timers to process in this lop
 		for (auto it = timers.begin(); it!=timers.end(); )
 		{
-			//Update now
-			auto now = Now();
 			//Check it we are still on the time
 			if (it->first>now)
 				//It is yet to come
 				break;
 			//Get timer
-			auto timer = it->second;
+			triggered.push_back(it->second);
+			//Remove from the list
+			it = timers.erase(it);
+		}
+		
+		//Now process all timers triggered
+		for (auto timer : triggered)
+		{
+			//UltraDebug("-EventLoop::Run() | timer triggered at ll%u\n",now.count());
 			//We are executing
 			timer->next = 0ms;
 			//Execute it
 			timer->callback(now);
-			//Remove from the list
-			it = timers.erase(it);
 			//If we have to reschedule it again
 			if (timer->repeat.count())
 			{
-				//Set nest
+				//Set next
 				timer->next = now + timer->repeat;
 				//Schedule
 				timers.insert({timer->next, timer});

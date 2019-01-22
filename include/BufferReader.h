@@ -82,6 +82,11 @@ public:
 	inline uint32_t Get3() 				{ auto val = Get3(pos); pos+=3; return val;	}
 	inline uint32_t Get4() 				{ auto val = Get4(pos); pos+=4; return val;	}
 	inline uint64_t Get8() 				{ auto val = Get8(pos); pos+=8; return val;	}
+	inline uint8_t  Peek1()				{ return Get1(pos); }
+	inline uint16_t Peek2()				{ return Get2(pos); }
+	inline uint32_t Peek3()				{ return Get3(pos); }
+	inline uint32_t Peek4()				{ return Get4(pos); }
+	inline uint64_t Peek8()				{ return Get8(pos); }
 	
 	size_t   PadTo(size_t num)
 	{

@@ -1,19 +1,26 @@
 #ifndef LIBDATACHANNELS_INTERNAL_BUFFER_H_
 #define	LIBDATACHANNELS_INTERNAL_BUFFER_H_
 #include <stdint.h>
-#include <string.h>
-#include <stdlib.h>
-#include "config.h"
+#include <stddef.h>
+#include <cstdlib>
+#include <cstring>
+
+
+//Allingment must be a power of 2
+inline int RoundUp(size_t alignment, size_t size) 
+{
+   return (size + alignment - 1) & -alignment;
+}
 
 class Buffer
 {
 public:
 	Buffer(const uint8_t* data, const size_t size)
 	{
-		//Set buffer size
-		capacity = size;
+		//Set buffer size to a 
+		capacity = RoundUp(64,size);
 		//Allocate memory
-		buffer = (uint8_t*) malloc32(capacity);
+		buffer = (uint8_t*) std::aligned_alloc(64, this->capacity);
 		//Copy
 		memcpy(buffer,data,size);
 		//Reset size
@@ -23,9 +30,9 @@ public:
 	Buffer(size_t capacity = 0)
 	{
 		//Set buffer size
-		this->capacity = capacity;
+		this->capacity = capacity ? RoundUp(64,capacity) : 0;
 		//Allocate memory
-		buffer = capacity ? (uint8_t*) malloc32(capacity) : nullptr;
+		buffer = capacity ? (uint8_t*) std::aligned_alloc(64, this->capacity) : nullptr;
 		//NO size
 		this->size = 0;
 	}
@@ -57,7 +64,7 @@ public:
 	
 	~Buffer()
 	{
-		if (buffer) free(buffer);
+		std::free(buffer);
 	}
 	
 	uint8_t* GetData() const		{ return buffer;		}
@@ -79,7 +86,7 @@ public:
 		//Calculate new size
 		this->capacity = capacity;
 		//Realloc
-		buffer = ( uint8_t*) realloc(buffer,capacity);
+		buffer = ( uint8_t*) std::realloc(buffer,capacity);
 		//Check new size
 		if (size>capacity)
 			//reduce size
@@ -93,7 +100,7 @@ public:
 			//Allocate new size
 			Alloc(size);
 		//Copy
-		memcpy(buffer,data,size);
+		std::memcpy(buffer,data,size);
 		//Reset size
 		this->size = size;
 	}
@@ -110,9 +117,20 @@ public:
 			//Allocate new size
 			Alloc(this->size+size);
 		//Copy
-		memcpy(buffer+size,data,size);
+		std::memcpy(buffer+size,data,size);
 		//Increase size
 		this->size += size;
+	}
+	
+	static Buffer&& Wrap(uint8_t* data, size_t size)
+	{
+		Buffer buffer;
+		
+		buffer.buffer = data;
+		buffer.capacity = size;
+		buffer.size = size;
+		
+		return std::move(buffer);
 	}
 	
 protected:

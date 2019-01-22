@@ -58,6 +58,7 @@ public:
 	bool Stop();
 	
 	virtual const std::chrono::milliseconds GetNow() const override { return now; }
+	virtual Timer::shared CreateTimer(std::function<void(std::chrono::milliseconds)> callback) override;
 	virtual Timer::shared CreateTimer(const std::chrono::milliseconds& ms, std::function<void(std::chrono::milliseconds)> timeout) override;
 	virtual Timer::shared CreateTimer(const std::chrono::milliseconds& ms, const std::chrono::milliseconds& repeat, std::function<void(std::chrono::milliseconds)> timeout) override;
 	virtual void Async(std::function<void(std::chrono::milliseconds)> func) override;

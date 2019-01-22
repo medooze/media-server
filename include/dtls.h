@@ -5,6 +5,7 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <openssl/bio.h>
+#include <atomic>
 #include <string>
 #include <map>
 #include <vector>
@@ -154,7 +155,7 @@ private:
 	Connection connection;		// Whether this is a new or existing connection 
 	unsigned int rekey;		// Interval at which to renegotiate and rekey 
 	int rekeyid;			// Scheduled item id for rekeying 
-	bool inited;			// Set to true once the SSL stuff is set for this DTLS session 
+	std::atomic<bool> inited;	// Set to true once the SSL stuff is set for this DTLS session 
 	std::string profiles;		// Overrriden list of srtp profiles
 };
 
