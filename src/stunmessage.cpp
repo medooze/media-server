@@ -253,7 +253,7 @@ DWORD STUNMessage::AuthenticatedFingerPrint(BYTE* data,DWORD size,const char* pw
 	//Check
 	if (size<msgSize)
 		//Not enought
-		return ::Error("Not enought size");
+		return ::Error("Not enought size [size:%u,need:%u\n",size,msgSize);
 
 	//Convert so we can sift
 	WORD msgType = type;

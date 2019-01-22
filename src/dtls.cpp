@@ -4,6 +4,8 @@
 #include "use.h"
 #include "Datachannels.h"
 
+using namespace std::chrono_literals;
+	
 // Initialize static data
 std::string		DTLSConnection::certfile("");
 std::string		DTLSConnection::pvtfile("");
@@ -357,7 +359,8 @@ std::string DTLSConnection::GetCertificateFingerPrint(Hash hash)
 DTLSConnection::DTLSConnection(Listener& listener,TimeService& timeService,datachannels::Transport& sctp) :
 	listener(listener),
 	timeService(timeService),
-	sctp(sctp)
+	sctp(sctp),
+	inited(false)
 {
 	//Set default values
 	rekey		  	     = 0;
@@ -366,7 +369,6 @@ DTLSConnection::DTLSConnection(Listener& listener,TimeService& timeService,datac
 	ssl			     = NULL;		// SSL session 
 	read_bio		     = NULL;		// Memory buffer for reading 
 	write_bio		     = NULL;		// Memory buffer for writing 
-	inited			     = false;
 	remoteHash		     = UNKNOWN_HASH;
 	//Reset remote fingerprint
 	memset(remoteFingerprint,0,EVP_MAX_MD_SIZE);
@@ -451,30 +453,24 @@ int DTLSConnection::Init()
 	//New connection
 	connection = CONNECTION_NEW;
 	
-	//Get next timeout
-	struct timeval tv;
-	DTLSv1_get_timeout(ssl, &timeout);
-	std::chrono::milliseconds next = std::chrono::milliseconds(tv.tv_sec*1000 + tv.tv_usec/1000);
-	
 	//Start timeout
-	timeout = timeService.CreateTimer(next,[this](...){
-		if (!ssl)
-			return 0;
-		//Run timeut
-		DTLSv1_handle_timeout(ssl);
-		//Get next timeout
-		struct timeval tv;
-		DTLSv1_get_timeout(ssl, &timeout);
-		std::chrono::milliseconds next = std::chrono::milliseconds(tv.tv_sec*1000 + tv.tv_usec/1000);
-		//Reschedule timer
-		timeout->Again(next);
+	timeout = timeService.CreateTimer([this](...){
+		//Check if still inited
+		if (inited)
+			//Run timeut
+			DTLSv1_handle_timeout(ssl);
 	});
-
+	
+	//Now we are ready to read and write DTLS packets.
+	inited = true;
+	
 	//Start handshake
 	SSL_do_handshake(ssl);
 
-	//Now we are ready to read and write DTLS packets.
-	inited = true;
+	//Get next timeout
+	struct timeval tv = {0,0};
+	if (DTLSv1_get_timeout(ssl, &tv))
+		timeout->Again(std::chrono::milliseconds(getDifTime(&tv)));
 
 	Log("<DTLSConnection::Init()\n");
 
@@ -488,6 +484,9 @@ void DTLSConnection::End()
 	// NOTE: Don't use BIO_free() for write_bio and read_bio as they are
 	// automatically freed by SSL_free().
 	
+	//Not inited anymore
+	inited = false;
+	
 	//Cancel dtls timeout
 	timeout->Cancel();
 
@@ -498,19 +497,23 @@ void DTLSConnection::End()
 		read_bio = NULL;
 		write_bio = NULL;		
 	}
+	
 }
 
 void DTLSConnection::Reset()
 {
 	Log("-DTLSConnection::Reset()\n");
 
-	// If the SSL session is not yet finalized don't bother resetting
-	if (!SSL_is_init_finished(ssl))
-		return;
+	//Run in event loop thread
+	timeService.Async([this](...){
+		// If the SSL session is not yet finalized don't bother resetting
+		if (!SSL_is_init_finished(ssl))
+			return;
 
-	SSL_shutdown(ssl);
+		SSL_shutdown(ssl);
 
-	connection = CONNECTION_NEW;
+		connection = CONNECTION_NEW;
+	});
 }
 
 void DTLSConnection::SetRemoteSetup(Setup remote)
@@ -623,13 +626,17 @@ void DTLSConnection::onSSLInfo(int where, int ret)
 
 int DTLSConnection::Renegotiate()
 {
-	if (!ssl)
-		return 0;
-	
-	SSL_renegotiate(ssl);
-	SSL_do_handshake(ssl);
+	//Run in event loop thread
+	timeService.Async([this](...){
+		if (ssl)
+		{
 
-	rekeyid = -1;
+			SSL_renegotiate(ssl);
+			SSL_do_handshake(ssl);
+
+			rekeyid = -1;
+		}
+	});
 	return 1;
 }
 
@@ -748,6 +755,11 @@ int DTLSConnection::Write(const BYTE *buffer, DWORD size)
 
 	BIO_write(read_bio, buffer, size);
 	
+	//Reschedule timer
+	struct timeval tv = {0,0};
+	if (DTLSv1_get_timeout(ssl, &tv))
+		timeout->Again(std::chrono::milliseconds(getDifTime(&tv)));
+	
 	BYTE msg[MTU];
 	int len = SSL_read(ssl, msg, MTU);
 	
@@ -759,9 +771,11 @@ int DTLSConnection::Write(const BYTE *buffer, DWORD size)
 		else 
 			return 0;
 	}
-	
+	//DumpAsC(msg,len);
+	Debug("-sctp of len %d\n",len);
 	//Pass data to sctp
-	sctp.WritePacket(msg,len);
+	if (len && !sctp.WritePacket(msg,len))
+		return Error("sctp parse error");
 
 	// Check if the peer sent close alert or a fatal error happened.
 	if (SSL_get_shutdown(ssl) & SSL_RECEIVED_SHUTDOWN)
