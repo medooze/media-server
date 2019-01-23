@@ -39,7 +39,7 @@ We intend to implement support the following features:
 - [x] Plain RTP broadcasting/streaming
 - [ ] [Layer Refresh Request (LRR) RTCP Feedback Message](https://datatracker.ietf.org/doc/html/draft-ietf-avtext-lrr-04)
 - [ ] MPEG DASH
-- [ ] Datachannels
+- [ ] Datachannels (WIP via [libdatachannels](https://github.com/medooze/libdatachannels))
 
 ## Support
 To discuss issues related to this project or ask for help please [join the google comunity group](https://groups.google.com/forum/#!forum/medooze).
