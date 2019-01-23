@@ -20,6 +20,12 @@
 #include "stunmessage.h"
 #include "dtls.h"
 
+
+/*********************************
+* RTPTransport
+*	底层的rtp+rtcp数据包处理模块
+*********************************/
+
 class RTPTransport :
 	public DTLSConnection::Listener
 {
@@ -31,8 +37,11 @@ public:
 		virtual ~Listener(){};
 	public:
 		//Interface
+		// 有新的参与者加入
 		virtual void onRemotePeer(const char* ip, const short port) = 0;
+		// 接收到rtp数据包
 		virtual void onRTPPacket(BYTE* buffer, DWORD size) = 0;
+		// 接收到rtcp数据包
 		virtual void onRTCPPacket(BYTE* buffer, DWORD size) = 0;
 	};
 public:
@@ -72,6 +81,8 @@ public:
 	void SetSecure(int flag)	{ encript = true; decript = true; };
 
 	virtual void onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMasterKey,DWORD localMasterKeySize,BYTE* remoteMasterKey,DWORD remoteMasterKeySize);
+
+
 private:
 	void SendEmptyPacket();
 	int SetLocalCryptoSDES(const char* suite, const BYTE* key, const DWORD len);
@@ -87,11 +98,12 @@ private:
 	Listener* listener;
 	bool	muxRTCP;
 	//Sockets
-	int 	simSocket;
-	int 	simRtcpSocket;
-	int 	simPort;
-	int	simRtcpPort;
-	pollfd	ufds[2];
+	int 	simSocket; 		// rtp socket
+	int 	simRtcpSocket;	// rtcp socket
+	int 	simPort;		// rtp port
+	int		simRtcpPort;	// rtcp port
+
+	pollfd	ufds[2];		// 0->rtp, 1->rtcp
 	bool	running;
 
 	DTLSConnection dtls;

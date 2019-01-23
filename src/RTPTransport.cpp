@@ -466,6 +466,7 @@ int RTPTransport::SetRemotePort(char *ip,int sendPort)
 	sendAddr.sin_port 		= htons(sendPort);
 
 	//Check if doing rtcp muxing
+	//如果开通rtcp和rtp端口复用功能的话，则rtcp和rtp公用一个端口,否则rtp端口+1
 	if (muxRTCP)
 		//Same than rtp
 		sendRtcpAddr.sin_port 	= htons(sendPort);
@@ -629,6 +630,11 @@ int RTPTransport::End()
 	return 1;
 }
 
+/*********************************
+* SendRTCPPacket
+*	发送RTCP数据包
+*********************************/
+
 int RTPTransport::SendRTCPPacket(BYTE*  buffer,DWORD size)
 {
 	int len = size;
@@ -664,6 +670,11 @@ int RTPTransport::SendRTCPPacket(BYTE*  buffer,DWORD size)
 		//Send using RCTP port
 		return sendto(simRtcpSocket,buffer,len,0,(sockaddr *)&sendRtcpAddr,sizeof(struct sockaddr_in));
 }
+
+/*********************************
+* SendRTCPPacket
+*	发送RTP数据包
+*********************************/
 
 int RTPTransport::SendRTPPacket(BYTE *buffer,DWORD size)
 {
@@ -740,6 +751,12 @@ int RTPTransport::SendRTPPacket(BYTE *buffer,DWORD size)
 	//Send packet
 	return sendto(simSocket,buffer,len,0,(sockaddr *)&sendAddr,sizeof(struct sockaddr_in));
 }
+
+/*********************************
+*   GetTextPacket
+*	Lee el siguiente paquete de video
+* 	从RTCP的socket里面读取rtcp数据包, 并处理
+*********************************/
 
 int RTPTransport::ReadRTCP()
 {
@@ -854,9 +871,16 @@ int RTPTransport::ReadRTCP()
 }
 
 /*********************************
-* GetTextPacket
+*   GetTextPacket
 *	Lee el siguiente paquete de video
+* 	从RTP的socket里面读取rtp数据包, 并处理
+* 	1. 如果为stun message, 则处理数据包;
+* 	2. 如果为RTCP message, 则muxRTCP = true;，调用listener->onRTCPPacket。 
+* 	3. 如果为DTLS message，则处理数据DTLS消息。
+*	4. 如果为上一次的ip跟当前packet的ip不一致，则需要调用listener->onRemotePeer。
+*	5. 如果为RTP message, 则调用listener->onRTPPacket。
 *********************************/
+
 int RTPTransport::ReadRTP()
 {
 	BYTE data[MTU+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
@@ -1158,6 +1182,7 @@ int RTPTransport::Run()
 	//Set values for polling
 	ufds[0].fd = simSocket;
 	ufds[0].events = POLLIN | POLLERR | POLLHUP;
+
 	ufds[1].fd = simRtcpSocket;
 	ufds[1].events = POLLIN | POLLERR | POLLHUP;
 
@@ -1184,6 +1209,7 @@ int RTPTransport::Run()
 		if (ufds[0].revents & POLLIN)
 			//Read rtp data
 			ReadRTP();
+
 		if (ufds[1].revents & POLLIN)
 			//Read rtcp data
 			ReadRTCP();
