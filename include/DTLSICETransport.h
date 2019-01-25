@@ -109,7 +109,7 @@ private:
 	struct Maps
 	{
 		RTPMap		rtp;
-		RTPMap		ext;
+		RTPMap		ext;	//存储发送的rtp包 扩展字段里面的自定义字段
 		RTPMap		apt;
 	};
 	
@@ -147,7 +147,7 @@ private:
 	Sender*		sender;
 	DTLSConnection	dtls;
 	Maps		sendMaps;
-	Maps		recvMaps;
+	Maps		recvMaps;  //存储发送的rtp包 扩展字段里面的自定义字段
 	ICERemoteCandidate* active			= nullptr;
 	srtp_t		send				= nullptr;
 	srtp_t		recv				= nullptr;

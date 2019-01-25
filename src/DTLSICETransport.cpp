@@ -57,6 +57,10 @@ DTLSICETransport::~DTLSICETransport()
 	Stop();
 }
 
+/*
+	1. 解析来自底层RTPBundleTransport的udp数据包。
+*/
+
 int DTLSICETransport::onData(const ICERemoteCandidate* candidate,BYTE* data,DWORD size)
 {
 	RTPHeader header;
@@ -1979,6 +1983,13 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 	return (len>=0);
 }
 
+
+/*
+	RTCP数据包的核心处理逻辑:
+
+	1. 为组合包的模式，需要每一个rtcp包都要处理
+*/
+
 void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 {
 	//For each packet
@@ -2399,6 +2410,10 @@ void DTLSICETransport::SendTransportWideFeedbackMessage(DWORD ssrc)
 	Send(rtcp);
 }
 
+/*
+	启动工作线程，处理数据
+*/
+
 void DTLSICETransport::Start()
 {
 	Debug("-DTLSICETransport::Start()\n");
@@ -2495,7 +2510,7 @@ int DTLSICETransport::Run()
 				ScopedUse use(outgoingUse);
 				//Probe size
 				BYTE size = 255;
-				//Get bitrates
+				//Get bitrates, 发送的瞬时码率或者瞬时发送速度
 				DWORD bitrate   = static_cast<DWORD>(outgoingBitrate.GetInstantAvg());
 				DWORD estimated = senderSideEstimator.GetEstimatedBitrate();
 

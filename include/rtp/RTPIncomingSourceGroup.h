@@ -23,6 +23,7 @@ public:
 		virtual void onRTP(RTPIncomingSourceGroup* group,const RTPPacket::shared& packet) = 0;
 		virtual void onEnded(RTPIncomingSourceGroup* group) = 0;
 	};
+	
 public:	
 	RTPIncomingSourceGroup(MediaFrame::Type type);
 	virtual ~RTPIncomingSourceGroup();
@@ -50,6 +51,7 @@ public:
 	long double GetAvgWaitedTime()		const {	return packets.GetAvgWaitedTime();	}
 	
 	virtual void onTargetBitrateRequested(DWORD bitrate) override;
+
 public:	
 	std::string rid;
 	std::string mid;
@@ -58,13 +60,14 @@ public:
 	RTPIncomingSource media;
 	RTPIncomingSource fec;
 	RTPIncomingSource rtx;
-        DWORD remoteBitrateEstimation = 0;
+    DWORD remoteBitrateEstimation = 0;
 	
 	//Stats
 	DWORD lost = 0;
 	DWORD minWaitedTime = 0;
 	DWORD maxWaitedTime = 0;
 	long double avgWaitedTime = 0;
+
 private:
 	pthread_t dispatchThread = {0};
 	RTPLostPackets	losts;
