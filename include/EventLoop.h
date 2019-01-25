@@ -5,7 +5,7 @@
 #include <functional>
 #include <chrono>
 #include <poll.h>
-
+#include <cassert>
 #include "config.h"
 #include "concurrentqueue.h"
 #include "Buffer.h"
@@ -51,9 +51,10 @@ private:
 		std::function<void(std::chrono::milliseconds)> callback;
 	};
 public:
-	EventLoop(Listener &listener);
+	EventLoop(Listener* listener = nullptr);
 	virtual ~EventLoop();
 	
+	bool Start(std::function<void(void)> loop);
 	bool Start(int fd);
 	bool Stop();
 	
@@ -64,12 +65,13 @@ public:
 	virtual void Async(std::function<void(std::chrono::milliseconds)> func) override;
 	
 	void Send(const uint32_t ipAddr, const uint16_t port, Buffer&& buffer);
+	void Run(const std::chrono::milliseconds &duration = std::chrono::milliseconds::max());
+	void Signal();
 	
 protected:
+	inline void AssertThread() const { assert(std::this_thread::get_id()==thread.get_id()); }
 	void CancelTimer(std::shared_ptr<TimerImpl> timer);
-private:
-	void Run();
-	void Signal();
+	
 	const std::chrono::milliseconds Now();
 private:
 	struct SendBuffer
@@ -86,15 +88,15 @@ private:
 		Buffer   buffer;
 	};
 	
-private:	
-	std::thread thread;
-	Listener& listener;
-	int fd = 0;
-	int pipe[2] = {0};
-	pollfd	ufds[2];
-	volatile bool running = false;
+private:
+	std::thread	thread;
+	Listener*	listener = nullptr;
+	int		fd = 0;
+	int		pipe[2] = {0};
+	pollfd		ufds[2];
+	volatile bool	running = false;
 	std::chrono::milliseconds now = 0ms;
-	moodycamel::ConcurrentQueue<SendBuffer>			sending;
+	moodycamel::ConcurrentQueue<SendBuffer>	sending;
 	moodycamel::ConcurrentQueue<std::function<void(std::chrono::milliseconds)>>  tasks;
 	std::multimap<std::chrono::milliseconds,TimerImpl::shared> timers;
 	

@@ -34,7 +34,7 @@
 * 	Constructro
 **************************/
 RTPBundleTransport::RTPBundleTransport() : 
-	loop(*this)
+	loop(this)
 {
 	//Init values
 	socket = FD_INVALID;

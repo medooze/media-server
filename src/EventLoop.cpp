@@ -16,13 +16,43 @@
 
 #include "log.h"
 
-EventLoop::EventLoop(Listener &listener) :
+EventLoop::EventLoop(Listener *listener) :
 	listener(listener)
 {
 }
 
 EventLoop::~EventLoop()
 {
+	Stop();
+}
+
+bool EventLoop::Start(std::function<void(void)> loop)
+{
+	//If already started
+	if (thread.get_id()!=std::thread::id())
+		//Alredy running
+		return false;
+	
+	//Create pipe
+	if (::pipe(pipe)==-1)
+		//Error
+		return false;
+	
+	//Set non blocking
+	fcntl(pipe[0], F_SETFL , O_NONBLOCK);
+	fcntl(pipe[1], F_SETFL , O_NONBLOCK);
+	
+	//Store socket
+	this->fd = -1;
+	
+	//Running
+	running = true;
+	
+	//Start thread and run
+	thread = std::thread(loop);
+	
+	//Done
+	return true;
 }
 
 bool EventLoop::Start(int fd)
@@ -46,9 +76,9 @@ bool EventLoop::Start(int fd)
 	
 	//Running
 	running = true;
-
+	
 	//Start thread and run
-	thread = std::thread([this](){ Run(); });
+	thread = std::thread([this](...){ Run(); });
 	
 	//Done
 	return true;
@@ -56,19 +86,23 @@ bool EventLoop::Start(int fd)
 
 bool EventLoop::Stop()
 {
-	//Check thred
-	if (thread.get_id()==std::thread::id())
+	//Check if running
+	if (!running)
 		//Nothing to do
 		return false;
 	
 	//Not running
 	running = false;
 	
-	//Signal the pthread this will cause the poll call to exit
-	Signal();
-	
-	//Nulifi thread
-	thread.join();
+	//If it was not external
+	if (thread.joinable())
+	{
+		//Signal the pthread this will cause the poll call to exit
+		Signal();
+
+		//Nulifi thread
+		thread.join();
+	}
 	
 	//Close pipe
 	close(pipe[0]);
@@ -176,8 +210,10 @@ void EventLoop::TimerImpl::Again(const std::chrono::milliseconds& ms)
 
 void EventLoop::CancelTimer(std::shared_ptr<TimerImpl> timer)
 {
+	//Asert we are on same thread than loop
+	AssertThread();
+	
 	//UltraDebug(">EventLoop::CancelTimer() \n");
-	//TODO: Asert we are on same thread than loop
 
 	//We don't have to repeat this
 	timer->repeat = 0ms;
@@ -226,7 +262,7 @@ void EventLoop::Signal()
 	write(pipe[1],".",1);
 }
 
-void EventLoop::Run()
+void EventLoop::Run(const std::chrono::milliseconds &duration)
 {
 	Log(">EventLoop::Run() | [%p]\n",this);
 	
@@ -254,25 +290,31 @@ void EventLoop::Run()
 	//Catch all IO errors and do nothing
 	signal(SIGIO,[](int){});
 	
+	//Get now
+	auto now = GetNow();
+	
+	//calculate until when
+	auto until = now + duration;
+		
 	//Run until ended
-	while(running)
+	while(running && now<until)
 	{
 		//If we have anything to send set to wait also for write events
-		ufds[0].events =sending.size_approx() ? POLLIN | POLLOUT | POLLERR | POLLHUP : POLLIN | POLLERR | POLLHUP;
-		
-		//Get now
-		auto now = GetNow();
+		ufds[0].events = sending.size_approx() ? POLLIN | POLLOUT | POLLERR | POLLHUP : POLLIN | POLLERR | POLLHUP;
 		
 		//Check if we have any pending task to wait or exit poll inmediatelly
 		int timeout = tasks.size_approx() ? 0 : -1;
 		
-		//If we have any timer
+		//If we have any timer or a timeout
 		if (timers.size())
 		{
 			//Get first timer in  queue
-			auto next = timers.begin()->first;
+			auto next = std::min(timers.begin()->first,until);
 			//Override timeout
 			timeout = next > now ? std::chrono::duration_cast<std::chrono::milliseconds>(next - now).count() : 0;
+		} else if (duration!=std::chrono::milliseconds::max()) {
+			//Override timeout
+			timeout = until > now ? std::chrono::duration_cast<std::chrono::milliseconds>(until - now).count() : 0;
 		}
 
 		//UltraDebug(">EventLoop::Run() | poll timeout:%d\n",timeout);
@@ -308,7 +350,7 @@ void EventLoop::Run()
 			//Leemos del socket
 			int len = recvfrom(fd,data,size,MSG_DONTWAIT,(sockaddr*)&from,&fromLen);
 			//Run callback
-			listener.OnRead(ufds[0].fd,data,len,ntohl(from.sin_addr.s_addr),ntohs(from.sin_port));
+			if (listener) listener->OnRead(ufds[0].fd,data,len,ntohl(from.sin_addr.s_addr),ntohs(from.sin_port));
 		}
 		
 		//Check read is possible
@@ -390,6 +432,8 @@ void EventLoop::Run()
 				timers.insert({timer->next, timer});
 			}
 		}
+		//Get now
+		now = GetNow();
 	}
 
 	Log("<EventLoop::Run()\n");

@@ -32,7 +32,7 @@
 RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) :
 	transport(this),
 	send(media),
-	recv(media),
+	recv(media,transport.GetTimeService()),
 	losts(640)
 {
 	//Store listener
@@ -751,7 +751,7 @@ void RTPSession::onRTPPacket(const BYTE* data, DWORD size)
 		//Send packet
 		SendPacket(rtcp);
 	}
-
+	
 
 	//If it is not a retransmission
 	if (!isRTX)

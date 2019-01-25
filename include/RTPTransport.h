@@ -78,6 +78,8 @@ public:
 	virtual void OnRead(const int fd, const uint8_t* data, const size_t size, const uint32_t ipAddr, const uint16_t port) override;
 	virtual void onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMasterKey,DWORD localMasterKeySize,BYTE* remoteMasterKey,DWORD remoteMasterKeySize) override;
 	
+	TimeService& GetTimeService() { return rtpLoop; }
+	
 private:
 	void SendEmptyPacket();
 	int SetLocalCryptoSDES(const char* suite, const BYTE* key, const DWORD len);

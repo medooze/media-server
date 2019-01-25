@@ -235,7 +235,6 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 	//Set the payload
 	packet->SetPayload(data+ini,len-ini);
 	
-	
 	//Synchronized
 	RTPIncomingSourceGroup *group = nullptr;
 	{

@@ -112,7 +112,7 @@ protected:
 private:
 	MediaFrame::Type media;
 	Listener* listener;
-	RTPBuffer packets;
+	RTPWaitedBuffer packets;
 	RTPTransport transport;
 	char*	cname;
 	//Transmision

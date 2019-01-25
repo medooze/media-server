@@ -83,6 +83,8 @@ public:
 	virtual int onData(const ICERemoteCandidate* candidate,const BYTE* data,DWORD size)  override;
 	
 	DWORD GetRTT() const { return rtt; }
+	
+	TimeService& GetTimeService() { return timeService; }
 
 private:
 	void Probe();

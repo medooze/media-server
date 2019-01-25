@@ -92,8 +92,8 @@ bool RTPTransport::SetPortRange(int minPort, int maxPort)
 * 	Constructro
 **************************/
 RTPTransport::RTPTransport(Listener *listener) :
-	rtpLoop(*this),
-	rtcpLoop(*this),
+	rtpLoop(this),
+	rtcpLoop(this),
 	endpoint(rtpLoop),
 	dtls(*this,rtpLoop,endpoint.GetTransport())
 {

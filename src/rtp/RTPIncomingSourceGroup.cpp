@@ -5,17 +5,16 @@
 #include "VideoLayerSelector.h"
 #include "remoterateestimator.h"
 
-RTPIncomingSourceGroup::RTPIncomingSourceGroup(MediaFrame::Type type) 
-	: losts(128)
+RTPIncomingSourceGroup::RTPIncomingSourceGroup(MediaFrame::Type type,TimeService& timeService) :
+	timeService(timeService),
+	losts(128)
 {
-	this->rtt = 0;
-	this->rttrtxSeq = 0;
-	this->rttrtxTime = 0;
-	this->type = type;
 	//Small initial bufer of 100ms
 	packets.SetMaxWaitTime(100);
 	//LIsten remote rate events
 	remoteRateEstimator.SetListener(this);
+	//Create dispatch timer
+	dispatchTimer = timeService.CreateTimer([this](auto now){ DispatchPackets(now.count()); });
 }
 
 RTPIncomingSourceGroup::~RTPIncomingSourceGroup() 
@@ -52,6 +51,9 @@ void RTPIncomingSourceGroup::RemoveListener(Listener* listener)
 
 int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet, DWORD size)
 {
+	
+	//UltraDebug(">RTPIncomingSourceGroup::AddPacket()\n");
+	
 	//Check if it is the rtx packet used to calculate rtt
 	if (rttrtxTime && packet->GetSeqNum()==rttrtxSeq)
 	{
@@ -86,6 +88,16 @@ int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet, DWORD siz
 	if (!packets.Add(packet))
 		//Rejected packet
 		return -1;
+	
+	//Get next time for dispatcht
+	uint64_t next = packets.GetWaitTime(getTimeMS());
+	
+	//UltraDebug("-RTPIncomingSourceGroup::AddPacket() | [lost:%d,next:%llu]\n",lost,next);
+	
+	//If we have anything on the queue
+	if (next!=(QWORD)-1)
+		//Reschedule timer
+		dispatchTimer->Again(std::chrono::milliseconds(next));
 	
 	//Return lost packets
 	return lost;
@@ -158,53 +170,34 @@ void RTPIncomingSourceGroup::Start(bool remb)
 {
 	Debug("-RTPIncomingSourceGroup::Start() | [remb:%d]\n",remb);
 	
-	if (!isZeroThread(dispatchThread))
-		return;
-	
 	//are we using remb?
 	this->remb = remb;
 	
 	//Add media ssrc
 	remoteRateEstimator.AddStream(media.ssrc);
+}
+
+void RTPIncomingSourceGroup::DispatchPackets(uint64_t time)
+{
+	//UltraDebug("-RTPIncomingSourceGroup::DispatchPackets() | [time:%llu]\n",time);
 	
-	//Create dispatch trhead
-	createPriorityThread(&dispatchThread,[](void* arg) -> void* {
-			Debug(">RTPIncomingSourceGroup dispatch %p\n",arg);
-			//Get group
-			RTPIncomingSourceGroup* group = (RTPIncomingSourceGroup*) arg;
-			//Loop until canceled
-			RTPPacket::shared packet;
-			while ((packet=group->packets.Wait()))
-			{
-				//We need to adjust the seq num due the in band probing packets
-				packet->SetExtSeqNum(packet->GetExtSeqNum() - group->packets.GetNumDiscardedPackets());
-				ScopedLock scoped(group->listenerMutex);
-				//Deliver to all listeners
-				for (auto listener : group->listeners)
-					//Dispatch rtp packet
-					listener->onRTP(group,packet);
-			}
-			Debug("<RTPIncomingSourceGroup dispatch\n");
-			return nullptr;
-		},
-		(void*)this,
-		0
-	);
+	//Block listeners
+	ScopedLock scoped(listenerMutex);
+	
+	//Deliver all pending packets at once
+	for (auto packet = packets.GetOrdered(getTimeMS()); packet; packet = packets.GetOrdered(getTimeMS()))
+	{
+		//We need to adjust the seq num due the in band probing packets
+		packet->SetExtSeqNum(packet->GetExtSeqNum() - packets.GetNumDiscardedPackets());
+		//Deliver to all listeners
+		for (auto listener : listeners)
+			//Dispatch rtp packet
+			listener->onRTP(this,packet);
+	}
 }
 
 void RTPIncomingSourceGroup::Stop()
 {
-	if (isZeroThread(dispatchThread))
-		return;
-	//Cacnel packet wait
-	packets.Cancel();
-	
-	//Wait for thread
-	pthread_join(dispatchThread,NULL);
-	
-	//Clean it
-	setZeroThread(&dispatchThread);
-	
 	ScopedLock scoped(listenerMutex);
 	
 	//Deliver to all listeners

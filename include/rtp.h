@@ -31,7 +31,7 @@
 #include "rtp/RTCPNACK.h"
 #include "rtp/RTCPReceiverReport.h"
 #include "rtp/RTCPSDES.h"
-#include "rtp/RTPBuffer.h"
+#include "rtp/RTPWaitedBuffer.h"
 #include "rtp/RTPLostPackets.h"
 #include "rtp/RTPSource.h"
 #include "rtp/RTPIncomingSource.h"
