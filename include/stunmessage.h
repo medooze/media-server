@@ -45,7 +45,7 @@ public:
 		Attribute() = delete;
 		Attribute(Attribute&&) = delete;
 		Attribute(const Attribute&) = delete;
-		Attribute(WORD type,BYTE *attr,WORD size)
+		Attribute(WORD type,const BYTE *attr,WORD size)
 		{
 			//Copy values
 			this->type = type;
@@ -99,10 +99,10 @@ public:
 		BYTE *attr;
 	};
 public:
-	static bool IsSTUN(BYTE* data,DWORD size);
-	static STUNMessage* Parse(BYTE* data,DWORD size);
+	static bool IsSTUN(const BYTE* data,DWORD size);
+	static STUNMessage* Parse(const BYTE* data,DWORD size);
 public:
-	STUNMessage(Type type,Method method,BYTE* transId);
+	STUNMessage(Type type,Method method,const BYTE* transId);
 	~STUNMessage();
 	STUNMessage* CreateResponse();
 	DWORD AuthenticatedFingerPrint(BYTE* data,DWORD size,const char* pwd);
@@ -111,12 +111,13 @@ public:
 	Attribute* GetAttribute(Attribute::Type type);
 	bool  HasAttribute(Attribute::Type type);
 	void  AddAttribute(Attribute* attr);
-	void  AddAttribute(Attribute::Type type,BYTE *data,DWORD size);
+	void  AddAttribute(Attribute::Type type,const BYTE *data,DWORD size);
 	void  AddAttribute(Attribute::Type type,QWORD data);
 	void  AddAttribute(Attribute::Type type,DWORD data);
 	void  AddAttribute(Attribute::Type type);
 	void  AddAddressAttribute(sockaddr_in *addr);
 	void  AddXorAddressAttribute(sockaddr_in *addr);
+	void  AddXorAddressAttribute(uint32_t addr, uint16_t port);
 	void  AddUsernameAttribute(const char* local,const char* remote);
 
 	Type GetType()		{ return type; }

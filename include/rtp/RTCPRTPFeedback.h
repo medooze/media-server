@@ -56,7 +56,7 @@ public:
 		
 		virtual ~Field(){};
 		virtual DWORD GetSize() const = 0;
-		virtual DWORD Parse(BYTE* data,DWORD size) = 0;
+		virtual DWORD Parse(const BYTE* data,DWORD size) = 0;
 		virtual DWORD Serialize(BYTE* data,DWORD size) const = 0;
 		virtual void Dump() const = 0;
 	};
@@ -94,7 +94,7 @@ public:
 		virtual ~NACKField() = default;
 		
 		virtual DWORD GetSize() const { return 4;}
-		virtual DWORD Parse(BYTE* data,DWORD size)
+		virtual DWORD Parse(const BYTE* data,DWORD size)
 		{
 			if (size<4) return 0;
 			pid = get2(data,0);
@@ -156,7 +156,7 @@ public:
 		}
 		virtual ~TempMaxMediaStreamBitrateField(){}
 		virtual DWORD GetSize() const { return 8;}
-		virtual DWORD Parse(BYTE* data,DWORD size)
+		virtual DWORD Parse(const BYTE* data,DWORD size)
 		{
 			if (size<8) return 0;
 			ssrc = get4(data,0);
@@ -264,7 +264,7 @@ public:
 		
 		//From Field
 		virtual DWORD GetSize() const;
-		virtual DWORD Parse(BYTE* data,DWORD size);
+		virtual DWORD Parse(const BYTE* data,DWORD size);
 		virtual DWORD Serialize(BYTE* data,DWORD size) const;
 		virtual void Dump() const;
 		
@@ -281,7 +281,7 @@ public:
 	RTCPRTPFeedback(FeedbackType type,DWORD senderSSRC,DWORD mediaSSRC);
 	virtual ~RTCPRTPFeedback() = default;
 	virtual DWORD GetSize();
-	virtual DWORD Parse(BYTE* data,DWORD size);
+	virtual DWORD Parse(const BYTE* data,DWORD size);
 	virtual DWORD Serialize(BYTE* data,DWORD size);
 	virtual void Dump();
 

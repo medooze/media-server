@@ -38,7 +38,7 @@ DWORD RTCPRTPFeedback::GetSize()
 	return len;
 }
 
-DWORD RTCPRTPFeedback::Parse(BYTE* data,DWORD size)
+DWORD RTCPRTPFeedback::Parse(const BYTE* data,DWORD size)
 {
 	//Get header
 	RTCPCommonHeader header;
@@ -570,7 +570,7 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Serialize(BYTE* data,D
 	return len;
 }
 
-DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Parse(BYTE* data,DWORD size)
+DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Parse(const BYTE* data,DWORD size)
 {
 	//Create the  status count
 	std::vector<PacketStatus> statuses;

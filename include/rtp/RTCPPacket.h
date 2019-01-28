@@ -75,7 +75,7 @@ public:
 	Type GetType() const {return type; }
 	virtual void Dump();
 	virtual DWORD GetSize() = 0;
-	virtual DWORD Parse(BYTE* data,DWORD size) = 0;
+	virtual DWORD Parse(const BYTE* data,DWORD size) = 0;
 	virtual DWORD Serialize(BYTE* data,DWORD size) = 0;
 protected:
 	typedef std::vector<RTCPReport::shared> Reports;

@@ -1,0 +1,3 @@
+[submodule "ext/libdatachannels"]
+	path = ext/libdatachannels
+	url = https://github.com/medooze/libdatachannels.git

@@ -25,7 +25,7 @@ public:
 	using shared = std::shared_ptr<RTCPCompoundPacket>;
 	
 public:
-	static bool IsRTCP(BYTE *data,DWORD size)
+	static bool IsRTCP(const BYTE *data,DWORD size)
 	{
 		//Check size
 		if (size<4)
@@ -42,7 +42,7 @@ public:
 		//RTCP
 		return 1;
 	}
-	static RTCPCompoundPacket::shared Parse(BYTE *data,DWORD size);
+	static RTCPCompoundPacket::shared Parse(const BYTE *data,DWORD size);
 	static RTCPCompoundPacket::shared Create()
 	{
 		return  std::make_shared<RTCPCompoundPacket>();

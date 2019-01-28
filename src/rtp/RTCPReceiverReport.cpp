@@ -41,7 +41,7 @@ DWORD RTCPReceiverReport::GetSize()
 	return RTCPCommonHeader::GetSize()+4+24*reports.size();
 }
 
-DWORD RTCPReceiverReport::Parse(BYTE* data,DWORD size)
+DWORD RTCPReceiverReport::Parse(const BYTE* data,DWORD size)
 {
 	//Get header
 	RTCPCommonHeader header;

@@ -17,6 +17,7 @@
 #include "config.h"
 #include "rtp.h"
 #include "PCAPReader.h"
+#include "EventLoop.h"
 
 
 class PCAPTransportEmulator : 
@@ -40,11 +41,12 @@ public:
 	
 	// RTPReceiver interface
 	virtual int SendPLI(DWORD ssrc) override { return 1; }
-	
+	TimeService& GetTimeService() { return loop; }
 private:
 	int Run();
 	
 private:
+	EventLoop loop;
 	std::unique_ptr<UDPReader> reader;
 	
 	RTPMap		rtpMap;
@@ -52,9 +54,7 @@ private:
 	RTPMap		aptMap;
 	std::map<DWORD,RTPIncomingSourceGroup*> incoming;
 	uint64_t first		= 0;
-	pthread_t thread	= {0};
-	bool running		= false;;
-	WaitCondition cond;
+	volatile bool running	= false;;
 };
 
 #endif /* PCAPTRANSPORTEMULATOR_H */

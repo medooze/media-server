@@ -191,13 +191,13 @@ bool PCAPTransportEmulator::Open(const char* filename)
 
 bool PCAPTransportEmulator::SetReader(UDPReader* reader)
 {
-	//Block condition
-	ScopedLock lock(cond);
-	
 	//Double check
 	if (!reader)
 		//Error
 		return false;
+	
+	//Stop
+	Stop();
 	
 	//Store it
 	this->reader.reset(reader);
@@ -213,12 +213,12 @@ bool PCAPTransportEmulator::Close()
 {
 	Debug(">PCAPTransportEmulator::Close()\n");
 	
-	//Block condition
-	ScopedLock lock(cond);
-	
 	//Check we have reader
 	if (!reader)
 		return false;
+	
+	//Stop
+	Stop();
 	
 	//Close reader
 	return reader->Close();
@@ -228,45 +228,18 @@ bool PCAPTransportEmulator::Play()
 {
 	Debug(">PCAPTransportEmulator::Play()\n");
 	
-	//Block condition
-	ScopedLock lock(cond);
-	
 	//Check we have reader
 	if (!reader)
 		return false;
 	
-	//Check thred
-	if (!isZeroThread(thread))
-	{
-		//Not running
-		running = false;
-		
-		//Cancel packets wait queue
-		cond.Cancel();
-		Debug("-PCAPTransportEmulator::Play() joining\n");
-		//Wait thread to close
-		pthread_join(thread,NULL);
-		//Nulifi thread
-		setZeroThread(&thread);
-	}
+	//Stop running loop
+	loop.Stop();
 	
-	//We are running
+	//We are running now
 	running = true;
 
 	//Create thread
-	createPriorityThread(&thread,[](void* par)->void*{
-		//Block signals to avoid exiting on SIGUSR1
-		blocksignals();
-
-		//Obtenemos el parametro
-		PCAPTransportEmulator *transport = (PCAPTransportEmulator *)par;
-
-		//Run main loop
-		transport->Run();
-
-		//Exit
-		return NULL;
-	},this,0);
+	loop.Start([this](...){ Run(); });
 	
 	Debug("<PCAPTransportEmulator::Play()\n");
 	
@@ -278,41 +251,26 @@ uint64_t PCAPTransportEmulator::Seek(uint64_t time)
 {
 	Debug("-PCAPTransportEmulator::Seek() [time:%llu]\n",time);
 	
-	//Block condition
-	ScopedLock lock(cond);
-	
 	//Check we have reader
 	if (!reader)
 		return 0;
-	
-	//Set first timestamp to start playing from
-	first = time;
+
+	//Stop
+	Stop();
 	
 	//Seek it and return which is the first packet that will be played
-	return reader->Seek(first*1000)/100;
+	return first = reader->Seek(first*1000)/100;;
 }
 
 bool PCAPTransportEmulator::Stop()
 {
 	Debug(">PCAPTransportEmulator::Stop()\n");
 	
+	//Not running
+	running = false;
+	
 	//Check thred
-	if (!isZeroThread(thread))
-	{
-		//Not running
-		running = false;
-		
-		Debug("-PCAPTransportEmulator::Stop() | cond cancel()\n");
-		
-		//Cancel packets wait queue
-		cond.Cancel();
-		
-		Debug("-PCAPTransportEmulator::Stop() | join\n");
-		//Wait thread to close
-		pthread_join(thread,NULL);
-		//Nulifi thread
-		setZeroThread(&thread);
-	}
+	loop.Stop();
 	
 	Debug("<PCAPTransportEmulator::Stop()\n");
 	
@@ -327,12 +285,6 @@ int PCAPTransportEmulator::Run()
 	uint64_t ini  = getTime();
 	uint64_t now = 0;
 	
-	//Restart condition
-	cond.Reset();
-	
-	//Lock
-	cond.Lock();
-
 	//Run until canceled
 outher:	while(running)
 	{
@@ -464,17 +416,16 @@ outher:	while(running)
 		while (now<time)
 		{
 			//Get when is the next packet to be played
-			auto diff = time-now; 
+			uint64_t diff = time-now; 
 			
 			//UltraDebug("-PCAPTransportEmulator::Run() | waiting now:%llu next:%llu diff:%llu\n",now,time,diff);
 				
 			//Wait the difference
-			if (!cond.Wait(diff))
-			{
-				Debug("-PCAPTransportEmulator::Run() | canceled\n");
-				//Check if we have been stoped
+			loop.Run(std::chrono::milliseconds(diff/1000));
+
+			//Check if we have been stoped
+			if (!running)
 				goto outher;
-			}
 			
 			//Get relative play times since start in ns
 			now = getTimeDiff(ini);
@@ -585,9 +536,6 @@ outher:	while(running)
 			source->dropPackets++;
 		} 
 	}
-
-	//Unlock
-	cond.Unlock();
 	
 	Log("<PCAPTransportEmulator::Run()\n");
 	

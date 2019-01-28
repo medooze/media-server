@@ -91,7 +91,11 @@ bool RTPTransport::SetPortRange(int minPort, int maxPort)
 * RTPTransport
 * 	Constructro
 **************************/
-RTPTransport::RTPTransport(Listener *listener) : dtls(*this)
+RTPTransport::RTPTransport(Listener *listener) :
+	rtpLoop(this),
+	rtcpLoop(this),
+	endpoint(rtpLoop),
+	dtls(*this,rtpLoop,endpoint.GetTransport())
 {
 	this->listener = listener;
 	//Init values
@@ -120,9 +124,6 @@ RTPTransport::RTPTransport(Listener *listener) : dtls(*this)
 	//Preparamos las direcciones de envio
 	memset(&sendAddr,       0,sizeof(struct sockaddr_in));
 	memset(&sendRtcpAddr,   0,sizeof(struct sockaddr_in));
-	//No thread
-	setZeroThread(&thread);
-	running = false;
 
 	//Set family
 	sendAddr.sin_family     = AF_INET;
@@ -137,7 +138,6 @@ RTPTransport::~RTPTransport()
 {
 	//Reset
 	Reset();
-	
 }
 
 void RTPTransport::Reset()
@@ -226,7 +226,7 @@ int RTPTransport::SetLocalCryptoSDES(const char* suite,const BYTE* key,const DWO
 	}
 
 	//Check sizes
-	if (len!=policy.rtp.cipher_key_len)
+	if (len!=(DWORD)policy.rtp.cipher_key_len)
 		//Error
 		return Error("-RTPTransport::SetLocalCryptoSDES() | Key size (%d) doesn't match the selected srtp profile (required %d)\n",len,policy.rtp.cipher_key_len);
 
@@ -380,7 +380,7 @@ int RTPTransport::SetRemoteCryptoSDES(const char* suite, const BYTE* key, const 
 	}
 
 	//Check sizes
-	if (len!=policy.rtp.cipher_key_len)
+	if (len!=(DWORD)policy.rtp.cipher_key_len)
 		//Error
 		return Error("-RTPTransport::SetRemoteCryptoSDES() | Key size (%d) doesn't match the selected srtp profile (required %d)\n",len,policy.rtp.cipher_key_len);
 
@@ -597,18 +597,11 @@ int RTPTransport::Init()
 *********************************/
 int RTPTransport::End()
 {
-	//Check if not running
-	if (!running)
-		//Nothing
-		return 0;
-
 	Log(">RTPTransport::End()\n");
 
 	//Stop just in case
 	Stop();
 
-	//Not running;
-	running = false;
 	//If got socket
 	if (simSocket!=FD_INVALID)
 	{
@@ -630,56 +623,15 @@ int RTPTransport::End()
 	return 1;
 }
 
-/*********************************
-* SendRTCPPacket
-*	发送RTCP数据包
-*********************************/
-
-int RTPTransport::SendRTCPPacket(BYTE*  buffer,DWORD size)
-{
-	int len = size;
-
-	//Check if we have sendinf ip address
-	if (sendRtcpAddr.sin_addr.s_addr == INADDR_ANY && !muxRTCP)
-	{
-		//Debug
-		Debug("-RTPTransport::SendPacket() | Error sending rtcp packet, no remote IP yet\n");
-		//Exit
-		return 0;
-	}
-
-	//If encripted
-	if (encript)
-	{
-		//Check  session
-		if (!send)
-			return Error("-RTPTransport::SendPacket() | no send\n");
-		//Protect
-		srtp_err_status_t err = srtp_protect_rtcp(send,buffer,&len);
-		//Check error
-		if (err!=srtp_err_status_ok)
-			//Nothing
-			return Error("-RTPTransport::SendPacket() | Error protecting RTCP packet [%d]\n",err);
-	}
-
-	//If muxin
-	if (muxRTCP)
-		//Send using RTP port
-		return sendto(simSocket,buffer,len,0,(sockaddr *)&sendAddr,sizeof(struct sockaddr_in));
-	else
-		//Send using RCTP port
-		return sendto(simRtcpSocket,buffer,len,0,(sockaddr *)&sendRtcpAddr,sizeof(struct sockaddr_in));
-}
 
 /*********************************
 * SendRTCPPacket
 *	发送RTP数据包
 *********************************/
 
-int RTPTransport::SendRTPPacket(BYTE *buffer,DWORD size)
-{
-	int len = size;
 
+int RTPTransport::SendRTPPacket(Buffer&& packet)
+{
 	//Check if we have sendinf ip address
 	if (sendAddr.sin_addr.s_addr == INADDR_ANY)
 	{
@@ -695,10 +647,6 @@ int RTPTransport::SendRTPPacket(BYTE *buffer,DWORD size)
 			//Check if using ice
 			if (iceRemoteUsername && iceRemotePwd && iceLocalUsername)
 			{
-				//Create buffer
-				BYTE aux[MTU+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
-				int size = RTPPAYLOADSIZE;
-
 				//Create trans id
 				BYTE transId[12];
 				//Set first to 0
@@ -712,10 +660,18 @@ int RTPTransport::SendRTPPacket(BYTE *buffer,DWORD size)
 				//Add other attributes
 				request->AddAttribute(STUNMessage::Attribute::IceControlled,(QWORD)1);
 				request->AddAttribute(STUNMessage::Attribute::Priority,(DWORD)33554431);
+				
+				//Create new mesage
+				Buffer buffer(MTU);
+
 				//Serialize and autenticate
-				int len = request->AuthenticatedFingerPrint(aux,size,iceRemotePwd);
-				//Send it
-				sendto(simSocket,aux,len,0,(sockaddr *)&sendAddr,sizeof(struct sockaddr_in));
+				size_t len = request->AuthenticatedFingerPrint(buffer.GetData(),buffer.GetCapacity(),iceLocalPwd);
+
+				//Resize
+				buffer.SetSize(len);
+				
+				//Send response
+				rtpLoop.Send(ntohl(sendAddr.sin_addr.s_addr),ntohs(sendAddr.sin_port),std::move(buffer));
 
 				//Clean response
 				delete(request);
@@ -735,7 +691,9 @@ int RTPTransport::SendRTPPacket(BYTE *buffer,DWORD size)
 		if (send)
 		{
 			//Encript
-			srtp_err_status_t srtp_err_status = srtp_protect(send,buffer,&len);
+			int len = packet.GetSize();
+			srtp_err_status_t srtp_err_status = srtp_protect(send,packet.GetData(),&len);
+			packet.SetSize(len);
 			//Check error
 			if (srtp_err_status!=srtp_err_status_ok)
 				//Error
@@ -748,8 +706,10 @@ int RTPTransport::SendRTPPacket(BYTE *buffer,DWORD size)
 		}
 	}
 
-	//Send packet
-	return sendto(simSocket,buffer,len,0,(sockaddr *)&sendAddr,sizeof(struct sockaddr_in));
+	//Send response
+	rtpLoop.Send(ntohl(sendAddr.sin_addr.s_addr),ntohs(sendAddr.sin_port),std::move(packet));
+	 
+	return 1;
 }
 
 /*********************************
@@ -758,28 +718,19 @@ int RTPTransport::SendRTPPacket(BYTE *buffer,DWORD size)
 * 	从RTCP的socket里面读取rtcp数据包, 并处理
 *********************************/
 
-int RTPTransport::ReadRTCP()
+int RTPTransport::ReadRTCP(const uint8_t* data, const size_t size, const uint32_t ipAddr, const uint16_t port)
 {
-	BYTE data[MTU+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
-	BYTE *buffer = data;
+	//TOOD: remove and use ipAddr/port directly
 	sockaddr_in from_addr;
-	DWORD from_len = sizeof(from_addr);
-
 	//Receive from everywhere
-	memset(&from_addr, 0, from_len);
-
-	//Read rtcp socket
-	int size = recvfrom(simRtcpSocket,buffer,MTU,MSG_DONTWAIT,(sockaddr*)&from_addr, &from_len);
-
-	// Ignore empty datagrams and errors
-	if (size <= 0)
-		return 0;
+	from_addr.sin_addr.s_addr = htonl(ipAddr);
+	from_addr.sin_port = htons(port);
 
 	//Check if it looks like a STUN message
-	if (STUNMessage::IsSTUN(buffer,size))
+	if (STUNMessage::IsSTUN(data,size))
 	{
 		//Parse message
-		STUNMessage *stun = STUNMessage::Parse(buffer,size);
+		STUNMessage *stun = STUNMessage::Parse(data,size);
 
 		//It was not a valid STUN message
 		if (! stun)
@@ -793,30 +744,30 @@ int RTPTransport::ReadRTCP()
 		//If it is a request
 		if (type==STUNMessage::Request && method==STUNMessage::Binding)
 		{
-			DWORD len = 0;
 			//Create response
 			STUNMessage* resp = stun->CreateResponse();
 			//Add received xor mapped addres
 			resp->AddXorAddressAttribute(&from_addr);
 			//TODO: Check incoming request username attribute value starts with iceLocalUsername+":"
-			//Create  response
-			DWORD size = resp->GetSize();
-			BYTE *aux = (BYTE*)malloc(size);
-			memset(aux, 0, size);
-
+			
+			//Create new mesage
+			size_t len = 0;
+			Buffer buffer(MTU);
+		
 			//Check if we have local passworkd
 			if (iceLocalPwd)
 				//Serialize and autenticate
-				len = resp->AuthenticatedFingerPrint(aux,size,iceLocalPwd);
+				len = resp->AuthenticatedFingerPrint(buffer.GetData(),buffer.GetCapacity(),iceLocalPwd);
 			else
 				//Do nto authenticate
-				len = resp->NonAuthenticatedFingerPrint(aux,size);
+				len = resp->NonAuthenticatedFingerPrint(buffer.GetData(),buffer.GetCapacity());
+			
+			//resize
+			buffer.SetSize(len);
 
-			//Send it
-			sendto(simRtcpSocket,aux,len,0,(sockaddr *)&from_addr,sizeof(struct sockaddr_in));
-
-			//Clean memory
-			free(aux);
+			//Send response
+			rtpLoop.Send(ipAddr,port,std::move(buffer));
+			
 			//Clean response
 			delete(resp);
 
@@ -833,7 +784,7 @@ int RTPTransport::ReadRTCP()
 	}
 
 	//Check if it is RTCP
-	if (!RTCPCompoundPacket::IsRTCP(buffer,size))
+	if (!RTCPCompoundPacket::IsRTCP(data,size))
 		//Exit
 		return 0;
 
@@ -848,6 +799,8 @@ int RTPTransport::ReadRTCP()
 		Log("-RTPTransport::ReadRTCP() | Got first RTCP, sending to %s:%d with rtcp-muxing:%d\n",inet_ntoa(sendRtcpAddr.sin_addr),ntohs(sendRtcpAddr.sin_port),muxRTCP);
 	}
 
+	int len = size;
+	
 	//Decript
 	if (decript)
 	{
@@ -855,7 +808,7 @@ int RTPTransport::ReadRTCP()
 		if (!recv)
 			return Error("-RTPTransport::ReadRTCP() | No recvSRTPSession\n");
 		//unprotect
-		srtp_err_status_t err = srtp_unprotect_rtcp(recv,buffer,&size);
+		srtp_err_status_t err = srtp_unprotect_rtcp(recv,(BYTE*)data,&len);
 		//Check error
 		if (err!=srtp_err_status_ok)
 			return Error("-RTPTransport::ReadRTCP() | Error unprotecting rtcp packet [%d]\n",err);
@@ -864,7 +817,7 @@ int RTPTransport::ReadRTCP()
 	muxRTCP = false;
 	
 	//Parse it
-	listener->onRTCPPacket(buffer,size);
+	listener->onRTCPPacket(data,len);
 	
 	//OK
 	return 1;
@@ -881,28 +834,20 @@ int RTPTransport::ReadRTCP()
 *	5. 如果为RTP message, 则调用listener->onRTPPacket。
 *********************************/
 
-int RTPTransport::ReadRTP()
+int RTPTransport::ReadRTP(const uint8_t* data, const size_t size, const uint32_t ipAddr, const uint16_t port)
+
 {
-	BYTE data[MTU+SRTP_MAX_TRAILER_LEN] ZEROALIGNEDTO32;
-	BYTE *buffer = data;
+	//TOOD: remove and use ipAddr/port directly
 	sockaddr_in from_addr;
-	DWORD from_len = sizeof(from_addr);
-
 	//Receive from everywhere
-	memset(&from_addr, 0, from_len);
-
-	//Leemos del socket
-	int size = recvfrom(simSocket,buffer,MTU,MSG_DONTWAIT,(sockaddr*)&from_addr, &from_len);
-
-	// Ignore empty datagrams and errors
-	if (size <= 0)
-		return 0;
+	from_addr.sin_addr.s_addr = htonl(ipAddr);
+	from_addr.sin_port = htons(port);
 
 	//Check if it looks like a STUN message
-	if (STUNMessage::IsSTUN(buffer,size))
+	if (STUNMessage::IsSTUN(data,size))
 	{
 		//Parse it
-		STUNMessage *stun = STUNMessage::Parse(buffer,size);
+		STUNMessage *stun = STUNMessage::Parse(data,size);
 
 		//It was not a valid STUN message
 		if (!stun)
@@ -915,30 +860,30 @@ int RTPTransport::ReadRTP()
 		//If it is a request
 		if (type==STUNMessage::Request && method==STUNMessage::Binding)
 		{
-			DWORD len = 0;
 			//Create response
 			STUNMessage* resp = stun->CreateResponse();
 			//Add received xor mapped addres
-			resp->AddXorAddressAttribute(&from_addr);
+			resp->AddXorAddressAttribute(ipAddr,port);
 			//TODO: Check incoming request username attribute value starts with iceLocalUsername+":"
-			//Create  response
-			DWORD size = resp->GetSize();
-			BYTE *aux = (BYTE*)malloc(size);
-			memset(aux, 0, size);
-
+			
+			//Create new mesage
+			size_t len = 0;
+			Buffer buffer(MTU);
+		
 			//Check if we have local passworkd
 			if (iceLocalPwd)
 				//Serialize and autenticate
-				len = resp->AuthenticatedFingerPrint(aux,size,iceLocalPwd);
+				len = resp->AuthenticatedFingerPrint(buffer.GetData(),buffer.GetCapacity(),iceLocalPwd);
 			else
 				//Do nto authenticate
-				len = resp->NonAuthenticatedFingerPrint(aux,size);
+				len = resp->NonAuthenticatedFingerPrint(buffer.GetData(),buffer.GetCapacity());
+			
+			//resize
+			buffer.SetSize(len);
 
-			//Send it
-			sendto(simSocket,aux,len,0,(sockaddr *)&from_addr,sizeof(struct sockaddr_in));
+			//Send response
+			rtpLoop.Send(ipAddr,port,std::move(buffer));
 
-			//Clean memory
-			free(aux);
 			//Clean response
 			delete(resp);
 
@@ -985,7 +930,6 @@ int RTPTransport::ReadRTP()
 					//Request a I frame
 					listener->onRemotePeer(inet_ntoa(sendAddr.sin_addr), ntohs(sendAddr.sin_port));
 
-				DWORD len = 0;
 				//Create trans id
 				BYTE transId[12];
 				//Set first to 0
@@ -1003,32 +947,40 @@ int RTPTransport::ReadRTP()
 				request->AddAttribute(STUNMessage::Attribute::Priority,(DWORD)33554431);
 
 				//Create  request
-				DWORD size = request->GetSize();
-				BYTE* aux = (BYTE*)malloc(size);
-				memset(aux, 0, size);
+				size_t len = 0;
+				Buffer buffer(request->GetSize());
 
 				//Check remote pwd
 				if (iceRemotePwd)
 					//Serialize and autenticate
-					len = request->AuthenticatedFingerPrint(aux,size,iceRemotePwd);
+					len = request->AuthenticatedFingerPrint(buffer.GetData(),buffer.GetCapacity(),iceRemotePwd);
 				else
 					//Do nto authenticate
-					len = request->NonAuthenticatedFingerPrint(aux,size);
+					len = request->NonAuthenticatedFingerPrint(buffer.GetData(),buffer.GetCapacity());
 
-				//Send it
-				sendto(simSocket,aux,len,0,(sockaddr *)&from_addr,sizeof(struct sockaddr_in));
+				//resize
+				buffer.SetSize(len);
+				
+				//Send response
+				rtpLoop.Send(ipAddr,port,std::move(buffer));
 
-				//Clean memory
-				free(aux);
 				//Clean response
 				delete(request);
 
-				// Needed for DTLS in client mode (otherwise the DTLS "Client Hello" is not sent over the wire)
-				len = dtls.Read(buffer,MTU);
-				//Check it
-				if (len>0)
-					//Send back
-					sendto(simSocket,buffer,len,0,(sockaddr *)&from_addr,sizeof(struct sockaddr_in));
+				{
+					// Needed for DTLS in client mode (otherwise the DTLS "Client Hello" is not sent over the wire)
+					Buffer buffer(MTU);
+					size_t len = dtls.Read(buffer.GetData(),buffer.GetCapacity());
+					
+					//Check it
+					if (len>0)
+					{
+						//resize
+						buffer.SetSize(len);
+						//Send response
+						rtpLoop.Send(ipAddr,port,std::move(buffer));
+					}
+				}
 			}
 		}
 
@@ -1039,8 +991,10 @@ int RTPTransport::ReadRTP()
 	}
 
 	//Check if it is RTCP
-	if (RTCPCompoundPacket::IsRTCP(buffer,size))
+	if (RTCPCompoundPacket::IsRTCP(data,size))
 	{
+		int len = size;
+		
 		//Decript
 		if (decript)
 		{
@@ -1048,7 +1002,7 @@ int RTPTransport::ReadRTP()
 			if (!recv)
 				return Error("-RTPTransport::ReadRTP() | No recvSRTPSession\n");
 			//unprotect
-			srtp_err_status_t err = srtp_unprotect_rtcp(recv,buffer,&size);
+			srtp_err_status_t err = srtp_unprotect_rtcp(recv,(BYTE*)data,&len);
 			//Check error
 			if (err!=srtp_err_status_ok)
 				return Error("-RTPTransport::ReadRTP() | Error unprotecting rtcp packet [%d]\n",err);
@@ -1058,25 +1012,31 @@ int RTPTransport::ReadRTP()
 		muxRTCP = true;
 		
 		//Handle incomming rtcp packets
-		listener->onRTCPPacket(buffer,size);
+		listener->onRTCPPacket(data,len);
 		
 		//Skip
 		return 1;
 	}
 
 	//Check if it a DTLS packet
-	if (DTLSConnection::IsDTLS(buffer,size))
+	if (DTLSConnection::IsDTLS(data,size))
 	{
 		//Feed it
-		dtls.Write(buffer,size);
+		dtls.Write(data,size);
 
-		//Read
-		int len = dtls.Read(buffer,MTU);
-
+		//REad dtls data
+		Buffer buffer(MTU);
+		size_t len = dtls.Read(buffer.GetData(),buffer.GetCapacity());
+					
 		//Check it
 		if (len>0)
-			//Send it back
-			sendto(simSocket,buffer,len,0,(sockaddr *)&from_addr,sizeof(struct sockaddr_in));
+		{
+			//resize
+			buffer.SetSize(len);
+			//Send response
+			rtpLoop.Send(ipAddr,port,std::move(buffer));
+		}
+
 		//Exit
 		return 1;
 	}
@@ -1104,6 +1064,7 @@ int RTPTransport::ReadRTP()
 		return 0;
 	}
 
+	int len = size;
 	//Check if it is encripted
 	if (decript)
 	{
@@ -1112,14 +1073,14 @@ int RTPTransport::ReadRTP()
 		if (!recv)
 			return Error("-RTPTransport::ReadRTP() | No recvSRTPSession\n");
 		//unprotect
-		err = srtp_unprotect(recv,buffer,&size);
+		err = srtp_unprotect(recv,(BYTE*)data,&len);
 		//Check status
 		if (err!=srtp_err_status_ok)
 			//Error
 			return Error("-RTPTransport::ReadRTP() | Error unprotecting rtp packet [%d]\n",err);
 	}
 	
-	listener->onRTPPacket(buffer,size);
+	listener->onRTPPacket(data,len);
 	
 	//Done
 	return 1;
@@ -1127,105 +1088,26 @@ int RTPTransport::ReadRTP()
 
 void RTPTransport::Start()
 {
-	//We are running
-	running = true;
-
-	//Create thread
-	createPriorityThread(&thread,run,this,0);
+	//Start loops
+	rtpLoop.Start(simSocket);
+	rtcpLoop.Start(simRtcpSocket);
 }
 
 void RTPTransport::Stop()
 {
-	//Check thred
-	if (!isZeroThread(thread))
-	{
-		//Not running
-		running = false;
-
-		//Signal the pthread this will cause the poll call to exit
-		pthread_kill(thread,SIGIO);
-		//Wait thread to close
-		pthread_join(thread,NULL);
-		//Nulifi thread
-		setZeroThread(&thread);
-	}
+	//Stop loops
+	rtpLoop.Stop();
+	rtcpLoop.Stop();
 }
 
-/***********************
-* run
-*       Helper thread function
-************************/
-void * RTPTransport::run(void *par)
+void RTPTransport::OnRead(const int fd, const uint8_t* data, const size_t size, const uint32_t ipAddr, const uint16_t port)
 {
-        Log("-RTPTransport::run() | thread [%d,0x%x]\n",getpid(),par);
-
-	//Block signals to avoid exiting on SIGUSR1
-	blocksignals();
-
-        //Obtenemos el parametro
-        RTPTransport *sess = (RTPTransport *)par;
-
-        //Ejecutamos
-        sess->Run();
-	//Exit
-	return NULL;
-}
-
-/***************************
- * Run
- * 	Server running thread
- ***************************/
-int RTPTransport::Run()
-{
-	Log(">RTPTransport::Run() | [%p]\n",this);
-
-	//Set values for polling
-	ufds[0].fd = simSocket;
-	ufds[0].events = POLLIN | POLLERR | POLLHUP;
-
-	ufds[1].fd = simRtcpSocket;
-	ufds[1].events = POLLIN | POLLERR | POLLHUP;
-
-	//Set non blocking so we can get an error when we are closed by end
-	int fsflags = fcntl(simSocket,F_GETFL,0);
-	fsflags |= O_NONBLOCK;
-	fcntl(simSocket,F_SETFL,fsflags);
-
-	fsflags = fcntl(simRtcpSocket,F_GETFL,0);
-	fsflags |= O_NONBLOCK;
-	fcntl(simRtcpSocket,F_SETFL,fsflags);
-
-	//Catch all IO errors
-	signal(SIGIO,EmptyCatch);
-
-	//Run until ended
-	while(running)
-	{
-		//Wait for events
-		if(poll(ufds,2,-1)<0)
-			//Check again
-			continue;
-
-		if (ufds[0].revents & POLLIN)
-			//Read rtp data
-			ReadRTP();
-
-		if (ufds[1].revents & POLLIN)
-			//Read rtcp data
-			ReadRTCP();
-
-		if ((ufds[0].revents & POLLHUP) || (ufds[0].revents & POLLERR) || (ufds[1].revents & POLLHUP) || (ufds[0].revents & POLLERR))
-		{
-			//Error
-			Log("-RTPTransport::Run() | Pool error event [%d]\n",ufds[0].revents);
-			//Exit
-			break;
-		}
-	}
-
-	Log("<RTPTransport::Run()\n");
- 
-	return 1;
+	if (fd == simSocket)
+		//Read rtp data
+		ReadRTP(data,size,ipAddr,port);
+	else if (fd == simRtcpSocket)
+		//Read rtcp data
+		ReadRTCP(data,size,ipAddr,port);
 }
 
 void RTPTransport::onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMasterKey,DWORD localMasterKeySize,BYTE* remoteMasterKey,DWORD remoteMasterKeySize)

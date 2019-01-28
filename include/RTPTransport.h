@@ -19,6 +19,9 @@
 #include "config.h"
 #include "stunmessage.h"
 #include "dtls.h"
+#include "EventLoop.h"
+#include "Datachannels.h"
+#include "Endpoint.h"
 
 
 /*********************************
@@ -27,6 +30,7 @@
 *********************************/
 
 class RTPTransport :
+	public EventLoop::Listener,
 	public DTLSConnection::Listener
 {
 public:
@@ -39,10 +43,10 @@ public:
 		//Interface
 		// 有新的参与者加入
 		virtual void onRemotePeer(const char* ip, const short port) = 0;
-		// 接收到rtp数据包
-		virtual void onRTPPacket(BYTE* buffer, DWORD size) = 0;
-		// 接收到rtcp数据包
-		virtual void onRTCPPacket(BYTE* buffer, DWORD size) = 0;
+    // 接收到rtp数据包
+		virtual void onRTPPacket(const BYTE* buffer, DWORD size) = 0;
+    // 接收到rtcp数据包
+		virtual void onRTCPPacket(const BYTE* buffer, DWORD size) = 0;
 	};
 public:
 
@@ -66,9 +70,9 @@ public:
 	int SetRemotePort(char *ip,int sendPort);
 	void Reset();
 	int End();
-
-	int SendRTPPacket(BYTE *buffer,DWORD size);
-	int SendRTCPPacket(BYTE *buffer,DWORD size);
+	
+	int SendRTPPacket(Buffer&& packet);
+	int SendRTCPPacket(Buffer&& packet);
 
 	int SetLocalCryptoSDES(const char* suite, const char* key64);
 	int SetRemoteCryptoSDES(const char* suite, const char* key64);
@@ -76,36 +80,36 @@ public:
 	int SetLocalSTUNCredentials(const char* username, const char* pwd);
 	int SetRemoteSTUNCredentials(const char* username, const char* pwd);
 	
-	
 	void SetMuxRTCP(int flag)	{ muxRTCP = flag; };
 	void SetSecure(int flag)	{ encript = true; decript = true; };
 
-	virtual void onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMasterKey,DWORD localMasterKeySize,BYTE* remoteMasterKey,DWORD remoteMasterKeySize);
-
-
+	virtual void OnRead(const int fd, const uint8_t* data, const size_t size, const uint32_t ipAddr, const uint16_t port) override;
+	virtual void onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMasterKey,DWORD localMasterKeySize,BYTE* remoteMasterKey,DWORD remoteMasterKeySize) override;
+	
+	TimeService& GetTimeService() { return rtpLoop; }
+	
 private:
 	void SendEmptyPacket();
 	int SetLocalCryptoSDES(const char* suite, const BYTE* key, const DWORD len);
 	int SetRemoteCryptoSDES(const char* suite, const BYTE* key, const DWORD len);
 	void Start();
 	void Stop();
-	int  ReadRTP();
-	int  ReadRTCP();
-	int Run();
-private:
-	static  void* run(void *par);
+	int  ReadRTP(const uint8_t* data, const size_t size, const uint32_t ipAddr, const uint16_t port);
+	int  ReadRTCP(const uint8_t* data, const size_t size, const uint32_t ipAddr, const uint16_t port);
+
 private:
 	Listener* listener;
 	bool	muxRTCP;
 	//Sockets
-	int 	simSocket; 		// rtp socket
-	int 	simRtcpSocket;	// rtcp socket
-	int 	simPort;		// rtp port
-	int		simRtcpPort;	// rtcp port
 
-	pollfd	ufds[2];		// 0->rtp, 1->rtcp
-	bool	running;
+	int 	simSocket;     // rtp socket
+	int 	simRtcpSocket; // rtcp socket
+	int 	simPort;       // rtp port
+	int	simRtcpPort;
+	EventLoop rtpLoop;
+	EventLoop rtcpLoop;
 
+	datachannels::impl::Endpoint endpoint;
 	DTLSConnection dtls;
 	bool	encript;
 	bool	decript;

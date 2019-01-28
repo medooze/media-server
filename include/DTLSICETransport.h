@@ -18,7 +18,6 @@
 #include <poll.h>
 #include <list>
 #include <srtp2/srtp.h>
-#include <queue>
 
 #include "config.h"
 #include "stunmessage.h"
@@ -29,9 +28,9 @@
 #include "use.h"
 #include "UDPDumper.h"
 #include "remoterateestimator.h"
-#include "waitqueue.h"
-
-
+#include "EventLoop.h"
+#include "Datachannels.h"
+#include "Endpoint.h"
 
 class DTLSICETransport : 
 	public RTPSender,
@@ -43,11 +42,11 @@ public:
 	class Sender
 	{
 	public:
-		virtual int Send(const ICERemoteCandidate *candiadte, const BYTE* data,const DWORD size) = 0;
+		virtual int Send(const ICERemoteCandidate *candiadte, Buffer&& buffer) = 0;
 	};
 
 public:
-	DTLSICETransport(Sender *sender);
+	DTLSICETransport(Sender *sender,TimeService& timeService);
 	virtual ~DTLSICETransport();
 	
 	void Start();
@@ -81,12 +80,14 @@ public:
 	const char* GetLocalPwd()	const { return iceLocalPwd;		};
 	
 	virtual void onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMasterKey,DWORD localMasterKeySize,BYTE* remoteMasterKey,DWORD remoteMasterKeySize)  override;
-	virtual int onData(const ICERemoteCandidate* candidate,BYTE* data,DWORD size)  override;
+	virtual int onData(const ICERemoteCandidate* candidate,const BYTE* data,DWORD size)  override;
 	
 	DWORD GetRTT() const { return rtt; }
+	
+	TimeService& GetTimeService() { return timeService; }
 
 private:
-	int Run();
+	void Probe();
 	int Send(const RTPPacket::shared& packet);
 	void SetRTT(DWORD rtt);
 	void onRTCP(const RTCPCompoundPacket::shared &rtcp);
@@ -144,6 +145,9 @@ private:
 		bool  mark;
 	};
 private:
+	TimeService&	timeService;
+	datachannels::impl::Endpoint endpoint;
+	datachannels::Endpoint::Options dcOptions;
 	Sender*		sender;
 	DTLSConnection	dtls;
 	Maps		sendMaps;
@@ -160,11 +164,6 @@ private:
 	std::map<std::string,RTPIncomingSourceGroup*> rids;
 	std::map<std::string,std::set<RTPIncomingSourceGroup*>> mids;
 	
-	WaitCondition wait;
-	std::queue<RTPPacket::shared> packets;
-	pthread_t thread	= {0};
-	bool running		= false;
-	
 	DWORD	mainSSRC		= 1;
 	DWORD   rtt			= 0;
 	char*	iceRemoteUsername	= nullptr;
@@ -172,13 +171,11 @@ private:
 	char*	iceLocalUsername	= nullptr;
 	char*	iceLocalPwd		= nullptr;
 	
-	Mutex	mutex;
 	Use	incomingUse;
 	Use	outgoingUse;
 	Acumulator incomingBitrate;
 	Acumulator outgoingBitrate;
 	
-	Mutex transportWideMutex;
 	std::map<DWORD,PacketStats::shared> transportWideSentPacketsStats;
 	std::map<DWORD,PacketStats::shared> transportWideReceivedPacketsStats;
 	
@@ -186,10 +183,14 @@ private:
 	bool dumpInRTP		= false;
 	bool dumpOutRTP		= false;
 	bool dumpRTCP		= false;
-	bool probe		= false;
+	volatile bool probe	= false;
 	DWORD maxProbingBitrate = 1024*1000;
 	
 	RemoteRateEstimator senderSideEstimator;
+	
+	Timer::shared probingTimer;
+	timeval	ini;
+	
 };
 
 

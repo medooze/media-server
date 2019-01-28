@@ -12,6 +12,7 @@
 #include "rtp/RTPLostPackets.h"
 #include "rtp/RTPBuffer.h"
 #include "remoterateestimator.h"
+#include "TimeService.h"
 
 class RTPIncomingSourceGroup :
 	public RemoteRateEstimator::Listener
@@ -25,7 +26,7 @@ public:
 	};
 	
 public:	
-	RTPIncomingSourceGroup(MediaFrame::Type type);
+	RTPIncomingSourceGroup(MediaFrame::Type type,TimeService& timeService);
 	virtual ~RTPIncomingSourceGroup();
 	
 	RTPIncomingSource* GetSource(DWORD ssrc);
@@ -33,6 +34,7 @@ public:
 	void RemoveListener(Listener* listener);
 	int AddPacket(const RTPPacket::shared &packet, DWORD size = 0); //Size is only used if remb is in use
 	RTPIncomingSource* Process(RTPPacket::shared &packet);
+	
 	
 	void ResetPackets();
 	void Update();
@@ -52,6 +54,9 @@ public:
 	
 	virtual void onTargetBitrateRequested(DWORD bitrate) override;
 
+private:
+	void DispatchPackets(QWORD time);
+  
 public:	
 	std::string rid;
 	std::string mid;
@@ -69,16 +74,17 @@ public:
 	long double avgWaitedTime = 0;
 
 private:
-	pthread_t dispatchThread = {0};
+	TimeService&	timeService;
+	Timer::shared	dispatchTimer;
 	RTPLostPackets	losts;
-	RTPBuffer packets;
-	Mutex listenerMutex;
-	Mutex mutex;
+	RTPBuffer	packets;
+	Mutex		listenerMutex;
+	Mutex		mutex;
 	std::set<Listener*>  listeners;
-	WORD  rttrtxSeq;
-	QWORD rttrtxTime;
 	RemoteRateEstimator remoteRateEstimator;
-	bool remb = false;
+	WORD  rttrtxSeq	 = 0 ;
+	QWORD rttrtxTime = 0;
+	bool remb	 = false;
 };
 
 #endif /* RTPINCOMINGSOURCEGROUP_H */

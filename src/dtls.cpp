@@ -2,7 +2,10 @@
 #include "dtls.h"
 #include "log.h"
 #include "use.h"
+#include "Datachannels.h"
 
+using namespace std::chrono_literals;
+	
 // Initialize static data
 std::string		DTLSConnection::certfile("");
 std::string		DTLSConnection::pvtfile("");
@@ -14,25 +17,6 @@ bool			DTLSConnection::hasDTLS		= false;
 
 DTLSConnection::LocalFingerPrints	DTLSConnection::localFingerPrints;
 DTLSConnection::AvailableHashes		DTLSConnection::availableHashes;
-
-
-
-// Static callbacks for OpenSSL. 
-
-static inline
-int on_ssl_certificate_verify(int preverify_ok, X509_STORE_CTX* ctx)
-{
-	// Always valid.
-	return 1;
-}
-
-static inline
-void on_ssl_info(const SSL* ssl, int where, int ret)
-{
-	DTLSConnection *conn = (DTLSConnection*)SSL_get_ex_data(ssl, 0);
-	conn->onSSLInfo(where, ret);
-}
-
 
 // Static methods. 
 void DTLSConnection::SetCertificate(const char* cert,const char* key)
@@ -253,10 +237,16 @@ int DTLSConnection::Initialize()
 	SSL_CTX_set_read_ahead(ssl_ctx,true);
 
 	// Require cert from client (mandatory for WebRTC).
-	SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, on_ssl_certificate_verify);
+	SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, [](int preverify_ok, X509_STORE_CTX* ctx) -> int {
+		// Always valid.
+		return 1;
+	});
 
 	// Set SSL info callback.
-	SSL_CTX_set_info_callback(ssl_ctx, on_ssl_info);
+	SSL_CTX_set_info_callback(ssl_ctx, [](const SSL* ssl, int where, int ret) {
+		DTLSConnection *conn = (DTLSConnection*)SSL_get_ex_data(ssl, 0);
+		conn->onSSLInfo(where, ret);
+	});
 
 	// Try to use GCM suite
 	if (SSL_CTX_set_tlsext_use_srtp(ssl_ctx, "SRTP_AES128_CM_SHA1_80;SRTP_AEAD_AES_128_GCM;SRTP_AEAD_AES_256_GCM")!=0)
@@ -366,7 +356,11 @@ std::string DTLSConnection::GetCertificateFingerPrint(Hash hash)
 }
 
 
-DTLSConnection::DTLSConnection(Listener& listener) : listener(listener)
+DTLSConnection::DTLSConnection(Listener& listener,TimeService& timeService,datachannels::Transport& sctp) :
+	listener(listener),
+	timeService(timeService),
+	sctp(sctp),
+	inited(false)
 {
 	//Set default values
 	rekey		  	     = 0;
@@ -375,7 +369,6 @@ DTLSConnection::DTLSConnection(Listener& listener) : listener(listener)
 	ssl			     = NULL;		// SSL session 
 	read_bio		     = NULL;		// Memory buffer for reading 
 	write_bio		     = NULL;		// Memory buffer for writing 
-	inited			     = false;
 	remoteHash		     = UNKNOWN_HASH;
 	//Reset remote fingerprint
 	memset(remoteFingerprint,0,EVP_MAX_MD_SIZE);
@@ -459,12 +452,25 @@ int DTLSConnection::Init()
 	
 	//New connection
 	connection = CONNECTION_NEW;
-
+	
+	//Start timeout
+	timeout = timeService.CreateTimer([this](...){
+		//Check if still inited
+		if (inited)
+			//Run timeut
+			DTLSv1_handle_timeout(ssl);
+	});
+	
+	//Now we are ready to read and write DTLS packets.
+	inited = true;
+	
 	//Start handshake
 	SSL_do_handshake(ssl);
 
-	//Now we are ready to read and write DTLS packets.
-	inited = true;
+	//Get next timeout
+	struct timeval tv = {0,0};
+	if (DTLSv1_get_timeout(ssl, &tv))
+		timeout->Again(std::chrono::milliseconds(getDifTime(&tv)));
 
 	Log("<DTLSConnection::Init()\n");
 
@@ -477,6 +483,12 @@ void DTLSConnection::End()
 
 	// NOTE: Don't use BIO_free() for write_bio and read_bio as they are
 	// automatically freed by SSL_free().
+	
+	//Not inited anymore
+	inited = false;
+	
+	//Cancel dtls timeout
+	timeout->Cancel();
 
 	if (ssl) 
 	{
@@ -485,19 +497,23 @@ void DTLSConnection::End()
 		read_bio = NULL;
 		write_bio = NULL;		
 	}
+	
 }
 
 void DTLSConnection::Reset()
 {
 	Log("-DTLSConnection::Reset()\n");
 
-	// If the SSL session is not yet finalized don't bother resetting
-	if (!SSL_is_init_finished(ssl))
-		return;
+	//Run in event loop thread
+	timeService.Async([this](...){
+		// If the SSL session is not yet finalized don't bother resetting
+		if (!SSL_is_init_finished(ssl))
+			return;
 
-	SSL_shutdown(ssl);
+		SSL_shutdown(ssl);
 
-	connection = CONNECTION_NEW;
+		connection = CONNECTION_NEW;
+	});
 }
 
 void DTLSConnection::SetRemoteSetup(Setup remote)
@@ -574,8 +590,6 @@ void DTLSConnection::SetRemoteFingerprint(Hash hash, const char *fingerprint)
 
 int DTLSConnection::Read(BYTE* data,DWORD size)
 {
-	HandleTimeout();
-	
 	if (! DTLSConnection::hasDTLS) 
 		return Error("-DTLSConnection::Read() | no DTLS\n");
 
@@ -610,22 +624,19 @@ void DTLSConnection::onSSLInfo(int where, int ret)
 	// receipt of a close alert does not work.
 }
 
-int DTLSConnection::HandleTimeout()
-{
-	if (!ssl)
-		return 0;
-	return DTLSv1_handle_timeout(ssl);
-}
-
 int DTLSConnection::Renegotiate()
 {
-	if (!ssl)
-		return 0;
-	
-	SSL_renegotiate(ssl);
-	SSL_do_handshake(ssl);
+	//Run in event loop thread
+	timeService.Async([this](...){
+		if (ssl)
+		{
 
-	rekeyid = -1;
+			SSL_renegotiate(ssl);
+			SSL_do_handshake(ssl);
+
+			rekeyid = -1;
+		}
+	});
 	return 1;
 }
 
@@ -734,10 +745,8 @@ int DTLSConnection::SetupSRTP()
 	return 1;
 }
 
-int DTLSConnection::Write( BYTE *buffer, DWORD size)
+int DTLSConnection::Write(const BYTE *buffer, DWORD size)
 {
-	HandleTimeout();
-	
 	if (!DTLSConnection::hasDTLS)
 		return Error("-DTLSConnection::Write() | no DTLS\n");
 
@@ -745,34 +754,43 @@ int DTLSConnection::Write( BYTE *buffer, DWORD size)
 		return Error("-DTLSConnection::Write() | SSL not yet ready\n");
 
 	BIO_write(read_bio, buffer, size);
-
-	int ret = SSL_read(ssl, buffer, size);
 	
-	if (ret<0)
+	//Reschedule timer
+	struct timeval tv = {0,0};
+	if (DTLSv1_get_timeout(ssl, &tv))
+		timeout->Again(std::chrono::milliseconds(getDifTime(&tv)));
+	
+	BYTE msg[MTU];
+	int len = SSL_read(ssl, msg, MTU);
+	
+	if (len<0)
 	{
-		int err = SSL_get_error(ssl,ret);
+		int err = SSL_get_error(ssl,len);
 		if (err!=SSL_ERROR_WANT_READ)
-			return Error("-DTLSConnection::Write() | SSL_read error [ret:%d,err:%d]\n",ret,SSL_get_error(ssl,ret));
+			return Error("-DTLSConnection::Write() | SSL_read error [ret:%d,err:%d]\n",len,SSL_get_error(ssl,len));
 		else 
 			return 0;
 	}
-		
+	//DumpAsC(msg,len);
+	Debug("-sctp of len %d\n",len);
+	//Pass data to sctp
+	if (len && !sctp.WritePacket(msg,len))
+		return Error("sctp parse error");
 
 	// Check if the peer sent close alert or a fatal error happened.
 	if (SSL_get_shutdown(ssl) & SSL_RECEIVED_SHUTDOWN)
 	{
 		Debug("-DTLSConnection::Write() | SSL_RECEIVED_SHUTDOWN on instance '%p', resetting SSL\n", this);
-		ret = SSL_clear(ssl);
-		ssl = nullptr;
-		if (ret == 0)
+		if (SSL_clear(ssl)==0)
 			Error("-DTLSConnection::Write() | SSL_clear() failed: %s", ERR_error_string(ERR_get_error(), NULL));
-
+		ssl = nullptr;
 		return 0;
 	}
 
 	return 1;
 }
 
+/*/
 int DTLSConnection::CheckPending()
 {
 	if (!write_bio)
@@ -782,3 +800,4 @@ int DTLSConnection::CheckPending()
 
 	return BIO_ctrl_pending(write_bio);
 }
+*/

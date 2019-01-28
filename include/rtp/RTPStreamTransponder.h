@@ -36,8 +36,6 @@ public:
 	void SelectLayer(int spatialLayerId,int temporalLayerId);
 	void Mute(bool muting);
 protected:
-	
-	void Reset();
 	void RequestPLI();
 
 private:
@@ -46,11 +44,12 @@ private:
 	RTPIncomingSourceGroup *incoming	= NULL;
 	RTPReceiver* receiver			= NULL;
 	RTPSender* sender			= NULL;
-	VideoLayerSelector* selector		= NULL;
+	std::unique_ptr<VideoLayerSelector> selector;
 	Mutex mutex;
 	
 	
-	bool muted		= false;
+	volatile bool reset	= false;
+	volatile bool muted	= false;
 	DWORD firstExtSeqNum	= 0;  //First seq num of incoming stream
 	DWORD baseExtSeqNum	= 0;  //Base seq num of outgoing stream
 	DWORD lastExtSeqNum	= 0;  //Last seq num of sent packet
@@ -65,8 +64,9 @@ private:
 	MediaFrame::Type media;
 	BYTE codec		= 0;
 	BYTE type		= 0;
-	BYTE spatialLayerId	= LayerInfo::MaxLayerId;
-	BYTE temporalLayerId	= LayerInfo::MaxLayerId;
+	volatile BYTE spatialLayerId		= LayerInfo::MaxLayerId;
+	volatile BYTE temporalLayerId		= LayerInfo::MaxLayerId;
+	volatile BYTE lastSpatialLayerId	= LayerInfo::MaxLayerId;
 	WORD lastPicId		= 0;
 	WORD lastTl0Idx		= 0;
 	QWORD picId		= 0;

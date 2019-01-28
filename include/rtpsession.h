@@ -93,8 +93,8 @@ public:
 	RTPIncomingSourceGroup* GetIncomingSourceGroup() { return &recv; }
 public:	
 	virtual void onRemotePeer(const char* ip, const short port);
-	virtual void onRTPPacket(BYTE* buffer, DWORD size);
-	virtual void onRTCPPacket(BYTE* buffer, DWORD size);
+	virtual void onRTPPacket(const BYTE* buffer, DWORD size);
+	virtual void onRTCPPacket(const BYTE* buffer, DWORD size);
 private:
 	void SetRTT(DWORD rtt);
 	int ReSendPacket(int seq);
@@ -112,7 +112,7 @@ protected:
 private:
 	MediaFrame::Type media;
 	Listener* listener;
-	RTPBuffer packets;
+	RTPWaitedBuffer packets;
 	RTPTransport transport;
 	char*	cname;
 	//Transmision

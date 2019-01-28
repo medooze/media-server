@@ -49,7 +49,7 @@ bool RTPStreamTransponder::SetIncoming(RTPIncomingSourceGroup* incoming, RTPRece
                 ScopedLock lock(mutex);
         
                 //Reset packets before start listening again
-                Reset();
+                reset = true;
 
                 //Store stream and receiver
                 this->incoming = incoming;
@@ -74,8 +74,6 @@ bool RTPStreamTransponder::SetIncoming(RTPIncomingSourceGroup* incoming, RTPRece
 
 RTPStreamTransponder::~RTPStreamTransponder()
 {
-	//Clean all pending packets in queue
-	Reset();
 	//Stop listeneing
 	Close();
 }
@@ -129,6 +127,29 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,const RTPPacket::
 	if (!sender)
 		//Nothing
 		return;
+	//If we need to reset
+	if (reset)
+	{
+		//No source
+		lastCompleted = true;
+		source = 0;
+		//Reset first paquet seq num and timestamp
+		firstExtSeqNum = 0;
+		firstTimestamp = 0;
+		//Store the last send ones
+		baseExtSeqNum = lastExtSeqNum+1;
+		baseTimestamp = lastTimestamp;
+		//None dropped
+		dropped = 0;
+		//Not selecting
+		selector = nullptr;
+		//No layer
+		spatialLayerId = LayerInfo::MaxLayerId;
+		temporalLayerId = LayerInfo::MaxLayerId;
+		
+		//Reseted
+		reset = false;
+	}
 	
 	//Check if the source has changed
 	if (source && packet->GetSSRC()!=source)
@@ -151,11 +172,8 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,const RTPPacket::
 		firstExtSeqNum = 0;
 		//Not selecting
 		if (selector)
-		{
 			//Delete and reset
-			delete(selector);
 			selector = nullptr;
-		}
 	}
 	
 	//Update source
@@ -205,27 +223,34 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,const RTPPacket::
 		//Check if we don't have one or if we have a selector and it is not from the same codec
 		if (!selector || (BYTE)selector->GetCodec()!=packet->GetCodec())
 		{
-			//If we had one
-			if (selector)
-				//Delete it and reset
-				delete(selector);
 			//Create new selector for codec
-			selector = VideoLayerSelector::Create((VideoCodec::Type)packet->GetCodec());
+			selector.reset(VideoLayerSelector::Create((VideoCodec::Type)packet->GetCodec()));
 			//Set prev layers
 			selector->SelectSpatialLayer(spatialLayerId);
 			selector->SelectTemporalLayer(temporalLayerId);
 		}
 	}
 	
+	//Get rtp marking
 	bool mark = packet->GetMark();
 	
-	//Select layer
-	if (selector && !selector->Select(packet,mark))
+	//If we have selector for codec
+	if (selector)
 	{
-		//One more dropperd
-		dropped++;
-		//Drop
-		return;
+		//Select layer
+		selector->SelectSpatialLayer(spatialLayerId);
+		selector->SelectTemporalLayer(temporalLayerId);
+		
+		//Select pacekt
+		if (!selector->Select(packet,mark))
+		{
+			//One more dropperd
+			dropped++;
+			//Drop
+			return;
+		}
+		//Get current spatial layer id
+		lastSpatialLayerId = selector->GetSpatialLayer();
 	}
 	
 	//Clone packet
@@ -311,7 +336,7 @@ void RTPStreamTransponder::onEnded(RTPIncomingSourceGroup* group)
 		return;
 	
 	//Reset packets before start listening again
-	Reset();
+	reset = true;
 	
 	//Store stream and receiver
 	this->incoming = nullptr;
@@ -338,50 +363,12 @@ void RTPStreamTransponder::onREMB(RTPOutgoingSourceGroup* group,DWORD ssrc, DWOR
 
 void RTPStreamTransponder::SelectLayer(int spatialLayerId,int temporalLayerId)
 {
-	ScopedLock lock(mutex);
-		
-	this->spatialLayerId = spatialLayerId;
+	this->spatialLayerId  =  spatialLayerId;
 	this->temporalLayerId = temporalLayerId;
-		
-	if (!selector)
-		return;
 	
-	if (selector->GetSpatialLayer()<spatialLayerId)
+	if (lastSpatialLayerId<spatialLayerId)
 		//Request update on the incoming
 		RequestPLI();
-	selector->SelectSpatialLayer(spatialLayerId);
-	selector->SelectTemporalLayer(temporalLayerId);
-}
-
-void  RTPStreamTransponder::Reset()
-{
-	ScopedLock lock(mutex);
-		
-	Debug(">RTPStreamTransponder::Reset()\n");
-		
-	//No source
-	lastCompleted = true;
-	source = 0;
-	//Reset first paquet seq num and timestamp
-	firstExtSeqNum = 0;
-	firstTimestamp = 0;
-	//Store the last send ones
-	baseExtSeqNum = lastExtSeqNum+1;
-	baseTimestamp = lastTimestamp;
-	//None dropped
-	dropped = 0;
-	//Not selecting
-	if (selector)
-	{
-		//Delete and reset
-		delete(selector);
-		selector = nullptr;
-	}
-	//No layer
-	spatialLayerId = LayerInfo::MaxLayerId;
-	temporalLayerId = LayerInfo::MaxLayerId;
-	
-	Debug("<RTPStreamTransponder::Reset()\n");
 }
 
 void RTPStreamTransponder::Mute(bool muting)

@@ -23,7 +23,7 @@ DWORD RTCPNACK::GetSize()
 	return RTCPCommonHeader::GetSize()+8;
 }
 
-DWORD RTCPNACK::Parse(BYTE* data,DWORD size)
+DWORD RTCPNACK::Parse(const BYTE* data,DWORD size)
 {//Get header
 	RTCPCommonHeader header;
 		

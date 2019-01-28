@@ -25,7 +25,7 @@ DWORD RTCPFullIntraRequest::GetSize()
 	return RTCPCommonHeader::GetSize()+4;
 }
 
-DWORD RTCPFullIntraRequest::Parse(BYTE* data,DWORD size)
+DWORD RTCPFullIntraRequest::Parse(const BYTE* data,DWORD size)
 {
 	//Get header
 	RTCPCommonHeader header;

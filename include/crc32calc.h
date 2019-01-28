@@ -36,7 +36,7 @@ public:
 		crc = 0;
 	}
 
-	DWORD Update(BYTE *data, DWORD size)
+	DWORD Update(const BYTE *data, DWORD size)
 	{
 		DWORD c = crc ^ 0xFFFFFFFF;
 		for (DWORD i = 0; i < size; ++i) 
