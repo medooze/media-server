@@ -365,6 +365,7 @@
           <in>RTPRedundantPacket.h</in>
           <in>RTPSource.h</in>
           <in>RTPStreamTransponder.h</in>
+          <in>RTPWaitedBuffer.h</in>
         </df>
         <df name="ws">
           <in>websocketconnection.h</in>
@@ -5841,6 +5842,8 @@
       <item path="include/rtp/RTPSource.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/rtp/RTPStreamTransponder.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/rtp/RTPWaitedBuffer.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/rtpparticipant.h" ex="false" tool="3" flavor2="0">
       </item>

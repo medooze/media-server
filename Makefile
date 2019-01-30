@@ -2,7 +2,11 @@
 # Fichero de configuracion
 ###########################################
 include config.mk
-OPTS+= -fPIC -DPIC -msse -msse2 -msse3 -DSPX_RESAMPLE_EXPORT= -DRANDOM_PREFIX=mcu -DOUTSIDE_SPEEX -DFLOATING_POINT -D__SSE2__ -Wno-narrowing -std=c++17 -std=gnu++17
+OPTS+= -fPIC -DPIC -msse -msse2 -msse3 -msse4.1 -DSPX_RESAMPLE_EXPORT= -DRANDOM_PREFIX=mcu -DOUTSIDE_SPEEX -DFLOATING_POINT -D__SSE2__ -Wno-narrowing -std=c++17 -std=gnu++17 -march=native
+
+#GET OS
+OS = $(shell uname -s)
+PLATFORM = $(shell uname -p)
 
 #DEBUG
 ifeq ($(DEBUG),yes)
@@ -79,7 +83,7 @@ AACOBJ=aacencoder.o
 
 RTP=  RTPMap.o  RTPDepacketizer.o RTPPacket.o   RTPPacketSched.o RTPSmoother.o  RTPLostPackets.o RTPSource.o RTPIncomingSource.o RTPIncomingSourceGroup.o RTPOutgoingSource.o RTPOutgoingSourceGroup.o
 RTCP= RTCPCompoundPacket.o RTCPNACK.o RTCPReceiverReport.o RTCPCommonHeader.o RTPHeader.o RTPHeaderExtension.o RTCPApp.o RTCPExtendedJitterReport.o RTCPPacket.o RTCPReport.o RTCPSenderReport.o RTCPBye.o RTCPFullIntraRequest.o RTCPPayloadFeedback.o RTCPRTPFeedback.o RTCPSDES.o 
-CORE= dtls.o OpenSSL.o RTPTransport.o  stunmessage.o crc32calc.o http.o httpparser.o avcdescriptor.o utf8.o rtpsession.o RTPStreamTransponder.o VideoLayerSelector.o remoteratecontrol.o remoterateestimator.o RTPBundleTransport.o DTLSICETransport.o PCAPFile.o PCAPReader.o PCAPTransportEmulator.o mp4streamer.o mp4recorder.o ActiveSpeakerDetector.o EventLoop.o Datachannels.o
+CORE= dtls.o OpenSSL.o RTPTransport.o  stunmessage.o crc32calc.o http.o httpparser.o avcdescriptor.o utf8.o rtpsession.o RTPStreamTransponder.o VideoLayerSelector.o remoteratecontrol.o remoterateestimator.o RTPBundleTransport.o DTLSICETransport.o PCAPFile.o PCAPReader.o PCAPTransportEmulator.o mp4streamer.o mp4recorder.o ActiveSpeakerDetector.o EventLoop.o Datachannels.o crc32c.o crc32c_sse42.o crc32c_portable.o
 
 RTMP= rtmpparticipant.o amf.o rtmpmessage.o rtmpchunk.o rtmpstream.o rtmpconnection.o  rtmpserver.o  rtmpflvstream.o flvrecorder.o flvencoder.o
 
@@ -131,9 +135,10 @@ VPATH +=  %.cpp $(SRCDIR)/src/$(OPUSDIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(AACDIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(COREDIR)
 VPATH +=  %.cpp $(SRCDIR)/ext/libdatachannels/src
+VPATH +=  %.cc  $(SRCDIR)/ext/crc32c/src/
 
 
-INCLUDE+= -I$(SRCDIR)/src -I$(SRCDIR)/include/ $(VADINCLUDE) -I$(SRCDIR)/ext/libdatachannels/src
+INCLUDE+= -I$(SRCDIR)/src -I$(SRCDIR)/include/ $(VADINCLUDE) -I$(SRCDIR)/ext/libdatachannels/src -I$(SRCDIR)/ext/libdatachannels/src/internal -I$(SRCDIR)/ext/crc32c/config/${OS}-${PLATFORM}/
 LDFLAGS+= -lpthread 
 LDLIBFLAGS+= -lpthread 
 
@@ -204,6 +209,10 @@ CXXFLAGS+= $(INCLUDE) $(OPTS)
 	@echo "[CXX] $(TAG) $<"
 	@$(CXX) $(CXXFLAGS) -c $< -o $(BUILD)/$@
 
+%.o: %.cc
+	@echo "[CXX] $(TAG) $<"
+	@$(CXX) $(CXXFLAGS) -c $< -o $(BUILD)/$@
+	
 ############################################
 #Targets
 ############################################

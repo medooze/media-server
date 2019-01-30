@@ -773,6 +773,7 @@ int DTLSConnection::Write(const BYTE *buffer, DWORD size)
 	}
 	//DumpAsC(msg,len);
 	Debug("-sctp of len %d\n",len);
+	if (len) DumpAsC(msg,len);
 	//Pass data to sctp
 	if (len && !sctp.WritePacket(msg,len))
 		return Error("sctp parse error");
