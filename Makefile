@@ -8,6 +8,12 @@ OPTS+= -fPIC -DPIC -msse -msse2 -msse3 -msse4.1 -DSPX_RESAMPLE_EXPORT= -DRANDOM_
 OS = $(shell uname -s)
 PLATFORM = $(shell uname -p)
 
+ifeq ($(OS),"Linux")
+OPTS+=-DHAVE_STD_ALIGNED_ALLOC -DLINUX
+else
+OPTS+=-DDARWIN
+endif
+
 #DEBUG
 ifeq ($(DEBUG),yes)
 	TAG=debug

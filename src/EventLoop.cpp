@@ -10,9 +10,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <signal.h>
-#include <cassert>
-#include <pthread.h>
-#include <bits/stl_vector.h>
 
 #include "log.h"
 
@@ -97,7 +94,7 @@ bool EventLoop::Stop()
 	//If it was not external
 	if (thread.joinable())
 	{
-		//Signal the pthread this will cause the poll call to exit
+		//Signal the thread this will cause the poll call to exit
 		Signal();
 
 		//Nulifi thread
@@ -124,7 +121,7 @@ void EventLoop::Send(const uint32_t ipAddr, const uint16_t port, Buffer&& buffer
 	//Move it back to sending queue
 	sending.enqueue(std::move(send));
 	
-	//Signal the pthread this will cause the poll call to exit
+	//Signal the thread this will cause the poll call to exit
 	Signal();
 }
 
@@ -135,7 +132,7 @@ void EventLoop::Async(std::function<void(std::chrono::milliseconds)> func)
 	//Add to pending taks
 	tasks.enqueue(func);
 	
-	//Signal the pthread this will cause the poll call to exit
+	//Signal the thread this will cause the poll call to exit
 	Signal();
 	
 	//UltraDebug("<EventLoop::Async()\n");

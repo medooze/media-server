@@ -373,9 +373,6 @@
           <in>websocketserver.h</in>
         </df>
         <in>ActiveSpeakerDetector.h</in>
-        <in>Buffer.h</in>
-        <in>BufferReader.h</in>
-        <in>BufferWritter.h</in>
         <in>CPUMonitor.h</in>
         <in>DTLSICETransport.h</in>
         <in>Datachannels.h</in>
@@ -5585,12 +5582,6 @@
       <item path="ext/webrtc/typedefs.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/ActiveSpeakerDetector.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/Buffer.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/BufferReader.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/BufferWritter.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/CPUMonitor.h" ex="false" tool="3" flavor2="0">
       </item>
