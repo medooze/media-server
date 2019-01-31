@@ -21,10 +21,10 @@ public:
 	
 private:
 	QWORD *packets;
-	WORD size;
-	WORD len;
-	DWORD first;
-	DWORD total;
+	WORD size   = 0;
+	WORD len    = 0;
+	DWORD first = 0;
+	DWORD total = 0;
 };
 
 

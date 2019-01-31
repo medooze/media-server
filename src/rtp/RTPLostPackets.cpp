@@ -8,11 +8,6 @@ RTPLostPackets::RTPLostPackets(WORD num)
 	packets = (QWORD*) malloc(num*sizeof(QWORD));
 	//Set to 0
 	memset(packets,0,size*sizeof(QWORD));
-	//No first packet
-	first = 0;
-	//None yet
-	len = 0;
-	total = 0;
 }
 
 void RTPLostPackets::Reset()

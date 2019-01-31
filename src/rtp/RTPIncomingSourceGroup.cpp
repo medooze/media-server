@@ -11,6 +11,8 @@ RTPIncomingSourceGroup::RTPIncomingSourceGroup(MediaFrame::Type type,TimeService
 	timeService(timeService),
 	losts(128)
 {
+	//Store type
+	this->type = type;
 	//Small initial bufer of 100ms
 	packets.SetMaxWaitTime(100);
 	//LIsten remote rate events
@@ -195,7 +197,7 @@ void RTPIncomingSourceGroup::DispatchPackets(uint64_t time)
 		}
 	}
 	//Update stats
-	losts         = losts.GetTotal();
+	lost          = losts.GetTotal();
 	minWaitedTime = packets.GetMinWaitedime();
 	maxWaitedTime = packets.GetMaxWaitedTime();
 	avgWaitedTime = packets.GetAvgWaitedTime();
