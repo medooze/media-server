@@ -80,6 +80,7 @@ public:
 	const char* GetLocalPwd()	const { return iceLocalPwd;		};
 	
 	virtual void onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMasterKey,DWORD localMasterKeySize,BYTE* remoteMasterKey,DWORD remoteMasterKeySize)  override;
+	virtual void onDTLSPendingData() override;
 	virtual int onData(const ICERemoteCandidate* candidate,const BYTE* data,DWORD size)  override;
 	
 	DWORD GetRTT() const { return rtt; }

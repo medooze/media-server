@@ -144,7 +144,7 @@ VPATH +=  %.cpp $(SRCDIR)/ext/libdatachannels/src
 VPATH +=  %.cc  $(SRCDIR)/ext/crc32c/src/
 
 
-INCLUDE+= -I$(SRCDIR)/src -I$(SRCDIR)/include/ $(VADINCLUDE) -I$(SRCDIR)/ext/libdatachannels/src -I$(SRCDIR)/ext/libdatachannels/src/internal -I$(SRCDIR)/ext/crc32c/config/${OS}-${PLATFORM}/
+INCLUDE+= -I$(SRCDIR)/src -I$(SRCDIR)/include/ $(VADINCLUDE) -I$(SRCDIR)/ext/libdatachannels/src -I$(SRCDIR)/ext/libdatachannels/src/internal -I$(SRCDIR)/ext/crc32c/include -I$(SRCDIR)/ext/crc32c/config/${OS}-${PLATFORM}/
 LDFLAGS+= -lpthread 
 LDLIBFLAGS+= -lpthread 
 

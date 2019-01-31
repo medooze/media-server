@@ -457,8 +457,12 @@ int DTLSConnection::Init()
 	timeout = timeService.CreateTimer([this](...){
 		//Check if still inited
 		if (inited)
+		{
 			//Run timeut
 			DTLSv1_handle_timeout(ssl);
+			//Check if there is any pending data
+			CheckPending();
+		}
 	});
 	
 	//Now we are ready to read and write DTLS packets.
@@ -471,6 +475,27 @@ int DTLSConnection::Init()
 	struct timeval tv = {0,0};
 	if (DTLSv1_get_timeout(ssl, &tv))
 		timeout->Again(std::chrono::milliseconds(getDifTime(&tv)));
+	
+	//Start sctp transport
+	sctp.OnPendingData([this](...){
+		Log("-sctp::OnPendingData() [ssl:%p]\n",ssl);
+
+		if (ssl)
+		{
+			BYTE msg[MTU];
+			size_t len;
+			//Read from sctp transport
+			while((len = sctp.ReadPacket(msg,MTU)))
+			{
+				Log("-sctp::OnPendingData() [len:%p]\n",len);
+				//Write it to the ssl context
+				SSL_write(ssl,msg,len);
+			}
+			
+			//Check if there is any pending data
+			CheckPending();
+		}
+	});
 
 	Log("<DTLSConnection::Init()\n");
 
@@ -791,14 +816,9 @@ int DTLSConnection::Write(const BYTE *buffer, DWORD size)
 	return 1;
 }
 
-/*/
-int DTLSConnection::CheckPending()
+void DTLSConnection::CheckPending()
 {
-	if (!write_bio)
-		return 0;
-	
-	HandleTimeout();
-
-	return BIO_ctrl_pending(write_bio);
+	if (BIO_ctrl_pending(write_bio))
+		listener.onDTLSPendingData();
 }
-*/
+

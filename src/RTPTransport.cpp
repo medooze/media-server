@@ -1156,3 +1156,21 @@ void RTPTransport::onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMasterKey,
 			Error("-TPTransport::onDTLSSetup() Unknown suite\n");
 	}
 }
+
+void RTPTransport::onDTLSPendingData()
+{
+	//Until depleted
+	while(true)
+	{
+		Buffer buffer(MTU);
+		//Read from dtls
+		size_t len = dtls.Read(buffer.GetData(),buffer.GetCapacity());
+		if (!len)
+			break;
+		//resize
+		buffer.SetSize(len);
+		//Send response
+		rtpLoop.Send(ntohl(sendAddr.sin_addr.s_addr),ntohs(sendAddr.sin_port),std::move(buffer));
+	}
+		
+}

@@ -421,7 +421,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 			//Execute it
 			timer->callback(now);
 			//If we have to reschedule it again
-			if (timer->repeat.count())
+			if (timer->repeat.count() && !timer->next.count())
 			{
 				//Set next
 				timer->next = now + timer->repeat;

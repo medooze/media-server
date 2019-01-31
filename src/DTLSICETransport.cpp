@@ -60,6 +60,26 @@ DTLSICETransport::~DTLSICETransport()
 	Stop();
 }
 
+
+void DTLSICETransport::onDTLSPendingData()
+{
+	//Until depleted
+	while(active)
+	{
+		Buffer buffer(MTU);
+		//Read from dtls
+		size_t len=dtls.Read(buffer.GetData(),buffer.GetCapacity());
+		if (!len)
+			break;
+		//resize
+		buffer.SetSize(len);
+		Log("-sctp send [%d]\n",len);
+		::Dump(buffer.GetData(),buffer.GetSize());
+		//Send it back
+		sender->Send(active,std::move(buffer));
+	}
+}
+
 int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* data,DWORD size)
 {
 	RTPHeader header;

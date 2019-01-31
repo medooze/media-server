@@ -54,6 +54,7 @@ public:
 		virtual ~Listener(){};
 	public:
 		//Interface
+		virtual void onDTLSPendingData() = 0;
 		virtual void onDTLSSetup(Suite suite,BYTE* localMasterKey,DWORD localMasterKeySize,BYTE* remoteMasterKey,DWORD remoteMasterKeySize) = 0;
 	};
 
@@ -102,6 +103,7 @@ public:
 private:
 	static int GenerateCertificate();
 	static int ReadCertificate();
+	
 private:
 	typedef std::map<Hash, std::string> LocalFingerPrints;
 	typedef std::vector<Hash> AvailableHashes;
@@ -140,7 +142,7 @@ public:
 
 protected:
 	int  SetupSRTP();
-
+	void CheckPending();
 private:
 	Listener& listener;
 	TimeService& timeService;
