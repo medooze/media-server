@@ -5,6 +5,8 @@
 #include "VideoLayerSelector.h"
 #include "remoterateestimator.h"
 
+using namespace std::chrono_literals;
+
 RTPIncomingSourceGroup::RTPIncomingSourceGroup(MediaFrame::Type type,TimeService& timeService) :
 	timeService(timeService),
 	losts(128)
@@ -105,17 +107,17 @@ int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet, DWORD siz
 
 void RTPIncomingSourceGroup::ResetPackets()
 {
-	//Lock sources accumulators
-	ScopedLock scoped(mutex);
-	
-	//Reset packet queue and lost count
-	packets.Reset();
-	losts.Reset();
-	//Reset stats
-	lost = 0;
-	minWaitedTime = 0;
-	maxWaitedTime = 0;
-	avgWaitedTime = 0;
+	//Do it async
+	timeService.Async([this](...){
+		//Reset packet queue and lost count
+		packets.Reset();
+		losts.Reset();
+		//Reset stats
+		lost = 0;
+		minWaitedTime = 0;
+		maxWaitedTime = 0;
+		avgWaitedTime = 0;
+	});
 }
 
 void RTPIncomingSourceGroup::Update()
@@ -136,11 +138,6 @@ void RTPIncomingSourceGroup::Update(QWORD now)
 	for (auto& entry : media.layers)
 		//Update bitrate also
 		entry.second.acumulator.Update(now);
-	//Update stats
-	lost = GetCurrentLost();
-	minWaitedTime = GetMinWaitedTime();
-	maxWaitedTime = GetMaxWaitedTime();
-	avgWaitedTime = GetAvgWaitedTime();
 }
 
 void RTPIncomingSourceGroup::SetRTT(DWORD rtt)
@@ -149,6 +146,8 @@ void RTPIncomingSourceGroup::SetRTT(DWORD rtt)
 	this->rtt = rtt;
 	//Set max packet wait time
 	packets.SetMaxWaitTime(fmin(500,fmax(120,rtt*4)+40));
+	//Dispatch packets with new timer now
+	dispatchTimer->Again(0ms);
 	//If using remote rate estimator
 	if (remb)
 		//Add estimation
@@ -180,24 +179,33 @@ void RTPIncomingSourceGroup::Start(bool remb)
 void RTPIncomingSourceGroup::DispatchPackets(uint64_t time)
 {
 	//UltraDebug("-RTPIncomingSourceGroup::DispatchPackets() | [time:%llu]\n",time);
-	
-	//Block listeners
-	ScopedLock scoped(listenerMutex);
-	
-	//Deliver all pending packets at once
-	for (auto packet = packets.GetOrdered(getTimeMS()); packet; packet = packets.GetOrdered(getTimeMS()))
 	{
-		//We need to adjust the seq num due the in band probing packets
-		packet->SetExtSeqNum(packet->GetExtSeqNum() - packets.GetNumDiscardedPackets());
-		//Deliver to all listeners
-		for (auto listener : listeners)
-			//Dispatch rtp packet
-			listener->onRTP(this,packet);
+		//Block listeners
+		ScopedLock scoped(listenerMutex);
+
+		//Deliver all pending packets at once
+		for (auto packet = packets.GetOrdered(getTimeMS()); packet; packet = packets.GetOrdered(getTimeMS()))
+		{
+			//We need to adjust the seq num due the in band probing packets
+			packet->SetExtSeqNum(packet->GetExtSeqNum() - packets.GetNumDiscardedPackets());
+			//Deliver to all listeners
+			for (auto listener : listeners)
+				//Dispatch rtp packet
+				listener->onRTP(this,packet);
+		}
 	}
+	//Update stats
+	losts         = losts.GetTotal();
+	minWaitedTime = packets.GetMinWaitedime();
+	maxWaitedTime = packets.GetMaxWaitedTime();
+	avgWaitedTime = packets.GetAvgWaitedTime();
 }
 
 void RTPIncomingSourceGroup::Stop()
 {
+	//Stop timer
+	dispatchTimer->Cancel();
+	
 	ScopedLock scoped(listenerMutex);
 	
 	//Deliver to all listeners

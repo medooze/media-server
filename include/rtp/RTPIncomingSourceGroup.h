@@ -46,10 +46,10 @@ public:
 	
 	WORD SetRTTRTX(uint64_t time);
 	
-	DWORD GetCurrentLost()			const { return losts.GetTotal();		}
-	DWORD GetMinWaitedTime()		const { return packets.GetMinWaitedime();	}
-	DWORD GetMaxWaitedTime()		const { return packets.GetMaxWaitedTime();	}
-	long double GetAvgWaitedTime()		const {	return packets.GetAvgWaitedTime();	}
+	DWORD GetCurrentLost()			const { return lost;		}
+	DWORD GetMinWaitedTime()		const { return minWaitedTime;	}
+	DWORD GetMaxWaitedTime()		const { return maxWaitedTime;	}
+	long double GetAvgWaitedTime()		const {	return avgWaitedTime;	}
 	
 	virtual void onTargetBitrateRequested(DWORD bitrate) override;
 private:
