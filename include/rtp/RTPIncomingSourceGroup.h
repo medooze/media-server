@@ -75,7 +75,6 @@ private:
 	RTPLostPackets	losts;
 	RTPBuffer	packets;
 	Mutex		listenerMutex;
-	Mutex		mutex;
 	std::set<Listener*>  listeners;
 	RemoteRateEstimator remoteRateEstimator;
 	WORD  rttrtxSeq	 = 0 ;

@@ -320,9 +320,13 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 	const uint8_t* host = (const uint8_t*)&ip;
 	snprintf(remote,sizeof(remote),"%hu.%hu.%hu.%hu:%hu",get1(host,3), get1(host,2), get1(host,1), get1(host,0), port);
 	
+	//UltraDebug("-RTPBundleTransport::OnRead() | [remote:%s,size:%u]\n",remote,size);
+	
 	//Check if it looks like a STUN message
 	if (STUNMessage::IsSTUN(data,size))
 	{
+		UltraDebug("-RTPBundleTransport::OnRead() | stun\n");
+		
 		//Parse it
 		STUNMessage *stun = STUNMessage::Parse(data,size);
 
@@ -341,6 +345,8 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 		//If it is a request
 		if (type==STUNMessage::Request && method==STUNMessage::Binding)
 		{
+			//UltraDebug("-RTPBundleTransport::OnRead() | Binding request\n");
+			
 			//Get username
 			STUNMessage::Attribute* attr = stun->GetAttribute(STUNMessage::Attribute::Username);
 
@@ -375,7 +381,7 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 			}
 			
 			//Check wether we have to reply to this message or not
-			bool reply = !connection->disableSTUNKeepAlive;
+			bool reply = !(connection->disableSTUNKeepAlive && transport->HasActiveRemoteCandidate());
 			
 			//Get attribute
 			STUNMessage::Attribute* priority = stun->GetAttribute(STUNMessage::Attribute::Priority);
@@ -485,11 +491,13 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 	ice->onData(data,size);
 }
 
-int RTPBundleTransport::AddRemoteCandidate(const std::string& username,const char* ip, WORD port)
+int RTPBundleTransport::AddRemoteCandidate(const std::string& username,const char* host, WORD port)
 {
-	//Get remote ip:port address
-	std::string remote = std::string(ip) + ":" + std::to_string(port);
-		
+	Log("-RTPBundleTransport::AddRemoteCandidate [username:%s,candidate:%s:%u}\n",username.c_str(),host,port);
+	
+	//Copy ip 
+	auto ip = std::string(host);
+	
 	//Async
 	loop.Async([=](...){
 		//Check if we have an ICE transport for that username
@@ -503,6 +511,9 @@ int RTPBundleTransport::AddRemoteCandidate(const std::string& username,const cha
 			//Done
 			return;
 		}
+		
+		//Get remote ip:port address
+		std::string remote = ip + ":" + std::to_string(port);
 
 		//Get ice connection
 		Connection* connection = it->second;
@@ -518,7 +529,7 @@ int RTPBundleTransport::AddRemoteCandidate(const std::string& username,const cha
 		}
 
 		//Create new candidate
-		ICERemoteCandidate* candidate = new ICERemoteCandidate(ip,port,transport);
+		ICERemoteCandidate* candidate = new ICERemoteCandidate(ip.c_str(),port,transport);
 		//Add candidate and add it to the maps
 		candidates[remote] = candidate;
 		connection->candidates.insert(candidate);

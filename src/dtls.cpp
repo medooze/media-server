@@ -453,8 +453,15 @@ int DTLSConnection::Init()
 	//New connection
 	connection = CONNECTION_NEW;
 	
+	//Now we are ready to read and write DTLS packets.
+	inited = true;
+	
+	//Start handshake
+	SSL_do_handshake(ssl);
+	
 	//Start timeout
-	timeout = timeService.CreateTimer([this](...){
+	timeout = timeService.CreateTimer(0ms, [this](...){
+		//UltraDebug("-DTLSConnection::Timeout()\n");
 		//Check if still inited
 		if (inited)
 		{
@@ -465,20 +472,9 @@ int DTLSConnection::Init()
 		}
 	});
 	
-	//Now we are ready to read and write DTLS packets.
-	inited = true;
-	
-	//Start handshake
-	SSL_do_handshake(ssl);
-
-	//Get next timeout
-	struct timeval tv = {0,0};
-	if (DTLSv1_get_timeout(ssl, &tv))
-		timeout->Again(std::chrono::milliseconds(getDifTime(&tv)));
-	
 	//Start sctp transport
 	sctp.OnPendingData([this](...){
-		Log("-sctp::OnPendingData() [ssl:%p]\n",ssl);
+		//UltraDebug("-sctp::OnPendingData() [ssl:%p]\n",ssl);
 
 		if (ssl)
 		{
@@ -487,7 +483,8 @@ int DTLSConnection::Init()
 			//Read from sctp transport
 			while((len = sctp.ReadPacket(msg,MTU)))
 			{
-				Log("-sctp::OnPendingData() [len:%p]\n",len);
+				//UltraDebug("-sctp::OnPendingData() [len:%d]\n",len);
+				//DumpAsC(msg,len);
 				//Write it to the ssl context
 				SSL_write(ssl,msg,len);
 			}
@@ -615,6 +612,8 @@ void DTLSConnection::SetRemoteFingerprint(Hash hash, const char *fingerprint)
 
 int DTLSConnection::Read(BYTE* data,DWORD size)
 {
+	//UltraDebug("-DTLSConnection::Read() | [pending:%d]\n",BIO_ctrl_pending(write_bio));
+	
 	if (! DTLSConnection::hasDTLS) 
 		return Error("-DTLSConnection::Read() | no DTLS\n");
 
@@ -772,6 +771,8 @@ int DTLSConnection::SetupSRTP()
 
 int DTLSConnection::Write(const BYTE *buffer, DWORD size)
 {
+	//UltraDebug("-DTLSConnection::Write()\n");
+	
 	if (!DTLSConnection::hasDTLS)
 		return Error("-DTLSConnection::Write() | no DTLS\n");
 
@@ -818,6 +819,8 @@ int DTLSConnection::Write(const BYTE *buffer, DWORD size)
 
 void DTLSConnection::CheckPending()
 {
+	//UltraDebug("-DTLSConnection::CheckPending()\n");
+	//Check if there is any pending 
 	if (BIO_ctrl_pending(write_bio))
 		listener.onDTLSPendingData();
 }

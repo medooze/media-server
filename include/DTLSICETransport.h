@@ -62,6 +62,7 @@ public:
 	void Reset();
 	
 	void ActivateRemoteCandidate(ICERemoteCandidate* candidate,bool useCandidate, DWORD priority);
+	bool HasActiveRemoteCandidate() const { return active;	}
 	int SetRemoteCryptoDTLS(const char *setup,const char *hash,const char *fingerprint);
 	int SetLocalSTUNCredentials(const char* username, const char* pwd);
 	int SetRemoteSTUNCredentials(const char* username, const char* pwd);

@@ -63,21 +63,26 @@ DTLSICETransport::~DTLSICETransport()
 
 void DTLSICETransport::onDTLSPendingData()
 {
+	//UltraDebug(">DTLSConnection::onDTLSPendingData() [active:%p]\n",active);
 	//Until depleted
 	while(active)
 	{
 		Buffer buffer(MTU);
 		//Read from dtls
 		size_t len=dtls.Read(buffer.GetData(),buffer.GetCapacity());
+		//Check result
 		if (!len)
 			break;
-		//resize
+		//Set read size
 		buffer.SetSize(len);
-		Log("-sctp send [%d]\n",len);
-		::Dump(buffer.GetData(),buffer.GetSize());
+		//Update bitrate
+		outgoingBitrate.Update(getTimeMS(),len);
+		//Send
+		Log("-DTLSConnection::onDTLSPendingData() | dtls send [len:%d]\n",len);
 		//Send it back
 		sender->Send(active,std::move(buffer));
 	}
+	//UltraDebug("<DTLSConnection::onDTLSPendingData() | no more data\n");
 }
 
 int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* data,DWORD size)
@@ -938,7 +943,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 void  DTLSICETransport::ActivateRemoteCandidate(ICERemoteCandidate* candidate,bool useCandidate, DWORD priority)
 {
 	//Debug
-	//UltraDebug("-DTLSICETransport::ActivateRemoteCandidate() | Remote candidate [%s:%hu,use:%d,prio:%d]\n",candidate->GetIP(),candidate->GetPort(),useCandidate,priority);
+	UltraDebug("-DTLSICETransport::ActivateRemoteCandidate() | Remote candidate [%s:%hu,use:%d,prio:%d,active:%p]\n",candidate->GetIP(),candidate->GetPort(),useCandidate,priority,active);
 	
 	//Should we set this candidate as the active one
 	if (!active || (useCandidate && candidate!=active))
@@ -952,25 +957,8 @@ void  DTLSICETransport::ActivateRemoteCandidate(ICERemoteCandidate* candidate,bo
 	
 	// Needed for DTLS in client mode (otherwise the DTLS "Client Hello" is not sent over the wire)
 	if (dtls.GetSetup()!=DTLSConnection::SETUP_PASSIVE) 
-	{
-		//Send buffer
-		Buffer buffer(MTU);
-		
-		//Read response
-		DWORD len  = dtls.Read(buffer.GetData(),buffer.GetCapacity());
-		
-		//Check it
-		if (len<=0)
-			//DOne
-			return;
-		
-		//Update bitrate
-		outgoingBitrate.Update(getTimeMS(),len);
-		//Set buffer size
-		buffer.SetSize(len);
-		//Send to bundle transport
-		sender->Send(active,std::move(buffer));
-	}
+		//Trigger manually
+		onDTLSPendingData();
 }
 
 void DTLSICETransport::SetLocalProperties(const Properties& properties)
@@ -2394,7 +2382,8 @@ void DTLSICETransport::Start()
 	
 	//Get init time
 	getUpdDifTime(&ini);
-	
+	dcOptions.localPort = 5000;
+	dcOptions.remotePort = 5000;
 	//Start
 	endpoint.Init(dcOptions);
 	

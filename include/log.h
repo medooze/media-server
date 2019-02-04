@@ -239,6 +239,9 @@ inline void DumpAsC(const BYTE *data,DWORD size)
 	}
 	switch(size%4)
 	{
+		case 0:
+			Debug("\t0x%.2x, 0x%.2x, 0x%.2x, 0x%.2x\n",data[size-4],data[size-3],data[size-2],data[size-1]);
+			break;
 		case 1:
 			Debug("\t0x%.2x\n",data[size-1]);
 			break;
@@ -247,9 +250,6 @@ inline void DumpAsC(const BYTE *data,DWORD size)
 			break;
 		case 3:
 			Debug("\t0x%.2x, 0x%.2x, 0x%.2x\n",data[size-3],data[size-2],data[size-1]);
-			break;
-		case 4:
-			Debug("\t0x%.2x, 0x%.2x, 0x%.2x, 0x%.2x\n",data[size-4],data[size-3],data[size-2],data[size-1]);
 			break;
 	}
 	Debug("};\n",size);
