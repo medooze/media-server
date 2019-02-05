@@ -127,9 +127,29 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,const RTPPacket::
 	if (!sender)
 		//Nothing
 		return;
+	
+	//Check if source has changed
+	if (source && packet->GetSSRC()!=source)
+		//We need to reset
+		reset = true;
+	
 	//If we need to reset
 	if (reset)
 	{
+		//IF last was not completed
+		if (!lastCompleted && type==MediaFrame::Video)
+		{
+			//Create new RTP packet
+			RTPPacket::shared rtp = std::make_shared<RTPPacket>(media,codec);
+			//Set data
+			rtp->SetPayloadType(type);
+			rtp->SetSSRC(source);
+			rtp->SetExtSeqNum(lastExtSeqNum++);
+			rtp->SetMark(true);
+			rtp->SetTimestamp(lastTimestamp);
+			//Send it
+			sender->Enqueue(rtp);
+		}
 		//No source
 		lastCompleted = true;
 		source = 0;
@@ -149,31 +169,6 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,const RTPPacket::
 		
 		//Reseted
 		reset = false;
-	}
-	
-	//Check if the source has changed
-	if (source && packet->GetSSRC()!=source)
-	{
-		//IF last was not completed
-		if (!lastCompleted && type==MediaFrame::Video)
-		{
-			//Create new RTP packet
-			RTPPacket::shared rtp = std::make_shared<RTPPacket>(media,codec);
-			//Set data
-			rtp->SetPayloadType(type);
-			rtp->SetSSRC(source);
-			rtp->SetExtSeqNum(lastExtSeqNum++);
-			rtp->SetMark(true);
-			rtp->SetTimestamp(lastTimestamp);
-			//Send it
-			sender->Enqueue(rtp);
-		}
-		//Reset first paquet
-		firstExtSeqNum = 0;
-		//Not selecting
-		if (selector)
-			//Delete and reset
-			selector = nullptr;
 	}
 	
 	//Update source

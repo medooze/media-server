@@ -13,7 +13,12 @@ VP8LayerSelector::VP8LayerSelector()
 
 void VP8LayerSelector::SelectTemporalLayer(BYTE id)
 {
-	Debug("-SelectTemporalLayer [layerId:%d,prev:%d,current:%d]\n",id,nextTemporalLayerId,temporalLayerId);
+	//Check if its the same
+	if (id==nextTemporalLayerId)
+		//Do nothing
+		return;
+	//Log
+	UltraDebug("-SelectTemporalLayer [layerId:%d,prev:%d,current:%d]\n",id,nextTemporalLayerId,temporalLayerId);
 	//Set next
 	nextTemporalLayerId = id;
 }

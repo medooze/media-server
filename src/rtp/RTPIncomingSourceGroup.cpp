@@ -109,17 +109,14 @@ int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet, DWORD siz
 
 void RTPIncomingSourceGroup::ResetPackets()
 {
-	//Do it async
-	timeService.Async([this](...){
-		//Reset packet queue and lost count
-		packets.Reset();
-		losts.Reset();
-		//Reset stats
-		lost = 0;
-		minWaitedTime = 0;
-		maxWaitedTime = 0;
-		avgWaitedTime = 0;
-	});
+	//Reset packet queue and lost count
+	packets.Reset();
+	losts.Reset();
+	//Reset stats
+	lost = 0;
+	minWaitedTime = 0;
+	maxWaitedTime = 0;
+	avgWaitedTime = 0;
 }
 
 void RTPIncomingSourceGroup::Update()

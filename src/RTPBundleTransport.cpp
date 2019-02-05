@@ -325,7 +325,7 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 	//Check if it looks like a STUN message
 	if (STUNMessage::IsSTUN(data,size))
 	{
-		UltraDebug("-RTPBundleTransport::OnRead() | stun\n");
+		//UltraDebug("-RTPBundleTransport::OnRead() | stun\n");
 		
 		//Parse it
 		STUNMessage *stun = STUNMessage::Parse(data,size);
@@ -361,7 +361,7 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 			{
 				//TODO: Reject
 				//Error
-				Error("-RTPBundleTransport::Read ice username not found [%s}\n",username.c_str());
+				Debug("-RTPBundleTransport::Read ice username not found [%s}\n",username.c_str());
 				//Done
 				return;
 			}
@@ -375,7 +375,7 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 			if (!stun->HasAttribute(STUNMessage::Attribute::Priority))
 			{
 				//Error
-				Error("-STUN Message without priority attribute");
+				Debug("-STUN Message without priority attribute");
 				//DOne
 				return;
 			}
@@ -479,7 +479,7 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 	if (it==candidates.end())
 	{
 		//Error
-		Error("-RTPBundleTransport::ReadRTP() | No registered ICE candidate for [%s]\n",remote);
+		Debug("-RTPBundleTransport::ReadRTP() | No registered ICE candidate for [%s]\n",remote);
 		//DOne
 		return;
 	}
@@ -498,7 +498,7 @@ int RTPBundleTransport::AddRemoteCandidate(const std::string& username,const cha
 	//Copy ip 
 	auto ip = std::string(host);
 	
-	//Async
+	//Execute async and wait for completion
 	loop.Async([=](...){
 		//Check if we have an ICE transport for that username
 		auto it = connections.find(username);
@@ -562,7 +562,7 @@ int RTPBundleTransport::AddRemoteCandidate(const std::string& username,const cha
 
 		//Clean request
 		delete(request);
-	});
+	}).wait();
 	
 	return 1;
 }

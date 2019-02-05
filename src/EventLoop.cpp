@@ -125,17 +125,36 @@ void EventLoop::Send(const uint32_t ipAddr, const uint16_t port, Buffer&& buffer
 	Signal();
 }
 
-void EventLoop::Async(std::function<void(std::chrono::milliseconds)> func)
+std::future<void> EventLoop::Async(std::function<void(std::chrono::milliseconds)> func)
 {
 	//UltraDebug(">EventLoop::Async()\n");
 	
-	//Add to pending taks
-	tasks.enqueue(func);
+	//Create task
+	auto task = std::make_pair(std::promise<void>(),func);
 	
-	//Signal the thread this will cause the poll call to exit
-	Signal();
+	//Get future before moving the promise
+	auto future = task.first.get_future();
+	
+	//If not in the same thread
+	if (std::this_thread::get_id()!=thread.get_id())
+	{
+		//Add to pending taks
+		tasks.enqueue(std::move(task));
+
+		//Signal the thread this will cause the poll call to exit
+		Signal();
+	} else {
+		//Call now otherwise
+		task.second(GetNow());
+		
+		//Resolve the promise
+		task.first.set_value();
+	}
 	
 	//UltraDebug("<EventLoop::Async()\n");
+	
+	//Return the future for the promise
+	return future;
 }
 
 Timer::shared EventLoop::CreateTimer(std::function<void(std::chrono::milliseconds)> callback)
@@ -384,7 +403,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 		}
 		
 		//Run queued task
-		std::function<void(std::chrono::milliseconds)> task;
+		std::pair<std::promise<void>,std::function<void(std::chrono::milliseconds)>> task;
 		//Get all pending taks
 		while (tasks.try_dequeue(task))
 		{
@@ -392,7 +411,9 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 			//Update now
 			auto now = Now();
 			//Execute it
-			task(now);
+			task.second(now);
+			//Resolce promise
+			task.first.set_value();
 		}
 
 		//Update now

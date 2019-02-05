@@ -62,7 +62,7 @@ public:
 	virtual Timer::shared CreateTimer(std::function<void(std::chrono::milliseconds)> callback) override;
 	virtual Timer::shared CreateTimer(const std::chrono::milliseconds& ms, std::function<void(std::chrono::milliseconds)> timeout) override;
 	virtual Timer::shared CreateTimer(const std::chrono::milliseconds& ms, const std::chrono::milliseconds& repeat, std::function<void(std::chrono::milliseconds)> timeout) override;
-	virtual void Async(std::function<void(std::chrono::milliseconds)> func) override;
+	virtual std::future<void> Async(std::function<void(std::chrono::milliseconds)> func) override;
 	
 	void Send(const uint32_t ipAddr, const uint16_t port, Buffer&& buffer);
 	void Run(const std::chrono::milliseconds &duration = std::chrono::milliseconds::max());
@@ -97,7 +97,7 @@ private:
 	volatile bool	running = false;
 	std::chrono::milliseconds now = 0ms;
 	moodycamel::ConcurrentQueue<SendBuffer>	sending;
-	moodycamel::ConcurrentQueue<std::function<void(std::chrono::milliseconds)>>  tasks;
+	moodycamel::ConcurrentQueue<std::pair<std::promise<void>,std::function<void(std::chrono::milliseconds)>>>  tasks;
 	std::multimap<std::chrono::milliseconds,TimerImpl::shared> timers;
 	
 };

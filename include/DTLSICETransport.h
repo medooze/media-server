@@ -173,8 +173,6 @@ private:
 	char*	iceLocalUsername	= nullptr;
 	char*	iceLocalPwd		= nullptr;
 	
-	Use	incomingUse;
-	Use	outgoingUse;
 	Acumulator incomingBitrate;
 	Acumulator outgoingBitrate;
 	

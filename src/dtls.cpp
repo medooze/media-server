@@ -660,7 +660,8 @@ int DTLSConnection::Renegotiate()
 
 			rekeyid = -1;
 		}
-	});
+	}).wait();
+	
 	return 1;
 }
 
