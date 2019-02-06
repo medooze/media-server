@@ -483,8 +483,8 @@ int DTLSConnection::Init()
 			//Read from sctp transport
 			while((len = sctp.ReadPacket(msg,MTU)))
 			{
-				//UltraDebug("-sctp::OnPendingData() [len:%d]\n",len);
-				//DumpAsC(msg,len);
+				UltraDebug("-sctp::OnPendingData() [len:%d]\n",len);
+				DumpAsC(msg,len);
 				//Write it to the ssl context
 				SSL_write(ssl,msg,len);
 			}
