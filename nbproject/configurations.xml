@@ -386,6 +386,7 @@
         <in>RTPBundleTransport.h</in>
         <in>RTPSmoother.h</in>
         <in>RTPTransport.h</in>
+        <in>SRTPSession.h</in>
         <in>SendSideBandwidthEstimation.h</in>
         <in>TimeService.h</in>
         <in>UDPDumper.h</in>
@@ -626,6 +627,7 @@
         <in>RTPBundleTransport.cpp</in>
         <in>RTPSmoother.cpp</in>
         <in>RTPTransport.cpp</in>
+        <in>SRTPSession.cpp</in>
         <in>SendSideBandwidthEstimation.cpp</in>
         <in>VideoLayerSelector.cpp</in>
         <in>appmixer.cpp</in>
@@ -816,6 +818,8 @@
       </item>
       <item path="include/PCAPTransportEmulator.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="include/SRTPSession.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="include/SendSideBandwidthEstimation.h"
             ex="false"
             tool="3"
@@ -880,6 +884,8 @@
       <item path="src/RTPTransport.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="3">
         </ccTool>
+      </item>
+      <item path="src/SRTPSession.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/SendSideBandwidthEstimation.cpp"
             ex="false"
@@ -1503,6 +1509,8 @@
               <pElem>src</pElem>
               <pElem>include</pElem>
               <pElem>ext</pElem>
+              <pElem>ext/libdatachannels/src</pElem>
+              <pElem>ext/crc32c/include</pElem>
             </incDir>
           </ccTool>
         </makeTool>
@@ -1887,6 +1895,8 @@
       </folder>
       <item path="include/EventLoop.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="include/SRTPSession.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="include/SendSideBandwidthEstimation.h"
             ex="false"
             tool="3"
@@ -2141,6 +2151,8 @@
             <Elem>__STDC_CONSTANT_MACROS</Elem>
           </preprocessorList>
         </ccTool>
+      </item>
+      <item path="src/SRTPSession.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/SendSideBandwidthEstimation.cpp"
             ex="false"
@@ -5609,6 +5621,8 @@
       </item>
       <item path="include/RTPTransport.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="include/SRTPSession.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="include/SendSideBandwidthEstimation.h"
             ex="false"
             tool="3"
@@ -5917,6 +5931,8 @@
       <item path="src/RTPSmoother.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/RTPTransport.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/SRTPSession.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/SendSideBandwidthEstimation.cpp"
             ex="false"

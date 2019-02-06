@@ -15,9 +15,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <poll.h>
 #include <list>
-#include <srtp2/srtp.h>
 
 #include "config.h"
 #include "stunmessage.h"
@@ -31,6 +29,7 @@
 #include "EventLoop.h"
 #include "Datachannels.h"
 #include "Endpoint.h"
+#include "SRTPSession.h"
 
 class DTLSICETransport : 
 	public RTPSender,
@@ -155,8 +154,8 @@ private:
 	Maps		sendMaps;
 	Maps		recvMaps;
 	ICERemoteCandidate* active			= nullptr;
-	srtp_t		send				= nullptr;
-	srtp_t		recv				= nullptr;
+	SRTPSession	send;
+	SRTPSession	recv;
 	WORD		transportSeqNum			= 0;
 	WORD		feedbackPacketCount		= 0;
 	DWORD		lastFeedbackPacketExtSeqNum	= 0;

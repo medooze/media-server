@@ -26,7 +26,6 @@
 #include "tools.h"
 #include "codecs.h"
 #include "rtp.h"
-#include "rtpsession.h"
 #include "stunmessage.h"
 #include <openssl/opensslconf.h>
 #include <openssl/ossl_typ.h>
@@ -89,7 +88,6 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 {
 	RTPHeader header;
 	RTPHeaderExtension extension;
-	DWORD len = size;
 
 	//Acumulate bitrate
 	incomingBitrate.Update(getTimeMS(),size);
@@ -127,15 +125,16 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 	{
 
 		//Check session
-		if (!recv)
-			return Error("-DTLSICETransport::onData() | No recvSRTPSession\n");
+		if (!recv.IsSetup())
+			return Error("-DTLSICETransport::onData() |  Recv SRTPSession is not setup\n");
 
 		//unprotect
-		srtp_err_status_t err = srtp_unprotect_rtcp(recv,(BYTE*)data,(int*)&len);
+		size_t len = recv.UnprotectRTCP(data,size);
 		
-		//Check error
-		if (err!=srtp_err_status_ok)
-			return Error("-DTLSICETransport::onData() | Error unprotecting rtcp packet [%d]\n",err);
+		//Check size
+		if (!len)
+			//Error
+			return Error("-DTLSICETransport::onData() | Error unprotecting rtcp packet [%s]\n",recv.GetLastError());
 
 		//If dumping
 		if (dumper && dumpRTCP)
@@ -164,15 +163,16 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 	}
 
 	//Check session
-	if (!recv)
-		return Error("-DTLSICETransport::onData() | No recvSRTPSession\n");
+	if (!recv.IsSetup())
+		return Error("-DTLSICETransport::onData() | Recv SRTPSession is not setup\n");
+	
 	//unprotect
-	srtp_err_status_t err = srtp_unprotect(recv,(void*)data,(int*)&len);
+	size_t len = recv.UnprotectRTP(data,size);
 	//Check status
-	if (err!=srtp_err_status_ok)
+	if (!len)
 	{
 		//Error
-		Error("-DTLSICETransport::onData() | Error unprotecting rtp packet [%d]\n",err);
+		Error("-DTLSICETransport::onData() | Error unprotecting rtp packet [%s]\n",recv.GetLastError());
 		//Parse RTP header
 		DWORD ini = header.Parse(data,size);
 		//If it has extension
@@ -287,14 +287,20 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 
 				//Check if there was a previous ssrc
 				if (group->rtx.ssrc)
+				{
 					//Remove previous one
 					incoming.erase(group->rtx.ssrc);
+					//Also from srtp session
+					recv.RemoveStream(group->rtx.ssrc);
+				}
 
 				//Set ssrc for next ones
 				group->rtx.ssrc = ssrc;
 
 				//Add it to the incoming list
 				incoming[ssrc] = group;
+				//And to the srtp session
+				recv.AddStream(ssrc);
 			}
 		} else if (extension.hasRId) {
 			//Try to find it on the rids and mids
@@ -309,14 +315,20 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 
 				//Check if there was a previous ssrc
 				if (group->media.ssrc)
+				{
 					//Remove previous one
 					incoming.erase(group->media.ssrc);
+					//Also from srtp session
+					recv.RemoveStream(group->media.ssrc);
+				}
 
 				//Set ssrc for next ones
 				group->media.ssrc = ssrc;
 
 				//Add it to the incoming list
 				incoming[ssrc] = group;
+				//And to the srtp session
+				recv.AddStream(ssrc);
 			}
 		} else if (extension.hasMediaStreamId && packet->GetCodec()==VideoCodec::RTX) {
 			//Try to find it on the rids and mids
@@ -331,14 +343,20 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 
 				//Check if there was a previous ssrc
 				if (group->rtx.ssrc)
+				{
 					//Remove previous one
 					incoming.erase(group->rtx.ssrc);
+					//Also from srtp session
+					recv.RemoveStream(group->rtx.ssrc);
+				}
 
 				//Set ssrc for next ones
 				group->rtx.ssrc = ssrc;
 
 				//Add it to the incoming list
 				incoming[ssrc] = group;
+				//And to the srtp session
+				recv.AddStream(ssrc);
 			}
 		} else if (extension.hasMediaStreamId) {
 			//Try to find it on the rids and mids
@@ -353,22 +371,31 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 
 				//Check if there was a previous ssrc
 				if (group->media.ssrc)
+				{
 					//Remove previous one
 					incoming.erase(group->media.ssrc);
+					//Also from srtp session
+					recv.RemoveStream(group->media.ssrc);
+				}
 
 				//Set ssrc for next ones
 				group->media.ssrc = ssrc;
 
 				//Add it to the incoming list
 				incoming[ssrc] = group;
+				//And to the srtp session
+				recv.AddStream(ssrc);
 			}
 		}
 	}
 			
 	//Ensure it has a group
 	if (!group)	
+	{
 		//error
-		return Error("-DTLSICETransport::onData() | Unknowing group for ssrc [%u]\n",ssrc);
+		Debug("-DTLSICETransport::onData() | Unknowing group for ssrc [%u]\n",ssrc);
+		return 0;
+	}
 	
 	//Assing mid if found
 	if (group->mid.empty() && extension.hasMediaStreamId)
@@ -549,7 +576,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 			}
 			
 			//LOg
-			Log("-REMB [ssrc:%x,mid:'%s',count:%d,bitrate:%u]\n",group->media.ssrc,group->mid.c_str(),ssrcs.size(),bitrate);
+			Debug("-DTLSICETransport::REMB() [ssrc:%x,mid:'%s',count:%d,bitrate:%u]\n",group->media.ssrc,group->mid.c_str(),ssrcs.size(),bitrate);
 			
 			// SSRC of media source (32 bits):  Always 0; this is the same convention as in [RFC5104] section 4.2.2.2 (TMMBN).
 			auto remb = rtcp->CreatePacket<RTCPPayloadFeedback>(RTCPPayloadFeedback::ApplicationLayerFeeedbackMessage,group->media.ssrc,WORD(0));
@@ -579,9 +606,9 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 void DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 {
 	//Check if we have an active DTLS connection yet
-	if (!send)
+	if (!send.IsSetup())
 		//Error
-		return (void) Debug("-DTLSICETransport::SendProbe() | We don't have an DTLS setup yet\n");
+		return (void) Debug("-DTLSICETransport::SendProbe() | Send SRTPSession is not setup\n");
 	
 	//Overrride headers
 	RTPHeader		header;
@@ -689,13 +716,13 @@ void DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 		//Write udp packet
 		dumper->WriteUDP(getTimeMS(),0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len);
 
-
 	//Encript
-	srtp_err_status_t err = srtp_protect(send,data,(int*)&len);
-	//Check error
-	if (err!=srtp_err_status_ok)
+	len = send.ProtectRTP(data,len);
+		
+	//Check size
+	if (!len)
 		//Error
-		return (void)Error("-RTPTransport::SendProbe() | Error protecting RTP packet [%d]\n",err);
+		return (void)Error("-RTPTransport::SendProbe() | Error protecting RTP packet [ssrc:%u,%s]\n",source.ssrc,send.GetLastError());
 
 	//Store candidate before unlocking
 	ICERemoteCandidate* candidate = active;
@@ -747,10 +774,10 @@ void DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 {
 	//Check if we have an active DTLS connection yet
-	if (!send)
+	if (!send.IsSetup())
 	{
 		//Error
-		Debug("-DTLSICETransport::ReSendPacket() | We don't have an DTLS setup yet\n");
+		Debug("-DTLSICETransport::ReSendPacket() | Send SRTPSession is not setup yet\n");
 		//Done
 		return;
 	}
@@ -880,12 +907,13 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 		dumper->WriteUDP(getTimeMS(),0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len);
 
 	//Encript
-	srtp_err_status_t err = srtp_protect(send,data,(int*)&len);
-	//Check error
-	if (err!=srtp_err_status_ok)
+	len = send.ProtectRTP(data,len);
+		
+	//Check size
+	if (!len)
 		//Error
-		return (void)Error("-RTPTransport::SendPacket() | Error protecting RTP packet [%d]\n",err);
-
+		return (void)Error("-RTPTransport::SendPacket() | Error protecting RTP packet [ssrc:%u,%s]\n",source.ssrc,send.GetLastError());
+	
 	//Store candidate before unlocking
 	ICERemoteCandidate* candidate = active;
 
@@ -1237,14 +1265,10 @@ void DTLSICETransport::Reset()
 			free(iceRemoteUsername);
 		if (iceRemotePwd)
 			free(iceRemotePwd);
-		//If secure
-		if (send)
-			//Dealoacate
-			srtp_dealloc(send);
-		//If secure
-		if (recv)
-			//Dealoacate
-			srtp_dealloc(recv);
+		
+		//Reset srtp
+		send.Reset();
+		recv.Reset();
 
 		//Check if dumping
 		if (dumper)
@@ -1254,9 +1278,6 @@ void DTLSICETransport::Reset()
 			//Delete it
 			delete(dumper);
 		}
-
-		send = NULL;
-		recv = NULL;
 		//No ice
 		iceLocalUsername = NULL;
 		iceLocalPwd = NULL;
@@ -1271,76 +1292,13 @@ void DTLSICETransport::Reset()
 
 int DTLSICETransport::SetLocalCryptoSDES(const char* suite,const BYTE* key,const DWORD len)
 {
-	srtp_err_status_t err;
-	srtp_policy_t policy;
-
-	//empty policy
-	memset(&policy, 0, sizeof(srtp_policy_t));
-
-	//Get cypher
-	if (strcmp(suite,"AES_CM_128_HMAC_SHA1_80")==0)
-	{
-		Log("-DTLSICETransport::SetLocalCryptoSDES() | suite: AES_CM_128_HMAC_SHA1_80\n");
-		srtp_crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtp);
-		srtp_crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtcp);
-	} else if (strcmp(suite,"AES_CM_128_HMAC_SHA1_32")==0) {
-		Log("-DTLSICETransport::SetLocalCryptoSDES() | suite: AES_CM_128_HMAC_SHA1_32\n");
-		srtp_crypto_policy_set_aes_cm_128_hmac_sha1_32(&policy.rtp);
-		srtp_crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtcp);  // NOTE: Must be 80 for RTCP!
-	} else if (strcmp(suite,"AES_CM_128_NULL_AUTH")==0) {
-		Log("-DTLSICETransport::SetLocalCryptoSDES() | suite: AES_CM_128_NULL_AUTH\n");
-		srtp_crypto_policy_set_aes_cm_128_null_auth(&policy.rtp);
-		srtp_crypto_policy_set_aes_cm_128_null_auth(&policy.rtcp);
-	} else if (strcmp(suite,"NULL_CIPHER_HMAC_SHA1_80")==0) {
-		Log("-DTLSICETransport::SetLocalCryptoSDES() | suite: NULL_CIPHER_HMAC_SHA1_80\n");
-		srtp_crypto_policy_set_null_cipher_hmac_sha1_80(&policy.rtp);
-		srtp_crypto_policy_set_null_cipher_hmac_sha1_80(&policy.rtcp);
-#ifdef SRTP_AES_256_GCM_KEYSIZE_WSALT
-	} else if (strcmp(suite,"AEAD_AES_256_GCM")==0) {
-		Log("-DTLSICETransport::SetLocalCryptoSDES() | suite: AEAD_AES_256_GCM\n");
-		srtp_crypto_policy_set_aes_gcm_256_16_auth(&policy.rtp);
-		srtp_crypto_policy_set_aes_gcm_256_16_auth(&policy.rtcp);
-#endif		
-#ifdef SRTP_AES_128_GCM_KEYSIZE_WSALT
-	} else if (strcmp(suite,"AEAD_AES_128_GCM")==0) {
-		Log("-DTLSICETransport::SetLocalCryptoSDES() | suite: AEAD_AES_128_GCM\n");
-		srtp_crypto_policy_set_aes_gcm_128_16_auth(&policy.rtp);
-		srtp_crypto_policy_set_aes_gcm_128_16_auth(&policy.rtcp);
-#endif
-	} else {
-		return Error("-DTLSICETransport::SetLocalCryptoSDES() | Unknown cipher suite: %s", suite);
-	}
-
-	//Check sizes
-	if (len!=(DWORD)policy.rtp.cipher_key_len)
-		//Error
-		return Error("-DTLSICETransport::SetLocalCryptoSDES() | Key size (%d) doesn't match the selected srtp profile (required %d)\n",len,policy.rtp.cipher_key_len);
-
-	//Set polciy values
-	policy.ssrc.type	= ssrc_any_outbound;
-	policy.ssrc.value	= 0;
-	policy.allow_repeat_tx  = 1;
-	policy.window_size	= 1024;
-	policy.key		= (BYTE*)key;
-	policy.next		= NULL;
-	//Create new
-	srtp_t session;
-	err = srtp_create(&session,&policy);
-
-	//Check error
-	if (err!=srtp_err_status_ok)
-		//Error
-		return Error("-DTLSICETransport::SetLocalCryptoSDES() | Failed to create local SRTP session | err:%d\n", err);
+	Log("-DTLSICETransport::SetLocalCryptoSDES() | [suite:%s]\n",suite);
 	
-	//if we already got a send session don't leak it
-	if (send)
-		//Dealoacate
-		srtp_dealloc(send);
-
-	//Set send SSRTP sesion
-	send = session;
-
-	//Evrything ok
+	//Set sending srtp session
+	if (!send.Setup(suite,key,len))
+		//Error
+		return Error("-DTLSICETransport::SetLocalCryptoSDES() | Error [%s]\n",send.GetLastError());
+	//Done
 	return 1;
 }
 
@@ -1412,73 +1370,13 @@ int DTLSICETransport::SetRemoteCryptoDTLS(const char *setup,const char *hash,con
 
 int DTLSICETransport::SetRemoteCryptoSDES(const char* suite, const BYTE* key, const DWORD len)
 {
-	srtp_err_status_t err;
-	srtp_policy_t policy;
-
-	//empty policy
-	memset(&policy, 0, sizeof(srtp_policy_t));
-
-	if (strcmp(suite,"AES_CM_128_HMAC_SHA1_80")==0)
-	{
-		Log("-DTLSICETransport::SetRemoteCryptoSDES() | suite: AES_CM_128_HMAC_SHA1_80\n");
-		srtp_crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtp);
-		srtp_crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtcp);
-	} else if (strcmp(suite,"AES_CM_128_HMAC_SHA1_32")==0) {
-		Log("-DTLSICETransport::SetRemoteCryptoSDES() | suite: AES_CM_128_HMAC_SHA1_32\n");
-		srtp_crypto_policy_set_aes_cm_128_hmac_sha1_32(&policy.rtp);
-		srtp_crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtcp);  // NOTE: Must be 80 for RTCP!
-	} else if (strcmp(suite,"AES_CM_128_NULL_AUTH")==0) {
-		Log("-DTLSICETransport::SetRemoteCryptoSDES() | suite: AES_CM_128_NULL_AUTH\n");
-		srtp_crypto_policy_set_aes_cm_128_null_auth(&policy.rtp);
-		srtp_crypto_policy_set_aes_cm_128_null_auth(&policy.rtcp);
-	} else if (strcmp(suite,"NULL_CIPHER_HMAC_SHA1_80")==0) {
-		Log("-DTLSICETransport::SetRemoteCryptoSDES() | suite: NULL_CIPHER_HMAC_SHA1_80\n");
-		srtp_crypto_policy_set_null_cipher_hmac_sha1_80(&policy.rtp);
-		srtp_crypto_policy_set_null_cipher_hmac_sha1_80(&policy.rtcp);
-#ifdef SRTP_AES_256_GCM_KEYSIZE_WSALT
-	} else if (strcmp(suite,"AEAD_AES_256_GCM")==0) {
-		Log("-DTLSICETransport::SetRemoteCryptoSDES() | suite: AEAD_AES_256_GCM\n");
-		srtp_crypto_policy_set_aes_gcm_256_16_auth(&policy.rtp);
-		srtp_crypto_policy_set_aes_gcm_256_16_auth(&policy.rtcp);
-#endif
-#ifdef SRTP_AES_128_GCM_KEYSIZE_WSALT		
-	} else if (strcmp(suite,"AEAD_AES_128_GCM")==0) {
-		Log("-DTLSICETransport::SetRemoteCryptoSDES() | suite: AEAD_AES_128_GCM\n");
-		srtp_crypto_policy_set_aes_gcm_128_16_auth(&policy.rtp);
-		srtp_crypto_policy_set_aes_gcm_128_16_auth(&policy.rtcp);
-#endif
-	} else {
-		return Error("-DTLSICETransport::SetRemoteCryptoSDES() | Unknown cipher suite %s", suite);
-	}
-
-	//Check sizes
-	if (len!=(DWORD)policy.rtp.cipher_key_len)
-		//Error
-		return Error("-DTLSICETransport::SetRemoteCryptoSDES() | Key size (%d) doesn't match the selected srtp profile (required %d)\n",len,policy.rtp.cipher_key_len);
-
-	//Set polciy values
-	policy.ssrc.type	= ssrc_any_inbound;
-	policy.ssrc.value	= 0;
-	policy.key		= (BYTE*)key;
-	policy.next		= NULL;
-
-	//Create new
-	srtp_t session;
-	err = srtp_create(&session,&policy);
-
-	//Check error
-	if (err!=srtp_err_status_ok)
-		//Error
-		return Error("-DTLSICETransport::SetRemoteCryptoSDES() | Failed to create remote SRTP session | err:%d\n", err);
+	Log("-DTLSICETransport::SetRemoteCryptoSDES() | [suite:%s]\n",suite);
 	
-	//if we already got a recv session don't leak it
-	if (recv)
-		//Dealoacate
-		srtp_dealloc(recv);
-	//Set it
-	recv = session;
-
-	//Everything ok
+	//Set sending srtp session
+	if (!recv.Setup(suite,key,len))
+		//Error
+		return Error("-DTLSICETransport::SetRemoteCryptoSDES() | Error [%s]\n",send.GetLastError());
+	//Done
 	return 1;
 }
 
@@ -1516,27 +1414,32 @@ void DTLSICETransport::onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMaster
 bool DTLSICETransport::AddOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 {
 	//Log
-	Log("-AddOutgoingSourceGroup [group:%p,ssrc:%u,fec:%u,rtx:%u]\n",group,group->media.ssrc,group->fec.ssrc,group->rtx.ssrc);
+	Log("-DTLSICETransport::AddOutgoingSourceGroup() [group:%p,ssrc:%u,fec:%u,rtx:%u]\n",group,group->media.ssrc,group->fec.ssrc,group->rtx.ssrc);
 	
 	//Done
 	bool done = true;
 
 	//Dispatch to the event loop thread
 	timeService.Sync([&](...){
+		//Get ssrcs
+		const auto media = group->media.ssrc;
+		const auto rtx   = group->rtx.ssrc;
+		const auto fec	 = group->fec.ssrc;
+		
 		//Check they are not already assigned
-		if (outgoing.find(group->media.ssrc)!=outgoing.end())
+		if (media && outgoing.find(media)!=outgoing.end())
 		{
 			//Error
 			done = Error("-AddOutgoingSourceGroup media ssrc already assigned");
 			return;
 		}
-		if (outgoing.find(group->fec.ssrc)!=outgoing.end())
+		if (fec && outgoing.find(fec)!=outgoing.end())
 		{
 			//Error
 			done = Error("-AddOutgoingSourceGroup fec ssrc already assigned");
 			return;
 		}
-		if (outgoing.find(group->rtx.ssrc)!=outgoing.end())
+		if (rtx && outgoing.find(rtx)!=outgoing.end())
 		{
 			//Error
 			done = Error("-AddOutgoingSourceGroup rtx ssrc already assigned");
@@ -1544,16 +1447,26 @@ bool DTLSICETransport::AddOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 		}
 
 		//Add it for each group ssrc
-		outgoing[group->media.ssrc] = group;
-		if (group->fec.ssrc)
-			outgoing[group->fec.ssrc] = group;
-		if (group->rtx.ssrc)
-			outgoing[group->rtx.ssrc] = group;
+		if (media)
+		{
+			outgoing[media] = group;
+			send.AddStream(media);
+		}
+		if (fec)
+		{
+			outgoing[fec] = group;
+			send.AddStream(fec);
+		}
+		if (rtx)
+		{
+			outgoing[rtx] = group;
+			send.AddStream(rtx);
+		}
 
 		//If we don't have a mainSSRC
-		if (mainSSRC==1)
+		if (mainSSRC==1 && media)
 			//Set it
-			mainSSRC = group->media.ssrc;
+			mainSSRC = media;
 
 		//Create rtcp sender retpor
 		auto rtcp = RTCPCompoundPacket::Create(group->media.CreateSenderReport(getTime()));
@@ -1568,10 +1481,11 @@ bool DTLSICETransport::AddOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 
 bool DTLSICETransport::RemoveOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 {
-	Log("-RemoveOutgoingSourceGroup [ssrc:%u,fec:%u,rtx:%u]\n",group->media.ssrc,group->fec.ssrc,group->rtx.ssrc);
+	Log("-DTLSICETransport::RemoveOutgoingSourceGroup() [ssrc:%u,fec:%u,rtx:%u]\n",group->media.ssrc,group->fec.ssrc,group->rtx.ssrc);
 
 	//Dispatch to the event loop thread
 	timeService.Sync([=](...){
+		Log("-DTLSICETransport::RemoveOutgoingSourceGroup() | Async [ssrc:%u,fec:%u,rtx:%u]\n",group->media.ssrc,group->fec.ssrc,group->rtx.ssrc);
 		//Get ssrcs
 		std::vector<DWORD> ssrcs;
 		const auto media = group->media.ssrc;
@@ -1583,7 +1497,7 @@ bool DTLSICETransport::RemoveOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 		{
 			//Remove from ssrc mapping and srtp session
 			outgoing.erase(media);
-			srtp_remove_stream(send, media);
+			send.RemoveStream(media);
 			//Add group ssrcs
 			ssrcs.push_back(media);
 		}
@@ -1592,7 +1506,7 @@ bool DTLSICETransport::RemoveOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 		{
 			//Remove from ssrc mapping and srtp session
 			outgoing.erase(fec);
-			srtp_remove_stream(send, fec);
+			send.RemoveStream(fec);
 			//Add group ssrcs
 			ssrcs.push_back(fec);
 		}
@@ -1601,7 +1515,7 @@ bool DTLSICETransport::RemoveOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 		{
 			//Remove from ssrc mapping and srtp session
 			outgoing.erase(rtx);
-			srtp_remove_stream(send, rtx);
+			send.RemoveStream(rtx);
 			//Add group ssrcs
 			ssrcs.push_back(rtx);
 		}
@@ -1621,7 +1535,7 @@ bool DTLSICETransport::RemoveOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 
 bool DTLSICETransport::AddIncomingSourceGroup(RTPIncomingSourceGroup *group)
 {
-	Log("-AddIncomingSourceGroup [mid:'%s',rid:'%s',ssrc:%u,fec:%u,rtx:%u]\n",group->mid.c_str(),group->rid.c_str(),group->media.ssrc,group->fec.ssrc,group->rtx.ssrc);
+	Log("-DTLSICETransport::AddIncomingSourceGroup() [mid:'%s',rid:'%s',ssrc:%u,fec:%u,rtx:%u]\n",group->mid.c_str(),group->rid.c_str(),group->media.ssrc,group->fec.ssrc,group->rtx.ssrc);
 	
 	//It must contain media ssrc
 	if (!group->media.ssrc && group->rid.empty())
@@ -1632,21 +1546,26 @@ bool DTLSICETransport::AddIncomingSourceGroup(RTPIncomingSourceGroup *group)
 	
 	//Dispatch to the event loop thread
 	timeService.Sync([&](...){
+		//Get ssrcs
+		const auto media = group->media.ssrc;
+		const auto rtx   = group->rtx.ssrc;
+		const auto fec	 = group->fec.ssrc;
+		
 		//Check they are not already assigned
-		if (group->media.ssrc && incoming.find(group->media.ssrc)!=incoming.end())
+		if (media && incoming.find(media)!=incoming.end())
 		{
 			//Error
 			done = Error("-AddIncomingSourceGroup media ssrc already assigned");
 			return;
 		}
-		if (group->fec.ssrc && incoming.find(group->fec.ssrc)!=incoming.end())
+		if (fec && incoming.find(fec)!=incoming.end())
 		{
 			//Error
 			done = Error("-AddIncomingSourceGroup fec ssrc already assigned");
 			return;
 		}
 			
-		if (group->rtx.ssrc && incoming.find(group->rtx.ssrc)!=incoming.end())
+		if (rtx && incoming.find(rtx)!=incoming.end())
 		{
 			//Error
 			done =  Error("-AddIncomingSourceGroup rtx ssrc already assigned");
@@ -1672,12 +1591,21 @@ bool DTLSICETransport::AddIncomingSourceGroup(RTPIncomingSourceGroup *group)
 		}
 
 		//Add it for each group ssrc
-		if (group->media.ssrc)
-			incoming[group->media.ssrc] = group;
-		if (group->fec.ssrc)
-			incoming[group->fec.ssrc] = group;
-		if (group->rtx.ssrc)
-			incoming[group->rtx.ssrc] = group;
+		if (media)
+		{
+			incoming[media] = group;
+			recv.AddStream(media);
+		}
+		if (fec)
+		{
+			incoming[fec] = group;
+			recv.AddStream(fec);
+		}
+		if (rtx)
+		{
+			incoming[rtx] = group;
+			recv.AddStream(rtx);
+		}
 	});
 	
 	//Check result
@@ -1696,7 +1624,7 @@ bool DTLSICETransport::AddIncomingSourceGroup(RTPIncomingSourceGroup *group)
 
 bool DTLSICETransport::RemoveIncomingSourceGroup(RTPIncomingSourceGroup *group)
 {
-	Log("-RemoveIncomingSourceGroup [mid:'%s',rid:'%s',ssrc:%u,fec:%u,rtx:%u]\n",group->mid.c_str(),group->rid.c_str(),group->media.ssrc,group->fec.ssrc,group->rtx.ssrc);
+	Log("-DTLSICETransport::RemoveIncomingSourceGroup() [mid:'%s',rid:'%s',ssrc:%u,fec:%u,rtx:%u]\n",group->mid.c_str(),group->rid.c_str(),group->media.ssrc,group->fec.ssrc,group->rtx.ssrc);
 	
 	//Stop distpaching
 	group->Stop();
@@ -1734,21 +1662,21 @@ bool DTLSICETransport::RemoveIncomingSourceGroup(RTPIncomingSourceGroup *group)
 		{
 			//Remove from ssrc mapping and srtp session
 			incoming.erase(media);
-			srtp_remove_stream(recv, media);
+			recv.RemoveStream(media);
 		}
 		//IF got fec ssrc
 		if (fec)
 		{
 			//Remove from ssrc mapping and srtp session
 			incoming.erase(fec);
-			srtp_remove_stream(recv, fec);
+			recv.RemoveStream(fec);
 		}
 		//IF got rtx ssrc
 		if (rtx)
 		{
 			//Remove from ssrc mapping and srtp session
 			incoming.erase(rtx);
-			srtp_remove_stream(recv, rtx);
+			recv.RemoveStream(rtx);
 		}
 	});
 	
@@ -1766,7 +1694,7 @@ void DTLSICETransport::Send(const RTCPCompoundPacket::shared &rtcp)
 		return (void)Error("-DTLSICETransport::Send() | NULL rtcp message\n");
 	
 	//Check if we have an active DTLS connection yet
-	if (!send)
+	if (!send.IsSetup())
 		//Error
 		return (void) Debug("-DTLSICETransport::Send() | We don't have an DTLS setup yet\n");
 	
@@ -1794,14 +1722,14 @@ void DTLSICETransport::Send(const RTCPCompoundPacket::shared &rtcp)
 		dumper->WriteUDP(getTimeMS(),0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len);
 
 	//Encript
-	srtp_err_status_t srtp_err_status = srtp_protect_rtcp(send,data,(int*)&len);
+	len = send.ProtectRTCP(data,len);
 	
 	//Check error
-	if (srtp_err_status!=srtp_err_status_ok)
+	if (!len)
 		//Error
-		return (void)Error("-DTLSICETransport::Send() | Error protecting RTCP packet [%d]\n",srtp_err_status);
+		return (void)Error("-DTLSICETransport::Send() | Error protecting RTCP packet [%s]\n",send.GetLastError());
 
-	//Store active candidate
+	//Store active candidate1889
 	ICERemoteCandidate* candidate = active;
 
 	//Update bitrate
@@ -1817,8 +1745,8 @@ int DTLSICETransport::SendPLI(DWORD ssrc)
 	//Log
 	Debug("-DTLSICETransport::SendPLI() | [ssrc:%u]\n",ssrc);
 	
-	//Execute on the event loop thread and wait
-	timeService.Sync([=](...){
+	//Execute on the event loop thread and do not wait
+	timeService.Async([=](...){
 		//Get group
 		RTPIncomingSourceGroup *group = GetIncomingSourceGroup(ssrc);
 
@@ -1865,7 +1793,7 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 		return Debug("-DTLSICETransport::Send() | Error null packet\n");
 	
 	//Check if we have an active DTLS connection yet
-	if (!send)
+	if (!send.IsSetup())
 		//Error
 		return Debug("-DTLSICETransport::Send() | We don't have an DTLS setup yet\n");
 	
@@ -1955,11 +1883,12 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 		dumper->WriteUDP(getTimeMS(),0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len);
 
 	//Encript
-	srtp_err_status_t err = srtp_protect(send,data,&len);
+	len = send.ProtectRTP(data,len);
+	
 	//Check error
-	if (err!=srtp_err_status_ok)
+	if (!len)
 		//Error
-		return Error("-RTPTransport::SendPacket() | Error protecting RTP packet [%d]\n",err);
+		return Error("-RTPTransport::SendPacket() | Error protecting RTP packet [ssrc:%u,%s]\n",ssrc,send.GetLastError());
 
 	//Store candidate
 	ICERemoteCandidate* candidate = active;
