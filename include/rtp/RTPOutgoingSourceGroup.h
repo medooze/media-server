@@ -46,7 +46,7 @@ public:
 	RTPOutgoingSource fec;
 	RTPOutgoingSource rtx;
 private:	
-	mutable Mutex mutex;
+	mutable Mutex listenersMutex;
 	std::map<DWORD,RTPPacket::shared> packets;
 	std::set<Listener*> listeners;
 };

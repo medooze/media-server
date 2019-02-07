@@ -27,7 +27,7 @@ void RTPOutgoingSourceGroup::AddListener(Listener* listener)
 {
 	Debug("-RTPOutgoingSourceGroup::AddListener() [listener:%p]\n",listener);
 	
-	ScopedLock scoped(mutex);
+	ScopedLock scoped(listenersMutex);
 	listeners.insert(listener);
 	
 }
@@ -36,15 +36,12 @@ void RTPOutgoingSourceGroup::RemoveListener(Listener* listener)
 {
 	Debug("-RTPOutgoingSourceGroup::RemoveListener() [listener:%p]\n",listener);
 	
-	ScopedLock scoped(mutex);
+	ScopedLock scoped(listenersMutex);
 	listeners.erase(listener);
 }
 
 void RTPOutgoingSourceGroup::ReleasePackets(QWORD until)
 {
-	//Lock packets
-	ScopedLock scoped(mutex);
-	
 	//Delete old packets
 	auto it = packets.begin();
 	//Until the end
@@ -61,18 +58,12 @@ void RTPOutgoingSourceGroup::ReleasePackets(QWORD until)
 
 void RTPOutgoingSourceGroup::AddPacket(const RTPPacket::shared& packet)
 {
-	//Lock packets
-	ScopedLock scoped(mutex);
-	
 	//Add a clone to the rtx queue
 	packets[packet->GetExtSeqNum()] = packet;
 }
 
 RTPPacket::shared RTPOutgoingSourceGroup::GetPacket(WORD seq) const
 {
-	//Lock packets
-	ScopedLock scoped(mutex);
-	
 	//If there are no packets
 	if (packets.empty())
 	{
@@ -111,7 +102,7 @@ RTPPacket::shared RTPOutgoingSourceGroup::GetPacket(WORD seq) const
 
 void RTPOutgoingSourceGroup::onPLIRequest(DWORD ssrc)
 {
-	ScopedLock scoped(mutex);
+	ScopedLock scoped(listenersMutex);
 	for (auto listener : listeners)
 		listener->onPLIRequest(this,ssrc);
 }
@@ -121,7 +112,7 @@ void RTPOutgoingSourceGroup::onREMB(DWORD ssrc, DWORD bitrate)
 	//Update remb on media
 	media.remb = bitrate;
 	
-	ScopedLock scoped(mutex);
+	ScopedLock scoped(listenersMutex);
 	for (auto listener : listeners)
 		listener->onREMB(this,ssrc,bitrate);
 }
@@ -133,11 +124,26 @@ void RTPOutgoingSourceGroup::Update()
 
 void RTPOutgoingSourceGroup::Update(QWORD now)
 {
-	//Lock sources accumulators
-	ScopedLock scoped(mutex);
 	
-	//Refresh instant bitrates
-	media.acumulator.Update(now);
-	rtx.acumulator.Update(now);
-	fec.acumulator.Update(now);
+	//SYNCed
+	{
+		//Lock in scope
+                ScopedLock scope(media);
+		//Refresh instant bitrates
+		media.acumulator.Update(now);
+	}
+	//SYNCde
+	{
+		//Lock in scope
+                ScopedLock scope(rtx);
+		//Refresh instant bitrates
+		rtx.acumulator.Update(now);
+	}
+	//SYNCde
+	{
+		//Lock in scope
+                ScopedLock scope(fec);
+		//Refresh instant bitrates
+		fec.acumulator.Update(now);
+	}
 }
