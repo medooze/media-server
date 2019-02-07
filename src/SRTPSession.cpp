@@ -52,13 +52,19 @@ bool SRTPSession::Setup(const char* suite,const uint8_t* key,const size_t len)
 		srtp_crypto_policy_set_aes_gcm_128_16_auth(&policy.rtp);
 		srtp_crypto_policy_set_aes_gcm_128_16_auth(&policy.rtcp);
 #endif
-	} else
+	} else {
+		//Error
+		Error("-SRTPSession::Setup() | Unknown suite [%s]\n",suite);
+		//Set error
+		err = Status::BadParam;
+		return false;
+	}
 
 	//Check sizes
 	if (len!=(size_t)policy.rtp.cipher_key_len)
-	 {
+	{
 		//Error
-		Log("-SRTPSession::Setup() | Could not create srtp session wrong key size[got:%d,needed:%d]\n",len,policy.rtp.cipher_key_len);
+		Error("-SRTPSession::Setup() | Could not create srtp session wrong key size[got:%d,needed:%d]\n",len,policy.rtp.cipher_key_len);
 		//Set error
 		err = Status::BadParam;
 		return false;
@@ -81,6 +87,9 @@ bool SRTPSession::Setup(const char* suite,const uint8_t* key,const size_t len)
 	//Check error
 	if (err!=Status::OK)
 	{
+		//Error
+		Error("-SRTPSession::Setup() | Could not create srtp session[%s]\n",GetLastError());
+		//Set error
 		//No session
 		srtp = nullptr;
 		//Error
