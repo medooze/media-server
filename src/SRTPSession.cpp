@@ -42,16 +42,12 @@ bool SRTPSession::Setup(const char* suite,const uint8_t* key,const size_t len)
 	} else if (strcmp(suite,"NULL_CIPHER_HMAC_SHA1_80")==0) {
 		srtp_crypto_policy_set_null_cipher_hmac_sha1_80(&policy.rtp);
 		srtp_crypto_policy_set_null_cipher_hmac_sha1_80(&policy.rtcp);
-#ifdef SRTP_AES_256_GCM_KEYSIZE_WSALT
 	} else if (strcmp(suite,"AEAD_AES_256_GCM")==0) {
 		srtp_crypto_policy_set_aes_gcm_256_16_auth(&policy.rtp);
 		srtp_crypto_policy_set_aes_gcm_256_16_auth(&policy.rtcp);
-#endif		
-#ifdef SRTP_AES_128_GCM_KEYSIZE_WSALT
 	} else if (strcmp(suite,"AEAD_AES_128_GCM")==0) {
 		srtp_crypto_policy_set_aes_gcm_128_16_auth(&policy.rtp);
 		srtp_crypto_policy_set_aes_gcm_128_16_auth(&policy.rtcp);
-#endif
 	} else {
 		//Error
 		Error("-SRTPSession::Setup() | Unknown suite [%s]\n",suite);
