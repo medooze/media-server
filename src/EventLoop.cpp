@@ -453,6 +453,20 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 		//Get now
 		now = GetNow();
 	}
+	
+	//Run queued task
+	std::pair<std::promise<void>,std::function<void(std::chrono::milliseconds)>> task;
+	//Get all pending taks
+	while (tasks.try_dequeue(task))
+	{
+		//UltraDebug("-EventLoop::Run() | task pending\n");
+		//Update now
+		auto now = Now();
+		//Execute it
+		task.second(now);
+		//Resolce promise
+		task.first.set_value();
+	}
 
 	Log("<EventLoop::Run()\n");
 }

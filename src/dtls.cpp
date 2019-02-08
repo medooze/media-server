@@ -601,10 +601,11 @@ void DTLSConnection::SetRemoteFingerprint(Hash hash, const char *fingerprint)
 
 	remoteHash = hash;
 	char* tmp = strdup(fingerprint);
+	char* str = tmp;
 	char* value;
 	int pos = 0;
 
-	while ((value = strsep(&tmp, ":")) && (pos != (EVP_MAX_MD_SIZE - 1)))
+	while ((value = strsep(&str, ":")) && (pos != (EVP_MAX_MD_SIZE - 1)))
 		sscanf(value, "%02x", (unsigned int*)&remoteFingerprint[pos++]);
 
 	free(tmp);
