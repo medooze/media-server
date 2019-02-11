@@ -394,8 +394,12 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 				
 				//It we have an error
 				if (ret<0)
+				{
+					//Do we need to retry current packet?
+					pending = errno==EAGAIN || errno==EWOULDBLOCK;
 					//Retry again later
 					break;
+				}
 				//Get next item
 				pending = sending.try_dequeue(item);
 			}
