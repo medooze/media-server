@@ -26,7 +26,6 @@ public:
 	};
 public:	
 	RTPIncomingSourceGroup(MediaFrame::Type type,TimeService& timeService);
-	virtual ~RTPIncomingSourceGroup();
 	
 	RTPIncomingSource* GetSource(DWORD ssrc);
 	void AddListener(Listener* listener);

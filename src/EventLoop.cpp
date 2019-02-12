@@ -194,9 +194,8 @@ Timer::shared EventLoop::CreateTimer(const std::chrono::milliseconds& ms, const 
 
 void EventLoop::TimerImpl::Cancel()
 {
-	TimerImpl::shared timer = shared_from_this();
 	//Add it async
-	loop.Async([timer](...){
+	loop.Async([timer = shared_from_this()](...){
 		//Remove us
 		timer->loop.CancelTimer(timer);
 	});
@@ -224,7 +223,7 @@ void EventLoop::TimerImpl::Again(const std::chrono::milliseconds& ms)
 	//UltraDebug("<EventLoop::Again() | timer triggered at %llu\n",next.count());
 }
 
-void EventLoop::CancelTimer(std::shared_ptr<TimerImpl> timer)
+void EventLoop::CancelTimer(TimerImpl::shared timer)
 {
 	//Asert we are on same thread than loop
 	AssertThread();

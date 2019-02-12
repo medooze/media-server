@@ -21,11 +21,6 @@ RTPIncomingSourceGroup::RTPIncomingSourceGroup(MediaFrame::Type type,TimeService
 	dispatchTimer = timeService.CreateTimer([this](auto now){ DispatchPackets(now.count()); });
 }
 
-RTPIncomingSourceGroup::~RTPIncomingSourceGroup() 
-{
-	Stop();
-}
-
 RTPIncomingSource* RTPIncomingSourceGroup::GetSource(DWORD ssrc)
 {
 	if (ssrc == media.ssrc)

@@ -328,7 +328,7 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 		//UltraDebug("-RTPBundleTransport::OnRead() | stun\n");
 		
 		//Parse it
-		STUNMessage *stun = STUNMessage::Parse(data,size);
+		auto stun = std::unique_ptr<STUNMessage>(STUNMessage::Parse(data,size));
 
 		//It was not a valid STUN message
 		if (!stun)
@@ -411,7 +411,8 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 			transport->ActivateRemoteCandidate(candidate,stun->HasAttribute(STUNMessage::Attribute::UseCandidate),prio);
 			
 			//Create response
-			STUNMessage* resp = stun->CreateResponse();
+			auto resp = std::unique_ptr<STUNMessage>(stun->CreateResponse());
+			
 			//Add received xor mapped addres
 			resp->AddXorAddressAttribute(htonl(ip),htons(port));
 			
@@ -427,9 +428,6 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 			//Send response
 			loop.Send(ip,port,std::move(buffer));
 
-			//Clean response
-			delete(resp);
-			
 			//If the STUN keep alive response is not disabled
 			if (reply)
 			{
@@ -441,7 +439,7 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 				//Set timestamp as trans id
 				set8(transId,4,getTime());
 				//Create binding request to send back
-				STUNMessage *request = new STUNMessage(STUNMessage::Request,STUNMessage::Binding,transId);
+				auto request = std::make_unique<STUNMessage>(STUNMessage::Request,STUNMessage::Binding,transId);
 				//Add username
 				request->AddUsernameAttribute(transport->GetLocalUsername(),transport->GetRemoteUsername());
 				//Add other attributes
@@ -459,14 +457,8 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 				
 				//Send response
 				loop.Send(ip,port,std::move(buffer));
-				
-				//Clean response
-				delete(request);
 			}
 		}
-
-		//Delete message
-		delete(stun);
 
 		//Exit
 		return;

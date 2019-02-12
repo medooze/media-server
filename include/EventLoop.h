@@ -23,7 +23,9 @@ public:
 		virtual void OnRead(const int fd, const uint8_t* data, const size_t size, const uint32_t ipAddr, const uint16_t port) = 0;
 	};
 private:
-	class TimerImpl : public Timer, public std::enable_shared_from_this<TimerImpl>
+	class TimerImpl : 
+		public Timer, 
+		public std::enable_shared_from_this<TimerImpl>
 	{
 	public:
 		using shared = std::shared_ptr<TimerImpl>;
@@ -70,7 +72,7 @@ public:
 	
 protected:
 	inline void AssertThread() const { assert(std::this_thread::get_id()==thread.get_id()); }
-	void CancelTimer(std::shared_ptr<TimerImpl> timer);
+	void CancelTimer(TimerImpl::shared timer);
 	
 	const std::chrono::milliseconds Now();
 private:
