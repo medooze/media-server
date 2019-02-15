@@ -210,7 +210,7 @@ public:
 			case 2:
 				return data[1] + 64;
 			case 3:
-				return ((DWORD)data[1])<<8 + data[2] + 64;
+				return (((DWORD)data[1])<<8) + data[2] + 64;
 		}
 	}
 	void	SetStreamId(DWORD csid)
