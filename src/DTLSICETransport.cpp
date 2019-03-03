@@ -91,6 +91,9 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 
 	//Acumulate bitrate
 	incomingBitrate.Update(getTimeMS(),size);
+
+	//Update time  
+	this->UpdateLastUpdateTime();
 	
 	//Check if it a DTLS packet
 	if (DTLSConnection::IsDTLS(data,size))
@@ -2461,4 +2464,10 @@ void DTLSICETransport::SetBandwidthProbing(bool probe)
 {
 	//Set probing status
 	this->probe = probe;
+}
+
+
+void DTLSICETransport::UpdateLastUpdateTime()
+{
+	this->lastUpdateTime = getTimeMS();
 }

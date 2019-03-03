@@ -371,6 +371,9 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 			DTLSICETransport* transport = connection->transport;
 			ICERemoteCandidate* candidate = NULL;
 
+			//Update time 
+			transport->UpdateLastUpdateTime();
+
 			//Check if it has the prio attribute
 			if (!stun->HasAttribute(STUNMessage::Attribute::Priority))
 			{

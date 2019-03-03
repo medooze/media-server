@@ -84,6 +84,9 @@ public:
 	virtual int onData(const ICERemoteCandidate* candidate,const BYTE* data,DWORD size)  override;
 	
 	DWORD GetRTT() const { return rtt; }
+
+	DWORD GetLastUpdateTime() const { return lastUpdateTime; }
+	void UpdateLastUpdateTime();
 	
 	TimeService& GetTimeService() { return timeService; }
 
@@ -164,7 +167,9 @@ private:
 	IncomingStreams incoming;
 	std::map<std::string,RTPIncomingSourceGroup*> rids;
 	std::map<std::string,std::set<RTPIncomingSourceGroup*>> mids;
-	
+
+	DWORD   lastUpdateTime = 0;
+
 	DWORD	mainSSRC		= 1;
 	DWORD   rtt			= 0;
 	char*	iceRemoteUsername	= nullptr;
