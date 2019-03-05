@@ -31,7 +31,7 @@ RTPStreamTransponder::RTPStreamTransponder(RTPOutgoingSourceGroup* outgoing,RTPS
 }
 
 
-bool RTPStreamTransponder::SetIncoming(RTPIncomingSourceGroup* incoming, RTPReceiver* receiver)
+bool RTPStreamTransponder::SetIncoming(RTPIncomingMediaStream* incoming, RTPReceiver* receiver)
 {
 	//If they are the same
 	if (this->incoming==incoming && this->receiver==receiver)
@@ -60,10 +60,10 @@ bool RTPStreamTransponder::SetIncoming(RTPIncomingSourceGroup* incoming, RTPRece
 	if (this->incoming)
 	{
 		//Add us as listeners
-		incoming->AddListener(this);
+		this->incoming->AddListener(this);
 		
 		//Request update on the incoming
-		if (this->receiver) this->receiver->SendPLI(this->incoming->media.ssrc);
+		if (this->receiver) this->receiver->SendPLI(this->incoming->GetMediaSSRC());
 	}
 	
 	Debug("<RTPStreamTransponder::SetIncoming() | [incoming:%p,receiver:%p]\n",incoming,receiver);
@@ -99,7 +99,7 @@ void RTPStreamTransponder::Close()
 }
 
 
-void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,const RTPPacket::shared& packet)
+void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket::shared& packet)
 {
 	//Double check
 	if (!packet)
@@ -321,12 +321,12 @@ void RTPStreamTransponder::onRTP(RTPIncomingSourceGroup* group,const RTPPacket::
 	sender->Enqueue(cloned);
 }
 
-void RTPStreamTransponder::onEnded(RTPIncomingSourceGroup* group)
+void RTPStreamTransponder::onEnded(RTPIncomingMediaStream* stream)
 {
 	ScopedLock lock(mutex);
 	
 	//If they are the not same
-	if (this->incoming!=group)
+	if (this->incoming!=stream)
 		//DO nothing
 		return;
 	
@@ -342,7 +342,7 @@ void RTPStreamTransponder::RequestPLI()
 {
 	ScopedLock lock(mutex);
 	//Request update on the incoming
-	if (receiver && incoming) receiver->SendPLI(incoming->media.ssrc);
+	if (receiver && incoming) receiver->SendPLI(incoming->GetMediaSSRC());
 }
 
 void RTPStreamTransponder::onPLIRequest(RTPOutgoingSourceGroup* group,DWORD ssrc)

@@ -664,6 +664,11 @@ DWORD AMFString::GetUTF8Size()
 	return u16parser.GetValue();
 }
 
+std::string AMFString::GetUTF8String()
+{
+	return utf8parser.GetUTF8String();
+}
+
 void AMFString::SetWString(const std::wstring& str)
 {
 	//Set string value
@@ -754,6 +759,11 @@ bool AMFLongString::IsParsed()
 std::wstring AMFLongString::GetWString()
 {
 	return utf8parser.GetWString();
+}
+
+std::string AMFLongString::GetUTF8String()
+{
+	return utf8parser.GetUTF8String();
 }
 
 DWORD AMFLongString::GetUTF8Size()
@@ -1175,6 +1185,11 @@ AMFObjectMap& AMFEcmaArray::GetElements()
 	return elements;
 }
 
+DWORD AMFEcmaArray::GetLength()
+{
+	return elements.size();
+}
+
 AMFData& AMFEcmaArray::GetProperty(const wchar_t* key)
 {
 	return *(elements[std::wstring(key)]);
@@ -1403,6 +1418,11 @@ bool AMFStrictArray::IsParsed()
 AMFData** AMFStrictArray::GetElements()
 {
 	return elements;
+}
+
+DWORD AMFStrictArray::GetLength()
+{
+	return num.GetValue();
 }
 
 void AMFStrictArray::Dump()

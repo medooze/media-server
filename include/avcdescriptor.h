@@ -16,13 +16,13 @@ class AVCDescriptor
 public:
 	AVCDescriptor();
 	~AVCDescriptor();
-	void AddSequenceParameterSet(BYTE *data,DWORD size);
-	void AddPictureParameterSet(BYTE *data,DWORD size);
-	void AddParametersFromFrame(BYTE *data,DWORD size);
+	void AddSequenceParameterSet(const BYTE *data,DWORD size);
+	void AddPictureParameterSet(const BYTE *data,DWORD size);
+	void AddParametersFromFrame(const BYTE *data,DWORD size);
 	void ClearSequenceParameterSets();
 	void ClearPictureParameterSets();
 	DWORD Serialize(BYTE* buffer,DWORD bufferLength) const;
-	bool Parse(BYTE* data,DWORD size);
+	bool Parse(const BYTE* data,DWORD size);
 	void Dump() const;
 
 	BYTE GetNumOfPictureParameterSets()		const { return numOfPictureParameterSets;	}

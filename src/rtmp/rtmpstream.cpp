@@ -543,3 +543,53 @@ void  RTMPNetStream::fireOnNetStreamStatus(const RTMPNetStatusEventInfo &info,co
 		listener->onNetStreamStatus(id,info,message);
 }
 
+void RTMPNetStream::ProcessCommandMessage(RTMPCommandMessage* cmd)
+{
+	//Get message values
+	std::wstring name 	= cmd->GetName();
+
+	//Check command names
+	if (name.compare(L"play")==0)
+	{
+		//Get url to play
+		std::wstring url = *(cmd->GetExtra(0));
+		//Play
+		doPlay(url,this);
+	//Publish
+	} else if (name.compare(L"publish")==0){
+		//Get param
+		AMFData *obj = cmd->GetExtra(0);
+		//Check type
+		if (obj->CheckType(AMFData::String))
+		{
+			//Get url to play
+			std::wstring url = *obj;
+			//Publish
+			doPublish(url);
+		} else {
+			//Close
+			doClose(this);
+		}
+	} else if (name.compare(L"seek")==0) {
+		//Get timestamp
+		double time = *(cmd->GetExtra(0));
+		//Play
+		doSeek(time);
+	} else if (name.compare(L"pause")==0) {
+		//Get pause/resume flag
+		bool flag = *(cmd->GetExtra(0));
+		//Check if it is pause or resume
+		if (!flag)
+			//Pause
+			doPause();
+		else
+			//Resume
+			doResume();
+	} else if (name.compare(L"closeStream")==0) {
+		//Close stream
+		doClose(this);
+	} else {
+		//Send command
+		doCommand(cmd);
+	}
+}

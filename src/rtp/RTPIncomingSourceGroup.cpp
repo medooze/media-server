@@ -32,7 +32,7 @@ RTPIncomingSource* RTPIncomingSourceGroup::GetSource(DWORD ssrc)
 	return NULL;
 }
 
-void RTPIncomingSourceGroup::AddListener(Listener* listener) 
+void RTPIncomingSourceGroup::AddListener(RTPIncomingMediaStream::Listener* listener) 
 {
 	Debug("-RTPIncomingSourceGroup::AddListener() [listener:%p]\n",listener);
 		
@@ -40,7 +40,7 @@ void RTPIncomingSourceGroup::AddListener(Listener* listener)
 	listeners.insert(listener);
 }
 
-void RTPIncomingSourceGroup::RemoveListener(Listener* listener) 
+void RTPIncomingSourceGroup::RemoveListener(RTPIncomingMediaStream::Listener* listener) 
 {
 	Debug("-RTPIncomingSourceGroup::RemoveListener() [listener:%p]\n",listener);
 		

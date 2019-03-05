@@ -41,8 +41,8 @@
 
 
 #define FD_INVALID	(int)-1
-#define MTU		1500
-#define RTPPAYLOADSIZE	1350
+#define MTU		1500u
+#define RTPPAYLOADSIZE	1350u
 
 #define QWORD		uint64_t
 #define DWORD		uint32_t

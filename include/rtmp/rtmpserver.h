@@ -12,17 +12,15 @@ class RTMPServer : public RTMPConnection::Listener
 public:
 	/** Constructors */
 	RTMPServer();
-	~RTMPServer();
+	virtual ~RTMPServer();
 
 	int Init(int port);
 	int AddApplication(const wchar_t* name,RTMPApplication *app);
-	int Start();
-	int Stop();
 	int End();
 	
 	/** Listener for RTMPConnection */
-	RTMPNetConnection* OnConnect(const std::wstring& appName,RTMPNetConnection::Listener *listener);
-	void onDisconnect(RTMPConnection *con);
+	virtual RTMPNetConnection* OnConnect(const std::wstring& appName,RTMPNetConnection::Listener *listener,std::function<void(bool)> accept) override;
+	virtual void onDisconnect(RTMPConnection *con) override;
 
 protected:
         int Run();

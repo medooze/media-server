@@ -3,11 +3,12 @@
 #include "config.h"
 #include "rtmpnetconnection.h"
 #include <string>
+#include <functional>
 
 class RTMPApplication
 {
 public:
-	virtual RTMPNetConnection* Connect(const std::wstring& appName,RTMPNetConnection::Listener *listener) = 0;
+	virtual RTMPNetConnection* Connect(const std::wstring& appName,RTMPNetConnection::Listener *listener,std::function<void(bool)> accept) = 0;
 };
 
 #endif

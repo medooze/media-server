@@ -25,7 +25,7 @@ public:
 		virtual ~Listener(){};
 	public:
 		//Interface
-		virtual RTMPNetConnection* OnConnect(const std::wstring& appName,RTMPNetConnection::Listener *listener) = 0;
+		virtual RTMPNetConnection* OnConnect(const std::wstring& appName,RTMPNetConnection::Listener *listener,std::function<void(bool)> accept) = 0;
 		virtual void onDisconnect(RTMPConnection *con) = 0;
 	};
 public:

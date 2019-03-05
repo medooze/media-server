@@ -27,7 +27,7 @@ public:
 	virtual BYTE*	GetMediaData()			{ return buffer;		}
 	virtual DWORD	GetMediaSize()			{ return mediaSize;		}
 	virtual DWORD	GetMaxMediaSize()		{ return bufferSize;		}
-	virtual bool	SetMediaSize(DWORD mediaSize)	{ this->mediaSize = mediaSize;	}
+	virtual void	SetMediaSize(DWORD mediaSize)	{ this->mediaSize = mediaSize;	}
 
 	virtual void	Dump();
 
@@ -140,7 +140,9 @@ public:
 	DWORD GetSize();
 
 	std::wstring 	GetName() 		{ return name->GetWString(); 	}
+	std::string 	GetNameUTF8() 		{ return name->GetUTF8String();	}
 	double		GetTransId()		{ return transId->GetNumber(); 	}
+	bool		HasParams()  		{ return params; 		}
 	AMFData*	GetParams()  		{ return params; 		}
 	DWORD		GetExtraLength() 	{ return extra.size(); 		}
 	AMFData*	GetExtra(DWORD i) 	{ return extra[i]; 		}

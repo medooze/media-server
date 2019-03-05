@@ -112,7 +112,7 @@ RTMPNetConnection* BroadcastSession::ConnectPublisher(RTMPNetConnection::Listene
 	//Create new connection publisher
 	publisher = new NetConnection(NetConnection::Publisher,this);
 	//Connect
-	publisher->Connect(listener);
+	publisher->AddListener(listener);
 	//Add to watchers
 	publishers.insert(publisher);
 
@@ -137,7 +137,7 @@ RTMPNetConnection* BroadcastSession::ConnectWatcher(RTMPNetConnection::Listener*
 	//Create new connection publisher
 	watcher = new NetConnection(NetConnection::Watcher,this);
 	//Connect
-	watcher->Connect(listener);
+	watcher->AddListener(listener);
 	//Add to watchers
 	watchers.insert(watcher);
 

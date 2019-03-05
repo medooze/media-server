@@ -24,16 +24,18 @@ public:
 	};
 public:
 	virtual ~RTMPNetConnection();
-	virtual void Connect(Listener* listener);
-	virtual void Disconnect(Listener* listener);
-
+	virtual void AddListener(Listener* listener);
+	virtual void RemoveListener(Listener* listener);
+	virtual void SendStatus(const RTMPNetStatusEventInfo &info,const wchar_t *message);
+	virtual void Disconnect();
+	
 	/* Interface */
 	virtual RTMPNetStream* CreateStream(DWORD streamId,DWORD audioCaps,DWORD videoCaps,RTMPNetStream::Listener *listener) = 0;
 	virtual void DeleteStream(RTMPNetStream *stream) = 0;
+	
 protected:
 	int RegisterStream(RTMPNetStream* stream);
 	int UnRegisterStream(RTMPNetStream* stream);
-	void fireOnNetConnectionDisconnected();
 protected:
 	typedef std::set<Listener*> Listeners;
 	typedef std::set<RTMPNetStream*> RTMPNetStreams;

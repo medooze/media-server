@@ -56,7 +56,7 @@ public:
 	/** Conference events*/
 	virtual void onParticipantRequestFPU(MultiConf *conf,int partId,void *param);
 	/** RTMP application interface*/
-	virtual RTMPNetConnection* Connect(const std::wstring& appName,RTMPNetConnection::Listener* listener);
+	virtual RTMPNetConnection* Connect(const std::wstring& appName,RTMPNetConnection::Listener *listener,std::function<void(bool)> accept);
 	/** File uploader event */
 	virtual int onFileUploaded(const char* url, const char *filename);
 	/** WebSocket connection event */

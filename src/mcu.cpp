@@ -368,7 +368,7 @@ int MCU::DeleteConference(int id)
 	return true;
 }
 
-RTMPNetConnection* MCU::Connect(const std::wstring& appName,RTMPNetConnection::Listener* listener)
+RTMPNetConnection* MCU::Connect(const std::wstring& appName,RTMPNetConnection::Listener *listener,std::function<void(bool)> accept)
 {
 	int confId = 0;
 	MultiConf *conf = NULL;
@@ -410,7 +410,10 @@ RTMPNetConnection* MCU::Connect(const std::wstring& appName,RTMPNetConnection::L
 	}
 
 	//Connect
-	conf->Connect(listener);
+	conf->AddListener(listener);
+	
+	//Accept it
+	accept(true);
 
 	//release it
 	ReleaseConferenceRef(confId);

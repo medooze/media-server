@@ -84,7 +84,6 @@ public:
 		this->type = type;
 		//Set no timestamp
 		ts = (DWORD)-1;
-		time = (QWORD)-1;
 		//No duration
 		duration = 0;
 		//Set buffer size
@@ -123,9 +122,6 @@ public:
 	Type	GetType() const		{ return type;	}
 	DWORD	GetTimeStamp() const	{ return ts;	}
 	void	SetTimestamp(DWORD ts)	{ this->ts = ts; }
-	
-	QWORD	GetTime() const		{ return time;		}
-	void	SetTime(QWORD time)	{ this->time = time;	}
 	
 	DWORD	GetSSRC() const		{ return ssrc;		}
 	void	SetSSRC(DWORD ssrc)	{ this->ssrc = ssrc;	}
@@ -181,7 +177,6 @@ public:
 protected:
 	Type type;
 	DWORD ts;
-	QWORD time;
 	DWORD ssrc;
 	RtpPacketizationInfo rtpInfo;
 	BYTE	*buffer;

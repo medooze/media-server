@@ -187,6 +187,7 @@ public:
 	const wchar_t* GetWChar();
 	void SetWString(const std::wstring& value);
 	DWORD GetUTF8Size();
+	std::string GetUTF8String();
 	virtual void Dump();
 	virtual AMFData* Clone();
 private:
@@ -203,6 +204,7 @@ public:
 	virtual ValueType GetType() {return LongString;};
 	virtual void Reset();
 	std::wstring GetWString();
+	std::string GetUTF8String();
 	DWORD GetUTF8Size();
 private:
 	UTF8Parser utf8parser;
@@ -255,6 +257,7 @@ public:
 	virtual ValueType GetType() {return EcmaArray;};
 	virtual void Dump();
 	AMFObjectMap& GetElements();
+	DWORD GetLength();
 	void AddProperty(const wchar_t* key,const wchar_t* value);
 	void AddProperty(const wchar_t* key,const wchar_t* value,DWORD length);
 	void AddProperty(const wchar_t* key,const std::wstring& value);
@@ -301,6 +304,7 @@ public:
 	virtual ValueType GetType() {return StrictArray;};
 	virtual void Dump();
 	AMFData** GetElements();
+	DWORD GetLength();
 private:
 	AMFData** elements;
 	AMFParser parser;

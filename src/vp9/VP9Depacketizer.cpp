@@ -39,23 +39,20 @@ void VP9Depacketizer::ResetFrame()
 	frame.SetLength(0);
 	//Clear time
 	frame.SetTimestamp((DWORD)-1);
-	frame.SetTime((QWORD)-1);
 }
 
 MediaFrame* VP9Depacketizer::AddPacket(const RTPPacket::shared& packet)
 {
+	//Get timestamp in ms
+	auto ts = packet->GetTimestamp()/90;
 	//Check it is from same packet
-	if (frame.GetTimeStamp()!=packet->GetTimestamp())
+	if (frame.GetTimeStamp()!=ts)
 		//Reset frame
 		ResetFrame();
 	//If not timestamp
 	if (frame.GetTimeStamp()==(DWORD)-1)
 		//Set timestamp
-		frame.SetTimestamp(packet->GetTimestamp());
-	//If not times
-	if (frame.GetTime()==(QWORD)-1)
-		//Set timestamp
-		frame.SetTime(packet->GetTime());
+		frame.SetTimestamp(ts);
 	//Set SSRC
 	frame.SetSSRC(packet->GetSSRC());
 	//Add payload

@@ -167,14 +167,14 @@ int AudioEncoderWorker::StopEncoding()
 int AudioEncoderWorker::Encode()
 {
 	SWORD 		recBuffer[512];
-        struct timeval 	before;
+        struct timeval 	first;
 	AudioEncoder* 	codec;
 	DWORD		frameTime=0;
 
 	Log(">Encode Audio\n");
 
 	//Obtenemos el tiempo ahora
-	gettimeofday(&before,NULL);
+	gettimeofday(&first,NULL);
 
 	//Creamos el codec de audio
 	if ((codec = AudioCodecFactory::CreateEncoder(audioCodec))==NULL)

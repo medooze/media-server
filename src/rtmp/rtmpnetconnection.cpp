@@ -2,6 +2,25 @@
 
 RTMPNetConnection::~RTMPNetConnection()
 {
+	//Disconnected
+	Disconnect();
+}
+
+
+void RTMPNetConnection::SendStatus(const RTMPNetStatusEventInfo &info,const wchar_t *message)
+{
+	//Lock mutexk
+	lock.WaitUnusedAndLock();
+	//For each listener
+	for(Listeners::iterator it = listeners.begin(); it!=listeners.end(); ++it)
+		//Disconnect
+		(*it)->onNetConnectionStatus(info,message);
+	//Unlock
+	lock.Unlock();
+}
+	
+void RTMPNetConnection::Disconnect()
+{
 	//Lock mutexk
 	lock.WaitUnusedAndLock();
 	//For each stream
@@ -10,25 +29,17 @@ RTMPNetConnection::~RTMPNetConnection()
 		delete(*it);
 	//Clean streams
 	streams.clear();
-	//Disconnected
-	fireOnNetConnectionDisconnected();
-	//Clean streams
-	listeners.clear();
-	//Unlock
-	lock.Unlock();
-}
-
-void RTMPNetConnection::fireOnNetConnectionDisconnected()
-{
 	//For each listener
 	for(Listeners::iterator it = listeners.begin(); it!=listeners.end(); ++it)
 		//Disconnect
 		(*it)->onNetConnectionDisconnected();
+	//Unlock
+	lock.Unlock();
 }
 
 int RTMPNetConnection::RegisterStream(RTMPNetStream* stream)
 {
-	Log(">Registering stream [tag:%ls]\n",stream->GetTag().c_str());
+	Log(">RTMPNetConnection::RegisterStream() [tag:%ls]\n",stream->GetTag().c_str());
 
 	//Lock mutexk
 	lock.WaitUnusedAndLock();
@@ -39,7 +50,7 @@ int RTMPNetConnection::RegisterStream(RTMPNetStream* stream)
 	//Unlock
 	lock.Unlock();
 
-	Log("<Unregistering string [num:%d]\n",num);
+	Log("<RTMPNetConnection::RegisterStream() [size:%d]\n",num);
 	
 	//return number of streams
 	return num;
@@ -48,7 +59,7 @@ int RTMPNetConnection::RegisterStream(RTMPNetStream* stream)
 int RTMPNetConnection::UnRegisterStream(RTMPNetStream* stream)
 {
 
-	Log(">Unregistering string [tag:%ls]\n",stream->GetTag().c_str());
+	Log(">RTMPNetConnection::UnRegisterStream() [tag:%ls]\n",stream->GetTag().c_str());
 
 	//Lock mutexk
 	lock.WaitUnusedAndLock();
@@ -63,13 +74,13 @@ int RTMPNetConnection::UnRegisterStream(RTMPNetStream* stream)
 	//Unlock
 	lock.Unlock();
 
-	Log("<Unregistering string [num:%d]\n",num);
+	Log("<RTMPNetConnection::UnRegisterStream()[size:%d]\n",num);
 
 	//return number of streams
 	return num;
 }
 
-void RTMPNetConnection::Connect(Listener* listener)
+void RTMPNetConnection::AddListener(Listener* listener)
 {
 	//Lock mutexk
 	lock.WaitUnusedAndLock();
@@ -80,7 +91,7 @@ void RTMPNetConnection::Connect(Listener* listener)
 }
 
 
-void RTMPNetConnection::Disconnect(Listener* listener)
+void RTMPNetConnection::RemoveListener(Listener* listener)
 {
 	//Lock mutexk
 	lock.WaitUnusedAndLock();

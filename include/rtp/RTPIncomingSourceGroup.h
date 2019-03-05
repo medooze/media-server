@@ -8,6 +8,7 @@
 #include "config.h"
 #include "use.h"
 #include "rtp/RTPPacket.h"
+#include "rtp/RTPIncomingMediaStream.h"
 #include "rtp/RTPIncomingSource.h"
 #include "rtp/RTPLostPackets.h"
 #include "rtp/RTPBuffer.h"
@@ -15,21 +16,17 @@
 #include "TimeService.h"
 
 class RTPIncomingSourceGroup :
+	public RTPIncomingMediaStream,
 	public RemoteRateEstimator::Listener
 {
-public:
-	class Listener 
-	{
-	public:
-		virtual void onRTP(RTPIncomingSourceGroup* group,const RTPPacket::shared& packet) = 0;
-		virtual void onEnded(RTPIncomingSourceGroup* group) = 0;
-	};
 public:	
 	RTPIncomingSourceGroup(MediaFrame::Type type,TimeService& timeService);
+	virtual ~RTPIncomingSourceGroup() = default;
 	
 	RTPIncomingSource* GetSource(DWORD ssrc);
-	void AddListener(Listener* listener);
-	void RemoveListener(Listener* listener);
+	virtual void AddListener(RTPIncomingMediaStream::Listener* listener) override;
+	virtual void RemoveListener(RTPIncomingMediaStream::Listener* listener) override;
+	virtual DWORD GetMediaSSRC() override { return media.ssrc; }
 	int AddPacket(const RTPPacket::shared &packet, DWORD size = 0); //Size is only used if remb is in use
 	RTPIncomingSource* Process(RTPPacket::shared &packet);
 	
@@ -74,7 +71,7 @@ private:
 	RTPLostPackets	losts;
 	RTPBuffer	packets;
 	Mutex		listenerMutex;
-	std::set<Listener*>  listeners;
+	std::set<RTPIncomingMediaStream::Listener*>  listeners;
 	RemoteRateEstimator remoteRateEstimator;
 	WORD  rttrtxSeq	 = 0 ;
 	QWORD rttrtxTime = 0;

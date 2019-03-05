@@ -154,7 +154,7 @@ int RTMPConnection::End()
 			app->DeleteStream((it++)->second);
 
 		//Disconnect application
-		app->Disconnect(this);
+		app->RemoveListener(this);
 		//NO app
 		app = NULL;
 	}
@@ -872,50 +872,12 @@ void RTMPConnection::ProcessCommandMessage(DWORD streamId,RTMPCommandMessage* cm
 		//Get media stream
 		RTMPNetStream* stream = it->second;
 
-		//Check command names
-		if (name.compare(L"play")==0)
-		{
-			//Get url to play
-			std::wstring url = *(cmd->GetExtra(0));
-			//Play
-			stream->doPlay(url,this);
-		//Publish
-		} else if (name.compare(L"publish")==0){
-			//Get param
-			AMFData *obj = cmd->GetExtra(0);
-			//Check type
-			if (obj->CheckType(AMFData::String))
-			{
-				//Get url to play
-				std::wstring url = *obj;
-				//Publish
-				stream->doPublish(url);
-			} else {
-				//Close
-				stream->doClose(this);
-			}
-		} else if (name.compare(L"seek")==0) {
-			//Get timestamp
-			double time = *(cmd->GetExtra(0));
-			//Play
-			stream->doSeek(time);
-		} else if (name.compare(L"pause")==0) {
-			//Get pause/resume flag
-			bool flag = *(cmd->GetExtra(0));
-			//Check if it is pause or resume
-			if (!flag)
-				//Pause
-				stream->doPause();
-			else
-				//Resume
-				stream->doResume();
-		} else if (name.compare(L"closeStream")==0) {
-			//Close stream
-			stream->doClose(this);
-		} else {
-			//Send command
-			stream->doCommand(cmd);
-		}
+		//Ensure valid
+		if (!stream)
+			//Send error
+			return SendCommandError(streamId,transId,NULL,NULL);
+		//Let it process the message
+		stream->ProcessCommandMessage(cmd);
 
 	} else if (name.compare(L"connect")==0) {
 		double objectEncoding = 0;
@@ -952,43 +914,48 @@ void RTMPConnection::ProcessCommandMessage(DWORD streamId,RTMPCommandMessage* cm
 			objectEncoding = (double)obj->GetProperty(L"objectEncoding");
 
 		//Call listener
-		app = listener->OnConnect(appName,this);
+		app = listener->OnConnect(appName,this,[=](bool accepted){
+			//Log
+			Log("-Accepting connection [%d]\n",accepted);
+			//IF not acepted
+			if (!accepted)
+				//End connection
+				return End();
+			//Send start stream
+			SendControlMessage(RTMPMessage::UserControlMessage,RTMPUserControlMessage::CreateStreamBegin(0));
+			//Send window acknoledgement
+			SendControlMessage(RTMPMessage::WindowAcknowledgementSize, RTMPWindowAcknowledgementSize::Create(512000));
+			//Send client bandwitdh
+			SendControlMessage(RTMPMessage::SetPeerBandwidth, RTMPSetPeerBandWidth::Create(512000,2));
+			//Increase chunk size
+			maxOutChunkSize = 512;
+			//Send client bandwitdh
+			SendControlMessage(RTMPMessage::SetChunkSize, RTMPSetChunkSize::Create(maxOutChunkSize));
+
+			//Create params & extra info
+			AMFObject* params = new AMFObject();
+			AMFObject* extra = new AMFObject();
+			AMFEcmaArray* data = new AMFEcmaArray();
+			//Add properties
+			params->AddProperty(L"fmsVer"		,L"FMS/3,5,1,525");
+			params->AddProperty(L"capabilities"	,31.0);
+			params->AddProperty(L"mode"		,1.0);
+			extra->AddProperty(L"level"		,L"status");
+			extra->AddProperty(L"code"		,L"NetConnection.Connect.Success");
+			extra->AddProperty(L"description"	,L"Connection succeded");
+			extra->AddProperty(L"data"		,data);
+			extra->AddProperty(L"objectEncoding"	,objectEncoding);
+			data->AddProperty(L"version"           	,L"3,5,1,525");
+			//Create
+			SendCommandResult(streamId,transId,params,extra);
+			//Ping
+			PingRequest();
+		});
 
 		//If it is null
 		if (!app)
 			//Send error
 			return SendCommandError(streamId,transId);
-
-		//Send start stream
-		SendControlMessage(RTMPMessage::UserControlMessage,RTMPUserControlMessage::CreateStreamBegin(0));
-		//Send window acknoledgement
-		SendControlMessage(RTMPMessage::WindowAcknowledgementSize, RTMPWindowAcknowledgementSize::Create(512000));
-		//Send client bandwitdh
-		SendControlMessage(RTMPMessage::SetPeerBandwidth, RTMPSetPeerBandWidth::Create(512000,2));
-		//Increase chunk size
-		maxOutChunkSize = 512;
-		//Send client bandwitdh
-		SendControlMessage(RTMPMessage::SetChunkSize, RTMPSetChunkSize::Create(maxOutChunkSize));
-
-		//Create params & extra info
-		AMFObject* params = new AMFObject();
-		AMFObject* extra = new AMFObject();
-		AMFEcmaArray* data = new AMFEcmaArray();
-		objectEncoding = 3;
-		//Add properties
-		params->AddProperty(L"fmsVer"		,L"FMS/3,5,1,525");
-		params->AddProperty(L"capabilities"	,31.0);
-		params->AddProperty(L"mode"		,1.0);
-		extra->AddProperty(L"level"		,L"status");
-		extra->AddProperty(L"code"		,L"NetConnection.Connect.Success");
-		extra->AddProperty(L"description"	,L"Connection succeded");
-		extra->AddProperty(L"data"		,data);
-		extra->AddProperty(L"objectEncoding"	,objectEncoding);
-		data->AddProperty(L"version"           	,L"3,5,1,525");
-		//Create
-		SendCommandResult(streamId,transId,params,extra);
-		//Ping
-		PingRequest();
 	} else if (name.compare(L"createStream")==0 || name.compare(L"initStream")==0) {
 		//Check if we have an application
 		if (!app)

@@ -22,6 +22,7 @@ public:
 	DWORD Parse(const BYTE *data,DWORD size);
 	bool IsParsed();
 	void SetSize(DWORD size);
+	std::string GetUTF8String();
 	DWORD GetUTF8Size();
 	DWORD GetLength();
 	std::wstring GetWString();

@@ -34,6 +34,7 @@
 #include "rtp/RTPWaitedBuffer.h"
 #include "rtp/RTPLostPackets.h"
 #include "rtp/RTPSource.h"
+#include "rtp/RTPIncomingMediaStream.h"
 #include "rtp/RTPIncomingSource.h"
 #include "rtp/RTPIncomingSourceGroup.h"
 #include "rtp/RTPOutgoingSource.h"

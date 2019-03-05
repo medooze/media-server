@@ -274,6 +274,7 @@ public:
 	//virtual void doSend(std::wstring &name,args);
 	//virtual void doStep(DWORD num);
 	//virtual void doTogglePause();
+	virtual void ProcessCommandMessage(RTMPCommandMessage* cmd);
 	
 protected:
 	virtual void fireOnNetStreamStatus(const RTMPNetStatusEventInfo &info,const wchar_t* message);

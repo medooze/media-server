@@ -18,18 +18,18 @@
 #include "VideoLayerSelector.h"
 
 class RTPStreamTransponder : 
-	public RTPIncomingSourceGroup::Listener,
+	public RTPIncomingMediaStream::Listener,
 	public RTPOutgoingSourceGroup::Listener
 {
 public:
 	RTPStreamTransponder(RTPOutgoingSourceGroup* outgoing,RTPSender* sender);
 	virtual ~RTPStreamTransponder();
 	
-	bool SetIncoming(RTPIncomingSourceGroup* incoming, RTPReceiver* receiver);
+	bool SetIncoming(RTPIncomingMediaStream* incoming, RTPReceiver* receiver);
 	void Close();
 	
-	virtual void onRTP(RTPIncomingSourceGroup* group,const RTPPacket::shared& packet) override;
-	virtual void onEnded(RTPIncomingSourceGroup* group) override;
+	virtual void onRTP(RTPIncomingMediaStream* stream,const RTPPacket::shared& packet) override;
+	virtual void onEnded(RTPIncomingMediaStream* stream) override;
 	virtual void onPLIRequest(RTPOutgoingSourceGroup* group,DWORD ssrc) override;
 	virtual void onREMB(RTPOutgoingSourceGroup* group,DWORD ssrc,DWORD bitrate) override;
 	
@@ -41,7 +41,7 @@ protected:
 private:
 	
 	RTPOutgoingSourceGroup *outgoing	= NULL;
-	RTPIncomingSourceGroup *incoming	= NULL;
+	RTPIncomingMediaStream *incoming	= NULL;
 	RTPReceiver* receiver			= NULL;
 	RTPSender* sender			= NULL;
 	std::unique_ptr<VideoLayerSelector> selector;

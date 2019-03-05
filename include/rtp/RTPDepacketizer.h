@@ -77,10 +77,6 @@ public:
 		if (frame.GetTimeStamp()==(DWORD)-1)
 			//Set timestamp
 			frame.SetTimestamp(packet->GetTimestamp());
-		//If not times
-		if (frame.GetTime()==(QWORD)-1)
-			//Set timestamp
-			frame.SetTime(packet->GetTime());
 		//Set SSRC
 		frame.SetSSRC(packet->GetSSRC());
 		//Add payload
@@ -107,7 +103,6 @@ public:
 		frame.SetLength(0);
 		//Clear time
 		frame.SetTimestamp((DWORD)-1);
-		frame.SetTime((QWORD)-1);
 	}
 	virtual DWORD GetTimestamp() 
 	{

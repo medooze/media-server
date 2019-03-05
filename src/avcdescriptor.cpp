@@ -25,7 +25,7 @@ AVCDescriptor::AVCDescriptor()
 	spsTotalSizes = 0;
 }
 
-bool AVCDescriptor::Parse(BYTE* buffer,DWORD bufferLen)
+bool AVCDescriptor::Parse(const BYTE* buffer,DWORD bufferLen)
 {
 	//Check size
 	if (bufferLen<7)
@@ -101,7 +101,7 @@ AVCDescriptor::~AVCDescriptor()
 	ClearPictureParameterSets();
 }
 
-void AVCDescriptor::AddSequenceParameterSet(BYTE *data,DWORD size)
+void AVCDescriptor::AddSequenceParameterSet(const BYTE *data,DWORD size)
 {
 	//Increase number of pps
 	numOfSequenceParameterSets++;
@@ -117,7 +117,7 @@ void AVCDescriptor::AddSequenceParameterSet(BYTE *data,DWORD size)
 	spsTotalSizes+=size;
 }
 
-void AVCDescriptor::AddParametersFromFrame(BYTE *data,DWORD size)
+void AVCDescriptor::AddParametersFromFrame(const BYTE *data,DWORD size)
 {
 	//Chop into NALs
 	while(size>4)
@@ -125,7 +125,7 @@ void AVCDescriptor::AddParametersFromFrame(BYTE *data,DWORD size)
 		//Get nal size
 		DWORD nalSize =  get4(data,0);
 		//Get NAL start
-		BYTE *nal = data+4;
+		const BYTE* nal = data+4;
 		//Depending on the type
 		switch(nal[0] & 0xF)
 		{
@@ -144,7 +144,7 @@ void AVCDescriptor::AddParametersFromFrame(BYTE *data,DWORD size)
 	}
 }
 
-void AVCDescriptor::AddPictureParameterSet(BYTE *data,DWORD size)
+void AVCDescriptor::AddPictureParameterSet(const BYTE *data,DWORD size)
 {
 	//Increase number of pps
 	numOfPictureParameterSets++;

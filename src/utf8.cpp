@@ -142,6 +142,14 @@ DWORD UTF8Parser::GetUTF8Size()
 	return utf8size;
 }
 
+std::string UTF8Parser::GetUTF8String()
+{
+	std::string utf8string;
+	utf8string.resize(utf8size);
+	Serialize((BYTE*)utf8string.data(),utf8size);
+	return utf8string;
+}
+
 DWORD UTF8Parser::GetLength()
 {
 	return value.length();
