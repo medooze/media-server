@@ -88,7 +88,7 @@ public:
 			return 0;
 	
 		//Calculamos lo que queda hasta el end
-		unsigned int total = size()-ini;
+		int total = size()-ini;
 	
 		//Y si tenemos que copiar al principio
 		if (total>=l)

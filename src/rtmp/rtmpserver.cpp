@@ -47,12 +47,14 @@ RTMPServer::~RTMPServer()
 *************************/
 int RTMPServer::Init(int port)
 {
+	Log("-RTMPServer::Init() [port:%d]\n",port);
+	
 	//Check not already inited
 	if (inited)
 		//Error
-		return Error("-Init: RTMP Server is already running.\n");
+		return Error("-RTMPServer::Init() RTMP Server is already running.\n");
 
-	Log("-Init RTMP Server [%d]\n",port);
+	
 
 	//Save server port
 	serverPort = port;
@@ -78,7 +80,7 @@ int RTMPServer::Run()
 
 init:
 	//Log
-	Log(">Run RTMP Server [%p]\n",this);
+	Log(">RTMPServer::Run() [%p]\n",this);
 	//Create socket
 	server = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -95,12 +97,12 @@ init:
 	//Bind
      	if (bind(server, (sockaddr *) &addr, sizeof(addr)) < 0)
 		//Error
-		return Error("Can't bind server socket. errno = %d.\n", errno);
+		return Error("-RTMPServer::Run() Can't bind server socket. errno = %d.\n", errno);
 
 	//Listen for connections
 	if (listen(server,5)<0)
 		//Error
-		return Error("Can't listen on server socket. errno = %d\n", errno);
+		return Error("-RTMPServer::Run() Can't listen on server socket. errno = %d\n", errno);
 
 	//Set values for polling
 	ufds[0].fd = server;
@@ -115,7 +117,7 @@ init:
 	while(inited)
 	{
 		//Log
-		Log("-RTMP Server accepting connections [fd:%d]\n", ufds[0].fd);
+		Log("-RTMPServer::Run() Server accepting connections [fd:%d]\n", ufds[0].fd);
 
 		//Clean zombies each time
 		CleanZombies();
@@ -124,7 +126,7 @@ init:
 		if (poll(ufds,1,-1)<0)
 		{
 			//Error
-			Error("RTMPServer: pool error [fd:%d,errno:%d]\n",ufds[0].fd,errno);
+			Error("-RTMPServer::Run() pool error [fd:%d,errno:%d]\n",ufds[0].fd,errno);
 			//Check if already inited
 			if (!inited)
 				//Exit
@@ -141,7 +143,7 @@ init:
 		if (ufds[0].revents!=POLLIN)
 		{
 			//Error
-			Error("RTMPServer: poolin error event [event:%d,fd:%d,errno:%d]\n",ufds[0].revents,ufds[0].fd,errno);
+			Error("-RTMPServer::Run() poolin error event [event:%d,fd:%d,errno:%d]\n",ufds[0].revents,ufds[0].fd,errno);
 			//Check if already inited
 			if (!inited)
 				//Exit
@@ -161,7 +163,7 @@ init:
 		if (fd<0)
 		{
 			//LOg error
-			Error("RTMPServer: error accepting new connection [fd:%d,errno:%d]\n",server,errno);
+			Error("-RTMPServer::Run() error accepting new connection [fd:%d,errno:%d]\n",server,errno);
 			//Check if already inited
 			if (!inited)
 				//Exit
@@ -183,7 +185,7 @@ init:
 		CreateConnection(fd);
 	}
 
-	Log("<Run RTMP Server\n");
+	Log("<RTMPServer::Run()\n");
 
 	return 0;
 }
@@ -194,12 +196,10 @@ init:
  *************************/
 void RTMPServer::CreateConnection(int fd)
 {
-	Log(">Creating connection\n");
-
 	//Create new RTMP connection
 	RTMPConnection* rtmp = new RTMPConnection(this);
 
-	Log("-Incoming connection [%d,%p]\n",fd,rtmp);
+	Log(">RTMPServer::CreateConnection() connection [fd:%d,%p]\n",fd,rtmp);
 
 	//Init connection
 	rtmp->Init(fd);
@@ -213,7 +213,7 @@ void RTMPServer::CreateConnection(int fd)
 	//Unlock
 	pthread_mutex_unlock(&sessionMutex);
 
-	Log("<Creating connection [0x%x]\n",rtmp);
+	Log("<RTMPServer::CreateConnection() [0x%x]\n",rtmp);
 }
 
 /**************************
@@ -248,7 +248,7 @@ void RTMPServer::CleanZombies()
  *********************/
 void RTMPServer::DeleteAllConnections()
 {
-	Log(">Delete all connections\n");
+	Log(">RTMPServer::DeleteAllConnections()\n");
 
 	//Lock list
 	pthread_mutex_lock(&sessionMutex);
@@ -270,7 +270,7 @@ void RTMPServer::DeleteAllConnections()
 	//Unlock list
 	pthread_mutex_unlock(&sessionMutex);
 
-	Log("<Delete all connections\n");
+	Log("<RTMPServer::DeleteAllConnections()\n");
 
 }
 
@@ -301,7 +301,7 @@ void * RTMPServer::run(void *par)
 *************************/
 int RTMPServer::End()
 {
-	Log(">End RTMP Server\n");
+	Log(">RTMPServer::End()\n");
 
 	//Check we have been inited
 	if (!inited)
@@ -319,14 +319,14 @@ int RTMPServer::End()
 	server = FD_INVALID;
 
 	//Wait for server thread to close
-        Log("Joining server thread [%d,%d]\n",serverThread,inited);
+        Log("-RTMPServer::End() Joining server thread [%d,%d]\n",serverThread,inited);
         pthread_join(serverThread,NULL);
-        Log("Joined server thread [%d]\n",serverThread);
+        Log("-RTMPServer::End() Joined server thread [%d]\n",serverThread);
 
 	//Delete connections
 	DeleteAllConnections();
 
-	Log("<End RTMP Server\n");
+	Log("<RTMPServer::End()\n");
 }
 
 /**********************************
@@ -335,7 +335,7 @@ int RTMPServer::End()
  *********************************/
 int RTMPServer::AddApplication(const wchar_t* name,RTMPApplication *app)
 {
-	Log("-Adding rtmp application %ls\n",name);
+	Log("-RTMPServer::AddApplication() [name:%ls]\n",name);
 	//Store
 	applications[std::wstring(name)] = app;
 
@@ -369,7 +369,7 @@ RTMPNetConnection* RTMPServer::OnConnect(const std::wstring &appName,RTMPNetConn
   *************************************/
 void RTMPServer::onDisconnect(RTMPConnection *con)
 {
-	Log("-onDisconnected [%p]\n",con);
+	Log("-RTMPServer::onDisconnect() [%p]\n",con);
 
 	//Lock list
 	pthread_mutex_lock(&sessionMutex);

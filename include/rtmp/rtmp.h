@@ -8,6 +8,7 @@
 class RTMPObject
 {
 public:
+	virtual ~RTMPObject() = default;
 	virtual DWORD Parse(BYTE *buffer,DWORD bufferSize) = 0;
 	virtual bool IsParsed() = 0;
 	virtual DWORD GetSize() = 0;
@@ -38,7 +39,7 @@ public:
 
 	virtual DWORD Parse(BYTE *buffer,DWORD bufferSize)
 	{
-		int num;
+		DWORD num;
 
 		//Sanity check	
 		if (bufferSize==0)
@@ -96,8 +97,8 @@ public:
 	
 protected:
 	BYTE	data[SIZE];
-	int	len;
-	int 	size;
+	DWORD	len;
+	DWORD 	size;
 };
 
 /***********************************************************
@@ -212,6 +213,7 @@ public:
 			case 3:
 				return (((DWORD)data[1])<<8) + data[2] + 64;
 		}
+		return (DWORD)-1;
 	}
 	void	SetStreamId(DWORD csid)
 	{

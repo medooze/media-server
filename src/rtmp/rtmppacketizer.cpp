@@ -147,13 +147,18 @@ std::unique_ptr<VideoFrame> RTMPAVCPacketizer::AddFrame(RTMPVideoFrame* videoFra
 
 std::unique_ptr<AudioFrame> RTMPAACPacketizer::AddFrame(RTMPAudioFrame* audioFrame)
 {
+	//Debug("-RTMPAACPacketizer::AddFrame() [size:%u,aac:%d,codec:%d]\n",audioFrame->GetMediaSize(),audioFrame->GetAACPacketType(),audioFrame->GetAudioCodec());
+	
 	if (audioFrame->GetAudioCodec()!=RTMPAudioFrame::AAC)
 		return nullptr;
 	
 	//Check if it is AAC descriptor
 	if (audioFrame->GetAACPacketType()==RTMPAudioFrame::AACSequenceHeader)
-		//TODO: Handle specific settings
+	{
+		//Handle specific settings
+		aacSpecificConfig.Decode(audioFrame->GetMediaData(),audioFrame->GetMediaSize());
 		return nullptr;
+	}
 	
 	if (audioFrame->GetAACPacketType()!=RTMPAudioFrame::AACRaw)
 		//DOne

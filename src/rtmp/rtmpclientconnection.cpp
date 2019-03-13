@@ -232,7 +232,6 @@ int RTMPClientConnection::Run()
 {
 	BYTE data[1400];
 	unsigned int size = 1400;
-	unsigned int len = 0;
 
 	Log(">Run connection [%p]\n",this);
 
@@ -320,6 +319,8 @@ int RTMPClientConnection::Run()
 
 	Log("<Run RTMP connection\n");
 
+	//Done
+	return 1;
 }
 
 void RTMPClientConnection::SignalWriteNeeded()
@@ -732,6 +733,9 @@ void RTMPClientConnection::ParseData(BYTE *data,const DWORD size)
 				}
 
 				break;
+			case NONE:
+				//We should not be here
+				break;
 		}
 	}
 }
@@ -805,6 +809,9 @@ void RTMPClientConnection::ProcessControlMessage(DWORD streamId,BYTE type,RTMPOb
 			break;
 		case RTMPMessage::SetPeerBandwidth:
 			Log("SetPeerBandwidth\n");
+			break;
+		default:
+			Log("Unknown [type:%d]\n",type);
 			break;
 	}
 }
@@ -1029,7 +1036,7 @@ void RTMPClientConnection::onMediaFrame(DWORD streamId,RTMPMediaFrame *frame)
 	QWORD ts = frame->GetTimestamp();
 
 	//Check timestamp
-	if (ts==-1)
+	if (ts==(QWORD)-1)
 		//Calculate timestamp based on current time
 		ts = getDifTime(&startTime)/1000;
 
@@ -1054,7 +1061,7 @@ void RTMPClientConnection::onMetaData(DWORD streamId,RTMPMetaData *meta)
 	QWORD ts = meta->GetTimestamp();
 
 	//Check timestamp
-	if (ts==-1)
+	if (ts==(QWORD)-1)
 		//Calculate timestamp based on current time
 		ts = getDifTime(&startTime)/1000;
 
@@ -1121,6 +1128,8 @@ bool RTMPClientConnection::NetStream::Close()
 	conn->SendCommand(id,L"close",NULL,NULL);
 	//Remove all list
 	RemoveAllMediaListeners();
+	//Done
+	return true;
 }
 bool RTMPClientConnection::NetStream::Publish(std::wstring& url)
 {

@@ -48,14 +48,11 @@ AudioEncoderWorker::~AudioEncoderWorker()
 * SetAudioCodec
 *	Fija el codec de audio
 ***************************************/
-int AudioEncoderWorker::SetAudioCodec(AudioCodec::Type codec)
+int AudioEncoderWorker::SetAudioCodec(AudioCodec::Type codec, const Properties& properties)
 {
-	//Compromabos que soportamos el modo
-	if (!(codec==AudioCodec::PCMA || codec==AudioCodec::GSM || codec==AudioCodec::PCMU))
-		return 0;
-
 	//Colocamos el tipo de audio
 	audioCodec = codec;
+	audioProperties = properties;
 
 	Log("-SetAudioCodec [%d,%s]\n",audioCodec,AudioCodec::GetNameFor(audioCodec));
 
@@ -166,26 +163,19 @@ int AudioEncoderWorker::StopEncoding()
 *******************************************/
 int AudioEncoderWorker::Encode()
 {
-	SWORD 		recBuffer[512];
-        struct timeval 	first;
+	SWORD 		recBuffer[2048];
 	AudioEncoder* 	codec;
 	DWORD		frameTime=0;
 
 	Log(">Encode Audio\n");
 
-	//Obtenemos el tiempo ahora
-	gettimeofday(&first,NULL);
-
 	//Creamos el codec de audio
-	if ((codec = AudioCodecFactory::CreateEncoder(audioCodec))==NULL)
-	{
-		Log("Error en el envio de audio,saliendo\n");
-		return 0;
-	}
+	if ((codec = AudioCodecFactory::CreateEncoder(audioCodec,audioProperties))==NULL)
+		return Error("Could not open encoder");
 
 	//Try to set native rate
 	DWORD rate = codec->TrySetRate(audioInput->GetNativeRate());
-
+	
 	//Create audio frame
 	AudioFrame frame(audioCodec,rate);
 
@@ -196,12 +186,12 @@ int AudioEncoderWorker::Encode()
 	while(encodingAudio)
 	{
 		//Capturamos 20ms
-		if (audioInput->RecBuffer(recBuffer,160)==0)
+		if (audioInput->RecBuffer(recBuffer,codec->numFrameSamples)==0)
 			//Skip and probably exit
 			continue;
 
 		//Incrementamos el tiempo de envio
-		frameTime += 160;
+		frameTime += codec->numFrameSamples;
 
 		//Check codec
 		if (codec)
@@ -220,10 +210,10 @@ int AudioEncoderWorker::Encode()
 			frame.SetLength(len);
 
 			//Set frame time
-			frame.SetTimestamp(frameTime);
+			frame.SetTimestamp(frameTime*1000/codec->GetClockRate());
 
 			//Set frame duration
-			frame.SetDuration(codec->numFrameSamples);
+			frame.SetDuration(codec->numFrameSamples*1000/codec->GetClockRate());
 
 			//Clear rtp
 			frame.ClearRTPPacketizationInfo();
@@ -265,6 +255,7 @@ int AudioEncoderWorker::Encode()
 	//Salimos
         Log("<Encode Audio\n");
 	
+	return 1;
 }
 
 bool AudioEncoderWorker::AddListener(MediaFrame::Listener *listener)

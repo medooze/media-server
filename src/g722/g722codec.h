@@ -18,7 +18,7 @@ public:
 	virtual DWORD GetRate()			{ return 16000;	}
 	virtual DWORD GetClockRate()		{ return 8000;	}
 private:
-	G722EncoderState encoder = {0};
+	G722EncoderState encoder = {};
 };
 
 class G722Decoder : public AudioDecoder
@@ -30,7 +30,7 @@ public:
 	virtual DWORD TrySetRate(DWORD rate)	{ return 16000;	}
 	virtual DWORD GetRate()			{ return 16000;	}
 private:
-	G722DecoderState decoder = {0};
+	G722DecoderState decoder = {};
 };
 
 #endif	/* NELLYCODEC_H */

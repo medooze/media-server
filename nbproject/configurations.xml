@@ -14,117 +14,65 @@
           <df name="gtests">
             <in>TestSuite.cpp</in>
           </df>
-          <df name="include">
-            <in>datachannels.h</in>
-          </df>
           <df name="src">
-            <df name="internal">
-              <in>Buffer.h</in>
-              <in>BufferReader.h</in>
-              <in>BufferWritter.h</in>
-            </df>
             <df name="sctp">
               <df name="chunks">
                 <in>AbortAssociationChunk.cpp</in>
-                <in>AbortAssociationChunk.h</in>
                 <in>CookieAckChunk.cpp</in>
-                <in>CookieAckChunk.h</in>
                 <in>CookieEchoChunk.cpp</in>
-                <in>CookieEchoChunk.h</in>
                 <in>ForwardCumulativeTSNChunk.cpp</in>
-                <in>ForwardCumulativeTSNChunk.h</in>
                 <in>HeartbeatAckChunk.cpp</in>
-                <in>HeartbeatAckChunk.h</in>
                 <in>HeartbeatRequestChunk.cpp</in>
-                <in>HeartbeatRequestChunk.h</in>
                 <in>InitiationAcknowledgementChunk.cpp</in>
-                <in>InitiationAcknowledgementChunk.h</in>
                 <in>InitiationChunk.cpp</in>
-                <in>InitiationChunk.h</in>
                 <in>OperationErrorChunk.cpp</in>
-                <in>OperationErrorChunk.h</in>
                 <in>PayloadDataChunk.cpp</in>
-                <in>PayloadDataChunk.h</in>
                 <in>ReConfigChunk.cpp</in>
-                <in>ReConfigChunk.h</in>
                 <in>SelectiveAcknowledgementChunk.cpp</in>
-                <in>SelectiveAcknowledgementChunk.h</in>
                 <in>ShutdownAcknowledgementChunk.cpp</in>
-                <in>ShutdownAcknowledgementChunk.h</in>
                 <in>ShutdownAssociationChunk.cpp</in>
-                <in>ShutdownAssociationChunk.h</in>
                 <in>ShutdownCompleteChunk.cpp</in>
-                <in>ShutdownCompleteChunk.h</in>
               </df>
               <in>Association.cpp</in>
-              <in>Association.h</in>
-              <in>Chunk.h</in>
-              <in>ErrorCause.h</in>
               <in>PacketHeader.cpp</in>
-              <in>PacketHeader.h</in>
-              <in>Parameter.h</in>
               <in>Stream.cpp</in>
-              <in>Stream.h</in>
             </df>
             <in>Datachannel.cpp</in>
-            <in>Datachannel.h</in>
             <in>Datachannels.cpp</in>
             <in>Endpoint.cpp</in>
-            <in>Endpoint.h</in>
           </df>
         </df>
         <df name="webrtc">
           <df name="common_audio">
-            <df name="include">
-              <in>audio_util.h</in>
-            </df>
             <df name="resampler">
-              <df name="include">
-                <in>push_resampler.h</in>
-                <in>resampler.h</in>
-              </df>
               <in>push_resampler.cc</in>
               <in>push_resampler_unittest.cc</in>
               <in>push_sinc_resampler.cc</in>
-              <in>push_sinc_resampler.h</in>
               <in>push_sinc_resampler_unittest.cc</in>
               <in>resampler.cc</in>
               <in>resampler_unittest.cc</in>
               <in>sinc_resampler.cc</in>
-              <in>sinc_resampler.h</in>
               <in>sinc_resampler_neon.cc</in>
               <in>sinc_resampler_sse.cc</in>
               <in>sinc_resampler_unittest.cc</in>
               <in>sinusoidal_linear_chirp_source.cc</in>
-              <in>sinusoidal_linear_chirp_source.h</in>
             </df>
             <df name="signal_processing">
-              <df name="include">
-                <in>real_fft.h</in>
-                <in>signal_processing_library.h</in>
-                <in>spl_inl.h</in>
-                <in>spl_inl_armv7.h</in>
-              </df>
               <in>auto_corr_to_refl_coef.c</in>
               <in>auto_correlation.c</in>
               <in>complex_bit_reverse.c</in>
-              <in>complex_bit_reverse_arm.S</in>
               <in>complex_bit_reverse_mips.c</in>
               <in>complex_fft.c</in>
               <in>complex_fft_mips.c</in>
-              <in>complex_fft_tables.h</in>
               <in>copy_set_operations.c</in>
               <in>cross_correlation.c</in>
-              <in>cross_correlation_neon.S</in>
               <in>division_operations.c</in>
               <in>dot_product_with_scale.c</in>
               <in>downsample_fast.c</in>
               <in>downsample_fast_mips.c</in>
-              <in>downsample_fast_neon.S</in>
               <in>energy.c</in>
               <in>filter_ar.c</in>
               <in>filter_ar_fast_q12.c</in>
-              <in>filter_ar_fast_q12_armv7.S</in>
               <in>filter_ar_fast_q12_mips.c</in>
               <in>filter_ma_fast_q12.c</in>
               <in>get_hanning_window.c</in>
@@ -134,7 +82,6 @@
               <in>lpc_to_refl_coef.c</in>
               <in>min_max_operations.c</in>
               <in>min_max_operations_mips.c</in>
-              <in>min_max_operations_neon.S</in>
               <in>randomization_functions.c</in>
               <in>real_fft.c</in>
               <in>real_fft_unittest.cc</in>
@@ -143,85 +90,36 @@
               <in>resample_48khz.c</in>
               <in>resample_by_2.c</in>
               <in>resample_by_2_internal.c</in>
-              <in>resample_by_2_internal.h</in>
               <in>resample_by_2_mips.c</in>
               <in>resample_fractional.c</in>
               <in>signal_processing_unittest.cc</in>
               <in>spl_init.c</in>
               <in>spl_sqrt.c</in>
               <in>spl_sqrt_floor.c</in>
-              <in>spl_sqrt_floor_arm.S</in>
               <in>spl_version.c</in>
               <in>splitting_filter.c</in>
               <in>sqrt_of_one_minus_x_squared.c</in>
               <in>vector_scaling_operations.c</in>
-              <in>vector_scaling_operations_neon.S</in>
             </df>
             <df name="vad">
-              <df name="include">
-                <in>webrtc_vad.h</in>
-              </df>
               <in>vad_core.c</in>
-              <in>vad_core.h</in>
               <in>vad_core_unittest.cc</in>
               <in>vad_filterbank.c</in>
-              <in>vad_filterbank.h</in>
               <in>vad_filterbank_unittest.cc</in>
               <in>vad_gmm.c</in>
-              <in>vad_gmm.h</in>
               <in>vad_gmm_unittest.cc</in>
               <in>vad_sp.c</in>
-              <in>vad_sp.h</in>
               <in>vad_sp_unittest.cc</in>
               <in>vad_unittest.cc</in>
-              <in>vad_unittest.h</in>
               <in>webrtc_vad.c</in>
             </df>
             <in>audio_util.cc</in>
             <in>audio_util_unittest.cc</in>
           </df>
           <df name="system_wrappers">
-            <df name="interface">
-              <in>aligned_malloc.h</in>
-              <in>asm_defines.h</in>
-              <in>atomic32.h</in>
-              <in>clock.h</in>
-              <in>compile_assert.h</in>
-              <in>condition_variable_wrapper.h</in>
-              <in>constructor_magic.h</in>
-              <in>cpu_features_wrapper.h</in>
-              <in>cpu_info.h</in>
-              <in>critical_section_wrapper.h</in>
-              <in>data_log.h</in>
-              <in>data_log_c.h</in>
-              <in>data_log_impl.h</in>
-              <in>event_tracer.h</in>
-              <in>event_wrapper.h</in>
-              <in>file_wrapper.h</in>
-              <in>fix_interlocked_exchange_pointer_win.h</in>
-              <in>list_wrapper.h</in>
-              <in>logging.h</in>
-              <in>ref_count.h</in>
-              <in>rw_lock_wrapper.h</in>
-              <in>scoped_ptr.h</in>
-              <in>scoped_refptr.h</in>
-              <in>sleep.h</in>
-              <in>sort.h</in>
-              <in>static_instance.h</in>
-              <in>stringize_macros.h</in>
-              <in>thread_wrapper.h</in>
-              <in>tick_util.h</in>
-              <in>trace.h</in>
-              <in>trace_event.h</in>
-            </df>
             <df name="source">
               <df name="android">
                 <in>cpu-features.c</in>
-                <in>cpu-features.h</in>
-              </df>
-              <df name="spreadsortlib">
-                <in>constants.hpp</in>
-                <in>spreadsort.hpp</in>
               </df>
               <in>aligned_malloc.cc</in>
               <in>aligned_malloc_unittest.cc</in>
@@ -232,73 +130,52 @@
               <in>clock_unittest.cc</in>
               <in>condition_variable.cc</in>
               <in>condition_variable_event_win.cc</in>
-              <in>condition_variable_event_win.h</in>
               <in>condition_variable_native_win.cc</in>
-              <in>condition_variable_native_win.h</in>
               <in>condition_variable_posix.cc</in>
-              <in>condition_variable_posix.h</in>
               <in>condition_variable_unittest.cc</in>
               <in>cpu_features.cc</in>
               <in>cpu_features_android.c</in>
               <in>cpu_info.cc</in>
               <in>critical_section.cc</in>
               <in>critical_section_posix.cc</in>
-              <in>critical_section_posix.h</in>
               <in>critical_section_unittest.cc</in>
               <in>critical_section_win.cc</in>
-              <in>critical_section_win.h</in>
               <in>data_log.cc</in>
               <in>data_log_c.cc</in>
               <in>data_log_c_helpers_unittest.c</in>
-              <in>data_log_c_helpers_unittest.h</in>
               <in>data_log_helpers_unittest.cc</in>
               <in>data_log_no_op.cc</in>
               <in>data_log_unittest.cc</in>
               <in>data_log_unittest_disabled.cc</in>
               <in>event.cc</in>
               <in>event_posix.cc</in>
-              <in>event_posix.h</in>
               <in>event_tracer.cc</in>
               <in>event_tracer_unittest.cc</in>
               <in>event_win.cc</in>
-              <in>event_win.h</in>
               <in>file_impl.cc</in>
-              <in>file_impl.h</in>
               <in>list_no_stl.cc</in>
-              <in>list_no_stl.h</in>
               <in>list_stl.cc</in>
-              <in>list_stl.h</in>
               <in>list_unittest.cc</in>
               <in>logging.cc</in>
               <in>logging_no_op.cc</in>
               <in>logging_unittest.cc</in>
               <in>rw_lock.cc</in>
               <in>rw_lock_generic.cc</in>
-              <in>rw_lock_generic.h</in>
               <in>rw_lock_posix.cc</in>
-              <in>rw_lock_posix.h</in>
               <in>rw_lock_win.cc</in>
-              <in>rw_lock_win.h</in>
-              <in>set_thread_name_win.h</in>
               <in>sleep.cc</in>
               <in>sort.cc</in>
               <in>stringize_macros_unittest.cc</in>
               <in>thread.cc</in>
               <in>thread_posix.cc</in>
-              <in>thread_posix.h</in>
               <in>thread_posix_unittest.cc</in>
               <in>thread_unittest.cc</in>
               <in>thread_win.cc</in>
-              <in>thread_win.h</in>
               <in>tick_util.cc</in>
               <in>trace_impl.cc</in>
-              <in>trace_impl.h</in>
               <in>trace_impl_no_op.cc</in>
               <in>trace_posix.cc</in>
-              <in>trace_posix.h</in>
               <in>trace_win.cc</in>
-              <in>trace_win.h</in>
-              <in>unittest_utilities.h</in>
               <in>unittest_utilities_unittest.cc</in>
             </df>
             <df name="test">
@@ -310,236 +187,77 @@
               </df>
             </df>
           </df>
-          <df name="test">
-            <df name="testsupport">
-              <in>gtest_prod_util.h</in>
-            </df>
-          </df>
-          <in>typedefs.h</in>
         </df>
       </df>
       <df name="include">
-        <df name="core">
-          <in>VideoEncoderWorker.h</in>
-        </df>
         <df name="rtmp">
-          <in>amf.h</in>
-          <in>flv.h</in>
-          <in>flvencoder.h</in>
-          <in>flvrecorder.h</in>
-          <in>rtmp.h</in>
-          <in>rtmpapplication.h</in>
-          <in>rtmpbroadcaster.h</in>
-          <in>rtmpchunk.h</in>
-          <in>rtmpclientconnection.h</in>
-          <in>rtmpconnection.h</in>
-          <in>rtmpflvstream.h</in>
-          <in>rtmphandshake.h</in>
-          <in>rtmpmessage.h</in>
-          <in>rtmpmp4stream.h</in>
-          <in>rtmpnetconnection.h</in>
           <in>rtmppacketizer.h</in>
-          <in>rtmpparticipant.h</in>
-          <in>rtmpserver.h</in>
-          <in>rtmpstream.h</in>
-          <in>rtmptranscoder.h</in>
         </df>
         <df name="rtp">
-          <in>RTCPApp.h</in>
-          <in>RTCPBye.h</in>
-          <in>RTCPCommonHeader.h</in>
-          <in>RTCPCompoundPacket.h</in>
-          <in>RTCPExtendedJitterReport.h</in>
-          <in>RTCPFullIntraRequest.h</in>
-          <in>RTCPNACK.h</in>
-          <in>RTCPPacket.h</in>
-          <in>RTCPPayloadFeedback.h</in>
-          <in>RTCPRTPFeedback.h</in>
-          <in>RTCPReceiverReport.h</in>
-          <in>RTCPReport.h</in>
-          <in>RTCPSDES.h</in>
-          <in>RTCPSenderReport.h</in>
-          <in>RTPBuffer.h</in>
-          <in>RTPDepacketizer.h</in>
-          <in>RTPHeader.h</in>
-          <in>RTPHeaderExtension.h</in>
           <in>RTPIncomingMediaStream.h</in>
           <in>RTPIncomingSource.h</in>
           <in>RTPIncomingSourceGroup.h</in>
           <in>RTPLostPackets.h</in>
-          <in>RTPMap.h</in>
           <in>RTPOutgoingSource.h</in>
           <in>RTPOutgoingSourceGroup.h</in>
-          <in>RTPPacket.h</in>
-          <in>RTPPacketSched.h</in>
-          <in>RTPRedundantPacket.h</in>
           <in>RTPSource.h</in>
-          <in>RTPStreamTransponder.h</in>
-          <in>RTPWaitedBuffer.h</in>
         </df>
-        <df name="ws">
-          <in>websocketconnection.h</in>
-          <in>websockets.h</in>
-          <in>websocketserver.h</in>
-        </df>
-        <in>ActiveSpeakerDetector.h</in>
-        <in>CPUMonitor.h</in>
-        <in>DTLSICETransport.h</in>
-        <in>Datachannels.h</in>
+        <in>AudioPipe.h</in>
         <in>EventLoop.h</in>
-        <in>EventSource.h</in>
-        <in>ICERemoteCandidate.h</in>
-        <in>OpenSSL.h</in>
+        <in>MediaFrameListenerBridge.h</in>
         <in>PCAPFile.h</in>
-        <in>PCAPReader.h</in>
         <in>PCAPTransportEmulator.h</in>
-        <in>RTPBundleTransport.h</in>
-        <in>RTPSmoother.h</in>
-        <in>RTPTransport.h</in>
         <in>SRTPSession.h</in>
         <in>SendSideBandwidthEstimation.h</in>
         <in>TimeService.h</in>
         <in>UDPDumper.h</in>
         <in>UDPReader.h</in>
         <in>VideoLayerSelector.h</in>
-        <in>aacconfig.h</in>
-        <in>acumulator.h</in>
-        <in>appmixer.h</in>
-        <in>assertions.h</in>
-        <in>asymmetricmosaic.h</in>
-        <in>audio.h</in>
-        <in>audiodecoder.h</in>
-        <in>audioencoder.h</in>
-        <in>audiomixer.h</in>
-        <in>audiostream.h</in>
-        <in>audiotransrater.h</in>
-        <in>av_codec_encode_video.h</in>
-        <in>avcdescriptor.h</in>
-        <in>bitstream.h</in>
-        <in>broadcastsession.h</in>
-        <in>codecs.h</in>
-        <in>concurrentqueue.h</in>
-        <in>config.h</in>
-        <in>cpim.h</in>
-        <in>crc32calc.h</in>
-        <in>dtls.h</in>
-        <in>eventstreaminghandler.h</in>
-        <in>fecdecoder.h</in>
-        <in>fifo.h</in>
-        <in>framescaler.h</in>
-        <in>groupchat.h</in>
-        <in>http.h</in>
-        <in>httpparser.h</in>
-        <in>log.h</in>
-        <in>logo.h</in>
-        <in>mcu.h</in>
-        <in>media.h</in>
-        <in>mosaic.h</in>
-        <in>mp4player.h</in>
-        <in>mp4recorder.h</in>
-        <in>mp4streamer.h</in>
-        <in>multiconf.h</in>
-        <in>overlay.h</in>
-        <in>partedmosaic.h</in>
-        <in>participant.h</in>
-        <in>pipeaudioinput.h</in>
-        <in>pipeaudiooutput.h</in>
-        <in>pipetextinput.h</in>
-        <in>pipetextoutput.h</in>
-        <in>pipevideoinput.h</in>
-        <in>pipevideooutput.h</in>
-        <in>pipmosaic.h</in>
-        <in>recordercontrol.h</in>
-        <in>remoteratecontrol.h</in>
-        <in>remoterateestimator.h</in>
-        <in>rtp.h</in>
-        <in>rtpparticipant.h</in>
-        <in>rtpsession.h</in>
-        <in>sidebar.h</in>
-        <in>statushandler.h</in>
-        <in>stringparser.h</in>
-        <in>stunmessage.h</in>
-        <in>text.h</in>
-        <in>textencoder.h</in>
-        <in>textmixer.h</in>
-        <in>textmixerworker.h</in>
-        <in>textstream.h</in>
-        <in>tools.h</in>
-        <in>uploadhandler.h</in>
-        <in>use.h</in>
-        <in>utf8.h</in>
-        <in>vad.h</in>
-        <in>version.h</in>
-        <in>video.h</in>
-        <in>videomixer.h</in>
-        <in>videopipe.h</in>
-        <in>videostream.h</in>
-        <in>wait.h</in>
-        <in>waitqueue.h</in>
-        <in>xmlhandler.h</in>
-        <in>xmlrpcserver.h</in>
-        <in>xmlstreaminghandler.h</in>
       </df>
       <df name="src">
         <df name="aac">
-          <in>aacconfig.h</in>
+          <in>aacdecoder.cpp</in>
+          <in>aacdecoder.h</in>
           <in>aacencoder.cpp</in>
-          <in>aacencoder.h</in>
         </df>
         <df name="core">
           <in>VideoEncoderWorker.cpp</in>
         </df>
         <df name="flv1">
           <in>flv1codec.cpp</in>
-          <in>flv1codec.h</in>
         </df>
         <df name="g711">
           <in>g711.cpp</in>
-          <in>g711.h</in>
-          <in>g711codec.h</in>
           <in>pcmacodec.cpp</in>
           <in>pcmucodec.cpp</in>
         </df>
         <df name="g722">
           <in>g722_decode.c</in>
-          <in>g722_enc_dec.h</in>
           <in>g722_encode.c</in>
           <in>g722codec.cpp</in>
-          <in>g722codec.h</in>
         </df>
         <df name="gsm">
           <in>gsmcodec.cpp</in>
-          <in>gsmcodec.h</in>
         </df>
         <df name="h263">
           <in>h263-1996codec.cpp</in>
           <in>h263.cpp</in>
-          <in>h263.h</in>
           <in>h263codec.cpp</in>
-          <in>h263codec.h</in>
           <in>mpeg4codec.cpp</in>
-          <in>mpeg4codec.h</in>
         </df>
         <df name="h264">
           <in>H264LayerSelector.cpp</in>
           <in>H264LayerSelector.h</in>
-          <in>h264.h</in>
           <in>h264decoder.cpp</in>
-          <in>h264decoder.h</in>
           <in>h264depacketizer.cpp</in>
-          <in>h264depacketizer.h</in>
           <in>h264encoder.cpp</in>
-          <in>h264encoder.h</in>
         </df>
         <df name="nelly">
           <in>NellyCodec.cpp</in>
-          <in>NellyCodec.h</in>
         </df>
         <df name="opus">
           <in>opusdecoder.cpp</in>
-          <in>opusdecoder.h</in>
           <in>opusencoder.cpp</in>
-          <in>opusencoder.h</in>
         </df>
         <df name="rtmp">
           <in>amf.cpp</in>
@@ -589,48 +307,35 @@
           <in>RTPStreamTransponder.cpp</in>
         </df>
         <df name="speex">
-          <in>arch.h</in>
-          <in>cpusupport.h</in>
-          <in>os_support.h</in>
           <in>resample.c</in>
-          <in>resample_sse.h</in>
-          <in>speex_resampler.h</in>
           <in>speexcodec.cpp</in>
-          <in>speexcodec.h</in>
-          <in>stack_alloc.h</in>
         </df>
         <df name="vp6">
           <in>vp6decoder.cpp</in>
-          <in>vp6decoder.h</in>
         </df>
         <df name="vp8">
           <in>VP8LayerSelector.cpp</in>
           <in>VP8LayerSelector.h</in>
-          <in>vp8.h</in>
           <in>vp8decoder.cpp</in>
-          <in>vp8decoder.h</in>
           <in>vp8depacketizer.cpp</in>
-          <in>vp8depacketizer.h</in>
           <in>vp8encoder.cpp</in>
-          <in>vp8encoder.h</in>
         </df>
         <df name="vp9">
           <in>VP9Depacketizer.cpp</in>
-          <in>VP9Depacketizer.h</in>
           <in>VP9LayerSelector.cpp</in>
-          <in>VP9LayerSelector.h</in>
           <in>VP9PayloadDescription.cpp</in>
-          <in>VP9PayloadDescription.h</in>
         </df>
         <df name="ws">
           <in>websocketconnection.cpp</in>
           <in>websocketserver.cpp</in>
         </df>
         <in>ActiveSpeakerDetector.cpp</in>
+        <in>AudioPipe.cpp</in>
         <in>CPUMonitor.cpp</in>
         <in>DTLSICETransport.cpp</in>
         <in>EventLoop.cpp</in>
         <in>EventSource.cpp</in>
+        <in>MediaFrameListenerBridge.cpp</in>
         <in>OpenSSL.cpp</in>
         <in>PCAPFile.cpp</in>
         <in>PCAPReader.cpp</in>
@@ -713,7 +418,6 @@
         <in>overlay.cpp</in>
         <in>rtp.cpp</in>
         <in>test.cpp</in>
-        <in>test.h</in>
         <in>vp8.cpp</in>
         <in>vp9.cpp</in>
       </df>
@@ -823,7 +527,11 @@
           </preprocessorList>
         </cTool>
       </folder>
+      <item path="include/AudioPipe.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="include/EventLoop.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/MediaFrameListenerBridge.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/PCAPFile.h" ex="false" tool="3" flavor2="0">
       </item>
@@ -869,6 +577,8 @@
       </item>
       <item path="include/rtp/RTPSource.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="src/AudioPipe.cpp" ex="false" tool="1" flavor2="0">
+      </item>
       <item path="src/CPUMonitor.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="3">
         </ccTool>
@@ -882,6 +592,8 @@
       <item path="src/EventSource.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="3">
         </ccTool>
+      </item>
+      <item path="src/MediaFrameListenerBridge.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/OpenSSL.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="3">
@@ -911,6 +623,10 @@
             flavor2="0">
       </item>
       <item path="src/VideoLayerSelector.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/aac/aacdecoder.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/aac/aacdecoder.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="src/aac/aacencoder.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="3">
@@ -1966,9 +1682,30 @@
           </preprocessorList>
         </ccTool>
       </folder>
-      <item path="include/rtmp/rtmppacketizer.h" ex="false" tool="3" flavor2="0">
-      </item>
       <item path="src/ActiveSpeakerDetector.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+          <incDir>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>DARWIN</Elem>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/AudioPipe.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
             <pElem>ext/libdatachannels/src/internal</pElem>
@@ -2061,6 +1798,29 @@
         </ccTool>
       </item>
       <item path="src/EventSource.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+          <incDir>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>DARWIN</Elem>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/MediaFrameListenerBridge.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
             <pElem>ext/libdatachannels/src/internal</pElem>
@@ -2298,6 +2058,10 @@
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
           </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/aac/aacdecoder.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
         </ccTool>
       </item>
       <item path="src/aac/aacencoder.cpp" ex="false" tool="1" flavor2="11">
@@ -3318,7 +3082,9 @@
         <ccTool flags="1">
         </ccTool>
       </item>
-      <item path="src/rtmp/rtmppacketizer.cpp" ex="false" tool="1" flavor2="0">
+      <item path="src/rtmp/rtmppacketizer.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="src/rtmp/rtmpparticipant.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
@@ -4625,10 +4391,15 @@
     </conf>
     <conf name="node" type="0">
       <toolsSet>
-        <compilerSet>default</compilerSet>
+        <compilerSet>GNU_1|GNU</compilerSet>
         <dependencyChecking>false</dependencyChecking>
         <rebuildPropChanged>false</rebuildPropChanged>
       </toolsSet>
+      <flagsDictionary>
+        <element flagsID="0"
+                 commonFlags="-fPIC -msse3 -msse4.1 -std=c++17 -std=gnu++17 -march=native"/>
+        <element flagsID="1" commonFlags="-std=c++14"/>
+      </flagsDictionary>
       <codeAssistance>
       </codeAssistance>
       <makefileType>
@@ -4636,7 +4407,7 @@
           <buildCommandWorkingDir>R:/usr/local/src/medooze/mcu</buildCommandWorkingDir>
           <buildCommand>${MAKE}</buildCommand>
           <cleanCommand>${MAKE} clean</cleanCommand>
-          <executablePath></executablePath>
+          <executablePath>r:\root/.nvm/versions/node/v8.8.1/bin/node</executablePath>
         </makeTool>
         <preBuild>
           <preBuildCommandWorkingDir>.</preBuildCommandWorkingDir>
@@ -4646,1992 +4417,1867 @@
       <item path="ext/libdatachannels/gtests/TestSuite.cpp"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/libdatachannels/include/datachannels.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/libdatachannels/src/Datachannel.cpp"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/libdatachannels/src/Datachannel.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/libdatachannels/src/Endpoint.cpp"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/libdatachannels/src/Endpoint.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="ext/libdatachannels/src/internal/Buffer.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/libdatachannels/src/internal/BufferReader.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/libdatachannels/src/internal/BufferWritter.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/libdatachannels/src/sctp/Association.cpp"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/libdatachannels/src/sctp/Association.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/libdatachannels/src/sctp/Chunk.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/libdatachannels/src/sctp/ErrorCause.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/libdatachannels/src/sctp/PacketHeader.cpp"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/libdatachannels/src/sctp/PacketHeader.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/libdatachannels/src/sctp/Parameter.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/libdatachannels/src/sctp/Stream.cpp"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/libdatachannels/src/sctp/Stream.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/libdatachannels/src/sctp/chunks/AbortAssociationChunk.cpp"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/libdatachannels/src/sctp/chunks/AbortAssociationChunk.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/libdatachannels/src/sctp/chunks/CookieAckChunk.cpp"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/libdatachannels/src/sctp/chunks/CookieAckChunk.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/libdatachannels/src/sctp/chunks/CookieEchoChunk.cpp"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/libdatachannels/src/sctp/chunks/CookieEchoChunk.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/libdatachannels/src/sctp/chunks/ForwardCumulativeTSNChunk.cpp"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/libdatachannels/src/sctp/chunks/ForwardCumulativeTSNChunk.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/libdatachannels/src/sctp/chunks/HeartbeatAckChunk.cpp"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/libdatachannels/src/sctp/chunks/HeartbeatAckChunk.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/libdatachannels/src/sctp/chunks/HeartbeatRequestChunk.cpp"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/libdatachannels/src/sctp/chunks/HeartbeatRequestChunk.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/libdatachannels/src/sctp/chunks/InitiationAcknowledgementChunk.cpp"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/libdatachannels/src/sctp/chunks/InitiationAcknowledgementChunk.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/libdatachannels/src/sctp/chunks/InitiationChunk.cpp"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/libdatachannels/src/sctp/chunks/InitiationChunk.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/libdatachannels/src/sctp/chunks/OperationErrorChunk.cpp"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/libdatachannels/src/sctp/chunks/OperationErrorChunk.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/libdatachannels/src/sctp/chunks/PayloadDataChunk.cpp"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/libdatachannels/src/sctp/chunks/PayloadDataChunk.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/libdatachannels/src/sctp/chunks/ReConfigChunk.cpp"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/libdatachannels/src/sctp/chunks/ReConfigChunk.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/libdatachannels/src/sctp/chunks/SelectiveAcknowledgementChunk.cpp"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/libdatachannels/src/sctp/chunks/SelectiveAcknowledgementChunk.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/libdatachannels/src/sctp/chunks/ShutdownAcknowledgementChunk.cpp"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/libdatachannels/src/sctp/chunks/ShutdownAcknowledgementChunk.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/libdatachannels/src/sctp/chunks/ShutdownAssociationChunk.cpp"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/libdatachannels/src/sctp/chunks/ShutdownAssociationChunk.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/libdatachannels/src/sctp/chunks/ShutdownCompleteChunk.cpp"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/libdatachannels/src/sctp/chunks/ShutdownCompleteChunk.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/common_audio/audio_util.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/common_audio/audio_util_unittest.cc"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/common_audio/include/audio_util.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/common_audio/resampler/include/push_resampler.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/common_audio/resampler/include/resampler.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/common_audio/resampler/push_resampler.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/common_audio/resampler/push_resampler_unittest.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/common_audio/resampler/push_sinc_resampler.cc"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/common_audio/resampler/push_sinc_resampler.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/common_audio/resampler/push_sinc_resampler_unittest.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/common_audio/resampler/resampler.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/common_audio/resampler/resampler_unittest.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/common_audio/resampler/sinc_resampler.cc"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/common_audio/resampler/sinc_resampler.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/common_audio/resampler/sinc_resampler_neon.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/common_audio/resampler/sinc_resampler_sse.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/common_audio/resampler/sinc_resampler_unittest.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/common_audio/resampler/sinusoidal_linear_chirp_source.cc"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/common_audio/resampler/sinusoidal_linear_chirp_source.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/auto_corr_to_refl_coef.c"
             ex="false"
             tool="0"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/auto_correlation.c"
             ex="false"
             tool="0"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/complex_bit_reverse.c"
             ex="false"
             tool="0"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/common_audio/signal_processing/complex_bit_reverse_arm.S"
-            ex="false"
-            tool="4"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/complex_bit_reverse_mips.c"
             ex="false"
             tool="0"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/complex_fft.c"
             ex="false"
             tool="0"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/complex_fft_mips.c"
             ex="false"
             tool="0"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/common_audio/signal_processing/complex_fft_tables.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/copy_set_operations.c"
             ex="false"
             tool="0"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/cross_correlation.c"
             ex="false"
             tool="0"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/common_audio/signal_processing/cross_correlation_neon.S"
-            ex="false"
-            tool="4"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/division_operations.c"
             ex="false"
             tool="0"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/dot_product_with_scale.c"
             ex="false"
             tool="0"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/downsample_fast.c"
             ex="false"
             tool="0"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/downsample_fast_mips.c"
             ex="false"
             tool="0"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/common_audio/signal_processing/downsample_fast_neon.S"
-            ex="false"
-            tool="4"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/energy.c"
             ex="false"
             tool="0"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/filter_ar.c"
             ex="false"
             tool="0"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/filter_ar_fast_q12.c"
             ex="false"
             tool="0"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/common_audio/signal_processing/filter_ar_fast_q12_armv7.S"
-            ex="false"
-            tool="4"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/filter_ar_fast_q12_mips.c"
             ex="false"
             tool="0"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/filter_ma_fast_q12.c"
             ex="false"
             tool="0"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/get_hanning_window.c"
             ex="false"
             tool="0"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/get_scaling_square.c"
             ex="false"
             tool="0"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/ilbc_specific_functions.c"
             ex="false"
             tool="0"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/common_audio/signal_processing/include/real_fft.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/common_audio/signal_processing/include/signal_processing_library.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/common_audio/signal_processing/include/spl_inl.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/common_audio/signal_processing/include/spl_inl_armv7.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/levinson_durbin.c"
             ex="false"
             tool="0"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/lpc_to_refl_coef.c"
             ex="false"
             tool="0"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/min_max_operations.c"
             ex="false"
             tool="0"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/min_max_operations_mips.c"
             ex="false"
             tool="0"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/common_audio/signal_processing/min_max_operations_neon.S"
-            ex="false"
-            tool="4"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/randomization_functions.c"
             ex="false"
             tool="0"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/real_fft.c"
             ex="false"
             tool="0"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/real_fft_unittest.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/refl_coef_to_lpc.c"
             ex="false"
             tool="0"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/resample.c"
             ex="false"
             tool="0"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/resample_48khz.c"
             ex="false"
             tool="0"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/resample_by_2.c"
             ex="false"
             tool="0"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/resample_by_2_internal.c"
             ex="false"
             tool="0"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/common_audio/signal_processing/resample_by_2_internal.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/resample_by_2_mips.c"
             ex="false"
             tool="0"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/resample_fractional.c"
             ex="false"
             tool="0"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/signal_processing_unittest.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/spl_init.c"
             ex="false"
             tool="0"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/spl_sqrt.c"
             ex="false"
             tool="0"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/spl_sqrt_floor.c"
             ex="false"
             tool="0"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/common_audio/signal_processing/spl_sqrt_floor_arm.S"
-            ex="false"
-            tool="4"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/spl_version.c"
             ex="false"
             tool="0"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/splitting_filter.c"
             ex="false"
             tool="0"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/sqrt_of_one_minus_x_squared.c"
             ex="false"
             tool="0"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/signal_processing/vector_scaling_operations.c"
             ex="false"
             tool="0"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/common_audio/signal_processing/vector_scaling_operations_neon.S"
-            ex="false"
-            tool="4"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/common_audio/vad/include/webrtc_vad.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/vad/vad_core.c"
             ex="false"
             tool="0"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/common_audio/vad/vad_core.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/vad/vad_core_unittest.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/common_audio/vad/vad_filterbank.c"
             ex="false"
             tool="0"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/common_audio/vad/vad_filterbank.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/vad/vad_filterbank_unittest.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/common_audio/vad/vad_gmm.c"
             ex="false"
             tool="0"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/common_audio/vad/vad_gmm.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/vad/vad_gmm_unittest.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/common_audio/vad/vad_sp.c"
             ex="false"
             tool="0"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/common_audio/vad/vad_sp.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/common_audio/vad/vad_sp_unittest.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/common_audio/vad/vad_unittest.cc"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/common_audio/vad/vad_unittest.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/common_audio/vad/webrtc_vad.c"
             ex="false"
             tool="0"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/interface/aligned_malloc.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/interface/asm_defines.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/interface/atomic32.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/interface/clock.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/interface/compile_assert.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/interface/condition_variable_wrapper.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/interface/constructor_magic.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/interface/cpu_features_wrapper.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/interface/cpu_info.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/interface/critical_section_wrapper.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/interface/data_log.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/interface/data_log_c.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/interface/data_log_impl.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/interface/event_tracer.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/interface/event_wrapper.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/interface/file_wrapper.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/interface/fix_interlocked_exchange_pointer_win.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/interface/list_wrapper.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/interface/logging.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/interface/ref_count.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/interface/rw_lock_wrapper.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/interface/scoped_ptr.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/interface/scoped_refptr.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/interface/sleep.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/interface/sort.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/interface/static_instance.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/interface/stringize_macros.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/interface/thread_wrapper.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/interface/tick_util.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/interface/trace.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/interface/trace_event.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/system_wrappers/source/aligned_malloc.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/aligned_malloc_unittest.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/android/cpu-features.c"
             ex="false"
             tool="0"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/source/android/cpu-features.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/system_wrappers/source/atomic32_mac.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/atomic32_posix.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/atomic32_win.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/clock.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/clock_unittest.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/condition_variable.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/condition_variable_event_win.cc"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/source/condition_variable_event_win.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/condition_variable_native_win.cc"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/source/condition_variable_native_win.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/condition_variable_posix.cc"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/source/condition_variable_posix.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/condition_variable_unittest.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/cpu_features.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/cpu_features_android.c"
             ex="false"
             tool="0"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/system_wrappers/source/cpu_info.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/critical_section.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/critical_section_posix.cc"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/source/critical_section_posix.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/critical_section_unittest.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/critical_section_win.cc"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/source/critical_section_win.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/data_log.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/data_log_c.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/data_log_c_helpers_unittest.c"
             ex="false"
             tool="0"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/source/data_log_c_helpers_unittest.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="2">
       </item>
       <item path="ext/webrtc/system_wrappers/source/data_log_helpers_unittest.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/data_log_no_op.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/data_log_unittest.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/data_log_unittest_disabled.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/event.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/event_posix.cc"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/source/event_posix.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/event_tracer.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/event_tracer_unittest.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/event_win.cc"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/source/event_win.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/file_impl.cc"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/source/file_impl.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/list_no_stl.cc"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/source/list_no_stl.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/list_stl.cc"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/source/list_stl.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/list_unittest.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/logging.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/logging_no_op.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/logging_unittest.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/rw_lock.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/rw_lock_generic.cc"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/source/rw_lock_generic.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/rw_lock_posix.cc"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/source/rw_lock_posix.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/rw_lock_win.cc"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/source/rw_lock_win.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/source/set_thread_name_win.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/sleep.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/sort.cc"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/source/spreadsortlib/constants.hpp"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/source/spreadsortlib/spreadsort.hpp"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/stringize_macros_unittest.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/thread.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/thread_posix.cc"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/source/thread_posix.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/thread_posix_unittest.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/thread_unittest.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/thread_win.cc"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/source/thread_win.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/tick_util.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/trace_impl.cc"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/source/trace_impl.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/trace_impl_no_op.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/trace_posix.cc"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/source/trace_posix.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/trace_win.cc"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/source/trace_win.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/system_wrappers/source/unittest_utilities.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/source/unittest_utilities_unittest.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/test/TestSort/TestSort.cc"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="ext/webrtc/system_wrappers/test/list/list.cc"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/test/testsupport/gtest_prod_util.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="ext/webrtc/typedefs.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/ActiveSpeakerDetector.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/CPUMonitor.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/DTLSICETransport.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/Datachannels.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/EventLoop.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/EventSource.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/ICERemoteCandidate.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/OpenSSL.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/PCAPFile.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/PCAPReader.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/PCAPTransportEmulator.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/RTPBundleTransport.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/RTPSmoother.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/RTPTransport.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/SRTPSession.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/SendSideBandwidthEstimation.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="include/TimeService.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/UDPDumper.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/UDPReader.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/VideoLayerSelector.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/aacconfig.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/acumulator.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/appmixer.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/assertions.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/asymmetricmosaic.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/audio.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/audiodecoder.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/audioencoder.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/audiomixer.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/audiostream.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/audiotransrater.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/av_codec_encode_video.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/avcdescriptor.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/bitstream.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/broadcastsession.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/codecs.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/concurrentqueue.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/config.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/core/VideoEncoderWorker.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/cpim.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/crc32calc.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/dtls.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/eventstreaminghandler.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/fecdecoder.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/fifo.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/framescaler.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/groupchat.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/http.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/httpparser.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/log.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/logo.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/mcu.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/media.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/mosaic.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/mp4player.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/mp4recorder.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/mp4streamer.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/multiconf.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/overlay.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/partedmosaic.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/participant.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/pipeaudioinput.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/pipeaudiooutput.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/pipetextinput.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/pipetextoutput.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/pipevideoinput.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/pipevideooutput.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/pipmosaic.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/recordercontrol.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/remoteratecontrol.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/remoterateestimator.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtmp/amf.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtmp/flv.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtmp/flvencoder.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtmp/flvrecorder.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtmp/rtmp.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtmp/rtmpapplication.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtmp/rtmpbroadcaster.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtmp/rtmpchunk.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtmp/rtmpclientconnection.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="include/rtmp/rtmpconnection.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtmp/rtmpflvstream.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtmp/rtmphandshake.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtmp/rtmpmessage.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtmp/rtmpmp4stream.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtmp/rtmpnetconnection.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtmp/rtmppacketizer.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtmp/rtmpparticipant.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtmp/rtmpserver.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtmp/rtmpstream.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtmp/rtmptranscoder.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtp.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtp/RTCPApp.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtp/RTCPBye.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtp/RTCPCommonHeader.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtp/RTCPCompoundPacket.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtp/RTCPExtendedJitterReport.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="include/rtp/RTCPFullIntraRequest.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtp/RTCPNACK.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtp/RTCPPacket.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtp/RTCPPayloadFeedback.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtp/RTCPRTPFeedback.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtp/RTCPReceiverReport.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtp/RTCPReport.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtp/RTCPSDES.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtp/RTCPSenderReport.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtp/RTPBuffer.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtp/RTPDepacketizer.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtp/RTPHeader.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtp/RTPHeaderExtension.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtp/RTPIncomingMediaStream.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="include/rtp/RTPIncomingSource.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtp/RTPIncomingSourceGroup.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="include/rtp/RTPLostPackets.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtp/RTPMap.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtp/RTPOutgoingSource.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtp/RTPOutgoingSourceGroup.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="include/rtp/RTPPacket.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtp/RTPPacketSched.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtp/RTPRedundantPacket.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtp/RTPSource.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtp/RTPStreamTransponder.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtp/RTPWaitedBuffer.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtpparticipant.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtpsession.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/sidebar.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/statushandler.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/stringparser.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/stunmessage.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/text.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/textencoder.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/textmixer.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/textmixerworker.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/textstream.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/tools.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/uploadhandler.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/use.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/utf8.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/vad.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/version.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/video.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/videomixer.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/videopipe.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/videostream.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/wait.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/waitqueue.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/ws/websocketconnection.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/ws/websockets.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/ws/websocketserver.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/xmlhandler.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/xmlrpcserver.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/xmlstreaminghandler.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="src/ActiveSpeakerDetector.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/CPUMonitor.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/DTLSICETransport.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/EventLoop.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/EventSource.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/OpenSSL.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/PCAPFile.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/PCAPReader.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/PCAPTransportEmulator.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/RTPBundleTransport.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/RTPSmoother.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/RTPTransport.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/SRTPSession.cpp" ex="false" tool="1" flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/ActiveSpeakerDetector.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/AudioPipe.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="0">
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>DARWIN</Elem>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/CPUMonitor.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/DTLSICETransport.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/EventLoop.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/EventSource.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/MediaFrameListenerBridge.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="0">
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>DARWIN</Elem>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/OpenSSL.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/PCAPFile.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/PCAPReader.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/PCAPTransportEmulator.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/RTPBundleTransport.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/RTPSmoother.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/RTPTransport.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/SRTPSession.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="src/SendSideBandwidthEstimation.cpp"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/VideoLayerSelector.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/aac/aacdecoder.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="0">
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>DARWIN</Elem>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/aac/aacencoder.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/appmixer.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/asymmetricmosaic.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/audio.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/audiodecoder.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="0">
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>DARWIN</Elem>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/audioencoder.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="0">
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>DARWIN</Elem>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
+        </ccTool>
       </item>
-      <item path="src/VideoLayerSelector.cpp" ex="false" tool="1" flavor2="0">
+      <item path="src/audiomixer.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
-      <item path="src/aac/aacconfig.h" ex="false" tool="3" flavor2="0">
+      <item path="src/audiostream.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
-      <item path="src/aac/aacencoder.cpp" ex="false" tool="1" flavor2="0">
+      <item path="src/audiotransrater.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
-      <item path="src/aac/aacencoder.h" ex="false" tool="3" flavor2="0">
+      <item path="src/avcdescriptor.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
-      <item path="src/appmixer.cpp" ex="false" tool="1" flavor2="0">
+      <item path="src/broadcastsession.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
-      <item path="src/asymmetricmosaic.cpp" ex="false" tool="1" flavor2="0">
+      <item path="src/core/VideoEncoderWorker.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
-      <item path="src/audio.cpp" ex="false" tool="1" flavor2="0">
+      <item path="src/cpim.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
-      <item path="src/audiodecoder.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/audioencoder.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/audiomixer.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/audiostream.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/audiotransrater.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/avcdescriptor.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/broadcastsession.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/core/VideoEncoderWorker.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/cpim.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/crc32calc.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/dtls.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/eventstreaminghandler.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/fecdecoder.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/flv1/flv1codec.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/flv1/flv1codec.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="src/framescaler.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/g711/g711.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/g711/g711.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="src/g711/g711codec.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="src/g711/pcmacodec.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/g711/pcmucodec.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/g722/g722_decode.c" ex="false" tool="0" flavor2="0">
-      </item>
-      <item path="src/g722/g722_enc_dec.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="src/g722/g722_encode.c" ex="false" tool="0" flavor2="0">
-      </item>
-      <item path="src/g722/g722codec.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/g722/g722codec.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="src/groupchat.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/gsm/gsmcodec.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/gsm/gsmcodec.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="src/h263/h263-1996codec.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/h263/h263.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/h263/h263.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="src/h263/h263codec.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/h263/h263codec.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="src/h263/mpeg4codec.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/h263/mpeg4codec.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="src/h264/H264LayerSelector.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/h264/H264LayerSelector.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="src/h264/h264.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="src/h264/h264decoder.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/h264/h264decoder.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="src/h264/h264depacketizer.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/h264/h264depacketizer.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="src/h264/h264encoder.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/h264/h264encoder.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="src/http.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/httpparser.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/logo.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/main.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/mcu.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/mosaic.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/mp4player.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/mp4recorder.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/mp4streamer.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/multiconf.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/nelly/NellyCodec.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/nelly/NellyCodec.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="src/nocodecs.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/opus/opusdecoder.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/opus/opusdecoder.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="src/opus/opusencoder.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/opus/opusencoder.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="src/overlay.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/partedmosaic.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/pipeaudioinput.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/pipeaudiooutput.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/pipetextinput.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/pipetextoutput.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/pipevideoinput.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/pipevideooutput.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/pipmosaic.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/receiver.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/remoteratecontrol.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/remoterateestimator.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtmp/amf.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtmp/flvencoder.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtmp/flvrecorder.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtmp/rtmpchunk.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtmp/rtmpclientconnection.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtmp/rtmpconnection.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtmp/rtmpdebug.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtmp/rtmpflvstream.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtmp/rtmpmessage.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtmp/rtmpmp4stream.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtmp/rtmpnetconnection.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtmp/rtmppacketizer.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtmp/rtmpparticipant.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtmp/rtmpserver.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtmp/rtmpstream.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtp/RTCPApp.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtp/RTCPBye.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtp/RTCPCommonHeader.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtp/RTCPCompoundPacket.cpp" ex="false" tool="1" flavor2="0">
+      <item path="src/crc32calc.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/dtls.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/eventstreaminghandler.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/fecdecoder.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/flv1/flv1codec.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/framescaler.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/g711/g711.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/g711/pcmacodec.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/g711/pcmucodec.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/g722/g722_decode.c" ex="false" tool="0" flavor2="2">
+      </item>
+      <item path="src/g722/g722_encode.c" ex="false" tool="0" flavor2="2">
+      </item>
+      <item path="src/g722/g722codec.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/groupchat.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/gsm/gsmcodec.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/h263/h263-1996codec.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/h263/h263.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/h263/h263codec.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/h263/mpeg4codec.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/h264/H264LayerSelector.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/h264/h264decoder.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/h264/h264depacketizer.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/h264/h264encoder.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/http.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/httpparser.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/logo.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/main.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="0">
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>DARWIN</Elem>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/mcu.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/mosaic.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/mp4player.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/mp4recorder.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/mp4streamer.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/multiconf.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/nelly/NellyCodec.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/nocodecs.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/opus/opusdecoder.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/opus/opusencoder.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/overlay.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/partedmosaic.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/pipeaudioinput.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/pipeaudiooutput.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/pipetextinput.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/pipetextoutput.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/pipevideoinput.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/pipevideooutput.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/pipmosaic.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/receiver.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/remoteratecontrol.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/remoterateestimator.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtmp/amf.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtmp/flvencoder.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtmp/flvrecorder.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtmp/rtmpchunk.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtmp/rtmpclientconnection.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="0">
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>DARWIN</Elem>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/rtmp/rtmpconnection.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="0">
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>DARWIN</Elem>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/rtmp/rtmpdebug.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtmp/rtmpflvstream.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtmp/rtmpmessage.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="0">
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>DARWIN</Elem>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/rtmp/rtmpmp4stream.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtmp/rtmpnetconnection.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtmp/rtmppacketizer.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="0">
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>DARWIN</Elem>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/rtmp/rtmpparticipant.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtmp/rtmpserver.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtmp/rtmpstream.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="0">
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>DARWIN</Elem>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/rtp/RTCPApp.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtp/RTCPBye.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtp/RTCPCommonHeader.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtp/RTCPCompoundPacket.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="src/rtp/RTCPExtendedJitterReport.cpp"
             ex="false"
             tool="1"
-            flavor2="0">
-      </item>
-      <item path="src/rtp/RTCPFullIntraRequest.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtp/RTCPNACK.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtp/RTCPPacket.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtp/RTCPPayloadFeedback.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtp/RTCPRTPFeedback.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtp/RTCPReceiverReport.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtp/RTCPReport.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtp/RTCPSDES.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtp/RTCPSenderReport.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtp/RTPDepacketizer.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtp/RTPHeader.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtp/RTPHeaderExtension.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtp/RTPIncomingSource.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtp/RTPIncomingSourceGroup.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtp/RTPLostPackets.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtp/RTPMap.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtp/RTPOutgoingSource.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtp/RTPOutgoingSourceGroup.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtp/RTPPacket.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtp/RTPPacketSched.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtp/RTPRedundantPacket.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtp/RTPSource.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtp/RTPStreamTransponder.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtpparticipant.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/rtpsession.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/sender.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/sidebar.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/speex/arch.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="src/speex/cpusupport.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="src/speex/os_support.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="src/speex/resample.c" ex="false" tool="0" flavor2="0">
-      </item>
-      <item path="src/speex/resample_sse.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="src/speex/speex_resampler.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="src/speex/speexcodec.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/speex/speexcodec.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="src/speex/stack_alloc.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="src/statushandler.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/stunmessage.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/textencoder.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/textmixer.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/textmixerworker.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/textstream.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/uploadhandler.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/utf8.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/vad.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/video.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/videomixer.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/videopipe.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/videostream.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/vp6/vp6decoder.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/vp6/vp6decoder.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="src/vp8/VP8LayerSelector.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/vp8/VP8LayerSelector.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="src/vp8/vp8.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="src/vp8/vp8decoder.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/vp8/vp8decoder.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="src/vp8/vp8depacketizer.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/vp8/vp8depacketizer.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="src/vp8/vp8encoder.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/vp8/vp8encoder.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="src/vp9/VP9Depacketizer.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/vp9/VP9Depacketizer.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="src/vp9/VP9LayerSelector.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/vp9/VP9LayerSelector.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="src/vp9/VP9PayloadDescription.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/vp9/VP9PayloadDescription.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="src/ws/websocketconnection.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/ws/websocketserver.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/xmlhandler.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/xmlrpcmcu.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/xmlrpcserver.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/xmlstreaminghandler.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="test/aac.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="test/bundle.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="test/cpim.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="test/fec.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="test/h264.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="test/main.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="test/overlay.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="test/rtp.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="test/test.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="test/test.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="test/vp8.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="test/vp9.cpp" ex="false" tool="1" flavor2="0">
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtp/RTCPFullIntraRequest.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtp/RTCPNACK.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtp/RTCPPacket.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtp/RTCPPayloadFeedback.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtp/RTCPRTPFeedback.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtp/RTCPReceiverReport.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtp/RTCPReport.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtp/RTCPSDES.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtp/RTCPSenderReport.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtp/RTPDepacketizer.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtp/RTPHeader.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtp/RTPHeaderExtension.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtp/RTPIncomingSource.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtp/RTPIncomingSourceGroup.cpp"
+            ex="false"
+            tool="1"
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtp/RTPLostPackets.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtp/RTPMap.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtp/RTPOutgoingSource.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtp/RTPOutgoingSourceGroup.cpp"
+            ex="false"
+            tool="1"
+            flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtp/RTPPacket.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtp/RTPPacketSched.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtp/RTPRedundantPacket.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtp/RTPSource.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtp/RTPStreamTransponder.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="0">
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>DARWIN</Elem>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/rtpparticipant.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/rtpsession.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/sender.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/sidebar.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/speex/resample.c" ex="false" tool="0" flavor2="2">
+      </item>
+      <item path="src/speex/speexcodec.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/statushandler.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/stunmessage.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/textencoder.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/textmixer.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/textmixerworker.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/textstream.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/uploadhandler.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/utf8.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/vad.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/video.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/videomixer.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/videopipe.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/videostream.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/vp6/vp6decoder.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/vp8/VP8LayerSelector.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/vp8/vp8decoder.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/vp8/vp8depacketizer.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/vp8/vp8encoder.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/vp9/VP9Depacketizer.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/vp9/VP9LayerSelector.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/vp9/VP9PayloadDescription.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/ws/websocketconnection.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/ws/websocketserver.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/xmlhandler.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/xmlrpcmcu.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/xmlrpcserver.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/xmlstreaminghandler.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="test/aac.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="test/bundle.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="test/cpim.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="test/fec.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="test/h264.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="test/main.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="test/overlay.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="test/rtp.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="test/test.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="test/vp8.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="test/vp9.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
     </conf>
   </confs>

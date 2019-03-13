@@ -251,6 +251,9 @@ void RTMPMessage::Dump()
 			case RTMPMessage::SetPeerBandwidth:
 				Debug("\tSetPeerBandwidth [size:%d]\n",((RTMPSetPeerBandWidth*)ctrl)->GetWindowSize());
 				break;
+			default:
+				Debug("\tUnknown type [type:%d]\n",type);
+				break;
 		}
 	}
 	if (cmd)
@@ -353,6 +356,8 @@ bool RTMPMessage::IsControlProtocolMessage()
                 case RTMPMessage::WindowAcknowledgementSize:
                 case RTMPMessage::SetPeerBandwidth:
 			return true;
+		default:
+			return false;
 	}
 	return false;
 }
@@ -365,6 +370,8 @@ bool RTMPMessage::IsCommandMessage()
 		case RTMPMessage::Command:
 		case RTMPMessage::CommandAMF3:
 			return true;
+		default:
+			return false;
 	}
 	return false;
 }
@@ -377,6 +384,8 @@ bool RTMPMessage::IsMetaData()
 		case RTMPMessage::Data:
 		case RTMPMessage::DataAMF3:
 			return true;
+		default:
+			return false;
 	}
 	return false;
 }
@@ -389,6 +398,8 @@ bool RTMPMessage::IsSharedObject()
 		case RTMPMessage::SharedObject:
 		case RTMPMessage::SharedObjectAMF3:
 			return true;
+		default:
+			return false;
 	}
 	return false;
 }
@@ -401,6 +412,8 @@ bool RTMPMessage::IsMedia()
 		case RTMPMessage::Audio:
 		case RTMPMessage::Video:
 			return true;
+		default:
+			return false;
 	}
 	return false;
 }
@@ -1015,7 +1028,7 @@ RTMPAudioFrame::RTMPAudioFrame(QWORD timestamp,const AACSpecificConfig &config) 
 	//Set type
 	SetAACPacketType(AACSequenceHeader);
 	//Set data
-	SetAudioFrame(config.GetData(),config.GetSize());
+	mediaSize = config.Serialize(buffer,bufferSize);
 }
 
 RTMPAudioFrame::RTMPAudioFrame(QWORD timestamp,DWORD size) : RTMPMediaFrame(Audio,timestamp,size)

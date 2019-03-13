@@ -193,7 +193,6 @@ int RTMPConnection::Run()
 {
 	BYTE data[1400];
 	unsigned int size = 1400;
-	unsigned int len = 0;
 
 	Log(">Run connection [%p]\n",this);
 
@@ -276,6 +275,8 @@ int RTMPConnection::Run()
 	if (listener)
 		//launch event
 		listener->onDisconnect(this);
+	//Done
+	return 1;
 }
 
 void RTMPConnection::SignalWriteNeeded()
@@ -460,7 +461,7 @@ void RTMPConnection::ParseData(BYTE *data,const DWORD size)
 					//Set random data from memory
 					BYTE* random = s01.GetRandom();
 					//Fill it
-					for (int i=0;i<s01.GetRandomSize();i++)
+					for (size_t i=0;i<s01.GetRandomSize();i++)
 						//With random
 						random[i] = rand();
 					//If we have to calculate digest
@@ -841,6 +842,9 @@ void RTMPConnection::ProcessControlMessage(DWORD streamId,BYTE type,RTMPObject* 
 		case RTMPMessage::SetPeerBandwidth:
 			Log("SetPeerBandwidth\n");
 			break;
+		default:
+			Log("Unknown [type:%d]\n",type);
+			break;
 	}
 }
 
@@ -919,8 +923,12 @@ void RTMPConnection::ProcessCommandMessage(DWORD streamId,RTMPCommandMessage* cm
 			Log("-Accepting connection [%d]\n",accepted);
 			//IF not acepted
 			if (!accepted)
+			{
 				//End connection
-				return End();
+				End();
+				//Done
+				return;
+			}
 			//Send start stream
 			SendControlMessage(RTMPMessage::UserControlMessage,RTMPUserControlMessage::CreateStreamBegin(0));
 			//Send window acknoledgement
@@ -1153,7 +1161,7 @@ void RTMPConnection::onMediaFrame(DWORD streamId,RTMPMediaFrame *frame)
 	QWORD ts = frame->GetTimestamp();
 
 	//Check timestamp
-	if (ts==-1)
+	if (ts==(QWORD)-1)
 		//Calculate timestamp based on current time
 		ts = getDifTime(&startTime)/1000;
 
@@ -1179,7 +1187,7 @@ void RTMPConnection::onMetaData(DWORD streamId,RTMPMetaData *meta)
 	QWORD ts = meta->GetTimestamp();
 
 	//Check timestamp
-	if (ts==-1)
+	if (ts==(QWORD)-1)
 		//Calculate timestamp based on current time
 		ts = getDifTime(&startTime)/1000;
 

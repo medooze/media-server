@@ -12,17 +12,21 @@
 #include "waitqueue.h"
 #include "rtp.h"
 
-class AudioDecoderWorker
+class AudioDecoderWorker 
+	: public RTPIncomingMediaStream::Listener
 {
 public:
-	AudioDecoderWorker();
+	AudioDecoderWorker() = default;
 	virtual ~AudioDecoderWorker();
 
-	int Init(AudioOutput *output);
 	int Start();
-	void onRTPPacket(const RTPPacket::shared &packet);
+	virtual void onRTP(RTPIncomingMediaStream* stream,const RTPPacket::shared& packet);
+	virtual void onEnded(RTPIncomingMediaStream* stream);
 	int Stop();
-	int End();
+	
+	void SetAACConfig(const uint8_t* data,const size_t size);
+	void AddAudioOuput(AudioOutput* ouput);
+	void RemoveAudioOutput(AudioOutput* ouput);
 
 protected:
 	int Decode();
@@ -31,10 +35,13 @@ private:
 	static void *startDecoding(void *par);
 
 private:
-	AudioOutput *output;
+	std::set<AudioOutput*> outputs;
 	WaitQueue<RTPPacket::shared> packets;
 	pthread_t thread;
-	bool decoding;
+	Mutex mutex;
+	bool		decoding	= false;
+	DWORD		rate		= 0;
+	std::unique_ptr<AudioDecoder>	codec;
 };
 
 #endif	/* AUDIODECODER_H */

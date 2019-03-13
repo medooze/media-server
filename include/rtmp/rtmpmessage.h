@@ -5,7 +5,7 @@
 #include "amf.h"
 #include "rtmp.h"
 #include "avcdescriptor.h"
-#include "aacconfig.h"
+#include "aac/aacconfig.h"
 #include <vector>
 
 class RTMPMediaFrame 

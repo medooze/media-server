@@ -1,40 +1,15 @@
 #include "audiodecoder.h"
 #include "media.h"
-
-AudioDecoderWorker::AudioDecoderWorker()
-{
-	//Nothing
-	output = NULL;
-	decoding = false;
-}
+#include "aac/aacdecoder.h"
 
 AudioDecoderWorker::~AudioDecoderWorker()
 {
-	End();
-}
-
-int AudioDecoderWorker::Init(AudioOutput *output)
-{
-	//Store it
-	this->output = output;
-}
-
-int AudioDecoderWorker::End()
-{
-	//Check if already decoding
-	if (decoding)
-		//Stop
-		Stop();
+	Stop();
 }
 
 int AudioDecoderWorker::Start()
 {
-	Log("-StartAudioDecoder\n");
-
-	//Check
-	if (!output)
-		//Exit
-		return Error("null audio output");
+	Log("-AudioDecoderWorker::Start()\n");
 
 	//Check if need to restart
 	if (decoding)
@@ -64,7 +39,7 @@ void * AudioDecoderWorker::startDecoding(void *par)
 
 int  AudioDecoderWorker::Stop()
 {
-	Log(">StopAudioDecoder\n");
+	Log(">AudioDecoderWorker::Stop()\n");
 
 	//If we were started
 	if (decoding)
@@ -79,32 +54,115 @@ int  AudioDecoderWorker::Stop()
 		pthread_join(thread,NULL);
 	}
 
-	Log("<StopAudioDecoder\n");
+	Log("<AudioDecoderWorker::Stop()\n");
 
 	return 1;
+}
+
+void AudioDecoderWorker::AddAudioOuput(AudioOutput* output)
+{
+	//Ensure we have a valid value
+	if (!output)
+		//Done
+		return;
+		
+	ScopedLock scope(mutex);
+	//Add it
+	outputs.insert(output);
+	//If we hace started
+	if (decoding)
+		//Start it
+		output->StartPlaying(rate);
+}
+
+void AudioDecoderWorker::RemoveAudioOutput(AudioOutput* output)
+{
+	ScopedLock scope(mutex);
+	//Remove from ouput
+	if (outputs.erase(output))
+		//Stop it
+		output->StopPlaying();
+}
+
+void AudioDecoderWorker::SetAACConfig(const uint8_t* data,const size_t size)
+{
+	//IF no codec
+	if (!codec)
+	{
+		//Create new AAC odec from pacekt
+		codec.reset(AudioCodecFactory::CreateDecoder(AudioCodec::AAC));
+
+		//Check we found one
+		if (!codec)
+			//Skip
+			return;
+		
+		//Convert it to AAC encoder
+		auto aac = static_cast<AACDecoder*>(codec.get());
+		//Set config there
+		aac->SetConfig(data,size);
+
+		//Update rate
+		rate = codec->GetRate();
+
+		//SYNC block
+		{
+			ScopedLock scope(mutex);
+			//For each output
+			for (auto output : outputs)
+				//Start playing again
+				output->StartPlaying(rate);	
+		}
+	} else {
+		//Convert it to AAC encoder
+		auto aac = static_cast<AACDecoder*>(codec.get());
+		//Set config there
+		aac->SetConfig(data,size);
+		
+		//SYNC block
+		{
+			ScopedLock scope(mutex);
+			//For each output
+			for (auto output : outputs)
+			{
+				//Stop it
+				output->StopPlaying();
+				//Start playing again
+				output->StartPlaying(rate);	
+			}
+		}
+	}
 }
 
 
 int AudioDecoderWorker::Decode()
 {
-	SWORD		raw[512];
-	DWORD		rawSize=512;
-	AudioDecoder*	codec=NULL;
+	SWORD		raw[2048];
+	DWORD		rawSize=2048;
 	DWORD		frameTime=0;
 	DWORD		lastTime=0;
 
-	Log(">DecodeAudio\n");
-
-	//Empezamos a reproducir
-	output->StartPlaying(8000);
+	Log(">AudioDecoderWorker::Decode()\n");
 
 	//Mientras tengamos que capturar
 	while(decoding)
 	{
 		//Obtenemos el paquete
 		if (!packets.Wait(0))
-			//Check condition again
-			continue;
+		{
+			//If no codec
+			if (!codec)
+			{
+				//Stop playing
+				ScopedLock scope(mutex);
+				//For each output
+				for (auto output : outputs)
+					//Stop it
+					output->StopPlaying();
+			}
+			//Done
+			break;
+		}
 
 		//Get packet in queue
 		auto packet = packets.Pop();
@@ -114,17 +172,40 @@ int AudioDecoderWorker::Decode()
 			//Check condition again
 			continue;
 
-		//Comprobamos el tipo
-		if ((codec==NULL) || (packet->GetCodec()!=codec->type))
+		//If we don't have codec
+		if (!codec || (packet->GetCodec()!=codec->type))
 		{
-			//Si habia uno nos lo cargamos
-			if (codec!=NULL)
-				delete codec;
-
-			//Creamos uno dependiendo del tipo
-			if (!(codec = AudioCodecFactory::CreateDecoder((AudioCodec::Type)packet->GetCodec())))
+			//If no codec
+			if (!codec)
+			{
+				//Stop playing
+				ScopedLock scope(mutex);
+				//For each output
+				for (auto output : outputs)
+					//Stop it
+					output->StopPlaying();
+			}
+			
+			//Create new codec from pacekt
+			codec.reset(AudioCodecFactory::CreateDecoder((AudioCodec::Type)packet->GetCodec()));
+				
+			//Check we found one
+			if (!codec)
+				//Skip
 				continue;
-
+			
+			//Update rate
+			rate = codec->GetRate();
+			
+			//SYNC block
+			{
+				ScopedLock scope(mutex);
+				//For each output
+				for (auto output : outputs)
+					//Start playing again
+					output->StartPlaying(rate);	
+			}
+			
 		}
 
 		//Lo decodificamos
@@ -136,28 +217,42 @@ int AudioDecoderWorker::Decode()
 		//Actualizamos el ultimo envio
 		lastTime = packet->GetTimestamp();
 
-		//Y lo reproducimos
-		output->PlayBuffer(raw,len,frameTime);
-
+		//Sync
+		{
+			ScopedLock scope(mutex);
+			//For each output
+			for (auto output : outputs)
+				//Send buffer
+				output->PlayBuffer(raw,len,frameTime);
+		}
 	}
-
-	//End reproducing
-	output->StopPlaying();
 
 	//Check codec
 	if (codec!=NULL)
-		//Delete object
-		delete codec;
+	{
+		//Stop playing
+		ScopedLock scope(mutex);
+		//For each output
+		for (auto output : outputs)
+			//Stop it
+			output->StopPlaying();
+	}
 
 
-	Log("<DecodeAudio\n");
+	Log("<AudioDecoderWorker::Decode()\n");
 
 	//Exit
 	return 0;
 }
 
-void AudioDecoderWorker::onRTPPacket(const RTPPacket::shared& packet)
+void AudioDecoderWorker::onRTP(RTPIncomingMediaStream* stream,const RTPPacket::shared& packet)
 {
 	//Put it on the queue
 	packets.Add(packet->Clone());
+}
+
+void AudioDecoderWorker::onEnded(RTPIncomingMediaStream* stream)
+{
+	//Cancel packets wait
+	packets.Cancel();
 }

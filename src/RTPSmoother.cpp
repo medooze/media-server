@@ -148,10 +148,10 @@ int RTPSmoother::SendFrame(MediaFrame* frame,DWORD duration)
 		else
 			//No last
 			packet->SetMark(false);
+		//Calculate sending time offset from first frame
+		packet->SetSendingTime(rtp->GetPos()*duration/frameLength);
 		//Calculate partial lenght
 		current += rtp->GetPrefixLen()+rtp->GetSize();
-		//Calculate sending time offset from first frame
-		packet->SetSendingTime(current*duration/frameLength);
 		//Append it
 		queue.Add(packet);
 	}

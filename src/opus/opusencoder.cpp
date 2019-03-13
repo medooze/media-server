@@ -17,16 +17,8 @@ OpusEncoder::OpusEncoder(const Properties &properties)
 	//Set number of input frames for codec
 	numFrameSamples = rate * 20 / 1000;
 	//Set default mode
-	mode = OPUS_APPLICATION_VOIP;
+	mode = properties.GetProperty("opus.application.audio",false) ? OPUS_APPLICATION_VOIP : OPUS_APPLICATION_AUDIO;
 
-	//Check speex quality overrride
-	Properties::const_iterator it = properties.find(std::string("opus.applicaion.audio"));
-
-	//If found
-	if (it!=properties.end())
-		//Update it
-		mode = OPUS_APPLICATION_AUDIO;
-	
 	//Open encoder
 	enc = opus_encoder_create(rate, 1, mode, &error);
 		
@@ -35,7 +27,7 @@ OpusEncoder::OpusEncoder(const Properties &properties)
 		Error("Could not open OPUS encoder");
 
 	//Enable FEC
-	opus_encoder_ctl(enc, OPUS_SET_INBAND_FEC(0));
+	opus_encoder_ctl(enc, OPUS_SET_INBAND_FEC(properties.GetProperty("opus.inbandfec",false)));
 }
 
 DWORD OpusEncoder::TrySetRate(DWORD rate)

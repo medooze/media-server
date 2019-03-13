@@ -151,7 +151,7 @@ RTMPPipedMediaStream::RTMPPipedMediaStream() : RTMPMediaStream(0)
 	//Not attached
 	attached = NULL;
 	//No first frame
-	first = -1;
+	first = (QWORD)-1;
 	//NO meta
 	meta = NULL;
 	//No desc
@@ -167,7 +167,7 @@ RTMPPipedMediaStream::RTMPPipedMediaStream(DWORD id) : RTMPMediaStream(id)
 	//Not attached
 	attached = NULL;
 	//No first frame
-	first = -1;
+	first = (QWORD)-1;
 	//NO meta
 	meta = NULL;
 	//No desc
@@ -264,12 +264,12 @@ void RTMPPipedMediaStream:: onMediaFrame(DWORD id,RTMPMediaFrame *frame)
 	QWORD ts = frame->GetTimestamp();
 
 	//Check if it is not set
-	if (ts==-1)
+	if (ts==(QWORD)-1)
 		//Reuse it
 		SendMediaFrame(frame);
 	
 	//Check if it is first
-	if (first==-1)
+	if (first==(QWORD)-1)
 	{
 		//If we have to wait to video
 		if (waitIntra)
@@ -387,7 +387,7 @@ void RTMPPipedMediaStream:: onMetaData(DWORD id,RTMPMetaData *publishedMetaData)
 			meta->AddParam(publishedMetaData->GetParams(i)->Clone());
 
 		//Check if we have started to send it
-		if (first!=-1)
+		if (first!=(QWORD)-1)
 		{
 			//Check if we have to rewrite ts
 			if (rewriteTimestamps)
@@ -404,7 +404,7 @@ void RTMPPipedMediaStream:: onMetaData(DWORD id,RTMPMetaData *publishedMetaData)
 		{
 
 			//Check if we have started to send it
-			if (first!=-1)
+			if (first!=(QWORD)-1)
 				//Set new meta
 				cloned->SetTimestamp(ts-first);
 			else

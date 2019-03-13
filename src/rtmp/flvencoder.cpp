@@ -9,7 +9,7 @@
 #include "rtmp/flv.h"
 #include "flv1/flv1codec.h"
 #include "audioencoder.h"
-#include "aacconfig.h"
+#include "aac/aacconfig.h"
 
 FLVEncoder::FLVEncoder(DWORD id) : RTMPMediaStream(id)
 {

@@ -119,7 +119,7 @@ int MultiConf::Init(const Properties &properties)
 	textEncoder.Init(textMixer.GetInput(watcherId));
 
 	//Set codec
-	audioEncoder.SetAudioCodec(AudioCodec::PCMA);
+	audioEncoder.SetAudioCodec(AudioCodec::PCMA,properties.GetChildren("mixer.audio.encoder"));
 
 	//Start mixers
 	audioMixer.InitMixer(watcherId,0);

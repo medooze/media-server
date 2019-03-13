@@ -5,7 +5,7 @@
 #include "log.h"
 #include "mp4recorder.h"
 #include "h264/h264.h"
-#include "aacconfig.h"
+#include "aac/aacconfig.h"
 
 
 mp4track::mp4track(MP4FileHandle mp4)
@@ -77,12 +77,15 @@ int mp4track::CreateAudioTrack(AudioCodec::Type codec,DWORD rate)
 		}
 		case AudioCodec::AAC:
 		{
+			BYTE config[24];
 			// Create audio track
 			track = MP4AddAudioTrack(mp4, rate, 1024, MP4_MPEG2_AAC_LC_AUDIO_TYPE);
 			//Create AAC config
-			AACSpecificConfig config(rate,1);
+			AACSpecificConfig aacSpecificConfig(rate,1);
+			//Serialize it
+			auto size = aacSpecificConfig.Serialize(config,sizeof(config));
 			// Set channel and sample properties
-			MP4SetTrackESConfiguration(mp4, track,config.GetData(),config.GetSize());
+			MP4SetTrackESConfiguration(mp4, track,config,size);
 			// No hint track
 			hint = 0;
 			break;

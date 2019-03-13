@@ -259,5 +259,7 @@ private:
 	BYTE			redundant_pic_cnt_present_flag = 0;
 };
 
+#undef CHECK
+
 #endif	/* H264_H */
 
