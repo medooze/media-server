@@ -222,6 +222,8 @@ void RTMPServer::CreateConnection(int fd)
  **************************/
 void RTMPServer::CleanZombies()
 {
+	Log("-RTMPServer::CleanZombies()\n");
+	
 	//Lock list
 	pthread_mutex_lock(&sessionMutex);
 
@@ -230,6 +232,8 @@ void RTMPServer::CleanZombies()
 	{
 		//Get connection
 		RTMPConnection *con = *it;
+		//End connection
+		con->End();
 		//Delete connection
 		delete con;
 	}
@@ -254,21 +258,26 @@ void RTMPServer::DeleteAllConnections()
 	pthread_mutex_lock(&sessionMutex);
 
 	//Connection iterator
-	for (Connections::iterator it=connections.begin();it!=connections.end();++it)
+	while (connections.size())
 	{
-		//Get connection
-		RTMPConnection *con = *it;
+		//Get first
+		RTMPConnection *con = *connections.begin();
+		//Remove
+		connections.erase(connections.begin());
+		
+		//Unlock list
+		pthread_mutex_unlock(&sessionMutex);
+		
 		//End connection
 		con->End();
 		//Delete connection
 		delete con;
+		//Lock list
+		pthread_mutex_lock(&sessionMutex);
 	}
-
-	//Clear connections
-	connections.clear();
-
 	//Unlock list
 	pthread_mutex_unlock(&sessionMutex);
+	
 
 	Log("<RTMPServer::DeleteAllConnections()\n");
 
@@ -323,10 +332,14 @@ int RTMPServer::End()
         pthread_join(serverThread,NULL);
         Log("-RTMPServer::End() Joined server thread [%d]\n",serverThread);
 
+	//Clen zombies 
+	CleanZombies();
 	//Delete connections
 	DeleteAllConnections();
 
 	Log("<RTMPServer::End()\n");
+	
+	return 1;
 }
 
 /**********************************

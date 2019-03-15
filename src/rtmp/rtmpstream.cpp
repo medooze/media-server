@@ -22,6 +22,8 @@ RTMPMediaStream::~RTMPMediaStream()
 
 DWORD RTMPMediaStream::AddMediaListener(Listener *listener)
 {
+	Log("-RTMPMediaStream::AddMediaListener() [id:%d,listener:%p]\n",id,listener); 
+	
 	//Lock mutexk
 	lock.WaitUnusedAndLock();
 	//Apend
@@ -38,6 +40,7 @@ DWORD RTMPMediaStream::AddMediaListener(Listener *listener)
 
 void RTMPMediaStream::RemoveAllMediaListeners()
 {
+	Log("-RTMPMediaStream::RemoveAllMediaListeners() [id:%d]\n",id);
 	//Lock mutexk
 	lock.WaitUnusedAndLock();
 	//For each listener
@@ -52,6 +55,8 @@ void RTMPMediaStream::RemoveAllMediaListeners()
 
 DWORD RTMPMediaStream::RemoveMediaListener(Listener *listener)
 {
+	Log("-RTMPMediaStream::RemoveMediaListener() [id:%d,listener:%p]\n",id,listener);
+	
 	//Lock mutexk
 	lock.WaitUnusedAndLock();
 	//Find it
@@ -251,7 +256,7 @@ void RTMPPipedMediaStream::onAttached(RTMPMediaStream *stream)
 void RTMPPipedMediaStream::onDetached(RTMPMediaStream *stream)
 {
 	//Detach if joined
-	if (attached!=stream)
+	if (attached && attached!=stream)
 		//Remove ourself as listeners
 		attached->RemoveMediaListener(this);
 	//Detach
@@ -498,12 +503,14 @@ void RTMPCachedPipedMediaStream::SendMediaFrame(RTMPMediaFrame *frame)
  ***************************/
 RTMPNetStream::RTMPNetStream(DWORD id,Listener *listener) : RTMPPipedMediaStream(id)
 {
+	Log("-RTMPNetStream:RTMPNetStream() [id:%d,listener:%p,this:%p]\n",id,listener,this); 
 	//Store listener
 	this->listener = listener;
 }
 
 RTMPNetStream::~RTMPNetStream()
 {
+	Log("-RTMPNetStream::~RTMPNetStream() [id:%d,listener:%p,this:%p]\n",id,listener,this); 
 	if (listener)
 		listener->onNetStreamDestroyed(id);
 }

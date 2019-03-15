@@ -32,6 +32,7 @@ public:
 	/* Interface */
 	virtual RTMPNetStream* CreateStream(DWORD streamId,DWORD audioCaps,DWORD videoCaps,RTMPNetStream::Listener *listener) = 0;
 	virtual void DeleteStream(RTMPNetStream *stream) = 0;
+	virtual void Disconnected() {};
 	
 protected:
 	int RegisterStream(RTMPNetStream* stream);
