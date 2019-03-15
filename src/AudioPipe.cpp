@@ -44,6 +44,11 @@ int AudioPipe::StartRecording(DWORD rate)
 
 int AudioPipe::StopRecording()
 {
+	//If we were recording
+	if (!recording)
+		//Done
+		return false;
+	
 	Log("-AudioPipe stop recording\n");
 	
 	//Bloqueamos
@@ -95,6 +100,9 @@ int AudioPipe::StartPlaying(DWORD rate)
 		//Open it
 		transrater.Open(playRate,nativeRate);
 	
+	//We are playing
+	playing = true;
+	
 	//Unlock
 	pthread_mutex_unlock(&mutex);
 	
@@ -104,12 +112,19 @@ int AudioPipe::StartPlaying(DWORD rate)
 
 int AudioPipe::StopPlaying()
 {
+	//Check if playing already
+	if (!playing)
+		//DOne
+		return false;
+	
 	Log("-AudioPipe stop playing\n");
 
 	//Lock
 	pthread_mutex_lock(&mutex);
 	//Close transrater
 	transrater.Close();
+	//We are not playing
+	playing = false;
 	//Unlock
 	pthread_mutex_unlock(&mutex);
 	

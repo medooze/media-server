@@ -38,6 +38,7 @@ private:
 	//Members
 	fifo<SWORD,48000*4>	fifoBuffer;
 	bool			recording = false;
+	bool			playing = false;
 	bool			inited = false;
 	bool			canceled = false;
 	

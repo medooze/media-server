@@ -85,7 +85,7 @@ int AACDecoder::Decode(BYTE *in, int inLen, SWORD* out, int outLen)
 {
 	//Check we have config
 	if (!inited)
-		return Error("Not inited\n");
+		return Error("-AACDecoder::Decode() Not inited\n");
 	
 	//If we have input
 	if (inLen<=0)
@@ -98,7 +98,7 @@ int AACDecoder::Decode(BYTE *in, int inLen, SWORD* out, int outLen)
 	//Decode it
 	if (avcodec_send_packet(ctx, packet)<0)
 		//nothing
-		return Error("Error decoding AAC\n");
+		return Error("-AACDecoder::Decode() Error decoding AAC packet\n");
 	
 	//Release side data
 	av_packet_free_side_data(packet);

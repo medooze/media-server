@@ -39,20 +39,19 @@ void * AudioDecoderWorker::startDecoding(void *par)
 
 int  AudioDecoderWorker::Stop()
 {
+	if (!decoding)
+		return 0;
+	
 	Log(">AudioDecoderWorker::Stop()\n");
 
-	//If we were started
-	if (decoding)
-	{
-		//Stop
-		decoding=0;
+	//Stop
+	decoding=0;
 
-		//Cancel any pending wait
-		packets.Cancel();
+	//Cancel any pending wait
+	packets.Cancel();
 
-		//Esperamos
-		pthread_join(thread,NULL);
-	}
+	//Esperamos
+	pthread_join(thread,NULL);
 
 	Log("<AudioDecoderWorker::Stop()\n");
 
