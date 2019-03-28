@@ -8,7 +8,8 @@ H264LayerSelector::H264LayerSelector()
 
 bool H264LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 {
-	bool isIntra = true;
+	//We only siwtch on SPS/PPS not intra, as we need the SPS/PPS
+	bool isIntra = false;
 	//Get payload
 	DWORD payloadLen = packet->GetMediaLength();
 	BYTE* payload = packet->GetMediaData();
@@ -95,13 +96,13 @@ bool H264LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 				
 				//Get nal data
 				BYTE *nalData = payload+1;
-				
+
 				//Check if IDR SPS or PPS
 				switch (nalType)
 				{
 					case 0x05:
 						//It is intra
-						isIntra = true;
+						//isIntra = true;
 						break;
 					case 0x07:
 						//Consider it intra also
@@ -169,7 +170,7 @@ bool H264LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 				{
 					case 0x05:
 						//It is intra
-						isIntra = true;
+						//isIntra = true;
 						break;
 					case 0x07:
 						//Consider it intra also
@@ -204,7 +205,7 @@ bool H264LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 			{
 				case 0x05:
 					//It is intra
-					isIntra = true;
+					//isIntra = true;
 					break;
 				case 0x07:
 					//Consider it intra also
