@@ -8,10 +8,6 @@
 #include <openssl/hmac.h>
 #include "log.h"
 
-#define HMAC_setup(ctx, key, len)	HMAC_CTX_init(&ctx); HMAC_Init_ex(&ctx, key, len, EVP_sha256(), 0)
-#define HMAC_crunch(ctx, buf, len)	HMAC_Update(&ctx, buf, len)
-#define HMAC_finish(ctx, dig, dlen)	HMAC_Final(&ctx, dig, &dlen); HMAC_CTX_cleanup(&ctx)
-
 
 static const uint8_t GenuineFMSKey[] = {
   0x47, 0x65, 0x6e, 0x75, 0x69, 0x6e, 0x65, 0x20, 0x41, 0x64, 0x6f, 0x62, 0x65, 0x20, 0x46, 0x6c,
@@ -58,11 +54,21 @@ static unsigned int GetDigestOffset1(uint8_t *handshake, unsigned int len)
 static void HMACsha256(const uint8_t *message, size_t messageLen, const uint8_t *key, size_t keylen, uint8_t *digest)
 {
 	unsigned int digestLen;
-	HMAC_CTX ctx;
-
-	HMAC_setup(ctx, key, keylen);
-	HMAC_crunch(ctx, message, messageLen);
-	HMAC_finish(ctx, digest, digestLen);
+	
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+  HMAC_CTX ctx;
+  HMAC_CTX_init(&ctx); 
+	HMAC_Init_ex(&ctx, key, keylen, EVP_sha256(), 0);
+	HMAC_Update(&ctx, message, messageLen);
+	HMAC_Final(&ctx, digest, &digestLen);
+	HMAC_CTX_cleanup(&ctx);
+#else
+	HMAC_CTX *ctx = HMAC_CTX_new();
+	HMAC_Init_ex(ctx, key, keylen, EVP_sha256(), 0);
+	HMAC_Update(ctx, message, messageLen);
+	HMAC_Final(ctx, digest, &digestLen);
+	HMAC_CTX_free(ctx);
+#endif
 
 }
 
