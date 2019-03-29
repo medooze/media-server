@@ -96,7 +96,7 @@ public:
 	}
 	
 protected:
-	BYTE	data[SIZE];
+	BYTE	data[SIZE] = {};
 	DWORD	len;
 	DWORD 	size;
 };

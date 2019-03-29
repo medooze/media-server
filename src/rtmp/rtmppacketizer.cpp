@@ -60,7 +60,7 @@ std::unique_ptr<VideoFrame> RTMPAVCPacketizer::AddFrame(RTMPVideoFrame* videoFra
 	}
 
 	//GEt nal header length
-	auto nalUnitLength = desc.GetNALUnitLength() + 1;
+	DWORD nalUnitLength = desc.GetNALUnitLength() + 1;
 		
 	//Malloc
 	BYTE *data = videoFrame->GetMediaData();
@@ -111,7 +111,10 @@ std::unique_ptr<VideoFrame> RTMPAVCPacketizer::AddFrame(RTMPVideoFrame* videoFra
 			 * |F|NRI|   28    |S|E|R| Type	   |
 			 * +---------------+---------------+
 			*/
-			BYTE fragmentationHeader[2] = {(nal[0] & 0xE0) | 28 , 0x80 | nalUnitType};
+			BYTE fragmentationHeader[2] = {
+				(BYTE)((nal[0] & 0xE0) | 28),
+				(BYTE)(0x80 | nalUnitType)
+			};
 			//Skip original header
 			ini++;
 			nalSize--;
@@ -138,10 +141,10 @@ std::unique_ptr<VideoFrame> RTMPAVCPacketizer::AddFrame(RTMPVideoFrame* videoFra
 			//Add nal unit
 			frame->AddRtpPacket(ini,nalSize,nullptr,0);
 		}
-		
-		//Done
-		return frame;
 	}
+ 		
+	//Done
+	return frame; 
 }
 
 

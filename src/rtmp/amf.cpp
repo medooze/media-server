@@ -785,7 +785,7 @@ AMFData* AMFObject::Clone()
 	AMFObject *obj = new AMFObject();
 
 	//Get object properties in order
-	for (int i=0;i<propertiesOrder.size();i++)
+	for (size_t i=0;i<propertiesOrder.size();i++)
 	{
 		//Search for the property
 		AMFObjectMap::iterator it = properties.find(propertiesOrder[i]);
@@ -980,7 +980,7 @@ DWORD AMFObject::Serialize(BYTE* data,DWORD size)
 	//Set start mark
 	data[len++] = AMFParser::ObjectMarker;
 	//Loop properties in insert order
-	for (int i=0;i<propertiesOrder.size();i++)
+	for (size_t i=0;i<propertiesOrder.size();i++)
 	{
 		//Search for the property
 		AMFObjectMap::iterator it = properties.find(propertiesOrder[i]);
@@ -1008,7 +1008,7 @@ void AMFObject::Dump()
 {
 	Debug("[Object]\n");
 	//Loop properties in insert order
-	for (int i=0;i<propertiesOrder.size();i++)
+	for (size_t i=0;i<propertiesOrder.size();i++)
 	{
 		//Search for the property
 		AMFObjectMap::iterator it = properties.find(propertiesOrder[i]);

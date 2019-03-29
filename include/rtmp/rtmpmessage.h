@@ -133,7 +133,7 @@ class RTMPCommandMessage
 public:
 	RTMPCommandMessage();
 	RTMPCommandMessage(const wchar_t* name,QWORD transId,AMFData* params,AMFData *extra);
-	~RTMPCommandMessage();
+	virtual ~RTMPCommandMessage();
 
 	virtual DWORD Parse(BYTE *data,DWORD size);
 	DWORD Serialize(BYTE* buffer,DWORD size);

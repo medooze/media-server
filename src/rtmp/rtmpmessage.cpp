@@ -916,7 +916,7 @@ DWORD RTMPVideoFrame::Parse(BYTE *data,DWORD size)
 	if (headerPos<5 && codec==AVC)
 	{
 		//How much is left
-		int len = 5-headerPos;
+		DWORD len = 5-headerPos;
 		//Copy data available
 		if (len>bufferLen)
 			len = bufferLen;
@@ -1102,7 +1102,7 @@ DWORD RTMPAudioFrame::Parse(BYTE *data,DWORD size)
 
 DWORD RTMPAudioFrame::Serialize(BYTE* data,DWORD size)
 {
-	int pos = 0;
+	DWORD pos = 0;
 
 	//Check if enought space
 	if (size<GetSize())
