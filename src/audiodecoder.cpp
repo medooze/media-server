@@ -1,6 +1,7 @@
 #include "audiodecoder.h"
 #include "media.h"
 #include "aac/aacdecoder.h"
+#include "AudioCodecFactory.h"
 
 AudioDecoderWorker::~AudioDecoderWorker()
 {

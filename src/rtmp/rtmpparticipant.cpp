@@ -24,6 +24,8 @@
 #include "fifo.h"
 #include <wchar.h>
 #include <stdlib.h>
+#include "AudioCodecFactory.h"
+#include "VideoCodecFactory.h"
 
 RTMPParticipant::RTMPParticipant(DWORD partId,const std::wstring& token) :
 	Participant(Participant::RTMP,partId,token),

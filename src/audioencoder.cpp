@@ -13,7 +13,7 @@
 #include "g711/g711codec.h"
 #include "gsm/gsmcodec.h"
 #include "audioencoder.h"
-
+#include "AudioCodecFactory.h"
 
 
 /**********************************

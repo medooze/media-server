@@ -10,6 +10,7 @@
 #include "rtmp/rtmpmp4stream.h"
 #include "rtmp/flvrecorder.h"
 #include "audio.h"
+#include "AudioCodecFactory.h"
 
 #ifdef FLV1PARSER
 #include "flv1/flv1Parser.h"

@@ -1,5 +1,5 @@
 #include "log.h"
-#include "video.h"
+#include "VideoCodecFactory.h"
 #include "flv1/flv1codec.h"
 #include "h263/h263codec.h"
 #include "h263/mpeg4codec.h"

@@ -113,11 +113,4 @@ public:
 
 };
 
-class VideoCodecFactory
-{
-public:
-	static VideoDecoder* CreateDecoder(VideoCodec::Type codec);
-	static VideoEncoder* CreateEncoder(VideoCodec::Type codec);
-	static VideoEncoder* CreateEncoder(VideoCodec::Type codec, const Properties &properties);
-};
 #endif

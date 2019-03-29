@@ -9,6 +9,7 @@
 #include "log.h"
 #include "tools.h"
 #include "acumulator.h"
+#include "VideoCodecFactory.h"
 
 VideoEncoderWorker::VideoEncoderWorker() 
 {

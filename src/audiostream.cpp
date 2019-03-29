@@ -11,6 +11,7 @@
 #include "audio.h"
 #include "audiostream.h"
 #include "mp4recorder.h"
+#include "AudioCodecFactory.h"
 
 
 /**********************************

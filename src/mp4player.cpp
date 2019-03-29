@@ -1,6 +1,8 @@
 #include "mp4player.h"
 #include "log.h"
 #include "codecs.h"
+#include "AudioCodecFactory.h"
+#include "VideoCodecFactory.h"
 
 MP4Player::MP4Player() : streamer(this)
 {

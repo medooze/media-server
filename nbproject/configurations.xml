@@ -202,6 +202,7 @@
           <in>RTPOutgoingSourceGroup.h</in>
           <in>RTPSource.h</in>
         </df>
+        <in>AudioCodecFactory.h</in>
         <in>AudioPipe.h</in>
         <in>EventLoop.h</in>
         <in>MediaFrameListenerBridge.h</in>
@@ -212,6 +213,7 @@
         <in>TimeService.h</in>
         <in>UDPDumper.h</in>
         <in>UDPReader.h</in>
+        <in>VideoCodecFactory.h</in>
         <in>VideoLayerSelector.h</in>
       </df>
       <df name="src">
@@ -330,6 +332,7 @@
           <in>websocketserver.cpp</in>
         </df>
         <in>ActiveSpeakerDetector.cpp</in>
+        <in>AudioCodecFactory.cpp</in>
         <in>AudioPipe.cpp</in>
         <in>CPUMonitor.cpp</in>
         <in>DTLSICETransport.cpp</in>
@@ -345,10 +348,10 @@
         <in>RTPTransport.cpp</in>
         <in>SRTPSession.cpp</in>
         <in>SendSideBandwidthEstimation.cpp</in>
+        <in>VideoCodecFactory.cpp</in>
         <in>VideoLayerSelector.cpp</in>
         <in>appmixer.cpp</in>
         <in>asymmetricmosaic.cpp</in>
-        <in>audio.cpp</in>
         <in>audiodecoder.cpp</in>
         <in>audioencoder.cpp</in>
         <in>audiomixer.cpp</in>
@@ -399,7 +402,6 @@
         <in>uploadhandler.cpp</in>
         <in>utf8.cpp</in>
         <in>vad.cpp</in>
-        <in>video.cpp</in>
         <in>videomixer.cpp</in>
         <in>videopipe.cpp</in>
         <in>videostream.cpp</in>
@@ -527,6 +529,8 @@
           </preprocessorList>
         </cTool>
       </folder>
+      <item path="include/AudioCodecFactory.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="include/AudioPipe.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/EventLoop.h" ex="false" tool="3" flavor2="0">
@@ -549,6 +553,8 @@
       <item path="include/UDPDumper.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/UDPReader.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/VideoCodecFactory.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/VideoLayerSelector.h" ex="false" tool="3" flavor2="0">
       </item>
@@ -576,6 +582,10 @@
             flavor2="0">
       </item>
       <item path="include/rtp/RTPSource.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/AudioCodecFactory.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="3">
+        </ccTool>
       </item>
       <item path="src/AudioPipe.cpp" ex="false" tool="1" flavor2="0">
       </item>
@@ -622,6 +632,10 @@
             tool="1"
             flavor2="0">
       </item>
+      <item path="src/VideoCodecFactory.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="3">
+        </ccTool>
+      </item>
       <item path="src/VideoLayerSelector.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/aac/aacdecoder.cpp" ex="false" tool="1" flavor2="0">
@@ -637,10 +651,6 @@
         </ccTool>
       </item>
       <item path="src/asymmetricmosaic.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
-        </ccTool>
-      </item>
-      <item path="src/audio.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="3">
         </ccTool>
       </item>
@@ -1085,10 +1095,6 @@
         </ccTool>
       </item>
       <item path="src/vad.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
-        </ccTool>
-      </item>
-      <item path="src/video.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="3">
         </ccTool>
       </item>
@@ -1682,7 +1688,34 @@
           </preprocessorList>
         </ccTool>
       </folder>
+      <item path="include/AudioCodecFactory.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/VideoCodecFactory.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="src/ActiveSpeakerDetector.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+          <incDir>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>DARWIN</Elem>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/AudioCodecFactory.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
             <pElem>ext/libdatachannels/src/internal</pElem>
@@ -2037,6 +2070,29 @@
           </incDir>
         </ccTool>
       </item>
+      <item path="src/VideoCodecFactory.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+          <incDir>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>DARWIN</Elem>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
       <item path="src/VideoLayerSelector.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
@@ -2092,29 +2148,6 @@
         </ccTool>
       </item>
       <item path="src/asymmetricmosaic.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="1">
-          <incDir>
-            <pElem>ext/libdatachannels/src/internal</pElem>
-            <pElem>ext/crc32c/include</pElem>
-            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>DARWIN</Elem>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </item>
-      <item path="src/audio.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
             <pElem>ext/libdatachannels/src/internal</pElem>
@@ -4026,29 +4059,6 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="src/video.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="1">
-          <incDir>
-            <pElem>ext/libdatachannels/src/internal</pElem>
-            <pElem>ext/crc32c/include</pElem>
-            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>DARWIN</Elem>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </item>
       <item path="src/videomixer.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
@@ -5333,7 +5343,15 @@
         <ccTool flags="1">
         </ccTool>
       </item>
+      <item path="include/AudioCodecFactory.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/VideoCodecFactory.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="src/ActiveSpeakerDetector.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/AudioCodecFactory.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
         </ccTool>
       </item>
@@ -5446,6 +5464,10 @@
         <ccTool flags="1">
         </ccTool>
       </item>
+      <item path="src/VideoCodecFactory.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
       <item path="src/VideoLayerSelector.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
         </ccTool>
@@ -5486,10 +5508,6 @@
         </ccTool>
       </item>
       <item path="src/asymmetricmosaic.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="1">
-        </ccTool>
-      </item>
-      <item path="src/audio.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
         </ccTool>
       </item>
@@ -6160,10 +6178,6 @@
         </ccTool>
       </item>
       <item path="src/vad.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="1">
-        </ccTool>
-      </item>
-      <item path="src/video.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
         </ccTool>
       </item>
