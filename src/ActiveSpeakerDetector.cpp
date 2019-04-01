@@ -11,15 +11,18 @@ void ActiveSpeakerDetector::Accumulate(uint32_t id, bool vad, uint8_t db, uint64
 {
 	//Search for the speacker
 	auto it = speakers.find(id);
-
+  
+	//Check voice is detected and not muted
+	auto speaking = vad && db<127;
+  
 	//Check if we had that speakcer before
 	if (it==speakers.end())
 	{
 		//Store 1s of initial bump if vad
-		speakers[id] = {vad ? ScorePerMiliScond*1000ul : 0ul,now};
+		speakers[id] = { speaking ? ScorePerMiliScond*1000ul : 0ul,now};
 	} 
-	//Accumulate only if audio has been detected
-	else if (vad)
+	//Accumulate only if audio has been detected 
+	else if (speaking)
 	{
 		// The audio level is expressed in -dBov, with values from 0 to 127
 		// representing 0 to -127 dBov. dBov is the level, in decibels, relative
@@ -30,14 +33,14 @@ void ActiveSpeakerDetector::Accumulate(uint32_t id, bool vad, uint8_t db, uint64
 
 		//Get time diff from last score, we consider 1s as max to coincide with initial bump
 		uint64_t diff = std::min(now-it->second.ts,(uint64_t)1000ul);
-		//UltraDebug("-ActiveSpeakerDetector::Accumulate [id:%u,vad:%d,diff:%u,level:%u,score:%lu]\n",id,vad,diff,level,speakers[id].score);
+		//UltraDebug("-ActiveSpeakerDetector::Accumulate [id:%u,vad:%d,speaking:%d,diff:%u,level:%u,score:%lu]\n",id,vad,speaking,diff,level,speakers[id].score);
 		//Do not accumulate too much so we can switch faster
 		it->second.score = std::min(it->second.score+diff*level/ScorePerMiliScond,MaxScore);
 		//Set last update time
 		it->second.ts = now;
 	}
 	
-	//UltraDebug("-ActiveSpeakerDetector::Accumulate [id:%u,vad:%d,dbs:%u,score:%lu]\n",id,vad,db,speakers[id].score);
+	//UltraDebug("-ActiveSpeakerDetector::Accumulat e [id:%u,vad:%d,dbs:%u,score:%lu]\n",id,vad,db,speakers[id].score);
 	
 	//Process vads and check new 
 	Process(now);
