@@ -22,6 +22,12 @@ public:
 		virtual ~Listener() = default;
 		virtual void OnRead(const int fd, const uint8_t* data, const size_t size, const uint32_t ipAddr, const uint16_t port) = 0;
 	};
+	enum State
+	{
+		Normal,
+		Lagging,
+		Overflown
+	};
 private:
 	class TimerImpl : 
 		public Timer, 
@@ -89,9 +95,10 @@ private:
 		uint16_t port;
 		Buffer   buffer;
 	};
-	
+	static size_t MaxSendingQueueSize;
 private:
 	std::thread	thread;
+	State		state = State::Normal;
 	Listener*	listener = nullptr;
 	int		fd = 0;
 	int		pipe[2] = {0};

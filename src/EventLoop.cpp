@@ -13,6 +13,8 @@
 
 #include "log.h"
 
+size_t EventLoop::MaxSendingQueueSize = 16*1024;
+
 EventLoop::EventLoop(Listener *listener) :
 	listener(listener)
 {
@@ -115,6 +117,34 @@ bool EventLoop::Stop()
 
 void EventLoop::Send(const uint32_t ipAddr, const uint16_t port, Buffer&& buffer)
 {
+	//Get approximate queued size
+	auto aprox = sending.size_approx();
+	
+	//Check if there is too much in the queue already
+	if (aprox>MaxSendingQueueSize)
+	{
+		//Check state
+		if (state!=State::Overflown)
+		{
+			//We are overflowing
+			state = State::Overflown;
+			//Log
+			Error("-EventLoop::Send() | sending queue overflown [aprox:%u]\n",aprox);
+		}
+		//Do not enqueue more
+		return;
+	} else if (aprox>MaxSendingQueueSize/2 && state==State::Normal) {
+		//We are lagging behind
+		state = State::Lagging;
+		//Log
+		Error("-EventLoop::Send() | sending queue lagging behind [aprox:%u]\n",aprox);
+	} else if (aprox<MaxSendingQueueSize/4 && state!=State::Normal)  {
+		//We are lagging behind
+		state = State::Lagging;
+		//Log
+		Log("-EventLoop::Send() | sending queue back to normal [aprox:%u]\n",aprox);
+	}
+	
 	//Create send buffer
 	SendBuffer send = {ipAddr, port, std::move(buffer)};
 	
