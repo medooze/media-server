@@ -15,7 +15,9 @@
 #include "log.h"
 
 
-RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec)
+
+
+RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec, QWORD time)
 {
 	this->media = media;
 	//Set coced
@@ -38,10 +40,18 @@ RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec)
 	payload  = buffer+PREFIX;
 	payloadLen = 0;
 	//Set time
-	time = ::getTimeMS();
+	this->time = time;
 }
 
-RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec,const RTPHeader &header, const RTPHeaderExtension &extension) :
+RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec) : RTPPacket(media, codec, ::getTimeMS())
+{
+}
+
+RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec,const RTPHeader &header, const RTPHeaderExtension &extension) : RTPPacket(media,codec,header,extension,::getTimeMS())
+{
+}
+
+RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec,const RTPHeader &header, const RTPHeaderExtension &extension, QWORD time) :
 	header(header),
 	extension(extension)
 {
@@ -66,7 +76,7 @@ RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec,const RTPHeader &header, 
 	payload  = buffer+PREFIX;
 	payloadLen = 0;
 	//Set time
-	time = ::getTimeMS();
+	this->time = time;
 }
 
 RTPPacket::~RTPPacket()
@@ -76,12 +86,11 @@ RTPPacket::~RTPPacket()
 RTPPacket::shared RTPPacket::Clone()
 {
 	//New one
-	auto cloned = std::make_shared<RTPPacket>(GetMedia(),GetCodec(),GetRTPHeader(),GetRTPHeaderExtension());
+	auto cloned = std::make_shared<RTPPacket>(GetMedia(),GetCodec(),GetRTPHeader(),GetRTPHeaderExtension(),GetTime());
 	//Set attrributes
 	cloned->SetClockRate(GetClockRate());
 	cloned->SetSeqCycles(GetSeqCycles());
 	cloned->SetTimestamp(GetTimestamp());
-	cloned->SetTime(GetTime());
 	//Set payload
 	cloned->SetPayload(GetMediaData(),GetMediaLength());
 	//Return it

@@ -448,12 +448,15 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		//Get extended value
 		DWORD transportExtSeqNum = feedbackCycles<<16 | transportSeqNum;
 		
+		//Get current time
+		auto now = getTime();
+		
 		//Add packets to the transport wide stats
-		transportWideReceivedPacketsStats[transportExtSeqNum] = PacketStats::Create(packet,size,getTime());
+		transportWideReceivedPacketsStats[transportExtSeqNum] = PacketStats::Create(packet,size,now);
 		
 		//If we have enought or timeout (500ms)
 		//TODO: Implement timer
-		if (transportWideReceivedPacketsStats.size()>20 || (getTime()-transportWideReceivedPacketsStats.begin()->second->time)>5E5)
+		if (transportWideReceivedPacketsStats.size()>20 || (now-transportWideReceivedPacketsStats.begin()->second->time)>5E5)
 			//Send feedback message
 			SendTransportWideFeedbackMessage(ssrc);
 	}
@@ -509,8 +512,11 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		source->dropPackets++;
 	} 
 	
+	//Get current time
+	auto now = getTime();
+	
 	if ( group->type == MediaFrame::Video && 
-		( lost>0 ||  (group->GetCurrentLost() && getTimeDiff(source->lastNACKed)/1000>fmax(rtt,20)))
+		( lost>0 ||  (group->GetCurrentLost() && (now-source->lastNACKed)/1000>fmax(rtt,20)))
 	   )
 	{
 		UltraDebug("-DTLSICETransport::onData() | Lost packets [ssrc:%u,ssrc:%u,seq:%d,lost:%d,total:%d]\n",ssrc,packet->GetSSRC(),packet->GetSeqNum(),lost,group->GetCurrentLost());
@@ -529,13 +535,13 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		Send(rtcp);
 
 		//Update last time nacked
-		source->lastNACKed = getTime();
+		source->lastNACKed = now;
 		//Update nacked packets
 		source->totalNACKs++;
 	}
 	
 	//Check if we need to send RR (1 per second)
-	if (getTimeDiff(source->lastReport)>1E6)
+	if (now-source->lastReport>1E6)
 	{
 		//Create rtcp sender retpor
 		auto rtcp = RTCPCompoundPacket::Create();
@@ -544,7 +550,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		auto rr = rtcp->CreatePacket<RTCPReceiverReport>(mainSSRC);
 		
 		//Create report
-		auto report = source->CreateReport(getTime());
+		auto report = source->CreateReport(now);
 
 		//If got anything
 		if (report)
@@ -590,7 +596,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 			//We try to calculate rtt based on rtx
 			auto nack = rtcp->CreatePacket<RTCPRTPFeedback>(RTCPRTPFeedback::NACK,mainSSRC,group->media.ssrc);
 			//Get last seq num for calculating rtt based on rtx
-			WORD last = group->SetRTTRTX(getTime());
+			WORD last = group->SetRTTRTX(now);
 			//Request it
 			nack->AddField(std::make_shared<RTCPRTPFeedback::NACKField>(last,0));
 		}
@@ -646,6 +652,9 @@ void DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 		//Padding
 		header.padding		= 1;
 	}
+	
+	//Get current time
+	auto now = getTime();
 
 	//Add transport wide cc on video
 	if (group->type == MediaFrame::Video && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC)!=RTPMap::NotFound)
@@ -664,7 +673,7 @@ void DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 		header.extension = true;
 		//Set abs send time
 		extension.hasAbsSentTime = true;
-		extension.absSentTime = getTimeMS();
+		extension.absSentTime = now/1000;
 	}
 	
 	//Send buffer
@@ -714,7 +723,7 @@ void DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 	//If dumping
 	if (dumper && dumpOutRTP)
 		//Write udp packet
-		dumper->WriteUDP(getTimeMS(),0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len);
+		dumper->WriteUDP(now/1000,0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len);
 
 	//Encript
 	len = send.ProtectRTP(data,len);
@@ -727,8 +736,11 @@ void DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 	//Store candidate before unlocking
 	ICERemoteCandidate* candidate = active;
 
+	//Update now
+	now = getTime();
+	
 	//Update bitrate
-	outgoingBitrate.Update(getTimeMS(),len);
+	outgoingBitrate.Update(now/1000,len);
 	//Set buffer size
 	buffer.SetSize(len);
 	//No error yet, send packet
@@ -742,8 +754,11 @@ void DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
                 source.lastTime		= header.timestamp;
                 source.lastPayloadType  = header.payloadType;
 	
+		//Update now
+		now = getTime();
+		
                 //Update stats
-                source.Update(getTimeMS(),header.sequenceNumber,len);
+                source.Update(now/1000,header.sequenceNumber,len);
         }
 	
 	//Add to transport wide stats
@@ -758,14 +773,14 @@ void DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 		stats->size			= len;
 		stats->payload			= 0;
 		stats->timestamp		= header.timestamp;
-		stats->time			= getTime();
+		stats->time			= now;
 		stats->mark			= false;
 		//Add new stat
 		transportWideSentPacketsStats[extension.transportSeqNum] = stats;
 		//Protect against missing feedbacks, remove too old lost packets
 		auto it = transportWideSentPacketsStats.begin();
 		//If we have more than 1s diff
-		while(it!=transportWideSentPacketsStats.end() && getTimeDiff(it->second->time)>1E6)
+		while(it!=transportWideSentPacketsStats.end() && (now-it->second->time)>1E6)
 			//Erase it and move iterator
 			it = transportWideSentPacketsStats.erase(it);
 	}
@@ -825,7 +840,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 		//No padding
 		header.padding		= 0;
 	}
-
+	
 	//Add transport wide cc on video
 	if (group->type == MediaFrame::Video && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC!=RTPMap::NotFound))
 	{
@@ -899,7 +914,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	//If we don't have an active candidate yet
 	if (!active)
 		//Error
-		return (void)Debug("-DTLSICETransport::Send() | We don't have an active candidate yet\n");
+		return (void)Debug("-DTLSICETransport::ReSendPacket() | We don't have an active candidate yet\n");
 
 	//If dumping
 	if (dumper && dumpOutRTP)
@@ -912,7 +927,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	//Check size
 	if (!len)
 		//Error
-		return (void)Error("-RTPTransport::SendPacket() | Error protecting RTP packet [ssrc:%u,%s]\n",source.ssrc,send.GetLastError());
+		return (void)Error("-RTPTransport::ReSendPacket() | Error protecting RTP packet [ssrc:%u,%s]\n",source.ssrc,send.GetLastError());
 	
 	//Store candidate before unlocking
 	ICERemoteCandidate* candidate = active;
@@ -939,6 +954,8 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	//Add to transport wide stats
 	if (extension.hasTransportWideCC)
 	{
+		//Get current time
+		auto now = getTime();
 		//Create stat
 		auto stats = std::make_shared<PacketStats>();
 		//Fill
@@ -948,14 +965,14 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 		stats->size			= len;
 		stats->payload			= packet->GetMediaLength();
 		stats->timestamp		= header.timestamp;
-		stats->time			= getTime();
+		stats->time			= now;
 		stats->mark			= false;
 		//Add new stat
 		transportWideSentPacketsStats[extension.transportSeqNum] = stats;
 		//Protect against missing feedbacks, remove too old lost packets
 		auto it = transportWideSentPacketsStats.begin();
 		//If we have more than 1s diff
-		while(it!=transportWideSentPacketsStats.end() && getTimeDiff(it->second->time)>1E6)
+		while(it!=transportWideSentPacketsStats.end() && (now-it->second->time)>1E6)
 			//Erase it and move iterator
 			it = transportWideSentPacketsStats.erase(it);
 	}
@@ -1756,13 +1773,16 @@ int DTLSICETransport::SendPLI(DWORD ssrc)
 			Debug("- DTLSICETransport::SendPLI() | no incoming source found for [ssrc:%u]\n",ssrc);
 			return;
 		}
+		
+		//Get current time
+		auto now = getTime();
 
 		//Check if we have sent a PLI recently (less than half a second ago)
-		if (getTimeDiff(group->media.lastPLI)<1E6/2)
+		if ((now-group->media.lastPLI)<1E6/2)
 			//We refuse to end more
 			return;
 		//Update last PLI requested time
-		group->media.lastPLI = getTime();
+		group->media.lastPLI = now;
 		//And number of requested plis
 		group->media.totalPLIs++;
 
@@ -1835,10 +1855,13 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 		//Disable transport wide cc
 		cloned->DisableTransportSeqNum();
 
+	//Get time
+	auto now = getTime();
+	
 	//If we are using abs send time for sending
 	if (sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::AbsoluteSendTime)!=RTPMap::NotFound)
 		//Set abs send time
-		cloned->SetAbsSentTime(getTimeMS());
+		cloned->SetAbsSentTime(now/1000);
 	else
 		//Disable it
 		cloned->DisableAbsSentTime();
@@ -1880,7 +1903,7 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 	//If dumping
 	if (dumper && dumpOutRTP)
 		//Write udp packet
-		dumper->WriteUDP(getTimeMS(),0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len);
+		dumper->WriteUDP(now/1000,0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len);
 
 	//Encript
 	len = send.ProtectRTP(data,len);
@@ -1918,30 +1941,33 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 		bitrate   = static_cast<DWORD>(source.acumulator.GetInstantAvg());
 		estimated = source.remb;
 	}
+	
+	//Get time
+	now = getTime();
 
 	//Check if we are using transport wide for this packet
 	if (cloned->HasTransportWideCC())
 	{
 		//Add new stat
-		transportWideSentPacketsStats[cloned->GetTransportSeqNum()] = PacketStats::Create(cloned,len,getTime());
+		transportWideSentPacketsStats[cloned->GetTransportSeqNum()] = PacketStats::Create(cloned,len,now);
 		//Protect against missing feedbacks, remove too old lost packets
 		auto it = transportWideSentPacketsStats.begin();
 		//If we have more than 1s diff
-		while(it!=transportWideSentPacketsStats.end() && getTimeDiff(it->second->time)>1E6)
+		while(it!=transportWideSentPacketsStats.end() && (now-it->second->time)>1E6)
 			//Erase it and move iterator
 			it = transportWideSentPacketsStats.erase(it);
 	}
 
 	//Get time for packets to discard, always have at least 200ms, max 500ms
-	QWORD until = getTimeMS() - (200+fmin(rtt*2,300));
+	QWORD until = now/1000 - (200+fmin(rtt*2,300));
 	
 	//Release packets from rtx queue
 	group->ReleasePackets(until);
 	
 	//Check if we need to send SR (1 per second)
-	if (getTimeDiff(source.lastSenderReport)>1E6)
+	if (now-source.lastSenderReport>1E6)
 		//Create and send rtcp sender retpor
-		Send(RTCPCompoundPacket::Create(group->media.CreateSenderReport(getTime())));
+		Send(RTCPCompoundPacket::Create(group->media.CreateSenderReport(now)));
 	
 	//Do we need to send probing?
 	if (probe && group->type == MediaFrame::Video && cloned->GetMark() && estimated>bitrate)
