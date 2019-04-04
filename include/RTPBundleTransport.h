@@ -45,6 +45,8 @@ public:
 	virtual int Send(const ICERemoteCandidate* candidate,Buffer&& buffer) override;
 	
 	virtual void OnRead(const int fd, const uint8_t* data, const size_t size, const uint32_t ip, const uint16_t port) override;
+	
+	bool SetAffinity(int cpu) { return loop.SetAffinity(cpu); }
 private:
 	typedef std::map<std::string,Connection*> Connections;
 	typedef std::map<std::string,ICERemoteCandidate*> RTPICECandidates;

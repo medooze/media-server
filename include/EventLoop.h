@@ -74,9 +74,11 @@ public:
 	
 	void Send(const uint32_t ipAddr, const uint16_t port, Buffer&& buffer);
 	void Run(const std::chrono::milliseconds &duration = std::chrono::milliseconds::max());
-	void Signal();
+	
+	bool SetAffinity(int cpu);
 	
 protected:
+	void Signal();
 	inline void AssertThread() const { assert(std::this_thread::get_id()==thread.get_id()); }
 	void CancelTimer(TimerImpl::shared timer);
 	

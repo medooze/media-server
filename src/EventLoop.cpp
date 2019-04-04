@@ -10,6 +10,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <sched.h>
+#include <pthread.h>
 
 #include "log.h"
 
@@ -23,6 +25,27 @@ EventLoop::EventLoop(Listener *listener) :
 EventLoop::~EventLoop()
 {
 	Stop();
+}
+
+bool EventLoop::SetAffinity(int cpu)
+{
+        cpu_set_t cpuset;
+
+	//Set affinity to the cpu core
+	if (cpu>=0)
+	{
+		//Set  no affinity
+		CPU_ZERO(&cpuset);
+		//Set mask
+		CPU_SET(cpu, &cpuset);
+	} else {
+		//Set affinity for all cpus
+		for (int j=0; j<CPU_SETSIZE ; j++)
+			CPU_SET(j, &cpuset);
+	}
+
+	//Set thread affinity
+        return !pthread_setaffinity_np((pthread_t)thread.native_handle(), sizeof(cpu_set_t), &cpuset);
 }
 
 bool EventLoop::Start(std::function<void(void)> loop)

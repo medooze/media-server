@@ -209,6 +209,11 @@ int RTPBundleTransport::Init()
 		//Set TOS
 		int tos = 0x2E;
 		setsockopt(socket, IPPROTO_IP, IP_TOS, &tos, sizeof(tos));
+		
+		//Disable path mtu discoveruy
+		int pmtu = IP_PMTUDISC_DO;
+		setsockopt(socket, IPPROTO_IP, IP_MTU_DISCOVER, &pmtu, sizeof(pmtu));
+		
 		//Everything ok
 		Log("-RTPBundleTransport::Init() | Got port [%d]\n",port);
 		//Start receiving
