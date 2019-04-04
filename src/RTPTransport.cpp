@@ -121,6 +121,9 @@ RTPTransport::RTPTransport(Listener *listener) :
 	recPort = 0;
 	prio = 0;
 
+	//Not dumping
+	dumping = false;
+	
 	//Preparamos las direcciones de envio
 	memset(&sendAddr,       0,sizeof(struct sockaddr_in));
 	memset(&sendRtcpAddr,   0,sizeof(struct sockaddr_in));
@@ -577,6 +580,10 @@ int RTPTransport::Init()
 		Log("-RTPTransport::Init() | Got ports [%d,%d]\n",simPort,simRtcpPort);
 		//Start receiving
 		Start();
+		//Dump
+		char filename[256];
+		snprintf(filename,255,"/tmp/%d-%p",simPort,this);
+		if (dumping) pcap.Open(filename);
 		//Done
 		Log("<RTPTransport::Init()\n");
 		//Opened
@@ -601,6 +608,8 @@ int RTPTransport::End()
 	//Stop just in case
 	Stop();
 
+	if (dumping) pcap.Close();
+	
 	//If got socket
 	if (simSocket!=FD_INVALID)
 	{
@@ -632,6 +641,9 @@ int RTPTransport::SendRTCPPacket(Buffer&& packet)
 		//Exit
 		return 0;
 	}
+	
+	//Write udp packet
+	if (dumping) pcap.WriteUDP(getTimeMS(),0x7F000001,5004,ntohl(sendAddr.sin_addr.s_addr),ntohs(sendAddr.sin_port),packet.GetData(),packet.GetSize());
 
 	//If encripted
 	if (encript)
@@ -656,6 +668,8 @@ int RTPTransport::SendRTCPPacket(Buffer&& packet)
 	else
 		//Send using RCTP port
 		rtcpLoop.Send(ntohl(sendRtcpAddr.sin_addr.s_addr),ntohs(sendRtcpAddr.sin_port),std::move(packet));
+	
+	
 	
 	return 1;
 }
@@ -713,6 +727,9 @@ int RTPTransport::SendRTPPacket(Buffer&& packet)
 			return 0;
 		}
 	}
+	
+	//Write udp packet
+	if (dumping) pcap.WriteUDP(getTimeMS(),0x7F000001,5004,ntohl(sendAddr.sin_addr.s_addr),ntohs(sendAddr.sin_port),packet.GetData(),packet.GetSize());
 
 	//Check if we ar encripted
 	if (encript)
@@ -839,6 +856,9 @@ int RTPTransport::ReadRTCP(const uint8_t* data, const size_t size, const uint32_
 	}
 	//RTCP mux disabled
 	muxRTCP = false;
+	
+	//Write udp packet
+	if (dumping) pcap.WriteUDP(getTimeMS(),ntohl(from_addr.sin_addr.s_addr),ntohs(from_addr.sin_port),0x7F000001,5004,data,len);
 	
 	//Parse it
 	listener->onRTCPPacket(data,len);
@@ -1027,6 +1047,9 @@ int RTPTransport::ReadRTP(const uint8_t* data, const size_t size, const uint32_t
 		//RTCP mux enabled
 		muxRTCP = true;
 		
+		//Write udp packet
+		if (dumping) pcap.WriteUDP(getTimeMS(),ntohl(from_addr.sin_addr.s_addr),ntohs(from_addr.sin_port),0x7F000001,5004,data,len);
+		
 		//Handle incomming rtcp packets
 		listener->onRTCPPacket(data,len);
 		
@@ -1080,6 +1103,9 @@ int RTPTransport::ReadRTP(const uint8_t* data, const size_t size, const uint32_t
 		return 0;
 	}
 
+	//Write udp packet
+	if (dumping) pcap.WriteUDP(getTimeMS(),ntohl(from_addr.sin_addr.s_addr),ntohs(from_addr.sin_port),0x7F000001,5004,data,size);
+	
 	int len = size;
 	//Check if it is encripted
 	if (decript)

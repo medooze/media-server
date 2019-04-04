@@ -22,6 +22,7 @@
 #include "EventLoop.h"
 #include "Datachannels.h"
 #include "Endpoint.h"
+#include "PCAPFile.h"
 
 class RTPTransport :
 	public EventLoop::Listener,
@@ -122,6 +123,8 @@ private:
 	in_addr_t recIP;
 	DWORD	  recPort;
 	DWORD     prio;
+	bool	  dumping;
+	PCAPFile  pcap;
 };
 
 #endif
