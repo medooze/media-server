@@ -502,6 +502,9 @@ int DTLSConnection::Init()
 void DTLSConnection::End()
 {
 	Log("-DTLSConnection::End()\n");
+	
+	if (!inited)
+		return;
 
 	// NOTE: Don't use BIO_free() for write_bio and read_bio as they are
 	// automatically freed by SSL_free().
@@ -510,7 +513,7 @@ void DTLSConnection::End()
 	inited = false;
 	
 	//Cancel dtls timeout
-	timeout->Cancel();
+	if (timeout) timeout->Cancel();
 
 	if (ssl) 
 	{
