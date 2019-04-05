@@ -445,7 +445,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 				int ret = sendto(fd,item.buffer.GetData(),item.buffer.GetSize(),MSG_DONTWAIT,(sockaddr*)&to,sizeof(to));
 				
 				//It we have an error
-				if (ret<0)
+				if (ret<0 && state==State::Normal)
 				{
 					//Do we need to retry current packet?
 					pending = errno==EAGAIN || errno==EWOULDBLOCK;
