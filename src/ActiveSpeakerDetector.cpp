@@ -4,7 +4,7 @@
 #include <log.h>
 
 static const uint64_t ScorePerMiliScond = 10;
-static const uint64_t MaxScore = 6000;
+static const uint64_t MaxScore = 2500;
 static const uint64_t MinInterval = 10;
 
 void ActiveSpeakerDetector::Accumulate(uint32_t id, bool vad, uint8_t db, uint64_t now)
