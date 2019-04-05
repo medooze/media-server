@@ -193,14 +193,26 @@ int RTPBundleTransport::Init()
 		socket = ::socket(PF_INET,SOCK_DGRAM,0);
 		//Get random
 		port = (RTPTransport::GetMinPort()+(RTPTransport::GetMaxPort()-RTPTransport::GetMinPort())*double(rand()/double(RAND_MAX)));
-		//Make even
-		port &= 0xFFFFFFFE;
 		//Try to bind to port
 		recAddr.sin_port = htons(port);
 		//Bind the rtp socket
 		if(bind(socket,(struct sockaddr *)&recAddr,sizeof(struct sockaddr_in))!=0)
+		{
+			Log("-could not bind");
 			//Try again
 			continue;
+		}
+		//If port was random
+		if (!port)
+		{
+			socklen_t len = sizeof(struct sockaddr_in);
+			//Get binded port
+			if (getsockname(socket,(struct sockaddr *)&recAddr,&len)!=0)
+				//Try again
+				continue;
+			//Get final port
+			port = ntohs(recAddr.sin_port);
+		}
 #ifdef SO_PRIORITY
 		//Set COS
 		int cos = 5;
@@ -259,7 +271,6 @@ int RTPBundleTransport::Init(int port)
 
 	//Create new sockets
 	socket = ::socket(PF_INET,SOCK_DGRAM,0);
-	//Get random
 	//Try to bind to port
 	recAddr.sin_port = htons(port);
 	//Bind the rtp socket
@@ -275,6 +286,9 @@ int RTPBundleTransport::Init(int port)
 	//Set TOS
 	int tos = 0x2E;
 	setsockopt(socket, IPPROTO_IP, IP_TOS, &tos, sizeof(tos));
+	//Disable path mtu discoveruy
+	int pmtu = IP_PMTUDISC_DO;
+	setsockopt(socket, IPPROTO_IP, IP_MTU_DISCOVER, &pmtu, sizeof(pmtu));
 	//Everything ok
 	Log("-RTPBundleTransport::Init() | Got port [%d]\n",port);
 	//Store local port

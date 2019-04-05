@@ -148,8 +148,8 @@ int main(int argc,char **argv)
 	char* iface = NULL;
 	int wsPort = 9090;
 	int rtmpPort = 1935;
-	int minPort = RTPTransport::GetMinPort();
-	int maxPort = RTPTransport::GetMaxPort();
+	int minPort = 0;
+	int maxPort = 0;
 	int vadPeriod = 2000;
 	const char *logfile = "mcu.log";
 	const char *pidfile = "mcu.pid";
@@ -360,7 +360,7 @@ int main(int argc,char **argv)
 	VideoMixer::SetVADDefaultChangePeriod(vadPeriod);
 
 	//Set port ramge
-	if (!RTPTransport::SetPortRange(minPort,maxPort))
+	if (minPort && maxPort && !RTPTransport::SetPortRange(minPort,maxPort))
 		//Using default ones
 		Log("-RTPSession using default port range [%d,%d]\n",RTPTransport::GetMinPort(),RTPTransport::GetMaxPort());
 

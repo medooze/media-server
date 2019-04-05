@@ -34,8 +34,8 @@ public:
 };
 SRTPLib srtp;
 
-DWORD RTPTransport::minLocalPort = 49152;
-DWORD RTPTransport::maxLocalPort = 65535;
+DWORD RTPTransport::minLocalPort = 0;
+DWORD RTPTransport::maxLocalPort = 0;
 int RTPTransport::minLocalPortRange = 50;
 
 bool RTPTransport::SetPortRange(int minPort, int maxPort)
@@ -50,7 +50,7 @@ bool RTPTransport::SetPortRange(int minPort, int maxPort)
 		return Error("-RTPTransport::SetPortRange() | port range invalid [%d,%d]\n",minPort,maxPort);
 
 	//check min range ports
-	if (maxPort-minPort<minLocalPortRange)
+	if (maxPort && maxPort-minPort<minLocalPortRange)
 	{
 		//Error
 		Error("-RTPTransport::SetPortRange() | port range too short %d, should be at least %d\n",maxPort-minPort,minLocalPortRange);
@@ -59,7 +59,7 @@ bool RTPTransport::SetPortRange(int minPort, int maxPort)
 	}
 
 	//check min range
-	if (minPort<1024)
+	if (minPort && minPort<1024)
 	{
 		//Error
 		Error("-RTPTransport::SetPortRange() | min rtp port is inside privileged range, increasing it\n");
@@ -214,7 +214,6 @@ int RTPTransport::SetLocalCryptoSDES(const char* suite,const BYTE* key,const DWO
 		Log("-RTPTransport::SetLocalCryptoSDES() | suite: NULL_CIPHER_HMAC_SHA1_80\n");
 		srtp_crypto_policy_set_null_cipher_hmac_sha1_80(&policy.rtp);
 		srtp_crypto_policy_set_null_cipher_hmac_sha1_80(&policy.rtcp);
-#ifdef SRTP_GCM
 	} else if (strcmp(suite,"AEAD_AES_256_GCM")==0) {
 		Log("-RTPTransport::SetLocalCryptoSDES() | suite: AEAD_AES_256_GCM\n");
 		srtp_crypto_policy_set_aes_gcm_256_16_auth(&policy.rtp);
@@ -223,7 +222,6 @@ int RTPTransport::SetLocalCryptoSDES(const char* suite,const BYTE* key,const DWO
 		Log("-RTPTransport::SetLocalCryptoSDES() | suite: AEAD_AES_128_GCM\n");
 		srtp_crypto_policy_set_aes_gcm_128_16_auth(&policy.rtp);
 		srtp_crypto_policy_set_aes_gcm_128_16_auth(&policy.rtcp);
-#endif
 	} else {
 		return Error("-RTPTransport::SetLocalCryptoSDES() | Unknown cipher suite: %s", suite);
 	}
@@ -368,7 +366,6 @@ int RTPTransport::SetRemoteCryptoSDES(const char* suite, const BYTE* key, const 
 		Log("-RTPTransport::SetRemoteCryptoSDES() | suite: NULL_CIPHER_HMAC_SHA1_80\n");
 		srtp_crypto_policy_set_null_cipher_hmac_sha1_80(&policy.rtp);
 		srtp_crypto_policy_set_null_cipher_hmac_sha1_80(&policy.rtcp);
-#ifdef SRTP_GCM		
 	} else if (strcmp(suite,"AEAD_AES_256_GCM")==0) {
 		Log("-RTPTransport::SetLocalCryptoSDES() | suite: AEAD_AES_256_GCM\n");
 		srtp_crypto_policy_set_aes_gcm_256_16_auth(&policy.rtp);
@@ -377,7 +374,6 @@ int RTPTransport::SetRemoteCryptoSDES(const char* suite, const BYTE* key, const 
 		Log("-RTPTransport::SetLocalCryptoSDES() | suite: AEAD_AES_128_GCM\n");
 		srtp_crypto_policy_set_aes_gcm_128_16_auth(&policy.rtp);
 		srtp_crypto_policy_set_aes_gcm_128_16_auth(&policy.rtcp);
-#endif
 	} else {
 		return Error("-RTPTransport::SetRemoteCryptoSDES() | Unknown cipher suite %s", suite);
 	}
@@ -550,6 +546,17 @@ int RTPTransport::Init()
 			simPort = 0;
 			//Try again
 			continue;
+		}
+		//If port was random
+		if (!simPort)
+		{
+			socklen_t len = sizeof(struct sockaddr_in);
+			//Get binded port
+			if (getsockname(simSocket,(struct sockaddr *)&recAddr,&len)!=0)
+				//Try again
+				continue;
+			//Get final port
+			simPort = ntohs(recAddr.sin_port);
 		}
 		//Create new sockets
 		simRtcpSocket = socket(PF_INET,SOCK_DGRAM,0);
