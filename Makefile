@@ -145,8 +145,6 @@ VPATH +=  %.cc  $(SRCDIR)/ext/crc32c/src/
 
 
 INCLUDE+= -I$(SRCDIR)/src -I$(SRCDIR)/include/ $(VADINCLUDE) -I$(SRCDIR)/ext/libdatachannels/src -I$(SRCDIR)/ext/libdatachannels/src/internal -I$(SRCDIR)/ext/crc32c/include -I$(SRCDIR)/ext/crc32c/config/${OS}-${PLATFORM}/
-LDFLAGS+= -lpthread 
-LDLIBFLAGS+= -lpthread 
 
 ifeq ($(STATIC_OPENSSL),yes)
 	INCLUDE+= -I$(OPENSSL_DIR)/include
@@ -164,10 +162,6 @@ ifeq ($(STATIC_LIBSRTP),yes)
 else
 	LDFLAGS+= -lsrtp2
 	LDLIBFLAGS+= -lsrtp2
-endif
-
-ifeq ($(LIBSRTP_GCM),yes)
-	OPTS+= -DSRTP_GCM
 endif
 
 ifeq ($(STATIC_LIBMP4),yes)
@@ -200,7 +194,7 @@ else
 	LDFLAGS+= -lavcodec -lswscale -lavformat -lavutil -lavresample  -lmp4v2 -lspeex -lvpx -lopus  -lx264 
 endif
 
-LDFLAGS+= -lgsm -lxmlrpc -lxmlrpc_xmlparse -lxmlrpc_xmltok -lxmlrpc_abyss -lxmlrpc_server -lxmlrpc_util -lnsl -lz -ljpeg -lpng -lresolv -L/lib/i386-linux-gnu -lgcrypt
+LDFLAGS+= -lgsm -lxmlrpc -lxmlrpc_xmlparse -lxmlrpc_xmltok -lxmlrpc_abyss -lxmlrpc_server -lxmlrpc_util -lnsl -lz -ljpeg -lpng -lresolv -L/lib/i386-linux-gnu -lgcrypt -lpthread -ldl
 
 #For abyss
 OPTS 	+= -D_UNIX -D__STDC_CONSTANT_MACROS
