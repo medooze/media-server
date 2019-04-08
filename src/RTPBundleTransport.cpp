@@ -222,9 +222,11 @@ int RTPBundleTransport::Init()
 		int tos = 0x2E;
 		setsockopt(socket, IPPROTO_IP, IP_TOS, &tos, sizeof(tos));
 		
+#ifdef IP_PMTUDISC_DONT			
 		//Disable path mtu discoveruy
-		int pmtu = IP_PMTUDISC_DO;
+		int pmtu = IP_PMTUDISC_DONT;
 		setsockopt(socket, IPPROTO_IP, IP_MTU_DISCOVER, &pmtu, sizeof(pmtu));
+#endif
 		
 		//Everything ok
 		Log("-RTPBundleTransport::Init() | Got port [%d]\n",port);
@@ -286,9 +288,12 @@ int RTPBundleTransport::Init(int port)
 	//Set TOS
 	int tos = 0x2E;
 	setsockopt(socket, IPPROTO_IP, IP_TOS, &tos, sizeof(tos));
+	
+#ifdef IP_PMTUDISC_DONT	
 	//Disable path mtu discoveruy
-	int pmtu = IP_PMTUDISC_DO;
+	int pmtu = IP_PMTUDISC_DONT;
 	setsockopt(socket, IPPROTO_IP, IP_MTU_DISCOVER, &pmtu, sizeof(pmtu));
+#endif
 	//Everything ok
 	Log("-RTPBundleTransport::Init() | Got port [%d]\n",port);
 	//Store local port
