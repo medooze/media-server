@@ -21,7 +21,7 @@ size_t EventLoop::MaxSendingQueueSize = 16*1024;
 #if __APPLE__
 #include <mach/thread_policy.h>
 #else
-cpu_set_t* alloc_cpu_set(std::size_t* size) {
+cpu_set_t* alloc_cpu_set(size_t* size) {
 	// the CPU set macros don't handle cases like my Azure VM, where there are 2 cores, but 128 possible cores (why???)
 	// hence requiring an oversized 16 byte cpu_set_t rather than the 8 bytes that the macros assume to be sufficient.
 	// this is the only way (even documented as such!) to figure out how to make a buffer big enough
@@ -57,14 +57,15 @@ bool EventLoop::SetAffinity(int cpu)
 #ifdef THREAD_AFFINITY_POLICY
 	if (cpu>=0)
 	{
-		thread_affinity_policy_data_t policy = { cpu };
+		thread_affinity_policy_data_t policy = { cpu+1 };
 		return !thread_policy_set(pthread_mach_thread_np(thread.native_handle()), THREAD_AFFINITY_POLICY, (thread_policy_t)&policy, 1);
 	} else  {
-		return !thread_policy_set(pthread_mach_thread_np(thread.native_handle()), THREAD_AFFINITY_POLICY, THREAD_AFFINITY_NULL, 1);
+		thread_affinity_policy_data_t policy = { 0 };
+		return !thread_policy_set(pthread_mach_thread_np(thread.native_handle()), THREAD_AFFINITY_POLICY, (thread_policy_t)&policy, 1);
 	}
 	
 #else
-	std::size_t cpuSize = 0;
+	size_t cpuSize = 0;
 	cpu_set_t* cpuSet = alloc_cpu_set(&cpuSize);
 	CPU_ZERO_S(cpuSize, cpuSet);
 
@@ -74,7 +75,7 @@ bool EventLoop::SetAffinity(int cpu)
 		CPU_SET(cpu, cpuSet);
 	else
 		//Set affinity for all cpus
-		for (int j=0; j<cpuSize ; j++)
+		for (size_t j=0; j<cpuSize ; j++)
 			CPU_SET(j, cpuSet);
 
 	//Set thread affinity
