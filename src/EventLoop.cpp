@@ -19,6 +19,7 @@ size_t EventLoop::MaxSendingQueueSize = 16*1024;
 
 
 #if __APPLE__
+#include <mach/mach.h>
 #include <mach/thread_policy.h>
 #else
 cpu_set_t* alloc_cpu_set(size_t* size) {
