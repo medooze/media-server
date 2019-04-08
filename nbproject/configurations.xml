@@ -412,7 +412,6 @@
       </df>
       <df name="test">
         <in>aac.cpp</in>
-        <in>bundle.cpp</in>
         <in>cpim.cpp</in>
         <in>fec.cpp</in>
         <in>h264.cpp</in>
@@ -1168,8 +1167,6 @@
       </item>
       <item path="test/aac.cpp" ex="false" tool="1" flavor2="0">
       </item>
-      <item path="test/bundle.cpp" ex="false" tool="1" flavor2="0">
-      </item>
       <item path="test/cpim.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="3">
         </ccTool>
@@ -1214,8 +1211,7 @@
         <element flagsID="1"
                  commonFlags="-fPIC -msse3 -msse4.1 -std=c++17 -std=gnu++17 -march=native"/>
         <element flagsID="2" commonFlags="-fPIC -msse3 -std=c++11"/>
-        <element flagsID="3" commonFlags="-fPIC -msse3 -std=c++14 -std=c++11"/>
-        <element flagsID="4" commonFlags="-std=c++14"/>
+        <element flagsID="3" commonFlags="-std=c++14"/>
       </flagsDictionary>
       <codeAssistance>
         <includeAdditional>true</includeAdditional>
@@ -2064,7 +2060,7 @@
             ex="false"
             tool="1"
             flavor2="11">
-        <ccTool flags="4">
+        <ccTool flags="3">
           <incDir>
             <pElem>ext/crc32c/include</pElem>
           </incDir>
@@ -2801,7 +2797,7 @@
         </ccTool>
       </item>
       <item path="src/nocodecs.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="4">
+        <ccTool flags="3">
           <incDir>
             <pElem>ext/crc32c/include</pElem>
           </incDir>
@@ -3023,7 +3019,7 @@
         </ccTool>
       </item>
       <item path="src/receiver.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="4">
+        <ccTool flags="3">
           <incDir>
             <pElem>ext/crc32c/include</pElem>
           </incDir>
@@ -3716,7 +3712,7 @@
         </ccTool>
       </item>
       <item path="src/rtp/RTPRedundantPacket.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="4">
+        <ccTool flags="3">
           <incDir>
             <pElem>ext/crc32c/include</pElem>
           </incDir>
@@ -3815,7 +3811,7 @@
         </ccTool>
       </item>
       <item path="src/sender.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="4">
+        <ccTool flags="3">
           <incDir>
             <pElem>ext/crc32c/include</pElem>
           </incDir>
@@ -4271,14 +4267,6 @@
           <preprocessorList>
             <Elem>DARWIN</Elem>
           </preprocessorList>
-        </ccTool>
-      </item>
-      <item path="test/bundle.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
-          <incDir>
-            <pElem>ext/crc32c/include</pElem>
-            <pElem></pElem>
-          </incDir>
         </ccTool>
       </item>
       <item path="test/cpim.cpp" ex="false" tool="1" flavor2="11">
@@ -6250,10 +6238,6 @@
         </ccTool>
       </item>
       <item path="test/aac.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="1">
-        </ccTool>
-      </item>
-      <item path="test/bundle.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
         </ccTool>
       </item>

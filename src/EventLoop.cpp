@@ -17,6 +17,10 @@
 
 size_t EventLoop::MaxSendingQueueSize = 16*1024;
 
+
+#if __APPLE__
+#include <mach/thread_policy.h>
+#else
 cpu_set_t* alloc_cpu_set(std::size_t* size) {
 	// the CPU set macros don't handle cases like my Azure VM, where there are 2 cores, but 128 possible cores (why???)
 	// hence requiring an oversized 16 byte cpu_set_t rather than the 8 bytes that the macros assume to be sufficient.
@@ -36,6 +40,7 @@ cpu_set_t* alloc_cpu_set(std::size_t* size) {
 void free_cpu_set(cpu_set_t* s) {
 	delete [] reinterpret_cast<unsigned long*>(s);
 }
+#endif
 
 EventLoop::EventLoop(Listener *listener) :
 	listener(listener)
@@ -49,6 +54,16 @@ EventLoop::~EventLoop()
 
 bool EventLoop::SetAffinity(int cpu)
 {
+#ifdef THREAD_AFFINITY_POLICY
+	if (cpu>=0)
+	{
+		thread_affinity_policy_data_t policy = { cpu };
+		return !thread_policy_set(pthread_mach_thread_np(thread.native_handle()), THREAD_AFFINITY_POLICY, (thread_policy_t)&policy, 1);
+	} else  {
+		return !thread_policy_set(pthread_mach_thread_np(thread.native_handle()), THREAD_AFFINITY_POLICY, THREAD_AFFINITY_NULL, 1);
+	}
+	
+#else
 	std::size_t cpuSize = 0;
 	cpu_set_t* cpuSet = alloc_cpu_set(&cpuSize);
 	CPU_ZERO_S(cpuSize, cpuSet);
@@ -70,7 +85,7 @@ bool EventLoop::SetAffinity(int cpu)
 	
 	//Done
 	return ret;
-	
+#endif
 }
 
 bool EventLoop::Start(std::function<void(void)> loop)
@@ -413,7 +428,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 		//UltraDebug(">EventLoop::Run() | poll timeout:%d\n",timeout);
 		
 		//Wait for events
-		poll(ufds,sizeof(ufds)/sizeof(pollfd),0);
+		poll(ufds,sizeof(ufds)/sizeof(pollfd),timeout);
 			
 		//Check for cancel
 		if ((ufds[0].revents & POLLHUP) || (ufds[0].revents & POLLERR) || (ufds[1].revents & POLLHUP) || (ufds[1].revents & POLLERR))
