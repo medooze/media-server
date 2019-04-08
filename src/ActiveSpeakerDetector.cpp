@@ -4,7 +4,6 @@
 #include <log.h>
 
 static const uint64_t ScorePerMiliScond = 10;
-static const uint64_t MaxScore = 2500;
 static const uint64_t MinInterval = 10;
 
 void ActiveSpeakerDetector::Accumulate(uint32_t id, bool vad, uint8_t db, uint64_t now)
@@ -13,7 +12,7 @@ void ActiveSpeakerDetector::Accumulate(uint32_t id, bool vad, uint8_t db, uint64
 	auto it = speakers.find(id);
   
 	//Check voice is detected and not muted
-	auto speaking = vad && db<127;
+	auto speaking = vad && db<noiseGatingThreshold;
   
 	//Check if we had that speakcer before
 	if (it==speakers.end())
@@ -35,7 +34,7 @@ void ActiveSpeakerDetector::Accumulate(uint32_t id, bool vad, uint8_t db, uint64
 		uint64_t diff = std::min(now-it->second.ts,(uint64_t)1000ul);
 		//UltraDebug("-ActiveSpeakerDetector::Accumulate [id:%u,vad:%d,speaking:%d,diff:%u,level:%u,score:%lu]\n",id,vad,speaking,diff,level,speakers[id].score);
 		//Do not accumulate too much so we can switch faster
-		it->second.score = std::min(it->second.score+diff*level/ScorePerMiliScond,MaxScore);
+		it->second.score = std::min(it->second.score+diff*level/ScorePerMiliScond,maxAcummulatedScore);
 		//Set last update time
 		it->second.ts = now;
 	}
@@ -90,7 +89,7 @@ void ActiveSpeakerDetector::Process(uint64_t now)
 	}
 	
 	//IF active has changed and we are out of the block period
-	if (active!=lastActive && now>blockedUntil)
+	if (maxScore>minActivationScore && active!=lastActive && now>blockedUntil)
 	{
 		//Event
 		listener->onActiveSpeakerChanded(active);
