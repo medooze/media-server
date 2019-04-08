@@ -16,9 +16,9 @@ public:
 	void Accumulate(uint32_t id, bool vad, uint8_t db, uint64_t now);
 	void Release(uint32_t id);
 	void SetMinChangePeriod(uint32_t minChangePeriod)		{ this->minChangePeriod = minChangePeriod;		}
-	void SetMaxAccumulatedScore(uint64_t maxScore)			{ this->maxAcummulatedScore = maxAcummulatedScore;	}	
+	void SetMaxAccumulatedScore(uint64_t maxAcummulatedScore)	{ this->maxAcummulatedScore = maxAcummulatedScore;	}	
 	void SetNoiseGatingThreshold(uint8_t noiseGatingThreshold)	{ this->noiseGatingThreshold = noiseGatingThreshold;	}	
-	void SetMinActivationScore(uint32_t noiseGatingThreshold)	{ this->minActivationScore = minActivationScore;	}	
+	void SetMinActivationScore(uint32_t minActivationScore)		{ this->minActivationScore = minActivationScore;	}	
 protected:
 	void Process(uint64_t now);
 	
