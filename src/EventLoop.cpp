@@ -17,6 +17,26 @@
 
 size_t EventLoop::MaxSendingQueueSize = 16*1024;
 
+cpu_set_t* alloc_cpu_set(std::size_t* size) {
+	// the CPU set macros don't handle cases like my Azure VM, where there are 2 cores, but 128 possible cores (why???)
+	// hence requiring an oversized 16 byte cpu_set_t rather than the 8 bytes that the macros assume to be sufficient.
+	// this is the only way (even documented as such!) to figure out how to make a buffer big enough
+	unsigned long* buffer = nullptr;
+	int len = 0;
+	do {
+		++len;
+		delete [] buffer;
+		buffer = new unsigned long[len];
+	} while(pthread_getaffinity_np(pthread_self(), len * sizeof(unsigned long), reinterpret_cast<cpu_set_t*>(buffer)) == EINVAL);
+
+	*size = len * sizeof(unsigned long);
+	return reinterpret_cast<cpu_set_t*>(buffer);
+}
+
+void free_cpu_set(cpu_set_t* s) {
+	delete [] reinterpret_cast<unsigned long*>(s);
+}
+
 EventLoop::EventLoop(Listener *listener) :
 	listener(listener)
 {
@@ -29,23 +49,28 @@ EventLoop::~EventLoop()
 
 bool EventLoop::SetAffinity(int cpu)
 {
-        cpu_set_t cpuset;
+	std::size_t cpuSize = 0;
+	cpu_set_t* cpuSet = alloc_cpu_set(&cpuSize);
+	CPU_ZERO_S(cpuSize, cpuSet);
 
 	//Set affinity to the cpu core
 	if (cpu>=0)
-	{
-		//Set  no affinity
-		CPU_ZERO(&cpuset);
 		//Set mask
-		CPU_SET(cpu, &cpuset);
-	} else {
+		CPU_SET(cpu, cpuSet);
+	else
 		//Set affinity for all cpus
-		for (int j=0; j<CPU_SETSIZE ; j++)
-			CPU_SET(j, &cpuset);
-	}
+		for (int j=0; j<cpuSize ; j++)
+			CPU_SET(j, cpuSet);
 
 	//Set thread affinity
-        return !pthread_setaffinity_np((pthread_t)thread.native_handle(), sizeof(cpu_set_t), &cpuset);
+        bool ret =  !pthread_setaffinity_np(thread.native_handle(), cpuSize, cpuSet);
+	
+	//Clear cpu mask
+	free_cpu_set(cpuSet);
+	
+	//Done
+	return ret;
+	
 }
 
 bool EventLoop::Start(std::function<void(void)> loop)
@@ -388,7 +413,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 		//UltraDebug(">EventLoop::Run() | poll timeout:%d\n",timeout);
 		
 		//Wait for events
-		poll(ufds,sizeof(ufds)/sizeof(pollfd),timeout);
+		poll(ufds,sizeof(ufds)/sizeof(pollfd),0);
 			
 		//Check for cancel
 		if ((ufds[0].revents & POLLHUP) || (ufds[0].revents & POLLERR) || (ufds[1].revents & POLLHUP) || (ufds[1].revents & POLLERR))
