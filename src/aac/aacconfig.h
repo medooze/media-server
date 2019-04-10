@@ -67,7 +67,7 @@ public:
 	AACSpecificConfig() = default;
 	AACSpecificConfig(DWORD rate,BYTE channels)
 	{
-		this->rate = channels;
+		this->rate = rate;
 		this->channels = channels;
 	}
 
