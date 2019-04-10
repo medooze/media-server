@@ -105,6 +105,7 @@ private:
 	int		fd = 0;
 	int		pipe[2] = {0};
 	pollfd		ufds[2];
+	volatile bool	signaled = false;
 	volatile bool	running = false;
 	std::chrono::milliseconds now = 0ms;
 	moodycamel::ConcurrentQueue<SendBuffer>	sending;

@@ -97,7 +97,7 @@ bool EventLoop::Start(std::function<void(void)> loop)
 	if (thread.get_id()!=std::thread::id())
 		//Alredy running
 		return false;
-#if __APPLE__	
+#if __APPLE__
 	//Create pipe
 	if (::pipe(pipe)==-1)
 		//Error
@@ -108,7 +108,7 @@ bool EventLoop::Start(std::function<void(void)> loop)
 	fcntl(pipe[1], F_SETFL , O_NONBLOCK);
 	
 #else
-	pipe[0] = pipe[1] = eventfd(0,EFD_NONBLOCK);
+	pipe[0] = pipe[1] = eventfd(0, EFD_NONBLOCK);
 #endif	
 	
 	//Store socket
@@ -370,10 +370,15 @@ void EventLoop::Signal()
 	//UltraDebug("-EventLoop::Signal()\r\n");
 	uint64_t one = 1;
 	
-	//If we are in the same thread
-	if (std::this_thread::get_id()==thread.get_id())
+	//If we are in the same thread or already signaled
+	if (std::this_thread::get_id()==thread.get_id() || signaled) 
 		//No need to do anything
 		return;
+	
+	//We have signaled it
+	//worst case scenario is that race happens between this to points
+	//and that we signal it twice
+	signaled = true;
 	
 	//Write to tbe pipe
 	write(pipe[1],(uint8_t*)&one,sizeof(one));
@@ -438,7 +443,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 		
 		//Wait for events
 		poll(ufds,sizeof(ufds)/sizeof(pollfd),timeout);
-			
+		
 		//Check for cancel
 		if ((ufds[0].revents & POLLHUP) || (ufds[0].revents & POLLERR) || (ufds[1].revents & POLLHUP) || (ufds[1].revents & POLLERR))
 		{
@@ -456,6 +461,8 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 			{
 				//DO nothing
 			}
+			//We are not signaled anymore
+			signaled = false;
 		}
 		
 		//Read first
