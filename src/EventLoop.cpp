@@ -22,6 +22,7 @@ size_t EventLoop::MaxSendingQueueSize = 16*1024;
 #include <mach/mach.h>
 #include <mach/thread_policy.h>
 #else
+#include <sys/eventfd.h>
 cpu_set_t* alloc_cpu_set(size_t* size) {
 	// the CPU set macros don't handle cases like my Azure VM, where there are 2 cores, but 128 possible cores (why???)
 	// hence requiring an oversized 16 byte cpu_set_t rather than the 8 bytes that the macros assume to be sufficient.
@@ -96,7 +97,7 @@ bool EventLoop::Start(std::function<void(void)> loop)
 	if (thread.get_id()!=std::thread::id())
 		//Alredy running
 		return false;
-	
+#if __APPLE__	
 	//Create pipe
 	if (::pipe(pipe)==-1)
 		//Error
@@ -105,6 +106,10 @@ bool EventLoop::Start(std::function<void(void)> loop)
 	//Set non blocking
 	fcntl(pipe[0], F_SETFL , O_NONBLOCK);
 	fcntl(pipe[1], F_SETFL , O_NONBLOCK);
+	
+#else
+	pipe[0] = pipe[1] = eventfd(0,EFD_NONBLOCK);
+#endif	
 	
 	//Store socket
 	this->fd = -1;
@@ -363,13 +368,15 @@ const std::chrono::milliseconds EventLoop::Now()
 void EventLoop::Signal()
 {
 	//UltraDebug("-EventLoop::Signal()\r\n");
+	uint64_t one = 1;
 	
 	//If we are in the same thread
 	if (std::this_thread::get_id()==thread.get_id())
 		//No need to do anything
 		return;
-	//Write a single char to pipe
-	write(pipe[1],".",1);
+	
+	//Write to tbe pipe
+	write(pipe[1],(uint8_t*)&one,sizeof(one));
 }
 
 void EventLoop::Run(const std::chrono::milliseconds &duration)
