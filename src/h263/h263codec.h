@@ -38,7 +38,7 @@ class H263Decoder : public VideoDecoder
 public:
 	H263Decoder();
 	virtual ~H263Decoder();
-	virtual int DecodePacket(BYTE *in,DWORD len,int lost,int last);
+	virtual int DecodePacket(const BYTE *in,DWORD len,int lost,int last);
 	virtual int Decode(BYTE *in,DWORD len);
 	virtual int GetWidth()		{ return ctx->width;		};
 	virtual int GetHeight()		{ return ctx->height;		};
@@ -100,7 +100,7 @@ class H263Decoder1996 : public VideoDecoder
 public:
 	H263Decoder1996();
 	virtual ~H263Decoder1996();
-	virtual int DecodePacket(BYTE *in,DWORD len,int lost,int last);
+	virtual int DecodePacket(const BYTE *in,DWORD len,int lost,int last);
 	virtual int Decode(BYTE *in,DWORD len);
 	virtual int GetWidth()		{ return ctx->width;		};
 	virtual int GetHeight()		{ return ctx->height;		};

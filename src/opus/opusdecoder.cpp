@@ -48,7 +48,7 @@ OpusDecoder::~OpusDecoder()
 		opus_decoder_destroy(dec);
 }
 
-int OpusDecoder::Decode(BYTE *in,int inLen,SWORD* out,int outLen)
+int OpusDecoder::Decode(const BYTE *in,int inLen,SWORD* out,int outLen)
 {
 	//Decode without FEC
 	int ret = opus_decode(dec,in,inLen,out,outLen,0);

@@ -40,7 +40,7 @@ G722Decoder::G722Decoder()
 }
 
 
-int G722Decoder::Decode(BYTE *in, int inLen, SWORD* out, int outLen)
+int G722Decoder::Decode(const BYTE *in, int inLen, SWORD* out, int outLen)
 {
 	return g722_decode(&decoder,out,in,inLen);
 }

@@ -25,7 +25,7 @@ RTPRedundantPacket::RTPRedundantPacket(MediaFrame::Type media,BYTE *data,DWORD s
 	WORD skip = 0;
 
 	//The the payload
-	BYTE *payload = GetMediaData();
+	const BYTE *payload = GetMediaData();
 
 	//redundant counter
 	WORD i = 0;

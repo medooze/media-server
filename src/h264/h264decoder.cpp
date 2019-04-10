@@ -74,7 +74,7 @@ static const uint8_t sync_bytes[] = { 0, 0, 0, 1 };
 
 
 
-DWORD h264_append_nals(BYTE *dest, DWORD destLen, DWORD destSize, BYTE *buffer, DWORD bufferLen, BYTE **nals, DWORD nalSize, DWORD *num)
+DWORD h264_append_nals(BYTE *dest, DWORD destLen, DWORD destSize,const BYTE *buffer, DWORD bufferLen, BYTE **nals, DWORD nalSize, DWORD *num)
 {
 	BYTE nal_unit_type;
 	unsigned int header_len;
@@ -82,7 +82,7 @@ DWORD h264_append_nals(BYTE *dest, DWORD destLen, DWORD destSize, BYTE *buffer, 
 	unsigned int nalu_size;
 
 	DWORD payload_len = bufferLen;
-	BYTE *payload = buffer;
+	const BYTE *payload = buffer;
 	BYTE *outdata = dest+destLen;
 	DWORD outsize = 0;
 
@@ -295,7 +295,7 @@ DWORD h264_append_nals(BYTE *dest, DWORD destLen, DWORD destSize, BYTE *buffer, 
 	return 0;
 }
 
-DWORD h264_append(BYTE *dest, DWORD destLen, DWORD destSize, BYTE *buffer, DWORD bufferLen)
+DWORD h264_append(BYTE *dest, DWORD destLen, DWORD destSize,const BYTE *buffer, DWORD bufferLen)
 {
 	DWORD num = 0;
 	return h264_append_nals(dest,destLen,destSize,buffer,bufferLen,NULL,0,&num);
@@ -305,7 +305,7 @@ DWORD h264_append(BYTE *dest, DWORD destLen, DWORD destSize, BYTE *buffer, DWORD
 * DecodePacket 
 *	Decodifica un packete
 ************************/
-int H264Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
+int H264Decoder::DecodePacket(const BYTE *in,DWORD inLen,int lost,int last)
 {
 	int ret = 1;
 	

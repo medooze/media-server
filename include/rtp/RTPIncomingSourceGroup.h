@@ -42,7 +42,7 @@ public:
 	
 	WORD SetRTTRTX(uint64_t time);
 	
-	DWORD GetCurrentLost()			const { return lost;		}
+	DWORD GetCurrentLost()			const { return losts.GetTotal();}
 	DWORD GetMinWaitedTime()		const { return minWaitedTime;	}
 	DWORD GetMaxWaitedTime()		const { return maxWaitedTime;	}
 	long double GetAvgWaitedTime()		const {	return avgWaitedTime;	}

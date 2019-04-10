@@ -26,7 +26,7 @@ class G722Decoder : public AudioDecoder
 public:
 	G722Decoder();
 	virtual ~G722Decoder() = default;
-	virtual int Decode(BYTE *in,int inLen,SWORD* out,int outLen);
+	virtual int Decode(const BYTE *in,int inLen,SWORD* out,int outLen);
 	virtual DWORD TrySetRate(DWORD rate)	{ return 16000;	}
 	virtual DWORD GetRate()			{ return 16000;	}
 private:

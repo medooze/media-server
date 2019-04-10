@@ -23,7 +23,7 @@ class SpeexDecoder : public AudioDecoder
 public:
 	SpeexDecoder();
 	virtual ~SpeexDecoder();
-	virtual int Decode(BYTE *in,int inLen,SWORD* out,int outLen);
+	virtual int Decode(const BYTE *in,int inLen,SWORD* out,int outLen);
 	virtual DWORD TrySetRate(DWORD rate);
 	virtual DWORD GetRate()		{ return 16000;}
 private:

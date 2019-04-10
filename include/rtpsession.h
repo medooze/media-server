@@ -62,8 +62,8 @@ public:
 	bool SetSendingCodec(DWORD codec);
 
 	void SendEmptyPacket();
-	int SendPacket(RTPPacket &packet,DWORD timestamp);
-	int SendPacket(RTPPacket &packet);
+	int SendPacket(const RTPPacket::shared &packet,DWORD timestamp);
+	int SendPacket(const RTPPacket::shared &packet);
 	
 	RTPPacket::shared GetPacket();
 	void CancelGetPacket();

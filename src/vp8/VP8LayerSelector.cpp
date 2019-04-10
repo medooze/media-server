@@ -30,28 +30,22 @@ void VP8LayerSelector::SelectSpatialLayer(BYTE id)
 	
 bool VP8LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 {
-	VP8PayloadDescriptor desc;
-	VP8PayloadHeader header;
-	
-	//Parse VP8 payload description
-	int len = desc.Parse(packet->GetMediaData(),packet->GetMediaLength());
-	
-	if (!len)
-		//Error
-		return 0;
-	
-	//Note that the header is present only in packets that have the S bit equal to one and the PID equal to zero in the payload descriptor.
-	if (desc.startOfPartition && desc.partitionIndex==0 && !header.Parse(packet->GetMediaData()+len,packet->GetMediaLength()-len))
-		//Error
-		return 0;
+	//Get header and description from packet
+	auto& desc   = packet->vp8PayloadDescriptor;
+	auto& header = packet->vp8PayloadHeader;
 
-	//UltraDebug("-intra:%d\t tl:%u\t picId:%u\t tl0picIdx:%u\t sync:%u\t waitingForIntra:%d\n",header.isKeyFrame,desc.temporalLayerIndex,desc.pictureId,desc.temporalLevelZeroIndex,desc.layerSync,waitingForIntra);
+	//Check that you are having a descriptor
+	if (!desc)
+		//Error
+		return 0;
+	
+	//UltraDebug("-intra:%d\t tl:%u\t picId:%u\t tl0picIdx:%u\t sync:%u\t waitingForIntra:%d\n",header.isKeyFrame,desc->temporalLayerIndex,desc->pictureId,desc->temporalLevelZeroIndex,desc->layerSync,waitingForIntra);
 	
 	//If we have to wait for first intra
 	if (waitingForIntra)
 	{
 		//If this is not intra
-		if (!header.isKeyFrame)
+		if (!header || !header->isKeyFrame)
 			//Discard
 			return 0;
 		//Stop waiting
@@ -65,11 +59,11 @@ bool VP8LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 	if (nextTemporalLayerId>temporalLayerId)
 	{
 		//Check if we can upscale and it is the start of the layer and it is a layer higher than current
-		if (desc.layerSync && desc.startOfPartition && desc.temporalLayerIndex>currentTemporalLayerId && desc.temporalLayerIndex<=nextTemporalLayerId)
+		if (desc->layerSync && desc->startOfPartition && desc->temporalLayerIndex>currentTemporalLayerId && desc->temporalLayerIndex<=nextTemporalLayerId)
 		{
-			UltraDebug("-VP8LayerSelector::Select() | Upscaling temporalLayerId [id:%d,current:%d,target:%d]\n",desc.temporalLayerIndex,currentTemporalLayerId,nextTemporalLayerId);
+			UltraDebug("-VP8LayerSelector::Select() | Upscaling temporalLayerId [id:%d,current:%d,target:%d]\n",desc->temporalLayerIndex,currentTemporalLayerId,nextTemporalLayerId);
 			//Update current layer
-			temporalLayerId = desc.temporalLayerIndex;
+			temporalLayerId = desc->temporalLayerIndex;
 			currentTemporalLayerId = temporalLayerId;
 		}
 	//Check if we need to downscale
@@ -84,9 +78,9 @@ bool VP8LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 	}
 	
 	//If it is not valid for the current layer
-	if (currentTemporalLayerId<desc.temporalLayerIndex)
+	if (currentTemporalLayerId<desc->temporalLayerIndex)
 	{
-		//UltraDebug("-VP8LayerSelector::Select() | dropping packet based on temporalLayerId [current:%d,desc:%d,mark:%d]\n",currentTemporalLayerId,desc.temporalLayerIndex,packet->GetMark());
+		//UltraDebug("-VP8LayerSelector::Select() | dropping packet based on temporalLayerId [current:%d,desc:%d,mark:%d]\n",currentTemporalLayerId,desc->temporalLayerIndex,packet->GetMark());
 		//Drop it
 		return false;
 	}
@@ -94,22 +88,51 @@ bool VP8LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 	//RTP mark is unchanged
 	mark = packet->GetMark();
 	
-	//UltraDebug("-VP8LayerSelector::Select() | Accepting packet [extSegNum:%u,mark:%d,desc.tid:%d,current:%d]\n",packet->GetExtSeqNum(),mark,desc.temporalLayerIndex,currentTemporalLayerId);
+	//UltraDebug("-VP8LayerSelector::Select() | Accepting packet [extSegNum:%u,mark:%d,desc->tid:%d,current:%d]\n",packet->GetExtSeqNum(),mark,desc->temporalLayerIndex,currentTemporalLayerId);
 	
 	//Select
 	return true;
-	
 }
 
  LayerInfo VP8LayerSelector::GetLayerIds(const RTPPacket::shared& packet)
 {
 	LayerInfo info;
-	VP8PayloadDescriptor desc;
 	
-	//Parse VP8 payload description
-	if (desc.Parse(packet->GetMediaData(),packet->GetMediaLength()))
+	//Check if it already have the descriptor
+	if (!packet->vp8PayloadDescriptor)
+	{
+		//Create new one
+		auto& desc = packet->vp8PayloadDescriptor.emplace();
+		
+		//Try to parse
+		int len = desc.Parse(packet->GetMediaData(),packet->GetMediaLength());
+		
+		//If error
+		if (!len)
+		{
+			//Clear desc
+			packet->vp8PayloadDescriptor.reset();
+			//NOne
+			return info;
+		}
+		
+		//Parse header if first packet
+		if (desc.startOfPartition && desc.partitionIndex==0)
+		{
+			//Create header
+			auto &header = packet->vp8PayloadHeader.emplace();
+			
+			//parse it
+			if (!header.Parse(packet->GetMediaData()+len,packet->GetMediaLength()-len))
+				//Clear desc
+				packet->vp8PayloadDescriptor.reset();
+		}
+	}
+	
+	//If we got the descriptor
+	if (packet->vp8PayloadDescriptor)
 		//Set temporal layer info
-		info.temporalLayerId = desc.temporalLayerIndex;
+		info.temporalLayerId = packet->vp8PayloadDescriptor->temporalLayerIndex;
 	//UltraDebug("-VP8LayerSelector::GetLayerIds() | [tid:%u,sid:%u]\n",info.temporalLayerId,info.spatialLayerId);
 	return info;
 }

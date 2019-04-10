@@ -423,7 +423,7 @@ int MP4RtpTrack::SendH263SEI(Listener *listener)
 	MP4GetTrackH264SeqPictHeaders(mp4, track, &sequenceHeader, &sequenceHeaderSize, &pictureHeader, &pictureHeaderSize);
 
 	// Get data pointer
-	data = rtp.GetMediaData();
+	data = rtp.AdquireMediaData();
 	// Reset length
 	dataLen = 0;
 
@@ -655,7 +655,7 @@ QWORD MP4RtpTrack::Read(Listener *listener)
 	rtp.SetMark(last);
 
 	// Get data pointer
-	data = rtp.GetMediaData();
+	data = rtp.AdquireMediaData();
 	//Get max data lenght
 	DWORD dataLen = rtp.GetMaxMediaLength();
 

@@ -407,7 +407,6 @@ int TextStream::RecText()
 *******************************************/
 int TextStream::SendText()
 {
-	RTPPacket packet(MediaFrame::Text,textCodec);
 	bool idle = true;
 	DWORD timeout = 25000;
 	DWORD lastTime = 0;
@@ -430,9 +429,12 @@ int TextStream::SendText()
 		else
 			//Update last send time with timeout
 			lastTime += timeout;
+		
+		//Create packet
+		RTPPacket::shared packet = std::make_shared<RTPPacket>(MediaFrame::Text,textCodec);
 
 		//Set timestamp
-		packet.SetTimestamp(lastTime);
+		packet->SetTimestamp(lastTime);
 
 		//Check codec
 		if (textCodec==TextCodec::T140)
@@ -441,10 +443,10 @@ int TextStream::SendText()
 			if (frame)
 			{
 				//Set data
-				packet.SetPayload(frame->GetData(),frame->GetLength());
+				packet->SetPayload(frame->GetData(),frame->GetLength());
 
 				//Set Mark for the first frame after idle
-				packet.SetMark(idle);
+				packet->SetMark(idle);
 
 				//Send it
 				rtp.SendPacket(packet);
@@ -463,10 +465,10 @@ int TextStream::SendText()
 				timeout = 25000;
 			} else {
 				//Set data
-				packet.SetPayload(BOMUTF8,sizeof(BOMUTF8));
+				packet->SetPayload(BOMUTF8,sizeof(BOMUTF8));
 
 				//No mark
-				packet.SetMark(false);
+				packet->SetMark(false);
 
 				//Send it
 				rtp.SendPacket(packet);
@@ -579,13 +581,13 @@ int TextStream::SendText()
 			bool mark = idle && frame;
 
 			//Set data
-			packet.SetPayload(buffer,bufferLen);
+			packet->SetPayload(buffer,bufferLen);
 
 			//Set timestamp
-			packet.SetTimestamp(lastTime);
+			packet->SetTimestamp(lastTime);
 
 			//Set mark
-			packet.SetMark(mark);
+			packet->SetMark(mark);
 
 			//Send it
 			rtp.SendPacket(packet);

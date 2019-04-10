@@ -20,6 +20,8 @@ class RTPPacketSched :
 	public RTPPacket
 {
 public:
+	using shared = std::shared_ptr<RTPPacketSched>; 
+public:
 	RTPPacketSched(MediaFrame::Type media,DWORD codec) : RTPPacket(media,codec)
 	{
 		//Set sending type

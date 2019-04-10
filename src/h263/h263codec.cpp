@@ -332,7 +332,7 @@ H263Decoder::~H263Decoder()
 * DecodePacket 
 *	Decodifica un packete
 ************************/
-int H263Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
+int H263Decoder::DecodePacket(const BYTE *in,DWORD inLen,int lost,int last)
 {
 	int ret = 1;
 
@@ -398,7 +398,7 @@ int H263Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
 		BYTE pebit = in[0] & 0x7;
 
 		/* Skip the header and the extra picture */
-		BYTE* i = in+2+plen;
+		const BYTE* i = in+2+plen;
 		DWORD  len = inLen-2-plen;
 
 		/* Check extra VRC byte*/

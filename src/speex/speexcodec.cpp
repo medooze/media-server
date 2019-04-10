@@ -114,7 +114,7 @@ DWORD SpeexDecoder::TrySetRate(DWORD rate)
 	return GetRate();
 }
 
-int SpeexDecoder::Decode (BYTE *in, int inLen, SWORD* out, int outLen)
+int SpeexDecoder::Decode (const BYTE *in, int inLen, SWORD* out, int outLen)
 {
 	//Nothing to decode
 	if (!inLen)

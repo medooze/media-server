@@ -60,7 +60,7 @@ MediaFrame* H264Depacketizer::AddPacket(const RTPPacket::shared& packet)
 	return packet->GetMark() ? &frame : NULL;
 }
 
-MediaFrame* H264Depacketizer::AddPayload(BYTE* payload, DWORD payload_len)
+MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payload_len)
 {
 	BYTE nalHeader[4];
 	BYTE S, E;

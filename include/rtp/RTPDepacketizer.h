@@ -36,7 +36,7 @@ public:
 
 	virtual void SetTimestamp(DWORD timestamp) = 0;
 	virtual MediaFrame* AddPacket(const RTPPacket::shared& packet) = 0;
-	virtual MediaFrame* AddPayload(BYTE* payload,DWORD payload_len) = 0;
+	virtual MediaFrame* AddPayload(const BYTE* payload,DWORD payload_len) = 0;
 	virtual void ResetFrame() = 0;
 	virtual DWORD GetTimestamp() = 0;
 private:
@@ -84,7 +84,7 @@ public:
 		//Return frame
 		return &frame;
 	}
-	virtual MediaFrame* AddPayload(BYTE* payload,DWORD payload_len)
+	virtual MediaFrame* AddPayload(const BYTE* payload,DWORD payload_len)
 	{
 		//And data
 		DWORD pos = frame.AppendMedia(payload, payload_len);

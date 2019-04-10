@@ -33,8 +33,8 @@ WORD RTPLostPackets::AddPacket(const RTPPacket::shared &packet)
 	//Get the packet number
 	DWORD extSeq = packet->GetExtSeqNum();
 	
-	//Check if is befor first
-	if (extSeq<first)
+	//Check if is before first
+	if (first && extSeq<first)
 		//Exit, very old packet
 		return 0;
 
@@ -68,16 +68,16 @@ WORD RTPLostPackets::AddPacket(const RTPPacket::shared &packet)
 		//Set first
 		first = extSeq-size+1;
 		//Full
-		len = size;
+		len = size-1;
 		//We are last
 		pos = size-1;
 	} 
 	
 	//Check if it is last
-	if (len-1<=pos)
+	if (len<pos+1)
 	{
-		//lock until we find a non lost and increase counter in the meanwhile
-		for (int i=pos-1;i>=0 && !packets[i];--i)
+		//look until we find a non lost and increase counter in the meanwhile
+		for (int i=pos; i>0 && !packets[i-1];--i)
 			//Lost
 			lost++;
 		//Increase lost

@@ -10,7 +10,7 @@ public:
 	virtual ~VP9Depacketizer();
 	virtual void SetTimestamp(DWORD timestamp) override;
 	virtual MediaFrame* AddPacket(const RTPPacket::shared& packet) override;
-	virtual MediaFrame* AddPayload(BYTE* payload,DWORD payload_len) override;
+	virtual MediaFrame* AddPayload(const BYTE* payload,DWORD payload_len) override;
 	virtual void ResetFrame() override;
 	virtual DWORD GetTimestamp() override
 	{

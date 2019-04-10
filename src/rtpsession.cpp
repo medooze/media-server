@@ -427,12 +427,12 @@ int RTPSession::SendPacket(const RTCPCompoundPacket::shared &rtcp)
 	return 1;
 }
 
-int RTPSession::SendPacket(RTPPacket &packet)
+int RTPSession::SendPacket(const RTPPacket::shared &packet)
 {
-	return SendPacket(packet,packet.GetTimestamp());
+	return SendPacket(packet,packet->GetTimestamp());
 }
 
-int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
+int RTPSession::SendPacket(const RTPPacket::shared &packet,DWORD timestamp)
 {
 	//Data
 	Buffer buffer(MTU);
@@ -448,7 +448,7 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 	if (sendType==0xFF)
 	{
 		//Set it
-		if (!SetSendingCodec(packet.GetCodec()))
+		if (!SetSendingCodec(packet->GetCodec()))
 			//Error
 			return Error("-No send type");
 	}
@@ -461,70 +461,34 @@ int RTPSession::SendPacket(RTPPacket &packet,DWORD timestamp)
 	RTPHeaderExtension extension;
 	
 	//Init send packet
-	header.ssrc		= send.media.ssrc;
-	header.timestamp	= send.media.lastTime;
-	header.payloadType	= sendType;
-	header.sequenceNumber	= send.media.NextSeqNum();
-	header.mark		= packet.GetMark();
+	packet->SetSSRC(send.media.ssrc);
+	packet->SetTimestamp(send.media.lastTime);
+	packet->SetPayloadType(sendType);
+	packet->SetExtSeqNum(send.media.NextExtSeqNum());
 
 	//If we have are using any sending extensions
 	if (useAbsTime)
-	{
-		//Use extension
-		header.extension = true;
 		//Set abs send time
-		extension.hasAbsSentTime = true;
-		extension.absSentTime = getTimeMS();
-	}
+		packet->SetAbsSentTime(getTimeMS());
 
-	//Serialize header
-	size_t len = header.Serialize(data,size);
+	//Serialize packet
+	size_t len = packet->Serialize(data,size,extMap);
 
 	//Check
 	if (!len)
 		//Error
 		return Error("-RTPSession::SendPacket() | Error serializing rtp headers\n");
 
-	//If we have extension
-	if (header.extension)
-	{
-		//Serialize
-		int n = extension.Serialize(extMap,data+len,size-len);
-		//Comprobamos que quepan
-		if (!n)
-			//Error
-			return Error("-RTPSession::SendPacket() | Error serializing rtp extension headers\n");
-		//Inc len
-		len += n;
-	}
-
-	//Ensure we have enougth data
-	if (len+packet.GetMediaLength()>size)
-		//Error
-		return Error("-RTPSession::SendPacket() | Media overflow\n");
-
-	//Copiamos los datos
-	memcpy(data+len,packet.GetMediaData(),packet.GetMediaLength());
-
-	//Set pateckt length
-	len += packet.GetMediaLength();
-
+	//Set serialized packet size
+	buffer.SetSize(len);
+	
 	//Block
 	sendMutex.Lock();
 
 	//Add it rtx queue before encripting
 	if (useNACK)
-	{
-		//Create new packet with this data
-		auto rtx = std::make_shared<RTPPacket>(packet.GetMedia(),packet.GetCodec(),header,extension);
-		//Set media
-		rtx->SetPayload(packet.GetMediaData(),packet.GetMediaLength());
 		//Add it to que
-		rtxs[rtx->GetExtSeqNum()] = rtx;
-	}
-	
-	//Set serialized packet size
-	buffer.SetSize(len);
+		rtxs[packet->GetExtSeqNum()] = packet;
 	
 	//No error yet, send packet
 	len = transport.SendRTPPacket(std::move(buffer));

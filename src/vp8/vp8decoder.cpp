@@ -85,7 +85,7 @@ VP8Decoder::~VP8Decoder()
 * DecodePacket
 *	Decodifica un packete
 ************************/
-int VP8Decoder::DecodePacket(BYTE *in,DWORD inLen,int lost,int last)
+int VP8Decoder::DecodePacket(const BYTE *in,DWORD inLen,int lost,int last)
 {
 	vpx_codec_err_t err = VPX_CODEC_OK;
 

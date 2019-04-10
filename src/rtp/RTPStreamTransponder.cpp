@@ -121,8 +121,6 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 		return;
 	}
 	
-	ScopedLock lock(mutex);
-	
 	//Check sender
 	if (!sender)
 		//Nothing
@@ -148,7 +146,7 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 			rtp->SetMark(true);
 			rtp->SetTimestamp(lastTimestamp);
 			//Send it
-			sender->Enqueue(rtp);
+			if (sender) sender->Enqueue(rtp);
 		}
 		//No source
 		lastCompleted = true;
@@ -268,18 +266,12 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 	//Change ssrc
 	cloned->SetSSRC(ssrc);
 	
-	//Disable frame markings
-	//TODO: we should change this so the header extension is recvonly and stripted when sending it instead
-	cloned->DisableFrameMarkings();
-	
 	//Rewrite pict id
 	//TODO: this should go into the layer selector??
-	if (rewritePicId && cloned->GetCodec()==VideoCodec::VP8)
+	if (rewritePicId && cloned->GetCodec()==VideoCodec::VP8 && packet->vp8PayloadDescriptor)
 	{
-		VP8PayloadDescriptor desc;
-
-		//Parse VP8 payload description
-		desc.Parse(cloned->GetMediaData(),cloned->GetMediaLength());
+		//Get VP8 desc
+		auto desc = *packet->vp8PayloadDescriptor;
 		
 		//Check if we have a new pictId
 		if (desc.pictureIdPresent && desc.pictureId!=lastPicId)
@@ -303,9 +295,8 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 		desc.pictureId = desc.pictureIdLength==2 ? picId%0x7FFF : picId%0x7F;
 		//Rewrite tl0 index
 		desc.temporalLevelZeroIndex = tl0Idx;
-		
-		//Write it back
-		desc.Serialize(cloned->GetMediaData(),cloned->GetMediaLength());
+		//We need to rewrite vp8 picture ids
+		packet->rewitePictureIds = true;
 	}
 	//UPdate media codec and type
 	media = cloned->GetMedia();
@@ -318,7 +309,7 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 	lastTime = getTime();
 	
 	//Send packet
-	sender->Enqueue(cloned);
+	if (sender) sender->Enqueue(cloned);
 }
 
 void RTPStreamTransponder::onEnded(RTPIncomingMediaStream* stream)

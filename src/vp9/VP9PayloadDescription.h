@@ -58,7 +58,7 @@ struct VP9InterPictureDependency
 	
 	VP9InterPictureDependency();
 	DWORD GetSize();
-	DWORD Parse(BYTE* data, DWORD size);
+	DWORD Parse(const BYTE* data, DWORD size);
 
 	DWORD Serialize(BYTE *data,DWORD size);
 	void Dump();
@@ -116,7 +116,7 @@ struct VP9ScalabilityScructure
 	
 	VP9ScalabilityScructure();
 	DWORD GetSize();
-	DWORD Parse(BYTE* data, DWORD size);
+	DWORD Parse(const BYTE* data, DWORD size);
 
 	DWORD Serialize(BYTE *data,DWORD size);
 	void Dump();
@@ -287,7 +287,7 @@ struct VP9PayloadDescription
 
 	VP9PayloadDescription();
 	DWORD GetSize();
-	DWORD Parse(BYTE* data, DWORD size);
+	DWORD Parse(const BYTE* data, DWORD size);
 
 	DWORD Serialize(BYTE *data,DWORD size);
 	void Dump();

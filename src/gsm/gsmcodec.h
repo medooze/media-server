@@ -23,7 +23,7 @@ class GSMDecoder : public AudioDecoder
 public:
 	GSMDecoder();
 	virtual ~GSMDecoder();
-	virtual int Decode(BYTE *in,int inLen,SWORD* out,int outLen);
+	virtual int Decode(const BYTE *in,int inLen,SWORD* out,int outLen);
 	virtual DWORD TrySetRate(DWORD rate)	{ return 8000;	}
 	virtual DWORD GetRate()			{ return 8000;	}
 private:

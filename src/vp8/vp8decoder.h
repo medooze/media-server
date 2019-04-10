@@ -18,7 +18,7 @@ class VP8Decoder : public VideoDecoder
 public:
 	VP8Decoder();
 	virtual ~VP8Decoder();
-	virtual int DecodePacket(BYTE *in,DWORD len,int lost,int last);
+	virtual int DecodePacket(const BYTE *in,DWORD len,int lost,int last);
 	virtual int Decode(BYTE *in,DWORD len);
 	virtual int GetWidth()	{return width;};
 	virtual int GetHeight()	{return height;};

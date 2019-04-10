@@ -74,7 +74,7 @@ Mpeg4Decoder::~Mpeg4Decoder()
 * DecodePacket 
 *	Decodifica un packete
 ************************/
-int Mpeg4Decoder::DecodePacket(BYTE *in,DWORD len,int lost,int last)
+int Mpeg4Decoder::DecodePacket(const BYTE *in,DWORD len,int lost,int last)
 {
 	int ret = 1;
 

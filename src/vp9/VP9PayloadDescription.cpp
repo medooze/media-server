@@ -28,7 +28,7 @@ DWORD VP9InterPictureDependency::GetSize()
 	return 1 + referenceIndexDiff.size();
 }
 
-DWORD VP9InterPictureDependency::Parse(BYTE* data, DWORD size)
+DWORD VP9InterPictureDependency::Parse(const BYTE* data, DWORD size)
 {
 	//Get values
 	temporalLayerId = data[0] >> 5;
@@ -137,7 +137,7 @@ DWORD VP9ScalabilityScructure::GetSize()
 	return len;
 }
 
-DWORD VP9ScalabilityScructure::Parse(BYTE* data, DWORD size)
+DWORD VP9ScalabilityScructure::Parse(const BYTE* data, DWORD size)
 {
 	//Check kength
 	if (size<1)
@@ -377,7 +377,7 @@ DWORD VP9PayloadDescription::GetSize()
 	return len;
 }
 
-DWORD VP9PayloadDescription::Parse(BYTE* data, DWORD size)
+DWORD VP9PayloadDescription::Parse(const BYTE* data, DWORD size)
 {
 	//Check kength
 	if (size<1)

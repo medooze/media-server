@@ -11,7 +11,7 @@ class H264Decoder : public VideoDecoder
 public:
 	H264Decoder();
 	virtual ~H264Decoder();
-	virtual int DecodePacket(BYTE *in,DWORD len,int lost,int last);
+	virtual int DecodePacket(const BYTE *in,DWORD len,int lost,int last);
 	virtual int Decode(BYTE *in,DWORD len);
 	virtual int GetWidth()		{ return ctx->width;		};
 	virtual int GetHeight()		{ return ctx->height;		};

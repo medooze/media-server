@@ -303,7 +303,7 @@ FLV1Decoder::~FLV1Decoder()
 * DecodePacket 
 *	Decodifica un packete
 ************************/
-int FLV1Decoder::DecodePacket(BYTE *buffer,DWORD bufferLen,int lost,int last)
+int FLV1Decoder::DecodePacket(const BYTE *buffer,DWORD bufferLen,int lost,int last)
 {
 	return 0;
 }

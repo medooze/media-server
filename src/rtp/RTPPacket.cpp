@@ -11,13 +11,12 @@
  * Created on 3 de febrero de 2017, 11:52
  */
 
+#include <array>
+
 #include "rtp/RTPPacket.h"
 #include "log.h"
 
-
-
-
-RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec, QWORD time)
+RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec, QWORD time) 
 {
 	this->media = media;
 	//Set coced
@@ -36,9 +35,10 @@ RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec, QWORD time)
 		default:
 			clockRate = 1000;
 	}
-	//Reset payload
-	payload  = buffer+PREFIX;
-	payloadLen = 0;
+	//Create payload
+	payload  = std::make_shared<RTPPayload>();
+	//We own the payload
+	ownedPayload = true;
 	//Set time
 	this->time = time;
 }
@@ -47,11 +47,7 @@ RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec) : RTPPacket(media, codec
 {
 }
 
-RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec,const RTPHeader &header, const RTPHeaderExtension &extension) : RTPPacket(media,codec,header,extension,::getTimeMS())
-{
-}
-
-RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec,const RTPHeader &header, const RTPHeaderExtension &extension, QWORD time) :
+RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec,const RTPHeader &header, const RTPHeaderExtension &extension) :
 	header(header),
 	extension(extension)
 {
@@ -72,9 +68,40 @@ RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec,const RTPHeader &header, 
 		default:
 			clockRate = 1000;
 	}
-	//Reset payload
-	payload  = buffer+PREFIX;
-	payloadLen = 0;
+	//Create payload
+	payload  = std::make_shared<RTPPayload>();
+	//We own the payload
+	ownedPayload = true;
+	//Set time
+	this->time = ::getTimeMS();
+}
+
+
+RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec,const RTPHeader &header, const RTPHeaderExtension &extension, const RTPPayload::shared &payload, QWORD time) :
+	header(header),
+	extension(extension)
+{
+	this->media = media;
+	//Set coced
+	this->codec = codec;
+	//NO seq cycles
+	cycles = 0;
+	//Default clock rates
+	switch(media)
+	{
+		case MediaFrame::Video:
+			clockRate = 90000;
+			break;
+		case MediaFrame::Audio:
+			clockRate = AudioCodec::GetClockRate((AudioCodec::Type)codec);
+			break;
+		default:
+			clockRate = 1000;
+	}
+	//Copy payload object
+	this->payload  = payload;
+	//Owned payload
+	ownedPayload = false;
 	//Set time
 	this->time = time;
 }
@@ -86,13 +113,15 @@ RTPPacket::~RTPPacket()
 RTPPacket::shared RTPPacket::Clone()
 {
 	//New one
-	auto cloned = std::make_shared<RTPPacket>(GetMedia(),GetCodec(),GetRTPHeader(),GetRTPHeaderExtension(),GetTime());
+	auto cloned = std::make_shared<RTPPacket>(GetMedia(),GetCodec(),GetRTPHeader(),GetRTPHeaderExtension(),payload,GetTime());
 	//Set attrributes
 	cloned->SetClockRate(GetClockRate());
 	cloned->SetSeqCycles(GetSeqCycles());
 	cloned->SetTimestamp(GetTimestamp());
-	//Set payload
-	cloned->SetPayload(GetMediaData(),GetMediaLength());
+	//Copy descriptors
+	cloned->vp8PayloadDescriptor = vp8PayloadDescriptor;
+	cloned->vp8PayloadHeader     = vp8PayloadHeader;
+	cloned->vp9PayloadDescriptor = vp9PayloadDescriptor;
 	//Return it
 	return cloned;
 }
@@ -128,6 +157,11 @@ DWORD RTPPacket::Serialize(BYTE* data,DWORD size,const RTPMap& extMap) const
 	//Copy media payload
 	memcpy(data+len,GetMediaData(),GetMediaLength());
 	
+	//If we need to rewrite the vp8 descriptor
+	if (rewitePictureIds && vp8PayloadDescriptor)
+		//Write it back
+		vp8PayloadDescriptor->Serialize(data+len,size-len);
+	
 	//Inc payload len
 	len += GetMediaLength();
 	
@@ -135,52 +169,19 @@ DWORD RTPPacket::Serialize(BYTE* data,DWORD size,const RTPMap& extMap) const
 	return len;
 }
 
-bool RTPPacket::SetPayload(const BYTE *data,DWORD size)
+BYTE* RTPPacket::AdquireMediaData()
 {
-	//Check size
-	if (size>GetMaxMediaLength())
-		//Error
-		return false;
-	//Reset payload
-	payload  = buffer+PREFIX;
-	//Copy
-	memcpy(payload,data,size);
-	//Set length
-	payloadLen = size;
-	//good
-	return true;
+	//If the packet was cloned and doesn't own the payload
+	if (!ownedPayload)
+	{
+		//Clone payload
+		payload = payload->Clone();
+		//We own the payload
+		ownedPayload = true;
+	}
+	//You can write on payload now
+	return payload->GetPayloadData();
 }
-bool RTPPacket::PrefixPayload(BYTE *data,DWORD size)
-{
-	//Check size
-	if (size>payload-buffer)
-		//Error
-		return false;
-	//Copy
-	memcpy(payload-size,data,size);
-	//Set pointers
-	payload  -= size;
-	payloadLen += size;
-	//good
-	return true;
-}
-
-
-bool RTPPacket::SkipPayload(DWORD skip) 
-{
-	//Ensure we have enough to skip
-	if (GetMaxMediaLength()<skip+(payload-buffer)+payloadLen)
-		//Error
-		return false;
-
-	//Move media data
-	payload += skip;
-	//Set length
-	payloadLen -= skip;
-	//good
-	return true;
-}
-
 
 bool RTPPacket::RecoverOSN()
 {

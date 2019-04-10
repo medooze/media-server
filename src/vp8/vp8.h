@@ -69,7 +69,7 @@ struct VP8PayloadDescriptor
 		this->partitionIndex = partitionIndex;
 	}
 
-	DWORD GetSize()
+	DWORD GetSize() const
 	{
 		//Base size
 		DWORD len = 1;
@@ -91,7 +91,7 @@ struct VP8PayloadDescriptor
 		return len;
 	}
 
-	DWORD Parse(BYTE* data, DWORD size)
+	DWORD Parse(const BYTE* data, DWORD size)
 	{
 		//Check size
 		if (size<1)
@@ -180,7 +180,7 @@ struct VP8PayloadDescriptor
 		return len;
 	}
 
-	DWORD Serialize(BYTE *data,DWORD size)
+	DWORD Serialize(BYTE *data,DWORD size) const
 	{
 		//Check size
 		if (size<GetSize())
@@ -295,7 +295,7 @@ struct VP8PayloadHeader
 	BYTE horizontalScale = 0;
 	BYTE verticalScale = 0;
 	
-	DWORD Parse(BYTE* data, DWORD size)
+	DWORD Parse(const BYTE* data, DWORD size)
 	{
 		//Check size
 		if (size<3)
@@ -345,12 +345,12 @@ struct VP8PayloadHeader
 		return 3;
 	}
 	
-	DWORD GetSize() 
+	DWORD GetSize() const
 	{
 		return isKeyFrame ? 10 : 3;
 	}
 	
-	void Dump()
+	void Dump() const
 	{
 		Debug("[VP8PayloadHeader \n");
 		Debug("\t isKeyFrame=%d\n"		, isKeyFrame);

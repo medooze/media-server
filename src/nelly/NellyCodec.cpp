@@ -301,7 +301,7 @@ NellyDecoder11Khz::~NellyDecoder11Khz()
 	}
 }
 
-int NellyDecoder11Khz::Decode(BYTE *in, int inLen, SWORD* out, int outLen)
+int NellyDecoder11Khz::Decode(const BYTE *in, int inLen, SWORD* out, int outLen)
 {
 	AVFrame frame;
 	int got_frame;

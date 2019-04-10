@@ -22,7 +22,7 @@ public:
 	class RtpPacketization
 	{
 	public:
-		RtpPacketization(DWORD pos,DWORD size,BYTE* prefix,DWORD prefixLen)
+		RtpPacketization(DWORD pos,DWORD size,const BYTE* prefix,DWORD prefixLen)
 		{
 			//Store values
 			this->pos = pos;
@@ -114,7 +114,7 @@ public:
 		}
 	}
 	
-	void	AddRtpPacket(DWORD pos,DWORD size,BYTE* prefix,DWORD prefixLen)		
+	void	AddRtpPacket(DWORD pos,DWORD size,const BYTE* prefix,DWORD prefixLen)		
 	{
 		rtpInfo.push_back(new RtpPacketization(pos,size,prefix,prefixLen));
 	}
@@ -147,7 +147,7 @@ public:
 		buffer = (BYTE*) realloc(buffer,bufferSize);
 	}
 
-	void SetMedia(BYTE* data,DWORD size)
+	void SetMedia(const BYTE* data,DWORD size)
 	{
 		//Check size
 		if (size>bufferSize)
@@ -159,7 +159,7 @@ public:
 		length=size;
 	}
 
-	DWORD AppendMedia(BYTE* data,DWORD size)
+	DWORD AppendMedia(const BYTE* data,DWORD size)
 	{
 		DWORD pos = length;
 		//Check size

@@ -51,7 +51,7 @@ GSMDecoder::~GSMDecoder()
 	gsm_destroy(g);
 }
 
-int GSMDecoder::Decode (BYTE *in,int inLen,SWORD* out,int outLen)
+int GSMDecoder::Decode (const BYTE *in,int inLen,SWORD* out,int outLen)
 {
 	//Dependiendo de la longitud tenemos un tipo u otro
 	if (inLen==33)

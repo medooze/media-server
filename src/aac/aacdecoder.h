@@ -16,7 +16,7 @@ class AACDecoder : public AudioDecoder
 public:
 	AACDecoder();
 	virtual ~AACDecoder();
-	virtual int Decode(BYTE *in,int inLen,SWORD* out,int outLen);
+	virtual int Decode(const BYTE *in,int inLen,SWORD* out,int outLen);
 	virtual DWORD TrySetRate(DWORD rate)	{ return ctx->sample_rate;	}
 	virtual DWORD GetRate()			{  return ctx->sample_rate;	}
 	void SetConfig(const uint8_t* data,const size_t size);

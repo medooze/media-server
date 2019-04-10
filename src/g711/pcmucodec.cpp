@@ -37,7 +37,7 @@ int PCMUEncoder::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 	return inLen;
 }
 
-int PCMUDecoder::Decode (BYTE *in,int inLen,SWORD* out,int outLen)
+int PCMUDecoder::Decode (const BYTE *in,int inLen,SWORD* out,int outLen)
 {
 	//Comprobamos las longitudes
 	if (outLen<inLen)

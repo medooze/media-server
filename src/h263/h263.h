@@ -94,7 +94,7 @@ public:
 	BYTE a;		// size 1;
 public:
 	static H263HeadersBasic* CreateHeaders(BYTE first);
-	virtual int Parse(BYTE *data,DWORD size) = 0;
+	virtual int Parse(const BYTE *data,DWORD size) = 0;
 };
 
 class H263HeadersModeA : public H263HeadersBasic
@@ -103,7 +103,7 @@ public:
 	H263HeadersModeA();
 	BYTE* GetData();
 	DWORD GetSize();
-	virtual int Parse(BYTE *buffer,DWORD bufferLen);
+	virtual int Parse(const BYTE *buffer,DWORD bufferLen);
 public:
 	BYTE r;		// size 4;
 	BYTE dbq;	// size 2;
@@ -119,7 +119,7 @@ public:
 	H263HeadersModeB();
 	BYTE* GetData();
 	DWORD GetSize();
-	virtual int Parse(BYTE *buffer,DWORD bufferLen);
+	virtual int Parse(const BYTE *buffer,DWORD bufferLen);
 public:
 /**********
     0                   1                   2                   3

@@ -44,41 +44,12 @@ void VP9LayerSelector::SelectSpatialLayer(BYTE id)
 	
 bool VP9LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 {
-	VP9PayloadDescription desc = {};
+	//Get VP9 payload description
+	if (!packet->vp9PayloadDescriptor) 
+		return Error("-VP9LayerSelector::Select() | coulnd't retrieve VP9PayloadDescription\n");
 	
-	//If packet has frame markings
-	if (packet->HasFrameMarkings())
-	{
-		//Get it from frame markings
-		const auto& fm = packet->GetFrameMarks();
-		//Import data
-		desc.pictureIdPresent			= false;
-		desc.layerIndicesPresent		= 0;
-		desc.flexibleMode			= 0;
-		desc.startOfLayerFrame			= fm.startOfFrame;
-		desc.endOfLayerFrame			= fm.endOfFrame;
-		desc.scalabiltiyStructureDataPresent	= 0;
-		desc.pictureId				= 0;
-		desc.temporalLayerId			= fm.temporalLayerId;
-		// The following  shows VP9 Layer encoding information (3 bits for
-		// spatial and temporal layer) mapped to the generic LID and TID fields.
-		// The P and U bits MUST match the corresponding bits in the VP9 Payload
-		// Description.
-		//    0                
-		//    0 1 2 3 4 5 6 7
-		//   +-+-+-+-+-+-+-+-+
-		//   |0|0|0|P|U| SID |
-		//   +-+-+-+-+-+-+-+-+
-		desc.interPicturePredictedLayerFrame	= fm.layerId & 0x20;
-		desc.switchingPoint			= fm.layerId & 0x10;
-		desc.spatialLayerId			= fm.layerId & 0x07;
-		desc.interlayerDependencyUsed		= false;
-		desc.temporalLayer0Index		= fm.tl0PicIdx;
-
-	//Parse VP9 payload description
-	} else if (!desc.Parse(packet->GetMediaData(),packet->GetMaxMediaLength()))
-		//Error
-		return Error("-VP9LayerSelector::Select() | Cannot parse VP9PayloadDescription\n");
+	//Get description
+	auto& desc = *packet->vp9PayloadDescriptor;
 	
 	//if (desc.startOfLayerFrame)
 	//	UltraDebug("-VP9LayerSelector::Select() | #%d T%dS%d P=%d D=%d S=%d %s\n", desc.pictureId-42,desc.temporalLayerId,desc.spatialLayerId,desc.interPicturePredictedLayerFrame,desc.interlayerDependencyUsed,desc.switchingPoint
@@ -169,22 +140,56 @@ bool VP9LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
  LayerInfo VP9LayerSelector::GetLayerIds(const RTPPacket::shared& packet)
 {
 	LayerInfo info;
-	VP9PayloadDescription desc;
 	
-	//If packet has frame markings
-	if (packet->HasFrameMarkings())
+	//If we don't have one yet
+	if (!packet->vp9PayloadDescriptor)
 	{
-		//Get it from frame markings
-		const auto& fm = packet->GetFrameMarks();
-		//Import data
-		info.temporalLayerId			= fm.temporalLayerId;
-		info.spatialLayerId			= fm.layerId & 0x07;
-	//Parse VP9 payload description
-	} else if (desc.Parse(packet->GetMediaData(),packet->GetMaxMediaLength())) {
-		//Get data
-		info.temporalLayerId			= desc.temporalLayerId;
-		info.spatialLayerId			= desc.spatialLayerId;
+		//Create new one
+		auto& desc = packet->vp9PayloadDescriptor.emplace();
+			
+		//If packet has frame markings
+		if (packet->HasFrameMarkings())
+		{
+			//Get it from frame markings
+			const auto& fm = packet->GetFrameMarks();
+			//Import data
+			desc.pictureIdPresent			= false;
+			desc.layerIndicesPresent		= 0;
+			desc.flexibleMode			= 0;
+			desc.startOfLayerFrame			= fm.startOfFrame;
+			desc.endOfLayerFrame			= fm.endOfFrame;
+			desc.scalabiltiyStructureDataPresent	= 0;
+			desc.pictureId				= 0;
+			desc.temporalLayerId			= fm.temporalLayerId;
+			// The following  shows VP9 Layer encoding information (3 bits for
+			// spatial and temporal layer) mapped to the generic LID and TID fields.
+			// The P and U bits MUST match the corresponding bits in the VP9 Payload
+			// Description.
+			//    0                
+			//    0 1 2 3 4 5 6 7
+			//   +-+-+-+-+-+-+-+-+
+			//   |0|0|0|P|U| SID |
+			//   +-+-+-+-+-+-+-+-+
+			desc.interPicturePredictedLayerFrame	= fm.layerId & 0x20;
+			desc.switchingPoint			= fm.layerId & 0x10;
+			desc.spatialLayerId			= fm.layerId & 0x07;
+			desc.interlayerDependencyUsed		= false;
+			desc.temporalLayer0Index		= fm.tl0PicIdx;
+		//We need to parse it
+		} else if (!desc.Parse(packet->GetMediaData(),packet->GetMediaLength())) {
+			//Failed
+			packet->vp9PayloadDescriptor.reset();
+		}
 	}
+
+	//Check if we have it now
+	if (!packet->vp9PayloadDescriptor)
+	{
+		//Get data from header
+		info.temporalLayerId	= packet->vp9PayloadDescriptor->temporalLayerId;
+		info.spatialLayerId	= packet->vp9PayloadDescriptor->spatialLayerId;
+	}
+	
 	//UltraDebug("-VP9LayerSelector::GetLayerIds() | [tid:%u,sid:%u]\n",info.temporalLayerId,info.spatialLayerId);
 	//Return layer info
 	return info;

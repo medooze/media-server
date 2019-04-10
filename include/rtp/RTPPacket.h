@@ -17,6 +17,9 @@
 #include "media.h"
 #include "rtp/RTPHeader.h"
 #include "rtp/RTPHeaderExtension.h"
+#include "rtp/RTPPayload.h"
+#include "vp8/vp8.h"
+#include "vp9/VP9PayloadDescription.h"
 #include <memory>
 
 class RTPPacket
@@ -31,18 +34,18 @@ public:
 	RTPPacket(MediaFrame::Type media,BYTE codec);
 	RTPPacket(MediaFrame::Type media,BYTE codec, QWORD time);
 	RTPPacket(MediaFrame::Type media,BYTE codec,const RTPHeader &header, const RTPHeaderExtension &extension);
-	RTPPacket(MediaFrame::Type media,BYTE codec,const RTPHeader &header, const RTPHeaderExtension &extension, QWORD time);
+	RTPPacket(MediaFrame::Type media,BYTE codec,const RTPHeader &header, const RTPHeaderExtension &extension, const RTPPayload::shared &payload, QWORD time);
 	virtual ~RTPPacket();
 
 	RTPPacket::shared Clone();
 	
 	DWORD Serialize(BYTE* data,DWORD size,const RTPMap& extMap) const;
 	
-	bool	SetPayload(const BYTE *data,DWORD size);
-	bool	SkipPayload(DWORD skip);
-	bool	PrefixPayload(BYTE *data,DWORD size);
+	bool SetPayload(const BYTE *data,DWORD size)	{ return payload->SetPayload(data,size);	}
+	bool SkipPayload(DWORD skip)			{ return payload->SkipPayload(skip);		}
+	bool PrefixPayload(BYTE *data,DWORD size)	{ return payload->PrefixPayload(data,size);	}
 	
-	bool	RecoverOSN();
+	bool RecoverOSN();
 
 	virtual void Dump();
 	
@@ -60,19 +63,17 @@ public:
 	void SetSeqCycles(WORD cycles)		{ this->cycles = cycles;		}
 	void SetClockRate(DWORD rate)		{ this->clockRate = rate;		}
 
-	void SetMediaLength(DWORD len)		{ this->payloadLen = len;		}
+	void SetMediaLength(DWORD len)		{ payload->SetMediaLength(len);		}
 	
 	//Getters
 	MediaFrame::Type GetMedia()	const { return media;				} //Deprecated
 	MediaFrame::Type GetMediaType()	const { return media;				}
 	BYTE  GetCodec()		const { return codec;				}
 	
-	
-	
-	BYTE* GetMediaData()		      { return payload;				}
-	const BYTE* GetMediaData()	const { return payload;				}
-	DWORD GetMediaLength()		const { return payloadLen;			}
-	DWORD GetMaxMediaLength()	const { return SIZE;				}
+	BYTE* AdquireMediaData();
+	const BYTE* GetMediaData()	const { return payload->GetMediaData();		}
+	DWORD GetMediaLength()		const { return payload->GetMediaLength();	}
+	DWORD GetMaxMediaLength()	const { return payload->GetMaxMediaLength();	}
 	
 	bool  GetMark()			const { return header.mark;			}
 	DWORD GetTimestamp()		const { return header.timestamp;		}
@@ -130,6 +131,14 @@ public:
 	const RTPHeader&		GetRTPHeader()		const { return header;		}
 	const RTPHeaderExtension&	GetRTPHeaderExtension()	const { return extension;	}
 	
+	
+public:
+	//TODO:refactor a bit
+	std::optional<VP8PayloadDescriptor>	vp8PayloadDescriptor;
+	std::optional<VP8PayloadHeader>		vp8PayloadHeader;
+	std::optional<VP9PayloadDescription>	vp9PayloadDescriptor;
+	bool rewitePictureIds = false;
+	
 protected:
 	void  CheckExtensionMark()	{ header.extension =  extension.hasAudioLevel
 						|| extension.hasAbsSentTime 
@@ -141,9 +150,6 @@ protected:
 						|| extension.hasMediaStreamId; }
 
 private:
-	static const DWORD SIZE = 1700;
-	static const DWORD PREFIX = 200;
-private:
 	MediaFrame::Type media;
 	BYTE		codec;
 	DWORD		clockRate;
@@ -151,12 +157,11 @@ private:
 	
 	RTPHeader	   header;
 	RTPHeaderExtension extension;
-	
-	BYTE	buffer[SIZE+PREFIX];
-	BYTE*   payload;
-	DWORD	payloadLen;
-
+	RTPPayload::shared payload;
+	bool ownedPayload = false;
 	QWORD time;
+	
+
 };
 #endif /* RTPPACKET_H */
 

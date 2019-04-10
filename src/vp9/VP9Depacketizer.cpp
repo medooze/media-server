@@ -61,7 +61,7 @@ MediaFrame* VP9Depacketizer::AddPacket(const RTPPacket::shared& packet)
 	return packet->GetMark() ? &frame : NULL;
 }
 
-MediaFrame* VP9Depacketizer::AddPayload(BYTE* payload, DWORD len)
+MediaFrame* VP9Depacketizer::AddPayload(const BYTE* payload, DWORD len)
 {
 	//Check length
 	if (!len)

@@ -81,7 +81,7 @@ void AACDecoder::SetConfig(const uint8_t* data,const size_t size)
 	inited = true;
 }
 
-int AACDecoder::Decode(BYTE *in, int inLen, SWORD* out, int outLen)
+int AACDecoder::Decode(const BYTE *in, int inLen, SWORD* out, int outLen)
 {
 	//Check we have config
 	if (!inited)

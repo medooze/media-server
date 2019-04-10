@@ -69,7 +69,7 @@ H263Decoder1996::~H263Decoder1996()
 * DecodePacket 
 *	Decodifica un packete
 ************************/
-int H263Decoder1996::DecodePacket(BYTE *in,DWORD len,int lost,int last)
+int H263Decoder1996::DecodePacket(const BYTE *in,DWORD len,int lost,int last)
 {
 	int ret = 1;
 
@@ -116,11 +116,11 @@ int H263Decoder1996::DecodePacket(BYTE *in,DWORD len,int lost,int last)
 		len-=parsed;
 
 		//POnemos en blanco el primer bit hasta el comienzo
-		in[0] &= 0xff >> headers->sbits;
+		((BYTE*)in)[0] &= 0xff >> headers->sbits;
 
 		//Y el final
 		if (len>0)
-			in[len-1] &= 0xff << headers->ebits;
+			((BYTE*)in)[len-1] &= 0xff << headers->ebits;
 
 		//Si el hay solapamiento de bytes
 		if(headers->sbits!=0 && bufLen>0)

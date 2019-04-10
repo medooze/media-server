@@ -22,7 +22,7 @@ class AudioDecoder
 public:
 	// Must have virtual destructor to ensure child class's destructor is called
 	virtual ~AudioDecoder(){};
-	virtual int   Decode(BYTE *in,int inLen,SWORD* out,int outLen)=0;
+	virtual int   Decode(const BYTE *in,int inLen,SWORD* out,int outLen)=0;
 	virtual DWORD TrySetRate(DWORD rate)=0;
 	virtual DWORD GetRate()=0;
 	AudioCodec::Type	type;

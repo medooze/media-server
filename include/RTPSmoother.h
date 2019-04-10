@@ -35,7 +35,7 @@ private:
 	pthread_mutex_t mutex;
 	pthread_cond_t	cond;
 	bool		inited;
-	WaitQueue<RTPPacketSched*> queue;
+	WaitQueue<RTPPacketSched::shared> queue;
 };
 
 #endif	/* RTPSMOOTHER_H */

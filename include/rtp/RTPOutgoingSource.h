@@ -68,6 +68,23 @@ struct RTPOutgoingSource :
 		return next;
 	}
 	
+	DWORD NextExtSeqNum()
+	{
+		//We are generating the seq nums
+		generatedSeqNum = true;
+		
+		//Get next
+		DWORD next = (++extSeqNum) & 0xFFFF;
+		
+		//Check if we have a sequence wrap
+		if (!next)
+			//Increase cycles
+			cycles++;
+
+		//Return it
+		return extSeqNum;
+	}
+	
 	virtual ~RTPOutgoingSource() = default;
 	
 	virtual void Reset()

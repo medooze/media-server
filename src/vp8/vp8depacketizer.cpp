@@ -58,7 +58,7 @@ MediaFrame* VP8Depacketizer::AddPacket(const RTPPacket::shared& packet)
 	return packet->GetMark() ? &frame : NULL;
 }
 
-MediaFrame* VP8Depacketizer::AddPayload(BYTE* payload, DWORD len)
+MediaFrame* VP8Depacketizer::AddPayload(const BYTE* payload, DWORD len)
 {
 	//Check lenght
 	if (!len)

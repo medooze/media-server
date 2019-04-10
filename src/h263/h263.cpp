@@ -336,7 +336,7 @@ DWORD H263HeadersModeA::GetSize()
 	return sizeof(data);
 }
 
-int H263HeadersModeA::Parse(BYTE *buffer,DWORD bufferLen)
+int H263HeadersModeA::Parse(const BYTE *buffer,DWORD bufferLen)
 {
 	if (bufferLen<sizeof(data))
 		return 0;
@@ -415,7 +415,7 @@ DWORD H263HeadersModeB::GetSize()
 	return sizeof(data);
 }
 
-int H263HeadersModeB::Parse(BYTE *buffer,DWORD bufferLen)
+int H263HeadersModeB::Parse(const BYTE *buffer,DWORD bufferLen)
 {
 	if (bufferLen<sizeof(data))
 		return 0;

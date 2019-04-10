@@ -23,9 +23,9 @@ public:
 		if (next!=(DWORD)-1 && seq<next)
 		{
 			//Error
-			//UltraDebug("-RTPBuffer::Add() | Out of order non recoverable packet [next:%u,seq:%u,maxWaitTime=%d,cycles:%d-%u,time:%lld,current:%lld,hurry:%d]\n",next,seq,maxWaitTime,rtp->GetSeqCycles(),rtp->GetSeqNum(),rtp->GetTime(),GetTime(),hurryUp);
+			//UltraDebug("-RTPBuffer::Add() | Out of order non recoverable packet [next:%u,seq:%u,maxWaitTime=%d,cycles:%d-%u,time:%lld,current:%lld,hurry:%d]\n",next,seq,maxWaitTime,rtp->GetSeqCycles(),rtp->GetSeqNum(),rtp->GetTime(),getTime(),hurryUp);
 			//Skip it and lost forever
-			return 0;
+			return false;
 		}
 		
 		//Check if we already have it
@@ -34,7 +34,7 @@ public:
 			//Error
 			//UltraDebug("-RTPBuffer::Add() | Already have that packet [next:%u,seq:%u,maxWaitTime=%d,cycles:%d-%u]\n",next,seq,maxWaitTime,rtp->GetSeqCycles(),rtp->GetSeqNum());
 			//Skip it and lost forever
-			return 0;
+			return false;
 		}
 
 		//Add packet
