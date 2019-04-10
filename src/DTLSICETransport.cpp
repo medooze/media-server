@@ -2433,7 +2433,7 @@ void DTLSICETransport::Stop()
 int DTLSICETransport::Enqueue(const RTPPacket::shared& packet)
 {
 	//Send async
-	timeService.Async([this,packet](...){
+	timeService.Async([this,packet=std::move(packet)](...){
 		//Send
 		Send(packet);
 	});

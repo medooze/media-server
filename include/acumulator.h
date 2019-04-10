@@ -58,7 +58,7 @@ public:
 		//And the instant one
 		instant += val;
 		//Insert into the instant queue
-		values.push_back(Value(now,val));
+		values.emplace_back(now,val);
 		//Erase old values
 		while(!values.empty() && values.front().first+window<now)
 		{

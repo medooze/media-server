@@ -230,7 +230,8 @@ std::future<void> EventLoop::Async(std::function<void(std::chrono::milliseconds)
 	//UltraDebug(">EventLoop::Async()\n");
 	
 	//Create task
-	auto task = std::make_pair(std::promise<void>(),func);
+	std::promise<void> promise;
+	auto task = std::make_pair(std::move(promise),std::move(func));
 	
 	//Get future before moving the promise
 	auto future = task.first.get_future();
@@ -285,7 +286,7 @@ Timer::shared EventLoop::CreateTimer(const std::chrono::milliseconds& ms, const 
 		timer->next = next;
 
 		//Add to timer list
-		timers.insert({next, timer});
+		timers.emplace(next, timer);
 	});
 	
 	//Done
@@ -317,7 +318,7 @@ void EventLoop::TimerImpl::Again(const std::chrono::milliseconds& ms)
 		timer->next = next;
 		
 		//Add to timer list
-		timer->loop.timers.insert({next, timer});
+		timer->loop.timers.emplace(next, timer);
 	});
 	
 	//UltraDebug("<EventLoop::Again() | timer triggered at %llu\n",next.count());
@@ -540,7 +541,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 				//It is yet to come
 				break;
 			//Get timer
-			triggered.push_back(it->second);
+			triggered.push_back(std::move(it->second));
 			//Remove from the list
 			it = timers.erase(it);
 		}
@@ -559,7 +560,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 				//Set next
 				timer->next = now + timer->repeat;
 				//Schedule
-				timers.insert({timer->next, timer});
+				timers.emplace(timer->next, timer);
 			}
 		}
 		//Get now
