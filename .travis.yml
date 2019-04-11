@@ -1,0 +1,34 @@
+language: cpp
+
+sudo: true
+
+os:
+  - linux
+  - osx
+
+
+matrix:
+  include:
+    - os: linux
+      dist: trusty
+    - os: osx
+      osx_image: xcode10.1
+
+
+
+before_install:
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sudo apt-get update -qq; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sudo apt-get install -y autoconf libtool automake g++-7; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 90; fi
+
+
+  - git clone https://github.com/openssl/openssl.git && cd openssl/ && git checkout OpenSSL_1_0_2r && export KERNEL_BITS=64 && ./config --prefix=/usr/local/ &&  make && sudo make install && cd ../
+  - git clone https://github.com/cisco/libsrtp.git && cd libsrtp/ && ./configure --prefix=/usr/local/ --enable-openssl  --with-openssl-dir=/usr/local/ && make && sudo make install && cd ../
+  - git clone https://github.com/medooze/mp4v2.git && cd mp4v2/ && autoreconf -i && ./configure --prefix=/usr/local/ && make && sudo make install && cd ../
+
+  - sudo mkdir -p /usr/local/src/medooze && git clone --recurse-submodules https://github.com/medooze/media-server.git mcu
+
+script:
+  - cd /usr/local/src/medooze/mcu 
+  - make libmediaserver.a
