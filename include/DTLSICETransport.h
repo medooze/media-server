@@ -91,12 +91,13 @@ public:
 private:
 	void Probe();
 	int Send(RTPPacket::shared&& packet);
+	int Send(const RTCPCompoundPacket::shared& rtcp);
 	void SetRTT(DWORD rtt);
 	void onRTCP(const RTCPCompoundPacket::shared &rtcp);
 	void ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq);
 	void SendProbe(RTPOutgoingSourceGroup *group,BYTE padding);
 	void SendTransportWideFeedbackMessage(DWORD ssrc);
-	void Send(const RTCPCompoundPacket::shared& rtcp);
+	
 	int SetLocalCryptoSDES(const char* suite, const BYTE* key, const DWORD len);
 	int SetRemoteCryptoSDES(const char* suite, const BYTE* key, const DWORD len);
 	//Helpers

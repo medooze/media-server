@@ -1701,19 +1701,23 @@ bool DTLSICETransport::RemoveIncomingSourceGroup(RTPIncomingSourceGroup *group)
 	return true;
 }
 
-void DTLSICETransport::Send(const RTCPCompoundPacket::shared &rtcp)
+int DTLSICETransport::Send(const RTCPCompoundPacket::shared &rtcp)
 {
 	//TODO: Assert event loop thread
 	
 	//Double check message
 	if (!rtcp)
 		//Error
-		return (void)Error("-DTLSICETransport::Send() | NULL rtcp message\n");
+		return Error("-DTLSICETransport::Send() | NULL rtcp message\n");
 	
 	//Check if we have an active DTLS connection yet
 	if (!send.IsSetup())
+	{
+		//Log error
+		Debug("-DTLSICETransport::Send() | We don't have an DTLS setup yet\n");
 		//Error
-		return (void) Debug("-DTLSICETransport::Send() | We don't have an DTLS setup yet\n");
+		return 0;
+	}
 	
 	//Send buffer
 	Buffer buffer(MTU);
@@ -1726,12 +1730,16 @@ void DTLSICETransport::Send(const RTCPCompoundPacket::shared &rtcp)
 	//Check result
 	if (len<=0 || len>size)
 		//Error
-		return (void)Error("-DTLSICETransport::Send() | Error serializing RTCP packet [len:%d]\n",len);
+		return Error("-DTLSICETransport::Send() | Error serializing RTCP packet [len:%d]\n",len);
 	
 	//If we don't have an active candidate yet
 	if (!active)
+	{
+		//Log error
+		Debug("-DTLSICETransport::Send() | We don't have an active candidate yet\n");
 		//Error
-		return (void) Debug("-DTLSICETransport::Send() | We don't have an active candidate yet\n");
+		return 0;
+	}
 
 	//If dumping
 	if (dumper && dumpRTCP)
@@ -1744,7 +1752,7 @@ void DTLSICETransport::Send(const RTCPCompoundPacket::shared &rtcp)
 	//Check error
 	if (!len)
 		//Error
-		return (void)Error("-DTLSICETransport::Send() | Error protecting RTCP packet [%s]\n",send.GetLastError());
+		return Error("-DTLSICETransport::Send() | Error protecting RTCP packet [%s]\n",send.GetLastError());
 
 	//Store active candidate1889
 	ICERemoteCandidate* candidate = active;
@@ -1754,7 +1762,7 @@ void DTLSICETransport::Send(const RTCPCompoundPacket::shared &rtcp)
 	//Set buffer size
 	buffer.SetSize(len);
 	//No error yet, send packet
-	sender->Send(candidate,std::move(buffer));
+	return sender->Send(candidate,std::move(buffer));
 }
 
 int DTLSICETransport::SendPLI(DWORD ssrc)
