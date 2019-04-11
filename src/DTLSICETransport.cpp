@@ -1802,7 +1802,7 @@ int DTLSICETransport::SendPLI(DWORD ssrc)
 	return 1;
 }
 
-int DTLSICETransport::Send(const RTPPacket::shared& packet)
+int DTLSICETransport::Send(RTPPacket::shared&& packet)
 {
 	//TODO: Assert event loop thread
 	
@@ -1831,29 +1831,26 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 	//Get outgoing source
 	RTPOutgoingSource& source = group->media;
 	
-	//Clone packet
-	auto cloned = packet->Clone();
-	
         //SYNCHRONIZED
         {
                 //Block scope
 		ScopedLock scope(source);
                 //Update headers
-                cloned->SetExtSeqNum(source.CorrectExtSeqNum(cloned->GetExtSeqNum()));
-                cloned->SetSSRC(source.ssrc);
+                packet->SetExtSeqNum(source.CorrectExtSeqNum(packet->GetExtSeqNum()));
+                packet->SetSSRC(source.ssrc);
         }
         
-	cloned->SetPayloadType(sendMaps.rtp.GetTypeForCodec(cloned->GetCodec()));
+	packet->SetPayloadType(sendMaps.rtp.GetTypeForCodec(packet->GetCodec()));
 	//No padding
-	cloned->SetPadding(0);
+	packet->SetPadding(0);
 
 	//Add transport wide cc on video
 	if (group->type == MediaFrame::Video && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC)!=RTPMap::NotFound)
 		//Set transport wide seq num
-		cloned->SetTransportSeqNum(++transportSeqNum);
+		packet->SetTransportSeqNum(++transportSeqNum);
 	else
 		//Disable transport wide cc
-		cloned->DisableTransportSeqNum();
+		packet->DisableTransportSeqNum();
 
 	//Get time
 	auto now = getTime();
@@ -1861,27 +1858,27 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 	//If we are using abs send time for sending
 	if (sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::AbsoluteSendTime)!=RTPMap::NotFound)
 		//Set abs send time
-		cloned->SetAbsSentTime(now/1000);
+		packet->SetAbsSentTime(now/1000);
 	else
 		//Disable it
-		cloned->DisableAbsSentTime();
+		packet->DisableAbsSentTime();
 	
 	//Disable rid & repair id
-	cloned->DisableRId();
-	cloned->DisableRepairedId();
+	packet->DisableRId();
+	packet->DisableRepairedId();
 	
 	//Update mid
 	if (!group->mid.empty())
 		//Set new mid
-		cloned->SetMediaStreamId(group->mid);
+		packet->SetMediaStreamId(group->mid);
 	else
 		//Disable it
-		cloned->DisableMediaStreamId();
+		packet->DisableMediaStreamId();
 	
 	//No frame markings
-	cloned->DisableFrameMarkings();
+	packet->DisableFrameMarkings();
 	
-	//if (group->type==MediaFrame::Video) UltraDebug("-Sending RTP on media:%s sssrc:%u seq:%u pt:%u ts:%lu codec:%s\n",MediaFrame::TypeToString(group->type),source.ssrc,cloned->GetSeqNum(),cloned->GetPayloadType(),cloned->GetTimestamp(),GetNameForCodec(group->type,cloned->GetCodec()));
+	//if (group->type==MediaFrame::Video) UltraDebug("-Sending RTP on media:%s sssrc:%u seq:%u pt:%u ts:%lu codec:%s\n",MediaFrame::TypeToString(group->type),source.ssrc,packet->GetSeqNum(),packet->GetPayloadType(),packet->GetTimestamp(),GetNameForCodec(group->type,packet->GetCodec()));
 	
 	//Send buffer
 	Buffer buffer(MTU);
@@ -1889,14 +1886,14 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 	DWORD	size = buffer.GetCapacity();
 	
 	//Serialize data
-	int len = cloned->Serialize(data,size,sendMaps.ext);
+	int len = packet->Serialize(data,size,sendMaps.ext);
 	
 	//IF failed
 	if (!len)
 		return 0;
 
 	//Add packet for RTX
-	group->AddPacket(cloned);
+	group->AddPacket(packet);
 	
 	//If we don't have an active candidate yet
 	if (!active)
@@ -1934,11 +1931,11 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 		//Block scope
 		ScopedLock scope(source);
 		//Update last items
-		source.lastTime		= cloned->GetTimestamp();
-		source.lastPayloadType  = cloned->GetPayloadType();
+		source.lastTime		= packet->GetTimestamp();
+		source.lastPayloadType  = packet->GetPayloadType();
 
 		//Update source
-		source.Update(getTimeMS(),cloned->GetSeqNum(),len);
+		source.Update(getTimeMS(),packet->GetSeqNum(),len);
 		
 		 //Get bitrates
 		bitrate   = static_cast<DWORD>(source.acumulator.GetInstantAvg());
@@ -1949,10 +1946,10 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 	now = getTime();
 
 	//Check if we are using transport wide for this packet
-	if (cloned->HasTransportWideCC())
+	if (packet->HasTransportWideCC())
 	{
 		//Add new stat
-		transportWideSentPacketsStats[cloned->GetTransportSeqNum()] = PacketStats::Create(cloned,len,now);
+		transportWideSentPacketsStats[packet->GetTransportSeqNum()] = PacketStats::Create(packet,len,now);
 		//Protect against missing feedbacks, remove too old lost packets
 		auto it = transportWideSentPacketsStats.begin();
 		//If we have more than 1s diff
@@ -1973,7 +1970,7 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 		Send(RTCPCompoundPacket::Create(group->media.CreateSenderReport(now)));
 	
 	//Do we need to send probing?
-	if (probe && group->type == MediaFrame::Video && cloned->GetMark() && estimated>bitrate)
+	if (probe && group->type == MediaFrame::Video && packet->GetMark() && estimated>bitrate)
 	{
 		BYTE size = 255;
 		//Get probe padding needed
@@ -1982,7 +1979,7 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 		//Get number of probes, do not send more than 32 continoues packets (~aprox 2mpbs)
 		BYTE num = std::min<QWORD>((probingBitrate*33)/(8000*size),32);
 
-		//UltraDebug("-DTLSICETransport::Run() | Sending inband probing packets [at:%u,estimated:%u,bitrate:%u,probing:%u,max:%u,num:%d]\n", cloned->GetSeqNum(), estimated, bitrate,probingBitrate,maxProbingBitrate, num, sleep);
+		//UltraDebug("-DTLSICETransport::Run() | Sending inband probing packets [at:%u,estimated:%u,bitrate:%u,probing:%u,max:%u,num:%d]\n", packet->GetSeqNum(), estimated, bitrate,probingBitrate,maxProbingBitrate, num, sleep);
 
 		//Set all the probes
 		for (BYTE i=0;i<num;++i)
@@ -2433,14 +2430,24 @@ void DTLSICETransport::Stop()
 int DTLSICETransport::Enqueue(const RTPPacket::shared& packet)
 {
 	//Send async
-	timeService.Async([this,packet=std::move(packet)](...){
+	timeService.Async([this,packet](...){
 		//Send
-		Send(packet);
+		Send(packet->Clone());
 	});
 	
 	return 1;
 }
 
+int DTLSICETransport::Enqueue(const RTPPacket::shared& packet,std::function<RTPPacket::shared(const RTPPacket::shared&)> modifier)
+{
+	//Send async
+	timeService.Async([this,packet,modifier](...){
+		//Send
+		Send(modifier(packet));
+	});
+	
+	return 1;
+}
 void DTLSICETransport::Probe()
 {
 	//Endure that transport wide cc is enabled

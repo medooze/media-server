@@ -51,8 +51,6 @@ public:
 		Dump(aux,len);
 		
 		Log("%d %d %d\n",config1.GetRate(),config2.GetRate(),config3.GetRate());
-		exit(0);
-		
 	}
 	
 };

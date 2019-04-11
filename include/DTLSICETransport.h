@@ -56,6 +56,7 @@ public:
 	void SetLocalProperties(const Properties& properties);
 	virtual int SendPLI(DWORD ssrc) override;
 	virtual int Enqueue(const RTPPacket::shared& packet) override;
+	virtual int Enqueue(const RTPPacket::shared& packet,std::function<RTPPacket::shared(const RTPPacket::shared&)> modifier) override;
 	int Dump(const char* filename, bool inbound = true, bool outbound = true, bool rtcp = true);
 	int Dump(UDPDumper* dumper, bool inbound = true, bool outbound = true, bool rtcp = true);
 	void Reset();
@@ -89,7 +90,7 @@ public:
 
 private:
 	void Probe();
-	int Send(const RTPPacket::shared& packet);
+	int Send(RTPPacket::shared&& packet);
 	void SetRTT(DWORD rtt);
 	void onRTCP(const RTCPCompoundPacket::shared &rtcp);
 	void ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq);
