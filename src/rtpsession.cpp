@@ -456,10 +456,6 @@ int RTPSession::SendPacket(const RTPPacket::shared &packet,DWORD timestamp)
 	//Calculate last timestamp
 	send.media.lastTime = send.media.time + timestamp;
 
-	//Modificamos las cabeceras del packete
-	RTPHeader header;
-	RTPHeaderExtension extension;
-	
 	//Init send packet
 	packet->SetSSRC(send.media.ssrc);
 	packet->SetTimestamp(send.media.lastTime);

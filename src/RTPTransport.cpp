@@ -589,7 +589,7 @@ int RTPTransport::Init()
 		Start();
 		//Dump
 		char filename[256];
-		snprintf(filename,255,"/tmp/%d-%p",simPort,this);
+		snprintf(filename,255,"/tmp/%d-%p.pcap",simPort,this);
 		if (dumping) pcap.Open(filename);
 		//Done
 		Log("<RTPTransport::Init()\n");

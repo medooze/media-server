@@ -651,7 +651,7 @@ int VideoStream::RecVideo()
 		DWORD ts = packet->GetTimestamp();
 
 		//Get packet data
-		BYTE* buffer = packet->AdquireMediaData();
+		const BYTE* buffer = packet->GetMediaData();
 		DWORD size = packet->GetMediaLength();
 
 		//Get type

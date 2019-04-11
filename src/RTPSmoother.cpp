@@ -223,9 +223,9 @@ int RTPSmoother::Run()
 		
 		//Update sending time
 		sendingTime = sched->GetSendingTime();
-
+		
 		//Send it
-		session->SendPacket(sched,sendingTime);
+		session->SendPacket(sched);
 
 		//If it was not last
 		if (!sched->GetMark())
