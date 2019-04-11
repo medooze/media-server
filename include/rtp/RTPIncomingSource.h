@@ -42,7 +42,7 @@ struct RTPIncomingSource : public RTPSource
 		minExtSeqNumSinceLastSR  = RTPPacket::MaxExtSeqNum;
 	}
 	
-	void Update(QWORD now,DWORD seqNum,DWORD size, LayerInfo layerInfo)
+	void Update(QWORD now,DWORD seqNum,DWORD size,const LayerInfo &layerInfo)
 	{
 		//Update source normally
 		RTPIncomingSource::Update(now,seqNum,size);
