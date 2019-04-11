@@ -2,10 +2,6 @@ language: cpp
 
 sudo: true
 
-os:
-  - linux
-  - osx
-
 
 matrix:
   include:
@@ -27,7 +23,7 @@ before_install:
   - git clone https://github.com/cisco/libsrtp.git && cd libsrtp/ && ./configure --prefix=/usr/local/ --enable-openssl  --with-openssl-dir=/usr/local/ && make && sudo make install && cd ../
   - git clone https://github.com/medooze/mp4v2.git && cd mp4v2/ && autoreconf -i && ./configure --prefix=/usr/local/ && make && sudo make install && cd ../
 
-  - sudo mkdir -p /usr/local/src/medooze && git clone --recurse-submodules https://github.com/medooze/media-server.git mcu
+  - sudo mkdir -p /usr/local/src/medooze &&  cd /usr/local/src/medooze && git clone --recurse-submodules https://github.com/medooze/media-server.git mcu
 
 script:
   - cd /usr/local/src/medooze/mcu 
