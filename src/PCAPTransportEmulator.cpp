@@ -526,7 +526,7 @@ outher:	while(running)
 		}	
 		
 		//Add packet and see if we have lost any in between
-		int lost = group->AddPacket(packet);
+		int lost = group->AddPacket(packet,size);
 
 		//Check if it was rejected
 		if (lost<0)

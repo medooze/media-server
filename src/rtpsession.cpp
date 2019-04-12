@@ -650,7 +650,7 @@ void RTPSession::onRTPPacket(const BYTE* data, DWORD size)
 	//	return (void)Error("RTX: Drop %d %s packet #%d ts:%u\n",type,VideoCodec::GetNameFor((VideoCodec::Type)codec),packet->GetSeqNum(),packet->GetTimestamp());
 		
 	//Update lost packets
-	int lost = recv.AddPacket(packet);
+	int lost = recv.AddPacket(packet,size);
 
 	//Check if it was rejected
 	if (lost<0)
@@ -689,13 +689,10 @@ void RTPSession::onRTPPacket(const BYTE* data, DWORD size)
 		source->totalNACKs++;
 	}
 	
-	
+	//TODO: remove
 	if (!delegate)
 		//Append packet
 		packets.Add(packet);
-	else 
-		//Append packet to group
-		recv.AddPacket(packet);
 
 	//Check if we need to send RR (1 per second)
 	if (useRTCP && now-source->lastReport>1E6)

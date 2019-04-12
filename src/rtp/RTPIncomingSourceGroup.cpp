@@ -79,17 +79,21 @@ int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet, DWORD siz
 	//Add to lost packets
 	auto lost = losts.AddPacket(packet);
 	
+	//Get now
+	auto now = getTimeMS();
+	
 	//If doing remb
 	if (remb)
 	{
+		
 		//Add estimation
 		remoteRateEstimator.Update(media.ssrc,packet,size);
 		//Update lost
-		if (lost) remoteRateEstimator.UpdateLost(media.ssrc,lost,getTimeMS());
+		if (lost) remoteRateEstimator.UpdateLost(media.ssrc,lost,now);
 	}
 	
 	//Get next time for dispatcht
-	uint64_t next = packets.GetWaitTime(getTimeMS());
+	uint64_t next = packets.GetWaitTime(now);
 	
 	//UltraDebug("-RTPIncomingSourceGroup::AddPacket() | [lost:%d,next:%llu]\n",lost,next);
 	

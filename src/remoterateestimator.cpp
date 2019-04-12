@@ -79,9 +79,6 @@ void RemoteRateEstimator::RemoveStream(DWORD ssrc)
 
 void RemoteRateEstimator::Update(DWORD ssrc,const RTPPacket::shared& packet,DWORD size)
 {
-	//Get now
-	QWORD now = getTimeMS();
-
 	//Get rtp timestamp in ms
 	QWORD ts = packet->GetClockTimestamp();
 
@@ -101,7 +98,7 @@ void RemoteRateEstimator::Update(DWORD ssrc,const RTPPacket::shared& packet,DWOR
 	
 	
 	//Update
-	Update(packet->GetSSRC(),now,ts,size, packet->GetMark());
+	Update(packet->GetSSRC(),packet->GetTime(),ts,size, packet->GetMark());
 	
 	//Store current ts
 	curTS = ts;

@@ -251,7 +251,7 @@ int RTPSmoother::Run()
 			//Check queue length, it should be empty
 			if (queue.Length()>0)
 				//Log it
-				Log("-RTPSmoother lagging behind [enqueued:%d,frameTime:%u,sendingTime:%u]\n",queue.Length(),frameTime,sendingTime);
+				Debug("-RTPSmoother lagging behind [enqueued:%d,frameTime:%u,sendingTime:%u]\n",queue.Length(),frameTime,sendingTime);
 		}
 	}
 

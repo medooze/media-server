@@ -27,7 +27,7 @@ public:
 	virtual void AddListener(RTPIncomingMediaStream::Listener* listener) override;
 	virtual void RemoveListener(RTPIncomingMediaStream::Listener* listener) override;
 	virtual DWORD GetMediaSSRC() override { return media.ssrc; }
-	int AddPacket(const RTPPacket::shared &packet, DWORD size = 0); //Size is only used if remb is in use
+	int AddPacket(const RTPPacket::shared &packet, DWORD size);
 	RTPIncomingSource* Process(RTPPacket::shared &packet);
 	
 	
