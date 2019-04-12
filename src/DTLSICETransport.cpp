@@ -474,7 +474,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		//Find codec 
 		codec = recvMaps.rtp.GetCodecForType(apt);
 		//Check codec
-		 if (codec==RTPMap::NotFound)
+		if (codec==RTPMap::NotFound)
 			  //Error
 			  return Error("-DTLSICETransport::onData() | RTP RTX packet apt type unknown [%d]\n",MediaFrame::TypeToString(packet->GetMedia()),packet->GetPayloadType());
 		

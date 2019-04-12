@@ -64,7 +64,6 @@ private:
 	VideoStream	video;
 	AudioStream	audio;
 	TextStream	text;
-	RemoteRateEstimator estimator;
 
 	VideoInput*	videoInput;
 	VideoOutput*	videoOutput;

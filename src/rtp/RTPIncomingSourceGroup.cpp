@@ -183,7 +183,7 @@ void RTPIncomingSourceGroup::Start(bool remb)
 	this->remb = remb;
 	
 	//Add media ssrc
-	remoteRateEstimator.AddStream(media.ssrc);
+	if (media.ssrc) remoteRateEstimator.AddStream(media.ssrc);
 }
 
 void RTPIncomingSourceGroup::DispatchPackets(uint64_t time)

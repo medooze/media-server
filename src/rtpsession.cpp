@@ -43,8 +43,6 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) :
 	sendType = 0xFF;
 	useRTCP = true;
 	useAbsTime = false;
-	recTimestamp = 0;
-	setZeroTime(&recTimeval);
 	firReqNum = 0;
 	requestFPU = false;
 	pendingTMBR = false;
@@ -74,10 +72,6 @@ RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) :
 	isNACKEnabled = false;
 	//Reduce jitter buffer to min
 	packets.SetMaxWaitTime(60);
-
-	//No stimator
-	remoteRateEstimator = NULL;
-
 }
 
 /*************************
@@ -88,11 +82,6 @@ RTPSession::~RTPSession()
 {
 	//Reset
 	Reset();
-	
-	//Check listener
-	if (remoteRateEstimator)
-		//Add as listener
-		remoteRateEstimator->SetListener(NULL);
 }
 
 void RTPSession::Reset()
@@ -122,8 +111,6 @@ void RTPSession::Reset()
 	//Init values
 	sendType = 0xFF;
 	useAbsTime = false;
-	recTimestamp = 0;
-	setZeroTime(&recTimeval);
 	firReqNum = 0;
 	requestFPU = false;
 	pendingTMBR = false;
@@ -358,21 +345,16 @@ int RTPSession::SetRemotePort(char *ip,int sendPort)
 	return transport.SetRemotePort(ip,sendPort);
 }
 
-void RTPSession::SetRemoteRateEstimator(RemoteRateEstimator* estimator)
-{
-	//Store it
-	remoteRateEstimator = estimator;
-
-	//Add as listener
-	remoteRateEstimator->SetListener(this);
-}
-
 /********************************
 * Init
 *	Inicia el control rtcp
 ********************************/
 int RTPSession::Init()
 {
+	//Start recv
+	recv.Start(media==MediaFrame::Video);
+	//Override stimator
+	recv.remoteRateEstimator.SetListener(this);
 	//Start transport
 	return transport.Init();
 }
@@ -383,16 +365,13 @@ int RTPSession::Init()
 *********************************/
 int RTPSession::End()
 {
+	//Stop recv
+	recv.Stop();
 	//End transport
 	if (!transport.End())
 		//Error
 		return 0;
 	
-	//Check listener
-	if (remoteRateEstimator && recv.media.ssrc)
-		//Remove stream
-		remoteRateEstimator->RemoveStream(recv.media.ssrc);
-
 	//OK
 	return 1;
 }
@@ -518,7 +497,6 @@ int RTPSession::SendPacket(const RTPPacket::shared &packet,DWORD timestamp)
 
 void RTPSession::onRTPPacket(const BYTE* data, DWORD size)
 {
-	bool isRTX = false;
 	RTPHeader header;
 	RTPHeaderExtension extension;
 	
@@ -601,15 +579,6 @@ void RTPSession::onRTPPacket(const BYTE* data, DWORD size)
 	//Set the payload
 	packet->SetPayload(data+ini,size-ini);
 	
-	//Get sec number
-	WORD seq = packet->GetSeqNum();
-
-	//Update media and get cycles
-	WORD cycles = recv.media.SetSeqNum(seq);
-
-	//Set extended secuence number
-	packet->SetSeqCycles(cycles);
-	
 	//Check if we got a different SSRC
 	if (recv.media.ssrc!=ssrc && codec!=VideoCodec::RTX)
 	{
@@ -624,40 +593,29 @@ void RTPSession::onRTPPacket(const BYTE* data, DWORD size)
 		//Update ssrc
 		recv.media.ssrc = ssrc;
 		//If remote estimator
-		if (remoteRateEstimator)
-			//Add stream
-			remoteRateEstimator->AddStream(recv.media.ssrc);
+		recv.remoteRateEstimator.AddStream(recv.media.ssrc);
+	} else if (recv.rtx.ssrc!=ssrc && codec==VideoCodec::RTX) {
+		//Log
+		Log("-RTPSession::onRTPPacket(%s) | New RTX SSRC [new:%u,old:%u]\n",MediaFrame::TypeToString(media),ssrc,recv.rtx.ssrc);
+		//Update ssrc
+		recv.rtx.ssrc = ssrc;
 	}
 	
-	//Check if it is a rtx
-	if (codec==VideoCodec::RTX)
+	//Process packet and get source
+	RTPIncomingSource* source = recv.Process(packet);
+	
+	//Ensure it has a source
+	if (!source)
 	{
-		//IT is a retransmission check if we didn't had the ssrc
-		if (!recv.rtx.ssrc)
-		{
-			//Store it
-			recv.rtx.ssrc = ssrc;
-			//Log
-			Log("-RTPSession::onRTPPacket(%s) | Gor RTX for SSRC [rtx:%u,ssrc:%u]\n",MediaFrame::TypeToString(media),recv.rtx.ssrc,recv.media.ssrc);
-		}	
-		/*
-		       The format of a retransmission packet is shown below:
-		   0                   1                   2                   3
-		   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-		  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-		  |                         RTP Header                            |
-		  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-		  |            OSN                |                               |
-		  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               |
-		  |                  Original RTP Packet Payload                  |
-		  |                                                               |
-		  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-		*/
-		 //Get original sequence number
-		WORD osn = get2(packet->GetMediaData(),0);
-
-		UltraDebug("RTX: Got   %.d:RTX for #%d ts:%u\n",type,osn,packet->GetTimestamp());
-
+		//error
+		Error("-DRTPSession::onRTPPacket() | Recv group does not contain ssrc [%u]\n",ssrc);
+		//Exit
+		return;
+	}
+	
+	//If it was an RTX packet and not a padding only one
+	if (codec==VideoCodec::RTX && packet->GetMediaLength()) 
+	{
 		//Get the associated type
 		type = aptMapIn->GetCodecForType(type);
 		//Find codec for type
@@ -671,31 +629,46 @@ void RTPSession::onRTPPacket(const BYTE* data, DWORD size)
 			 return;
 		}
 
-		 //Set original seq num
-		packet->SetSeqNum(osn);
+		//Remove OSN and restore seq num
+		if (!packet->RecoverOSN())
+		{
+			//Error
+			Error("-RTPSession::onRTPPacket(%s) | RTP Could not recoever OSX\n",MediaFrame::TypeToString(media));
+			//Exit
+			return;
+		}
 		//Set original ssrc
 		packet->SetSSRC(recv.media.ssrc);
-		//Set original type
-		packet->SetPayloadType(type);
+		//Set corrected seq num cycles
+		packet->SetSeqCycles(recv.media.RecoverSeqNum(packet->GetSeqNum()));
 		//Set codec
 		packet->SetCodec(codec);
-
-		//Skip osn from payload
-		packet->SkipPayload(2);
-		//It is a retrasmision
-		isRTX = true;
+		packet->SetPayloadType(type);
 	}	
 
 	//if (media==MediaFrame::Video && !isRTX && seq % 40 ==0)
 	//	return (void)Error("RTX: Drop %d %s packet #%d ts:%u\n",type,VideoCodec::GetNameFor((VideoCodec::Type)codec),packet->GetSeqNum(),packet->GetTimestamp());
 		
 	//Update lost packets
-	int lost = losts.AddPacket(packet);
+	int lost = recv.AddPacket(packet);
 
-	if (lost) UltraDebug("RTX: Missing %d [media:%s,nack:%d,diff:%llu,rtt:%llu]\n",lost,MediaFrame::TypeToString(media),isNACKEnabled,getDifTime(&lastFPU)/1000,rtt);
+	//Check if it was rejected
+	if (lost<0)
+	{
+		//Log
+		UltraDebug("-RTPSession::onRTPPacket(%s) | Dropped packet [orig:%u,ssrc:%u,seq:%d,rtx:%d]\n",MediaFrame::TypeToString(media),ssrc,packet->GetSSRC(),packet->GetSeqNum(),ssrc==recv.rtx.ssrc);
+		//Increase rejected counter
+		source->dropPackets++;
+	} else if (lost>0) {
+		//Log
+		UltraDebug("-RTPSession::onRTPPacket(%s) | RTX: Missing %d [media:%s,nack:%d,diff:%llu,rtt:%llu]\n",MediaFrame::TypeToString(media),lost,isNACKEnabled,getDifTime(&lastFPU)/1000,rtt);
+	}
+	
+	//Get current time
+	auto now = getTime();
 	
 	//If nack is enable t waiting for a PLI/FIR response (to not oeverflow)
-	if (isNACKEnabled && getDifTime(&lastFPU)/1000>rtt/2 && lost)
+	if (isNACKEnabled && getDifTime(&lastFPU)/1000>rtt/2 && lost>0)
 	{
 		//Create rtcp sender retpor
 		auto rtcp = CreateSenderReport();
@@ -710,71 +683,12 @@ void RTPSession::onRTPPacket(const BYTE* data, DWORD size)
 		
 		//Send packet
 		SendPacket(rtcp);
+		//Update last time nacked
+		source->lastNACKed = getTime();
+		//Update nacked packets
+		source->totalNACKs++;
 	}
 	
-
-	//If it is not a retransmission
-	if (!isRTX)
-	{
-		//If remote estimator
-		if (remoteRateEstimator)
-			//Update rate control
-			remoteRateEstimator->Update(recv.media.ssrc,packet,size);
-
-		//Increase stats
-		recv.media.numPackets++;
-		recv.media.totalPacketsSinceLastSR++;
-		recv.media.totalBytes += size;
-		recv.media.totalBytesSinceLastSR += size;
-
-		//Get ext seq
-		DWORD extSeqNum = packet->GetExtSeqNum();
-
-		//Check if it is the min for this SR
-		if (extSeqNum<recv.media.minExtSeqNumSinceLastSR)
-			//Store minimum
-			recv.media.minExtSeqNumSinceLastSR = extSeqNum;
-
-		//If we have a not out of order pacekt
-		if (extSeqNum>recv.media.extSeqNum)
-		{
-			//Check possible lost pacekts
-			if (recv.media.extSeqNum && extSeqNum>(recv.media.extSeqNum+1))
-			{
-				//Get number of lost packets
-				WORD lost = extSeqNum-recv.media.extSeqNum-1;
-				
-				//If remote estimator
-				if (remoteRateEstimator)
-					//Update estimator
-					remoteRateEstimator->UpdateLost(recv.media.ssrc,lost,getTimeMS());
-			}
-			
-			//Update seq num
-			recv.media.SetExtSeqNum(extSeqNum);
-
-			//Get diff from previous
-			DWORD diff = getUpdDifTime(&recTimeval)/1000;
-
-			//If it is not first one and not from the same frame
-			if (recTimestamp && recTimestamp<packet->GetClockTimestamp())
-			{
-				//Get difference of arravail times
-				int d = (packet->GetClockTimestamp()-recTimestamp)-diff;
-				//Check negative
-				if (d<0)
-					//Calc abs
-					d = -d;
-				//Calculate variance
-				int v = d-recv.media.jitter;
-				//Calculate jitter
-				recv.media.jitter += v/16;
-			}
-
-			//Update rtp timestamp
-			recTimestamp = packet->GetClockTimestamp();
-		}
-	}
 	
 	if (!delegate)
 		//Append packet
@@ -783,8 +697,8 @@ void RTPSession::onRTPPacket(const BYTE* data, DWORD size)
 		//Append packet to group
 		recv.AddPacket(packet);
 
-	//Check if we need to send SR (1 per second
-	if (useRTCP && (!send.media.lastSenderReport || getTimeDiff(send.media.lastSenderReport)>1E6))
+	//Check if we need to send RR (1 per second)
+	if (useRTCP && now-source->lastReport>1E6)
 		//Send it
 		SendSenderReport();
 
@@ -1040,20 +954,20 @@ RTCPCompoundPacket::shared RTPSession::CreateSenderReport()
 
 	//Create report
 	auto report = recv.media.CreateReport(now);
-
 	//If got anything
 	if (report)
 		//Append it
 		sr->AddReport(report);
 
-	//Append SR to rtcp
-	rtcp->AddPacket(sr);
-
-	//TODO: 
 	//Create sender report for RTX stream
-	//RTCPSenderReport* rtx = send.rtx.CreateSenderReport(&tv);
+	auto rtx = recv.rtx.CreateReport(now);
+	//If got anything
+	if (rtx)
+		//Append it
+		sr->AddReport(rtx);
+	
 	//Append SR to rtcp
-	//rtcp->AddPacket(rtx);
+	rtcp->AddPacket(sr);	
 
 	//Create SDES packet
 	auto sdes = rtcp->CreatePacket<RTCPSDES>();
@@ -1061,7 +975,7 @@ RTCPCompoundPacket::shared RTPSession::CreateSenderReport()
 	auto desc = sdes->CreateDescription(send.media.ssrc);
 	//Add item
 	desc->CreateItem(RTCPSDES::Item::CName,cname);
-
+	
 	//Return it
 	return rtcp;
 }
@@ -1070,27 +984,25 @@ int RTPSession::SendSenderReport()
 {
 	//Create rtcp sender retpor
 	auto rtcp = CreateSenderReport();
-
-	if (remoteRateEstimator)
+	
+	//Get lastest estimation and convert to kbps
+	DWORD estimation = recv.remoteRateEstimator.GetEstimatedBitrate();
+	
+	//If it was ok
+	if (estimation)
 	{
-		//Get lastest estimation and convert to kbps
-		DWORD estimation = remoteRateEstimator->GetEstimatedBitrate();
-		//If it was ok
-		if (estimation)
-		{
-			//Resend TMMBR
-			auto tmmbr = rtcp->CreatePacket<RTCPRTPFeedback>(RTCPRTPFeedback::TempMaxMediaStreamBitrateRequest,send.media.ssrc,recv.media.ssrc);
-			//Limit incoming bitrate
-			tmmbr->CreateField<RTCPRTPFeedback::TempMaxMediaStreamBitrateField>(recv.media.ssrc,estimation,WORD(0));
-			//Get ssrcs
-			std::list<DWORD> ssrcs;
-			remoteRateEstimator->GetSSRCs(ssrcs);
-			//Create feedback
-			// SSRC of media source (32 bits):  Always 0; this is the same convention as in [RFC5104] section 4.2.2.2 (TMMBN).
-			auto remb = rtcp->CreatePacket<RTCPPayloadFeedback>(RTCPPayloadFeedback::ApplicationLayerFeeedbackMessage,send.media.ssrc,WORD(0));
-			//Send estimation
-			remb->AddField(RTCPPayloadFeedback::ApplicationLayerFeeedbackField::CreateReceiverEstimatedMaxBitrate(ssrcs,estimation));
-		}
+		//Resend TMMBR
+		auto tmmbr = rtcp->CreatePacket<RTCPRTPFeedback>(RTCPRTPFeedback::TempMaxMediaStreamBitrateRequest,send.media.ssrc,recv.media.ssrc);
+		//Limit incoming bitrate
+		tmmbr->CreateField<RTCPRTPFeedback::TempMaxMediaStreamBitrateField>(recv.media.ssrc,estimation,WORD(0));
+		//Get ssrcs
+		std::list<DWORD> ssrcs;
+		recv.remoteRateEstimator.GetSSRCs(ssrcs);
+		//Create feedback
+		// SSRC of media source (32 bits):  Always 0; this is the same convention as in [RFC5104] section 4.2.2.2 (TMMBN).
+		auto remb = rtcp->CreatePacket<RTCPPayloadFeedback>(RTCPPayloadFeedback::ApplicationLayerFeeedbackMessage,send.media.ssrc,WORD(0));
+		//Send estimation
+		remb->AddField(RTCPPayloadFeedback::ApplicationLayerFeeedbackField::CreateReceiverEstimatedMaxBitrate(ssrcs,estimation));
 	}
 
 	//Send packet
@@ -1152,10 +1064,6 @@ void RTPSession::SetRTT(DWORD rtt)
 {
 	//Set it
 	this->rtt = rtt;
-	//if got estimator
-	if (remoteRateEstimator)
-		//Update estimator
-		remoteRateEstimator->UpdateRTT(recv.media.ssrc,rtt,getTimeMS());
 	//Set group rtt
 	recv.SetRTT(rtt);
 	//Check RTT to enable NACK

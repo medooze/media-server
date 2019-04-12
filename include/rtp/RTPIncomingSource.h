@@ -23,6 +23,8 @@ struct RTPIncomingSource : public RTPSource
 	DWORD   totalPLIs;
 	DWORD	totalNACKs;
 	QWORD	lastNACKed;
+	DWORD	lastTimestamp;
+	QWORD	lastTime;
 	std::map<WORD,LayerSource> layers;
 	
 	RTPIncomingSource() : RTPSource()
@@ -39,6 +41,8 @@ struct RTPIncomingSource : public RTPSource
 		totalPLIs		 = 0;
 		totalNACKs		 = 0;
 		lastNACKed		 = 0;
+		lastTimestamp		 = 0;
+		lastTime		 = 0;
 		minExtSeqNumSinceLastSR  = RTPPacket::MaxExtSeqNum;
 	}
 	
@@ -62,6 +66,10 @@ struct RTPIncomingSource : public RTPSource
 	
 	virtual void Update(QWORD now,DWORD seqNum,DWORD size)
 	{
+		//Store last seq number before updating
+		//DWORD lastExtSeqNum = extSeqNum;
+			
+		//Update source
 		RTPSource::Update(now,seqNum,size);
 		
 		//Update seq num
@@ -74,6 +82,33 @@ struct RTPIncomingSource : public RTPSource
 		if (extSeqNum<minExtSeqNumSinceLastSR)
 			//Store minimum
 			minExtSeqNumSinceLastSR = extSeqNum;
+		
+		/*TODO: calculate jitter
+		//If we have a not out of order pacekt
+		if (lastExtSeqNum != extSeqNum)
+		{
+			//If it is not first one and not from the same frame
+			if (lastTimestamp && lastTimestamp<timestamp)
+			{
+				//Get diff from previous
+				QWORD diff = (lastTime-now)/1000;
+
+		
+				//Get difference of arravail times
+				int d = (timestamp-lastTimestamp)-diff;
+				//Check negative
+				if (d<0)
+					//Calc abs
+					d = -d;
+				//Calculate variance
+				int v = d - jitter;
+				//Calculate jitter
+				jitter += v/16;
+			}
+			//Update rtp timestamp
+			lastTime = timestamp;
+		}
+		 */
 	}
 	
 	virtual void Reset()

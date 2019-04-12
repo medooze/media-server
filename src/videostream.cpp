@@ -68,6 +68,14 @@ int VideoStream::SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitra
 {
 	Log("-SetVideoCodec [%s,%dfps,%dkbps,intra:%d]\n",VideoCodec::GetNameFor(codec),fps,bitrate,intraPeriod);
 
+	//Fix: Should not be here
+	if (properties.HasProperty("rateEstimator.maxRate"))
+		rtp.SetTemporalMaxLimit(properties.GetProperty("rateEstimator.maxRate",0));
+	//Fix: Should not be here
+	if (properties.HasProperty("rateEstimator.minRate"))
+		//Set it
+		rtp.SetTemporalMinLimit(properties.GetProperty("rateEstimator.minRate",0));
+	
 	//LO guardamos
 	videoCodec=codec;
 
@@ -110,12 +118,6 @@ int VideoStream::SetTemporalBitrateLimit(int estimation)
 	videoBitrateLimitCount = videoFPS;
 	//Exit
 	return 1;
-}
-
-void VideoStream::SetRemoteRateEstimator(RemoteRateEstimator* estimator)
-{
-	//Set it in the rtp session
-	rtp.SetRemoteRateEstimator(estimator);
 }
 
 /***************************************

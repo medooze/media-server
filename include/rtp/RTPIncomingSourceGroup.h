@@ -65,6 +65,9 @@ public:
 	DWORD minWaitedTime = 0;
 	DWORD maxWaitedTime = 0;
 	long double avgWaitedTime = 0;
+	
+	//TODO: FIx
+	RemoteRateEstimator remoteRateEstimator;
 private:
 	TimeService&	timeService;
 	Timer::shared	dispatchTimer;
@@ -72,7 +75,7 @@ private:
 	RTPBuffer	packets;
 	Mutex		listenerMutex;
 	std::set<RTPIncomingMediaStream::Listener*>  listeners;
-	RemoteRateEstimator remoteRateEstimator;
+	
 	WORD  rttrtxSeq	 = 0 ;
 	QWORD rttrtxTime = 0;
 	bool remb	 = false;

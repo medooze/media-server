@@ -50,7 +50,6 @@ public:
 	RTPSession(MediaFrame::Type media,Listener *listener);
 	virtual ~RTPSession();
 	int Init();
-	void SetRemoteRateEstimator(RemoteRateEstimator* estimator);
 	int SetLocalPort(int recvPort);
 	int GetLocalPort();
 	int SetRemotePort(char *ip,int sendPort);
@@ -86,7 +85,9 @@ public:
 	void FlushRTXPackets();
 
 	int SendTempMaxMediaStreamBitrateNotification(DWORD bitrate,DWORD overhead);
-
+	
+	void SetTemporalMaxLimit(DWORD limit)	{ recv.remoteRateEstimator.SetTemporalMaxLimit(limit);	}
+	void SetTemporalMinLimit(DWORD limit)	{ recv.remoteRateEstimator.SetTemporalMinLimit(limit);	}
 	virtual void onTargetBitrateRequested(DWORD bitrate);
 
 	RTPOutgoingSourceGroup* GetOutgoingSourceGroup() { return &send; }
@@ -107,7 +108,6 @@ protected:
 private:
 	typedef std::map<DWORD,RTPPacket::shared> RTPOrderedPackets;
 protected:
-	RemoteRateEstimator*	remoteRateEstimator;
 	bool	delegate; // Controls if we have to delegate dispatch of packets to the incoming group or not
 private:
 	MediaFrame::Type media;
@@ -124,8 +124,6 @@ private:
 
 	//Recepcion
 	BYTE	recBuffer[MTU+SRTP_MAX_TRAILER_LEN] ALIGNEDTO32;
-	DWORD	recTimestamp;
-	timeval recTimeval;
 
 	//RTP Map types
 	RTPMap* rtpMapIn;
