@@ -14,7 +14,7 @@ RemoteRateEstimator::RemoteRateEstimator() : bitrateAcu(200)
 {
 	//Not last estimate
 	minConfiguredBitRate	= 128000;
-	maxConfiguredBitRate	= 30000000;
+	maxConfiguredBitRate	= 1280000000;
 	currentBitRate		= 0;
 	maxHoldRate		= 0;
 	avgMaxBitRate		= -1.0f;
@@ -508,7 +508,7 @@ void RemoteRateEstimator::SetTemporalMaxLimit(DWORD limit)
 		maxConfiguredBitRate = limit;
 	else
 		//Set default max
-		maxConfiguredBitRate = 30000000;
+		maxConfiguredBitRate = 1280000000;
 }
 
 void RemoteRateEstimator::SetTemporalMinLimit(DWORD limit)
@@ -520,7 +520,7 @@ void RemoteRateEstimator::SetTemporalMinLimit(DWORD limit)
 		minConfiguredBitRate = limit;
 	else
 		//Set default min
-		minConfiguredBitRate = 32000;
+		minConfiguredBitRate = 128000;
 }
 void RemoteRateEstimator::SetListener(Listener *listener)
 {
