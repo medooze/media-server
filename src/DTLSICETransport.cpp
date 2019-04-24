@@ -66,7 +66,7 @@ void DTLSICETransport::onDTLSPendingData()
 	//Until depleted
 	while(active)
 	{
-		Buffer buffer(MTU);
+		Packet buffer;
 		//Read from dtls
 		size_t len=dtls.Read(buffer.GetData(),buffer.GetCapacity());
 		//Check result
@@ -100,7 +100,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 
 		//Read buffers are always MTU size
 		//TODO: reuse incoming buffer
-		Buffer buffer(MTU);
+		Packet buffer;
 		
 		//Read data from it
 		DWORD len = dtls.Read(buffer.GetData(),buffer.GetCapacity());
@@ -677,7 +677,7 @@ void DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 	}
 	
 	//Send buffer
-	Buffer buffer(MTU);
+	Packet buffer;
 	BYTE* 	data = buffer.GetData();
 	DWORD	size = buffer.GetCapacity();
 	int	len  = 0;
@@ -862,7 +862,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	}
 	
 	//Send buffer
-	Buffer buffer(MTU);
+	Packet buffer;
 	BYTE* 	data = buffer.GetData();
 	DWORD	size = buffer.GetCapacity();
 	int	len  = 0;
@@ -1720,7 +1720,7 @@ int DTLSICETransport::Send(const RTCPCompoundPacket::shared &rtcp)
 	}
 	
 	//Send buffer
-	Buffer buffer(MTU);
+	Packet buffer;
 	BYTE* 	data = buffer.GetData();
 	DWORD	size = buffer.GetCapacity();
 	
@@ -1889,7 +1889,7 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 	//if (group->type==MediaFrame::Video) UltraDebug("-Sending RTP on media:%s sssrc:%u seq:%u pt:%u ts:%lu codec:%s\n",MediaFrame::TypeToString(group->type),source.ssrc,packet->GetSeqNum(),packet->GetPayloadType(),packet->GetTimestamp(),GetNameForCodec(group->type,packet->GetCodec()));
 	
 	//Send buffer
-	Buffer buffer(MTU);
+	Packet buffer;
 	BYTE* 	data = buffer.GetData();
 	DWORD	size = buffer.GetCapacity();
 	

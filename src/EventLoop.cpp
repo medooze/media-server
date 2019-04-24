@@ -26,17 +26,17 @@ size_t EventLoop::MaxSendingQueueSize = 16*1024;
 cpu_set_t* alloc_cpu_set(size_t* size) {
 	// the CPU set macros don't handle cases like my Azure VM, where there are 2 cores, but 128 possible cores (why???)
 	// hence requiring an oversized 16 byte cpu_set_t rather than the 8 bytes that the macros assume to be sufficient.
-	// this is the only way (even documented as such!) to figure out how to make a buffer big enough
-	unsigned long* buffer = nullptr;
+	// this is the only way (even documented as such!) to figure out how to make a packet big enough
+	unsigned long* packet = nullptr;
 	int len = 0;
 	do {
 		++len;
-		delete [] buffer;
-		buffer = new unsigned long[len];
-	} while(pthread_getaffinity_np(pthread_self(), len * sizeof(unsigned long), reinterpret_cast<cpu_set_t*>(buffer)) == EINVAL);
+		delete [] packet;
+		packet = new unsigned long[len];
+	} while(pthread_getaffinity_np(pthread_self(), len * sizeof(unsigned long), reinterpret_cast<cpu_set_t*>(packet)) == EINVAL);
 
 	*size = len * sizeof(unsigned long);
-	return reinterpret_cast<cpu_set_t*>(buffer);
+	return reinterpret_cast<cpu_set_t*>(packet);
 }
 
 void free_cpu_set(cpu_set_t* s) {
@@ -131,6 +131,7 @@ bool EventLoop::Start(int fd)
 		//Alredy running
 		return false;
 	
+#if __APPLE__
 	//Create pipe
 	if (::pipe(pipe)==-1)
 		//Error
@@ -139,6 +140,10 @@ bool EventLoop::Start(int fd)
 	//Set non blocking
 	fcntl(pipe[0], F_SETFL , O_NONBLOCK);
 	fcntl(pipe[1], F_SETFL , O_NONBLOCK);
+	
+#else
+	pipe[0] = pipe[1] = eventfd(0, EFD_NONBLOCK);
+#endif	
 	
 	//Store socket
 	this->fd = fd;
@@ -185,7 +190,7 @@ bool EventLoop::Stop()
 	
 }
 
-void EventLoop::Send(const uint32_t ipAddr, const uint16_t port, Buffer&& buffer)
+void EventLoop::Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet)
 {
 	//Get approximate queued size
 	auto aprox = sending.size_approx();
@@ -215,8 +220,8 @@ void EventLoop::Send(const uint32_t ipAddr, const uint16_t port, Buffer&& buffer
 		Log("-EventLoop::Send() | sending queue back to normal [aprox:%u]\n",aprox);
 	}
 	
-	//Create send buffer
-	SendBuffer send = {ipAddr, port, std::move(buffer)};
+	//Create send packet
+	SendBuffer send = {ipAddr, port, std::move(packet)};
 	
 	//Move it back to sending queue
 	sending.enqueue(std::move(send));
@@ -499,7 +504,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 				to.sin_port	   = htons(item.port);
 
 				//Send it
-				int ret = sendto(fd,item.buffer.GetData(),item.buffer.GetSize(),MSG_DONTWAIT,(sockaddr*)&to,sizeof(to));
+				int ret = sendto(fd,item.packet.GetData(),item.packet.GetSize(),MSG_DONTWAIT,(sockaddr*)&to,sizeof(to));
 				
 				//It we have an error
 				if (ret<0 && state==State::Normal)

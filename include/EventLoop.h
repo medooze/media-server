@@ -8,7 +8,7 @@
 #include <cassert>
 #include "config.h"
 #include "concurrentqueue.h"
-#include "Buffer.h"
+#include "Packet.h"
 #include "TimeService.h"
 
 using namespace std::chrono_literals;
@@ -72,7 +72,7 @@ public:
 	virtual Timer::shared CreateTimer(const std::chrono::milliseconds& ms, const std::chrono::milliseconds& repeat, std::function<void(std::chrono::milliseconds)> timeout) override;
 	virtual std::future<void> Async(std::function<void(std::chrono::milliseconds)> func) override;
 	
-	void Send(const uint32_t ipAddr, const uint16_t port, Buffer&& buffer);
+	void Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet);
 	void Run(const std::chrono::milliseconds &duration = std::chrono::milliseconds::max());
 	
 	bool SetAffinity(int cpu);
@@ -95,7 +95,7 @@ private:
 		
 		uint32_t ipAddr;
 		uint16_t port;
-		Buffer   buffer;
+		Packet   packet;
 	};
 	static size_t MaxSendingQueueSize;
 private:
@@ -103,8 +103,8 @@ private:
 	State		state = State::Normal;
 	Listener*	listener = nullptr;
 	int		fd = 0;
-	int		pipe[2] = {0};
-	pollfd		ufds[2];
+	int		pipe[2] = {};
+	pollfd		ufds[2] = {};
 	volatile bool	signaled = false;
 	volatile bool	running = false;
 	std::chrono::milliseconds now = 0ms;

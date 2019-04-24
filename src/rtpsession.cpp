@@ -379,7 +379,7 @@ int RTPSession::End()
 int RTPSession::SendPacket(const RTCPCompoundPacket::shared &rtcp)
 {
 	//Data
-	Buffer buffer(MTU);
+	Packet buffer;
 	BYTE* data = buffer.GetData();
 	size_t size = buffer.GetCapacity();
 
@@ -414,7 +414,7 @@ int RTPSession::SendPacket(const RTPPacket::shared &packet)
 int RTPSession::SendPacket(const RTPPacket::shared &packet,DWORD timestamp)
 {
 	//Data
-	Buffer buffer(MTU);
+	Packet buffer;
 	BYTE* data = buffer.GetData();
 	size_t size = buffer.GetCapacity();
 	
@@ -1118,7 +1118,7 @@ int RTPSession::ReSendPacket(int seq)
 		auto packet = it->second;
 
 		//Data
-		Buffer buffer(MTU);
+		Packet buffer;
 		BYTE* data = buffer.GetData();
 		size_t size = buffer.GetCapacity();
 		size_t len = 0;

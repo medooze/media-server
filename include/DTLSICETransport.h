@@ -41,7 +41,7 @@ public:
 	class Sender
 	{
 	public:
-		virtual int Send(const ICERemoteCandidate *candiadte, Buffer&& buffer) = 0;
+		virtual int Send(const ICERemoteCandidate *candiadte, Packet&& buffer) = 0;
 	};
 
 public:

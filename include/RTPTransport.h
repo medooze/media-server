@@ -63,8 +63,8 @@ public:
 	void Reset();
 	int End();
 	
-	int SendRTPPacket(Buffer&& packet);
-	int SendRTCPPacket(Buffer&& packet);
+	int SendRTPPacket(Packet&& packet);
+	int SendRTCPPacket(Packet&& packet);
 
 	int SetLocalCryptoSDES(const char* suite, const char* key64);
 	int SetRemoteCryptoSDES(const char* suite, const char* key64);

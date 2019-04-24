@@ -331,7 +331,7 @@ int RTPBundleTransport::End()
 	return 1;
 }
 
-int RTPBundleTransport::Send(const ICERemoteCandidate* candidate, Buffer&& buffer)
+int RTPBundleTransport::Send(const ICERemoteCandidate* candidate, Packet&& buffer)
 {
 	loop.Send(candidate->GetIPAddress(),candidate->GetPort(),std::move(buffer));
 	return 1;
@@ -441,7 +441,7 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 			resp->AddXorAddressAttribute(htonl(ip),htons(port));
 			
 			//Create new mesage
-			Buffer buffer(MTU);
+			Packet buffer;
 		
 			//Serialize and autenticate
 			size_t len = resp->AuthenticatedFingerPrint(buffer.GetData(),buffer.GetCapacity(),transport->GetLocalPwd());
@@ -471,7 +471,7 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 				request->AddAttribute(STUNMessage::Attribute::Priority,(DWORD)33554431);
 
 				//Create new mesage
-				Buffer buffer(MTU);
+				Packet buffer;
 				
 				//Serialize and autenticate
 				size_t len = request->AuthenticatedFingerPrint(buffer.GetData(),buffer.GetCapacity(),transport->GetRemotePwd());
@@ -565,7 +565,7 @@ int RTPBundleTransport::AddRemoteCandidate(const std::string& username,const cha
 		request->AddAttribute(STUNMessage::Attribute::Priority,(DWORD)33554431);
 
 		//Create new mesage
-		Buffer buffer(MTU);
+		Packet buffer;
 		
 		//Serialize and autenticate
 		size_t len = request->AuthenticatedFingerPrint(buffer.GetData(),buffer.GetCapacity(),transport->GetRemotePwd());
