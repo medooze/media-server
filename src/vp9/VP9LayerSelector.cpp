@@ -183,7 +183,7 @@ bool VP9LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 	}
 
 	//Check if we have it now
-	if (!packet->vp9PayloadDescriptor)
+	if (packet->vp9PayloadDescriptor)
 	{
 		//Get data from header
 		info.temporalLayerId	= packet->vp9PayloadDescriptor->temporalLayerId;
