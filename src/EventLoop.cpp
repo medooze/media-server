@@ -386,13 +386,13 @@ void EventLoop::Signal()
 	//and that we signal it twice
 	signaled = true;
 	
-	//Write to tbe pipe
-	write(pipe[1],(uint8_t*)&one,sizeof(one));
+	//Write to tbe pipe, and assign to one to avoid warning in compile time
+	one = write(pipe[1],(uint8_t*)&one,sizeof(one));
 }
 
 void EventLoop::Run(const std::chrono::milliseconds &duration)
 {
-	Log(">EventLoop::Run() | [%p]\n",this);
+	//Log(">EventLoop::Run() | [%p,running:%d,duration:%llu]\n",this,running,duration.count());
 	
 	//Recv data
 	uint8_t data[MTU] ZEROALIGNEDTO32;
@@ -419,36 +419,50 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 	signal(SIGIO,[](int){});
 	
 	//Get now
-	auto now = GetNow();
+	auto now = Now();
 	
 	//calculate until when
-	auto until = now + duration;
+	auto until = duration < std::chrono::milliseconds::max() ? now + duration : std::chrono::milliseconds::max();
 		
 	//Run until ended
-	while(running && now<until)
+	while(running && now<=until)
 	{
 		//If we have anything to send set to wait also for write events
 		ufds[0].events = sending.size_approx() ? POLLIN | POLLOUT | POLLERR | POLLHUP : POLLIN | POLLERR | POLLHUP;
 		
-		//Check if we have any pending task to wait or exit poll inmediatelly
-		int timeout = tasks.size_approx() ? 0 : -1;
+		//Until signaled
+		int timeout = -1;
 		
+		//Check if we have any pending task to wait or exit poll inmediatelly
+		if (tasks.size_approx()) 
+		{
+			//No wait
+			timeout = 0;
+		}
 		//If we have any timer or a timeout
-		if (timers.size())
+		else if (timers.size())
 		{
 			//Get first timer in  queue
 			auto next = std::min(timers.begin()->first,until);
 			//Override timeout
 			timeout = next > now ? std::chrono::duration_cast<std::chrono::milliseconds>(next - now).count() : 0;
-		} else if (duration!=std::chrono::milliseconds::max()) {
+		} 
+		//If we have a maximum duration
+		else if (duration!=std::chrono::milliseconds::max()) 
+		{
 			//Override timeout
 			timeout = until > now ? std::chrono::duration_cast<std::chrono::milliseconds>(until - now).count() : 0;
 		}
 
-		//UltraDebug(">EventLoop::Run() | poll timeout:%d\n",timeout);
+		//UltraDebug(">EventLoop::Run() | poll timeout:%d timers:%d tasks:%d\n",timeout,timers.size(),tasks.size_approx());
 		
 		//Wait for events
 		poll(ufds,sizeof(ufds)/sizeof(pollfd),timeout);
+		
+		//Update now
+		now = Now();
+		
+		//UltraDebug("<EventLoop::Run() | poll timeout:%d timers:%d tasks:%d\n",timeout,timers.size(),tasks.size_approx());
 		
 		//Check for cancel
 		if ((ufds[0].revents & POLLHUP) || (ufds[0].revents & POLLERR) || (ufds[1].revents & POLLHUP) || (ufds[1].revents & POLLERR))
@@ -457,18 +471,6 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 			Log("-EventLoop::Run() | Pool error event [%d]\n",ufds[0].revents);
 			//Exit
 			break;
-		}
-		
-		//Read first from signal pipe
-		if (ufds[1].revents & POLLIN)
-		{
-			//Remove pending data
-			while (read(pipe[0],data,size)>0) 
-			{
-				//DO nothing
-			}
-			//We are not signaled anymore
-			signaled = false;
 		}
 		
 		//Read first
@@ -526,16 +528,12 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 		while (tasks.try_dequeue(task))
 		{
 			//UltraDebug("-EventLoop::Run() | task pending\n");
-			//Update now
-			auto now = Now();
 			//Execute it
 			task.second(now);
 			//Resolce promise
 			task.first.set_value();
 		}
 
-		//Update now
-		now = Now();
 		//Timers triggered
 		std::vector<TimerImpl::shared> triggered;
 		//Get all timers to process in this lop
@@ -550,7 +548,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 			//Remove from the list
 			it = timers.erase(it);
 		}
-		
+
 		//Now process all timers triggered
 		for (auto timer : triggered)
 		{
@@ -568,8 +566,21 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 				timers.emplace(timer->next, timer);
 			}
 		}
-		//Get now
-		now = GetNow();
+		
+		//Read first from signal pipe
+		if (ufds[1].revents & POLLIN)
+		{
+			//Remove pending data
+			while (read(pipe[0],data,size)>0) 
+			{
+				//DO nothing
+			}
+			//We are not signaled anymore
+			signaled = false;
+		}
+		
+		//Update now
+		now = Now();
 	}
 	
 	//Run queued task
@@ -586,5 +597,5 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 		task.first.set_value();
 	}
 
-	Log("<EventLoop::Run()\n");
+	//Log("<EventLoop::Run()\n");
 }

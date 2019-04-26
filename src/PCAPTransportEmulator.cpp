@@ -318,7 +318,7 @@ outher:	while(running)
 		if (RTCPCompoundPacket::IsRTCP(data,size))
 		{
 			//Debug
-			UltraDebug("-PCAPTransportEmulator::Run() | skipping rtcp\n");
+			//UltraDebug("-PCAPTransportEmulator::Run() | skipping rtcp\n");
 			//Ignore this try again
 			goto outher;
 		}
@@ -421,7 +421,7 @@ outher:	while(running)
 			//Get when is the next packet to be played
 			uint64_t diff = time-now; 
 			
-			UltraDebug("-PCAPTransportEmulator::Run() | waiting now:%llu next:%llu diff:%llu first:%llu, ts:%llu\n",now,time,diff,first,ts);
+			//UltraDebug("-PCAPTransportEmulator::Run() | waiting now:%llu next:%llu diff:%llu first:%llu, ts:%llu\n",now,time,diff,first,ts);
 				
 			//Wait the difference
 			loop.Run(std::chrono::milliseconds(diff));
@@ -534,7 +534,7 @@ outher:	while(running)
 		//Check if it was rejected
 		if (lost<0)
 		{
-			UltraDebug("-PCAPTransportEmulator::Run()| Dropped packet [ssrc:%u,seq:%d]\n",packet->GetSSRC(),packet->GetSeqNum());
+			//UltraDebug("-PCAPTransportEmulator::Run()| Dropped packet [ssrc:%u,seq:%d]\n",packet->GetSSRC(),packet->GetSeqNum());
 			//Increase rejected counter
 			source->dropPackets++;
 		} 
