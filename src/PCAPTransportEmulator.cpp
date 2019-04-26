@@ -258,8 +258,11 @@ uint64_t PCAPTransportEmulator::Seek(uint64_t time)
 	//Stop
 	Stop();
 	
+	//Store start time
+	first = time;
+	
 	//Seek it and return which is the first packet that will be played
-	return first = reader->Seek(first*1000)/100;;
+	return reader->Seek(time*1000)/1000;
 }
 
 bool PCAPTransportEmulator::Stop()
@@ -269,7 +272,7 @@ bool PCAPTransportEmulator::Stop()
 	//Not running
 	running = false;
 	
-	//Check thred
+	//Check thread
 	loop.Stop();
 	
 	Debug("<PCAPTransportEmulator::Stop()\n");
@@ -418,17 +421,17 @@ outher:	while(running)
 			//Get when is the next packet to be played
 			uint64_t diff = time-now; 
 			
-			//UltraDebug("-PCAPTransportEmulator::Run() | waiting now:%llu next:%llu diff:%llu\n",now,time,diff);
+			UltraDebug("-PCAPTransportEmulator::Run() | waiting now:%llu next:%llu diff:%llu first:%llu, ts:%llu\n",now,time,diff,first,ts);
 				
 			//Wait the difference
-			loop.Run(std::chrono::milliseconds(diff/1000));
+			loop.Run(std::chrono::milliseconds(diff));
 
 			//Check if we have been stoped
 			if (!running)
 				goto outher;
 			
 			//Get relative play times since start in ns
-			now = getTimeDiff(ini);
+			now = getTimeDiff(ini)/1000;
 		}
 		
 		//Get sssrc
@@ -537,6 +540,9 @@ outher:	while(running)
 		} 
 	}
 	
+	//Run until canceled
+	if (running) loop.Run();
+			
 	Log("<PCAPTransportEmulator::Run()\n");
 	
 	return 0;
