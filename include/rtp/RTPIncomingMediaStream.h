@@ -17,6 +17,8 @@
 #include "config.h"
 #include "rtp/RTPPacket.h"
 
+#include <vector>
+
 class RTPIncomingMediaStream
 {
 public:
@@ -25,6 +27,11 @@ public:
 	public:
 		virtual ~Listener() = default;
 		virtual void onRTP(RTPIncomingMediaStream* stream,const RTPPacket::shared& packet) = 0;
+		virtual void onRTP(RTPIncomingMediaStream* stream,const std::vector<RTPPacket::shared>& packets)
+		{
+			for (const auto packet : packets)
+				onRTP(stream,packet);
+		};
 		virtual void onEnded(RTPIncomingMediaStream* stream) = 0;
 	};
 	virtual ~RTPIncomingMediaStream() = default;

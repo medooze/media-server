@@ -37,6 +37,24 @@ void RTPIncomingMediaStreamMultiplexer::onRTP(RTPIncomingMediaStream* stream,con
 			listener->onRTP(this,packet);
 	});
 }
+
+void RTPIncomingMediaStreamMultiplexer::onRTP(RTPIncomingMediaStream* stream,const std::vector<RTPPacket::shared>& packets)
+{
+	//Dispatch in thread async
+	timeService.Async([=](...){
+		//Block listeners
+		ScopedLock scoped(listenerMutex);
+		//For each packet
+		for (const auto packet : packets)
+			//Deliver to all listeners
+			for (auto listener : listeners)
+				//Dispatch rtp packet
+				listener->onRTP(stream,packet);
+	});
+}
+
+
+
 void RTPIncomingMediaStreamMultiplexer::onEnded(RTPIncomingMediaStream* stream)
 {
 	//Dispatch in thread async
