@@ -87,7 +87,7 @@ G722OBJ=g722codec.o g722_decode.o g722_encode.o
 AACDIR=aac
 AACOBJ=aacencoder.o aacdecoder.o
 
-RTP=  RTPMap.o  RTPDepacketizer.o RTPPacket.o RTPPayload.o RTPPacketSched.o RTPSmoother.o  RTPLostPackets.o RTPSource.o RTPIncomingSource.o RTPIncomingSourceGroup.o RTPOutgoingSource.o RTPOutgoingSourceGroup.o
+RTP=  RTPMap.o  RTPDepacketizer.o RTPPacket.o RTPPayload.o RTPPacketSched.o RTPSmoother.o  RTPLostPackets.o RTPSource.o RTPIncomingMediaStreamMultiplexer.o RTPIncomingSource.o RTPIncomingSourceGroup.o RTPOutgoingSource.o RTPOutgoingSourceGroup.o
 RTCP= RTCPCompoundPacket.o RTCPNACK.o RTCPReceiverReport.o RTCPCommonHeader.o RTPHeader.o RTPHeaderExtension.o RTCPApp.o RTCPExtendedJitterReport.o RTCPPacket.o RTCPReport.o RTCPSenderReport.o RTCPBye.o RTCPFullIntraRequest.o RTCPPayloadFeedback.o RTCPRTPFeedback.o RTCPSDES.o 
 CORE= SRTPSession.o dtls.o OpenSSL.o RTPTransport.o  stunmessage.o crc32calc.o http.o httpparser.o avcdescriptor.o utf8.o rtpsession.o RTPStreamTransponder.o VideoLayerSelector.o remoteratecontrol.o remoterateestimator.o RTPBundleTransport.o DTLSICETransport.o PCAPFile.o PCAPReader.o PCAPTransportEmulator.o mp4streamer.o mp4recorder.o ActiveSpeakerDetector.o EventLoop.o Datachannels.o crc32c.o crc32c_sse42.o crc32c_portable.o MediaFrameListenerBridge.o
 
@@ -195,6 +195,7 @@ else
 endif
 
 LDFLAGS+= -lgsm -lxmlrpc -lxmlrpc_xmlparse -lxmlrpc_xmltok -lxmlrpc_abyss -lxmlrpc_server -lxmlrpc_util -lnsl -lz -ljpeg -lpng -lresolv -L/lib/i386-linux-gnu -lgcrypt -lpthread -ldl
+LDLIBFLAGS+= -lpthread
 
 #For abyss
 OPTS 	+= -D_UNIX -D__STDC_CONSTANT_MACROS

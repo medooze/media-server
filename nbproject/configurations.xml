@@ -191,6 +191,7 @@
       </df>
       <df name="include">
         <df name="rtp">
+          <in>RTPIncomingMediaStreamListenerMultiplexer.h</in>
           <in>RTPPayload.h</in>
         </df>
         <in>AudioCodecFactory.h</in>
@@ -275,6 +276,7 @@
           <in>RTPDepacketizer.cpp</in>
           <in>RTPHeader.cpp</in>
           <in>RTPHeaderExtension.cpp</in>
+          <in>RTPIncomingMediaStreamListenerMultiplexer.cpp</in>
           <in>RTPIncomingSource.cpp</in>
           <in>RTPIncomingSourceGroup.cpp</in>
           <in>RTPLostPackets.cpp</in>
@@ -755,6 +757,11 @@
           </preprocessorList>
         </ccTool>
       </folder>
+      <item path="include/rtp/RTPIncomingMediaStreamListenerMultiplexer.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
       <item path="src/ActiveSpeakerDetector.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="3">
           <incDir>
@@ -1926,6 +1933,11 @@
           </preprocessorList>
         </ccTool>
       </item>
+      <item path="src/rtp/RTPIncomingMediaStreamListenerMultiplexer.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
+      </item>
       <item path="src/rtp/RTPIncomingSource.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="2">
           <incDir>
@@ -2949,6 +2961,11 @@
       <item path="include/Packet.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/VideoCodecFactory.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/rtp/RTPIncomingMediaStreamListenerMultiplexer.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
       </item>
       <item path="include/rtp/RTPPayload.h" ex="false" tool="3" flavor2="0">
       </item>
@@ -4784,6 +4801,11 @@
             <Elem>__STDC_CONSTANT_MACROS</Elem>
           </preprocessorList>
         </ccTool>
+      </item>
+      <item path="src/rtp/RTPIncomingMediaStreamListenerMultiplexer.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
       </item>
       <item path="src/rtp/RTPIncomingSource.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
@@ -7101,6 +7123,11 @@
         </ccTool>
       </folder>
       <item path="include/Packet.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/rtp/RTPIncomingMediaStreamListenerMultiplexer.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
       </item>
       <item path="src/ActiveSpeakerDetector.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="0">
@@ -9510,6 +9537,11 @@
             <Elem>__STDC_CONSTANT_MACROS</Elem>
           </preprocessorList>
         </ccTool>
+      </item>
+      <item path="src/rtp/RTPIncomingMediaStreamListenerMultiplexer.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
       </item>
       <item path="src/rtp/RTPIncomingSource.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="0">
