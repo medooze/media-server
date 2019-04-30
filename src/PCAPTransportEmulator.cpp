@@ -517,6 +517,8 @@ outher:	while(running)
 			//Set codec
 			packet->SetCodec(codec);
 			packet->SetPayloadType(apt);
+			//TODO: Move from here
+			VideoLayerSelector::GetLayerIds(packet);
 	
 		} else if (ssrc==group->fec.ssrc)  {
 			UltraDebug("-Flex fec\n");

@@ -235,7 +235,7 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 		selector->SelectTemporalLayer(temporalLayerId);
 		
 		//Select pacekt
-		if (!selector->Select(packet,mark))
+		if (!packet->GetMediaLength() || !selector->Select(packet,mark))
 		{
 			//One more dropperd
 			dropped++;
@@ -349,6 +349,7 @@ void RTPStreamTransponder::onEnded(RTPIncomingMediaStream* stream)
 
 void RTPStreamTransponder::RequestPLI()
 {
+	//Log("-RTPStreamTransponder::RequestPLI() [receiver:%p,incoming:%p]\n",receiver,incoming);
 	ScopedLock lock(mutex);
 	//Request update on the incoming
 	if (receiver && incoming) receiver->SendPLI(incoming->GetMediaSSRC());
@@ -367,10 +368,10 @@ void RTPStreamTransponder::onREMB(RTPOutgoingSourceGroup* group,DWORD ssrc, DWOR
 
 void RTPStreamTransponder::SelectLayer(int spatialLayerId,int temporalLayerId)
 {
-	this->spatialLayerId  =  spatialLayerId;
+	this->spatialLayerId  = spatialLayerId;
 	this->temporalLayerId = temporalLayerId;
 	
-	if (lastSpatialLayerId<spatialLayerId)
+	if (lastSpatialLayerId!=spatialLayerId)
 		//Request update on the incoming
 		RequestPLI();
 }
