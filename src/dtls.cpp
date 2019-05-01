@@ -813,8 +813,7 @@ int DTLSConnection::Write(const BYTE *buffer, DWORD size)
 	if (SSL_get_shutdown(ssl) & SSL_RECEIVED_SHUTDOWN)
 	{
 		Debug("-DTLSConnection::Write() | SSL_RECEIVED_SHUTDOWN on instance '%p', resetting SSL\n", this);
-		SSL_free(ssl);
-		ssl = nullptr;
+		SSL_clear(ssl);
 		return 0;
 	}
 
