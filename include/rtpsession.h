@@ -142,7 +142,6 @@ private:
 	bool	pendingTMBR;
 	DWORD	pendingTMBBitrate;
 
-	RTPLostPackets		losts;
 	bool			useNACK;
 	bool			useRTX;
 	bool			isNACKEnabled;

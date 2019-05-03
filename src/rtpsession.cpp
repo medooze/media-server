@@ -32,8 +32,7 @@
 RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) :
 	transport(this),
 	send(media),
-	recv(media,transport.GetTimeService()),
-	losts(640)
+	recv(media,transport.GetTimeService())
 {
 	//Store listener
 	this->listener = listener;
@@ -608,7 +607,7 @@ void RTPSession::onRTPPacket(const BYTE* data, DWORD size)
 	if (!source)
 	{
 		//error
-		Error("-DRTPSession::onRTPPacket() | Recv group does not contain ssrc [%u]\n",ssrc);
+		Error("-RTPSession::onRTPPacket(%s) | Recv group does not contain ssrc [%u]\n",MediaFrame::TypeToString(media),ssrc);
 		//Exit
 		return;
 	}
@@ -661,7 +660,7 @@ void RTPSession::onRTPPacket(const BYTE* data, DWORD size)
 		source->dropPackets++;
 	} else if (lost>0) {
 		//Log
-		UltraDebug("-RTPSession::onRTPPacket(%s) | RTX: Missing %d [media:%s,nack:%d,diff:%llu,rtt:%llu]\n",MediaFrame::TypeToString(media),lost,isNACKEnabled,getDifTime(&lastFPU)/1000,rtt);
+		UltraDebug("-RTPSession::onRTPPacket(%s) | RTX: Missing %d [nack:%d,diff:%llu,rtt:%llu]\n",MediaFrame::TypeToString(media),lost,isNACKEnabled,getDifTime(&lastFPU)/1000,rtt);
 	}
 	
 	//Get current time
@@ -677,7 +676,7 @@ void RTPSession::onRTPPacket(const BYTE* data, DWORD size)
 		auto nack = rtcp->CreatePacket<RTCPRTPFeedback>(RTCPRTPFeedback::NACK,send.media.ssrc,recv.media.ssrc);
 		
 		//Get nacks for lost pacekts
-		for (auto field : losts.GetNacks())
+		for (auto field : recv.GetNacks())
 			//Add it
 			nack->AddField(field);
 		
@@ -1042,12 +1041,8 @@ int RTPSession::RequestFPU()
 	recv.ResetPackets();
 	//Drop all paquets queued, we could also hurry up
 	packets.Reset();
-	//Reset packet lost
-	losts.Reset();
 	//Do not wait until next RTCP SR
 	packets.SetMaxWaitTime(0);
-	//Disable NACK
-	isNACKEnabled = false;
 	//request FIR
 	SendFIR();
 	//Update last request FPU

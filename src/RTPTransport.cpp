@@ -122,7 +122,7 @@ RTPTransport::RTPTransport(Listener *listener) :
 	prio = 0;
 
 	//Not dumping
-	dumping = false;
+	dumping = true;
 	
 	//Preparamos las direcciones de envio
 	memset(&sendAddr,       0,sizeof(struct sockaddr_in));
@@ -1110,9 +1110,6 @@ int RTPTransport::ReadRTP(const uint8_t* data, const size_t size, const uint32_t
 		return 0;
 	}
 
-	//Write udp packet
-	if (dumping) pcap.WriteUDP(getTimeMS(),ntohl(from_addr.sin_addr.s_addr),ntohs(from_addr.sin_port),0x7F000001,5004,data,size);
-	
 	int len = size;
 	//Check if it is encripted
 	if (decript)
@@ -1128,6 +1125,9 @@ int RTPTransport::ReadRTP(const uint8_t* data, const size_t size, const uint32_t
 			//Error
 			return Error("-RTPTransport::ReadRTP() | Error unprotecting rtp packet [%d]\n",err);
 	}
+	
+	//Write udp packet
+	if (dumping) pcap.WriteUDP(getTimeMS(),ntohl(from_addr.sin_addr.s_addr),ntohs(from_addr.sin_port),0x7F000001,5004,data,size);
 	
 	listener->onRTPPacket(data,len);
 	

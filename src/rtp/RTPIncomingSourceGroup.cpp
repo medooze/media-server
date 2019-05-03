@@ -9,7 +9,7 @@ using namespace std::chrono_literals;
 
 RTPIncomingSourceGroup::RTPIncomingSourceGroup(MediaFrame::Type type,TimeService& timeService) :
 	timeService(timeService),
-	losts(128)
+	losts(256)
 {
 	//Store type
 	this->type = type;
