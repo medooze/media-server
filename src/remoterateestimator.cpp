@@ -121,6 +121,17 @@ void RemoteRateEstimator::Update(DWORD ssrc,QWORD now,QWORD ts,DWORD size, bool 
 
 	//Reset noise
 	noiseVar = 0;
+	
+	//Check if it was an unknown stream
+	if (streams.find(ssrc)==streams.end())
+	{
+		//Create new control
+		RemoteRateControl* ctrl = new RemoteRateControl();
+		//Set tracer
+		ctrl->SetEventSource(eventSource);
+		//Add it
+		streams[ssrc] = ctrl;
+	}
 
 	//For each one
 	for (Streams::iterator it = streams.begin(); it!=streams.end(); ++it)
@@ -150,9 +161,9 @@ void RemoteRateEstimator::Update(DWORD ssrc,QWORD now,QWORD ts,DWORD size, bool 
 		//Get noise var and sum up
 		noiseVar += ctrl->GetNoise();
 	}
-
+	
 	//Normalize
-	noiseVar = noiseVar/streams.size();
+	noiseVar = streams.size() ? noiseVar/streams.size() : 0;
 
 	//If not firs update
 	if (!lastChange)
