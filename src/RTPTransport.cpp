@@ -122,7 +122,7 @@ RTPTransport::RTPTransport(Listener *listener) :
 	prio = 0;
 
 	//Not dumping
-	dumping = true;
+	dumping = false;
 	
 	//Preparamos las direcciones de envio
 	memset(&sendAddr,       0,sizeof(struct sockaddr_in));
