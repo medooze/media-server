@@ -379,6 +379,9 @@ int AudioStream::RecAudio()
 
 	//Exit
 	Log("<RecAudio\n");
+
+	//Done
+	return 1;
 }
 
 /*******************************************
