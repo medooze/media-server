@@ -1037,8 +1037,11 @@ int RTPSession::SendFIR()
 int RTPSession::RequestFPU()
 {
 	Debug("-RTPSession::RequestFPU()\n");
-	//Reset pacekts
-	recv.ResetPackets();
+	//Execute on the event loop thread and wait
+	transport.GetTimeService().Sync([=](...){
+		//Reset pacekts
+		recv.ResetPackets();
+	});
 	//Drop all paquets queued, we could also hurry up
 	packets.Reset();
 	//Do not wait until next RTCP SR
