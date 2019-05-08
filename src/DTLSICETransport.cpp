@@ -714,8 +714,8 @@ void DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 	//Set pateckt length
 	len += padding;
 	
-	//Set padding size
-	data[len++] = padding;
+	//Set padding size in last byte of the padding
+	data[len-1] = padding;
 
 	//If we don't have an active candidate yet
 	if (!active)
@@ -2365,6 +2365,8 @@ void DTLSICETransport::SetRTT(DWORD rtt)
 	for (auto it : incoming)
 		//Update jitter
 		it.second->SetRTT(rtt);
+	//Add estimation
+	senderSideEstimator.UpdateRTT(0,rtt,getTimeMS());
 }
 
 void DTLSICETransport::SendTransportWideFeedbackMessage(DWORD ssrc)
@@ -2420,7 +2422,7 @@ void DTLSICETransport::Start()
 	endpoint.Init(dcOptions);
 	
 	//Create new probe
-	probingTimer = timeService.CreateTimer(0ms,33ms,[this](...){
+	probingTimer = timeService.CreateTimer(0ms,10ms,[this](...){
 		//Do probe
 		Probe();
 	});
