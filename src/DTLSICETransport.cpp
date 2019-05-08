@@ -39,6 +39,7 @@
 #include "EventLoop.h"
 #include "Endpoint.h"
 #include "VideoLayerSelector.h"
+#include "aac/aacdecoder.h"
 
 DTLSICETransport::DTLSICETransport(Sender *sender,TimeService& timeService) :
 	timeService(timeService),
@@ -1383,6 +1384,8 @@ int DTLSICETransport::SetRemoteCryptoDTLS(const char *setup,const char *hash,con
 	else
 		return Error("-DTLSICETransport::SetRemoteCryptoDTLS | Unknown hash");
 
+	//Starting
+	SetState(DTLSState::Connecting);
 	//Init DTLS
 	return dtls.Init();
 }
@@ -1426,8 +1429,28 @@ void DTLSICETransport::onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMaster
 			SetRemoteCryptoSDES("AEAD_AES_256_GCM",remoteMasterKey,remoteMasterKeySize);
 			break;
 		default:
+			//Error
+			SetState(DTLSState::Failed);
+			//Log
 			Error("-DTLSICETransport::onDTLSSetup() | Unknown suite\n");
+			//Exit
+			return;
 	}
+	
+	//Done
+	SetState(DTLSState::Connected);
+}
+
+void DTLSICETransport::onDTLSSetupError()
+{
+	//Set new state
+	SetState(DTLSState::Failed);
+}
+
+void DTLSICETransport::onDTLSShutdown()
+{
+	//Set new state
+	SetState(DTLSState::Closed);
 }
 
 bool DTLSICETransport::AddOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
@@ -2523,4 +2546,23 @@ void DTLSICETransport::SetBandwidthProbing(bool probe)
 {
 	//Set probing status
 	this->probe = probe;
+}
+
+void DTLSICETransport::SetListener(Listener* listener)
+{
+	//Add in main thread and wait
+	timeService.Sync([=](...){
+		//Store listener
+		this->listener = listener;
+	});
+}
+
+void DTLSICETransport::SetState(DTLSState state)
+{
+	//Store state
+	this->state = state;
+	//If got listener
+	if (listener)
+		//Fire change
+		listener->onDTLSStateChanged(state);
 }

@@ -645,7 +645,9 @@ void DTLSConnection::onSSLInfo(int where, int ret)
 		connection = CONNECTION_EXISTING;
 
 		// Use the keying material to set up key/salt information 
-		SetupSRTP();
+		if (!SetupSRTP())
+			//Error
+			listener.onDTLSSetupError();
 	}
 
 	// NOTE: checking SSL_get_shutdown(this->ssl) & SSL_RECEIVED_SHUTDOWN here upon
@@ -768,7 +770,7 @@ int DTLSConnection::SetupSRTP()
 	memcpy(remoteMasterKey			,remoteKey	,keysalt.first);
 	memcpy(remoteMasterKey+keysalt.first	,remoteSalt	,keysalt.second);
 
-	//Fire eventº
+	//Fire event
 	listener.onDTLSSetup(suite,localMasterKey,total,remoteMasterKey,total);
 
 	return 1;
@@ -814,6 +816,8 @@ int DTLSConnection::Write(const BYTE *buffer, DWORD size)
 	{
 		Debug("-DTLSConnection::Write() | SSL_RECEIVED_SHUTDOWN on instance '%p', resetting SSL\n", this);
 		SSL_clear(ssl);
+		//Fire eventº
+		listener.onDTLSShutdown();
 		return 0;
 	}
 

@@ -1207,3 +1207,11 @@ void RTPTransport::onDTLSPendingData()
 	}
 		
 }
+void RTPTransport::onDTLSSetupError()
+{
+	
+}
+void RTPTransport::onDTLSShutdown()
+{
+	
+}

@@ -38,6 +38,21 @@ class DTLSICETransport :
 	public ICERemoteCandidate::Listener
 {
 public:
+	enum DTLSState
+	{
+		New,
+		Connecting,
+		Connected,
+		Closed,
+		Failed
+	};
+	
+	class Listener
+	{
+	public:
+		virtual void onDTLSStateChanged(const DTLSState) = 0;
+		virtual ~Listener() = default;
+	};
 	class Sender
 	{
 	public:
@@ -82,13 +97,18 @@ public:
 	
 	virtual void onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMasterKey,DWORD localMasterKeySize,BYTE* remoteMasterKey,DWORD remoteMasterKeySize)  override;
 	virtual void onDTLSPendingData() override;
+	virtual void onDTLSSetupError() override;
+	virtual void onDTLSShutdown() override;
 	virtual int onData(const ICERemoteCandidate* candidate,const BYTE* data,DWORD size)  override;
 	
 	DWORD GetRTT() const { return rtt; }
 	
 	TimeService& GetTimeService() { return timeService; }
+	
+	void SetListener(Listener* listener);
 
 private:
+	void SetState(DTLSState state);
 	void Probe();
 	int Send(RTPPacket::shared&& packet);
 	int Send(const RTCPCompoundPacket::shared& rtcp);
@@ -151,8 +171,10 @@ private:
 	TimeService&	timeService;
 	datachannels::impl::Endpoint endpoint;
 	datachannels::Endpoint::Options dcOptions;
-	Sender*		sender;
+	Listener*	listener = nullptr;
+	Sender*		sender = nullptr;
 	DTLSConnection	dtls;
+	DTLSState	state = DTLSState::New;
 	Maps		sendMaps;
 	Maps		recvMaps;
 	ICERemoteCandidate* active			= nullptr;
