@@ -106,6 +106,32 @@ int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet, DWORD siz
 	return lost;
 }
 
+void RTPIncomingSourceGroup::Bye(DWORD ssrc)
+{
+	if (ssrc == media.ssrc)
+	{
+		//Reset source
+		media.Reset();
+		//REset packets
+		ResetPackets();
+		//Reset 
+		{
+			//Block listeners
+			ScopedLock scoped(listenerMutex);
+			//Deliver to all listeners
+			for (auto listener : listeners)
+				//Dispatch rtp packet
+				listener->onBye(this);
+		}
+	} else if (ssrc == rtx.ssrc) {
+		//Reset source
+		rtx.Reset();
+	} else if (ssrc == fec.ssrc) {
+		//Reset source
+		fec.Reset();
+	}
+}
+
 void RTPIncomingSourceGroup::ResetPackets()
 {
 	//Reset packet queue and lost count

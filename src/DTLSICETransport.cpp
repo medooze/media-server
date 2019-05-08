@@ -2107,7 +2107,21 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 			case RTCPPacket::SDES:
 				break;
 			case RTCPPacket::Bye:
+			{
+				//Get bye
+				auto bye = std::static_pointer_cast<RTCPBye>(packet);
+				//For each ssrc
+				for (auto& ssrc : bye->GetSSRCs())
+				{
+					//Get media
+					RTPIncomingSourceGroup* group = GetIncomingSourceGroup(ssrc);
+					//If found
+					if (group)
+						//Reset it
+						group->Bye(ssrc);
+				}
 				break;
+			}
 			case RTCPPacket::App:
 				break;
 			case RTCPPacket::RTPFeedback:

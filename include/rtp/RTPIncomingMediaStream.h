@@ -32,6 +32,7 @@ public:
 			for (const auto packet : packets)
 				onRTP(stream,packet);
 		};
+		virtual void onBye(RTPIncomingMediaStream* stream) = 0;
 		virtual void onEnded(RTPIncomingMediaStream* stream) = 0;
 	};
 	virtual ~RTPIncomingMediaStream() = default;

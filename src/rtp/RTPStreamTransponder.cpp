@@ -114,7 +114,7 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 	//Check if it is an empty packet
 	if (!packet->GetMediaLength())
 	{
-		Debug("-StreamTransponder::onRTP dropping empty packet\n");
+		UltraDebug("-StreamTransponder::onRTP() | dropping empty packet\n");
 		//Drop it
 		dropped++;
 		//Exit
@@ -134,6 +134,7 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 	//If we need to reset
 	if (reset)
 	{
+		Debug("-StreamTransponder::onRTP() | Reset stream\n");
 		//IF last was not completed
 		if (!lastCompleted && type==MediaFrame::Video)
 		{
@@ -202,7 +203,7 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 		//Get first timestamp
 		firstTimestamp = packet->GetTimestamp();
 		
-		UltraDebug("-first seq:%lu base:%lu last:%lu ts:%lu baseSeq:%lu baseTimestamp:%llu lastTimestamp:%llu\n",firstExtSeqNum,baseExtSeqNum,lastExtSeqNum,firstTimestamp,baseExtSeqNum,baseTimestamp,lastTimestamp);
+		UltraDebug("-StreamTransponder::onRTP() | first seq:%lu base:%lu last:%lu ts:%lu baseSeq:%lu baseTimestamp:%llu lastTimestamp:%llu\n",firstExtSeqNum,baseExtSeqNum,lastExtSeqNum,firstTimestamp,baseExtSeqNum,baseTimestamp,lastTimestamp);
 	}
 	
 	//Ensure it is not before first one
@@ -251,10 +252,10 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 	//Set normalized seq num
 	extSeqNum = baseExtSeqNum + (extSeqNum - firstExtSeqNum) - dropped;
 	
-	//UltraDebug("-ext seq:%lu base:%lu first:%lu current:%lu dropped:%lu\n",extSeqNum,baseExtSeqNum,firstExtSeqNum,packet->GetExtSeqNum(),dropped);
-	
 	//Set normailized timestamp
 	uint64_t timestamp = baseTimestamp + (packet->GetTimestamp()-firstTimestamp);
+	
+	//UltraDebug("-ext seq:%lu base:%lu first:%lu current:%lu dropped:%lu ts:%lu normalized:%llu\n",extSeqNum,baseExtSeqNum,firstExtSeqNum,packet->GetExtSeqNum(),dropped,packet->GetTimestamp(),timestamp);
 	
 	//Rewrite pict id
 	bool rewitePictureIds = false;
@@ -328,6 +329,19 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 			//Move it
 			return std::move(cloned);
 		});
+}
+
+void RTPStreamTransponder::onBye(RTPIncomingMediaStream* stream)
+{
+	ScopedLock lock(mutex);
+	
+	//If they are the not same
+	if (this->incoming!=stream)
+		//DO nothing
+		return;
+	
+	//Reset packets
+	reset = true;
 }
 
 void RTPStreamTransponder::onEnded(RTPIncomingMediaStream* stream)

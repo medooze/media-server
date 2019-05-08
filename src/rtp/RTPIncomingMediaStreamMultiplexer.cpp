@@ -54,6 +54,19 @@ void RTPIncomingMediaStreamMultiplexer::onRTP(RTPIncomingMediaStream* stream,con
 }
 
 
+void RTPIncomingMediaStreamMultiplexer::onBye(RTPIncomingMediaStream* stream)
+{
+	//Dispatch in thread async
+	timeService.Async([=](...){
+		//Block listeners
+		ScopedLock scoped(listenerMutex);
+		//Deliver to all listeners
+		for (auto listener : listeners)
+			//Dispatch rtp packet
+			listener->onBye(this);
+	});
+}
+
 
 void RTPIncomingMediaStreamMultiplexer::onEnded(RTPIncomingMediaStream* stream)
 {

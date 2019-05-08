@@ -29,7 +29,7 @@ public:
 	virtual DWORD GetMediaSSRC() override { return media.ssrc; }
 	int AddPacket(const RTPPacket::shared &packet, DWORD size);
 	RTPIncomingSource* Process(RTPPacket::shared &packet);
-	
+	void Bye(DWORD ssrc);
 	
 	void ResetPackets();
 	void Update();
