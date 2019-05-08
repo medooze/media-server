@@ -85,6 +85,12 @@ retry:
 		//retry
 		goto retry;
 	}
+	//Get ip and ports
+	originIp	= get4(data,26);
+	destIp		= get4(data,30);
+	originPort	= get2(data,34);
+	destPort	= get2(data,36);
+	
 	//The udp packet
 	packet	  = data + 42;
 	packetLen = udpLen - 8;
