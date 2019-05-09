@@ -41,16 +41,13 @@
 #include "VideoLayerSelector.h"
 
 DTLSICETransport::DTLSICETransport(Sender *sender,TimeService& timeService) :
+	sender(sender),
 	timeService(timeService),
 	endpoint(timeService),
 	dtls(*this,timeService,endpoint.GetTransport()),
 	incomingBitrate(1000),
 	outgoingBitrate(1000)
 {
-	//Store sender
-	this->sender = sender;
-	//Add dummy stream to stimator
-	senderSideEstimator.AddStream(0);
 }
 
 DTLSICETransport::~DTLSICETransport()
@@ -59,7 +56,6 @@ DTLSICETransport::~DTLSICETransport()
 	Reset();
 	Stop();
 }
-
 
 void DTLSICETransport::onDTLSPendingData()
 {
@@ -456,8 +452,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		transportWideReceivedPacketsStats[transportExtSeqNum] = PacketStats::Create(packet,size,now);
 		
 		//If we have enought or timeout (500ms)
-		//TODO: Implement timer
-		if (transportWideReceivedPacketsStats.size()>20 || (now-transportWideReceivedPacketsStats.begin()->second->time)>5E5)
+		if (packet->GetMark()  || transportWideReceivedPacketsStats.size()>100 || (now-transportWideReceivedPacketsStats.begin()->second->time)>5E5)
 			//Send feedback message
 			SendTransportWideFeedbackMessage(ssrc);
 	}
@@ -508,11 +503,8 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 
 	//Check if it was rejected
 	if (lost<0)
-	{
-		UltraDebug("-DTLSICETransport::onData() | Dropped packet [orig:%u,ssrc:%u,seq:%d,rtx:%d]\n",ssrc,packet->GetSSRC(),packet->GetSeqNum(),ssrc==group->rtx.ssrc);
 		//Increase rejected counter
 		source->dropPackets++;
-	} 
 	
 	//Get current time
 	auto now = getTime();
@@ -690,7 +682,7 @@ void DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 	//Comprobamos que quepan
 	if (!n)
 		//Error
-		return (void)Error("-DTLSICETransport::ReSendPacket() | Error serializing rtp headers\n");
+		return (void)Error("-DTLSICETransport::SendProbe() | Error serializing rtp headers\n");
 
 	//Inc len
 	len += n;
@@ -703,7 +695,7 @@ void DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 		//Comprobamos que quepan
 		if (!n)
 			//Error
-			return (void)Error("-DTLSICETransport::ReSendPacket() | Error serializing rtp extension headers\n");
+			return (void)Error("-DTLSICETransport::SendProbe() | Error serializing rtp extension headers\n");
 		//Inc len
 		len += n;
 	}
@@ -767,24 +759,17 @@ void DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 	if (extension.hasTransportWideCC)
 	{
 		//Create stat
-		auto stats = std::make_shared<PacketStats>();
-		//Fill
-		stats->transportWideSeqNum	= extension.transportSeqNum;
-		stats->ssrc			= header.ssrc;
-		stats->extSeqNum		= extSeqNum;
-		stats->size			= len;
-		stats->payload			= 0;
-		stats->timestamp		= header.timestamp;
-		stats->time			= now;
-		stats->mark			= false;
+		auto stats = PacketStats::Create(
+			extension.transportSeqNum,
+			header.ssrc,
+			extSeqNum,
+			len,
+			0,
+			header.timestamp,
+			now,false
+		);
 		//Add new stat
-		transportWideSentPacketsStats[extension.transportSeqNum] = stats;
-		//Protect against missing feedbacks, remove too old lost packets
-		auto it = transportWideSentPacketsStats.begin();
-		//If we have more than 1s diff
-		while(it!=transportWideSentPacketsStats.end() && (now-it->second->time)>1E6)
-			//Erase it and move iterator
-			it = transportWideSentPacketsStats.erase(it);
+		senderSideBandwidthEstimator.SentPacket(stats);
 	}
 }
 
@@ -812,7 +797,9 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 		//Done
 		return;
 	}
-
+	
+	//Get current time
+	auto now = getTime();
 
 	//Overrride headers
 	RTPHeader		header(packet->GetRTPHeader());
@@ -860,7 +847,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 		header.extension = true;
 		//Set abs send time
 		extension.hasAbsSentTime = true;
-		extension.absSentTime = getTimeMS();
+		extension.absSentTime = now/1000;
 	}
 	
 	//Send buffer
@@ -921,7 +908,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	//If dumping
 	if (dumper && dumpOutRTP)
 		//Write udp packet
-		dumper->WriteUDP(getTimeMS(),0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len);
+		dumper->WriteUDP(now/1000,0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len);
 
 	//Encript
 	len = send.ProtectRTP(data,len);
@@ -934,13 +921,17 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	//Store candidate before unlocking
 	ICERemoteCandidate* candidate = active;
 
-	//Update bitrate
-	outgoingBitrate.Update(getTimeMS(),len);
 	//Set buffer size
 	buffer.SetSize(len);
 	//No error yet, send packet
 	sender->Send(candidate,std::move(buffer));
 	
+	//Update current time after sending
+	now = getTime();
+	
+	//Update bitrate
+	outgoingBitrate.Update(now/1000,len);
+		
         //Synchronized
 	{
 		//Block scope
@@ -950,33 +941,25 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
                 source.lastPayloadType  = packet->GetPayloadType();
 	
                 //Update stats
-                source.Update(getTimeMS(),header.sequenceNumber,len);
+                source.Update(now/1000,header.sequenceNumber,len);
         }
 	
 	//Add to transport wide stats
 	if (extension.hasTransportWideCC)
 	{
-		//Get current time
-		auto now = getTime();
-		//Create stat
-		auto stats = std::make_shared<PacketStats>();
-		//Fill
-		stats->transportWideSeqNum	= extension.transportSeqNum;
-		stats->ssrc			= header.ssrc;
-		stats->extSeqNum		= extSeqNum;
-		stats->size			= len;
-		stats->payload			= packet->GetMediaLength();
-		stats->timestamp		= header.timestamp;
-		stats->time			= now;
-		stats->mark			= false;
+		//Create stats
+		auto stats = PacketStats::Create(
+			extension.transportSeqNum,
+			header.ssrc,
+			extSeqNum,
+			len,
+			0,
+			header.timestamp,
+			now,
+			false
+		);
 		//Add new stat
-		transportWideSentPacketsStats[extension.transportSeqNum] = stats;
-		//Protect against missing feedbacks, remove too old lost packets
-		auto it = transportWideSentPacketsStats.begin();
-		//If we have more than 1s diff
-		while(it!=transportWideSentPacketsStats.end() && (now-it->second->time)>1E6)
-			//Erase it and move iterator
-			it = transportWideSentPacketsStats.erase(it);
+		senderSideBandwidthEstimator.SentPacket(stats);
 	}
 }
 
@@ -1980,14 +1963,10 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 	//Check if we are using transport wide for this packet
 	if (packet->HasTransportWideCC())
 	{
+		//Create stats
+		auto stats = PacketStats::Create(packet,len,now);
 		//Add new stat
-		transportWideSentPacketsStats[packet->GetTransportSeqNum()] = PacketStats::Create(packet,len,now);
-		//Protect against missing feedbacks, remove too old lost packets
-		auto it = transportWideSentPacketsStats.begin();
-		//If we have more than 1s diff
-		while(it!=transportWideSentPacketsStats.end() && (now-it->second->time)>1E6)
-			//Erase it and move iterator
-			it = transportWideSentPacketsStats.erase(it);
+		senderSideBandwidthEstimator.SentPacket(stats);
 	}
 
 	//Get time for packets to discard, always have at least 200ms, max 500ms
@@ -2195,34 +2174,8 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 						{
 							//Get field
 							auto field = fb->GetField<RTCPRTPFeedback::TransportWideFeedbackMessageField>(i);
-							//Lost count
-							QWORD last = field->referenceTime;
-							//For each packet
-							for (auto& remote : field->packets)
-							{
-								//Get packets stats
-								auto it = transportWideSentPacketsStats.find(remote.first);
-								//If found
-								if (it!=transportWideSentPacketsStats.end())
-								{
-									//Get stats
-									auto stat = it->second;
-									//Check if it was lost
-									if (remote.second)
-									{
-										//UltraDebug("-Update seq:%d,sent:%llu,ts:%ll,size:%d\n",remote.first,remote.second/1000,stat->time/1000,stat->size);
-										//Add it to sender side estimator
-										senderSideEstimator.Update(0,remote.second/1000,stat->time/1000,stat->size,stat->mark);
-										//Update last
-										last = remote.second;
-									} else {
-										//Updateu
-										senderSideEstimator.UpdateLost(0,1,last/1000);
-									}
-									//Erase it
-									transportWideSentPacketsStats.erase(it);
-								}
-							}
+							//Pass it to the estimator
+							senderSideBandwidthEstimator.ReceivedFeedback(field->feedbackPacketCount,field->packets);
 						}
 						break;
 				}
@@ -2402,7 +2355,7 @@ void DTLSICETransport::SetRTT(DWORD rtt)
 		//Update jitter
 		it.second->SetRTT(rtt);
 	//Add estimation
-	senderSideEstimator.UpdateRTT(0,rtt,getTimeMS());
+	senderSideBandwidthEstimator.UpdateRTT(rtt);
 }
 
 void DTLSICETransport::SendTransportWideFeedbackMessage(DWORD ssrc)
@@ -2507,13 +2460,15 @@ void DTLSICETransport::Probe()
 		uint64_t sleep = probingTimer->GetRepeat().count();
 		//Get bitrates
 		DWORD bitrate   = static_cast<DWORD>(outgoingBitrate.GetInstantAvg());
-		DWORD estimated = senderSideEstimator.GetEstimatedBitrate();
+		DWORD estimated = senderSideBandwidthEstimator.GetEstimatedBitrate();
 
 		//Probe the first 5s to 312kbps
 		if (getDifTime(&ini)<5E6)
 			//Increase stimation
-			estimated = std::max(estimated,bitrate+3120000);
+			estimated = std::max(estimated,bitrate+312000);
 
+		//UltraDebug("-DTLSICETransport::Probe() | [estimated:%u,bitrate:%d]\n",estimated,bitrate);
+			
 		//If we can still send more
 		if (estimated>bitrate)
 		{
@@ -2521,7 +2476,7 @@ void DTLSICETransport::Probe()
 			DWORD probingBitrate = maxProbingBitrate ? std::min(estimated-bitrate,maxProbingBitrate) : estimated-bitrate;
 
 			//Get number of probes, do not send more than 32 continoues packets (~aprox 2mpbs)
-			BYTE num = std::min<QWORD>((probingBitrate*sleep)/(8000*size),32);
+			BYTE num = std::min<QWORD>((probingBitrate*sleep)/(8000*size)+1,32);
 
 			//Check if we have an outgpoing group
 			for (auto &group : outgoing)
@@ -2529,7 +2484,7 @@ void DTLSICETransport::Probe()
 				//We can only probe on rtx with video
 				if (group.second->type == MediaFrame::Video)
 				{
-					//UltraDebug("-DTLSICETransport::Run() | Sending probing packets [estimated:%u,bitrate:%u,probing:%u,max:%u,num:%d,sleep:%d]\n", estimated, bitrate,probingBitrate,maxProbingBitrate, num, sleep);
+					//UltraDebug("-DTLSICETransport::Probe() | Sending probing packets [estimated:%u,bitrate:%u,probing:%u,max:%u,num:%d,sleep:%d]\n", estimated, bitrate,probingBitrate,maxProbingBitrate, num, sleep);
 					//Set all the probes
 					for (BYTE i=0;i<num;++i)
 						//Send probe packet
