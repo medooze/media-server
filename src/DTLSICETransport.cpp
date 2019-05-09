@@ -39,7 +39,6 @@
 #include "EventLoop.h"
 #include "Endpoint.h"
 #include "VideoLayerSelector.h"
-#include "aac/aacdecoder.h"
 
 DTLSICETransport::DTLSICETransport(Sender *sender,TimeService& timeService) :
 	timeService(timeService),
