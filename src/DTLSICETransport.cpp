@@ -1801,9 +1801,6 @@ int DTLSICETransport::SendPLI(DWORD ssrc)
 		//And number of requested plis
 		group->media.totalPLIs++;
 
-		//Drop all pending and lost packets
-		group->ResetPackets();
-
 		//Create rtcp sender retpor
 		auto rtcp = RTCPCompoundPacket::Create();
 

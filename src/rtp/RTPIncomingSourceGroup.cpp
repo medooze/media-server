@@ -71,11 +71,6 @@ int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet, DWORD siz
 		//Do nothing else
 		return 0;
 	
-	//Add to packet queue
-	if (!packets.Add(packet))
-		//Rejected packet
-		return -1;
-	
 	//Add to lost packets
 	auto lost = losts.AddPacket(packet);
 	
@@ -91,6 +86,11 @@ int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet, DWORD siz
 		//Update lost
 		if (lost) remoteRateEstimator.UpdateLost(media.ssrc,lost,now);
 	}
+	
+	//Add to packet queue
+	if (!packets.Add(packet))
+		//Rejected packet
+		return -1;
 	
 	//Get next time for dispatcht
 	uint64_t next = packets.GetWaitTime(now);
