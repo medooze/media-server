@@ -22,6 +22,7 @@ public:
 	int Start();
 	virtual void onRTP(RTPIncomingMediaStream* stream,const RTPPacket::shared& packet);
 	virtual void onEnded(RTPIncomingMediaStream* stream);
+	virtual void onBye(RTPIncomingMediaStream* stream);
 	int Stop();
 	
 	void SetAACConfig(const uint8_t* data,const size_t size);
