@@ -29,6 +29,7 @@ void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const st
 		//Get feedback data
 		auto transportSeqNum	= feedback.first;
 		auto receivedTime	= feedback.second; 
+		
 		//Get packets stats
 		auto it = transportWideSentPacketsStats.find(transportSeqNum);
 		//If found
@@ -36,28 +37,59 @@ void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const st
 		{
 			//Get stats
 			const auto& stat = it->second;
-			//Check if it was lost
+			//Get sent time
+			const auto sentTime = stat->time;
+			
+			//Check first feedback received
+			if (!firstSent)
+				firstSent = sentTime;
+			if (!firstRecv)
+				firstRecv = receivedTime;
+			
+			//Correc ts
+			auto sent = sentTime - firstSent;
+			auto recv = receivedTime - firstRecv;
+			
+			//Check if it was not lost
 			if (receivedTime)
 			{
-				//UltraDebug("-Update seq:%d,sent:%llu,ts:%ll,size:%d\n",remote.first,remote.second/1000,stat->time/1000,stat->size);
+				//Get deltas
+				auto deltaSent = sent - prevSent;
+				auto deltaRecv = recv - prevRecv;
+				auto delta = deltaRecv - deltaSent;
+
+				
+				
 				//Add it to sender side estimator
-				estimator.Update(0,receivedTime/1000,stat->time/1000,stat->size,stat->mark);
-				//store last one
-				last = stat->time;
+				estimator.Update(0,receivedTime/1000,sentTime/1000,stat->size,stat->mark);
+				
+				//Update last received time
+				lastRecv = receivedTime;
+				//And previous
+				prevSent = sent;
+				prevRecv = recv;
+				//Dump stats
+				//UltraDebug("#%u sent:%.8lu (+%.6lu) recv:%.8lu (+%.6lu) delta:%.6ld fb:%u, size:%u, bwe:%u\n",transportSeqNum,sent,deltaSent,recv,deltaRecv,delta,feedbackNum, stat->size, estimator.GetEstimatedBitrate());
 			} else {
+				//Dump stats
+				//UltraDebug("#%u sent:%.8lu (+%.6lu) recv:%.8lu (+%.6lu) delta:%.6ld fb:%u, size:%u\n",transportSeqNum,sent,0,recv,0,0,feedbackNum, stat->size);
 				lost++;
 			}
+			
+			//store last one
+			lastSent = stat->time;
+			
 			//Erase it
 			transportWideSentPacketsStats.erase(it);
 		}
 	}
 	//If any lost
-	estimator.UpdateLost(0,lost,last/1000);
+	estimator.UpdateLost(0,lost,lastRecv/1000);
 }
 
 void SendSideBandwidthEstimation::UpdateRTT(uint32_t rtt)
 {
-	estimator.UpdateRTT(0,rtt,last/1000);
+	estimator.UpdateRTT(0,rtt,lastRecv/1000);
 }
 
 uint32_t SendSideBandwidthEstimation::GetEstimatedBitrate()

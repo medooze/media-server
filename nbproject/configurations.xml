@@ -347,6 +347,7 @@
         <in>audiotransrater.cpp</in>
         <in>avcdescriptor.cpp</in>
         <in>broadcastsession.cpp</in>
+        <in>bwe.cpp</in>
         <in>cpim.cpp</in>
         <in>crc32calc.cpp</in>
         <in>dtls.cpp</in>
@@ -411,7 +412,6 @@
         <in>vp8.cpp</in>
         <in>vp9.cpp</in>
       </df>
-      <in>bwe.cpp</in>
       <in>eventloop.cpp</in>
     </df>
     <logicalFolder name="ExternalFiles"
@@ -502,8 +502,6 @@
           <preBuildCommand></preBuildCommand>
         </preBuild>
       </makefileType>
-      <item path="bwe.cpp" ex="false" tool="1" flavor2="0">
-      </item>
       <item path="ext/crc32c/src/crc32c.cc" ex="false" tool="1" flavor2="11">
         <ccTool flags="3">
         </ccTool>
@@ -1170,6 +1168,8 @@
             <Elem>DARWIN</Elem>
           </preprocessorList>
         </ccTool>
+      </item>
+      <item path="src/bwe.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/core/VideoEncoderWorker.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="4">
@@ -2546,8 +2546,6 @@
           <preBuildCommand></preBuildCommand>
         </preBuild>
       </makefileType>
-      <item path="bwe.cpp" ex="false" tool="1" flavor2="0">
-      </item>
       <item path="ext/crc32c/src/crc32c.cc" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
         </ccTool>
@@ -3624,6 +3622,8 @@
             <Elem>__STDC_CONSTANT_MACROS</Elem>
           </preprocessorList>
         </ccTool>
+      </item>
+      <item path="src/bwe.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/core/VideoEncoderWorker.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="2">
@@ -5719,8 +5719,6 @@
           <preBuildCommand></preBuildCommand>
         </preBuild>
       </makefileType>
-      <item path="bwe.cpp" ex="false" tool="1" flavor2="0">
-      </item>
       <item path="ext/crc32c/src/crc32c.cc" ex="false" tool="1" flavor2="11">
         <ccTool flags="0">
         </ccTool>
@@ -7893,6 +7891,8 @@
             <Elem>__STDC_CONSTANT_MACROS</Elem>
           </preprocessorList>
         </ccTool>
+      </item>
+      <item path="src/bwe.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/core/VideoEncoderWorker.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
@@ -10479,7 +10479,7 @@
         </ccTool>
       </item>
     </conf>
-    <conf name="Copy_of_test" type="0">
+    <conf name="bwe" type="0">
       <toolsSet>
         <compilerSet>GNU|GNU</compilerSet>
         <dependencyChecking>false</dependencyChecking>
@@ -10502,7 +10502,7 @@
           <buildCommandWorkingDir>R:/usr/local/src/medooze/mcu</buildCommandWorkingDir>
           <buildCommand>${MAKE} -f Makefile bwe -j 4</buildCommand>
           <cleanCommand>${MAKE} -f Makefile clean</cleanCommand>
-          <executablePath>bin/release/eventloop</executablePath>
+          <executablePath>bin/release/bwe</executablePath>
           <cTool>
             <incDir>
               <pElem>src</pElem>
@@ -10542,28 +10542,6 @@
           <preBuildCommand></preBuildCommand>
         </preBuild>
       </makefileType>
-      <item path="bwe.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="2">
-          <incDir>
-            <pElem>ext/libdatachannels/src/internal</pElem>
-            <pElem>ext/crc32c/include</pElem>
-            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>DARWIN</Elem>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </item>
       <item path="eventloop.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="2">
           <incDir>
@@ -11032,8 +11010,6 @@
           </preprocessorList>
         </ccTool>
       </folder>
-      <item path="include/rtp/PacketStats.h" ex="false" tool="3" flavor2="0">
-      </item>
       <item path="src/ActiveSpeakerDetector.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
@@ -11406,10 +11382,26 @@
             ex="false"
             tool="1"
             flavor2="11">
-        <ccTool flags="4">
+        <ccTool flags="2">
           <incDir>
+            <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem></pElem>
           </incDir>
+          <preprocessorList>
+            <Elem>DARWIN</Elem>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
         </ccTool>
       </item>
       <item path="src/VideoCodecFactory.cpp" ex="false" tool="1" flavor2="11">
@@ -11657,6 +11649,28 @@
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
             <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>DARWIN</Elem>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/bwe.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="2">
+          <incDir>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
@@ -12917,7 +12931,7 @@
             ex="false"
             tool="1"
             flavor2="11">
-        <ccTool flags="1">
+        <ccTool flags="2">
           <incDir>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>

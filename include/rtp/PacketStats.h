@@ -23,7 +23,7 @@ struct PacketStats
 		return stats;
 	}
 	
-	static PacketStats::shared Create(uint32_t transportWideSeqNum, uint32_t ssrc,uint32_t extSeqNum, uint32_t timestamp, bool mark, uint32_t size, uint32_t payload, uint64_t now)
+	static PacketStats::shared Create(uint32_t transportWideSeqNum, uint32_t ssrc,uint32_t extSeqNum, uint32_t size, uint32_t payload, uint32_t timestamp, uint64_t now, bool mark)
 	{
 		//Create stat
 		auto stats = std::make_shared<PacketStats>();
@@ -35,7 +35,7 @@ struct PacketStats
 		stats->payload			= payload;
 		stats->timestamp		= timestamp;
 		stats->time			= now;
-		stats->mark			= false;
+		stats->mark			= mark;
 
 		return stats;
 	}

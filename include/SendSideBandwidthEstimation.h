@@ -22,7 +22,12 @@ public:
 private:
 	std::map<DWORD,PacketStats::shared> transportWideSentPacketsStats;
 	RemoteRateEstimator estimator;
-	uint64_t last = 0;
+	uint64_t firstSent = 0;
+	uint64_t lastSent = 0;
+	uint64_t firstRecv = 0;
+	uint64_t lastRecv = 0;
+	uint64_t prevSent = 0;
+	uint64_t prevRecv = 0;
 	
 };
 
