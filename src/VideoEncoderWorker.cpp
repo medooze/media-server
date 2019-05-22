@@ -5,7 +5,7 @@
  * Created on 12 de agosto de 2014, 10:32
  */
 
-#include "core/VideoEncoderWorker.h"
+#include "VideoEncoderWorker.h"
 #include "log.h"
 #include "tools.h"
 #include "acumulator.h"
@@ -13,11 +13,6 @@
 
 VideoEncoderWorker::VideoEncoderWorker() 
 {
-	//Nothing
-	input = NULL;
-	encoding = false;
-	sendFPU = false;
-	codec = (VideoCodec::Type)-1;
 	//Create objects
 	pthread_mutex_init(&mutex,NULL);
 	pthread_cond_init(&cond,NULL);
@@ -35,15 +30,28 @@ int VideoEncoderWorker::Init(VideoInput *input)
 {
 	//Store it
 	this->input = input;
+	//Done
+	return true;
 }
 
 int VideoEncoderWorker::SetCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int intraPeriod, const Properties& properties)
 {
-	Log("-SetVideoCodec [%s,%d,%d,%d,%d,]\n",VideoCodec::GetNameFor(codec),codec,fps,bitrate,intraPeriod);
+	return SetVideoCodec(codec,GetWidth(mode),GetHeight(mode),fps,bitrate,intraPeriod,properties);
+}
 
+int VideoEncoderWorker::SetVideoCodec(VideoCodec::Type codec, int width, int height, int fps,int bitrate,int intraPeriod, const Properties& properties)
+{
+	Log("-VideoEncoderWorker::SetCodec() [%s,width:%d,height:%d,fps:%d,bitrate:%d,intraPeriod:%d]\n",VideoCodec::GetNameFor(codec),width,height,fps,bitrate,intraPeriod);
+
+	//Check size
+	if (!width || !height)
+		//Error
+		return Error("Wrong size\n");
+	
 	//Store parameters
 	this->codec	  = codec;
-	this->mode	  = mode;
+	this->width	  = width;
+	this->height	  = height;
 	this->bitrate	  = bitrate;
 	this->fps	  = fps;
 	this->intraPeriod = intraPeriod;
@@ -53,24 +61,19 @@ int VideoEncoderWorker::SetCodec(VideoCodec::Type codec,int mode,int fps,int bit
         //Store properties
         this->properties  = properties;
 
-	//Get width and height
-	width = GetWidth(mode);
-	height = GetHeight(mode);
-
-	//Check size
-	if (!width || !height)
-		//Error
-		return Error("Unknown video mode\n");
-	//Exit
+	//Good
 	return 1;
 }
 
 int VideoEncoderWorker::Start()
 {
+	Log("-VideoEncoderWorker::Start()\n");
+	
 	//Check
 	if (!input)
 		//Exit
-		return Error("null video input");
+		return Error("-VideoEncoderWorker::Start() Error: null video input");
+	
 	
 	//Check if need to restart
 	if (encoding)
@@ -88,7 +91,6 @@ int VideoEncoderWorker::Start()
 
 void * VideoEncoderWorker::startEncoding(void *par)
 {
-	Log("VideoEncoderWorkerThread [%p]\n",pthread_self());
 	//Get worker
 	VideoEncoderWorker *worker = (VideoEncoderWorker *)par;
 	//Block all signals
@@ -101,7 +103,7 @@ void * VideoEncoderWorker::startEncoding(void *par)
 
 int VideoEncoderWorker::Stop()
 {
-	Log(">Stop VideoEncoderWorker\n");
+	Log(">VideoEncoderWorker::Stop()\n");
 
 	//If we were started
 	if (encoding)
@@ -119,7 +121,7 @@ int VideoEncoderWorker::Stop()
 		pthread_join(thread,NULL);
 	}
 
-	Log("<Stop VideoEncoderWorker\n");
+	Log("<VideoEncoderWorker::Stop()\n");
 
 	return 1;
 }
@@ -133,6 +135,9 @@ int VideoEncoderWorker::End()
 
 	//Set null
 	input = NULL;
+	
+	//Done
+	return 1;
 }
 
 int VideoEncoderWorker::Encode()
@@ -147,7 +152,7 @@ int VideoEncoderWorker::Encode()
 	Acumulator bitrateAcu(1000);
 	Acumulator fpsAcu(1000);
 
-	Log(">SendVideo [width:%d,size:%d,bitrate:%d,fps:%d,intra:%d]\n",width,height,bitrate,fps,intraPeriod);
+	Log(">VideoEncoderWorker::Encode() [width:%d,size:%d,bitrate:%d,fps:%d,intra:%d]\n",width,height,bitrate,fps,intraPeriod);
 
 	//Creamos el encoder
 	VideoEncoder* videoEncoder = VideoCodecFactory::CreateEncoder(codec,properties);
@@ -185,9 +190,6 @@ int VideoEncoderWorker::Encode()
 
 	//Fist FPU
 	gettimeofday(&lastFPU,NULL);
-
-	//Started
-	Log("-Sending video\n");
 
 	//Mientras tengamos que capturar
 	while(encoding)
@@ -316,10 +318,22 @@ int VideoEncoderWorker::Encode()
 		//Set frame timestamp
 		videoFrame->SetTimestamp(getDifTime(&first)/1000);
 		
-		//Check if we have mediaListener
-		if (mediaListener)
-			//Call it
-			mediaListener->onMediaFrame(*videoFrame);
+		//Lock
+		pthread_mutex_lock(&mutex);
+
+		//For each listener
+		for (Listeners::iterator it=listeners.begin(); it!=listeners.end(); ++it)
+		{
+			//Get listener
+			MediaFrame::Listener* listener =  *it;
+			//If was not null
+			if (listener)
+				//Call listener
+				listener->onMediaFrame(*videoFrame);
+		}
+
+		//unlock
+		pthread_mutex_unlock(&mutex);
 
 		//Set sending time of previous frame
 		getUpdDifTime(&prev);
@@ -332,13 +346,13 @@ int VideoEncoderWorker::Encode()
 			//Cap it
 			sendingTime = frameTime/1000;
 
-                //If it was a I frame
-                if (videoFrame->IsIntra())
-			//Clean rtp rtx buffer
-			FlushRTXPackets();
-
-		//Send it smoothly
-		SmoothFrame(videoFrame,sendingTime);
+//                //If it was a I frame
+//                if (videoFrame->IsIntra())
+//			//Clean rtp rtx buffer
+//			FlushRTXPackets();
+//
+//		//Send it smoothly
+//		SmoothFrame(videoFrame,sendingTime);
 
 		//Dump statistics
 		if (num && ((num%fps*10)==0))
@@ -350,8 +364,6 @@ int VideoEncoderWorker::Encode()
 		num++;
 	}
 
-	Log("-SendVideo out of loop\n");
-
 	//Terminamos de capturar
 	input->StopVideoCapture();
 
@@ -361,13 +373,10 @@ int VideoEncoderWorker::Encode()
 		delete videoEncoder;
 
 	//Salimos
-	Log("<SendVideo [%d]\n",encoding);
-}
-
-int VideoEncoderWorker::SetMediaListener(MediaFrame::Listener *listener)
-{
-	//Set it
-	this->mediaListener = listener;
+	Log("<VideoEncoderWorker::Encode()  [%d]\n",encoding);
+	
+	//Done
+	return 1;
 }
 
 int VideoEncoderWorker::SetTemporalBitrateLimit(int estimation)
@@ -379,6 +388,41 @@ int VideoEncoderWorker::SetTemporalBitrateLimit(int estimation)
 	//Exit
 	return 1;
 }
+
+bool VideoEncoderWorker::AddListener(MediaFrame::Listener *listener)
+{
+	//Lock
+	pthread_mutex_lock(&mutex);
+
+	//Add to set
+	listeners.insert(listener);
+
+	//unlock
+	pthread_mutex_unlock(&mutex);
+
+	return true;
+}
+
+bool VideoEncoderWorker::RemoveListener(MediaFrame::Listener *listener)
+{
+	//Lock
+	pthread_mutex_lock(&mutex);
+
+	//Search
+	Listeners::iterator it = listeners.find(listener);
+
+	//If found
+	if (it!=listeners.end())
+		//Erase it
+		listeners.erase(it);
+
+	//Unlock
+	pthread_mutex_unlock(&mutex);
+
+	return true;
+}
+
+
 void VideoEncoderWorker::SendFPU()
 {
 	sendFPU = true;

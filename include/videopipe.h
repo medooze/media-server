@@ -18,7 +18,7 @@ class VideoPipe :
 {
 public:
 	VideoPipe();
-	~VideoPipe();
+	virtual ~VideoPipe();
 	int Init();
 	/** VideoInput */
 	virtual int   StartVideoCapture(int width,int height,int fps);

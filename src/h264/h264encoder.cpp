@@ -305,7 +305,7 @@ VideoFrame* H264Encoder::EncodeFrame(BYTE *buffer,DWORD bufferSize)
 	frame->ClearRTPPacketizationInfo();
 
 	//Add packetization
-	for (DWORD i=0;i<numNals;i++)
+	for (int i=0;i<numNals;i++)
 	{
 		// Get NAL data pointer skiping the header
 		BYTE* nalData = nals[i].p_payload+4;

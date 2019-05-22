@@ -198,14 +198,12 @@
         <in>AudioCodecFactory.h</in>
         <in>Packet.h</in>
         <in>VideoCodecFactory.h</in>
+        <in>VideoDecoderWorker.h</in>
       </df>
       <df name="src">
         <df name="aac">
           <in>aacdecoder.cpp</in>
           <in>aacencoder.cpp</in>
-        </df>
-        <df name="core">
-          <in>VideoEncoderWorker.cpp</in>
         </df>
         <df name="flv1">
           <in>flv1codec.cpp</in>
@@ -337,6 +335,8 @@
         <in>SRTPSession.cpp</in>
         <in>SendSideBandwidthEstimation.cpp</in>
         <in>VideoCodecFactory.cpp</in>
+        <in>VideoDecoderWorker.cpp</in>
+        <in>VideoEncoderWorker.cpp</in>
         <in>VideoLayerSelector.cpp</in>
         <in>appmixer.cpp</in>
         <in>asymmetricmosaic.cpp</in>
@@ -549,13 +549,6 @@
           </preprocessorList>
         </ccTool>
       </folder>
-      <folder path="0/src/core">
-        <ccTool>
-          <incDir>
-            <pElem></pElem>
-          </incDir>
-        </ccTool>
-      </folder>
       <folder path="0/src/flv1">
         <ccTool>
           <incDir>
@@ -766,6 +759,8 @@
           </preprocessorList>
         </ccTool>
       </folder>
+      <item path="include/VideoDecoderWorker.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="include/rtp/PacketStats.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/rtp/RTPIncomingMediaStreamMultiplexer.h"
@@ -1021,6 +1016,12 @@
           </preprocessorList>
         </ccTool>
       </item>
+      <item path="src/VideoDecoderWorker.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/VideoEncoderWorker.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="4">
+        </ccTool>
+      </item>
       <item path="src/VideoLayerSelector.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="3">
           <incDir>
@@ -1170,10 +1171,6 @@
         </ccTool>
       </item>
       <item path="src/bwe.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/core/VideoEncoderWorker.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="4">
-        </ccTool>
       </item>
       <item path="src/cpim.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="3">
@@ -2611,26 +2608,6 @@
           </preprocessorList>
         </ccTool>
       </folder>
-      <folder path="0/src/core">
-        <ccTool>
-          <incDir>
-            <pElem>ext/crc32c/include</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </folder>
       <folder path="0/src/flv1">
         <ccTool>
           <incDir>
@@ -2974,6 +2951,8 @@
       <item path="include/Packet.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/VideoCodecFactory.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/VideoDecoderWorker.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/rtp/PacketStats.h" ex="false" tool="3" flavor2="0">
       </item>
@@ -3385,6 +3364,12 @@
           </preprocessorList>
         </ccTool>
       </item>
+      <item path="src/VideoDecoderWorker.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/VideoEncoderWorker.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="2">
+        </ccTool>
+      </item>
       <item path="src/VideoLayerSelector.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
@@ -3624,10 +3609,6 @@
         </ccTool>
       </item>
       <item path="src/bwe.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/core/VideoEncoderWorker.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="2">
-        </ccTool>
       </item>
       <item path="src/cpim.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
@@ -7141,6 +7122,8 @@
       </folder>
       <item path="include/Packet.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="include/VideoDecoderWorker.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="include/rtp/PacketStats.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/rtp/RTPIncomingMediaStreamMultiplexer.h"
@@ -7614,6 +7597,12 @@
           </preprocessorList>
         </ccTool>
       </item>
+      <item path="src/VideoDecoderWorker.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/VideoEncoderWorker.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
       <item path="src/VideoLayerSelector.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="0">
           <incDir>
@@ -7893,10 +7882,6 @@
         </ccTool>
       </item>
       <item path="src/bwe.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/core/VideoEncoderWorker.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="1">
-        </ccTool>
       </item>
       <item path="src/cpim.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="0">
@@ -10629,26 +10614,6 @@
           </preprocessorList>
         </ccTool>
       </folder>
-      <folder path="0/src/core">
-        <ccTool>
-          <incDir>
-            <pElem>ext/crc32c/include</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </folder>
       <folder path="0/src/flv1">
         <ccTool>
           <incDir>
@@ -11010,6 +10975,8 @@
           </preprocessorList>
         </ccTool>
       </folder>
+      <item path="include/VideoDecoderWorker.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="src/ActiveSpeakerDetector.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
@@ -11427,6 +11394,12 @@
           </preprocessorList>
         </ccTool>
       </item>
+      <item path="src/VideoDecoderWorker.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/VideoEncoderWorker.cpp" ex="false" tool="1" flavor2="8">
+        <ccTool flags="3">
+        </ccTool>
+      </item>
       <item path="src/VideoLayerSelector.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
@@ -11685,10 +11658,6 @@
             <Elem>__SSE2__</Elem>
             <Elem>__STDC_CONSTANT_MACROS</Elem>
           </preprocessorList>
-        </ccTool>
-      </item>
-      <item path="src/core/VideoEncoderWorker.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="3">
         </ccTool>
       </item>
       <item path="src/cpim.cpp" ex="false" tool="1" flavor2="11">

@@ -95,7 +95,7 @@ RTMP= rtmpparticipant.o amf.o rtmpmessage.o rtmpchunk.o rtmpstream.o rtmpconnect
 
 PCC= BitrateController.o BitrateController.o NetworkController.o RTTTracker.o UtilityFunction.o
 
-OBJS= xmlrpcserver.o xmlhandler.o xmlstreaminghandler.o statushandler.o CPUMonitor.o   EventSource.o eventstreaminghandler.o  AudioCodecFactory.o VideoCodecFactory.o cpim.o  groupchat.o websocketserver.o websocketconnection.o  mcu.o rtpparticipant.o multiconf.o    xmlrpcmcu.o    audiostream.o videostream.o  textmixer.o textmixerworker.o textstream.o pipetextinput.o pipetextoutput.o  logo.o overlay.o audioencoder.o audiodecoder.o textencoder.o rtmpmp4stream.o rtmpnetconnection.o   rtmpclientconnection.o vad.o  uploadhandler.o  appmixer.o  videopipe.o framescaler.o sidebar.o mosaic.o partedmosaic.o asymmetricmosaic.o pipmosaic.o videomixer.o audiomixer.o audiotransrater.o pipeaudioinput.o pipeaudiooutput.o pipevideoinput.o pipevideooutput.o broadcastsession.o mp4player.o AudioPipe.o
+OBJS= xmlrpcserver.o xmlhandler.o xmlstreaminghandler.o statushandler.o CPUMonitor.o   EventSource.o eventstreaminghandler.o  AudioCodecFactory.o VideoCodecFactory.o cpim.o  groupchat.o websocketserver.o websocketconnection.o  mcu.o rtpparticipant.o multiconf.o    xmlrpcmcu.o    audiostream.o videostream.o  textmixer.o textmixerworker.o textstream.o pipetextinput.o pipetextoutput.o  logo.o overlay.o VideoEncoderWorker.o audioencoder.o audiodecoder.o textencoder.o rtmpmp4stream.o rtmpnetconnection.o   rtmpclientconnection.o vad.o  uploadhandler.o  appmixer.o  videopipe.o framescaler.o sidebar.o mosaic.o partedmosaic.o asymmetricmosaic.o pipmosaic.o videomixer.o audiomixer.o audiotransrater.o pipeaudioinput.o pipeaudiooutput.o pipevideoinput.o pipevideooutput.o broadcastsession.o mp4player.o AudioPipe.o
 OBJS+= ${CORE} ${RTP} ${RTCP} ${RTMP} $(G711OBJ) $(H263OBJ) $(GSMOBJ)  $(H264OBJ) ${FLV1OBJ} $(SPEEXOBJ) $(NELLYOBJ) $(G722OBJ)  $(VADOBJ) $(VP6OBJ) $(VP8OBJ) $(VP9OBJ) $(OPUSOBJ) $(AACOBJ) $(DEPACKETIZERSOBJ)
 TARGETS=mcu test
 
@@ -142,7 +142,6 @@ VPATH +=  %.cpp $(SRCDIR)/src/$(VP8DIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(VP9DIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(OPUSDIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(AACDIR)
-VPATH +=  %.cpp $(SRCDIR)/src/$(COREDIR)
 VPATH +=  %.cpp $(SRCDIR)/ext/libdatachannels/src
 VPATH +=  %.cc  $(SRCDIR)/ext/crc32c/src/
 

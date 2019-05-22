@@ -31,7 +31,7 @@ private:
 	bool forceKeyFrame;
 	int width;
 	int height;
-	int numPixels;
+	DWORD numPixels;
 	int bitrate;
 	int fps;
 	int format;
