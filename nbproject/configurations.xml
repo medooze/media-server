@@ -191,6 +191,7 @@
       </df>
       <df name="include">
         <df name="rtp">
+          <in>LayerInfo.h</in>
           <in>PacketStats.h</in>
           <in>RTPIncomingMediaStreamMultiplexer.h</in>
           <in>RTPPayload.h</in>
@@ -264,6 +265,7 @@
           <in>rtmpstream.cpp</in>
         </df>
         <df name="rtp">
+          <in>LayerInfo.cpp</in>
           <in>RTCPApp.cpp</in>
           <in>RTCPBye.cpp</in>
           <in>RTCPCommonHeader.cpp</in>
@@ -760,6 +762,8 @@
         </ccTool>
       </folder>
       <item path="include/VideoDecoderWorker.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/rtp/LayerInfo.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/rtp/PacketStats.h" ex="false" tool="3" flavor2="0">
       </item>
@@ -1701,6 +1705,8 @@
       <item path="src/rtmp/rtmpstream.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="2">
         </ccTool>
+      </item>
+      <item path="src/rtp/LayerInfo.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/rtp/RTCPApp.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="2">
@@ -2953,6 +2959,8 @@
       <item path="include/VideoCodecFactory.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/VideoDecoderWorker.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/rtp/LayerInfo.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/rtp/PacketStats.h" ex="false" tool="3" flavor2="0">
       </item>
@@ -4405,6 +4413,8 @@
       <item path="src/rtmp/rtmpstream.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
         </ccTool>
+      </item>
+      <item path="src/rtp/LayerInfo.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/rtp/RTCPApp.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
@@ -7124,6 +7134,8 @@
       </item>
       <item path="include/VideoDecoderWorker.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="include/rtp/LayerInfo.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="include/rtp/PacketStats.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/rtp/RTPIncomingMediaStreamMultiplexer.h"
@@ -9082,6 +9094,8 @@
           </preprocessorList>
         </ccTool>
       </item>
+      <item path="src/rtp/LayerInfo.cpp" ex="false" tool="1" flavor2="0">
+      </item>
       <item path="src/rtp/RTCPApp.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="0">
           <incDir>
@@ -10977,6 +10991,8 @@
       </folder>
       <item path="include/VideoDecoderWorker.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="include/rtp/LayerInfo.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="src/ActiveSpeakerDetector.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
@@ -12471,6 +12487,8 @@
       <item path="src/rtmp/rtmpstream.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
         </ccTool>
+      </item>
+      <item path="src/rtp/LayerInfo.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="src/rtp/RTCPApp.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">

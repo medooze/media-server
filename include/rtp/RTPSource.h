@@ -20,16 +20,6 @@
 #include "rtp/RTCPSenderReport.h"
 #include "rtp/RTCPCompoundPacket.h"
 
-struct LayerInfo
-{
-	static BYTE MaxLayerId; 
-	BYTE temporalLayerId = MaxLayerId;
-	BYTE spatialLayerId  = MaxLayerId;
-	
-	bool IsValid() const { return spatialLayerId!=MaxLayerId || temporalLayerId != MaxLayerId;	}
-	WORD GetId()   const { return ((WORD)spatialLayerId)<<8  | temporalLayerId;			}
-};
-
 struct LayerSource : LayerInfo
 {
 	DWORD		numPackets = 0;

@@ -14,6 +14,7 @@
 #ifndef RTCPSENDERREPORT_H
 #define RTCPSENDERREPORT_H
 #include "config.h"
+#include "rtp/LayerInfo.h"
 #include "rtp/RTCPPacket.h"
 #include "rtp/RTCPReport.h"
 #include "rtp/RTCPCommonHeader.h"
