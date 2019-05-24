@@ -136,7 +136,7 @@ void RTPSession::Reset()
 	send.media.Reset();
 	recv.media.Reset();
 	send.rtx.Reset();
-	recv.media.Reset();
+	recv.rtx.Reset();
 }
 
 void RTPSession::FlushRTXPackets()
@@ -596,6 +596,8 @@ void RTPSession::onRTPPacket(const BYTE* data, DWORD size)
 	} else if (recv.rtx.ssrc!=ssrc && codec==VideoCodec::RTX) {
 		//Log
 		Log("-RTPSession::onRTPPacket(%s) | New RTX SSRC [new:%u,old:%u]\n",MediaFrame::TypeToString(media),ssrc,recv.rtx.ssrc);
+		//Reset cycles
+		recv.rtx.Reset();
 		//Update ssrc
 		recv.rtx.ssrc = ssrc;
 	}
