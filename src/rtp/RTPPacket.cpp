@@ -226,6 +226,10 @@ void RTPPacket::Dump()
 	if (header.extension)
 		//Dump extension
 		extension.Dump();
+	if (vp8PayloadDescriptor)
+		vp8PayloadDescriptor->Dump();
+	if (vp8PayloadHeader)
+		vp8PayloadHeader->Dump();
 	::Dump(GetMediaData(),16);
 	Debug("[/RTPPacket]\n");
 }

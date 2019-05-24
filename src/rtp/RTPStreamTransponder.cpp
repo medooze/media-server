@@ -101,7 +101,7 @@ void RTPStreamTransponder::Close()
 
 void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket::shared& packet)
 {
-	//Double check
+	
 	if (!packet)
 		//Exit
 		return;
@@ -114,7 +114,7 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 	//Check if it is an empty packet
 	if (!packet->GetMediaLength())
 	{
-		UltraDebug("-StreamTransponder::onRTP() | dropping empty packet\n");
+		UltraDebug("-RTPStreamTransponder::onRTP() | dropping empty packet\n");
 		//Drop it
 		dropped++;
 		//Exit
