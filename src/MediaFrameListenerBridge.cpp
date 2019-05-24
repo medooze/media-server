@@ -1,6 +1,7 @@
 #include "video.h"
 #include "audio.h"
 #include "MediaFrameListenerBridge.h"
+#include "VideoLayerSelector.h"
 
 void MediaFrameListenerBridge::AddListener(RTPIncomingMediaStream::Listener* listener)
 {
@@ -130,6 +131,11 @@ void MediaFrameListenerBridge::onMediaFrame(MediaFrame& frame)
 			packet->SetMark(false);
 		//Calculate partial lenght
 		current += rtp->GetPrefixLen()+rtp->GetSize();
+		
+		//Fill payload descriptors
+		//TODO: move out of here
+		if (frame.GetType()==MediaFrame::Video)
+			VideoLayerSelector::GetLayerIds(packet);
 		
 		//Sync
 		{
