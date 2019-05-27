@@ -34,7 +34,7 @@ void MediaFrameListenerBridge::onMediaFrame(MediaFrame& frame)
 		//Reseted
 		reset = false;
 	}
-
+	
 	//Get info
 	const MediaFrame::RtpPacketizationInfo& info = frame.GetRtpPacketizationInfo();
 
@@ -78,6 +78,23 @@ void MediaFrameListenerBridge::onMediaFrame(MediaFrame& frame)
 			return;
 
 	}
+	
+	//Get now
+	auto now = getTimeMS();
+	
+	//Increase stats
+	numFrames++;
+	totalBytes += frameSize;
+		
+	//Sync
+	{
+		ScopedLock scope(mutex);
+		//Update bitrate acumulator
+		acumulator.Update(now,frameSize);
+		//Get bitrate in bps
+		bitrate = acumulator.GetInstant()*8;
+	}
+	
 
 	//Check if it the first received packet
 	if (!firstTimestamp)
@@ -132,6 +149,9 @@ void MediaFrameListenerBridge::onMediaFrame(MediaFrame& frame)
 		//Calculate partial lenght
 		current += rtp->GetPrefixLen()+rtp->GetSize();
 		
+		//Increase stats
+		numPackets++;
+		
 		//Fill payload descriptors
 		//TODO: move out of here
 		if (frame.GetType()==MediaFrame::Video)
@@ -149,4 +169,19 @@ void MediaFrameListenerBridge::onMediaFrame(MediaFrame& frame)
 void MediaFrameListenerBridge::Reset()
 {
 	reset = true;
+}
+
+void MediaFrameListenerBridge::Update()
+{
+	Update(getTimeMS());
+}
+
+
+void MediaFrameListenerBridge::Update(QWORD now)
+{
+	ScopedLock scope(mutex);
+	//Update bitrate acumulator
+	acumulator.Update(now);
+	//Get bitrate in bps
+	bitrate = acumulator.GetInstant()*8;
 }

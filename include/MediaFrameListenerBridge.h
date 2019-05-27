@@ -1,6 +1,7 @@
 #ifndef MEDIAFRAMELISTENERBRIDGE_H
 #define MEDIAFRAMELISTENERBRIDGE_H
 
+#include "acumulator.h"
 #include "media.h"
 #include "rtp.h"
 
@@ -9,7 +10,7 @@ class MediaFrameListenerBridge :
 	public RTPIncomingMediaStream
 {
 public:
-	MediaFrameListenerBridge(DWORD ssrc) : ssrc(ssrc) {}
+	MediaFrameListenerBridge(DWORD ssrc) : ssrc(ssrc), acumulator(1000) {}
 	virtual ~MediaFrameListenerBridge() = default;
 	
 	virtual void AddListener(RTPIncomingMediaStream::Listener* listener);
@@ -19,6 +20,9 @@ public:
 	virtual void onMediaFrame(MediaFrame &frame);
 	virtual void onMediaFrame(DWORD ssrc, MediaFrame &frame) { onMediaFrame(frame); }
 	void Reset();
+	void Update();
+	void Update(QWORD now);
+	
 	
 public:
 	DWORD ssrc = 0;
@@ -30,6 +34,11 @@ public:
 	QWORD baseTimestamp	= 0;
 	QWORD lastTimestamp	= 0;
 	QWORD lastTime		= 0;
+	DWORD numFrames		= 0;
+	DWORD numPackets	= 0;
+	DWORD totalBytes	= 0;
+	DWORD bitrate		= 0;
+	Acumulator acumulator;
 };
 
 #endif /* MEDIAFRAMELISTENERBRIDGE_H */
