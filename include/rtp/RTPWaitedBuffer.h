@@ -103,12 +103,16 @@ public:
 			auto candidate = it->second;
 			//Get time of the packet
 			QWORD time = candidate->GetTime();
+			//Get now
+			QWORD now = GetTime();
 
 			//Check if first is the one expected or wait if not
-			if (next==(DWORD)-1 || seq==next || time+maxWaitTime<GetTime() || hurryUp)
+			if (next==(DWORD)-1 || seq==next || time+maxWaitTime<=now || hurryUp)
 			{
 				//Update next
 				next = seq+1;
+				//Waiting time
+				waited.Update(now,now-time);
 				//Remove it
 				packets.erase(it);
 				//If no mor packets
@@ -158,7 +162,7 @@ public:
 				QWORD now = GetTime();
 
 				//Check if first is the one expected or wait if not
-				if (next==(DWORD)-1 || seq==next || time+maxWaitTime<now || hurryUp)
+				if (next==(DWORD)-1 || seq==next || time+maxWaitTime<=now || hurryUp)
 				{
 					//Update next
 					next = seq+1;

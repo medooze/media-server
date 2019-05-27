@@ -142,15 +142,15 @@ private:
 	bool	pendingTMBR;
 	DWORD	pendingTMBBitrate;
 
-	bool			useNACK;
-	bool			useRTX;
-	bool			isNACKEnabled;
-	bool			useAbsTime;
+	bool	useNACK;
+	bool	useRTX;
+	bool	isNACKEnabled;
+	bool	useAbsTime;
 
-	bool 			useRTCP;
+	bool 	useRTCP;
 
 	RTPOrderedPackets	rtxs;
-	bool			usePLI;
+	bool	usePLI;
 };
 
 #endif

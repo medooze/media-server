@@ -59,12 +59,12 @@ public:
 			QWORD time = candidate->GetTime();
 
 			//Check if first is the one expected or wait if not
-			if (next==(DWORD)-1 || seq==next || time+maxWaitTime<now || hurryUp)
+			if (next==(DWORD)-1 || seq==next || time+maxWaitTime<=now || hurryUp)
 			{
 				//Update next
 				next = seq+1;
 				//Waiting time
-				waited.Update(now,now-time);
+				waited.Update(now, now>time ? now-time : 0);
 				//Remove it
 				packets.erase(it);
 				//If no mor packets
@@ -168,7 +168,7 @@ public:
 		//Get time of the packet
 		QWORD time = candidate->GetTime();
 		//Get wait time
-		if (next==(DWORD)-1 || seq==next || time+maxWaitTime<now || hurryUp)
+		if (next==(DWORD)-1 || seq==next || time+maxWaitTime<=now || hurryUp)
 			//Now!
 			return 0;
 		//Return wait time for next packet
