@@ -268,6 +268,12 @@ public:
 		//REturn objets in queu
 		return packets.size();
 	}
+
+	DWORD GetMaxWaitTime() const
+       	{
+		return maxWaitTime;
+	}
+
 	
 	void SetMaxWaitTime(DWORD maxWaitTime)
 	{

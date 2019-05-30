@@ -697,8 +697,11 @@ void RTPSession::onRTPPacket(const BYTE* data, DWORD size)
 
 	//Check if we need to send RR (1 per second)
 	if (useRTCP && now-source->lastReport>1E6)
+	{
+		Log("-wait time max:%d,len:%d,wait:%d,avg:%llf\n",packets.GetMaxWaitedTime(),packets.Length(),packets.GetMaxWaitTime(),packets.GetAvgWaitedTime());
 		//Send it
 		SendSenderReport();
+	}
 
 	//OK
 	return;

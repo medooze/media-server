@@ -651,7 +651,7 @@ int VideoStream::RecVideo()
 		auto packet = rtp.GetPacket();
 		
 		//Get diff
-		auto diff = getUpdDifTime(&now);
+		auto diff = getUpdDifTime(&now)/1000;
 		
 		//Update waited time
 		waitTimeAcu.Update(getTime(now)/1000,diff);
@@ -791,7 +791,7 @@ int VideoStream::RecVideo()
 		}
 		
 		//Get decode time
-		diff = getUpdDifTime(&now);
+		diff = getUpdDifTime(&now)/1000;
 		
 		//Update waited time
 		decodeTimeAcu.Update(getTime(now)/1000,diff);
@@ -800,7 +800,7 @@ int VideoStream::RecVideo()
 		if(packet->GetMark())
 		{
 			//One morw frame
-			fpsAcu.Update(getTime(now)/1000,diff);
+			fpsAcu.Update(getTime(now)/1000,1);
 
 			if (videoDecoder->IsKeyFrame())
 				Debug("-Got Intra\n");
@@ -829,19 +829,25 @@ int VideoStream::RecVideo()
 				waitIntra = false;
 			
 			//Get deliver time
-			diff = getUpdDifTime(&now);
+			diff = getUpdDifTime(&now)/1000;
 		
 			//Update waited time
 			deliverTimeAcu.Update(getTime(now)/1000,diff);
 			
 			//Dump stats each 6 frames
 			if (fpsAcu.GetAcumulated() % 60 == 0)
-				Log("-VideoStream::RecVideo() fps [min:%lf,max:%lf,avg:%lf] wait [min:%lf,max:%lf,avg:%lf] enc [min:%lf,max:%lf,avg:%lf] deliver [min:%lf,max:%lf,avg:%lf]",
+			{
+				Log("-VideoStream::RecVideo() fps [min:%.2Lf,max:%.2Lf,avg:%.2Lf] wait [min:%.2Lf,max:%.2Lf,avg:%.2Lf] enc [min:%.2Lf,max:%.2Lf,avg:%.2Lf] deliver [min:%.2Lf,max:%.2Lf,avg:%.2Lf]\n",
 					fpsAcu.GetMinAvg()		,fpsAcu.GetMaxAvg()		, fpsAcu.GetInstantAvg(),
 					waitTimeAcu.GetMinAvg()		,waitTimeAcu.GetMaxAvg()	, waitTimeAcu.GetInstantAvg(),
 					decodeTimeAcu.GetMinAvg()	,decodeTimeAcu.GetMaxAvg()	, decodeTimeAcu.GetInstantAvg(),
 					deliverTimeAcu.GetMinAvg()	,deliverTimeAcu.GetMaxAvg()	, deliverTimeAcu.GetInstantAvg()
 				);
+				fpsAcu.ResetMinMax();
+				waitTimeAcu.ResetMinMax();
+				decodeTimeAcu.ResetMinMax();
+				deliverTimeAcu.ResetMinMax();
+			}
 		}
 	}
 
