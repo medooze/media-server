@@ -621,27 +621,40 @@ int VideoStream::RecVideo()
 {
 	VideoDecoder*	videoDecoder = NULL;
 	VideoCodec::Type type;
-	timeval 	before;
+	timeval 	now;
 	timeval		lastFPURequest;
 	DWORD		lostCount=0;
 	DWORD		frameTime = (DWORD)-1;
 	DWORD		lastSeq = RTPPacket::MaxExtSeqNum;
 	bool		waitIntra = false;
 	
+	Acumulator deliverTimeAcu(1000);
+	Acumulator decodeTimeAcu(1000);
+	Acumulator waitTimeAcu(1000);
+	Acumulator fpsAcu(1000);
 	
 	Log(">RecVideo\n");
 	
 	//Get now
-	gettimeofday(&before,NULL);
+	getUpdDifTime(&now);
 
 	//Not sent FPU yet
 	setZeroTime(&lastFPURequest);
-
+	
 	//Mientras tengamos que capturar
 	while(receivingVideo)
 	{
+		//Update before waiting
+		getUpdDifTime(&now);
+		
 		//Get RTP packet
 		auto packet = rtp.GetPacket();
+		
+		//Get diff
+		auto diff = getUpdDifTime(&now);
+		
+		//Update waited time
+		waitTimeAcu.Update(getTime(now)/1000,diff);
 
 		//Check
 		if (!packet)
@@ -776,10 +789,19 @@ int VideoStream::RecVideo()
 				waitIntra = true;
 			}
 		}
+		
+		//Get decode time
+		diff = getUpdDifTime(&now);
+		
+		//Update waited time
+		decodeTimeAcu.Update(getTime(now)/1000,diff);
 
 		//Check if it is the last packet of a frame
 		if(packet->GetMark())
 		{
+			//One morw frame
+			fpsAcu.Update(getTime(now)/1000,diff);
+
 			if (videoDecoder->IsKeyFrame())
 				Debug("-Got Intra\n");
 			
@@ -805,6 +827,21 @@ int VideoStream::RecVideo()
 			if (waitIntra && videoDecoder->IsKeyFrame())
 				//Do not wait anymore
 				waitIntra = false;
+			
+			//Get deliver time
+			diff = getUpdDifTime(&now);
+		
+			//Update waited time
+			deliverTimeAcu.Update(getTime(now)/1000,diff);
+			
+			//Dump stats each 6 frames
+			if (fpsAcu.GetAcumulated() % 60 == 0)
+				Log("-VideoStream::RecVideo() fps [min:%lf,max:%lf,avg:%lf] wait [min:%lf,max:%lf,avg:%lf] enc [min:%lf,max:%lf,avg:%lf] deliver [min:%lf,max:%lf,avg:%lf]",
+					fpsAcu.GetMinAvg()		,fpsAcu.GetMaxAvg()		, fpsAcu.GetInstantAvg(),
+					waitTimeAcu.GetMinAvg()		,waitTimeAcu.GetMaxAvg()	, waitTimeAcu.GetInstantAvg(),
+					decodeTimeAcu.GetMinAvg()	,decodeTimeAcu.GetMaxAvg()	, decodeTimeAcu.GetInstantAvg(),
+					deliverTimeAcu.GetMinAvg()	,deliverTimeAcu.GetMaxAvg()	, deliverTimeAcu.GetInstantAvg()
+				);
 		}
 	}
 
