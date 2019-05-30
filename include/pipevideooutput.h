@@ -2,9 +2,11 @@
 #define _PIPVIDEOOUTPUT_H_
 #include <pthread.h>
 #include <video.h>
+#include <use.h>
 
 class PipeVideoOutput :
-	public VideoOutput
+	public VideoOutput,
+	public Mutex
 {
 public:
 	PipeVideoOutput(pthread_mutex_t* mutex, pthread_cond_t* cond);

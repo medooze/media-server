@@ -71,6 +71,10 @@ inline int msleep(long msec)
 	return select(0,0,0,0,&tv);
 }
 
+inline QWORD getTime(const struct timeval& now)
+{
+	return (((QWORD)now.tv_sec)*1E6+now.tv_usec);
+}
 inline QWORD getTime()
 {
 	//Obtenemos ahora

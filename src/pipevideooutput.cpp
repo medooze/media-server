@@ -45,12 +45,19 @@ int PipeVideoOutput::NextFrame(BYTE *pic)
 		//Exit
 		return Error("-PipeVideoOutput calling NextFrame without been inited\n");
 	
-	//Bloqueamos
-	pthread_mutex_lock(videoMixerMutex);
+	//Lock
+	Lock();
 
 	//Copiamos
 	memcpy(buffer,pic,bufferSize);
+	
+	//Release
+	Unlock();
 
+	
+	//Bloqueamos
+	pthread_mutex_lock(videoMixerMutex);
+	
 	//Ponemos el cambio
 	isChanged = true;
 
@@ -65,16 +72,22 @@ int PipeVideoOutput::NextFrame(BYTE *pic)
 
 void PipeVideoOutput::ClearFrame()
 {
-	//Bloqueamos
-	pthread_mutex_lock(videoMixerMutex);
-
+	//Lock
+	Lock();
+	
 	//Get number of pixels
 	DWORD num = videoWidth*videoHeight;
 
 	// paint the background in black for YUV
 	memset(buffer		, 0		, num);
 	memset(buffer+num	, (BYTE) -128	, num/2);
+	
+	//Release
+	Unlock();
 
+	//Bloqueamos
+	pthread_mutex_lock(videoMixerMutex);
+	
 	//Ponemos el cambio
 	isChanged = true;
 
@@ -93,7 +106,7 @@ int PipeVideoOutput::SetVideoSize(int width,int height)
 		return 0;
 	
 	//Lock
-	pthread_mutex_lock(videoMixerMutex);
+	Lock();
 
 	//Freem memory
 	if (buffer)
@@ -108,8 +121,8 @@ int PipeVideoOutput::SetVideoSize(int width,int height)
 	//Get memory
 	buffer = (BYTE*)malloc(bufferSize);
 
-	//Unlock
-	pthread_mutex_unlock(videoMixerMutex);
+	//Release
+	Unlock();
 	
 	//Changed
 	return 1;
