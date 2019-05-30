@@ -837,12 +837,14 @@ int VideoStream::RecVideo()
 			//Dump stats each 6 frames
 			if (fpsAcu.GetAcumulated() % 60 == 0)
 			{
-				Log("-VideoStream::RecVideo() fps [min:%.2Lf,max:%.2Lf,avg:%.2Lf] wait [min:%.2Lf,max:%.2Lf,avg:%.2Lf] enc [min:%.2Lf,max:%.2Lf,avg:%.2Lf] deliver [min:%.2Lf,max:%.2Lf,avg:%.2Lf]\n",
+				//Log
+				UltraDebug("-VideoStream::RecVideo() fps [min:%.2Lf,max:%.2Lf,avg:%.2Lf] wait [min:%.2Lf,max:%.2Lf,avg:%.2Lf] enc [min:%.2Lf,max:%.2Lf,avg:%.2Lf] deliver [min:%.2Lf,max:%.2Lf,avg:%.2Lf]\n",
 					fpsAcu.GetMinAvg()		,fpsAcu.GetMaxAvg()		, fpsAcu.GetInstantAvg(),
 					waitTimeAcu.GetMinAvg()		,waitTimeAcu.GetMaxAvg()	, waitTimeAcu.GetInstantAvg(),
 					decodeTimeAcu.GetMinAvg()	,decodeTimeAcu.GetMaxAvg()	, decodeTimeAcu.GetInstantAvg(),
 					deliverTimeAcu.GetMinAvg()	,deliverTimeAcu.GetMaxAvg()	, deliverTimeAcu.GetInstantAvg()
 				);
+				//Reset min and max
 				fpsAcu.ResetMinMax();
 				waitTimeAcu.ResetMinMax();
 				decodeTimeAcu.ResetMinMax();
