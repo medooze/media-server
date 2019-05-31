@@ -52,7 +52,7 @@ RTPBundleTransport::~RTPBundleTransport()
 	End();
 }
 
-DTLSICETransport* RTPBundleTransport::AddICETransport(const std::string &username,const Properties& properties)
+RTPBundleTransport::Connection* RTPBundleTransport::AddICETransport(const std::string &username,const Properties& properties)
 {
 	Log("-RTPBundleTransport::AddICETransport [%s]\n",username.c_str());
 	
@@ -107,7 +107,7 @@ DTLSICETransport* RTPBundleTransport::AddICETransport(const std::string &usernam
 	});
 	
 	//OK
-	return transport;
+	return connection;
 }
 
 int RTPBundleTransport::RemoveICETransport(const std::string &username)
@@ -371,9 +371,18 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 		{
 			//UltraDebug("-RTPBundleTransport::OnRead() | Binding request\n");
 			
+			//Check if it has the prio attribute
+			if (!stun->HasAttribute(STUNMessage::Attribute::Username))
+			{
+				//Error
+				Debug("-STUN Message without username attribute");
+				//DOne
+				return;
+			}
+			
 			//Get username
 			STUNMessage::Attribute* attr = stun->GetAttribute(STUNMessage::Attribute::Username);
-
+			
 			//Copy username string
 			std::string username((char*)attr->attr,attr->size);
 			
@@ -394,6 +403,9 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 			Connection* connection = it->second;
 			DTLSICETransport* transport = connection->transport;
 			ICERemoteCandidate* candidate = NULL;
+			
+			//Inc stats
+			connection->iceRequestsReceived++;
 
 			//Check if it has the prio attribute
 			if (!stun->HasAttribute(STUNMessage::Attribute::Priority))
@@ -451,6 +463,9 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 
 			//Send response
 			loop.Send(ip,port,std::move(buffer));
+			
+			//Inc stats
+			connection->iceResponsesSent++;
 
 			//If the STUN keep alive response is not disabled
 			if (reply)
@@ -481,7 +496,46 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 				
 				//Send response
 				loop.Send(ip,port,std::move(buffer));
+				
+				//Inc stats
+				connection->iceRequestsSent++;
 			}
+		} else if (type==STUNMessage::Response && method==STUNMessage::Binding) {
+			//Get username
+			STUNMessage::Attribute* attr = stun->GetAttribute(STUNMessage::Attribute::Username);
+
+			//Check if it has the username attribute
+			if (!stun->HasAttribute(STUNMessage::Attribute::Username))
+			{
+				//Error
+				Debug("-STUN Message without username attribute");
+				//DOne
+				return;
+			}
+			
+			//Copy username string
+			std::string username((char*)attr->attr,attr->size);
+			
+			//Check if we have an ICE transport for that username
+			auto it = connections.find(username);
+			
+			//If not found
+			if (it==connections.end())
+			{
+				//TODO: Reject
+				//Error
+				Debug("-RTPBundleTransport::Read ice username not found [%s}\n",username.c_str());
+				//Done
+				return;
+			}
+			
+			//Get ice connection
+			Connection* connection = it->second;
+			DTLSICETransport* transport = connection->transport;
+			ICERemoteCandidate* candidate = NULL;
+			
+			//Inc stats
+			connection->iceResponsesReceived++;
 		}
 
 		//Exit

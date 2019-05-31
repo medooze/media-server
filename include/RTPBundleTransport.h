@@ -17,7 +17,7 @@ class RTPBundleTransport :
 	public DTLSICETransport::Sender,
 	public EventLoop::Listener
 {
-private:
+public:
 	struct Connection
 	{
 		Connection(DTLSICETransport* transport,bool disableSTUNKeepAlive)
@@ -29,13 +29,18 @@ private:
 		DTLSICETransport* transport;
 		std::set<ICERemoteCandidate*> candidates;
 		bool disableSTUNKeepAlive;
+		size_t iceRequestsSent		= 0;
+		size_t iceRequestsReceived	= 0;
+		size_t iceResponsesSent		= 0;
+		size_t iceResponsesReceived	= 0;
+		
 	};
 public:
 	RTPBundleTransport();
 	virtual ~RTPBundleTransport();
 	int Init();
 	int Init(int port);
-	DTLSICETransport* AddICETransport(const std::string &username,const Properties& properties);
+	Connection* AddICETransport(const std::string &username,const Properties& properties);
 	int RemoveICETransport(const std::string &username);
 	
 	int End();
