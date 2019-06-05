@@ -114,9 +114,9 @@ int PipeVideoInput::StopVideoCapture()
 	return true;
 }
 
-BYTE* PipeVideoInput::GrabFrame(DWORD timeout)
+VideoBuffer PipeVideoInput::GrabFrame(DWORD timeout)
 { 
-	BYTE *pic;
+	VideoBuffer pic;
 
 	//Bloqueamos para ver si hay un nuevo picture
 	pthread_mutex_lock(&newPicMutex);
@@ -129,7 +129,7 @@ BYTE* PipeVideoInput::GrabFrame(DWORD timeout)
 		//Desbloqueamos
 		pthread_mutex_unlock(&newPicMutex);
 		//Salimos
-		return NULL;
+		return pic;
 	}
 	
 	//Miramos a ver si hay un nuevo pict
@@ -153,7 +153,9 @@ BYTE* PipeVideoInput::GrabFrame(DWORD timeout)
 	imgNew=0;
 
 	//Nos quedamos con el puntero antes de que lo cambien
-	pic=grabPic;
+	pic.width	= videoWidth;
+	pic.height	= videoHeight;
+	pic.buffer	= grabPic;
 
 	//Y liberamos el mutex
 	pthread_mutex_unlock(&newPicMutex);
@@ -176,11 +178,6 @@ void  PipeVideoInput::CancelGrabFrame()
 	//Unloco mutex
 	pthread_mutex_unlock(&newPicMutex);
 	
-}
-
-DWORD PipeVideoInput::GetBufferSize()
-{
-	return (videoWidth*videoHeight*3)/2;
 }
 
 int PipeVideoInput::SetFrame(BYTE * buffer, int width, int height)

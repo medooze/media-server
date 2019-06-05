@@ -64,13 +64,32 @@ private:
 
 };
 
+struct VideoBuffer
+{
+	VideoBuffer() = default;
+	VideoBuffer(DWORD width, DWORD height,BYTE* buffer)
+	{
+		this->width = width;
+		this->height = height;
+		this->buffer = buffer;
+	}
+	
+	DWORD GetBufferSize()
+	{
+		return (width*height*3)/2;
+	}
+	
+	DWORD	width = 0;
+	DWORD	height = 0;
+	BYTE*	buffer = nullptr;
+};
+
 class VideoInput
 {
 public:
 	virtual int   StartVideoCapture(int width,int height,int fps)=0;
-	virtual BYTE* GrabFrame(DWORD timeout)=0;
+	virtual VideoBuffer GrabFrame(DWORD timeout)=0;
 	virtual void  CancelGrabFrame()=0;
-	virtual DWORD GetBufferSize()=0;
 	virtual int   StopVideoCapture()=0;
 };
 

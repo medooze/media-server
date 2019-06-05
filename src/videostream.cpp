@@ -431,10 +431,10 @@ int VideoStream::SendVideo()
 	while(sendingVideo)
 	{
 		//Nos quedamos con el puntero antes de que lo cambien
-		BYTE *pic = videoInput->GrabFrame(frameTime/1000);
+		auto pic = videoInput->GrabFrame(frameTime/1000);
 
 		//Check picture
-		if (!pic)
+		if (!pic.buffer)
 			//Exit
 			continue;
 
@@ -495,7 +495,7 @@ int VideoStream::SendVideo()
 		}
 		
 		//Procesamos el frame
-		VideoFrame *videoFrame = videoEncoder->EncodeFrame(pic,videoInput->GetBufferSize());
+		VideoFrame *videoFrame = videoEncoder->EncodeFrame(pic.buffer,pic.GetBufferSize());
 
 		//If was failed
 		if (!videoFrame)

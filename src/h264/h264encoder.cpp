@@ -43,7 +43,7 @@ H264Encoder::H264Encoder(const Properties& properties)
 	//No bitrate
 	bitrate = 0;
 	fps = 0;
-	intraPeriod = 0;
+	intraPeriod = X264_KEYINT_MAX_INFINITE;
 
 	//Check profile level id
 	h264ProfileLevelId = properties.GetProperty("h264.profile-level-id",std::string("42801F"));
@@ -77,6 +77,9 @@ H264Encoder::~H264Encoder()
 ***********************/
 int H264Encoder::SetSize(int width, int height)
 {
+	
+	Log("-H264Encoder::SetSize() [width:%d,height:%d]\n",width,height);
+	
 	//Save values
 	this->width = width;
 	this->height = height;
@@ -105,18 +108,13 @@ int H264Encoder::SetFrameRate(int frames,int kbits,int intraPeriod)
 		bitrate=kbits;
 
 	//Save intra period
-	if (intraPeriod>0)
-		//Set maximium intra period
-		this->intraPeriod = intraPeriod;
-	else
-		//No maximum intra period
-		this->intraPeriod = X264_KEYINT_MAX_INFINITE;
+	this->intraPeriod = intraPeriod ? intraPeriod : X264_KEYINT_MAX_INFINITE;
 
 	//Check if already opened
 	if (opened)
 	{
 		//Reconfig parameters -> FPS is not allowed to be recondigured
-		params.i_keyint_max         = intraPeriod ;
+		params.i_keyint_max         = this->intraPeriod ;
 		params.i_frame_reference    = 1;
 		params.rc.i_rc_method	    = X264_RC_ABR;
 		params.rc.i_bitrate         = bitrate;
@@ -140,7 +138,7 @@ int H264Encoder::SetFrameRate(int frames,int kbits,int intraPeriod)
 ***********************/
 int H264Encoder::OpenCodec()
 {
-	Log("-OpenCodec H264 [%dkbps,%dfps,%dintra]\n",bitrate,fps,intraPeriod);
+	Log("-H264Encoder::OpenCodec() [%dkbps,%dfps,%dintra,width:%d,height:%d]\n",bitrate,fps,intraPeriod,width,height);
 
 	// Check 
 	if (opened)

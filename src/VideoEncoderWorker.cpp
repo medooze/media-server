@@ -194,13 +194,31 @@ int VideoEncoderWorker::Encode()
 	//Mientras tengamos que capturar
 	while(encoding)
 	{
-		//Nos quedamos con el puntero antes de que lo cambien
-		BYTE *pic=input->GrabFrame(frameTime/1000);
+		//Capture video frame buffer
+		auto pic = input->GrabFrame(frameTime/1000);
 
 		//Check picture
-		if (!pic)
+		if (!pic.buffer)
 			//Exit
 			continue;
+		
+		//Check size
+		if (pic.width!=width || pic.height!=height)
+		{
+			//Check
+			if (videoEncoder)
+				//Borramos el encoder
+				delete videoEncoder;
+			//Update size
+			width	= pic.width;
+			height	= pic.height;
+			//Create encoder again
+			videoEncoder = VideoCodecFactory::CreateEncoder(codec,properties);
+			//Reset bitrate
+			videoEncoder->SetFrameRate(fps,current,intraPeriod);
+			//Set on the encoder
+			videoEncoder->SetSize(width,height);
+		}
 
 		//Check if we need to send intra
 		if (sendFPU)
@@ -253,8 +271,10 @@ int VideoEncoderWorker::Encode()
 			current = target;
 		}
 
+		
+
 		//Procesamos el frame
-		VideoFrame *videoFrame = videoEncoder->EncodeFrame(pic,input->GetBufferSize());
+		VideoFrame *videoFrame = videoEncoder->EncodeFrame(pic.buffer,pic.GetBufferSize());
 
 		//If was failed
 		if (!videoFrame)

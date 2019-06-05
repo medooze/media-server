@@ -375,7 +375,7 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 			if (!stun->HasAttribute(STUNMessage::Attribute::Username))
 			{
 				//Error
-				Debug("-STUN Message without username attribute");
+				Debug("-STUN Message without username attribute\n");
 				//DOne
 				return;
 			}
@@ -501,22 +501,8 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 				connection->iceRequestsSent++;
 			}
 		} else if (type==STUNMessage::Response && method==STUNMessage::Binding) {
-			//Get username
-			STUNMessage::Attribute* attr = stun->GetAttribute(STUNMessage::Attribute::Username);
-
-			//Check if it has the username attribute
-			if (!stun->HasAttribute(STUNMessage::Attribute::Username))
-			{
-				//Error
-				Debug("-STUN Message without username attribute");
-				//DOne
-				return;
-			}
-			
-			//Copy username string
-			std::string username((char*)attr->attr,attr->size);
-			
-			//Check if we have an ICE transport for that username
+			//TODO: map incoming resposnes with sent request based on transaction ids
+			/*/
 			auto it = connections.find(username);
 			
 			//If not found
@@ -536,6 +522,7 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 			
 			//Inc stats
 			connection->iceResponsesReceived++;
+			*/
 		}
 
 		//Exit

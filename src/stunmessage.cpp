@@ -459,3 +459,15 @@ STUNMessage* STUNMessage::CreateResponse()
 {
 	return new STUNMessage(Response,method,transId);
 }
+
+void STUNMessage::Dump()
+{
+	Debug("[STUNMessage type=%d method=%d]\n",type,method);
+	for (const auto attr : attributes)
+	{
+		Debug("[Attribute type=%d size=%d]\n",attr->type,attr->size);
+		::Dump(attr->attr,attr->size);
+		Debug("[/Attribute]\n");
+	}
+	Debug("[/STUNMessage]\n");
+}
