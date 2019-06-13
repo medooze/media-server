@@ -1253,6 +1253,11 @@ int DTLSICETransport::Dump(const char* filename, bool inbound, bool outbound, bo
 	return done;
 }
 
+int DTLSICETransport::DumpBWEStats(const char* filename)
+{
+	return senderSideBandwidthEstimator.Dump(filename);
+}
+
 void DTLSICETransport::Reset()
 {
 	Log("-DTLSICETransport::Reset()\n");
