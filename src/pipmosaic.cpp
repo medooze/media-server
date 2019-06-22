@@ -82,34 +82,27 @@ int PIPMosaic::Update(int pos, BYTE *image, int imgWidth, int imgHeight,bool kee
 	*	--------------------
 	***********************************************/
 
+	/**********************************************
+	*	--------------------
+	*      |           	    |
+	*      |     	 1          |
+	*      | -------            |
+	*      | |     |            |
+	*      | |  2  |            |
+	*      | -------         -  |
+	*	--------------------
+	***********************************************/
+	
 	//Calculate pip participant size
-	DWORD mosaicWidth		= SIZE4MUL(mosaicTotalWidth/5);
-	DWORD mosaicHeight		= SIZE4MUL(mosaicTotalHeight/5);
+	DWORD mosaicWidth		= GetWidth(1); //Get common width for all slots excluding slot 0
+	DWORD mosaicHeight		= GetHeight(1); //Get common height for all slots excluding slot 0
 	DWORD mosaicTotalWidthUV	= mosaicTotalWidth/2;
 	DWORD mosaicWidthUV		= mosaicWidth/2;
 	//Get empty space between PIP
-	DWORD intraWidth	= mosaicWidth/2;
+	DWORD intraWidth	= SIZE4MUL(mosaicTotalWidth/5)/2;
 	DWORD intraWidthUV	= intraWidth/2;
-	DWORD intraHeight	= mosaicHeight/4;
-	
-	//If only 2 PIP
-	if (numSlots==2) 
-	{
-		/**********************************************
-		*	--------------------
-		*      |           	    |
-		*      |     	 1          |
-		*      | -------            |
-		*      | |     |            |
-		*      | |  2  |            |
-		*      | -------         -  |
-		*	--------------------
-		***********************************************/
-		//Change size
-		mosaicWidth		= SIZE4MUL(mosaicTotalWidth/4);
-		mosaicHeight		= SIZE4MUL(mosaicTotalHeight/4);
-		mosaicWidthUV		= mosaicWidth/2;
-	}
+	DWORD intraHeight	= SIZE4MUL(mosaicTotalHeight/5)/2;
+
 	//Get top position
 	DWORD pipIni			= SIZE4MUL(mosaicTotalHeight-mosaicHeight-intraHeight);
 	//Get pip ini
@@ -222,7 +215,9 @@ int PIPMosaic::Update(int pos, BYTE *image, int imgWidth, int imgHeight,bool kee
 			imageU += mosaicTotalWidthUV;
 			imageV += mosaicTotalWidthUV;
 		}
-	} else {
+	}
+	else 
+	{
 		//Get offsets
 		DWORD offsetY  = pipYOffset  + intraWidth   + (intraWidth+mosaicWidth)*(pos-1);
 		DWORD offsetUV = pipUVOffset + intraWidthUV + (intraWidthUV+mosaicWidthUV)*(pos-1);
@@ -259,7 +254,9 @@ int PIPMosaic::Update(int pos, BYTE *image, int imgWidth, int imgHeight,bool kee
 				imageU += mosaicWidthUV;
 				imageV += mosaicWidthUV;
 			}
-		} else if ((imgWidth > 0) && (imgHeight > 0)) {
+		}
+		else if ((imgWidth > 0) && (imgHeight > 0)) 
+		{
 			//Set resize
 			resizer[pos]->SetResize(imgWidth,imgHeight,imgWidth,mosaicWidth,mosaicHeight,mosaicTotalWidth,keepAspectRatio);
 			//Resize and set to slot
@@ -279,25 +276,59 @@ int PIPMosaic::Update(int pos, BYTE *image, int imgWidth, int imgHeight,bool kee
 *****************************/
 int PIPMosaic::Clean(int pos)
 {
-}
+	//Check it's in the mosaic
+	if(pos<0 || pos >= numSlots)
+	{
+		return 0;
+	}
 
+	DWORD mosaicNumPixels = mosaicTotalWidth*mosaicTotalHeight;
+	DWORD offset=0;
+	DWORD offset2=0;
+	BYTE *lineaY;
+	BYTE *lineaU;
+	BYTE *lineaV;
 
-/***********************
-* GetWidth
-*	Get mosaic width
-************************/
-int PIPMosaic::GetWidth()
-{
-	return mosaicTotalWidth;
-}
+	//Get positions
+	int left = GetLeft(pos);
+	int top = GetTop(pos);
+	int mosaicWidth = GetWidth(pos);
+	int mosaicHeight = GetHeight(pos);
 
-/***********************
-* GetHeight
-*	Get mosaic height
-************************/
-int PIPMosaic::GetHeight()
-{
-	return mosaicTotalHeight;
+	//Get offsets
+	offset += (mosaicTotalWidth*top) + left;
+	offset2 += (mosaicTotalWidth*top)/4+left/2;
+
+	//Get plane pointers
+	lineaY = mosaic + offset;
+	lineaU = mosaic + mosaicNumPixels + offset2;
+	lineaV = lineaU + mosaicNumPixels/4;
+
+	//Clear Y plane
+	for (int i = 0; i<mosaicHeight; i++)
+	{
+		//Copy Y line
+		memset(lineaY, 0x00, mosaicWidth);
+		//Go to next
+		lineaY += mosaicTotalWidth;
+	}
+
+	//Clear U and V planes
+	for (int i = 0; i<mosaicHeight/2; i++)
+	{
+		//Copy U and V lines
+		memset(lineaU, 0x80, mosaicWidth/2);
+		memset(lineaV, 0x80, mosaicWidth/2);
+
+		//Go to next
+		lineaU += mosaicTotalWidth/2;
+		lineaV += mosaicTotalWidth/2;
+	}
+
+	//We have changed
+	SetChanged();
+
+	return 1;
 }
 
 /***********************
@@ -348,24 +379,37 @@ int PIPMosaic::GetHeight(int pos)
 		return SIZE4MUL(mosaicTotalHeight/4);
 	return SIZE4MUL(mosaicTotalHeight/5);
 }
+
 int PIPMosaic::GetTop(int pos)
 {
+	DWORD mosaicHeight = 0;
+	DWORD intraHeight = 0;
 	//Check it's in the mosaic
-	if (pos+1>numSlots)
+	if(pos+1>numSlots)
+	{
 		//Exit
 		return 0;
+	}
+
 	//Main
-	if (!pos)
+	if(!pos)
 		return 0;
+
+	if(numSlots==2)
+		mosaicHeight = SIZE4MUL(mosaicTotalHeight/4);
+	else
+		mosaicHeight = SIZE4MUL(mosaicTotalHeight/5);
+
 	//Calculate pip participant size
-	DWORD mosaicHeight		= SIZE4MUL(mosaicTotalHeight/5);
+	intraHeight = SIZE4MUL(mosaicTotalHeight/5);
 	//Get top position
-	return SIZE4MUL(mosaicTotalHeight-mosaicHeight-mosaicHeight/2);
+	return SIZE4MUL(mosaicTotalHeight-mosaicHeight-intraHeight/2);
 }
+
 int PIPMosaic::GetLeft(int pos)
 {
 	//Check it's in the mosaic
-	if (pos+1>numSlots)
+	if ((pos+1) > numSlots)
 		//Exit
 		return 0;
 		//Main
