@@ -25,7 +25,6 @@ public:
 	~VideoStream();
 
 	int Init(VideoInput *input, VideoOutput *output);
-	void SetRemoteRateEstimator(RemoteRateEstimator* estimator);
 	int SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int intraPeriod,const Properties& properties);
 	int SetTemporalBitrateLimit(int bitrate);
 	int StartSending(char *sendVideoIp,int sendVideoPort,const RTPMap& rtpMap,const RTPMap& aptMap);

@@ -1,6 +1,7 @@
 #include "video.h"
 #include "audio.h"
 #include "MediaFrameListenerBridge.h"
+#include "VideoLayerSelector.h"
 
 void MediaFrameListenerBridge::AddListener(RTPIncomingMediaStream::Listener* listener)
 {
@@ -16,8 +17,16 @@ void MediaFrameListenerBridge::RemoveListener(RTPIncomingMediaStream::Listener* 
 	listeners.erase(listener);
 }
 
-void MediaFrameListenerBridge::onMediaFrame(MediaFrame& frame)
+void MediaFrameListenerBridge::onMediaFrame(const MediaFrame& frame)
 {
+	//Sync
+	{
+		ScopedLock scope(mutex);
+		//Multiplex
+		for (auto listener : mediaFrameListenerss)
+			listener->onMediaFrame(frame);
+	}
+	
 	//Check
 	if (!frame.HasRtpPacketizationInfo())
 		//Error
@@ -33,12 +42,12 @@ void MediaFrameListenerBridge::onMediaFrame(MediaFrame& frame)
 		//Reseted
 		reset = false;
 	}
-
+	
 	//Get info
 	const MediaFrame::RtpPacketizationInfo& info = frame.GetRtpPacketizationInfo();
 
 	DWORD codec = 0;
-	BYTE *frameData = NULL;
+	const BYTE *frameData = NULL;
 	DWORD frameSize = 0;
 	WORD  rate = 1;
 
@@ -77,6 +86,23 @@ void MediaFrameListenerBridge::onMediaFrame(MediaFrame& frame)
 			return;
 
 	}
+	
+	//Get now
+	auto now = getTimeMS();
+	
+	//Increase stats
+	numFrames++;
+	totalBytes += frameSize;
+		
+	//Sync
+	{
+		ScopedLock scope(mutex);
+		//Update bitrate acumulator
+		acumulator.Update(now,frameSize);
+		//Get bitrate in bps
+		bitrate = acumulator.GetInstant()*8;
+	}
+	
 
 	//Check if it the first received packet
 	if (!firstTimestamp)
@@ -131,6 +157,14 @@ void MediaFrameListenerBridge::onMediaFrame(MediaFrame& frame)
 		//Calculate partial lenght
 		current += rtp->GetPrefixLen()+rtp->GetSize();
 		
+		//Increase stats
+		numPackets++;
+		
+		//Fill payload descriptors
+		//TODO: move out of here
+		if (frame.GetType()==MediaFrame::Video)
+			VideoLayerSelector::GetLayerIds(packet);
+		
 		//Sync
 		{
 			ScopedLock scope(mutex);
@@ -143,4 +177,33 @@ void MediaFrameListenerBridge::onMediaFrame(MediaFrame& frame)
 void MediaFrameListenerBridge::Reset()
 {
 	reset = true;
+}
+
+void MediaFrameListenerBridge::Update()
+{
+	Update(getTimeMS());
+}
+
+
+void MediaFrameListenerBridge::Update(QWORD now)
+{
+	ScopedLock scope(mutex);
+	//Update bitrate acumulator
+	acumulator.Update(now);
+	//Get bitrate in bps
+	bitrate = acumulator.GetInstant()*8;
+}
+
+void MediaFrameListenerBridge::AddMediaListener(MediaFrame::Listener *listener)
+{
+	ScopedLock scope(mutex);
+	//Add to set
+	mediaFrameListenerss.insert(listener);
+}
+
+void MediaFrameListenerBridge::RemoveMediaListener(MediaFrame::Listener *listener)
+{
+	ScopedLock scope(mutex);
+	//Remove from set
+	mediaFrameListenerss.erase(listener);
 }

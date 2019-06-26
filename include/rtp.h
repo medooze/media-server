@@ -35,6 +35,7 @@
 #include "rtp/RTPLostPackets.h"
 #include "rtp/RTPSource.h"
 #include "rtp/RTPIncomingMediaStream.h"
+#include "rtp/RTPIncomingMediaStreamMultiplexer.h"
 #include "rtp/RTPIncomingSource.h"
 #include "rtp/RTPIncomingSourceGroup.h"
 #include "rtp/RTPOutgoingSource.h"
@@ -44,6 +45,7 @@ class RTPSender
 {
 public:
 	virtual int Enqueue(const RTPPacket::shared& packet) = 0;
+	virtual int Enqueue(const RTPPacket::shared& packet,std::function<RTPPacket::shared(const RTPPacket::shared&)> modifier) = 0;
 };
 
 class RTPReceiver

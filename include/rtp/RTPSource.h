@@ -20,16 +20,6 @@
 #include "rtp/RTCPSenderReport.h"
 #include "rtp/RTCPCompoundPacket.h"
 
-struct LayerInfo
-{
-	static BYTE MaxLayerId; 
-	BYTE temporalLayerId = MaxLayerId;
-	BYTE spatialLayerId  = MaxLayerId;
-	
-	bool IsValid() { return spatialLayerId!=MaxLayerId || temporalLayerId != MaxLayerId;	}
-	WORD GetId()   { return ((WORD)spatialLayerId)<<8  | temporalLayerId;			}
-};
-
 struct LayerSource : LayerInfo
 {
 	DWORD		numPackets = 0;
@@ -151,7 +141,6 @@ struct RTPSource : public Mutex
 	
 	virtual void Reset()
 	{
-		ssrc		= 0;
 		extSeqNum	= 0;
 		cycles		= 0;
 		numPackets	= 0;
@@ -160,6 +149,8 @@ struct RTPSource : public Mutex
 		totalRTCPBytes	= 0;
 		jitter		= 0;
 		bitrate		= 0;
+		//Reset accumulators
+		acumulator.Reset(0);
 	}
 };
 

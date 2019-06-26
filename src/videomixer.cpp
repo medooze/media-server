@@ -125,12 +125,12 @@ int VideoMixer::MixVideo()
 			//go to the begining
 			continue;
 		}
+		
+		//Desbloqueamos
+		pthread_mutex_unlock(&mixVideoMutex);
 
 		//Process 
 		Process(forceUpdate,getTime());
-
-		//Desbloqueamos
-		pthread_mutex_unlock(&mixVideoMutex);
 	}
 
 	Log("<MixVideo\n");
@@ -259,6 +259,9 @@ void VideoMixer::Process(bool forceUpdate, QWORD now)
 
 				//Get output
 				PipeVideoOutput *output = it->second->output;
+				
+				//Lock it
+				output->Lock();
 
 				//If we've got a new frame or the participant image was not in slot yet
 				if ((output && output->IsChanged(version)) || changed)
@@ -275,6 +278,8 @@ void VideoMixer::Process(bool forceUpdate, QWORD now)
 						mosaic->DrawVUMeter(i,vad,48000);
 					}
 				}
+				//Release it
+				output->Unlock();
 			} else if (changed) {
 				//Clean position
 				mosaic->Clean(i,logo);
@@ -359,8 +364,14 @@ int VideoMixer::SetMosaicOverlayImage(int mosaicId,const char* filename)
 	//Unlock
 	lstVideosUse.DecUse();
 	
+	//LOck the mixing
+	pthread_mutex_lock(&mixVideoMutex);
+
 	//Signal for new video
 	pthread_cond_signal(&mixVideoCond);
+
+	//UNlock mixing
+	pthread_mutex_unlock(&mixVideoMutex);
 	
 	//Exit
 	return ret;
@@ -500,8 +511,14 @@ int VideoMixer::End()
 		//Terminamos la mezcla
 		mixingVideo = 0;
 
-		//Seï¿½alamos la condicion
+		//LOck the mixing
+		pthread_mutex_lock(&mixVideoMutex);
+
+		//Signal for new video
 		pthread_cond_signal(&mixVideoCond);
+
+		//UNlock mixing
+		pthread_mutex_unlock(&mixVideoMutex);
 
 		//Y esperamos
 		pthread_join(mixVideoThread,NULL);
@@ -632,8 +649,14 @@ int VideoMixer::InitMixer(int id,int mosaicId)
 	//Desprotegemos
 	lstVideosUse.DecUse();
 	
+	//LOck the mixing
+	pthread_mutex_lock(&mixVideoMutex);
+
 	//Signal for new video
 	pthread_cond_signal(&mixVideoCond);
+
+	//UNlock mixing
+	pthread_mutex_unlock(&mixVideoMutex);
 
 	Log("<Init mixer [%d]\n",id);
 
@@ -690,8 +713,14 @@ int VideoMixer::SetMixerMosaic(int id,int mosaicId)
 	//Desprotegemos
 	lstVideosUse.DecUse();
 	
+	//LOck the mixing
+	pthread_mutex_lock(&mixVideoMutex);
+
 	//Signal for new video
 	pthread_cond_signal(&mixVideoCond);
+
+	//UNlock mixing
+	pthread_mutex_unlock(&mixVideoMutex);
 
 	Log("<SetMixerMosaic [%d]\n",id);
 
@@ -735,6 +764,15 @@ int VideoMixer::AddMosaicParticipant(int mosaicId, int partId)
 
 	//Unblock
 	lstVideosUse.DecUse();
+	
+	//LOck the mixing
+	pthread_mutex_lock(&mixVideoMutex);
+
+	//Signal for new video
+	pthread_cond_signal(&mixVideoCond);
+
+	//UNlock mixing
+	pthread_mutex_unlock(&mixVideoMutex);
 
 	//Everything ok
 	return 1;
@@ -777,6 +815,15 @@ int VideoMixer::RemoveMosaicParticipant(int mosaicId, int partId)
 
 	//Unblock
 	lstVideosUse.DecUse();
+	
+	//LOck the mixing
+	pthread_mutex_lock(&mixVideoMutex);
+
+	//Signal for new video
+	pthread_cond_signal(&mixVideoCond);
+
+	//UNlock mixing
+	pthread_mutex_unlock(&mixVideoMutex);
 
 	//Correct
 	return 1;
@@ -815,12 +862,6 @@ int VideoMixer::EndMixer(int id)
 	//Unset mosaic
 	video->mosaic = NULL;
 
-	//Dec usage
-	lstVideosUse.DecUse();
-
-	//LOck the mixing
-	pthread_mutex_lock(&mixVideoMutex);
-
 	//If still mixing video
 	if (mixingVideo)
 	{
@@ -841,6 +882,12 @@ int VideoMixer::EndMixer(int id)
 			}
 		}
 	}
+	
+	//Dec usage
+	lstVideosUse.DecUse();
+
+	//LOck the mixing
+	pthread_mutex_lock(&mixVideoMutex);
 
 	//Signal for new video
 	pthread_cond_signal(&mixVideoCond);
@@ -1010,11 +1057,17 @@ int VideoMixer::SetCompositionType(int mosaicId,Mosaic::Type comp, int size)
 	//And in the list
 	mosaics[mosaicId] = mosaic;
 
+	//Unlock (Could this be done earlier??)
+	lstVideosUse.Unlock();
+	
+	//LOck the mixing
+	pthread_mutex_lock(&mixVideoMutex);
+
 	//Signal for new video
 	pthread_cond_signal(&mixVideoCond);
 
-	//Unlock (Could this be done earlier??)
-	lstVideosUse.Unlock();
+	//UNlock mixing
+	pthread_mutex_unlock(&mixVideoMutex);
 
 	Log("<SetCompositionType\n");
 
@@ -1070,9 +1123,15 @@ int VideoMixer::SetSlot(int mosaicId,int num,int id)
 	//Desprotegemos la lista
 	lstVideosUse.DecUse();
 	
+	//LOck the mixing
+	pthread_mutex_lock(&mixVideoMutex);
+
 	//Signal for new video
 	pthread_cond_signal(&mixVideoCond);
 
+	//UNlock mixing
+	pthread_mutex_unlock(&mixVideoMutex);
+	
 	Log("<SetSlot\n");
 
 	return 1;
@@ -1121,8 +1180,14 @@ int VideoMixer::ResetSlots(int mosaicId)
 	//Desprotegemos la lista
 	lstVideosUse.DecUse();
 	
+	//LOck the mixing
+	pthread_mutex_lock(&mixVideoMutex);
+
 	//Signal for new video
 	pthread_cond_signal(&mixVideoCond);
+
+	//UNlock mixing
+	pthread_mutex_unlock(&mixVideoMutex);
 
 	Log("<SetSlot\n");
 

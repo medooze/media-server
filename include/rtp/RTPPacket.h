@@ -21,6 +21,7 @@
 #include "vp8/vp8.h"
 #include "vp9/VP9PayloadDescription.h"
 #include <memory>
+#include <optional>
 
 class RTPPacket
 {

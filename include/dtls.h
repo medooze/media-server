@@ -56,6 +56,8 @@ public:
 		//Interface
 		virtual void onDTLSPendingData() = 0;
 		virtual void onDTLSSetup(Suite suite,BYTE* localMasterKey,DWORD localMasterKeySize,BYTE* remoteMasterKey,DWORD remoteMasterKeySize) = 0;
+		virtual void onDTLSSetupError() = 0;
+		virtual void onDTLSShutdown() = 0;
 	};
 
 public:

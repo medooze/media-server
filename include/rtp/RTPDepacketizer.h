@@ -31,14 +31,12 @@ public:
 	}
 	virtual ~RTPDepacketizer()	{};
 
-	MediaFrame::Type GetMediaType()	{ return mediaType; }
-	DWORD		 GetCodec()	{ return codec; }
+	MediaFrame::Type GetMediaType()	const { return mediaType; }
+	DWORD		 GetCodec()	const { return codec; }
 
-	virtual void SetTimestamp(DWORD timestamp) = 0;
 	virtual MediaFrame* AddPacket(const RTPPacket::shared& packet) = 0;
 	virtual MediaFrame* AddPayload(const BYTE* payload,DWORD payload_len) = 0;
 	virtual void ResetFrame() = 0;
-	virtual DWORD GetTimestamp() = 0;
 private:
 	MediaFrame::Type	mediaType;
 	DWORD			codec;
@@ -48,13 +46,14 @@ private:
 class DummyAudioDepacketizer : public RTPDepacketizer
 {
 public:
-	DummyAudioDepacketizer(DWORD codec, DWORD rate) : RTPDepacketizer(MediaFrame::Audio,codec), frame((AudioCodec::Type)codec,rate)
+	DummyAudioDepacketizer(AudioCodec::Type codec, DWORD rate) : RTPDepacketizer(MediaFrame::Audio,codec), frame(codec)
 	{
-
+		frame.SetClockRate(rate);
 	}
-	DummyAudioDepacketizer(DWORD codec) : RTPDepacketizer(MediaFrame::Audio,codec), frame((AudioCodec::Type)codec,8000)
+	
+	DummyAudioDepacketizer(AudioCodec::Type codec) : RTPDepacketizer(MediaFrame::Audio,codec), frame(codec)
 	{
-
+		frame.SetClockRate(8000);
 	}
 
 	virtual ~DummyAudioDepacketizer()
@@ -62,21 +61,14 @@ public:
 
 	}
 
-	virtual void SetTimestamp(DWORD timestamp)
-	{
-		//Set timestamp
-		frame.SetTimestamp(timestamp);
-	}
 	virtual MediaFrame* AddPacket(const RTPPacket::shared& packet)
 	{
 		//Check it is from same packet
 		if (frame.GetTimeStamp()!=packet->GetTimestamp())
 			//Reset frame
 			ResetFrame();
-		//If not timestamp
-		if (frame.GetTimeStamp()==(DWORD)-1)
-			//Set timestamp
-			frame.SetTimestamp(packet->GetTimestamp());
+		//Set timestamp
+		frame.SetTimestamp(packet->GetTimestamp());
 		//Set SSRC
 		frame.SetSSRC(packet->GetSSRC());
 		//Add payload

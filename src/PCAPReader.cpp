@@ -85,11 +85,17 @@ retry:
 		//retry
 		goto retry;
 	}
+	//Get ip and ports
+	originIp	= get4(data,26);
+	destIp		= get4(data,30);
+	originPort	= get2(data,34);
+	destPort	= get2(data,36);
+	
 	//The udp packet
 	packet	  = data + 42;
 	packetLen = udpLen - 8;
 	
-	UltraDebug("-PCAPReader::GetNextPacket() | got packet [len:%d,pos:%d]\n",packetLen,lseek(fd, 0, SEEK_CUR));
+	//UltraDebug("-PCAPReader::GetNextPacket() | got packet [len:%d,pos:%d,ts:%llu]\n",packetLen,lseek(fd, 0, SEEK_CUR),ts);
 	
 	//Return timestamp of this packet
 	return ts;

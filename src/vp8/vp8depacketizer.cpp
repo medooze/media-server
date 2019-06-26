@@ -15,17 +15,15 @@
 
 VP8Depacketizer::VP8Depacketizer() : RTPDepacketizer(MediaFrame::Video,VideoCodec::VP8), frame(VideoCodec::VP8,0)
 {
+	//Set clock rate
+	frame.SetClockRate(90000);
 }
 
 VP8Depacketizer::~VP8Depacketizer()
 {
 
 }
-void VP8Depacketizer::SetTimestamp(DWORD timestamp)
-{
-	//Set timestamp
-	frame.SetTimestamp(timestamp);
-}
+
 void VP8Depacketizer::ResetFrame()
 {
 	//Clear packetization info
@@ -41,15 +39,13 @@ void VP8Depacketizer::ResetFrame()
 MediaFrame* VP8Depacketizer::AddPacket(const RTPPacket::shared& packet)
 {
 	//Get timestamp in ms
-	auto ts = packet->GetTimestamp()/90;
+	auto ts = packet->GetTimestamp();
 	//Check it is from same packet
 	if (frame.GetTimeStamp()!=ts)
 		//Reset frame
 		ResetFrame();
-	//If not timestamp
-	if (frame.GetTimeStamp()==(DWORD)-1)
-		//Set timestamp
-		frame.SetTimestamp(ts);
+	//Set timestamp
+	frame.SetTimestamp(ts);
 	//Set SSRC
 	frame.SetSSRC(packet->GetSSRC());
 	//Add payload

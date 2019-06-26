@@ -29,7 +29,7 @@ private:
 	int numNals;
 	int width;
 	int height;
-	int numPixels;
+	DWORD numPixels;
 	int bitrate;
 	int fps;
 	int format;

@@ -9,7 +9,7 @@ using namespace std::chrono_literals;
 
 RTPIncomingSourceGroup::RTPIncomingSourceGroup(MediaFrame::Type type,TimeService& timeService) :
 	timeService(timeService),
-	losts(128)
+	losts(256)
 {
 	//Store type
 	this->type = type;
@@ -71,25 +71,29 @@ int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet, DWORD siz
 		//Do nothing else
 		return 0;
 	
+	//Add to lost packets
+	auto lost = losts.AddPacket(packet);
+	
+	//Get now
+	auto now = getTimeMS();
+	
+	//If doing remb
+	if (remb)
+	{
+		
+		//Add estimation
+		remoteRateEstimator.Update(media.ssrc,packet,size);
+		//Update lost
+		if (lost) remoteRateEstimator.UpdateLost(media.ssrc,lost,now);
+	}
+	
 	//Add to packet queue
 	if (!packets.Add(packet))
 		//Rejected packet
 		return -1;
 	
-	//Add to lost packets
-	auto lost = losts.AddPacket(packet);
-	
-	//If doing remb
-	if (remb)
-	{
-		//Add estimation
-		remoteRateEstimator.Update(media.ssrc,packet,size);
-		//Update lost
-		if (lost) remoteRateEstimator.UpdateLost(media.ssrc,lost,getTimeMS());
-	}
-	
 	//Get next time for dispatcht
-	uint64_t next = packets.GetWaitTime(getTimeMS());
+	uint64_t next = packets.GetWaitTime(now);
 	
 	//UltraDebug("-RTPIncomingSourceGroup::AddPacket() | [lost:%d,next:%llu]\n",lost,next);
 	
@@ -100,6 +104,32 @@ int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet, DWORD siz
 	
 	//Return lost packets
 	return lost;
+}
+
+void RTPIncomingSourceGroup::Bye(DWORD ssrc)
+{
+	if (ssrc == media.ssrc)
+	{
+		//Reset source
+		media.Reset();
+		//REset packets
+		ResetPackets();
+		//Reset 
+		{
+			//Block listeners
+			ScopedLock scoped(listenerMutex);
+			//Deliver to all listeners
+			for (auto listener : listeners)
+				//Dispatch rtp packet
+				listener->onBye(this);
+		}
+	} else if (ssrc == rtx.ssrc) {
+		//Reset source
+		rtx.Reset();
+	} else if (ssrc == fec.ssrc) {
+		//Reset source
+		fec.Reset();
+	}
 }
 
 void RTPIncomingSourceGroup::ResetPackets()
@@ -183,26 +213,30 @@ void RTPIncomingSourceGroup::Start(bool remb)
 	this->remb = remb;
 	
 	//Add media ssrc
-	remoteRateEstimator.AddStream(media.ssrc);
+	if (media.ssrc) remoteRateEstimator.AddStream(media.ssrc);
 }
 
 void RTPIncomingSourceGroup::DispatchPackets(uint64_t time)
 {
 	//UltraDebug("-RTPIncomingSourceGroup::DispatchPackets() | [time:%llu]\n",time);
+	
+	//Deliver all pending packets at once
+	std::vector<RTPPacket::shared> ordered;
+	for (auto packet = packets.GetOrdered(getTimeMS()); packet; packet = packets.GetOrdered(getTimeMS()))
+	{
+		//We need to adjust the seq num due the in band probing packets
+		packet->SetExtSeqNum(packet->GetExtSeqNum() - packets.GetNumDiscardedPackets());
+		//Add to packets
+		ordered.push_back(packet);
+	}
+	
 	{
 		//Block listeners
 		ScopedLock scoped(listenerMutex);
-
-		//Deliver all pending packets at once
-		for (auto packet = packets.GetOrdered(getTimeMS()); packet; packet = packets.GetOrdered(getTimeMS()))
-		{
-			//We need to adjust the seq num due the in band probing packets
-			packet->SetExtSeqNum(packet->GetExtSeqNum() - packets.GetNumDiscardedPackets());
-			//Deliver to all listeners
-			for (auto listener : listeners)
-				//Dispatch rtp packet
-				listener->onRTP(this,packet);
-		}
+		//Deliver to all listeners
+		for (auto listener : listeners)
+			//Dispatch rtp packet
+			listener->onRTP(this,ordered);
 	}
 	//Update stats
 	lost          = losts.GetTotal();

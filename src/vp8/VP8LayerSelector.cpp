@@ -39,7 +39,7 @@ bool VP8LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 		//Error
 		return 0;
 	
-	//UltraDebug("-intra:%d\t tl:%u\t picId:%u\t tl0picIdx:%u\t sync:%u\t waitingForIntra:%d\n",header.isKeyFrame,desc->temporalLayerIndex,desc->pictureId,desc->temporalLevelZeroIndex,desc->layerSync,waitingForIntra);
+	//UltraDebug("-intra:%d\t tl:%u\t picId:%u\t tl0picIdx:%u\t sync:%u\t waitingForIntra:%d\n",header && header->isKeyFrame,desc->temporalLayerIndex,desc->pictureId,desc->temporalLevelZeroIndex,desc->layerSync,waitingForIntra);
 	
 	//If we have to wait for first intra
 	if (waitingForIntra)
@@ -124,8 +124,11 @@ bool VP8LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 			
 			//parse it
 			if (!header.Parse(packet->GetMediaData()+len,packet->GetMediaLength()-len))
+			{
 				//Clear desc
 				packet->vp8PayloadDescriptor.reset();
+				packet->vp8PayloadHeader.reset();
+			}
 		}
 	}
 	

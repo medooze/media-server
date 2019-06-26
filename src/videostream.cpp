@@ -68,6 +68,14 @@ int VideoStream::SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitra
 {
 	Log("-SetVideoCodec [%s,%dfps,%dkbps,intra:%d]\n",VideoCodec::GetNameFor(codec),fps,bitrate,intraPeriod);
 
+	//Fix: Should not be here
+	if (properties.HasProperty("rateEstimator.maxRate"))
+		rtp.SetTemporalMaxLimit(properties.GetProperty("rateEstimator.maxRate",0));
+	//Fix: Should not be here
+	if (properties.HasProperty("rateEstimator.minRate"))
+		//Set it
+		rtp.SetTemporalMinLimit(properties.GetProperty("rateEstimator.minRate",0));
+	
 	//LO guardamos
 	videoCodec=codec;
 
@@ -110,12 +118,6 @@ int VideoStream::SetTemporalBitrateLimit(int estimation)
 	videoBitrateLimitCount = videoFPS;
 	//Exit
 	return 1;
-}
-
-void VideoStream::SetRemoteRateEstimator(RemoteRateEstimator* estimator)
-{
-	//Set it in the rtp session
-	rtp.SetRemoteRateEstimator(estimator);
 }
 
 /***************************************
@@ -429,10 +431,10 @@ int VideoStream::SendVideo()
 	while(sendingVideo)
 	{
 		//Nos quedamos con el puntero antes de que lo cambien
-		BYTE *pic = videoInput->GrabFrame(frameTime/1000);
+		auto pic = videoInput->GrabFrame(frameTime/1000);
 
 		//Check picture
-		if (!pic)
+		if (!pic.buffer)
 			//Exit
 			continue;
 
@@ -493,7 +495,7 @@ int VideoStream::SendVideo()
 		}
 		
 		//Procesamos el frame
-		VideoFrame *videoFrame = videoEncoder->EncodeFrame(pic,videoInput->GetBufferSize());
+		VideoFrame *videoFrame = videoEncoder->EncodeFrame(pic.buffer,pic.GetBufferSize());
 
 		//If was failed
 		if (!videoFrame)
@@ -558,6 +560,9 @@ int VideoStream::SendVideo()
 		//Add frame size in bits to bitrate calculator
 		bitrateAcu.Update(getDifTime(&ini)/1000,videoFrame->GetLength()*8);
 
+		//Set clock rate
+		videoFrame->SetClockRate(1000);
+		
 		//Set frame timestamp
 		videoFrame->SetTimestamp(getDifTime(&ini)/1000);
 
@@ -619,27 +624,40 @@ int VideoStream::RecVideo()
 {
 	VideoDecoder*	videoDecoder = NULL;
 	VideoCodec::Type type;
-	timeval 	before;
+	timeval 	now;
 	timeval		lastFPURequest;
 	DWORD		lostCount=0;
 	DWORD		frameTime = (DWORD)-1;
 	DWORD		lastSeq = RTPPacket::MaxExtSeqNum;
 	bool		waitIntra = false;
 	
+	Acumulator deliverTimeAcu(1000);
+	Acumulator decodeTimeAcu(1000);
+	Acumulator waitTimeAcu(1000);
+	Acumulator fpsAcu(1000);
 	
 	Log(">RecVideo\n");
 	
 	//Get now
-	gettimeofday(&before,NULL);
+	getUpdDifTime(&now);
 
 	//Not sent FPU yet
 	setZeroTime(&lastFPURequest);
-
+	
 	//Mientras tengamos que capturar
 	while(receivingVideo)
 	{
+		//Update before waiting
+		getUpdDifTime(&now);
+		
 		//Get RTP packet
 		auto packet = rtp.GetPacket();
+		
+		//Get diff
+		auto diff = getUpdDifTime(&now)/1000;
+		
+		//Update waited time
+		waitTimeAcu.Update(getTime(now)/1000,diff);
 
 		//Check
 		if (!packet)
@@ -651,7 +669,7 @@ int VideoStream::RecVideo()
 		DWORD ts = packet->GetTimestamp();
 
 		//Get packet data
-		BYTE* buffer = packet->AdquireMediaData();
+		const BYTE* buffer = packet->GetMediaData();
 		DWORD size = packet->GetMediaLength();
 
 		//Get type
@@ -774,10 +792,19 @@ int VideoStream::RecVideo()
 				waitIntra = true;
 			}
 		}
+		
+		//Get decode time
+		diff = getUpdDifTime(&now)/1000;
+		
+		//Update waited time
+		decodeTimeAcu.Update(getTime(now)/1000,diff);
 
 		//Check if it is the last packet of a frame
 		if(packet->GetMark())
 		{
+			//One morw frame
+			fpsAcu.Update(getTime(now)/1000,1);
+
 			if (videoDecoder->IsKeyFrame())
 				Debug("-Got Intra\n");
 			
@@ -803,6 +830,29 @@ int VideoStream::RecVideo()
 			if (waitIntra && videoDecoder->IsKeyFrame())
 				//Do not wait anymore
 				waitIntra = false;
+			
+			//Get deliver time
+			diff = getUpdDifTime(&now)/1000;
+		
+			//Update waited time
+			deliverTimeAcu.Update(getTime(now)/1000,diff);
+			
+			//Dump stats each 6 frames
+			if (fpsAcu.GetAcumulated() % 60 == 0)
+			{
+				//Log
+				UltraDebug("-VideoStream::RecVideo() fps [min:%.2Lf,max:%.2Lf,avg:%.2Lf] wait [min:%.2Lf,max:%.2Lf,avg:%.2Lf] enc [min:%.2Lf,max:%.2Lf,avg:%.2Lf] deliver [min:%.2Lf,max:%.2Lf,avg:%.2Lf]\n",
+					fpsAcu.GetMinAvg()		,fpsAcu.GetMaxAvg()		, fpsAcu.GetInstantAvg(),
+					waitTimeAcu.GetMinAvg()		,waitTimeAcu.GetMaxAvg()	, waitTimeAcu.GetInstantAvg(),
+					decodeTimeAcu.GetMinAvg()	,decodeTimeAcu.GetMaxAvg()	, decodeTimeAcu.GetInstantAvg(),
+					deliverTimeAcu.GetMinAvg()	,deliverTimeAcu.GetMaxAvg()	, deliverTimeAcu.GetInstantAvg()
+				);
+				//Reset min and max
+				fpsAcu.ResetMinMax();
+				waitTimeAcu.ResetMinMax();
+				decodeTimeAcu.ResetMinMax();
+				deliverTimeAcu.ResetMinMax();
+			}
 		}
 	}
 

@@ -256,3 +256,10 @@ void AudioDecoderWorker::onEnded(RTPIncomingMediaStream* stream)
 	//Cancel packets wait
 	packets.Cancel();
 }
+
+
+void AudioDecoderWorker::onBye(RTPIncomingMediaStream* stream)
+{
+	//Cancel packets wait
+	packets.Cancel();
+}

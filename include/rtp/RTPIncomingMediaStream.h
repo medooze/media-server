@@ -14,6 +14,10 @@
 #ifndef RTPINCOMINGMEDIASTREAM_H
 #define RTPINCOMINGMEDIASTREAM_H
 
+#include "config.h"
+#include "rtp/RTPPacket.h"
+
+#include <vector>
 
 class RTPIncomingMediaStream
 {
@@ -21,10 +25,17 @@ public:
 	class Listener 
 	{
 	public:
+		virtual ~Listener() = default;
 		virtual void onRTP(RTPIncomingMediaStream* stream,const RTPPacket::shared& packet) = 0;
+		virtual void onRTP(RTPIncomingMediaStream* stream,const std::vector<RTPPacket::shared>& packets)
+		{
+			for (const auto packet : packets)
+				onRTP(stream,packet);
+		};
+		virtual void onBye(RTPIncomingMediaStream* stream) = 0;
 		virtual void onEnded(RTPIncomingMediaStream* stream) = 0;
 	};
-	
+	virtual ~RTPIncomingMediaStream() = default;
 	virtual void AddListener(Listener* listener) = 0;
 	virtual void RemoveListener(Listener* listener) = 0;
 	virtual DWORD GetMediaSSRC() = 0;

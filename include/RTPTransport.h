@@ -63,8 +63,8 @@ public:
 	void Reset();
 	int End();
 	
-	int SendRTPPacket(Buffer&& packet);
-	int SendRTCPPacket(Buffer&& packet);
+	int SendRTPPacket(Packet&& packet);
+	int SendRTCPPacket(Packet&& packet);
 
 	int SetLocalCryptoSDES(const char* suite, const char* key64);
 	int SetRemoteCryptoSDES(const char* suite, const char* key64);
@@ -79,6 +79,8 @@ public:
 	virtual void OnRead(const int fd, const uint8_t* data, const size_t size, const uint32_t ipAddr, const uint16_t port) override;
 	virtual void onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMasterKey,DWORD localMasterKeySize,BYTE* remoteMasterKey,DWORD remoteMasterKeySize) override;
 	virtual void onDTLSPendingData() override;
+	virtual void onDTLSSetupError() override;
+	virtual void onDTLSShutdown() override;
 	
 	TimeService& GetTimeService() { return rtpLoop; }
 	

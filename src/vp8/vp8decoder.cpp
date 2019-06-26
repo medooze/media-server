@@ -224,9 +224,9 @@ int VP8Decoder::DecodePacket(const BYTE *in,DWORD inLen,int lost,int last)
 		//Get dimensions
 		width = img->d_w;
 		height = img->d_h;
-		int u = width*height;
-		int v = width*height*5/4;
-		int size = width*height*3/2;
+		DWORD u = width*height;
+		DWORD v = width*height*5/4;
+		DWORD size = width*height*3/2;
 
 		//Check size
 		if (size>frameSize)
@@ -241,11 +241,11 @@ int VP8Decoder::DecodePacket(const BYTE *in,DWORD inLen,int lost,int last)
 		}
 
 		//Copaamos  el Cy
-		for(int i=0;i<height;i++)
+		for(DWORD i=0;i<height;i++)
 			memcpy(&frame[i*width],&img->planes[0][i*img->stride[0]],width);
 
 		//Y el Cr y Cb
-		for(int i=0;i<height/2;i++)
+		for(DWORD i=0;i<height/2;i++)
 		{
 			memcpy(&frame[i*width/2+u],&img->planes[1][i*img->stride[1]],width/2);
 			memcpy(&frame[i*width/2+v],&img->planes[2][i*img->stride[2]],width/2);
@@ -293,9 +293,9 @@ int VP8Decoder::Decode(BYTE *buffer,DWORD len)
 	//Get dimensions
 	width = img->d_w;
 	height = img->d_h;
-	int u = width*height;
-	int v = width*height*5/4;
-	int size = width*height*3/2;
+	DWORD u = width*height;
+	DWORD v = width*height*5/4;
+	DWORD size = width*height*3/2;
 
 	//Check size
 	if (size>frameSize)
@@ -310,11 +310,11 @@ int VP8Decoder::Decode(BYTE *buffer,DWORD len)
 	}
 
 	//Copaamos  el Cy
-	for(int i=0;i<height;i++)
+	for(DWORD i=0;i<height;i++)
 		memcpy(&frame[i*width],&img->planes[0][i*img->stride[0]],width);
 
 	//Y el Cr y Cb
-	for(int i=0;i<height/2;i++)
+	for(DWORD i=0;i<height/2;i++)
 	{
 		memcpy(&frame[i*width/2+u],&img->planes[1][i*img->stride[1]],width/2);
 		memcpy(&frame[i*width/2+v],&img->planes[2][i*img->stride[2]],width/2);

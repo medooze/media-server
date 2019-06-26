@@ -27,7 +27,7 @@ RTPStreamTransponder::RTPStreamTransponder(RTPOutgoingSourceGroup* outgoing,RTPS
 	//Add us as listeners
 	outgoing->AddListener(this);
 	
-	Debug(">RTPStreamTransponder() | [outgoing:%p,sender:%p,ssrc:%u]\n",outgoing,sender,ssrc);
+	Debug("-RTPStreamTransponder() | [outgoing:%p,sender:%p,ssrc:%u]\n",outgoing,sender,ssrc);
 }
 
 
@@ -101,7 +101,7 @@ void RTPStreamTransponder::Close()
 
 void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket::shared& packet)
 {
-	//Double check
+	
 	if (!packet)
 		//Exit
 		return;
@@ -114,7 +114,7 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 	//Check if it is an empty packet
 	if (!packet->GetMediaLength())
 	{
-		Debug("-StreamTransponder::onRTP dropping empty packet\n");
+		UltraDebug("-RTPStreamTransponder::onRTP() | dropping empty packet\n");
 		//Drop it
 		dropped++;
 		//Exit
@@ -134,6 +134,7 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 	//If we need to reset
 	if (reset)
 	{
+		Debug("-StreamTransponder::onRTP() | Reset stream\n");
 		//IF last was not completed
 		if (!lastCompleted && type==MediaFrame::Video)
 		{
@@ -202,7 +203,7 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 		//Get first timestamp
 		firstTimestamp = packet->GetTimestamp();
 		
-		UltraDebug("-first seq:%lu base:%lu last:%lu ts:%lu baseSeq:%lu baseTimestamp:%llu lastTimestamp:%llu\n",firstExtSeqNum,baseExtSeqNum,lastExtSeqNum,firstTimestamp,baseExtSeqNum,baseTimestamp,lastTimestamp);
+		UltraDebug("-StreamTransponder::onRTP() | first seq:%lu base:%lu last:%lu ts:%lu baseSeq:%lu baseTimestamp:%llu lastTimestamp:%llu\n",firstExtSeqNum,baseExtSeqNum,lastExtSeqNum,firstTimestamp,baseExtSeqNum,baseTimestamp,lastTimestamp);
 	}
 	
 	//Ensure it is not before first one
@@ -235,7 +236,7 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 		selector->SelectTemporalLayer(temporalLayerId);
 		
 		//Select pacekt
-		if (!selector->Select(packet,mark))
+		if (!packet->GetMediaLength() || !selector->Select(packet,mark))
 		{
 			//One more dropperd
 			dropped++;
@@ -246,29 +247,22 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 		lastSpatialLayerId = selector->GetSpatialLayer();
 	}
 	
-	//Clone packet
-	auto cloned = packet->Clone();
+	
 	
 	//Set normalized seq num
 	extSeqNum = baseExtSeqNum + (extSeqNum - firstExtSeqNum) - dropped;
 	
-	//UltraDebug("-ext seq:%lu base:%lu first:%lu current:%lu dropped:%lu\n",extSeqNum,baseExtSeqNum,firstExtSeqNum,packet->GetExtSeqNum(),dropped);
-	
-	//Set new seq numbers
-	cloned->SetExtSeqNum(extSeqNum);
-	
 	//Set normailized timestamp
-	cloned->SetTimestamp(baseTimestamp + (packet->GetTimestamp()-firstTimestamp));
+	uint64_t timestamp = baseTimestamp + (packet->GetTimestamp()-firstTimestamp);
 	
-	//Set mark again
-	cloned->SetMark(mark);
-	
-	//Change ssrc
-	cloned->SetSSRC(ssrc);
+	//UltraDebug("-ext seq:%lu base:%lu first:%lu current:%lu dropped:%lu ts:%lu normalized:%llu\n",extSeqNum,baseExtSeqNum,firstExtSeqNum,packet->GetExtSeqNum(),dropped,packet->GetTimestamp(),timestamp);
 	
 	//Rewrite pict id
+	bool rewitePictureIds = false;
+	DWORD pictureId = 0;
+	DWORD temporalLevelZeroIndex = 0;
 	//TODO: this should go into the layer selector??
-	if (rewritePicId && cloned->GetCodec()==VideoCodec::VP8 && packet->vp8PayloadDescriptor)
+	if (rewritePicId && packet->GetCodec()==VideoCodec::VP8 && packet->vp8PayloadDescriptor)
 	{
 		//Get VP8 desc
 		auto desc = *packet->vp8PayloadDescriptor;
@@ -292,24 +286,62 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 		}
 		
 		//Rewrite picture id wrapping to 15 or 7 bits
-		desc.pictureId = desc.pictureIdLength==2 ? picId%0x7FFF : picId%0x7F;
+		pictureId = desc.pictureIdLength==2 ? picId%0x7FFF : picId%0x7F;
 		//Rewrite tl0 index
-		desc.temporalLevelZeroIndex = tl0Idx;
+		temporalLevelZeroIndex = tl0Idx;
 		//We need to rewrite vp8 picture ids
-		packet->rewitePictureIds = true;
+		rewitePictureIds = true;
 	}
 	//UPdate media codec and type
-	media = cloned->GetMedia();
-	codec = cloned->GetCodec();
-	type  = cloned->GetPayloadType();
+	media = packet->GetMedia();
+	codec = packet->GetCodec();
+	type  = packet->GetPayloadType();
 	//Get last send seq num and timestamp
-	lastExtSeqNum = cloned->GetExtSeqNum();
-	lastTimestamp = cloned->GetTimestamp();
+	lastExtSeqNum = extSeqNum;
+	lastTimestamp = timestamp;
 	//Update last sent time
 	lastTime = getTime();
 	
 	//Send packet
-	if (sender) sender->Enqueue(cloned);
+	if (sender)
+		//Create clone on sender thread
+		sender->Enqueue(packet,[=](const RTPPacket::shared& packet) -> RTPPacket::shared {
+			//Clone packet
+			auto cloned = packet->Clone();
+			//Set new seq numbers
+			cloned->SetExtSeqNum(extSeqNum);
+			//Set normailized timestamp
+			cloned->SetTimestamp(timestamp);
+			//Set mark again
+			cloned->SetMark(mark);
+			//Change ssrc
+			cloned->SetSSRC(ssrc);
+			//We need to rewrite vp8 picture ids
+			cloned->rewitePictureIds = rewitePictureIds;
+			//Ensure we have desc
+			if (cloned->vp8PayloadDescriptor)
+			{
+				//Rewrite picture id wrapping to 15 or 7 bits
+				cloned->vp8PayloadDescriptor->pictureId = pictureId;
+				//Rewrite tl0 index
+				cloned->vp8PayloadDescriptor->temporalLevelZeroIndex = temporalLevelZeroIndex;
+			}
+			//Move it
+			return std::move(cloned);
+		});
+}
+
+void RTPStreamTransponder::onBye(RTPIncomingMediaStream* stream)
+{
+	ScopedLock lock(mutex);
+	
+	//If they are the not same
+	if (this->incoming!=stream)
+		//DO nothing
+		return;
+	
+	//Reset packets
+	reset = true;
 }
 
 void RTPStreamTransponder::onEnded(RTPIncomingMediaStream* stream)
@@ -331,6 +363,7 @@ void RTPStreamTransponder::onEnded(RTPIncomingMediaStream* stream)
 
 void RTPStreamTransponder::RequestPLI()
 {
+	//Log("-RTPStreamTransponder::RequestPLI() [receiver:%p,incoming:%p]\n",receiver,incoming);
 	ScopedLock lock(mutex);
 	//Request update on the incoming
 	if (receiver && incoming) receiver->SendPLI(incoming->GetMediaSSRC());
@@ -349,10 +382,10 @@ void RTPStreamTransponder::onREMB(RTPOutgoingSourceGroup* group,DWORD ssrc, DWOR
 
 void RTPStreamTransponder::SelectLayer(int spatialLayerId,int temporalLayerId)
 {
-	this->spatialLayerId  =  spatialLayerId;
+	this->spatialLayerId  = spatialLayerId;
 	this->temporalLayerId = temporalLayerId;
 	
-	if (lastSpatialLayerId<spatialLayerId)
+	if (lastSpatialLayerId!=spatialLayerId)
 		//Request update on the incoming
 		RequestPLI();
 }

@@ -122,6 +122,9 @@ public:
 
 	Type GetType()		{ return type; }
 	Method GetMethod()	{ return method; }
+	
+	void Dump();
+	
 private:
 	typedef std::vector<Attribute*> Attributes;
 private:

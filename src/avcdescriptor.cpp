@@ -248,17 +248,18 @@ DWORD AVCDescriptor::Serialize(BYTE* buffer,DWORD bufferLength) const
 void AVCDescriptor::Dump() const
 {
 	//Get data
-	Debug("-Dumping AVC Descriptor\n");
+	Debug("[AVCDescriptor\n");
 	Debug(" configurationVersion: %d\n",configurationVersion);
 	Debug(" AVCProfileIndication: 0x%.2x\n",AVCProfileIndication);
 	Debug(" profileCompatibility: 0x%.2x\n",profileCompatibility);
 	Debug(" AVCLevelIndication: 0x%.2x\n",AVCLevelIndication);
 	Debug(" NALUnitLength: %d\n",NALUnitLength);
 	Debug(" numOfSequenceParameterSets: %d\n",numOfSequenceParameterSets);
+	Debug(" numOfPictureParameterSets: %d\n",numOfPictureParameterSets);
+	Debug("]");
 	//Dump them
 	for (BYTE i=0;i<numOfSequenceParameterSets;i++)
 	{
-		Debug(" SequenceParameterSets[%d]\n",i);
 		H264SeqParameterSet sps;
 		//Decode
 		sps.Decode(spsData[i],spsSizes[i]);
@@ -266,7 +267,7 @@ void AVCDescriptor::Dump() const
 		sps.Dump();
 	}
 	
-	Debug(" numOfPictureParameterSets: %d\n",numOfPictureParameterSets);
+	
 	//Dump them
 	for (BYTE i=0;i<numOfPictureParameterSets;i++)
 	{
@@ -276,4 +277,5 @@ void AVCDescriptor::Dump() const
 		//Dump
 		pps.Dump();
 	}
+	Debug("[AVCDescriptor/]\n");
 }

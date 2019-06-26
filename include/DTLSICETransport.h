@@ -30,6 +30,7 @@
 #include "Datachannels.h"
 #include "Endpoint.h"
 #include "SRTPSession.h"
+#include "SendSideBandwidthEstimation.h"
 
 class DTLSICETransport : 
 	public RTPSender,
@@ -38,10 +39,25 @@ class DTLSICETransport :
 	public ICERemoteCandidate::Listener
 {
 public:
+	enum DTLSState
+	{
+		New,
+		Connecting,
+		Connected,
+		Closed,
+		Failed
+	};
+	
+	class Listener
+	{
+	public:
+		virtual void onDTLSStateChanged(const DTLSState) = 0;
+		virtual ~Listener() = default;
+	};
 	class Sender
 	{
 	public:
-		virtual int Send(const ICERemoteCandidate *candiadte, Buffer&& buffer) = 0;
+		virtual int Send(const ICERemoteCandidate *candiadte, Packet&& buffer) = 0;
 	};
 
 public:
@@ -56,8 +72,10 @@ public:
 	void SetLocalProperties(const Properties& properties);
 	virtual int SendPLI(DWORD ssrc) override;
 	virtual int Enqueue(const RTPPacket::shared& packet) override;
+	virtual int Enqueue(const RTPPacket::shared& packet,std::function<RTPPacket::shared(const RTPPacket::shared&)> modifier) override;
 	int Dump(const char* filename, bool inbound = true, bool outbound = true, bool rtcp = true);
 	int Dump(UDPDumper* dumper, bool inbound = true, bool outbound = true, bool rtcp = true);
+        int DumpBWEStats(const char* filename);
 	void Reset();
 	
 	void ActivateRemoteCandidate(ICERemoteCandidate* candidate,bool useCandidate, DWORD priority);
@@ -72,7 +90,7 @@ public:
 	
 	void SetBandwidthProbing(bool probe);
 	void SetMaxProbingBitrate(DWORD bitrate)	{ this->maxProbingBitrate = bitrate;	}
-	void SetSenderSideEstimatorListener(RemoteRateEstimator::Listener* listener) { senderSideEstimator.SetListener(listener); }
+	void SetSenderSideEstimatorListener(RemoteRateEstimator::Listener* listener) { senderSideBandwidthEstimator.SetListener(listener); }
 	
 	const char* GetRemoteUsername() const { return iceRemoteUsername;	};
 	const char* GetRemotePwd()	const { return iceRemotePwd;		};
@@ -81,21 +99,27 @@ public:
 	
 	virtual void onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMasterKey,DWORD localMasterKeySize,BYTE* remoteMasterKey,DWORD remoteMasterKeySize)  override;
 	virtual void onDTLSPendingData() override;
+	virtual void onDTLSSetupError() override;
+	virtual void onDTLSShutdown() override;
 	virtual int onData(const ICERemoteCandidate* candidate,const BYTE* data,DWORD size)  override;
 	
 	DWORD GetRTT() const { return rtt; }
 	
 	TimeService& GetTimeService() { return timeService; }
+	
+	void SetListener(Listener* listener);
 
 private:
+	void SetState(DTLSState state);
 	void Probe();
-	int Send(const RTPPacket::shared& packet);
+	int Send(RTPPacket::shared&& packet);
+	int Send(const RTCPCompoundPacket::shared& rtcp);
 	void SetRTT(DWORD rtt);
 	void onRTCP(const RTCPCompoundPacket::shared &rtcp);
 	void ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq);
 	void SendProbe(RTPOutgoingSourceGroup *group,BYTE padding);
 	void SendTransportWideFeedbackMessage(DWORD ssrc);
-	void Send(const RTCPCompoundPacket::shared& rtcp);
+	
 	int SetLocalCryptoSDES(const char* suite, const BYTE* key, const DWORD len);
 	int SetRemoteCryptoSDES(const char* suite, const BYTE* key, const DWORD len);
 	//Helpers
@@ -116,41 +140,15 @@ private:
 	};
 	
 private:
-	struct PacketStats
-	{
-		using shared = std::shared_ptr<PacketStats>;
-		
-		static PacketStats::shared Create(const RTPPacket::shared& packet, DWORD size, QWORD now)
-		{
-			auto stats = std::make_shared<PacketStats>();
-			
-			stats->transportWideSeqNum	= packet->GetTransportSeqNum();
-			stats->ssrc			= packet->GetSSRC();
-			stats->extSeqNum		= packet->GetExtSeqNum();
-			stats->size			= size;
-			stats->payload			= packet->GetMediaLength();
-			stats->timestamp		= packet->GetTimestamp();
-			stats->time			= now;
-			stats->mark			= packet->GetMark();
-			
-			return stats;
-		}
-		
-		DWORD transportWideSeqNum;
-		DWORD ssrc;
-		DWORD extSeqNum;
-		DWORD size;
-		DWORD payload;
-		DWORD timestamp;
-		QWORD time;
-		bool  mark;
-	};
+	
 private:
+	Sender*		sender = nullptr;
 	TimeService&	timeService;
 	datachannels::impl::Endpoint endpoint;
 	datachannels::Endpoint::Options dcOptions;
-	Sender*		sender;
+	Listener*	listener = nullptr;
 	DTLSConnection	dtls;
+	DTLSState	state = DTLSState::New;
 	Maps		sendMaps;
 	Maps		recvMaps;
 	ICERemoteCandidate* active			= nullptr;
@@ -175,7 +173,6 @@ private:
 	Acumulator incomingBitrate;
 	Acumulator outgoingBitrate;
 	
-	std::map<DWORD,PacketStats::shared> transportWideSentPacketsStats;
 	std::map<DWORD,PacketStats::shared> transportWideReceivedPacketsStats;
 	
 	UDPDumper* dumper	= nullptr;
@@ -185,11 +182,10 @@ private:
 	volatile bool probe	= false;
 	DWORD maxProbingBitrate = 1024*1000;
 	
-	RemoteRateEstimator senderSideEstimator;
-	
 	Timer::shared probingTimer;
 	timeval	ini;
 	
+	SendSideBandwidthEstimation senderSideBandwidthEstimator;
 };
 
 

@@ -29,6 +29,7 @@ public:
 	void Close();
 	
 	virtual void onRTP(RTPIncomingMediaStream* stream,const RTPPacket::shared& packet) override;
+	virtual void onBye(RTPIncomingMediaStream* stream) override;
 	virtual void onEnded(RTPIncomingMediaStream* stream) override;
 	virtual void onPLIRequest(RTPOutgoingSourceGroup* group,DWORD ssrc) override;
 	virtual void onREMB(RTPOutgoingSourceGroup* group,DWORD ssrc,DWORD bitrate) override;

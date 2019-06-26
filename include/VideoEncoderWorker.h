@@ -9,9 +9,11 @@
 #define	VIDEOENCODERWORKER_H
 
 #include <pthread.h>
+#include <set>
 #include "config.h"
 #include "codecs.h"
 #include "video.h"
+
 class VideoEncoderWorker
 {
 public:
@@ -20,18 +22,16 @@ public:
 
 	int Init(VideoInput *input);
 	int SetCodec(VideoCodec::Type codec,int mode,int fps,int bitrate,int intraPeriod,const Properties & properties);
+	int SetVideoCodec(VideoCodec::Type codec,int width, int height, int fps,int bitrate,int intraPeriod,const Properties & properties);
 	int End();
 
 	int  SetTemporalBitrateLimit(int bitrate);
-	int  SetMediaListener(MediaFrame::Listener *listener);
+	bool AddListener(MediaFrame::Listener *listener);
+	bool RemoveListener(MediaFrame::Listener *listener);
 	void SendFPU();
 	
 	bool IsEncoding() { return encoding;	}
 	
-	virtual void FlushRTXPackets() = 0;
-	virtual void SmoothFrame(const VideoFrame *videoFrame,DWORD sendingTime) = 0;
-
-protected:
 	int Start();
 	int Stop();
 	
@@ -42,26 +42,28 @@ private:
 	static void *startEncoding(void *par);
 
 private:
-	MediaFrame::Listener *mediaListener;
+	typedef std::set<MediaFrame::Listener*> Listeners;
 	
-	VideoInput *input;
-	VideoCodec::Type codec;
+private:
+	Listeners		listeners;
+	
+	VideoInput *input	= nullptr;
+	VideoCodec::Type codec  = VideoCodec::UNKNOWN;
 
-	int mode;	
-	int width;	
-	int height;	
-	int fps;
-	int bitrate;
-	int intraPeriod;
-	int bitrateLimit;
-	int bitrateLimitCount;
+	int width		= 0;	
+	int height		= 0;	
+	int fps			= 0;
+	DWORD bitrate		= 0;
+	int intraPeriod		= 0;
+	int bitrateLimit	= 0;
+	int bitrateLimitCount	= 0;
 	Properties properties;
 
 	pthread_t	thread;
 	pthread_mutex_t mutex;
 	pthread_cond_t	cond;
-	bool	encoding;
-	bool	sendFPU;
+	bool	encoding	 = false;
+	bool	sendFPU		 = false;
 };
 
 

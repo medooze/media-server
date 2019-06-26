@@ -598,8 +598,8 @@ QWORD MP4RtpTrack::Read(Listener *listener)
 			mp4,				// MP4FileHandle hFile
 			track,				// MP4TrackId hintTrackId
 			sampleId,			// MP4SampleId sampleId,
-			(u_int8_t **) &data,		// u_int8_t** ppBytes
-			(u_int32_t *) &dataLen,		// u_int32_t* pNumBytes
+			(uint8_t **) &data,		// uint8_t** ppBytes
+			(uint32_t *) &dataLen,		// uint32_t* pNumBytes
 			&startTime,			// MP4Timestamp* pStartTime
 			&duration,			// MP4Duration* pDuration
 			&renderingOffset,		// MP4Duration* pRenderingOffset
@@ -620,6 +620,8 @@ QWORD MP4RtpTrack::Read(Listener *listener)
 			VideoFrame *video = (VideoFrame*)frame;
 			//Set lenght
 			video->SetLength(dataLen);
+			//Set clock rate
+			video->SetClockRate(1000);
 			//Timestamp
 			video->SetTimestamp(startTime);
 			//Set intra
@@ -631,6 +633,8 @@ QWORD MP4RtpTrack::Read(Listener *listener)
 			AudioFrame *audio = (AudioFrame*)frame;
 			//Set lenght
 			audio->SetLength(dataLen);
+			//Set clock rate
+			audio->SetClockRate(1000);
 			//Timestamp
 			audio->SetTimestamp(startTime);
 			//Set audio duration (informative)
@@ -663,10 +667,10 @@ QWORD MP4RtpTrack::Read(Listener *listener)
 	if (!MP4ReadRtpPacket(
 				mp4,				// MP4FileHandle hFile
 				hint,				// MP4TrackId hintTrackId
-				packetIndex++,			// u_int16_t packetIndex
-				(u_int8_t **) &data,		// u_int8_t** ppBytes
-				(u_int32_t *) &dataLen,		// u_int32_t* pNumBytes
-				0,				// u_int32_t ssrc DEFAULT(0)
+				packetIndex++,			// uint16_t packetIndex
+				(uint8_t **) &data,		// uint8_t** ppBytes
+				(uint32_t *) &dataLen,		// uint32_t* pNumBytes
+				0,				// uint32_t ssrc DEFAULT(0)
 				0,				// bool includeHeader DEFAULT(true)
 				1				// bool includePayload DEFAULT(true)
 	))
@@ -773,8 +777,8 @@ QWORD MP4TextTrack::ReadPrevious(QWORD time,Listener *listener)
 				mp4,				// MP4FileHandle hFile
 				track,				// MP4TrackId hintTrackId
 				prevId,				// MP4SampleId sampleId,
-				(u_int8_t **) &data,		// u_int8_t** ppBytes
-				(u_int32_t *) &dataLen,		// u_int32_t* pNumBytes
+				(uint8_t **) &data,		// uint8_t** ppBytes
+				(uint32_t *) &dataLen,		// uint32_t* pNumBytes
 				&startTime,			// MP4Timestamp* pStartTime
 				&duration,			// MP4Duration* pDuration
 				&renderingOffset,		// MP4Duration* pRenderingOffset
@@ -827,8 +831,8 @@ QWORD MP4TextTrack::Read(Listener *listener)
 				mp4,				// MP4FileHandle hFile
 				track,				// MP4TrackId hintTrackId
 				sampleId++,			// MP4SampleId sampleId,
-				(u_int8_t **) &data,		// u_int8_t** ppBytes
-				(u_int32_t *) &dataLen,		// u_int32_t* pNumBytes
+				(uint8_t **) &data,		// uint8_t** ppBytes
+				(uint32_t *) &dataLen,		// uint32_t* pNumBytes
 				&startTime,			// MP4Timestamp* pStartTime
 				&duration,			// MP4Duration* pDuration
 				&renderingOffset,		// MP4Duration* pRenderingOffset

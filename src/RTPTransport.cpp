@@ -589,7 +589,7 @@ int RTPTransport::Init()
 		Start();
 		//Dump
 		char filename[256];
-		snprintf(filename,255,"/tmp/%d-%p",simPort,this);
+		snprintf(filename,255,"/tmp/%d-%p.pcap",simPort,this);
 		if (dumping) pcap.Open(filename);
 		//Done
 		Log("<RTPTransport::Init()\n");
@@ -638,7 +638,7 @@ int RTPTransport::End()
 	return 1;
 }
 
-int RTPTransport::SendRTCPPacket(Buffer&& packet)
+int RTPTransport::SendRTCPPacket(Packet&& packet)
 {
 	//Check if we have sendinf ip address
 	if (sendRtcpAddr.sin_addr.s_addr == INADDR_ANY && !muxRTCP)
@@ -681,7 +681,7 @@ int RTPTransport::SendRTCPPacket(Buffer&& packet)
 	return 1;
 }
 
-int RTPTransport::SendRTPPacket(Buffer&& packet)
+int RTPTransport::SendRTPPacket(Packet&& packet)
 {
 	//Check if we have sendinf ip address
 	if (sendAddr.sin_addr.s_addr == INADDR_ANY)
@@ -713,16 +713,16 @@ int RTPTransport::SendRTPPacket(Buffer&& packet)
 				request->AddAttribute(STUNMessage::Attribute::Priority,(DWORD)33554431);
 				
 				//Create new mesage
-				Buffer buffer(MTU);
+				Packet packet;
 
 				//Serialize and autenticate
-				size_t len = request->AuthenticatedFingerPrint(buffer.GetData(),buffer.GetCapacity(),iceLocalPwd);
+				size_t len = request->AuthenticatedFingerPrint(packet.GetData(),packet.GetCapacity(),iceLocalPwd);
 
 				//Resize
-				buffer.SetSize(len);
+				packet.SetSize(len);
 				
 				//Send response
-				rtpLoop.Send(ntohl(sendAddr.sin_addr.s_addr),ntohs(sendAddr.sin_port),std::move(buffer));
+				rtpLoop.Send(ntohl(sendAddr.sin_addr.s_addr),ntohs(sendAddr.sin_port),std::move(packet));
 
 				//Clean response
 				delete(request);
@@ -800,21 +800,21 @@ int RTPTransport::ReadRTCP(const uint8_t* data, const size_t size, const uint32_
 			
 			//Create new mesage
 			size_t len = 0;
-			Buffer buffer(MTU);
+			Packet packet;
 		
 			//Check if we have local passworkd
 			if (iceLocalPwd)
 				//Serialize and autenticate
-				len = resp->AuthenticatedFingerPrint(buffer.GetData(),buffer.GetCapacity(),iceLocalPwd);
+				len = resp->AuthenticatedFingerPrint(packet.GetData(),packet.GetCapacity(),iceLocalPwd);
 			else
 				//Do nto authenticate
-				len = resp->NonAuthenticatedFingerPrint(buffer.GetData(),buffer.GetCapacity());
+				len = resp->NonAuthenticatedFingerPrint(packet.GetData(),packet.GetCapacity());
 			
 			//resize
-			buffer.SetSize(len);
+			packet.SetSize(len);
 
 			//Send response
-			rtpLoop.Send(ipAddr,port,std::move(buffer));
+			rtpLoop.Send(ipAddr,port,std::move(packet));
 			
 			//Clean response
 			delete(resp);
@@ -911,21 +911,21 @@ int RTPTransport::ReadRTP(const uint8_t* data, const size_t size, const uint32_t
 			
 			//Create new mesage
 			size_t len = 0;
-			Buffer buffer(MTU);
+			Packet packet;
 		
 			//Check if we have local passworkd
 			if (iceLocalPwd)
 				//Serialize and autenticate
-				len = resp->AuthenticatedFingerPrint(buffer.GetData(),buffer.GetCapacity(),iceLocalPwd);
+				len = resp->AuthenticatedFingerPrint(packet.GetData(),packet.GetCapacity(),iceLocalPwd);
 			else
 				//Do nto authenticate
-				len = resp->NonAuthenticatedFingerPrint(buffer.GetData(),buffer.GetCapacity());
+				len = resp->NonAuthenticatedFingerPrint(packet.GetData(),packet.GetCapacity());
 			
 			//resize
-			buffer.SetSize(len);
+			packet.SetSize(len);
 
 			//Send response
-			rtpLoop.Send(ipAddr,port,std::move(buffer));
+			rtpLoop.Send(ipAddr,port,std::move(packet));
 
 			//Clean response
 			delete(resp);
@@ -991,37 +991,37 @@ int RTPTransport::ReadRTP(const uint8_t* data, const size_t size, const uint32_t
 
 				//Create  request
 				size_t len = 0;
-				Buffer buffer(request->GetSize());
+				Packet packet;
 
 				//Check remote pwd
 				if (iceRemotePwd)
 					//Serialize and autenticate
-					len = request->AuthenticatedFingerPrint(buffer.GetData(),buffer.GetCapacity(),iceRemotePwd);
+					len = request->AuthenticatedFingerPrint(packet.GetData(),packet.GetCapacity(),iceRemotePwd);
 				else
 					//Do nto authenticate
-					len = request->NonAuthenticatedFingerPrint(buffer.GetData(),buffer.GetCapacity());
+					len = request->NonAuthenticatedFingerPrint(packet.GetData(),packet.GetCapacity());
 
 				//resize
-				buffer.SetSize(len);
+				packet.SetSize(len);
 				
 				//Send response
-				rtpLoop.Send(ipAddr,port,std::move(buffer));
+				rtpLoop.Send(ipAddr,port,std::move(packet));
 
 				//Clean response
 				delete(request);
 
 				{
 					// Needed for DTLS in client mode (otherwise the DTLS "Client Hello" is not sent over the wire)
-					Buffer buffer(MTU);
-					size_t len = dtls.Read(buffer.GetData(),buffer.GetCapacity());
+					Packet packet;
+					size_t len = dtls.Read(packet.GetData(),packet.GetCapacity());
 					
 					//Check it
 					if (len>0)
 					{
 						//resize
-						buffer.SetSize(len);
+						packet.SetSize(len);
 						//Send response
-						rtpLoop.Send(ipAddr,port,std::move(buffer));
+						rtpLoop.Send(ipAddr,port,std::move(packet));
 					}
 				}
 			}
@@ -1071,16 +1071,16 @@ int RTPTransport::ReadRTP(const uint8_t* data, const size_t size, const uint32_t
 		dtls.Write(data,size);
 
 		//REad dtls data
-		Buffer buffer(MTU);
-		size_t len = dtls.Read(buffer.GetData(),buffer.GetCapacity());
+		Packet packet;
+		size_t len = dtls.Read(packet.GetData(),packet.GetCapacity());
 					
 		//Check it
 		if (len>0)
 		{
 			//resize
-			buffer.SetSize(len);
+			packet.SetSize(len);
 			//Send response
-			rtpLoop.Send(ipAddr,port,std::move(buffer));
+			rtpLoop.Send(ipAddr,port,std::move(packet));
 		}
 
 		//Exit
@@ -1110,9 +1110,6 @@ int RTPTransport::ReadRTP(const uint8_t* data, const size_t size, const uint32_t
 		return 0;
 	}
 
-	//Write udp packet
-	if (dumping) pcap.WriteUDP(getTimeMS(),ntohl(from_addr.sin_addr.s_addr),ntohs(from_addr.sin_port),0x7F000001,5004,data,size);
-	
 	int len = size;
 	//Check if it is encripted
 	if (decript)
@@ -1128,6 +1125,9 @@ int RTPTransport::ReadRTP(const uint8_t* data, const size_t size, const uint32_t
 			//Error
 			return Error("-RTPTransport::ReadRTP() | Error unprotecting rtp packet [%d]\n",err);
 	}
+	
+	//Write udp packet
+	if (dumping) pcap.WriteUDP(getTimeMS(),ntohl(from_addr.sin_addr.s_addr),ntohs(from_addr.sin_port),0x7F000001,5004,data,size);
 	
 	listener->onRTPPacket(data,len);
 	
@@ -1195,15 +1195,23 @@ void RTPTransport::onDTLSPendingData()
 	//Until depleted
 	while(true)
 	{
-		Buffer buffer(MTU);
+		Packet packet;
 		//Read from dtls
-		size_t len = dtls.Read(buffer.GetData(),buffer.GetCapacity());
+		size_t len = dtls.Read(packet.GetData(),packet.GetCapacity());
 		if (!len)
 			break;
 		//resize
-		buffer.SetSize(len);
+		packet.SetSize(len);
 		//Send response
-		rtpLoop.Send(ntohl(sendAddr.sin_addr.s_addr),ntohs(sendAddr.sin_port),std::move(buffer));
+		rtpLoop.Send(ntohl(sendAddr.sin_addr.s_addr),ntohs(sendAddr.sin_port),std::move(packet));
 	}
 		
+}
+void RTPTransport::onDTLSSetupError()
+{
+	
+}
+void RTPTransport::onDTLSShutdown()
+{
+	
 }

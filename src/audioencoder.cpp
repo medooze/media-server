@@ -177,7 +177,10 @@ int AudioEncoderWorker::Encode()
 	DWORD rate = codec->TrySetRate(audioInput->GetNativeRate());
 	
 	//Create audio frame
-	AudioFrame frame(audioCodec,rate);
+	AudioFrame frame(audioCodec);
+	
+	//Set rate
+	frame.SetClockRate(rate);
 
 	//Empezamos a grabar
 	audioInput->StartRecording(rate);

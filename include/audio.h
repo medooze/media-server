@@ -32,35 +32,39 @@ public:
 class AudioFrame : public MediaFrame
 {
 public:
-	AudioFrame(AudioCodec::Type codec,DWORD rate) : MediaFrame(MediaFrame::Audio,2048)
+	AudioFrame(AudioCodec::Type codec) : MediaFrame(MediaFrame::Audio,2048)
 	{
 		//Store codec
 		this->codec = codec;
-		//Set default rate
-		this->rate = rate;
+	}
+	
+	AudioFrame(AudioCodec::Type codec,const std::shared_ptr<Buffer>& buffer) : MediaFrame(MediaFrame::Audio,buffer)
+	{
+		//Store codec
+		this->codec = codec;
 	}
 
-	virtual MediaFrame* Clone()
+	virtual MediaFrame* Clone() const
 	{
-		//Create new one
-		AudioFrame *frame = new AudioFrame(codec,rate);
-		//Copy content
-		frame->SetMedia(buffer,length);
-		//Duration
-		frame->SetDuration(duration);
+		//Create new one with same data
+		AudioFrame *frame = new AudioFrame(codec,buffer);
+		//Set clock rate
+		frame->SetClockRate(GetClockRate());
 		//Set timestamp
 		frame->SetTimestamp(GetTimeStamp());
+		//Set duration
+		frame->SetDuration(GetDuration());
+		//Set config
+		if (HasCodecConfig()) frame->SetCodecConfig(GetCodecConfigData(),GetCodecConfigSize());
 		//Return it
 		return (MediaFrame*)frame;
 	}
 
 	AudioCodec::Type GetCodec()			{ return codec;		}
 	void	SetCodec(AudioCodec::Type codec)	{ this->codec = codec;	}
-	DWORD	GetRate()				{ return rate;		}
-
+	
 private:
 	AudioCodec::Type codec;
-	DWORD		 rate;
 };
 
 class AudioInput

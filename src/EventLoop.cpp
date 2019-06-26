@@ -26,17 +26,17 @@ size_t EventLoop::MaxSendingQueueSize = 16*1024;
 cpu_set_t* alloc_cpu_set(size_t* size) {
 	// the CPU set macros don't handle cases like my Azure VM, where there are 2 cores, but 128 possible cores (why???)
 	// hence requiring an oversized 16 byte cpu_set_t rather than the 8 bytes that the macros assume to be sufficient.
-	// this is the only way (even documented as such!) to figure out how to make a buffer big enough
-	unsigned long* buffer = nullptr;
+	// this is the only way (even documented as such!) to figure out how to make a packet big enough
+	unsigned long* packet = nullptr;
 	int len = 0;
 	do {
 		++len;
-		delete [] buffer;
-		buffer = new unsigned long[len];
-	} while(pthread_getaffinity_np(pthread_self(), len * sizeof(unsigned long), reinterpret_cast<cpu_set_t*>(buffer)) == EINVAL);
+		delete [] packet;
+		packet = new unsigned long[len];
+	} while(pthread_getaffinity_np(pthread_self(), len * sizeof(unsigned long), reinterpret_cast<cpu_set_t*>(packet)) == EINVAL);
 
 	*size = len * sizeof(unsigned long);
-	return reinterpret_cast<cpu_set_t*>(buffer);
+	return reinterpret_cast<cpu_set_t*>(packet);
 }
 
 void free_cpu_set(cpu_set_t* s) {
@@ -97,7 +97,7 @@ bool EventLoop::Start(std::function<void(void)> loop)
 	if (thread.get_id()!=std::thread::id())
 		//Alredy running
 		return false;
-#if __APPLE__	
+#if __APPLE__
 	//Create pipe
 	if (::pipe(pipe)==-1)
 		//Error
@@ -108,7 +108,7 @@ bool EventLoop::Start(std::function<void(void)> loop)
 	fcntl(pipe[1], F_SETFL , O_NONBLOCK);
 	
 #else
-	pipe[0] = pipe[1] = eventfd(0,EFD_NONBLOCK);
+	pipe[0] = pipe[1] = eventfd(0, EFD_NONBLOCK);
 #endif	
 	
 	//Store socket
@@ -131,6 +131,7 @@ bool EventLoop::Start(int fd)
 		//Alredy running
 		return false;
 	
+#if __APPLE__
 	//Create pipe
 	if (::pipe(pipe)==-1)
 		//Error
@@ -139,6 +140,10 @@ bool EventLoop::Start(int fd)
 	//Set non blocking
 	fcntl(pipe[0], F_SETFL , O_NONBLOCK);
 	fcntl(pipe[1], F_SETFL , O_NONBLOCK);
+	
+#else
+	pipe[0] = pipe[1] = eventfd(0, EFD_NONBLOCK);
+#endif	
 	
 	//Store socket
 	this->fd = fd;
@@ -185,7 +190,7 @@ bool EventLoop::Stop()
 	
 }
 
-void EventLoop::Send(const uint32_t ipAddr, const uint16_t port, Buffer&& buffer)
+void EventLoop::Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet)
 {
 	//Get approximate queued size
 	auto aprox = sending.size_approx();
@@ -215,8 +220,8 @@ void EventLoop::Send(const uint32_t ipAddr, const uint16_t port, Buffer&& buffer
 		Log("-EventLoop::Send() | sending queue back to normal [aprox:%u]\n",aprox);
 	}
 	
-	//Create send buffer
-	SendBuffer send = {ipAddr, port, std::move(buffer)};
+	//Create send packet
+	SendBuffer send = {ipAddr, port, std::move(packet)};
 	
 	//Move it back to sending queue
 	sending.enqueue(std::move(send));
@@ -230,7 +235,8 @@ std::future<void> EventLoop::Async(std::function<void(std::chrono::milliseconds)
 	//UltraDebug(">EventLoop::Async()\n");
 	
 	//Create task
-	auto task = std::make_pair(std::promise<void>(),func);
+	std::promise<void> promise;
+	auto task = std::make_pair(std::move(promise),std::move(func));
 	
 	//Get future before moving the promise
 	auto future = task.first.get_future();
@@ -285,7 +291,7 @@ Timer::shared EventLoop::CreateTimer(const std::chrono::milliseconds& ms, const 
 		timer->next = next;
 
 		//Add to timer list
-		timers.insert({next, timer});
+		timers.emplace(next, timer);
 	});
 	
 	//Done
@@ -317,7 +323,7 @@ void EventLoop::TimerImpl::Again(const std::chrono::milliseconds& ms)
 		timer->next = next;
 		
 		//Add to timer list
-		timer->loop.timers.insert({next, timer});
+		timer->loop.timers.emplace(next, timer);
 	});
 	
 	//UltraDebug("<EventLoop::Again() | timer triggered at %llu\n",next.count());
@@ -370,18 +376,23 @@ void EventLoop::Signal()
 	//UltraDebug("-EventLoop::Signal()\r\n");
 	uint64_t one = 1;
 	
-	//If we are in the same thread
-	if (std::this_thread::get_id()==thread.get_id())
+	//If we are in the same thread or already signaled
+	if (std::this_thread::get_id()==thread.get_id() || signaled) 
 		//No need to do anything
 		return;
 	
-	//Write to tbe pipe
-	write(pipe[1],(uint8_t*)&one,sizeof(one));
+	//We have signaled it
+	//worst case scenario is that race happens between this to points
+	//and that we signal it twice
+	signaled = true;
+	
+	//Write to tbe pipe, and assign to one to avoid warning in compile time
+	one = write(pipe[1],(uint8_t*)&one,sizeof(one));
 }
 
 void EventLoop::Run(const std::chrono::milliseconds &duration)
 {
-	Log(">EventLoop::Run() | [%p]\n",this);
+	//Log(">EventLoop::Run() | [%p,running:%d,duration:%llu]\n",this,running,duration.count());
 	
 	//Recv data
 	uint8_t data[MTU] ZEROALIGNEDTO32;
@@ -408,37 +419,51 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 	signal(SIGIO,[](int){});
 	
 	//Get now
-	auto now = GetNow();
+	auto now = Now();
 	
 	//calculate until when
-	auto until = now + duration;
+	auto until = duration < std::chrono::milliseconds::max() ? now + duration : std::chrono::milliseconds::max();
 		
 	//Run until ended
-	while(running && now<until)
+	while(running && now<=until)
 	{
 		//If we have anything to send set to wait also for write events
 		ufds[0].events = sending.size_approx() ? POLLIN | POLLOUT | POLLERR | POLLHUP : POLLIN | POLLERR | POLLHUP;
 		
-		//Check if we have any pending task to wait or exit poll inmediatelly
-		int timeout = tasks.size_approx() ? 0 : -1;
+		//Until signaled
+		int timeout = -1;
 		
+		//Check if we have any pending task to wait or exit poll inmediatelly
+		if (tasks.size_approx()) 
+		{
+			//No wait
+			timeout = 0;
+		}
 		//If we have any timer or a timeout
-		if (timers.size())
+		else if (timers.size())
 		{
 			//Get first timer in  queue
 			auto next = std::min(timers.begin()->first,until);
 			//Override timeout
 			timeout = next > now ? std::chrono::duration_cast<std::chrono::milliseconds>(next - now).count() : 0;
-		} else if (duration!=std::chrono::milliseconds::max()) {
+		} 
+		//If we have a maximum duration
+		else if (duration!=std::chrono::milliseconds::max()) 
+		{
 			//Override timeout
 			timeout = until > now ? std::chrono::duration_cast<std::chrono::milliseconds>(until - now).count() : 0;
 		}
 
-		//UltraDebug(">EventLoop::Run() | poll timeout:%d\n",timeout);
+		//UltraDebug(">EventLoop::Run() | poll timeout:%d timers:%d tasks:%d\n",timeout,timers.size(),tasks.size_approx());
 		
 		//Wait for events
 		poll(ufds,sizeof(ufds)/sizeof(pollfd),timeout);
-			
+		
+		//Update now
+		now = Now();
+		
+		//UltraDebug("<EventLoop::Run() | poll timeout:%d timers:%d tasks:%d\n",timeout,timers.size(),tasks.size_approx());
+		
 		//Check for cancel
 		if ((ufds[0].revents & POLLHUP) || (ufds[0].revents & POLLERR) || (ufds[1].revents & POLLHUP) || (ufds[1].revents & POLLERR))
 		{
@@ -446,16 +471,6 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 			Log("-EventLoop::Run() | Pool error event [%d]\n",ufds[0].revents);
 			//Exit
 			break;
-		}
-		
-		//Read first from signal pipe
-		if (ufds[1].revents & POLLIN)
-		{
-			//Remove pending data
-			while (read(pipe[0],data,size)>0) 
-			{
-				//DO nothing
-			}
 		}
 		
 		//Read first
@@ -491,7 +506,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 				to.sin_port	   = htons(item.port);
 
 				//Send it
-				int ret = sendto(fd,item.buffer.GetData(),item.buffer.GetSize(),MSG_DONTWAIT,(sockaddr*)&to,sizeof(to));
+				int ret = sendto(fd,item.packet.GetData(),item.packet.GetSize(),MSG_DONTWAIT,(sockaddr*)&to,sizeof(to));
 				
 				//It we have an error
 				if (ret<0 && state==State::Normal)
@@ -513,16 +528,12 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 		while (tasks.try_dequeue(task))
 		{
 			//UltraDebug("-EventLoop::Run() | task pending\n");
-			//Update now
-			auto now = Now();
 			//Execute it
 			task.second(now);
 			//Resolce promise
 			task.first.set_value();
 		}
 
-		//Update now
-		now = Now();
 		//Timers triggered
 		std::vector<TimerImpl::shared> triggered;
 		//Get all timers to process in this lop
@@ -533,11 +544,11 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 				//It is yet to come
 				break;
 			//Get timer
-			triggered.push_back(it->second);
+			triggered.push_back(std::move(it->second));
 			//Remove from the list
 			it = timers.erase(it);
 		}
-		
+
 		//Now process all timers triggered
 		for (auto timer : triggered)
 		{
@@ -552,11 +563,24 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 				//Set next
 				timer->next = now + timer->repeat;
 				//Schedule
-				timers.insert({timer->next, timer});
+				timers.emplace(timer->next, timer);
 			}
 		}
-		//Get now
-		now = GetNow();
+		
+		//Read first from signal pipe
+		if (ufds[1].revents & POLLIN)
+		{
+			//Remove pending data
+			while (read(pipe[0],data,size)>0) 
+			{
+				//DO nothing
+			}
+			//We are not signaled anymore
+			signaled = false;
+		}
+		
+		//Update now
+		now = Now();
 	}
 	
 	//Run queued task
@@ -573,5 +597,5 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 		task.first.set_value();
 	}
 
-	Log("<EventLoop::Run()\n");
+	//Log("<EventLoop::Run()\n");
 }

@@ -34,7 +34,7 @@ public:
 	{
 		return std::make_shared<RTCPBye>(ssrcs,reason);
 	}
-	
+	const std::vector<DWORD>& GetSSRCs() const  { return ssrcs; };
 private:
 	std::vector<DWORD> ssrcs;
 	char* reason = NULL;

@@ -16,7 +16,7 @@
 class H264SeqParameterSet
 {
 public:
-	bool Decode(BYTE* buffer,DWORD bufferSize)
+	bool Decode(const BYTE* buffer,DWORD bufferSize)
 	{
 		//SHould be done otherway, like modifying the BitReader to escape the input NAL, but anyway.. duplicate memory
 		BYTE *aux = (BYTE*)malloc(bufferSize);
@@ -58,7 +58,7 @@ public:
 		return !r.Error();
 	}
 private:
-	inline static DWORD Escape( BYTE *dst, BYTE *src, DWORD size )
+	inline static DWORD Escape( BYTE *dst,const BYTE *src, DWORD size )
 	{
 		DWORD len = 0;
 		DWORD i = 0;
@@ -131,7 +131,7 @@ private:
 class H264PictureParameterSet
 {
 public:
-	bool Decode(BYTE* buffer,DWORD bufferSize)
+	bool Decode(const BYTE* buffer,DWORD bufferSize)
 	{
 		//SHould be done otherway, like modifying the BitReader to escape the input NAL, but anyway.. duplicate memory
 		BYTE *aux = (BYTE*)malloc(bufferSize);
@@ -188,7 +188,7 @@ public:
 		return true;
 	}
 private:
-	inline static DWORD Escape( BYTE *dst, BYTE *src, DWORD size )
+	inline static DWORD Escape( BYTE *dst,const BYTE *src, DWORD size )
 	{
 		DWORD len = 0;
 		DWORD i = 0;

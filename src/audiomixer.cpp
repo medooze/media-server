@@ -196,11 +196,15 @@ void AudioMixer::Process(DWORD numSamples)
 	//Unblock list
 	lstAudiosUse.Unlock();
 }
+
 int AudioMixer::SetCalculateVAD(bool vad)
 {
 	Log("-SetCalculateVAD [vad:%d]\n",vad);
 	//Store
 	this->vad = vad;	
+
+	//OK
+	return 1;
 }
 
 

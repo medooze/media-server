@@ -14,7 +14,7 @@ RemoteRateEstimator::RemoteRateEstimator() : bitrateAcu(200)
 {
 	//Not last estimate
 	minConfiguredBitRate	= 128000;
-	maxConfiguredBitRate	= 30000000;
+	maxConfiguredBitRate	= 1280000000;
 	currentBitRate		= 0;
 	maxHoldRate		= 0;
 	avgMaxBitRate		= -1.0f;
@@ -55,6 +55,7 @@ void RemoteRateEstimator::AddStream(DWORD ssrc)
 	//Unlock
 	lock.Unlock();
 }
+
 void RemoteRateEstimator::RemoveStream(DWORD ssrc)
 {
 	Log("-RemoteRateEstimator removing stream [ssrc:%u]\n",ssrc);
@@ -78,9 +79,6 @@ void RemoteRateEstimator::RemoveStream(DWORD ssrc)
 
 void RemoteRateEstimator::Update(DWORD ssrc,const RTPPacket::shared& packet,DWORD size)
 {
-	//Get now
-	QWORD now = getTimeMS();
-
 	//Get rtp timestamp in ms
 	QWORD ts = packet->GetClockTimestamp();
 
@@ -100,7 +98,7 @@ void RemoteRateEstimator::Update(DWORD ssrc,const RTPPacket::shared& packet,DWOR
 	
 	
 	//Update
-	Update(packet->GetSSRC(),now,ts,size, packet->GetMark());
+	Update(packet->GetSSRC(),packet->GetTime(),ts,size, packet->GetMark());
 	
 	//Store current ts
 	curTS = ts;
@@ -108,7 +106,7 @@ void RemoteRateEstimator::Update(DWORD ssrc,const RTPPacket::shared& packet,DWOR
 
 void RemoteRateEstimator::Update(DWORD ssrc,QWORD now,QWORD ts,DWORD size, bool mark)
 {
-	//UltraDebug("-Update [ssrc:%u,now:%lu,last:%u,ts:%lu,size:%u\n",ssrc,now,lastChange,ts,size);
+	//UltraDebug("-Update [ssrc:%u,now:%lu,last:%u,ts:%lu,size:%u,inwindow:%d\n",ssrc,now,lastChange,ts,size,bitrateAcu.IsInWindow());
 	//Lock
 	lock.WaitUnusedAndLock();
 
@@ -123,6 +121,17 @@ void RemoteRateEstimator::Update(DWORD ssrc,QWORD now,QWORD ts,DWORD size, bool 
 
 	//Reset noise
 	noiseVar = 0;
+	
+	//Check if it was an unknown stream
+	if (streams.find(ssrc)==streams.end())
+	{
+		//Create new control
+		RemoteRateControl* ctrl = new RemoteRateControl();
+		//Set tracer
+		ctrl->SetEventSource(eventSource);
+		//Add it
+		streams[ssrc] = ctrl;
+	}
 
 	//For each one
 	for (Streams::iterator it = streams.begin(); it!=streams.end(); ++it)
@@ -152,9 +161,9 @@ void RemoteRateEstimator::Update(DWORD ssrc,QWORD now,QWORD ts,DWORD size, bool 
 		//Get noise var and sum up
 		noiseVar += ctrl->GetNoise();
 	}
-
+	
 	//Normalize
-	noiseVar = noiseVar/streams.size();
+	noiseVar = streams.size() ? noiseVar/streams.size() : 0;
 
 	//If not firs update
 	if (!lastChange)
@@ -510,7 +519,7 @@ void RemoteRateEstimator::SetTemporalMaxLimit(DWORD limit)
 		maxConfiguredBitRate = limit;
 	else
 		//Set default max
-		maxConfiguredBitRate = 30000000;
+		maxConfiguredBitRate = 1280000000;
 }
 
 void RemoteRateEstimator::SetTemporalMinLimit(DWORD limit)
@@ -522,7 +531,7 @@ void RemoteRateEstimator::SetTemporalMinLimit(DWORD limit)
 		minConfiguredBitRate = limit;
 	else
 		//Set default min
-		minConfiguredBitRate = 32000;
+		minConfiguredBitRate = 128000;
 }
 void RemoteRateEstimator::SetListener(Listener *listener)
 {

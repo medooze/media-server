@@ -31,6 +31,8 @@ std::unique_ptr<VideoFrame> RTMPAVCPacketizer::AddFrame(RTMPVideoFrame* videoFra
 	//Create frame
 	auto frame = std::make_unique<VideoFrame>(VideoCodec::H264,videoFrame->GetSize()+desc.GetSize()+256);
 	
+	//Set clock rate
+	frame->SetClockRate(1000);
 	//Set time
 	frame->SetTimestamp(videoFrame->GetTimestamp());
 		
@@ -168,7 +170,12 @@ std::unique_ptr<AudioFrame> RTMPAACPacketizer::AddFrame(RTMPAudioFrame* audioFra
 		return nullptr;
 	
 	//Create frame
-	auto frame = std::make_unique<AudioFrame>(AudioCodec::AAC,audioFrame->GetSize());
+	auto frame = std::make_unique<AudioFrame>(AudioCodec::AAC);
+	
+	//Set clock rate
+	frame->SetClockRate(1000);
+	//Set time
+	frame->SetTimestamp(audioFrame->GetTimestamp());
 	
 	//Add aac frame in single rtp 
 	auto ini = frame->AppendMedia(audioFrame->GetMediaData(),audioFrame->GetMediaSize());

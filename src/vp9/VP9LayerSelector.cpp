@@ -52,7 +52,7 @@ bool VP9LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 	auto& desc = *packet->vp9PayloadDescriptor;
 	
 	//if (desc.startOfLayerFrame)
-	//	UltraDebug("-VP9LayerSelector::Select() | #%d T%dS%d P=%d D=%d S=%d %s\n", desc.pictureId-42,desc.temporalLayerId,desc.spatialLayerId,desc.interPicturePredictedLayerFrame,desc.interlayerDependencyUsed,desc.switchingPoint
+	//	//UltraDebug("-VP9LayerSelector::Select() | s:%d end:%d #%d T%dS%d P=%d D=%d S=%d %s\n", desc.startOfLayerFrame, desc.endOfLayerFrame, desc.pictureId,desc.temporalLayerId,desc.spatialLayerId,desc.interPicturePredictedLayerFrame,desc.interlayerDependencyUsed,desc.switchingPoint
 	//		,desc.interPicturePredictedLayerFrame==0 && desc.spatialLayerId==1 ? "<----------------------":"");
 	
 	//Store current temporal id
@@ -62,26 +62,25 @@ bool VP9LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 	if (nextTemporalLayerId>temporalLayerId)
 	{
 		//Check if we can upscale and it is the start of the layer and it is a valid layer
-		if (desc.switchingPoint && desc.startOfLayerFrame && desc.temporalLayerId<=nextTemporalLayerId)
+		if (desc.switchingPoint && desc.startOfLayerFrame && currentTemporalLayerId<desc.temporalLayerId && desc.temporalLayerId<=nextTemporalLayerId)
 		{
 			//UltraDebug("-VP9LayerSelector::Select() | Upscaling temporalLayerId [id:%d,target:%d]\n",desc.temporalLayerId,nextTemporalLayerId);
 			//Update current layer
-			temporalLayerId = desc.temporalLayerId;
-			currentTemporalLayerId = temporalLayerId;
+			currentTemporalLayerId = temporalLayerId = desc.temporalLayerId;
 		}
 	//Check if we need to downscale
 	} else if (nextTemporalLayerId<temporalLayerId) {
 		//We can only downscale on the end of a layer to set the market bit
 		if (desc.endOfLayerFrame)
 		{
-			//UltraDebug("-VP9LayerSelector::Select() | Downscaling temporalLayerId [id:%d,target:%d]\n",temporalLayerId,nextTemporalLayerId);
+			//UltraDebug("-VP9LayerSelector::Select() | Downscaling temporalLayerId [id:%d,target:%d]\n",desc.temporalLayerId,nextTemporalLayerId);
 			//Update to target layer for next packets
-			temporalLayerId = nextTemporalLayerId;
+			temporalLayerId = desc.temporalLayerId;
 		}
 	}
 	
-	//If it is from the current layer
-	if (currentTemporalLayerId<desc.temporalLayerId)
+	//If it is from a higher layers
+	if (desc.temporalLayerId>currentTemporalLayerId)
 	{
 		//UltraDebug("-VP9LayerSelector::Select() | dropping packet based on temporalLayerId [us:%d,desc:%d,mark:%d]\n",temporalLayerId,desc.temporalLayerId,packet->GetMark());
 		//Drop it
@@ -102,11 +101,11 @@ bool VP9LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 			when encoding a layer synchronization frame in response to an LRR
 		 */
 		//Check if we can upscale and it is the start of the layer and it is a valid layer
-		if (desc.interPicturePredictedLayerFrame==0 && desc.startOfLayerFrame && desc.spatialLayerId<nextSpatialLayerId)
+		if (desc.interPicturePredictedLayerFrame==0 && desc.startOfLayerFrame && currentSpatialLayerId<desc.spatialLayerId && desc.spatialLayerId<=nextSpatialLayerId)
 		{
-			//Update current layer
-			spatialLayerId = desc.spatialLayerId+1;
 			//UltraDebug("-VP9LayerSelector::Select() | Upscaling spatialLayerId [id:%d,to:%d,target:%d]\n",desc.spatialLayerId,spatialLayerId,nextSpatialLayerId);
+			//Update current layer
+			currentSpatialLayerId = spatialLayerId = desc.spatialLayerId;
 			
 		}
 	//Ceck if we need to downscale
@@ -114,14 +113,14 @@ bool VP9LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 		//We can only downscale on the end of a layer to set the market bit
 		if (desc.endOfLayerFrame)
 		{
-			//UltraDebug("-VP9LayerSelector::Select() | Downscaling spatialLayerId [id:%d,target:%d]\n",spatialLayerId,nextSpatialLayerId);
+			//UltraDebug("-VP9LayerSelector::Select() | Downscaling spatialLayerId [id:%d,to:%d,target:%d]\n",desc.spatialLayerId,spatialLayerId,nextSpatialLayerId);
 			//Update to target layer
-			spatialLayerId = nextSpatialLayerId;
+			spatialLayerId = desc.spatialLayerId;
 		}
 	}
 	
-	//If it is not valid for the current layer
-	if (currentSpatialLayerId<desc.spatialLayerId)
+	//If it is from a higher layers
+	if (desc.spatialLayerId>currentSpatialLayerId)
 	{
 		//UltraDebug("-VP9LayerSelector::Select() | dropping packet based on spatialLayerId [us:%d,desc:%d,mark:%d]\n",spatialLayerId,desc.spatialLayerId,packet->GetMark());
 		//Drop it
@@ -131,7 +130,7 @@ bool VP9LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 	//RTP mark is set for the last frame layer of the selected layer
 	mark = packet->GetMark() || (desc.endOfLayerFrame && spatialLayerId==desc.spatialLayerId);
 	
-	//UltraDebug("-VP9LayerSelector::Select() | Accepting packet [extSegNum:%u,mark:%d,tid:%d,sid:%d]\n",packet->GetExtSeqNum(),mark,desc.temporalLayerId,desc.spatialLayerId);
+	//UltraDebug("-VP9LayerSelector::Select() | Accepting packet [extSegNum:%u,mark:%d,sid:%d,tid:%d,current:S%dL%d]\n",packet->GetExtSeqNum(),mark,desc.spatialLayerId,desc.temporalLayerId,spatialLayerId,temporalLayerId);
 	//Select
 	return true;
 	
@@ -176,21 +175,23 @@ bool VP9LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 			desc.interlayerDependencyUsed		= false;
 			desc.temporalLayer0Index		= fm.tl0PicIdx;
 		//We need to parse it
-		} else if (!desc.Parse(packet->GetMediaData(),packet->GetMediaLength())) {
-			//Failed
-			packet->vp9PayloadDescriptor.reset();
+		} else if (packet->GetMediaLength() && !desc.Parse(packet->GetMediaData(),packet->GetMediaLength())) {
+			Error("-VP9LayerSelector::GetLayerIds() | parse error\n");
 		}
 	}
 
 	//Check if we have it now
-	if (!packet->vp9PayloadDescriptor)
+	if (packet->vp9PayloadDescriptor)
 	{
 		//Get data from header
 		info.temporalLayerId	= packet->vp9PayloadDescriptor->temporalLayerId;
 		info.spatialLayerId	= packet->vp9PayloadDescriptor->spatialLayerId;
+	} else if (packet->GetMaxMediaLength()) { 
+		Error("-VP9LayerSelector::GetLayerIds() | no descriptor");
 	}
 	
 	//UltraDebug("-VP9LayerSelector::GetLayerIds() | [tid:%u,sid:%u]\n",info.temporalLayerId,info.spatialLayerId);
+	
 	//Return layer info
 	return info;
 }

@@ -355,9 +355,9 @@ int H264Decoder::Decode(BYTE *buffer,DWORD size)
 
 		int w = ctx->width;
 		int h = ctx->height;
-		int u = w*h;
-		int v = w*h*5/4;
-		int size = w*h*3/2;
+		DWORD u = w*h;
+		DWORD v = w*h*5/4;
+		DWORD size = w*h*3/2;
 
 		//Comprobamos el tama�o
 		if (size>frameSize)

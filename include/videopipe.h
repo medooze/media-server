@@ -18,13 +18,12 @@ class VideoPipe :
 {
 public:
 	VideoPipe();
-	~VideoPipe();
-	int Init();
+	virtual ~VideoPipe();
+	int Init(float scaleResolutionDownBy = 0.0f);
 	/** VideoInput */
 	virtual int   StartVideoCapture(int width,int height,int fps);
-	virtual BYTE* GrabFrame(DWORD timeout);
+	virtual VideoBuffer GrabFrame(DWORD timeout);
 	virtual void  CancelGrabFrame();
-	virtual DWORD GetBufferSize();
 	virtual int   StopVideoCapture();
 	/** VideoOutput */
 	virtual int NextFrame(BYTE *pic);
@@ -42,10 +41,10 @@ private:
 	int videoFPS;
 	int imgPos;
 	int imgNew;
+	float scaleResolutionDownBy = 0.0f;
 	int inited;
 	int capturing;
-	BYTE *imgBuffer[2];
-	BYTE *grabPic;
+	VideoBuffer imgBuffer[2];
 
 	pthread_mutex_t newPicMutex;
 	pthread_cond_t  newPicCond;

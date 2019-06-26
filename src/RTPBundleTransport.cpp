@@ -52,7 +52,7 @@ RTPBundleTransport::~RTPBundleTransport()
 	End();
 }
 
-DTLSICETransport* RTPBundleTransport::AddICETransport(const std::string &username,const Properties& properties)
+RTPBundleTransport::Connection* RTPBundleTransport::AddICETransport(const std::string &username,const Properties& properties)
 {
 	Log("-RTPBundleTransport::AddICETransport [%s]\n",username.c_str());
 	
@@ -107,7 +107,7 @@ DTLSICETransport* RTPBundleTransport::AddICETransport(const std::string &usernam
 	});
 	
 	//OK
-	return transport;
+	return connection;
 }
 
 int RTPBundleTransport::RemoveICETransport(const std::string &username)
@@ -331,7 +331,7 @@ int RTPBundleTransport::End()
 	return 1;
 }
 
-int RTPBundleTransport::Send(const ICERemoteCandidate* candidate, Buffer&& buffer)
+int RTPBundleTransport::Send(const ICERemoteCandidate* candidate, Packet&& buffer)
 {
 	loop.Send(candidate->GetIPAddress(),candidate->GetPort(),std::move(buffer));
 	return 1;
@@ -371,9 +371,18 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 		{
 			//UltraDebug("-RTPBundleTransport::OnRead() | Binding request\n");
 			
+			//Check if it has the prio attribute
+			if (!stun->HasAttribute(STUNMessage::Attribute::Username))
+			{
+				//Error
+				Debug("-STUN Message without username attribute\n");
+				//DOne
+				return;
+			}
+			
 			//Get username
 			STUNMessage::Attribute* attr = stun->GetAttribute(STUNMessage::Attribute::Username);
-
+			
 			//Copy username string
 			std::string username((char*)attr->attr,attr->size);
 			
@@ -394,6 +403,9 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 			Connection* connection = it->second;
 			DTLSICETransport* transport = connection->transport;
 			ICERemoteCandidate* candidate = NULL;
+			
+			//Inc stats
+			connection->iceRequestsReceived++;
 
 			//Check if it has the prio attribute
 			if (!stun->HasAttribute(STUNMessage::Attribute::Priority))
@@ -441,7 +453,7 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 			resp->AddXorAddressAttribute(htonl(ip),htons(port));
 			
 			//Create new mesage
-			Buffer buffer(MTU);
+			Packet buffer;
 		
 			//Serialize and autenticate
 			size_t len = resp->AuthenticatedFingerPrint(buffer.GetData(),buffer.GetCapacity(),transport->GetLocalPwd());
@@ -451,6 +463,9 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 
 			//Send response
 			loop.Send(ip,port,std::move(buffer));
+			
+			//Inc stats
+			connection->iceResponsesSent++;
 
 			//If the STUN keep alive response is not disabled
 			if (reply)
@@ -471,7 +486,7 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 				request->AddAttribute(STUNMessage::Attribute::Priority,(DWORD)33554431);
 
 				//Create new mesage
-				Buffer buffer(MTU);
+				Packet buffer;
 				
 				//Serialize and autenticate
 				size_t len = request->AuthenticatedFingerPrint(buffer.GetData(),buffer.GetCapacity(),transport->GetRemotePwd());
@@ -481,7 +496,33 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 				
 				//Send response
 				loop.Send(ip,port,std::move(buffer));
+				
+				//Inc stats
+				connection->iceRequestsSent++;
 			}
+		} else if (type==STUNMessage::Response && method==STUNMessage::Binding) {
+			//TODO: map incoming resposnes with sent request based on transaction ids
+			/*/
+			auto it = connections.find(username);
+			
+			//If not found
+			if (it==connections.end())
+			{
+				//TODO: Reject
+				//Error
+				Debug("-RTPBundleTransport::Read ice username not found [%s}\n",username.c_str());
+				//Done
+				return;
+			}
+			
+			//Get ice connection
+			Connection* connection = it->second;
+			DTLSICETransport* transport = connection->transport;
+			ICERemoteCandidate* candidate = NULL;
+			
+			//Inc stats
+			connection->iceResponsesReceived++;
+			*/
 		}
 
 		//Exit
@@ -565,7 +606,7 @@ int RTPBundleTransport::AddRemoteCandidate(const std::string& username,const cha
 		request->AddAttribute(STUNMessage::Attribute::Priority,(DWORD)33554431);
 
 		//Create new mesage
-		Buffer buffer(MTU);
+		Packet buffer;
 		
 		//Serialize and autenticate
 		size_t len = request->AuthenticatedFingerPrint(buffer.GetData(),buffer.GetCapacity(),transport->GetRemotePwd());

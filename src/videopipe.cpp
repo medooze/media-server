@@ -20,9 +20,6 @@ VideoPipe::VideoPipe()
 	//No estamos iniciados
 	//inited = false;
 	capturing = false;
-	grabPic = 0;
-	imgBuffer[0] = NULL;
-	imgBuffer[1] = NULL;
 }
 
 VideoPipe::~VideoPipe()
@@ -32,15 +29,18 @@ VideoPipe::~VideoPipe()
 	pthread_cond_destroy(&newPicCond);
 }
 
-int VideoPipe::Init()
+int VideoPipe::Init(float scaleResolutionDownBy)
 {
-	Log("VideoPipe init\n");
+	Log("-VideoPipe::Init() [scaleResolutionDownBy:%f]\n",scaleResolutionDownBy);
 
 	//Protegemos
 	pthread_mutex_lock(&newPicMutex);
 
 	//Iniciamos
 	inited = true;
+	
+	//Store scaleResolutionDownBy
+	this->scaleResolutionDownBy = scaleResolutionDownBy;
 
 	//Protegemos
 	pthread_mutex_unlock(&newPicMutex);
@@ -50,6 +50,9 @@ int VideoPipe::Init()
 
 int VideoPipe::End()
 {
+	
+	Log("-VideoPipe::End()\n)");
+		
 	//Protegemos
 	pthread_mutex_lock(&newPicMutex);
 
@@ -67,7 +70,7 @@ int VideoPipe::End()
 
 int VideoPipe::StartVideoCapture(int width,int height,int fps)
 {
-	Log("-StartVideoCapture [%d,%d,%d]\n",width,height,fps);
+	Log("-VideoPipe::StartVideoCapture() [%d,%d,%d]\n",width,height,fps);
 
 	//Protegemos
 	pthread_mutex_lock(&newPicMutex);
@@ -79,13 +82,16 @@ int VideoPipe::StartVideoCapture(int width,int height,int fps)
 	videoFPS = fps;
 
 	//Creamos el buffer
-	imgBuffer[0] = (BYTE *)malloc(videoSize);
-	imgBuffer[1] = (BYTE *)malloc(videoSize);
+	imgBuffer[0].width  = videoWidth;
+	imgBuffer[0].height = videoHeight;
+	imgBuffer[0].buffer = (BYTE *)malloc(videoSize);
+	imgBuffer[1].width  = videoWidth;
+	imgBuffer[1].height = videoHeight;
+	imgBuffer[1].buffer = (BYTE *)malloc(videoSize);
 
 	//El inicio
 	imgPos = false;
 	imgNew = false;
-	grabPic = 0;
 
 	//Estamos capturando
 	capturing = true;
@@ -98,22 +104,19 @@ int VideoPipe::StartVideoCapture(int width,int height,int fps)
 
 int VideoPipe::StopVideoCapture()
 {
-	Log("-StopVideoCapture\n");
+	Log("-VideoPipe::StopVideoCapture()\n");
 
 	//Protegemos
 	pthread_mutex_lock(&newPicMutex);
 
 	//LIberamos los buffers
-	if (imgBuffer[0])
-		free(imgBuffer[0]);
-	if (imgBuffer[1])
-		free(imgBuffer[1]);
+	if (imgBuffer[0].buffer)
+		free(imgBuffer[0].buffer);
+	if (imgBuffer[1].buffer)
+		free(imgBuffer[1].buffer);
 
 	//Y no estamos capturando
 	capturing = false;
-
-	//Clear flags
-	grabPic = NULL;
 
 	//Desprotegemos
 	pthread_mutex_unlock(&newPicMutex);
@@ -121,10 +124,10 @@ int VideoPipe::StopVideoCapture()
 	return true;
 }
 
-BYTE* VideoPipe::GrabFrame(DWORD timeout)
+VideoBuffer VideoPipe::GrabFrame(DWORD timeout)
 {
-	BYTE *pic;
-
+	VideoBuffer pic;
+	
 	//Bloqueamos para ver si hay un nuevo picture
 	pthread_mutex_lock(&newPicMutex);
 
@@ -132,11 +135,11 @@ BYTE* VideoPipe::GrabFrame(DWORD timeout)
 	if (!inited)
 	{
 		//Logeamos
-		Error("VideoPipe no inited, grab failed\n");
+		Error("-VideoPipe::GrabFrame() | VideoPipe no inited, grab failed\n");
 		//Desbloqueamos
 		pthread_mutex_unlock(&newPicMutex);
 		//Salimos
-		return NULL;
+		return std::move(pic);
 	}
 
 	//Miramos a ver si hay un nuevo pict
@@ -160,12 +163,14 @@ BYTE* VideoPipe::GrabFrame(DWORD timeout)
 	imgNew=0;
 
 	//Nos quedamos con el puntero antes de que lo cambien
-	pic=grabPic;
+	pic.width	= imgBuffer[imgPos].width;
+	pic.height	= imgBuffer[imgPos].height;
+	pic.buffer	= imgBuffer[imgPos].buffer;
 
 	//Y liberamos el mutex
 	pthread_mutex_unlock(&newPicMutex);
 
-	return pic;
+	return std::move(pic);
 }
 
 void  VideoPipe::CancelGrabFrame()
@@ -175,7 +180,6 @@ void  VideoPipe::CancelGrabFrame()
 
 	//No image
 	imgNew = false;
-	grabPic = NULL;
 
 	//Se�alamos
 	pthread_cond_signal(&newPicCond);
@@ -185,16 +189,12 @@ void  VideoPipe::CancelGrabFrame()
 
 }
 
-DWORD VideoPipe::GetBufferSize()
-{
-	return (videoWidth*videoHeight*3)/2;
-}
-
 int VideoPipe::SetVideoSize(int width, int height)
 {
 	//Set current values
 	inputWidth  = width;
 	inputHeight = height;
+	return 1;
 }
 
 int VideoPipe::NextFrame(BYTE * buffer)
@@ -206,13 +206,28 @@ int VideoPipe::NextFrame(BYTE * buffer)
 	if (capturing)
 	{
 		//Actualizamos el grabPic
-		grabPic = imgBuffer[imgPos];
+		auto &grabPic = imgBuffer[imgPos];
+		
+		//If we have a dinamic resize
+		if (scaleResolutionDownBy>0)
+		{
+			//Check adjusted video size
+			DWORD width  = ((DWORD)(inputWidth/scaleResolutionDownBy)) & ~1;
+			DWORD height = ((DWORD)(inputHeight/scaleResolutionDownBy)) & ~1;
+			//If it is not current
+			if (width!=grabPic.width || height!=grabPic.height)
+			{
+				grabPic.width  = width;
+				grabPic.height = height;
+				grabPic.buffer = (BYTE *)realloc(grabPic.buffer,grabPic.GetBufferSize());
+			}
+		}
 
 		//Pasamos al siguiente
 		imgPos = !imgPos;
 
 		//Copy & Resize
-		resizer.Resize(buffer,inputWidth,inputHeight,grabPic,videoWidth,videoHeight,true);
+		resizer.Resize(buffer,inputWidth,inputHeight,grabPic.buffer,grabPic.width,grabPic.height,true);
 
 		//Hay imagen
 		imgNew = true;
@@ -232,17 +247,17 @@ void VideoPipe::ClearFrame()
 	pthread_mutex_lock(&newPicMutex);
 	
 	//Actualizamos el grabPic
-	grabPic = imgBuffer[imgPos];
+	auto &grabPic = imgBuffer[imgPos];
 
 	//Pasamos al siguiente
 	imgPos = !imgPos;
 
 	//Get number of pixels
-	DWORD num = videoWidth*videoHeight;
+	DWORD num = grabPic.width*grabPic.height;
 
 	// paint the background in black for YUV
-	memset(grabPic		, 0		, num);
-	memset(grabPic+num	, (BYTE) -128	, num/2);
+	memset(grabPic.buffer		, 0		, num);
+	memset(grabPic.buffer+num	, (BYTE) -128	, num/2);
 
 	//Ponemos el cambio
 	imgNew = true;

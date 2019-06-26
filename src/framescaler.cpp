@@ -210,7 +210,7 @@ int FrameScaler::Resize(BYTE *srcY,BYTE *srcU,BYTE *srcV,BYTE *dstY, BYTE *dstU,
 	DWORD y = (resizeDstHeight-resizeDstAdjustedHeight)/2 & ~1;
 
 	//Copy to destination
-	for (int i=0;i<resizeDstHeight;++i)
+	for (DWORD i=0;i<resizeDstHeight;++i)
 	{
 		//Check for horizontal bars
 		if ((i<y) || (i>=(resizeDstAdjustedHeight+y)))

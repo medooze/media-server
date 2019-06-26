@@ -55,8 +55,13 @@
 #define SIZE4MUL(x)	((x)&0xFFFFFFFC)
 #define MAXKBITS 	300
 
+#if __APPLE__
+#define ALIGNEDTO32
+#define ZEROALIGNEDTO32
+#else
 #define ALIGNEDTO32        __attribute__ ((aligned (32)))
 #define ZEROALIGNEDTO32    __attribute__ ((aligned (32))) = {0}
+#endif
 
 inline DWORD GetWidth(DWORD size)
 {

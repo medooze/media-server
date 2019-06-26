@@ -15,14 +15,9 @@ class VP8Depacketizer : public RTPDepacketizer
 public:
 	VP8Depacketizer();
 	virtual ~VP8Depacketizer();
-	virtual void SetTimestamp(DWORD timestamp) override;
 	virtual MediaFrame* AddPacket(const RTPPacket::shared& packet) override;
 	virtual MediaFrame* AddPayload(const BYTE* payload,DWORD payload_len) override;
 	virtual void ResetFrame() override;
-	virtual DWORD GetTimestamp() override
-	{
-		return frame.GetTimeStamp();
-	} 
 private:
 	VideoFrame frame;
 };

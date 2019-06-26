@@ -1,6 +1,5 @@
 #include "rtp/RTPOutgoingSource.h"
 
-BYTE LayerInfo::MaxLayerId = 0xFF;
 
 RTCPSenderReport::shared RTPOutgoingSource::CreateSenderReport(QWORD now)
 {

@@ -15,20 +15,15 @@
 
 VP9Depacketizer::VP9Depacketizer() : RTPDepacketizer(MediaFrame::Video,VideoCodec::VP9), frame(VideoCodec::VP9,0)
 {
-	//Fakse initial size
-	frame.SetWidth(640);
-	frame.SetHeight(480);
+	//Set clock rate
+	frame.SetClockRate(90000);
 }
 
 VP9Depacketizer::~VP9Depacketizer()
 {
 
 }
-void VP9Depacketizer::SetTimestamp(DWORD timestamp)
-{
-	//Set timestamp
-	frame.SetTimestamp(timestamp);
-}
+
 void VP9Depacketizer::ResetFrame()
 {
 	//Clear packetization info
