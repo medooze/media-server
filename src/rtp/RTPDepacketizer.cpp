@@ -14,6 +14,7 @@
 #include "rtp/RTPDepacketizer.h"
 #include "audio.h"
 #include "bitstream.h"
+#include "opus/opusdepacketizer.h"
 #include "h264/h264depacketizer.h"
 #include "vp8/vp8depacketizer.h"
 #include "vp9/VP9Depacketizer.h"
@@ -39,26 +40,30 @@ RTPDepacketizer* RTPDepacketizer::Create(MediaFrame::Type mediaType,DWORD codec)
 			 }
 			 break;
 		 case MediaFrame::Audio:
+		 {
+			 //GEt codec
+			 AudioCodec::Type  audioCodec = (AudioCodec::Type)codec;
 			 //Depending on the codec
-			 switch((AudioCodec::Type)codec)
+			 switch(audioCodec)
 			 {
 				case AudioCodec::GSM:
 				case AudioCodec::PCMA:
 				case AudioCodec::PCMU:
 					//Dummy depacketizer
-					return new DummyAudioDepacketizer(codec);
+					return new DummyAudioDepacketizer(audioCodec);
 				case AudioCodec::SPEEX16:
 				case AudioCodec::G722:
 					//Dummy depacketizer
-					return new DummyAudioDepacketizer(codec,16000);
+					return new DummyAudioDepacketizer(audioCodec,16000);
 				case AudioCodec::OPUS:
 					//Dummy depacketizer
-					return new DummyAudioDepacketizer(codec,48000);
+					return new OpusDepacketizer();
 				 default:
 					//Dummy depacketizer
-					return new DummyAudioDepacketizer(codec);
+					return new DummyAudioDepacketizer(audioCodec);
 			 }
 			 break;
+		 }
 		 default:
 			 Error("-RTPDepacketizer::Create unknown media type");
 	 }

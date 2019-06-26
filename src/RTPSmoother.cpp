@@ -84,7 +84,7 @@ int RTPSmoother::SendFrame(MediaFrame* frame,DWORD duration)
 			//Get size
 			frameSize = audio->GetLength();
 			//Set default rate
-			rate = 8;
+			rate = 8000;
 		}
 			break;
 		case MediaFrame::Video:
@@ -98,7 +98,7 @@ int RTPSmoother::SendFrame(MediaFrame* frame,DWORD duration)
 			//Get size
 			frameSize = video->GetLength();
 			//Set default rate
-			rate = 90;
+			rate = 90000;
 		}
 			break;
 		default:
@@ -135,7 +135,7 @@ int RTPSmoother::SendFrame(MediaFrame* frame,DWORD duration)
 		//Add prefix
 		packet->PrefixPayload(rtp->GetPrefixData(),rtp->GetPrefixLen());
 		//Set other values
-		packet->SetTimestamp(frame->GetTimeStamp()*rate);
+		packet->SetTimestamp(frame->GetTimeStamp()*rate/frame->GetClockRate());
 		//Check
 		if (i+1==info.size())
 			//last

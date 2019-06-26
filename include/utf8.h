@@ -20,18 +20,18 @@ public:
 	UTF8Parser(const std::string& str);
 	void Reset();
 	DWORD Parse(const BYTE *data,DWORD size);
-	bool IsParsed();
+	bool IsParsed() const;
 	void SetSize(DWORD size);
-	std::string GetUTF8String();
-	DWORD GetUTF8Size();
-	DWORD GetLength();
-	std::wstring GetWString();
-	const wchar_t* GetWChar();
+	const std::string GetUTF8String() const;
+	DWORD GetUTF8Size() const;
+	DWORD GetLength() const;
+	const std::wstring GetWString() const;
+	const wchar_t* GetWChar() const;
 	void SetWString(const std::wstring& str);
 	void SetWChar(const wchar_t* buffer,DWORD bufferLen);
 	DWORD SetString(const char* str);
 	DWORD SetString(const std::string& str);
-	DWORD Serialize(BYTE *data,DWORD size);
+	DWORD Serialize(BYTE *data,DWORD size) const;
 private:
 	std::wstring value;
 	DWORD utf8size;

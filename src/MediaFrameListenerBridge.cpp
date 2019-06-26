@@ -17,8 +17,16 @@ void MediaFrameListenerBridge::RemoveListener(RTPIncomingMediaStream::Listener* 
 	listeners.erase(listener);
 }
 
-void MediaFrameListenerBridge::onMediaFrame(MediaFrame& frame)
+void MediaFrameListenerBridge::onMediaFrame(const MediaFrame& frame)
 {
+	//Sync
+	{
+		ScopedLock scope(mutex);
+		//Multiplex
+		for (auto listener : mediaFrameListenerss)
+			listener->onMediaFrame(frame);
+	}
+	
 	//Check
 	if (!frame.HasRtpPacketizationInfo())
 		//Error
@@ -39,7 +47,7 @@ void MediaFrameListenerBridge::onMediaFrame(MediaFrame& frame)
 	const MediaFrame::RtpPacketizationInfo& info = frame.GetRtpPacketizationInfo();
 
 	DWORD codec = 0;
-	BYTE *frameData = NULL;
+	const BYTE *frameData = NULL;
 	DWORD frameSize = 0;
 	WORD  rate = 1;
 
@@ -184,4 +192,18 @@ void MediaFrameListenerBridge::Update(QWORD now)
 	acumulator.Update(now);
 	//Get bitrate in bps
 	bitrate = acumulator.GetInstant()*8;
+}
+
+void MediaFrameListenerBridge::AddMediaListener(MediaFrame::Listener *listener)
+{
+	ScopedLock scope(mutex);
+	//Add to set
+	mediaFrameListenerss.insert(listener);
+}
+
+void MediaFrameListenerBridge::RemoveMediaListener(MediaFrame::Listener *listener)
+{
+	ScopedLock scope(mutex);
+	//Remove from set
+	mediaFrameListenerss.erase(listener);
 }

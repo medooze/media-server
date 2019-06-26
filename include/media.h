@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <vector>
 #include <string.h>
+#include <memory>
+#include "Buffer.h"
 
 class MediaFrame
 {
@@ -15,8 +17,8 @@ public:
 		virtual ~Listener(){};
 	public:
 		//Interface
-		virtual void onMediaFrame(MediaFrame &frame) = 0;
-		virtual void onMediaFrame(DWORD ssrc, MediaFrame &frame) = 0;
+		virtual void onMediaFrame(const MediaFrame &frame) = 0;
+		virtual void onMediaFrame(DWORD ssrc, const MediaFrame &frame) = 0;
 	};
 
 	class RtpPacketization
@@ -45,11 +47,11 @@ public:
 			if (prefix) free(prefix);
 		}
 
-		DWORD GetPos()		{ return pos;	}
-		DWORD GetSize()		{ return size;	}
-		BYTE* GetPrefixData()	{ return prefix;	}
-		DWORD GetPrefixLen()	{ return prefixLen;	}
-		DWORD GetTotalLength()	{ return size+prefixLen;}
+		DWORD GetPos()		const { return pos;	}
+		DWORD GetSize()		const { return size;	}
+		BYTE* GetPrefixData()	const { return prefix;	}
+		DWORD GetPrefixLen()	const { return prefixLen;	}
+		DWORD GetTotalLength()	const { return size+prefixLen;}
 		
 	private:
 		DWORD	pos;
@@ -82,16 +84,20 @@ public:
 	{
 		//Set media type
 		this->type = type;
-		//Set no timestamp
-		ts = (DWORD)-1;
-		//No duration
-		duration = 0;
-		//Set buffer size
-		bufferSize = size;
-		//Allocate memory
-		buffer = (BYTE*) malloc(bufferSize);
-		//NO length
-		length = 0;
+		//Create new owned buffer
+		buffer = std::make_shared<Buffer>(size);
+		//Owned buffer
+		ownedBuffer = true;
+	}
+	
+	MediaFrame(Type type,const std::shared_ptr<Buffer>& buffer)
+	{
+		//Set media type
+		this->type = type;
+		//Share same buffer
+		this->buffer = buffer;
+		//Not owned buffer
+		ownedBuffer = false;
 	}
 
 	virtual ~MediaFrame()
@@ -99,7 +105,7 @@ public:
 		//Clear
 		ClearRTPPacketizationInfo();
 		//Clear memory
-		free(buffer);
+		if (configData) free(configData);
 	}
 
 	void	ClearRTPPacketizationInfo()
@@ -126,64 +132,107 @@ public:
 	DWORD	GetSSRC() const		{ return ssrc;		}
 	void	SetSSRC(DWORD ssrc)	{ this->ssrc = ssrc;	}
 
-	bool	HasRtpPacketizationInfo() const		{ return !rtpInfo.empty();	}
-	const RtpPacketizationInfo& GetRtpPacketizationInfo() const { return rtpInfo;		}
-	virtual MediaFrame* Clone() = 0;
+	bool	HasRtpPacketizationInfo() const				{ return !rtpInfo.empty();	}
+	const RtpPacketizationInfo& GetRtpPacketizationInfo() const	{ return rtpInfo;		}
+	virtual MediaFrame* Clone() const = 0;
 
 	DWORD GetDuration() const		{ return duration;		}
 	void SetDuration(DWORD duration)	{ this->duration = duration;	}
 
-	BYTE* GetData() const			{ return buffer;		}
-	DWORD GetLength() const			{ return length;		}
-	DWORD GetMaxMediaLength() const		{ return bufferSize;		}
+	DWORD GetLength() const			{ return buffer->GetSize();			}
+	DWORD GetMaxMediaLength() const		{ return buffer->GetCapacity();			}
+	const BYTE* GetData() const		{ return buffer->GetData();			}
 
-	void SetLength(DWORD length)		{ this->length = length;	}
+	BYTE* GetData()				{ AdquireBuffer(); return buffer->GetData();	}
+	void SetLength(DWORD length)		{ AdquireBuffer(); buffer->SetSize(length);	}
 
 	void Alloc(DWORD size)
 	{
-		//Calculate new size
-		bufferSize = size;
-		//Realloc
-		buffer = (BYTE*) realloc(buffer,bufferSize);
+		//Adquire buffer
+		AdquireBuffer();
+		//Allocate mem
+		buffer->Alloc(size);
 	}
 
 	void SetMedia(const BYTE* data,DWORD size)
 	{
-		//Check size
-		if (size>bufferSize)
-			//Allocate new size
-			Alloc(size*3/2);
-		//Copy
-		memcpy(buffer,data,size);
-		//Increase length
-		length=size;
+		//Adquire buffer
+		AdquireBuffer();
+		//Allocate mem
+		buffer->SetData(data,size);
 	}
 
 	DWORD AppendMedia(const BYTE* data,DWORD size)
 	{
-		DWORD pos = length;
-		//Check size
-		if (size+length>bufferSize)
-			//Allocate new size
-			Alloc((size+length)*3/2);
-		//Copy
-		memcpy(buffer+length,data,size);
-		//Increase length
-		length+=size;
+                //Get current pos
+                DWORD pos = buffer->GetSize();
+		//Adquire buffer
+		AdquireBuffer();
+		//Append data
+		buffer->AppendData(data,size);
 		//Return previous pos
 		return pos;
 	}
 	
+	void SetCodecConfig(const BYTE* data,DWORD size)
+	{
+		//If we had old data
+		if (configData)
+			//Free it
+			free(configData);
+		//Allocate memory
+		configData = (BYTE*) malloc(size);
+		//Copy
+		memcpy(configData,data,size);
+		//Set lenght
+		configSize = size;
+	}
+	
+	void ClearCodecConfig()
+	{
+		//Free mem
+		if (configData) free(configData);
+		//Creal
+		configData = nullptr;
+		configSize = 0;
+	}
+	
+	bool HasCodecConfig() const		{ return configData && configSize;	}
+	BYTE* GetCodecConfigData() const	{ return configData;			}
+	DWORD GetCodecConfigSize() const	{ return configSize;			} 
+	
+	DWORD GetClockRate() const		{ return clockRate;			}
+	void  SetClockRate(DWORD clockRate)	{ this->clockRate = clockRate;		}
+	
 protected:
-	Type type;
-	DWORD ts;
-	DWORD ssrc;
+	void AdquireBuffer()
+	{
+		//If already owning
+		if (ownedBuffer)
+			//Do nothing
+			return;
+		
+		//Clone payload
+		buffer = std::make_shared<Buffer>(buffer->GetData(),buffer->GetSize());
+		//We own the payload
+		ownedBuffer = true;
+	}
+	
+protected:
+	Type type		= MediaFrame::Unknown;
+	DWORD ts		= (DWORD)-1;
+	DWORD ssrc		= 0;
+	
+	std::shared_ptr<Buffer> buffer;
+	bool ownedBuffer	= false;
+	
+	DWORD	duration	= 0;
+	DWORD	clockRate	= 1000;
+	
+	BYTE	*configData	= nullptr;
+	DWORD	configSize	= 0;
+	
 	RtpPacketizationInfo rtpInfo;
-	BYTE	*buffer;
-	DWORD	length;
-	DWORD	bufferSize;
-	DWORD	duration;
-	DWORD	clockRate;
 };
 
 #endif	/* MEDIA_H */

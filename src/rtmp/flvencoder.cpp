@@ -420,7 +420,10 @@ int FLVEncoder::EncodeAudio()
 	DWORD rate = encoder->TrySetRate(audioInput->GetNativeRate());
 
 	//Create audio frame
-	AudioFrame frame(audioCodec,rate);
+	AudioFrame frame(audioCodec);
+	
+	//Set rate
+	frame.SetClockRate(rate);
 
 	//Start recording
 	audioInput->StartRecording(rate);
@@ -649,6 +652,9 @@ int FLVEncoder::EncodeVideo()
 		//Set sending time of previous frame
 		getUpdDifTime(&prev);
 
+		//Set clock rate
+		encoded->SetClockRate(1000);
+		
 		//Set timestamp
 		encoded->SetTimestamp(getDifTime(&first)/1000);
 

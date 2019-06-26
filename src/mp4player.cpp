@@ -149,11 +149,11 @@ void MP4Player::onRTPPacket(RTPPacket &packet)
 
 }
 
-void MP4Player::onMediaFrame(MediaFrame &frame)
+void MP4Player::onMediaFrame(const MediaFrame &frame)
 {
 	//Do nothing now
 }
-void MP4Player::onMediaFrame(DWORD ssrc, MediaFrame &frame)
+void MP4Player::onMediaFrame(DWORD ssrc, const MediaFrame &frame)
 {
 	//Do nothing now
 }

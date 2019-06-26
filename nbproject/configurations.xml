@@ -229,6 +229,7 @@
           <in>mpeg4codec.cpp</in>
         </df>
         <df name="h264">
+          <in>H264CodecConfig.h</in>
           <in>H264LayerSelector.cpp</in>
           <in>h264decoder.cpp</in>
           <in>h264depacketizer.cpp</in>
@@ -238,7 +239,10 @@
           <in>NellyCodec.cpp</in>
         </df>
         <df name="opus">
+          <in>opusconfig.h</in>
           <in>opusdecoder.cpp</in>
+          <in>opusdepacketizer.cpp</in>
+          <in>opusdepacketizer.h</in>
           <in>opusencoder.cpp</in>
         </df>
         <df name="pcc">
@@ -1316,6 +1320,8 @@
         <ccTool flags="2">
         </ccTool>
       </item>
+      <item path="src/h264/H264CodecConfig.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="src/h264/H264LayerSelector.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="2">
         </ccTool>
@@ -1481,9 +1487,15 @@
           </incDir>
         </ccTool>
       </item>
+      <item path="src/opus/opusconfig.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="src/opus/opusdecoder.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="2">
         </ccTool>
+      </item>
+      <item path="src/opus/opusdepacketizer.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/opus/opusdepacketizer.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="src/opus/opusencoder.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="2">
@@ -3830,6 +3842,8 @@
         <ccTool flags="1">
         </ccTool>
       </item>
+      <item path="src/h264/H264CodecConfig.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="src/h264/H264LayerSelector.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
         </ccTool>
@@ -4090,9 +4104,15 @@
           </incDir>
         </ccTool>
       </item>
+      <item path="src/opus/opusconfig.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="src/opus/opusdecoder.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
         </ccTool>
+      </item>
+      <item path="src/opus/opusdepacketizer.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/opus/opusdepacketizer.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="src/opus/opusencoder.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
@@ -7130,19 +7150,6 @@
           </preprocessorList>
         </ccTool>
       </folder>
-      <item path="include/Packet.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/VideoDecoderWorker.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtp/LayerInfo.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtp/PacketStats.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtp/RTPIncomingMediaStreamMultiplexer.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
       <item path="src/ActiveSpeakerDetector.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="0">
           <incDir>
@@ -7579,7 +7586,30 @@
             ex="false"
             tool="1"
             flavor2="11">
-        <ccTool flags="1">
+        <ccTool flags="0">
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>DARWIN</Elem>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
         </ccTool>
       </item>
       <item path="src/VideoCodecFactory.cpp" ex="false" tool="1" flavor2="11">
@@ -7609,10 +7639,35 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="src/VideoDecoderWorker.cpp" ex="false" tool="1" flavor2="0">
+      <item path="src/VideoDecoderWorker.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="src/VideoEncoderWorker.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="1">
+        <ccTool flags="0">
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>DARWIN</Elem>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
         </ccTool>
       </item>
       <item path="src/VideoLayerSelector.cpp" ex="false" tool="1" flavor2="11">
@@ -7893,7 +7948,9 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="src/bwe.cpp" ex="false" tool="1" flavor2="0">
+      <item path="src/bwe.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="src/cpim.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="0">
@@ -8405,6 +8462,10 @@
       </item>
       <item path="src/opus/opusdecoder.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="0">
+        </ccTool>
+      </item>
+      <item path="src/opus/opusdepacketizer.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
         </ccTool>
       </item>
       <item path="src/opus/opusencoder.cpp" ex="false" tool="1" flavor2="11">
@@ -9094,7 +9155,32 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="src/rtp/LayerInfo.cpp" ex="false" tool="1" flavor2="0">
+      <item path="src/rtp/LayerInfo.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="0">
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>DARWIN</Elem>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
+        </ccTool>
       </item>
       <item path="src/rtp/RTCPApp.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="0">
@@ -9561,7 +9647,32 @@
       <item path="src/rtp/RTPIncomingMediaStreamMultiplexer.cpp"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="0">
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>DARWIN</Elem>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
+        </ccTool>
       </item>
       <item path="src/rtp/RTPIncomingSource.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="0">
@@ -10443,7 +10554,9 @@
         <ccTool flags="0">
         </ccTool>
       </item>
-      <item path="test/eventloop.cpp" ex="false" tool="1" flavor2="0">
+      <item path="test/eventloop.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="test/fec.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="0">
@@ -11888,6 +12001,8 @@
         <ccTool flags="1">
         </ccTool>
       </item>
+      <item path="src/h264/H264CodecConfig.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="src/h264/H264LayerSelector.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
         </ccTool>
@@ -12148,9 +12263,15 @@
           </incDir>
         </ccTool>
       </item>
+      <item path="src/opus/opusconfig.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="src/opus/opusdecoder.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
         </ccTool>
+      </item>
+      <item path="src/opus/opusdepacketizer.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="src/opus/opusdepacketizer.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="src/opus/opusencoder.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">

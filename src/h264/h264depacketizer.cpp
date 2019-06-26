@@ -10,24 +10,19 @@
 #include "codecs.h"
 #include "rtp.h"
 #include "log.h"
-
-/* 3 zero bytes syncword */
-//static uint8_t sync_bytes[] = { 0, 0, 0, 1 };
-
+#include "h264.h"
 
 H264Depacketizer::H264Depacketizer() : RTPDepacketizer(MediaFrame::Video,VideoCodec::H264), frame(VideoCodec::H264,0)
 {
+	//Set clock rate
+	frame.SetClockRate(90000);
 }
 
 H264Depacketizer::~H264Depacketizer()
 {
 
 }
-void H264Depacketizer::SetTimestamp(DWORD timestamp)
-{
-	//Set timestamp
-	frame.SetTimestamp(timestamp);
-}
+
 void H264Depacketizer::ResetFrame()
 {
 	//Clear packetization info
@@ -38,36 +33,54 @@ void H264Depacketizer::ResetFrame()
 	frame.SetLength(0);
 	//Clear time
 	frame.SetTimestamp((DWORD)-1);
+	//No intra
+	frame.SetIntra(false);
+	//Set it
+	frame.ClearCodecConfig();
+	//Clear config
+	config.ClearSequenceParameterSets();
+	config.ClearPictureParameterSets();
 }
 
 MediaFrame* H264Depacketizer::AddPacket(const RTPPacket::shared& packet)
 {
 	//Get timestamp in ms
-	auto ts = packet->GetTimestamp()/90;
+	auto ts = packet->GetTimestamp();
 	//Check it is from same packet
 	if (frame.GetTimeStamp()!=ts)
 		//Reset frame
 		ResetFrame();
-	//If not timestamp
-	if (frame.GetTimeStamp()==(DWORD)-1)
-		//Set timestamp
-		frame.SetTimestamp(ts);
+	//Set timestamp
+	frame.SetTimestamp(ts);
 	//Set SSRC
 	frame.SetSSRC(packet->GetSSRC());
 	//Add payload
 	AddPayload(packet->GetMediaData(),packet->GetMediaLength());
 	//If it is last return frame
-	return packet->GetMark() ? &frame : NULL;
+	if (!packet->GetMark())
+		return NULL;
+	//Get config size
+	auto size = config.GetSize();
+	//Serialize codec config
+	BYTE* data = (BYTE*)malloc(size);
+	//Serialize
+	DWORD len = config.Serialize(data,size);
+	//Set it
+	frame.SetCodecConfig(data,len);
+	//Free config
+	free(data);
+	//Return frame
+	return &frame;
 }
 
-MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payload_len)
+MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 {
+	H264SeqParameterSet sps;
 	BYTE nalHeader[4];
 	BYTE S, E;
-	DWORD nalu_size;
 	DWORD pos;
 	//Check lenght
-	if (!payload_len)
+	if (!payloadLen)
 		//Exit
 		return NULL;
 
@@ -80,12 +93,18 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payload_len)
 	 * F must be 0.
 	 */
 	// BYTE nal_ref_idc = (payload[0] & 0x60) >> 5;
-	BYTE nal_unit_type = payload[0] & 0x1f;
+	BYTE nalUnitType = payload[0] & 0x1f;
+	
+	//Get nal data
+	const BYTE *nalData = payload+1;
+	
+	//Get nalu size
+	DWORD nalSize = payloadLen;
 
-	//Debug("-H264 [NAL:%d,type:%d]\n", payload[0], nal_unit_type);
+	//Debug("-H264 [NAL:%d,type:%d]\n", payload[0], nalUnitType);
 
 	//Check type
-	switch (nal_unit_type)
+	switch (nalUnitType)
 	{
 		case 0:
 		case 30:
@@ -125,45 +144,77 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payload_len)
 					 single-time aggregation units
 			*/
 			//Everything goes to the payload
-			frame.AddRtpPacket(0,0,payload,payload_len);
+			frame.AddRtpPacket(0,0,payload,payloadLen);
 
 			/* Skip STAP-A NAL HDR */
 			payload++;
-			payload_len--;
+			payloadLen--;
 
 			/* STAP-A Single-time aggregation packet 5.7.1 */
-			while (payload_len > 2)
+			while (payloadLen > 2)
 			{
 				/* Get NALU size */
-				nalu_size = (payload[0] << 8) | payload[1];
+				nalSize = (payload[0] << 8) | payload[1];
 
 				/* strip NALU size */
 				payload += 2;
-				payload_len -= 2;
+				payloadLen -= 2;
 				
 				//Check
-				if (!nalu_size || nalu_size>payload_len)
+				if (!nalSize || nalSize>payloadLen)
 					//Error
 					break;
 
 				//Get nal type
-				BYTE nalType = payload[0] & 0x1f;
-				//Check it
-				if (nalType==0x05)
-					//It is intra
-					frame.SetIntra(true);
+				nalUnitType = payload[0] & 0x1f;
+				//Get data
+				nalData = payload+1;
+				
+				//Check if IDR SPS or PPS
+				switch (nalUnitType)
+				{
+					case 0x05:
+						//It is intra
+						frame.SetIntra(true);
+						break;
+					case 0x07:
+						//Consider it intra also
+						frame.SetIntra(true);
+						//Set config
+						config.SetConfigurationVersion(1);
+						config.SetAVCProfileIndication(nalData[0]);
+						config.SetProfileCompatibility(nalData[1]);
+						config.SetAVCLevelIndication(nalData[2]);
+						config.SetNALUnitLength(sizeof(nalHeader)-1);
+						//Add to config
+						config.AddSequenceParameterSet(nalData,nalSize-1);
+						
+						//Parse sps
+						if (sps.Decode(nalData,nalSize-1))
+						{
+							//Set dimensions
+							frame.SetWidth(sps.GetWidth());
+							frame.SetHeight(sps.GetHeight());
+						}
+						break;
+					case 0x08:
+						//Consider it intra also
+						frame.SetIntra(true);
+						//Add to config
+						config.AddPictureParameterSet(nalData,nalSize-1);
+						break;
+				}
 
 				//Set size
-				set4(nalHeader,0,nalu_size);
+				set4(nalHeader,0,nalSize);
 				//Append data
-				//frame.AppendMedia(sync_bytes, sizeof (sync_bytes));
 				frame.AppendMedia(nalHeader, sizeof (nalHeader));
 				
 				//Append NAL
-				frame.AppendMedia(payload,nalu_size);
+				frame.AppendMedia(payload,nalSize);
 				
-				payload += nalu_size;
-				payload_len -= nalu_size;
+				payload += nalSize;
+				payloadLen -= nalSize;
 			}
 			break;
 		case 26:
@@ -179,7 +230,7 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payload_len)
 
 
 			//Check length
-			if (payload_len < 2)
+			if (payloadLen < 2)
 				return NULL;
 			
 			/* +---------------+
@@ -194,39 +245,37 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payload_len)
 			E = (payload[1] & 0x40) == 0x40;
 
 			/* strip off FU indicator and FU header bytes */
-			nalu_size = payload_len-2;
+			nalSize = payloadLen-2;
 
 			if (S)
 			{
 				/* NAL unit starts here */
-				BYTE nal_header;
-
-				/* reconstruct NAL header */
-				nal_header = (payload[0] & 0xe0) | (payload[1] & 0x1f);
+				BYTE fragNalHeader = (payload[0] & 0xe0) | (payload[1] & 0x1f);
 
 				//Get nal type
-				BYTE nalType = nal_header & 0x1f;
+				nalUnitType = fragNalHeader & 0x1f;
+				
 				//Check it
-				if (nalType==0x05)
+				if (nalUnitType==0x05)
 					//It is intra
 					frame.SetIntra(true);
 
 				//Get init of the nal
 				iniFragNALU = frame.GetLength();
-				//Set size with start code
-				set4(nalHeader,0,1);
+				//Set empty header, will be set later
+				set4(nalHeader,0,0);
 				//Append data
 				frame.AppendMedia(nalHeader, sizeof (nalHeader));
 				//Append NAL header
-				frame.AppendMedia(&nal_header,1);
+				frame.AppendMedia(&fragNalHeader,1);
 			}
 
 			//Get position
 			pos = frame.GetLength();
 			//Append data
-			frame.AppendMedia(payload+2,nalu_size);
+			frame.AppendMedia(payload+2,nalSize);
 			//Add rtp payload
-			frame.AddRtpPacket(pos,nalu_size,payload,2);
+			frame.AddRtpPacket(pos,nalSize,payload,2);
 
 			if (E)
 			{
@@ -239,22 +288,55 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payload_len)
 			break;
 		default:
 			/* 1-23	 NAL unit	Single NAL unit packet per H.264	 5.6 */
-			//Check it
-			if (nal_unit_type==0x05)
-				//It is intra
-				frame.SetIntra(true);
+			
 			/* the entire payload is the output buffer */
-			nalu_size = payload_len;
+			nalSize = payloadLen;
+			//Check if IDR SPS or PPS
+			switch (nalUnitType)
+			{
+				case 0x05:
+					//It is intra
+					frame.SetIntra(true);
+					break;
+				case 0x07:
+					//Consider it intra also
+					frame.SetIntra(true);
+					//Set config
+					config.SetConfigurationVersion(1);
+					config.SetAVCProfileIndication(nalData[0]);
+					config.SetProfileCompatibility(nalData[1]);
+					config.SetAVCLevelIndication(nalData[2]);
+					config.SetNALUnitLength(sizeof(nalHeader));
+					
+					//Add to config
+					config.AddSequenceParameterSet(nalData,nalSize-1);
+					
+					//Parse sps
+					if (sps.Decode(nalData,nalSize-1))
+					{
+						//Set dimensions
+						frame.SetWidth(sps.GetWidth());
+						frame.SetHeight(sps.GetHeight());
+					}
+					break;
+				case 0x08:
+					
+					//Consider it intra also
+					frame.SetIntra(true);
+					//Add to config
+					config.AddPictureParameterSet(nalData,nalSize-1);
+					break;
+			}
 			//Set size
-			set4(nalHeader,0,nalu_size);
+			set4(nalHeader,0,nalSize);
 			//Append data
 			frame.AppendMedia(nalHeader, sizeof (nalHeader));
 			//Get current position in frame
 			DWORD pos = frame.GetLength();
 			//And data
-			frame.AppendMedia(payload, nalu_size);
+			frame.AppendMedia(payload, nalSize);
 			//Add RTP packet
-			frame.AddRtpPacket(pos,nalu_size,NULL,0);
+			frame.AddRtpPacket(pos,nalSize,NULL,0);
 			//Done
 			break;
 	}

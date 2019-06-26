@@ -22,7 +22,7 @@ mp4track::mp4track(MP4FileHandle mp4)
 	hasPPS = false;
 }
 
-int mp4track::CreateAudioTrack(AudioCodec::Type codec,DWORD rate)
+int mp4track::CreateAudioTrack(AudioCodec::Type codec, DWORD rate)
 {
 	Log("mp4track::CreateAudioTrack [codec:%d]\n",codec);
 	
@@ -97,10 +97,10 @@ int mp4track::CreateAudioTrack(AudioCodec::Type codec,DWORD rate)
 	return track;
 }
 
-int mp4track::CreateVideoTrack(VideoCodec::Type codec,int width, int height)
+int mp4track::CreateVideoTrack(VideoCodec::Type codec, DWORD rate, int width, int height)
 {
 	
-	Log("mp4track::CreateVideoTrack [codec:%d]\n",codec);
+	Log("mp4track::CreateVideoTrack [codec:%d,rate:%d,width:%d,height:%d]\n",codec,rate,width,height);
 	
 	BYTE type;
 
@@ -110,7 +110,7 @@ int mp4track::CreateVideoTrack(VideoCodec::Type codec,int width, int height)
 		case VideoCodec::H263_1996:
 		{
 			// Create video track
-			track = MP4AddH263VideoTrack(mp4, 90000, 0, width, height, 0, 0, 0, 0);
+			track = MP4AddH263VideoTrack(mp4, rate, 0, width, height, 0, 0, 0, 0);
 			// Create video hint track
 			hint = MP4AddHintTrack(mp4, track);
 			// Set payload type for hint track
@@ -121,7 +121,7 @@ int mp4track::CreateVideoTrack(VideoCodec::Type codec,int width, int height)
 		case VideoCodec::H263_1998:
 		{
 			// Create video track
-			track = MP4AddH263VideoTrack(mp4, 90000, 0, width, height, 0, 0, 0, 0);
+			track = MP4AddH263VideoTrack(mp4, rate, 0, width, height, 0, 0, 0, 0);
 			// Create video hint track
 			hint = MP4AddHintTrack(mp4, track);
 			// Set payload type for hint track
@@ -137,7 +137,7 @@ int mp4track::CreateVideoTrack(VideoCodec::Type codec,int width, int height)
 			unsigned char AVCProfileCompat		= 0xC0;
 			MP4Duration h264FrameDuration		= 1.0/30;
 			// Create video track
-			track = MP4AddH264VideoTrack(mp4, 90000, h264FrameDuration, width, height, AVCProfileIndication, AVCProfileCompat, AVCLevelIndication,  3);
+			track = MP4AddH264VideoTrack(mp4, rate, h264FrameDuration, width, height, AVCProfileIndication, AVCProfileCompat, AVCLevelIndication,  3);
 			// Create video hint track
 			hint = MP4AddHintTrack(mp4, track);
 			// Set payload type for hint track
@@ -151,10 +151,10 @@ int mp4track::CreateVideoTrack(VideoCodec::Type codec,int width, int height)
 			MP4Duration hvp8FrameDuration	= 1.0/30;
 #ifdef MP4_VP8_VIDEO_TYPE      
 			// Create video track
-			track = MP4AddVP8VideoTrack(mp4, 90000, hvp8FrameDuration, width, height);
+			track = MP4AddVP8VideoTrack(mp4, rate, hvp8FrameDuration, width, height);
 #else
 			// Create video track
-			track = MP4AddVideoTrack(mp4, 90000, hvp8FrameDuration, width, height, MP4_PRIVATE_VIDEO_TYPE);
+			track = MP4AddVideoTrack(mp4, rate, hvp8FrameDuration, width, height, MP4_PRIVATE_VIDEO_TYPE);
 #endif
 			// Create video hint track
 			hint = MP4AddHintTrack(mp4, track);
@@ -169,10 +169,10 @@ int mp4track::CreateVideoTrack(VideoCodec::Type codec,int width, int height)
 			MP4Duration vp9FrameDuration	= 1.0/30;
 #ifdef MP4_VP9_VIDEO_TYPE      
 			// Create video track
-			track = MP4AddVP9VideoTrack(mp4, 90000, vp9FrameDuration, width, height);
+			track = MP4AddVP9VideoTrack(mp4, rate, vp9FrameDuration, width, height);
 #else
 			// Create video track
-			track = MP4AddVideoTrack(mp4, 90000, vp9FrameDuration, width, height, MP4_PRIVATE_VIDEO_TYPE);
+			track = MP4AddVideoTrack(mp4, rate, vp9FrameDuration, width, height, MP4_PRIVATE_VIDEO_TYPE);
 #endif
 			// Create video hint track
 			hint = MP4AddHintTrack(mp4, track);
@@ -199,6 +199,7 @@ int mp4track::CreateTextTrack()
 
 int mp4track::FlushAudioFrame(AudioFrame* frame,DWORD duration)
 {
+	Log("-FlushAudioFrame() [duration:%u]\n",duration);
 	// Save audio frame
 	MP4WriteSample(mp4, track, frame->GetData(), frame->GetLength(), duration, 0, 1);
 
@@ -240,9 +241,14 @@ int mp4track::WriteAudioFrame(AudioFrame &audioFrame)
 	//One more frame
 	sampleId++;
 
-	//Get number of samples
-	DWORD duration = (frame->GetTimeStamp()-prev->GetTimeStamp())*audioFrame.GetRate()/1000;
-
+	//Get frame duration
+	DWORD duration = prev->GetDuration();
+	
+	//If not set
+	if (!duration)
+		//calculate it
+		duration = frame->GetTimeStamp()-prev->GetTimeStamp();
+	
 	//Flush sample
 	FlushAudioFrame((AudioFrame *)prev,duration);
 	
@@ -252,6 +258,7 @@ int mp4track::WriteAudioFrame(AudioFrame &audioFrame)
 
 int mp4track::FlushVideoFrame(VideoFrame* frame,DWORD duration)
 {
+	Log("-FlushVideoFrame() [duration:%u]\n",duration);
 	// Save video frame
 	MP4WriteSample(mp4, track, frame->GetData(), frame->GetLength(), duration, 0, frame->IsIntra());
 
@@ -348,8 +355,13 @@ int mp4track::WriteVideoFrame(VideoFrame& videoFrame)
 	//One mor frame
 	sampleId++;
 
-	//Get samples
-	DWORD duration = (frame->GetTimeStamp()-prev->GetTimeStamp())*90;
+	//Get frame duration
+	DWORD duration = prev->GetDuration();
+	
+	//If not set
+	if (!duration)
+		//calculate it
+		duration = frame->GetTimeStamp()-prev->GetTimeStamp();
 
 	//Flush frame
 	FlushVideoFrame(prev,duration);
@@ -617,17 +629,17 @@ bool MP4Recorder::Close(bool async)
 	return true;
 }
 
-void MP4Recorder::onMediaFrame(MediaFrame &frame)
+void MP4Recorder::onMediaFrame(const MediaFrame &frame)
 {
 	onMediaFrame(0,frame);
 }
 
-void MP4Recorder::onMediaFrame(DWORD ssrc, MediaFrame &frame)
+void MP4Recorder::onMediaFrame(DWORD ssrc, const MediaFrame &frame)
 {
 	//Set now as timestamp
 	onMediaFrame(ssrc,frame,getTimeMS());
 }
-void MP4Recorder::onMediaFrame(DWORD ssrc, MediaFrame &frame, QWORD time)
+void MP4Recorder::onMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD time)
 {
 	// Check if we have to wait for video
 	if (waitVideo && (frame.GetType()!=MediaFrame::Video))
@@ -659,34 +671,31 @@ void MP4Recorder::onMediaFrame(DWORD ssrc, MediaFrame &frame, QWORD time)
 				if (first==(QWORD)-1)
 					//Set this one as first
 					first = time;
-				// Calculate new timestamp
-				QWORD timestamp = time-first;
+				
 				// Check if we have the audio track
 				if (!audioTrack)
 				{
+					// Calculate time diff since first
+					QWORD delta = time-first;
 					//Create object
 					audioTrack = new mp4track(mp4);
 					//Create track
-					audioTrack->CreateAudioTrack(audioFrame.GetCodec(),audioFrame.GetRate());
+					audioTrack->CreateAudioTrack(audioFrame.GetCodec(),audioFrame.GetClockRate());
 					//If it is not first
-					if (timestamp)
+					if (delta)
 					{
 						//Create empty text frame
-						AudioFrame empty(audioFrame.GetCodec(),audioFrame.GetRate());
-						//Set empty data
-						empty.SetTimestamp(0);
-						empty.SetLength(0);
-						//Set duration until first real frame
-						empty.SetDuration(timestamp);
+						AudioFrame empty(audioFrame.GetCodec());
+						//Set clock rate
+						empty.SetClockRate(audioFrame.GetClockRate());
+						//Set duration
+						empty.SetDuration(delta*audioFrame.GetClockRate()/1000);
 						//Send first empty packet
 						audioTrack->WriteAudioFrame(empty);
 					}
 					//Add it to map
 					audioTracks[ssrc] = audioTrack;
 				}
-
-				//Update timestamp
-				audioFrame.SetTimestamp(timestamp);
 				// Save audio rtp packet
 				audioTrack->WriteAudioFrame(audioFrame);
 				break;
@@ -718,39 +727,33 @@ void MP4Recorder::onMediaFrame(DWORD ssrc, MediaFrame &frame, QWORD time)
 					//Set this one as first
 					first = time;
 			
-				// Calculate new timestamp
-				QWORD timestamp = time-first;
-
 				//Check if we have to write or not
 				if (!waitVideo)
 				{
 					// Check if we have the audio track
 					if (!videoTrack)
 					{
+						// Calculate time diff since first
+						QWORD delta = time-first;
 						//Create object
 						videoTrack = new mp4track(mp4);
 						//Create track
-						videoTrack->CreateVideoTrack(videoFrame.GetCodec(),videoFrame.GetWidth(),videoFrame.GetHeight());
+						videoTrack->CreateVideoTrack(videoFrame.GetCodec(),videoFrame.GetClockRate(),videoFrame.GetWidth(),videoFrame.GetHeight());
 						//Add it to map
 						videoTracks[ssrc] = videoTrack;
+						
 						//If not the first one
-						if (timestamp)
+						if (delta)
 						{
 							//Create empty video frame
 							VideoFrame empty(videoFrame.GetCodec(),0);
-							//Set empty data
-							empty.SetTimestamp(0);
-							//Set duration until first real frame
-							empty.SetDuration(timestamp);
+							//Set duration
+							empty.SetDuration(delta*videoFrame.GetClockRate()/1000);
 							//Send first empty packet
 							videoTrack->WriteVideoFrame(empty);
 						}
 					}
 					
-					//Update timestamp
-					//TODO: Don't do it
-					videoFrame.SetTimestamp(timestamp);
-
 					// Save audio rtp packet
 					videoTrack->WriteVideoFrame(videoFrame);
 				}

@@ -253,12 +253,11 @@ bool H264LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 			{
 				/* 1-23	 NAL unit	Single NAL unit packet per H.264	 5.6 */
 
-				//Get nalu size
-				WORD nalSize = payloadLen;
-				BYTE nalType = nal_unit_type;
-
 				//Get nal data
 				const BYTE *nalData = payload+1;
+				//Get nalu size
+				WORD nalSize = payloadLen-1;
+				BYTE nalType = nal_unit_type;
 
 				//Check if IDR SPS or PPS
 				switch (nalType)

@@ -560,6 +560,9 @@ int VideoStream::SendVideo()
 		//Add frame size in bits to bitrate calculator
 		bitrateAcu.Update(getDifTime(&ini)/1000,videoFrame->GetLength()*8);
 
+		//Set clock rate
+		videoFrame->SetClockRate(1000);
+		
 		//Set frame timestamp
 		videoFrame->SetTimestamp(getDifTime(&ini)/1000);
 

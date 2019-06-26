@@ -16,29 +16,39 @@ public:
 		width = 0;
 		height = 0;
 	}
-
-	virtual MediaFrame* Clone()
+	
+	VideoFrame(VideoCodec::Type codec,const std::shared_ptr<Buffer>& buffer) : MediaFrame(MediaFrame::Video,buffer)
 	{
-		//Create new one
-		VideoFrame *frame = new VideoFrame(codec,length);
-		//Copy
-		memcpy(frame->GetData(),buffer,length);
-		//Set length
-		frame->SetLength(length);
+		//Store codec
+		this->codec = codec;
+		//Init values
+		isIntra = 0;
+		width = 0;
+		height = 0;
+	}
+
+	virtual MediaFrame* Clone() const
+	{
+		//Create new one with same data
+		VideoFrame *frame = new VideoFrame(codec,buffer);
 		//Size
 		frame->SetWidth(width);
 		frame->SetHeight(height);
 		//Set intra
 		frame->SetIntra(isIntra);
+		//Set clock rate
+		frame->SetClockRate(GetClockRate());
 		//Set timestamp
 		frame->SetTimestamp(GetTimeStamp());
 		//Set duration
 		frame->SetDuration(GetDuration());
+		//Set config
+		if (HasCodecConfig()) frame->SetCodecConfig(GetCodecConfigData(),GetCodecConfigSize());
 		//Check if it has rtp info
-		for (MediaFrame::RtpPacketizationInfo::iterator it = rtpInfo.begin();it!=rtpInfo.end();++it)
+		for (auto it = rtpInfo.begin();it!=rtpInfo.end();++it)
 		{
 			//Gete info
-			MediaFrame::RtpPacketization *rtp = (*it);
+			const MediaFrame::RtpPacketization *rtp = (*it);
 			//Add it
 			frame->AddRtpPacket(rtp->GetPos(),rtp->GetSize(),rtp->GetPrefixData(),rtp->GetPrefixLen());
 		}

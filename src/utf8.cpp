@@ -122,27 +122,27 @@ DWORD UTF8Parser::Parse(const BYTE* buffer,DWORD size)
 	return copy;
 }
 
-bool UTF8Parser::IsParsed()
+bool UTF8Parser::IsParsed() const
 {
 	return (len==utf8size);
 }
 
-std::wstring UTF8Parser::GetWString()
+const std::wstring UTF8Parser::GetWString() const
 {
 	return value;
 }
 
-const wchar_t* UTF8Parser::GetWChar()
+const wchar_t* UTF8Parser::GetWChar() const
 {
 	return value.c_str();
 }
 
-DWORD UTF8Parser::GetUTF8Size()
+DWORD UTF8Parser::GetUTF8Size() const
 {
 	return utf8size;
 }
 
-std::string UTF8Parser::GetUTF8String()
+const std::string UTF8Parser::GetUTF8String() const
 {
 	std::string utf8string;
 	utf8string.resize(utf8size);
@@ -150,7 +150,7 @@ std::string UTF8Parser::GetUTF8String()
 	return utf8string;
 }
 
-DWORD UTF8Parser::GetLength()
+DWORD UTF8Parser::GetLength() const
 {
 	return value.length();
 }
@@ -201,7 +201,7 @@ void UTF8Parser::SetWChar(const wchar_t *buffer,DWORD bufferLen)
 	}
 }
 
-DWORD UTF8Parser::Serialize(BYTE* buffer,DWORD size)
+DWORD UTF8Parser::Serialize(BYTE* buffer,DWORD size) const
 {
 	DWORD len=0;
 

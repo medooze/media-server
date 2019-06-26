@@ -68,10 +68,12 @@ public:
 		SetLength(len);
 	}
 
-	virtual MediaFrame* Clone()
+	virtual MediaFrame* Clone() const
 	{
 		//Create new one
 		TextFrame *frame = new TextFrame(GetTimeStamp(),parser.GetWString());
+		//Set clock rate
+		frame->SetClockRate(GetClockRate());
 		//Return it
 		return (MediaFrame*)frame;
 	}

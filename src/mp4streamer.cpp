@@ -620,6 +620,8 @@ QWORD MP4RtpTrack::Read(Listener *listener)
 			VideoFrame *video = (VideoFrame*)frame;
 			//Set lenght
 			video->SetLength(dataLen);
+			//Set clock rate
+			video->SetClockRate(1000);
 			//Timestamp
 			video->SetTimestamp(startTime);
 			//Set intra
@@ -631,6 +633,8 @@ QWORD MP4RtpTrack::Read(Listener *listener)
 			AudioFrame *audio = (AudioFrame*)frame;
 			//Set lenght
 			audio->SetLength(dataLen);
+			//Set clock rate
+			audio->SetClockRate(1000);
 			//Timestamp
 			audio->SetTimestamp(startTime);
 			//Set audio duration (informative)

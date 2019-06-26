@@ -335,6 +335,8 @@ int VideoEncoderWorker::Encode()
 		//Add frame size in bits to bitrate calculator
 	        bitrateAcu.Update(getDifTime(&first)/1000,videoFrame->GetLength()*8);
 
+		//Set clock rate
+		videoFrame->SetClockRate(1000);
 		//Set frame timestamp
 		videoFrame->SetTimestamp(getDifTime(&first)/1000);
 		
