@@ -74,7 +74,8 @@ int VideoStream::SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitra
 	//Fix: Should not be here
 	if (properties.HasProperty("rateEstimator.minRate"))
 		//Set it
-		rtp.SetTemporalMinLimit(properties.GetProperty("rateEstimator.minRate",0));
+		rtp.SetTemporalMinLimit(properties.GetProperty("rateEstimator.minRate",0));		
+                sendMinRate = properties.GetProperty("rateEstimator.minRate",0);
 	
 	//LO guardamos
 	videoCodec=codec;
@@ -113,7 +114,8 @@ int VideoStream::SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitra
 int VideoStream::SetTemporalBitrateLimit(int estimation)
 {
 	//Set bitrate limit
-	videoBitrateLimit = estimation/1000;
+	videoBitrateLimit = estimation/1000;	
+	videoBitrateLimit = sendMinRate ? std::max(sendMinRate,estimation)/1000 : estimation/1000;	
 	//Set limit of bitrate to 1 second;
 	videoBitrateLimitCount = videoFPS;
 	//Exit
