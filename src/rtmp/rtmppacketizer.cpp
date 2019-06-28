@@ -161,7 +161,7 @@ std::unique_ptr<AudioFrame> RTMPAACPacketizer::AddFrame(RTMPAudioFrame* audioFra
 	if (audioFrame->GetAACPacketType()==RTMPAudioFrame::AACSequenceHeader)
 	{
 		//Handle specific settings
-		aacSpecificConfig.Decode(audioFrame->GetMediaData(),audioFrame->GetMediaSize());
+		gotConfig = aacSpecificConfig.Decode(audioFrame->GetMediaData(),audioFrame->GetMediaSize());
 		return nullptr;
 	}
 	
@@ -176,6 +176,15 @@ std::unique_ptr<AudioFrame> RTMPAACPacketizer::AddFrame(RTMPAudioFrame* audioFra
 	frame->SetClockRate(1000);
 	//Set time
 	frame->SetTimestamp(audioFrame->GetTimestamp());
+	
+	//IF we have aac config
+	if (gotConfig)
+	{
+		//Allocate data
+		frame->AllocateCodecConfig(aacSpecificConfig.GetSize());
+		//Serialize it
+		aacSpecificConfig.Serialize(frame->GetCodecConfigData(),frame->GetCodecConfigSize());
+	}
 	
 	//Add aac frame in single rtp 
 	auto ini = frame->AppendMedia(audioFrame->GetMediaData(),audioFrame->GetMediaSize());

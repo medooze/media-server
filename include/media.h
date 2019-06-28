@@ -173,19 +173,25 @@ public:
 		//Return previous pos
 		return pos;
 	}
-	
-	void SetCodecConfig(const BYTE* data,DWORD size)
-	{
-		//If we had old data
+        
+	BYTE* AllocateCodecConfig(DWORD size)
+        {
+                //If we had old data
 		if (configData)
 			//Free it
 			free(configData);
 		//Allocate memory
 		configData = (BYTE*) malloc(size);
-		//Copy
-		memcpy(configData,data,size);
-		//Set lenght
+                //Set lenght
 		configSize = size;
+                //return it
+                return configData;
+        }
+        
+	void SetCodecConfig(const BYTE* data,DWORD size)
+	{
+		//Copy
+		memcpy(AllocateCodecConfig(size),data,size);
 	}
 	
 	void ClearCodecConfig()

@@ -58,20 +58,21 @@ AACDecoder::~AACDecoder()
 		av_frame_free(&frame);
 }
 
-void AACDecoder::SetConfig(const uint8_t* data,const size_t size)
+bool AACDecoder::SetConfig(const uint8_t* data,const size_t size)
 {
 	AACSpecificConfig config;
 	
 	Debug("-AACDecoder::SetConfig()\n");
 	
 	//Decode it
-	if (config.Decode(data,size))
-	{
-		//Set data
-		ctx->channels		= config.GetChannels();
-		ctx->sample_rate	= config.GetRate();
-		numFrameSamples		= config.GetFrameLength();
-	}
+	if (!config.Decode(data,size))
+		//Error
+		return false;
+	
+	//Set data
+	ctx->channels		= config.GetChannels();
+	ctx->sample_rate	= config.GetRate();
+	numFrameSamples		= config.GetFrameLength();
 
 	//Set side data pon packet
 	uint8_t *side = av_packet_new_side_data(packet, AV_PKT_DATA_NEW_EXTRADATA, size);
@@ -79,6 +80,9 @@ void AACDecoder::SetConfig(const uint8_t* data,const size_t size)
 	memcpy(side,data,size);
 	//We are inited
 	inited = true;
+	
+	//Done
+	return true;
 }
 
 int AACDecoder::Decode(const BYTE *in, int inLen, SWORD* out, int outLen)
