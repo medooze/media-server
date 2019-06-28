@@ -59,6 +59,8 @@ std::unique_ptr<VideoFrame> RTMPAVCPacketizer::AddFrame(RTMPVideoFrame* videoFra
 			//Send NAL
 			frame->AddRtpPacket(ini,desc.GetPictureParameterSetSize(i),nullptr,0);
 		}
+		//Set intra flag
+		frame->SetIntra(true);
 	}
 
 	//GEt nal header length
