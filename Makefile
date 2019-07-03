@@ -79,7 +79,8 @@ NELLYDIR=nelly
 NELLYOBJ=NellyCodec.o
 
 OPUSDIR=opus
-OPUSOBJ=opusdecoder.o opusencoder.o opusdepacketizer.o
+OPUSOBJ=opusdecoder.o opusencoder.o
+DEPACKETIZERSOBJ+= opusdepacketizer.o
 
 G722DIR=g722
 G722OBJ=g722codec.o g722_decode.o g722_encode.o
