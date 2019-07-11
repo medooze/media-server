@@ -21,6 +21,13 @@ public:
 	//Factory method
 	static VideoLayerSelector* Create(VideoCodec::Type codec);
 	static LayerInfo GetLayerIds(const RTPPacket::shared& packet);
+
+public:
+	//Common method
+	void SetWaitingForIntra(bool waitingForIntra);
+
+protected: 
+	bool waitingForIntra;
 };
 
 #endif /* VIDEOLAYERSELECTOR_H */

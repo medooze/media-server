@@ -60,3 +60,8 @@ VideoLayerSelector* VideoLayerSelector::Create(VideoCodec::Type codec)
 			return LayerInfo();
 	}
 }
+
+void VideoLayerSelector::SetWaitingForIntra(bool waitingForIntra) 
+{
+	this->waitingForIntra = waitingForIntra;
+}

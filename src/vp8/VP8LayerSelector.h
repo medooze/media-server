@@ -35,7 +35,6 @@ public:
 	static LayerInfo GetLayerIds(const RTPPacket::shared& packet);
 	
 private:
-	bool waitingForIntra;
 	BYTE temporalLayerId;
 	BYTE nextTemporalLayerId;
 };

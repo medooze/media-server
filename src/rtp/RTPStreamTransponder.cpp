@@ -16,8 +16,8 @@
 #include "vp8/vp8.h"
 
 
-RTPStreamTransponder::RTPStreamTransponder(RTPOutgoingSourceGroup* outgoing,RTPSender* sender) :
-	mutex(true)
+RTPStreamTransponder::RTPStreamTransponder(RTPOutgoingSourceGroup* outgoing, RTPSender* sender, bool waitingForIntra) :
+	mutex(true), waitingForIntra(waitingForIntra)
 {
 	//Store outgoing streams
 	this->outgoing = outgoing;
@@ -222,6 +222,7 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 			//Set prev layers
 			selector->SelectSpatialLayer(spatialLayerId);
 			selector->SelectTemporalLayer(temporalLayerId);
+			selector->SetWaitingForIntra(this->waitingForIntra);
 		}
 	}
 	

@@ -25,7 +25,6 @@ public:
 	
 	static LayerInfo GetLayerIds(const RTPPacket::shared& packet);
 private:
-	bool waitingForIntra;
 	H264SeqParameterSet sps;
 	H264PictureParameterSet pps;
 	BYTE temporalLayerId;

@@ -22,12 +22,12 @@ class RTPStreamTransponder :
 	public RTPOutgoingSourceGroup::Listener
 {
 public:
-	RTPStreamTransponder(RTPOutgoingSourceGroup* outgoing,RTPSender* sender);
+	RTPStreamTransponder(RTPOutgoingSourceGroup* outgoing, RTPSender* sender, bool waitingForIntra = true);
 	virtual ~RTPStreamTransponder();
 	
 	bool SetIncoming(RTPIncomingMediaStream* incoming, RTPReceiver* receiver);
 	void Close();
-	
+
 	virtual void onRTP(RTPIncomingMediaStream* stream,const RTPPacket::shared& packet) override;
 	virtual void onBye(RTPIncomingMediaStream* stream) override;
 	virtual void onEnded(RTPIncomingMediaStream* stream) override;
@@ -73,6 +73,7 @@ private:
 	QWORD picId		= 0;
 	WORD tl0Idx		= 0;
 	bool rewritePicId	= true;
+	bool waitingForIntra = true;
 };
 
 #endif /* RTPSTREAMTRANSPONDER_H */
