@@ -1,5 +1,6 @@
 
 #include "rtmp/rtmppacketizer.h"
+#include "h264/h264.h"
 
 const BYTE AnnexBStartCode[4] = {0x00,0x00,0x00,0x01};
 
@@ -28,6 +29,11 @@ std::unique_ptr<VideoFrame> RTMPAVCPacketizer::AddFrame(RTMPVideoFrame* videoFra
 		//DOne
 		return nullptr;
 	
+	//GEt nal header length
+	DWORD nalUnitLength = desc.GetNALUnitLength() + 1;
+	//Create it
+	BYTE nalHeader[4];
+	
 	//Create frame
 	auto frame = std::make_unique<VideoFrame>(VideoCodec::H264,videoFrame->GetSize()+desc.GetSize()+256);
 	
@@ -35,6 +41,17 @@ std::unique_ptr<VideoFrame> RTMPAVCPacketizer::AddFrame(RTMPVideoFrame* videoFra
 	frame->SetClockRate(1000);
 	//Set time
 	frame->SetTimestamp(videoFrame->GetTimestamp());
+	
+	//Get AVC data size
+	auto configSize = desc.GetSize();
+	//Allocate mem
+	BYTE* config = (BYTE*)malloc(configSize);
+	//Serialize AVC codec data
+	DWORD configLen = desc.Serialize(config,configSize);
+	//Set it
+	frame->SetCodecConfig(config,configLen);
+	//Free data
+	free(config);
 		
 	//If is an intra
 	if (videoFrame->GetFrameType()==RTMPVideoFrame::INTRA)
@@ -42,30 +59,71 @@ std::unique_ptr<VideoFrame> RTMPAVCPacketizer::AddFrame(RTMPVideoFrame* videoFra
 		//Decode SPS
 		for (int i=0;i<desc.GetNumOfSequenceParameterSets();i++)
 		{
-			//Add annex b nal unit start code
-			frame->AppendMedia((BYTE*)AnnexBStartCode,sizeof(AnnexBStartCode));
+			H264SeqParameterSet sps;
+			
+			//Create SPS NAL type
+			/* +---------------+
+			 * |0|1|2|3|4|5|6|7|
+			 * +-+-+-+-+-+-+-+-+
+			 * |F|NRI|  Type   |
+			 * +---------------+
+			 *
+			 * F must be 0.
+			*/
+			BYTE nalType[1] =  { 0x67 };
+			
+			//Set size
+			set4(nalHeader,0,sizeof(nalType)+desc.GetSequenceParameterSetSize(i));
+			
+			//Append nal size header
+			frame->AppendMedia(nalHeader, nalUnitLength);
+			//Append nal type
+			auto ini = frame->AppendMedia(nalType,sizeof(nalType));
 			//Append nal
-			auto ini = frame->AppendMedia(desc.GetSequenceParameterSet(i),desc.GetSequenceParameterSetSize(i));
-			//Send NAL
-			frame->AddRtpPacket(ini,desc.GetSequenceParameterSetSize(i),nullptr,0);
+			frame->AppendMedia(desc.GetSequenceParameterSet(i),desc.GetSequenceParameterSetSize(i));
+			
+			//Crete rtp packet
+			frame->AddRtpPacket(ini,sizeof(nalType)+desc.GetSequenceParameterSetSize(i),nullptr,0);
+			
+			//Parse sps
+			if (sps.Decode(desc.GetSequenceParameterSet(i),desc.GetSequenceParameterSetSize(i)))
+			{
+				//Set dimensions
+				frame->SetWidth(sps.GetWidth());
+				frame->SetHeight(sps.GetHeight());
+			}
 		}
 		//Decode PPS
 		for (int i=0;i<desc.GetNumOfPictureParameterSets();i++)
 		{
-			//Add annex b nal unit start code
-			frame->AppendMedia((BYTE*)AnnexBStartCode,sizeof(AnnexBStartCode));
+			//Create PPS NAL type
+			/* +---------------+
+			 * |0|1|2|3|4|5|6|7|
+			 * +-+-+-+-+-+-+-+-+
+			 * |F|NRI|  Type   |
+			 * +---------------+
+			 *
+			 * F must be 0.
+			*/
+			BYTE nalType[1] = { 0x68 };
+			
+			//Set size
+			set4(nalHeader,0,sizeof(nalType)+desc.GetPictureParameterSetSize(i));
+			
+			//Append nal size header
+			frame->AppendMedia(nalHeader, nalUnitLength);
+			//Append nal header type
+			auto ini = frame->AppendMedia(nalType,sizeof(nalType));
 			//Append nal
-			auto ini = frame->AppendMedia(desc.GetPictureParameterSet(i),desc.GetPictureParameterSetSize(i));
-			//Send NAL
-			frame->AddRtpPacket(ini,desc.GetPictureParameterSetSize(i),nullptr,0);
+			frame->AppendMedia(desc.GetPictureParameterSet(i),desc.GetPictureParameterSetSize(i));
+			
+			//Crete rtp packet
+			frame->AddRtpPacket(ini,sizeof(nalType)+desc.GetPictureParameterSetSize(i),nullptr,0);
 		}
 		//Set intra flag
 		frame->SetIntra(true);
 	}
 
-	//GEt nal header length
-	DWORD nalUnitLength = desc.GetNALUnitLength() + 1;
-		
 	//Malloc
 	BYTE *data = videoFrame->GetMediaData();
 	//Get size
@@ -91,17 +149,31 @@ std::unique_ptr<VideoFrame> RTMPAVCPacketizer::AddFrame(RTMPVideoFrame* videoFra
 		else
 			//Skip
 			break;
+
+		//Append nal header
+		frame->AppendMedia(data, nalUnitLength);
+
 		//Get NAL start
 		BYTE *nal = data+nalUnitLength;
-		//Skip it
-		data+=nalUnitLength+nalSize;
-		size-=nalUnitLength+nalSize;
 		
-		//Add annex b nal unit start code
-		frame->AppendMedia((BYTE*)AnnexBStartCode,sizeof(AnnexBStartCode));
+		//Skip fill data nalus
+		if (nal[0]==12)
+		{
+			//Skip it
+			data+=nalUnitLength+nalSize;
+			size-=nalUnitLength+nalSize;
+			//Next
+			continue;
+		}
+		
+		//Log("-NAL %x size=%d nalSize=%d fameSize=%d\n",nal[0],size,nalSize,videoFrame->GetMediaSize());
 		
 		//Append nal
 		auto ini = frame->AppendMedia(nal,nalSize);
+		
+		//Skip it
+		data+=nalUnitLength+nalSize;
+		size-=nalUnitLength+nalSize;
 		
 		//Check if NAL is bigger than RTPPAYLOADSIZE
 		if (nalSize>RTPPAYLOADSIZE)
