@@ -55,13 +55,7 @@ MediaFrame* OpusDepacketizer::AddPayload(const BYTE* payload,DWORD payloadLen)
 
 void OpusDepacketizer::ResetFrame()
 {
-	//Clear packetization info
-	frame.ClearRTPPacketizationInfo();
-	//Reset
-	memset(frame.GetData(),0,frame.GetMaxMediaLength());
-	//Clear length
-	frame.SetLength(0);
-	//Clear time
-	frame.SetTimestamp((DWORD)-1);
+	//Reset frame data
+	frame.Reset();
 }
 	

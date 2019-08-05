@@ -66,6 +66,16 @@ public:
 	void SetHeight(DWORD height)		{ this->height = height;	}
 	void SetIntra(bool isIntra)		{ this->isIntra = isIntra;	}
 	
+	void Reset() 
+	{
+		//Reset media frame
+		MediaFrame::Reset();
+		//No intra
+		SetIntra(false);
+		//No new config
+		ClearCodecConfig();
+	}
+	
 private:
 	VideoCodec::Type codec;
 	bool	isIntra;

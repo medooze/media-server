@@ -138,6 +138,9 @@ int mp4track::CreateVideoTrack(VideoCodec::Type codec, DWORD rate, int width, in
 			MP4Duration h264FrameDuration		= 1.0/30;
 			// Create video track
 			track = MP4AddH264VideoTrack(mp4, rate, h264FrameDuration, width, height, AVCProfileIndication, AVCProfileCompat, AVCLevelIndication,  3);
+			//Update widht an ehight
+			MP4SetTrackIntegerProperty(mp4,track,"mdia.minf.stbl.stsd.avc1.width", width);
+			MP4SetTrackIntegerProperty(mp4,track,"mdia.minf.stbl.stsd.avc1.height", height);
 			// Create video hint track
 			hint = MP4AddHintTrack(mp4, track);
 			// Set payload type for hint track
@@ -199,7 +202,7 @@ int mp4track::CreateTextTrack()
 
 int mp4track::FlushAudioFrame(AudioFrame* frame,DWORD duration)
 {
-	Log("-FlushAudioFrame() [duration:%u]\n",duration);
+	//Log("-FlushAudioFrame() [duration:%u]\n",duration);
 	// Save audio frame
 	MP4WriteSample(mp4, track, frame->GetData(), frame->GetLength(), duration, 0, 1);
 
@@ -258,7 +261,7 @@ int mp4track::WriteAudioFrame(AudioFrame &audioFrame)
 
 int mp4track::FlushVideoFrame(VideoFrame* frame,DWORD duration)
 {
-	Log("-FlushVideoFrame() [duration:%u]\n",duration);
+	//Log("-FlushVideoFrame() [duration:%u,width:%d,height:%d%s]\n",duration, frame->GetWidth(), frame->GetWidth(), frame->IsIntra() ? ",intra" : "");
 	// Save video frame
 	MP4WriteSample(mp4, track, frame->GetData(), frame->GetLength(), duration, 0, frame->IsIntra());
 
@@ -297,22 +300,25 @@ int mp4track::FlushVideoFrame(VideoFrame* frame,DWORD duration)
 			if (frame->GetCodec()==VideoCodec::H264 && (!hasSPS || !hasPPS))
 			{
 				//Get rtp data pointer
-				BYTE *data = frame->GetData()+rtp->GetPos();
+				const BYTE *data = frame->GetData()+rtp->GetPos();
 				//Check nal type
 				BYTE nalType = data[0] & 0x1F;
 				//Get nal data
-				BYTE *nalData = data+1;
+				const BYTE *nalData = data+1;
 				DWORD nalSize = rtp->GetSize()-1;
-
+				
 				//If it a SPS NAL
 				if (!hasSPS && nalType==0x07)
 				{
 					H264SeqParameterSet sps;
 					//DEcode SPS
-					sps.Decode(nalData,nalSize);
-					//Update widht an ehight
-					MP4SetTrackIntegerProperty(mp4,track,"mdia.minf.stbl.stsd.avc1.width", sps.GetWidth());
-					MP4SetTrackIntegerProperty(mp4,track,"mdia.minf.stbl.stsd.avc1.height", sps.GetHeight());
+					if (sps.Decode(nalData,nalSize))
+					{
+						//Update width an height
+						MP4SetTrackIntegerProperty(mp4,track,"mdia.minf.stbl.stsd.avc1.width", sps.GetWidth());
+						MP4SetTrackIntegerProperty(mp4,track,"mdia.minf.stbl.stsd.avc1.height", sps.GetHeight());
+					}
+
 					//Add it
 					MP4AddH264SequenceParameterSet(mp4,track,nalData,nalSize);
 					//No need to search more
@@ -749,6 +755,13 @@ void MP4Recorder::onMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD time)
 							VideoFrame empty(videoFrame.GetCodec(),0);
 							//Set duration
 							empty.SetDuration(delta*videoFrame.GetClockRate()/1000);
+							//Size
+							empty.SetWidth(videoFrame.GetWidth());
+							empty.SetHeight(videoFrame.GetHeight());
+							//Set clock rate
+							empty.SetClockRate(videoFrame.GetClockRate());
+							//Set config
+							if (videoFrame.HasCodecConfig()) empty.SetCodecConfig(videoFrame.GetCodecConfigData(),videoFrame.GetCodecConfigSize());
 							//Send first empty packet
 							videoTrack->WriteVideoFrame(empty);
 						}

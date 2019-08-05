@@ -1,6 +1,7 @@
 #ifndef _MEDIA_H_
 #define	_MEDIA_H_
 #include "config.h"
+#include "log.h"
 #include <stdlib.h>
 #include <vector>
 #include <string.h>
@@ -47,12 +48,24 @@ public:
 			if (prefix) free(prefix);
 		}
 
-		DWORD GetPos()		const { return pos;	}
-		DWORD GetSize()		const { return size;	}
-		BYTE* GetPrefixData()	const { return prefix;	}
+		DWORD GetPos()		const { return pos;		}
+		DWORD GetSize()		const { return size;		}
+		BYTE* GetPrefixData()	const { return prefix;		}
 		DWORD GetPrefixLen()	const { return prefixLen;	}
-		DWORD GetTotalLength()	const { return size+prefixLen;}
+		DWORD GetTotalLength()	const { return size+prefixLen;	}
 		
+		void Dump() const 
+		{
+			if (!prefixLen)
+			{
+				Debug("[RtpPacketization size=%u pos=%u/]\n",size,pos);
+			} else {
+				Debug("[RtpPacketization size=%u pos=%u]\n",size,pos);
+				::Dump(prefix,prefixLen);
+				Debug("[RtpPacketization/]\n");
+			}
+			
+		}
 	private:
 		DWORD	pos;
 		DWORD	size;
@@ -120,6 +133,13 @@ public:
 		}
 	}
 	
+	void	DumpRTPPacketizationInfo() const
+	{
+		//Dump all info
+		for (const auto& info : rtpInfo)
+			info->Dump();
+	}
+	
 	void	AddRtpPacket(DWORD pos,DWORD size,const BYTE* prefix,DWORD prefixLen)		
 	{
 		rtpInfo.push_back(new RtpPacketization(pos,size,prefix,prefixLen));
@@ -145,6 +165,14 @@ public:
 
 	BYTE* GetData()				{ AdquireBuffer(); return buffer->GetData();	}
 	void SetLength(DWORD length)		{ AdquireBuffer(); buffer->SetSize(length);	}
+	
+	void ResetData(DWORD size = 0) 
+	{
+		//Create new owned buffer
+		buffer = std::make_shared<Buffer>(size);
+		//Owned buffer
+		ownedBuffer = true;
+	}
 
 	void Alloc(DWORD size)
 	{
@@ -201,6 +229,16 @@ public:
 		//Creal
 		configData = nullptr;
 		configSize = 0;
+	}
+	
+	void Reset() 
+	{
+		//Clear packetization info
+		ClearRTPPacketizationInfo();
+		//Reset data
+		ResetData();
+		//Clear time
+		SetTimestamp((DWORD)-1);
 	}
 	
 	bool HasCodecConfig() const		{ return configData && configSize;	}

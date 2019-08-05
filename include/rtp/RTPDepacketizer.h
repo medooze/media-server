@@ -87,15 +87,10 @@ public:
 	}
 	virtual void ResetFrame()
 	{
-		//Clear packetization info
-		frame.ClearRTPPacketizationInfo();
-		//Reset
-		memset(frame.GetData(),0,frame.GetMaxMediaLength());
-		//Clear length
-		frame.SetLength(0);
-		//Clear time
-		frame.SetTimestamp((DWORD)-1);
+		//Reset frame data
+		frame.Reset();
 	}
+	
 	virtual DWORD GetTimestamp() 
 	{
 		return frame.GetTimeStamp();
