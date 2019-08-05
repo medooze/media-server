@@ -2,8 +2,6 @@
 #include "rtmp/rtmppacketizer.h"
 #include "h264/h264.h"
 
-const BYTE AnnexBStartCode[4] = {0x00,0x00,0x00,0x01};
-
 std::unique_ptr<VideoFrame> RTMPAVCPacketizer::AddFrame(RTMPVideoFrame* videoFrame)
 {
 	//Debug("-RTMPAVCPacketizer::AddFrame() [size:%u]\n",videoFrame->GetMediaSize());
@@ -59,34 +57,21 @@ std::unique_ptr<VideoFrame> RTMPAVCPacketizer::AddFrame(RTMPVideoFrame* videoFra
 		//Decode SPS
 		for (int i=0;i<desc.GetNumOfSequenceParameterSets();i++)
 		{
-			H264SeqParameterSet sps;
-			
-			//Create SPS NAL type
-			/* +---------------+
-			 * |0|1|2|3|4|5|6|7|
-			 * +-+-+-+-+-+-+-+-+
-			 * |F|NRI|  Type   |
-			 * +---------------+
-			 *
-			 * F must be 0.
-			*/
-			BYTE nalType[1] =  { 0x67 };
-			
 			//Set size
-			set4(nalHeader,0,sizeof(nalType)+desc.GetSequenceParameterSetSize(i));
+			set4(nalHeader,0,desc.GetSequenceParameterSetSize(i));
 			
 			//Append nal size header
 			frame->AppendMedia(nalHeader, nalUnitLength);
-			//Append nal type
-			auto ini = frame->AppendMedia(nalType,sizeof(nalType));
+			
 			//Append nal
-			frame->AppendMedia(desc.GetSequenceParameterSet(i),desc.GetSequenceParameterSetSize(i));
+			auto ini =frame->AppendMedia(desc.GetSequenceParameterSet(i),desc.GetSequenceParameterSetSize(i));
 			
 			//Crete rtp packet
-			frame->AddRtpPacket(ini,sizeof(nalType)+desc.GetSequenceParameterSetSize(i),nullptr,0);
+			frame->AddRtpPacket(ini,desc.GetSequenceParameterSetSize(i),nullptr,0);
 			
-			//Parse sps
-			if (sps.Decode(desc.GetSequenceParameterSet(i),desc.GetSequenceParameterSetSize(i)))
+			//Parse sps skipping nal type (first byte)
+			H264SeqParameterSet sps;
+			if (sps.Decode(desc.GetSequenceParameterSet(i)+1,desc.GetSequenceParameterSetSize(i)-1))
 			{
 				//Set dimensions
 				frame->SetWidth(sps.GetWidth());
@@ -96,29 +81,16 @@ std::unique_ptr<VideoFrame> RTMPAVCPacketizer::AddFrame(RTMPVideoFrame* videoFra
 		//Decode PPS
 		for (int i=0;i<desc.GetNumOfPictureParameterSets();i++)
 		{
-			//Create PPS NAL type
-			/* +---------------+
-			 * |0|1|2|3|4|5|6|7|
-			 * +-+-+-+-+-+-+-+-+
-			 * |F|NRI|  Type   |
-			 * +---------------+
-			 *
-			 * F must be 0.
-			*/
-			BYTE nalType[1] = { 0x68 };
-			
 			//Set size
-			set4(nalHeader,0,sizeof(nalType)+desc.GetPictureParameterSetSize(i));
+			set4(nalHeader,0,desc.GetPictureParameterSetSize(i));
 			
 			//Append nal size header
 			frame->AppendMedia(nalHeader, nalUnitLength);
-			//Append nal header type
-			auto ini = frame->AppendMedia(nalType,sizeof(nalType));
 			//Append nal
-			frame->AppendMedia(desc.GetPictureParameterSet(i),desc.GetPictureParameterSetSize(i));
+			auto ini = frame->AppendMedia(desc.GetPictureParameterSet(i),desc.GetPictureParameterSetSize(i));
 			
 			//Crete rtp packet
-			frame->AddRtpPacket(ini,sizeof(nalType)+desc.GetPictureParameterSetSize(i),nullptr,0);
+			frame->AddRtpPacket(ini,desc.GetPictureParameterSetSize(i),nullptr,0);
 		}
 		//Set intra flag
 		frame->SetIntra(true);

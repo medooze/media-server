@@ -39,8 +39,10 @@ public:
 			Cache();
 			//Get the remaining
 			ret =  ret | GetCached(a);
-		} else
+		} else if (n) {
+			//Get from cache
 			ret = GetCached(n);
+		}
 		//Debug("Readed %d:\n",n);
 		//BitDump(ret,n);
 		return ret;
@@ -61,9 +63,10 @@ public:
 			Cache();
 			//Skip cache
 			SkipCached(a);
-		} else
+		} else if (n) {
 			//Skip cache
 			SkipCached(n);
+		}
 	}
 
 	inline QWORD Left()
@@ -82,8 +85,10 @@ public:
 			ret = cache >> (32-n);
 			//Get the remaining
 			ret =  ret | (PeekNextCached() >> (32-a));
-		} else
+		} else if (n) {
+			//Get from cache
 			ret = cache >> (32-n);
+		}
 		//Debug("Peeked %d:\n",n);
 		//BitDump(ret,n);
 		return ret;
@@ -180,6 +185,8 @@ public:
 
 	inline void SkipCached(DWORD n)
 	{
+		//Check length
+		if (!n) return;
 		//Move
 		cache = cache << n;
 		//Update cached bytes
@@ -189,9 +196,11 @@ public:
 
 	inline DWORD GetCached(DWORD n)
 	{
+		//Check length
+		if (!n) return 0;
 		//Get bits
 		DWORD ret = cache >> (32-n);
-		//Skip thos bits
+		//Skip those bits
 		SkipCached(n);
 		//Return bits
 		return ret;
@@ -441,8 +450,11 @@ public:
 		while (reader.Left() && !reader.Get(1))
 			//Increase len
 			++len;
+		//Check 0
+		if (!len) return 0;
 		//Get the exp
 		DWORD value = reader.Get(len);
+		
 		//Calc value
 		return (1<<len)-1+value;
 	}

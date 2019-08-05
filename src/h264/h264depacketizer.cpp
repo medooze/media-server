@@ -186,8 +186,8 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 						config.SetProfileCompatibility(nalData[1]);
 						config.SetAVCLevelIndication(nalData[2]);
 						config.SetNALUnitLength(sizeof(nalHeader)-1);
-						//Add to config
-						config.AddSequenceParameterSet(nalData,nalSize-1);
+						//Add full nal to config
+						config.AddSequenceParameterSet(payload,nalSize);
 						
 						//Parse sps
 						if (sps.Decode(nalData,nalSize-1))
@@ -200,8 +200,8 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 					case 0x08:
 						//Consider it intra also
 						frame.SetIntra(true);
-						//Add to config
-						config.AddPictureParameterSet(nalData,nalSize-1);
+						//Add full nal to config
+						config.AddPictureParameterSet(payload,nalSize);
 						break;
 				}
 
@@ -308,8 +308,8 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 					config.SetAVCLevelIndication(nalData[2]);
 					config.SetNALUnitLength(sizeof(nalHeader));
 					
-					//Add to config
-					config.AddSequenceParameterSet(nalData,nalSize-1);
+					//Add full nal to config
+					config.AddSequenceParameterSet(payload,nalSize);
 					
 					//Parse sps
 					if (sps.Decode(nalData,nalSize-1))
@@ -323,8 +323,8 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 					
 					//Consider it intra also
 					frame.SetIntra(true);
-					//Add to config
-					config.AddPictureParameterSet(nalData,nalSize-1);
+					//Add full nal to config
+					config.AddPictureParameterSet(payload,nalSize);
 					break;
 			}
 			//Set size

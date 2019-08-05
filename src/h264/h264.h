@@ -52,6 +52,20 @@ public:
 		CHECK(r); pic_width_in_mbs_minus1 = ExpGolombDecoder::Decode(r);
 		CHECK(r); pic_height_in_map_units_minus1 = ExpGolombDecoder::Decode(r);
 		CHECK(r); frame_mbs_only_flag = r.Get(1);
+		if (!frame_mbs_only_flag)
+		{
+			CHECK(r); mb_adaptive_frame_field_flag = r.Get(1);
+		}
+		CHECK(r); direct_8x8_inference_flag = r.Get(1);
+		CHECK(r); frame_cropping_flag = r.Get(1);
+		if (frame_cropping_flag)
+		{
+			CHECK(r); frame_crop_left_offset = ExpGolombDecoder::Decode(r);
+			CHECK(r); frame_crop_right_offset = ExpGolombDecoder::Decode(r);
+			CHECK(r); frame_crop_top_offset = ExpGolombDecoder::Decode(r);
+			CHECK(r); frame_crop_bottom_offset = ExpGolombDecoder::Decode(r);
+		}
+		//CHECK(r); vui_parameters_present_flag = r.Get(1);
 		//Free memory
 		free(aux);
 		//OK
@@ -79,8 +93,8 @@ private:
 		return len;
 	}
 public:
-	DWORD GetWidth()	{ return (pic_width_in_mbs_minus1+1)*16; }
-	DWORD GetHeight()	{ return (pic_height_in_map_units_minus1+1)*16; }
+	DWORD GetWidth()	{ return ((pic_width_in_mbs_minus1 +1)*16) - frame_crop_right_offset *2 - frame_crop_left_offset *2; }
+	DWORD GetHeight()	{ return ((2 - frame_mbs_only_flag)* (pic_height_in_map_units_minus1 +1) * 16) - frame_crop_bottom_offset*2 - frame_crop_top_offset*2; }
 	void Dump() const
 	{
 		Debug("[H264SeqParameterSet \n");
@@ -103,29 +117,45 @@ public:
 		Debug("\tpic_width_in_mbs_minus1=%u\n",			pic_width_in_mbs_minus1);
 		Debug("\tpic_height_in_map_units_minus1=%u\n",		pic_height_in_map_units_minus1);
 		Debug("\tframe_mbs_only_flag=%u\n",			frame_mbs_only_flag);
+		Debug("\tmb_adaptive_frame_field_flag=%u\n",		mb_adaptive_frame_field_flag);
+		Debug("\tdirect_8x8_inference_flag=%u\n",		direct_8x8_inference_flag);
+		Debug("\tframe_cropping_flag=%u\n",			frame_cropping_flag);
+		Debug("\tframe_crop_left_offset=%u\n",			frame_crop_left_offset);
+		Debug("\tframe_crop_right_offset=%u\n",			frame_crop_right_offset);
+		Debug("\tframe_crop_top_offset=%u\n",			frame_crop_top_offset);
+		Debug("\tframe_crop_bottom_offset=%u\n",		frame_crop_bottom_offset);
 		Debug("/]\n");
 	}
 private:
 	BYTE			profile_idc = 0;
-	BYTE			constraint_set0_flag = 0;
-	BYTE			constraint_set1_flag = 0;
-	BYTE			constraint_set2_flag = 0;
+	bool			constraint_set0_flag = false;
+	bool			constraint_set1_flag = false;
+	bool			constraint_set2_flag = false;
 	BYTE			reserved_zero_5bits  = 0;
 	BYTE			level_idc = 0;
 	BYTE			seq_parameter_set_id = 0;
 	BYTE			log2_max_frame_num_minus4 = 0;
 	BYTE			pic_order_cnt_type = 0;
 	BYTE			log2_max_pic_order_cnt_lsb_minus4 = 0;
-	BYTE			delta_pic_order_always_zero_flag = 0;
+	bool			delta_pic_order_always_zero_flag = false;
 	int			offset_for_non_ref_pic = 0;
 	int			offset_for_top_to_bottom_field = 0;
 	BYTE			num_ref_frames_in_pic_order_cnt_cycle = 0;
 	std::vector<int>	offset_for_ref_frame;
-	BYTE			num_ref_frames = 0;
-	BYTE			gaps_in_frame_num_value_allowed_flag = 0;
-	BYTE			pic_width_in_mbs_minus1 = 0;
-	BYTE			pic_height_in_map_units_minus1 = 0;
-	BYTE			frame_mbs_only_flag = 0;
+	DWORD			num_ref_frames = 0;
+	bool			gaps_in_frame_num_value_allowed_flag = false;
+	DWORD			pic_width_in_mbs_minus1 = 0;
+	DWORD			pic_height_in_map_units_minus1 = 0;
+	bool			frame_mbs_only_flag = false;
+	bool			mb_adaptive_frame_field_flag = false;
+	bool			direct_8x8_inference_flag = false;
+	bool			frame_cropping_flag = false;
+	DWORD			frame_crop_left_offset = 0;
+	DWORD			frame_crop_right_offset = 0;
+	DWORD			frame_crop_top_offset = 0;
+	DWORD			frame_crop_bottom_offset = 0;
+	//bool			vui_parameters_present_flag = false;
+
 };
 
 class H264PictureParameterSet
@@ -175,9 +205,9 @@ public:
 		CHECK(r); num_ref_idx_l1_active_minus1 = ExpGolombDecoder::Decode(r);
 		CHECK(r); weighted_pred_flag = r.Get(1);
 		CHECK(r); weighted_bipred_idc = r.Get(2);
-		CHECK(r); pic_init_qp_minus26 = ExpGolombDecoder::Decode(r); //Signed
-		CHECK(r); pic_init_qs_minus26 = ExpGolombDecoder::Decode(r); //Signed
-		CHECK(r); chroma_qp_index_offset = ExpGolombDecoder::Decode(r); //Signed
+		CHECK(r); pic_init_qp_minus26 = ExpGolombDecoder::DecodeSE(r); //Signed
+		CHECK(r); pic_init_qs_minus26 = ExpGolombDecoder::DecodeSE(r); //Signed
+		CHECK(r); chroma_qp_index_offset = ExpGolombDecoder::DecodeSE(r); //Signed
 		CHECK(r); deblocking_filter_control_present_flag = r.Get(1);
 		CHECK(r); constrained_intra_pred_flag = r.Get(1);
 		CHECK(r); redundant_pic_cnt_present_flag = r.Get(1);
@@ -236,27 +266,27 @@ public:
 private:
 	BYTE			pic_parameter_set_id = 0;
 	BYTE			seq_parameter_set_id = 0;
-	BYTE			entropy_coding_mode_flag = 0;
-	BYTE			pic_order_present_flag = 0;
+	bool			entropy_coding_mode_flag = false;
+	bool			pic_order_present_flag = false;
 	int			num_slice_groups_minus1 = 0;
 	BYTE			slice_group_map_type = 0;
 	std::vector<DWORD>	run_length_minus1;
 	std::vector<DWORD>	top_left;
 	std::vector<DWORD>	bottom_right;
-	BYTE			slice_group_change_direction_flag = 0;
+	bool			slice_group_change_direction_flag = false;
 	int			slice_group_change_rate_minus1 = 0;
 	int			pic_size_in_map_units_minus1 = 0;
 	std::vector<DWORD>	slice_group_id;
 	BYTE			num_ref_idx_l0_active_minus1 = 0;
 	BYTE			num_ref_idx_l1_active_minus1 = 0;
-	BYTE			weighted_pred_flag = 0;
+	bool			weighted_pred_flag = false;
 	BYTE			weighted_bipred_idc = 0;
 	int			pic_init_qp_minus26 = 0;
 	int			pic_init_qs_minus26 = 0;
 	int			chroma_qp_index_offset = 0;
-	BYTE			deblocking_filter_control_present_flag = 0;
-	BYTE			constrained_intra_pred_flag = 0;
-	BYTE			redundant_pic_cnt_present_flag = 0;
+	bool			deblocking_filter_control_present_flag = false;
+	bool			constrained_intra_pred_flag = false;
+	bool			redundant_pic_cnt_present_flag = false;
 };
 
 #undef CHECK
