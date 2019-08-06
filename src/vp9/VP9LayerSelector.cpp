@@ -128,7 +128,7 @@ bool VP9LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 	}
 	
 	//RTP mark is set for the last frame layer of the selected layer
-	mark = packet->GetMark() || (desc.endOfLayerFrame && spatialLayerId==desc.spatialLayerId);
+	mark = packet->GetMark() || (desc.endOfLayerFrame && spatialLayerId==nextSpatialLayerId);
 	
 	//UltraDebug("-VP9LayerSelector::Select() | Accepting packet [extSegNum:%u,mark:%d,sid:%d,tid:%d,current:S%dL%d]\n",packet->GetExtSeqNum(),mark,desc.spatialLayerId,desc.temporalLayerId,spatialLayerId,temporalLayerId);
 	//Select
