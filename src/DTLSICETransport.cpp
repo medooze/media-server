@@ -769,6 +769,8 @@ void DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 			now,
 			false
 		);
+		//It is probe
+		stats->probing = true;
 		//Add new stat
 		senderSideBandwidthEstimator.SentPacket(stats);
 	}
@@ -959,6 +961,8 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 			now,
 			false
 		);
+		//It is rtx
+		stats->rtx = true;
 		//Add new stat
 		senderSideBandwidthEstimator.SentPacket(stats);
 	}
@@ -2178,7 +2182,7 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 							//Get field
 							auto field = fb->GetField<RTCPRTPFeedback::TransportWideFeedbackMessageField>(i);
 							//Pass it to the estimator
-							senderSideBandwidthEstimator.ReceivedFeedback(field->feedbackPacketCount,field->packets);
+							senderSideBandwidthEstimator.ReceivedFeedback(field->feedbackPacketCount,field->packets,getTime());
 						}
 						break;
 				}

@@ -19,7 +19,7 @@
 RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec, QWORD time) 
 {
 	this->media = media;
-	//Set coced
+	//Set codec
 	this->codec = codec;
 	//NO seq cycles
 	cycles = 0;

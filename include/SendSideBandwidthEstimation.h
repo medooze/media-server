@@ -14,7 +14,7 @@ public:
 	SendSideBandwidthEstimation();
         ~SendSideBandwidthEstimation();
 	void SentPacket(const PacketStats::shared& packet);
-	void ReceivedFeedback(uint8_t feedbackNum, const std::map<uint32_t,uint64_t>& packets);
+	void ReceivedFeedback(uint8_t feedbackNum, const std::map<uint32_t,uint64_t>& packets, uint64_t when = 0);
 	void UpdateRTT(uint32_t rtt);
 	uint32_t GetEstimatedBitrate();
 	

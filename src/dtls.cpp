@@ -718,7 +718,7 @@ int DTLSConnection::SetupSRTP()
 			return Error("-DTLSConnection::SetupSRTP() | unknown remote hash, cannot verify remote fingerprint\n");
 	}
 
-	if (!X509_digest(certificate, hashFunction, fingerprint, &size) || !size || memcmp(fingerprint, remoteFingerprint, size))
+	if (strlen((char*)remoteFingerprint) && (!X509_digest(certificate, hashFunction, fingerprint, &size) || !size || memcmp(fingerprint, remoteFingerprint, size)))
 	{
 		X509_free(certificate);
 		return Error("-DTLSConnection::SetupSRTP() | fingerprint in remote SDP does not match that of peer certificate (hash %s)\n", hashStr.c_str());

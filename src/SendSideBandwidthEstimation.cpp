@@ -29,7 +29,7 @@ void SendSideBandwidthEstimation::SentPacket(const PacketStats::shared& stats)
 		it = transportWideSentPacketsStats.erase(it);
 }
 
-void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const std::map<uint32_t,uint64_t>& packets)
+void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const std::map<uint32_t,uint64_t>& packets, uint64_t when)
 {
 	uint32_t lost = 0;
 	
@@ -57,6 +57,7 @@ void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const st
 				firstRecv = receivedTime;
 			
 			//Correc ts
+			auto fb   = when - firstSent;
 			auto sent = sentTime - firstSent;
 			auto recv = receivedTime ? receivedTime - firstRecv : -1;
 			
@@ -84,7 +85,7 @@ void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const st
 				{
 					char msg[1024];
 					//Create log
-					int len = snprintf(msg,1024,"%u|%u|%u|%.8lu|%.8lu|%.6lu|%.6lu|%.6ld|%u|%u\n",transportSeqNum,feedbackNum, stat->size,sent,recv,deltaSent,deltaRecv,delta,estimator.GetEstimatedBitrate(),rtt);
+					int len = snprintf(msg,1024,"%.8lu|%u|%u|%u|%.8lu|%.8lu|%.6lu|%.6lu|%.6ld|%u|%u|%d|%d|%d\n",fb,transportSeqNum,feedbackNum, stat->size,sent,recv,deltaSent,deltaRecv,delta,estimator.GetEstimatedBitrate(),rtt,stat->mark,stat->rtx,stat->probing);
 					//Write it
 					write(fd,msg,len);
 				}
@@ -104,7 +105,7 @@ void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const st
 				{
 					char msg[1024];
 					//Create log
-					int len = snprintf(msg,1024,"%u|%u|%u|%.8lu|%.8lu|%.6lu|%.6lu|%.6ld|%u|%u\n",transportSeqNum,feedbackNum, stat->size,sent,recv,deltaSent,deltaRecv,delta,estimator.GetEstimatedBitrate(),rtt);
+					int len = snprintf(msg,1024,"%.8lu|%u|%u|%u|%.8lu|%.8lu|%.6lu|%.6lu|%.6ld|%u|%u|%d|%d|%d|%.8lu\\n",fb,transportSeqNum,feedbackNum, stat->size,sent,recv,deltaSent,deltaRecv,delta,estimator.GetEstimatedBitrate(),rtt,stat->mark,stat->rtx,stat->probing);
 					//Write it
 					write(fd,msg,len);
 				}
