@@ -48,7 +48,7 @@ void RemoteRateControl::Update(QWORD time,QWORD ts,DWORD size, bool mark)
 //	Debug("ts:%u,time:%llu,%u\n",ts,time,size);
 	
 	//If it is a our of order packet from previous frame
-	if (ts < curTS)
+	if (curTS && ts < curTS)
 		//Exit
 		return;
 

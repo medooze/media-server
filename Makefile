@@ -264,13 +264,13 @@ test: buildtest
 	$(BIN)/$@ -lavcodec
 
 
-bwe: bwe.o $(OBJSLIB) 
-	$(CXX) -o $(BIN)/$@ $(BUILDOBJOBJSLIB) $(LDLIBFLAGS) $(addprefix $(BUILD)/,$@.o)
+bwe: bwe.o $(OBJSBASE) 
+	$(CXX) -o $(BIN)/$@ $(BUILDOBJSBASE) $(LDLIBFLAGS) $(addprefix $(BUILD)/,$@.o)
 	
 sender:  sender.o $(OBJSBASE) 
 	$(CXX) -o $(BIN)/$@ $(BUILDOBJSBASE) $(LDLIBFLAGS) $(addprefix $(BUILD)/,$@.o)
 	
-receiver: receiver.o $(OBJSLIB) 
+receiver: receiver.o $(OBJSBASE) 
 	$(CXX) -o $(BIN)/$@ $(BUILDOBJSBASE) $(LDLIBFLAGS) $(addprefix $(BUILD)/,$@.o)
 	
 libmediaserver.so: touch mkdirs $(OBJSLIB)

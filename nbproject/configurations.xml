@@ -6,16 +6,12 @@
         <df name="crc32c">
           <df name="src">
             <in>crc32c.cc</in>
-            <in>crc32c_arm64.cc</in>
             <in>crc32c_portable.cc</in>
             <in>crc32c_sse42.cc</in>
           </df>
         </df>
         <df name="libdatachannels">
           <df name="gtests">
-            <in>Association.cpp</in>
-            <in>Chunks.cpp</in>
-            <in>SequenceNumberWrapper.cpp</in>
             <in>TestSuite.cpp</in>
           </df>
           <df name="src">
@@ -38,43 +34,6 @@
                 <in>ShutdownCompleteChunk.cpp</in>
               </df>
               <in>Association.cpp</in>
-              <in>PacketHeader.cpp</in>
-              <in>Stream.cpp</in>
-            </df>
-            <in>Datachannel.cpp</in>
-            <in>Datachannels.cpp</in>
-            <in>Endpoint.cpp</in>
-          </df>
-        </df>
-        <df name="libdatachannels-fs">
-          <df name="gtests">
-            <in>Association.cpp</in>
-            <in>Chunks.cpp</in>
-            <in>SequenceNumberWrapper.cpp</in>
-          </df>
-          <df name="src">
-            <df name="sctp">
-              <df name="chunks">
-                <in>AbortAssociationChunk.cpp</in>
-                <in>CookieAckChunk.cpp</in>
-                <in>CookieEchoChunk.cpp</in>
-                <in>ForwardCumulativeTSNChunk.cpp</in>
-                <in>HeartbeatAckChunk.cpp</in>
-                <in>HeartbeatRequestChunk.cpp</in>
-                <in>InitiationAcknowledgementChunk.cpp</in>
-                <in>InitiationChunk.cpp</in>
-                <in>OperationErrorChunk.cpp</in>
-                <in>PaddingChunk.cpp</in>
-                <in>PayloadDataChunk.cpp</in>
-                <in>ReConfigChunk.cpp</in>
-                <in>SelectiveAcknowledgementChunk.cpp</in>
-                <in>ShutdownAcknowledgementChunk.cpp</in>
-                <in>ShutdownAssociationChunk.cpp</in>
-                <in>ShutdownCompleteChunk.cpp</in>
-                <in>UnknownChunk.cpp</in>
-              </df>
-              <in>Association.cpp</in>
-              <in>Chunk.cpp</in>
               <in>PacketHeader.cpp</in>
               <in>Stream.cpp</in>
             </df>
@@ -288,7 +247,6 @@
         </df>
         <df name="pcc">
           <in>BitrateController.cpp</in>
-          <in>MonitorInterval.cpp</in>
           <in>NetworkController.cpp</in>
           <in>RTTTracker.cpp</in>
           <in>UtilityFunction.cpp</in>
@@ -10656,7 +10614,7 @@
           <buildCommandWorkingDir>R:/usr/local/src/medooze/mcu</buildCommandWorkingDir>
           <buildCommand>${MAKE} -f Makefile bwe -j 4</buildCommand>
           <cleanCommand>${MAKE} -f Makefile clean</cleanCommand>
-          <executablePath>bin/release/bwe</executablePath>
+          <executablePath>bin/debug/bwe</executablePath>
           <cTool>
             <incDir>
               <pElem>src</pElem>
