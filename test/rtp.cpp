@@ -38,6 +38,8 @@ public:
 		testTransportField();
 		Log("Transport Wide Message Feedback (2)\n");
 		testTransportWideFeedbackMessage();
+		Log("Transport Wide Message Feedback (2)\n");
+		testTransportWideFeedbackMessageParser();
 		Log("testBye\n");
 		testBye();
 		end();
@@ -494,7 +496,7 @@ public:
 		i++; //lost;
 		packets[i++] = 7000;
 */
-
+		QWORD initTime = 1515507427620000;
 		packets[1912] = 1515507427621937;
 		packets[1913] = 1515507427623837;
 		packets[1914] = 1515507427675038;
@@ -533,8 +535,8 @@ public:
 		{
 			//Get transportSeqNum
 			DWORD transportSeqNum = it->first;
-			//Get time
-			QWORD time = it->second;
+			//Get relative time
+			QWORD time = it->second - initTime;
 
 			//Check if we have a sequence wrap
 			if (transportSeqNum<0x0FFF && (lastFeedbackPacketExtSeqNum & 0xFFFF)>0xF000)
@@ -577,7 +579,48 @@ public:
 		
 		parsed->Dump();
 		
+		auto a = rtcp->GetPacket<RTCPRTPFeedback>(0)->GetField<RTCPRTPFeedback::TransportWideFeedbackMessageField>(0)->packets;
+		auto b = parsed->GetPacket<RTCPRTPFeedback>(0)->GetField<RTCPRTPFeedback::TransportWideFeedbackMessageField>(0)->packets;
+		
+		//Calucalte diferences
+		for (auto orig=a.begin(), mod=b.begin(); orig!=a.end(), mod!=b.end(); ++orig, ++mod)
+			//Log difference
+			Log("-diff %d\n",orig->second-mod->second);
+		
 		free(data);
+	}
+	void testTransportWideFeedbackMessageParser()
+	{
+		{
+			constexpr uint8_t rtcp[] = {
+				0x8F, 0xCD, 0x00, 0x07, 0xAA, 0x7D, 0x9D, 0x28,
+				0xAA, 0x7D, 0x9D, 0x28, 0x00, 0x02, 0x00, 0x08,
+				0x71, 0x66, 0xD7, 0x00, 0x20, 0x08, 0x1C, 0x20,
+				0x08, 0x10, 0x20, 0x10, 0x00, 0x14, 0x00, 0x00	
+			};
+
+			//Parse it
+			auto parsed = RTCPCompoundPacket::Parse(rtcp,sizeof(rtcp));
+
+			if (parsed)
+				parsed->Dump();
+		}
+		
+		{
+			constexpr uint8_t rtcp[] = {
+				0x8F, 0xCD, 0x00, 0x06, 0xDB, 0x17, 0xE1, 0x2C,
+				0xDB, 0x17, 0xE1, 0x2C, 0x00, 0x0A, 0x00, 0x05,
+				0x71, 0x66, 0xD7, 0x01, 0x20, 0x05, 0x14, 0x00,
+				0x08, 0x00, 0xA8, 0x00
+			};
+			//Parse it
+			auto parsed = RTCPCompoundPacket::Parse(rtcp,sizeof(rtcp));
+
+			if (parsed)
+				parsed->Dump();
+		}
+		
+		exit(0);
 	}
 	
 };

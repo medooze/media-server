@@ -183,7 +183,7 @@ private:
 	DWORD maxProbingBitrate = 1024*1000;
 	
 	Timer::shared probingTimer;
-	timeval	ini;
+	QWORD 	initTime = 0;
 	
 	SendSideBandwidthEstimation senderSideBandwidthEstimator;
 };

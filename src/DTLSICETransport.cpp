@@ -2385,8 +2385,8 @@ void DTLSICETransport::SendTransportWideFeedbackMessage(DWORD ssrc)
 		auto stats = it->second;
 		//Get transport seq
 		DWORD transportExtSeqNum = it->first;
-		//Get time
-		QWORD time = stats->time;
+		//Get relative time
+		QWORD time = stats->time - initTime;
 
 		//if not first and not out of order
 		if (lastFeedbackPacketExtSeqNum && transportExtSeqNum>lastFeedbackPacketExtSeqNum)
@@ -2411,7 +2411,7 @@ void DTLSICETransport::Start()
 	Debug("-DTLSICETransport::Start()\n");
 	
 	//Get init time
-	getUpdDifTime(&ini);
+	initTime = getTime();
 	dcOptions.localPort = 5000;
 	dcOptions.remotePort = 5000;
 	//Start
@@ -2470,7 +2470,7 @@ void DTLSICETransport::Probe()
 		DWORD estimated = senderSideBandwidthEstimator.GetEstimatedBitrate();
 
 		//Probe the first 5s to 312kbps
-		if (getDifTime(&ini)<5E6)
+		if (getTimeDiff(initTime)<5E6)
 			//Increase stimation
 			estimated = std::max(estimated,bitrate+312000);
 
