@@ -113,7 +113,7 @@ void RemoteRateControl::UpdateKalman(QWORD now,int deltaTime, int deltaTS, int d
 	const double residual = ttsdelta-slope*h[0]-offset;
 
 	// Only update the noise estimate if we're not over-using and in stable state
-	if (hypothesis!=OverUsing && (fmin(fpsCalc.GetAcumulated(),60)*std::fabs(offset)<threshold))
+	//if (hypothesis!=OverUsing && (fmin(fpsCalc.GetAcumulated(),30)*std::fabs(offset)<threshold))
 	{
 		double residualFiltered = residual;
 
@@ -157,7 +157,7 @@ void RemoteRateControl::UpdateKalman(QWORD now,int deltaTime, int deltaTS, int d
 	prevOffset = offset;
 	offset = offset+K[1]*residual;
 
-	const double T = fmin(fpsCalc.GetAcumulated(),60)*offset;
+	const double T = fmin(fpsCalc.GetAcumulated(),30)*offset;
 
 	//Debug("BWE: Update tdelta:%d,tsdelta:%d,fsdelta:%d,t:%f,threshold:%f,slope:%f,offset:%f,scale:%f,frames:%lld,fps:%llf,residual:%f\n",deltaTime,deltaTS,deltaSize,T,threshold,slope,offset,scaleFactor,fpsCalc.GetAcumulated(),fpsCalc.GetInstantAvg(),residual);
 

@@ -267,7 +267,7 @@ void RemoteRateEstimator::Update(RemoteRateControl::BandwidthUsage usage, bool r
 				if (incomingBitRate > avgMaxBitRate + 3 * stdMaxBitRate)
 				{
 					ChangeRegion(RemoteRateControl::MaxUnknown);
-					UpdateMaxBitRateEstimate(currentBitRate);
+					UpdateMaxBitRateEstimate(fmax(currentBitRate,incomingBitRate));
 				} else if (incomingBitRate > avgMaxBitRate + 2.5 * stdMaxBitRate) {
 					ChangeRegion(RemoteRateControl::AboveMax);
 				} else if (incomingBitRate > avgMaxBitRate - 3 * stdMaxBitRate) {
@@ -285,7 +285,7 @@ void RemoteRateEstimator::Update(RemoteRateControl::BandwidthUsage usage, bool r
 			if (maxHoldRate > 0 && beta * maxHoldRate > current)
 			{
 				current = (DWORD) (beta * maxHoldRate);
-				UpdateMaxBitRateEstimate(current);
+				UpdateMaxBitRateEstimate(fmax(currentBitRate,incomingBitRate));
 				ChangeRegion(RemoteRateControl::NearMax);
 				recovery = true;
 			}
@@ -311,7 +311,7 @@ void RemoteRateEstimator::Update(RemoteRateControl::BandwidthUsage usage, bool r
 			if (avgMaxBitRate<0 || incomingBitRate > avgMaxBitRate - 3 * stdMaxBitRate )
 			{
 				ChangeRegion(RemoteRateControl::NearMax);
-				UpdateMaxBitRateEstimate(current);
+				UpdateMaxBitRateEstimate(fmax(currentBitRate,incomingBitRate));
 			} else {
 				ChangeRegion(RemoteRateControl::BelowMax);
 			}	
