@@ -60,7 +60,7 @@ public:
 		//Insert into the instant queue
 		values.emplace_back(now,val);
 		//Erase old values
-		while(!values.empty() && values.front().first+window<now)
+		while(!values.empty() && values.front().first+window<=now)
 		{
 			//Remove from instant value
 			instant -= values.front().second;
@@ -118,12 +118,8 @@ public:
 		return values.size();
 	}
 	
-
 private:
-	typedef std::pair<QWORD,DWORD>  Value;
-	typedef std::list<Value>	Values;
-private:
-	Values values;
+	std::list<std::pair<QWORD,DWORD>> values;
 	DWORD window;
 	bool  inWindow;
 	QWORD acumulated;

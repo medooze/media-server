@@ -2418,7 +2418,7 @@ void DTLSICETransport::Start()
 	endpoint.Init(dcOptions);
 	
 	//Create new probe
-	probingTimer = timeService.CreateTimer(0ms,10ms,[this](...){
+	probingTimer = timeService.CreateTimer(0ms,5ms,[this](...){
 		//Do probe
 		Probe();
 	});
@@ -2465,12 +2465,14 @@ void DTLSICETransport::Probe()
 		BYTE size = 255;
 		//Get sleep time
 		uint64_t sleep = probingTimer->GetRepeat().count();
+		//Update estimation
+		outgoingBitrate.Update(getTimeMS());
 		//Get bitrates
-		DWORD bitrate   = static_cast<DWORD>(outgoingBitrate.GetInstantAvg());
+		DWORD bitrate   = static_cast<DWORD>(outgoingBitrate.GetInstantAvg()*8);
 		DWORD estimated = senderSideBandwidthEstimator.GetEstimatedBitrate();
 
-		//Probe the first 5s to 312kbps
-		if (getTimeDiff(initTime)<5E6)
+		//Probe the first 1.5s at least to 312kbps
+		if (getTimeDiff(initTime)<15E5)
 			//Increase stimation
 			estimated = std::max(estimated,bitrate+312000);
 
@@ -2482,8 +2484,10 @@ void DTLSICETransport::Probe()
 			//Get probe padding needed
 			DWORD probingBitrate = maxProbingBitrate ? std::min(estimated-bitrate,maxProbingBitrate) : estimated-bitrate;
 
-			//Get number of probes, do not send more than 32 continoues packets (~aprox 2mpbs)
-			BYTE num = std::min<QWORD>((probingBitrate*sleep)/(8000*size)+1,32);
+			//Get number of probes
+			BYTE num = (probingBitrate*sleep)/(8000*size)+1;
+			
+			//Log("-DTLSICETransport::Probe() | Sending probing packets [estimated:%u,bitrate:%u,probing:%u,max:%u,num:%d,sleep:%d]\n", estimated, bitrate,probingBitrate,maxProbingBitrate, num, sleep);
 
 			//Check if we have an outgpoing group
 			for (auto &group : outgoing)
@@ -2491,7 +2495,6 @@ void DTLSICETransport::Probe()
 				//We can only probe on rtx with video
 				if (group.second->type == MediaFrame::Video)
 				{
-					//UltraDebug("-DTLSICETransport::Probe() | Sending probing packets [estimated:%u,bitrate:%u,probing:%u,max:%u,num:%d,sleep:%d]\n", estimated, bitrate,probingBitrate,maxProbingBitrate, num, sleep);
 					//Set all the probes
 					for (BYTE i=0;i<num;++i)
 						//Send probe packet
