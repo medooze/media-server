@@ -87,10 +87,7 @@ void RemoteRateControl::UpdateKalman(QWORD now,int deltaTime, int deltaTS, int d
 	const int ttsdelta = deltaTime-deltaTS;
 
 	//Get scaling factor
-	double scaleFactor = 1;
-
-	if (fpsCalc.GetAcumulated()>60)
-		scaleFactor = 30.0/fpsCalc.GetInstantAvg();
+	double scaleFactor = 30.0/fpsCalc.GetInstantAvg();
 
 	// Update the Kalman filter
 	E[0][0] += processNoise[0]*scaleFactor;
@@ -157,9 +154,9 @@ void RemoteRateControl::UpdateKalman(QWORD now,int deltaTime, int deltaTS, int d
 	prevOffset = offset;
 	offset = offset+K[1]*residual;
 
-	const double T = fmin(fpsCalc.GetAcumulated(),30)*offset;
+	const double T = fmin(fpsCalc.GetInstantAvg(),30)*offset;
 
-	//Debug("BWE: Update tdelta:%d,tsdelta:%d,fsdelta:%d,t:%f,threshold:%f,slope:%f,offset:%f,scale:%f,frames:%lld,fps:%llf,residual:%f\n",deltaTime,deltaTS,deltaSize,T,threshold,slope,offset,scaleFactor,fpsCalc.GetAcumulated(),fpsCalc.GetInstantAvg(),residual);
+	//Debug("BWE: Update tdelta:%d,tsdelta:%d,fsdelta:%d,t:%f,threshold:%f,slope:%f,offset:%f,scale:%f,frames:%lld,fps:%llf,residual:%f\n",deltaTime,deltaTS,deltaSize,T,threshold,slope,offset,scaleFactor,fpsCalc.GetInstantAvg(),fpsCalc.GetInstantAvg(),residual);
 
 	//Compare
 	if (std::fabs(T)>threshold)

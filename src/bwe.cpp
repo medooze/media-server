@@ -31,7 +31,7 @@ int main(int argc, char** argv)
 	SendSideBandwidthEstimation senderSideBandwidthEstimator;
 	
 	extMap[1] = RTPHeaderExtension::SSRCAudioLevel;
-	extMap[2] = RTPHeaderExtension::TransportWideCC;
+	extMap[5] = RTPHeaderExtension::TransportWideCC;
 	
 	reader.Open(argv[1]);
 	
