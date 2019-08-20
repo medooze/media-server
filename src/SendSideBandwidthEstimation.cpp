@@ -2,7 +2,6 @@
 #include <fcntl.h>
 #include <cmath>
 #include "SendSideBandwidthEstimation.h"
-#include "aac/aacdecoder.h"
 
 constexpr uint64_t kStartupDuration		= 15E5;		// 1.5 s
 constexpr uint64_t kMonitorDuration		= 250E3;	// 250ms
