@@ -117,7 +117,7 @@ private:
 	void SetRTT(DWORD rtt);
 	void onRTCP(const RTCPCompoundPacket::shared &rtcp);
 	void ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq);
-	void SendProbe(RTPOutgoingSourceGroup *group,BYTE padding);
+	DWORD SendProbe(RTPOutgoingSourceGroup *group,BYTE padding);
 	void SendTransportWideFeedbackMessage(DWORD ssrc);
 	
 	int SetLocalCryptoSDES(const char* suite, const BYTE* key, const DWORD len);
@@ -172,6 +172,7 @@ private:
 	
 	Acumulator incomingBitrate;
 	Acumulator outgoingBitrate;
+	Acumulator probingBitrate;
 	
 	std::map<DWORD,PacketStats::shared> transportWideReceivedPacketsStats;
 	
@@ -183,6 +184,7 @@ private:
 	DWORD maxProbingBitrate = 1024*1000;
 	
 	Timer::shared probingTimer;
+	QWORD   lastProbe = 0;
 	QWORD 	initTime = 0;
 	
 	SendSideBandwidthEstimation senderSideBandwidthEstimator;

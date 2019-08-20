@@ -68,7 +68,7 @@ int RTPSmoother::SendFrame(MediaFrame* frame,DWORD duration)
 	DWORD codec = 0;
 	BYTE *frameData = NULL;
 	DWORD frameSize = 0;
-	WORD  rate = 1;
+	DWORD rate = 1;
 
 	//Depending on the type
 	switch(frame->GetType())

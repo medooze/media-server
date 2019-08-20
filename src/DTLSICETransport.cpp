@@ -46,7 +46,8 @@ DTLSICETransport::DTLSICETransport(Sender *sender,TimeService& timeService) :
 	endpoint(timeService),
 	dtls(*this,timeService,endpoint.GetTransport()),
 	incomingBitrate(1000),
-	outgoingBitrate(1000)
+	outgoingBitrate(1000),
+	probingBitrate(250)
 {
 }
 
@@ -603,12 +604,12 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 	return 1;
 }
 
-void DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
+DWORD DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 {
 	//Check if we have an active DTLS connection yet
 	if (!send.IsSetup())
 		//Error
-		return (void) Debug("-DTLSICETransport::SendProbe() | Send SRTPSession is not setup\n");
+		return Debug("-DTLSICETransport::SendProbe() | Send SRTPSession is not setup\n");
 	
 	//Overrride headers
 	RTPHeader		header;
@@ -682,7 +683,7 @@ void DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 	//Comprobamos que quepan
 	if (!n)
 		//Error
-		return (void)Error("-DTLSICETransport::SendProbe() | Error serializing rtp headers\n");
+		return Error("-DTLSICETransport::SendProbe() | Error serializing rtp headers\n");
 
 	//Inc len
 	len += n;
@@ -695,7 +696,7 @@ void DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 		//Comprobamos que quepan
 		if (!n)
 			//Error
-			return (void)Error("-DTLSICETransport::SendProbe() | Error serializing rtp extension headers\n");
+			return Error("-DTLSICETransport::SendProbe() | Error serializing rtp extension headers\n");
 		//Inc len
 		len += n;
 	}
@@ -712,7 +713,7 @@ void DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 	//If we don't have an active candidate yet
 	if (!active)
 		//Error
-		return (void)Debug("-DTLSICETransport::SendProbe() | We don't have an active candidate yet\n");
+		return Debug("-DTLSICETransport::SendProbe() | We don't have an active candidate yet\n");
 
 	//If dumping
 	if (dumper && dumpOutRTP)
@@ -725,16 +726,10 @@ void DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 	//Check size
 	if (!len)
 		//Error
-		return (void)Error("-RTPTransport::SendProbe() | Error protecting RTP packet [ssrc:%u,%s]\n",source.ssrc,send.GetLastError());
+		return Error("-RTPTransport::SendProbe() | Error protecting RTP packet [ssrc:%u,%s]\n",source.ssrc,send.GetLastError());
 
 	//Store candidate before unlocking
 	ICERemoteCandidate* candidate = active;
-
-	//Update now
-	now = getTime();
-	
-	//Update bitrate
-	outgoingBitrate.Update(now/1000,len);
 	//Set buffer size
 	buffer.SetSize(len);
 	//No error yet, send packet
@@ -754,6 +749,8 @@ void DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
                 //Update stats
                 source.Update(now/1000,header.sequenceNumber,len);
         }
+	//Update bitrate
+	outgoingBitrate.Update(now/1000,len);
 	
 	//Add to transport wide stats
 	if (extension.hasTransportWideCC)
@@ -774,6 +771,8 @@ void DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 		//Add new stat
 		senderSideBandwidthEstimator.SentPacket(stats);
 	}
+	
+	return len;
 }
 
 void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
@@ -2464,30 +2463,36 @@ void DTLSICETransport::Probe()
 		//Probe size
 		BYTE size = 255;
 		//Get sleep time
-		uint64_t sleep = probingTimer->GetRepeat().count();
-		//Update estimation
-		outgoingBitrate.Update(getTimeMS());
+		uint64_t now = getTime();
+		//Update bitrates
+		outgoingBitrate.Update(now/1000);
+		probingBitrate.Update(now/1000);
+		//Calculate sleep time
+		uint64_t sleep = lastProbe ? (now - lastProbe)/1000 : probingTimer->GetRepeat().count();
+		//Update last probe time
+		lastProbe = now;
 		//Get bitrates
-		DWORD bitrate   = static_cast<DWORD>(outgoingBitrate.GetInstantAvg()*8);
-		DWORD estimated = senderSideBandwidthEstimator.GetEstimatedBitrate();
+		DWORD bitrate		= static_cast<DWORD>(outgoingBitrate.GetInstantAvg()*8);
+		DWORD probing		= static_cast<DWORD>(probingBitrate.GetInstantAvg()*8);
+		DWORD target		= senderSideBandwidthEstimator.GetTargetBitrate();
 
 		//Probe the first 1.5s at least to 312kbps
-		if (getTimeDiff(initTime)<15E5)
+		if ((now-initTime)<15E5)
 			//Increase stimation
-			estimated = std::max(estimated,bitrate+312000);
+			target = std::max(target,bitrate+312000);
 
-		//UltraDebug("-DTLSICETransport::Probe() | [estimated:%u,bitrate:%d]\n",estimated,bitrate);
+		//Log("-DTLSICETransport::Probe() | [estimated:%u,bitrate:%d]\n",estimated,bitrate);
 			
 		//If we can still send more
-		if (estimated>bitrate)
+		if (target>bitrate)
 		{
-			//Get probe padding needed
-			DWORD probingBitrate = maxProbingBitrate ? std::min(estimated-bitrate,maxProbingBitrate) : estimated-bitrate;
+			//Increase probing bitrate
+			probing = std::min(maxProbingBitrate,probing + target - bitrate);
 
 			//Get number of probes
-			BYTE num = (probingBitrate*sleep)/(8000*size)+1;
+			BYTE num = (probing*sleep)/(8000*size)+1;
 			
-			//Log("-DTLSICETransport::Probe() | Sending probing packets [estimated:%u,bitrate:%u,probing:%u,max:%u,num:%d,sleep:%d]\n", estimated, bitrate,probingBitrate,maxProbingBitrate, num, sleep);
+			//Log("-DTLSICETransport::Probe() | Sending probing packets [target:%u,bitrate:%u,probing:%u,max:%u,num:%d,sleep:%d]\n", target, bitrate,probing,maxProbingBitrate, num, sleep);
 
 			//Check if we have an outgpoing group
 			for (auto &group : outgoing)
@@ -2497,8 +2502,12 @@ void DTLSICETransport::Probe()
 				{
 					//Set all the probes
 					for (BYTE i=0;i<num;++i)
+					{
 						//Send probe packet
-						SendProbe(group.second,size);
+						DWORD len = SendProbe(group.second,size);
+						//Update probing
+						probingBitrate.Update(now/1000,len);
+					}
 					break;
 				}
 			}

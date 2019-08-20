@@ -95,8 +95,6 @@ MP4= mp4streamer.o mp4recorder.o mp4player.o
 
 RTMP= rtmpparticipant.o amf.o rtmpmessage.o rtmpchunk.o rtmpstream.o rtmpconnection.o  rtmpserver.o  rtmpflvstream.o flvrecorder.o flvencoder.o rtmppacketizer.o
 
-PCC= BitrateController.o BitrateController.o NetworkController.o RTTTracker.o UtilityFunction.o
-
 OBJS= xmlrpcserver.o xmlhandler.o xmlstreaminghandler.o statushandler.o CPUMonitor.o   EventSource.o eventstreaminghandler.o  AudioCodecFactory.o VideoCodecFactory.o cpim.o  groupchat.o websocketserver.o websocketconnection.o  mcu.o rtpparticipant.o multiconf.o    xmlrpcmcu.o    audiostream.o videostream.o  textmixer.o textmixerworker.o textstream.o pipetextinput.o pipetextoutput.o  logo.o overlay.o VideoEncoderWorker.o audioencoder.o audiodecoder.o textencoder.o rtmpmp4stream.o rtmpnetconnection.o   rtmpclientconnection.o vad.o  uploadhandler.o  appmixer.o  videopipe.o framescaler.o sidebar.o mosaic.o partedmosaic.o asymmetricmosaic.o pipmosaic.o videomixer.o audiomixer.o audiotransrater.o pipeaudioinput.o pipeaudiooutput.o pipevideoinput.o pipevideooutput.o broadcastsession.o  AudioPipe.o
 OBJS+= ${CORE} ${RTP} ${RTCP} ${RTMP} $(G711OBJ) $(H263OBJ) $(GSMOBJ)  $(H264OBJ) ${FLV1OBJ} $(SPEEXOBJ) $(NELLYOBJ) $(G722OBJ)  $(VADOBJ) $(VP6OBJ) $(VP8OBJ) $(VP9OBJ) $(OPUSOBJ) $(AACOBJ) $(DEPACKETIZERSOBJ) $(MP4)
 TARGETS=mcu test
@@ -111,7 +109,7 @@ else
 endif
 
 OBJSMCU = $(OBJS) main.o
-OBJSBASE = ${CORE} ${RTP} ${RTCP} $(DEPACKETIZERSOBJ)
+OBJSBASE = ${CORE} ${RTP} ${RTCP} $(DEPACKETIZERSOBJ) 
 OBJSLIB = ${CORE} ${RTP} ${RTCP} $(DEPACKETIZERSOBJ) $(MP4)
 OBJSTEST = $(OBJS) test/main.o test/test.o test/h264.o test/aac.o test/cpim.o test/rtp.o test/fec.o test/overlay.o test/vp8.o test/vp9.o
 

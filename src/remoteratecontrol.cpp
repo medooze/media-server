@@ -51,12 +51,13 @@ void RemoteRateControl::Update(QWORD time,QWORD ts,DWORD size, bool mark)
 	if (curTS && ts < curTS)
 		//Exit
 		return;
-
+	
+	//Add new frame
+	if (mark) fpsCalc.Update(ts,1);
+	
 	//Check if it is from a new frame
 	if (ts > curTS)
 	{
-		//Add new frame
-		if (mark) fpsCalc.Update(ts,1);
 		//Debug("+curTime:%llu,prevTime:%llu,ts:%u,curTS:%u,prevTS:%u\n",curTime,prevTime,ts,curTS,prevTS);
 		//If not first one
 		if (prevTime)
@@ -154,7 +155,7 @@ void RemoteRateControl::UpdateKalman(QWORD now,int deltaTime, int deltaTS, int d
 	prevOffset = offset;
 	offset = offset+K[1]*residual;
 
-	const double T = fmin(fpsCalc.GetInstantAvg(),30)*offset;
+	const double T = fpsCalc.GetCount() ? fmin(fpsCalc.GetInstantAvg(),30)*offset : offset;
 
 	//Debug("BWE: Update tdelta:%d,tsdelta:%d,fsdelta:%d,t:%f,threshold:%f,slope:%f,offset:%f,scale:%f,frames:%lld,fps:%llf,residual:%f\n",deltaTime,deltaTS,deltaSize,T,threshold,slope,offset,scaleFactor,fpsCalc.GetInstantAvg(),fpsCalc.GetInstantAvg(),residual);
 
