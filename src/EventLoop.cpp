@@ -331,9 +331,7 @@ void EventLoop::TimerImpl::Again(const std::chrono::milliseconds& ms)
 
 void EventLoop::CancelTimer(TimerImpl::shared timer)
 {
-	//Asert we are on same thread than loop
-	AssertThread();
-	
+
 	//UltraDebug(">EventLoop::CancelTimer() \n");
 
 	//We don't have to repeat this
