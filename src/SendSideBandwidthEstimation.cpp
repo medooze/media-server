@@ -4,16 +4,17 @@
 #include "SendSideBandwidthEstimation.h"
 
 constexpr uint64_t kStartupDuration		= 15E5;		// 1.5 s
-constexpr uint64_t kMonitorDuration		= 250E3;	// 250ms
+constexpr uint64_t kMonitorDuration		= 500E3;	// 500ms
 constexpr uint64_t kMonitorTimeout		= 750E3;	// 750ms
 constexpr uint64_t kMinRate			= 128E3;	// 128kbps
 constexpr uint64_t kMaxRate			= 100E6;	// 100mbps
 constexpr uint64_t kMinRateChangeBps		= 4000;
-constexpr uint64_t kConversionFactor		= 2;
+constexpr uint64_t kConversionFactor		= 1;
+constexpr double   kSamplingStep		= 0.05;
 
 // Utility function parameters.
-constexpr double kDelayGradientCoefficient = 0.005;
-constexpr double kLossCoefficient = 10;
+constexpr double kDelayGradientCoefficient = 900;
+constexpr double kLossCoefficient = 11.35;
 constexpr double kThroughputPower = 0.9;
 
 
@@ -333,7 +334,7 @@ void SendSideBandwidthEstimation::CreateIntervals(uint64_t time)
 	int64_t sign = 2 * (std::rand() % 2) - 1;
 	
 	//Calculate step
-	uint64_t step = std::max(static_cast<uint64_t>(bandwidthEstimation * 0.1),kMinRateChangeBps);
+	uint64_t step = std::max(static_cast<uint64_t>(bandwidthEstimation * kSamplingStep),kMinRateChangeBps);
 
 	//Calculate probing btirates for monitors
 	uint64_t monitorIntervalsBitrates[2] = {
@@ -382,6 +383,8 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate()
 		//Done
 		return;
 	}
+	monitorIntervals[0].Dump();
+	monitorIntervals[1].Dump();
 	//Get deltas gradients
 	double delta0	= monitorIntervals[0].ComputeDelayGradient();
 	double delta1	= monitorIntervals[1].ComputeDelayGradient();
@@ -389,8 +392,8 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate()
 	double utility0 = monitorIntervals[0].ComputeVivaceUtilityFunction();
 	double utility1 = monitorIntervals[1].ComputeVivaceUtilityFunction();
 	//Get actual sent rate
-	double bitrate0 = monitorIntervals[0].GetSentBitrate();
-	double bitrate1 = monitorIntervals[1].GetSentBitrate();
+	double bitrate0 = std::max(monitorIntervals[0].GetSentBitrate(),monitorIntervals[0].GetTargetBitrate());
+	double bitrate1 = std::max(monitorIntervals[1].GetSentBitrate(),monitorIntervals[1].GetTargetBitrate());
 	//Get actual target bitrate
 	uint64_t targetBitrate = bitrate0 && bitrate1 ? (bitrate0 + bitrate1) / 2 : bitrate0 + bitrate1;
 	
@@ -401,33 +404,28 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate()
 	auto prevState = state;
 
 	//Check if we have sent much more than expected
-	if (targetBitrate>std::max(monitorIntervals[0].GetTargetBitrate(),monitorIntervals[1].GetReceivedBitrate()))
+	if (targetBitrate>std::max(monitorIntervals[0].GetTargetBitrate(),monitorIntervals[1].GetTargetBitrate()))
+	{
 		//We are overshooting
 		state = ChangeState::OverShoot;
-	else
+		//Update target bitrate to max received
+		targetBitrate = std::max(monitorIntervals[0].GetReceivedBitrate(),monitorIntervals[1].GetReceivedBitrate());
+	} else
 		//Get state from gradient
 		state = gradient ? ChangeState::Increase : ChangeState::Decrease;
 
 	//Set bumber of consecutive chantes
-	if (prevState == state)
+	if (prevState == state && state!=ChangeState::OverShoot)
 		consecutiveChanges++;
 	else
 		consecutiveChanges = 0;
 	
-	//If not overshooting
-	if (state!=ChangeState::OverShoot)
-	{
-		//Initial conversion factor
-		double confidenceAmplifier = std::log(consecutiveChanges+1);
-		//Get rate change
-		uint64_t rateChange = gradient * confidenceAmplifier * kConversionFactor;
-		//Set it
-		bandwidthEstimation = targetBitrate + rateChange;
-	
-	} else {
-		//Only use recevied bitrate
-		bandwidthEstimation = std::min(monitorIntervals[0].GetReceivedBitrate(),monitorIntervals[1].GetReceivedBitrate());
-	}
+	//Initial conversion factor
+	double confidenceAmplifier = 1+std::log(consecutiveChanges+1);
+	//Get rate change
+	int64_t rateChange = gradient * confidenceAmplifier * kConversionFactor;
+	//Set it
+	bandwidthEstimation = targetBitrate + rateChange;
 	
 	//Adjust max/min rates
 	bandwidthEstimation = std::min(std::max(bandwidthEstimation,kMinRate),kMaxRate);
@@ -437,17 +435,18 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate()
 	//Corrected rate
 	availableRate = bandwidthEstimation * ( 1 - lossRate);
 	
-//	Log("-SendSideBandwidthEstimation::EstimateBandwidthRate() [estimate:%llubps,available:%llubps,target:%llubps,bitrate0:%llubps,bitrate1:%llubps,utility0:%f,utility1:%f,gradient:%f,state:%d\n",
-//		bandwidthEstimation,
-//		targetBitrate,
-//		availableRate,
-//		static_cast<uint64_t>(bitrate0),
-//		static_cast<uint64_t>(bitrate1),
-//		utility0,
-//		utility1,
-//		gradient,
-//		state
-//	);
+	Log("-SendSideBandwidthEstimation::EstimateBandwidthRate() [estimate:%llubps,available:%llubps,target:%llubps,bitrate0:%llubps,bitrate1:%llubps,utility0:%f,utility1:%f,gradient:%f,rate:%lld,state:%d\n",
+		bandwidthEstimation,
+		targetBitrate,
+		availableRate,
+		static_cast<uint64_t>(bitrate0),
+		static_cast<uint64_t>(bitrate1),
+		utility0,
+		utility1,
+		gradient,
+		rateChange,
+		state
+	);
 	
 	//Set new extimate
 	if (listener)

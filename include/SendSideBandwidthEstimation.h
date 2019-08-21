@@ -92,7 +92,7 @@ private:
         int fd = FD_INVALID;
 	
 	//RttTracker rttTracker;
-	ChangeState state;
+	ChangeState state = ChangeState::Maintain;
 	uint32_t consecutiveChanges = 0;
 	std::vector<MonitorInterval> monitorIntervals;
 	
