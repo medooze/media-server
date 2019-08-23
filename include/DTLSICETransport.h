@@ -117,6 +117,7 @@ private:
 	void SetRTT(DWORD rtt);
 	void onRTCP(const RTCPCompoundPacket::shared &rtcp);
 	void ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq);
+	DWORD SendProbe(const RTPPacket::shared& packet);
 	DWORD SendProbe(RTPOutgoingSourceGroup *group,BYTE padding);
 	void SendTransportWideFeedbackMessage(DWORD ssrc);
 	
@@ -162,6 +163,7 @@ private:
 	IncomingStreams incoming;
 	std::map<std::string,RTPIncomingSourceGroup*> rids;
 	std::map<std::string,std::set<RTPIncomingSourceGroup*>> mids;
+	std::list<RTPPacket::shared> history;
 	
 	DWORD	mainSSRC		= 1;
 	DWORD   rtt			= 0;

@@ -248,6 +248,7 @@
         <df name="pcc">
           <in>BitrateController.cpp</in>
           <in>NetworkController.cpp</in>
+          <in>PacketResult.h</in>
           <in>RTTTracker.cpp</in>
           <in>UtilityFunction.cpp</in>
         </df>
@@ -1528,6 +1529,8 @@
             <Elem>DARWIN</Elem>
           </preprocessorList>
         </ccTool>
+      </item>
+      <item path="src/pcc/PacketResult.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="src/pipeaudioinput.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="3">
@@ -4163,6 +4166,8 @@
             <Elem>__STDC_CONSTANT_MACROS</Elem>
           </preprocessorList>
         </ccTool>
+      </item>
+      <item path="src/pcc/PacketResult.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="src/pipeaudioinput.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
@@ -8526,6 +8531,8 @@
           </preprocessorList>
         </ccTool>
       </item>
+      <item path="src/pcc/PacketResult.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="src/pipeaudioinput.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="0">
           <incDir>
@@ -11102,10 +11109,6 @@
           </preprocessorList>
         </ccTool>
       </folder>
-      <item path="include/VideoDecoderWorker.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtp/LayerInfo.h" ex="false" tool="3" flavor2="0">
-      </item>
       <item path="src/ActiveSpeakerDetector.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
@@ -11199,7 +11202,7 @@
         </ccTool>
       </item>
       <item path="src/DTLSICETransport.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="2">
+        <ccTool flags="1">
           <incDir>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
@@ -11478,7 +11481,7 @@
             ex="false"
             tool="1"
             flavor2="11">
-        <ccTool flags="2">
+        <ccTool flags="1">
           <incDir>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
@@ -11523,7 +11526,9 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="src/VideoDecoderWorker.cpp" ex="false" tool="1" flavor2="0">
+      <item path="src/VideoDecoderWorker.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="4">
+        </ccTool>
       </item>
       <item path="src/VideoEncoderWorker.cpp" ex="false" tool="1" flavor2="8">
         <ccTool flags="3">
@@ -12001,8 +12006,6 @@
         <ccTool flags="1">
         </ccTool>
       </item>
-      <item path="src/h264/H264CodecConfig.h" ex="false" tool="3" flavor2="0">
-      </item>
       <item path="src/h264/H264LayerSelector.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
         </ccTool>
@@ -12263,15 +12266,13 @@
           </incDir>
         </ccTool>
       </item>
-      <item path="src/opus/opusconfig.h" ex="false" tool="3" flavor2="0">
-      </item>
       <item path="src/opus/opusdecoder.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
         </ccTool>
       </item>
-      <item path="src/opus/opusdepacketizer.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/opus/opusdepacketizer.h" ex="false" tool="3" flavor2="0">
+      <item path="src/opus/opusdepacketizer.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
       </item>
       <item path="src/opus/opusencoder.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
@@ -12609,7 +12610,28 @@
         <ccTool flags="1">
         </ccTool>
       </item>
-      <item path="src/rtp/LayerInfo.cpp" ex="false" tool="1" flavor2="0">
+      <item path="src/rtp/LayerInfo.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+          <incDir>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>DARWIN</Elem>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
+        </ccTool>
       </item>
       <item path="src/rtp/RTCPApp.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
@@ -13009,7 +13031,26 @@
             ex="false"
             tool="1"
             flavor2="11">
-        <ccTool flags="4">
+        <ccTool flags="1">
+          <incDir>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>DARWIN</Elem>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
         </ccTool>
       </item>
       <item path="src/rtp/RTPIncomingSource.cpp" ex="false" tool="1" flavor2="11">
@@ -13039,7 +13080,7 @@
             ex="false"
             tool="1"
             flavor2="11">
-        <ccTool flags="2">
+        <ccTool flags="1">
           <incDir>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
@@ -13203,7 +13244,26 @@
         </ccTool>
       </item>
       <item path="src/rtp/RTPPayload.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="4">
+        <ccTool flags="1">
+          <incDir>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>DARWIN</Elem>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
         </ccTool>
       </item>
       <item path="src/rtp/RTPRedundantPacket.cpp" ex="false" tool="1" flavor2="11">
@@ -13283,7 +13343,7 @@
         </ccTool>
       </item>
       <item path="src/rtpsession.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="2">
+        <ccTool flags="1">
           <incDir>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
@@ -15619,6 +15679,8 @@
       <item path="src/pcc/NetworkController.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="2">
         </ccTool>
+      </item>
+      <item path="src/pcc/PacketResult.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="src/pcc/RTTTracker.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="2">

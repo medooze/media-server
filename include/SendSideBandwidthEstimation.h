@@ -16,41 +16,68 @@ public:
 		start(start),
 		duration(duration)
 	{}
+
 	MonitorInterval(uint64_t start,uint64_t duration) :
 		start(start),
 		duration(duration)
 	{}
+
 	
-	bool SentPacket(uint64_t sent, uint64_t size);
-	bool Feedback(uint64_t sent, uint64_t recv, uint64_t size, int64_t delta);
+	bool SentPacket(uint64_t sent, uint64_t size, bool probing, bool rtx);
+	bool Feedback(uint64_t sent, uint64_t recv, uint64_t size, int64_t delta, bool probing, bool rtx);
 	
 	uint64_t GetStartTime()		const { return start;			}
 	uint64_t GetEndTime()		const { return start + duration;	}
 	bool IsFeedbackCollectionDone() const { return feedbackCollectionDone;	}
 	uint64_t GetTargetBitrate()	const { return target;			}
-	uint64_t GetReceivedBitrate() const;
+
 	uint64_t GetSentBitrate() const;
+	uint64_t GetSentEffectiveBitrate() const;
+	uint64_t GetSentMediaBitrate() const;
+	uint64_t GetSentProbingBitrate() const;
+	uint64_t GetSentRTXBitrate() const;
+	uint64_t GetReceivedBitrate() const;
+	uint64_t GetReceivedMediaBitrate() const;
+	uint64_t GetReceivedProbingBitrate() const;
+	uint64_t GetReceivedRTXBitrate() const;
 	double   GetLossRate() const;
 	double	 ComputeDelayGradient() const;
 	double   ComputeVivaceUtilityFunction() const;
 	void	 Dump() const;
+
+        uint64_t GetAccumulatedReceivedSize() const		{ return accumulatedReceivedSize;        }
+        uint64_t GetAccumulatedReceivedRTXSize() const		{ return accumulatedReceivedRTXSize;     }
+        uint64_t GetAccumulatedReceivedProbingSize() const      { return accumulatedReceivedProbingSize; }
+        uint64_t GetAccumulatedReceivedMediaSize() const        { return accumulatedReceivedMediaSize;   }
+        uint64_t GetAccumulatedSentRTXSize() const		{ return accumulatedSentRTXSize;         }
+        uint64_t GetAccumulatedSentProbingSize() const		{ return accumulatedSentProbingSize;     }
+        uint64_t GetAccumulatedSentMediaSize() const		{ return accumulatedSentMediaSize;       }
+        uint64_t GetAccumulatedSentSize() const			{ return accumulatedSentSize;            }
+
 	
 private:
-	uint64_t start;
-	uint64_t duration;
 	uint64_t target				= 0;
+	uint64_t start				= std::numeric_limits<uint64_t>::max();
+	uint64_t duration			= 0;
 	uint64_t firstSent			= std::numeric_limits<uint64_t>::max();
 	uint64_t lastSent			= std::numeric_limits<uint64_t>::max();
 	uint64_t firstRecv			= std::numeric_limits<uint64_t>::max();
 	uint64_t lastRecv			= std::numeric_limits<uint64_t>::max();
 	uint64_t accumulatedSentSize		= 0;
+	uint64_t accumulatedSentMediaSize	= 0;
+	uint64_t accumulatedSentProbingSize	= 0;
+	uint64_t accumulatedSentRTXSize		= 0;
+	uint64_t accumulatedReceivedMediaSize	= 0;
+	uint64_t accumulatedReceivedProbingSize	= 0;
+	uint64_t accumulatedReceivedRTXSize	= 0;
 	uint64_t accumulatedReceivedSize	= 0;
 	uint32_t lostPackets			= 0;
 	uint32_t totalFeedbackedPackets		= 0;
 	uint32_t totalSentPackets		= 0;
 	bool feedbackCollectionDone		= 0;
 	std::vector<std::pair<uint64_t,int64_t>> deltas;
-};
+}
+;
 
 class SendSideBandwidthEstimation
 {
@@ -61,7 +88,8 @@ public:
 		Increase,
 		Decrease,
 		OverShoot,
-	};
+	}
+;
 public:
 	SendSideBandwidthEstimation();
         ~SendSideBandwidthEstimation();
@@ -70,8 +98,10 @@ public:
 	void UpdateRTT(uint32_t rtt);
 	uint32_t GetEstimatedBitrate() const;
 	uint32_t GetTargetBitrate() const;
+	uint32_t GetAvailableBitrate() const;
 	
 	void SetListener(RemoteRateEstimator::Listener* listener) { this->listener = listener; }
+
         
         int Dump(const char* filename);
 private:
@@ -99,6 +129,7 @@ private:
 	RemoteRateEstimator::Listener* listener = nullptr;
         
 	
-};
+}
+;
 
 #endif  // CONTROLLER_SEND_SIDE_BANDWIDTH_ESTIMATION_H_

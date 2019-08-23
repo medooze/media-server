@@ -46,7 +46,7 @@ DTLSICETransport::DTLSICETransport(Sender *sender,TimeService& timeService) :
 	endpoint(timeService),
 	dtls(*this,timeService,endpoint.GetTransport()),
 	incomingBitrate(1000),
-	outgoingBitrate(1000),
+	outgoingBitrate(500), //maching sender side chunk sizes
 	probingBitrate(250)
 {
 }
@@ -72,12 +72,12 @@ void DTLSICETransport::onDTLSPendingData()
 			break;
 		//Set read size
 		buffer.SetSize(len);
-		//Update bitrate
-		outgoingBitrate.Update(getTimeMS(),len);
 		//Send
 		Log("-DTLSConnection::onDTLSPendingData() | dtls send [len:%d]\n",len);
 		//Send it back
 		sender->Send(active,std::move(buffer));
+		//Update bitrate
+		outgoingBitrate.Update(getTimeMS(),len);
 	}
 	//UltraDebug("<DTLSConnection::onDTLSPendingData() | no more data\n");
 }
@@ -107,12 +107,13 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		if (len<=0)
 			return 0;
 		
-		//Acumulate bitrate
-		outgoingBitrate.Update(getTimeMS(),len);
 		//Set buffer size
 		buffer.SetSize(len);
 		//Send it back
 		sender->Send(candidate,std::move(buffer));
+		
+		//Acumulate bitrate
+		outgoingBitrate.Update(getTimeMS(),len);
 		
 		//Exit
 		return 1;
@@ -604,12 +605,199 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 	return 1;
 }
 
+DWORD DTLSICETransport::SendProbe(const RTPPacket::shared& packet)
+{
+	//Check packet
+	if (!packet)
+		//Done
+		return Error("-DTLSICETransport::SendProbe() | No packet\n");
+	
+	//Check if we have an active DTLS connection yet
+	if (!send.IsSetup())
+		//Done
+		return Error("-DTLSICETransport::SendProbe() | Send SRTPSession is not setup yet\n");;
+	
+	//Get ssrc
+	DWORD ssrc = packet->GetSSRC();
+	
+	//Get outgoing group
+	RTPOutgoingSourceGroup* group = GetOutgoingSourceGroup(ssrc);
+	
+	//If not found
+	if (!group)
+		//Error
+		return Error("-DTLSICETransport::SendProbe() | Outgoind source not registered for ssrc:%u\n",packet->GetSSRC());
+
+	//Get current time
+	auto now = getTime();
+
+	//Overrride headers
+	RTPHeader		header(packet->GetRTPHeader());
+	RTPHeaderExtension	extension(packet->GetRTPHeaderExtension());
+
+	//Try to send it via rtx
+	BYTE apt = sendMaps.apt.GetTypeForCodec(packet->GetPayloadType());
+		
+	//Check if we ar using rtx or not
+	if (!group->rtx.ssrc || apt==RTPMap::NotFound)
+		return Error("-DTLSICETransport::SendProbe() | No rtx or apt found\n");
+	
+	//Get rtx source
+	RTPOutgoingSource& source = group->rtx;
+	
+	//Get extended sequence number
+	DWORD originalSeqNum	= packet->GetSeqNum();
+	DWORD extSeqNum		= packet->GetExtSeqNum();
+	
+	{
+		//Lock in scope
+		ScopedLock scope(source);
+		//Update RTX headers
+		header.ssrc		= source.ssrc;
+		header.payloadType	= apt;
+		header.sequenceNumber	= extSeqNum = source.NextSeqNum();
+		//No padding
+		header.padding		= 0;
+	}
+	
+	//Add transport wide cc on video
+	if (group->type == MediaFrame::Video && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC!=RTPMap::NotFound))
+	{
+		//Add extension
+		header.extension = true;
+		//Add transport
+		extension.hasTransportWideCC = true;
+		extension.transportSeqNum = ++transportSeqNum;
+	}
+	
+	//If we are using abs send time for sending
+	if (sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::AbsoluteSendTime)!=RTPMap::NotFound)
+	{
+		//Use extension
+		header.extension = true;
+		//Set abs send time
+		extension.hasAbsSentTime = true;
+		extension.absSentTime = now/1000;
+	}
+	
+	//Send buffer
+	Packet buffer;
+	BYTE* 	data = buffer.GetData();
+	DWORD	size = buffer.GetCapacity();
+	int	len  = 0;
+
+	//Serialize header
+	int n = header.Serialize(data,size);
+
+	//Comprobamos que quepan
+	if (!n)
+		//Error
+		return Error("-DTLSICETransport::SendProbe() | Error serializing rtp headers\n");
+
+	//Inc len
+	len += n;
+
+	//If we have extension
+	if (header.extension)
+	{
+		//Serialize
+		n = extension.Serialize(sendMaps.ext,data+len,size-len);
+		//Comprobamos que quepan
+		if (!n)
+			//Error
+			return Error("-DTLSICETransport::SendProbe() | Error serializing rtp extension headers\n");
+		//Inc len
+		len += n;
+	}
+
+	//And set the original seq
+	set2(data,len,originalSeqNum);
+	//Move payload start
+	len += 2;
+
+	//Ensure we have enougth data
+	if (len+packet->GetMediaLength()>size)
+		//Error
+		return Error("-DTLSICETransport::SendProbe() | Media overflow\n");
+
+	//Copiamos los datos
+	memcpy(data+len,packet->GetMediaData(),packet->GetMediaLength());
+
+	//Set pateckt length
+	len += packet->GetMediaLength();
+
+	//If we don't have an active candidate yet
+	if (!active)
+		//Error
+		return Error("-DTLSICETransport::SendProbe() | We don't have an active candidate yet\n");
+
+	//If dumping
+	if (dumper && dumpOutRTP)
+		//Write udp packet
+		dumper->WriteUDP(now/1000,0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len);
+
+	//Encript
+	len = send.ProtectRTP(data,len);
+		
+	//Check size
+	if (!len)
+		//Error
+		return Error("-DTLSICETransport::SendProbe() | Error protecting RTP packet [ssrc:%u,%s]\n",source.ssrc,send.GetLastError());
+	
+	//Store candidate before unlocking
+	ICERemoteCandidate* candidate = active;
+
+	//Set buffer size
+	buffer.SetSize(len);
+	//No error yet, send packet
+	sender->Send(candidate,std::move(buffer));
+	
+	//Update current time after sending
+	now = getTime();
+	//Update bitrate
+	outgoingBitrate.Update(now/1000,len);
+		
+        //Synchronized
+	{
+		//Block scope
+		ScopedLock scope(source);
+                //Update last send time
+                source.lastTime		= packet->GetTimestamp();
+                source.lastPayloadType  = packet->GetPayloadType();
+	
+                //Update stats
+                source.Update(now/1000,header.sequenceNumber,len);
+        }
+	
+	//Add to transport wide stats
+	if (extension.hasTransportWideCC)
+	{
+		//Create stats
+		auto stats = PacketStats::Create(
+			extension.transportSeqNum,
+			header.ssrc,
+			extSeqNum,
+			len,
+			0,
+			header.timestamp,
+			now,
+			false
+		);
+		//It is probe
+		stats->probing = true;
+		//Add new stat
+		senderSideBandwidthEstimator.SentPacket(stats);
+	}
+	
+	return len;
+}
+
 DWORD DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 {
 	//Check if we have an active DTLS connection yet
 	if (!send.IsSetup())
 		//Error
-		return Debug("-DTLSICETransport::SendProbe() | Send SRTPSession is not setup\n");
+		return Error("-DTLSICETransport::SendProbe() | Send SRTPSession is not setup\n");
 	
 	//Overrride headers
 	RTPHeader		header;
@@ -735,6 +923,11 @@ DWORD DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 	//No error yet, send packet
 	sender->Send(candidate,std::move(buffer));
 	
+	//Update now
+	now = getTime();
+	//Update bitrate
+	outgoingBitrate.Update(now/1000,len);
+	
         //SYNC
         {
                 //Lock in scope
@@ -742,15 +935,10 @@ DWORD DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
                 //Update last send time
                 source.lastTime		= header.timestamp;
                 source.lastPayloadType  = header.payloadType;
-	
-		//Update now
-		now = getTime();
-		
                 //Update stats
                 source.Update(now/1000,header.sequenceNumber,len);
         }
-	//Update bitrate
-	outgoingBitrate.Update(now/1000,len);
+	
 	
 	//Add to transport wide stats
 	if (extension.hasTransportWideCC)
@@ -930,7 +1118,6 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	
 	//Update current time after sending
 	now = getTime();
-	
 	//Update bitrate
 	outgoingBitrate.Update(now/1000,len);
 		
@@ -1430,6 +1617,12 @@ void DTLSICETransport::onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMaster
 	
 	//Done
 	SetState(DTLSState::Connected);
+	
+	//Create new probe timer
+	probingTimer = timeService.CreateTimer(0ms,5ms,[this](...){
+		//Do probe
+		Probe();
+	});
 }
 
 void DTLSICETransport::onDTLSSetupError()
@@ -1745,8 +1938,11 @@ int DTLSICETransport::Send(const RTCPCompoundPacket::shared &rtcp)
 	
 	//Check result
 	if (len<=0 || len>size)
+	{
+		rtcp->Dump();
 		//Error
 		return Error("-DTLSICETransport::Send() | Error serializing RTCP packet [len:%d]\n",len);
+	}
 	
 	//If we don't have an active candidate yet
 	if (!active)
@@ -1773,12 +1969,16 @@ int DTLSICETransport::Send(const RTCPCompoundPacket::shared &rtcp)
 	//Store active candidate1889
 	ICERemoteCandidate* candidate = active;
 
-	//Update bitrate
-	outgoingBitrate.Update(getTimeMS(),len);
 	//Set buffer size
 	buffer.SetSize(len);
 	//No error yet, send packet
-	return sender->Send(candidate,std::move(buffer));
+	len = sender->Send(candidate,std::move(buffer));
+	
+	//Update bitrate
+	outgoingBitrate.Update(getTimeMS(),len);
+	
+	//Return length
+	return len;
 }
 
 int DTLSICETransport::SendPLI(DWORD ssrc)
@@ -1937,12 +2137,14 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 	//Store candidate
 	ICERemoteCandidate* candidate = active;
 
-	//Update bitrate
-	outgoingBitrate.Update(getTimeMS(),len);
 	//Set buffer size
 	buffer.SetSize(len);
 	//No error yet, send packet
 	sender->Send(candidate,std::move(buffer));
+	//Get time
+	now = getTime();
+	//Update bitrate
+	outgoingBitrate.Update(now/1000,len);
 	
 	DWORD bitrate   = 0;
 	DWORD estimated = 0;
@@ -1956,15 +2158,12 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 		source.lastPayloadType  = packet->GetPayloadType();
 
 		//Update source
-		source.Update(getTimeMS(),packet->GetSeqNum(),len);
+		source.Update(now/1000,packet->GetSeqNum(),len);
 		
 		 //Get bitrates
 		bitrate   = static_cast<DWORD>(source.acumulator.GetInstantAvg());
 		estimated = source.remb;
 	}
-	
-	//Get time
-	now = getTime();
 
 	//Check if we are using transport wide for this packet
 	if (packet->HasTransportWideCC())
@@ -1986,8 +2185,11 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 		//Create and send rtcp sender retpor
 		Send(RTCPCompoundPacket::Create(group->media.CreateSenderReport(now)));
 	
-	//Do we need to send probing?
-	if (probe && group->type == MediaFrame::Video && packet->GetMark() && estimated>bitrate)
+	//Check if this packets support rtx
+	bool rtx = group->rtx.ssrc && !sendMaps.apt.empty();
+	
+	//Do we need to send probing as inline media?
+	if (!rtx && probe && group->type == MediaFrame::Video && packet->GetMark() && estimated>bitrate)
 	{
 		BYTE size = 255;
 		//Get probe padding needed
@@ -2002,6 +2204,17 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 		for (BYTE i=0;i<num;++i)
 			//Send probe packet
 			SendProbe(group,size);
+	}
+	
+	//If packets supports rtx
+	if (rtx)
+	{
+		//Append it to the end of the packet history
+		history.push_back(packet);
+		//Remove old ones
+		while (history.size()>10)
+			//Remove first
+			history.pop_front();
 	}
 	
 	//Did we send successfully?
@@ -2415,23 +2628,19 @@ void DTLSICETransport::Start()
 	dcOptions.remotePort = 5000;
 	//Start
 	endpoint.Init(dcOptions);
-	
-	//Create new probe
-	probingTimer = timeService.CreateTimer(0ms,5ms,[this](...){
-		//Do probe
-		Probe();
-	});
 }
 
 void DTLSICETransport::Stop()
 {
 	Debug(">DTLSICETransport::Stop()\n");
 	
+	//Check probing timer
+	if (probingTimer)
+		//Stop probing
+		probingTimer->Cancel();
+	
 	//Stop
 	endpoint.Close();
-	
-	//Stop probing
-	probingTimer->Cancel();
 }
 
 int DTLSICETransport::Enqueue(const RTPPacket::shared& packet)
@@ -2460,8 +2669,7 @@ void DTLSICETransport::Probe()
 	//Endure that transport wide cc is enabled
 	if (probe && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC)!=RTPMap::NotFound)
 	{
-		//Probe size
-		BYTE size = 255;
+		
 		//Get sleep time
 		uint64_t now = getTime();
 		//Update bitrates
@@ -2481,7 +2689,7 @@ void DTLSICETransport::Probe()
 			//Increase stimation
 			target = std::max(target,bitrate+312000);
 
-		//Log("-DTLSICETransport::Probe() | [estimated:%u,bitrate:%d]\n",estimated,bitrate);
+		//Log(">DTLSICETransport::Probe() | [target:%u,bitrate:%d,history:%d]\n",target,bitrate,history.size());
 			
 		//If we can still send more
 		if (target>bitrate)
@@ -2489,26 +2697,70 @@ void DTLSICETransport::Probe()
 			//Increase probing bitrate
 			probing = std::min(maxProbingBitrate,probing + target - bitrate);
 
-			//Get number of probes
-			BYTE num = (probing*sleep)/(8000*size)+1;
+			//Get size of probes
+			DWORD probingSize = (probing*sleep)/(8000);
 			
-			//Log("-DTLSICETransport::Probe() | Sending probing packets [target:%u,bitrate:%u,probing:%u,max:%u,num:%d,sleep:%d]\n", target, bitrate,probing,maxProbingBitrate, num, sleep);
+			//Log("-DTLSICETransport::Probe() | Sending probing packets [target:%u,bitrate:%u,probing:%u,max:%u,probingSize:%d,sleep:%d]\n", target, bitrate,probing,maxProbingBitrate, probingSize, sleep);
 
-			//Check if we have an outgpoing group
-			for (auto &group : outgoing)
+			//If we have packet history
+			if (history.size())
 			{
-				//We can only probe on rtx with video
-				if (group.second->type == MediaFrame::Video)
+				//Sent until no more probe
+				while (probingSize)
 				{
-					//Set all the probes
-					for (BYTE i=0;i<num;++i)
+					//For each packet in history
+					for (auto it = history.rbegin(); it!=history.rend(); ++it)
 					{
 						//Send probe packet
-						DWORD len = SendProbe(group.second,size);
+						DWORD len = SendProbe(*it);
+						//Check len
+						if (!len)
+							//Done
+							return;
 						//Update probing
 						probingBitrate.Update(now/1000,len);
+						//Check size
+						if (len>probingSize)
+							//Done
+							return;
+						//Reduce probe
+						probingSize -= len;
+						//Update now
+						now = getTime();
 					}
-					break;
+					
+				}
+			} else {
+				DWORD size = 255;
+				//Check if we have an outgpoing group
+				for (auto &group : outgoing)
+				{
+					//We can only probe on rtx with video
+					if (group.second->type == MediaFrame::Video)
+					{
+						//Set all the probes
+						while (probingSize>size)
+						{
+							//Send probe packet
+							DWORD len = SendProbe(group.second,size);
+							//Check len
+							if (!len)
+								//Done
+								return;
+							//Update probing
+							probingBitrate.Update(now/1000,len);
+							//Check size
+							if (len>probingSize)
+								//Done
+								return;
+							//Reduce probe
+							probingSize -= len;
+							//Update now
+							now = getTime();
+						}
+						//Done
+						return;
+					}
 				}
 			}
 		}
