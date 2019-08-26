@@ -21,6 +21,8 @@ RemoteRateControl::RemoteRateControl() : bitrateCalc(100), fpsCalc(1000), packet
 	curTS = 0;
 	curTime = 0;
 	curSize = 0;
+	curDelta = 0;
+	prevDelta = 0;
 	slope = 8.0/512.0;
 	E[0][0] = 100;
 	E[0][1] = 0;
@@ -47,45 +49,43 @@ void RemoteRateControl::Update(QWORD time,QWORD ts,DWORD size, bool mark)
 	
 //	Debug("ts:%u,time:%llu,%u\n",ts,time,size);
 	
-	//If it is a our of order packet from previous frame
+	//If it is an out of order packet from previous frame
 	if (curTS && ts < curTS)
 		//Exit
 		return;
 	
-	//Add new frame
-	if (mark) fpsCalc.Update(ts,1);
-	
-	//Check if it is from a new frame
-	if (ts > curTS)
-	{
-		//Debug("+curTime:%llu,prevTime:%llu,ts:%u,curTS:%u,prevTS:%u\n",curTime,prevTime,ts,curTS,prevTS);
-		//If not first one
-		if (prevTime)
-			//Update Kalman filter as per google algorithm from the previous frame
-			UpdateKalman(time,
-				static_cast<int64_t>(curTime) - static_cast<int64_t>(prevTime),
-				static_cast<int>(curTS)   - static_cast<int>(prevTS),
-				static_cast<int>(curSize) - static_cast<int>(prevSize)
-			);
-		//Move
-		prevTS = curTS;
-		prevTime = curTime;
-		prevSize = curSize;
-		curSize = 0;
-	}
 	//Update size of current frame
 	curSize += size;
 	//And reception time
 	curTS	= ts;
 	curTime = time;
-	//Debug("-curTime:%llu,prevTime:%llu,ts:%u,curTS:%u,prevTS:%u\n",curTime,prevTime,ts,curTS,prevTS);
+	
+	//If not first packet
+	if (prevTime)
+		//Increase deltas
+		curDelta += (curTime - prevTime) - (curTS - prevTS);
+				
+	//Add new frame
+	if (mark) 
+	{
+		//New frame
+		fpsCalc.Update(time,1);
+		//Update Kalman filter as per google algorithm from the previous frame
+		UpdateKalman(curDelta - prevDelta, curSize - prevSize);
+		//reset frame stats
+		prevSize = curSize;
+		prevDelta = curDelta;
+		curSize = 0;
+		curDelta = 0;
+	} 
+	//Update current stats
+	prevTS = curTS;
+	prevTime = curTime;
 }
 
-void RemoteRateControl::UpdateKalman(QWORD now,int deltaTime, int deltaTS, int deltaSize)
+void RemoteRateControl::UpdateKalman(int deltaTime, int deltaSize)
 {
-	//UltraDebug("RemoteRateControl::UpdateKalman() deltas [time:%d ts:%d size:%d]\n",deltaTime,deltaTS,deltaSize);
-	//Calculate time to timestamp delta
-	const int ttsdelta = deltaTime-deltaTS;
+	//UltraDebug("RemoteRateControl::UpdateKalman() deltas [time:%d size:%d]\n",deltaTime, deltaSize);
 
 	//Get scaling factor
 	double scaleFactor = 30.0/fpsCalc.GetInstantAvg();
@@ -108,7 +108,7 @@ void RemoteRateControl::UpdateKalman(QWORD now,int deltaTime, int deltaTS, int d
 		E[1][0]*h[0] + E[1][1]*h[1]
 	};
 
-	const double residual = ttsdelta-slope*h[0]-offset;
+	const double residual = deltaTime-slope*h[0]-offset;
 
 	// Only update the noise estimate if we're not over-using and in stable state
 	//if (hypothesis!=OverUsing && (fmin(fpsCalc.GetAcumulated(),30)*std::fabs(offset)<threshold))

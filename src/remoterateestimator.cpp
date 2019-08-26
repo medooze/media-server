@@ -106,7 +106,7 @@ void RemoteRateEstimator::Update(DWORD ssrc,const RTPPacket::shared& packet,DWOR
 
 void RemoteRateEstimator::Update(DWORD ssrc,QWORD now,QWORD ts,DWORD size, bool mark)
 {
-	//UltraDebug("-Update [ssrc:%u,now:%lu,last:%u,ts:%lu,size:%u,inwindow:%d\n",ssrc,now,lastChange,ts,size,bitrateAcu.IsInWindow());
+	//Log("-Update [ssrc:%u,now:%lu,last:%u,ts:%lu,size:%u,inwindow:%d\n",ssrc,now,lastChange,ts,size,bitrateAcu.IsInWindow());
 	//Lock
 	lock.WaitUnusedAndLock();
 
