@@ -129,7 +129,7 @@ RTPPacket::shared RTPPacket::Clone()
 DWORD RTPPacket::Serialize(BYTE* data,DWORD size,const RTPMap& extMap) const
 {
 	//Serialize header
-	int len = header.Serialize(data,size);
+	uint32_t len = header.Serialize(data,size);
 
 	//Check
 	if (!len)
@@ -140,7 +140,7 @@ DWORD RTPPacket::Serialize(BYTE* data,DWORD size,const RTPMap& extMap) const
 	if (header.extension)
 	{
 		//Serialize
-		int n = extension.Serialize(extMap,data+len,size-len);
+		uint32_t n = extension.Serialize(extMap,data+len,size-len);
 		//Comprobamos que quepan
 		if (!n)
 			//Error
@@ -153,17 +153,37 @@ DWORD RTPPacket::Serialize(BYTE* data,DWORD size,const RTPMap& extMap) const
 	if (len+GetMediaLength()>size)
 		//Error
 		return Error("-RTPPacket::Serialize() | Media overflow\n");
-
-	//Copy media payload
-	memcpy(data+len,GetMediaData(),GetMediaLength());
 	
 	//If we need to rewrite the vp8 descriptor
 	if (rewitePictureIds && vp8PayloadDescriptor)
+	{
+		//Get current vp8 descriptor length
+		uint32_t descLen = vp8PayloadDescriptor->GetSize();
+		//Copy the descriptor
+		auto vp8NewPayloadDescriptor = vp8PayloadDescriptor.value();
+		//Always store it as two bytes
+		vp8NewPayloadDescriptor.pictureIdPresent = 1;
+		vp8NewPayloadDescriptor.pictureIdLength = 2;
 		//Write it back
-		vp8PayloadDescriptor->Serialize(data+len,size-len);
+		len += vp8NewPayloadDescriptor.Serialize(data+len,size-len);
+		
+		//Check size
+		if (descLen>GetMediaLength())
+			//Error
+			return Error("-RTPPacket::Serialize() | Wrong vp8PayloadDescriptor when rewriting pict ids\n");
+		
+		//Copy media payload without the old description
+		memcpy(data+len,GetMediaData()+descLen,GetMediaLength()-descLen);
+		//Inc payload len
+		len += GetMediaLength()-descLen;
+		
+	} else {
+		//Copy media payload
+		memcpy(data+len,GetMediaData(),GetMediaLength());
+		//Inc payload len
+		len += GetMediaLength();
+	}
 	
-	//Inc payload len
-	len += GetMediaLength();
 	
 	//Return copied len
 	return len;

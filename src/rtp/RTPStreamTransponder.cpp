@@ -285,8 +285,8 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 			tl0Idx++;
 		}
 		
-		//Rewrite picture id wrapping to 15 or 7 bits
-		pictureId = desc.pictureIdLength==2 ? picId%0x7FFF : picId%0x7F;
+		//Rewrite picture id
+		pictureId = picId;
 		//Rewrite tl0 index
 		temporalLevelZeroIndex = tl0Idx;
 		//We need to rewrite vp8 picture ids

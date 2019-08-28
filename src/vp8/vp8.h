@@ -77,12 +77,7 @@ struct VP8PayloadDescriptor
 		{
 			len++;
 			if (pictureIdPresent)
-			{
-				if (pictureId>7)
-					len+=2;
-				else
-					len+=1;
-			}
+				len += pictureIdLength;
 			if (temporalLevelZeroIndexPresent)
 				len++;
 			if (temporalLayerIndexPresent || keyIndexPresent)
@@ -225,7 +220,7 @@ struct VP8PayloadDescriptor
 		//Check if picture id present
 		if (pictureIdPresent)
 		{
-			//Check long is the picture id
+			//Check how long is the picture id
 			if (pictureIdLength == 2)
 			{
 				//Set picture id
@@ -263,7 +258,7 @@ struct VP8PayloadDescriptor
 		return len;
 	}
 
-	void Dump()
+	void Dump() const
 	{
 		Debug("[VP8PayloadDescriptor \n");
 		Debug("\t extendedControlBitsPresent=%d\n"	, extendedControlBitsPresent);
