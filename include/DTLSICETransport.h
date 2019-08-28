@@ -90,6 +90,7 @@ public:
 	
 	void SetBandwidthProbing(bool probe);
 	void SetMaxProbingBitrate(DWORD bitrate)	{ this->maxProbingBitrate = bitrate;	}
+	void SetProbingBitrateLimit(DWORD bitrate)	{ this->probingBitrateLimit = bitrate;	}
 	void SetSenderSideEstimatorListener(RemoteRateEstimator::Listener* listener) { senderSideBandwidthEstimator.SetListener(listener); }
 	
 	const char* GetRemoteUsername() const { return iceRemoteUsername;	};
@@ -178,12 +179,13 @@ private:
 	
 	std::map<DWORD,PacketStats::shared> transportWideReceivedPacketsStats;
 	
-	UDPDumper* dumper	= nullptr;
-	bool dumpInRTP		= false;
-	bool dumpOutRTP		= false;
-	bool dumpRTCP		= false;
-	volatile bool probe	= false;
-	DWORD maxProbingBitrate = 1024*1000;
+	UDPDumper* dumper		= nullptr;
+	bool dumpInRTP			= false;
+	bool dumpOutRTP			= false;
+	bool dumpRTCP			= false;
+	volatile bool probe		= false;
+	DWORD maxProbingBitrate		= 1024*1000;
+	DWORD probingBitrateLimit	= maxProbingBitrate *4;
 	
 	Timer::shared probingTimer;
 	QWORD   lastProbe = 0;

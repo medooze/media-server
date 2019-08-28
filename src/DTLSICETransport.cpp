@@ -45,8 +45,8 @@ DTLSICETransport::DTLSICETransport(Sender *sender,TimeService& timeService) :
 	timeService(timeService),
 	endpoint(timeService),
 	dtls(*this,timeService,endpoint.GetTransport()),
-	incomingBitrate(1000),
-	outgoingBitrate(500), //maching sender side chunk sizes
+	incomingBitrate(250),
+	outgoingBitrate(250),
 	probingBitrate(250)
 {
 }
@@ -2574,7 +2574,7 @@ void DTLSICETransport::SetRTT(DWORD rtt)
 		//Update jitter
 		it.second->SetRTT(rtt);
 	//Add estimation
-	senderSideBandwidthEstimator.UpdateRTT(rtt);
+	senderSideBandwidthEstimator.UpdateRTT(getTime(),rtt);
 }
 
 void DTLSICETransport::SendTransportWideFeedbackMessage(DWORD ssrc)
@@ -2684,21 +2684,16 @@ void DTLSICETransport::Probe()
 		DWORD probing		= static_cast<DWORD>(probingBitrate.GetInstantAvg()*8);
 		DWORD target		= senderSideBandwidthEstimator.GetTargetBitrate();
 
-		//Probe the first 1.5s at least to 312kbps
-		if ((now-initTime)<15E5)
-			//Increase stimation
-			target = std::max(target,bitrate+312000);
-
 		//Log(">DTLSICETransport::Probe() | [target:%u,bitrate:%d,history:%d]\n",target,bitrate,history.size());
 			
 		//If we can still send more
-		if (target>bitrate)
+		if (target>bitrate && (!probingBitrateLimit || bitrate<probingBitrateLimit))
 		{
 			//Increase probing bitrate
-			probing = std::min(maxProbingBitrate,probing + target - bitrate);
+			probing = maxProbingBitrate ? std::min(maxProbingBitrate,probing + target - bitrate) : probing + target - bitrate;
 
 			//Get size of probes
-			DWORD probingSize = (probing*sleep)/(8000);
+			DWORD probingSize = (probing*sleep)/8000;
 			
 			//Log("-DTLSICETransport::Probe() | Sending probing packets [target:%u,bitrate:%u,probing:%u,max:%u,probingSize:%d,sleep:%d]\n", target, bitrate,probing,maxProbingBitrate, probingSize, sleep);
 

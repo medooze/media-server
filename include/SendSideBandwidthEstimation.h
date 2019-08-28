@@ -5,6 +5,7 @@
 #include <utility>
 #include <vector>
 
+#include "acumulator.h"
 #include "rtp/PacketStats.h"
 #include "remoterateestimator.h"
 
@@ -17,17 +18,13 @@ public:
 		duration(duration)
 	{}
 
-	MonitorInterval(uint64_t start,uint64_t duration) :
-		start(start),
-		duration(duration)
-	{}
-
-	
 	bool SentPacket(uint64_t sent, uint64_t size, bool probing, bool rtx);
 	bool Feedback(uint64_t sent, uint64_t recv, uint64_t size, int64_t delta, bool probing, bool rtx);
 	
 	uint64_t GetStartTime()		const { return start;			}
 	uint64_t GetEndTime()		const { return start + duration;	}
+	uint64_t GetElapsedTime()	const { return lastSent + firstSent;	}
+	uint64_t GetDuration()		const { return duration;		}
 	bool IsFeedbackCollectionDone() const { return feedbackCollectionDone;	}
 	uint64_t GetTargetBitrate()	const { return target;			}
 
@@ -53,6 +50,7 @@ public:
         uint64_t GetAccumulatedSentProbingSize() const		{ return accumulatedSentProbingSize;     }
         uint64_t GetAccumulatedSentMediaSize() const		{ return accumulatedSentMediaSize;       }
         uint64_t GetAccumulatedSentSize() const			{ return accumulatedSentSize;            }
+	int64_t  GetAccumulatedDelta() const			{ return acumulatedDelta;		 }
 
 	
 private:
@@ -71,10 +69,11 @@ private:
 	uint64_t accumulatedReceivedProbingSize	= 0;
 	uint64_t accumulatedReceivedRTXSize	= 0;
 	uint64_t accumulatedReceivedSize	= 0;
+	int64_t	acumulatedDelta			= 0;
 	uint32_t lostPackets			= 0;
 	uint32_t totalFeedbackedPackets		= 0;
 	uint32_t totalSentPackets		= 0;
-	bool feedbackCollectionDone		= 0;
+	bool feedbackCollectionDone		= false;
 	std::vector<std::pair<uint64_t,int64_t>> deltas;
 }
 ;
@@ -95,11 +94,11 @@ public:
         ~SendSideBandwidthEstimation();
 	void SentPacket(const PacketStats::shared& packet);
 	void ReceivedFeedback(uint8_t feedbackNum, const std::map<uint32_t,uint64_t>& packets, uint64_t when = 0);
-	void UpdateRTT(uint32_t rtt);
+	void UpdateRTT(uint64_t when, uint32_t rtt);
 	uint32_t GetEstimatedBitrate() const;
 	uint32_t GetTargetBitrate() const;
 	uint32_t GetAvailableBitrate() const;
-	
+	uint32_t GetMinRTT() const;
 	void SetListener(RemoteRateEstimator::Listener* listener) { this->listener = listener; }
 
         
@@ -121,7 +120,8 @@ private:
         
         int fd = FD_INVALID;
 	
-	//RttTracker rttTracker;
+	Acumulator rttAccumulator;
+	int64_t accumulateDelta = 0;
 	ChangeState state = ChangeState::Maintain;
 	uint32_t consecutiveChanges = 0;
 	std::vector<MonitorInterval> monitorIntervals;
@@ -129,7 +129,6 @@ private:
 	RemoteRateEstimator::Listener* listener = nullptr;
         
 	
-}
-;
+};
 
 #endif  // CONTROLLER_SEND_SIDE_BANDWIDTH_ESTIMATION_H_

@@ -184,8 +184,8 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::GetSize() const
 			{
 				//Got it 
 				firstReceived = true;
-				//Set it
-				referenceTime = (it->second/64000);
+				//Set it as 3 bytes signed integer
+				referenceTime = (it->second/64000) & 0x7FFFFF;
 				//Get initial time
 				time = referenceTime * 64000;
 			}
@@ -205,7 +205,7 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::GetSize() const
 			//Store delta
 			deltas.push_back(delta);
 			//Set next time
-			time = it->second;
+			time = time + delta*250;
 		}
 		
 		//Check if all previoues ones were equal and this one the firt different
