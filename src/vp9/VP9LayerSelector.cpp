@@ -178,6 +178,8 @@ bool VP9LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 		} else if (packet->GetMediaLength() && !desc.Parse(packet->GetMediaData(),packet->GetMediaLength())) {
 			Error("-VP9LayerSelector::GetLayerIds() | parse error\n");
 		}
+		//Set key fram
+		packet->SetKeyFrame(!desc.interPicturePredictedLayerFrame);
 	}
 
 	//Check if we have it now

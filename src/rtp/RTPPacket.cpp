@@ -118,6 +118,7 @@ RTPPacket::shared RTPPacket::Clone()
 	cloned->SetClockRate(GetClockRate());
 	cloned->SetSeqCycles(GetSeqCycles());
 	cloned->SetTimestamp(GetTimestamp());
+	cloned->SetKeyFrame(IsKeyFrame());
 	//Copy descriptors
 	cloned->vp8PayloadDescriptor = vp8PayloadDescriptor;
 	cloned->vp8PayloadHeader     = vp8PayloadHeader;

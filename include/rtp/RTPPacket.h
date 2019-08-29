@@ -128,12 +128,16 @@ public:
 	bool  HasMediaStreamId()		const   { return extension.hasMediaStreamId;	}
 	
 	
-	QWORD GetTime()	const		{ return time;		}
-	void  SetTime(QWORD time )	{ this->time = time;	}
+	QWORD GetTime()	const			{ return time;			}
+	void  SetTime(QWORD time )		{ this->time = time;		}
+	
+	bool  IsKeyFrame() const		{ return isKeyFrame;		}
+	void  SetKeyFrame(bool isKeyFrame)	{ this->isKeyFrame = isKeyFrame;	}
 	
 	const RTPHeader&		GetRTPHeader()		const { return header;		}
 	const RTPHeaderExtension&	GetRTPHeaderExtension()	const { return extension;	}
 
+	
 public:
 	//TODO:refactor a bit
 	std::optional<VP8PayloadDescriptor>	vp8PayloadDescriptor;
@@ -162,6 +166,7 @@ private:
 	RTPPayload::shared payload;
 	bool ownedPayload = false;
 	QWORD time;
+	bool isKeyFrame = false;
 	
 
 };
