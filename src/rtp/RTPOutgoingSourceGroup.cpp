@@ -48,7 +48,7 @@ void RTPOutgoingSourceGroup::ReleasePackets(QWORD until)
 	while(it!=packets.end())
 	{
 		//Check packet time
-		if (it->second->GetTime()>until)
+		if (it->second->GetTime()>=until)
 			//Keep the rest
 			break;
 		//Delete from queue and move next
@@ -56,6 +56,28 @@ void RTPOutgoingSourceGroup::ReleasePackets(QWORD until)
 	}
 }
 
+void RTPOutgoingSourceGroup::ReleasePacketsByTimestamp(DWORD until)
+{
+	//Delete old packets
+	auto it = packets.begin();
+	//Until the end
+	while(it!=packets.end())
+	{
+		//Check packet timestamp
+		if (it->second->GetTimestamp()>=until)
+			//Keep the rest
+			break;
+		//Delete from queue and move next
+		packets.erase(it++);
+	}
+}
+
+void RTPOutgoingSourceGroup::ReleaseAllPackets()
+{
+	//Clear
+	packets.clear();
+}
+	
 void RTPOutgoingSourceGroup::AddPacket(const RTPPacket::shared& packet)
 {
 	//Add a clone to the rtx queue

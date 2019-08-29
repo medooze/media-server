@@ -38,6 +38,10 @@ public:
 	void AddPacket(const RTPPacket::shared& packet);
 	RTPPacket::shared GetPacket(WORD seq) const;
 	void ReleasePackets(QWORD until);
+	void ReleasePacketsByTimestamp(DWORD until);
+	void ReleaseAllPackets();
+	
+	
 	
 public:	
 	std::string mid;
