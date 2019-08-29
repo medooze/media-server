@@ -478,9 +478,14 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 			//Len
 			uint32_t fromLen = sizeof(from);
 			//Leemos del socket
-			int len = recvfrom(fd,data,size,MSG_DONTWAIT,(sockaddr*)&from,&fromLen);
-			//Run callback
-			if (listener) listener->OnRead(ufds[0].fd,data,len,ntohl(from.sin_addr.s_addr),ntohs(from.sin_port));
+			ssize_t len = recvfrom(fd,data,size,MSG_DONTWAIT,(sockaddr*)&from,&fromLen);
+			//If error
+			if (len<=0)
+				UltraDebug("-EventLoop::Run() | recvfrom errno:d\n",errno);
+			//If we got listener
+			else if (listener)
+				//Run callback
+				listener->OnRead(ufds[0].fd,data,len,ntohl(from.sin_addr.s_addr),ntohs(from.sin_port));
 		}
 		
 		//Check read is possible
