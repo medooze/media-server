@@ -190,74 +190,18 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		//Write udp packet
 		dumper->WriteUDP(getTimeMS(),candidate->GetIPAddress(),candidate->GetPort(),0x7F000001,5004,data,len);
 	
-	//Parse RTP header
-	DWORD ini = header.Parse(data,size);
-	
-	//On error
-	if (!ini)
-	{
-		//Debug
-		Debug("-DTLSICETransport::onData() | Could not parse RTP header\n");
-		//Dump it
-		::Dump(data,size);
-		//Exit
-		return 1;
-	}
-	
-	//If it has extension
-	if (header.extension)
-	{
-		//Parse extension
-		DWORD l = extension.Parse(recvMaps.ext,data+ini,size-ini);
-		//If not parsed
-		if (!l)
-		{
-			///Debug
-			Debug("-DTLSICETransport::onData() | Could not parse RTP header extension\n");
-			//Dump it
-			::Dump(data,size);
-			//Exit
-			return 1;
-		}
-		//Inc ini
-		ini += l;
-	}
-
-	//Check size with padding
-	if (header.padding)
-	{
-		//Get last 2 bytes
-		WORD padding = get1(data,len-1);
-		//Ensure we have enought size
-		if (len-ini<padding)
-		{
-			///Debug
-			Debug("-DTLSICETransport::onData() | RTP padding is bigger than size [padding:%u,size%u]\n",padding,len);
-			//Exit
-			return 0;
-		}
-		//Remove from size
-		len -= padding;
-	}
+	RTPPacket::shared packet = RTPPacket::Parse(data,len,recvMaps.rtp,recvMaps.ext);
 	
 	//Get ssrc
-	DWORD ssrc = header.ssrc;
+	DWORD ssrc = packet->GetSSRC();
 	
-	//Get initial codec
-	BYTE codec = recvMaps.rtp.GetCodecForType(header.payloadType);
+	//Get codec
+	DWORD codec = packet->GetCodec();
 	
 	//Check codec
 	if (codec==RTPMap::NotFound)
 		//Exit
-		return Error("-DTLSICETransport::onData() | RTP packet payload type unknown [%d]\n",header.payloadType);
-	//Get media
-	MediaFrame::Type media = GetMediaForCodec(codec);
-	
-	//Create normal packet
-	auto packet = std::make_shared<RTPPacket>(media,codec,header,extension);
-	
-	//Set the payload
-	packet->SetPayload(data+ini,len-ini);
+		return Error("-DTLSICETransport::onData() | RTP packet payload type unknown [%d]\n",packet->GetPayloadType());
 	
 	//Get group
 	RTPIncomingSourceGroup *group = GetIncomingSourceGroup(ssrc);

@@ -126,6 +126,77 @@ RTPPacket::shared RTPPacket::Clone()
 	return cloned;
 }
 
+RTPPacket::shared RTPPacket::Parse(const BYTE* data, DWORD size, const RTPMap& rtpMap, const RTPMap& extMap)
+{
+	RTPHeader header;
+	RTPHeaderExtension extension;
+	//Parse RTP header
+	DWORD ini = header.Parse(data,size);
+	
+	//On error
+	if (!ini)
+	{
+		//Debug
+		Debug("-DTLSICETransport::onData() | Could not parse RTP header\n");
+		//Dump it
+		::Dump(data,size);
+		//Exit
+		return nullptr;
+	}
+	
+	//If it has extension
+	if (header.extension)
+	{
+		//Parse extension
+		DWORD l = extension.Parse(extMap,data+ini,size-ini);
+		//If not parsed
+		if (!l)
+		{
+			///Debug
+			Debug("-DTLSICETransport::onData() | Could not parse RTP header extension\n");
+			//Dump it
+			::Dump(data,size);
+			//Exit
+			return nullptr;
+		}
+		//Inc ini
+		ini += l;
+	}
+
+	//Check size with padding
+	if (header.padding)
+	{
+		//Get last 2 bytes
+		WORD padding = get1(data,size-1);
+		//Ensure we have enought size
+		if (size-ini<padding)
+		{
+			///Debug
+			Debug("-DTLSICETransport::onData() | RTP padding is bigger than size [padding:%u,size%u]\n",padding,size);
+			//Exit
+			return 0;
+		}
+		//Remove from size
+		size -= padding;
+	}
+	
+	//Get initial codec
+	BYTE codec = rtpMap.GetCodecForType(header.payloadType);
+	
+	//Get media
+	MediaFrame::Type media = GetMediaForCodec(codec);
+	
+	//Create normal packet
+	auto packet = std::make_shared<RTPPacket>(media,codec,header,extension);
+	
+	//Set the payload
+	packet->SetPayload(data+ini,size-ini);
+	
+	//Done
+	return packet;
+}
+
+
 DWORD RTPPacket::Serialize(BYTE* data,DWORD size,const RTPMap& extMap) const
 {
 	//Serialize header

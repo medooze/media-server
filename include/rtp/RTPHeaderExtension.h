@@ -31,6 +31,7 @@ public:
 		RTPStreamId		= 7,
 		RepairedRTPStreamId	= 8,
 		MediaStreamId		= 9,
+		Reserved		= 15
 	};
 	
 	static Type GetExtensionForName(const char* ext)

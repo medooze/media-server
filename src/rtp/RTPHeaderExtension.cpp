@@ -49,7 +49,7 @@ size_t WriteHeaderIdAndLength(BYTE* data, DWORD pos, BYTE id, DWORD length)
 */
 DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWORD size)
 {
-  
+  	BYTE headerLength = 0;
 	//If not enought size for header
 	if (size<4)
 		//ERROR
@@ -59,7 +59,13 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 	WORD magic = get2(data,0);
 	
 	//Ensure it is magical
-	if (magic!=0xBEDE)
+	if (magic==0xBEDE)
+		//One byte headers
+		headerLength = 1;
+	else if ((magic >>4) == 0x100)
+		//two byte headers
+		headerLength = 2;
+	else
 		//ERROR
 		return Error("Magic cookie not found");
 	
@@ -80,21 +86,60 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 	//Read all
 	while (i<length)
 	{
-		//Get header
-		const BYTE header = ext[i++];
-		//If it is padding
-		if (!header)
-			//skip
-			continue;
-		//Get extension element id
-		BYTE id = header >> 4;
-		//Get extenion element length
-		BYTE len = (header & 0x0F) + 1;
-		//Get mapped extension
-		BYTE t = extMap.GetCodecForType(id);
+		BYTE len = 0;
+		BYTE id  = 0;
+		
+		//Check header length
+		if (headerLength==1)
+		{
+			//Get header
+			const BYTE header = ext[i++];
+			//If it is padding
+			if (!header)
+				//skip
+				continue;
+			//Get extension element id
+			id = header >> 4;
+			//Get extenion element length
+			len = (header & 0x0F) + 1;
+		} else {
+			
+			//Get extension element id
+			id = ext[i++];
+			
+			//If it is padding
+			if (!id)
+				//skip
+				continue;
+			
+			//Check size
+			if (i+1>length)
+				return Error("Not enought data for 2 byte header");;
+			
+			//Get extension element length
+			len = ext[i++];
+		}
+		
 		//Debug("-RTPExtension [type:%d,codec:%d,len:%d]\n",id,t,len);
+		
+		//   The local identifier value 15 is reserved for a future extension and
+		//   MUST NOT be used as an identifier.  If the ID value 15 is
+		//   encountered, its length field MUST be ignored, processing of the
+		//   entire extension MUST terminate at that point, and only the extension
+		//   elements present prior to the element with ID 15 SHOULD be
+		//   considered.
+		if (id==Reserved)
+			break;
+		
+		//Ensure that we have enought data
+		if (i+len>length)
+			return Error("Not enougth data for extension value");
+		
+		//Get mapped extension
+		BYTE type = extMap.GetCodecForType(id);
+		
 		//Check type
-		switch (t)
+		switch (type)
 		{
 			case SSRCAudioLevel:
 				// The payload of the audio level header extension element can be
@@ -232,7 +277,7 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 			case MediaStreamId:
 				hasMediaStreamId = true;
 				mid.assign((const char*)ext+i,len);
-				break;	
+				break;
 			default:
 				UltraDebug("-Unknown or unmapped extension [%d]\n",id);
 				break;

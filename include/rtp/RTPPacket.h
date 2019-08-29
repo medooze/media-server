@@ -30,7 +30,9 @@ public:
 public:
 	using shared = std::shared_ptr<RTPPacket>;
 	using unique = std::unique_ptr<RTPPacket>;
-
+	
+public:
+	static RTPPacket::shared Parse(const BYTE* data, DWORD size, const RTPMap& rtpMap, const RTPMap& extMap);
 public:
 	RTPPacket(MediaFrame::Type media,BYTE codec);
 	RTPPacket(MediaFrame::Type media,BYTE codec, QWORD time);
@@ -131,8 +133,7 @@ public:
 	
 	const RTPHeader&		GetRTPHeader()		const { return header;		}
 	const RTPHeaderExtension&	GetRTPHeaderExtension()	const { return extension;	}
-	
-	
+
 public:
 	//TODO:refactor a bit
 	std::optional<VP8PayloadDescriptor>	vp8PayloadDescriptor;
