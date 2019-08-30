@@ -83,10 +83,11 @@ class SendSideBandwidthEstimation
 	
 public:
 	enum ChangeState {
-		Maintain,
+		Initial,
 		Increase,
 		Decrease,
 		OverShoot,
+		Congestion
 	}
 ;
 public:
@@ -122,7 +123,7 @@ private:
 	
 	Acumulator rttAccumulator;
 	int64_t accumulateDelta = 0;
-	ChangeState state = ChangeState::Maintain;
+	ChangeState state = ChangeState::Initial;
 	uint32_t consecutiveChanges = 0;
 	std::vector<MonitorInterval> monitorIntervals;
 	
