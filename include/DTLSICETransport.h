@@ -175,6 +175,7 @@ private:
 	
 	Acumulator incomingBitrate;
 	Acumulator outgoingBitrate;
+	Acumulator rtxBitrate;
 	Acumulator probingBitrate;
 	
 	std::map<DWORD,PacketStats::shared> transportWideReceivedPacketsStats;

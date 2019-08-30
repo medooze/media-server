@@ -47,6 +47,7 @@ DTLSICETransport::DTLSICETransport(Sender *sender,TimeService& timeService) :
 	dtls(*this,timeService,endpoint.GetTransport()),
 	incomingBitrate(250),
 	outgoingBitrate(250),
+	rtxBitrate(250),
 	probingBitrate(250)
 {
 }
@@ -920,6 +921,21 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	
 	UltraDebug("-DTLSICETransport::ReSendPacket() | resending [seq:%d,ssrc:%u]\n",seq,group->rtx.ssrc);
 	
+	//Get current time
+	auto now = getTime();
+	
+	//Update rtx bitrate
+	rtxBitrate.Update(now/1000);
+	
+	//Check if we are sending way to much bitrate
+	if (rtxBitrate.GetInstantAvg()*8 > senderSideBandwidthEstimator.GetEstimatedBitrate())
+	{
+		//Error
+		UltraDebug("-DTLSICETransport::ReSendPacket() | Too much bitrate on rtx, skiping rtx:%lld estimated:%u\n",(uint64_t)(rtxBitrate.GetInstantAvg()*8), senderSideBandwidthEstimator.GetEstimatedBitrate());
+		//Skip
+		return;
+	}
+	
 	//Find packet to retransmit
 	auto packet = group->GetPacket(seq);
 
@@ -932,9 +948,6 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 		return;
 	}
 	
-	//Get current time
-	auto now = getTime();
-
 	//Overrride headers
 	RTPHeader		header(packet->GetRTPHeader());
 	RTPHeaderExtension	extension(packet->GetRTPHeaderExtension());
@@ -1064,7 +1077,14 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	now = getTime();
 	//Update bitrate
 	outgoingBitrate.Update(now/1000,len);
-		
+	rtxBitrate.Update(now/1000,len);
+	
+	//Get time for packets to discard, always have at least 200ms, max 500ms
+	QWORD until = now/1000 - (200+fmin(rtt*2,300));
+	
+	//Release packets from rtx queue
+	group->ReleasePackets(until);	
+	
         //Synchronized
 	{
 		//Block scope
@@ -1969,9 +1989,6 @@ int DTLSICETransport::SendPLI(DWORD ssrc)
 
 int DTLSICETransport::Send(RTPPacket::shared&& packet)
 {
-	//TODO: Assert event loop thread
-	
-	
 	//Check packet
 	if (!packet)
 		//Error
@@ -2123,6 +2140,11 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 	
 	//Release packets from rtx queue
 	group->ReleasePackets(until);
+	
+	//If packet is an key frame
+	if (packet->IsKeyFrame())
+		//Do not retransmit packets before this frame
+		group->ReleasePacketsByTimestamp(packet->GetTimestamp());
 	
 	//Check if we need to send SR (1 per second)
 	if (now-source.lastSenderReport>1E6)
