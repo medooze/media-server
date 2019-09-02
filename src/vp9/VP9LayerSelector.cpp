@@ -16,6 +16,7 @@
 
 VP9LayerSelector::VP9LayerSelector()
 {
+	waitingForIntra		= true;
 	temporalLayerId		= 0;
 	spatialLayerId		= 0;
 	nextTemporalLayerId	= LayerInfo::MaxLayerId;
@@ -125,6 +126,17 @@ bool VP9LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 		//UltraDebug("-VP9LayerSelector::Select() | dropping packet based on spatialLayerId [us:%d,desc:%d,mark:%d]\n",spatialLayerId,desc.spatialLayerId,packet->GetMark());
 		//Drop it
 		return false;
+	}
+	
+	//If we have to wait for first intra
+	if (waitingForIntra)
+	{
+		//If this is not intra
+		if (!desc.interPicturePredictedLayerFrame)
+			//Discard
+			return 0;
+		//Stop waiting
+		waitingForIntra = 0;
 	}
 	
 	//RTP mark is set for the last frame layer of the selected layer

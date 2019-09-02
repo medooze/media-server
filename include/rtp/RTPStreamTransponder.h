@@ -73,6 +73,7 @@ private:
 	QWORD picId		= 0;
 	WORD tl0Idx		= 0;
 	bool rewritePicId	= true;
+	QWORD lastSentPLI	= 0;
 };
 
 #endif /* RTPSTREAMTRANSPONDER_H */

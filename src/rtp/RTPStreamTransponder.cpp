@@ -64,6 +64,8 @@ bool RTPStreamTransponder::SetIncoming(RTPIncomingMediaStream* incoming, RTPRece
 		
 		//Request update on the incoming
 		if (this->receiver) this->receiver->SendPLI(this->incoming->GetMediaSSRC());
+		//Update last requested PLI
+		lastSentPLI = getTime();
 	}
 	
 	Debug("<RTPStreamTransponder::SetIncoming() | [incoming:%p,receiver:%p]\n",incoming,receiver);
@@ -240,6 +242,10 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 		{
 			//One more dropperd
 			dropped++;
+			//If selector is waiting for intra and last PLI was more than 1s ago
+			if (selector->IsWaitingForIntra() && getTimeDiff(lastSentPLI)>1E6)
+				//Request it again
+				RequestPLI();
 			//Drop
 			return;
 		}
@@ -367,6 +373,8 @@ void RTPStreamTransponder::RequestPLI()
 	ScopedLock lock(mutex);
 	//Request update on the incoming
 	if (receiver && incoming) receiver->SendPLI(incoming->GetMediaSSRC());
+	//Update last sent pli
+	lastSentPLI = getTime();
 }
 
 void RTPStreamTransponder::onPLIRequest(RTPOutgoingSourceGroup* group,DWORD ssrc)

@@ -19,6 +19,7 @@ public:
 	BYTE GetTemporalLayer()		const override { return temporalLayerId;	}
 	BYTE GetSpatialLayer()		const override { return LayerInfo::MaxLayerId;	}
 	VideoCodec::Type GetCodec()	const override { return VideoCodec::H264;	}
+	bool IsWaitingForIntra()	const override { return waitingForIntra;	}
 	
 	const H264SeqParameterSet&	GetSeqParameterSet()		const { return sps; }
 	const H264PictureParameterSet&	GetPictureParameterSet()	const { return pps; }
