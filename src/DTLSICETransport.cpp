@@ -85,9 +85,6 @@ void DTLSICETransport::onDTLSPendingData()
 
 int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* data,DWORD size)
 {
-	RTPHeader header;
-	RTPHeaderExtension extension;
-
 	//Acumulate bitrate
 	incomingBitrate.Update(getTimeMS(),size);
 	
@@ -170,28 +167,21 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 	size_t len = recv.UnprotectRTP(data,size);
 	//Check status
 	if (!len)
-	{
 		//Error
-		Error("-DTLSICETransport::onData() | Error unprotecting rtp packet [%s]\n",recv.GetLastError());
-		//Parse RTP header
-		DWORD ini = header.Parse(data,size);
-		//If it has extension
-		if (header.extension)
-		{
-			//Parse extension
-			extension.Parse(recvMaps.ext,data+ini,size-ini);
-			extension.Dump();
-		}
-		//Error
-		return 0;
-	}
+		return Error("-DTLSICETransport::onData() | Error unprotecting rtp packet [%s]\n",recv.GetLastError());
 	
 	//If dumping
 	if (dumper && dumpInRTP)
 		//Write udp packet
 		dumper->WriteUDP(getTimeMS(),candidate->GetIPAddress(),candidate->GetPort(),0x7F000001,5004,data,len);
 	
+	//Parse rtp packet
 	RTPPacket::shared packet = RTPPacket::Parse(data,len,recvMaps.rtp,recvMaps.ext);
+	
+	//Check
+	if (!packet)
+		//Error
+		return Error("-DTLSICETransport::onData() | Could not parse rtp packet\n");
 	
 	//Get ssrc
 	DWORD ssrc = packet->GetSSRC();
@@ -211,13 +201,13 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 	if (!group)
 	{
 		//Get rid
-		auto mid = extension.mid;
-		auto rid = extension.hasRepairedId ? extension.repairedId : extension.rid;
+		auto mid = packet->GetMediaStreamId();
+		auto rid = packet->HasRepairedId() ? packet->GetRepairedId() : packet->GetRId();
 
-		Debug("-DTLSICETransport::onData() | Unknowing group for ssrc trying to retrieve by [ssrc:%u,rid:'%s']\n",ssrc,extension.rid.c_str());
+		Debug("-DTLSICETransport::onData() | Unknowing group for ssrc trying to retrieve by [ssrc:%u,rid:'%s']\n",ssrc,rid.c_str());
 
 		//If it is the repaidr stream or it has rid and it is rtx
-		if (extension.hasRepairedId || (extension.hasRId && packet->GetCodec()==VideoCodec::RTX))
+		if (!rid.empty() && packet->GetCodec()==VideoCodec::RTX)
 		{
 			//Try to find it on the rids and mids
 			auto it = rids.find(mid+"@"+rid);
@@ -246,7 +236,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 				//And to the srtp session
 				recv.AddStream(ssrc);
 			}
-		} else if (extension.hasRId) {
+		} else if (packet->HasRId()) {
 			//Try to find it on the rids and mids
 			auto it = rids.find(mid+"@"+rid);
 			//If found
@@ -274,7 +264,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 				//And to the srtp session
 				recv.AddStream(ssrc);
 			}
-		} else if (extension.hasMediaStreamId && packet->GetCodec()==VideoCodec::RTX) {
+		} else if (packet->HasMediaStreamId() && packet->GetCodec()==VideoCodec::RTX) {
 			//Try to find it on the rids and mids
 			auto it = mids.find(mid);
 			//If found
@@ -302,7 +292,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 				//And to the srtp session
 				recv.AddStream(ssrc);
 			}
-		} else if (extension.hasMediaStreamId) {
+		} else if (packet->HasMediaStreamId()) {
 			//Try to find it on the rids and mids
 			auto it = mids.find(mid);
 			//If found
@@ -342,21 +332,23 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 	}
 	
 	//Assing mid if found
-	if (group->mid.empty() && extension.hasMediaStreamId)
+	if (group->mid.empty() && packet->HasMediaStreamId())
 	{
+		//Get mid
+		auto mid = packet->GetMediaStreamId();
 		//Debug
-		Debug("-DTLSICETransport::onData() | Assinging media stream id [ssrc:%u,mid:'%s']\n",ssrc,extension.mid.c_str());
+		Debug("-DTLSICETransport::onData() | Assinging media stream id [ssrc:%u,mid:'%s']\n",ssrc,mid.c_str());
 		//Set it
-		group->mid = extension.mid;
+		group->mid = mid;
 		//Find mid 
-		auto it = mids.find(group->mid);
+		auto it = mids.find(mid);
 		//If not there
 		if (it!=mids.end())
 			//Append
 			it->second.insert(group);
 		else
 			//Add new set
-			mids[group->mid] = { group };
+			mids[mid] = { group };
 	}
 	
 	//UltraDebug("-Got RTP on media:%s sssrc:%u seq:%u pt:%u codec:%s rid:'%s', mid:'%s'\n",MediaFrame::TypeToString(group->type),ssrc,header.sequenceNumber,header.payloadType,GetNameForCodec(group->type,codec),group->rid.c_str(),group->mid.c_str());
@@ -2122,7 +2114,7 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 		source.Update(now/1000,packet->GetSeqNum(),len);
 		
 		 //Get bitrates
-		bitrate   = static_cast<DWORD>(source.acumulator.GetInstantAvg());
+		bitrate   = static_cast<DWORD>(source.acumulator.GetInstantAvg()*8);
 		estimated = source.remb;
 	}
 
