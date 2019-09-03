@@ -73,7 +73,7 @@ int VP6Decoder::DecodePacket(const BYTE *buffer,DWORD bufferLen,int lost,int las
 	return 0;
 }
 
-int VP6Decoder::Decode(BYTE *buffer,DWORD size)
+int VP6Decoder::Decode(const BYTE *buffer,DWORD size)
 {
 	//Decodificamos	
 	int got_picture=0, ret;
@@ -84,11 +84,11 @@ int VP6Decoder::Decode(BYTE *buffer,DWORD size)
 	if ( buffer[0]== 0 )
 	{
 		// Skip unused first byte
-		pkt.data = buffer + 1;
+		pkt.data = (uint8_t*)buffer + 1;
 	}
 	else
 	{
-		pkt.data = buffer;
+		pkt.data = (uint8_t*)buffer;
 	}
 	pkt.size = size;
 

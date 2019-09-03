@@ -336,14 +336,14 @@ int H264Decoder::DecodePacket(const BYTE *in,DWORD inLen,int lost,int last)
 	return ret;
 }
 
-int H264Decoder::Decode(BYTE *buffer,DWORD size)
+int H264Decoder::Decode(const BYTE *buffer,DWORD size)
 {
 	//Decodificamos
 	int got_picture=0;
 	//Decodificamos
 	AVPacket pkt;
 	av_init_packet(&pkt);
-	pkt.data = buffer;
+	pkt.data = (uint8_t*)buffer;
 	pkt.size = size;
 	int readed = avcodec_decode_video2(ctx, picture, &got_picture, &pkt);
 

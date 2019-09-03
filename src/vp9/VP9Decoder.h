@@ -1,23 +1,17 @@
-/* 
- * File:   vp8decoder.h
- * Author: Sergio
- *
- * Created on 13 de noviembre de 2012, 15:57
- */
-
-#ifndef VP8DECODER_H
-#define	VP8DECODER_H
+#ifndef VP9DECODER_H
+#define	VP9DECODER_H
 #include "config.h"
 #include "video.h"
 #define VPX_CODEC_DISABLE_COMPAT 1
 #include "vpx/vpx_decoder.h"
 #include "vpx/vp8dx.h"
+#include "VP9Depacketizer.h"
 
-class VP8Decoder : public VideoDecoder
+class VP9Decoder : public VideoDecoder
 {
 public:
-	VP8Decoder();
-	virtual ~VP8Decoder();
+	VP9Decoder();
+	virtual ~VP9Decoder();
 	virtual int DecodePacket(const BYTE *in,DWORD len,int lost,int last);
 	virtual int Decode(const BYTE *in,DWORD len);
 	virtual int GetWidth()	{return width;};
@@ -26,17 +20,14 @@ public:
 	virtual bool  IsKeyFrame();
 private:
 	vpx_codec_ctx_t  decoder;
-	BYTE*		buffer;
-	DWORD		bufLen;
-	DWORD 		bufSize;
+	VP9Depacketizer  depacketizer;
 	BYTE*		frame;
 	DWORD		frameSize;
-	BYTE		src;
 	DWORD		width;
 	DWORD		height;
 	bool		isKeyFrame;
 	bool		completeFrame;
 	bool		first;
 };
-#endif	/* VP8DECODER_H */
+#endif	/* VP9DECODER_H */
 

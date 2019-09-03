@@ -143,7 +143,7 @@ public:
 
 	virtual int GetWidth()=0;
 	virtual int GetHeight()=0;
-	virtual int Decode(BYTE *in,DWORD len) = 0;
+	virtual int Decode(const BYTE *in,DWORD len) = 0;
 	virtual int DecodePacket(const BYTE *in,DWORD len,int lost,int last)=0;
 	virtual BYTE* GetFrame()=0;
 	virtual bool  IsKeyFrame()=0;
