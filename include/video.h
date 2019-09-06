@@ -94,7 +94,12 @@ struct VideoBuffer
 		this->buffer = buffer;
 	}
 	
-	DWORD GetBufferSize()
+	BYTE* GetBufferData() const
+	{
+		return buffer;
+	}
+	
+	DWORD GetBufferSize() const
 	{
 		return (width*height*3)/2;
 	}
