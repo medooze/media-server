@@ -920,10 +920,10 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	rtxBitrate.Update(now/1000);
 	
 	//Check if we are sending way to much bitrate
-	if (rtxBitrate.GetInstantAvg()*8 > senderSideBandwidthEstimator.GetEstimatedBitrate())
+	if (rtxBitrate.GetInstantAvg()*8 > senderSideBandwidthEstimator.GetAvailableBitrate() * 0.30f)
 	{
 		//Error
-		UltraDebug("-DTLSICETransport::ReSendPacket() | Too much bitrate on rtx, skiping rtx:%lld estimated:%u\n",(uint64_t)(rtxBitrate.GetInstantAvg()*8), senderSideBandwidthEstimator.GetEstimatedBitrate());
+		Log("-DTLSICETransport::ReSendPacket() | Too much bitrate on rtx, skiping rtx:%lld estimated:%u\n",(uint64_t)(rtxBitrate.GetInstantAvg()*8), senderSideBandwidthEstimator.GetEstimatedBitrate());
 		//Skip
 		return;
 	}
@@ -2642,13 +2642,13 @@ void DTLSICETransport::Probe()
 		DWORD probing		= static_cast<DWORD>(probingBitrate.GetInstantAvg()*8);
 		DWORD target		= senderSideBandwidthEstimator.GetTargetBitrate();
 
-		//Log(">DTLSICETransport::Probe() | [target:%u,bitrate:%d,history:%d]\n",target,bitrate,history.size());
+		//Log(">DTLSICETransport::Probe() | [target:%u,bitrate:%d,probing:%d,history:%d]\n",target,bitrate,probing,history.size());
 			
 		//If we can still send more
-		if (target>bitrate && (!probingBitrateLimit || bitrate<probingBitrateLimit))
+		if (target>bitrate && (!probingBitrateLimit || bitrate<probingBitrateLimit) && (!maxProbingBitrate || probing<maxProbingBitrate))
 		{
 			//Increase probing bitrate
-			probing = maxProbingBitrate ? std::min(maxProbingBitrate,probing + target - bitrate) : probing + target - bitrate;
+			probing = maxProbingBitrate ? std::min(maxProbingBitrate, target - bitrate) : target - bitrate;
 
 			//Get size of probes
 			DWORD probingSize = (probing*sleep)/8000;

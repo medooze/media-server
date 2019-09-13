@@ -316,6 +316,7 @@
           <in>vp8encoder.cpp</in>
         </df>
         <df name="vp9">
+          <in>VP9Decoder.cpp</in>
           <in>VP9Depacketizer.cpp</in>
           <in>VP9LayerSelector.cpp</in>
           <in>VP9PayloadDescription.cpp</in>
@@ -2379,6 +2380,10 @@
         </ccTool>
       </item>
       <item path="src/vp8/vp8encoder.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="2">
+        </ccTool>
+      </item>
+      <item path="src/vp9/VP9Decoder.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="2">
         </ccTool>
       </item>
@@ -5462,6 +5467,10 @@
         </ccTool>
       </item>
       <item path="src/vp8/vp8encoder.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/vp9/VP9Decoder.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
         </ccTool>
       </item>
@@ -10425,6 +10434,10 @@
         <ccTool flags="0">
         </ccTool>
       </item>
+      <item path="src/vp9/VP9Decoder.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="0">
+        </ccTool>
+      </item>
       <item path="src/vp9/VP9Depacketizer.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="0">
         </ccTool>
@@ -13696,6 +13709,10 @@
         </ccTool>
       </item>
       <item path="src/vp8/vp8encoder.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/vp9/VP9Decoder.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
         </ccTool>
       </item>
@@ -17005,6 +17022,10 @@
         </ccTool>
       </item>
       <item path="src/vp8/vp8encoder.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/vp9/VP9Decoder.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
         </ccTool>
       </item>
