@@ -329,21 +329,21 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 		(state != ChangeState::OverShoot && lastChange + kStartupDuration < when)
 	)
 	{
-		Log("-SendSideBandwidthEstimation::EstimateBandwidthRate() [estimate:%llubps,target:%llubps,available:%llubps,sent:%llubps,recv:%llubps,rtx=%llubps,state:%d,delta=%d,media:%u,rtx:%d,overhead:%f,when:%llu,diff:%llu\n",
-			bandwidthEstimation,
-			targetBitrate,
-			availableRate,
-			totalSentBitrate,
-			totalRecvBitrate,
-			rtxSentBitrate,
-			state,
-			static_cast<int32_t>(accumulatedDelta/1000),
-			mediaSentAcumulator.GetAcumulated(),
-			rtxSentAcumulator.GetAcumulated(),
-			overhead,
-			when,
-			when - lastChange
-		);
+//		Log("-SendSideBandwidthEstimation::EstimateBandwidthRate() [estimate:%llubps,target:%llubps,available:%llubps,sent:%llubps,recv:%llubps,rtx=%llubps,state:%d,delta=%d,media:%u,rtx:%d,overhead:%f,when:%llu,diff:%llu\n",
+//			bandwidthEstimation,
+//			targetBitrate,
+//			availableRate,
+//			totalSentBitrate,
+//			totalRecvBitrate,
+//			rtxSentBitrate,
+//			state,
+//			static_cast<int32_t>(accumulatedDelta/1000),
+//			mediaSentAcumulator.GetAcumulated(),
+//			rtxSentAcumulator.GetAcumulated(),
+//			overhead,
+//			when,
+//			when - lastChange
+//		);
 		//Call listener	
 		listener->onTargetBitrateRequested(availableRate);
 		//Upddate last changed time
