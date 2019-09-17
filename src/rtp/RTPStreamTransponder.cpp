@@ -327,7 +327,7 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 			//Ensure we have desc
 			if (cloned->vp8PayloadDescriptor)
 			{
-				//Rewrite picture id wrapping to 15 or 7 bits
+				//Rewrite picture id
 				cloned->vp8PayloadDescriptor->pictureId = pictureId;
 				//Rewrite tl0 index
 				cloned->vp8PayloadDescriptor->temporalLevelZeroIndex = temporalLevelZeroIndex;

@@ -54,7 +54,7 @@ bool VP9LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 	
 	//if (desc.startOfLayerFrame)
 	//	//UltraDebug("-VP9LayerSelector::Select() | s:%d end:%d #%d T%dS%d P=%d D=%d S=%d %s\n", desc.startOfLayerFrame, desc.endOfLayerFrame, desc.pictureId,desc.temporalLayerId,desc.spatialLayerId,desc.interPicturePredictedLayerFrame,desc.interlayerDependencyUsed,desc.switchingPoint
-	//		,desc.interPicturePredictedLayerFrame==0 && desc.spatialLayerId==1 ? "<----------------------":"");
+//			,desc.interPicturePredictedLayerFrame==0 && desc.spatialLayerId==1 ? "<----------------------":"");
 	
 	//Store current temporal id
 	BYTE currentTemporalLayerId = temporalLayerId;
@@ -134,13 +134,13 @@ bool VP9LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 		//If this is not intra
 		if (!desc.interPicturePredictedLayerFrame)
 			//Discard
-			return 0;
+			return false;
 		//Stop waiting
 		waitingForIntra = 0;
 	}
 	
 	//RTP mark is set for the last frame layer of the selected layer
-	mark = packet->GetMark() || (desc.endOfLayerFrame && spatialLayerId==nextSpatialLayerId);
+	mark = packet->GetMark() || (desc.endOfLayerFrame && spatialLayerId==desc.spatialLayerId && nextSpatialLayerId<=spatialLayerId);
 	
 	//UltraDebug("-VP9LayerSelector::Select() | Accepting packet [extSegNum:%u,mark:%d,sid:%d,tid:%d,current:S%dL%d]\n",packet->GetExtSeqNum(),mark,desc.spatialLayerId,desc.temporalLayerId,spatialLayerId,temporalLayerId);
 	//Select
