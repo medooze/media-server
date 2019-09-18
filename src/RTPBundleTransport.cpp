@@ -145,8 +145,6 @@ int RTPBundleTransport::RemoveICETransport(const std::string &username)
 			snprintf(remote,sizeof(remote),"%s:%hu", candidate->GetIP(),candidate->GetPort());
 			//Remove from all candidates list
 			candidates.erase(std::string(remote));
-			//Delete candidate
-			delete(candidate);
 		}
 	
 		//Stop transport
@@ -402,7 +400,6 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 			//Get ice connection
 			Connection* connection = it->second;
 			DTLSICETransport* transport = connection->transport;
-			ICERemoteCandidate* candidate = NULL;
 			
 			//Inc stats
 			connection->iceRequestsReceived++;
@@ -425,22 +422,19 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 			//Get prio
 			DWORD prio = get4(priority->attr,0);
 			
-			//Find candidate
-			auto it2 = candidates.find(remote);
+			//Find candidate or try to create one if not present
+			auto [itc, inserted] = candidates.try_emplace(remote,ip,port,transport);
+			
+			//Get candidate
+			ICERemoteCandidate* candidate = &itc->second;
 			
 			//Check if it is not already present
-			if (it2==candidates.end())
+			if (inserted)
 			{
-				//Create new candidate
-				candidate = new ICERemoteCandidate(ip,port,transport);
-				//Add candidate and add it to the maps
-				candidates[remote] = candidate;
+				//Add it to the connection
 				connection->candidates.insert(candidate);
 				//We need to reply the first always
 				reply = true;
-			} else {
-				//Get it
-				candidate = it2->second;
 			}
 			
 			//Set it active
@@ -541,11 +535,8 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 		return;
 	}
 	
-	//Get ice transport
-	ICERemoteCandidate *ice = it->second;
-	
-	//Send data
-	ice->onData(data,size);
+	//Send data on ice transport
+	it->second.onData(data,size);
 }
 
 int RTPBundleTransport::AddRemoteCandidate(const std::string& username,const char* host, WORD port)
@@ -576,20 +567,15 @@ int RTPBundleTransport::AddRemoteCandidate(const std::string& username,const cha
 		Connection* connection = it->second;
 		DTLSICETransport* transport = connection->transport;
 
-		//Check if it is not already present
-		if (candidates.find(remote)!=candidates.end())
-		{
-			//Exit
-			Error("-RTPBundleTransport::AddRemoteCandidate already present [candidate:%s]\n",remote.c_str());
-			//Done
-			return;
-		}
-
-		//Create new candidate
-		ICERemoteCandidate* candidate = new ICERemoteCandidate(ip.c_str(),port,transport);
-		//Add candidate and add it to the maps
-		candidates[remote] = candidate;
-		connection->candidates.insert(candidate);
+		//Create new candidate if it is not already present
+		auto [itc, inserted] = candidates.try_emplace(remote,ip,port,transport);
+		//Get candidate
+		ICERemoteCandidate* candidate = &itc->second;
+	
+		//If it was new
+		if (inserted)
+			//Add candidate and add it to the connection
+			connection->candidates.insert(candidate);
 
 		//Create trans id
 		BYTE transId[12];

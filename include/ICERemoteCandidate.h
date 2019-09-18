@@ -33,28 +33,28 @@ public:
 		virtual int onData(const ICERemoteCandidate* candidate,const BYTE* data,DWORD size) = 0;
 	};
 public:
-	ICERemoteCandidate(const char *ip,const WORD port,Listener *listener)
+	
+	ICERemoteCandidate(const std::string& ip,const WORD port,Listener *listener) :
+		listener(listener)
 	{
-		//Store transport
-		this->listener = listener;
-
-		//Rset addr
-		memset(&addr,0,sizeof(sockaddr_in));
-		
+		//Set values
+		addr.sin_family		= AF_INET;
+		addr.sin_port		= htons(port);
+		addr.sin_addr.s_addr	= inet_addr(ip.c_str());
+	}
+	
+	ICERemoteCandidate(const char *ip,const WORD port,Listener *listener) :
+		listener(listener)
+	{
 		//Set values
 		addr.sin_family		= AF_INET;
 		addr.sin_port		= htons(port);
 		addr.sin_addr.s_addr	= inet_addr(ip);
 	}
 	
-	ICERemoteCandidate(const DWORD ipAddr ,const WORD port,Listener *listener)
+	ICERemoteCandidate(const DWORD ipAddr ,const WORD port,Listener *listener) :
+		listener(listener)
 	{
-		//Store transport
-		this->listener = listener;
-
-		//Rset addr
-		memset(&addr,0,sizeof(sockaddr_in));
-		
 		//Set values
 		addr.sin_family		= AF_INET;
 		addr.sin_port		= htons(port);
@@ -66,14 +66,14 @@ public:
 		return listener->onData(this,data,size);
 	}
 	
-	const sockaddr* GetAddress()	const { return (const sockaddr*)&addr;	}
-	      DWORD     GetAddressLen() const { return sizeof(sockaddr_in);	}
-	const char*	GetIP()		const { return inet_ntoa(addr.sin_addr);}
+	const sockaddr* GetAddress()	const { return (const sockaddr*)&addr;		}
+	      DWORD     GetAddressLen() const { return sizeof(sockaddr_in);		}
+	const char*	GetIP()		const { return inet_ntoa(addr.sin_addr);	}
 	      DWORD     GetIPAddress()  const { return ntohl(addr.sin_addr.s_addr);	}
-	      WORD	GetPort()	const {	return ntohs(addr.sin_port);	}
+	      WORD	GetPort()	const {	return ntohs(addr.sin_port);		}
 
 private:
-	sockaddr_in addr;
+	sockaddr_in addr	= {};
 	Listener *listener;
 };
 

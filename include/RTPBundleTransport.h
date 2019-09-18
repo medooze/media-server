@@ -7,6 +7,7 @@
 #include <arpa/inet.h>
 #include <map>
 #include <string>
+#include <memory>
 #include <poll.h>
 #include <srtp2/srtp.h>
 #include "config.h"
@@ -55,7 +56,7 @@ public:
 	TimeService& GetTimeService()	{ return loop;			}
 private:
 	typedef std::map<std::string,Connection*> Connections;
-	typedef std::map<std::string,ICERemoteCandidate*> RTPICECandidates;
+	typedef std::map<std::string,ICERemoteCandidate> RTPICECandidates;
 private:
 	//Sockets
 	int 	socket;

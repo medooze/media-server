@@ -59,7 +59,7 @@ public:
 	void SetMark(bool mark)			{ header.mark = mark;			}
 	void SetSSRC(DWORD ssrc)		{ header.ssrc = ssrc;			}
 	void SetPayloadType(DWORD payloadType)	{ header.payloadType = payloadType;	}
-	void SetType(DWORD payloadType)		{ SetType(payloadType);			} //Deprecated
+	void SetType(DWORD payloadType)		{ SetPayloadType(payloadType);		} //Deprecated
 	void SetPadding(WORD padding)		{ header.padding = padding;		}
 	void SetMediaTpe(MediaFrame::Type media){ this->media = media;			}
 	void SetCodec(BYTE codec)		{ this->codec = codec;			}
