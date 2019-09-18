@@ -1,9 +1,9 @@
 #ifndef _MP4PLAYER_H_
 #define _MP4PLAYER_H_
 
-#include "pipeaudioinput.h"
-#include "pipevideoinput.h"
-#include "pipetextinput.h"
+#include "audio.h"
+#include "video.h"
+#include "text.h"
 #include "mp4streamer.h"
 #include "codecs.h"
 

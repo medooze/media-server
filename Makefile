@@ -114,6 +114,7 @@ OBJSLIB = ${CORE} ${RTP} ${RTCP} $(DEPACKETIZERSOBJ) $(MP4)
 OBJSTEST = $(OBJS) test/main.o test/test.o test/h264.o test/aac.o test/cpim.o test/rtp.o test/fec.o test/overlay.o test/vp8.o test/vp9.o
 
 
+BUILDOBJS = $(addprefix $(BUILD)/,$(OBJSMCU))
 BUILDOBJSMCU = $(addprefix $(BUILD)/,$(OBJSMCU))
 BUILDOBJSBASE  = $(addprefix $(BUILD)/,$(OBJSBASE))
 BUILDOBJOBJSLIB = $(addprefix $(BUILD)/,$(OBJSLIB))
@@ -148,7 +149,7 @@ VPATH +=  %.cpp $(SRCDIR)/ext/libdatachannels/src
 VPATH +=  %.cc  $(SRCDIR)/ext/crc32c/src/
 
 
-INCLUDE+= -I$(SRCDIR)/src -I$(SRCDIR)/include/ $(VADINCLUDE) -I$(SRCDIR)/ext/libdatachannels/src -I$(SRCDIR)/ext/libdatachannels/src/internal -I$(SRCDIR)/ext/crc32c/include -I$(SRCDIR)/ext/crc32c/config/${OS}-${PLATFORM}/
+INCLUDE+= -I/usr/local/include -I$(SRCDIR)/src -I$(SRCDIR)/include/ $(VADINCLUDE) -I$(SRCDIR)/ext/libdatachannels/src -I$(SRCDIR)/ext/libdatachannels/src/internal -I$(SRCDIR)/ext/crc32c/include -I$(SRCDIR)/ext/crc32c/config/${OS}-${PLATFORM}/
 
 ifeq ($(STATIC_OPENSSL),yes)
 	INCLUDE+= -I$(OPENSSL_DIR)/include
@@ -279,3 +280,6 @@ libmediaserver.a: touch mkdirs $(OBJSLIB)
 	${AR} rsc  $(BIN)/$@ $(BUILDOBJOBJSLIB)
 	@echo [OUT] $(TAG) $(BIN)/$@
  
+libmediamixer.a: touch mkdirs $(OBJS)
+	${AR} rsc  $(BIN)/$@ $(BUILDOBJS)
+	@echo [OUT] $(TAG) $(BIN)/$@
