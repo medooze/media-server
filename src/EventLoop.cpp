@@ -427,6 +427,9 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 	{
 		//If we have anything to send set to wait also for write events
 		ufds[0].events = sending.size_approx() ? POLLIN | POLLOUT | POLLERR | POLLHUP : POLLIN | POLLERR | POLLHUP;
+		//Clear readed events
+		ufds[0].revents = 0;
+		ufds[1].revents = 0;
 		
 		//Until signaled
 		int timeout = -1;
@@ -466,7 +469,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 		if ((ufds[0].revents & POLLHUP) || (ufds[0].revents & POLLERR) || (ufds[1].revents & POLLHUP) || (ufds[1].revents & POLLERR))
 		{
 			//Error
-			Log("-EventLoop::Run() | Pool error event [%d]\n",ufds[0].revents);
+			Log("-EventLoop::Run() | Pool error event [revents:%d,errno:%d]\n",ufds[0].revents,errno);
 			//Exit
 			break;
 		}
@@ -481,7 +484,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 			ssize_t len = recvfrom(fd,data,size,MSG_DONTWAIT,(sockaddr*)&from,&fromLen);
 			//If error
 			if (len<=0)
-				UltraDebug("-EventLoop::Run() | recvfrom errno:d\n",errno);
+				UltraDebug("-EventLoop::Run() | recvfrom error [len:%d,errno:%d\n",len,errno);
 			//If we got listener
 			else if (listener)
 				//Run callback
