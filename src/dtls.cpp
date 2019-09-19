@@ -819,8 +819,6 @@ int DTLSConnection::Write(const BYTE *buffer, DWORD size)
 		return 0;
 	}
 	
-
-	
 	//Done
 	return 1;
 }
@@ -834,6 +832,6 @@ void DTLSConnection::CheckPending()
 	//Reschedule timer
 	timeval tv = {};
 	if (timeout && DTLSv1_get_timeout(ssl, &tv))
-		timeout->Again(std::chrono::milliseconds(getTime(&tv)/1000));
+		timeout->Again(std::chrono::milliseconds(getTime(tv)/1000));
 }
 
