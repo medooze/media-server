@@ -788,11 +788,6 @@ int DTLSConnection::Write(const BYTE *buffer, DWORD size)
 
 	BIO_write(read_bio, buffer, size);
 	
-	//Reschedule timer
-	struct timeval tv = {0,0};
-	if (DTLSv1_get_timeout(ssl, &tv))
-		timeout->Again(std::chrono::milliseconds(getDifTime(&tv)));
-	
 	BYTE msg[MTU];
 	int len = SSL_read(ssl, msg, MTU);
 	
@@ -820,7 +815,11 @@ int DTLSConnection::Write(const BYTE *buffer, DWORD size)
 		listener.onDTLSShutdown();
 		return 0;
 	}
-
+	
+	//Check pending dtls data for sending
+	CheckPending();
+	
+	//Done
 	return 1;
 }
 
@@ -830,5 +829,9 @@ void DTLSConnection::CheckPending()
 	//Check if there is any pending 
 	if (BIO_ctrl_pending(write_bio))
 		listener.onDTLSPendingData();
+	//Reschedule timer
+	timeval tv = {};
+	if (timeout && DTLSv1_get_timeout(ssl, &tv))
+		timeout->Again(std::chrono::milliseconds(getDifTime(&tv)));
 }
 

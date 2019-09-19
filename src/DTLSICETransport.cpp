@@ -67,9 +67,9 @@ void DTLSICETransport::onDTLSPendingData()
 	{
 		Packet buffer;
 		//Read from dtls
-		size_t len=dtls.Read(buffer.GetData(),buffer.GetCapacity());
+		size_t len = dtls.Read(buffer.GetData(),buffer.GetCapacity());
 		//Check result
-		if (!len)
+		if (len<=0)
 			break;
 		//Set read size
 		buffer.SetSize(len);
@@ -93,26 +93,6 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 	{
 		//Feed it
 		dtls.Write(data,size);
-
-		//Read buffers are always MTU size
-		//TODO: reuse incoming buffer
-		Packet buffer;
-		
-		//Read data from it
-		DWORD len = dtls.Read(buffer.GetData(),buffer.GetCapacity());
-		
-		//Check it
-		if (len<=0)
-			return 0;
-		
-		//Set buffer size
-		buffer.SetSize(len);
-		//Send it back
-		sender->Send(candidate,std::move(buffer));
-		
-		//Acumulate bitrate
-		outgoingBitrate.Update(getTimeMS(),len);
-		
 		//Exit
 		return 1;
 	}
