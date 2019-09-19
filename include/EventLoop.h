@@ -77,6 +77,8 @@ public:
 	
 	bool SetAffinity(int cpu);
 	
+	bool IsRunning() const { return running; }
+	
 protected:
 	void Signal();
 	inline void AssertThread() const { assert(std::this_thread::get_id()==thread.get_id()); }
@@ -100,14 +102,14 @@ private:
 	static size_t MaxSendingQueueSize;
 private:
 	std::thread	thread;
-	State		state = State::Normal;
-	Listener*	listener = nullptr;
-	int		fd = 0;
-	int		pipe[2] = {};
-	pollfd		ufds[2] = {};
-	volatile bool	signaled = false;
-	volatile bool	running = false;
-	std::chrono::milliseconds now = 0ms;
+	State		state		= State::Normal;
+	Listener*	listener	= nullptr;
+	int		fd		= 0;
+	int		pipe[2]		= {};
+	pollfd		ufds[2]		= {};
+	volatile bool	signaled	= false;
+	volatile bool	running		= false;
+	std::chrono::milliseconds now	= 0ms;
 	moodycamel::ConcurrentQueue<SendBuffer>	sending;
 	moodycamel::ConcurrentQueue<std::pair<std::promise<void>,std::function<void(std::chrono::milliseconds)>>>  tasks;
 	std::multimap<std::chrono::milliseconds,TimerImpl::shared> timers;

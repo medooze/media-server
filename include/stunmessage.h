@@ -107,6 +107,7 @@ public:
 	STUNMessage* CreateResponse();
 	DWORD AuthenticatedFingerPrint(BYTE* data,DWORD size,const char* pwd);
 	DWORD NonAuthenticatedFingerPrint(BYTE* data,DWORD size);
+	bool CheckAuthenticatedFingerPrint(const BYTE* data,DWORD size,const char* pwd);
 	DWORD GetSize();
 	Attribute* GetAttribute(Attribute::Type type);
 	bool  HasAttribute(Attribute::Type type);
@@ -120,8 +121,9 @@ public:
 	void  AddXorAddressAttribute(uint32_t addr, uint16_t port);
 	void  AddUsernameAttribute(const char* local,const char* remote);
 
-	Type GetType()		{ return type; }
-	Method GetMethod()	{ return method; }
+	Type   GetType()		const { return type;	}
+	Method GetMethod()		const { return method;	}
+	const BYTE*  GetTransactionId()	const { return transId; }
 	
 	void Dump();
 	

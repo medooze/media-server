@@ -621,8 +621,6 @@ public:
 			if (parsed)
 				parsed->Dump();
 		}
-		
-		exit(0);
 	}
 	
 	void testRTPPacket()

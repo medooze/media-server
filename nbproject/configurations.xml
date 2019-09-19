@@ -416,6 +416,7 @@
         <in>main.cpp</in>
         <in>overlay.cpp</in>
         <in>rtp.cpp</in>
+        <in>stun.cpp</in>
         <in>test.cpp</in>
         <in>vp8.cpp</in>
         <in>vp9.cpp</in>
@@ -2494,6 +2495,8 @@
       <item path="test/rtp.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="2">
         </ccTool>
+      </item>
+      <item path="test/stun.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="test/test.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="2">
@@ -5678,6 +5681,8 @@
             <Elem>DARWIN</Elem>
           </preprocessorList>
         </ccTool>
+      </item>
+      <item path="test/stun.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="test/test.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
@@ -10598,6 +10603,8 @@
         <ccTool flags="0">
         </ccTool>
       </item>
+      <item path="test/stun.cpp" ex="false" tool="1" flavor2="0">
+      </item>
       <item path="test/test.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="0">
         </ccTool>
@@ -13923,6 +13930,8 @@
           </preprocessorList>
         </ccTool>
       </item>
+      <item path="test/stun.cpp" ex="false" tool="1" flavor2="0">
+      </item>
       <item path="test/test.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
@@ -17235,6 +17244,8 @@
             <Elem>DARWIN</Elem>
           </preprocessorList>
         </ccTool>
+      </item>
+      <item path="test/stun.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="test/test.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">

@@ -21,15 +21,17 @@ class RTPBundleTransport :
 public:
 	struct Connection
 	{
-		Connection(DTLSICETransport* transport,bool disableSTUNKeepAlive)
+		Connection(const std::string& username, DTLSICETransport* transport,bool disableSTUNKeepAlive)
 		{
+			this->username = username;
 			this->transport = transport;
 			this->disableSTUNKeepAlive = disableSTUNKeepAlive;
 		}
 		
+		std::string username;
 		DTLSICETransport* transport;
 		std::set<ICERemoteCandidate*> candidates;
-		bool disableSTUNKeepAlive;
+		bool disableSTUNKeepAlive	= false;
 		size_t iceRequestsSent		= 0;
 		size_t iceRequestsReceived	= 0;
 		size_t iceResponsesSent		= 0;
@@ -55,8 +57,7 @@ public:
 	bool SetAffinity(int cpu)	{ return loop.SetAffinity(cpu); }
 	TimeService& GetTimeService()	{ return loop;			}
 private:
-	typedef std::map<std::string,Connection*> Connections;
-	typedef std::map<std::string,ICERemoteCandidate> RTPICECandidates;
+	void SendBindingRequest(Connection* connection,ICERemoteCandidate* candidate);
 private:
 	//Sockets
 	int 	socket;
@@ -64,8 +65,10 @@ private:
 	
 	EventLoop loop;
 
-	Connections	 connections;
-	RTPICECandidates candidates;
+	std::map<std::string,Connection*>	 connections;
+	std::map<std::string,ICERemoteCandidate> candidates;
+	std::map<std::pair<uint64_t,uint32_t>,std::string> transactions;
+	uint32_t maxTransId = 0;
 	Use	use;
 };
 

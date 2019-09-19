@@ -47,14 +47,13 @@ RTPBundleTransport::RTPBundleTransport() :
 **************************/
 RTPBundleTransport::~RTPBundleTransport()
 {
-	Debug("-RTPBundleTransport::~RTPBundleTransport()\n");
 	//End)
 	End();
 }
 
 RTPBundleTransport::Connection* RTPBundleTransport::AddICETransport(const std::string &username,const Properties& properties)
 {
-	Log("-RTPBundleTransport::AddICETransport [%s]\n",username.c_str());
+	Log("-RTPBundleTransport::AddICETransport() | [%s]\n",username.c_str());
 	
 	Properties ice;
 	Properties dtls;
@@ -67,7 +66,7 @@ RTPBundleTransport::Connection* RTPBundleTransport::AddICETransport(const std::s
 	if (!ice.HasProperty("remoteUsername") || !ice.HasProperty("remotePassword") || !ice.HasProperty("localUsername") || !ice.HasProperty("localPassword"))
 	{
 		//Error
-		Error("-Missing ICE properties\n");
+		Error("-RTPBundleTransport::AddICETransport() | Missing ICE properties\n");
 		//Error
 		return NULL;
 	}
@@ -76,7 +75,7 @@ RTPBundleTransport::Connection* RTPBundleTransport::AddICETransport(const std::s
 	if (!dtls.HasProperty("setup") || !dtls.HasProperty("fingerprint") || !dtls.HasProperty("hash"))
 	{
 		//Error
-		Error("-Missing DTLS properties\n");
+		Error("-RTPBundleTransport::AddICETransport() | Missing DTLS properties\n");
 		//Error
 		return NULL;
 	}
@@ -96,7 +95,7 @@ RTPBundleTransport::Connection* RTPBundleTransport::AddICETransport(const std::s
 	transport->SetRemoteCryptoDTLS(dtls.GetProperty("setup"),dtls.GetProperty("hash"),dtls.GetProperty("fingerprint"));
 	
 	//Create connection
-	auto connection = new Connection(transport,properties.GetProperty("disableSTUNKeepAlive", false));
+	auto connection = new Connection(username,transport,properties.GetProperty("disableSTUNKeepAlive", false));
 	
 	//Synchronized
 	loop.Async([=](...){
@@ -124,7 +123,7 @@ int RTPBundleTransport::RemoveICETransport(const std::string &username)
 		if (it==connections.end())
 		{
 			//Error
-			Error("-ICE transport not found\n");
+			Error("-RTPBundleTransport::RemoveICETransport() | ICE transport not found\n");
 			//Done
 			return;
 		}
@@ -310,6 +309,10 @@ int RTPBundleTransport::Init(int port)
 *********************************/
 int RTPBundleTransport::End()
 {
+	//Check we are already running
+	if (!loop.IsRunning())
+		return 0;
+	
 	Log(">RTPBundleTransport::End()\n");
 
 	//Stop just in case
@@ -356,7 +359,7 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 		if (!stun)
 		{
 			//Error
-			Error("-RTPBundleTransport::ReadRTP() | failed to parse STUN message\n");
+			Error("-RTPBundleTransport::Read() | failed to parse STUN message\n");
 			//Done
 			return;
 		}
@@ -373,7 +376,7 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 			if (!stun->HasAttribute(STUNMessage::Attribute::Username))
 			{
 				//Error
-				Debug("-STUN Message without username attribute\n");
+				Debug("-RTPBundleTransport::Read() | STUN Message without username attribute\n");
 				//DOne
 				return;
 			}
@@ -392,7 +395,7 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 			{
 				//TODO: Reject
 				//Error
-				Debug("-RTPBundleTransport::Read ice username not found [%s}\n",username.c_str());
+				Debug("-RTPBundleTransport::Read() | ICE username not found [%s}\n",username.c_str());
 				//Done
 				return;
 			}
@@ -401,6 +404,15 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 			Connection* connection = it->second;
 			DTLSICETransport* transport = connection->transport;
 			
+			//Authenticate request with remote username
+			if (!stun->CheckAuthenticatedFingerPrint(data,size,transport->GetLocalPwd()))
+			{
+				//Error
+				Error("-RTPBundleTransport::Read() | STUN Message request failed authentication [pwd:%s]\n",transport->GetLocalPwd());
+				//DOne
+				return;
+			}
+			
 			//Inc stats
 			connection->iceRequestsReceived++;
 
@@ -408,7 +420,7 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 			if (!stun->HasAttribute(STUNMessage::Attribute::Priority))
 			{
 				//Error
-				Debug("-STUN Message without priority attribute");
+				Debug("-RTPBundleTransport::Read() | STUN Message without priority attribute\n");
 				//DOne
 				return;
 			}
@@ -420,7 +432,7 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 			STUNMessage::Attribute* priority = stun->GetAttribute(STUNMessage::Attribute::Priority);
 			
 			//Get prio
-			DWORD prio = get4(priority->attr,0);
+			DWORD prio = priority ? get4(priority->attr,0) : 0;
 			
 			//Find candidate or try to create one if not present
 			auto [itc, inserted] = candidates.try_emplace(remote,ip,port,transport);
@@ -431,6 +443,7 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 			//Check if it is not already present
 			if (inserted)
 			{
+				Log("-RTPBundleTransport::Read() | Got new remote ICE candidate [remote:%s]\n",remote);
 				//Add it to the connection
 				connection->candidates.insert(candidate);
 				//We need to reply the first always
@@ -463,48 +476,36 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 
 			//If the STUN keep alive response is not disabled
 			if (reply)
-			{
-				len = 0;
-				//Create trans id
-				BYTE transId[12];
-				//Set first to 0
-				set4(transId,0,0);
-				//Set timestamp as trans id
-				set8(transId,4,getTime());
-				//Create binding request to send back
-				auto request = std::make_unique<STUNMessage>(STUNMessage::Request,STUNMessage::Binding,transId);
-				//Add username
-				request->AddUsernameAttribute(transport->GetLocalUsername(),transport->GetRemoteUsername());
-				//Add other attributes
-				request->AddAttribute(STUNMessage::Attribute::IceControlled,(QWORD)1);
-				request->AddAttribute(STUNMessage::Attribute::Priority,(DWORD)33554431);
-
-				//Create new mesage
-				Packet buffer;
-				
-				//Serialize and autenticate
-				size_t len = request->AuthenticatedFingerPrint(buffer.GetData(),buffer.GetCapacity(),transport->GetRemotePwd());
-
-				//resize
-				buffer.SetSize(len);
-				
-				//Send response
-				loop.Send(ip,port,std::move(buffer));
-				
-				//Inc stats
-				connection->iceRequestsSent++;
-			}
+				//Send back an ice request
+				SendBindingRequest(connection,candidate);
 		} else if (type==STUNMessage::Response && method==STUNMessage::Binding) {
-			//TODO: map incoming resposnes with sent request based on transaction ids
-			/*/
+			
+			//Get ts and id
+			uint32_t id = get4(stun->GetTransactionId(),0);
+			uint64_t ts = get8(stun->GetTransactionId(),4);
+			
+			//Find transaction
+			auto itt = transactions.find({ts,id});
+			
+			//If not found
+			if (itt==transactions.end())
+			{
+				//Error
+				Debug("-RTPBundleTransport::Read() | transaction not found [id:%u,ts:%llu]",id,ts);
+				//Done
+				return;
+			}
+			//Get username
+			std::string& username = itt->second;
+				
+			//Check if we have an ICE transport for that username
 			auto it = connections.find(username);
 			
 			//If not found
 			if (it==connections.end())
 			{
-				//TODO: Reject
 				//Error
-				Debug("-RTPBundleTransport::Read ice username not found [%s}\n",username.c_str());
+				Debug("-RTPBundleTransport::Read() | ICE username not found for response [%s}\n",username.c_str());
 				//Done
 				return;
 			}
@@ -512,11 +513,41 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 			//Get ice connection
 			Connection* connection = it->second;
 			DTLSICETransport* transport = connection->transport;
-			ICERemoteCandidate* candidate = NULL;
+			
+			//Find candidate
+			auto it2 = candidates.find(remote);
+			
+			//Check we have it
+			if (it2==candidates.end())
+			{
+				//Error
+				Debug("-RTPBundleTransport::Read() | remote candidate not found for response [remote:%s}\n",remote);
+				return;
+			}
+		
+			//Get it
+			ICERemoteCandidate* candidate = &it2->second;
+			
+			//Authenticate request with remote username
+			if (!stun->CheckAuthenticatedFingerPrint(data,size,transport->GetRemotePwd()))
+			{
+				//Error
+				Error("-RTPBundleTransport::Read() | STUN Message response failed authentication [pwd:%s]\n",transport->GetRemotePwd());
+				//DOne
+				return;
+			}
+
+			//Get attribute
+			STUNMessage::Attribute* priority = stun->GetAttribute(STUNMessage::Attribute::Priority);
+
+			//Get prio
+			DWORD prio = priority ? get4(priority->attr,0) : 0;
+
+			//Set it active
+			transport->ActivateRemoteCandidate(candidate,stun->HasAttribute(STUNMessage::Attribute::UseCandidate),prio);
 			
 			//Inc stats
 			connection->iceResponsesReceived++;
-			*/
 		}
 
 		//Exit
@@ -530,7 +561,7 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 	if (it==candidates.end())
 	{
 		//Error
-		Debug("-RTPBundleTransport::ReadRTP() | No registered ICE candidate for [%s]\n",remote);
+		Debug("-RTPBundleTransport::Read() | No registered ICE candidate for [%s]\n",remote);
 		//DOne
 		return;
 	}
@@ -541,7 +572,7 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 
 int RTPBundleTransport::AddRemoteCandidate(const std::string& username,const char* host, WORD port)
 {
-	Log("-RTPBundleTransport::AddRemoteCandidate [username:%s,candidate:%s:%u}\n",username.c_str(),host,port);
+	Log("-RTPBundleTransport::AddRemoteCandidate() [username:%s,candidate:%s:%u}\n",username.c_str(),host,port);
 	
 	//Copy ip 
 	auto ip = std::string(host);
@@ -555,20 +586,21 @@ int RTPBundleTransport::AddRemoteCandidate(const std::string& username,const cha
 		if (it==connections.end())
 		{
 			//Exit
-			Error("-RTPBundleTransport::AddRemoteCandidate:: ice username not found [%s}\n",username.c_str());
+			Error("-RTPBundleTransport::AddRemoteCandidate() | ICE username not found [username:%s}\n",username.c_str());
 			//Done
 			return;
 		}
 		
-		//Get remote ip:port address
-		std::string remote = ip + ":" + std::to_string(port);
-
 		//Get ice connection
 		Connection* connection = it->second;
 		DTLSICETransport* transport = connection->transport;
-
+		
+		//Get remote ip:port address
+		std::string remote = ip + ":" + std::to_string(port);
+		
 		//Create new candidate if it is not already present
 		auto [itc, inserted] = candidates.try_emplace(remote,ip,port,transport);
+		
 		//Get candidate
 		ICERemoteCandidate* candidate = &itc->second;
 	
@@ -577,35 +609,59 @@ int RTPBundleTransport::AddRemoteCandidate(const std::string& username,const cha
 			//Add candidate and add it to the connection
 			connection->candidates.insert(candidate);
 
-		//Create trans id
-		BYTE transId[12];
-		//Set first to 0
-		set4(transId,0,0);
-		//Set timestamp as trans id
-		set8(transId,4,getTime());
-		//Create binding request to send back
-		STUNMessage *request = new STUNMessage(STUNMessage::Request,STUNMessage::Binding,transId);
-		//Add username
-		request->AddUsernameAttribute(transport->GetLocalUsername(),transport->GetRemoteUsername());
-		//Add other attributes
-		request->AddAttribute(STUNMessage::Attribute::IceControlled,(QWORD)1);
-		request->AddAttribute(STUNMessage::Attribute::Priority,(DWORD)33554431);
-
-		//Create new mesage
-		Packet buffer;
+		//Send binding request in any case
+		SendBindingRequest(connection,candidate);
 		
-		//Serialize and autenticate
-		size_t len = request->AuthenticatedFingerPrint(buffer.GetData(),buffer.GetCapacity(),transport->GetRemotePwd());
-		
-		//resize
-		buffer.SetSize(len);
-
-		//Send it
-		loop.Send(candidate->GetIPAddress(),candidate->GetPort(),std::move(buffer));
-
-		//Clean request
-		delete(request);
 	}).wait();
 	
 	return 1;
+}
+
+
+void RTPBundleTransport::SendBindingRequest(Connection* connection,ICERemoteCandidate* candidate)
+{
+	//Get transport
+	DTLSICETransport* transport = connection->transport;
+	
+	//Create transaction
+	uint32_t id	= maxTransId++;
+	uint64_t ts	= getTime();
+	//Create trans id
+	BYTE transId[12];
+	//Set data
+	set4(transId,0,id);
+	set8(transId,4,ts);
+	
+	//Add to outgoing transactions
+	transactions[{ts,id}] = connection->username;
+				
+	//Create binding request to send back
+	auto request = std::make_unique<STUNMessage>(STUNMessage::Request,STUNMessage::Binding,transId);
+	//Add username
+	request->AddUsernameAttribute(transport->GetLocalUsername(),transport->GetRemoteUsername());
+	//Add other attributes
+	request->AddAttribute(STUNMessage::Attribute::IceControlled,(QWORD)1);
+	request->AddAttribute(STUNMessage::Attribute::Priority,(DWORD)33554431);
+
+	//Create new mesage
+	Packet buffer;
+
+	//Serialize and autenticate
+	size_t len = request->AuthenticatedFingerPrint(buffer.GetData(),buffer.GetCapacity(),transport->GetRemotePwd());
+
+	//resize
+	buffer.SetSize(len);
+
+	//Send it
+	loop.Send(candidate->GetIPAddress(),candidate->GetPort(),std::move(buffer));
+
+	//Inc stats
+	connection->iceRequestsSent++;
+	
+	//Delete old transactions
+	for (auto it = transactions.begin();it != transactions.end(); it = transactions.erase(it))
+		//Remove last 5s transactions
+		if (it->first.first + 5E6 > ts)
+			//Done
+			break;
 }
