@@ -1103,6 +1103,9 @@ void  DTLSICETransport::ActivateRemoteCandidate(ICERemoteCandidate* candidate,bo
 		
 		//Send data to this one from now on
 		active = candidate;
+		
+		//Launch event
+		if (listener)listener->onRemoteICECandidateActivated(candidate->GetIP(),candidate->GetPort(),priority);
 	}
 	
 	// Needed for DTLS in client mode (otherwise the DTLS "Client Hello" is not sent over the wire)

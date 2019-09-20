@@ -52,6 +52,7 @@ public:
 	{
 	public:
 		virtual void onDTLSStateChanged(const DTLSState) = 0;
+		virtual void onRemoteICECandidateActivated(const std::string& ip, uint16_t port, uint32_t priority) = 0;
 		virtual ~Listener() = default;
 	};
 	class Sender

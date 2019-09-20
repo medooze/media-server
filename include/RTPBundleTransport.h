@@ -54,9 +54,11 @@ public:
 	
 	virtual void OnRead(const int fd, const uint8_t* data, const size_t size, const uint32_t ip, const uint16_t port) override;
 	
-	bool SetAffinity(int cpu)	{ return loop.SetAffinity(cpu); }
-	TimeService& GetTimeService()	{ return loop;			}
+	void SetIceTimeout(uint32_t timeout)	{ iceTimeout = std::chrono::milliseconds(timeout);	}
+	bool SetAffinity(int cpu)		{ return loop.SetAffinity(cpu);				}
+	TimeService& GetTimeService()		{ return loop;						}
 private:
+	void onTimer(std::chrono::milliseconds now);
 	void SendBindingRequest(Connection* connection,ICERemoteCandidate* candidate);
 private:
 	//Sockets
@@ -64,10 +66,12 @@ private:
 	int 	port;
 	
 	EventLoop loop;
+	Timer::shared iceTimer;
+	std::chrono::milliseconds iceTimeout = 10000ms;
 
 	std::map<std::string,Connection*>	 connections;
 	std::map<std::string,ICERemoteCandidate> candidates;
-	std::map<std::pair<uint64_t,uint32_t>,std::string> transactions;
+	std::map<std::pair<uint64_t,uint32_t>,std::pair<std::string,std::string>> transactions;
 	uint32_t maxTransId = 0;
 	Use	use;
 };
