@@ -19,7 +19,7 @@ public:
 	PCAPFile() = default;
 	~PCAPFile();
 	int Open(const char* filename);
-	virtual void WriteUDP(QWORD currentTimeMillis,DWORD originIp, short originPort, DWORD destIp, short destPort,const BYTE* data, DWORD size) override;
+	virtual void WriteUDP(QWORD currentTimeMillis,DWORD originIp, short originPort, DWORD destIp, short destPort,const BYTE* data, DWORD size, DWORD truncate = 0) override;
 	virtual void Close() override;
 private:
 	int fd = -1;

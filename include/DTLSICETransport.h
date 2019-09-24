@@ -74,8 +74,8 @@ public:
 	virtual int SendPLI(DWORD ssrc) override;
 	virtual int Enqueue(const RTPPacket::shared& packet) override;
 	virtual int Enqueue(const RTPPacket::shared& packet,std::function<RTPPacket::shared(const RTPPacket::shared&)> modifier) override;
-	int Dump(const char* filename, bool inbound = true, bool outbound = true, bool rtcp = true);
-	int Dump(UDPDumper* dumper, bool inbound = true, bool outbound = true, bool rtcp = true);
+	int Dump(const char* filename, bool inbound = true, bool outbound = true, bool rtcp = true, bool rtpHeadersOnly = false);
+	int Dump(UDPDumper* dumper, bool inbound = true, bool outbound = true, bool rtcp = true, bool rtpHeadersOnly = false);
         int DumpBWEStats(const char* filename);
 	void Reset();
 	
@@ -185,6 +185,7 @@ private:
 	bool dumpInRTP			= false;
 	bool dumpOutRTP			= false;
 	bool dumpRTCP			= false;
+	bool dumpRTPHeadersOnly		= false;
 	volatile bool probe		= false;
 	DWORD maxProbingBitrate		= 1024*1000;
 	DWORD probingBitrateLimit	= maxProbingBitrate *4;

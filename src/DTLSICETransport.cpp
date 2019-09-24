@@ -150,11 +150,6 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		//Error
 		return Error("-DTLSICETransport::onData() | Error unprotecting rtp packet [%s]\n",recv.GetLastError());
 	
-	//If dumping
-	if (dumper && dumpInRTP)
-		//Write udp packet
-		dumper->WriteUDP(getTimeMS(),candidate->GetIPAddress(),candidate->GetPort(),0x7F000001,5004,data,len);
-	
 	//Parse rtp packet
 	RTPPacket::shared packet = RTPPacket::Parse(data,len,recvMaps.rtp,recvMaps.ext);
 	
@@ -162,6 +157,15 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 	if (!packet)
 		//Error
 		return Error("-DTLSICETransport::onData() | Could not parse rtp packet\n");
+	
+	//If dumping
+	if (dumper && dumpInRTP)
+	{
+		//Get truncate size
+		DWORD truncate = dumpRTPHeadersOnly ? len - packet->GetMediaLength() + 16 : 0;
+		//Write udp packet
+		dumper->WriteUDP(getTimeMS(),candidate->GetIPAddress(),candidate->GetPort(),0x7F000001,5004,data,len, truncate);
+	}
 	
 	//Get ssrc
 	DWORD ssrc = packet->GetSSRC();
@@ -650,8 +654,12 @@ DWORD DTLSICETransport::SendProbe(const RTPPacket::shared& packet)
 
 	//If dumping
 	if (dumper && dumpOutRTP)
+	{
+		//Get truncate size
+		DWORD truncate = dumpRTPHeadersOnly ? len - packet->GetMediaLength() + 16 : 0;
 		//Write udp packet
-		dumper->WriteUDP(now/1000,0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len);
+		dumper->WriteUDP(now/1000,0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len,truncate);
+	}
 
 	//Encript
 	len = send.ProtectRTP(data,len);
@@ -822,8 +830,12 @@ DWORD DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 
 	//If dumping
 	if (dumper && dumpOutRTP)
+	{
+		//Get truncate size
+		DWORD truncate = dumpRTPHeadersOnly ? len - padding : 0;
 		//Write udp packet
-		dumper->WriteUDP(now/1000,0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len);
+		dumper->WriteUDP(now/1000,0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len,truncate);
+	}
 
 	//Encript
 	len = send.ProtectRTP(data,len);
@@ -1026,8 +1038,13 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 
 	//If dumping
 	if (dumper && dumpOutRTP)
+	{
+		//Get truncate size
+		DWORD truncate = dumpRTPHeadersOnly ? len - packet->GetMediaLength() + 16 : 0;
 		//Write udp packet
-		dumper->WriteUDP(now/1000,0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len);
+		dumper->WriteUDP(now/1000,0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len,truncate);
+	}
+		
 
 	//Encript
 	len = send.ProtectRTP(data,len);
@@ -1313,9 +1330,9 @@ void DTLSICETransport::SetRemoteProperties(const Properties& properties)
 	//Clear extension
 	extensions.clear();
 }
-int DTLSICETransport::Dump(UDPDumper* dumper, bool inbound, bool outbound, bool rtcp)
+int DTLSICETransport::Dump(UDPDumper* dumper, bool inbound, bool outbound, bool rtcp, bool rtpHeadersOnly)
 {
-	Debug("-DTLSICETransport::Dump() | [inbound:%d,outboud:%d,rtcp:%d]\n",inbound,outbound,rtcp);
+	Debug("-DTLSICETransport::Dump() | [inbound:%d,outboud:%d,rtcp:%d,rtpHeadersOnly:%d]\n",inbound,outbound,rtcp,rtpHeadersOnly);
 	
 	//Done
 	int done = 1;
@@ -1333,15 +1350,16 @@ int DTLSICETransport::Dump(UDPDumper* dumper, bool inbound, bool outbound, bool 
 		this->dumper = dumper;
 
 		//What to dumo
-		dumpInRTP	= inbound;
-		dumpOutRTP	= outbound;
-		dumpRTCP	= rtcp;
+		dumpInRTP		= inbound;
+		dumpOutRTP		= outbound;
+		dumpRTCP		= rtcp;
+		dumpRTPHeadersOnly	= rtpHeadersOnly;
 	});
 	//Done
 	return done;
 }
 
-int DTLSICETransport::Dump(const char* filename, bool inbound, bool outbound, bool rtcp)
+int DTLSICETransport::Dump(const char* filename, bool inbound, bool outbound, bool rtcp, bool rtpHeadersOnly)
 {
 	Log("-DTLSICETransport::Dump() | [pcap:%s]\n",filename);
 	
@@ -1373,9 +1391,10 @@ int DTLSICETransport::Dump(const char* filename, bool inbound, bool outbound, bo
 		this->dumper = pcap;
 
 		//What to dump
-		dumpInRTP	= inbound;
-		dumpOutRTP	= outbound;
-		dumpRTCP	= rtcp;
+		dumpInRTP		= inbound;
+		dumpOutRTP		= outbound;
+		dumpRTCP		= rtcp;
+		dumpRTPHeadersOnly	= rtpHeadersOnly;
 	});
 	
 	//Done
@@ -2059,8 +2078,12 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 
 	//If dumping
 	if (dumper && dumpOutRTP)
+	{
+		//Get truncate size
+		DWORD truncate = dumpRTPHeadersOnly ? len - packet->GetMediaLength() + 16 : 0;
 		//Write udp packet
-		dumper->WriteUDP(now/1000,0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len);
+		dumper->WriteUDP(now/1000,0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len,truncate);
+	}
 
 	//Encript
 	len = send.ProtectRTP(data,len);

@@ -194,11 +194,7 @@
           <in>LayerInfo.h</in>
           <in>PacketStats.h</in>
           <in>RTPIncomingMediaStreamMultiplexer.h</in>
-          <in>RTPPayload.h</in>
         </df>
-        <in>AudioCodecFactory.h</in>
-        <in>Packet.h</in>
-        <in>VideoCodecFactory.h</in>
         <in>VideoDecoderWorker.h</in>
       </df>
       <df name="src">
@@ -2521,8 +2517,10 @@
         <element flagsID="0" commonFlags="-fPIC -msse3 -fopenmp"/>
         <element flagsID="1"
                  commonFlags="-fPIC -msse3 -msse4.1 -std=c++17 -std=gnu++17 -march=native"/>
-        <element flagsID="2" commonFlags="-fPIC -msse3 -std=c++11"/>
-        <element flagsID="3" commonFlags="-std=c++14"/>
+        <element flagsID="2"
+                 commonFlags="-fPIC -msse3 -msse4.1 -std=c++17 -std=gnu++17 -march=native -fopenmp -fopenmp -fopenmp"/>
+        <element flagsID="3" commonFlags="-fPIC -msse3 -std=c++11"/>
+        <element flagsID="4" commonFlags="-std=c++14"/>
       </flagsDictionary>
       <codeAssistance>
         <includeAdditional>true</includeAdditional>
@@ -2558,14 +2556,6 @@
               <Elem>__STDC_CONSTANT_MACROS</Elem>
             </preprocessorList>
           </cTool>
-          <ccTool>
-            <incDir>
-              <pElem>src</pElem>
-              <pElem>include</pElem>
-              <pElem>ext</pElem>
-              <pElem>ext/libdatachannels/src</pElem>
-            </incDir>
-          </ccTool>
         </makeTool>
         <preBuild>
           <preBuildCommandWorkingDir>.</preBuildCommandWorkingDir>
@@ -2594,6 +2584,10 @@
       <folder path="0/ext">
         <ccTool>
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -2617,6 +2611,10 @@
       <folder path="0/src/aac">
         <ccTool>
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -2640,6 +2638,10 @@
       <folder path="0/src/flv1">
         <ccTool>
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -2663,6 +2665,10 @@
       <folder path="0/src/g711">
         <ccTool>
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -2686,6 +2692,10 @@
       <folder path="0/src/g722">
         <ccTool>
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -2709,6 +2719,10 @@
       <folder path="0/src/gsm">
         <ccTool>
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -2732,6 +2746,10 @@
       <folder path="0/src/h263">
         <ccTool>
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -2755,6 +2773,10 @@
       <folder path="0/src/h264">
         <ccTool>
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -2778,6 +2800,10 @@
       <folder path="0/src/nelly">
         <ccTool>
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -2801,6 +2827,10 @@
       <folder path="0/src/opus">
         <ccTool>
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -2824,6 +2854,10 @@
       <folder path="0/src/rtmp">
         <ccTool>
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -2844,9 +2878,23 @@
           </preprocessorList>
         </ccTool>
       </folder>
+      <folder path="0/src/rtp">
+        <ccTool>
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+          </incDir>
+        </ccTool>
+      </folder>
       <folder path="0/src/speex">
         <ccTool>
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -2870,6 +2918,10 @@
       <folder path="0/src/vp6">
         <ccTool>
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -2893,6 +2945,10 @@
       <folder path="0/src/vp8">
         <ccTool>
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -2916,6 +2972,10 @@
       <folder path="0/src/vp9">
         <ccTool>
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -2939,6 +2999,10 @@
       <folder path="0/src/ws">
         <ccTool>
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -2975,28 +3039,13 @@
           </preprocessorList>
         </ccTool>
       </folder>
-      <item path="include/AudioCodecFactory.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/Packet.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/VideoCodecFactory.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/VideoDecoderWorker.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtp/LayerInfo.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtp/PacketStats.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="include/rtp/RTPIncomingMediaStreamMultiplexer.h"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="include/rtp/RTPPayload.h" ex="false" tool="3" flavor2="0">
-      </item>
       <item path="src/ActiveSpeakerDetector.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -3020,6 +3069,10 @@
       <item path="src/AudioCodecFactory.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -3043,6 +3096,10 @@
       <item path="src/AudioPipe.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -3066,6 +3123,10 @@
       <item path="src/CPUMonitor.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -3089,6 +3150,10 @@
       <item path="src/DTLSICETransport.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -3112,6 +3177,10 @@
       <item path="src/EventLoop.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -3135,6 +3204,10 @@
       <item path="src/EventSource.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -3158,6 +3231,10 @@
       <item path="src/MediaFrameListenerBridge.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -3181,6 +3258,10 @@
       <item path="src/OpenSSL.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -3202,17 +3283,29 @@
         </ccTool>
       </item>
       <item path="src/PCAPFile.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="1">
+        <ccTool flags="2">
           <incDir>
+            <pElem>../../../include</pElem>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3227,6 +3320,10 @@
       <item path="src/PCAPReader.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -3250,6 +3347,10 @@
       <item path="src/PCAPTransportEmulator.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -3273,6 +3374,10 @@
       <item path="src/RTPBundleTransport.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -3296,6 +3401,10 @@
       <item path="src/RTPSmoother.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -3319,6 +3428,10 @@
       <item path="src/RTPTransport.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -3342,6 +3455,10 @@
       <item path="src/SRTPSession.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -3366,8 +3483,12 @@
             ex="false"
             tool="1"
             flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/crc32c/include</pElem>
           </incDir>
         </ccTool>
@@ -3375,6 +3496,10 @@
       <item path="src/VideoCodecFactory.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -3395,15 +3520,33 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="src/VideoDecoderWorker.cpp" ex="false" tool="1" flavor2="0">
+      <item path="src/VideoDecoderWorker.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="4">
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+          </incDir>
+        </ccTool>
       </item>
       <item path="src/VideoEncoderWorker.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="2">
+        <ccTool flags="3">
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+          </incDir>
         </ccTool>
       </item>
       <item path="src/VideoLayerSelector.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -3435,6 +3578,10 @@
       <item path="src/appmixer.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -3458,6 +3605,10 @@
       <item path="src/asymmetricmosaic.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -3481,6 +3632,10 @@
       <item path="src/audiodecoder.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -3504,6 +3659,10 @@
       <item path="src/audioencoder.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -3527,6 +3686,10 @@
       <item path="src/audiomixer.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -3550,6 +3713,10 @@
       <item path="src/audiostream.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -3573,6 +3740,10 @@
       <item path="src/audiotransrater.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -3596,6 +3767,10 @@
       <item path="src/avcdescriptor.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -3619,6 +3794,10 @@
       <item path="src/broadcastsession.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -3639,11 +3818,23 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="src/bwe.cpp" ex="false" tool="1" flavor2="0">
+      <item path="src/bwe.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="4">
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+          </incDir>
+        </ccTool>
       </item>
       <item path="src/cpim.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -3667,6 +3858,10 @@
       <item path="src/crc32calc.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -3690,6 +3885,10 @@
       <item path="src/dtls.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -3713,6 +3912,10 @@
       <item path="src/eventstreaminghandler.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -3736,6 +3939,10 @@
       <item path="src/fecdecoder.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
@@ -3766,6 +3973,10 @@
       <item path="src/framescaler.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -3813,6 +4024,10 @@
       <item path="src/groupchat.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -3853,8 +4068,6 @@
         <ccTool flags="1">
         </ccTool>
       </item>
-      <item path="src/h264/H264CodecConfig.h" ex="false" tool="3" flavor2="0">
-      </item>
       <item path="src/h264/H264LayerSelector.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
         </ccTool>
@@ -3874,6 +4087,10 @@
       <item path="src/http.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -3897,6 +4114,10 @@
       <item path="src/httpparser.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -3920,6 +4141,10 @@
       <item path="src/logo.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -3943,6 +4168,10 @@
       <item path="src/main.cpp" ex="false" tool="1" flavor2="4">
         <ccTool flags="0">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>src/vnc/common</pElem>
             <pElem>src/vnc/libvncserver</pElem>
@@ -3969,6 +4198,10 @@
       <item path="src/mcu.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -3992,6 +4225,10 @@
       <item path="src/mosaic.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -4015,6 +4252,10 @@
       <item path="src/mp4player.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -4038,6 +4279,10 @@
       <item path="src/mp4recorder.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -4061,6 +4306,10 @@
       <item path="src/mp4streamer.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -4084,6 +4333,10 @@
       <item path="src/multiconf.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -4109,21 +4362,23 @@
         </ccTool>
       </item>
       <item path="src/nocodecs.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/crc32c/include</pElem>
           </incDir>
         </ccTool>
-      </item>
-      <item path="src/opus/opusconfig.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="src/opus/opusdecoder.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
         </ccTool>
       </item>
-      <item path="src/opus/opusdepacketizer.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="src/opus/opusdepacketizer.h" ex="false" tool="3" flavor2="0">
+      <item path="src/opus/opusdepacketizer.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="4">
+        </ccTool>
       </item>
       <item path="src/opus/opusencoder.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
@@ -4132,6 +4387,10 @@
       <item path="src/overlay.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -4155,6 +4414,10 @@
       <item path="src/partedmosaic.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -4175,11 +4438,13 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="src/pcc/PacketResult.h" ex="false" tool="3" flavor2="0">
-      </item>
       <item path="src/pipeaudioinput.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -4203,6 +4468,10 @@
       <item path="src/pipeaudiooutput.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -4226,6 +4495,10 @@
       <item path="src/pipetextinput.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -4249,6 +4522,10 @@
       <item path="src/pipetextoutput.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -4272,6 +4549,10 @@
       <item path="src/pipevideoinput.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -4295,6 +4576,10 @@
       <item path="src/pipevideooutput.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -4318,6 +4603,10 @@
       <item path="src/pipmosaic.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -4339,8 +4628,12 @@
         </ccTool>
       </item>
       <item path="src/receiver.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/crc32c/include</pElem>
           </incDir>
         </ccTool>
@@ -4348,6 +4641,10 @@
       <item path="src/remoteratecontrol.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -4371,6 +4668,10 @@
       <item path="src/remoterateestimator.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -4447,7 +4748,9 @@
         <ccTool flags="1">
         </ccTool>
       </item>
-      <item path="src/rtp/LayerInfo.cpp" ex="false" tool="1" flavor2="0">
+      <item path="src/rtp/LayerInfo.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="4">
+        </ccTool>
       </item>
       <item path="src/rtp/RTCPApp.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
@@ -4846,7 +5149,9 @@
       <item path="src/rtp/RTPIncomingMediaStreamMultiplexer.cpp"
             ex="false"
             tool="1"
-            flavor2="0">
+            flavor2="11">
+        <ccTool flags="4">
+        </ccTool>
       </item>
       <item path="src/rtp/RTPIncomingSource.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
@@ -5038,10 +5343,12 @@
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="src/rtp/RTPPayload.cpp" ex="false" tool="1" flavor2="0">
+      <item path="src/rtp/RTPPayload.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="4">
+        </ccTool>
       </item>
       <item path="src/rtp/RTPRedundantPacket.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
             <pElem>ext/crc32c/include</pElem>
           </incDir>
@@ -5096,6 +5403,10 @@
       <item path="src/rtpparticipant.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -5119,6 +5430,10 @@
       <item path="src/rtpsession.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -5140,8 +5455,12 @@
         </ccTool>
       </item>
       <item path="src/sender.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="4">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/crc32c/include</pElem>
           </incDir>
         </ccTool>
@@ -5149,6 +5468,10 @@
       <item path="src/sidebar.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -5180,6 +5503,10 @@
       <item path="src/statushandler.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -5203,6 +5530,10 @@
       <item path="src/stunmessage.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -5226,6 +5557,10 @@
       <item path="src/textencoder.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -5249,6 +5584,10 @@
       <item path="src/textmixer.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -5272,6 +5611,10 @@
       <item path="src/textmixerworker.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -5295,6 +5638,10 @@
       <item path="src/textstream.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -5318,6 +5665,10 @@
       <item path="src/uploadhandler.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -5341,6 +5692,10 @@
       <item path="src/utf8.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -5364,6 +5719,10 @@
       <item path="src/vad.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -5387,6 +5746,10 @@
       <item path="src/videomixer.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -5410,6 +5773,10 @@
       <item path="src/videopipe.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -5433,6 +5800,10 @@
       <item path="src/videostream.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -5500,6 +5871,10 @@
       <item path="src/xmlhandler.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -5523,6 +5898,10 @@
       <item path="src/xmlrpcmcu.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -5546,6 +5925,10 @@
       <item path="src/xmlrpcserver.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -5569,6 +5952,10 @@
       <item path="src/xmlstreaminghandler.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
@@ -5590,136 +5977,287 @@
         </ccTool>
       </item>
       <item path="test/aac.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="1">
+        <ccTool flags="2">
           <incDir>
+            <pElem>../../../include</pElem>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
           </preprocessorList>
         </ccTool>
       </item>
       <item path="test/cpim.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="1">
+        <ccTool flags="2">
           <incDir>
+            <pElem>../../../include</pElem>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="test/eventloop.cpp" ex="false" tool="1" flavor2="0">
+      <item path="test/eventloop.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="4">
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+          </incDir>
+        </ccTool>
       </item>
       <item path="test/fec.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="1">
+        <ccTool flags="2">
           <incDir>
+            <pElem>../../../include</pElem>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
           </preprocessorList>
         </ccTool>
       </item>
       <item path="test/h264.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="1">
+        <ccTool flags="2">
           <incDir>
+            <pElem>../../../include</pElem>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
           </preprocessorList>
         </ccTool>
       </item>
       <item path="test/main.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="1">
+        <ccTool flags="2">
           <incDir>
+            <pElem>../../../include</pElem>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
           </preprocessorList>
         </ccTool>
       </item>
       <item path="test/overlay.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="1">
+        <ccTool flags="2">
           <incDir>
+            <pElem>../../../include</pElem>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
           </preprocessorList>
         </ccTool>
       </item>
       <item path="test/rtp.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="1">
+        <ccTool flags="2">
           <incDir>
+            <pElem>../../../include</pElem>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
           </preprocessorList>
         </ccTool>
       </item>
-      <item path="test/stun.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="test/test.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="1">
+      <item path="test/stun.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="2">
           <incDir>
+            <pElem>../../../include</pElem>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="test/test.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="2">
+          <incDir>
+            <pElem>../../../include</pElem>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>DARWIN</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
           </preprocessorList>
         </ccTool>
       </item>
       <item path="test/vp8.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="1">
+        <ccTool flags="2">
           <incDir>
+            <pElem>../../../include</pElem>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
           </preprocessorList>
         </ccTool>
       </item>
       <item path="test/vp9.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="1">
+        <ccTool flags="2">
           <incDir>
+            <pElem>../../../include</pElem>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
           </preprocessorList>
         </ccTool>
       </item>
