@@ -328,7 +328,6 @@ bool H264LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 		if (len)
 		{
 			//Check if first nal
-			BYTE nalRefIdc	 = (payload[0] & 0x60) >> 5;
 			BYTE nalUnitType = payload[0] & 0x1f;
 			
 			//FU-A
@@ -340,8 +339,8 @@ bool H264LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 				//Get first nal type
 				nalUnitType = payload[3] & 0x1f;
 				
-			//Check idc flag or IDR/PPS/SPS nals
-			if (nalRefIdc==3 || nalUnitType==5 || nalUnitType==7 || nalUnitType==8)
+			//Check for IDR/PPS/SPS nals
+			if (nalUnitType==5 || nalUnitType==7 || nalUnitType==8)
 				//Key frame
 				packet->SetKeyFrame(true);
 		}
