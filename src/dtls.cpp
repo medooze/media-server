@@ -650,8 +650,8 @@ void DTLSConnection::onSSLInfo(int where, int ret)
 			listener.onDTLSSetupError();
 	}
 
-	// NOTE: checking SSL_get_shutdown(this->ssl) & SSL_RECEIVED_SHUTDOWN here upon
-	// receipt of a close alert does not work.
+	//Check pending data for writing
+	CheckPending();
 }
 
 int DTLSConnection::Renegotiate()
