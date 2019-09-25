@@ -17,12 +17,12 @@ int PCAPFile::Open(const char* filename)
 {
 	ScopedLock lock(mutex);
 	
-	Log("PCAPFile::open() [\"%s\"]\n",filename);
+	Log("-PCAPFile::open() [\"%s\"]\n",filename);
 	
 	//Open file
 	if ((fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0600))<0)
 		//Error
-		return Error("Could not open file [err:%d]\n",errno);
+		return Error("-PCAPFile::open() | Could not open file [err:%d]\n",errno);
 		
         //PCAP file header
 	BYTE out[PCAP_HEADER_SIZE];
@@ -77,7 +77,7 @@ void PCAPFile::WriteUDP(QWORD currentTimeMillis,DWORD originIp, short originPort
         //Write header and content
 	if (write(fd, out, sizeof(out))<0 || write(fd, data, saved)<0)
 		//Error
-		Error("-PCAPFile::WriteUDP()\n");
+		Error("-PCAPFile::WriteUDP() | Error writing file [errno:%d]\n",errno);
 	
 	//unlock
 	mutex.Unlock();
@@ -90,7 +90,7 @@ void PCAPFile::Close()
 	//Check not already closed
 	if (fd<0) return;
 
-	Log("-PCAPFile::close()\n");
+	Log("-PCAPFile::Close()\n");
 	
 	//Close file
 	close(fd);

@@ -1361,7 +1361,7 @@ int DTLSICETransport::Dump(UDPDumper* dumper, bool inbound, bool outbound, bool 
 
 int DTLSICETransport::Dump(const char* filename, bool inbound, bool outbound, bool rtcp, bool rtpHeadersOnly)
 {
-	Log("-DTLSICETransport::Dump() | [pcap:%s]\n",filename);
+	Log("-DTLSICETransport::Dump() | [pcap:%s,inbound:%d,outboud:%d,rtcp:%d,rtpHeadersOnly:%d]\n",filename,inbound,outbound,rtcp,rtpHeadersOnly);
 	
 	//Done
 	int done = 1;
