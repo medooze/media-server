@@ -911,11 +911,14 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	//Update rtx bitrate
 	rtxBitrate.Update(now/1000);
 	
+	//Get available bitrate
+	DWORD availableBitrate = senderSideBandwidthEstimator.GetAvailableBitrate();
+	
 	//Check if we are sending way to much bitrate
-	if (rtxBitrate.GetInstantAvg()*8 > senderSideBandwidthEstimator.GetAvailableBitrate() * 0.30f)
+	if (availableBitrate && rtxBitrate.GetInstantAvg()*8 > availableBitrate * 0.30f)
 	{
 		//Error
-		Log("-DTLSICETransport::ReSendPacket() | Too much bitrate on rtx, skiping rtx:%lld estimated:%u\n",(uint64_t)(rtxBitrate.GetInstantAvg()*8), senderSideBandwidthEstimator.GetEstimatedBitrate());
+		Log("-DTLSICETransport::ReSendPacket() | Too much bitrate on rtx, skiping rtx:%lld estimated:%u available:%d\n",(uint64_t)(rtxBitrate.GetInstantAvg()*8), senderSideBandwidthEstimator.GetEstimatedBitrate(),availableBitrate);
 		//Skip
 		return;
 	}
