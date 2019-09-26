@@ -15,7 +15,7 @@ class RTPIncomingMediaStreamMultiplexer :
 {
 public:
 	RTPIncomingMediaStreamMultiplexer(DWORD ssrc, TimeService& timeService);
-	virtual ~RTPIncomingMediaStreamMultiplexer() = default;
+	virtual ~RTPIncomingMediaStreamMultiplexer();
 	virtual void AddListener(RTPIncomingMediaStream::Listener* listener) override;
 	virtual void RemoveListener(RTPIncomingMediaStream::Listener* listener) override;
 	virtual DWORD GetMediaSSRC() override { return ssrc; }
