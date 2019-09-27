@@ -103,7 +103,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 
 		//Check session
 		if (!recv.IsSetup())
-			return Error("-DTLSICETransport::onData() |  Recv SRTPSession is not setup\n");
+			return Warning("-DTLSICETransport::onData() |  Recv SRTPSession is not setup\n");
 
 		//unprotect
 		size_t len = recv.UnprotectRTCP(data,size);
@@ -111,7 +111,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		//Check size
 		if (!len)
 			//Error
-			return Error("-DTLSICETransport::onData() | Error unprotecting rtcp packet [%s]\n",recv.GetLastError());
+			return Warning("-DTLSICETransport::onData() | Error unprotecting rtcp packet [%s]\n",recv.GetLastError());
 
 		//If dumping
 		if (dumper && dumpRTCP)
@@ -141,14 +141,14 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 
 	//Check session
 	if (!recv.IsSetup())
-		return Error("-DTLSICETransport::onData() | Recv SRTPSession is not setup\n");
+		return Warning("-DTLSICETransport::onData() | Recv SRTPSession is not setup\n");
 	
 	//unprotect
 	size_t len = recv.UnprotectRTP(data,size);
 	//Check status
 	if (!len)
 		//Error
-		return Error("-DTLSICETransport::onData() | Error unprotecting rtp packet [%s]\n",recv.GetLastError());
+		return Warning("-DTLSICETransport::onData() | Error unprotecting rtp packet [%s]\n",recv.GetLastError());
 	
 	//Parse rtp packet
 	RTPPacket::shared packet = RTPPacket::Parse(data,len,recvMaps.rtp,recvMaps.ext);
@@ -156,7 +156,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 	//Check
 	if (!packet)
 		//Error
-		return Error("-DTLSICETransport::onData() | Could not parse rtp packet\n");
+		return Warning("-DTLSICETransport::onData() | Could not parse rtp packet\n");
 	
 	//If dumping
 	if (dumper && dumpInRTP)
@@ -176,7 +176,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 	//Check codec
 	if (codec==RTPMap::NotFound)
 		//Exit
-		return Error("-DTLSICETransport::onData() | RTP packet payload type unknown [%d]\n",packet->GetPayloadType());
+		return Warning("-DTLSICETransport::onData() | RTP packet payload type unknown [%d]\n",packet->GetPayloadType());
 	
 	//Get group
 	RTPIncomingSourceGroup *group = GetIncomingSourceGroup(ssrc);
@@ -309,11 +309,8 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 			
 	//Ensure it has a group
 	if (!group)	
-	{
 		//error
-		Debug("-DTLSICETransport::onData() | Unknowing group for ssrc [%u]\n",ssrc);
-		return 0;
-	}
+		return Warning("-DTLSICETransport::onData() | Unknowing group for ssrc [%u]\n",ssrc);
 	
 	//Assing mid if found
 	if (group->mid.empty() && packet->HasMediaStreamId())
@@ -321,7 +318,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		//Get mid
 		auto mid = packet->GetMediaStreamId();
 		//Debug
-		Debug("-DTLSICETransport::onData() | Assinging media stream id [ssrc:%u,mid:'%s']\n",ssrc,mid.c_str());
+		Log("-DTLSICETransport::onData() | Assinging media stream id [ssrc:%u,mid:'%s']\n",ssrc,mid.c_str());
 		//Set it
 		group->mid = mid;
 		//Find mid 
@@ -343,7 +340,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 	//Ensure it has a source
 	if (!source)
 		//error
-		return Error("-DTLSICETransport::onData() | Group does not contain ssrc [%u]\n",ssrc);
+		return Warning("-DTLSICETransport::onData() | Group does not contain ssrc [%u]\n",ssrc);
 
 	//If transport wide cc is used
 	if (packet->HasTransportWideCC())
@@ -386,7 +383,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		//Ensure that it is a RTX codec
 		if (codec!=VideoCodec::RTX)
 			//error
-			return  Error("-DTLSICETransport::onData() | No RTX codec on rtx sssrc:%u type:%d codec:%d\n",packet->GetSSRC(),packet->GetPayloadType(),packet->GetCodec());
+			return  Warning("-DTLSICETransport::onData() | No RTX codec on rtx sssrc:%u type:%d codec:%d\n",packet->GetSSRC(),packet->GetPayloadType(),packet->GetCodec());
 	
 		//Find apt type
 		auto apt = recvMaps.apt.GetCodecForType(packet->GetPayloadType());
@@ -395,12 +392,12 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		//Check codec
 		if (codec==RTPMap::NotFound)
 			  //Error
-			  return Error("-DTLSICETransport::onData() | RTP RTX packet apt type unknown [%d]\n",MediaFrame::TypeToString(packet->GetMedia()),packet->GetPayloadType());
+			  return Warning("-DTLSICETransport::onData() | RTP RTX packet apt type unknown [%d]\n",MediaFrame::TypeToString(packet->GetMedia()),packet->GetPayloadType());
 		
 		//Remove OSN and restore seq num
 		if (!packet->RecoverOSN())
 			//Error
-			return Error("-DTLSICETransport::onData() | RTP Could not recoever OSX\n");
+			return Warning("-DTLSICETransport::onData() | RTP Could not recoever OSX\n");
 		
 		 //Set original ssrc
 		 packet->SetSSRC(group->media.ssrc);
@@ -412,11 +409,10 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		 //TODO: Move from here, required to fill the vp8/vp9 descriptors
 		VideoLayerSelector::GetLayerIds(packet);
 	} else if (ssrc==group->fec.ssrc)  {
-		UltraDebug("-Flex fec\n");
 		//Ensure that it is a FEC codec
 		if (codec!=VideoCodec::FLEXFEC)
 			//error
-			return  Error("-DTLSICETransport::onData() | No FLEXFEC codec on fec sssrc:%u type:%d codec:%d\n",MediaFrame::TypeToString(packet->GetMedia()),packet->GetPayloadType(),packet->GetSSRC());
+			return  Warning("-DTLSICETransport::onData() | No FLEXFEC codec on fec sssrc:%u type:%d codec:%d\n",MediaFrame::TypeToString(packet->GetMedia()),packet->GetPayloadType(),packet->GetSSRC());
 		//DO NOTHING with it yet
 		return 1;
 	}	
@@ -536,7 +532,7 @@ DWORD DTLSICETransport::SendProbe(const RTPPacket::shared& packet)
 	//Check if we have an active DTLS connection yet
 	if (!send.IsSetup())
 		//Done
-		return Error("-DTLSICETransport::SendProbe() | Send SRTPSession is not setup yet\n");;
+		return Warning("-DTLSICETransport::SendProbe() | Send SRTPSession is not setup yet\n");;
 	
 	//Get ssrc
 	DWORD ssrc = packet->GetSSRC();
@@ -650,7 +646,7 @@ DWORD DTLSICETransport::SendProbe(const RTPPacket::shared& packet)
 	//If we don't have an active candidate yet
 	if (!active)
 		//Error
-		return Error("-DTLSICETransport::SendProbe() | We don't have an active candidate yet\n");
+		return Warning("-DTLSICETransport::SendProbe() | We don't have an active candidate yet\n");
 
 	//If dumping
 	if (dumper && dumpOutRTP)
@@ -722,7 +718,7 @@ DWORD DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 	//Check if we have an active DTLS connection yet
 	if (!send.IsSetup())
 		//Error
-		return Error("-DTLSICETransport::SendProbe() | Send SRTPSession is not setup\n");
+		return Warning("-DTLSICETransport::SendProbe() | Send SRTPSession is not setup\n");
 	
 	//Overrride headers
 	RTPHeader		header;
@@ -918,7 +914,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	if (availableBitrate && rtxBitrate.GetInstantAvg()*8 > availableBitrate * 0.30f)
 	{
 		//Error
-		Log("-DTLSICETransport::ReSendPacket() | Too much bitrate on rtx, skiping rtx:%lld estimated:%u available:%d\n",(uint64_t)(rtxBitrate.GetInstantAvg()*8), senderSideBandwidthEstimator.GetEstimatedBitrate(),availableBitrate);
+		Debug("-DTLSICETransport::ReSendPacket() | Too much bitrate on rtx, skiping rtx:%lld estimated:%u available:%d\n",(uint64_t)(rtxBitrate.GetInstantAvg()*8), senderSideBandwidthEstimator.GetEstimatedBitrate(),availableBitrate);
 		//Skip
 		return;
 	}
@@ -1877,17 +1873,13 @@ int DTLSICETransport::Send(const RTCPCompoundPacket::shared &rtcp)
 	
 	//Double check message
 	if (!rtcp)
-		//Error
+		//Log
 		return Error("-DTLSICETransport::Send() | NULL rtcp message\n");
 	
 	//Check if we have an active DTLS connection yet
 	if (!send.IsSetup())
-	{
-		//Log error
-		Debug("-DTLSICETransport::Send() | We don't have an DTLS setup yet\n");
-		//Error
-		return 0;
-	}
+		//Log 
+		return Debug("-DTLSICETransport::Send() | We don't have an DTLS setup yet\n");
 	
 	//Send buffer
 	Packet buffer;
@@ -1900,6 +1892,7 @@ int DTLSICETransport::Send(const RTCPCompoundPacket::shared &rtcp)
 	//Check result
 	if (len<=0 || len>size)
 	{
+		//Dump it
 		rtcp->Dump();
 		//Error
 		return Error("-DTLSICETransport::Send() | Error serializing RTCP packet [len:%d]\n",len);
@@ -1907,12 +1900,8 @@ int DTLSICETransport::Send(const RTCPCompoundPacket::shared &rtcp)
 	
 	//If we don't have an active candidate yet
 	if (!active)
-	{
-		//Log error
-		Debug("-DTLSICETransport::Send() | We don't have an active candidate yet\n");
-		//Error
-		return 0;
-	}
+		//Log
+		return Debug("-DTLSICETransport::Send() | We don't have an active candidate yet\n");
 
 	//If dumping
 	if (dumper && dumpRTCP)
@@ -1954,10 +1943,7 @@ int DTLSICETransport::SendPLI(DWORD ssrc)
 
 		//If not found
 		if (!group)
-		{
-			Debug("- DTLSICETransport::SendPLI() | no incoming source found for [ssrc:%u]\n",ssrc);
-			return;
-		}
+			return (void)Debug("-DTLSICETransport::SendPLI() | no incoming source found for [ssrc:%u]\n",ssrc);
 		
 		//Get current time
 		auto now = getTime();
@@ -1965,7 +1951,7 @@ int DTLSICETransport::SendPLI(DWORD ssrc)
 		//Check if we have sent a PLI recently (less than half a second ago)
 		if ((now-group->media.lastPLI)<1E6/2)
 			//We refuse to end more
-			return;
+			return (void)UltraDebug("-DTLSICETransport::SendPLI() | ignored, we send a PLI recently\n");
 		//Update last PLI requested time
 		group->media.lastPLI = now;
 		//And number of requested plis
@@ -1989,7 +1975,7 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 	//Check packet
 	if (!packet)
 		//Error
-		return Debug("-DTLSICETransport::Send() | Error null packet\n");
+		return Error("-DTLSICETransport::Send() | Error null packet\n");
 	
 	//Check if we have an active DTLS connection yet
 	if (!send.IsSetup())
@@ -2005,7 +1991,7 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 	//If not found
 	if (!group)
 		//Error
-		return Error("-DTLSICETransport::Send() | Outgoind source not registered for ssrc:%u\n",packet->GetSSRC());
+		return Warning("-DTLSICETransport::Send() | Outgoind source not registered for ssrc:%u\n",packet->GetSSRC());
 	
 	//Get outgoing source
 	RTPOutgoingSource& source = group->media;
@@ -2212,7 +2198,7 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 				//If not found
 				if (!source)
 				{
-					Error("-Could not find incoming source for RTCP SR [ssrc:%u]\n",ssrc);
+					Warning("-DTLSICETransport::onRTCP() | Could not find incoming source for RTCP SR [ssrc:%u]\n",ssrc);
 					rtcp->Dump();
 					continue;
 				}
@@ -2325,7 +2311,7 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 					//Dump
 					fb->Dump();
 					//Debug
-					Error("-DTLSICETransport::onRTCP() | Got feedback message for unknown media  [ssrc:%u]\n",ssrc);
+					Warning("-DTLSICETransport::onRTCP() | Got feedback message for unknown media  [ssrc:%u]\n",ssrc);
 					//Ups! Skip
 					continue;
 				}

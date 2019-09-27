@@ -22,7 +22,7 @@ DTLSConnection::AvailableHashes		DTLSConnection::availableHashes;
 void DTLSConnection::SetCertificate(const char* cert,const char* key)
 {
 	//Log
-	Log("-DTLSConnection::SetCertificate() | Set SSL certificate files [crt:\"%s\",key:\"%s\"]\n",cert,key);
+	Debug("-DTLSConnection::SetCertificate() | Set SSL certificate files [crt:\"%s\",key:\"%s\"]\n",cert,key);
 	//Set certificate files
 	DTLSConnection::certfile.assign(cert);
 	DTLSConnection::pvtfile.assign(key);
@@ -30,7 +30,7 @@ void DTLSConnection::SetCertificate(const char* cert,const char* key)
 
 int DTLSConnection::GenerateCertificate()
 {
-	Log(">DTLSConnection::GenerateCertificate()\n");
+	Debug(">DTLSConnection::GenerateCertificate()\n");
 	
 	int ret = 0;
 	BIGNUM* bne = NULL;
@@ -142,7 +142,7 @@ int DTLSConnection::GenerateCertificate()
 	// Free stuff and return.
 	BN_free(bne);
 	
-	Log("<DTLSConnection::GenerateCertificate()\n");
+	Debug("<DTLSConnection::GenerateCertificate()\n");
 	
 	return 1;
 
@@ -210,7 +210,7 @@ int DTLSConnection::ReadCertificate()
 
 int DTLSConnection::Initialize()
 {
-	Log(">DTLSConnection::Initialize()\n");
+	Debug(">DTLSConnection::Initialize()\n");
 
 	// Create a single SSL context
 	ssl_ctx = SSL_CTX_new(DTLS_method());
@@ -333,13 +333,14 @@ int DTLSConnection::Initialize()
 	// OK, we have DTLS.
 	DTLSConnection::hasDTLS = true;
 
-	Log("<DTLSConnection::Initialize(%d)\n",availableHashes.size());
+	Debug("<DTLSConnection::Initialize(%d)\n",availableHashes.size());
 	//OK
 	return 1;
 }
 
 int DTLSConnection::Terminate()
 {
+	Debug("-DTLSConnection::Terminate()\n");
 	if (privateKey)
 		EVP_PKEY_free(privateKey);
 	if (certificate)

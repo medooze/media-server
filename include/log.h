@@ -140,6 +140,23 @@ inline int Debug(const char *msg, ...)
 	return 1;
 }
 
+inline int Warning(const char *msg, ...)
+{
+	if (Logger::IsLogEnabled())
+	{
+		struct timeval tv;
+		va_list ap;
+		gettimeofday(&tv,NULL);
+		printf("[0x%lx][%.10ld.%.3ld][WRN]", (long) pthread_self(),(long)tv.tv_sec,(long)tv.tv_usec/1000);
+		va_start(ap, msg);
+		vprintf(msg, ap);
+		va_end(ap);
+		fflush(stdout);
+	}
+	return 0;
+}
+
+
 inline int Error(const char *msg, ...)
 {
 	struct timeval tv;
