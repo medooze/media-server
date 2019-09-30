@@ -341,6 +341,8 @@ int DTLSConnection::Initialize()
 int DTLSConnection::Terminate()
 {
 	Debug("-DTLSConnection::Terminate()\n");
+	
+	//Free stuff
 	if (privateKey)
 		EVP_PKEY_free(privateKey);
 	if (certificate)
@@ -348,6 +350,12 @@ int DTLSConnection::Terminate()
 	if (ssl_ctx)
 		SSL_CTX_free(ssl_ctx);
 	
+	//Reset values
+	privateKey = nullptr;
+	certificate = nullptr;
+	ssl_ctx = nullptr;
+	
+	//All done
 	return 1;
 }
 
