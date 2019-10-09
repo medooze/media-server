@@ -136,10 +136,8 @@ public:
 	void onRequestFPU(Participant *part);
 
 	/** RTMPNetConnection */
-	//virtual void Connect(RTMPNetConnection::Listener* listener); -> Not needed to be overriden yet
-	virtual RTMPNetStream* CreateStream(DWORD streamId,DWORD audioCaps,DWORD videoCaps,RTMPNetStream::Listener* listener);
-	virtual void DeleteStream(RTMPNetStream *stream);
-	//virtual void Disconnect(RTMPNetConnection::Listener* listener);  -> Not needed to be overriden yet
+	virtual RTMPNetStream::shared CreateStream(DWORD streamId,DWORD audioCaps,DWORD videoCaps,RTMPNetStream::Listener *listener) override;
+	virtual void DeleteStream(const RTMPNetStream::shared& stream) override;
 
 	/** RTMPClientConnection for pubblishers*/
 	virtual void onConnected(RTMPClientConnection* conn);

@@ -10,9 +10,12 @@
 #include "rtmpapplication.h"
 #include <pthread.h>
 #include <map>
+#include <memory>
+#include <thread>
 
 
 class RTMPConnection :
+	public std::enable_shared_from_this<RTMPConnection>,
 	public RTMPNetConnection::Listener,
 	public RTMPMediaStream::Listener,
 	public RTMPNetStream::Listener
@@ -28,12 +31,15 @@ public:
 		virtual RTMPNetConnection* OnConnect(const std::wstring& appName,RTMPNetConnection::Listener *listener,std::function<void(bool)> accept) = 0;
 		virtual void onDisconnect(RTMPConnection *con) = 0;
 	};
+	using shared = std::shared_ptr<RTMPConnection>;
 public:
 	RTMPConnection(Listener* listener);
 	~RTMPConnection();
 
 	int Init(int fd);
 	int End();
+	
+	int GetSocket() { return socket; }
 
 	//Listener from NetConnection
 	virtual void onNetConnectionStatus(const RTMPNetStatusEventInfo &info,const wchar_t *message);
@@ -58,7 +64,6 @@ protected:
 	int Run();
 	void PingRequest();
 private:
-	static  void* run(void *par);
 	void ParseData(BYTE *data,const DWORD size);
 	DWORD SerializeChunkData(BYTE *data,const DWORD size);
 	int WriteData(BYTE *data,const DWORD size);
@@ -80,7 +85,7 @@ private:
 	enum State {HEADER_C0_WAIT=0,HEADER_C1_WAIT=1,HEADER_C2_WAIT=2,CHUNK_HEADER_WAIT=3,CHUNK_TYPE_WAIT=4,CHUNK_EXT_TIMESTAMP_WAIT=5,CHUNK_DATA_WAIT=6};
 	typedef std::map<DWORD,RTMPChunkInputStream*>  RTMPChunkInputStreams;
 	typedef std::map<DWORD,RTMPChunkOutputStream*> RTMPChunkOutputStreams;
-	typedef std::map<DWORD,RTMPNetStream*> RTMPNetStreams;
+	typedef std::map<DWORD,RTMPNetStream::shared> RTMPNetStreams;
 private:
 	int socket;
 	pollfd ufds[1];
@@ -114,7 +119,7 @@ private:
 	DWORD maxChunkSize;
 	DWORD maxOutChunkSize;
 
-	pthread_t thread;
+	std::thread thread;
 	pthread_mutex_t mutex;
 
 	RTMPNetConnection* app;

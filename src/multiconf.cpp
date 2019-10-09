@@ -1750,10 +1750,10 @@ RTMPMediaStream* MultiConf::ConsumeParticipantOutputToken(const std::wstring &to
 /********************************
  * NetConnection
  **********************************/
-RTMPNetStream* MultiConf::CreateStream(DWORD streamId,DWORD audioCaps,DWORD videoCaps,RTMPNetStream::Listener *listener)
+RTMPNetStream::shared MultiConf::CreateStream(DWORD streamId,DWORD audioCaps,DWORD videoCaps,RTMPNetStream::Listener *listener)
 {
 	//No stream for that url
-	RTMPNetStream *stream = new NetStream(streamId,this,listener);
+	auto stream = std::make_shared<NetStream>(streamId,this,listener);
 
 	//Set tag
 	stream->SetTag(tag);
@@ -1765,13 +1765,10 @@ RTMPNetStream* MultiConf::CreateStream(DWORD streamId,DWORD audioCaps,DWORD vide
 	return stream;
 }
 
-void MultiConf::DeleteStream(RTMPNetStream *stream)
+void MultiConf::DeleteStream(const RTMPNetStream::shared& stream)
 {
 	//Unregister stream
 	UnRegisterStream(stream);
-
-	//Delete the stream
-	delete(stream);
 }
 
 /*****************************************************

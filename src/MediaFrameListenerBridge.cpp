@@ -3,6 +3,13 @@
 #include "MediaFrameListenerBridge.h"
 #include "VideoLayerSelector.h"
 
+
+MediaFrameListenerBridge::~MediaFrameListenerBridge()
+{
+	ScopedLock scope(mutex);
+	for (auto listener : listeners)
+		listener->onEnded(this);
+}
 void MediaFrameListenerBridge::AddListener(RTPIncomingMediaStream::Listener* listener)
 {
 	Debug("-MediaFrameListenerBridge::AddListener() [listener:%p]\n",listener);

@@ -119,9 +119,6 @@ init:
 		//Log
 		Log("-RTMPServer::Run() Server accepting connections [fd:%d]\n", ufds[0].fd);
 
-		//Clean zombies each time
-		CleanZombies();
-
 		//Wait for events
 		if (poll(ufds,1,-1)<0)
 		{
@@ -197,7 +194,7 @@ init:
 void RTMPServer::CreateConnection(int fd)
 {
 	//Create new RTMP connection
-	RTMPConnection* rtmp = new RTMPConnection(this);
+	auto rtmp = std::make_shared<RTMPConnection>(this);
 
 	Log(">RTMPServer::CreateConnection() connection [fd:%d,%p]\n",fd,rtmp);
 
@@ -208,42 +205,12 @@ void RTMPServer::CreateConnection(int fd)
 	pthread_mutex_lock(&sessionMutex);
 
 	//Append
-	connections.push_back(rtmp);
+	connections[fd] = rtmp;
 
 	//Unlock
 	pthread_mutex_unlock(&sessionMutex);
 
 	Log("<RTMPServer::CreateConnection() [0x%x]\n",rtmp);
-}
-
-/**************************
- * DeleteConnection
- * 	DeleteConnection
- **************************/
-void RTMPServer::CleanZombies()
-{
-	Log("-RTMPServer::CleanZombies()\n");
-	
-	//Lock list
-	pthread_mutex_lock(&sessionMutex);
-
-	//Zombie iterator
-	for (Connections::iterator it=zombies.begin();it!=zombies.end();++it)
-	{
-		//Get connection
-		RTMPConnection *con = *it;
-		//End connection
-		con->End();
-		//Delete connection
-		delete con;
-	}
-
-	//Clear zombies
-	zombies.clear();
-
-	//Unlock list
-	pthread_mutex_unlock(&sessionMutex);
-
 }
 
 /*********************
@@ -257,24 +224,9 @@ void RTMPServer::DeleteAllConnections()
 	//Lock list
 	pthread_mutex_lock(&sessionMutex);
 
-	//Connection iterator
-	while (connections.size())
-	{
-		//Get first
-		RTMPConnection *con = *connections.begin();
-		//Remove
-		connections.erase(connections.begin());
-		
-		//Unlock list
-		pthread_mutex_unlock(&sessionMutex);
-		
-		//End connection
-		con->End();
-		//Delete connection
-		delete con;
-		//Lock list
-		pthread_mutex_lock(&sessionMutex);
-	}
+	//Clear all connections
+	connections.clear();
+	
 	//Unlock list
 	pthread_mutex_unlock(&sessionMutex);
 	
@@ -332,8 +284,6 @@ int RTMPServer::End()
         pthread_join(serverThread,NULL);
         Log("-RTMPServer::End() Joined server thread [%d]\n",serverThread);
 
-	//Clen zombies 
-	CleanZombies();
 	//Delete connections
 	DeleteAllConnections();
 
@@ -364,7 +314,7 @@ int RTMPServer::AddApplication(const wchar_t* name,RTMPApplication *app)
 RTMPNetConnection* RTMPServer::OnConnect(const std::wstring &appName,RTMPNetConnection::Listener *listener,std::function<void(bool)> accept)
 {
 	//Recorremos la lista
-	for (ApplicationMap::iterator it=applications.begin(); it!=applications.end(); ++it)
+	for (auto it=applications.begin(); it!=applications.end(); ++it)
 	{
 		//Si la uri empieza por la base del handler
 		if (appName.find(it->first)==0)
@@ -382,16 +332,13 @@ RTMPNetConnection* RTMPServer::OnConnect(const std::wstring &appName,RTMPNetConn
   *************************************/
 void RTMPServer::onDisconnect(RTMPConnection *con)
 {
-	Log("-RTMPServer::onDisconnect() [%p]\n",con);
+	Log("-RTMPServer::onDisconnect() [%p,socket:%d]\n",con,con->GetSocket());
 
 	//Lock list
 	pthread_mutex_lock(&sessionMutex);
 
 	//Remove from list
-	connections.remove(con);
-
-	//Append to destroyed
-	zombies.push_back(con);
+	connections.erase(con->GetSocket());
 
 	//Unlock list
 	pthread_mutex_unlock(&sessionMutex);

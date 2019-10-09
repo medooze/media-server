@@ -2853,16 +2853,6 @@
       </folder>
       <folder path="0/src/rtmp">
         <ccTool>
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>ext/libdatachannels/src</pElem>
-            <pElem>ext/libdatachannels/src/internal</pElem>
-            <pElem>ext/crc32c/include</pElem>
-            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem></pElem>
-          </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
@@ -3229,8 +3219,9 @@
         </ccTool>
       </item>
       <item path="src/MediaFrameListenerBridge.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="1">
+        <ccTool flags="2">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -3238,12 +3229,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4694,58 +4692,238 @@
       </item>
       <item path="src/rtmp/amf.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem></pElem>
+          </incDir>
         </ccTool>
       </item>
       <item path="src/rtmp/flvencoder.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem></pElem>
+          </incDir>
         </ccTool>
       </item>
       <item path="src/rtmp/flvrecorder.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem></pElem>
+          </incDir>
         </ccTool>
       </item>
       <item path="src/rtmp/rtmpchunk.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="1">
+        <ccTool flags="2">
+          <incDir>
+            <pElem>../../../include</pElem>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
+          </preprocessorList>
         </ccTool>
       </item>
       <item path="src/rtmp/rtmpclientconnection.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem></pElem>
+          </incDir>
         </ccTool>
       </item>
       <item path="src/rtmp/rtmpconnection.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="1">
+        <ccTool flags="2">
+          <incDir>
+            <pElem>../../../include</pElem>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
+          </preprocessorList>
         </ccTool>
       </item>
       <item path="src/rtmp/rtmpflvstream.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem></pElem>
+          </incDir>
         </ccTool>
       </item>
       <item path="src/rtmp/rtmpmessage.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem></pElem>
+          </incDir>
         </ccTool>
       </item>
       <item path="src/rtmp/rtmpmp4stream.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem></pElem>
+          </incDir>
         </ccTool>
       </item>
       <item path="src/rtmp/rtmpnetconnection.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="1">
+        <ccTool flags="2">
+          <incDir>
+            <pElem>../../../include</pElem>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
+          </preprocessorList>
         </ccTool>
       </item>
       <item path="src/rtmp/rtmppacketizer.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem></pElem>
+          </incDir>
         </ccTool>
       </item>
       <item path="src/rtmp/rtmpparticipant.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem></pElem>
+          </incDir>
         </ccTool>
       </item>
       <item path="src/rtmp/rtmpserver.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="1">
+        <ccTool flags="2">
+          <incDir>
+            <pElem>../../../include</pElem>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
+          </preprocessorList>
         </ccTool>
       </item>
       <item path="src/rtmp/rtmpstream.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
+          <incDir>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem></pElem>
+          </incDir>
         </ccTool>
       </item>
       <item path="src/rtp/LayerInfo.cpp" ex="false" tool="1" flavor2="11">

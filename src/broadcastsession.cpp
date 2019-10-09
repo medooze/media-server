@@ -275,29 +275,27 @@ BroadcastSession::NetConnection::Type BroadcastSession::NetConnection::GetType()
 	return type;
 }
 
-RTMPNetStream* BroadcastSession::NetConnection::CreateStream(DWORD streamId,DWORD audioCaps,DWORD videoCaps,RTMPNetStream::Listener* listener)
+ RTMPNetStream::shared BroadcastSession::NetConnection::CreateStream(DWORD streamId,DWORD audioCaps,DWORD videoCaps,RTMPNetStream::Listener* listener)
 {
-	RTMPNetStream* stream;
+	RTMPNetStream::shared stream;
 
 	//Check type
 	if (type==Publisher)
 		//Create publisher stream
-		stream = new PublisherNetStream(streamId,sess,listener);
+		stream = std::make_shared<PublisherNetStream>(streamId,sess,listener);
 	else
 		//Create watcher stream
-		stream = new WatcherNetStream(streamId,sess,listener);
+		stream = std::make_shared<WatcherNetStream>(streamId,sess,listener);
 	//Register it
 	RegisterStream(stream);
 	//return it
 	return stream;
 }
 
-void BroadcastSession::NetConnection::DeleteStream(RTMPNetStream *stream)
+void BroadcastSession::NetConnection::DeleteStream(const RTMPNetStream::shared& stream)
 {
 	//Unregister
 	UnRegisterStream(stream);
-	//Delete
-	delete(stream);
 }
 
 void BroadcastSession::NetConnection::Disconnect(RTMPNetConnection::Listener* listener)

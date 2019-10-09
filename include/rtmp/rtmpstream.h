@@ -7,6 +7,7 @@
 #include <string>
 #include <list>
 #include <set>
+#include <memory>
 
 struct RTMPNetStatusEventInfo
 {
@@ -257,6 +258,8 @@ public:
 		virtual void onNetStreamStatus(DWORD id,const RTMPNetStatusEventInfo &info,const wchar_t *message) = 0;
 		virtual void onNetStreamDestroyed(DWORD id) = 0;
 	};
+	
+	using shared = std::shared_ptr<RTMPNetStream>;
 public:
 	RTMPNetStream(DWORD id,Listener *listener);
 	virtual ~RTMPNetStream();

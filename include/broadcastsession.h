@@ -59,9 +59,8 @@ private:
 		NetConnection(Type type,BroadcastSession *sess);
 		Type GetType();
 		/** RTMPNetConnection */
-		//virtual void Connect(RTMPNetConnection::Listener* listener);
-		virtual RTMPNetStream* CreateStream(DWORD streamId,DWORD audioCaps,DWORD videoCaps,RTMPNetStream::Listener* listener);
-		virtual void DeleteStream(RTMPNetStream *stream);
+		virtual RTMPNetStream::shared CreateStream(DWORD streamId,DWORD audioCaps,DWORD videoCaps,RTMPNetStream::Listener *listener) override;
+		virtual void DeleteStream(const RTMPNetStream::shared& stream) override;
 		virtual void Disconnect(RTMPNetConnection::Listener* listener);
 	private:
 		Type type;

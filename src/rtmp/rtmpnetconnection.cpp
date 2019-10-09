@@ -12,7 +12,7 @@ void RTMPNetConnection::SendStatus(const RTMPNetStatusEventInfo &info,const wcha
 	//Lock mutexk
 	lock.WaitUnusedAndLock();
 	//For each listener
-	for(Listeners::iterator it = listeners.begin(); it!=listeners.end(); ++it)
+	for(auto it = listeners.begin(); it!=listeners.end(); ++it)
 		//Disconnect
 		(*it)->onNetConnectionStatus(info,message);
 	//Unlock
@@ -23,28 +23,24 @@ void RTMPNetConnection::Disconnect()
 {
 	//Lock mutexk
 	lock.WaitUnusedAndLock();
-	//For each stream
-	for(RTMPNetStreams::iterator it = streams.begin(); it!=streams.end(); ++it)
-		//Delete it
-		delete(*it);
 	//Clean streams
 	streams.clear();
 	//For each listener
-	for(Listeners::iterator it = listeners.begin(); it!=listeners.end(); ++it)
+	for(auto it = listeners.begin(); it!=listeners.end(); ++it)
 		//Disconnect
 		(*it)->onNetConnectionDisconnected();
 	//Unlock
 	lock.Unlock();
 }
 
-int RTMPNetConnection::RegisterStream(RTMPNetStream* stream)
+int RTMPNetConnection::RegisterStream(const RTMPNetStream::shared& stream)
 {
 	Log(">RTMPNetConnection::RegisterStream() [tag:%ls]\n",stream->GetTag().c_str());
 
 	//Lock mutexk
 	lock.WaitUnusedAndLock();
 	//Apend
-	streams.insert(stream);
+	streams[stream->GetStreamId()] = stream;
 	//Get number of streams
 	DWORD num = streams.size();
 	//Unlock
@@ -56,19 +52,15 @@ int RTMPNetConnection::RegisterStream(RTMPNetStream* stream)
 	return num;
 }
 
-int RTMPNetConnection::UnRegisterStream(RTMPNetStream* stream)
+int RTMPNetConnection::UnRegisterStream(const RTMPNetStream::shared& stream)
 {
 
 	Log(">RTMPNetConnection::UnRegisterStream() [tag:%ls]\n",stream->GetTag().c_str());
 
 	//Lock mutexk
 	lock.WaitUnusedAndLock();
-	//Find it
-	RTMPNetStreams::iterator it = streams.find(stream);
-	//If present
-	if (it!=streams.end())
-		//erase it
-		streams.erase(it);
+	//erase it
+	streams.erase(stream->GetStreamId());
 	//Get number of streams
 	DWORD num = streams.size();
 	//Unlock
@@ -96,7 +88,7 @@ void RTMPNetConnection::RemoveListener(Listener* listener)
 	//Lock mutexk
 	lock.WaitUnusedAndLock();
 	//Find it
-	Listeners::iterator it = listeners.find(listener);
+	auto it = listeners.find(listener);
 	//If present
 	if (it!=listeners.end())
 		//erase it
