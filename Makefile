@@ -114,7 +114,7 @@ OBJSLIB = ${CORE} ${RTP} ${RTCP} $(DEPACKETIZERSOBJ) $(MP4)
 OBJSTEST = $(OBJS) test/main.o test/test.o test/h264.o test/aac.o test/cpim.o test/rtp.o test/fec.o test/overlay.o test/vp8.o test/vp9.o test/stun.o
 
 
-BUILDOBJS = $(addprefix $(BUILD)/,$(OBJSMCU))
+BUILDOBJS = $(addprefix $(BUILD)/,$(OBJS))
 BUILDOBJSMCU = $(addprefix $(BUILD)/,$(OBJSMCU))
 BUILDOBJSBASE  = $(addprefix $(BUILD)/,$(OBJSBASE))
 BUILDOBJOBJSLIB = $(addprefix $(BUILD)/,$(OBJSLIB))
@@ -196,7 +196,7 @@ ifeq ($(STATIC),yes)
 	LDFLAGS+=/usr/local/src/libvpx/libvpx.a
 	LDFLAGS+=/usr/local/lib/
 else
-	LDFLAGS+= -lavcodec -lswscale -lavformat -lavutil -lavresample  -lmp4v2 -lspeex -lvpx -lopus  -lx264 
+	LDFLAGS+= -lavcodec -lswscale -lavformat -lavutil -lavresample  -lspeex -lvpx -lopus  -lx264 
 endif
 
 LDFLAGS+= -lgsm -lxmlrpc -lxmlrpc_xmlparse -lxmlrpc_xmltok -lxmlrpc_abyss -lxmlrpc_server -lxmlrpc_util -lnsl -lz -ljpeg -lpng -lresolv -L/lib/i386-linux-gnu -lgcrypt -lpthread -ldl
@@ -277,7 +277,7 @@ libmediaserver.so: touch mkdirs $(OBJSLIB)
 	@echo [OUT] $(TAG) $(BIN)/$@
 
 libmediaserver.a: touch mkdirs $(OBJSLIB)
-	${AR} rsc  $(BIN)/$@ $(BUILDOBJOBJSLIB)
+	${AR} rsc  $(BIN)/$@ $(BUILDOBJOBJSLIB) 
 	@echo [OUT] $(TAG) $(BIN)/$@
  
 libmediamixer.a: touch mkdirs $(OBJS)

@@ -214,8 +214,8 @@ void EventLoop::Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet
 		//Log
 		Error("-EventLoop::Send() | sending queue lagging behind [aprox:%u]\n",aprox);
 	} else if (aprox<MaxSendingQueueSize/4 && state!=State::Normal)  {
-		//We are lagging behind
-		state = State::Lagging;
+		//We are normal again
+		state = State::Normal;
 		//Log
 		Log("-EventLoop::Send() | sending queue back to normal [aprox:%u]\n",aprox);
 	}
