@@ -507,6 +507,7 @@ int FLVEncoder::EncodeAudio()
 			frame.SetMedia(audio.GetMediaData(),audio.GetMediaSize());
 			//Set frame time
 			frame.SetTimestamp(audio.GetTimestamp());
+			frame.SetTime(audio.GetTimestamp());
 			//Set frame duration
 			frame.SetDuration(encoder->numFrameSamples);
 			//Clear rtp
@@ -656,8 +657,10 @@ int FLVEncoder::EncodeVideo()
 		encoded->SetClockRate(1000);
 		
 		//Set timestamp
-		encoded->SetTimestamp(getDifTime(&first)/1000);
-
+		auto now = getDifTime(&first)/1000;
+		encoded->SetTimestamp(now);
+		encoded->SetTimestamp(now);
+		
 		//Set next one
 		frameTime = 1000/fps;
 

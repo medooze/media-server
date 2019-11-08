@@ -191,6 +191,8 @@ Mpeg4Encoder::Mpeg4Encoder(const Properties& properties)
 
 	//Y alocamos el buffer
 	frame = new VideoFrame(type,bufSize);
+	//Disable sharing buffer on clone
+	frame->DisableSharedBufer();
 }
 
 /***********************

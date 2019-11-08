@@ -157,6 +157,7 @@ RTPPacket::shared RTPPacket::Parse(const BYTE* data, DWORD size, const RTPMap& r
 			Debug("-DTLSICETransport::onData() | Could not parse RTP header extension\n");
 			//Dump it
 			::Dump(data,size);
+			header.Dump();
 			//Exit
 			return nullptr;
 		}

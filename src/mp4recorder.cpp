@@ -138,9 +138,6 @@ int mp4track::CreateVideoTrack(VideoCodec::Type codec, DWORD rate, int width, in
 			MP4Duration h264FrameDuration		= 1.0/30;
 			// Create video track
 			track = MP4AddH264VideoTrack(mp4, rate, h264FrameDuration, width, height, AVCProfileIndication, AVCProfileCompat, AVCLevelIndication,  3);
-			//Update widht an ehight
-			MP4SetTrackIntegerProperty(mp4,track,"mdia.minf.stbl.stsd.avc1.width", width);
-			MP4SetTrackIntegerProperty(mp4,track,"mdia.minf.stbl.stsd.avc1.height", height);
 			// Create video hint track
 			hint = MP4AddHintTrack(mp4, track);
 			// Set payload type for hint track

@@ -141,6 +141,8 @@ int FLV1Encoder::OpenCodec()
 
 	//Y alocamos el buffer
 	frame = new VideoFrame(type,bufSize);
+	//Disable sharing buffer on clone
+	frame->DisableSharedBufer();
 
 	// Bitrate,fps
 	ctx->bit_rate 		= bitrate;

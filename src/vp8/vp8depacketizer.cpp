@@ -38,8 +38,14 @@ MediaFrame* VP8Depacketizer::AddPacket(const RTPPacket::shared& packet)
 	if (frame.GetTimeStamp()!=ts)
 		//Reset frame
 		ResetFrame();
-	//Set timestamp
-	frame.SetTimestamp(ts);
+	//If not timestamp
+	if (frame.GetTimeStamp()==(DWORD)-1)
+	{
+		//Set timestamp
+		frame.SetTimestamp(ts);
+		//Set time
+		frame.SetTime(packet->GetTime());
+	}
 	//Set SSRC
 	frame.SetSSRC(packet->GetSSRC());
 	//Add payload

@@ -148,6 +148,8 @@ public:
 	Type	GetType() const		{ return type;	}
 	DWORD	GetTimeStamp() const	{ return ts;	}
 	void	SetTimestamp(DWORD ts)	{ this->ts = ts; }
+	QWORD	GetTime() const		{ return time;	}
+	void	SetTime(QWORD time)	{ this->time = time; }
 	
 	DWORD	GetSSRC() const		{ return ssrc;		}
 	void	SetSSRC(DWORD ssrc)	{ this->ssrc = ssrc;	}
@@ -165,6 +167,8 @@ public:
 
 	BYTE* GetData()				{ AdquireBuffer(); return buffer->GetData();	}
 	void SetLength(DWORD length)		{ AdquireBuffer(); buffer->SetSize(length);	}
+	
+	void DisableSharedBufer()		{ disableSharedBuffer = true;			}
 	
 	void ResetData(DWORD size = 0) 
 	{
@@ -239,6 +243,7 @@ public:
 		ResetData();
 		//Clear time
 		SetTimestamp((DWORD)-1);
+		SetTime(0);
 	}
 	
 	bool HasCodecConfig() const		{ return configData && configSize;	}
@@ -265,10 +270,12 @@ protected:
 protected:
 	Type type		= MediaFrame::Unknown;
 	DWORD ts		= (DWORD)-1;
+	QWORD time		= 0;
 	DWORD ssrc		= 0;
 	
 	std::shared_ptr<Buffer> buffer;
-	bool ownedBuffer	= false;
+	bool ownedBuffer		= false;
+	bool disableSharedBuffer	= false;
 	
 	DWORD	duration	= 0;
 	DWORD	clockRate	= 1000;

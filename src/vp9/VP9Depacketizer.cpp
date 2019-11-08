@@ -40,8 +40,12 @@ MediaFrame* VP9Depacketizer::AddPacket(const RTPPacket::shared& packet)
 		ResetFrame();
 	//If not timestamp
 	if (frame.GetTimeStamp()==(DWORD)-1)
+	{
 		//Set timestamp
 		frame.SetTimestamp(ts);
+		//Set time
+		frame.SetTime(packet->GetTime());
+	}
 	//Set SSRC
 	frame.SetSSRC(packet->GetSSRC());
 	//Add payload
