@@ -543,7 +543,7 @@ DWORD DTLSICETransport::SendProbe(const RTPPacket::shared& packet)
 	//If not found
 	if (!group)
 		//Error
-		return Error("-DTLSICETransport::SendProbe() | Outgoind source not registered for ssrc:%u\n",packet->GetSSRC());
+		return Warning("-DTLSICETransport::SendProbe() | Outgoind source not registered for ssrc:%u\n",packet->GetSSRC());
 
 	//Get current time
 	auto now = getTime();
@@ -1701,6 +1701,9 @@ bool DTLSICETransport::RemoveOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 			send.RemoveStream(rtx);
 			//Add group ssrcs
 			ssrcs.push_back(rtx);
+			//Clear history
+			//TODO: make it fine grained
+			history.clear();
 		}
 		
 		//If it was our main ssrc
