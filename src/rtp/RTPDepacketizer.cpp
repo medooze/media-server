@@ -65,7 +65,7 @@ RTPDepacketizer* RTPDepacketizer::Create(MediaFrame::Type mediaType,DWORD codec)
 			 break;
 		 }
 		 default:
-			 Error("-RTPDepacketizer::Create unknown media type");
+			 Error("-RTPDepacketizer::Create unknown media type\n");
 	 }
 	 return NULL;
 }
