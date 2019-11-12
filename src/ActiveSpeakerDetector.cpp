@@ -50,6 +50,10 @@ void ActiveSpeakerDetector::Release(uint32_t id)
 {
 	//Remove speaker
 	speakers.erase(id);
+	//If it was last active
+	if (lastActive==id)
+		//Process it again
+		Process(last);
 }
 
 void ActiveSpeakerDetector::Process(uint64_t now)
