@@ -114,7 +114,7 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 			
 			//Check size
 			if (i+1>length)
-				return Error("Not enought data for 2 byte header");;
+				return Error("Not enought data for 2 byte header\n");;
 			
 			//Get extension element length
 			len = ext[i++];
@@ -133,7 +133,7 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 		
 		//Ensure that we have enought data
 		if (i+len>length)
-			return Error("Not enougth data for extension value");
+			return Error("Not enougth data for extension\n");
 		
 		//Get mapped extension
 		BYTE type = extMap.GetCodecForType(id);

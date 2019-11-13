@@ -21,8 +21,6 @@ RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec, QWORD time)
 	this->media = media;
 	//Set codec
 	this->codec = codec;
-	//NO seq cycles
-	cycles = 0;
 	//Default clock rates
 	switch(media)
 	{
@@ -54,8 +52,6 @@ RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec,const RTPHeader &header, 
 	this->media = media;
 	//Set coced
 	this->codec = codec;
-	//NO seq cycles
-	cycles = 0;
 	//Default clock rates
 	switch(media)
 	{
@@ -84,8 +80,6 @@ RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec,const RTPHeader &header, 
 	this->media = media;
 	//Set coced
 	this->codec = codec;
-	//NO seq cycles
-	cycles = 0;
 	//Default clock rates
 	switch(media)
 	{
@@ -110,7 +104,7 @@ RTPPacket::~RTPPacket()
 {
 }
 
-RTPPacket::shared RTPPacket::Clone()
+RTPPacket::shared RTPPacket::Clone() const
 {
 	//New one
 	auto cloned = std::make_shared<RTPPacket>(GetMedia(),GetCodec(),GetRTPHeader(),GetRTPHeaderExtension(),payload,GetTime());
@@ -120,9 +114,10 @@ RTPPacket::shared RTPPacket::Clone()
 	cloned->SetTimestamp(GetTimestamp());
 	cloned->SetKeyFrame(IsKeyFrame());
 	//Copy descriptors
-	cloned->vp8PayloadDescriptor = vp8PayloadDescriptor;
-	cloned->vp8PayloadHeader     = vp8PayloadHeader;
-	cloned->vp9PayloadDescriptor = vp9PayloadDescriptor;
+	cloned->rewitePictureIds     = rewitePictureIds;
+	cloned->vp8PayloadDescriptor = std::optional<VP8PayloadDescriptor>(vp8PayloadDescriptor);
+	cloned->vp8PayloadHeader     = std::optional<VP8PayloadHeader>(vp8PayloadHeader);
+	cloned->vp9PayloadDescriptor = std::optional<VP9PayloadDescription>(vp9PayloadDescriptor);
 	//Return it
 	return cloned;
 }
@@ -227,6 +222,15 @@ DWORD RTPPacket::Serialize(BYTE* data,DWORD size,const RTPMap& extMap) const
 		//Error
 		return Error("-RTPPacket::Serialize() | Media overflow\n");
 	
+	//If we have osn
+	if (osn)
+	{
+		//And set the original seq
+		set2(data, len, osn);
+		//Move payload start
+		len += 2;
+	}
+	
 	//If we need to rewrite the vp8 descriptor
 	if (rewitePictureIds && vp8PayloadDescriptor)
 	{
@@ -251,6 +255,7 @@ DWORD RTPPacket::Serialize(BYTE* data,DWORD size,const RTPMap& extMap) const
 		len += GetMediaLength()-descLen;
 		
 	} else {
+		Dump();
 		//Copy media payload
 		memcpy(data+len,GetMediaData(),GetMediaLength());
 		//Inc payload len
@@ -311,7 +316,15 @@ bool RTPPacket::RecoverOSN()
 	return true;
 }
 
-void RTPPacket::Dump()
+void RTPPacket::SetOSN(DWORD extSeqNum)
+{
+	//Store current seq as osn
+	osn = GetSeqNum();
+	//Set new seq num
+	SetExtSeqNum(extSeqNum);
+}
+
+void RTPPacket::Dump() const
 {
 	Debug("[RTPPacket %s codec=%s payload=%d extSeqNum=%u(%u)]\n",MediaFrame::TypeToString(GetMedia()),GetNameForCodec(GetMedia(),GetCodec()),GetMediaLength(),GetExtSeqNum(),GetSeqCycles());
 	header.Dump();
