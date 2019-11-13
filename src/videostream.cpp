@@ -72,11 +72,10 @@ int VideoStream::SetVideoCodec(VideoCodec::Type codec,int mode,int fps,int bitra
 	if (properties.HasProperty("rateEstimator.maxRate"))
 		rtp.SetTemporalMaxLimit(properties.GetProperty("rateEstimator.maxRate",0));
 	//Fix: Should not be here
-	if (properties.HasProperty("rateEstimator.minRate")){
+	if (properties.HasProperty("rateEstimator.minRate"))
 		//Set it
 		sendMinRate = properties.GetProperty("rateEstimator.minRate",0);
 		rtp.SetTemporalMinLimit(sendMinRate);
-	}
 	
 	//LO guardamos
 	videoCodec=codec;
