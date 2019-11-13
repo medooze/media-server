@@ -6,6 +6,8 @@ MediaFrame* OpusDepacketizer::AddPacket(const RTPPacket::shared& packet)
 	ResetFrame();
 	//Set timestamp
 	frame.SetTimestamp(packet->GetTimestamp());
+	//Set time
+	frame.SetTime(packet->GetTime());
 	//Set SSRC
 	frame.SetSSRC(packet->GetSSRC());
 	//Add payload
@@ -55,13 +57,7 @@ MediaFrame* OpusDepacketizer::AddPayload(const BYTE* payload,DWORD payloadLen)
 
 void OpusDepacketizer::ResetFrame()
 {
-	//Clear packetization info
-	frame.ClearRTPPacketizationInfo();
-	//Reset
-	memset(frame.GetData(),0,frame.GetMaxMediaLength());
-	//Clear length
-	frame.SetLength(0);
-	//Clear time
-	frame.SetTimestamp((DWORD)-1);
+	//Reset frame data
+	frame.Reset();
 }
 	

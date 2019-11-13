@@ -214,7 +214,7 @@ int AudioEncoderWorker::Encode()
 
 			//Set frame time
 			frame.SetTimestamp(frameTime*1000/codec->GetClockRate());
-
+			frame.SetTime(frameTime);
 			//Set frame duration
 			frame.SetDuration(codec->numFrameSamples*1000/codec->GetClockRate());
 

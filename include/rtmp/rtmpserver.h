@@ -1,5 +1,6 @@
 #ifndef _RTMPSERVER_H_
 #define _RTPMSERVER_H_
+#include <memory>
 #include "pthread.h"
 #include "rtmpstream.h"
 #include "rtmpapplication.h"
@@ -26,13 +27,9 @@ protected:
         int Run();
 
 private:
-	typedef std::map<std::wstring,RTMPApplication *> ApplicationMap;
-	typedef std::list<RTMPConnection*>	Connections;
-
         static void * run(void *par);
 
 	void CreateConnection(int fd);
-	void CleanZombies();
 	void DeleteAllConnections();
 
 private:
@@ -40,9 +37,8 @@ private:
 	int serverPort;
 	int server;
 
-	Connections connections;
-	Connections zombies;
-	ApplicationMap applications;
+	std::map<int,RTMPConnection::shared> connections;
+	std::map<std::wstring,RTMPApplication *> applications;
 	pthread_t serverThread;
 	pthread_mutex_t	sessionMutex;
 };

@@ -17,12 +17,12 @@ int PCAPFile::Open(const char* filename)
 {
 	ScopedLock lock(mutex);
 	
-	Log("PCAPFile::open() [\"%s\"]\n",filename);
+	Log("-PCAPFile::open() [\"%s\"]\n",filename);
 	
 	//Open file
 	if ((fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0600))<0)
 		//Error
-		return Error("Could not open file [err:%d]\n",errno);
+		return Error("-PCAPFile::open() | Could not open file [err:%d]\n",errno);
 		
         //PCAP file header
 	BYTE out[PCAP_HEADER_SIZE];
@@ -39,14 +39,16 @@ int PCAPFile::Open(const char* filename)
 	return write(fd, out, sizeof(out));
 }
     
-void PCAPFile::WriteUDP(QWORD currentTimeMillis,DWORD originIp, short originPort, DWORD destIp, short destPort,const BYTE* data, DWORD size)
+void PCAPFile::WriteUDP(QWORD currentTimeMillis,DWORD originIp, short originPort, DWORD destIp, short destPort,const BYTE* data, DWORD size, DWORD truncate)
 {
 	BYTE out[PCAP_UDP_PACKET_SIZE];
 	
-        // Packet headers (16)
+	DWORD saved = truncate ? std::min(truncate,size) : size;
+	
+	// Packet headers (16)
         set4(out,  0,( int) (currentTimeMillis/1000));             // timestamp seconds
         set4(out,  4, (int) ((currentTimeMillis %1000))*1000);     // timestamp in nanoseconds
-        set4(out,  8, size+42);                                    // number of octets of packet saved in file
+        set4(out,  8, saved+42);                                   // number of octets of packet saved in file
         set4(out, 12, size+42);                                    // actual length of packet 
         //Write ehternet header (14)
 	set6(out, 16, 0x00000000);
@@ -73,9 +75,9 @@ void PCAPFile::WriteUDP(QWORD currentTimeMillis,DWORD originIp, short originPort
 	mutex.Lock();
 
         //Write header and content
-	if (write(fd, out, sizeof(out))<0 || write(fd, data, size)<0)
+	if (write(fd, out, sizeof(out))<0 || write(fd, data, saved)<0)
 		//Error
-		Error("-PCAPFile::WriteUDP()\n");
+		Error("-PCAPFile::WriteUDP() | Error writing file [errno:%d]\n",errno);
 	
 	//unlock
 	mutex.Unlock();
@@ -88,7 +90,7 @@ void PCAPFile::Close()
 	//Check not already closed
 	if (fd<0) return;
 
-	Log("-PCAPFile::close()\n");
+	Log("-PCAPFile::Close()\n");
 	
 	//Close file
 	close(fd);

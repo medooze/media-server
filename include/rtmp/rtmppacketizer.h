@@ -23,6 +23,7 @@ public:
 	std::unique_ptr<AudioFrame> AddFrame(RTMPAudioFrame* videoFrame);
 private:
 	AACSpecificConfig aacSpecificConfig;
+        bool gotConfig = false;
 };
 
 #endif /* RTMPPACKETIZER_H */

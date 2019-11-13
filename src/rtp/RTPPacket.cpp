@@ -19,7 +19,7 @@
 RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec, QWORD time) 
 {
 	this->media = media;
-	//Set coced
+	//Set codec
 	this->codec = codec;
 	//NO seq cycles
 	cycles = 0;
@@ -118,6 +118,7 @@ RTPPacket::shared RTPPacket::Clone()
 	cloned->SetClockRate(GetClockRate());
 	cloned->SetSeqCycles(GetSeqCycles());
 	cloned->SetTimestamp(GetTimestamp());
+	cloned->SetKeyFrame(IsKeyFrame());
 	//Copy descriptors
 	cloned->vp8PayloadDescriptor = vp8PayloadDescriptor;
 	cloned->vp8PayloadHeader     = vp8PayloadHeader;
@@ -126,10 +127,82 @@ RTPPacket::shared RTPPacket::Clone()
 	return cloned;
 }
 
+RTPPacket::shared RTPPacket::Parse(const BYTE* data, DWORD size, const RTPMap& rtpMap, const RTPMap& extMap)
+{
+	RTPHeader header;
+	RTPHeaderExtension extension;
+	//Parse RTP header
+	DWORD ini = header.Parse(data,size);
+	
+	//On error
+	if (!ini)
+	{
+		//Debug
+		Debug("-DTLSICETransport::onData() | Could not parse RTP header\n");
+		//Dump it
+		::Dump(data,size);
+		//Exit
+		return nullptr;
+	}
+	
+	//If it has extension
+	if (header.extension)
+	{
+		//Parse extension
+		DWORD l = extension.Parse(extMap,data+ini,size-ini);
+		//If not parsed
+		if (!l)
+		{
+			///Debug
+			Debug("-DTLSICETransport::onData() | Could not parse RTP header extension\n");
+			//Dump it
+			::Dump(data,size);
+			header.Dump();
+			//Exit
+			return nullptr;
+		}
+		//Inc ini
+		ini += l;
+	}
+
+	//Check size with padding
+	if (header.padding)
+	{
+		//Get last 2 bytes
+		WORD padding = get1(data,size-1);
+		//Ensure we have enought size
+		if (size-ini<padding)
+		{
+			///Debug
+			Debug("-DTLSICETransport::onData() | RTP padding is bigger than size [padding:%u,size%u]\n",padding,size);
+			//Exit
+			return 0;
+		}
+		//Remove from size
+		size -= padding;
+	}
+	
+	//Get initial codec
+	BYTE codec = rtpMap.GetCodecForType(header.payloadType);
+	
+	//Get media
+	MediaFrame::Type media = GetMediaForCodec(codec);
+	
+	//Create normal packet
+	auto packet = std::make_shared<RTPPacket>(media,codec,header,extension);
+	
+	//Set the payload
+	packet->SetPayload(data+ini,size-ini);
+	
+	//Done
+	return packet;
+}
+
+
 DWORD RTPPacket::Serialize(BYTE* data,DWORD size,const RTPMap& extMap) const
 {
 	//Serialize header
-	int len = header.Serialize(data,size);
+	uint32_t len = header.Serialize(data,size);
 
 	//Check
 	if (!len)
@@ -140,7 +213,7 @@ DWORD RTPPacket::Serialize(BYTE* data,DWORD size,const RTPMap& extMap) const
 	if (header.extension)
 	{
 		//Serialize
-		int n = extension.Serialize(extMap,data+len,size-len);
+		uint32_t n = extension.Serialize(extMap,data+len,size-len);
 		//Comprobamos que quepan
 		if (!n)
 			//Error
@@ -153,17 +226,37 @@ DWORD RTPPacket::Serialize(BYTE* data,DWORD size,const RTPMap& extMap) const
 	if (len+GetMediaLength()>size)
 		//Error
 		return Error("-RTPPacket::Serialize() | Media overflow\n");
-
-	//Copy media payload
-	memcpy(data+len,GetMediaData(),GetMediaLength());
 	
 	//If we need to rewrite the vp8 descriptor
 	if (rewitePictureIds && vp8PayloadDescriptor)
+	{
+		//Get current vp8 descriptor length
+		uint32_t descLen = vp8PayloadDescriptor->GetSize();
+		//Copy the descriptor
+		auto vp8NewPayloadDescriptor = vp8PayloadDescriptor.value();
+		//Always store it as two bytes
+		vp8NewPayloadDescriptor.pictureIdPresent = 1;
+		vp8NewPayloadDescriptor.pictureIdLength = 2;
 		//Write it back
-		vp8PayloadDescriptor->Serialize(data+len,size-len);
+		len += vp8NewPayloadDescriptor.Serialize(data+len,size-len);
+		
+		//Check size
+		if (descLen>GetMediaLength())
+			//Error
+			return Error("-RTPPacket::Serialize() | Wrong vp8PayloadDescriptor when rewriting pict ids\n");
+		
+		//Copy media payload without the old description
+		memcpy(data+len,GetMediaData()+descLen,GetMediaLength()-descLen);
+		//Inc payload len
+		len += GetMediaLength()-descLen;
+		
+	} else {
+		//Copy media payload
+		memcpy(data+len,GetMediaData(),GetMediaLength());
+		//Inc payload len
+		len += GetMediaLength();
+	}
 	
-	//Inc payload len
-	len += GetMediaLength();
 	
 	//Return copied len
 	return len;

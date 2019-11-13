@@ -31,7 +31,8 @@ int main(int argc, char** argv)
 	SendSideBandwidthEstimation senderSideBandwidthEstimator;
 	
 	extMap[1] = RTPHeaderExtension::SSRCAudioLevel;
-	extMap[5] = RTPHeaderExtension::TransportWideCC;
+	//extMap[5] = RTPHeaderExtension::TransportWideCC;
+	extMap[2] = RTPHeaderExtension::TransportWideCC;
 	
 	reader.Open(argv[1]);
 	
@@ -85,9 +86,8 @@ int main(int argc, char** argv)
 						{
 							//Get field
 							auto field = fb->GetField<RTCPRTPFeedback::TransportWideFeedbackMessageField>(i);
-							field->Dump();
 							//Pass it to the estimator
-							senderSideBandwidthEstimator.ReceivedFeedback(field->feedbackPacketCount,field->packets);
+							senderSideBandwidthEstimator.ReceivedFeedback(field->feedbackPacketCount,field->packets, time);
 						}
 					}
 				}

@@ -22,7 +22,7 @@ DTLSConnection::AvailableHashes		DTLSConnection::availableHashes;
 void DTLSConnection::SetCertificate(const char* cert,const char* key)
 {
 	//Log
-	Log("-DTLSConnection::SetCertificate() | Set SSL certificate files [crt:\"%s\",key:\"%s\"]\n",cert,key);
+	Debug("-DTLSConnection::SetCertificate() | Set SSL certificate files [crt:\"%s\",key:\"%s\"]\n",cert,key);
 	//Set certificate files
 	DTLSConnection::certfile.assign(cert);
 	DTLSConnection::pvtfile.assign(key);
@@ -30,7 +30,7 @@ void DTLSConnection::SetCertificate(const char* cert,const char* key)
 
 int DTLSConnection::GenerateCertificate()
 {
-	Log(">DTLSConnection::GenerateCertificate()\n");
+	Debug(">DTLSConnection::GenerateCertificate()\n");
 	
 	int ret = 0;
 	BIGNUM* bne = NULL;
@@ -142,7 +142,7 @@ int DTLSConnection::GenerateCertificate()
 	// Free stuff and return.
 	BN_free(bne);
 	
-	Log("<DTLSConnection::GenerateCertificate()\n");
+	Debug("<DTLSConnection::GenerateCertificate()\n");
 	
 	return 1;
 
@@ -210,7 +210,7 @@ int DTLSConnection::ReadCertificate()
 
 int DTLSConnection::Initialize()
 {
-	Log(">DTLSConnection::Initialize()\n");
+	Debug(">DTLSConnection::Initialize()\n");
 
 	// Create a single SSL context
 	ssl_ctx = SSL_CTX_new(DTLS_method());
@@ -333,13 +333,16 @@ int DTLSConnection::Initialize()
 	// OK, we have DTLS.
 	DTLSConnection::hasDTLS = true;
 
-	Log("<DTLSConnection::Initialize(%d)\n",availableHashes.size());
+	Debug("<DTLSConnection::Initialize(%d)\n",availableHashes.size());
 	//OK
 	return 1;
 }
 
 int DTLSConnection::Terminate()
 {
+	Debug("-DTLSConnection::Terminate()\n");
+	
+	//Free stuff
 	if (privateKey)
 		EVP_PKEY_free(privateKey);
 	if (certificate)
@@ -347,6 +350,12 @@ int DTLSConnection::Terminate()
 	if (ssl_ctx)
 		SSL_CTX_free(ssl_ctx);
 	
+	//Reset values
+	privateKey = nullptr;
+	certificate = nullptr;
+	ssl_ctx = nullptr;
+	
+	//All done
 	return 1;
 }
 
@@ -650,8 +659,8 @@ void DTLSConnection::onSSLInfo(int where, int ret)
 			listener.onDTLSSetupError();
 	}
 
-	// NOTE: checking SSL_get_shutdown(this->ssl) & SSL_RECEIVED_SHUTDOWN here upon
-	// receipt of a close alert does not work.
+	//Check pending data for writing
+	CheckPending();
 }
 
 int DTLSConnection::Renegotiate()
@@ -718,7 +727,7 @@ int DTLSConnection::SetupSRTP()
 			return Error("-DTLSConnection::SetupSRTP() | unknown remote hash, cannot verify remote fingerprint\n");
 	}
 
-	if (!X509_digest(certificate, hashFunction, fingerprint, &size) || !size || memcmp(fingerprint, remoteFingerprint, size))
+	if (strlen((char*)remoteFingerprint) && (!X509_digest(certificate, hashFunction, fingerprint, &size) || !size || memcmp(fingerprint, remoteFingerprint, size)))
 	{
 		X509_free(certificate);
 		return Error("-DTLSConnection::SetupSRTP() | fingerprint in remote SDP does not match that of peer certificate (hash %s)\n", hashStr.c_str());
@@ -788,10 +797,8 @@ int DTLSConnection::Write(const BYTE *buffer, DWORD size)
 
 	BIO_write(read_bio, buffer, size);
 	
-	//Reschedule timer
-	struct timeval tv = {0,0};
-	if (DTLSv1_get_timeout(ssl, &tv))
-		timeout->Again(std::chrono::milliseconds(getDifTime(&tv)));
+	//Check pending dtls data for sending
+	CheckPending();
 	
 	BYTE msg[MTU];
 	int len = SSL_read(ssl, msg, MTU);
@@ -820,7 +827,8 @@ int DTLSConnection::Write(const BYTE *buffer, DWORD size)
 		listener.onDTLSShutdown();
 		return 0;
 	}
-
+	
+	//Done
 	return 1;
 }
 
@@ -830,5 +838,9 @@ void DTLSConnection::CheckPending()
 	//Check if there is any pending 
 	if (BIO_ctrl_pending(write_bio))
 		listener.onDTLSPendingData();
+	//Reschedule timer
+	timeval tv = {};
+	if (timeout && DTLSv1_get_timeout(ssl, &tv))
+		timeout->Again(std::chrono::milliseconds(getTime(tv)/1000));
 }
 

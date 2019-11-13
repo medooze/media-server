@@ -26,28 +26,26 @@ VP9Depacketizer::~VP9Depacketizer()
 
 void VP9Depacketizer::ResetFrame()
 {
-	//Clear packetization info
-	frame.ClearRTPPacketizationInfo();
-	//Reset
-	memset(frame.GetData(),0,frame.GetMaxMediaLength());
-	//Clear length
-	frame.SetLength(0);
-	//Clear time
-	frame.SetTimestamp((DWORD)-1);
+	//Reset frame data
+	frame.Reset();
 }
 
 MediaFrame* VP9Depacketizer::AddPacket(const RTPPacket::shared& packet)
 {
 	//Get timestamp in ms
-	auto ts = packet->GetTimestamp()/90;
+	auto ts = packet->GetTimestamp();
 	//Check it is from same packet
 	if (frame.GetTimeStamp()!=ts)
 		//Reset frame
 		ResetFrame();
 	//If not timestamp
 	if (frame.GetTimeStamp()==(DWORD)-1)
+	{
 		//Set timestamp
 		frame.SetTimestamp(ts);
+		//Set time
+		frame.SetTime(packet->GetTime());
+	}
 	//Set SSRC
 	frame.SetSSRC(packet->GetSSRC());
 	//Add payload

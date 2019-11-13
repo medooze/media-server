@@ -64,6 +64,8 @@ bool RTPStreamTransponder::SetIncoming(RTPIncomingMediaStream* incoming, RTPRece
 		
 		//Request update on the incoming
 		if (this->receiver) this->receiver->SendPLI(this->incoming->GetMediaSSRC());
+		//Update last requested PLI
+		lastSentPLI = getTime();
 	}
 	
 	Debug("<RTPStreamTransponder::SetIncoming() | [incoming:%p,receiver:%p]\n",incoming,receiver);
@@ -240,6 +242,10 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 		{
 			//One more dropperd
 			dropped++;
+			//If selector is waiting for intra and last PLI was more than 1s ago
+			if (selector->IsWaitingForIntra() && getTimeDiff(lastSentPLI)>1E6)
+				//Request it again
+				RequestPLI();
 			//Drop
 			return;
 		}
@@ -285,8 +291,8 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 			tl0Idx++;
 		}
 		
-		//Rewrite picture id wrapping to 15 or 7 bits
-		pictureId = desc.pictureIdLength==2 ? picId%0x7FFF : picId%0x7F;
+		//Rewrite picture id
+		pictureId = picId;
 		//Rewrite tl0 index
 		temporalLevelZeroIndex = tl0Idx;
 		//We need to rewrite vp8 picture ids
@@ -321,7 +327,7 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 			//Ensure we have desc
 			if (cloned->vp8PayloadDescriptor)
 			{
-				//Rewrite picture id wrapping to 15 or 7 bits
+				//Rewrite picture id
 				cloned->vp8PayloadDescriptor->pictureId = pictureId;
 				//Rewrite tl0 index
 				cloned->vp8PayloadDescriptor->temporalLevelZeroIndex = temporalLevelZeroIndex;
@@ -367,6 +373,8 @@ void RTPStreamTransponder::RequestPLI()
 	ScopedLock lock(mutex);
 	//Request update on the incoming
 	if (receiver && incoming) receiver->SendPLI(incoming->GetMediaSSRC());
+	//Update last sent pli
+	lastSentPLI = getTime();
 }
 
 void RTPStreamTransponder::onPLIRequest(RTPOutgoingSourceGroup* group,DWORD ssrc)

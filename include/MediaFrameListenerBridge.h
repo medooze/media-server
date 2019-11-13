@@ -11,7 +11,7 @@ class MediaFrameListenerBridge :
 {
 public:
 	MediaFrameListenerBridge(DWORD ssrc) : ssrc(ssrc), acumulator(1000) {}
-	virtual ~MediaFrameListenerBridge() = default;
+	virtual ~MediaFrameListenerBridge();
 	
         void AddMediaListener(MediaFrame::Listener *listener);	
 	void RemoveMediaListener(MediaFrame::Listener *listener);

@@ -162,14 +162,14 @@ int H263Decoder1996::DecodePacket(const BYTE *in,DWORD len,int lost,int last)
 	return ret;
 }
 
-int H263Decoder1996::Decode(BYTE *buffer,DWORD size)
+int H263Decoder1996::Decode(const BYTE *buffer,DWORD size)
 {
 	//Decodificamos
 	int got_picture=0;
 	//Decodificamos
 	AVPacket pkt;
 	av_init_packet(&pkt);
-	pkt.data = buffer;
+	pkt.data = (uint8_t*)buffer;
 	pkt.size = size;
 	int readed = avcodec_decode_video2(ctx, picture, &got_picture, &pkt);
 
@@ -354,6 +354,8 @@ int H263Encoder1996::OpenCodec()
 
 	//Y alocamos el buffer
 	frame = new VideoFrame(type,bufSize);
+	//Disable sharing buffer on clone
+	frame->DisableSharedBufer();
 
 	// Bitrate,fps
 	ctx->bit_rate 		= bitrate;

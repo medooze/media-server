@@ -16,6 +16,7 @@ public:
 	virtual BYTE GetTemporalLayer()		const = 0;
 	virtual BYTE GetSpatialLayer()		const = 0;
 	virtual VideoCodec::Type GetCodec()	const = 0;
+	virtual bool IsWaitingForIntra()	const = 0;
 	
 public:
 	//Factory method

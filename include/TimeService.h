@@ -15,6 +15,8 @@ public:
 	virtual ~Timer() = default;
 	virtual void Cancel() = 0;
 	virtual void Again(const std::chrono::milliseconds& ms) = 0;
+	virtual bool IsScheduled() const = 0;
+	virtual std::chrono::milliseconds GetNextTick()	const = 0;
 	virtual std::chrono::milliseconds GetRepeat() const = 0;
 };
 	

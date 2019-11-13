@@ -1,6 +1,7 @@
 #ifndef _MEDIA_H_
 #define	_MEDIA_H_
 #include "config.h"
+#include "log.h"
 #include <stdlib.h>
 #include <vector>
 #include <string.h>
@@ -47,12 +48,24 @@ public:
 			if (prefix) free(prefix);
 		}
 
-		DWORD GetPos()		const { return pos;	}
-		DWORD GetSize()		const { return size;	}
-		BYTE* GetPrefixData()	const { return prefix;	}
+		DWORD GetPos()		const { return pos;		}
+		DWORD GetSize()		const { return size;		}
+		BYTE* GetPrefixData()	const { return prefix;		}
 		DWORD GetPrefixLen()	const { return prefixLen;	}
-		DWORD GetTotalLength()	const { return size+prefixLen;}
+		DWORD GetTotalLength()	const { return size+prefixLen;	}
 		
+		void Dump() const 
+		{
+			if (!prefixLen)
+			{
+				Debug("[RtpPacketization size=%u pos=%u/]\n",size,pos);
+			} else {
+				Debug("[RtpPacketization size=%u pos=%u]\n",size,pos);
+				::Dump(prefix,prefixLen);
+				Debug("[RtpPacketization/]\n");
+			}
+			
+		}
 	private:
 		DWORD	pos;
 		DWORD	size;
@@ -120,6 +133,13 @@ public:
 		}
 	}
 	
+	void	DumpRTPPacketizationInfo() const
+	{
+		//Dump all info
+		for (const auto& info : rtpInfo)
+			info->Dump();
+	}
+	
 	void	AddRtpPacket(DWORD pos,DWORD size,const BYTE* prefix,DWORD prefixLen)		
 	{
 		rtpInfo.push_back(new RtpPacketization(pos,size,prefix,prefixLen));
@@ -128,6 +148,8 @@ public:
 	Type	GetType() const		{ return type;	}
 	DWORD	GetTimeStamp() const	{ return ts;	}
 	void	SetTimestamp(DWORD ts)	{ this->ts = ts; }
+	QWORD	GetTime() const		{ return time;	}
+	void	SetTime(QWORD time)	{ this->time = time; }
 	
 	DWORD	GetSSRC() const		{ return ssrc;		}
 	void	SetSSRC(DWORD ssrc)	{ this->ssrc = ssrc;	}
@@ -145,6 +167,16 @@ public:
 
 	BYTE* GetData()				{ AdquireBuffer(); return buffer->GetData();	}
 	void SetLength(DWORD length)		{ AdquireBuffer(); buffer->SetSize(length);	}
+	
+	void DisableSharedBufer()		{ disableSharedBuffer = true;			}
+	
+	void ResetData(DWORD size = 0) 
+	{
+		//Create new owned buffer
+		buffer = std::make_shared<Buffer>(size);
+		//Owned buffer
+		ownedBuffer = true;
+	}
 
 	void Alloc(DWORD size)
 	{
@@ -173,19 +205,25 @@ public:
 		//Return previous pos
 		return pos;
 	}
-	
-	void SetCodecConfig(const BYTE* data,DWORD size)
-	{
-		//If we had old data
+        
+	BYTE* AllocateCodecConfig(DWORD size)
+        {
+                //If we had old data
 		if (configData)
 			//Free it
 			free(configData);
 		//Allocate memory
 		configData = (BYTE*) malloc(size);
-		//Copy
-		memcpy(configData,data,size);
-		//Set lenght
+                //Set lenght
 		configSize = size;
+                //return it
+                return configData;
+        }
+        
+	void SetCodecConfig(const BYTE* data,DWORD size)
+	{
+		//Copy
+		memcpy(AllocateCodecConfig(size),data,size);
 	}
 	
 	void ClearCodecConfig()
@@ -195,6 +233,17 @@ public:
 		//Creal
 		configData = nullptr;
 		configSize = 0;
+	}
+	
+	void Reset() 
+	{
+		//Clear packetization info
+		ClearRTPPacketizationInfo();
+		//Reset data
+		ResetData();
+		//Clear time
+		SetTimestamp((DWORD)-1);
+		SetTime(0);
 	}
 	
 	bool HasCodecConfig() const		{ return configData && configSize;	}
@@ -221,10 +270,12 @@ protected:
 protected:
 	Type type		= MediaFrame::Unknown;
 	DWORD ts		= (DWORD)-1;
+	QWORD time		= 0;
 	DWORD ssrc		= 0;
 	
 	std::shared_ptr<Buffer> buffer;
-	bool ownedBuffer	= false;
+	bool ownedBuffer		= false;
+	bool disableSharedBuffer	= false;
 	
 	DWORD	duration	= 0;
 	DWORD	clockRate	= 1000;

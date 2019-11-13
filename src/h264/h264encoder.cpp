@@ -44,6 +44,9 @@ H264Encoder::H264Encoder(const Properties& properties)
 	bitrate = 0;
 	fps = 0;
 	intraPeriod = X264_KEYINT_MAX_INFINITE;
+	
+	//Number of threads or auto
+	threads = properties.GetProperty("h264.threads",0);
 
 	//Check profile level id
 	h264ProfileLevelId = properties.GetProperty("h264.profile-level-id",std::string("42801F"));
@@ -181,7 +184,7 @@ int H264Encoder::OpenCodec()
 		params.rc.i_vbv_buffer_size = bitrate;
 	}
 	params.rc.f_vbv_buffer_init = 0;
-	params.i_threads	    = 1; //0 is auto!!
+	params.i_threads	    = threads; //0 is auto!!
 	params.b_sliced_threads	    = 0;
 	params.rc.i_lookahead       = 0;
 	params.i_sync_lookahead	    = 0;
@@ -283,8 +286,12 @@ VideoFrame* H264Encoder::EncodeFrame(BYTE *buffer,DWORD bufferSize)
 	}
 	//Check size
 	if (!frame)
+	{
 		//Create new frame
 		frame = new VideoFrame(type,len);
+		//Disable sharing buffer on clone
+		frame->DisableSharedBufer();
+	}
 
 	//Set the media
 	frame->SetMedia(nals[0].p_payload,len);

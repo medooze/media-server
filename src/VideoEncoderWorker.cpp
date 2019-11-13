@@ -337,8 +337,11 @@ int VideoEncoderWorker::Encode()
 
 		//Set clock rate
 		videoFrame->SetClockRate(1000);
+		//Get now
+		auto now = getDifTime(&first)/1000;
 		//Set frame timestamp
-		videoFrame->SetTimestamp(getDifTime(&first)/1000);
+		videoFrame->SetTimestamp(now);
+		videoFrame->SetTime(now);
 		
 		//Lock
 		pthread_mutex_lock(&mutex);

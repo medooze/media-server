@@ -20,23 +20,14 @@ H264Depacketizer::H264Depacketizer() : RTPDepacketizer(MediaFrame::Video,VideoCo
 
 H264Depacketizer::~H264Depacketizer()
 {
-
+	//Set clock rate
+	frame.SetClockRate(90000);
 }
 
 void H264Depacketizer::ResetFrame()
 {
 	//Clear packetization info
-	frame.ClearRTPPacketizationInfo();
-	//Reset
-	memset(frame.GetData(),0,frame.GetMaxMediaLength());
-	//Clear length
-	frame.SetLength(0);
-	//Clear time
-	frame.SetTimestamp((DWORD)-1);
-	//No intra
-	frame.SetIntra(false);
-	//Set it
-	frame.ClearCodecConfig();
+	frame.Reset();
 	//Clear config
 	config.ClearSequenceParameterSets();
 	config.ClearPictureParameterSets();
@@ -50,8 +41,14 @@ MediaFrame* H264Depacketizer::AddPacket(const RTPPacket::shared& packet)
 	if (frame.GetTimeStamp()!=ts)
 		//Reset frame
 		ResetFrame();
-	//Set timestamp
-	frame.SetTimestamp(ts);
+	//If not timestamp
+	if (frame.GetTimeStamp()==(DWORD)-1)
+	{
+		//Set timestamp
+		frame.SetTimestamp(ts);
+		//Set time
+		frame.SetTime(packet->GetTime());
+	}
 	//Set SSRC
 	frame.SetSSRC(packet->GetSSRC());
 	//Add payload
@@ -143,8 +140,6 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 			      Figure 7.  An example of an RTP packet including an STAP-A and two
 					 single-time aggregation units
 			*/
-			//Everything goes to the payload
-			frame.AddRtpPacket(0,0,payload,payloadLen);
 
 			/* Skip STAP-A NAL HDR */
 			payload++;
@@ -186,9 +181,8 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 						config.SetProfileCompatibility(nalData[1]);
 						config.SetAVCLevelIndication(nalData[2]);
 						config.SetNALUnitLength(sizeof(nalHeader)-1);
-						//Add to config
-						config.AddSequenceParameterSet(nalData,nalSize-1);
-						
+						//Add full nal to config
+						config.AddSequenceParameterSet(payload,nalSize);
 						//Parse sps
 						if (sps.Decode(nalData,nalSize-1))
 						{
@@ -200,8 +194,8 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 					case 0x08:
 						//Consider it intra also
 						frame.SetIntra(true);
-						//Add to config
-						config.AddPictureParameterSet(nalData,nalSize-1);
+						//Add full nal to config
+						config.AddPictureParameterSet(payload,nalSize);
 						break;
 				}
 
@@ -210,8 +204,10 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 				//Append data
 				frame.AppendMedia(nalHeader, sizeof (nalHeader));
 				
-				//Append NAL
-				frame.AppendMedia(payload,nalSize);
+				//Append data and get current post
+				pos = frame.AppendMedia(payload,nalSize);
+				//Add RTP packet
+				frame.AddRtpPacket(pos,nalSize,NULL,0);
 				
 				payload += nalSize;
 				payloadLen -= nalSize;
@@ -270,10 +266,8 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 				frame.AppendMedia(&fragNalHeader,1);
 			}
 
-			//Get position
-			pos = frame.GetLength();
-			//Append data
-			frame.AppendMedia(payload+2,nalSize);
+			//Append data and get current post
+			pos = frame.AppendMedia(payload+2,nalSize);
 			//Add rtp payload
 			frame.AddRtpPacket(pos,nalSize,payload,2);
 
@@ -308,8 +302,8 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 					config.SetAVCLevelIndication(nalData[2]);
 					config.SetNALUnitLength(sizeof(nalHeader));
 					
-					//Add to config
-					config.AddSequenceParameterSet(nalData,nalSize-1);
+					//Add full nal to config
+					config.AddSequenceParameterSet(payload,nalSize);
 					
 					//Parse sps
 					if (sps.Decode(nalData,nalSize-1))
@@ -323,18 +317,16 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 					
 					//Consider it intra also
 					frame.SetIntra(true);
-					//Add to config
-					config.AddPictureParameterSet(nalData,nalSize-1);
+					//Add full nal to config
+					config.AddPictureParameterSet(payload,nalSize);
 					break;
 			}
 			//Set size
 			set4(nalHeader,0,nalSize);
 			//Append data
 			frame.AppendMedia(nalHeader, sizeof (nalHeader));
-			//Get current position in frame
-			DWORD pos = frame.GetLength();
-			//And data
-			frame.AppendMedia(payload, nalSize);
+			//Append data and get current post
+			pos = frame.AppendMedia(payload, nalSize);
 			//Add RTP packet
 			frame.AddRtpPacket(pos,nalSize,NULL,0);
 			//Done

@@ -30,7 +30,9 @@ public:
 public:
 	using shared = std::shared_ptr<RTPPacket>;
 	using unique = std::unique_ptr<RTPPacket>;
-
+	
+public:
+	static RTPPacket::shared Parse(const BYTE* data, DWORD size, const RTPMap& rtpMap, const RTPMap& extMap);
 public:
 	RTPPacket(MediaFrame::Type media,BYTE codec);
 	RTPPacket(MediaFrame::Type media,BYTE codec, QWORD time);
@@ -57,7 +59,7 @@ public:
 	void SetMark(bool mark)			{ header.mark = mark;			}
 	void SetSSRC(DWORD ssrc)		{ header.ssrc = ssrc;			}
 	void SetPayloadType(DWORD payloadType)	{ header.payloadType = payloadType;	}
-	void SetType(DWORD payloadType)		{ SetType(payloadType);			} //Deprecated
+	void SetType(DWORD payloadType)		{ SetPayloadType(payloadType);		} //Deprecated
 	void SetPadding(WORD padding)		{ header.padding = padding;		}
 	void SetMediaTpe(MediaFrame::Type media){ this->media = media;			}
 	void SetCodec(BYTE codec)		{ this->codec = codec;			}
@@ -126,12 +128,15 @@ public:
 	bool  HasMediaStreamId()		const   { return extension.hasMediaStreamId;	}
 	
 	
-	QWORD GetTime()	const		{ return time;		}
-	void  SetTime(QWORD time )	{ this->time = time;	}
+	QWORD GetTime()	const			{ return time;			}
+	void  SetTime(QWORD time )		{ this->time = time;		}
+	
+	bool  IsKeyFrame() const		{ return isKeyFrame;		}
+	void  SetKeyFrame(bool isKeyFrame)	{ this->isKeyFrame = isKeyFrame;	}
 	
 	const RTPHeader&		GetRTPHeader()		const { return header;		}
 	const RTPHeaderExtension&	GetRTPHeaderExtension()	const { return extension;	}
-	
+
 	
 public:
 	//TODO:refactor a bit
@@ -161,6 +166,7 @@ private:
 	RTPPayload::shared payload;
 	bool ownedPayload = false;
 	QWORD time;
+	bool isKeyFrame = false;
 	
 
 };

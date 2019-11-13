@@ -47,7 +47,10 @@ struct PacketStats
 	uint32_t payload;
 	uint32_t timestamp;
 	uint64_t time;
-	bool  mark;
+	bool  mark = false;
+	bool  rtx = false;
+	bool  probing = false;
+	uint32_t bwe = 0;
 };
 
 #endif /* PACKETSTATS_H */

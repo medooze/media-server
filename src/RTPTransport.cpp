@@ -45,7 +45,7 @@ bool RTPTransport::SetPortRange(int minPort, int maxPort)
 		minPort++;
 
 	//Check port range is possitive
-	if (maxPort<minPort)
+	if (!minPort || maxPort<=minPort)
 		//Error
 		return Error("-RTPTransport::SetPortRange() | port range invalid [%d,%d]\n",minPort,maxPort);
 

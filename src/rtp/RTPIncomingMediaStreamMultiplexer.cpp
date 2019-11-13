@@ -8,6 +8,11 @@ RTPIncomingMediaStreamMultiplexer::RTPIncomingMediaStreamMultiplexer(DWORD ssrc,
 	this->ssrc = ssrc;
 }
 
+void RTPIncomingMediaStreamMultiplexer::Stop()
+{
+	//Wait until all the previous async have finished as async calls are executed in order
+	timeService.Async([=](...){}).wait();
+}
 
 void RTPIncomingMediaStreamMultiplexer::AddListener(RTPIncomingMediaStream::Listener* listener) 
 {

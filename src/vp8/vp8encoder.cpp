@@ -280,8 +280,12 @@ VideoFrame* VP8Encoder::EncodeFrame(BYTE *buffer,DWORD bufferSize)
 
 	//Check size
 	if (!frame)
+	{
 		//Create new frame
 		frame = new VideoFrame(type,262143);
+		//Disable sharing buffer on clone
+		frame->DisableSharedBufer();
+	}
 
 	//Set width and height
 	frame->SetWidth(width);

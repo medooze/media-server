@@ -37,6 +37,7 @@ private:
 	int intraPeriod;
 	int pts;
 	std::string h264ProfileLevelId;
+	int threads;
 };
 
 #endif 

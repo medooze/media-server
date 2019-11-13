@@ -256,7 +256,7 @@ int VP8Decoder::DecodePacket(const BYTE *in,DWORD inLen,int lost,int last)
 	return 1;
 }
 
-int VP8Decoder::Decode(BYTE *buffer,DWORD len)
+int VP8Decoder::Decode(const BYTE *buffer,DWORD len)
 {
 	vpx_codec_err_t err = VPX_CODEC_OK;
 	int corrupted = false;

@@ -496,9 +496,6 @@ int RTPSession::SendPacket(const RTPPacket::shared &packet,DWORD timestamp)
 
 void RTPSession::onRTPPacket(const BYTE* data, DWORD size)
 {
-	RTPHeader header;
-	RTPHeaderExtension extension;
-	
 	//Check rtp map
 	if (!rtpMapIn)
 	{
@@ -507,61 +504,26 @@ void RTPSession::onRTPPacket(const BYTE* data, DWORD size)
 		//Exit
 		return;
 	}
-	//Parse RTP header
-	int ini = header.Parse(data,size);
+	//Parse rtp packet
+	RTPPacket::shared packet = RTPPacket::Parse(data,size,*rtpMapIn,extMap);
 	
-	//On error
-	if (!ini)
+	//Check
+	if (!packet)
 	{
 		//Debug
-		Debug("-RTPSession::onRTPPacket() | Could not parse RTP header\n");
+		Debug("-RTPSession::onRTPPacket() | Could not parse RTP packet\n");
 		//Dump it
 		Dump(data,size);
 		//Exit
 		return;
 	}
 	
-	//If it has extension
-	if (header.extension)
-	{
-		//Parse extension
-		int l = extension.Parse(extMap,data+ini,size-ini);
-		//If not parsed
-		if (!l)
-		{
-			///Debug
-			Debug("-RTPSession::onRTPPacket() | Could not parse RTP header extension\n");
-			//Dump it
-			Dump(data,size);
-			//Exit
-			return;
-		}
-		//Inc ini
-		ini += l;
-	}
+	//Get ssrc
+	DWORD ssrc = packet->GetSSRC();
 	
-	//Check size with padding
-	if (header.padding)
-	{
-		//Get last 2 bytes
-		WORD padding = get1(data,size-1);
-		//Ensure we have enought size
-		if (size-ini<padding)
-		{
-			///Debug
-			Debug("-RTPSession::onRTPPacket() | RTP padding is bigger than size\n");
-			//Exit
-			return;
-		}
-		//Remove from size
-		size -= padding;
-	}
-	
-	//Get header data as shorcut
-	DWORD ssrc = header.ssrc;
-	BYTE type  = header.payloadType;
-	//Get initial codec
-	BYTE codec = rtpMapIn->GetCodecForType(header.payloadType);
+	//Get codec and type
+	BYTE type   = packet->GetPayloadType();
+	DWORD codec = packet->GetCodec();
 	
 	//Check codec
 	if (codec==RTPMap::NotFound)
@@ -571,12 +533,6 @@ void RTPSession::onRTPPacket(const BYTE* data, DWORD size)
 		//Exit
 		return;
 	}
-	
-	//Create normal packet
-	auto packet = std::make_shared<RTPPacket>(media,codec,header,extension);
-	
-	//Set the payload
-	packet->SetPayload(data+ini,size-ini);
 	
 	//Check if we got a different SSRC
 	if (recv.media.ssrc!=ssrc && codec!=VideoCodec::RTX)

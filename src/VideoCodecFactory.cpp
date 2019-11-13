@@ -8,6 +8,7 @@
 #include "vp8/vp8decoder.h"
 #include "vp8/vp8encoder.h"
 #include "vp6/vp6decoder.h"
+#include "vp9/VP9Decoder.h"
 
 VideoDecoder* VideoCodecFactory::CreateDecoder(VideoCodec::Type codec)
 {
@@ -30,6 +31,8 @@ VideoDecoder* VideoCodecFactory::CreateDecoder(VideoCodec::Type codec)
 			return new VP6Decoder();
 		case VideoCodec::VP8:
 			return new VP8Decoder();
+		case VideoCodec::VP9:
+			return new VP9Decoder();
 		default:
 			Error("Video decoder not found [%d]\n",codec);
 	}

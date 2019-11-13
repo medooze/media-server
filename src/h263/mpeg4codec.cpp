@@ -104,13 +104,13 @@ int Mpeg4Decoder::DecodePacket(const BYTE *in,DWORD len,int lost,int last)
 	return ret;
 }
 
-int Mpeg4Decoder::Decode(BYTE* buffer,DWORD size)
+int Mpeg4Decoder::Decode(const BYTE* buffer,DWORD size)
 {
 	int got_picture = 0;
 
 	AVPacket pkt;
 	av_init_packet(&pkt);
-	pkt.data = buffer;
+	pkt.data = (uint8_t*)buffer;
 	pkt.size = size;
 	int readed = avcodec_decode_video2(ctx, picture, &got_picture, &pkt);
 
@@ -191,6 +191,8 @@ Mpeg4Encoder::Mpeg4Encoder(const Properties& properties)
 
 	//Y alocamos el buffer
 	frame = new VideoFrame(type,bufSize);
+	//Disable sharing buffer on clone
+	frame->DisableSharedBufer();
 }
 
 /***********************

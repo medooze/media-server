@@ -86,6 +86,8 @@ void AudioDecoderWorker::RemoveAudioOutput(AudioOutput* output)
 
 void AudioDecoderWorker::SetAACConfig(const uint8_t* data,const size_t size)
 {
+	ScopedLock scope(mutex);
+		
 	//IF no codec
 	if (!codec)
 	{
@@ -96,42 +98,25 @@ void AudioDecoderWorker::SetAACConfig(const uint8_t* data,const size_t size)
 		if (!codec)
 			//Skip
 			return;
-		
-		//Convert it to AAC encoder
-		auto aac = static_cast<AACDecoder*>(codec.get());
-		//Set config there
-		aac->SetConfig(data,size);
-
-		//Update rate
-		rate = codec->GetRate();
-
-		//SYNC block
-		{
-			ScopedLock scope(mutex);
-			//For each output
-			for (auto output : outputs)
-				//Start playing again
-				output->StartPlaying(rate);	
-		}
 	} else {
-		//Convert it to AAC encoder
-		auto aac = static_cast<AACDecoder*>(codec.get());
-		//Set config there
-		aac->SetConfig(data,size);
-		
-		//SYNC block
-		{
-			ScopedLock scope(mutex);
-			//For each output
-			for (auto output : outputs)
-			{
-				//Stop it
-				output->StopPlaying();
-				//Start playing again
-				output->StartPlaying(rate);	
-			}
-		}
+		//For each output
+		for (auto output : outputs)
+			//Stop it
+			output->StopPlaying();
 	}
+	
+	//Convert it to AAC encoder
+	auto aac = static_cast<AACDecoder*>(codec.get());
+	//Set config there
+	aac->SetConfig(data,size);
+
+	//Update rate
+	rate = codec->GetRate();
+
+	//For each output
+	for (auto output : outputs)
+		//Start playing again
+		output->StartPlaying(rate);
 }
 
 
@@ -149,20 +134,8 @@ int AudioDecoderWorker::Decode()
 	{
 		//Obtenemos el paquete
 		if (!packets.Wait(0))
-		{
-			//If no codec
-			if (!codec)
-			{
-				//Stop playing
-				ScopedLock scope(mutex);
-				//For each output
-				for (auto output : outputs)
-					//Stop it
-					output->StopPlaying();
-			}
 			//Done
 			break;
-		}
 
 		//Get packet in queue
 		auto packet = packets.Pop();
@@ -171,55 +144,48 @@ int AudioDecoderWorker::Decode()
 		if (!packet)
 			//Check condition again
 			continue;
-
-		//If we don't have codec
-		if (!codec || (packet->GetCodec()!=codec->type))
+		
+		//SYNC
 		{
-			//If no codec
-			if (!codec)
+			//Lock
+			ScopedLock scope(mutex);
+
+			//If we don't have codec
+			if (!codec || (packet->GetCodec()!=codec->type))
 			{
-				//Stop playing
-				ScopedLock scope(mutex);
-				//For each output
-				for (auto output : outputs)
-					//Stop it
-					output->StopPlaying();
-			}
-			
-			//Create new codec from pacekt
-			codec.reset(AudioCodecFactory::CreateDecoder((AudioCodec::Type)packet->GetCodec()));
-				
-			//Check we found one
-			if (!codec)
-				//Skip
-				continue;
-			
-			//Update rate
-			rate = codec->GetRate();
-			
-			//SYNC block
-			{
-				ScopedLock scope(mutex);
+				//If got a previous codec
+				if (codec)
+					//For each output
+					for (auto output : outputs)
+						//Stop it
+						output->StopPlaying();
+
+				//Create new codec from pacekt
+				codec.reset(AudioCodecFactory::CreateDecoder((AudioCodec::Type)packet->GetCodec()));
+
+				//Check we found one
+				if (!codec)
+					//Skip
+					continue;
+
+				//Update rate
+				rate = codec->GetRate();
+
 				//For each output
 				for (auto output : outputs)
 					//Start playing again
 					output->StartPlaying(rate);	
 			}
-			
-		}
 
-		//Lo decodificamos
-		int len = codec->Decode(packet->GetMediaData(),packet->GetMediaLength(),raw,rawSize);
+			//Lo decodificamos
+			int len = codec->Decode(packet->GetMediaData(),packet->GetMediaLength(),raw,rawSize);
 
-		//Obtenemos el tiempo del frame
-		frameTime = packet->GetTimestamp() - lastTime;
+			//Obtenemos el tiempo del frame
+			frameTime = packet->GetTimestamp() - lastTime;
 
-		//Actualizamos el ultimo envio
-		lastTime = packet->GetTimestamp();
-
-		//Sync
-		{
-			ScopedLock scope(mutex);
+			//Actualizamos el ultimo envio
+			lastTime = packet->GetTimestamp();
+		
 			//For each output
 			for (auto output : outputs)
 				//Send buffer
@@ -227,15 +193,16 @@ int AudioDecoderWorker::Decode()
 		}
 	}
 
-	//Check codec
-	if (codec!=NULL)
+	//SYNC
 	{
 		//Stop playing
 		ScopedLock scope(mutex);
-		//For each output
-		for (auto output : outputs)
-			//Stop it
-			output->StopPlaying();
+		//Check codec
+		if (codec)
+			//For each output
+			for (auto output : outputs)
+				//Stop it
+				output->StopPlaying();
 	}
 
 

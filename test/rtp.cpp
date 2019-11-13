@@ -28,6 +28,8 @@ public:
 		
 		Log("RTPHeader\n");
 		testRTPHeader();
+		Log("RTPPacket\n");
+		testRTPPacket();
 		Log("testSenderReport\n");
 		testSenderReport();
 		Log("NACK\n");
@@ -38,6 +40,8 @@ public:
 		testTransportField();
 		Log("Transport Wide Message Feedback (2)\n");
 		testTransportWideFeedbackMessage();
+		Log("Transport Wide Message Feedback (2)\n");
+		testTransportWideFeedbackMessageParser();
 		Log("testBye\n");
 		testBye();
 		end();
@@ -494,7 +498,7 @@ public:
 		i++; //lost;
 		packets[i++] = 7000;
 */
-
+		QWORD initTime = 1515507427620000;
 		packets[1912] = 1515507427621937;
 		packets[1913] = 1515507427623837;
 		packets[1914] = 1515507427675038;
@@ -533,8 +537,8 @@ public:
 		{
 			//Get transportSeqNum
 			DWORD transportSeqNum = it->first;
-			//Get time
-			QWORD time = it->second;
+			//Get relative time
+			QWORD time = it->second - initTime;
 
 			//Check if we have a sequence wrap
 			if (transportSeqNum<0x0FFF && (lastFeedbackPacketExtSeqNum & 0xFFFF)>0xF000)
@@ -577,7 +581,237 @@ public:
 		
 		parsed->Dump();
 		
+		auto a = rtcp->GetPacket<RTCPRTPFeedback>(0)->GetField<RTCPRTPFeedback::TransportWideFeedbackMessageField>(0)->packets;
+		auto b = parsed->GetPacket<RTCPRTPFeedback>(0)->GetField<RTCPRTPFeedback::TransportWideFeedbackMessageField>(0)->packets;
+		
+		//Calucalte diferences
+		for (auto orig=a.begin(), mod=b.begin(); orig!=a.end(), mod!=b.end(); ++orig, ++mod)
+			//Log difference
+			Log("-diff %d\n",orig->second-mod->second);
+		
 		free(data);
+	}
+	void testTransportWideFeedbackMessageParser()
+	{
+		{
+			constexpr uint8_t rtcp[] = {
+				0x8F, 0xCD, 0x00, 0x07, 0xAA, 0x7D, 0x9D, 0x28,
+				0xAA, 0x7D, 0x9D, 0x28, 0x00, 0x02, 0x00, 0x08,
+				0x71, 0x66, 0xD7, 0x00, 0x20, 0x08, 0x1C, 0x20,
+				0x08, 0x10, 0x20, 0x10, 0x00, 0x14, 0x00, 0x00	
+			};
+
+			//Parse it
+			auto parsed = RTCPCompoundPacket::Parse(rtcp,sizeof(rtcp));
+
+			if (parsed)
+				parsed->Dump();
+		}
+		
+		{
+			constexpr uint8_t rtcp[] = {
+				0x8F, 0xCD, 0x00, 0x06, 0xDB, 0x17, 0xE1, 0x2C,
+				0xDB, 0x17, 0xE1, 0x2C, 0x00, 0x0A, 0x00, 0x05,
+				0x71, 0x66, 0xD7, 0x01, 0x20, 0x05, 0x14, 0x00,
+				0x08, 0x00, 0xA8, 0x00
+			};
+			//Parse it
+			auto parsed = RTCPCompoundPacket::Parse(rtcp,sizeof(rtcp));
+
+			if (parsed)
+				parsed->Dump();
+		}
+	}
+	
+	void testRTPPacket()
+	{
+		
+		constexpr int8_t kPayloadType = 100;
+		constexpr uint32_t kSsrc = 0x12345678;
+		constexpr uint16_t kSeqNum = 0x1234;
+		constexpr uint8_t kSeqNumFirstByte = kSeqNum >> 8;
+		constexpr uint8_t kSeqNumSecondByte = kSeqNum & 0xff;
+		constexpr uint32_t kTimestamp = 0x65431278;
+		constexpr uint8_t kTransmissionOffsetExtensionId = 1;
+		constexpr uint8_t kAudioLevelExtensionId = 9;
+		constexpr uint8_t kRtpStreamIdExtensionId = 0xa;
+		constexpr uint8_t kRtpMidExtensionId = 0xb;
+		constexpr uint8_t kVideoTimingExtensionId = 0xc;
+		constexpr uint8_t kTwoByteExtensionId = 0xf0;
+		constexpr uint8_t kTwoByteExtensionMId = 0xf0;
+		constexpr int32_t kTimeOffset = 0x56ce;
+		constexpr bool kVoiceActive = true;
+		constexpr uint8_t kAudioLevel = 0x5a;
+		constexpr char kStreamId[] = "streamid";
+		constexpr char kMid[] = "mid";
+		constexpr char kLongMid[] = "extra-long string to test two-byte header";
+		constexpr size_t kMaxPaddingSize = 224u;
+		
+		RTPMap	rtpMap;
+		RTPMap	extMap;
+		extMap[kTransmissionOffsetExtensionId]	= RTPHeaderExtension::TimeOffset;
+		extMap[kAudioLevelExtensionId]		= RTPHeaderExtension::SSRCAudioLevel;
+		extMap[kRtpStreamIdExtensionId]		= RTPHeaderExtension::RTPStreamId;
+		extMap[kRtpMidExtensionId]		= RTPHeaderExtension::MediaStreamId;
+		extMap[kTwoByteExtensionMId]		= RTPHeaderExtension::MediaStreamId;
+		
+		// clang-format off
+		constexpr uint8_t kMinimumPacket[] = {
+			0x80, kPayloadType, kSeqNumFirstByte, kSeqNumSecondByte,
+			0x65, 0x43, 0x12, 0x78,
+			0x12, 0x34, 0x56, 0x78
+		};
+		RTPPacket::Parse(kMinimumPacket, sizeof(kMinimumPacket), rtpMap, extMap)->Dump();
+
+		constexpr uint8_t kPacketWithTO[] = {
+			0x90, kPayloadType, kSeqNumFirstByte, kSeqNumSecondByte,
+			0x65, 0x43, 0x12, 0x78,
+			0x12, 0x34, 0x56, 0x78,
+			0xbe, 0xde, 0x00, 0x01,
+			0x12, 0x00, 0x56, 0xce
+		};
+		RTPPacket::Parse(kPacketWithTO, sizeof(kPacketWithTO), rtpMap, extMap)->Dump();
+		
+		constexpr uint8_t kPacketWithTOAndAL[] = {
+			0x90, kPayloadType, kSeqNumFirstByte, kSeqNumSecondByte,
+			0x65, 0x43, 0x12, 0x78,
+			0x12, 0x34, 0x56, 0x78,
+			0xbe, 0xde, 0x00, 0x02,
+			0x12, 0x00, 0x56, 0xce,
+			0x90, 0x80 | kAudioLevel, 0x00, 0x00
+		};
+		RTPPacket::Parse(kPacketWithTOAndAL, sizeof(kPacketWithTOAndAL), rtpMap, extMap)->Dump();
+
+		constexpr uint8_t kPacketWithTwoByteExtensionIdLast[] = {
+			0x90, kPayloadType, kSeqNumFirstByte, kSeqNumSecondByte,
+			0x65, 0x43, 0x12, 0x78,
+			0x12, 0x34, 0x56, 0x78,
+			0x10, 0x00, 0x00, 0x04,
+			0x01, 0x03, 0x00, 0x56,
+			0xce, 0x09, 0x01, 0x80 | kAudioLevel,
+			kTwoByteExtensionId, 0x03, 0x00, 0x30, // => 0x00 0x30 0x22
+			0x22, 0x00, 0x00, 0x00
+		}; // => Playout delay.min_ms = 3*10
+		// => Playout delay.max_ms = 34*10
+		RTPPacket::Parse(kPacketWithTwoByteExtensionIdLast, sizeof(kPacketWithTwoByteExtensionIdLast), rtpMap, extMap)->Dump();
+
+		constexpr uint8_t kPacketWithTwoByteExtensionIdFirst[] = {
+			0x90, kPayloadType, kSeqNumFirstByte, kSeqNumSecondByte,
+			0x65, 0x43, 0x12, 0x78,
+			0x12, 0x34, 0x56, 0x78,
+			0x10, 0x00, 0x00, 0x04,
+			kTwoByteExtensionId, 0x03, 0x00, 0x30, // => 0x00 0x30 0x22
+			0x22, 0x01, 0x03, 0x00, // => Playout delay.min_ms = 3*10
+			0x56, 0xce, 0x09, 0x01, // => Playout delay.max_ms = 34*10
+			0x80 | kAudioLevel, 0x00, 0x00, 0x00
+		};
+		RTPPacket::Parse(kPacketWithTwoByteExtensionIdFirst, sizeof(kPacketWithTwoByteExtensionIdFirst), rtpMap, extMap)->Dump();
+
+		constexpr uint8_t kPacketWithTOAndALInvalidPadding[] = {
+			0x90, kPayloadType, kSeqNumFirstByte, kSeqNumSecondByte,
+			0x65, 0x43, 0x12, 0x78,
+			0x12, 0x34, 0x56, 0x78,
+			0xbe, 0xde, 0x00, 0x03,
+			0x12, 0x00, 0x56, 0xce,
+			0x00, 0x02, 0x00, 0x00, // 0x02 is invalid padding, parsing should stop.
+			0x90, 0x80 | kAudioLevel, 0x00, 0x00
+		};
+		RTPPacket::Parse(kPacketWithTOAndALInvalidPadding, sizeof(kPacketWithTOAndALInvalidPadding), rtpMap, extMap);
+
+		constexpr uint8_t kPacketWithTOAndALReservedExtensionId[] = {
+			0x90, kPayloadType, kSeqNumFirstByte, kSeqNumSecondByte,
+			0x65, 0x43, 0x12, 0x78,
+			0x12, 0x34, 0x56, 0x78,
+			0xbe, 0xde, 0x00, 0x03,
+			0x12, 0x00, 0x56, 0xce,
+			0x00, 0xF0, 0x00, 0x00, // F is a reserved id, parsing should stop.
+			0x90, 0x80 | kAudioLevel, 0x00, 0x00
+		};
+		RTPPacket::Parse(kPacketWithTOAndALReservedExtensionId, sizeof(kPacketWithTOAndALReservedExtensionId), rtpMap, extMap )->Dump();
+
+		constexpr uint8_t kPacketWithRsid[] = {
+			0x90, kPayloadType, kSeqNumFirstByte, kSeqNumSecondByte,
+			0x65, 0x43, 0x12, 0x78,
+			0x12, 0x34, 0x56, 0x78,
+			0xbe, 0xde, 0x00, 0x03,
+			0xa7, 's', 't', 'r',
+			'e', 'a', 'm', 'i',
+			'd', 0x00, 0x00, 0x00
+		};
+		RTPPacket::Parse(kPacketWithRsid, sizeof(kPacketWithRsid), rtpMap, extMap)->Dump();
+
+		constexpr uint8_t kPacketWithMid[] = {
+			0x90, kPayloadType, kSeqNumFirstByte, kSeqNumSecondByte,
+			0x65, 0x43, 0x12, 0x78,
+			0x12, 0x34, 0x56, 0x78,
+			0xbe, 0xde, 0x00, 0x01,
+			0xb2, 'm', 'i', 'd'
+		};
+		RTPPacket::Parse(kPacketWithMid, sizeof(kPacketWithMid), rtpMap, extMap)->Dump();
+
+		constexpr uint32_t kCsrcs[] = {0x34567890, 0x32435465};
+		constexpr uint8_t kPayload[] = {'p', 'a', 'y', 'l', 'o', 'a', 'd'};
+		constexpr uint8_t kPacketPaddingSize = 8;
+		constexpr uint8_t kPacket[] = {
+			0xb2, kPayloadType, kSeqNumFirstByte, kSeqNumSecondByte,
+			0x65, 0x43, 0x12, 0x78,
+			0x12, 0x34, 0x56, 0x78,
+			0x34, 0x56, 0x78, 0x90,
+			0x32, 0x43, 0x54, 0x65,
+			0xbe, 0xde, 0x00, 0x01,
+			0x12, 0x00, 0x56, 0xce,
+			'p', 'a', 'y', 'l', 'o', 'a', 'd',
+			'p', 'a', 'd', 'd', 'i', 'n', 'g', kPacketPaddingSize
+		};
+		RTPPacket::Parse(kPacket, sizeof(kPacket), rtpMap, extMap)->Dump();
+
+		constexpr uint8_t kPacketWithTwoByteHeaderExtension[] = {
+			0x90, kPayloadType, kSeqNumFirstByte, kSeqNumSecondByte,
+			0x65, 0x43, 0x12, 0x78,
+			0x12, 0x34, 0x56, 0x78,
+			0x10, 0x00, 0x00, 0x02, // Two-byte header extension profile id + length.
+			kTwoByteExtensionId, 0x03, 0x00, 0x56,
+			0xce, 0x00, 0x00, 0x00
+		};
+		RTPPacket::Parse(kPacketWithTwoByteHeaderExtension, sizeof(kPacketWithTwoByteHeaderExtension), rtpMap, extMap)->Dump();
+
+		constexpr uint8_t kPacketWithLongTwoByteHeaderExtension[] = {
+			0x90, kPayloadType, kSeqNumFirstByte, kSeqNumSecondByte,
+			0x65, 0x43, 0x12, 0x78,
+			0x12, 0x34, 0x56, 0x78,
+			0x10, 0x00, 0x00, 0x0B, // Two-byte header extension profile id + length.
+			kTwoByteExtensionMId, 0x29, 'e', 'x',
+			't', 'r', 'a', '-', 'l', 'o', 'n', 'g',
+			' ', 's', 't', 'r', 'i', 'n', 'g', ' ',
+			't', 'o', ' ', 't', 'e', 's', 't', ' ',
+			't', 'w', 'o', '-', 'b', 'y', 't', 'e',
+			' ', 'h', 'e', 'a', 'd', 'e', 'r', 0x00
+		};
+		RTPPacket::Parse(kPacketWithLongTwoByteHeaderExtension, sizeof(kPacketWithLongTwoByteHeaderExtension), rtpMap, extMap)->Dump();
+
+		constexpr uint8_t kPacketWithTwoByteHeaderExtensionWithPadding[] = {
+			0x90, kPayloadType, kSeqNumFirstByte, kSeqNumSecondByte,
+			0x65, 0x43, 0x12, 0x78,
+			0x12, 0x34, 0x56, 0x78,
+			0x10, 0x00, 0x00, 0x03, // Two-byte header extension profile id + length.
+			kTwoByteExtensionId, 0x03, 0x00, 0x56,
+			0xce, 0x00, 0x00, 0x00, // Three padding bytes.
+			kAudioLevelExtensionId, 0x01, 0x80 | kAudioLevel, 0x00
+		};
+		RTPPacket::Parse(kPacketWithTwoByteHeaderExtensionWithPadding, sizeof(kPacketWithTwoByteHeaderExtensionWithPadding), rtpMap, extMap)->Dump();
+
+		constexpr uint8_t kPacketWithInvalidExtension[] = {
+			0x90, kPayloadType, kSeqNumFirstByte, kSeqNumSecondByte,
+			0x65, 0x43, 0x12, 0x78, // kTimestamp.
+			0x12, 0x34, 0x56, 0x78, // kSSrc.
+			0xbe, 0xde, 0x00, 0x02, // Extension block of size 2 x 32bit words.
+			(kTransmissionOffsetExtensionId << 4) | 6, // (6+1)-byte extension, but
+			'e', 'x', 't', // Transmission Offset
+			'd', 'a', 't', 'a', // expected to be 3-bytes.
+			'p', 'a', 'y', 'l', 'o', 'a', 'd'
+		};
+		RTPPacket::Parse(kPacketWithInvalidExtension, sizeof(kPacketWithInvalidExtension), rtpMap, extMap)->Dump();
+
 	}
 	
 };

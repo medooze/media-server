@@ -123,8 +123,11 @@ bool VP8LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 			auto &header = packet->vp8PayloadHeader.emplace();
 			
 			//parse it
-			if (!header.Parse(packet->GetMediaData()+len,packet->GetMediaLength()-len))
+			if (header.Parse(packet->GetMediaData()+len,packet->GetMediaLength()-len))
 			{
+				//Set key frame
+				packet->SetKeyFrame(header.isKeyFrame);
+			} else {
 				//Clear desc
 				packet->vp8PayloadDescriptor.reset();
 				packet->vp8PayloadHeader.reset();

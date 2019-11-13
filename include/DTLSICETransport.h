@@ -52,6 +52,7 @@ public:
 	{
 	public:
 		virtual void onDTLSStateChanged(const DTLSState) = 0;
+		virtual void onRemoteICECandidateActivated(const std::string& ip, uint16_t port, uint32_t priority) = 0;
 		virtual ~Listener() = default;
 	};
 	class Sender
@@ -73,8 +74,8 @@ public:
 	virtual int SendPLI(DWORD ssrc) override;
 	virtual int Enqueue(const RTPPacket::shared& packet) override;
 	virtual int Enqueue(const RTPPacket::shared& packet,std::function<RTPPacket::shared(const RTPPacket::shared&)> modifier) override;
-	int Dump(const char* filename, bool inbound = true, bool outbound = true, bool rtcp = true);
-	int Dump(UDPDumper* dumper, bool inbound = true, bool outbound = true, bool rtcp = true);
+	int Dump(const char* filename, bool inbound = true, bool outbound = true, bool rtcp = true, bool rtpHeadersOnly = false);
+	int Dump(UDPDumper* dumper, bool inbound = true, bool outbound = true, bool rtcp = true, bool rtpHeadersOnly = false);
         int DumpBWEStats(const char* filename);
 	void Reset();
 	
@@ -90,6 +91,7 @@ public:
 	
 	void SetBandwidthProbing(bool probe);
 	void SetMaxProbingBitrate(DWORD bitrate)	{ this->maxProbingBitrate = bitrate;	}
+	void SetProbingBitrateLimit(DWORD bitrate)	{ this->probingBitrateLimit = bitrate;	}
 	void SetSenderSideEstimatorListener(RemoteRateEstimator::Listener* listener) { senderSideBandwidthEstimator.SetListener(listener); }
 	
 	const char* GetRemoteUsername() const { return iceRemoteUsername;	};
@@ -117,7 +119,8 @@ private:
 	void SetRTT(DWORD rtt);
 	void onRTCP(const RTCPCompoundPacket::shared &rtcp);
 	void ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq);
-	void SendProbe(RTPOutgoingSourceGroup *group,BYTE padding);
+	DWORD SendProbe(const RTPPacket::shared& packet);
+	DWORD SendProbe(RTPOutgoingSourceGroup *group,BYTE padding);
 	void SendTransportWideFeedbackMessage(DWORD ssrc);
 	
 	int SetLocalCryptoSDES(const char* suite, const BYTE* key, const DWORD len);
@@ -162,6 +165,7 @@ private:
 	IncomingStreams incoming;
 	std::map<std::string,RTPIncomingSourceGroup*> rids;
 	std::map<std::string,std::set<RTPIncomingSourceGroup*>> mids;
+	std::list<RTPPacket::shared> history;
 	
 	DWORD	mainSSRC		= 1;
 	DWORD   rtt			= 0;
@@ -172,18 +176,23 @@ private:
 	
 	Acumulator incomingBitrate;
 	Acumulator outgoingBitrate;
+	Acumulator rtxBitrate;
+	Acumulator probingBitrate;
 	
 	std::map<DWORD,PacketStats::shared> transportWideReceivedPacketsStats;
 	
-	UDPDumper* dumper	= nullptr;
-	bool dumpInRTP		= false;
-	bool dumpOutRTP		= false;
-	bool dumpRTCP		= false;
-	volatile bool probe	= false;
-	DWORD maxProbingBitrate = 1024*1000;
+	UDPDumper* dumper		= nullptr;
+	bool dumpInRTP			= false;
+	bool dumpOutRTP			= false;
+	bool dumpRTCP			= false;
+	bool dumpRTPHeadersOnly		= false;
+	volatile bool probe		= false;
+	DWORD maxProbingBitrate		= 1024*1000;
+	DWORD probingBitrateLimit	= maxProbingBitrate *4;
 	
 	Timer::shared probingTimer;
-	timeval	ini;
+	QWORD   lastProbe = 0;
+	QWORD 	initTime = 0;
 	
 	SendSideBandwidthEstimation senderSideBandwidthEstimator;
 };

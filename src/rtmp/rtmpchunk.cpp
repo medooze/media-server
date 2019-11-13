@@ -136,6 +136,8 @@ RTMPChunkOutputStream::RTMPChunkOutputStream(DWORD chunkStreamId) : RTMPChunkStr
 
 RTMPChunkOutputStream::~RTMPChunkOutputStream()
 {
+	//lock now
+	pthread_mutex_lock(&mutex);
 	//Clean messages in queue
 	for (RTMPMessages::iterator it=messages.begin(); it!=messages.end(); ++it)
 		//Delete message	
@@ -146,6 +148,8 @@ RTMPChunkOutputStream::~RTMPChunkOutputStream()
 		delete(msgBuffer);
 		delete(message);
 	}
+	//Unlock
+	pthread_mutex_unlock(&mutex);
 	//Destroy mutex
 	pthread_mutex_destroy(&mutex);
 }

@@ -40,31 +40,43 @@ public:
 		frame->SetClockRate(GetClockRate());
 		//Set timestamp
 		frame->SetTimestamp(GetTimeStamp());
+		//Set time
+		frame->SetTime(GetTime());
 		//Set duration
 		frame->SetDuration(GetDuration());
+		//If we have disabled the shared buffer for this frame
+		if (disableSharedBuffer)
+			//Copy data
+			frame->AdquireBuffer();
 		//Set config
 		if (HasCodecConfig()) frame->SetCodecConfig(GetCodecConfigData(),GetCodecConfigSize());
 		//Check if it has rtp info
-		for (auto it = rtpInfo.begin();it!=rtpInfo.end();++it)
-		{
-			//Gete info
-			const MediaFrame::RtpPacketization *rtp = (*it);
+		for (auto rtp : rtpInfo)
 			//Add it
 			frame->AddRtpPacket(rtp->GetPos(),rtp->GetSize(),rtp->GetPrefixData(),rtp->GetPrefixLen());
-		}
 		//Return it
 		return (MediaFrame*)frame;
 	}
 	
-	VideoCodec::Type GetCodec()	{ return codec;			}
-	bool  IsIntra()			{ return isIntra;		}
-	DWORD GetWidth()		{ return width;			}
-	DWORD GetHeight()		{ return height;		}
+	VideoCodec::Type GetCodec() const	{ return codec;			}
+	bool  IsIntra()	const			{ return isIntra;		}
+	DWORD GetWidth() const			{ return width;			}
+	DWORD GetHeight() const			{ return height;		}
 
 	void SetCodec(VideoCodec::Type codec)	{ this->codec = codec;		}
 	void SetWidth(DWORD width)		{ this->width = width;		}
 	void SetHeight(DWORD height)		{ this->height = height;	}
 	void SetIntra(bool isIntra)		{ this->isIntra = isIntra;	}
+	
+	void Reset() 
+	{
+		//Reset media frame
+		MediaFrame::Reset();
+		//No intra
+		SetIntra(false);
+		//No new config
+		ClearCodecConfig();
+	}
 	
 private:
 	VideoCodec::Type codec;
@@ -84,7 +96,12 @@ struct VideoBuffer
 		this->buffer = buffer;
 	}
 	
-	DWORD GetBufferSize()
+	BYTE* GetBufferData() const
+	{
+		return buffer;
+	}
+	
+	DWORD GetBufferSize() const
 	{
 		return (width*height*3)/2;
 	}
@@ -133,7 +150,7 @@ public:
 
 	virtual int GetWidth()=0;
 	virtual int GetHeight()=0;
-	virtual int Decode(BYTE *in,DWORD len) = 0;
+	virtual int Decode(const BYTE *in,DWORD len) = 0;
 	virtual int DecodePacket(const BYTE *in,DWORD len,int lost,int last)=0;
 	virtual BYTE* GetFrame()=0;
 	virtual bool  IsKeyFrame()=0;

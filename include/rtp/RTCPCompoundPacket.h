@@ -65,6 +65,8 @@ public:
 	void			 AddPacket(const RTCPPacket::shared& packet)	{ packets.push_back(packet);	}
 	DWORD			 GetPacketCount()			const	{ return packets.size();	}
 	const RTCPPacket::shared GetPacket(DWORD num)			const	{ return packets[num];		}
+	template<typename Type>
+	const std::shared_ptr<Type> GetPacket(DWORD num)		const	{ return std::static_pointer_cast<Type>(packets[num]); }
 	
 	template<typename Type,class ...Args>
 	std::shared_ptr<Type> CreatePacket(Args... args)

@@ -103,7 +103,6 @@ STUNMessage* STUNMessage::Parse(const BYTE* data,DWORD size)
 	// Flags (positions) for special MESSAGE-INTEGRITY and FINGERPRINT attributes.
 	bool hasMessageIntegrity = false;
 	bool hasFingerprint = false;
-	DWORD posMessageIntegrity = 0;
 	DWORD posFingerprint = 0;
 
 	//Read atributes
@@ -142,7 +141,6 @@ STUNMessage* STUNMessage::Parse(const BYTE* data,DWORD size)
 		{
 			case Attribute::MessageIntegrity:
 				hasMessageIntegrity = true;
-				posMessageIntegrity = i;
 				break;
 			case Attribute::FingerPrint:
 				hasFingerprint = true;
@@ -326,6 +324,62 @@ DWORD STUNMessage::AuthenticatedFingerPrint(BYTE* data,DWORD size,const char* pw
 
 	//Return size
 	return i;
+}
+
+
+bool STUNMessage::CheckAuthenticatedFingerPrint(const BYTE* data,DWORD size,const char* pwd)
+{
+	//Start looking for attributes after STUN header (byte #20).
+	size_t i = 20;
+
+	// Flags (positions) for special MESSAGE-INTEGRITY and FINGERPRINT attributes.
+	bool hasMessageIntegrity = false;
+
+	//Read atributes
+	//Ensure there are at least 4 remaining bytes (attribute with 0 length).
+	while (i+4 <= size)
+	{
+		//Get attribute type
+		WORD attrType = get2(data,i);
+		WORD attrLen = get2(data,i+2);
+
+		//Looking for the message integrity attribute position
+		if(attrType==Attribute::MessageIntegrity)
+		{
+			//Found here
+			hasMessageIntegrity = true;
+			break;
+		}
+
+		//Next
+		i = pad32(i+4+attrLen);
+	}
+	
+	//Ensure we have found the attribute
+	if (!hasMessageIntegrity)
+		return false;
+	
+	//Create new data for authentication and hmac
+	BYTE* authentication = (BYTE*)malloc(i+20);
+	
+	//Copy input
+	memcpy(authentication,data,i);
+	
+	//Change length to add the Fingerprint attribute from the HMAC calculation of the message integrity
+	set2(authentication,2,i+4);
+
+	//Calculate HMAC and put it in the attibute value
+	DWORD len = 0;
+	HMAC(EVP_sha1(),(BYTE*)pwd, strlen(pwd),authentication,i,authentication+i,&len);
+	
+	//Compare generated hmac with integrity attribute
+	bool result = len && memcmp(GetAttribute(Attribute::MessageIntegrity)->attr,authentication+i,len)==0;
+	
+	//Free mem
+	free(authentication);
+	
+	//Return result
+	return result;
 }
 
 DWORD STUNMessage::GetSize()

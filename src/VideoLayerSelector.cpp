@@ -21,7 +21,7 @@ public:
 		mark = packet->GetMark();
 		return true;
 	}
-	
+	bool IsWaitingForIntra() const override	{ return false; }
 	BYTE GetTemporalLayer() const override { return LayerInfo::MaxLayerId;  }
 	BYTE GetSpatialLayer()	const override { return LayerInfo::MaxLayerId;  }
 	VideoCodec::Type GetCodec()	const override { return codec; }

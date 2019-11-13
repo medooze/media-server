@@ -26,14 +26,8 @@ VP8Depacketizer::~VP8Depacketizer()
 
 void VP8Depacketizer::ResetFrame()
 {
-	//Clear packetization info
-	frame.ClearRTPPacketizationInfo();
-	//Reset
-	memset(frame.GetData(),0,frame.GetMaxMediaLength());
-	//Clear length
-	frame.SetLength(0);
-	//Clear time
-	frame.SetTimestamp((DWORD)-1);
+	//Reset frame data
+	frame.Reset();
 }
 
 MediaFrame* VP8Depacketizer::AddPacket(const RTPPacket::shared& packet)
@@ -44,12 +38,25 @@ MediaFrame* VP8Depacketizer::AddPacket(const RTPPacket::shared& packet)
 	if (frame.GetTimeStamp()!=ts)
 		//Reset frame
 		ResetFrame();
-	//Set timestamp
-	frame.SetTimestamp(ts);
+	//If not timestamp
+	if (frame.GetTimeStamp()==(DWORD)-1)
+	{
+		//Set timestamp
+		frame.SetTimestamp(ts);
+		//Set time
+		frame.SetTime(packet->GetTime());
+	}
 	//Set SSRC
 	frame.SetSSRC(packet->GetSSRC());
 	//Add payload
 	AddPayload(packet->GetMediaData(),packet->GetMediaLength());
+	//Check if it has vp8 descriptor
+	if (packet->vp8PayloadHeader)
+	{
+		//Set data
+		frame.SetWidth(packet->vp8PayloadHeader->width);
+		frame.SetHeight(packet->vp8PayloadHeader->height);
+	}
 	//If it is last return frame
 	return packet->GetMark() ? &frame : NULL;
 }
@@ -89,7 +96,7 @@ MediaFrame* VP8Depacketizer::AddPayload(const BYTE* payload, DWORD len)
 	{
 		//calculate if it is an iframe
 		frame.SetIntra(!(payload[descLen] & 0x01));
-		//Fakse size
+		//TODO: armonize with rtp packet vp8 data
 		frame.SetWidth(640);
 		frame.SetHeight(480);
 	}

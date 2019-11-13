@@ -13,7 +13,7 @@ public:
 	VP6Decoder();
 	virtual ~VP6Decoder();
 	virtual int DecodePacket(const BYTE *in,DWORD len,int lost,int last);
-	virtual int Decode(BYTE *in,DWORD len);
+	virtual int Decode(const BYTE *in,DWORD len);
 	virtual int GetWidth()		{ return ctx->width;		};
 	virtual int GetHeight()		{ return ctx->height;		};
 	virtual BYTE* GetFrame()	{ return (BYTE *)frame;		};

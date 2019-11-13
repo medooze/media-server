@@ -185,7 +185,7 @@ void RTPIncomingSourceGroup::SetRTT(DWORD rtt)
 	//Store rtt
 	this->rtt = rtt;
 	//Set max packet wait time
-	packets.SetMaxWaitTime(fmin(500,fmax(120,rtt*4)+40));
+	packets.SetMaxWaitTime(fmin(500,fmax(120,rtt)*2));
 	//Dispatch packets with new timer now
 	dispatchTimer->Again(0ms);
 	//If using remote rate estimator

@@ -214,8 +214,8 @@ void EventLoop::Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet
 		//Log
 		Error("-EventLoop::Send() | sending queue lagging behind [aprox:%u]\n",aprox);
 	} else if (aprox<MaxSendingQueueSize/4 && state!=State::Normal)  {
-		//We are lagging behind
-		state = State::Lagging;
+		//We are normal again
+		state = State::Normal;
 		//Log
 		Log("-EventLoop::Send() | sending queue back to normal [aprox:%u]\n",aprox);
 	}
@@ -331,9 +331,7 @@ void EventLoop::TimerImpl::Again(const std::chrono::milliseconds& ms)
 
 void EventLoop::CancelTimer(TimerImpl::shared timer)
 {
-	//Asert we are on same thread than loop
-	AssertThread();
-	
+
 	//UltraDebug(">EventLoop::CancelTimer() \n");
 
 	//We don't have to repeat this
@@ -429,6 +427,9 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 	{
 		//If we have anything to send set to wait also for write events
 		ufds[0].events = sending.size_approx() ? POLLIN | POLLOUT | POLLERR | POLLHUP : POLLIN | POLLERR | POLLHUP;
+		//Clear readed events
+		ufds[0].revents = 0;
+		ufds[1].revents = 0;
 		
 		//Until signaled
 		int timeout = -1;
@@ -468,7 +469,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 		if ((ufds[0].revents & POLLHUP) || (ufds[0].revents & POLLERR) || (ufds[1].revents & POLLHUP) || (ufds[1].revents & POLLERR))
 		{
 			//Error
-			Log("-EventLoop::Run() | Pool error event [%d]\n",ufds[0].revents);
+			Log("-EventLoop::Run() | Pool error event [revents:%d,errno:%d]\n",ufds[0].revents,errno);
 			//Exit
 			break;
 		}
@@ -480,9 +481,14 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 			//Len
 			uint32_t fromLen = sizeof(from);
 			//Leemos del socket
-			int len = recvfrom(fd,data,size,MSG_DONTWAIT,(sockaddr*)&from,&fromLen);
-			//Run callback
-			if (listener) listener->OnRead(ufds[0].fd,data,len,ntohl(from.sin_addr.s_addr),ntohs(from.sin_port));
+			ssize_t len = recvfrom(fd,data,size,MSG_DONTWAIT,(sockaddr*)&from,&fromLen);
+			//If error
+			if (len<=0)
+				UltraDebug("-EventLoop::Run() | recvfrom error [len:%d,errno:%d\n",len,errno);
+			//If we got listener
+			else if (listener)
+				//Run callback
+				listener->OnRead(ufds[0].fd,data,len,ntohl(from.sin_addr.s_addr),ntohs(from.sin_port));
 		}
 		
 		//Check read is possible

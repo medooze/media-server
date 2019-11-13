@@ -30,20 +30,17 @@ public:
 	virtual void Disconnect();
 	
 	/* Interface */
-	virtual RTMPNetStream* CreateStream(DWORD streamId,DWORD audioCaps,DWORD videoCaps,RTMPNetStream::Listener *listener) = 0;
-	virtual void DeleteStream(RTMPNetStream *stream) = 0;
+	virtual RTMPNetStream::shared CreateStream(DWORD streamId,DWORD audioCaps,DWORD videoCaps,RTMPNetStream::Listener *listener) = 0;
+	virtual void DeleteStream(const RTMPNetStream::shared& stream) = 0;
 	virtual void Disconnected() {};
 	
 protected:
-	int RegisterStream(RTMPNetStream* stream);
-	int UnRegisterStream(RTMPNetStream* stream);
+	int RegisterStream(const RTMPNetStream::shared& stream);
+	int UnRegisterStream(const RTMPNetStream::shared& stream);
 protected:
-	typedef std::set<Listener*> Listeners;
-	typedef std::set<RTMPNetStream*> RTMPNetStreams;
-protected:
-	Listeners	listeners;
-	RTMPNetStreams	streams;
-	Use		lock;
+	std::set<Listener*>			listeners;
+	std::map<DWORD,RTMPNetStream::shared>	streams;
+	Use					lock;
 };
 
 #endif	/* RTMPNETCONNECTION_H */

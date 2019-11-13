@@ -27,12 +27,14 @@ public:
 	
 	bool Select(const RTPPacket::shared& packet,bool &mark)	override;
 	
-	BYTE GetTemporalLayer()		const override { return temporalLayerId; }
-	BYTE GetSpatialLayer()		const override { return spatialLayerId;  }
-	VideoCodec::Type GetCodec()	const override { return VideoCodec::VP9; }
+	BYTE GetTemporalLayer()		const override { return temporalLayerId;	}
+	BYTE GetSpatialLayer()		const override { return spatialLayerId;		}
+	VideoCodec::Type GetCodec()	const override { return VideoCodec::VP9;	}
+	bool IsWaitingForIntra()	const override { return false;			}
 	
 	static LayerInfo GetLayerIds(const RTPPacket::shared& packet);
 private:
+	bool waitingForIntra;
 	BYTE temporalLayerId;
 	BYTE spatialLayerId;
 	BYTE nextTemporalLayerId;
