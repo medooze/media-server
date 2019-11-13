@@ -40,7 +40,7 @@ public:
 	RTPPacket(MediaFrame::Type media,BYTE codec,const RTPHeader &header, const RTPHeaderExtension &extension, const RTPPayload::shared &payload, QWORD time);
 	virtual ~RTPPacket();
 
-	RTPPacket::shared Clone();
+	RTPPacket::shared Clone() const;
 	
 	DWORD Serialize(BYTE* data,DWORD size,const RTPMap& extMap) const;
 	
@@ -49,8 +49,9 @@ public:
 	bool PrefixPayload(BYTE *data,DWORD size)	{ return payload->PrefixPayload(data,size);	}
 	
 	bool RecoverOSN();
+	void SetOSN(DWORD extSeqNum);
 
-	virtual void Dump();
+	virtual void Dump() const;
 	
 	//Setters
 	void SetTimestamp(DWORD timestamp)	{ header.timestamp = timestamp;		}
@@ -128,11 +129,11 @@ public:
 	bool  HasMediaStreamId()		const   { return extension.hasMediaStreamId;	}
 	
 	
-	QWORD GetTime()	const			{ return time;			}
-	void  SetTime(QWORD time )		{ this->time = time;		}
+	QWORD GetTime()				const	{ return time;				}
+	void  SetTime(QWORD time )			{ this->time = time;			}
 	
-	bool  IsKeyFrame() const		{ return isKeyFrame;		}
-	void  SetKeyFrame(bool isKeyFrame)	{ this->isKeyFrame = isKeyFrame;	}
+	bool  IsKeyFrame()			const	{ return isKeyFrame;			}
+	void  SetKeyFrame(bool isKeyFrame)		{ this->isKeyFrame = isKeyFrame;	}
 	
 	const RTPHeader&		GetRTPHeader()		const { return header;		}
 	const RTPHeaderExtension&	GetRTPHeaderExtension()	const { return extension;	}
@@ -159,14 +160,15 @@ private:
 	MediaFrame::Type media;
 	BYTE		codec;
 	DWORD		clockRate;
-	WORD		cycles;
+	WORD		cycles		= 0;
+	WORD		osn		= 0;
 	
 	RTPHeader	   header;
 	RTPHeaderExtension extension;
 	RTPPayload::shared payload;
-	bool ownedPayload = false;
-	QWORD time;
-	bool isKeyFrame = false;
+	bool ownedPayload		= false;
+	QWORD time			= 0;
+	bool isKeyFrame			= false;
 	
 
 };

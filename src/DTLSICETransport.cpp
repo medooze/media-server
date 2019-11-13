@@ -522,10 +522,10 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 	return 1;
 }
 
-DWORD DTLSICETransport::SendProbe(const RTPPacket::shared& packet)
+DWORD DTLSICETransport::SendProbe(const RTPPacket::shared& original)
 {
 	//Check packet
-	if (!packet)
+	if (!original)
 		//Done
 		return Error("-DTLSICETransport::SendProbe() | No packet\n");
 	
@@ -535,22 +535,21 @@ DWORD DTLSICETransport::SendProbe(const RTPPacket::shared& packet)
 		return Warning("-DTLSICETransport::SendProbe() | Send SRTPSession is not setup yet\n");;
 	
 	//Get ssrc
-	DWORD ssrc = packet->GetSSRC();
-	
+	DWORD ssrc = original->GetSSRC();
+
 	//Get outgoing group
 	RTPOutgoingSourceGroup* group = GetOutgoingSourceGroup(ssrc);
 	
 	//If not found
 	if (!group)
 		//Error
-		return Warning("-DTLSICETransport::SendProbe() | Outgoind source not registered for ssrc:%u\n",packet->GetSSRC());
+		return Warning("-DTLSICETransport::SendProbe() | Outgoind source not registered for ssrc:%u\n",ssrc);
 
 	//Get current time
 	auto now = getTime();
-
-	//Overrride headers
-	RTPHeader		header(packet->GetRTPHeader());
-	RTPHeaderExtension	extension(packet->GetRTPHeaderExtension());
+	
+	//Create resend packet
+	auto packet = original->Clone();
 
 	//Try to send it via rtx
 	BYTE apt = sendMaps.apt.GetTypeForCodec(packet->GetPayloadType());
@@ -562,86 +561,60 @@ DWORD DTLSICETransport::SendProbe(const RTPPacket::shared& packet)
 	//Get rtx source
 	RTPOutgoingSource& source = group->rtx;
 	
-	//Get extended sequence number
-	DWORD originalSeqNum	= packet->GetSeqNum();
-	DWORD extSeqNum		= packet->GetExtSeqNum();
-	
+	//Sync
 	{
 		//Lock in scope
 		ScopedLock scope(source);
 		//Update RTX headers
-		header.ssrc		= source.ssrc;
-		header.payloadType	= apt;
-		header.sequenceNumber	= extSeqNum = source.NextSeqNum();
+		packet->SetSSRC(source.ssrc);
+		packet->SetOSN(source.NextSeqNum());
+		packet->SetPayloadType(apt);
 		//No padding
-		header.padding		= 0;
+		packet->SetPadding(0);
 	}
 	
 	//Add transport wide cc on video
-	if (group->type == MediaFrame::Video && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC!=RTPMap::NotFound))
-	{
-		//Add extension
-		header.extension = true;
-		//Add transport
-		extension.hasTransportWideCC = true;
-		extension.transportSeqNum = ++transportSeqNum;
-	}
+	if (group->type == MediaFrame::Video && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC)!=RTPMap::NotFound)
+		//Set transport wide seq num
+		packet->SetTransportSeqNum(++transportSeqNum);
+	else
+		//Disable transport wide cc
+		packet->DisableTransportSeqNum();
 	
 	//If we are using abs send time for sending
 	if (sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::AbsoluteSendTime)!=RTPMap::NotFound)
-	{
-		//Use extension
-		header.extension = true;
 		//Set abs send time
-		extension.hasAbsSentTime = true;
-		extension.absSentTime = now/1000;
-	}
+		packet->SetAbsSentTime(now/1000);
+	else
+		//Disable it
+		packet->DisableAbsSentTime();
+	
+	//Disable rid & repair id
+	packet->DisableRId();
+	packet->DisableRepairedId();
+	
+	//Update mid
+	if (!group->mid.empty())
+		//Set new mid
+		packet->SetMediaStreamId(group->mid);
+	else
+		//Disable it
+		packet->DisableMediaStreamId();
+	
+	//No frame markings
+	packet->DisableFrameMarkings();
 	
 	//Send buffer
 	Packet buffer;
 	BYTE* 	data = buffer.GetData();
 	DWORD	size = buffer.GetCapacity();
-	int	len  = 0;
-
-	//Serialize header
-	int n = header.Serialize(data,size);
-
-	//Comprobamos que quepan
-	if (!n)
-		//Error
-		return Error("-DTLSICETransport::SendProbe() | Error serializing rtp headers\n");
-
-	//Inc len
-	len += n;
-
-	//If we have extension
-	if (header.extension)
-	{
-		//Serialize
-		n = extension.Serialize(sendMaps.ext,data+len,size-len);
-		//Comprobamos que quepan
-		if (!n)
-			//Error
-			return Error("-DTLSICETransport::SendProbe() | Error serializing rtp extension headers\n");
-		//Inc len
-		len += n;
-	}
-
-	//And set the original seq
-	set2(data,len,originalSeqNum);
-	//Move payload start
-	len += 2;
-
-	//Ensure we have enougth data
-	if (len+packet->GetMediaLength()>size)
-		//Error
-		return Error("-DTLSICETransport::SendProbe() | Media overflow\n");
-
-	//Copiamos los datos
-	memcpy(data+len,packet->GetMediaData(),packet->GetMediaLength());
-
-	//Set pateckt length
-	len += packet->GetMediaLength();
+	
+	//Serialize data
+	int len = packet->Serialize(data,size,sendMaps.ext);
+	
+	//IF failed
+	if (!len)
+		return Warning("-DTLSICETransport::SendProbe() | Could not serialize packet\n");
 
 	//If we don't have an active candidate yet
 	if (!active)
@@ -687,23 +660,14 @@ DWORD DTLSICETransport::SendProbe(const RTPPacket::shared& packet)
                 source.lastPayloadType  = packet->GetPayloadType();
 	
                 //Update stats
-                source.Update(now/1000,header.sequenceNumber,len);
+                source.Update(now/1000,packet->GetSeqNum(),len);
         }
 	
 	//Add to transport wide stats
-	if (extension.hasTransportWideCC)
+	if (packet->HasTransportWideCC())
 	{
 		//Create stats
-		auto stats = PacketStats::Create(
-			extension.transportSeqNum,
-			header.ssrc,
-			extSeqNum,
-			len,
-			0,
-			header.timestamp,
-			now,
-			false
-		);
+		auto stats = PacketStats::Create(packet,len,now);
 		//It is probe
 		stats->probing = true;
 		//Add new stat
@@ -899,7 +863,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 		return;
 	}
 	
-	UltraDebug("-DTLSICETransport::ReSendPacket() | resending [seq:%d,ssrc:%u]\n",seq,group->rtx.ssrc);
+	UltraDebug("-DTLSICETransport::ReSendPacket() | resending [seq:%d,ssrc:&%u,rtx:%u]\n",seq,group->media.ssrc,group->rtx.ssrc);
 	
 	//Get current time
 	auto now = getTime();
@@ -912,29 +876,20 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	
 	//Check if we are sending way to much bitrate
 	if (availableBitrate && rtxBitrate.GetInstantAvg()*8 > availableBitrate * 0.30f)
-	{
 		//Error
-		Debug("-DTLSICETransport::ReSendPacket() | Too much bitrate on rtx, skiping rtx:%lld estimated:%u available:%d\n",(uint64_t)(rtxBitrate.GetInstantAvg()*8), senderSideBandwidthEstimator.GetEstimatedBitrate(),availableBitrate);
-		//Skip
-		return;
-	}
+		return (void)Warning("-DTLSICETransport::ReSendPacket() | Too much bitrate on rtx, skiping rtx:%lld estimated:%u available:%d\n",(uint64_t)(rtxBitrate.GetInstantAvg()*8), senderSideBandwidthEstimator.GetEstimatedBitrate(),availableBitrate);
 	
 	//Find packet to retransmit
-	auto packet = group->GetPacket(seq);
+	auto original = group->GetPacket(seq);
 
 	//If we don't have it anymore
-	if (!packet)
-	{
+	if (!original)
 		//Debug
-		UltraDebug("-DTLSICETransport::ReSendPacket() | packet not found[seq:%d,ssrc:%u]\n",seq,group->rtx.ssrc);
-		//Done
-		return;
-	}
+		return (void)Warning("-DTLSICETransport::ReSendPacket() | packet not found[seq:%d,ssrc:&%u,rtx:%u]\n",seq,group->media.ssrc,group->rtx.ssrc);
 	
-	//Overrride headers
-	RTPHeader		header(packet->GetRTPHeader());
-	RTPHeaderExtension	extension(packet->GetRTPHeaderExtension());
-
+	//Create resend packet
+	auto packet = original->Clone();
+	
 	//Try to send it via rtx
 	BYTE apt = sendMaps.apt.GetTypeForCodec(packet->GetPayloadType());
 		
@@ -944,91 +899,61 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	//Check which source are we using
 	RTPOutgoingSource& source = rtx ? group->rtx : group->media;
 	
-	//Get extended sequence number
-	DWORD extSeqNum = packet->GetExtSeqNum();
-	
 	//If it is using rtx (i.e. not firefox)
 	if (rtx)
 	{
                 //Lock in scope
                 ScopedLock scope(source);
 		//Update RTX headers
-		header.ssrc		= source.ssrc;
-		header.payloadType	= apt;
-		header.sequenceNumber	= extSeqNum = source.NextSeqNum();
+		packet->SetSSRC(source.ssrc);
+		packet->SetOSN(source.NextSeqNum());
+		packet->SetPayloadType(apt);
 		//No padding
-		header.padding		= 0;
+		packet->SetPadding(0);
 	}
 	
 	//Add transport wide cc on video
-	if (group->type == MediaFrame::Video && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC!=RTPMap::NotFound))
-	{
-		//Add extension
-		header.extension = true;
-		//Add transport
-		extension.hasTransportWideCC = true;
-		extension.transportSeqNum = ++transportSeqNum;
-	}
+	if (group->type == MediaFrame::Video && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC)!=RTPMap::NotFound)
+		//Set transport wide seq num
+		packet->SetTransportSeqNum(++transportSeqNum);
+	else
+		//Disable transport wide cc
+		packet->DisableTransportSeqNum();
 	
 	//If we are using abs send time for sending
 	if (sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::AbsoluteSendTime)!=RTPMap::NotFound)
-	{
-		//Use extension
-		header.extension = true;
 		//Set abs send time
-		extension.hasAbsSentTime = true;
-		extension.absSentTime = now/1000;
-	}
+		packet->SetAbsSentTime(now/1000);
+	else
+		//Disable it
+		packet->DisableAbsSentTime();
+	
+	//Disable rid & repair id
+	packet->DisableRId();
+	packet->DisableRepairedId();
+	
+	//Update mid
+	if (!group->mid.empty())
+		//Set new mid
+		packet->SetMediaStreamId(group->mid);
+	else
+		//Disable it
+		packet->DisableMediaStreamId();
+	
+	//No frame markings
+	packet->DisableFrameMarkings();
 	
 	//Send buffer
 	Packet buffer;
 	BYTE* 	data = buffer.GetData();
 	DWORD	size = buffer.GetCapacity();
-	int	len  = 0;
-
-	//Serialize header
-	int n = header.Serialize(data,size);
-
-	//Comprobamos que quepan
-	if (!n)
-		//Error
-		return (void)Error("-DTLSICETransport::ReSendPacket() | Error serializing rtp headers\n");
-
-	//Inc len
-	len += n;
-
-	//If we have extension
-	if (header.extension)
-	{
-		//Serialize
-		n = extension.Serialize(sendMaps.ext,data+len,size-len);
-		//Comprobamos que quepan
-		if (!n)
-			//Error
-			return (void)Error("-DTLSICETransport::ReSendPacket() | Error serializing rtp extension headers\n");
-		//Inc len
-		len += n;
-	}
-
-	//If it is using rtx (i.e. not firefox)
-	if (rtx)
-	{
-		//And set the original seq
-		set2(data,len,seq);
-		//Move payload start
-		len += 2;
-	}
-
-	//Ensure we have enougth data
-	if (len+packet->GetMediaLength()>size)
-		//Error
-		return (void)Error("-DTLSICETransport::ReSendPacket() | Media overflow\n");
-
-	//Copiamos los datos
-	memcpy(data+len,packet->GetMediaData(),packet->GetMediaLength());
-
-	//Set pateckt length
-	len += packet->GetMediaLength();
+	
+	//Serialize data
+	int len = packet->Serialize(data,size,sendMaps.ext);
+	
+	//IF failed
+	if (!len)
+		return (void)Warning("-DTLSICETransport::ReSendPacket() | Could not serialize packet\n");
 
 	//If we don't have an active candidate yet
 	if (!active)
@@ -1044,7 +969,6 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 		dumper->WriteUDP(now/1000,0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len,truncate);
 	}
 		
-
 	//Encript
 	len = send.ProtectRTP(data,len);
 		
@@ -1082,23 +1006,14 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
                 source.lastPayloadType  = packet->GetPayloadType();
 	
                 //Update stats
-                source.Update(now/1000,header.sequenceNumber,len);
+                source.Update(now/1000,packet->GetSeqNum(),len);
         }
 	
-	//Add to transport wide stats
-	if (extension.hasTransportWideCC)
+	//Check if we are using transport wide for this packet
+	if (packet->HasTransportWideCC())
 	{
 		//Create stats
-		auto stats = PacketStats::Create(
-			extension.transportSeqNum,
-			header.ssrc,
-			extSeqNum,
-			len,
-			0,
-			header.timestamp,
-			now,
-			false
-		);
+		auto stats = PacketStats::Create(packet,len,now);
 		//It is rtx
 		stats->rtx = true;
 		//Add new stat
@@ -2058,7 +1973,7 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 	
 	//IF failed
 	if (!len)
-		return 0;
+		return Warning("-DTLSICETransport::Send() | Could not serialize packet\n");
 
 	//Add packet for RTX
 	group->AddPacket(packet);
