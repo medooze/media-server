@@ -102,6 +102,7 @@ private:
 		Packet   packet;
 	};
 	static size_t MaxSendingQueueSize;
+	static size_t MaxMultipleSendingMessages;
 private:
 	std::thread	thread;
 	State		state		= State::Normal;
