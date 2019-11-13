@@ -89,9 +89,8 @@ private:
 	bool	inited;
 	bool	sendFPU;
 	bool	muted;
-	int sendMinRate = 0;
 	
-	timeval ini;	
+	timeval ini;
 };
 
 #endif
