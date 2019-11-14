@@ -21,7 +21,8 @@ ifeq ($(DEBUG),yes)
 	#SANITIZE
 	ifeq ($(SANITIZE),yes)
 		OPTS+= -fsanitize=address -fsanitize=leak -fsanitize=undefined -fno-omit-frame-pointer
-		LDFLAGS+=  -fsanitize=address -fsanitize=leak -fsanitize=undefined 
+		SANITIZEFLAGS+= -fsanitize=address -fsanitize=leak -fsanitize=undefined 
+		LDFLAGS += -fsanitize=address -fsanitize=leak -fsanitize=undefined 
 	endif
 else
 	OPTS+= -g -O3
@@ -263,7 +264,7 @@ buildtest: touch mkdirs $(OBJSTEST)
 	$(CXX) -o $(BIN)/test $(BUILDOBJSTEST) $(LDFLAGS) $(VADLD) 
 
 buildfuzz: touch mkdirs $(OBJSFUZZ)
-	$(CXX) -o $(BIN)/fuzz $(BUILDOBJSFUZZ)
+	$(CXX) -o $(BIN)/fuzz $(BUILDOBJSFUZZ) $(SANITIZEFLAGS)
 	
 test: buildtest
 	$(BIN)/$@ -lavcodec
