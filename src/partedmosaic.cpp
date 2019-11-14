@@ -49,6 +49,11 @@ PartedMosaic::PartedMosaic(Type type, DWORD size) : Mosaic(type,size)
 			mosaicCols = 2;
 			mosaicRows = 1;
 			break;
+		case mosaic3x2:
+			//Set num rows and cols
+			mosaicCols = 3;
+			mosaicRows = 2;
+			break;
 		default:
 			throw new std::runtime_error("Unknown mosaic type\n");
 

@@ -69,6 +69,8 @@ int Mosaic::GetNumSlotsForType(Mosaic::Type type)
 			return 10;
 		case mosaic1p3A:
 			return 4;
+		case mosaic3x2:
+			return 6;
 	}
 	//Error
 	return Error("-Unknown mosaic type %d\n",type);
