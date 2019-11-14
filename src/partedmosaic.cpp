@@ -58,8 +58,8 @@ PartedMosaic::PartedMosaic(Type type, DWORD size) : Mosaic(type,size)
 			throw new std::runtime_error("Unknown mosaic type\n");
 
 	}
-	mosaicWidth = (int)mosaicTotalWidth/mosaicCols;
-	mosaicHeight = (int)mosaicTotalHeight/mosaicRows;
+	mosaicWidth = SIZE2MUL((int)mosaicTotalWidth/mosaicCols);
+	mosaicHeight = SIZE2MUL((int)mosaicTotalHeight/mosaicRows);
 }
 
 /***********************
@@ -219,7 +219,7 @@ int PartedMosaic::GetWidth(int pos)
 		return 0;
 
 	//Get widht
-	return mosaicWidth;
+	return SIZE2MUL(mosaicWidth);
 }
 int PartedMosaic::GetHeight(int pos)
 {
@@ -228,7 +228,7 @@ int PartedMosaic::GetHeight(int pos)
 		return 0;
 
 	//Get widht
-	return mosaicHeight;
+	return SIZE2MUL(mosaicHeight);
 }
 int PartedMosaic::GetTop(int pos)
 {
@@ -237,7 +237,7 @@ int PartedMosaic::GetTop(int pos)
 	int j = pos - i*mosaicCols;
 
 	//Get offsets
-	return mosaicHeight*i;
+	return SIZE2MUL(mosaicHeight*i);
 }
 int PartedMosaic::GetLeft(int pos)
 {
@@ -245,5 +245,5 @@ int PartedMosaic::GetLeft(int pos)
 	int i = pos / mosaicCols;
 	int j = pos - i*mosaicCols;
 	//Get offsets
-	return mosaicWidth*j;
+	return SIZE2MUL(mosaicWidth*j);
 }

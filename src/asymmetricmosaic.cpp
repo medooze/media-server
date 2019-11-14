@@ -425,7 +425,7 @@ int AsymmetricMosaic::GetWidth(int pos)
 				size = 1;
 			break;
 	}
-	return (mosaicTotalWidth/cols)*size;
+	return SIZE2MUL(mosaicTotalWidth/cols)*size;
 }
 int AsymmetricMosaic::GetHeight(int pos)
 {
@@ -688,7 +688,7 @@ int AsymmetricMosaic::GetHeight(int pos)
 				size = 1;
 			break;
 	}
-	return (mosaicTotalHeight/rows)*size;
+	return SIZE2MUL(mosaicTotalHeight/rows)*size;
 }
 
 int AsymmetricMosaic::GetTop(int pos)
@@ -932,7 +932,7 @@ int AsymmetricMosaic::GetTop(int pos)
 	//Get row heigth
 	int mosaicHeight = mosaicTotalHeight/rows;
 	//Calculate top
-	return mosaicHeight*i;
+	return SIZE2MUL(mosaicHeight*i);
 }
 
 int AsymmetricMosaic::GetLeft(int pos)
@@ -1175,5 +1175,5 @@ int AsymmetricMosaic::GetLeft(int pos)
 	int j = index - i*cols;
 	int mosaicWidth = mosaicTotalWidth/cols;
 	//Start filling from the end to not cause overlap
-	return mosaicWidth*j;
+	return SIZE2MUL(mosaicWidth*j);
 }
