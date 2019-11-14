@@ -1067,92 +1067,9 @@ int RTPSession::ReSendPacket(int seq)
 	//Find packet to retransmit
 	RTPOrderedPackets::iterator it = rtxs.find(ext);
 
-	//If we still have it
-	if (it!=rtxs.end())
+	//If we don't have it
+	if (it==rtxs.end())
 	{
-		//Get packet
-		auto packet = it->second;
-
-		//Data
-		Packet buffer;
-		BYTE* data = buffer.GetData();
-		size_t size = buffer.GetCapacity();
-		size_t len = 0;
-		
-		//Overrride headers
-		RTPHeader		header(packet->GetRTPHeader());
-		RTPHeaderExtension	extension(packet->GetRTPHeaderExtension());
-		
-		//If usint RTX type for retransmission
-		if (useRTX) 
-		{
-			//Update RTX headers
-			header.ssrc		= send.rtx.ssrc;
-			header.payloadType	= aptMapOut->GetTypeForCodec(packet->GetPayloadType());
-			header.sequenceNumber	= send.rtx.NextSeqNum();
-			//Increase counters
-			send.rtx.numPackets++;
-			send.rtx.totalBytes += packet->GetMediaLength()+2;
-			//No padding
-			header.padding		= 0;
-
-			//If using abs-time
-			if (useAbsTime)
-			{
-				header.extension = true;
-				extension.hasAbsSentTime = true;
-				extension.absSentTime = getTime();
-			}
-		}
-		
-		//Serialize header
-		int n = header.Serialize(data,size);
-
-		//Comprobamos que quepan
-		if (!n)
-			//Error
-			return Error("-RTPSession::ReSendPacket() | Error serializing rtp headers\n");
-		
-		//Inc len
-		len += n;
-		
-		//If we have extension
-		if (header.extension)
-		{
-			//Serialize
-			n = extension.Serialize(extMap,data+len,size-len);
-			//Comprobamos que quepan
-			if (!n)
-				//Error
-				return Error("-RTPSession::ReSendPacket() | Error serializing rtp extension headers\n");
-			//Inc len
-			len += n;
-		}
-		
-		//If usint RTX type for retransmission
-		if (useRTX) 
-		{
-			//And set the original seq
-			set2(data,len,seq);
-			//Move payload start
-			len += 2;
-		}
-		
-		//Copiamos los datos
-		memcpy(data+len,packet->GetMediaData(),packet->GetMediaLength());
-		
-		//Increase len
-		len += packet->GetMediaLength();
-		
-		UltraDebug("-RTPSession::ReSendPacket() | seq:%d ext:%d pt:%d rtx:%d\n",seq,ext,header.payloadType,useRTX);
-		
-		//Set serialized packet size
-		buffer.SetSize(len);
-		
-		//Send packet
-		transport.SendRTPPacket(std::move(buffer));
-		
-	} else {
 		UltraDebug("-RTPSession::ReSendPacket() | %d:%d %d not found first %d sending intra instead\n",send.media.cycles,seq,ext,rtxs.size() ?  rtxs.begin()->first : 0);
 		//Check if got listener
 		if (listener)
@@ -1161,6 +1078,45 @@ int RTPSession::ReSendPacket(int seq)
 		//Empty rtx queue
 		rtxs.clear();
 	}
+
+	//Get packet clone
+	auto packet = it->second->Clone();
+
+	//If usint RTX type for retransmission
+	if (useRTX) 
+	{
+		//Get apt type
+		BYTE apt = aptMapOut->GetTypeForCodec(packet->GetPayloadType());
+		
+		//Update RTX headers
+		packet->SetSSRC(send.rtx.ssrc);
+		packet->SetOSN(send.rtx.NextSeqNum());
+		packet->SetPayloadType(apt);
+		//No padding
+		packet->SetPadding(0);
+		//Increase counters
+		send.rtx.numPackets++;
+		send.rtx.totalBytes += packet->GetMediaLength()+2;
+	}
+	
+	//If using abs-time
+	if (useAbsTime)
+		//Set abs send time
+		packet->SetAbsSentTime(getTimeMS());
+
+	//Data
+	Packet buffer;
+	BYTE* data = buffer.GetData();
+	size_t size = buffer.GetCapacity();
+
+	//Serialize data
+	int len = packet->Serialize(data,size,extMap);
+
+	//Set serialized packet size
+	buffer.SetSize(len);
+
+	//Send packet
+	transport.SendRTPPacket(std::move(buffer));
 	
 	//OK
 	return 1;
