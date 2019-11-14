@@ -14,8 +14,6 @@ public:
 	virtual int GetSlots();
 
 	virtual BYTE* GetFrame();
-	virtual int GetWidth();
-	virtual int GetHeight();
 
 	virtual int Update(int index,BYTE *frame,int width,int heigth, bool keepAspectRatio);
 	virtual int Clean(int index);
