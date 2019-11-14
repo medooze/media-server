@@ -215,9 +215,7 @@ int PIPMosaic::Update(int pos, BYTE *image, int imgWidth, int imgHeight,bool kee
 			imageU += mosaicTotalWidthUV;
 			imageV += mosaicTotalWidthUV;
 		}
-	}
-	else 
-	{
+	} else {
 		//Get offsets
 		DWORD offsetY  = pipYOffset  + intraWidth   + (intraWidth+mosaicWidth)*(pos-1);
 		DWORD offsetUV = pipUVOffset + intraWidthUV + (intraWidthUV+mosaicWidthUV)*(pos-1);
@@ -254,9 +252,7 @@ int PIPMosaic::Update(int pos, BYTE *image, int imgWidth, int imgHeight,bool kee
 				imageU += mosaicWidthUV;
 				imageV += mosaicWidthUV;
 			}
-		}
-		else if ((imgWidth > 0) && (imgHeight > 0)) 
-		{
+		} else if ((imgWidth > 0) && (imgHeight > 0)) {
 			//Set resize
 			resizer[pos]->SetResize(imgWidth,imgHeight,imgWidth,mosaicWidth,mosaicHeight,mosaicTotalWidth,keepAspectRatio);
 			//Resize and set to slot
@@ -372,7 +368,7 @@ int PIPMosaic::GetHeight(int pos)
 		//Exit
 		return 0;
 	//Main
-	if(!pos)
+	if (!pos)
 		return mosaicTotalHeight;
 	//If only 2 PIP
 	if (numSlots==2)
@@ -385,17 +381,15 @@ int PIPMosaic::GetTop(int pos)
 	DWORD mosaicHeight = 0;
 	DWORD intraHeight = 0;
 	//Check it's in the mosaic
-	if(pos+1>numSlots)
-	{
+	if (pos+1>numSlots)
 		//Exit
 		return 0;
-	}
 
 	//Main
-	if(!pos)
+	if (!pos)
 		return 0;
 
-	if(numSlots==2)
+	if (numSlots==2)
 		mosaicHeight = SIZE4MUL(mosaicTotalHeight/4);
 	else
 		mosaicHeight = SIZE4MUL(mosaicTotalHeight/5);
