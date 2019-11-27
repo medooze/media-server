@@ -105,6 +105,14 @@ bool EventLoop::SetAffinity(int cpu)
 	//Clear cpu mask
 	free_cpu_set(cpuSet);
 	
+#ifdef 	SO_INCOMING_CPU
+	//If got socket
+	if (fd)
+		//Set incoming socket cpu affinity
+		setsockopt(fd, SOL_SOCKET, SO_INCOMING_CPU, &cpu, sizeof(cpu));
+#endif
+
+	
 	//Done
 	return ret;
 #endif
