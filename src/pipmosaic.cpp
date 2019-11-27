@@ -17,10 +17,6 @@ extern "C" {
 ************************/
 PIPMosaic::PIPMosaic(Mosaic::Type type, DWORD size) : Mosaic(type,size)
 {
-	//Get width and height
-	mosaicTotalWidth = ::GetWidth(size);
-	mosaicTotalHeight = ::GetHeight(size);
-
 	//Allocate memory for under image
 	underBuffer = (BYTE *) malloc32(mosaicSize);
 	//Get aligned
@@ -45,6 +41,8 @@ PIPMosaic::~PIPMosaic()
 *****************************/
 int PIPMosaic::Update(int pos, BYTE *image, int imgWidth, int imgHeight,bool keepAspectRatio)
 {
+	//TODO: Use margins
+	
 	//Check size
 	if (!image && !imgWidth && !imgHeight)
 	{
@@ -272,6 +270,8 @@ int PIPMosaic::Update(int pos, BYTE *image, int imgWidth, int imgHeight,bool kee
 *****************************/
 int PIPMosaic::Clean(int pos)
 {
+	//TODO: Use margins
+	
 	//Check it's in the mosaic
 	if(pos<0 || pos >= numSlots)
 	{

@@ -35,17 +35,10 @@ int AsymmetricMosaic::Update(int pos, BYTE *image, int imgWidth, int imgHeight,b
 		//Clean position
 		return Clean(pos);
 
-	DWORD mosaicNumPixels = mosaicTotalWidth*mosaicTotalHeight;
-	DWORD offset=0;
-	DWORD offset2=0;
-	BYTE *lineaY;
-	BYTE *lineaU;
-	BYTE *lineaV;
-	
 	DWORD imgNumPixels = imgHeight*imgWidth;
-	BYTE *imageY = image;
-	BYTE *imageU  = imageY  + imgNumPixels;
-	BYTE *imageV  = imageU + imgNumPixels/4;
+	BYTE* imageY = image;
+	BYTE* imageU = imageY  + imgNumPixels;
+	BYTE* imageV = imageU + imgNumPixels/4;
 
 	//Get positions
 	int left = GetLeft(pos);
@@ -54,13 +47,14 @@ int AsymmetricMosaic::Update(int pos, BYTE *image, int imgWidth, int imgHeight,b
 	int mosaicHeight = GetHeight(pos);
 
 	//Get offsets
-	offset += (mosaicTotalWidth*top) + left;
-	offset2 += (mosaicTotalWidth*top)/4+left/2;
+	DWORD offset	= (mosaicTotalWidth*top) + left;
+	DWORD offset2	= (mosaicTotalWidth*top)/4+left/2;
 
+	DWORD mosaicNumPixels = mosaicTotalWidth*mosaicTotalHeight;
 	//Get plane pointers
-	lineaY = mosaic + offset;
-	lineaU = mosaic + mosaicNumPixels + offset2;
-	lineaV = lineaU + mosaicNumPixels/4; 
+	BYTE* lineaY = mosaic + offset;
+	BYTE* lineaU = mosaic + mosaicNumPixels + offset2;
+	BYTE* lineaV = lineaU + mosaicNumPixels/4; 
 
 	//Check if the sizes are equal 
 	if ((imgWidth == mosaicWidth) && (imgHeight == mosaicHeight))
@@ -425,7 +419,7 @@ int AsymmetricMosaic::GetWidth(int pos)
 				size = 1;
 			break;
 	}
-	return SIZE2MUL(mosaicTotalWidth/cols)*size;
+	return SIZE2MUL(GetInnerWidth()/cols)*size;
 }
 int AsymmetricMosaic::GetHeight(int pos)
 {
@@ -688,7 +682,7 @@ int AsymmetricMosaic::GetHeight(int pos)
 				size = 1;
 			break;
 	}
-	return SIZE2MUL(mosaicTotalHeight/rows)*size;
+	return SIZE2MUL(GetInnerHeight()/rows)*size;
 }
 
 int AsymmetricMosaic::GetTop(int pos)
@@ -930,9 +924,9 @@ int AsymmetricMosaic::GetTop(int pos)
 	//Get col
 	int j = index - i*cols;
 	//Get row heigth
-	int mosaicHeight = mosaicTotalHeight/rows;
+	int mosaicHeight = GetInnerHeight()/rows;
 	//Calculate top
-	return SIZE2MUL(mosaicHeight*i);
+	return SIZE2MUL(GetPaddingTop()+mosaicHeight*i);
 }
 
 int AsymmetricMosaic::GetLeft(int pos)
@@ -1173,7 +1167,8 @@ int AsymmetricMosaic::GetLeft(int pos)
 	int i = index/cols;
 	//Get col
 	int j = index - i*cols;
-	int mosaicWidth = mosaicTotalWidth/cols;
+	//Get participant mosaic width
+	int mosaicWidth = GetInnerWidth()/cols;
 	//Start filling from the end to not cause overlap
-	return SIZE2MUL(mosaicWidth*j);
+	return SIZE2MUL(GetPaddingLeft()+mosaicWidth*j);
 }

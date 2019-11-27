@@ -58,8 +58,6 @@ PartedMosaic::PartedMosaic(Type type, DWORD size) : Mosaic(type,size)
 			throw new std::runtime_error("Unknown mosaic type\n");
 
 	}
-	mosaicWidth = SIZE2MUL((int)mosaicTotalWidth/mosaicCols);
-	mosaicHeight = SIZE2MUL((int)mosaicTotalHeight/mosaicRows);
 }
 
 /***********************
@@ -90,29 +88,26 @@ int PartedMosaic::Update(int pos, BYTE *image, int imgWidth, int imgHeight,bool 
 
 	}
 
-	DWORD mosaicNumPixels = mosaicTotalWidth*mosaicTotalHeight;
-	DWORD offset,offset2;
-	BYTE *lineaY;
-	BYTE *lineaU;
-	BYTE *lineaV;
-	
 	DWORD imgNumPixels = imgHeight*imgWidth;
-	BYTE *imageY = image;
-	BYTE *imageU  = image  + imgNumPixels;
-	BYTE *imageV  = imageU + imgNumPixels/4;
+	BYTE* imageY = image;
+	BYTE* imageU = imageY  + imgNumPixels;
+	BYTE* imageV = imageU + imgNumPixels/4;
 
-	//Get slot position in mosaic
-	int i = pos / mosaicCols;
-	int j = pos - i*mosaicCols;
+	//Get positions
+	int left = GetLeft(pos);
+	int top = GetTop(pos);
+	int mosaicWidth = GetWidth(pos);
+	int mosaicHeight = GetHeight(pos);
 
 	//Get offsets
-	offset = (mosaicTotalWidth*mosaicHeight*i) + mosaicWidth*j; 
-	offset2 = (mosaicTotalWidth*mosaicHeight/4)*i+(mosaicWidth/2)*j;
+	DWORD offset	= (mosaicTotalWidth*top) + left;
+	DWORD offset2	= (mosaicTotalWidth*top)/4+left/2;
 
+	DWORD mosaicNumPixels = mosaicTotalWidth*mosaicTotalHeight;
 	//Get plane pointers
-	lineaY = mosaic + offset;
-	lineaU = mosaic + mosaicNumPixels + offset2;
-	lineaV = lineaU + mosaicNumPixels/4; 
+	BYTE* lineaY = mosaic + offset;
+	BYTE* lineaU = mosaic + mosaicNumPixels + offset2;
+	BYTE* lineaV = lineaU + mosaicNumPixels/4; 
 
 	//Check if the sizes are equal 
 	if ((imgWidth == mosaicWidth) && (imgHeight == mosaicHeight))
@@ -172,13 +167,15 @@ int PartedMosaic::Clean(int pos)
 	BYTE *lineaU;
 	BYTE *lineaV;
 
-	//Get slot position in mosaic
-	int i = pos / mosaicCols;
-	int j = pos - i*mosaicCols;
+	//Get positions
+	int left = GetLeft(pos);
+	int top = GetTop(pos);
+	int mosaicWidth = GetWidth(pos);
+	int mosaicHeight = GetHeight(pos);
 
 	//Get offsets
-	offset = (mosaicTotalWidth*mosaicHeight*i) + mosaicWidth*j;
-	offset2 = (mosaicTotalWidth*mosaicHeight/4)*i+(mosaicWidth/2)*j;
+	offset += (mosaicTotalWidth*top) + left;
+	offset2 += (mosaicTotalWidth*top)/4+left/2;
 
 	//Get plane pointers
 	lineaY = mosaic + offset;
@@ -219,7 +216,7 @@ int PartedMosaic::GetWidth(int pos)
 		return 0;
 
 	//Get widht
-	return SIZE2MUL(mosaicWidth);
+	return SIZE2MUL(GetInnerWidth()/mosaicRows);
 }
 int PartedMosaic::GetHeight(int pos)
 {
@@ -228,16 +225,16 @@ int PartedMosaic::GetHeight(int pos)
 		return 0;
 
 	//Get widht
-	return SIZE2MUL(mosaicHeight);
+	return SIZE2MUL(GetInnerHeight()/mosaicCols);
 }
 int PartedMosaic::GetTop(int pos)
 {
 	//Get slot position in mosaic
 	int i = pos / mosaicCols;
 	int j = pos - i*mosaicCols;
-
+	
 	//Get offsets
-	return SIZE2MUL(mosaicHeight*i);
+	return SIZE2MUL(GetPaddingTop()+GetWidth(pos)*i);
 }
 int PartedMosaic::GetLeft(int pos)
 {
@@ -245,5 +242,5 @@ int PartedMosaic::GetLeft(int pos)
 	int i = pos / mosaicCols;
 	int j = pos - i*mosaicCols;
 	//Get offsets
-	return SIZE2MUL(mosaicWidth*j);
+	return SIZE2MUL(GetPaddingLeft()+GetHeight(pos)*j);
 }

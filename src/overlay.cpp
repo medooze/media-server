@@ -314,6 +314,7 @@ int Canvas::RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWOR
 	BYTE margin		= properties.GetProperty("margin"		,2		);
 	BYTE cornerWidth	= properties.GetProperty("cornerWidth"		,2		);
 	BYTE cornerHeight	= properties.GetProperty("cornerHeight"		,2		);
+	int textSize		= properties.GetProperty("textSize"		,(int)fontSize	);
 	char str[1024];
 
 	try
@@ -379,7 +380,7 @@ int Canvas::RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWOR
  */
 		render.fillColor(Magick::Color(color));
 		render.strokeWidth(0);
-		render.draw( Magick::DrawableText(margin+padding+strokeWidth, height-padding-strokeWidth-fontSize/2, str, "UTF-8"));
+		render.draw( Magick::DrawableText(margin+padding+strokeWidth, height-padding-strokeWidth-textSize/2, str, "UTF-8"));
 		render.magick("RGBA");
 		render.write(&rgbablob);
 		

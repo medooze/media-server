@@ -747,3 +747,22 @@ int Mosaic::DrawVUMeter(int pos,DWORD val,DWORD size)
 	return 1;
 }
 
+bool Mosaic::SetPadding(int top, int right, int bottom, int left)
+{
+	//Check positive values
+	if (top<0 || right<0 || bottom<0 || left<0)
+		return false;
+	//Check enought widht
+	if (left+right>mosaicTotalWidth)
+		return false;
+	//Check enough height
+	if (top+bottom>mosaicTotalHeight)
+		return false;
+	//Store padding
+	paddingTop = top;
+	paddingRight = right;
+	paddingBottom = bottom;
+	paddingLeft = left;
+	//Done
+	return true;
+}

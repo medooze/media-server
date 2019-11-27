@@ -49,6 +49,9 @@ public:
 	int SetSlot(int mosaicId,int num,int id);
 	int ResetSlots(int mosaicId);
 	int SetCompositionType(int mosaicId,Mosaic::Type comp,int size);
+	int SetMosaicPadding(int mosaicId, int paddingTop = 0, int paddingRight = 0, int paddingBottom = 0, int paddingLeft = 0);
+	int SetMosaicOverlayText(int mosaicId);
+	int RenderMosaicOverlayText(int mosaicId,const std::wstring& text,DWORD x,DWORD y,DWORD width,DWORD height, const Properties &properties);
 	int DeleteMosaic(int mosaicId);
 
 	void Process(bool forceUpdate, QWORD now);
@@ -102,25 +105,27 @@ private:
 	Videos lstVideos;
 	//Mosaics
 	Mosaics mosaics;
-	int maxMosaics;
+	int maxMosaics = MosaicDefault;
 
 	//Las propiedades del mosaico
 	Logo 	logo;
-	Mosaic	*defaultMosaic;
+	Mosaic	*defaultMosaic			 = nullptr;
 
 	//Threads, mutex y condiciones
 	pthread_t 	mixVideoThread;
 	pthread_cond_t  mixVideoCond;
 	pthread_mutex_t mixVideoMutex;
 	int		mixingVideo;
-	QWORD		ini;
+	QWORD		ini			= 0;
 	Use		lstVideosUse;
-	VADProxy*	proxy;
-	VADMode		vadMode;
-	bool		keepAspectRatio;
-	bool		displayNames;
-	DWORD		version;
+	VADProxy*	proxy			= nullptr;
+	VADMode		vadMode			= VADMode::NoVAD;
+	bool		keepAspectRatio		= true;
+	bool		displayNames		= false;
+	uint32_t	speakingThreashold	= 0;
+	DWORD		version = 0;
 	Properties	overlay;
+	Properties	overlaySpeaking;
 };
 
 #endif
