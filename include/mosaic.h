@@ -136,6 +136,7 @@ public:
 	int SetOverlaySVG(const char* svg);
 	int SetOverlayText();
 	int RenderOverlayText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWORD height, const Properties &properties);
+	int RenderOverlayText(const std::string& text,DWORD x,DWORD y,DWORD width,DWORD height, const Properties &properties);
 	int ResetOverlay();
 	int DrawVUMeter(int pos,DWORD val,DWORD size);
 	

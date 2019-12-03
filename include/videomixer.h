@@ -52,6 +52,7 @@ public:
 	int SetMosaicPadding(int mosaicId, int paddingTop = 0, int paddingRight = 0, int paddingBottom = 0, int paddingLeft = 0);
 	int SetMosaicOverlayText(int mosaicId);
 	int RenderMosaicOverlayText(int mosaicId,const std::wstring& text,DWORD x,DWORD y,DWORD width,DWORD height, const Properties &properties);
+	int RenderMosaicOverlayText(int mosaicId,const std::string& utf8,DWORD x,DWORD y,DWORD width,DWORD height, const Properties &properties);
 	int DeleteMosaic(int mosaicId);
 
 	void Process(bool forceUpdate, QWORD now);
@@ -122,7 +123,7 @@ private:
 	VADMode		vadMode			= VADMode::NoVAD;
 	bool		keepAspectRatio		= true;
 	bool		displayNames		= false;
-	uint32_t	speakingThreashold	= 0;
+	uint32_t	speakingThreshold	= 0;
 	DWORD		version = 0;
 	Properties	overlay;
 	Properties	overlaySpeaking;

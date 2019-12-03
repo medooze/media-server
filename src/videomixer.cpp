@@ -227,7 +227,7 @@ void VideoMixer::Process(bool forceUpdate, QWORD now)
 				if (displayNames && !it->second->name.empty())
 				{
 					//Get properties depending on the speaking threshold
-					Properties& properties = (speakingThreashold && proxy->GetVAD(partId)>speakingThreashold) ? overlaySpeaking : overlay;
+					Properties& properties = (speakingThreshold && proxy->GetVAD(partId)>speakingThreshold) ? overlaySpeaking : overlay;
 					//Get heigth
 					int height = properties.GetProperty("height",30);
 					//Set name
@@ -450,9 +450,12 @@ int VideoMixer::Init(const Properties &properties)
 	
 	//Should we display names?
 	displayNames = properties.GetProperty("displayNames", false);
+	//Get threshold for switching to speaking mode
+	speakingThreshold = properties.GetProperty("speakingThreshold",48000);
 	
 	//Get overlay children properties
 	properties.GetChildren("overlay",overlay);
+	overlay.GetChildren("speaking",overlaySpeaking);
 		
 	//Load file
 	logo.Load(logoFile);
@@ -1015,10 +1018,23 @@ int VideoMixer::RenderMosaicOverlayText(int mosaicId,const std::wstring& text,DW
 
 	//Check if we have found it
 	if (it==mosaics.end())
-		return Error("VideoMixer::SetMosaicPadding() Mosaic not found");
+		return Error("VideoMixer::RenderMosaicOverlayText() Mosaic not found");
 	
 	//Set padding
 	return it->second->RenderOverlayText(text,x,y,width,height,properties);
+}
+
+int VideoMixer::RenderMosaicOverlayText(int mosaicId,const std::string& utf8,DWORD x,DWORD y,DWORD width,DWORD height, const Properties &properties)
+{
+	//Get mosaic from id
+	Mosaics::iterator it = mosaics.find(mosaicId);
+
+	//Check if we have found it
+	if (it==mosaics.end())
+		return Error("VideoMixer::RenderMosaicOverlayText() Mosaic not found");
+	
+	//Set padding
+	return it->second->RenderOverlayText(utf8,x,y,width,height,properties);
 }
 	
 /**************************

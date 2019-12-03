@@ -661,6 +661,15 @@ int Mosaic::RenderOverlayText(const std::wstring& text,DWORD x,DWORD y,DWORD wid
 	return overlay.RenderText(text,x,y,width,height,properties);
 }
 
+int Mosaic::RenderOverlayText(const std::string& utf8,DWORD x,DWORD y,DWORD width,DWORD height, const Properties& properties)
+{
+	//Lock method
+	ScopedLock scoped(mutex);
+	
+	//Render text
+	return overlay.RenderText(utf8,x,y,width,height,properties);
+}
+
 int Mosaic::ResetOverlay()
 {
 	//Lock method

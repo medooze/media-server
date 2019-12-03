@@ -225,7 +225,6 @@
           <in>mpeg4codec.cpp</in>
         </df>
         <df name="h264">
-          <in>H264CodecConfig.h</in>
           <in>H264LayerSelector.cpp</in>
           <in>h264decoder.cpp</in>
           <in>h264depacketizer.cpp</in>
@@ -1318,8 +1317,6 @@
       <item path="src/h263/mpeg4codec.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="2">
         </ccTool>
-      </item>
-      <item path="src/h264/H264CodecConfig.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="src/h264/H264LayerSelector.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="2">

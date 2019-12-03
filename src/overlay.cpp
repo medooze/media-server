@@ -301,6 +301,26 @@ int Canvas::RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWOR
 
 int Canvas::RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWORD height,const Properties& properties)
 {
+	//Convert text to tuf8
+	UTF8Parser utf8(text);
+	//Get mas length
+	DWORD len = utf8.GetUTF8Size();
+	//Create str
+	char* str = (char*)malloc(len+1);
+	//Serialize it
+	utf8.Serialize((BYTE*)str,len);
+	//end it
+	str[len] = 0;
+	//Render text
+	int ret = RenderText(str,x,y,width,height,properties);
+	//Free mem
+	free(str);
+	//Done
+	return ret;
+}
+
+int Canvas::RenderText(const std::string& utf8,DWORD x,DWORD y,DWORD width,DWORD height,const Properties& properties)
+{
 #ifdef HAVE_IMAGEMAGICK
 	//Colors in RGBA
 	const char *strokeColor	= properties.GetProperty("strokeColor"		,"#40404040"	);
@@ -344,17 +364,6 @@ int Canvas::RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWOR
 		render.font(font);
 		render.fontPointsize(fontSize);
 
-		//Convert text to tuf8
-		UTF8Parser utf8(text);
-		//Get mas length
-		DWORD len = utf8.GetUTF8Size();
-		//Check size
-		if (len+1>1024)
-			//reduce
-			len = 1024-1;
-		//Serialize it
-		utf8.Serialize((BYTE*)str,len);
-		str[len] = 0;
 /*
 		Magick::TypeMetric textSize;
 		render.fontTypeMetrics( txt, &textSize );
@@ -380,7 +389,7 @@ int Canvas::RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWOR
  */
 		render.fillColor(Magick::Color(color));
 		render.strokeWidth(0);
-		render.draw( Magick::DrawableText(margin+padding+strokeWidth, height-padding-strokeWidth-textSize/2, str, "UTF-8"));
+		render.draw( Magick::DrawableText(margin+padding+strokeWidth, height-padding-strokeWidth-textSize/2, utf8, "UTF-8"));
 		render.magick("RGBA");
 		render.write(&rgbablob);
 		
@@ -437,7 +446,7 @@ int Canvas::RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWOR
 		display = true;
 	} catch ( Magick::Exception &error ) {
 		display = false;
-		return Error("-Canvas: failed to render text %ls: %s.\n", text.c_str(), error.what() );
+		return Error("-Canvas: failed to render text: %s: %s.\n", utf8.c_str(), error.what() );
 	}
 #endif
 	//OK

@@ -19,6 +19,7 @@ public:
 	int LoadSVG(const char* svg);
 	int RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWORD height);
 	int RenderText(const std::wstring& text,DWORD x,DWORD y,DWORD width,DWORD height,const Properties& properties);
+	int RenderText(const std::string& utf8,DWORD x,DWORD y,DWORD width,DWORD height,const Properties& properties);
 	void Draw(BYTE*image, BYTE* frame);
 	void Reset();
 	BYTE* GetCanvas()	{ return overlay;	}
