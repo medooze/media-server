@@ -5,6 +5,7 @@
 extern "C" {
 #include <x264.h>
 }
+#include "avcdescriptor.h"
 
 class H264Encoder : public VideoEncoder
 {
@@ -18,7 +19,9 @@ public:
 
 private:
 	int OpenCodec();
+	AVCDescriptor config;
 	bool streaming;
+	bool annexb;
 	x264_t*		enc;
 	x264_param_t    params;
 	x264_nal_t*	nals;

@@ -56,16 +56,10 @@ MediaFrame* H264Depacketizer::AddPacket(const RTPPacket::shared& packet)
 	//If it is last return frame
 	if (!packet->GetMark())
 		return NULL;
-	//Get config size
-	auto size = config.GetSize();
-	//Serialize codec config
-	BYTE* data = (BYTE*)malloc(size);
+	//Set config size
+	frame.AllocateCodecConfig(config.GetSize());
 	//Serialize
-	DWORD len = config.Serialize(data,size);
-	//Set it
-	frame.SetCodecConfig(data,len);
-	//Free config
-	free(data);
+	config.Serialize(frame.GetCodecConfigData(),frame.GetCodecConfigSize());
 	//Return frame
 	return &frame;
 }
