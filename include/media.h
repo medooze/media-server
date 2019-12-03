@@ -145,11 +145,11 @@ public:
 		rtpInfo.push_back(new RtpPacketization(pos,size,prefix,prefixLen));
 	}
 	
-	Type	GetType() const		{ return type;	}
-	DWORD	GetTimeStamp() const	{ return ts;	}
-	void	SetTimestamp(DWORD ts)	{ this->ts = ts; }
-	QWORD	GetTime() const		{ return time;	}
-	void	SetTime(QWORD time)	{ this->time = time; }
+	Type	GetType() const		{ return type;		}
+	QWORD	GetTimeStamp() const	{ return ts;		}
+	void	SetTimestamp(QWORD ts)	{ this->ts = ts;	}
+	QWORD	GetTime() const		{ return time;		}
+	void	SetTime(QWORD time)	{ this->time = time;	}
 	
 	DWORD	GetSSRC() const		{ return ssrc;		}
 	void	SetSSRC(DWORD ssrc)	{ this->ssrc = ssrc;	}
@@ -268,20 +268,20 @@ protected:
 	}
 	
 protected:
-	Type type		= MediaFrame::Unknown;
-	DWORD ts		= (DWORD)-1;
-	QWORD time		= 0;
-	DWORD ssrc		= 0;
+	Type type			= MediaFrame::Unknown;
+	QWORD ts			= (QWORD)-1;
+	QWORD time			= 0;
+	DWORD ssrc			= 0;
 	
 	std::shared_ptr<Buffer> buffer;
 	bool ownedBuffer		= false;
 	bool disableSharedBuffer	= false;
 	
-	DWORD	duration	= 0;
-	DWORD	clockRate	= 1000;
+	DWORD	duration		= 0;
+	DWORD	clockRate		= 1000;
 	
-	BYTE	*configData	= nullptr;
-	DWORD	configSize	= 0;
+	BYTE	*configData		= nullptr;
+	DWORD	configSize		= 0;
 	
 	RtpPacketizationInfo rtpInfo;
 };
