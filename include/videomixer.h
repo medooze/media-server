@@ -34,6 +34,7 @@ public:
 	int CreateMixer(int id,const std::wstring &name);
 	int InitMixer(int id,int mosaicId);
 	int SetMixerMosaic(int id,int mosaicId);
+	int SetMixerName(int id,const std::wstring &name);
 	int EndMixer(int id);
 	int DeleteMixer(int id);
 	VideoInput*  GetInput(int id);

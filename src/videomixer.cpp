@@ -714,6 +714,53 @@ int VideoMixer::SetMixerMosaic(int id,int mosaicId)
 	//Si esta devolvemos el input
 	return true;
 }
+
+int  VideoMixer::SetMixerName(int id,const std::wstring &name)
+{
+	Debug(">SetMixerName [id:%d,mosaic:%ls]\n",id,name.c_str());
+
+	//Protegemos la lista
+	lstVideosUse.IncUse();
+	
+	//Buscamos el video source
+	Videos::iterator it = lstVideos.find(id);
+
+	//Si no esta
+	if (it == lstVideos.end())
+	{
+		//Desprotegemos
+		lstVideosUse.DecUse();
+		//Salimos
+		return Error("Mixer not found\n");
+	}
+
+	//Obtenemos el video source
+	VideoSource *video = (*it).second;
+
+	//Set mosaic
+	video->name = name;
+	
+	//Refresh it
+	video->refresh = true;
+
+	//Desprotegemos
+	lstVideosUse.DecUse();
+	
+	//LOck the mixing
+	pthread_mutex_lock(&mixVideoMutex);
+
+	//Signal for new video
+	pthread_cond_signal(&mixVideoCond);
+
+	//UNlock mixing
+	pthread_mutex_unlock(&mixVideoMutex);
+
+	Debug("<SetMixerName [%d]\n",id);
+
+	//Si esta devolvemos el input
+	return true;
+}
+
 /***********************************
  * AddMosaicParticipant
  *	Add a participant to be shown in a mosaic
