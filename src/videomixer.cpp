@@ -955,7 +955,7 @@ int VideoMixer::DeleteMixer(int id)
 		//Desprotegemos la lista
 		lstVideosUse.Unlock();
 		//Salimos
-		return Error("Video mixer not found\n");
+		return Error("-Video mixer not found\n");
 	}
 
 	//Obtenemos el video source

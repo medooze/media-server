@@ -3,7 +3,6 @@
 #include "partedmosaic.h"
 #include "asymmetricmosaic.h"
 #include "pipmosaic.h"
-#include "participant.h"
 #include <stdexcept>
 #include <vector>
 #include <map>
