@@ -88,7 +88,7 @@ int VP9Decoder::Decode(const BYTE *buffer,DWORD len)
 	//Check error
 	if (err!=VPX_CODEC_OK)
 		//Error
-		return Error("Error decoding VP9 empty [error %d:%s]\n",decoder.err,decoder.err_detail);
+		return Error("Error decoding VP9 frame [error %d:%s]\n",decoder.err,decoder.err_detail);
 
 	//Ger image
 	vpx_codec_iter_t iter = NULL;
