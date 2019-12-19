@@ -12,7 +12,7 @@ void ActiveSpeakerDetector::Accumulate(uint32_t id, bool vad, uint8_t db, uint64
 	auto it = speakers.find(id);
   
 	//Check voice is detected and not muted
-	auto speaking = vad && db<noiseGatingThreshold;
+	auto speaking = vad && db!=127 && (!noiseGatingThreshold || db<noiseGatingThreshold);
   
 	//Check if we had that speakcer before
 	if (it==speakers.end())
@@ -48,12 +48,18 @@ void ActiveSpeakerDetector::Accumulate(uint32_t id, bool vad, uint8_t db, uint64
 
 void ActiveSpeakerDetector::Release(uint32_t id)
 {
+	Debug("-ActiveSpeakerDetector::Release() [id:%id]\n",id);
+		
 	//Remove speaker
 	speakers.erase(id);
 	//If it was last active
 	if (lastActive==id)
+	{
+		//We can change now
+		blockedUntil = 0;
 		//Process it again
 		Process(last);
+	}
 }
 
 void ActiveSpeakerDetector::Process(uint64_t now)
@@ -61,7 +67,10 @@ void ActiveSpeakerDetector::Process(uint64_t now)
 	uint64_t active = 0;
 	uint64_t maxScore = 0;
 	//Get difference from last process
-	uint64_t diff = now-last;
+	uint64_t diff = last ? now-last : 0;
+	
+	//Store last
+	last = now;
 	
 	//If we have processed it quite recently
 	if (diff<MinInterval)
@@ -73,6 +82,8 @@ void ActiveSpeakerDetector::Process(uint64_t now)
 	//For each 
 	for (auto& entry : speakers)
 	{
+		//UltraDebug(">ActiveSpeakerDetector::Process() | part [id:%u,score:%llu,decay:%llu]\n",entry.first,entry.second.score,decay);
+		
 		//Decay
 		if (entry.second.score>decay)
 			//Decrease score
@@ -81,7 +92,7 @@ void ActiveSpeakerDetector::Process(uint64_t now)
 			//None
 			entry.second.score = 0;
 		
-		//UltraDebug("-ActiveSpeakerDetector::Process [id:%u,score:%llu,decay:%llu]\n",entry.first,entry.second.score,decay);
+		//UltraDebug("<ActiveSpeakerDetector::Process() | part [id:%u,score:%llu,decay:%llu]\n",entry.first,entry.second.score,decay);
 		
 		//Check if it is active speaker
 		if (maxScore<entry.second.score)
@@ -91,7 +102,7 @@ void ActiveSpeakerDetector::Process(uint64_t now)
 			maxScore = entry.second.score;
 		}
 	}
-	
+	//onActiveSpeakerChanded("-ActiveSpeakerDetector::Process() |  current [maxSocre:%llu,activation:%llu,active:%u,lastActive:%u,now:%llu,blockedUntil:%llu]\n",maxScore,minActivationScore,active,lastActive,now,blockedUntil);
 	//IF active has changed and we are out of the block period
 	if (maxScore>minActivationScore && active!=lastActive && now>blockedUntil)
 	{
@@ -100,9 +111,7 @@ void ActiveSpeakerDetector::Process(uint64_t now)
 		//Store last aceive and calculate blocking time
 		lastActive = active;
 		blockedUntil = now + minChangePeriod;
-		//UltraDebug("-ActiveSpeakerDetector::Process [active:%u,blockedUntil:%ull]\n",active,blockedUntil);
+		
+		//UltraDebug("-ActiveSpeakerDetector::onActiveSpeakerChanded() [active:%u,blockedUntil:%ull]\n",active,blockedUntil);
 	}
-	
-	//Update laste process time
-	last = now;
 }
