@@ -137,10 +137,17 @@ int RTMPConnection::End()
 	//Stop just in case
 	Stop();
 
-	//if it is valid
-	if (thread.joinable() && std::this_thread::get_id()!=thread.get_id())
-		//Join it
-		thread.join();
+	//If thread is already running
+	if (thread.joinable())
+	{
+		//If we are on different thread
+		if (std::this_thread::get_id()!=thread.get_id())
+			//Join it
+			thread.join();
+		else
+			//Detach as we are ending ourselves
+			thread.detach();
+	}
 
 	//Ended
 	Log("<RTMPConnection::End()\n");
