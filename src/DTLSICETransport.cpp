@@ -2014,6 +2014,7 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 	
 	DWORD bitrate   = 0;
 	DWORD estimated = 0;
+	DWORD probing	= 0;
 		
 	//SYNCHRONIZED
 	{
@@ -2029,6 +2030,7 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 		 //Get bitrates
 		bitrate   = static_cast<DWORD>(source.acumulator.GetInstantAvg()*8);
 		estimated = source.remb;
+		probing	  = static_cast<DWORD>(probingBitrate.GetInstantAvg()*8);
 	}
 
 	//Check if we are using transport wide for this packet
@@ -2060,11 +2062,11 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 	bool rtx = group->rtx.ssrc && !sendMaps.apt.empty();
 	
 	//Do we need to send probing as inline media?
-	if (!rtx && probe && group->type == MediaFrame::Video && packet->GetMark() && estimated>bitrate)
+	if (!rtx && probe && group->type == MediaFrame::Video && packet->GetMark() && estimated>bitrate && probing<maxProbingBitrate)
 	{
 		BYTE size = 255;
 		//Get probe padding needed
-		DWORD probingBitrate = maxProbingBitrate ? std::min(estimated-bitrate,maxProbingBitrate) : estimated-bitrate;
+		DWORD probingBitrate = std::min(estimated-bitrate,maxProbingBitrate);
 
 		//Get number of probes, do not send more than 32 continoues packets (~aprox 2mpbs)
 		BYTE num = std::min<QWORD>((probingBitrate*33)/(8000*size),32);
@@ -2558,10 +2560,10 @@ void DTLSICETransport::Probe()
 		//Log(">DTLSICETransport::Probe() | [target:%u,bitrate:%d,probing:%d,history:%d]\n",target,bitrate,probing,history.size());
 			
 		//If we can still send more
-		if (target>bitrate && (!probingBitrateLimit || bitrate<probingBitrateLimit) && (!maxProbingBitrate || probing<maxProbingBitrate))
+		if (target>bitrate && (!probingBitrateLimit || bitrate<probingBitrateLimit) && probing<maxProbingBitrate)
 		{
 			//Increase probing bitrate
-			probing = maxProbingBitrate ? std::min(maxProbingBitrate, target - bitrate) : target - bitrate;
+			probing = std::min(maxProbingBitrate, target - bitrate);
 
 			//Get size of probes
 			DWORD probingSize = (probing*sleep)/8000;
