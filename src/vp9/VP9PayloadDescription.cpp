@@ -147,7 +147,7 @@ DWORD VP9ScalabilityScructure::Parse(const BYTE* data, DWORD size)
 	//Parse header
 	numberSpatialLayers			= (data[0] >> 5) + 1;
 	spatialLayerFrameResolutionPresent	= data[0] & 0x10;
-	groupOfFramesDescriptionPresent		= data[0] & 0x0F;
+	groupOfFramesDescriptionPresent		= data[0] & 0x08;
 	
 	//Heder
 	DWORD len =  1;
@@ -263,7 +263,7 @@ void VP9ScalabilityScructure::Dump()
 	Debug("\t[VP9ScalabilityScructure \n");
 	Debug("\t\t numberSpatialLayers=%d\n"			, numberSpatialLayers);
 	Debug("\t\t spatialLayerFrameResolutionPresent=%d\n"	, spatialLayerFrameResolutionPresent);
-	Debug("\t\t groupOfFramesDescriptionPresent=%d\n"		, groupOfFramesDescriptionPresent);
+	Debug("\t\t groupOfFramesDescriptionPresent=%d\n"	, groupOfFramesDescriptionPresent);
 	Debug("\t]\n");
 	if (spatialLayerFrameResolutionPresent)
 		for (auto it = spatialLayerFrameResolutions.begin(); it!= spatialLayerFrameResolutions.end(); ++it)
@@ -455,17 +455,22 @@ DWORD VP9PayloadDescription::Parse(const BYTE* data, DWORD size)
 		}
 	}
 		
-	if (flexibleMode && pictureIdPresent)
+	if (flexibleMode && interPicturePredictedLayerFrame)
 	{
-		//Check kength
-		if (size<len+1)
-			//Error
-			return 0;
+		//at least 1
+		bool next = true;
 		//Check last diff mark
-		while (data[len] & 0x01)
+		while (next)
 		{
+			//Check length
+			if (size<len+1)
+				//Error
+				return 0;
 			//Add ref index
 			referenceIndexDiff.push_back(data[len]>>1);
+			//Are there more?
+			next = data[len] & 0x01;
+			
 			//Inc len
 			len ++;
 		}	
