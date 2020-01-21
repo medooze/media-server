@@ -13,6 +13,8 @@
 #include "dtls.h"
 #include "groupchat.h"
 #include "CPUMonitor.h"
+#include "EventSource.h"
+#include "eventstreaminghandler.h"
 extern "C" {
 	#include "libavcodec/avcodec.h"
 }
