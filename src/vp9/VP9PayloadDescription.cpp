@@ -30,11 +30,17 @@ DWORD VP9InterPictureDependency::GetSize()
 
 DWORD VP9InterPictureDependency::Parse(const BYTE* data, DWORD size)
 {
+	//Check size
+	if (size<1)
+		return 0;
 	//Get values
 	temporalLayerId = data[0] >> 5;
 	switchingPoint  = data[0] & 0x10;
 	//Number of pdifs
 	BYTE pdifs = data[0] >> 2 & 0x03;
+	//Check size
+	if (size<1+pdifs)
+		return 0;
 	//Get each one
 	for (BYTE j=0;j<pdifs;++j)
 		//Get it
@@ -553,23 +559,27 @@ DWORD VP9PayloadDescription::Serialize(BYTE *data,DWORD size)
 		}
 	}
 		
-	if (flexibleMode && pictureIdPresent)
-	{
-		//Serialize picture refid
-		for (auto it=referenceIndexDiff.begin(); it!=referenceIndexDiff.end(); ++it)
-		{
-			//Add ref index
-			data[len] = (*it) << 1;
-			//if  not last
-			if (it!=referenceIndexDiff.end())
-				//Add marker
-				data[len] = data[len] | 0x01;
-			//Inc len
-			len ++;
-		}	
-	}
+        if (flexibleMode && interPicturePredictedLayerFrame)
+        {
+                bool next = true;
+                //Check last diff mark
+                while (next)
+                {
+                        //Check length
+                        if (size<len+1)
+                                //Error
+                                return 0;
+                        //Add ref index
+                        referenceIndexDiff.push_back(data[len]>>1);
+                        //Are there more?
+                        next = data[len] & 0x01;
 
-	
+                        //Inc len
+                        len ++;
+                }
+        }
+
+
 	if (scalabiltiyStructureDataPresent)
 	{
 		//Get SS size
