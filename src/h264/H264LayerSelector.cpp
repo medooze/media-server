@@ -230,7 +230,7 @@ bool H264LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 					{
 						case 0x05:
 							//It is intra
-							//isIntra = true;
+							isIntra = true;
 							break;
 						case 0x07:
 							//Consider it intra also
