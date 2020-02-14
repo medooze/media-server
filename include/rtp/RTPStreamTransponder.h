@@ -26,6 +26,7 @@ public:
 	virtual ~RTPStreamTransponder();
 	
 	bool SetIncoming(RTPIncomingMediaStream* incoming, RTPReceiver* receiver);
+	bool AppendH264ParameterSets(const std::string& sprop);
 	void Close();
 	
 	virtual void onRTP(RTPIncomingMediaStream* stream,const RTPPacket::shared& packet) override;
@@ -60,6 +61,7 @@ private:
 	QWORD lastTime		= 0;  //Last sent time
 	bool  lastCompleted	= true; //Last packet enqueued had the M bit
 	DWORD dropped		= 0;  //Num of empty packets dropped
+	DWORD added		= 0;
 	DWORD source		= 0;  //SSRC of the incoming rtp
 	DWORD ssrc		= 0;  //SSRC to rewrite to
 	MediaFrame::Type media;
@@ -74,6 +76,8 @@ private:
 	WORD tl0Idx		= 0;
 	bool rewritePicId	= true;
 	QWORD lastSentPLI	= 0;
+	
+	RTPPacket::shared	h264Parameters;
 };
 
 #endif /* RTPSTREAMTRANSPONDER_H */

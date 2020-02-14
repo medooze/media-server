@@ -144,7 +144,7 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 			RTPPacket::shared rtp = std::make_shared<RTPPacket>(media,codec);
 			//Set data
 			rtp->SetPayloadType(type);
-			rtp->SetSSRC(source);
+			rtp->SetSSRC(ssrc);
 			rtp->SetExtSeqNum(lastExtSeqNum++);
 			rtp->SetMark(true);
 			rtp->SetTimestamp(lastTimestamp);
@@ -160,8 +160,9 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 		//Store the last send ones
 		baseExtSeqNum = lastExtSeqNum+1;
 		baseTimestamp = lastTimestamp;
-		//None dropped
+		//None dropped or added
 		dropped = 0;
+		added = 0;
 		//Not selecting
 		selector = nullptr;
 		//No layer
@@ -253,22 +254,25 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 		lastSpatialLayerId = selector->GetSpatialLayer();
 	}
 	
-	
-	
 	//Set normalized seq num
-	extSeqNum = baseExtSeqNum + (extSeqNum - firstExtSeqNum) - dropped;
+	extSeqNum = baseExtSeqNum + (extSeqNum - firstExtSeqNum) - dropped + added;
 	
 	//Set normailized timestamp
 	uint64_t timestamp = baseTimestamp + (packet->GetTimestamp()-firstTimestamp);
 	
-	//UltraDebug("-ext seq:%lu base:%lu first:%lu current:%lu dropped:%lu ts:%lu normalized:%llu\n",extSeqNum,baseExtSeqNum,firstExtSeqNum,packet->GetExtSeqNum(),dropped,packet->GetTimestamp(),timestamp);
+	//UPdate media codec and type
+	media = packet->GetMedia();
+	codec = packet->GetCodec();
+	type  = packet->GetPayloadType();
+	
+	//UltraDebug("-ext seq:%lu base:%lu first:%lu current:%lu dropped:%lu added:%d ts:%lu normalized:%llu intra:%d codec=%d\n",extSeqNum,baseExtSeqNum,firstExtSeqNum,packet->GetExtSeqNum(),dropped,added,packet->GetTimestamp(),timestamp,packet->IsKeyFrame(),codec);
 	
 	//Rewrite pict id
 	bool rewitePictureIds = false;
 	DWORD pictureId = 0;
 	DWORD temporalLevelZeroIndex = 0;
 	//TODO: this should go into the layer selector??
-	if (rewritePicId && packet->GetCodec()==VideoCodec::VP8 && packet->vp8PayloadDescriptor)
+	if (rewritePicId && codec==VideoCodec::VP8 && packet->vp8PayloadDescriptor)
 	{
 		//Get VP8 desc
 		auto desc = *packet->vp8PayloadDescriptor;
@@ -298,10 +302,33 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 		//We need to rewrite vp8 picture ids
 		rewitePictureIds = true;
 	}
-	//UPdate media codec and type
-	media = packet->GetMedia();
-	codec = packet->GetCodec();
-	type  = packet->GetPayloadType();
+	
+	//If we have to append h264 sprop parameters set for the first packet of an iframe
+	if (h264Parameters && codec==VideoCodec::H264 && packet->IsKeyFrame() && (timestamp!=lastTimestamp || firstExtSeqNum==packet->GetExtSeqNum()))
+	{
+		//UltraDebug("-addding h264 sprop\n");
+		
+		//Clone packet
+		auto cloned = h264Parameters->Clone();
+		//Set new seq numbers
+		cloned->SetExtSeqNum(extSeqNum);
+		//Set normailized timestamp
+		cloned->SetTimestamp(timestamp);
+		//Set payload type
+		cloned->SetPayloadType(type);
+		//Change ssrc
+		cloned->SetSSRC(ssrc);
+		//Send packet
+		if (sender)
+			//Create clone on sender thread
+			sender->Enqueue(cloned);
+		//Add new packet
+		added ++;
+		extSeqNum ++;
+		
+		//UltraDebug("-ext seq:%lu base:%lu first:%lu current:%lu dropped:%lu added:%d ts:%lu normalized:%llu intra:%d codec=%d\n",extSeqNum,baseExtSeqNum,firstExtSeqNum,packet->GetExtSeqNum(),dropped,added,packet->GetTimestamp(),timestamp,packet->IsKeyFrame(),codec);
+	}
+	
 	//Get last send seq num and timestamp
 	lastExtSeqNum = extSeqNum;
 	lastTimestamp = timestamp;
@@ -410,4 +437,67 @@ void RTPStreamTransponder::Mute(bool muting)
 		RequestPLI();
 	//Update state
 	muted = muting;
+}
+
+bool RTPStreamTransponder::AppendH264ParameterSets(const std::string& sprop)
+{
+	
+	Debug("-RTPStreamTransponder::AppendH264ParameterSets() [sprop:%s]\n",sprop.c_str());
+	
+	//Create pakcet
+	auto rtp = std::make_shared<RTPPacket>(MediaFrame::Video,VideoCodec::H264);
+	
+	//Get current length
+	BYTE* data = rtp->AdquireMediaData();
+	DWORD len = 0;
+	DWORD size = rtp->GetMaxMediaLength();
+	//Append stap-a header
+	data[len++] = 24;
+	//Split by ","
+	auto start = 0;
+	
+	//Get next separator
+	auto end = sprop.find(',');
+	
+	//Parse
+	while(end!=std::string::npos)
+	{
+		//Get prop
+		auto prop = sprop.substr(start,end-start);
+		
+		Debug("-RTPStreamTransponder::AppendH264ParameterSets() [sprop:%s]\n",prop.c_str());
+		//Parse and keep space for size
+		auto l = av_base64_decode(data+len+2,prop.c_str(),size-len-2);
+		//Check result
+		if (l<=0)
+			return Error("-RTPStreamTransponder::AppendH264ParameterSets() could not decode base64 data [%s]\n",prop.c_str());
+		//Set naly length
+		set2(data,len,l);
+		//Increase length
+		len += l+2;
+		//Next
+		start = end+1;
+		//Get nest
+		end = sprop.find(',',start);
+	}
+	//last one
+	auto prop = sprop.substr(start,end-start);
+	
+	//Parse and keep space for size
+	auto l = av_base64_decode(data+len+2,prop.c_str(),size-len-2);
+	//Check result
+	if (l<=0)
+		return Error("-RTPStreamTransponder::AppendH264ParameterSets() could not decode base64 data [%s]\n",prop.c_str());
+	//Set naly length
+	set2(data,len,l);
+	//Increase length
+	len += l+2;
+	//Set new lenght
+	rtp->SetMediaLength(len);
+	
+	//Store it
+	this->h264Parameters = rtp;
+	
+	//Done
+	return true;
 }
