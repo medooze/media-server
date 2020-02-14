@@ -158,6 +158,7 @@ void VideoMixer::Process(bool forceUpdate, QWORD now)
 				{
 					//Get vad value for participant
 					DWORD vad = proxy->GetVAD(id);
+					UltraDebug("-VAD %d:%u\n",id,vad);
 					//Found the highest VAD participant but select at least one.
 					if (vad>maxVAD || vadId==0)
 					{
@@ -788,7 +789,7 @@ int VideoMixer::AddMosaicParticipant(int mosaicId, int partId)
 	Mosaic* mosaic = itMosaic->second;
 
 	//Add participant to the mosaic with score so it is last
-	mosaic->AddParticipant(partId,partId>ini ? ini-partId : 0);
+	mosaic->AddParticipant(partId,partId<ini ? ini-partId : 0);
 
 	//Recalculate positions
 	mosaic->CalculatePositions();

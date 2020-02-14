@@ -142,9 +142,17 @@ public:
 	
 	void SetProperty(const char* key,int intval)
 	{
-		std::ostringstream val;
-		val << intval;
-		SetProperty(std::string(key),val.str());
+		SetProperty(std::string(key),std::to_string(intval));
+	}
+
+	void SetProperty(const char* key,DWORD val)
+	{
+		SetProperty(std::string(key),std::to_string(val));
+	}
+
+	void SetProperty(const char* key,QWORD val)
+	{
+		SetProperty(std::string(key),std::to_string(val));
 	}
 
 	void SetProperty(const char* key,const char* val)
