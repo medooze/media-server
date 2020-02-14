@@ -788,7 +788,7 @@ int VideoMixer::AddMosaicParticipant(int mosaicId, int partId)
 	Mosaic* mosaic = itMosaic->second;
 
 	//Add participant to the mosaic with score so it is last
-	mosaic->AddParticipant(partId,ini-partId);
+	mosaic->AddParticipant(partId,partId>ini ? ini-partId : 0);
 
 	//Recalculate positions
 	mosaic->CalculatePositions();
