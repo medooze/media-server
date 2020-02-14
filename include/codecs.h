@@ -9,7 +9,7 @@
 class AudioCodec
 {
 public:
-	enum Type {PCMA=8,PCMU=0,GSM=3,G722=9,SPEEX16=117,AMR=118,TELEPHONE_EVENT=100,NELLY8=130,NELLY11=131,OPUS=98,AAC=97,UNKNOWN=-1};
+	enum Type {PCMA=8,PCMU=0,GSM=3,G722=9,SPEEX16=117,AMR=118,TELEPHONE_EVENT=100,NELLY8=130,NELLY11=131,OPUS=98,AAC=97,MULTIOPUS=114,UNKNOWN=-1};
 
 public:
 	static Type GetCodecForName(const char* codec)
@@ -21,6 +21,7 @@ public:
 		else if (strcasecmp(codec,"NELLY8")==0) return NELLY8;
 		else if (strcasecmp(codec,"NELLY11")==0) return NELLY11;
 		else if (strcasecmp(codec,"OPUS")==0) return OPUS;
+		else if (strcasecmp(codec,"MULTIOPUS")==0) return MULTIOPUS;
 		else if (strcasecmp(codec,"G722")==0) return G722;
 		else if (strcasecmp(codec,"AAC")==0) return AAC;
 		return UNKNOWN;
@@ -37,6 +38,7 @@ public:
 			case NELLY8:	return "NELLY8Khz";
 			case NELLY11:	return "NELLY11Khz";
 			case OPUS:	return "OPUS";
+			case MULTIOPUS:	return "MULTIOPUS";
 			case G722:	return "G722";
 			case AAC:	return "AAC";
 			default:	return "unknown";
@@ -54,6 +56,7 @@ public:
 			case NELLY8:	return 8000;
 			case NELLY11:	return 11000;
 			case OPUS:	return 48000;
+			case MULTIOPUS:	return 48000;
 			case G722:	return 16000;
 			case AAC:	return 90000;
 			default:	return 8000;
@@ -136,6 +139,7 @@ static MediaFrame::Type GetMediaForCodec(BYTE codec)
 		case AudioCodec::NELLY8:
 		case AudioCodec::NELLY11:
 		case AudioCodec::OPUS:
+		case AudioCodec::MULTIOPUS:
 		case AudioCodec::G722:
 		case AudioCodec::AAC:
 			return MediaFrame::Audio;
