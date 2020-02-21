@@ -15,6 +15,7 @@ public:
 	std::unique_ptr<VideoFrame> AddFrame(RTMPVideoFrame* videoFrame);
 private:
 	AVCDescriptor desc;
+	bool gotConfig = false;
 };
 
 class RTMPAACPacketizer

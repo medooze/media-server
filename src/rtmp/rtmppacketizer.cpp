@@ -15,9 +15,12 @@ std::unique_ptr<VideoFrame> RTMPAVCPacketizer::AddFrame(RTMPVideoFrame* videoFra
 	if (videoFrame->GetAVCType()==RTMPVideoFrame::AVCHEADER)
 	{
 		//Parse it
-		if(!desc.Parse(videoFrame->GetMediaData(),videoFrame->GetMaxMediaSize()))
+		if(desc.Parse(videoFrame->GetMediaData(),videoFrame->GetMaxMediaSize()))
+			//Got config
+			gotConfig = true;
+		else
 			//Show error
-			Error("AVCDescriptor parse error\n");
+			Error(" RTMPAVCPacketizer::AddFrame() | AVCDescriptor parse error\n");
 		//DOne
 		return nullptr;
 	}
@@ -26,6 +29,15 @@ std::unique_ptr<VideoFrame> RTMPAVCPacketizer::AddFrame(RTMPVideoFrame* videoFra
 	if (videoFrame->GetAVCType()!=RTMPVideoFrame::AVCNALU)
 		//DOne
 		return nullptr;
+	
+	//Ensure that we have got config
+	if (!gotConfig)
+	{
+		//Error
+		Debug("-RTMPAVCPacketizer::AddFrame() | Gor NAL frame but not valid description yet\n");
+		//DOne
+		return nullptr;
+	}
 	
 	//GEt nal header length
 	DWORD nalUnitLength = desc.GetNALUnitLength() + 1;
@@ -121,6 +133,15 @@ std::unique_ptr<VideoFrame> RTMPAVCPacketizer::AddFrame(RTMPVideoFrame* videoFra
 		else
 			//Skip
 			break;
+		
+		//Ensure we have enougth data
+		if (nalSize+nalUnitLength>size)
+		{
+			//Error
+			Error("-RTMPAVCPacketizer::AddFrame() Error adding size=%d nalSize=%d fameSize=%d\n",size,nalSize,videoFrame->GetMediaSize());
+			//Skip
+			break;
+		}
 
 		//Append nal header
 		frame->AppendMedia(data, nalUnitLength);
@@ -238,5 +259,4 @@ std::unique_ptr<AudioFrame> RTMPAACPacketizer::AddFrame(RTMPAudioFrame* audioFra
 	
 	//DOne
 	return frame;
-	
 }
