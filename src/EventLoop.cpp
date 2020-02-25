@@ -382,8 +382,8 @@ void EventLoop::Signal()
 	//UltraDebug("-EventLoop::Signal()\r\n");
 	uint64_t one = 1;
 	
-	//If we are in the same thread or already signaled and we are running and pipe is ok
-	if (std::this_thread::get_id()==thread.get_id() || signaled || !running || pipe[1]==FD_INVALID)
+	//If we are in the same thread or already signaled and pipe is ok
+	if (std::this_thread::get_id()==thread.get_id() || signaled || pipe[1]==FD_INVALID)
 		//No need to do anything
 		return;
 	
