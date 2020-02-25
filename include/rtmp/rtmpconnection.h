@@ -89,6 +89,7 @@ private:
 private:
 	int socket;
 	pollfd ufds[1];
+	int timeout = 5*60*1000; // 5 minute timeout
 	bool inited;
 	bool running;
 	State state;

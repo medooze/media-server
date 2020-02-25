@@ -186,10 +186,21 @@ int RTMPConnection::Run()
 	while(running)
 	{
 		//Wait for events
-		if(poll(ufds,1,-1)<0)
+		int ret = poll(ufds,1,timeout);
+		
+		//If there was an error
+		if (ret<0)
 			//Check again
 			continue;
-
+		
+		//If timed out
+		if (ret==0)
+		{
+			//Log and exit run loop
+			Log("-RTMPConnection::Run() Timedout [connection:%p]\n",this);
+			break;
+		}
+			
 		if (ufds[0].revents & POLLOUT)
 		{
 			//Write data buffer
