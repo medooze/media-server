@@ -110,9 +110,13 @@ bool EventLoop::Start(std::function<void(void)> loop)
 #else
 	pipe[0] = pipe[1] = eventfd(0, EFD_NONBLOCK);
 #endif	
-	
+	//Check values
+	if (pipe[0]==FD_INVALID || pipe[1]==FD_INVALID)
+		//Error
+		return Error("-EventLoop::Start() | could not start pipe [errno:%d]\n",errno);
+			
 	//Store socket
-	this->fd = -1;
+	this->fd = FD_INVALID;
 	
 	//Running
 	running = true;
@@ -144,6 +148,10 @@ bool EventLoop::Start(int fd)
 #else
 	pipe[0] = pipe[1] = eventfd(0, EFD_NONBLOCK);
 #endif	
+	//Check values
+	if (pipe[0]==FD_INVALID || pipe[1]==FD_INVALID)
+		//Error
+		return Error("-EventLoop::Start() | could not start pipe [errno:%d]\n",errno);
 	
 	//Store socket
 	this->fd = fd;
@@ -179,11 +187,11 @@ bool EventLoop::Stop()
 	}
 	
 	//Close pipe
-	close(pipe[0]);
-	close(pipe[1]);
+	if (pipe[0]!=FD_INVALID) close(pipe[0]);
+	if (pipe[1]!=FD_INVALID) close(pipe[1]);
 	
 	//Empyt pipe
-	pipe[0] = pipe[1] = 0;
+	pipe[0] = pipe[1] = FD_INVALID;
 	
 	//Done
 	return true;
@@ -374,8 +382,8 @@ void EventLoop::Signal()
 	//UltraDebug("-EventLoop::Signal()\r\n");
 	uint64_t one = 1;
 	
-	//If we are in the same thread or already signaled
-	if (std::this_thread::get_id()==thread.get_id() || signaled) 
+	//If we are in the same thread or already signaled and we are running and pipe is ok
+	if (std::this_thread::get_id()==thread.get_id() || signaled || !running || pipe[1]==FD_INVALID)
 		//No need to do anything
 		return;
 	

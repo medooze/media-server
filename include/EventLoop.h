@@ -107,8 +107,8 @@ private:
 	State		state		= State::Normal;
 	Listener*	listener	= nullptr;
 	int		fd		= 0;
-	int		pipe[2]		= {};
-	pollfd		ufds[2]		= {};
+	int		pipe[2]		= {FD_INVALID, FD_INVALID};
+	pollfd		ufds[2]		= {FD_INVALID, FD_INVALID};
 	volatile bool	signaled	= false;
 	volatile bool	running		= false;
 	std::chrono::milliseconds now	= 0ms;
