@@ -999,8 +999,15 @@ void RTMPConnection::ProcessCommandMessage(DWORD streamId,RTMPCommandMessage* cm
 			//Send error
 			return SendCommandError(streamId,transId);
 
+		//Lock mutex
+		pthread_mutex_lock(&mutex);
+		
 		//Add to the streams vector
 		streams[mediaStreamId] = stream;
+		
+		//Unlock mutex
+		pthread_mutex_unlock(&mutex);
+		
 		//Create
 		SendCommandResult(streamId,transId,new AMFNull(),new AMFNumber((double)mediaStreamId));
 	} else if (name.compare(L"deleteStream")==0) {
