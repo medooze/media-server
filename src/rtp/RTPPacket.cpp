@@ -255,7 +255,6 @@ DWORD RTPPacket::Serialize(BYTE* data,DWORD size,const RTPMap& extMap) const
 		len += GetMediaLength()-descLen;
 		
 	} else {
-		Dump();
 		//Copy media payload
 		memcpy(data+len,GetMediaData(),GetMediaLength());
 		//Inc payload len
