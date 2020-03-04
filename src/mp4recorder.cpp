@@ -478,12 +478,9 @@ int mp4track::Close()
 	return 1;
 }
 
-MP4Recorder::MP4Recorder()
+MP4Recorder::MP4Recorder(Listener listener) :
+	listener(listener)
 {
-	recording = false;
-	mp4 = MP4_INVALID_FILE_HANDLE;
-	//No
-	first = (QWORD)-1;
 	//Create mutex
 	pthread_mutex_init(&mutex,0);
 }
@@ -672,8 +669,14 @@ void MP4Recorder::onMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD time)
 				AudioFrame &audioFrame = (AudioFrame&) frame;
 				//Check if it is the first
 				if (first==(QWORD)-1)
+				{
 					//Set this one as first
 					first = time;
+					//Triger listener
+					if (this->listener)
+						//Send event
+						this->listener->onFirstFrame(first);
+				}
 				
 				// Check if we have the audio track
 				if (!audioTrack)
@@ -718,17 +721,19 @@ void MP4Recorder::onMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD time)
 
 				//If it is intra
 				if (waitVideo  && videoFrame.IsIntra())
-				{
 					//Don't wait more
 					waitVideo = 0;
-					//Set first timestamp
-					first = time;
-				}
 				
 				//Check if it is the first
 				if (first==(QWORD)-1)
+				{
 					//Set this one as first
 					first = time;
+					//If we have listener
+					if (this->listener)
+						//Send event
+						this->listener->onFirstFrame(first);
+				}
 			
 				//Check if we have to write or not
 				if (!waitVideo)
@@ -799,8 +804,14 @@ void MP4Recorder::onMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD time)
 
 				//Check if it is the first
 				if (first==(QWORD)-1)
+				{
 					//Set this one as first
 					first = time;
+					//If we have listener
+					if (this->listener)
+						//Send event
+						this->listener->onFirstFrame(first);
+				}
 				// Calculate new timestamp
 				QWORD timestamp = time-first;
 				//Update timestamp

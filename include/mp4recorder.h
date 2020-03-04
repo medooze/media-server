@@ -43,8 +43,13 @@ class MP4Recorder :
 	public MediaFrame::Listener
 {
 public:
-
-	MP4Recorder();
+	class Listener 
+	{
+	public:
+		virtual onFirstFrame(QWORD time) = 0;
+	};
+public:
+	MP4Recorder(Listener listener = null);
 	virtual ~MP4Recorder();
 
 	//Recorder interface
@@ -63,14 +68,14 @@ public:
 private:
 	typedef std::map<DWORD,mp4track*>	Tracks;
 private:
-
-	MP4FileHandle	mp4;
+	Listener	listener = nullptr;
+	MP4FileHandle	mp4 = MP4_INVALID_FILE_HANDLE;
 	Tracks		audioTracks;
 	Tracks		videoTracks;
 	Tracks		textTracks;
-	bool		recording;
-	int		waitVideo;
+	bool		recording = false;
+	int		waitVideo = false;
 	pthread_mutex_t mutex;
-	QWORD		first;
+	QWORD		first =  (QWORD)-1;
 };
 #endif
