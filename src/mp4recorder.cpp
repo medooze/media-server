@@ -478,7 +478,7 @@ int mp4track::Close()
 	return 1;
 }
 
-MP4Recorder::MP4Recorder(Listener listener) :
+MP4Recorder::MP4Recorder(Listener* listener) :
 	listener(listener)
 {
 	//Create mutex

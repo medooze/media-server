@@ -46,10 +46,10 @@ public:
 	class Listener 
 	{
 	public:
-		virtual onFirstFrame(QWORD time) = 0;
+		virtual void onFirstFrame(QWORD time) = 0;
 	};
 public:
-	MP4Recorder(Listener listener = null);
+	MP4Recorder(Listener* listener = nullptr);
 	virtual ~MP4Recorder();
 
 	//Recorder interface
@@ -68,7 +68,7 @@ public:
 private:
 	typedef std::map<DWORD,mp4track*>	Tracks;
 private:
-	Listener	listener = nullptr;
+	Listener*	listener = nullptr;
 	MP4FileHandle	mp4 = MP4_INVALID_FILE_HANDLE;
 	Tracks		audioTracks;
 	Tracks		videoTracks;
