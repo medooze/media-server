@@ -32,7 +32,7 @@ public:
 	/* Interface */
 	virtual RTMPNetStream::shared CreateStream(DWORD streamId,DWORD audioCaps,DWORD videoCaps,RTMPNetStream::Listener *listener) = 0;
 	virtual void DeleteStream(const RTMPNetStream::shared& stream) = 0;
-	virtual void Disconnected() {};
+	virtual void Disconnected();
 	
 protected:
 	int RegisterStream(const RTMPNetStream::shared& stream);

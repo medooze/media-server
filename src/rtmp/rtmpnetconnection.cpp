@@ -33,6 +33,16 @@ void RTMPNetConnection::Disconnect()
 	lock.Unlock();
 }
 
+void RTMPNetConnection::Disconnected()
+{
+	//Lock mutexk
+	lock.WaitUnusedAndLock();
+	//Remove all listeners
+	listeners.clear();
+	//Unlock
+	lock.Unlock();
+}
+
 int RTMPNetConnection::RegisterStream(const RTMPNetStream::shared& stream)
 {
 	Log(">RTMPNetConnection::RegisterStream() [tag:%ls]\n",stream->GetTag().c_str());
