@@ -115,7 +115,6 @@ private:
 	char*	iceRemotePwd;
 	char*	iceLocalUsername;
 	char*	iceLocalPwd;
-	pthread_t thread;
 
 	//Transmision
 	sockaddr_in sendAddr;
