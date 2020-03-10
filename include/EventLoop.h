@@ -101,15 +101,15 @@ private:
 		uint16_t port;
 		Packet   packet;
 	};
-	static size_t MaxSendingQueueSize;
-	static size_t MaxMultipleSendingMessages;
+	static const size_t MaxSendingQueueSize;
+	static const size_t MaxMultipleSendingMessages;
 private:
 	std::thread	thread;
 	State		state		= State::Normal;
 	Listener*	listener	= nullptr;
 	int		fd		= 0;
 	int		pipe[2]		= {FD_INVALID, FD_INVALID};
-	pollfd		ufds[2]		= {FD_INVALID, FD_INVALID};
+	pollfd		ufds[2]		= {};
 	volatile bool	signaled	= false;
 	volatile bool	running		= false;
 	std::chrono::milliseconds now	= 0ms;

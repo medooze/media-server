@@ -15,13 +15,13 @@
 
 #include "log.h"
 
-size_t EventLoop::MaxSendingQueueSize = 16*1024;
+const size_t EventLoop::MaxSendingQueueSize = 16*1024;
 
 
 #if __APPLE__
 #include <mach/mach.h>
 #include <mach/thread_policy.h>
-size_t EventLoop::MaxMultipleSendingMessages = 1;
+const size_t EventLoop::MaxMultipleSendingMessages = 1;
 
 struct mmsghdr
 {
@@ -40,7 +40,7 @@ struct mmsghdr
 #include <linux/errqueue.h>
 #include <sys/eventfd.h>
 
-size_t EventLoop::MaxMultipleSendingMessages = 10;
+const size_t EventLoop::MaxMultipleSendingMessages = 10;
 
 cpu_set_t* alloc_cpu_set(size_t* size) {
 	// the CPU set macros don't handle cases like my Azure VM, where there are 2 cores, but 128 possible cores (why???)
