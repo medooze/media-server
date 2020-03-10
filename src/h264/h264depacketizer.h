@@ -22,7 +22,8 @@ public:
 private:
 	VideoFrame frame;
 	AVCDescriptor config;
-	DWORD iniFragNALU;
+	DWORD iniFragNALU = 0;
+	bool startedFrag = false;
 };
 
 #endif	/* H264DEPACKETIZER_H */

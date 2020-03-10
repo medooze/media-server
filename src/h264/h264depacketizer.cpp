@@ -31,6 +31,9 @@ void H264Depacketizer::ResetFrame()
 	//Clear config
 	config.ClearSequenceParameterSets();
 	config.ClearPictureParameterSets();
+	//No fragments
+	iniFragNALU = 0;
+	startedFrag = false;
 }
 
 MediaFrame* H264Depacketizer::AddPacket(const RTPPacket::shared& packet)
@@ -237,6 +240,7 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 			/* strip off FU indicator and FU header bytes */
 			nalSize = payloadLen-2;
 
+			//if it is the start fragment of the nal unit
 			if (S)
 			{
 				/* NAL unit starts here */
@@ -258,15 +262,30 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 				frame.AppendMedia(nalHeader, sizeof (nalHeader));
 				//Append NAL header
 				frame.AppendMedia(&fragNalHeader,1);
+				//We have a start frag
+				startedFrag = true;
 			}
+			
+			//If we didn't receive a start frag
+			if (!startedFrag)
+				//Ignore
+				return NULL;
 
 			//Append data and get current post
 			pos = frame.AppendMedia(payload+2,nalSize);
 			//Add rtp payload
 			frame.AddRtpPacket(pos,nalSize,payload,2);
 
+			//If it is the end fragment of the nal unit
 			if (E)
 			{
+				//Done with fragment
+				iniFragNALU = 0;
+				startedFrag = false;
+				//Ensure it is valid
+				if (iniFragNALU+4>frame.GetLength())
+					//Error
+					return NULL;
 				//Get NAL size
 				DWORD nalSize = frame.GetLength()-iniFragNALU-4;
 				//Set it
