@@ -672,7 +672,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 			//First
 			auto it = items.begin();
 			//check each mesasge
-			for (uint32_t i = 0; i<len; ++i, it!=items.end())
+			for (uint32_t i = 0; i<len && it!=items.end(); ++i)
 				//If we are in normal state and we can retry a failed message
 				if (!messages[i].msg_len && state==State::Normal && (errno==EAGAIN || errno==EWOULDBLOCK))
 				{
@@ -693,9 +693,6 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 					//Delete
 					it = items.erase(it);
 				}
-
-
-		
 		}
 		
 		//Run queued task
