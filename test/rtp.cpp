@@ -44,6 +44,8 @@ public:
 		testTransportWideFeedbackMessageParser();
 		Log("testBye\n");
 		testBye();
+		Log("testExtSeqNum\n");
+		testExtSeqNum();
 		end();
 	}
 	
@@ -812,6 +814,27 @@ public:
 		};
 		RTPPacket::Parse(kPacketWithInvalidExtension, sizeof(kPacketWithInvalidExtension), rtpMap, extMap)->Dump();
 
+	}
+	
+	void testExtSeqNum()
+	{
+		RTPSource source;
+		
+		assert(source.SetSeqNum(64000)==0); Log("%d\n",source.extSeqNum); assert(source.extSeqNum == 64000); 
+		//First
+		source.Update(0,64000,1);
+		assert(source.SetSeqNum(65530)==0); Log("%d\n",source.extSeqNum); assert(source.extSeqNum == 65530);
+		assert(source.SetSeqNum(65532)==0); Log("%d\n",source.extSeqNum); assert(source.extSeqNum == 65532);
+		assert(source.SetSeqNum(65531)==0); Log("%d\n",source.extSeqNum); assert(source.extSeqNum == 65532);
+		assert(source.SetSeqNum(65533)==0); Log("%d\n",source.extSeqNum); assert(source.extSeqNum == 65533);
+		assert(source.SetSeqNum(65534)==0); Log("%d\n",source.extSeqNum); assert(source.extSeqNum == 65534);
+		assert(source.SetSeqNum(1)    ==1); Log("%d\n",source.extSeqNum); assert(source.extSeqNum == 65537);
+		assert(source.SetSeqNum(65535)==0); Log("%d\n",source.extSeqNum); assert(source.extSeqNum == 65537);
+		assert(source.SetSeqNum(0)    ==1); Log("%d\n",source.extSeqNum); assert(source.extSeqNum == 65537);
+		assert(source.SetSeqNum(2)    ==1); Log("%d\n",source.extSeqNum); assert(source.extSeqNum == 65538);
+		assert(source.SetSeqNum(3)    ==1); Log("%d\n",source.extSeqNum); assert(source.extSeqNum == 65539);
+		assert(source.SetSeqNum(5)    ==1); Log("%d\n",source.extSeqNum); assert(source.extSeqNum == 65541);
+		assert(source.SetSeqNum(4)    ==1); Log("%d\n",source.extSeqNum); assert(source.extSeqNum == 65541);
 	}
 	
 };

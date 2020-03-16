@@ -65,93 +65,20 @@ struct RTPSource : public Mutex
 	DWORD   bitrate;
 	Acumulator acumulator;
 	
-	RTPSource() : acumulator(1000)
-	{
-		ssrc		= 0;
-		extSeqNum	= 0;
-		cycles		= 0;
-		numPackets	= 0;
-		numRTCPPackets	= 0;
-		totalBytes	= 0;
-		totalRTCPBytes	= 0;
-		jitter		= 0;
-		bitrate		= 0;
-	}
+	RTPSource();
+	virtual ~RTPSource() = default;
 	
-	virtual ~RTPSource()
-	{
-		
-	}
+	WORD SetSeqNum(WORD seqNum);
+	void SetExtSeqNum(DWORD extSeqNum );
+	virtual void Update(QWORD now, DWORD seqNum,DWORD size) ;
+	virtual void Reset();
 	
-	RTCPCompoundPacket::shared CreateSenderReport();
-	
-	WORD SetSeqNum(WORD seqNum)
-	{
-		//Check if we have a sequence wrap
-		if (seqNum<0x0FFF && (extSeqNum & 0xFFFF)>0xF000)
-			//Increase cycles
-			cycles++;
-
-		//Get ext seq
-		DWORD extSeqNum = ((DWORD)cycles)<<16 | seqNum;
-
-		//If we have a not out of order pacekt
-		if (extSeqNum > this->extSeqNum || !numPackets)
-			//Update seq num
-			this->extSeqNum = extSeqNum;
-		
-		//Return seq cycles count
-		return cycles;
-	}
-	
-	void SetExtSeqNum(DWORD extSeqNum )
-	{
-		//Updte seqNum and cycles
-		this->extSeqNum = extSeqNum;
-		cycles = extSeqNum >>16;
-		
-	}
-
 	
 	/*
 	 * Get seq num cycles from a past sequence numer
 	 */
-	WORD RecoverSeqNum(WORD osn)
-	{
-		 //Check secuence wrap
-		if ((extSeqNum & 0xFFFF)<0x0FFF && (osn>0xF000))
-			//It is from the past cycle
-			return cycles - 1;
-		//It is from current cyle
-		return cycles;
-	}
+	WORD RecoverSeqNum(WORD osn);
 	
-	virtual void Update(QWORD now, DWORD seqNum,DWORD size) 
-	{
-		//Increase stats
-		numPackets++;
-		totalBytes += size;
-		
-		//Update bitrate acumulator
-		acumulator.Update(now,size);
-		
-		//Get bitrate in bps
-		bitrate = acumulator.GetInstant()*8;
-	}
-	
-	virtual void Reset()
-	{
-		extSeqNum	= 0;
-		cycles		= 0;
-		numPackets	= 0;
-		numRTCPPackets	= 0;
-		totalBytes	= 0;
-		totalRTCPBytes	= 0;
-		jitter		= 0;
-		bitrate		= 0;
-		//Reset accumulators
-		acumulator.Reset(0);
-	}
 };
 
 
