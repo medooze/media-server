@@ -236,7 +236,7 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 			 */
 			S = (payload[1] & 0x80) == 0x80;
 			E = (payload[1] & 0x40) == 0x40;
-
+			
 			/* strip off FU indicator and FU header bytes */
 			nalSize = payloadLen-2;
 
@@ -279,9 +279,6 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 			//If it is the end fragment of the nal unit
 			if (E)
 			{
-				//Done with fragment
-				iniFragNALU = 0;
-				startedFrag = false;
 				//Ensure it is valid
 				if (iniFragNALU+4>frame.GetLength())
 					//Error
@@ -290,6 +287,9 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 				DWORD nalSize = frame.GetLength()-iniFragNALU-4;
 				//Set it
 				set4(frame.GetData(),iniFragNALU,nalSize);
+				//Done with fragment
+				iniFragNALU = 0;
+				startedFrag = false;
 			}
 			//Done
 			break;
