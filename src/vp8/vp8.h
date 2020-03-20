@@ -325,13 +325,13 @@ struct VP8PayloadHeader
 				//Invalid
 				return Error("Invalid start code [%p]\n",get3(data,3));
 			}
-			//Get size
-			WORD hor = get2(data,6);
-			WORD ver = get2(data,8);
+			//Get size in le
+			WORD hor = data[7]<<8 | data[6];
+			WORD ver = data[9]<<8 | data[8];
 			//Get dimensions and scale
-			width		= hor & 0xC0;
+			width		= hor & 0x3fff;
 			horizontalScale = hor >> 14;
-			height		= ver & 0xC0;
+			height		= ver & 0x3fff;
 			verticalScale	= ver >> 14;
 			//Key frame
 			return 10;

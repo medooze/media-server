@@ -20,8 +20,6 @@ H264Depacketizer::H264Depacketizer() : RTPDepacketizer(MediaFrame::Video,VideoCo
 
 H264Depacketizer::~H264Depacketizer()
 {
-	//Set clock rate
-	frame.SetClockRate(90000);
 }
 
 void H264Depacketizer::ResetFrame()
