@@ -65,7 +65,7 @@ public:
 	virtual ~EventLoop();
 	
 	bool Start(std::function<void(void)> loop);
-	bool Start(int fd);
+	bool Start(int fd = FD_INVALID);
 	bool Stop();
 	
 	virtual const std::chrono::milliseconds GetNow() const override { return now; }

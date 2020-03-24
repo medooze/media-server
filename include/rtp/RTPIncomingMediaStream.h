@@ -16,6 +16,7 @@
 
 #include "config.h"
 #include "rtp/RTPPacket.h"
+#include "TimeService.h"
 
 #include <vector>
 
@@ -39,6 +40,7 @@ public:
 	virtual void AddListener(Listener* listener) = 0;
 	virtual void RemoveListener(Listener* listener) = 0;
 	virtual DWORD GetMediaSSRC() = 0;
+	virtual TimeService& GetTimeService() = 0;
 };
 
 #endif /* RTPINCOMINGMEDIASTREAM_H */

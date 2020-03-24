@@ -659,7 +659,7 @@ int FLVEncoder::EncodeVideo()
 		//Set timestamp
 		auto now = getDifTime(&first)/1000;
 		encoded->SetTimestamp(now);
-		encoded->SetTimestamp(now);
+		encoded->SetTime(now);
 		
 		//Set next one
 		frameTime = 1000/fps;

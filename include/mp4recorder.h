@@ -8,7 +8,9 @@
 #include "text.h"
 #include "media.h"
 #include "recordercontrol.h"
+#include "EventLoop.h"
 
+#include <deque>
 
 class mp4track
 {
@@ -47,6 +49,7 @@ public:
 	{
 	public:
 		virtual void onFirstFrame(QWORD time) = 0;
+		virtual void onClosed() = 0;
 	};
 public:
 	MP4Recorder(Listener* listener = nullptr);
@@ -64,10 +67,15 @@ public:
 
 	virtual void onMediaFrame(const MediaFrame &frame);
 	virtual void onMediaFrame(DWORD ssrc, const MediaFrame &frame);
-	virtual void onMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD time);
+	
+	void SetTimeShiftDuration(DWORD duration) { timeShiftDuration = duration; }
+	
 private:
+	void processMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD time);
+private:	
 	typedef std::map<DWORD,mp4track*>	Tracks;
 private:
+	EventLoop	loop;
 	Listener*	listener = nullptr;
 	MP4FileHandle	mp4 = MP4_INVALID_FILE_HANDLE;
 	Tracks		audioTracks;
@@ -75,7 +83,9 @@ private:
 	Tracks		textTracks;
 	bool		recording = false;
 	int		waitVideo = false;
-	pthread_mutex_t mutex;
 	QWORD		first =  (QWORD)-1;
+	
+	std::deque<std::pair<uint32_t,std::unique_ptr<MediaFrame>>> timeShiftBuffer;
+	DWORD timeShiftDuration = 0;
 };
 #endif

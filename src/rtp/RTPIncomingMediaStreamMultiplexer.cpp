@@ -17,7 +17,8 @@ void RTPIncomingMediaStreamMultiplexer::Stop()
 void RTPIncomingMediaStreamMultiplexer::AddListener(RTPIncomingMediaStream::Listener* listener) 
 {
 	Debug("-RTPIncomingMediaStreamMultiplexer::AddListener() [listener:%p,this:%p]\n",listener,this);
-		
+	
+	//TODO: Can we change this to a timerService.Sync ?
 	ScopedLock scoped(listenerMutex);
 	listeners.insert(listener);
 }

@@ -8,6 +8,7 @@
 #include "aac/aacconfig.h"
 
 
+
 mp4track::mp4track(MP4FileHandle mp4)
 {
 	// Set struct info
@@ -481,8 +482,8 @@ int mp4track::Close()
 MP4Recorder::MP4Recorder(Listener* listener) :
 	listener(listener)
 {
-	//Create mutex
-	pthread_mutex_init(&mutex,0);
+	//Create loop
+	loop.Start();
 }
 
 MP4Recorder::~MP4Recorder()
@@ -502,8 +503,6 @@ MP4Recorder::~MP4Recorder()
 	for (Tracks::iterator it = textTracks.begin(); it!=textTracks.end(); ++it)
 		//delete it
 		delete(it->second);
-	//Liberamos los mutex
-	pthread_mutex_destroy(&mutex);
 }
 
 bool MP4Recorder::Create(const char* filename)
@@ -537,6 +536,9 @@ bool MP4Recorder::Record()
 
 bool MP4Recorder::Record(bool waitVideo)
 {
+	
+	Log("-MP4Recorder::Record() [waitVideo:%d]\n",waitVideo);
+	
         //Check mp4 file is opened
         if (mp4 == MP4_INVALID_FILE_HANDLE)
                 //Error
@@ -545,39 +547,37 @@ bool MP4Recorder::Record(bool waitVideo)
 	//Do We have to wait for first I-Frame?
 	this->waitVideo = waitVideo;
 	
-	//Recording
-	recording = true;
+	//Run in thread
+	loop.Async([=](...){
+		//Recording
+		recording = true;
+
+		//For all time shift frames
+		for (const auto& [ssrc,frame] : timeShiftBuffer)
+			//Process it
+			processMediaFrame(ssrc,*frame,frame->GetTime());
+
+		//clear buffer
+		timeShiftBuffer.clear();
+	});
 	
 	//Exit
-	return recording;
+	return true;
 }
 
 bool MP4Recorder::Stop()
 {
 	Log("-MP4Recorder::Stop()\n");
 	
-	//L0ck the  access to the file
-	pthread_mutex_lock(&mutex);
-	
-        //not recording anymore
-	recording = false;
-	
-	//L0ck the  access to the file
-	pthread_mutex_unlock(&mutex);
+	//Signal async	
+	loop.Async([=](...){
+		//not recording anymore
+		recording = false;
+	});
 	
 	return true;
 }
 
-void* mp4close(void *mp4)
-{
-	timeval tv;
-	getUpdDifTime(&tv);
-	Log(">mp4close [%p]\n",mp4);
-	// Close file
-	MP4Close(mp4);
-	Log("<mp4close [%p,time:%llu]\n",mp4,getDifTime(&tv)/1000);
-	return NULL;
-}
 bool MP4Recorder::Close()
 {
 	//Default is async
@@ -586,15 +586,24 @@ bool MP4Recorder::Close()
 
 bool MP4Recorder::Close(bool async)
 {
-        //Stop always
-        Stop();
+	//If not started
+	if (mp4==MP4_INVALID_FILE_HANDLE)
+		return true;
+		
+	Log("-MP4Recorder::Close()\n");
 	
-	//L0ck the  access to the file
-	pthread_mutex_lock(&mutex);
-
-	//Check mp4 file is opened
-        if (mp4!=MP4_INVALID_FILE_HANDLE)
-	{
+        //Stop always
+        auto res = loop.Async([=](...){
+		//If not started
+		if (mp4==MP4_INVALID_FILE_HANDLE)
+			return;
+		
+		Debug(">MP4Recorder::Close() | Async\n");
+		
+		//Not recording anymore
+		recording = false;
+		
+		//Check mp4 file is opened
 		//For each audio track
 		for (Tracks::iterator it = audioTracks.begin(); it!=audioTracks.end(); ++it)
 			//Close it
@@ -608,22 +617,24 @@ bool MP4Recorder::Close(bool async)
 			//Close it
 			it->second->Close();
 		
-		//Do we need to launch the close on another thread?
-		if (async) {
-			//Launch MP4Close in another thread
-			pthread_t 	mp4CloseThread;
-			createPriorityThread(&mp4CloseThread,mp4close,mp4,0);
-		} else {
-			//Do it here
-			mp4close(mp4);
-		}
+		// Close file
+		MP4Close(mp4);
 
 		//Empty file
 		mp4 = MP4_INVALID_FILE_HANDLE;
-	}
+		
+		//Triger listener
+		if (this->listener)
+			//Send event
+			this->listener->onClosed();
+		
+		Debug("<MP4Recorder::Close() | Async\n");
+	});
 	
-	//L0ck the  access to the file
-	pthread_mutex_unlock(&mutex);
+	//If sync
+	if (!async)
+		//Wait
+		res.wait();
 	
 	//NOthing more
 	return true;
@@ -636,200 +647,212 @@ void MP4Recorder::onMediaFrame(const MediaFrame &frame)
 
 void MP4Recorder::onMediaFrame(DWORD ssrc, const MediaFrame &frame)
 {
-	//Set now as timestamp
-	onMediaFrame(ssrc,frame,getTimeMS());
+	//run async	
+	loop.Async([=,cloned = frame.Clone()](...){
+		//Check we are recording
+		if (recording) 
+		{
+			//Set now as timestamp
+			processMediaFrame(ssrc,*cloned,cloned->GetTime());
+			//Delete
+			delete cloned;
+		} 
+		//Check if doing time shift recording
+		else if (timeShiftDuration) 
+		{
+			 //Push it to the end
+			timeShiftBuffer.emplace_back(ssrc,cloned);
+			//Get time shitft start
+			QWORD ini = getTimeMS() - timeShiftDuration;
+			//Discard all the timed out frames
+			while (!timeShiftBuffer.empty() && timeShiftBuffer.front().second->GetTime()<ini)
+				//Delete
+				timeShiftBuffer.pop_front();
+		} else {
+			//Delete
+			delete cloned;
+		}
+	});
 }
-void MP4Recorder::onMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD time)
+
+void MP4Recorder::processMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD time)
 {
 	// Check if we have to wait for video
 	if (waitVideo && (frame.GetType()!=MediaFrame::Video))
 		//Do nothing yet
 		return;
-
-	//L0ck the  access to the file
-	pthread_mutex_lock(&mutex);
 	
-	//Check we are recording
-	if (recording)
+	//Depending on the codec type
+	switch (frame.GetType())
 	{
-		//Depending on the codec type
-		switch (frame.GetType())
+		case MediaFrame::Audio:
 		{
-			case MediaFrame::Audio:
+			//It is an audio track
+			mp4track* audioTrack = NULL;
+			//Find the ssrc
+			Tracks::iterator it = audioTracks.find(ssrc);
+			//If found
+			if (it!=audioTracks.end())
+				//Get it
+				audioTrack = it->second;
+			//Convert to audio frame
+			AudioFrame &audioFrame = (AudioFrame&) frame;
+			//Check if it is the first
+			if (first==(QWORD)-1)
 			{
-				//It is an audio track
-				mp4track* audioTrack = NULL;
-				//Find the ssrc
-				Tracks::iterator it = audioTracks.find(ssrc);
-				//If found
-				if (it!=audioTracks.end())
-					//Get it
-					audioTrack = it->second;
-				//Convert to audio frame
-				AudioFrame &audioFrame = (AudioFrame&) frame;
-				//Check if it is the first
-				if (first==(QWORD)-1)
+				//Set this one as first
+				first = time;
+				//Triger listener
+				if (this->listener)
+					//Send event
+					this->listener->onFirstFrame(first);
+			}
+
+			// Check if we have the audio track
+			if (!audioTrack)
+			{
+				// Calculate time diff since first
+				QWORD delta = time-first;
+				//Create object
+				audioTrack = new mp4track(mp4);
+				//Create track
+				audioTrack->CreateAudioTrack(audioFrame.GetCodec(),audioFrame.GetClockRate());
+				//If it is not first
+				if (delta)
 				{
-					//Set this one as first
-					first = time;
-					//Triger listener
-					if (this->listener)
-						//Send event
-						this->listener->onFirstFrame(first);
+					//Create empty text frame
+					AudioFrame empty(audioFrame.GetCodec());
+					//Set clock rate
+					empty.SetClockRate(audioFrame.GetClockRate());
+					//Set duration
+					empty.SetDuration(delta*audioFrame.GetClockRate()/1000);
+					//Send first empty packet
+					audioTrack->WriteAudioFrame(empty);
 				}
-				
+				//Add it to map
+				audioTracks[ssrc] = audioTrack;
+			}
+			// Save audio rtp packet
+			audioTrack->WriteAudioFrame(audioFrame);
+			break;
+		}
+		case MediaFrame::Video:
+		{
+			//It is an video track
+			mp4track* videoTrack = NULL;
+			//Find the ssrc
+			Tracks::iterator it = videoTracks.find(ssrc);
+			//If found
+			if (it!=videoTracks.end())
+				//Get it
+				videoTrack = it->second;
+			//Convert to video frame
+			VideoFrame &videoFrame = (VideoFrame&) frame;
+
+			//If it is intra
+			if (waitVideo  && videoFrame.IsIntra())
+				//Don't wait more
+				waitVideo = 0;
+
+			//Check if it is the first
+			if (first==(QWORD)-1)
+			{
+				//Set this one as first
+				first = time;
+				//If we have listener
+				if (this->listener)
+					//Send event
+					this->listener->onFirstFrame(first);
+			}
+
+			//Check if we have to write or not
+			if (!waitVideo)
+			{
 				// Check if we have the audio track
-				if (!audioTrack)
+				if (!videoTrack)
 				{
 					// Calculate time diff since first
 					QWORD delta = time-first;
 					//Create object
-					audioTrack = new mp4track(mp4);
+					videoTrack = new mp4track(mp4);
 					//Create track
-					audioTrack->CreateAudioTrack(audioFrame.GetCodec(),audioFrame.GetClockRate());
-					//If it is not first
+					videoTrack->CreateVideoTrack(videoFrame.GetCodec(),videoFrame.GetClockRate(),videoFrame.GetWidth(),videoFrame.GetHeight());
+					//Add it to map
+					videoTracks[ssrc] = videoTrack;
+
+					//If not the first one
 					if (delta)
 					{
-						//Create empty text frame
-						AudioFrame empty(audioFrame.GetCodec());
-						//Set clock rate
-						empty.SetClockRate(audioFrame.GetClockRate());
+						//Create empty video frame
+						VideoFrame empty(videoFrame.GetCodec(),0);
 						//Set duration
-						empty.SetDuration(delta*audioFrame.GetClockRate()/1000);
+						empty.SetDuration(delta*videoFrame.GetClockRate()/1000);
+						//Size
+						empty.SetWidth(videoFrame.GetWidth());
+						empty.SetHeight(videoFrame.GetHeight());
+						//Set clock rate
+						empty.SetClockRate(videoFrame.GetClockRate());
+						//Set config
+						if (videoFrame.HasCodecConfig()) empty.SetCodecConfig(videoFrame.GetCodecConfigData(),videoFrame.GetCodecConfigSize());
 						//Send first empty packet
-						audioTrack->WriteAudioFrame(empty);
+						videoTrack->WriteVideoFrame(empty);
 					}
-					//Add it to map
-					audioTracks[ssrc] = audioTrack;
 				}
-				// Save audio rtp packet
-				audioTrack->WriteAudioFrame(audioFrame);
-				break;
-			}
-			case MediaFrame::Video:
-			{
-				//It is an video track
-				mp4track* videoTrack = NULL;
-				//Find the ssrc
-				Tracks::iterator it = videoTracks.find(ssrc);
-				//If found
-				if (it!=videoTracks.end())
-					//Get it
-					videoTrack = it->second;
-				//Convert to video frame
-				VideoFrame &videoFrame = (VideoFrame&) frame;
-
-				//If it is intra
-				if (waitVideo  && videoFrame.IsIntra())
-					//Don't wait more
-					waitVideo = 0;
-				
-				//Check if it is the first
-				if (first==(QWORD)-1)
-				{
-					//Set this one as first
-					first = time;
-					//If we have listener
-					if (this->listener)
-						//Send event
-						this->listener->onFirstFrame(first);
-				}
-			
-				//Check if we have to write or not
-				if (!waitVideo)
-				{
-					// Check if we have the audio track
-					if (!videoTrack)
-					{
-						// Calculate time diff since first
-						QWORD delta = time-first;
-						//Create object
-						videoTrack = new mp4track(mp4);
-						//Create track
-						videoTrack->CreateVideoTrack(videoFrame.GetCodec(),videoFrame.GetClockRate(),videoFrame.GetWidth(),videoFrame.GetHeight());
-						//Add it to map
-						videoTracks[ssrc] = videoTrack;
-						
-						//If not the first one
-						if (delta)
-						{
-							//Create empty video frame
-							VideoFrame empty(videoFrame.GetCodec(),0);
-							//Set duration
-							empty.SetDuration(delta*videoFrame.GetClockRate()/1000);
-							//Size
-							empty.SetWidth(videoFrame.GetWidth());
-							empty.SetHeight(videoFrame.GetHeight());
-							//Set clock rate
-							empty.SetClockRate(videoFrame.GetClockRate());
-							//Set config
-							if (videoFrame.HasCodecConfig()) empty.SetCodecConfig(videoFrame.GetCodecConfigData(),videoFrame.GetCodecConfigSize());
-							//Send first empty packet
-							videoTrack->WriteVideoFrame(empty);
-						}
-					}
-					
-					// Save audio rtp packet
-					videoTrack->WriteVideoFrame(videoFrame);
-				}
-				break;
-			}
-			case MediaFrame::Text:
-			{
-				//It is an text track
-				mp4track* textTrack = NULL;
-				//Find the ssrc
-				Tracks::iterator it = textTracks.find(ssrc);
-				//If found
-				if (it!=textTracks.end())
-					//Get it
-					textTrack = it->second;
-				//Convert to audio frame
-				TextFrame &textFrame = (TextFrame&) frame;
-
-				// Check if we have the audio track
-				if (!textTrack)
-				{
-					//Create object
-					textTrack = new mp4track(mp4);
-					//Create track
-					textTrack->CreateTextTrack();
-					//Create empty text frame
-					TextFrame empty(0,(BYTE*)NULL,0);
-					//Send first empty packet
-					textTrack->WriteTextFrame(empty);
-					//Add it to map
-					textTracks[ssrc] = textTrack;
-				}
-
-				//Check if it is the first
-				if (first==(QWORD)-1)
-				{
-					//Set this one as first
-					first = time;
-					//If we have listener
-					if (this->listener)
-						//Send event
-						this->listener->onFirstFrame(first);
-				}
-				// Calculate new timestamp
-				QWORD timestamp = time-first;
-				//Update timestamp
-				textFrame.SetTimestamp(timestamp);
 
 				// Save audio rtp packet
-				textTrack->WriteTextFrame(textFrame);
-				break;
+				videoTrack->WriteVideoFrame(videoFrame);
 			}
-			case MediaFrame::Unknown:
-				//Nothing
-				break;
+			break;
 		}
+		case MediaFrame::Text:
+		{
+			//It is an text track
+			mp4track* textTrack = NULL;
+			//Find the ssrc
+			Tracks::iterator it = textTracks.find(ssrc);
+			//If found
+			if (it!=textTracks.end())
+				//Get it
+				textTrack = it->second;
+			//Convert to audio frame
+			TextFrame &textFrame = (TextFrame&) frame;
+
+			// Check if we have the audio track
+			if (!textTrack)
+			{
+				//Create object
+				textTrack = new mp4track(mp4);
+				//Create track
+				textTrack->CreateTextTrack();
+				//Create empty text frame
+				TextFrame empty(0,(BYTE*)NULL,0);
+				//Send first empty packet
+				textTrack->WriteTextFrame(empty);
+				//Add it to map
+				textTracks[ssrc] = textTrack;
+			}
+
+			//Check if it is the first
+			if (first==(QWORD)-1)
+			{
+				//Set this one as first
+				first = time;
+				//If we have listener
+				if (this->listener)
+					//Send event
+					this->listener->onFirstFrame(first);
+			}
+			// Calculate new timestamp
+			QWORD timestamp = time-first;
+			//Update timestamp
+			textFrame.SetTimestamp(timestamp);
+
+			// Save audio rtp packet
+			textTrack->WriteTextFrame(textFrame);
+			break;
+		}
+		case MediaFrame::Unknown:
+			//Nothing
+			break;
 	}
-
-	//Unlock the  access to the file
-	pthread_mutex_unlock(&mutex);
-	
 }
-
-
