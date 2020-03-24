@@ -5,6 +5,7 @@
  * Created on 26 de enero de 2012, 9:46
  */
 
+#include "VP9.h"
 #include "VP9Depacketizer.h"
 #include "VP9PayloadDescription.h"
 #include "media.h"
@@ -15,6 +16,12 @@
 
 VP9Depacketizer::VP9Depacketizer() : RTPDepacketizer(MediaFrame::Video,VideoCodec::VP9), frame(VideoCodec::VP9,0)
 {
+	//Generic vp9 config
+	VP9CodecConfig config;
+	//Set config size
+	frame.AllocateCodecConfig(config.GetSize());
+	//Serialize
+	config.Serialize(frame.GetCodecConfigData(),frame.GetCodecConfigSize());
 	//Set clock rate
 	frame.SetClockRate(90000);
 }
@@ -28,6 +35,12 @@ void VP9Depacketizer::ResetFrame()
 {
 	//Reset frame data
 	frame.Reset();
+	//Generic vp9 config
+	VP9CodecConfig config;
+	//Set config size
+	frame.AllocateCodecConfig(config.GetSize());
+	//Serialize
+	config.Serialize(frame.GetCodecConfigData(),frame.GetCodecConfigSize());
 }
 
 MediaFrame* VP9Depacketizer::AddPacket(const RTPPacket::shared& packet)
