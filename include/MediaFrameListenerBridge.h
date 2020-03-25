@@ -4,13 +4,14 @@
 #include "acumulator.h"
 #include "media.h"
 #include "rtp.h"
+#include "EventLoop.h"
 
 class MediaFrameListenerBridge :
 	public MediaFrame::Listener,
 	public RTPIncomingMediaStream
 {
 public:
-	MediaFrameListenerBridge(DWORD ssrc) : ssrc(ssrc), acumulator(1000) {}
+	MediaFrameListenerBridge(DWORD ssrc);
 	virtual ~MediaFrameListenerBridge();
 	
         void AddMediaListener(MediaFrame::Listener *listener);	
@@ -23,12 +24,14 @@ public:
 	
 	virtual void onMediaFrame(const MediaFrame &frame);
 	virtual void onMediaFrame(DWORD ssrc, const MediaFrame &frame) { onMediaFrame(frame); }
+	virtual TimeService& GetTimeService() { return loop; }
 	void Reset();
 	void Update();
 	void Update(QWORD now);
         
         
 public:
+	EventLoop loop;
 	DWORD ssrc = 0;
 	DWORD extSeqNum = 0;
 	Mutex mutex;
