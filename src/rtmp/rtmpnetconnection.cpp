@@ -29,6 +29,8 @@ void RTMPNetConnection::Disconnect()
 	for(auto it = listeners.begin(); it!=listeners.end(); ++it)
 		//Disconnect
 		(*it)->onNetConnectionDisconnected();
+	//Remove all listeners
+	listeners.clear();
 	//Unlock
 	lock.Unlock();
 }
