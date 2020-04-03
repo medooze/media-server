@@ -2501,19 +2501,35 @@ void DTLSICETransport::Start()
 	dcOptions.remotePort = 5000;
 	//Start
 	endpoint.Init(dcOptions);
+	//Started
+	started = true;
 }
 
 void DTLSICETransport::Stop()
 {
+	if (!started)
+		return;
+	
+	//Log
 	Debug(">DTLSICETransport::Stop()\n");
 	
 	//Check probing timer
 	if (probingTimer)
+	{
 		//Stop probing
 		probingTimer->Cancel();
+		//Remove timer
+		probingTimer.reset();
+	}
 	
 	//Stop
 	endpoint.Close();
+	
+	//Not started anymore
+	started = false;
+	
+	//Log
+	Debug("<DTLSICETransport::Stop()\n");
 }
 
 int DTLSICETransport::Enqueue(const RTPPacket::shared& packet)

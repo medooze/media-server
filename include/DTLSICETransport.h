@@ -193,6 +193,7 @@ private:
 	Timer::shared probingTimer;
 	QWORD   lastProbe = 0;
 	QWORD 	initTime = 0;
+	bool	started = false;
 	
 	SendSideBandwidthEstimation senderSideBandwidthEstimator;
 };
