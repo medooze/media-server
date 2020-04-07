@@ -112,7 +112,7 @@ endif
 OBJSMCU = $(OBJS) main.o
 OBJSBASE = ${CORE} ${RTP} ${RTCP} $(DEPACKETIZERSOBJ) 
 OBJSLIB = ${CORE} ${RTP} ${RTCP} $(DEPACKETIZERSOBJ) $(MP4)
-OBJSTEST = $(OBJS) test/main.o test/test.o test/h264.o test/aac.o test/cpim.o test/rtp.o test/fec.o test/overlay.o test/vp8.o test/vp9.o test/stun.o
+OBJSTEST = $(OBJS) test/main.o test/test.o test/h264.o test/aac.o test/cpim.o test/rtp.o test/fec.o test/overlay.o test/vp8.o test/vp9.o test/stun.o test/rtmp.o
 OBJSFUZZ = ${RTP} ${RTCP} fuzz/fuzz.o
 
 

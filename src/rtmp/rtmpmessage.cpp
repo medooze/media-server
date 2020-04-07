@@ -515,11 +515,13 @@ void RTMPCommandMessage::Dump()
 {
 	AMFNull null;
 
-	Debug("[RTMPCommandMessage name:%ls transId:%d]\n",name->GetWString().c_str(),(DWORD)transId->GetNumber());
+	Debug("[RTMPCommandMessage name:%ls transId:%d]\n",name ? name->GetWString().c_str() : L"<null>" ,transId ? (DWORD)transId->GetNumber() : 0);
+	
 	if (params)
 		params->Dump();
 	else
 		null.Dump();
+	
 	for(DWORD i=0;i<extra.size();i++)
 	{
 		//Get object

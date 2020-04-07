@@ -311,6 +311,7 @@
           <in>vp8encoder.cpp</in>
         </df>
         <df name="vp9">
+          <in>VP9.h</in>
           <in>VP9Decoder.cpp</in>
           <in>VP9Depacketizer.cpp</in>
           <in>VP9LayerSelector.cpp</in>
@@ -410,6 +411,7 @@
         <in>h264.cpp</in>
         <in>main.cpp</in>
         <in>overlay.cpp</in>
+        <in>rtmp.cpp</in>
         <in>rtp.cpp</in>
         <in>stun.cpp</in>
         <in>test.cpp</in>
@@ -2377,6 +2379,8 @@
         <ccTool flags="2">
         </ccTool>
       </item>
+      <item path="src/vp9/VP9.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="src/vp9/VP9Decoder.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="2">
         </ccTool>
@@ -2484,6 +2488,8 @@
       <item path="test/overlay.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="2">
         </ccTool>
+      </item>
+      <item path="test/rtmp.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="test/rtp.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="2">
@@ -6059,6 +6065,8 @@
         <ccTool flags="1">
         </ccTool>
       </item>
+      <item path="src/vp9/VP9.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="src/vp9/VP9Decoder.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
         </ccTool>
@@ -6374,6 +6382,8 @@
             <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
           </preprocessorList>
         </ccTool>
+      </item>
+      <item path="test/rtmp.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="test/rtp.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="2">
@@ -11216,6 +11226,8 @@
         <ccTool flags="0">
         </ccTool>
       </item>
+      <item path="src/vp9/VP9.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="src/vp9/VP9Decoder.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="0">
         </ccTool>
@@ -11375,6 +11387,8 @@
       <item path="test/overlay.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="0">
         </ccTool>
+      </item>
+      <item path="test/rtmp.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="test/rtp.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="0">
@@ -14496,6 +14510,8 @@
         <ccTool flags="1">
         </ccTool>
       </item>
+      <item path="src/vp9/VP9.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="src/vp9/VP9Decoder.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
         </ccTool>
@@ -14693,6 +14709,8 @@
             <Elem>DARWIN</Elem>
           </preprocessorList>
         </ccTool>
+      </item>
+      <item path="test/rtmp.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="test/rtp.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
@@ -17811,6 +17829,8 @@
         <ccTool flags="1">
         </ccTool>
       </item>
+      <item path="src/vp9/VP9.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="src/vp9/VP9Decoder.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
         </ccTool>
@@ -18008,6 +18028,8 @@
             <Elem>DARWIN</Elem>
           </preprocessorList>
         </ccTool>
+      </item>
+      <item path="test/rtmp.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="test/rtp.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">

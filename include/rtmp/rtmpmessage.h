@@ -142,6 +142,8 @@ public:
 	std::wstring 	GetName() 		{ return name->GetWString(); 	}
 	std::string 	GetNameUTF8() 		{ return name->GetUTF8String();	}
 	double		GetTransId()		{ return transId->GetNumber(); 	}
+	bool		HasName()		{ return name;			}
+	bool		HasTransId()		{ return transId;		}
 	bool		HasParams()  		{ return params; 		}
 	AMFData*	GetParams()  		{ return params; 		}
 	DWORD		GetExtraLength() 	{ return extra.size(); 		}

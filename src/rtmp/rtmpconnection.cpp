@@ -862,6 +862,15 @@ void RTMPConnection::ProcessControlMessage(DWORD streamId,BYTE type,RTMPObject* 
  ************************************/
 void RTMPConnection::ProcessCommandMessage(DWORD streamId,RTMPCommandMessage* cmd)
 {
+	//Ensure we have name and trans if
+	if (!cmd->HasName() || !cmd->HasTransId())
+	{
+		//Error
+		Log("-RTMPConnection::ProcessCommandMessage() | Command does not have name or transid\n");
+		//Skip
+		return;
+	}
+	
 	//Get message values
 	std::wstring name 	= cmd->GetName();
 	QWORD transId 		= cmd->GetTransId();
