@@ -21,6 +21,7 @@ mp4track::mp4track(MP4FileHandle mp4)
 	frame = NULL;
 	hasSPS = false;
 	hasPPS = false;
+	hasDimensions = false;
 }
 
 int mp4track::CreateAudioTrack(AudioCodec::Type codec, DWORD rate)
@@ -185,6 +186,10 @@ int mp4track::CreateVideoTrack(VideoCodec::Type codec, DWORD rate, int width, in
 		default:
 			return Error("-Codec %s not supported yet\n",VideoCodec::GetNameFor(codec));
 	}
+	
+	//Check if it has dimensions
+	hasDimensions = width && height;
+	
 	//OK
 	return 1;
 }
@@ -295,7 +300,8 @@ int mp4track::FlushVideoFrame(VideoFrame* frame,DWORD duration)
 			MP4AddRtpSampleData(mp4, hint, sampleId, rtp->GetPos(), rtp->GetSize());
 
 			//It is h264 and we still do not have SPS or PPS?
-			if (frame->GetCodec()==VideoCodec::H264 && (!hasSPS || !hasPPS))
+			// only check full full naltypes
+			if (frame->GetCodec()==VideoCodec::H264 && (!hasSPS || !hasPPS) && !rtp->GetPrefixLen())
 			{
 				//Get rtp data pointer
 				const BYTE *data = frame->GetData()+rtp->GetPos();
@@ -306,31 +312,13 @@ int mp4track::FlushVideoFrame(VideoFrame* frame,DWORD duration)
 				DWORD nalSize = rtp->GetSize()-1;
 				
 				//If it a SPS NAL
-				if (!hasSPS && nalType==0x07)
-				{
-					H264SeqParameterSet sps;
-					//DEcode SPS
-					if (sps.Decode(nalData,nalSize))
-					{
-						//Update width an height
-						MP4SetTrackIntegerProperty(mp4,track,"mdia.minf.stbl.stsd.avc1.width", sps.GetWidth());
-						MP4SetTrackIntegerProperty(mp4,track,"mdia.minf.stbl.stsd.avc1.height", sps.GetHeight());
-					}
-
+				if (nalType==0x07)
 					//Add it
-					MP4AddH264SequenceParameterSet(mp4,track,nalData,nalSize);
-					//No need to search more
-					hasSPS = true;
-				}
-
+					AddH264SequenceParameterSet(nalData,nalSize);
 				//If it is a PPS NAL
-				if (!hasPPS && nalType==0x08)
-				{
+				else if (nalType==0x08)
 					//Add it
-					MP4AddH264PictureParameterSet(mp4,track,nalData,nalSize);
-					//No need to search more
-					hasPPS = true;
-				}
+					AddH264PictureParameterSet(nalData,nalSize);
 			}
 		}
 		//Save rtp
@@ -341,6 +329,54 @@ int mp4track::FlushVideoFrame(VideoFrame* frame,DWORD duration)
 	delete frame;
 	//Stored
 	return 1;
+}
+
+void mp4track::AddH264SequenceParameterSet(const BYTE* data, DWORD size)
+{
+	::Dump(data,size);
+	//If it a SPS NAL
+	if (hasSPS)
+		//Do noting
+		return;	
+	
+	Debug("-mp4track::AddH264SequenceParameterSet() | Got SPS\n");
+	//Add it
+	MP4AddH264SequenceParameterSet(mp4,track,data,size);
+	
+	//No need to search more
+	hasSPS = true;
+
+	//IF we dont have widht or height
+	if (!hasDimensions)
+	{
+		H264SeqParameterSet sps;
+		//DEcode SPS
+		if (sps.Decode(data,size))
+		{
+			Debug("-mp4track::AddH264SequenceParameterSet() | Got size [%dx%d]\n", sps.GetWidth(), sps.GetHeight());
+			
+			//Update width an height
+			MP4SetTrackIntegerProperty(mp4,track,"mdia.minf.stbl.stsd.avc1.width", sps.GetWidth());
+			MP4SetTrackIntegerProperty(mp4,track,"mdia.minf.stbl.stsd.avc1.height", sps.GetHeight());
+			//Check if it has dimensions
+			hasDimensions = sps.GetWidth() && sps.GetHeight();
+		}
+	}
+}
+
+void mp4track::AddH264PictureParameterSet(const BYTE* data, DWORD size)
+{
+	::Dump(data,size);
+	//If it a PPS NAL
+	if (hasPPS)
+		//Do noting
+		return;	
+	
+	Debug("-mp4track::AddH264PictureParameterSet() | Got PPS\n");
+	//Add it
+	MP4AddH264PictureParameterSet(mp4,track,data,size);
+	//No need to search more
+	hasPPS = true;
 }
 
 int mp4track::WriteVideoFrame(VideoFrame& videoFrame)
@@ -779,7 +815,48 @@ void MP4Recorder::processMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD t
 					videoTrack->CreateVideoTrack(videoFrame.GetCodec(),videoFrame.GetClockRate(),videoFrame.GetWidth(),videoFrame.GetHeight());
 					//Add it to map
 					videoTracks[ssrc] = videoTrack;
-
+					
+					//If it is h264
+					if (videoFrame.GetCodec() == VideoCodec::H264)
+					{
+						//IF we have pps
+						if (h264PPS)
+						{
+							//Set it
+							videoTrack->AddH264SequenceParameterSet(h264PPS->GetData(),h264PPS->GetSize());
+							//Create NAL
+							BYTE nal[5+h264PPS->GetSize()];
+							//Set nal header
+							set4(nal,0,h264PPS->GetSize()+1);
+							set1(nal,4,0x08);
+							//Copy
+							memcpy(nal+5,h264PPS->GetData(),h264PPS->GetSize());
+							//Add nal
+							videoFrame.PrependMedia(nal,sizeof(nal));
+							//Add rtp packet
+							videoFrame.AddRtpPacket(4,h264PPS->GetSize()+1);
+						}
+						//IF we have sps
+						if (h264SPS)
+						{
+							//Set it
+							videoTrack->AddH264SequenceParameterSet(h264SPS->GetData(),h264SPS->GetSize());
+							//Create NAL
+							BYTE nal[5+h264SPS->GetSize()];
+							//Set nal header
+							set4(nal,0,h264SPS->GetSize()+1);
+							set1(nal,4,0x07);
+							//Copy
+							memcpy(nal+5,h264SPS->GetData(),h264SPS->GetSize());
+							//Add nal
+							videoFrame.PrependMedia(nal,sizeof(nal));
+							//Add rtp packet
+							videoFrame.AddRtpPacket(4,h264SPS->GetSize()+1);
+							
+						}
+						
+					}
+					
 					//If not the first one
 					if (delta)
 					{
@@ -855,4 +932,73 @@ void MP4Recorder::processMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD t
 			//Nothing
 			break;
 	}
+}
+
+
+bool MP4Recorder::SetH264ParameterSets(const std::string& sprop)
+{
+	BYTE nal[MTU];
+	
+	//Log
+	Debug("-MP4Recorder::SetH264ParameterSets() [sprop:%s]\n",sprop.c_str());
+	
+	//Split by ","
+	auto start = 0;
+	
+	//Get next separator
+	auto end = sprop.find(',');
+	
+	//Parse
+	while(end!=std::string::npos)
+	{
+		//Get prop
+		auto prop = sprop.substr(start,end-start);
+		
+		Debug("-MP4Recorder::SetH264ParameterSets() [sprop:%s]\n",prop.c_str());
+		
+		//Parse and keep space for size
+		auto len = av_base64_decode(nal,prop.c_str(),MTU);
+		//Check result
+		if (len<=0)
+			return Error("-MP4Recorder::SetH264ParameterSets() could not decode base64 data [%s]\n",prop.c_str());
+		//Get nal type
+		BYTE nalType = nal[0] & 0x1F;
+		//If it a SPS NAL
+		if (nalType==0x07)
+			//Add it
+			h264SPS.emplace(nal+1,len-1);
+		//If it is a PPS NAL
+		else if (nalType==0x08)
+			//Add it
+			h264PPS.emplace(nal+1,len-1);
+		
+		//Next
+		start = end+1;
+		//Get nest
+		end = sprop.find(',',start);
+	}
+	//last one
+	auto prop = sprop.substr(start,end-start);
+	
+	Debug("-MP4Recorder::SetH264ParameterSets() [sprop:%s]\n",prop.c_str());
+	
+	//Parse and keep space for size
+	auto len = av_base64_decode(nal,prop.c_str(),MTU);
+	//Check result
+	if (len<=0)
+		return Error("-MP4Recorder::SetH264ParameterSets() could not decode base64 data [%s]\n",prop.c_str());
+	::Dump(nal,len);
+	//Get nal type
+	BYTE nalType = nal[0] & 0x1F;
+	//If it a SPS NAL
+	if (nalType==0x07)
+		//Add it
+		h264SPS.emplace(nal+1,len-1);
+	//If it is a PPS NAL
+	else if (nalType==0x08)
+		//Add it
+		h264PPS.emplace(nal+1,len-1);
+	
+	//Done
+	return true;
 }

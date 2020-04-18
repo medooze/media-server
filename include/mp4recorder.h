@@ -8,9 +8,11 @@
 #include "text.h"
 #include "media.h"
 #include "recordercontrol.h"
+#include "Buffer.h"
 #include "EventLoop.h"
 
 #include <deque>
+#include <optional>
 
 class mp4track
 {
@@ -23,6 +25,8 @@ public:
 	int WriteVideoFrame(VideoFrame &videoFrame);
 	int WriteTextFrame(TextFrame &textFrame);
 	int Close();
+	void AddH264SequenceParameterSet(const BYTE* data, DWORD size);
+	void AddH264PictureParameterSet(const BYTE* data, DWORD size);
 private:
 	int FlushAudioFrame(AudioFrame* frame,DWORD duration);
 	int FlushVideoFrame(VideoFrame* frame,DWORD duration);
@@ -37,6 +41,7 @@ private:
 	MediaFrame *frame;
 	bool hasSPS;
 	bool hasPPS;
+	bool hasDimensions;
 };
 
 
@@ -69,6 +74,7 @@ public:
 	virtual void onMediaFrame(DWORD ssrc, const MediaFrame &frame);
 	
 	void SetTimeShiftDuration(DWORD duration) { timeShiftDuration = duration; }
+	bool SetH264ParameterSets(const std::string& sprop);
 	
 private:
 	void processMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD time);
@@ -86,6 +92,8 @@ private:
 	QWORD		first =  (QWORD)-1;
 	
 	std::deque<std::pair<uint32_t,std::unique_ptr<MediaFrame>>> timeShiftBuffer;
+	std::optional<Buffer>	h264SPS;
+	std::optional<Buffer>	h264PPS;
 	DWORD timeShiftDuration = 0;
 };
 #endif
