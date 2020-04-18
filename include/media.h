@@ -47,7 +47,8 @@ public:
 		{
 			if (prefix) free(prefix);
 		}
-
+		void  SetPos(DWORD pos)	      { this->pos = pos;	}
+		void  IncPos(DWORD num)	      { this->pos += num;	}		
 		DWORD GetPos()		const { return pos;		}
 		DWORD GetSize()		const { return size;		}
 		BYTE* GetPrefixData()	const { return prefix;		}
@@ -140,7 +141,7 @@ public:
 			info->Dump();
 	}
 	
-	void	AddRtpPacket(DWORD pos,DWORD size,const BYTE* prefix,DWORD prefixLen)		
+	void	AddRtpPacket(DWORD pos,DWORD size,const BYTE* prefix = nullptr,DWORD prefixLen = 0)		
 	{
 		rtpInfo.push_back(new RtpPacketization(pos,size,prefix,prefixLen));
 	}
@@ -204,6 +205,25 @@ public:
 		buffer->AppendData(data,size);
 		//Return previous pos
 		return pos;
+	}
+	
+	
+	void PrependMedia(const BYTE* data,DWORD size)
+	{
+		//Store old buffer
+		auto old = buffer;
+		//New one
+		buffer = std::make_shared<Buffer>(old->GetSize()+size);
+		//We own the payload
+		ownedBuffer = true;
+		//Append data
+		buffer->AppendData(data,size);
+		//Append data
+		buffer->AppendData(old->GetData(),old->GetSize());
+		//Move rtp packets
+		for (auto &info : rtpInfo)
+			//Move init of rtp packet
+			info->IncPos(size);
 	}
         
 	BYTE* AllocateCodecConfig(DWORD size)
