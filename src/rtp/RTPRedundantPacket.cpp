@@ -91,13 +91,12 @@ RTPRedundantPacket::RTPRedundantPacket(MediaFrame::Type media,BYTE *data,DWORD s
 RTPPacket* RTPRedundantPacket::CreatePrimaryPacket()
 {
 	//Create new pacekt
-	RTPPacket* packet = new RTPPacket(GetMedia(),primaryCodec,primaryType);
+	RTPPacket* packet = new RTPPacket(GetMediaType(),primaryCodec,primaryType);
 	//Set attributes
 	packet->SetClockRate(GetClockRate());
 	packet->SetMark(GetMark());
-	packet->SetSeqNum(GetSeqNum());
-	packet->SetSeqCycles(GetSeqCycles());
-	packet->SetTimestamp(GetTimestamp());
+	packet->SetExtSeqNum(GetExtSeqNum());
+	packet->SetExtTimestamp(GetExtTimestamp());
 	packet->SetSSRC(GetSSRC());
 	//Set paylaod
 	packet->SetPayload(primaryData,primarySize);

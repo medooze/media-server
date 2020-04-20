@@ -497,7 +497,7 @@ outher:	while(running)
 			if (codec==RTPMap::NotFound)
 			{
 				//Error
-				Debug("-PCAPTransportEmulator::Run() | RTP RTX packet apt type unknown [%d]\n",MediaFrame::TypeToString(packet->GetMedia()),packet->GetPayloadType());
+				Debug("-PCAPTransportEmulator::Run() | RTP RTX packet apt type unknown [%d]\n",MediaFrame::TypeToString(packet->GetMediaType()),packet->GetPayloadType());
 				//Skip
 				continue;
 			}
@@ -514,6 +514,8 @@ outher:	while(running)
 			packet->SetSSRC(group->media.ssrc);
 			//Set corrected seq num cycles
 			packet->SetSeqCycles(group->media.RecoverSeqNum(packet->GetSeqNum()));
+			//Set corrected timestamp cycles
+			packet->SetTimestampCycles(group->media.RecoverTimestamp(packet->GetTimestamp()));
 			//Set codec
 			packet->SetCodec(codec);
 			packet->SetPayloadType(apt);
@@ -525,7 +527,7 @@ outher:	while(running)
 			//Ensure that it is a FEC codec
 			if (codec!=VideoCodec::FLEXFEC)
 				//error
-				Debug("-PCAPTransportEmulator::Run()| No FLEXFEC codec on fec sssrc:%u type:%d codec:%d\n",MediaFrame::TypeToString(packet->GetMedia()),packet->GetPayloadType(),packet->GetSSRC());
+				Debug("-PCAPTransportEmulator::Run()| No FLEXFEC codec on fec sssrc:%u type:%d codec:%d\n",MediaFrame::TypeToString(packet->GetMediaType()),packet->GetPayloadType(),packet->GetSSRC());
 			//DO NOTHING with it yet
 			continue;
 		}	

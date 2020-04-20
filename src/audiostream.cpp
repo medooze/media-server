@@ -300,8 +300,8 @@ int AudioStream::RecAudio()
 	const DWORD	playBufferSize = 1024;
 	AudioDecoder*	codec=NULL;
 	AudioCodec::Type type;
-	DWORD		frameTime=0;
-	DWORD		lastTime=0;
+	QWORD		frameTime=0;
+	QWORD		lastTime=0;
 	
 	Log(">RecAudio\n");
 	
@@ -350,10 +350,10 @@ int AudioStream::RecAudio()
 		if (len>0)
 		{
 			//Obtenemos el tiempo del frame
-			frameTime = packet->GetTimestamp() - lastTime;
+			frameTime = packet->GetExtTimestamp() - lastTime;
 
 			//Actualizamos el ultimo envio
-			lastTime = packet->GetTimestamp();
+			lastTime = packet->GetExtTimestamp();
 
 			//Check muted
 			if (!muted)
@@ -428,7 +428,7 @@ int AudioStream::SendAudio()
 	
 
 	//Get initial time
-	DWORD frameTime = getDifTime(&ini)*clock/1E6;
+	QWORD frameTime = getDifTime(&ini)*clock/1E6;
 
 	//Send audio
 	while(sendingAudio)
@@ -457,7 +457,7 @@ int AudioStream::SendAudio()
 		packet->SetMediaLength(len);
 
 		//Set frametime
-		packet->SetTimestamp(frameTime);
+		packet->SetExtTimestamp(frameTime);
 
 		//Send it
 		rtp.SendPacket(packet,frameTime);

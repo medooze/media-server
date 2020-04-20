@@ -147,7 +147,7 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 			rtp->SetSSRC(ssrc);
 			rtp->SetExtSeqNum(lastExtSeqNum++);
 			rtp->SetMark(true);
-			rtp->SetTimestamp(lastTimestamp);
+			rtp->SetExtTimestamp(lastTimestamp);
 			//Send it
 			if (sender) sender->Enqueue(rtp);
 		}
@@ -189,7 +189,7 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 			//Get timestamp diff on correct clock rate
 			QWORD diff = offset*packet->GetClockRate()/1000;
 			
-			//UltraDebug("-ts offset:%llu diff:%llu baseTimestap:%lu firstTimestamp:%lu lastTimestamp:%llu rate:%llu\n",offset,diff,baseTimestamp,firstTimestamp,lastTimestamp,packet->GetClockRate());
+			//UltraDebug("-ts offset:%llu diff:%llu baseTimestap:%lu firstTimestamp:%llu lastTimestamp:%llu rate:%llu\n",offset,diff,baseTimestamp,firstTimestamp,lastTimestamp,packet->GetClockRate());
 			
 			//convert it to rtp time and add to the last sent timestamp
 			baseTimestamp = lastTimestamp + diff + 1;
@@ -204,9 +204,9 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 		//Reset drop counter
 		dropped = 0;
 		//Get first timestamp
-		firstTimestamp = packet->GetTimestamp();
+		firstTimestamp = packet->GetExtTimestamp();
 		
-		UltraDebug("-StreamTransponder::onRTP() | first seq:%lu base:%lu last:%lu ts:%lu baseSeq:%lu baseTimestamp:%llu lastTimestamp:%llu\n",firstExtSeqNum,baseExtSeqNum,lastExtSeqNum,firstTimestamp,baseExtSeqNum,baseTimestamp,lastTimestamp);
+		UltraDebug("-StreamTransponder::onRTP() | first seq:%lu base:%lu last:%lu ts:%llu baseSeq:%lu baseTimestamp:%llu lastTimestamp:%llu\n",firstExtSeqNum,baseExtSeqNum,lastExtSeqNum,firstTimestamp,baseExtSeqNum,baseTimestamp,lastTimestamp);
 	}
 	
 	//Ensure it is not before first one
@@ -215,7 +215,7 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 		return;
 	
 	//Only for viedo
-	if (packet->GetMedia()==MediaFrame::Video)
+	if (packet->GetMediaType()==MediaFrame::Video)
 	{
 		//Check if we don't have one or if we have a selector and it is not from the same codec
 		if (!selector || (BYTE)selector->GetCodec()!=packet->GetCodec())
@@ -258,10 +258,10 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 	extSeqNum = baseExtSeqNum + (extSeqNum - firstExtSeqNum) - dropped + added;
 	
 	//Set normailized timestamp
-	uint64_t timestamp = baseTimestamp + (packet->GetTimestamp()-firstTimestamp);
+	uint64_t timestamp = baseTimestamp + (packet->GetExtTimestamp()-firstTimestamp);
 	
 	//UPdate media codec and type
-	media = packet->GetMedia();
+	media = packet->GetMediaType();
 	codec = packet->GetCodec();
 	type  = packet->GetPayloadType();
 	
@@ -313,7 +313,7 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 		//Set new seq numbers
 		cloned->SetExtSeqNum(extSeqNum);
 		//Set normailized timestamp
-		cloned->SetTimestamp(timestamp);
+		cloned->SetExtTimestamp(timestamp);
 		//Set payload type
 		cloned->SetPayloadType(type);
 		//Change ssrc

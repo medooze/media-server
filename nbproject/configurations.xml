@@ -196,6 +196,7 @@
           <in>RTPIncomingMediaStreamMultiplexer.h</in>
         </df>
         <in>VideoDecoderWorker.h</in>
+        <in>WarpExtender.h</in>
       </df>
       <df name="src">
         <df name="aac">
@@ -766,6 +767,8 @@
         </ccTool>
       </folder>
       <item path="include/VideoDecoderWorker.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/WarpExtender.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/rtp/LayerInfo.h" ex="false" tool="3" flavor2="0">
       </item>
@@ -3032,6 +3035,8 @@
           </preprocessorList>
         </ccTool>
       </folder>
+      <item path="include/WarpExtender.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="src/ActiveSpeakerDetector.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
@@ -7956,6 +7961,8 @@
           </preprocessorList>
         </ccTool>
       </folder>
+      <item path="include/WarpExtender.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="src/ActiveSpeakerDetector.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="0">
           <incDir>
@@ -11920,6 +11927,8 @@
           </preprocessorList>
         </ccTool>
       </folder>
+      <item path="include/WarpExtender.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="src/ActiveSpeakerDetector.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
@@ -15278,6 +15287,8 @@
           </preprocessorList>
         </ccTool>
       </folder>
+      <item path="include/WarpExtender.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="src/ActiveSpeakerDetector.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>

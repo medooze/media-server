@@ -278,6 +278,11 @@ RTPIncomingSource* RTPIncomingSourceGroup::Process(RTPPacket::shared &packet)
 	if (!source)
 		//error
 		return nullptr;
+	
+	//Set extendedd  timestamp
+	packet->SetTimestampCycles(source->ExtendTimestamp(packet->GetTimestamp()));
+	//Set cycles back
+	packet->SetSeqCycles(source->ExtendSeqNum(packet->GetSeqNum()));
 
 	//if it is video
 	if (type == MediaFrame::Video)
@@ -295,12 +300,6 @@ RTPIncomingSource* RTPIncomingSourceGroup::Process(RTPPacket::shared &packet)
 		//Update source and layer info
 		source->Update(time, packet->GetSeqNum(), packet->GetRTPHeader().GetSize() + packet->GetMediaLength());
 	}
-	
-	//Update source sequence number and get cycles
-	WORD cycles = source->SetSeqNum(packet->GetSeqNum());
-
-	//Set cycles back
-	packet->SetSeqCycles(cycles);
 	
 	//Done
 	return source;

@@ -46,7 +46,7 @@ void VP9Depacketizer::ResetFrame()
 MediaFrame* VP9Depacketizer::AddPacket(const RTPPacket::shared& packet)
 {
 	//Get timestamp in ms
-	auto ts = packet->GetTimestamp();
+	auto ts = packet->GetExtTimestamp();
 	//Check it is from same packet
 	if (frame.GetTimeStamp()!=ts)
 		//Reset frame

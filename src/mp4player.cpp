@@ -108,7 +108,7 @@ void MP4Player::onRTPPacket(RTPPacket &packet)
 	bool mark = packet.GetMark();
 	
 	//Depending on the media
-	switch (packet.GetMedia())
+	switch (packet.GetMediaType())
 	{
 		case MediaFrame::Audio:
 			//Check decoder

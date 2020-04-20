@@ -159,7 +159,7 @@ void MediaFrameListenerBridge::onMediaFrame(const MediaFrame& frame)
 			//Calculate timestamp
 			lastTimestamp = baseTimestamp + (frame->GetTimeStamp()-firstTimestamp);
 			//Set other values
-			packet->SetTimestamp(lastTimestamp*rate);
+			packet->SetExtTimestamp(lastTimestamp*rate);
 			//Check
 			if (i+1==info.size())
 				//last

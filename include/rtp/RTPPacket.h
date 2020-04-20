@@ -55,8 +55,9 @@ public:
 	
 	//Setters
 	void SetTimestamp(DWORD timestamp)	{ header.timestamp = timestamp;		}
+	void SetExtTimestamp(QWORD extTimestamp){ header.timestamp = (WORD)extTimestamp; this->timestampCycles = extTimestamp >> 32;	}
 	void SetSeqNum(WORD seq)		{ header.sequenceNumber = seq;		}
-	void SetExtSeqNum(DWORD extSeq)		{ header.sequenceNumber = (WORD)extSeq; this->cycles = extSeq >> 16;	}
+	void SetExtSeqNum(DWORD extSeq)		{ header.sequenceNumber = (WORD)extSeq; this->seqCycles = extSeq >> 16;			}
 	void SetMark(bool mark)			{ header.mark = mark;			}
 	void SetSSRC(DWORD ssrc)		{ header.ssrc = ssrc;			}
 	void SetPayloadType(DWORD payloadType)	{ header.payloadType = payloadType;	}
@@ -64,7 +65,8 @@ public:
 	void SetPadding(WORD padding)		{ header.padding = padding;		}
 	void SetMediaTpe(MediaFrame::Type media){ this->media = media;			}
 	void SetCodec(BYTE codec)		{ this->codec = codec;			}
-	void SetSeqCycles(WORD cycles)		{ this->cycles = cycles;		}
+	void SetSeqCycles(WORD cycles)		{ this->seqCycles = cycles;		}
+	void SetTimestampCycles(DWORD cycles)	{ this->timestampCycles = cycles;	}
 	void SetClockRate(DWORD rate)		{ this->clockRate = rate;		}
 
 	void SetMediaLength(DWORD len)		{ payload->SetMediaLength(len);		}
@@ -86,10 +88,11 @@ public:
 	DWORD GetPayloadType()		const { return header.payloadType;		}
 	WORD  GetPadding()		const { return header.padding;			}
 	
-	WORD  GetSeqCycles()		const { return cycles;				}
+	WORD  GetSeqCycles()		const { return seqCycles;			}
 	DWORD GetClockRate()		const { return clockRate;			}
-	DWORD GetExtSeqNum()		const { return ((DWORD)cycles)<<16 | GetSeqNum();			}
-	DWORD GetClockTimestamp()	const { return static_cast<QWORD>(GetTimestamp())*1000/clockRate;	}
+	DWORD GetExtSeqNum()		const { return ((DWORD)seqCycles)<<16 | GetSeqNum();			}
+	QWORD GetExtTimestamp()		const { return ((QWORD)timestampCycles)<<32 | GetTimestamp();		}
+	QWORD GetClockTimestamp()	const { return static_cast<QWORD>(GetExtTimestamp())*1000/clockRate;	}
 
 	//Extensions
 	void  SetAbsSentTime(QWORD absSentTime)						{ header.extension = extension.hasAbsSentTime     = true; extension.absSentTime = absSentTime;	}
@@ -160,7 +163,8 @@ private:
 	MediaFrame::Type media;
 	BYTE		codec;
 	DWORD		clockRate;
-	WORD		cycles		= 0;
+	WORD		seqCycles	= 0;
+	DWORD		timestampCycles	= 0;
 	WORD		osn		= 0;
 	
 	RTPHeader	   header;

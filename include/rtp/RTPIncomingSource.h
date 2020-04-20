@@ -7,6 +7,7 @@
 #include "rtp/RTPPacket.h"
 #include "rtp/RTPSource.h"
 #include "rtp/RTCPReport.h"
+#include "WrapExtender.h"
 
 struct RTPIncomingSource : public RTPSource
 {
@@ -25,109 +26,25 @@ struct RTPIncomingSource : public RTPSource
 	QWORD	lastNACKed;
 	DWORD	lastTimestamp;
 	QWORD	lastTime;
+	WrapExtender timestampExtender;
 	std::map<WORD,LayerSource> layers;
 	
-	RTPIncomingSource() : RTPSource()
-	{
-		lostPackets		 = 0;
-		dropPackets		 = 0;
-		totalPacketsSinceLastSR	 = 0;
-		totalBytesSinceLastSR	 = 0;
-		lostPacketsSinceLastSR   = 0;
-		lastReceivedSenderNTPTimestamp = 0;
-		lastReceivedSenderReport = 0;
-		lastReport		 = 0;
-		lastPLI			 = 0;
-		totalPLIs		 = 0;
-		totalNACKs		 = 0;
-		lastNACKed		 = 0;
-		lastTimestamp		 = 0;
-		lastTime		 = 0;
-		minExtSeqNumSinceLastSR  = RTPPacket::MaxExtSeqNum;
-	}
-	
-	void Update(QWORD now,DWORD seqNum,DWORD size,const LayerInfo &layerInfo)
-	{
-		//Update source normally
-		RTPIncomingSource::Update(now,seqNum,size);
-		//Check layer info is present
-		if (layerInfo.IsValid())
-		{
-			//Find layer
-			auto it = layers.find(layerInfo.GetId());
-			//If not found
-			if (it==layers.end())
-				//Add new entry
-				it = layers.emplace(layerInfo.GetId(),LayerSource(layerInfo)).first;
-			//Update layer source
-			it->second.Update(now,size);
-		}
-	}
-	
-	virtual void Update(QWORD now,DWORD seqNum,DWORD size)
-	{
-		//Store last seq number before updating
-		//DWORD lastExtSeqNum = extSeqNum;
-			
-		//Update source
-		RTPSource::Update(now,seqNum,size);
-		
-		//Update seq num
-		SetSeqNum(seqNum);
-		
-		totalPacketsSinceLastSR++;
-		totalBytesSinceLastSR += size;
-
-		//Check if it is the min for this SR
-		if (extSeqNum<minExtSeqNumSinceLastSR)
-			//Store minimum
-			minExtSeqNumSinceLastSR = extSeqNum;
-		
-		/*TODO: calculate jitter
-		//If we have a not out of order pacekt
-		if (lastExtSeqNum != extSeqNum)
-		{
-			//If it is not first one and not from the same frame
-			if (lastTimestamp && lastTimestamp<timestamp)
-			{
-				//Get diff from previous
-				QWORD diff = (lastTime-now)/1000;
-
-		
-				//Get difference of arravail times
-				int d = (timestamp-lastTimestamp)-diff;
-				//Check negative
-				if (d<0)
-					//Calc abs
-					d = -d;
-				//Calculate variance
-				int v = d - jitter;
-				//Calculate jitter
-				jitter += v/16;
-			}
-			//Update rtp timestamp
-			lastTime = timestamp;
-		}
-		 */
-	}
-	
-	virtual void Reset()
-	{
-		RTPSource::Reset();
-		lostPackets		 = 0;
-		dropPackets		 = 0;
-		totalPacketsSinceLastSR	 = 0;
-		totalBytesSinceLastSR	 = 0;
-		lostPacketsSinceLastSR   = 0;
-		lastReceivedSenderNTPTimestamp = 0;
-		lastReceivedSenderReport = 0;
-		lastReport		 = 0;
-		lastPLI			 = 0;
-		totalPLIs		 = 0;
-		lastNACKed		 = 0;
-		minExtSeqNumSinceLastSR  = RTPPacket::MaxExtSeqNum;
-	}
+	RTPIncomingSource();
 	virtual ~RTPIncomingSource() = default;
+	
+	WORD  ExtendSeqNum(WORD seqNum);
+	WORD  RecoverSeqNum(WORD osn);
+	
+	DWORD ExtendTimestamp(DWORD timestamp);
+	DWORD RecoverTimestamp(DWORD timestamp);
+	
+	void Update(QWORD now,DWORD seqNum,DWORD size,const LayerInfo &layerInfo);
+	
+	
+	
+	
+	virtual void Update(QWORD now,DWORD seqNum,DWORD size) override;
+	virtual void Reset() override;
 	
 	RTCPReport::shared CreateReport(QWORD now);
 };

@@ -80,7 +80,7 @@ void VideoDecoderWorker::RemoveVideoOutput(VideoOutput* output)
 
 int VideoDecoderWorker::Decode()
 {
-	DWORD		frameTime = (DWORD)-1;
+	QWORD		frameTime = (QWORD)-1;
 	DWORD		lastSeq = RTPPacket::MaxExtSeqNum;
 	bool		waitIntra = false;
 
@@ -104,7 +104,7 @@ int VideoDecoderWorker::Decode()
 		
 		//Get extended sequence number and timestamp
 		DWORD seq = packet->GetExtSeqNum();
-		DWORD ts = packet->GetTimestamp();
+		QWORD ts = packet->GetExtTimestamp();
 
 		//If we don't have codec
 		if (!videoDecoder || (packet->GetCodec()!=videoDecoder->type))
@@ -137,7 +137,7 @@ int VideoDecoderWorker::Decode()
 		//Check if we have lost the last packet from the previous frame by comparing both timestamps
 		if (ts>frameTime)
 		{
-			Debug("-lost mark packet ts:%u frameTime:%u\n",ts,frameTime);
+			Debug("-lost mark packet ts:%llu frameTime:%llu\n",ts,frameTime);
 			//Try to decode what is in the buffer
 			videoDecoder->DecodePacket(NULL,0,1,1);
 			//Get picture
@@ -179,7 +179,7 @@ int VideoDecoderWorker::Decode()
 				Debug("-Got Intra\n");
 			
 			//No frame time yet for next frame
-			frameTime = (DWORD)-1;
+			frameTime = (QWORD)-1;
 
 			//Get picture
 			BYTE *frame = videoDecoder->GetFrame();

@@ -54,20 +54,6 @@ void RTPSource::SetExtSeqNum(DWORD extSeqNum )
 
 }
 
-
-/*
- * Get seq num cycles from a past sequence numer
- */
-WORD RTPSource::RecoverSeqNum(WORD osn)
-{
-	 //Check secuence wrap
-	if ((extSeqNum & 0xFFFF)<0x0FFF && (osn>0xF000))
-		//It is from the past cycle
-		return cycles - 1;
-	//It is from current cyle
-	return cycles;
-}
-
 void RTPSource::Update(QWORD now, DWORD seqNum,DWORD size) 
 {
 	//Increase stats

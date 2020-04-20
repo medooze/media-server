@@ -598,6 +598,8 @@ void RTPSession::onRTPPacket(const BYTE* data, DWORD size)
 		packet->SetSSRC(recv.media.ssrc);
 		//Set corrected seq num cycles
 		packet->SetSeqCycles(recv.media.RecoverSeqNum(packet->GetSeqNum()));
+		//Set corrected timestamp cycles
+		packet->SetTimestampCycles(recv.media.RecoverTimestamp(packet->GetTimestamp()));
 		//Set codec
 		packet->SetCodec(codec);
 		packet->SetPayloadType(type);

@@ -56,7 +56,7 @@ void RTPOutgoingSourceGroup::ReleasePackets(QWORD until)
 	}
 }
 
-void RTPOutgoingSourceGroup::ReleasePacketsByTimestamp(DWORD until)
+void RTPOutgoingSourceGroup::ReleasePacketsByTimestamp(QWORD until)
 {
 	//Delete old packets
 	auto it = packets.begin();
@@ -64,7 +64,7 @@ void RTPOutgoingSourceGroup::ReleasePacketsByTimestamp(DWORD until)
 	while(it!=packets.end())
 	{
 		//Check packet timestamp
-		if (it->second->GetTimestamp()>=until)
+		if (it->second->GetExtTimestamp()>=until)
 			//Keep the rest
 			break;
 		//Delete from queue and move next

@@ -72,13 +72,6 @@ struct RTPSource : public Mutex
 	void SetExtSeqNum(DWORD extSeqNum );
 	virtual void Update(QWORD now, DWORD seqNum,DWORD size) ;
 	virtual void Reset();
-	
-	
-	/*
-	 * Get seq num cycles from a past sequence numer
-	 */
-	WORD RecoverSeqNum(WORD osn);
-	
 };
 
 

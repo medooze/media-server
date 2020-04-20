@@ -642,7 +642,7 @@ QWORD MP4RtpTrack::Read(Listener *listener)
 		}
 		
 		//Set rtp timestamp
-		rtp.SetTimestamp(startTime);
+		rtp.SetExtTimestamp(startTime);
 		
 		//Check listener
 		if (listener)

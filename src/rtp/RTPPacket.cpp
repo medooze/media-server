@@ -107,11 +107,11 @@ RTPPacket::~RTPPacket()
 RTPPacket::shared RTPPacket::Clone() const
 {
 	//New one
-	auto cloned = std::make_shared<RTPPacket>(GetMedia(),GetCodec(),GetRTPHeader(),GetRTPHeaderExtension(),payload,GetTime());
+	auto cloned = std::make_shared<RTPPacket>(GetMediaType(),GetCodec(),GetRTPHeader(),GetRTPHeaderExtension(),payload,GetTime());
 	//Set attrributes
 	cloned->SetClockRate(GetClockRate());
 	cloned->SetSeqCycles(GetSeqCycles());
-	cloned->SetTimestamp(GetTimestamp());
+	cloned->SetExtTimestamp(GetExtTimestamp());
 	cloned->SetKeyFrame(IsKeyFrame());
 	//Copy descriptors
 	cloned->rewitePictureIds     = rewitePictureIds;
@@ -325,7 +325,7 @@ void RTPPacket::SetOSN(DWORD extSeqNum)
 
 void RTPPacket::Dump() const
 {
-	Debug("[RTPPacket %s codec=%s payload=%d extSeqNum=%u(%u)]\n",MediaFrame::TypeToString(GetMedia()),GetNameForCodec(GetMedia(),GetCodec()),GetMediaLength(),GetExtSeqNum(),GetSeqCycles());
+	Debug("[RTPPacket %s codec=%s payload=%d extSeqNum=%u(%u)]\n",MediaFrame::TypeToString(GetMediaType()),GetNameForCodec(GetMediaType(),GetCodec()),GetMediaLength(),GetExtSeqNum(),GetSeqCycles());
 	header.Dump();
 	//If  there is an extension
 	if (header.extension)

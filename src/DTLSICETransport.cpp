@@ -392,7 +392,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		//Check codec
 		if (codec==RTPMap::NotFound)
 			  //Error
-			  return Warning("-DTLSICETransport::onData() | RTP RTX packet apt type unknown [%d]\n",MediaFrame::TypeToString(packet->GetMedia()),packet->GetPayloadType());
+			  return Warning("-DTLSICETransport::onData() | RTP RTX packet apt type unknown [%d]\n",MediaFrame::TypeToString(packet->GetMediaType()),packet->GetPayloadType());
 		
 		//Remove OSN and restore seq num
 		if (!packet->RecoverOSN())
@@ -403,6 +403,8 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		 packet->SetSSRC(group->media.ssrc);
 		 //Set corrected seq num cycles
 		 packet->SetSeqCycles(group->media.RecoverSeqNum(packet->GetSeqNum()));
+		 //Set corrected timestamp cycles
+		 packet->SetTimestampCycles(group->media.RecoverTimestamp(packet->GetTimestamp()));
 		 //Set codec
 		 packet->SetCodec(codec);
 		 packet->SetPayloadType(apt);
@@ -412,7 +414,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		//Ensure that it is a FEC codec
 		if (codec!=VideoCodec::FLEXFEC)
 			//error
-			return  Warning("-DTLSICETransport::onData() | No FLEXFEC codec on fec sssrc:%u type:%d codec:%d\n",MediaFrame::TypeToString(packet->GetMedia()),packet->GetPayloadType(),packet->GetSSRC());
+			return  Warning("-DTLSICETransport::onData() | No FLEXFEC codec on fec sssrc:%u type:%d codec:%d\n",MediaFrame::TypeToString(packet->GetMediaType()),packet->GetPayloadType(),packet->GetSSRC());
 		//DO NOTHING with it yet
 		return 1;
 	}	
@@ -2051,7 +2053,7 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 	//If packet is an key frame
 	if (packet->IsKeyFrame())
 		//Do not retransmit packets before this frame
-		group->ReleasePacketsByTimestamp(packet->GetTimestamp());
+		group->ReleasePacketsByTimestamp(packet->GetExtTimestamp());
 	
 	//Check if we need to send SR (1 per second)
 	if (now-source.lastSenderReport>1E6)

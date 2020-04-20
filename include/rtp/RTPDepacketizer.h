@@ -63,12 +63,10 @@ public:
 
 	virtual MediaFrame* AddPacket(const RTPPacket::shared& packet)
 	{
-		//Check it is from same packet
-		if (frame.GetTimeStamp()!=packet->GetTimestamp())
-			//Reset frame
-			ResetFrame();
+		//Reset frame
+		ResetFrame();
 		//Set timestamp
-		frame.SetTimestamp(packet->GetTimestamp());
+		frame.SetTimestamp(packet->GetExtTimestamp());
 		//Set time
 		frame.SetTime(packet->GetTime());
 		//Set SSRC

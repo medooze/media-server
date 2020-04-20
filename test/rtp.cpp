@@ -46,6 +46,8 @@ public:
 		testBye();
 		Log("testExtSeqNum\n");
 		testExtSeqNum();
+		Log("testExtTimestamp\n");
+		testExtTimestamp();
 		end();
 	}
 	
@@ -826,6 +828,8 @@ public:
 		assert(source.SetSeqNum(65530)==0); Log("%d\n",source.extSeqNum); assert(source.extSeqNum == 65530);
 		assert(source.SetSeqNum(65532)==0); Log("%d\n",source.extSeqNum); assert(source.extSeqNum == 65532);
 		assert(source.SetSeqNum(65531)==0); Log("%d\n",source.extSeqNum); assert(source.extSeqNum == 65532);
+		assert(source.SetSeqNum(65531)==0); Log("%d\n",source.extSeqNum); assert(source.extSeqNum == 65532);
+		assert(source.SetSeqNum(65531)==0); Log("%d\n",source.extSeqNum); assert(source.extSeqNum == 65532);
 		assert(source.SetSeqNum(65533)==0); Log("%d\n",source.extSeqNum); assert(source.extSeqNum == 65533);
 		assert(source.SetSeqNum(65534)==0); Log("%d\n",source.extSeqNum); assert(source.extSeqNum == 65534);
 		assert(source.SetSeqNum(1)    ==1); Log("%d\n",source.extSeqNum); assert(source.extSeqNum == 65537);
@@ -834,7 +838,32 @@ public:
 		assert(source.SetSeqNum(2)    ==1); Log("%d\n",source.extSeqNum); assert(source.extSeqNum == 65538);
 		assert(source.SetSeqNum(3)    ==1); Log("%d\n",source.extSeqNum); assert(source.extSeqNum == 65539);
 		assert(source.SetSeqNum(5)    ==1); Log("%d\n",source.extSeqNum); assert(source.extSeqNum == 65541);
+		assert(source.SetSeqNum(5)    ==1); Log("%d\n",source.extSeqNum); assert(source.extSeqNum == 65541);
 		assert(source.SetSeqNum(4)    ==1); Log("%d\n",source.extSeqNum); assert(source.extSeqNum == 65541);
+	}
+	
+	void testExtTimestamp()
+	{
+		RTPIncomingSource source;
+		
+		uint32_t max = std::numeric_limits<uint32_t>::max();
+		uint64_t wrap = max;
+		
+		assert(source.ExtendTimestamp(max-10)==0); Log("%llu\n",source.timestampExtender.GetExtSeqNum()); assert(source.timestampExtender.GetExtSeqNum() == wrap-10);
+		assert(source.ExtendTimestamp(max-8)==0); Log("%llu\n",source.timestampExtender.GetExtSeqNum()); assert(source.timestampExtender.GetExtSeqNum() == wrap-8);
+		assert(source.ExtendTimestamp(max-9)==0); Log("%llu\n",source.timestampExtender.GetExtSeqNum()); assert(source.timestampExtender.GetExtSeqNum() == wrap-8);
+		assert(source.ExtendTimestamp(max-9)==0); Log("%llu\n",source.timestampExtender.GetExtSeqNum()); assert(source.timestampExtender.GetExtSeqNum() == wrap-8);
+		assert(source.ExtendTimestamp(max-9)==0); Log("%llu\n",source.timestampExtender.GetExtSeqNum()); assert(source.timestampExtender.GetExtSeqNum() == wrap-8);
+		assert(source.ExtendTimestamp(max-7)==0); Log("%llu\n",source.timestampExtender.GetExtSeqNum()); assert(source.timestampExtender.GetExtSeqNum() == wrap-7);
+		assert(source.ExtendTimestamp(max-5)==0); Log("%llu\n",source.timestampExtender.GetExtSeqNum()); assert(source.timestampExtender.GetExtSeqNum() == wrap-5);
+		assert(source.ExtendTimestamp(1)    ==1); Log("%llu\n",source.timestampExtender.GetExtSeqNum()); assert(source.timestampExtender.GetExtSeqNum() == wrap+2);
+		assert(source.ExtendTimestamp(max)  ==0); Log("%llu\n",source.timestampExtender.GetExtSeqNum()); assert(source.timestampExtender.GetExtSeqNum() == wrap+2);
+		assert(source.ExtendTimestamp(0)    ==1); Log("%llu\n",source.timestampExtender.GetExtSeqNum()); assert(source.timestampExtender.GetExtSeqNum() == wrap+2);
+		assert(source.ExtendTimestamp(2)    ==1); Log("%llu\n",source.timestampExtender.GetExtSeqNum()); assert(source.timestampExtender.GetExtSeqNum() == wrap+3);
+		assert(source.ExtendTimestamp(3)    ==1); Log("%llu\n",source.timestampExtender.GetExtSeqNum()); assert(source.timestampExtender.GetExtSeqNum() == wrap+4);
+		assert(source.ExtendTimestamp(5)    ==1); Log("%llu\n",source.timestampExtender.GetExtSeqNum()); assert(source.timestampExtender.GetExtSeqNum() == wrap+6);
+		assert(source.ExtendTimestamp(5)    ==1); Log("%llu\n",source.timestampExtender.GetExtSeqNum()); assert(source.timestampExtender.GetExtSeqNum() == wrap+6);
+		assert(source.ExtendTimestamp(4)    ==1); Log("%llu\n",source.timestampExtender.GetExtSeqNum()); assert(source.timestampExtender.GetExtSeqNum() == wrap+6);
 	}
 	
 };

@@ -55,7 +55,7 @@ private:
 	DWORD firstExtSeqNum	= 0;  //First seq num of incoming stream
 	DWORD baseExtSeqNum	= 0;  //Base seq num of outgoing stream
 	DWORD lastExtSeqNum	= 0;  //Last seq num of sent packet
-	DWORD firstTimestamp	= 0;  //First rtp timstamp of incoming stream
+	QWORD firstTimestamp	= 0;  //First rtp timstamp of incoming stream
 	QWORD baseTimestamp	= 0;  //Base rtp timestamp of ougogoing stream
 	QWORD lastTimestamp	= 0;  //Last rtp timestamp of outgoing stream
 	QWORD lastTime		= 0;  //Last sent time

@@ -124,8 +124,8 @@ int AudioDecoderWorker::Decode()
 {
 	SWORD		raw[2048];
 	DWORD		rawSize=2048;
-	DWORD		frameTime=0;
-	DWORD		lastTime=0;
+	QWORD		frameTime=0;
+	QWORD		lastTime=0;
 
 	Log(">AudioDecoderWorker::Decode()\n");
 
@@ -181,10 +181,10 @@ int AudioDecoderWorker::Decode()
 			int len = codec->Decode(packet->GetMediaData(),packet->GetMediaLength(),raw,rawSize);
 
 			//Obtenemos el tiempo del frame
-			frameTime = packet->GetTimestamp() - lastTime;
+			frameTime = packet->GetExtTimestamp() - lastTime;
 
 			//Actualizamos el ultimo envio
-			lastTime = packet->GetTimestamp();
+			lastTime = packet->GetExtTimestamp();
 		
 			//For each output
 			for (auto output : outputs)
