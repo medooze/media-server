@@ -324,24 +324,26 @@ int VideoEncoderWorker::Encode()
 		if (!frameTime)
 		{
 			//Set frame time, slower
-			frameTime = 5*1000000/fps;
+			frameTime = 5*1E6/fps;
 			//Restore frame rate
 			videoEncoder->SetFrameRate(fps,current,intraPeriod);
 		} else {
 			//Set frame time
-			frameTime = 1000000/fps;
+			frameTime = 1E6/fps;
 		}
 
 		//Add frame size in bits to bitrate calculator
 	        bitrateAcu.Update(getDifTime(&first)/1000,videoFrame->GetLength()*8);
 
 		//Set clock rate
-		videoFrame->SetClockRate(1000);
+		videoFrame->SetClockRate(90000);
 		//Get now
 		auto now = getDifTime(&first)/1000;
 		//Set frame timestamp
-		videoFrame->SetTimestamp(now);
+		videoFrame->SetTimestamp(now*90);
 		videoFrame->SetTime(now);
+		//Set dudation
+		videoFrame->SetDuration(frameTime*90000/1E6);
 		
 		//Lock
 		pthread_mutex_lock(&mutex);

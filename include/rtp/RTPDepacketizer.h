@@ -67,6 +67,8 @@ public:
 		ResetFrame();
 		//Set timestamp
 		frame.SetTimestamp(packet->GetExtTimestamp());
+		//Set clock rate
+		frame.SetClockRate(packet->GetClockRate());
 		//Set time
 		frame.SetTime(packet->GetTime());
 		//Set SSRC
@@ -90,11 +92,7 @@ public:
 		//Reset frame data
 		frame.Reset();
 	}
-	
-	virtual DWORD GetTimestamp() 
-	{
-		return frame.GetTimeStamp();
-	}
+
 private:
 	AudioFrame frame;
 };

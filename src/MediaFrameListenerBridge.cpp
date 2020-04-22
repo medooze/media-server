@@ -67,7 +67,7 @@ void MediaFrameListenerBridge::onMediaFrame(const MediaFrame& frame)
 		DWORD codec = 0;
 		const BYTE *frameData = NULL;
 		DWORD frameSize = 0;
-		WORD  rate = 1;
+		QWORD rate = 1000;
 
 		//Depending on the type
 		switch(frame->GetType())
@@ -82,8 +82,8 @@ void MediaFrameListenerBridge::onMediaFrame(const MediaFrame& frame)
 				frameData = audio->GetData();
 				//Get size
 				frameSize = audio->GetLength();
-				//Set default rate
-				rate = 48;
+				//Set correct clock rate for audio codec
+				rate = AudioCodec::GetClockRate(audio->GetCodec());
 				break;
 			}
 			case MediaFrame::Video:
@@ -96,8 +96,8 @@ void MediaFrameListenerBridge::onMediaFrame(const MediaFrame& frame)
 				frameData = video->GetData();
 				//Get size
 				frameSize = video->GetLength();
-				//Set default rate
-				rate = 90;
+				//Set clock rate
+				rate = 90000;
 				break;
 			}
 			default:
@@ -122,8 +122,12 @@ void MediaFrameListenerBridge::onMediaFrame(const MediaFrame& frame)
 		{
 			//If we have a time offest from last sent packet
 			if (lastTime)
+			{
+				//Get offset
+				QWORD offset = std::max((QWORD)(getTimeDiff(lastTime)*frame->GetClockRate()/1E6),1ul);
 				//Calculate time difd and add to the last sent timestamp
-				baseTimestamp = lastTimestamp + getTimeDiff(lastTime)*rate/1000 + 1;
+				baseTimestamp = lastTimestamp + offset;
+			}
 			//Get first timestamp
 			firstTimestamp = frame->GetTimeStamp();
 		}
@@ -159,7 +163,8 @@ void MediaFrameListenerBridge::onMediaFrame(const MediaFrame& frame)
 			//Calculate timestamp
 			lastTimestamp = baseTimestamp + (frame->GetTimeStamp()-firstTimestamp);
 			//Set other values
-			packet->SetExtTimestamp(lastTimestamp*rate);
+			packet->SetClockRate(rate);
+			packet->SetExtTimestamp(lastTimestamp*rate/frame->GetClockRate());
 			//Check
 			if (i+1==info.size())
 				//last
@@ -172,6 +177,8 @@ void MediaFrameListenerBridge::onMediaFrame(const MediaFrame& frame)
 
 			//Increase stats
 			numPackets++;
+			//Set last sent time
+			lastTime = getTime();
 
 			//Fill payload descriptors
 			//TODO: move out of here

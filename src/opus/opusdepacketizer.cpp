@@ -6,6 +6,8 @@ MediaFrame* OpusDepacketizer::AddPacket(const RTPPacket::shared& packet)
 	ResetFrame();
 	//Set timestamp
 	frame.SetTimestamp(packet->GetExtTimestamp());
+	//Set clock rate
+	frame.SetClockRate(packet->GetClockRate());
 	//Set time
 	frame.SetTime(packet->GetTime());
 	//Set SSRC

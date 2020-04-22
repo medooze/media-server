@@ -11,6 +11,7 @@ class TextFrame : public MediaFrame
 public:
 	TextFrame() : MediaFrame(MediaFrame::Text,0)
 	{
+		SetClockRate(1000);
 	}
 	
 	TextFrame(DWORD ts,const BYTE *buffer,DWORD bufferLen) : MediaFrame(MediaFrame::Text,bufferLen)

@@ -55,6 +55,8 @@ MediaFrame* VP8Depacketizer::AddPacket(const RTPPacket::shared& packet)
 	{
 		//Set timestamp
 		frame.SetTimestamp(ts);
+		//Set clock rate
+		frame.SetClockRate(packet->GetClockRate());
 		//Set time
 		frame.SetTime(packet->GetTime());
 	}

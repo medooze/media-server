@@ -135,7 +135,9 @@ int RTPSmoother::SendFrame(MediaFrame* frame,DWORD duration)
 		//Add prefix
 		packet->PrefixPayload(rtp->GetPrefixData(),rtp->GetPrefixLen());
 		//Set other values
-		packet->SetExtTimestamp(frame->GetTimeStamp()*rate/frame->GetClockRate());
+		packet->SetExtTimestamp(frame->GetTimeStamp());
+		//Set clock rate
+		packet->SetClockRate(frame->GetClockRate());
 		//Check
 		if (i+1==info.size())
 			//last

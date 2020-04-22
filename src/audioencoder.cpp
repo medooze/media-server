@@ -165,7 +165,7 @@ int AudioEncoderWorker::Encode()
 {
 	SWORD 		recBuffer[2048];
 	AudioEncoder* 	codec;
-	DWORD		frameTime=0;
+	QWORD		frameTime=0;
 
 	Log(">Encode Audio\n");
 
@@ -212,11 +212,12 @@ int AudioEncoderWorker::Encode()
 			//Set frame length
 			frame.SetLength(len);
 
-			//Set frame time
-			frame.SetTimestamp(frameTime*1000/codec->GetClockRate());
-			frame.SetTime(frameTime);
+			//Set frame timestamp
+			frame.SetTimestamp(frameTime);
+			//Set time
+			frame.SetTime(frameTime*1000/codec->GetClockRate());
 			//Set frame duration
-			frame.SetDuration(codec->numFrameSamples*1000/codec->GetClockRate());
+			frame.SetDuration(codec->numFrameSamples);
 
 			//Clear rtp
 			frame.ClearRTPPacketizationInfo();

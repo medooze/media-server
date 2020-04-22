@@ -38,7 +38,7 @@ public:
 	std::set<RTPIncomingMediaStream::Listener*> listeners;
         std::set<MediaFrame::Listener*> mediaFrameListenerss;
 	volatile bool reset	= false;
-	DWORD firstTimestamp	= 0;
+	QWORD firstTimestamp	= 0;
 	QWORD baseTimestamp	= 0;
 	QWORD lastTimestamp	= 0;
 	QWORD lastTime		= 0;

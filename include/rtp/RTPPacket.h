@@ -55,7 +55,7 @@ public:
 	
 	//Setters
 	void SetTimestamp(DWORD timestamp)	{ header.timestamp = timestamp;		}
-	void SetExtTimestamp(QWORD extTimestamp){ header.timestamp = (WORD)extTimestamp; this->timestampCycles = extTimestamp >> 32;	}
+	void SetExtTimestamp(QWORD extTimestamp){ header.timestamp = (DWORD)extTimestamp; this->timestampCycles = extTimestamp >> 32;	}
 	void SetSeqNum(WORD seq)		{ header.sequenceNumber = seq;		}
 	void SetExtSeqNum(DWORD extSeq)		{ header.sequenceNumber = (WORD)extSeq; this->seqCycles = extSeq >> 16;			}
 	void SetMark(bool mark)			{ header.mark = mark;			}

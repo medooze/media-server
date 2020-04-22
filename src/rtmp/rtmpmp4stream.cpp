@@ -212,13 +212,16 @@ void RTMPMP4Stream::onTextFrame(TextFrame &text)
 
 void RTMPMP4Stream::onMediaFrame(MediaFrame &media)
 {
+	//Get timestamp in 1000ms clock rate
+	QWORD timestamp = media.GetTimeStamp()*1000/media.GetClockRate();
+	
 	//Depending on the media type
 	switch (media.GetType())
 	{
 		case MediaFrame::Audio:
 		{
 			//Create rtmp frame
-			RTMPAudioFrame *frame = new RTMPAudioFrame(0,512);
+			RTMPAudioFrame *frame = new RTMPAudioFrame(timestamp,512);
 			//Get audio frame
 			AudioFrame& audio = (AudioFrame&)media;
 			//Check codec
@@ -240,8 +243,6 @@ void RTMPMP4Stream::onMediaFrame(MediaFrame &media)
 					frame->SetSoundRate(RTMPAudioFrame::RATE11khz);
 					frame->SetSamples16Bits(1);
 					frame->SetStereo(0);
-					//Set timestamp
-					frame->SetTimestamp(audio.GetTimeStamp());
 					break;
 				}
 				default:
@@ -257,7 +258,7 @@ void RTMPMP4Stream::onMediaFrame(MediaFrame &media)
 			//Get video frame
 			VideoFrame& video = (VideoFrame&)media;
 			//Create rtmp frame
-			RTMPVideoFrame *frame = new RTMPVideoFrame(video.GetTimeStamp(),video.GetLength());
+			RTMPVideoFrame *frame = new RTMPVideoFrame(timestamp,video.GetLength());
 			//Check codec
 			switch(video.GetCodec())
 			{
@@ -297,7 +298,7 @@ void RTMPMP4Stream::onMediaFrame(MediaFrame &media)
 						if (desc)
 						{
 							//Create the fraame
-							RTMPVideoFrame fdesc(frame->GetTimestamp(),*desc);
+							RTMPVideoFrame fdesc(timestamp,*desc);
 							//Play it
 							SendMediaFrame(&fdesc);
 						}
