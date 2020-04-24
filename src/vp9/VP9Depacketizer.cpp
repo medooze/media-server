@@ -95,6 +95,32 @@ MediaFrame* VP9Depacketizer::AddPayload(const BYTE* payload, DWORD len)
 	//Skip desc
 	DWORD pos = frame.AppendMedia(payload+descLen, len-descLen);
 	
+	//If it is the first one
+	if (desc.startOfLayerFrame)
+	{
+		//Set values
+		layer.data = frame.GetData() + pos;
+		layer.size = len - descLen;
+		layer.info.spatialLayerId	= desc.spatialLayerId;
+		layer.info.temporalLayerId	= desc.temporalLayerId;
+		if (desc.scalabiltiyStructureDataPresent && desc.scalabilityStructure.spatialLayerFrameResolutions.size()>desc.spatialLayerId)
+		{
+			//Set layer info
+			layer.width  = desc.scalabilityStructure.spatialLayerFrameResolutions[desc.spatialLayerId].first;
+			layer.height = desc.scalabilityStructure.spatialLayerFrameResolutions[desc.spatialLayerId].second;
+		} else {
+			layer.width = 0;
+			layer.height = 0;
+		}
+	//If it is from the same layer frame
+	} else if (layer.info.spatialLayerId == desc.spatialLayerId && layer.info.temporalLayerId == desc.temporalLayerId) {
+		//Increase layer info
+		layer.size += len - descLen;
+		//If it is latest
+		if (desc.endOfLayerFrame)
+			//Add it
+			frame.AddLayerFrame(layer);
+	}
 	
 	BYTE inmediate[14];
 	

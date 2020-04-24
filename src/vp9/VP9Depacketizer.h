@@ -13,6 +13,7 @@ public:
 	virtual void ResetFrame() override;
 private:
 	VideoFrame frame;
+	LayerFrame layer;
 };
 
 #endif	/* VP9DEPACKETIZER_H */
