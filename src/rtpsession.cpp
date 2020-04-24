@@ -377,6 +377,11 @@ int RTPSession::End()
 
 int RTPSession::SendPacket(const RTCPCompoundPacket::shared &rtcp)
 {
+	//If not using RTCp
+	if (!useRTCP)
+		//Do nothing
+		return 0;
+	
 	//Data
 	Packet buffer;
 	BYTE* data = buffer.GetData();
@@ -627,7 +632,7 @@ void RTPSession::onRTPPacket(const BYTE* data, DWORD size)
 	auto now = getTime();
 	
 	//If nack is enable t waiting for a PLI/FIR response (to not oeverflow)
-	if (isNACKEnabled && getDifTime(&lastFPU)/1000>rtt/2 && lost>0)
+	if (useRTCP && isNACKEnabled && getDifTime(&lastFPU)/1000>rtt/2 && lost>0)
 	{
 		//Create rtcp sender retpor
 		auto rtcp = CreateSenderReport();
@@ -938,6 +943,9 @@ RTCPCompoundPacket::shared RTPSession::CreateSenderReport()
 
 int RTPSession::SendSenderReport()
 {
+	if (!useRTCP)
+		return 0;
+	
 	//Create rtcp sender retpor
 	auto rtcp = CreateSenderReport();
 	
@@ -970,6 +978,11 @@ int RTPSession::SendSenderReport()
 
 int RTPSession::SendFIR()
 {
+	//If not using RTCp
+	if (!useRTCP)
+		//Do nothing
+		return 0;
+	
 	Debug("-RTPSession::SendFIR()\n");
 
 	//Create rtcp sender retpor
@@ -996,6 +1009,11 @@ int RTPSession::SendFIR()
 
 int RTPSession::RequestFPU()
 {
+	//If not using RTCp
+	if (!useRTCP)
+		//Do nothing
+		return 0;
+	
 	Debug("-RTPSession::RequestFPU()\n");
 	//Execute on the event loop thread and wait
 	transport.GetTimeService().Sync([=](...){
@@ -1040,6 +1058,11 @@ void RTPSession::SetRTT(DWORD rtt)
 
 void RTPSession::onTargetBitrateRequested(DWORD bitrate)
 {
+	//If not using RTCp
+	if (!useRTCP)
+		//Do nothing
+		return;
+	
 	UltraDebug("-RTPSession::onTargetBitrateRequested() | [%d]\n",bitrate);
 
 	//Create rtcp sender retpor
@@ -1126,6 +1149,11 @@ int RTPSession::ReSendPacket(int seq)
 
 int RTPSession::SendTempMaxMediaStreamBitrateNotification(DWORD bitrate,DWORD overhead)
 {
+	//If not using RTCp
+	if (!useRTCP)
+		//Do nothing
+		return 0;
+	
 	//Create rtcp sender retpor
 	auto rtcp = CreateSenderReport();
 
