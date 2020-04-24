@@ -1348,7 +1348,7 @@ AMFStrictArray::~AMFStrictArray()
 	if (elements)
 	{
 		//For each property
-		for (DWORD i=0;i<num.GetSize();i++)
+		for (DWORD i=0;i<GetLength();i++)
 			if (elements[i])
 				//delete object
 				delete(elements[i]);
@@ -1431,7 +1431,7 @@ void AMFStrictArray::Dump()
 	if (elements)
 	{
 		//For each property
-		for (DWORD i=0;i<num.GetSize();i++)
+		for (DWORD i=0;i<GetLength();i++)
 			if (elements[i])
 				elements[i]->Dump();
 			else	
