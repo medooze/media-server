@@ -3,6 +3,16 @@
 #include "config.h"
 #include "media.h"
 #include "codecs.h"
+#include "rtp/LayerInfo.h"
+
+struct LayerFrame
+{
+	BYTE* data	= nullptr;
+	DWORD size	= 0;
+	DWORD width	= 0;
+	DWORD height	= 0;
+	LayerInfo info;
+};
 
 class VideoFrame : public MediaFrame
 {
@@ -68,6 +78,10 @@ public:
 	void SetHeight(DWORD height)		{ this->height = height;	}
 	void SetIntra(bool isIntra)		{ this->isIntra = isIntra;	}
 	
+	bool	HasLayerFrames() const				{ return !layers.empty();	}
+	const std::vector<LayerFrame>& GetLayerFrames() const	{ return layers;		}
+	void AddLayerFrame(const LayerFrame& layer)		{ layers.push_back(layer);	}
+	
 	void Reset() 
 	{
 		//Reset media frame
@@ -76,6 +90,8 @@ public:
 		SetIntra(false);
 		//No new config
 		ClearCodecConfig();
+		//Clear layers
+		layers.empty();
 	}
 	
 private:
@@ -83,6 +99,7 @@ private:
 	bool	isIntra;
 	DWORD	width;
 	DWORD	height;
+	std::vector<LayerFrame> layers;
 
 };
 
