@@ -494,15 +494,15 @@ int mp4track::Close()
 		{
 			case MediaFrame::Audio:
 				//Flush it
-				FlushAudioFrame((AudioFrame*)frame,8000);
+				FlushAudioFrame((AudioFrame*)frame,frame->GetClockRate());
 				break;
 			case MediaFrame::Video:
 				//Flush it
-				FlushVideoFrame((VideoFrame*)frame,90000);
+				FlushVideoFrame((VideoFrame*)frame,frame->GetClockRate());
 				break;
 			case MediaFrame::Text:
 				//Flush it
-				FlushTextFrame((TextFrame*)frame,1000);
+				FlushTextFrame((TextFrame*)frame,frame->GetClockRate());
 				break;
 			case MediaFrame::Unknown:
 				//Nothing
@@ -748,7 +748,7 @@ void MP4Recorder::processMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD t
 			if (!audioTrack)
 			{
 				// Calculate time diff since first
-				QWORD delta = time-first;
+				QWORD delta = time > first ? time-first : 0;
 				//Create object
 				audioTrack = new mp4track(mp4);
 				//Create track
@@ -758,6 +758,10 @@ void MP4Recorder::processMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD t
 				{
 					//Create empty text frame
 					AudioFrame empty(audioFrame.GetCodec());
+					//Set time
+					empty.SetTime(time);
+					//Set timestamp
+					empty.SetTimestamp(time*audioFrame.GetClockRate()/1000);
 					//Set clock rate
 					empty.SetClockRate(audioFrame.GetClockRate());
 					//Set duration
@@ -808,7 +812,7 @@ void MP4Recorder::processMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD t
 				if (!videoTrack)
 				{
 					// Calculate time diff since first
-					QWORD delta = time-first;
+					QWORD delta = time > first ? time-first : 0;
 					//Create object
 					videoTrack = new mp4track(mp4);
 					//Create track
@@ -862,6 +866,10 @@ void MP4Recorder::processMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD t
 					{
 						//Create empty video frame
 						VideoFrame empty(videoFrame.GetCodec(),0);
+						//Set time
+						empty.SetTime(time);
+						//Set timestamp
+						empty.SetTimestamp(time*videoFrame.GetClockRate()/1000);
 						//Set duration
 						empty.SetDuration(delta*videoFrame.GetClockRate()/1000);
 						//Size
@@ -869,6 +877,8 @@ void MP4Recorder::processMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD t
 						empty.SetHeight(videoFrame.GetHeight());
 						//Set clock rate
 						empty.SetClockRate(videoFrame.GetClockRate());
+						//first frame must be syncable
+						empty.SetIntra(true);
 						//Set config
 						if (videoFrame.HasCodecConfig()) empty.SetCodecConfig(videoFrame.GetCodecConfigData(),videoFrame.GetCodecConfigSize());
 						//Send first empty packet
