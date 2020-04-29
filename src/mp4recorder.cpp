@@ -6,6 +6,7 @@
 #include "mp4recorder.h"
 #include "h264/h264.h"
 #include "aac/aacconfig.h"
+#include "opus/opusconfig.h"
 
 
 
@@ -205,7 +206,7 @@ int mp4track::CreateTextTrack()
 
 int mp4track::FlushAudioFrame(AudioFrame* frame,DWORD duration)
 {
-	//Log("-FlushAudioFrame() [duration:%u]\n",duration);
+	//Log("-FlushAudioFrame() [duration:%u,length:%d]\n",duration,frame->GetLength());
 	// Save audio frame
 	MP4WriteSample(mp4, track, frame->GetData(), frame->GetLength(), duration, 0, 1);
 
@@ -250,13 +251,48 @@ int mp4track::WriteAudioFrame(AudioFrame &audioFrame)
 	//Get frame duration
 	DWORD duration = prev->GetDuration();
 	
+	//Get frame timestamp delta
+	DWORD delta = frame->GetTimeStamp()-prev->GetTimeStamp();
+	
 	//If not set
 	if (!duration)
-		//calculate it
-		duration = frame->GetTimeStamp()-prev->GetTimeStamp();
+		//Get timestamp delta
+		duration = delta;
 	
-	//Flush sample
-	FlushAudioFrame((AudioFrame *)prev,duration);
+	//If it is Opus and there are missing packets
+	if (prev->GetCodec()==AudioCodec::OPUS && duration<delta)
+	{
+		//Get opus toc
+		auto [mode, bandwidth, frameSize, stereo, codeNumber ] = OpusTOC::TOC(prev->GetData()[0]);
+		
+		//Flush sample
+		FlushAudioFrame((AudioFrame *)prev,duration);
+		
+		//Create missing audio frame
+		auto missing = std::make_shared<Buffer>(3);
+		
+		//Set toc
+		missing->GetData()[0] = OpusTOC::GetTOC(mode,bandwidth,frameSize,stereo,OpusTOC::Arbitrary);
+		
+		//Missing
+		missing->GetData()[1] = 0x81; //vbr 1 packet
+		missing->GetData()[2] = 0x00; //0 length -> missing or PLC
+		
+		//Set size
+		missing->SetSize(3);
+		
+		//Fill the gap
+		while(duration+frameSize<=delta)
+		{
+			//Flush missing
+			FlushAudioFrame(new AudioFrame(AudioCodec::OPUS, missing),frameSize);
+			//Increase timestamp
+			duration += frameSize;
+		}
+	} else {
+		//Flush sample
+		FlushAudioFrame((AudioFrame *)prev,duration);
+	}
 	
 	//Exit
 	return 1;
