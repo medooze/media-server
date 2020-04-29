@@ -147,7 +147,8 @@ public:
 	}
 	
 	Type	GetType() const		{ return type;		}
-	QWORD	GetTimeStamp() const	{ return ts;		}
+	QWORD	GetTimeStamp() const	{ return ts;		} //Deprecated
+	QWORD	GetTimestamp() const	{ return ts;		}
 	void	SetTimestamp(QWORD ts)	{ this->ts = ts;	}
 	QWORD	GetTime() const		{ return time;		}
 	void	SetTime(QWORD time)	{ this->time = time;	}
@@ -264,6 +265,7 @@ public:
 		//Clear time
 		SetTimestamp((DWORD)-1);
 		SetTime(0);
+		SetDuration(0);
 	}
 	
 	bool HasCodecConfig() const		{ return configData && configSize;	}
