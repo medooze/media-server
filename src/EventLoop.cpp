@@ -121,9 +121,13 @@ bool EventLoop::SetAffinity(int cpu)
 bool EventLoop::Start(std::function<void(void)> loop)
 {
 	//If already started
-	if (thread.get_id()!=std::thread::id())
-		//Alredy running
-		return false;
+	if (running)
+		//Stop first
+		Stop();
+	
+	//Log
+	Debug("-EventLoop::Start()\n");
+	
 #if __APPLE__
 	//Create pipe
 	if (::pipe(pipe)==-1)
@@ -158,9 +162,12 @@ bool EventLoop::Start(std::function<void(void)> loop)
 bool EventLoop::Start(int fd)
 {
 	//If already started
-	if (thread.get_id()!=std::thread::id())
-		//Alredy running
-		return false;
+	if (running)
+		//Alredy running, Run() doesn't exit so Stop() must be called explicitly
+		return Error("-EventLoop::Start() | Already running\n");
+	
+	//Log
+	Debug("-EventLoop::Start() [fd:%d]\n",fd);
 	
 #if __APPLE__
 	//Create pipe
@@ -198,10 +205,10 @@ bool EventLoop::Stop()
 	//Check if running
 	if (!running)
 		//Nothing to do
-		return false;
+		return Error("-EventLoop::Stop() | Already stopped");
 	
-	//Not running
-	running = false;
+	//Log
+	Debug(">EventLoop::Stop() [fd:%d]\n",fd);
 	
 	//If it was not external
 	if (thread.joinable())
@@ -219,6 +226,12 @@ bool EventLoop::Stop()
 	
 	//Empyt pipe
 	pipe[0] = pipe[1] = FD_INVALID;
+	
+	//Not running
+	running = false;
+	
+	//Log
+	Debug("<EventLoop::Stop() [fd:%d]\n",fd);
 	
 	//Done
 	return true;
