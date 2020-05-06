@@ -18,8 +18,8 @@ class mp4track
 {
 public:
 	mp4track(MP4FileHandle mp4);
-	int CreateAudioTrack(AudioCodec::Type codec, DWORD rate);
-	int CreateVideoTrack(VideoCodec::Type codec, DWORD rate, int width, int height);
+	int CreateAudioTrack(AudioCodec::Type codec, DWORD rate, bool disableHints = false);
+	int CreateVideoTrack(VideoCodec::Type codec, DWORD rate, int width, int height, bool disableHints = false);
 	int CreateTextTrack();
 	int WriteAudioFrame(AudioFrame &audioFrame);
 	int WriteVideoFrame(VideoFrame &videoFrame);
@@ -32,16 +32,16 @@ private:
 	int FlushVideoFrame(VideoFrame* frame,DWORD duration);
 	int FlushTextFrame(TextFrame* frame,DWORD duration);
 private:
-	MP4FileHandle mp4;
-	MP4TrackId track;
-	MP4TrackId hint;
-	bool first;
-	int length;
-	int sampleId;
-	MediaFrame *frame;
-	bool hasSPS;
-	bool hasPPS;
-	bool hasDimensions;
+	MP4FileHandle mp4	= MP4_INVALID_FILE_HANDLE;
+	MP4TrackId track	= 0;
+	MP4TrackId hint		= 0;
+	bool first		= true;
+	int length		= 0;
+	int sampleId		= 0;
+	MediaFrame *frame	= nullptr;
+	bool hasSPS		= false;
+	bool hasPPS		= false;
+	bool hasDimensions	= false;
 };
 
 
@@ -64,6 +64,7 @@ public:
 	virtual bool Create(const char *filename);
 	virtual bool Record();
 	virtual bool Record(bool waitVideo);
+		bool Record(bool waitVideo, bool disableHints);
 	virtual bool Stop();
 	virtual bool Close();
 	bool Close(bool async);
@@ -82,14 +83,15 @@ private:
 	typedef std::map<DWORD,mp4track*>	Tracks;
 private:
 	EventLoop	loop;
-	Listener*	listener = nullptr;
-	MP4FileHandle	mp4 = MP4_INVALID_FILE_HANDLE;
+	Listener*	listener	= nullptr;
+	MP4FileHandle	mp4		= MP4_INVALID_FILE_HANDLE;
 	Tracks		audioTracks;
 	Tracks		videoTracks;
 	Tracks		textTracks;
-	bool		recording = false;
-	int		waitVideo = false;
-	QWORD		first =  (QWORD)-1;
+	bool		recording	= false;
+	bool		waitVideo	= false;
+	bool		disableHints    = false;
+	QWORD		first		= (QWORD)-1;
 	
 	std::deque<std::pair<uint32_t,std::unique_ptr<MediaFrame>>> timeShiftBuffer;
 	std::optional<Buffer>	h264SPS;

@@ -10,24 +10,14 @@
 
 
 
-mp4track::mp4track(MP4FileHandle mp4)
+mp4track::mp4track(MP4FileHandle mp4) :
+	mp4(mp4)
 {
-	// Set struct info
-	this->mp4 = mp4;
-	track = 0;
-	hint = 0;
-	length = 0;
-	sampleId = 0;
-	first = 1;
-	frame = NULL;
-	hasSPS = false;
-	hasPPS = false;
-	hasDimensions = false;
 }
 
-int mp4track::CreateAudioTrack(AudioCodec::Type codec, DWORD rate)
+int mp4track::CreateAudioTrack(AudioCodec::Type codec, DWORD rate, bool disableHints)
 {
-	Log("mp4track::CreateAudioTrack [codec:%d]\n",codec);
+	Log("-mp4track::CreateAudioTrack() [codec:%d]\n",codec);
 	
 	BYTE type;
 
@@ -38,14 +28,20 @@ int mp4track::CreateAudioTrack(AudioCodec::Type codec, DWORD rate)
 		{
 			// Create audio track
 			track = MP4AddULawAudioTrack(mp4,rate);
-			// Create audio hint track
-			hint = MP4AddHintTrack(mp4, track);
-			// Set payload type for hint track
-			type = 0;
-			MP4SetHintTrackRtpPayload(mp4, hint, "PCMU", &type, 0, NULL, 1, 0);
 			// Set channel and sample properties
 			MP4SetTrackIntegerProperty(mp4, track, "mdia.minf.stbl.stsd.ulaw.channels", 1);
 			MP4SetTrackIntegerProperty(mp4, track, "mdia.minf.stbl.stsd.ulaw.sampleSize", 8);
+			
+			//If hints are not disabled
+			if (!disableHints)
+			{
+				// Create audio hint track
+				hint = MP4AddHintTrack(mp4, track);
+				// Set payload type for hint track
+				type = 0;
+				MP4SetHintTrackRtpPayload(mp4, hint, "PCMU", &type, 0, NULL, 1, 0);
+			}
+			
 			break;
 		}
 		case AudioCodec::PCMA:
@@ -55,11 +51,16 @@ int mp4track::CreateAudioTrack(AudioCodec::Type codec, DWORD rate)
 			// Set channel and sample properties
 			MP4SetTrackIntegerProperty(mp4, track, "mdia.minf.stbl.stsd.alaw.channels", 1);
 			MP4SetTrackIntegerProperty(mp4, track, "mdia.minf.stbl.stsd.alaw.sampleSize", 8);
-			// Create audio hint track
-			hint = MP4AddHintTrack(mp4, track);
-			// Set payload type for hint track
-			type = 8;
-			MP4SetHintTrackRtpPayload(mp4, hint, "PCMA", &type, 0, NULL, 1, 0);
+			
+			//If hints are not disabled
+			if (!disableHints)
+			{
+				// Create audio hint track
+				hint = MP4AddHintTrack(mp4, track);
+				// Set payload type for hint track
+				type = 8;
+				MP4SetHintTrackRtpPayload(mp4, hint, "PCMA", &type, 0, NULL, 1, 0);
+			}
 			break;
 		}
 		case AudioCodec::OPUS:
@@ -71,11 +72,15 @@ int mp4track::CreateAudioTrack(AudioCodec::Type codec, DWORD rate)
 			// Create audio track
 			track = MP4AddAudioTrack(mp4, rate, 1024, MP4_PRIVATE_AUDIO_TYPE);
 #endif       
-			// Create audio hint track
-			hint = MP4AddHintTrack(mp4, track);
-			// Set payload type for hint track
-			type = 102;
-			MP4SetHintTrackRtpPayload(mp4, hint, "OPUS", &type, 0, NULL, 1, 0);
+			//If hints are not disabled
+			if (!disableHints)
+			{
+				// Create audio hint track
+				hint = MP4AddHintTrack(mp4, track);
+				// Set payload type for hint track
+				type = 102;
+				MP4SetHintTrackRtpPayload(mp4, hint, "OPUS", &type, 0, NULL, 1, 0);
+			}
 			break;
 		}
 		case AudioCodec::AAC:
@@ -100,10 +105,10 @@ int mp4track::CreateAudioTrack(AudioCodec::Type codec, DWORD rate)
 	return track;
 }
 
-int mp4track::CreateVideoTrack(VideoCodec::Type codec, DWORD rate, int width, int height)
+int mp4track::CreateVideoTrack(VideoCodec::Type codec, DWORD rate, int width, int height, bool disableHints)
 {
 	
-	Log("mp4track::CreateVideoTrack [codec:%d,rate:%d,width:%d,height:%d]\n",codec,rate,width,height);
+	Log("-mp4track::CreateVideoTrack() [codec:%d,rate:%d,width:%d,height:%d]\n",codec,rate,width,height);
 	
 	BYTE type;
 
@@ -114,22 +119,30 @@ int mp4track::CreateVideoTrack(VideoCodec::Type codec, DWORD rate, int width, in
 		{
 			// Create video track
 			track = MP4AddH263VideoTrack(mp4, rate, 0, width, height, 0, 0, 0, 0);
-			// Create video hint track
-			hint = MP4AddHintTrack(mp4, track);
-			// Set payload type for hint track
-			type = 34;
-			MP4SetHintTrackRtpPayload(mp4, hint, "H263", &type, 0, NULL, 1, 0);
+			//If hints are not disabled
+			if (!disableHints)
+			{
+				// Create video hint track
+				hint = MP4AddHintTrack(mp4, track);
+				// Set payload type for hint track
+				type = 34;
+				MP4SetHintTrackRtpPayload(mp4, hint, "H263", &type, 0, NULL, 1, 0);
+			}
 			break;
 		}
 		case VideoCodec::H263_1998:
 		{
 			// Create video track
 			track = MP4AddH263VideoTrack(mp4, rate, 0, width, height, 0, 0, 0, 0);
-			// Create video hint track
-			hint = MP4AddHintTrack(mp4, track);
-			// Set payload type for hint track
-			type = 96;
-			MP4SetHintTrackRtpPayload(mp4, hint, "H263-1998", &type, 0, NULL, 1, 0);
+			//If hints are not disabled
+			if (!disableHints)
+			{
+				// Create video hint track
+				hint = MP4AddHintTrack(mp4, track);
+				// Set payload type for hint track
+				type = 96;
+				MP4SetHintTrackRtpPayload(mp4, hint, "H263-1998", &type, 0, NULL, 1, 0);
+			}
 			break;
 		}
 		case VideoCodec::H264:
@@ -141,11 +154,15 @@ int mp4track::CreateVideoTrack(VideoCodec::Type codec, DWORD rate, int width, in
 			MP4Duration h264FrameDuration		= 1.0/30;
 			// Create video track
 			track = MP4AddH264VideoTrack(mp4, rate, h264FrameDuration, width, height, AVCProfileIndication, AVCProfileCompat, AVCLevelIndication,  3);
-			// Create video hint track
-			hint = MP4AddHintTrack(mp4, track);
-			// Set payload type for hint track
-			type = 99;
-			MP4SetHintTrackRtpPayload(mp4, hint, "H264", &type, 0, NULL, 1, 0);
+			//If hints are not disabled
+			if (!disableHints)
+			{
+				// Create video hint track
+				hint = MP4AddHintTrack(mp4, track);
+				// Set payload type for hint track
+				type = 99;
+				MP4SetHintTrackRtpPayload(mp4, hint, "H264", &type, 0, NULL, 1, 0);
+			}
 			break;
 		}
 		case VideoCodec::VP8:
@@ -159,11 +176,15 @@ int mp4track::CreateVideoTrack(VideoCodec::Type codec, DWORD rate, int width, in
 			// Create video track
 			track = MP4AddVideoTrack(mp4, rate, hvp8FrameDuration, width, height, MP4_PRIVATE_VIDEO_TYPE);
 #endif
-			// Create video hint track
-			hint = MP4AddHintTrack(mp4, track);
-			// Set payload type for hint track
-			type = 101;
-			MP4SetHintTrackRtpPayload(mp4, hint, "VP8", &type, 0, NULL, 1, 0);
+			//If hints are not disabled
+			if (!disableHints)
+			{
+				// Create video hint track
+				hint = MP4AddHintTrack(mp4, track);
+				// Set payload type for hint track
+				type = 101;
+				MP4SetHintTrackRtpPayload(mp4, hint, "VP8", &type, 0, NULL, 1, 0);
+			}
 			break;
 		}
 		case VideoCodec::VP9:
@@ -177,11 +198,16 @@ int mp4track::CreateVideoTrack(VideoCodec::Type codec, DWORD rate, int width, in
 			// Create video track
 			track = MP4AddVideoTrack(mp4, rate, vp9FrameDuration, width, height, MP4_PRIVATE_VIDEO_TYPE);
 #endif
-			// Create video hint track
-			hint = MP4AddHintTrack(mp4, track);
-			// Set payload type for hint track
-			type = 102;
-			MP4SetHintTrackRtpPayload(mp4, hint, "VP9", &type, 0, NULL, 1, 0);
+			//If hints are not disabled
+			if (!disableHints)
+			{
+				// Create video hint track
+				hint = MP4AddHintTrack(mp4, track);
+				// Set payload type for hint track
+				type = 102;
+				MP4SetHintTrackRtpPayload(mp4, hint, "VP9", &type, 0, NULL, 1, 0);
+				//If hints are not disabled
+			}
 			break;
 		}		
 		default:
@@ -206,7 +232,7 @@ int mp4track::CreateTextTrack()
 
 int mp4track::FlushAudioFrame(AudioFrame* frame,DWORD duration)
 {
-	//Log("-FlushAudioFrame() [duration:%u,length:%d]\n",duration,frame->GetLength());
+	//Log("-mp4track::FlushAudioFrame() [duration:%u,length:%d]\n",duration,frame->GetLength());
 	// Save audio frame
 	MP4WriteSample(mp4, track, frame->GetData(), frame->GetLength(), duration, 0, 1);
 
@@ -300,12 +326,12 @@ int mp4track::WriteAudioFrame(AudioFrame &audioFrame)
 
 int mp4track::FlushVideoFrame(VideoFrame* frame,DWORD duration)
 {
-	//Log("-FlushVideoFrame() [duration:%u,width:%d,height:%d%s]\n",duration, frame->GetWidth(), frame->GetWidth(), frame->IsIntra() ? ",intra" : "");
+	//Log("-mp4track::FlushVideoFrame() [duration:%u,width:%d,height:%d%s]\n",duration, frame->GetWidth(), frame->GetWidth(), frame->IsIntra() ? ",intra" : "");
 	// Save video frame
 	MP4WriteSample(mp4, track, frame->GetData(), frame->GetLength(), duration, 0, frame->IsIntra());
 
 	//Check if we have rtp data
-	if (frame->HasRtpPacketizationInfo())
+	if (hint && frame->HasRtpPacketizationInfo())
 	{
 		//Get list
 		const MediaFrame::RtpPacketizationInfo& rtpInfo = frame->GetRtpPacketizationInfo();
@@ -337,7 +363,7 @@ int mp4track::FlushVideoFrame(VideoFrame* frame,DWORD duration)
 
 			//It is h264 and we still do not have SPS or PPS?
 			// only check full full naltypes
-			if (frame->GetCodec()==VideoCodec::H264 && (!hasSPS || !hasPPS) && !rtp->GetPrefixLen())
+			if (frame->GetCodec()==VideoCodec::H264 && (!hasSPS || !hasPPS) && !rtp->GetPrefixLen() && rtp->GetSize()>1)
 			{
 				//Get rtp data pointer
 				const BYTE *data = frame->GetData()+rtp->GetPos();
@@ -369,7 +395,6 @@ int mp4track::FlushVideoFrame(VideoFrame* frame,DWORD duration)
 
 void mp4track::AddH264SequenceParameterSet(const BYTE* data, DWORD size)
 {
-	::Dump(data,size);
 	//If it a SPS NAL
 	if (hasSPS)
 		//Do noting
@@ -402,7 +427,6 @@ void mp4track::AddH264SequenceParameterSet(const BYTE* data, DWORD size)
 
 void mp4track::AddH264PictureParameterSet(const BYTE* data, DWORD size)
 {
-	::Dump(data,size);
 	//If it a PPS NAL
 	if (hasPPS)
 		//Do noting
@@ -468,8 +492,7 @@ int mp4track::FlushTextFrame(TextFrame *frame, DWORD duration)
 	//Copy text
 	memcpy(data+2,frame->GetData(),frame->GetLength());
 	//Log
-	Log("-Recording text [timestamp:%d,duration:%d,size:%u]\n]",frame->GetTimeStamp(),frameduration,size+2);
-	Dump(data,size+2);
+	Debug("-mp4track::FlushTextFrame() [timestamp:%d,duration:%d,size:%u]\n]",frame->GetTimeStamp(),frameduration,size+2);
 	//Write sample
 	MP4WriteSample( mp4, track, data, size+2, frameduration, 0, false );
 
@@ -477,8 +500,7 @@ int mp4track::FlushTextFrame(TextFrame *frame, DWORD duration)
 	if (duration-frameduration>0)
 	{
 		//Log
-		Log("-Recording empty text [timestamp:%d,duration:%d]\n]",frame->GetTimeStamp()+frameduration,duration-frameduration);
-		Dump(data,size+2);
+		Debug("-mp4track::FlushTextFrame() empty text [timestamp:%d,duration:%d]\n]",frame->GetTimeStamp()+frameduration,duration-frameduration);
 		//Put empty text
 		data[0] = 0;
 		data[1] = 0;
@@ -603,13 +625,18 @@ bool MP4Recorder::Create(const char* filename)
 
 bool MP4Recorder::Record()
 {
-	return Record(true);
+	return Record(true, false);
 }
 
 bool MP4Recorder::Record(bool waitVideo)
 {
+	return Record(waitVideo, false);
+}
+
+bool MP4Recorder::Record(bool waitVideo, bool disableHints)
+{
 	
-	Log("-MP4Recorder::Record() [waitVideo:%d]\n",waitVideo);
+	Log("-MP4Recorder::Record() [waitVideo:%d,disableHints:%d]\n",waitVideo,disableHints);
 	
         //Check mp4 file is opened
         if (mp4 == MP4_INVALID_FILE_HANDLE)
@@ -618,6 +645,8 @@ bool MP4Recorder::Record(bool waitVideo)
         
 	//Do We have to wait for first I-Frame?
 	this->waitVideo = waitVideo;
+	//Disable hints tracks
+	this->disableHints = disableHints;
 	
 	//Run in thread
 	loop.Async([=](...){
@@ -788,7 +817,7 @@ void MP4Recorder::processMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD t
 				//Create object
 				audioTrack = new mp4track(mp4);
 				//Create track
-				audioTrack->CreateAudioTrack(audioFrame.GetCodec(),audioFrame.GetClockRate());
+				audioTrack->CreateAudioTrack(audioFrame.GetCodec(),audioFrame.GetClockRate(),disableHints);
 				//If it is not first
 				if (delta)
 				{
@@ -852,7 +881,7 @@ void MP4Recorder::processMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD t
 					//Create object
 					videoTrack = new mp4track(mp4);
 					//Create track
-					videoTrack->CreateVideoTrack(videoFrame.GetCodec(),videoFrame.GetClockRate(),videoFrame.GetWidth(),videoFrame.GetHeight());
+					videoTrack->CreateVideoTrack(videoFrame.GetCodec(),videoFrame.GetClockRate(),videoFrame.GetWidth(),videoFrame.GetHeight(),disableHints);
 					//Add it to map
 					videoTracks[ssrc] = videoTrack;
 					
