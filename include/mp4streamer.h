@@ -93,7 +93,7 @@ struct MP4RtpTrack
 	QWORD SeekNearestSyncFrame(QWORD time);
 	QWORD SearchNearestSyncFrame(QWORD time);
 	QWORD Seek(QWORD time);
-	int SendH263SEI(Listener *listener);
+	int SendH264Parameters(Listener *listener);
 	QWORD GetNextFrameTime();
 };
 

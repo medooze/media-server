@@ -406,119 +406,133 @@ int MP4Streamer::Close()
 	return 1;
 }
 
-int MP4RtpTrack::SendH263SEI(Listener *listener)
+int MP4RtpTrack::SendH264Parameters(Listener *listener)
 {
 	uint8_t **sequenceHeader;
 	uint8_t **pictureHeader;
 	uint32_t *pictureHeaderSize;
 	uint32_t *sequenceHeaderSize;
-	uint32_t i;
+	
 	uint8_t* data;
-	uint32_t dataLen;
+	uint32_t len;
 
 	//Not mark
 	rtp.SetMark(false);
 
 	// Get SEI information
 	MP4GetTrackH264SeqPictHeaders(mp4, track, &sequenceHeader, &sequenceHeaderSize, &pictureHeader, &pictureHeaderSize);
-
+	
 	// Get data pointer
 	data = rtp.AdquireMediaData();
 	// Reset length
-	dataLen = 0;
+	len = 0;
 
-	// Send sequence headers
-	i=0;
-
+	//Append stap-a header
+	data[len++] = 24;
+	
 	// Check we have sequence header
 	if (sequenceHeader)
-		// Loop array
+	{
+		uint32_t i = 0;
+		// Send sequence headers
 		while(sequenceHeader[i] && sequenceHeaderSize[i])
 		{
 			// Check if it can be handled in a single packeti
-			if (sequenceHeaderSize[i]<1400)
+			if (sequenceHeaderSize[i]+3<MTU)
 			{
 				// If there is not enought length
-				if (dataLen+sequenceHeaderSize[i]>1400)
+				if (len+sequenceHeaderSize[i]+3>MTU)
 				{
 					// Set data length
-					rtp.SetMediaLength(dataLen);
+					rtp.SetMediaLength(len);
+					//Set seqnum
+					rtp.SetSeqNum(seqNum++);
+					rtp.Dump();
 					//Check listener
 					if (listener)
 						// Write frame
 						listener->onRTPPacket(rtp);
 					// Reset data
-					dataLen = 0;
+					len = 0;
+					//Append stap-a header
+					data[len++] = 24;
 				}
+				//Set nal size
+				set2(data,len,sequenceHeaderSize[i]+1);
+				//Inc len
+				len += 2;
+				//Append SPS nal header
+				data[len++] = 0x07;
 				// Copy data
-				memcpy(data+dataLen,sequenceHeader[i],sequenceHeaderSize[i]);	
+				memcpy(data+len,sequenceHeader[i],sequenceHeaderSize[i]);	
 				// Increase pointer
-				dataLen+=sequenceHeaderSize[i];
+				len+=sequenceHeaderSize[i];
 			}
 			// Free memory
 			free(sequenceHeader[i]);
 			// Next header
 			i++;
 		}
-
-	// If there is still data
-	if (dataLen>0)
-	{
-		// Set data length
-		rtp.SetMediaLength(dataLen);
-		//Check listener
-		if (listener)
-			// Write frame
-			listener->onRTPPacket(rtp);
-		// Reset data
-		dataLen = 0;
 	}
-
-	// Send picture headers
-	i=0;
 
 	// Check we have picture header
 	if (pictureHeader)
-		// Loop array
+	{
+		uint32_t i = 0;
+		// Send picture headers
 		while(pictureHeader[i] && pictureHeaderSize[i])
 		{
 			// Check if it can be handled in a single packeti
-			if (pictureHeaderSize[i]<1400)
+			if (pictureHeaderSize[i]+3<MTU)
 			{
 				// If there is not enought length
-				if (dataLen+pictureHeaderSize[i]>1400)
+				if (len+pictureHeaderSize[i]+3>MTU)
 				{
 					// Set data length
-					rtp.SetMediaLength(dataLen);
+					rtp.SetMediaLength(len);
+					//Set seqnum
+					rtp.SetSeqNum(seqNum++);
+					rtp.Dump();
 					//Check listener
 					if (listener)
 						// Write frame
 						listener->onRTPPacket(rtp);
 					// Reset data
-					dataLen = 0;
+					len = 0;
+					//Append stap-a header
+					data[len++] = 24;
 				}
+				//Set nal size
+				set2(data,len,pictureHeaderSize[i]+1);
+				//Inc len
+				len += 2;
+				//Append PPS nal header
+				data[len++] = 0x08;
 				// Copy data
-				memcpy(data+dataLen,pictureHeader[i],pictureHeaderSize[i]);	
+				memcpy(data+len,pictureHeader[i],pictureHeaderSize[i]);	
 				// Increase pointer
-				dataLen+=pictureHeaderSize[i];
+				len+=pictureHeaderSize[i];
 			}
 			// Free memory
 			free(pictureHeader[i]);
 			// Next header
 			i++;
 		}
+	}
 
 	// If there is still data
-	if (dataLen>0)
+	if (len>1)
 	{
 		// Set data length
-		rtp.SetMediaLength(dataLen);
-		//Check listener
+		rtp.SetMediaLength(len);
+		//Set seqnum
+		rtp.SetSeqNum(seqNum++);
+		//Check listenerG44
 		if (listener)
 			// Write frame
 			listener->onRTPPacket(rtp);
 		// Reset data
-		dataLen = 0;
+		len = 0;
 	}
 
 	// Free data
@@ -577,11 +591,6 @@ QWORD MP4RtpTrack::Read(Listener *listener)
 		//Convert to miliseconds
 		frameTime = MP4ConvertFromTrackTimestamp(mp4, hint, frameTime, 1000);
 
-		// Check if it is H264 and it is a Sync frame
-		if (codec==VideoCodec::H264 && MP4GetSampleSync(mp4,track,sampleId))
-			// Send SEI info
-			SendH263SEI(listener);
-
 		//Get max data lenght
 		BYTE *data = NULL;
 		DWORD dataLen = 0;
@@ -611,7 +620,7 @@ QWORD MP4RtpTrack::Read(Listener *listener)
 			return MP4_INVALID_TIMESTAMP;
 		}
 		
-		//UltraDebug("Got frame [time:%d,start:%d,duration:%d,lenght:%d,offset:%d,sinc:%d\n",frameTime,startTime,duration,dataLen,renderingOffset,isSyncSample);
+		UltraDebug("Got frame [time:%d,start:%d,duration:%d,lenght:%d,offset:%d,sinc:%d\n",frameTime,startTime,duration,dataLen,renderingOffset,isSyncSample);
 		
 		//Check type
 		if (media == MediaFrame::Video)
@@ -643,6 +652,14 @@ QWORD MP4RtpTrack::Read(Listener *listener)
 		
 		//Set rtp timestamp
 		rtp.SetExtTimestamp(startTime);
+		
+		//Set key frame marking
+		rtp.SetKeyFrame(MP4GetSampleSync(mp4,track,sampleId));
+		
+		// Check if it is H264 and it is a Sync frame
+		if (codec==VideoCodec::H264 && rtp.IsKeyFrame())
+			// Send SPS/PPS info
+			SendH264Parameters(listener);
 		
 		//Check listener
 		if (listener)
