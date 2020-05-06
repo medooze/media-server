@@ -80,7 +80,6 @@ int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet, DWORD siz
 	//If doing remb
 	if (remb)
 	{
-		
 		//Add estimation
 		remoteRateEstimator.Update(media.ssrc,packet,size);
 		//Update lost

@@ -146,7 +146,7 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 			while (payloadLen > 2)
 			{
 				/* Get NALU size */
-				nalSize = (payload[0] << 8) | payload[1];
+				nalSize = get2(payload,0);
 
 				/* strip NALU size */
 				payload += 2;
