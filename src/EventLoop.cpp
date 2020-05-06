@@ -210,6 +210,9 @@ bool EventLoop::Stop()
 	//Log
 	Debug(">EventLoop::Stop() [fd:%d]\n",fd);
 	
+	//Not running
+	running = false;
+	
 	//If it was not external
 	if (thread.joinable())
 	{
@@ -226,9 +229,6 @@ bool EventLoop::Stop()
 	
 	//Empyt pipe
 	pipe[0] = pipe[1] = FD_INVALID;
-	
-	//Not running
-	running = false;
 	
 	//Log
 	Debug("<EventLoop::Stop() [fd:%d]\n",fd);
