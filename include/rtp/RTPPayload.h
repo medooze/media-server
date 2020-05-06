@@ -21,7 +21,6 @@ public:
 	DWORD GetMediaLength()		const	{ return payloadLen;		}
 	DWORD GetMaxMediaLength()	const	{ return SIZE;			}
 	
-	BYTE* GetPayloadData()			{ return payload;		}
 	void SetMediaLength(DWORD len)		{ this->payloadLen = len;	}
 private:
 	static const DWORD SIZE = 1700;
