@@ -133,7 +133,7 @@ RTPPacket::shared RTPPacket::Parse(const BYTE* data, DWORD size, const RTPMap& r
 	if (!ini)
 	{
 		//Debug
-		Debug("-DTLSICETransport::onData() | Could not parse RTP header\n");
+		Debug("-RTPPacket::Parse() | Could not parse RTP header\n");
 		//Dump it
 		::Dump(data,size);
 		//Exit
@@ -149,7 +149,7 @@ RTPPacket::shared RTPPacket::Parse(const BYTE* data, DWORD size, const RTPMap& r
 		if (!l)
 		{
 			///Debug
-			Debug("-DTLSICETransport::onData() | Could not parse RTP header extension\n");
+			Debug("-RTPPacket::Parse() | Could not parse RTP header extension\n");
 			//Dump it
 			::Dump(data,size);
 			header.Dump();
@@ -169,9 +169,9 @@ RTPPacket::shared RTPPacket::Parse(const BYTE* data, DWORD size, const RTPMap& r
 		if (size-ini<padding)
 		{
 			///Debug
-			Debug("-DTLSICETransport::onData() | RTP padding is bigger than size [padding:%u,size%u]\n",padding,size);
+			Debug("-RTPPacket::Parse() | RTP padding is bigger than size [padding:%u,size%u]\n",padding,size);
 			//Exit
-			return 0;
+			return nullptr;
 		}
 		//Remove from size
 		size -= padding;
@@ -277,7 +277,7 @@ BYTE* RTPPacket::AdquireMediaData()
 		ownedPayload = true;
 	}
 	//You can write on payload now
-	return payload->GetPayloadData();
+	return payload->GetMediaData();
 }
 
 bool RTPPacket::RecoverOSN()
