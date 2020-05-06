@@ -32,6 +32,38 @@ public:
 		CHECK(r); reserved_zero_5bits  = r.Get(5);
 		CHECK(r); level_idc = r.Get(8);
 		CHECK(r); seq_parameter_set_id = ExpGolombDecoder::Decode(r);
+		
+		//Check profile
+		if(profile_idc==100 || profile_idc==110 || profile_idc==122 || profile_idc==244 || profile_idc==44 || 
+			profile_idc==83 || profile_idc==86 || profile_idc==118 || profile_idc==128 || profile_idc==138 || profile_idc==139 || 
+			profile_idc==134 || profile_idc==135)
+		{
+			CHECK(r); auto chroma_format_idc = ExpGolombDecoder::Decode(r);
+			if( chroma_format_idc == 3 )
+			{
+				CHECK(r); auto separate_colour_plane_flag = r.Get(1);
+			}
+			CHECK(r); auto bit_depth_luma_minus8 = ExpGolombDecoder::Decode(r);
+			CHECK(r); auto bit_depth_chroma_minus8 = ExpGolombDecoder::Decode(r);
+			CHECK(r); auto qpprime_y_zero_transform_bypass_flag = r.Get(1);
+			CHECK(r); auto seq_scaling_matrix_present_flag = r.Get(1);
+			if( seq_scaling_matrix_present_flag )
+			{	
+				for(uint32_t i = 0; i < (( chroma_format_idc != 3 ) ? 8 : 12 ); i++ )
+				{
+					CHECK(r); auto seq_scaling_list_present_flag = r.Get(1);
+					if( seq_scaling_list_present_flag)
+					{
+						//Not supported
+						return false;
+//						if( i < 6 )
+//							scaling_list( ScalingList4x4[ i ], 16, UseDefaultScalingMatrix4x4Flag[ i ] )
+//						else
+//							scaling_list( ScalingList8x8[ i − 6 ], 64, UseDefaultScalingMatrix8x8Flag[ i − 6 ] )
+					}
+				}
+			}
+		}
 		CHECK(r); log2_max_frame_num_minus4 = ExpGolombDecoder::Decode(r);
 		pic_order_cnt_type = ExpGolombDecoder::Decode(r);
 		if( pic_order_cnt_type == 0 )
