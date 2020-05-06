@@ -117,7 +117,7 @@ private:
 	pthread_t 	mixVideoThread;
 	pthread_cond_t  mixVideoCond;
 	pthread_mutex_t mixVideoMutex;
-	int		mixingVideo;
+	int		mixingVideo		= 0;
 	QWORD		ini			= 0;
 	Use		lstVideosUse;
 	VADProxy*	proxy			= nullptr;
