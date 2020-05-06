@@ -70,7 +70,8 @@ EventLoop::EventLoop(Listener *listener) :
 
 EventLoop::~EventLoop()
 {
-	Stop();
+	if (running)
+		Stop();
 }
 
 bool EventLoop::SetAffinity(int cpu)
