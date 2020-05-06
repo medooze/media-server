@@ -14,7 +14,7 @@ RTPPayload::shared RTPPayload::Clone()
 	//Copy buffer data
 	memcpy(cloned->buffer.data(),buffer.data(),buffer.size());
 	//Reset payload pointers
-	cloned->payload = cloned->payload - payloadLen;
+	cloned->payload = cloned->buffer.data() + (payload-buffer.data());
 	cloned->payloadLen = payloadLen;
 	//Return it
 	return cloned;
