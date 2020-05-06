@@ -309,7 +309,7 @@ struct VP8PayloadHeader
 		firstPartitionSize	= data[0] >> 5;
 		showFrame		= data[0] >> 4 & 0x01;
 		version			= data[0] >> 1 & 0x07;
-		isKeyFrame		= (data[0] & 0x0F) == 0;
+		isKeyFrame		= (data[0] & 0x01) == 0;
 
 		//check if more
 		if (isKeyFrame)
