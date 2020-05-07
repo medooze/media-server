@@ -417,7 +417,23 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 			return  Warning("-DTLSICETransport::onData() | No FLEXFEC codec on fec sssrc:%u type:%d codec:%d\n",MediaFrame::TypeToString(packet->GetMediaType()),packet->GetPayloadType(),packet->GetSSRC());
 		//DO NOTHING with it yet
 		return 1;
-	}	
+	}
+	//Check if we have receiver already an SR for media stream
+	if ( group->media.lastReceivedSenderReport)
+	{
+		//Get ntp and rtp timestamps
+		QWORD timestamp =  group->media.lastReceivedSenderRTPTimestampExtender.GetExtSeqNum();
+		
+		//IF packet is newer than SR (should be)
+		if (timestamp<packet->GetExtTimestamp())
+		{
+			//Calculate sender time 
+			QWORD senderTime =  group->media.lastReceivedSenderTime + (packet->GetExtTimestamp()-timestamp)*1000/packet->GetClockRate();
+			//Set calculated sender time
+			packet->SetSenderTime(senderTime);
+		}
+	}
+	
 
 	//Add packet and see if we have lost any in between
 	int lost = group->AddPacket(packet,size);
@@ -2127,6 +2143,8 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 				
 				//Store info
 				source->lastReceivedSenderNTPTimestamp = sr->GetNTPTimestamp();
+				source->lastReceivedSenderTime = sr->GetNTPTime();
+				source->lastReceivedSenderRTPTimestampExtender.Extend(sr->GetRTPTimestamp());
 				source->lastReceivedSenderReport = getTime();
 				
 				//Process all the Sender Reports

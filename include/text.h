@@ -75,6 +75,15 @@ public:
 		TextFrame *frame = new TextFrame(GetTimeStamp(),parser.GetWString());
 		//Set clock rate
 		frame->SetClockRate(GetClockRate());
+		//Set time
+		frame->SetTime(GetTime());
+		frame->SetSenderTime(GetSenderTime());
+		//Set duration
+		frame->SetDuration(GetDuration());
+		//If we have disabled the shared buffer for this frame
+		if (disableSharedBuffer)
+			//Copy data
+			frame->AdquireBuffer();
 		//Return it
 		return (MediaFrame*)frame;
 	}

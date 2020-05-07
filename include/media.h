@@ -155,6 +155,9 @@ public:
 	
 	DWORD	GetSSRC() const		{ return ssrc;		}
 	void	SetSSRC(DWORD ssrc)	{ this->ssrc = ssrc;	}
+	
+	QWORD GetSenderTime() const		{ return senderTime;			}
+	void  SetSenderTime(QWORD senderTime )	{ this->senderTime = senderTime;	}
 
 	bool	HasRtpPacketizationInfo() const				{ return !rtpInfo.empty();	}
 	const RtpPacketizationInfo& GetRtpPacketizationInfo() const	{ return rtpInfo;		}
@@ -293,6 +296,7 @@ protected:
 	Type type			= MediaFrame::Unknown;
 	QWORD ts			= (QWORD)-1;
 	QWORD time			= 0;
+	QWORD senderTime		= 0;
 	DWORD ssrc			= 0;
 	
 	std::shared_ptr<Buffer> buffer;

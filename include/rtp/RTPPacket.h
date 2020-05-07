@@ -135,6 +135,9 @@ public:
 	QWORD GetTime()				const	{ return time;				}
 	void  SetTime(QWORD time )			{ this->time = time;			}
 	
+	QWORD GetSenderTime()			const	{ return senderTime;			}
+	void  SetSenderTime(QWORD senderTime )		{ this->senderTime = senderTime;	}
+	
 	bool  IsKeyFrame()			const	{ return isKeyFrame;			}
 	void  SetKeyFrame(bool isKeyFrame)		{ this->isKeyFrame = isKeyFrame;	}
 	
@@ -173,7 +176,7 @@ private:
 	bool ownedPayload		= false;
 	QWORD time			= 0;
 	bool isKeyFrame			= false;
-	
+	QWORD senderTime		= 0;
 
 };
 #endif /* RTPPACKET_H */

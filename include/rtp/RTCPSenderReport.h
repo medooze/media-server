@@ -20,6 +20,7 @@
 #include "rtp/RTCPCommonHeader.h"
 #include <vector>
 #include <memory>
+#include <math.h>
 
 class RTCPSenderReport : public RTCPPacket
 {
@@ -46,6 +47,7 @@ public:
 	DWORD GetNTPFrac()	const		{ return ntpFrac;			}
 	DWORD GetNTPSec()	const		{ return ntpSec;			}
 	QWORD GetNTPTimestamp()	const		{ return ((QWORD)ntpSec)<<32 | ntpFrac; }
+	QWORD GetNTPTime()	const		{ return ntpSec*1000 + round(1000.00*ntpFrac/0xFFFFFFFF);	}
 	DWORD GetSSRC()		const		{ return ssrc;				}
 
 	DWORD GetCount()	const				{ return reports.size();		}

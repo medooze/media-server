@@ -71,6 +71,8 @@ public:
 		frame.SetClockRate(packet->GetClockRate());
 		//Set time
 		frame.SetTime(packet->GetTime());
+		//Set sender time
+		frame.SetSenderTime(packet->GetSenderTime());
 		//Set SSRC
 		frame.SetSSRC(packet->GetSSRC());
 		//Add payload

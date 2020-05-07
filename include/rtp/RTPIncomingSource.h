@@ -18,6 +18,7 @@ struct RTPIncomingSource : public RTPSource
 	DWORD	minExtSeqNumSinceLastSR ;
 	DWORD   lostPacketsSinceLastSR;
 	QWORD   lastReceivedSenderNTPTimestamp;
+	QWORD   lastReceivedSenderTime;
 	QWORD   lastReceivedSenderReport;
 	QWORD   lastReport;
 	QWORD	lastPLI;
@@ -27,6 +28,7 @@ struct RTPIncomingSource : public RTPSource
 	DWORD	lastTimestamp;
 	QWORD	lastTime;
 	WrapExtender timestampExtender;
+	WrapExtender lastReceivedSenderRTPTimestampExtender;
 	std::map<WORD,LayerSource> layers;
 	
 	RTPIncomingSource();

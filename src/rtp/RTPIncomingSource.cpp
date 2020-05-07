@@ -58,6 +58,7 @@ RTPIncomingSource::RTPIncomingSource() : RTPSource()
 	totalBytesSinceLastSR	 = 0;
 	lostPacketsSinceLastSR   = 0;
 	lastReceivedSenderNTPTimestamp = 0;
+	lastReceivedSenderTime	 = 0;
 	lastReceivedSenderReport = 0;
 	lastReport		 = 0;
 	lastPLI			 = 0;
@@ -79,12 +80,15 @@ void RTPIncomingSource::Reset()
 	totalBytesSinceLastSR	 = 0;
 	lostPacketsSinceLastSR   = 0;
 	lastReceivedSenderNTPTimestamp = 0;
+	lastReceivedSenderTime	 = 0;
 	lastReceivedSenderReport = 0;
 	lastReport		 = 0;
 	lastPLI			 = 0;
 	totalPLIs		 = 0;
 	lastNACKed		 = 0;
 	minExtSeqNumSinceLastSR  = RTPPacket::MaxExtSeqNum;
+	timestampExtender.Reset();
+	lastReceivedSenderRTPTimestampExtender.Reset();
 }
 
 DWORD RTPIncomingSource::ExtendTimestamp(DWORD timestamp)

@@ -612,6 +612,22 @@ void RTPSession::onRTPPacket(const BYTE* data, DWORD size)
 
 	//if (media==MediaFrame::Video && !isRTX && seq % 40 ==0)
 	//	return (void)Error("RTX: Drop %d %s packet #%d ts:%u\n",type,VideoCodec::GetNameFor((VideoCodec::Type)codec),packet->GetSeqNum(),packet->GetTimestamp());
+	
+	//Check if we have receiver already an SR
+	if (recv.media.lastReceivedSenderReport)
+	{
+		//Get ntp and rtp timestamps
+		QWORD timestamp = source->lastReceivedSenderRTPTimestampExtender.GetExtSeqNum();
+		
+		//IF packet is newer than SR (should be)
+		if (timestamp<packet->GetExtTimestamp())
+		{
+			//Calculate sender time 
+			QWORD senderTime = source->lastReceivedSenderTime + (packet->GetExtTimestamp()-timestamp)*1000/packet->GetClockRate();
+			//Set calculated sender time
+			packet->SetSenderTime(senderTime);
+		}
+	}
 		
 	//Update lost packets
 	int lost = recv.AddPacket(packet,size);
@@ -717,6 +733,8 @@ void RTPSession::onRTCPPacket(const BYTE* buffer, DWORD size)
 				
 				//Store info
 				recv.media.lastReceivedSenderNTPTimestamp = sr->GetNTPTimestamp();
+				recv.media.lastReceivedSenderTime = sr->GetNTPTime();
+				recv.media.lastReceivedSenderRTPTimestampExtender.Extend(sr->GetRTPTimestamp());
 				recv.media.lastReceivedSenderReport = getTime();
 				
 				//Check recievd report

@@ -52,6 +52,12 @@ public:
 	uint32_t GetSeqNum() const	{ return extSeqNum;	}
 	uint64_t GetCycles() const	{ return cycles;	}
 	
+	void Reset()
+	{
+		extSeqNum	= 0;
+		cycles		= 0;
+	}
+	
 private:
 	uint64_t extSeqNum	= 0;
 	uint32_t cycles		= 0;

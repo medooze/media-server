@@ -864,6 +864,9 @@ public:
 		assert(source.ExtendTimestamp(5)    ==1); Log("%llu\n",source.timestampExtender.GetExtSeqNum()); assert(source.timestampExtender.GetExtSeqNum() == wrap+6);
 		assert(source.ExtendTimestamp(5)    ==1); Log("%llu\n",source.timestampExtender.GetExtSeqNum()); assert(source.timestampExtender.GetExtSeqNum() == wrap+6);
 		assert(source.ExtendTimestamp(4)    ==1); Log("%llu\n",source.timestampExtender.GetExtSeqNum()); assert(source.timestampExtender.GetExtSeqNum() == wrap+6);
+		
+		assert(source.RecoverTimestamp(max-10)==0);
+		assert(source.RecoverTimestamp(2)==1);
 	}
 	
 };
