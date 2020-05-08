@@ -65,6 +65,10 @@ public:
 		for (auto rtp : rtpInfo)
 			//Add it
 			frame->AddRtpPacket(rtp->GetPos(),rtp->GetSize(),rtp->GetPrefixData(),rtp->GetPrefixLen());
+		//Check if it has layers
+		for (auto layer : layers)
+			//Add it
+			frame->AddLayerFrame(layer);
 		//Return it
 		return (MediaFrame*)frame;
 	}
