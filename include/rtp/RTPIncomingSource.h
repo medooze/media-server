@@ -27,6 +27,9 @@ struct RTPIncomingSource : public RTPSource
 	QWORD	lastNACKed;
 	DWORD	lastTimestamp;
 	QWORD	lastTime;
+	QWORD   firstReceivedSenderTime;
+	QWORD   firstReceivedSenderTimestamp;
+	int64_t skew;
 	WrapExtender timestampExtender;
 	WrapExtender lastReceivedSenderRTPTimestampExtender;
 	std::map<WORD,LayerSource> layers;
@@ -42,7 +45,7 @@ struct RTPIncomingSource : public RTPSource
 	
 	void Update(QWORD now,DWORD seqNum,DWORD size,const LayerInfo &layerInfo);
 	
-	
+	void Process(QWORD now, const RTCPSenderReport::shared& sr);
 	
 	
 	virtual void Update(QWORD now,DWORD seqNum,DWORD size) override;

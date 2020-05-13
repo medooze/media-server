@@ -52,21 +52,24 @@ RTCPReport::shared RTPIncomingSource::CreateReport(QWORD now)
 
 RTPIncomingSource::RTPIncomingSource() : RTPSource()
 {
-	lostPackets		 = 0;
-	dropPackets		 = 0;
-	totalPacketsSinceLastSR	 = 0;
-	totalBytesSinceLastSR	 = 0;
-	lostPacketsSinceLastSR   = 0;
-	lastReceivedSenderNTPTimestamp = 0;
-	lastReceivedSenderTime	 = 0;
-	lastReceivedSenderReport = 0;
-	lastReport		 = 0;
-	lastPLI			 = 0;
-	totalPLIs		 = 0;
-	totalNACKs		 = 0;
-	lastNACKed		 = 0;
-	lastTimestamp		 = 0;
-	lastTime		 = 0;
+	lostPackets			= 0;
+	dropPackets			= 0;
+	totalPacketsSinceLastSR		= 0;
+	totalBytesSinceLastSR		= 0;
+	lostPacketsSinceLastSR		= 0;
+	lastReceivedSenderNTPTimestamp	= 0;
+	lastReceivedSenderTime		= 0;
+	lastReceivedSenderReport	= 0;
+	lastReport			= 0;
+	lastPLI				= 0;
+	totalPLIs			= 0;
+	totalNACKs			= 0;
+	lastNACKed			= 0;
+	lastTimestamp			= 0;
+	lastTime			= 0;
+	firstReceivedSenderTime		= 0;
+	firstReceivedSenderTimestamp	= 0;
+	skew				= 0;
 	minExtSeqNumSinceLastSR  = RTPPacket::MaxExtSeqNum;
 }
 
@@ -74,19 +77,24 @@ RTPIncomingSource::RTPIncomingSource() : RTPSource()
 void RTPIncomingSource::Reset()
 {
 	RTPSource::Reset();
-	lostPackets		 = 0;
-	dropPackets		 = 0;
-	totalPacketsSinceLastSR	 = 0;
-	totalBytesSinceLastSR	 = 0;
-	lostPacketsSinceLastSR   = 0;
-	lastReceivedSenderNTPTimestamp = 0;
-	lastReceivedSenderTime	 = 0;
-	lastReceivedSenderReport = 0;
-	lastReport		 = 0;
-	lastPLI			 = 0;
-	totalPLIs		 = 0;
-	lastNACKed		 = 0;
-	minExtSeqNumSinceLastSR  = RTPPacket::MaxExtSeqNum;
+	lostPackets			= 0;
+	dropPackets			= 0;
+	totalPacketsSinceLastSR		= 0;
+	totalBytesSinceLastSR		= 0;
+	lostPacketsSinceLastSR		= 0;
+	lastReceivedSenderNTPTimestamp  = 0;
+	lastReceivedSenderTime		= 0;
+	lastReceivedSenderReport	= 0;
+	lastReport			= 0;
+	lastPLI				= 0;
+	totalPLIs			= 0;
+	lastNACKed			= 0;
+	lastTimestamp			= 0;
+	lastTime			= 0;
+	firstReceivedSenderTime		= 0;
+	firstReceivedSenderTimestamp	= 0;
+	skew				= 0;
+	minExtSeqNumSinceLastSR		= RTPPacket::MaxExtSeqNum;
 	timestampExtender.Reset();
 	lastReceivedSenderRTPTimestampExtender.Reset();
 }
@@ -168,6 +176,34 @@ void RTPIncomingSource::Update(QWORD now,DWORD seqNum,DWORD size)
 		lastTime = timestamp;
 	}
 	 */
+}
+
+void RTPIncomingSource::Process(QWORD now, const RTCPSenderReport::shared& sr)
+{
+	//If first
+	if (!firstReceivedSenderTime)
+	{
+		//Store time
+		firstReceivedSenderTime = sr->GetTimestamp()/1000;
+		firstReceivedSenderTimestamp = sr->GetRTPTimestamp();
+	}
+	//Store info
+	lastReceivedSenderNTPTimestamp = sr->GetNTPTimestamp();
+	lastReceivedSenderTime = sr->GetTimestamp()/1000;
+	lastReceivedSenderRTPTimestampExtender.Extend(sr->GetRTPTimestamp());
+	lastReceivedSenderReport = now;
+	
+	//Ensure we have clock rate configured
+	if (clockrate)
+	{
+		//Get diff in sender time
+		QWORD deltaTime = (lastReceivedSenderTime-firstReceivedSenderTime);
+		QWORD deltaTimestamp = (lastReceivedSenderRTPTimestampExtender.GetExtSeqNum()-firstReceivedSenderTimestamp)*1000/clockrate;
+		//Calculate skew
+		skew = deltaTime - deltaTimestamp;
+		//Debug
+		UltraDebug("-RTPIncomingSource::Process() [ssrc:0x%x,skew:%lld,deltaTime:%llu,deltaTimestamp:%llu,senderTime:%llu,clockrate:%u]\n",ssrc,skew,deltaTime,deltaTimestamp,lastReceivedSenderTime,clockrate);
+	}
 }
 
 /*

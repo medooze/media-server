@@ -2041,7 +2041,9 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 		//Update last items
 		source.lastTime		= packet->GetTimestamp();
 		source.lastPayloadType  = packet->GetPayloadType();
-
+		//Set clockrate
+		source.clockrate	= packet->GetClockRate();
+		
 		//Update source
 		source.Update(now/1000,packet->GetSeqNum(),len);
 		
@@ -2141,11 +2143,8 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 					continue;
 				}
 				
-				//Store info
-				source->lastReceivedSenderNTPTimestamp = sr->GetNTPTimestamp();
-				source->lastReceivedSenderTime = sr->GetNTPTime();
-				source->lastReceivedSenderRTPTimestampExtender.Extend(sr->GetRTPTimestamp());
-				source->lastReceivedSenderReport = getTime();
+				//Update source
+				source->Process(getTime(),sr);
 				
 				//Process all the Sender Reports
 				for (DWORD j=0;j<sr->GetCount();j++)

@@ -11,6 +11,7 @@ RTPSource::RTPSource() : acumulator(1000)
 	totalRTCPBytes	= 0;
 	jitter		= 0;
 	bitrate		= 0;
+	clockrate	= 0;
 }
 
 WORD RTPSource::SetSeqNum(WORD seqNum)
@@ -77,6 +78,7 @@ void RTPSource::Reset()
 	totalRTCPBytes	= 0;
 	jitter		= 0;
 	bitrate		= 0;
+	clockrate	= 0;
 	//Reset accumulators
 	acumulator.Reset(0);
 }

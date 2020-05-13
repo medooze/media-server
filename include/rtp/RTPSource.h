@@ -63,6 +63,7 @@ struct RTPSource : public Mutex
 	DWORD	totalBytes;
 	DWORD	totalRTCPBytes;
 	DWORD   bitrate;
+	DWORD	clockrate;
 	Acumulator acumulator;
 	
 	RTPSource();

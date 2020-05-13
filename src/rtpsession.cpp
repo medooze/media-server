@@ -731,11 +731,8 @@ void RTPSession::onRTCPPacket(const BYTE* buffer, DWORD size)
 				//Cast to sender report
 				auto sr = std::static_pointer_cast<RTCPSenderReport>(packet);
 				
-				//Store info
-				recv.media.lastReceivedSenderNTPTimestamp = sr->GetNTPTimestamp();
-				recv.media.lastReceivedSenderTime = sr->GetNTPTime();
-				recv.media.lastReceivedSenderRTPTimestampExtender.Extend(sr->GetRTPTimestamp());
-				recv.media.lastReceivedSenderReport = getTime();
+				//Update source
+				recv.media.Process(getTime(),sr);
 				
 				//Check recievd report
 				for (DWORD j=0;j<sr->GetCount();j++)

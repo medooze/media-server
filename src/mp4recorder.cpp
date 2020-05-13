@@ -285,6 +285,78 @@ int mp4track::WriteAudioFrame(AudioFrame &audioFrame)
 		//Get timestamp delta
 		duration = delta;
 	
+	//If not sync source yet
+	if (!firstSenderTime)
+	{
+		//Try get it
+		firstSenderTime  = prev->GetSenderTime();
+		firstTimestamp   = prev->GetTimeStamp();
+	} 
+	//Calculate skew
+	else if (prev->GetSenderTime()>firstSenderTime) 
+	{
+		//Get diff in sender time
+		QWORD deltaTime = (prev->GetSenderTime()-firstSenderTime)*prev->GetClockRate()/1000;
+		QWORD deltaTimestamp = (prev->GetTimeStamp()-firstTimestamp);
+		//Calculate skew
+		int64_t skew = deltaTime - deltaTimestamp;
+		//Get how much we need to skew/scheetch
+		int64_t	compensate = skew - corrected;
+		//Do not compensate if skew is less than 2 frames
+		if (std::abs(compensate)>duration*2)
+		{
+			//Log
+			Debug("-mp4track::WriteAudioFrame()  [skew:%lldms(samples:%lld),first:%llu,frame:%lld,deltaTimestamp:%d,deltaTime:%lld,duration:%d,compensate:%d,corrected:%lld]\n",skew*1000/prev->GetClockRate(),skew,firstSenderTime,prev->GetSenderTime(),deltaTimestamp,deltaTime,duration,compensate,corrected);
+			//Audio ahead
+			if (compensate<=-(int)(duration))
+			{
+				//Drop frame
+				corrected = -duration;
+				//Free frame
+				delete(prev);
+				//Done
+				return 1;
+			}
+			
+			//Opus is special
+			if (prev->GetCodec()==AudioCodec::OPUS)
+			{
+				//Get opus toc
+				auto [mode, bandwidth, frameSize, stereo, codeNumber ] = OpusTOC::TOC(prev->GetData()[0]);
+				//Only add one frame at a time
+				if (compensate>=(int)frameSize)
+				{
+					//Create missing audio frame
+					auto expand = std::make_shared<Buffer>(3);
+
+					//Set toc
+					expand->GetData()[0] = OpusTOC::GetTOC(mode,bandwidth,frameSize,stereo,OpusTOC::Arbitrary);
+
+					//Missing
+					expand->GetData()[1] = 0x81; //vbr 1 packet
+					expand->GetData()[2] = 0x00; //0 length -> missing or PLC
+
+					//Set size
+					expand->SetSize(3);
+		
+					//Flush missing
+					FlushAudioFrame(new AudioFrame(AudioCodec::OPUS, expand),frameSize);
+					
+					//Add one frame
+					corrected += frameSize;
+				}
+			}
+			//Audio behind
+			else if (compensate>=(int)duration)
+			{
+				//Add one frame
+				corrected = duration;
+				//Increase duration by one frame
+				duration += duration;
+			}
+		}
+	}
+	
 	//If it is Opus and there are missing packets
 	if (prev->GetCodec()==AudioCodec::OPUS && duration<delta)
 	{

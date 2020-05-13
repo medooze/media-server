@@ -42,6 +42,10 @@ private:
 	bool hasSPS		= false;
 	bool hasPPS		= false;
 	bool hasDimensions	= false;
+	uint64_t firstSenderTime= 0;
+	uint64_t firstTimestamp = 0;
+	int64_t skew		= 0;
+	int64_t corrected	= 0;
 };
 
 

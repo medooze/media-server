@@ -282,6 +282,9 @@ RTPIncomingSource* RTPIncomingSourceGroup::Process(RTPPacket::shared &packet)
 	packet->SetTimestampCycles(source->ExtendTimestamp(packet->GetTimestamp()));
 	//Set cycles back
 	packet->SetSeqCycles(source->ExtendSeqNum(packet->GetSeqNum()));
+	
+	//Set clockrate
+	source->clockrate = packet->GetClockRate();
 
 	//if it is video
 	if (type == MediaFrame::Video)
