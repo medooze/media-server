@@ -311,7 +311,7 @@ int mp4track::WriteAudioFrame(AudioFrame &audioFrame)
 			if (compensate<=-(int)(duration))
 			{
 				//Drop frame
-				corrected = -duration;
+				corrected -= duration;
 				//Free frame
 				delete(prev);
 				//Done
@@ -350,7 +350,7 @@ int mp4track::WriteAudioFrame(AudioFrame &audioFrame)
 			else if (compensate>=(int)duration)
 			{
 				//Add one frame
-				corrected = duration;
+				corrected += duration;
 				//Increase duration by one frame
 				duration += duration;
 			}
