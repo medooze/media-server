@@ -96,7 +96,7 @@ public:
 		//No new config
 		ClearCodecConfig();
 		//Clear layers
-		layers.empty();
+		layers.clear();
 	}
 	
 private:
