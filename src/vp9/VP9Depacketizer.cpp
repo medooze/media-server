@@ -101,7 +101,7 @@ MediaFrame* VP9Depacketizer::AddPayload(const BYTE* payload, DWORD len)
 	if (desc.startOfLayerFrame)
 	{
 		//Set values
-		layer.data = frame.GetData() + pos;
+		layer.pos =  pos;
 		layer.size = len - descLen;
 		layer.info.spatialLayerId	= desc.spatialLayerId;
 		layer.info.temporalLayerId	= desc.temporalLayerId;

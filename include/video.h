@@ -7,7 +7,7 @@
 
 struct LayerFrame
 {
-	BYTE* data	= nullptr;
+	DWORD pos	= 0;
 	DWORD size	= 0;
 	DWORD width	= 0;
 	DWORD height	= 0;
