@@ -109,8 +109,6 @@ void RTPIncomingSourceGroup::Bye(DWORD ssrc)
 {
 	if (ssrc == media.ssrc)
 	{
-		//Reset source
-		media.Reset();
 		//REset packets
 		ResetPackets();
 		//Reset 
@@ -123,11 +121,7 @@ void RTPIncomingSourceGroup::Bye(DWORD ssrc)
 				listener->onBye(this);
 		}
 	} else if (ssrc == rtx.ssrc) {
-		//Reset source
-		rtx.Reset();
 	} else if (ssrc == fec.ssrc) {
-		//Reset source
-		fec.Reset();
 	}
 }
 
@@ -136,11 +130,6 @@ void RTPIncomingSourceGroup::ResetPackets()
 	//Reset packet queue and lost count
 	packets.Reset();
 	losts.Reset();
-	//Reset stats
-	lost = 0;
-	minWaitedTime = 0;
-	maxWaitedTime = 0;
-	avgWaitedTime = 0;
 }
 
 void RTPIncomingSourceGroup::Update()

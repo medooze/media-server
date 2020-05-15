@@ -70,6 +70,7 @@ RTPIncomingSource::RTPIncomingSource() : RTPSource()
 	firstReceivedSenderTime		= 0;
 	firstReceivedSenderTimestamp	= 0;
 	skew				= 0;
+	drift				= 1;
 	minExtSeqNumSinceLastSR  = RTPPacket::MaxExtSeqNum;
 }
 
@@ -94,6 +95,7 @@ void RTPIncomingSource::Reset()
 	firstReceivedSenderTime		= 0;
 	firstReceivedSenderTimestamp	= 0;
 	skew				= 0;
+	drift				= 1;
 	minExtSeqNumSinceLastSR		= RTPPacket::MaxExtSeqNum;
 	timestampExtender.Reset();
 	lastReceivedSenderRTPTimestampExtender.Reset();
@@ -201,6 +203,7 @@ void RTPIncomingSource::Process(QWORD now, const RTCPSenderReport::shared& sr)
 		QWORD deltaTimestamp = (lastReceivedSenderRTPTimestampExtender.GetExtSeqNum()-firstReceivedSenderTimestamp)*1000/clockrate;
 		//Calculate skew
 		skew = deltaTime - deltaTimestamp;
+		drift = deltaTime ? (double)deltaTimestamp/deltaTime : 1;
 		//Debug
 		UltraDebug("-RTPIncomingSource::Process() [ssrc:0x%x,skew:%lld,deltaTime:%llu,deltaTimestamp:%llu,senderTime:%llu,clockrate:%u]\n",ssrc,skew,deltaTime,deltaTimestamp,lastReceivedSenderTime,clockrate);
 	}
