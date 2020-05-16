@@ -992,10 +992,17 @@ void RTMPConnection::ProcessCommandMessage(DWORD streamId,RTMPCommandMessage* cm
 			//Send error
 			return SendCommandError(streamId,transId);
 	} else if (name.compare(L"createStream")==0 || name.compare(L"initStream")==0) {
+		//Lock mutex
+		pthread_mutex_lock(&mutex);
+		
 		//Check if we have an application
 		if (!app)
+		{
+			//Unlock mutex
+			pthread_mutex_unlock(&mutex);
 			//Send error
 			return SendCommandError(streamId,transId);
+		}
 
 		//Assign the media string id
 		DWORD mediaStreamId = maxStreamId++;
@@ -1005,11 +1012,12 @@ void RTMPConnection::ProcessCommandMessage(DWORD streamId,RTMPCommandMessage* cm
 
 		//Check if it was created correctly
 		if (!stream)
+		{
+			//Unlock mutex
+			pthread_mutex_unlock(&mutex);
 			//Send error
 			return SendCommandError(streamId,transId);
-
-		//Lock mutex
-		pthread_mutex_lock(&mutex);
+		}
 		
 		//Add to the streams vector
 		streams[mediaStreamId] = stream;

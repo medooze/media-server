@@ -40,7 +40,8 @@ protected:
 protected:
 	std::set<Listener*>			listeners;
 	std::map<DWORD,RTMPNetStream::shared>	streams;
-	Use					lock;
+	Mutex					listenerLock;
+	Mutex					streamLock;
 };
 
 #endif	/* RTMPNETCONNECTION_H */
