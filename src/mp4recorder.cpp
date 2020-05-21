@@ -101,6 +101,9 @@ int mp4track::CreateAudioTrack(AudioCodec::Type codec, DWORD rate, bool disableH
 		default:
 			return 0;
 	}
+	
+	//Sotore clock rate
+	clockrate = rate;
 
 	return track;
 }
@@ -217,6 +220,9 @@ int mp4track::CreateVideoTrack(VideoCodec::Type codec, DWORD rate, int width, in
 	//Check if it has dimensions
 	hasDimensions = width && height;
 	
+	//Sotore clock rate
+	clockrate = rate;
+	
 	//OK
 	return 1;
 }
@@ -225,6 +231,9 @@ int mp4track::CreateTextTrack()
 {
 	//Create subtitle track
 	track = MP4AddSubtitleTrack(mp4,1000,0,0);
+	
+	//Sotore clock rate
+	clockrate = 1000;
 	
 	//OK
 	return 1;
@@ -292,69 +301,13 @@ int mp4track::WriteAudioFrame(AudioFrame &audioFrame)
 		firstSenderTime  = prev->GetSenderTime();
 		firstTimestamp   = prev->GetTimeStamp();
 	} 
-	//Calculate skew
-	else if (prev->GetSenderTime()>firstSenderTime) 
+	
+	//Update last
+	if (prev->GetSenderTime())
 	{
-		//Get diff in sender time
-		QWORD deltaTime = (prev->GetSenderTime()-firstSenderTime)*prev->GetClockRate()/1000;
-		QWORD deltaTimestamp = (prev->GetTimeStamp()-firstTimestamp);
-		//Calculate skew
-		int64_t skew = deltaTime - deltaTimestamp;
-		//Get how much we need to skew/scheetch
-		int64_t	compensate = skew - corrected;
-		//Do not compensate if skew is less than 2 frames
-		if (std::abs(compensate)>duration*2)
-		{
-			//Log
-			Debug("-mp4track::WriteAudioFrame()  [skew:%lldms(samples:%lld),first:%llu,frame:%lld,deltaTimestamp:%d,deltaTime:%lld,duration:%d,compensate:%d,corrected:%lld]\n",skew*1000/prev->GetClockRate(),skew,firstSenderTime,prev->GetSenderTime(),deltaTimestamp,deltaTime,duration,compensate,corrected);
-			//Audio ahead
-			if (compensate<=-(int)(duration))
-			{
-				//Drop frame
-				corrected -= duration;
-				//Free frame
-				delete(prev);
-				//Done
-				return 1;
-			}
-			
-			//Opus is special
-			if (prev->GetCodec()==AudioCodec::OPUS)
-			{
-				//Get opus toc
-				auto [mode, bandwidth, frameSize, stereo, codeNumber ] = OpusTOC::TOC(prev->GetData()[0]);
-				//Only add one frame at a time
-				if (compensate>=(int)frameSize)
-				{
-					//Create missing audio frame
-					auto expand = std::make_shared<Buffer>(3);
-
-					//Set toc
-					expand->GetData()[0] = OpusTOC::GetTOC(mode,bandwidth,frameSize,stereo,OpusTOC::Arbitrary);
-
-					//Missing
-					expand->GetData()[1] = 0x81; //vbr 1 packet
-					expand->GetData()[2] = 0x00; //0 length -> missing or PLC
-
-					//Set size
-					expand->SetSize(3);
-		
-					//Flush missing
-					FlushAudioFrame(new AudioFrame(AudioCodec::OPUS, expand),frameSize);
-					
-					//Add one frame
-					corrected += frameSize;
-				}
-			}
-			//Audio behind
-			else if (compensate>=(int)duration)
-			{
-				//Add one frame
-				corrected += duration;
-				//Increase duration by one frame
-				duration += duration;
-			}
-		}
+		//Only valid times
+		lastSenderTime  = prev->GetSenderTime();
+		lastTimestamp   = prev->GetTimeStamp();
 	}
 	
 	//If it is Opus and there are missing packets
@@ -417,8 +370,8 @@ int mp4track::FlushVideoFrame(VideoFrame* frame,DWORD duration)
 		//Iterate
 		while(!last)
 		{
-			//Get rtp packet and move to next
-			MediaFrame::RtpPacketization *rtp = *(it++);
+			//Get rtp packet
+			const MediaFrame::RtpPacketization& rtp = *(it++);
 			//is last?
 			last = (it==rtpInfo.end());
 
@@ -426,24 +379,24 @@ int mp4track::FlushVideoFrame(VideoFrame* frame,DWORD duration)
 			MP4AddRtpPacket(mp4, hint, last, 0);
 
 			//Prefix data can't be longer than 14bytes per mp4 spec
-			if (rtp->GetPrefixLen() && rtp->GetPrefixLen()<14)
+			if (rtp.GetPrefixLen() && rtp.GetPrefixLen()<14)
 				//Add rtp data
-				MP4AddRtpImmediateData(mp4, hint, rtp->GetPrefixData(), rtp->GetPrefixLen());
+				MP4AddRtpImmediateData(mp4, hint, rtp.GetPrefixData(), rtp.GetPrefixLen());
 
 			//Add rtp data
-			MP4AddRtpSampleData(mp4, hint, sampleId, rtp->GetPos(), rtp->GetSize());
+			MP4AddRtpSampleData(mp4, hint, sampleId, rtp.GetPos(), rtp.GetSize());
 
 			//It is h264 and we still do not have SPS or PPS?
 			// only check full full naltypes
-			if (frame->GetCodec()==VideoCodec::H264 && (!hasSPS || !hasPPS) && !rtp->GetPrefixLen() && rtp->GetSize()>1)
+			if (frame->GetCodec()==VideoCodec::H264 && (!hasSPS || !hasPPS) && !rtp.GetPrefixLen() && rtp.GetSize()>1)
 			{
 				//Get rtp data pointer
-				const BYTE *data = frame->GetData()+rtp->GetPos();
+				const BYTE *data = frame->GetData()+rtp.GetPos();
 				//Check nal type
 				BYTE nalType = data[0] & 0x1F;
 				//Get nal data
 				const BYTE *nalData = data+1;
-				DWORD nalSize = rtp->GetSize()-1;
+				DWORD nalSize = rtp.GetSize()-1;
 				
 				//If it a SPS NAL
 				if (nalType==0x07)
@@ -616,6 +569,7 @@ int mp4track::WriteTextFrame(TextFrame& textFrame)
 
 int mp4track::Close()
 {
+	Debug("-mp4track::Close()\n");
 	//If we got frame
 	if (frame)
 	{
@@ -640,6 +594,30 @@ int mp4track::Close()
 		}
 		//NO frame
 		frame = NULL;
+	}
+	lastSenderTime = lastSenderTime+100;
+	//If we have timing information
+	if (firstSenderTime && lastSenderTime && lastSenderTime>firstSenderTime && lastTimestamp>firstTimestamp)
+	{
+		
+		//Get diff in sender time
+		QWORD deltaTime = lastSenderTime-firstSenderTime;
+		QWORD deltaTimestamp = (lastTimestamp-firstTimestamp)*1000/clockrate;
+		//calculate drift rate
+		int64_t skew = deltaTime - deltaTimestamp;
+		double drift = (double)deltaTimestamp/deltaTime;
+		
+		//If we have a big drift
+		if (std::abs(skew)>40)
+		{
+			
+			//Calculate new clockrate
+			uint32_t adjusted = std::round(drift*clockrate);
+			//Log
+			Log("-mp4track::Close() | Clockdrift detecteced, adjusting clockrate [skew:%lldms,dirft:%f,clockrate:%u,adjusted:%u\n",skew,drift,clockrate,adjusted);
+			//Update timescale
+			MP4SetTrackIntegerProperty(mp4, track, "mdia.mdhd.timeScale", adjusted);
+		}
 	}
 
 	return 1;
