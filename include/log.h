@@ -142,7 +142,7 @@ inline int Debug(const char *msg, ...)
 
 inline int Warning(const char *msg, ...)
 {
-	if (Logger::IsLogEnabled())
+	if (Logger::IsDebugEnabled())
 	{
 		struct timeval tv;
 		va_list ap;

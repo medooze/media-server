@@ -895,7 +895,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	//Check if we are sending way to much bitrate
 	if (availableBitrate && rtxBitrate.GetInstantAvg()*8 > availableBitrate * 0.30f)
 		//Error
-		return (void)Warning("-DTLSICETransport::ReSendPacket() | Too much bitrate on rtx, skiping rtx:%lld estimated:%u available:%d\n",(uint64_t)(rtxBitrate.GetInstantAvg()*8), senderSideBandwidthEstimator.GetEstimatedBitrate(),availableBitrate);
+		return (void)Debug("-DTLSICETransport::ReSendPacket() | Too much bitrate on rtx, skiping rtx:%lld estimated:%u available:%d\n",(uint64_t)(rtxBitrate.GetInstantAvg()*8), senderSideBandwidthEstimator.GetEstimatedBitrate(),availableBitrate);
 	
 	//Find packet to retransmit
 	auto original = group->GetPacket(seq);
@@ -976,7 +976,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	//If we don't have an active candidate yet
 	if (!active)
 		//Error
-		return (void)Debug("-DTLSICETransport::ReSendPacket() | We don't have an active candidate yet\n");
+		return (void)Warning("-DTLSICETransport::ReSendPacket() | We don't have an active candidate yet\n");
 
 	//If dumping
 	if (dumper && dumpOutRTP)

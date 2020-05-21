@@ -190,7 +190,8 @@ void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const st
 			//Erase it
 			transportWideSentPacketsStats.erase(it);
 		} else {
-			Error("-packet not found\n");
+			//Log
+			Warning("-SendSideBandwidthEstimation::ReceivedFeedback() | Packet not found [transportSeqNum:%u,receivedTime:%llu]\n",transportSeqNum,receivedTime);
 		}
 	}
 	
