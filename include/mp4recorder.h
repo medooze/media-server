@@ -44,8 +44,9 @@ private:
 	bool hasDimensions	= false;
 	uint64_t firstSenderTime= 0;
 	uint64_t firstTimestamp = 0;
-	int64_t skew		= 0;
-	int64_t corrected	= 0;
+	uint64_t lastSenderTime = 0;
+	uint64_t lastTimestamp  = 0;
+	uint32_t clockrate	= 0;
 };
 
 
