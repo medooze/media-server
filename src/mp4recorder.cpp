@@ -311,7 +311,7 @@ int mp4track::WriteAudioFrame(AudioFrame &audioFrame)
 	}
 	
 	//If it is Opus and there are missing packets
-	if (prev->GetCodec()==AudioCodec::OPUS && duration<delta)
+	if (prev->GetCodec()==AudioCodec::OPUS && duration<delta && prev->GetLength()>0)
 	{
 		//Get opus toc
 		auto [mode, bandwidth, frameSize, stereo, codeNumber ] = OpusTOC::TOC(prev->GetData()[0]);
@@ -595,7 +595,7 @@ int mp4track::Close()
 		//NO frame
 		frame = NULL;
 	}
-	lastSenderTime = lastSenderTime+100;
+
 	//If we have timing information
 	if (firstSenderTime && lastSenderTime && lastSenderTime>firstSenderTime && lastTimestamp>firstTimestamp)
 	{
@@ -612,7 +612,7 @@ int mp4track::Close()
 		{
 			
 			//Calculate new clockrate
-			uint32_t adjusted = std::round(drift*clockrate);
+			uint64_t adjusted = std::lround(drift*clockrate);
 			//Log
 			Log("-mp4track::Close() | Clockdrift detecteced, adjusting clockrate [skew:%lldms,dirft:%f,clockrate:%u,adjusted:%u\n",skew,drift,clockrate,adjusted);
 			//Update timescale
@@ -851,6 +851,8 @@ void MP4Recorder::processMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD t
 			//Check if it is the first
 			if (first==(QWORD)-1)
 			{
+				//Log
+				Log("-MP4Recorder::processMediaFrame() | Got first frame in audio [time:%llu]\n", time);
 				//Set this one as first
 				first = time;
 				//Triger listener
@@ -871,16 +873,18 @@ void MP4Recorder::processMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD t
 				//If it is not first
 				if (delta)
 				{
+					//Calculate duration
+					uint64_t duration = delta*audioFrame.GetClockRate()/1000;
 					//Create empty text frame
 					AudioFrame empty(audioFrame.GetCodec());
 					//Set time
 					empty.SetTime(time);
 					//Set timestamp
-					empty.SetTimestamp(time*audioFrame.GetClockRate()/1000);
+					empty.SetTimestamp(audioFrame.GetTimeStamp()>duration ? audioFrame.GetTimeStamp() - duration : 0);
 					//Set clock rate
 					empty.SetClockRate(audioFrame.GetClockRate());
 					//Set duration
-					empty.SetDuration(delta*audioFrame.GetClockRate()/1000);
+					empty.SetDuration(duration);
 					//Send first empty packet
 					audioTrack->WriteAudioFrame(empty);
 				}
@@ -912,6 +916,8 @@ void MP4Recorder::processMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD t
 			//Check if it is the first
 			if (first==(QWORD)-1)
 			{
+				//Log
+				Log("-MP4Recorder::processMediaFrame() | Got first frame in video [time:%llu]\n", time);
 				//Set this one as first
 				first = time;
 				//If we have listener
@@ -1037,6 +1043,8 @@ void MP4Recorder::processMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD t
 			//Check if it is the first
 			if (first==(QWORD)-1)
 			{
+				//Log
+				Log("-MP4Recorder::processMediaFrame() | Got first frame in text [time:%llu]\n", time);
 				//Set this one as first
 				first = time;
 				//If we have listener
