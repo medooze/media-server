@@ -64,9 +64,9 @@ public:
 			//Copy data
 			frame->AdquireBuffer();
 		//Check if it has rtp info
-		for (auto rtp : rtpInfo)
+		for (const auto& rtp : rtpInfo)
 			//Add it
-			frame->AddRtpPacket(rtp->GetPos(),rtp->GetSize(),rtp->GetPrefixData(),rtp->GetPrefixLen());
+			frame->AddRtpPacket(rtp.GetPos(),rtp.GetSize(),rtp.GetPrefixData(),rtp.GetPrefixLen());
 		//Return it
 		return (MediaFrame*)frame;
 	}

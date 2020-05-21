@@ -62,11 +62,11 @@ public:
 		//Set config
 		if (HasCodecConfig()) frame->SetCodecConfig(GetCodecConfigData(),GetCodecConfigSize());
 		//Check if it has rtp info
-		for (auto rtp : rtpInfo)
+		for (const auto& rtp : rtpInfo)
 			//Add it
-			frame->AddRtpPacket(rtp->GetPos(),rtp->GetSize(),rtp->GetPrefixData(),rtp->GetPrefixLen());
+			frame->AddRtpPacket(rtp.GetPos(),rtp.GetSize(),rtp.GetPrefixData(),rtp.GetPrefixLen());
 		//Check if it has layers
-		for (auto layer : layers)
+		for (const auto& layer : layers)
 			//Add it
 			frame->AddLayerFrame(layer);
 		//Return it

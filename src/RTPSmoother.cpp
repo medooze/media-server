@@ -109,7 +109,7 @@ int RTPSmoother::SendFrame(MediaFrame* frame,DWORD duration)
 	//Calculate total length
 	for (int i=0;i<info.size();i++)
 		//Get total length
-		frameLength += info[i]->GetTotalLength();
+		frameLength += info[i].GetTotalLength();
 
 	DWORD current = 0;
 	
@@ -117,23 +117,23 @@ int RTPSmoother::SendFrame(MediaFrame* frame,DWORD duration)
 	for (int i=0;i<info.size();i++)
 	{
 		//Get packet
-		MediaFrame::RtpPacketization* rtp = info[i];
+		const MediaFrame::RtpPacketization& rtp = info[i];
 
 		//Create rtp packet
 		RTPPacketSched::shared packet = std::make_shared<RTPPacketSched>(frame->GetType(),codec);
 
 		//Make sure it is enought length
-		if (rtp->GetTotalLength()>packet->GetMaxMediaLength())
+		if (rtp.GetTotalLength()>packet->GetMaxMediaLength())
 		{
-			Error("RTP payload too big [%d,%d]\n",rtp->GetTotalLength(),packet->GetMaxMediaLength());
+			Error("RTP payload too big [%d,%d]\n",rtp.GetTotalLength(),packet->GetMaxMediaLength());
 			//Error
 			continue;
 		}
 		
 		//Set data
-		packet->SetPayload(frameData+rtp->GetPos(),rtp->GetSize());
+		packet->SetPayload(frameData+rtp.GetPos(),rtp.GetSize());
 		//Add prefix
-		packet->PrefixPayload(rtp->GetPrefixData(),rtp->GetPrefixLen());
+		packet->PrefixPayload(rtp.GetPrefixData(),rtp.GetPrefixLen());
 		//Set other values
 		packet->SetExtTimestamp(frame->GetTimeStamp());
 		//Set clock rate
@@ -146,9 +146,9 @@ int RTPSmoother::SendFrame(MediaFrame* frame,DWORD duration)
 			//No last
 			packet->SetMark(false);
 		//Calculate sending time offset from first frame
-		packet->SetSendingTime(rtp->GetPos()*duration/frameLength);
+		packet->SetSendingTime(rtp.GetPos()*duration/frameLength);
 		//Calculate partial lenght
-		current += rtp->GetPrefixLen()+rtp->GetSize();
+		current += rtp.GetPrefixLen()+rtp.GetSize();
 		//Append it
 		queue.Add(packet);
 	}

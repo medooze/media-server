@@ -136,7 +136,7 @@ void MediaFrameListenerBridge::onMediaFrame(const MediaFrame& frame)
 		//Calculate total length
 		for (size_t i=0;i<info.size();i++)
 			//Get total length
-			frameLength += info[i]->GetTotalLength();
+			frameLength += info[i].GetTotalLength();
 
 		DWORD current = 0;
 
@@ -144,22 +144,22 @@ void MediaFrameListenerBridge::onMediaFrame(const MediaFrame& frame)
 		for (size_t i=0;i<info.size();i++)
 		{
 			//Get packet
-			MediaFrame::RtpPacketization* rtp = info[i];
+			const MediaFrame::RtpPacketization& rtp = info[i];
 
 			//Create rtp packet
 			 auto packet = std::make_shared<RTPPacket>(frame->GetType(),codec);
 
 			//Make sure it is enought length
-			if (rtp->GetTotalLength()>packet->GetMaxMediaLength())
+			if (rtp.GetTotalLength()>packet->GetMaxMediaLength())
 				//Error
 				continue;
 			//Set src
 			packet->SetSSRC(ssrc);
 			packet->SetExtSeqNum(extSeqNum++);
 			//Set data
-			packet->SetPayload(frameData+rtp->GetPos(),rtp->GetSize());
+			packet->SetPayload(frameData+rtp.GetPos(),rtp.GetSize());
 			//Add prefix
-			packet->PrefixPayload(rtp->GetPrefixData(),rtp->GetPrefixLen());
+			packet->PrefixPayload(rtp.GetPrefixData(),rtp.GetPrefixLen());
 			//Calculate timestamp
 			lastTimestamp = baseTimestamp + (frame->GetTimeStamp()-firstTimestamp);
 			//Set other values
@@ -173,7 +173,7 @@ void MediaFrameListenerBridge::onMediaFrame(const MediaFrame& frame)
 				//No last
 				packet->SetMark(false);
 			//Calculate partial lenght
-			current += rtp->GetPrefixLen()+rtp->GetSize();
+			current += rtp.GetPrefixLen()+rtp.GetSize();
 
 			//Increase stats
 			numPackets++;

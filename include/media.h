@@ -38,10 +38,22 @@ public:
 				this->prefix = (BYTE*) malloc(prefixLen);
 				//Copy data
 				memcpy(this->prefix,prefix,prefixLen);
-			} else {
-				this->prefix = NULL;
 			}
-
+		}
+		RtpPacketization(RtpPacketization&& info)
+		{
+			//Store values
+			this->pos = info.GetPos();
+			this->size = info.GetSize();
+			this->prefixLen = info.GetPrefixLen();
+			//Check size
+			if (prefixLen)
+			{
+				//Allocate mem
+				this->prefix = (BYTE*) malloc(prefixLen);
+				//Copy data
+				memcpy(this->prefix,info.GetPrefixData(),prefixLen);
+			}
 		}
 		~RtpPacketization()
 		{
@@ -68,13 +80,13 @@ public:
 			
 		}
 	private:
-		DWORD	pos;
-		DWORD	size;
-		BYTE*	prefix;
-		DWORD	prefixLen;
+		DWORD	pos		= 0;
+		DWORD	size		= 0;
+		BYTE*	prefix		= nullptr;
+		DWORD	prefixLen	= 0;
 	};
 
-	typedef std::vector<RtpPacketization*> RtpPacketizationInfo;
+	typedef std::vector<RtpPacketization> RtpPacketizationInfo;
 public:
 	enum Type {Audio=0,Video=1,Text=2,Unknown=-1};
 
@@ -124,26 +136,20 @@ public:
 
 	void	ClearRTPPacketizationInfo()
 	{
-		//Emtpy
-		while (!rtpInfo.empty())
-		{
-			//Delete
-			delete(rtpInfo.back());
-			//remove
-			rtpInfo.pop_back();
-		}
+		//Clear
+		rtpInfo.clear();
 	}
 	
 	void	DumpRTPPacketizationInfo() const
 	{
 		//Dump all info
 		for (const auto& info : rtpInfo)
-			info->Dump();
+			info.Dump();
 	}
 	
 	void	AddRtpPacket(DWORD pos,DWORD size,const BYTE* prefix = nullptr,DWORD prefixLen = 0)		
 	{
-		rtpInfo.push_back(new RtpPacketization(pos,size,prefix,prefixLen));
+		rtpInfo.emplace_back(pos,size,prefix,prefixLen);
 	}
 	
 	Type	GetType() const		{ return type;		}
@@ -227,7 +233,7 @@ public:
 		//Move rtp packets
 		for (auto &info : rtpInfo)
 			//Move init of rtp packet
-			info->IncPos(size);
+			info.IncPos(size);
 	}
         
 	BYTE* AllocateCodecConfig(DWORD size)
