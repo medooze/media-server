@@ -2598,7 +2598,7 @@ void DTLSICETransport::Probe()
 		if (target>bitrate && (!probingBitrateLimit || bitrate<probingBitrateLimit) && probing<maxProbingBitrate)
 		{
 			//Increase probing bitrate
-			probing = std::min(maxProbingBitrate, target - bitrate);
+			probing += std::min(maxProbingBitrate, target - bitrate);
 
 			//Get size of probes
 			DWORD probingSize = (probing*sleep)/8000;
@@ -2634,7 +2634,8 @@ void DTLSICETransport::Probe()
 					
 				}
 			} else {
-				DWORD size = 255;
+				//Ensure we send at least one packet
+				DWORD size = std::min(255u,probingSize);
 				//Check if we have an outgpoing group
 				for (auto &group : outgoing)
 				{
@@ -2642,7 +2643,7 @@ void DTLSICETransport::Probe()
 					if (group.second->type == MediaFrame::Video)
 					{
 						//Set all the probes
-						while (probingSize>size)
+						while (probingSize>=size)
 						{
 							//Send probe packet
 							DWORD len = SendProbe(group.second,size);

@@ -229,7 +229,7 @@ uint32_t SendSideBandwidthEstimation::GetMinRTT() const
 
 uint32_t SendSideBandwidthEstimation::GetTargetBitrate() const
 {
-	return targetBitrate;
+	return std::min(std::max(targetBitrate,kMinRate),kMaxRate);
 	
 }
 
@@ -295,7 +295,7 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 		targetBitrate = bandwidthEstimation;
 	
 	//Calculate rtx overhead
-	double overhead = rtxSentAcumulator.GetCount() && mediaSentAcumulator.GetCount() ?  static_cast<double>(mediaSentAcumulator.GetAcumulated()) / (mediaSentAcumulator.GetAcumulated() + rtxSentAcumulator.GetAcumulated()) : 1.0f;
+	double overhead = rtxSentAcumulator.GetAcumulated() && mediaSentAcumulator.GetAcumulated() ?  static_cast<double>(mediaSentAcumulator.GetAcumulated()) / (mediaSentAcumulator.GetAcumulated() + rtxSentAcumulator.GetAcumulated()) : 1.0f;
 
 	//Available rate taking into account current rtx overhead
 	availableRate = targetBitrate * overhead; 
