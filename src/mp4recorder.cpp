@@ -612,7 +612,7 @@ int mp4track::Close()
 		{
 			
 			//Calculate new clockrate
-			uint64_t adjusted = std::lround(drift*clockrate);
+			uint64_t adjusted = ::lround(drift*clockrate);
 			//Log
 			Log("-mp4track::Close() | Clockdrift detecteced, adjusting clockrate [skew:%lldms,dirft:%f,clockrate:%u,adjusted:%u\n",skew,drift,clockrate,adjusted);
 			//Update timescale
