@@ -29,7 +29,6 @@ public:
 private:
 	DWORD		ssrc = 0;
 	TimeService&	timeService;
-	Mutex		listenerMutex;
 	std::set<RTPIncomingMediaStream::Listener*>  listeners;	
 };
 
