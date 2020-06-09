@@ -1028,8 +1028,30 @@ void RTMPConnection::ProcessCommandMessage(DWORD streamId,RTMPCommandMessage* cm
 		//Create
 		SendCommandResult(streamId,transId,new AMFNull(),new AMFNumber((double)mediaStreamId));
 	} else if (name.compare(L"deleteStream")==0) {
+		//Check length
+		if (!cmd->GetExtraLength())
+		{
+			//Error
+			Warning("-RTMPConnection::ProcessCommandMessage() | deleteStream has no extra args\n");
+			//Dump
+			cmd->Dump();
+			//Skip
+			return;
+		}
+		//Get extra param
+		auto extra = cmd->GetExtra(0);
+		//Check type
+		if (!extra->CheckType(AMFData::Number))
+		{
+			//Error
+			Warning("-RTMPConnection::ProcessCommandMessage() | deleteStream stream id not a number\n");
+			//Dump
+			cmd->Dump();
+			//Skip
+			return;
+		}
 		//Get
-		DWORD mediaStreamId = ((AMFNumber*)cmd->GetExtra(0))->GetNumber();
+		DWORD mediaStreamId = ((AMFNumber*)extra)->GetNumber();
 		//Log
 		Log("-RTMPConnection::ProcessCommandMessage() Deleting stream [%d]\n",mediaStreamId);
 		
