@@ -35,6 +35,7 @@ public:
 
         
         int Dump(const char* filename);
+	int StopDump();
 private:
 	void EstimateBandwidthRate(uint64_t when);
 private:

@@ -1274,7 +1274,7 @@ int DTLSICETransport::Dump(UDPDumper* dumper, bool inbound, bool outbound, bool 
 		if (this->dumper)
 		{
 			//Error
-			done = Error("Already dumping\n");
+			done = Error("-DTLSICETransport::Dump() | Already dumping\n");
 			return;
 		}
 
@@ -1286,6 +1286,33 @@ int DTLSICETransport::Dump(UDPDumper* dumper, bool inbound, bool outbound, bool 
 		dumpOutRTP		= outbound;
 		dumpRTCP		= rtcp;
 		dumpRTPHeadersOnly	= rtpHeadersOnly;
+	});
+	//Done
+	return done;
+}
+
+int DTLSICETransport::StopDump()
+{
+	Debug("-DTLSICETransport::StopDump()\n");
+	
+	//Done
+	int done = 1;
+	//Execute on timer thread
+	timeService.Sync([&](...){
+		//Check we are not dumping
+		if (!this->dumper)
+		{
+			//Error
+			done = Error("-DTLSICETransport::StopDump() | Not dumping\n");
+			return;
+		}
+
+		//Close dumper
+		this->dumper->Close();
+		//Delete it
+		delete(this->dumper);
+		//Not dumping
+		this->dumper = nullptr;
 	});
 	//Done
 	return done;
@@ -1337,6 +1364,12 @@ int DTLSICETransport::DumpBWEStats(const char* filename)
 {
 	return senderSideBandwidthEstimator.Dump(filename);
 }
+
+int DTLSICETransport::StopDumpBWEStats()
+{
+	return senderSideBandwidthEstimator.StopDump();
+}
+
 
 void DTLSICETransport::Reset()
 {

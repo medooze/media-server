@@ -359,12 +359,32 @@ int SendSideBandwidthEstimation::Dump(const char* filename)
 		//Error
 		return 0;
 	
-	Log("-SendSideBandwidthEstimation::Dump [\"%s\"]\n",filename);
+	Log("-SendSideBandwidthEstimation::Dump() [\"%s\"]\n",filename);
 	
 	//Open file
 	if ((fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0600))<0)
 		//Error
 		return false; //Error("Could not open file [err:%d]\n",errno);
+
+	//Done
+	return 1;
+}
+
+int SendSideBandwidthEstimation::StopDump() 
+{
+	//If not already dumping
+	if (fd==FD_INVALID)
+		//Error
+		return 0;
+	
+	Log("-SendSideBandwidthEstimation::StopDump()\n");
+	
+	
+	//Close file
+	close(fd);
+	
+	//No dump
+	fd=FD_INVALID;
 
 	//Done
 	return 1;
