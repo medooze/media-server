@@ -124,7 +124,7 @@ void MediaFrameListenerBridge::onMediaFrame(const MediaFrame& frame)
 			if (lastTime)
 			{
 				//Get offset
-				QWORD offset = std::max((QWORD)(getTimeDiff(lastTime)*frame->GetClockRate()/1E6),1ul);
+				QWORD offset = std::max<QWORD>((QWORD)(getTimeDiff(lastTime)*frame->GetClockRate()/1E6),1ul);
 				//Calculate time difd and add to the last sent timestamp
 				baseTimestamp = lastTimestamp + offset;
 			}
