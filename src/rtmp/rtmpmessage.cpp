@@ -334,6 +334,11 @@ DWORD RTMPMessage::Parse(BYTE* data,DWORD size)
 		pos +=len;
 		//Check if we have finished
 		parsing = (pos!=length);
+	} else {
+		//Skip 
+		pos +=len;
+		//Check if we have finished
+		parsing = (pos!=length);
 	}
 
 	return len;
