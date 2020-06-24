@@ -180,6 +180,16 @@ void RTPIncomingSource::Update(QWORD now,DWORD seqNum,DWORD size)
 	 */
 }
 
+void RTPIncomingSource::Update(QWORD now)
+{
+	//Update source normally
+	RTPSource::Update(now);
+	//Update also all media layers
+	for (auto& [layerId,layer] : layers)
+		//Update bitrate also
+		layer.Update(now);
+}
+
 void RTPIncomingSource::Process(QWORD now, const RTCPSenderReport::shared& sr)
 {
 	//If first

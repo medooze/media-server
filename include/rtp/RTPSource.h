@@ -50,6 +50,14 @@ struct LayerSource : LayerInfo
 		//Update bitrate in bps
 		bitrate = acumulator.GetInstant()*8;
 	}
+	
+	virtual void Update(QWORD now)
+	{
+		//Update bitrate acumulator
+		acumulator.Update(now);
+		//Update bitrate in bps
+		bitrate = acumulator.GetInstant()*8;
+	}
 };
 
 struct RTPSource : public Mutex
@@ -71,7 +79,8 @@ struct RTPSource : public Mutex
 	
 	WORD SetSeqNum(WORD seqNum);
 	void SetExtSeqNum(DWORD extSeqNum );
-	virtual void Update(QWORD now, DWORD seqNum,DWORD size) ;
+	virtual void Update(QWORD now, DWORD seqNum,DWORD size);
+	virtual void Update(QWORD now);
 	virtual void Reset();
 };
 

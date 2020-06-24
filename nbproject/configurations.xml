@@ -193,8 +193,8 @@
         <df name="rtp">
           <in>LayerInfo.h</in>
           <in>PacketStats.h</in>
+          <in>RTPIncomingMediaStreamDepacketizer.h</in>
           <in>RTPIncomingMediaStreamMultiplexer.h</in>
-          <in>StreamTrackDepacketizerDepacketizer.h</in>
         </df>
         <in>VideoDecoderWorker.h</in>
         <in>WarpExtender.h</in>
@@ -776,12 +776,12 @@
       </item>
       <item path="include/rtp/PacketStats.h" ex="false" tool="3" flavor2="0">
       </item>
-      <item path="include/rtp/RTPIncomingMediaStreamMultiplexer.h"
+      <item path="include/rtp/RTPIncomingMediaStreamDepacketizer.h"
             ex="false"
             tool="3"
             flavor2="0">
       </item>
-      <item path="include/rtp/StreamTrackDepacketizerDepacketizer.h"
+      <item path="include/rtp/RTPIncomingMediaStreamMultiplexer.h"
             ex="false"
             tool="3"
             flavor2="0">
@@ -3049,7 +3049,7 @@
       </folder>
       <item path="include/WarpExtender.h" ex="false" tool="3" flavor2="0">
       </item>
-      <item path="include/rtp/StreamTrackDepacketizerDepacketizer.h"
+      <item path="include/rtp/RTPIncomingMediaStreamDepacketizer.h"
             ex="false"
             tool="3"
             flavor2="0">
@@ -7985,7 +7985,7 @@
       </folder>
       <item path="include/WarpExtender.h" ex="false" tool="3" flavor2="0">
       </item>
-      <item path="include/rtp/StreamTrackDepacketizerDepacketizer.h"
+      <item path="include/rtp/RTPIncomingMediaStreamDepacketizer.h"
             ex="false"
             tool="3"
             flavor2="0">
@@ -11961,7 +11961,7 @@
       </folder>
       <item path="include/WarpExtender.h" ex="false" tool="3" flavor2="0">
       </item>
-      <item path="include/rtp/StreamTrackDepacketizerDepacketizer.h"
+      <item path="include/rtp/RTPIncomingMediaStreamDepacketizer.h"
             ex="false"
             tool="3"
             flavor2="0">
@@ -15331,7 +15331,7 @@
       </folder>
       <item path="include/WarpExtender.h" ex="false" tool="3" flavor2="0">
       </item>
-      <item path="include/rtp/StreamTrackDepacketizerDepacketizer.h"
+      <item path="include/rtp/RTPIncomingMediaStreamDepacketizer.h"
             ex="false"
             tool="3"
             flavor2="0">

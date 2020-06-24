@@ -143,28 +143,24 @@ void RTPIncomingSourceGroup::Update(QWORD now)
 	{
 		//Lock source
 		ScopedLock scoped(media);
-		//Update bitrate accumulator
-		media.acumulator.Update(now);
-		//Update also all media layers
-		for (auto& entry : media.layers)
-			//Update bitrate also
-			entry.second.acumulator.Update(now);
+		//Update
+		media.Update(now);
 	}
 	
 	//Update RTX
 	{
 		//Lock source
 		ScopedLock scoped(rtx);
-		//Update bitrate accumulator
-		rtx.acumulator.Update(now);
+		//Update
+		rtx.Update(now);
 	}
 	
 	//Update FEC
 	{
 		//Lock source
 		ScopedLock scoped(fec);
-		//Update bitrate accumulator
-		fec.acumulator.Update(now);
+		//Update
+		fec.Update(now);
 	}
 }
 

@@ -50,6 +50,7 @@ struct RTPIncomingSource : public RTPSource
 	
 	
 	virtual void Update(QWORD now,DWORD seqNum,DWORD size) override;
+	virtual void Update(QWORD now) override;
 	virtual void Reset() override;
 	
 	RTCPReport::shared CreateReport(QWORD now);

@@ -68,6 +68,15 @@ void RTPSource::Update(QWORD now, DWORD seqNum,DWORD size)
 	bitrate = acumulator.GetInstant()*8;
 }
 
+void RTPSource::Update(QWORD now) 
+{
+	//Update bitrate acumulator
+	acumulator.Update(now);
+
+	//Get bitrate in bps
+	bitrate = acumulator.GetInstant()*8;
+}
+
 void RTPSource::Reset()
 {
 	extSeqNum	= 0;
