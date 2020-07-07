@@ -667,6 +667,10 @@ void RTPSession::onRTPPacket(const BYTE* data, DWORD size)
 		source->lastNACKed = getTime();
 		//Update nacked packets
 		source->totalNACKs++;
+	//Check if we need to send SR (1 per second
+	} else if (useRTCP && (!send.media.lastSenderReport || getTimeDiff(send.media.lastSenderReport)>1E6)) {
+		//Send it
+		SendSenderReport();
 	}
 	
 	//TODO: remove
