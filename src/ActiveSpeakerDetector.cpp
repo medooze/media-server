@@ -69,12 +69,12 @@ void ActiveSpeakerDetector::Process(uint64_t now)
 	//Get difference from last process
 	uint64_t diff = last ? now-last : 0;
 	
-	//Store last
-	last = now;
-	
 	//If we have processed it quite recently
 	if (diff<MinInterval)
 		return;
+	
+	//Store last
+	last = now;
 	
 	//Reduce accumulated voice activity
 	uint64_t decay = diff*ScorePerMiliScond;
