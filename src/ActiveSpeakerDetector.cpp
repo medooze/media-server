@@ -66,8 +66,9 @@ void ActiveSpeakerDetector::Process(uint64_t now)
 {
 	uint64_t active = 0;
 	uint64_t maxScore = 0;
+	
 	//Get difference from last process
-	uint64_t diff = last ? now-last : 0;
+	uint64_t diff = now - last;
 	
 	//If we have processed it quite recently
 	if (diff<MinInterval)
