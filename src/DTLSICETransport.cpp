@@ -40,6 +40,8 @@
 #include "Endpoint.h"
 #include "VideoLayerSelector.h"
 
+constexpr auto IceTimeout = 30000ms;
+
 DTLSICETransport::DTLSICETransport(Sender *sender,TimeService& timeService) :
 	sender(sender),
 	timeService(timeService),
@@ -1043,6 +1045,9 @@ void  DTLSICETransport::ActivateRemoteCandidate(ICERemoteCandidate* candidate,bo
 {
 	//Debug
 	//UltraDebug("-DTLSICETransport::ActivateRemoteCandidate() | Remote candidate [%s:%hu,use:%d,prio:%d,active:%p]\n",candidate->GetIP(),candidate->GetPort(),useCandidate,priority,active);
+	
+	//Restart timer
+	iceTimeoutTimer->Again(IceTimeout);
 	
 	//Should we set this candidate as the active one
 	if (!active || (useCandidate && candidate!=active))
@@ -2552,7 +2557,7 @@ void DTLSICETransport::Start()
 	dcOptions.localPort = 5000;
 	dcOptions.remotePort = 5000;
 	//Run ice timeout timer
-	iceTimeoutTimer = timeService.CreateTimer(30000ms,[this](...){
+	iceTimeoutTimer = timeService.CreateTimer(IceTimeout,[this](...){
 		//If got listener
 		if (listener)
 			//Fire timeout 
