@@ -37,6 +37,7 @@ public:
         int Dump(const char* filename);
 	int StopDump();
 private:
+	void SetState(ChangeState state);
 	void EstimateBandwidthRate(uint64_t when);
 private:
 	std::map<DWORD,PacketStats::shared> transportWideSentPacketsStats;

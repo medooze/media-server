@@ -233,12 +233,22 @@ uint32_t SendSideBandwidthEstimation::GetTargetBitrate() const
 	
 }
 
+void SendSideBandwidthEstimation::SetState(ChangeState state)
+{
+	//Set number of consecutive chantes
+	if (this->state == state)
+		consecutiveChanges++;
+	else 
+		consecutiveChanges = 0;
+	//Store new state
+	this->state = state;
+}
+
 void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 {
 	//Log("-SendSideBandwidthEstimation::EstimateBandwidthRate()\n");
 	
-	//Get previous state change
-	auto prevState = state;
+
 
 	//Get current estimated rtt
 	uint32_t rttMin		= GetMinRTT();
@@ -253,17 +263,17 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 	if (rttMin && rttEstimated>(50+rttMin*1.5))
 	{
 		//We are in congestion
-		state = ChangeState::Congestion;
+		SetState(ChangeState::Congestion);
 		//Set bwe as received rate
 		bandwidthEstimation = totalRecvBitrate;
 	} else if (mediaSentAcumulator.GetInstantAvg()*8>targetBitrate) {
 		//We are overshooting
-		state = ChangeState::OverShoot;
+		SetState(ChangeState::OverShoot);
 		//Take maximum of the spike and current value
 		bandwidthEstimation = std::max<uint64_t>(bandwidthEstimation, totalRecvBitrate);
 	} else {
 		//We are going to increase rate again
-		state = ChangeState::Increase;
+		SetState(ChangeState::Increase);
 		
 		//Initial conversion factor
 		double confidenceAmplifier = 1+std::log(consecutiveChanges+1);
@@ -276,12 +286,6 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 	
 	//Set min/max limits
 	bandwidthEstimation = std::min(std::max(bandwidthEstimation,kMinRate),kMaxRate);
-	
-	//Set number of consecutive chantes
-	if (prevState == state)
-		consecutiveChanges++;
-	else 
-		consecutiveChanges = 0;
 	
 	//Corrected rate based on loss
 	//bandwidthEstimation = bandwidthEstimation * ( 1.0f - lossRate);
