@@ -2551,6 +2551,13 @@ void DTLSICETransport::Start()
 	initTime = getTime();
 	dcOptions.localPort = 5000;
 	dcOptions.remotePort = 5000;
+	//Run ice timeout timer
+	iceTimeoutTimer = timeService.CreateTimer(30000ms,[this](...){
+		//If got listener
+		if (listener)
+			//Fire timeout 
+			listener->onICETimeout();
+	});
 	//Start
 	endpoint.Init(dcOptions);
 	//Started
@@ -2574,6 +2581,11 @@ void DTLSICETransport::Stop()
 		probingTimer.reset();
 	}
 	
+	//Check ice timeout timer
+	if (iceTimeoutTimer)
+		//Stop probing
+		iceTimeoutTimer->Cancel();
+
 	//Stop
 	endpoint.Close();
 	
