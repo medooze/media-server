@@ -26,6 +26,15 @@ public:
 		//No error
 		error = false;
 	}
+	inline void Reset()
+	{
+		//nothing in the cache
+		cached = 0;
+		cache = 0;
+		bufferPos = 0;
+		//No error
+		error = false;
+	}
 	inline DWORD Get(DWORD n)
 	{
 		DWORD ret = 0;
@@ -71,7 +80,7 @@ public:
 
 	inline QWORD Left()
 	{
-		return cached+bufferLen*8;
+		return (bufferLen - bufferPos) * 8 - cached;
 	}
 
 	inline DWORD Peek(DWORD n)
@@ -98,51 +107,57 @@ public:
 	{
 		return bufferPos*8-cached;
 	}
+
+	inline uint32_t GetNonSymmetric(uint8_t n) 
+	{
+		uint8_t w = 0;
+		uint8_t x = n;
+		while (x != 0) 
+		{
+			x = x >> 1;
+			w++;
+		}
+		uint8_t m = (1 << w) - n;
+		uint8_t v = Get(w - 1);
+		if (v < m)
+			return v;
+		uint8_t extra_bit = Get(1);
+		return (v << 1) - m + extra_bit;
+	}
 public:
 	inline DWORD Cache()
 	{
 		//Check left buffer
-		if (bufferLen>3)
+		if (bufferLen-bufferPos>3)
 		{
 			//Update cache
-			cache = get4(buffer,0);
+			cache = get4(buffer+bufferPos,0);
 			//Update bit count
 			cached = 32;
 			//Increase pointer
-			buffer += 4;
 			bufferPos += 4;
-			//Decrease length
-			bufferLen -= 4;
-		} else if(bufferLen==3) {
+
+		} else if(bufferLen-bufferPos==3) {
 			//Update cache
-			cache = get3(buffer,0)<<8;
+			cache = get3(buffer+bufferPos,0)<<8;
 			//Update bit count
 			cached = 24;
 			//Increase pointer
-			buffer += 3;
 			bufferPos += 3;
-			//Decrease length
-			bufferLen -= 3;
-		} else if (bufferLen==2) {
+		} else if (bufferLen-bufferPos==2) {
 			//Update cache
-			cache = get2(buffer,0)<<16;
+			cache = get2(buffer+bufferPos,0)<<16;
 			//Update bit count
 			cached = 16;
 			//Increase pointer
-			buffer += 2;
 			bufferPos += 2;
-			//Decrease length
-			bufferLen -= 2;
-		} else if (bufferLen==1) {
+		} else if (bufferLen-bufferPos==1) {
 			//Update cache
-			cache  = get1(buffer,0)<<24;
+			cache  = get1(buffer+bufferPos,0)<<24;
 			//Update bit count
 			cached = 8;
 			//Increase pointer
-			buffer++;
 			bufferPos++;
-			//Decrease length
-			bufferLen--;
 		} else {
 			//We can't use exceptions so set error flag
 			error = true;
@@ -161,19 +176,19 @@ public:
 	inline DWORD PeekNextCached()
 	{
 		//Check left buffer
-		if (bufferLen>3)
+		if (bufferLen-bufferPos>3)
 		{
 			//return  cached
-			return get4(buffer,0);
-		} else if(bufferLen==3) {
+			return get4(buffer+bufferPos,0);
+		} else if(bufferLen-bufferPos==3) {
 			//return  cached
-			return get3(buffer,0)<<8;
-		} else if (bufferLen==2) {
+			return get3(buffer+bufferPos,0)<<8;
+		} else if (bufferLen-bufferPos==2) {
 			//return  cached
-			return get2(buffer,0)<<16;
-		} else if (bufferLen==1) {
+			return get2(buffer+bufferPos,0)<<16;
+		} else if (bufferLen-bufferPos==1) {
 			//return  cached
-			return get1(buffer,0)<<24;
+			return get1(buffer+bufferPos,0)<<24;
 		} else {
 			//We can't use exceptions so set error flag
 			error = true;
@@ -324,8 +339,10 @@ public:
 		{
 			BYTE a = 32-cached;
 			BYTE b =  n-a;
-			//Add to cache
-			cache = (cache << a) | ((v>>b) & (0xFFFFFFFF>>cached));
+			//Check if cache is not full
+			if (a)
+				//Add remaining to cache
+				cache = (cache << a) | ((v>>b) & (0xFFFFFFFF>>cached));
 			//Set cached bytes
 			cached = 32;
 			//Flush into memory
@@ -347,6 +364,11 @@ public:
 		
 		return v;
 	}
+	
+	inline QWORD Left()
+	{
+		return (size - bufferLen) * 8 - cached;
+	}
 
 	inline DWORD Put(BYTE n,BitReader &reader)
 	{
@@ -358,6 +380,29 @@ public:
 		//We won't use exceptions, so we need to signal errors somehow
 		return error;
 	}
+	
+	inline bool WriteNonSymmetric(uint32_t num,uint32_t val) 
+	{
+  		if (num == 1)
+			// When there is only one possible value, it requires zero bits to store it.
+			return true;
+		
+		size_t count = CountBits(num);
+		uint32_t numbits = (1u << count) - num;
+
+		if (val < numbits)
+		{
+			if (Left()<count-1)
+				return false;
+			Put(count - 1, val);
+		} else {
+			if (Left()<count)
+				return false;
+			Put(count, val + numbits);
+		}
+		return true;
+	}
+
 private:
 	BYTE* data;
 	DWORD size;

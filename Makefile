@@ -89,8 +89,8 @@ G722OBJ=g722codec.o g722_decode.o g722_encode.o
 AACDIR=aac
 AACOBJ=aacencoder.o aacdecoder.o
 
-RTP=  LayerInfo.o RTPMap.o  RTPPacket.o RTPPayload.o RTPPacketSched.o  RTPLostPackets.o RTPSource.o
-RTCP= RTCPCompoundPacket.o RTCPNACK.o RTCPReceiverReport.o RTCPCommonHeader.o RTPHeader.o RTPHeaderExtension.o RTCPApp.o RTCPExtendedJitterReport.o RTCPPacket.o RTCPReport.o RTCPSenderReport.o RTCPBye.o RTCPFullIntraRequest.o RTCPPayloadFeedback.o RTCPRTPFeedback.o RTCPSDES.o 
+RTP=  LayerInfo.o RTPMap.o  RTPPacket.o RTPPayload.o RTPPacketSched.o  RTPLostPackets.o RTPSource.o RTPHeader.o RTPHeaderExtension.o DependencyDescriptor.o
+RTCP= RTCPCompoundPacket.o RTCPNACK.o RTCPReceiverReport.o RTCPCommonHeader.o  RTCPApp.o RTCPExtendedJitterReport.o RTCPPacket.o RTCPReport.o RTCPSenderReport.o RTCPBye.o RTCPFullIntraRequest.o RTCPPayloadFeedback.o RTCPRTPFeedback.o RTCPSDES.o 
 CORE= RTPIncomingMediaStreamDepacketizer.o RTPIncomingMediaStreamMultiplexer.o RTPIncomingSource.o RTPIncomingSourceGroup.o RTPOutgoingSource.o RTPOutgoingSourceGroup.o RTPSmoother.o SRTPSession.o dtls.o OpenSSL.o RTPTransport.o  stunmessage.o crc32calc.o http.o httpparser.o avcdescriptor.o utf8.o rtpsession.o RTPStreamTransponder.o VideoLayerSelector.o remoteratecontrol.o remoterateestimator.o RTPBundleTransport.o DTLSICETransport.o PCAPFile.o PCAPReader.o PCAPTransportEmulator.o ActiveSpeakerDetector.o EventLoop.o Datachannels.o crc32c.o crc32c_sse42.o crc32c_portable.o MediaFrameListenerBridge.o SendSideBandwidthEstimation.o
 MP4= mp4streamer.o mp4recorder.o mp4player.o
 
@@ -112,7 +112,7 @@ endif
 OBJSMCU = $(OBJS) main.o
 OBJSBASE = ${CORE} ${RTP} ${RTCP} $(DEPACKETIZERSOBJ) 
 OBJSLIB = ${CORE} ${RTP} ${RTCP} $(DEPACKETIZERSOBJ) $(MP4)
-OBJSTEST = $(OBJS) test/main.o test/test.o test/h264.o test/aac.o test/cpim.o test/rtp.o test/fec.o test/overlay.o test/vp8.o test/vp9.o test/stun.o test/rtmp.o
+OBJSTEST = $(OBJS) test/main.o test/test.o test/dd.o test/h264.o test/aac.o test/cpim.o test/rtp.o test/fec.o test/overlay.o test/vp8.o test/vp9.o test/stun.o test/rtmp.o
 OBJSFUZZ = ${RTP} ${RTCP} fuzz/fuzz.o
 
 

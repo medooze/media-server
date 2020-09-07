@@ -278,6 +278,13 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 				hasMediaStreamId = true;
 				mid.assign((const char*)ext+i,len);
 				break;
+			case DependencyDescriptor:
+			{
+				BitReader reader(ext+i,len);
+				dependencyDescryptor	= DependencyDescriptor::Parse(reader);
+				hasDependencyDescriptor = dependencyDescryptor.has_value();
+				break;
+			}
 			default:
 				UltraDebug("-Unknown or unmapped extension [%d]\n",id);
 				break;
@@ -306,6 +313,35 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 	DWORD len = 4;
 	
 	//For each extension
+	
+	if (hasDependencyDescriptor && dependencyDescryptor)
+	{
+		//Get id for extension
+		BYTE id = extMap.GetTypeForCodec(DependencyDescriptor);
+		
+		//Write header with dummy length
+		if ((n = WriteHeaderIdAndLength(data,len,id,0)))
+		{
+			//Get writter
+			BitWritter writter(data + len + n, size - len + n);
+			
+			//Serialize 
+			if (dependencyDescryptor->Serialize(writter))
+			{
+				//Flush buffer and get lenght
+				uint32_t extLen = writter.Flush();
+				
+				//TODO: check for two byte header extension
+				
+				//Rewrite header
+				n = WriteHeaderIdAndLength(data,len,id,extLen);
+				//Inc header len
+				len += extLen + n;
+			}
+		}	
+	}
+	
+	
 	if (hasAudioLevel)
 	{
 		//Get id for extension

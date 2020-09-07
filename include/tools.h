@@ -447,5 +447,18 @@ inline DWORD pad32(DWORD size)
 	else
 		return size;
 }
+
+// Counts the number of bits used in the binary representation of val.
+
+inline size_t CountBits(uint64_t val)
+{
+	size_t count = 0;
+	while (val != 0)
+	{
+		count++;
+		val >>= 1;
+	}
+	return count;
+}
 #endif
 

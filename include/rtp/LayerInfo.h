@@ -5,6 +5,12 @@
 
 struct LayerInfo
 {
+	LayerInfo() = default;
+	LayerInfo(BYTE temporalLayerId, BYTE spatialLayerId) :
+		temporalLayerId(temporalLayerId),
+		spatialLayerId(spatialLayerId)
+	{	
+	}
 	static BYTE MaxLayerId; 
 	BYTE temporalLayerId = MaxLayerId;
 	BYTE spatialLayerId  = MaxLayerId;
