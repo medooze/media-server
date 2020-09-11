@@ -24,6 +24,7 @@ public:
 	int WriteAudioFrame(AudioFrame &audioFrame);
 	int WriteVideoFrame(VideoFrame &videoFrame);
 	int WriteTextFrame(TextFrame &textFrame);
+	void SetTrackName(const std::string& name); 
 	int Close();
 	void AddH264SequenceParameterSet(const BYTE* data, DWORD size);
 	void AddH264PictureParameterSet(const BYTE* data, DWORD size);

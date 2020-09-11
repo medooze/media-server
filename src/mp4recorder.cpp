@@ -15,6 +15,11 @@ mp4track::mp4track(MP4FileHandle mp4) :
 {
 }
 
+void mp4track::SetTrackName(const std::string& name)
+{
+	MP4SetTrackName(mp4, track, name.c_str());
+}
+
 int mp4track::CreateAudioTrack(AudioCodec::Type codec, DWORD rate, bool disableHints)
 {
 	Log("-mp4track::CreateAudioTrack() [codec:%d]\n",codec);
@@ -870,6 +875,8 @@ void MP4Recorder::processMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD t
 				audioTrack = new mp4track(mp4);
 				//Create track
 				audioTrack->CreateAudioTrack(audioFrame.GetCodec(),audioFrame.GetClockRate(),disableHints);
+				//Set name as ssrc
+				audioTrack->SetTrackName(std::to_string(ssrc));
 				//If it is not first
 				if (delta)
 				{
@@ -938,6 +945,8 @@ void MP4Recorder::processMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD t
 					videoTrack = new mp4track(mp4);
 					//Create track
 					videoTrack->CreateVideoTrack(videoFrame.GetCodec(),videoFrame.GetClockRate(),videoFrame.GetWidth(),videoFrame.GetHeight(),disableHints);
+					//Set name as ssrc
+					videoTrack->SetTrackName(std::to_string(ssrc));
 					//Add it to map
 					videoTracks[ssrc] = videoTrack;
 					
@@ -1032,6 +1041,8 @@ void MP4Recorder::processMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD t
 				textTrack = new mp4track(mp4);
 				//Create track
 				textTrack->CreateTextTrack();
+				//Set name as ssrc
+				textTrack->SetTrackName(std::to_string(ssrc));
 				//Create empty text frame
 				TextFrame empty(0,(BYTE*)NULL,0);
 				//Send first empty packet
