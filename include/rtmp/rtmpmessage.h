@@ -133,6 +133,7 @@ class RTMPCommandMessage
 public:
 	RTMPCommandMessage();
 	RTMPCommandMessage(const wchar_t* name,QWORD transId,AMFData* params,AMFData *extra);
+	RTMPCommandMessage(const wchar_t* name,QWORD transId,AMFData* params,const std::vector<AMFData*>& extra);
 	virtual ~RTMPCommandMessage();
 
 	virtual DWORD Parse(BYTE *data,DWORD size);
@@ -149,6 +150,8 @@ public:
 	DWORD		GetExtraLength() 	{ return extra.size(); 		}
 	AMFData*	GetExtra(DWORD i) 	{ return extra[i]; 		}
 	void		Dump();
+	RTMPCommandMessage* Clone() const;
+	
 private:
 	AMFParser 	parser;
 	AMFString* 	name;

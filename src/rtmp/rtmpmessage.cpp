@@ -456,6 +456,24 @@ RTMPCommandMessage::RTMPCommandMessage(const wchar_t* name,QWORD transId,AMFData
 		this->extra.push_back(extra);
 }
 
+RTMPCommandMessage::RTMPCommandMessage(const wchar_t* name,QWORD transId,AMFData* params,const std::vector<AMFData*>& extra)
+{
+	//Set name
+	this->name = new AMFString();
+	this->name->SetWString(name);
+	//Set transId
+	this->transId = new AMFNumber();
+	this->transId->SetNumber(transId);
+	//Store objects
+	if (params)
+	    //Store object
+	    this->params = params;
+	else
+	    //Create null object
+	    this->params = new AMFNull();
+	//If extra
+	this->extra = extra;
+}
 
 RTMPCommandMessage::~RTMPCommandMessage()
 {
@@ -633,6 +651,20 @@ DWORD RTMPCommandMessage::GetSize()
 
 	//Return lengt
 	return len;
+}
+
+RTMPCommandMessage* RTMPCommandMessage::Clone() const 
+{
+	std::vector<AMFData*> extras;
+	for (auto ext : extra)
+		extras.push_back(ext ? ext->Clone() : nullptr);
+	
+	return new RTMPCommandMessage(
+		name->GetWChar(),
+		transId->GetNumber(),
+		params ? params->Clone() : nullptr,
+		extras
+	);
 }
 /************************
  * RTMPMetaData
