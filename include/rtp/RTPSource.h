@@ -31,6 +31,7 @@ struct LayerSource : LayerInfo
 	{
 		
 	}
+	virtual ~LayerSource() = default;
 	
 	LayerSource(const LayerInfo& layerInfo) : acumulator(1000)
 	{
@@ -67,12 +68,14 @@ struct RTPSource : public Mutex
 	DWORD	cycles;
 	DWORD	jitter;
 	DWORD	numPackets;
+	DWORD   numPacketsDelta;
 	DWORD	numRTCPPackets;
 	DWORD	totalBytes;
 	DWORD	totalRTCPBytes;
 	DWORD   bitrate;
 	DWORD	clockrate;
 	Acumulator acumulator;
+	Acumulator acumulatorPackets;
 	
 	RTPSource();
 	virtual ~RTPSource() = default;

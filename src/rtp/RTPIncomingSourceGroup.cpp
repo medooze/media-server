@@ -77,6 +77,9 @@ int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet, DWORD siz
 	//Get now
 	auto now = getTimeMS();
 	
+	//Update instant lost accumulator
+	if (lost) media.AddLostPackets(now, lost);
+	
 	//If doing remb
 	if (remb)
 	{
@@ -288,6 +291,8 @@ RTPIncomingSource* RTPIncomingSourceGroup::Process(RTPPacket::shared &packet)
 		source->Update(time, packet->GetSeqNum(), packet->GetRTPHeader().GetSize() + packet->GetMediaLength());
 	}
 	
+	if (source==&media)
+		source->SetLastTimestamp(time, packet->GetExtTimestamp());
 	//Done
 	return source;
 }

@@ -7,7 +7,10 @@
 
 MediaFrameListenerBridge::MediaFrameListenerBridge(DWORD ssrc) : 
 	ssrc(ssrc),
-	acumulator(1000)
+	acumulator(1000),
+	accumulatorFrames(1000),
+	accumulatorPackets(1000),
+	waited(1000)
 {
 	loop.Start();
 }
@@ -107,13 +110,19 @@ void MediaFrameListenerBridge::onMediaFrame(const MediaFrame& frame)
 
 		//Get now
 		auto now = getTimeMS();
+		//Get frame reception time
+		auto time = frame->GetTime();
 
 		//Increase stats
 		numFrames++;
 		totalBytes += frameSize;
 
+		//Increate accumulators
+		accumulatorFrames.Update(now,1);
 		//Update bitrate acumulator
 		acumulator.Update(now,frameSize);
+		//Waiting time
+		waited.Update(now, now>time ? now-time : 0);
 		//Get bitrate in bps
 		bitrate = acumulator.GetInstant()*8;
 
@@ -210,7 +219,16 @@ void MediaFrameListenerBridge::Update(QWORD now)
 		//Update bitrate acumulator
 		acumulator.Update(now);
 		//Get bitrate in bps
-		bitrate = acumulator.GetInstant()*8;
+		bitrate		= acumulator.GetInstant()*8;
+		///Get value
+		minWaitedTime	= waited.GetMinValueInWindow();
+		//Get value
+		maxWaitedTime	= waited.GetMaxValueInWindow();
+		//Get value
+		avgWaitedTime	= waited.GetInstantMedia();
+		//Get packets and frames delta
+		numFramesDelta	= accumulatorFrames.GetInstant();
+		numPacketsDelta	= accumulatorPackets.GetInstant();
 	});
 }
 

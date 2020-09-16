@@ -50,9 +50,15 @@ RTCPReport::shared RTPIncomingSource::CreateReport(QWORD now)
 	return report;
 }
 
-RTPIncomingSource::RTPIncomingSource() : RTPSource()
+RTPIncomingSource::RTPIncomingSource() : 
+	RTPSource(),
+	acumulatorFrames(1000),
+	acumulatorLostPackets(1000)
 {
+	numFrames			= 0;
+	numFramesDelta			= 0;
 	lostPackets			= 0;
+	lostPacketsDelta		= 0;
 	dropPackets			= 0;
 	totalPacketsSinceLastSR		= 0;
 	totalBytesSinceLastSR		= 0;
@@ -78,7 +84,10 @@ RTPIncomingSource::RTPIncomingSource() : RTPSource()
 void RTPIncomingSource::Reset()
 {
 	RTPSource::Reset();
+	numFrames			= 0;
+	numFramesDelta			= 0;
 	lostPackets			= 0;
+	lostPacketsDelta		= 0;
 	dropPackets			= 0;
 	totalPacketsSinceLastSR		= 0;
 	totalBytesSinceLastSR		= 0;
@@ -188,6 +197,9 @@ void RTPIncomingSource::Update(QWORD now)
 	for (auto& [layerId,layer] : layers)
 		//Update bitrate also
 		layer.Update(now);
+	//Update deltas
+	numFramesDelta	 = acumulatorFrames.Update(now);
+	lostPacketsDelta = acumulatorLostPackets.Update(now);
 }
 
 void RTPIncomingSource::Process(QWORD now, const RTCPSenderReport::shared& sr)
@@ -238,4 +250,18 @@ WORD RTPIncomingSource::RecoverSeqNum(WORD osn)
 DWORD RTPIncomingSource::RecoverTimestamp(DWORD timestamp)
 {
 	return timestampExtender.RecoverCycles(timestamp);
+}
+
+void RTPIncomingSource::SetLastTimestamp(QWORD now, QWORD timestamp)
+{
+	//If new packet is newer
+	if (timestamp>lastTimestamp)
+	{
+		//One new frame
+		numFrames++;
+		numFramesDelta = acumulatorFrames.Update(now, 1);
+		//Store last time
+		lastTimestamp = timestamp;
+	}
+	lastTime = now;
 }

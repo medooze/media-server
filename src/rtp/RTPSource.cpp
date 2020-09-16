@@ -1,11 +1,12 @@
 #include "rtp/RTPSource.h"
 
-RTPSource::RTPSource() : acumulator(1000)
+RTPSource::RTPSource() : acumulator(1000),acumulatorPackets(1000)
 {
 	ssrc		= 0;
 	extSeqNum	= 0;
 	cycles		= 0;
 	numPackets	= 0;
+	numPacketsDelta = 0;	
 	numRTCPPackets	= 0;
 	totalBytes	= 0;
 	totalRTCPBytes	= 0;
@@ -63,6 +64,7 @@ void RTPSource::Update(QWORD now, DWORD seqNum,DWORD size)
 
 	//Update bitrate acumulator
 	acumulator.Update(now,size);
+	acumulatorPackets.Update(now,1);
 
 	//Get bitrate in bps
 	bitrate = acumulator.GetInstant()*8;
@@ -75,6 +77,8 @@ void RTPSource::Update(QWORD now)
 
 	//Get bitrate in bps
 	bitrate = acumulator.GetInstant()*8;
+	//Get num packets in window
+	numPacketsDelta = acumulatorPackets.GetInstant();
 }
 
 void RTPSource::Reset()
@@ -82,6 +86,7 @@ void RTPSource::Reset()
 	extSeqNum	= 0;
 	cycles		= 0;
 	numPackets	= 0;
+	numPacketsDelta = 0;
 	numRTCPPackets	= 0;
 	totalBytes	= 0;
 	totalRTCPBytes	= 0;

@@ -7,11 +7,15 @@
 #include "rtp/RTPPacket.h"
 #include "rtp/RTPSource.h"
 #include "rtp/RTCPReport.h"
+#include "acumulator.h"
 #include "WrapExtender.h"
 
 struct RTPIncomingSource : public RTPSource
 {
+	DWORD	numFrames;
+	DWORD	numFramesDelta;
 	DWORD	lostPackets;
+	DWORD	lostPacketsDelta;
 	DWORD	dropPackets;
 	DWORD	totalPacketsSinceLastSR;
 	DWORD	totalBytesSinceLastSR;
@@ -25,7 +29,7 @@ struct RTPIncomingSource : public RTPSource
 	DWORD   totalPLIs;
 	DWORD	totalNACKs;
 	QWORD	lastNACKed;
-	DWORD	lastTimestamp;
+	QWORD	lastTimestamp;
 	QWORD	lastTime;
 	QWORD   firstReceivedSenderTime;
 	QWORD   firstReceivedSenderTimestamp;
@@ -34,6 +38,10 @@ struct RTPIncomingSource : public RTPSource
 	WrapExtender timestampExtender;
 	WrapExtender lastReceivedSenderRTPTimestampExtender;
 	std::map<WORD,LayerSource> layers;
+	
+	Acumulator acumulatorFrames;
+	Acumulator acumulatorLostPackets;
+	
 	
 	RTPIncomingSource();
 	virtual ~RTPIncomingSource() = default;
@@ -47,11 +55,16 @@ struct RTPIncomingSource : public RTPSource
 	void Update(QWORD now,DWORD seqNum,DWORD size,const LayerInfo &layerInfo);
 	
 	void Process(QWORD now, const RTCPSenderReport::shared& sr);
-	
+	void SetLastTimestamp(QWORD now, QWORD timestamp);
 	
 	virtual void Update(QWORD now,DWORD seqNum,DWORD size) override;
 	virtual void Update(QWORD now) override;
 	virtual void Reset() override;
+	
+	void AddLostPackets(QWORD now, DWORD lost) 
+	{
+		lostPacketsDelta = acumulatorLostPackets.Update(now, lost); 
+	}
 	
 	RTCPReport::shared CreateReport(QWORD now);
 };
