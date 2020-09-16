@@ -836,8 +836,8 @@ void RTMPConnection::ProcessControlMessage(DWORD streamId,BYTE type,RTMPObject* 
 					//Get response
 					DWORD ping = event->GetEventData();
 					//Get roundtrip delay
-					DWORD delay = getDifTime(&startTime)/1000-ping;
-					Log("PingResponse [ping:%d,delay:%d]\n",ping,delay);
+					rtt = getDifTime(&startTime)/1000-ping;
+					Log("PingResponse [ping:%d,delay:%d]\n",ping,rtt);
 					break;
 
 			}

@@ -58,6 +58,7 @@ public:
 	virtual void onStreamReset(DWORD id);
 	virtual void onDetached(RTMPMediaStream *stream);
 	
+	DWORD GetRTT()	{ return rtt; }
 protected:
 	void Start();
 	void Stop();
@@ -141,6 +142,8 @@ private:
 	QWORD bandIni;
 	DWORD bandSize;
 	DWORD bandCalc;
+	
+	DWORD rtt = 0;
 };
 
 #endif
