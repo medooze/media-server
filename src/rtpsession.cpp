@@ -718,6 +718,9 @@ void RTPSession::onRTCPPacket(const BYTE* buffer, DWORD size)
 		//Error
 		return;
 	
+	//Get now
+	QWORD now = getTime();
+	
 	//Increase stats
 	recv.media.numRTCPPackets++;
 	recv.media.totalRTCPBytes += rtcp->GetSize();
@@ -745,16 +748,10 @@ void RTPSession::onRTCPPacket(const BYTE* buffer, DWORD size)
 					auto report = sr->GetReport(j);
 					//Check ssrc
 					if (report->GetSSRC()==send.media.ssrc)
-					{
-						//Calculate RTT
-						if (send.media.lastSenderReport && send.media.IsLastSenderReportNTP(report->GetLastSR()))
-						{
-							//Calculate new rtt in ms
-							DWORD rtt = getTimeDiff(send.media.lastSenderReport)/1000-report->GetDelaySinceLastSRMilis();
-							//Set it
-							SetRTT(rtt);
-						}
-					}
+						//Proccess it
+						if (send.media.ProcessReceiverReport(now/1000, report))
+							//We need to update rtt
+							SetRTT(send.media.rtt);
 				}
 				break;
 			}
@@ -769,16 +766,10 @@ void RTPSession::onRTCPPacket(const BYTE* buffer, DWORD size)
 					auto report = rr->GetReport(j);
 					//Check ssrc
 					if (report->GetSSRC()==send.media.ssrc)
-					{
-						//Calculate RTT
-						if (send.media.lastSenderReport && send.media.IsLastSenderReportNTP(report->GetLastSR()))
-						{
-							//Calculate new rtt in ms
-							DWORD rtt = getTimeDiff(send.media.lastSenderReport)/1000-report->GetDelaySinceLastSRMilis();
-							//Set it
-							SetRTT(rtt);
-						}
-					}
+						//Proccess it
+						if (send.media.ProcessReceiverReport(now/1000, report))
+							//We need to update rtt
+							SetRTT(send.media.rtt);
 				}
 				break;
 			}

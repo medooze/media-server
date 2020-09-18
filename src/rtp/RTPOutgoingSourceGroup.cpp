@@ -146,26 +146,27 @@ void RTPOutgoingSourceGroup::Update()
 
 void RTPOutgoingSourceGroup::Update(QWORD now)
 {
+	//Update media
+	{
+		//Lock source
+		ScopedLock scoped(media);
+		//Update
+		media.Update(now);
+	}
 	
-	//SYNCed
+	//Update RTX
 	{
-		//Lock in scope
-                ScopedLock scope(media);
-		//Refresh instant bitrates
-		media.acumulator.Update(now);
+		//Lock source
+		ScopedLock scoped(rtx);
+		//Update
+		rtx.Update(now);
 	}
-	//SYNCde
+	
+	//Update FEC
 	{
-		//Lock in scope
-                ScopedLock scope(rtx);
-		//Refresh instant bitrates
-		rtx.acumulator.Update(now);
-	}
-	//SYNCde
-	{
-		//Lock in scope
-                ScopedLock scope(fec);
-		//Refresh instant bitrates
-		fec.acumulator.Update(now);
+		//Lock source
+		ScopedLock scoped(fec);
+		//Update
+		fec.Update(now);
 	}
 }

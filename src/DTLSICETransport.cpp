@@ -2154,6 +2154,9 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 
 void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 {
+	//Get current time
+	uint64_t now = getTime();
+	
 	//For each packet
 	for (DWORD i = 0; i<rtcp->GetPacketCount();i++)
 	{
@@ -2182,7 +2185,7 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 				}
 				
 				//Update source
-				source->Process(getTime(),sr);
+				source->Process(now, sr);
 				
 				//Process all the Sender Reports
 				for (DWORD j=0;j<sr->GetCount();j++)
@@ -2202,14 +2205,11 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 						//Check ssrc
 						if (source)
 						{
-							//Calculate RTT
-							if (source->IsLastSenderReportNTP(report->GetLastSR()))
-							{
-								//Calculate new rtt in ms
-								DWORD rtt = getTimeDiff(source->lastSenderReport)/1000-report->GetDelaySinceLastSRMilis();
-								//Update packet jitter buffer
-								SetRTT(rtt);
-							}
+							RTPOutgoingSource* source = group->GetSource(ssrc);
+							//Proccess it
+							if (source && source->ProcessReceiverReport(now/1000, report))
+								//We need to update rtt
+								SetRTT(source->rtt);
 						}
 					}
 				}
@@ -2235,19 +2235,10 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 					{
 						//Get media
 						RTPOutgoingSource* source = group->GetSource(ssrc);
-						//Check ssrc
-						if (source)
-						{
-							//Calculate RTT
-							if (source->IsLastSenderReportNTP(report->GetLastSR()))
-							{
-								//Calculate new rtt in ms
-								DWORD rtt = getTimeDiff(source->lastSenderReport)/1000-report->GetDelaySinceLastSRMilis();
-								//Set it
-								SetRTT(rtt);
-								
-							}
-						}
+						//Proccess it
+						if (source && source->ProcessReceiverReport(now/1000, report))
+							//We need to update rtt
+							SetRTT(source->rtt);
 					}
 				}
 				break;
@@ -2324,7 +2315,7 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 							//Get field
 							auto field = fb->GetField<RTCPRTPFeedback::TransportWideFeedbackMessageField>(i);
 							//Pass it to the estimator
-							senderSideBandwidthEstimator.ReceivedFeedback(field->feedbackPacketCount,field->packets,getTime());
+							senderSideBandwidthEstimator.ReceivedFeedback(field->feedbackPacketCount,field->packets,now);
 						}
 						break;
 				}
