@@ -2206,10 +2206,16 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 						if (source)
 						{
 							RTPOutgoingSource* source = group->GetSource(ssrc);
-							//Proccess it
-							if (source && source->ProcessReceiverReport(now/1000, report))
-								//We need to update rtt
-								SetRTT(source->rtt);
+							//Check we have it
+							if (source)
+							{
+								//Lock source
+								ScopedLock scoped(*source);
+								//Process report
+								if (source->ProcessReceiverReport(now/1000, report))
+									//We need to update rtt
+									SetRTT(source->rtt);
+							}
 						}
 					}
 				}
@@ -2235,10 +2241,21 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 					{
 						//Get media
 						RTPOutgoingSource* source = group->GetSource(ssrc);
-						//Proccess it
-						if (source && source->ProcessReceiverReport(now/1000, report))
-							//We need to update rtt
-							SetRTT(source->rtt);
+						//Check ssrc
+						if (source)
+						{
+							RTPOutgoingSource* source = group->GetSource(ssrc);
+							//Check we have it
+							if (source)
+							{
+								//Lock source
+								ScopedLock scoped(*source);
+								//Process report
+								if (source->ProcessReceiverReport(now/1000, report))
+									//We need to update rtt
+									SetRTT(source->rtt);
+							}
+						}
 					}
 				}
 				break;

@@ -748,10 +748,13 @@ void RTPSession::onRTCPPacket(const BYTE* buffer, DWORD size)
 					auto report = sr->GetReport(j);
 					//Check ssrc
 					if (report->GetSSRC()==send.media.ssrc)
+					{
+						ScopedLock scoped(send.media);
 						//Proccess it
 						if (send.media.ProcessReceiverReport(now/1000, report))
 							//We need to update rtt
 							SetRTT(send.media.rtt);
+					}
 				}
 				break;
 			}
@@ -766,10 +769,13 @@ void RTPSession::onRTCPPacket(const BYTE* buffer, DWORD size)
 					auto report = rr->GetReport(j);
 					//Check ssrc
 					if (report->GetSSRC()==send.media.ssrc)
+					{
+						ScopedLock scoped(send.media);
 						//Proccess it
 						if (send.media.ProcessReceiverReport(now/1000, report))
 							//We need to update rtt
 							SetRTT(send.media.rtt);
+					}
 				}
 				break;
 			}
