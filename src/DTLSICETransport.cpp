@@ -1712,20 +1712,20 @@ bool DTLSICETransport::AddIncomingSourceGroup(RTPIncomingSourceGroup *group)
 		if (media && incoming.find(media)!=incoming.end())
 		{
 			//Error
-			done = Error("-AddIncomingSourceGroup media ssrc already assigned");
+			done = Warning("-DTLSICETransport::AddIncomingSourceGroup() media ssrc already assigned\n");
 			return;
 		}
 		if (fec && incoming.find(fec)!=incoming.end())
 		{
 			//Error
-			done = Error("-AddIncomingSourceGroup fec ssrc already assigned");
+			done = Warning("-DTLSICETransport::AddIncomingSourceGroup() fec ssrc already assigned\n");
 			return;
 		}
 			
 		if (rtx && incoming.find(rtx)!=incoming.end())
 		{
 			//Error
-			done =  Error("-AddIncomingSourceGroup rtx ssrc already assigned");
+			done =  Warning("-DTLSICETransport::AddIncomingSourceGroup() rtx ssrc already assigned\n");
 			return;
 		}
 
@@ -1767,7 +1767,7 @@ bool DTLSICETransport::AddIncomingSourceGroup(RTPIncomingSourceGroup *group)
 	
 	//Check result
 	if (!done)
-		return false;
+		return Warning("-DTLSICETransport::AddIncomingSourceGroup() Could not add incoming source\n");
 		
 	//If it is video and the transport wide cc is not enabled enable remb
 	bool remb = group->type == MediaFrame::Video && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC)==RTPMap::NotFound;

@@ -1,7 +1,10 @@
 #include "rtp/RTPIncomingMediaStreamDepacketizer.h"
+#include "use.h"
 
 RTPIncomingMediaStreamDepacketizer::RTPIncomingMediaStreamDepacketizer(RTPIncomingMediaStream* incomingSource)
 {
+	Debug("-RTPIncomingMediaStreamDepacketizer::RTPIncomingMediaStreamDepacketizer() [%p]\n",incomingSource);
+	
 	//Store
 	this->incomingSource = incomingSource;
 	//Add us as RTP listeners
@@ -12,6 +15,8 @@ RTPIncomingMediaStreamDepacketizer::RTPIncomingMediaStreamDepacketizer(RTPIncomi
 
 RTPIncomingMediaStreamDepacketizer::~RTPIncomingMediaStreamDepacketizer()
 {
+	Debug("-RTPIncomingMediaStreamDepacketizer::~RTPIncomingMediaStreamDepacketizer()\n");
+	
 	//JIC
 	Stop();
 	//Check 
@@ -59,6 +64,8 @@ void RTPIncomingMediaStreamDepacketizer::onRTP(RTPIncomingMediaStream* group,con
 
 void RTPIncomingMediaStreamDepacketizer::onBye(RTPIncomingMediaStream* group) 
 {
+	Debug("-RTPIncomingMediaStreamDepacketizer::onBye() [group:%p]\n", group);
+	
 	if(depacketizer)
 		//Skip current
 		depacketizer->ResetFrame();
@@ -66,16 +73,28 @@ void RTPIncomingMediaStreamDepacketizer::onBye(RTPIncomingMediaStream* group)
 
 void RTPIncomingMediaStreamDepacketizer::onEnded(RTPIncomingMediaStream* group) 
 {
+	ScopedLock scoped(mutex);
+	
+	//Lock	
+	Debug("-RTPIncomingMediaStreamDepacketizer::onEnded() [group:%p]\n", group);
+	
+	//Check it is ours
 	if (incomingSource==group)
 		incomingSource = nullptr;
 }
 
 void RTPIncomingMediaStreamDepacketizer::AddMediaListener(MediaFrame::Listener *listener)
 {
-	//If already stopped
-	if (!incomingSource || !listener)
+	ScopedLock scoped(mutex);
+	
+	//Log
+	Debug("-RTPIncomingMediaStreamDepacketizer::AddMediaListener() [listener:%p]\n", listener);
+	
+	//Check listener
+	if (!listener)
 		//Done
 		return;
+	
 	//Add listener async
 	incomingSource->GetTimeService().Async([=](...){
 		//Add to set
@@ -85,8 +104,13 @@ void RTPIncomingMediaStreamDepacketizer::AddMediaListener(MediaFrame::Listener *
 
 void RTPIncomingMediaStreamDepacketizer::RemoveMediaListener(MediaFrame::Listener *listener)
 {
-	//If already stopped
-	if (!incomingSource)
+	ScopedLock scoped(mutex);
+	
+	//Log
+	Debug("-RTPIncomingMediaStreamDepacketizer::RemoveMediaListener() [listener:%p]\n", listener);
+	
+	//Check listener
+	if (!incomingSource || !listener)
 		//Done
 		return;
 
@@ -99,11 +123,16 @@ void RTPIncomingMediaStreamDepacketizer::RemoveMediaListener(MediaFrame::Listene
 
 void RTPIncomingMediaStreamDepacketizer::Stop()
 {
+	ScopedLock scoped(mutex);
+	
+	//Log
+	Debug("-RTPIncomingMediaStreamDepacketizer::Stop() [%p]\n",incomingSource);
+	
 	//If already stopped
 	if (!incomingSource)
 		//Done
 		return;
-
+		
 	//Stop listeneing
 	incomingSource->RemoveListener(this);
 	//Clean it
