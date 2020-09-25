@@ -44,7 +44,7 @@ BIN   = $(SRCDIR)/bin/$(TAG)
 ############################################
 #Objetos
 ############################################
-DEPACKETIZERSOBJ= RTPDepacketizer.o
+DEPACKETIZERSOBJ= RTPDepacketizer.o DependencyDescriptorLayerSelector.o
 G711DIR=g711
 G711OBJ=g711.o pcmucodec.o pcmacodec.o
 
