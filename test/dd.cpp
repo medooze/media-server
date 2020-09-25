@@ -106,7 +106,7 @@ public:
 			{1},
 			{2,2}
 		});
-		dd.templateDependencyStructure->decodeTargetProtectedBy = {0,0};
+		dd.templateDependencyStructure->decodeTargetProtectedByChain = {0,0};
 		
 		
 		assert(dd.Serialize(writter));
@@ -121,8 +121,22 @@ public:
 		assert(parsed);
 		parsed->Dump();
 		assert(dd == parsed.value());
-
+		
+		
+		writter.Reset();
+		DependencyDescriptor dd2;
+		dd2.customDecodeTargetIndications	= std::vector<DecodeTargetIndication>{DecodeTargetIndication::Switch, DecodeTargetIndication::Required};
+		dd2.customFrameDiffs			= std::vector<uint32_t>{1};
+		dd2.customFrameDiffsChains		= std::vector<uint32_t>{2,2};
+		
+		assert(dd2.Serialize(writter));
+		
+		len = writter.Flush();
+		::Dump(buffer,len);
+		
+		
 	}
+	
 	
 		
 };

@@ -5,6 +5,7 @@
 #include <optional>
 
 #include "bitstream.h"
+#include "WrapExtender.h"
 #include "rtp/LayerInfo.h"
 
 enum DecodeTargetIndication
@@ -52,8 +53,22 @@ struct TemplateDependencyStructure
 	uint32_t chainsCount	  = 0;
 	
 	std::vector<FrameDependencyTemplate> frameDependencyTemplates;
-	std::vector<uint32_t> decodeTargetProtectedBy;
+	// The index of the Chain that protects the Decode target
+	// When chains count > 0, each Decode Target MUST be protected by exactly one Chain.
+	// decodeTargetProtectedByChain[dtiIndex] = chainIndex
+	std::vector<uint32_t> decodeTargetProtectedByChain;
 	std::vector<RenderResolution> resolutions;
+
+	bool ContainsFrameDependencyTemplate(uint32_t frameDependencyTemplateId) const
+	{
+		return frameDependencyTemplateId >= templateIdOffset
+			&& (frameDependencyTemplateId - templateIdOffset) < frameDependencyTemplates.size();
+	}
+
+	const FrameDependencyTemplate& GetFrameDependencyTemplate(uint32_t frameDependencyTemplateId)
+	{
+		return frameDependencyTemplates[frameDependencyTemplateId - templateIdOffset];
+	}
 	
 	static std::optional<TemplateDependencyStructure> Parse(BitReader& reader);
 	bool Serialize(BitWritter& writter) const;
@@ -65,7 +80,7 @@ struct TemplateDependencyStructure
 			lhs.dtisCount == rhs.dtisCount &&
 			lhs.chainsCount == rhs.chainsCount &&
 			lhs.frameDependencyTemplates == rhs.frameDependencyTemplates &&
-			lhs.decodeTargetProtectedBy == rhs.decodeTargetProtectedBy &&
+			lhs.decodeTargetProtectedByChain == rhs.decodeTargetProtectedByChain &&
 			lhs.resolutions == rhs.resolutions;
 	}
 };
@@ -80,13 +95,13 @@ struct DependencyDescriptor
 	
 	
 	//mandatory_descriptor_fields
-	bool startOfFrame			= true;
+	bool startOfFrame			= true; 
 	bool endOfFrame				= true;
 	uint32_t  frameDependencyTemplateId	= 0;
-	uint32_t  frameNumber			= 0;
+	uint16_t  frameNumber			= 0;
 	
 	std::optional<TemplateDependencyStructure> templateDependencyStructure;
-	std::optional<std::vector<bool>> activeDecodeTargets;
+	std::optional<std::vector<bool>> activeDecodeTargets;			
 	
 	std::optional<std::vector<DecodeTargetIndication>> customDecodeTargetIndications;
 	std::optional<std::vector<uint32_t>> customFrameDiffs;

@@ -121,7 +121,8 @@ public:
 	const std::string& GetRId()		const	{ return extension.rid;			}
 	const std::string& GetRepairedId()	const	{ return extension.repairedId;		}
 	const std::string& GetMediaStreamId()	const	{ return extension.mid;	}
-	const RTPHeaderExtension::FrameMarks& GetFrameMarks() const { return extension.frameMarks; }
+	const RTPHeaderExtension::FrameMarks& GetFrameMarks() const	{ return extension.frameMarks;			}
+	const DependencyDescriptor& GetDependencyDescriptor() const	{ return *extension.dependencyDescryptor;	}
 	bool  HasAudioLevel()			const	{ return extension.hasAudioLevel;	}
 	bool  HasAbsSentTime()			const	{ return extension.hasAbsSentTime;	}
 	bool  HasTimeOffeset()			const   { return extension.hasTimeOffset;	}
@@ -130,6 +131,7 @@ public:
 	bool  HasRId()				const   { return extension.hasRId;		}
 	bool  HasRepairedId()			const   { return extension.hasRepairedId;	}
 	bool  HasMediaStreamId()		const   { return extension.hasMediaStreamId;	}
+	bool  HasDependencyDestriptor()		const   { return extension.hasDependencyDescriptor;	}
 	
 	
 	QWORD GetTime()				const	{ return time;				}

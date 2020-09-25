@@ -86,10 +86,10 @@ std::optional<TemplateDependencyStructure> TemplateDependencyStructure::Parse(Bi
 		return tds;
   
 	//Read all dtis
-	while (tds->decodeTargetProtectedBy.size() < tds->dtisCount)
+	while (tds->decodeTargetProtectedByChain.size() < tds->dtisCount)
 	{
 		//decode_target_protected_by[dtiIndex]
-		tds->decodeTargetProtectedBy.push_back(reader.GetNonSymmetric(tds->dtisCount)); CHECK(reader);
+		tds->decodeTargetProtectedByChain.push_back(reader.GetNonSymmetric(tds->dtisCount)); CHECK(reader);
 	}
 	
 	//For all templates
@@ -126,7 +126,7 @@ std::optional<DependencyDescriptor> DependencyDescriptor::Parse(BitReader& reade
 	auto dd = std::make_optional<DependencyDescriptor>({});
 	
 	//check min size
-	if (reader.Left()<3)
+	if (reader.Left()<24)
 		//error
 		return {};
 	
@@ -182,7 +182,7 @@ std::optional<DependencyDescriptor> DependencyDescriptor::Parse(BitReader& reade
 		
 		if (customDtis)
 		{
-			//check dtis are set
+			//check dtis count is set
 			if (!dtisCount)
 				//Error
 				return {};
@@ -315,7 +315,7 @@ bool TemplateDependencyStructure::Serialize(BitWritter& writter) const
 		return 0;
   
 	//Read all dtis
-	for (auto& dti : decodeTargetProtectedBy)
+	for (auto& dti : decodeTargetProtectedByChain)
 		//template_chains()
 		if (!writter.WriteNonSymmetric(dtisCount, dti))
 			return 0;
@@ -384,10 +384,18 @@ bool DependencyDescriptor::Serialize(BitWritter& writter) const
 		writter.Put(1, customFrameDiffsChains.has_value());
 		
 		if (templateDependencyStructure)
+		{
 			//Serialize template dependency
 			if (!templateDependencyStructure->Serialize(writter))
 				//Error
 				return 0;
+		} else if (activeDecodeTargets || customDecodeTargetIndications || customFrameDiffsChains) {
+			uint32_t dtisCount = customDecodeTargetIndications->size();
+			writter.Put(5, dtisCount - 1);
+			if (customFrameDiffsChains)
+				if (!writter.WriteNonSymmetric(dtisCount + 1, customFrameDiffsChains->size() ))
+				return 0;
+		}
 
 		if (activeDecodeTargets) 
 		{
@@ -518,12 +526,12 @@ void TemplateDependencyStructure::Dump() const
 		fdt.Dump();
 	
 	std::string str; 
-	for (auto& dti : decodeTargetProtectedBy)
+	for (auto& dti : decodeTargetProtectedByChain)
 	{
 		if (!str.empty()) str += ",";
 		str += dti;
 	}
-	Log("\t\t[decodeTargetProtectedBy]%s[/decodeTargetProtectedBy/]\n", str.c_str());
+	Log("\t\t[decodeTargetProtectedByChain]%s[/decodeTargetProtectedByChain/]\n", str.c_str());
 	
 	
 	//Read 

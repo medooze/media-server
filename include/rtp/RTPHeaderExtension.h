@@ -13,6 +13,8 @@
 
 #ifndef RTPHEADEREXTENSION_H
 #define RTPHEADEREXTENSION_H
+#include <optional>
+
 #include "config.h"
 #include "tools.h"
 #include "rtp/RTPMap.h"

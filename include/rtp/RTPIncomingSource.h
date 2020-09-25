@@ -35,8 +35,8 @@ struct RTPIncomingSource : public RTPSource
 	QWORD   firstReceivedSenderTimestamp;
 	int64_t skew;
 	double  drift;
-	WrapExtender timestampExtender;
-	WrapExtender lastReceivedSenderRTPTimestampExtender;
+	WrapExtender<uint32_t,uint64_t> timestampExtender;
+	WrapExtender<uint32_t,uint64_t> lastReceivedSenderRTPTimestampExtender;
 	std::map<WORD,LayerSource> layers;
 	
 	Acumulator acumulatorFrames;

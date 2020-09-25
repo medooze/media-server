@@ -6,6 +6,7 @@
 #include "media.h"
 #include "rtp/RTPIncomingMediaStream.h"
 #include "RTPDepacketizer.h"
+#include "use.h"
 
 class RTPIncomingMediaStreamDepacketizer :
 	public RTPIncomingMediaStream::Listener
@@ -27,6 +28,7 @@ private:
 	std::set<MediaFrame::Listener*> listeners;
 	RTPDepacketizer* depacketizer;
 	RTPIncomingMediaStream* incomingSource;
+	Mutex mutex;
 };
 
 #endif /* STREAMTRACKDEPACKETIZERDEPACKETIZER_H */
