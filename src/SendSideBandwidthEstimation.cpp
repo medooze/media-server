@@ -220,7 +220,7 @@ uint32_t SendSideBandwidthEstimation::GetAvailableBitrate() const
 uint32_t SendSideBandwidthEstimation::GetMinRTT() const
 {
 	//If we have any value
-	if (rttAcumulator.GetCount())
+	if (!rttAcumulator.IsEmpty())
 		//Get min value over long period
 		return rttAcumulator.GetMinValueInWindow();
 	//Return last, must be possitive

@@ -18,7 +18,6 @@ public:
 		window(window),
 		base(base)
 	{
-		instant = 0;
 		Reset(0);
 	}
 
@@ -44,12 +43,15 @@ public:
 
 	void Reset(QWORD now)
 	{
+		instant = 0;
 		acumulated = 0;
 		max = 0;
 		min = (QWORD)-1;
 		first = now;
 		last = 0;
 		inWindow = false;
+		values.clear();
+		count = 0;
 	}
 	
 	QWORD Update(QWORD now,DWORD val = 0)
@@ -60,6 +62,7 @@ public:
 		instant += val;
 		//Insert into the instant queue
 		values.emplace_back(now,val);
+		count++;
 		//Erase old values
 		while(!values.empty() && values.front().first+window<=now)
 		{
@@ -67,6 +70,7 @@ public:
 			instant -= values.front().second;
 			//Delete value
 			values.pop_front();
+			count--;
 			//We are in a window
 			inWindow = true;
 		}
@@ -116,11 +120,16 @@ public:
 	
 	DWORD GetCount() const
 	{
-		return values.size();
+		return count;
 	}
 	
+	DWORD IsEmpty() const
+	{
+		return values.empty();
+	}
 private:
 	std::list<std::pair<QWORD,DWORD>> values;
+	DWORD count;
 	DWORD window;
 	DWORD base;
 	bool  inWindow;

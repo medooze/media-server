@@ -155,7 +155,7 @@ void RemoteRateControl::UpdateKalman(int deltaTime, int deltaSize)
 	prevOffset = offset;
 	offset = offset+K[1]*residual;
 
-	const double T = fpsCalc.GetCount() ? fmin(fpsCalc.GetInstantAvg(),30)*offset : offset;
+	const double T = !fpsCalc.IsEmpty() ? fmin(fpsCalc.GetInstantAvg(),30)*offset : offset;
 
 	//Debug("BWE: Update tdelta:%d,tsdelta:%d,fsdelta:%d,t:%f,threshold:%f,slope:%f,offset:%f,scale:%f,frames:%lld,fps:%llf,residual:%f\n",deltaTime,deltaTS,deltaSize,T,threshold,slope,offset,scaleFactor,fpsCalc.GetInstantAvg(),fpsCalc.GetInstantAvg(),residual);
 
