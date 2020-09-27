@@ -47,7 +47,7 @@ size_t WriteHeaderIdAndLength(BYTE* data, DWORD pos, BYTE id, DWORD length)
 	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  *  
 */
-DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWORD size)
+DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWORD size, const std::optional<TemplateDependencyStructure>& templateDependencyStructure)
 {
   	BYTE headerLength = 0;
 	//If not enought size for header
@@ -281,7 +281,7 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 			case DependencyDescriptor:
 			{
 				BitReader reader(ext+i,len);
-				dependencyDescryptor	= DependencyDescriptor::Parse(reader);
+				dependencyDescryptor	= DependencyDescriptor::Parse(reader,templateDependencyStructure);
 				hasDependencyDescriptor = dependencyDescryptor.has_value();
 				break;
 			}

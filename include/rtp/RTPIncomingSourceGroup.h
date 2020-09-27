@@ -76,6 +76,7 @@ private:
 	RTPBuffer	packets;
 	Mutex		listenerMutex;
 	std::set<RTPIncomingMediaStream::Listener*>  listeners;
+	std::optional<TemplateDependencyStructure> templateDependencyStructure;
 	
 	WORD  rttrtxSeq	 = 0 ;
 	QWORD rttrtxTime = 0;

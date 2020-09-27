@@ -32,7 +32,7 @@ public:
 	using unique = std::unique_ptr<RTPPacket>;
 	
 public:
-	static RTPPacket::shared Parse(const BYTE* data, DWORD size, const RTPMap& rtpMap, const RTPMap& extMap);
+	static RTPPacket::shared Parse(const BYTE* data, DWORD size, const RTPMap& rtpMap, const RTPMap& extMap, const std::optional<TemplateDependencyStructure>& templateDependencyStructure = std::nullopt);
 public:
 	RTPPacket(MediaFrame::Type media,BYTE codec);
 	RTPPacket(MediaFrame::Type media,BYTE codec, QWORD time);
@@ -121,8 +121,12 @@ public:
 	const std::string& GetRId()		const	{ return extension.rid;			}
 	const std::string& GetRepairedId()	const	{ return extension.repairedId;		}
 	const std::string& GetMediaStreamId()	const	{ return extension.mid;	}
-	const RTPHeaderExtension::FrameMarks& GetFrameMarks() const	{ return extension.frameMarks;			}
-	const DependencyDescriptor& GetDependencyDescriptor() const	{ return *extension.dependencyDescryptor;	}
+	const RTPHeaderExtension::FrameMarks& GetFrameMarks()	const { return extension.frameMarks;		}
+	const DependencyDescriptor& GetDependencyDescriptor()	const { return *extension.dependencyDescryptor;	}
+	const TemplateDependencyStructure& GetTemplateDependencyStructure() const
+	{
+		return *extension.dependencyDescryptor->templateDependencyStructure;	
+	}
 	bool  HasAudioLevel()			const	{ return extension.hasAudioLevel;	}
 	bool  HasAbsSentTime()			const	{ return extension.hasAbsSentTime;	}
 	bool  HasTimeOffeset()			const   { return extension.hasTimeOffset;	}
@@ -132,7 +136,10 @@ public:
 	bool  HasRepairedId()			const   { return extension.hasRepairedId;	}
 	bool  HasMediaStreamId()		const   { return extension.hasMediaStreamId;	}
 	bool  HasDependencyDestriptor()		const   { return extension.hasDependencyDescriptor;	}
-	
+	bool  HasTemplateDependencyStructure()	const
+	{
+		return extension.hasDependencyDescriptor && extension.dependencyDescryptor && extension.dependencyDescryptor->templateDependencyStructure;
+	}
 	
 	QWORD GetTime()				const	{ return time;				}
 	void  SetTime(QWORD time )			{ this->time = time;			}
@@ -152,6 +159,7 @@ public:
 	std::optional<VP8PayloadDescriptor>	vp8PayloadDescriptor;
 	std::optional<VP8PayloadHeader>		vp8PayloadHeader;
 	std::optional<VP9PayloadDescription>	vp9PayloadDescriptor;
+	std::optional<TemplateDependencyStructure> templateDependencyStructure;
 	bool rewitePictureIds = false;
 	
 protected:

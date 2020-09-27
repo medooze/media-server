@@ -2,7 +2,7 @@
 #include "bitstream.h"
 #include "video.h"
 
-#define CHECK(r) if(r.Error()) return {};
+#define CHECK(r) if(r.Error()) return std::nullopt;
 
 enum NextLayerIdc 
 {
@@ -121,14 +121,14 @@ std::optional<TemplateDependencyStructure> TemplateDependencyStructure::Parse(Bi
 	return tds;
 }
 	
-std::optional<DependencyDescriptor> DependencyDescriptor::Parse(BitReader& reader)
+std::optional<DependencyDescriptor> DependencyDescriptor::Parse(BitReader& reader, const std::optional<TemplateDependencyStructure>& templateDependencyStructure)
 {
 	auto dd = std::make_optional<DependencyDescriptor>({});
 	
 	//check min size
 	if (reader.Left()<24)
 		//error
-		return {};
+		return std::nullopt;
 	
 	//mandatory_descriptor_fields()
 	dd->startOfFrame		= reader.Get(1);  CHECK(reader);
@@ -155,10 +155,14 @@ std::optional<DependencyDescriptor> DependencyDescriptor::Parse(BitReader& reade
 			//If failed
 			if (!dd->templateDependencyStructure)
 				//Error
-				return {};
+				return std::nullopt;
 			//Set counts
 			dtisCount	= dd->templateDependencyStructure->dtisCount;
 			chainsCount	= dd->templateDependencyStructure->chainsCount;
+		} else if (templateDependencyStructure) {
+			//Set counts
+			dtisCount	= templateDependencyStructure->dtisCount;
+			chainsCount	= templateDependencyStructure->chainsCount;
 		}
 
 		if (activeDecodeTargetsPresent) 
@@ -166,7 +170,7 @@ std::optional<DependencyDescriptor> DependencyDescriptor::Parse(BitReader& reade
 			//check dtis are set
 			if (!dtisCount)
 				//Error
-				return {};
+				return std::nullopt;
 			//Get bitmask
 			activeDecodeTargetsBitmask = reader.Get(dtisCount); CHECK(reader);
 			//Create empty field
@@ -185,7 +189,7 @@ std::optional<DependencyDescriptor> DependencyDescriptor::Parse(BitReader& reade
 			//check dtis count is set
 			if (!dtisCount)
 				//Error
-				return {};
+				return std::nullopt;
 			//Create custom dtis
 			dd->customDecodeTargetIndications = {};
 			//Fill custom dtis up to count
@@ -221,7 +225,7 @@ std::optional<DependencyDescriptor> DependencyDescriptor::Parse(BitReader& reade
 			//check count is set
 			if (!chainsCount)
 				//Error
-				return {};
+				return std::nullopt;
 				
 			//Create custom chains
 			dd->customFrameDiffsChains = {};
@@ -478,7 +482,7 @@ bool DependencyDescriptor::Serialize(BitWritter& writter) const
 
 void FrameDependencyTemplate::Dump() const
 {
-	Log("\t\t[FrameDependencyTemplate]\n");;
+	Log("\t\t[FrameDependencyTemplate]\n");
 	
 	{
 		std::string str; 
@@ -513,7 +517,7 @@ void FrameDependencyTemplate::Dump() const
 		Log("\t\t\t[frameDiffsChains]%s[/frameDiffsChains/]\n", str.c_str());
 	}
 	  
-	Log("\t\t[FrameDependencyTemplate/]\n");;
+	Log("\t\t[FrameDependencyTemplate/]\n");
 }
 
 void TemplateDependencyStructure::Dump() const
@@ -537,15 +541,15 @@ void TemplateDependencyStructure::Dump() const
 	//Read 
 	if (resolutions.size()) 
 	{
-		Log("\t\t[RenderResolutions]\n");;
+		Log("\t\t[RenderResolutions]\n");
 		//render_resolutions()
 		for (auto& resolution : resolutions)
 			Log("\t\t\t%dx%x\n",resolution.width,resolution.height);
 		
-		Log("\t[RenderResolutions/]\n");;
+		Log("\t[RenderResolutions/]\n");
   	}
 	
-	Log("\t[TemplateDependencyStructure/]\n");;
+	Log("\t[TemplateDependencyStructure/]\n");
 }
 
 void DependencyDescriptor::Dump() const
@@ -607,5 +611,5 @@ void DependencyDescriptor::Dump() const
 		Log("\t[customFrameDiffsChains]%s[/customFrameDiffsChains/]\n", str.c_str());
 	}
 	  
-	Log("[DependencyDescriptor/]\n");;
+	Log("[DependencyDescriptor/]\n");
 }

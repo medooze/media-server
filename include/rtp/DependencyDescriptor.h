@@ -110,7 +110,7 @@ struct DependencyDescriptor
 	bool Serialize(BitWritter& writter) const;
 	void Dump() const;
 	
-	static std::optional<DependencyDescriptor> Parse(BitReader& reader);
+	static std::optional<DependencyDescriptor> Parse(BitReader& reader, const std::optional<TemplateDependencyStructure>& templateDependencyStructure = std::nullopt);
 
 	friend bool operator==(const DependencyDescriptor& lhs, const DependencyDescriptor& rhs)
 	{

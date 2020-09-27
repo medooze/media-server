@@ -122,7 +122,7 @@ public:
 	};
 	
 public:
-	DWORD Parse(const RTPMap &extMap,const BYTE* data,const DWORD size);
+	DWORD Parse(const RTPMap &extMap,const BYTE* data,const DWORD size, const std::optional<TemplateDependencyStructure>& templateDependencyStructure = std::nullopt);
 	DWORD Serialize(const RTPMap &extMap,BYTE* data,const DWORD size) const;
 	void  Dump() const;
 public:
