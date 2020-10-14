@@ -20,9 +20,9 @@ std::optional<TemplateDependencyStructure> TemplateDependencyStructure::Parse(Bi
 	tds->templateIdOffset	= reader.Get(6);	CHECK(reader);
 	tds->dtisCount		= reader.Get(5) + 1;	CHECK(reader);
 	
-	uint32_t temporalId		= 0;
-	uint8_t  spatialId		= 0;
-	uint8_t  maxTemporalId		= 0;
+	uint8_t temporalId		= 0;
+	uint8_t spatialId		= 0;
+	uint8_t maxTemporalId		= 0;
 	NextLayerIdc nextLayerIdc	= Invalid;	
 	
 	//template_layers()
@@ -30,7 +30,7 @@ std::optional<TemplateDependencyStructure> TemplateDependencyStructure::Parse(Bi
 	{
 		//Add template layer if info
 		tds->frameDependencyTemplates.emplace_back(FrameDependencyTemplate{
-			{temporalId,spatialId},
+			{temporalId,spatialId},{},{},{}
 		});
 		//Get next layer id
 		nextLayerIdc = (NextLayerIdc)reader.Get(2); CHECK(reader);
@@ -51,6 +51,8 @@ std::optional<TemplateDependencyStructure> TemplateDependencyStructure::Parse(Bi
 				break;
 			case NoMoreLayers:
 				break;
+			case Invalid:
+				return std::nullopt;
 		}
 	} 
 	
@@ -82,24 +84,26 @@ std::optional<TemplateDependencyStructure> TemplateDependencyStructure::Parse(Bi
 
 	//template_chains()
 	tds->chainsCount = reader.GetNonSymmetric(tds->dtisCount + 1);
-	if (tds->chainsCount == 0) 
-		return tds;
-  
-	//Read all dtis
-	while (tds->decodeTargetProtectedByChain.size() < tds->dtisCount)
-	{
-		//decode_target_protected_by[dtiIndex]
-		tds->decodeTargetProtectedByChain.push_back(reader.GetNonSymmetric(tds->dtisCount)); CHECK(reader);
-	}
 	
-	//For all templates
-	for (auto& fdt : tds->frameDependencyTemplates)
+	//Check if we have chains
+	if (tds->chainsCount == 0) 
 	{
-		//Read all chains
-		while (fdt.frameDiffsChains.size()<tds->chainsCount)
+		//Read all dtis
+		while (tds->decodeTargetProtectedByChain.size() < tds->dtisCount)
 		{
-			//template_chain_fdiff
-			fdt.frameDiffsChains.push_back(reader.Get(4)); CHECK(reader);
+			//decode_target_protected_by[dtiIndex]
+			tds->decodeTargetProtectedByChain.push_back(reader.GetNonSymmetric(tds->dtisCount)); CHECK(reader);
+		}
+	
+		//For all templates
+		for (auto& fdt : tds->frameDependencyTemplates)
+		{
+			//Read all chains
+			while (fdt.frameDiffsChains.size()<tds->chainsCount)
+			{
+				//template_chain_fdiff
+				fdt.frameDiffsChains.push_back(reader.Get(4)); CHECK(reader);
+			}
 		}
 	}
 	
@@ -108,7 +112,7 @@ std::optional<TemplateDependencyStructure> TemplateDependencyStructure::Parse(Bi
 	{
 		//render_resolutions()
 		//For all spatiail layers
-		while(tds->resolutions.size()<maxSpatialId) 
+		while(tds->resolutions.size()<maxSpatialId+1) 
 		{
 			//Read resolution
 			uint32_t maxRenderWidthMinusOne  = reader.Get(16); CHECK(reader);
@@ -489,12 +493,26 @@ void FrameDependencyTemplate::Dump() const
 		//For each dti
 		for (auto dti : decodeTargetIndications)
 		{
-			if (!str.empty()) str += ",";
-			str += std::to_string(dti);
+			switch(dti)
+			{
+				case DecodeTargetIndication::NotPresent:
+					str += "-";
+					break;
+				case DecodeTargetIndication::Discardable:
+					str += "D";
+					break;
+				case DecodeTargetIndication::Switch:
+					str += "S";
+					break;
+				case DecodeTargetIndication::Required:
+					str += "R";
+					break;
+			}
 		}
 		Log("\t\t\t[decodeTargetIndications]%s[/decodeTargetIndications/]\n", str.c_str());
 	}
 	
+	if (frameDiffs.size())
 	{
 		std::string str;
 		//For each difference
@@ -506,6 +524,7 @@ void FrameDependencyTemplate::Dump() const
 		Log("\t\t\t[frameDiffs]%s[/frameDiffs/]\n", str.c_str());
 	}
 		
+	if (frameDiffsChains.size())
 	{
 		std::string str;
 		//For each difference
@@ -516,7 +535,7 @@ void FrameDependencyTemplate::Dump() const
 		}
 		Log("\t\t\t[frameDiffsChains]%s[/frameDiffsChains/]\n", str.c_str());
 	}
-	  
+	
 	Log("\t\t[FrameDependencyTemplate/]\n");
 }
 
@@ -529,13 +548,16 @@ void TemplateDependencyStructure::Dump() const
 	for (auto& fdt : frameDependencyTemplates)
 		fdt.Dump();
 	
-	std::string str; 
-	for (auto& dti : decodeTargetProtectedByChain)
+	if (decodeTargetProtectedByChain.size())
 	{
-		if (!str.empty()) str += ",";
-		str += dti;
+		std::string str; 
+		for (auto& dti : decodeTargetProtectedByChain)
+		{
+			if (!str.empty()) str += ",";
+			str += dti;
+		}
+		Log("\t\t[decodeTargetProtectedByChain]%s[/decodeTargetProtectedByChain/]\n", str.c_str());
 	}
-	Log("\t\t[decodeTargetProtectedByChain]%s[/decodeTargetProtectedByChain/]\n", str.c_str());
 	
 	
 	//Read 
@@ -544,9 +566,9 @@ void TemplateDependencyStructure::Dump() const
 		Log("\t\t[RenderResolutions]\n");
 		//render_resolutions()
 		for (auto& resolution : resolutions)
-			Log("\t\t\t%dx%x\n",resolution.width,resolution.height);
+			Log("\t\t\t%dx%d\n",resolution.width,resolution.height);
 		
-		Log("\t[RenderResolutions/]\n");
+		Log("\t\t[RenderResolutions/]\n");
   	}
 	
 	Log("\t[TemplateDependencyStructure/]\n");

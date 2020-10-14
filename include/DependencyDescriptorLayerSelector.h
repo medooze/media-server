@@ -26,7 +26,6 @@ public:
 private:
 	WrapExtender<uint16_t,uint32_t> frameNumberExtender;
 	uint32_t currentFrameNumber = std::numeric_limits<uint32_t>::max();
-	TemplateDependencyStructure currentTemplateDependencyStructure;
 	std::vector<uint32_t> forwardedFrames;
 	DWORD currentDecodeTarget = 0;
 	DWORD nextDecodeTarget = 0;

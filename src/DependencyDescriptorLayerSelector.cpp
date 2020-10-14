@@ -30,25 +30,29 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	if (!packet->HasDependencyDestriptor())
 		return Warning("-DependencyDescriptorLayerSelector::Select() | coulnd't retrieve DependencyDestriptor\n");
 	
+	//Check we already have received a template structure
+	if (!packet->HasTemplateDependencyStructure())
+		//Drop packet
+		return false;
+	
 	//Get dependency description
-	auto& dd = packet->GetDependencyDescriptor();
+	auto& dependencyDescriptor = packet->GetDependencyDescriptor();
+	auto& currentTemplateDependencyStructure = packet->GetTemplateDependencyStructure();
 	
 	//Get extended frame number
-	uint32_t extFrameNum = frameNumberExtender.Extend(dd.frameNumber);
+	uint32_t extFrameNum = frameNumberExtender.Extend(dependencyDescriptor.frameNumber);
 	
 	//Check if we have not received the first frame 
 	if (currentFrameNumber==std::numeric_limits<uint32_t>::max())
 	{
 		//If it is not first packet in frame
-		if (!dd.startOfFrame)
+		if (!dependencyDescriptor.startOfFrame)
 			//Ignore packet
 			return false;
 		//Ensure if has a template structure
-		if (!dd.templateDependencyStructure)
+		if (!dependencyDescriptor.templateDependencyStructure)
 			//Ignore packet
 			return false;
-		//Store the template structure
-		currentTemplateDependencyStructure = dd.templateDependencyStructure.value();
 		
 		//We need to find what is the best decode target for our constrains
 		nextDecodeTarget = 0;
@@ -58,7 +62,7 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	} 
 	
 	//Ensure that we have the packet frame dependency template
-	if (currentTemplateDependencyStructure.ContainsFrameDependencyTemplate(dd.frameDependencyTemplateId))
+	if (currentTemplateDependencyStructure.ContainsFrameDependencyTemplate(dependencyDescriptor.frameDependencyTemplateId))
 		//Skip
 		return Warning("-DependencyDescriptorLayerSelector::Select() | Current frame dependency templates don't contain reference templateId");
 	
@@ -71,12 +75,12 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	auto currentChain = currentTemplateDependencyStructure.decodeTargetProtectedByChain[currentDecodeTarget];
 		
 	//Get template
-	auto& frameDependencyTemplate = currentTemplateDependencyStructure.GetFrameDependencyTemplate(dd.frameDependencyTemplateId);
+	const auto& frameDependencyTemplate = currentTemplateDependencyStructure.GetFrameDependencyTemplate(dependencyDescriptor.frameDependencyTemplateId);
 	
 	//Get dtis for current frame
-	auto& decodeTargetIndications	= dd.customDecodeTargetIndications	? dd.customDecodeTargetIndications.value()	: frameDependencyTemplate.decodeTargetIndications; 
-	auto& frameDiffs		= dd.customFrameDiffs			? dd.customFrameDiffs.value()			: frameDependencyTemplate.frameDiffs;
-	auto& frameDiffsChains		= dd.customFrameDiffsChains		? dd.customFrameDiffsChains.value()		: frameDependencyTemplate.frameDiffsChains;
+	auto& decodeTargetIndications	= dependencyDescriptor.customDecodeTargetIndications	? dependencyDescriptor.customDecodeTargetIndications.value()	: frameDependencyTemplate.decodeTargetIndications; 
+	auto& frameDiffs		= dependencyDescriptor.customFrameDiffs			? dependencyDescriptor.customFrameDiffs.value()			: frameDependencyTemplate.frameDiffs;
+	auto& frameDiffsChains		= dependencyDescriptor.customFrameDiffsChains		? dependencyDescriptor.customFrameDiffsChains.value()		: frameDependencyTemplate.frameDiffsChains;
 	
 	//Chec dti info is correct
 	if (decodeTargetIndications.size()<currentDecodeTarget)
@@ -104,7 +108,7 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	
 	//We will only forward full frames
 	// TODO: check rtp seq num continuity?
-	if (extFrameNum>currentFrameNumber && !dd.startOfFrame)
+	if (extFrameNum>currentFrameNumber && !dependencyDescriptor.startOfFrame)
 		//Discard packet
 		return false;
 	
@@ -125,7 +129,7 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 //	mark = packet->GetMark() || (desc.endOfLayerFrame && spatialLayerId==desc.spatialLayerId && nextSpatialLayerId<=spatialLayerId);
 	
 	//If it is the last in current frame
-	if (dd.endOfFrame)
+	if (dependencyDescriptor.endOfFrame)
 		//We only count full forwarded frames
 		forwardedFrames.push_back(currentFrameNumber);
 	

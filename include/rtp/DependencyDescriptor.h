@@ -65,7 +65,7 @@ struct TemplateDependencyStructure
 			&& (frameDependencyTemplateId - templateIdOffset) < frameDependencyTemplates.size();
 	}
 
-	const FrameDependencyTemplate& GetFrameDependencyTemplate(uint32_t frameDependencyTemplateId)
+	const FrameDependencyTemplate& GetFrameDependencyTemplate(uint32_t frameDependencyTemplateId) const
 	{
 		return frameDependencyTemplates[frameDependencyTemplateId - templateIdOffset];
 	}
