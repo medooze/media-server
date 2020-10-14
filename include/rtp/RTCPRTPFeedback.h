@@ -111,17 +111,13 @@ public:
 		
 		virtual void Dump() const
 		{
-			BYTE blp[2];
 			char str[17];
-			//Get BLP in BYTE[]
-			set2(blp,0,this->blp);
 			//Convert to binary
-			BitReader r(blp,2);
 			for (DWORD j=0;j<16;j++)
-				str[j] = r.Get(1) ? '1' : '0';
+				str[j] = (blp >> j) & 0x01 ? '1' : '0';
 			str[16] = 0;
 			//Debug
-			Debug("\t\t[NACK pid:%d blp:0x%x:%s /]\n",pid,this->blp,str);
+			Debug("\t\t[NACK pid:%d blp:0x%x:%s /]\n",pid,blp,str);
 		}
 	};
 
