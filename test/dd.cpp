@@ -145,6 +145,8 @@ public:
 		BYTE data[10] = { 0x80,   0x00,   0x01,   0x80,   0x00,   0xe2,   0x04,   0xfe, 0x03,   0xbe};
 		BitReader reader(data,10);
 		auto dd = DependencyDescriptor::Parse(reader);
+		
+		assert(dd->templateDependencyStructure->ContainsFrameDependencyTemplate(0));
 		dd->Dump();
 
 	}

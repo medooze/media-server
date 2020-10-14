@@ -86,7 +86,7 @@ std::optional<TemplateDependencyStructure> TemplateDependencyStructure::Parse(Bi
 	tds->chainsCount = reader.GetNonSymmetric(tds->dtisCount + 1);
 	
 	//Check if we have chains
-	if (tds->chainsCount == 0) 
+	if (tds->chainsCount) 
 	{
 		//Read all dtis
 		while (tds->decodeTargetProtectedByChain.size() < tds->dtisCount)
