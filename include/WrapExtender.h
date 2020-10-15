@@ -8,7 +8,7 @@ class WrapExtender
 {
 public:
 
-	N Extend(N seqNum)
+	X Extend(N seqNum)
 	{
 		//If this is first
 		if (!extSeqNum)
@@ -28,7 +28,7 @@ public:
 			//Do nothing and return prev one
 			return cycles - 1;
 		//Get ext seq
-		X extSeqNum = ((X) cycles) << sizeof(N) | seqNum;
+		X extSeqNum = (cycles << sizeof(N)) | seqNum;
 
 		//If we have a not out of order packet
 		if (extSeqNum > this->extSeqNum)
@@ -39,7 +39,7 @@ public:
 		return cycles;
 	}
 
-	N RecoverCycles(X seqNum)
+	X RecoverCycles(X seqNum)
 	{
 		//Check secuence wrap
 		if (seqNum > GetSeqNum() && seqNum - GetSeqNum() > std::numeric_limits<N>::max() / 2 && cycles)
@@ -61,7 +61,7 @@ public:
 	
 private:
 	X extSeqNum	= 0;
-	N cycles	= 0;
+	X cycles	= 0;
 };
 
 #endif /* WRAPEXTENDER_H */

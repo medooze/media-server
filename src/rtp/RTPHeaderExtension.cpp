@@ -47,7 +47,7 @@ size_t WriteHeaderIdAndLength(BYTE* data, DWORD pos, BYTE id, DWORD length)
 	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  *  
 */
-DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWORD size, const std::optional<TemplateDependencyStructure>& templateDependencyStructure)
+DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWORD size)
 {
   	BYTE headerLength = 0;
 	//If not enought size for header
@@ -279,12 +279,9 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 				mid.assign((const char*)ext+i,len);
 				break;
 			case DependencyDescriptor:
-			{
-				BitReader reader(ext+i,len);
-				dependencyDescryptor	= DependencyDescriptor::Parse(reader,templateDependencyStructure);
-				hasDependencyDescriptor = dependencyDescryptor.has_value();
+				//Leave it for later
+				dependencyDescryptorReader.Wrap(ext+i,len);
 				break;
-			}
 			default:
 				UltraDebug("-Unknown or unmapped extension [%d]\n",id);
 				break;
@@ -296,6 +293,23 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 	return 4+length;
 }
 
+bool RTPHeaderExtension::ParseDependencyDescriptor(const std::optional<TemplateDependencyStructure>& templateDependencyStructure)
+{
+	//Check we have anything to read
+	if (!dependencyDescryptorReader.Left())
+		//Error
+		return false;
+	
+	//Parse it
+	dependencyDescryptor = DependencyDescriptor::Parse(dependencyDescryptorReader,templateDependencyStructure);
+	//Was it parsed correctly?
+	hasDependencyDescriptor = dependencyDescryptor.has_value();
+	//Release reader
+	dependencyDescryptorReader.Release();
+
+	//Done
+	return hasDependencyDescriptor;
+}
 
 DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD size) const
 {
@@ -602,17 +616,17 @@ void RTPHeaderExtension::Dump() const
 {
 	Debug("\t\t[RTPHeaderExtension]\n");
 	if (hasAudioLevel)
-		Debug("\t\t\t[AudioLevel vad=%d level=%d]\n",vad,level);
+		Debug("\t\t\t[AudioLevel vad=%d level=%d/]\n",vad,level);
 	if (hasTimeOffset)
-		Debug("\t\t\t[TimeOffset offset=%d]\n",timeOffset);
+		Debug("\t\t\t[TimeOffset offset=%d/]\n",timeOffset);
 	if (hasAbsSentTime)
-		Debug("\t\t\t[AbsSentTime ts=%lld]\n",absSentTime);
+		Debug("\t\t\t[AbsSentTime ts=%lld/]\n",absSentTime);
 	if (hasVideoOrientation)
-		Debug("\t\t\t[VideoOrientation facing=%d flip=%d rotation=%d]\n",cvo.facing,cvo.flip,cvo.rotation);
+		Debug("\t\t\t[VideoOrientation facing=%d flip=%d rotation=%d/]\n",cvo.facing,cvo.flip,cvo.rotation);
 	if (hasTransportWideCC)
-		Debug("\t\t\t[TransportWideCC seq=%u]\n",transportSeqNum);
+		Debug("\t\t\t[TransportWideCC seq=%u/]\n",transportSeqNum);
 	if (hasFrameMarking)
-		Debug("\t\t\t[FrameMarking startOfFrame=%u endOfFrame=%u independent=%u discardable=%u baseLayerSync=%u temporalLayerId=%u layerId=%u tl0PicIdx=%u]\n",
+		Debug("\t\t\t[FrameMarking startOfFrame=%u endOfFrame=%u independent=%u discardable=%u baseLayerSync=%u temporalLayerId=%u layerId=%u tl0PicIdx=%u/]\n",
 			frameMarks.startOfFrame,
 			frameMarks.endOfFrame,
 			frameMarks.independent,
@@ -629,6 +643,8 @@ void RTPHeaderExtension::Dump() const
 		Debug("\t\t\t[RepairedId str=\"%s\"]\n",repairedId.c_str());
 	if (hasMediaStreamId)
 		Debug("\t\t\t[MediaStreamId str=\"%s\"]\n",mid.c_str());
+	if (hasDependencyDescriptor && dependencyDescryptor)
+		dependencyDescryptor->Dump();
 	
 	Debug("\t\t[/RTPHeaderExtension]\n");
 }

@@ -32,7 +32,7 @@ public:
 	using unique = std::unique_ptr<RTPPacket>;
 	
 public:
-	static RTPPacket::shared Parse(const BYTE* data, DWORD size, const RTPMap& rtpMap, const RTPMap& extMap, const std::optional<TemplateDependencyStructure>& templateDependencyStructure = std::nullopt);
+	static RTPPacket::shared Parse(const BYTE* data, DWORD size, const RTPMap& rtpMap, const RTPMap& extMap);
 public:
 	RTPPacket(MediaFrame::Type media,BYTE codec);
 	RTPPacket(MediaFrame::Type media,BYTE codec, QWORD time);
@@ -103,6 +103,24 @@ public:
 	void  SetRepairedId(const std::string &repairedId)				{ header.extension = extension.hasRepairedId	  = true; extension.repairedId = repairedId;	}
 	void  SetMediaStreamId(const std::string &mid)					{ header.extension = extension.hasMediaStreamId   = true; extension.mid = mid;			}
 	
+	bool  ParseDependencyDescriptor(const std::optional<TemplateDependencyStructure>& templateDependencyStructure)
+	{
+		//parse it
+		if (!extension.ParseDependencyDescriptor(templateDependencyStructure))
+			//Nothing to do
+			return false;
+		
+		//If packet has a new dependency structure
+		if (extension.dependencyDescryptor && extension.dependencyDescryptor->templateDependencyStructure)
+			//Store it
+			this->templateDependencyStructure = extension.dependencyDescryptor->templateDependencyStructure;
+		else
+			//Keep previous
+			this->templateDependencyStructure = templateDependencyStructure;
+		//Done
+		return true;
+	}
+	
 	//Disable extensions
 	void  DisableAbsSentTime()	{ extension.hasAbsSentTime     = false; CheckExtensionMark(); }
 	void  DisableTimeOffset()	{ extension.hasTimeOffset      = false; CheckExtensionMark(); }
@@ -113,33 +131,31 @@ public:
 	void  DisableMediaStreamId()	{ extension.hasMediaStreamId   = false; CheckExtensionMark(); }
 	
 
-	QWORD GetAbsSendTime()			const	{ return extension.absSentTime;		}
-	int   GetTimeOffset()			const	{ return extension.timeOffset;		}
-	bool  GetVAD()				const	{ return extension.vad;			}
-	BYTE  GetLevel()			const	{ return extension.level;		}
-	WORD  GetTransportSeqNum()		const	{ return extension.transportSeqNum;	}
-	const std::string& GetRId()		const	{ return extension.rid;			}
-	const std::string& GetRepairedId()	const	{ return extension.repairedId;		}
-	const std::string& GetMediaStreamId()	const	{ return extension.mid;	}
-	const RTPHeaderExtension::FrameMarks& GetFrameMarks()	const { return extension.frameMarks;		}
-	const DependencyDescriptor& GetDependencyDescriptor()	const { return *extension.dependencyDescryptor;	}
-	const TemplateDependencyStructure& GetTemplateDependencyStructure() const
-	{
-		return *extension.dependencyDescryptor->templateDependencyStructure;	
-	}
-	bool  HasAudioLevel()			const	{ return extension.hasAudioLevel;	}
-	bool  HasAbsSentTime()			const	{ return extension.hasAbsSentTime;	}
-	bool  HasTimeOffeset()			const   { return extension.hasTimeOffset;	}
-	bool  HasTransportWideCC()		const   { return extension.hasTransportWideCC;	}
-	bool  HasFrameMarkings()		const   { return extension.hasFrameMarking;	}
-	bool  HasRId()				const   { return extension.hasRId;		}
-	bool  HasRepairedId()			const   { return extension.hasRepairedId;	}
-	bool  HasMediaStreamId()		const   { return extension.hasMediaStreamId;	}
+	QWORD GetAbsSendTime()			const	{ return extension.absSentTime;			}
+	int   GetTimeOffset()			const	{ return extension.timeOffset;			}
+	bool  GetVAD()				const	{ return extension.vad;				}
+	BYTE  GetLevel()			const	{ return extension.level;			}
+	WORD  GetTransportSeqNum()		const	{ return extension.transportSeqNum;		}
+	const std::string& GetRId()		const	{ return extension.rid;				}
+	const std::string& GetRepairedId()	const	{ return extension.repairedId;			}
+	const std::string& GetMediaStreamId()	const	{ return extension.mid;				}
+	
+	const RTPHeaderExtension::FrameMarks&			GetFrameMarks()			 const { return extension.frameMarks;		}
+	const std::optional<DependencyDescriptor>&		GetDependencyDescriptor()	 const { return extension.dependencyDescryptor;	}
+	const std::optional<TemplateDependencyStructure>&	GetTemplateDependencyStructure() const { return templateDependencyStructure;	}
+	
+	bool  HasAudioLevel()			const	{ return extension.hasAudioLevel;		}
+	bool  HasAbsSentTime()			const	{ return extension.hasAbsSentTime;		}
+	bool  HasTimeOffeset()			const   { return extension.hasTimeOffset;		}
+	bool  HasTransportWideCC()		const   { return extension.hasTransportWideCC;		}
+	bool  HasFrameMarkings()		const   { return extension.hasFrameMarking;		}
+	bool  HasRId()				const   { return extension.hasRId;			}
+	bool  HasRepairedId()			const   { return extension.hasRepairedId;		}
+	bool  HasMediaStreamId()		const   { return extension.hasMediaStreamId;		}
 	bool  HasDependencyDestriptor()		const   { return extension.hasDependencyDescriptor;	}
-	bool  HasTemplateDependencyStructure()	const
-	{
-		return extension.hasDependencyDescriptor && extension.dependencyDescryptor && extension.dependencyDescryptor->templateDependencyStructure;
-	}
+	bool  HasTemplateDependencyStructure()	const	{ return extension.hasDependencyDescriptor &&
+								 extension.dependencyDescryptor &&
+								 extension.dependencyDescryptor->templateDependencyStructure;	}
 	
 	QWORD GetTime()				const	{ return time;				}
 	void  SetTime(QWORD time )			{ this->time = time;			}

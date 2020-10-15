@@ -71,10 +71,14 @@ int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet, DWORD siz
 		//Do nothing else
 		return 0;
 	
-	//If it has a new dependency structure
-	if (packet->HasTemplateDependencyStructure())
-		//Store it
-		templateDependencyStructure = packet->GetTemplateDependencyStructure();
+	//Parse dependency structure now
+	if (packet->ParseDependencyDescriptor(templateDependencyStructure))
+	{
+		//If it has a new dependency structure
+		if (packet->HasTemplateDependencyStructure())
+			//Store it
+			templateDependencyStructure = packet->GetTemplateDependencyStructure();
+	}
 	
 	//Add to lost packets
 	auto lost = losts.AddPacket(packet);

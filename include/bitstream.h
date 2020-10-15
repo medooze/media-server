@@ -14,6 +14,18 @@
 class BitReader
 {
 public:
+	BitReader()
+	{
+		//Nothing
+		buffer = nullptr;
+		bufferLen = 0;
+		//nothing in the cache
+		cached = 0;
+		cache = 0;
+		bufferPos = 0;
+		//No error
+		error = false;
+	}
 	BitReader(const BYTE *data,const DWORD size)
 	{
 		//Store
@@ -26,6 +38,33 @@ public:
 		//No error
 		error = false;
 	}
+	
+	inline void Wrap(const BYTE *data,const DWORD size)
+	{
+		//Store
+		buffer = data;
+		bufferLen = size;
+		//nothing in the cache
+		cached = 0;
+		cache = 0;
+		bufferPos = 0;
+		//No error
+		error = false;
+	}
+	
+	inline void Release()
+	{
+		//Nothing
+		buffer = nullptr;
+		bufferLen = 0;
+		//nothing in the cache
+		cached = 0;
+		cache = 0;
+		bufferPos = 0;
+		//No error
+		error = false;
+	}
+	
 	inline void Reset()
 	{
 		//nothing in the cache

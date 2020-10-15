@@ -123,7 +123,7 @@ RTPPacket::shared RTPPacket::Clone() const
 	return cloned;
 }
 
-RTPPacket::shared RTPPacket::Parse(const BYTE* data, DWORD size, const RTPMap& rtpMap, const RTPMap& extMap, const std::optional<TemplateDependencyStructure>& templateDependencyStructure)
+RTPPacket::shared RTPPacket::Parse(const BYTE* data, DWORD size, const RTPMap& rtpMap, const RTPMap& extMap)
 {
 	RTPHeader header;
 	RTPHeaderExtension extension;
@@ -145,7 +145,7 @@ RTPPacket::shared RTPPacket::Parse(const BYTE* data, DWORD size, const RTPMap& r
 	if (header.extension)
 	{
 		//Parse extension
-		DWORD l = extension.Parse(extMap,data+ini,size-ini,templateDependencyStructure);
+		DWORD l = extension.Parse(extMap,data+ini,size-ini);
 		//If not parsed
 		if (!l)
 		{
@@ -189,12 +189,6 @@ RTPPacket::shared RTPPacket::Parse(const BYTE* data, DWORD size, const RTPMap& r
 	
 	//Set the payload
 	packet->SetPayload(data+ini,size-ini);
-	
-	//Store current dependency descriptor
-	if (extension.hasDependencyDescriptor && extension.dependencyDescryptor->templateDependencyStructure)
-		packet->templateDependencyStructure = extension.dependencyDescryptor->templateDependencyStructure;
-	else
-		packet->templateDependencyStructure = templateDependencyStructure;
 	
 	//Done
 	return packet;

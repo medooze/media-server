@@ -24,9 +24,9 @@ public:
 	
 	static LayerInfo GetLayerIds(const RTPPacket::shared& packet);
 private:
-	WrapExtender<uint16_t,uint32_t> frameNumberExtender;
-	uint32_t currentFrameNumber = std::numeric_limits<uint32_t>::max();
-	std::vector<uint32_t> forwardedFrames;
+	WrapExtender<uint16_t,uint64_t> frameNumberExtender;
+	uint64_t currentFrameNumber = std::numeric_limits<uint64_t>::max();
+	std::vector<uint64_t> forwardedFrames;
 	DWORD currentDecodeTarget = 0;
 	DWORD nextDecodeTarget = 0;
 	

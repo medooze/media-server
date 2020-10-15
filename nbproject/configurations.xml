@@ -197,6 +197,7 @@
           <in>RTPIncomingMediaStreamDepacketizer.h</in>
           <in>RTPIncomingMediaStreamMultiplexer.h</in>
         </df>
+        <in>DependencyDescriptorLayerSelector.h</in>
         <in>VideoDecoderWorker.h</in>
         <in>WarpExtender.h</in>
       </df>
@@ -331,6 +332,7 @@
         <in>AudioPipe.cpp</in>
         <in>CPUMonitor.cpp</in>
         <in>DTLSICETransport.cpp</in>
+        <in>DependencyDescriptorLayerSelector.cpp</in>
         <in>EventLoop.cpp</in>
         <in>EventSource.cpp</in>
         <in>MediaFrameListenerBridge.cpp</in>
@@ -771,6 +773,11 @@
           </preprocessorList>
         </ccTool>
       </folder>
+      <item path="include/DependencyDescriptorLayerSelector.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
       <item path="include/VideoDecoderWorker.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/WarpExtender.h" ex="false" tool="3" flavor2="0">
@@ -860,6 +867,11 @@
             <Elem>DARWIN</Elem>
           </preprocessorList>
         </ccTool>
+      </item>
+      <item path="src/DependencyDescriptorLayerSelector.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
       </item>
       <item path="src/EventLoop.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="3">
@@ -2543,13 +2555,8 @@
       <flagsDictionary>
         <element flagsID="0" commonFlags="-fPIC -msse3 -fopenmp"/>
         <element flagsID="1"
-                 commonFlags="-fPIC -msse3 -msse4.1 -std=c++17 -std=gnu++17 -march=native"/>
-        <element flagsID="2"
-                 commonFlags="-fPIC -msse3 -msse4.1 -std=c++17 -std=gnu++17 -march=native -fopenmp -fopenmp -fopenmp"/>
-        <element flagsID="3"
                  commonFlags="-fPIC -msse3 -msse4.1 -std=c++17 -std=gnu++17 -march=native -fsanitize=address -fsanitize=leak -fsanitize=undefined -fopenmp -fopenmp -fopenmp"/>
-        <element flagsID="4" commonFlags="-fPIC -msse3 -std=c++11"/>
-        <element flagsID="5" commonFlags="-std=c++14"/>
+        <element flagsID="2" commonFlags="-std=c++14"/>
       </flagsDictionary>
       <codeAssistance>
         <includeAdditional>true</includeAdditional>
@@ -2562,6 +2569,7 @@
           <executablePath>bin/debug/test</executablePath>
           <cTool>
             <incDir>
+              <pElem>../../../include</pElem>
               <pElem>src</pElem>
               <pElem>include</pElem>
               <pElem>ext</pElem>
@@ -2569,12 +2577,19 @@
               <pElem>ext/libdatachannels/src/internal</pElem>
               <pElem>ext/crc32c/include</pElem>
               <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+              <pElem>../../openssl_1_1_1-stable/include</pElem>
+              <pElem>../../libsrtp-2.2.0/include</pElem>
+              <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+              <pElem>../../../../include/ImageMagick-6</pElem>
               <pElem></pElem>
             </incDir>
             <preprocessorList>
               <Elem>DARWIN</Elem>
               <Elem>FLOATING_POINT</Elem>
+              <Elem>HAVE_IMAGEMAGICK</Elem>
               <Elem>LOG_</Elem>
+              <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+              <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
               <Elem>OUTSIDE_SPEEX</Elem>
               <Elem>PIC</Elem>
               <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2613,6 +2628,7 @@
       <folder path="0/ext">
         <ccTool>
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -2620,12 +2636,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2640,6 +2663,7 @@
       <folder path="0/src/aac">
         <ccTool>
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -2647,12 +2671,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2667,6 +2698,7 @@
       <folder path="0/src/flv1">
         <ccTool>
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -2674,12 +2706,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2694,6 +2733,7 @@
       <folder path="0/src/g711">
         <ccTool>
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -2701,12 +2741,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2721,6 +2768,7 @@
       <folder path="0/src/g722">
         <ccTool>
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -2728,12 +2776,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2748,6 +2803,7 @@
       <folder path="0/src/gsm">
         <ccTool>
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -2755,12 +2811,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2775,6 +2838,7 @@
       <folder path="0/src/h263">
         <ccTool>
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -2782,12 +2846,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2802,6 +2873,7 @@
       <folder path="0/src/h264">
         <ccTool>
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -2809,12 +2881,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2829,6 +2908,7 @@
       <folder path="0/src/nelly">
         <ccTool>
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -2836,12 +2916,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2856,6 +2943,7 @@
       <folder path="0/src/opus">
         <ccTool>
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -2863,12 +2951,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2882,10 +2977,28 @@
       </folder>
       <folder path="0/src/rtmp">
         <ccTool>
+          <incDir>
+            <pElem>../../../include</pElem>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
+            <pElem></pElem>
+          </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2900,6 +3013,7 @@
       <folder path="0/src/speex">
         <ccTool>
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -2907,12 +3021,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2927,6 +3048,7 @@
       <folder path="0/src/vp6">
         <ccTool>
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -2934,12 +3056,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2954,6 +3083,7 @@
       <folder path="0/src/vp8">
         <ccTool>
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -2961,12 +3091,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -2981,6 +3118,7 @@
       <folder path="0/src/vp9">
         <ccTool>
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -2988,12 +3126,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3008,6 +3153,7 @@
       <folder path="0/src/ws">
         <ccTool>
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -3015,12 +3161,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3051,6 +3204,7 @@
       <item path="src/ActiveSpeakerDetector.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -3058,12 +3212,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3076,7 +3237,7 @@
         </ccTool>
       </item>
       <item path="src/AudioCodecFactory.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="2">
+        <ccTool flags="1">
           <incDir>
             <pElem>../../../include</pElem>
             <pElem>src</pElem>
@@ -3086,7 +3247,7 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
             <pElem>../../libsrtp-2.2.0/include</pElem>
             <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
             <pElem>../../../../include/ImageMagick-6</pElem>
@@ -3113,6 +3274,7 @@
       <item path="src/AudioPipe.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -3120,12 +3282,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3138,7 +3307,7 @@
         </ccTool>
       </item>
       <item path="src/CPUMonitor.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="2">
+        <ccTool flags="1">
           <incDir>
             <pElem>../../../include</pElem>
             <pElem>src</pElem>
@@ -3148,7 +3317,7 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
             <pElem>../../libsrtp-2.2.0/include</pElem>
             <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
             <pElem>../../../../include/ImageMagick-6</pElem>
@@ -3175,6 +3344,7 @@
       <item path="src/DTLSICETransport.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -3182,12 +3352,57 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/DependencyDescriptorLayerSelector.cpp"
+            ex="false"
+            tool="1"
+            flavor2="11">
+        <ccTool flags="1">
+          <incDir>
+            <pElem>../../../include</pElem>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>DARWIN</Elem>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3202,6 +3417,7 @@
       <item path="src/EventLoop.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -3209,12 +3425,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3227,7 +3450,7 @@
         </ccTool>
       </item>
       <item path="src/EventSource.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="2">
+        <ccTool flags="1">
           <incDir>
             <pElem>../../../include</pElem>
             <pElem>src</pElem>
@@ -3237,7 +3460,7 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
             <pElem>../../libsrtp-2.2.0/include</pElem>
             <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
             <pElem>../../../../include/ImageMagick-6</pElem>
@@ -3262,7 +3485,7 @@
         </ccTool>
       </item>
       <item path="src/MediaFrameListenerBridge.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="2">
+        <ccTool flags="1">
           <incDir>
             <pElem>../../../include</pElem>
             <pElem>src</pElem>
@@ -3272,7 +3495,7 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
             <pElem>../../libsrtp-2.2.0/include</pElem>
             <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
             <pElem>../../../../include/ImageMagick-6</pElem>
@@ -3299,6 +3522,7 @@
       <item path="src/OpenSSL.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -3306,12 +3530,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3324,7 +3555,7 @@
         </ccTool>
       </item>
       <item path="src/PCAPFile.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="2">
+        <ccTool flags="1">
           <incDir>
             <pElem>../../../include</pElem>
             <pElem>src</pElem>
@@ -3334,7 +3565,7 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
             <pElem>../../libsrtp-2.2.0/include</pElem>
             <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
             <pElem>../../../../include/ImageMagick-6</pElem>
@@ -3361,6 +3592,7 @@
       <item path="src/PCAPReader.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -3368,12 +3600,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3388,6 +3627,7 @@
       <item path="src/PCAPTransportEmulator.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -3395,12 +3635,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3415,6 +3662,7 @@
       <item path="src/RTPBundleTransport.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -3422,12 +3670,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3442,6 +3697,7 @@
       <item path="src/RTPSmoother.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -3449,12 +3705,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3469,6 +3732,7 @@
       <item path="src/RTPTransport.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -3476,12 +3740,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3496,6 +3767,7 @@
       <item path="src/SRTPSession.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -3503,12 +3775,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3524,19 +3803,9 @@
             ex="false"
             tool="1"
             flavor2="11">
-        <ccTool flags="5">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>ext/libdatachannels/src</pElem>
-            <pElem>ext/crc32c/include</pElem>
-          </incDir>
-        </ccTool>
-      </item>
-      <item path="src/VideoCodecFactory.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -3544,12 +3813,54 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/VideoCodecFactory.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+          <incDir>
+            <pElem>../../../include</pElem>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>DARWIN</Elem>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3562,7 +3873,7 @@
         </ccTool>
       </item>
       <item path="src/VideoDecoderWorker.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="5">
+        <ccTool flags="2">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -3571,19 +3882,10 @@
           </incDir>
         </ccTool>
       </item>
-      <item path="src/VideoEncoderWorker.cpp" ex="false" tool="1" flavor2="8">
-        <ccTool flags="4">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>ext/libdatachannels/src</pElem>
-          </incDir>
-        </ccTool>
-      </item>
-      <item path="src/VideoLayerSelector.cpp" ex="false" tool="1" flavor2="11">
+      <item path="src/VideoEncoderWorker.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -3591,12 +3893,54 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/VideoLayerSelector.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+          <incDir>
+            <pElem>../../../include</pElem>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>DARWIN</Elem>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3619,6 +3963,7 @@
       <item path="src/appmixer.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -3626,12 +3971,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3646,6 +3998,7 @@
       <item path="src/asymmetricmosaic.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -3653,12 +4006,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3673,6 +4033,7 @@
       <item path="src/audiodecoder.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -3680,12 +4041,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3700,6 +4068,7 @@
       <item path="src/audioencoder.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -3707,12 +4076,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3727,6 +4103,7 @@
       <item path="src/audiomixer.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -3734,12 +4111,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3754,6 +4138,7 @@
       <item path="src/audiostream.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -3761,12 +4146,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3781,6 +4173,7 @@
       <item path="src/audiotransrater.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -3788,12 +4181,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3808,6 +4208,7 @@
       <item path="src/avcdescriptor.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -3815,12 +4216,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3835,6 +4243,7 @@
       <item path="src/broadcastsession.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -3842,12 +4251,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3860,7 +4276,7 @@
         </ccTool>
       </item>
       <item path="src/bwe.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="5">
+        <ccTool flags="2">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -3872,6 +4288,7 @@
       <item path="src/cpim.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -3879,12 +4296,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3899,6 +4323,7 @@
       <item path="src/crc32calc.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -3906,12 +4331,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3926,6 +4358,7 @@
       <item path="src/dtls.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -3933,12 +4366,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -3951,7 +4391,7 @@
         </ccTool>
       </item>
       <item path="src/eventstreaminghandler.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="2">
+        <ccTool flags="1">
           <incDir>
             <pElem>../../../include</pElem>
             <pElem>src</pElem>
@@ -3961,7 +4401,7 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
             <pElem>../../libsrtp-2.2.0/include</pElem>
             <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
             <pElem>../../../../include/ImageMagick-6</pElem>
@@ -4022,6 +4462,7 @@
       <item path="src/framescaler.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -4029,12 +4470,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4073,6 +4521,7 @@
       <item path="src/groupchat.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -4080,12 +4529,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4136,6 +4592,7 @@
       <item path="src/http.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -4143,12 +4600,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4163,6 +4627,7 @@
       <item path="src/httpparser.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -4170,12 +4635,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4190,6 +4662,7 @@
       <item path="src/logo.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -4197,12 +4670,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4247,6 +4727,7 @@
       <item path="src/mcu.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -4254,12 +4735,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4274,6 +4762,7 @@
       <item path="src/mosaic.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -4281,12 +4770,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4301,6 +4797,7 @@
       <item path="src/mp4player.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -4308,12 +4805,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4328,6 +4832,7 @@
       <item path="src/mp4recorder.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -4335,12 +4840,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4355,6 +4867,7 @@
       <item path="src/mp4streamer.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -4362,12 +4875,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4382,6 +4902,7 @@
       <item path="src/multiconf.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -4389,12 +4910,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4411,7 +4939,7 @@
         </ccTool>
       </item>
       <item path="src/nocodecs.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="5">
+        <ccTool flags="2">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -4426,7 +4954,7 @@
         </ccTool>
       </item>
       <item path="src/opus/opusdepacketizer.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="5">
+        <ccTool flags="1">
         </ccTool>
       </item>
       <item path="src/opus/opusencoder.cpp" ex="false" tool="1" flavor2="11">
@@ -4436,6 +4964,7 @@
       <item path="src/overlay.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -4443,12 +4972,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4463,6 +4999,7 @@
       <item path="src/partedmosaic.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -4470,12 +5007,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4490,6 +5034,7 @@
       <item path="src/pipeaudioinput.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -4497,12 +5042,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4517,6 +5069,7 @@
       <item path="src/pipeaudiooutput.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -4524,12 +5077,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4544,6 +5104,7 @@
       <item path="src/pipetextinput.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -4551,12 +5112,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4571,6 +5139,7 @@
       <item path="src/pipetextoutput.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -4578,12 +5147,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4598,6 +5174,7 @@
       <item path="src/pipevideoinput.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -4605,12 +5182,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4625,6 +5209,7 @@
       <item path="src/pipevideooutput.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -4632,12 +5217,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4652,6 +5244,7 @@
       <item path="src/pipmosaic.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -4659,12 +5252,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4677,7 +5277,7 @@
         </ccTool>
       </item>
       <item path="src/receiver.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="5">
+        <ccTool flags="2">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -4690,6 +5290,7 @@
       <item path="src/remoteratecontrol.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -4697,12 +5298,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4717,6 +5325,7 @@
       <item path="src/remoterateestimator.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -4724,12 +5333,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -4743,242 +5359,62 @@
       </item>
       <item path="src/rtmp/amf.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>ext/libdatachannels/src</pElem>
-            <pElem>ext/libdatachannels/src/internal</pElem>
-            <pElem>ext/crc32c/include</pElem>
-            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem></pElem>
-          </incDir>
         </ccTool>
       </item>
       <item path="src/rtmp/flvencoder.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>ext/libdatachannels/src</pElem>
-            <pElem>ext/libdatachannels/src/internal</pElem>
-            <pElem>ext/crc32c/include</pElem>
-            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem></pElem>
-          </incDir>
         </ccTool>
       </item>
       <item path="src/rtmp/flvrecorder.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>ext/libdatachannels/src</pElem>
-            <pElem>ext/libdatachannels/src/internal</pElem>
-            <pElem>ext/crc32c/include</pElem>
-            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem></pElem>
-          </incDir>
         </ccTool>
       </item>
       <item path="src/rtmp/rtmpchunk.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="2">
-          <incDir>
-            <pElem>../../../include</pElem>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>ext/libdatachannels/src</pElem>
-            <pElem>ext/libdatachannels/src/internal</pElem>
-            <pElem>ext/crc32c/include</pElem>
-            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem>../../openssl-1.1.1c/include</pElem>
-            <pElem>../../libsrtp-2.2.0/include</pElem>
-            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
-            <pElem>../../../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-          </preprocessorList>
+        <ccTool flags="1">
         </ccTool>
       </item>
       <item path="src/rtmp/rtmpclientconnection.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>ext/libdatachannels/src</pElem>
-            <pElem>ext/libdatachannels/src/internal</pElem>
-            <pElem>ext/crc32c/include</pElem>
-            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem></pElem>
-          </incDir>
         </ccTool>
       </item>
       <item path="src/rtmp/rtmpconnection.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="2">
-          <incDir>
-            <pElem>../../../include</pElem>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>ext/libdatachannels/src</pElem>
-            <pElem>ext/libdatachannels/src/internal</pElem>
-            <pElem>ext/crc32c/include</pElem>
-            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem>../../openssl-1.1.1c/include</pElem>
-            <pElem>../../libsrtp-2.2.0/include</pElem>
-            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
-            <pElem>../../../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-          </preprocessorList>
+        <ccTool flags="1">
         </ccTool>
       </item>
       <item path="src/rtmp/rtmpflvstream.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>ext/libdatachannels/src</pElem>
-            <pElem>ext/libdatachannels/src/internal</pElem>
-            <pElem>ext/crc32c/include</pElem>
-            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem></pElem>
-          </incDir>
         </ccTool>
       </item>
       <item path="src/rtmp/rtmpmessage.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>ext/libdatachannels/src</pElem>
-            <pElem>ext/libdatachannels/src/internal</pElem>
-            <pElem>ext/crc32c/include</pElem>
-            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem></pElem>
-          </incDir>
         </ccTool>
       </item>
       <item path="src/rtmp/rtmpmp4stream.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>ext/libdatachannels/src</pElem>
-            <pElem>ext/libdatachannels/src/internal</pElem>
-            <pElem>ext/crc32c/include</pElem>
-            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem></pElem>
-          </incDir>
         </ccTool>
       </item>
       <item path="src/rtmp/rtmpnetconnection.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="2">
-          <incDir>
-            <pElem>../../../include</pElem>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>ext/libdatachannels/src</pElem>
-            <pElem>ext/libdatachannels/src/internal</pElem>
-            <pElem>ext/crc32c/include</pElem>
-            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem>../../openssl-1.1.1c/include</pElem>
-            <pElem>../../libsrtp-2.2.0/include</pElem>
-            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
-            <pElem>../../../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-          </preprocessorList>
+        <ccTool flags="1">
         </ccTool>
       </item>
       <item path="src/rtmp/rtmppacketizer.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>ext/libdatachannels/src</pElem>
-            <pElem>ext/libdatachannels/src/internal</pElem>
-            <pElem>ext/crc32c/include</pElem>
-            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem></pElem>
-          </incDir>
         </ccTool>
       </item>
       <item path="src/rtmp/rtmpparticipant.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>ext/libdatachannels/src</pElem>
-            <pElem>ext/libdatachannels/src/internal</pElem>
-            <pElem>ext/crc32c/include</pElem>
-            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem></pElem>
-          </incDir>
         </ccTool>
       </item>
       <item path="src/rtmp/rtmpserver.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="2">
-          <incDir>
-            <pElem>../../../include</pElem>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>ext/libdatachannels/src</pElem>
-            <pElem>ext/libdatachannels/src/internal</pElem>
-            <pElem>ext/crc32c/include</pElem>
-            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem>../../openssl-1.1.1c/include</pElem>
-            <pElem>../../libsrtp-2.2.0/include</pElem>
-            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
-            <pElem>../../../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-          </preprocessorList>
+        <ccTool flags="1">
         </ccTool>
       </item>
       <item path="src/rtmp/rtmpstream.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>ext/libdatachannels/src</pElem>
-            <pElem>ext/libdatachannels/src/internal</pElem>
-            <pElem>ext/crc32c/include</pElem>
-            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem></pElem>
-          </incDir>
         </ccTool>
       </item>
       <item path="src/rtp/DependencyDescriptor.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="1">
           <incDir>
             <pElem>../../../include</pElem>
             <pElem>src</pElem>
@@ -5013,18 +5449,9 @@
         </ccTool>
       </item>
       <item path="src/rtp/LayerInfo.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="5">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>ext/libdatachannels/src</pElem>
-          </incDir>
-        </ccTool>
-      </item>
-      <item path="src/rtp/RTCPApp.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -5032,12 +5459,54 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/rtp/RTCPApp.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+          <incDir>
+            <pElem>../../../include</pElem>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>DARWIN</Elem>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -5052,6 +5521,7 @@
       <item path="src/rtp/RTCPBye.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -5059,12 +5529,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -5079,6 +5556,7 @@
       <item path="src/rtp/RTCPCommonHeader.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -5086,12 +5564,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -5106,6 +5591,7 @@
       <item path="src/rtp/RTCPCompoundPacket.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -5113,12 +5599,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -5136,6 +5629,7 @@
             flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -5143,12 +5637,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -5163,6 +5664,7 @@
       <item path="src/rtp/RTCPFullIntraRequest.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -5170,12 +5672,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -5190,6 +5699,7 @@
       <item path="src/rtp/RTCPNACK.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -5197,12 +5707,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -5217,6 +5734,7 @@
       <item path="src/rtp/RTCPPacket.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -5224,12 +5742,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -5244,6 +5769,7 @@
       <item path="src/rtp/RTCPPayloadFeedback.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -5251,12 +5777,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -5271,6 +5804,7 @@
       <item path="src/rtp/RTCPRTPFeedback.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -5278,12 +5812,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -5298,6 +5839,7 @@
       <item path="src/rtp/RTCPReceiverReport.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -5305,12 +5847,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -5325,6 +5874,7 @@
       <item path="src/rtp/RTCPReport.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -5332,12 +5882,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -5352,6 +5909,7 @@
       <item path="src/rtp/RTCPSDES.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -5359,12 +5917,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -5379,6 +5944,7 @@
       <item path="src/rtp/RTCPSenderReport.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -5386,12 +5952,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -5406,6 +5979,7 @@
       <item path="src/rtp/RTPDepacketizer.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -5413,12 +5987,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -5433,6 +6014,7 @@
       <item path="src/rtp/RTPHeader.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -5440,12 +6022,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -5460,6 +6049,7 @@
       <item path="src/rtp/RTPHeaderExtension.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -5467,12 +6057,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -5488,31 +6085,9 @@
             ex="false"
             tool="1"
             flavor2="11">
-        <ccTool flags="5">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>ext/libdatachannels/src</pElem>
-          </incDir>
-        </ccTool>
-      </item>
-      <item path="src/rtp/RTPIncomingMediaStreamMultiplexer.cpp"
-            ex="false"
-            tool="1"
-            flavor2="11">
-        <ccTool flags="5">
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>ext/libdatachannels/src</pElem>
-          </incDir>
-        </ccTool>
-      </item>
-      <item path="src/rtp/RTPIncomingSource.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -5520,12 +6095,92 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/rtp/RTPIncomingMediaStreamMultiplexer.cpp"
+            ex="false"
+            tool="1"
+            flavor2="11">
+        <ccTool flags="1">
+          <incDir>
+            <pElem>../../../include</pElem>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>DARWIN</Elem>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="src/rtp/RTPIncomingSource.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+          <incDir>
+            <pElem>../../../include</pElem>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>DARWIN</Elem>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -5543,6 +6198,7 @@
             flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -5550,12 +6206,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -5570,6 +6233,7 @@
       <item path="src/rtp/RTPLostPackets.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -5577,12 +6241,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -5597,6 +6268,7 @@
       <item path="src/rtp/RTPMap.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -5604,12 +6276,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -5624,6 +6303,7 @@
       <item path="src/rtp/RTPOutgoingSource.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -5631,12 +6311,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -5654,6 +6341,7 @@
             flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -5661,12 +6349,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -5681,6 +6376,7 @@
       <item path="src/rtp/RTPPacket.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -5688,12 +6384,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -5708,6 +6411,7 @@
       <item path="src/rtp/RTPPacketSched.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -5715,12 +6419,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -5733,17 +6444,42 @@
         </ccTool>
       </item>
       <item path="src/rtp/RTPPayload.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="5">
+        <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
             <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
+            <pElem></pElem>
           </incDir>
+          <preprocessorList>
+            <Elem>DARWIN</Elem>
+            <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
+            <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
+            <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
         </ccTool>
       </item>
       <item path="src/rtp/RTPRedundantPacket.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="5">
+        <ccTool flags="2">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -5756,6 +6492,7 @@
       <item path="src/rtp/RTPSource.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -5763,12 +6500,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -5783,6 +6527,7 @@
       <item path="src/rtp/RTPStreamTransponder.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -5790,12 +6535,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -5810,6 +6562,7 @@
       <item path="src/rtpparticipant.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -5817,12 +6570,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -5837,6 +6597,7 @@
       <item path="src/rtpsession.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -5844,12 +6605,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -5862,7 +6630,7 @@
         </ccTool>
       </item>
       <item path="src/sender.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="5">
+        <ccTool flags="2">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -5875,6 +6643,7 @@
       <item path="src/sidebar.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -5882,12 +6651,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -5908,7 +6684,7 @@
         </ccTool>
       </item>
       <item path="src/statushandler.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="2">
+        <ccTool flags="1">
           <incDir>
             <pElem>../../../include</pElem>
             <pElem>src</pElem>
@@ -5918,7 +6694,7 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
             <pElem>../../libsrtp-2.2.0/include</pElem>
             <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
             <pElem>../../../../include/ImageMagick-6</pElem>
@@ -5945,6 +6721,7 @@
       <item path="src/stunmessage.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -5952,12 +6729,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -5972,6 +6756,7 @@
       <item path="src/textencoder.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -5979,12 +6764,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -5999,6 +6791,7 @@
       <item path="src/textmixer.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -6006,12 +6799,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -6026,6 +6826,7 @@
       <item path="src/textmixerworker.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -6033,12 +6834,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -6053,6 +6861,7 @@
       <item path="src/textstream.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -6060,12 +6869,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -6080,6 +6896,7 @@
       <item path="src/uploadhandler.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -6087,12 +6904,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -6107,6 +6931,7 @@
       <item path="src/utf8.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -6114,12 +6939,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -6134,6 +6966,7 @@
       <item path="src/vad.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -6141,12 +6974,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -6161,6 +7001,7 @@
       <item path="src/videomixer.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -6168,12 +7009,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -6188,6 +7036,7 @@
       <item path="src/videopipe.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -6195,12 +7044,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -6215,6 +7071,7 @@
       <item path="src/videostream.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -6222,12 +7079,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -6284,7 +7148,7 @@
         </ccTool>
       </item>
       <item path="src/xmlhandler.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="2">
+        <ccTool flags="1">
           <incDir>
             <pElem>../../../include</pElem>
             <pElem>src</pElem>
@@ -6294,7 +7158,7 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
             <pElem>../../libsrtp-2.2.0/include</pElem>
             <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
             <pElem>../../../../include/ImageMagick-6</pElem>
@@ -6321,6 +7185,7 @@
       <item path="src/xmlrpcmcu.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
           <incDir>
+            <pElem>../../../include</pElem>
             <pElem>src</pElem>
             <pElem>include</pElem>
             <pElem>ext</pElem>
@@ -6328,12 +7193,19 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
             <pElem></pElem>
           </incDir>
           <preprocessorList>
             <Elem>DARWIN</Elem>
             <Elem>FLOATING_POINT</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
             <Elem>LOG_</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
             <Elem>PIC</Elem>
             <Elem>RANDOM_PREFIX=mcu</Elem>
@@ -6346,7 +7218,7 @@
         </ccTool>
       </item>
       <item path="src/xmlrpcserver.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="2">
+        <ccTool flags="1">
           <incDir>
             <pElem>../../../include</pElem>
             <pElem>src</pElem>
@@ -6356,7 +7228,7 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
             <pElem>../../libsrtp-2.2.0/include</pElem>
             <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
             <pElem>../../../../include/ImageMagick-6</pElem>
@@ -6381,7 +7253,7 @@
         </ccTool>
       </item>
       <item path="src/xmlstreaminghandler.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="2">
+        <ccTool flags="1">
           <incDir>
             <pElem>../../../include</pElem>
             <pElem>src</pElem>
@@ -6391,7 +7263,7 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
             <pElem>../../libsrtp-2.2.0/include</pElem>
             <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
             <pElem>../../../../include/ImageMagick-6</pElem>
@@ -6416,7 +7288,7 @@
         </ccTool>
       </item>
       <item path="test/aac.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="2">
+        <ccTool flags="1">
           <incDir>
             <pElem>../../../include</pElem>
             <pElem>src</pElem>
@@ -6426,7 +7298,7 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
             <pElem>../../libsrtp-2.2.0/include</pElem>
             <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
             <pElem>../../../../include/ImageMagick-6</pElem>
@@ -6441,7 +7313,7 @@
         </ccTool>
       </item>
       <item path="test/cpim.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="2">
+        <ccTool flags="1">
           <incDir>
             <pElem>../../../include</pElem>
             <pElem>src</pElem>
@@ -6451,7 +7323,7 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
             <pElem>../../libsrtp-2.2.0/include</pElem>
             <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
             <pElem>../../../../include/ImageMagick-6</pElem>
@@ -6466,7 +7338,7 @@
         </ccTool>
       </item>
       <item path="test/dd.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="3">
+        <ccTool flags="1">
           <incDir>
             <pElem>../../../include</pElem>
             <pElem>src</pElem>
@@ -6491,7 +7363,7 @@
         </ccTool>
       </item>
       <item path="test/eventloop.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="5">
+        <ccTool flags="2">
           <incDir>
             <pElem>src</pElem>
             <pElem>include</pElem>
@@ -6501,7 +7373,7 @@
         </ccTool>
       </item>
       <item path="test/fec.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="2">
+        <ccTool flags="1">
           <incDir>
             <pElem>../../../include</pElem>
             <pElem>src</pElem>
@@ -6511,7 +7383,7 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
             <pElem>../../libsrtp-2.2.0/include</pElem>
             <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
             <pElem>../../../../include/ImageMagick-6</pElem>
@@ -6526,7 +7398,7 @@
         </ccTool>
       </item>
       <item path="test/h264.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="2">
+        <ccTool flags="1">
           <incDir>
             <pElem>../../../include</pElem>
             <pElem>src</pElem>
@@ -6536,7 +7408,7 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
             <pElem>../../libsrtp-2.2.0/include</pElem>
             <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
             <pElem>../../../../include/ImageMagick-6</pElem>
@@ -6551,7 +7423,7 @@
         </ccTool>
       </item>
       <item path="test/main.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="2">
+        <ccTool flags="1">
           <incDir>
             <pElem>../../../include</pElem>
             <pElem>src</pElem>
@@ -6561,7 +7433,7 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
             <pElem>../../libsrtp-2.2.0/include</pElem>
             <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
             <pElem>../../../../include/ImageMagick-6</pElem>
@@ -6576,7 +7448,7 @@
         </ccTool>
       </item>
       <item path="test/overlay.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="2">
+        <ccTool flags="1">
           <incDir>
             <pElem>../../../include</pElem>
             <pElem>src</pElem>
@@ -6586,7 +7458,7 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
             <pElem>../../libsrtp-2.2.0/include</pElem>
             <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
             <pElem>../../../../include/ImageMagick-6</pElem>
@@ -6601,11 +7473,7 @@
         </ccTool>
       </item>
       <item path="test/rtmp.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="5">
-        </ccTool>
-      </item>
-      <item path="test/rtp.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="2">
+        <ccTool flags="1">
           <incDir>
             <pElem>../../../include</pElem>
             <pElem>src</pElem>
@@ -6615,7 +7483,32 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>DARWIN</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="test/rtp.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+          <incDir>
+            <pElem>../../../include</pElem>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
             <pElem>../../libsrtp-2.2.0/include</pElem>
             <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
             <pElem>../../../../include/ImageMagick-6</pElem>
@@ -6630,7 +7523,7 @@
         </ccTool>
       </item>
       <item path="test/stun.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="2">
+        <ccTool flags="1">
           <incDir>
             <pElem>../../../include</pElem>
             <pElem>src</pElem>
@@ -6640,7 +7533,7 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
             <pElem>../../libsrtp-2.2.0/include</pElem>
             <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
             <pElem>../../../../include/ImageMagick-6</pElem>
@@ -6655,7 +7548,7 @@
         </ccTool>
       </item>
       <item path="test/test.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="2">
+        <ccTool flags="1">
           <incDir>
             <pElem>../../../include</pElem>
             <pElem>src</pElem>
@@ -6665,7 +7558,7 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
             <pElem>../../libsrtp-2.2.0/include</pElem>
             <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
             <pElem>../../../../include/ImageMagick-6</pElem>
@@ -6680,7 +7573,7 @@
         </ccTool>
       </item>
       <item path="test/vp8.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="2">
+        <ccTool flags="1">
           <incDir>
             <pElem>../../../include</pElem>
             <pElem>src</pElem>
@@ -6690,7 +7583,7 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
             <pElem>../../libsrtp-2.2.0/include</pElem>
             <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
             <pElem>../../../../include/ImageMagick-6</pElem>
@@ -6705,7 +7598,7 @@
         </ccTool>
       </item>
       <item path="test/vp9.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="2">
+        <ccTool flags="1">
           <incDir>
             <pElem>../../../include</pElem>
             <pElem>src</pElem>
@@ -6715,7 +7608,7 @@
             <pElem>ext/libdatachannels/src/internal</pElem>
             <pElem>ext/crc32c/include</pElem>
             <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem>../../openssl-1.1.1c/include</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
             <pElem>../../libsrtp-2.2.0/include</pElem>
             <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
             <pElem>../../../../include/ImageMagick-6</pElem>
@@ -8175,6 +9068,11 @@
           </preprocessorList>
         </ccTool>
       </folder>
+      <item path="include/DependencyDescriptorLayerSelector.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
       <item path="include/WarpExtender.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/rtp/DependencyDescriptor.h" ex="false" tool="3" flavor2="0">
@@ -8318,6 +9216,11 @@
             <Elem>__STDC_CONSTANT_MACROS</Elem>
           </preprocessorList>
         </ccTool>
+      </item>
+      <item path="src/DependencyDescriptorLayerSelector.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
       </item>
       <item path="src/EventLoop.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="0">
@@ -12157,6 +13060,11 @@
           </preprocessorList>
         </ccTool>
       </folder>
+      <item path="include/DependencyDescriptorLayerSelector.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
       <item path="include/WarpExtender.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/rtp/DependencyDescriptor.h" ex="false" tool="3" flavor2="0">
@@ -12280,6 +13188,11 @@
             <Elem>__STDC_CONSTANT_MACROS</Elem>
           </preprocessorList>
         </ccTool>
+      </item>
+      <item path="src/DependencyDescriptorLayerSelector.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
       </item>
       <item path="src/EventLoop.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
@@ -15533,6 +16446,11 @@
           </preprocessorList>
         </ccTool>
       </folder>
+      <item path="include/DependencyDescriptorLayerSelector.h"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
       <item path="include/WarpExtender.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/rtp/DependencyDescriptor.h" ex="false" tool="3" flavor2="0">
@@ -15656,6 +16574,11 @@
             <Elem>__STDC_CONSTANT_MACROS</Elem>
           </preprocessorList>
         </ccTool>
+      </item>
+      <item path="src/DependencyDescriptorLayerSelector.cpp"
+            ex="false"
+            tool="1"
+            flavor2="0">
       </item>
       <item path="src/EventLoop.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">

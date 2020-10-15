@@ -122,7 +122,8 @@ public:
 	};
 	
 public:
-	DWORD Parse(const RTPMap &extMap,const BYTE* data,const DWORD size, const std::optional<TemplateDependencyStructure>& templateDependencyStructure = std::nullopt);
+	DWORD Parse(const RTPMap &extMap,const BYTE* data,const DWORD size);
+	bool  ParseDependencyDescriptor(const std::optional<TemplateDependencyStructure>& templateDependencyStructure);
 	DWORD Serialize(const RTPMap &extMap,BYTE* data,const DWORD size) const;
 	void  Dump() const;
 public:
@@ -136,6 +137,7 @@ public:
 	std::string rid;
 	std::string repairedId;
 	std::string mid;
+	BitReader dependencyDescryptorReader; 
 	std::optional<::DependencyDescriptor> dependencyDescryptor;
 	
 	bool    hasAbsSentTime		= false;
