@@ -38,9 +38,9 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 		return Warning("-DependencyDescriptorLayerSelector::Select() | coulnd't retrieve DependencyDestriptor\n");
 	
 	//Check we already have received a template structure
-	if (!packet->HasTemplateDependencyStructure())
+	if (!currentTemplateDependencyStructure)
 		//Drop packet
-		return false;
+		return Warning("-DependencyDescriptorLayerSelector::Select() | coulnd't retrieve current TemplateDependencyStructure\n");
 	
 	//Get extended frame number
 	auto extFrameNum = frameNumberExtender.Extend(dependencyDescriptor->frameNumber);
@@ -71,7 +71,7 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 		return false;
 	
 	//Ensure that we have the packet frame dependency template
-	if (currentTemplateDependencyStructure->ContainsFrameDependencyTemplate(dependencyDescriptor->frameDependencyTemplateId))
+	if (!currentTemplateDependencyStructure->ContainsFrameDependencyTemplate(dependencyDescriptor->frameDependencyTemplateId))
 		//Skip
 		return Warning("-DependencyDescriptorLayerSelector::Select() | Current frame dependency templates don't contain reference templateId [id:%d]\n",dependencyDescriptor->frameDependencyTemplateId);
 	
@@ -91,10 +91,10 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	auto& frameDiffs		= dependencyDescriptor->customFrameDiffs		? dependencyDescriptor->customFrameDiffs.value()		: frameDependencyTemplate.frameDiffs;
 	auto& frameDiffsChains		= dependencyDescriptor->customFrameDiffsChains		? dependencyDescriptor->customFrameDiffsChains.value()		: frameDependencyTemplate.frameDiffsChains;
 	
-	//Chec dti info is correct
+	//Check dti info is correct
 	if (decodeTargetIndications.size()<currentDecodeTarget)
 		//Ignore packet
-		return false;
+		return Warning("-DependencyDescriptorLayerSelector::Select() | Could not find current decode target [dt:%d]\n",currentDecodeTarget);
 	
 	//Get decode target indication for this frame in current decode target
 	auto dti = decodeTargetIndications[currentDecodeTarget];
