@@ -195,7 +195,7 @@ std::optional<DependencyDescriptor> DependencyDescriptor::Parse(BitReader& reade
 				//Error
 				return std::nullopt;
 			//Create custom dtis
-			dd->customDecodeTargetIndications = {};
+			dd->customDecodeTargetIndications.emplace();
 			//Fill custom dtis up to count
 			while (dd->customDecodeTargetIndications->size() < customDtis)
 			{
@@ -208,7 +208,7 @@ std::optional<DependencyDescriptor> DependencyDescriptor::Parse(BitReader& reade
 		if (customFrameDiffs)
 		{
 			//Create custom dtis
-			dd->customFrameDiffs = {};
+			dd->customFrameDiffs.emplace();
 			
 			//Get next value size
 			uint32_t nextFrameDiffSize = reader.Get(2); CHECK(reader);
@@ -232,7 +232,7 @@ std::optional<DependencyDescriptor> DependencyDescriptor::Parse(BitReader& reade
 				return std::nullopt;
 				
 			//Create custom chains
-			dd->customFrameDiffsChains = {};
+			dd->customFrameDiffsChains.emplace();
 			//Fill custom dtis up to count
 			while (dd->customFrameDiffsChains->size() < chainsCount)
 			{
