@@ -4,6 +4,7 @@
 #include "codecs.h"
 #include "WrapExtender.h"
 #include "VideoLayerSelector.h"
+#include "BitHistory.h"
 
 
 class DependencyDescriptorLayerSelector : 
@@ -26,7 +27,7 @@ public:
 private:
 	WrapExtender<uint16_t,uint64_t> frameNumberExtender;
 	uint64_t currentFrameNumber = std::numeric_limits<uint64_t>::max();
-	std::vector<uint64_t> forwardedFrames;
+	BitHistory<256> forwardedFrames;
 	DWORD currentDecodeTarget = 0;
 	DWORD nextDecodeTarget = 0;
 	

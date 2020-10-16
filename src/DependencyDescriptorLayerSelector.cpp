@@ -99,22 +99,47 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	//Get decode target indication for this frame in current decode target
 	auto dti = decodeTargetIndications[currentDecodeTarget];
 	
+	//If it is not present in currnet target
+	if (dti==DecodeTargetIndication::NotPresent)
+		//Drop it
+		return false;
+	
 	//Previus frame in chain
 	auto prevFrameInCurrentChain = NoFrame;
 	
+	//Check if current frame is broken
+	bool isChainBroken = false;
+	
 	//Check chain info is correct
 	if (frameDiffsChains.size()<currentChain)
+	{
 		//Get previous frame numner in current chain
 		 prevFrameInCurrentChain = extFrameNum - frameDiffsChains[currentChain];
+		 //If it is not us
+		 if (prevFrameInCurrentChain!=currentFrameNumber)
+			//Check if previus frame was not sent
+			isChainBroken = !forwardedFrames.Contains(prevFrameInCurrentChain);
+	}
 	
-	//Get referenced frames 
-	std::vector<uint64_t> referencedFrames(frameDiffs.size());
+	//Check if it is decodable
+	bool decodable = true;
 	
 	//Get all referenced frames
-	for(size_t i=0; i<frameDiffs.size(); ++i)
+	for(size_t i=0; i<frameDiffs.size() && decodable; ++i)
+	{
 		//Calculate frame number from diff
-		referencedFrames[i] = extFrameNum - frameDiffs[i];
+		auto referencedFrame = extFrameNum - frameDiffs[i];
+		//If it is not us
+		if (referencedFrame!=currentFrameNumber)
+			//Check if we have sent it
+			decodable = forwardedFrames.Contains(referencedFrame);
+	}
 	
+	//Check if the frame is decodable or the chain is broken
+	if (!decodable || isChainBroken)
+		//Drop it
+		return false;
+		
 	
 //	//If we have to wait for first intra
 //	if (waitingForIntra)
@@ -133,7 +158,7 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	//If it is the last in current frame
 	if (dependencyDescriptor->endOfFrame)
 		//We only count full forwarded frames
-		forwardedFrames.push_back(currentFrameNumber);
+		forwardedFrames.Add(currentFrameNumber);
 	
 	//UltraDebug("-DependencyDescriptorLayerSelector::Select() | Accepting packet [extSegNum:%u,mark:%d,sid:%d,tid:%d,current:S%dL%d]\n",packet->GetExtSeqNum(),mark,desc.spatialLayerId,desc.temporalLayerId,spatialLayerId,temporalLayerId);
 	//Select
