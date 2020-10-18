@@ -168,8 +168,17 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 
  LayerInfo DependencyDescriptorLayerSelector::GetLayerIds(const RTPPacket::shared& packet)
 {
-	LayerInfo info;
+	//Get dependency description
+	auto& dependencyDescriptor = packet->GetDependencyDescriptor();
+	auto& currentTemplateDependencyStructure = packet->GetTemplateDependencyStructure();
 	
-	//Return layer info
-	return info;
+	//check 
+	if (dependencyDescriptor 
+		&& currentTemplateDependencyStructure
+		&& currentTemplateDependencyStructure->ContainsFrameDependencyTemplate(dependencyDescriptor->frameDependencyTemplateId))
+		//Get layer info from template
+		return currentTemplateDependencyStructure->GetFrameDependencyTemplate(dependencyDescriptor->frameDependencyTemplateId);
+	
+	//Return empty layer info
+	return LayerInfo();
 }
