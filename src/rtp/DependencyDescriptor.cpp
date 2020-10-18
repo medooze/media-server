@@ -486,7 +486,7 @@ bool DependencyDescriptor::Serialize(BitWritter& writter) const
 
 void FrameDependencyTemplate::Dump() const
 {
-	Log("\t\t[FrameDependencyTemplate]\n");
+	Log("\t\t[FrameDependencyTemplate spatialLayerId=%d temporalLayerId]\n",spatialLayerId,temporalLayerId);
 	
 	{
 		std::string str; 
