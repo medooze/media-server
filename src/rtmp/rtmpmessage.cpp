@@ -90,8 +90,14 @@ RTMPMessage::RTMPMessage(DWORD streamId,QWORD timestamp,Type type,DWORD length)
 				media = new RTMPVideoFrame(timestamp,length);
 			break;
 		default:
-			std::runtime_error("RTMP Message not supported");
+			//Throw exception
+			throw std::runtime_error("RTMP Message not supported");
 	}
+	
+	//Check size of control messages,except for UserControlMessage that can have 2 different sizes
+	if (ctrl && type!=UserControlMessage && ctrl->GetSize()!=length)
+		//Throw exception
+		throw std::runtime_error("Wrong size for control message");
 
 	//Init position
 	pos = 0;
@@ -271,7 +277,12 @@ DWORD RTMPMessage::Parse(BYTE* data,DWORD size)
 	DWORD len = size;
 
 	//Get reamining data
-	DWORD left = length - pos;
+	DWORD left = GetLeft();
+	
+	//Check if have consumed all input but still we are not parsed
+	if (!left && !IsParsed())
+		//Throw exception
+		throw std::runtime_error("Wrong size for message");
 
 	//Check sizes
 	if (len > left)
@@ -347,6 +358,11 @@ DWORD RTMPMessage::Parse(BYTE* data,DWORD size)
 bool RTMPMessage::IsParsed()
 {
 	return !parsing;
+}
+
+DWORD RTMPMessage::GetLeft()
+{
+	return length - pos;
 }
 
 bool RTMPMessage::IsControlProtocolMessage()

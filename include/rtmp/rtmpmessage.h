@@ -272,6 +272,7 @@ public:
 	DWORD Parse(BYTE* buffer,DWORD size);
 	DWORD Serialize(BYTE *data,DWORD size);
 	bool IsParsed();
+	DWORD GetLeft();
 	void Dump();
 
 	bool IsControlProtocolMessage();
