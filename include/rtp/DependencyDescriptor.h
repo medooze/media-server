@@ -58,7 +58,10 @@ struct TemplateDependencyStructure
 	// decodeTargetProtectedByChain[dtiIndex] = chainIndex
 	std::vector<uint32_t> decodeTargetProtectedByChain;
 	std::vector<RenderResolution> resolutions;
-
+	
+	//Mapping betwee
+	std::vector<LayerInfo> decodeTargetLayerMapping;
+	
 	bool ContainsFrameDependencyTemplate(uint32_t frameDependencyTemplateId) const
 	{
 		return frameDependencyTemplateId >= templateIdOffset
@@ -69,6 +72,8 @@ struct TemplateDependencyStructure
 	{
 		return frameDependencyTemplates[frameDependencyTemplateId - templateIdOffset];
 	}
+	
+	void CalculateLayerMapping();
 	
 	static std::optional<TemplateDependencyStructure> Parse(BitReader& reader);
 	bool Serialize(BitWritter& writter) const;

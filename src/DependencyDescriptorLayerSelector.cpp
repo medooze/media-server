@@ -2,29 +2,25 @@
 
 #include "DependencyDescriptorLayerSelector.h"
 
-constexpr uint32_t NoChain = std::numeric_limits<uint32_t>::max();
-constexpr uint64_t NoFrame = std::numeric_limits<uint64_t>::max();
+constexpr uint32_t NoChain		= std::numeric_limits<uint32_t>::max();
+constexpr uint32_t NoDecodeTarget	= std::numeric_limits<uint32_t>::max();
+constexpr uint64_t NoFrame		= std::numeric_limits<uint64_t>::max();
 	
 DependencyDescriptorLayerSelector::DependencyDescriptorLayerSelector(VideoCodec::Type codec)
 {
-	this->codec		= codec;
-	waitingForIntra		= true;
-	temporalLayerId		= 0;
-	spatialLayerId		= 0;
-	nextTemporalLayerId	= LayerInfo::MaxLayerId;
-	nextSpatialLayerId	= LayerInfo::MaxLayerId;
+	this->codec = codec;
 }
 
 void DependencyDescriptorLayerSelector::SelectTemporalLayer(BYTE id)
 {
 	//Set next
-	nextTemporalLayerId = id;
+	temporalLayerId = id;
 }
 
 void DependencyDescriptorLayerSelector::SelectSpatialLayer(BYTE id)
 {
 	//Set next
-	nextSpatialLayerId = id;
+	spatialLayerId = id;
 }
 	
 bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
@@ -32,15 +28,25 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	//Get dependency description
 	auto& dependencyDescriptor = packet->GetDependencyDescriptor();
 	auto& currentTemplateDependencyStructure = packet->GetTemplateDependencyStructure();
+	auto& activeDecodeTargets = packet->GetActiveDecodeTargets();
 	
-	//check 
+	//Check rtp packet has a frame descriptor
 	if (!dependencyDescriptor)
+	{
+		//Request intra
+		waitingForIntra = true;
+		//Error
 		return Warning("-DependencyDescriptorLayerSelector::Select() | coulnd't retrieve DependencyDestriptor\n");
+	}
 	
-	//Check we already have received a template structure
+	//Check we already have received a template structure for this rtp stream
 	if (!currentTemplateDependencyStructure)
-		//Drop packet
+	{
+		//Request intra
+		waitingForIntra = true;
+		//Error
 		return Warning("-DependencyDescriptorLayerSelector::Select() | coulnd't retrieve current TemplateDependencyStructure\n");
+	}
 	
 	//Get extended frame number
 	auto extFrameNum = frameNumberExtender.Extend(dependencyDescriptor->frameNumber);
@@ -50,38 +56,21 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	{
 		//If it is not first packet in frame
 		if (!dependencyDescriptor->startOfFrame)
+		{
+			//Request intra
+			waitingForIntra = true;
 			//Ignore packet
 			return false;
-		//Ensure if has a template structure
-		if (!dependencyDescriptor->templateDependencyStructure)
-			//Ignore packet
-			return false;
-		
-		//We need to find what is the best decode target for our constrains
-		nextDecodeTarget = 0;
+		}
 		
 		//Store current frame
 		currentFrameNumber = extFrameNum;
 	}
 	
-	//We will only forward full frames
-	// TODO: check rtp seq num continuity?
-	if (extFrameNum>currentFrameNumber && !dependencyDescriptor->startOfFrame)
-		//Discard packet
-		return false;
-	
 	//Ensure that we have the packet frame dependency template
 	if (!currentTemplateDependencyStructure->ContainsFrameDependencyTemplate(dependencyDescriptor->frameDependencyTemplateId))
 		//Skip
 		return Warning("-DependencyDescriptorLayerSelector::Select() | Current frame dependency templates don't contain reference templateId [id:%d]\n",dependencyDescriptor->frameDependencyTemplateId);
-	
-	//No chain
-	auto currentChain = NoChain;
-		
-	//Check we have chain for current targe
-	if (currentDecodeTarget < currentTemplateDependencyStructure->decodeTargetProtectedByChain.size())
-		//Get chain for current target
-		currentChain = currentTemplateDependencyStructure->decodeTargetProtectedByChain[currentDecodeTarget];
 	
 	//Get template
 	const auto& frameDependencyTemplate = currentTemplateDependencyStructure->GetFrameDependencyTemplate(dependencyDescriptor->frameDependencyTemplateId);
@@ -91,38 +80,14 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	auto& frameDiffs		= dependencyDescriptor->customFrameDiffs		? dependencyDescriptor->customFrameDiffs.value()		: frameDependencyTemplate.frameDiffs;
 	auto& frameDiffsChains		= dependencyDescriptor->customFrameDiffsChains		? dependencyDescriptor->customFrameDiffsChains.value()		: frameDependencyTemplate.frameDiffsChains;
 	
-	//Check dti info is correct
-	if (decodeTargetIndications.size()<currentDecodeTarget)
-		//Ignore packet
-		return Warning("-DependencyDescriptorLayerSelector::Select() | Could not find current decode target [dt:%d]\n",currentDecodeTarget);
-	
-	//Get decode target indication for this frame in current decode target
-	auto dti = decodeTargetIndications[currentDecodeTarget];
-	
-	//If it is not present in currnet target
-	if (dti==DecodeTargetIndication::NotPresent)
-		//Drop it
-		return false;
-	
-	//Previus frame in chain
-	auto prevFrameInCurrentChain = NoFrame;
-	
-	//Check if current frame is broken
-	bool isChainBroken = false;
-	
-	//Check chain info is correct
-	if (frameDiffsChains.size()<currentChain)
-	{
-		//Get previous frame numner in current chain
-		 prevFrameInCurrentChain = extFrameNum - frameDiffsChains[currentChain];
-		 //If it is not us
-		 if (prevFrameInCurrentChain!=currentFrameNumber)
-			//Check if previus frame was not sent
-			isChainBroken = !forwardedFrames.Contains(prevFrameInCurrentChain);
-	}
-	
 	//Check if it is decodable
 	bool decodable = true;
+	
+	//We will only forward full frames
+	// TODO: check rtp seq num continuity?
+	if (extFrameNum>currentFrameNumber && !dependencyDescriptor->startOfFrame)
+		//Discard frame
+		decodable = false;
 	
 	//Get all referenced frames
 	for(size_t i=0; i<frameDiffs.size() && decodable; ++i)
@@ -135,25 +100,76 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 			decodable = forwardedFrames.Contains(referencedFrame);
 	}
 	
-	//Check if the frame is decodable or the chain is broken
-	if (!decodable || isChainBroken)
-		//Drop it
+	//No chain or decode target
+	auto currentChain	 = NoChain;
+	auto currentDecodeTarget = NoDecodeTarget;
+	
+	//Seach best lahyer target for this spatial and temporal layer
+	for (uint32_t decodeTarget = decodeTarget<currentTemplateDependencyStructure->dtisCount-1; decodeTarget>=0; --decodeTarget)
+	{
+		//Check if it is our current selected layer 
+		if (currentTemplateDependencyStructure->decodeTargetLayerMapping[decodeTarget].spatialLayerId <= spatialLayerId && 
+		    currentTemplateDependencyStructure->decodeTargetLayerMapping[decodeTarget].temporalLayerId <= temporalLayerId )
+		{
+			//If decode target is active
+			if (activeDecodeTargets && activeDecodeTargets->at(decodeTarget))
+			{
+				//Check we have chain for current target
+				if (decodeTarget < currentTemplateDependencyStructure->decodeTargetProtectedByChain.size())
+				{
+					//Get chain for current target
+					auto chain = currentTemplateDependencyStructure->decodeTargetProtectedByChain[decodeTarget];
+					
+					//Check dti info is correct
+					if (decodeTargetIndications.size()<decodeTarget)
+						//Try next
+						continue;
+
+					//If frame is not present in current target
+					if (decodeTargetIndications[decodeTarget]==DecodeTargetIndication::NotPresent)
+						//Try next
+						continue;
+					
+					//Check chain info is correct
+					if (frameDiffsChains.size()<chain)
+						//Try next
+						continue;
+					
+					//Get previous frame numner in current chain
+					 auto prevFrameInCurrentChain = extFrameNum - frameDiffsChains[chain];
+					 //If it is not us, check if previus frame was not sent
+					 if (prevFrameInCurrentChain!=currentFrameNumber && !forwardedFrames.Contains(prevFrameInCurrentChain))
+						//Chain is broken, try next
+						continue;
+					
+					//Got it
+					currentChain = chain;
+					currentDecodeTarget = decodeTarget;
+					break;
+				}
+			}
+		}
+	}
+
+	//If there is none available
+	if (currentChain==NoChain || currentDecodeTarget==NoDecodeTarget)
+	{
+		//Request intra
+		waitingForIntra = true;
+		//Ignore packet
 		return false;
-		
+	}
 	
-//	//If we have to wait for first intra
-//	if (waitingForIntra)
-//	{
-//		//If this is not intra
-//		if (!desc.interPicturePredictedLayerFrame)
-//			//Discard
-//			return false;
-//		//Stop waiting
-//		waitingForIntra = 0;
-//	}
+	//If frame is not decodable but we can't discard it
+	if (!decodable && decodeTargetIndications[currentDecodeTarget]==DecodeTargetIndication::Discardable)
+		//Ignore packet but do not discard packet
+		return false;
 	
-	//RTP mark is set for the last frame layer of the selected layer
-//	mark = packet->GetMark() || (desc.endOfLayerFrame && spatialLayerId==desc.spatialLayerId && nextSpatialLayerId<=spatialLayerId);
+	//RTP mark is set for the last frame layer of the selected spatial layer
+	mark = packet->GetMark() || (dependencyDescriptor->endOfFrame && spatialLayerId==frameDependencyTemplate.spatialLayerId);
+	
+	//Not waiting for intra
+	waitingForIntra = false;
 	
 	//If it is the last in current frame
 	if (dependencyDescriptor->endOfFrame)

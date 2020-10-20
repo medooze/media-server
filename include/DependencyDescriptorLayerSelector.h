@@ -28,15 +28,11 @@ private:
 	WrapExtender<uint16_t,uint64_t> frameNumberExtender;
 	uint64_t currentFrameNumber = std::numeric_limits<uint64_t>::max();
 	BitHistory<256> forwardedFrames;
-	DWORD currentDecodeTarget = 0;
-	DWORD nextDecodeTarget = 0;
 	
 	VideoCodec::Type codec;
-	bool waitingForIntra;
-	BYTE temporalLayerId;
-	BYTE spatialLayerId;
-	BYTE nextTemporalLayerId;
-	BYTE nextSpatialLayerId;
+	BYTE temporalLayerId = LayerInfo::MaxLayerId;
+	BYTE spatialLayerId  = LayerInfo::MaxLayerId;
+	bool waitingForIntra = true;
 };
 
 #endif /* DEPENDENCYDESCRIPTORLAYERSELECTOR_H */

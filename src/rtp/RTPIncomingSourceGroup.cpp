@@ -72,12 +72,15 @@ int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet, DWORD siz
 		return 0;
 	
 	//Parse dependency structure now
-	if (packet->ParseDependencyDescriptor(templateDependencyStructure))
+	if (packet->ParseDependencyDescriptor(templateDependencyStructure,activeDecodeTargets))
 	{
 		//If it has a new dependency structure
 		if (packet->HasTemplateDependencyStructure())
+		{
 			//Store it
 			templateDependencyStructure = packet->GetTemplateDependencyStructure();
+			activeDecodeTargets = packet->GetActiveDecodeTargets();
+		}
 	}
 	
 	//Add to lost packets

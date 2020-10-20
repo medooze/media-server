@@ -13,6 +13,32 @@ enum NextLayerIdc
 	Invalid		 = 4
 };
 
+void TemplateDependencyStructure::CalculateLayerMapping()
+{
+	//For each decode target
+	for (uint32_t dt=0; dt<dtisCount; ++dt)
+	{
+		//Get layer info
+		auto& layer = decodeTargetLayerMapping[dt];
+		
+		//None
+		layer.spatialLayerId  = 0;
+		layer.temporalLayerId = 0;
+		
+		//For each template
+		for (const auto& frameDependencyTemplate : frameDependencyTemplates)
+		{
+			//If decode target is in template
+			if (frameDependencyTemplate.decodeTargetIndications[dt]!=DecodeTargetIndication::NotPresent)
+			{
+				//Get max
+				layer.spatialLayerId = std::max(layer.spatialLayerId, frameDependencyTemplate.spatialLayerId);
+				layer.temporalLayerId = std::max(layer.temporalLayerId, frameDependencyTemplate.spatialLayerId);
+			}
+		}
+	}
+}
+
 std::optional<TemplateDependencyStructure> TemplateDependencyStructure::Parse(BitReader& reader)
 {
 	auto tds = std::make_optional<TemplateDependencyStructure>({});
@@ -112,7 +138,7 @@ std::optional<TemplateDependencyStructure> TemplateDependencyStructure::Parse(Bi
 	{
 		//render_resolutions()
 		//For all spatiail layers
-		while(tds->resolutions.size()<maxSpatialId+1) 
+		while(tds->resolutions.size()<maxSpatialId+1u) 
 		{
 			//Read resolution
 			uint32_t maxRenderWidthMinusOne  = reader.Get(16); CHECK(reader);
@@ -121,6 +147,9 @@ std::optional<TemplateDependencyStructure> TemplateDependencyStructure::Parse(Bi
 			tds->resolutions.emplace_back(RenderResolution{maxRenderWidthMinusOne + 1, maxRenderHeightMinusOne + 1});
 		}
   	}
+	
+	//Update mappings
+	tds->CalculateLayerMapping();
 	
 	return tds;
 }
@@ -244,7 +273,7 @@ std::optional<DependencyDescriptor> DependencyDescriptor::Parse(BitReader& reade
 	
 	//frame_dependency_definition()
 	//zero_padding = f(sz * 8 - TotalConsumedBits)
-	  
+	
 	return dd;
 }
 
@@ -536,7 +565,7 @@ void FrameDependencyTemplate::Dump() const
 		Log("\t\t\t[frameDiffsChains]%s[/frameDiffsChains/]\n", str.c_str());
 	}
 	
-	Log("\t\t[FrameDependencyTemplate/]\n");
+	Log("\t\t[/FrameDependencyTemplate]\n");
 }
 
 void TemplateDependencyStructure::Dump() const
@@ -548,6 +577,12 @@ void TemplateDependencyStructure::Dump() const
 	for (auto& fdt : frameDependencyTemplates)
 		fdt.Dump();
 	
+	Log("\t\t[DecodeTargets]\n");
+	//For each decode target
+	for (uint32_t dt=0; dt<dtisCount; ++dt)
+		Log("\t\t\t[DecodeTarget id=%d spatialLayerId=%d temporalLayerId=%d/]\n", dt, decodeTargetLayerMapping[dt].spatialLayerId, decodeTargetLayerMapping[dt].temporalLayerId);
+	Log("\t\t[DecodeTargets]\n");
+		
 	if (decodeTargetProtectedByChain.size())
 	{
 		std::string str; 
@@ -556,9 +591,8 @@ void TemplateDependencyStructure::Dump() const
 			if (!str.empty()) str += ",";
 			str += dti;
 		}
-		Log("\t\t[decodeTargetProtectedByChain]%s[/decodeTargetProtectedByChain/]\n", str.c_str());
-	}
-	
+		Log("\t\t[DecodeTargetProtectedByChain]%s[/DecodeTargetProtectedByChain]\n", str.c_str());
+	}	
 	
 	//Read 
 	if (resolutions.size()) 
@@ -568,10 +602,10 @@ void TemplateDependencyStructure::Dump() const
 		for (auto& resolution : resolutions)
 			Log("\t\t\t%dx%d\n",resolution.width,resolution.height);
 		
-		Log("\t\t[RenderResolutions/]\n");
+		Log("\t\t[/RenderResolutions]\n");
   	}
 	
-	Log("\t[TemplateDependencyStructure/]\n");
+	Log("\t[/TemplateDependencyStructure]\n");
 }
 
 void DependencyDescriptor::Dump() const
@@ -633,5 +667,5 @@ void DependencyDescriptor::Dump() const
 		Log("\t[customFrameDiffsChains]%s[/customFrameDiffsChains/]\n", str.c_str());
 	}
 	  
-	Log("[DependencyDescriptor/]\n");
+	Log("[/DependencyDescriptor]\n");
 }

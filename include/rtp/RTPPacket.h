@@ -103,7 +103,7 @@ public:
 	void  SetRepairedId(const std::string &repairedId)				{ header.extension = extension.hasRepairedId	  = true; extension.repairedId = repairedId;	}
 	void  SetMediaStreamId(const std::string &mid)					{ header.extension = extension.hasMediaStreamId   = true; extension.mid = mid;			}
 	
-	bool  ParseDependencyDescriptor(const std::optional<TemplateDependencyStructure>& templateDependencyStructure)
+	bool  ParseDependencyDescriptor(const std::optional<TemplateDependencyStructure>& templateDependencyStructure, std::optional<std::vector<bool>>& activeDecodeTargets)
 	{
 		//parse it
 		if (!extension.ParseDependencyDescriptor(templateDependencyStructure))
@@ -112,11 +112,15 @@ public:
 		
 		//If packet has a new dependency structure
 		if (extension.dependencyDescryptor && extension.dependencyDescryptor->templateDependencyStructure)
+		{
 			//Store it
 			this->templateDependencyStructure = extension.dependencyDescryptor->templateDependencyStructure;
-		else
+			this->activeDecodeTargets	  = extension.dependencyDescryptor->activeDecodeTargets;
+		} else {
 			//Keep previous
 			this->templateDependencyStructure = templateDependencyStructure;
+			this->activeDecodeTargets	  = activeDecodeTargets;
+		}
 		//Done
 		return true;
 	}
@@ -143,6 +147,7 @@ public:
 	const RTPHeaderExtension::FrameMarks&			GetFrameMarks()			 const { return extension.frameMarks;		}
 	const std::optional<DependencyDescriptor>&		GetDependencyDescriptor()	 const { return extension.dependencyDescryptor;	}
 	const std::optional<TemplateDependencyStructure>&	GetTemplateDependencyStructure() const { return templateDependencyStructure;	}
+	const std::optional<std::vector<bool>>&			GetActiveDecodeTargets()	 const { return activeDecodeTargets;		}
 	
 	bool  HasAudioLevel()			const	{ return extension.hasAudioLevel;		}
 	bool  HasAbsSentTime()			const	{ return extension.hasAbsSentTime;		}
@@ -175,7 +180,9 @@ public:
 	std::optional<VP8PayloadDescriptor>	vp8PayloadDescriptor;
 	std::optional<VP8PayloadHeader>		vp8PayloadHeader;
 	std::optional<VP9PayloadDescription>	vp9PayloadDescriptor;
+	std::optional<std::vector<bool>>	activeDecodeTargets;
 	std::optional<TemplateDependencyStructure> templateDependencyStructure;
+	
 	bool rewitePictureIds = false;
 	
 protected:
