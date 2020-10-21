@@ -28,7 +28,7 @@ public:
 			//Do nothing and return prev one
 			return cycles - 1;
 		//Get ext seq
-		X extSeqNum = (cycles << sizeof(N)) | seqNum;
+		X extSeqNum = (cycles << (sizeof(N)*8)) | seqNum;
 
 		//If we have a not out of order packet
 		if (extSeqNum > this->extSeqNum)
