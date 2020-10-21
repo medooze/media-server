@@ -49,7 +49,7 @@ struct FrameDependencyTemplate : public LayerInfo
 struct TemplateDependencyStructure
 {
 	uint32_t templateIdOffset = 0;
-	uint32_t dtisCount	  = 0;
+	uint32_t dtsCount	  = 0;
 	uint32_t chainsCount	  = 0;
 	
 	std::vector<FrameDependencyTemplate> frameDependencyTemplates;
@@ -82,7 +82,7 @@ struct TemplateDependencyStructure
 	friend bool operator==(const TemplateDependencyStructure& lhs, const TemplateDependencyStructure& rhs)
 	{
 		return  lhs.templateIdOffset == rhs.templateIdOffset &&
-			lhs.dtisCount == rhs.dtisCount &&
+			lhs.dtsCount == rhs.dtsCount &&
 			lhs.chainsCount == rhs.chainsCount &&
 			lhs.frameDependencyTemplates == rhs.frameDependencyTemplates &&
 			lhs.decodeTargetProtectedByChain == rhs.decodeTargetProtectedByChain &&

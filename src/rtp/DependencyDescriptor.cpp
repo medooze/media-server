@@ -16,7 +16,7 @@ enum NextLayerIdc
 void TemplateDependencyStructure::CalculateLayerMapping()
 {
 	//For each decode target
-	for (uint32_t dt=0; dt<dtisCount; ++dt)
+	for (uint32_t dt=0; dt<dtsCount; ++dt)
 	{
 		//Get layer info
 		auto& layer = decodeTargetLayerMapping.emplace_back(0,0);
@@ -40,7 +40,7 @@ std::optional<TemplateDependencyStructure> TemplateDependencyStructure::Parse(Bi
 	auto tds = std::make_optional<TemplateDependencyStructure>({});
 	
 	tds->templateIdOffset	= reader.Get(6);	CHECK(reader);
-	tds->dtisCount		= reader.Get(5) + 1;	CHECK(reader);
+	tds->dtsCount		= reader.Get(5) + 1;	CHECK(reader);
 	
 	uint8_t temporalId		= 0;
 	uint8_t spatialId		= 0;
@@ -82,9 +82,9 @@ std::optional<TemplateDependencyStructure> TemplateDependencyStructure::Parse(Bi
 	for (auto& fdt : tds->frameDependencyTemplates)
 	{
 		//Read all dtis up to count num
-		while(fdt.decodeTargetIndications.size()< tds->dtisCount)
+		while(fdt.decodeTargetIndications.size()< tds->dtsCount)
 		{
-			//template_dti[templateIndex][dtiIndex] = f(2)
+			//template_dti[templateIndex][dtIndex] = f(2)
 			fdt.decodeTargetIndications.push_back((DecodeTargetIndication)reader.Get(2)); CHECK(reader);
 		}
 	}
@@ -105,16 +105,16 @@ std::optional<TemplateDependencyStructure> TemplateDependencyStructure::Parse(Bi
 	}
 
 	//template_chains()
-	tds->chainsCount = reader.GetNonSymmetric(tds->dtisCount + 1);
+	tds->chainsCount = reader.GetNonSymmetric(tds->dtsCount + 1);
 	
 	//Check if we have chains
 	if (tds->chainsCount) 
 	{
-		//Read all dtis
-		while (tds->decodeTargetProtectedByChain.size() < tds->dtisCount)
+		//Read all decode targets
+		while (tds->decodeTargetProtectedByChain.size() < tds->dtsCount)
 		{
-			//decode_target_protected_by[dtiIndex]
-			tds->decodeTargetProtectedByChain.push_back(reader.GetNonSymmetric(tds->dtisCount)); CHECK(reader);
+			//decode_target_protected_by[dtIndex]
+			tds->decodeTargetProtectedByChain.push_back(reader.GetNonSymmetric(tds->dtsCount)); CHECK(reader);
 		}
 	
 		//For all templates
@@ -173,7 +173,7 @@ std::optional<DependencyDescriptor> DependencyDescriptor::Parse(BitReader& reade
 		bool customDtis				= reader.Get(1); CHECK(reader);
 		bool customFrameDiffs			= reader.Get(1); CHECK(reader);
 		bool customChains			= reader.Get(1); CHECK(reader);
-		uint32_t dtisCount			= 0;
+		uint32_t dtsCount			= 0;
 		uint32_t chainsCount			= 0;
 		uint32_t activeDecodeTargetsBitmask	= 0;
 		
@@ -186,37 +186,37 @@ std::optional<DependencyDescriptor> DependencyDescriptor::Parse(BitReader& reade
 				//Error
 				return std::nullopt;
 			//Set counts
-			dtisCount	= dd->templateDependencyStructure->dtisCount;
+			dtsCount	= dd->templateDependencyStructure->dtsCount;
 			chainsCount	= dd->templateDependencyStructure->chainsCount;
 		} else if (templateDependencyStructure) {
 			//Set counts
-			dtisCount	= templateDependencyStructure->dtisCount;
+			dtsCount	= templateDependencyStructure->dtsCount;
 			chainsCount	= templateDependencyStructure->chainsCount;
 		}
 
 		if (activeDecodeTargetsPresent) 
 		{
-			//check dtis are set
-			if (!dtisCount)
+			//check decode targets are set
+			if (!dtsCount)
 				//Error
 				return std::nullopt;
 			//Get bitmask
-			activeDecodeTargetsBitmask = reader.Get(dtisCount); CHECK(reader);
+			activeDecodeTargetsBitmask = reader.Get(dtsCount); CHECK(reader);
 			//Create empty field
-			dd->activeDecodeTargets.emplace(dtisCount);
+			dd->activeDecodeTargets.emplace(dtsCount);
 		}
 		
 		//If got active decode targets info
 		if (dd->activeDecodeTargets)
 			//Parse mask
-			for (uint8_t i = 0; i < dtisCount; ++i)
+			for (uint8_t i = 0; i < dtsCount; ++i)
 				//Read bits from end to first, so push front in field
-				dd->activeDecodeTargets.value()[dtisCount - i - 1] = (activeDecodeTargetsBitmask >> i ) & 1;
+				dd->activeDecodeTargets.value()[dtsCount - i - 1] = (activeDecodeTargetsBitmask >> i ) & 1;
 		
 		if (customDtis)
 		{
-			//check dtis count is set
-			if (!dtisCount)
+			//check decode target count is set
+			if (!dtsCount)
 				//Error
 				return std::nullopt;
 			//Create custom dtis
@@ -224,7 +224,7 @@ std::optional<DependencyDescriptor> DependencyDescriptor::Parse(BitReader& reade
 			//Fill custom dtis up to count
 			while (dd->customDecodeTargetIndications->size() < customDtis)
 			{
-				//frame_dti[dtiIndex] = f(2)
+				//frame_dti[dtIndex] = f(2)
 				dd->customDecodeTargetIndications->push_back((DecodeTargetIndication)reader.Get(2)); CHECK(reader);
 			}
 		}
@@ -232,7 +232,7 @@ std::optional<DependencyDescriptor> DependencyDescriptor::Parse(BitReader& reade
 		
 		if (customFrameDiffs)
 		{
-			//Create custom dtis
+			//Create custom frame diffs
 			dd->customFrameDiffs.emplace();
 			
 			//Get next value size
@@ -258,7 +258,7 @@ std::optional<DependencyDescriptor> DependencyDescriptor::Parse(BitReader& reade
 				
 			//Create custom chains
 			dd->customFrameDiffsChains.emplace();
-			//Fill custom dtis up to count
+			//Fill custom chain frame diffs up to count
 			while (dd->customFrameDiffsChains->size() < chainsCount)
 			{
 				//frame_chain_fdiff[chainIndex] = f(8)
@@ -280,7 +280,7 @@ bool TemplateDependencyStructure::Serialize(BitWritter& writter) const
 		return 0;
 	
 	writter.Put(6, templateIdOffset);
-	writter.Put(5, dtisCount - 1);
+	writter.Put(5, dtsCount - 1);
 	
 	//Check before write
 	if (writter.Left()<frameDependencyTemplates.size()*2+2)
@@ -320,7 +320,7 @@ bool TemplateDependencyStructure::Serialize(BitWritter& writter) const
 	
 		//Write all dtis
 		for (auto& dti : fdt.decodeTargetIndications)
-			//template_dti[templateIndex][dtiIndex] = f(2)
+			//template_dti[templateIndex][dtIndex] = f(2)
 			writter.Put(2, dti);
 	}
 	
@@ -344,13 +344,13 @@ bool TemplateDependencyStructure::Serialize(BitWritter& writter) const
 	}
 
 	//template_chains()
-	if (!writter.WriteNonSymmetric(dtisCount+1, chainsCount ))
+	if (!writter.WriteNonSymmetric(dtsCount+1, chainsCount ))
 		return 0;
   
-	//Read all dtis
-	for (auto& dti : decodeTargetProtectedByChain)
+	//Read all decode targets
+	for (auto& chain : decodeTargetProtectedByChain)
 		//template_chains()
-		if (!writter.WriteNonSymmetric(dtisCount, dti))
+		if (!writter.WriteNonSymmetric(dtsCount, chain))
 			return 0;
 	
 	//For all templates
@@ -423,10 +423,10 @@ bool DependencyDescriptor::Serialize(BitWritter& writter) const
 				//Error
 				return 0;
 		} else if (activeDecodeTargets || customDecodeTargetIndications || customFrameDiffsChains) {
-			uint32_t dtisCount = customDecodeTargetIndications->size();
-			writter.Put(5, dtisCount - 1);
+			uint32_t dtsCount = customDecodeTargetIndications->size();
+			writter.Put(5, dtsCount - 1);
 			if (customFrameDiffsChains)
-				if (!writter.WriteNonSymmetric(dtisCount + 1, customFrameDiffsChains->size() ))
+				if (!writter.WriteNonSymmetric(dtsCount + 1, customFrameDiffsChains->size() ))
 				return 0;
 		}
 
@@ -436,7 +436,7 @@ bool DependencyDescriptor::Serialize(BitWritter& writter) const
 			if (writter.Left()<activeDecodeTargets->size())
 				return 0;
 			
-			//For each dti
+			//For each decode target
 			for (bool active : *activeDecodeTargets)
 				//Write if it is active
 				writter.Put(1, active);
@@ -496,9 +496,9 @@ bool DependencyDescriptor::Serialize(BitWritter& writter) const
 			if (writter.Left()<customFrameDiffsChains->size()*8)
 				return 0;
 			
-			//For each dti
+			//For each decode target
 			for (auto fdiff : *customFrameDiffsChains)
-				//Write if it is active
+				//Write chain frame diff
 				writter.Put(18, fdiff);
 		}
 	}
@@ -566,9 +566,9 @@ void FrameDependencyTemplate::Dump() const
 
 void TemplateDependencyStructure::Dump() const
 {
-	Log("\t[TemplateDependencyStructure templateIdOffset=%d dtisCount=%d chainsCount=%d]\n",
+	Log("\t[TemplateDependencyStructure templateIdOffset=%d dtsCount=%d chainsCount=%d]\n",
 		templateIdOffset,
-		dtisCount,
+		dtsCount,
 		chainsCount);
 	
 	for (auto& fdt : frameDependencyTemplates)
@@ -576,17 +576,17 @@ void TemplateDependencyStructure::Dump() const
 	
 	Log("\t\t[DecodeTargets]\n");
 	//For each decode target
-	for (uint32_t dt=0; dt<dtisCount; ++dt)
+	for (uint32_t dt=0; dt<dtsCount; ++dt)
 		Log("\t\t\t[DecodeTarget id=%d spatialLayerId=%d temporalLayerId=%d/]\n", dt, decodeTargetLayerMapping[dt].spatialLayerId, decodeTargetLayerMapping[dt].temporalLayerId);
 	Log("\t\t[DecodeTargets]\n");
 		
 	if (decodeTargetProtectedByChain.size())
 	{
 		std::string str; 
-		for (auto& dti : decodeTargetProtectedByChain)
+		for (auto& chain : decodeTargetProtectedByChain)
 		{
 			if (!str.empty()) str += ",";
-			str += dti;
+			str += std::to_string(chain);
 		}
 		Log("\t\t[DecodeTargetProtectedByChain]%s[/DecodeTargetProtectedByChain]\n", str.c_str());
 	}	
@@ -619,7 +619,7 @@ void DependencyDescriptor::Dump() const
 	if (activeDecodeTargets) 
 	{
 		std::string str; 
-		//For each dti
+		//For each decode target
 		for (bool active : *activeDecodeTargets)
 		{
 			if (!str.empty()) str += ",";
