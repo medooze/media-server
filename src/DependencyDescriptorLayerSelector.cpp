@@ -105,10 +105,10 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	auto currentDecodeTarget = NoDecodeTarget;
 	
 	//Seach best lahyer target for this spatial and temporal layer
-	for (uint32_t i = 0; i<templateDependencyStructure->dtisCount; ++i)
+	for (uint32_t i = 0; i<templateDependencyStructure->dtsCount; ++i)
 	{
 		//Iterate in reverse order, high spatial layers first, then temporal layers within same spatial layer
-		uint32_t decodeTarget = templateDependencyStructure->dtisCount-i-1;
+		uint32_t decodeTarget = templateDependencyStructure->dtsCount-i-1;
 		//Check if it is our current selected layer 
 		if (templateDependencyStructure->decodeTargetLayerMapping[decodeTarget].spatialLayerId <= spatialLayerId && 
 		    templateDependencyStructure->decodeTargetLayerMapping[decodeTarget].temporalLayerId <= temporalLayerId )
