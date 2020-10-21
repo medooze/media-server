@@ -114,7 +114,7 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 		    currentTemplateDependencyStructure->decodeTargetLayerMapping[decodeTarget].temporalLayerId <= temporalLayerId )
 		{
 			//If decode target is active
-			if (activeDecodeTargets && activeDecodeTargets->at(decodeTarget))
+			if (!activeDecodeTargets || activeDecodeTargets->at(decodeTarget))
 			{
 				//Check we have chain for current target
 				if (decodeTarget < currentTemplateDependencyStructure->decodeTargetProtectedByChain.size())
