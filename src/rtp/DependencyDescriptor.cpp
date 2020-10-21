@@ -114,7 +114,7 @@ std::optional<TemplateDependencyStructure> TemplateDependencyStructure::Parse(Bi
 		while (tds->decodeTargetProtectedByChain.size() < tds->dtsCount)
 		{
 			//decode_target_protected_by[dtIndex]
-			tds->decodeTargetProtectedByChain.push_back(reader.GetNonSymmetric(tds->dtsCount)); CHECK(reader);
+			tds->decodeTargetProtectedByChain.push_back(reader.GetNonSymmetric(tds->chainsCount)); CHECK(reader);
 		}
 	
 		//For all templates
@@ -350,7 +350,7 @@ bool TemplateDependencyStructure::Serialize(BitWritter& writter) const
 	//Read all decode targets
 	for (auto& chain : decodeTargetProtectedByChain)
 		//template_chains()
-		if (!writter.WriteNonSymmetric(dtsCount, chain))
+		if (!writter.WriteNonSymmetric(chainsCount, chain))
 			return 0;
 	
 	//For all templates
@@ -576,7 +576,7 @@ void TemplateDependencyStructure::Dump() const
 	
 	Log("\t\t[DecodeTargets]\n");
 	//For each decode target
-	for (uint32_t dt=0; dt<dtsCount; ++dt)
+	for (uint32_t dt=0; dt<decodeTargetLayerMapping.size(); ++dt)
 		Log("\t\t\t[DecodeTarget id=%d spatialLayerId=%d temporalLayerId=%d/]\n", dt, decodeTargetLayerMapping[dt].spatialLayerId, decodeTargetLayerMapping[dt].temporalLayerId);
 	Log("\t\t[DecodeTargets]\n");
 		
