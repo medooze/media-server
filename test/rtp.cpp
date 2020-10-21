@@ -848,7 +848,7 @@ public:
 		
 		uint32_t max = std::numeric_limits<uint32_t>::max();
 		uint64_t wrap = max;
-		
+		Log("wrap %llu\n",wrap);
 		assert(source.ExtendTimestamp(max-10)==0); Log("%llu\n",source.timestampExtender.GetExtSeqNum()); assert(source.timestampExtender.GetExtSeqNum() == wrap-10);
 		assert(source.ExtendTimestamp(max-8)==0); Log("%llu\n",source.timestampExtender.GetExtSeqNum()); assert(source.timestampExtender.GetExtSeqNum() == wrap-8);
 		assert(source.ExtendTimestamp(max-9)==0); Log("%llu\n",source.timestampExtender.GetExtSeqNum()); assert(source.timestampExtender.GetExtSeqNum() == wrap-8);

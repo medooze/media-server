@@ -2,10 +2,10 @@
 #include "rtp.h"
 #include "BitHistory.h"
 
-class RTPTestPlan: public TestPlan
+class DependencyDescriptorLayerSelectorTestPlan: public TestPlan
 {
 public:
-	RTPTestPlan() : TestPlan("Dependency layer selector test plan")
+	DependencyDescriptorLayerSelectorTestPlan() : TestPlan("Dependency layer selector test plan")
 	{
 	}
 	
@@ -89,4 +89,4 @@ public:
 	}
 };
 
-RTPTestPlan ddls;
+DependencyDescriptorLayerSelectorTestPlan ddls;

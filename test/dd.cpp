@@ -2,10 +2,10 @@
 #include "rtp.h"
 #include "bitstream.h"
 
-class RTPTestPlan: public TestPlan
+class DependencyDescriptorTestPlan: public TestPlan
 {
 public:
-	RTPTestPlan() : TestPlan("Dependency descriptor test plan")
+	DependencyDescriptorTestPlan() : TestPlan("Dependency descriptor test plan")
 	{
 	}
 	
@@ -101,7 +101,7 @@ public:
 		
 		DependencyDescriptor dd;
 		dd.templateDependencyStructure = TemplateDependencyStructure{};
-		dd.templateDependencyStructure->dtisCount = 2;
+		dd.templateDependencyStructure->dtsCount = 2;
 		dd.templateDependencyStructure->chainsCount = 2;
 		dd.templateDependencyStructure->frameDependencyTemplates.emplace_back(FrameDependencyTemplate{
 			{0, 0}, 
@@ -110,7 +110,7 @@ public:
 			{2,2}
 		});
 		dd.templateDependencyStructure->decodeTargetProtectedByChain = {0,0};
-		
+		dd.templateDependencyStructure->CalculateLayerMapping();
 		
 		assert(dd.Serialize(writter));
 			
@@ -142,15 +142,30 @@ public:
 	
 	void testParser()
 	{
-		BYTE data[10] = { 0x80,   0x00,   0x01,   0x80,   0x00,   0xe2,   0x04,   0xfe, 0x03,   0xbe};
-		BitReader reader(data,10);
-		auto dd = DependencyDescriptor::Parse(reader);
+		{
+			BYTE data[10] = { 0x80,   0x00,   0x01,   0x80,   0x00,   0xe2,   0x04,   0xfe, 0x03,   0xbe};
+			BitReader reader(data,10);
+			auto dd = DependencyDescriptor::Parse(reader);
+
+			assert(dd->templateDependencyStructure->ContainsFrameDependencyTemplate(0));
+			dd->Dump();
+		}
 		
-		assert(dd->templateDependencyStructure->ContainsFrameDependencyTemplate(0));
-		dd->Dump();
+		//ScalabilityStructureL2T2KeyShift
+		{
+			BYTE data[0x24] = {0xc7   ,0x00   ,0xc6   ,0x80   ,0xe3   ,0x06   ,0x1e   ,0xaa
+					  ,0x82   ,0x80   ,0x40   ,0x28   ,0x28   ,0x05   ,0x14   ,0xd1
+					  ,0x41   ,0x34   ,0x51   ,0x80   ,0x10   ,0xa0   ,0x91   ,0x88
+					  ,0x9a   ,0x09   ,0x40   ,0x3b   ,0xc0   ,0x2c   ,0xc0   ,0x77
+					  ,0xc0   ,0x59   ,0xc0};
+			BitReader reader(data,0x24);
+			auto dd = DependencyDescriptor::Parse(reader);
+
+			dd->Dump();
+		}
 
 	}
 		
 };
 
-RTPTestPlan dd;
+DependencyDescriptorTestPlan dd;
