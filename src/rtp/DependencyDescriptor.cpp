@@ -566,9 +566,10 @@ void FrameDependencyTemplate::Dump() const
 
 void TemplateDependencyStructure::Dump() const
 {
-	Log("\t[TemplateDependencyStructure templateIdOffset=%d dtisCount=%d]\n",
+	Log("\t[TemplateDependencyStructure templateIdOffset=%d dtisCount=%d chainsCount=%d]\n",
 		templateIdOffset,
-		dtisCount);
+		dtisCount,
+		chainsCount);
 	
 	for (auto& fdt : frameDependencyTemplates)
 		fdt.Dump();
