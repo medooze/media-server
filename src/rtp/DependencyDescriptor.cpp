@@ -29,7 +29,7 @@ void TemplateDependencyStructure::CalculateLayerMapping()
 			{
 				//Get max
 				layer.spatialLayerId = std::max(layer.spatialLayerId, frameDependencyTemplate.spatialLayerId);
-				layer.temporalLayerId = std::max(layer.temporalLayerId, frameDependencyTemplate.spatialLayerId);
+				layer.temporalLayerId = std::max(layer.temporalLayerId, frameDependencyTemplate.temporalLayerId);
 			}
 		}
 	}
