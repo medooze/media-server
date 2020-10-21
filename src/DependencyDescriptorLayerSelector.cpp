@@ -27,7 +27,7 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 {
 	//Get dependency description
 	auto& dependencyDescriptor = packet->GetDependencyDescriptor();
-	auto& currentTemplateDependencyStructure = packet->GetTemplateDependencyStructure();
+	auto& templateDependencyStructure = packet->GetTemplateDependencyStructure();
 	auto& activeDecodeTargets = packet->GetActiveDecodeTargets();
 	
 	//Check rtp packet has a frame descriptor
@@ -40,7 +40,7 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	}
 	
 	//Check we already have received a template structure for this rtp stream
-	if (!currentTemplateDependencyStructure)
+	if (!templateDependencyStructure)
 	{
 		//Request intra
 		waitingForIntra = true;
@@ -68,12 +68,12 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	}
 	
 	//Ensure that we have the packet frame dependency template
-	if (!currentTemplateDependencyStructure->ContainsFrameDependencyTemplate(dependencyDescriptor->frameDependencyTemplateId))
+	if (!templateDependencyStructure->ContainsFrameDependencyTemplate(dependencyDescriptor->frameDependencyTemplateId))
 		//Skip
 		return Warning("-DependencyDescriptorLayerSelector::Select() | Current frame dependency templates don't contain reference templateId [id:%d]\n",dependencyDescriptor->frameDependencyTemplateId);
 	
 	//Get template
-	const auto& frameDependencyTemplate = currentTemplateDependencyStructure->GetFrameDependencyTemplate(dependencyDescriptor->frameDependencyTemplateId);
+	const auto& frameDependencyTemplate = templateDependencyStructure->GetFrameDependencyTemplate(dependencyDescriptor->frameDependencyTemplateId);
 	
 	//Get dtis for current frame
 	auto& decodeTargetIndications	= dependencyDescriptor->customDecodeTargetIndications	? dependencyDescriptor->customDecodeTargetIndications.value()	: frameDependencyTemplate.decodeTargetIndications; 
@@ -105,13 +105,13 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	auto currentDecodeTarget = NoDecodeTarget;
 	
 	//Seach best lahyer target for this spatial and temporal layer
-	for (uint32_t i = 0; i<currentTemplateDependencyStructure->dtisCount; ++i)
+	for (uint32_t i = 0; i<templateDependencyStructure->dtisCount; ++i)
 	{
 		//Iterate in reverse order, high spatial layers first, then temporal layers within same spatial layer
-		uint32_t decodeTarget = currentTemplateDependencyStructure->dtisCount-i-1;
+		uint32_t decodeTarget = templateDependencyStructure->dtisCount-i-1;
 		//Check if it is our current selected layer 
-		if (currentTemplateDependencyStructure->decodeTargetLayerMapping[decodeTarget].spatialLayerId <= spatialLayerId && 
-		    currentTemplateDependencyStructure->decodeTargetLayerMapping[decodeTarget].temporalLayerId <= temporalLayerId )
+		if (templateDependencyStructure->decodeTargetLayerMapping[decodeTarget].spatialLayerId <= spatialLayerId && 
+		    templateDependencyStructure->decodeTargetLayerMapping[decodeTarget].temporalLayerId <= temporalLayerId )
 		{
 			//If decode target is active
 			if (!activeDecodeTargets || activeDecodeTargets->at(decodeTarget))
@@ -127,7 +127,7 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 					continue;
 				
 				//If we don't have chain info
-				if (currentTemplateDependencyStructure->decodeTargetProtectedByChain.empty())
+				if (templateDependencyStructure->decodeTargetProtectedByChain.empty())
 				{
 					//Got it	
 					currentDecodeTarget = decodeTarget;
@@ -135,12 +135,12 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 				}
 					
 				//Check we have chain for current target
-				if (currentTemplateDependencyStructure->decodeTargetProtectedByChain.size()<decodeTarget)
+				if (templateDependencyStructure->decodeTargetProtectedByChain.size()<decodeTarget)
 					//Try next
 					continue;
 				
 				//Get chain for current target
-				auto chain = currentTemplateDependencyStructure->decodeTargetProtectedByChain[decodeTarget];
+				auto chain = templateDependencyStructure->decodeTargetProtectedByChain[decodeTarget];
 
 				//Check chain info is correct
 				if (frameDiffsChains.size()<chain)
