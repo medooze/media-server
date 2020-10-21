@@ -116,45 +116,54 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 			//If decode target is active
 			if (!activeDecodeTargets || activeDecodeTargets->at(decodeTarget))
 			{
-				//Check we have chain for current target
-				if (decodeTarget < currentTemplateDependencyStructure->decodeTargetProtectedByChain.size())
-				{
-					//Get chain for current target
-					auto chain = currentTemplateDependencyStructure->decodeTargetProtectedByChain[decodeTarget];
-					
-					//Check dti info is correct
-					if (decodeTargetIndications.size()<decodeTarget)
-						//Try next
-						continue;
+				//Check dti info is correct
+				if (decodeTargetIndications.size()<decodeTarget)
+					//Try next
+					continue;
 
-					//If frame is not present in current target
-					if (decodeTargetIndications[decodeTarget]==DecodeTargetIndication::NotPresent)
-						//Try next
-						continue;
-					
-					//Check chain info is correct
-					if (frameDiffsChains.size()<chain)
-						//Try next
-						continue;
-					
-					//Get previous frame numner in current chain
-					 auto prevFrameInCurrentChain = extFrameNum - frameDiffsChains[chain];
-					 //If it is not us, check if previus frame was not sent
-					 if (prevFrameInCurrentChain!=currentFrameNumber && !forwardedFrames.Contains(prevFrameInCurrentChain))
-						//Chain is broken, try next
-						continue;
-					
-					//Got it
-					currentChain = chain;
+				//If frame is not present in current target
+				if (decodeTargetIndications[decodeTarget]==DecodeTargetIndication::NotPresent)
+					//Try next
+					continue;
+				
+				//If we don't have chain info
+				if (currentTemplateDependencyStructure->decodeTargetProtectedByChain.empty())
+				{
+					//Got it	
 					currentDecodeTarget = decodeTarget;
 					break;
 				}
+					
+				//Check we have chain for current target
+				if (currentTemplateDependencyStructure->decodeTargetProtectedByChain.size()<decodeTarget)
+					//Try next
+					continue;
+				
+				//Get chain for current target
+				auto chain = currentTemplateDependencyStructure->decodeTargetProtectedByChain[decodeTarget];
+
+				//Check chain info is correct
+				if (frameDiffsChains.size()<chain)
+					//Try next
+					continue;
+
+				//Get previous frame numner in current chain
+				 auto prevFrameInCurrentChain = extFrameNum - frameDiffsChains[chain];
+				 //If it is not us, check if previus frame was not sent
+				 if (prevFrameInCurrentChain!=currentFrameNumber && !forwardedFrames.Contains(prevFrameInCurrentChain))
+					//Chain is broken, try next
+					continue;
+
+				//Got it
+				currentChain = chain;
+				currentDecodeTarget = decodeTarget;
+				break;
 			}
 		}
 	}
 
 	//If there is none available
-	if (currentChain==NoChain || currentDecodeTarget==NoDecodeTarget)
+	if (currentDecodeTarget==NoDecodeTarget)
 	{
 		//Request intra
 		waitingForIntra = true;
