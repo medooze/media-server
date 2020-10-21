@@ -19,11 +19,7 @@ void TemplateDependencyStructure::CalculateLayerMapping()
 	for (uint32_t dt=0; dt<dtisCount; ++dt)
 	{
 		//Get layer info
-		auto& layer = decodeTargetLayerMapping[dt];
-		
-		//None
-		layer.spatialLayerId  = 0;
-		layer.temporalLayerId = 0;
+		auto& layer = decodeTargetLayerMapping.emplace_back(0,0);
 		
 		//For each template
 		for (const auto& frameDependencyTemplate : frameDependencyTemplates)
@@ -207,7 +203,7 @@ std::optional<DependencyDescriptor> DependencyDescriptor::Parse(BitReader& reade
 			//Get bitmask
 			activeDecodeTargetsBitmask = reader.Get(dtisCount); CHECK(reader);
 			//Create empty field
-			dd->activeDecodeTargets = std::vector<bool>(dtisCount);
+			dd->activeDecodeTargets.emplace(dtisCount);
 		}
 		
 		//If got active decode targets info
@@ -515,7 +511,7 @@ bool DependencyDescriptor::Serialize(BitWritter& writter) const
 
 void FrameDependencyTemplate::Dump() const
 {
-	Log("\t\t[FrameDependencyTemplate spatialLayerId=%d temporalLayerId]\n",spatialLayerId,temporalLayerId);
+	Log("\t\t[FrameDependencyTemplate spatialLayerId=%d temporalLayerId=%d]\n",spatialLayerId,temporalLayerId);
 	
 	{
 		std::string str; 
