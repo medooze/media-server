@@ -500,7 +500,7 @@ DWORD AMFNumber::Serialize(BYTE* data,DWORD size)
 
 void AMFNumber::Dump()
 {
-	Debug("[Number %f]\n",GetNumber());
+	Debug("[Number %lf]\n",GetNumber());
 }
 /*************************
  * AMFBoolean
@@ -622,6 +622,8 @@ DWORD AMFString::Parse(BYTE *data,DWORD size)
 	{
 		//Parse it
 		DWORD copy = u16parser.Parse(buffer,bufferSize);
+		//If not parsed
+		if (!copy) return 0;
 		//Remove from buffer
 		buffer += copy;
 		bufferSize -= copy;
@@ -816,6 +818,8 @@ DWORD AMFObject::Parse(BYTE *data,DWORD size)
 		{
 			//Parse it
 			DWORD copy = key.Parse(buffer,bufferSize);
+			//If not parsed
+			if (!copy) return 0;
 			//Remove from buffer
 			buffer += copy;
 			bufferSize -= copy;
@@ -837,6 +841,8 @@ DWORD AMFObject::Parse(BYTE *data,DWORD size)
 			} else {
 				//Parse the next object
 				DWORD copy = parser.Parse(buffer,bufferSize);
+				//If not parsed
+				if (!copy) return 0;
 				//Remove from buffer 
 				buffer += copy;
 				bufferSize -= copy;
@@ -1035,6 +1041,8 @@ DWORD AMFTypedObject::Parse(BYTE *data,DWORD size)
 		{
 			//Parse name length
 			DWORD copy = u16parser.Parse(buffer,bufferSize);
+			//If not parsed
+			if (!copy) return 0;
 			//Remove from buffer
 			buffer += copy;
 			bufferSize -= copy;
@@ -1045,12 +1053,16 @@ DWORD AMFTypedObject::Parse(BYTE *data,DWORD size)
 		} else if (!utf8parser.IsParsed()) {
 			//Parse utf8 name string
 			DWORD copy = utf8parser.Parse(buffer,bufferSize);
+			//If not parsed
+			if (!copy) return 0;
 			//Remove from buffer
 			buffer += copy;
 			bufferSize -= copy;
 		} else {
 			//Parse attributes
-			DWORD copy = ((AMFObject*)this)->Parse(buffer,bufferSize);
+			DWORD copy = AMFObject::Parse(buffer,bufferSize);
+			//If not parsed
+			if (!copy) return 0;
 			//Remove from buffer
 			buffer += copy;
 			bufferSize -= copy;
@@ -1063,7 +1075,7 @@ DWORD AMFTypedObject::Parse(BYTE *data,DWORD size)
 
 bool AMFTypedObject::IsParsed()
 {
-	return ((AMFObject*)this)->IsParsed();
+	return AMFObject::IsParsed();
 }
 
 std::wstring AMFTypedObject::GetClassName()
@@ -1118,7 +1130,6 @@ DWORD AMFEcmaArray::Parse(BYTE *data,DWORD size)
 {
 	BYTE *buffer = data;
 	DWORD bufferSize = size;
-	DWORD copy = 0;
 
 	while (bufferSize && !IsParsed())
 	{
@@ -1126,7 +1137,9 @@ DWORD AMFEcmaArray::Parse(BYTE *data,DWORD size)
 		if (!num.IsParsed())
 		{
 			//Append the byte to the string size
-			copy = num.Parse(buffer,bufferSize);
+			DWORD copy = num.Parse(buffer,bufferSize);
+			//If not parsed
+			if (!copy) return 0;
 			//Remove from buffer
 			buffer += copy;
 			bufferSize -= copy;
@@ -1134,9 +1147,11 @@ DWORD AMFEcmaArray::Parse(BYTE *data,DWORD size)
 		} else if (!key.IsParsed()) {
 			//Parse it
 			DWORD copy = key.Parse(buffer,bufferSize);
+			//If not parsed
+			if (!copy) return 0;
 			//Remove from buffer
-			buffer += copy;
-			bufferSize -= copy;
+			buffer += len;
+			bufferSize -= len;
 		} else {
 			//Check if now we have got it and it has a zero size
 			if (!key.GetUTF8Size()) 
@@ -1155,6 +1170,8 @@ DWORD AMFEcmaArray::Parse(BYTE *data,DWORD size)
 			} else {
 				//Parse the next object
 				DWORD copy = parser.Parse(buffer,bufferSize);
+				//If not parsed
+				if (!copy) return 0;
 				//Remove from buffer
 				buffer += copy;
 				bufferSize -= copy;
@@ -1361,7 +1378,6 @@ DWORD AMFStrictArray::Parse(BYTE *data,DWORD size)
 {
 	BYTE *buffer = data;
 	DWORD bufferSize = size;
-	DWORD copy = 0;
 
 	while (bufferSize)
 	{
@@ -1369,7 +1385,7 @@ DWORD AMFStrictArray::Parse(BYTE *data,DWORD size)
 		if (!num.IsParsed())
 		{
 			//Append the byte to the string size
-			copy = num.Parse(data,size);
+			DWORD copy = num.Parse(data,size);
 			//Increase copied data
 			len += copy;
 			//Remove from buffer
@@ -1385,7 +1401,7 @@ DWORD AMFStrictArray::Parse(BYTE *data,DWORD size)
 			}
 		} else {
 			//Parse the property object
-			copy = parser.Parse(buffer,bufferSize);
+			DWORD copy = parser.Parse(buffer,bufferSize);
 			//Increase copied data
 			len += copy;
 			//Remove from buffer

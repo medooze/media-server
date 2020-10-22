@@ -750,6 +750,8 @@ void RTMPConnection::ParseData(BYTE *data,const DWORD size)
 					state = CHUNK_HEADER_WAIT;
 					//Clean header
 					header.Reset();
+				} else if (!len) {
+					throw std::runtime_error("Could not parse message");
 				}
 				//Increase buffer length
 				chunkLen += len;

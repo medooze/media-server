@@ -515,6 +515,9 @@ DWORD RTMPCommandMessage::Parse(BYTE *data,DWORD size)
 	{
 		//Parse amf object
 		DWORD len = parser.Parse(buffer,bufferSize);
+		//If not parsed
+		if (!len)
+			return 0;
 
 		//Remove used data
 		buffer += len;
@@ -723,6 +726,10 @@ DWORD RTMPMetaData::Parse(BYTE *data,DWORD size)
 	{
 		//Parse amf object
 		DWORD len = parser.Parse(buffer,bufferSize);
+		
+		//If not parsed
+		if (!len)
+			return 0;
 
 		//Remove used data
 		buffer += len;
