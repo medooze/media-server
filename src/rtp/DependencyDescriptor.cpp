@@ -607,7 +607,7 @@ void TemplateDependencyStructure::Dump() const
 
 void DependencyDescriptor::Dump() const
 {
-	Log("[DependencyDescriptor startOfFrame=%d endOfFrame=%d endOfFrame=%u frameNumber=%u]\n",
+	Log("[DependencyDescriptor startOfFrame=%d endOfFrame=%d frameDependencyTemplateId=%u frameNumber=%u]\n",
 		startOfFrame,
 		endOfFrame,
 		frameDependencyTemplateId,
