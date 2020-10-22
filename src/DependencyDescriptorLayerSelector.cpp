@@ -49,7 +49,8 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	}
 	
 	//Get extended frame number
-	auto extFrameNum = frameNumberExtender.Extend(dependencyDescriptor->frameNumber);
+	frameNumberExtender.Extend(dependencyDescriptor->frameNumber);
+	auto extFrameNum = frameNumberExtender.GetExtSeqNum();
 	
 	//Check if we have not received the first frame 
 	if (currentFrameNumber==std::numeric_limits<uint32_t>::max())
