@@ -124,7 +124,6 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 			decodeTarget,
 			templateDependencyStructure->decodeTargetLayerMapping[decodeTarget].spatialLayerId,
 			templateDependencyStructure->decodeTargetLayerMapping[decodeTarget].temporalLayerId,
-			
 			!activeDecodeTargets || activeDecodeTargets->at(decodeTarget)
 		 );
 		
@@ -135,19 +134,6 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 			//If decode target is active
 			if (!activeDecodeTargets || activeDecodeTargets->at(decodeTarget))
 			{
-				//Check dti info is correct
-				if (decodeTargetIndications.size()<decodeTarget)
-					//Try next
-					continue;
-
-				//Get decode target indicattion
-				auto dti = decodeTargetIndications[decodeTarget];
-				
-				//If frame is not present in current target
-				if (dti==DecodeTargetIndication::NotPresent)
-					//Try next
-					continue;
-				
 				//If we don't have chain info
 				if (templateDependencyStructure->decodeTargetProtectedByChain.empty())
 				{
@@ -173,13 +159,12 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 				 auto prevFrameInCurrentChain = extFrameNum - frameDiffsChains[chain];
 				 
 				 //Log
-				 Debug("-DependencyDescriptorLayerSelector::Select() | Frame [dt:%llu,chain:%d,prev:%d,dti:%d]\n",decodeTarget,chain,prevFrameInCurrentChain,dti);
+				 Debug("-DependencyDescriptorLayerSelector::Select() | Frame [dt:%llu,chain:%d,prev:%d]\n",decodeTarget,chain,prevFrameInCurrentChain);
 				  
 				 //If it is not us, check if previus frame was not sent
 				 if (prevFrameInCurrentChain && 
 				     prevFrameInCurrentChain!=extFrameNum &&
 				     !forwardedFrames.Contains(prevFrameInCurrentChain))
-
 					//Chain is broken, try next
 					continue;
 
@@ -190,23 +175,36 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 			}
 		}
 	}
-
-	 //Log
-	Debug("-DependencyDescriptorLayerSelector::Select() | Selected [dt:%llu,chain:%d]\n",currentDecodeTarget,currentChain);
-				 
+	
 	//If there is none available
 	if (currentDecodeTarget==NoDecodeTarget)
 	{
 		//Request intra
 		waitingForIntra = true;
 		//Ignore packet
-		return false;
+		return Debug("-DependencyDescriptorLayerSelector::Select() | No decode target availalable\n");
 	}
 	
+	
+	//Check dti info is correct
+	if (decodeTargetIndications.size()<currentDecodeTarget)
+	{
+		//Request intra
+		waitingForIntra = true;
+		//Ignore packet
+		return Debug("-DependencyDescriptorLayerSelector::Select() | No decode target information available [dt:%d]\n",currentDecodeTarget);
+	}
+
+	//Get decode target indicattion
+	auto dti = decodeTargetIndications[currentDecodeTarget];
+
+	//Log
+	Debug("-DependencyDescriptorLayerSelector::Select() | Selected [dt:%llu,chain:%d,dti:%d]\n",currentDecodeTarget,currentChain,dti);
+	
 	//If frame is not decodable but we can't discard it
-	if (!decodable && decodeTargetIndications[currentDecodeTarget]==DecodeTargetIndication::Discardable)
+	if (dti==DecodeTargetIndication::NotPresent || (!decodable && dti==DecodeTargetIndication::Discardable))
 		//Ignore packet but do not discard packet
-		return false;
+		return Warning("-DependencyDescriptorLayerSelector::Select() | Discarding packet\n");
 	
 	//RTP mark is set for the last frame layer of the selected spatial layer
 	mark = packet->GetMark() || (dependencyDescriptor->endOfFrame && spatialLayerId==frameDependencyTemplate.spatialLayerId);
