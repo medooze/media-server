@@ -197,6 +197,7 @@
           <in>RTPIncomingMediaStreamDepacketizer.h</in>
           <in>RTPIncomingMediaStreamMultiplexer.h</in>
         </df>
+        <in>BitHistory.h</in>
         <in>DependencyDescriptorLayerSelector.h</in>
         <in>VideoDecoderWorker.h</in>
         <in>WarpExtender.h</in>
@@ -414,6 +415,7 @@
         <in>aac.cpp</in>
         <in>cpim.cpp</in>
         <in>dd.cpp</in>
+        <in>ddls.cpp</in>
         <in>eventloop.cpp</in>
         <in>fec.cpp</in>
         <in>h264.cpp</in>
@@ -773,6 +775,8 @@
           </preprocessorList>
         </ccTool>
       </folder>
+      <item path="include/BitHistory.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="include/DependencyDescriptorLayerSelector.h"
             ex="false"
             tool="3"
@@ -2504,6 +2508,8 @@
         </ccTool>
       </item>
       <item path="test/dd.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="test/ddls.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="test/eventloop.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="5">
@@ -7362,6 +7368,31 @@
           </preprocessorList>
         </ccTool>
       </item>
+      <item path="test/ddls.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+          <incDir>
+            <pElem>../../../include</pElem>
+            <pElem>src</pElem>
+            <pElem>include</pElem>
+            <pElem>ext</pElem>
+            <pElem>ext/libdatachannels/src</pElem>
+            <pElem>ext/libdatachannels/src/internal</pElem>
+            <pElem>ext/crc32c/include</pElem>
+            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
+            <pElem>../../openssl_1_1_1-stable/include</pElem>
+            <pElem>../../libsrtp-2.2.0/include</pElem>
+            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
+            <pElem>../../../../include/ImageMagick-6</pElem>
+            <pElem></pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>DARWIN</Elem>
+            <Elem>HAVE_IMAGEMAGICK</Elem>
+            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
+            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
       <item path="test/eventloop.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="2">
           <incDir>
@@ -9068,6 +9099,8 @@
           </preprocessorList>
         </ccTool>
       </folder>
+      <item path="include/BitHistory.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="include/DependencyDescriptorLayerSelector.h"
             ex="false"
             tool="3"
@@ -12508,6 +12541,8 @@
       </item>
       <item path="test/dd.cpp" ex="false" tool="1" flavor2="0">
       </item>
+      <item path="test/ddls.cpp" ex="false" tool="1" flavor2="0">
+      </item>
       <item path="test/eventloop.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
         </ccTool>
@@ -13060,6 +13095,8 @@
           </preprocessorList>
         </ccTool>
       </folder>
+      <item path="include/BitHistory.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="include/DependencyDescriptorLayerSelector.h"
             ex="false"
             tool="3"
@@ -15822,6 +15859,8 @@
       </item>
       <item path="test/dd.cpp" ex="false" tool="1" flavor2="0">
       </item>
+      <item path="test/ddls.cpp" ex="false" tool="1" flavor2="0">
+      </item>
       <item path="test/eventloop.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="4">
         </ccTool>
@@ -16446,6 +16485,8 @@
           </preprocessorList>
         </ccTool>
       </folder>
+      <item path="include/BitHistory.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="include/DependencyDescriptorLayerSelector.h"
             ex="false"
             tool="3"
@@ -19168,6 +19209,8 @@
         </ccTool>
       </item>
       <item path="test/dd.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="test/ddls.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="test/eventloop.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="4">

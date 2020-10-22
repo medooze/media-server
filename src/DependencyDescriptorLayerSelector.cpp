@@ -167,7 +167,7 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 				 auto prevFrameInCurrentChain = extFrameNum - frameDiffsChains[chain];
 				 
 				 //Log
-				 Debug("-DependencyDescriptorLayerSelector::Select() | Frame [dt:%llu,chain:%d,prev:%d,dti:%s,]\n",decodeTarget,chain,prevFrameInCurrentChain,dti);
+				 Debug("-DependencyDescriptorLayerSelector::Select() | Frame [dt:%llu,chain:%d,prev:%d,dti:%d]\n",decodeTarget,chain,prevFrameInCurrentChain,dti);
 				  
 				 //If it is not us, check if previus frame was not sent
 				 if (prevFrameInCurrentChain!=currentFrameNumber || !forwardedFrames.Contains(prevFrameInCurrentChain))
