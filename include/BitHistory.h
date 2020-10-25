@@ -35,10 +35,13 @@ public:
 			//Clean moved old positions in ringbuffer
 			if (i<index)
 				history[cur] = 0;
-			//Move bits
-			uint64_t overflown = history[cur] >> (64-bit);
-			history[cur] = history[cur] << bit | reminder;
-			reminder = overflown;
+			if (bit)
+			{
+				//Move bits
+				uint64_t overflown = history[cur] >> (64-bit);
+				history[cur] = history[cur] << bit | reminder;
+				reminder = overflown;
+			}
 		}
 		
 		//Store last
