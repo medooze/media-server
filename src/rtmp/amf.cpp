@@ -1150,8 +1150,8 @@ DWORD AMFEcmaArray::Parse(BYTE *data,DWORD size)
 			//If not parsed
 			if (!copy) return 0;
 			//Remove from buffer
-			buffer += len;
-			bufferSize -= len;
+			buffer += copy;
+			bufferSize -= copy;
 		} else {
 			//Check if now we have got it and it has a zero size
 			if (!key.GetUTF8Size()) 
