@@ -113,6 +113,22 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	
 	Debug("-DependencyDescriptorLayerSelector::Select() | frame [number=%llu,decodable=%d]\n", extFrameNum, decodable);
 	
+	//If we are doing content adaptation
+	if (spatialLayerId!=LayerInfo::MaxLayerId || temporalLayerId!=LayerInfo::MaxLayerId)
+	{
+		//If we have active decode target info
+		if (activeDecodeTargets)
+		{
+			//Copy it
+			forwardedDecodeTargets = activeDecodeTargets;
+		} else {
+			//Create it
+			forwardedDecodeTargets.emplace(templateDependencyStructure->dtsCount);
+			//All layers are active
+			std::fill(forwardedDecodeTargets->begin(), forwardedDecodeTargets->end(), true);
+		}
+	}
+	
 	//Seach best lahyer target for this spatial and temporal layer
 	for (uint32_t i = 0; i<templateDependencyStructure->dtsCount; ++i)
 	{
@@ -124,7 +140,7 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 			decodeTarget,
 			templateDependencyStructure->decodeTargetLayerMapping[decodeTarget].spatialLayerId,
 			templateDependencyStructure->decodeTargetLayerMapping[decodeTarget].temporalLayerId,
-			!activeDecodeTargets || activeDecodeTargets->at(decodeTarget)
+			!activeDecodeTargets || (*activeDecodeTargets)[decodeTarget]
 		 );
 		
 		//Check if it is our current selected layer 
@@ -132,7 +148,7 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 		    templateDependencyStructure->decodeTargetLayerMapping[decodeTarget].temporalLayerId <= temporalLayerId )
 		{
 			//If decode target is active
-			if (!activeDecodeTargets || activeDecodeTargets->at(decodeTarget))
+			if (!activeDecodeTargets || (*activeDecodeTargets)[decodeTarget])
 			{
 				//If we don't have chain info
 				if (templateDependencyStructure->decodeTargetProtectedByChain.empty())
@@ -173,6 +189,9 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 				currentDecodeTarget = decodeTarget;
 				break;
 			}
+		} else {
+			//Disable layer
+			(*forwardedDecodeTargets)[decodeTarget] = false;
 		}
 	}
 	

@@ -23,11 +23,14 @@ public:
 	VideoCodec::Type GetCodec()	const override { return codec;			}
 	bool IsWaitingForIntra()	const override { return false;			}
 	
+	std::optional<std::vector<bool>> GetForwardedDecodeTargets() const { return forwardedDecodeTargets;	}
+	
 	static LayerInfo GetLayerIds(const RTPPacket::shared& packet);
 private:
 	WrapExtender<uint16_t,uint64_t> frameNumberExtender;
 	uint64_t currentFrameNumber = std::numeric_limits<uint64_t>::max();
 	BitHistory<256> forwardedFrames;
+	std::optional<std::vector<bool>> forwardedDecodeTargets;
 	
 	VideoCodec::Type codec;
 	BYTE temporalLayerId = LayerInfo::MaxLayerId;

@@ -1,19 +1,7 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/* 
- * File:   RTPStreamTransponder.cpp
- * Author: Sergio
- * 
- * Created on 20 de abril de 2017, 18:33
- */
-
 #include "rtp/RTPStreamTransponder.h"
 #include "waitqueue.h"
 #include "vp8/vp8.h"
+#include "DependencyDescriptorLayerSelector.h"
 
 
 RTPStreamTransponder::RTPStreamTransponder(RTPOutgoingSourceGroup* outgoing,RTPSender* sender) :
@@ -329,6 +317,14 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 		//UltraDebug("-ext seq:%lu base:%lu first:%lu current:%lu dropped:%lu added:%d ts:%lu normalized:%llu intra:%d codec=%d\n",extSeqNum,baseExtSeqNum,firstExtSeqNum,packet->GetExtSeqNum(),dropped,added,packet->GetTimestamp(),timestamp,packet->IsKeyFrame(),codec);
 	}
 	
+	//Dependency descriptor active decodte target mask
+	std::optional<std::vector<bool>> forwaredDecodeTargets;
+	
+	//If it is AV1
+	if (codec==VideoCodec::AV1)
+		//Get decode target
+		forwaredDecodeTargets = static_cast<DependencyDescriptorLayerSelector*>(selector.get())->GetForwardedDecodeTargets();
+	
 	//Get last send seq num and timestamp
 	lastExtSeqNum = extSeqNum;
 	lastTimestamp = timestamp;
@@ -359,6 +355,10 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 				//Rewrite tl0 index
 				cloned->vp8PayloadDescriptor->temporalLevelZeroIndex = temporalLevelZeroIndex;
 			}
+			//If it has a dependency descriptor
+			if (forwaredDecodeTargets && cloned->HasTemplateDependencyStructure())
+				//Override mak
+				cloned->OverrideActiveDecodeTargets(forwaredDecodeTargets);
 			//Move it
 			return std::move(cloned);
 		});

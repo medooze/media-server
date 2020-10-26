@@ -162,6 +162,12 @@ public:
 								 extension.dependencyDescryptor &&
 								 extension.dependencyDescryptor->templateDependencyStructure;	}
 	
+	bool  OverrideActiveDecodeTargets(const std::optional<std::vector<bool>>& activeDecodeTargets) 
+	{
+		if (extension.dependencyDescryptor)
+			extension.dependencyDescryptor->activeDecodeTargets = activeDecodeTargets;
+	}
+	
 	QWORD GetTime()				const	{ return time;				}
 	void  SetTime(QWORD time )			{ this->time = time;			}
 	
