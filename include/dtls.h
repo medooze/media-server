@@ -70,7 +70,7 @@ public:
 	{
 		if (strcmp(suite,"SRTP_AES128_CM_SHA1_80")==0)
 			return AES_CM_128_HMAC_SHA1_80;
-		else if (strcmp(suite,"SRTP_AES128_CM_SHA1_80")==0) 
+		else if (strcmp(suite,"SRTP_AES128_CM_SHA1_32")==0) 
 			return AES_CM_128_HMAC_SHA1_32;
 		else if (strcmp(suite,"SRTP_AEAD_AES_128_GCM")==0)
 			return AEAD_AES_128_GCM;
