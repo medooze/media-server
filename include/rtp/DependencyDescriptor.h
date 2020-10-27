@@ -55,7 +55,7 @@ struct TemplateDependencyStructure
 	std::vector<FrameDependencyTemplate> frameDependencyTemplates;
 	// The index of the Chain that protects the Decode target
 	// When chains count > 0, each Decode Target MUST be protected by exactly one Chain.
-	// decodeTargetProtectedByChain[dtiIndex] = chainIndex
+	// decodeTargetProtectedByChain[dtIndex] = chainIndex
 	std::vector<uint32_t> decodeTargetProtectedByChain;
 	std::vector<RenderResolution> resolutions;
 	

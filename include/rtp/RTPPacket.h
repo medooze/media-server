@@ -95,13 +95,14 @@ public:
 	QWORD GetClockTimestamp()	const { return static_cast<QWORD>(GetExtTimestamp())*1000/clockRate;	}
 
 	//Extensions
-	void  SetAbsSentTime(QWORD absSentTime)						{ header.extension = extension.hasAbsSentTime     = true; extension.absSentTime = absSentTime;	}
-	void  SetTimeOffset(int timeOffset)						{ header.extension = extension.hasTimeOffset      = true; extension.timeOffset = timeOffset;	}
-	void  SetTransportSeqNum(DWORD seq)						{ header.extension = extension.hasTransportWideCC = true; extension.transportSeqNum = seq;	}
-	void  SetFrameMarkings(const RTPHeaderExtension::FrameMarks& frameMarks )	{ header.extension = extension.hasFrameMarking    = true; extension.frameMarks = frameMarks;	}
-	void  SetRId(const std::string &rid)						{ header.extension = extension.hasRId		  = true; extension.rid = rid;			}
-	void  SetRepairedId(const std::string &repairedId)				{ header.extension = extension.hasRepairedId	  = true; extension.repairedId = repairedId;	}
-	void  SetMediaStreamId(const std::string &mid)					{ header.extension = extension.hasMediaStreamId   = true; extension.mid = mid;			}
+	void  SetAbsSentTime(QWORD absSentTime)						{ header.extension = extension.hasAbsSentTime		= true; extension.absSentTime = absSentTime;	}
+	void  SetTimeOffset(int timeOffset)						{ header.extension = extension.hasTimeOffset		= true; extension.timeOffset = timeOffset;	}
+	void  SetTransportSeqNum(DWORD seq)						{ header.extension = extension.hasTransportWideCC	= true; extension.transportSeqNum = seq;	}
+	void  SetFrameMarkings(const RTPHeaderExtension::FrameMarks& frameMarks )	{ header.extension = extension.hasFrameMarking		= true; extension.frameMarks = frameMarks;	}
+	void  SetRId(const std::string &rid)						{ header.extension = extension.hasRId			= true; extension.rid = rid;			}
+	void  SetRepairedId(const std::string &repairedId)				{ header.extension = extension.hasRepairedId		= true; extension.repairedId = repairedId;	}
+	void  SetMediaStreamId(const std::string &mid)					{ header.extension = extension.hasMediaStreamId		= true; extension.mid = mid;			}
+	void  SetDependencyDescriptor(DependencyDescriptor& dependencyDescriptor)	{ header.extension = extension.hasDependencyDescriptor	= true; extension.dependencyDescryptor = dependencyDescriptor; }
 	
 	bool  ParseDependencyDescriptor(const std::optional<TemplateDependencyStructure>& templateDependencyStructure, std::optional<std::vector<bool>>& activeDecodeTargets)
 	{
@@ -162,10 +163,14 @@ public:
 								 extension.dependencyDescryptor &&
 								 extension.dependencyDescryptor->templateDependencyStructure;	}
 	
-	bool  OverrideActiveDecodeTargets(const std::optional<std::vector<bool>>& activeDecodeTargets) 
+	void  OverrideActiveDecodeTargets(const std::optional<std::vector<bool>>& activeDecodeTargets) 
 	{
 		if (extension.dependencyDescryptor)
 			extension.dependencyDescryptor->activeDecodeTargets = activeDecodeTargets;
+	}
+	void OverrideTemplateDependencyStructure(const std::optional<TemplateDependencyStructure>& templateDependencyStructure)
+	{
+		this->templateDependencyStructure = templateDependencyStructure;
 	}
 	
 	QWORD GetTime()				const	{ return time;				}
