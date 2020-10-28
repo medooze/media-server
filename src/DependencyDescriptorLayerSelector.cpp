@@ -147,7 +147,7 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 			!activeDecodeTargets || (*activeDecodeTargets)[decodeTarget]
 		 );
 		
-		//Check if it is our current selected layer 
+		//Check if layers are lower than our content adaptation selected ones
 		if (templateDependencyStructure->decodeTargetLayerMapping[decodeTarget].spatialLayerId <= spatialLayerId && 
 		    templateDependencyStructure->decodeTargetLayerMapping[decodeTarget].temporalLayerId <= temporalLayerId )
 		{
