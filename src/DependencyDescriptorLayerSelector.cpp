@@ -84,7 +84,7 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	const auto& frameDiffs			= dependencyDescriptor->customFrameDiffs		? dependencyDescriptor->customFrameDiffs.value()		: frameDependencyTemplate.frameDiffs;
 	const auto& frameDiffsChains		= dependencyDescriptor->customFrameDiffsChains		? dependencyDescriptor->customFrameDiffsChains.value()		: frameDependencyTemplate.frameDiffsChains;
 	
-	//Check if it is decodable
+	//Check if frame is decodable
 	bool decodable = true;
 	
 	//We will only forward full frames
@@ -107,10 +107,11 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 			decodable = forwardedFrames.Contains(referencedFrame);
 	}
 	
-	//No chain or decode target
+	//No chain or decode target yet
 	auto currentChain	 = NoChain;
 	auto currentDecodeTarget = NoDecodeTarget;
-	
+
+	//Log
 	Debug("-DependencyDescriptorLayerSelector::Select() | frame [number=%llu,decodable=%d]\n", extFrameNum, decodable);
 	
 	//If we are doing content adaptation
@@ -129,6 +130,7 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 		}
 	}
 	
+	//Check if we really need to override the active decode target mask
 	bool needsForwardedDecodeTargets = false;
 	
 	//Seach best layer target for this spatial and temporal layer
@@ -155,7 +157,7 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 				//If we don't have chain info
 				if (templateDependencyStructure->decodeTargetProtectedByChain.empty())
 				{
-					//Got it	
+					//Use current target	
 					currentDecodeTarget = decodeTarget;
 					break;
 				}
@@ -212,7 +214,6 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 		return Debug("-DependencyDescriptorLayerSelector::Select() | No decode target availalable\n");
 	}
 	
-	
 	//Check dti info is correct
 	if (decodeTargetIndications.size()<currentDecodeTarget)
 	{
@@ -228,16 +229,16 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	//Log
 	Debug("-DependencyDescriptorLayerSelector::Select() | Selected [dt:%llu,chain:%d,dti:%d]\n",currentDecodeTarget,currentChain,dti);
 	
-	//If frame is present in selected decode target
+	//If frame is not present in selected decode target
 	if (dti==DecodeTargetIndication::NotPresent)
 		//Ignore packet
 		return Warning("-DependencyDescriptorLayerSelector::Select() | Discarding packet, not present\n");
 	
-	//if not decodable
+	//If frame is not decodable
 	if (!decodable)
 	{
 		//Request iframe if we can't discard it
-		waitingForIntra = dti!=DecodeTargetIndication::Discardable;
+		waitingForIntra = (dti!=DecodeTargetIndication::Discardable);
 		//Ignore packet
 		return Warning("-DependencyDescriptorLayerSelector::Select() | Discarding packet, not decodable\n");
 	}
