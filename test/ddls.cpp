@@ -68,18 +68,25 @@ TemplateDependencyStructure parseExampleTemplate(const std::vector<std::string>&
 	return tds;
 }
 
+struct FrameDescription 
+{
+	uint32_t idx;
+	uint32_t frameNumber;
+	std::optional<std::vector<uint32_t>> customFrameDiffs;
+	std::optional<std::vector<uint32_t>> customFrameDiffsChains;
+};
 
-std::vector<RTPPacket::shared> generateRTPStream(const std::vector<std::pair<int,int>>& frames, const TemplateDependencyStructure& templateDependencyStructure, const std::vector<int> lost = {})
+std::vector<RTPPacket::shared> generateRTPStream(const std::vector<FrameDescription>& frames, const TemplateDependencyStructure& templateDependencyStructure, const std::vector<int> lost = {})
 {
 	std::vector<RTPPacket::shared> packets;
 	
 	//For each frame
-	for (const auto& [idx,frameNumber] : frames)
+	for (const auto& frame : frames)
 	{
 		//Check if it is lost
-		if (std::any_of(lost.begin(),lost.end(),[=](const auto &num){ return num==frameNumber; }))
+		if (std::any_of(lost.begin(),lost.end(),[=](const auto &num){ return num==frame.frameNumber; }))
 			continue;
-		uint32_t frameDependencyTemplateId = idx - 1;
+		uint32_t frameDependencyTemplateId = frame.idx - 1;
 		//Get the template associated to the frame
 		const auto& frameDependencyTemplate = templateDependencyStructure.frameDependencyTemplates[frameDependencyTemplateId];
 		
@@ -92,13 +99,14 @@ std::vector<RTPPacket::shared> generateRTPStream(const std::vector<std::pair<int
 		//Set basic rtp info, only packet per frame
 		packet->SetClockRate(90000);
 		packet->SetType(96);
-		packet->SetSeqNum(frameNumber);
-		packet->SetTimestamp(frameNumber*3000);
+		packet->SetSeqNum(frame.frameNumber);
+		packet->SetTimestamp(frame.frameNumber*3000);
 		packet->SetMark(true);
 		
 		//Create dependency descriptor
-		DependencyDescriptor dependencyDescriptor = {true, true, frameDependencyTemplateId, frameNumber };
-		
+		DependencyDescriptor dependencyDescriptor = {true, true, frameDependencyTemplateId, frame.frameNumber };
+		dependencyDescriptor.customFrameDiffs = frame.customFrameDiffs;
+		dependencyDescriptor.customFrameDiffsChains = frame.customFrameDiffsChains;
 		//Only send template structure on intra
 		if (isIntra)
 			dependencyDescriptor.templateDependencyStructure = templateDependencyStructure;
@@ -140,7 +148,16 @@ public:
 		Log("testBitHistory\n");
 		testBitHistory();
 		
-		Log("test A.8.2.3 L3T3 K-SVC with Temporal Shift");
+		Log("test A.8.1.3 Dynamic Prediction Structure\n");
+		testCustomDiffs();
+			
+		Log("test A.8.2.1 L1T3\n");
+		testL1T3();
+		
+		Log("test A.8.2.2 L3T3 Full SVC\n");
+		testL3T3FullSVC();
+			
+		Log("test A.8.2.3 L3T3 K-SVC with Temporal Shift\n");
 		testL3T3KSVCTemporalShitt();
 		
 		end();
@@ -202,6 +219,284 @@ public:
 		}
 	}
 	
+	void testL1T3()
+	{
+
+		//A.8.2.1 L1T3 Single Spatial Layer with 3 Temporal Layers
+		auto templateDependencyStructure = parseExampleTemplate({
+			"1	0	0		0	S	S	S",
+			"2	0	0	4	4	S	S	S",
+			"3	0	1	2	2	S	D	-",
+			"4	0	2	1	1	D	-	-",
+			"5	0	2	1	3	D	-	-",
+		});
+		templateDependencyStructure.decodeTargetProtectedByChain = { 0, 0, 0};
+		
+		//Create frame sequence
+		std::vector<FrameDescription> frames = {
+			{1  , 10},
+			{4  , 11},
+			{3  , 12},
+			{5  , 13},
+			{2  , 14},
+			{4  , 15},
+		};
+		
+		//Generate rtp packets
+		auto packets = generateRTPStream(frames, templateDependencyStructure);
+		bool mark = true;
+		
+		
+		//No content adaptation
+		{
+			std::vector<int> selected;
+			DependencyDescriptorLayerSelector selector(VideoCodec::AV1);
+
+			for (const auto& packet: packets)
+				if (selector.Select(packet,mark))
+					selected.push_back(packet->GetSeqNum());
+
+			//All frames must be forwarded
+			assert(isEqual(selected, {10,11,12,13,14,15}));
+			//No change on the decode target mask
+			auto forwarded = selector.GetForwardedDecodeTargets();
+			assert(!forwarded);
+		}
+		
+		//S0T1
+		{
+			std::vector<int> selected;
+			DependencyDescriptorLayerSelector selector(VideoCodec::AV1);
+			selector.SelectSpatialLayer(0);
+			selector.SelectTemporalLayer(1);
+			for (const auto& packet: packets)
+				if (selector.Select(packet,mark))
+					selected.push_back(packet->GetSeqNum());
+			//Only S1T1 frames and belllow are forwared
+			assert(isEqual(selected, {10,12,14}));
+			//Mask updated to disable layers > S1T1
+			auto forwarded = selector.GetForwardedDecodeTargets();
+			assert(forwarded);
+			assert(isEqual(*forwarded, {1,1,0}));
+		}
+		
+		//Simulate loss
+		{
+			auto packets = generateRTPStream(frames, templateDependencyStructure, {12});
+			std::vector<int> selected;
+			DependencyDescriptorLayerSelector selector(VideoCodec::AV1);
+			
+			for (const auto& packet: packets)
+				if (selector.Select(packet,mark))
+					selected.push_back(packet->GetSeqNum());
+			
+			assert(isEqual(selected, {10,11,14,15}));
+		}
+	}
+	
+	void testCustomDiffs()
+	{
+		//A.8.1.3 Dynamic Prediction Structure
+		auto templateDependencyStructure = parseExampleTemplate({
+			"1	0	0		0	S	S",
+			"2	0	0	2	2	S	R",
+			"3	1	0	1	1	R	-",
+			"4	1	0	1,2	1	R	-",
+		});
+		templateDependencyStructure.decodeTargetProtectedByChain = { 0, 0, 0};
+		
+		//Create frame sequence
+		std::vector<FrameDescription> frames = {
+			{1  ,  99},
+			{3  , 100},
+			{2  , 101},
+			{4  , 102},
+			{2  , 103},
+			{4  , 104},
+			{3  , 105 , {}    , {{2}}},
+			{3  , 106 , {}    , {{3}}},
+			{3  , 107 , {}    , {{4}}},
+			{2  , 108 , {{5}} , {{5}}},
+			{4  , 109},
+			{2  , 110},
+			{4  , 111},
+		};
+		
+		//Generate rtp packets
+		auto packets = generateRTPStream(frames, templateDependencyStructure);
+		bool mark = true;
+		
+		
+		//No content adaptation
+		{
+			std::vector<int> selected;
+			DependencyDescriptorLayerSelector selector(VideoCodec::AV1);
+
+			for (const auto& packet: packets)
+				if (selector.Select(packet,mark))
+					selected.push_back(packet->GetSeqNum());
+
+			//All frames must be forwarded
+			assert(isEqual(selected, {99,100,101,102,103,104,105,106,107,108,109,110,111}));
+			//No change on the decode target mask
+			auto forwarded = selector.GetForwardedDecodeTargets();
+			assert(!forwarded);
+		}
+		
+		//S0T0
+		{
+			std::vector<int> selected;
+			DependencyDescriptorLayerSelector selector(VideoCodec::AV1);
+			selector.SelectSpatialLayer(0);
+			selector.SelectTemporalLayer(0);
+			for (const auto& packet: packets)
+				if (selector.Select(packet,mark))
+					selected.push_back(packet->GetSeqNum());
+			//Only S0T0
+			assert(isEqual(selected, {99,101,103,108,110}));
+			//Mask should not be updated
+			auto forwarded = selector.GetForwardedDecodeTargets();
+			assert(forwarded);
+			assert(isEqual(*forwarded, {1,0}));
+		}
+		
+		//S1T0
+		{
+			std::vector<int> selected;
+			DependencyDescriptorLayerSelector selector(VideoCodec::AV1);
+			selector.SelectSpatialLayer(1);
+			selector.SelectTemporalLayer(0);
+			for (const auto& packet: packets)
+				if (selector.Select(packet,mark))
+					selected.push_back(packet->GetSeqNum());
+			//All
+			assert(isEqual(selected, {99,100,101,102,103,104,105,106,107,108,109,110,111}));
+			//Mask should not be updated
+			auto forwarded = selector.GetForwardedDecodeTargets();
+			assert(!forwarded);
+		}
+		
+		//Simulate loss
+		{
+			auto packets = generateRTPStream(frames, templateDependencyStructure, {106});
+			std::vector<int> selected;
+			DependencyDescriptorLayerSelector selector(VideoCodec::AV1);
+			
+			for (const auto& packet: packets)
+				if (selector.Select(packet,mark))
+					selected.push_back(packet->GetSeqNum());
+			
+			assert(isEqual(selected, {99,100,101,102,103,104,105,108,110}));
+		}
+	}
+	
+	void testL3T3FullSVC()
+	{
+		//A.8.2.2 L3T3 Full SVC
+		auto templateDependencyStructure = parseExampleTemplate({
+			"1	0	0		0	0	0	S	S	S	S	S	S	S	S	S",
+			"2	0	0	12	12	11	10	R	R	R	R	R	R	S	S	S",
+			"3	0	1	6	6	5	4	R	R	-	R	R	-	S	D	-",
+			"4	0	2	3	3	2	1	R	-	-	R	-	-	D	-	-",
+			"5	0	2	3	9	8	7	R	-	-	R	-	-	D	-	-",
+			"6	1	0	1	1	1	1	S	S	S	S	S	S	-	-	-",
+			"7	1	0	12,1	1	1	1	R	R	R	S	S	S	-	-	-",
+			"8	1	1	6,1	7	6	5	R	R	-	S	D	-	-	-	-",
+			"9	1	2	3,1	4	3	2	R	-	-	D	-	-	-	-	-",
+			"10	1	2	3,1	10	9	8	R	-	-	D	-	-	-	-	-",
+			"11	2	0	1	2	1	1	S	S	S	-	-	-	-	-	-",
+			"12	2	0	12,1	2	1	1	S	S	S	-	-	-	-	-	-",
+			"13	2	1	6,1	8	7	6	S	D	-	-	-	-	-	-	-",
+			"14	2	2	3,1	5	4	3	D	-	-	-	-	-	-	-	-",
+			"15	2	2	3,1	11	10	9	D	-	-	-	-	-	-	-	-",
+		});
+		templateDependencyStructure.resolutions = {
+			{1280 , 960},
+			{640  , 480},
+			{320  , 240},
+		};
+		templateDependencyStructure.decodeTargetProtectedByChain = { 2, 2, 2, 1, 1, 1, 0, 0, 0};
+		
+		//Create frame sequence
+		std::vector<FrameDescription> frames = {
+			{1  , 100},
+			{6  , 101},
+			{11 , 102},
+			{4  , 103},
+			{9  , 104},
+			{14 , 105},
+			{3  , 106},
+			{8  , 107},
+			{13 , 108},
+			{5  , 109},
+			{10 , 110},
+			{15 , 111},
+			{2  , 112},
+			{7  , 113},
+			{12 , 114},
+			{4  , 115},
+			{9  , 116},
+			{14 , 117},
+			{3  , 118},
+			{8  , 119},
+			{13 , 120},
+			{5  , 121},
+			{10 , 122},
+			{15 , 123},
+		};
+		
+		//Generate rtp packets
+		auto packets = generateRTPStream(frames, templateDependencyStructure);
+		bool mark = true;
+		
+		
+		//No content adaptation
+		{
+			std::vector<int> selected;
+			DependencyDescriptorLayerSelector selector(VideoCodec::AV1);
+
+			for (const auto& packet: packets)
+				if (selector.Select(packet,mark))
+					selected.push_back(packet->GetSeqNum());
+
+			//All frames must be forwarded
+			assert(isEqual(selected, {100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123}));
+			//No change on the decode target mask
+			auto forwarded = selector.GetForwardedDecodeTargets();
+			assert(!forwarded);
+		}
+		
+		//S1T1
+		{
+			std::vector<int> selected;
+			DependencyDescriptorLayerSelector selector(VideoCodec::AV1);
+			selector.SelectSpatialLayer(1);
+			selector.SelectTemporalLayer(1);
+			for (const auto& packet: packets)
+				if (selector.Select(packet,mark))
+					selected.push_back(packet->GetSeqNum());
+			//Only S1T1 frames and belllow are forwared
+			assert(isEqual(selected, {100,101,106,107,112,113,118,119}));
+			//Mask updated to disable layers > S1T1
+			auto forwarded = selector.GetForwardedDecodeTargets();
+			assert(forwarded);
+			assert(isEqual(*forwarded, {1,1,1,1,1,0,0,0,0}));
+		}
+		
+		//Simulate loss
+		{
+			auto packets = generateRTPStream(frames, templateDependencyStructure, {104,113});
+			std::vector<int> selected;
+			DependencyDescriptorLayerSelector selector(VideoCodec::AV1);
+			
+			for (const auto& packet: packets)
+				if (selector.Select(packet,mark))
+					selected.push_back(packet->GetSeqNum());
+			
+			assert(isEqual(selected, {100,101,102,103,106,107,108,109,110,111,112,115,118,121}));
+		}
+	}
+	
 	void testL3T3KSVCTemporalShitt()
 	{
 		//A.8.2.3 L3T3 K-SVC with Temporal Shift
@@ -239,7 +534,7 @@ public:
 		templateDependencyStructure.Dump();
 		
 		//Create frame sequence
-		std::vector<std::pair<int,int>> frames = {
+		std::vector<FrameDescription> frames = {
 			{1  , 100},
 			{8  , 101},
 			{15 , 102},
@@ -276,7 +571,11 @@ public:
 				if (selector.Select(packet,mark))
 					selected.push_back(packet->GetSeqNum());
 
+			//All S2 frames must be forwarded
 			assert(isEqual(selected, {100,101,102,105,108,111,114,117,120}));
+			//No change on the decode target mask
+			auto forwarded = selector.GetForwardedDecodeTargets();
+			assert(!forwarded);
 		}
 		
 		//S1T1
@@ -288,8 +587,12 @@ public:
 			for (const auto& packet: packets)
 				if (selector.Select(packet,mark))
 					selected.push_back(packet->GetSeqNum());
-
+			//Only S1T1 frames forwared
 			assert(isEqual(selected, {100,101,107,113,119}));
+			//Mask updated to disable layers > S1T1
+			auto forwarded = selector.GetForwardedDecodeTargets();
+			assert(forwarded);
+			assert(isEqual(*forwarded, {1,1,1,1,1,0,0,0,0}));
 		}
 		
 		//Simulate loss
@@ -301,8 +604,23 @@ public:
 			for (const auto& packet: packets)
 				if (selector.Select(packet,mark))
 					selected.push_back(packet->GetSeqNum());
-
+			//S2 is not forwared and neither some of the S1T2
 			assert(isEqual(selected, {100,101,104,107,113,116,119}));
+			
+			//Now generate an iframe
+			std::vector<FrameDescription> frames2 = {
+				{1  , 121},
+				{8  , 122},
+				{15 , 123}
+			};
+			
+			auto packets2 = generateRTPStream(frames2, templateDependencyStructure, {102,110});
+			selected.clear();
+			for (const auto& packet: packets2)
+				if (selector.Select(packet,mark))
+					selected.push_back(packet->GetSeqNum());
+			//Evyrthing should get back to normal
+			assert(isEqual(selected, {121,122,123}));
 		}
 		
 	}

@@ -129,7 +129,9 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 		}
 	}
 	
-	//Seach best lahyer target for this spatial and temporal layer
+	bool needsForwardedDecodeTargets = false;
+	
+	//Seach best layer target for this spatial and temporal layer
 	for (uint32_t i = 0; i<templateDependencyStructure->dtsCount; ++i)
 	{
 		//Iterate in reverse order, high spatial layers first, then temporal layers within same spatial layer
@@ -192,8 +194,14 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 		} else {
 			//Disable layer
 			(*forwardedDecodeTargets)[decodeTarget] = false;
+			needsForwardedDecodeTargets = true;
 		}
 	}
+	
+	//If we have not changed the targets
+	if (!needsForwardedDecodeTargets)
+		//Do not override it
+		forwardedDecodeTargets.reset();
 	
 	//If there is none available
 	if (currentDecodeTarget==NoDecodeTarget)
@@ -220,10 +228,19 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	//Log
 	Debug("-DependencyDescriptorLayerSelector::Select() | Selected [dt:%llu,chain:%d,dti:%d]\n",currentDecodeTarget,currentChain,dti);
 	
-	//If frame is not decodable but we can't discard it
-	if (dti==DecodeTargetIndication::NotPresent || (!decodable && dti==DecodeTargetIndication::Discardable))
-		//Ignore packet but do not discard packet
-		return Warning("-DependencyDescriptorLayerSelector::Select() | Discarding packet\n");
+	//If frame is present in selected decode target
+	if (dti==DecodeTargetIndication::NotPresent)
+		//Ignore packet
+		return Warning("-DependencyDescriptorLayerSelector::Select() | Discarding packet, not present\n");
+	
+	//if not decodable
+	if (!decodable)
+	{
+		//Request iframe if we can't discard it
+		waitingForIntra = dti!=DecodeTargetIndication::Discardable;
+		//Ignore packet
+		return Warning("-DependencyDescriptorLayerSelector::Select() | Discarding packet, not decodable\n");
+	}
 	
 	//RTP mark is set for the last frame layer of the selected spatial layer
 	mark = packet->GetMark() || (dependencyDescriptor->endOfFrame && spatialLayerId==frameDependencyTemplate.spatialLayerId);
