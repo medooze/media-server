@@ -339,3 +339,27 @@ void RTPPacket::Dump() const
 	::Dump(GetMediaData(),16);
 	Debug("[/RTPPacket]\n");
 }
+
+
+bool RTPPacket::ParseDependencyDescriptor(const std::optional<TemplateDependencyStructure>& templateDependencyStructure, std::optional<std::vector<bool>>& activeDecodeTargets)
+{
+	//parse it
+	if (!extension.ParseDependencyDescriptor(templateDependencyStructure))
+		//Nothing to do
+		return false;
+
+	//If packet has a new dependency structure
+	if (extension.dependencyDescryptor && extension.dependencyDescryptor->templateDependencyStructure)
+	{
+		//Store it
+		this->templateDependencyStructure = extension.dependencyDescryptor->templateDependencyStructure;
+		this->activeDecodeTargets	  = extension.dependencyDescryptor->activeDecodeTargets;
+	} else {
+		//Keep previous
+		this->templateDependencyStructure = templateDependencyStructure;
+		this->activeDecodeTargets	  = extension.dependencyDescryptor && extension.dependencyDescryptor->activeDecodeTargets.has_value() ?
+			extension.dependencyDescryptor->activeDecodeTargets : activeDecodeTargets;
+	}
+	//Done
+	return true;
+}
