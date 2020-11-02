@@ -134,22 +134,18 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	bool needsForwardedDecodeTargets = false;
 	
 	//Seach best layer target for this spatial and temporal layer
-	for (uint32_t i = 0; i<templateDependencyStructure->dtsCount; ++i)
+	for (auto& [decodeTarget,layerInfo] : templateDependencyStructure->decodeTargetLayerMapping)
 	{
-		//Iterate in reverse order, high spatial layers first, then temporal layers within same spatial layer
-		uint32_t decodeTarget = templateDependencyStructure->dtsCount-i-1;
-		
 		//Debug
 		Debug("-DependencyDescriptorLayerSelector::Select() | Trying decode target [dt:%llu,layer:layer:S%dL%d,active:%d]\n",
 			decodeTarget,
-			templateDependencyStructure->decodeTargetLayerMapping[decodeTarget].spatialLayerId,
-			templateDependencyStructure->decodeTargetLayerMapping[decodeTarget].temporalLayerId,
+			layerInfo.spatialLayerId,
+			layerInfo.temporalLayerId,
 			!activeDecodeTargets || (*activeDecodeTargets)[decodeTarget]
 		 );
 		
 		//Check if layers are lower than our content adaptation selected ones
-		if (templateDependencyStructure->decodeTargetLayerMapping[decodeTarget].spatialLayerId <= spatialLayerId && 
-		    templateDependencyStructure->decodeTargetLayerMapping[decodeTarget].temporalLayerId <= temporalLayerId )
+		if (layerInfo.spatialLayerId <= spatialLayerId && layerInfo.temporalLayerId <= temporalLayerId )
 		{
 			//If decode target is active
 			if (!activeDecodeTargets || (*activeDecodeTargets)[decodeTarget])

@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "rtp/DependencyDescriptor.h"
 #include "bitstream.h"
 #include "video.h"
@@ -15,11 +17,14 @@ enum NextLayerIdc
 
 void TemplateDependencyStructure::CalculateLayerMapping()
 {
+	//Clean 
+	decodeTargetLayerMapping.clear();
+	
 	//For each decode target
 	for (uint32_t dt=0; dt<dtsCount; ++dt)
 	{
 		//Get layer info
-		auto& layer = decodeTargetLayerMapping.emplace_back(0,0);
+		auto& layer = decodeTargetLayerMapping.emplace_back(dt,LayerInfo{0,0}).second;
 		
 		//For each template
 		for (const auto& frameDependencyTemplate : frameDependencyTemplates)
@@ -33,6 +38,13 @@ void TemplateDependencyStructure::CalculateLayerMapping()
 			}
 		}
 	}
+	
+	//Short
+	std::sort(decodeTargetLayerMapping.begin(),decodeTargetLayerMapping.end(),[](auto &a, auto& b){
+		if (a.second.spatialLayerId==b.second.spatialLayerId)
+			return a.second.temporalLayerId>b.second.temporalLayerId;
+		return a.second.spatialLayerId>b.second.spatialLayerId;
+	});
 }
 
 std::optional<TemplateDependencyStructure> TemplateDependencyStructure::Parse(BitReader& reader)
@@ -576,8 +588,8 @@ void TemplateDependencyStructure::Dump() const
 	
 	Log("\t\t[DecodeTargets]\n");
 	//For each decode target
-	for (uint32_t dt=0; dt<decodeTargetLayerMapping.size(); ++dt)
-		Log("\t\t\t[DecodeTarget id=%d spatialLayerId=%d temporalLayerId=%d/]\n", dt, decodeTargetLayerMapping[dt].spatialLayerId, decodeTargetLayerMapping[dt].temporalLayerId);
+	for (auto& [decodeTarget,layerInfo] : decodeTargetLayerMapping)
+		Log("\t\t\t[DecodeTarget id=%d spatialLayerId=%d temporalLayerId=%d/]\n", decodeTarget, layerInfo.spatialLayerId, layerInfo.temporalLayerId);
 	Log("\t\t[DecodeTargets]\n");
 		
 	if (decodeTargetProtectedByChain.size())

@@ -3,6 +3,8 @@
 
 #include "config.h"
 #include <optional>
+#include <utility>
+#include <vector>
 
 #include "bitstream.h"
 #include "WrapExtender.h"
@@ -59,8 +61,8 @@ struct TemplateDependencyStructure
 	std::vector<uint32_t> decodeTargetProtectedByChain;
 	std::vector<RenderResolution> resolutions;
 	
-	//Mapping betwee
-	std::vector<LayerInfo> decodeTargetLayerMapping;
+	//Mapping between decode targets and layers, oredered in descending spataila and layer order
+	std::vector<std::pair<uint32_t,LayerInfo>> decodeTargetLayerMapping;
 	
 	bool ContainsFrameDependencyTemplate(uint32_t frameDependencyTemplateId) const
 	{

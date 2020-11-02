@@ -42,16 +42,16 @@ TemplateDependencyStructure parseExampleTemplate(const std::vector<std::string>&
 			{
 				//Decode targets are ordered in reverse order
 				case 'S':
-					fdt.decodeTargetIndications.insert(fdt.decodeTargetIndications.begin(),DecodeTargetIndication::Switch);
+					fdt.decodeTargetIndications.push_back(DecodeTargetIndication::Switch);
 					break;
 				case 'R':
-					fdt.decodeTargetIndications.insert(fdt.decodeTargetIndications.begin(),DecodeTargetIndication::Required);
+					fdt.decodeTargetIndications.push_back(DecodeTargetIndication::Required);
 					break;
 				case 'D':
-					fdt.decodeTargetIndications.insert(fdt.decodeTargetIndications.begin(),DecodeTargetIndication::Discardable);
+					fdt.decodeTargetIndications.push_back(DecodeTargetIndication::Discardable);
 					break;
 				case '-':
-					fdt.decodeTargetIndications.insert(fdt.decodeTargetIndications.begin(),DecodeTargetIndication::NotPresent);
+					fdt.decodeTargetIndications.push_back(DecodeTargetIndication::NotPresent);
 					break;
 				default:
 					fdt.frameDiffsChains.push_back(std::stoul(cells[i]));
@@ -64,7 +64,7 @@ TemplateDependencyStructure parseExampleTemplate(const std::vector<std::string>&
 	tds.dtsCount	= tds.frameDependencyTemplates[0].decodeTargetIndications.size();
 	tds.chainsCount = tds.frameDependencyTemplates[0].frameDiffsChains.size();
 	tds.CalculateLayerMapping();
-
+	tds.Dump();
 	return tds;
 }
 
@@ -277,7 +277,7 @@ public:
 			//Mask updated to disable layers > S1T1
 			auto forwarded = selector.GetForwardedDecodeTargets();
 			assert(forwarded);
-			assert(isEqual(*forwarded, {1,1,0}));
+			assert(isEqual(*forwarded, {0,1,1}));
 		}
 		
 		//Simulate loss
@@ -357,7 +357,7 @@ public:
 			//Mask should not be updated
 			auto forwarded = selector.GetForwardedDecodeTargets();
 			assert(forwarded);
-			assert(isEqual(*forwarded, {1,0}));
+			assert(isEqual(*forwarded, {0,1}));
 		}
 		
 		//S1T0
@@ -415,7 +415,7 @@ public:
 			{640  , 480},
 			{320  , 240},
 		};
-		templateDependencyStructure.decodeTargetProtectedByChain = { 2, 2, 2, 1, 1, 1, 0, 0, 0};
+		templateDependencyStructure.decodeTargetProtectedByChain = { 0, 0, 0, 1, 1, 1, 2, 2, 2};
 		
 		//Create frame sequence
 		std::vector<FrameDescription> frames = {
@@ -480,7 +480,7 @@ public:
 			//Mask updated to disable layers > S1T1
 			auto forwarded = selector.GetForwardedDecodeTargets();
 			assert(forwarded);
-			assert(isEqual(*forwarded, {1,1,1,1,1,0,0,0,0}));
+			assert(isEqual(*forwarded, {0,0,0,0,1,1,1,1,1}));
 		}
 		
 		//Simulate loss
@@ -527,7 +527,7 @@ public:
 			{640  , 480},
 			{320  , 240},
 		};
-		templateDependencyStructure.decodeTargetProtectedByChain = { 2, 2, 2, 1, 1, 1, 0, 0, 0};
+		templateDependencyStructure.decodeTargetProtectedByChain = { 0, 0, 0 , 1, 1, 1, 2, 2, 2};
 		//It is in reverse order
 		std::reverse(std::begin(templateDependencyStructure.decodeTargetProtectedByChain), std::end(templateDependencyStructure.decodeTargetProtectedByChain));
 		
@@ -592,7 +592,7 @@ public:
 			//Mask updated to disable layers > S1T1
 			auto forwarded = selector.GetForwardedDecodeTargets();
 			assert(forwarded);
-			assert(isEqual(*forwarded, {1,1,1,1,1,0,0,0,0}));
+			assert(isEqual(*forwarded, {0,0,0,0,1,1,1,1,1}));
 		}
 		
 		//Simulate loss
