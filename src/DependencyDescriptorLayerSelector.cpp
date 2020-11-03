@@ -207,7 +207,7 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 		//Request intra
 		waitingForIntra = true;
 		//Ignore packet
-		return Debug("-DependencyDescriptorLayerSelector::Select() | No decode target availalable\n");
+		return Warning("-DependencyDescriptorLayerSelector::Select() | No decode target availalable\n");
 	}
 	
 	//Check dti info is correct
@@ -216,7 +216,7 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 		//Request intra
 		waitingForIntra = true;
 		//Ignore packet
-		return Debug("-DependencyDescriptorLayerSelector::Select() | No decode target information available [dt:%d]\n",currentDecodeTarget);
+		return Warning("-DependencyDescriptorLayerSelector::Select() | No decode target information available [dt:%d]\n",currentDecodeTarget);
 	}
 
 	//Get decode target indicattion
