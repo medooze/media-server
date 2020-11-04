@@ -71,7 +71,7 @@ bool FECDecoder::AddPacket(RTPPacket* packet)
 		}
 	} else if (packet->GetCodec()==VideoCodec::ULPFEC ) {
 		//Create new FEC data
-		FECData *fec = new FECData(packet->GetMediaData(),packet->GetMediaLength());
+		FECData *fec = new FECData((BYTE* )packet->GetMediaData(),packet->GetMediaLength());
 		//Log
 		Debug("-fec data at %d\n",fec->GetBaseExtSeq());
 		//Append it
@@ -87,7 +87,7 @@ bool FECDecoder::AddPacket(RTPPacket* packet)
 			//Do nothing
 			return false;
 		//Add media packet
-		medias[packet->GetExtSeqNum()] = packet->Clone();
+		medias[packet->GetExtSeqNum()] = packet->Clone().get();
 	}
 	//Get last seq number
 	DWORD seq = medias.rbegin()->first;
@@ -236,15 +236,18 @@ RTPPacket* FECDecoder::Recover()
 						//Get media packet
 						RTPPacket* media = medias[fec->GetBaseExtSeq()+r.GetPos()-1];
 						//Calculate receovered attributes
-						p  ^= media->GetP();
-						x  ^= media->GetX();
-						cc ^= media->GetCC();
+
+						//TODO: tannzh 2019-04-12
+						// 暂时屏蔽，无法编译通过
+						//p  ^= media->GetP();
+						//x  ^= media->GetX();
+						//cc ^= media->GetCC();
 						m  ^= media->GetMark();
-						pt ^= media->GetType();
+						//pt ^= media->GetType();
 						ts ^= media->GetTimestamp();
 						l  ^= media->GetMediaLength();
 						//Get data
-						BYTE *payload = media->GetMediaData();
+						BYTE *payload = (BYTE *)media->GetMediaData();
 						//Calculate the xor
 						for (int i=0;i<fmin(media->GetMediaLength(),level0Size);++i)
 							//XOR
@@ -254,8 +257,10 @@ RTPPacket* FECDecoder::Recover()
 				//Create new video packet
 				RTPPacket* packet = new RTPPacket(MediaFrame::Video,pt);
 				//Set values
-				packet->SetP(p);
-				packet->SetX(x);
+                //TODO: tannzh 2019-04-12
+                // 暂时屏蔽，无法编译通过
+				//packet->SetP(p);
+				//packet->SetX(x);
 				packet->SetMark(m);
 				packet->SetTimestamp(ts);
 				//Set sequence number
@@ -264,6 +269,7 @@ RTPPacket* FECDecoder::Recover()
 				packet->SetSeqCycles(fec->GetBaseSeqCylcles());
 				//Set ssrc
 				packet->SetSSRC(ssrc);
+#if 0 //TODO: tannzh 2019-04-12
 				//Set payload and recovered length
 				if (!packet->SetPayloadWithExtensionData(recovered,l))
 				{
@@ -274,6 +280,7 @@ RTPPacket* FECDecoder::Recover()
 					//Skip
 					continue;
 				}
+#endif
 
 				Debug("-recovered packet len:%u ts:%u pts:%u seq:%d\n",l,ts,packet->GetTimestamp() ,packet->GetSeqNum());
 

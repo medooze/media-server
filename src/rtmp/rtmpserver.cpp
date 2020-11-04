@@ -196,7 +196,7 @@ void RTMPServer::CreateConnection(int fd)
 	//Create new RTMP connection
 	auto rtmp = std::make_shared<RTMPConnection>(this);
 
-	Log(">RTMPServer::CreateConnection() connection [fd:%d,%p]\n",fd,rtmp);
+	Log(">RTMPServer::CreateConnection() connection [fd:%d,%p]\n",fd,rtmp.get());
 
 	//Init connection
 	rtmp->Init(fd);
@@ -210,7 +210,7 @@ void RTMPServer::CreateConnection(int fd)
 	//Unlock
 	pthread_mutex_unlock(&sessionMutex);
 
-	Log("<RTMPServer::CreateConnection() [0x%x]\n",rtmp);
+	Log("<RTMPServer::CreateConnection() [0x%x]\n",rtmp.get());
 }
 
 /*********************

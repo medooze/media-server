@@ -81,7 +81,7 @@ RTPRedundantPacket::RTPRedundantPacket(MediaFrame::Type media,BYTE *data,DWORD s
 	//Skip it
 	i++;
 	//Get redundant payload
-	redundantData = payload+i;
+	redundantData = (BYTE *)payload+i;
 	//Get prymary payload
 	primaryData = redundantData+skip;
 	//Get size of primary payload

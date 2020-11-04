@@ -24,6 +24,11 @@ public:
 	{
 		callback(state);
 	}
+
+protected:
+    void onICETimeout() override {}
+    void onRemoteICECandidateActivated(const std::string& ip, uint16_t port, uint32_t priority) override {}
+
 private:
 	std::function<void(const DTLSICETransport::DTLSState)> callback;
 };
