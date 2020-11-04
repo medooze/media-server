@@ -30,6 +30,9 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	auto& templateDependencyStructure = packet->GetTemplateDependencyStructure();
 	auto& activeDecodeTargets = packet->GetActiveDecodeTargets();
 	
+	//No request intra
+	waitingForIntra = false;
+	
 	//Check rtp packet has a frame descriptor
 	if (!dependencyDescriptor)
 	{
@@ -108,7 +111,10 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	}
 	
 	//No chain or decode target yet
+	auto topChain		 = NoChain;
+	auto topLayer		 = LayerInfo::NoLayer;
 	auto currentChain	 = NoChain;
+	auto currentLayer	 = LayerInfo::NoLayer;
 	auto currentDecodeTarget = NoDecodeTarget;
 
 	//Log
@@ -165,11 +171,19 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 				
 				//Get chain for current target
 				auto chain = templateDependencyStructure->decodeTargetProtectedByChain[decodeTarget];
-
+				
 				//Check chain info is correct
 				if (frameDiffsChains.size()<chain)
 					//Try next
 					continue;
+				
+				//If we don't have a top layer yet
+				if (!topLayer.IsValid())
+				{
+					//Store top most layer
+					topLayer = layerInfo;
+					topChain = chain;
+				}
 
 				//Get previous frame numner in current chain
 				 auto prevFrameInCurrentChain = extFrameNum - frameDiffsChains[chain];
@@ -185,6 +199,7 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 					continue;
 
 				//Got it
+				currentLayer = layerInfo;
 				currentChain = chain;
 				currentDecodeTarget = decodeTarget;
 				break;
@@ -218,33 +233,38 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 		//Ignore packet
 		return Warning("-DependencyDescriptorLayerSelector::Select() | No decode target information available [dt:%d]\n",currentDecodeTarget);
 	}
-
+	
 	//Get decode target indicattion
 	auto dti = decodeTargetIndications[currentDecodeTarget];
 
 	//Log
-	Debug("-DependencyDescriptorLayerSelector::Select() | Selected [dt:%llu,chain:%d,dti:%d]\n",currentDecodeTarget,currentChain,dti);
+	Debug("-DependencyDescriptorLayerSelector::Select() | Selected [dt:%llu,chain:%d,dti:%d,top:{S%dT%d],current:{S%dT%d]\n",
+		currentDecodeTarget,
+		currentChain,
+		dti,
+		topLayer.spatialLayerId,
+	 	topLayer.temporalLayerId,
+		currentLayer.spatialLayerId,
+	 	currentLayer.temporalLayerId
+	);
+	
+	//If frame is not decodable
+	if (!decodable)
+	{
+		//Request iframe if chain for the top active layer is broken
+		waitingForIntra = (topLayer!=currentLayer);
+		//Ignore packet
+		return Warning("-DependencyDescriptorLayerSelector::Select() | Discarding packet, not decodable\n");
+	}
 	
 	//If frame is not present in selected decode target
 	if (dti==DecodeTargetIndication::NotPresent)
 		//Ignore packet
 		return Warning("-DependencyDescriptorLayerSelector::Select() | Discarding packet, not present\n");
-	
-	//If frame is not decodable
-	if (!decodable)
-	{
-		//Request iframe if we can't discard it
-		waitingForIntra = (dti!=DecodeTargetIndication::Discardable);
-		//Ignore packet
-		return Warning("-DependencyDescriptorLayerSelector::Select() | Discarding packet, not decodable\n");
-	}
-	
+
 	//RTP mark is set for the last frame layer of the selected spatial layer
 	mark = packet->GetMark() || (dependencyDescriptor->endOfFrame && spatialLayerId==frameDependencyTemplate.spatialLayerId);
-	
-	//Not waiting for intra
-	waitingForIntra = false;
-	
+
 	//If it is the last in current frame
 	if (dependencyDescriptor->endOfFrame)
 		//We only count full forwarded frames

@@ -415,7 +415,7 @@ public:
 			{640  , 480},
 			{320  , 240},
 		};
-		templateDependencyStructure.decodeTargetProtectedByChain = { 0, 0, 0, 1, 1, 1, 2, 2, 2};
+		templateDependencyStructure.decodeTargetProtectedByChain = { 2, 2, 2, 1, 1, 1, 0, 0, 0};
 		
 		//Create frame sequence
 		std::vector<FrameDescription> frames = {
@@ -490,10 +490,33 @@ public:
 			DependencyDescriptorLayerSelector selector(VideoCodec::AV1);
 			
 			for (const auto& packet: packets)
+			{
 				if (selector.Select(packet,mark))
 					selected.push_back(packet->GetSeqNum());
+				//We should have an intra request on second loss
+				if (packet->GetSeqNum()<113)
+					assert(!selector.IsWaitingForIntra());
+				else if (packet->GetSeqNum()==114)
+					assert(selector.IsWaitingForIntra());
+			}
 			
 			assert(isEqual(selected, {100,101,102,103,106,107,108,109,110,111,112,115,118,121}));
+		}
+		
+		//Simulate loss no intra request
+		{
+			auto packets = generateRTPStream(frames, templateDependencyStructure, {108});
+			std::vector<int> selected;
+			DependencyDescriptorLayerSelector selector(VideoCodec::AV1);
+			
+			for (const auto& packet: packets)
+			{
+				if (selector.Select(packet,mark))
+					selected.push_back(packet->GetSeqNum());
+				assert(!selector.IsWaitingForIntra());
+			}
+			
+			assert(isEqual(selected, {100,101,102,103,104,105,106,107,109,110,112,113,114,115,116,117,118,119,120,121,122,123}));
 		}
 	}
 	
@@ -527,9 +550,7 @@ public:
 			{640  , 480},
 			{320  , 240},
 		};
-		templateDependencyStructure.decodeTargetProtectedByChain = { 0, 0, 0 , 1, 1, 1, 2, 2, 2};
-		//It is in reverse order
-		std::reverse(std::begin(templateDependencyStructure.decodeTargetProtectedByChain), std::end(templateDependencyStructure.decodeTargetProtectedByChain));
+		templateDependencyStructure.decodeTargetProtectedByChain = { 2, 2, 2 , 1, 1, 1, 0, 0, 0};
 		
 		templateDependencyStructure.Dump();
 		

@@ -21,7 +21,7 @@ public:
 	BYTE GetTemporalLayer()		const override { return temporalLayerId;	}
 	BYTE GetSpatialLayer()		const override { return spatialLayerId;		}
 	VideoCodec::Type GetCodec()	const override { return codec;			}
-	bool IsWaitingForIntra()	const override { return false;			}
+	bool IsWaitingForIntra()	const override { return waitingForIntra;	}
 	
 	std::optional<std::vector<bool>> GetForwardedDecodeTargets() const { return forwardedDecodeTargets;	}
 	
