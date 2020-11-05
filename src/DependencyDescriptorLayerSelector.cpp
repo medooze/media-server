@@ -118,7 +118,7 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	auto currentDecodeTarget = NoDecodeTarget;
 
 	//Log
-	Debug("-DependencyDescriptorLayerSelector::Select() | frame [number=%llu,decodable=%d]\n", extFrameNum, decodable);
+	UltraDebug("-DependencyDescriptorLayerSelector::Select() | frame [number=%llu,decodable=%d]\n", extFrameNum, decodable);
 	
 	//If we are doing content adaptation
 	if (spatialLayerId!=LayerInfo::MaxLayerId || temporalLayerId!=LayerInfo::MaxLayerId)
@@ -143,7 +143,7 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	for (auto& [decodeTarget,layerInfo] : templateDependencyStructure->decodeTargetLayerMapping)
 	{
 		//Debug
-		Debug("-DependencyDescriptorLayerSelector::Select() | Trying decode target [dt:%llu,layer:layer:S%dL%d,active:%d]\n",
+		UltraDebug("-DependencyDescriptorLayerSelector::Select() | Trying decode target [dt:%llu,layer:layer:S%dL%d,active:%d]\n",
 			decodeTarget,
 			layerInfo.spatialLayerId,
 			layerInfo.temporalLayerId,
@@ -189,7 +189,7 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 				 auto prevFrameInCurrentChain = extFrameNum - frameDiffsChains[chain];
 				 
 				 //Log
-				 Debug("-DependencyDescriptorLayerSelector::Select() | Frame [dt:%llu,chain:%d,prev:%d]\n",decodeTarget,chain,prevFrameInCurrentChain);
+				 UltraDebug("-DependencyDescriptorLayerSelector::Select() | Frame [dt:%llu,chain:%d,prev:%d]\n",decodeTarget,chain,prevFrameInCurrentChain);
 				  
 				 //If it is not us, check if previus frame was not sent
 				 if (prevFrameInCurrentChain && 
@@ -238,7 +238,8 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	auto dti = decodeTargetIndications[currentDecodeTarget];
 
 	//Log
-	Debug("-DependencyDescriptorLayerSelector::Select() | Selected [dt:%llu,chain:%d,dti:%d,top:{S%dT%d],current:{S%dT%d]\n",
+	Debug("-DependencyDescriptorLayerSelector::Select() | Selected [number=%llu,dt:%llu,chain:%d,dti:%d,top:{S%dT%d],current:{S%dT%d]\n",
+		extFrameNum,
 		currentDecodeTarget,
 		currentChain,
 		dti,
