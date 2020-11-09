@@ -238,15 +238,18 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	auto dti = decodeTargetIndications[currentDecodeTarget];
 
 	//Log
-	Debug("-DependencyDescriptorLayerSelector::Select() | Selected [number=%llu,dt:%llu,chain:%d,dti:%d,top:{S%dT%d],current:{S%dT%d]\n",
+	Debug("-DependencyDescriptorLayerSelector::Select() | Selected [number=%llu,t:%d,dt:%llu,chain:%d,dti:%d,top:{S%dT%d],current:{S%dT%d],frame:[S%dT%d]\n",
 		extFrameNum,
+		dependencyDescriptor->frameDependencyTemplateId,
 		currentDecodeTarget,
 		currentChain,
 		dti,
 		topLayer.spatialLayerId,
 	 	topLayer.temporalLayerId,
 		currentLayer.spatialLayerId,
-	 	currentLayer.temporalLayerId
+	 	currentLayer.temporalLayerId,
+		frameDependencyTemplate.spatialLayerId,
+		frameDependencyTemplate.temporalLayerId
 	);
 	
 	//If frame is not decodable
