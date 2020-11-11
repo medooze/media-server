@@ -306,9 +306,9 @@ bool H264LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 	
 }
 
- LayerInfo H264LayerSelector::GetLayerIds(const RTPPacket::shared& packet)
+ std::vector<LayerInfo> H264LayerSelector::GetLayerIds(const RTPPacket::shared& packet)
 {
-	LayerInfo info;
+	std::vector<LayerInfo> infos;
 	
 	//If packet has frame markings
 	if (packet->HasFrameMarkings())
@@ -316,8 +316,7 @@ bool H264LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 		//Get it from frame markings
 		const auto& fm = packet->GetFrameMarks();
 		//Get data from frame marking
-		info.temporalLayerId	= fm.temporalLayerId;
-		info.spatialLayerId	= fm.layerId;
+		infos.emplace_back(fm.temporalLayerId, fm.layerId);
 		//Set key frame flag
 		packet->SetKeyFrame(fm.independent);
 	} else {
@@ -348,7 +347,7 @@ bool H264LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 	
 	//UltraDebug("-VP9LayerSelector::GetLayerIds() | [tid:%u,sid:%u]\n",info.temporalLayerId,info.spatialLayerId);
 	
-	//Return layer info
-	return info;
+	//Return layer infos
+	return infos;
 }
 	

@@ -128,21 +128,21 @@ WORD RTPIncomingSource::ExtendSeqNum(WORD seqNum)
 	return cycles; 
 }
 
-void RTPIncomingSource::Update(QWORD now,DWORD seqNum,DWORD size,const LayerInfo &layerInfo)
+void RTPIncomingSource::Update(QWORD now,DWORD seqNum,DWORD size,const std::vector<LayerInfo> &layerInfos)
 {
 	//Update source normally
 	RTPIncomingSource::Update(now,seqNum,size);
-	//Check layer info is present
-	if (layerInfo.IsValid())
+	//For each layer
+	for (const auto& layerInfo : layerInfos)
 	{
-		//Find layer
-		auto it = layers.find(layerInfo.GetId());
-		//If not found
-		if (it==layers.end())
-			//Add new entry
-			it = layers.emplace(layerInfo.GetId(),LayerSource(layerInfo)).first;
-		//Update layer source
-		it->second.Update(now,size);
+		//Check layer info is present
+		if (layerInfo.IsValid())
+		{
+			//Insert layer info if it doesn't exist
+			auto [it, inserted] = layers.try_emplace(layerInfo.GetId(), layerInfo);
+			//Update layer source
+			it->second.Update(now,size);
+		}
 	}
 }
 

@@ -94,9 +94,9 @@ bool VP8LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 	return true;
 }
 
- LayerInfo VP8LayerSelector::GetLayerIds(const RTPPacket::shared& packet)
+ std::vector<LayerInfo> VP8LayerSelector::GetLayerIds(const RTPPacket::shared& packet)
 {
-	LayerInfo info;
+	std::vector<LayerInfo> infos;
 	
 	//Check if it already have the descriptor
 	if (!packet->vp8PayloadDescriptor)
@@ -113,7 +113,7 @@ bool VP8LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 			//Clear desc
 			packet->vp8PayloadDescriptor.reset();
 			//NOne
-			return info;
+			return infos;
 		}
 		
 		//Parse header if first packet
@@ -138,7 +138,7 @@ bool VP8LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 	//If we got the descriptor
 	if (packet->vp8PayloadDescriptor)
 		//Set temporal layer info
-		info.temporalLayerId = packet->vp8PayloadDescriptor->temporalLayerIndex;
+		infos.emplace_back(packet->vp8PayloadDescriptor->temporalLayerIndex,0);
 	//UltraDebug("-VP8LayerSelector::GetLayerIds() | [tid:%u,sid:%u]\n",info.temporalLayerId,info.spatialLayerId);
-	return info;
+	return infos;
 }

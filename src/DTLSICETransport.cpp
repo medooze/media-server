@@ -411,7 +411,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		 packet->SetCodec(codec);
 		 packet->SetPayloadType(apt);
 		 //TODO: Move from here, required to fill the vp8/vp9 descriptors
-		VideoLayerSelector::GetLayerIds(packet);
+		 VideoLayerSelector::GetLayerIds(packet);
 	} else if (ssrc==group->fec.ssrc)  {
 		//Ensure that it is a FEC codec
 		if (codec!=VideoCodec::FLEXFEC)

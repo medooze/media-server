@@ -148,9 +148,9 @@ bool VP9LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 	
 }
 
- LayerInfo VP9LayerSelector::GetLayerIds(const RTPPacket::shared& packet)
+ std::vector<LayerInfo> VP9LayerSelector::GetLayerIds(const RTPPacket::shared& packet)
 {
-	LayerInfo info;
+	 std::vector<LayerInfo> infos;
 	
 	//If we don't have one yet
 	if (!packet->vp9PayloadDescriptor)
@@ -198,8 +198,7 @@ bool VP9LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 	if (packet->vp9PayloadDescriptor)
 	{
 		//Get data from header
-		info.temporalLayerId	= packet->vp9PayloadDescriptor->temporalLayerId;
-		info.spatialLayerId	= packet->vp9PayloadDescriptor->spatialLayerId;
+		infos.emplace_back(packet->vp9PayloadDescriptor->temporalLayerId,packet->vp9PayloadDescriptor->spatialLayerId);
 	} else if (packet->GetMaxMediaLength()) { 
 		Error("-VP9LayerSelector::GetLayerIds() | no descriptor");
 	}
@@ -207,5 +206,5 @@ bool VP9LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 	//UltraDebug("-VP9LayerSelector::GetLayerIds() | [tid:%u,sid:%u]\n",info.temporalLayerId,info.spatialLayerId);
 	
 	//Return layer info
-	return info;
+	return infos;
 }

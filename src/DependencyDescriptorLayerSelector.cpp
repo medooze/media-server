@@ -284,8 +284,10 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	
 }
 
- LayerInfo DependencyDescriptorLayerSelector::GetLayerIds(const RTPPacket::shared& packet)
+std::vector<LayerInfo> DependencyDescriptorLayerSelector::GetLayerIds(const RTPPacket::shared& packet)
 {
+	std::vector<LayerInfo> infos;
+	
 	//Get dependency description
 	auto& dependencyDescriptor = packet->GetDependencyDescriptor();
 	auto& currentTemplateDependencyStructure = packet->GetTemplateDependencyStructure();
@@ -294,9 +296,32 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	if (dependencyDescriptor 
 		&& currentTemplateDependencyStructure
 		&& currentTemplateDependencyStructure->ContainsFrameDependencyTemplate(dependencyDescriptor->frameDependencyTemplateId))
-		//Get layer info from template
-		return currentTemplateDependencyStructure->GetFrameDependencyTemplate(dependencyDescriptor->frameDependencyTemplateId);
+	{
+		//Get dependencey structure from template
+		const auto& templateDependencyStructure = currentTemplateDependencyStructure->GetFrameDependencyTemplate(dependencyDescriptor->frameDependencyTemplateId);
+		//Get decode target indications
+		const auto& decodeTargetIndications = dependencyDescriptor->customDecodeTargetIndications 
+			? dependencyDescriptor->customDecodeTargetIndications.value()
+			: templateDependencyStructure.decodeTargetIndications; 
+		//Do not add duplicate layers
+		LayerInfo last;
+		//Traverse all layers
+		for (auto& [decodeTarget,layerInfo] : currentTemplateDependencyStructure->decodeTargetLayerMapping)
+		{
+			
+			//Get decode target indicattion
+			auto dti = decodeTargetIndications[decodeTarget];
+			//If frame is present in selected decode target and it is not a duplicate
+			if (dti!=DecodeTargetIndication::NotPresent && last!=layerInfo)
+			{
+				//Add layer info
+				infos.push_back(layerInfo);
+				//Update last
+				last = layerInfo;
+			}
+		}
+	}
 	
 	//Return empty layer info
-	return LayerInfo();
+	return infos;
 }

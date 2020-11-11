@@ -241,10 +241,23 @@ public:
 			{2  , 14},
 			{4  , 15},
 		};
-		
+		//Create frame layer info
+		std::vector<std::vector<LayerInfo>> info = {
+			{{2,0},{1,0},{0,0}},
+			{{2,0}},
+			{{2,0},{1,0}},
+			{{2,0}},
+			{{2,0},{1,0},{0,0}},
+			{{2,0}},
+		};
 		//Generate rtp packets
 		auto packets = generateRTPStream(frames, templateDependencyStructure);
 		bool mark = true;
+		
+		//Check layer infos
+		for (int i=0; i<packets.size();++i)
+			assert(DependencyDescriptorLayerSelector::GetLayerIds(packets[i])==info[i]);
+		
 		
 		
 		//No content adaptation
@@ -322,9 +335,29 @@ public:
 			{4  , 111},
 		};
 		
+		//Create frame layer info
+		std::vector<std::vector<LayerInfo>> info = {
+			{{0,1},{0,0}},
+			{{0,1}},
+			{{0,1},{0,0}},
+			{{0,1}},
+			{{0,1},{0,0}},
+			{{0,1}},
+			{{0,1}},
+			{{0,1}},
+			{{0,1}},
+			{{0,1},{0,0}},
+			{{0,1}},
+			{{0,1},{0,0}},
+			{{0,1}},
+		};
 		//Generate rtp packets
 		auto packets = generateRTPStream(frames, templateDependencyStructure);
 		bool mark = true;
+		
+		//Check layer infos
+		for (int i=0; i<packets.size();++i)
+			assert(DependencyDescriptorLayerSelector::GetLayerIds(packets[i])==info[i]);
 		
 		
 		//No content adaptation
@@ -578,9 +611,37 @@ public:
 			{10 , 119},
 			{17 , 120}
 		};
+		//Create frame layer info
+		std::vector<std::vector<LayerInfo>> info = {
+			{{2,2},{1,2},{0,2},{2,1},{1,1},{0,1},{2,0},{1,0},{0,0}},
+			{{2,2},{1,2},{0,2},{2,1},{1,1},{0,1}},
+			{{2,2},{1,2},{0,2}},
+			{{2,0},{1,0},{0,0}},
+			{{2,1}},
+			{{2,2}},
+			{{2,0}},
+			{{2,1},{1,1},{0,1}},
+			{{2,2},{1,2}},
+			{{2,0},{1,0}},
+			{{2,1}},
+			{{2,2}},
+			{{2,0}},
+			{{2,1},{1,1}},
+			{{2,2},{1,2},{0,2}},
+			{{2,0},{1,0},{0,0}},
+			{{2,1}},
+			{{2,2}},
+			{{2,0}},
+			{{2,1},{1,1},{0,1}},
+			{{2,2},{1,2}},
+		};
 		//Generate rtp packets
 		auto packets = generateRTPStream(frames, templateDependencyStructure);
 		bool mark = true;
+		
+		//Check layer infos
+		for (int i=0; i<packets.size();++i)
+			assert(DependencyDescriptorLayerSelector::GetLayerIds(packets[i])==info[i]);
 		
 		
 		//No content adaptation
