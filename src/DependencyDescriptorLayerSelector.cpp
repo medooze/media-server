@@ -118,7 +118,7 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	auto currentDecodeTarget = NoDecodeTarget;
 
 	//Log
-	UltraDebug("-DependencyDescriptorLayerSelector::Select() | frame [number=%llu,decodable=%d]\n", extFrameNum, decodable);
+	UltraDebug("-DependencyDescriptorLayerSelector::Select() | frame [number=%llu,decodable=%d,ts:%lu,mark:%d]\n", extFrameNum, decodable, packet->GetTimestamp(),packet->GetMark());
 	
 	//If we are doing content adaptation
 	if (spatialLayerId!=LayerInfo::MaxLayerId || temporalLayerId!=LayerInfo::MaxLayerId)
@@ -314,6 +314,7 @@ std::vector<LayerInfo> DependencyDescriptorLayerSelector::GetLayerIds(const RTPP
 			//If frame is present in selected decode target and it is not a duplicate
 			if (dti!=DecodeTargetIndication::NotPresent && last!=layerInfo)
 			{
+				Log("-[S%dT%d]\n",layerInfo.spatialLayerId,layerInfo.temporalLayerId);
 				//Add layer info
 				infos.push_back(layerInfo);
 				//Update last
