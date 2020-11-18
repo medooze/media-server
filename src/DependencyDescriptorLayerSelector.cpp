@@ -314,7 +314,6 @@ std::vector<LayerInfo> DependencyDescriptorLayerSelector::GetLayerIds(const RTPP
 			//If frame is present in selected decode target and it is not a duplicate
 			if (dti!=DecodeTargetIndication::NotPresent && last!=layerInfo)
 			{
-				Log("-[S%dT%d]\n",layerInfo.spatialLayerId,layerInfo.temporalLayerId);
 				//Add layer info
 				infos.push_back(layerInfo);
 				//Update last
