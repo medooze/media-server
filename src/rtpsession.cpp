@@ -926,26 +926,40 @@ RTCPCompoundPacket::shared RTPSession::CreateSenderReport()
 	//Get now
 	QWORD now = getTime();
 
-	//Create sender report for normal stream
-	auto sr = send.media.CreateSenderReport(now);
-
-	//Create report
+	//Create report for receiver stream
 	auto report = recv.media.CreateReport(now);
-	//If got anything
-	if (report)
-		//Append it
-		sr->AddReport(report);
-
-	//Create sender report for RTX stream
-	auto rtx = recv.rtx.CreateReport(now);
-	//If got anything
-	if (rtx)
-		//Append it
-		sr->AddReport(rtx);
 	
-	//Append SR to rtcp
-	rtcp->AddPacket(sr);	
+	//Check it we have sent anything
+	if (!send.media.numPackets)
+	{
+		//Create sender report for normal stream
+		auto sr = send.media.CreateSenderReport(now);
+		
+		//If got anything
+		if (report)
+			//Append it
+			sr->AddReport(report);
+		//Create sender report for RTX stream
+		auto rtx = recv.rtx.CreateReport(now);
+		//If got anything
+		if (rtx)
+			//Append it
+			sr->AddReport(rtx);
+		//Append SR to rtcp
+		rtcp->AddPacket(sr);
+	} else {
+		//Create Sender report
+		auto rr = std::make_shared<RTCPReceiverReport>();
 
+		//If got anything
+		if (report)
+			//Append it
+			rr->AddReport(report);
+		
+		//Append RR to rtcp
+		rtcp->AddPacket(rr);
+	}
+	
 	//Create SDES packet
 	auto sdes = rtcp->CreatePacket<RTCPSDES>();
 	//Create description
