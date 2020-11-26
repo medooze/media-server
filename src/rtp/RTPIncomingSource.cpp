@@ -59,6 +59,8 @@ RTPIncomingSource::RTPIncomingSource() :
 	numFramesDelta			= 0;
 	lostPackets			= 0;
 	lostPacketsDelta		= 0;
+	lostPacketsGapCount		= 0;
+	lostPacketsMaxGap		= 0;
 	dropPackets			= 0;
 	totalPacketsSinceLastSR		= 0;
 	totalBytesSinceLastSR		= 0;
@@ -77,7 +79,7 @@ RTPIncomingSource::RTPIncomingSource() :
 	firstReceivedSenderTimestamp	= 0;
 	skew				= 0;
 	drift				= 1;
-	minExtSeqNumSinceLastSR  = RTPPacket::MaxExtSeqNum;
+	minExtSeqNumSinceLastSR		= RTPPacket::MaxExtSeqNum;
 }
 
 
@@ -88,6 +90,8 @@ void RTPIncomingSource::Reset()
 	numFramesDelta			= 0;
 	lostPackets			= 0;
 	lostPacketsDelta		= 0;
+	lostPacketsGapCount		= 0;
+	lostPacketsMaxGap		= 0;	
 	dropPackets			= 0;
 	totalPacketsSinceLastSR		= 0;
 	totalBytesSinceLastSR		= 0;
@@ -200,6 +204,8 @@ void RTPIncomingSource::Update(QWORD now)
 	//Update deltas
 	numFramesDelta	 = acumulatorFrames.Update(now);
 	lostPacketsDelta = acumulatorLostPackets.Update(now);
+	lostPacketsGapCount = acumulatorLostPackets.GetCount();
+	lostPacketsMaxGap = acumulatorLostPackets.GetMaxValueInWindow();
 }
 
 void RTPIncomingSource::Process(QWORD now, const RTCPSenderReport::shared& sr)

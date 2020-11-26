@@ -16,6 +16,8 @@ struct RTPIncomingSource : public RTPSource
 	DWORD	numFramesDelta;
 	DWORD	lostPackets;
 	DWORD	lostPacketsDelta;
+	DWORD   lostPacketsGapCount;
+	DWORD   lostPacketsMaxGap;
 	DWORD	dropPackets;
 	DWORD	totalPacketsSinceLastSR;
 	DWORD	totalBytesSinceLastSR;
