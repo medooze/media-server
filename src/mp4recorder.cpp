@@ -753,6 +753,9 @@ bool MP4Recorder::Close(bool async)
 		//Not recording anymore
 		recording = false;
 		
+		//Clear time buffer
+		timeShiftBuffer.clear();
+		
 		//Check mp4 file is opened
 		//For each audio track
 		for (Tracks::iterator it = audioTracks.begin(); it!=audioTracks.end(); ++it)
@@ -799,6 +802,7 @@ void MP4Recorder::onMediaFrame(const MediaFrame &frame)
 
 void MP4Recorder::onMediaFrame(DWORD ssrc, const MediaFrame &frame)
 {
+	
 	//run async	
 	loop.Async([=,cloned = frame.Clone()](...){
 		//Check we are recording
