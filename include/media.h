@@ -174,7 +174,11 @@ public:
 
 	DWORD GetLength() const			{ return buffer->GetSize();			}
 	DWORD GetMaxMediaLength() const		{ return buffer->GetCapacity();			}
+
+#ifndef SWIG
+	// the SWIG compiler can not handle correctly the 2 GetData signatures
 	const BYTE* GetData() const		{ return buffer->GetData();			}
+#endif
 
 	BYTE* GetData()				{ AdquireBuffer(); return buffer->GetData();	}
 	void SetLength(DWORD length)		{ AdquireBuffer(); buffer->SetSize(length);	}
