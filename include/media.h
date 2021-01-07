@@ -175,8 +175,8 @@ public:
 	DWORD GetLength() const			{ return buffer->GetSize();			}
 	DWORD GetMaxMediaLength() const		{ return buffer->GetCapacity();			}
 
-#ifndef SWIG
-	// the SWIG compiler can not handle correctly the 2 GetData signatures
+#ifndef SWIGGO
+	// the SWIG compiler can not handle correctly the 2 GetData signatures for the GoLang target
 	const BYTE* GetData() const		{ return buffer->GetData();			}
 #endif
 
