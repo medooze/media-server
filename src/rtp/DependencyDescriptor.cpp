@@ -223,7 +223,7 @@ std::optional<DependencyDescriptor> DependencyDescriptor::Parse(BitReader& reade
 			//Parse mask
 			for (uint8_t i = 0; i < dtsCount; ++i)
 				//Read bits from end to first, so push front in field
-				dd->activeDecodeTargets.value()[dtsCount - i - 1] = (activeDecodeTargetsBitmask >> i ) & 1;
+				dd->activeDecodeTargets.value()[i] = (activeDecodeTargetsBitmask >> i ) & 1;
 		
 		if (customDtis)
 		{
@@ -449,9 +449,9 @@ bool DependencyDescriptor::Serialize(BitWritter& writter) const
 				return 0;
 			
 			//For each decode target
-			for (bool active : *activeDecodeTargets)
+			for (size_t i=activeDecodeTargets->size(); i!=0; --i)
 				//Write if it is active
-				writter.Put(1, active);
+				writter.Put(1, (*activeDecodeTargets)[i-1]);
 		}
 		
 		if (customDecodeTargetIndications)
