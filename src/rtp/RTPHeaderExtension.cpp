@@ -332,9 +332,9 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 	{
 		//Get id for extension
 		BYTE id = extMap.GetTypeForCodec(DependencyDescriptor);
-		
-		//Write header with dummy length
-		if ((n = WriteHeaderIdAndLength(data,len,id,0)))
+
+		//Write header with dummy 1 length (zero length not valid)
+		if ((n = WriteHeaderIdAndLength(data,len,id,1)))
 		{
 			//Get writter
 			BitWritter writter(data + len + n, size - len + n);
@@ -352,7 +352,7 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 				//Inc header len
 				len += extLen + n;
 			}
-		}	
+		}
 	}
 	
 	

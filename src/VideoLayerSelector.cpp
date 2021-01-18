@@ -33,7 +33,8 @@ private:
 
 VideoLayerSelector* VideoLayerSelector::Create(VideoCodec::Type codec)
 {
-	
+	Debug("VideoLayerSelector::Create() [codec:%s]\n",VideoCodec::GetNameFor(codec));
+
 	switch(codec)
 	{
 		case VideoCodec::VP9:

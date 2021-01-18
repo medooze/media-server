@@ -116,9 +116,11 @@ RTPPacket::shared RTPPacket::Clone() const
 	cloned->SetSenderTime(GetSenderTime());
 	//Copy descriptors
 	cloned->rewitePictureIds     = rewitePictureIds;
-	cloned->vp8PayloadDescriptor = std::optional<VP8PayloadDescriptor>(vp8PayloadDescriptor);
-	cloned->vp8PayloadHeader     = std::optional<VP8PayloadHeader>(vp8PayloadHeader);
-	cloned->vp9PayloadDescriptor = std::optional<VP9PayloadDescription>(vp9PayloadDescriptor);
+	cloned->vp8PayloadDescriptor = vp8PayloadDescriptor;
+	cloned->vp8PayloadHeader     = vp8PayloadHeader;
+	cloned->vp9PayloadDescriptor = vp9PayloadDescriptor;
+	cloned->activeDecodeTargets  = activeDecodeTargets;
+	cloned->templateDependencyStructure = templateDependencyStructure;
 	//Return it
 	return cloned;
 }
