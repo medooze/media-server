@@ -25,6 +25,12 @@ void DependencyDescriptorLayerSelector::SelectSpatialLayer(BYTE id)
 	
 bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 {
+
+	//If the dependency descryptor has not been negotiated
+	if (!packet->HasDependencyDestriptor())
+		//Accept all
+		return true;
+
 	//Get dependency description
 	auto& dependencyDescriptor = packet->GetDependencyDescriptor();
 	auto& templateDependencyStructure = packet->GetTemplateDependencyStructure();
