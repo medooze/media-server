@@ -72,7 +72,7 @@ static void speex_free (void *ptr) {free(ptr);}
 #include "arch.h"
 #else /* OUTSIDE_SPEEX */
                
-#include "../include/speex/speex_resampler.h"
+#include "speex_resampler.h"
 #include "arch.h"
 #include "os_support.h"
 #endif /* OUTSIDE_SPEEX */

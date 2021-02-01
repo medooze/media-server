@@ -62,7 +62,7 @@ int UploadHandler::ProcessRequest(TRequestInfo *req,TSession * const ses)
 
 	
 	//Get content type
-	type = RequestHeaderValue(ses, (char*)"content-type");
+	type = (char*)RequestHeaderValue(ses, (char*)"content-type");
 
 	//Check type
 	if (!type)
@@ -181,7 +181,7 @@ int UploadHandler::ProcessRequest(TRequestInfo *req,TSession * const ses)
 			if (bodyType && bodyDisposition && bodyDisposition->HasParameter("filename"))
 			{
 				//Create filename
-				snprintf(filename,1024,"%s%s",tmpnam(NULL),basename(bodyDisposition->GetParameter("filename").c_str()));
+				snprintf(filename,1024,"%s%s",tmpnam(NULL), bodyDisposition->GetParameter("filename").c_str());
 				//Log
 				Log("-Got content %s/%s saving to %s\n",bodyType->GetType().c_str(),bodyType->GetSubType().c_str(),filename);
 				//Open
