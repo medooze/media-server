@@ -16,6 +16,8 @@ struct RTPIncomingSource : public RTPSource
 	DWORD	numFramesDelta;
 	DWORD	lostPackets;
 	DWORD	lostPacketsDelta;
+	DWORD   lostPacketsGapCount;
+	DWORD   lostPacketsMaxGap;
 	DWORD	dropPackets;
 	DWORD	totalPacketsSinceLastSR;
 	DWORD	totalBytesSinceLastSR;
@@ -52,7 +54,7 @@ struct RTPIncomingSource : public RTPSource
 	DWORD ExtendTimestamp(DWORD timestamp);
 	DWORD RecoverTimestamp(DWORD timestamp);
 	
-	void Update(QWORD now,DWORD seqNum,DWORD size,const LayerInfo &layerInfo);
+	void Update(QWORD now,DWORD seqNum,DWORD size,const std::vector<LayerInfo> &layerInfos);
 	
 	void Process(QWORD now, const RTCPSenderReport::shared& sr);
 	void SetLastTimestamp(QWORD now, QWORD timestamp);

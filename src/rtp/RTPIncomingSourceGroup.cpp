@@ -71,18 +71,6 @@ int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet, DWORD siz
 		//Do nothing else
 		return 0;
 	
-	//Parse dependency structure now
-	if (packet->ParseDependencyDescriptor(templateDependencyStructure,activeDecodeTargets))
-	{
-		//If it has a new dependency structure
-		if (packet->HasTemplateDependencyStructure())
-		{
-			//Store it
-			templateDependencyStructure = packet->GetTemplateDependencyStructure();
-			activeDecodeTargets = packet->GetActiveDecodeTargets();
-		}
-	}
-	
 	//Add to lost packets
 	auto lost = losts.AddPacket(packet);
 	
@@ -282,6 +270,18 @@ RTPIncomingSource* RTPIncomingSourceGroup::Process(RTPPacket::shared &packet)
 	packet->SetTimestampCycles(source->ExtendTimestamp(packet->GetTimestamp()));
 	//Set cycles back
 	packet->SetSeqCycles(source->ExtendSeqNum(packet->GetSeqNum()));
+	
+	//Parse dependency structure now
+	if (packet->ParseDependencyDescriptor(templateDependencyStructure,activeDecodeTargets))
+	{
+		//If it has a new dependency structure
+		if (packet->HasTemplateDependencyStructure())
+		{
+			//Store it
+			templateDependencyStructure = packet->GetTemplateDependencyStructure();
+			activeDecodeTargets = packet->GetActiveDecodeTargets();
+		}
+	}
 	
 	//Set clockrate
 	source->clockrate = packet->GetClockRate();

@@ -35,7 +35,7 @@ int DTLSConnection::GenerateCertificate()
 	int ret = 0;
 	BIGNUM* bne = NULL;
 	RSA* rsa_key = NULL;
-	int num_bits = 1024;
+	int num_bits = 2048;
 	X509_NAME* cert_name = NULL;
 
 	// Create a big number object.

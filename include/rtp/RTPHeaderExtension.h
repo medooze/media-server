@@ -140,7 +140,7 @@ public:
 	BitReader dependencyDescryptorReader; 
 	std::optional<::DependencyDescriptor> dependencyDescryptor;
 	
-	bool    hasAbsSentTime		= false;
+	bool	hasAbsSentTime		= false;
 	bool	hasTimeOffset		= false;
 	bool	hasAudioLevel		= false;
 	bool	hasVideoOrientation	= false;

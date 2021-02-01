@@ -25,10 +25,19 @@ void DependencyDescriptorLayerSelector::SelectSpatialLayer(BYTE id)
 	
 bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 {
+
+	//If the dependency descryptor has not been negotiated
+	if (!packet->HasDependencyDestriptor())
+		//Accept all
+		return true;
+
 	//Get dependency description
 	auto& dependencyDescriptor = packet->GetDependencyDescriptor();
 	auto& templateDependencyStructure = packet->GetTemplateDependencyStructure();
 	auto& activeDecodeTargets = packet->GetActiveDecodeTargets();
+	
+	//No request intra
+	waitingForIntra = false;
 	
 	//Check rtp packet has a frame descriptor
 	if (!dependencyDescriptor)
@@ -108,11 +117,14 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	}
 	
 	//No chain or decode target yet
+	auto topChain		 = NoChain;
+	auto topLayer		 = LayerInfo::NoLayer;
 	auto currentChain	 = NoChain;
+	auto currentLayer	 = LayerInfo::NoLayer;
 	auto currentDecodeTarget = NoDecodeTarget;
 
 	//Log
-	Debug("-DependencyDescriptorLayerSelector::Select() | frame [number=%llu,decodable=%d]\n", extFrameNum, decodable);
+	UltraDebug("-DependencyDescriptorLayerSelector::Select() | frame [number=%llu,decodable=%d,ts:%lu,mark:%d]\n", extFrameNum, decodable, packet->GetTimestamp(),packet->GetMark());
 	
 	//If we are doing content adaptation
 	if (spatialLayerId!=LayerInfo::MaxLayerId || temporalLayerId!=LayerInfo::MaxLayerId)
@@ -137,7 +149,7 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	for (auto& [decodeTarget,layerInfo] : templateDependencyStructure->decodeTargetLayerMapping)
 	{
 		//Debug
-		Debug("-DependencyDescriptorLayerSelector::Select() | Trying decode target [dt:%llu,layer:layer:S%dL%d,active:%d]\n",
+		UltraDebug("-DependencyDescriptorLayerSelector::Select() | Trying decode target [dt:%llu,layer:layer:S%dL%d,active:%d]\n",
 			decodeTarget,
 			layerInfo.spatialLayerId,
 			layerInfo.temporalLayerId,
@@ -165,17 +177,25 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 				
 				//Get chain for current target
 				auto chain = templateDependencyStructure->decodeTargetProtectedByChain[decodeTarget];
-
+				
 				//Check chain info is correct
 				if (frameDiffsChains.size()<chain)
 					//Try next
 					continue;
+				
+				//If we don't have a top layer yet
+				if (!topLayer.IsValid())
+				{
+					//Store top most layer
+					topLayer = layerInfo;
+					topChain = chain;
+				}
 
 				//Get previous frame numner in current chain
 				 auto prevFrameInCurrentChain = extFrameNum - frameDiffsChains[chain];
 				 
 				 //Log
-				 Debug("-DependencyDescriptorLayerSelector::Select() | Frame [dt:%llu,chain:%d,prev:%d]\n",decodeTarget,chain,prevFrameInCurrentChain);
+				 UltraDebug("-DependencyDescriptorLayerSelector::Select() | Frame [dt:%llu,chain:%d,prev:%d]\n",decodeTarget,chain,prevFrameInCurrentChain);
 				  
 				 //If it is not us, check if previus frame was not sent
 				 if (prevFrameInCurrentChain && 
@@ -185,6 +205,7 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 					continue;
 
 				//Got it
+				currentLayer = layerInfo;
 				currentChain = chain;
 				currentDecodeTarget = decodeTarget;
 				break;
@@ -218,33 +239,42 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 		//Ignore packet
 		return Warning("-DependencyDescriptorLayerSelector::Select() | No decode target information available [dt:%d]\n",currentDecodeTarget);
 	}
-
+	
 	//Get decode target indicattion
 	auto dti = decodeTargetIndications[currentDecodeTarget];
 
 	//Log
-	Debug("-DependencyDescriptorLayerSelector::Select() | Selected [dt:%llu,chain:%d,dti:%d]\n",currentDecodeTarget,currentChain,dti);
+	Debug("-DependencyDescriptorLayerSelector::Select() | Selected [number=%llu,t:%d,dt:%llu,chain:%d,dti:%d,top:{S%dT%d],current:{S%dT%d],frame:[S%dT%d]\n",
+		extFrameNum,
+		dependencyDescriptor->frameDependencyTemplateId,
+		currentDecodeTarget,
+		currentChain,
+		dti,
+		topLayer.spatialLayerId,
+	 	topLayer.temporalLayerId,
+		currentLayer.spatialLayerId,
+	 	currentLayer.temporalLayerId,
+		frameDependencyTemplate.spatialLayerId,
+		frameDependencyTemplate.temporalLayerId
+	);
+	
+	//If frame is not decodable
+	if (!decodable)
+	{
+		//Request iframe if chain for the top active layer is broken
+		waitingForIntra = (topLayer!=currentLayer);
+		//Ignore packet
+		return Warning("-DependencyDescriptorLayerSelector::Select() | Discarding packet, not decodable\n");
+	}
 	
 	//If frame is not present in selected decode target
 	if (dti==DecodeTargetIndication::NotPresent)
 		//Ignore packet
 		return Warning("-DependencyDescriptorLayerSelector::Select() | Discarding packet, not present\n");
-	
-	//If frame is not decodable
-	if (!decodable)
-	{
-		//Request iframe if we can't discard it
-		waitingForIntra = (dti!=DecodeTargetIndication::Discardable);
-		//Ignore packet
-		return Warning("-DependencyDescriptorLayerSelector::Select() | Discarding packet, not decodable\n");
-	}
-	
+
 	//RTP mark is set for the last frame layer of the selected spatial layer
 	mark = packet->GetMark() || (dependencyDescriptor->endOfFrame && spatialLayerId==frameDependencyTemplate.spatialLayerId);
-	
-	//Not waiting for intra
-	waitingForIntra = false;
-	
+
 	//If it is the last in current frame
 	if (dependencyDescriptor->endOfFrame)
 		//We only count full forwarded frames
@@ -260,8 +290,10 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	
 }
 
- LayerInfo DependencyDescriptorLayerSelector::GetLayerIds(const RTPPacket::shared& packet)
+std::vector<LayerInfo> DependencyDescriptorLayerSelector::GetLayerIds(const RTPPacket::shared& packet)
 {
+	std::vector<LayerInfo> infos;
+	
 	//Get dependency description
 	auto& dependencyDescriptor = packet->GetDependencyDescriptor();
 	auto& currentTemplateDependencyStructure = packet->GetTemplateDependencyStructure();
@@ -270,9 +302,32 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	if (dependencyDescriptor 
 		&& currentTemplateDependencyStructure
 		&& currentTemplateDependencyStructure->ContainsFrameDependencyTemplate(dependencyDescriptor->frameDependencyTemplateId))
-		//Get layer info from template
-		return currentTemplateDependencyStructure->GetFrameDependencyTemplate(dependencyDescriptor->frameDependencyTemplateId);
+	{
+		//Get dependencey structure from template
+		const auto& templateDependencyStructure = currentTemplateDependencyStructure->GetFrameDependencyTemplate(dependencyDescriptor->frameDependencyTemplateId);
+		//Get decode target indications
+		const auto& decodeTargetIndications = dependencyDescriptor->customDecodeTargetIndications 
+			? dependencyDescriptor->customDecodeTargetIndications.value()
+			: templateDependencyStructure.decodeTargetIndications; 
+		//Do not add duplicate layers
+		LayerInfo last;
+		//Traverse all layers
+		for (auto& [decodeTarget,layerInfo] : currentTemplateDependencyStructure->decodeTargetLayerMapping)
+		{
+			
+			//Get decode target indicattion
+			auto dti = decodeTargetIndications[decodeTarget];
+			//If frame is present in selected decode target and it is not a duplicate
+			if (dti!=DecodeTargetIndication::NotPresent && last!=layerInfo)
+			{
+				//Add layer info
+				infos.push_back(layerInfo);
+				//Update last
+				last = layerInfo;
+			}
+		}
+	}
 	
 	//Return empty layer info
-	return LayerInfo();
+	return infos;
 }

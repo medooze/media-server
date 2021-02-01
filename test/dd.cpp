@@ -110,6 +110,7 @@ public:
 			{2,2}
 		});
 		dd.templateDependencyStructure->decodeTargetProtectedByChain = {0,0};
+		dd.activeDecodeTargets = {1,1};
 		dd.templateDependencyStructure->CalculateLayerMapping();
 		
 		assert(dd.Serialize(writter));

@@ -24,7 +24,7 @@ public:
 	const H264SeqParameterSet&	GetSeqParameterSet()		const { return sps; }
 	const H264PictureParameterSet&	GetPictureParameterSet()	const { return pps; }
 	
-	static LayerInfo GetLayerIds(const RTPPacket::shared& packet);
+	static std::vector<LayerInfo> GetLayerIds(const RTPPacket::shared& packet);
 private:
 	bool waitingForIntra;
 	H264SeqParameterSet sps;

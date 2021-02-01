@@ -32,7 +32,7 @@ public:
 	VideoCodec::Type GetCodec()	const override { return VideoCodec::VP9;	}
 	bool IsWaitingForIntra()	const override { return false;			}
 	
-	static LayerInfo GetLayerIds(const RTPPacket::shared& packet);
+	static std::vector<LayerInfo> GetLayerIds(const RTPPacket::shared& packet);
 private:
 	bool waitingForIntra;
 	BYTE temporalLayerId;

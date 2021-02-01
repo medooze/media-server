@@ -33,7 +33,8 @@ private:
 
 VideoLayerSelector* VideoLayerSelector::Create(VideoCodec::Type codec)
 {
-	
+	Debug("VideoLayerSelector::Create() [codec:%s]\n",VideoCodec::GetNameFor(codec));
+
 	switch(codec)
 	{
 		case VideoCodec::VP9:
@@ -49,7 +50,7 @@ VideoLayerSelector* VideoLayerSelector::Create(VideoCodec::Type codec)
 	}
 }
 
- LayerInfo VideoLayerSelector::GetLayerIds(const RTPPacket::shared& packet)
+ std::vector<LayerInfo> VideoLayerSelector::GetLayerIds(const RTPPacket::shared& packet)
 {
 	switch(packet->GetCodec())
 	{
@@ -62,6 +63,6 @@ VideoLayerSelector* VideoLayerSelector::Create(VideoCodec::Type codec)
 		case VideoCodec::AV1:
 			return DependencyDescriptorLayerSelector::GetLayerIds(packet);
 		default:
-			return LayerInfo();
+			return {};
 	}
 }

@@ -637,8 +637,10 @@ MP4Recorder::MP4Recorder(Listener* listener) :
 
 MP4Recorder::~MP4Recorder()
 {
-        //Close just in case
-        Close();
+	//If not closed
+        if (mp4!=MP4_INVALID_FILE_HANDLE)
+		//Close sync
+		Close(false);
         
 	//For each audio track
 	for (Tracks::iterator it = audioTracks.begin(); it!=audioTracks.end(); ++it)
@@ -742,22 +744,17 @@ bool MP4Recorder::Close()
 
 bool MP4Recorder::Close(bool async)
 {
-	//If not started
-	if (mp4==MP4_INVALID_FILE_HANDLE)
-		return true;
-		
 	Log("-MP4Recorder::Close()\n");
 	
         //Stop always
         auto res = loop.Async([=](...){
-		//If not started
-		if (mp4==MP4_INVALID_FILE_HANDLE)
-			return;
-		
 		Debug(">MP4Recorder::Close() | Async\n");
 		
 		//Not recording anymore
 		recording = false;
+		
+		//Clear time buffer
+		timeShiftBuffer.clear();
 		
 		//Check mp4 file is opened
 		//For each audio track
@@ -773,8 +770,10 @@ bool MP4Recorder::Close(bool async)
 			//Close it
 			it->second->Close();
 		
-		// Close file
-		MP4Close(mp4);
+		//If started
+		if (mp4!=MP4_INVALID_FILE_HANDLE)
+			// Close file
+			MP4Close(mp4);
 
 		//Empty file
 		mp4 = MP4_INVALID_FILE_HANDLE;
@@ -803,6 +802,7 @@ void MP4Recorder::onMediaFrame(const MediaFrame &frame)
 
 void MP4Recorder::onMediaFrame(DWORD ssrc, const MediaFrame &frame)
 {
+	
 	//run async	
 	loop.Async([=,cloned = frame.Clone()](...){
 		//Check we are recording

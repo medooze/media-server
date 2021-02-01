@@ -21,11 +21,11 @@ public:
 	BYTE GetTemporalLayer()		const override { return temporalLayerId;	}
 	BYTE GetSpatialLayer()		const override { return spatialLayerId;		}
 	VideoCodec::Type GetCodec()	const override { return codec;			}
-	bool IsWaitingForIntra()	const override { return false;			}
+	bool IsWaitingForIntra()	const override { return waitingForIntra;	}
 	
 	std::optional<std::vector<bool>> GetForwardedDecodeTargets() const { return forwardedDecodeTargets;	}
 	
-	static LayerInfo GetLayerIds(const RTPPacket::shared& packet);
+	static std::vector<LayerInfo> GetLayerIds(const RTPPacket::shared& packet);
 private:
 	WrapExtender<uint16_t,uint64_t> frameNumberExtender;
 	uint64_t currentFrameNumber = std::numeric_limits<uint64_t>::max();
