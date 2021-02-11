@@ -23,7 +23,7 @@
 struct LayerSource : LayerInfo
 {
 	DWORD		numPackets = 0;
-	DWORD		totalBytes = 0;
+	QWORD		totalBytes = 0;
 	DWORD		bitrate;
 	Acumulator	acumulator;
 	
@@ -70,8 +70,8 @@ struct RTPSource : public Mutex
 	DWORD	numPackets;
 	DWORD   numPacketsDelta;
 	DWORD	numRTCPPackets;
-	DWORD	totalBytes;
-	DWORD	totalRTCPBytes;
+	QWORD	totalBytes;
+	QWORD	totalRTCPBytes;
 	DWORD   bitrate;
 	DWORD	clockrate;
 	Acumulator acumulator;
