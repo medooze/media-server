@@ -107,13 +107,14 @@ public:
 	bool  ParseDependencyDescriptor(const std::optional<TemplateDependencyStructure>& templateDependencyStructure, std::optional<std::vector<bool>>& activeDecodeTargets);
 	
 	//Disable extensions
-	void  DisableAbsSentTime()	{ extension.hasAbsSentTime     = false; CheckExtensionMark(); }
-	void  DisableTimeOffset()	{ extension.hasTimeOffset      = false; CheckExtensionMark(); }
-	void  DisableTransportSeqNum()	{ extension.hasTransportWideCC = false; CheckExtensionMark(); }
-	void  DisableFrameMarkings()	{ extension.hasFrameMarking    = false; CheckExtensionMark(); }
-	void  DisableRId()		{ extension.hasRId	       = false; CheckExtensionMark(); }
-	void  DisableRepairedId()	{ extension.hasRepairedId      = false; CheckExtensionMark(); }
-	void  DisableMediaStreamId()	{ extension.hasMediaStreamId   = false; CheckExtensionMark(); }
+	void  DisableAbsSentTime()		{ extension.hasAbsSentTime		= false; CheckExtensionMark(); }
+	void  DisableTimeOffset()		{ extension.hasTimeOffset		= false; CheckExtensionMark(); }
+	void  DisableTransportSeqNum()		{ extension.hasTransportWideCC		= false; CheckExtensionMark(); }
+	void  DisableFrameMarkings()		{ extension.hasFrameMarking		= false; CheckExtensionMark(); }
+	void  DisableRId()			{ extension.hasRId			= false; CheckExtensionMark(); }
+	void  DisableRepairedId()		{ extension.hasRepairedId		= false; CheckExtensionMark(); }
+	void  DisableMediaStreamId()		{ extension.hasMediaStreamId		= false; CheckExtensionMark(); }
+	void  DisableDependencyDestriptor()	{ extension.hasDependencyDescriptor	= false; CheckExtensionMark(); }
 	
 
 	QWORD GetAbsSendTime()			const	{ return extension.absSentTime;			}
