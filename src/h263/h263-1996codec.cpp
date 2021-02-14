@@ -222,12 +222,11 @@ int H263Decoder1996::Decode(const BYTE *buffer,DWORD size)
 * H263Encoder
 *	Constructor de la clase
 ************************/
-H263Encoder1996::H263Encoder1996(const Properties& properties)
+H263Encoder1996::H263Encoder1996(const Properties& properties) : frame(VideoCodec::H263_1996)
 {
 	// Set default values
-	frame	= NULL;
 	codec   = NULL;
-	type    = VideoCodec::H263_1998;
+	type    = VideoCodec::H263_1996;
 	format  = 0;
 
 	// Init framerate
@@ -246,6 +245,10 @@ H263Encoder1996::H263Encoder1996(const Properties& properties)
 	//Alocamos el conto y el picture
 	ctx = avcodec_alloc_context3(codec);
 	picture = av_frame_alloc();
+
+	//Disable sharing buffer on clone
+	frame.DisableSharedBuffer();
+
 }
 
 /***********************
@@ -254,9 +257,6 @@ H263Encoder1996::H263Encoder1996(const Properties& properties)
 ************************/
 H263Encoder1996::~H263Encoder1996()
 {
-	if (frame);
-		delete(frame);
-
 	if (ctx)
 	{
 		avcodec_close(ctx);
@@ -339,24 +339,6 @@ int H263Encoder1996::OpenCodec()
 	if (opened)
 		return Error("Already opened\n");
 
-	//If already got a buffer
-	if (frame)
-		//Free it
-		delete(frame);
-
-	//Set new buffer size
-	DWORD bufSize = 1.5*bitrate/fps;
-
-	//Check size
-	if (bufSize<AV_INPUT_BUFFER_MIN_SIZE)
-		//Set minimun
-		bufSize = AV_INPUT_BUFFER_MIN_SIZE;
-
-	//Y alocamos el buffer
-	frame = new VideoFrame(type,bufSize);
-	//Disable sharing buffer on clone
-	frame->DisableSharedBufer();
-
 	// Bitrate,fps
 	ctx->bit_rate 		= bitrate;
 	ctx->bit_rate_tolerance = bitrate/fps+1;
@@ -406,32 +388,32 @@ VideoFrame* H263Encoder1996::EncodeFrame(BYTE *in,DWORD len)
 	picture->data[2] = in+numPixels*5/4;
 
 	//Clean all previous packets
-	frame->ClearRTPPacketizationInfo();
+	frame.ClearRTPPacketizationInfo();
 
 	//Codificamos
-	DWORD bufLen = avcodec_encode_video(ctx,frame->GetData(),frame->GetMaxMediaLength(),picture);
+	DWORD bufLen = avcodec_encode_video(ctx,frame.GetData(),frame.GetMaxMediaLength(),picture);
 
 	//Set length
-	frame->SetLength(bufLen);
+	frame.SetLength(bufLen);
 
 	//Set width and height
-	frame->SetWidth(ctx->width);
-	frame->SetHeight(ctx->height);
+	frame.SetWidth(ctx->width);
+	frame.SetHeight(ctx->height);
 
 	//Is intra
-	frame->SetIntra(ctx->coded_frame->key_frame);
+	frame.SetIntra(ctx->coded_frame->key_frame);
 
 	//Unset fpu
 	picture->key_frame = 0;
 	picture->pict_type = AV_PICTURE_TYPE_NONE;
 
 	//Paquetize
-	paquetizer.PaquetizeFrame(frame);
+	paquetizer.PaquetizeFrame(&frame);
 	
 	//From the first
 	num = 0;
 	
-	return frame;
+	return &frame;
 }
 
 /***********************

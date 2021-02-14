@@ -15,10 +15,9 @@
 * H263Encoder
 *	Constructor de la clase
 ************************/
-H263Encoder::H263Encoder(const Properties& properties)
+H263Encoder::H263Encoder(const Properties& properties) : frame(VideoCodec::H263_1998)
 {
 	// Set default values
-	frame	= NULL;
 	codec   = NULL;
 	type    = VideoCodec::H263_1998;
 	format  = 0;
@@ -39,6 +38,10 @@ H263Encoder::H263Encoder(const Properties& properties)
 	//Alocamos el conto y el picture
 	ctx = avcodec_alloc_context3(codec);
 	picture = av_frame_alloc();
+
+	//Disable sharing buffer on clone
+	frame.DisableSharedBuffer();
+
 }
 
 /***********************
@@ -47,9 +50,6 @@ H263Encoder::H263Encoder(const Properties& properties)
 ************************/
 H263Encoder::~H263Encoder()
 {
-	if (frame);
-		delete(frame);
-
 	if (ctx)
 	{
 		avcodec_close(ctx);
@@ -121,24 +121,6 @@ int H263Encoder::OpenCodec()
 	if (opened)
 		return Error("Already opened\n");
 
-	//If already got a buffer
-	if (frame)
-		//Free it
-		delete(frame);
-
-	//Set new buffer size
-	DWORD bufSize = 1.5*bitrate/fps;
-
-	//Check size
-	if (bufSize<AV_INPUT_BUFFER_MIN_SIZE)
-		//Set minimun
-		bufSize = AV_INPUT_BUFFER_MIN_SIZE;
-
-	//Y alocamos el buffer
-	frame = new VideoFrame(type,bufSize);
-	//Disable sharing buffer on clone
-	frame->DisableSharedBufer();
-
 	// Bitrate,fps
 	ctx->bit_rate 		= bitrate;
 	ctx->bit_rate_tolerance = bitrate/fps+1;
@@ -185,13 +167,13 @@ VideoFrame* H263Encoder::EncodeFrame(BYTE *in,DWORD len)
 	picture->data[2] = in+numPixels*5/4;
 
 	//Codificamos
-	int ret = avcodec_encode_video(ctx,frame->GetData(),frame->GetMaxMediaLength(),picture);
+	int ret = avcodec_encode_video(ctx,frame.GetData(),frame.GetMaxMediaLength(),picture);
 
 	//Check
 	if (ret<0)
 	{
 		//Error
-		Error("%d\n",frame->GetMaxMediaLength());
+		Error("%d\n",frame.GetMaxMediaLength());
 		//Exit
 		return NULL;
 	}
@@ -200,14 +182,14 @@ VideoFrame* H263Encoder::EncodeFrame(BYTE *in,DWORD len)
 	DWORD bufLen = ret;
 
 	//Set length
-	frame->SetLength(bufLen);
+	frame.SetLength(bufLen);
 
 	//Set width and height
-	frame->SetWidth(ctx->width);
-	frame->SetHeight(ctx->height);
+	frame.SetWidth(ctx->width);
+	frame.SetHeight(ctx->height);
 
 	//Is intra
-	frame->SetIntra(ctx->coded_frame->key_frame);
+	frame.SetIntra(ctx->coded_frame->key_frame);
 
 	//Unset fpu
 	picture->key_frame = 0;
@@ -223,7 +205,7 @@ VideoFrame* H263Encoder::EncodeFrame(BYTE *in,DWORD len)
 	prefix[1] = 0x00;
 	
 	//Clean all previous packets
-	frame->ClearRTPPacketizationInfo();
+	frame.ClearRTPPacketizationInfo();
 
 	//Copy all
 	while(ini<bufLen)
@@ -237,7 +219,7 @@ VideoFrame* H263Encoder::EncodeFrame(BYTE *in,DWORD len)
 			len=bufLen-ini;
 		
 		//Add rtp packet
-		frame->AddRtpPacket(ini,len,prefix,2);
+		frame.AddRtpPacket(ini,len,prefix,2);
 
 		//If it is first
 		if (ini==2)
@@ -251,7 +233,7 @@ VideoFrame* H263Encoder::EncodeFrame(BYTE *in,DWORD len)
 		ini += len;
 	}
 	
-	return frame;
+	return &frame;
 }
 
 /***********************

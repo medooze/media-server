@@ -30,7 +30,7 @@ private:
 	int		format;
 	int		opened;
 	int		intraPeriod;
-	VideoFrame	*frame;
+	VideoFrame	frame;
 };
 
 class H263Decoder : public VideoDecoder
@@ -90,7 +90,7 @@ private:
 	int		format;
 	int		opened;
 	int		intraPeriod;
-	VideoFrame	*frame;
+	VideoFrame	frame;
 	WORD		num;
 	H263RFC2190Paquetizer paquetizer;
 };

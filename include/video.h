@@ -17,6 +17,16 @@ struct LayerFrame
 class VideoFrame : public MediaFrame
 {
 public:
+	VideoFrame(VideoCodec::Type codec) : MediaFrame(MediaFrame::Video)
+	{
+		//Store codec
+		this->codec = codec;
+		//Init values
+		isIntra = 0;
+		width = 0;
+		height = 0;
+	}
+
 	VideoFrame(VideoCodec::Type codec,DWORD size) : MediaFrame(MediaFrame::Video,size)
 	{
 		//Store codec

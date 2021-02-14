@@ -17,12 +17,10 @@
 * FLV1Encoder
 *	Constructor de la clase
 ************************/
-FLV1Encoder::FLV1Encoder(const Properties& properties)
+FLV1Encoder::FLV1Encoder(const Properties& properties) : frame(VideoCodec::SORENSON)
 {
 	// Set default values
-	frame   = NULL;
 	codec   = NULL;
-	bufSize = 0;
 	type    = VideoCodec::SORENSON;
 	qMin	= 1;
 	qMax	= 31;
@@ -44,6 +42,10 @@ FLV1Encoder::FLV1Encoder(const Properties& properties)
 	//Alocamos el conto y el picture
 	ctx = avcodec_alloc_context3(codec);
 	picture = av_frame_alloc();
+
+	//Disable sharing buffer on clone
+	frame.DisableSharedBuffer();
+
 }
 
 /***********************
@@ -52,9 +54,6 @@ FLV1Encoder::FLV1Encoder(const Properties& properties)
 ************************/
 FLV1Encoder::~FLV1Encoder()
 {
-	if (frame);
-		delete(frame);
-
 	if (ctx)
 	{
 		avcodec_close(ctx);
@@ -126,24 +125,6 @@ int FLV1Encoder::OpenCodec()
 	if (opened)
 		return Error("Already opened\n");
 
-	//If already got a buffer
-	if (frame)
-		//Free it
-		delete(frame);
-
-	//Set new buffer size
-	bufSize = (int)bitrate/8;
-
-	//Check size
-	if (bufSize<65535)
-		//Set minimun
-		bufSize = 65535;
-
-	//Y alocamos el buffer
-	frame = new VideoFrame(type,bufSize);
-	//Disable sharing buffer on clone
-	frame->DisableSharedBufer();
-
 	// Bitrate,fps
 	ctx->bit_rate 		= bitrate;
 	ctx->bit_rate_tolerance = (int)bitrate/fps+1;
@@ -206,26 +187,23 @@ VideoFrame* FLV1Encoder::EncodeFrame(BYTE *in,DWORD len)
 	picture->data[2] = in+numPixels*5/4;
 
 	//Codificamos
-	bufLen=avcodec_encode_video(ctx,frame->GetData(),frame->GetMaxMediaLength(),picture);
+	int framelen = avcodec_encode_video(ctx,frame.GetData(),frame.GetMaxMediaLength(),picture);
 
 	//Set length
-	frame->SetLength(bufLen);
+	frame.SetLength(framelen);
 
 	//Set width and height
-	frame->SetWidth(ctx->width);
-	frame->SetHeight(ctx->height);
+	frame.SetWidth(ctx->width);
+	frame.SetHeight(ctx->height);
 
 	//Is intra
-	frame->SetIntra(ctx->coded_frame->key_frame);
+	frame.SetIntra(ctx->coded_frame->key_frame);
 
 	//Unset fpu
 	picture->key_frame = 0;
 	picture->pict_type = AV_PICTURE_TYPE_NONE;
 
-	//Y ponemos a cero el comienzo
-	bufIni=0;
-
-	return frame;
+	return &frame;
 }
 
 /***********************

@@ -29,10 +29,7 @@ private:
 	int		qMin;
 	int		qMax;
 	int		intraPeriod;
-	VideoFrame* 	frame;
-	DWORD		bufLen;
-	DWORD		bufIni;
-	DWORD		bufSize;
+	VideoFrame 	frame;
 };
 
 class FLV1Decoder : public VideoDecoder

@@ -27,7 +27,7 @@ private:
 	x264_nal_t*	nals;
 	x264_picture_t  pic;
 	x264_picture_t 	pic_out;
-	VideoFrame*	frame;
+	VideoFrame	frame;
 	int curNal;
 	int numNals;
 	int width;

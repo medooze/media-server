@@ -27,7 +27,7 @@ private:
 	vpx_codec_ctx_t		encoder;
 	vpx_codec_enc_cfg_t	config;
 	vpx_image_t*		pic;
-	VideoFrame*		frame;
+	VideoFrame		frame;
 	bool forceKeyFrame;
 	int width;
 	int height;

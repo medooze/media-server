@@ -106,6 +106,16 @@ public:
 		return "Unknown";
 	}
 
+	MediaFrame(Type type)
+	{
+		//Set media type
+		this->type = type;
+		//Create new owned buffer
+		buffer = std::make_shared<Buffer>();
+		//Owned buffer
+		ownedBuffer = true;
+	}
+
 	MediaFrame(Type type,DWORD size)
 	{
 		//Set media type
@@ -183,7 +193,7 @@ public:
 	BYTE* GetData()				{ AdquireBuffer(); return buffer->GetData();	}
 	void SetLength(DWORD length)		{ AdquireBuffer(); buffer->SetSize(length);	}
 	
-	void DisableSharedBufer()		{ disableSharedBuffer = true;			}
+	void DisableSharedBuffer()		{ disableSharedBuffer = true;			}
 	
 	void ResetData(DWORD size = 0) 
 	{

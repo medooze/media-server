@@ -29,12 +29,11 @@ static void X264_log(void *p, int level, const char *fmt, va_list args)
 * H264Encoder
 *	Constructor de la clase
 ***********************/
-H264Encoder::H264Encoder(const Properties& properties)
+H264Encoder::H264Encoder(const Properties& properties) : frame(VideoCodec::H264)
 {
 	// Set default values
 	type    = VideoCodec::H264;
 	format  = 0;
-	frame	= NULL;
 	pts	= 0;
 
 	//No estamos abiertos
@@ -57,6 +56,9 @@ H264Encoder::H264Encoder(const Properties& properties)
 	//Check mode
 	streaming = properties.HasProperty("streaming");
 
+	//Disable sharing buffer on clone
+	frame.DisableSharedBuffer();
+
 	//Reste values
 	enc = NULL;
 }
@@ -71,10 +73,6 @@ H264Encoder::~H264Encoder()
 	if (enc)
 		//Close it
 		x264_encoder_close(enc);
-	//If we have created a frame
-	if (frame)
-		//Delete it
-		delete(frame);
 }
 
 /**********************
@@ -287,30 +285,22 @@ VideoFrame* H264Encoder::EncodeFrame(BYTE *buffer,DWORD bufferSize)
 		Error("Error encoding frame [len:%d]\n",len);
 		return NULL;
 	}
-	//Check size
-	if (!frame)
-	{
-		//Create new frame
-		frame = new VideoFrame(type,len);
-		//Disable sharing buffer on clone
-		frame->DisableSharedBufer();
-	}
 
 	//Set the media
-	frame->SetMedia(nals[0].p_payload,len);
+	frame.SetMedia(nals[0].p_payload,len);
 
 	//Set width and height
-	frame->SetWidth(width);
-	frame->SetHeight(height);
+	frame.SetWidth(width);
+	frame.SetHeight(height);
 
 	//Set intra
-	frame->SetIntra(pic_out.b_keyframe);
+	frame.SetIntra(pic_out.b_keyframe);
 
 	//Unset type
 	pic.i_type = X264_TYPE_AUTO;
 
 	//Emtpy rtp info
-	frame->ClearRTPPacketizationInfo();
+	frame.ClearRTPPacketizationInfo();
 	
 	//If intra
 	if (pic_out.b_keyframe)
@@ -359,7 +349,7 @@ VideoFrame* H264Encoder::EncodeFrame(BYTE *buffer,DWORD bufferSize)
 				break;
 		}
 		//Add rtp packet
-		frame->AddRtpPacket(pos,nalUnitSize,NULL,0);
+		frame.AddRtpPacket(pos,nalUnitSize,NULL,0);
 	}
 
 	//Set first nal
@@ -369,12 +359,12 @@ VideoFrame* H264Encoder::EncodeFrame(BYTE *buffer,DWORD bufferSize)
 	if (pic_out.b_keyframe)
 	{
 		//Set config size
-		frame->AllocateCodecConfig(config.GetSize());
+		frame.AllocateCodecConfig(config.GetSize());
 		//Serialize
-		config.Serialize(frame->GetCodecConfigData(),frame->GetCodecConfigSize());
+		config.Serialize(frame.GetCodecConfigData(),frame.GetCodecConfigSize());
 	}
 	
-	return frame;
+	return &frame;
 }
 
 /**********************

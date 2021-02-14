@@ -25,11 +25,10 @@
 #endif
 
 
-VP8Encoder::VP8Encoder(const Properties& properties)
+VP8Encoder::VP8Encoder(const Properties& properties) : frame(VideoCodec::VP8)
 {
 	// Set default values
 	type    = VideoCodec::VP8;
-	frame	= NULL;
 	pts	= 0;
 	num	= 0;
 	pic	= NULL;
@@ -44,6 +43,16 @@ VP8Encoder::VP8Encoder(const Properties& properties)
 	fps = 0;
 	intraPeriod = 0;
 	threads = properties.GetProperty("vp8.threads",1);
+
+	//Disable sharing buffer on clone
+	frame.DisableSharedBuffer();
+
+	//Add default codec configuration
+	VP8CodecConfig vp8Config;
+	//Allocate config
+	frame.AllocateCodecConfig(vp8Config.GetSize());
+	//Add codec config
+	vp8Config.Serialize(frame.GetCodecConfigData(), frame.GetCodecConfigSize());
 }
 
 VP8Encoder::~VP8Encoder()
@@ -51,8 +60,6 @@ VP8Encoder::~VP8Encoder()
 	vpx_codec_destroy(&encoder);
 	if (pic)
 		vpx_img_free(pic);
-	if (frame)
-		delete frame;
 }
 
 /**********************
@@ -278,41 +285,27 @@ VideoFrame* VP8Encoder::EncodeFrame(BYTE *buffer,DWORD bufferSize)
 	int partitionIndex = 0;
 	const vpx_codec_cx_pkt_t *pkt = NULL;
 
-	//Check size
-	if (!frame)
-	{
-		VP8CodecConfig config;
-		//Create new frame
-		frame = new VideoFrame(type,262143);
-		//Disable sharing buffer on clone
-		frame->DisableSharedBufer();
-		//Allocate config
-		frame->AllocateCodecConfig(config.GetSize());
-		//Add codec config
-		config.Serialize(frame->GetCodecConfigData(),frame->GetCodecConfigSize());
-	}
-
 	//Set width and height
-	frame->SetWidth(width);
-	frame->SetHeight(height);
+	frame.SetWidth(width);
+	frame.SetHeight(height);
 	
 	//Emtpy rtp info
-	frame->ClearRTPPacketizationInfo();
+	frame.ClearRTPPacketizationInfo();
 
 	//Emtpy
-	frame->SetLength(0);
+	frame.SetLength(0);
 
 	//For each packet
 	while ((pkt = vpx_codec_get_cx_data(&encoder, &iter)) != NULL)
 	{
 		//Set intra
-		frame->SetIntra(pkt->data.frame.flags & VPX_FRAME_IS_KEY);
+		frame.SetIntra(pkt->data.frame.flags & VPX_FRAME_IS_KEY);
 	
 		if (pkt->kind==VPX_CODEC_CX_FRAME_PKT)
 		{
 			VP8PayloadDescriptor desc;
 			//Append data to the frame
-			DWORD pos = frame->AppendMedia((BYTE*)pkt->data.frame.buf,pkt->data.frame.sz);
+			DWORD pos = frame.AppendMedia((BYTE*)pkt->data.frame.buf,pkt->data.frame.sz);
 			//Set data
 			desc.extendedControlBitsPresent = 0;
 			desc.nonReferencePicture = pkt->data.frame.flags & VPX_FRAME_IS_DROPPABLE;
@@ -334,7 +327,7 @@ VideoFrame* VP8Encoder::EncodeFrame(BYTE *buffer,DWORD bufferSize)
 					//Reduce
 					len = pkt->data.frame.sz-cur;
 				//Append hint
-				frame->AddRtpPacket(pos+cur,len,aux,auxLen);
+				frame.AddRtpPacket(pos+cur,len,aux,auxLen);
 				//Increase current
 				cur+=len;
 				//Not first in partition
@@ -345,5 +338,5 @@ VideoFrame* VP8Encoder::EncodeFrame(BYTE *buffer,DWORD bufferSize)
 		}
 	}
 
-	return frame;
+	return &frame;
 }

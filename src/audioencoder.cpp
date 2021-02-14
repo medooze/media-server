@@ -179,6 +179,9 @@ int AudioEncoderWorker::Encode()
 	//Create audio frame
 	AudioFrame frame(audioCodec);
 	
+	//Disable shared buffer on clone
+	frame.DisableSharedBuffer();
+
 	//Set rate
 	frame.SetClockRate(rate);
 
