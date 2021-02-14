@@ -11,6 +11,9 @@ class MediaFrameListenerBridge :
 	public RTPIncomingMediaStream
 {
 public:
+	static constexpr uint32_t NoSeqNum = std::numeric_limits<uint32_t>::max();
+	static constexpr uint64_t NoTimestamp = std::numeric_limits<uint64_t>::max();
+public:
 	MediaFrameListenerBridge(DWORD ssrc);
 	virtual ~MediaFrameListenerBridge();
 	
@@ -38,7 +41,7 @@ public:
 	std::set<RTPIncomingMediaStream::Listener*> listeners;
         std::set<MediaFrame::Listener*> mediaFrameListenerss;
 	volatile bool reset	= false;
-	QWORD firstTimestamp	= 0;
+	QWORD firstTimestamp	= NoTimestamp;
 	QWORD baseTimestamp	= 0;
 	QWORD lastTimestamp	= 0;
 	QWORD lastTime		= 0;

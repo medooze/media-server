@@ -57,7 +57,7 @@ void MediaFrameListenerBridge::onMediaFrame(const MediaFrame& frame)
 		if (reset)
 		{
 			//Reset first paquet seq num and timestamp
-			firstTimestamp = 0;
+			firstTimestamp = NoTimestamp;
 			//Store the last send ones
 			baseTimestamp = lastTimestamp;
 			//Reseted
@@ -127,7 +127,7 @@ void MediaFrameListenerBridge::onMediaFrame(const MediaFrame& frame)
 		bitrate = acumulator.GetInstant()*8;
 
 		//Check if it the first received packet
-		if (!firstTimestamp)
+		if (firstTimestamp==NoTimestamp)
 		{
 			//If we have a time offest from last sent packet
 			if (lastTime)

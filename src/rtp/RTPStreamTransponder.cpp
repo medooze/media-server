@@ -143,8 +143,8 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 		lastCompleted = true;
 		source = 0;
 		//Reset first paquet seq num and timestamp
-		firstExtSeqNum = 0;
-		firstTimestamp = 0;
+		firstExtSeqNum = NoSeqNum;
+		firstTimestamp = NoTimestamp;
 		//Store the last send ones
 		baseExtSeqNum = lastExtSeqNum+1;
 		baseTimestamp = lastTimestamp;
@@ -167,7 +167,7 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 	DWORD extSeqNum = packet->GetExtSeqNum();
 	
 	//Check if it the first received packet
-	if (!firstExtSeqNum)
+	if (firstExtSeqNum==NoSeqNum || firstTimestamp==NoTimestamp)
 	{
 		//If we have a time offest from last sent packet
 		if (lastTime)
@@ -181,16 +181,12 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 			
 			//convert it to rtp time and add to the last sent timestamp
 			baseTimestamp = lastTimestamp + diff + 1;
-		} else {
-			//Ini from 0 (We could random, but who cares, this way it is easier to debug)
-			baseTimestamp = 0;
 		}
-		//Store seq number
-		firstExtSeqNum = extSeqNum;
-		//Store the last send ones as base for new stream
-		baseExtSeqNum = lastExtSeqNum+1;
+
 		//Reset drop counter
 		dropped = 0;
+		//Store seq number
+		firstExtSeqNum = extSeqNum;
 		//Get first timestamp
 		firstTimestamp = packet->GetExtTimestamp();
 		

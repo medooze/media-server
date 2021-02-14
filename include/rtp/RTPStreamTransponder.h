@@ -22,6 +22,9 @@ class RTPStreamTransponder :
 	public RTPOutgoingSourceGroup::Listener
 {
 public:
+	static constexpr uint32_t NoSeqNum = std::numeric_limits<uint32_t>::max();
+	static constexpr uint64_t NoTimestamp = std::numeric_limits<uint64_t>::max();
+public:
 	RTPStreamTransponder(RTPOutgoingSourceGroup* outgoing,RTPSender* sender);
 	virtual ~RTPStreamTransponder();
 	
@@ -52,18 +55,18 @@ private:
 	
 	volatile bool reset	= false;
 	volatile bool muted	= false;
-	DWORD firstExtSeqNum	= 0;  //First seq num of incoming stream
-	DWORD baseExtSeqNum	= 0;  //Base seq num of outgoing stream
-	DWORD lastExtSeqNum	= 0;  //Last seq num of sent packet
-	QWORD firstTimestamp	= 0;  //First rtp timstamp of incoming stream
-	QWORD baseTimestamp	= 0;  //Base rtp timestamp of ougogoing stream
-	QWORD lastTimestamp	= 0;  //Last rtp timestamp of outgoing stream
-	QWORD lastTime		= 0;  //Last sent time
-	bool  lastCompleted	= true; //Last packet enqueued had the M bit
-	DWORD dropped		= 0;  //Num of empty packets dropped
-	DWORD added		= 0;
-	DWORD source		= 0;  //SSRC of the incoming rtp
-	DWORD ssrc		= 0;  //SSRC to rewrite to
+	DWORD firstExtSeqNum	= NoSeqNum;	//First seq num of incoming stream
+	DWORD baseExtSeqNum	= 0;		//Base seq num of outgoing stream
+	DWORD lastExtSeqNum	= NoSeqNum;	//Last seq num of sent packet
+	QWORD firstTimestamp	= NoTimestamp;  //First rtp timstamp of incoming stream
+	QWORD baseTimestamp	= 0;		//Base rtp timestamp of ougogoing stream
+	QWORD lastTimestamp	= NoTimestamp;  //Last rtp timestamp of outgoing stream
+	QWORD lastTime		= 0;		//Last sent time
+	bool  lastCompleted	= true;		//Last packet enqueued had the M bit
+	DWORD dropped		= 0;		//Num of empty packets dropped
+	DWORD added		= 0;		//Number of added pacekts (like inserting h264 sps/pps)
+	DWORD source		= 0;		//SSRC of the incoming rtp
+	DWORD ssrc		= 0;		//SSRC to rewrite to
 	MediaFrame::Type media;
 	BYTE codec		= 0;
 	BYTE type		= 0;
