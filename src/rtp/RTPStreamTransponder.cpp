@@ -356,7 +356,7 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 				//Override mak
 				cloned->OverrideActiveDecodeTargets(forwaredDecodeTargets);
 			//Move it
-			return std::move(cloned);
+			return cloned;
 		});
 }
 
