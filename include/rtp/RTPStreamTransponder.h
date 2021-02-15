@@ -57,10 +57,10 @@ private:
 	volatile bool muted	= false;
 	DWORD firstExtSeqNum	= NoSeqNum;	//First seq num of incoming stream
 	DWORD baseExtSeqNum	= 0;		//Base seq num of outgoing stream
-	DWORD lastExtSeqNum	= NoSeqNum;	//Last seq num of sent packet
+	DWORD lastExtSeqNum	= 0;		//Last seq num of sent packet
 	QWORD firstTimestamp	= NoTimestamp;  //First rtp timstamp of incoming stream
 	QWORD baseTimestamp	= 0;		//Base rtp timestamp of ougogoing stream
-	QWORD lastTimestamp	= NoTimestamp;  //Last rtp timestamp of outgoing stream
+	QWORD lastTimestamp	= 0;		//Last rtp timestamp of outgoing stream
 	QWORD lastTime		= 0;		//Last sent time
 	bool  lastCompleted	= true;		//Last packet enqueued had the M bit
 	DWORD dropped		= 0;		//Num of empty packets dropped
