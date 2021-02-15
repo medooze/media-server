@@ -80,15 +80,17 @@ void  AudioPipe::CancelRecBuffer()
 }
 
 
-int AudioPipe::StartPlaying(DWORD rate)
+int AudioPipe::StartPlaying(DWORD rate, DWORD numChannels)
 {
-	Log("-AudioPipe start playing [rate:%d]\n",rate);
+	Log("-AudioPipe start playing [rate:%d,channels:%d]\n", rate, numChannels);
 
 	//Lock
 	pthread_mutex_lock(&mutex);
 
 	//Store play rate
 	playRate = rate;
+	//And number of channels
+	this->numChannels = numChannels;
 
 	//If we already had an open transcoder
 	if (transrater.IsOpen())
@@ -96,9 +98,9 @@ int AudioPipe::StartPlaying(DWORD rate)
 		transrater.Close();
 
 	//if rates are different
-	if (playRate!=nativeRate)
+	if (playRate != nativeRate)
 		//Open it
-		transrater.Open(playRate,nativeRate);
+		transrater.Open(playRate, nativeRate, numChannels);
 	
 	//We are playing
 	playing = true;
@@ -132,15 +134,15 @@ int AudioPipe::StopPlaying()
 	return true;
 }
 
-int AudioPipe::PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime, BYTE vadLevel)
+int AudioPipe::PlayBuffer(SWORD* buffer, DWORD size, DWORD frameTime, BYTE vadLevel)
 {
 	//Debug("-push %d cache %d\n",size,fifoBuffer.length());
-	
+
 	//Don't do anything if nobody is listening
 	if (!recording)
 		//Ok
 		return size;
-	
+
 	SWORD resampled[4096];
 	DWORD resampledSize = 4096;
 
@@ -148,7 +150,7 @@ int AudioPipe::PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime, BYTE vadLeve
 	if (transrater.IsOpen())
 	{
 		//Proccess
-		if (!transrater.ProcessBuffer( buffer, size, resampled, &resampledSize))
+		if (!transrater.ProcessBuffer(buffer, size, resampled, &resampledSize))
 			//Error
 			return Error("-AudioPipe could not transrate\n");
 
@@ -157,23 +159,26 @@ int AudioPipe::PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime, BYTE vadLeve
 		size = resampledSize;
 	}
 
+	//Calculate total audio length
+	DWORD totalSize = size * numChannels;
+
 	//Bloqueamos
 	pthread_mutex_lock(&mutex);
 
 	//Get left space
-	DWORD left = fifoBuffer.size()-fifoBuffer.length();
+	DWORD left = fifoBuffer.size() - fifoBuffer.length();
 
 	//if not enought
-	if(size>left)
+	if (totalSize > left)
 	{
-		Error("-not enought space %d %d\n",fifoBuffer.size(),fifoBuffer.length());
+		Warning("-AudioPipe::PlayBuffer() | not enought space %d %d\n", fifoBuffer.size(), fifoBuffer.length());
 		//Free space
-		fifoBuffer.remove(size-left);
+		fifoBuffer.remove(totalSize - static_cast<DWORD>(left / numChannels)* numChannels);
 	}
 
 	//Metemos en la fifo
-	fifoBuffer.push(buffer,size);
-	
+	fifoBuffer.push(buffer, totalSize);
+
 	//Signal rec
 	pthread_cond_signal(&cond);
 
@@ -183,20 +188,24 @@ int AudioPipe::PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime, BYTE vadLeve
 	return size;
 }
 
-int AudioPipe::RecBuffer(SWORD *buffer,DWORD size)
+
+int AudioPipe::RecBuffer(SWORD* buffer, DWORD size)
 {
 	//Debug("-pop %d cache %d\n",size,fifoBuffer.length());
-	
+
 	DWORD len = 0;
+
+	//Calculate total audio length
+	DWORD totalSize = size * numChannels;
 
 	//Bloqueamos
 	pthread_mutex_lock(&mutex);
 
 	//Mientras no tengamos suficientes muestras
-	while(recording && (fifoBuffer.length()<size+cache))
+	while (recording && (fifoBuffer.length() < totalSize + cache))
 	{
 		//Esperamos la condicion
-		pthread_cond_wait(&cond,&mutex);
+		pthread_cond_wait(&cond, &mutex);
 
 		//If we have been canceled
 		if (canceled)
@@ -211,7 +220,7 @@ int AudioPipe::RecBuffer(SWORD *buffer,DWORD size)
 	}
 
 	//Get samples from queue
-	len = fifoBuffer.pop(buffer,size);
+	len = fifoBuffer.pop(buffer, totalSize) / numChannels;
 
 end:
 	//Desbloqueamos
@@ -221,6 +230,7 @@ end:
 
 	return len;
 }
+
 
 int AudioPipe::ClearBuffer()
 {

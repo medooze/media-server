@@ -14,7 +14,7 @@ public:
 	PipeAudioOutput(bool calcVAD);
 	~PipeAudioOutput();
 	virtual int PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime, BYTE vadLevel = -1);
-	virtual int StartPlaying(DWORD samplerate);
+	virtual int StartPlaying(DWORD samplerate, DWORD numChannels);
 	virtual int StopPlaying();
 
 	virtual DWORD GetNativeRate()		{ return nativeRate;	}

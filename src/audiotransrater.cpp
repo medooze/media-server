@@ -13,7 +13,7 @@ AudioTransrater::~AudioTransrater()
 	Close();
 }
 
-int AudioTransrater::Open(DWORD inputRate, DWORD outputRate)
+int AudioTransrater::Open(DWORD inputRate, DWORD outputRate, DWORD numChannels)
 {
 	int err;
 
@@ -31,7 +31,7 @@ int AudioTransrater::Open(DWORD inputRate, DWORD outputRate)
 		return Log("-No resampling needed, same sample rate [in:%d,out:%d]\n",inputRate,outputRate);
 
 	//Create resampler
-	resampler = mcu_resampler_init(1, inputRate, outputRate, 10, &err);
+	resampler = mcu_resampler_init(numChannels, inputRate, outputRate, 10, &err);
 
 	//Check error
 	if (err)
@@ -66,7 +66,7 @@ int AudioTransrater::ProcessBuffer(SWORD * in, DWORD sizeIn, SWORD * out, DWORD 
 		return Error("-No output buffer/size [%p,%d]\n",out,sizeOut);
 
 	//Resample
-	int err = mcu_resampler_process_int(resampler, 0, (spx_int16_t*) in, (spx_uint32_t*) & sizeIn, (spx_int16_t*) out, (spx_uint32_t*) sizeOut);
+	int err = mcu_resampler_process_interleaved_int(resampler, (spx_int16_t*) in, (spx_uint32_t*) & sizeIn, (spx_int16_t*) out, (spx_uint32_t*) sizeOut);
 
 	//Check error
 	if (err)

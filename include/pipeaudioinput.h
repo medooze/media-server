@@ -20,6 +20,7 @@ public:
 
 	virtual DWORD GetNativeRate()		{ return nativeRate;	}
 	virtual DWORD GetRecordingRate()	{ return recordRate;	}
+	virtual DWORD GetNumChannels()		{ return 1;		}
 	
 	int Init(DWORD rate);
 	int PutSamples(SWORD *buffer,DWORD size);

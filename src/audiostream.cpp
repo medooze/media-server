@@ -340,7 +340,7 @@ int AudioStream::RecAudio()
 			DWORD rate = codec->TrySetRate(audioOutput->GetNativeRate());
 
 			//Start playing at codec rate
-			audioOutput->StartPlaying(rate);
+			audioOutput->StartPlaying(rate, 1);
 		}
 
 		//Lo decodificamos

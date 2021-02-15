@@ -42,6 +42,7 @@ private:
 	Mutex mutex;
 	bool		decoding	= false;
 	DWORD		rate		= 0;
+	DWORD		numChannels = 0;
 	std::unique_ptr<AudioDecoder>	codec;
 };
 

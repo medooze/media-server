@@ -174,7 +174,11 @@ int AudioEncoderWorker::Encode()
 		return Error("Could not open encoder");
 
 	//Try to set native rate
-	DWORD rate = codec->TrySetRate(audioInput->GetNativeRate());
+	DWORD numChannels = audioInput->GetNumChannels();
+	DWORD rate = audioInput->GetNativeRate();
+	
+	//Update codec
+	rate = codec->TrySetRate(rate, numChannels);
 	
 	//Create audio frame
 	AudioFrame frame(audioCodec);
@@ -198,6 +202,15 @@ int AudioEncoderWorker::Encode()
 
 		//Incrementamos el tiempo de envio
 		frameTime += codec->numFrameSamples;
+
+		//If we have a different channel count
+		if (numChannels != audioInput->GetNumChannels())
+		{
+			//Update channel count
+			numChannels = audioInput->GetNumChannels();
+			//Set new channel count on codec
+			codec->TrySetRate(rate, numChannels);
+		}
 
 		//Check codec
 		if (codec)

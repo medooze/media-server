@@ -10,8 +10,9 @@ public:
 	// Must have virtual destructor to ensure child class's destructor is called
 	virtual ~AudioEncoder(){};
 	virtual int   Encode(SWORD *in,int inLen,BYTE* out,int outLen)=0;
-	virtual DWORD TrySetRate(DWORD rate)=0;
+	virtual DWORD TrySetRate(DWORD rate, DWORD numChannels)=0;
 	virtual DWORD GetRate()=0;
+	virtual DWORD GetNumChannels() { return 1; }
 	virtual DWORD GetClockRate()=0;
 	AudioCodec::Type	type;
 	int			numFrameSamples;
@@ -25,6 +26,7 @@ public:
 	virtual int   Decode(const BYTE *in,int inLen,SWORD* out,int outLen)=0;
 	virtual DWORD TrySetRate(DWORD rate)=0;
 	virtual DWORD GetRate()=0;
+	virtual DWORD GetNumChannels() { return 1; }
 	AudioCodec::Type	type;
 	int			numFrameSamples;
 };
@@ -83,11 +85,13 @@ class AudioInput
 public:
 	virtual DWORD GetNativeRate()=0;
 	virtual DWORD GetRecordingRate()=0;
+	virtual DWORD GetNumChannels()=0;
 	virtual int RecBuffer(SWORD *buffer,DWORD size)=0;
 	virtual int ClearBuffer() = 0;
 	virtual void  CancelRecBuffer()=0;
 	virtual int StartRecording(DWORD samplerate)=0;
 	virtual int StopRecording()=0;
+
 };
 
 class AudioOutput
@@ -96,7 +100,7 @@ public:
 	virtual DWORD GetNativeRate()=0;
 	virtual DWORD GetPlayingRate()=0;
 	virtual int PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime, BYTE vadLevel = -1) = 0;
-	virtual int StartPlaying(DWORD samplerate)=0;
+	virtual int StartPlaying(DWORD samplerate, DWORD numChannels)=0;
 	virtual int StopPlaying()=0;
 };
 

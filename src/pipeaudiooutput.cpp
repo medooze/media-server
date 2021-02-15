@@ -102,9 +102,13 @@ int PipeAudioOutput::PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime, BYTE v
 	return size;
 }
 
-int PipeAudioOutput::StartPlaying(DWORD rate)
+int PipeAudioOutput::StartPlaying(DWORD rate, DWORD numChannels)
 {
-	Log("-PipeAudioOutput start playing [rate:%d,vad:%d]\n",rate,calcVAD);
+	Log("-PipeAudioOutput start playing [rate:%d,vad:%d]\n", rate, calcVAD);
+
+	//We only support mono
+	if (numChannels != 1)
+		return Error("Stereo not supported");
 
 	//Lock
 	pthread_mutex_lock(&mutex);

@@ -25,7 +25,7 @@ AACDecoder::AACDecoder()
 	ctx = avcodec_alloc_context3(codec);
 
 	//Set params
-	ctx->request_sample_fmt		= AV_SAMPLE_FMT_S16;
+	ctx->request_sample_fmt		= AV_SAMPLE_FMT_FLTP;
 
 	//OPEN it
 	if (avcodec_open2(ctx, codec, NULL) < 0)
@@ -112,14 +112,14 @@ int AACDecoder::Decode(const BYTE *in, int inLen, SWORD* out, int outLen)
 		//Nothing yet
 		return 0;
 	
-	//Get data
-	float *buffer = (float *) frame->extended_data[0];
+	//Get number of samples
 	auto len = frame->nb_samples;
-
 	//Convert to SWORD
-	for (size_t i=0; i<len && i<outLen; ++i)
-		out[i] = (buffer[i] * (1<<15));
-
+	for (size_t i=0; i<len && (i*frame->channels)<outLen; ++i)
+		//For each channel
+		for (size_t n=0; n<std::min(frame->channels,2); ++n)
+			//Interleave
+			out[i*frame->channels + n] = ((float*)(frame->extended_data[n]))[i] * (1<<15);
 	//Return number of samples
 	return len;
 }

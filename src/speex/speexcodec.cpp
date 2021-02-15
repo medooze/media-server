@@ -55,10 +55,10 @@ SpeexEncoder::~SpeexEncoder()
 	speex_encoder_destroy(encoder);
 }
 
-DWORD SpeexEncoder::TrySetRate(DWORD rate)
+DWORD SpeexEncoder::TrySetRate(DWORD rate, DWORD numChannels)
 {
 	//return real rate
-	return GetRate();
+	return numChannels==1 ? GetRate() : 0;
 }
 
 DWORD SpeexEncoder::GetRate()

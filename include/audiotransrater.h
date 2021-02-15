@@ -8,7 +8,7 @@ public:
 	AudioTransrater();
 	~AudioTransrater();
 
-	int Open(DWORD inputRate, DWORD outputRate);
+	int Open(DWORD inputRate, DWORD outputRate, DWORD numChannels = 1);
 	int ProcessBuffer(SWORD* in, DWORD sizeIn, SWORD* out, DWORD* sizeOut);
 	void Close();
 

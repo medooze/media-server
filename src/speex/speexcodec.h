@@ -10,7 +10,7 @@ public:
 	SpeexEncoder(const Properties &properties);
 	virtual ~SpeexEncoder();
 	virtual int Encode(SWORD *in,int inLen,BYTE* out,int outLen);
-	virtual DWORD TrySetRate(DWORD rate);
+	virtual DWORD TrySetRate(DWORD rate, DWORD numChannels);
 	virtual DWORD GetRate();
 	virtual DWORD GetClockRate()	{ return 16000;}
 private:

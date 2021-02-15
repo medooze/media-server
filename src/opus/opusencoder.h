@@ -17,12 +17,14 @@ public:
 	OpusEncoder(const Properties &properties);
 	virtual ~OpusEncoder();
 	virtual int Encode(SWORD *in,int inLen,BYTE* out,int outLen);
-	virtual DWORD TrySetRate(DWORD rate);
+	virtual DWORD TrySetRate(DWORD rate, DWORD numChannels);
 	virtual DWORD GetRate()			{ return rate;	}
+	virtual DWORD GetNumChannels()		{ return numChannels; }
 	virtual DWORD GetClockRate()		{ return 48000;	}
 private:
 	OpusEncoder *enc;
 	DWORD rate;
+	DWORD numChannels;
 	int mode;
 };
 

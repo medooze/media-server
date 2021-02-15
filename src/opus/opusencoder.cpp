@@ -14,6 +14,7 @@ OpusEncoder::OpusEncoder(const Properties &properties)
 	type = AudioCodec::OPUS;
 	//Rate
 	rate = 48000;
+	numChannels = 1;
 	//Set number of input frames for codec
 	numFrameSamples = rate * 20 / 1000;
 	//Set default mode
@@ -30,11 +31,12 @@ OpusEncoder::OpusEncoder(const Properties &properties)
 	opus_encoder_ctl(enc, OPUS_SET_INBAND_FEC(properties.GetProperty("opus.inbandfec",false)));
 }
 
-DWORD OpusEncoder::TrySetRate(DWORD rate)
+DWORD OpusEncoder::TrySetRate(DWORD rate, DWORD numChannels)
 {
+	Log("-OpusEncoder::TrySetRate() [rate:%d,numChannels:%d]\n",rate,numChannels);
 	int error = 0;
 	//Try to create a new encoder with that rate
-	OpusEncoder *aux = opus_encoder_create(rate, 1, mode, &error);
+	OpusEncoder *aux = opus_encoder_create(rate, numChannels, mode, &error);
 	//If no error
 	if (aux && !error)
 	{
@@ -44,6 +46,7 @@ DWORD OpusEncoder::TrySetRate(DWORD rate)
 		enc = aux;
 		//Store new rate
 		this->rate = rate;
+		this->numChannels = numChannels;
 		//Set number of input frames for codec
 		numFrameSamples = rate * 20 / 1000;
 	}
@@ -63,5 +66,5 @@ OpusEncoder::~OpusEncoder()
 
 int OpusEncoder::Encode(SWORD *in,int inLen,BYTE* out,int outLen)
 {
-	return opus_encode(enc,in,inLen,out,outLen);
+	return opus_encode(enc, in, inLen , out, outLen);
 }

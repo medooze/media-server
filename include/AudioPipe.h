@@ -23,12 +23,13 @@ public:
 
 	//Audio output
 	virtual int PlayBuffer(SWORD *buffer,DWORD size,DWORD frameTime, BYTE vadLevel = -1);
-	virtual int StartPlaying(DWORD samplerate);
+	virtual int StartPlaying(DWORD samplerate, DWORD numChannels);
 	virtual int StopPlaying();
 
 	virtual DWORD GetNativeRate()		{ return nativeRate;	}
 	virtual DWORD GetPlayingRate()		{ return playRate;	}
 	virtual DWORD GetRecordingRate()	{ return recordRate;	}
+	virtual DWORD GetNumChannels()		{ return numChannels;	}
 	
 private:
 	//Los mutex y condiciones
@@ -46,6 +47,7 @@ private:
 	DWORD			playRate = 0;
 	DWORD			recordRate = 0;
 	DWORD			nativeRate = 0;
+	DWORD			numChannels = 0;
 	
 	DWORD			cache = 0;
 };
