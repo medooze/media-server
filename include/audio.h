@@ -59,6 +59,8 @@ public:
 		frame->SetSenderTime(GetSenderTime());
 		//Set duration
 		frame->SetDuration(GetDuration());
+		//Set number of channels
+		frame->SetNumChannels(GetNumChannels());
 		//Set config
 		if (HasCodecConfig()) frame->SetCodecConfig(GetCodecConfigData(),GetCodecConfigSize());
 		//If we have disabled the shared buffer for this frame
@@ -75,9 +77,14 @@ public:
 
 	AudioCodec::Type GetCodec() const		{ return codec;		}
 	void	SetCodec(AudioCodec::Type codec)	{ this->codec = codec;	}
+
+	void SetNumChannels(int numChannels)		{ this->numChannels = numChannels;	}
+	int  GetNumChannels() const			{ return numChannels;			}
+
 	
 private:
 	AudioCodec::Type codec;
+	int numChannels = 1;
 };
 
 class AudioInput
