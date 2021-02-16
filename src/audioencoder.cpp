@@ -234,6 +234,8 @@ int AudioEncoderWorker::Encode()
 			frame.SetTime(frameTime*1000/codec->GetClockRate());
 			//Set frame duration
 			frame.SetDuration(codec->numFrameSamples);
+			//Set number of channels
+			frame.SetNumChannels(numChannels);
 
 			//Clear rtp
 			frame.ClearRTPPacketizationInfo();

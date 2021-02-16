@@ -35,6 +35,9 @@ MediaFrame* OpusDepacketizer::AddPayload(const BYTE* payload,DWORD payloadLen)
 	
 	//Set number of channels
 	uint8_t numChannels = stereo ? 2 : 1;
+
+	//Set it
+	frame.SetNumChannels(numChannels);
 	
 	//Set duration
 	frame.SetDuration(frameSize);
