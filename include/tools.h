@@ -230,6 +230,22 @@ inline DWORD get3(const BYTE *data,size_t i) { return (DWORD)(data[i+2]) | ((DWO
 inline DWORD get4(const BYTE *data,size_t i) { return (DWORD)(data[i+3]) | ((DWORD)(data[i+2]))<<8 | ((DWORD)(data[i+1]))<<16 | ((DWORD)(data[i]))<<24; }
 inline QWORD get8(const BYTE *data,size_t i) { return ((QWORD)get4(data,i))<<32 | get4(data,i+4);	}
 
+inline DWORD getN(BYTE n, BYTE* data, size_t i)
+{
+	switch (n)
+	{
+		case 1:
+			return get1(data,i);
+		case 2:
+			return get2(data,i);
+		case 3:
+			return get3(data,i);
+		case 4:
+			return get4(data,i);
+	}
+	return 0;
+}
+
 inline void set1(BYTE *data,size_t i,BYTE val)
 {
 	data[i] = val;
@@ -273,6 +289,21 @@ inline void set8(BYTE *data,size_t i,QWORD val)
 	data[i+2] = (BYTE)(val>>40);
 	data[i+1] = (BYTE)(val>>48);
 	data[i]   = (BYTE)(val>>56);
+}
+
+inline void setN(BYTE n, BYTE* data, size_t i, DWORD val)
+{
+	switch (n)
+	{
+		case 1:
+			return set1(data,i,val);
+		case 2:
+			return set2(data,i,val);
+		case 3:
+			return set3(data,i,val);
+		case 4:
+			return set4(data,i,val);
+	}
 }
 
 inline char PC(BYTE b)

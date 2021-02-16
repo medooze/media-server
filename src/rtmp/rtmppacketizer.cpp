@@ -4,7 +4,7 @@
 
 std::unique_ptr<VideoFrame> RTMPAVCPacketizer::AddFrame(RTMPVideoFrame* videoFrame)
 {
-	//Debug("-RTMPAVCPacketizer::AddFrame() [size:%u]\n",videoFrame->GetMediaSize());
+	//Debug("-RTMPAVCPacketizer::AddFrame() [size:%u,intra:%d]\n",videoFrame->GetMediaSize(), videoFrame->GetFrameType() == RTMPVideoFrame::INTRA);
 	
 	//Check it is AVC
 	if (videoFrame->GetVideoCodec()!=RTMPVideoFrame::AVC)
@@ -70,13 +70,13 @@ std::unique_ptr<VideoFrame> RTMPAVCPacketizer::AddFrame(RTMPVideoFrame* videoFra
 		for (int i=0;i<desc.GetNumOfSequenceParameterSets();i++)
 		{
 			//Set size
-			set4(nalHeader,0,desc.GetSequenceParameterSetSize(i));
+			setN(nalUnitLength, nalHeader, 0, desc.GetSequenceParameterSetSize(i));
 			
 			//Append nal size header
 			frame->AppendMedia(nalHeader, nalUnitLength);
 			
 			//Append nal
-			auto ini =frame->AppendMedia(desc.GetSequenceParameterSet(i),desc.GetSequenceParameterSetSize(i));
+			auto ini = frame->AppendMedia(desc.GetSequenceParameterSet(i),desc.GetSequenceParameterSetSize(i));
 			
 			//Crete rtp packet
 			frame->AddRtpPacket(ini,desc.GetSequenceParameterSetSize(i),nullptr,0);
@@ -94,7 +94,7 @@ std::unique_ptr<VideoFrame> RTMPAVCPacketizer::AddFrame(RTMPVideoFrame* videoFra
 		for (int i=0;i<desc.GetNumOfPictureParameterSets();i++)
 		{
 			//Set size
-			set4(nalHeader,0,desc.GetPictureParameterSetSize(i));
+			setN(nalUnitLength, nalHeader, 0, desc.GetPictureParameterSetSize(i));
 			
 			//Append nal size header
 			frame->AppendMedia(nalHeader, nalUnitLength);
@@ -116,23 +116,8 @@ std::unique_ptr<VideoFrame> RTMPAVCPacketizer::AddFrame(RTMPVideoFrame* videoFra
 	//Chop into NALs
 	while(size>nalUnitLength)
 	{
-		DWORD nalSize = 0;
 		//Get size
-		if (nalUnitLength==4)
-			//Get size
-			nalSize = get4(data,0);
-		else if (nalUnitLength==3)
-			//Get size
-			nalUnitLength = get3(data,0);
-		else if (nalUnitLength==2)
-			//Get size
-			nalSize = get2(data,0);
-		else if (nalUnitLength==1)
-			//Get size
-			nalSize = data[0];
-		else
-			//Skip
-			break;
+		DWORD nalSize = getN(nalUnitLength, data, 0);
 		
 		//Ensure we have enougth data
 		if (nalSize+nalUnitLength>size)
@@ -143,22 +128,22 @@ std::unique_ptr<VideoFrame> RTMPAVCPacketizer::AddFrame(RTMPVideoFrame* videoFra
 			break;
 		}
 
-		//Append nal header
-		frame->AppendMedia(data, nalUnitLength);
-
 		//Get NAL start
-		BYTE *nal = data+nalUnitLength;
-		
+		BYTE* nal = data + nalUnitLength;
+
 		//Skip fill data nalus
-		if (nal[0]==12)
+		if (nal[0] == 12)
 		{
 			//Skip it
-			data+=nalUnitLength+nalSize;
-			size-=nalUnitLength+nalSize;
+			data += nalUnitLength + nalSize;
+			size -= nalUnitLength + nalSize;
 			//Next
 			continue;
 		}
-		
+
+		//Append nal header
+		frame->AppendMedia(data, nalUnitLength);
+
 		//Log("-NAL %x size=%d nalSize=%d fameSize=%d\n",nal[0],size,nalSize,videoFrame->GetMediaSize());
 		
 		//Append nal
