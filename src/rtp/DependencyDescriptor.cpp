@@ -299,7 +299,7 @@ bool TemplateDependencyStructure::Serialize(BitWritter& writter) const
 		return 0;
 	
 	//template_layers()
-	for (size_t i = 1; i < frameDependencyTemplates.size() - 1; ++i)
+	for (size_t i = 0; i < frameDependencyTemplates.size() - 1; ++i)
 	{
 		//Get next and current layer
 		auto& current	= frameDependencyTemplates[i];
@@ -407,7 +407,7 @@ bool DependencyDescriptor::Serialize(BitWritter& writter) const
 
 	//Check before write
 	if (writter.Left()<24)
-		return 0;
+		return Warning("-DependencyDescriptor::Serialize() | Not enough space for writting common data\n");
 	
 	//mandatory_descriptor_fields()
 	writter.Put(1, startOfFrame); 
@@ -419,7 +419,7 @@ bool DependencyDescriptor::Serialize(BitWritter& writter) const
 	{
 		//Check before write
 		if (writter.Left()<5)
-			return 0;
+			return Warning("-DependencyDescriptor::Serialize() | Not enough space for writting extra data\n");
 		
 		//extended_descriptor_fields()	
 		writter.Put(1, templateDependencyStructure.has_value());
@@ -433,20 +433,14 @@ bool DependencyDescriptor::Serialize(BitWritter& writter) const
 			//Serialize template dependency
 			if (!templateDependencyStructure->Serialize(writter))
 				//Error
-				return 0;
-		} else if (activeDecodeTargets || customDecodeTargetIndications || customFrameDiffsChains) {
-			uint32_t dtsCount = customDecodeTargetIndications->size();
-			writter.Put(5, dtsCount - 1);
-			if (customFrameDiffsChains)
-				if (!writter.WriteNonSymmetric(dtsCount + 1, customFrameDiffsChains->size() ))
-				return 0;
+				return Warning("-DependencyDescriptor::Serialize() | Error writting tempate dependency structure\n");
 		}
 
 		if (activeDecodeTargets) 
 		{
 			//Check before write
 			if (writter.Left()<activeDecodeTargets->size())
-				return 0;
+				return Warning("-DependencyDescriptor::Serialize() | Not enough space for writting the active decode target mask\n");
 			
 			//For each decode target
 			for (size_t i=activeDecodeTargets->size(); i!=0; --i)
@@ -473,7 +467,7 @@ bool DependencyDescriptor::Serialize(BitWritter& writter) const
 			{
 				//It must be non cero
 				if (!fdiff || fdiff > 1<<12)
-					return 0;
+					return Warning("-DependencyDescriptor::Serialize() | Incorrect frame diffs [%d]\n", fdiff);
 				//Get next value size
 				uint32_t nextFrameDiffSize = 0;
 				
@@ -486,7 +480,7 @@ bool DependencyDescriptor::Serialize(BitWritter& writter) const
 				
 				//Check before write
 				if (writter.Left() < 2 + nextFrameDiffSize * 4)
-					return 0;
+					return Warning("-DependencyDescriptor::Serialize() | not enough space to write custom frame diffs\n");
 				//Write size
 				writter.Put(2, nextFrameDiffSize);
 				//Write fdif minus one
@@ -495,7 +489,7 @@ bool DependencyDescriptor::Serialize(BitWritter& writter) const
 			
 			//Check before write
 			if (writter.Left() < 2)
-				return 0;
+				return Warning("-DependencyDescriptor::Serialize() | not enough space to write custom frame diffs end\n");
 			//Last one
 			writter.Put(2, 0);
 			
@@ -506,7 +500,7 @@ bool DependencyDescriptor::Serialize(BitWritter& writter) const
 			
 			//Check before write
 			if (writter.Left()<customFrameDiffsChains->size()*8)
-				return 0;
+				return Warning("-DependencyDescriptor::Serialize() | not enough space to write custom frame diffs chains\n");
 			
 			//For each decode target
 			for (auto fdiff : *customFrameDiffsChains)
