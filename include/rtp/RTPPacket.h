@@ -114,7 +114,7 @@ public:
 	void  DisableRId()			{ extension.hasRId			= false; CheckExtensionMark(); }
 	void  DisableRepairedId()		{ extension.hasRepairedId		= false; CheckExtensionMark(); }
 	void  DisableMediaStreamId()		{ extension.hasMediaStreamId		= false; CheckExtensionMark(); }
-	void  DisableDependencyDestriptor()	{ extension.hasDependencyDescriptor	= false; CheckExtensionMark(); }
+	void  DisableDependencyDescriptor()	{ extension.hasDependencyDescriptor	= false; CheckExtensionMark(); }
 	
 
 	QWORD GetAbsSendTime()			const	{ return extension.absSentTime;			}
