@@ -15,20 +15,42 @@
 #include "log.h"
 
 
-size_t WriteHeaderIdAndLength(BYTE* data, DWORD pos, BYTE id, DWORD length)
+size_t WriteHeaderIdAndLength(BYTE* data, DWORD pos, BYTE id, DWORD length, int headerLength)
 {
 	//Check id is valid
 	if (id==RTPMap::NotFound)
 		return 0;
-	//Check size
-	if (!length || (length-1)>0x0f)
-		return 0;
+
+	switch (headerLength)
+	{
+		case 1:
+			//Check size
+			if (!length || (length-1)>0x0f)
+				return Warning("-WriteHeaderIdAndLength() | Wrong length for a 1 header byte extension [len:%d]\n", length);
 	
-	//Set id && length
-	data[pos] = id << 4 | (length-1);
+			//Set id && length
+			data[pos] = id << 4 | (length-1);
 	
-	//OK
-	return 1;
+			//OK
+			return 1;
+		case 2:
+			//Check size
+			if (length>0xff)
+				return Warning("-WriteHeaderIdAndLength() | Wrong length for a 1 header byte extension [len:%d]\n", length);
+
+			//Set id && length
+			data[pos++] = id;
+			data[pos] = length;
+
+			//OK
+			return 2;
+
+		default:
+			return Error("-WriteHeaderIdAndLength() | Unknown header extension size [headerLength:%d]\n", headerLength);
+	}
+
+	//Should not get here
+	return 0;
 }
 
 /*
@@ -67,7 +89,7 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 		headerLength = 2;
 	else
 		//ERROR
-		return Error("Magic cookie not found");
+		return Error("-RTPHeaderExtension::Parse() | Magic cookie not found");
 	
 	//Get length
 	WORD length = get2(data,2)*4;
@@ -75,7 +97,7 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 	//Ensure we have enought
 	if (size<length+4u)
 		//ERROR
-		return Error("Not enought data");
+		return Error("-RTPHeaderExtension::Parse() | Not enought data");
   
 	//Loop
 	WORD i = 0;
@@ -114,7 +136,7 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 			
 			//Check size
 			if (i+1>length)
-				return Error("Not enought data for 2 byte header\n");;
+				return Error("-RTPHeaderExtension::Parse() | Not enought data for 2 byte header\n");;
 			
 			//Get extension element length
 			len = ext[i++];
@@ -133,7 +155,7 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 		
 		//Ensure that we have enought data
 		if (i+len>length)
-			return Error("Not enougth data for extension\n");
+			return Error("-RTPHeaderExtension::Parse() | Not enougth data for extension\n");
 		
 		//Get mapped extension
 		BYTE type = extMap.GetCodecForType(id);
@@ -283,7 +305,7 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 				dependencyDescryptorReader.Wrap(ext+i,len);
 				break;
 			default:
-				UltraDebug("-Unknown or unmapped extension [%d]\n",id);
+				UltraDebug("-RTPHeaderExtension::Parse() | Unknown or unmapped extension [%d]\n",id);
 				break;
 		}
 		//Skip length
@@ -318,39 +340,50 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 	//If not enought size for header
 	if (size<4)
 		//ERROR
-		return 0;
+		return Warning("-RTPHeaderExtension::Serialize() | Not enought size [size:%d]\n", size);
+
+	//TODO:: Check max id 
 	
-	//Set magic header
-	set2(data,0,0xBEDE);
-	
-	//Parse and set length
+
+	//Try with 1 byte header length first
+	int headerLength = 1;
+
+	//Write the header later
 	DWORD len = 4;
 	
-	//For each extension
-	
+	//First dependency descriptor to make sure it fits 
 	if (hasDependencyDescriptor && dependencyDescryptor)
 	{
-		//Get id for extension
-		BYTE id = extMap.GetTypeForCodec(DependencyDescriptor);
+		//Use a temporary memory to serialize and check final size
+		BYTE ext[255];
 
-		//Write header with dummy 1 length (zero length not valid)
-		if ((n = WriteHeaderIdAndLength(data,len,id,1)))
+		//Get writter
+		BitWritter writter(ext, sizeof(ext));
+
+		//Serialize 
+		if (dependencyDescryptor->Serialize(writter))
 		{
-			//Get writter
-			BitWritter writter(data + len + n, size - len + n);
-			
-			//Serialize 
-			if (dependencyDescryptor->Serialize(writter))
+			//Flush buffer and get lenght
+			uint32_t extLen = writter.Flush();
+
+			//Check length
+			if (extLen>0x0f)
+				//We need to use 2 byte header extensions
+				headerLength = 2;
+
+			//Get id for extension
+			//Get id for extension
+			BYTE id = extMap.GetTypeForCodec(DependencyDescriptor);
+
+			//Write header 
+			if ((n = WriteHeaderIdAndLength(data,len,id,extLen,headerLength)))
 			{
-				//Flush buffer and get lenght
-				uint32_t extLen = writter.Flush();
-				
-				//TODO: check for two byte header extension
-				
-				//Rewrite header
-				n = WriteHeaderIdAndLength(data,len,id,extLen);
 				//Inc header len
-				len += extLen + n;
+				len += n;
+				//Copy str contents
+				memcpy(data + len, ext, extLen);
+				//Append length
+				len += extLen;
 			}
 		}
 	}
@@ -370,7 +403,7 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 		// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 		
 		//Write header 
-		if ((n = WriteHeaderIdAndLength(data,len,id,1)))
+		if ((n = WriteHeaderIdAndLength(data,len,id,1,headerLength)))
 		{
 			//Inc header len
 			len += n;
@@ -390,7 +423,7 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 		// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 		//
 		//Write header 
-		if ((n = WriteHeaderIdAndLength(data,len,id,3)))
+		if ((n = WriteHeaderIdAndLength(data,len,id,3,headerLength)))
 		{
 			//Inc header len
 			len += n;
@@ -423,7 +456,7 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 		// Calculate absolute send time field (convert ms to 24-bit unsigned with 18 bit fractional part.
 		// Encoding: Timestamp is in seconds, 24 bit 6.18 fixed point, yielding 64s wraparound and 3.8us resolution (one increment for each 477 bytes going out on a 1Gbps interface).
 		//If found
-		if ((n = WriteHeaderIdAndLength(data,len,id,3)))
+		if ((n = WriteHeaderIdAndLength(data,len,id,3,headerLength)))
 		{
 			//Inc header len
 			len += n;
@@ -453,7 +486,7 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 		// R1, R0 = Rotation: indicates the rotation of the video as transmitted on the link. The receiver should rotate the video to compensate that rotation. E.g. a 90° Counter Clockwise rotation should be compensated by the receiver with a 90° Clockwise rotation prior to displaying.
 		
 		//Write header 
-		if ((n = WriteHeaderIdAndLength(data,len,id,1)))
+		if ((n = WriteHeaderIdAndLength(data,len,id,1,headerLength)))
 		{
 			//Inc header len
 			len += n;
@@ -474,7 +507,7 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 		// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 		
 		//Write header 
-		if ((n = WriteHeaderIdAndLength(data,len,id,2)))
+		if ((n = WriteHeaderIdAndLength(data,len,id,2,headerLength)))
 		{
 			//Inc header len
 			len += n;
@@ -522,7 +555,7 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 			scalable = true;
 		
 		//Write header 
-		if ((n = WriteHeaderIdAndLength(data,len,id,(scalable ? 0x03 : 0x01))))
+		if ((n = WriteHeaderIdAndLength(data,len,id,(scalable ? 0x03 : 0x01),headerLength)))
 		{
 			//Inc header len
 			len += n;
@@ -556,7 +589,7 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 		BYTE id = extMap.GetTypeForCodec(RTPStreamId);
 		
 		//Write header 
-		if ((n = WriteHeaderIdAndLength(data,len,id,rid.length())))
+		if ((n = WriteHeaderIdAndLength(data,len,id,rid.length(),headerLength)))
 		{
 			//Inc header len
 			len += n;
@@ -573,7 +606,7 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 		BYTE id = extMap.GetTypeForCodec(RepairedRTPStreamId);
 		
 		//Write header 
-		if ((n = WriteHeaderIdAndLength(data,len,id,repairedId.length())))
+		if ((n = WriteHeaderIdAndLength(data,len,id,repairedId.length(),headerLength)))
 		{
 			//Inc header len
 			len += n;
@@ -590,7 +623,7 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 		BYTE id = extMap.GetTypeForCodec(MediaStreamId);
 		
 		//Write header 
-		if ((n = WriteHeaderIdAndLength(data,len,id,mid.length())))
+		if ((n = WriteHeaderIdAndLength(data,len,id,mid.length(),headerLength)))
 		{
 			//Inc header len
 			len += n;
@@ -604,6 +637,12 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 	//Pad to 32 bit words
 	while(len%4)
 		data[len++] = 0;
+
+	//Set magic header
+	if (headerLength==1)
+		set2(data, 0, 0xBEDE);
+	else 
+		set2(data, 0, 0x1000);
 	
 	//Set length
 	set2(data,2,(len/4)-1);
