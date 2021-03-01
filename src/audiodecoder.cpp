@@ -70,7 +70,7 @@ void AudioDecoderWorker::AddAudioOuput(AudioOutput* output)
 	//Add it
 	outputs.insert(output);
 	//If we hace started
-	if (decoding)
+	if (decoding && rate)
 		//Start it
 		output->StartPlaying(rate, numChannels);
 }

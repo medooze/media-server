@@ -5,6 +5,8 @@ AudioPipe::AudioPipe(DWORD rate)
 {
 	//Set rate
 	nativeRate = rate;
+	playRate = rate;
+	recordRate = rate;
 	
 	//Init mutex and cond
 	pthread_mutex_init(&mutex,0);
@@ -25,15 +27,28 @@ int AudioPipe::StartRecording(DWORD rate)
 {
 	Log("-AudioPipe start recording [rate:%d]\n",rate);
 	
-	//Set small cache 40ms
-	cache = rate/40;
+	//Set small cache 20ms
+	cache = rate/50;
 
 	//Bloqueamos
 	pthread_mutex_lock(&mutex);
+
+	//If rate has changed
+	if (rate != recordRate)
+		//Clear playing buffer
+		fifoBuffer.clear();
+
 	//Store recording rate
 	recordRate = rate;
-	//Open transrater
-	transrater.Open( nativeRate, recordRate );
+	//If we already had an open transcoder
+	if (transrater.IsOpen())
+		//Close it
+		transrater.Close();
+
+	//if rates are different
+	if (playRate != recordRate)
+		//Open it
+		transrater.Open(playRate, recordRate, numChannels);
 	//Estamos grabando
 	recording = true;
 	//Desbloqueamos
@@ -98,9 +113,9 @@ int AudioPipe::StartPlaying(DWORD rate, DWORD numChannels)
 		transrater.Close();
 
 	//if rates are different
-	if (playRate != nativeRate)
+	if (playRate != recordRate)
 		//Open it
-		transrater.Open(playRate, nativeRate, numChannels);
+		transrater.Open(playRate, recordRate, numChannels);
 	
 	//We are playing
 	playing = true;
@@ -143,12 +158,15 @@ int AudioPipe::PlayBuffer(SWORD* buffer, DWORD size, DWORD frameTime, BYTE vadLe
 		//Ok
 		return size;
 
-	SWORD resampled[4096];
-	DWORD resampledSize = 4096;
+	//Bloqueamos
+	pthread_mutex_lock(&mutex);
 
 	//Check if we are transtrating
 	if (transrater.IsOpen())
 	{
+		SWORD resampled[8192];
+		DWORD resampledSize = 8192 / numChannels;
+
 		//Proccess
 		if (!transrater.ProcessBuffer(buffer, size, resampled, &resampledSize))
 			//Error
@@ -161,9 +179,6 @@ int AudioPipe::PlayBuffer(SWORD* buffer, DWORD size, DWORD frameTime, BYTE vadLe
 
 	//Calculate total audio length
 	DWORD totalSize = size * numChannels;
-
-	//Bloqueamos
-	pthread_mutex_lock(&mutex);
 
 	//Get left space
 	DWORD left = fifoBuffer.size() - fifoBuffer.length();

@@ -47,7 +47,7 @@ private:
 	DWORD			playRate = 0;
 	DWORD			recordRate = 0;
 	DWORD			nativeRate = 0;
-	DWORD			numChannels = 0;
+	DWORD			numChannels = 1;
 	
 	DWORD			cache = 0;
 };
