@@ -480,6 +480,9 @@ int DTLSConnection::Init()
 			CheckPending();
 		}
 	});
+
+	//Set name for debug
+	timeout->SetName("DTLSConnection - timeout");
 	
 	//Start sctp transport
 	sctp.OnPendingData([this](...){

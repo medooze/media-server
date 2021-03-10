@@ -26,7 +26,7 @@ void RTPIncomingMediaStreamMultiplexer::AddListener(RTPIncomingMediaStream::List
 
 void RTPIncomingMediaStreamMultiplexer::RemoveListener(RTPIncomingMediaStream::Listener* listener) 
 {
-	Debug("-RTPIncomingMediaStreamMultiplexer::RemoveListener() [listener:%p]\n",listener);
+	Debug("-RTPIncomingMediaStreamMultiplexer::RemoveListener() [listener:%p,this:%p]\n", listener, this);
 		
 	//Dispatch in thread sync
 	timeService.Sync([=](...){

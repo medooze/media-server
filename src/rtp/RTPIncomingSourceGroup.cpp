@@ -19,6 +19,8 @@ RTPIncomingSourceGroup::RTPIncomingSourceGroup(MediaFrame::Type type,TimeService
 	remoteRateEstimator.SetListener(this);
 	//Create dispatch timer
 	dispatchTimer = timeService.CreateTimer([this](auto now){ DispatchPackets(now.count()); });
+	//Set name for debug
+	dispatchTimer->SetName("RTPIncomingSourceGroup - dispatch");
 }
 
 RTPIncomingSource* RTPIncomingSourceGroup::GetSource(DWORD ssrc)

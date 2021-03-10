@@ -1551,6 +1551,9 @@ void DTLSICETransport::onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMaster
 		//Do probe
 		Probe();
 	});
+
+	//Set name for debug
+	probingTimer->SetName("DTLSICETransport - bwe probe");
 }
 
 void DTLSICETransport::onDTLSSetupError()
@@ -2571,6 +2574,8 @@ void DTLSICETransport::Start()
 			//Fire timeout 
 			listener->onICETimeout();
 	});
+	//Set name for debug
+	iceTimeoutTimer->SetName("DTLSICETransport - ice timeout");
 	//Start
 	endpoint.Init(dcOptions);
 	//Started

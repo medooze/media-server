@@ -227,6 +227,8 @@ int RTPBundleTransport::Init()
 		loop.Start(socket);
 		//Create ice timer
 		iceTimer = loop.CreateTimer([=](std::chrono::milliseconds now){ this->onTimer(now); });
+		//Set name for debug
+		iceTimer->SetName("RTPBundleTransport - ice");
 		//Done
 		Log("<RTPBundleTransport::Init()\n");
 		//Opened
@@ -298,7 +300,9 @@ int RTPBundleTransport::Init(int port)
 	
 	//Create ice timer
 	iceTimer = loop.CreateTimer([=](std::chrono::milliseconds now){ this->onTimer(now); });
-	
+	//Set name for debug
+	iceTimer->SetName("RTPBundleTransport - ice");
+
 	//Done
 	Log("<RTPBundleTransport::Init()\n");
 	//Opened

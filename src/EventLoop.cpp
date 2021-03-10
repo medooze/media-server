@@ -714,11 +714,12 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 		//Get all pending taks
 		while (tasks.try_dequeue(task))
 		{
-			//UltraDebug("-EventLoop::Run() | task pending\n");
+			//UltraDebug(">EventLoop::Run() | task pending\n");
 			//Execute it
 			task.second(now);
 			//Resolce promise
 			task.first.set_value();
+			//UltraDebug("<EventLoop::Run() | task run\n");
 		}
 
 		//Timers triggered
@@ -739,7 +740,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 		//Now process all timers triggered
 		for (auto timer : triggered)
 		{
-			//UltraDebug("-EventLoop::Run() | timer triggered at ll%u\n",now.count());
+			//UltraDebug(">EventLoop::Run() | timer [%s] triggered at ll%u\n",timer->GetName().c_str(),now.count());
 			//We are executing
 			timer->next = 0ms;
 			//Execute it
@@ -747,11 +748,13 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 			//If we have to reschedule it again
 			if (timer->repeat.count() && !timer->next.count())
 			{
+				//UltraDebug("-EventLoop::Run() | timer rescheduled\n");
 				//Set next
 				timer->next = now + timer->repeat;
 				//Schedule
 				timers.emplace(timer->next, timer);
 			}
+			//UltraDebug("<EventLoop::Run() | timer run \n");
 		}
 		
 		//Read first from signal pipe

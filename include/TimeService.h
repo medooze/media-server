@@ -18,6 +18,10 @@ public:
 	virtual bool IsScheduled() const = 0;
 	virtual std::chrono::milliseconds GetNextTick()	const = 0;
 	virtual std::chrono::milliseconds GetRepeat() const = 0;
+	void SetName(const std::string& name) { this->name = name; }
+	std::string GetName() const  { return name; }
+private:
+	std::string name;
 };
 	
 class TimeService
