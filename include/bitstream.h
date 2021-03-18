@@ -163,6 +163,22 @@ public:
 		uint8_t extra_bit = Get(1);
 		return (v << 1) - m + extra_bit;
 	}
+
+	inline uint64_t GetVariableLengthUnsigned()
+	{
+		int leadingZeros = 0;
+		while (Get(1) && !error)
+		{
+			bool done = Get(1);
+			if (done)
+				break;
+			leadingZeros++;
+		}
+		if (leadingZeros >= 32)
+			return (1lu << 32) - 1;
+		uint64_t value = Get(leadingZeros);
+		return value + (1lu << leadingZeros) - 1;
+	}
 public:
 	inline DWORD Cache()
 	{
