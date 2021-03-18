@@ -38,7 +38,7 @@ void SimulcastMediaFrameListener::Stop()
 
 void SimulcastMediaFrameListener::Select()
 {
-	Log("-MediaFrameListenerBridge::Select() | [iframes:%u,pending:%d,forwarded:%u]\n", iframes.size(), pendingFrames.size(), forwarded);
+	//UltraDebug("-MediaFrameListenerBridge::Select() | [iframes:%u,pending:%d,forwarded:%u]\n", iframes.size(), pendingFrames.size(), forwarded);
 
 	DWORD prev = forwarded;
 	VideoFrame* selected = nullptr;
@@ -49,7 +49,7 @@ void SimulcastMediaFrameListener::Select()
 	for (const auto& [ssrc, videoFrame] : iframes)
 	{
 
-		Log("-MediaFrameListenerBridge::Select() | candidate [ssrc:%u,size:%d,dimensions:%ux%u,ts:%llu]\n", ssrc, videoFrame->GetLength(), videoFrame->GetWidth() , videoFrame->GetHeight(), videoFrame->GetTimeStamp());
+		//UltraDebug("-MediaFrameListenerBridge::Select() | candidate [ssrc:%u,size:%d,dimensions:%ux%u,ts:%llu]\n", ssrc, videoFrame->GetLength(), videoFrame->GetWidth() , videoFrame->GetHeight(), videoFrame->GetTimeStamp());
 		//Calculate dimensions
 		DWORD dimensions = videoFrame->GetWidth() * videoFrame->GetHeight();
 		//Check if it is bigger, bigger is better
@@ -96,7 +96,7 @@ void SimulcastMediaFrameListener::Select()
 		firstTimestamp = selected->GetTimestamp();
 
 		//Debug
-		Log("-MediaFrameListenerBridge::Select() | Changing active layer [prev:%u,current:%u,offset:%llu]\n", prev, forwarded, offsetTimestamp);
+		//UltraDebug("-MediaFrameListenerBridge::Select() | Changing active layer [prev:%u,current:%u,offset:%llu]\n", prev, forwarded, offsetTimestamp);
 	}
 
 	//Forward frame
@@ -133,7 +133,7 @@ void SimulcastMediaFrameListener::onMediaFrame(DWORD ssrc, const MediaFrame& fra
 	auto cloned = std::unique_ptr<VideoFrame>((VideoFrame*)frame.Clone());
 
 
-	Log("-SimulcastMediaFrameListener::onMediaFrame() [ssrc:%u:,intra:%d,iframes:%d,pending:%d,ts:%llu,frameTime:%llu,selectionTime:%llu]\n", ssrc, cloned->IsIntra(), iframes.size(), pendingFrames.size(), cloned->GetTimestamp(), frameTime, selectionTime);
+	//UltraDebug("-SimulcastMediaFrameListener::onMediaFrame() [ssrc:%u:,intra:%d,iframes:%d,pending:%d,ts:%llu,frameTime:%llu,selectionTime:%llu]\n", ssrc, cloned->IsIntra(), iframes.size(), pendingFrames.size(), cloned->GetTimestamp(), frameTime, selectionTime);
 
 
 	//We decide which layer to forwrd on each I frame
@@ -196,7 +196,7 @@ void SimulcastMediaFrameListener::ForwardFrame(VideoFrame& frame)
 	frame.SetTimestamp(ts - firstTimestamp + offsetTimestamp);
 
 	//Debug
-	Log("-SimulcastMediaFrameListener::ForwardFrame() | Forwarding frame [ts:%llu]\n", frame.GetTimestamp());
+	//UltraDebug("-SimulcastMediaFrameListener::ForwardFrame() | Forwarding frame [ts:%llu]\n", frame.GetTimestamp());
 	ScopedLock lock(mutex);
 	//Send it to all listeners
 	for (const auto listener : listeners)
