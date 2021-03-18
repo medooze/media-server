@@ -7,6 +7,7 @@
 #include <string.h>
 #include <memory>
 #include "Buffer.h"
+#include "BufferReader.h"
 
 class MediaFrame
 {
@@ -230,8 +231,24 @@ public:
 		//Return previous pos
 		return pos;
 	}
-	
-	
+
+	DWORD AppendMedia(BufferReader& reader, DWORD size)
+	{
+		//Get current pos
+		DWORD pos = buffer->GetSize();
+		//Adquire buffer
+		AdquireBuffer();
+		//Append data
+		buffer->AppendData(reader.GetData(size), size);
+		//Return previous pos
+		return pos;
+	}
+
+	DWORD AppendMedia(BufferReader& reader)
+	{
+		return AppendMedia(reader, reader.GetLeft());
+	}
+
 	void PrependMedia(const BYTE* data,DWORD size)
 	{
 		//Store old buffer
