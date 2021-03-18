@@ -70,6 +70,9 @@ VP9DIR=vp9
 VP9OBJ=VP9Decoder.o
 DEPACKETIZERSOBJ+= VP9PayloadDescription.o VP9LayerSelector.o VP9Depacketizer.o 
 
+AV1DIR=av1
+DEPACKETIZERSOBJ+= AV1Depacketizer.o 
+
 GSMDIR=gsm
 GSMOBJ=gsmcodec.o
 
@@ -91,7 +94,7 @@ AACOBJ=aacencoder.o aacdecoder.o
 
 RTP=  LayerInfo.o RTPMap.o  RTPPacket.o RTPPayload.o RTPPacketSched.o  RTPLostPackets.o RTPSource.o RTPHeader.o RTPHeaderExtension.o DependencyDescriptor.o
 RTCP= RTCPCompoundPacket.o RTCPNACK.o RTCPReceiverReport.o RTCPCommonHeader.o  RTCPApp.o RTCPExtendedJitterReport.o RTCPPacket.o RTCPReport.o RTCPSenderReport.o RTCPBye.o RTCPFullIntraRequest.o RTCPPayloadFeedback.o RTCPRTPFeedback.o RTCPSDES.o 
-CORE= RTPIncomingMediaStreamDepacketizer.o RTPIncomingMediaStreamMultiplexer.o RTPIncomingSource.o RTPIncomingSourceGroup.o RTPOutgoingSource.o RTPOutgoingSourceGroup.o RTPSmoother.o SRTPSession.o dtls.o OpenSSL.o RTPTransport.o  stunmessage.o crc32calc.o http.o httpparser.o avcdescriptor.o utf8.o rtpsession.o RTPStreamTransponder.o VideoLayerSelector.o remoteratecontrol.o remoterateestimator.o RTPBundleTransport.o DTLSICETransport.o PCAPFile.o PCAPReader.o PCAPTransportEmulator.o ActiveSpeakerDetector.o EventLoop.o Datachannels.o crc32c.o crc32c_sse42.o crc32c_portable.o MediaFrameListenerBridge.o SendSideBandwidthEstimation.o
+CORE= SimulcastMediaFrameListener.o RTPIncomingMediaStreamDepacketizer.o RTPIncomingMediaStreamMultiplexer.o RTPIncomingSource.o RTPIncomingSourceGroup.o RTPOutgoingSource.o RTPOutgoingSourceGroup.o RTPSmoother.o SRTPSession.o dtls.o OpenSSL.o RTPTransport.o  stunmessage.o crc32calc.o http.o httpparser.o avcdescriptor.o utf8.o rtpsession.o RTPStreamTransponder.o VideoLayerSelector.o remoteratecontrol.o remoterateestimator.o RTPBundleTransport.o DTLSICETransport.o PCAPFile.o PCAPReader.o PCAPTransportEmulator.o ActiveSpeakerDetector.o EventLoop.o Datachannels.o crc32c.o crc32c_sse42.o crc32c_portable.o MediaFrameListenerBridge.o SendSideBandwidthEstimation.o
 MP4= mp4streamer.o mp4recorder.o mp4player.o
 
 RTMP= rtmpparticipant.o amf.o rtmpmessage.o rtmpchunk.o rtmpstream.o rtmpconnection.o  rtmpserver.o  rtmpflvstream.o flvrecorder.o flvencoder.o rtmppacketizer.o
@@ -146,6 +149,7 @@ VPATH +=  %.cpp $(SRCDIR)/src/$(G722DIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(VP6DIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(VP8DIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(VP9DIR)
+VPATH +=  %.cpp $(SRCDIR)/src/$(AV1DIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(OPUSDIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(AACDIR)
 VPATH +=  %.cpp $(SRCDIR)/ext/libdatachannels/src

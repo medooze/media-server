@@ -18,6 +18,7 @@
 #include "h264/h264depacketizer.h"
 #include "vp8/vp8depacketizer.h"
 #include "vp9/VP9Depacketizer.h"
+#include "av1/AV1Depacketizer.h"
 
 RTPDepacketizer* RTPDepacketizer::Create(MediaFrame::Type mediaType,DWORD codec)
 {
@@ -35,6 +36,8 @@ RTPDepacketizer* RTPDepacketizer::Create(MediaFrame::Type mediaType,DWORD codec)
 					 return new VP8Depacketizer();
 				 case VideoCodec::VP9:
 					 return new VP9Depacketizer();
+				 case VideoCodec::AV1:
+					 return new AV1Depacketizer();
 				 default:
 					Error("-RTPDepacketizer::Create we don't have an RTP depacketizer for [media:%s,codec:%s]\n",MediaFrame::TypeToString(mediaType),GetNameForCodec(mediaType,codec));
 			 }
