@@ -50,7 +50,7 @@ void RTPIncomingMediaStreamMultiplexer::onRTP(RTPIncomingMediaStream* stream,con
 	//Dispatch in thread async
 	timeService.Async([=](...){
 		//For each packet
-		for (const auto packet : packets)
+		for (const auto& packet : packets)
 			//Deliver to all listeners
 			for (auto listener : listeners)
 				//Dispatch rtp packet
