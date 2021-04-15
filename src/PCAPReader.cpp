@@ -120,7 +120,7 @@ uint64_t PCAPReader::Seek(const uint64_t time)
 		uint32_t seconds	= get4(data,0);
 		uint32_t nanoseonds	= get4(data,4);
 		uint32_t packetSize	= get4(data,8);
-		uint32_t packetLen	= get4(data,12);
+[[maybe_unused]]uint32_t packetLen	= get4(data,12);
 		uint64_t ts = (((uint64_t)seconds)*1000000+nanoseonds);
 
 		//If we have got to the correct time

@@ -29,7 +29,6 @@ public:
 
 private:
 	uint8_t data[65535];
-	size_t size = 65535;
 	uint32_t originIp = 0;
 	uint16_t originPort = 0;
 	uint32_t destIp = 0;

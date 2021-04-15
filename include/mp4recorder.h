@@ -36,8 +36,6 @@ private:
 	MP4FileHandle mp4	= MP4_INVALID_FILE_HANDLE;
 	MP4TrackId track	= 0;
 	MP4TrackId hint		= 0;
-	bool first		= true;
-	int length		= 0;
 	int sampleId		= 0;
 	MediaFrame *frame	= nullptr;
 	bool hasSPS		= false;

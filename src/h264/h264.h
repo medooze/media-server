@@ -38,15 +38,15 @@ public:
 			profile_idc==83 || profile_idc==86 || profile_idc==118 || profile_idc==128 || profile_idc==138 || profile_idc==139 || 
 			profile_idc==134 || profile_idc==135)
 		{
-			CHECK(r); auto chroma_format_idc = ExpGolombDecoder::Decode(r);
+			CHECK(r); [[maybe_unused]] auto chroma_format_idc = ExpGolombDecoder::Decode(r);
 			if( chroma_format_idc == 3 )
 			{
-				CHECK(r); auto separate_colour_plane_flag = r.Get(1);
+				CHECK(r); [[maybe_unused]] auto separate_colour_plane_flag = r.Get(1);
 			}
-			CHECK(r); auto bit_depth_luma_minus8 = ExpGolombDecoder::Decode(r);
-			CHECK(r); auto bit_depth_chroma_minus8 = ExpGolombDecoder::Decode(r);
-			CHECK(r); auto qpprime_y_zero_transform_bypass_flag = r.Get(1);
-			CHECK(r); auto seq_scaling_matrix_present_flag = r.Get(1);
+			CHECK(r); [[maybe_unused]] auto bit_depth_luma_minus8 = ExpGolombDecoder::Decode(r);
+			CHECK(r); [[maybe_unused]] auto bit_depth_chroma_minus8 = ExpGolombDecoder::Decode(r);
+			CHECK(r); [[maybe_unused]] auto qpprime_y_zero_transform_bypass_flag = r.Get(1);
+			CHECK(r); [[maybe_unused]] auto seq_scaling_matrix_present_flag = r.Get(1);
 			if( seq_scaling_matrix_present_flag )
 			{	
 				for(uint32_t i = 0; i < (( chroma_format_idc != 3 ) ? 8 : 12 ); i++ )
