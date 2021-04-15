@@ -139,7 +139,7 @@ VideoBuffer VideoPipe::GrabFrame(DWORD timeout)
 		//Desbloqueamos
 		pthread_mutex_unlock(&newPicMutex);
 		//Salimos
-		return std::move(pic);
+		return pic;
 	}
 
 	//Miramos a ver si hay un nuevo pict
@@ -170,7 +170,7 @@ VideoBuffer VideoPipe::GrabFrame(DWORD timeout)
 	//Y liberamos el mutex
 	pthread_mutex_unlock(&newPicMutex);
 
-	return std::move(pic);
+	return pic;
 }
 
 void  VideoPipe::CancelGrabFrame()
