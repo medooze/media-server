@@ -47,6 +47,16 @@ public:
 		height = 0;
 	}
 
+	VideoFrame(VideoCodec::Type codec, Buffer&& buffer) : MediaFrame(MediaFrame::Video, std::move(buffer))
+	{
+		//Store codec
+		this->codec = codec;
+		//Init values
+		isIntra = 0;
+		width = 0;
+		height = 0;
+	}
+
 	virtual MediaFrame* Clone() const
 	{
 		//Create new one with same data

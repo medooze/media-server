@@ -137,6 +137,16 @@ public:
 		ownedBuffer = false;
 	}
 
+	MediaFrame(Type type, Buffer&& buffer)
+	{
+		//Set media type
+		this->type = type;
+		//Create new buffer
+		this->buffer = std::make_shared<Buffer>(std::move(buffer));
+		//owned buffer
+		ownedBuffer = true;
+	}
+
 	virtual ~MediaFrame()
 	{
 		//Clear
@@ -244,6 +254,18 @@ public:
 		return pos;
 	}
 
+	DWORD AppendMedia(const Buffer& append)
+	{
+		//Get current pos
+		DWORD pos = buffer->GetSize();
+		//Adquire buffer
+		AdquireBuffer();
+		//Append data
+		buffer->AppendData(append.GetData(), append.GetSize());
+		//Return previous pos
+		return pos;
+	}
+
 	DWORD AppendMedia(BufferReader& reader)
 	{
 		return AppendMedia(reader, reader.GetLeft());
@@ -265,6 +287,11 @@ public:
 		for (auto &info : rtpInfo)
 			//Move init of rtp packet
 			info.IncPos(size);
+	}
+
+	void PrependMedia(const Buffer& buffer)
+	{
+		PrependMedia(buffer.GetData(),buffer.GetSize());
 	}
         
 	BYTE* AllocateCodecConfig(DWORD size)
