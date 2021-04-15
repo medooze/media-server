@@ -417,7 +417,7 @@ int FLVEncoder::EncodeAudio()
 		return Error("Error opening encoder");
 	
 	//Try to set native rate
-	DWORD rate = encoder->TrySetRate(audioInput->GetNativeRate());
+	DWORD rate = encoder->TrySetRate(audioInput->GetNativeRate(),1);
 
 	//Create audio frame
 	AudioFrame frame(audioCodec);

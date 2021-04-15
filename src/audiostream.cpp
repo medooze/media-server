@@ -417,7 +417,7 @@ int AudioStream::SendAudio()
 	DWORD nativeRate = audioInput->GetNativeRate();
 
 	//Get codec rate
-	DWORD rate = codec->TrySetRate(nativeRate);
+	DWORD rate = codec->TrySetRate(nativeRate, 1);
 
 	//Start recording at codec rate
 	audioInput->StartRecording(rate);

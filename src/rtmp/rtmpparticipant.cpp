@@ -724,7 +724,7 @@ int RTMPParticipant::SendAudio()
 	AudioEncoder *encoder = AudioCodecFactory::CreateEncoder(audioCodec,audioProperties);
 
 	//Try to set native rate
-	DWORD rate = encoder->TrySetRate(audioInput->GetNativeRate());
+	DWORD rate = encoder->TrySetRate(audioInput->GetNativeRate(),1);
 	
 	//Start recording
 	audioInput->StartRecording(rate);
