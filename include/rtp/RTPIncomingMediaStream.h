@@ -30,7 +30,7 @@ public:
 		virtual void onRTP(RTPIncomingMediaStream* stream,const RTPPacket::shared& packet) = 0;
 		virtual void onRTP(RTPIncomingMediaStream* stream,const std::vector<RTPPacket::shared>& packets)
 		{
-			for (const auto packet : packets)
+			for (const auto& packet : packets)
 				onRTP(stream,packet);
 		};
 		virtual void onBye(RTPIncomingMediaStream* stream) = 0;
