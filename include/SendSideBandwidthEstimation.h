@@ -16,9 +16,9 @@ public:
 	enum ChangeState {
 		Initial,
 		Increase,
-		Decrease,
 		OverShoot,
-		Congestion
+		Congestion,
+		Recovery
 	}
 ;
 public:
@@ -45,7 +45,6 @@ private:
 	uint64_t targetBitrate = 0;
 	uint64_t availableRate = 0;
 	uint64_t firstSent = 0;
-	uint64_t lastSent = 0;
 	uint64_t firstRecv = 0;
 	uint64_t lastRecv = 0;
 	uint64_t prevSent = 0;
