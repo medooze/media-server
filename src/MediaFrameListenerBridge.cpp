@@ -1,3 +1,5 @@
+#include <vector>
+
 #include "video.h"
 #include "audio.h"
 #include "MediaFrameListenerBridge.h"
@@ -5,19 +7,43 @@
 #include "EventLoop.h"
 
 
-MediaFrameListenerBridge::MediaFrameListenerBridge(DWORD ssrc) : 
+MediaFrameListenerBridge::MediaFrameListenerBridge(DWORD ssrc, bool smooth) : 
 	ssrc(ssrc),
+	smooth(smooth),
 	acumulator(1000),
 	accumulatorFrames(1000),
 	accumulatorPackets(1000),
 	waited(1000)
 {
 	loop.Start();
+
+	//If we are doing bitrate smoothing
+	if (smooth)
+		//Create packet dispatch timer
+		dispatchTimer = loop.CreateTimer([=](auto now){
+			//If there are no pending packets
+			if (packets.empty())
+				//Done
+				return;
+
+			//Get first packet to send
+			auto& [packet,duration] = packets.front();
+
+			//Dispatch RTP packet
+			Dispatch(packet);
+
+			//remove it
+			packets.pop();
+
+			//Reschedule
+			dispatchTimer->Again(std::chrono::milliseconds(duration));
+		});
 }
 
 MediaFrameListenerBridge::~MediaFrameListenerBridge()
 {
 	loop.Sync([=](...){
+		//TODO wait onMediaFrame end
 		for (auto listener : listeners)
 			listener->onEnded(this);
 	});
@@ -47,6 +73,17 @@ void MediaFrameListenerBridge::onMediaFrame(const MediaFrame& frame)
 		//Multiplex
 		for (auto listener : mediaFrameListenerss)
 			listener->onMediaFrame(*frame);
+
+		//For all pending packets
+		while(!packets.empty())
+		{
+			//Get first
+			auto& [packet, duration] = packets.front();
+			//Dipatch it
+			Dispatch(packet);
+			//remove
+			packets.pop();
+		}
 
 		//Check
 		if (!frame->HasRtpPacketizationInfo())
@@ -149,14 +186,18 @@ void MediaFrameListenerBridge::onMediaFrame(const MediaFrame& frame)
 
 		DWORD current = 0;
 
+		//Calculate each packet duration
+		uint32_t frameDuration = frame->GetDuration() * 1000 / rate;
+
 		//For each one
 		for (size_t i=0;i<info.size();i++)
 		{
+			
 			//Get packet
 			const MediaFrame::RtpPacketization& rtp = info[i];
 
 			//Create rtp packet
-			 auto packet = std::make_shared<RTPPacket>(frame->GetType(),codec);
+				auto packet = std::make_shared<RTPPacket>(frame->GetType(),codec);
 
 			//Make sure it is enought length
 			if (rtp.GetTotalLength()>packet->GetMaxMediaLength())
@@ -194,10 +235,35 @@ void MediaFrameListenerBridge::onMediaFrame(const MediaFrame& frame)
 			if (frame->GetType()==MediaFrame::Video)
 				VideoLayerSelector::GetLayerIds(packet);
 
-			for (auto listener : listeners)
-				listener->onRTP(this,packet);
+			//If doing smooting
+			if (smooth)
+			{
+				//calculate packet duration based on relative size to keep bitrate smooth
+				const uint32_t packetDuration = std::max<uint32_t>(frameDuration * packet->GetMediaLength() / frameLength,1);
+
+				//Log("-%d %d %dms %d %dms\n", extSeqNum-1, frameLength, frameDuration, packet->GetMediaLength(), packetDuration);
+
+				//Insert it
+				packets.emplace(packet,packetDuration);
+			} else {
+				//Deliver now
+				for (auto listener : listeners)
+					listener->onRTP(this,packet);
+			}
 		}
+	
+		//If doing smoothing
+		if (smooth)
+			//Dispatch first packet now
+			dispatchTimer->Again(0ms);
 	});
+}
+
+void MediaFrameListenerBridge::Dispatch(const RTPPacket::shared& packet)
+{
+	//Dispatch it
+	for (auto listener : listeners)
+		listener->onRTP(this, packet);
 }
 
 void MediaFrameListenerBridge::Reset()

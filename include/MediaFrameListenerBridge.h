@@ -6,6 +6,8 @@
 #include "rtp.h"
 #include "EventLoop.h"
 
+#include <queue>
+
 class MediaFrameListenerBridge :
 	public MediaFrame::Listener,
 	public RTPIncomingMediaStream
@@ -14,7 +16,7 @@ public:
 	static constexpr uint32_t NoSeqNum = std::numeric_limits<uint32_t>::max();
 	static constexpr uint64_t NoTimestamp = std::numeric_limits<uint64_t>::max();
 public:
-	MediaFrameListenerBridge(DWORD ssrc);
+	MediaFrameListenerBridge(DWORD ssrc, bool smooth = false);
 	virtual ~MediaFrameListenerBridge();
 	
         void AddMediaListener(MediaFrame::Listener *listener);	
@@ -31,12 +33,19 @@ public:
 	void Reset();
 	void Update();
 	void Update(QWORD now);
-        
+
+private:
+	void Dispatch(const RTPPacket::shared& pacekt);
         
 public:
 	EventLoop loop;
+	Timer::shared dispatchTimer;
+
+	std::queue<std::pair<RTPPacket::shared,uint32_t>> packets;
+
 	DWORD ssrc = 0;
 	DWORD extSeqNum = 0;
+	bool  smooth = true;
 	Mutex mutex;
 	std::set<RTPIncomingMediaStream::Listener*> listeners;
         std::set<MediaFrame::Listener*> mediaFrameListenerss;
@@ -54,6 +63,8 @@ public:
 	Acumulator acumulator;
 	Acumulator accumulatorFrames;
 	Acumulator accumulatorPackets;
+
+	
 	
 	
 	DWORD minWaitedTime	= 0;
