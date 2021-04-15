@@ -41,6 +41,7 @@
 #include "VideoLayerSelector.h"
 
 constexpr auto IceTimeout = 30000ms;
+constexpr auto ProbingInterval = 10ms;
 
 DTLSICETransport::DTLSICETransport(Sender *sender,TimeService& timeService) :
 	sender(sender),
@@ -515,7 +516,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 			}
 			
 			//LOg
-			Debug("-DTLSICETransport::REMB() [ssrc:%x,mid:'%s',count:%d,bitrate:%u]\n",group->media.ssrc,group->mid.c_str(),ssrcs.size(),bitrate);
+			UltraDebug("-DTLSICETransport::onData() | Sending REMB [ssrc:%u,mid:'%s',count:%d,bitrate:%u]\n",group->media.ssrc,group->mid.c_str(),ssrcs.size(),bitrate);
 			
 			// SSRC of media source (32 bits):  Always 0; this is the same convention as in [RFC5104] section 4.2.2.2 (TMMBN).
 			auto remb = rtcp->CreatePacket<RTCPPayloadFeedback>(RTCPPayloadFeedback::ApplicationLayerFeeedbackMessage,group->media.ssrc,WORD(0));
@@ -693,7 +694,9 @@ DWORD DTLSICETransport::SendProbe(const RTPPacket::shared& original)
 		//Add new stat
 		senderSideBandwidthEstimator.SentPacket(stats);
 	}
-	
+
+	//Log("-DTLSICETransport::SendProbe() |  Sent probe [size:%d]\n", len);
+
 	return len;
 }
 
@@ -1547,7 +1550,7 @@ void DTLSICETransport::onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMaster
 	SetState(DTLSState::Connected);
 	
 	//Create new probe timer
-	probingTimer = timeService.CreateTimer(0ms,5ms,[this](...){
+	probingTimer = timeService.CreateTimer(0ms, ProbingInterval, [this](...){
 		//Do probe
 		Probe();
 	});
@@ -2019,7 +2022,7 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 	
 	//No frame markings
 	packet->DisableFrameMarkings();
-	
+
 	//if (group->type==MediaFrame::Video) UltraDebug("-Sending RTP on media:%s sssrc:%u seq:%u pt:%u ts:%lu codec:%s\n",MediaFrame::TypeToString(group->type),source.ssrc,packet->GetSeqNum(),packet->GetPayloadType(),packet->GetTimestamp(),GetNameForCodec(group->type,packet->GetCodec()));
 	
 	//Send buffer
@@ -2057,7 +2060,7 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 	//Check error
 	if (!len)
 		//Error
-		return Error("-RTPTransport::SendPacket() | Error protecting RTP packet [ssrc:%u,%s]\n",ssrc,send.GetLastError());
+		return Error("-RTPTransport::Send() | Error protecting RTP packet [ssrc:%u,%s]\n",ssrc,send.GetLastError());
 
 	//Store candidate
 	ICERemoteCandidate* candidate = active;
@@ -2276,6 +2279,10 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 				{
 					//Get media
 					RTPIncomingSourceGroup* group = GetIncomingSourceGroup(ssrc);
+
+					//Debug
+					Debug("-DTLSICETransport::onRTCP() | Got BYE [ssrc:%u,group:%p,this:%p]\n", ssrc, group, this);
+
 					//If found
 					if (group)
 						//Reset it
@@ -2356,7 +2363,7 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 						//Get media
 						RTPOutgoingSourceGroup* group = GetOutgoingSourceGroup(ssrc);
 						
-						//Dbug
+						//Debug
 						Debug("-DTLSICETransport::onRTCP() | FPU requested [ssrc:%u,group:%p,this:%p]\n",ssrc,group,this);
 						
 						//If not found
@@ -2420,6 +2427,9 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 									DWORD target = get4(payload,8+4*i);
 									//Get media
 									RTPOutgoingSourceGroup* group = GetOutgoingSourceGroup(target);
+
+									//Debug
+									Debug("-DTLSICETransport::onRTCP() | REMB received [bitrate:%d,target:%u,group:%p,this:%p]\n", bitrate, target, group, this);
 									
 									//If found
 									if (group)
@@ -2653,30 +2663,35 @@ void DTLSICETransport::Probe()
 		//Get bitrates
 		DWORD bitrate		= static_cast<DWORD>(outgoingBitrate.GetInstantAvg()*8);
 		DWORD probing		= static_cast<DWORD>(probingBitrate.GetInstantAvg()*8);
-		DWORD target		= senderSideBandwidthEstimator.GetTargetBitrate();
+		DWORD target		= senderSideBandwidthEstimator.GetAvailableBitrate();
 
-		//Log(">DTLSICETransport::Probe() | [target:%u,bitrate:%d,probing:%d,history:%d]\n",target,bitrate,probing,history.size());
+		//Log(">DTLSICETransport::Probe() | [target:%u,bitrate:%d,probing:%d,history:%d,probingBitrateLimit=%d,maxProbingBitrate=%d]\n",target,bitrate,probing,history.size(),probingBitrateLimit,maxProbingBitrate);
 			
 		//If we can still send more
 		if (target>bitrate && (!probingBitrateLimit || bitrate<probingBitrateLimit) && probing<maxProbingBitrate)
 		{
-			//Increase probing bitrate
-			probing += std::min(maxProbingBitrate, target - bitrate);
+			//Calculate how much bitrate should we sent
+			probing = target - (bitrate - probing);
 
 			//Get size of probes
-			DWORD probingSize = (probing*sleep)/8000;
+			DWORD probingSize = std::min<DWORD>((probing*sleep)/8000, maxProbingBitrate);
 			
 			//Log("-DTLSICETransport::Probe() | Sending probing packets [target:%u,bitrate:%u,probing:%u,max:%u,probingSize:%d,sleep:%d]\n", target, bitrate,probing,maxProbingBitrate, probingSize, sleep);
 
 			//If we have packet history
 			if (history.size())
 			{
+				int found = true;
 				//Sent until no more probe
-				while (probingSize)
+				while (probingSize && found)
 				{
+					found = false;
 					//For each packet in history
 					for (auto it = history.rbegin(); it!=history.rend(); ++it)
 					{
+						//Don't send too much data
+						if ((*it)->GetMediaLength()> probingSize)
+							continue;
 						//Send probe packet
 						DWORD len = SendProbe(*it);
 						//Check len
@@ -2693,6 +2708,7 @@ void DTLSICETransport::Probe()
 						probingSize -= len;
 						//Update now
 						now = getTime();
+						found = true;
 					}
 					
 				}
