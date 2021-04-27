@@ -281,7 +281,6 @@ std::optional<DependencyDescriptor> DependencyDescriptor::Parse(BitReader& reade
 	
 	//frame_dependency_definition()
 	//zero_padding = f(sz * 8 - TotalConsumedBits)
-	
 	return dd;
 }
 
@@ -505,7 +504,7 @@ bool DependencyDescriptor::Serialize(BitWritter& writter) const
 			//For each decode target
 			for (auto fdiff : *customFrameDiffsChains)
 				//Write chain frame diff
-				writter.Put(18, fdiff);
+				writter.Put(8, fdiff);
 		}
 	}
 	
