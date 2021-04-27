@@ -37,17 +37,21 @@ RTPIncomingSource* RTPIncomingSourceGroup::GetSource(DWORD ssrc)
 void RTPIncomingSourceGroup::AddListener(RTPIncomingMediaStream::Listener* listener) 
 {
 	Debug("-RTPIncomingSourceGroup::AddListener() [listener:%p]\n",listener);
-		
-	ScopedLock scoped(listenerMutex);
-	listeners.insert(listener);
+	
+	//Add it sync
+	timeService.Sync([=](auto){
+		listeners.insert(listener);
+	});
 }
 
 void RTPIncomingSourceGroup::RemoveListener(RTPIncomingMediaStream::Listener* listener) 
 {
 	Debug("-RTPIncomingSourceGroup::RemoveListener() [listener:%p]\n",listener);
-		
-	ScopedLock scoped(listenerMutex);
-	listeners.erase(listener);
+	
+	//Remove it sync
+	timeService.Sync([=](auto) {
+		listeners.erase(listener);
+	});
 }
 
 int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet, DWORD size)
@@ -118,12 +122,13 @@ void RTPIncomingSourceGroup::Bye(DWORD ssrc)
 		ResetPackets();
 		//Reset 
 		{
-			//Block listeners
-			ScopedLock scoped(listenerMutex);
-			//Deliver to all listeners
-			for (auto listener : listeners)
-				//Dispatch rtp packet
-				listener->onBye(this);
+			//Add it sync
+			timeService.Sync([=](auto) {
+				//Deliver to all listeners
+				for (auto listener : listeners)
+					//Dispatch rtp packet
+					listener->onBye(this);
+			});
 		}
 	} else if (ssrc == rtx.ssrc) {
 	} else if (ssrc == fec.ssrc) {
@@ -139,34 +144,28 @@ void RTPIncomingSourceGroup::ResetPackets()
 
 void RTPIncomingSourceGroup::Update()
 {
-	Update(getTimeMS());
+	//Update it sync
+	timeService.Sync([=](std::chrono::milliseconds now) {
+		//Update
+		media.Update(now.count());
+		//Update
+		rtx.Update(now.count());
+		//Update
+		fec.Update(now.count());
+	});
 }
 
 void RTPIncomingSourceGroup::Update(QWORD now)
 {
-	//Update media
-	{
-		//Lock source
-		ScopedLock scoped(media);
+	//Update it sync
+	timeService.Sync([=](auto) {
 		//Update
 		media.Update(now);
-	}
-	
-	//Update RTX
-	{
-		//Lock source
-		ScopedLock scoped(rtx);
 		//Update
 		rtx.Update(now);
-	}
-	
-	//Update FEC
-	{
-		//Lock source
-		ScopedLock scoped(fec);
 		//Update
 		fec.Update(now);
-	}
+	});
 }
 
 void RTPIncomingSourceGroup::SetRTT(DWORD rtt)
@@ -219,14 +218,11 @@ void RTPIncomingSourceGroup::DispatchPackets(uint64_t time)
 		ordered.push_back(packet);
 	}
 	
-	{
-		//Block listeners
-		ScopedLock scoped(listenerMutex);
-		//Deliver to all listeners
-		for (auto listener : listeners)
-			//Dispatch rtp packet
-			listener->onRTP(this,ordered);
-	}
+	//Deliver to all listeners
+	for (auto listener : listeners)
+		//Dispatch rtp packet
+		listener->onRTP(this,ordered);
+
 	//Update stats
 	lost          = losts.GetTotal();
 	minWaitedTime = packets.GetMinWaitedime();
@@ -239,14 +235,15 @@ void RTPIncomingSourceGroup::Stop()
 	//Stop timer
 	dispatchTimer->Cancel();
 	
-	ScopedLock scoped(listenerMutex);
-	
-	//Deliver to all listeners
-	for (auto listener : listeners)
-		//Dispatch rtp packet
-		listener->onEnded(this);
-	//Clear listeners
-	listeners.clear();
+	//Stop listeners sync
+	timeService.Sync([=](auto) {
+		//Deliver to all listeners
+		for (auto listener : listeners)
+			//Dispatch rtp packet
+			listener->onEnded(this);
+		//Clear listeners
+		listeners.clear();
+	});
 }
 
 RTPIncomingSource* RTPIncomingSourceGroup::Process(RTPPacket::shared &packet)
@@ -294,13 +291,9 @@ RTPIncomingSource* RTPIncomingSourceGroup::Process(RTPPacket::shared &packet)
 		//Check if we can ge the layer info
 		auto info = VideoLayerSelector::GetLayerIds(packet);
 		//UltraDebug("-VideoLayerSelector::GetLayerIds() | [id:%x,tid:%u,sid:%u]\n",info.GetId(),info.temporalLayerId,info.spatialLayerId);
-		//Lock sources accumulators
-		ScopedLock scoped(*source);
 		//Update source and layer info
 		source->Update(time, packet->GetSeqNum(), packet->GetRTPHeader().GetSize() + packet->GetMediaLength(), info);
 	} else {
-		//Lock sources accumulators
-		ScopedLock scoped(*source);
 		//Update source and layer info
 		source->Update(time, packet->GetSeqNum(), packet->GetRTPHeader().GetSize() + packet->GetMediaLength());
 	}

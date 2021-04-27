@@ -582,17 +582,12 @@ DWORD DTLSICETransport::SendProbe(const RTPPacket::shared& original)
 	//Get rtx source
 	RTPOutgoingSource& source = group->rtx;
 	
-	//Sync
-	{
-		//Lock in scope
-		ScopedLock scope(source);
-		//Update RTX headers
-		packet->SetSSRC(source.ssrc);
-		packet->SetOSN(source.NextSeqNum());
-		packet->SetPayloadType(apt);
-		//No padding
-		packet->SetPadding(0);
-	}
+	//Update RTX headers
+	packet->SetSSRC(source.ssrc);
+	packet->SetOSN(source.NextSeqNum());
+	packet->SetPayloadType(apt);
+	//No padding
+	packet->SetPadding(0);
 	
 	//Add transport wide cc on video
 	if (group->type == MediaFrame::Video && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC)!=RTPMap::NotFound)
@@ -672,17 +667,12 @@ DWORD DTLSICETransport::SendProbe(const RTPPacket::shared& original)
 	//Update bitrate
 	outgoingBitrate.Update(now/1000,len);
 		
-        //Synchronized
-	{
-		//Block scope
-		ScopedLock scope(source);
-                //Update last send time
-                source.lastTime		= packet->GetTimestamp();
-                source.lastPayloadType  = packet->GetPayloadType();
+        //Update last send time
+        source.lastTime		= packet->GetTimestamp();
+        source.lastPayloadType  = packet->GetPayloadType();
 	
-                //Update stats
-                source.Update(now/1000,packet->GetSeqNum(),len);
-        }
+        //Update stats
+        source.Update(now/1000,packet->GetSeqNum(),len);
 	
 	//Add to transport wide stats
 	if (packet->HasTransportWideCC())
@@ -723,8 +713,6 @@ DWORD DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 	//If it is using rtx (i.e. not firefox)
 	if (rtx)
 	{
-                //Lock in scope
-                ScopedLock scope(source);
 		//Update RTX headers
 		header.ssrc		= source.ssrc;
 		header.payloadType	= sendMaps.apt.begin()->first;
@@ -733,8 +721,6 @@ DWORD DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 		//Padding
 		header.padding		= 1;
 	} else {
-                //Lock in scope
-                ScopedLock scope(source);
 		//Update normal headers
 		header.ssrc		= source.ssrc;
 		header.payloadType	= source.lastPayloadType;
@@ -840,17 +826,11 @@ DWORD DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 	//Update bitrate
 	outgoingBitrate.Update(now/1000,len);
 	
-        //SYNC
-        {
-                //Lock in scope
-                ScopedLock scope(source);
-                //Update last send time
-                source.lastTime		= header.timestamp;
-                source.lastPayloadType  = header.payloadType;
-                //Update stats
-                source.Update(now/1000,header.sequenceNumber,len);
-        }
-	
+        //Update last send time
+        source.lastTime		= header.timestamp;
+        source.lastPayloadType  = header.payloadType;
+        //Update stats
+        source.Update(now/1000,header.sequenceNumber,len);
 	
 	//Add to transport wide stats
 	if (extension.hasTransportWideCC)
@@ -925,8 +905,6 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	//If it is using rtx (i.e. not firefox)
 	if (rtx)
 	{
-                //Lock in scope
-                ScopedLock scope(source);
 		//Update RTX headers
 		packet->SetSSRC(source.ssrc);
 		packet->SetOSN(source.NextSeqNum());
@@ -1020,17 +998,12 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	//Release packets from rtx queue
 	group->ReleasePackets(until);	
 	
-        //Synchronized
-	{
-		//Block scope
-		ScopedLock scope(source);
-                //Update last send time
-                source.lastTime		= packet->GetTimestamp();
-                source.lastPayloadType  = packet->GetPayloadType();
+        //Update last send time
+        source.lastTime		= packet->GetTimestamp();
+        source.lastPayloadType  = packet->GetPayloadType();
 	
-                //Update stats
-                source.Update(now/1000,packet->GetSeqNum(),len);
-        }
+        //Update stats
+        source.Update(now/1000,packet->GetSeqNum(),len);
 	
 	//Check if we are using transport wide for this packet
 	if (packet->HasTransportWideCC())
@@ -1976,14 +1949,9 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 	//Get outgoing source
 	RTPOutgoingSource& source = group->media;
 	
-        //SYNCHRONIZED
-        {
-                //Block scope
-		ScopedLock scope(source);
-                //Update headers
-                packet->SetExtSeqNum(source.CorrectExtSeqNum(packet->GetExtSeqNum()));
-                packet->SetSSRC(source.ssrc);
-        }
+        //Update headers
+        packet->SetExtSeqNum(source.CorrectExtSeqNum(packet->GetExtSeqNum()));
+        packet->SetSSRC(source.ssrc);
         
 	packet->SetPayloadType(sendMaps.rtp.GetTypeForCodec(packet->GetCodec()));
 	//No padding
@@ -2078,24 +2046,19 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 	DWORD estimated = 0;
 	DWORD probing	= 0;
 		
-	//SYNCHRONIZED
-	{
-		//Block scope
-		ScopedLock scope(source);
-		//Update last items
-		source.lastTime		= packet->GetTimestamp();
-		source.lastPayloadType  = packet->GetPayloadType();
-		//Set clockrate
-		source.clockrate	= packet->GetClockRate();
+	//Update last items
+	source.lastTime		= packet->GetTimestamp();
+	source.lastPayloadType  = packet->GetPayloadType();
+	//Set clockrate
+	source.clockrate	= packet->GetClockRate();
 		
-		//Update source
-		source.Update(now/1000,packet->GetSeqNum(),len);
+	//Update source
+	source.Update(now/1000,packet->GetSeqNum(),len);
 		
-		 //Get bitrates
-		bitrate   = static_cast<DWORD>(source.acumulator.GetInstantAvg()*8);
-		estimated = source.remb;
-		probing	  = static_cast<DWORD>(probingBitrate.GetInstantAvg()*8);
-	}
+		//Get bitrates
+	bitrate   = static_cast<DWORD>(source.acumulator.GetInstantAvg()*8);
+	estimated = source.remb;
+	probing	  = static_cast<DWORD>(probingBitrate.GetInstantAvg()*8);
 
 	//Check if we are using transport wide for this packet
 	if (packet->HasTransportWideCC())
@@ -2215,8 +2178,6 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 							//Check we have it
 							if (source)
 							{
-								//Lock source
-								ScopedLock scoped(*source);
 								//Process report
 								if (source->ProcessReceiverReport(now/1000, report))
 									//We need to update rtt
@@ -2254,8 +2215,6 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 							//Check we have it
 							if (source)
 							{
-								//Lock source
-								ScopedLock scoped(*source);
 								//Process report
 								if (source->ProcessReceiverReport(now/1000, report))
 									//We need to update rtt

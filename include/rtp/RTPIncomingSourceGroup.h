@@ -6,7 +6,6 @@
 #include <list>
 
 #include "config.h"
-#include "use.h"
 #include "rtp/RTPPacket.h"
 #include "rtp/RTPIncomingMediaStream.h"
 #include "rtp/RTPIncomingSource.h"
@@ -74,7 +73,6 @@ private:
 	Timer::shared	dispatchTimer;
 	RTPLostPackets	losts;
 	RTPBuffer	packets;
-	Mutex		listenerMutex;
 	std::set<RTPIncomingMediaStream::Listener*>  listeners;
 	std::optional<std::vector<bool>> activeDecodeTargets;
 	std::optional<TemplateDependencyStructure> templateDependencyStructure;

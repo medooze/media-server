@@ -31,8 +31,8 @@
 **************************/
 RTPSession::RTPSession(MediaFrame::Type media,Listener *listener) :
 	transport(this),
-	send(media),
-	recv(media,transport.GetTimeService())
+	send(media, transport.GetTimeService()),
+	recv(media, transport.GetTimeService())
 {
 	//Store listener
 	this->listener = listener;
@@ -749,7 +749,7 @@ void RTPSession::onRTCPPacket(const BYTE* buffer, DWORD size)
 					//Check ssrc
 					if (report->GetSSRC()==send.media.ssrc)
 					{
-						ScopedLock scoped(send.media);
+						//TODO: we need to protect this by having only a single timeservice on transport
 						//Proccess it
 						if (send.media.ProcessReceiverReport(now/1000, report))
 							//We need to update rtt
@@ -770,7 +770,7 @@ void RTPSession::onRTCPPacket(const BYTE* buffer, DWORD size)
 					//Check ssrc
 					if (report->GetSSRC()==send.media.ssrc)
 					{
-						ScopedLock scoped(send.media);
+						//TODO: we need to protect this by having only a single timeservice on transport
 						//Proccess it
 						if (send.media.ProcessReceiverReport(now/1000, report))
 							//We need to update rtt

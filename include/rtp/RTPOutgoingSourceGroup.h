@@ -6,10 +6,9 @@
 #include <set>
 
 #include "config.h"
-#include "use.h"
 #include "rtp/RTPPacket.h"
 #include "rtp/RTPOutgoingSource.h"
-
+#include "TimeService.h"
 
 struct RTPOutgoingSourceGroup
 {
@@ -22,8 +21,8 @@ public:
 		
 	};
 public:
-	RTPOutgoingSourceGroup(MediaFrame::Type type);
-	RTPOutgoingSourceGroup(std::string &mid,MediaFrame::Type type);
+	RTPOutgoingSourceGroup(MediaFrame::Type type,TimeService& timeService);
+	RTPOutgoingSourceGroup(std::string &mid,MediaFrame::Type type, TimeService& timeService);
 	
 	void AddListener(Listener* listener);
 	void RemoveListener(Listener* listener);
@@ -50,7 +49,7 @@ public:
 	RTPOutgoingSource fec;
 	RTPOutgoingSource rtx;
 private:	
-	mutable Mutex listenersMutex;
+	TimeService& timeService;
 	std::map<DWORD,RTPPacket::shared> packets;
 	std::set<Listener*> listeners;
 };

@@ -1,12 +1,14 @@
 #include "rtp/RTPOutgoingSourceGroup.h"
 
 
-RTPOutgoingSourceGroup::RTPOutgoingSourceGroup(MediaFrame::Type type)
+RTPOutgoingSourceGroup::RTPOutgoingSourceGroup(MediaFrame::Type type, TimeService& timeService) :
+	timeService(timeService)
 {
 	this->type = type;
 }
 
-RTPOutgoingSourceGroup::RTPOutgoingSourceGroup(std::string &mid,MediaFrame::Type type)
+RTPOutgoingSourceGroup::RTPOutgoingSourceGroup(std::string &mid, MediaFrame::Type type, TimeService& timeService) :
+	timeService(timeService)
 {
 	this->mid = mid;
 	this->type = type;
@@ -27,8 +29,10 @@ void RTPOutgoingSourceGroup::AddListener(Listener* listener)
 {
 	Debug("-RTPOutgoingSourceGroup::AddListener() [listener:%p]\n",listener);
 	
-	ScopedLock scoped(listenersMutex);
-	listeners.insert(listener);
+	//Add it sync
+	timeService.Sync([=](auto) {
+		listeners.insert(listener);
+	});
 	
 }
 
@@ -36,8 +40,10 @@ void RTPOutgoingSourceGroup::RemoveListener(Listener* listener)
 {
 	Debug("-RTPOutgoingSourceGroup::RemoveListener() [listener:%p]\n",listener);
 	
-	ScopedLock scoped(listenersMutex);
-	listeners.erase(listener);
+	//Remove it sync
+	timeService.Sync([=](auto) {
+		listeners.erase(listener);
+	});
 }
 
 void RTPOutgoingSourceGroup::ReleasePackets(QWORD until)
@@ -124,9 +130,12 @@ RTPPacket::shared RTPOutgoingSourceGroup::GetPacket(WORD seq) const
 
 void RTPOutgoingSourceGroup::onPLIRequest(DWORD ssrc)
 {
-	ScopedLock scoped(listenersMutex);
-	for (auto listener : listeners)
-		listener->onPLIRequest(this,ssrc);
+	//Send asycn
+	timeService.Async([=](auto) {
+		//Deliver to all listeners
+		for (auto listener : listeners)
+			listener->onPLIRequest(this,ssrc);
+	});
 }
 
 void RTPOutgoingSourceGroup::onREMB(DWORD ssrc, DWORD bitrate)
@@ -134,39 +143,36 @@ void RTPOutgoingSourceGroup::onREMB(DWORD ssrc, DWORD bitrate)
 	//Update remb on media
 	media.remb = bitrate;
 	
-	ScopedLock scoped(listenersMutex);
-	for (auto listener : listeners)
-		listener->onREMB(this,ssrc,bitrate);
+	//Send asycn
+	timeService.Async([=](auto) {
+		//Deliver to all listeners
+		for (auto listener : listeners)
+			listener->onREMB(this,ssrc,bitrate);
+	});
 }
 
 void RTPOutgoingSourceGroup::Update()
 {
-	Update(getTimeMS());
+	//Update it sync
+	timeService.Sync([=](auto now) {
+		//Update
+		media.Update(now.count());
+		//Update
+		rtx.Update(now.count());
+		//Update
+		fec.Update(now.count());
+	});
 }
 
 void RTPOutgoingSourceGroup::Update(QWORD now)
 {
-	//Update media
-	{
-		//Lock source
-		ScopedLock scoped(media);
+	//Update it sync
+	timeService.Sync([=](auto) {
 		//Update
 		media.Update(now);
-	}
-	
-	//Update RTX
-	{
-		//Lock source
-		ScopedLock scoped(rtx);
 		//Update
 		rtx.Update(now);
-	}
-	
-	//Update FEC
-	{
-		//Lock source
-		ScopedLock scoped(fec);
 		//Update
 		fec.Update(now);
-	}
+	});
 }

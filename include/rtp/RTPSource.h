@@ -16,7 +16,6 @@
 
 #include "config.h"
 #include "acumulator.h"
-#include "use.h"
 #include "rtp/RTCPSenderReport.h"
 #include "rtp/RTCPCompoundPacket.h"
 
@@ -61,7 +60,7 @@ struct LayerSource : LayerInfo
 	}
 };
 
-struct RTPSource : public Mutex
+struct RTPSource
 {
 	DWORD	ssrc;
 	DWORD   extSeqNum;
