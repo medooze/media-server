@@ -16,12 +16,14 @@
 
 #include "rtp.h"
 #include "VideoLayerSelector.h"
+#include "WrapExtender.h"
 
 class RTPStreamTransponder : 
 	public RTPIncomingMediaStream::Listener,
 	public RTPOutgoingSourceGroup::Listener
 {
 public:
+	static constexpr uint64_t NoFrameNum = std::numeric_limits<uint64_t>::max();
 	static constexpr uint32_t NoSeqNum = std::numeric_limits<uint32_t>::max();
 	static constexpr uint64_t NoTimestamp = std::numeric_limits<uint64_t>::max();
 public:
@@ -80,6 +82,12 @@ private:
 	bool rewritePicId	= true;
 	QWORD lastSentPLI	= 0;
 	
+
+	WrapExtender<uint16_t, uint64_t> frameNumberExtender;
+	uint64_t firstFrameNumber	= NoFrameNum;
+	uint64_t baseFrameNumber	= NoFrameNum;
+	uint64_t lastFrameNumber	= NoFrameNum;
+
 	RTPPacket::shared	h264Parameters;
 };
 

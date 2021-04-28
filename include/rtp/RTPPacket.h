@@ -153,6 +153,11 @@ public:
 	{
 		this->templateDependencyStructure = templateDependencyStructure;
 	}
+	void  OverrideFrameNumber(uint16_t frameNumber)
+	{
+		if (extension.dependencyDescryptor)
+			extension.dependencyDescryptor->frameNumber = frameNumber;
+	}
 	
 	QWORD GetTime()				const	{ return time;				}
 	void  SetTime(QWORD time )			{ this->time = time;			}

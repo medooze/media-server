@@ -71,13 +71,13 @@ RTPStreamTransponder::~RTPStreamTransponder()
 void RTPStreamTransponder::Close()
 {
 	Debug(">RTPStreamTransponder::Close()\n");
+
+	//Lock
+	ScopedLock lock(mutex);
 	
 	//Stop listeneing
 	if (outgoing) outgoing->RemoveListener(this);
 	if (incoming) incoming->RemoveListener(this);
-
-	//Lock
-	ScopedLock lock(mutex);
 
 	//Remove sources
 	outgoing = nullptr;
@@ -157,6 +157,11 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 		spatialLayerId = LayerInfo::MaxLayerId;
 		temporalLayerId = LayerInfo::MaxLayerId;
 		
+		//Reset frame numbers
+		firstFrameNumber = NoFrameNum;
+		baseFrameNumber = lastFrameNumber + 1;
+		frameNumberExtender.Reset();
+
 		//Reseted
 		reset = false;
 	}
@@ -320,12 +325,46 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 	if (codec==VideoCodec::AV1)
 		//Get decode target
 		forwaredDecodeTargets = static_cast<DependencyDescriptorLayerSelector*>(selector.get())->GetForwardedDecodeTargets();
+
+	//Continous frame number
+	uint64_t continousFrameNumber = NoFrameNum;
+	//Get frame number if we have dependency descriptor
+	if (packet->HasDependencyDestriptor())
+	{
+		//Get it
+		auto dd = packet->GetDependencyDescriptor();
+
+		//Double check
+		if (dd)
+		{
+			//Extend it
+			frameNumberExtender.Extend(dd->frameNumber);
+			//Get extended frame number
+			uint64_t frameNumber = frameNumberExtender.GetExtSeqNum();
+
+			//If it is first
+			if (firstFrameNumber==NoFrameNum)
+				//Set it
+				firstFrameNumber = frameNumber;
+			//If it is the first frame after reset
+			if (baseFrameNumber==NoFrameNum)
+				//Set it
+				baseFrameNumber = frameNumber;
+			//Calculate a continous frame number
+			continousFrameNumber = baseFrameNumber + frameNumber - firstFrameNumber;
+
+			//UltraDebug("-frameNum first:%llu base:%llu current:%llu(%u) continous=%llu\n", firstFrameNumber, baseFrameNumber, lastFrameNumber, dd->frameNumber, continousFrameNumber);
+		}
+	}
 	
 	//Get last send seq num and timestamp
 	lastExtSeqNum = extSeqNum;
 	lastTimestamp = timestamp;
 	//Update last sent time
 	lastTime = getTime();
+
+	//Get last frame number
+	lastFrameNumber = continousFrameNumber;
 	
 	//Send packet
 	if (sender)
@@ -355,6 +394,10 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 			if (forwaredDecodeTargets && cloned->HasTemplateDependencyStructure())
 				//Override mak
 				cloned->OverrideActiveDecodeTargets(forwaredDecodeTargets);
+			//If we have a continous frame number
+			if (cloned->HasDependencyDestriptor() && continousFrameNumber!=NoFrameNum)
+				//Update it
+				cloned->OverrideFrameNumber(static_cast<uint16_t>(continousFrameNumber));
 			//Move it
 			return cloned;
 		});
