@@ -507,8 +507,8 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 		ufds[0].revents = 0;
 		ufds[1].revents = 0;
 		
-		//Until signaled
-		int timeout = -1;
+		//Until signaled or one each 10 seconds to prevent deadlocks
+		int timeout = 10E3;
 		
 		//Check if we have any pending task to wait or exit poll inmediatelly
 		if (tasks.size_approx()) 
