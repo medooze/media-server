@@ -796,7 +796,7 @@ void RTPSession::onRTCPPacket(const BYTE* buffer, DWORD size)
 				switch(fb->GetFeedbackType())
 				{
 					case RTCPRTPFeedback::NACK:
-						for (BYTE i=0;i<fb->GetFieldCount();i++)
+						for (DWORD i=0;i<fb->GetFieldCount();i++)
 						{
 							//Get field
 							auto field = fb->GetField<RTCPRTPFeedback::NACKField>(i);
@@ -812,7 +812,7 @@ void RTPSession::onRTCPPacket(const BYTE* buffer, DWORD size)
 						break;
 					case RTCPRTPFeedback::TempMaxMediaStreamBitrateRequest:
 						//Debug("-TempMaxMediaStreamBitrateRequest\n");
-						for (BYTE i=0;i<fb->GetFieldCount();i++)
+						for (DWORD i=0;i<fb->GetFieldCount();i++)
 						{
 							//Get field
 							auto field = fb->GetField<RTCPRTPFeedback::TempMaxMediaStreamBitrateField>(i);
@@ -831,7 +831,7 @@ void RTPSession::onRTCPPacket(const BYTE* buffer, DWORD size)
 							SendFIR();
 						}
 						/*
-						for (BYTE i=0;i<fb->GetFieldCount();i++)
+						for (DWORD i=0;i<fb->GetFieldCount();i++)
 						{
 							//Get field
 							const RTCPRTPFeedback::TempMaxMediaStreamBitrateField *field = (const RTCPRTPFeedback::TempMaxMediaStreamBitrateField*) fb->GetField(i);
@@ -874,7 +874,7 @@ void RTPSession::onRTCPPacket(const BYTE* buffer, DWORD size)
 						Debug("-RTPSession::ProcessRTCPPacket() | VideoBackChannelMessage\n");
 						break;
 					case RTCPPayloadFeedback::ApplicationLayerFeeedbackMessage:
-						for (BYTE i=0;i<fb->GetFieldCount();i++)
+						for (DWORD i=0;i<fb->GetFieldCount();i++)
 						{
 							//Get feedback
 							auto msg = fb->GetField<RTCPPayloadFeedback::ApplicationLayerFeeedbackField>(i);

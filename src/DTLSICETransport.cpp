@@ -2273,7 +2273,7 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 				switch(fb->GetFeedbackType())
 				{
 					case RTCPRTPFeedback::NACK:
-						for (BYTE i=0;i<fb->GetFieldCount();i++)
+						for (DWORD i=0;i<fb->GetFieldCount();i++)
 						{
 							//Get field
 							auto field = fb->GetField<RTCPRTPFeedback::NACKField>(i);
@@ -2296,7 +2296,7 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 						break;
 					case RTCPRTPFeedback::TransportWideFeedbackMessage:
 						//Get each fiedl
-						for (BYTE i=0;i<fb->GetFieldCount();i++)
+						for (DWORD i=0;i<fb->GetFieldCount();i++)
 						{
 							//Get field
 							auto field = fb->GetField<RTCPRTPFeedback::TransportWideFeedbackMessageField>(i);
@@ -2356,7 +2356,7 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 						break;
 					case RTCPPayloadFeedback::ApplicationLayerFeeedbackMessage:
 						//For all message fields
-						for (BYTE i=0;i<fb->GetFieldCount();i++)
+						for (DWORD i=0;i<fb->GetFieldCount();i++)
 						{
 							//Get feedback
 							auto msg = fb->GetField<RTCPPayloadFeedback::ApplicationLayerFeeedbackField>(i);

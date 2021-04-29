@@ -82,7 +82,7 @@ int main(int argc, char** argv)
 					if (fb->GetFeedbackType()==RTCPRTPFeedback::TransportWideFeedbackMessage)
 					{
 						//Get each fiedl
-						for (BYTE i=0;i<fb->GetFieldCount();i++)
+						for (DWORD i=0;i<fb->GetFieldCount();i++)
 						{
 							//Get field
 							auto field = fb->GetField<RTCPRTPFeedback::TransportWideFeedbackMessageField>(i);
