@@ -124,7 +124,7 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	auto currentDecodeTarget = NoDecodeTarget;
 
 	//Log
-	UltraDebug("-DependencyDescriptorLayerSelector::Select() | frame [number=%llu,decodable=%d,ts:%lu,mark:%d]\n", extFrameNum, decodable, packet->GetTimestamp(),packet->GetMark());
+	//UltraDebug("-DependencyDescriptorLayerSelector::Select() | frame [number=%llu,decodable=%d,ts:%lu,mark:%d]\n", extFrameNum, decodable, packet->GetTimestamp(),packet->GetMark());
 	
 	//If we are doing content adaptation
 	if (spatialLayerId!=LayerInfo::MaxLayerId || temporalLayerId!=LayerInfo::MaxLayerId)
@@ -149,12 +149,12 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	for (auto& [decodeTarget,layerInfo] : templateDependencyStructure->decodeTargetLayerMapping)
 	{
 		//Debug
-		UltraDebug("-DependencyDescriptorLayerSelector::Select() | Trying decode target [dt:%llu,layer:layer:S%dL%d,active:%d]\n",
-			decodeTarget,
-			layerInfo.spatialLayerId,
-			layerInfo.temporalLayerId,
-			!activeDecodeTargets || (*activeDecodeTargets)[decodeTarget]
-		 );
+		//UltraDebug("-DependencyDescriptorLayerSelector::Select() | Trying decode target [dt:%llu,layer:layer:S%dL%d,active:%d]\n",
+		//	decodeTarget,
+		//	layerInfo.spatialLayerId,
+		//	layerInfo.temporalLayerId,
+		//	!activeDecodeTargets || (*activeDecodeTargets)[decodeTarget]
+		// );
 		
 		//Check if layers are lower than our content adaptation selected ones
 		if (layerInfo.spatialLayerId <= spatialLayerId && layerInfo.temporalLayerId <= temporalLayerId )
@@ -195,7 +195,7 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 				 auto prevFrameInCurrentChain = extFrameNum - frameDiffsChains[chain];
 				 
 				 //Log
-				 UltraDebug("-DependencyDescriptorLayerSelector::Select() | Frame [dt:%llu,chain:%d,prev:%d]\n",decodeTarget,chain,prevFrameInCurrentChain);
+				 //UltraDebug("-DependencyDescriptorLayerSelector::Select() | Frame [dt:%llu,chain:%d,prev:%d]\n",decodeTarget,chain,prevFrameInCurrentChain);
 				  
 				 //If it is not us, check if previus frame was not sent
 				 if (prevFrameInCurrentChain && 
@@ -244,33 +244,39 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	auto dti = decodeTargetIndications[currentDecodeTarget];
 
 	//Log
-	Debug("-DependencyDescriptorLayerSelector::Select() | Selected [number=%llu,t:%d,dt:%llu,chain:%d,dti:%d,top:{S%dT%d],current:{S%dT%d],frame:[S%dT%d]\n",
-		extFrameNum,
-		dependencyDescriptor->frameDependencyTemplateId,
-		currentDecodeTarget,
-		currentChain,
-		dti,
-		topLayer.spatialLayerId,
-	 	topLayer.temporalLayerId,
-		currentLayer.spatialLayerId,
-	 	currentLayer.temporalLayerId,
-		frameDependencyTemplate.spatialLayerId,
-		frameDependencyTemplate.temporalLayerId
-	);
+	//Debug("-DependencyDescriptorLayerSelector::Select() | Selected [number=%llu,t:%d,dt:%llu,chain:%d,dti:%d,top:{S%dT%d],current:{S%dT%d],frame:[S%dT%d]\n",
+	//	extFrameNum,
+	//	dependencyDescriptor->frameDependencyTemplateId,
+	//	currentDecodeTarget,
+	//	currentChain,
+	//	dti,
+	//	topLayer.spatialLayerId,
+	// 	topLayer.temporalLayerId,
+	//	currentLayer.spatialLayerId,
+	// 	currentLayer.temporalLayerId,
+	//	frameDependencyTemplate.spatialLayerId,
+	//	frameDependencyTemplate.temporalLayerId
+	//);
 	
 	//If frame is not decodable
 	if (!decodable)
 	{
 		//Request iframe if chain for the top active layer is broken
 		waitingForIntra = (topLayer!=currentLayer);
+		//Log
+		//UltraDebug("-DependencyDescriptorLayerSelector::Select() | Discarding packet, not decodable\n")
 		//Ignore packet
-		return Warning("-DependencyDescriptorLayerSelector::Select() | Discarding packet, not decodable\n");
+		return false;
 	}
 	
 	//If frame is not present in selected decode target
 	if (dti==DecodeTargetIndication::NotPresent)
+	{
+		//Log
+		//UltraDebug("-DependencyDescriptorLayerSelector::Select() | Discarding packet, not present\n");
 		//Ignore packet
-		return Warning("-DependencyDescriptorLayerSelector::Select() | Discarding packet, not present\n");
+		return false;
+	}
 
 	//RTP mark is set for the last frame layer of the selected spatial layer
 	mark = packet->GetMark() || (dependencyDescriptor->endOfFrame && spatialLayerId==frameDependencyTemplate.spatialLayerId);
@@ -280,11 +286,11 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 		//We only count full forwarded frames
 		forwardedFrames.Add(extFrameNum);
 	
-	UltraDebug("-DependencyDescriptorLayerSelector::Select() | Accepting packet [extSegNum:%u,mark:%d,layer:S%dL%d]\n",
-		 packet->GetExtSeqNum(),
-		 mark,
-		 frameDependencyTemplate.spatialLayerId,
-		 frameDependencyTemplate.temporalLayerId);
+	//UltraDebug("-DependencyDescriptorLayerSelector::Select() | Accepting packet [extSegNum:%u,mark:%d,layer:S%dL%d]\n",
+	//	 packet->GetExtSeqNum(),
+	//	 mark,
+	//	 frameDependencyTemplate.spatialLayerId,
+	//	 frameDependencyTemplate.temporalLayerId);
 	//Select
 	return true;
 	
