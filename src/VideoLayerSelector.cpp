@@ -66,3 +66,9 @@ VideoLayerSelector* VideoLayerSelector::Create(VideoCodec::Type codec)
 			return {};
 	}
 }
+
+
+ bool VideoLayerSelector::AreLayersInfoeAggregated(const RTPPacket::shared& packet)
+ {
+	 return packet->GetCodec()== VideoCodec::AV1;
+ }

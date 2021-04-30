@@ -22,6 +22,7 @@ public:
 	//Factory method
 	static VideoLayerSelector* Create(VideoCodec::Type codec);
 	static std::vector<LayerInfo> GetLayerIds(const RTPPacket::shared& packet);
+	static bool AreLayersInfoeAggregated(const RTPPacket::shared& packet);
 };
 
 #endif /* VIDEOLAYERSELECTOR_H */

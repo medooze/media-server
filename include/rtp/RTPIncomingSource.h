@@ -37,9 +37,11 @@ struct RTPIncomingSource : public RTPSource
 	QWORD   firstReceivedSenderTimestamp;
 	int64_t skew;
 	double  drift;
+	bool	aggregatedLayers;
 	WrapExtender<uint32_t,uint64_t> timestampExtender;
 	WrapExtender<uint32_t,uint64_t> lastReceivedSenderRTPTimestampExtender;
 	std::map<WORD,LayerSource> layers;
+	
 	
 	Acumulator acumulatorFrames;
 	Acumulator acumulatorLostPackets;
@@ -54,7 +56,7 @@ struct RTPIncomingSource : public RTPSource
 	DWORD ExtendTimestamp(DWORD timestamp);
 	DWORD RecoverTimestamp(DWORD timestamp);
 	
-	void Update(QWORD now,DWORD seqNum,DWORD size,const std::vector<LayerInfo> &layerInfos);
+	void Update(QWORD now,DWORD seqNum,DWORD size,const std::vector<LayerInfo> &layerInfos, bool aggreagtedLayers);
 	
 	void Process(QWORD now, const RTCPSenderReport::shared& sr);
 	void SetLastTimestamp(QWORD now, QWORD timestamp);

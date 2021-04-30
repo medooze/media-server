@@ -79,6 +79,7 @@ RTPIncomingSource::RTPIncomingSource() :
 	firstReceivedSenderTimestamp	= 0;
 	skew				= 0;
 	drift				= 1;
+	aggregatedLayers		= false;
 	minExtSeqNumSinceLastSR		= RTPPacket::MaxExtSeqNum;
 }
 
@@ -109,6 +110,7 @@ void RTPIncomingSource::Reset()
 	firstReceivedSenderTimestamp	= 0;
 	skew				= 0;
 	drift				= 1;
+	aggregatedLayers		= false;
 	minExtSeqNumSinceLastSR		= RTPPacket::MaxExtSeqNum;
 	timestampExtender.Reset();
 	lastReceivedSenderRTPTimestampExtender.Reset();
@@ -132,10 +134,12 @@ WORD RTPIncomingSource::ExtendSeqNum(WORD seqNum)
 	return cycles; 
 }
 
-void RTPIncomingSource::Update(QWORD now,DWORD seqNum,DWORD size,const std::vector<LayerInfo> &layerInfos)
+void RTPIncomingSource::Update(QWORD now,DWORD seqNum,DWORD size,const std::vector<LayerInfo> &layerInfos, bool aggreagtedLayers)
 {
 	//Update source normally
 	RTPIncomingSource::Update(now,seqNum,size);
+	//Set aggregated layers flag
+	this->aggregatedLayers = aggreagtedLayers;
 	//For each layer
 	for (const auto& layerInfo : layerInfos)
 	{
