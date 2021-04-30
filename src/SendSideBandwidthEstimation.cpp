@@ -3,8 +3,8 @@
 #include <cmath>
 #include "SendSideBandwidthEstimation.h"
 
-constexpr uint64_t kInitialDuration		= 4E6;		// 4s
-constexpr uint64_t kReportInterval		= 200E3;	// 200ms
+constexpr uint64_t kInitialDuration		= 500E3;	// 500ms
+constexpr uint64_t kReportInterval		= 250E3;	// 250ms
 constexpr uint64_t kMonitorDuration		= 250E3;	// 250ms
 constexpr uint64_t kMonitorTimeout		= 750E3;	// 750ms
 constexpr uint64_t kLongTermDuration		= 60E6;		// 60s
@@ -12,7 +12,10 @@ constexpr uint64_t kMinRate			= 128E3;	// 128kbps
 constexpr uint64_t kMaxRate			= 100E6;	// 100mbps
 constexpr uint64_t kMinRateChangeBps		= 16000;
 constexpr double   kSamplingStep		= 0.05f;
+constexpr double   kInitialRampUp		= 1.30f;
 constexpr uint64_t kRecoveryDuration		= 75E3;
+
+
 
 
 SendSideBandwidthEstimation::SendSideBandwidthEstimation() : 
@@ -236,6 +239,7 @@ uint32_t SendSideBandwidthEstimation::GetTargetBitrate() const
 
 void SendSideBandwidthEstimation::SetState(ChangeState state)
 {
+	//Log("-SendSideBandwidthEstimation::SetState() [state:%d,prev:%d,consecutiveChanges:%d]\n",state,this->state,consecutiveChanges);
 	//Set number of consecutive chantes
 	if (this->state == state)
 		consecutiveChanges++;
@@ -247,7 +251,7 @@ void SendSideBandwidthEstimation::SetState(ChangeState state)
 
 void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 {
-	//Log("-SendSideBandwidthEstimation::EstimateBandwidthRate()\n");
+	//Log("-SendSideBandwidthEstimation::EstimateBandwidthRate() [lastChane:%lld,when:%lldd]\n",lastChange,when);
 	
 	//Get current estimated rtt
 	uint32_t rttMin		= GetMinRTT();
@@ -259,7 +263,7 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 	uint64_t rtxSentBitrate		= rtxSentAcumulator.GetInstantAvg() * 8;
 	
 	//Check none of then is 0 or if delay has increased too much
-	if (ChangeState::Initial) 
+	if (state==ChangeState::Initial) 
 	{
 		//If first state 
 		if (!lastChange)
@@ -269,6 +273,10 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 		else if (lastChange + kInitialDuration < when)
 			//We are going to increase rate again
 			SetState(ChangeState::Increase);
+		//If the other side has received enought data
+		if (!totalRecvAcumulator.IsInWindow())
+			//Ignore first reports
+			return;
 		//Set bwe as received rate
 		bandwidthEstimation = totalRecvBitrate;
 	} else if (rttMin && rttEstimated>(10+rttMin*1.3)) {
@@ -315,9 +323,12 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 	bandwidthEstimation = std::min(std::max(bandwidthEstimation,kMinRate),kMaxRate);
 	
 	//If rtt increasing
-	if (accumulatedDelta>2000 && state != ChangeState::Initial)
+	if (accumulatedDelta>2000)
 		//Adapt to rtt slope
 		targetBitrate = bandwidthEstimation * (1 - static_cast<double>(accumulatedDelta) / (accumulatedDelta  + kRecoveryDuration));
+	else if (state == ChangeState::Initial)
+		//Increase to send probing
+		targetBitrate = bandwidthEstimation * kInitialRampUp;
 	else if (state != ChangeState::Recovery)
 		//Try to reach bwe
 		targetBitrate = bandwidthEstimation;
