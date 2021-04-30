@@ -42,6 +42,7 @@
 
 constexpr auto IceTimeout = 30000ms;
 constexpr auto ProbingInterval = 10ms;
+constexpr auto MasRTXOverhead = 0.50f;
 
 DTLSICETransport::DTLSICETransport(Sender *sender,TimeService& timeService) :
 	sender(sender),
@@ -859,14 +860,11 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 {
 	//Check if we have an active DTLS connection yet
 	if (!send.IsSetup())
-	{
 		//Error
-		Debug("-DTLSICETransport::ReSendPacket() | Send SRTPSession is not setup yet\n");
-		//Done
-		return;
-	}
+		return (void)Debug("-DTLSICETransport::ReSendPacket() | Send SRTPSession is not setup yet\n");
 	
-	UltraDebug("-DTLSICETransport::ReSendPacket() | resending [seq:%d,ssrc:&%u,rtx:%u]\n",seq,group->media.ssrc,group->rtx.ssrc);
+	//Log
+	UltraDebug("-DTLSICETransport::ReSendPacket() | resending [seq:%d,ssrc:%u,rtx:%u]\n",seq,group->media.ssrc,group->rtx.ssrc);
 	
 	//Get current time
 	auto now = getTime();
@@ -874,13 +872,13 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	//Update rtx bitrate
 	rtxBitrate.Update(now/1000);
 	
-	//Get available bitrate
-	DWORD availableBitrate = senderSideBandwidthEstimator.GetAvailableBitrate();
+	//Get target bitrate
+	DWORD targetBitrate = senderSideBandwidthEstimator.GetTargetBitrate();
 	
 	//Check if we are sending way to much bitrate
-	if (availableBitrate && rtxBitrate.GetInstantAvg()*8 > availableBitrate * 0.30f)
+	if (targetBitrate && rtxBitrate.GetInstantAvg()*8 > targetBitrate * MasRTXOverhead)
 		//Error
-		return (void)Debug("-DTLSICETransport::ReSendPacket() | Too much bitrate on rtx, skiping rtx:%lld estimated:%u available:%d\n",(uint64_t)(rtxBitrate.GetInstantAvg()*8), senderSideBandwidthEstimator.GetEstimatedBitrate(),availableBitrate);
+		return (void)UltraDebug("-DTLSICETransport::ReSendPacket() | Too much bitrate on rtx, skiping rtx:%lld estimated:%u target:%d\n",(uint64_t)(rtxBitrate.GetInstantAvg()*8), senderSideBandwidthEstimator.GetEstimatedBitrate(), targetBitrate);
 	
 	//Find packet to retransmit
 	auto original = group->GetPacket(seq);
@@ -888,7 +886,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	//If we don't have it anymore
 	if (!original)
 		//Debug
-		return (void)Warning("-DTLSICETransport::ReSendPacket() | packet not found[seq:%d,ssrc:&%u,rtx:%u]\n",seq,group->media.ssrc,group->rtx.ssrc);
+		return (void)UltraDebug("-DTLSICETransport::ReSendPacket() | packet not found[seq:%d,ssrc:&%u,rtx:%u]\n",seq,group->media.ssrc,group->rtx.ssrc);
 	
 	//Create resend packet
 	auto packet = original->Clone();
@@ -992,8 +990,8 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	outgoingBitrate.Update(now/1000,len);
 	rtxBitrate.Update(now/1000,len);
 	
-	//Get time for packets to discard, always have at least 200ms, max 500ms
-	QWORD until = now/1000 - (200+fmin(rtt*2,300));
+	//Get time for packets to discard, always have at least 400ms, max 700ms
+	QWORD until = now / 1000 - (400 + fmin(rtt * 2, 300));
 	
 	//Release packets from rtx queue
 	group->ReleasePackets(until);	
@@ -1014,6 +1012,9 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 		stats->rtx = true;
 		//Add new stat
 		senderSideBandwidthEstimator.SentPacket(stats);
+	} else {
+		Log("what!\n");
+		packet->Dump();
 	}
 }
 
@@ -2035,6 +2036,7 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 
 	//Set buffer size
 	buffer.SetSize(len);
+
 	//No error yet, send packet
 	sender->Send(candidate,std::move(buffer));
 	//Get time
@@ -2069,8 +2071,8 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 		senderSideBandwidthEstimator.SentPacket(stats);
 	}
 
-	//Get time for packets to discard, always have at least 200ms, max 500ms
-	QWORD until = now/1000 - (200+fmin(rtt*2,300));
+	//Get time for packets to discard, always have at least 400ms, max 700ms
+	QWORD until = now/1000 - (400+fmin(rtt*2,300));
 	
 	//Release packets from rtx queue
 	group->ReleasePackets(until);
