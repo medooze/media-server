@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "acumulator.h"
+#include "MovingCounter.h"
 #include "rtp/PacketStats.h"
 #include "remoterateestimator.h"
 
@@ -60,7 +61,7 @@ private:
 	
 
 	
-	Acumulator rttAcumulator;
+	MovingMinCounter<uint64_t> rttMin;
 	Acumulator deltaAcumulator;
 	Acumulator totalSentAcumulator;
 	Acumulator mediaSentAcumulator;

@@ -19,7 +19,7 @@ constexpr uint64_t kRecoveryDuration		= 75E3;
 
 
 SendSideBandwidthEstimation::SendSideBandwidthEstimation() : 
-		rttAcumulator(kLongTermDuration,1E6),
+		rttMin(kLongTermDuration),
 		deltaAcumulator(kMonitorDuration,1E6),
 		totalSentAcumulator(kMonitorDuration,1E6),
 		mediaSentAcumulator(kMonitorDuration,1E6),
@@ -108,7 +108,7 @@ void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const st
 			//Calculate rtt proxy, it is guaranteed to be bigger than rtt
 			uint64_t rtt = (when - sentTime)/1000;
 			//Update min
-			rttAcumulator.Update(when,rtt);
+			rttMin.Add(rtt, when);
 		}
 	}
 	
@@ -207,8 +207,8 @@ void SendSideBandwidthEstimation::UpdateRTT(uint64_t when, uint32_t rtt)
 {
 	//Store rtt
 	this->rtt = rtt;
-	//Smooth
-	rttAcumulator.Update(when,rtt);
+	//Calculate minimum
+	rttMin.Add(when, rtt);
 }
 
 uint32_t SendSideBandwidthEstimation::GetEstimatedBitrate() const
@@ -223,12 +223,14 @@ uint32_t SendSideBandwidthEstimation::GetAvailableBitrate() const
 
 uint32_t SendSideBandwidthEstimation::GetMinRTT() const
 {
-	//If we have any value
-	if (!rttAcumulator.IsEmpty())
-		//Get min value over long period
-		return rttAcumulator.GetMinValueInWindow();
-	//Return last, must be possitive
-	return rtt;
+	//Get minimum
+	auto min = rttMin.GetMin();
+	//If no data 
+	if (!min)
+		//return latest rtt
+		return rtt;
+	//Done
+	return *min;
 }
 
 uint32_t SendSideBandwidthEstimation::GetTargetBitrate() const

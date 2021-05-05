@@ -38,7 +38,7 @@ public:
 	void ResetMinMax()
 	{
 		max = 0;
-		min = (QWORD)-1;
+		min = std::numeric_limits<QWORD>::max();
 	}
 
 	void Reset(QWORD now)
@@ -46,7 +46,7 @@ public:
 		instant = 0;
 		acumulated = 0;
 		max = 0;
-		min = (QWORD)-1;
+		min = std::numeric_limits<QWORD>::max();
 		first = now;
 		last = 0;
 		inWindow = false;
@@ -94,7 +94,7 @@ public:
 	
 	DWORD GetMinValueInWindow() const
 	{
-		DWORD minValue = 0xFFFF;
+		DWORD minValue = std::numeric_limits<DWORD>::max();
 		//For eacn entry
 		for (const auto& value: values)
 			//If it is less
