@@ -427,15 +427,12 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 	{
 		//Get ntp and rtp timestamps
 		QWORD timestamp =  group->media.lastReceivedSenderRTPTimestampExtender.GetExtSeqNum();
-		
-		//IF packet is newer than SR (should be)
-		if (timestamp<packet->GetExtTimestamp())
-		{
-			//Calculate sender time 
-			QWORD senderTime =  group->media.lastReceivedSenderTime + (packet->GetExtTimestamp()-timestamp)*1000/packet->GetClockRate();
-			//Set calculated sender time
-			packet->SetSenderTime(senderTime);
-		}
+		//Get ts delta		
+		int64_t delta = (int64_t)packet->GetExtTimestamp() - timestamp;
+		//Calculate sender time 
+		QWORD senderTime =  group->media.lastReceivedSenderTime + (delta)*1000/packet->GetClockRate();
+		//Set calculated sender time
+		packet->SetSenderTime(senderTime);
 	}
 	
 
