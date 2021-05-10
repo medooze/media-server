@@ -72,18 +72,22 @@ void RTPStreamTransponder::Close()
 {
 	Debug(">RTPStreamTransponder::Close()\n");
 
-	//Lock
-	ScopedLock lock(mutex);
-	
-	//Stop listeneing
-	if (outgoing) outgoing->RemoveListener(this);
-	if (incoming) incoming->RemoveListener(this);
+	{
+		//Lock
+		ScopedLock lock(mutex);
 
+		//Stop listening
+		if (incoming) incoming->RemoveListener(this);
+		//Remove sources
+		incoming = nullptr;
+		receiver = nullptr;
+	}
+	
+	//Stop listening
+	if (outgoing) outgoing->RemoveListener(this);
 	//Remove sources
 	outgoing = nullptr;
-	incoming = nullptr;
-	receiver = nullptr;
-	sender   = nullptr;
+	sender = nullptr;
 	
 	Debug("<RTPStreamTransponder::Close()\n");
 }
