@@ -1009,10 +1009,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 		stats->rtx = true;
 		//Add new stat
 		senderSideBandwidthEstimator.SentPacket(stats);
-	} else {
-		Log("what!\n");
-		packet->Dump();
-	}
+	} 
 }
 
 void  DTLSICETransport::ActivateRemoteCandidate(ICERemoteCandidate* candidate,bool useCandidate, DWORD priority)
