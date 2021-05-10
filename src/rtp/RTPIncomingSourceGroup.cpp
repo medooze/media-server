@@ -210,7 +210,7 @@ void RTPIncomingSourceGroup::DispatchPackets(uint64_t time)
 	
 	//Deliver all pending packets at once
 	std::vector<RTPPacket::shared> ordered;
-	for (auto packet = packets.GetOrdered(getTimeMS()); packet; packet = packets.GetOrdered(getTimeMS()))
+	for (auto packet = packets.GetOrdered(time); packet; packet = packets.GetOrdered(time))
 	{
 		//We need to adjust the seq num due the in band probing packets
 		packet->SetExtSeqNum(packet->GetExtSeqNum() - packets.GetNumDiscardedPackets());
