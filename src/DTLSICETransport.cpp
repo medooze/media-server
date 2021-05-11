@@ -668,7 +668,7 @@ DWORD DTLSICETransport::SendProbe(const RTPPacket::shared& original)
         source.Update(now/1000,packet->GetSeqNum(),len);
 	
 	//Add to transport wide stats
-	if (packet->HasTransportWideCC())
+	if (packet->HasTransportWideCC() && senderSideEstimationEnabled)
 	{
 		//Create stats
 		auto stats = PacketStats::Create(packet,len,now);
@@ -826,7 +826,7 @@ DWORD DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
         source.Update(now/1000,header.sequenceNumber,len);
 	
 	//Add to transport wide stats
-	if (extension.hasTransportWideCC)
+	if (extension.hasTransportWideCC && senderSideEstimationEnabled)
 	{
 		//Create stat
 		auto stats = PacketStats::Create(
@@ -863,14 +863,18 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	
 	//Update rtx bitrate
 	rtxBitrate.Update(now/1000);
+
+	//if sse is enabled
+	if (senderSideEstimationEnabled)
+	{
+		//Get target bitrate
+		DWORD targetBitrate = senderSideBandwidthEstimator.GetTargetBitrate();
 	
-	//Get target bitrate
-	DWORD targetBitrate = senderSideBandwidthEstimator.GetTargetBitrate();
-	
-	//Check if we are sending way to much bitrate
-	if (targetBitrate && rtxBitrate.GetInstantAvg()*8 > targetBitrate * MasRTXOverhead)
-		//Error
-		return (void)UltraDebug("-DTLSICETransport::ReSendPacket() | Too much bitrate on rtx, skiping rtx:%lld estimated:%u target:%d\n",(uint64_t)(rtxBitrate.GetInstantAvg()*8), senderSideBandwidthEstimator.GetEstimatedBitrate(), targetBitrate);
+		//Check if we are sending way to much bitrate
+		if (targetBitrate && rtxBitrate.GetInstantAvg()*8 > targetBitrate * MasRTXOverhead)
+			//Error
+			return (void)UltraDebug("-DTLSICETransport::ReSendPacket() | Too much bitrate on rtx, skiping rtx:%lld estimated:%u target:%d\n",(uint64_t)(rtxBitrate.GetInstantAvg()*8), senderSideBandwidthEstimator.GetEstimatedBitrate(), targetBitrate);
+	}
 	
 	//Find packet to retransmit
 	auto original = group->GetPacket(seq);
@@ -996,7 +1000,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
         source.Update(now/1000,packet->GetSeqNum(),len);
 	
 	//Check if we are using transport wide for this packet
-	if (packet->HasTransportWideCC())
+	if (packet->HasTransportWideCC() && senderSideEstimationEnabled)
 	{
 		//Create stats
 		auto stats = PacketStats::Create(packet,len,now);
@@ -2011,7 +2015,7 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 	probing	  = static_cast<DWORD>(probingBitrate.GetInstantAvg()*8);
 
 	//Check if we are using transport wide for this packet
-	if (packet->HasTransportWideCC())
+	if (packet->HasTransportWideCC() && senderSideEstimationEnabled)
 	{
 		//Create stats
 		auto stats = PacketStats::Create(packet,len,now);
@@ -2245,14 +2249,16 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 						UltraDebug("-DTLSICETransport::onRTCP() | TempMaxMediaStreamBitrateNotification\n");
 						break;
 					case RTCPRTPFeedback::TransportWideFeedbackMessage:
-						//Get each fiedl
-						for (DWORD i=0;i<fb->GetFieldCount();i++)
-						{
-							//Get field
-							auto field = fb->GetField<RTCPRTPFeedback::TransportWideFeedbackMessageField>(i);
-							//Pass it to the estimator
-							senderSideBandwidthEstimator.ReceivedFeedback(field->feedbackPacketCount,field->packets,now);
-						}
+						//If sender side estimation is enabled
+						if (senderSideEstimationEnabled)
+							//Get each fiedl
+							for (DWORD i=0;i<fb->GetFieldCount();i++)
+							{
+								//Get field
+								auto field = fb->GetField<RTCPRTPFeedback::TransportWideFeedbackMessageField>(i);
+								//Pass it to the estimator
+								senderSideBandwidthEstimator.ReceivedFeedback(field->feedbackPacketCount,field->packets,now);
+							}
 						break;
 				}
 				break;
@@ -2433,8 +2439,10 @@ void DTLSICETransport::SetRTT(DWORD rtt)
 	for (auto it : incoming)
 		//Update jitter
 		it.second->SetRTT(rtt);
-	//Add estimation
-	senderSideBandwidthEstimator.UpdateRTT(getTime(),rtt);
+	//If sse is enabled
+	if (senderSideEstimationEnabled)
+		//Add estimation
+		senderSideBandwidthEstimator.UpdateRTT(getTime(),rtt);
 }
 
 void DTLSICETransport::SendTransportWideFeedbackMessage(DWORD ssrc)
@@ -2557,7 +2565,7 @@ int DTLSICETransport::Enqueue(const RTPPacket::shared& packet,std::function<RTPP
 void DTLSICETransport::Probe()
 {
 	//Endure that transport wide cc is enabled
-	if (probe && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC)!=RTPMap::NotFound)
+	if (senderSideEstimationEnabled && probe && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC)!=RTPMap::NotFound)
 	{
 		
 		//Get sleep time

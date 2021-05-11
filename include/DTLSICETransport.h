@@ -93,8 +93,9 @@ public:
 	bool RemoveIncomingSourceGroup(RTPIncomingSourceGroup *group);
 	
 	void SetBandwidthProbing(bool probe);
-	void SetMaxProbingBitrate(DWORD bitrate)	{ this->maxProbingBitrate = bitrate;	}
-	void SetProbingBitrateLimit(DWORD bitrate)	{ this->probingBitrateLimit = bitrate;	}
+	void SetMaxProbingBitrate(DWORD bitrate)	{ this->maxProbingBitrate = bitrate;		}
+	void SetProbingBitrateLimit(DWORD bitrate)	{ this->probingBitrateLimit = bitrate;		}
+	void EnableSenderSideEstimation(bool enabled)	{ this->senderSideEstimationEnabled = enabled;	}
 	void SetSenderSideEstimatorListener(RemoteRateEstimator::Listener* listener) { senderSideBandwidthEstimator.SetListener(listener); }
 	
 	const char* GetRemoteUsername() const { return iceRemoteUsername;	};
@@ -184,19 +185,20 @@ private:
 	
 	std::map<DWORD,PacketStats::shared> transportWideReceivedPacketsStats;
 	
-	UDPDumper* dumper		= nullptr;
-	bool dumpInRTP			= false;
-	bool dumpOutRTP			= false;
-	bool dumpRTCP			= false;
-	bool dumpRTPHeadersOnly		= false;
-	volatile bool probe		= false;
-	DWORD maxProbingBitrate		= 1024*1000;
-	DWORD probingBitrateLimit	= maxProbingBitrate *4;
-	
+	UDPDumper* dumper			= nullptr;
+	volatile bool dumpInRTP			= false;
+	volatile bool dumpOutRTP		= false;
+	volatile bool dumpRTCP			= false;
+	volatile bool dumpRTPHeadersOnly	= false;
+	volatile bool probe			= false;
+	DWORD maxProbingBitrate			= 1024*1000;
+	DWORD probingBitrateLimit		= maxProbingBitrate *4;
+	volatile bool senderSideEstimationEnabled = true;
+
 	Timer::shared probingTimer;
 	QWORD   lastProbe = 0;
 	QWORD 	initTime = 0;
-	bool	started = false;
+	volatile bool started = false;
 	
 	SendSideBandwidthEstimation senderSideBandwidthEstimator;
 	
