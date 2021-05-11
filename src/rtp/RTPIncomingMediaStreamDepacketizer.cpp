@@ -1,7 +1,8 @@
 #include "rtp/RTPIncomingMediaStreamDepacketizer.h"
 #include "use.h"
 
-RTPIncomingMediaStreamDepacketizer::RTPIncomingMediaStreamDepacketizer(RTPIncomingMediaStream* incomingSource)
+RTPIncomingMediaStreamDepacketizer::RTPIncomingMediaStreamDepacketizer(RTPIncomingMediaStream* incomingSource) :
+	timeService(incomingSource->GetTimeService())
 {
 	Debug("-RTPIncomingMediaStreamDepacketizer::RTPIncomingMediaStreamDepacketizer() [%p]\n",incomingSource);
 	
@@ -73,8 +74,6 @@ void RTPIncomingMediaStreamDepacketizer::onBye(RTPIncomingMediaStream* group)
 
 void RTPIncomingMediaStreamDepacketizer::onEnded(RTPIncomingMediaStream* group) 
 {
-	ScopedLock scoped(mutex);
-	
 	//Lock	
 	Debug("-RTPIncomingMediaStreamDepacketizer::onEnded() [group:%p]\n", group);
 	
@@ -85,8 +84,6 @@ void RTPIncomingMediaStreamDepacketizer::onEnded(RTPIncomingMediaStream* group)
 
 void RTPIncomingMediaStreamDepacketizer::AddMediaListener(MediaFrame::Listener *listener)
 {
-	ScopedLock scoped(mutex);
-	
 	//Log
 	Debug("-RTPIncomingMediaStreamDepacketizer::AddMediaListener() [listener:%p]\n", listener);
 	
@@ -94,9 +91,9 @@ void RTPIncomingMediaStreamDepacketizer::AddMediaListener(MediaFrame::Listener *
 	if (!listener)
 		//Done
 		return;
-	
-	//Add listener async
-	incomingSource->GetTimeService().Async([=](...){
+
+	//Add listener Sync
+	timeService.Sync([=](...){
 		//Add to set
 		listeners.insert(listener);
 	});
@@ -104,18 +101,15 @@ void RTPIncomingMediaStreamDepacketizer::AddMediaListener(MediaFrame::Listener *
 
 void RTPIncomingMediaStreamDepacketizer::RemoveMediaListener(MediaFrame::Listener *listener)
 {
-	ScopedLock scoped(mutex);
-	
 	//Log
 	Debug("-RTPIncomingMediaStreamDepacketizer::RemoveMediaListener() [listener:%p]\n", listener);
 	
-	//Check listener
-	if (!incomingSource || !listener)
-		//Done
-		return;
-
 	//Add listener sync so it can be deleted after this call
-	incomingSource->GetTimeService().Sync([=](...){
+	timeService.Sync([=](...){
+		//Check listener
+		if (!incomingSource || !listener)
+			//Done
+			return;
 		//Remove from set
 		listeners.erase(listener);
 	});
@@ -123,18 +117,17 @@ void RTPIncomingMediaStreamDepacketizer::RemoveMediaListener(MediaFrame::Listene
 
 void RTPIncomingMediaStreamDepacketizer::Stop()
 {
-	ScopedLock scoped(mutex);
-	
 	//Log
 	Debug("-RTPIncomingMediaStreamDepacketizer::Stop() [%p]\n",incomingSource);
-	
-	//If already stopped
-	if (!incomingSource)
-		//Done
-		return;
-		
-	//Stop listeneing
-	incomingSource->RemoveListener(this);
-	//Clean it
-	incomingSource = NULL;
+
+	timeService.Sync([=](...){
+		//If already stopped
+		if (!incomingSource)
+			//Done
+			return;
+		//Stop listeneing
+		incomingSource->RemoveListener(this);
+		//Clean it
+		incomingSource = NULL;
+	});
 }

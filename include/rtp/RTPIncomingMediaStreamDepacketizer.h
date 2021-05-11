@@ -28,7 +28,7 @@ private:
 	std::set<MediaFrame::Listener*> listeners;
 	RTPDepacketizer* depacketizer;
 	RTPIncomingMediaStream* incomingSource;
-	Mutex mutex;
+	TimeService &timeService;
 };
 
 #endif /* STREAMTRACKDEPACKETIZERDEPACKETIZER_H */
