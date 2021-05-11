@@ -100,6 +100,11 @@ inline QWORD getTimeMS()
 	return (((QWORD)now.tv_sec)*1000+now.tv_usec/1000);
 }
 
+inline QWORD getTimeDiffMS(QWORD time)
+{
+	return getTimeMS() - time;
+}
+
 /*********************************
 * getDifTime
 *	Obtiene cuantos microsegundos ha pasado desde "antes"

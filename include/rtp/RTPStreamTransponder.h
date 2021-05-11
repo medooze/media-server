@@ -52,7 +52,7 @@ private:
 	RTPReceiver* receiver			= NULL;
 	RTPSender* sender			= NULL;
 	std::unique_ptr<VideoLayerSelector> selector;
-	Mutex mutex;
+	TimeService& timeService;
 	
 	
 	volatile bool reset	= false;

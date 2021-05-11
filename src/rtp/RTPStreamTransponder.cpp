@@ -5,7 +5,7 @@
 
 
 RTPStreamTransponder::RTPStreamTransponder(RTPOutgoingSourceGroup* outgoing,RTPSender* sender) :
-	mutex(true)
+	timeService(outgoing->GetTimeService())
 {
 	//Store outgoing streams
 	this->outgoing = outgoing;
@@ -21,67 +21,68 @@ RTPStreamTransponder::RTPStreamTransponder(RTPOutgoingSourceGroup* outgoing,RTPS
 
 bool RTPStreamTransponder::SetIncoming(RTPIncomingMediaStream* incoming, RTPReceiver* receiver)
 {
-	//If they are the same
-	if (this->incoming==incoming && this->receiver==receiver)
-		//DO nothing
-		return false;
-	
-	Debug(">RTPStreamTransponder::SetIncoming() | [incoming:%p,receiver:%p,ssrc:%u]\n",incoming,receiver,ssrc);
-	
-	//Remove listener from old stream
-	if (this->incoming) 
-		this->incoming->RemoveListener(this);
+	bool res = true;
 
-        //Locked
-        {
-                ScopedLock lock(mutex);
-        
-                //Reset packets before start listening again
-                reset = true;
-
-                //Store stream and receiver
-                this->incoming = incoming;
-                this->receiver = receiver;
-        }
+	timeService.Sync([=,&res](auto now){
+		//If they are the same
+		if (this->incoming==incoming && this->receiver==receiver)
+		{
+			//Not updated
+			res = false;
+			//DO nothing
+			return;
+		}
 	
-	//Double check
-	if (this->incoming)
-	{
-		//Add us as listeners
-		this->incoming->AddListener(this);
+		Debug(">RTPStreamTransponder::SetIncoming() | [incoming:%p,receiver:%p,ssrc:%u]\n",incoming,receiver,ssrc);
+	
+		//Remove listener from old stream
+		if (this->incoming) 
+			this->incoming->RemoveListener(this);
+
+		//Reset packets before start listening again
+		reset = true;
+
+		//Store stream and receiver
+		this->incoming = incoming;
+		this->receiver = receiver;
+	
+		//Double check
+		if (this->incoming)
+		{
+			//Add us as listeners
+			this->incoming->AddListener(this);
 		
-		//Request update on the incoming
-		if (this->receiver) this->receiver->SendPLI(this->incoming->GetMediaSSRC());
-		//Update last requested PLI
-		lastSentPLI = getTime();
-	}
+			//Request update on the incoming
+			if (this->receiver) this->receiver->SendPLI(this->incoming->GetMediaSSRC());
+			//Update last requested PLI
+			lastSentPLI = now.count();
+		}
 	
-	Debug("<RTPStreamTransponder::SetIncoming() | [incoming:%p,receiver:%p]\n",incoming,receiver);
-	
-	//OK
-	return true;
+		Debug("<RTPStreamTransponder::SetIncoming() | [incoming:%p,receiver:%p]\n",incoming,receiver);
+	});
+
+	return res;
 }
 
 RTPStreamTransponder::~RTPStreamTransponder()
 {
-	//Stop listeneing
-	Close();
+	//If not already stopped
+	if (outgoing)
+		//Stop listeneing
+		Close();
 }
 
 void RTPStreamTransponder::Close()
 {
 	Debug(">RTPStreamTransponder::Close()\n");
 
-	{
-		//Lock
-		ScopedLock lock(mutex);
-
+	timeService.Sync([=](auto now) {
 		//Stop listening
 		if (incoming) incoming->RemoveListener(this);
 		//Remove sources
 		incoming = nullptr;
 		receiver = nullptr;
-	}
+	});
 	
 	//Stop listening
 	if (outgoing) outgoing->RemoveListener(this);
@@ -237,7 +238,7 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 			//One more dropperd
 			dropped++;
 			//If selector is waiting for intra and last PLI was more than 1s ago
-			if (selector->IsWaitingForIntra() && getTimeDiff(lastSentPLI)>1E6)
+			if (selector->IsWaitingForIntra() && getTimeDiffMS(lastSentPLI)>1E3)
 				//Request it again
 				RequestPLI();
 			//Drop
@@ -409,42 +410,45 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 
 void RTPStreamTransponder::onBye(RTPIncomingMediaStream* stream)
 {
-	ScopedLock lock(mutex);
+	timeService.Async([=](auto) {
 	
-	//If they are the not same
-	if (this->incoming!=stream)
-		//DO nothing
-		return;
+		//If they are the not same
+		if (this->incoming!=stream)
+			//DO nothing
+			return;
 	
-	//Reset packets
-	reset = true;
+		//Reset packets
+		reset = true;
+	});
 }
 
 void RTPStreamTransponder::onEnded(RTPIncomingMediaStream* stream)
 {
-	ScopedLock lock(mutex);
+	timeService.Async([=](auto){
 	
-	//If they are the not same
-	if (this->incoming!=stream)
-		//DO nothing
-		return;
+		//If they are the not same
+		if (this->incoming!=stream)
+			//DO nothing
+			return;
 	
-	//Reset packets before start listening again
-	reset = true;
+		//Reset packets before start listening again
+		reset = true;
 	
-	//Store stream and receiver
-	this->incoming = nullptr;
-	this->receiver = nullptr;
+		//Store stream and receiver
+		this->incoming = nullptr;
+		this->receiver = nullptr;
+	});
 }
 
 void RTPStreamTransponder::RequestPLI()
 {
 	//Log("-RTPStreamTransponder::RequestPLI() [receiver:%p,incoming:%p]\n",receiver,incoming);
-	ScopedLock lock(mutex);
-	//Request update on the incoming
-	if (receiver && incoming) receiver->SendPLI(incoming->GetMediaSSRC());
-	//Update last sent pli
-	lastSentPLI = getTime();
+	timeService.Async([=](auto now) {
+		//Request update on the incoming
+		if (receiver && incoming) receiver->SendPLI(incoming->GetMediaSSRC());
+		//Update last sent pli
+		lastSentPLI = now.count();
+	});
 }
 
 void RTPStreamTransponder::onPLIRequest(RTPOutgoingSourceGroup* group,DWORD ssrc)

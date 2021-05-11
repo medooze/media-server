@@ -28,7 +28,7 @@ public:
 	void RemoveListener(Listener* listener);
 	void onPLIRequest(DWORD ssrc);
 	void onREMB(DWORD ssrc,DWORD bitrate);
-	
+	TimeService& GetTimeService()	{ return timeService; }
 	RTPOutgoingSource* GetSource(DWORD ssrc);
 	
 	void Update(QWORD now);
