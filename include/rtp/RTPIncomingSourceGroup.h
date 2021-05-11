@@ -56,7 +56,6 @@ public:
 	DWORD rtt = 0;
 	MediaFrame::Type type;
 	RTPIncomingSource media;
-	RTPIncomingSource fec;
 	RTPIncomingSource rtx;
         DWORD remoteBitrateEstimation = 0;
 	

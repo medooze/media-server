@@ -72,7 +72,7 @@ void PCAPTransportEmulator::SetRemoteProperties(const Properties& properties)
 		{
 			//ADD it
 			rtpMap[type] = codec;
-			//Get rtx and fec
+			//Get rtx
 			BYTE rtx = it->GetProperty("rtx",0);
 			//Check if it has rtx
 			if (rtx)
@@ -108,20 +108,18 @@ void PCAPTransportEmulator::SetRemoteProperties(const Properties& properties)
 
 bool PCAPTransportEmulator::AddIncomingSourceGroup(RTPIncomingSourceGroup *group)
 {
-	Log("-AddIncomingSourceGroup [rid:'%s',ssrc:%u,fec:%u,rtx:%u]\n",group->rid.c_str(),group->media.ssrc,group->fec.ssrc,group->rtx.ssrc);
+	Log("-PCAPTransportEmulator::AddIncomingSourceGroup() [rid:'%s',ssrc:%u,rtx:%u]\n",group->rid.c_str(),group->media.ssrc,group->rtx.ssrc);
 	
 	//It must contain media ssrc
 	if (!group->media.ssrc && group->rid.empty())
-		return Error("No media ssrc or rid defined, stream will not be added\n");
+		return Error("-PCAPTransportEmulator::AddIncomingSourceGroup() No media ssrc or rid defined, stream will not be added\n");
 	
 
 	//Check they are not already assigned
 	if (group->media.ssrc && incoming.find(group->media.ssrc)!=incoming.end())
-		return Error("-AddIncomingSourceGroup media ssrc already assigned");
-	if (group->fec.ssrc && incoming.find(group->fec.ssrc)!=incoming.end())
-		return Error("-AddIncomingSourceGroup fec ssrc already assigned");
+		return Error("-PCAPTransportEmulator::AddIncomingSourceGroup() media ssrc already assigned");
 	if (group->rtx.ssrc && incoming.find(group->rtx.ssrc)!=incoming.end())
-		return Error("-AddIncomingSourceGroup rtx ssrc already assigned");
+		return Error("-PCAPTransportEmulator::AddIncomingSourceGroup() rtx ssrc already assigned");
 
 	/*
 	//Add rid if any
@@ -131,8 +129,6 @@ bool PCAPTransportEmulator::AddIncomingSourceGroup(RTPIncomingSourceGroup *group
 	//Add it for each group ssrc
 	if (group->media.ssrc)
 		incoming[group->media.ssrc] = group;
-	if (group->fec.ssrc)
-		incoming[group->fec.ssrc] = group;
 	if (group->rtx.ssrc)
 		incoming[group->rtx.ssrc] = group;
 	
@@ -145,11 +141,11 @@ bool PCAPTransportEmulator::AddIncomingSourceGroup(RTPIncomingSourceGroup *group
 
 bool PCAPTransportEmulator::RemoveIncomingSourceGroup(RTPIncomingSourceGroup *group)
 {
-	Log("-RemoveIncomingSourceGroup [ssrc:%u,fec:%u,rtx:%u]\n",group->media.ssrc,group->fec.ssrc,group->rtx.ssrc);
+	Log("-PCAPTransportEmulator::RemoveIncomingSourceGroup() [ssrc:%u,rtx:%u]\n",group->media.ssrc,group->rtx.ssrc);
 	
 	//It must contain media ssrc
 	if (!group->media.ssrc)
-		return Error("No media ssrc defined, stream will not be removed\n");
+		return Error("-PCAPTransportEmulator::RemoveIncomingSourceGroup() No media ssrc defined, stream will not be removed\n");
 	
 	//Stop distpaching
 	group->Stop();
@@ -162,8 +158,6 @@ bool PCAPTransportEmulator::RemoveIncomingSourceGroup(RTPIncomingSourceGroup *gr
 	//Remove it from each ssrc
 	if (group->media.ssrc)
 		incoming.erase(group->media.ssrc);
-	if (group->fec.ssrc)
-		incoming.erase(group->fec.ssrc);
 	if (group->rtx.ssrc)
 		incoming.erase(group->rtx.ssrc);
 	
@@ -522,14 +516,6 @@ outher:	while(running)
 			//TODO: Move from here
 			VideoLayerSelector::GetLayerIds(packet);
 	
-		} else if (ssrc==group->fec.ssrc)  {
-			UltraDebug("-Flex fec\n");
-			//Ensure that it is a FEC codec
-			if (codec!=VideoCodec::FLEXFEC)
-				//error
-				Debug("-PCAPTransportEmulator::Run()| No FLEXFEC codec on fec sssrc:%u type:%d codec:%d\n",MediaFrame::TypeToString(packet->GetMediaType()),packet->GetPayloadType(),packet->GetSSRC());
-			//DO NOTHING with it yet
-			continue;
 		}	
 		
 		//Add packet and see if we have lost any in between

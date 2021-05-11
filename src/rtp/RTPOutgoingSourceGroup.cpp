@@ -20,8 +20,6 @@ RTPOutgoingSource* RTPOutgoingSourceGroup::GetSource(DWORD ssrc)
 		return &media;
 	else if (ssrc == rtx.ssrc)
 		return &rtx;
-	else if (ssrc == fec.ssrc)
-		return &fec;
 	return NULL;
 }
 
@@ -159,8 +157,6 @@ void RTPOutgoingSourceGroup::Update()
 		media.Update(now.count());
 		//Update
 		rtx.Update(now.count());
-		//Update
-		fec.Update(now.count());
 	});
 }
 
@@ -172,7 +168,5 @@ void RTPOutgoingSourceGroup::Update(QWORD now)
 		media.Update(now);
 		//Update
 		rtx.Update(now);
-		//Update
-		fec.Update(now);
 	});
 }

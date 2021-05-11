@@ -43,6 +43,8 @@
 constexpr auto IceTimeout = 30000ms;
 constexpr auto ProbingInterval = 10ms;
 constexpr auto MasRTXOverhead = 0.50f;
+constexpr auto TransportWideCCMaxPackets = 100;
+constexpr auto TransportWideCCMaxInterval = 5E4;	//50ms
 
 DTLSICETransport::DTLSICETransport(Sender *sender,TimeService& timeService) :
 	sender(sender),
@@ -89,8 +91,11 @@ void DTLSICETransport::onDTLSPendingData()
 
 int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* data,DWORD size)
 {
+	//Get current time
+	auto now = getTime();
+
 	//Acumulate bitrate
-	incomingBitrate.Update(getTimeMS(),size);
+	incomingBitrate.Update(now/1000,size);
 	
 	//Check if it a DTLS packet
 	if (DTLSConnection::IsDTLS(data,size))
@@ -120,7 +125,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		//If dumping
 		if (dumper && dumpRTCP)
 			//Write udp packet
-			dumper->WriteUDP(getTimeMS(),candidate->GetIPAddress(),candidate->GetPort(),0x7F000001,5004,data,len);
+			dumper->WriteUDP(now/1000,candidate->GetIPAddress(),candidate->GetPort(),0x7F000001,5004,data,len);
 
 		//Parse it
 		auto rtcp = RTCPCompoundPacket::Parse(data,len);
@@ -168,11 +173,43 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		//Get truncate size
 		DWORD truncate = dumpRTPHeadersOnly ? len - packet->GetMediaLength() + 16 : 0;
 		//Write udp packet
-		dumper->WriteUDP(getTimeMS(),candidate->GetIPAddress(),candidate->GetPort(),0x7F000001,5004,data,len, truncate);
+		dumper->WriteUDP(now/1000,candidate->GetIPAddress(),candidate->GetPort(),0x7F000001,5004,data,len, truncate);
 	}
-	
+
 	//Get ssrc
 	DWORD ssrc = packet->GetSSRC();
+
+	//If transport wide cc is used, process now as it can be padding only data not associated yet with any source used for bwe
+	if (packet->HasTransportWideCC())
+	{
+		// Get current seq mum
+		WORD transportSeqNum = packet->GetTransportSeqNum();
+
+		//Get max seq num so far, it is either last one if queue is empy or last one of the queue
+		DWORD maxFeedbackPacketExtSeqNum = transportWideReceivedPacketsStats.size() ? transportWideReceivedPacketsStats.rbegin()->first : lastFeedbackPacketExtSeqNum;
+
+		//Check if we have a sequence wrap
+		if (transportSeqNum < 0x00FF && (maxFeedbackPacketExtSeqNum & 0xFFFF)>0xFF00)
+		{
+			//Increase cycles
+			feedbackCycles++;
+			//If looping
+			if (feedbackCycles)
+				//Send feedback now
+				SendTransportWideFeedbackMessage(ssrc);
+		}
+
+		//Get extended value
+		DWORD transportExtSeqNum = feedbackCycles << 16 | transportSeqNum;
+
+		//Add packets to the transport wide stats
+		transportWideReceivedPacketsStats[transportExtSeqNum] = PacketStats::Create(packet, size, now);
+
+		//If we have enought or timeout 
+		if (packet->GetMark() || transportWideReceivedPacketsStats.size() > TransportWideCCMaxPackets || (now - transportWideReceivedPacketsStats.begin()->second->time) > TransportWideCCMaxInterval)
+			//Send feedback message
+			SendTransportWideFeedbackMessage(ssrc);
+	}
 	
 	//Get codec
 	DWORD codec = packet->GetCodec();
@@ -346,41 +383,6 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		//error
 		return Warning("-DTLSICETransport::onData() | Group does not contain ssrc [%u]\n",ssrc);
 
-	//If transport wide cc is used
-	if (packet->HasTransportWideCC())
-	{
-		// Get current seq mum
-		WORD transportSeqNum = packet->GetTransportSeqNum();
-		
-		//Get max seq num so far, it is either last one if queue is empy or last one of the queue
-		DWORD maxFeedbackPacketExtSeqNum = transportWideReceivedPacketsStats.size() ? transportWideReceivedPacketsStats.rbegin()->first : lastFeedbackPacketExtSeqNum;
-		
-		//Check if we have a sequence wrap
-		if (transportSeqNum<0x00FF && (maxFeedbackPacketExtSeqNum & 0xFFFF)>0xFF00)
-		{
-			//Increase cycles
-			feedbackCycles++;
-			//If looping
-			if (feedbackCycles)
-				//Send feedback now
-				SendTransportWideFeedbackMessage(ssrc);
-		}
-
-		//Get extended value
-		DWORD transportExtSeqNum = feedbackCycles<<16 | transportSeqNum;
-		
-		//Get current time
-		auto now = getTime();
-		
-		//Add packets to the transport wide stats
-		transportWideReceivedPacketsStats[transportExtSeqNum] = PacketStats::Create(packet,size,now);
-		
-		//If we have enought or timeout (500ms)
-		if (packet->GetMark()  || transportWideReceivedPacketsStats.size()>100 || (now-transportWideReceivedPacketsStats.begin()->second->time)>5E5)
-			//Send feedback message
-			SendTransportWideFeedbackMessage(ssrc);
-	}
-
 	//If it was an RTX packet and not a padding only one
 	if (ssrc==group->rtx.ssrc && packet->GetMediaLength()) 
 	{
@@ -414,14 +416,8 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		 packet->SetPayloadType(apt);
 		 //TODO: Move from here, required to fill the vp8/vp9 descriptors
 		 VideoLayerSelector::GetLayerIds(packet);
-	} else if (ssrc==group->fec.ssrc)  {
-		//Ensure that it is a FEC codec
-		if (codec!=VideoCodec::FLEXFEC)
-			//error
-			return  Warning("-DTLSICETransport::onData() | No FLEXFEC codec on fec sssrc:%u type:%d codec:%d\n",MediaFrame::TypeToString(packet->GetMediaType()),packet->GetPayloadType(),packet->GetSSRC());
-		//DO NOTHING with it yet
-		return 1;
-	}
+	} 
+
 	//Check if we have receiver already an SR for media stream
 	if ( group->media.lastReceivedSenderReport)
 	{
@@ -444,8 +440,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		//Increase rejected counter
 		source->dropPackets++;
 	
-	//Get current time
-	auto now = getTime();
+
 	
 	if ( group->type == MediaFrame::Video && 
 		( lost>0 ||  (group->GetCurrentLost() && (now-source->lastNACKed)/1000>fmax(rtt,20)))
@@ -1102,7 +1097,7 @@ void DTLSICETransport::SetLocalProperties(const Properties& properties)
 		{
 			//ADD it
 			sendMaps.rtp[type] = codec;
-			//Get rtx and fec
+			//Get rtx
 			BYTE rtx = it->GetProperty("rtx",0);
 			//Check if it has rtx
 			if (rtx)
@@ -1205,7 +1200,7 @@ void DTLSICETransport::SetRemoteProperties(const Properties& properties)
 		{
 			//ADD it
 			recvMaps.rtp[type] = codec;
-			//Get rtx and fec
+			//Get rtx
 			BYTE rtx = it->GetProperty("rtx",0);
 			//Check if it has rtx
 			if (rtx)
@@ -1542,7 +1537,7 @@ void DTLSICETransport::onDTLSShutdown()
 bool DTLSICETransport::AddOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 {
 	//Log
-	Log("-DTLSICETransport::AddOutgoingSourceGroup() [group:%p,ssrc:%u,fec:%u,rtx:%u]\n",group,group->media.ssrc,group->fec.ssrc,group->rtx.ssrc);
+	Log("-DTLSICETransport::AddOutgoingSourceGroup() [group:%p,ssrc:%u,rtx:%u]\n",group,group->media.ssrc,group->rtx.ssrc);
 	
 	//Done
 	bool done = true;
@@ -1552,19 +1547,12 @@ bool DTLSICETransport::AddOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 		//Get ssrcs
 		const auto media = group->media.ssrc;
 		const auto rtx   = group->rtx.ssrc;
-		const auto fec	 = group->fec.ssrc;
 		
 		//Check they are not already assigned
 		if (media && outgoing.find(media)!=outgoing.end())
 		{
 			//Error
 			done = Error("-AddOutgoingSourceGroup media ssrc already assigned");
-			return;
-		}
-		if (fec && outgoing.find(fec)!=outgoing.end())
-		{
-			//Error
-			done = Error("-AddOutgoingSourceGroup fec ssrc already assigned");
 			return;
 		}
 		if (rtx && outgoing.find(rtx)!=outgoing.end())
@@ -1579,11 +1567,6 @@ bool DTLSICETransport::AddOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 		{
 			outgoing[media] = group;
 			send.AddStream(media);
-		}
-		if (fec)
-		{
-			outgoing[fec] = group;
-			send.AddStream(fec);
 		}
 		if (rtx)
 		{
@@ -1609,16 +1592,15 @@ bool DTLSICETransport::AddOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 
 bool DTLSICETransport::RemoveOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 {
-	Log("-DTLSICETransport::RemoveOutgoingSourceGroup() [ssrc:%u,fec:%u,rtx:%u]\n",group->media.ssrc,group->fec.ssrc,group->rtx.ssrc);
+	Log("-DTLSICETransport::RemoveOutgoingSourceGroup() [ssrc:%u,rtx:%u]\n",group->media.ssrc,group->rtx.ssrc);
 
 	//Dispatch to the event loop thread
 	timeService.Sync([=](...){
-		Log("-DTLSICETransport::RemoveOutgoingSourceGroup() | Async [ssrc:%u,fec:%u,rtx:%u]\n",group->media.ssrc,group->fec.ssrc,group->rtx.ssrc);
+		Log("-DTLSICETransport::RemoveOutgoingSourceGroup() | Async [ssrc:%u,rtx:%u]\n",group->media.ssrc,group->rtx.ssrc);
 		//Get ssrcs
 		std::vector<DWORD> ssrcs;
 		const auto media = group->media.ssrc;
 		const auto rtx   = group->rtx.ssrc;
-		const auto fec	 = group->fec.ssrc;
 		
 		//If got media ssrc
 		if (media)
@@ -1628,15 +1610,6 @@ bool DTLSICETransport::RemoveOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 			send.RemoveStream(media);
 			//Add group ssrcs
 			ssrcs.push_back(media);
-		}
-		//IF got fec ssrc
-		if (fec)
-		{
-			//Remove from ssrc mapping and srtp session
-			outgoing.erase(fec);
-			send.RemoveStream(fec);
-			//Add group ssrcs
-			ssrcs.push_back(fec);
 		}
 		//IF got rtx ssrc
 		if (rtx)
@@ -1666,7 +1639,7 @@ bool DTLSICETransport::RemoveOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 
 bool DTLSICETransport::AddIncomingSourceGroup(RTPIncomingSourceGroup *group)
 {
-	Log("-DTLSICETransport::AddIncomingSourceGroup() [mid:'%s',rid:'%s',ssrc:%u,fec:%u,rtx:%u]\n",group->mid.c_str(),group->rid.c_str(),group->media.ssrc,group->fec.ssrc,group->rtx.ssrc);
+	Log("-DTLSICETransport::AddIncomingSourceGroup() [mid:'%s',rid:'%s',ssrc:%u,rtx:%u]\n",group->mid.c_str(),group->rid.c_str(),group->media.ssrc,group->rtx.ssrc);
 	
 	//It must contain media ssrc
 	if (!group->media.ssrc && group->rid.empty())
@@ -1680,7 +1653,6 @@ bool DTLSICETransport::AddIncomingSourceGroup(RTPIncomingSourceGroup *group)
 		//Get ssrcs
 		const auto media = group->media.ssrc;
 		const auto rtx   = group->rtx.ssrc;
-		const auto fec	 = group->fec.ssrc;
 		
 		//Check they are not already assigned
 		if (media && incoming.find(media)!=incoming.end())
@@ -1689,12 +1661,7 @@ bool DTLSICETransport::AddIncomingSourceGroup(RTPIncomingSourceGroup *group)
 			done = Warning("-DTLSICETransport::AddIncomingSourceGroup() media ssrc already assigned\n");
 			return;
 		}
-		if (fec && incoming.find(fec)!=incoming.end())
-		{
-			//Error
-			done = Warning("-DTLSICETransport::AddIncomingSourceGroup() fec ssrc already assigned\n");
-			return;
-		}
+		
 			
 		if (rtx && incoming.find(rtx)!=incoming.end())
 		{
@@ -1727,11 +1694,6 @@ bool DTLSICETransport::AddIncomingSourceGroup(RTPIncomingSourceGroup *group)
 			incoming[media] = group;
 			recv.AddStream(media);
 		}
-		if (fec)
-		{
-			incoming[fec] = group;
-			recv.AddStream(fec);
-		}
 		if (rtx)
 		{
 			incoming[rtx] = group;
@@ -1755,7 +1717,7 @@ bool DTLSICETransport::AddIncomingSourceGroup(RTPIncomingSourceGroup *group)
 
 bool DTLSICETransport::RemoveIncomingSourceGroup(RTPIncomingSourceGroup *group)
 {
-	Log("-DTLSICETransport::RemoveIncomingSourceGroup() [mid:'%s',rid:'%s',ssrc:%u,fec:%u,rtx:%u]\n",group->mid.c_str(),group->rid.c_str(),group->media.ssrc,group->fec.ssrc,group->rtx.ssrc);
+	Log("-DTLSICETransport::RemoveIncomingSourceGroup() [mid:'%s',rid:'%s',ssrc:%u,rtx:%u]\n",group->mid.c_str(),group->rid.c_str(),group->media.ssrc,group->rtx.ssrc);
 	
 	//Stop distpaching
 	group->Stop();
@@ -1786,7 +1748,6 @@ bool DTLSICETransport::RemoveIncomingSourceGroup(RTPIncomingSourceGroup *group)
 		//Get ssrcs
 		const auto media = group->media.ssrc;
 		const auto rtx   = group->rtx.ssrc;
-		const auto fec	 = group->fec.ssrc;
 
 		//If got media ssrc
 		if (media)
@@ -1794,13 +1755,6 @@ bool DTLSICETransport::RemoveIncomingSourceGroup(RTPIncomingSourceGroup *group)
 			//Remove from ssrc mapping and srtp session
 			incoming.erase(media);
 			recv.RemoveStream(media);
-		}
-		//IF got fec ssrc
-		if (fec)
-		{
-			//Remove from ssrc mapping and srtp session
-			incoming.erase(fec);
-			recv.RemoveStream(fec);
 		}
 		//IF got rtx ssrc
 		if (rtx)

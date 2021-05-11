@@ -46,7 +46,6 @@ public:
 	std::string mid;
 	MediaFrame::Type type;
 	RTPOutgoingSource media;
-	RTPOutgoingSource fec;
 	RTPOutgoingSource rtx;
 private:	
 	TimeService& timeService;
