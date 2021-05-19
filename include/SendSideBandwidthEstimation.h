@@ -9,6 +9,7 @@
 #include "MovingCounter.h"
 #include "rtp/PacketStats.h"
 #include "remoterateestimator.h"
+#include "WrapExtender.h"
 
 class SendSideBandwidthEstimation
 {
@@ -59,7 +60,8 @@ private:
 	ChangeState state = ChangeState::Initial;
 	uint32_t consecutiveChanges = 0;
 	
-
+	WrapExtender<uint8_t, uint64_t> feedbackNumExtender;
+	uint64_t lastFeedbackNum = 0;
 	
 	MovingMinCounter<uint64_t> rttMin;
 	Acumulator deltaAcumulator;

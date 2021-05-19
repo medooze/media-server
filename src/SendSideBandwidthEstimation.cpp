@@ -3,7 +3,7 @@
 #include <cmath>
 #include "SendSideBandwidthEstimation.h"
 
-constexpr uint64_t kInitialDuration		= 500E3;	// 500ms
+constexpr uint64_t kInitialDuration		= 1500E3;	// 1500ms
 constexpr uint64_t kReportInterval		= 250E3;	// 250ms
 constexpr uint64_t kMonitorDuration		= 250E3;	// 250ms
 constexpr uint64_t kMonitorTimeout		= 750E3;	// 750ms
@@ -84,13 +84,27 @@ void SendSideBandwidthEstimation::SentPacket(const PacketStats::shared& stat)
 
 void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const std::map<uint32_t,uint64_t>& packets, uint64_t when)
 {
+	//Extend seq num
+	feedbackNumExtender.Extend(feedbackNum);
+
+	//Get extended one
+	uint64_t extFeedbabkNum = feedbackNumExtender.GetExtSeqNum();
+	//Check if there was a missing packet
+	if (lastFeedbackNum && extFeedbabkNum > lastFeedbackNum + 1)
+	{
+		//Log
+		UltraDebug("-SendSideBandwidthEstimation::ReceivedFeedback() missing feedback [seqNum:%u,extSeqNum:%llu,last:%llu]\n", feedbackNum, extFeedbabkNum, lastFeedbackNum);
+		//Reset received accumulator
+		totalRecvAcumulator.Reset(0);
+	}
+	
+	//Store last received feedback
+	lastFeedbackNum = extFeedbabkNum;
 
 	//Check we have packets
 	if (packets.empty())
 		//Skip
 		return;
-	
-	//TODO: How to handle lost feedback packets?
 	
 	//Get last packets stats
 	auto last = transportWideSentPacketsStats.find(packets.rbegin()->first);
@@ -281,9 +295,13 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 			return;
 		//Set bwe as received rate
 		bandwidthEstimation = totalRecvBitrate;
-	} else if (rttMin && rttEstimated>(10+rttMin*1.3)) {
+	} else if (rttMin && rttEstimated>(20+rttMin*1.3)) {
 		//We are in congestion
 		SetState(ChangeState::Congestion);
+		//If there was any feedback loss
+		if (!totalRecvAcumulator.IsInWindow())
+			//Wait until we have more feedback
+			return;
 		//Set bwe as received rate
 		bandwidthEstimation = totalRecvBitrate;
 	} else if (mediaSentAcumulator.GetInstantAvg()*8>targetBitrate) {
@@ -295,9 +313,10 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 		//We are going to conservatively reach the previous estimation again
 		SetState(ChangeState::Recovery);
 	} else if (state == ChangeState::Recovery) {
-
-		//Decrease bwe to converge to the received rate
-		bandwidthEstimation = bandwidthEstimation * 0.99 + totalRecvBitrate * 0.01;
+		//If there was enough data
+		if (totalRecvAcumulator.IsInWindow())
+			//Decrease bwe to converge to the received rate
+			bandwidthEstimation = bandwidthEstimation * 0.99 + totalRecvBitrate * 0.01;
 
 		//Initial conversion factor
 		double confidenceAmplifier = 1 + std::log(consecutiveChanges + 1);
@@ -334,9 +353,14 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 	else if (state != ChangeState::Recovery)
 		//Try to reach bwe
 		targetBitrate = bandwidthEstimation;
+
+	//Get sent data
+	auto rtxSent	= rtxSentAcumulator.GetAcumulated();
+	auto mediaSent	= mediaSentAcumulator.GetAcumulated();
+	auto totalSent	= rtxSent + mediaSent;
 	
-	//Calculate rtx overhead
-	double overhead = rtxSentAcumulator.GetAcumulated() && mediaSentAcumulator.GetAcumulated() ?  static_cast<double>(mediaSentAcumulator.GetAcumulated()) / (mediaSentAcumulator.GetAcumulated() + rtxSentAcumulator.GetAcumulated()) : 1.0f;
+	//Calculate long term rtx overhead
+	double overhead = totalSent ?  static_cast<double>(mediaSent)/totalSent : 1.0f;
 
 	//Available rate taking into account current rtx overhead
 	availableRate = targetBitrate * overhead; 
