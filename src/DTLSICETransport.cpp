@@ -2591,7 +2591,7 @@ void DTLSICETransport::Probe()
 			probing = target - (bitrate - probing);
 
 			//Get size of probes
-			DWORD probingSize = std::min<DWORD>((probing*sleep)/8000, maxProbingBitrate);
+			DWORD probingSize = std::min<DWORD>(probing, maxProbingBitrate)*sleep/8000;
 			
 			//Log("-DTLSICETransport::Probe() | Sending probing packets [target:%u,bitrate:%u,probing:%u,max:%u,probingSize:%d,sleep:%d]\n", target, bitrate,probing,maxProbingBitrate, probingSize, sleep);
 
