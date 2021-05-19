@@ -7,10 +7,14 @@
 
 #ifndef RTMPNETCONNECTION_H
 #define	RTMPNETCONNECTION_H
+
+#include <memory>
 #include "rtmpstream.h"
 
 class RTMPNetConnection
 {
+public:
+	using shared = std::shared_ptr<RTMPNetConnection>;
 public:
 	class Listener
 	{
@@ -22,6 +26,8 @@ public:
 		virtual void onNetConnectionStatus(const RTMPNetStatusEventInfo &info,const wchar_t *message) = 0;
 		virtual void onNetConnectionDisconnected() = 0;
 	};
+
+
 public:
 	virtual ~RTMPNetConnection();
 	virtual void AddListener(Listener* listener);

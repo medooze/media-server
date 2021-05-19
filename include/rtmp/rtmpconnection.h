@@ -28,7 +28,7 @@ public:
 		virtual ~Listener(){};
 	public:
 		//Interface
-		virtual RTMPNetConnection* OnConnect(const std::wstring& appName,RTMPNetConnection::Listener *listener,std::function<void(bool)> accept) = 0;
+		virtual RTMPNetConnection::shared OnConnect(const std::wstring& appName,RTMPNetConnection::Listener *listener,std::function<void(bool)> accept) = 0;
 		virtual void onDisconnect(RTMPConnection *con) = 0;
 	};
 	using shared = std::shared_ptr<RTMPConnection>;
@@ -90,9 +90,8 @@ private:
 private:
 	int socket;
 	pollfd ufds[1];
-	int timeout = 5*60*1000; // 5 minute timeout
-	bool inited;
-	bool running;
+	volatile bool inited;
+	volatile bool running;
 	State state;
 
 	RTMPHandshake01 s01;
@@ -124,7 +123,7 @@ private:
 	std::thread thread;
 	pthread_mutex_t mutex;
 
-	RTMPNetConnection* app;
+	RTMPNetConnection::shared app;
 	std::wstring	 appName;
 	RTMPNetStreams	 streams;
 	DWORD maxStreamId;

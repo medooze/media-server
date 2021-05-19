@@ -13,6 +13,8 @@
 #include "rtmp/rtmphandshake.h"
 #include "rtmp/rtmpconnection.h"
 
+constexpr int PoolTimeout = 5E3; //5s
+
 /********************************
  * RTMP connection demultiplex buffers streams from incoming raw data
  * extracting the individual buffers and passes the message fragments
@@ -186,7 +188,7 @@ int RTMPConnection::Run()
 	while(running)
 	{
 		//Wait for events
-		int ret = poll(ufds,1,timeout);
+		int ret = poll(ufds,1,PoolTimeout);
 		
 		//If there was an error
 		if (ret<0)
@@ -253,12 +255,12 @@ int RTMPConnection::Run()
 	
 	Log("-RTMPConnection::Run() Disconnecting [connection:%p]\n",this);
 
-	//Lock mutex
-	pthread_mutex_lock(&mutex);
-	
 	//If got application
 	if (app)
 	{
+		//lock now
+		pthread_mutex_lock(&mutex);
+
 		//Disconnect all streams
 		for (auto it=streams.begin(); it!=streams.end(); ++it)
 			//Delete stream
@@ -267,16 +269,14 @@ int RTMPConnection::Run()
 		//Clear stream
 		streams.clear();
 
+		//Unlock
+		pthread_mutex_unlock(&mutex);
+
 		//Disconnect application
 		app->RemoveListener(this);
 		//Disconnected
 		app->Disconnected();
-		//NO app
-		app = NULL;
 	}
-	
-	//Unlock mutex
-	pthread_mutex_unlock(&mutex);
 	
 	//Check listener
 	if (listener)
@@ -1347,15 +1347,6 @@ void RTMPConnection::onNetConnectionDisconnected()
 {
 	Log("-RTMPConnection::onNetConnectionDisconnected() [%p]\n",this);
 
-	//Lock mutex
-	pthread_mutex_lock(&mutex);
-	
-	//Delete app
-	app = NULL;
-	
-	//Lock mutex
-	pthread_mutex_unlock(&mutex);
-
-	//End us
-	End();
+	//Close socket and event loop
+	Stop();
 }

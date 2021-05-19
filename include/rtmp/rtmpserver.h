@@ -20,7 +20,7 @@ public:
 	int End();
 	
 	/** Listener for RTMPConnection */
-	virtual RTMPNetConnection* OnConnect(const std::wstring& appName,RTMPNetConnection::Listener *listener,std::function<void(bool)> accept) override;
+	virtual RTMPNetConnection::shared OnConnect(const std::wstring& appName,RTMPNetConnection::Listener *listener,std::function<void(bool)> accept) override;
 	virtual void onDisconnect(RTMPConnection *con) override;
 
 protected:
