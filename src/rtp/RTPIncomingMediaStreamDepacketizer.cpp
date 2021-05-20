@@ -19,7 +19,7 @@ RTPIncomingMediaStreamDepacketizer::~RTPIncomingMediaStreamDepacketizer()
 	Debug("-RTPIncomingMediaStreamDepacketizer::~RTPIncomingMediaStreamDepacketizer()\n");
 	
 	//If not already stopped
-	if (!incomingSource)
+	if (incomingSource)
 		//Stop it
 		Stop();
 }
