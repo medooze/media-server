@@ -18,12 +18,10 @@ RTPIncomingMediaStreamDepacketizer::~RTPIncomingMediaStreamDepacketizer()
 {
 	Debug("-RTPIncomingMediaStreamDepacketizer::~RTPIncomingMediaStreamDepacketizer()\n");
 	
-	//JIC
-	Stop();
-	//Check 
-	if (depacketizer)
-		//Delete depacketier
-		delete(depacketizer);
+	//If not already stopped
+	if (!incomingSource)
+		//Stop it
+		Stop();
 }
 
 void RTPIncomingMediaStreamDepacketizer::onRTP(RTPIncomingMediaStream* group,const RTPPacket::shared& packet)
@@ -129,5 +127,9 @@ void RTPIncomingMediaStreamDepacketizer::Stop()
 		incomingSource->RemoveListener(this);
 		//Clean it
 		incomingSource = NULL;
+		//Check 
+		if (depacketizer)
+			//Delete depacketier
+			delete(depacketizer);
 	});
 }
