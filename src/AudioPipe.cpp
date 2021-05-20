@@ -217,7 +217,7 @@ int AudioPipe::RecBuffer(SWORD* buffer, DWORD size)
 	pthread_mutex_lock(&mutex);
 
 	//Mientras no tengamos suficientes muestras
-	while (recording && (fifoBuffer.length() < totalSize + cache))
+	while (!canceled && recording && (fifoBuffer.length() < totalSize + cache))
 	{
 		//Esperamos la condicion
 		pthread_cond_wait(&cond, &mutex);

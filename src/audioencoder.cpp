@@ -90,7 +90,7 @@ void * AudioEncoderWorker::startEncoding(void *par)
 	Log("Encoding audio [%p]\n",pthread_self());
 	conf->Encode();
 	//Exit
-	return NULL;;
+	return NULL;
 }
 
 
