@@ -34,10 +34,11 @@ public:
 public:
 	static RTPPacket::shared Parse(const BYTE* data, DWORD size, const RTPMap& rtpMap, const RTPMap& extMap);
 public:
-	RTPPacket(MediaFrame::Type media,BYTE codec);
-	RTPPacket(MediaFrame::Type media,BYTE codec, QWORD time);
-	RTPPacket(MediaFrame::Type media,BYTE codec,const RTPHeader &header, const RTPHeaderExtension &extension);
-	RTPPacket(MediaFrame::Type media,BYTE codec,const RTPHeader &header, const RTPHeaderExtension &extension, const RTPPayload::shared &payload, QWORD time);
+	RTPPacket(MediaFrame::Type media, BYTE codec);
+	RTPPacket(MediaFrame::Type media, BYTE codec, QWORD time);
+	RTPPacket(MediaFrame::Type media, BYTE codec, const RTPHeader &header, const RTPHeaderExtension &extension);
+	RTPPacket(MediaFrame::Type media, BYTE codec, const RTPHeader& header, const RTPHeaderExtension& extension, QWORD time);
+	RTPPacket(MediaFrame::Type media, BYTE codec, const RTPHeader &header, const RTPHeaderExtension &extension, const RTPPayload::shared &payload, QWORD time);
 	virtual ~RTPPacket();
 
 	RTPPacket::shared Clone() const;
