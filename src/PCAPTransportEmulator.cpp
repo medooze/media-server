@@ -2,7 +2,10 @@
 #include "VideoLayerSelector.h"
 
 
-PCAPTransportEmulator::PCAPTransportEmulator() {}
+PCAPTransportEmulator::PCAPTransportEmulator()
+{
+	loop.Start(FD_INVALID);
+}
 
 PCAPTransportEmulator::~PCAPTransportEmulator() 
 {
@@ -131,6 +134,9 @@ bool PCAPTransportEmulator::AddIncomingSourceGroup(RTPIncomingSourceGroup *group
 		incoming[group->media.ssrc] = group;
 	if (group->rtx.ssrc)
 		incoming[group->rtx.ssrc] = group;
+
+	//Set RTX supported flag only for video
+	group->SetRTXEnabled(group->type == MediaFrame::Video);
 	
 	//Start distpaching
 	group->Start();
@@ -167,6 +173,8 @@ bool PCAPTransportEmulator::RemoveIncomingSourceGroup(RTPIncomingSourceGroup *gr
 
 bool PCAPTransportEmulator::Open(const char* filename)
 {
+	Debug("-PCAPTransportEmulator::Open() [file:%s]\n", filename);
+
 	//Create new PCAP reader
 	PCAPReader* reader = new PCAPReader();
 
@@ -176,7 +184,7 @@ bool PCAPTransportEmulator::Open(const char* filename)
 		//Delte it
 		delete reader;
 		//Error
-		return false;
+		return Error("-PCAPTransportEmulator::Open() | could not open pcap file\n");
 	}
 	
 	//Set reader
@@ -198,6 +206,9 @@ bool PCAPTransportEmulator::SetReader(UDPReader* reader)
 	
 	//Get first timestamp to start playing from
 	first = reader->Seek(0)/1000;
+
+	//Dispatch timers & tasks
+	loop.Start(FD_INVALID);
 	
 	//Done
 	return true;
@@ -271,6 +282,9 @@ bool PCAPTransportEmulator::Stop()
 	
 	Debug("<PCAPTransportEmulator::Stop()\n");
 	
+	//Dispatch timers & tasks
+	loop.Start(FD_INVALID);
+
 	return true;
 }
 
@@ -294,7 +308,7 @@ outher:	while(running)
 		}
 			
 		//Get packet
-		uint64_t ts = reader->Next();
+		uint64_t ts = reader->Next()/1000;
 		
 		//If we are at the end
 		if (!ts)
@@ -311,9 +325,79 @@ outher:	while(running)
 		//Check it is not RTCP
 		if (RTCPCompoundPacket::IsRTCP(data,size))
 		{
-			//Debug
-			//UltraDebug("-PCAPTransportEmulator::Run() | skipping rtcp\n");
-			//Ignore this try again
+			//Parse it
+			auto rtcp = RTCPCompoundPacket::Parse(data, size);
+
+			//Check packet
+			if (!rtcp)
+			{
+				//Debug
+				Debug("-DTLSICETransport::onData() | RTCP wrong data\n");
+				//Dump it
+				::Dump(data, size);
+				//Next
+				goto outher;
+			}
+
+			// For each packet
+			for (DWORD i = 0; i < rtcp->GetPacketCount(); i++)
+			{
+				//Get pacekt
+				auto packet = rtcp->GetPacket(i);
+				//Check packet type
+				switch (packet->GetType())
+				{
+					case RTCPPacket::SenderReport:
+					{
+						//Get sender report
+						auto sr = std::static_pointer_cast<RTCPSenderReport>(packet);
+
+						//Get ssrc
+						DWORD ssrc = sr->GetSSRC();
+
+						//Get source
+						RTPIncomingSource* source = GetIncomingSource(ssrc);
+
+						//If not found
+						if (!source)
+						{
+							Warning("-DTLSICETransport::onRTCP() | Could not find incoming source for RTCP SR [ssrc:%u]\n", ssrc);
+							rtcp->Dump();
+							continue;
+						}
+
+						//Update source
+						source->Process(ts, sr);
+						break;
+					}
+					case RTCPPacket::Bye:
+					{
+						//Get bye
+						auto bye = std::static_pointer_cast<RTCPBye>(packet);
+						//For each ssrc
+						for (auto& ssrc : bye->GetSSRCs())
+						{
+							//Get media
+							RTPIncomingSourceGroup* group = GetIncomingSourceGroup(ssrc);
+
+							//Debug
+							Debug("-DTLSICETransport::onRTCP() | Got BYE [ssrc:%u,group:%p,this:%p]\n", ssrc, group, this);
+
+							//If found
+							if (group)
+								//Reset it
+								group->Bye(ssrc);
+						}
+						break;
+					}
+					default:
+					{
+						//Ignore
+					}
+				}
+			}
+
+			//Next
 			goto outher;
 		}
 	
@@ -395,13 +479,10 @@ outher:	while(running)
 		MediaFrame::Type media = GetMediaForCodec(codec);
 
 		//Create normal packet
-		auto packet = std::make_shared<RTPPacket>(media,codec,header,extension);
+		auto packet = std::make_shared<RTPPacket>(media,codec,header,extension, ts);
 
 		//Set the payload
 		packet->SetPayload(data+len,size-len);
-
-		//Set capture time in ms
-		packet->SetTime(ts/1000);
 		
 		//Get the packet relative time in ns
 		auto time = packet->GetTime() - first;
@@ -431,20 +512,8 @@ outher:	while(running)
 		//Get sssrc
 		DWORD ssrc = packet->GetSSRC();
 		
-		//Get the incouming source
-		auto it = incoming.find(ssrc);
-				
-		//If not found
-		if (it==incoming.end())
-		{
-			//error
-			Debug("-PCAPTransportEmulator::Run() | Unknowing source for ssrc [%u]\n",ssrc);
-			//Continue
-			continue;
-		}
-		
 		//Get group
-		RTPIncomingSourceGroup *group = it->second;
+		RTPIncomingSourceGroup *group = GetIncomingSourceGroup(ssrc);
 
 		//TODO:support rids
 
@@ -495,7 +564,7 @@ outher:	while(running)
 				//Skip
 				continue;
 			}
-			
+
 			//Remove OSN and restore seq num
 			if (!packet->RecoverOSN())
 			{
@@ -504,6 +573,7 @@ outher:	while(running)
 				//Skip
 				continue;
 			}
+			
 			//Set original ssrc
 			packet->SetSSRC(group->media.ssrc);
 			//Set corrected seq num cycles
@@ -515,25 +585,74 @@ outher:	while(running)
 			packet->SetPayloadType(apt);
 			//TODO: Move from here
 			VideoLayerSelector::GetLayerIds(packet);
-	
-		}	
+		}
+		
+		//Check if we have receiver already an SR for media stream
+		if (group->media.lastReceivedSenderReport)
+		{
+			//Get ntp and rtp timestamps
+			QWORD timestamp = group->media.lastReceivedSenderRTPTimestampExtender.GetExtSeqNum();
+			//Get ts delta		
+			int64_t delta = (int64_t)packet->GetExtTimestamp() - timestamp;
+			//Calculate sender time 
+			QWORD senderTime = group->media.lastReceivedSenderTime + (delta) * 1000 / packet->GetClockRate();
+			//Set calculated sender time
+			packet->SetSenderTime(senderTime);
+		}
+
+		//Log("-%llu(%lld) %s seqNum:%llu(%u) mark:%d\n",ini+now,now,MediaFrame::TypeToString(group->type),packet->GetExtSeqNum(),packet->GetSeqNum(),packet->GetMark());
 		
 		//Add packet and see if we have lost any in between
-		int lost = group->AddPacket(packet,size);
+		int lost = group->AddPacket(packet,size,ts);
 
 		//Check if it was rejected
 		if (lost<0)
 		{
-			//UltraDebug("-PCAPTransportEmulator::Run()| Dropped packet [ssrc:%u,seq:%d]\n",packet->GetSSRC(),packet->GetSeqNum());
+			UltraDebug("-PCAPTransportEmulator::Run()| Dropped packet [ssrc:%u,seq:%d]\n",packet->GetSSRC(),packet->GetSeqNum());
 			//Increase rejected counter
 			source->dropPackets++;
-		} 
+		} else if (lost > 0) {
+			UltraDebug("-PCAPTransportEmulator::Run()| lost packets [ssrc:%u,seq:%d;lost:%d]\n", packet->GetSSRC(), packet->GetSeqNum(),lost);
+		}
 	}
-	
-	//Run until canceled
-	if (running) loop.Run();
+
+	//Run
+	if (running)
+		//Run event loop normaly
+		loop.Run();
 			
 	Log("<PCAPTransportEmulator::Run()\n");
 	
 	return 0;
+}
+
+
+
+RTPIncomingSourceGroup* PCAPTransportEmulator::GetIncomingSourceGroup(DWORD ssrc)
+{
+	//Get the incouming source
+	auto it = incoming.find(ssrc);
+
+	//If not found
+	if (it == incoming.end())
+		//Not found
+		return NULL;
+
+	//Get source froup
+	return it->second;
+}
+
+RTPIncomingSource* PCAPTransportEmulator::GetIncomingSource(DWORD ssrc)
+{
+	//Get the incouming source
+	auto it = incoming.find(ssrc);
+
+	//If not found
+	if (it == incoming.end())
+		//Not found
+		return NULL;
+
+	//Get source
+	return it->second->GetSource(ssrc);
+
 }

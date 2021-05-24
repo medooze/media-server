@@ -97,7 +97,7 @@ public:
 	virtual void onRTPPacket(const BYTE* buffer, DWORD size);
 	virtual void onRTCPPacket(const BYTE* buffer, DWORD size);
 private:
-	void SetRTT(DWORD rtt);
+	void SetRTT(DWORD rtt,QWORD now);
 	int ReSendPacket(int seq);
 protected:
 	//Envio y recepcion de rtcp

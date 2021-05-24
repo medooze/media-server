@@ -9,12 +9,12 @@ using namespace std::chrono_literals;
 
 RTPIncomingSourceGroup::RTPIncomingSourceGroup(MediaFrame::Type type,TimeService& timeService) :
 	timeService(timeService),
-	losts(256)
+	losts(1024)
 {
 	//Store type
 	this->type = type;
-	//Small initial bufer of 100ms
-	packets.SetMaxWaitTime(100);
+	//Small initial bufer of 1000s
+	packets.SetMaxWaitTime(1000);
 	//LIsten remote rate events
 	remoteRateEstimator.SetListener(this);
 	//Create dispatch timer
@@ -52,10 +52,10 @@ void RTPIncomingSourceGroup::RemoveListener(RTPIncomingMediaStream::Listener* li
 	});
 }
 
-int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet, DWORD size)
+int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet, DWORD size, QWORD now)
 {
 	
-	//UltraDebug(">RTPIncomingSourceGroup::AddPacket()\n");
+	//UltraDebug(">RTPIncomingSourceGroup::AddPacket() | [now:%lld]\n",now);
 	
 	//Check if it is the rtx packet used to calculate rtt
 	if (rttrtxTime && packet->GetSeqNum()==rttrtxSeq)
@@ -65,7 +65,7 @@ int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet, DWORD siz
 		//Calculate rtt
 		const auto rtt = time - rttrtxTime;
 		//Set RTT
-		SetRTT(rtt);
+		SetRTT(rtt,now);
 		//Done
 		return 0;
 	}
@@ -77,9 +77,6 @@ int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet, DWORD siz
 	
 	//Add to lost packets
 	auto lost = losts.AddPacket(packet);
-	
-	//Get now
-	auto now = getTimeMS();
 	
 	//Update instant lost accumulator
 	if (lost) media.AddLostPackets(now, lost);
@@ -161,18 +158,23 @@ void RTPIncomingSourceGroup::Update(QWORD now)
 	});
 }
 
-void RTPIncomingSourceGroup::SetRTT(DWORD rtt)
+void RTPIncomingSourceGroup::SetRTT(DWORD rtt, QWORD now)
 {
 	//Store rtt
 	this->rtt = rtt;
-	//Set max packet wait time
-	packets.SetMaxWaitTime(fmin(500,fmax(120,rtt)*2));
+	//if se suport rtx
+	if (isRTXEnabled)
+		//Set max packet wait time
+		packets.SetMaxWaitTime(fmin(750,fmax(200,rtt)*3));
+	else
+		//No wait
+		packets.SetMaxWaitTime(0);
 	//Dispatch packets with new timer now
 	dispatchTimer->Again(0ms);
 	//If using remote rate estimator
 	if (remb)
 		//Add estimation
-		remoteRateEstimator.UpdateRTT(media.ssrc,rtt,getTimeMS());
+		remoteRateEstimator.UpdateRTT(media.ssrc,rtt,now);
 }
 
 WORD RTPIncomingSourceGroup::SetRTTRTX(uint64_t time)
@@ -303,4 +305,11 @@ void RTPIncomingSourceGroup::onTargetBitrateRequested(DWORD bitrate)
 	UltraDebug("-RTPIncomingSourceGroup::onTargetBitrateRequested() | [bitrate:%d]\n",bitrate);
 	//store estimation
 	remoteBitrateEstimation = bitrate;
+}
+
+void RTPIncomingSourceGroup::SetRTXEnabled(bool enabled)
+{
+	UltraDebug("-RTPIncomingSourceGroup::EnableRTX() | [enabled:%d]\n", enabled);
+	//store estimation
+	isRTXEnabled = enabled;
 }

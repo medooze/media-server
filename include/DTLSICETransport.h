@@ -120,7 +120,7 @@ private:
 	void Probe();
 	int Send(RTPPacket::shared&& packet);
 	int Send(const RTCPCompoundPacket::shared& rtcp);
-	void SetRTT(DWORD rtt);
+	void SetRTT(DWORD rtt,QWORD now);
 	void onRTCP(const RTCPCompoundPacket::shared &rtcp);
 	void ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq);
 	DWORD SendProbe(const RTPPacket::shared& packet);

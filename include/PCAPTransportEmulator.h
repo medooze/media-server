@@ -44,7 +44,8 @@ public:
 	TimeService& GetTimeService() { return loop; }
 private:
 	int Run();
-	
+	RTPIncomingSourceGroup* GetIncomingSourceGroup(DWORD ssrc);
+	RTPIncomingSource* GetIncomingSource(DWORD ssrc);
 private:
 	EventLoop loop;
 	std::unique_ptr<UDPReader> reader;

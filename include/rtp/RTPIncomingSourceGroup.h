@@ -27,14 +27,15 @@ public:
 	virtual void RemoveListener(RTPIncomingMediaStream::Listener* listener) override;
 	virtual DWORD GetMediaSSRC()		override { return media.ssrc;	}
 	virtual TimeService& GetTimeService()	override { return timeService;	}
-	int AddPacket(const RTPPacket::shared &packet, DWORD size);
+	int AddPacket(const RTPPacket::shared &packet, DWORD size, QWORD now);
 	RTPIncomingSource* Process(RTPPacket::shared &packet);
 	void Bye(DWORD ssrc);
 	
+	void SetRTXEnabled(bool enabled);
 	void ResetPackets();
 	void Update();
 	void Update(QWORD now);
-	void SetRTT(DWORD rtt);
+	void SetRTT(DWORD rtt, QWORD now);
 	std::list<RTCPRTPFeedback::NACKField::shared>  GetNacks() { return losts.GetNacks(); }
 	
 	void Start(bool remb = false);
@@ -76,7 +77,7 @@ private:
 	std::optional<std::vector<bool>> activeDecodeTargets;
 	std::optional<TemplateDependencyStructure> templateDependencyStructure;
 	
-	
+	bool  isRTXEnabled = true;
 	WORD  rttrtxSeq	 = 0 ;
 	QWORD rttrtxTime = 0;
 	bool remb	 = false;

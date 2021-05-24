@@ -433,7 +433,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 	
 
 	//Add packet and see if we have lost any in between
-	int lost = group->AddPacket(packet,size);
+	int lost = group->AddPacket(packet,size,now/1000);
 
 	//Check if it was rejected
 	if (lost<0)
@@ -1703,6 +1703,9 @@ bool DTLSICETransport::AddIncomingSourceGroup(RTPIncomingSourceGroup *group)
 			incoming[rtx] = group;
 			recv.AddStream(rtx);
 		}
+
+		//Set RTX supported flag only for video
+		group->SetRTXEnabled(group->type==MediaFrame::Video);
 	});
 	
 	//Check result
@@ -2135,7 +2138,7 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 								//Process report
 								if (source->ProcessReceiverReport(now/1000, report))
 									//We need to update rtt
-									SetRTT(source->rtt);
+									SetRTT(source->rtt, now);
 							}
 						}
 					}
@@ -2172,7 +2175,7 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 								//Process report
 								if (source->ProcessReceiverReport(now/1000, report))
 									//We need to update rtt
-									SetRTT(source->rtt);
+									SetRTT(source->rtt,now);
 							}
 						}
 					}
@@ -2429,7 +2432,7 @@ RTPOutgoingSource* DTLSICETransport::GetOutgoingSource(DWORD ssrc)
 	return it->second->GetSource(ssrc);
 }
 
-void DTLSICETransport::SetRTT(DWORD rtt)
+void DTLSICETransport::SetRTT(DWORD rtt, QWORD now)
 {
 	//Debug
 	UltraDebug("-DTLSICETransport::SetRTT() [rtt:%d]\n",rtt);
@@ -2438,11 +2441,11 @@ void DTLSICETransport::SetRTT(DWORD rtt)
 	//Update jitters
 	for (auto it : incoming)
 		//Update jitter
-		it.second->SetRTT(rtt);
+		it.second->SetRTT(rtt,now/1000);
 	//If sse is enabled
 	if (senderSideEstimationEnabled)
 		//Add estimation
-		senderSideBandwidthEstimator.UpdateRTT(getTime(),rtt);
+		senderSideBandwidthEstimator.UpdateRTT(now,rtt);
 }
 
 void DTLSICETransport::SendTransportWideFeedbackMessage(DWORD ssrc)

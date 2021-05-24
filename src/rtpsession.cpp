@@ -628,9 +628,12 @@ void RTPSession::onRTPPacket(const BYTE* data, DWORD size)
 			packet->SetSenderTime(senderTime);
 		}
 	}
+
+	//Get current time
+	auto now = getTime();
 		
 	//Update lost packets
-	int lost = recv.AddPacket(packet,size);
+	int lost = recv.AddPacket(packet,size,now/1000);
 
 	//Check if it was rejected
 	if (lost<0)
@@ -643,9 +646,6 @@ void RTPSession::onRTPPacket(const BYTE* data, DWORD size)
 		//Log
 		UltraDebug("-RTPSession::onRTPPacket(%s) | RTX: Missing %d [nack:%d,diff:%llu,rtt:%llu]\n",MediaFrame::TypeToString(media),lost,isNACKEnabled,getDifTime(&lastFPU)/1000,rtt);
 	}
-	
-	//Get current time
-	auto now = getTime();
 	
 	//If nack is enable t waiting for a PLI/FIR response (to not oeverflow)
 	if (useRTCP && isNACKEnabled && getDifTime(&lastFPU)/1000>rtt/2 && lost>0)
@@ -753,7 +753,7 @@ void RTPSession::onRTCPPacket(const BYTE* buffer, DWORD size)
 						//Proccess it
 						if (send.media.ProcessReceiverReport(now/1000, report))
 							//We need to update rtt
-							SetRTT(send.media.rtt);
+							SetRTT(send.media.rtt,now);
 					}
 				}
 				break;
@@ -774,7 +774,7 @@ void RTPSession::onRTCPPacket(const BYTE* buffer, DWORD size)
 						//Proccess it
 						if (send.media.ProcessReceiverReport(now/1000, report))
 							//We need to update rtt
-							SetRTT(send.media.rtt);
+							SetRTT(send.media.rtt,now);
 					}
 				}
 				break;
@@ -1063,12 +1063,12 @@ int RTPSession::RequestFPU()
 	return 1;
 }
 
-void RTPSession::SetRTT(DWORD rtt)
+void RTPSession::SetRTT(DWORD rtt,QWORD now)
 {
 	//Set it
 	this->rtt = rtt;
 	//Set group rtt
-	recv.SetRTT(rtt);
+	recv.SetRTT(rtt,now/1000);
 	//Check RTT to enable NACK
 	if (useNACK && rtt < 240)
 	{
