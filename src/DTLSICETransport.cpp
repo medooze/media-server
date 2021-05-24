@@ -440,8 +440,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		//Increase rejected counter
 		source->dropPackets++;
 	
-
-	
+	//Send nack feedback
 	if ( group->type == MediaFrame::Video && 
 		( lost>0 ||  (group->GetCurrentLost() && (now-source->lastNACKed)/1000>fmax(rtt,20)))
 	   )

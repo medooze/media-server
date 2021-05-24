@@ -24,7 +24,8 @@ DWORD RTCPNACK::GetSize()
 }
 
 DWORD RTCPNACK::Parse(const BYTE* data,DWORD size)
-{//Get header
+{
+	//Get header
 	RTCPCommonHeader header;
 		
 	//Parse header
