@@ -1138,8 +1138,6 @@ void DTLSICETransport::SetLocalProperties(const Properties& properties)
 	//Clear extension
 	extensions.clear();
 
-	//override bwe
-	overrideBWE = properties.GetProperty("overrideBWE",0);
 }
 
 void DTLSICETransport::SetSRTPProtectionProfiles(const std::string& profiles)
@@ -2700,4 +2698,19 @@ void DTLSICETransport::SetState(DTLSState state)
 	if (listener)
 		//Fire change
 		listener->onDTLSStateChanged(state);
+}
+
+
+void DTLSICETransport::SetRemoteOverrideBWE(bool overrideBWE)
+{
+	//Log
+	Debug(">DTLSICETransport::SetRemoteOverrideBWE() [override:%d]\n", overrideBWE);
+	this->overrideBWE = overrideBWE; 
+}
+
+void DTLSICETransport::SetRemoteOverrideBitrate(DWORD bitrate) 
+{ 
+	//Log
+	Debug(">DTLSICETransport::SetRemoteOverrideBitrate() [bitrate:%d]\n", bitrate);
+	this->remoteOverrideBitrate = bitrate; 
 }

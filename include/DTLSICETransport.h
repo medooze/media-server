@@ -98,7 +98,8 @@ public:
 	void EnableSenderSideEstimation(bool enabled)	{ this->senderSideEstimationEnabled = enabled;	}
 	void SetSenderSideEstimatorListener(RemoteRateEstimator::Listener* listener) { senderSideBandwidthEstimator.SetListener(listener); }
 
-	void SetRemoteOverrideBitrate(DWORD bitrate)	{ this->remoteOverrideBitrate = bitrate;	}
+	void SetRemoteOverrideBWE(bool overrideBew);
+	void SetRemoteOverrideBitrate(DWORD bitrate);
 	
 	const char* GetRemoteUsername() const { return iceRemoteUsername;	};
 	const char* GetRemotePwd()	const { return iceRemotePwd;		};
@@ -205,7 +206,7 @@ private:
 	SendSideBandwidthEstimation senderSideBandwidthEstimator;
 
 	bool overrideBWE = false;
-	uin32_t remoteOverrideBitrate = 0;
+	uint32_t remoteOverrideBitrate = 0;
 
 	Timer::shared iceTimeoutTimer;
 };
