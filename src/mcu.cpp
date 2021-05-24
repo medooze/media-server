@@ -79,13 +79,10 @@ int MCU::End()
 		ConferenceEntry *entry = it->second;
 
 		//Get the conference
-		MultiConf *multi = entry->conf;
+		MultiConf::shared multi = entry->conf;
 
 		//End it
 		multi->End();
-
-		//Delete conference
-		delete multi;
 
 		//Delete entry
 		delete entry;
@@ -142,7 +139,7 @@ int MCU::CreateConference(std::wstring tag,int queueId)
 	Log(">CreateConference [tag:%ls,queueId:%d]\n",tag.c_str(),queueId);
 
 	//Create the multiconf
-	MultiConf * conf = new MultiConf(tag);
+	std::shared_ptr<MultiConf> conf = std::make_shared<MultiConf>(tag);
 
 	//Create the entry
 	ConferenceEntry *entry = new ConferenceEntry();
@@ -179,7 +176,7 @@ int MCU::CreateConference(std::wstring tag,int queueId)
 * GetConferenceRef
 *	Obtiene una referencia a una conferencia
 **************************************/
-int MCU::GetConferenceRef(int id,MultiConf **conf)
+MultiConf::shared MCU::GetConferenceRef(int id)
 {
 	Log("-GetConferenceRef [%d]\n",id);
 
@@ -194,8 +191,10 @@ int MCU::GetConferenceRef(int id,MultiConf **conf)
 	{
 		//Desbloquamos el mutex
 		use.DecUse();
-		//Y salimos
-		return Error("Conference not found [%d]\n",id);
+		//Error
+		Error("Conference not found [%d]\n",id);
+		//No conference
+		return nullptr;
 	}
 
 	//Get entry
@@ -206,20 +205,22 @@ int MCU::GetConferenceRef(int id,MultiConf **conf)
 	{
 		//Desbloquamos el mutex
 		use.DecUse();
-		//Y salimos
-		return Error("Conference not enabled [%d]\n",id);
+		//Error
+		Error("Conference not enabled [%d]\n", id);
+		//No conference
+		return nullptr;
 	}
 
 	//Inc usage
 	entry->IncUse();
 
-	//Y obtenemos el puntero a la la conferencia
-	*conf = entry->conf;
+	//Get pointer to conference
+	MultiConf::shared conf = entry->conf;
 
 	//Desbloquamos el mutex
 	use.DecUse();
 
-	return true;
+	return conf;
 }
 
 /**************************************
@@ -345,7 +346,7 @@ int MCU::DeleteConference(int id)
 	use.WaitUnusedAndLock();
 	
 	//Get conference from ref entry
-	MultiConf *conf = entry->conf;
+	MultiConf::shared conf = entry->conf;
 
 	//Remove from list
 	conferences.erase(it);
@@ -356,9 +357,6 @@ int MCU::DeleteConference(int id)
 	//End conference
 	conf->End();
 
-	//Delete conference
-	delete conf;
-
 	//Delete the entry
 	delete entry;
 
@@ -368,10 +366,9 @@ int MCU::DeleteConference(int id)
 	return true;
 }
 
-RTMPNetConnection* MCU::Connect(const std::wstring& appName,RTMPNetConnection::Listener *listener,std::function<void(bool)> accept)
+RTMPNetConnection::shared MCU::Connect(const std::wstring& appName,RTMPNetConnection::Listener *listener,std::function<void(bool)> accept)
 {
 	int confId = 0;
-	MultiConf *conf = NULL;
 	wchar_t *stopwcs;
 
 	//Skip the mcu part and find the conf Id
@@ -401,7 +398,9 @@ RTMPNetConnection* MCU::Connect(const std::wstring& appName,RTMPNetConnection::L
 		confId = wcstol(arg.c_str(),&stopwcs,10);
 
 	//Get conference
-	if(!GetConferenceRef(confId,&conf))
+	auto conf = GetConferenceRef(confId);
+	//If not found
+	if(!conf)
 	{
 		//No conference found
 		Error("Conference not found [confId:%d]\n",confId);
@@ -480,8 +479,6 @@ int MCU::onFileUploaded(const char* url, const char *filename)
 {
 	Log("-File upload for %s\n",url);
 
-	MultiConf* conf = NULL;
-
 	//Skip the first path
 	const char *sep = url + strlen("/upload/mcu/app/");
 
@@ -505,7 +502,9 @@ int MCU::onFileUploaded(const char* url, const char *filename)
 	int confId = GetConferenceId(parser.GetWString());
 
 	//Get conference
-	if(!GetConferenceRef(confId,&conf))
+	auto conf = GetConferenceRef(confId);
+	//If not found
+	if (!conf)
 	{
 		//Error
 		Error("Conference does not exist\n");
@@ -525,8 +524,6 @@ int MCU::onFileUploaded(const char* url, const char *filename)
 
 void MCU::onWebSocketConnection(const HTTPRequest& request,WebSocket *ws)
 {
-	MultiConf* conf = NULL;
-
 	//Log
 	Log("-WebSocket connection for for %s\n",request.GetRequestURI().c_str());
 
@@ -594,7 +591,10 @@ void MCU::onWebSocketConnection(const HTTPRequest& request,WebSocket *ws)
 	std::string to = parser.GetValue();
 
 	//Get conference
-	if(!GetConferenceRef(confId,&conf))
+	auto conf = GetConferenceRef(confId);
+
+	//If not found
+	if(!conf)
 	{
 		//Error
 		Error("Conference does not exist\n");

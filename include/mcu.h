@@ -2,6 +2,7 @@
 #define _MCU_H_
 #include <string>
 #include <set>
+#include <memory>
 #include "pthread.h"
 #include "multiconf.h"
 #include "rtmp/rtmpstream.h"
@@ -44,7 +45,7 @@ public:
 	int End();
 
 	int CreateConference(std::wstring tag,int queueId);
-	int GetConferenceRef(int id,MultiConf **conf);
+	MultiConf::shared GetConferenceRef(int id);
 	int GetConferenceId(const std::wstring& tag);
 	int ReleaseConferenceRef(int id);
 	int DeleteConference(int confId);
@@ -56,7 +57,7 @@ public:
 	/** Conference events*/
 	virtual void onParticipantRequestFPU(MultiConf *conf,int partId,void *param);
 	/** RTMP application interface*/
-	virtual RTMPNetConnection* Connect(const std::wstring& appName,RTMPNetConnection::Listener *listener,std::function<void(bool)> accept);
+	virtual RTMPNetConnection::shared Connect(const std::wstring& appName,RTMPNetConnection::Listener *listener,std::function<void(bool)> accept);
 	/** File uploader event */
 	virtual int onFileUploaded(const char* url, const char *filename);
 	/** WebSocket connection event */
@@ -69,7 +70,7 @@ private:
 		int id;
 		int enabled;
 		int queueId;
-		MultiConf* conf;
+		std::shared_ptr<MultiConf> conf;
 	};
 
 	typedef std::map<int,ConferenceEntry*> Conferences;

@@ -9,7 +9,6 @@
 xmlrpc_value* CreateConference(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
 	UTF8Parser tagParser;
 	 //Parseamos
 	char *str;
@@ -68,7 +67,8 @@ xmlrpc_value* CreateConference(xmlrpc_env *env, xmlrpc_value *param_array, void 
 		Properties properties;
 			
 		//Get conference reference
-		if(!mcu->GetConferenceRef(confId,&conf))
+		auto conf = mcu->GetConferenceRef(confId);
+		if (!conf)
 			return xmlerror(env,"Conference deleted before initing");
 
 		//Set vad and rate propertyes
@@ -93,7 +93,7 @@ xmlrpc_value* CreateConference(xmlrpc_env *env, xmlrpc_value *param_array, void 
 xmlrpc_value* InitConference(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -134,7 +134,8 @@ xmlrpc_value* InitConference(xmlrpc_env *env, xmlrpc_value *param_array, void *u
 	}
 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference deleted before initing");
 
 	//Init conference
@@ -154,14 +155,15 @@ xmlrpc_value* InitConference(xmlrpc_env *env, xmlrpc_value *param_array, void *u
 xmlrpc_value* EndConference(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
 	xmlrpc_parse_value(env, param_array, "(i)", &confId);
 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference deleted before initing");
 
 	//La iniciamos
@@ -181,7 +183,7 @@ xmlrpc_value* EndConference(xmlrpc_env *env, xmlrpc_value *param_array, void *us
 xmlrpc_value* DeleteConference(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -229,7 +231,7 @@ xmlrpc_value* GetConferences(xmlrpc_env *env, xmlrpc_value *param_array, void *u
 xmlrpc_value* CreateMosaic(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -242,7 +244,8 @@ xmlrpc_value* CreateMosaic(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 		return xmlerror(env,"Fault occurred");
 	 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
@@ -262,7 +265,7 @@ xmlrpc_value* CreateMosaic(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 xmlrpc_value* SetMosaicOverlayImage(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -275,7 +278,8 @@ xmlrpc_value* SetMosaicOverlayImage(xmlrpc_env *env, xmlrpc_value *param_array, 
 		return xmlerror(env,"Fault occurred");
 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
@@ -295,7 +299,7 @@ xmlrpc_value* SetMosaicOverlayImage(xmlrpc_env *env, xmlrpc_value *param_array, 
 xmlrpc_value* ResetMosaicOverlay(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -307,7 +311,8 @@ xmlrpc_value* ResetMosaicOverlay(xmlrpc_env *env, xmlrpc_value *param_array, voi
 		return xmlerror(env,"Fault occurred");
 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
@@ -326,7 +331,7 @@ xmlrpc_value* ResetMosaicOverlay(xmlrpc_env *env, xmlrpc_value *param_array, voi
 xmlrpc_value* DeleteMosaic(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -337,8 +342,9 @@ xmlrpc_value* DeleteMosaic(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 	if(env->fault_occurred)
 		return xmlerror(env,"Fault occurred");
 
-	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	///Get conference reference
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
@@ -357,7 +363,7 @@ xmlrpc_value* DeleteMosaic(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 xmlrpc_value* CreateSidebar(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -368,7 +374,8 @@ xmlrpc_value* CreateSidebar(xmlrpc_env *env, xmlrpc_value *param_array, void *us
 		return xmlerror(env,"Fault occurred");
 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
@@ -388,7 +395,7 @@ xmlrpc_value* CreateSidebar(xmlrpc_env *env, xmlrpc_value *param_array, void *us
 xmlrpc_value* DeleteSidebar(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -400,7 +407,8 @@ xmlrpc_value* DeleteSidebar(xmlrpc_env *env, xmlrpc_value *param_array, void *us
 		return xmlerror(env,"Fault occurred");
 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
@@ -420,7 +428,7 @@ xmlrpc_value* DeleteSidebar(xmlrpc_env *env, xmlrpc_value *param_array, void *us
 xmlrpc_value* CreateParticipant(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 	UTF8Parser parser;
 
 	 //Parseamos
@@ -452,7 +460,8 @@ xmlrpc_value* CreateParticipant(xmlrpc_env *env, xmlrpc_value *param_array, void
 	}
 	 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//Parse string
@@ -487,7 +496,7 @@ xmlrpc_value* CreateParticipant(xmlrpc_env *env, xmlrpc_value *param_array, void
 xmlrpc_value* DeleteParticipant(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -499,7 +508,8 @@ xmlrpc_value* DeleteParticipant(xmlrpc_env *env, xmlrpc_value *param_array, void
 		return xmlerror(env,"Fault occurred");
 	 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
@@ -519,7 +529,7 @@ xmlrpc_value* AddConferenceToken(xmlrpc_env *env, xmlrpc_value *param_array, voi
 {
 	UTF8Parser parser;
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -534,7 +544,8 @@ xmlrpc_value* AddConferenceToken(xmlrpc_env *env, xmlrpc_value *param_array, voi
 	parser.Parse((BYTE*)str,strlen(str));
 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
@@ -554,7 +565,7 @@ xmlrpc_value* AddParticipantInputToken(xmlrpc_env *env, xmlrpc_value *param_arra
 {
 	UTF8Parser parser;
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -570,7 +581,8 @@ xmlrpc_value* AddParticipantInputToken(xmlrpc_env *env, xmlrpc_value *param_arra
 	parser.Parse((BYTE*)str,strlen(str));
 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
@@ -590,7 +602,7 @@ xmlrpc_value* AddParticipantOutputToken(xmlrpc_env *env, xmlrpc_value *param_arr
 {
 	UTF8Parser parser;
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -606,7 +618,8 @@ xmlrpc_value* AddParticipantOutputToken(xmlrpc_env *env, xmlrpc_value *param_arr
 	parser.Parse((BYTE*)str,strlen(str));
 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
@@ -626,7 +639,7 @@ xmlrpc_value* AddParticipantOutputToken(xmlrpc_env *env, xmlrpc_value *param_arr
 xmlrpc_value* StartBroadcaster(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -671,7 +684,8 @@ xmlrpc_value* StartBroadcaster(xmlrpc_env *env, xmlrpc_value *param_array, void 
 		return xmlerror(env,"Fault occurred");
 	 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
@@ -691,7 +705,7 @@ xmlrpc_value* StartBroadcaster(xmlrpc_env *env, xmlrpc_value *param_array, void 
 xmlrpc_value* StopBroadcaster(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -702,7 +716,8 @@ xmlrpc_value* StopBroadcaster(xmlrpc_env *env, xmlrpc_value *param_array, void *
 		return xmlerror(env,"Fault occurred");
 	 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
@@ -722,7 +737,7 @@ xmlrpc_value* StopBroadcaster(xmlrpc_env *env, xmlrpc_value *param_array, void *
 xmlrpc_value* StartPublishing(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -737,7 +752,8 @@ xmlrpc_value* StartPublishing(xmlrpc_env *env, xmlrpc_value *param_array, void *
 		return xmlerror(env,"Fault occurred");
 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//Publish it
@@ -757,7 +773,7 @@ xmlrpc_value* StartPublishing(xmlrpc_env *env, xmlrpc_value *param_array, void *
 xmlrpc_value* StopPublishing(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -769,7 +785,8 @@ xmlrpc_value* StopPublishing(xmlrpc_env *env, xmlrpc_value *param_array, void *u
 		return xmlerror(env,"Fault occurred");
 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//Stop publishing
@@ -789,7 +806,7 @@ xmlrpc_value* StopPublishing(xmlrpc_env *env, xmlrpc_value *param_array, void *u
 xmlrpc_value* SetVideoCodec(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	//Parseamos
 	int confId;
@@ -842,7 +859,8 @@ xmlrpc_value* SetVideoCodec(xmlrpc_env *env, xmlrpc_value *param_array, void *us
 		return xmlerror(env,"Fault occurred");
 	 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
@@ -862,7 +880,7 @@ xmlrpc_value* SetVideoCodec(xmlrpc_env *env, xmlrpc_value *param_array, void *us
 xmlrpc_value* SetAudioCodec(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -909,7 +927,8 @@ xmlrpc_value* SetAudioCodec(xmlrpc_env *env, xmlrpc_value *param_array, void *us
 		return xmlerror(env,"Fault occurred");
 	 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
@@ -929,7 +948,7 @@ xmlrpc_value* SetAudioCodec(xmlrpc_env *env, xmlrpc_value *param_array, void *us
 xmlrpc_value* SetTextCodec(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -943,7 +962,8 @@ xmlrpc_value* SetTextCodec(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 		return xmlerror(env,"Fault occurred");
 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
@@ -963,7 +983,7 @@ xmlrpc_value* SetTextCodec(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 xmlrpc_value* SetCompositionType(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -977,7 +997,8 @@ xmlrpc_value* SetCompositionType(xmlrpc_env *env, xmlrpc_value *param_array, voi
 		return xmlerror(env,"Fault occurred");
 	 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
@@ -997,7 +1018,7 @@ xmlrpc_value* SetCompositionType(xmlrpc_env *env, xmlrpc_value *param_array, voi
 xmlrpc_value* SetParticipantMosaic(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -1010,7 +1031,8 @@ xmlrpc_value* SetParticipantMosaic(xmlrpc_env *env, xmlrpc_value *param_array, v
 		return xmlerror(env,"Fault occurred");
 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
@@ -1030,7 +1052,7 @@ xmlrpc_value* SetParticipantMosaic(xmlrpc_env *env, xmlrpc_value *param_array, v
 xmlrpc_value* SetParticipantSidebar(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -1043,7 +1065,8 @@ xmlrpc_value* SetParticipantSidebar(xmlrpc_env *env, xmlrpc_value *param_array, 
 		return xmlerror(env,"Fault occurred");
 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
@@ -1063,7 +1086,7 @@ xmlrpc_value* SetParticipantSidebar(xmlrpc_env *env, xmlrpc_value *param_array, 
 xmlrpc_value* SetMosaicSlot(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -1077,7 +1100,8 @@ xmlrpc_value* SetMosaicSlot(xmlrpc_env *env, xmlrpc_value *param_array, void *us
 		return xmlerror(env,"Fault occurred");
 	 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//Set slot
@@ -1098,7 +1122,7 @@ xmlrpc_value* SetMosaicSlot(xmlrpc_env *env, xmlrpc_value *param_array, void *us
 xmlrpc_value* ResetMosaicSlots(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -1110,7 +1134,8 @@ xmlrpc_value* ResetMosaicSlots(xmlrpc_env *env, xmlrpc_value *param_array, void 
 		return xmlerror(env,"Fault occurred");
 	 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//Set slot
@@ -1131,7 +1156,7 @@ xmlrpc_value* ResetMosaicSlots(xmlrpc_env *env, xmlrpc_value *param_array, void 
 xmlrpc_value* AddMosaicParticipant(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -1144,7 +1169,8 @@ xmlrpc_value* AddMosaicParticipant(xmlrpc_env *env, xmlrpc_value *param_array, v
 		return xmlerror(env,"Fault occurred");
 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//Set slot
@@ -1164,7 +1190,7 @@ xmlrpc_value* AddMosaicParticipant(xmlrpc_env *env, xmlrpc_value *param_array, v
 xmlrpc_value* RemoveMosaicParticipant(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -1177,7 +1203,8 @@ xmlrpc_value* RemoveMosaicParticipant(xmlrpc_env *env, xmlrpc_value *param_array
 		return xmlerror(env,"Fault occurred");
 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//Set slot
@@ -1197,7 +1224,7 @@ xmlrpc_value* RemoveMosaicParticipant(xmlrpc_env *env, xmlrpc_value *param_array
 xmlrpc_value* AddSidebarParticipant(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -1210,7 +1237,8 @@ xmlrpc_value* AddSidebarParticipant(xmlrpc_env *env, xmlrpc_value *param_array, 
 		return xmlerror(env,"Fault occurred");
 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//Set slot
@@ -1230,7 +1258,7 @@ xmlrpc_value* AddSidebarParticipant(xmlrpc_env *env, xmlrpc_value *param_array, 
 xmlrpc_value* RemoveSidebarParticipant(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -1243,7 +1271,8 @@ xmlrpc_value* RemoveSidebarParticipant(xmlrpc_env *env, xmlrpc_value *param_arra
 		return xmlerror(env,"Fault occurred");
 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//Set slot
@@ -1263,7 +1292,7 @@ xmlrpc_value* RemoveSidebarParticipant(xmlrpc_env *env, xmlrpc_value *param_arra
 xmlrpc_value* CreatePlayer(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 	UTF8Parser parser;
 	
 	 //Parseamos
@@ -1277,7 +1306,8 @@ xmlrpc_value* CreatePlayer(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 		return xmlerror(env,"Fault occurred");
 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//Parse string
@@ -1300,7 +1330,7 @@ xmlrpc_value* CreatePlayer(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 xmlrpc_value* DeletePlayer(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -1312,7 +1342,8 @@ xmlrpc_value* DeletePlayer(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 		return xmlerror(env,"Fault occurred");
 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
@@ -1332,7 +1363,7 @@ xmlrpc_value* DeletePlayer(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 xmlrpc_value* StartPlaying(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -1346,7 +1377,8 @@ xmlrpc_value* StartPlaying(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 		return xmlerror(env,"Fault occurred");
 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
@@ -1366,7 +1398,7 @@ xmlrpc_value* StartPlaying(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 xmlrpc_value* StopPlaying(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -1378,7 +1410,8 @@ xmlrpc_value* StopPlaying(xmlrpc_env *env, xmlrpc_value *param_array, void *user
 		return xmlerror(env,"Fault occurred");
 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
@@ -1398,7 +1431,7 @@ xmlrpc_value* StopPlaying(xmlrpc_env *env, xmlrpc_value *param_array, void *user
 xmlrpc_value* StartRecordingParticipant(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -1411,7 +1444,8 @@ xmlrpc_value* StartRecordingParticipant(xmlrpc_env *env, xmlrpc_value *param_arr
 		return xmlerror(env,"Fault occurred");
 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
@@ -1431,7 +1465,7 @@ xmlrpc_value* StartRecordingParticipant(xmlrpc_env *env, xmlrpc_value *param_arr
 xmlrpc_value* StopRecordingParticipant(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -1443,7 +1477,8 @@ xmlrpc_value* StopRecordingParticipant(xmlrpc_env *env, xmlrpc_value *param_arra
 		return xmlerror(env,"Fault occurred");
 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
@@ -1463,7 +1498,7 @@ xmlrpc_value* StopRecordingParticipant(xmlrpc_env *env, xmlrpc_value *param_arra
 xmlrpc_value* StartRecordingBroadcaster(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -1475,7 +1510,8 @@ xmlrpc_value* StartRecordingBroadcaster(xmlrpc_env *env, xmlrpc_value *param_arr
 		return xmlerror(env,"Fault occurred");
 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
@@ -1495,7 +1531,7 @@ xmlrpc_value* StartRecordingBroadcaster(xmlrpc_env *env, xmlrpc_value *param_arr
 xmlrpc_value* StopRecordingBroadcaster(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -1506,7 +1542,8 @@ xmlrpc_value* StopRecordingBroadcaster(xmlrpc_env *env, xmlrpc_value *param_arra
 		return xmlerror(env,"Fault occurred");
 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
@@ -1526,7 +1563,7 @@ xmlrpc_value* StopRecordingBroadcaster(xmlrpc_env *env, xmlrpc_value *param_arra
 xmlrpc_value* SendFPU(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -1538,7 +1575,8 @@ xmlrpc_value* SendFPU(xmlrpc_env *env, xmlrpc_value *param_array, void *user_dat
 		return xmlerror(env,"Fault occurred");
 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
@@ -1558,7 +1596,7 @@ xmlrpc_value* SendFPU(xmlrpc_env *env, xmlrpc_value *param_array, void *user_dat
 xmlrpc_value* SetMute(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -1572,7 +1610,8 @@ xmlrpc_value* SetMute(xmlrpc_env *env, xmlrpc_value *param_array, void *user_dat
 		return xmlerror(env,"Fault occurred");
 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
@@ -1592,7 +1631,7 @@ xmlrpc_value* SetMute(xmlrpc_env *env, xmlrpc_value *param_array, void *user_dat
 xmlrpc_value* GetParticipantStatistics(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -1604,7 +1643,8 @@ xmlrpc_value* GetParticipantStatistics(xmlrpc_env *env, xmlrpc_value *param_arra
 		return xmlerror(env,"Fault occurred");
 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//Get statistics
@@ -1644,7 +1684,7 @@ xmlrpc_value* GetParticipantStatistics(xmlrpc_env *env, xmlrpc_value *param_arra
 xmlrpc_value* GetMosaicPositions(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 	std::list<int> positions;
 
 	 //Parseamos
@@ -1657,7 +1697,8 @@ xmlrpc_value* GetMosaicPositions(xmlrpc_env *env, xmlrpc_value *param_array, voi
 		return xmlerror(env,"Fault occurred");
 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//Get statistics
@@ -1722,7 +1763,7 @@ xmlrpc_value* MCUEventQueueDelete(xmlrpc_env *env, xmlrpc_value *param_array, vo
 xmlrpc_value* StartSending(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -1788,8 +1829,9 @@ xmlrpc_value* StartSending(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 	if(env->fault_occurred)
 		return 0;
 
-		//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	//Get conference reference
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
@@ -1809,7 +1851,7 @@ xmlrpc_value* StartSending(xmlrpc_env *env, xmlrpc_value *param_array, void *use
 xmlrpc_value* SetRTPProperties(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -1847,8 +1889,9 @@ xmlrpc_value* SetRTPProperties(xmlrpc_env *env, xmlrpc_value *param_array, void 
 	if(env->fault_occurred)
 		return 0;
 
-		//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	//Get conference reference
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
@@ -1868,7 +1911,7 @@ xmlrpc_value* SetRTPProperties(xmlrpc_env *env, xmlrpc_value *param_array, void 
 xmlrpc_value* SetLocalCryptoSDES(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	//Parseamos
 	int confId;
@@ -1882,8 +1925,9 @@ xmlrpc_value* SetLocalCryptoSDES(xmlrpc_env *env, xmlrpc_value *param_array, voi
 	if(env->fault_occurred)
 		return 0;
 
-		//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	//Get conference reference
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
@@ -1903,7 +1947,7 @@ xmlrpc_value* SetLocalCryptoSDES(xmlrpc_env *env, xmlrpc_value *param_array, voi
 xmlrpc_value* SetRemoteCryptoSDES(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	//Parseamos
 	int confId;
@@ -1918,8 +1962,9 @@ xmlrpc_value* SetRemoteCryptoSDES(xmlrpc_env *env, xmlrpc_value *param_array, vo
 	if(env->fault_occurred)
 		return 0;
 
-		//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	//Get conference reference
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
@@ -1939,7 +1984,7 @@ xmlrpc_value* SetRemoteCryptoSDES(xmlrpc_env *env, xmlrpc_value *param_array, vo
 xmlrpc_value* SetRemoteCryptoDTLS(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	//Parseamos
 	int confId;
@@ -1953,8 +1998,9 @@ xmlrpc_value* SetRemoteCryptoDTLS(xmlrpc_env *env, xmlrpc_value *param_array, vo
 	if(env->fault_occurred)
 		return 0;
 
-		//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	//Get conference reference
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
@@ -2000,7 +2046,7 @@ xmlrpc_value* GetLocalCryptoDTLSFingerprint(xmlrpc_env *env, xmlrpc_value *param
 xmlrpc_value* SetLocalSTUNCredentials(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	//Parseamos
 	int confId;
@@ -2015,8 +2061,9 @@ xmlrpc_value* SetLocalSTUNCredentials(xmlrpc_env *env, xmlrpc_value *param_array
 	if(env->fault_occurred)
 		return 0;
 
-		//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	//Get conference reference
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
@@ -2036,7 +2083,7 @@ xmlrpc_value* SetLocalSTUNCredentials(xmlrpc_env *env, xmlrpc_value *param_array
 xmlrpc_value* SetRemoteSTUNCredentials(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	//Parseamos
 	int confId;
@@ -2051,8 +2098,9 @@ xmlrpc_value* SetRemoteSTUNCredentials(xmlrpc_env *env, xmlrpc_value *param_arra
 	if(env->fault_occurred)
 		return 0;
 
-		//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	//Get conference reference
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
@@ -2072,7 +2120,7 @@ xmlrpc_value* SetRemoteSTUNCredentials(xmlrpc_env *env, xmlrpc_value *param_arra
 xmlrpc_value* StopSending(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -2085,7 +2133,8 @@ xmlrpc_value* StopSending(xmlrpc_env *env, xmlrpc_value *param_array, void *user
 		return xmlerror(env,"Fault occurred");
 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
@@ -2104,8 +2153,8 @@ xmlrpc_value* StopSending(xmlrpc_env *env, xmlrpc_value *param_array, void *user
 
 xmlrpc_value* StartReceiving(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
-MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+	MCU *mcu = (MCU *)user_data;
+
 
 	 //Parseamos
 	int confId;
@@ -2171,7 +2220,8 @@ MCU *mcu = (MCU *)user_data;
 		return xmlerror(env,"Fault occurred");
 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos
@@ -2191,7 +2241,7 @@ MCU *mcu = (MCU *)user_data;
 xmlrpc_value* StopReceiving(xmlrpc_env *env, xmlrpc_value *param_array, void *user_data)
 {
 	MCU *mcu = (MCU *)user_data;
-	MultiConf *conf = NULL;
+
 
 	 //Parseamos
 	int confId;
@@ -2204,7 +2254,8 @@ xmlrpc_value* StopReceiving(xmlrpc_env *env, xmlrpc_value *param_array, void *us
 		return xmlerror(env,"Fault occurred");
 
 	//Get conference reference
-	if(!mcu->GetConferenceRef(confId,&conf))
+	auto conf = mcu->GetConferenceRef(confId);
+	if (!conf)
 		return xmlerror(env,"Conference does not exist");
 
 	//La borramos

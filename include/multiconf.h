@@ -2,6 +2,7 @@
 #define _MULTICONF_H_
 #include <map>
 #include <string>
+#include <memory>
 #include "videomixer.h"
 #include "audiomixer.h"
 #include "textmixer.h"
@@ -26,6 +27,7 @@ class MultiConf :
 public:
 	static const int AppMixerId = 1;
 	static const int AppMixerBroadcasterId = 2;
+	using shared = std::shared_ptr<MultiConf>;
 public:
 	typedef std::map<std::string,MediaStatistics> ParticipantStatistics;
 public:
