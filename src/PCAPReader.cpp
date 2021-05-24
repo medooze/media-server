@@ -21,19 +21,19 @@ PCAPReader::~PCAPReader()
 
 bool PCAPReader::Open(const char* file)
 {
-	Log("-Opening pcap file [%s]\n",file);
+	Log("-PCAPReader::Open() | Opening pcap file [%s]\n",file);
 	// Open filename
 	if ((fd = open(file, O_RDONLY))==-1)
-		return Error("Error opening pcap file\n");
+		return Error("-PCAPReader::Open() | Error opening pcap file\n");
 
 	//Read the header
 	if (read(fd,data,PCAP_HEADER_SIZE)!=PCAP_HEADER_SIZE)
-		return Error("Error reading magic cookie from pcap file\n");
+		return Error("-PCAPReader::Open() | Error reading magic cookie from pcap file\n");
 
 	uint32_t cookie = get4(data,0);
 
 	if (cookie!=PCAP_MAGIC_COOKIE)
-		return Error("PCAP magic cookie %x nof founr, got %x, reversed are not supported (yet).\n",PCAP_MAGIC_COOKIE,cookie);
+		return Error("-PCAPReader::Open() | PCAP magic cookie %x nof founr, got %x, reversed are not supported (yet).\n",PCAP_MAGIC_COOKIE,cookie);
 
 	return true;
 }
