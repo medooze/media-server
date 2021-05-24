@@ -42,7 +42,7 @@
 
 constexpr auto IceTimeout = 30000ms;
 constexpr auto ProbingInterval = 10ms;
-constexpr auto MasRTXOverhead = 0.50f;
+constexpr auto MaxRTXOverhead = 0.50f;
 constexpr auto TransportWideCCMaxPackets = 100;
 constexpr auto TransportWideCCMaxInterval = 5E4;	//50ms
 
@@ -870,7 +870,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 		DWORD targetBitrate = senderSideBandwidthEstimator.GetTargetBitrate();
 	
 		//Check if we are sending way to much bitrate
-		if (targetBitrate && rtxBitrate.GetInstantAvg()*8 > targetBitrate * MasRTXOverhead)
+		if (targetBitrate && rtxBitrate.GetInstantAvg()*8 > targetBitrate * MaxRTXOverhead)
 			//Error
 			return (void)UltraDebug("-DTLSICETransport::ReSendPacket() | Too much bitrate on rtx, skiping rtx:%lld estimated:%u target:%d\n",(uint64_t)(rtxBitrate.GetInstantAvg()*8), senderSideBandwidthEstimator.GetEstimatedBitrate(), targetBitrate);
 	}
