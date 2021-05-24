@@ -48,6 +48,8 @@ public:
 		testExtSeqNum();
 		Log("testExtTimestamp\n");
 		testExtTimestamp();
+		Log("testlostPackets\n");
+		testlostPackets();
 		end();
 	}
 	
@@ -867,6 +869,36 @@ public:
 		
 		assert(source.RecoverTimestamp(max-10)==0);
 		assert(source.RecoverTimestamp(2)==1);
+	}
+
+	RTCPRTPFeedback::NACKField* nack(RTPLostPackets& lost)
+	{
+		auto list = lost.GetNacks();
+		return (RTCPRTPFeedback::NACKField * )(list.begin()->get());
+	}
+
+	void testlostPackets()
+	{
+		RTPPacket::shared rtp = std::make_shared<RTPPacket>(MediaFrame::Video,0);
+
+		RTPLostPackets lost(4);
+
+		rtp->SetTime(1);  rtp->SetExtSeqNum(1);  assert(lost.AddPacket(rtp) == 0); lost.Dump(); assert(lost.GetNacks().empty());
+		rtp->SetTime(2);  rtp->SetExtSeqNum(2);  assert(lost.AddPacket(rtp) == 0); lost.Dump(); assert(lost.GetNacks().empty());
+		rtp->SetTime(3);  rtp->SetExtSeqNum(3);  assert(lost.AddPacket(rtp) == 0); lost.Dump(); assert(lost.GetNacks().empty());
+		rtp->SetTime(4);  rtp->SetExtSeqNum(4);  assert(lost.AddPacket(rtp) == 0); lost.Dump(); assert(lost.GetNacks().empty());
+		rtp->SetTime(5);  rtp->SetExtSeqNum(5);  assert(lost.AddPacket(rtp) == 0); lost.Dump(); assert(lost.GetNacks().empty());
+		rtp->SetTime(6);  rtp->SetExtSeqNum(7);  assert(lost.AddPacket(rtp) == 1); lost.Dump(); assert(nack(lost)->pid == 6); assert(nack(lost)->blp == 0b0000);
+		rtp->SetTime(8);  rtp->SetExtSeqNum(8);  assert(lost.AddPacket(rtp) == 0); lost.Dump(); assert(nack(lost)->pid == 6); assert(nack(lost)->blp == 0b0000);
+		rtp->SetTime(9);  rtp->SetExtSeqNum(9);  assert(lost.AddPacket(rtp) == 0); lost.Dump(); assert(nack(lost)->pid == 6); assert(nack(lost)->blp == 0b0000);
+		rtp->SetTime(11); rtp->SetExtSeqNum(11); assert(lost.AddPacket(rtp) == 1); lost.Dump(); assert(nack(lost)->pid == 10); assert(nack(lost)->blp == 0b0000);
+		rtp->SetTime(13); rtp->SetExtSeqNum(13); assert(lost.AddPacket(rtp) == 1); lost.Dump(); assert(nack(lost)->pid == 10); assert(nack(lost)->blp == 0b0010);
+		rtp->SetTime(14); rtp->SetExtSeqNum(14); assert(lost.AddPacket(rtp) == 0); lost.Dump(); assert(nack(lost)->pid == 12); assert(nack(lost)->blp == 0b0000);
+		rtp->SetTime(15); rtp->SetExtSeqNum(15); assert(lost.AddPacket(rtp) == 0); lost.Dump(); assert(nack(lost)->pid == 12); assert(nack(lost)->blp == 0b0000);
+		rtp->SetTime(16); rtp->SetExtSeqNum(16); assert(lost.AddPacket(rtp) == 0); lost.Dump(); assert(lost.GetNacks().empty());
+		rtp->SetTime(20); rtp->SetExtSeqNum(20); assert(lost.AddPacket(rtp) == 3); lost.Dump(); assert(nack(lost)->pid == 17); assert(nack(lost)->blp == 0b0011);
+		rtp->SetTime(25); rtp->SetExtSeqNum(25); assert(lost.AddPacket(rtp) == 3); lost.Dump(); assert(nack(lost)->pid == 22); assert(nack(lost)->blp == 0b0011);
+
 	}
 	
 };
