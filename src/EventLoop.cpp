@@ -152,6 +152,9 @@ bool EventLoop::Start(std::function<void(void)> loop)
 	
 	//Running
 	running = true;
+
+	//Not signaled
+	signaled = false;
 	
 	//Start thread and run
 	thread = std::thread(loop);
@@ -193,6 +196,9 @@ bool EventLoop::Start(int fd)
 	
 	//Running
 	running = true;
+
+	//Not signaled
+	signaled = false;
 	
 	//Start thread and run
 	thread = std::thread([this](...){ Run(); });
@@ -206,7 +212,7 @@ bool EventLoop::Stop()
 	//Check if running
 	if (!running)
 		//Nothing to do
-		return Error("-EventLoop::Stop() | Already stopped");
+		return Error("-EventLoop::Stop() | Already stopped\n");
 	
 	//Log
 	Debug(">EventLoop::Stop() [fd:%d]\n",fd);
@@ -531,7 +537,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 			timeout = until > now ? std::chrono::duration_cast<std::chrono::milliseconds>(until - now).count() : 0;
 		}
 
-		//UltraDebug(">EventLoop::Run() | poll timeout:%d timers:%d tasks:%d\n",timeout,timers.size(),tasks.size_approx());
+		//UltraDebug(">EventLoop::Run() | poll timeout:%d timers:%d tasks:%d size:%d\n",timeout,timers.size(),tasks.size_approx(), sizeof(ufds) / sizeof(pollfd));
 		
 		//Wait for events
 		poll(ufds,sizeof(ufds)/sizeof(pollfd),timeout);
