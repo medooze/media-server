@@ -484,27 +484,32 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 			rr->AddReport(report);
 		
 		//If we are using remb and have a value
-		if (group->remoteBitrateEstimation)
+		if (overrideBWE || group->remoteBitrateEstimation)
 		{
 			
 			//Add remb block
 			DWORD bitrate = 0;
 			std::list<DWORD> ssrcs;
 			
-			//If we haave a mid in group
-			if (!group->mid.empty())
+			if (!overrideBWE)
 			{
-				//for each group of this mid
-				for (const auto& other : mids[group->mid])
+				//If we haave a mid in group
+				if (!group->mid.empty())
 				{
-					//Append
-					ssrcs.push_back(other->media.ssrc);
-					bitrate += other->remoteBitrateEstimation;
+					//for each group of this mid
+					for (const auto& other : mids[group->mid])
+					{
+						//Append
+						ssrcs.push_back(other->media.ssrc);
+						bitrate += other->remoteBitrateEstimation;
+					}
+				} else {
+					//Just this group
+					ssrcs.push_back(group->media.ssrc);
+					bitrate = group->remoteBitrateEstimation;
 				}
 			} else {
-				//Just this group
-				ssrcs.push_back(group->media.ssrc);
-				bitrate = group->remoteBitrateEstimation;
+				bitrate = remoteOverrideBitrate;
 			}
 			
 			//LOg
@@ -1132,6 +1137,9 @@ void DTLSICETransport::SetLocalProperties(const Properties& properties)
 	
 	//Clear extension
 	extensions.clear();
+
+	//override bwe
+	overrideBWE = properties.GetProperty("overrideBWE",0);
 }
 
 void DTLSICETransport::SetSRTPProtectionProfiles(const std::string& profiles)
@@ -1711,8 +1719,8 @@ bool DTLSICETransport::AddIncomingSourceGroup(RTPIncomingSourceGroup *group)
 	if (!done)
 		return Warning("-DTLSICETransport::AddIncomingSourceGroup() Could not add incoming source\n");
 		
-	//If it is video and the transport wide cc is not enabled enable remb
-	bool remb = group->type == MediaFrame::Video && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC)==RTPMap::NotFound;
+	//If it is video and the transport wide cc is not enabled enable and not overriding the bitrate estimation
+	bool remb = group->type == MediaFrame::Video && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC)==RTPMap::NotFound && !overrideBWE;
 
 	//Start distpaching
 	group->Start(remb);
@@ -2011,7 +2019,7 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 	//Update source
 	source.Update(now/1000,packet->GetSeqNum(),len);
 		
-		//Get bitrates
+	//Get bitrates
 	bitrate   = static_cast<DWORD>(source.acumulator.GetInstantAvg()*8);
 	estimated = source.remb;
 	probing	  = static_cast<DWORD>(probingBitrate.GetInstantAvg()*8);

@@ -97,6 +97,8 @@ public:
 	void SetProbingBitrateLimit(DWORD bitrate)	{ this->probingBitrateLimit = bitrate;		}
 	void EnableSenderSideEstimation(bool enabled)	{ this->senderSideEstimationEnabled = enabled;	}
 	void SetSenderSideEstimatorListener(RemoteRateEstimator::Listener* listener) { senderSideBandwidthEstimator.SetListener(listener); }
+
+	void SetRemoteOverrideBitrate(DWORD bitrate)	{ this->remoteOverrideBitrate = bitrate;	}
 	
 	const char* GetRemoteUsername() const { return iceRemoteUsername;	};
 	const char* GetRemotePwd()	const { return iceRemotePwd;		};
@@ -201,7 +203,10 @@ private:
 	volatile bool started = false;
 	
 	SendSideBandwidthEstimation senderSideBandwidthEstimator;
-	
+
+	bool overrideBWE = false;
+	uin32_t remoteOverrideBitrate = 0;
+
 	Timer::shared iceTimeoutTimer;
 };
 
