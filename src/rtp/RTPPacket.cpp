@@ -41,11 +41,17 @@ RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec, QWORD time)
 	this->time = time;
 }
 
-RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec) : RTPPacket(media, codec, ::getTimeMS())
+RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec) :
+	RTPPacket(media, codec, ::getTimeMS())
 {
 }
 
-RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec,const RTPHeader &header, const RTPHeaderExtension &extension) :
+RTPPacket::RTPPacket(MediaFrame::Type media, BYTE codec, const RTPHeader& header, const RTPHeaderExtension& extension) :
+	RTPPacket(media, codec, header, extension, ::getTimeMS())
+{
+}
+
+RTPPacket::RTPPacket(MediaFrame::Type media, BYTE codec, const RTPHeader& header, const RTPHeaderExtension& extension, QWORD time) :
 	header(header),
 	extension(extension)
 {
@@ -69,7 +75,7 @@ RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec,const RTPHeader &header, 
 	//We own the payload
 	ownedPayload = true;
 	//Set time
-	this->time = ::getTimeMS();
+	this->time = time;
 }
 
 
