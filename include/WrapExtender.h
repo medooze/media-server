@@ -7,6 +7,28 @@ template <typename N, typename X>
 class WrapExtender
 {
 public:
+	X ExtendOrReset(N seqNum)
+	{
+		//If this is first
+		if (!extSeqNum)
+		{
+			//Update seq num
+			this->extSeqNum = seqNum;
+			//Done
+			return cycles;
+		}
+
+		//Check if we have a sequence wrap
+		if (seqNum < GetSeqNum() && GetSeqNum() - seqNum > std::numeric_limits<N>::max() / 2)
+			//Increase cycles
+			cycles++;
+		
+		//Update seq num
+		this->extSeqNum = (cycles << (sizeof(N) * 8)) | seqNum;
+
+		//Current cycle
+		return cycles;
+	}
 
 	X Extend(N seqNum)
 	{
@@ -23,7 +45,7 @@ public:
 		if (seqNum < GetSeqNum() && GetSeqNum() - seqNum > std::numeric_limits<N>::max() / 2)
 			//Increase cycles
 			cycles++;
-			//If it is an out of order packet from previous cycle
+		//If it is an out of order packet from previous cycle
 		else if (seqNum > GetSeqNum() && seqNum - GetSeqNum() > std::numeric_limits<N>::max() / 2 && cycles)
 			//Do nothing and return prev one
 			return cycles - 1;
