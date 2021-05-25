@@ -54,6 +54,7 @@ private:
 	RTPMap		extMap;
 	RTPMap		aptMap;
 	std::map<DWORD,RTPIncomingSourceGroup*> incoming;
+	std::map<MediaFrame::Type, RTPIncomingSourceGroup*> unknow;
 	uint64_t first		= 0;
 	volatile bool running	= false;;
 };

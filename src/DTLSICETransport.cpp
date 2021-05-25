@@ -160,7 +160,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		return Warning("-DTLSICETransport::onData() | Error unprotecting rtp packet [%s]\n",recv.GetLastError());
 	
 	//Parse rtp packet
-	RTPPacket::shared packet = RTPPacket::Parse(data,len,recvMaps.rtp,recvMaps.ext);
+	RTPPacket::shared packet = RTPPacket::Parse(data,len,recvMaps.rtp,recvMaps.ext,now/1000);
 	
 	//Check
 	if (!packet)
@@ -417,20 +417,6 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		 //TODO: Move from here, required to fill the vp8/vp9 descriptors
 		 VideoLayerSelector::GetLayerIds(packet);
 	} 
-
-	//Check if we have receiver already an SR for media stream
-	if ( group->media.lastReceivedSenderReport)
-	{
-		//Get ntp and rtp timestamps
-		QWORD timestamp =  group->media.lastReceivedSenderRTPTimestampExtender.GetExtSeqNum();
-		//Get ts delta		
-		int64_t delta = (int64_t)packet->GetExtTimestamp() - timestamp;
-		//Calculate sender time 
-		QWORD senderTime =  group->media.lastReceivedSenderTime + (delta)*1000/packet->GetClockRate();
-		//Set calculated sender time
-		packet->SetSenderTime(senderTime);
-	}
-	
 
 	//Add packet and see if we have lost any in between
 	int lost = group->AddPacket(packet,size,now/1000);

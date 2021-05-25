@@ -95,6 +95,19 @@ int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet, DWORD siz
 		//Rejected packet
 		return -1;
 	
+	//Check if we have receiver already an SR for media stream
+	if (media.lastReceivedSenderReport)
+	{
+		//Get ntp and rtp timestamps
+		QWORD timestamp = media.lastReceivedSenderRTPTimestampExtender.GetExtSeqNum();
+		//Get ts delta		
+		int64_t delta = (int64_t)packet->GetExtTimestamp() - timestamp;
+		//Calculate sender time 
+		QWORD senderTime = media.lastReceivedSenderTime + (delta) * 1000 / packet->GetClockRate();
+		//Set calculated sender time
+		packet->SetSenderTime(senderTime);
+	}
+
 	//Get next time for dispatcht
 	uint64_t next = packets.GetWaitTime(now);
 	

@@ -115,25 +115,27 @@ bool PCAPTransportEmulator::AddIncomingSourceGroup(RTPIncomingSourceGroup *group
 	
 	//It must contain media ssrc
 	if (!group->media.ssrc && group->rid.empty())
-		return Error("-PCAPTransportEmulator::AddIncomingSourceGroup() No media ssrc or rid defined, stream will not be added\n");
-	
+	{
+		//Add to unknown groups
+		unknow[group->type] = group;
+	} else {
+		//Check they are not already assigned
+		if (group->media.ssrc && incoming.find(group->media.ssrc)!=incoming.end())
+			return Error("-PCAPTransportEmulator::AddIncomingSourceGroup() media ssrc already assigned");
+		if (group->rtx.ssrc && incoming.find(group->rtx.ssrc)!=incoming.end())
+			return Error("-PCAPTransportEmulator::AddIncomingSourceGroup() rtx ssrc already assigned");
 
-	//Check they are not already assigned
-	if (group->media.ssrc && incoming.find(group->media.ssrc)!=incoming.end())
-		return Error("-PCAPTransportEmulator::AddIncomingSourceGroup() media ssrc already assigned");
-	if (group->rtx.ssrc && incoming.find(group->rtx.ssrc)!=incoming.end())
-		return Error("-PCAPTransportEmulator::AddIncomingSourceGroup() rtx ssrc already assigned");
-
-	/*
-	//Add rid if any
-	if (!group->rid.empty())
-		rids[group->rid] = group;
-	*/
-	//Add it for each group ssrc
-	if (group->media.ssrc)
-		incoming[group->media.ssrc] = group;
-	if (group->rtx.ssrc)
-		incoming[group->rtx.ssrc] = group;
+		/*
+		//Add rid if any
+		if (!group->rid.empty())
+			rids[group->rid] = group;
+		*/
+		//Add it for each group ssrc
+		if (group->media.ssrc)
+			incoming[group->media.ssrc] = group;
+		if (group->rtx.ssrc)
+			incoming[group->rtx.ssrc] = group;
+	}
 
 	//Set RTX supported flag only for video
 	group->SetRTXEnabled(group->type == MediaFrame::Video);
@@ -520,10 +522,34 @@ outher:	while(running)
 		//Ensure it has a group
 		if (!group)	
 		{
-			//error
-			Debug("-PCAPTransportEmulator::Run()| Unknowing group for ssrc [%u]\n",ssrc);
-			//Skip
-			continue;
+			//If we have an unknown group for that kind
+			auto it = unknow.find(media);
+			//If not found
+			if (it==unknow.end())
+			{
+				//error
+				Debug("-PCAPTransportEmulator::Run()| Unknown group for ssrc [%u]\n",ssrc);
+				//Skip
+				continue;
+			}
+			//Get group
+			group = it->second;
+			
+			//Check if it is rtx or media
+			if (media==MediaFrame::Video && codec==VideoCodec::RTX)
+			{
+				//Log
+				Debug("-PCAPTransportEmulator::Run()| Assigning rtx ssrc [%u] to group [%p]\n", ssrc, group);
+				//Set rtx ssrc
+				group->rtx.ssrc = ssrc;
+				incoming[group->rtx.ssrc] = group;
+			} else {
+				//Log
+				Debug("-PCAPTransportEmulator::Run()| Assigning media ssrc [%u] to group [%p]\n", ssrc, group);
+				//Set media ssrc
+				group->media.ssrc = ssrc;
+				incoming[group->media.ssrc] = group;
+			}
 		}
 
 		//UltraDebug("-PCAPTransportEmulator::Run() | Got RTP on media:%s sssrc:%u seq:%u pt:%u codec:%s rid:'%s'\n",MediaFrame::TypeToString(group->type),ssrc,packet->GetSeqNum(),packet->GetPayloadType(),GetNameForCodec(group->type,codec),group->rid.c_str());
@@ -587,19 +613,6 @@ outher:	while(running)
 			VideoLayerSelector::GetLayerIds(packet);
 		}
 		
-		//Check if we have receiver already an SR for media stream
-		if (group->media.lastReceivedSenderReport)
-		{
-			//Get ntp and rtp timestamps
-			QWORD timestamp = group->media.lastReceivedSenderRTPTimestampExtender.GetExtSeqNum();
-			//Get ts delta		
-			int64_t delta = (int64_t)packet->GetExtTimestamp() - timestamp;
-			//Calculate sender time 
-			QWORD senderTime = group->media.lastReceivedSenderTime + (delta) * 1000 / packet->GetClockRate();
-			//Set calculated sender time
-			packet->SetSenderTime(senderTime);
-		}
-
 		//Log("-%llu(%lld) %s seqNum:%llu(%u) mark:%d\n",ini+now,now,MediaFrame::TypeToString(group->type),packet->GetExtSeqNum(),packet->GetSeqNum(),packet->GetMark());
 		
 		//Add packet and see if we have lost any in between
