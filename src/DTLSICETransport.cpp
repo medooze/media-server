@@ -2023,10 +2023,11 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 	//Release packets from rtx queue
 	group->ReleasePackets(until);
 	
+	//TODO: check side effects
 	//If packet is an key frame
-	if (packet->IsKeyFrame())
+	//if (packet->IsKeyFrame())
 		//Do not retransmit packets before this frame
-		group->ReleasePacketsByTimestamp(packet->GetExtTimestamp());
+		//group->ReleasePacketsByTimestamp(packet->GetExtTimestamp());
 	
 	//Check if we need to send SR (1 per second)
 	if (now-source.lastSenderReport>1E6)
