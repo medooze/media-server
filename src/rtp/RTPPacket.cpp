@@ -133,6 +133,11 @@ RTPPacket::shared RTPPacket::Clone() const
 
 RTPPacket::shared RTPPacket::Parse(const BYTE* data, DWORD size, const RTPMap& rtpMap, const RTPMap& extMap)
 {
+	return Parse(data,size,rtpMap,extMap,getTimeMS());
+}
+
+RTPPacket::shared RTPPacket::Parse(const BYTE* data, DWORD size, const RTPMap& rtpMap, const RTPMap& extMap, QWORD time)
+{
 	RTPHeader header;
 	RTPHeaderExtension extension;
 	//Parse RTP header
@@ -193,7 +198,7 @@ RTPPacket::shared RTPPacket::Parse(const BYTE* data, DWORD size, const RTPMap& r
 	MediaFrame::Type media = GetMediaForCodec(codec);
 	
 	//Create normal packet
-	auto packet = std::make_shared<RTPPacket>(media,codec,header,extension);
+	auto packet = std::make_shared<RTPPacket>(media,codec,header,extension,time);
 	
 	//Set the payload
 	packet->SetPayload(data+ini,size-ini);

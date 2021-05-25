@@ -33,6 +33,7 @@ public:
 	
 public:
 	static RTPPacket::shared Parse(const BYTE* data, DWORD size, const RTPMap& rtpMap, const RTPMap& extMap);
+	static RTPPacket::shared Parse(const BYTE* data, DWORD size, const RTPMap& rtpMap, const RTPMap& extMap, QWORD time);
 public:
 	RTPPacket(MediaFrame::Type media, BYTE codec);
 	RTPPacket(MediaFrame::Type media, BYTE codec, QWORD time);
