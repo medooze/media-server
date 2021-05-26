@@ -239,8 +239,12 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 			dropped++;
 			//If selector is waiting for intra and last PLI was more than 1s ago
 			if (selector->IsWaitingForIntra() && getTimeDiffMS(lastSentPLI)>1E3)
+			{
+				//Log
+				//UltraDebug("-RTPStreamTransponder::onRTP() | selector IsWaitingForIntra\n");
 				//Request it again
 				RequestPLI();
+			}
 			//Drop
 			return;
 		}
@@ -453,6 +457,8 @@ void RTPStreamTransponder::RequestPLI()
 
 void RTPStreamTransponder::onPLIRequest(RTPOutgoingSourceGroup* group,DWORD ssrc)
 {
+	//Log
+	UltraDebug("-RTPStreamTransponder::onPLIRequest()\n");
 	RequestPLI();
 }
 
@@ -464,6 +470,9 @@ void RTPStreamTransponder::onREMB(RTPOutgoingSourceGroup* group,DWORD ssrc, DWOR
 
 void RTPStreamTransponder::SelectLayer(int spatialLayerId,int temporalLayerId)
 {
+	//Log
+	UltraDebug("-RTPStreamTransponder::SelectLayer() | [sid:%d,tid:%d]\n", spatialLayerId, temporalLayerId);
+
 	this->spatialLayerId  = spatialLayerId;
 	this->temporalLayerId = temporalLayerId;
 	
@@ -474,6 +483,9 @@ void RTPStreamTransponder::SelectLayer(int spatialLayerId,int temporalLayerId)
 
 void RTPStreamTransponder::Mute(bool muting)
 {
+	//Log
+	UltraDebug("-RTPStreamTransponder::Mute() | [muting:%d]\n", muting);
+
 	//Check if we are changing state
 	if (muting==muted)
 		//Do nothing
