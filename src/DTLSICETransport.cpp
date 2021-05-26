@@ -510,12 +510,16 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		//If there is no outgoing stream
 		if (outgoing.empty() && group->rtx.ssrc)
 		{
-			//We try to calculate rtt based on rtx
-			auto nack = rtcp->CreatePacket<RTCPRTPFeedback>(RTCPRTPFeedback::NACK,mainSSRC,group->media.ssrc);
 			//Get last seq num for calculating rtt based on rtx
 			WORD last = group->SetRTTRTX(now);
-			//Request it
-			nack->AddField(std::make_shared<RTCPRTPFeedback::NACKField>(last,0));
+			//If we have received at least one 
+			if (last)
+			{
+				//We try to calculate rtt based on rtx
+				auto nack = rtcp->CreatePacket<RTCPRTPFeedback>(RTCPRTPFeedback::NACK,mainSSRC,group->media.ssrc);
+				//Request it
+				nack->AddField(std::make_shared<RTCPRTPFeedback::NACKField>(last,0));
+			}
 		}
 	
 		//Send it
@@ -855,7 +859,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	rtxBitrate.Update(now/1000);
 
 	//if sse is enabled
-	if (senderSideEstimationEnabled)
+	if (senderSideEstimationEnabled && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC) != RTPMap::NotFound)
 	{
 		//Get target bitrate
 		DWORD targetBitrate = senderSideBandwidthEstimator.GetTargetBitrate();
