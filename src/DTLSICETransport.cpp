@@ -1512,9 +1512,9 @@ void DTLSICETransport::onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMaster
 	SetState(DTLSState::Connected);
 	
 	//Create new probe timer
-	probingTimer = timeService.CreateTimer(0ms, ProbingInterval, [this](...){
+	probingTimer = timeService.CreateTimer(0ms, ProbingInterval, [this](std::chrono::milliseconds ms){
 		//Do probe
-		Probe();
+		Probe(ms.count());
 	});
 
 	//Set name for debug
@@ -2561,21 +2561,17 @@ int DTLSICETransport::Enqueue(const RTPPacket::shared& packet,std::function<RTPP
 	
 	return 1;
 }
-void DTLSICETransport::Probe()
+void DTLSICETransport::Probe(QWORD now)
 {
 	//Endure that transport wide cc is enabled
 	if (senderSideEstimationEnabled && probe && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC)!=RTPMap::NotFound)
 	{
-		
-		//Get sleep time
-		uint64_t now = getTime();
 		//Update bitrates
-		outgoingBitrate.Update(now/1000);
-		probingBitrate.Update(now/1000);
+		outgoingBitrate.Update(now);
+		probingBitrate.Update(now);
 		//Calculate sleep time
-		uint64_t sleep = lastProbe ? (now - lastProbe)/1000 : probingTimer->GetRepeat().count();
-		//Update last probe time
-		lastProbe = now;
+		uint64_t sleep = lastProbe ? std::min<uint64_t>(now - lastProbe, probingTimer->GetRepeat().count()) : probingTimer->GetRepeat().count();
+		
 		//Get bitrates
 		DWORD bitrate		= static_cast<DWORD>(outgoingBitrate.GetInstantAvg()*8);
 		DWORD probing		= static_cast<DWORD>(probingBitrate.GetInstantAvg()*8);
@@ -2615,15 +2611,13 @@ void DTLSICETransport::Probe()
 							//Done
 							return;
 						//Update probing
-						probingBitrate.Update(now/1000,len);
+						probingBitrate.Update(now,len);
 						//Check size
 						if (len>probingSize)
 							//Done
 							return;
 						//Reduce probe
 						probingSize -= len;
-						//Update now
-						now = getTime();
 						found = true;
 					}
 					
@@ -2647,15 +2641,13 @@ void DTLSICETransport::Probe()
 								//Done
 								return;
 							//Update probing
-							probingBitrate.Update(now/1000,len);
+							probingBitrate.Update(now,len);
 							//Check size
 							if (len>probingSize)
 								//Done
 								return;
 							//Reduce probe
 							probingSize -= len;
-							//Update now
-							now = getTime();
 						}
 						//Done
 						return;
@@ -2664,6 +2656,8 @@ void DTLSICETransport::Probe()
 			}
 		}
 	}
+	//Update last probe time
+	lastProbe = now;
 }
 
 void DTLSICETransport::SetBandwidthProbing(bool probe)
