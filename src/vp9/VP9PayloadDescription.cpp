@@ -39,7 +39,7 @@ DWORD VP9InterPictureDependency::Parse(const BYTE* data, DWORD size)
 	//Number of pdifs
 	BYTE pdifs = data[0] >> 2 & 0x03;
 	//Check size
-	if (size<1+pdifs)
+	if (size<pdifs+1u)
 		return 0;
 	//Get each one
 	for (BYTE j=0;j<pdifs;++j)
