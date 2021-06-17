@@ -325,4 +325,8 @@ void RTPIncomingSourceGroup::SetRTXEnabled(bool enabled)
 	UltraDebug("-RTPIncomingSourceGroup::EnableRTX() | [enabled:%d]\n", enabled);
 	//store estimation
 	isRTXEnabled = enabled;
+	//if rtx is not supported
+	if (!isRTXEnabled)
+		//No wait
+		packets.SetMaxWaitTime(0);
 }

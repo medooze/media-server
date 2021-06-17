@@ -654,12 +654,8 @@ DWORD DTLSICETransport::SendProbe(const RTPPacket::shared& original)
 	//Update bitrate
 	outgoingBitrate.Update(now/1000,len);
 		
-        //Update last send time
-        source.lastTime		= packet->GetTimestamp();
-        source.lastPayloadType  = packet->GetPayloadType();
-	
-        //Update stats
-        source.Update(now/1000,packet->GetSeqNum(),len);
+	//Update last send time and stats
+	source.Update(now/1000, packet, len);
 	
 	//Add to transport wide stats
 	if (packet->HasTransportWideCC() && senderSideEstimationEnabled)
@@ -813,11 +809,8 @@ DWORD DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 	//Update bitrate
 	outgoingBitrate.Update(now/1000,len);
 	
-        //Update last send time
-        source.lastTime		= header.timestamp;
-        source.lastPayloadType  = header.payloadType;
-        //Update stats
-        source.Update(now/1000,header.sequenceNumber,len);
+	//Update last send time and stats
+	source.Update(now/1000, header, len);
 	
 	//Add to transport wide stats
 	if (extension.hasTransportWideCC && senderSideEstimationEnabled)
@@ -986,12 +979,8 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	//Release packets from rtx queue
 	group->ReleasePackets(until);	
 	
-        //Update last send time
-        source.lastTime		= packet->GetTimestamp();
-        source.lastPayloadType  = packet->GetPayloadType();
-	
-        //Update stats
-        source.Update(now/1000,packet->GetSeqNum(),len);
+	//Update stats
+	source.Update(now/1000, packet, len);
 	
 	//Check if we are using transport wide for this packet
 	if (packet->HasTransportWideCC() && senderSideEstimationEnabled)
@@ -1578,10 +1567,7 @@ bool DTLSICETransport::AddOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 			//Set it
 			mainSSRC = media;
 
-		//Create rtcp sender retpor
-		auto rtcp = RTCPCompoundPacket::Create(group->media.CreateSenderReport(getTime()));
-		//Send packet
-		Send(rtcp);	
+		//TODO: Send SDES
 	});
 	
 	//Done
@@ -1638,7 +1624,11 @@ bool DTLSICETransport::RemoveOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 
 bool DTLSICETransport::AddIncomingSourceGroup(RTPIncomingSourceGroup *group)
 {
-	Log("-DTLSICETransport::AddIncomingSourceGroup() [mid:'%s',rid:'%s',ssrc:%u,rtx:%u]\n",group->mid.c_str(),group->rid.c_str(),group->media.ssrc,group->rtx.ssrc);
+	//RTX should only be enabled for video and if RTX codec has been negotiated
+	bool isRTXEnabled = group->type == MediaFrame::Video && sendMaps.rtp.HasCodec(VideoCodec::RTX);
+
+	//Log
+	Log("-DTLSICETransport::AddIncomingSourceGroup() [mid:'%s',rid:'%s',ssrc:%u,rtx:%u,isRTXEnabled:%d]\n",group->mid.c_str(),group->rid.c_str(),group->media.ssrc,group->rtx.ssrc,isRTXEnabled);
 	
 	//It must contain media ssrc
 	if (!group->media.ssrc && group->rid.empty())
@@ -1700,7 +1690,7 @@ bool DTLSICETransport::AddIncomingSourceGroup(RTPIncomingSourceGroup *group)
 		}
 
 		//Set RTX supported flag only for video
-		group->SetRTXEnabled(group->type==MediaFrame::Video);
+		group->SetRTXEnabled(isRTXEnabled);
 	});
 	
 	//Check result
@@ -1998,14 +1988,8 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 	DWORD estimated = 0;
 	DWORD probing	= 0;
 		
-	//Update last items
-	source.lastTime		= packet->GetTimestamp();
-	source.lastPayloadType  = packet->GetPayloadType();
-	//Set clockrate
-	source.clockrate	= packet->GetClockRate();
-		
 	//Update source
-	source.Update(now/1000,packet->GetSeqNum(),len);
+	source.Update(now/1000, packet, len);
 		
 	//Get bitrates
 	bitrate   = static_cast<DWORD>(source.acumulator.GetInstantAvg()*8);

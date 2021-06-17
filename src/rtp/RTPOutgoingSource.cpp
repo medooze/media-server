@@ -7,7 +7,7 @@ RTPOutgoingSource::RTPOutgoingSource() :
 	reportedFractionLossAcumulator(1000)
 {
 	time			= random();
-	lastTime		= time;
+	lastTime		= 0;
 	ssrc			= random();
 	extSeqNum		= random() & 0xFFFF;
 	lastSenderReport	= 0;
@@ -85,7 +85,7 @@ void RTPOutgoingSource::Reset()
 	ssrc			= random();
 	extSeqNum		= random() & 0xFFFF;
 	time			= random();
-	lastTime		= time;
+	lastTime		= 0;
 	lastSenderReport	= 0;
 	lastSenderReportNTP	= 0;
 	lastPayloadType		= 0xFF;
@@ -148,7 +148,7 @@ RTCPSenderReport::shared RTPOutgoingSource::CreateSenderReport(QWORD now)
 	lastSenderReport = now;
 	//Store last send SR 32 middle bits
 	lastSenderReportNTP = sr->GetNTPTimestamp();
-	
+
 	//Return it
 	return sr;
 }
@@ -181,4 +181,22 @@ bool RTPOutgoingSource::ProcessReceiverReport(QWORD now, const RTCPReport::share
 	//RTT updated
 	return true;
 	
+}
+
+void RTPOutgoingSource::Update(QWORD now, const RTPPacket::shared& packet, DWORD size)
+{
+	//Set clockrate
+	clockrate = packet->GetClockRate();
+	//Update from headers
+	Update(now / 1000, packet->GetRTPHeader(), size);
+}
+
+void RTPOutgoingSource::Update(QWORD now, const RTPHeader& header, DWORD size)
+{
+	//Update last send time
+	lastTime = header.timestamp;
+	lastPayloadType = header.payloadType;
+
+	//Update stats
+	Update(now / 1000, header.sequenceNumber, size);
 }

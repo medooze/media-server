@@ -33,6 +33,18 @@ public:
 		//It is our codec
 		return it->second;
 	}
+
+	bool HasCodec(BYTE codec) const
+	{
+		//Try to find it in the map
+		for (const_iterator it = begin(); it != end(); ++it)
+			//Is it ourr codec
+			if (it->second == codec)
+				//found
+				return true;
+		//Not found
+		return false;
+	}
 	
 	BYTE GetTypeForCodec(BYTE codec) const
 	{

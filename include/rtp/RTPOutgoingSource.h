@@ -2,6 +2,7 @@
 #define RTPOUTGOINGSOURCE_H
 
 #include "config.h"
+#include "rtp/RTPPacket.h"
 #include "rtp/RTPSource.h"
 #include "rtp/RTCPSenderReport.h"
 
@@ -35,6 +36,10 @@ struct RTPOutgoingSource :
 	DWORD AddGapSeqNum();
 	DWORD NextSeqNum();
 	DWORD NextExtSeqNum();
+
+	void Update(QWORD now, const RTPPacket::shared& packet, DWORD size);
+	void Update(QWORD now, const RTPHeader& header, DWORD size);
+	
 	
 	virtual void Reset() override;
 	virtual void Update(QWORD now,DWORD seqNum,DWORD size) override;
