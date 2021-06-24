@@ -20,7 +20,7 @@ class RTPIncomingSourceGroup :
 {
 public:	
 	RTPIncomingSourceGroup(MediaFrame::Type type,TimeService& timeService);
-	virtual ~RTPIncomingSourceGroup() = default;
+	virtual ~RTPIncomingSourceGroup();
 	
 	RTPIncomingSource* GetSource(DWORD ssrc);
 	virtual void AddListener(RTPIncomingMediaStream::Listener* listener) override;
@@ -34,7 +34,6 @@ public:
 	void SetRTXEnabled(bool enabled);
 	void ResetPackets();
 	void Update();
-	void Update(QWORD now);
 	void SetRTT(DWORD rtt, QWORD now);
 	std::list<RTCPRTPFeedback::NACKField::shared>  GetNacks() { return losts.GetNacks(); }
 	

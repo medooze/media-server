@@ -53,9 +53,37 @@ public:
 		values.clear();
 		count = 0;
 	}
-	
-	QWORD Update(QWORD now,DWORD val = 0)
+
+	QWORD Update(QWORD now)
 	{
+		//Erase old values
+		while (!values.empty() && values.front().first + window <= now)
+		{
+			//Remove from instant value
+			instant -= values.front().second;
+			//Delete value
+			values.pop_front();
+			count--;
+			//We are in a window
+			inWindow = true;
+		}
+		//Check max
+		if (instant > max)
+			//new max
+			max = instant;
+		//Check min in window
+		if (inWindow && instant < min)
+			//New min
+			min = instant;
+		//Return accumulated value
+		return instant;
+	}
+	
+	QWORD Update(QWORD now, DWORD val)
+	{
+		//Don't allow time to go back
+		if (now<last)
+			now = last;
 		//Update acumulated value
 		acumulated += val;
 		//And the instant one
@@ -118,6 +146,26 @@ public:
 		return maxValue;
 	}
 	
+	std::pair<DWORD,DWORD> GetMinMaxValueInWindow() const
+	{
+		DWORD minValue = std::numeric_limits<DWORD>::max();
+		DWORD maxValue = 0;
+		//For eacn entry
+		for (const auto& value : values)
+		{
+			//If it is more
+			if (value.second > maxValue)
+				//Store it
+				maxValue = value.second;
+			//If it is less
+			if (value.second < minValue)
+				//Store it
+				minValue = value.second;
+		}
+		//Return min max values in window
+		return {minValue,maxValue};
+	}
+
 	DWORD GetCount() const
 	{
 		return count;

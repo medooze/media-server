@@ -23,6 +23,12 @@ RTPIncomingSourceGroup::RTPIncomingSourceGroup(MediaFrame::Type type,TimeService
 	dispatchTimer->SetName("RTPIncomingSourceGroup - dispatch");
 }
 
+RTPIncomingSourceGroup::~RTPIncomingSourceGroup()
+{
+	//Stop timer
+	dispatchTimer->Cancel();
+}
+
 RTPIncomingSource* RTPIncomingSourceGroup::GetSource(DWORD ssrc)
 {
 	if (ssrc == media.ssrc)
@@ -160,17 +166,6 @@ void RTPIncomingSourceGroup::Update()
 	});
 }
 
-void RTPIncomingSourceGroup::Update(QWORD now)
-{
-	//Update it sync
-	timeService.Sync([=](auto) {
-		//Update
-		media.Update(now);
-		//Update
-		rtx.Update(now);
-	});
-}
-
 void RTPIncomingSourceGroup::SetRTT(DWORD rtt, QWORD now)
 {
 	//Store rtt
@@ -231,11 +226,15 @@ void RTPIncomingSourceGroup::DispatchPackets(uint64_t time)
 		//Dispatch rtp packet
 		listener->onRTP(this,ordered);
 
+
 	//Update stats
 	lost          = losts.GetTotal();
-	minWaitedTime = packets.GetMinWaitedime();
-	maxWaitedTime = packets.GetMaxWaitedTime();
 	avgWaitedTime = packets.GetAvgWaitedTime();
+	//Get min max values
+	auto minmax = packets.GetMinMaxWaitedTime();
+	minWaitedTime = minmax.first;
+	maxWaitedTime = minmax.second;
+
 }
 
 void RTPIncomingSourceGroup::Stop()
@@ -259,9 +258,6 @@ RTPIncomingSource* RTPIncomingSourceGroup::Process(RTPPacket::shared &packet)
 	//Get packet time
 	uint64_t time = packet->GetTime();
 	
-	//Update instant bitrates
-	Update(time);
-	
 	//Get ssrc
 	uint32_t ssrc = packet->GetSSRC();
 	
@@ -272,7 +268,7 @@ RTPIncomingSource* RTPIncomingSourceGroup::Process(RTPPacket::shared &packet)
 	if (!source)
 		//error
 		return nullptr;
-	
+
 	//Set extendedd  timestamp
 	packet->SetTimestampCycles(source->ExtendTimestamp(packet->GetTimestamp()));
 	//Set cycles back
@@ -322,7 +318,7 @@ void RTPIncomingSourceGroup::onTargetBitrateRequested(DWORD bitrate)
 
 void RTPIncomingSourceGroup::SetRTXEnabled(bool enabled)
 {
-	UltraDebug("-RTPIncomingSourceGroup::EnableRTX() | [enabled:%d]\n", enabled);
+	UltraDebug("-RTPIncomingSourceGroup::SetRTXEnabled() | [enabled:%d]\n", enabled);
 	//store estimation
 	isRTXEnabled = enabled;
 	//if rtx is not supported

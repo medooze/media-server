@@ -122,23 +122,28 @@ public:
 	{
 		this->maxWaitTime = maxWaitTime;
 	}
+
+	DWORD GetMaxWaitTime() const
+	{
+		return maxWaitTime;
+	}
 	
 	DWORD GetMinWaitedime() const
 	{
-		//Get value
-		DWORD minValueInWindow =  waited.GetMinValueInWindow();
-		//return it
-		return minValueInWindow;
+		return waited.GetMinValueInWindow();
 	}
 	
 	DWORD GetMaxWaitedTime() const
 	{
-		//Get value
-		DWORD maxValueInWindow =  waited.GetMaxValueInWindow();
-		//return it
-		return maxValueInWindow;
+		return waited.GetMaxValueInWindow();
 	}
 	
+
+	std::pair<DWORD, DWORD> GetMinMaxWaitedTime() const
+	{
+		return waited.GetMinMaxValueInWindow();
+	}
+
 	long double GetAvgWaitedTime() const
 	{
 		//Get value
