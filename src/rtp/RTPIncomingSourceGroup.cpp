@@ -26,7 +26,7 @@ RTPIncomingSourceGroup::RTPIncomingSourceGroup(MediaFrame::Type type,TimeService
 RTPIncomingSourceGroup::~RTPIncomingSourceGroup()
 {
 	//Stop timer
-	dispatchTimer->Cancel();
+	if (dispatchTimer) dispatchTimer->Cancel();
 }
 
 RTPIncomingSource* RTPIncomingSourceGroup::GetSource(DWORD ssrc)
@@ -251,6 +251,9 @@ void RTPIncomingSourceGroup::Stop()
 		//Clear listeners
 		listeners.clear();
 	});
+
+	//No timer
+	dispatchTimer = nullptr;
 }
 
 RTPIncomingSource* RTPIncomingSourceGroup::Process(RTPPacket::shared &packet)

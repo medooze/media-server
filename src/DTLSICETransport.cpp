@@ -1711,9 +1711,6 @@ bool DTLSICETransport::RemoveIncomingSourceGroup(RTPIncomingSourceGroup *group)
 {
 	Log("-DTLSICETransport::RemoveIncomingSourceGroup() [mid:'%s',rid:'%s',ssrc:%u,rtx:%u]\n",group->mid.c_str(),group->rid.c_str(),group->media.ssrc,group->rtx.ssrc);
 	
-	//Stop distpaching
-	group->Stop();
-	
 	//Dispatch to the event loop thread
 	timeService.Sync([&](...){
 		//Remove rid if any
@@ -1756,6 +1753,9 @@ bool DTLSICETransport::RemoveIncomingSourceGroup(RTPIncomingSourceGroup *group)
 			recv.RemoveStream(rtx);
 		}
 	});
+
+	//Stop distpaching
+	group->Stop();
 	
 	//Done
 	return true;
