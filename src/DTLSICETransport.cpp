@@ -1797,10 +1797,13 @@ int DTLSICETransport::Send(const RTCPCompoundPacket::shared &rtcp)
 		//Log
 		return Debug("-DTLSICETransport::Send() | We don't have an active candidate yet\n");
 
+	//Get current time
+	QWORD now = getTime();
+
 	//If dumping
 	if (dumper && dumpRTCP)
 		//Write udp packet
-		dumper->WriteUDP(getTimeMS(),0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len);
+		dumper->WriteUDP(now/1000,0x7F000001,5004,active->GetIPAddress(),active->GetPort(),data,len);
 
 	//Encript
 	len = send.ProtectRTCP(data,len);
@@ -1819,7 +1822,7 @@ int DTLSICETransport::Send(const RTCPCompoundPacket::shared &rtcp)
 	len = sender->Send(candidate,std::move(buffer));
 	
 	//Update bitrate
-	outgoingBitrate.Update(getTimeMS(),len);
+	outgoingBitrate.Update(now/1000,len);
 	
 	//Return length
 	return len;
