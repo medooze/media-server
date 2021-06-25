@@ -188,7 +188,7 @@ void RTPOutgoingSource::Update(QWORD now, const RTPPacket::shared& packet, DWORD
 	//Set clockrate
 	clockrate = packet->GetClockRate();
 	//Update from headers
-	Update(now / 1000, packet->GetRTPHeader(), size);
+	Update(now, packet->GetRTPHeader(), size);
 }
 
 void RTPOutgoingSource::Update(QWORD now, const RTPHeader& header, DWORD size)
@@ -198,5 +198,5 @@ void RTPOutgoingSource::Update(QWORD now, const RTPHeader& header, DWORD size)
 	lastPayloadType = header.payloadType;
 
 	//Update stats
-	Update(now / 1000, header.sequenceNumber, size);
+	Update(now, header.sequenceNumber, size);
 }
