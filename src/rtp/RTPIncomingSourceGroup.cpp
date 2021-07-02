@@ -120,7 +120,7 @@ int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet, DWORD siz
 	//UltraDebug("-RTPIncomingSourceGroup::AddPacket() | [lost:%d,next:%llu]\n",lost,next);
 	
 	//If we have anything on the queue
-	if (next!=(QWORD)-1)
+	if (next!=(QWORD)-1 && dispatchTimer)
 		//Reschedule timer
 		dispatchTimer->Again(std::chrono::milliseconds(next));
 	
@@ -178,7 +178,7 @@ void RTPIncomingSourceGroup::SetRTT(DWORD rtt, QWORD now)
 		//No wait
 		packets.SetMaxWaitTime(0);
 	//Dispatch packets with new timer now
-	dispatchTimer->Again(0ms);
+	if (dispatchTimer) dispatchTimer->Again(0ms);
 	//If using remote rate estimator
 	if (remb)
 		//Add estimation
@@ -240,7 +240,7 @@ void RTPIncomingSourceGroup::DispatchPackets(uint64_t time)
 void RTPIncomingSourceGroup::Stop()
 {
 	//Stop timer
-	dispatchTimer->Cancel();
+	if (dispatchTimer) dispatchTimer->Cancel();
 	
 	//Stop listeners sync
 	timeService.Sync([=](auto) {

@@ -564,7 +564,7 @@ DWORD DTLSICETransport::SendProbe(const RTPPacket::shared& original)
 		
 	//Check if we ar using rtx or not
 	if (!group->rtx.ssrc || apt==RTPMap::NotFound)
-		return Error("-DTLSICETransport::SendProbe() | No rtx or apt found\n");
+		return Error("-DTLSICETransport::SendProbe() | No rtx or apt found [group:%p,ssrc:%u,apt:%d]\n", group, group->rtx.ssrc, apt);
 	
 	//Get rtx source
 	RTPOutgoingSource& source = group->rtx;
@@ -1713,27 +1713,24 @@ bool DTLSICETransport::RemoveIncomingSourceGroup(RTPIncomingSourceGroup *group)
 	
 	//Dispatch to the event loop thread
 	timeService.Sync([&](...){
+
 		//Remove rid if any
 		if (!group->rid.empty())
 			rids.erase(group->mid + "@" + group->rid);
 
-		//Remove mid if any
-		if (!group->rid.empty())
+		//Find mid 
+		auto it = mids.find(group->mid);
+		//If found
+		if (it!=mids.end())
 		{
-			//Find mid 
-			auto it = mids.find(group->mid);
-			//If found
-			if (it!=mids.end())
-			{
-				//Erase group
-				it->second.erase(group);
-				//If it is empty now
-				if(it->second.empty())
-					//Remove from mids
-					mids.erase(it);
-			}
-
+			//Erase group
+			it->second.erase(group);
+			//If it is empty now
+			if(it->second.empty())
+				//Remove from mids
+				mids.erase(it);
 		}
+
 		//Get ssrcs
 		const auto media = group->media.ssrc;
 		const auto rtx   = group->rtx.ssrc;
@@ -1752,11 +1749,11 @@ bool DTLSICETransport::RemoveIncomingSourceGroup(RTPIncomingSourceGroup *group)
 			incoming.erase(rtx);
 			recv.RemoveStream(rtx);
 		}
+
+		//Stop distpaching
+		group->Stop();
 	});
 
-	//Stop distpaching
-	group->Stop();
-	
 	//Done
 	return true;
 }
@@ -2026,7 +2023,7 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 		Send(RTCPCompoundPacket::Create(group->media.CreateSenderReport(now)));
 	
 	//Check if this packets support rtx
-	bool rtx = group->rtx.ssrc && !sendMaps.apt.empty();
+	bool rtx = group->rtx.ssrc && sendMaps.apt.GetTypeForCodec(packet->GetPayloadType())!=RTPMap::NotFound;
 	
 	//Do we need to send probing as inline media?
 	if (!rtx && probe && group->type == MediaFrame::Video && packet->GetMark() && estimated>bitrate && probing<maxProbingBitrate)
