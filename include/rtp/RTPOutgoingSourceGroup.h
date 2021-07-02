@@ -22,7 +22,7 @@ public:
 	};
 public:
 	RTPOutgoingSourceGroup(MediaFrame::Type type,TimeService& timeService);
-	RTPOutgoingSourceGroup(std::string &mid,MediaFrame::Type type, TimeService& timeService);
+	RTPOutgoingSourceGroup(const std::string &mid,MediaFrame::Type type, TimeService& timeService);
 	
 	void AddListener(Listener* listener);
 	void RemoveListener(Listener* listener);

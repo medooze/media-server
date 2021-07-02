@@ -7,7 +7,7 @@ RTPOutgoingSourceGroup::RTPOutgoingSourceGroup(MediaFrame::Type type, TimeServic
 	this->type = type;
 }
 
-RTPOutgoingSourceGroup::RTPOutgoingSourceGroup(std::string &mid, MediaFrame::Type type, TimeService& timeService) :
+RTPOutgoingSourceGroup::RTPOutgoingSourceGroup(const std::string &mid, MediaFrame::Type type, TimeService& timeService) :
 	timeService(timeService)
 {
 	this->mid = mid;
