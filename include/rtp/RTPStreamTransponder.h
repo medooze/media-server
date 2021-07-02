@@ -42,6 +42,9 @@ public:
 	
 	void SelectLayer(int spatialLayerId,int temporalLayerId);
 	void Mute(bool muting);
+
+	const RTPIncomingMediaStream* GetIncoming() const { return incoming; }
+
 protected:
 	void RequestPLI();
 
