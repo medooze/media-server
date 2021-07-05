@@ -132,7 +132,7 @@ public:
 	const std::optional<DependencyDescriptor>&		GetDependencyDescriptor()	 const { return extension.dependencyDescryptor;	}
 	const std::optional<TemplateDependencyStructure>&	GetTemplateDependencyStructure() const { return templateDependencyStructure;	}
 	const std::optional<std::vector<bool>>&			GetActiveDecodeTargets()	 const { return activeDecodeTargets;		}
-	const std::optional<VideoOrientation>			GetVideoOrientation()		 const { return extension.hasVideoOrientation ? std::make_optional<VideoOrientation>(extension.cvo) : std::nullopt; }
+	const VideoOrientation&					GetVideoOrientation()		 const { return extension.cvo;			}
 	
 	bool  HasAudioLevel()			const	{ return extension.hasAudioLevel;		}
 	bool  HasAbsSentTime()			const	{ return extension.hasAbsSentTime;		}
