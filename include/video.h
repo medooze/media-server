@@ -1,5 +1,6 @@
 #ifndef _VIDEO_H_
 #define _VIDEO_H_
+#include <optional>
 #include "config.h"
 #include "media.h"
 #include "codecs.h"
@@ -107,6 +108,9 @@ public:
 	const std::vector<LayerFrame>& GetLayerFrames() const	{ return layers;		}
 	void AddLayerFrame(const LayerFrame& layer)		{ layers.push_back(layer);	}
 	
+	void SetVideoOrientation(const VideoOrientation cvo)		{ this->cvo = cvo;	}
+	std::optional<VideoOrientation> GetVideoOrientation() const	{ return this->cvo;	}
+	
 	void Reset() 
 	{
 		//Reset media frame
@@ -125,6 +129,7 @@ private:
 	DWORD	width;
 	DWORD	height;
 	std::vector<LayerFrame> layers;
+	std::optional<VideoOrientation> cvo;
 
 };
 

@@ -72,12 +72,6 @@ public:
 		}
 	}
 	
-	struct VideoOrientation
-	{
-		bool facing	= 0;
-		bool flip	= 0;
-		BYTE rotation	= 0;
-	};
 	
 	// For Frame Marking RTP Header Extension:
 	// https://tools.ietf.org/html/draft-ietf-avtext-framemarking-04#page-4

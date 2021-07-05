@@ -345,6 +345,13 @@ inline void* malloc32(size_t size)
 	return ptr;
 }
 
+struct VideoOrientation
+{
+	bool facing = 0;
+	bool flip = 0;
+	BYTE rotation = 0;
+};
+
 class ByteBuffer
 {
 public:

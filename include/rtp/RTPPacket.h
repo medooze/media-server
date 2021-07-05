@@ -132,6 +132,7 @@ public:
 	const std::optional<DependencyDescriptor>&		GetDependencyDescriptor()	 const { return extension.dependencyDescryptor;	}
 	const std::optional<TemplateDependencyStructure>&	GetTemplateDependencyStructure() const { return templateDependencyStructure;	}
 	const std::optional<std::vector<bool>>&			GetActiveDecodeTargets()	 const { return activeDecodeTargets;		}
+	const std::optional<VideoOrientation>			GetVideoOrientation()		 const { return extension.hasVideoOrientation ? std::make_optional<VideoOrientation>(extension.cvo) : std::nullopt; }
 	
 	bool  HasAudioLevel()			const	{ return extension.hasAudioLevel;		}
 	bool  HasAbsSentTime()			const	{ return extension.hasAbsSentTime;		}
@@ -145,6 +146,7 @@ public:
 	bool  HasTemplateDependencyStructure()	const	{ return extension.hasDependencyDescriptor &&
 								 extension.dependencyDescryptor &&
 								 extension.dependencyDescryptor->templateDependencyStructure;	}
+	bool  HasVideoOrientation()		const	{ return extension.hasVideoOrientation;		}
 	
 	void  OverrideActiveDecodeTargets(const std::optional<std::vector<bool>>& activeDecodeTargets) 
 	{
