@@ -14,7 +14,7 @@ ActiveSpeakerMultiplexer::ActiveSpeakerMultiplexer(TimeService& timeService, Lis
 	listener(listener)
 {
 	//Create processing timer
-	timer = timeService.CreateTimer(MinInterval, [this](auto now) { Process(now.count()); });
+	timer = timeService.CreateTimer(0ms, MinInterval, [this](auto now) { Process(now.count()); });
 	//Set name for debug
 	timer->SetName("ActiveSpeakerMultiplexer - process");
 }
@@ -27,6 +27,8 @@ ActiveSpeakerMultiplexer::~ActiveSpeakerMultiplexer()
 
 void ActiveSpeakerMultiplexer::Stop()
 {
+	Debug(">ActiveSpeakerMultiplexer::Stop()\n");
+
 	//Stop timer
 	timer->Cancel();
 
@@ -44,6 +46,8 @@ void ActiveSpeakerMultiplexer::Stop()
 
 	//No timer
 	timer = nullptr;
+
+	Debug("<ActiveSpeakerMultiplexer::Stop()\n");
 }
 
 void ActiveSpeakerMultiplexer::AddRTPStreamTransponder(RTPStreamTransponder* transpoder, uint32_t id)
@@ -55,7 +59,7 @@ void ActiveSpeakerMultiplexer::AddRTPStreamTransponder(RTPStreamTransponder* tra
 
 	timeService.Sync([=](const auto& now) {
 		//Insert new 
-		transponders.try_emplace(transpoder, id);
+		destinations.try_emplace(transpoder, Destination{id,transpoder});
 	});
 }
 void ActiveSpeakerMultiplexer::RemoveRTPStreamTransponder(RTPStreamTransponder* transpoder)
@@ -67,7 +71,7 @@ void ActiveSpeakerMultiplexer::RemoveRTPStreamTransponder(RTPStreamTransponder* 
 
 	timeService.Sync([=](const auto& now) {
 		//Remove
-		transponders.erase(transpoder);
+		destinations.erase(transpoder);
 	});
 }
 
@@ -98,12 +102,36 @@ void ActiveSpeakerMultiplexer::RemoveIncomingSourceGroup(RTPIncomingMediaStream*
 		return;
 
 	timeService.Sync([=](const auto& now) {
+		//Find source
+		auto it = sources.find(incoming);
 		//check it was not present
-		if (sources.erase(incoming))
+		if (it==sources.end())
 			//Do nothing, probably called onEnded before
 			return;
-		//Remove listener
+		//Remove us from listeners
 		incoming->RemoveListener(this);
+		//Get source id
+		auto sourceId = it->second.id;
+		//Remove it
+		sources.erase(it);
+		//For each destination transpoder
+		for (auto& [transponder, destination] : destinations)
+		{
+			//If attached to it
+			if (destination.sourceId == sourceId)
+			{
+				//Remove it
+				transponder->SetIncoming(nullptr, nullptr);
+				//Event
+				listener->onActiveSpeakerRemoved(destination.id);
+				//Reset source id and timestamp
+				destination.sourceId = 0;
+				destination.ts = 0;
+				//Log
+				Debug("-ActiveSpeakerMultiplexer::RemoveIncomingSourceGroup() | onActiveSpeakerRemoved [multiplexId:%d]\n", destination.id);
+			}
+		}
+		
 	});
 }
 
@@ -116,6 +144,7 @@ void ActiveSpeakerMultiplexer::onRTP(RTPIncomingMediaStream* stream, const std::
 }
 void ActiveSpeakerMultiplexer::onRTP(RTPIncomingMediaStream* incoming, const RTPPacket::shared& packet)
 {
+	
 	//Double check we have audio level
 	if (!packet->HasAudioLevel())
 		return;
@@ -127,6 +156,8 @@ void ActiveSpeakerMultiplexer::onRTP(RTPIncomingMediaStream* incoming, const RTP
 
 	//Check voice is detected and not muted
 	auto speaking = vad && db != 127 && (!noiseGatingThreshold || db < noiseGatingThreshold);
+
+	//Debug("-ActiveSpeakerMultiplexer::onRTP() [vad:%d,db:%d,speaking:%d]\n", vad,db,speaking);
 
 	//Accumulate only if audio has been detected 
 	if (speaking)
@@ -147,7 +178,7 @@ void ActiveSpeakerMultiplexer::onRTP(RTPIncomingMediaStream* incoming, const RTP
 
 		//Get time diff from last score, we consider 1s as max to coincide with initial bump
 		uint64_t diff = std::min(now - it->second.ts, (uint64_t)1000ul);
-		//UltraDebug("-ActiveSpeakerDetector::Accumulate [id:%u,vad:%d,speaking:%d,diff:%u,level:%u,score:%lu]\n",id,vad,speaking,diff,level,speakers[id].score);
+		
 		//Do not accumulate too much so we can switch faster
 		it->second.score = std::min(it->second.score + diff * level / ScorePerMiliScond, maxAcummulatedScore);
 		//Set last update time
@@ -155,7 +186,8 @@ void ActiveSpeakerMultiplexer::onRTP(RTPIncomingMediaStream* incoming, const RTP
 		//Add packets for forwarding in case it is selected for multiplex
 		it->second.packets.push_back(packet);
 
-		//UltraDebug("-ActiveSpeakerMultiplexer::onRTP() Accumulate [id:%u,vad:%d,dbs:%u,score:%lu]\n",it->second.id,vad,db,it->second.score);
+		//Log
+		//Debug("-ActiveSpeakerMultiplexer::onRTP() Accumulate [id:%u,vad:%d,dbs:%u,score:%lu]\n",it->second.id,vad,db,it->second.score);
 	}
 }
 
@@ -170,8 +202,31 @@ void ActiveSpeakerMultiplexer::onEnded(RTPIncomingMediaStream* incoming)
 	if (!incoming)
 		return;
 
-	//Delete from sources
-	sources.erase(incoming);
+	//Find source
+	auto it = sources.find(incoming);
+	//check it was not present
+	if (it == sources.end())
+		//Do nothing, probably called onEnded before
+		return;
+	//Get source id
+	auto sourceId = it->second.id;
+	//Remove it
+	sources.erase(it);
+	//For each destination transpoder
+	for (auto& [transponder, destination] : destinations)
+	{
+		//If attached to it
+		if (destination.sourceId == sourceId)
+		{
+			//Event
+			listener->onActiveSpeakerRemoved(destination.id);
+			//Reset source id and timestamp
+			destination.sourceId = 0;
+			destination.ts = 0;
+			//Log
+			Debug("-ActiveSpeakerMultiplexer::RemoveIncomingSourceGroup() | onActiveSpeakerRemoved [multiplexId:%d]\n", destination.id);
+		}
+	}
 }
 
 void ActiveSpeakerMultiplexer::Process(uint64_t now)
@@ -186,13 +241,13 @@ void ActiveSpeakerMultiplexer::Process(uint64_t now)
 	uint64_t decay = diff * ScorePerMiliScond;
 
 	std::vector<Source*> candidates;
-	std::vector<Source*> top(transponders.size());
+	std::vector<Source*> top(destinations.size());
+
+	//UltraDebug("-ActiveSpeakerMultiplexer::Process() [now:%llu]\n",now);
 
 	//For each source
 	for (auto& entry : sources)
 	{
-		//UltraDebug(">ActiveSpeakerMultiplexer::Process() | part [id:%u,score:%llu,decay:%llu]\n",entry.first,entry.second.score,decay);
-
 		//Decay
 		if (entry.second.score > decay)
 			//Decrease score
@@ -201,22 +256,35 @@ void ActiveSpeakerMultiplexer::Process(uint64_t now)
 			//None
 			entry.second.score = 0;
 
-		//UltraDebug("<ActiveSpeakerMultiplexer::Process() | part [id:%u,score:%llu,decay:%llu]\n",entry.first,entry.second.score,decay);
+		//UltraDebug("-ActiveSpeakerMultiplexer::Process() | part [id:%u,score:%llu,decay:%llu]\n",entry.first,entry.second.score,decay);
 
 		//Check if it is active speaker
 		if (entry.second.score>minActivationScore)
 			//Add to potential candidates
-			candidates.push_back(&entry.second);
+			candidates.push_back(&(entry.second));
 	}
 
-	//Get top candidates by score
-	auto last = std::partial_sort_copy(candidates.begin(), candidates.end(), top.begin(), top.end());
-	
-	//The list of available transpoders
-	std::vector<RTPStreamTransponder*> availables;
+	//If no candidadtes
+	if (candidates.empty())
+		//Done
+		return;
 
-	//For each transpoder
-	for (const auto& [transponder, id] : transponders)
+	//for (auto source : candidates)
+	//	if (source)
+	//		Debug("-ActiveSpeakerMultiplexer::Process() | candidates [id:%d,score:%d]\n", source->id, source->score);
+
+	//Get top candidates by score
+	std::partial_sort_copy(candidates.begin(), candidates.end(), top.begin(), top.end());
+	
+	//for (auto source : top)
+	//	if (source)
+	//		Debug("-ActiveSpeakerMultiplexer::Process() | top [id:%dscore:%d]\n", source->id, source->score);
+
+	//The list of available destinations, ordered by last, id
+	std::map<std::pair<uint64_t, uint32_t>,Destination*> availables;
+
+	//For each destination transpoder
+	for (auto& [transponder, destination] : destinations)
 	{
 		bool available = true;
 		//Get attached incoming stream
@@ -225,10 +293,14 @@ void ActiveSpeakerMultiplexer::Process(uint64_t now)
 		if (incoming)
 		{
 			//Check if it is on the top sources
-			for (auto it = top.begin(); it!= last; )
+			for (auto it = top.begin(); it!= top.end(); )
 			{
 				//Get source
 				Source* source = *it;
+				//If no more sources available
+				if (!source)
+					//Done
+					break;
 				//If is the attached source
 				if (source->incoming == incoming)
 				{
@@ -246,32 +318,51 @@ void ActiveSpeakerMultiplexer::Process(uint64_t now)
 		//If aviable
 		if (available)
 			//Add to the list of available transpoders
-			availables.push_back(transponder);
+			availables.try_emplace({destination.ts,destination.id},&destination);
 	}
+
+	//for (auto source : top)
+	//	if (source)
+	//		Debug("-ActiveSpeakerMultiplexer::Process() | pending top [id:%d,score:%d]\n", source->id, source->score);
+
 	//Assing top sources in descending order
 	auto it = top.begin();
 
 	//For each available transceiver
-	for (const auto& transponder : availables)
+	for (auto& [key,destination] : availables)
 	{
-		//If no sources available
-		if (it==last)
+		//If no more sources available
+		if (it==top.end())
 			//Done
 			break;
 		//Get source
 		Source* source = *it;
+		//If no more sources available
+		if (!source)
+			//Done
+			break;
+
+		//UltraDebug("-ActiveSpeakerMultiplexer::Process() | transponder available [%d,last:%llu]\n", key.second, key.first);
+		
 		//Get multiplex id
-		const auto multiplexId = transponders[transponder];
+		const auto multiplexId = destination->id;
 		//Get source id
-		const auto speakerId = source->id;
+		const auto sourceId = source->id;
+		
+		//Log
+		UltraDebug("-ActiveSpeakerMultiplexer::Process() | onActiveSpeakerChanged [sourceId:%d,multiplexId:%d]\n", sourceId, multiplexId);
+
 		//Attach them
-		transponder->SetIncoming(source->incoming,nullptr);
+		destination->transponder->SetIncoming(source->incoming,nullptr);
 		//Send all pending packets
 		for (const auto& packet : source->packets)
 			//Send it
-			transponder->onRTP(source->incoming, packet);
+			destination->transponder->onRTP(source->incoming, packet);
 		//Event
-		listener->onActiveSpeakerChanded(speakerId, multiplexId);
+		listener->onActiveSpeakerChanged(sourceId, multiplexId);
+		//Set last multiplexed source and timestamp
+		destination->sourceId = sourceId;
+		destination->ts = now;
 		//Use next top source
 		++it;
 	}

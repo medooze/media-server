@@ -29,12 +29,27 @@ private:
 			return score < b.score;
 		}
 	};
+
+	struct Destination
+	{
+		uint32_t id;
+		RTPStreamTransponder* transponder = nullptr;
+		uint64_t ts = 0;
+		uint64_t sourceId = 0;
+
+		Destination(uint32_t id, RTPStreamTransponder* transponder) :
+			id(id),
+			transponder(transponder)
+		{
+		}
+	};
 public: 
 	class Listener
 	{
 	public:
 		virtual ~Listener() = default;
-		virtual void onActiveSpeakerChanded(uint32_t speakerId, uint32_t multiplexdId) = 0;
+		virtual void onActiveSpeakerChanged(uint32_t speakerId, uint32_t multiplexdId) = 0;
+		virtual void onActiveSpeakerRemoved(uint32_t multiplexdId) = 0;
 	};
 public:
 	ActiveSpeakerMultiplexer(TimeService& timeService, Listener* listener);
@@ -69,7 +84,7 @@ private:
 	uint64_t minActivationScore = 0;
 
 	std::map<RTPIncomingMediaStream*, Source> sources;
-	std::map<RTPStreamTransponder*, uint32_t> transponders;
+	std::map<RTPStreamTransponder*, Destination> destinations;
 };
 
 #endif /* ACTIVESPEAKERMULTIPLEXER_H */
