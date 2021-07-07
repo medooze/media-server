@@ -76,6 +76,8 @@ public:
 		frame->SetSenderTime(GetSenderTime());
 		//Set duration
 		frame->SetDuration(GetDuration());
+		//Set CVO
+		if (cvo) frame->SetVideoOrientation(*cvo);
 		//If we have disabled the shared buffer for this frame
 		if (disableSharedBuffer)
 			//Copy data
