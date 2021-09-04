@@ -304,6 +304,56 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 				//Leave it for later
 				dependencyDescryptorReader.Wrap(ext+i,len);
 				break;
+			case AbsoluteCaptureTime:
+				//	Data layout of the shortened version of abs-capture-time with a 1-byte header + 8 bytes of data:
+				//
+				//					0                   1                   2                   3
+				//	0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+				//	+ -+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				//	| ID | len = 7 | absolute capture timestamp(bit 0 - 23) |
+				//	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				//	| absolute capture timestamp(bit 24 - 55) |
+				//	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				//	| ... (56 - 63) |
+				//	+-+-+-+-+-+-+-+-+
+				//	Data layout of the extended version of abs - capture - time with a 1 - byte header + 16 bytes of data :
+				//
+				//	0                   1                   2                   3
+				//	0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+				//	+ -+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				//	| ID | len = 15 | absolute capture timestamp(bit 0 - 23) |
+				//	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				//	| absolute capture timestamp(bit 24 - 55) |
+				//	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				//	| ... (56 - 63) | estimated capture clock offset(bit 0 - 23) |
+				//	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				//	| estimated capture clock offset(bit 24 - 55) |
+				//	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				//	| ... (56 - 63) |
+				//	+-+-+-+-+-+-+-+-+
+				// 
+				//	
+				//	Absolute capture timestamp
+				//	Absolute capture timestamp is the NTP timestamp of when the first frame in a packet was originally captured.
+				//	This timestamp MUST be based on the same clock as the clock used to generate NTP timestamps for RTCP sender reports on the capture system.
+				//
+				//	This field is encoded as a 64 - bit unsigned fixed - point number with the high 32 bits for the timestamp in secondsand low 32 bits for the fractional part.
+				//	This is also known as the UQ32.32 format and is what the RTP specification defines as the canonical format to represent NTP timestamps.
+				//
+				//	Estimated capture clock offset
+				//	Estimated capture clock offset is the sender‘s estimate of the offset between its own NTP clock and the capture system’s NTP clock.
+				//	The sender is here defined as the system that owns the NTP clock used to generate the NTP timestamps for the RTCP sender reports on this stream.
+				//	The sender system is typically either the capture system or a mixer.
+				//
+				//	This field is encoded as a 64 - bit two’s complement signed fixed - point number with the high 32 bits for the secondsand low 32 bits for the fractional part.
+				//	It’s intended to make it easy for a receiver, that knows how to estimate the sender system’s NTP clock, to also estimate the capture system’s NTP clock :
+				// 
+				//	  Capture NTP Clock = Sender NTP Clock + Capture Clock Offset
+				hasAbsoluteCaptureTime = true;
+				absoluteCaptureTime.absoluteCatpureTimestampNTP = get8(ext,i);
+				if (len==16)
+					absoluteCaptureTime.estimatedCaptureClockOffsetNTP = (int64_t )get8(ext, i+8);
+				break;
 			default:
 				UltraDebug("-RTPHeaderExtension::Parse() | Unknown or unmapped extension [%d]\n",id);
 				break;
@@ -634,6 +684,34 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 		}
 	}
 	
+	if (hasAbsoluteCaptureTime)
+	{
+		//Get id for extension
+		BYTE id = extMap.GetTypeForCodec(AbsoluteCaptureTime);
+
+		//Check length
+		DWORD extLength = absoluteCaptureTime.estimatedCaptureClockOffsetNTP ? 16 : 8;
+
+		//Write header 
+		if ((n = WriteHeaderIdAndLength(data, len, id, extLength, headerLength)))
+		{
+			//Inc header len
+			len += n;
+			//Set ntp timestamp
+			set8(data,len, absoluteCaptureTime.absoluteCatpureTimestampNTP);
+			//Increase len
+			len+=8;
+			//If we have offset toot
+			if (absoluteCaptureTime.estimatedCaptureClockOffsetNTP)
+			{
+				//Set ntp offset
+				set8(data, len, absoluteCaptureTime.estimatedCaptureClockOffsetNTP);
+				//Increase len
+				len += 8;
+			}
+		}
+	}
+
 	//Pad to 32 bit words
 	while(len%4)
 		data[len++] = 0;
@@ -684,7 +762,14 @@ void RTPHeaderExtension::Dump() const
 		Debug("\t\t\t[MediaStreamId str=\"%s\"]\n",mid.c_str());
 	if (hasDependencyDescriptor && dependencyDescryptor)
 		dependencyDescryptor->Dump();
-	
+	if (hasAbsoluteCaptureTime)
+		Debug("\t\t\t[AbsoluteCaptureTime absoluteCatpureTimestampNTP=%llu estimatedCaptureClockOffsetNTP=%lld absoluteCaptureTimestamp=%llu absoluteCaptureTime=%llu/]\n",
+			absoluteCaptureTime.absoluteCatpureTimestampNTP,
+			absoluteCaptureTime.estimatedCaptureClockOffsetNTP,
+			absoluteCaptureTime.GetAbsoluteCaptureTimestamp(),
+			absoluteCaptureTime.GetAbsoluteCaptureTime()
+		);
+
 	Debug("\t\t[/RTPHeaderExtension]\n");
 }
 

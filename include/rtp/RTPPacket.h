@@ -104,7 +104,9 @@ public:
 	void  SetRId(const std::string &rid)						{ header.extension = extension.hasRId			= true; extension.rid = rid;			}
 	void  SetRepairedId(const std::string &repairedId)				{ header.extension = extension.hasRepairedId		= true; extension.repairedId = repairedId;	}
 	void  SetMediaStreamId(const std::string &mid)					{ header.extension = extension.hasMediaStreamId		= true; extension.mid = mid;			}
-	void  SetDependencyDescriptor(DependencyDescriptor& dependencyDescriptor)	{ header.extension = extension.hasDependencyDescriptor	= true; extension.dependencyDescryptor = dependencyDescriptor; }
+	void  SetDependencyDescriptor(DependencyDescriptor& dependencyDescriptor)	{ header.extension = extension.hasDependencyDescriptor	= true; extension.dependencyDescryptor = dependencyDescriptor;		}
+	void  SetAbsoluteCaptureTimestamp(QWORD ntp)						{ header.extension = extension.hasAbsoluteCaptureTime	= true; extension.absoluteCaptureTime.SetAbsoluteCaptureTimestamp(ntp); }
+	void  SetAbsoluteCaptureTime(QWORD ms)						{ header.extension = extension.hasAbsoluteCaptureTime	= true; extension.absoluteCaptureTime.SetAbsoluteCaptureTime(ms);	}
 	
 	bool  ParseDependencyDescriptor(const std::optional<TemplateDependencyStructure>& templateDependencyStructure, std::optional<std::vector<bool>>& activeDecodeTargets);
 	
@@ -120,6 +122,7 @@ public:
 	
 
 	QWORD GetAbsSendTime()			const	{ return extension.absSentTime;			}
+	QWORD GetEstimatedAbsSendTime()		const	{ return time % 64000 + extension.absSentTime;  }
 	int   GetTimeOffset()			const	{ return extension.timeOffset;			}
 	bool  GetVAD()				const	{ return extension.vad;				}
 	BYTE  GetLevel()			const	{ return extension.level;			}
@@ -147,6 +150,7 @@ public:
 								 extension.dependencyDescryptor &&
 								 extension.dependencyDescryptor->templateDependencyStructure;	}
 	bool  HasVideoOrientation()		const	{ return extension.hasVideoOrientation;		}
+	bool  HasAbsoluteCaptureTime()		const	{ return extension.hasAbsoluteCaptureTime;	}
 	
 	void  OverrideActiveDecodeTargets(const std::optional<std::vector<bool>>& activeDecodeTargets) 
 	{

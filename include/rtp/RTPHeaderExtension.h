@@ -35,6 +35,7 @@ public:
 		RepairedRTPStreamId	= 8,
 		MediaStreamId		= 9,
 		DependencyDescriptor	= 10,
+		AbsoluteCaptureTime	= 11,
 		Reserved		= 15
 	};
 	
@@ -51,6 +52,7 @@ public:
 		else if (strcasecmp(ext,"urn:ietf:params:rtp-hdrext:sdes:repaired-rtp-stream-id")==0)				return RepairedRTPStreamId;
 		else if (strcasecmp(ext,"urn:ietf:params:rtp-hdrext:sdes:mid")==0)						return MediaStreamId;
 		else if (strcasecmp(ext,"https://aomediacodec.github.io/av1-rtp-spec/#dependency-descriptor-rtp-header-extension")==0) return DependencyDescriptor;
+		else if (strcasecmp(ext,"http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time") == 0)			return AbsoluteCaptureTime;
 		return UNKNOWN;
 	}
 
@@ -68,6 +70,7 @@ public:
 			case RepairedRTPStreamId:		return "RepairedRTPStreamId";
 			case MediaStreamId:			return "MediaStreamId";
 			case DependencyDescriptor:		return "DependencyDescriptor";
+			case AbsoluteCaptureTime:		return "AbsoluteCaptureTime";
 			default:				return "unknown";
 		}
 	}
@@ -114,6 +117,32 @@ public:
 		BYTE layerId		= 0;
 		BYTE tl0PicIdx		= 0;
 	};
+
+	struct AbsoluteCaptureTime
+	{
+		uint64_t absoluteCatpureTimestampNTP	= 0;
+		int64_t  estimatedCaptureClockOffsetNTP	= 0;
+
+		uint64_t GetAbsoluteCaptureTimestamp() const
+		{
+			return (absoluteCatpureTimestampNTP + estimatedCaptureClockOffsetNTP) * (1000.0 / 0x100000000);
+		}
+
+		uint64_t GetAbsoluteCaptureTime() const
+		{
+			return GetAbsoluteCaptureTimestamp() - 2208988800000ULL;
+		}
+
+		void SetAbsoluteCaptureTime(uint64_t ms)
+		{
+			absoluteCatpureTimestampNTP = ms + 2208988800000ULL;
+		}
+
+		void SetAbsoluteCaptureTimestamp(uint64_t ntp)
+		{
+			absoluteCatpureTimestampNTP = ntp;
+		}
+	};
 	
 public:
 	DWORD Parse(const RTPMap &extMap,const BYTE* data,const DWORD size);
@@ -133,6 +162,7 @@ public:
 	std::string mid;
 	BitReader dependencyDescryptorReader; 
 	std::optional<::DependencyDescriptor> dependencyDescryptor;
+	struct AbsoluteCaptureTime absoluteCaptureTime;
 	
 	bool	hasAbsSentTime		= false;
 	bool	hasTimeOffset		= false;
@@ -144,6 +174,7 @@ public:
 	bool	hasRepairedId		= false;
 	bool	hasMediaStreamId	= false;
 	bool	hasDependencyDescriptor	= false;
+	bool	hasAbsoluteCaptureTime	= false;
 };
 
 #endif /* RTPHEADEREXTENSION_H */
