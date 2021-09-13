@@ -44,6 +44,7 @@ public:
 	int Init();
 	int Init(int port);
 	Connection* AddICETransport(const std::string &username,const Properties& properties);
+	bool RestartICETransport(const std::string& username, const std::string& restarted, const Properties& properties);
 	int RemoveICETransport(const std::string &username);
 	
 	int End();

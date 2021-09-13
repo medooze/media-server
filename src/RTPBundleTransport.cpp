@@ -154,6 +154,59 @@ int RTPBundleTransport::RemoveICETransport(const std::string &username)
 	return 1;
 }
 
+bool RTPBundleTransport::RestartICETransport(const std::string& username, const std::string& restarted, const Properties& properties)
+{
+	Log("-RTPBundleTransport::RestartICETransport() [username:%s,restarted:%s]\n", username.c_str(), restarted.c_str());
+
+	Properties ice;
+	
+	//Get child properties
+	properties.GetChildren("ice", ice);
+
+
+	//Ensure that we have required ICE properties
+	if (!ice.HasProperty("remoteUsername") || !ice.HasProperty("remotePassword") || !ice.HasProperty("localUsername") || !ice.HasProperty("localPassword"))
+	{
+		//Error
+		Error("-RTPBundleTransport::RestartICETransport() | Missing ICE properties\n");
+		//Error
+		return false;
+	}
+
+	//Synchronized
+	loop.Async([this, username, restarted, ice](...) {
+
+		//Get transport
+		auto connectionIterator = connections.find(username);
+
+		//Check
+		if (connectionIterator == connections.end())
+		{
+			//Error
+			Error("-RTPBundleTransport::RestartICETransport() | ICE transport not found\n");
+			//Done
+			return;
+		}
+
+		//Get connection 
+		Connection* connection = connectionIterator->second;
+
+		//REmove connection
+		connections.erase(connectionIterator);
+
+		//Set local STUN properties
+		connection->transport->SetLocalSTUNCredentials(ice.GetProperty("localUsername"), ice.GetProperty("localPassword"));
+		connection->transport->SetRemoteSTUNCredentials(ice.GetProperty("remoteUsername"), ice.GetProperty("remotePassword"));
+
+		//Add it with new username
+		connection->username = restarted;
+		connections[restarted] = connection;
+	});
+
+	//DOne
+	return 1;
+}
+
 int RTPBundleTransport::Init()
 {
 	int retries = 0;
