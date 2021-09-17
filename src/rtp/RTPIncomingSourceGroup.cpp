@@ -17,10 +17,6 @@ RTPIncomingSourceGroup::RTPIncomingSourceGroup(MediaFrame::Type type,TimeService
 	packets.SetMaxWaitTime(1000);
 	//LIsten remote rate events
 	remoteRateEstimator.SetListener(this);
-	//Create dispatch timer
-	dispatchTimer = timeService.CreateTimer([this](auto now){ DispatchPackets(now.count()); });
-	//Set name for debug
-	dispatchTimer->SetName("RTPIncomingSourceGroup - dispatch");
 }
 
 RTPIncomingSourceGroup::~RTPIncomingSourceGroup()
@@ -199,6 +195,11 @@ WORD RTPIncomingSourceGroup::SetRTTRTX(uint64_t time)
 void RTPIncomingSourceGroup::Start(bool remb)
 {
 	Debug("-RTPIncomingSourceGroup::Start() | [remb:%d]\n",remb);
+
+	//Create dispatch timer
+	dispatchTimer = timeService.CreateTimer([this](auto now) { DispatchPackets(now.count()); });
+	//Set name for debug
+	dispatchTimer->SetName("RTPIncomingSourceGroup - dispatch");
 	
 	//are we using remb?
 	this->remb = remb;
@@ -239,6 +240,9 @@ void RTPIncomingSourceGroup::DispatchPackets(uint64_t time)
 
 void RTPIncomingSourceGroup::Stop()
 {
+
+	Debug("-RTPIncomingSourceGroup::Stop()\r\n");
+
 	//Stop timer
 	if (dispatchTimer) dispatchTimer->Cancel();
 	
