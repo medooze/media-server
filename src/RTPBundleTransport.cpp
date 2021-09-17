@@ -89,6 +89,12 @@ RTPBundleTransport::Connection* RTPBundleTransport::AddICETransport(const std::s
 	//Set local STUN properties
 	transport->SetLocalSTUNCredentials(ice.GetProperty("localUsername"),ice.GetProperty("localPassword"));
 	transport->SetRemoteSTUNCredentials(ice.GetProperty("remoteUsername"),ice.GetProperty("remotePassword"));
+
+	//Check if remb is disabled
+	bool disableREMB = properties.GetProperty("remb.disabled", false);
+	//If we need to disable it
+	if (disableREMB) transport->DisableREMB(disableREMB);
+	
 	
 	//Set remote DTLS 
 	transport->SetRemoteCryptoDTLS(dtls.GetProperty("setup"),dtls.GetProperty("hash"),dtls.GetProperty("fingerprint"));

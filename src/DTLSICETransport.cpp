@@ -1628,7 +1628,7 @@ bool DTLSICETransport::AddIncomingSourceGroup(RTPIncomingSourceGroup *group)
 	bool isRTXEnabled = group->type == MediaFrame::Video && sendMaps.rtp.HasCodec(VideoCodec::RTX);
 
 	//Log
-	Log("-DTLSICETransport::AddIncomingSourceGroup() [mid:'%s',rid:'%s',ssrc:%u,rtx:%u,isRTXEnabled:%d]\n",group->mid.c_str(),group->rid.c_str(),group->media.ssrc,group->rtx.ssrc,isRTXEnabled);
+	Log("-DTLSICETransport::AddIncomingSourceGroup() [mid:'%s',rid:'%s',ssrc:%u,rtx:%u,isRTXEnabled:%d,disableREMB:%d]\n",group->mid.c_str(),group->rid.c_str(),group->media.ssrc,group->rtx.ssrc,isRTXEnabled, disableREMB);
 	
 	//It must contain media ssrc
 	if (!group->media.ssrc && group->rid.empty())
@@ -1698,7 +1698,7 @@ bool DTLSICETransport::AddIncomingSourceGroup(RTPIncomingSourceGroup *group)
 		return Warning("-DTLSICETransport::AddIncomingSourceGroup() Could not add incoming source\n");
 		
 	//If it is video and the transport wide cc is not enabled enable and not overriding the bitrate estimation
-	bool remb = group->type == MediaFrame::Video && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC)==RTPMap::NotFound && !overrideBWE;
+	bool remb = group->type == MediaFrame::Video && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC)==RTPMap::NotFound && !overrideBWE && !disableREMB;
 
 	//Start distpaching
 	group->Start(remb);
@@ -2682,4 +2682,12 @@ void DTLSICETransport::SetRemoteOverrideBitrate(DWORD bitrate)
 	//Log
 	Debug(">DTLSICETransport::SetRemoteOverrideBitrate() [bitrate:%d]\n", bitrate);
 	this->remoteOverrideBitrate = bitrate; 
+}
+
+
+void DTLSICETransport::DisableREMB(bool disabled)
+{
+	//Log
+	Debug(">DTLSICETransport::DisableREMB() [disabled:%d]\n", disabled);
+	this->disableREMB = disabled;
 }

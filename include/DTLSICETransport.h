@@ -100,6 +100,7 @@ public:
 
 	void SetRemoteOverrideBWE(bool overrideBew);
 	void SetRemoteOverrideBitrate(DWORD bitrate);
+	void DisableREMB(bool disabled);
 	
 	const char* GetRemoteUsername() const { return iceRemoteUsername;	};
 	const char* GetRemotePwd()	const { return iceRemotePwd;		};
@@ -206,6 +207,7 @@ private:
 	SendSideBandwidthEstimation senderSideBandwidthEstimator;
 
 	bool overrideBWE = false;
+	bool disableREMB = false;
 	uint32_t remoteOverrideBitrate = 0;
 
 	Timer::shared iceTimeoutTimer;
