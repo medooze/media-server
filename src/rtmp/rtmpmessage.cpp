@@ -102,7 +102,7 @@ RTMPMessage::RTMPMessage(DWORD streamId,QWORD timestamp,Type type,DWORD length)
 	//Init position
 	pos = 0;
 	//We are parsing again
-	parsing = true;
+	parsing = (pos!=length);
 }
 
 RTMPMessage::RTMPMessage(DWORD streamId,QWORD timestamp,Type type,RTMPObject* ctrl) 
@@ -273,6 +273,11 @@ void RTMPMessage::Dump()
 
 DWORD RTMPMessage::Parse(BYTE* data,DWORD size)
 {
+	//IF already parsed
+	if (IsParsed())
+		//Done
+		return 0;
+
 	//Get pointer and data size
 	DWORD len = size;
 
@@ -280,7 +285,7 @@ DWORD RTMPMessage::Parse(BYTE* data,DWORD size)
 	DWORD left = GetLeft();
 	
 	//Check if have consumed all input but still we are not parsed
-	if (!left && !IsParsed())
+	if (!left)
 		//Throw exception
 		throw std::runtime_error("Wrong size for message");
 
