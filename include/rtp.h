@@ -52,5 +52,6 @@ class RTPReceiver
 {
 public:
 	virtual int SendPLI(DWORD ssrc) = 0;
+	virtual int Reset(DWORD ssrc) = 0;
 };
 #endif

@@ -41,6 +41,7 @@ public:
 	
 	// RTPReceiver interface
 	virtual int SendPLI(DWORD ssrc) override { return 1; }
+	virtual int Reset(DWORD ssrc)  override { return 1; }
 	TimeService& GetTimeService() { return loop; }
 private:
 	int Run();

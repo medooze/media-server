@@ -1864,6 +1864,45 @@ int DTLSICETransport::SendPLI(DWORD ssrc)
 	return 1;
 }
 
+int DTLSICETransport::Reset(DWORD ssrc)
+{
+	//Log
+	Debug("-DTLSICETransport::Reset() | [ssrc:%u]\n", ssrc);
+
+	//Execute on the event loop thread and do not wait
+	timeService.Async([=](...) {
+		//Get group
+		RTPIncomingSourceGroup* group = GetIncomingSourceGroup(ssrc);
+
+		//If not found
+		if (!group)
+			return (void)Debug("-DTLSICETransport::Reset() | no incoming source found for [ssrc:%u]\n", ssrc);
+
+		//Reset buffers
+		group->ResetPackets();
+
+		//Reset srtp session
+		recv.RemoveStream(group->media.ssrc);
+		recv.AddStream(group->media.ssrc);
+
+		//Reset
+		group->media.Reset();
+
+		//Check if there was an rtx ssrc
+		if (group->rtx.ssrc)
+		{
+			//Reset srtp session
+			recv.RemoveStream(group->rtx.ssrc);
+			recv.AddStream(group->rtx.ssrc);
+		}
+
+		//Reset
+		group->rtx.Reset();
+	});
+
+	return 1;
+}
+
 int DTLSICETransport::Send(RTPPacket::shared&& packet)
 {
 	//Check packet
@@ -2270,7 +2309,7 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 							//Dump
 							fb->Dump();
 							//Debug
-							Error("-Got feedback message for unknown media  [ssrc:%u]\n",ssrc);
+							Warning("-Got feedback message for unknown media  [ssrc:%u]\n",ssrc);
 							//Ups! Skip
 							continue;
 						}
