@@ -40,7 +40,7 @@ struct mmsghdr
 #include <linux/errqueue.h>
 #include <sys/eventfd.h>
 
-const size_t EventLoop::MaxMultipleSendingMessages = 10;
+const size_t EventLoop::MaxMultipleSendingMessages = 128;
 
 cpu_set_t* alloc_cpu_set(size_t* size) {
 	// the CPU set macros don't handle cases like my Azure VM, where there are 2 cores, but 128 possible cores (why???)
@@ -691,13 +691,16 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 			
 			//First
 			auto it = items.begin();
+			//Retry
+			std::vector<SendBuffer> retry;
 			//check each mesasge
-			for (uint32_t i = 0; i<len && it!=items.end(); ++i)
+			for (uint32_t i = 0; i<len && it!=items.end(); ++i, ++it)
+			{
 				//If we are in normal state and we can retry a failed message
 				if (!messages[i].msg_len && state==State::Normal && (errno==EAGAIN || errno==EWOULDBLOCK))
 				{
-					//Keep
-					it++;
+					//Retry it
+					retry.emplace_back(std::move(*it));
 				} else {
 #ifdef MSG_ZEROCOPY_ENABLED				
 					//Check correctly sent
@@ -710,9 +713,12 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 						zerocopyIndex++;
 					}
 #endif							
-					//Delete
-					it = items.erase(it);
 				}
+			}
+			//Clear items
+			items.clear();
+			//Copy elements to retry
+			std::move(retry.begin(), retry.end(), std::back_inserter(items));
 		}
 		
 		//Run queued task
