@@ -475,9 +475,9 @@ int DTLSConnection::Init()
 		if (inited)
 		{
 			//Run timeut
-			DTLSv1_handle_timeout(ssl);
-			//Check if there is any pending data
-			CheckPending();
+			if (DTLSv1_handle_timeout(ssl)!=-1)
+				//Check if there is any pending data
+				CheckPending();
 		}
 	});
 
@@ -844,6 +844,13 @@ void DTLSConnection::CheckPending()
 	//Reschedule timer
 	timeval tv = {};
 	if (timeout && DTLSv1_get_timeout(ssl, &tv))
-		timeout->Again(std::chrono::milliseconds(getTime(tv)/1000));
+	{
+		//GET TIME
+		auto ms = getTime(tv) / 1000;
+		//IF any
+		if (ms)
+			//Get 
+			timeout->Again(std::chrono::milliseconds(ms));
+	}
 }
 
