@@ -10,7 +10,7 @@
 
 extern "C" {
 #include <libavcodec/avcodec.h>
-#include <libavresample/avresample.h>
+#include <libswresample/swresample.h>
 #include <libavutil/opt.h>
 }
 #include "config.h"
@@ -29,7 +29,7 @@ public:
 private:
 	AVCodec 	*codec;
 	AVCodecContext	*ctx;
-	AVAudioResampleContext *avr;
+	SwrContext *swr;
 	AVFrame         *frame;
 	BYTE *samples;
 	int samplesSize;

@@ -3,7 +3,6 @@
 
 extern "C" {
 #include <libavcodec/avcodec.h>
-#include <libavresample/avresample.h>
 #include <libavutil/opt.h>
 }
 #include "config.h"

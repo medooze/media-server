@@ -194,7 +194,7 @@ endif
 ifeq ($(STATIC),yes)
 	LDFLAGS+=/usr/local/src/ffmpeg/libavformat/libavformat.a
 	LDFLAGS+=/usr/local/src/ffmpeg/libavcodec/libavcodec.a
-	LDFLAGS+=/usr/local/src/ffmpeg/libavresample/libavresample.a
+	LDFLAGS+=/usr/local/src/ffmpeg/libswresample/libswresample.a
 	LDFLAGS+=/usr/local/src/ffmpeg/libswscale/libswscale.a
 	LDFLAGS+=/usr/local/src/ffmpeg/libavutil/libavutil.a
 	LDFLAGS+=/usr/local/src/x264/libx264.a
@@ -203,7 +203,7 @@ ifeq ($(STATIC),yes)
 	LDFLAGS+=/usr/local/src/libvpx/libvpx.a
 	LDFLAGS+=/usr/local/lib/
 else
-	LDFLAGS+= -lavcodec -lswscale -lavformat -lavutil -lavresample  -lspeex -lvpx -lopus  -lx264 
+	LDFLAGS+= -lavcodec -lswscale -lavformat -lavutil -lswresample  -lspeex -lvpx -lopus  -lx264
 endif
 
 LDFLAGS+= -lgsm -lxmlrpc -lxmlrpc_xmlparse -lxmlrpc_xmltok -lxmlrpc_abyss -lxmlrpc_server -lxmlrpc_util -lnsl -lz -ljpeg -lpng -lresolv -L/lib/i386-linux-gnu -lgcrypt -lpthread -ldl

@@ -11,7 +11,7 @@
 AACEncoder::AACEncoder(const Properties &properties)
 {
 	//NO ctx yet
-	avr = NULL;
+	swr = NULL;
 	ctx = NULL;
 	frame = NULL;
 	///Set type
@@ -61,19 +61,19 @@ AACEncoder::AACEncoder(const Properties &properties)
 	//Get the number of samples
 	numFrameSamples = ctx->frame_size;
 
-	//Create context for converting sampel formats
-	avr = avresample_alloc_context();
+	//Create context for converting sample formats
+	swr = swr_alloc();
 
 	//Set options
-	av_opt_set_int(avr, "in_channel_layout",  AV_CH_LAYOUT_MONO,	0);
-	av_opt_set_int(avr, "out_channel_layout", AV_CH_LAYOUT_MONO,	0);
-	av_opt_set_int(avr, "in_sample_rate",     ctx->sample_rate,     0);
-	av_opt_set_int(avr, "out_sample_rate",    ctx->sample_rate,     0);
-	av_opt_set_int(avr, "in_sample_fmt",      AV_SAMPLE_FMT_S16,   0);
-	av_opt_set_int(avr, "out_sample_fmt",     AV_SAMPLE_FMT_FLTP,    0);
+	av_opt_set_int(swr, "in_channel_layout",  AV_CH_LAYOUT_MONO,  0);
+	av_opt_set_int(swr, "out_channel_layout", AV_CH_LAYOUT_MONO,  0);
+	av_opt_set_int(swr, "in_sample_rate",     ctx->sample_rate,   0);
+	av_opt_set_int(swr, "out_sample_rate",    ctx->sample_rate,   0);
+	av_opt_set_int(swr, "in_sample_fmt",      AV_SAMPLE_FMT_S16,  0);
+	av_opt_set_int(swr, "out_sample_fmt",     AV_SAMPLE_FMT_FLTP, 0);
 
 	//Open context
-	avresample_open(avr);
+	swr_init(swr);
 
 	//Temporal buffer samples
 	samplesNum = numFrameSamples;
@@ -101,8 +101,8 @@ AACEncoder::~AACEncoder()
 		avcodec_close(ctx);
 		av_free(ctx);
 	}
-	if(avr)
-		avresample_free(&avr);
+	if(swr)
+		swr_free(&swr);
 	if (samples)
 		av_freep(&samples);
 	if (frame)
@@ -126,7 +126,7 @@ int AACEncoder::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 		return Error("AAC: sample size %d is not correct. Should be %d\n", inLen, numFrameSamples);
 
 	//Convert
-	int len = avresample_convert(avr, &samples, samplesSize, samplesNum, (BYTE**)&in, inLen*sizeof(SWORD), inLen);
+	int len = swr_convert(swr, &samples, samplesNum, (const BYTE**)&in, inLen);
 
 	//Check 
 	if (avcodec_fill_audio_frame(frame, ctx->channels, ctx->sample_fmt, (BYTE*)samples, samplesSize, 0)<0)
