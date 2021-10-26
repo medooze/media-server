@@ -65,7 +65,7 @@ cd ..
 #
  
 cd /usr/local/src/ffmpeg
-./configure --enable-shared --enable-gpl --enable-nonfree --disable-stripping --enable-zlib --enable-avresample --enable-decoder=png
+./configure --enable-shared --enable-gpl --enable-nonfree --disable-stripping --enable-zlib --enable-decoder=png
 make -j ${PROCS}
 make install
 cd ..
