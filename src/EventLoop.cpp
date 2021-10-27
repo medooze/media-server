@@ -15,7 +15,7 @@
 
 #include "log.h"
 
-const size_t EventLoop::MaxSendingQueueSize = 16*1024;
+const size_t EventLoop::MaxSendingQueueSize = 64*1024;
 
 
 #if __APPLE__
