@@ -61,7 +61,7 @@ public:
 		return cycles;
 	}
 
-	X RecoverCycles(X seqNum)
+	X RecoverCycles(X seqNum) const
 	{
 		//Check secuence wrap
 		if (seqNum > GetSeqNum() && seqNum - GetSeqNum() > std::numeric_limits<N>::max() / 2 && cycles)
@@ -71,7 +71,7 @@ public:
 		return cycles;
 	}
 
-	X Recover(X seqNum)
+	X Recover(X seqNum) const
 	{
 		//Get cycles
 		X cycles = RecoverCycles(seqNum);

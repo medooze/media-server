@@ -57,7 +57,7 @@ public:
 		return true;
 	}
 
-	bool IsPresent(S seq)
+	bool IsPresent(S seq) const
 	{
 		//Get extended sequence number
 		auto ext = extender.Recover(seq);
@@ -75,7 +75,7 @@ public:
 
 	}
 
-	const std::optional<T> Get(S seq)
+	const std::optional<T> Get(S seq) const
 	{
 		//Get extended sequence number
 		auto ext = extender.Recover(seq);
@@ -93,22 +93,22 @@ public:
 
 	}
 
-	S GetLastSeq()
+	S GetLastSeq() const
 	{
 		return static_cast<S>(last);
 	}
 
-	S GetFirstSeq()
+	S GetFirstSeq() const
 	{
 		return static_cast<S>(first);
 	}
 
-	uint64_t GetLength()
+	uint64_t GetLength() const
 	{
 		return first != std::numeric_limits<uint64_t>::max() ? last - first + 1 : 0;
 	}
 private:
-	uint64_t GetPos(uint64_t seq)
+	uint64_t GetPos(uint64_t seq) const
 	{
 		return  (pos  + (seq - first)) % N;
 	}
