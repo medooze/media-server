@@ -973,12 +973,6 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	outgoingBitrate.Update(now/1000,len);
 	rtxBitrate.Update(now/1000,len);
 	
-	//Get time for packets to discard, always have at least 400ms, max 700ms
-	QWORD until = now / 1000 - (400 + fmin(rtt * 2, 300));
-	
-	//Release packets from rtx queue
-	group->ReleasePackets(until);	
-	
 	//Update stats
 	source.Update(now/1000, packet, len);
 	
@@ -2043,18 +2037,6 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 		//Add new stat
 		senderSideBandwidthEstimator.SentPacket(stats);
 	}
-
-	//Get time for packets to discard, always have at least 400ms, max 700ms
-	QWORD until = now/1000 - (400+fmin(rtt*2,300));
-	
-	//Release packets from rtx queue
-	group->ReleasePackets(until);
-	
-	//TODO: check side effects
-	//If packet is an key frame
-	//if (packet->IsKeyFrame())
-		//Do not retransmit packets before this frame
-		//group->ReleasePacketsByTimestamp(packet->GetExtTimestamp());
 	
 	//Check if we need to send SR (1 per second)
 	if (now-source.lastSenderReport>1E6)

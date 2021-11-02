@@ -9,6 +9,7 @@
 #include "rtp/RTPPacket.h"
 #include "rtp/RTPOutgoingSource.h"
 #include "TimeService.h"
+#include "CircularBuffer.h"
 
 struct RTPOutgoingSourceGroup
 {
@@ -36,10 +37,6 @@ public:
 	//RTX packets
 	void AddPacket(const RTPPacket::shared& packet);
 	RTPPacket::shared GetPacket(WORD seq) const;
-	void ReleasePackets(QWORD until);
-	void ReleasePacketsByTimestamp(QWORD until);
-	void ReleaseAllPackets();
-	
 	
 	
 public:	
@@ -49,7 +46,7 @@ public:
 	RTPOutgoingSource rtx;
 private:	
 	TimeService& timeService;
-	std::map<DWORD,RTPPacket::shared> packets;
+	CircularBuffer<RTPPacket::shared, uint16_t, 512> packets;
 	std::set<Listener*> listeners;
 };
 
