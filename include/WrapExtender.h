@@ -70,6 +70,16 @@ public:
 		//From this
 		return cycles;
 	}
+
+	X Recover(X seqNum)
+	{
+		//Get cycles
+		X cycles = RecoverCycles(seqNum);
+		//Get ext seq
+		X extSeqNum = (cycles << (sizeof(N) * 8)) | seqNum;
+		//Get extended seq num
+		return extSeqNum;
+	}
 	
 	X GetExtSeqNum() const	{ return extSeqNum;	}
 	N GetSeqNum() const	{ return extSeqNum;	}

@@ -9,6 +9,7 @@
 #include "MovingCounter.h"
 #include "rtp/PacketStats.h"
 #include "remoterateestimator.h"
+#include "CircularBuffer.h"
 #include "WrapExtender.h"
 
 class SendSideBandwidthEstimation
@@ -42,7 +43,17 @@ private:
 	void SetState(ChangeState state);
 	void EstimateBandwidthRate(uint64_t when);
 private:
-	std::map<DWORD,PacketStats::shared> transportWideSentPacketsStats;
+	class Stats
+	{
+	public:
+		uint64_t time;
+		uint32_t size;
+		bool  mark = false;
+		bool  rtx = false;
+		bool  probing = false;
+	};
+private:
+	CircularBuffer<Stats, uint32_t, 32768> transportWideSentPacketsStats;
 	uint64_t bandwidthEstimation = 0;
 	uint64_t targetBitrate = 0;
 	uint64_t availableRate = 0;

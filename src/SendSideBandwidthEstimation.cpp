@@ -71,15 +71,7 @@ void SendSideBandwidthEstimation::SentPacket(const PacketStats::shared& stat)
 	}
 	
 	//Add to history map
-	transportWideSentPacketsStats[stat->transportWideSeqNum] = stat;
-	
-	//Protect against missfing feedbacks, remove too old lost packets
-	auto it = transportWideSentPacketsStats.begin();
-	//If there are no intervals for them
-	while(it!=transportWideSentPacketsStats.end() && it->second->time+rtt+kMonitorTimeout<stat->time)
-		//Erase it and move iterator
-		it = transportWideSentPacketsStats.erase(it);
-
+	transportWideSentPacketsStats.Set(stat->transportWideSeqNum, SendSideBandwidthEstimation::Stats{stat->time, stat->size, stat->mark, stat->rtx, stat->probing});
 }
 
 void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const std::map<uint32_t,uint64_t>& packets, uint64_t when)
@@ -107,14 +99,12 @@ void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const st
 		return;
 	
 	//Get last packets stats
-	auto last = transportWideSentPacketsStats.find(packets.rbegin()->first);
+	auto last = transportWideSentPacketsStats.Get(packets.rbegin()->first);
 	//We can use the difference between the last send packet time and the reception of the fb packet as proxy of the rtt min 
-	if (last!=transportWideSentPacketsStats.end())
+	if (last.has_value())
 	{
-		//Get stats
-		const auto& stat = last->second;
 		//Get sent time
-		const auto sentTime = stat->time;
+		const auto sentTime = last->time;
 
 		//Double check
 		if (when>sentTime)
@@ -132,14 +122,13 @@ void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const st
 		//Get feedback data
 		auto transportSeqNum	= feedback.first;
 		auto receivedTime	= feedback.second; 
+
+		//Get packet
+		auto stat = transportWideSentPacketsStats.Get(transportSeqNum);
 		
-		//Get packets stats
-		auto it = transportWideSentPacketsStats.find(transportSeqNum);
 		//If found
-		if (it!=transportWideSentPacketsStats.end())
+		if (stat.has_value())
 		{
-			//Get stats
-			const auto& stat = it->second;
 			//Get sent time
 			const auto sentTime = stat->time;
 			
@@ -204,9 +193,6 @@ void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const st
 				prevSent = sent;
 				prevRecv = recv;
 			}	
-
-			//Erase it
-			transportWideSentPacketsStats.erase(it);
 		} else {
 			//Log
 			Warning("-SendSideBandwidthEstimation::ReceivedFeedback() | Packet not found [transportSeqNum:%u,receivedTime:%llu]\n",transportSeqNum,receivedTime);
