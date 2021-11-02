@@ -4,6 +4,7 @@
 #include <set>
 #include <string>
 #include <list>
+#include <optional>
 
 #include "config.h"
 #include "rtp/RTPPacket.h"
@@ -32,6 +33,8 @@ public:
 	void Bye(DWORD ssrc);
 	
 	void SetRTXEnabled(bool enabled);
+	void SetMaxWaitTime(DWORD maxWaitingTime);
+	void ResetMaxWaitTime();
 	void ResetPackets();
 	void Update();
 	void SetRTT(DWORD rtt, QWORD now);
@@ -80,6 +83,7 @@ private:
 	WORD  rttrtxSeq	 = 0 ;
 	QWORD rttrtxTime = 0;
 	bool remb	 = false;
+	std::optional<DWORD> maxWaitingTime;
 };
 
 #endif /* RTPINCOMINGSOURCEGROUP_H */

@@ -161,18 +161,41 @@ void RTPIncomingSourceGroup::Update()
 		rtx.Update(now.count());
 	});
 }
+void RTPIncomingSourceGroup::SetMaxWaitTime(DWORD maxWaitingTime)
+{
+	//Update it sync
+	timeService.Sync([=](std::chrono::milliseconds now) {
+		//Set it
+		packets.SetMaxWaitTime(maxWaitingTime);
+		//Store overriden value
+		this->maxWaitingTime = maxWaitingTime;
+	});
+}
+
+void RTPIncomingSourceGroup::ResetMaxWaitTime()
+{
+	//Update it sync
+	timeService.Sync([=](std::chrono::milliseconds now) {
+		//Remove override
+		maxWaitingTime.reset();
+	});
+}
 
 void RTPIncomingSourceGroup::SetRTT(DWORD rtt, QWORD now)
 {
 	//Store rtt
 	this->rtt = rtt;
-	//if se suport rtx
-	if (isRTXEnabled)
-		//Set max packet wait time
-		packets.SetMaxWaitTime(fmin(750,fmax(200,rtt)*3));
-	else
-		//No wait
-		packets.SetMaxWaitTime(0);
+	//If the max wait time is not overriden
+	if (!maxWaitingTime.has_value())
+	{
+		//if se suport rtx
+		if (isRTXEnabled)
+			//Set max packet wait time
+			packets.SetMaxWaitTime(fmin(750,fmax(200,rtt)*3));
+		else
+			//No wait
+			packets.SetMaxWaitTime(0);
+	}
 	//Dispatch packets with new timer now
 	if (dispatchTimer) dispatchTimer->Again(0ms);
 	//If using remote rate estimator
