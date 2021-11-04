@@ -3,7 +3,6 @@
 
 #include <queue>
 #include <optional>
-#include "log.h"
 
 // Implements moving max: can add samples to it and calculate maximum over some
 // fixed moving window.

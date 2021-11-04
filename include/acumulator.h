@@ -8,27 +8,29 @@
 #ifndef ACUMULATOR_H
 #define	ACUMULATOR_H
 
-#include "config.h"
-#include <list>
+#include <stdint.h>
+
+#include "CircularQueue.h"
 
 class Acumulator
 {
 public:
-	Acumulator(DWORD window, DWORD base = 1000) :
+	Acumulator(uint32_t window, uint32_t base = 1000, uint32_t initialSize = 0) :
+		values(initialSize),
 		window(window),
 		base(base)
 	{
 		Reset(0);
 	}
 
-	QWORD GetAcumulated()		const { return acumulated;			}
-	QWORD GetDiff()			const { return last-first;			}
-	QWORD GetInstant()		const { return instant;				}
-	QWORD GetMin()			const { return min;				}
-	QWORD GetMax()			const { return max;				}
-	DWORD GetWindow()		const { return window;				}
+	uint64_t GetAcumulated()	const { return acumulated;			}
+	uint64_t GetDiff()		const { return last-first;			}
+	uint64_t GetInstant()		const { return instant;				}
+	uint64_t GetMin()		const { return min;				}
+	uint64_t GetMax()		const { return max;				}
+	uint32_t GetWindow()		const { return window;				}
 	bool  IsInWindow()		const { return inWindow;			}
-	bool  IsInMinMaxWindow()	const { return inWindow && min!=(QWORD)-1;	}
+	bool  IsInMinMaxWindow()	const { return inWindow && min!=(uint64_t)-1;	}
 	long double GetInstantMedia()	const { return GetCount() ? GetInstant()/GetCount() : 0;	}
 	long double GetInstantAvg()	const { return GetInstant()*base/GetWindow();			}
 	long double GetAverage()	const { return GetDiff() ? GetAcumulated()*base/GetDiff() : 0;	}
@@ -38,15 +40,15 @@ public:
 	void ResetMinMax()
 	{
 		max = 0;
-		min = std::numeric_limits<QWORD>::max();
+		min = std::numeric_limits<uint64_t>::max();
 	}
 
-	void Reset(QWORD now)
+	void Reset(uint64_t now)
 	{
 		instant = 0;
 		acumulated = 0;
 		max = 0;
-		min = std::numeric_limits<QWORD>::max();
+		min = std::numeric_limits<uint64_t>::max();
 		first = now;
 		last = 0;
 		inWindow = false;
@@ -54,7 +56,7 @@ public:
 		count = 0;
 	}
 
-	QWORD Update(QWORD now)
+	uint64_t Update(uint64_t now)
 	{
 		//Erase old values
 		while (!values.empty() && values.front().first + window <= now)
@@ -79,7 +81,7 @@ public:
 		return instant;
 	}
 	
-	QWORD Update(QWORD now, DWORD val)
+	uint64_t Update(uint64_t now, uint32_t val)
 	{
 		//Don't allow time to go back
 		if (now<last)
@@ -120,39 +122,46 @@ public:
 		return instant;
 	}
 	
-	DWORD GetMinValueInWindow() const
+	uint32_t GetMinValueInWindow() const
 	{
-		DWORD minValue = std::numeric_limits<DWORD>::max();
+		uint32_t minValue = std::numeric_limits<uint32_t>::max();
 		//For eacn entry
-		for (const auto& value: values)
+		for (size_t i = 0; i < values.length(); ++i)
+		{
+			const auto& value = values.at(i);
 			//If it is less
 			if (value.second<minValue)
 				//Store it
 				minValue = value.second;
+		}
 		//Return minimum value in window
 		return minValue;
 	}
 	
-	DWORD GetMaxValueInWindow() const
+	uint32_t GetMaxValueInWindow() const
 	{
-		DWORD maxValue = 0;
+		uint32_t maxValue = 0;
 		//For eacn entry
-		for (const auto& value: values)
+		for (size_t i = 0; i < values.length(); ++i)
+		{
+			const auto& value = values.at(i);
 			//If it is more
 			if (value.second>maxValue)
 				//Store it
 				maxValue = value.second;
+		}
 		//Return maxi value in window
 		return maxValue;
 	}
 	
-	std::pair<DWORD,DWORD> GetMinMaxValueInWindow() const
+	std::pair<uint32_t,uint32_t> GetMinMaxValueInWindow() const
 	{
-		DWORD minValue = std::numeric_limits<DWORD>::max();
-		DWORD maxValue = 0;
+		uint32_t minValue = std::numeric_limits<uint32_t>::max();
+		uint32_t maxValue = 0;
 		//For eacn entry
-		for (const auto& value : values)
+		for (size_t i = 0; i < values.length(); ++i)
 		{
+			const auto& value = values.at(i);
 			//If it is more
 			if (value.second > maxValue)
 				//Store it
@@ -166,27 +175,27 @@ public:
 		return {minValue,maxValue};
 	}
 
-	DWORD GetCount() const
+	uint32_t GetCount() const
 	{
 		return count;
 	}
 	
-	DWORD IsEmpty() const
+	uint32_t IsEmpty() const
 	{
 		return values.empty();
 	}
 private:
-	std::list<std::pair<QWORD,DWORD>> values;
-	DWORD count;
-	DWORD window;
-	DWORD base;
+	CircularQueue<std::pair<uint64_t,uint32_t>> values;
+	uint32_t count;
+	uint32_t window;
+	uint32_t base;
 	bool  inWindow;
-	QWORD acumulated;
-	QWORD instant;
-	QWORD max;
-	QWORD min;
-	QWORD first;
-	QWORD last;
+	uint64_t acumulated;
+	uint64_t instant;
+	uint64_t max;
+	uint64_t min;
+	uint64_t first;
+	uint64_t last;
 };
 #endif	/* ACUMULATOR_H */
 
