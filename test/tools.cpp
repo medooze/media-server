@@ -3,6 +3,7 @@
 #include "acumulator.h"
 #include "MovingCounter.h"
 #include "CircularBuffer.h"
+#include <algorithm>
 
 class ToolsPlan : public TestPlan
 {
@@ -280,22 +281,53 @@ public:
 	{
 
 		Log("-testAccumulator\n");
-
-		Acumulator acu(10);
-		MovingMinCounter<DWORD> min(10);
-		MovingMaxCounter<DWORD> max(10);
-
-
-		for (uint64_t i = 10; i < 1E6; i++)
 		{
-			DWORD val = rand();
-			acu.Update(i, val);
-			min.Add(i, val);
-			max.Add(i, val);
-			assert(acu.GetMaxValueInWindow() == *max.GetMax());
-			assert(acu.GetMinValueInWindow() == *min.GetMin());
+			Acumulator acu(10);
+			MovingMinCounter<DWORD> min(10);
+			MovingMaxCounter<DWORD> max(10);
 
 
+			for (uint64_t i = 10; i < 1E6; i++)
+			{
+				DWORD val = rand();
+				acu.Update(i, val);
+				min.Add(i, val);
+				max.Add(i, val);
+				assert(acu.GetMaxValueInWindow() == *max.GetMax());
+				assert(acu.GetMinValueInWindow() == *min.GetMin());
+
+
+			}
+		}
+
+		{
+			std::vector<std::pair<uint64_t,DWORD>> values;
+
+			Acumulator acu(1000);
+			MovingMinCounter<DWORD> min(1000);
+			MovingMaxCounter<DWORD> max(1000);
+			uint64_t ini = 0;
+			for (uint64_t i = 0; i < 1E6; i++)
+			{
+				DWORD diff = 1000 * ((double)rand() / (RAND_MAX));
+				DWORD val = 1000 * ((double)rand() / (RAND_MAX));
+				ini += diff;
+				acu.Update(ini, val);
+				values.emplace_back(ini,val);
+				values.erase(std::remove_if(values.begin(), values.end(), [=](auto& pair) { return pair.first + 1000 <= ini; }), values.end());
+				auto instant = 0;
+				for (const auto& value : values)
+				{
+					//Log("%d %d\n", value.first, value.second);
+					instant += value.second;
+				}
+				min.Add(ini, val);
+				max.Add(ini, val);
+				//Log("time:%d val:%d min:%d max:%d instant:%d acu:[%d,%d,%d] \n", ini, val, *min.GetMin(), *max.GetMax(), instant, acu.GetMinValueInWindow(), acu.GetMaxValueInWindow(), acu.GetInstant());
+				assert(acu.GetInstant() == instant);
+				assert(acu.GetMaxValueInWindow() == *max.GetMax());
+				assert(acu.GetMinValueInWindow() == *min.GetMin());
+			}
 		}
 	}
 
@@ -310,7 +342,7 @@ public:
 			assert(!buffer.IsPresent(0));
 			for (uint16_t i = 0; i < 399; ++i)
 			{
-				buffer.Set(i, i);
+				assert(buffer.Set(i, i));
 				//Log("%i %i %i %i %d\n", i, buffer.Get(i).value(), buffer.GetFirstSeq(), buffer.GetLastSeq(), buffer.GetLength());
 				assert(buffer.IsPresent(i)); assert(buffer.Get(i).value() == i); assert(buffer.GetLastSeq() == i % 256);
 			}
@@ -325,7 +357,7 @@ public:
 			assert(!buffer.IsPresent(0));
 			for (uint16_t i = 0; i < 399; ++i)
 			{
-				buffer.Set(i * 2, i);
+				assert(buffer.Set(i * 2, i));
 				//Log("%i %i %i %i %d\n", i, buffer.Get(i * 2).value(), buffer.GetFirstSeq(), buffer.GetLastSeq(), buffer.GetLength());
 				assert(buffer.IsPresent(i * 2)); assert(buffer.Get(i * 2).value() == i); assert(buffer.GetLastSeq() == (i * 2) % 256);
 				if (i) assert(!buffer.IsPresent(i * 2 - 1));
@@ -342,13 +374,36 @@ public:
 			assert(!buffer.IsPresent(0));
 			for (uint16_t i = 0; i < 399; ++i)
 			{
-				buffer.Set(i * 20, i);
+				assert(buffer.Set(i * 20, i));
 				//Log("%i %i %i %i %d\n", i, buffer.Get(i * 20).value(), buffer.GetFirstSeq(), buffer.GetLastSeq(), buffer.GetLength());
 				assert(buffer.IsPresent(i * 20)); assert(buffer.Get(i * 20).value() == i); assert(buffer.GetLastSeq() == (i * 20) % 256);
 				if (i) assert(!buffer.IsPresent(i * 20 - 1));
 			}
 
 			assert(!buffer.Set(buffer.GetLastSeq() - 11, 0));
+		}
+
+		{
+			Log("-testCircularBuffer wrap\n");
+
+			CircularBuffer<uint32_t, uint32_t, 32768> buffer;
+
+			assert(buffer.Set(-10, 1));
+			Log("%i %i %d\n", buffer.GetFirstSeq(), buffer.GetLastSeq(), buffer.GetLength());
+
+			assert(buffer.IsPresent(-10));
+			assert(buffer.Get(-10)==1);
+			assert(buffer.GetFirstSeq() == -10);
+			assert(buffer.GetLastSeq() == -10);
+
+
+			assert(buffer.Set(1, 2));
+			Log("%i %i %d\n", buffer.GetFirstSeq(), buffer.GetLastSeq(), buffer.GetLength());
+			assert(buffer.IsPresent(1));
+			assert(buffer.Get(1) == 2);
+			assert(buffer.GetFirstSeq() == -10);
+			assert(buffer.GetLastSeq() == 1);
+
 		}
 	}
 
