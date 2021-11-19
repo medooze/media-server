@@ -842,14 +842,14 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 		//Error
 		return (void)Debug("-DTLSICETransport::ReSendPacket() | Send SRTPSession is not setup yet\n");
 	
-	//Log
-	UltraDebug("-DTLSICETransport::ReSendPacket() | resending [seq:%d,ssrc:%u,rtx:%u]\n",seq,group->media.ssrc,group->rtx.ssrc);
-	
 	//Get current time
 	auto now = getTime();
 	
 	//Update rtx bitrate
-	rtxBitrate.Update(now/1000);
+	auto instant = rtxBitrate.Update(now/1000) * 8;
+
+	//Log
+	UltraDebug("-DTLSICETransport::ReSendPacket() | resending [seq:%d,ssrc:%u,rtx:%u,instant:%llu, isWindow:%d, count:%d, empty:%d]\n", seq, group->media.ssrc, group->rtx.ssrc, instant, rtxBitrate.IsInWindow(), rtxBitrate.GetCount(), rtxBitrate.IsEmpty());
 
 	//if sse is enabled
 	if (senderSideEstimationEnabled && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC) != RTPMap::NotFound)
