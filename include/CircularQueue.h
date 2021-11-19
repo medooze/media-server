@@ -64,9 +64,6 @@ public:
 		return queue[(head + pos) % queue.size()];
 	}
 
-	
-
-
 	bool pop_front()
 	{
 		// if buffer is empty, throw an error
@@ -116,7 +113,7 @@ public:
 				//If we have more on the tail than the new allocated space
 				if (tail>=diff)
 					//Move rest of tail to the beginning 
-					std::copy_backward(m, t, queue.begin() + tail - diff);
+					std::copy(m, t, queue.begin());
 			} 
 			//Update tail position
 			tail = (head + len) % queue.size();
@@ -146,7 +143,6 @@ public:
 
 	bool full() const
 	{
-		return queue.size() == length();
 		return queue.size() == length();
 	}
 
