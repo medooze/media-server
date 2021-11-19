@@ -53,7 +53,7 @@ private:
 		bool  probing = false;
 	};
 private:
-	CircularBuffer<Stats, uint32_t, 32768> transportWideSentPacketsStats;
+	CircularBuffer<Stats, uint16_t, 32768> transportWideSentPacketsStats;
 	uint64_t bandwidthEstimation = 0;
 	uint64_t targetBitrate = 0;
 	uint64_t availableRate = 0;
