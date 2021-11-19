@@ -9,7 +9,6 @@
 #define	ACUMULATOR_H
 
 #include <stdint.h>
-
 #include "CircularQueue.h"
 
 class Acumulator
@@ -61,8 +60,13 @@ public:
 		//Erase old values
 		while (!values.empty() && values.front().first + window <= now)
 		{
-			//Remove from instant value
-			instant -= values.front().second;
+			//Ensure we don't overflow (should not happen)
+			if (instant >= values.front().second)
+				//Remove from instant value
+				instant -= values.front().second;
+			else 
+				//Error
+				instant = 0; //assert(false);
 			//Delete value
 			values.pop_front();
 			count--;
@@ -96,8 +100,13 @@ public:
 		//Erase old values
 		while(!values.empty() && values.front().first+window<=now)
 		{
-			//Remove from instant value
-			instant -= values.front().second;
+			//Ensure we don't overflow (should not happen)
+			if (instant >= values.front().second)
+				//Remove from instant value
+				instant -= values.front().second;
+			else
+				//Error
+				instant = 0; //assert(false);
 			//Delete value
 			values.pop_front();
 			count--;
