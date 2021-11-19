@@ -71,7 +71,8 @@ void SendSideBandwidthEstimation::SentPacket(const PacketStats::shared& stat)
 	}
 	
 	//Add to history map
-	transportWideSentPacketsStats.Set(stat->transportWideSeqNum, SendSideBandwidthEstimation::Stats{stat->time, stat->size, stat->mark, stat->rtx, stat->probing});
+	if (!transportWideSentPacketsStats.Set(stat->transportWideSeqNum, SendSideBandwidthEstimation::Stats{stat->time, stat->size, stat->mark, stat->rtx, stat->probing}))
+		Warning("-SendSideBandwidthEstimation::SentPacket() Could not store stats for packet %u\n", stat->transportWideSeqNum);
 }
 
 void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const std::map<uint32_t,uint64_t>& packets, uint64_t when)
@@ -195,7 +196,7 @@ void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const st
 			}	
 		} else {
 			//Log
-			Warning("-SendSideBandwidthEstimation::ReceivedFeedback() | Packet not found [transportSeqNum:%u,receivedTime:%llu]\n",transportSeqNum,receivedTime);
+			Warning("-SendSideBandwidthEstimation::ReceivedFeedback() | Packet not found [transportSeqNum:%u,receivedTime:%llu,first:%llu,last:%llu]\n", transportSeqNum, receivedTime, transportWideSentPacketsStats.GetFirstSeq(), transportWideSentPacketsStats.GetLastSeq());
 		}
 	}
 	
