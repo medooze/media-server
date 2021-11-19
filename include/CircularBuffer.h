@@ -3,7 +3,6 @@
 
 #include <optional>
 #include "WrapExtender.h"
-#include "log.h"
 
 template <typename T, typename S, uint16_t N>
 class CircularBuffer
@@ -17,15 +16,19 @@ public:
 
 		//Get extended sequence number
 		auto ext = extender.Recover(seq);
-		
+
 		//If no first
 		if (first == std::numeric_limits<uint64_t>::max())
+		{
 			//Set it
 			first = ext;
-		//Ensure that we don't go backward
-		else if (ext<first)
+			last = ext;
+		//Ensure that we don't go backwards
+		} else if (ext<first) {
+			
 			//Drop
 			return false;
+		}
 
 		//Calculate position
 		auto current = GetPos(ext);
@@ -34,12 +37,13 @@ public:
 		if (ext > last)
 		{
 			//Fill the empty spaces
-			for (auto i = last+1; i< ext; ++i)
+			for (auto i = last+1; i<ext && i<last+N+1; ++i)
 				//Empty it
 				ringbuffer[GetPos(i)].reset();
 			//Store last
 			last = ext;
 		}
+
 		//Store item
 		ringbuffer[current] = value;
 
