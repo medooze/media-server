@@ -43,10 +43,10 @@ public:
 	void AddStream(uint32_t ssrc);
 	void RemoveStream(uint32_t ssrc);
 	
-	size_t ProtectRTP(const uint8_t* data, size_t size);
-	size_t ProtectRTCP(const uint8_t* data, size_t size);
-	size_t UnprotectRTP(const uint8_t* data, size_t size);
-	size_t UnprotectRTCP(const uint8_t* data, size_t size);
+	size_t ProtectRTP(uint8_t* data, size_t size);
+	size_t ProtectRTCP(uint8_t* data, size_t size);
+	size_t UnprotectRTP(uint8_t* data, size_t size);
+	size_t UnprotectRTCP(uint8_t* data, size_t size);
 	
 	bool IsSetup() const { return srtp; }
 	const char* GetLastError() const

@@ -115,7 +115,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 			return Warning("-DTLSICETransport::onData() |  Recv SRTPSession is not setup\n");
 
 		//unprotect
-		size_t len = recv.UnprotectRTCP(data,size);
+		size_t len = recv.UnprotectRTCP((BYTE*)data,size);
 		
 		//Check size
 		if (!len)
@@ -153,7 +153,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		return Warning("-DTLSICETransport::onData() | Recv SRTPSession is not setup\n");
 	
 	//unprotect
-	size_t len = recv.UnprotectRTP(data,size);
+	size_t len = recv.UnprotectRTP((BYTE*)data,size);
 	//Check status
 	if (!len)
 		//Error

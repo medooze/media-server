@@ -145,33 +145,33 @@ void SRTPSession::RemoveStream(uint32_t ssrc)
 	Log("-SRTPSession::RemoveStream() | [ssrc:%u,%s]\n",ssrc,GetLastError());
 }
 		
-size_t SRTPSession::ProtectRTP(const uint8_t* data, size_t size)
+size_t SRTPSession::ProtectRTP(uint8_t* data, size_t size)
 {
-	size_t len = size;
-	err = (Status)srtp_protect(srtp,(uint8_t*)data,(int*)&len);
-	return err==Status::OK ? len : 0;
+	int len = size;
+	err = (Status)srtp_protect(srtp,(uint8_t*)data,&len);
+	return err == Status::OK && len > 0 ? static_cast<size_t>(len) : 0;
 }
 
-size_t SRTPSession::ProtectRTCP(const uint8_t* data, size_t size)
+size_t SRTPSession::ProtectRTCP(uint8_t* data, size_t size)
 {
-	size_t len = size;
-	err = (Status)srtp_protect_rtcp(srtp,(uint8_t*)data,(int*)&len);
-	return err==Status::OK ? len : 0;
+	int len = size;
+	err = (Status)srtp_protect_rtcp(srtp,(uint8_t*)data,&len);
+	return err==Status::OK && len>0 ? static_cast<size_t>(len) : 0;
 }
 
-size_t SRTPSession::UnprotectRTP(const uint8_t* data, size_t size)
+size_t SRTPSession::UnprotectRTP(uint8_t* data, size_t size)
 {
-	size_t len = size;
-	err = (Status)srtp_unprotect(srtp,(uint8_t*)data,(int*)&len);
-	return err==Status::OK ? len : 0;
+	int len = size;
+	err = (Status)srtp_unprotect(srtp,(uint8_t*)data,&len);
+	return err==Status::OK && len>0 ? len : 0;
 }
 
 
-size_t SRTPSession::UnprotectRTCP(const uint8_t* data, size_t size)
+size_t SRTPSession::UnprotectRTCP(uint8_t* data, size_t size)
 {
-	size_t len = size;
-	err = (Status)srtp_unprotect_rtcp(srtp,(uint8_t*)data,(int*)&len);
-	return err==Status::OK ? len : 0;
+	int len = size;
+	err = (Status)srtp_unprotect_rtcp(srtp,(uint8_t*)data,&len);
+	return err == Status::OK && len > 0 ? static_cast<size_t>(len) : 0;
 }
 
 
