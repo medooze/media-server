@@ -99,6 +99,8 @@ public:
 	void EnableSenderSideEstimation(bool enabled)	{ this->senderSideEstimationEnabled = enabled;	}
 	void SetSenderSideEstimatorListener(RemoteRateEstimator::Listener* listener) { senderSideBandwidthEstimator.SetListener(listener); }
 
+	uint32_t GetAvailableOutgoingBitrate() const	{ return senderSideBandwidthEstimator.GetAvailableBitrate(); }
+
 	void SetRemoteOverrideBWE(bool overrideBew);
 	void SetRemoteOverrideBitrate(DWORD bitrate);
 	void DisableREMB(bool disabled);
