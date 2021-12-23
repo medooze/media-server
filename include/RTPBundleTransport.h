@@ -36,6 +36,8 @@ public:
 		size_t iceRequestsReceived	= 0;
 		size_t iceResponsesSent		= 0;
 		size_t iceResponsesReceived	= 0;
+		uint64_t lastKeepAliveRequestSent	= 0;
+		uint64_t lastKeepAliveRequestReceived	= 0;
 		
 	};
 public:

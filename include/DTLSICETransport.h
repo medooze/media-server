@@ -105,6 +105,7 @@ public:
 	void SetRemoteOverrideBitrate(DWORD bitrate);
 	void DisableREMB(bool disabled);
 	
+	ICERemoteCandidate* GetActiveRemoteCandidate() const { return active;	};
 	const char* GetRemoteUsername() const { return iceRemoteUsername;	};
 	const char* GetRemotePwd()	const { return iceRemotePwd;		};
 	const char* GetLocalUsername()	const { return iceLocalUsername;	};

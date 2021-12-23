@@ -551,6 +551,8 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 			//Get ts and id
 			uint32_t id = get4(stun->GetTransactionId(),0);
 			uint64_t ts = get8(stun->GetTransactionId(),4);
+
+			//UltraDebug("-RTPBundleTransport::OnRead() | Binding response [id:%u,ts:%llu]\n", id, ts);
 			
 			//Find transaction
 			auto transactionIterator = transactions.find({ts,id});
@@ -622,6 +624,7 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 			
 			//Inc stats
 			connection->iceResponsesReceived++;
+			connection->lastKeepAliveRequestReceived = getTime();
 		}
 
 		//Exit
@@ -694,14 +697,24 @@ int RTPBundleTransport::AddRemoteCandidate(const std::string& username,const cha
 
 void RTPBundleTransport::SendBindingRequest(Connection* connection,ICERemoteCandidate* candidate)
 {
-	UltraDebug("-RTPBundleTransport::SendBindingRequest() [remote:%s]\n",candidate->GetRemoteAddress().c_str());
-	
+	//Double check
+	if (!connection || !candidate)
+	{
+		//Exit
+		Error("-RTPBundleTransport::SendBindingRequest() | Null connection or candidate, skipping\n");
+		//Done
+		return;
+	}
+
 	//Get transport
 	DTLSICETransport* transport = connection->transport;
 	
 	//Create transaction
 	uint32_t id	= maxTransId++;
 	uint64_t ts	= getTime();
+
+	//UltraDebug("-RTPBundleTransport::SendBindingRequest() [remote:%s,id:%u,ts:%llu]\n", candidate->GetRemoteAddress().c_str(), id, ts);
+
 	//Create trans id
 	BYTE transId[12];
 	//Set data
@@ -737,6 +750,7 @@ void RTPBundleTransport::SendBindingRequest(Connection* connection,ICERemoteCand
 
 	//Inc stats
 	connection->iceRequestsSent++;
+	connection->lastKeepAliveRequestSent = ts;
 	
 	//Check if we need to start timer
 	if (iceTimer && !iceTimer->IsScheduled())
@@ -786,5 +800,27 @@ void RTPBundleTransport::onTimer(std::chrono::milliseconds now)
 		
 		//Check again
 		SendBindingRequest(connection,candidate);
+	}
+
+
+	//Keepalive all the connections 
+	for (auto& [username, connection] : connections)
+	{
+		//If it is disabled
+		if (connection->disableSTUNKeepAlive)
+			//Skip
+			continue;
+
+		//If there is an outgoing transaction already
+		if (connection->lastKeepAliveRequestSent>connection->lastKeepAliveRequestReceived)
+			//Skip
+			continue;
+		//Get active candidate
+		auto active = connection->transport->GetActiveRemoteCandidate();
+
+		//If we have an active remote candidate
+		if (active)
+			//Keep alive
+			SendBindingRequest(connection, active);
 	}
 }

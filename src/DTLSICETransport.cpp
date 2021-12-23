@@ -2500,6 +2500,8 @@ void DTLSICETransport::Start()
 	dcOptions.remotePort = 5000;
 	//Run ice timeout timer
 	iceTimeoutTimer = timeService.CreateTimer(IceTimeout,[this](...){
+		//Log
+		Debug("-DTLSICETransport::onIceTimeoutTimer() ICE timeout\n");
 		//If got listener
 		if (listener)
 			//Fire timeout 
@@ -2694,14 +2696,14 @@ void DTLSICETransport::SetState(DTLSState state)
 void DTLSICETransport::SetRemoteOverrideBWE(bool overrideBWE)
 {
 	//Log
-	Debug(">DTLSICETransport::SetRemoteOverrideBWE() [override:%d]\n", overrideBWE);
+	Debug("-DTLSICETransport::SetRemoteOverrideBWE() [override:%d]\n", overrideBWE);
 	this->overrideBWE = overrideBWE; 
 }
 
 void DTLSICETransport::SetRemoteOverrideBitrate(DWORD bitrate) 
 { 
 	//Log
-	Debug(">DTLSICETransport::SetRemoteOverrideBitrate() [bitrate:%d]\n", bitrate);
+	Debug("-DTLSICETransport::SetRemoteOverrideBitrate() [bitrate:%d]\n", bitrate);
 	this->remoteOverrideBitrate = bitrate; 
 }
 
@@ -2709,6 +2711,6 @@ void DTLSICETransport::SetRemoteOverrideBitrate(DWORD bitrate)
 void DTLSICETransport::DisableREMB(bool disabled)
 {
 	//Log
-	Debug(">DTLSICETransport::DisableREMB() [disabled:%d]\n", disabled);
+	Debug("-DTLSICETransport::DisableREMB() [disabled:%d]\n", disabled);
 	this->disableREMB = disabled;
 }
