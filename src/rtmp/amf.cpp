@@ -1379,7 +1379,7 @@ DWORD AMFStrictArray::Parse(BYTE *data,DWORD size)
 	BYTE *buffer = data;
 	DWORD bufferSize = size;
 
-	while (bufferSize)
+	while (bufferSize && !IsParsed())
 	{
 		//Check if we are processing the size of the array
 		if (!num.IsParsed())
