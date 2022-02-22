@@ -78,7 +78,7 @@ public:
 	void Run(const std::chrono::milliseconds &duration = std::chrono::milliseconds::max());
 	
 	bool SetAffinity(int cpu);
-	
+	bool SetPriority(int priority);
 	bool IsRunning() const { return running; }
 	
 protected:
