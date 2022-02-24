@@ -44,6 +44,7 @@ public:
 	MediaFrame::Type type;
 	RTPOutgoingSource media;
 	RTPOutgoingSource rtx;
+	QWORD lastUpdated = 0;
 private:	
 	TimeService& timeService;
 	CircularBuffer<RTPPacket::shared, uint16_t, 512> packets;

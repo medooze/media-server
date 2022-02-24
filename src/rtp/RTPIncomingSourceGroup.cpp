@@ -120,6 +120,13 @@ int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet, DWORD siz
 		//Reschedule timer
 		dispatchTimer->Again(std::chrono::milliseconds(next));
 	
+	//Set last updated time
+	lastUpdated = now;
+	//Update media
+	media.Update(now);
+	//Update rtx
+	rtx.Update(now);
+
 	//Return lost packets
 	return lost;
 }
@@ -155,6 +162,8 @@ void RTPIncomingSourceGroup::Update()
 {
 	//Update it sync
 	timeService.Sync([=](std::chrono::milliseconds now) {
+		//Set last updated time
+		lastUpdated = now.count();
 		//Update
 		media.Update(now.count());
 		//Update

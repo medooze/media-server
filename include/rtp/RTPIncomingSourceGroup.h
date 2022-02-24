@@ -68,6 +68,8 @@ public:
 	DWORD maxWaitedTime = 0;
 	long double avgWaitedTime = 0;
 	
+	QWORD lastUpdated = 0;
+
 	//TODO: FIx
 	RemoteRateEstimator remoteRateEstimator;
 private:
@@ -84,6 +86,7 @@ private:
 	QWORD rttrtxTime = 0;
 	bool remb	 = false;
 	std::optional<DWORD> maxWaitingTime;
+	
 };
 
 #endif /* RTPINCOMINGSOURCEGROUP_H */

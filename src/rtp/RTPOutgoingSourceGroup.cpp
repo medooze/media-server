@@ -104,6 +104,8 @@ void RTPOutgoingSourceGroup::Update()
 {
 	//Update it sync
 	timeService.Sync([=](auto now) {
+		//Set last updated time
+		lastUpdated = now.count();
 		//Update
 		media.Update(now.count());
 		//Update
@@ -115,6 +117,8 @@ void RTPOutgoingSourceGroup::Update(QWORD now)
 {
 	//Update it sync
 	timeService.Sync([=](auto) {
+		//Set last updated time
+		lastUpdated = now;
 		//Update
 		media.Update(now);
 		//Update
