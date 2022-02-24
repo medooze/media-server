@@ -117,9 +117,9 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	}
 	
 	//No chain or decode target yet
-	auto topChain		 = NoChain;
+	[[maybe_unused]] auto topChain		 = NoChain;
+	[[maybe_unused]] auto currentChain	 = NoChain;
 	auto topLayer		 = LayerInfo::NoLayer;
-	auto currentChain	 = NoChain;
 	auto currentLayer	 = LayerInfo::NoLayer;
 	auto currentDecodeTarget = NoDecodeTarget;
 

@@ -155,7 +155,7 @@ bool H264LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 					BYTE nalType = payload[0] & 0x1f;
 
 					//Get nal data
-					const BYTE *nalData = payload+1;
+					[[maybe_unused]] const BYTE *nalData = payload+1;
 
 					//Check if IDR SPS or PPS
 					switch (nalType)
@@ -209,7 +209,7 @@ bool H264LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 				bool S = (payload[1] & 0x80) == 0x80;
 
 				/* strip off FU indicator and FU header bytes */
-				BYTE nalSize = payloadLen-2;
+				[[maybe_unused]] BYTE nalSize = payloadLen-2;
 
 				if (S)
 				{
@@ -223,7 +223,7 @@ bool H264LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 					BYTE nalType = nal_header & 0x1f;
 
 					//Get nal data
-					const BYTE *nalData = payload+1;
+					[[maybe_unused]] const BYTE *nalData = payload+1;
 
 					//Check if IDR SPS or PPS
 					switch (nalType)
@@ -254,9 +254,9 @@ bool H264LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 				/* 1-23	 NAL unit	Single NAL unit packet per H.264	 5.6 */
 
 				//Get nal data
-				const BYTE *nalData = payload+1;
+				[[maybe_unused]] const BYTE *nalData = payload+1;
 				//Get nalu size
-				WORD nalSize = payloadLen-1;
+				[[maybe_unused]] WORD nalSize = payloadLen-1;
 				BYTE nalType = nal_unit_type;
 
 				//Check if IDR SPS or PPS
