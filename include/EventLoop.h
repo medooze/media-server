@@ -28,6 +28,7 @@ public:
 		Lagging,
 		Overflown
 	};
+	static bool SetAffinity(std::thread::native_handle_type thread, int cpu);
 private:
 	class TimerImpl : 
 		public Timer, 

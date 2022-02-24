@@ -74,38 +74,47 @@ EventLoop::~EventLoop()
 		Stop();
 }
 
-bool EventLoop::SetAffinity(int cpu)
+bool EventLoop::SetAffinity(std::thread::native_handle_type thread, int cpu)
 {
 #ifdef THREAD_AFFINITY_POLICY
-	if (cpu>=0)
+	if (cpu >= 0)
 	{
-		thread_affinity_policy_data_t policy = { cpu+1 };
-		return !thread_policy_set(pthread_mach_thread_np(thread.native_handle()), THREAD_AFFINITY_POLICY, (thread_policy_t)&policy, 1);
-	} else  {
-		thread_affinity_policy_data_t policy = { 0 };
-		return !thread_policy_set(pthread_mach_thread_np(thread.native_handle()), THREAD_AFFINITY_POLICY, (thread_policy_t)&policy, 1);
+		thread_affinity_policy_data_t policy = { cpu + 1 };
+		return !thread_policy_set(pthread_mach_thread_np(thread), THREAD_AFFINITY_POLICY, (thread_policy_t)&policy, 1);
 	}
-	
+	else {
+		thread_affinity_policy_data_t policy = { 0 };
+		return !thread_policy_set(pthread_mach_thread_np(thread), THREAD_AFFINITY_POLICY, (thread_policy_t)&policy, 1);
+	}
+
 #else
 	size_t cpuSize = 0;
 	cpu_set_t* cpuSet = alloc_cpu_set(&cpuSize);
 	CPU_ZERO_S(cpuSize, cpuSet);
 
 	//Set affinity to the cpu core
-	if (cpu>=0)
+	if (cpu >= 0)
 		//Set mask
 		CPU_SET(cpu, cpuSet);
 	else
 		//Set affinity for all cpus
-		for (size_t j=0; j<cpuSize ; j++)
+		for (size_t j = 0; j < cpuSize; j++)
 			CPU_SET(j, cpuSet);
 
 	//Set thread affinity
-        bool ret =  !pthread_setaffinity_np(thread.native_handle(), cpuSize, cpuSet);
-	
+	bool ret = !pthread_setaffinity_np(thread, cpuSize, cpuSet);
+
 	//Clear cpu mask
 	free_cpu_set(cpuSet);
-	
+
+	//Done
+	return ret;
+#endif
+
+}
+
+bool EventLoop::SetAffinity(int cpu)
+{
 #ifdef 	SO_INCOMING_CPU
 	//If got socket
 	if (fd)
@@ -113,10 +122,9 @@ bool EventLoop::SetAffinity(int cpu)
 		setsockopt(fd, SOL_SOCKET, SO_INCOMING_CPU, &cpu, sizeof(cpu));
 #endif
 
-	
-	//Done
-	return ret;
-#endif
+	//Set event loop thread affinity
+	return EventLoop::SetAffinity(thread.native_handle(), cpu);
+
 }
 
 bool EventLoop::SetPriority(int priority)
