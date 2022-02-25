@@ -750,7 +750,11 @@ void RTPBundleTransport::SendBindingRequest(Connection* connection,ICERemoteCand
 
 	//Inc stats
 	connection->iceRequestsSent++;
-	connection->lastKeepAliveRequestSent = ts;
+
+	//Check if it is the active candidate
+	if (connection->transport->GetActiveRemoteCandidate() == candidate)
+		//Onlyt consider timeouts for the active candidates
+		connection->lastKeepAliveRequestSent = ts;
 	
 	//Check if we need to start timer
 	if (iceTimer && !iceTimer->IsScheduled())
