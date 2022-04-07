@@ -2,6 +2,7 @@
 #define SRTPSESSION_H
 #include <srtp2/srtp.h>
 #include <vector>
+#include "config.h"
 
 class SRTPSession
 {

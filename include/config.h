@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <cstddef>  // size_t
 #include <cstdint> 
+#include <limits>
 #include <map>
 #include <vector>
 #include <sstream>
