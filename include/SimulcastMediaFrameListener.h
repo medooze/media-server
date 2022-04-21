@@ -16,6 +16,7 @@ public:
 	SimulcastMediaFrameListener(DWORD ssrc, DWORD numLayers);
 	virtual ~SimulcastMediaFrameListener();
 
+	void SetNumLayers(DWORD numLayers);
 	void AddMediaListener(MediaFrame::Listener* listener);
 	void RemoveMediaListener(MediaFrame::Listener* listener);
 

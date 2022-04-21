@@ -36,6 +36,11 @@ void SimulcastMediaFrameListener::Stop()
 	listeners.clear();
 }
 
+void SimulcastMediaFrameListener::SetNumLayers(DWORD numLayers)
+{
+	this->numLayers = numLayers;
+}
+
 void SimulcastMediaFrameListener::Select()
 {
 	//UltraDebug("-MediaFrameListenerBridge::Select() | [iframes:%u,pending:%d,forwarded:%u]\n", iframes.size(), pendingFrames.size(), forwarded);
