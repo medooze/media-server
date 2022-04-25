@@ -19,43 +19,97 @@ RTPStreamTransponder::RTPStreamTransponder(RTPOutgoingSourceGroup* outgoing,RTPS
 }
 
 
-bool RTPStreamTransponder::SetIncoming(RTPIncomingMediaStream* incoming, RTPReceiver* receiver)
+bool RTPStreamTransponder::SetIncoming(RTPIncomingMediaStream* incoming, RTPReceiver* receiver, bool smooth)
 {
 	bool res = true;
 
 	timeService.Sync([=,&res](auto now){
-		//If they are the same
-		if (this->incoming==incoming && this->receiver==receiver)
-		{
-			//Not updated
-			res = false;
-			//DO nothing
-			return;
-		}
-	
-		Debug(">RTPStreamTransponder::SetIncoming() | [incoming:%p,receiver:%p,ssrc:%u]\n",incoming,receiver,ssrc);
-	
-		//Remove listener from old stream
-		if (this->incoming) 
-			this->incoming->RemoveListener(this);
+		Debug(">RTPStreamTransponder::SetIncoming() | [incoming:%p,receiver:%p,ssrc:%u,smooth:%d]\n", incoming, receiver, ssrc, smooth);
 
-		//Reset packets before start listening again
-		reset = true;
-
-		//Store stream and receiver
-		this->incoming = incoming;
-		this->receiver = receiver;
-	
-		//Double check
-		if (this->incoming)
+		if (smooth) 
 		{
-			//Add us as listeners
-			this->incoming->AddListener(this);
+			//If they are the same as next ones already
+			if (this->incomingNext == incoming && this->receiverNext == receiver)
+			{
+				//Not updated
+				res = false;
+				//DO nothing
+				return;
+			}
+
+			//Remove listener from previues transitioning stream
+			if (this->incomingNext)
+				this->incomingNext->RemoveListener(this);
+
+			//If they are the same as current ones
+			if (this->incoming == incoming && this->receiver == receiver)
+			{
+				//And don't wait anymore
+				incomingNext = nullptr;
+				receiverNext = nullptr;
+				//Not updated
+				res = false;
+				//DO nothing
+				return;
+			}
+
+			//Store stream and receiver
+			this->incomingNext = incoming;
+			this->receiverNext = receiver;
+
+			//Double check
+			if (this->incomingNext)
+			{
+				//Add us as listeners
+				this->incomingNext->AddListener(this);
+
+				//Request update on the transitoning one
+				if (this->receiverNext) this->receiverNext->SendPLI(this->incomingNext->GetMediaSSRC());
+			}
+
+		} else {
+			//If we were waiting to transition to a new incoming media stream
+			if (this->incomingNext)
+			{
+				//Stop listening from it
+				this->incomingNext->RemoveListener(this);
+				//And don't wait anymore
+				incomingNext = nullptr;
+				receiverNext = nullptr;
+			}
+
+			//If they are the same as current ones
+			if (this->incoming==incoming && this->receiver==receiver)
+			{
+				//Not updated
+				res = false;
+				//DO nothing
+				return;
+			}
 		
-			//Request update on the incoming
-			if (this->receiver) this->receiver->SendPLI(this->incoming->GetMediaSSRC());
-			//Update last requested PLI
-			lastSentPLI = now.count();
+	
+			//Remove listener from old stream
+			if (this->incoming) 
+				this->incoming->RemoveListener(this);
+
+			//Reset packets before start listening again
+			reset = true;
+
+			//Store stream and receiver
+			this->incoming = incoming;
+			this->receiver = receiver;
+	
+			//Double check
+			if (this->incoming)
+			{
+				//Add us as listeners
+				this->incoming->AddListener(this);
+		
+				//Request update on the incoming
+				if (this->receiver) this->receiver->SendPLI(this->incoming->GetMediaSSRC());
+				//Update last requested PLI
+				lastSentPLI = now.count();
+			}
 		}
 	
 		Debug("<RTPStreamTransponder::SetIncoming() | [incoming:%p,receiver:%p]\n",incoming,receiver);
@@ -79,8 +133,11 @@ void RTPStreamTransponder::Close()
 	timeService.Sync([=](auto now) {
 		//Stop listening
 		if (incoming) incoming->RemoveListener(this);
+		if (incomingNext) incomingNext->RemoveListener(this);
 		//Remove sources
 		incoming = nullptr;
+		receiver = nullptr;
+		incomingNext = nullptr;
 		receiver = nullptr;
 	});
 	
@@ -100,6 +157,26 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 	if (!packet)
 		//Exit
 		return;
+
+	//If it is from the next transitioning stream
+	if (stream == incomingNext)
+	{
+		//If it is a video packet and not an iframe
+		if (packet->GetMediaType()==MediaFrame::Video && !packet->IsKeyFrame())
+			//Skip
+			return;
+
+		//Remove listener from old stream
+		if (this->incoming)
+			this->incoming->RemoveListener(this);
+
+		//Reset packets
+		reset = true;
+
+		//Transition to new stream and receiver
+		this->incoming = incomingNext;
+		this->receiver = receiverNext;
+	}
 	
 	//If muted
 	if (muted)
@@ -429,18 +506,20 @@ void RTPStreamTransponder::onBye(RTPIncomingMediaStream* stream)
 void RTPStreamTransponder::onEnded(RTPIncomingMediaStream* stream)
 {
 	timeService.Async([=](auto){
-	
-		//If they are the not same
+		//IF it is the current one
 		if (this->incoming!=stream)
-			//DO nothing
-			return;
+		{
+			//Reset packets before start listening again
+			reset = true;
 	
-		//Reset packets before start listening again
-		reset = true;
-	
-		//Store stream and receiver
-		this->incoming = nullptr;
-		this->receiver = nullptr;
+			//No stream and receiver
+			this->incoming = nullptr;
+			this->receiver = nullptr;
+		} else if (this->incoming != stream) {
+			//No transitioning stream and receiver
+			this->incomingNext = nullptr;
+			this->receiverNext = nullptr;
+		}
 	});
 }
 

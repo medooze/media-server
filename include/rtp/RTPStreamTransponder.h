@@ -30,7 +30,7 @@ public:
 	RTPStreamTransponder(RTPOutgoingSourceGroup* outgoing,RTPSender* sender);
 	virtual ~RTPStreamTransponder();
 	
-	bool SetIncoming(RTPIncomingMediaStream* incoming, RTPReceiver* receiver);
+	bool SetIncoming(RTPIncomingMediaStream* incoming, RTPReceiver* receiver, bool smooth = false);
 	bool AppendH264ParameterSets(const std::string& sprop);
 	void Close();
 	
@@ -53,6 +53,8 @@ private:
 	RTPOutgoingSourceGroup *outgoing	= NULL;
 	RTPIncomingMediaStream *incoming	= NULL;
 	RTPReceiver* receiver			= NULL;
+	RTPIncomingMediaStream* incomingNext	= NULL;
+	RTPReceiver* receiverNext		= NULL;
 	RTPSender* sender			= NULL;
 	std::unique_ptr<VideoLayerSelector> selector;
 	TimeService& timeService;
