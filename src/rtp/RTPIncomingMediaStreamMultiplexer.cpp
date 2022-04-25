@@ -54,7 +54,7 @@ void RTPIncomingMediaStreamMultiplexer::onRTP(RTPIncomingMediaStream* stream,con
 			//Deliver to all listeners
 			for (auto listener : listeners)
 				//Dispatch rtp packet
-				listener->onRTP(stream,packet);
+				listener->onRTP(this,packet);
 	});
 }
 

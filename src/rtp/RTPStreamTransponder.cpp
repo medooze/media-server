@@ -176,7 +176,14 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 		//Transition to new stream and receiver
 		this->incoming = incomingNext;
 		this->receiver = receiverNext;
+		this->incomingNext = nullptr;
+		this->receiverNext = nullptr;
 	}
+
+	//Check if it is from the correct stream
+	if (stream!= this->incoming)
+		//Skip
+		return;
 	
 	//If muted
 	if (muted)
