@@ -42,6 +42,7 @@ public:
 	
 	void SelectLayer(int spatialLayerId,int temporalLayerId);
 	void Mute(bool muting);
+	void SetIntraOnlyForwarding(bool intraOnlyForwarding);
 
 	const RTPIncomingMediaStream* GetIncoming() const { return incoming; }
 
@@ -86,7 +87,7 @@ private:
 	WORD tl0Idx		= 0;
 	bool rewritePicId	= true;
 	QWORD lastSentPLI	= 0;
-	
+	bool intraOnlyForwarding		= false;
 
 	WrapExtender<uint16_t, uint64_t> frameNumberExtender;
 	uint64_t firstFrameNumber	= NoFrameNum;

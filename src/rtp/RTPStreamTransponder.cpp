@@ -190,6 +190,15 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 		//Skip
 		return;
 
+	//If forwarding only intra frames and video frame is not intra
+	if (intraOnlyForwarding && packet->GetMediaType() == MediaFrame::Video && !packet->IsKeyFrame())
+	{
+		//Drop it
+		dropped++;
+		//Skip
+		return;
+	}
+
 	//Check if it is an empty packet
 	if (!packet->GetMediaLength())
 	{
@@ -582,6 +591,15 @@ void RTPStreamTransponder::Mute(bool muting)
 		RequestPLI();
 	//Update state
 	muted = muting;
+}
+
+void RTPStreamTransponder::SetIntraOnlyForwarding(bool intraOnlyForwarding)
+{
+	//Log
+	UltraDebug("-RTPStreamTransponder::SetIntraOnlyForwarding() | [intraOnlyForwarding:%d]\n", intraOnlyForwarding);
+
+	//Set flag
+	this->intraOnlyForwarding = intraOnlyForwarding;
 }
 
 bool RTPStreamTransponder::AppendH264ParameterSets(const std::string& sprop)
