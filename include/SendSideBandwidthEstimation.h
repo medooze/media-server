@@ -33,6 +33,7 @@ public:
 	uint32_t GetEstimatedBitrate() const;
 	uint32_t GetTargetBitrate() const;
 	uint32_t GetAvailableBitrate() const;
+	uint32_t GetTotalInstantSentBitrate() const;
 	uint32_t GetMinRTT() const;
 	void SetListener(RemoteRateEstimator::Listener* listener) { this->listener = listener; }
 

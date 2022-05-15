@@ -2574,13 +2574,12 @@ void DTLSICETransport::Probe(QWORD now)
 	if (senderSideEstimationEnabled && probe && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC)!=RTPMap::NotFound)
 	{
 		//Update bitrates
-		outgoingBitrate.Update(now);
 		probingBitrate.Update(now);
 		//Calculate sleep time
 		uint64_t sleep = lastProbe ? std::min<uint64_t>(now - lastProbe, probingTimer->GetRepeat().count()) : probingTimer->GetRepeat().count();
 		
 		//Get bitrates
-		DWORD bitrate		= static_cast<DWORD>(outgoingBitrate.GetInstantAvg()*8);
+		DWORD bitrate		= senderSideBandwidthEstimator.GetTotalInstantSentBitrate();
 		DWORD probing		= static_cast<DWORD>(probingBitrate.GetInstantAvg()*8);
 		DWORD target		= senderSideBandwidthEstimator.GetAvailableBitrate();
 
@@ -2629,20 +2628,20 @@ void DTLSICETransport::Probe(QWORD now)
 					}
 					
 				}
-			} else {
-				//Ensure we send at least one packet
-				DWORD size = std::min(255u,probingSize);
-				//Check if we have an outgpoing group
+			}
+
+            if(probingSize>0){
+				//Check if we have an outgoing group
 				for (auto &group : outgoing)
 				{
 					//We can only probe on rtx with video
 					if (group.second->type == MediaFrame::Video)
 					{
 						//Set all the probes
-						while (probingSize>=size)
+						while (probingSize>0)
 						{
-							//Send probe packet
-							DWORD len = SendProbe(group.second,size);
+							//Send probe packet. Ensure we send at least one packet
+							DWORD len = SendProbe(group.second,std::min(255u,probingSize));
 							//Check len
 							if (!len)
 								//Done
@@ -2651,13 +2650,12 @@ void DTLSICETransport::Probe(QWORD now)
 							probingBitrate.Update(now,len);
 							//Check size
 							if (len>probingSize)
-								//Done
-								return;
+                                break;
 							//Reduce probe
 							probingSize -= len;
 						}
 						//Done
-						return;
+                        break;
 					}
 				}
 			}

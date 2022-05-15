@@ -222,6 +222,11 @@ uint32_t SendSideBandwidthEstimation::GetAvailableBitrate() const
 	return availableRate;
 }
 
+uint32_t SendSideBandwidthEstimation::GetTotalInstantSentBitrate() const
+{
+	return totalSentAcumulator.GetInstantAvg() * 8;
+}
+
 uint32_t SendSideBandwidthEstimation::GetMinRTT() const
 {
 	//Get minimum
@@ -317,7 +322,7 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 		if (targetBitrate == bandwidthEstimation)
 			//We are going to increase rate again
 			SetState(ChangeState::Increase);
-	} else if (state==ChangeState::Increase || ChangeState::Initial) {
+	} else if (state==ChangeState::Increase) {
 		//Initial conversion factor
 		double confidenceAmplifier = 1+std::log(consecutiveChanges+1);
 		//Get rate change
