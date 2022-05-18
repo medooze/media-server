@@ -2584,7 +2584,7 @@ void DTLSICETransport::Probe(QWORD now)
 		DWORD probing		= static_cast<DWORD>(probingBitrate.GetInstantAvg()*8);
 		DWORD target		= senderSideBandwidthEstimator.GetAvailableBitrate();
 
-		//Log(">DTLSICETransport::Probe() | [target:%u,bitrate:%d,probing:%d,history:%d,probingBitrateLimit=%d,maxProbingBitrate=%d]\n",target,bitrate,probing,history.size(),probingBitrateLimit,maxProbingBitrate);
+		//Log(">DTLSICETransport::Probe() | [target:%ubps,bitrate:%ubps,probing:%ubps,history:%d,probingBitrateLimit=%ubps,maxProbingBitrate=%ubps]\n",target,bitrate,probing,history.size(),probingBitrateLimit,maxProbingBitrate);
 			
 		//If we can still send more
 		if (target>bitrate && (!probingBitrateLimit || bitrate<probingBitrateLimit) && probing<maxProbingBitrate)
@@ -2595,7 +2595,7 @@ void DTLSICETransport::Probe(QWORD now)
 			//Get size of probes
 			DWORD probingSize = std::min<DWORD>(probing, maxProbingBitrate)*sleep/8000;
 			
-			//Log("-DTLSICETransport::Probe() | Sending probing packets [target:%u,bitrate:%u,probing:%u,max:%u,probingSize:%d,sleep:%d]\n", target, bitrate,probing,maxProbingBitrate, probingSize, sleep);
+			//Log("-DTLSICETransport::Probe() | Sending probing packets [target:%ubps,bitrate:%ubps,probing:%u,max:%ubps,probingSize:%d,sleep:%d]\n", target, bitrate,probing,maxProbingBitrate, probingSize, sleep);
 
 			//If we have packet history
 			if (history.size())
