@@ -163,7 +163,7 @@ void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const st
 				//Create log
 				int len = snprintf(msg,1024,"%.8lu|%u|%hhu|%u|%lu|%lu|%lu|%lu|%ld|%u|%u|%u|%u|%d|%d|%d\n",fb,transportSeqNum,feedbackNum, stat->size,sent,recv,deltaSent,deltaRecv,delta,GetEstimatedBitrate(),GetTargetBitrate(),GetAvailableBitrate(),rtt,stat->mark,stat->rtx,stat->probing);
 				//Write it
-				write(fd,msg,len);
+				[[maybe_unused]] ssize_t written = write(fd,msg,len);
 			}
 			
 			//Check if it was not lost
