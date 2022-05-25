@@ -138,7 +138,7 @@ void RTPStreamTransponder::Close()
 		incoming = nullptr;
 		receiver = nullptr;
 		incomingNext = nullptr;
-		receiver = nullptr;
+		receiverNext = nullptr;
 	});
 	
 	//Stop listening
@@ -523,7 +523,7 @@ void RTPStreamTransponder::onEnded(RTPIncomingMediaStream* stream)
 {
 	timeService.Async([=](auto){
 		//IF it is the current one
-		if (this->incoming!=stream)
+		if (this->incoming == stream)
 		{
 			//Reset packets before start listening again
 			reset = true;
@@ -531,7 +531,8 @@ void RTPStreamTransponder::onEnded(RTPIncomingMediaStream* stream)
 			//No stream and receiver
 			this->incoming = nullptr;
 			this->receiver = nullptr;
-		} else if (this->incoming != stream) {
+		//If it is the next one
+		} else if (this->incomingNext == stream) {
 			//No transitioning stream and receiver
 			this->incomingNext = nullptr;
 			this->receiverNext = nullptr;
