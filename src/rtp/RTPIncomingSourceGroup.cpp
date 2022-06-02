@@ -21,8 +21,10 @@ RTPIncomingSourceGroup::RTPIncomingSourceGroup(MediaFrame::Type type,TimeService
 
 RTPIncomingSourceGroup::~RTPIncomingSourceGroup()
 {
-	//Stop timer
-	if (dispatchTimer) dispatchTimer->Cancel();
+	//If not stoped
+	if (dispatchTimer)
+		//Stop
+		Stop();
 }
 
 RTPIncomingSource* RTPIncomingSourceGroup::GetSource(DWORD ssrc)
@@ -277,7 +279,7 @@ void RTPIncomingSourceGroup::Stop()
 
 	//Stop timer
 	if (dispatchTimer) dispatchTimer->Cancel();
-	
+
 	//Stop listeners sync
 	timeService.Sync([=](auto) {
 		//Deliver to all listeners

@@ -19,11 +19,13 @@ public:
 		public:
 			virtual void onPLIRequest(RTPOutgoingSourceGroup* group,DWORD ssrc) = 0;
 			virtual void onREMB(RTPOutgoingSourceGroup* group,DWORD ssrc,DWORD bitrate) = 0;
+			virtual void onEnded(RTPOutgoingSourceGroup* group) = 0;
 		
 	};
 public:
 	RTPOutgoingSourceGroup(MediaFrame::Type type,TimeService& timeService);
 	RTPOutgoingSourceGroup(const std::string &mid,MediaFrame::Type type, TimeService& timeService);
+	~RTPOutgoingSourceGroup();
 	
 	void AddListener(Listener* listener);
 	void RemoveListener(Listener* listener);
@@ -37,6 +39,8 @@ public:
 	//RTX packets
 	void AddPacket(const RTPPacket::shared& packet);
 	RTPPacket::shared GetPacket(WORD seq) const;
+
+	void Stop();
 	
 	
 public:	

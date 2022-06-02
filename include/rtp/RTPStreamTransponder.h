@@ -39,6 +39,7 @@ public:
 	virtual void onEnded(RTPIncomingMediaStream* stream) override;
 	virtual void onPLIRequest(RTPOutgoingSourceGroup* group,DWORD ssrc) override;
 	virtual void onREMB(RTPOutgoingSourceGroup* group,DWORD ssrc,DWORD bitrate) override;
+	virtual void onEnded(RTPOutgoingSourceGroup* group) override;
 	
 	void SelectLayer(int spatialLayerId,int temporalLayerId);
 	void Mute(bool muting);

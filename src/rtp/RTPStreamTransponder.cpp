@@ -24,6 +24,17 @@ bool RTPStreamTransponder::SetIncoming(RTPIncomingMediaStream* incoming, RTPRece
 	bool res = true;
 
 	timeService.Sync([=,&res](auto now){
+		//Check we are not closed
+		if (!outgoing)
+		{
+			//Not updated
+			res = false;
+			//Error
+			Error("-RTPStreamTransponder::SetIncoming() | Transponder already closed\n");
+			//Exit
+			return;
+		}
+		
 		Debug(">RTPStreamTransponder::SetIncoming() | [incoming:%p,receiver:%p,ssrc:%u,smooth:%d]\n", incoming, receiver, ssrc, smooth);
 
 		if (smooth) 
@@ -121,7 +132,7 @@ bool RTPStreamTransponder::SetIncoming(RTPIncomingMediaStream* incoming, RTPRece
 RTPStreamTransponder::~RTPStreamTransponder()
 {
 	//If not already stopped
-	if (outgoing)
+	if (outgoing || incoming)
 		//Stop listeneing
 		Close();
 }
@@ -521,7 +532,7 @@ void RTPStreamTransponder::onBye(RTPIncomingMediaStream* stream)
 
 void RTPStreamTransponder::onEnded(RTPIncomingMediaStream* stream)
 {
-	timeService.Async([=](auto){
+	timeService.Sync([=](auto){
 		//IF it is the current one
 		if (this->incoming == stream)
 		{
@@ -539,6 +550,16 @@ void RTPStreamTransponder::onEnded(RTPIncomingMediaStream* stream)
 		}
 	});
 }
+void RTPStreamTransponder::onEnded(RTPOutgoingSourceGroup* group)
+{
+	timeService.Sync([=](auto) {
+		//IF it is the current one
+		if (this->outgoing == group)
+			//No more outgoing
+			this->outgoing = nullptr;
+	});
+}
+
 
 void RTPStreamTransponder::RequestPLI()
 {
