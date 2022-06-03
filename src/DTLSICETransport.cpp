@@ -73,7 +73,7 @@ void DTLSICETransport::onDTLSPendingData()
 	{
 		Packet buffer;
 		//Read from dtls
-		size_t len = dtls.Read(buffer.GetData(),buffer.GetCapacity());
+		int len = dtls.Read(buffer.GetData(),buffer.GetCapacity());
 		//Check result
 		if (len<=0)
 			break;

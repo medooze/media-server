@@ -135,7 +135,7 @@ void SRTPSession::RemoveStream(uint32_t ssrc)
 	if (!srtp)
 	{
 		//Just remove from pending
-		std::remove(pending.begin() ,pending.end(), ssrc);
+		pending.erase(std::remove(pending.begin(), pending.end(), ssrc), pending.end());
 		return;
 	}
 	

@@ -14,19 +14,9 @@
 #include "VP9LayerSelector.h"
 #include "VP9PayloadDescription.h"
 
-VP9LayerSelector::VP9LayerSelector()
-{
-	waitingForIntra		= true;
-	temporalLayerId		= 0;
-	spatialLayerId		= 0;
-	nextTemporalLayerId	= LayerInfo::MaxLayerId;
-	nextSpatialLayerId	= LayerInfo::MaxLayerId;
-}
 
 VP9LayerSelector::VP9LayerSelector(BYTE temporalLayerId,BYTE spatialLayerId )
 {
-	temporalLayerId		= 0;
-	spatialLayerId		= 0;
 	nextTemporalLayerId	= temporalLayerId;
 	nextSpatialLayerId	= spatialLayerId;
 }

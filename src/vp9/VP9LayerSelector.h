@@ -19,7 +19,7 @@
 class VP9LayerSelector : public VideoLayerSelector
 {
 public:
-	VP9LayerSelector();
+	VP9LayerSelector() = default;
 	VP9LayerSelector(BYTE temporalLayerId,BYTE spatialLayerId );
 	virtual ~VP9LayerSelector() = default;
 	void SelectTemporalLayer(BYTE id)		override;
@@ -34,11 +34,11 @@ public:
 	
 	static std::vector<LayerInfo> GetLayerIds(const RTPPacket::shared& packet);
 private:
-	bool waitingForIntra;
-	BYTE temporalLayerId;
-	BYTE spatialLayerId;
-	BYTE nextTemporalLayerId;
-	BYTE nextSpatialLayerId;
+	bool waitingForIntra = true;
+	BYTE temporalLayerId = 0;
+	BYTE spatialLayerId = 0;
+	BYTE nextTemporalLayerId = LayerInfo::MaxLayerId;
+	BYTE nextSpatialLayerId = LayerInfo::MaxLayerId;
 };
 
 #endif /* VP9LAYERSELECTOR_H */
