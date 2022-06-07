@@ -29,6 +29,7 @@ public:
 		Overflown
 	};
 	static bool SetAffinity(std::thread::native_handle_type thread, int cpu);
+	static bool SetThreadName(std::thread::native_handle_type thread, const std::string& name);
 private:
 	class TimerImpl : 
 		public Timer, 
@@ -79,6 +80,7 @@ public:
 	void Run(const std::chrono::milliseconds &duration = std::chrono::milliseconds::max());
 	
 	bool SetAffinity(int cpu);
+	bool SetThreadName(const std::string& name);
 	bool SetPriority(int priority);
 	bool IsRunning() const { return running; }
 	

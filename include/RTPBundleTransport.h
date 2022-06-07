@@ -59,6 +59,7 @@ public:
 	
 	void SetIceTimeout(uint32_t timeout)	{ iceTimeout = std::chrono::milliseconds(timeout);	}
 	bool SetAffinity(int cpu)		{ return loop.SetAffinity(cpu);				}
+	bool SetThreadName(const std::string& name) { return loop.SetThreadName(name);			}
 	bool SetPriority(int priority)		{ return loop.SetPriority(priority);			}
 	TimeService& GetTimeService()		{ return loop;						}
 private:
