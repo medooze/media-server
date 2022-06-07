@@ -74,6 +74,15 @@ EventLoop::~EventLoop()
 		Stop();
 }
 
+bool EventLoop::SetThreadName(std::thread::native_handle_type thread, const std::string& name)
+{
+#if defined(__linux__)
+	return !pthread_setname_np(thread, name.c_str());
+#else
+	return false;
+#endif
+}
+
 bool EventLoop::SetAffinity(std::thread::native_handle_type thread, int cpu)
 {
 #ifdef THREAD_AFFINITY_POLICY
@@ -125,6 +134,11 @@ bool EventLoop::SetAffinity(int cpu)
 	//Set event loop thread affinity
 	return EventLoop::SetAffinity(thread.native_handle(), cpu);
 
+}
+
+bool EventLoop::SetThreadName(const std::string& name)
+{
+	return EventLoop::SetThreadName(thread.native_handle(), name);
 }
 
 bool EventLoop::SetPriority(int priority)
