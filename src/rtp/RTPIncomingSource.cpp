@@ -54,7 +54,6 @@ RTPIncomingSource::RTPIncomingSource() :
 	RTPSource(),
 	acumulatorFrames(1000),
 	acumulatorFrameDelay(1000),
-	acumulatorFrameTime(1000),
 	acumulatorCaptureDelay(1000),
 	acumulatorLostPackets(1000)
 {
@@ -82,12 +81,10 @@ RTPIncomingSource::RTPIncomingSource() :
 	firstReceivedSenderTimestamp	= 0;
 	skew				= 0;
 	drift				= 1;
-	firstFrameTime			= 0;
+	lastCaptureTime			= 0;
 	lastCaptureTimestamp		= 0;
 	frameDelay			= 0;
 	frameDelayMax			= 0;
-	frameTime			= 0;
-	frameTimeMax			= 0;
 	frameCaptureDelay		= 0;
 	frameCaptureDelayMax		= 0;
 	lastCaptureTimestamp		= 0;
@@ -122,12 +119,10 @@ void RTPIncomingSource::Reset()
 	firstReceivedSenderTimestamp	= 0;
 	skew				= 0;
 	drift				= 1;
-	firstFrameTime			= 0;
+	lastCaptureTime			= 0;
 	lastCaptureTimestamp		= 0;
 	frameDelay			= 0;
 	frameDelayMax			= 0;
-	frameTime			= 0;
-	frameTimeMax			= 0;
 	frameCaptureDelay		= 0;
 	frameCaptureDelayMax		= 0;
 	aggregatedLayers		= false;
@@ -233,13 +228,10 @@ void RTPIncomingSource::Update(QWORD now)
 
 	//Update delay accuumulators
 	acumulatorFrameDelay.Update(now);
-	acumulatorFrameTime.Update(now);
 	acumulatorCaptureDelay.Update(now);
 	//Get max and averages
 	frameDelay		= acumulatorFrameDelay.GetAverage();
 	frameDelayMax		= acumulatorFrameDelay.GetMaxValueInWindow();
-	frameTime		= acumulatorFrameTime.GetAverage();
-	frameTimeMax		= acumulatorFrameTime.GetMaxValueInWindow();
 	frameCaptureDelay	= acumulatorCaptureDelay.GetAverage();
 	frameCaptureDelayMax	= acumulatorCaptureDelay.GetMaxValueInWindow();
 }
@@ -302,44 +294,50 @@ void RTPIncomingSource::SetLastTimestamp(QWORD now, QWORD timestamp, QWORD captu
 	//If new packet is newer
 	if (timestamp>lastTimestamp)
 	{
-		//Get time spent to receive the frame
-		acumulatorFrameTime.Update(now, lastTime - firstFrameTime);
+		//UltraDebug("RTPIncomingSource::SetLastTimestamp() time:[%llu,%llu] timestamp:[%llu,%llu] captureTimestamp:[%llu,%llu]\n", now,lastTime,timestamp,lastTimestamp, captureTimestamp, lastCaptureTimestamp);
 
 		//If we have capture timestamp
 		if (captureTimestamp)
 		{
+			//Calculate e2e delay
+			int64_t delay = captureTimestamp - now;
+
 			//e2e delay
-			acumulatorCaptureDelay.Update(now, captureTimestamp - now);
+			acumulatorCaptureDelay.Update(now, delay);
+
+			UltraDebug("RTPIncomingSource::SetLastTimestamp() [now:%llu,captureTimestamp:%llu,delay:%lld]\n", now, captureTimestamp, delay);
 
 			//If not first one
 			if (lastCaptureTimestamp && lastCaptureTimestamp <= captureTimestamp)
 			{
 				//Get difference between the first packet of a frame in both capture and reception time
 				int64_t catpureTimestampDiff = captureTimestamp - lastCaptureTimestamp;
-				int64_t receptionTimeDiff = now - firstFrameTime;
-			
+				int64_t receptionTimeDiff = now - lastCaptureTime;
+				int64_t interarraivalDelay = catpureTimestampDiff - receptionTimeDiff;
+
+				UltraDebug("RTPIncomingSource::SetLastTimestamp() [capture:%llu,reception:%llu,delay:%lld]\n", catpureTimestampDiff, receptionTimeDiff, interarraivalDelay);
+
 				//Update accumulators
-				acumulatorFrameDelay.Update(now, catpureTimestampDiff- receptionTimeDiff);
+				acumulatorFrameDelay.Update(now, interarraivalDelay);
 			}
+
+			//Store last capture time
+			lastCaptureTimestamp = captureTimestamp;
+			lastCaptureTime = now;
 		}
 
 		//Update stats
 		frameDelay		= acumulatorFrameDelay.GetAverage();
 		frameDelayMax		= acumulatorFrameDelay.GetMaxValueInWindow();
-		frameTime		= acumulatorFrameTime.GetAverage();
-		frameTimeMax		= acumulatorFrameTime.GetMaxValueInWindow();
 		frameCaptureDelay	= acumulatorCaptureDelay.GetAverage();
 		frameCaptureDelayMax	= acumulatorCaptureDelay.GetMaxValueInWindow();
 
-		//Store last capture time
-		lastCaptureTimestamp = captureTimestamp;
 		//One new frame
 		numFrames++;
 		numFramesDelta = acumulatorFrames.Update(now, 1);
 		//Store last time
 		lastTimestamp = timestamp;
-		//And first frame time
-		firstFrameTime = now;
+		
 	}
 	lastTime = now;
 }

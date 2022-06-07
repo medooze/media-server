@@ -31,17 +31,16 @@ struct RTPIncomingSource : public RTPSource
 	DWORD   totalPLIs;
 	DWORD	totalNACKs;
 	QWORD	lastNACKed;
-	QWORD	lastTimestamp;
-	QWORD	lastCaptureTimestamp;
 	QWORD	lastTime;
+	QWORD	lastTimestamp;
+	QWORD	lastCaptureTime;
+	QWORD	lastCaptureTimestamp;
 	QWORD   firstReceivedSenderTime;
 	QWORD   firstReceivedSenderTimestamp;
 
-	QWORD	firstFrameTime;
-	int64_t  frameDelay;
-	int64_t  frameDelayMax;
-	DWORD   frameTime;
-	DWORD   frameTimeMax;
+	
+	int32_t frameDelay;
+	int32_t frameDelayMax;
 	int32_t frameCaptureDelay;
 	int32_t frameCaptureDelayMax;
 
@@ -54,11 +53,9 @@ struct RTPIncomingSource : public RTPSource
 	
 	
 	Acumulator<uint32_t, uint64_t> acumulatorFrames;
-	Acumulator<int32_t, int64_t> acumulatorFrameDelay;
-	Acumulator<uint32_t, uint64_t> acumulatorFrameTime;
+	Acumulator<int32_t, int64_t>   acumulatorFrameDelay;
 	Acumulator<int32_t, int64_t>   acumulatorCaptureDelay;
 	Acumulator<uint32_t, uint64_t> acumulatorLostPackets;
-	
 	
 	RTPIncomingSource();
 	virtual ~RTPIncomingSource() = default;
