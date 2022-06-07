@@ -4,6 +4,7 @@
  * 
  * Created on 8 de enero de 2017, 18:37
  */
+#include "tracing.h"
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -91,6 +92,8 @@ void DTLSICETransport::onDTLSPendingData()
 
 int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* data,DWORD size)
 {
+	TRACE_EVENT("transport", "DTLSICETransport::onData");
+
 	//Get current time
 	auto now = getTime();
 
@@ -109,6 +112,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 	//Check if it is RTCP
 	if (RTCPCompoundPacket::IsRTCP(data,size))
 	{
+		TRACE_EVENT("rtp", "DTLSICETransport::onData::RTCP", "size", size);
 
 		//Check session
 		if (!recv.IsSetup())
@@ -147,6 +151,8 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		//Skip
 		return 1;
 	}
+
+	TRACE_EVENT("rtp", "DTLSICETransport::onData::RTP", "size", size);
 
 	//Check session
 	if (!recv.IsSetup())
@@ -2081,6 +2087,8 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 
 void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 {
+	TRACE_EVENT("rtp", "DTLSICETransport::onRTCP", "size", rtcp->GetSize());
+
 	//Get current time
 	uint64_t now = getTime();
 	
@@ -2099,7 +2107,9 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 				
 				//Get ssrc
 				DWORD ssrc = sr->GetSSRC();
-				
+
+				TRACE_EVENT("rtp", "DTLSICETransport::onRTCP::SR", "size", sr->GetSize(), "ssrc", ssrc);
+
 				//Get source
 				RTPIncomingSource* source = GetIncomingSource(ssrc);
 				
@@ -2150,7 +2160,9 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 			{
 				//Get receiver report
 				auto rr = std::static_pointer_cast<RTCPReceiverReport>(packet);
-				
+
+				TRACE_EVENT("rtp", "DTLSICETransport::onRTCP::RR", "size", rr->GetSize(), "count", rr->GetCount());
+
 				//Process all the receiver Reports
 				for (DWORD j=0;j<rr->GetCount();j++)
 				{
@@ -2215,6 +2227,9 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 				auto fb = std::static_pointer_cast<RTCPRTPFeedback>(packet);
 				//Get SSRC for media
 				DWORD ssrc = fb->GetMediaSSRC();
+
+				TRACE_EVENT("rtp", "DTLSICETransport::onRTCP::FB", "size", fb->GetSize(), "ssrc", ssrc);
+
 				//Get media
 				RTPOutgoingSourceGroup* group = GetOutgoingSourceGroup(ssrc);
 				//If not found
@@ -2273,6 +2288,9 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 				auto fb = std::static_pointer_cast<RTCPPayloadFeedback>(packet);
 				//Get SSRC for media
 				DWORD ssrc = fb->GetMediaSSRC();
+
+				TRACE_EVENT("rtp", "DTLSICETransport::onRTCP::PFB", "size", fb->GetSize(), "ssrc", ssrc);
+
 				//Check feedback type
 				switch(fb->GetFeedbackType())
 				{
@@ -2492,6 +2510,7 @@ void DTLSICETransport::SendTransportWideFeedbackMessage(DWORD ssrc)
 
 void DTLSICETransport::Start()
 {
+	TRACE_EVENT("transport", "DTLSICETransport::Start");
 	Debug("-DTLSICETransport::Start()\n");
 	
 	//Get init time
@@ -2521,6 +2540,7 @@ void DTLSICETransport::Stop()
 		return;
 	
 	//Log
+	TRACE_EVENT("transport", "DTLSICETransport::Stop");
 	Debug(">DTLSICETransport::Stop()\n");
 	
 	//Check probing timer
@@ -2570,7 +2590,8 @@ int DTLSICETransport::Enqueue(const RTPPacket::shared& packet,std::function<RTPP
 }
 void DTLSICETransport::Probe(QWORD now)
 {
-	//Endure that transport wide cc is enabled
+	TRACE_EVENT("transport", "DTLSICETransport::Probe", "now", now);
+	//Ensure that transport wide cc is enabled
 	if (senderSideEstimationEnabled && probe && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC)!=RTPMap::NotFound)
 	{
 		//Update bitrates

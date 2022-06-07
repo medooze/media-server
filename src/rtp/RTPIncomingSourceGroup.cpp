@@ -1,3 +1,4 @@
+#include "tracing.h"
 #include "rtp/RTPIncomingSourceGroup.h"
 
 #include <math.h>
@@ -58,7 +59,7 @@ void RTPIncomingSourceGroup::RemoveListener(RTPIncomingMediaStream::Listener* li
 
 int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet, DWORD size, QWORD now)
 {
-	
+	TRACE_EVENT("rtp", "RTPIncomingSourceGroup::AddPacket", "seq", packet->GetSeqNum());
 	//UltraDebug(">RTPIncomingSourceGroup::AddPacket() | [now:%lld]\n",now);
 	
 	//Check if it is the rtx packet used to calculate rtt
@@ -296,6 +297,7 @@ void RTPIncomingSourceGroup::Stop()
 
 RTPIncomingSource* RTPIncomingSourceGroup::Process(RTPPacket::shared &packet)
 {
+	TRACE_EVENT("rtp", "RTPIncomingSourceGroup::Process", "seq", packet->GetSeqNum());
 	//Get packet time
 	uint64_t time = packet->GetTime();
 	

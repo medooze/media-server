@@ -37,8 +37,16 @@
 PERFETTO_DEFINE_CATEGORIES(
     perfetto::Category("eventloop")
         .SetDescription("Event loop operation (scheduling, I/O, timers, sync)"),
-    perfetto::Category("transport"),
-    perfetto::Category("rtp"));
+    perfetto::Category("transport")
+        .SetDescription("ICE transport layer (managing candidates)"),
+    perfetto::Category("dtls")
+        .SetDescription("DTLS session"),
+    perfetto::Category("srtp")
+        .SetDescription("SRTP layer"),
+    perfetto::Category("rtp")
+        .SetDescription("RTP session (includes RTCP)"),
+    perfetto::Category("datachannel")
+        .SetDescription("Data channels / SCTP session"));
 
 #else
 
