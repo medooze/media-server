@@ -17,7 +17,7 @@ However it [is supported to some degree](https://github.com/google/perfetto/blob
     - build Medooze with the define in place, supplying the [tracing SDK](https://perfetto.dev/docs/instrumentation/tracing-sdk) as an include directory (so that `perfetto.h` can be included).
     - add `perfetto.cc` from that directory to the source list
     - initialize the tracing SDK
-    - register Medooze's TrackEvent data source by calling `MedoozeTrackEventRegister()` from the `tracingPublic.h` header
+    - register Medooze's TrackEvent data source by calling `MedoozeTrackEventRegister()` from the `MedoozeTracing.h` header
 
 This gives the most control to final applications and lets them add their own events into the trace as well.
 

@@ -1,3 +1,9 @@
+// WARNING: This header is internal to Medooze. It must only be
+// included directly from Medooze .cpp, never from other headers
+// or in user code.
+//
+// If you're a user, include MedoozeTracing.h instead.
+
 #ifndef __MEDOOZE_TRACING_H
 #define __MEDOOZE_TRACING_H
 

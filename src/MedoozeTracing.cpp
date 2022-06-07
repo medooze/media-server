@@ -1,5 +1,5 @@
 #include "tracing.h"
-#include "tracingPublic.h"
+#include "MedoozeTracing.h"
 
 #ifdef MEDOOZE_TRACING
 
