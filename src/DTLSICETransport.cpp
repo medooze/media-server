@@ -379,7 +379,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 			mids[mid] = { group };
 	}
 	
-	//UltraDebug("-Got RTP on media:%s sssrc:%u seq:%u pt:%u codec:%s rid:'%s', mid:'%s'\n",MediaFrame::TypeToString(group->type),ssrc,header.sequenceNumber,header.payloadType,GetNameForCodec(group->type,codec),group->rid.c_str(),group->mid.c_str());
+	//UltraDebug("-Got RTP on media:%s sssrc:%u seq:%u pt:%u codec:%s rid:'%s', mid:'%s'\n",MediaFrame::TypeToString(group->type),ssrc,packet->GetSeqNum(),packet->GetPayloadType(),GetNameForCodec(group->type,codec),group->rid.c_str(),group->mid.c_str());
 	
 	//Process packet and get source
 	RTPIncomingSource* source = group->Process(packet);
