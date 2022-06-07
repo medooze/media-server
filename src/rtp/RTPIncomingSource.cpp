@@ -1,3 +1,4 @@
+#include "tracing.h"
 #include "rtp/RTPIncomingSource.h"
 
 RTCPReport::shared RTPIncomingSource::CreateReport(QWORD now)
@@ -136,6 +137,8 @@ WORD RTPIncomingSource::ExtendSeqNum(WORD seqNum)
 
 void RTPIncomingSource::Update(QWORD now,DWORD seqNum,DWORD size,const std::vector<LayerInfo> &layerInfos, bool aggreagtedLayers)
 {
+	TRACE_EVENT("rtp", "RTPIncomingSource::Update", "now", now, "seq", seqNum, "size", size);
+
 	//Update source normally
 	RTPIncomingSource::Update(now,seqNum,size);
 	//Set aggregated layers flag

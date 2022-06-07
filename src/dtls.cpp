@@ -1,3 +1,4 @@
+#include "tracing.h"
 #include <srtp2/srtp.h>
 #include "dtls.h"
 #include "log.h"
@@ -30,6 +31,7 @@ void DTLSConnection::SetCertificate(const char* cert,const char* key)
 
 int DTLSConnection::GenerateCertificate()
 {
+	TRACE_EVENT("dtls", "DTLSConnection::GenerateCertificate");
 	Debug(">DTLSConnection::GenerateCertificate()\n");
 	
 	int ret = 0;
@@ -169,6 +171,7 @@ error:
 
 int DTLSConnection::ReadCertificate()
 {
+	TRACE_EVENT("dtls", "DTLSConnection::ReadCertificate");
 	
 	//Open certificate file
 	FILE* file = fopen(certfile.c_str(), "r");
@@ -210,6 +213,7 @@ int DTLSConnection::ReadCertificate()
 
 int DTLSConnection::Initialize()
 {
+	TRACE_EVENT("dtls", "Initialize");
 	Debug(">DTLSConnection::Initialize()\n");
 
 	// Create a single SSL context
@@ -340,6 +344,7 @@ int DTLSConnection::Initialize()
 
 int DTLSConnection::Terminate()
 {
+	TRACE_EVENT("dtls", "DTLSConnection::Terminate");
 	Debug("-DTLSConnection::Terminate()\n");
 	
 	//Free stuff
@@ -397,6 +402,7 @@ void DTLSConnection::SetSRTPProtectionProfiles(const std::string& profiles)
 
 int DTLSConnection::Init()
 {
+	TRACE_EVENT("dtls", "DTLSConnection::Init");
 	Log(">DTLSConnection::Init()\n");
 
 	if (! DTLSConnection::hasDTLS)
@@ -513,6 +519,7 @@ int DTLSConnection::Init()
 
 void DTLSConnection::End()
 {
+	TRACE_EVENT("dtls", "DTLSConnection::End");
 	Log("-DTLSConnection::End()\n");
 	
 	if (!inited)
@@ -539,6 +546,7 @@ void DTLSConnection::End()
 
 void DTLSConnection::Reset()
 {
+	TRACE_EVENT("dtls", "DTLSConnection::Reset");
 	Log("-DTLSConnection::Reset()\n");
 
 	//Run in event loop thread
@@ -628,6 +636,7 @@ void DTLSConnection::SetRemoteFingerprint(Hash hash, const char *fingerprint)
 
 int DTLSConnection::Read(BYTE* data,DWORD size)
 {
+	TRACE_EVENT("dtls", "DTLSConnection::Read", "size", size);
 	//UltraDebug("-DTLSConnection::Read() | [pending:%d]\n",BIO_ctrl_pending(write_bio));
 	
 	if (! DTLSConnection::hasDTLS) 
@@ -668,11 +677,13 @@ void DTLSConnection::onSSLInfo(int where, int ret)
 
 int DTLSConnection::Renegotiate()
 {
+	TRACE_EVENT("dtls", "DTLSConnection::Renegotiate");
 	//Run in event loop thread
 	timeService.Async([this](...){
 		if (ssl)
 		{
 
+			TRACE_EVENT("dtls", "DTLSConnection::Renegotiate::Work");
 			SSL_renegotiate(ssl);
 			SSL_do_handshake(ssl);
 
@@ -685,6 +696,7 @@ int DTLSConnection::Renegotiate()
 
 int DTLSConnection::SetupSRTP()
 {
+	TRACE_EVENT("dtls", "DTLSConnection::SetupSRTP");
 	if (! DTLSConnection::hasDTLS)
 		return Error("-DTLSConnection::SetupSRTP() | no DTLS\n");
 
@@ -790,6 +802,7 @@ int DTLSConnection::SetupSRTP()
 
 int DTLSConnection::Write(const BYTE *buffer, DWORD size)
 {
+	TRACE_EVENT("dtls", "DTLSConnection::Write", "size", size);
 	//UltraDebug("-DTLSConnection::Write()\n");
 	
 	if (!DTLSConnection::hasDTLS)

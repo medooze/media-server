@@ -1,4 +1,4 @@
-
+#include "tracing.h"
 #include "SRTPSession.h"
 #include <string.h>
 #include <algorithm>
@@ -147,6 +147,7 @@ void SRTPSession::RemoveStream(uint32_t ssrc)
 		
 size_t SRTPSession::ProtectRTP(uint8_t* data, size_t size)
 {
+	TRACE_EVENT("srtp", "SRTPSession::ProtectRTP", "size", size);
 	int len = size;
 	err = (Status)srtp_protect(srtp,(uint8_t*)data,&len);
 	return err == Status::OK && len > 0 ? static_cast<size_t>(len) : 0;
@@ -154,6 +155,7 @@ size_t SRTPSession::ProtectRTP(uint8_t* data, size_t size)
 
 size_t SRTPSession::ProtectRTCP(uint8_t* data, size_t size)
 {
+	TRACE_EVENT("srtp", "SRTPSession::ProtectRTCP", "size", size);
 	int len = size;
 	err = (Status)srtp_protect_rtcp(srtp,(uint8_t*)data,&len);
 	return err==Status::OK && len>0 ? static_cast<size_t>(len) : 0;
@@ -161,6 +163,7 @@ size_t SRTPSession::ProtectRTCP(uint8_t* data, size_t size)
 
 size_t SRTPSession::UnprotectRTP(uint8_t* data, size_t size)
 {
+	TRACE_EVENT("srtp", "SRTPSession::UnprotectRTP", "size", size);
 	int len = size;
 	err = (Status)srtp_unprotect(srtp,(uint8_t*)data,&len);
 	return err==Status::OK && len>0 ? len : 0;
@@ -169,6 +172,7 @@ size_t SRTPSession::UnprotectRTP(uint8_t* data, size_t size)
 
 size_t SRTPSession::UnprotectRTCP(uint8_t* data, size_t size)
 {
+	TRACE_EVENT("srtp", "SRTPSession::UnprotectRTCP", "size", size);
 	int len = size;
 	err = (Status)srtp_unprotect_rtcp(srtp,(uint8_t*)data,&len);
 	return err == Status::OK && len > 0 ? static_cast<size_t>(len) : 0;

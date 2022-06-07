@@ -1,3 +1,4 @@
+#include "tracing.h"
 #include "EventLoop.h"
 
 #include <sys/socket.h>
@@ -143,6 +144,7 @@ bool EventLoop::Start(std::function<void(void)> loop)
 		Stop();
 	
 	//Log
+	TRACE_EVENT("eventloop", "EventLoop::Start(loop)");
 	Debug("-EventLoop::Start()\n");
 	
 #if __APPLE__
@@ -187,6 +189,7 @@ bool EventLoop::Start(int fd)
 		return Error("-EventLoop::Start() | Already running\n");
 	
 	//Log
+	TRACE_EVENT("eventloop", "EventLoop::Start(fd)");
 	Debug("-EventLoop::Start() [fd:%d]\n",fd);
 	
 #if __APPLE__
@@ -231,6 +234,7 @@ bool EventLoop::Stop()
 		return Error("-EventLoop::Stop() | Already stopped\n");
 	
 	//Log
+	TRACE_EVENT("eventloop", "EventLoop::Stop");
 	Debug(">EventLoop::Stop() [fd:%d]\n",fd);
 	
 	//Not running
@@ -263,6 +267,8 @@ bool EventLoop::Stop()
 
 void EventLoop::Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet)
 {
+	TRACE_EVENT("eventloop", "EventLoop::Send", "packet_size", packet.GetSize());
+
 	//Get approximate queued size
 	auto aprox = sending.size_approx();
 	
@@ -442,6 +448,7 @@ const std::chrono::milliseconds EventLoop::Now()
 
 void EventLoop::Signal()
 {
+	TRACE_EVENT("eventloop", "EventLoop::Signal");
 	//UltraDebug("-EventLoop::Signal()\r\n");
 	uint64_t one = 1;
 	
@@ -523,6 +530,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 	//Run until ended
 	while(running && now<=until)
 	{
+		TRACE_EVENT("eventloop", "EventLoop::Run::Iteration");
 		//If we have anything to send set to wait also for write events
 		ufds[0].events = sending.size_approx() ? POLLIN | POLLOUT | POLLERR | POLLHUP : POLLIN | POLLERR | POLLHUP;
 		//Clear readed events
@@ -556,7 +564,10 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 		//UltraDebug(">EventLoop::Run() | poll timeout:%d timers:%d tasks:%d size:%d\n",timeout,timers.size(),tasks.size_approx(), sizeof(ufds) / sizeof(pollfd));
 		
 		//Wait for events
-		poll(ufds,sizeof(ufds)/sizeof(pollfd),timeout);
+		{
+			TRACE_EVENT("eventloop", "poll", "timeout", timeout);
+			poll(ufds,sizeof(ufds)/sizeof(pollfd),timeout);
+		}
 		
 		//Update now
 		now = Now();
@@ -567,6 +578,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 		//Check err queue
 		if  (zerocopyEnabled && ufds[0].revents & POLLERR)
 		{
+			TRACE_EVENT("eventloop", "EventLoop::Run::ProcessErr");
 			UltraDebug("-EventLoop::Run() | ufds[0].revents & POLLERR\n");
 						
 			struct msghdr msg		= {};
@@ -635,6 +647,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 		//Read first
 		if (ufds[0].revents & POLLIN)
 		{
+			TRACE_EVENT("eventloop", "EventLoop::Run::ProcessIn");
 			//UltraDebug("-EventLoop::Run() | ufds[0].revents & POLLIN\n");
 			//Len
 			uint32_t fromLen = sizeof(from);
@@ -652,7 +665,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 		//Check read is possible
 		if (ufds[0].revents & POLLOUT)
 		{
-			
+			TRACE_EVENT("eventloop", "EventLoop::Run::ProcessOut");
 			//UltraDebug("-EventLoop::Run() | ufds[0].revents & POLLOUT\n");
 			
 			//Now send all that we can
@@ -703,7 +716,10 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 			}
 			
 			//Send them
-			sendmmsg(fd, messages, len, flags);
+			{
+				TRACE_EVENT("eventloop", "sendmmsg", "fd", fd, "vlen", len);
+				sendmmsg(fd, messages, len, flags);
+			}
 			
 			//First
 			auto it = items.begin();
@@ -738,6 +754,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 		}
 		
 		//Run queued task
+		TRACE_EVENT_BEGIN("eventloop", "EventLoop::Run::ProcessTasks");
 		std::pair<std::promise<void>,std::function<void(std::chrono::milliseconds)>> task;
 		//Get all pending taks
 		while (tasks.try_dequeue(task))
@@ -749,8 +766,10 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 			task.first.set_value();
 			//UltraDebug("<EventLoop::Run() | task run\n");
 		}
+		TRACE_EVENT_END("eventloop");
 
 		//Timers triggered
+		TRACE_EVENT_BEGIN("eventloop", "EventLoop::Run::ProcessTimers");
 		std::vector<TimerImpl::shared> triggered;
 		//Get all timers to process in this lop
 		for (auto it = timers.begin(); it!=timers.end(); )
@@ -784,6 +803,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 			}
 			//UltraDebug("<EventLoop::Run() | timer run \n");
 		}
+		TRACE_EVENT_END("eventloop");
 		
 		//Read first from signal pipe
 		if (ufds[1].revents & POLLIN)
@@ -802,6 +822,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 	}
 	
 	//Run queued task
+	TRACE_EVENT_BEGIN("eventloop", "EventLoop::Run::FinalProcessTasks");
 	std::pair<std::promise<void>,std::function<void(std::chrono::milliseconds)>> task;
 	//Get all pending taks
 	while (tasks.try_dequeue(task))
@@ -814,6 +835,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 		//Resolce promise
 		task.first.set_value();
 	}
+	TRACE_EVENT_END("eventloop");
 
 	//Log("<EventLoop::Run()\n");
 }
