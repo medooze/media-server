@@ -804,8 +804,16 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 			//UltraDebug(">EventLoop::Run() | timer [%s] triggered at ll%u\n",timer->GetName().c_str(),now.count());
 			//We are executing
 			timer->next = 0ms;
+
+			//Timer triggered
+			TRACE_EVENT_BEGIN("eventloop", "EventLoop::Run::ExecuteTimer", "name", timer->GetName().c_str());
+
 			//Execute it
 			timer->callback(now);
+
+			//Timer ended
+			TRACE_EVENT_END("eventloop");
+
 			//If we have to reschedule it again
 			if (timer->repeat.count() && !timer->next.count())
 			{

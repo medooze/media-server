@@ -1,3 +1,5 @@
+#include "tracing.h"
+
 #include "rtp/RTPStreamTransponder.h"
 #include "waitqueue.h"
 #include "vp8/vp8.h"
@@ -164,7 +166,9 @@ void RTPStreamTransponder::Close()
 
 void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket::shared& packet)
 {
-	
+	//Trace method
+	TRACE_EVENT("rtp","RTPStreamTransponder::onRTP");
+
 	if (!packet)
 		//Exit
 		return;
@@ -483,6 +487,9 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 	if (sender)
 		//Create clone on sender thread
 		sender->Enqueue(packet,[=](const RTPPacket::shared& packet) -> RTPPacket::shared {
+			//Trace event
+			TRACE_EVENT("rtp","RTPStreamTransponder::onRTP::ClonePacket");
+
 			//Clone packet
 			auto cloned = packet->Clone();
 			//Set new seq numbers
@@ -511,6 +518,7 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 			if (cloned->HasDependencyDestriptor() && continousFrameNumber!=NoFrameNum)
 				//Update it
 				cloned->OverrideFrameNumber(static_cast<uint16_t>(continousFrameNumber));
+
 			//Move it
 			return cloned;
 		});

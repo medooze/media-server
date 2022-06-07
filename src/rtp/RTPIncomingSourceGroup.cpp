@@ -1,8 +1,7 @@
 #include "tracing.h"
+
 #include "rtp/RTPIncomingSourceGroup.h"
-
 #include <math.h>
-
 #include "VideoLayerSelector.h"
 #include "remoterateestimator.h"
 
@@ -59,7 +58,10 @@ void RTPIncomingSourceGroup::RemoveListener(RTPIncomingMediaStream::Listener* li
 
 int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet, DWORD size, QWORD now)
 {
-	TRACE_EVENT("rtp", "RTPIncomingSourceGroup::AddPacket", "seq", packet->GetSeqNum());
+	//Trace method
+	TRACE_EVENT("rtp", "RTPIncomingSourceGroup::AddPacket");
+
+
 	//UltraDebug(">RTPIncomingSourceGroup::AddPacket() | [now:%lld]\n",now);
 	
 	//Check if it is the rtx packet used to calculate rtt
@@ -163,6 +165,9 @@ void RTPIncomingSourceGroup::ResetPackets()
 
 void RTPIncomingSourceGroup::Update()
 {
+	//Trace method
+	TRACE_EVENT("rtp", "RTPIncomingSourceGroup::Update");
+
 	//Update it sync
 	timeService.Sync([=](std::chrono::milliseconds now) {
 		//Set last updated time
@@ -245,6 +250,9 @@ void RTPIncomingSourceGroup::Start(bool remb)
 
 void RTPIncomingSourceGroup::DispatchPackets(uint64_t time)
 {
+	//Trace method
+	TRACE_EVENT("rtp", "RTPIncomingSourceGroup::DispatchPackets");
+
 	//UltraDebug("-RTPIncomingSourceGroup::DispatchPackets() | [time:%llu]\n",time);
 	
 	//Deliver all pending packets at once
@@ -297,7 +305,9 @@ void RTPIncomingSourceGroup::Stop()
 
 RTPIncomingSource* RTPIncomingSourceGroup::Process(RTPPacket::shared &packet)
 {
-	TRACE_EVENT("rtp", "RTPIncomingSourceGroup::Process", "seq", packet->GetSeqNum());
+	//Trace method
+	TRACE_EVENT("rtp", "RTPIncomingSourceGroup::Process");
+
 	//Get packet time
 	uint64_t time = packet->GetTime();
 	
