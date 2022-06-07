@@ -130,7 +130,7 @@ public:
 
 		uint64_t GetAbsoluteCaptureTime() const
 		{
-			return GetAbsoluteCaptureTimestamp() - 2208988800000ULL;
+			return absoluteCatpureTimestampNTP ? GetAbsoluteCaptureTimestamp() - 2208988800000ULL : 0;
 		}
 
 		void SetAbsoluteCaptureTime(uint64_t ms)

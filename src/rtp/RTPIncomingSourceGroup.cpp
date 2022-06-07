@@ -346,7 +346,7 @@ RTPIncomingSource* RTPIncomingSourceGroup::Process(RTPPacket::shared &packet)
 	}
 	
 	if (source==&media)
-		source->SetLastTimestamp(time, packet->GetExtTimestamp());
+		source->SetLastTimestamp(time, packet->GetExtTimestamp(), packet->GetAbsoluteCaptureTime());
 	//Done
 	return source;
 }

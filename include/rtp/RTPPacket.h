@@ -123,6 +123,7 @@ public:
 
 	QWORD GetAbsSendTime()			const	{ return extension.absSentTime;			}
 	QWORD GetEstimatedAbsSendTime()		const	{ return time % 64000 + extension.absSentTime;  }
+	QWORD GetAbsoluteCaptureTime()		const   { return extension.absoluteCaptureTime.GetAbsoluteCaptureTime();	}
 	int   GetTimeOffset()			const	{ return extension.timeOffset;			}
 	bool  GetVAD()				const	{ return extension.vad;				}
 	BYTE  GetLevel()			const	{ return extension.level;			}
@@ -198,7 +199,11 @@ protected:
 						|| extension.hasFrameMarking
 						|| extension.hasRId
 						|| extension.hasRepairedId
-						|| extension.hasMediaStreamId; }
+						|| extension.hasMediaStreamId
+						|| extension.hasAbsoluteCaptureTime
+						|| extension.hasAudioLevel
+						|| extension.hasVideoOrientation
+						|| extension.hasDependencyDescriptor; }
 
 private:
 	MediaFrame::Type media;

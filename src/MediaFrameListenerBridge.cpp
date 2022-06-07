@@ -215,6 +215,7 @@ void MediaFrameListenerBridge::onMediaFrame(const MediaFrame& frame)
 			//Set other values
 			packet->SetClockRate(rate);
 			packet->SetExtTimestamp(lastTimestamp*rate/frame->GetClockRate());
+			packet->SetAbsoluteCaptureTime(time);
 			//Check
 			if (i+1==info.size())
 				//last

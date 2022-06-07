@@ -186,10 +186,10 @@ private:
 	char*	iceLocalUsername	= nullptr;
 	char*	iceLocalPwd		= nullptr;
 	
-	Acumulator incomingBitrate;
-	Acumulator outgoingBitrate;
-	Acumulator rtxBitrate;
-	Acumulator probingBitrate;
+	Acumulator<uint32_t, uint64_t> incomingBitrate;
+	Acumulator<uint32_t, uint64_t> outgoingBitrate;
+	Acumulator<uint32_t, uint64_t> rtxBitrate;
+	Acumulator<uint32_t, uint64_t> probingBitrate;
 	
 	std::map<DWORD,PacketStats::shared> transportWideReceivedPacketsStats;
 	

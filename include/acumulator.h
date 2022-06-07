@@ -9,24 +9,29 @@
 #define	ACUMULATOR_H
 
 #include <stdint.h>
+#include <limits>
 #include "CircularQueue.h"
+#include "MovingCounter.h"
 
+template <typename  V = uint32_t, typename T = uint64_t>
 class Acumulator
 {
 public:
 	Acumulator(uint32_t window, uint32_t base = 1000, uint32_t initialSize = 0) :
 		values(initialSize),
 		window(window),
-		base(base)
+		base(base),
+		minCounter(base),
+		maxCounter(base)
 	{
 		Reset(0);
 	}
 
-	uint64_t GetAcumulated()	const { return acumulated;			}
-	uint64_t GetDiff()		const { return last-first;			}
-	uint64_t GetInstant()		const { return instant;				}
-	uint64_t GetMin()		const { return min;				}
-	uint64_t GetMax()		const { return max;				}
+	T GetAcumulated()		const { return acumulated;			}
+	T GetInstant()			const { return instant;				}
+	T GetMin()			const { return min;				}
+	T GetMax()			const { return max;				}
+	uint64_t GetDiff()		const { return last - first;			}
 	uint32_t GetWindow()		const { return window;				}
 	bool  IsInWindow()		const { return inWindow;			}
 	bool  IsInMinMaxWindow()	const { return inWindow && min!=(uint64_t)-1;	}
@@ -39,7 +44,7 @@ public:
 	void ResetMinMax()
 	{
 		max = 0;
-		min = std::numeric_limits<uint64_t>::max();
+		min = std::numeric_limits<T>::max();
 	}
 
 	void Reset(uint64_t now)
@@ -53,9 +58,11 @@ public:
 		inWindow = false;
 		values.clear();
 		count = 0;
+		maxCounter.Reset();
+		minCounter.Reset();
 	}
 
-	uint64_t Update(uint64_t now)
+	T Update(uint64_t now)
 	{
 		//Erase old values
 		while (!values.empty() && values.front().first + window <= now)
@@ -81,11 +88,14 @@ public:
 		if (inWindow && instant < min)
 			//New min
 			min = instant;
+		//Set min and max moving counters
+		minCounter.RollWindow(now);
+		maxCounter.RollWindow(now);
 		//Return accumulated value
 		return instant;
 	}
 	
-	uint64_t Update(uint64_t now, uint32_t val)
+	T Update(uint64_t now, V val)
 	{
 		//Don't allow time to go back
 		if (now<last)
@@ -127,61 +137,29 @@ public:
 		if (inWindow && instant<min)
 			//New min
 			min = instant;
+		//Set min and max moving counters
+		minCounter.RollWindow(now);
+		maxCounter.RollWindow(now);
 		//Return accumulated value
 		return instant;
 	}
 	
-	uint32_t GetMinValueInWindow() const
+	V GetMinValueInWindow() const
 	{
-		uint32_t minValue = std::numeric_limits<uint32_t>::max();
-		//For eacn entry
-		for (size_t i = 0; i < values.length(); ++i)
-		{
-			const auto& value = values.at(i);
-			//If it is less
-			if (value.second<minValue)
-				//Store it
-				minValue = value.second;
-		}
 		//Return minimum value in window
-		return minValue;
+		return minCounter.GetMin().value_or(std::numeric_limits<V>::max());
 	}
 	
-	uint32_t GetMaxValueInWindow() const
+	V GetMaxValueInWindow() const
 	{
-		uint32_t maxValue = 0;
-		//For eacn entry
-		for (size_t i = 0; i < values.length(); ++i)
-		{
-			const auto& value = values.at(i);
-			//If it is more
-			if (value.second>maxValue)
-				//Store it
-				maxValue = value.second;
-		}
-		//Return maxi value in window
-		return maxValue;
+		//Return max value in window
+		return maxCounter.GetMax().value_or(std::numeric_limits<V>::min());
 	}
 	
-	std::pair<uint32_t,uint32_t> GetMinMaxValueInWindow() const
+	std::pair<V,V> GetMinMaxValueInWindow() const
 	{
-		uint32_t minValue = std::numeric_limits<uint32_t>::max();
-		uint32_t maxValue = 0;
-		//For eacn entry
-		for (size_t i = 0; i < values.length(); ++i)
-		{
-			const auto& value = values.at(i);
-			//If it is more
-			if (value.second > maxValue)
-				//Store it
-				maxValue = value.second;
-			//If it is less
-			if (value.second < minValue)
-				//Store it
-				minValue = value.second;
-		}
 		//Return min max values in window
-		return {minValue,maxValue};
+		return { GetMinValueInWindow(), GetMaxValueInWindow() };
 	}
 
 	uint32_t GetCount() const
@@ -189,22 +167,26 @@ public:
 		return count;
 	}
 	
-	uint32_t IsEmpty() const
+	bool IsEmpty() const
 	{
 		return values.empty();
 	}
 private:
-	CircularQueue<std::pair<uint64_t,uint32_t>> values;
+	CircularQueue<std::pair<uint64_t,V>> values;
+
 	uint32_t count;
 	uint32_t window;
 	uint32_t base;
 	bool  inWindow;
-	uint64_t acumulated;
-	uint64_t instant;
-	uint64_t max;
-	uint64_t min;
+	T acumulated;
+	T instant;
+	T max;
+	T min;
 	uint64_t first;
 	uint64_t last;
+
+	MovingMinCounter<V> minCounter;
+	MovingMaxCounter<V> maxCounter;
 };
 #endif	/* ACUMULATOR_H */
 

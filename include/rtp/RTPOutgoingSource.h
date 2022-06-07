@@ -12,7 +12,9 @@ struct RTPOutgoingSource :
 	bool	generatedSeqNum;
 	DWORD   time;
 	DWORD   seqGaps;
-	DWORD   lastTime;
+	DWORD	numFrames;
+	DWORD	numFramesDelta;
+	DWORD   lastTimestamp;
 	DWORD   lastPayloadType;
 	QWORD	lastSenderReport;
 	QWORD	lastSenderReportNTP;
@@ -25,9 +27,10 @@ struct RTPOutgoingSource :
 	DWORD	reportedJitter;
 	DWORD	rtt;
 	
-	Acumulator reportCountAcumulator;
-	Acumulator reportedlostCountAcumulator;
-	Acumulator reportedFractionLossAcumulator;
+	Acumulator<uint32_t, uint64_t> acumulatorFrames;
+	Acumulator<uint32_t, uint64_t> reportCountAcumulator;
+	Acumulator<uint32_t, uint64_t> reportedlostCountAcumulator;
+	Acumulator<uint32_t, uint64_t> reportedFractionLossAcumulator;
 	
 	RTPOutgoingSource();
 	virtual ~RTPOutgoingSource() = default;
@@ -48,6 +51,8 @@ struct RTPOutgoingSource :
 	RTCPSenderReport::shared CreateSenderReport(QWORD time);
 	bool ProcessReceiverReport(QWORD time, const RTCPReport::shared& report);
 	bool IsLastSenderReportNTP(DWORD ntp);
+
+	void SetLastTimestamp(QWORD now, QWORD timestamp);
 };
 
 #endif /* RTPOUTGOINGSOURCE_H */

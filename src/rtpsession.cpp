@@ -437,11 +437,11 @@ int RTPSession::SendPacket(const RTPPacket::shared &packet,DWORD timestamp)
 	}
 	
 	//Calculate last timestamp
-	send.media.lastTime = send.media.time + timestamp;
+	send.media.lastTimestamp = send.media.time + timestamp;
 
 	//Init send packet
 	packet->SetSSRC(send.media.ssrc);
-	packet->SetTimestamp(send.media.lastTime);
+	packet->SetTimestamp(send.media.lastTimestamp);
 	packet->SetPayloadType(sendType);
 	packet->SetExtSeqNum(send.media.NextExtSeqNum());
 

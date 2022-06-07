@@ -2,12 +2,15 @@
 
 RTPOutgoingSource::RTPOutgoingSource() : 
 	RTPSource(),
+	acumulatorFrames(1000),
 	reportCountAcumulator(1000),
 	reportedlostCountAcumulator(1000),
 	reportedFractionLossAcumulator(1000)
 {
 	time			= random();
-	lastTime		= 0;
+	numFrames		= 0;
+	numFramesDelta		= 0;
+	lastTimestamp		= 0;
 	ssrc			= random();
 	extSeqNum		= random() & 0xFFFF;
 	lastSenderReport	= 0;
@@ -85,7 +88,9 @@ void RTPOutgoingSource::Reset()
 	ssrc			= random();
 	extSeqNum		= random() & 0xFFFF;
 	time			= random();
-	lastTime		= 0;
+	numFrames		= 0;
+	numFramesDelta		= 0;
+	lastTimestamp		= 0;
 	lastSenderReport	= 0;
 	lastSenderReportNTP	= 0;
 	lastPayloadType		= 0xFF;
@@ -114,6 +119,7 @@ void RTPOutgoingSource::Update(QWORD now)
 {
 	RTPSource::Update(now);
 	//Set deltas
+	numFramesDelta		= acumulatorFrames.Update(now);
 	reportCountDelta	= reportCountAcumulator.Update(now);
 	reportedLostCountDelta	= reportedlostCountAcumulator.Update(now);
 	
@@ -139,8 +145,9 @@ RTCPSenderReport::shared RTPOutgoingSource::CreateSenderReport(QWORD now)
 
 	//Append data
 	sr->SetSSRC(ssrc);
+	//TODO: lastTime?
 	sr->SetTimestamp(now);
-	sr->SetRtpTimestamp(lastTime);
+	sr->SetRtpTimestamp(lastTimestamp);
 	sr->SetOctectsSent(totalBytes);
 	sr->SetPacketsSent(numPackets);
 	
@@ -194,9 +201,24 @@ void RTPOutgoingSource::Update(QWORD now, const RTPPacket::shared& packet, DWORD
 void RTPOutgoingSource::Update(QWORD now, const RTPHeader& header, DWORD size)
 {
 	//Update last send time
-	lastTime = header.timestamp;
+	SetLastTimestamp(now,header.timestamp);
+	//Update current payload
 	lastPayloadType = header.payloadType;
 
 	//Update stats
 	Update(now, header.sequenceNumber, size);
+}
+
+void RTPOutgoingSource::SetLastTimestamp(QWORD now, QWORD timestamp)
+{
+	//If new packet is newer
+	if (timestamp > lastTimestamp)
+	{
+		//One new frame
+		numFrames++;
+		numFramesDelta = acumulatorFrames.Update(now, 1);
+		//Store last time
+		lastTimestamp = timestamp;
+	}
+	//lastTime = now;
 }

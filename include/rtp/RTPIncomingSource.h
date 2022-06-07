@@ -32,9 +32,19 @@ struct RTPIncomingSource : public RTPSource
 	DWORD	totalNACKs;
 	QWORD	lastNACKed;
 	QWORD	lastTimestamp;
+	QWORD	lastCaptureTimestamp;
 	QWORD	lastTime;
 	QWORD   firstReceivedSenderTime;
 	QWORD   firstReceivedSenderTimestamp;
+
+	QWORD	firstFrameTime;
+	DWORD   frameDelay;
+	DWORD   frameDelayMax;
+	DWORD   frameTime;
+	DWORD   frameTimeMax;
+	int32_t frameCaptureDelay;
+	int32_t frameCaptureDelayMax;
+
 	int64_t skew;
 	double  drift;
 	bool	aggregatedLayers;
@@ -43,8 +53,11 @@ struct RTPIncomingSource : public RTPSource
 	std::map<WORD,LayerSource> layers;
 	
 	
-	Acumulator acumulatorFrames;
-	Acumulator acumulatorLostPackets;
+	Acumulator<uint32_t, uint64_t> acumulatorFrames;
+	Acumulator<int32_t, int64_t> acumulatorFrameDelay;
+	Acumulator<uint32_t, uint64_t> acumulatorFrameTime;
+	Acumulator<int32_t, int64_t>   acumulatorCaptureDelay;
+	Acumulator<uint32_t, uint64_t> acumulatorLostPackets;
 	
 	
 	RTPIncomingSource();
@@ -59,7 +72,7 @@ struct RTPIncomingSource : public RTPSource
 	void Update(QWORD now,DWORD seqNum,DWORD size,const std::vector<LayerInfo> &layerInfos, bool aggreagtedLayers);
 	
 	void Process(QWORD now, const RTCPSenderReport::shared& sr);
-	void SetLastTimestamp(QWORD now, QWORD timestamp);
+	void SetLastTimestamp(QWORD now, QWORD timestamp, QWORD captureTimestamp = 0);
 	
 	virtual void Update(QWORD now,DWORD seqNum,DWORD size) override;
 	virtual void Update(QWORD now) override;

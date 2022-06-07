@@ -706,7 +706,7 @@ DWORD DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 		header.ssrc		= source.ssrc;
 		header.payloadType	= sendMaps.apt.begin()->first;
 		header.sequenceNumber	= extSeqNum = source.NextSeqNum();
-		header.timestamp	= source.lastTime++;
+		header.timestamp	= source.lastTimestamp++;
 		//Padding
 		header.padding		= 1;
 	} else {
@@ -714,7 +714,7 @@ DWORD DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 		header.ssrc		= source.ssrc;
 		header.payloadType	= source.lastPayloadType;
 		header.sequenceNumber	= extSeqNum = source.AddGapSeqNum();
-		header.timestamp	= source.lastTime;
+		header.timestamp	= source.lastTimestamp;
 		//Padding
 		header.padding		= 1;
 	}

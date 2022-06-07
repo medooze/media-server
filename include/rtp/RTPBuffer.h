@@ -183,7 +183,7 @@ public:
 private:
 	//The event list
 	std::map<DWORD,RTPPacket::shared> packets;
-	Acumulator waited;
+	Acumulator<uint32_t, uint64_t> waited;
 	
 	bool  hurryUp		= false;
 	DWORD next		= (DWORD)-1;
