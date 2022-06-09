@@ -105,7 +105,7 @@ public:
 	void  SetRepairedId(const std::string &repairedId)				{ header.extension = extension.hasRepairedId		= true; extension.repairedId = repairedId;	}
 	void  SetMediaStreamId(const std::string &mid)					{ header.extension = extension.hasMediaStreamId		= true; extension.mid = mid;			}
 	void  SetDependencyDescriptor(DependencyDescriptor& dependencyDescriptor)	{ header.extension = extension.hasDependencyDescriptor	= true; extension.dependencyDescryptor = dependencyDescriptor;		}
-	void  SetAbsoluteCaptureTimestamp(QWORD ntp)						{ header.extension = extension.hasAbsoluteCaptureTime	= true; extension.absoluteCaptureTime.SetAbsoluteCaptureTimestamp(ntp); }
+	void  SetAbsoluteCaptureTimestamp(QWORD ntp)					{ header.extension = extension.hasAbsoluteCaptureTime	= true; extension.absoluteCaptureTime.SetAbsoluteCaptureTimestamp(ntp); }
 	void  SetAbsoluteCaptureTime(QWORD ms)						{ header.extension = extension.hasAbsoluteCaptureTime	= true; extension.absoluteCaptureTime.SetAbsoluteCaptureTime(ms);	}
 	
 	bool  ParseDependencyDescriptor(const std::optional<TemplateDependencyStructure>& templateDependencyStructure, std::optional<std::vector<bool>>& activeDecodeTargets);

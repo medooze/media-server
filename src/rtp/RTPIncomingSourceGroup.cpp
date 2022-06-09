@@ -127,10 +127,6 @@ int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet, DWORD siz
 	
 	//Set last updated time
 	lastUpdated = now;
-	//Update media
-	media.Update(now);
-	//Update rtx
-	rtx.Update(now);
 
 	//Return lost packets
 	return lost;

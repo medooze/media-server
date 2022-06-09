@@ -14,6 +14,7 @@
 #ifndef RTPHEADEREXTENSION_H
 #define RTPHEADEREXTENSION_H
 #include <optional>
+#include <cmath>
 
 #include "config.h"
 #include "tools.h"
@@ -135,12 +136,14 @@ public:
 
 		void SetAbsoluteCaptureTime(uint64_t ms)
 		{
-			absoluteCatpureTimestampNTP = ms + 2208988800000ULL;
+			SetAbsoluteCaptureTimestamp(ms + 2208988800000ULL);
 		}
 
 		void SetAbsoluteCaptureTimestamp(uint64_t ntp)
 		{
-			absoluteCatpureTimestampNTP = ntp;
+			absoluteCatpureTimestampNTP = std::round(ntp * (0x100000000 / 1000.0));
+			estimatedCaptureClockOffsetNTP = 0;
+
 		}
 	};
 	

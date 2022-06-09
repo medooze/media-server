@@ -138,8 +138,8 @@ public:
 			//New min
 			min = instant;
 		//Set min and max moving counters
-		minCounter.RollWindow(now);
-		maxCounter.RollWindow(now);
+		minCounter.Add(now, val);
+		maxCounter.Add(now, val);
 		//Return accumulated value
 		return instant;
 	}

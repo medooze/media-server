@@ -230,10 +230,12 @@ void RTPIncomingSource::Update(QWORD now)
 	acumulatorFrameDelay.Update(now);
 	acumulatorCaptureDelay.Update(now);
 	//Get max and averages
-	frameDelay		= acumulatorFrameDelay.GetAverage();
+	frameDelay		= acumulatorFrameDelay.GetInstantMedia();
 	frameDelayMax		= acumulatorFrameDelay.GetMaxValueInWindow();
-	frameCaptureDelay	= acumulatorCaptureDelay.GetAverage();
+	frameCaptureDelay	= acumulatorCaptureDelay.GetInstantMedia();
 	frameCaptureDelayMax	= acumulatorCaptureDelay.GetMaxValueInWindow();
+
+	//UltraDebug("-RTPIncomingSource::Update() [frameDelay:%d,frameDelayMax:%d,frameDelayMax:%d,frameCaptureDelayMax:%d]\n", frameDelay, frameDelayMax, frameCaptureDelay, frameCaptureDelayMax);
 }
 
 void RTPIncomingSource::Process(QWORD now, const RTCPSenderReport::shared& sr)
@@ -300,12 +302,16 @@ void RTPIncomingSource::SetLastTimestamp(QWORD now, QWORD timestamp, QWORD captu
 		if (captureTimestamp)
 		{
 			//Calculate e2e delay
-			int64_t delay = captureTimestamp - now;
+			int64_t delay = now - captureTimestamp;
 
 			//e2e delay
 			acumulatorCaptureDelay.Update(now, delay);
 
-			UltraDebug("RTPIncomingSource::SetLastTimestamp() [now:%llu,captureTimestamp:%llu,delay:%lld]\n", now, captureTimestamp, delay);
+			//Update stats
+			frameCaptureDelay = acumulatorCaptureDelay.GetInstantMedia();
+			frameCaptureDelayMax = acumulatorCaptureDelay.GetMaxValueInWindow();
+
+			//UltraDebug("RTPIncomingSource::SetLastTimestamp() [now:%llu,captureTimestamp:%llu,delay:%lld]\n", now, captureTimestamp, delay);
 
 			//If not first one
 			if (lastCaptureTimestamp && lastCaptureTimestamp <= captureTimestamp)
@@ -315,22 +321,23 @@ void RTPIncomingSource::SetLastTimestamp(QWORD now, QWORD timestamp, QWORD captu
 				int64_t receptionTimeDiff = now - lastCaptureTime;
 				int64_t interarraivalDelay = catpureTimestampDiff - receptionTimeDiff;
 
-				UltraDebug("RTPIncomingSource::SetLastTimestamp() [capture:%llu,reception:%llu,delay:%lld]\n", catpureTimestampDiff, receptionTimeDiff, interarraivalDelay);
+				//UltraDebug("RTPIncomingSource::SetLastTimestamp() [capture:%llu,reception:%llu,delay:%lld]\n", catpureTimestampDiff, receptionTimeDiff, interarraivalDelay);
 
 				//Update accumulators
 				acumulatorFrameDelay.Update(now, interarraivalDelay);
+
+				//Update stats
+				frameDelay = acumulatorFrameDelay.GetInstantMedia();
+				frameDelayMax = acumulatorFrameDelay.GetMaxValueInWindow();
 			}
+
+			//UltraDebug("-RTPIncomingSource::SetLastTimestamp() [frameDelay:%d,frameDelayMax:%d,frameDelayMax:%d,frameCaptureDelayMax:%d]\n", frameDelay, frameDelayMax, frameCaptureDelay, frameCaptureDelayMax);
 
 			//Store last capture time
 			lastCaptureTimestamp = captureTimestamp;
 			lastCaptureTime = now;
 		}
 
-		//Update stats
-		frameDelay		= acumulatorFrameDelay.GetAverage();
-		frameDelayMax		= acumulatorFrameDelay.GetMaxValueInWindow();
-		frameCaptureDelay	= acumulatorCaptureDelay.GetAverage();
-		frameCaptureDelayMax	= acumulatorCaptureDelay.GetMaxValueInWindow();
 
 		//One new frame
 		numFrames++;
