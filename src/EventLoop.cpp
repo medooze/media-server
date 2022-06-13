@@ -544,7 +544,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 	//Run until ended
 	while(running && now<=until)
 	{
-		TRACE_EVENT("eventloop", "EventLoop::Run::Iteration");
+		//TRACE_EVENT("eventloop", "EventLoop::Run::Iteration");
 		//If we have anything to send set to wait also for write events
 		ufds[0].events = sending.size_approx() ? POLLIN | POLLOUT | POLLERR | POLLHUP : POLLIN | POLLERR | POLLHUP;
 		//Clear readed events
@@ -579,7 +579,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 		
 		//Wait for events
 		{
-			TRACE_EVENT("eventloop", "poll", "timeout", timeout);
+			//TRACE_EVENT("eventloop", "poll", "timeout", timeout);
 			poll(ufds,sizeof(ufds)/sizeof(pollfd),timeout);
 		}
 		
