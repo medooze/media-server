@@ -427,6 +427,8 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 	//Check if it looks like a STUN message
 	if (STUNMessage::IsSTUN(data,size))
 	{
+		TRACE_EVENT("transport", "RTPBundleTransport::OnRead::STUN", "ip", ip, "port", port, "size", size);
+
 		//UltraDebug("-RTPBundleTransport::OnRead() | stun\n");
 		
 		//Parse it
@@ -502,9 +504,6 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 				return;
 			}
 			
-			//Check wether we have to reply to this message or not
-			bool reply = !(connection->disableSTUNKeepAlive && transport->HasActiveRemoteCandidate());
-			
 			//Get attribute
 			STUNMessage::Attribute* priority = stun->GetAttribute(STUNMessage::Attribute::Priority);
 			
@@ -523,8 +522,8 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 				Log("-RTPBundleTransport::Read() | Got new remote ICE candidate [remote:%s]\n",remote.c_str());
 				//Add it to the connection
 				connection->candidates.insert(candidate);
-				//We need to reply the first always
-				reply = true;
+				//Send back an ice request
+				SendBindingRequest(connection, candidate);
 			}
 			
 			//Set it active
@@ -551,10 +550,6 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 			//Inc stats
 			connection->iceResponsesSent++;
 
-			//If the STUN keep alive response is not disabled
-			if (reply)
-				//Send back an ice request
-				SendBindingRequest(connection,candidate);
 		} else if (type==STUNMessage::Response && method==STUNMessage::Binding) {
 			
 			//Get ts and id
