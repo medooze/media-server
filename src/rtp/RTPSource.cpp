@@ -74,6 +74,7 @@ void RTPSource::Update(QWORD now)
 {
 	//Update bitrate acumulator
 	acumulator.Update(now);
+	acumulatorPackets.Update(now);
 
 	//Get bitrate in bps
 	bitrate = acumulator.GetInstant()*8;
