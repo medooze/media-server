@@ -62,24 +62,18 @@ void RTPSource::Update(QWORD now, DWORD seqNum,DWORD size)
 	numPackets++;
 	totalBytes += size;
 
-	//Update bitrate acumulator
-	acumulator.Update(now,size);
-	acumulatorPackets.Update(now,1);
-
-	//Get bitrate in bps
-	bitrate = acumulator.GetInstant()*8;
+	//Update bitrate acumulator and get value in bps
+	bitrate = acumulator.Update(now,size) * 8;
+	//Update packets acumulator
+	numPacketsDelta = acumulatorPackets.Update(now,1);
 }
 
 void RTPSource::Update(QWORD now) 
 {
-	//Update bitrate acumulator
-	acumulator.Update(now);
-	acumulatorPackets.Update(now);
-
-	//Get bitrate in bps
-	bitrate = acumulator.GetInstant()*8;
-	//Get num packets in window
-	numPacketsDelta = acumulatorPackets.GetInstant();
+	//Update bitrate acumulator and get value in bps
+	bitrate = acumulator.Update(now) * 8;
+	//Update packets acumulator
+	numPacketsDelta = acumulatorPackets.Update(now);
 }
 
 void RTPSource::Reset()
