@@ -147,7 +147,7 @@ bool EventLoop::SetPriority(int priority)
 	sched_param param = { 
 		.sched_priority = priority
 	};
-	return !pthread_setschedparam(thread.native_handle(), priority ? SCHED_RR : SCHED_OTHER ,&param);
+	return !pthread_setschedparam(thread.native_handle(), priority ? SCHED_FIFO : SCHED_OTHER ,&param);
 }
 
 bool EventLoop::Start(std::function<void(void)> loop)
