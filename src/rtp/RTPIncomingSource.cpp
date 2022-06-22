@@ -319,7 +319,7 @@ void RTPIncomingSource::SetLastTimestamp(QWORD now, QWORD timestamp, QWORD captu
 				//Get difference between the first packet of a frame in both capture and reception time
 				int64_t catpureTimestampDiff = captureTimestamp - lastCaptureTimestamp;
 				int64_t receptionTimeDiff = now - lastCaptureTime;
-				int64_t interarraivalDelay = catpureTimestampDiff - receptionTimeDiff;
+				int64_t interarraivalDelay = receptionTimeDiff - catpureTimestampDiff;
 
 				//UltraDebug("RTPIncomingSource::SetLastTimestamp() [capture:%llu,reception:%llu,delay:%lld]\n", catpureTimestampDiff, receptionTimeDiff, interarraivalDelay);
 
