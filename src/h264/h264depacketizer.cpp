@@ -97,7 +97,7 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 	//Get nalu size
 	DWORD nalSize = payloadLen;
 
-	//Debug("-H264 [NAL:%d,type:%d]\n", payload[0], nalUnitType);
+	Debug("-H264 [NAL:%d,type:%d,size:%d]\n", payload[0], nalUnitType, nalSize);
 
 	//Check type
 	switch (nalUnitType)
@@ -315,7 +315,7 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 					config.SetAVCProfileIndication(nalData[0]);
 					config.SetProfileCompatibility(nalData[1]);
 					config.SetAVCLevelIndication(nalData[2]);
-					config.SetNALUnitLength(sizeof(nalHeader));
+					config.SetNALUnitLength(sizeof(nalHeader)-1);
 					
 					//Add full nal to config
 					config.AddSequenceParameterSet(payload,nalSize);
