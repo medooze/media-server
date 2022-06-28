@@ -1508,6 +1508,11 @@ void DTLSICETransport::onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMaster
 
 	//Set name for debug
 	probingTimer->SetName("DTLSICETransport - bwe probe");
+
+	//If sse is disabled
+	if (!this->senderSideEstimationEnabled)
+		//Cancel timer for now, and let it be rescheduled
+		probingTimer->Cancel();
 }
 
 void DTLSICETransport::onDTLSSetupError()
@@ -2734,4 +2739,22 @@ void DTLSICETransport::DisableREMB(bool disabled)
 	//Log
 	Debug("-DTLSICETransport::DisableREMB() [disabled:%d]\n", disabled);
 	this->disableREMB = disabled;
+}
+
+void DTLSICETransport::EnableSenderSideEstimation(bool enabled)
+{ 
+	//Update flag
+	this->senderSideEstimationEnabled = enabled;
+
+	//Check if we still have the timer
+	if (probingTimer)
+	{
+		//If sse enabled
+		if (this->senderSideEstimationEnabled)
+			//Start probing timer again
+			probingTimer->Again(0ms);
+		else
+			//Stop probing timer
+			probingTimer->Cancel();
+	}
 }

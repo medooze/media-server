@@ -96,7 +96,7 @@ public:
 	void SetBandwidthProbing(bool probe);
 	void SetMaxProbingBitrate(DWORD bitrate)	{ this->maxProbingBitrate = bitrate;		}
 	void SetProbingBitrateLimit(DWORD bitrate)	{ this->probingBitrateLimit = bitrate;		}
-	void EnableSenderSideEstimation(bool enabled)	{ this->senderSideEstimationEnabled = enabled;	}
+	void EnableSenderSideEstimation(bool enabled);
 	void SetSenderSideEstimatorListener(RemoteRateEstimator::Listener* listener) { senderSideBandwidthEstimator.SetListener(listener); }
 
 	uint32_t GetAvailableOutgoingBitrate() const	{ return senderSideBandwidthEstimator.GetAvailableBitrate(); }
