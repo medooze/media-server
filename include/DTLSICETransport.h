@@ -94,8 +94,8 @@ public:
 	bool RemoveIncomingSourceGroup(RTPIncomingSourceGroup *group);
 	
 	void SetBandwidthProbing(bool probe);
-	void SetMaxProbingBitrate(DWORD bitrate)	{ this->maxProbingBitrate = bitrate;		}
-	void SetProbingBitrateLimit(DWORD bitrate)	{ this->probingBitrateLimit = bitrate;		}
+	void SetMaxProbingBitrate(DWORD bitrate);
+	void SetProbingBitrateLimit(DWORD bitrate);
 	void EnableSenderSideEstimation(bool enabled);
 	void SetSenderSideEstimatorListener(RemoteRateEstimator::Listener* listener) { senderSideBandwidthEstimator.SetListener(listener); }
 

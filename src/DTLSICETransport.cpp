@@ -2693,12 +2693,6 @@ void DTLSICETransport::Probe(QWORD now)
 	lastProbe = now;
 }
 
-void DTLSICETransport::SetBandwidthProbing(bool probe)
-{
-	//Set probing status
-	this->probe = probe;
-}
-
 void DTLSICETransport::SetListener(Listener* listener)
 {
 	//Add in main thread and wait
@@ -2740,17 +2734,53 @@ void DTLSICETransport::DisableREMB(bool disabled)
 	Debug("-DTLSICETransport::DisableREMB() [disabled:%d]\n", disabled);
 	this->disableREMB = disabled;
 }
+void DTLSICETransport::SetMaxProbingBitrate(DWORD bitrate)
+{
+	//Log
+	Debug("-DTLSICETransport::SetMaxProbingBitrate() [bitrate:%d]\n", bitrate);
+	this->maxProbingBitrate = bitrate;
+}
+
+void DTLSICETransport::SetProbingBitrateLimit(DWORD bitrate)
+{
+	//Log
+	Debug("-DTLSICETransport::SetProbingBitrateLimit() [bitrate:%d]\n", bitrate);
+	this->probingBitrateLimit = bitrate;
+}
+
+void DTLSICETransport::SetBandwidthProbing(bool probe)
+{
+	//Log
+	Debug("-DTLSICETransport::SetBandwidthProbing() [probe:%d]\n", probe);
+	//Set probing status
+	this->probe = probe;
+
+	//Check if we still have the timer
+	if (probingTimer)
+	{
+		//If sse and probing are enabled
+		if (this->senderSideEstimationEnabled && this->probe)
+			//Start probing timer again
+			probingTimer->Again(0ms);
+		else
+			//Stop probing timer
+			probingTimer->Cancel();
+	}
+}
+
 
 void DTLSICETransport::EnableSenderSideEstimation(bool enabled)
 { 
+	//Log
+	Debug("-DTLSICETransport::EnableSenderSideEstimation() [enabled:%d]\n", enabled);
 	//Update flag
 	this->senderSideEstimationEnabled = enabled;
 
 	//Check if we still have the timer
 	if (probingTimer)
 	{
-		//If sse enabled
-		if (this->senderSideEstimationEnabled)
+		//If sse and probing are enabled
+		if (this->senderSideEstimationEnabled && this->probe)
 			//Start probing timer again
 			probingTimer->Again(0ms);
 		else
