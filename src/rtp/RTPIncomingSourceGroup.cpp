@@ -247,7 +247,11 @@ void RTPIncomingSourceGroup::Start(bool remb)
 void RTPIncomingSourceGroup::DispatchPackets(uint64_t time)
 {
 	//Trace method
-	TRACE_EVENT("rtp", "RTPIncomingSourceGroup::DispatchPackets", "queuedPackets", packets.Length());
+	TRACE_EVENT("rtp", "RTPIncomingSourceGroup::DispatchPackets",
+		"queued", packets.Length(),
+		"next", packets.GetNextPacketSeqNumber(),
+		"discarded", packets.GetNumDiscardedPackets()
+	);
 
 	//UltraDebug("-RTPIncomingSourceGroup::DispatchPackets() | [time:%llu]\n",time);
 	
@@ -268,7 +272,6 @@ void RTPIncomingSourceGroup::DispatchPackets(uint64_t time)
 			//Dispatch rtp packet
 			listener->onRTP(this,ordered);
 
-
 	//Update stats
 	lost		= losts.GetTotal();
 	avgWaitedTime	= packets.GetAvgWaitedTime();
@@ -276,6 +279,14 @@ void RTPIncomingSourceGroup::DispatchPackets(uint64_t time)
 	auto minmax	= packets.GetMinMaxWaitedTime();
 	minWaitedTime	= minmax.first;
 	maxWaitedTime	= minmax.second;
+
+	TRACE_EVENT("rtp", "RTPIncomingSourceGroup::DispatchedPackets",
+		"queued", packets.Length(),
+		"next", packets.GetNextPacketSeqNumber(),
+		"discarded", packets.GetNumDiscardedPackets(),
+		"lost", losts.GetTotal(),
+		"dispatched", ordered.size()
+	);
 
 }
 

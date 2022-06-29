@@ -175,6 +175,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		"ssrc", packet->GetSSRC(),
 		"seqnum", packet->GetSeqNum(),
 		"pt", packet->GetPayloadType(),
+		"payload", packet->GetMediaLength(),
 		"act", packet->GetAbsoluteCaptureTime());
 	
 	//If dumping

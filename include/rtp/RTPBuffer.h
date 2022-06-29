@@ -156,6 +156,11 @@ public:
 	{
 		return discarded;
 	}
+
+	DWORD GetNextPacketSeqNumber() const
+	{
+		return next;
+	}
 	
 	QWORD GetWaitTime(QWORD now)
 	{
