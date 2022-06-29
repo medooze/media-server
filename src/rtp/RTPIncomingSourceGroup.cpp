@@ -247,7 +247,7 @@ void RTPIncomingSourceGroup::Start(bool remb)
 void RTPIncomingSourceGroup::DispatchPackets(uint64_t time)
 {
 	//Trace method
-	TRACE_EVENT("rtp", "RTPIncomingSourceGroup::DispatchPackets");
+	TRACE_EVENT("rtp", "RTPIncomingSourceGroup::DispatchPackets", "queuedPackets", packets.Length());
 
 	//UltraDebug("-RTPIncomingSourceGroup::DispatchPackets() | [time:%llu]\n",time);
 	

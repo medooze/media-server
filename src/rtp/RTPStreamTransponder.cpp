@@ -167,7 +167,7 @@ void RTPStreamTransponder::Close()
 void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket::shared& packet)
 {
 	//Trace method
-	TRACE_EVENT("rtp","RTPStreamTransponder::onRTP");
+	TRACE_EVENT("rtp","RTPStreamTransponder::onRTP", "ssrc", packet->GetSSRC(), "seqnum", packet->GetSeqNum());
 
 	if (!packet)
 		//Exit
@@ -488,7 +488,7 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 		//Create clone on sender thread
 		sender->Enqueue(packet,[=](const RTPPacket::shared& packet) -> RTPPacket::shared {
 			//Trace event
-			TRACE_EVENT("rtp","RTPStreamTransponder::onRTP::ClonePacket");
+			TRACE_EVENT("rtp","RTPStreamTransponder::onRTP::ClonePacket", "ssrc", packet->GetSSRC(), "seqnum", packet->GetSeqNum());
 
 			//Clone packet
 			auto cloned = packet->Clone();
