@@ -152,12 +152,6 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		return 1;
 	}
 
-	if (TRACE_EVENT_CATEGORY_ENABLED("rtp")) {
-		RTPHeader header;
-		auto ok = header.Parse(data, size);
-		TRACE_EVENT("rtp", "DTLSICETransport::onData::RTP", "ssrc", ok ? header.ssrc : -1, "seqnum", ok ? header.sequenceNumber : -1);
-	}
-
 	//Check session
 	if (!recv.IsSetup())
 		return Warning("-DTLSICETransport::onData() | Recv SRTPSession is not setup\n");
@@ -176,6 +170,12 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 	if (!packet)
 		//Error
 		return Warning("-DTLSICETransport::onData() | Could not parse rtp packet\n");
+
+	TRACE_EVENT("rtp", "DTLSICETransport::onData::RTP",
+		"ssrc", packet->GetSSRC(),
+		"seqnum", packet->GetSeqNum(),
+		"pt", packet->GetPayloadType(),
+		"act", packet->GetAbsoluteCaptureTime());
 	
 	//If dumping
 	if (dumper && dumpInRTP)
