@@ -92,7 +92,7 @@ void DTLSICETransport::onDTLSPendingData()
 
 int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* data,DWORD size)
 {
-	TRACE_EVENT("transport", "DTLSICETransport::onData");
+	TRACE_EVENT("transport", "DTLSICETransport::onData", "size", size);
 
 	//Get current time
 	auto now = getTime();
@@ -152,7 +152,11 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		return 1;
 	}
 
-	TRACE_EVENT("rtp", "DTLSICETransport::onData::RTP", "size", size);
+	if (TRACE_EVENT_CATEGORY_ENABLED("rtp")) {
+		RTPHeader header;
+		auto ok = header.Parse(data, size);
+		TRACE_EVENT("rtp", "DTLSICETransport::onData::RTP", "ssrc", ok ? header.ssrc : -1, "seqnum", ok ? header.sequenceNumber : -1);
+	}
 
 	//Check session
 	if (!recv.IsSetup())
