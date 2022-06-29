@@ -261,19 +261,21 @@ void RTPIncomingSourceGroup::DispatchPackets(uint64_t time)
 		ordered.push_back(packet);
 	}
 	
-	//Deliver to all listeners
-	for (auto listener : listeners)
-		//Dispatch rtp packet
-		listener->onRTP(this,ordered);
+	//If we have any rtp packets
+	if (ordered.size())
+		//Deliver to all listeners
+		for (auto listener : listeners)
+			//Dispatch rtp packet
+			listener->onRTP(this,ordered);
 
 
 	//Update stats
-	lost          = losts.GetTotal();
-	avgWaitedTime = packets.GetAvgWaitedTime();
+	lost		= losts.GetTotal();
+	avgWaitedTime	= packets.GetAvgWaitedTime();
 	//Get min max values
-	auto minmax = packets.GetMinMaxWaitedTime();
-	minWaitedTime = minmax.first;
-	maxWaitedTime = minmax.second;
+	auto minmax	= packets.GetMinMaxWaitedTime();
+	minWaitedTime	= minmax.first;
+	maxWaitedTime	= minmax.second;
 
 }
 
