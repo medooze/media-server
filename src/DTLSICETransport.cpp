@@ -1770,6 +1770,9 @@ bool DTLSICETransport::RemoveIncomingSourceGroup(RTPIncomingSourceGroup *group)
 
 int DTLSICETransport::Send(const RTCPCompoundPacket::shared &rtcp)
 {
+
+	TRACE_EVENT("rtp","DTLSICETransport::Send RTCP");
+
 	//TODO: Assert event loop thread
 	
 	//Double check message
@@ -1924,6 +1927,11 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 	if (!send.IsSetup())
 		//Error
 		return Debug("-DTLSICETransport::Send() | We don't have an DTLS setup yet\n");
+
+	//Trace
+	TRACE_EVENT("rtp", "DTLSICETransport::Send RTP",
+		"ssrc", packet->GetSSRC(),
+		"seqNum", packet->GetSeqNum());
 	
 	//Get ssrc
 	DWORD ssrc = packet->GetSSRC();
@@ -2521,6 +2529,7 @@ void DTLSICETransport::SendTransportWideFeedbackMessage(DWORD ssrc)
 void DTLSICETransport::Start()
 {
 	TRACE_EVENT("transport", "DTLSICETransport::Start");
+
 	Debug("-DTLSICETransport::Start()\n");
 	
 	//Get init time
@@ -2579,6 +2588,11 @@ void DTLSICETransport::Stop()
 
 int DTLSICETransport::Enqueue(const RTPPacket::shared& packet)
 {
+	//Trace
+	TRACE_EVENT("rtp", "DTLSICETransport::Enqueue RTP",
+		"ssrc", packet->GetSSRC(),
+		"seqNum", packet->GetSeqNum());
+
 	//Send async
 	timeService.Async([this,packet](...){
 		//Send
@@ -2590,6 +2604,11 @@ int DTLSICETransport::Enqueue(const RTPPacket::shared& packet)
 
 int DTLSICETransport::Enqueue(const RTPPacket::shared& packet,std::function<RTPPacket::shared(const RTPPacket::shared&)> modifier)
 {
+	//Trace
+	TRACE_EVENT("rtp", "DTLSICETransport::Enqueue RTP",
+		"ssrc", packet->GetSSRC(),
+		"seqNum", packet->GetSeqNum());
+
 	//Send async
 	timeService.Async([this,packet,modifier](...){
 		//Send
@@ -2598,9 +2617,11 @@ int DTLSICETransport::Enqueue(const RTPPacket::shared& packet,std::function<RTPP
 	
 	return 1;
 }
+
 void DTLSICETransport::Probe(QWORD now)
 {
 	TRACE_EVENT("transport", "DTLSICETransport::Probe", "now", now);
+
 	//Ensure that transport wide cc is enabled
 	if (senderSideEstimationEnabled && probe && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC)!=RTPMap::NotFound)
 	{
