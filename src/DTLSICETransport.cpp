@@ -228,7 +228,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 				//Schedule
 				sseTimer->Reschedule(std::chrono::milliseconds((int)(TransportWideCCMaxInterval/1000)), 0ms);
 		//If timer is still valid and still scheduled
-		} else if (sseTimer && !sseTimer->IsScheduled()) {
+		} else if (sseTimer && sseTimer->IsScheduled()) {
 			//Cancel it
 			sseTimer->Cancel();
 		}
@@ -2499,7 +2499,7 @@ void DTLSICETransport::SetRTT(DWORD rtt, QWORD now)
 void DTLSICETransport::SendTransportWideFeedbackMessage(DWORD ssrc)
 {
 	//Debug
-	UltraDebug("-DTLSICETriansport::SendTransportWideFeedbackMessage() [ssrc:%d]\n", ssrc);
+	//UltraDebug("-DTLSICETriansport::SendTransportWideFeedbackMessage() [ssrc:%d]\n", ssrc);
 	//RTCP packet
 	auto rtcp = RTCPCompoundPacket::Create();
 
@@ -2844,12 +2844,16 @@ void DTLSICETransport::CheckProbeTimer()
 			break;
 		}
 	}
-	Log("sse:%d probe:%d video:%d state:%d\n", this->senderSideEstimationEnabled, this->probe, video, state == DTLSState::Connected);
+	
 	//Check if we have to start if
-	if (this->senderSideEstimationEnabled && this->probe && video && state==DTLSState::Connected)
-		//Start probing timer again
-		probingTimer->Repeat(ProbingInterval);
-	else 
+	if (this->senderSideEstimationEnabled && this->probe && video && state == DTLSState::Connected)
+	{
+		//If not already started
+		if (probingTimer->IsScheduled())
+			//Start probing timer again
+			probingTimer->Repeat(ProbingInterval);
+	}else {
 		//Stop probing
 		probingTimer->Cancel();
+	}
 }
