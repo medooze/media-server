@@ -125,6 +125,7 @@ public:
 
 private:
 	void SetState(DTLSState state);
+	void CheckProbeTimer();
 	void Probe(QWORD now);
 	int Send(RTPPacket::shared&& packet);
 	int Send(const RTCPCompoundPacket::shared& rtcp);
@@ -209,6 +210,7 @@ private:
 	volatile bool started = false;
 	
 	SendSideBandwidthEstimation senderSideBandwidthEstimator;
+	Timer::shared sseTimer;
 
 	bool overrideBWE = false;
 	bool disableREMB = false;

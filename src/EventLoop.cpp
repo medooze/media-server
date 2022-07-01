@@ -420,6 +420,31 @@ void EventLoop::TimerImpl::Again(const std::chrono::milliseconds& ms)
 	//UltraDebug("<EventLoop::Again() | timer triggered at %llu\n",next.count());
 }
 
+void EventLoop::TimerImpl::Repeat(const std::chrono::milliseconds& repeat)
+{
+	Reschedule(0ms, repeat);
+}
+
+void EventLoop::TimerImpl::Reschedule(const std::chrono::milliseconds& ms, const std::chrono::milliseconds& repeat)
+{
+	//Get next
+	auto next = loop.GetNow() + ms;
+
+	//Reschedule it async
+	loop.Async([timer = shared_from_this(), next, repeat](...){
+		//Remove us
+		timer->loop.CancelTimer(timer);
+
+		//Set next tick
+		timer->next = next;
+		//Update repeat interval
+		timer->repeat = repeat;
+
+		//Add to timer list
+		timer->loop.timers.emplace(next, timer);
+	});
+}
+
 void EventLoop::CancelTimer(TimerImpl::shared timer)
 {
 

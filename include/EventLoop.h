@@ -53,6 +53,8 @@ private:
 		TimerImpl(const TimerImpl&) = delete;
 		virtual void Cancel() override;
 		virtual void Again(const std::chrono::milliseconds& ms) override;
+		virtual void Repeat(const std::chrono::milliseconds& repeat) override;
+		virtual void Reschedule(const std::chrono::milliseconds& ms, const std::chrono::milliseconds& repeat) override;
 		virtual bool IsScheduled()			const override { return next.count();	}
 		virtual std::chrono::milliseconds GetNextTick()	const override { return next;		}
 		virtual std::chrono::milliseconds GetRepeat()	const override { return repeat;		}

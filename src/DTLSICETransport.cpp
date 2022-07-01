@@ -220,6 +220,18 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		if (packet->GetMark() || transportWideReceivedPacketsStats.size() > TransportWideCCMaxPackets || (now - transportWideReceivedPacketsStats.begin()->second->time) > TransportWideCCMaxInterval)
 			//Send feedback message
 			SendTransportWideFeedbackMessage(ssrc);
+		//Schedule for later
+		if (transportWideReceivedPacketsStats.size())
+		{
+			//If timer is still valid and has not been scheduled already
+			if (sseTimer && !sseTimer->IsScheduled())
+				//Schedule
+				sseTimer->Reschedule(std::chrono::milliseconds((int)(TransportWideCCMaxInterval/1000)), 0ms);
+		//If timer is still valid and still scheduled
+		} else if (sseTimer && !sseTimer->IsScheduled()) {
+			//Cancel it
+			sseTimer->Cancel();
+		}
 	}
 	
 	//Get codec
@@ -1505,19 +1517,8 @@ void DTLSICETransport::onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMaster
 	//Done
 	SetState(DTLSState::Connected);
 	
-	//Create new probe timer
-	probingTimer = timeService.CreateTimer(0ms, ProbingInterval, [this](std::chrono::milliseconds ms){
-		//Do probe
-		Probe(ms.count());
-	});
-
-	//Set name for debug
-	probingTimer->SetName("DTLSICETransport - bwe probe");
-
-	//If sse is disabled
-	if (!this->senderSideEstimationEnabled)
-		//Cancel timer for now, and let it be rescheduled
-		probingTimer->Cancel();
+	//Check if we need to start or stop the timer
+	CheckProbeTimer();
 }
 
 void DTLSICETransport::onDTLSSetupError()
@@ -1577,6 +1578,9 @@ bool DTLSICETransport::AddOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 			//Set it
 			mainSSRC = media;
 
+		//Check if we need to start or stop the timer
+		CheckProbeTimer();
+
 		//TODO: Send SDES
 	});
 	
@@ -1626,6 +1630,11 @@ bool DTLSICETransport::RemoveOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 		
 		//Send BYE
 		Send(RTCPCompoundPacket::Create(RTCPBye::Create(ssrcs,"terminated")));
+
+		//If last one
+		if (outgoing.size()==0 && probingTimer)
+			//Stop probing timer
+			probingTimer->Cancel();
 	});
 	
 	//Done
@@ -2248,37 +2257,39 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 
 				TRACE_EVENT("rtp", "DTLSICETransport::onRTCP::FB", "size", fb->GetSize(), "ssrc", ssrc);
 
-				//Get media
-				RTPOutgoingSourceGroup* group = GetOutgoingSourceGroup(ssrc);
-				//If not found
-				if (!group)
-				{
-					//Dump
-					fb->Dump();
-					//Debug
-					Warning("-DTLSICETransport::onRTCP() | Got feedback message for unknown media  [ssrc:%u]\n",ssrc);
-					//Ups! Skip
-					continue;
-				}
 				//Check feedback type
 				switch(fb->GetFeedbackType())
 				{
 					case RTCPRTPFeedback::NACK:
-						for (DWORD i=0;i<fb->GetFieldCount();i++)
+					{
+						//Get media
+						RTPOutgoingSourceGroup* group = GetOutgoingSourceGroup(ssrc);
+						//If not found
+						if (!group)
+						{
+							//Dump
+							fb->Dump();
+							//Debug
+							Warning("-DTLSICETransport::onRTCP() | Got NACK feedback message for unknown media  [ssrc:%u]\n", ssrc);
+							//Ups! Skip
+							break;
+						}
+						for (DWORD i = 0; i < fb->GetFieldCount(); i++)
 						{
 							//Get field
 							auto field = fb->GetField<RTCPRTPFeedback::NACKField>(i);
-							
+
 							//Resent it
-							ReSendPacket(group,field->pid);
+							ReSendPacket(group, field->pid);
 							//Check each bit of the mask
-							for (BYTE i=0;i<16;i++)
+							for (BYTE i = 0; i < 16; i++)
 								//Check it bit is present to rtx the packets
 								if ((field->blp >> i) & 1)
 									//Resent it
-									ReSendPacket(group,field->pid+i+1);
+									ReSendPacket(group, field->pid + i + 1);
 						}
 						break;
+					}
 					case RTCPRTPFeedback::TempMaxMediaStreamBitrateRequest:
 						UltraDebug("-DTLSICETransport::onRTCP() | TempMaxMediaStreamBitrateRequest\n");
 						break;
@@ -2487,6 +2498,8 @@ void DTLSICETransport::SetRTT(DWORD rtt, QWORD now)
 
 void DTLSICETransport::SendTransportWideFeedbackMessage(DWORD ssrc)
 {
+	//Debug
+	UltraDebug("-DTLSICETriansport::SendTransportWideFeedbackMessage() [ssrc:%d]\n", ssrc);
 	//RTCP packet
 	auto rtcp = RTCPCompoundPacket::Create();
 
@@ -2547,6 +2560,20 @@ void DTLSICETransport::Start()
 	});
 	//Set name for debug
 	iceTimeoutTimer->SetName("DTLSICETransport - ice timeout");
+	//Create new probe timer
+	probingTimer = timeService.CreateTimer([this](std::chrono::milliseconds ms) {
+		//Do probe
+		Probe(ms.count());
+		});
+	//Set name for debug
+	probingTimer->SetName("DTLSICETransport - bwe probe");
+	//Create sse timer
+	sseTimer = timeService.CreateTimer([this](std::chrono::milliseconds ms) {
+		//Send feedback now
+		SendTransportWideFeedbackMessage(0);
+	});
+	//Set name for debug
+	sseTimer->SetName("DTLSICETransport - twcc feedback");
 	//Start
 	endpoint.Init(dcOptions);
 	//Started
@@ -2781,17 +2808,8 @@ void DTLSICETransport::SetBandwidthProbing(bool probe)
 	//Set probing status
 	this->probe = probe;
 
-	//Check if we still have the timer
-	if (probingTimer)
-	{
-		//If sse and probing are enabled
-		if (this->senderSideEstimationEnabled && this->probe)
-			//Start probing timer again
-			probingTimer->Again(0ms);
-		else
-			//Stop probing timer
-			probingTimer->Cancel();
-	}
+	//Check if we need to start the timar
+	CheckProbeTimer();
 }
 
 
@@ -2802,15 +2820,36 @@ void DTLSICETransport::EnableSenderSideEstimation(bool enabled)
 	//Update flag
 	this->senderSideEstimationEnabled = enabled;
 
-	//Check if we still have the timer
-	if (probingTimer)
+	//Check if we need to start the timer
+	CheckProbeTimer();
+}
+
+
+void DTLSICETransport::CheckProbeTimer()
+{
+	//If we don't have timer anumore
+	if (!probingTimer)
+		//Do nothing
+		return;
+	//No video
+	bool video = false;
+	//Check if there is any video source
+	for (auto& [ssrc,outgoing] : outgoing)
 	{
-		//If sse and probing are enabled
-		if (this->senderSideEstimationEnabled && this->probe)
-			//Start probing timer again
-			probingTimer->Again(0ms);
-		else
-			//Stop probing timer
-			probingTimer->Cancel();
+		//If it is video
+		if (outgoing->type == MediaFrame::Video)
+		{
+			//Got one
+			video = true;
+			break;
+		}
 	}
+	Log("sse:%d probe:%d video:%d state:%d\n", this->senderSideEstimationEnabled, this->probe, video, state == DTLSState::Connected);
+	//Check if we have to start if
+	if (this->senderSideEstimationEnabled && this->probe && video && state==DTLSState::Connected)
+		//Start probing timer again
+		probingTimer->Repeat(ProbingInterval);
+	else 
+		//Stop probing
+		probingTimer->Cancel();
 }
