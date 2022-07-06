@@ -24,7 +24,7 @@ struct LayerSource : LayerInfo
 	DWORD		numPackets = 0;
 	QWORD		totalBytes = 0;
 	DWORD		bitrate;
-	Acumulator	acumulator;
+	Acumulator<uint32_t, uint64_t>	acumulator;
 	
 	LayerSource() : acumulator(1000)
 	{
@@ -73,8 +73,8 @@ struct RTPSource
 	QWORD	totalRTCPBytes;
 	DWORD   bitrate;
 	DWORD	clockrate;
-	Acumulator acumulator;
-	Acumulator acumulatorPackets;
+	Acumulator<uint32_t, uint64_t> acumulator;
+	Acumulator<uint32_t, uint64_t> acumulatorPackets;
 	
 	RTPSource();
 	virtual ~RTPSource() = default;

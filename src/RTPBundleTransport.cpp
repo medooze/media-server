@@ -1,3 +1,4 @@
+#include "tracing.h"
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -52,6 +53,7 @@ RTPBundleTransport::~RTPBundleTransport()
 
 RTPBundleTransport::Connection* RTPBundleTransport::AddICETransport(const std::string &username,const Properties& properties)
 {
+	TRACE_EVENT("transport", "RTPBundleTransport::AddICETransport", "username", username);
 	Log("-RTPBundleTransport::AddICETransport() | [%s]\n",username.c_str());
 	
 	Properties ice;
@@ -116,6 +118,7 @@ RTPBundleTransport::Connection* RTPBundleTransport::AddICETransport(const std::s
 
 int RTPBundleTransport::RemoveICETransport(const std::string &username)
 {
+	TRACE_EVENT("transport", "RTPBundleTransport::RemoveICETransport", "username", username);
 	Log("-RTPBundleTransport::RemoveICETransport() [username:%s]\n",username.c_str());
   
 	//Synchronized
@@ -162,6 +165,7 @@ int RTPBundleTransport::RemoveICETransport(const std::string &username)
 
 bool RTPBundleTransport::RestartICETransport(const std::string& username, const std::string& restarted, const Properties& properties)
 {
+	TRACE_EVENT("transport", "RTPBundleTransport::RestartICETransport", "username", username);
 	Log("-RTPBundleTransport::RestartICETransport() [username:%s,restarted:%s]\n", username.c_str(), restarted.c_str());
 
 	Properties ice;
@@ -217,6 +221,7 @@ int RTPBundleTransport::Init()
 {
 	int retries = 0;
 
+	TRACE_EVENT("transport", "RTPBundleTransport::Init");
 	Log(">RTPBundleTransport::Init()\n");
 
 	sockaddr_in recAddr;
@@ -306,6 +311,7 @@ int RTPBundleTransport::Init(int port)
 	if (!port)
 		return Init();
 	
+	TRACE_EVENT("transport", "RTPBundleTransport::Init", "port", port);
 	Log(">RTPBundleTransport::Init(%d)\n",port);
 
 	sockaddr_in recAddr;
@@ -378,6 +384,7 @@ int RTPBundleTransport::End()
 	if (!loop.IsRunning())
 		return 0;
 	
+	TRACE_EVENT("transport", "RTPBundleTransport::End");
 	Log(">RTPBundleTransport::End()\n");
 	
 	//Stop timer
@@ -410,6 +417,8 @@ int RTPBundleTransport::Send(const ICERemoteCandidate* candidate, Packet&& buffe
 
 void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t size, const uint32_t ip, const uint16_t port)
 {
+	TRACE_EVENT("transport", "RTPBundleTransport::OnRead", "ip", ip, "port", port, "size", size);
+
 	//Get remote ip:port address
 	std::string remote = ICERemoteCandidate::GetRemoteAddress(ip,port);
 	
@@ -418,6 +427,8 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 	//Check if it looks like a STUN message
 	if (STUNMessage::IsSTUN(data,size))
 	{
+		TRACE_EVENT("transport", "RTPBundleTransport::OnRead::STUN", "ip", ip, "port", port, "size", size);
+
 		//UltraDebug("-RTPBundleTransport::OnRead() | stun\n");
 		
 		//Parse it
@@ -493,9 +504,6 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 				return;
 			}
 			
-			//Check wether we have to reply to this message or not
-			bool reply = !(connection->disableSTUNKeepAlive && transport->HasActiveRemoteCandidate());
-			
 			//Get attribute
 			STUNMessage::Attribute* priority = stun->GetAttribute(STUNMessage::Attribute::Priority);
 			
@@ -514,8 +522,8 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 				Log("-RTPBundleTransport::Read() | Got new remote ICE candidate [remote:%s]\n",remote.c_str());
 				//Add it to the connection
 				connection->candidates.insert(candidate);
-				//We need to reply the first always
-				reply = true;
+				//Send back an ice request
+				SendBindingRequest(connection, candidate);
 			}
 			
 			//Set it active
@@ -542,10 +550,6 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 			//Inc stats
 			connection->iceResponsesSent++;
 
-			//If the STUN keep alive response is not disabled
-			if (reply)
-				//Send back an ice request
-				SendBindingRequest(connection,candidate);
 		} else if (type==STUNMessage::Response && method==STUNMessage::Binding) {
 			
 			//Get ts and id
@@ -649,6 +653,7 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 
 int RTPBundleTransport::AddRemoteCandidate(const std::string& username,const char* host, WORD port)
 {
+	TRACE_EVENT("transport", "RTPBundleTransport::AddRemoteCandidate", "username", username, "host", host, "port", port);
 	Log("-RTPBundleTransport::AddRemoteCandidate() [username:%s,candidate:%s:%u}\n",username.c_str(),host,port);
 	
 	//Copy ip 
@@ -697,6 +702,8 @@ int RTPBundleTransport::AddRemoteCandidate(const std::string& username,const cha
 
 void RTPBundleTransport::SendBindingRequest(Connection* connection,ICERemoteCandidate* candidate)
 {
+	TRACE_EVENT("transport", "RTPBundleTransport::SendBindingRequest");
+
 	//Double check
 	if (!connection || !candidate)
 	{
@@ -764,6 +771,7 @@ void RTPBundleTransport::SendBindingRequest(Connection* connection,ICERemoteCand
 
 void RTPBundleTransport::onTimer(std::chrono::milliseconds now)
 {
+	TRACE_EVENT("transport", "RTPBundleTransport::onTimer");
 	UltraDebug("-RTPBundleTransport::onTimer()\n");
 	
 	//Delete old transactions

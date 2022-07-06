@@ -29,6 +29,7 @@ public:
 		Overflown
 	};
 	static bool SetAffinity(std::thread::native_handle_type thread, int cpu);
+	static bool SetThreadName(std::thread::native_handle_type thread, const std::string& name);
 private:
 	class TimerImpl : 
 		public Timer, 
@@ -52,6 +53,8 @@ private:
 		TimerImpl(const TimerImpl&) = delete;
 		virtual void Cancel() override;
 		virtual void Again(const std::chrono::milliseconds& ms) override;
+		virtual void Repeat(const std::chrono::milliseconds& repeat) override;
+		virtual void Reschedule(const std::chrono::milliseconds& ms, const std::chrono::milliseconds& repeat) override;
 		virtual bool IsScheduled()			const override { return next.count();	}
 		virtual std::chrono::milliseconds GetNextTick()	const override { return next;		}
 		virtual std::chrono::milliseconds GetRepeat()	const override { return repeat;		}
@@ -79,6 +82,7 @@ public:
 	void Run(const std::chrono::milliseconds &duration = std::chrono::milliseconds::max());
 	
 	bool SetAffinity(int cpu);
+	bool SetThreadName(const std::string& name);
 	bool SetPriority(int priority);
 	bool IsRunning() const { return running; }
 	

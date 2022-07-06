@@ -94,9 +94,9 @@ public:
 	bool RemoveIncomingSourceGroup(RTPIncomingSourceGroup *group);
 	
 	void SetBandwidthProbing(bool probe);
-	void SetMaxProbingBitrate(DWORD bitrate)	{ this->maxProbingBitrate = bitrate;		}
-	void SetProbingBitrateLimit(DWORD bitrate)	{ this->probingBitrateLimit = bitrate;		}
-	void EnableSenderSideEstimation(bool enabled)	{ this->senderSideEstimationEnabled = enabled;	}
+	void SetMaxProbingBitrate(DWORD bitrate);
+	void SetProbingBitrateLimit(DWORD bitrate);
+	void EnableSenderSideEstimation(bool enabled);
 	void SetSenderSideEstimatorListener(RemoteRateEstimator::Listener* listener) { senderSideBandwidthEstimator.SetListener(listener); }
 
 	uint32_t GetAvailableOutgoingBitrate() const	{ return senderSideBandwidthEstimator.GetAvailableBitrate(); }
@@ -125,6 +125,7 @@ public:
 
 private:
 	void SetState(DTLSState state);
+	void CheckProbeTimer();
 	void Probe(QWORD now);
 	int Send(RTPPacket::shared&& packet);
 	int Send(const RTCPCompoundPacket::shared& rtcp);
@@ -186,10 +187,10 @@ private:
 	char*	iceLocalUsername	= nullptr;
 	char*	iceLocalPwd		= nullptr;
 	
-	Acumulator incomingBitrate;
-	Acumulator outgoingBitrate;
-	Acumulator rtxBitrate;
-	Acumulator probingBitrate;
+	Acumulator<uint32_t, uint64_t> incomingBitrate;
+	Acumulator<uint32_t, uint64_t> outgoingBitrate;
+	Acumulator<uint32_t, uint64_t> rtxBitrate;
+	Acumulator<uint32_t, uint64_t> probingBitrate;
 	
 	std::map<DWORD,PacketStats::shared> transportWideReceivedPacketsStats;
 	
@@ -209,6 +210,7 @@ private:
 	volatile bool started = false;
 	
 	SendSideBandwidthEstimation senderSideBandwidthEstimator;
+	Timer::shared sseTimer;
 
 	bool overrideBWE = false;
 	bool disableREMB = false;

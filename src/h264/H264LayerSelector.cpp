@@ -328,24 +328,23 @@ bool H264LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 		{
 			//Check if first nal
 			BYTE nalUnitType = payload[0] & 0x1f;
-			
+
 			//FU-A
 			if (nalUnitType == 28 && len>2)
 				//Get first nal type
 				nalUnitType = payload[1] & 0x1f;
 			//STAP-A
-			else if (nalUnitType == 25 && len>3)
+			else if (nalUnitType == 24 && len>3)
 				//Get first nal type
 				nalUnitType = payload[3] & 0x1f;
-				
+
 			//Check for IDR/PPS/SPS nals
 			if (nalUnitType==5 || nalUnitType==7 || nalUnitType==8)
 				//Key frame
 				packet->SetKeyFrame(true);
 		}
 	}
-	
-	//UltraDebug("-VP9LayerSelector::GetLayerIds() | [tid:%u,sid:%u]\n",info.temporalLayerId,info.spatialLayerId);
+	//UltraDebug("-H264LayerSelector::GetLayerIds() | [isKeyFrame:%d]\n",packet->IsKeyFrame());
 	
 	//Return layer infos
 	return infos;

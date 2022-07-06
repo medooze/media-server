@@ -1,7 +1,7 @@
+#include "tracing.h"
+
 #include "rtp/RTPIncomingSourceGroup.h"
-
 #include <math.h>
-
 #include "VideoLayerSelector.h"
 #include "remoterateestimator.h"
 
@@ -21,8 +21,10 @@ RTPIncomingSourceGroup::RTPIncomingSourceGroup(MediaFrame::Type type,TimeService
 
 RTPIncomingSourceGroup::~RTPIncomingSourceGroup()
 {
-	//Stop timer
-	if (dispatchTimer) dispatchTimer->Cancel();
+	//If not stoped
+	if (dispatchTimer)
+		//Stop
+		Stop();
 }
 
 RTPIncomingSource* RTPIncomingSourceGroup::GetSource(DWORD ssrc)
@@ -56,7 +58,10 @@ void RTPIncomingSourceGroup::RemoveListener(RTPIncomingMediaStream::Listener* li
 
 int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet, DWORD size, QWORD now)
 {
-	
+	//Trace method
+	TRACE_EVENT("rtp", "RTPIncomingSourceGroup::AddPacket");
+
+
 	//UltraDebug(">RTPIncomingSourceGroup::AddPacket() | [now:%lld]\n",now);
 	
 	//Check if it is the rtx packet used to calculate rtt
@@ -122,10 +127,6 @@ int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet, DWORD siz
 	
 	//Set last updated time
 	lastUpdated = now;
-	//Update media
-	media.Update(now);
-	//Update rtx
-	rtx.Update(now);
 
 	//Return lost packets
 	return lost;
@@ -160,6 +161,9 @@ void RTPIncomingSourceGroup::ResetPackets()
 
 void RTPIncomingSourceGroup::Update()
 {
+	//Trace method
+	TRACE_EVENT("rtp", "RTPIncomingSourceGroup::Update");
+
 	//Update it sync
 	timeService.Sync([=](std::chrono::milliseconds now) {
 		//Set last updated time
@@ -242,6 +246,14 @@ void RTPIncomingSourceGroup::Start(bool remb)
 
 void RTPIncomingSourceGroup::DispatchPackets(uint64_t time)
 {
+	//Trace method
+	TRACE_EVENT("rtp", "RTPIncomingSourceGroup::DispatchPackets",
+		"queued", packets.Length(),
+		"next", packets.GetNextPacketSeqNumber(),
+		"discarded", packets.GetNumDiscardedPackets(),
+		"listeners", listeners.size()
+	);
+
 	//UltraDebug("-RTPIncomingSourceGroup::DispatchPackets() | [time:%llu]\n",time);
 	
 	//Deliver all pending packets at once
@@ -254,19 +266,29 @@ void RTPIncomingSourceGroup::DispatchPackets(uint64_t time)
 		ordered.push_back(packet);
 	}
 	
-	//Deliver to all listeners
-	for (auto listener : listeners)
-		//Dispatch rtp packet
-		listener->onRTP(this,ordered);
-
+	//If we have any rtp packets
+	if (ordered.size())
+		//Deliver to all listeners
+		for (auto listener : listeners)
+			//Dispatch rtp packet
+			listener->onRTP(this,ordered);
 
 	//Update stats
-	lost          = losts.GetTotal();
-	avgWaitedTime = packets.GetAvgWaitedTime();
+	lost		= losts.GetTotal();
+	avgWaitedTime	= packets.GetAvgWaitedTime();
 	//Get min max values
-	auto minmax = packets.GetMinMaxWaitedTime();
-	minWaitedTime = minmax.first;
-	maxWaitedTime = minmax.second;
+	auto minmax	= packets.GetMinMaxWaitedTime();
+	minWaitedTime	= minmax.first;
+	maxWaitedTime	= minmax.second;
+
+	TRACE_EVENT("rtp", "RTPIncomingSourceGroup::DispatchedPackets",
+		"queued", packets.Length(),
+		"next", packets.GetNextPacketSeqNumber(),
+		"discarded", packets.GetNumDiscardedPackets(),
+		"lost", losts.GetTotal(),
+		"dispatched", ordered.size(),
+		"listeners", listeners.size()
+	);
 
 }
 
@@ -277,7 +299,7 @@ void RTPIncomingSourceGroup::Stop()
 
 	//Stop timer
 	if (dispatchTimer) dispatchTimer->Cancel();
-	
+
 	//Stop listeners sync
 	timeService.Sync([=](auto) {
 		//Deliver to all listeners
@@ -294,6 +316,9 @@ void RTPIncomingSourceGroup::Stop()
 
 RTPIncomingSource* RTPIncomingSourceGroup::Process(RTPPacket::shared &packet)
 {
+	//Trace method
+	TRACE_EVENT("rtp", "RTPIncomingSourceGroup::Process");
+
 	//Get packet time
 	uint64_t time = packet->GetTime();
 	
@@ -342,7 +367,7 @@ RTPIncomingSource* RTPIncomingSourceGroup::Process(RTPPacket::shared &packet)
 	}
 	
 	if (source==&media)
-		source->SetLastTimestamp(time, packet->GetExtTimestamp());
+		source->SetLastTimestamp(time, packet->GetExtTimestamp(), packet->GetAbsoluteCaptureTime());
 	//Done
 	return source;
 }

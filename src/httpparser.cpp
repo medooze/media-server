@@ -2315,7 +2315,7 @@ http_parser_parse_url(const char *buf, DWORD buflen, int is_connect,
 			case s_req_server_with_at:
 				found_at = 1;
 
-				/* FALLTROUGH */
+				[[fallthrough]];
 			case s_req_server:
 				uf = UF_HOST;
 				break;

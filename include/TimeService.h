@@ -16,6 +16,8 @@ public:
 	virtual void Cancel() = 0;
 	virtual void Again(const std::chrono::milliseconds& ms) = 0;
 	virtual bool IsScheduled() const = 0;
+	virtual void Repeat(const std::chrono::milliseconds& repeat) = 0;
+	virtual void Reschedule(const std::chrono::milliseconds& ms, const std::chrono::milliseconds& repeat) = 0;
 	virtual std::chrono::milliseconds GetNextTick()	const = 0;
 	virtual std::chrono::milliseconds GetRepeat() const = 0;
 	void SetName(const std::string& name) { this->name = name; }

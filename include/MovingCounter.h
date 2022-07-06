@@ -11,7 +11,7 @@
 // Samples can be added with |Add()| and max over current window is returned by
 // |MovingMax|. |when| in successive calls to Add and MovingMax
 // should never decrease as if it's a wallclock time.
-template <class T>
+template <typename  T>
 class MovingMaxCounter {
 public:
 	explicit MovingMaxCounter(uint64_t window)
@@ -51,13 +51,14 @@ public:
 	std::optional<T> Max(uint64_t when) 
 	{
 		RollWindow(when);
+		return GetMax();
 	}
 
 	void Reset() 
 	{
 		samples.clear();
 	}
-private:
+
 	// Throws out obsolete samples.
 	void RollWindow(uint64_t when) 
 	{
@@ -69,6 +70,8 @@ private:
 		while (!samples.empty() && samples.front().first <= start)
 			samples.pop_front();
 	}
+
+private:
 	const uint64_t window;
 
 	// This deque stores (timestamp, sample) pairs in chronological order; new
@@ -99,10 +102,8 @@ public:
 
 	std::optional<T> Min(uint64_t when)
 	{
-		auto res = MovingMaxCounter<T>::Max(when);
-		if (!res)
-			return res;
-		return std::make_optional(std::numeric_limits<T>::max() - *res);
+		RollWindow(when);
+		return GetMin();
 	}
 
 	std::optional<T> GetMin() const
@@ -116,6 +117,11 @@ public:
 	void Reset()
 	{
 		MovingMaxCounter<T>::Reset();
+	}
+
+	void RollWindow(uint64_t when)
+	{
+		MovingMaxCounter<T>::RollWindow(when);
 	}
 };
 

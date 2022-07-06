@@ -346,7 +346,7 @@ private:
 	std::map<DWORD,RTPPacket::shared> packets;
 	mutable pthread_mutex_t	mutex;
 	pthread_cond_t cond;
-	Acumulator waited;
+	Acumulator<uint32_t, uint64_t> waited;
 	
 	bool  cancel		= false;
 	bool  hurryUp		= false;

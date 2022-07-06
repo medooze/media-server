@@ -16,6 +16,8 @@ public:
 		testDepacketizer();
 		
 		testSelector();
+
+		testGetLayerIds();
 	}
 	
 	void testDepacketizer()
@@ -306,6 +308,24 @@ public:
 		
 		selector.GetSeqParameterSet().Dump();
 		selector.GetPictureParameterSet().Dump();
+	}
+
+	void testGetLayerIds()
+	{
+
+		const BYTE data[31] = {
+			0x78, 0x00, 0x16, 0x67, 0x42, 0xc0, 0x0d, 0x95, 0xa0, 0x50, 0x67, 0xe7, 0x84, 0x00, 0x00, 0x0f,
+			0xa0, 0x00, 0x03, 0xa9, 0x80, 0x3c, 0x70, 0x8a, 0x80, 0x00, 0x04, 0x68, 0xce, 0x3c, 0x80
+		};
+
+		H264LayerSelector selector;
+		RTPPacket::shared rtp = std::make_shared<RTPPacket>(MediaFrame::Video, VideoCodec::H264);
+		rtp->SetPayload((BYTE*)data, sizeof(data));
+
+		selector.GetLayerIds(rtp);
+
+		rtp->Dump();
+		assert(rtp->IsKeyFrame());
 	}
 };
 

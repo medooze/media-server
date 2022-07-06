@@ -1,3 +1,5 @@
+#include "tracing.h"
+
 #include "rtp/RTPStreamTransponder.h"
 #include "waitqueue.h"
 #include "vp8/vp8.h"
@@ -24,6 +26,17 @@ bool RTPStreamTransponder::SetIncoming(RTPIncomingMediaStream* incoming, RTPRece
 	bool res = true;
 
 	timeService.Sync([=,&res](auto now){
+		//Check we are not closed
+		if (!outgoing)
+		{
+			//Not updated
+			res = false;
+			//Error
+			Error("-RTPStreamTransponder::SetIncoming() | Transponder already closed\n");
+			//Exit
+			return;
+		}
+		
 		Debug(">RTPStreamTransponder::SetIncoming() | [incoming:%p,receiver:%p,ssrc:%u,smooth:%d]\n", incoming, receiver, ssrc, smooth);
 
 		if (smooth) 
@@ -121,7 +134,7 @@ bool RTPStreamTransponder::SetIncoming(RTPIncomingMediaStream* incoming, RTPRece
 RTPStreamTransponder::~RTPStreamTransponder()
 {
 	//If not already stopped
-	if (outgoing)
+	if (outgoing || incoming)
 		//Stop listeneing
 		Close();
 }
@@ -138,7 +151,7 @@ void RTPStreamTransponder::Close()
 		incoming = nullptr;
 		receiver = nullptr;
 		incomingNext = nullptr;
-		receiver = nullptr;
+		receiverNext = nullptr;
 	});
 	
 	//Stop listening
@@ -153,7 +166,9 @@ void RTPStreamTransponder::Close()
 
 void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket::shared& packet)
 {
-	
+	//Trace method
+	TRACE_EVENT("rtp","RTPStreamTransponder::onRTP", "ssrc", packet->GetSSRC(), "seqnum", packet->GetSeqNum());
+
 	if (!packet)
 		//Exit
 		return;
@@ -472,6 +487,9 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 	if (sender)
 		//Create clone on sender thread
 		sender->Enqueue(packet,[=](const RTPPacket::shared& packet) -> RTPPacket::shared {
+			//Trace event
+			TRACE_EVENT("rtp","RTPStreamTransponder::onRTP::ClonePacket", "ssrc", packet->GetSSRC(), "seqnum", packet->GetSeqNum());
+
 			//Clone packet
 			auto cloned = packet->Clone();
 			//Set new seq numbers
@@ -500,6 +518,7 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 			if (cloned->HasDependencyDestriptor() && continousFrameNumber!=NoFrameNum)
 				//Update it
 				cloned->OverrideFrameNumber(static_cast<uint16_t>(continousFrameNumber));
+
 			//Move it
 			return cloned;
 		});
@@ -521,9 +540,9 @@ void RTPStreamTransponder::onBye(RTPIncomingMediaStream* stream)
 
 void RTPStreamTransponder::onEnded(RTPIncomingMediaStream* stream)
 {
-	timeService.Async([=](auto){
+	timeService.Sync([=](auto){
 		//IF it is the current one
-		if (this->incoming!=stream)
+		if (this->incoming == stream)
 		{
 			//Reset packets before start listening again
 			reset = true;
@@ -531,13 +550,24 @@ void RTPStreamTransponder::onEnded(RTPIncomingMediaStream* stream)
 			//No stream and receiver
 			this->incoming = nullptr;
 			this->receiver = nullptr;
-		} else if (this->incoming != stream) {
+		//If it is the next one
+		} else if (this->incomingNext == stream) {
 			//No transitioning stream and receiver
 			this->incomingNext = nullptr;
 			this->receiverNext = nullptr;
 		}
 	});
 }
+void RTPStreamTransponder::onEnded(RTPOutgoingSourceGroup* group)
+{
+	timeService.Sync([=](auto) {
+		//IF it is the current one
+		if (this->outgoing == group)
+			//No more outgoing
+			this->outgoing = nullptr;
+	});
+}
+
 
 void RTPStreamTransponder::RequestPLI()
 {

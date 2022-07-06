@@ -14,6 +14,14 @@ RTPOutgoingSourceGroup::RTPOutgoingSourceGroup(const std::string &mid, MediaFram
 	this->type = type;
 }
 
+RTPOutgoingSourceGroup::~RTPOutgoingSourceGroup()
+{
+	//If there are any listener
+	if (listeners.size())
+		//Stop again
+		Stop();
+}
+
 RTPOutgoingSource* RTPOutgoingSourceGroup::GetSource(DWORD ssrc)
 {
 	if (ssrc == media.ssrc)
@@ -124,4 +132,20 @@ void RTPOutgoingSourceGroup::Update(QWORD now)
 		//Update
 		rtx.Update(now);
 	});
+}
+
+
+void RTPOutgoingSourceGroup::Stop()
+{
+	Debug("-RTPOutgoingSourceGroup::Stop()\r\n");
+
+	//Add it sync
+	timeService.Sync([=](auto) {
+		//Signal them we have been ended
+		for (auto listener : listeners)
+			listener->onEnded(this);
+		//No mor listeners
+		listeners.clear();
+	});
+
 }

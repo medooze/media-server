@@ -60,9 +60,9 @@ public:
 	DWORD numPacketsDelta	= 0;
 	DWORD totalBytes	= 0;
 	DWORD bitrate		= 0;
-	Acumulator acumulator;
-	Acumulator accumulatorFrames;
-	Acumulator accumulatorPackets;
+	Acumulator<uint32_t, uint64_t> acumulator;
+	Acumulator<uint32_t, uint64_t> accumulatorFrames;
+	Acumulator<uint32_t, uint64_t> accumulatorPackets;
 
 	
 	
@@ -70,7 +70,7 @@ public:
 	DWORD minWaitedTime	= 0;
 	DWORD maxWaitedTime	= 0;
 	long double avgWaitedTime = 0;
-	Acumulator waited;
+	Acumulator<uint32_t, uint64_t> waited;
 };
 
 #endif /* MEDIAFRAMELISTENERBRIDGE_H */

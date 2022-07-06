@@ -4,6 +4,7 @@
  * 
  * Created on 8 de enero de 2017, 18:37
  */
+#include "tracing.h"
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -73,7 +74,7 @@ void DTLSICETransport::onDTLSPendingData()
 	{
 		Packet buffer;
 		//Read from dtls
-		size_t len = dtls.Read(buffer.GetData(),buffer.GetCapacity());
+		int len = dtls.Read(buffer.GetData(),buffer.GetCapacity());
 		//Check result
 		if (len<=0)
 			break;
@@ -91,6 +92,8 @@ void DTLSICETransport::onDTLSPendingData()
 
 int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* data,DWORD size)
 {
+	TRACE_EVENT("transport", "DTLSICETransport::onData", "size", size);
+
 	//Get current time
 	auto now = getTime();
 
@@ -109,6 +112,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 	//Check if it is RTCP
 	if (RTCPCompoundPacket::IsRTCP(data,size))
 	{
+		TRACE_EVENT("rtp", "DTLSICETransport::onData::RTCP", "size", size);
 
 		//Check session
 		if (!recv.IsSetup())
@@ -166,6 +170,13 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 	if (!packet)
 		//Error
 		return Warning("-DTLSICETransport::onData() | Could not parse rtp packet\n");
+
+	TRACE_EVENT("rtp", "DTLSICETransport::onData::RTP",
+		"ssrc", packet->GetSSRC(),
+		"seqnum", packet->GetSeqNum(),
+		"pt", packet->GetPayloadType(),
+		"payload", packet->GetMediaLength(),
+		"act", packet->GetAbsoluteCaptureTime());
 	
 	//If dumping
 	if (dumper && dumpInRTP)
@@ -209,6 +220,18 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		if (packet->GetMark() || transportWideReceivedPacketsStats.size() > TransportWideCCMaxPackets || (now - transportWideReceivedPacketsStats.begin()->second->time) > TransportWideCCMaxInterval)
 			//Send feedback message
 			SendTransportWideFeedbackMessage(ssrc);
+		//Schedule for later
+		if (transportWideReceivedPacketsStats.size())
+		{
+			//If timer is still valid and has not been scheduled already
+			if (sseTimer && !sseTimer->IsScheduled())
+				//Schedule
+				sseTimer->Reschedule(std::chrono::milliseconds((int)(TransportWideCCMaxInterval/1000)), 0ms);
+		//If timer is still valid and still scheduled
+		} else if (sseTimer && sseTimer->IsScheduled()) {
+			//Cancel it
+			sseTimer->Cancel();
+		}
 	}
 	
 	//Get codec
@@ -373,7 +396,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 			mids[mid] = { group };
 	}
 	
-	//UltraDebug("-Got RTP on media:%s sssrc:%u seq:%u pt:%u codec:%s rid:'%s', mid:'%s'\n",MediaFrame::TypeToString(group->type),ssrc,header.sequenceNumber,header.payloadType,GetNameForCodec(group->type,codec),group->rid.c_str(),group->mid.c_str());
+	//UltraDebug("-Got RTP on media:%s sssrc:%u seq:%u pt:%u codec:%s rid:'%s', mid:'%s'\n",MediaFrame::TypeToString(group->type),ssrc,packet->GetSeqNum(),packet->GetPayloadType(),GetNameForCodec(group->type,codec),group->rid.c_str(),group->mid.c_str());
 	
 	//Process packet and get source
 	RTPIncomingSource* source = group->Process(packet);
@@ -700,7 +723,7 @@ DWORD DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 		header.ssrc		= source.ssrc;
 		header.payloadType	= sendMaps.apt.begin()->first;
 		header.sequenceNumber	= extSeqNum = source.NextSeqNum();
-		header.timestamp	= source.lastTime++;
+		header.timestamp	= source.lastTimestamp++;
 		//Padding
 		header.padding		= 1;
 	} else {
@@ -708,7 +731,7 @@ DWORD DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 		header.ssrc		= source.ssrc;
 		header.payloadType	= source.lastPayloadType;
 		header.sequenceNumber	= extSeqNum = source.AddGapSeqNum();
-		header.timestamp	= source.lastTime;
+		header.timestamp	= source.lastTimestamp;
 		//Padding
 		header.padding		= 1;
 	}
@@ -1494,14 +1517,8 @@ void DTLSICETransport::onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMaster
 	//Done
 	SetState(DTLSState::Connected);
 	
-	//Create new probe timer
-	probingTimer = timeService.CreateTimer(0ms, ProbingInterval, [this](std::chrono::milliseconds ms){
-		//Do probe
-		Probe(ms.count());
-	});
-
-	//Set name for debug
-	probingTimer->SetName("DTLSICETransport - bwe probe");
+	//Check if we need to start or stop the timer
+	CheckProbeTimer();
 }
 
 void DTLSICETransport::onDTLSSetupError()
@@ -1561,6 +1578,9 @@ bool DTLSICETransport::AddOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 			//Set it
 			mainSSRC = media;
 
+		//Check if we need to start or stop the timer
+		CheckProbeTimer();
+
 		//TODO: Send SDES
 	});
 	
@@ -1610,6 +1630,11 @@ bool DTLSICETransport::RemoveOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 		
 		//Send BYE
 		Send(RTCPCompoundPacket::Create(RTCPBye::Create(ssrcs,"terminated")));
+
+		//If last one
+		if (outgoing.size()==0 && probingTimer)
+			//Stop probing timer
+			probingTimer->Cancel();
 	});
 	
 	//Done
@@ -1754,6 +1779,9 @@ bool DTLSICETransport::RemoveIncomingSourceGroup(RTPIncomingSourceGroup *group)
 
 int DTLSICETransport::Send(const RTCPCompoundPacket::shared &rtcp)
 {
+
+	TRACE_EVENT("rtp","DTLSICETransport::Send RTCP");
+
 	//TODO: Assert event loop thread
 	
 	//Double check message
@@ -1908,6 +1936,11 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 	if (!send.IsSetup())
 		//Error
 		return Debug("-DTLSICETransport::Send() | We don't have an DTLS setup yet\n");
+
+	//Trace
+	TRACE_EVENT("rtp", "DTLSICETransport::Send RTP",
+		"ssrc", packet->GetSSRC(),
+		"seqNum", packet->GetSeqNum());
 	
 	//Get ssrc
 	DWORD ssrc = packet->GetSSRC();
@@ -2081,6 +2114,8 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 
 void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 {
+	TRACE_EVENT("rtp", "DTLSICETransport::onRTCP", "size", rtcp->GetSize());
+
 	//Get current time
 	uint64_t now = getTime();
 	
@@ -2099,7 +2134,9 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 				
 				//Get ssrc
 				DWORD ssrc = sr->GetSSRC();
-				
+
+				TRACE_EVENT("rtp", "DTLSICETransport::onRTCP::SR", "size", sr->GetSize(), "ssrc", ssrc);
+
 				//Get source
 				RTPIncomingSource* source = GetIncomingSource(ssrc);
 				
@@ -2150,7 +2187,9 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 			{
 				//Get receiver report
 				auto rr = std::static_pointer_cast<RTCPReceiverReport>(packet);
-				
+
+				TRACE_EVENT("rtp", "DTLSICETransport::onRTCP::RR", "size", rr->GetSize(), "count", rr->GetCount());
+
 				//Process all the receiver Reports
 				for (DWORD j=0;j<rr->GetCount();j++)
 				{
@@ -2215,37 +2254,42 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 				auto fb = std::static_pointer_cast<RTCPRTPFeedback>(packet);
 				//Get SSRC for media
 				DWORD ssrc = fb->GetMediaSSRC();
-				//Get media
-				RTPOutgoingSourceGroup* group = GetOutgoingSourceGroup(ssrc);
-				//If not found
-				if (!group)
-				{
-					//Dump
-					fb->Dump();
-					//Debug
-					Warning("-DTLSICETransport::onRTCP() | Got feedback message for unknown media  [ssrc:%u]\n",ssrc);
-					//Ups! Skip
-					continue;
-				}
+
+				TRACE_EVENT("rtp", "DTLSICETransport::onRTCP::FB", "size", fb->GetSize(), "ssrc", ssrc);
+
 				//Check feedback type
 				switch(fb->GetFeedbackType())
 				{
 					case RTCPRTPFeedback::NACK:
-						for (DWORD i=0;i<fb->GetFieldCount();i++)
+					{
+						//Get media
+						RTPOutgoingSourceGroup* group = GetOutgoingSourceGroup(ssrc);
+						//If not found
+						if (!group)
+						{
+							//Dump
+							fb->Dump();
+							//Debug
+							Warning("-DTLSICETransport::onRTCP() | Got NACK feedback message for unknown media  [ssrc:%u]\n", ssrc);
+							//Ups! Skip
+							break;
+						}
+						for (DWORD i = 0; i < fb->GetFieldCount(); i++)
 						{
 							//Get field
 							auto field = fb->GetField<RTCPRTPFeedback::NACKField>(i);
-							
+
 							//Resent it
-							ReSendPacket(group,field->pid);
+							ReSendPacket(group, field->pid);
 							//Check each bit of the mask
-							for (BYTE i=0;i<16;i++)
+							for (BYTE i = 0; i < 16; i++)
 								//Check it bit is present to rtx the packets
 								if ((field->blp >> i) & 1)
 									//Resent it
-									ReSendPacket(group,field->pid+i+1);
+									ReSendPacket(group, field->pid + i + 1);
 						}
 						break;
+					}
 					case RTCPRTPFeedback::TempMaxMediaStreamBitrateRequest:
 						UltraDebug("-DTLSICETransport::onRTCP() | TempMaxMediaStreamBitrateRequest\n");
 						break;
@@ -2273,6 +2317,9 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 				auto fb = std::static_pointer_cast<RTCPPayloadFeedback>(packet);
 				//Get SSRC for media
 				DWORD ssrc = fb->GetMediaSSRC();
+
+				TRACE_EVENT("rtp", "DTLSICETransport::onRTCP::PFB", "size", fb->GetSize(), "ssrc", ssrc);
+
 				//Check feedback type
 				switch(fb->GetFeedbackType())
 				{
@@ -2451,6 +2498,8 @@ void DTLSICETransport::SetRTT(DWORD rtt, QWORD now)
 
 void DTLSICETransport::SendTransportWideFeedbackMessage(DWORD ssrc)
 {
+	//Debug
+	//UltraDebug("-DTLSICETriansport::SendTransportWideFeedbackMessage() [ssrc:%d]\n", ssrc);
 	//RTCP packet
 	auto rtcp = RTCPCompoundPacket::Create();
 
@@ -2492,6 +2541,8 @@ void DTLSICETransport::SendTransportWideFeedbackMessage(DWORD ssrc)
 
 void DTLSICETransport::Start()
 {
+	TRACE_EVENT("transport", "DTLSICETransport::Start");
+
 	Debug("-DTLSICETransport::Start()\n");
 	
 	//Get init time
@@ -2509,6 +2560,20 @@ void DTLSICETransport::Start()
 	});
 	//Set name for debug
 	iceTimeoutTimer->SetName("DTLSICETransport - ice timeout");
+	//Create new probe timer
+	probingTimer = timeService.CreateTimer([this](std::chrono::milliseconds ms) {
+		//Do probe
+		Probe(ms.count());
+		});
+	//Set name for debug
+	probingTimer->SetName("DTLSICETransport - bwe probe");
+	//Create sse timer
+	sseTimer = timeService.CreateTimer([this](std::chrono::milliseconds ms) {
+		//Send feedback now
+		SendTransportWideFeedbackMessage(0);
+	});
+	//Set name for debug
+	sseTimer->SetName("DTLSICETransport - twcc feedback");
 	//Start
 	endpoint.Init(dcOptions);
 	//Started
@@ -2521,6 +2586,7 @@ void DTLSICETransport::Stop()
 		return;
 	
 	//Log
+	TRACE_EVENT("transport", "DTLSICETransport::Stop");
 	Debug(">DTLSICETransport::Stop()\n");
 	
 	//Check probing timer
@@ -2549,6 +2615,11 @@ void DTLSICETransport::Stop()
 
 int DTLSICETransport::Enqueue(const RTPPacket::shared& packet)
 {
+	//Trace
+	TRACE_EVENT("rtp", "DTLSICETransport::Enqueue RTP",
+		"ssrc", packet->GetSSRC(),
+		"seqNum", packet->GetSeqNum());
+
 	//Send async
 	timeService.Async([this,packet](...){
 		//Send
@@ -2560,6 +2631,11 @@ int DTLSICETransport::Enqueue(const RTPPacket::shared& packet)
 
 int DTLSICETransport::Enqueue(const RTPPacket::shared& packet,std::function<RTPPacket::shared(const RTPPacket::shared&)> modifier)
 {
+	//Trace
+	TRACE_EVENT("rtp", "DTLSICETransport::Enqueue RTP",
+		"ssrc", packet->GetSSRC(),
+		"seqNum", packet->GetSeqNum());
+
 	//Send async
 	timeService.Async([this,packet,modifier](...){
 		//Send
@@ -2568,9 +2644,12 @@ int DTLSICETransport::Enqueue(const RTPPacket::shared& packet,std::function<RTPP
 	
 	return 1;
 }
+
 void DTLSICETransport::Probe(QWORD now)
 {
-	//Endure that transport wide cc is enabled
+	TRACE_EVENT("transport", "DTLSICETransport::Probe", "now", now);
+
+	//Ensure that transport wide cc is enabled
 	if (senderSideEstimationEnabled && probe && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC)!=RTPMap::NotFound)
 	{
 		//Update bitrates
@@ -2583,7 +2662,7 @@ void DTLSICETransport::Probe(QWORD now)
 		DWORD probing		= static_cast<DWORD>(probingBitrate.GetInstantAvg()*8);
 		DWORD target		= senderSideBandwidthEstimator.GetAvailableBitrate();
 
-		//Log(">DTLSICETransport::Probe() | [target:%u,bitrate:%d,probing:%d,history:%d,probingBitrateLimit=%d,maxProbingBitrate=%d]\n",target,bitrate,probing,history.size(),probingBitrateLimit,maxProbingBitrate);
+		//Log(">DTLSICETransport::Probe() | [target:%ubps,bitrate:%ubps,probing:%ubps,history:%d,probingBitrateLimit=%ubps,maxProbingBitrate=%ubps]\n",target,bitrate,probing,history.size(),probingBitrateLimit,maxProbingBitrate);
 			
 		//If we can still send more
 		if (target>bitrate && (!probingBitrateLimit || bitrate<probingBitrateLimit) && probing<maxProbingBitrate)
@@ -2594,7 +2673,7 @@ void DTLSICETransport::Probe(QWORD now)
 			//Get size of probes
 			DWORD probingSize = std::min<DWORD>(probing, maxProbingBitrate)*sleep/8000;
 			
-			//Log("-DTLSICETransport::Probe() | Sending probing packets [target:%u,bitrate:%u,probing:%u,max:%u,probingSize:%d,sleep:%d]\n", target, bitrate,probing,maxProbingBitrate, probingSize, sleep);
+			//Log("-DTLSICETransport::Probe() | Sending probing packets [target:%ubps,bitrate:%ubps,probing:%u,max:%ubps,probingSize:%d,sleep:%d]\n", target, bitrate,probing,maxProbingBitrate, probingSize, sleep);
 
 			//If we have packet history
 			if (history.size())
@@ -2665,12 +2744,6 @@ void DTLSICETransport::Probe(QWORD now)
 	lastProbe = now;
 }
 
-void DTLSICETransport::SetBandwidthProbing(bool probe)
-{
-	//Set probing status
-	this->probe = probe;
-}
-
 void DTLSICETransport::SetListener(Listener* listener)
 {
 	//Add in main thread and wait
@@ -2711,4 +2784,74 @@ void DTLSICETransport::DisableREMB(bool disabled)
 	//Log
 	Debug("-DTLSICETransport::DisableREMB() [disabled:%d]\n", disabled);
 	this->disableREMB = disabled;
+}
+void DTLSICETransport::SetMaxProbingBitrate(DWORD bitrate)
+{
+	//Log
+	Debug("-DTLSICETransport::SetMaxProbingBitrate() [bitrate:%d]\n", bitrate);
+	this->maxProbingBitrate = bitrate;
+}
+
+void DTLSICETransport::SetProbingBitrateLimit(DWORD bitrate)
+{
+	//Log
+	Debug("-DTLSICETransport::SetProbingBitrateLimit() [bitrate:%d]\n", bitrate);
+	this->probingBitrateLimit = bitrate;
+}
+
+void DTLSICETransport::SetBandwidthProbing(bool probe)
+{
+	//Log
+	Debug("-DTLSICETransport::SetBandwidthProbing() [probe:%d]\n", probe);
+	//Set probing status
+	this->probe = probe;
+
+	//Check if we need to start the timar
+	CheckProbeTimer();
+}
+
+
+void DTLSICETransport::EnableSenderSideEstimation(bool enabled)
+{ 
+	//Log
+	Debug("-DTLSICETransport::EnableSenderSideEstimation() [enabled:%d]\n", enabled);
+	//Update flag
+	this->senderSideEstimationEnabled = enabled;
+
+	//Check if we need to start the timer
+	CheckProbeTimer();
+}
+
+
+void DTLSICETransport::CheckProbeTimer()
+{
+	//If we don't have timer anumore
+	if (!probingTimer)
+		//Do nothing
+		return;
+	//No video
+	bool video = false;
+	//Check if there is any video source
+	for (auto& [ssrc,outgoing] : outgoing)
+	{
+		//If it is video
+		if (outgoing->type == MediaFrame::Video)
+		{
+			//Got one
+			video = true;
+			break;
+		}
+	}
+	
+	//Check if we have to start if
+	if (this->senderSideEstimationEnabled && this->probe && video && state == DTLSState::Connected)
+	{
+		//If not already started
+		if (probingTimer->IsScheduled())
+			//Start probing timer again
+			probingTimer->Repeat(ProbingInterval);
+	}else {
+		//Stop probing
+		probingTimer->Cancel();
+	}
 }

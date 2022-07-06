@@ -76,15 +76,15 @@ private:
 	uint64_t lastFeedbackNum = 0;
 	
 	MovingMinCounter<uint64_t> rttMin;
-	Acumulator deltaAcumulator;
-	Acumulator totalSentAcumulator;
-	Acumulator mediaSentAcumulator;
-	Acumulator rtxSentAcumulator;
-	Acumulator probingSentAcumulator;
-	Acumulator totalRecvAcumulator;
-	Acumulator mediaRecvAcumulator;
-	Acumulator rtxRecvAcumulator;
-	Acumulator probingRecvAcumulator;
+	Acumulator<uint32_t, uint64_t> deltaAcumulator;
+	Acumulator<uint32_t, uint64_t> totalSentAcumulator;
+	Acumulator<uint32_t, uint64_t> mediaSentAcumulator;
+	Acumulator<uint32_t, uint64_t> rtxSentAcumulator;
+	Acumulator<uint32_t, uint64_t> probingSentAcumulator;
+	Acumulator<uint32_t, uint64_t> totalRecvAcumulator;
+	Acumulator<uint32_t, uint64_t> mediaRecvAcumulator;
+	Acumulator<uint32_t, uint64_t> rtxRecvAcumulator;
+	Acumulator<uint32_t, uint64_t> probingRecvAcumulator;
 	
 	RemoteRateEstimator::Listener* listener = nullptr;
 
