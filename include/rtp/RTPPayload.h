@@ -11,8 +11,9 @@ public:
 public:
 	RTPPayload();
 	
-	RTPPayload::shared Clone();
+	void Reset();
 	bool SetPayload(const BYTE *data,DWORD size);
+	bool SetPayload(const RTPPayload& other);
 	bool SkipPayload(DWORD skip);
 	bool PrefixPayload(BYTE *data,DWORD size);
 	

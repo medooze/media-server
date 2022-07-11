@@ -7,17 +7,11 @@ RTPPayload::RTPPayload()
 	payloadLen = 0;
 }
 
-RTPPayload::shared RTPPayload::Clone()
+void RTPPayload::Reset()
 {
-	//New one
-	auto cloned = std::make_shared<RTPPayload>();
-	//Copy buffer data
-	memcpy(cloned->buffer.data(),buffer.data(),buffer.size());
-	//Reset payload pointers
-	cloned->payload = cloned->buffer.data() + (payload-buffer.data());
-	cloned->payloadLen = payloadLen;
-	//Return it
-	return cloned;
+	//Reset payload
+	payload = buffer.data() + PREFIX;
+	payloadLen = 0;
 }
 
 bool RTPPayload::SetPayload(const BYTE *data,DWORD size)
@@ -35,6 +29,16 @@ bool RTPPayload::SetPayload(const BYTE *data,DWORD size)
 	//good
 	return true;
 }
+
+bool RTPPayload::SetPayload(const RTPPayload& other)
+{
+	//Copy buffer data
+	memcpy(buffer.data(), other.buffer.data(), other.buffer.size());
+	//Reset payload pointers
+	payload = buffer.data() + (other.payload - other.buffer.data());
+	payloadLen = other.payloadLen;
+}
+
 bool RTPPayload::PrefixPayload(BYTE *data,DWORD size)
 {
 	//Check size

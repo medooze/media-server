@@ -16,6 +16,8 @@
 #include "rtp/RTPPacket.h"
 #include "log.h"
 
+RTPPayloadPool RTPPacket::PayloadPool(16536);
+
 RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec, QWORD time) 
 {
 	this->media = media;
@@ -33,8 +35,8 @@ RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec, QWORD time)
 		default:
 			clockRate = 1000;
 	}
-	//Create payload
-	payload  = std::make_shared<RTPPayload>();
+	//Create payload from pool
+	payload = RTPPacket::PayloadPool.allocate();
 	//We own the payload
 	ownedPayload = true;
 	//Set time
@@ -70,8 +72,8 @@ RTPPacket::RTPPacket(MediaFrame::Type media, BYTE codec, const RTPHeader& header
 		default:
 			clockRate = 1000;
 	}
-	//Create payload
-	payload  = std::make_shared<RTPPayload>();
+	//Create payload from pool
+	payload = RTPPacket::PayloadPool.allocate();
 	//We own the payload
 	ownedPayload = true;
 	//Set time
@@ -285,8 +287,12 @@ BYTE* RTPPacket::AdquireMediaData()
 	//If the packet was cloned and doesn't own the payload
 	if (!ownedPayload)
 	{
+		//Store old one
+		RTPPayload::shared old = payload;
+		//Create payload from pool
+		payload = RTPPacket::PayloadPool.allocate();
 		//Clone payload
-		payload = payload->Clone();
+		payload->SetPayload(*old);
 		//We own the payload
 		ownedPayload = true;
 	}

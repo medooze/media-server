@@ -18,6 +18,7 @@
 #include "rtp/RTPHeader.h"
 #include "rtp/RTPHeaderExtension.h"
 #include "rtp/RTPPayload.h"
+#include "rtp/RTPPayloadPool.h"
 #include "vp8/vp8.h"
 #include "vp9/VP9PayloadDescription.h"
 #include <memory>
@@ -27,6 +28,7 @@ class RTPPacket
 {
 public:
 	const static DWORD MaxExtSeqNum = 0xFFFFFFFF;
+	static RTPPayloadPool PayloadPool;
 public:
 	using shared = std::shared_ptr<RTPPacket>;
 	using unique = std::unique_ptr<RTPPacket>;
