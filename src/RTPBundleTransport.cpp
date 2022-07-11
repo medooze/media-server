@@ -82,7 +82,7 @@ RTPBundleTransport::Connection* RTPBundleTransport::AddICETransport(const std::s
 	}
 	
 	//Create new ICE transport
-	DTLSICETransport *transport = new DTLSICETransport(this,loop);
+	DTLSICETransport *transport = new DTLSICETransport(this,loop,loop.GetPacketPool());
 	
 	//Set SRTP protection profiles
 	std::string profiles = properties.GetProperty("srtpProtectionProfiles","");
@@ -536,7 +536,7 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 			resp->AddXorAddressAttribute(htonl(ip),htons(port));
 			
 			//Create new mesage
-			Packet buffer;
+			Packet buffer = loop.GetPacketPool().pick();
 		
 			//Serialize and autenticate
 			size_t len = resp->AuthenticatedFingerPrint(buffer.GetData(),buffer.GetCapacity(),transport->GetLocalPwd());
@@ -741,7 +741,7 @@ void RTPBundleTransport::SendBindingRequest(Connection* connection,ICERemoteCand
 	request->AddAttribute(STUNMessage::Attribute::Priority,(DWORD)33554431);
 
 	//Create new mesage
-	Packet buffer;
+	Packet buffer = loop.GetPacketPool().pick();
 
 	//Serialize and autenticate
 	size_t len = request->AuthenticatedFingerPrint(buffer.GetData(),buffer.GetCapacity(),transport->GetRemotePwd());

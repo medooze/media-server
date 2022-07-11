@@ -63,7 +63,7 @@ public:
 	};
 
 public:
-	DTLSICETransport(Sender *sender,TimeService& timeService);
+	DTLSICETransport(Sender *sender,TimeService& timeService, ObjectPool<Packet>& packetPool);
 	virtual ~DTLSICETransport();
 	
 	void Start();
@@ -160,6 +160,7 @@ private:
 private:
 	Sender*		sender = nullptr;
 	TimeService&	timeService;
+	ObjectPool<Packet>& packetPool;
 	datachannels::impl::Endpoint endpoint;
 	datachannels::Endpoint::Options dcOptions;
 	Listener*	listener = nullptr;

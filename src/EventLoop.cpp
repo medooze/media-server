@@ -17,6 +17,7 @@
 #include "log.h"
 
 const size_t EventLoop::MaxSendingQueueSize = 64*1024;
+const size_t EventLoop::PacketPoolSize = 1024;
 
 
 #if __APPLE__
@@ -65,7 +66,9 @@ void free_cpu_set(cpu_set_t* s) {
 #endif
 
 EventLoop::EventLoop(Listener *listener) :
-	listener(listener)
+	listener(listener),
+	packetPool(PacketPoolSize)
+
 {
 }
 
@@ -523,7 +526,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 	uint32_t flags = MSG_DONTWAIT;
 	
 	//Pending data
-	std::vector<SendBuffer> items(MaxMultipleSendingMessages);
+	std::vector<SendBuffer> items;
 	
 	//Set values for polling
 	ufds[0].fd = fd;
@@ -625,6 +628,9 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 		{
 			TRACE_EVENT("eventloop", "EventLoop::Run::ProcessOut");
 			//UltraDebug("-EventLoop::Run() | ufds[0].revents & POLLOUT\n");
+
+			//Reserve space
+			items.reserve(MaxMultipleSendingMessages);
 			
 			//Now send all that we can
 			while (items.size()<MaxMultipleSendingMessages)
@@ -691,6 +697,9 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 				{
 					//Retry it
 					retry.emplace_back(std::move(*it));
+				} else {
+					//Move packet buffer back to the pool
+					packetPool.release(std::move(it->packet));
 				}
 			}
 			//Clear items

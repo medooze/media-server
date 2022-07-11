@@ -47,9 +47,10 @@ constexpr auto MaxRTXOverhead = 0.50f;
 constexpr auto TransportWideCCMaxPackets = 100;
 constexpr auto TransportWideCCMaxInterval = 5E4;	//50ms
 
-DTLSICETransport::DTLSICETransport(Sender *sender,TimeService& timeService) :
+DTLSICETransport::DTLSICETransport(Sender *sender,TimeService& timeService, ObjectPool<Packet>& packetPool) :
 	sender(sender),
 	timeService(timeService),
+	packetPool(packetPool),
 	endpoint(timeService),
 	dtls(*this,timeService,endpoint.GetTransport()),
 	incomingBitrate(250),
@@ -72,12 +73,18 @@ void DTLSICETransport::onDTLSPendingData()
 	//Until depleted
 	while(active)
 	{
-		Packet buffer;
+		//Pick one packet from the pool
+		Packet buffer = packetPool.pick();
+
 		//Read from dtls
 		int len = dtls.Read(buffer.GetData(),buffer.GetCapacity());
 		//Check result
 		if (len<=0)
+		{
+			//Return packet to pool
+			packetPool.release(std::move(buffer));
 			break;
+		}
 		//Set read size
 		buffer.SetSize(len);
 		//Send
@@ -630,8 +637,8 @@ DWORD DTLSICETransport::SendProbe(const RTPPacket::shared& original)
 	//No frame markings
 	packet->DisableFrameMarkings();
 	
-	//Send buffer
-	Packet buffer;
+	//Pick one packet buffer from the pool
+	Packet buffer = packetPool.pick();
 	BYTE* 	data = buffer.GetData();
 	DWORD	size = buffer.GetCapacity();
 	
@@ -640,12 +647,22 @@ DWORD DTLSICETransport::SendProbe(const RTPPacket::shared& original)
 	
 	//IF failed
 	if (!len)
+	{
+		//Return packet to pool
+		packetPool.release(std::move(buffer));
+		//Log warning and exit
 		return Warning("-DTLSICETransport::SendProbe() | Could not serialize packet\n");
+	}
 
 	//If we don't have an active candidate yet
 	if (!active)
+	{
+		//Return packet to pool
+		packetPool.release(std::move(buffer));
+		//Log warning and exit
 		//Error
 		return Warning("-DTLSICETransport::SendProbe() | We don't have an active candidate yet\n");
+	}
 
 	//If dumping
 	if (dumper && dumpOutRTP)
@@ -661,8 +678,13 @@ DWORD DTLSICETransport::SendProbe(const RTPPacket::shared& original)
 		
 	//Check size
 	if (!len)
+	{
+		//Return packet to pool
+		packetPool.release(std::move(buffer));
+		//Log warning and exit
 		//Error
 		return Error("-DTLSICETransport::SendProbe() | Error protecting RTP packet [ssrc:%u,%s]\n",source.ssrc,send.GetLastError());
+	}
 	
 	//Store candidate before unlocking
 	ICERemoteCandidate* candidate = active;
@@ -759,8 +781,8 @@ DWORD DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 		extension.absSentTime = now/1000;
 	}
 	
-	//Send buffer
-	Packet buffer;
+	//Pick one packet buffer from the pool
+	Packet buffer = packetPool.pick();
 	BYTE* 	data = buffer.GetData();
 	DWORD	size = buffer.GetCapacity();
 	int	len  = 0;
@@ -770,8 +792,12 @@ DWORD DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 
 	//Comprobamos que quepan
 	if (!n)
+	{
+		//Return packet to pool
+		packetPool.release(std::move(buffer));
 		//Error
 		return Error("-DTLSICETransport::SendProbe() | Error serializing rtp headers\n");
+	}
 
 	//Inc len
 	len += n;
@@ -783,8 +809,12 @@ DWORD DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 		n = extension.Serialize(sendMaps.ext,data+len,size-len);
 		//Comprobamos que quepan
 		if (!n)
+		{
+			//Return packet to pool
+			packetPool.release(std::move(buffer));
 			//Error
 			return Error("-DTLSICETransport::SendProbe() | Error serializing rtp extension headers\n");
+		}
 		//Inc len
 		len += n;
 	}
@@ -800,8 +830,12 @@ DWORD DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 
 	//If we don't have an active candidate yet
 	if (!active)
+	{
+		//Return packet to pool
+		packetPool.release(std::move(buffer));
 		//Error
 		return Debug("-DTLSICETransport::SendProbe() | We don't have an active candidate yet\n");
+	}
 
 	//If dumping
 	if (dumper && dumpOutRTP)
@@ -817,8 +851,12 @@ DWORD DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 		
 	//Check size
 	if (!len)
+	{
+		//Return packet to pool
+		packetPool.release(std::move(buffer));
 		//Error
 		return Error("-RTPTransport::SendProbe() | Error protecting RTP packet [ssrc:%u,%s]\n",source.ssrc,send.GetLastError());
+	}
 
 	//Store candidate before unlocking
 	ICERemoteCandidate* candidate = active;
@@ -948,8 +986,8 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	//No frame markings
 	packet->DisableFrameMarkings();
 	
-	//Send buffer
-	Packet buffer;
+	//Pick one packet buffer from the pool
+	Packet buffer = packetPool.pick();
 	BYTE* 	data = buffer.GetData();
 	DWORD	size = buffer.GetCapacity();
 	
@@ -958,12 +996,21 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	
 	//IF failed
 	if (!len)
+	{
+		//Return packet to pool
+		packetPool.release(std::move(buffer));
+		//Log warnign and exit
 		return (void)Warning("-DTLSICETransport::ReSendPacket() | Could not serialize packet\n");
+	}
 
 	//If we don't have an active candidate yet
 	if (!active)
+	{
+		//Return packet to pool
+		packetPool.release(std::move(buffer));
 		//Error
 		return (void)Warning("-DTLSICETransport::ReSendPacket() | We don't have an active candidate yet\n");
+	}
 
 	//If dumping
 	if (dumper && dumpOutRTP)
@@ -979,8 +1026,12 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 		
 	//Check size
 	if (!len)
+	{
+		//Return packet to pool
+		packetPool.release(std::move(buffer));
 		//Error
 		return (void)Error("-RTPTransport::ReSendPacket() | Error protecting RTP packet [ssrc:%u,%s]\n",source.ssrc,send.GetLastError());
+	}
 	
 	//Store candidate before unlocking
 	ICERemoteCandidate* candidate = active;
@@ -1794,8 +1845,8 @@ int DTLSICETransport::Send(const RTCPCompoundPacket::shared &rtcp)
 		//Log 
 		return Debug("-DTLSICETransport::Send() | We don't have an DTLS setup yet\n");
 	
-	//Send buffer
-	Packet buffer;
+	//Pick one packet buffer from the pool
+	Packet buffer = packetPool.pick();
 	BYTE* 	data = buffer.GetData();
 	DWORD	size = buffer.GetCapacity();
 	
@@ -1805,16 +1856,22 @@ int DTLSICETransport::Send(const RTCPCompoundPacket::shared &rtcp)
 	//Check result
 	if (len<=0 || len>size)
 	{
+		//Return packet to pool
+		packetPool.release(std::move(buffer));
 		//Dump it
 		rtcp->Dump();
 		//Error
-		return Error("-DTLSICETransport::Send() | Error serializing RTCP packet [len:%d]\n",len);
+		return Error("-DTLSICETransport::Send() | Error serializing RTCP packet [len:%d,size:%d]\n",len,size);
 	}
 	
 	//If we don't have an active candidate yet
 	if (!active)
+	{
+		//Return packet to pool
+		packetPool.release(std::move(buffer));
 		//Log
 		return Debug("-DTLSICETransport::Send() | We don't have an active candidate yet\n");
+	}
 
 	//Get current time
 	QWORD now = getTime();
@@ -1829,8 +1886,12 @@ int DTLSICETransport::Send(const RTCPCompoundPacket::shared &rtcp)
 	
 	//Check error
 	if (!len)
+	{
+		//Return packet to pool
+		packetPool.release(std::move(buffer));
 		//Error
 		return Error("-DTLSICETransport::Send() | Error protecting RTCP packet [%s]\n",send.GetLastError());
+	}
 
 	//Store active candidate1889
 	ICERemoteCandidate* candidate = active;
@@ -2000,8 +2061,8 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 
 	//if (group->type==MediaFrame::Video) UltraDebug("-Sending RTP on media:%s sssrc:%u seq:%u pt:%u ts:%lu codec:%s\n",MediaFrame::TypeToString(group->type),source.ssrc,packet->GetSeqNum(),packet->GetPayloadType(),packet->GetTimestamp(),GetNameForCodec(group->type,packet->GetCodec()));
 	
-	//Send buffer
-	Packet buffer;
+	//Pick one packet buffer from the pool
+	Packet buffer = packetPool.pick();
 	BYTE* 	data = buffer.GetData();
 	DWORD	size = buffer.GetCapacity();
 	
@@ -2010,15 +2071,24 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 	
 	//IF failed
 	if (!len)
+	{
+		//Return packet to pool
+		packetPool.release(std::move(buffer));
+		//Log warning and exit
 		return Warning("-DTLSICETransport::Send() | Could not serialize packet\n");
+	}
 
 	//Add packet for RTX
 	group->AddPacket(packet);
 	
 	//If we don't have an active candidate yet
 	if (!active)
+	{
+		//Return packet to pool
+		packetPool.release(std::move(buffer));
 		//Error
 		return Debug("-DTLSICETransport::Send() | We don't have an active candidate yet\n");
+	}
 
 	//If dumping
 	if (dumper && dumpOutRTP)
@@ -2034,8 +2104,12 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 	
 	//Check error
 	if (!len)
+	{
+		//Return packet to pool
+		packetPool.release(std::move(buffer));
 		//Error
 		return Error("-RTPTransport::Send() | Error protecting RTP packet [ssrc:%u,%s]\n",ssrc,send.GetLastError());
+	}
 
 	//Store candidate
 	ICERemoteCandidate* candidate = active;
@@ -2596,6 +2670,15 @@ void DTLSICETransport::Stop()
 		probingTimer->Cancel();
 		//Remove timer
 		probingTimer.reset();
+	}
+
+	//Check sse timer
+	if (sseTimer)
+	{
+		//Stop probing
+		sseTimer->Cancel();
+		//Remove timer
+		sseTimer.reset();
 	}
 	
 	//Check ice timeout timer
