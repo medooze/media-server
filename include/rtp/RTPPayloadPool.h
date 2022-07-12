@@ -10,7 +10,7 @@ public:
 	RTPPayloadPool(std::size_t preallocate)
 	{
 		//Allocate some payload objects by default
-		for (auto i = 0; i< preallocate; ++i)
+		for (std::size_t i = 0; i < preallocate; ++i)
 			pool.enqueue(new RTPPayload());
 	}
 	RTPPayload::shared allocate()
