@@ -286,6 +286,10 @@ void EventLoop::Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet
 {
 	TRACE_EVENT("eventloop", "EventLoop::Send", "packet_size", packet.GetSize());
 
+	//Try to send through raw TX helper, if installed
+	if (rawTx && rawTx->TrySend(ipAddr, port, std::move(packet)))
+		return;
+
 	//Get approximate queued size
 	auto aprox = sending.size_approx();
 	

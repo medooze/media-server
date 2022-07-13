@@ -4,6 +4,7 @@
 #include <thread>
 #include <functional>
 #include <chrono>
+#include <optional>
 #include <poll.h>
 #include <cassert>
 #include "config.h"
@@ -11,6 +12,7 @@
 #include "Packet.h"
 #include "ObjectPool.h"
 #include "TimeService.h"
+#include "RawTxHelper.h"
 
 using namespace std::chrono_literals;
 
@@ -82,6 +84,11 @@ public:
 	void Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet);
 	void Run(const std::chrono::milliseconds &duration = std::chrono::milliseconds::max());
 	
+	void SetRawTx(std::optional<RawTxHelper>&& rawTx) {
+		// the lambda needs to be copyable, so use a shared_ptr for storage. ugly, I know
+		auto rawTxPtr = std::make_shared<std::optional<RawTxHelper>>(std::move(rawTx));
+		Async([this, rawTxPtr](...) { this->rawTx = std::move(*rawTxPtr); });
+	}
 	bool SetAffinity(int cpu);
 	bool SetThreadName(const std::string& name);
 	bool SetPriority(int priority);
@@ -143,7 +150,8 @@ private:
 	moodycamel::ConcurrentQueue<std::pair<std::promise<void>,std::function<void(std::chrono::milliseconds)>>>  tasks;
 	std::multimap<std::chrono::milliseconds,TimerImpl::shared> timers;
 	ObjectPool<Packet> packetPool;
-	
+	std::optional<RawTxHelper> rawTx;
+
 };
 
 #endif /* EVENTLOOP_H */
