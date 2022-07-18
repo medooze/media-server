@@ -5,6 +5,7 @@
 #include <array>
 #include <random>
 #include "Packet.h"
+#include "PacketHeader.h"
 
 /**
  * @brief Simple helper to send UDP messages as raw Ethernet/IP/UDP
@@ -32,7 +33,7 @@ public:
 	 * try to send a frame using raw TX. if false is returned,
 	 * the packet has to be sent through normal means
 	 */
-	bool TrySend(uint32_t ip, uint16_t port, Packet&& packet);
+	bool TrySend(uint32_t ip, uint16_t port, Packet&& payload);
 
 protected:
 	// AF_PACKET socket
@@ -40,8 +41,8 @@ protected:
 	// used to check for link-local traffic
 	uint32_t selfAddr;
 	uint32_t prefixlen;
-	// frame header template
-	std::string frameTemplate;
+	// used to build frame header
+	PacketHeader header;
 	// used to generate IP identification
 	std::mt19937 rng;
 };
