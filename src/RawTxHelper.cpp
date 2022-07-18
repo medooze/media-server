@@ -9,9 +9,6 @@ RawTxHelper::RawTxHelper(int32_t ifindex, unsigned int sndbuf, bool skipQdisc, u
 {
 	throw std::runtime_error("raw TX is only supported in Linux");
 }
-RawTxHelper::RawTxHelper(RawTxHelper&& other) noexcept {}
-RawTxHelper& RawTxHelper::operator=(RawTxHelper&& other) noexcept { return *this; }
-RawTxHelper::~RawTxHelper() {}
 bool RawTxHelper::TrySend(uint32_t ip, uint16_t port, Packet&& payload) { return false; }
 #else
 
@@ -21,21 +18,6 @@ bool RawTxHelper::TrySend(uint32_t ip, uint16_t port, Packet&& payload) { return
 #include <sys/socket.h>
 #include <linux/if_packet.h>
 #include <fcntl.h>
-
-RawTxHelper::RawTxHelper(RawTxHelper&& other) noexcept:
-	selfAddr(other.selfAddr), prefixlen(other.prefixlen), header(header),
-	rng(std::move(other.rng))
-{
-	std::swap(fd, other.fd);
-}
-
-RawTxHelper& RawTxHelper::operator=(RawTxHelper&& other) noexcept
-{
-	selfAddr = other.selfAddr, prefixlen = other.prefixlen, header = other.header;
-	rng = std::move(other.rng);
-	std::swap(fd, other.fd);
-	return *this;
-}
 
 RawTxHelper::RawTxHelper(int32_t ifindex, unsigned int sndbuf, bool skipQdisc, uint32_t selfAddr, uint32_t prefixlen, MacAddr selfLladdr, uint32_t gwAddr, MacAddr gwLladdr, uint16_t port):
 	selfAddr(selfAddr), prefixlen(prefixlen), rng(std::random_device()())
@@ -58,7 +40,7 @@ RawTxHelper::RawTxHelper(int32_t ifindex, unsigned int sndbuf, bool skipQdisc, u
 	// set up AF_PACKET socket
 
 	// protocol=0 means no RX
-	if ((fd = socket(PF_PACKET, SOCK_RAW, 0)) < 0)
+	if ((fd = FileDescriptor(socket(PF_PACKET, SOCK_RAW, 0))) < 0)
 		throw std::system_error(std::error_code(errno, std::system_category()), "failed creating AF_PACKET socket");
 
 	fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
@@ -67,27 +49,15 @@ RawTxHelper::RawTxHelper(int32_t ifindex, unsigned int sndbuf, bool skipQdisc, u
 	bindAddr.sll_family = AF_PACKET;
 	bindAddr.sll_ifindex = ifindex;
 	bindAddr.sll_protocol = 0;
-	if (bind(fd, (sockaddr*)&bindAddr, sizeof(bindAddr)) < 0) {
-		close(fd);
+	if (bind(fd, (sockaddr*)&bindAddr, sizeof(bindAddr)) < 0)
 		throw std::system_error(std::error_code(errno, std::system_category()), "failed binding AF_PACKET socket");
-	}
 
-	if (sndbuf > 0 && setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &sndbuf, sizeof(sndbuf)) < 0) {
-		close(fd);
+	if (sndbuf > 0 && setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &sndbuf, sizeof(sndbuf)) < 0)
 		throw std::system_error(std::error_code(errno, std::system_category()), "failed setting send queue size");
-	}
 
 	int skipQdiscInt = 1;
-	if (skipQdisc && setsockopt(fd, SOL_PACKET, PACKET_QDISC_BYPASS, &skipQdiscInt, sizeof(skipQdiscInt)) < 0) {
-		close(fd);
+	if (skipQdisc && setsockopt(fd, SOL_PACKET, PACKET_QDISC_BYPASS, &skipQdiscInt, sizeof(skipQdiscInt)) < 0)
 		throw std::system_error(std::error_code(errno, std::system_category()), "failed setting QDISC_BYPASS");
-	}
-}
-
-RawTxHelper::~RawTxHelper()
-{
-	if (fd >= 0 && close(fd) < 0)
-		throw std::system_error(std::error_code(errno, std::system_category()), "failed closing AF_PACKET socket");
 }
 
 bool RawTxHelper::TrySend(uint32_t ip, uint16_t port, Packet&& payload)

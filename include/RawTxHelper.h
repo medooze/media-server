@@ -6,6 +6,7 @@
 #include <random>
 #include "Packet.h"
 #include "PacketHeader.h"
+#include "FileDescriptor.h"
 
 /**
  * @brief Simple helper to send UDP messages as raw Ethernet/IP/UDP
@@ -23,12 +24,6 @@ public:
 		// frame header parameters
 		uint32_t selfAddr, uint32_t prefixlen, MacAddr selfLladdr, uint32_t gwAddr, MacAddr gwLladdr, uint16_t port);
 
-	RawTxHelper(RawTxHelper&& other) noexcept;
-	RawTxHelper& operator=(RawTxHelper&& other) noexcept;
-	RawTxHelper(const RawTxHelper& other) = delete;
-	RawTxHelper& operator=(const RawTxHelper& other) = delete;
-	~RawTxHelper();
-
 	/**
 	 * try to send a frame using raw TX. if false is returned,
 	 * the packet has to be sent through normal means
@@ -37,7 +32,7 @@ public:
 
 protected:
 	// AF_PACKET socket
-	int fd = -1;
+	FileDescriptor fd;
 	// used to check for link-local traffic
 	uint32_t selfAddr;
 	uint32_t prefixlen;
