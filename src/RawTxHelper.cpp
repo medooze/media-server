@@ -200,7 +200,8 @@ bool RawTxHelper::TrySend(uint32_t ip, uint16_t port, Packet&& packet)
 
 	TRACE_EVENT("eventloop", "RawTxHelper::TrySend::sendmsg");
 	if (sendmsg(fd, &msg, 0) < 0) {
-		if (errno == EWOULDBLOCK || errno == EAGAIN) {
+		// AF_PACKET seems to return ENOSPC instead of blocking
+		if (errno == EWOULDBLOCK || errno == EAGAIN || errno == ENOSPC) {
 			TRACE_EVENT("eventloop", "RawTxHelper::TrySend::Dropped");
 		} else {
 			throw std::system_error(std::error_code(errno, std::system_category()), "failed sending frame");
