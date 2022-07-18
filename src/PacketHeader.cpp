@@ -1,5 +1,7 @@
 #include "PacketHeader.h"
 
+// checksum is a one's complement, so it's independent of endianness
+
 void PacketHeader::CalculateIpChecksum(PacketHeader& header)
 {
 	header.ip.hdrChecksum = 0;
@@ -28,14 +30,15 @@ void PacketHeader::CalculateUdpChecksum(PacketHeader& header, const Packet& payl
 		checksum += udpPhdr.words[i];
 	for (size_t i = 0; i < (sizeof(header.udp_hws) / sizeof(*header.udp_hws)); i++)
 		checksum += header.udp_hws[i];
-	
+
+	// FIXME: make sure data is aligned and we're not breaking strict aliasing
 	uint16_t* data_words = (uint16_t*) payload.GetData();
 	size_t data_nwords = payload.GetSize() / 2;
 	for (size_t i = 0; i < data_nwords; i++)
 		checksum += data_words[i];
 	if (payload.GetSize() % 2 != 0)
 		checksum += uint16_t(payload.GetData()[payload.GetSize() - 1]);
-	
+
 	checksum = (checksum & 0xFFFF) + (checksum >> 16);
 	checksum = (checksum & 0xFFFF) + (checksum >> 16);
 	header.udp.checksum = ~checksum;

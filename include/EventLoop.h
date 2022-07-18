@@ -87,7 +87,7 @@ public:
 	void SetRawTx(std::optional<RawTxHelper>&& rawTx) {
 		// the lambda needs to be copyable, so use a shared_ptr for storage. ugly, I know
 		auto rawTxPtr = std::make_shared<std::optional<RawTxHelper>>(std::move(rawTx));
-		Async([this, rawTxPtr](...) { this->rawTx = std::move(*rawTxPtr); });
+		Async([this, rawTxPtr](std::chrono::milliseconds) { this->rawTx = std::move(*rawTxPtr); });
 	}
 	bool SetAffinity(int cpu);
 	bool SetThreadName(const std::string& name);
