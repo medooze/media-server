@@ -46,6 +46,14 @@ struct UdpHeader {
 	uint16_t checksum;
 } __attribute__ ((packed));
 
+struct UdpIpv4PseudoHeader {
+	uint32_t src;
+	uint32_t dst;
+	uint8_t zero;
+	uint8_t protocol;
+	uint16_t udpLength;
+} __attribute__ ((packed));
+
 struct FrameTemplate {
 	ether_header eth;
 	union {
@@ -58,7 +66,50 @@ struct FrameTemplate {
 		// for checksum calculation
 		uint16_t udp_hws [sizeof(UdpHeader) / 2];
 	};
+
+	static void CalculateIpChecksum(FrameTemplate& frame);
+	static void CalculateUdpChecksum(FrameTemplate& frame, const Packet& packet);
 } __attribute__ ((packed));
+
+void FrameTemplate::CalculateIpChecksum(FrameTemplate& frame) {
+	frame.ip.hdrChecksum = 0;
+	uint32_t checksum = 0;
+
+	for (size_t i = 0; i < (sizeof(frame.ip_hws) / sizeof(*frame.ip_hws)); i++)
+		checksum += frame.ip_hws[i];
+
+	checksum = (checksum & 0xFFFF) + (checksum >> 16);
+	checksum = (checksum & 0xFFFF) + (checksum >> 16);
+	frame.ip.hdrChecksum = ~checksum;
+}
+
+void FrameTemplate::CalculateUdpChecksum(FrameTemplate& frame, const Packet& packet) {
+	union {
+		UdpIpv4PseudoHeader hdr;
+		uint16_t words [sizeof(UdpIpv4PseudoHeader) / 2];
+	} udpPhdr;
+	udpPhdr.hdr = { frame.ip.src, frame.ip.dst, 0, frame.ip.protocol, frame.udp.length };
+
+	frame.udp.checksum = 0;
+	uint32_t checksum = 0;
+
+	for (size_t i = 0; i < (sizeof(udpPhdr.words) / sizeof(*udpPhdr.words)); i++)
+		checksum += udpPhdr.words[i];
+	for (size_t i = 0; i < (sizeof(frame.udp_hws) / sizeof(*frame.udp_hws)); i++)
+		checksum += frame.udp_hws[i];
+	
+	uint16_t* data_words = (uint16_t*) packet.GetData();
+	size_t data_nwords = packet.GetSize() / 2;
+	for (size_t i = 0; i < data_nwords; i++)
+		checksum += data_words[i];
+	if (packet.GetSize() % 2 != 0)
+		checksum += uint16_t(packet.GetData()[packet.GetSize() - 1]);
+	
+	checksum = (checksum & 0xFFFF) + (checksum >> 16);
+	checksum = (checksum & 0xFFFF) + (checksum >> 16);
+	frame.udp.checksum = ~checksum;
+	if (!frame.udp.checksum) frame.udp.checksum = 0xFFFF;
+}
 
 RawTxHelper::RawTxHelper(RawTxHelper&& other) noexcept:
 	selfAddr(other.selfAddr), prefixlen(other.prefixlen),
@@ -132,14 +183,6 @@ RawTxHelper::~RawTxHelper()
 		throw std::system_error(std::error_code(errno, std::system_category()), "failed closing AF_PACKET socket");
 }
 
-struct UdpIpv4PseudoHeader {
-	uint32_t src;
-	uint32_t dst;
-	uint8_t zero;
-	uint8_t protocol;
-	uint16_t udpLength;
-} __attribute__ ((packed));
-
 bool RawTxHelper::TrySend(uint32_t ip, uint16_t port, Packet&& packet)
 {
 	if (fd < 0)
@@ -159,40 +202,8 @@ bool RawTxHelper::TrySend(uint32_t ip, uint16_t port, Packet&& packet)
 	std::uniform_int_distribution<uint16_t> u16_distr;
 	frame.ip.identification = u16_distr(rng);
 
-	uint32_t checksum;
-
-	// calculate IP header checksum
-	frame.ip.hdrChecksum = 0;
-	checksum = 0;
-	for (size_t i = 0; i < (sizeof(frame.ip_hws) / sizeof(*frame.ip_hws)); i++)
-		checksum += frame.ip_hws[i];
-	checksum = (checksum & 0xFFFF) + (checksum >> 16);
-	checksum = (checksum & 0xFFFF) + (checksum >> 16);
-	frame.ip.hdrChecksum = ~checksum;
-
-	// calculate UDP checksum
-	union {
-		UdpIpv4PseudoHeader hdr;
-		uint16_t words [sizeof(UdpIpv4PseudoHeader) / 2];
-	} udpPhdr;
-	udpPhdr.hdr = { frame.ip.src, frame.ip.dst, 0, frame.ip.protocol, frame.udp.length };
-
-	frame.udp.checksum = 0;
-	checksum = 0;
-	for (size_t i = 0; i < (sizeof(udpPhdr.words) / sizeof(*udpPhdr.words)); i++)
-		checksum += udpPhdr.words[i];
-	for (size_t i = 0; i < (sizeof(frame.udp_hws) / sizeof(*frame.udp_hws)); i++)
-		checksum += frame.udp_hws[i];
-	uint16_t* data_words = (uint16_t*) packet.GetData();
-	size_t data_nwords = packet.GetSize() / 2;
-	for (size_t i = 0; i < data_nwords; i++)
-		checksum += data_words[i];
-	if (packet.GetSize() % 2 != 0)
-		checksum += uint16_t(packet.GetData()[packet.GetSize() - 1]);
-	checksum = (checksum & 0xFFFF) + (checksum >> 16);
-	checksum = (checksum & 0xFFFF) + (checksum >> 16);
-	frame.udp.checksum = ~checksum;
-	if (!frame.udp.checksum) frame.udp.checksum = 0xFFFF;
+	FrameTemplate::CalculateIpChecksum(frame);
+	FrameTemplate::CalculateUdpChecksum(frame, packet);
 
 	// send frame
 	struct iovec iov [2] = { { &frame, sizeof(frame) }, { packet.GetData(), packet.GetSize() } };
