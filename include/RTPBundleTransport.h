@@ -57,8 +57,8 @@ public:
 	
 	virtual void OnRead(const int fd, const uint8_t* data, const size_t size, const uint32_t ip, const uint16_t port) override;
 	
-	void SetRawTx(int32_t ifindex, unsigned int sndbuf, bool skipQdisc, uint32_t self_addr, uint32_t prefixlen, RawTxHelper::MacAddr self_lladdr, uint32_t gw_addr, RawTxHelper::MacAddr gw_lladdr, uint16_t port)
-		{ loop.SetRawTx(std::make_optional<RawTxHelper>(ifindex, sndbuf, skipQdisc, self_addr, prefixlen, self_lladdr, gw_addr, gw_lladdr, port)); }
+	void SetRawTx(int32_t ifindex, unsigned int sndbuf, bool skipQdisc, uint32_t selfAddr, uint32_t prefixlen, RawTxHelper::MacAddr selfLladdr, uint32_t gwAddr, RawTxHelper::MacAddr gwLladdr, uint16_t port)
+		{ loop.SetRawTx(std::make_optional<RawTxHelper>(ifindex, sndbuf, skipQdisc, selfAddr, prefixlen, selfLladdr, gwAddr, gwLladdr, port)); }
 	void ClearRawTx() { loop.SetRawTx(std::nullopt); }
 
 	void SetIceTimeout(uint32_t timeout)	{ iceTimeout = std::chrono::milliseconds(timeout);	}

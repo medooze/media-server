@@ -20,7 +20,7 @@ public:
 		// TX options
 		int32_t ifindex, unsigned int sndbuf, bool skipQdisc,
 		// frame header parameters
-		uint32_t self_addr, uint32_t prefixlen, MacAddr self_lladdr, uint32_t gw_addr, MacAddr gw_lladdr, uint16_t port);
+		uint32_t selfAddr, uint32_t prefixlen, MacAddr selfLladdr, uint32_t gwAddr, MacAddr gwLladdr, uint16_t port);
 
 	RawTxHelper(RawTxHelper&& other) noexcept;
 	RawTxHelper& operator=(RawTxHelper&& other) noexcept;
@@ -38,10 +38,10 @@ protected:
 	// AF_PACKET socket
 	int fd = -1;
 	// used to check for link-local traffic
-	uint32_t self_addr;
+	uint32_t selfAddr;
 	uint32_t prefixlen;
 	// frame header template
-	std::string frame_template;
+	std::string frameTemplate;
 	// used to generate IP identification
 	std::mt19937 rng;
 };

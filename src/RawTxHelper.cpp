@@ -4,7 +4,7 @@
 #include <system_error>
 
 #ifndef __linux__
-RawTxHelper::RawTxHelper(int32_t ifindex, unsigned int sndbuf, bool skipQdisc, uint32_t self_addr, uint32_t prefixlen, MacAddr self_lladdr, uint32_t gw_addr, MacAddr gw_lladdr, uint16_t port)
+RawTxHelper::RawTxHelper(int32_t ifindex, unsigned int sndbuf, bool skipQdisc, uint32_t selfAddr, uint32_t prefixlen, MacAddr selfLladdr, uint32_t gwAddr, MacAddr gwLladdr, uint16_t port)
 {
 	throw std::runtime_error("raw TX is only supported in Linux");
 }
@@ -27,13 +27,13 @@ struct IpHeader {
 	uint8_t ihl : 4;
 	uint8_t version : 4;
 	uint8_t tos;
-	uint16_t total_len;
+	uint16_t totalLen;
 	uint16_t identification;
 	uint8_t flags : 3;
-	uint16_t frag_offset : 13;
+	uint16_t fragOffset : 13;
 	uint8_t ttl;
 	uint8_t protocol;
-	uint16_t hdr_checksum;
+	uint16_t hdrChecksum;
 	uint32_t src;
 	uint32_t dst;
 	// options
@@ -61,8 +61,8 @@ struct FrameTemplate {
 } __attribute__ ((packed));
 
 RawTxHelper::RawTxHelper(RawTxHelper&& other) noexcept:
-	self_addr(other.self_addr), prefixlen(other.prefixlen),
-	frame_template(std::move(other.frame_template)),
+	selfAddr(other.selfAddr), prefixlen(other.prefixlen),
+	frameTemplate(std::move(other.frameTemplate)),
 	rng(std::move(other.rng))
 {
 	std::swap(fd, other.fd);
@@ -70,32 +70,32 @@ RawTxHelper::RawTxHelper(RawTxHelper&& other) noexcept:
 
 RawTxHelper& RawTxHelper::operator=(RawTxHelper&& other) noexcept
 {
-	self_addr = other.self_addr, prefixlen = other.prefixlen;
-	frame_template = std::move(other.frame_template);
+	selfAddr = other.selfAddr, prefixlen = other.prefixlen;
+	frameTemplate = std::move(other.frameTemplate);
 	rng = std::move(other.rng);
 	std::swap(fd, other.fd);
 	return *this;
 }
 
-RawTxHelper::RawTxHelper(int32_t ifindex, unsigned int sndbuf, bool skipQdisc, uint32_t self_addr, uint32_t prefixlen, MacAddr self_lladdr, uint32_t gw_addr, MacAddr gw_lladdr, uint16_t port):
-	self_addr(self_addr), prefixlen(prefixlen), rng(std::random_device()())
+RawTxHelper::RawTxHelper(int32_t ifindex, unsigned int sndbuf, bool skipQdisc, uint32_t selfAddr, uint32_t prefixlen, MacAddr selfLladdr, uint32_t gwAddr, MacAddr gwLladdr, uint16_t port):
+	selfAddr(selfAddr), prefixlen(prefixlen), rng(std::random_device()())
 {
 	// prepare frame template
 
 	FrameTemplate frame;
-	memcpy(frame.eth.ether_dhost, gw_lladdr.data(), 6);
-	memcpy(frame.eth.ether_shost, self_lladdr.data(), 6);
+	memcpy(frame.eth.ether_dhost, gwLladdr.data(), 6);
+	memcpy(frame.eth.ether_shost, selfLladdr.data(), 6);
 	frame.eth.ether_type = htons(ETHERTYPE_IP);
 	frame.ip.ihl = sizeof(frame.ip) / 4;
 	frame.ip.version = 4;
 	frame.ip.tos = 0x2E;
 	frame.ip.flags = 0;
-	frame.ip.frag_offset = 0;
+	frame.ip.fragOffset = 0;
 	frame.ip.ttl = 64;
 	frame.ip.protocol = IPPROTO_UDP;
-	frame.ip.src = htonl(self_addr);
+	frame.ip.src = htonl(selfAddr);
 	frame.udp.src = htons(port);
-	frame_template = std::string((const char*)&frame, sizeof(frame));
+	frameTemplate = std::string((const char*)&frame, sizeof(frame));
 
 	// set up AF_PACKET socket
 
@@ -105,11 +105,11 @@ RawTxHelper::RawTxHelper(int32_t ifindex, unsigned int sndbuf, bool skipQdisc, u
 
 	fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
 
-	struct sockaddr_ll bind_addr;
-	bind_addr.sll_family = AF_PACKET;
-	bind_addr.sll_ifindex = ifindex;
-	bind_addr.sll_protocol = 0;
-	if (bind(fd, (sockaddr*)&bind_addr, sizeof(bind_addr)) < 0) {
+	struct sockaddr_ll bindAddr;
+	bindAddr.sll_family = AF_PACKET;
+	bindAddr.sll_ifindex = ifindex;
+	bindAddr.sll_protocol = 0;
+	if (bind(fd, (sockaddr*)&bindAddr, sizeof(bindAddr)) < 0) {
 		close(fd);
 		throw std::system_error(std::error_code(errno, std::system_category()), "failed binding AF_PACKET socket");
 	}
@@ -137,7 +137,7 @@ struct UdpIpv4PseudoHeader {
 	uint32_t dst;
 	uint8_t zero;
 	uint8_t protocol;
-	uint16_t udp_length;
+	uint16_t udpLength;
 } __attribute__ ((packed));
 
 bool RawTxHelper::TrySend(uint32_t ip, uint16_t port, Packet&& packet)
@@ -147,40 +147,40 @@ bool RawTxHelper::TrySend(uint32_t ip, uint16_t port, Packet&& packet)
 
 	// for safety, if destination ip is local, send in the usual way
 	uint32_t mask = (~0U) << (32 - prefixlen);
-	if (!((ip ^ self_addr) & mask))
+	if (!((ip ^ selfAddr) & mask))
 		return false;
 
 	// set missing fields
-	FrameTemplate& frame = *(FrameTemplate*)&frame_template[0];
+	FrameTemplate& frame = *(FrameTemplate*)&frameTemplate[0];
 	frame.ip.dst = htonl(ip);
 	frame.udp.dst = htons(port);
 	frame.udp.length = htons(sizeof(frame.udp) + packet.GetSize());
-	frame.ip.total_len = htons((sizeof(frame) - sizeof(frame.eth)) + packet.GetSize());
+	frame.ip.totalLen = htons((sizeof(frame) - sizeof(frame.eth)) + packet.GetSize());
 	std::uniform_int_distribution<uint16_t> u16_distr;
 	frame.ip.identification = u16_distr(rng);
 
 	uint32_t checksum;
 
 	// calculate IP header checksum
-	frame.ip.hdr_checksum = 0;
+	frame.ip.hdrChecksum = 0;
 	checksum = 0;
 	for (size_t i = 0; i < (sizeof(frame.ip_hws) / sizeof(*frame.ip_hws)); i++)
 		checksum += frame.ip_hws[i];
 	checksum = (checksum & 0xFFFF) + (checksum >> 16);
 	checksum = (checksum & 0xFFFF) + (checksum >> 16);
-	frame.ip.hdr_checksum = ~checksum;
+	frame.ip.hdrChecksum = ~checksum;
 
 	// calculate UDP checksum
 	union {
 		UdpIpv4PseudoHeader hdr;
 		uint16_t words [sizeof(UdpIpv4PseudoHeader) / 2];
-	} udp_phdr;
-	udp_phdr.hdr = { frame.ip.src, frame.ip.dst, 0, frame.ip.protocol, frame.udp.length };
+	} udpPhdr;
+	udpPhdr.hdr = { frame.ip.src, frame.ip.dst, 0, frame.ip.protocol, frame.udp.length };
 
 	frame.udp.checksum = 0;
 	checksum = 0;
-	for (size_t i = 0; i < (sizeof(udp_phdr.words) / sizeof(*udp_phdr.words)); i++)
-		checksum += udp_phdr.words[i];
+	for (size_t i = 0; i < (sizeof(udpPhdr.words) / sizeof(*udpPhdr.words)); i++)
+		checksum += udpPhdr.words[i];
 	for (size_t i = 0; i < (sizeof(frame.udp_hws) / sizeof(*frame.udp_hws)); i++)
 		checksum += frame.udp_hws[i];
 	uint16_t* data_words = (uint16_t*) packet.GetData();
