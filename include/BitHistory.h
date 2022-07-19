@@ -61,7 +61,7 @@ public:
 		uint16_t index	= offset / 64;
 		uint16_t bit	= offset % 64;
 		//Set it
-		history[ (Size + pos - index) % Size] |= 1 << bit;
+		history[ (Size + pos - index) % Size] |= 1ull << bit;
 		
 		//Done
 		return true;
