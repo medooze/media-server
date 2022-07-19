@@ -145,21 +145,21 @@ void MediaFrameListenerBridge::onMediaFrame(const MediaFrame& frame)
 
 		}
 
-		//Get now
-		auto now = getTimeMS();
+		//Get now in ms
+		uint64_t ms = now.count();
 		//Get frame reception time
-		auto time = frame->GetTime();
+		uint64_t time = frame->GetTime();
 
 		//Increase stats
 		numFrames++;
 		totalBytes += frameSize;
 
 		//Increate accumulators
-		accumulatorFrames.Update(now,1);
+		accumulatorFrames.Update(ms,1);
 		//Update bitrate acumulator
-		acumulator.Update(now,frameSize);
+		acumulator.Update(ms,frameSize);
 		//Waiting time
-		waited.Update(now, now>time ? now-time : 0);
+		waited.Update(ms, ms>time ? ms-time : 0);
 		//Get bitrate in bps
 		bitrate = acumulator.GetInstant()*8;
 
@@ -284,7 +284,7 @@ void MediaFrameListenerBridge::Update(QWORD now)
 {
 	loop.Sync([=](auto now){
 		//Update bitrate acumulator
-		acumulator.Update(now);
+		acumulator.Update(now.count());
 		//Get bitrate in bps
 		bitrate		= acumulator.GetInstant()*8;
 		///Get value

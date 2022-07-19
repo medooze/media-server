@@ -102,7 +102,7 @@ void RTMPConnection::Start()
 	running = true;
 	
 	//Start thread and run
-	thread = std::thread([=](auto now){
+	thread = std::thread([=](){
 		//Block signals to avoid exiting on SIGUSR1
 		blocksignals();
 		//Run
@@ -400,7 +400,6 @@ void RTMPConnection::ParseData(BYTE *data,const DWORD size)
 	//Get pointer and data size
 	BYTE *buffer = data;
 	DWORD bufferSize = size;
-	DWORD digestPosServer = 0;
 
 	//Increase current window
 	curWindowSize += size;
@@ -475,7 +474,7 @@ void RTMPConnection::ParseData(BYTE *data,const DWORD size)
 					//If we have to calculate digest
 					if (digest)
 						//calculate digest for s1 only, skipping s0
-						digestPosServer = GenerateS1Data(digesOffsetMethod,s01.GetData()+1,s01.GetSize()-1);
+						GenerateS1Data(digesOffsetMethod,s01.GetData()+1,s01.GetSize()-1);
 					//Send S01 data
 					WriteData(s01.GetData(),s01.GetSize());
 					//Move to next state
