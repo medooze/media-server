@@ -91,7 +91,7 @@ void RTPIncomingMediaStreamDepacketizer::AddMediaListener(MediaFrame::Listener *
 		return;
 
 	//Add listener Sync
-	timeService.Sync([=](...){
+	timeService.Sync([=](auto now){
 		//Add to set
 		listeners.insert(listener);
 	});
@@ -103,7 +103,7 @@ void RTPIncomingMediaStreamDepacketizer::RemoveMediaListener(MediaFrame::Listene
 	Debug("-RTPIncomingMediaStreamDepacketizer::RemoveMediaListener() [listener:%p]\n", listener);
 	
 	//Add listener sync so it can be deleted after this call
-	timeService.Sync([=](...){
+	timeService.Sync([=](auto now){
 		//Check listener
 		if (!incomingSource || !listener)
 			//Done
@@ -118,7 +118,7 @@ void RTPIncomingMediaStreamDepacketizer::Stop()
 	//Log
 	Debug("-RTPIncomingMediaStreamDepacketizer::Stop() [%p]\n",incomingSource);
 
-	timeService.Sync([=](...){
+	timeService.Sync([=](auto now){
 		//If already stopped
 		if (!incomingSource)
 			//Done

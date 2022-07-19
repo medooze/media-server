@@ -42,7 +42,7 @@ MediaFrameListenerBridge::MediaFrameListenerBridge(DWORD ssrc, bool smooth) :
 
 MediaFrameListenerBridge::~MediaFrameListenerBridge()
 {
-	loop.Sync([=](...){
+	loop.Sync([=](auto now){
 		//TODO wait onMediaFrame end
 		for (auto listener : listeners)
 			listener->onEnded(this);
@@ -51,7 +51,7 @@ MediaFrameListenerBridge::~MediaFrameListenerBridge()
 void MediaFrameListenerBridge::AddListener(RTPIncomingMediaStream::Listener* listener)
 {
 	Debug("-MediaFrameListenerBridge::AddListener() [listener:%p]\n",listener);
-	loop.Async([=](...){
+	loop.Async([=](auto now){
 		listeners.insert(listener);
 	});
 }
@@ -59,14 +59,14 @@ void MediaFrameListenerBridge::AddListener(RTPIncomingMediaStream::Listener* lis
 void MediaFrameListenerBridge::RemoveListener(RTPIncomingMediaStream::Listener* listener)
 {
 	Debug("-MediaFrameListenerBridge::RemoveListener() [listener:%p]\n",listener);
-	loop.Sync([=](...){
+	loop.Sync([=](auto now){
 		listeners.erase(listener);
 	});
 }
 
 void MediaFrameListenerBridge::onMediaFrame(const MediaFrame& frame)
 {
-	loop.Async([=,cloned = frame.Clone()](...){
+	loop.Async([=,cloned = frame.Clone()](auto now){
 		
 		std::unique_ptr<MediaFrame> frame(cloned);
 		
@@ -269,7 +269,7 @@ void MediaFrameListenerBridge::Dispatch(const RTPPacket::shared& packet)
 
 void MediaFrameListenerBridge::Reset()
 {
-	loop.Async([=](...){
+	loop.Async([=](auto now){
 		reset = true;
 	});
 }
@@ -282,7 +282,7 @@ void MediaFrameListenerBridge::Update()
 
 void MediaFrameListenerBridge::Update(QWORD now)
 {
-	loop.Sync([=](...){
+	loop.Sync([=](auto now){
 		//Update bitrate acumulator
 		acumulator.Update(now);
 		//Get bitrate in bps
@@ -301,7 +301,7 @@ void MediaFrameListenerBridge::Update(QWORD now)
 
 void MediaFrameListenerBridge::AddMediaListener(MediaFrame::Listener *listener)
 {
-	loop.Async([=](...){
+	loop.Async([=](auto now){
 		//Add to set
 		mediaFrameListenerss.insert(listener);
 	});
@@ -309,7 +309,7 @@ void MediaFrameListenerBridge::AddMediaListener(MediaFrame::Listener *listener)
 
 void MediaFrameListenerBridge::RemoveMediaListener(MediaFrame::Listener *listener)
 {
-	loop.Sync([=](...){
+	loop.Sync([=](auto now){
 		//Remove from set
 		mediaFrameListenerss.erase(listener);
 	});

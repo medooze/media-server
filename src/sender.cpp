@@ -182,7 +182,7 @@ int main(int argc, char** argv)
 		switch(state)
 		{
 			case DTLSICETransport::DTLSState::Connected:
-				timer = endpoint.GetTimeService().CreateTimer(0ms,33ms,[&](...){
+				timer = endpoint.GetTimeService().CreateTimer(0ms,33ms,[&](auto now){
 					for (int i=0;i<10;++i)
 					{
 						//Create rtp packet

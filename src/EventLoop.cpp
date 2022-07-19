@@ -237,7 +237,7 @@ bool EventLoop::Start(int fd)
 	signaled = false;
 	
 	//Start thread and run
-	thread = std::thread([this](...){ Run(); });
+	thread = std::thread([this](){ Run(); });
 	
 	//Done
 	return true;
@@ -380,7 +380,7 @@ Timer::shared EventLoop::CreateTimer(const std::chrono::milliseconds& ms, const 
 	auto next = this->GetNow() + ms;
 	
 	//Add it async
-	Async([this,timer,next](...){
+	Async([this,timer,next](auto now){
 		//Set next tick
 		timer->next = next;
 
@@ -395,7 +395,7 @@ Timer::shared EventLoop::CreateTimer(const std::chrono::milliseconds& ms, const 
 void EventLoop::TimerImpl::Cancel()
 {
 	//Add it async
-	loop.Async([timer = shared_from_this()](...){
+	loop.Async([timer = shared_from_this()](auto now){
 		//Remove us
 		timer->loop.CancelTimer(timer);
 	});
@@ -409,7 +409,7 @@ void EventLoop::TimerImpl::Again(const std::chrono::milliseconds& ms)
 	auto next = loop.GetNow() + ms;
 	
 	//Reschedule it async
-	loop.Async([timer = shared_from_this(),next](...){
+	loop.Async([timer = shared_from_this(),next](auto now){
 		//Remove us
 		timer->loop.CancelTimer(timer);
 
@@ -434,7 +434,7 @@ void EventLoop::TimerImpl::Reschedule(const std::chrono::milliseconds& ms, const
 	auto next = loop.GetNow() + ms;
 
 	//Reschedule it async
-	loop.Async([timer = shared_from_this(), next, repeat](...){
+	loop.Async([timer = shared_from_this(), next, repeat](auto now){
 		//Remove us
 		timer->loop.CancelTimer(timer);
 

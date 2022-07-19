@@ -105,7 +105,7 @@ RTPBundleTransport::Connection* RTPBundleTransport::AddICETransport(const std::s
 	auto connection = new Connection(username,transport,properties.GetProperty("disableSTUNKeepAlive", false));
 	
 	//Synchronized
-	loop.Async([=](...){
+	loop.Async([=](auto now){
 		//Add it
 		connections[username] = connection;
 		//Start it
@@ -122,7 +122,7 @@ int RTPBundleTransport::RemoveICETransport(const std::string &username)
 	Log("-RTPBundleTransport::RemoveICETransport() [username:%s]\n",username.c_str());
   
 	//Synchronized
-	loop.Async([this,username](...){
+	loop.Async([this,username](auto now){
 
 		//Get transport
 		auto connectionIterator = connections.find(username);
@@ -184,7 +184,7 @@ bool RTPBundleTransport::RestartICETransport(const std::string& username, const 
 	}
 
 	//Synchronized
-	loop.Async([this, username, restarted, ice](...) {
+	loop.Async([this, username, restarted, ice](auto now) {
 
 		//Get transport
 		auto connectionIterator = connections.find(username);
@@ -660,7 +660,7 @@ int RTPBundleTransport::AddRemoteCandidate(const std::string& username,const cha
 	auto ip = std::string(host);
 	
 	//Execute async and wait for completion
-	loop.Async([=](...){
+	loop.Async([=](auto now){
 		//Check if we have an ICE transport for that username
 		auto it = connections.find(username);
 

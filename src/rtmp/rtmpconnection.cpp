@@ -102,7 +102,7 @@ void RTMPConnection::Start()
 	running = true;
 	
 	//Start thread and run
-	thread = std::thread([=](...){
+	thread = std::thread([=](auto now){
 		//Block signals to avoid exiting on SIGUSR1
 		blocksignals();
 		//Run

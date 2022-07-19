@@ -475,7 +475,7 @@ int DTLSConnection::Init()
 	SSL_do_handshake(ssl);
 	
 	//Start timeout
-	timeout = timeService.CreateTimer(0ms, [this](...){
+	timeout = timeService.CreateTimer(0ms, [this](auto now){
 		//UltraDebug("-DTLSConnection::Timeout()\n");
 		//Check if still inited
 		if (inited)
@@ -491,7 +491,7 @@ int DTLSConnection::Init()
 	timeout->SetName("DTLSConnection - timeout");
 	
 	//Start sctp transport
-	sctp.OnPendingData([this](...){
+	sctp.OnPendingData([this](){
 		//UltraDebug("-sctp::OnPendingData() [ssl:%p]\n",ssl);
 
 		if (ssl)
@@ -550,7 +550,7 @@ void DTLSConnection::Reset()
 	Log("-DTLSConnection::Reset()\n");
 
 	//Run in event loop thread
-	timeService.Async([this](...){
+	timeService.Async([this](auto now){
 		// If the SSL session is not yet finalized don't bother resetting
 		if (!SSL_is_init_finished(ssl))
 			return;
@@ -679,7 +679,7 @@ int DTLSConnection::Renegotiate()
 {
 	TRACE_EVENT("dtls", "DTLSConnection::Renegotiate");
 	//Run in event loop thread
-	timeService.Async([this](...){
+	timeService.Async([this](auto now){
 		if (ssl)
 		{
 

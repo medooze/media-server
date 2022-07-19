@@ -1296,7 +1296,7 @@ int DTLSICETransport::Dump(UDPDumper* dumper, bool inbound, bool outbound, bool 
 	//Done
 	int done = 1;
 	//Execute on timer thread
-	timeService.Sync([&](...){
+	timeService.Sync([&](auto now){
 		//Check we are not dumping
 		if (this->dumper)
 		{
@@ -1325,7 +1325,7 @@ int DTLSICETransport::StopDump()
 	//Done
 	int done = 1;
 	//Execute on timer thread
-	timeService.Sync([&](...){
+	timeService.Sync([&](auto now){
 		//Check we are not dumping
 		if (!this->dumper)
 		{
@@ -1352,7 +1352,7 @@ int DTLSICETransport::Dump(const char* filename, bool inbound, bool outbound, bo
 	//Done
 	int done = 1;
 	//Execute on timer thread
-	timeService.Sync([&](...){
+	timeService.Sync([&](auto now){
 		//Check we are not dumping
 		if (this->dumper)
 		{
@@ -1403,7 +1403,7 @@ void DTLSICETransport::Reset()
 	Log("-DTLSICETransport::Reset()\n");
 
 	//Execute on timer thread
-	timeService.Sync([=](...){
+	timeService.Sync([=](auto now){
 		//Clean mem
 		if (iceLocalUsername)
 			free(iceLocalUsername);
@@ -1593,7 +1593,7 @@ bool DTLSICETransport::AddOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 	bool done = true;
 
 	//Dispatch to the event loop thread
-	timeService.Sync([&](...){
+	timeService.Sync([&](auto now){
 		//Get ssrcs
 		const auto media = group->media.ssrc;
 		const auto rtx   = group->rtx.ssrc;
@@ -1645,7 +1645,7 @@ bool DTLSICETransport::RemoveOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 	Log("-DTLSICETransport::RemoveOutgoingSourceGroup() [ssrc:%u,rtx:%u]\n",group->media.ssrc,group->rtx.ssrc);
 
 	//Dispatch to the event loop thread
-	timeService.Sync([=](...){
+	timeService.Sync([=](auto now){
 		Log("-DTLSICETransport::RemoveOutgoingSourceGroup() | Async [ssrc:%u,rtx:%u]\n",group->media.ssrc,group->rtx.ssrc);
 		//Get ssrcs
 		std::vector<DWORD> ssrcs;
@@ -1708,7 +1708,7 @@ bool DTLSICETransport::AddIncomingSourceGroup(RTPIncomingSourceGroup *group)
 	bool done = true;
 	
 	//Dispatch to the event loop thread
-	timeService.Sync([&](...){
+	timeService.Sync([&](auto now){
 		//Get ssrcs
 		const auto media = group->media.ssrc;
 		const auto rtx   = group->rtx.ssrc;
@@ -1782,7 +1782,7 @@ bool DTLSICETransport::RemoveIncomingSourceGroup(RTPIncomingSourceGroup *group)
 	Log("-DTLSICETransport::RemoveIncomingSourceGroup() [mid:'%s',rid:'%s',ssrc:%u,rtx:%u]\n",group->mid.c_str(),group->rid.c_str(),group->media.ssrc,group->rtx.ssrc);
 	
 	//Dispatch to the event loop thread
-	timeService.Sync([&](...){
+	timeService.Sync([&](auto now){
 
 		//Remove rid if any
 		if (!group->rid.empty())
@@ -1914,23 +1914,21 @@ int DTLSICETransport::SendPLI(DWORD ssrc)
 	Debug("-DTLSICETransport::SendPLI() | [ssrc:%u]\n",ssrc);
 	
 	//Execute on the event loop thread and do not wait
-	timeService.Async([=](...){
+	timeService.Async([=](auto now){
 		//Get group
 		RTPIncomingSourceGroup *group = GetIncomingSourceGroup(ssrc);
 
 		//If not found
 		if (!group)
 			return (void)Debug("-DTLSICETransport::SendPLI() | no incoming source found for [ssrc:%u]\n",ssrc);
-		
-		//Get current time
-		auto now = getTime();
-
+		//Get now in ms
+		auto ms = now.count();
 		//Check if we have sent a PLI recently (less than half a second ago)
-		if ((now-group->media.lastPLI)<1E6/2)
+		if ((ms - group->media.lastPLI)<1E3/2)
 			//We refuse to end more
 			return (void)UltraDebug("-DTLSICETransport::SendPLI() | ignored, we send a PLI recently\n");
 		//Update last PLI requested time
-		group->media.lastPLI = now;
+		group->media.lastPLI = ms;
 		//And number of requested plis
 		group->media.totalPLIs++;
 
@@ -1953,7 +1951,7 @@ int DTLSICETransport::Reset(DWORD ssrc)
 	Debug("-DTLSICETransport::Reset() | [ssrc:%u]\n", ssrc);
 
 	//Execute on the event loop thread and do not wait
-	timeService.Async([=](...) {
+	timeService.Async([=](auto now) {
 		//Get group
 		RTPIncomingSourceGroup* group = GetIncomingSourceGroup(ssrc);
 
@@ -2624,7 +2622,7 @@ void DTLSICETransport::Start()
 	dcOptions.localPort = 5000;
 	dcOptions.remotePort = 5000;
 	//Run ice timeout timer
-	iceTimeoutTimer = timeService.CreateTimer(IceTimeout,[this](...){
+	iceTimeoutTimer = timeService.CreateTimer(IceTimeout,[this](auto now){
 		//Log
 		Debug("-DTLSICETransport::onIceTimeoutTimer() ICE timeout\n");
 		//If got listener
@@ -2704,7 +2702,7 @@ int DTLSICETransport::Enqueue(const RTPPacket::shared& packet)
 		"seqNum", packet->GetSeqNum());
 
 	//Send async
-	timeService.Async([this,packet](...){
+	timeService.Async([this,packet](auto now){
 		//Send
 		Send(packet->Clone());
 	});
@@ -2720,7 +2718,7 @@ int DTLSICETransport::Enqueue(const RTPPacket::shared& packet,std::function<RTPP
 		"seqNum", packet->GetSeqNum());
 
 	//Send async
-	timeService.Async([this,packet,modifier](...){
+	timeService.Async([this,packet,modifier](auto now){
 		//Send
 		Send(modifier(packet));
 	});
@@ -2832,7 +2830,7 @@ void DTLSICETransport::Probe(QWORD now)
 void DTLSICETransport::SetListener(Listener* listener)
 {
 	//Add in main thread and wait
-	timeService.Sync([=](...){
+	timeService.Sync([=](auto now){
 		//Store listener
 		this->listener = listener;
 	});

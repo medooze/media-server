@@ -1046,7 +1046,7 @@ int RTPSession::RequestFPU()
 	
 	Debug("-RTPSession::RequestFPU()\n");
 	//Execute on the event loop thread and wait
-	transport.GetTimeService().Sync([=](...){
+	transport.GetTimeService().Sync([=](auto now){
 		//Reset pacekts
 		recv.ResetPackets();
 	});

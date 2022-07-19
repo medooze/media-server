@@ -706,7 +706,7 @@ bool MP4Recorder::Record(bool waitVideo, bool disableHints)
 	this->disableHints = disableHints;
 	
 	//Run in thread
-	loop.Async([=](...){
+	loop.Async([=](auto now){
 		//Recording
 		recording = true;
 
@@ -728,7 +728,7 @@ bool MP4Recorder::Stop()
 	Log("-MP4Recorder::Stop()\n");
 	
 	//Signal async	
-	loop.Async([=](...){
+	loop.Async([=](auto now){
 		//not recording anymore
 		recording = false;
 	});
@@ -747,7 +747,7 @@ bool MP4Recorder::Close(bool async)
 	Log("-MP4Recorder::Close()\n");
 	
         //Stop always
-        auto res = loop.Async([=](...){
+        auto res = loop.Async([=](auto now){
 		Debug(">MP4Recorder::Close() | Async\n");
 		
 		//Not recording anymore
@@ -804,7 +804,7 @@ void MP4Recorder::onMediaFrame(DWORD ssrc, const MediaFrame &frame)
 {
 	
 	//run async	
-	loop.Async([=,cloned = frame.Clone()](...){
+	loop.Async([=,cloned = frame.Clone()](auto now){
 		//Check we are recording
 		if (recording) 
 		{
