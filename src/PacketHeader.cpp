@@ -2,45 +2,42 @@
 
 // checksum is a one's complement, so it's independent of endianness
 
+static void ChecksumUpdateWords(uint32_t& checksum, void* data, size_t nWords) {
+	// memcpy is the only safe way to do type punning in C++ pre C++20. the compiler
+	// should see the memcpy call to an identically sized type and optimize it away
+	uint16_t words [nWords];
+	memcpy(words, data, sizeof(words));
+	for (size_t i = 0; i < nWords; i++)
+		checksum += words[i];
+}
+
+static uint16_t ChecksumFinish(uint32_t checksum) {
+	checksum = (checksum & 0xFFFF) + (checksum >> 16);
+	checksum = (checksum & 0xFFFF) + (checksum >> 16);
+	return ~checksum;
+}
+
 void PacketHeader::CalculateIpChecksum(PacketHeader& header)
 {
 	header.ip.hdrChecksum = 0;
 	uint32_t checksum = 0;
-
-	for (size_t i = 0; i < (sizeof(header.ip_hws) / sizeof(*header.ip_hws)); i++)
-		checksum += header.ip_hws[i];
-
-	checksum = (checksum & 0xFFFF) + (checksum >> 16);
-	checksum = (checksum & 0xFFFF) + (checksum >> 16);
-	header.ip.hdrChecksum = ~checksum;
+	ChecksumUpdateWords(checksum, &header.ip, sizeof(header.ip) / 2);
+	header.ip.hdrChecksum = ChecksumFinish(checksum);
 }
 
 void PacketHeader::CalculateUdpChecksum(PacketHeader& header, const Packet& payload)
 {
-	union {
-		UdpIpv4PseudoHeader hdr;
-		uint16_t words [sizeof(UdpIpv4PseudoHeader) / 2];
-	} udpPhdr;
-	udpPhdr.hdr = { header.ip.src, header.ip.dst, 0, header.ip.protocol, header.udp.length };
+	UdpIpv4PseudoHeader udpPhdr = { header.ip.src, header.ip.dst, 0, header.ip.protocol, header.udp.length };
 
 	header.udp.checksum = 0;
 	uint32_t checksum = 0;
 
-	for (size_t i = 0; i < (sizeof(udpPhdr.words) / sizeof(*udpPhdr.words)); i++)
-		checksum += udpPhdr.words[i];
-	for (size_t i = 0; i < (sizeof(header.udp_hws) / sizeof(*header.udp_hws)); i++)
-		checksum += header.udp_hws[i];
-
-	// FIXME: make sure data is aligned and we're not breaking strict aliasing
-	uint16_t* data_words = (uint16_t*) payload.GetData();
-	size_t data_nwords = payload.GetSize() / 2;
-	for (size_t i = 0; i < data_nwords; i++)
-		checksum += data_words[i];
+	ChecksumUpdateWords(checksum, &udpPhdr, sizeof(udpPhdr) / 2);
+	ChecksumUpdateWords(checksum, &header.udp, sizeof(header.udp) / 2);
+	ChecksumUpdateWords(checksum, payload.GetData(), payload.GetSize() / 2);
 	if (payload.GetSize() % 2 != 0)
 		checksum += uint16_t(payload.GetData()[payload.GetSize() - 1]);
 
-	checksum = (checksum & 0xFFFF) + (checksum >> 16);
-	checksum = (checksum & 0xFFFF) + (checksum >> 16);
-	header.udp.checksum = ~checksum;
+	header.udp.checksum = ChecksumFinish(checksum);
 	if (!header.udp.checksum) header.udp.checksum = 0xFFFF;
 }

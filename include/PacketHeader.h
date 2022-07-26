@@ -43,19 +43,9 @@ struct PacketHeader {
 
 
 	// DATA
-
 	ether_header eth;
-	union {
-		IpHeader ip;
-		// for checksum calculation
-		uint16_t ip_hws [sizeof(IpHeader) / 2];
-	};
-	union {
-		UdpHeader udp;
-		// for checksum calculation
-		uint16_t udp_hws [sizeof(UdpHeader) / 2];
-	};
-
+	IpHeader ip;
+	UdpHeader udp;
 
 	/**
 	 * @brief Calculate and (re)set the IP header checksum
