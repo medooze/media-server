@@ -33,9 +33,6 @@ public:
 protected:
 	// AF_PACKET socket
 	FileDescriptor fd;
-	// used to check for link-local traffic
-	uint32_t selfAddr;
-	uint32_t prefixlen;
 	// used to build frame header
 	PacketHeader header;
 	// used to generate IP identification

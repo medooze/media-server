@@ -20,7 +20,7 @@ bool RawTxHelper::TrySend(uint32_t ip, uint16_t port, Packet&& payload) { return
 #include <fcntl.h>
 
 RawTxHelper::RawTxHelper(int32_t ifindex, unsigned int sndbuf, bool skipQdisc, uint32_t selfAddr, uint32_t prefixlen, MacAddr selfLladdr, uint32_t gwAddr, MacAddr gwLladdr, uint16_t port):
-	selfAddr(selfAddr), prefixlen(prefixlen), rng(std::random_device()())
+	rng(std::random_device()())
 {
 	// prepare frame template
 
@@ -52,11 +52,6 @@ RawTxHelper::RawTxHelper(int32_t ifindex, unsigned int sndbuf, bool skipQdisc, u
 bool RawTxHelper::TrySend(uint32_t ip, uint16_t port, Packet&& payload)
 {
 	if (fd < 0)
-		return false;
-
-	// for safety, if destination ip is local, send in the usual way
-	uint32_t mask = (~0U) << (32 - prefixlen);
-	if (!((ip ^ selfAddr) & mask))
 		return false;
 
 	// set missing fields
