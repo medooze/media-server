@@ -17,7 +17,7 @@
 class RawTxHelper
 {
 public:
-	using MacAddr = std::array<uint8_t, 6>;
+	using MacAddr = PacketHeader::MacAddr;
 	RawTxHelper(
 		// TX options
 		int32_t ifindex, unsigned int sndbuf, bool skipQdisc,

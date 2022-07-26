@@ -4,12 +4,22 @@
 #include <cstdint>
 #include <net/ethernet.h>
 #include <arpa/inet.h>
+#include <array>
+#include <string>
 #include "Packet.h"
 
 /**
  * @brief Provides structs and logic to build Ethernet packet headers
  */
 struct PacketHeader {
+	using MacAddr = std::array<uint8_t, 6>;
+
+	/**
+	 * @brief Parse an "xx:xx:xx:xx:xx:xx" string into a MacAddr
+	 */
+	static MacAddr ParseMac(std::string str);
+
+
 	struct IpHeader {
 		uint8_t ihl : 4;
 		uint8_t version : 4;
