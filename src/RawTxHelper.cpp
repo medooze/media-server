@@ -24,18 +24,7 @@ RawTxHelper::RawTxHelper(int32_t ifindex, unsigned int sndbuf, bool skipQdisc, u
 {
 	// prepare frame template
 
-	memcpy(header.eth.ether_dhost, gwLladdr.data(), 6);
-	memcpy(header.eth.ether_shost, selfLladdr.data(), 6);
-	header.eth.ether_type = htons(ETHERTYPE_IP);
-	header.ip.ihl = sizeof(header.ip) / 4;
-	header.ip.version = 4;
-	header.ip.tos = 0x2E;
-	header.ip.flags = 0;
-	header.ip.fragOffset = 0;
-	header.ip.ttl = 64;
-	header.ip.protocol = IPPROTO_UDP;
-	header.ip.src = htonl(selfAddr);
-	header.udp.src = htons(port);
+	PacketHeader::InitHeader(header, selfAddr, selfLladdr, gwAddr, gwLladdr, port);
 
 	// set up AF_PACKET socket
 
@@ -71,14 +60,7 @@ bool RawTxHelper::TrySend(uint32_t ip, uint16_t port, Packet&& payload)
 		return false;
 
 	// set missing fields
-	header.ip.dst = htonl(ip);
-	header.udp.dst = htons(port);
-	header.udp.length = htons(sizeof(header.udp) + payload.GetSize());
-	header.ip.totalLen = htons((sizeof(header) - sizeof(header.eth)) + payload.GetSize());
-	std::uniform_int_distribution<uint16_t> u16_distr;
-	header.ip.identification = u16_distr(rng);
-	PacketHeader::CalculateIpChecksum(header);
-	PacketHeader::CalculateUdpChecksum(header, payload);
+	PacketHeader::PrepareHeader(header, rng, ip, port, payload);
 
 	// send frame
 	struct iovec iov [2] = { { &header, sizeof(header) }, { payload.GetData(), payload.GetSize() } };

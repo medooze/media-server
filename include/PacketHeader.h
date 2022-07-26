@@ -6,6 +6,7 @@
 #include <arpa/inet.h>
 #include <array>
 #include <string>
+#include <random>
 #include "Packet.h"
 
 /**
@@ -66,6 +67,18 @@ struct PacketHeader {
 	 * @brief Calculate and (re)set the UDP checksum
 	 */
 	static void CalculateUdpChecksum(PacketHeader& header, const Packet& payload);
+
+	/**
+	 * @brief Initialize the frame header
+	 */
+	static void InitHeader(
+		PacketHeader& header,
+		uint32_t selfAddr, MacAddr selfLladdr, uint32_t gwAddr, MacAddr gwLladdr, uint16_t port);
+
+	/**
+	 * @brief Complete a previously initialized header
+	 */
+	static void PrepareHeader(PacketHeader& header, std::mt19937 rng, uint32_t ip, uint16_t port, const Packet& payload);
 } __attribute__ ((packed));
 
 #endif
