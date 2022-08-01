@@ -545,7 +545,7 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 			buffer.SetSize(len);
 
 			//Send response
-			loop.Send(ip,port,std::move(buffer));
+			Send(candidate, std::move(buffer));
 			
 			//Inc stats
 			connection->iceResponsesSent++;
@@ -750,7 +750,7 @@ void RTPBundleTransport::SendBindingRequest(Connection* connection,ICERemoteCand
 	buffer.SetSize(len);
 
 	//Send it
-	loop.Send(candidate->GetIPAddress(),candidate->GetPort(),std::move(buffer));
+	Send(candidate, std::move(buffer));
 	
 	//Set state
 	candidate->SetState(ICERemoteCandidate::Checking);
