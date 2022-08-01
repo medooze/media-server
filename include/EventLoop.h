@@ -7,12 +7,15 @@
 #include <optional>
 #include <poll.h>
 #include <cassert>
+#include <random>
+#include <optional>
 #include "config.h"
 #include "concurrentqueue.h"
 #include "Packet.h"
 #include "ObjectPool.h"
 #include "TimeService.h"
-#include "RawTxHelper.h"
+#include "FileDescriptor.h"
+#include "PacketHeader.h"
 
 using namespace std::chrono_literals;
 
@@ -30,6 +33,11 @@ public:
 		Normal,
 		Lagging,
 		Overflown
+	};
+	struct RawTx
+	{
+		FileDescriptor fd;
+		PacketHeader header;
 	};
 	static bool SetAffinity(std::thread::native_handle_type thread, int cpu);
 	static bool SetThreadName(std::thread::native_handle_type thread, const std::string& name);
@@ -81,14 +89,10 @@ public:
 	virtual Timer::shared CreateTimer(const std::chrono::milliseconds& ms, const std::chrono::milliseconds& repeat, std::function<void(std::chrono::milliseconds)> timeout) override;
 	virtual std::future<void> Async(std::function<void(std::chrono::milliseconds)> func) override;
 	
-	void Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet);
+	void Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet, std::optional<PacketHeader::CandidateData> rawTxData = std::nullopt);
 	void Run(const std::chrono::milliseconds &duration = std::chrono::milliseconds::max());
 	
-	void SetRawTx(std::optional<RawTxHelper>&& rawTx) {
-		// the lambda needs to be copyable, so use a shared_ptr for storage. ugly, I know
-		auto rawTxPtr = std::make_shared<std::optional<RawTxHelper>>(std::move(rawTx));
-		Async([this, rawTxPtr](std::chrono::milliseconds) { this->rawTx = std::move(*rawTxPtr); });
-	}
+	void SetRawTx(std::optional<RawTx>&& rawTx) { this->rawTx = std::move(rawTx); }
 	bool SetAffinity(int cpu);
 	bool SetThreadName(const std::string& name);
 	bool SetPriority(int priority);
@@ -112,15 +116,17 @@ private:
 		{
 		}
 		
-		SendBuffer(uint32_t ipAddr, uint16_t port, Packet&& packet) :
+		SendBuffer(uint32_t ipAddr, uint16_t port, std::optional<PacketHeader::CandidateData> rawTxData, Packet&& packetm) :
 			ipAddr(ipAddr),
 			port(port),
+			rawTxData(rawTxData),
 			packet(std::move(packet))
 		{
 		}
 		SendBuffer(SendBuffer&& other) :
 			ipAddr(other.ipAddr),
 			port(other.port),
+			rawTxData(other.rawTxData),
 			packet(std::move(other.packet))
 		{
 		}
@@ -131,6 +137,7 @@ private:
 		
 		uint32_t ipAddr;
 		uint16_t port;
+		std::optional<PacketHeader::CandidateData> rawTxData;
 		Packet   packet;
 	};
 	static const size_t MaxSendingQueueSize;
@@ -138,6 +145,7 @@ private:
 	static const size_t PacketPoolSize;
 private:
 	std::thread	thread;
+	std::mt19937	rng		= std::mt19937(std::random_device()());
 	State		state		= State::Normal;
 	Listener*	listener	= nullptr;
 	int		fd		= 0;
@@ -150,7 +158,7 @@ private:
 	moodycamel::ConcurrentQueue<std::pair<std::promise<void>,std::function<void(std::chrono::milliseconds)>>>  tasks;
 	std::multimap<std::chrono::milliseconds,TimerImpl::shared> timers;
 	ObjectPool<Packet> packetPool;
-	std::optional<RawTxHelper> rawTx;
+	std::optional<RawTx> rawTx;
 
 };
 

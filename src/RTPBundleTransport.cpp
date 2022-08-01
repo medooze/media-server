@@ -17,6 +17,10 @@
 #include <srtp2/srtp.h>
 #include <time.h>
 #include <string>
+#include <memory>
+#include <optional>
+#include <stdexcept>
+#include <system_error>
 #include <openssl/opensslconf.h>
 #include <openssl/ossl_typ.h>
 #include "log.h"
@@ -28,6 +32,60 @@
 #include "RTPTransport.h"
 #include "ICERemoteCandidate.h"
 #include "EventLoop.h"
+
+#ifndef __linux__
+void RTPBundleTransport::SetRawTx(int32_t ifindex, unsigned int sndbuf, bool skipQdisc, const std::string& selfLladdr, uint16_t port)
+{
+	throw std::runtime_error("raw TX is only supported in Linux");
+}
+#else
+
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <linux/if_packet.h>
+#include <fcntl.h>
+
+void RTPBundleTransport::SetRawTx(int32_t ifindex, unsigned int sndbuf, bool skipQdisc, const std::string& selfLladdr, uint16_t port)
+{
+
+	// prepare frame template
+
+	PacketHeader header;
+	PacketHeader::InitHeader(header, PacketHeader::ParseMac(selfLladdr), port);
+
+	// set up AF_PACKET socket
+
+	FileDescriptor fd;
+
+	// protocol=0 means no RX
+	if ((fd = FileDescriptor(::socket(PF_PACKET, SOCK_RAW, 0))) < 0)
+		throw std::system_error(std::error_code(errno, std::system_category()), "failed creating AF_PACKET socket");
+
+	fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
+
+	struct sockaddr_ll bindAddr;
+	bindAddr.sll_family = AF_PACKET;
+	bindAddr.sll_ifindex = ifindex;
+	bindAddr.sll_protocol = 0;
+	if (bind(fd, (sockaddr*)&bindAddr, sizeof(bindAddr)) < 0)
+		throw std::system_error(std::error_code(errno, std::system_category()), "failed binding AF_PACKET socket");
+
+	if (sndbuf > 0 && setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &sndbuf, sizeof(sndbuf)) < 0)
+		throw std::system_error(std::error_code(errno, std::system_category()), "failed setting send queue size");
+
+	int skipQdiscInt = 1;
+	if (skipQdisc && setsockopt(fd, SOL_PACKET, PACKET_QDISC_BYPASS, &skipQdiscInt, sizeof(skipQdiscInt)) < 0)
+		throw std::system_error(std::error_code(errno, std::system_category()), "failed setting QDISC_BYPASS");
+
+	auto rawTx = std::make_optional<EventLoop::RawTx>({ std::move(fd), header });
+
+	// the lambda needs to be copyable, so use a shared_ptr for storage. ugly, I know
+	auto rawTxPtr = std::make_shared<std::optional<EventLoop::RawTx>>(std::move(rawTx));
+	loop.Async([this, rawTxPtr](std::chrono::milliseconds) { loop.SetRawTx(std::move(*rawTxPtr)); });
+}
+#endif
 
 /*************************
 * RTPBundleTransport
@@ -411,7 +469,7 @@ int RTPBundleTransport::End()
 
 int RTPBundleTransport::Send(const ICERemoteCandidate* candidate, Packet&& buffer)
 {
-	loop.Send(candidate->GetIPAddress(),candidate->GetPort(),std::move(buffer));
+	loop.Send(candidate->GetIPAddress(),candidate->GetPort(),std::move(buffer),candidate->GetRawTxData());
 	return 1;
 }
 
@@ -649,6 +707,24 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 	
 	//Send data on ice transport
 	it->second.onData(data,size);
+}
+
+void RTPBundleTransport::SetCandidateRawTxData(const std::string& ip, uint16_t port, uint32_t selfAddr, const std::string& dstLladdr)
+{
+	PacketHeader::CandidateData rawTxData = { selfAddr, PacketHeader::ParseMac(dstLladdr) };
+	loop.Async([=](auto now){
+		std::string remote = ip + ":" + std::to_string(port);
+
+		auto it = candidates.find(remote);
+		if (it == candidates.end())
+		{
+			Error("-RTPBundleTransport::SetCandidateRawTxData() | candidate not found [remote:%s}\n", remote.c_str());
+			return;
+		}
+
+		printf("setting candidate %s data\n", remote.c_str());
+		it->second.SetRawTxData(rawTxData);
+	});
 }
 
 int RTPBundleTransport::AddRemoteCandidate(const std::string& username,const char* host, WORD port)

@@ -21,6 +21,12 @@ struct PacketHeader {
 	static MacAddr ParseMac(std::string str);
 
 
+	struct CandidateData {
+		uint32_t selfAddr;
+		MacAddr dstLladdr;
+	};
+
+
 	struct IpHeader {
 		uint8_t ihl : 4;
 		uint8_t version : 4;
@@ -71,14 +77,12 @@ struct PacketHeader {
 	/**
 	 * @brief Initialize the frame header
 	 */
-	static void InitHeader(
-		PacketHeader& header,
-		uint32_t selfAddr, MacAddr selfLladdr, uint32_t gwAddr, MacAddr gwLladdr, uint16_t port);
+	static void InitHeader(PacketHeader& header, MacAddr selfLladdr, uint16_t port);
 
 	/**
 	 * @brief Complete a previously initialized header
 	 */
-	static void PrepareHeader(PacketHeader& header, std::mt19937 rng, uint32_t ip, uint16_t port, const Packet& payload);
+	static void PrepareHeader(PacketHeader& header, std::mt19937 rng, uint32_t ip, uint16_t port, CandidateData rawTxData, const Packet& payload);
 } __attribute__ ((packed));
 
 #endif
