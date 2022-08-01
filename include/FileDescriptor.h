@@ -25,10 +25,10 @@ public:
 	}
 
 	FileDescriptor(FileDescriptor&& other) {
-		std::swap(*this, other);
+		swap(*this, other);
 	}
 	FileDescriptor& operator=(FileDescriptor&& other) {
-		std::swap(*this, other);
+		swap(*this, other);
 		return *this;
 	}
 	// prevent copy for now; I'm not comfortable implicitly
