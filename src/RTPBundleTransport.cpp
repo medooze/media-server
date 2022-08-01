@@ -34,7 +34,7 @@
 #include "EventLoop.h"
 
 #ifndef __linux__
-void RTPBundleTransport::SetRawTx(int32_t ifindex, unsigned int sndbuf, bool skipQdisc, const std::string& selfLladdr, uint16_t port)
+void RTPBundleTransport::SetRawTx(int32_t ifindex, unsigned int sndbuf, bool skipQdisc, uint32_t selfAddr, uint32_t prefixlen, const std::string& selfLladdr, uint32_t gwAddr, const std::string& gwLladdr, uint16_t port)
 {
 	throw std::runtime_error("raw TX is only supported in Linux");
 }
@@ -47,13 +47,15 @@ void RTPBundleTransport::SetRawTx(int32_t ifindex, unsigned int sndbuf, bool ski
 #include <linux/if_packet.h>
 #include <fcntl.h>
 
-void RTPBundleTransport::SetRawTx(int32_t ifindex, unsigned int sndbuf, bool skipQdisc, const std::string& selfLladdr, uint16_t port)
+void RTPBundleTransport::SetRawTx(int32_t ifindex, unsigned int sndbuf, bool skipQdisc, uint32_t selfAddr, uint32_t prefixlen, const std::string& selfLladdr, uint32_t gwAddr, const std::string& gwLladdr, uint16_t port)
 {
 
 	// prepare frame template
 
 	PacketHeader header;
 	PacketHeader::InitHeader(header, PacketHeader::ParseMac(selfLladdr), port);
+
+	PacketHeader::CandidateData fallbackData = { selfAddr, PacketHeader::ParseMac(gwLladdr) };
 
 	// set up AF_PACKET socket
 
@@ -79,7 +81,7 @@ void RTPBundleTransport::SetRawTx(int32_t ifindex, unsigned int sndbuf, bool ski
 	if (skipQdisc && setsockopt(fd, SOL_PACKET, PACKET_QDISC_BYPASS, &skipQdiscInt, sizeof(skipQdiscInt)) < 0)
 		throw std::system_error(std::error_code(errno, std::system_category()), "failed setting QDISC_BYPASS");
 
-	auto rawTx = std::make_optional<EventLoop::RawTx>({ std::move(fd), header });
+	auto rawTx = std::make_optional<EventLoop::RawTx>({ std::move(fd), header, fallbackData });
 
 	// the lambda needs to be copyable, so use a shared_ptr for storage. ugly, I know
 	auto rawTxPtr = std::make_shared<std::optional<EventLoop::RawTx>>(std::move(rawTx));

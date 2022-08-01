@@ -38,6 +38,7 @@ public:
 	{
 		FileDescriptor fd;
 		PacketHeader header;
+		PacketHeader::CandidateData fallbackData;
 	};
 	static bool SetAffinity(std::thread::native_handle_type thread, int cpu);
 	static bool SetThreadName(std::thread::native_handle_type thread, const std::string& name);

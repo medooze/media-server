@@ -675,9 +675,8 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 					message.msg_namelen	= sizeof (to);
 				} else {
 					//Packet header
-					if (!item.rawTxData)
-						continue; // if candidate data not present, packet gets silently discarded
-					PacketHeader::PrepareHeader(this->rawTx->header, rng, item.ipAddr, item.port, *item.rawTxData, item.packet);
+					auto candidateData = item.rawTxData ? *item.rawTxData : this->rawTx->fallbackData;
+					PacketHeader::PrepareHeader(this->rawTx->header, rng, item.ipAddr, item.port, candidateData, item.packet);
 					item.packet.PrefixData((uint8_t*) &this->rawTx->header, sizeof(this->rawTx->header));
 				}
 
