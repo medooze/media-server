@@ -34,7 +34,7 @@
 #include "EventLoop.h"
 
 #ifndef __linux__
-void RTPBundleTransport::SetRawTx(int32_t ifindex, unsigned int sndbuf, bool skipQdisc, uint32_t selfAddr, uint32_t prefixlen, const std::string& selfLladdr, uint32_t gwAddr, const std::string& gwLladdr, uint16_t port)
+void RTPBundleTransport::SetRawTx(int32_t ifindex, unsigned int sndbuf, bool skipQdisc, const std::string& selfLladdr, uint32_t fallbackSelfAddr, const std::string& fallbackDstLladdr, uint16_t port)
 {
 	throw std::runtime_error("raw TX is only supported in Linux");
 }
@@ -47,14 +47,14 @@ void RTPBundleTransport::SetRawTx(int32_t ifindex, unsigned int sndbuf, bool ski
 #include <linux/if_packet.h>
 #include <fcntl.h>
 
-void RTPBundleTransport::SetRawTx(int32_t ifindex, unsigned int sndbuf, bool skipQdisc, uint32_t selfAddr, uint32_t prefixlen, const std::string& selfLladdr, uint32_t gwAddr, const std::string& gwLladdr, uint16_t port)
+void RTPBundleTransport::SetRawTx(int32_t ifindex, unsigned int sndbuf, bool skipQdisc, const std::string& selfLladdr, uint32_t fallbackSelfAddr, const std::string& fallbackDstLladdr, uint16_t port)
 {
 
 	// prepare frame template
 
 	PacketHeader header = PacketHeader::Create(PacketHeader::ParseMac(selfLladdr), port);
 
-	PacketHeader::CandidateData fallbackData = { selfAddr, PacketHeader::ParseMac(gwLladdr) };
+	PacketHeader::CandidateData fallbackData = { fallbackSelfAddr, PacketHeader::ParseMac(fallbackDstLladdr) };
 
 	// set up AF_PACKET socket
 	// protocol=0 means no RX
