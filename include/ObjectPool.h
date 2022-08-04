@@ -48,6 +48,9 @@ public:
 			//Initialize to current pos
 			head = tail;
 
+		//Reset object
+		t.Reset();
+
 		//Move item at back of buffer
 		queue[tail] = std::move(t);
 
