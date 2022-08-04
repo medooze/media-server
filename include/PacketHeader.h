@@ -82,7 +82,7 @@ struct PacketHeader {
 	/**
 	 * @brief Complete a previously initialized header
 	 */
-	static void PrepareHeader(PacketHeader& header, std::mt19937 rng, uint32_t ip, uint16_t port, CandidateData rawTxData, const Packet& payload);
+	static void PrepareHeader(PacketHeader& header, std::mt19937 rng, uint32_t ip, uint16_t port, const CandidateData& rawTxData, const Packet& payload);
 } __attribute__ ((packed));
 
 #endif

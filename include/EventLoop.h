@@ -90,7 +90,7 @@ public:
 	virtual Timer::shared CreateTimer(const std::chrono::milliseconds& ms, const std::chrono::milliseconds& repeat, std::function<void(std::chrono::milliseconds)> timeout) override;
 	virtual std::future<void> Async(std::function<void(std::chrono::milliseconds)> func) override;
 	
-	void Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet, std::optional<PacketHeader::CandidateData> rawTxData = std::nullopt);
+	void Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet, const std::optional<PacketHeader::CandidateData>& rawTxData = std::nullopt);
 	void Run(const std::chrono::milliseconds &duration = std::chrono::milliseconds::max());
 	
 	void SetRawTx(std::optional<RawTx>&& rawTx) { this->rawTx = std::move(rawTx); }

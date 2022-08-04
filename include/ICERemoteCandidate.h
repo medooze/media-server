@@ -78,7 +78,7 @@ public:
 	{
 		this->state = state;
 	}
-	void SetRawTxData(PacketHeader::CandidateData data)
+	void SetRawTxData(const PacketHeader::CandidateData& data)
 	{
 		this->rawTxData = std::optional(data);
 	}
@@ -90,7 +90,7 @@ public:
 	      WORD	GetPort()		const {	return ntohs(addr.sin_port);		}
 	std::string	GetRemoteAddress()	const { return std::string(GetIP()) + ":" + std::to_string(GetPort()); }
 	State		GetState()		const { return state;				}
-	std::optional<PacketHeader::CandidateData>	GetRawTxData()	const { return rawTxData;		}
+	const std::optional<PacketHeader::CandidateData>&	GetRawTxData()	const { return rawTxData;		}
 public:
 	static std::string GetRemoteAddress(DWORD address,WORD port)
 	{
