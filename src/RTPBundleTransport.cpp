@@ -79,7 +79,7 @@ void RTPBundleTransport::SetRawTx(int32_t ifindex, unsigned int sndbuf, bool ski
 	if (skipQdisc && setsockopt(fd, SOL_PACKET, PACKET_QDISC_BYPASS, &skipQdiscInt, sizeof(skipQdiscInt)) < 0)
 		throw std::system_error(std::error_code(errno, std::system_category()), "failed setting QDISC_BYPASS");
 
-	loop.Async([=](std::chrono::milliseconds) {
+	loop.Async([=, fd = std::move(fd)](std::chrono::milliseconds) {
 		loop.SetRawTx(fd, header, fallbackData);
 	});
 }
