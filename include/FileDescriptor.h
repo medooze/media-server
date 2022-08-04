@@ -31,11 +31,21 @@ public:
 		swap(*this, other);
 		return *this;
 	}
-	// prevent copy for now; I'm not comfortable implicitly
-	// duplicating any FDs this class may hold in the future
-	FileDescriptor(const FileDescriptor& other) = delete;
-	FileDescriptor& operator=(const FileDescriptor& other) = delete;
 
+	FileDescriptor(const FileDescriptor& other)
+	{
+		fd = dup(other.fd);
+	}
+	FileDescriptor& operator=(const FileDescriptor& other)
+	{
+		fd = dup(other.fd);
+		return *this;
+	}
+
+	bool isValid()
+	{
+		return (fd!=-1);
+	}
 	/**
 	 * @brief Return stored FD (not checked valid)
 	 */
