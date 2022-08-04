@@ -58,7 +58,7 @@ void RTPBundleTransport::SetRawTx(int32_t ifindex, unsigned int sndbuf, bool ski
 
 	// set up AF_PACKET socket
 	// protocol=0 means no RX
-	FileDescriptor fd = FileDescriptor(::socket(PF_PACKET, SOCK_RAW, 0));
+	FileDescriptor fd(::socket(PF_PACKET, SOCK_RAW, 0));
 
 	if (!fd.isValid())
 		throw std::system_error(std::error_code(errno, std::system_category()), "failed creating AF_PACKET socket");
