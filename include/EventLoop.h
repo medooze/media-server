@@ -7,7 +7,6 @@
 #include <optional>
 #include <poll.h>
 #include <cassert>
-#include <random>
 #include <optional>
 #include "config.h"
 #include "concurrentqueue.h"
@@ -34,12 +33,7 @@ public:
 		Lagging,
 		Overflown
 	};
-	struct RawTx
-	{
-		FileDescriptor fd;
-		PacketHeader header;
-		PacketHeader::CandidateData fallbackData;
-	};
+	
 	static bool SetAffinity(std::thread::native_handle_type thread, int cpu);
 	static bool SetThreadName(std::thread::native_handle_type thread, const std::string& name);
 private:
@@ -76,6 +70,20 @@ private:
 		std::chrono::milliseconds repeat;
 		std::function<void(std::chrono::milliseconds)> callback;
 	};
+
+	struct RawTx
+	{
+		FileDescriptor fd;
+		PacketHeader header;
+		PacketHeader::CandidateData fallbackData;
+
+		RawTx(const FileDescriptor& fd, const PacketHeader& header, const PacketHeader::CandidateData& fallbackData)	:
+			fd(fd),
+			header(header),
+			fallbackData(fallbackData)
+		{
+		}
+	};
 public:
 	EventLoop(Listener* listener = nullptr);
 	virtual ~EventLoop();
@@ -93,7 +101,8 @@ public:
 	void Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet, const std::optional<PacketHeader::CandidateData>& rawTxData = std::nullopt);
 	void Run(const std::chrono::milliseconds &duration = std::chrono::milliseconds::max());
 	
-	void SetRawTx(std::optional<RawTx>&& rawTx) { this->rawTx = std::move(rawTx); }
+	void SetRawTx(const FileDescriptor &fd, const PacketHeader& header, const PacketHeader::CandidateData& fallbackData);
+	void ClearRawTx();
 	bool SetAffinity(int cpu);
 	bool SetThreadName(const std::string& name);
 	bool SetPriority(int priority);
@@ -146,7 +155,6 @@ private:
 	static const size_t PacketPoolSize;
 private:
 	std::thread	thread;
-	std::mt19937	rng		= std::mt19937(std::random_device()());
 	State		state		= State::Normal;
 	Listener*	listener	= nullptr;
 	int		fd		= 0;

@@ -52,17 +52,15 @@ void RTPBundleTransport::SetRawTx(int32_t ifindex, unsigned int sndbuf, bool ski
 
 	// prepare frame template
 
-	PacketHeader header;
-	PacketHeader::InitHeader(header, PacketHeader::ParseMac(selfLladdr), port);
+	PacketHeader header = PacketHeader::Create(PacketHeader::ParseMac(selfLladdr), port);
 
 	PacketHeader::CandidateData fallbackData = { selfAddr, PacketHeader::ParseMac(gwLladdr) };
 
 	// set up AF_PACKET socket
-
-	FileDescriptor fd;
-
 	// protocol=0 means no RX
-	if ((fd = FileDescriptor(::socket(PF_PACKET, SOCK_RAW, 0))) < 0)
+	FileDescriptor fd = FileDescriptor(::socket(PF_PACKET, SOCK_RAW, 0));
+
+	if (!fd.isValid())
 		throw std::system_error(std::error_code(errno, std::system_category()), "failed creating AF_PACKET socket");
 
 	fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
@@ -81,13 +79,18 @@ void RTPBundleTransport::SetRawTx(int32_t ifindex, unsigned int sndbuf, bool ski
 	if (skipQdisc && setsockopt(fd, SOL_PACKET, PACKET_QDISC_BYPASS, &skipQdiscInt, sizeof(skipQdiscInt)) < 0)
 		throw std::system_error(std::error_code(errno, std::system_category()), "failed setting QDISC_BYPASS");
 
-	auto rawTx = std::make_optional<EventLoop::RawTx>({ std::move(fd), header, fallbackData });
-
-	// the lambda needs to be copyable, so use a shared_ptr for storage. ugly, I know
-	auto rawTxPtr = std::make_shared<std::optional<EventLoop::RawTx>>(std::move(rawTx));
-	loop.Async([this, rawTxPtr](std::chrono::milliseconds) { loop.SetRawTx(std::move(*rawTxPtr)); });
+	loop.Async([=](std::chrono::milliseconds) {
+		loop.SetRawTx(fd, header, fallbackData);
+	});
 }
 #endif
+
+void RTPBundleTransport::RTPBundleTransport::ClearRawTx()
+{
+	loop.Async([this](std::chrono::milliseconds) { 
+		loop.ClearRawTx(); 
+	}); 
+}
 
 /*************************
 * RTPBundleTransport

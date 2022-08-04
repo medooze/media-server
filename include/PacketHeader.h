@@ -6,7 +6,6 @@
 #include <arpa/inet.h>
 #include <array>
 #include <string>
-#include <random>
 #include "Packet.h"
 
 /**
@@ -77,12 +76,12 @@ struct PacketHeader {
 	/**
 	 * @brief Initialize the frame header
 	 */
-	static void InitHeader(PacketHeader& header, MacAddr selfLladdr, uint16_t port);
+	static PacketHeader Create(const MacAddr& selfLladdr, uint16_t port);
 
 	/**
 	 * @brief Complete a previously initialized header
 	 */
-	static void PrepareHeader(PacketHeader& header, std::mt19937 rng, uint32_t ip, uint16_t port, const CandidateData& rawTxData, const Packet& payload);
+	static void PrepareHeader(PacketHeader& header, uint32_t ip, uint16_t port, const CandidateData& rawTxData, const Packet& payload);
 } __attribute__ ((packed));
 
 #endif

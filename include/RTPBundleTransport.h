@@ -60,7 +60,7 @@ public:
 	virtual void OnRead(const int fd, const uint8_t* data, const size_t size, const uint32_t ip, const uint16_t port) override;
 	
 	void SetRawTx(int32_t ifindex, unsigned int sndbuf, bool skipQdisc, uint32_t selfAddr, uint32_t prefixlen, const std::string& selfLladdr, uint32_t gwAddr, const std::string& gwLladdr, uint16_t port);
-	void ClearRawTx() { loop.Async([this](std::chrono::milliseconds) { loop.SetRawTx(std::nullopt); }); }
+	void ClearRawTx();
 
 	void SetIceTimeout(uint32_t timeout)	{ iceTimeout = std::chrono::milliseconds(timeout);	}
 	bool SetAffinity(int cpu)		{ return loop.SetAffinity(cpu);				}
