@@ -83,7 +83,9 @@ void PacketHeader::InitHeader(PacketHeader& header, MacAddr selfLladdr, uint16_t
 	header.udp.src = htons(port);
 }
 
-void PacketHeader::PrepareHeader(PacketHeader& header, std::mt19937 rng, uint32_t ip, uint16_t port, CandidateData rawTxData, const Packet& payload)
+thread_local uint16_t identificationCounter = 0;
+
+void PacketHeader::PrepareHeader(PacketHeader& header, std::mt19937 rng, uint32_t ip, uint16_t port, const CandidateData& rawTxData, const Packet& payload)
 {
 	memcpy(header.eth.ether_dhost, rawTxData.dstLladdr.data(), 6);
 	header.ip.src = htonl(rawTxData.selfAddr);
@@ -91,8 +93,7 @@ void PacketHeader::PrepareHeader(PacketHeader& header, std::mt19937 rng, uint32_
 	header.udp.dst = htons(port);
 	header.udp.length = htons(sizeof(header.udp) + payload.GetSize());
 	header.ip.totalLen = htons((sizeof(header) - sizeof(header.eth)) + payload.GetSize());
-	std::uniform_int_distribution<uint16_t> u16_distr;
-	header.ip.identification = u16_distr(rng);
+	header.ip.identification = htons(identificationCounter++);
 	PacketHeader::CalculateIpChecksum(header);
 	PacketHeader::CalculateUdpChecksum(header, payload);
 }

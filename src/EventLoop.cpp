@@ -282,7 +282,7 @@ bool EventLoop::Stop()
 	
 }
 
-void EventLoop::Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet, std::optional<PacketHeader::CandidateData> rawTxData)
+void EventLoop::Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet, const std::optional<PacketHeader::CandidateData>& rawTxData)
 {
 	TRACE_EVENT("eventloop", "EventLoop::Send", "packet_size", packet.GetSize());
 
@@ -675,7 +675,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 					message.msg_namelen	= sizeof (to);
 				} else {
 					//Packet header
-					auto candidateData = item.rawTxData ? *item.rawTxData : this->rawTx->fallbackData;
+					auto& candidateData = item.rawTxData ? *item.rawTxData : this->rawTx->fallbackData;
 					PacketHeader::PrepareHeader(this->rawTx->header, rng, item.ipAddr, item.port, candidateData, item.packet);
 					item.packet.PrefixData((uint8_t*) &this->rawTx->header, sizeof(this->rawTx->header));
 				}
