@@ -13,6 +13,17 @@ public:
 		for (std::size_t i = 0; i < preallocate; ++i)
 			pool.enqueue(new RTPPayload());
 	}
+
+	~RTPPayloadPool()
+	{
+		RTPPayload* payload;
+
+		//Get all the object from the pool
+		while (pool.try_dequeue(payload))
+			//Delete them
+			delete(payload;
+	}
+
 	RTPPayload::shared allocate()
 	{
 		RTPPayload* payload;
