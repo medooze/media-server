@@ -22,7 +22,9 @@ public:
 	{
 		checksum = (checksum & 0xFFFF) + (checksum >> 16);
 		checksum = (checksum & 0xFFFF) + (checksum >> 16);
-		return ~checksum;
+		checksum = ~checksum;
+		if (!checksum) checksum = 0xFFFF;
+		return checksum;
 	}
 private:
 	uint32_t checksum = 0;
