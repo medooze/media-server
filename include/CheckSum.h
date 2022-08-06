@@ -9,10 +9,10 @@ class CheckSum
 public:
 	inline void Calculate(const char* data, size_t size)
 	{
-		for (size_t i = 0; i < size *2; i++)
+		for (size_t i = 0; i < size; i = i + 2)
 		{
 			uint16_t word;
-			memcpy(&word, ((char*)data) + i * 2, sizeof word);
+			memcpy(&word, ((char*)data) + i, sizeof word);
 			checksum += word;
 		}
 		if (size % 2 != 0)
