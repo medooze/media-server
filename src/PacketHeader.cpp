@@ -32,7 +32,7 @@ void PacketHeader::CalculateIpChecksum(PacketHeader& header)
 	
 	header.ip.hdrChecksum = 0;
 	checksum.Calculate((const char*)&header.ip, sizeof(header.ip));
-	header.ip.hdrChecksum = checksum.Finish();
+	header.ip.hdrChecksum = checksum.Finalize();
 }
 
 void PacketHeader::CalculateUdpChecksum(PacketHeader& header, const Packet& payload)
@@ -44,7 +44,7 @@ void PacketHeader::CalculateUdpChecksum(PacketHeader& header, const Packet& payl
 	checksum.Calculate((const char*)&udpPhdr, sizeof(udpPhdr));
 	checksum.Calculate((const char*)&header.udp, sizeof(header.udp));
 	checksum.Calculate((const char*)payload.GetData(), payload.GetSize());
-	header.udp.checksum = checksum.Finish();
+	header.udp.checksum = checksum.Finalize();
 }
 
 PacketHeader PacketHeader::Create(const MacAddr& selfLladdr, uint16_t port)
