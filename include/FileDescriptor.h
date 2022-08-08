@@ -19,15 +19,18 @@ public:
 	 */
 	explicit FileDescriptor(int fd): fd(fd) {}
 
-	~FileDescriptor() {
+	~FileDescriptor()
+	{
 		if (fd >= 0 && close(fd) < 0)
 			Error("-FileDescriptor::~FileDescriptor() | failed closing descriptor: %s\n", strerror(errno));
 	}
 
-	FileDescriptor(FileDescriptor&& other) {
+	FileDescriptor(FileDescriptor&& other)
+	{
 		swap(*this, other);
 	}
-	FileDescriptor& operator=(FileDescriptor&& other) {
+	FileDescriptor& operator=(FileDescriptor&& other)
+	{
 		swap(*this, other);
 		return *this;
 	}
@@ -36,9 +39,9 @@ public:
 	{
 		fd = dup(other.fd);
 	}
-	FileDescriptor& operator=(const FileDescriptor& other)
+	FileDescriptor& operator=(FileDescriptor other)
 	{
-		fd = dup(other.fd);
+		swap(*this, other);
 		return *this;
 	}
 
@@ -49,19 +52,22 @@ public:
 	/**
 	 * @brief Return stored FD (not checked valid)
 	 */
-	operator int() {
+	operator int()
+	{
 		return fd;
 	}
 	/**
 	 * @brief Release stored FD from ownership; the holder becomes empty
 	 */
-	int release() {
+	int release()
+	{
 		int fd = -1;
 		std::swap(this->fd, fd);
 		return fd;
 	}
 
-	friend void swap(FileDescriptor& a, FileDescriptor& b) {
+	friend void swap(FileDescriptor& a, FileDescriptor& b)
+	{
 		std::swap(a.fd, b.fd);
 	}
 private:
