@@ -45,6 +45,9 @@ void PacketHeader::CalculateUdpChecksum(PacketHeader& header, const Packet& payl
 	checksum.Calculate((const char*)&header.udp, sizeof(header.udp));
 	checksum.Calculate((const char*)payload.GetData(), payload.GetSize());
 	header.udp.checksum = checksum.Finalize();
+	// in UDP specifically, a zeroed checksum means "no checksum"
+	// and we must set FFFF instead:
+	if (!header.udp.checksum) header.udp.checksum = 0xFFFF;
 }
 
 PacketHeader PacketHeader::Create(const MacAddr& selfLladdr, uint16_t port)
