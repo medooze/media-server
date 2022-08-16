@@ -21,7 +21,7 @@ public:
 		//Get all the object from the pool
 		while (pool.try_dequeue(payload))
 			//Delete them
-			delete(payload;
+			delete(payload);
 	}
 
 	RTPPayload::shared allocate()
