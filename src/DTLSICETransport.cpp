@@ -2686,6 +2686,7 @@ void DTLSICETransport::Stop()
 
 	//Stop
 	endpoint.Close();
+	dtls.Stop();
 	
 	//Not started anymore
 	started = false;

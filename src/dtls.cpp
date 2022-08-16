@@ -544,6 +544,18 @@ void DTLSConnection::End()
 	
 }
 
+void DTLSConnection::Stop()
+{
+	Log("<DTLSConnection::Stop()\n");
+
+	// If the SSL session is not yet finalized don't bother resetting
+	if (!SSL_is_init_finished(ssl))
+		return;
+
+	// Send close notify (no need to wait for other peer)
+	SSL_shutdown(ssl);
+}
+
 void DTLSConnection::Reset()
 {
 	TRACE_EVENT("dtls", "DTLSConnection::Reset");
@@ -551,12 +563,7 @@ void DTLSConnection::Reset()
 
 	//Run in event loop thread
 	timeService.Async([this](auto now){
-		// If the SSL session is not yet finalized don't bother resetting
-		if (!SSL_is_init_finished(ssl))
-			return;
-
-		SSL_shutdown(ssl);
-
+		Stop();
 		connection = CONNECTION_NEW;
 	});
 }

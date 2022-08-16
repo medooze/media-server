@@ -129,6 +129,7 @@ public:
 	void SetRemoteSetup(Setup setup);
 	void SetRemoteFingerprint(Hash hash, const char *fingerprint);
 	void End();
+	void Stop();
 	void Reset();
 
 	Setup GetSetup() const { return setup; }
