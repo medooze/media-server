@@ -41,13 +41,17 @@ void RTPIncomingMediaStreamMultiplexer::onRTP(RTPIncomingMediaStream* stream,con
 	//Trace method
 	TRACE_EVENT("rtp", "RTPIncomingMediaStreamMultiplexer::onRTP", "ssrc", stream->GetMediaSSRC());
 
-	//Dispatch in thread async
-	timeService.Async([=](auto now){
-		//Deliver to all listeners
-		for (auto listener : listeners)
-			//Dispatch rtp packet
-			listener->onRTP(this,packet);
-	});
+	//If not muted
+	if (!muted)
+	{
+		//Dispatch in thread async
+		timeService.Async([=](auto now){
+			//Deliver to all listeners
+			for (auto listener : listeners)
+				//Dispatch rtp packet
+				listener->onRTP(this,packet);
+		});
+	}
 }
 
 void RTPIncomingMediaStreamMultiplexer::onRTP(RTPIncomingMediaStream* stream,const std::vector<RTPPacket::shared>& packets)
@@ -55,17 +59,21 @@ void RTPIncomingMediaStreamMultiplexer::onRTP(RTPIncomingMediaStream* stream,con
 	//Trace method
 	TRACE_EVENT("rtp", "RTPIncomingMediaStreamMultiplexer::onRTP", "ssrc", stream->GetMediaSSRC(), "packets", packets.size());
 
-	//Dispatch in thread async
-	timeService.Async([=,ssrc = stream->GetMediaSSRC()](auto now){
-		//Trace method
-		TRACE_EVENT("rtp", "RTPIncomingMediaStreamMultiplexer::onRTP async", "ssrc", ssrc, "packets", packets.size());
-		//For each packet
-		for (const auto& packet : packets)
-			//Deliver to all listeners
-			for (auto listener : listeners)
-				//Dispatch rtp packet
-				listener->onRTP(this,packet);
-	});
+	//If not muted
+	if (!muted)
+	{
+		//Dispatch in thread async
+		timeService.Async([=,ssrc = stream->GetMediaSSRC()](auto now){
+			//Trace method
+			TRACE_EVENT("rtp", "RTPIncomingMediaStreamMultiplexer::onRTP async", "ssrc", ssrc, "packets", packets.size());
+			//For each packet
+			for (const auto& packet : packets)
+				//Deliver to all listeners
+				for (auto listener : listeners)
+					//Dispatch rtp packet
+					listener->onRTP(this,packet);
+		});
+	}
 }
 
 
@@ -100,4 +108,13 @@ void RTPIncomingMediaStreamMultiplexer::onEnded(RTPIncomingMediaStream* stream)
 			//Dispatch rtp packet
 			listener->onEnded(this);
 	});
+}
+
+void RTPIncomingMediaStreamMultiplexer::Mute(bool muting)
+{
+	//Log
+	UltraDebug("-RTPIncomingMediaStreamMultiplexer::Mute() | [muting:%d]\n", muting);
+
+	//Update state
+	muted = muting;
 }

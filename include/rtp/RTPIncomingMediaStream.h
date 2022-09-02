@@ -41,6 +41,7 @@ public:
 	virtual void RemoveListener(Listener* listener) = 0;
 	virtual DWORD GetMediaSSRC() = 0;
 	virtual TimeService& GetTimeService() = 0;
+	virtual void Mute(bool muting) = 0;
 };
 
 #endif /* RTPINCOMINGMEDIASTREAM_H */

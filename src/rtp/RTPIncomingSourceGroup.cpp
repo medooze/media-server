@@ -266,8 +266,8 @@ void RTPIncomingSourceGroup::DispatchPackets(uint64_t time)
 		ordered.push_back(packet);
 	}
 	
-	//If we have any rtp packets
-	if (ordered.size())
+	//If we have any rtp packets and we are not muted
+	if (ordered.size() && !muted)
 		//Deliver to all listeners
 		for (auto listener : listeners)
 			//Dispatch rtp packet
@@ -389,4 +389,13 @@ void RTPIncomingSourceGroup::SetRTXEnabled(bool enabled)
 	if (!isRTXEnabled)
 		//No wait
 		packets.SetMaxWaitTime(0);
+}
+
+void RTPIncomingSourceGroup::Mute(bool muting)
+{
+	//Log
+	UltraDebug("-RTPIncomingSourceGroup::Mute() | [muting:%d]\n", muting);
+
+	//Update state
+	muted = muting;
 }

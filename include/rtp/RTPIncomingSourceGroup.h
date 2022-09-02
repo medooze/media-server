@@ -28,6 +28,7 @@ public:
 	virtual void RemoveListener(RTPIncomingMediaStream::Listener* listener) override;
 	virtual DWORD GetMediaSSRC()		override { return media.ssrc;	}
 	virtual TimeService& GetTimeService()	override { return timeService;	}
+	virtual void Mute(bool muting);
 	int AddPacket(const RTPPacket::shared &packet, DWORD size, QWORD now);
 	RTPIncomingSource* Process(RTPPacket::shared &packet);
 	void Bye(DWORD ssrc);
@@ -86,6 +87,7 @@ private:
 	QWORD rttrtxTime = 0;
 	bool remb	 = false;
 	std::optional<DWORD> maxWaitingTime;
+	volatile bool muted = false;
 	
 };
 
