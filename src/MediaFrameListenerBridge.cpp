@@ -247,7 +247,7 @@ void MediaFrameListenerBridge::onMediaFrame(const MediaFrame& frame)
 				//Insert it
 				packets.emplace(packet,packetDuration);
 			} else {
-				Dispatch(this,packet);
+				Dispatch(packet);
 			}
 		}
 	
