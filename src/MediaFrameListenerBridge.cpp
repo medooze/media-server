@@ -247,9 +247,7 @@ void MediaFrameListenerBridge::onMediaFrame(const MediaFrame& frame)
 				//Insert it
 				packets.emplace(packet,packetDuration);
 			} else {
-				//Deliver now
-				for (auto listener : listeners)
-					listener->onRTP(this,packet);
+				Dispatch(this,packet);
 			}
 		}
 	
@@ -262,9 +260,10 @@ void MediaFrameListenerBridge::onMediaFrame(const MediaFrame& frame)
 
 void MediaFrameListenerBridge::Dispatch(const RTPPacket::shared& packet)
 {
-	//Dispatch it
-	for (auto listener : listeners)
-		listener->onRTP(this, packet);
+	if (!muted)
+		//Dispatch it
+		for (auto listener : listeners)
+			listener->onRTP(this, packet);
 }
 
 void MediaFrameListenerBridge::Reset()
@@ -313,4 +312,14 @@ void MediaFrameListenerBridge::RemoveMediaListener(MediaFrame::Listener *listene
 		//Remove from set
 		mediaFrameListenerss.erase(listener);
 	});
+}
+
+
+void MediaFrameListenerBridge::Mute(bool muting)
+{
+	//Log
+	UltraDebug("-MediaFrameListenerBridge::Mute() | [muting:%d]\n", muting);
+
+	//Update state
+	muted = muting;
 }

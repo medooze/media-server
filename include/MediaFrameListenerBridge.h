@@ -30,6 +30,7 @@ public:
 	virtual void onMediaFrame(const MediaFrame &frame);
 	virtual void onMediaFrame(DWORD ssrc, const MediaFrame &frame) { onMediaFrame(frame); }
 	virtual TimeService& GetTimeService() { return loop; }
+	virtual void Mute(bool muting);
 	void Reset();
 	void Update();
 	void Update(QWORD now);
@@ -71,6 +72,7 @@ public:
 	DWORD maxWaitedTime	= 0;
 	long double avgWaitedTime = 0;
 	Acumulator<uint32_t, uint64_t> waited;
+	volatile bool muted = false;
 };
 
 #endif /* MEDIAFRAMELISTENERBRIDGE_H */
