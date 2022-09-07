@@ -57,12 +57,12 @@ struct PacketHeader {
 	/**
 	 * @brief Calculate and (re)set the IP header checksum
 	 */
-	static void CalculateIpChecksum(PacketHeader& header);
+	void CalculateIpChecksum();
 
 	/**
 	 * @brief Calculate and (re)set the UDP checksum
 	 */
-	static void CalculateUdpChecksum(PacketHeader& header, const Packet& payload);
+	void CalculateUdpChecksum(const Packet& payload);
 
 	/**
 	 * @brief Initialize the frame header

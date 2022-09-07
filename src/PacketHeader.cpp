@@ -2,28 +2,28 @@
 
 #include "CheckSum.h"
 
-void PacketHeader::CalculateIpChecksum(PacketHeader& header)
+void PacketHeader::CalculateIpChecksum()
 {
 	CheckSum checksum;
 	
-	header.ip.hdrChecksum = 0;
-	checksum.Calculate((const char*)&header.ip, sizeof(header.ip));
-	header.ip.hdrChecksum = checksum.Finalize();
+	this->ip.hdrChecksum = 0;
+	checksum.Calculate((const char*)&this->ip, sizeof(this->ip));
+	this->ip.hdrChecksum = checksum.Finalize();
 }
 
-void PacketHeader::CalculateUdpChecksum(PacketHeader& header, const Packet& payload)
+void PacketHeader::CalculateUdpChecksum(const Packet& payload)
 {
 	CheckSum checksum;
-	UdpIpv4PseudoHeader udpPhdr = { header.ip.src, header.ip.dst, 0, header.ip.protocol, header.udp.length };
+	UdpIpv4PseudoHeader udpPhdr = { this->ip.src, this->ip.dst, 0, this->ip.protocol, this->udp.length };
 	
-	header.udp.checksum = 0;
+	this->udp.checksum = 0;
 	checksum.Calculate((const char*)&udpPhdr, sizeof(udpPhdr));
-	checksum.Calculate((const char*)&header.udp, sizeof(header.udp));
+	checksum.Calculate((const char*)&this->udp, sizeof(this->udp));
 	checksum.Calculate((const char*)payload.GetData(), payload.GetSize());
-	header.udp.checksum = checksum.Finalize();
+	this->udp.checksum = checksum.Finalize();
 	// in UDP specifically, a zeroed checksum means "no checksum"
 	// and we must set FFFF instead:
-	if (!header.udp.checksum) header.udp.checksum = 0xFFFF;
+	if (!this->udp.checksum) this->udp.checksum = 0xFFFF;
 }
 
 PacketHeader PacketHeader::Create(const MacAddress& selfLladdr, uint16_t port)
@@ -54,6 +54,6 @@ void PacketHeader::PrepareHeader(PacketHeader& header, uint32_t ip, uint16_t por
 	header.udp.length = htons(sizeof(header.udp) + payload.GetSize());
 	header.ip.totalLen = htons((sizeof(header) - sizeof(header.eth)) + payload.GetSize());
 	header.ip.identification = htons(identificationCounter++);
-	PacketHeader::CalculateIpChecksum(header);
-	PacketHeader::CalculateUdpChecksum(header, payload);
+	header.CalculateIpChecksum();
+	header.CalculateUdpChecksum(payload);
 }
