@@ -126,7 +126,7 @@ private:
 		{
 		}
 		
-		SendBuffer(uint32_t ipAddr, uint16_t port, std::optional<PacketHeader::CandidateData> rawTxData, Packet&& packet) :
+		SendBuffer(uint32_t ipAddr, uint16_t port, const std::optional<PacketHeader::CandidateData>& rawTxData, Packet&& packet) :
 			ipAddr(ipAddr),
 			port(port),
 			rawTxData(rawTxData),
