@@ -75,9 +75,9 @@ private:
 	{
 		FileDescriptor fd;
 		PacketHeader header;
-		PacketHeader::CandidateData defaultRoute;
+		PacketHeader::FlowRoutingInfo defaultRoute;
 
-		RawTx(const FileDescriptor& fd, const PacketHeader& header, const PacketHeader::CandidateData& defaultRoute)	:
+		RawTx(const FileDescriptor& fd, const PacketHeader& header, const PacketHeader::FlowRoutingInfo& defaultRoute)	:
 			fd(fd),
 			header(header),
 			defaultRoute(defaultRoute)
@@ -98,10 +98,10 @@ public:
 	virtual Timer::shared CreateTimer(const std::chrono::milliseconds& ms, const std::chrono::milliseconds& repeat, std::function<void(std::chrono::milliseconds)> timeout) override;
 	virtual std::future<void> Async(std::function<void(std::chrono::milliseconds)> func) override;
 	
-	void Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet, const std::optional<PacketHeader::CandidateData>& rawTxData = std::nullopt);
+	void Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet, const std::optional<PacketHeader::FlowRoutingInfo>& rawTxData = std::nullopt);
 	void Run(const std::chrono::milliseconds &duration = std::chrono::milliseconds::max());
 	
-	void SetRawTx(const FileDescriptor &fd, const PacketHeader& header, const PacketHeader::CandidateData& defaultRoute);
+	void SetRawTx(const FileDescriptor &fd, const PacketHeader& header, const PacketHeader::FlowRoutingInfo& defaultRoute);
 	void ClearRawTx();
 	bool SetAffinity(int cpu);
 	bool SetThreadName(const std::string& name);
@@ -126,7 +126,7 @@ private:
 		{
 		}
 		
-		SendBuffer(uint32_t ipAddr, uint16_t port, const std::optional<PacketHeader::CandidateData>& rawTxData, Packet&& packet) :
+		SendBuffer(uint32_t ipAddr, uint16_t port, const std::optional<PacketHeader::FlowRoutingInfo>& rawTxData, Packet&& packet) :
 			ipAddr(ipAddr),
 			port(port),
 			rawTxData(rawTxData),
@@ -147,7 +147,7 @@ private:
 		
 		uint32_t ipAddr;
 		uint16_t port;
-		std::optional<PacketHeader::CandidateData> rawTxData;
+		std::optional<PacketHeader::FlowRoutingInfo> rawTxData;
 		Packet   packet;
 	};
 	static const size_t MaxSendingQueueSize;

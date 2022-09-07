@@ -45,7 +45,7 @@ PacketHeader PacketHeader::Create(const MacAddress& selfLladdr, uint16_t port)
 
 thread_local uint16_t identificationCounter = 0;
 
-void PacketHeader::PrepareHeader(PacketHeader& header, uint32_t ip, uint16_t port, const CandidateData& rawTxData, const Packet& payload)
+void PacketHeader::PrepareHeader(PacketHeader& header, uint32_t ip, uint16_t port, const FlowRoutingInfo& rawTxData, const Packet& payload)
 {
 	memcpy(header.eth.ether_dhost, rawTxData.dstLladdr.data(), 6);
 	header.ip.src = htonl(rawTxData.selfAddr);

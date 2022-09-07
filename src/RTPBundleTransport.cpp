@@ -55,7 +55,7 @@ void RTPBundleTransport::SetRawTx(int32_t ifindex, unsigned int sndbuf, bool ski
 
 	PacketHeader header = PacketHeader::Create(MacAddress::Parse(selfLladdr), port);
 
-	PacketHeader::CandidateData defaultRoute = { defaultSelfAddr, MacAddress::Parse(defaultDstLladdr) };
+	PacketHeader::FlowRoutingInfo defaultRoute = { defaultSelfAddr, MacAddress::Parse(defaultDstLladdr) };
 
 	// set up AF_PACKET socket
 	// protocol=0 means no RX
@@ -717,7 +717,7 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 
 void RTPBundleTransport::SetCandidateRawTxData(const std::string& ip, uint16_t port, uint32_t selfAddr, const std::string& dstLladdr)
 {
-	PacketHeader::CandidateData rawTxData = { selfAddr, MacAddress::Parse(dstLladdr) };
+	PacketHeader::FlowRoutingInfo rawTxData = { selfAddr, MacAddress::Parse(dstLladdr) };
 	loop.Async([=](auto now){
 		std::string remote = ip + ":" + std::to_string(port);
 

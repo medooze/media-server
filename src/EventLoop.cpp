@@ -153,7 +153,7 @@ bool EventLoop::SetPriority(int priority)
 	return !pthread_setschedparam(thread.native_handle(), priority ? SCHED_FIFO : SCHED_OTHER ,&param);
 }
 
-void EventLoop::SetRawTx(const FileDescriptor& fd, const PacketHeader& header, const PacketHeader::CandidateData& defaultRoute)
+void EventLoop::SetRawTx(const FileDescriptor& fd, const PacketHeader& header, const PacketHeader::FlowRoutingInfo& defaultRoute)
 {
 	rawTx.emplace(fd, header, defaultRoute);
 }
@@ -293,7 +293,7 @@ bool EventLoop::Stop()
 	
 }
 
-void EventLoop::Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet, const std::optional<PacketHeader::CandidateData>& rawTxData)
+void EventLoop::Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet, const std::optional<PacketHeader::FlowRoutingInfo>& rawTxData)
 {
 	TRACE_EVENT("eventloop", "EventLoop::Send", "packet_size", packet.GetSize());
 

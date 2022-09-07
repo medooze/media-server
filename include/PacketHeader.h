@@ -11,7 +11,7 @@
  * @brief Provides structs and logic to build Ethernet packet headers
  */
 struct PacketHeader {
-	struct CandidateData {
+	struct FlowRoutingInfo {
 		uint32_t selfAddr;
 		MacAddress dstLladdr;
 	};
@@ -72,7 +72,7 @@ struct PacketHeader {
 	/**
 	 * @brief Complete a previously initialized header
 	 */
-	static void PrepareHeader(PacketHeader& header, uint32_t ip, uint16_t port, const CandidateData& rawTxData, const Packet& payload);
+	static void PrepareHeader(PacketHeader& header, uint32_t ip, uint16_t port, const FlowRoutingInfo& rawTxData, const Packet& payload);
 } __attribute__ ((packed));
 
 #endif
