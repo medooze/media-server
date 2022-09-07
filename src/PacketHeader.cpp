@@ -1,30 +1,6 @@
 #include "PacketHeader.h"
 
-#include <cctype>
-#include <stdexcept>
 #include "CheckSum.h"
-
-using MacAddr = PacketHeader::MacAddr;
-
-MacAddr PacketHeader::ParseMac(std::string str)
-{
-	if (str.length() != 17)
-		throw std::invalid_argument("invalid MAC address: incorrect length");
-	auto HexDigit = [](unsigned char c) {
-		static std::string digits = "0123456789abcdef";
-		if (auto pos = digits.find(std::tolower(c)); pos != std::string::npos)
-			return pos;
-		throw std::invalid_argument("invalid MAC address: incorrect hex digit");
-	};
-	MacAddr result;
-	for (size_t i = 0; i < 6; i++)
-	{
-		result[i] = HexDigit(str[i * 3 + 0]) << 4 | HexDigit(str[i * 3 + 1]);
-		if (i < 5 && str[i * 3 + 2] != ':')
-			throw std::invalid_argument("invalid MAC address: incorrect separator");
-	}
-	return result;
-}
 
 void PacketHeader::CalculateIpChecksum(PacketHeader& header)
 {
@@ -50,7 +26,7 @@ void PacketHeader::CalculateUdpChecksum(PacketHeader& header, const Packet& payl
 	if (!header.udp.checksum) header.udp.checksum = 0xFFFF;
 }
 
-PacketHeader PacketHeader::Create(const MacAddr& selfLladdr, uint16_t port)
+PacketHeader PacketHeader::Create(const MacAddress& selfLladdr, uint16_t port)
 {
 	PacketHeader header;
 	memset(&header, 0, sizeof(header));

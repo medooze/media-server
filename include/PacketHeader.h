@@ -4,25 +4,16 @@
 #include <cstdint>
 #include <net/ethernet.h>
 #include <arpa/inet.h>
-#include <array>
-#include <string>
+#include "MacAddress.h"
 #include "Packet.h"
 
 /**
  * @brief Provides structs and logic to build Ethernet packet headers
  */
 struct PacketHeader {
-	using MacAddr = std::array<uint8_t, 6>;
-
-	/**
-	 * @brief Parse an "xx:xx:xx:xx:xx:xx" string into a MacAddr
-	 */
-	static MacAddr ParseMac(std::string str);
-
-
 	struct CandidateData {
 		uint32_t selfAddr;
-		MacAddr dstLladdr;
+		MacAddress dstLladdr;
 	};
 
 
@@ -76,7 +67,7 @@ struct PacketHeader {
 	/**
 	 * @brief Initialize the frame header
 	 */
-	static PacketHeader Create(const MacAddr& selfLladdr, uint16_t port);
+	static PacketHeader Create(const MacAddress& selfLladdr, uint16_t port);
 
 	/**
 	 * @brief Complete a previously initialized header
