@@ -13,6 +13,7 @@
 #include "config.h"
 #include "DTLSICETransport.h"
 #include "EventLoop.h"
+#include "PacketHeader.h"
 
 class RTPBundleTransport :
 	public DTLSICETransport::Sender,
@@ -53,10 +54,14 @@ public:
 	
 	int GetLocalPort() const { return port; }
 	int AddRemoteCandidate(const std::string& username,const char* ip, WORD port);
+	void SetCandidateRawTxData(const std::string& ip, uint16_t port, uint32_t selfAddr, const std::string& dstLladdr);
 	virtual int Send(const ICERemoteCandidate* candidate,Packet&& buffer) override;
 	
 	virtual void OnRead(const int fd, const uint8_t* data, const size_t size, const uint32_t ip, const uint16_t port) override;
 	
+	void SetRawTx(int32_t ifindex, unsigned int sndbuf, bool skipQdisc, const std::string& selfLladdr, uint32_t fallbackSelfAddr, const std::string& fallbackDstLladdr, uint16_t port);
+	void ClearRawTx();
+
 	void SetIceTimeout(uint32_t timeout)	{ iceTimeout = std::chrono::milliseconds(timeout);	}
 	bool SetAffinity(int cpu)		{ return loop.SetAffinity(cpu);				}
 	bool SetThreadName(const std::string& name) { return loop.SetThreadName(name);			}

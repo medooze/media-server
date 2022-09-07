@@ -17,6 +17,10 @@
 #include <srtp2/srtp.h>
 #include <time.h>
 #include <string>
+#include <memory>
+#include <optional>
+#include <stdexcept>
+#include <system_error>
 #include <openssl/opensslconf.h>
 #include <openssl/ossl_typ.h>
 #include "log.h"
@@ -28,6 +32,66 @@
 #include "RTPTransport.h"
 #include "ICERemoteCandidate.h"
 #include "EventLoop.h"
+#include "MacAddress.h"
+
+#ifndef __linux__
+void RTPBundleTransport::SetRawTx(int32_t ifindex, unsigned int sndbuf, bool skipQdisc, const std::string& selfLladdr, uint32_t defaultSelfAddr, const std::string& defaultDstLladdr, uint16_t port)
+{
+	throw std::runtime_error("raw TX is only supported in Linux");
+}
+#else
+
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <linux/if_packet.h>
+#include <fcntl.h>
+
+void RTPBundleTransport::SetRawTx(int32_t ifindex, unsigned int sndbuf, bool skipQdisc, const std::string& selfLladdr, uint32_t defaultSelfAddr, const std::string& defaultDstLladdr, uint16_t port)
+{
+
+	// prepare frame template
+
+	PacketHeader header = PacketHeader::Create(MacAddress::Parse(selfLladdr), port);
+
+	PacketHeader::FlowRoutingInfo defaultRoute = { defaultSelfAddr, MacAddress::Parse(defaultDstLladdr) };
+
+	// set up AF_PACKET socket
+	// protocol=0 means no RX
+	FileDescriptor fd(::socket(PF_PACKET, SOCK_RAW, 0));
+
+	if (!fd.isValid())
+		throw std::system_error(std::error_code(errno, std::system_category()), "failed creating AF_PACKET socket");
+
+	fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
+
+	struct sockaddr_ll bindAddr;
+	bindAddr.sll_family = AF_PACKET;
+	bindAddr.sll_ifindex = ifindex;
+	bindAddr.sll_protocol = 0;
+	if (bind(fd, (sockaddr*)&bindAddr, sizeof(bindAddr)) < 0)
+		throw std::system_error(std::error_code(errno, std::system_category()), "failed binding AF_PACKET socket");
+
+	if (sndbuf > 0 && setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &sndbuf, sizeof(sndbuf)) < 0)
+		throw std::system_error(std::error_code(errno, std::system_category()), "failed setting send queue size");
+
+	int skipQdiscInt = 1;
+	if (skipQdisc && setsockopt(fd, SOL_PACKET, PACKET_QDISC_BYPASS, &skipQdiscInt, sizeof(skipQdiscInt)) < 0)
+		throw std::system_error(std::error_code(errno, std::system_category()), "failed setting QDISC_BYPASS");
+
+	loop.Async([=, fd = std::move(fd)](std::chrono::milliseconds) {
+		loop.SetRawTx(fd, header, defaultRoute);
+	});
+}
+#endif
+
+void RTPBundleTransport::RTPBundleTransport::ClearRawTx()
+{
+	loop.Async([this](std::chrono::milliseconds) { 
+		loop.ClearRawTx(); 
+	}); 
+}
 
 /*************************
 * RTPBundleTransport
@@ -411,7 +475,7 @@ int RTPBundleTransport::End()
 
 int RTPBundleTransport::Send(const ICERemoteCandidate* candidate, Packet&& buffer)
 {
-	loop.Send(candidate->GetIPAddress(),candidate->GetPort(),std::move(buffer));
+	loop.Send(candidate->GetIPAddress(),candidate->GetPort(),std::move(buffer),candidate->GetRawTxData());
 	return 1;
 }
 
@@ -545,7 +609,7 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 			buffer.SetSize(len);
 
 			//Send response
-			loop.Send(ip,port,std::move(buffer));
+			Send(candidate, std::move(buffer));
 			
 			//Inc stats
 			connection->iceResponsesSent++;
@@ -651,6 +715,24 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 	it->second.onData(data,size);
 }
 
+void RTPBundleTransport::SetCandidateRawTxData(const std::string& ip, uint16_t port, uint32_t selfAddr, const std::string& dstLladdr)
+{
+	PacketHeader::FlowRoutingInfo rawTxData = { selfAddr, MacAddress::Parse(dstLladdr) };
+	loop.Async([=](auto now){
+		std::string remote = ip + ":" + std::to_string(port);
+
+		auto it = candidates.find(remote);
+		if (it == candidates.end())
+		{
+			Error("-RTPBundleTransport::SetCandidateRawTxData() | candidate not found [remote:%s}\n", remote.c_str());
+			return;
+		}
+
+		printf("setting candidate %s data\n", remote.c_str());
+		it->second.SetRawTxData(rawTxData);
+	});
+}
+
 int RTPBundleTransport::AddRemoteCandidate(const std::string& username,const char* host, WORD port)
 {
 	TRACE_EVENT("transport", "RTPBundleTransport::AddRemoteCandidate", "username", username, "host", host, "port", port);
@@ -750,7 +832,7 @@ void RTPBundleTransport::SendBindingRequest(Connection* connection,ICERemoteCand
 	buffer.SetSize(len);
 
 	//Send it
-	loop.Send(candidate->GetIPAddress(),candidate->GetPort(),std::move(buffer));
+	Send(candidate, std::move(buffer));
 	
 	//Set state
 	candidate->SetState(ICERemoteCandidate::Checking);

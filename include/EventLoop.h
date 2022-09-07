@@ -4,13 +4,17 @@
 #include <thread>
 #include <functional>
 #include <chrono>
+#include <optional>
 #include <poll.h>
 #include <cassert>
+#include <optional>
 #include "config.h"
 #include "concurrentqueue.h"
 #include "Packet.h"
 #include "ObjectPool.h"
 #include "TimeService.h"
+#include "FileDescriptor.h"
+#include "PacketHeader.h"
 
 using namespace std::chrono_literals;
 
@@ -29,6 +33,7 @@ public:
 		Lagging,
 		Overflown
 	};
+	
 	static bool SetAffinity(std::thread::native_handle_type thread, int cpu);
 	static bool SetThreadName(std::thread::native_handle_type thread, const std::string& name);
 private:
@@ -65,6 +70,20 @@ private:
 		std::chrono::milliseconds repeat;
 		std::function<void(std::chrono::milliseconds)> callback;
 	};
+
+	struct RawTx
+	{
+		FileDescriptor fd;
+		PacketHeader header;
+		PacketHeader::FlowRoutingInfo defaultRoute;
+
+		RawTx(const FileDescriptor& fd, const PacketHeader& header, const PacketHeader::FlowRoutingInfo& defaultRoute)	:
+			fd(fd),
+			header(header),
+			defaultRoute(defaultRoute)
+		{
+		}
+	};
 public:
 	EventLoop(Listener* listener = nullptr);
 	virtual ~EventLoop();
@@ -79,9 +98,11 @@ public:
 	virtual Timer::shared CreateTimer(const std::chrono::milliseconds& ms, const std::chrono::milliseconds& repeat, std::function<void(std::chrono::milliseconds)> timeout) override;
 	virtual std::future<void> Async(std::function<void(std::chrono::milliseconds)> func) override;
 	
-	void Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet);
+	void Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet, const std::optional<PacketHeader::FlowRoutingInfo>& rawTxData = std::nullopt);
 	void Run(const std::chrono::milliseconds &duration = std::chrono::milliseconds::max());
 	
+	void SetRawTx(const FileDescriptor &fd, const PacketHeader& header, const PacketHeader::FlowRoutingInfo& defaultRoute);
+	void ClearRawTx();
 	bool SetAffinity(int cpu);
 	bool SetThreadName(const std::string& name);
 	bool SetPriority(int priority);
@@ -105,15 +126,17 @@ private:
 		{
 		}
 		
-		SendBuffer(uint32_t ipAddr, uint16_t port, Packet&& packet) :
+		SendBuffer(uint32_t ipAddr, uint16_t port, const std::optional<PacketHeader::FlowRoutingInfo>& rawTxData, Packet&& packet) :
 			ipAddr(ipAddr),
 			port(port),
+			rawTxData(rawTxData),
 			packet(std::move(packet))
 		{
 		}
 		SendBuffer(SendBuffer&& other) :
 			ipAddr(other.ipAddr),
 			port(other.port),
+			rawTxData(other.rawTxData),
 			packet(std::move(other.packet))
 		{
 		}
@@ -124,6 +147,7 @@ private:
 		
 		uint32_t ipAddr;
 		uint16_t port;
+		std::optional<PacketHeader::FlowRoutingInfo> rawTxData;
 		Packet   packet;
 	};
 	static const size_t MaxSendingQueueSize;
@@ -143,7 +167,8 @@ private:
 	moodycamel::ConcurrentQueue<std::pair<std::promise<void>,std::function<void(std::chrono::milliseconds)>>>  tasks;
 	std::multimap<std::chrono::milliseconds,TimerImpl::shared> timers;
 	ObjectPool<Packet> packetPool;
-	
+	std::optional<RawTx> rawTx;
+
 };
 
 #endif /* EVENTLOOP_H */

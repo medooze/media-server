@@ -22,6 +22,8 @@
 #include <poll.h>
 #include <srtp2/srtp.h>
 #include "config.h"
+#include <optional>
+#include "PacketHeader.h"
 
 
 class ICERemoteCandidate
@@ -76,6 +78,10 @@ public:
 	{
 		this->state = state;
 	}
+	void SetRawTxData(const PacketHeader::FlowRoutingInfo& data)
+	{
+		this->rawTxData = std::optional(data);
+	}
 	
 	const sockaddr* GetAddress()		const { return (const sockaddr*)&addr;		}
 	      DWORD     GetAddressLen()		const { return sizeof(sockaddr_in);		}
@@ -84,6 +90,7 @@ public:
 	      WORD	GetPort()		const {	return ntohs(addr.sin_port);		}
 	std::string	GetRemoteAddress()	const { return std::string(GetIP()) + ":" + std::to_string(GetPort()); }
 	State		GetState()		const { return state;				}
+	const std::optional<PacketHeader::FlowRoutingInfo>&	GetRawTxData()	const { return rawTxData;		}
 public:
 	static std::string GetRemoteAddress(DWORD address,WORD port)
 	{
@@ -98,6 +105,7 @@ private:
 	State state		= Initial;
 	sockaddr_in addr	= {};
 	Listener *listener;
+	std::optional<PacketHeader::FlowRoutingInfo> rawTxData;
 };
 
 

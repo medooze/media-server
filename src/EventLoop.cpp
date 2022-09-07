@@ -153,6 +153,17 @@ bool EventLoop::SetPriority(int priority)
 	return !pthread_setschedparam(thread.native_handle(), priority ? SCHED_FIFO : SCHED_OTHER ,&param);
 }
 
+void EventLoop::SetRawTx(const FileDescriptor& fd, const PacketHeader& header, const PacketHeader::FlowRoutingInfo& defaultRoute)
+{
+	rawTx.emplace(fd, header, defaultRoute);
+}
+
+
+void EventLoop::ClearRawTx()
+{
+	rawTx.reset();
+}
+
 bool EventLoop::Start(std::function<void(void)> loop)
 {
 	//If already started
@@ -282,7 +293,7 @@ bool EventLoop::Stop()
 	
 }
 
-void EventLoop::Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet)
+void EventLoop::Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet, const std::optional<PacketHeader::FlowRoutingInfo>& rawTxData)
 {
 	TRACE_EVENT("eventloop", "EventLoop::Send", "packet_size", packet.GetSize());
 
@@ -315,7 +326,7 @@ void EventLoop::Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet
 	}
 	
 	//Create send packet
-	SendBuffer send = {ipAddr, port, std::move(packet)};
+	SendBuffer send = {ipAddr, port, rawTxData, std::move(packet)};
 	
 	//Move it back to sending queue
 	sending.enqueue(std::move(send));
@@ -652,25 +663,37 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 			//For each item
 			for (auto& item : items)
 			{
-				//Send addres
-				sockaddr_in& to		= tos[len];
-				to.sin_family		= AF_INET;
-				to.sin_addr.s_addr	= htonl(item.ipAddr);
-				to.sin_port		= htons(item.port);
-
 				//IO buffer
 				auto& iov		= iovs[len];
-				iov[0].iov_base		= item.packet.GetData();
-				iov[0].iov_len		= item.packet.GetSize();
 
 				//Message
 				msghdr& message		= messages[len].msg_hdr;
-				message.msg_name	= (sockaddr*) & to;
-				message.msg_namelen	= sizeof (to);
+				message.msg_name	= nullptr;
+				message.msg_namelen	= 0;
 				message.msg_iov		= iov;
 				message.msg_iovlen	= 1;
 				message.msg_control	= 0;
 				message.msg_controllen	= 0;
+
+				if (!this->rawTx) {
+					//Send address
+					sockaddr_in& to		= tos[len];
+					to.sin_family		= AF_INET;
+					to.sin_addr.s_addr	= htonl(item.ipAddr);
+					to.sin_port		= htons(item.port);
+
+					message.msg_name	= (sockaddr*) & to;
+					message.msg_namelen	= sizeof (to);
+				} else {
+					//Packet header
+					auto& candidateData = item.rawTxData ? *item.rawTxData : this->rawTx->defaultRoute;
+					PacketHeader::PrepareHeader(this->rawTx->header, item.ipAddr, item.port, candidateData, item.packet);
+					item.packet.PrefixData((uint8_t*) &this->rawTx->header, sizeof(this->rawTx->header));
+				}
+
+				//Set packet data
+				iov[0].iov_base		= item.packet.GetData();
+				iov[0].iov_len		= item.packet.GetSize();
 				
 				//Reset message len
 				messages[len].msg_len	= 0;
@@ -680,9 +703,10 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 			}
 			
 			//Send them
+			int sendFd = this->rawTx ? this->rawTx->fd : fd;
 			{
 				TRACE_EVENT("eventloop", "sendmmsg", "fd", fd, "vlen", len);
-				sendmmsg(fd, messages, len, flags);
+				sendmmsg(sendFd, messages, len, flags);
 			}
 			
 			//First
