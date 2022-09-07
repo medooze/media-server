@@ -34,7 +34,7 @@
 #include "EventLoop.h"
 
 #ifndef __linux__
-void RTPBundleTransport::SetRawTx(int32_t ifindex, unsigned int sndbuf, bool skipQdisc, const std::string& selfLladdr, uint32_t fallbackSelfAddr, const std::string& fallbackDstLladdr, uint16_t port)
+void RTPBundleTransport::SetRawTx(int32_t ifindex, unsigned int sndbuf, bool skipQdisc, const std::string& selfLladdr, uint32_t defaultSelfAddr, const std::string& defaultDstLladdr, uint16_t port)
 {
 	throw std::runtime_error("raw TX is only supported in Linux");
 }
@@ -47,14 +47,14 @@ void RTPBundleTransport::SetRawTx(int32_t ifindex, unsigned int sndbuf, bool ski
 #include <linux/if_packet.h>
 #include <fcntl.h>
 
-void RTPBundleTransport::SetRawTx(int32_t ifindex, unsigned int sndbuf, bool skipQdisc, const std::string& selfLladdr, uint32_t fallbackSelfAddr, const std::string& fallbackDstLladdr, uint16_t port)
+void RTPBundleTransport::SetRawTx(int32_t ifindex, unsigned int sndbuf, bool skipQdisc, const std::string& selfLladdr, uint32_t defaultSelfAddr, const std::string& defaultDstLladdr, uint16_t port)
 {
 
 	// prepare frame template
 
 	PacketHeader header = PacketHeader::Create(PacketHeader::ParseMac(selfLladdr), port);
 
-	PacketHeader::CandidateData fallbackData = { fallbackSelfAddr, PacketHeader::ParseMac(fallbackDstLladdr) };
+	PacketHeader::CandidateData defaultRoute = { defaultSelfAddr, PacketHeader::ParseMac(defaultDstLladdr) };
 
 	// set up AF_PACKET socket
 	// protocol=0 means no RX
@@ -80,7 +80,7 @@ void RTPBundleTransport::SetRawTx(int32_t ifindex, unsigned int sndbuf, bool ski
 		throw std::system_error(std::error_code(errno, std::system_category()), "failed setting QDISC_BYPASS");
 
 	loop.Async([=, fd = std::move(fd)](std::chrono::milliseconds) {
-		loop.SetRawTx(fd, header, fallbackData);
+		loop.SetRawTx(fd, header, defaultRoute);
 	});
 }
 #endif

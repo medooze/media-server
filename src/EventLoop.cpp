@@ -153,9 +153,9 @@ bool EventLoop::SetPriority(int priority)
 	return !pthread_setschedparam(thread.native_handle(), priority ? SCHED_FIFO : SCHED_OTHER ,&param);
 }
 
-void EventLoop::SetRawTx(const FileDescriptor& fd, const PacketHeader& header, const PacketHeader::CandidateData& fallbackData)
+void EventLoop::SetRawTx(const FileDescriptor& fd, const PacketHeader& header, const PacketHeader::CandidateData& defaultRoute)
 {
-	rawTx.emplace(fd, header, fallbackData);
+	rawTx.emplace(fd, header, defaultRoute);
 }
 
 
@@ -686,7 +686,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 					message.msg_namelen	= sizeof (to);
 				} else {
 					//Packet header
-					auto& candidateData = item.rawTxData ? *item.rawTxData : this->rawTx->fallbackData;
+					auto& candidateData = item.rawTxData ? *item.rawTxData : this->rawTx->defaultRoute;
 					PacketHeader::PrepareHeader(this->rawTx->header, item.ipAddr, item.port, candidateData, item.packet);
 					item.packet.PrefixData((uint8_t*) &this->rawTx->header, sizeof(this->rawTx->header));
 				}

@@ -75,12 +75,12 @@ private:
 	{
 		FileDescriptor fd;
 		PacketHeader header;
-		PacketHeader::CandidateData fallbackData;
+		PacketHeader::CandidateData defaultRoute;
 
-		RawTx(const FileDescriptor& fd, const PacketHeader& header, const PacketHeader::CandidateData& fallbackData)	:
+		RawTx(const FileDescriptor& fd, const PacketHeader& header, const PacketHeader::CandidateData& defaultRoute)	:
 			fd(fd),
 			header(header),
-			fallbackData(fallbackData)
+			defaultRoute(defaultRoute)
 		{
 		}
 	};
@@ -101,7 +101,7 @@ public:
 	void Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet, const std::optional<PacketHeader::CandidateData>& rawTxData = std::nullopt);
 	void Run(const std::chrono::milliseconds &duration = std::chrono::milliseconds::max());
 	
-	void SetRawTx(const FileDescriptor &fd, const PacketHeader& header, const PacketHeader::CandidateData& fallbackData);
+	void SetRawTx(const FileDescriptor &fd, const PacketHeader& header, const PacketHeader::CandidateData& defaultRoute);
 	void ClearRawTx();
 	bool SetAffinity(int cpu);
 	bool SetThreadName(const std::string& name);
