@@ -10,7 +10,7 @@ public:
 	/**
 	 * @brief Parse an "xx:xx:xx:xx:xx:xx" string into a MacAddress
 	 */
-	static MacAddress Parse(std::string str);
+	static MacAddress Parse(const std::string& str);
 };
 
 #endif /* MAC_ADDRESS_H */

@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include <cctype>
 
-MacAddress Parse(std::string str) {
+MacAddress Parse(const std::string& str) {
 	if (str.length() != 17)
 		throw std::invalid_argument("invalid MAC address: incorrect length");
 	auto HexDigit = [](unsigned char c) {
