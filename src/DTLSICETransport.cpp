@@ -46,6 +46,7 @@ constexpr auto ProbingInterval = 10ms;
 constexpr auto MaxRTXOverhead = 0.50f;
 constexpr auto TransportWideCCMaxPackets = 100;
 constexpr auto TransportWideCCMaxInterval = 5E4;	//50ms
+constexpr auto MaxProbingHistorySize = 20;
 
 DTLSICETransport::DTLSICETransport(Sender *sender,TimeService& timeService, ObjectPool<Packet>& packetPool) :
 	sender(sender),
@@ -2175,7 +2176,7 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 		//Append it to the end of the packet history
 		history.push_back(packet);
 		//Remove old ones
-		while (history.size()>10)
+		while (history.size()>MaxProbingHistorySize)
 			//Remove first
 			history.pop_front();
 	}
@@ -2744,55 +2745,76 @@ void DTLSICETransport::Probe(QWORD now)
 		DWORD bitrate		= static_cast<DWORD>(outgoingBitrate.GetInstantAvg()*8);
 		DWORD probing		= static_cast<DWORD>(probingBitrate.GetInstantAvg()*8);
 		DWORD target		= senderSideBandwidthEstimator.GetAvailableBitrate();
+		DWORD limit		= std::min(target, probingBitrateLimit);
 
 		//Log(">DTLSICETransport::Probe() | [target:%ubps,bitrate:%ubps,probing:%ubps,history:%d,probingBitrateLimit=%ubps,maxProbingBitrate=%ubps]\n",target,bitrate,probing,history.size(),probingBitrateLimit,maxProbingBitrate);
 			
 		//If we can still send more
-		if (target>bitrate && (!probingBitrateLimit || bitrate<probingBitrateLimit) && probing<maxProbingBitrate)
+		if (bitrate<limit && probing<maxProbingBitrate)
 		{
-			//Calculate how much bitrate should we sent
-			probing = target - (bitrate - probing);
+			//Calculate how much probe bitrate should we sent
+			DWORD probe = std::min<DWORD>(limit + probing - bitrate, maxProbingBitrate);
 
 			//Get size of probes
-			DWORD probingSize = std::min<DWORD>(probing, maxProbingBitrate)*sleep/8000;
+			DWORD probeSize = probe*sleep/8000;
 			
-			//Log("-DTLSICETransport::Probe() | Sending probing packets [target:%ubps,bitrate:%ubps,probing:%u,max:%ubps,probingSize:%d,sleep:%d]\n", target, bitrate,probing,maxProbingBitrate, probingSize, sleep);
+			//Log("-DTLSICETransport::Probe() | Sending probe packets [limit:%ubps,bitrate:%ubps,probe:%u,probingSize:%d,sleep:%d]\n", limit, bitrate, probe, probeSize, sleep);
 
 			//If we have packet history
 			if (history.size())
 			{
 				int found = true;
+				//Get last packet as smallest
+				auto smallest = history.crbegin();
+				
 				//Sent until no more probe
-				while (probingSize && found)
-				{
+				while (probeSize && found)
+				{	
+					//We need to always send one at minimun
 					found = false;
 					//For each packet in history
-					for (auto it = history.rbegin(); it!=history.rend(); ++it)
+					for (auto it = history.crbegin(); it!=history.crend(); ++it)
 					{
 						//Don't send too much data
-						if ((*it)->GetMediaLength()> probingSize)
+						if ((*it)->GetMediaLength()>probeSize)
+						{
+							if ((*it)->GetMediaLength()< (*smallest)->GetMediaLength())
+								smallest = it;
+							//Try next
 							continue;
+						}
 						//Send probe packet
 						DWORD len = SendProbe(*it);
 						//Check len
 						if (!len)
-							//Done
+							//Error
 							return;
 						//Update probing
 						probingBitrate.Update(now,len);
 						//Check size
-						if (len>probingSize)
+						if (len>probeSize)
 							//Done
-							return;
+							break;
 						//Reduce probe
-						probingSize -= len;
+						probeSize -= len;
 						found = true;
 					}
-					
+				}
+				//If we have not found any packet
+				if (!found)
+				{
+					//Send the smallest one
+					DWORD len = SendProbe(*smallest);
+					//Check len
+					if (!len)
+						//Done
+						return;
+					//Update probing
+					probingBitrate.Update(now, len);
 				}
 			} else {
 				//Ensure we send at least one packet
-				DWORD size = std::min(255u,probingSize);
+				DWORD size = std::min(255u, probeSize);
 				//Check if we have an outgpoing group
 				for (auto &group : outgoing)
 				{
@@ -2800,7 +2822,7 @@ void DTLSICETransport::Probe(QWORD now)
 					if (group.second->type == MediaFrame::Video)
 					{
 						//Set all the probes
-						while (probingSize>=size)
+						while (probeSize >=size)
 						{
 							//Send probe packet
 							DWORD len = SendProbe(group.second,size);
@@ -2811,11 +2833,11 @@ void DTLSICETransport::Probe(QWORD now)
 							//Update probing
 							probingBitrate.Update(now,len);
 							//Check size
-							if (len>probingSize)
+							if (len>probeSize)
 								//Done
 								return;
 							//Reduce probe
-							probingSize -= len;
+							probeSize -= len;
 						}
 						//Done
 						return;
@@ -2823,6 +2845,11 @@ void DTLSICETransport::Probe(QWORD now)
 				}
 			}
 		}
+		//Update bitrates
+		//bitrate = static_cast<DWORD>(outgoingBitrate.GetInstantAvg() * 8);
+		//probing = static_cast<DWORD>(probingBitrate.GetInstantAvg() * 8);
+		//Log
+		//Log("<DTLSICETransport::Probe() | [target:%ubps,bitrate:%ubps,probing:%ubps]\n", target, bitrate, probing);
 	}
 	//Update last probe time
 	lastProbe = now;
@@ -2909,6 +2936,8 @@ void DTLSICETransport::EnableSenderSideEstimation(bool enabled)
 
 void DTLSICETransport::CheckProbeTimer()
 {
+	Debug("-DTLSICETransport::CheckProbeTimer() | [probingTimer:%d]\n",!!probingTimer);
+
 	//If we don't have timer anumore
 	if (!probingTimer)
 		//Do nothing
@@ -2931,7 +2960,7 @@ void DTLSICETransport::CheckProbeTimer()
 	if (this->senderSideEstimationEnabled && this->probe && video && state == DTLSState::Connected)
 	{
 		//If not already started
-		if (probingTimer->IsScheduled())
+		if (!probingTimer->IsScheduled())
 			//Start probing timer again
 			probingTimer->Repeat(ProbingInterval);
 	}else {
