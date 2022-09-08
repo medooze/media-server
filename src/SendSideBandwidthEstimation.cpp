@@ -6,8 +6,7 @@
 constexpr uint64_t kInitialDuration		= 1500E3;	// 1500ms
 constexpr uint64_t kReportInterval		= 250E3;	// 250ms
 constexpr uint64_t kMonitorDuration		= 250E3;	// 250ms
-constexpr uint64_t kMonitorTimeout		= 750E3;	// 750ms
-constexpr uint64_t kLongTermDuration		= 60E6;		// 60s
+constexpr uint64_t kLongTermDuration		= 5E6;		// 5s
 constexpr uint64_t kMinRate			= 128E3;	// 128kbps
 constexpr uint64_t kMaxRate			= 100E6;	// 100mbps
 constexpr uint64_t kMinRateChangeBps		= 16000;
@@ -20,7 +19,7 @@ constexpr uint64_t kRecoveryDuration		= 75E3;
 
 SendSideBandwidthEstimation::SendSideBandwidthEstimation() : 
 		rttMin(kLongTermDuration),
-		deltaAcumulator(kMonitorDuration,1E6),
+		deltaAcumulator(kLongTermDuration,1E6),
 		totalSentAcumulator(kMonitorDuration,1E6),
 		mediaSentAcumulator(kMonitorDuration,1E6),
 		rtxSentAcumulator(kMonitorDuration,1E6),
@@ -113,9 +112,12 @@ void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const st
 			//Calculate rtt proxy, it is guaranteed to be bigger than rtt
 			uint64_t rtt = (when - sentTime)/1000;
 			//Update min
-			rttMin.Add(rtt, when);
+			rttMin.Add(when, rtt);
 		}
 	}
+
+	//Accumulated delay during the feebdack packet
+	int64_t accumulatedDelta = 0;
 	
 	//For each packet
 	for (const auto& feedback : packets)
@@ -142,26 +144,22 @@ void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const st
 			uint64_t sent = sentTime - firstSent;
 			uint64_t recv = receivedTime ? receivedTime - firstRecv : 0;
 			//Get deltas
-			uint64_t deltaSent = sent - prevSent;
-			uint64_t deltaRecv = receivedTime ? recv - prevRecv : 0;
-			int64_t  delta = receivedTime ? deltaRecv - deltaSent : 0;
+			int64_t deltaSent = sent - prevSent;
+			int64_t deltaRecv = receivedTime ? recv - prevRecv : 0;
+			int64_t delta     = receivedTime ? deltaRecv - deltaSent : 0;
 			
 			//Accumulate delta
 			accumulatedDelta += delta;
 			
-			//Check if we have reached bottom
-			if (accumulatedDelta<0)
-				//Reset
-				accumulatedDelta = 0;
 			//Dump stats
-			//Log("recv #%u sent:%.8lu (+%.6lu) recv:%.8lu (+%.6lu) delta:%.6ld fb:%u, size:%u, bwe:%lu accumulateDelta:%lld\n",transportSeqNum,sent,deltaSent,recv,deltaRecv,delta,feedbackNum, stat->size, bandwidthEstimation, accumulatedDelta);
+			Log("recv #%u sent:%.8lu (+%.6ld) recv:%.8lu (+%.6ld) delta:%.6ld fb:%u, size:%u, bwe:%lu accumulateDelta:%lld\n",transportSeqNum,sent,deltaSent,recv,deltaRecv,delta,feedbackNum, stat->size, bandwidthEstimation, accumulatedDelta);
 			
 			//If dumping to file
 			if (fd!=FD_INVALID)
 			{
 				char msg[1024];
 				//Create log
-				int len = snprintf(msg,1024,"%.8lu|%u|%hhu|%u|%lu|%lu|%lu|%lu|%ld|%u|%u|%u|%u|%d|%d|%d\n",fb,transportSeqNum,feedbackNum, stat->size,sent,recv,deltaSent,deltaRecv,delta,GetEstimatedBitrate(),GetTargetBitrate(),GetAvailableBitrate(),rtt,stat->mark,stat->rtx,stat->probing);
+				int len = snprintf(msg, 1024, "%.8lu|%u|%hhu|%u|%lu|%lu|%lu|%lu|%ld|%u|%u|%u|%u|%u|%d|%d|%d\n", fb, transportSeqNum, feedbackNum, stat->size, sent, recv, deltaSent, deltaRecv, delta, GetEstimatedBitrate(), GetTargetBitrate(), GetAvailableBitrate(), rtt, GetMinRTT(), stat->mark, stat->rtx, stat->probing);
 				//Write it
 				[[maybe_unused]] ssize_t written = write(fd,msg,len);
 			}
@@ -199,6 +197,9 @@ void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const st
 			Warning("-SendSideBandwidthEstimation::ReceivedFeedback() | Packet not found [transportSeqNum:%u,receivedTime:%llu,first:%llu,last:%llu]\n", transportSeqNum, receivedTime, transportWideSentPacketsStats.GetFirstSeq(), transportWideSentPacketsStats.GetLastSeq());
 		}
 	}
+
+	//Add current delta time
+	deltaAcumulator.Update(when, accumulatedDelta);
 	
 	//Calculate new estimation
 	EstimateBandwidthRate(when);
@@ -220,6 +221,15 @@ uint32_t SendSideBandwidthEstimation::GetEstimatedBitrate() const
 uint32_t SendSideBandwidthEstimation::GetAvailableBitrate() const
 {
 	return availableRate;
+}
+
+uint32_t SendSideBandwidthEstimation::UpdateMinRTT(uint64_t when)
+{
+	//Update minimum
+	rttMin.RollWindow(when);
+	
+	//Get new value
+	return GetMinRTT();
 }
 
 uint32_t SendSideBandwidthEstimation::GetMinRTT() const
@@ -256,8 +266,13 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 {
 	//Log("-SendSideBandwidthEstimation::EstimateBandwidthRate() [lastChane:%lld,when:%lldd]\n",lastChange,when);
 	
+	//Get accumulated delta during the time window
+	// We consider the minimum of the total accumulated delay and the accumulated value during the last kLongTermDuration periods
+	int64_t accumulatedDelta = std::max(
+		std::min(deltaAcumulator.GetAcumulated(), deltaAcumulator.GetInstant())
+		, 0l);
 	//Get current estimated rtt
-	uint32_t rttMin		= GetMinRTT();
+	uint32_t rttMin		= UpdateMinRTT(when);
 	int32_t rttEstimated	= rttMin + accumulatedDelta/1000;
 	
 	//Get bitrates

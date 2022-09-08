@@ -33,6 +33,7 @@ public:
 	uint32_t GetEstimatedBitrate() const;
 	uint32_t GetTargetBitrate() const;
 	uint32_t GetAvailableBitrate() const;
+	uint32_t UpdateMinRTT(uint64_t when);
 	uint32_t GetMinRTT() const;
 	void SetListener(RemoteRateEstimator::Listener* listener) { this->listener = listener; }
 
@@ -66,8 +67,6 @@ private:
         uint64_t lastChange = 0;
         int fd = FD_INVALID;
 	
-	int64_t accumulatedDelta = 0;
-	
 	ChangeState state = ChangeState::Initial;
 	uint32_t consecutiveChanges = 0;
 	
@@ -75,7 +74,7 @@ private:
 	uint64_t lastFeedbackNum = 0;
 	
 	MovingMinCounter<uint64_t> rttMin;
-	Acumulator<uint32_t, uint64_t> deltaAcumulator;
+	Acumulator<int32_t , int64_t>  deltaAcumulator;
 	Acumulator<uint32_t, uint64_t> totalSentAcumulator;
 	Acumulator<uint32_t, uint64_t> mediaSentAcumulator;
 	Acumulator<uint32_t, uint64_t> rtxSentAcumulator;
@@ -84,6 +83,7 @@ private:
 	Acumulator<uint32_t, uint64_t> mediaRecvAcumulator;
 	Acumulator<uint32_t, uint64_t> rtxRecvAcumulator;
 	Acumulator<uint32_t, uint64_t> probingRecvAcumulator;
+
 	
 	RemoteRateEstimator::Listener* listener = nullptr;
 
