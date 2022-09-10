@@ -67,13 +67,13 @@ public:
 		//Erase old values
 		while (!values.empty() && values.front().first + window <= now)
 		{
-			//Ensure we don't overflow (should not happen)
-			if (instant >= values.front().second)
+			//Ensure we don't overflow for unsigned types (should not happen)
+			if (!std::is_unsigned<T>::value || instant >= values.front().second)
 				//Remove from instant value
 				instant -= values.front().second;
-			else 
+			else
 				//Error
-				instant = 0; //assert(false);
+				instant = 0;
 			//Delete value
 			values.pop_front();
 			count--;
@@ -110,8 +110,8 @@ public:
 		//Erase old values
 		while(!values.empty() && values.front().first+window<=now)
 		{
-			//Ensure we don't overflow (should not happen)
-			if (instant >= values.front().second)
+			//Ensure we don't overflow for unsigned types (should not happen)
+			if (!std::is_unsigned<T>::value || instant >= values.front().second)
 				//Remove from instant value
 				instant -= values.front().second;
 			else

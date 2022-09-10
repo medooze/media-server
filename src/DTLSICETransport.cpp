@@ -2758,7 +2758,7 @@ void DTLSICETransport::Probe(QWORD now)
 			//Get size of probes
 			DWORD probeSize = probe*sleep/8000;
 			
-			//Log("-DTLSICETransport::Probe() | Sending probe packets [limit:%ubps,bitrate:%ubps,probe:%u,probingSize:%d,sleep:%d]\n", limit, bitrate, probe, probeSize, sleep);
+			Log("-DTLSICETransport::Probe() | Sending probe packets [target:%ubps,bitrate:%ubps,limit:%ubps,probe:%u,probingSize:%d,sleep:%d]\n", target,  bitrate, limit, probe, probeSize, sleep);
 
 			//If we have packet history
 			if (history.size())

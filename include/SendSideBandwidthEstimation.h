@@ -21,7 +21,8 @@ public:
 		Increase,
 		OverShoot,
 		Congestion,
-		Recovery
+		Recovery,
+		Loosy
 	}
 ;
 public:
@@ -65,6 +66,7 @@ private:
 	uint64_t prevRecv = 0;
         uint32_t rtt = 0;
         uint64_t lastChange = 0;
+	int64_t  accumulatedDelta = 0;
         int fd = FD_INVALID;
 	
 	ChangeState state = ChangeState::Initial;
@@ -74,7 +76,7 @@ private:
 	uint64_t lastFeedbackNum = 0;
 	
 	MovingMinCounter<uint64_t> rttMin;
-	Acumulator<int32_t , int64_t>  deltaAcumulator;
+	MovingMinCounter<int64_t>  accumulatedDeltaMinCounter;
 	Acumulator<uint32_t, uint64_t> totalSentAcumulator;
 	Acumulator<uint32_t, uint64_t> mediaSentAcumulator;
 	Acumulator<uint32_t, uint64_t> rtxSentAcumulator;
@@ -83,6 +85,9 @@ private:
 	Acumulator<uint32_t, uint64_t> mediaRecvAcumulator;
 	Acumulator<uint32_t, uint64_t> rtxRecvAcumulator;
 	Acumulator<uint32_t, uint64_t> probingRecvAcumulator;
+	Acumulator<uint32_t, uint64_t> packetsReceivedAcumulator;
+	Acumulator<uint32_t, uint64_t> packetsLostAcumulator;
+	
 
 	
 	RemoteRateEstimator::Listener* listener = nullptr;
