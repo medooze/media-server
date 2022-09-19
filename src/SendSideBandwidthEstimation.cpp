@@ -384,9 +384,10 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 		uint32_t diff = totalSentBitrate > totalRecvBitrate ? totalSentBitrate - totalRecvBitrate : kMinRateChangeBps;
 		//Adapt to rtt slope
 		uint32_t rateChange =  diff * accumulatedDelta / (delta + rttEstimated);
-		Log("rate:%u,sent:%u,received:%d,diff:%d,slope:%f\n", rateChange, totalSentBitrate, totalRecvBitrate, totalSentBitrate - totalRecvBitrate, (double)delta / rttEstimated);
 		//Decrease target
 		targetBitrate = targetBitrate > rateChange ? bandwidthEstimation - rateChange : kMinRate;
+
+		//Log("rate:%u,sent:%u,received:%d,diff:%d,slope:%f\n", rateChange, totalSentBitrate, totalRecvBitrate, totalSentBitrate - totalRecvBitrate, (double)delta / rttEstimated);
 	} else if (state == ChangeState::Initial) {
 		//Increase to send probing
 		targetBitrate = bandwidthEstimation * kInitialRampUp;
@@ -401,32 +402,32 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 	//Available rate taking into account current rtx overhead
 	availableRate = targetBitrate * overhead; 
 
-	Log("-SendSideBandwidthEstimation::EstimateBandwidthRate() [this:%p,estimate:%llubps,target:%llubps,available:%llubps,sent:%llubps,recv:%llubps,rtx=%llubps,state:%d,delta=%d,acuDelta:%d,aduDeltaMin:%d,media:%u,rtx:%d,overhead:%.2f,rttEstimated:%d,rttMin:%d,received:%f,lost:%f,lossRate:%f\n",
-		this,
-		bandwidthEstimation,
-		targetBitrate,
-		availableRate,
-		totalSentBitrate,
-		totalRecvBitrate,
-		rtxSentBitrate,
-		state,
-		static_cast<int32_t>(delta/1000),
-		static_cast<int32_t>(accumulatedDelta/1000),
-		static_cast<int32_t>(accumulatedDeltaMin/1000),
-		mediaSentAcumulator.GetAcumulated(),
-		rtxSentAcumulator.GetAcumulated(),
-		(1-overhead),
-		rttEstimated,
-		rttMin,
-		receivedPackets,
-		lostPackets,
-		lossRate
-	);
+	//Log("-SendSideBandwidthEstimation::EstimateBandwidthRate() [this:%p,estimate:%llubps,target:%llubps,available:%llubps,sent:%llubps,recv:%llubps,rtx=%llubps,state:%d,delta=%d,acuDelta:%d,aduDeltaMin:%d,media:%u,rtx:%d,overhead:%.2f,rttEstimated:%d,rttMin:%d,received:%f,lost:%f,lossRate:%f\n",
+	//	this,
+	//	bandwidthEstimation,
+	//	targetBitrate,
+	//	availableRate,
+	//	totalSentBitrate,
+	//	totalRecvBitrate,
+	//	rtxSentBitrate,
+	//	state,
+	//	static_cast<int32_t>(delta/1000),
+	//	static_cast<int32_t>(accumulatedDelta/1000),
+	//	static_cast<int32_t>(accumulatedDeltaMin/1000),
+	//	mediaSentAcumulator.GetAcumulated(),
+	//	rtxSentAcumulator.GetAcumulated(),
+	//	(1-overhead),
+	//	rttEstimated,
+	//	rttMin,
+	//	receivedPackets,
+	//	lostPackets,
+	//	lossRate
+	//);
 
 	//Set min/max limits
-	//bandwidthEstimation = std::min(std::max(bandwidthEstimation,kMinRate),kMaxRate);
-	//targetBitrate = std::min(std::max(targetBitrate, kMinRate), kMaxRate);
-	//availableRate = std::min(std::max(availableRate, kMinRate), kMaxRate);
+	bandwidthEstimation = std::min(std::max(bandwidthEstimation,kMinRate), kMaxRate);
+	targetBitrate = std::min(std::max(targetBitrate, kMinRate), kMaxRate);
+	availableRate = std::min(std::max(availableRate, kMinRate), kMaxRate);
 
 	//Check we have listener
 	if (!listener)
