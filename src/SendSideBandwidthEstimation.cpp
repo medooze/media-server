@@ -146,8 +146,10 @@ void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const st
 			
 			//Accumulate delta
 			accumulatedDelta += delta;
-			//Update and get min 
-			int64_t accumulatedDeltaMin = accumulatedDeltaMinCounter.Add(when, accumulatedDelta);
+			accumulatedDeltaMinCounter.Add(when, accumulatedDelta);
+
+			//Deltas 
+			int64_t accumulatedDeltaMin = accumulatedDeltaMinCounter.GetMin().value_or(0);
 			int64_t acumulatedDeltaRelative = accumulatedDelta - accumulatedDeltaMin;
 			//Get current estimated rtt
 			int32_t rttMin = GetMinRTT();
@@ -284,7 +286,7 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 
 	//Get current estimated rtt and minimum delta
 	int32_t rttMin			= UpdateMinRTT(when);
-	int64_t accumulatedDeltaMin	= *accumulatedDeltaMinCounter.Min(when);
+	int64_t accumulatedDeltaMin	= accumulatedDeltaMinCounter.Min(when).value_or(0);
 	//Get relative delta
 	int64_t delta = accumulatedDelta - accumulatedDeltaMin;
 	//Calculate estimated rtt
@@ -326,7 +328,7 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 			//Wait until we have more feedback
 			return;
 		//Set bwe as received rate
-		bandwidthEstimation = std::min<uint64_t>(bandwidthEstimation * 0.20 + totalRecvBitrate * 0.80, bandwidthEstimation);
+		bandwidthEstimation = std::min<uint64_t>(bandwidthEstimation * 0.80 + totalRecvBitrate * 0.20, bandwidthEstimation);
 		targetBitrate = std::min(bandwidthEstimation, targetBitrate);
 	} else if (lossRate > 0.1) {
 		//We are on a loosy environment
@@ -344,9 +346,9 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 			bandwidthEstimation = bandwidthEstimation * 0.80 + totalRecvBitrate * 0.20;
 
 		//Initial conversion factor
-		double confidenceAmplifier = 1 + std::log(consecutiveChanges + 1);
+		double confidenceAmplifier = std::log(consecutiveChanges + 1);
 		//Get rate change
-		int64_t rateChange = std::max<uint64_t>(totalSentBitrate * confidenceAmplifier * kSamplingStep, kMinRateChangeBps);
+		int64_t rateChange = std::max<uint64_t>(totalRecvBitrate * confidenceAmplifier * kSamplingStep, kMinRateChangeBps);
 
 		//Increase the target rate
 		targetBitrate = std::min(bandwidthEstimation, targetBitrate + rateChange);
@@ -367,9 +369,9 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 		targetBitrate = totalRecvBitrate;
 	} else if (state==ChangeState::Increase || ChangeState::Initial) {
 		//Initial conversion factor
-		double confidenceAmplifier = std::log(consecutiveChanges+1);
+		double confidenceAmplifier = 1 + std::log(consecutiveChanges+1);
 		//Get rate change
-		int64_t rateChange = std::max<uint64_t>(totalSentBitrate * confidenceAmplifier * kSamplingStep, kMinRateChangeBps);
+		int64_t rateChange = std::max<uint64_t>(totalRecvBitrate * confidenceAmplifier * kSamplingStep, kMinRateChangeBps);
 		
 		//Calcuate new estimation
 		bandwidthEstimation = std::max(bandwidthEstimation, totalRecvBitrate + rateChange);
@@ -384,7 +386,7 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 		uint32_t rateChange =  diff * accumulatedDelta / (delta + rttEstimated);
 		Log("rate:%u,sent:%u,received:%d,diff:%d,slope:%f\n", rateChange, totalSentBitrate, totalRecvBitrate, totalSentBitrate - totalRecvBitrate, (double)delta / rttEstimated);
 		//Decrease target
-		targetBitrate = targetBitrate > rateChange ? targetBitrate - rateChange : kMinRate;
+		targetBitrate = targetBitrate > rateChange ? bandwidthEstimation - rateChange : kMinRate;
 	} else if (state == ChangeState::Initial) {
 		//Increase to send probing
 		targetBitrate = bandwidthEstimation * kInitialRampUp;

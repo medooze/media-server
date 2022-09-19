@@ -75,7 +75,7 @@ private:
 	WrapExtender<uint8_t, uint64_t> feedbackNumExtender;
 	uint64_t lastFeedbackNum = 0;
 	
-	MovingMinCounter<uint64_t> rttMin;
+	MovingMinCounter<int64_t> rttMin;
 	MovingMinCounter<int64_t>  accumulatedDeltaMinCounter;
 	Acumulator<uint32_t, uint64_t> totalSentAcumulator;
 	Acumulator<uint32_t, uint64_t> mediaSentAcumulator;
