@@ -21,7 +21,7 @@ public:
 
 	// Advances the current time, and adds a new sample. The new current time must
 	// be at least as large as the old current time.
-	void Add(uint64_t when, const T& sample)
+	T Add(uint64_t when, const T& sample)
 	{
 		RollWindow(when);
 		// Remove samples that will never be maximum in any window: newly added sample
@@ -35,6 +35,8 @@ public:
 		// new sample will never be the maximum in any window.
 		if (samples.empty() || samples.back().first < when) 
 			samples.emplace_back(std::make_pair(when, sample));
+		//Return min value
+		return samples.front().second;
 	}
 
 	std::optional<T> GetMax() const
@@ -95,9 +97,9 @@ public:
 	{
 	}
 
-	void Add(uint64_t when, const T& sample)
+	T Add(uint64_t when, const T& sample)
 	{
-		MovingMaxCounter<T>::Add(when, std::numeric_limits<T>::max() - sample);
+		return std::numeric_limits<T>::max() - MovingMaxCounter<T>::Add(when, std::numeric_limits<T>::max() - sample);
 	}
 
 	std::optional<T> Min(uint64_t when)
