@@ -37,6 +37,8 @@ bool RTPPayload::SetPayload(const RTPPayload& other)
 	//Reset payload pointers
 	payload = buffer.data() + (other.payload - other.buffer.data());
 	payloadLen = other.payloadLen;
+	//good
+	return true;
 }
 
 bool RTPPayload::PrefixPayload(BYTE *data,DWORD size)
