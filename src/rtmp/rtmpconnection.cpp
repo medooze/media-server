@@ -1080,6 +1080,9 @@ void RTMPConnection::ProcessCommandMessage(DWORD streamId,RTMPCommandMessage* cm
 		
 		//Send eof stream
 		SendControlMessage(RTMPMessage::UserControlMessage,RTMPUserControlMessage::CreateStreamEOF(mediaStreamId));
+	} else if (name.compare(L"releaseStream") == 0 || name.compare(L"FCPublish") == 0) {
+		//Do nothing
+		SendCommandResult(streamId, transId, new AMFNull(), new AMFNull());
 	} else {
 		//Send
 		SendCommandError(streamId,transId);
