@@ -732,65 +732,11 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 			std::move(retry.begin(), retry.end(), std::back_inserter(items));
 		}
 		
-		//Run queued task
-		TRACE_EVENT_BEGIN("eventloop", "EventLoop::Run::ProcessTasks");
-		std::pair<std::promise<void>,std::function<void(std::chrono::milliseconds)>> task;
-		//Get all pending taks
-		while (tasks.try_dequeue(task))
-		{
-			//UltraDebug(">EventLoop::Run() | task pending\n");
-			//Execute it
-			task.second(now);
-			//Resolce promise
-			task.first.set_value();
-			//UltraDebug("<EventLoop::Run() | task run\n");
-		}
-		TRACE_EVENT_END("eventloop");
+		//Process pendint tasks
+		ProcessTasks(now);
 
 		//Timers triggered
-		TRACE_EVENT_BEGIN("eventloop", "EventLoop::Run::ProcessTimers");
-		std::vector<TimerImpl::shared> triggered;
-		//Get all timers to process in this lop
-		for (auto it = timers.begin(); it!=timers.end(); )
-		{
-			//Check it we are still on the time
-			if (it->first>now)
-				//It is yet to come
-				break;
-			//Get timer
-			triggered.push_back(std::move(it->second));
-			//Remove from the list
-			it = timers.erase(it);
-		}
-
-		//Now process all timers triggered
-		for (auto timer : triggered)
-		{
-			//UltraDebug(">EventLoop::Run() | timer [%s] triggered at ll%u\n",timer->GetName().c_str(),now.count());
-			//We are executing
-			timer->next = 0ms;
-
-			//Timer triggered
-			TRACE_EVENT_BEGIN("eventloop", "EventLoop::Run::ExecuteTimer", "name", timer->GetName().c_str());
-
-			//Execute it
-			timer->callback(now);
-
-			//Timer ended
-			TRACE_EVENT_END("eventloop");
-
-			//If we have to reschedule it again
-			if (timer->repeat.count() && !timer->next.count())
-			{
-				//UltraDebug("-EventLoop::Run() | timer rescheduled\n");
-				//Set next
-				timer->next = now + timer->repeat;
-				//Schedule
-				timers.emplace(timer->next, timer);
-			}
-			//UltraDebug("<EventLoop::Run() | timer run \n");
-		}
-		TRACE_EVENT_END("eventloop");
+		ProcessTriggers(now);
 		
 		//Read first from signal pipe
 		if (ufds[1].revents & POLLIN)
@@ -825,4 +771,71 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 	TRACE_EVENT_END("eventloop");
 
 	//Log("<EventLoop::Run()\n");
+}
+
+
+void EventLoop::ProcessTasks(const std::chrono::milliseconds& now)
+{
+	//Run queued task
+	TRACE_EVENT_BEGIN("eventloop", "EventLoop::ProcessTasks");
+	std::pair<std::promise<void>, std::function<void(std::chrono::milliseconds)>> task;
+	//Get all pending taks
+	while (tasks.try_dequeue(task))
+	{
+		//UltraDebug(">EventLoop::Run() | task pending\n");
+		//Execute it
+		task.second(now);
+		//Resolce promise
+		task.first.set_value();
+		//UltraDebug("<EventLoop::Run() | task run\n");
+	}
+	TRACE_EVENT_END("eventloop");
+}
+
+void EventLoop::ProcessTriggers(const std::chrono::milliseconds& now)
+{
+	//Run triggered timers
+	TRACE_EVENT_BEGIN("eventloop", "EventLoop::ProcessTimers");
+	std::vector<TimerImpl::shared> triggered;
+	//Get all timers to process in this lop
+	for (auto it = timers.begin(); it != timers.end(); )
+	{
+		//Check it we are still on the time
+		if (it->first > now)
+			//It is yet to come
+			break;
+		//Get timer
+		triggered.push_back(std::move(it->second));
+		//Remove from the list
+		it = timers.erase(it);
+	}
+
+	//Now process all timers triggered
+	for (auto timer : triggered)
+	{
+		//UltraDebug(">EventLoop::Run() | timer [%s] triggered at ll%u\n",timer->GetName().c_str(),now.count());
+		//We are executing
+		timer->next = 0ms;
+
+		//Timer triggered
+		TRACE_EVENT_BEGIN("eventloop", "EventLoop::ProcessTriggers::ExecuteTimer", "name", timer->GetName().c_str());
+
+		//Execute it
+		timer->callback(now);
+
+		//Timer ended
+		TRACE_EVENT_END("eventloop");
+
+		//If we have to reschedule it again
+		if (timer->repeat.count() && !timer->next.count())
+		{
+			//UltraDebug("-EventLoop::Run() | timer rescheduled\n");
+			//Set next
+			timer->next = now + timer->repeat;
+			//Schedule
+			timers.emplace(timer->next, timer);
+		}
+		//UltraDebug("<EventLoop::Run() | timer run \n");
+	}
+	TRACE_EVENT_END("eventloop");
 }
