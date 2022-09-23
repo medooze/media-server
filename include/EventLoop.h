@@ -116,6 +116,13 @@ protected:
 	inline void AssertThread() const { assert(std::this_thread::get_id()==thread.get_id()); }
 	void CancelTimer(TimerImpl::shared timer);
 	
+	void ProcessTasks(const std::chrono::milliseconds& now);
+	void ProcessTriggers(const std::chrono::milliseconds& now);
+	const auto GetPipe() const
+	{
+		return pipe;
+	}
+
 	const std::chrono::milliseconds Now();
 private:
 	struct SendBuffer
