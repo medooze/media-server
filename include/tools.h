@@ -323,7 +323,7 @@ inline char PC(BYTE b)
 inline DWORD BitPrint(char* out,BYTE val,BYTE n)
 {
 	int j=0;
-
+	if (n>8) n=8;
 	for (int i=0;i<(8-n);i++)
 		out[j++] = 'x';
 	for (int i=(8-n);i<8;i++)
