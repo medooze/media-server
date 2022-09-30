@@ -176,20 +176,20 @@ inline void BitDump(DWORD val,BYTE n)
 	DWORD i=0;
 	if (n>24)
 	{
-		sprintf(line1,"0x%.2x     0x%.2x     0x%.2x     0x%.2x     ",(BYTE)(val>>24),(BYTE)(val>>16),(BYTE)(val>>4),(BYTE)(val));
+		sprintf(line1,"0x%.2x     0x%.2x     0x%.2x     0x%.2x     ",(BYTE)(val>>24),(BYTE)(val>>16),(BYTE)(val>>8),(BYTE)(val));
 		i+= BitPrint(line2,(BYTE)(val>>24),n-24);
-		i+= BitPrint(line2+i,(BYTE)(val>>16),4);
-		i+= BitPrint(line2+i,(BYTE)(val>>4),4);
-		i+= BitPrint(line2+i,(BYTE)(val),4);
+		i+= BitPrint(line2+i,(BYTE)(val>>16),24);
+		i+= BitPrint(line2+i,(BYTE)(val>>8),16);
+		i+= BitPrint(line2+i,(BYTE)(val),8);
 	} else if (n>16) {
-		sprintf(line1,"0x%.2x     0x%.2x     0x%.2x     ",(BYTE)(val>>16),(BYTE)(val>>4),(BYTE)(val));
+		sprintf(line1,"0x%.2x     0x%.2x     0x%.2x     ",(BYTE)(val>>16),(BYTE)(val>>8),(BYTE)(val));
 		i+= BitPrint(line2+i,(BYTE)(val>>16),n-16);
-		i+= BitPrint(line2+i,(BYTE)(val>>4),4);
-		i+= BitPrint(line2+i,(BYTE)(val),4);
-	} else if (n>4) {
-		sprintf(line1,"0x%.2x     0x%.2x     ",(BYTE)(val>>4),(BYTE)(val));
-		i+= BitPrint(line2,(BYTE)(val>>4),n-4);
-		i+= BitPrint(line2+i,(BYTE)(val),4);
+		i+= BitPrint(line2+i,(BYTE)(val>>8),16);
+		i+= BitPrint(line2+i,(BYTE)(val),8);
+	} else if (n>8) {
+		sprintf(line1,"0x%.2x     0x%.2x     ",(BYTE)(val>>8),(BYTE)(val));
+		i+= BitPrint(line2,(BYTE)(val>>8),n-8);
+		i+= BitPrint(line2+i,(BYTE)(val),8);
 	} else {
 		sprintf(line1,"0x%.2x     ",(BYTE)(val));
 		BitPrint(line2,(BYTE)(val),n);

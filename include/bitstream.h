@@ -91,7 +91,7 @@ public:
 			//Get from cache
 			ret = GetCached(n);
 		}
-		//Debug("Readed %d:\n",n);
+		//Debug("Readed %d: cached:%d\n",n, cached);
 		//BitDump(ret,n);
 		return ret;
 	}
@@ -115,6 +115,7 @@ public:
 			//Skip cache
 			SkipCached(n);
 		}
+		//Debug("Skiped %d: cached:%d\n", n, cached);
 	}
 
 	inline QWORD Left()
@@ -221,8 +222,8 @@ public:
 		}
 			
 
-		//Debug("Reading int cache");
-		//BitDump(cache,cached);
+		//Debug("Reading int cache %x:%d\n",cache,cached);
+		//BitDump(cache>>(32-cached),cached);
 
 		//return number of bits
 		return cached;
