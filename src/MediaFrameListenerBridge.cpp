@@ -4,10 +4,11 @@
 #include "audio.h"
 #include "MediaFrameListenerBridge.h"
 #include "VideoLayerSelector.h"
-#include "EventLoop.h"
 
+using namespace std::chrono_literals;
 
-MediaFrameListenerBridge::MediaFrameListenerBridge(DWORD ssrc, bool smooth) : 
+MediaFrameListenerBridge::MediaFrameListenerBridge(TimeService& timeService,DWORD ssrc, bool smooth) : 
+	timeService(timeService),
 	ssrc(ssrc),
 	smooth(smooth),
 	acumulator(1000),
@@ -15,12 +16,12 @@ MediaFrameListenerBridge::MediaFrameListenerBridge(DWORD ssrc, bool smooth) :
 	accumulatorPackets(1000),
 	waited(1000)
 {
-	loop.Start();
+	Debug("-MediaFrameListenerBridge::MediaFrameListenerBridge() [this:%p]\n", this);
 
 	//If we are doing bitrate smoothing
 	if (smooth)
 		//Create packet dispatch timer
-		dispatchTimer = loop.CreateTimer([=](auto now){
+		dispatchTimer = timeService.CreateTimer([=](auto now){
 			//If there are no pending packets
 			if (packets.empty())
 				//Done
@@ -42,31 +43,41 @@ MediaFrameListenerBridge::MediaFrameListenerBridge(DWORD ssrc, bool smooth) :
 
 MediaFrameListenerBridge::~MediaFrameListenerBridge()
 {
-	loop.Sync([=](auto now){
+	Debug("-MediaFrameListenerBridge::~MediaFrameListenerBridge() [this:%p]\n", this);
+}
+
+void MediaFrameListenerBridge::Stop()
+{
+	Debug("-MediaFrameListenerBridge::Stop() [this:%p]\n", this);
+
+	timeService.Sync([=](auto now) {
 		//TODO wait onMediaFrame end
 		for (auto listener : listeners)
 			listener->onEnded(this);
+		//Clear listeners
+		listeners.clear();
 	});
 }
+
 void MediaFrameListenerBridge::AddListener(RTPIncomingMediaStream::Listener* listener)
 {
-	Debug("-MediaFrameListenerBridge::AddListener() [listener:%p]\n",listener);
-	loop.Async([=](auto now){
+	Debug("-MediaFrameListenerBridge::AddListener() [listener:%p,this:%p]\n",listener,this);
+	timeService.Async([=](auto now){
 		listeners.insert(listener);
 	});
 }
 
 void MediaFrameListenerBridge::RemoveListener(RTPIncomingMediaStream::Listener* listener)
 {
-	Debug("-MediaFrameListenerBridge::RemoveListener() [listener:%p]\n",listener);
-	loop.Sync([=](auto now){
+	Debug("-MediaFrameListenerBridge::RemoveListener() [listener:%p,this:%p]\n",listener,this);
+	timeService.Sync([=](auto now){
 		listeners.erase(listener);
 	});
 }
 
 void MediaFrameListenerBridge::onMediaFrame(const MediaFrame& frame)
 {
-	loop.Async([=,cloned = frame.Clone()](auto now){
+	timeService.Async([=,cloned = frame.Clone()](auto now){
 		
 		std::unique_ptr<MediaFrame> frame(cloned);
 		
@@ -236,6 +247,11 @@ void MediaFrameListenerBridge::onMediaFrame(const MediaFrame& frame)
 			if (frame->GetType()==MediaFrame::Video)
 				VideoLayerSelector::GetLayerIds(packet);
 
+			//If it the media frame has config
+			if (frame->HasCodecConfig())
+				//Set it in the rtp packet
+				packet->config = frame->GetCodecConfig();
+
 			//If doing smooting
 			if (smooth)
 			{
@@ -268,7 +284,7 @@ void MediaFrameListenerBridge::Dispatch(const RTPPacket::shared& packet)
 
 void MediaFrameListenerBridge::Reset()
 {
-	loop.Async([=](auto now){
+	timeService.Async([=](auto now){
 		reset = true;
 	});
 }
@@ -281,7 +297,7 @@ void MediaFrameListenerBridge::Update()
 
 void MediaFrameListenerBridge::Update(QWORD now)
 {
-	loop.Sync([=](auto now){
+	timeService.Sync([=](auto now){
 		//Update bitrate acumulator
 		acumulator.Update(now.count());
 		//Get bitrate in bps
@@ -300,7 +316,7 @@ void MediaFrameListenerBridge::Update(QWORD now)
 
 void MediaFrameListenerBridge::AddMediaListener(MediaFrame::Listener *listener)
 {
-	loop.Async([=](auto now){
+	timeService.Async([=](auto now){
 		//Add to set
 		mediaFrameListenerss.insert(listener);
 	});
@@ -308,7 +324,7 @@ void MediaFrameListenerBridge::AddMediaListener(MediaFrame::Listener *listener)
 
 void MediaFrameListenerBridge::RemoveMediaListener(MediaFrame::Listener *listener)
 {
-	loop.Sync([=](auto now){
+	timeService.Sync([=](auto now){
 		//Remove from set
 		mediaFrameListenerss.erase(listener);
 	});

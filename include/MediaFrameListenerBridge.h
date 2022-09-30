@@ -4,7 +4,7 @@
 #include "acumulator.h"
 #include "media.h"
 #include "rtp.h"
-#include "EventLoop.h"
+#include "TimeService.h"
 
 #include <queue>
 
@@ -16,7 +16,7 @@ public:
 	static constexpr uint32_t NoSeqNum = std::numeric_limits<uint32_t>::max();
 	static constexpr uint64_t NoTimestamp = std::numeric_limits<uint64_t>::max();
 public:
-	MediaFrameListenerBridge(DWORD ssrc, bool smooth = false);
+	MediaFrameListenerBridge(TimeService& timeService, DWORD ssrc, bool smooth = false);
 	virtual ~MediaFrameListenerBridge();
 	
         void AddMediaListener(MediaFrame::Listener *listener);	
@@ -29,17 +29,18 @@ public:
 	
 	virtual void onMediaFrame(const MediaFrame &frame);
 	virtual void onMediaFrame(DWORD ssrc, const MediaFrame &frame) { onMediaFrame(frame); }
-	virtual TimeService& GetTimeService() { return loop; }
+	virtual TimeService& GetTimeService() { return timeService; }
 	virtual void Mute(bool muting);
 	void Reset();
 	void Update();
 	void Update(QWORD now);
+	void Stop();
 
 private:
 	void Dispatch(const RTPPacket::shared& pacekt);
         
 public:
-	EventLoop loop;
+	TimeService& timeService;
 	Timer::shared dispatchTimer;
 
 	std::queue<std::pair<RTPPacket::shared,uint32_t>> packets;
