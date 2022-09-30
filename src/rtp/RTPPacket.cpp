@@ -129,6 +129,7 @@ RTPPacket::shared RTPPacket::Clone() const
 	cloned->vp9PayloadDescriptor = vp9PayloadDescriptor;
 	cloned->activeDecodeTargets  = activeDecodeTargets;
 	cloned->templateDependencyStructure = templateDependencyStructure;
+	cloned->config		     = config;
 	//Return it
 	return cloned;
 }

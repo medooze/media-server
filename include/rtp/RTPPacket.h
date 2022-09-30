@@ -190,7 +190,8 @@ public:
 	std::optional<VP9PayloadDescription>	vp9PayloadDescriptor;
 	std::optional<std::vector<bool>>	activeDecodeTargets;
 	std::optional<TemplateDependencyStructure> templateDependencyStructure;
-	
+	Buffer::shared				config;
+
 	bool rewitePictureIds = false;
 	
 protected:
