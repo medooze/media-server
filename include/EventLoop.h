@@ -113,11 +113,13 @@ public:
 
 protected:
 	void Signal();
+	void ClearSignal();
 	inline void AssertThread() const { assert(std::this_thread::get_id()==thread.get_id()); }
 	void CancelTimer(TimerImpl::shared timer);
 	
 	void ProcessTasks(const std::chrono::milliseconds& now);
 	void ProcessTriggers(const std::chrono::milliseconds& now);
+	int  GetNextTimeout(int defaultTimeout, const std::chrono::milliseconds& until = std::chrono::milliseconds::max()) const;
 	const auto GetPipe() const
 	{
 		return pipe;

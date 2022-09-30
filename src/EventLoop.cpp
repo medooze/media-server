@@ -68,12 +68,13 @@ void free_cpu_set(cpu_set_t* s) {
 EventLoop::EventLoop(Listener *listener) :
 	listener(listener),
 	packetPool(PacketPoolSize)
-
 {
+	Debug("-EventLoop::EventLoop() this:%p\n",this);
 }
 
 EventLoop::~EventLoop()
 {
+	Debug("-EventLoop::~EventLoop() this:%p\n", this);
 	if (running)
 		Stop();
 }
@@ -218,7 +219,7 @@ bool EventLoop::Start(int fd)
 	
 	//Log
 	TRACE_EVENT("eventloop", "EventLoop::Start(fd)");
-	Debug("-EventLoop::Start() [fd:%d]\n",fd);
+	Debug("-EventLoop::Start() [fd:%d,this:%p]\n",fd,this);
 	
 #if __APPLE__
 	//Create pipe
@@ -263,7 +264,7 @@ bool EventLoop::Stop()
 	
 	//Log
 	TRACE_EVENT("eventloop", "EventLoop::Stop");
-	Debug(">EventLoop::Stop() [fd:%d]\n",fd);
+	Debug(">EventLoop::Stop() [fd:%d,this:%p]\n",fd,this);
 	
 	//Not running
 	running = false;
@@ -571,28 +572,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 		ufds[1].revents = 0;
 		
 		//Until signaled or one each 10 seconds to prevent deadlocks
-		int timeout = 10E3;
-		
-		//Check if we have any pending task to wait or exit poll inmediatelly
-		if (tasks.size_approx()) 
-		{
-			//No wait
-			timeout = 0;
-		}
-		//If we have any timer or a timeout
-		else if (timers.size())
-		{
-			//Get first timer in  queue
-			auto next = std::min(timers.begin()->first,until);
-			//Override timeout
-			timeout = next > now ? std::chrono::duration_cast<std::chrono::milliseconds>(next - now).count() : 0;
-		} 
-		//If we have a maximum duration
-		else if (duration!=std::chrono::milliseconds::max()) 
-		{
-			//Override timeout
-			timeout = until > now ? std::chrono::duration_cast<std::chrono::milliseconds>(until - now).count() : 0;
-		}
+		int timeout = GetNextTimeout(10E3, until);
 
 		//UltraDebug(">EventLoop::Run() | poll timeout:%d timers:%d tasks:%d size:%d\n",timeout,timers.size(),tasks.size_approx(), sizeof(ufds) / sizeof(pollfd));
 		
@@ -740,39 +720,58 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 		
 		//Read first from signal pipe
 		if (ufds[1].revents & POLLIN)
-		{
-			//Remove pending data
-			while (read(pipe[0],data,size)>0) 
-			{
-				//DO nothing
-			}
-			//We are not signaled anymore
-			signaled = false;
-		}
+			//Clear signal flag
+			ClearSignal();
 		
 		//Update now
 		now = Now();
 	}
 	
-	//Run queued task
-	TRACE_EVENT_BEGIN("eventloop", "EventLoop::Run::FinalProcessTasks");
-	std::pair<std::promise<void>,std::function<void(std::chrono::milliseconds)>> task;
-	//Get all pending taks
-	while (tasks.try_dequeue(task))
-	{
-		//UltraDebug("-EventLoop::Run() | task pending\n");
-		//Update now
-		auto now = Now();
-		//Execute it
-		task.second(now);
-		//Resolce promise
-		task.first.set_value();
-	}
-	TRACE_EVENT_END("eventloop");
+	//Run queued tasks before exiting
+	ProcessTasks(now);
 
 	//Log("<EventLoop::Run()\n");
 }
 
+int EventLoop::GetNextTimeout(int defaultTimeout, const std::chrono::milliseconds& until) const
+{
+	int timeout = defaultTimeout;
+
+	//Check if we have any pending task to wait or exit poll inmediatelly
+	if (tasks.size_approx())
+	{
+		//No wait
+		timeout = 0;
+	}
+	//If we have any timer or a timeout
+	else if (timers.size())
+	{
+		//Get first timer in  queue
+		auto next = std::min(timers.cbegin()->first, until);
+		//Override timeout
+		timeout = next > now ? std::chrono::duration_cast<std::chrono::milliseconds>(next - now).count() : 0;
+	}
+	//If we have a maximum duration
+	else if (until != std::chrono::milliseconds::max())
+	{
+		//Override timeout
+		timeout = until > now ? std::chrono::duration_cast<std::chrono::milliseconds>(until - now).count() : 0;
+	}
+
+	return timeout;
+}
+
+void EventLoop::ClearSignal()
+{
+	uint64_t data = 0;
+	//Remove pending data on signal pipe
+	while (read(pipe[0], &data, sizeof(uint64_t)) > 0)
+	{
+		//DO nothing
+	}
+	//We are not signaled anymore
+	signaled = false;
+}
 
 void EventLoop::ProcessTasks(const std::chrono::milliseconds& now)
 {
