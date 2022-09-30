@@ -3,17 +3,41 @@
 #include "rtp/RTPIncomingMediaStreamMultiplexer.h"
 
 	
-RTPIncomingMediaStreamMultiplexer::RTPIncomingMediaStreamMultiplexer(DWORD ssrc,TimeService& timeService) :
+RTPIncomingMediaStreamMultiplexer::RTPIncomingMediaStreamMultiplexer(RTPIncomingMediaStream* incomingMediaStream,TimeService& timeService) :
+	incomingMediaStream(incomingMediaStream),
 	timeService(timeService)
 {
-	//Store type
-	this->ssrc = ssrc;
+
+	Debug("-RTPIncomingMediaStreamMultiplexer::RTPIncomingMediaStreamMultiplexer() [stream:%p,this:%p]\n", incomingMediaStream, this);
+
+	if (incomingMediaStream)
+	{	
+		//Get ssrc
+		this->ssrc = incomingMediaStream->GetMediaSSRC();
+		//Add us as listeners
+		incomingMediaStream->AddListener(this);
+	}
 }
 
 void RTPIncomingMediaStreamMultiplexer::Stop()
 {
+	Debug("-RTPIncomingMediaStreamMultiplexer::Stop() [this:%p]\n", this);
+
 	//Wait until all the previous async have finished as async calls are executed in order
-	timeService.Async([=](auto now){}).wait();
+	timeService.Sync([=](auto now){
+		//Trace method
+		TRACE_EVENT("rtp", "RTPIncomingMediaStreamMultiplexer::onEnded async", "ssrc", ssrc);
+		//If the source stream is alive
+		if (incomingMediaStream)
+			//Do not listen anymore
+			incomingMediaStream->RemoveListener(this);
+		//Deliver to all listeners
+		for (auto listener : listeners)
+			//Dispatch rtp packet
+			listener->onEnded(this);
+		//Remove all listeners
+		listeners.clear();
+	});
 }
 
 void RTPIncomingMediaStreamMultiplexer::AddListener(RTPIncomingMediaStream::Listener* listener) 
@@ -96,18 +120,11 @@ void RTPIncomingMediaStreamMultiplexer::onBye(RTPIncomingMediaStream* stream)
 
 void RTPIncomingMediaStreamMultiplexer::onEnded(RTPIncomingMediaStream* stream)
 {
-	//Trace method
-	TRACE_EVENT("rtp", "RTPIncomingMediaStreamMultiplexer::onEnded", "ssrc", stream->GetMediaSSRC());
-
-	//Dispatch in thread async
-	timeService.Async([=](auto now){
-		//Trace method
-		TRACE_EVENT("rtp", "RTPIncomingMediaStreamMultiplexer::onEnded async", "ssrc", ssrc);
-		//Deliver to all listeners
-		for (auto listener : listeners)
-			//Dispatch rtp packet
-			listener->onEnded(this);
-	});
+	Debug("-RTPIncomingMediaStreamMultiplexer::onEnded() [stream:%p,this:%p]\n", stream, this);
+	//Check
+	if (incomingMediaStream == stream)
+		//No stream
+		incomingMediaStream = nullptr;
 }
 
 void RTPIncomingMediaStreamMultiplexer::Mute(bool muting)

@@ -9,30 +9,30 @@
 #include "TimeService.h"
 
 
-class RTPIncomingMediaStreamMultiplexer : 
+class RTPIncomingMediaStreamMultiplexer :
 	public RTPIncomingMediaStream,
 	public RTPIncomingMediaStream::Listener
 {
 public:
-	RTPIncomingMediaStreamMultiplexer(DWORD ssrc, TimeService& timeService);
+	RTPIncomingMediaStreamMultiplexer(RTPIncomingMediaStream* incomingMediaStream, TimeService& timeService);
 	virtual ~RTPIncomingMediaStreamMultiplexer() = default;
 	virtual void AddListener(RTPIncomingMediaStream::Listener* listener) override;
 	virtual void RemoveListener(RTPIncomingMediaStream::Listener* listener) override;
 	virtual DWORD GetMediaSSRC() override { return ssrc; }
 	virtual void Mute(bool muting);
 
-	virtual void onRTP(RTPIncomingMediaStream* stream,const RTPPacket::shared& packet) override;
-	virtual void onRTP(RTPIncomingMediaStream* stream,const std::vector<RTPPacket::shared>& packets) override;
+	virtual void onRTP(RTPIncomingMediaStream* stream, const RTPPacket::shared& packet) override;
+	virtual void onRTP(RTPIncomingMediaStream* stream, const std::vector<RTPPacket::shared>& packets) override;
 	virtual void onBye(RTPIncomingMediaStream* stream) override;
 	virtual void onEnded(RTPIncomingMediaStream* stream) override;
 	virtual TimeService& GetTimeService() override { return timeService; }
 	void Stop();
 private:
-	DWORD		ssrc = 0;
-	TimeService&	timeService;
-	std::set<RTPIncomingMediaStream::Listener*>  listeners;	
+	DWORD	ssrc = 0;
+	RTPIncomingMediaStream* incomingMediaStream = nullptr;
+	TimeService& timeService;
+	std::set<RTPIncomingMediaStream::Listener*>  listeners;
 	volatile bool muted = false;
 };
 
-#endif /* RTPINCOMINGMEDIASTREAMMULTIPLEXER_H */
-
+#endif //RTPINCOMINGMEDIASTREAMMULTIPLEXER_H
