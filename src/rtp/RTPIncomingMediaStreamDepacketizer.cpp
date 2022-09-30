@@ -4,7 +4,7 @@
 RTPIncomingMediaStreamDepacketizer::RTPIncomingMediaStreamDepacketizer(RTPIncomingMediaStream* incomingSource) :
 	timeService(incomingSource->GetTimeService())
 {
-	Debug("-RTPIncomingMediaStreamDepacketizer::RTPIncomingMediaStreamDepacketizer() [%p]\n",incomingSource);
+	Debug("-RTPIncomingMediaStreamDepacketizer::RTPIncomingMediaStreamDepacketizer() [incomingSource:%p,this:%p]\n",incomingSource,this);
 	
 	//Store
 	this->incomingSource = incomingSource;
@@ -16,12 +16,12 @@ RTPIncomingMediaStreamDepacketizer::RTPIncomingMediaStreamDepacketizer(RTPIncomi
 
 RTPIncomingMediaStreamDepacketizer::~RTPIncomingMediaStreamDepacketizer()
 {
-	Debug("-RTPIncomingMediaStreamDepacketizer::~RTPIncomingMediaStreamDepacketizer()\n");
+	Debug("-RTPIncomingMediaStreamDepacketizer::~RTPIncomingMediaStreamDepacketizer() [incomingSource:%p,this:%p]\n", incomingSource, this);
 	
-	//If not already stopped
-	if (incomingSource)
-		//Stop it
-		Stop();
+	//Check 
+	if (depacketizer)
+		//Delete depacketier
+		delete(depacketizer);
 }
 
 void RTPIncomingMediaStreamDepacketizer::onRTP(RTPIncomingMediaStream* group,const RTPPacket::shared& packet)
@@ -36,7 +36,7 @@ void RTPIncomingMediaStreamDepacketizer::onRTP(RTPIncomingMediaStream* group,con
 		//Delete it
 		delete(depacketizer);
 		//Create it next
-		depacketizer = NULL;
+		depacketizer = nullptr;
 	}
 	//If we don't have a depacketized
 	if (!depacketizer)
@@ -63,8 +63,7 @@ void RTPIncomingMediaStreamDepacketizer::onRTP(RTPIncomingMediaStream* group,con
 
 void RTPIncomingMediaStreamDepacketizer::onBye(RTPIncomingMediaStream* group) 
 {
-	Debug("-RTPIncomingMediaStreamDepacketizer::onBye() [group:%p]\n", group);
-	
+	Debug("-RTPIncomingMediaStreamDepacketizer::onBye() [group:%p,this:%p]\n", group, this);
 	if(depacketizer)
 		//Skip current
 		depacketizer->ResetFrame();
@@ -73,7 +72,7 @@ void RTPIncomingMediaStreamDepacketizer::onBye(RTPIncomingMediaStream* group)
 void RTPIncomingMediaStreamDepacketizer::onEnded(RTPIncomingMediaStream* group) 
 {
 	//Lock	
-	Debug("-RTPIncomingMediaStreamDepacketizer::onEnded() [group:%p]\n", group);
+	Debug("-RTPIncomingMediaStreamDepacketizer::onEnded() [group:%p,this:%p]\n", group, this);
 	
 	//Check it is ours
 	if (incomingSource==group)
@@ -83,7 +82,7 @@ void RTPIncomingMediaStreamDepacketizer::onEnded(RTPIncomingMediaStream* group)
 void RTPIncomingMediaStreamDepacketizer::AddMediaListener(MediaFrame::Listener *listener)
 {
 	//Log
-	Debug("-RTPIncomingMediaStreamDepacketizer::AddMediaListener() [listener:%p]\n", listener);
+	Debug("-RTPIncomingMediaStreamDepacketizer::AddMediaListener() [listener:%p,this:%p]\n", listener, this);
 	
 	//Check listener
 	if (!listener)
@@ -100,12 +99,12 @@ void RTPIncomingMediaStreamDepacketizer::AddMediaListener(MediaFrame::Listener *
 void RTPIncomingMediaStreamDepacketizer::RemoveMediaListener(MediaFrame::Listener *listener)
 {
 	//Log
-	Debug("-RTPIncomingMediaStreamDepacketizer::RemoveMediaListener() [listener:%p]\n", listener);
+	Debug("-RTPIncomingMediaStreamDepacketizer::RemoveMediaListener() [listener:%p,this:%p]\n", listener, this);
 	
 	//Add listener sync so it can be deleted after this call
 	timeService.Sync([=](auto now){
 		//Check listener
-		if (!incomingSource || !listener)
+		if (!listener)
 			//Done
 			return;
 		//Remove from set
@@ -116,20 +115,16 @@ void RTPIncomingMediaStreamDepacketizer::RemoveMediaListener(MediaFrame::Listene
 void RTPIncomingMediaStreamDepacketizer::Stop()
 {
 	//Log
-	Debug("-RTPIncomingMediaStreamDepacketizer::Stop() [%p]\n",incomingSource);
+	Debug("-RTPIncomingMediaStreamDepacketizer::Stop() [incomingSource:%p,this:%p]\n", incomingSource, this);
 
 	timeService.Sync([=](auto now){
-		//If already stopped
-		if (!incomingSource)
-			//Done
-			return;
-		//Stop listeneing
-		incomingSource->RemoveListener(this);
-		//Clean it
-		incomingSource = NULL;
-		//Check 
-		if (depacketizer)
-			//Delete depacketier
-			delete(depacketizer);
+		//If still have a incoming source
+		if (incomingSource)
+		{
+			//Stop listeneing
+			incomingSource->RemoveListener(this);
+			//Clean it
+			incomingSource = nullptr;
+		}
 	});
 }
