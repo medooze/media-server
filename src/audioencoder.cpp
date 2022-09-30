@@ -22,6 +22,8 @@
 ***********************************/
 AudioEncoderWorker::AudioEncoderWorker()
 {
+	Log("-AudioEncoderWorker::AudioEncoderWorker()\n");
+
 	//Not encoding
 	encodingAudio=0;
 	//Set default codec to PCMU
@@ -36,6 +38,8 @@ AudioEncoderWorker::AudioEncoderWorker()
 ********************************/
 AudioEncoderWorker::~AudioEncoderWorker()
 {
+	Log("-AudioEncoderWorker::~AudioEncoderWorker()\n");
+
 	//If still running
 	if (encodingAudio)
 		//End
@@ -54,7 +58,7 @@ int AudioEncoderWorker::SetAudioCodec(AudioCodec::Type codec, const Properties& 
 	audioCodec = codec;
 	audioProperties = properties;
 
-	Log("-SetAudioCodec [%d,%s]\n",audioCodec,AudioCodec::GetNameFor(audioCodec));
+	Log("-AudioEncoderWorker::SetAudioCodec() [%d,%s]\n",audioCodec,AudioCodec::GetNameFor(audioCodec));
 
 	//Y salimos
 	return 1;
@@ -66,7 +70,7 @@ int AudioEncoderWorker::SetAudioCodec(AudioCodec::Type codec, const Properties& 
 ***************************************/
 int AudioEncoderWorker::Init(AudioInput *input)
 {
-	Log(">Init audio encoder\n");
+	Log(">AudioEncoderWorker::Init()\n");
 
 	//Nos quedamos con los puntericos
 	audioInput  = input;
@@ -74,7 +78,7 @@ int AudioEncoderWorker::Init(AudioInput *input)
 	//Y aun no estamos mandando nada
 	encodingAudio=0;
 
-	Log("<Init audio encoder\n");
+	Log("<AudioEncoderWorker::Init()n");
 
 	return 1;
 }
@@ -87,7 +91,6 @@ void * AudioEncoderWorker::startEncoding(void *par)
 {
 	AudioEncoderWorker *conf = (AudioEncoderWorker *)par;
 	blocksignals();
-	Log("Encoding audio [%p]\n",pthread_self());
 	conf->Encode();
 	//Exit
 	return NULL;
@@ -100,8 +103,6 @@ void * AudioEncoderWorker::startEncoding(void *par)
 ***************************************/
 int AudioEncoderWorker::StartEncoding()
 {
-	Log(">Start encoding audio\n");
-
 	//Si estabamos mandando tenemos que parar
 	if (encodingAudio)
 		//paramos
@@ -112,8 +113,6 @@ int AudioEncoderWorker::StartEncoding()
 	//Start thread
 	createPriorityThread(&encodingAudioThread,startEncoding,this,1);
 
-	Log("<StartSending audio [%d]\n",encodingAudio);
-
 	return 1;
 }
 /***************************************
@@ -122,6 +121,8 @@ int AudioEncoderWorker::StartEncoding()
 ***************************************/
 int AudioEncoderWorker::End()
 {
+	Log("-AudioEncoderWorker::End()\n");
+
 	//Terminamos de enviar
 	StopEncoding();
 
@@ -135,7 +136,7 @@ int AudioEncoderWorker::End()
 ****************************************/
 int AudioEncoderWorker::StopEncoding()
 {
-	Log(">StopEncoding Audio\n");
+	Log(">AudioEncoderWorker::StopEncoding()\n");
 
 	//Esperamos a que se cierren las threads de envio
 	if (encodingAudio)
@@ -150,7 +151,7 @@ int AudioEncoderWorker::StopEncoding()
 		pthread_join(encodingAudioThread,NULL);
 	}
 
-	Log("<StopEncoding Audio\n");
+	Log("<AudioEncoderWorker::StopEncoding()\n");
 
 	return 1;
 }
@@ -167,11 +168,11 @@ int AudioEncoderWorker::Encode()
 	AudioEncoder* 	codec;
 	QWORD		frameTime=0;
 
-	Log(">Encode Audio\n");
+	Log(">AudioEncoderWorker::Encode()\n");
 
 	//Creamos el codec de audio
 	if ((codec = AudioCodecFactory::CreateEncoder(audioCodec,audioProperties))==NULL)
-		return Error("Could not open encoder");
+		return Error("-AudioEncoderWorker::Encode() | Could not open encoder");
 
 	//Try to set native rate
 	DWORD numChannels = audioInput->GetNumChannels();
@@ -221,7 +222,7 @@ int AudioEncoderWorker::Encode()
 			//Comprobamos que ha sido correcto
 			if(len<=0)
 			{
-				Log("Error codificando el packete de audio\n");
+				Log("-AudioEncoderWorker::Encode() | Error encoding audio\n");
 				continue;
 			}
 
@@ -263,25 +264,26 @@ int AudioEncoderWorker::Encode()
 		
 	}
 
-	Log("-Encode Audio cleanup[%d]\n",encodingAudio);
+	Debug("-AudioEncoderWorker::Encode() | cleanup[%d]\n",encodingAudio);
 
 	//Paramos de grabar por si acaso
 	audioInput->StopRecording();
 
-	//Logeamos
-	Log("-Deleting codec\n");
-
+	
 	//Borramos el codec
 	delete codec;
 
 	//Salimos
-        Log("<Encode Audio\n");
+        Log("<AudioEncoderWorker::Encode()\n");
 	
 	return 1;
 }
 
 bool AudioEncoderWorker::AddListener(MediaFrame::Listener *listener)
 {
+
+	Debug("-AudioEncoderWorker::AddListener() | [listener:%p]\n", listener);
+
 	//Lock
 	pthread_mutex_lock(&mutex);
 
@@ -296,6 +298,8 @@ bool AudioEncoderWorker::AddListener(MediaFrame::Listener *listener)
 
 bool AudioEncoderWorker::RemoveListener(MediaFrame::Listener *listener)
 {
+	Debug("-AudioEncoderWorker::RemoveListener() | [listener:%p]\n", listener);
+
 	//Lock
 	pthread_mutex_lock(&mutex);
 
