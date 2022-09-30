@@ -5,6 +5,8 @@
 
 AudioDecoderWorker::~AudioDecoderWorker()
 {
+	Log("-AudioDecoderWorker::~AudioDecoderWorker()\n");
+
 	Stop();
 }
 
@@ -27,7 +29,6 @@ int AudioDecoderWorker::Start()
 }
 void * AudioDecoderWorker::startDecoding(void *par)
 {
-	Log("AudioDecoderThread [%p]\n",pthread_self());
 	//Get worker
 	AudioDecoderWorker *worker = (AudioDecoderWorker *)par;
 	//Block all signals
@@ -164,6 +165,15 @@ int AudioDecoderWorker::Decode()
 				//Create new codec from pacekt
 				codec.reset(AudioCodecFactory::CreateDecoder((AudioCodec::Type)packet->GetCodec()));
 
+				//If it is aac and we have config
+				if (codec->type==AudioCodec::AAC && packet->config && !packet->config->IsEmpty())
+				{
+					//Convert it to AAC encoder
+					auto aac = static_cast<AACDecoder*>(codec.get());
+					//Set config there
+					aac->SetConfig(packet->config->GetData(), packet->config->GetSize());
+				}
+
 				//Check we found one
 				if (!codec)
 					//Skip
@@ -173,6 +183,11 @@ int AudioDecoderWorker::Decode()
 				rate = codec->GetRate();
 				numChannels = codec->GetNumChannels();
 
+				//Ensure that we have rate and samples
+				if (!rate || !numChannels)
+					//skip
+					continue;
+
 				//For each output
 				for (auto output : outputs)
 					//Start playing again
@@ -181,7 +196,7 @@ int AudioDecoderWorker::Decode()
 
 			//Lo decodificamos
 			int len = codec->Decode(packet->GetMediaData(),packet->GetMediaLength(),raw,rawSize);
-
+			
 			//Check if we have a different channel count
 			if (numChannels != codec->GetNumChannels())
 			{
