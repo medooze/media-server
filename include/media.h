@@ -151,8 +151,6 @@ public:
 	{
 		//Clear
 		ClearRTPPacketizationInfo();
-		//Clear memory
-		if (configData) free(configData);
 	}
 
 	void	ClearRTPPacketizationInfo()
@@ -296,31 +294,26 @@ public:
         
 	BYTE* AllocateCodecConfig(DWORD size)
         {
-                //If we had old data
-		if (configData)
-			//Free it
-			free(configData);
-		//Allocate memory
-		configData = (BYTE*) malloc(size);
-                //Set lenght
-		configSize = size;
+		//Create new config buffer
+		config = std::make_shared<Buffer>(size);
+		//Set new size
+		config->SetSize(size);
                 //return it
-                return configData;
+                return config->GetData();
         }
         
 	void SetCodecConfig(const BYTE* data,DWORD size)
 	{
-		//Copy
-		memcpy(AllocateCodecConfig(size),data,size);
+		//Allocate new config;
+		AllocateCodecConfig(size);
+		//Set data
+		config->SetData(data,size);
 	}
 	
 	void ClearCodecConfig()
 	{
 		//Free mem
-		if (configData) free(configData);
-		//Creal
-		configData = nullptr;
-		configSize = 0;
+		config.reset();
 	}
 	
 	void Reset() 
@@ -329,19 +322,21 @@ public:
 		ClearRTPPacketizationInfo();
 		//Reset data
 		ResetData();
+		//Clear config
+		 ClearCodecConfig();
 		//Clear time
 		SetTimestamp((DWORD)-1);
 		SetTime(0);
 		SetDuration(0);
 	}
 	
-	bool HasCodecConfig() const		{ return configData && configSize;	}
-	BYTE* GetCodecConfigData() const	{ return configData;			}
-	DWORD GetCodecConfigSize() const	{ return configSize;			} 
-	
-	DWORD GetClockRate() const		{ return clockRate;			}
-	void  SetClockRate(DWORD clockRate)	{ this->clockRate = clockRate;		}
-	
+	bool HasCodecConfig() const			{ return config && !config->IsEmpty();	}
+	BYTE* GetCodecConfigData() const		{ return config->GetData();		}
+	DWORD GetCodecConfigSize() const		{ return config->GetSize();		} 
+	const Buffer::shared& GetCodecConfig() const	{ return config;			}
+	DWORD GetClockRate() const			{ return clockRate;			}
+	void  SetClockRate(DWORD clockRate)		{ this->clockRate = clockRate;		}
+
 protected:
 	void AdquireBuffer()
 	{
@@ -363,17 +358,15 @@ protected:
 	QWORD senderTime		= 0;
 	DWORD ssrc			= 0;
 	
-	std::shared_ptr<Buffer> buffer;
+	Buffer::shared	buffer;
 	bool ownedBuffer		= false;
 	bool disableSharedBuffer	= false;
 	
 	DWORD	duration		= 0;
 	DWORD	clockRate		= 1000;
 	
-	BYTE	*configData		= nullptr;
-	DWORD	configSize		= 0;
-	
 	RtpPacketizationInfo rtpInfo;
+	Buffer::shared config;
 };
 
 #endif	/* MEDIA_H */
