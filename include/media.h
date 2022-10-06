@@ -330,12 +330,12 @@ public:
 		SetDuration(0);
 	}
 	
-	bool HasCodecConfig() const			{ return config && !config->IsEmpty();	}
-	BYTE* GetCodecConfigData() const		{ return config->GetData();		}
-	DWORD GetCodecConfigSize() const		{ return config->GetSize();		} 
-	const Buffer::shared& GetCodecConfig() const	{ return config;			}
-	DWORD GetClockRate() const			{ return clockRate;			}
-	void  SetClockRate(DWORD clockRate)		{ this->clockRate = clockRate;		}
+	bool HasCodecConfig() const			{ return config && !config->IsEmpty();		}
+	BYTE* GetCodecConfigData() const		{ return config ? config->GetData() : nullptr;	}
+	DWORD GetCodecConfigSize() const		{ return config ? config->GetSize() : 0;	}
+	const Buffer::shared& GetCodecConfig() const	{ return config;				}
+	DWORD GetClockRate() const			{ return clockRate;				}
+	void  SetClockRate(DWORD clockRate)		{ this->clockRate = clockRate;			}
 
 protected:
 	void AdquireBuffer()
