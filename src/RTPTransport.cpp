@@ -713,7 +713,7 @@ int RTPTransport::SendRTPPacket(Packet&& packet)
 				request->AddAttribute(STUNMessage::Attribute::Priority,(DWORD)33554431);
 				
 				//Create new mesage
-				Packet packet;
+				Packet packet = rtpLoop.GetPacketPool().pick();
 
 				//Serialize and autenticate
 				size_t len = request->AuthenticatedFingerPrint(packet.GetData(),packet.GetCapacity(),iceLocalPwd);
@@ -800,7 +800,7 @@ int RTPTransport::ReadRTCP(const uint8_t* data, const size_t size, const uint32_
 			
 			//Create new mesage
 			size_t len = 0;
-			Packet packet;
+			Packet packet = rtpLoop.GetPacketPool().pick();
 		
 			//Check if we have local passworkd
 			if (iceLocalPwd)
@@ -911,7 +911,7 @@ int RTPTransport::ReadRTP(const uint8_t* data, const size_t size, const uint32_t
 			
 			//Create new mesage
 			size_t len = 0;
-			Packet packet;
+			Packet packet = rtpLoop.GetPacketPool().pick();
 		
 			//Check if we have local passworkd
 			if (iceLocalPwd)
@@ -991,7 +991,7 @@ int RTPTransport::ReadRTP(const uint8_t* data, const size_t size, const uint32_t
 
 				//Create  request
 				size_t len = 0;
-				Packet packet;
+				Packet packet = rtpLoop.GetPacketPool().pick();
 
 				//Check remote pwd
 				if (iceRemotePwd)
@@ -1071,7 +1071,7 @@ int RTPTransport::ReadRTP(const uint8_t* data, const size_t size, const uint32_t
 		dtls.Write(data,size);
 
 		//REad dtls data
-		Packet packet;
+		Packet packet = rtpLoop.GetPacketPool().pick();
 		size_t len = dtls.Read(packet.GetData(),packet.GetCapacity());
 					
 		//Check it
@@ -1195,7 +1195,7 @@ void RTPTransport::onDTLSPendingData()
 	//Until depleted
 	while(true)
 	{
-		Packet packet;
+		Packet packet = rtpLoop.GetPacketPool().pick();
 		//Read from dtls
 		size_t len = dtls.Read(packet.GetData(),packet.GetCapacity());
 		if (!len)
