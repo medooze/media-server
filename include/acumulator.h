@@ -21,8 +21,8 @@ public:
 		values(initialSize),
 		window(window),
 		base(base),
-		minCounter(base),
-		maxCounter(base)
+		minCounter(window),
+		maxCounter(window)
 	{
 		Reset(0);
 	}
