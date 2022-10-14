@@ -758,7 +758,7 @@ int EventLoop::GetNextTimeout(int defaultTimeout, const std::chrono::millisecond
 		timeout = until > now ? std::chrono::duration_cast<std::chrono::milliseconds>(until - now).count() : 0;
 	}
 
-	return timeout;
+	return std::min(timeout, defaultTimeout);
 }
 
 void EventLoop::ClearSignal()
