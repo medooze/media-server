@@ -16,6 +16,7 @@
 #include "bitstream.h"
 #include "opus/opusdepacketizer.h"
 #include "h264/h264depacketizer.h"
+#include "h265/H265Depacketizer.h"
 #include "vp8/vp8depacketizer.h"
 #include "vp9/VP9Depacketizer.h"
 #include "av1/AV1Depacketizer.h"

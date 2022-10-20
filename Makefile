@@ -59,6 +59,9 @@ H264DIR=h264
 H264OBJ=h264encoder.o h264decoder.o 
 DEPACKETIZERSOBJ+= h264depacketizer.o H264LayerSelector.o
 
+H265DIR=h265
+DEPACKETIZERSOBJ+= H265Depacketizer.o
+
 VP6DIR=vp6
 VP6OBJ=vp6decoder.o
 
@@ -142,6 +145,7 @@ VPATH +=  %.cpp $(SRCDIR)/src/$(G711DIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(GSMDIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(H263DIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(H264DIR)
+VPATH +=  %.cpp $(SRCDIR)/src/$(H265DIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(FLV1DIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(SPEEXDIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(NELLYDIR)
