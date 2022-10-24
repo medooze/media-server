@@ -361,7 +361,7 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 		else 
 			//We are going to conservatively reach the previous estimation again
 			SetState(ChangeState::Recovery);
-	} else if (mediaSentAcumulator.GetInstantAvg() * 8 > targetBitrate) {
+	} else if (mediaSentBitrate > targetBitrate) {
 		//We are overshooting
 		SetState(ChangeState::OverShoot);
 		//Take maximum of the spike and current value
@@ -379,14 +379,14 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 	}
 	
 	//If rtt increasing
-	if (delta>2000)
+	if (delta>2000 && accumulatedDelta>0)
 	{
 		//Initial conversion factor
 		uint32_t diff = totalSentBitrate > totalRecvBitrate ? totalSentBitrate - totalRecvBitrate : kMinRateChangeBps;
-		//Adapt to rtt slope
+		//Adapt to rtt slope, accumulatedDelta MUST be possitive
 		uint32_t rateChange =  diff * accumulatedDelta / (delta + rttEstimated);
 		//Decrease target
-		targetBitrate = targetBitrate > rateChange ? bandwidthEstimation - rateChange : kMinRate;
+		targetBitrate = bandwidthEstimation > rateChange ? bandwidthEstimation - rateChange : kMinRate;
 
 		//Log("rate:%u,sent:%u,received:%d,diff:%d,slope:%f\n", rateChange, totalSentBitrate, totalRecvBitrate, totalSentBitrate - totalRecvBitrate, (double)delta / rttEstimated);
 	} else if (state == ChangeState::Initial) {

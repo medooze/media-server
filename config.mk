@@ -9,8 +9,8 @@ VADWEBRTC	  = yes
 SRCDIR		  = /usr/local/src/medooze/media-server
 TARGET		  = /usr/local
 IMAGEMAGICK       = yes
-STATIC_OPENSSL	  = yes
+STATIC_OPENSSL	  = no
 OPENSSL_DIR	  = /usr/local/src/openssl_1_1_1-stable/
-STATIC_LIBSRTP	  = yes
+STATIC_LIBSRTP	  = no
 LIBSRTP_DIR	  = /usr/local/src/libsrtp-2.2.0/
 
