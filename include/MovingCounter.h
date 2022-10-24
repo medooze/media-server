@@ -99,8 +99,11 @@ public:
 
 	T Add(uint64_t when, const T& sample)
 	{
-		return std::numeric_limits<T>::max() - MovingMaxCounter<T>::Add(when, std::numeric_limits<T>::max() - sample);
-	}
+		if (std::is_unsigned<T>::value)
+			return std::numeric_limits<T>::max() - MovingMaxCounter<T>::Add(when, std::numeric_limits<T>::max() - sample);
+		else
+			return - MovingMaxCounter<T>::Add(when, - sample);
+	}	
 
 	std::optional<T> Min(uint64_t when)
 	{
@@ -113,7 +116,10 @@ public:
 		auto res = MovingMaxCounter<T>::GetMax();
 		if (!res)
 			return res;
-		return std::make_optional(std::numeric_limits<T>::max() - *res);
+		if (std::is_unsigned<T>::value)
+			return std::make_optional(std::numeric_limits<T>::max() - *res);
+		else
+			return std::make_optional(-*res);
 	}
 
 	void Reset()
