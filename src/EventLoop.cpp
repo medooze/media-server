@@ -813,6 +813,9 @@ void EventLoop::ProcessTriggers(const std::chrono::milliseconds& now)
 	for (auto timer : triggered)
 	{
 		//UltraDebug(">EventLoop::Run() | timer [%s] triggered at ll%u\n",timer->GetName().c_str(),now.count());
+		//Get scheduled time
+		auto scheduled = timer->next;
+	
 		//We are executing
 		timer->next = 0ms;
 
@@ -830,7 +833,7 @@ void EventLoop::ProcessTriggers(const std::chrono::milliseconds& now)
 		{
 			//UltraDebug("-EventLoop::Run() | timer rescheduled\n");
 			//Set next
-			timer->next += timer->repeat;
+			timer->next = scheduled + timer->repeat;
 			//Schedule
 			timers.emplace(timer->next, timer);
 		}
