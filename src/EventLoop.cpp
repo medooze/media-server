@@ -830,7 +830,7 @@ void EventLoop::ProcessTriggers(const std::chrono::milliseconds& now)
 		{
 			//UltraDebug("-EventLoop::Run() | timer rescheduled\n");
 			//Set next
-			timer->next = now + timer->repeat;
+			timer->next += timer->repeat;
 			//Schedule
 			timers.emplace(timer->next, timer);
 		}
