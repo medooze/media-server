@@ -67,6 +67,7 @@ private:
         uint32_t rtt = 0;
         uint64_t lastChange = 0;
 	int64_t  accumulatedDelta = 0;
+	int64_t  lastFeedbackDelta = 0;
         int fd = FD_INVALID;
 	
 	ChangeState state = ChangeState::Initial;

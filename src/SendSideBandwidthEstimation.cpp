@@ -92,6 +92,9 @@ void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const st
 	//Store last received feedback
 	lastFeedbackNum = extFeedbabkNum;
 
+	//Reset delta accumulated during this period
+	lastFeedbackDelta = 0;
+
 	//Check we have packets
 	if (packets.empty())
 		//Skip
@@ -145,6 +148,7 @@ void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const st
 			int64_t delta     = receivedTime ? deltaRecv - deltaSent : 0;
 			
 			//Accumulate delta
+			lastFeedbackDelta += delta;
 			accumulatedDelta += delta;
 			accumulatedDeltaMinCounter.Add(when, accumulatedDelta);
 
@@ -379,7 +383,7 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 	}
 	
 	//If rtt increasing
-	if (delta>2000 && accumulatedDelta>0)
+	if (lastFeedbackDelta>2000 && accumulatedDelta>0)
 	{
 		//Initial conversion factor
 		uint32_t diff = totalSentBitrate > totalRecvBitrate ? totalSentBitrate - totalRecvBitrate : kMinRateChangeBps;
@@ -388,7 +392,7 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 		//Decrease target
 		targetBitrate = bandwidthEstimation > rateChange ? bandwidthEstimation - rateChange : kMinRate;
 
-		//Log("rate:%u,sent:%u,received:%d,diff:%d,slope:%f\n", rateChange, totalSentBitrate, totalRecvBitrate, totalSentBitrate - totalRecvBitrate, (double)delta / rttEstimated);
+		//Log("lastFeedbackDelta:%d delta:%d accumulatedDeltaMin:%d accumulatedDelta:%d rate:%u,sent:%u,received:%d,diff:%d,slope:%f\n", lastFeedbackDelta, delta, accumulatedDeltaMin, accumulatedDelta, rateChange, totalSentBitrate, totalRecvBitrate, totalSentBitrate - totalRecvBitrate, (double)delta / rttEstimated);
 	} else if (state == ChangeState::Initial) {
 		//Increase to send probing
 		targetBitrate = bandwidthEstimation * kInitialRampUp;
@@ -398,7 +402,7 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 	}
 
 	//Calculate term rtx overhead
-	double overhead = totalSentBitrate ? static_cast<double>(mediaSentBitrate) / totalSentBitrate : 1.0f;
+	double overhead = totalSentBitrate ? static_cast<double>(mediaSentBitrate) / (mediaSentBitrate + rtxSentBitrate) : 1.0f;
 
 	//Available rate taking into account current rtx overhead
 	availableRate = targetBitrate * overhead; 
