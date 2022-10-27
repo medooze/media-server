@@ -20,6 +20,7 @@ MediaFrameListenerBridge::MediaFrameListenerBridge(TimeService& timeService,DWOR
 
 	//If we are doing bitrate smoothing
 	if (smooth)
+	{
 		//Create packet dispatch timer
 		dispatchTimer = timeService.CreateTimer([=](auto now){
 			//If there are no pending packets
@@ -39,6 +40,8 @@ MediaFrameListenerBridge::MediaFrameListenerBridge(TimeService& timeService,DWOR
 			//Reschedule
 			dispatchTimer->Again(std::chrono::milliseconds(duration));
 		});
+		dispatchTimer->SetName("MediaFrameListenerBridge::dispatchTimer");
+	}
 }
 
 MediaFrameListenerBridge::~MediaFrameListenerBridge()
