@@ -70,7 +70,7 @@ private:
 		std::chrono::milliseconds repeat;
 		std::function<void(std::chrono::milliseconds)> callback;
 	};
-
+	
 	struct RawTx
 	{
 		FileDescriptor fd;

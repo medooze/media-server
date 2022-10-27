@@ -385,11 +385,13 @@ Timer::shared EventLoop::CreateTimer(const std::chrono::milliseconds& ms, std::f
 
 Timer::shared EventLoop::CreateTimer(const std::chrono::milliseconds& ms, const std::chrono::milliseconds& repeat, std::function<void(std::chrono::milliseconds)> callback)
 {
+	//UltraDebug(">EventLoop::CreateTimer() | CreateTimer in %u\n", ms.count());
+
 	//Create timer
 	auto timer = std::make_shared<TimerImpl>(*this,repeat,callback);
 	
 	//Get next
-	auto next = this->GetNow() + ms;
+	auto next = this->Now() + ms;
 	
 	//Add it async
 	Async([this,timer,next](auto now){
@@ -418,7 +420,7 @@ void EventLoop::TimerImpl::Again(const std::chrono::milliseconds& ms)
 	//UltraDebug(">EventLoop::Again() | Again triggered in %u\n",ms.count());
 	
 	//Get next
-	auto next = loop.GetNow() + ms;
+	auto next = loop.Now() + ms;
 	
 	//Reschedule it async
 	loop.Async([timer = shared_from_this(),next](auto now){
@@ -442,8 +444,10 @@ void EventLoop::TimerImpl::Repeat(const std::chrono::milliseconds& repeat)
 
 void EventLoop::TimerImpl::Reschedule(const std::chrono::milliseconds& ms, const std::chrono::milliseconds& repeat)
 {
+	//UltraDebug(">EventLoop::TimerImpl::Reschedule() | in %u repeat %u\n", ms.count(), repeat.count());
+
 	//Get next
-	auto next = loop.GetNow() + ms;
+	auto next = loop.Now() + ms;
 
 	//Reschedule it async
 	loop.Async([timer = shared_from_this(), next, repeat](auto now){
@@ -454,7 +458,7 @@ void EventLoop::TimerImpl::Reschedule(const std::chrono::milliseconds& ms, const
 		timer->next = next;
 		//Update repeat interval
 		timer->repeat = repeat;
-
+		
 		//Add to timer list
 		timer->loop.timers.emplace(next, timer);
 	});
@@ -812,9 +816,10 @@ void EventLoop::ProcessTriggers(const std::chrono::milliseconds& now)
 	//Now process all timers triggered
 	for (auto timer : triggered)
 	{
-		//UltraDebug(">EventLoop::Run() | timer [%s] triggered at ll%u\n",timer->GetName().c_str(),now.count());
 		//Get scheduled time
 		auto scheduled = timer->next;
+
+		//UltraDebug(">EventLoop::Run() | timer [%s] triggered at ll%u scheduled at %lld\n",timer->GetName().c_str(),now.count(),scheduled.count());
 	
 		//We are executing
 		timer->next = 0ms;
@@ -841,3 +846,4 @@ void EventLoop::ProcessTriggers(const std::chrono::milliseconds& now)
 	}
 	TRACE_EVENT_END("eventloop");
 }
+
