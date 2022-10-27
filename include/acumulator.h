@@ -34,7 +34,7 @@ public:
 	uint64_t GetDiff()		const { return last - first;			}
 	uint32_t GetWindow()		const { return window;				}
 	bool  IsInWindow()		const { return inWindow;			}
-	bool  IsInMinMaxWindow()	const { return inWindow && min!=(uint64_t)-1;	}
+	bool  IsInMinMaxWindow()	const { return inWindow && min!= std::numeric_limits<T>::max();	}
 	long double GetInstantMedia()	const { return GetCount() ? GetInstant()/GetCount() : 0;	}
 	long double GetInstantAvg()	const { return GetInstant()*base/GetWindow();			}
 	long double GetAverage()	const { return GetDiff() ? GetAcumulated()*base/GetDiff() : 0;	}
@@ -52,7 +52,7 @@ public:
 		instant = 0;
 		acumulated = 0;
 		max = 0;
-		min = std::numeric_limits<uint64_t>::max();
+		min = std::numeric_limits<T>::max();
 		first = now;
 		last = 0;
 		inWindow = false;
