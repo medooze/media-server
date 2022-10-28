@@ -288,7 +288,7 @@ StreamType GetStreamType(const uint8_t& streamId)
 		return PrivateStream2;
 	else if (streamId >= 0xC0 && streamId <= 0xDF)
 		return AudioStream;
-	else if (streamId >= 0xE0 || streamId <= 0xEF)
+	else if (streamId >= 0xE0 && streamId <= 0xEF)
 		return VideoStream;
 	else
 		return Invalid;
