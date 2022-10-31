@@ -41,12 +41,12 @@
 #include "Endpoint.h"
 #include "VideoLayerSelector.h"
 
-constexpr auto IceTimeout = 30000ms;
-constexpr auto ProbingInterval = 10ms;
-constexpr auto MaxRTXOverhead = 0.50f;
-constexpr auto TransportWideCCMaxPackets = 100;
-constexpr auto TransportWideCCMaxInterval = 5E4;	//50ms
-constexpr auto MaxProbingHistorySize = 20;
+constexpr auto IceTimeout			= 30000ms;
+constexpr auto ProbingInterval			= 5ms;
+constexpr auto MaxRTXOverhead			= 0.50f;
+constexpr auto TransportWideCCMaxPackets	= 100;
+constexpr auto TransportWideCCMaxInterval	= 5E4;	//50ms
+constexpr auto MaxProbingHistorySize		= 50;
 
 DTLSICETransport::DTLSICETransport(Sender *sender,TimeService& timeService, ObjectPool<Packet>& packetPool) :
 	sender(sender),
@@ -2753,7 +2753,7 @@ void DTLSICETransport::Probe(QWORD now)
 		if (bitrate<limit && probing<maxProbingBitrate)
 		{
 			//Calculate how much probe bitrate should we sent
-			DWORD probe = std::min<DWORD>(limit + probing - bitrate, maxProbingBitrate);
+			DWORD probe = std::min<DWORD>(limit - bitrate, maxProbingBitrate);
 
 			//Get size of probes
 			DWORD probeSize = probe*sleep/8000;
