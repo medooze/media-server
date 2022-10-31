@@ -92,6 +92,8 @@ public:
 
 	RTPOutgoingSourceGroup* GetOutgoingSourceGroup() { return &send; }
 	RTPIncomingSourceGroup* GetIncomingSourceGroup() { return &recv; }
+
+	TimeService& GetTimeService() { return transport.GetTimeService(); }
 public:	
 	virtual void onRemotePeer(const char* ip, const short port);
 	virtual void onRTPPacket(const BYTE* buffer, DWORD size);

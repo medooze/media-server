@@ -1,7 +1,9 @@
 #include "SimulcastMediaFrameListener.h"
 
+constexpr uint32_t FrameWaitingTime = 300; // Time that we wait until all frames for all the layers are received before doing layer selection.
 
-SimulcastMediaFrameListener::SimulcastMediaFrameListener(DWORD ssrc, DWORD numLayers) :
+SimulcastMediaFrameListener::SimulcastMediaFrameListener(TimeService& timeService, DWORD ssrc, DWORD numLayers) :
+	timeService(timeService),
 	ssrc(ssrc),
 	numLayers(numLayers)
 {
@@ -15,30 +17,35 @@ SimulcastMediaFrameListener::~SimulcastMediaFrameListener()
 void SimulcastMediaFrameListener::AddMediaListener(MediaFrame::Listener* listener)
 {
 	Debug("-MediaFrameListenerBridge::AddListener() [listener:%p]\n", listener);
-	ScopedLock lock(mutex);
-	listeners.insert(listener);
+	
+	timeService.Sync([=](std::chrono::milliseconds){
+		listeners.insert(listener);
+	});
 }
 
 void SimulcastMediaFrameListener::RemoveMediaListener(MediaFrame::Listener* listener)
 {
 	Debug("-MediaFrameListenerBridge::RemoveListener() [listener:%p]\n", listener);
-	ScopedLock lock(mutex);
-	listeners.erase(listener);
+	timeService.Sync([=](std::chrono::milliseconds){
+		listeners.erase(listener);
+	});
 }
 
 void SimulcastMediaFrameListener::Stop()
 {
-	//Select last frame
-	Select();
-	//Lock
-	ScopedLock lock(mutex);
-	//Clear listeners
-	listeners.clear();
+	timeService.Sync([=](std::chrono::milliseconds) {
+		//Select last frame
+		Select();
+		//Clear listeners
+		listeners.clear();
+	});
 }
 
 void SimulcastMediaFrameListener::SetNumLayers(DWORD numLayers)
 {
-	this->numLayers = numLayers;
+	timeService.Sync([=](std::chrono::milliseconds) {
+		this->numLayers = numLayers;
+	});
 }
 
 void SimulcastMediaFrameListener::Select()
@@ -147,6 +154,8 @@ void SimulcastMediaFrameListener::onMediaFrame(DWORD ssrc, const MediaFrame& fra
 		//If it is the first one
 		if (iframes.empty())
 			//Start selection from now
+			//TODO: Create a timer so selection happens timely even if no further frame is recieved. 
+			//TODO: Currently pending frames will be deleivered on Stop() it no other frames are received.
 			selectionTime = frame.GetTime();
 		//Move cloned frame to the pending frames for selection
 		auto res = iframes.try_emplace(ssrc, std::move(cloned));
@@ -155,7 +164,7 @@ void SimulcastMediaFrameListener::onMediaFrame(DWORD ssrc, const MediaFrame& fra
 			//Buffer it
 			pendingFrames.push_back({ ssrc, std::move(cloned) });
 		//If we have enough I frames or we timed out waiting
-		if (iframes.size() == numLayers || (frameTime > selectionTime + 100))
+		if (iframes.size() == numLayers || (frameTime > selectionTime + FrameWaitingTime))
 			//Do simulcast layer selection
 			Select();
 		//Done
@@ -169,7 +178,7 @@ void SimulcastMediaFrameListener::onMediaFrame(DWORD ssrc, const MediaFrame& fra
 		pendingFrames.push_back({ ssrc, std::move(cloned) });
 
 		// If we have enough timed out waiting
-		if (frameTime > selectionTime + 100)
+		if (frameTime > selectionTime + FrameWaitingTime)
 			//Don't wait for other layers and force layer selection
 			Select();
 
@@ -202,7 +211,6 @@ void SimulcastMediaFrameListener::ForwardFrame(VideoFrame& frame)
 
 	//Debug
 	//UltraDebug("-SimulcastMediaFrameListener::ForwardFrame() | Forwarding frame [ts:%llu]\n", frame.GetTimestamp());
-	ScopedLock lock(mutex);
 	//Send it to all listeners
 	for (const auto listener : listeners)
 		//Send cloned frame
