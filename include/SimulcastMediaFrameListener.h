@@ -4,6 +4,7 @@
 #include "media.h"
 #include "use.h"
 #include "video.h"
+#include "TimeService.h"
 
 #include <map>
 #include <memory>
@@ -13,7 +14,7 @@ class SimulcastMediaFrameListener :
 	public MediaFrame::Listener
 {
 public:
-	SimulcastMediaFrameListener(DWORD ssrc, DWORD numLayers);
+	SimulcastMediaFrameListener(TimeService& timeService,DWORD ssrc, DWORD numLayers);
 	virtual ~SimulcastMediaFrameListener();
 
 	void SetNumLayers(DWORD numLayers);
@@ -29,6 +30,7 @@ private:
 	void Select();
 	void ForwardFrame(VideoFrame& frame);
 private:
+	TimeService& timeService;
 	DWORD ssrc = 0;
 	DWORD numLayers = 0;
 	DWORD extSeqNum = 0;
