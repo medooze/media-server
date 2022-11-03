@@ -89,7 +89,7 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 		headerLength = 2;
 	else
 		//ERROR
-		return Error("-RTPHeaderExtension::Parse() | Magic cookie not found");
+		return Error("-RTPHeaderExtension::Parse() | Magic cookie not found\n");
 	
 	//Get length
 	WORD length = get2(data,2)*4;
@@ -97,7 +97,7 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 	//Ensure we have enought
 	if (size<length+4u)
 		//ERROR
-		return Error("-RTPHeaderExtension::Parse() | Not enought data");
+		return Error("-RTPHeaderExtension::Parse() | Not enought data\n");
   
 	//Loop
 	WORD i = 0;
