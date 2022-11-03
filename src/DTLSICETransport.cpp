@@ -2688,6 +2688,9 @@ void DTLSICETransport::Stop()
 	//Stop
 	endpoint.Close();
 	dtls.Stop();
+
+	//No active candiadte
+	active = nullptr;
 	
 	//Not started anymore
 	started = false;

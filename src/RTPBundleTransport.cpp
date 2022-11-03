@@ -203,6 +203,9 @@ int RTPBundleTransport::RemoveICETransport(const std::string &username)
 		//Get connection 
 		Connection* connection = connectionIterator->second;
 
+		//Stop transport first, to prevent using active candidate after it is deleted afterwards
+		connection->transport->Stop();
+
 		//REmove connection
 		connections.erase(connectionIterator);
 
@@ -214,9 +217,6 @@ int RTPBundleTransport::RemoveICETransport(const std::string &username)
 			//Remove from all candidates list
 			candidates.erase(candidate->GetRemoteAddress());
 		}
-	
-		//Stop transport
-		connection->transport->Stop();
 
 		//Delete connection wrapper and transport
 		delete(connection->transport);
