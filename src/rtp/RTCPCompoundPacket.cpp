@@ -86,7 +86,7 @@ RTCPCompoundPacket::shared RTCPCompoundPacket::Parse(const BYTE *data,DWORD size
 			return NULL;
 		}
 		//Check len
-		if (header.length>bufferLen)
+		if (header.length>bufferLen || header.length==0)
 		{
 			//error
 			Warning("Wrong rtcp packet size [headerLen:%d,bufferLen:%d]\n", header.length, bufferLen);
