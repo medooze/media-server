@@ -540,7 +540,7 @@ void RTPStreamTransponder::onBye(RTPIncomingMediaStream* stream)
 
 void RTPStreamTransponder::onEnded(RTPIncomingMediaStream* stream)
 {
-	timeService.Sync([=](auto){
+	timeService.Async([=](auto){
 		//IF it is the current one
 		if (this->incoming == stream)
 		{
@@ -560,7 +560,7 @@ void RTPStreamTransponder::onEnded(RTPIncomingMediaStream* stream)
 }
 void RTPStreamTransponder::onEnded(RTPOutgoingSourceGroup* group)
 {
-	timeService.Sync([=](auto) {
+	timeService.Async([=](auto) {
 		//IF it is the current one
 		if (this->outgoing == group)
 			//No more outgoing
