@@ -81,9 +81,9 @@ public:
 	BYTE  GetCodec()		const { return codec;				}
 	
 	BYTE* AdquireMediaData();
-	const BYTE* GetMediaData()	const { return payload->GetMediaData();		}
-	DWORD GetMediaLength()		const { return payload->GetMediaLength();	}
-	DWORD GetMaxMediaLength()	const { return payload->GetMaxMediaLength();	}
+	const BYTE* GetMediaData()	const { return payload ? payload->GetMediaData()	: nullptr;	}
+	DWORD GetMediaLength()		const { return payload ? payload->GetMediaLength()	: 0; 		}
+	DWORD GetMaxMediaLength()	const { return payload ? payload->GetMaxMediaLength()	: 0;		}
 	
 	bool  GetMark()			const { return header.mark;			}
 	DWORD GetTimestamp()		const { return header.timestamp;		}
