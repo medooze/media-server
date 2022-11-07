@@ -34,7 +34,6 @@ private:
 	DWORD ssrc = 0;
 	DWORD numLayers = 0;
 	DWORD extSeqNum = 0;
-	Mutex mutex;
 	std::set<MediaFrame::Listener*> listeners;
 	std::map<DWORD, std::unique_ptr<VideoFrame>> iframes;
 	std::vector<std::pair<DWORD,std::unique_ptr<VideoFrame>>> pendingFrames;
