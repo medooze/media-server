@@ -102,12 +102,16 @@ void ActiveSpeakerMultiplexer::RemoveIncomingSourceGroup(RTPIncomingMediaStream*
 		return;
 
 	timeService.Sync([=](const auto& now) {
+		Debug("-ActiveSpeakerMultiplexer::RemoveIncomingSourceGroup() async [incoming:%p]\n", incoming);
 		//Find source
 		auto it = sources.find(incoming);
 		//check it was not present
 		if (it==sources.end())
+		{
+			Debug("-ActiveSpeakerMultiplexer::RemoveIncomingSourceGroup() async not found[incoming:%p]\n", incoming);
 			//Do nothing, probably called onEnded before
 			return;
+		}
 		//Remove us from listeners
 		incoming->RemoveListener(this);
 		//Get source id
@@ -128,6 +132,7 @@ void ActiveSpeakerMultiplexer::RemoveIncomingSourceGroup(RTPIncomingMediaStream*
 				destination.sourceId = 0;
 				destination.ts = 0;
 				//Log
+				//Log
 				Debug("-ActiveSpeakerMultiplexer::RemoveIncomingSourceGroup() | onActiveSpeakerRemoved [multiplexId:%d]\n", destination.id);
 			}
 		}
@@ -144,51 +149,59 @@ void ActiveSpeakerMultiplexer::onRTP(RTPIncomingMediaStream* stream, const std::
 }
 void ActiveSpeakerMultiplexer::onRTP(RTPIncomingMediaStream* incoming, const RTPPacket::shared& packet)
 {
-	
-	//Double check we have audio level
-	if (!packet->HasAudioLevel())
+	//Log
+	//Debug("-ActiveSpeakerMultiplexer::onRTP() [ssrc:%d,seqnum:%u]\n", packet->GetSSRC(), packet->GetSeqNum());
+
+	if (!packet)
+		//Exit
 		return;
 
-	//Get vad level
-	auto vad = packet->GetVAD();
-	auto db	 = packet->GetLevel();
-	auto now = getTimeMS();
-
-	//Check voice is detected and not muted
-	auto speaking = vad && db != 127 && (!noiseGatingThreshold || db < noiseGatingThreshold);
-
-	//Debug("-ActiveSpeakerMultiplexer::onRTP() [vad:%d,db:%d,speaking:%d]\n", vad,db,speaking);
-
-	//Accumulate only if audio has been detected 
-	if (speaking)
-	{
-		//Get incoming source
-		auto it = sources.find(incoming);
-		//check it was present
-		if (it == sources.end())
-			//Do nothing
+	timeService.Async([=, packet = packet](auto) {
+		//Double check we have audio level
+		if (!packet->HasAudioLevel())
 			return;
 
-		// The audio level is expressed in -dBov, with values from 0 to 127
-		// representing 0 to -127 dBov. dBov is the level, in decibels, relative
-		// to the overload point of the system.
-		// The audio level for digital silence, for example for a muted audio
-		// source, MUST be represented as 127 (-127 dBov).
-		WORD level = 64 + (127 - db) / 2;
+		//Get vad level
+		auto vad = packet->GetVAD();
+		auto db	 = packet->GetLevel();
+		auto now = getTimeMS();
 
-		//Get time diff from last score, we consider 1s as max to coincide with initial bump
-		uint64_t diff = std::min(now - it->second.ts, (uint64_t)1000ul);
+		//Check voice is detected and not muted
+		auto speaking = vad && db != 127 && (!noiseGatingThreshold || db < noiseGatingThreshold);
+
+		//Debug("-ActiveSpeakerMultiplexer::onRTP() [vad:%d,db:%d,speaking:%d]\n", vad,db,speaking);
+
+		//Accumulate only if audio has been detected 
+		if (speaking)
+		{
+			//Get incoming source
+			auto it = sources.find(incoming);
+			//check it was present
+			if (it == sources.end())
+				//Do nothing
+				return;
+
+			// The audio level is expressed in -dBov, with values from 0 to 127
+			// representing 0 to -127 dBov. dBov is the level, in decibels, relative
+			// to the overload point of the system.
+			// The audio level for digital silence, for example for a muted audio
+			// source, MUST be represented as 127 (-127 dBov).
+			WORD level = 64 + (127 - db) / 2;
+
+			//Get time diff from last score, we consider 1s as max to coincide with initial bump
+			uint64_t diff = std::min(now - it->second.ts, (uint64_t)1000ul);
 		
-		//Do not accumulate too much so we can switch faster
-		it->second.score = std::min(it->second.score + diff * level / ScorePerMiliScond, maxAcummulatedScore);
-		//Set last update time
-		it->second.ts = now;
-		//Add packets for forwarding in case it is selected for multiplex
-		it->second.packets.push_back(packet);
+			//Do not accumulate too much so we can switch faster
+			it->second.score = std::min(it->second.score + diff * level / ScorePerMiliScond, maxAcummulatedScore);
+			//Set last update time
+			it->second.ts = now;
+			//Add packets for forwarding in case it is selected for multiplex
+			it->second.packets.push_back(packet);
 
-		//Log
-		//Debug("-ActiveSpeakerMultiplexer::onRTP() Accumulate [id:%u,vad:%d,dbs:%u,score:%lu]\n",it->second.id,vad,db,it->second.score);
-	}
+			//Log
+			//Debug("-ActiveSpeakerMultiplexer::onRTP() Accumulate [id:%u,vad:%d,dbs:%u,score:%lu]\n",it->second.id,vad,db,it->second.score);
+		}
+	});
 }
 
 void ActiveSpeakerMultiplexer::onBye(RTPIncomingMediaStream* group)
@@ -202,31 +215,39 @@ void ActiveSpeakerMultiplexer::onEnded(RTPIncomingMediaStream* incoming)
 	if (!incoming)
 		return;
 
-	//Find source
-	auto it = sources.find(incoming);
-	//check it was not present
-	if (it == sources.end())
-		//Do nothing, probably called onEnded before
-		return;
-	//Get source id
-	auto sourceId = it->second.id;
-	//Remove it
-	sources.erase(it);
-	//For each destination transpoder
-	for (auto& [transponder, destination] : destinations)
-	{
-		//If attached to it
-		if (destination.sourceId == sourceId)
+	timeService.Async([=](auto) {
+
+		Debug("-ActiveSpeakerDetectorFacade::onEnded() async [incoming:%p]\n", incoming);
+
+		//Find source
+		auto it = sources.find(incoming);
+		//check it was not present
+		if (it == sources.end())
 		{
-			//Event
-			listener->onActiveSpeakerRemoved(destination.id);
-			//Reset source id and timestamp
-			destination.sourceId = 0;
-			destination.ts = 0;
-			//Log
-			Debug("-ActiveSpeakerMultiplexer::RemoveIncomingSourceGroup() | onActiveSpeakerRemoved [multiplexId:%d]\n", destination.id);
+			Debug("-ActiveSpeakerMultiplexer::onEnded() async not found[incoming:%p]\n", incoming);
+			//Do nothing, probably called onEnded before
+			return;
 		}
-	}
+		//Get source id
+		auto sourceId = it->second.id;
+		//Remove it
+		sources.erase(it);
+		//For each destination transpoder
+		for (auto& [transponder, destination] : destinations)
+		{
+			//If attached to it
+			if (destination.sourceId == sourceId)
+			{
+				//Event
+				listener->onActiveSpeakerRemoved(destination.id);
+				//Reset source id and timestamp
+				destination.sourceId = 0;
+				destination.ts = 0;
+				//Log
+				Debug("-ActiveSpeakerMultiplexer::onEnded() | onActiveSpeakerRemoved [multiplexId:%d]\n", destination.id);
+			}
+		}
+	});
 }
 
 void ActiveSpeakerMultiplexer::Process(uint64_t now)
