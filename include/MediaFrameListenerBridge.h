@@ -48,7 +48,6 @@ public:
 	DWORD ssrc = 0;
 	DWORD extSeqNum = 0;
 	bool  smooth = true;
-	Mutex mutex;
 	std::set<RTPIncomingMediaStream::Listener*> listeners;
         std::set<MediaFrame::Listener*> mediaFrameListenerss;
 	volatile bool reset	= false;
