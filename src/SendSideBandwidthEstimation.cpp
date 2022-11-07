@@ -399,12 +399,14 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 		double confidenceAmplifier = 1 + std::log(consecutiveChanges+1);
 		//Get rate change
 		int64_t rateChange = std::max<uint64_t>(totalRecvBitrate * confidenceAmplifier * kSamplingStep, kMinRateChangeBps);
-		//bwe to converge to target bitrate
-		bandwidthEstimation = bandwidthEstimation * 0.90 + targetBitrate * 0.10;
+		//If target bitrate is higher than bwe
+		if (targetBitrate > bandwidthEstimation)
+			//bwe to converge to target bitrate
+			bandwidthEstimation = bandwidthEstimation * 0.90 + targetBitrate * 0.10;
 		//If there was enough data
 		if (totalRecvAcumulator.IsInWindow())
 			//Calcuate new estimation
-			targetBitrate = std::min(bandwidthEstimation, totalRecvBitrate) + rateChange;
+			targetBitrate = std::max(bandwidthEstimation, totalRecvBitrate) + rateChange;
 	}	 
 
 	//If rtt increasing
