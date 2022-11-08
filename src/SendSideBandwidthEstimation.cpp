@@ -335,8 +335,10 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 		if (totalRecvAcumulator.IsInWindow())
 			//Take maximum of the spike and current value
 			bandwidthEstimation = std::max<uint64_t>(bandwidthEstimation, totalRecvBitrate);
-		//Decrease target bitrate
-		targetBitrate = std::min<uint32_t>(bandwidthEstimation, totalRecvBitrate);
+		//If there was enough data
+		if (totalRecvAcumulator.IsInWindow())
+			//Decrease target bitrate
+			targetBitrate = std::min<uint32_t>(bandwidthEstimation, totalRecvBitrate);
 	} else if (state == ChangeState::Initial) {
 		//If first state 
 		if (!lastChange)
@@ -360,7 +362,14 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 		int64_t rateChange = std::max<uint64_t>(bandwidthEstimation * confidenceAmplifier * kInitialRampUp, kMinRateChangeBps);
 		//Increase
 		targetBitrate = std::min(targetBitrate, bandwidthEstimation) + rateChange;
-	} else if (state==ChangeState::Congestion || state == ChangeState::OverShoot || state == ChangeState::Loosy) {
+	} else if  (state == ChangeState::OverShoot) {
+		//Increase again
+		SetState(ChangeState::Increase);
+		//If bitrate is higher than bwe
+		if (totalSentBitrate > bandwidthEstimation)
+			//bwe to converge to target bitrate
+			bandwidthEstimation = bandwidthEstimation * 0.90 + totalSentBitrate * 0.10;
+	} else if (state==ChangeState::Congestion || state == ChangeState::Loosy) {
 		//We are going to conservatively reach the previous estimation again
 		SetState(ChangeState::Recovery);
 	} else if (mediaSentBitrate > targetBitrate) {
@@ -399,10 +408,10 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 		double confidenceAmplifier = 1 + std::log(consecutiveChanges+1);
 		//Get rate change
 		int64_t rateChange = std::max<uint64_t>(totalRecvBitrate * confidenceAmplifier * kSamplingStep, kMinRateChangeBps);
-		//If target bitrate is higher than bwe
-		if (targetBitrate > bandwidthEstimation)
+		//If bitrate is higher than bwe
+		if (totalSentBitrate > bandwidthEstimation)
 			//bwe to converge to target bitrate
-			bandwidthEstimation = bandwidthEstimation * 0.90 + targetBitrate * 0.10;
+			bandwidthEstimation = bandwidthEstimation * 0.90 + totalSentBitrate * 0.10;
 		//If there was enough data
 		if (totalRecvAcumulator.IsInWindow())
 			//Calcuate new estimation
