@@ -246,7 +246,7 @@ HeaderExtension HeaderExtension::Parse(BufferReader& reader)
 	}
 
 	//Read DTS
-	if (headerExtension.ptsdtsIndicator == Both || headerExtension.ptsdtsIndicator == OnlyPTS)
+	if (headerExtension.ptsdtsIndicator == Both)
 	{
 		if (reader.GetLeft() < 5)
 			throw std::runtime_error("Not enought data to read mpegtsp pes extension header DTS");
