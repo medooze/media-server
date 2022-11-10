@@ -80,9 +80,7 @@ void MediaFrameListenerBridge::RemoveListener(RTPIncomingMediaStream::Listener* 
 
 void MediaFrameListenerBridge::onMediaFrame(const MediaFrame& frame)
 {
-	timeService.Async([=,cloned = frame.Clone()](auto now){
-		
-		std::unique_ptr<MediaFrame> frame(cloned);
+	timeService.Async([=, frame = std::shared_ptr<MediaFrame>(frame.Clone())] (auto now){
 		
 		//Multiplex
 		for (auto listener : mediaFrameListenerss)
