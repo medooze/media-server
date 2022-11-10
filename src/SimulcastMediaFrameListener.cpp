@@ -57,6 +57,37 @@ void SimulcastMediaFrameListener::Select()
 	DWORD currentDimensions = 0;
 	DWORD currentSize = 0;
 
+	//Check if there was only iframe,  
+	if (iframes.size() == 1)
+	{
+		bool forwardedLayerAlive = false;
+		//Could be a bug on the encoder sending iframes on individual layer, check if we have frames from the current selected layer
+		for (auto& [ssrc, pending] : pendingFrames)
+		{
+			//If the frame is from the forwarded simulcast layer
+			if (ssrc == forwarded)
+			{
+				//The layer is still alive
+				forwardedLayerAlive = true;
+				//Forward frame
+				ForwardFrame(*pending);
+			}
+		}
+
+		//If it forwarded layer was still active
+		if (forwardedLayerAlive)
+		{
+			//Not selecting
+			selectionTime = 0;
+			//Clear pending frames
+			pendingFrames.clear();
+			//Clear pending frames from the rest of the streams
+			pendingFrames.clear();
+			//Done
+			return;
+		}
+	}
+
 	//For all pending frames
 	for (const auto& [ssrc, videoFrame] : iframes)
 	{
