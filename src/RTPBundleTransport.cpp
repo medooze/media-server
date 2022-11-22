@@ -473,9 +473,9 @@ int RTPBundleTransport::End()
 	return 1;
 }
 
-int RTPBundleTransport::Send(const ICERemoteCandidate* candidate, Packet&& buffer)
+int RTPBundleTransport::Send(const ICERemoteCandidate* candidate, Packet&& buffer, std::optional<std::function<void(std::chrono::milliseconds)>> callback)
 {
-	loop.Send(candidate->GetIPAddress(),candidate->GetPort(),std::move(buffer),candidate->GetRawTxData());
+	loop.Send(candidate->GetIPAddress(),candidate->GetPort(),std::move(buffer),candidate->GetRawTxData(), callback);
 	return 1;
 }
 

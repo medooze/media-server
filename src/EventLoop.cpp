@@ -13,6 +13,7 @@
 #include <signal.h>
 #include <sched.h>
 #include <pthread.h>
+#include <cmath>
 
 #include "log.h"
 
@@ -294,7 +295,7 @@ bool EventLoop::Stop()
 	
 }
 
-void EventLoop::Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet, const std::optional<PacketHeader::FlowRoutingInfo>& rawTxData)
+void EventLoop::Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet, const std::optional<PacketHeader::FlowRoutingInfo>& rawTxData, const std::optional<std::function<void(std::chrono::milliseconds)>>& callback)
 {
 	TRACE_EVENT("eventloop", "EventLoop::Send", "packet_size", packet.GetSize());
 
@@ -327,7 +328,7 @@ void EventLoop::Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet
 	}
 	
 	//Create send packet
-	SendBuffer send = {ipAddr, port, rawTxData, std::move(packet)};
+	SendBuffer send = {ipAddr, port, rawTxData, std::move(packet), std::move(callback)};
 	
 	//Move it back to sending queue
 	sending.enqueue(std::move(send));
@@ -693,6 +694,9 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 				sendmmsg(sendFd, messages, len, flags);
 			}
 			
+			//Update now
+			now = Now();
+
 			//First
 			auto it = items.begin();
 			//Retry
@@ -706,6 +710,10 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 					//Retry it
 					retry.emplace_back(std::move(*it));
 				} else {
+					//If we had a callback
+					if (it->callback)
+						//Set sending time
+						it->callback.value()(now);
 					//Move packet buffer back to the pool
 					packetPool.release(std::move(it->packet));
 				}
@@ -839,6 +847,10 @@ void EventLoop::ProcessTriggers(const std::chrono::milliseconds& now)
 			//UltraDebug("-EventLoop::Run() | timer rescheduled\n");
 			//Set next
 			timer->next = scheduled + timer->repeat;
+			//If the event loop has frozen and the next one is still in the past
+			if (timer->next<now)
+				//Set it to the next one in the future
+				timer->next = timer->next + std::chrono::duration_cast<std::chrono::milliseconds>(std::ceil((now - timer->next) / timer->repeat) * timer->repeat);
 			//Schedule
 			timers.emplace(timer->next, timer);
 		}

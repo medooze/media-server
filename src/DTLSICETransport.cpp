@@ -57,7 +57,8 @@ DTLSICETransport::DTLSICETransport(Sender *sender,TimeService& timeService, Obje
 	incomingBitrate(250),
 	outgoingBitrate(250),
 	rtxBitrate(250),
-	probingBitrate(250)
+	probingBitrate(250),
+	senderSideBandwidthEstimator(new SendSideBandwidthEstimation())
 {
 }
 
@@ -692,8 +693,29 @@ DWORD DTLSICETransport::SendProbe(const RTPPacket::shared& original)
 
 	//Set buffer size
 	buffer.SetSize(len);
-	//No error yet, send packet
-	sender->Send(candidate,std::move(buffer));
+
+	//Check if we are using transport wide for this packet
+	if (packet->HasTransportWideCC() && senderSideEstimationEnabled)
+		//Send packet and update stats in callback
+		sender->Send(candidate, std::move(buffer), [
+				weak = std::weak_ptr<SendSideBandwidthEstimation>(senderSideBandwidthEstimator),
+				stats = PacketStats::CreateProbing(packet, len, now)
+			](std::chrono::milliseconds now) {
+				//Get shared pointer from weak reference
+				auto senderSideBandwidthEstimator = weak.lock();
+				//If already gone
+				if (!senderSideBandwidthEstimator)
+					//Ignore
+					return;
+				//Update sent timestamp
+				stats->timestamp = now.count();
+				//Add new stat
+				senderSideBandwidthEstimator->SentPacket(stats);
+			}
+		);
+	else
+		//Send packet
+		sender->Send(candidate, std::move(buffer));
 	
 	//Update current time after sending
 	now = getTime();
@@ -703,17 +725,6 @@ DWORD DTLSICETransport::SendProbe(const RTPPacket::shared& original)
 	//Update last send time and stats
 	source.Update(now/1000, packet, len);
 	
-	//Add to transport wide stats
-	if (packet->HasTransportWideCC() && senderSideEstimationEnabled)
-	{
-		//Create stats
-		auto stats = PacketStats::Create(packet,len,now);
-		//It is probe
-		stats->probing = true;
-		//Add new stat
-		senderSideBandwidthEstimator.SentPacket(stats);
-	}
-
 	//Log("-DTLSICETransport::SendProbe() |  Sent probe [size:%d]\n", len);
 
 	return len;
@@ -863,8 +874,36 @@ DWORD DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 	ICERemoteCandidate* candidate = active;
 	//Set buffer size
 	buffer.SetSize(len);
-	//No error yet, send packet
-	sender->Send(candidate,std::move(buffer));
+
+	if(extension.hasTransportWideCC && senderSideEstimationEnabled)
+		//Send packet and update stats in callback
+		sender->Send(candidate, std::move(buffer),[
+			weak = std::weak_ptr<SendSideBandwidthEstimation>(senderSideBandwidthEstimator),
+			stats = PacketStats::CreateProbing(
+				extension.transportSeqNum,
+				header.ssrc,
+				extSeqNum,
+				len,
+				0,
+				header.timestamp,
+				now,
+				false
+			)](std::chrono::milliseconds now) {
+				//Get shared pointer from weak reference
+				auto senderSideBandwidthEstimator = weak.lock();
+				//If already gone
+				if (!senderSideBandwidthEstimator)
+					//Ignore
+					return;
+				//Update sent timestamp
+				stats->timestamp = now.count();
+				//Add new stat
+				senderSideBandwidthEstimator->SentPacket(stats);
+			}
+		);
+	else
+		//Send packet
+		sender->Send(candidate,std::move(buffer));
 	
 	//Update now
 	now = getTime();
@@ -873,27 +912,7 @@ DWORD DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 	
 	//Update last send time and stats
 	source.Update(now/1000, header, len);
-	
-	//Add to transport wide stats
-	if (extension.hasTransportWideCC && senderSideEstimationEnabled)
-	{
-		//Create stat
-		auto stats = PacketStats::Create(
-			extension.transportSeqNum,
-			header.ssrc,
-			extSeqNum,
-			len,
-			0,
-			header.timestamp,
-			now,
-			false
-		);
-		//It is probe
-		stats->probing = true;
-		//Add new stat
-		senderSideBandwidthEstimator.SentPacket(stats);
-	}
-	
+
 	return len;
 }
 
@@ -917,12 +936,12 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	if (senderSideEstimationEnabled && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC) != RTPMap::NotFound)
 	{
 		//Get target bitrate
-		DWORD targetBitrate = senderSideBandwidthEstimator.GetTargetBitrate();
+		DWORD targetBitrate = senderSideBandwidthEstimator->GetTargetBitrate();
 	
 		//Check if we are sending way to much bitrate
 		if (targetBitrate && rtxBitrate.GetInstantAvg()*8 > targetBitrate * MaxRTXOverhead)
 			//Error
-			return (void)UltraDebug("-DTLSICETransport::ReSendPacket() | Too much bitrate on rtx, skiping rtx:%lld estimated:%u target:%d\n",(uint64_t)(rtxBitrate.GetInstantAvg()*8), senderSideBandwidthEstimator.GetEstimatedBitrate(), targetBitrate);
+			return (void)UltraDebug("-DTLSICETransport::ReSendPacket() | Too much bitrate on rtx, skiping rtx:%lld estimated:%u target:%d\n",(uint64_t)(rtxBitrate.GetInstantAvg()*8), senderSideBandwidthEstimator->GetEstimatedBitrate(), targetBitrate);
 	}
 	
 	//Find packet to retransmit
@@ -1041,6 +1060,30 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	buffer.SetSize(len);
 	//No error yet, send packet
 	sender->Send(candidate,std::move(buffer));
+
+	//Check if we are using transport wide for this packet
+	if (packet->HasTransportWideCC() && senderSideEstimationEnabled)
+		//Send packet and update stats in callback
+		sender->Send(candidate, std::move(buffer), [
+			weak = std::weak_ptr<SendSideBandwidthEstimation>(senderSideBandwidthEstimator),
+				stats = PacketStats::CreateRTX(packet, len, now)
+				](std::chrono::milliseconds now) {
+				//Get shared pointer from weak reference
+				auto senderSideBandwidthEstimator = weak.lock();
+				//If already gone
+				if (!senderSideBandwidthEstimator)
+					//Ignore
+					return;
+				//Update sent timestamp
+				stats->timestamp = now.count();
+				//Add new stat
+				senderSideBandwidthEstimator->SentPacket(stats);
+			}
+		);
+	else
+		//Send packet
+		sender->Send(candidate, std::move(buffer));
+
 	
 	//Update current time after sending
 	now = getTime();
@@ -1050,17 +1093,6 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	
 	//Update stats
 	source.Update(now/1000, packet, len);
-	
-	//Check if we are using transport wide for this packet
-	if (packet->HasTransportWideCC() && senderSideEstimationEnabled)
-	{
-		//Create stats
-		auto stats = PacketStats::Create(packet,len,now);
-		//It is rtx
-		stats->rtx = true;
-		//Add new stat
-		senderSideBandwidthEstimator.SentPacket(stats);
-	} 
 }
 
 void  DTLSICETransport::ActivateRemoteCandidate(ICERemoteCandidate* candidate,bool useCandidate, DWORD priority)
@@ -1390,12 +1422,12 @@ int DTLSICETransport::Dump(const char* filename, bool inbound, bool outbound, bo
 
 int DTLSICETransport::DumpBWEStats(const char* filename)
 {
-	return senderSideBandwidthEstimator.Dump(filename);
+	return senderSideBandwidthEstimator->Dump(filename);
 }
 
 int DTLSICETransport::StopDumpBWEStats()
 {
-	return senderSideBandwidthEstimator.StopDump();
+	return senderSideBandwidthEstimator->StopDump();
 }
 
 
@@ -2116,8 +2148,29 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 	//Set buffer size
 	buffer.SetSize(len);
 
-	//No error yet, send packet
-	sender->Send(candidate,std::move(buffer));
+	//Check if we are using transport wide for this packet
+	if (packet->HasTransportWideCC() && senderSideEstimationEnabled)
+		//Send packet and update stats in callback
+		sender->Send(candidate, std::move(buffer), [
+				weak = std::weak_ptr<SendSideBandwidthEstimation>(senderSideBandwidthEstimator),
+				stats = PacketStats::Create(packet, len, now)
+			](std::chrono::milliseconds now) {
+				//Get shared pointer from weak reference
+				auto senderSideBandwidthEstimator = weak.lock();
+				//If already gone
+				if (!senderSideBandwidthEstimator)
+					//Ignore
+					return;
+				//Update sent timestamp
+				stats->timestamp = now.count();
+				//Add new stat
+				senderSideBandwidthEstimator->SentPacket(stats);
+			}
+		);
+	else
+		//Send packet
+		sender->Send(candidate, std::move(buffer));
+
 	//Get time
 	now = getTime();
 	//Update bitrate
@@ -2134,15 +2187,6 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 	bitrate   = static_cast<DWORD>(source.acumulator.GetInstantAvg()*8);
 	estimated = source.remb;
 	probing	  = static_cast<DWORD>(probingBitrate.GetInstantAvg()*8);
-
-	//Check if we are using transport wide for this packet
-	if (packet->HasTransportWideCC() && senderSideEstimationEnabled)
-	{
-		//Create stats
-		auto stats = PacketStats::Create(packet,len,now);
-		//Add new stat
-		senderSideBandwidthEstimator.SentPacket(stats);
-	}
 	
 	//Check if we need to send SR (1 per second)
 	if (now-source.lastSenderReport>1E6)
@@ -2378,7 +2422,7 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 								//Get field
 								auto field = fb->GetField<RTCPRTPFeedback::TransportWideFeedbackMessageField>(i);
 								//Pass it to the estimator
-								senderSideBandwidthEstimator.ReceivedFeedback(field->feedbackPacketCount,field->packets,now);
+								senderSideBandwidthEstimator->ReceivedFeedback(field->feedbackPacketCount,field->packets,now);
 							}
 						break;
 				}
@@ -2566,7 +2610,7 @@ void DTLSICETransport::SetRTT(DWORD rtt, QWORD now)
 	//If sse is enabled
 	if (senderSideEstimationEnabled)
 		//Add estimation
-		senderSideBandwidthEstimator.UpdateRTT(now,rtt);
+		senderSideBandwidthEstimator->UpdateRTT(now,rtt);
 }
 
 void DTLSICETransport::SendTransportWideFeedbackMessage(DWORD ssrc)
@@ -2747,7 +2791,7 @@ void DTLSICETransport::Probe(QWORD now)
 		//Get bitrates
 		DWORD bitrate		= static_cast<DWORD>(outgoingBitrate.GetInstantAvg()*8);
 		DWORD probing		= static_cast<DWORD>(probingBitrate.GetInstantAvg()*8);
-		DWORD target		= senderSideBandwidthEstimator.GetAvailableBitrate();
+		DWORD target		= senderSideBandwidthEstimator->GetAvailableBitrate();
 		DWORD limit		= std::min(target, probingBitrateLimit);
 
 		//Log(">DTLSICETransport::Probe() | [target:%ubps,bitrate:%ubps,probing:%ubps,history:%d,probingBitrateLimit=%ubps,maxProbingBitrate=%ubps]\n",target,bitrate,probing,history.size(),probingBitrateLimit,maxProbingBitrate);

@@ -98,7 +98,7 @@ public:
 	virtual Timer::shared CreateTimer(const std::chrono::milliseconds& ms, const std::chrono::milliseconds& repeat, std::function<void(std::chrono::milliseconds)> timeout) override;
 	virtual std::future<void> Async(std::function<void(std::chrono::milliseconds)> func) override;
 	
-	void Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet, const std::optional<PacketHeader::FlowRoutingInfo>& rawTxData = std::nullopt);
+	void Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet, const std::optional<PacketHeader::FlowRoutingInfo>& rawTxData = std::nullopt, const std::optional<std::function<void(std::chrono::milliseconds)>>& callback = std::nullopt);
 	void Run(const std::chrono::milliseconds &duration = std::chrono::milliseconds::max());
 	
 	void SetRawTx(const FileDescriptor &fd, const PacketHeader& header, const PacketHeader::FlowRoutingInfo& defaultRoute);
@@ -135,18 +135,20 @@ private:
 		{
 		}
 		
-		SendBuffer(uint32_t ipAddr, uint16_t port, const std::optional<PacketHeader::FlowRoutingInfo>& rawTxData, Packet&& packet) :
+		SendBuffer(uint32_t ipAddr, uint16_t port, const std::optional<PacketHeader::FlowRoutingInfo>& rawTxData, Packet&& packet, std::optional<std::function<void(std::chrono::milliseconds)>> callback) :
 			ipAddr(ipAddr),
 			port(port),
+			packet(std::move(packet)),
 			rawTxData(rawTxData),
-			packet(std::move(packet))
+			callback(std::move(callback))
 		{
 		}
 		SendBuffer(SendBuffer&& other) :
 			ipAddr(other.ipAddr),
 			port(other.port),
+			packet(std::move(other.packet)),
 			rawTxData(other.rawTxData),
-			packet(std::move(other.packet))
+			callback(std::move(other.callback))
 		{
 		}
 		SendBuffer& operator=(SendBuffer&&) = default;
@@ -156,8 +158,10 @@ private:
 		
 		uint32_t ipAddr;
 		uint16_t port;
-		std::optional<PacketHeader::FlowRoutingInfo> rawTxData;
 		Packet   packet;
+		std::optional<PacketHeader::FlowRoutingInfo> rawTxData;
+		std::optional<std::function<void(std::chrono::milliseconds)>> callback;
+		
 	};
 	static const size_t MaxSendingQueueSize;
 	static const size_t MaxMultipleSendingMessages;

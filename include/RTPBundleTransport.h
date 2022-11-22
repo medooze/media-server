@@ -55,7 +55,7 @@ public:
 	int GetLocalPort() const { return port; }
 	int AddRemoteCandidate(const std::string& username,const char* ip, WORD port);
 	void SetCandidateRawTxData(const std::string& ip, uint16_t port, uint32_t selfAddr, const std::string& dstLladdr);
-	virtual int Send(const ICERemoteCandidate* candidate,Packet&& buffer) override;
+	virtual int Send(const ICERemoteCandidate* candidate,Packet&& buffer, std::optional<std::function<void(std::chrono::milliseconds)>> callback = std::nullopt) override;
 	
 	virtual void OnRead(const int fd, const uint8_t* data, const size_t size, const uint32_t ip, const uint16_t port) override;
 	

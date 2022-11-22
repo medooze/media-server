@@ -59,7 +59,7 @@ public:
 	class Sender
 	{
 	public:
-		virtual int Send(const ICERemoteCandidate *candiadte, Packet&& buffer) = 0;
+		virtual int Send(const ICERemoteCandidate *candiadte, Packet&& buffer, std::optional<std::function<void(std::chrono::milliseconds)>> callback = std::nullopt) = 0;
 	};
 
 public:
@@ -97,9 +97,9 @@ public:
 	void SetMaxProbingBitrate(DWORD bitrate);
 	void SetProbingBitrateLimit(DWORD bitrate);
 	void EnableSenderSideEstimation(bool enabled);
-	void SetSenderSideEstimatorListener(RemoteRateEstimator::Listener* listener) { senderSideBandwidthEstimator.SetListener(listener); }
+	void SetSenderSideEstimatorListener(RemoteRateEstimator::Listener* listener) { senderSideBandwidthEstimator->SetListener(listener); }
 
-	uint32_t GetAvailableOutgoingBitrate() const	{ return senderSideBandwidthEstimator.GetAvailableBitrate(); }
+	uint32_t GetAvailableOutgoingBitrate() const	{ return senderSideBandwidthEstimator->GetAvailableBitrate(); }
 
 	void SetRemoteOverrideBWE(bool overrideBew);
 	void SetRemoteOverrideBitrate(DWORD bitrate);
@@ -210,7 +210,7 @@ private:
 	QWORD 	initTime = 0;
 	volatile bool started = false;
 	
-	SendSideBandwidthEstimation senderSideBandwidthEstimator;
+	std::shared_ptr<SendSideBandwidthEstimation> senderSideBandwidthEstimator;
 	Timer::shared sseTimer;
 
 	bool overrideBWE = false;
