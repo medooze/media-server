@@ -202,7 +202,7 @@ void SimulcastMediaFrameListener::onMediaFrame(DWORD ssrc, const MediaFrame& fra
 		return;
 	}
 
-	//Check if we are selecting
+	//Check if we are selecting and we have already an iframe for that 
 	if (selectionTime)
 	{
 		//Buffer it
