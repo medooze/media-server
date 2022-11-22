@@ -135,12 +135,12 @@ private:
 		{
 		}
 		
-		SendBuffer(uint32_t ipAddr, uint16_t port, const std::optional<PacketHeader::FlowRoutingInfo>& rawTxData, Packet&& packet, std::optional<std::function<void(std::chrono::milliseconds)>> callback) :
+		SendBuffer(uint32_t ipAddr, uint16_t port, const std::optional<PacketHeader::FlowRoutingInfo>& rawTxData, Packet&& packet, const std::optional<std::function<void(std::chrono::milliseconds)>>& callback) :
 			ipAddr(ipAddr),
 			port(port),
 			packet(std::move(packet)),
 			rawTxData(rawTxData),
-			callback(std::move(callback))
+			callback(callback)
 		{
 		}
 		SendBuffer(SendBuffer&& other) :
@@ -148,7 +148,7 @@ private:
 			port(other.port),
 			packet(std::move(other.packet)),
 			rawTxData(other.rawTxData),
-			callback(std::move(other.callback))
+			callback(other.callback)
 		{
 		}
 		SendBuffer& operator=(SendBuffer&&) = default;
@@ -165,6 +165,7 @@ private:
 	};
 	static const size_t MaxSendingQueueSize;
 	static const size_t MaxMultipleSendingMessages;
+	static const size_t MaxMultipleReceivingMessages;
 	static const size_t PacketPoolSize;
 private:
 	std::thread	thread;

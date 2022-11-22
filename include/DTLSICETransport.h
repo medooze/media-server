@@ -59,7 +59,7 @@ public:
 	class Sender
 	{
 	public:
-		virtual int Send(const ICERemoteCandidate *candiadte, Packet&& buffer, std::optional<std::function<void(std::chrono::milliseconds)>> callback = std::nullopt) = 0;
+		virtual int Send(const ICERemoteCandidate *candiadte, Packet&& buffer, const std::optional<std::function<void(std::chrono::milliseconds)>>& callback = std::nullopt) = 0;
 	};
 
 public:

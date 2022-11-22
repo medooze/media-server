@@ -1058,8 +1058,6 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 
 	//Set buffer size
 	buffer.SetSize(len);
-	//No error yet, send packet
-	sender->Send(candidate,std::move(buffer));
 
 	//Check if we are using transport wide for this packet
 	if (packet->HasTransportWideCC() && senderSideEstimationEnabled)

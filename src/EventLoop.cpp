@@ -25,6 +25,7 @@ const size_t EventLoop::PacketPoolSize = 1024;
 #include <mach/mach.h>
 #include <mach/thread_policy.h>
 const size_t EventLoop::MaxMultipleSendingMessages = 1;
+const size_t EventLoop::MaxMultipleReceivingMessages = 1;
 
 struct mmsghdr
 {
@@ -39,11 +40,20 @@ struct mmsghdr
 		 ret += (msgvec[len].msg_len = sendmsg(sockfd, &msgvec[len].msg_hdr, flags ))>0;
 	 return ret;
  }
+
+ int recvmmsg(int sockfd, struct mmsghdr* msgvec, unsigned int vlen, int flags, struct timespec* timeout);
+ {
+	 int ret = 0;
+	 for (unsigned int len = 0; len < vlen; ++len)
+		 ret += (msgvec[len].msg_len = sendmsg(sockfd, &msgvec[len].msg_hdr, flags)) > 0;
+	 return ret;
+ }
 #else
 #include <linux/errqueue.h>
 #include <sys/eventfd.h>
 
 const size_t EventLoop::MaxMultipleSendingMessages = 128;
+const size_t EventLoop::MaxMultipleReceivingMessages = 128;
 
 cpu_set_t* alloc_cpu_set(size_t* size) {
 	// the CPU set macros don't handle cases like my Azure VM, where there are 2 cores, but 128 possible cores (why???)
@@ -328,7 +338,7 @@ void EventLoop::Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet
 	}
 	
 	//Create send packet
-	SendBuffer send = {ipAddr, port, rawTxData, std::move(packet), std::move(callback)};
+	SendBuffer send = {ipAddr, port, rawTxData, std::move(packet), callback};
 	
 	//Move it back to sending queue
 	sending.enqueue(std::move(send));
@@ -530,14 +540,8 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 	//Log(">EventLoop::Run() | [%p,running:%d,duration:%llu]\n",this,running,duration.count());
 	
 	//Recv data
-	uint8_t data[MTU] ZEROALIGNEDTO32;
+	uint8_t datas[MaxMultipleReceivingMessages][MTU] ZEROALIGNEDTO32;
 	size_t  size = MTU;
-	struct sockaddr_in from = {};
-	
-	//Multiple messages struct
-	struct mmsghdr messages[MaxMultipleSendingMessages] = {};
-	struct sockaddr_in tos[MaxMultipleSendingMessages] = {};
-	struct iovec iovs[MaxMultipleSendingMessages][1] = {};
 	
 	//UDP send flags
 	uint32_t flags = MSG_DONTWAIT;
@@ -604,29 +608,61 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 		//Read first
 		if (ufds[0].revents & POLLIN)
 		{
+			struct sockaddr_in froms[MaxMultipleReceivingMessages] = {};
+			struct mmsghdr messages[MaxMultipleReceivingMessages] = {};
+			struct iovec iovs[MaxMultipleReceivingMessages][1] = {};
+
 			TRACE_EVENT("eventloop", "EventLoop::Run::ProcessIn");
 			//UltraDebug("-EventLoop::Run() | ufds[0].revents & POLLIN\n");
-			//Len
-			uint32_t fromLen = sizeof(from);
-			//Leemos del socket
-			ssize_t len = recvfrom(fd,data,size,MSG_DONTWAIT,(sockaddr*)&from,&fromLen);
-			//If error
-			if (len<=0)
-				UltraDebug("-EventLoop::Run() | recvfrom error [len:%d,errno:%d\n",len,errno);
+
+			//Reserve space
+			items.reserve(MaxMultipleSendingMessages);
+
+			//For each msg
+			for (size_t i = 0; i < MaxMultipleReceivingMessages; i++)
+			{	
+				//IO buffer
+				auto& iov = iovs[i];
+				iov[0].iov_base = datas[i];
+				iov[0].iov_len = size;
+
+				//Recv address
+				sockaddr_in& from = froms[i];
+
+				//Message
+				auto& message = messages[i].msg_hdr;
+				message.msg_name = (sockaddr*)&from;
+				message.msg_namelen = sizeof(from);
+				message.msg_iov = iov;
+				message.msg_iovlen = 1;
+				message.msg_control = 0;
+				message.msg_controllen = 0;
+			}
+
+			//Read from socket
+			int len = recvmmsg(fd, messages, MaxMultipleReceivingMessages, flags, nullptr);
+
 			//If we got listener
-			else if (listener)
-				//Run callback
-				listener->OnRead(ufds[0].fd,data,len,ntohl(from.sin_addr.s_addr),ntohs(from.sin_port));
+			if (listener)
+				//for each one
+				for (int i = 0; i < len && i < MaxMultipleReceivingMessages; i++)
+					//double check
+					if (messages[i].msg_len)
+						//Run callback
+						listener->OnRead(ufds[0].fd, datas[i], messages[i].msg_len, ntohl(froms[i].sin_addr.s_addr), ntohs(froms[i].sin_port));
 		}
 		
 		//Check read is possible
 		if (ufds[0].revents & POLLOUT)
 		{
+			//Multiple messages struct
+			struct mmsghdr messages[MaxMultipleSendingMessages] = {};
+			struct sockaddr_in tos[MaxMultipleSendingMessages] = {};
+			struct iovec iovs[MaxMultipleSendingMessages][1] = {};
+
 			TRACE_EVENT("eventloop", "EventLoop::Run::ProcessOut");
 			//UltraDebug("-EventLoop::Run() | ufds[0].revents & POLLOUT\n");
 
-			//Reserve space
-			items.reserve(MaxMultipleSendingMessages);
 			
 			//Now send all that we can
 			while (items.size()<MaxMultipleSendingMessages)
@@ -710,12 +746,12 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 					//Retry it
 					retry.emplace_back(std::move(*it));
 				} else {
+					//Move packet buffer back to the pool
+					packetPool.release(std::move(it->packet));
 					//If we had a callback
 					if (it->callback)
 						//Set sending time
 						it->callback.value()(now);
-					//Move packet buffer back to the pool
-					packetPool.release(std::move(it->packet));
 				}
 			}
 			//Clear items

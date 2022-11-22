@@ -6,7 +6,7 @@
 #include <cstring>
 #include "Buffer.h"
 
-class Packet : public Buffer
+class Packet
 {
 private:
 	static const DWORD PREFIX = 200;
@@ -16,7 +16,9 @@ public:
 	{
 		Reset();
 	};
-	~Packet() {};
+	~Packet() 
+	{
+	};
 
 
 	void Reset()
@@ -32,11 +34,26 @@ public:
 		}
 	}
 
-	Packet(const Packet&)		 = delete;
-	Packet(Packet&&)		 = default;
+	Packet(const Packet&) = delete;
+	Packet(Packet&& other)  noexcept
+	{
+		this->buffer = std::move(other.buffer);
+		this->data = other.data;
+		this->size = other.size;
+		other.data = nullptr;
+		other.size = 0;
+	}
 
 	Packet& operator=(Packet const&) = delete;
-	Packet& operator=(Packet&&)	 = default;
+	Packet& operator=(Packet&& other) noexcept
+	{
+		this->buffer = std::move(other.buffer);
+		this->data = other.data;
+		this->size = other.size;
+		other.data = nullptr;
+		other.size = 0;
+		return *this;
+	}
 
 
 	uint8_t* GetData()		const { return data; }
