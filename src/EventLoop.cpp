@@ -45,7 +45,7 @@ struct mmsghdr
  {
 	 int ret = 0;
 	 for (unsigned int len = 0; len < vlen; ++len)
-		 ret += (msgvec[len].msg_len = sendmsg(sockfd, &msgvec[len].msg_hdr, flags)) > 0;
+		 ret += (msgvec[len].msg_len = recvmsg(sockfd, &msgvec[len].msg_hdr, flags)) > 0;
 	 return ret;
  }
 #else
