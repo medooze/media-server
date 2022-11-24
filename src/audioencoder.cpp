@@ -10,10 +10,9 @@
 #include "log.h"
 #include "tools.h"
 #include "audio.h"
-#include "g711/g711codec.h"
-#include "gsm/gsmcodec.h"
 #include "audioencoder.h"
 #include "AudioCodecFactory.h"
+#include "opus/opusconfig.h"
 
 
 /**********************************
@@ -183,6 +182,16 @@ int AudioEncoderWorker::Encode()
 	
 	//Create audio frame
 	AudioFrame frame(audioCodec);
+
+	//If it is opus
+	if (audioCodec == AudioCodec::OPUS)
+	{
+		//Create opus config
+		OpusConfig config(numChannels, rate);
+
+		//Serialize config and add it to frame
+		config.Serialize(frame.AllocateCodecConfig(config.GetSize()), frame.GetCodecConfigSize());
+	}
 	
 	//Disable shared buffer on clone
 	frame.DisableSharedBuffer();
@@ -211,57 +220,65 @@ int AudioEncoderWorker::Encode()
 			numChannels = audioInput->GetNumChannels();
 			//Set new channel count on codec
 			codec->TrySetRate(rate, numChannels);
+
+			//If it is opus
+			if (audioCodec == AudioCodec::OPUS)
+			{
+				//Create opus config
+				OpusConfig config(numChannels,rate);
+
+				//Serialize config and add it to frame
+				config.Serialize(frame.AllocateCodecConfig(config.GetSize()), frame.GetCodecConfigSize());
+			}
 		}
 
-		//Check codec
-		if (codec)
+
+		//Lo codificamos
+		int len = codec->Encode(recBuffer,codec->numFrameSamples,frame.GetData(),frame.GetMaxMediaLength());
+
+		//Comprobamos que ha sido correcto
+		if(len<=0)
 		{
-			//Lo codificamos
-			int len = codec->Encode(recBuffer,codec->numFrameSamples,frame.GetData(),frame.GetMaxMediaLength());
-
-			//Comprobamos que ha sido correcto
-			if(len<=0)
-			{
-				Log("-AudioEncoderWorker::Encode() | Error encoding audio\n");
-				continue;
-			}
-
-			//Set frame length
-			frame.SetLength(len);
-
-			//Set frame timestamp
-			frame.SetTimestamp(frameTime);
-			//Set time
-			frame.SetTime(frameTime*1000/codec->GetClockRate());
-			//Set frame duration
-			frame.SetDuration(codec->numFrameSamples);
-			//Set number of channels
-			frame.SetNumChannels(numChannels);
-
-			//Clear rtp
-			frame.ClearRTPPacketizationInfo();
-			
-			//Add rtp packet
-			frame.AddRtpPacket(0,len,NULL,0);
-		 
-			//Lock
-			pthread_mutex_lock(&mutex);
-
-			//For each listener
-			for (Listeners::iterator it=listeners.begin(); it!=listeners.end(); ++it)
-			{
-				//Get listener
-				MediaFrame::Listener* listener =  *it;
-				//If was not null
-				if (listener)
-					//Call listener
-					listener->onMediaFrame(frame);
-			}
-
-			//unlock
-			pthread_mutex_unlock(&mutex);
+			Log("-AudioEncoderWorker::Encode() | Error encoding audio\n");
+			continue;
 		}
-		
+
+		//Set frame length
+		frame.SetLength(len);
+
+		//Set frame timestamp
+		frame.SetTimestamp(frameTime);
+		//Set time
+		frame.SetTime(frameTime*1000/codec->GetClockRate());
+		//Set frame duration
+		frame.SetDuration(codec->numFrameSamples);
+		//Set number of channels
+		frame.SetNumChannels(numChannels);
+
+		//Clear rtp
+		frame.ClearRTPPacketizationInfo();
+			
+		//Add rtp packet
+		frame.AddRtpPacket(0,len,NULL,0);
+
+			
+		 
+		//Lock
+		pthread_mutex_lock(&mutex);
+
+		//For each listener
+		for (Listeners::iterator it=listeners.begin(); it!=listeners.end(); ++it)
+		{
+			//Get listener
+			MediaFrame::Listener* listener =  *it;
+			//If was not null
+			if (listener)
+				//Call listener
+				listener->onMediaFrame(frame);
+		}
+
+		//unlock
+		pthread_mutex_unlock(&mutex);
 	}
 
 	Debug("-AudioEncoderWorker::Encode() | cleanup[%d]\n",encodingAudio);
