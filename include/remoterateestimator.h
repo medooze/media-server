@@ -22,7 +22,7 @@ public:
 		virtual ~Listener(){};
 	public:
 		//Interface
-		virtual void onTargetBitrateRequested(DWORD bitrate) = 0;
+		virtual void onTargetBitrateRequested(DWORD bitrate, DWORD bandwidthEstimation) = 0;
 	};
 public:
 	enum State {

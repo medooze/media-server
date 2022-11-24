@@ -51,7 +51,7 @@ public:
 	DWORD GetMaxWaitedTime()		const { return maxWaitedTime;	}
 	long double GetAvgWaitedTime()		const {	return avgWaitedTime;	}
 	
-	virtual void onTargetBitrateRequested(DWORD bitrate) override;
+	virtual void onTargetBitrateRequested(DWORD bitrate, DWORD bandwidthEstimation) override;
 private:
 	void DispatchPackets(QWORD time);
 public:	

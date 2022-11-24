@@ -487,7 +487,7 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 		//	when - lastChange
 		//);
 		//Call listener	
-		listener->onTargetBitrateRequested(availableRate);
+		listener->onTargetBitrateRequested(availableRate, bandwidthEstimation);
 		//Upddate last changed time
 		lastChange = when;
 	}

@@ -1086,7 +1086,7 @@ void RTPSession::SetRTT(DWORD rtt,QWORD now)
 	UltraDebug("-RTPSession::SetRTT(%s) | [%dms,nack:%d]\n",MediaFrame::TypeToString(media),rtt,isNACKEnabled);
 }
 
-void RTPSession::onTargetBitrateRequested(DWORD bitrate)
+void RTPSession::onTargetBitrateRequested(DWORD bitrate, DWORD bandwidthEstimation)
 {
 	//If not using RTCp
 	if (!useRTCP)
