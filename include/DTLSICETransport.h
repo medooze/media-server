@@ -100,6 +100,7 @@ public:
 	void SetSenderSideEstimatorListener(RemoteRateEstimator::Listener* listener) { senderSideBandwidthEstimator->SetListener(listener); }
 
 	uint32_t GetAvailableOutgoingBitrate() const	{ return senderSideBandwidthEstimator->GetAvailableBitrate(); }
+	uint32_t GetEstimatedOutgoingBitrate() const    { return senderSideBandwidthEstimator->GetEstimatedBitrate(); }
 
 	void SetRemoteOverrideBWE(bool overrideBew);
 	void SetRemoteOverrideBitrate(DWORD bitrate);
