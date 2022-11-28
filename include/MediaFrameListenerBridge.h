@@ -8,6 +8,8 @@
 
 #include <queue>
 
+using namespace std::chrono_literals;
+
 class MediaFrameListenerBridge :
 	public MediaFrame::Listener,
 	public RTPIncomingMediaStream
@@ -37,13 +39,13 @@ public:
 	void Stop();
 
 private:
-	void Dispatch(const RTPPacket::shared& pacekt);
+	void Dispatch(const std::vector<RTPPacket::shared>& packet);
         
 public:
 	TimeService& timeService;
 	Timer::shared dispatchTimer;
 
-	std::queue<std::pair<RTPPacket::shared,uint32_t>> packets;
+	std::queue<std::pair<RTPPacket::shared, std::chrono::milliseconds>> packets;
 
 	DWORD ssrc = 0;
 	DWORD extSeqNum = 0;
@@ -66,7 +68,7 @@ public:
 	Acumulator<uint32_t, uint64_t> accumulatorPackets;
 
 	
-	
+	std::chrono::milliseconds lastSent = 0ms;
 	
 	DWORD minWaitedTime	= 0;
 	DWORD maxWaitedTime	= 0;

@@ -18,30 +18,45 @@ MediaFrameListenerBridge::MediaFrameListenerBridge(TimeService& timeService,DWOR
 {
 	Debug("-MediaFrameListenerBridge::MediaFrameListenerBridge() [this:%p]\n", this);
 
-	//If we are doing bitrate smoothing
-	if (smooth)
-	{
-		//Create packet dispatch timer
-		dispatchTimer = timeService.CreateTimer([=](auto now){
-			//If there are no pending packets
-			if (packets.empty())
-				//Done
-				return;
+	//Create packet dispatch timer
+	dispatchTimer = timeService.CreateTimer([=](auto now){
 
+		//Get how much should we send
+		auto period = lastSent!=0ms && now >= lastSent ? now - lastSent : 10ms;
+
+		//Updated last dispatched 
+		lastSent = now;
+
+		//Packets to send during the period
+		std::vector<RTPPacket::shared> sending;
+
+		//Amount of time for the packets
+		auto accumulated = 0ms;
+
+		//Until no mor pacekts or full period
+		while (packets.size() && period >= accumulated)
+		{
 			//Get first packet to send
-			auto& [packet,duration] = packets.front();
-
-			//Dispatch RTP packet
-			Dispatch(packet);
-
-			//remove it
+			const auto& [packet,duration] = packets.front();
+			//Increase accumulated time
+			accumulated += duration;
+			//Add to sending packets
+			sending.push_back(packet);
+			//remove it from pending packets
 			packets.pop();
+		}
 
+		//UltraDebug("-MediaFrameListenerBridge::dispatchTimer() [queue:%d,sending:%d,period:%llu,accumulated:%llu,next:%d,smooth:%d]\n", packets.size(), sending.size(), period.count(), accumulated.count(), packets.size() && accumulated > period ? (accumulated - period).count(): -1, this->smooth);
+
+		//Dispatch RTP packets
+		Dispatch(sending);
+
+		//If we have packets in the queue
+		if (packets.size() && accumulated > period)
 			//Reschedule
-			dispatchTimer->Again(std::chrono::milliseconds(duration));
-		});
-		dispatchTimer->SetName("MediaFrameListenerBridge::dispatchTimer");
-	}
+			dispatchTimer->Again(std::chrono::milliseconds(accumulated - period));
+	});
+	dispatchTimer->SetName("MediaFrameListenerBridge::dispatchTimer");
 }
 
 MediaFrameListenerBridge::~MediaFrameListenerBridge()
@@ -86,16 +101,26 @@ void MediaFrameListenerBridge::onMediaFrame(const MediaFrame& frame)
 		for (auto listener : mediaFrameListenerss)
 			listener->onMediaFrame(*frame);
 
-		//For all pending packets
-		while(!packets.empty())
+		//Dispatch any pending packet now
+		std::vector<RTPPacket::shared> sending;
+		//Remove all packets
+		while (packets.size())
 		{
-			//Get first
-			auto& [packet, duration] = packets.front();
-			//Dipatch it
-			Dispatch(packet);
-			//remove
+			//Get first packet to send
+			const auto& [packet, duration] = packets.front();
+			//Add to sending packets
+			sending.push_back(packet);
+			//remove it from pending packets
 			packets.pop();
 		}
+		//Dispatch RTP packets
+		Dispatch(sending);
+
+		//Updated last dispatched 
+		lastSent = now;
+
+		//Dispatch packets again
+		dispatchTimer->Again(0ms);
 
 		//Check
 		if (!frame->HasRtpPacketizationInfo())
@@ -190,16 +215,14 @@ void MediaFrameListenerBridge::onMediaFrame(const MediaFrame& frame)
 			firstTimestamp = frame->GetTimeStamp();
 		}
 
-		DWORD frameLength = 0;
 		//Calculate total length
+		uint32_t pendingLength = 0;
 		for (size_t i=0;i<info.size();i++)
 			//Get total length
-			frameLength += info[i].GetTotalLength();
-
-		DWORD current = 0;
+			pendingLength += info[i].GetTotalLength();
 
 		//Calculate each packet duration
-		uint32_t frameDuration = frame->GetDuration() * 1000 / rate;
+		uint32_t pendingDuration = frame->GetDuration() * 1000 / rate;
 
 		//For each one
 		for (size_t i=0;i<info.size();i++)
@@ -235,8 +258,7 @@ void MediaFrameListenerBridge::onMediaFrame(const MediaFrame& frame)
 			else
 				//No last
 				packet->SetMark(false);
-			//Calculate partial lenght
-			current += rtp.GetPrefixLen()+rtp.GetSize();
+			
 
 			//Increase stats
 			numPackets++;
@@ -253,34 +275,28 @@ void MediaFrameListenerBridge::onMediaFrame(const MediaFrame& frame)
 				//Set it in the rtp packet
 				packet->config = frame->GetCodecConfig();
 
-			//If doing smooting
-			if (smooth)
-			{
-				//calculate packet duration based on relative size to keep bitrate smooth
-				const uint32_t packetDuration = std::max<uint32_t>(frameDuration * packet->GetMediaLength() / frameLength,1);
+			//calculate packet duration based on relative size to keep bitrate smooth
+			const uint32_t packetDuration = smooth ? pendingDuration * info[i].GetTotalLength() / pendingLength : 0;
 
-				//Log("-%d %d %dms %d %dms\n", extSeqNum-1, frameLength, frameDuration, packet->GetMediaLength(), packetDuration);
+			//UltraDebug("-%d %d %dms %d %dms\n", extSeqNum-1, pendingLength, packetDuration, info[i].GetTotalLength(), packetDuration);
 
-				//Insert it
-				packets.emplace(packet,packetDuration);
-			} else {
-				Dispatch(packet);
-			}
+			//Insert it
+			packets.emplace(packet,packetDuration);
+
+			//Recalcualte pending
+			pendingLength -= info[i].GetTotalLength();
+			pendingDuration -= packetDuration;
+
 		}
-	
-		//If doing smoothing
-		if (smooth)
-			//Dispatch first packet now
-			dispatchTimer->Again(0ms);
 	});
 }
 
-void MediaFrameListenerBridge::Dispatch(const RTPPacket::shared& packet)
+void MediaFrameListenerBridge::Dispatch(const std::vector<RTPPacket::shared>& packets)
 {
-	if (!muted)
+	if (!muted && packets.size())
 		//Dispatch it
 		for (auto listener : listeners)
-			listener->onRTP(this, packet);
+			listener->onRTP(this, packets);
 }
 
 void MediaFrameListenerBridge::Reset()
