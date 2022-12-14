@@ -60,12 +60,14 @@ DTLSICETransport::DTLSICETransport(Sender *sender,TimeService& timeService, Obje
 	probingBitrate(250),
 	senderSideBandwidthEstimator(new SendSideBandwidthEstimation())
 {
+	Debug(">DTLSICETransport::DTLSICETransport() [this:%p]\n", this);
 }
 
 DTLSICETransport::~DTLSICETransport()
 {
-	//Reset & stop
-	Reset();
+	Debug(">DTLSICETransport::~DTLSICETransport() [this:%p,started:%d\n", this, started);
+	
+	//Stop
 	Stop();
 }
 
@@ -1337,7 +1339,7 @@ int DTLSICETransport::Dump(UDPDumper* dumper, bool inbound, bool outbound, bool 
 		}
 
 		//Store pcap as dumper
-		this->dumper = dumper;
+		this->dumper.reset(dumper);
 
 		//What to dumo
 		dumpInRTP		= inbound;
@@ -1364,13 +1366,10 @@ int DTLSICETransport::StopDump()
 			done = Error("-DTLSICETransport::StopDump() | Not dumping\n");
 			return;
 		}
-
 		//Close dumper
 		this->dumper->Close();
-		//Delete it
-		delete(this->dumper);
 		//Not dumping
-		this->dumper = nullptr;
+		this->dumper.reset();
 	});
 	//Done
 	return done;
@@ -1405,7 +1404,7 @@ int DTLSICETransport::Dump(const char* filename, bool inbound, bool outbound, bo
 			return ;
 		}
 		//Store pcap as dumper
-		this->dumper = pcap;
+		this->dumper.reset(pcap);
 
 		//What to dump
 		dumpInRTP		= inbound;
@@ -1455,7 +1454,7 @@ void DTLSICETransport::Reset()
 			//Close dumper
 			dumper->Close();
 			//Delete it
-			delete(dumper);
+			dumper.reset();
 		}
 		//No ice
 		iceLocalUsername = NULL;
@@ -2731,6 +2730,9 @@ void DTLSICETransport::Stop()
 	endpoint.Close();
 	dtls.Stop();
 
+	//End DTLS as well
+	dtls.End();
+
 	//No active candiadte
 	active = nullptr;
 	
@@ -2902,6 +2904,7 @@ void DTLSICETransport::Probe(QWORD now)
 
 void DTLSICETransport::SetListener(Listener* listener)
 {
+	Debug(">DTLSICETransport::SetListener() [this:%p,listener:%p]\n", this, listener);
 	//Add in main thread and wait
 	timeService.Sync([=](auto now){
 		//Store listener

@@ -14,7 +14,7 @@ class RTPIncomingMediaStreamMultiplexer :
 	public RTPIncomingMediaStream::Listener
 {
 public:
-	RTPIncomingMediaStreamMultiplexer(RTPIncomingMediaStream* incomingMediaStream, TimeService& timeService);
+	RTPIncomingMediaStreamMultiplexer(const RTPIncomingMediaStream::shared& incomingMediaStream, TimeService& timeService);
 	virtual ~RTPIncomingMediaStreamMultiplexer() = default;
 	virtual void AddListener(RTPIncomingMediaStream::Listener* listener) override;
 	virtual void RemoveListener(RTPIncomingMediaStream::Listener* listener) override;
@@ -29,7 +29,7 @@ public:
 	void Stop();
 private:
 	DWORD	ssrc = 0;
-	RTPIncomingMediaStream* incomingMediaStream = nullptr;
+	RTPIncomingMediaStream::shared incomingMediaStream;
 	TimeService& timeService;
 	std::set<RTPIncomingMediaStream::Listener*>  listeners;
 	volatile bool muted = false;

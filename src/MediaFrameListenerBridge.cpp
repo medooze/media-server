@@ -232,7 +232,7 @@ void MediaFrameListenerBridge::onMediaFrame(const MediaFrame& frame)
 			const MediaFrame::RtpPacketization& rtp = info[i];
 
 			//Create rtp packet
-				auto packet = std::make_shared<RTPPacket>(frame->GetType(),codec);
+			auto packet = std::make_shared<RTPPacket>(frame->GetType(),codec);
 
 			//Make sure it is enought length
 			if (rtp.GetTotalLength()>packet->GetMaxMediaLength())

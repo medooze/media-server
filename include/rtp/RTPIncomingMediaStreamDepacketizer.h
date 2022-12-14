@@ -12,7 +12,7 @@ class RTPIncomingMediaStreamDepacketizer :
 	public RTPIncomingMediaStream::Listener
 {
 public:
-	RTPIncomingMediaStreamDepacketizer(RTPIncomingMediaStream* incomingSource);
+	RTPIncomingMediaStreamDepacketizer(const RTPIncomingMediaStream::shared& incomingSource);
 	virtual ~RTPIncomingMediaStreamDepacketizer();
 	
 	void onRTP(RTPIncomingMediaStream* group,const RTPPacket::shared& packet) override;
@@ -26,8 +26,8 @@ public:
 	
 private:
 	std::set<MediaFrame::Listener*> listeners;
-	RTPDepacketizer* depacketizer;
-	RTPIncomingMediaStream* incomingSource;
+	std::unique_ptr<RTPDepacketizer> depacketizer;
+	RTPIncomingMediaStream::shared incomingSource;
 	TimeService &timeService;
 };
 

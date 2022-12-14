@@ -115,7 +115,7 @@ RTPBundleTransport::~RTPBundleTransport()
 	End();
 }
 
-RTPBundleTransport::Connection* RTPBundleTransport::AddICETransport(const std::string &username,const Properties& properties)
+RTPBundleTransport::Connection::shared RTPBundleTransport::AddICETransport(const std::string &username,const Properties& properties)
 {
 	TRACE_EVENT("transport", "RTPBundleTransport::AddICETransport", "username", username);
 	Log("-RTPBundleTransport::AddICETransport() | [%s]\n",username.c_str());
@@ -146,7 +146,7 @@ RTPBundleTransport::Connection* RTPBundleTransport::AddICETransport(const std::s
 	}
 	
 	//Create new ICE transport
-	DTLSICETransport *transport = new DTLSICETransport(this,loop,loop.GetPacketPool());
+	auto transport = std::make_shared<DTLSICETransport>(this,loop,loop.GetPacketPool());
 	
 	//Set SRTP protection profiles
 	std::string profiles = properties.GetProperty("srtpProtectionProfiles","");
@@ -166,7 +166,7 @@ RTPBundleTransport::Connection* RTPBundleTransport::AddICETransport(const std::s
 	transport->SetRemoteCryptoDTLS(dtls.GetProperty("setup"),dtls.GetProperty("hash"),dtls.GetProperty("fingerprint"));
 	
 	//Create connection
-	auto connection = new Connection(username,transport,properties.GetProperty("disableSTUNKeepAlive", false));
+	auto connection = std::make_shared<Connection>(username,transport,properties.GetProperty("disableSTUNKeepAlive", false));
 	
 	//Synchronized
 	loop.Async([=](auto now){
@@ -201,7 +201,7 @@ int RTPBundleTransport::RemoveICETransport(const std::string &username)
 		}
 
 		//Get connection 
-		Connection* connection = connectionIterator->second;
+		auto connection = connectionIterator->second;
 
 		//Stop transport first, to prevent using active candidate after it is deleted afterwards
 		connection->transport->Stop();
@@ -217,10 +217,6 @@ int RTPBundleTransport::RemoveICETransport(const std::string &username)
 			//Remove from all candidates list
 			candidates.erase(candidate->GetRemoteAddress());
 		}
-
-		//Delete connection wrapper and transport
-		delete(connection->transport);
-		delete(connection);
 	});
 
 	//DOne
@@ -263,7 +259,7 @@ bool RTPBundleTransport::RestartICETransport(const std::string& username, const 
 		}
 
 		//Get connection 
-		Connection* connection = connectionIterator->second;
+		auto connection = connectionIterator->second;
 
 		//REmove connection
 		connections.erase(connectionIterator);
@@ -544,8 +540,8 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 			}
 			
 			//Get ice connection
-			Connection* connection = it->second;
-			DTLSICETransport* transport = connection->transport;
+			auto connection = it->second;
+			auto transport = connection->transport;
 			
 			//Authenticate request with remote username
 			if (!stun->CheckAuthenticatedFingerPrint(data,size,transport->GetLocalPwd()))
@@ -652,8 +648,8 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 			}
 			
 			//Get ice connection
-			Connection* connection = cconnectionIterator->second;
-			DTLSICETransport* transport = connection->transport;
+			auto connection = cconnectionIterator->second;
+			auto transport = connection->transport;
 			
 			//Find candidate
 			auto candidateIterator = candidates.find(remote);
@@ -756,8 +752,8 @@ int RTPBundleTransport::AddRemoteCandidate(const std::string& username,const cha
 		}
 		
 		//Get ice connection
-		Connection* connection = it->second;
-		DTLSICETransport* transport = connection->transport;
+		auto connection = it->second;
+		auto transport = connection->transport;
 		
 		//Get remote ip:port address
 		std::string remote = ip + ":" + std::to_string(port);
@@ -782,7 +778,7 @@ int RTPBundleTransport::AddRemoteCandidate(const std::string& username,const cha
 }
 
 
-void RTPBundleTransport::SendBindingRequest(Connection* connection,ICERemoteCandidate* candidate)
+void RTPBundleTransport::SendBindingRequest(Connection::shared connection,ICERemoteCandidate* candidate)
 {
 	TRACE_EVENT("transport", "RTPBundleTransport::SendBindingRequest");
 
@@ -796,7 +792,7 @@ void RTPBundleTransport::SendBindingRequest(Connection* connection,ICERemoteCand
 	}
 
 	//Get transport
-	DTLSICETransport* transport = connection->transport;
+	auto transport = connection->transport;
 	
 	//Create transaction
 	uint32_t id	= maxTransId++;
@@ -880,7 +876,7 @@ void RTPBundleTransport::onTimer(std::chrono::milliseconds now)
 			break;
 			
 		//Get ice connection
-		Connection* connection = cconnectionIterator->second;
+		auto connection = cconnectionIterator->second;
 		
 		//Find candidate
 		auto candidateIterator = candidates.find(remote);

@@ -243,13 +243,18 @@ int AudioEncoderWorker::Encode()
 			continue;
 		}
 
+		//Reset frame data
+		frame.Reset();
+
 		//Set frame length
 		frame.SetLength(len);
-
+		
 		//Set frame timestamp
 		frame.SetTimestamp(frameTime);
-		//Set time
-		frame.SetTime(frameTime*1000/codec->GetClockRate());
+		//Set frame timestamp
+		frame.SetSenderTime(frameTime * 1000 / codec->GetClockRate());
+		//Set encoded time
+		frame.SetTime(getTime()/1000);
 		//Set frame duration
 		frame.SetDuration(codec->numFrameSamples);
 		//Set number of channels

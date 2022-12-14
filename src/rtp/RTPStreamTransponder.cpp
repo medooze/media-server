@@ -6,12 +6,12 @@
 #include "DependencyDescriptorLayerSelector.h"
 
 
-RTPStreamTransponder::RTPStreamTransponder(RTPOutgoingSourceGroup* outgoing,RTPSender* sender) :
-	timeService(outgoing->GetTimeService())
+RTPStreamTransponder::RTPStreamTransponder(const RTPOutgoingSourceGroup::shared& outgoing, const RTPSender::shared& sender) :
+	timeService(outgoing->GetTimeService()),
+	outgoing(outgoing),
+	sender(sender)
 {
 	//Store outgoing streams
-	this->outgoing = outgoing;
-	this->sender = sender;
 	ssrc = outgoing->media.ssrc;
 	
 	//Add us as listeners
@@ -20,8 +20,12 @@ RTPStreamTransponder::RTPStreamTransponder(RTPOutgoingSourceGroup* outgoing,RTPS
 	Debug("-RTPStreamTransponder() | [outgoing:%p,sender:%p,ssrc:%u]\n",outgoing,sender,ssrc);
 }
 
+bool RTPStreamTransponder::ResetIncoming()
+{
+	return SetIncoming(nullptr, nullptr);
+}
 
-bool RTPStreamTransponder::SetIncoming(RTPIncomingMediaStream* incoming, RTPReceiver* receiver, bool smooth)
+bool RTPStreamTransponder::SetIncoming(const RTPIncomingMediaStream::shared& incoming, const RTPReceiver::shared& receiver, bool smooth)
 {
 	bool res = true;
 
@@ -177,7 +181,7 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 	timeService.Async([=, packet = packet->Clone()](auto now){
 
 		//If it is from the next transitioning stream
-		if (stream == incomingNext)
+		if (stream == incomingNext.get())
 		{
 			//If it is a video packet and not an iframe
 			if (packet->GetMediaType()==MediaFrame::Video && !packet->IsKeyFrame())
@@ -199,7 +203,7 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 		}
 
 		//Check if it is from the correct stream
-		if (stream!= this->incoming)
+		if (stream != this->incoming.get())
 			//Skip
 			return;
 	
@@ -525,7 +529,7 @@ void RTPStreamTransponder::onBye(RTPIncomingMediaStream* stream)
 	timeService.Async([=](auto) {
 	
 		//If they are the not same
-		if (this->incoming!=stream)
+		if (this->incoming.get() != stream)
 			//DO nothing
 			return;
 	
@@ -538,7 +542,7 @@ void RTPStreamTransponder::onEnded(RTPIncomingMediaStream* stream)
 {
 	timeService.Async([=](auto){
 		//IF it is the current one
-		if (this->incoming == stream)
+		if (this->incoming.get() == stream)
 		{
 			//Reset packets before start listening again
 			reset = true;
@@ -547,7 +551,7 @@ void RTPStreamTransponder::onEnded(RTPIncomingMediaStream* stream)
 			this->incoming = nullptr;
 			this->receiver = nullptr;
 		//If it is the next one
-		} else if (this->incomingNext == stream) {
+		} else if (this->incomingNext.get() == stream) {
 			//No transitioning stream and receiver
 			this->incomingNext = nullptr;
 			this->receiverNext = nullptr;
@@ -558,7 +562,7 @@ void RTPStreamTransponder::onEnded(RTPOutgoingSourceGroup* group)
 {
 	timeService.Async([=](auto) {
 		//IF it is the current one
-		if (this->outgoing == group)
+		if (this->outgoing.get() == group)
 			//No more outgoing
 			this->outgoing = nullptr;
 	});

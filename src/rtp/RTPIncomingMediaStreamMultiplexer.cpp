@@ -3,7 +3,7 @@
 #include "rtp/RTPIncomingMediaStreamMultiplexer.h"
 
 	
-RTPIncomingMediaStreamMultiplexer::RTPIncomingMediaStreamMultiplexer(RTPIncomingMediaStream* incomingMediaStream,TimeService& timeService) :
+RTPIncomingMediaStreamMultiplexer::RTPIncomingMediaStreamMultiplexer(const RTPIncomingMediaStream::shared& incomingMediaStream,TimeService& timeService) :
 	incomingMediaStream(incomingMediaStream),
 	timeService(timeService)
 {
@@ -122,9 +122,9 @@ void RTPIncomingMediaStreamMultiplexer::onEnded(RTPIncomingMediaStream* stream)
 {
 	Debug("-RTPIncomingMediaStreamMultiplexer::onEnded() [stream:%p,this:%p]\n", stream, this);
 	//Check
-	if (incomingMediaStream == stream)
+	if (incomingMediaStream.get() == stream)
 		//No stream
-		incomingMediaStream = nullptr;
+		incomingMediaStream.reset();
 }
 
 void RTPIncomingMediaStreamMultiplexer::Mute(bool muting)

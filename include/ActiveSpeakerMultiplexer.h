@@ -13,12 +13,12 @@ private:
 	struct Source
 	{
 		uint32_t id;
-		RTPIncomingMediaStream* incoming = nullptr;
+		RTPIncomingMediaStream::shared incoming;
 		uint64_t score = 0;
 		uint64_t ts = 0;
 		std::vector<RTPPacket::shared> packets;
 
-		Source(uint32_t id, RTPIncomingMediaStream* incoming) :
+		Source(uint32_t id, RTPIncomingMediaStream::shared incoming) :
 			id(id),
 			incoming(incoming)
 		{
@@ -55,8 +55,8 @@ public:
 	ActiveSpeakerMultiplexer(TimeService& timeService, Listener* listener);
 	virtual ~ActiveSpeakerMultiplexer();
 
-	void AddIncomingSourceGroup(RTPIncomingMediaStream* incoming, uint32_t id);
-	void RemoveIncomingSourceGroup(RTPIncomingMediaStream* incoming);
+	void AddIncomingSourceGroup(RTPIncomingMediaStream::shared incoming, uint32_t id);
+	void RemoveIncomingSourceGroup(RTPIncomingMediaStream::shared incoming);
 
 	void AddRTPStreamTransponder(RTPStreamTransponder* transpoder, uint32_t id);
 	void RemoveRTPStreamTransponder(RTPStreamTransponder* transpoder);

@@ -44,12 +44,16 @@
 class RTPSender
 {
 public:
+	using shared = std::shared_ptr<RTPSender>;
+public:
 	virtual int Enqueue(const RTPPacket::shared& packet) = 0;
 	virtual int Enqueue(const RTPPacket::shared& packet,std::function<RTPPacket::shared(const RTPPacket::shared&)> modifier) = 0;
 };
 
 class RTPReceiver
 {
+public:
+	using shared = std::shared_ptr<RTPReceiver>;
 public:
 	virtual int SendPLI(DWORD ssrc) = 0;
 	virtual int Reset(DWORD ssrc) = 0;

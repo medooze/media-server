@@ -66,11 +66,11 @@ public:
 	
 	RTPPacket::shared GetPacket();
 	void CancelGetPacket();
-	DWORD GetNumRecvPackets()	const { return recv.media.numPackets+recv.media.numRTCPPackets;	}
-	DWORD GetNumSendPackets()	const { return send.media.numPackets+send.media.numRTCPPackets;	}
-	DWORD GetTotalRecvBytes()	const { return recv.media.totalBytes+recv.media.totalRTCPBytes;	}
-	DWORD GetTotalSendBytes()	const { return send.media.totalBytes+send.media.totalRTCPBytes;	}
-	DWORD GetLostRecvPackets()	const { return recv.media.lostPackets;			}
+	DWORD GetNumRecvPackets()	const { return recv->media.numPackets+recv->media.numRTCPPackets;	}
+	DWORD GetNumSendPackets()	const { return send->media.numPackets+send->media.numRTCPPackets;	}
+	DWORD GetTotalRecvBytes()	const { return recv->media.totalBytes+recv->media.totalRTCPBytes;	}
+	DWORD GetTotalSendBytes()	const { return send->media.totalBytes+send->media.totalRTCPBytes;	}
+	DWORD GetLostRecvPackets()	const { return recv->media.lostPackets;			}
 
 
 	MediaFrame::Type GetMediaType()	const { return media;		}
@@ -86,12 +86,12 @@ public:
 
 	int SendTempMaxMediaStreamBitrateNotification(DWORD bitrate,DWORD overhead);
 	
-	void SetTemporalMaxLimit(DWORD limit)	{ recv.remoteRateEstimator.SetTemporalMaxLimit(limit);	}
-	void SetTemporalMinLimit(DWORD limit)	{ recv.remoteRateEstimator.SetTemporalMinLimit(limit);	}
+	void SetTemporalMaxLimit(DWORD limit)	{ recv->remoteRateEstimator.SetTemporalMaxLimit(limit);	}
+	void SetTemporalMinLimit(DWORD limit)	{ recv->remoteRateEstimator.SetTemporalMinLimit(limit);	}
 	virtual void onTargetBitrateRequested(DWORD bitrate, DWORD bandwidthEstimation);
 
-	RTPOutgoingSourceGroup* GetOutgoingSourceGroup() { return &send; }
-	RTPIncomingSourceGroup* GetIncomingSourceGroup() { return &recv; }
+	RTPOutgoingSourceGroup::shared GetOutgoingSourceGroup() { return send; }
+	RTPIncomingSourceGroup::shared GetIncomingSourceGroup() { return recv; }
 
 	TimeService& GetTimeService() { return transport.GetTimeService(); }
 public:	
@@ -118,8 +118,8 @@ private:
 	RTPTransport transport;
 	char*	cname;
 	//Transmision
-	RTPOutgoingSourceGroup send;
-	RTPIncomingSourceGroup recv;
+	RTPOutgoingSourceGroup::shared send;
+	RTPIncomingSourceGroup::shared recv;
 
 	DWORD  	sendType;
 	Mutex	sendMutex;

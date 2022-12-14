@@ -75,7 +75,7 @@ void ActiveSpeakerMultiplexer::RemoveRTPStreamTransponder(RTPStreamTransponder* 
 	});
 }
 
-void ActiveSpeakerMultiplexer::AddIncomingSourceGroup(RTPIncomingMediaStream* incoming, uint32_t id)
+void ActiveSpeakerMultiplexer::AddIncomingSourceGroup(RTPIncomingMediaStream::shared incoming, uint32_t id)
 {
 	Debug("-ActiveSpeakerMultiplexer::AddIncomingSourceGroup() [incoming:%p,id:%d]\n", incoming, id);
 
@@ -84,7 +84,7 @@ void ActiveSpeakerMultiplexer::AddIncomingSourceGroup(RTPIncomingMediaStream* in
 
 	timeService.Sync([=](const auto& now){
 		//Insert new 
-		auto [it, inserted] = sources.try_emplace(incoming, Source{id, incoming});
+		auto [it, inserted] = sources.try_emplace(incoming.get(), Source{id, incoming});
 		//If already present
 		if (!inserted)
 			//do nothing
@@ -94,7 +94,7 @@ void ActiveSpeakerMultiplexer::AddIncomingSourceGroup(RTPIncomingMediaStream* in
 	});
 }
 
-void ActiveSpeakerMultiplexer::RemoveIncomingSourceGroup(RTPIncomingMediaStream* incoming)
+void ActiveSpeakerMultiplexer::RemoveIncomingSourceGroup(RTPIncomingMediaStream::shared incoming)
 {
 	Debug("-ActiveSpeakerMultiplexer::RemoveIncomingSourceGroup() [incoming:%p]\n", incoming);
 
@@ -104,7 +104,7 @@ void ActiveSpeakerMultiplexer::RemoveIncomingSourceGroup(RTPIncomingMediaStream*
 	timeService.Sync([=](const auto& now) {
 		Debug("-ActiveSpeakerMultiplexer::RemoveIncomingSourceGroup() async [incoming:%p]\n", incoming);
 		//Find source
-		auto it = sources.find(incoming);
+		auto it = sources.find(incoming.get());
 		//check it was not present
 		if (it==sources.end())
 		{
@@ -378,7 +378,7 @@ void ActiveSpeakerMultiplexer::Process(uint64_t now)
 		//Send all pending packets
 		for (const auto& packet : source->packets)
 			//Send it
-			destination->transponder->onRTP(source->incoming, packet);
+			destination->transponder->onRTP(source->incoming.get(), packet);
 		//Event
 		listener->onActiveSpeakerChanged(sourceId, multiplexId);
 		//Set last multiplexed source and timestamp

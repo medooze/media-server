@@ -27,10 +27,11 @@ public:
 	static constexpr uint32_t NoSeqNum = std::numeric_limits<uint32_t>::max();
 	static constexpr uint64_t NoTimestamp = std::numeric_limits<uint64_t>::max();
 public:
-	RTPStreamTransponder(RTPOutgoingSourceGroup* outgoing,RTPSender* sender);
+	RTPStreamTransponder(const RTPOutgoingSourceGroup::shared& outgoing,const RTPSender::shared& sender);
 	virtual ~RTPStreamTransponder();
 	
-	bool SetIncoming(RTPIncomingMediaStream* incoming, RTPReceiver* receiver, bool smooth = false);
+	bool ResetIncoming();
+	bool SetIncoming(const RTPIncomingMediaStream::shared& incoming, const RTPReceiver::shared& receiver, bool smooth = false);
 	bool AppendH264ParameterSets(const std::string& sprop);
 	void Close();
 	
@@ -45,22 +46,22 @@ public:
 	void Mute(bool muting);
 	void SetIntraOnlyForwarding(bool intraOnlyForwarding);
 
-	const RTPIncomingMediaStream* GetIncoming() const { return incoming; }
+	const RTPIncomingMediaStream::shared GetIncoming() const { return incoming; }
 
 protected:
 	void RequestPLI();
 
 private:
-	
-	RTPOutgoingSourceGroup *outgoing	= NULL;
-	RTPIncomingMediaStream *incoming	= NULL;
-	RTPReceiver* receiver			= NULL;
-	RTPIncomingMediaStream* incomingNext	= NULL;
-	RTPReceiver* receiverNext		= NULL;
-	RTPSender* sender			= NULL;
-	std::unique_ptr<VideoLayerSelector> selector;
 	TimeService& timeService;
+
+	RTPOutgoingSourceGroup::shared  outgoing;
+	RTPSender::shared		sender;
+	RTPIncomingMediaStream::shared  incoming;
+	RTPReceiver::shared		receiver;
+	RTPIncomingMediaStream::shared  incomingNext;
+	RTPReceiver::shared		receiverNext;
 	
+	std::unique_ptr<VideoLayerSelector> selector;
 	
 	volatile bool reset	= false;
 	volatile bool muted	= false;

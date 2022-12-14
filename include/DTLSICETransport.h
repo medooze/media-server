@@ -39,6 +39,8 @@ class DTLSICETransport :
 	public ICERemoteCandidate::Listener
 {
 public:
+	using shared = std::shared_ptr<DTLSICETransport>;
+public:
 	enum DTLSState
 	{
 		New,
@@ -196,7 +198,7 @@ private:
 	
 	std::map<DWORD,PacketStats::shared> transportWideReceivedPacketsStats;
 	
-	UDPDumper* dumper			= nullptr;
+	std::unique_ptr<UDPDumper> dumper;
 	volatile bool dumpInRTP			= false;
 	volatile bool dumpOutRTP		= false;
 	volatile bool dumpRTCP			= false;

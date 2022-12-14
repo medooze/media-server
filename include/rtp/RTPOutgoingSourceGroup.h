@@ -14,6 +14,8 @@
 struct RTPOutgoingSourceGroup
 {
 public:
+	using shared = std::shared_ptr<RTPOutgoingSourceGroup>;
+public:
 	class Listener 
 	{
 		public:

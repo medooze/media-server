@@ -43,7 +43,7 @@ public:
 	};
 public:
 	
-	ICERemoteCandidate(const std::string& ip,const WORD port,Listener *listener) :
+	ICERemoteCandidate(const std::string& ip,const WORD port,std::shared_ptr<Listener> listener) :
 		listener(listener)
 	{
 		//Set values
@@ -52,7 +52,7 @@ public:
 		addr.sin_addr.s_addr	= inet_addr(ip.c_str());
 	}
 	
-	ICERemoteCandidate(const char *ip,const WORD port,Listener *listener) :
+	ICERemoteCandidate(const char *ip,const WORD port, std::shared_ptr<Listener> listener) :
 		listener(listener)
 	{
 		//Set values
@@ -61,7 +61,7 @@ public:
 		addr.sin_addr.s_addr	= inet_addr(ip);
 	}
 	
-	ICERemoteCandidate(const DWORD ipAddr ,const WORD port,Listener *listener) :
+	ICERemoteCandidate(const DWORD ipAddr ,const WORD port, std::shared_ptr<Listener> listener) :
 		listener(listener)
 	{
 		//Set values
@@ -104,7 +104,7 @@ public:
 private:
 	State state		= Initial;
 	sockaddr_in addr	= {};
-	Listener *listener;
+	std::shared_ptr<Listener> listener;
 	std::optional<PacketHeader::FlowRoutingInfo> rawTxData;
 };
 

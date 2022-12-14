@@ -22,7 +22,9 @@ class RTPBundleTransport :
 public:
 	struct Connection
 	{
-		Connection(const std::string& username, DTLSICETransport* transport,bool disableSTUNKeepAlive)
+		using shared = std::shared_ptr<Connection>;
+
+		Connection(const std::string& username, DTLSICETransport::shared transport,bool disableSTUNKeepAlive)
 		{
 			this->username = username;
 			this->transport = transport;
@@ -30,7 +32,7 @@ public:
 		}
 		
 		std::string username;
-		DTLSICETransport* transport;
+		DTLSICETransport::shared transport;
 		std::set<ICERemoteCandidate*> candidates;
 		bool disableSTUNKeepAlive	= false;
 		size_t iceRequestsSent		= 0;
@@ -46,7 +48,7 @@ public:
 	virtual ~RTPBundleTransport();
 	int Init();
 	int Init(int port);
-	Connection* AddICETransport(const std::string &username,const Properties& properties);
+	Connection::shared AddICETransport(const std::string &username,const Properties& properties);
 	bool RestartICETransport(const std::string& username, const std::string& restarted, const Properties& properties);
 	int RemoveICETransport(const std::string &username);
 	
@@ -69,7 +71,7 @@ public:
 	TimeService& GetTimeService()		{ return loop;						}
 private:
 	void onTimer(std::chrono::milliseconds now);
-	void SendBindingRequest(Connection* connection,ICERemoteCandidate* candidate);
+	void SendBindingRequest(Connection::shared connection,ICERemoteCandidate* candidate);
 private:
 	//Sockets
 	int 	socket;
@@ -79,9 +81,9 @@ private:
 	Timer::shared iceTimer;
 	std::chrono::milliseconds iceTimeout = 10000ms;
 
-	std::map<std::string,Connection*>	 connections;
-	std::map<std::string,ICERemoteCandidate> candidates;
-	std::map<std::pair<uint64_t,uint32_t>,std::pair<std::string,std::string>> transactions;
+	std::map<std::string, Connection::shared>	connections;
+	std::map<std::string, ICERemoteCandidate>	candidates;
+	std::map<std::pair<uint64_t,uint32_t>, std::pair<std::string,std::string>> transactions;
 	uint32_t maxTransId = 0;
 	Use	use;
 };

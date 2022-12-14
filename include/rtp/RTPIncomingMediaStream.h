@@ -23,6 +23,8 @@
 class RTPIncomingMediaStream
 {
 public:
+	using shared = std::shared_ptr<RTPIncomingMediaStream>;
+public:
 	class Listener 
 	{
 	public:

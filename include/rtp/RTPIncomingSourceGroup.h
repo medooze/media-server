@@ -19,6 +19,8 @@ class RTPIncomingSourceGroup :
 	public RTPIncomingMediaStream,
 	public RemoteRateEstimator::Listener
 {
+public:
+	using shared = std::shared_ptr<RTPIncomingSourceGroup>;
 public:	
 	RTPIncomingSourceGroup(MediaFrame::Type type,TimeService& timeService);
 	virtual ~RTPIncomingSourceGroup();

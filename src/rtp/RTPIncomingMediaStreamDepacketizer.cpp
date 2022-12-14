@@ -1,7 +1,7 @@
 #include "rtp/RTPIncomingMediaStreamDepacketizer.h"
 #include "use.h"
 
-RTPIncomingMediaStreamDepacketizer::RTPIncomingMediaStreamDepacketizer(RTPIncomingMediaStream* incomingSource) :
+RTPIncomingMediaStreamDepacketizer::RTPIncomingMediaStreamDepacketizer(const RTPIncomingMediaStream::shared& incomingSource) :
 	timeService(incomingSource->GetTimeService())
 {
 	Debug("-RTPIncomingMediaStreamDepacketizer::RTPIncomingMediaStreamDepacketizer() [incomingSource:%p,this:%p]\n",incomingSource,this);
@@ -10,18 +10,12 @@ RTPIncomingMediaStreamDepacketizer::RTPIncomingMediaStreamDepacketizer(RTPIncomi
 	this->incomingSource = incomingSource;
 	//Add us as RTP listeners
 	this->incomingSource->AddListener(this);
-	//No depkacketixer yet
-	depacketizer = NULL;
 }
 
 RTPIncomingMediaStreamDepacketizer::~RTPIncomingMediaStreamDepacketizer()
 {
 	Debug("-RTPIncomingMediaStreamDepacketizer::~RTPIncomingMediaStreamDepacketizer() [incomingSource:%p,this:%p]\n", incomingSource, this);
-	
-	//Check 
-	if (depacketizer)
-		//Delete depacketier
-		delete(depacketizer);
+
 }
 
 void RTPIncomingMediaStreamDepacketizer::onRTP(RTPIncomingMediaStream* group,const RTPPacket::shared& packet)
@@ -30,22 +24,16 @@ void RTPIncomingMediaStreamDepacketizer::onRTP(RTPIncomingMediaStream* group,con
 	if (listeners.empty()) 
 		return;
 
-	//If depacketizer is not the same codec 
-	if (depacketizer && depacketizer->GetCodec()!=packet->GetCodec())
-	{
-		//Delete it
-		delete(depacketizer);
-		//Create it next
-		depacketizer = nullptr;
-	}
-	//If we don't have a depacketized
-	if (!depacketizer)
+	//If we don't have a depacketized or is not the same codec 
+	if (!depacketizer && depacketizer->GetCodec()!=packet->GetCodec())
 		//Create one
-		depacketizer = RTPDepacketizer::Create(packet->GetMedia(),packet->GetCodec());
+		depacketizer.reset(RTPDepacketizer::Create(packet->GetMedia(),packet->GetCodec()));
+
 	//Ensure we have it
 	if (!depacketizer)
 		//Do nothing
 		return;
+
 	//Pass the pakcet to the depacketizer
 	 MediaFrame* frame = depacketizer->AddPacket(packet);
 
@@ -64,7 +52,8 @@ void RTPIncomingMediaStreamDepacketizer::onRTP(RTPIncomingMediaStream* group,con
 void RTPIncomingMediaStreamDepacketizer::onBye(RTPIncomingMediaStream* group) 
 {
 	Debug("-RTPIncomingMediaStreamDepacketizer::onBye() [group:%p,this:%p]\n", group, this);
-	if(depacketizer)
+	//Check it is ours
+	if (incomingSource.get() == group && depacketizer)
 		//Skip current
 		depacketizer->ResetFrame();
 }
@@ -75,7 +64,8 @@ void RTPIncomingMediaStreamDepacketizer::onEnded(RTPIncomingMediaStream* group)
 	Debug("-RTPIncomingMediaStreamDepacketizer::onEnded() [group:%p,this:%p]\n", group, this);
 	
 	//Check it is ours
-	if (incomingSource==group)
+	if (incomingSource.get()==group)
+		//Remove source
 		incomingSource = nullptr;
 }
 
@@ -124,7 +114,7 @@ void RTPIncomingMediaStreamDepacketizer::Stop()
 			//Stop listeneing
 			incomingSource->RemoveListener(this);
 			//Clean it
-			incomingSource = nullptr;
+			incomingSource.reset();
 		}
 	});
 }
