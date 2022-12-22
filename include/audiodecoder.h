@@ -20,11 +20,13 @@ public:
 	virtual ~AudioDecoderWorker();
 
 	int Start();
-	virtual void onRTP(RTPIncomingMediaStream* stream,const RTPPacket::shared& packet);
-	virtual void onEnded(RTPIncomingMediaStream* stream);
-	virtual void onBye(RTPIncomingMediaStream* stream);
 	int Stop();
-	
+
+	// RTPIncomingMediaStream::Listener interface
+	virtual void onRTP(const RTPIncomingMediaStream* stream, const RTPPacket::shared& packet) override;
+	virtual void onBye(const RTPIncomingMediaStream* stream) override;
+	virtual void onEnded(const RTPIncomingMediaStream* stream)  override;
+
 	void SetAACConfig(const uint8_t* data,const size_t size);
 	void AddAudioOuput(AudioOutput* ouput);
 	void RemoveAudioOutput(AudioOutput* ouput);

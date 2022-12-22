@@ -246,20 +246,20 @@ int AudioDecoderWorker::Decode()
 	return 0;
 }
 
-void AudioDecoderWorker::onRTP(RTPIncomingMediaStream* stream,const RTPPacket::shared& packet)
+void AudioDecoderWorker::onRTP(const RTPIncomingMediaStream* stream,const RTPPacket::shared& packet)
 {
 	//Put it on the queue
 	packets.Add(packet->Clone());
 }
 
-void AudioDecoderWorker::onEnded(RTPIncomingMediaStream* stream)
+void AudioDecoderWorker::onEnded(const RTPIncomingMediaStream* stream)
 {
 	//Cancel packets wait
 	packets.Cancel();
 }
 
 
-void AudioDecoderWorker::onBye(RTPIncomingMediaStream* stream)
+void AudioDecoderWorker::onBye(const RTPIncomingMediaStream* stream)
 {
 	//Cancel packets wait
 	packets.Cancel();
