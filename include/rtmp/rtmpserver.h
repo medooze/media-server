@@ -2,6 +2,7 @@
 #define _RTPMSERVER_H_
 #include <memory>
 #include "pthread.h"
+#include "use.h"
 #include "rtmpstream.h"
 #include "rtmpapplication.h"
 #include "rtmpconnection.h"
@@ -32,15 +33,17 @@ private:
 	void CreateConnection(int fd);
 	void DeleteAllConnections();
 
+	int BindServer();
+
 private:
-	int inited;
-	int serverPort;
-	int server;
+	int inited = 0;
+	int serverPort = 0;
+	int server = FD_INVALID;
 
 	std::map<int,RTMPConnection::shared> connections;
 	std::map<std::wstring,RTMPApplication *> applications;
 	pthread_t serverThread;
-	pthread_mutex_t	sessionMutex;
+	Mutex mutex;
 };
 
 #endif

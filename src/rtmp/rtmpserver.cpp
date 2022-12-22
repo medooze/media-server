@@ -15,15 +15,8 @@
 * RTMPServer
 * 	Constructor
 *************************/
-RTMPServer::RTMPServer()
+RTMPServer::RTMPServer() : mutex(true)
 {
-	//Y no tamos iniciados
-	inited = 0;
-	serverPort = 0;
-	server = FD_INVALID;
-
-	//Create mutx
-	pthread_mutex_init(&sessionMutex,0);
 }
 
 
@@ -37,8 +30,6 @@ RTMPServer::~RTMPServer()
 	if (inited)
 		//End it anyway
 		End();
-	//Destroy mutex
-	pthread_mutex_destroy(&sessionMutex);
 }
 
 /************************
@@ -54,18 +45,55 @@ int RTMPServer::Init(int port)
 		//Error
 		return Error("-RTMPServer::Init() RTMP Server is already running.\n");
 
-	
-
 	//Save server port
 	serverPort = port;
 
 	//I am inited
 	inited = 1;
 
+	//Init server socket
+	if (!BindServer())
+		return 0;
+
 	//Create threads
 	createPriorityThread(&serverThread,run,this,0);
 
 	//Return ok
+	return 1;
+}
+
+int RTMPServer::BindServer()
+{
+	Debug("-RTMPServer::BindServer()\n");
+
+	//Close socket just in case
+	close(server);
+
+	//Create socket
+	server = socket(AF_INET, SOCK_STREAM, 0);
+
+	//Set SO_REUSEADDR on a socket to true (1):
+	int optval = 1;
+	setsockopt(server, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
+
+	//Bind to first available port
+	sockaddr_in addr;
+	memset(&addr, 0, sizeof(addr));
+	addr.sin_family = AF_INET;
+	addr.sin_addr.s_addr = INADDR_ANY;
+	addr.sin_port = htons(serverPort);
+
+	//Bind
+	if (bind(server, (sockaddr*)&addr, sizeof(addr)) < 0)
+		//Error
+		return Error("-RTMPServer::BindServer() Can't bind server socket. errno = %d.\n", errno);
+
+	//Listen for connections
+	if (listen(server, 5) < 0)
+		//Error
+		return Error("-RTMPServer::BindServer() Can't listen on server socket. errno = %d\n", errno);
+
+	//OK
 	return 1;
 }
 
@@ -75,36 +103,11 @@ int RTMPServer::Init(int port)
  ***************************/
 int RTMPServer::Run()
 {
-	sockaddr_in addr;
-	pollfd ufds[1];
-
-init:
 	//Log
 	Log(">RTMPServer::Run() [%p]\n",this);
-	//Create socket
-	server = socket(AF_INET, SOCK_STREAM, 0);
-
-	//Set SO_REUSEADDR on a socket to true (1):
-	int optval = 1;
-	setsockopt(server, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
-
-	//Bind to first available port
-	memset(&addr,0,sizeof(addr));
-	addr.sin_family 	= AF_INET;
-	addr.sin_addr.s_addr 	= INADDR_ANY;
-	addr.sin_port 		= htons(serverPort);
-
-	//Bind
-     	if (bind(server, (sockaddr *) &addr, sizeof(addr)) < 0)
-		//Error
-		return Error("-RTMPServer::Run() Can't bind server socket. errno = %d.\n", errno);
-
-	//Listen for connections
-	if (listen(server,5)<0)
-		//Error
-		return Error("-RTMPServer::Run() Can't listen on server socket. errno = %d\n", errno);
 
 	//Set values for polling
+	pollfd ufds[1];
 	ufds[0].fd = server;
 	ufds[0].events = POLLIN | POLLHUP | POLLERR ;
 
@@ -128,12 +131,12 @@ init:
 			if (!inited)
 				//Exit
 				break;
-			//Close socket just in case
-			MCU_CLOSE(server);
-			//Invalidate
-			server = FD_INVALID;
-			//Re-init
-			goto init;
+			//Try to restart server
+			if (!BindServer())
+				break;
+			//Contintue
+			continue;
+
 		}
 
 		//Chek events, will fail if closed by End() so we can exit
@@ -145,12 +148,11 @@ init:
 			if (!inited)
 				//Exit
 				break;
-			//Close socket just in case
-			MCU_CLOSE(server);
-			//Invalidate
-			server = FD_INVALID;
-			//Re-init
-			goto init;
+			//Try to restart server
+			if (!BindServer())
+				break;
+			//Contintue
+			continue;
 		}
 
 		//Accpept incoming connections
@@ -165,12 +167,11 @@ init:
 			if (!inited)
 				//Exit
 				break;
-			//Close socket just in case
-			MCU_CLOSE(server);
-			//Invalidate
-			server = FD_INVALID;
-			//Re-init
-			goto init;
+			//Try to restart server
+			if (!BindServer())
+				break;
+			//Contintue
+			continue;
 		}
 
 		//Set non blocking again
@@ -202,13 +203,13 @@ void RTMPServer::CreateConnection(int fd)
 	rtmp->Init(fd);
 
 	//Lock list
-	pthread_mutex_lock(&sessionMutex);
+	mutex.Lock();
 
 	//Append
 	connections[fd] = rtmp;
 
 	//Unlock
-	pthread_mutex_unlock(&sessionMutex);
+	mutex.Unlock();
 
 	Log("<RTMPServer::CreateConnection() [0x%x]\n",rtmp);
 }
@@ -221,15 +222,16 @@ void RTMPServer::DeleteAllConnections()
 {
 	Log(">RTMPServer::DeleteAllConnections()\n");
 
-	//Lock list
-	pthread_mutex_lock(&sessionMutex);
+	//Lock connection list
+	ScopedLock lock(mutex);
+
+	//For all connections
+	for (auto & [fd,connection] : connections)
+		//Stop it
+		connection->Stop();
 
 	//Clear all connections
 	connections.clear();
-	
-	//Unlock list
-	pthread_mutex_unlock(&sessionMutex);
-	
 
 	Log("<RTMPServer::DeleteAllConnections()\n");
 
@@ -275,7 +277,7 @@ int RTMPServer::End()
 	//Close server socket
 	shutdown(server,SHUT_RDWR);
 	//Will cause poll function to exit
-	MCU_CLOSE(server);
+	close(server);
 	//Invalidate
 	server = FD_INVALID;
 
@@ -334,12 +336,11 @@ void RTMPServer::onDisconnect(RTMPConnection *con)
 {
 	Log("-RTMPServer::onDisconnect() [%p,socket:%d]\n",con,con->GetSocket());
 
-	//Lock list
-	pthread_mutex_lock(&sessionMutex);
-
+	//Lock connection list
+	ScopedLock lock(mutex);
+	
 	//Remove from list
 	connections.erase(con->GetSocket());
 
-	//Unlock list
-	pthread_mutex_unlock(&sessionMutex);
+	
 }
