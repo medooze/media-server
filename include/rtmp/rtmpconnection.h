@@ -37,6 +37,8 @@ public:
 	~RTMPConnection();
 
 	int Init(int fd);
+	void Start();
+	void Stop();
 	int End();
 	
 	int GetSocket() { return socket; }
@@ -60,8 +62,7 @@ public:
 	
 	DWORD GetRTT()	{ return rtt; }
 protected:
-	void Start();
-	void Stop();
+	
 	int Run();
 	void PingRequest();
 private:
