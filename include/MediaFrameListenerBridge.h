@@ -7,13 +7,17 @@
 #include "TimeService.h"
 
 #include <queue>
+#include <memory>
 
 using namespace std::chrono_literals;
 
 class MediaFrameListenerBridge :
 	public MediaFrame::Listener,
-	public RTPIncomingMediaStream
+	public RTPIncomingMediaStream,
+	public RTPReceiver
 {
+public:
+	using shared = std::shared_ptr<MediaFrameListenerBridge>;
 public:
 	static constexpr uint32_t NoSeqNum = std::numeric_limits<uint32_t>::max();
 	static constexpr uint64_t NoTimestamp = std::numeric_limits<uint64_t>::max();
@@ -27,16 +31,19 @@ public:
 	virtual void AddListener(RTPIncomingMediaStream::Listener* listener);
 	virtual void RemoveListener(RTPIncomingMediaStream::Listener* listener);
         
-	virtual DWORD GetMediaSSRC() { return ssrc; }
+	virtual DWORD GetMediaSSRC() const override{ return ssrc; }
 	
-	virtual void onMediaFrame(const MediaFrame &frame);
-	virtual void onMediaFrame(DWORD ssrc, const MediaFrame &frame) { onMediaFrame(frame); }
-	virtual TimeService& GetTimeService() { return timeService; }
-	virtual void Mute(bool muting);
+	virtual void onMediaFrame(const MediaFrame &frame) override;
+	virtual void onMediaFrame(DWORD ssrc, const MediaFrame &frame) override { onMediaFrame(frame); }
+	virtual TimeService& GetTimeService() override  { return timeService; }
+	virtual void Mute(bool muting) override;
 	void Reset();
 	void Update();
 	void Update(QWORD now);
 	void Stop();
+
+	virtual int SendPLI(DWORD ssrc) override { return 1; };
+	virtual int Reset(DWORD ssrc) override { return 1; };
 
 private:
 	void Dispatch(const std::vector<RTPPacket::shared>& packet);

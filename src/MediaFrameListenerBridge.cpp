@@ -333,6 +333,8 @@ void MediaFrameListenerBridge::Update(QWORD now)
 
 void MediaFrameListenerBridge::AddMediaListener(MediaFrame::Listener *listener)
 {
+	Debug("-MediaFrameListenerBridge::AddMediaListener() [this:%p,listener:%p]\n", this, listener);
+
 	timeService.Async([=](auto now){
 		//Add to set
 		mediaFrameListenerss.insert(listener);
@@ -341,6 +343,8 @@ void MediaFrameListenerBridge::AddMediaListener(MediaFrame::Listener *listener)
 
 void MediaFrameListenerBridge::RemoveMediaListener(MediaFrame::Listener *listener)
 {
+	Debug("-MediaFrameListenerBridge::RemoveMediaListener() [this:%p,listener:%p]\n", this, listener);
+
 	timeService.Sync([=](auto now){
 		//Remove from set
 		mediaFrameListenerss.erase(listener);
