@@ -35,14 +35,18 @@ public:
 	bool AppendH264ParameterSets(const std::string& sprop);
 	void Close();
 	
-	virtual void onRTP(RTPIncomingMediaStream* stream,const RTPPacket::shared& packet) override;
-	virtual void onBye(RTPIncomingMediaStream* stream) override;
-	virtual void onEnded(RTPIncomingMediaStream* stream) override;
-	virtual void onPLIRequest(RTPOutgoingSourceGroup* group,DWORD ssrc) override;
-	virtual void onREMB(RTPOutgoingSourceGroup* group,DWORD ssrc,DWORD bitrate) override;
-	virtual void onEnded(RTPOutgoingSourceGroup* group) override;
+	// RTPIncomingMediaStream::Listener interface
+	virtual void onRTP(const RTPIncomingMediaStream* stream, const RTPPacket::shared& packet) override;
+	virtual void onBye(const RTPIncomingMediaStream* stream) override;
+	virtual void onEnded(const RTPIncomingMediaStream* stream) override;
+
+
+	// RTPOutgoingSourceGroup::Listener interface
+	virtual void onPLIRequest(const RTPOutgoingSourceGroup* group,DWORD ssrc) override;
+	virtual void onREMB(const RTPOutgoingSourceGroup* group, DWORD ssrc, DWORD bitrate) override;
+	virtual void onEnded(const RTPOutgoingSourceGroup* group) override;
 	
-	void SelectLayer(int spatialLayerId,int temporalLayerId);
+	void SelectLayer(int spatialLayerId, int temporalLayerId);
 	void Mute(bool muting);
 	void SetIntraOnlyForwarding(bool intraOnlyForwarding);
 

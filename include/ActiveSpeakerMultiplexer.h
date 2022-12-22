@@ -61,10 +61,11 @@ public:
 	void AddRTPStreamTransponder(RTPStreamTransponder* transpoder, uint32_t id);
 	void RemoveRTPStreamTransponder(RTPStreamTransponder* transpoder);
 	
-	virtual void onRTP(RTPIncomingMediaStream* stream, const RTPPacket::shared& packet) override;
-	virtual void onRTP(RTPIncomingMediaStream* stream, const std::vector<RTPPacket::shared>& packets) override;
-	virtual void onBye(RTPIncomingMediaStream* stream) override;
-	virtual void onEnded(RTPIncomingMediaStream* stream) override;
+	// RTPIncomingMediaStream::Listener interface
+	virtual void onRTP(const RTPIncomingMediaStream* stream, const RTPPacket::shared& packet) override;
+	virtual void onRTP(const RTPIncomingMediaStream* stream, const std::vector<RTPPacket::shared>& packets) override;
+	virtual void onBye(const RTPIncomingMediaStream* stream) override;
+	virtual void onEnded(const RTPIncomingMediaStream* stream) override;
 
 	void SetMaxAccumulatedScore(uint64_t maxAcummulatedScore)	{ this->maxAcummulatedScore = maxAcummulatedScore;	}
 	void SetNoiseGatingThreshold(uint8_t noiseGatingThreshold)	{ this->noiseGatingThreshold = noiseGatingThreshold;	}
@@ -83,7 +84,7 @@ private:
 	uint8_t noiseGatingThreshold = 127;
 	uint64_t minActivationScore = 0;
 
-	std::map<RTPIncomingMediaStream*, Source> sources;
+	std::map<RTPIncomingMediaStream*, Source, std::less<>> sources;
 	std::map<RTPStreamTransponder*, Destination> destinations;
 };
 

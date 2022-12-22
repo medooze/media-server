@@ -16,15 +16,19 @@ class RTPIncomingMediaStreamMultiplexer :
 public:
 	RTPIncomingMediaStreamMultiplexer(const RTPIncomingMediaStream::shared& incomingMediaStream, TimeService& timeService);
 	virtual ~RTPIncomingMediaStreamMultiplexer() = default;
+	
+	// RTPIncomingMediaStream interface;
 	virtual void AddListener(RTPIncomingMediaStream::Listener* listener) override;
 	virtual void RemoveListener(RTPIncomingMediaStream::Listener* listener) override;
-	virtual DWORD GetMediaSSRC() override { return ssrc; }
+	virtual DWORD GetMediaSSRC() const override { return ssrc; }
 	virtual void Mute(bool muting);
 
-	virtual void onRTP(RTPIncomingMediaStream* stream, const RTPPacket::shared& packet) override;
-	virtual void onRTP(RTPIncomingMediaStream* stream, const std::vector<RTPPacket::shared>& packets) override;
-	virtual void onBye(RTPIncomingMediaStream* stream) override;
-	virtual void onEnded(RTPIncomingMediaStream* stream) override;
+	// RTPIncomingMediaStream::Listener interface
+	virtual void onRTP(const RTPIncomingMediaStream* stream, const RTPPacket::shared& packet) override;
+	virtual void onRTP(const RTPIncomingMediaStream* stream, const std::vector<RTPPacket::shared>& packets) override;
+	virtual void onBye(const RTPIncomingMediaStream* stream) override;
+	virtual void onEnded(const RTPIncomingMediaStream* stream) override;
+
 	virtual TimeService& GetTimeService() override { return timeService; }
 	void Stop();
 private:

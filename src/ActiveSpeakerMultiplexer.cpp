@@ -140,14 +140,14 @@ void ActiveSpeakerMultiplexer::RemoveIncomingSourceGroup(RTPIncomingMediaStream:
 	});
 }
 
-void ActiveSpeakerMultiplexer::onRTP(RTPIncomingMediaStream* stream, const std::vector<RTPPacket::shared>& packets)
+void ActiveSpeakerMultiplexer::onRTP(const RTPIncomingMediaStream* stream, const std::vector<RTPPacket::shared>& packets)
 {
 	//For each packet
 	for (const auto& packet : packets)
 		//handle rtp packet
 		onRTP(stream, packet);
 }
-void ActiveSpeakerMultiplexer::onRTP(RTPIncomingMediaStream* incoming, const RTPPacket::shared& packet)
+void ActiveSpeakerMultiplexer::onRTP(const RTPIncomingMediaStream* incoming, const RTPPacket::shared& packet)
 {
 	//Log
 	//Debug("-ActiveSpeakerMultiplexer::onRTP() [ssrc:%d,seqnum:%u]\n", packet->GetSSRC(), packet->GetSeqNum());
@@ -204,11 +204,11 @@ void ActiveSpeakerMultiplexer::onRTP(RTPIncomingMediaStream* incoming, const RTP
 	});
 }
 
-void ActiveSpeakerMultiplexer::onBye(RTPIncomingMediaStream* group)
+void ActiveSpeakerMultiplexer::onBye(const RTPIncomingMediaStream* group)
 {
 }
 
-void ActiveSpeakerMultiplexer::onEnded(RTPIncomingMediaStream* incoming)
+void ActiveSpeakerMultiplexer::onEnded(const RTPIncomingMediaStream* incoming)
 {
 	Debug("-ActiveSpeakerDetectorFacade::onEnded() [incoming:%p]\n", incoming);
 

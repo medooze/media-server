@@ -18,7 +18,7 @@ RTPIncomingMediaStreamDepacketizer::~RTPIncomingMediaStreamDepacketizer()
 
 }
 
-void RTPIncomingMediaStreamDepacketizer::onRTP(RTPIncomingMediaStream* group,const RTPPacket::shared& packet)
+void RTPIncomingMediaStreamDepacketizer::onRTP(const RTPIncomingMediaStream* group,const RTPPacket::shared& packet)
 {
 	//Do not do extra work if there are no listeners
 	if (listeners.empty()) 
@@ -49,7 +49,7 @@ void RTPIncomingMediaStreamDepacketizer::onRTP(RTPIncomingMediaStream* group,con
 	 }
 }
 
-void RTPIncomingMediaStreamDepacketizer::onBye(RTPIncomingMediaStream* group) 
+void RTPIncomingMediaStreamDepacketizer::onBye(const RTPIncomingMediaStream* group)
 {
 	Debug("-RTPIncomingMediaStreamDepacketizer::onBye() [group:%p,this:%p]\n", group, this);
 	//Check it is ours
@@ -58,7 +58,7 @@ void RTPIncomingMediaStreamDepacketizer::onBye(RTPIncomingMediaStream* group)
 		depacketizer->ResetFrame();
 }
 
-void RTPIncomingMediaStreamDepacketizer::onEnded(RTPIncomingMediaStream* group) 
+void RTPIncomingMediaStreamDepacketizer::onEnded(const RTPIncomingMediaStream* group)
 {
 	//Lock	
 	Debug("-RTPIncomingMediaStreamDepacketizer::onEnded() [group:%p,this:%p]\n", group, this);

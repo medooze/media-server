@@ -168,7 +168,7 @@ void RTPStreamTransponder::Close()
 }
 
 
-void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket::shared& packet)
+void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPPacket::shared& packet)
 {
 	//Trace method
 	TRACE_EVENT("rtp","RTPStreamTransponder::onRTP", "ssrc", packet->GetSSRC(), "seqnum", packet->GetSeqNum());
@@ -524,7 +524,7 @@ void RTPStreamTransponder::onRTP(RTPIncomingMediaStream* stream,const RTPPacket:
 	});
 }
 
-void RTPStreamTransponder::onBye(RTPIncomingMediaStream* stream)
+void RTPStreamTransponder::onBye(const RTPIncomingMediaStream* stream)
 {
 	timeService.Async([=](auto) {
 	
@@ -538,7 +538,7 @@ void RTPStreamTransponder::onBye(RTPIncomingMediaStream* stream)
 	});
 }
 
-void RTPStreamTransponder::onEnded(RTPIncomingMediaStream* stream)
+void RTPStreamTransponder::onEnded(const RTPIncomingMediaStream* stream)
 {
 	timeService.Async([=](auto){
 		//IF it is the current one
@@ -558,7 +558,7 @@ void RTPStreamTransponder::onEnded(RTPIncomingMediaStream* stream)
 		}
 	});
 }
-void RTPStreamTransponder::onEnded(RTPOutgoingSourceGroup* group)
+void RTPStreamTransponder::onEnded(const RTPOutgoingSourceGroup* group)
 {
 	timeService.Async([=](auto) {
 		//IF it is the current one
@@ -580,14 +580,14 @@ void RTPStreamTransponder::RequestPLI()
 	});
 }
 
-void RTPStreamTransponder::onPLIRequest(RTPOutgoingSourceGroup* group,DWORD ssrc)
+void RTPStreamTransponder::onPLIRequest(const RTPOutgoingSourceGroup* group,DWORD ssrc)
 {
 	//Log
 	UltraDebug("-RTPStreamTransponder::onPLIRequest()\n");
 	RequestPLI();
 }
 
-void RTPStreamTransponder::onREMB(RTPOutgoingSourceGroup* group,DWORD ssrc, DWORD bitrate)
+void RTPStreamTransponder::onREMB(const RTPOutgoingSourceGroup* group,DWORD ssrc, DWORD bitrate)
 {
 	UltraDebug("-RTPStreamTransponder::onREMB() [ssrc:%u,bitrate:%u]\n",ssrc,bitrate);
 }

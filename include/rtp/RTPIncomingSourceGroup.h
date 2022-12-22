@@ -28,7 +28,7 @@ public:
 	RTPIncomingSource* GetSource(DWORD ssrc);
 	virtual void AddListener(RTPIncomingMediaStream::Listener* listener) override;
 	virtual void RemoveListener(RTPIncomingMediaStream::Listener* listener) override;
-	virtual DWORD GetMediaSSRC()		override { return media.ssrc;	}
+	virtual DWORD GetMediaSSRC() const	override { return media.ssrc;	}
 	virtual TimeService& GetTimeService()	override { return timeService;	}
 	virtual void Mute(bool muting);
 	int AddPacket(const RTPPacket::shared &packet, DWORD size, QWORD now);

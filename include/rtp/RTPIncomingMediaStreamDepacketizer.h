@@ -15,9 +15,10 @@ public:
 	RTPIncomingMediaStreamDepacketizer(const RTPIncomingMediaStream::shared& incomingSource);
 	virtual ~RTPIncomingMediaStreamDepacketizer();
 	
-	void onRTP(RTPIncomingMediaStream* group,const RTPPacket::shared& packet) override;
-	void onBye(RTPIncomingMediaStream* group) override;
-	void onEnded(RTPIncomingMediaStream* group) override;
+	// RTPIncomingMediaStream::Listener interface
+	void onRTP(const RTPIncomingMediaStream* group,const RTPPacket::shared& packet) override;
+	void onBye(const RTPIncomingMediaStream* group) override;
+	void onEnded(const RTPIncomingMediaStream* group) override;
 	
 	void AddMediaListener(MediaFrame::Listener *listener);
 	void RemoveMediaListener(MediaFrame::Listener *listener);

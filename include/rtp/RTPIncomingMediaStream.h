@@ -29,19 +29,19 @@ public:
 	{
 	public:
 		virtual ~Listener() = default;
-		virtual void onRTP(RTPIncomingMediaStream* stream,const RTPPacket::shared& packet) = 0;
-		virtual void onRTP(RTPIncomingMediaStream* stream,const std::vector<RTPPacket::shared>& packets)
+		virtual void onRTP(const RTPIncomingMediaStream* stream,const RTPPacket::shared& packet) = 0;
+		virtual void onRTP(const RTPIncomingMediaStream* stream,const std::vector<RTPPacket::shared>& packets)
 		{
 			for (const auto& packet : packets)
 				onRTP(stream,packet);
 		};
-		virtual void onBye(RTPIncomingMediaStream* stream) = 0;
-		virtual void onEnded(RTPIncomingMediaStream* stream) = 0;
+		virtual void onBye(const RTPIncomingMediaStream* stream) = 0;
+		virtual void onEnded(const RTPIncomingMediaStream* stream) = 0;
 	};
 	virtual ~RTPIncomingMediaStream() = default;
 	virtual void AddListener(Listener* listener) = 0;
 	virtual void RemoveListener(Listener* listener) = 0;
-	virtual DWORD GetMediaSSRC() = 0;
+	virtual DWORD GetMediaSSRC() const = 0;
 	virtual TimeService& GetTimeService() = 0;
 	virtual void Mute(bool muting) = 0;
 };

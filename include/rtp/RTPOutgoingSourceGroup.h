@@ -19,9 +19,9 @@ public:
 	class Listener 
 	{
 		public:
-			virtual void onPLIRequest(RTPOutgoingSourceGroup* group,DWORD ssrc) = 0;
-			virtual void onREMB(RTPOutgoingSourceGroup* group,DWORD ssrc,DWORD bitrate) = 0;
-			virtual void onEnded(RTPOutgoingSourceGroup* group) = 0;
+			virtual void onPLIRequest(const RTPOutgoingSourceGroup* group,DWORD ssrc) = 0;
+			virtual void onREMB(const RTPOutgoingSourceGroup* group,DWORD ssrc,DWORD bitrate) = 0;
+			virtual void onEnded(const RTPOutgoingSourceGroup* group) = 0;
 		
 	};
 public:

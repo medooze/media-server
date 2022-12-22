@@ -40,7 +40,7 @@ void RTPIncomingMediaStreamMultiplexer::Stop()
 	});
 }
 
-void RTPIncomingMediaStreamMultiplexer::AddListener(RTPIncomingMediaStream::Listener* listener) 
+void RTPIncomingMediaStreamMultiplexer::AddListener(RTPIncomingMediaStream::Listener* listener)
 {
 	Debug("-RTPIncomingMediaStreamMultiplexer::AddListener() [listener:%p,this:%p]\n",listener,this);
 	
@@ -50,7 +50,7 @@ void RTPIncomingMediaStreamMultiplexer::AddListener(RTPIncomingMediaStream::List
 	});
 }
 
-void RTPIncomingMediaStreamMultiplexer::RemoveListener(RTPIncomingMediaStream::Listener* listener) 
+void RTPIncomingMediaStreamMultiplexer::RemoveListener(RTPIncomingMediaStream::Listener* listener)
 {
 	Debug("-RTPIncomingMediaStreamMultiplexer::RemoveListener() [listener:%p,this:%p]\n", listener, this);
 		
@@ -60,7 +60,7 @@ void RTPIncomingMediaStreamMultiplexer::RemoveListener(RTPIncomingMediaStream::L
 	});
 }
 
-void RTPIncomingMediaStreamMultiplexer::onRTP(RTPIncomingMediaStream* stream,const RTPPacket::shared& packet)
+void RTPIncomingMediaStreamMultiplexer::onRTP(const RTPIncomingMediaStream* stream,const RTPPacket::shared& packet)
 {
 	//Trace method
 	TRACE_EVENT("rtp", "RTPIncomingMediaStreamMultiplexer::onRTP", "ssrc", stream->GetMediaSSRC());
@@ -78,7 +78,7 @@ void RTPIncomingMediaStreamMultiplexer::onRTP(RTPIncomingMediaStream* stream,con
 	}
 }
 
-void RTPIncomingMediaStreamMultiplexer::onRTP(RTPIncomingMediaStream* stream,const std::vector<RTPPacket::shared>& packets)
+void RTPIncomingMediaStreamMultiplexer::onRTP(const RTPIncomingMediaStream* stream,const std::vector<RTPPacket::shared>& packets)
 {
 	//Trace method
 	TRACE_EVENT("rtp", "RTPIncomingMediaStreamMultiplexer::onRTP", "ssrc", stream->GetMediaSSRC(), "packets", packets.size());
@@ -101,7 +101,7 @@ void RTPIncomingMediaStreamMultiplexer::onRTP(RTPIncomingMediaStream* stream,con
 }
 
 
-void RTPIncomingMediaStreamMultiplexer::onBye(RTPIncomingMediaStream* stream)
+void RTPIncomingMediaStreamMultiplexer::onBye(const RTPIncomingMediaStream* stream)
 {
 	//Trace method
 	TRACE_EVENT("rtp", "RTPIncomingMediaStreamMultiplexer::onBye", "ssrc", stream->GetMediaSSRC());
@@ -118,7 +118,7 @@ void RTPIncomingMediaStreamMultiplexer::onBye(RTPIncomingMediaStream* stream)
 }
 
 
-void RTPIncomingMediaStreamMultiplexer::onEnded(RTPIncomingMediaStream* stream)
+void RTPIncomingMediaStreamMultiplexer::onEnded(const RTPIncomingMediaStream* stream)
 {
 	Debug("-RTPIncomingMediaStreamMultiplexer::onEnded() [stream:%p,this:%p]\n", stream, this);
 	//Check
