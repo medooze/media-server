@@ -14,9 +14,9 @@ public:
 	virtual ~VideoDecoderWorker();
 
 	int Start();
-	virtual void onRTP(RTPIncomingMediaStream* stream,const RTPPacket::shared& packet);
-	virtual void onEnded(RTPIncomingMediaStream* stream);
-	virtual void onBye(RTPIncomingMediaStream* stream);
+	virtual void onRTP(const RTPIncomingMediaStream* stream,const RTPPacket::shared& packet);
+	virtual void onEnded(const RTPIncomingMediaStream* stream);
+	virtual void onBye(const RTPIncomingMediaStream* stream);
 	int Stop();
 	
 	void AddVideoOutput(VideoOutput* ouput);

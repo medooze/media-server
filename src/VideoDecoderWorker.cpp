@@ -215,20 +215,20 @@ int VideoDecoderWorker::Decode()
 	return 0;
 }
 
-void VideoDecoderWorker::onRTP(RTPIncomingMediaStream* stream,const RTPPacket::shared& packet)
+void VideoDecoderWorker::onRTP(const RTPIncomingMediaStream* stream, const RTPPacket::shared& packet)
 {
 	//Put it on the queue
 	packets.Add(packet->Clone());
 }
 
-void VideoDecoderWorker::onEnded(RTPIncomingMediaStream* stream)
+void VideoDecoderWorker::onEnded(const RTPIncomingMediaStream* stream)
 {
 	//Cancel packets wait
 	packets.Cancel();
 }
 
 
-void VideoDecoderWorker::onBye(RTPIncomingMediaStream* stream)
+void VideoDecoderWorker::onBye(const RTPIncomingMediaStream* stream)
 {
 	//Cancel packets wait
 	packets.Cancel();
