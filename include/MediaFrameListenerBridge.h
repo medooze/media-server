@@ -25,8 +25,8 @@ public:
 	MediaFrameListenerBridge(TimeService& timeService, DWORD ssrc, bool smooth = false);
 	virtual ~MediaFrameListenerBridge();
 	
-        void AddMediaListener(MediaFrame::Listener *listener);	
-	void RemoveMediaListener(MediaFrame::Listener *listener);
+	void AddMediaListener(const MediaFrame::Listener::shared& listener);
+	void RemoveMediaListener(const MediaFrame::Listener::shared& listener);
         
 	virtual void AddListener(RTPIncomingMediaStream::Listener* listener);
 	virtual void RemoveListener(RTPIncomingMediaStream::Listener* listener);
@@ -58,7 +58,7 @@ public:
 	DWORD extSeqNum = 0;
 	bool  smooth = true;
 	std::set<RTPIncomingMediaStream::Listener*> listeners;
-        std::set<MediaFrame::Listener*> mediaFrameListenerss;
+        std::set<MediaFrame::Listener::shared> mediaFrameListeners;
 	volatile bool reset	= false;
 	QWORD firstTimestamp	= NoTimestamp;
 	QWORD baseTimestamp	= 0;

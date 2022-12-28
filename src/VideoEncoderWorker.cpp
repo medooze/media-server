@@ -349,10 +349,8 @@ int VideoEncoderWorker::Encode()
 		pthread_mutex_lock(&mutex);
 
 		//For each listener
-		for (Listeners::iterator it=listeners.begin(); it!=listeners.end(); ++it)
+		for (auto &listener : listeners)
 		{
-			//Get listener
-			MediaFrame::Listener* listener =  *it;
 			//If was not null
 			if (listener)
 				//Call listener
@@ -416,7 +414,7 @@ int VideoEncoderWorker::SetTemporalBitrateLimit(int estimation)
 	return 1;
 }
 
-bool VideoEncoderWorker::AddListener(MediaFrame::Listener *listener)
+bool VideoEncoderWorker::AddListener(const MediaFrame::Listener::shared& listener)
 {
 	//Lock
 	pthread_mutex_lock(&mutex);
@@ -430,7 +428,7 @@ bool VideoEncoderWorker::AddListener(MediaFrame::Listener *listener)
 	return true;
 }
 
-bool VideoEncoderWorker::RemoveListener(MediaFrame::Listener *listener)
+bool VideoEncoderWorker::RemoveListener(const MediaFrame::Listener::shared& listener)
 {
 	//Lock
 	pthread_mutex_lock(&mutex);

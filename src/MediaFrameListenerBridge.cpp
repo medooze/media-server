@@ -79,7 +79,7 @@ void MediaFrameListenerBridge::Stop()
 
 void MediaFrameListenerBridge::AddListener(RTPIncomingMediaStream::Listener* listener)
 {
-	Debug("-MediaFrameListenerBridge::AddListener() [listener:%p,this:%p]\n",listener,this);
+	Debug("-MediaFrameListenerBridge::AddListener() [this:%p,listener:%p]\n", this, listener);
 	timeService.Async([=](auto now){
 		listeners.insert(listener);
 	});
@@ -87,7 +87,7 @@ void MediaFrameListenerBridge::AddListener(RTPIncomingMediaStream::Listener* lis
 
 void MediaFrameListenerBridge::RemoveListener(RTPIncomingMediaStream::Listener* listener)
 {
-	Debug("-MediaFrameListenerBridge::RemoveListener() [listener:%p,this:%p]\n",listener,this);
+	Debug("-MediaFrameListenerBridge::RemoveListener() [this:%p,listener:%p]\n", this, listener);
 	timeService.Sync([=](auto now){
 		listeners.erase(listener);
 	});
@@ -98,7 +98,7 @@ void MediaFrameListenerBridge::onMediaFrame(const MediaFrame& frame)
 	timeService.Async([=, frame = std::shared_ptr<MediaFrame>(frame.Clone())] (auto now){
 		
 		//Multiplex
-		for (auto listener : mediaFrameListenerss)
+		for (auto& listener : mediaFrameListeners)
 			listener->onMediaFrame(*frame);
 
 		//Dispatch any pending packet now
@@ -331,23 +331,23 @@ void MediaFrameListenerBridge::Update(QWORD now)
 	});
 }
 
-void MediaFrameListenerBridge::AddMediaListener(MediaFrame::Listener *listener)
+void MediaFrameListenerBridge::AddMediaListener(const MediaFrame::Listener::shared& listener)
 {
-	Debug("-MediaFrameListenerBridge::AddMediaListener() [this:%p,listener:%p]\n", this, listener);
+	Debug("-MediaFrameListenerBridge::AddMediaListener() [this:%p,listener:%p]\n", this, listener.get());
 
 	timeService.Async([=](auto now){
 		//Add to set
-		mediaFrameListenerss.insert(listener);
+		mediaFrameListeners.insert(listener);
 	});
 }
 
-void MediaFrameListenerBridge::RemoveMediaListener(MediaFrame::Listener *listener)
+void MediaFrameListenerBridge::RemoveMediaListener(const MediaFrame::Listener::shared& listener)
 {
-	Debug("-MediaFrameListenerBridge::RemoveMediaListener() [this:%p,listener:%p]\n", this, listener);
+	Debug("-MediaFrameListenerBridge::RemoveMediaListener() [this:%p,listener:%p]\n", this, listener.get());
 
 	timeService.Sync([=](auto now){
 		//Remove from set
-		mediaFrameListenerss.erase(listener);
+		mediaFrameListeners.erase(listener);
 	});
 }
 

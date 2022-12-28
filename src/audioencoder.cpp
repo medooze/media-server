@@ -190,7 +190,8 @@ int AudioEncoderWorker::Encode()
 		OpusConfig config(numChannels, rate);
 
 		//Serialize config and add it to frame
-		config.Serialize(frame.AllocateCodecConfig(config.GetSize()), frame.GetCodecConfigSize());
+		frame.AllocateCodecConfig(config.GetSize());
+		config.Serialize(frame.GetCodecConfigData(), frame.GetCodecConfigSize());
 	}
 	
 	//Disable shared buffer on clone
@@ -228,10 +229,10 @@ int AudioEncoderWorker::Encode()
 				OpusConfig config(numChannels,rate);
 
 				//Serialize config and add it to frame
-				config.Serialize(frame.AllocateCodecConfig(config.GetSize()), frame.GetCodecConfigSize());
+				frame.AllocateCodecConfig(config.GetSize());
+				config.Serialize(frame.GetCodecConfigData(), frame.GetCodecConfigSize());
 			}
 		}
-
 
 		//Lo codificamos
 		int len = codec->Encode(recBuffer,codec->numFrameSamples,frame.GetData(),frame.GetMaxMediaLength());
@@ -242,9 +243,6 @@ int AudioEncoderWorker::Encode()
 			Log("-AudioEncoderWorker::Encode() | Error encoding audio\n");
 			continue;
 		}
-
-		//Reset frame data
-		frame.Reset();
 
 		//Set frame length
 		frame.SetLength(len);
@@ -265,17 +263,13 @@ int AudioEncoderWorker::Encode()
 			
 		//Add rtp packet
 		frame.AddRtpPacket(0,len,NULL,0);
-
-			
 		 
 		//Lock
 		pthread_mutex_lock(&mutex);
 
 		//For each listener
-		for (Listeners::iterator it=listeners.begin(); it!=listeners.end(); ++it)
+		for (auto& listener : listeners)
 		{
-			//Get listener
-			MediaFrame::Listener* listener =  *it;
 			//If was not null
 			if (listener)
 				//Call listener
@@ -301,10 +295,10 @@ int AudioEncoderWorker::Encode()
 	return 1;
 }
 
-bool AudioEncoderWorker::AddListener(MediaFrame::Listener *listener)
+bool AudioEncoderWorker::AddListener(const MediaFrame::Listener::shared& listener)
 {
 
-	Debug("-AudioEncoderWorker::AddListener() | [listener:%p]\n", listener);
+	Debug("-AudioEncoderWorker::AddListener() | [listener:%p]\n", listener.get());
 
 	//Lock
 	pthread_mutex_lock(&mutex);
@@ -318,9 +312,9 @@ bool AudioEncoderWorker::AddListener(MediaFrame::Listener *listener)
 	return true;
 }
 
-bool AudioEncoderWorker::RemoveListener(MediaFrame::Listener *listener)
+bool AudioEncoderWorker::RemoveListener(const MediaFrame::Listener::shared& listener)
 {
-	Debug("-AudioEncoderWorker::RemoveListener() | [listener:%p]\n", listener);
+	Debug("-AudioEncoderWorker::RemoveListener() | [listener:%p]\n", listener.get());
 
 	//Lock
 	pthread_mutex_lock(&mutex);

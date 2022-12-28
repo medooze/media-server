@@ -10,8 +10,8 @@ public:
 	~AudioEncoderWorker();
 
 	int Init(AudioInput *input);
-	bool AddListener(MediaFrame::Listener *listener);
-	bool RemoveListener(MediaFrame::Listener *listener);
+	bool AddListener(const MediaFrame::Listener::shared& listener);
+	bool RemoveListener(const MediaFrame::Listener::shared& listener);
 	int SetAudioCodec(AudioCodec::Type codec, const Properties& properties);
 	int StartEncoding();
 	int StopEncoding();
@@ -29,7 +29,7 @@ private:
 	AudioEncoder* CreateAudioEncoder(AudioCodec::Type type);
 
 private:
-	typedef std::set<MediaFrame::Listener*> Listeners;
+	typedef std::set<MediaFrame::Listener::shared> Listeners;
 	
 private:
 	Listeners		listeners;

@@ -26,8 +26,8 @@ public:
 	int End();
 
 	int  SetTemporalBitrateLimit(int bitrate);
-	bool AddListener(MediaFrame::Listener *listener);
-	bool RemoveListener(MediaFrame::Listener *listener);
+	bool AddListener(const MediaFrame::Listener::shared& listener);
+	bool RemoveListener(const MediaFrame::Listener::shared& listener);
 	void SendFPU();
 	
 	bool IsEncoding() { return encoding;	}
@@ -42,7 +42,7 @@ private:
 	static void *startEncoding(void *par);
 
 private:
-	typedef std::set<MediaFrame::Listener*> Listeners;
+	typedef std::set<MediaFrame::Listener::shared> Listeners;
 	
 private:
 	Listeners		listeners;

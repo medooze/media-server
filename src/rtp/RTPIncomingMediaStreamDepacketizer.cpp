@@ -4,7 +4,7 @@
 RTPIncomingMediaStreamDepacketizer::RTPIncomingMediaStreamDepacketizer(const RTPIncomingMediaStream::shared& incomingSource) :
 	timeService(incomingSource->GetTimeService())
 {
-	Debug("-RTPIncomingMediaStreamDepacketizer::RTPIncomingMediaStreamDepacketizer() [incomingSource:%p,this:%p]\n",incomingSource,this);
+	Debug("-RTPIncomingMediaStreamDepacketizer::RTPIncomingMediaStreamDepacketizer() [this:%p,incomingSource:%p]\n", this, incomingSource.get());
 	
 	//Store
 	this->incomingSource = incomingSource;
@@ -14,7 +14,7 @@ RTPIncomingMediaStreamDepacketizer::RTPIncomingMediaStreamDepacketizer(const RTP
 
 RTPIncomingMediaStreamDepacketizer::~RTPIncomingMediaStreamDepacketizer()
 {
-	Debug("-RTPIncomingMediaStreamDepacketizer::~RTPIncomingMediaStreamDepacketizer() [incomingSource:%p,this:%p]\n", incomingSource, this);
+	Debug("-RTPIncomingMediaStreamDepacketizer::~RTPIncomingMediaStreamDepacketizer() [this:%p,incomingSource:%p]\n", this, incomingSource.get());
 
 }
 
@@ -25,7 +25,7 @@ void RTPIncomingMediaStreamDepacketizer::onRTP(const RTPIncomingMediaStream* gro
 		return;
 
 	//If we don't have a depacketized or is not the same codec 
-	if (!depacketizer && depacketizer->GetCodec()!=packet->GetCodec())
+	if (!depacketizer || depacketizer->GetCodec()!=packet->GetCodec())
 		//Create one
 		depacketizer.reset(RTPDepacketizer::Create(packet->GetMedia(),packet->GetCodec()));
 
@@ -51,7 +51,7 @@ void RTPIncomingMediaStreamDepacketizer::onRTP(const RTPIncomingMediaStream* gro
 
 void RTPIncomingMediaStreamDepacketizer::onBye(const RTPIncomingMediaStream* group)
 {
-	Debug("-RTPIncomingMediaStreamDepacketizer::onBye() [group:%p,this:%p]\n", group, this);
+	Debug("-RTPIncomingMediaStreamDepacketizer::onBye() [this:%p,group:%p]\n", this, group);
 	//Check it is ours
 	if (incomingSource.get() == group && depacketizer)
 		//Skip current
@@ -61,7 +61,7 @@ void RTPIncomingMediaStreamDepacketizer::onBye(const RTPIncomingMediaStream* gro
 void RTPIncomingMediaStreamDepacketizer::onEnded(const RTPIncomingMediaStream* group)
 {
 	//Lock	
-	Debug("-RTPIncomingMediaStreamDepacketizer::onEnded() [group:%p,this:%p]\n", group, this);
+	Debug("-RTPIncomingMediaStreamDepacketizer::onEnded() [this:%p,group:%p]\n", this, group);
 	
 	//Check it is ours
 	if (incomingSource.get()==group)
@@ -69,10 +69,10 @@ void RTPIncomingMediaStreamDepacketizer::onEnded(const RTPIncomingMediaStream* g
 		incomingSource = nullptr;
 }
 
-void RTPIncomingMediaStreamDepacketizer::AddMediaListener(MediaFrame::Listener *listener)
+void RTPIncomingMediaStreamDepacketizer::AddMediaListener(const MediaFrame::Listener::shared& listener)
 {
 	//Log
-	Debug("-RTPIncomingMediaStreamDepacketizer::AddMediaListener() [listener:%p,this:%p]\n", listener, this);
+	Debug("-RTPIncomingMediaStreamDepacketizer::AddMediaListener() [this:%p,listener:%p]\n", this, listener.get());
 	
 	//Check listener
 	if (!listener)
@@ -86,10 +86,10 @@ void RTPIncomingMediaStreamDepacketizer::AddMediaListener(MediaFrame::Listener *
 	});
 }
 
-void RTPIncomingMediaStreamDepacketizer::RemoveMediaListener(MediaFrame::Listener *listener)
+void RTPIncomingMediaStreamDepacketizer::RemoveMediaListener(const MediaFrame::Listener::shared& listener)
 {
 	//Log
-	Debug("-RTPIncomingMediaStreamDepacketizer::RemoveMediaListener() [listener:%p,this:%p]\n", listener, this);
+	Debug("-RTPIncomingMediaStreamDepacketizer::RemoveMediaListener() [this:%p,listener:%p]\n", this, listener.get());
 	
 	//Add listener sync so it can be deleted after this call
 	timeService.Sync([=](auto now){
@@ -105,7 +105,7 @@ void RTPIncomingMediaStreamDepacketizer::RemoveMediaListener(MediaFrame::Listene
 void RTPIncomingMediaStreamDepacketizer::Stop()
 {
 	//Log
-	Debug("-RTPIncomingMediaStreamDepacketizer::Stop() [incomingSource:%p,this:%p]\n", incomingSource, this);
+	Debug("-RTPIncomingMediaStreamDepacketizer::Stop() [this:%p,incomingSource:%p]\n", this, incomingSource.get());
 
 	timeService.Sync([=](auto now){
 		//If still have a incoming source

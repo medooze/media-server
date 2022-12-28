@@ -14,18 +14,18 @@ SimulcastMediaFrameListener::~SimulcastMediaFrameListener()
 	Select();
 }
 
-void SimulcastMediaFrameListener::AddMediaListener(MediaFrame::Listener* listener)
+void SimulcastMediaFrameListener::AddMediaListener(const MediaFrame::Listener::shared& listener)
 {
-	Debug("-MediaFrameListenerBridge::AddListener() [listener:%p]\n", listener);
+	Debug("-MediaFrameListenerBridge::AddListener() [this:%p,listener:%p]\n", this, listener.get());
 	
 	timeService.Sync([=](std::chrono::milliseconds){
 		listeners.insert(listener);
 	});
 }
 
-void SimulcastMediaFrameListener::RemoveMediaListener(MediaFrame::Listener* listener)
+void SimulcastMediaFrameListener::RemoveMediaListener(const MediaFrame::Listener::shared& listener)
 {
-	Debug("-MediaFrameListenerBridge::RemoveListener() [listener:%p]\n", listener);
+	Debug("-MediaFrameListenerBridge::RemoveListener() [this:%p,listener:%p]\n", this, listener.get());
 	timeService.Sync([=](std::chrono::milliseconds){
 		listeners.erase(listener);
 	});
@@ -243,7 +243,7 @@ void SimulcastMediaFrameListener::ForwardFrame(VideoFrame& frame)
 	//Debug
 	//UltraDebug("-SimulcastMediaFrameListener::ForwardFrame() | Forwarding frame [ts:%llu]\n", frame.GetTimestamp());
 	//Send it to all listeners
-	for (const auto listener : listeners)
+	for (const auto& listener : listeners)
 		//Send cloned frame
 		listener->onMediaFrame(this->ssrc, frame);
 

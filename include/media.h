@@ -15,6 +15,8 @@ public:
 	class Listener
 	{
 	public:
+		using shared = std::shared_ptr<Listener>;
+	public:
 		//Virtual desctructor
 		virtual ~Listener(){};
 	public:
@@ -323,7 +325,7 @@ public:
 		//Reset data
 		ResetData();
 		//Clear config
-		 ClearCodecConfig();
+		ClearCodecConfig();
 		//Clear time
 		SetTimestamp((DWORD)-1);
 		SetTime(0);

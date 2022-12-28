@@ -18,8 +18,8 @@ public:
 	virtual ~SimulcastMediaFrameListener();
 
 	void SetNumLayers(DWORD numLayers);
-	void AddMediaListener(MediaFrame::Listener* listener);
-	void RemoveMediaListener(MediaFrame::Listener* listener);
+	void AddMediaListener(const MediaFrame::Listener::shared& listener);
+	void RemoveMediaListener(const MediaFrame::Listener::shared& listener);
 
 	virtual void onMediaFrame(const MediaFrame& frame) { onMediaFrame(0, frame); }
 	virtual void onMediaFrame(DWORD ssrc, const MediaFrame& frame); 
@@ -34,7 +34,7 @@ private:
 	DWORD ssrc = 0;
 	DWORD numLayers = 0;
 	DWORD extSeqNum = 0;
-	std::set<MediaFrame::Listener*> listeners;
+	std::set<MediaFrame::Listener::shared> listeners;
 	std::map<DWORD, std::unique_ptr<VideoFrame>> iframes;
 	std::vector<std::pair<DWORD,std::unique_ptr<VideoFrame>>> pendingFrames;
 	DWORD forwarded = 0;

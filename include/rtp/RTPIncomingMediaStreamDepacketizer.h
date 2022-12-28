@@ -20,13 +20,13 @@ public:
 	void onBye(const RTPIncomingMediaStream* group) override;
 	void onEnded(const RTPIncomingMediaStream* group) override;
 	
-	void AddMediaListener(MediaFrame::Listener *listener);
-	void RemoveMediaListener(MediaFrame::Listener *listener);
+	void AddMediaListener(const MediaFrame::Listener::shared& listener);
+	void RemoveMediaListener(const MediaFrame::Listener::shared& listener);
 	
 	void Stop();
 	
 private:
-	std::set<MediaFrame::Listener*> listeners;
+	std::set<MediaFrame::Listener::shared> listeners;
 	std::unique_ptr<RTPDepacketizer> depacketizer;
 	RTPIncomingMediaStream::shared incomingSource;
 	TimeService &timeService;
