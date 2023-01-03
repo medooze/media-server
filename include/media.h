@@ -200,8 +200,8 @@ public:
 	// the SWIG compiler can not handle correctly the 2 GetData signatures for the GoLang target
 	const BYTE* GetData() const		{ return buffer->GetData();			}
 #endif
-
 	BYTE* GetData()				{ AdquireBuffer(); return buffer->GetData();	}
+	const Buffer::shared& GetBuffer() const	{ return buffer; }
 	void SetLength(DWORD length)		{ AdquireBuffer(); buffer->SetSize(length);	}
 	
 	void DisableSharedBuffer()		{ disableSharedBuffer = true;			}
