@@ -319,13 +319,8 @@ bool AudioEncoderWorker::RemoveListener(const MediaFrame::Listener::shared& list
 	//Lock
 	pthread_mutex_lock(&mutex);
 
-	//Search
-	Listeners::iterator it = listeners.find(listener);
-
-	//If found
-	if (it!=listeners.end())
-		//Erase it
-		listeners.erase(it);
+	//Erase it
+	listeners.erase(listener);
 
 	//Unlock
 	pthread_mutex_unlock(&mutex);
