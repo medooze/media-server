@@ -278,7 +278,7 @@ void MediaFrameListenerBridge::onMediaFrame(const MediaFrame& frame)
 			//calculate packet duration based on relative size to keep bitrate smooth
 			const uint32_t packetDuration = smooth ? pendingDuration * info[i].GetTotalLength() / pendingLength : 0;
 
-			//UltraDebug("-%d %d %dms %d %dms\n", extSeqNum-1, pendingLength, packetDuration, info[i].GetTotalLength(), packetDuration);
+			//UltraDebug("-MediaFrameListenerBridge::onMediaFrame() [this:%p,extSeqNum:%d,pending:%d,duration:%dms,total:%d,total:%dms\n", extSeqNum-1, pendingLength, packetDuration, info[i].GetTotalLength(), packetDuration);
 
 			//Insert it
 			packets.emplace(packet,packetDuration);
