@@ -9,6 +9,7 @@
 #include "vp8/vp8encoder.h"
 #include "vp6/vp6decoder.h"
 #include "vp9/VP9Decoder.h"
+#include "jpeg/JPEGEncoder.h"
 
 VideoDecoder* VideoCodecFactory::CreateDecoder(VideoCodec::Type codec)
 {
@@ -68,6 +69,8 @@ VideoEncoder* VideoCodecFactory::CreateEncoder(VideoCodec::Type codec,const Prop
 			return new H264Encoder(properties);
 		case VideoCodec::VP8:
 			return new VP8Encoder(properties);
+		case VideoCodec::JPEG:
+			return new JPEGEncoder(properties);
 		default:
 			Error("Video Encoder not found\n");
 	}
