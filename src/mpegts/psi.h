@@ -30,7 +30,7 @@ struct SyntaxData
 	static SyntaxData Parse(BufferReader& reader, BufferReader& outData);
 };
 
-/** PSI table section. checksum not verified if present */
+/** PSI table section (checksum not verified if present) */
 struct Table
 {
 	uint8_t tableId;
