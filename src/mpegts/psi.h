@@ -24,6 +24,8 @@ struct SyntaxData
 	uint8_t sectionNumber;
 	uint8_t lastSectionNumber;
 
+	BufferReader data;
+
 	// fields following table data
 	uint32_t crc32;
 
