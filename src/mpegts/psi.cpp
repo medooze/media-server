@@ -18,39 +18,42 @@ static inline uint16_t GetPID(BufferReader& reader)
 	return pid;
 }
 
-SyntaxData SyntaxData::Parse(BufferReader& reader, const uint8_t*& data, size_t& dataSize)
+SyntaxData SyntaxData::Parse(BufferReader& reader, BufferReader& outData)
 {
 	if (reader.GetLeft()<5+4)
 		throw std::runtime_error("Not enough data to read mpegts psi syntax section");
 
-	uint16_t tableIdExtension = reader.Get2();
+	SyntaxData result = {};
+	result.tableIdExtension = reader.Get2();
 	uint8_t composite = reader.Get1();
-	uint8_t sectionNumber = reader.Get1();
-	uint8_t lastSectionNumber = reader.Get1();
+	result.sectionNumber = reader.Get1();
+	result.lastSectionNumber = reader.Get1();
 
-	dataSize = reader.GetLeft() - 4;
-	data = reader.GetData(dataSize);
+	size_t dataSize = reader.GetLeft() - 4;
+	outData = BufferReader(reader.GetData(dataSize), dataSize);
 
-	uint32_t crc32 = reader.Get4();
+	result.crc32 = reader.Get4();
 
 	// save parsed syntax data
-	uint8_t _reserved1 = composite >> 6;
-	uint8_t versionNumber = (composite >> 1) & 0b11111;
-	bool isCurrent = (composite & 1) != 0;
-	return { tableIdExtension, _reserved1, versionNumber, isCurrent, sectionNumber, lastSectionNumber, crc32 };
+	result._reserved1 = composite >> 6;
+	result.versionNumber = (composite >> 1) & 0b11111;
+	result.isCurrent = (composite & 1) != 0;
+	return result;
 }
 
 Table Table::Parse(BufferReader& reader)
 {
+	Table result;
+
 	// read table header
 	if (reader.GetLeft()<3)
 		throw std::runtime_error("Not enough data to read mpegts psi table header");
 	BitReader bitreader(reader.GetData(3), 3);
 
-	uint8_t tableId = bitreader.Get(8);
+	result.tableId = bitreader.Get(8);
 	bool sectionSyntaxIndicator = bitreader.Get(1) != 0;
-	bool privateBit = bitreader.Get(1) != 0;
-	uint8_t _reserved1 = bitreader.Get(2);
+	result.privateBit = bitreader.Get(1) != 0;
+	result._reserved1 = bitreader.Get(2);
 	uint16_t sectionLength = bitreader.Get(12);
 
 	if (sectionLength > 1021)
@@ -61,22 +64,17 @@ Table Table::Parse(BufferReader& reader)
 		throw std::runtime_error("Not enough data to read mpegts psi table data");
 	BufferReader dataReader (reader.GetData(sectionLength), sectionLength);
 
-	std::optional<SyntaxData> syntax;
-	const uint8_t* data;
-	size_t dataSize;
-
 	if (sectionSyntaxIndicator) {
 		// we have a syntax section surrounding data
-		syntax = std::optional(SyntaxData::Parse(dataReader, data, dataSize));
+		result.syntax = std::optional(SyntaxData::Parse(dataReader, result.data));
 	} else {
 		// whole contents are data
-		dataSize = dataReader.GetLeft();
-		data = dataReader.GetData(dataSize);
-		syntax = std::nullopt;
+		size_t dataSize = dataReader.GetLeft();
+		result.data = BufferReader(dataReader.GetData(dataSize), dataSize);
 	}
 
 	// return parsed table
-	return { tableId, privateBit, _reserved1, syntax, BufferReader(data, dataSize) };
+	return result;
 }
 
 std::vector<Table> ParsePayloadUnit(BufferReader& reader)
@@ -104,9 +102,10 @@ ProgramAssociation ProgramAssociation::Parse(BufferReader& reader)
 {
 	if (reader.GetLeft()<4)
 		throw std::runtime_error("Not enough data to read mpegts pat entry");
-	uint16_t programNum = reader.Get2();
-	uint16_t pmtPid = GetPID(reader);
-	return { programNum, pmtPid };
+	ProgramAssociation result;
+	result.programNum = reader.Get2();
+	result.pmtPid = GetPID(reader);
+	return result;
 }
 
 std::vector<ProgramAssociation> ProgramAssociation::ParsePayloadUnit(BufferReader& reader)
@@ -137,18 +136,19 @@ ProgramMap::ES ProgramMap::ES::Parse(BufferReader& reader)
 {
 	if (reader.GetLeft()<5)
 		throw std::runtime_error("Not enough data to read mpegts pmt ES entry header");
-	uint8_t streamType = reader.Get1();
-	uint16_t pid = GetPID(reader);
+	ProgramMap::ES result;
+	result.streamType = reader.Get1();
+	result.pid = GetPID(reader);
 	uint16_t esLength = reader.Get2();
 
-	uint8_t _reserved1 = esLength >> 12;
+	result._reserved1 = esLength >> 12;
 	esLength = esLength & ~((~0) << 12);
 
 	if (reader.GetLeft()<esLength)
 		throw std::runtime_error("Not enough data to read mpegts pmt ES entry descriptor");
-	BufferReader descriptor (reader.GetData(esLength), esLength);
+	result.descriptor = BufferReader(reader.GetData(esLength), esLength);
 
-	return { streamType, pid, _reserved1, descriptor };
+	return result;
 }
 
 // PMT
@@ -157,21 +157,22 @@ ProgramMap ProgramMap::Parse(BufferReader& reader)
 {
 	if (reader.GetLeft()<4)
 		throw std::runtime_error("Not enough data to read mpegts pmt header");
-	uint16_t pcrPid = GetPID(reader);
+
+	ProgramMap result;
+	result.pcrPid = GetPID(reader);
 	uint16_t piLength = reader.Get2();
 
-	uint8_t _reserved1 = piLength >> 12;
+	result._reserved1 = piLength >> 12;
 	piLength = piLength & ~((~0) << 12);
 
 	if (reader.GetLeft()<piLength)
 		throw std::runtime_error("Not enough data to read mpegts pmt descriptor");
-	BufferReader programInfo (reader.GetData(piLength), piLength);
+	result.programInfo = BufferReader(reader.GetData(piLength), piLength);
 
-	std::vector<ProgramMap::ES> streams;
 	while (reader.GetLeft() > 0)
-		streams.push_back(ProgramMap::ES::Parse(reader));
+		result.streams.push_back(ProgramMap::ES::Parse(reader));
 
-	return { pcrPid, _reserved1, programInfo, streams };
+	return result;
 }
 
 }; //namespace mpegts::psi
