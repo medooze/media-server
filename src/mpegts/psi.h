@@ -2,7 +2,7 @@
 #define MPEGTS_PSI_H_
 
 #include <cstdint>
-#include <optional>
+#include <variant>
 #include <vector>
 #include "BufferReader.h"
 
@@ -38,8 +38,7 @@ struct Table
 	uint8_t tableId;
 	bool privateBit;
 	uint8_t _reserved1;
-	std::optional<SyntaxData> syntax;
-	BufferReader data;
+	std::variant<BufferReader, SyntaxData> data;
 
 	static Table Parse(BufferReader& reader);
 };

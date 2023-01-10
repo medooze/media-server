@@ -81,7 +81,7 @@ Table Table::Parse(BufferReader& reader)
 	if (sectionSyntaxIndicator) 
 	{
 		// we have a syntax section surrounding data
-		table.syntax = std::optional(SyntaxData::Parse(dataReader));
+		table.data = SyntaxData::Parse(dataReader);
 	} else {
 		// whole contents are data
 		table.data = dataReader;
@@ -143,15 +143,16 @@ std::vector<ProgramAssociation> ProgramAssociation::ParsePayloadUnit(BufferReade
 
 	if (tables.size() != 1)
 		throw std::runtime_error("PAT did not contain exactly one table");
+	auto syntax = std::get_if<SyntaxData>(&tables[0].data);
 	if (!(
 		tables[0].tableId == ProgramAssociation::TABLE_ID &&
 		tables[0].privateBit == false &&
-		tables[0].syntax &&
-		tables[0].syntax->isCurrent
+		syntax &&
+		syntax->isCurrent
 	))
 		throw std::runtime_error("malformed PAT table section");
 
-	BufferReader dataReader = tables[0].data;
+	BufferReader dataReader = syntax->data;
 	std::vector<ProgramAssociation> entries;
 	while (dataReader.GetLeft() > 0)
 		entries.push_back(ProgramAssociation::Parse(dataReader));
