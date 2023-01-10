@@ -57,7 +57,7 @@ VP8Decoder::VP8Decoder()
 	
 	//Init decoder
 	if(vpx_codec_dec_init(&decoder, interface, NULL, flags)!=VPX_CODEC_OK)
-		Error("Error initing VP8 decoder [error %d:%s]\n",decoder.err,decoder.err_detail);
+		Error("Error initing VP8 decoder [error %d:%s]\n", decoder.err, decoder.err_detail ? decoder.err_detail : "(null)");
 
 	vp8_postproc_cfg_t  ppcfg;
 	 /**< the types of post processing to be done, should be combination of "vp8_postproc_level" */
@@ -111,7 +111,7 @@ int VP8Decoder::DecodePacket(const BYTE *in,DWORD inLen,int lost,int last)
 			//Frame not complete
 			completeFrame = false;
 			//Error
-			return Error("Could not parse VP8 payload descriptor");
+			return Error("Could not parse VP8 payload descriptor\n");
 		}
 
 		//If it is first packetand it is not a partition start
@@ -120,7 +120,7 @@ int VP8Decoder::DecodePacket(const BYTE *in,DWORD inLen,int lost,int last)
 			//Frame not complete
 			completeFrame = false;
 			//Error but continue to handle last mark
-			Error("First packet lost of VP8 frame");
+			Error("First packet lost of VP8 frame\n");
 		}
 
 		//Next is not first frame
@@ -141,7 +141,7 @@ int VP8Decoder::DecodePacket(const BYTE *in,DWORD inLen,int lost,int last)
 			//Check error
 			if (err!=VPX_CODEC_OK)
 				//Error
-				Error("Error decoding VP8 partition [error %d:%s]\n",decoder.err,decoder.err_detail);
+				Error("Error decoding VP8 partition [error %d:%s]\n", decoder.err, decoder.err_detail ? decoder.err_detail : "(null)");
 		}
 
 		//Check size
@@ -191,7 +191,7 @@ int VP8Decoder::DecodePacket(const BYTE *in,DWORD inLen,int lost,int last)
 		//Check error
 		if (err!=VPX_CODEC_OK)
 			//Error
-			return Error("Error decoding VP8 last [error %d:%s]\n",decoder.err,decoder.err_detail);
+			return Error("Error decoding VP8 last [error %d:%s]\n", decoder.err, decoder.err_detail ? decoder.err_detail : "(null)");
 
 		//Decode end of frame
 		err = vpx_codec_decode(&decoder,NULL,0,NULL,0);
@@ -200,7 +200,7 @@ int VP8Decoder::DecodePacket(const BYTE *in,DWORD inLen,int lost,int last)
 		//Check error
 		if (err!=VPX_CODEC_OK)
 			//Error
-			return Error("Error decoding VP8 empty [error %d:%s]\n",decoder.err,decoder.err_detail);
+			return Error("Error decoding VP8 empty [error %d:%s]\n", decoder.err, decoder.err_detail ? decoder.err_detail : "(null)");
 
 		//Check if it is corrupted even if completed
 		if (vpx_codec_control(&decoder, VP8D_GET_FRAME_CORRUPTED, &corrupted)==VPX_CODEC_OK)
@@ -269,7 +269,7 @@ int VP8Decoder::Decode(const BYTE *buffer,DWORD len)
 	//Check error
 	if (err!=VPX_CODEC_OK)
 		//Error
-		return Error("Error decoding VP8 empty [error %d:%s]\n",decoder.err,decoder.err_detail);
+		return Error("Error decoding VP8 empty [error %d:%s]\n", decoder.err, decoder.err_detail ? decoder.err_detail : "(null)");
 
 	//Check if it is corrupted even if completed
 	if (vpx_codec_control(&decoder, VP8D_GET_FRAME_CORRUPTED, &corrupted)==VPX_CODEC_OK)
