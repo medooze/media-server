@@ -160,9 +160,9 @@ std::vector<ProgramAssociation> ProgramAssociation::ParsePayloadUnit(BufferReade
 	return entries;
 }
 
-ProgramMap::ES ProgramMap::ES::Parse(BufferReader& reader)
+ProgramMap::ElementaryStream ProgramMap::ElementaryStream::Parse(BufferReader& reader)
 {
-	ProgramMap::ES result;
+	ProgramMap::ElementaryStream result;
 
 	/*
 	 * stream type	8	This defines the structure of the data contained within the elementary packet identifier.
@@ -219,7 +219,7 @@ ProgramMap ProgramMap::Parse(BufferReader& reader)
 	result.programInfo = BufferReader(reader.GetData(piLength), piLength);
 
 	while (reader.GetLeft() > 0)
-		result.streams.push_back(ProgramMap::ES::Parse(reader));
+		result.streams.push_back(ProgramMap::ElementaryStream::Parse(reader));
 
 	return result;
 }
