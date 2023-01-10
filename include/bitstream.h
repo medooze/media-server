@@ -40,7 +40,7 @@ public:
 		error = false;
 	}
 
-	BitReader(BitReader& reader, const DWORD size) : 
+	BitReader(BufferReader& reader, const DWORD size) : 
 		BitReader(reader.GetData(size), size)
 	{
 	}

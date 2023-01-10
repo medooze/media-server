@@ -29,7 +29,7 @@ struct SyntaxData
 	// fields following table data
 	uint32_t crc32;
 
-	static SyntaxData Parse(BufferReader& reader, BufferReader& outData);
+	static SyntaxData Parse(BufferReader& reader);
 };
 
 /** PSI table section (checksum not verified if present) */

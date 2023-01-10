@@ -180,7 +180,7 @@ ProgramMap::ElementaryStream ProgramMap::ElementaryStream::Parse(BufferReader& r
 
 	elementaryStream.streamType	= bitreader.Get(8);
 	bitreader.Skip(3);		//Reserved
-	elementaryStream.pid		= bitreader.Get(13)
+	elementaryStream.pid		= bitreader.Get(13);
 	bitreader.Skip(4);		//Reserved
 	bitreader.Skip(2);		//Unused
 	uint16_t esLength		= bitreader.Get(10);
@@ -215,7 +215,7 @@ ProgramMap ProgramMap::Parse(BufferReader& reader)
 	BitReader bitreader(reader, 4);
 
 	bitreader.Skip(3);	//Reserved
-	programMap.pid		= bitreader.Get(13)
+	programMap.pcrPid	= bitreader.Get(13);
 	bitreader.Skip(4);	//Reserved
 	bitreader.Skip(2);	//Unused
 	uint16_t piLength	= bitreader.Get(10);
