@@ -30,7 +30,7 @@ struct SyntaxData
 	static SyntaxData Parse(BufferReader& reader, BufferReader& outData);
 };
 
-/** PSI table section. checksum not verified if present */
+/** PSI table section (checksum not verified if present) */
 struct Table
 {
 	uint8_t tableId;
@@ -67,20 +67,20 @@ struct ProgramMap
 	static const uint8_t TABLE_ID = 0x02;
 
 	/** data for an Elementary Stream entry in a PMT */
-	struct ES
+	struct ElementaryStream
 	{
 		uint8_t streamType;
 		uint16_t pid;
 		uint8_t _reserved1;
 		BufferReader descriptor;
 
-		static ES Parse(BufferReader& reader);
+		static ElementaryStream Parse(BufferReader& reader);
 	};
 
 	uint16_t pcrPid;
 	uint8_t _reserved1;
 	BufferReader programInfo;
-	std::vector<ES> streams;
+	std::vector<ElementaryStream> streams;
 
 	static ProgramMap Parse(BufferReader& reader);
 };
