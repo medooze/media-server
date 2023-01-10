@@ -10,6 +10,7 @@
 #include "config.h"
 #include "tools.h"
 #include <stdexcept>
+#include "BufferReader.h"
 
 class BitReader
 {
@@ -37,6 +38,11 @@ public:
 		bufferPos = 0;
 		//No error
 		error = false;
+	}
+
+	BitReader(BufferReader& reader, const DWORD size) : 
+		BitReader(reader.GetData(size), size)
+	{
 	}
 	
 	inline void Wrap(const BYTE *data,const DWORD size)

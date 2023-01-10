@@ -2,7 +2,7 @@
 #define MPEGTS_PSI_H_
 
 #include <cstdint>
-#include <optional>
+#include <variant>
 #include <vector>
 #include "BufferReader.h"
 
@@ -24,10 +24,12 @@ struct SyntaxData
 	uint8_t sectionNumber;
 	uint8_t lastSectionNumber;
 
+	BufferReader data;
+
 	// fields following table data
 	uint32_t crc32;
 
-	static SyntaxData Parse(BufferReader& reader, BufferReader& outData);
+	static SyntaxData Parse(BufferReader& reader);
 };
 
 /** PSI table section (checksum not verified if present) */
@@ -36,8 +38,7 @@ struct Table
 	uint8_t tableId;
 	bool privateBit;
 	uint8_t _reserved1;
-	std::optional<SyntaxData> syntax;
-	BufferReader data;
+	std::variant<BufferReader, SyntaxData> data;
 
 	static Table Parse(BufferReader& reader);
 };
