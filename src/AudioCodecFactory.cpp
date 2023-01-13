@@ -9,6 +9,7 @@
 #include "g722/g722codec.h"
 #include "aac/aacencoder.h"
 #include "aac/aacdecoder.h"
+#include "mp3/MP3Decoder.h"
 
 
 AudioEncoder* AudioCodecFactory::CreateEncoder(AudioCodec::Type codec)
@@ -77,6 +78,8 @@ AudioDecoder* AudioCodecFactory::CreateDecoder(AudioCodec::Type codec)
 			return new G722Decoder();
 		case AudioCodec::AAC:
 			return new AACDecoder();
+		case AudioCodec::MP3:
+			return new MP3Decoder();
 		default:
 			Error("Codec not found [%d]\n",codec);
 	}
