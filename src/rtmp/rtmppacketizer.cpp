@@ -228,14 +228,13 @@ std::unique_ptr<AudioFrame> RTMPAACPacketizer::AddFrame(RTMPAudioFrame* audioFra
 	
 	//Set time
 	frame->SetTime(audioFrame->GetTimestamp());
-	//Set clock rate
-	frame->SetClockRate(1000);
-	//Set timestamp
-	frame->SetTimestamp(audioFrame->GetTimestamp());
-	
+
 	//IF we have aac config
 	if (gotConfig)
 	{
+		frame->SetClockRate(aacSpecificConfig.GetRate());
+		frame->SetNumChannels(aacSpecificConfig.GetChannels());
+		frame->SetTimestamp(audioFrame->GetTimestamp() * aacSpecificConfig.GetRate() / 1000);
 		//Allocate data
 		frame->AllocateCodecConfig(aacSpecificConfig.GetSize());
 		//Serialize it
