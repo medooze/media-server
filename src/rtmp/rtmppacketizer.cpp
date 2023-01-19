@@ -222,29 +222,43 @@ std::unique_ptr<AudioFrame> RTMPAACPacketizer::AddFrame(RTMPAudioFrame* audioFra
 	if (audioFrame->GetAACPacketType()!=RTMPAudioFrame::AACRaw)
 		//DOne
 		return nullptr;
-	
+
+	//IF we have aac config
+	if (!gotConfig)
+	{
+		//Error
+		Debug("-RTMPAACPacketizer::AddFrame() | Gor AAC frame but not valid description yet\n");
+		//DOne
+		return nullptr;
+	}
+
 	//Create frame
 	auto frame = std::make_unique<AudioFrame>(AudioCodec::AAC);
 	
-	//Set time
+	//Set time in ms
 	frame->SetTime(audioFrame->GetTimestamp());
+	
+	//Calculate timestamp in sample rate clock
+	uint64_t timestamp = audioFrame->GetTimestamp() * aacSpecificConfig.GetRate() / 1000;
 
-	//IF we have aac config
-	if (gotConfig)
-	{
-		frame->SetClockRate(aacSpecificConfig.GetRate());
-		frame->SetNumChannels(aacSpecificConfig.GetChannels());
-		frame->SetTimestamp(audioFrame->GetTimestamp() * aacSpecificConfig.GetRate() / 1000);
-		//Allocate data
-		frame->AllocateCodecConfig(aacSpecificConfig.GetSize());
-		//Serialize it
-		aacSpecificConfig.Serialize(frame->GetCodecConfigData(),frame->GetCodecConfigSize());
-	}
+	//Round up to full frame duration
+	timestamp = std::round<uint64_t>((double)timestamp / aacSpecificConfig.GetFrameLength() * aacSpecificConfig.GetFrameLength());
+
+	//Set info from AAC config
+	frame->SetClockRate(aacSpecificConfig.GetRate());
+	frame->SetNumChannels(aacSpecificConfig.GetChannels());
+	frame->SetTimestamp(timestamp);
+	frame->SetDuration(aacSpecificConfig.GetFrameLength());
+
+	//Allocate data
+	frame->AllocateCodecConfig(aacSpecificConfig.GetSize());
+	//Serialize it
+	aacSpecificConfig.Serialize(frame->GetCodecConfigData(),frame->GetCodecConfigSize());
 	
 	//Add aac frame in single rtp 
 	auto ini = frame->AppendMedia(audioFrame->GetMediaData(),audioFrame->GetMediaSize());
 	frame->AddRtpPacket(ini,audioFrame->GetMediaSize(),nullptr,0);
-	
+
 	//DOne
 	return frame;
 }
