@@ -106,20 +106,27 @@ int AACDecoder::Decode(const BYTE *in, int inLen, SWORD* out, int outLen)
 	
 	//Release side data
 	av_packet_free_side_data(packet);
-	
-	//If we got a frame
-	if (avcodec_receive_frame(ctx, frame)<0)
-		//Nothing yet
-		return 0;
-	
-	//Get number of samples
-	auto len = frame->nb_samples;
-	//Convert to SWORD
-	for (size_t i=0; i<len && (i*frame->channels)<outLen; ++i)
-		//For each channel
-		for (size_t n=0; n<std::min(frame->channels,2); ++n)
-			//Interleave
-			out[i*frame->channels + n] = ((float*)(frame->extended_data[n]))[i] * (1<<15);
+
+	//Copy outout data
+	int len = 0;
+
+	//While we got decoded frames
+	while (avcodec_receive_frame(ctx, frame) >= 0)
+	{
+		//Make sure that we have enough data
+		if (outLen < (len + frame->nb_samples) * frame->channels)
+			return Error("-AACDecoder::Decode() | AAC returned too much data [len:%d,samples:%d,channels:%d,outLen:%d]\n", len, frame->nb_samples, frame->channels);
+
+		//Convert to SWORD
+		for (size_t i = 0; i < frame->nb_samples && (i * frame->channels) < outLen; ++i)
+			//For each channel
+			for (size_t n = 0; n < std::min(frame->channels, 2); ++n)
+				//Interleave
+				out[(len + i) * frame->channels + n] = ((float*)(frame->extended_data[n]))[i] * (1 << 15);
+		//Get number of samples
+		len += frame->nb_samples;
+	}
+
 	//Return number of samples
 	return len;
 }
