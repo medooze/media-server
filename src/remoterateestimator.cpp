@@ -362,7 +362,7 @@ void RemoteRateEstimator::Update(RemoteRateControl::BandwidthUsage usage, bool r
 	//Check if we need to send inmediate feedback
 	if (listener)
 		//Send it
-		listener->onTargetBitrateRequested(GetEstimatedBitrate(),GetEstimatedBitrate());
+		listener->onTargetBitrateRequested(GetEstimatedBitrate(),GetEstimatedBitrate(), incomingBitRate);
 }
 
 double RemoteRateEstimator::RateIncreaseFactor(QWORD now, QWORD last, DWORD reactionTime) const

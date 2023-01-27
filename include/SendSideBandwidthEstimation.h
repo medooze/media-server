@@ -34,6 +34,7 @@ public:
 	uint32_t GetEstimatedBitrate() const;
 	uint32_t GetTargetBitrate() const;
 	uint32_t GetAvailableBitrate() const;
+	uint32_t GetTotalSentBitrate() const;
 	uint32_t UpdateMinRTT(uint64_t when);
 	uint32_t GetMinRTT() const;
 	void SetListener(RemoteRateEstimator::Listener* listener) { this->listener = listener; }

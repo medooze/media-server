@@ -373,9 +373,9 @@ RTPIncomingSource* RTPIncomingSourceGroup::Process(RTPPacket::shared &packet)
 }
 
 
-void RTPIncomingSourceGroup::onTargetBitrateRequested(DWORD bitrate, DWORD bandwidthEstimation)
+void RTPIncomingSourceGroup::onTargetBitrateRequested(DWORD bitrate, DWORD bandwidthEstimation, DWORD totalBitrate)
 {
-	UltraDebug("-RTPIncomingSourceGroup::onTargetBitrateRequested() | [bitrate:%d, bandwidthEstimation:%d]\n", bitrate, bandwidthEstimation);
+	UltraDebug("-RTPIncomingSourceGroup::onTargetBitrateRequested() | [bitrate:%d, bandwidthEstimation:%d, totalBitrate:%d]\n", bitrate, bandwidthEstimation, totalBitrate);
 	//store estimation
 	remoteBitrateEstimation = bitrate;
 }

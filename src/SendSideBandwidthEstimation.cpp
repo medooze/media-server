@@ -266,6 +266,11 @@ uint32_t SendSideBandwidthEstimation::GetTargetBitrate() const
 	
 }
 
+uint32_t SendSideBandwidthEstimation::GetTotalSentBitrate() const
+{
+	return totalSentAcumulator.GetInstantAvg() * 8;
+}
+
 void SendSideBandwidthEstimation::SetState(ChangeState state)
 {
 	UltraDebug("-SendSideBandwidthEstimation::SetState() [state:%d,prev:%d,consecutiveChanges:%d]\n",state,this->state,consecutiveChanges);
@@ -487,7 +492,7 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 		//	when - lastChange
 		//);
 		//Call listener	
-		listener->onTargetBitrateRequested(availableRate, bandwidthEstimation);
+		listener->onTargetBitrateRequested(availableRate, bandwidthEstimation, totalSentBitrate);
 		//Upddate last changed time
 		lastChange = when;
 	}

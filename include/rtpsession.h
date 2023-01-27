@@ -88,7 +88,7 @@ public:
 	
 	void SetTemporalMaxLimit(DWORD limit)	{ recv->remoteRateEstimator.SetTemporalMaxLimit(limit);	}
 	void SetTemporalMinLimit(DWORD limit)	{ recv->remoteRateEstimator.SetTemporalMinLimit(limit);	}
-	virtual void onTargetBitrateRequested(DWORD bitrate, DWORD bandwidthEstimation);
+	virtual void onTargetBitrateRequested(DWORD bitrate, DWORD bandwidthEstimation, DWORD totalBitrate);
 
 	RTPOutgoingSourceGroup::shared GetOutgoingSourceGroup() { return send; }
 	RTPIncomingSourceGroup::shared GetIncomingSourceGroup() { return recv; }

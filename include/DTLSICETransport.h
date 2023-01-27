@@ -103,6 +103,7 @@ public:
 
 	uint32_t GetAvailableOutgoingBitrate() const	{ return senderSideBandwidthEstimator->GetAvailableBitrate(); }
 	uint32_t GetEstimatedOutgoingBitrate() const    { return senderSideBandwidthEstimator->GetEstimatedBitrate(); }
+	uint32_t GetTotalSentBitrate() const		{ return senderSideBandwidthEstimator->GetTotalSentBitrate(); }
 
 	void SetRemoteOverrideBWE(bool overrideBew);
 	void SetRemoteOverrideBitrate(DWORD bitrate);
