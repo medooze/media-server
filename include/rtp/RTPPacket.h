@@ -109,6 +109,8 @@ public:
 	void  SetDependencyDescriptor(DependencyDescriptor& dependencyDescriptor)	{ header.extension = extension.hasDependencyDescriptor	= true; extension.dependencyDescryptor = dependencyDescriptor;		}
 	void  SetAbsoluteCaptureTimestamp(QWORD ntp)					{ header.extension = extension.hasAbsoluteCaptureTime	= true; extension.absoluteCaptureTime.SetAbsoluteCaptureTimestamp(ntp); }
 	void  SetAbsoluteCaptureTime(QWORD ms)						{ header.extension = extension.hasAbsoluteCaptureTime	= true; extension.absoluteCaptureTime.SetAbsoluteCaptureTime(ms);	}
+	void  SetPlayoutDelay(uint16_t min, uint16_t max)				{ header.extension = extension.hasPlayoutDelay		= true; extension.playoutDelay.SetPlayoutDelay(min, max);		}
+	void  SetPlayoutDelay(const struct RTPHeaderExtension::PlayoutDelay& playoutDelay) { header.extension = extension.hasPlayoutDelay	= true; extension.playoutDelay = playoutDelay;				}
 	
 	bool  ParseDependencyDescriptor(const std::optional<TemplateDependencyStructure>& templateDependencyStructure, std::optional<std::vector<bool>>& activeDecodeTargets);
 	
@@ -121,6 +123,7 @@ public:
 	void  DisableRepairedId()		{ extension.hasRepairedId		= false; CheckExtensionMark(); }
 	void  DisableMediaStreamId()		{ extension.hasMediaStreamId		= false; CheckExtensionMark(); }
 	void  DisableDependencyDescriptor()	{ extension.hasDependencyDescriptor	= false; CheckExtensionMark(); }
+	void  DisablePlayoutDelay()		{ extension.hasPlayoutDelay		= false; CheckExtensionMark(); }
 	
 
 	QWORD GetAbsSendTime()			const	{ return extension.absSentTime;			}
@@ -139,6 +142,7 @@ public:
 	const std::optional<TemplateDependencyStructure>&	GetTemplateDependencyStructure() const { return templateDependencyStructure;	}
 	const std::optional<std::vector<bool>>&			GetActiveDecodeTargets()	 const { return activeDecodeTargets;		}
 	const VideoOrientation&					GetVideoOrientation()		 const { return extension.cvo;			}
+	const struct RTPHeaderExtension::PlayoutDelay&		GetPlayoutDelay()		 const { return extension.playoutDelay;		}
 	
 	bool  HasAudioLevel()			const	{ return extension.hasAudioLevel;		}
 	bool  HasAbsSentTime()			const	{ return extension.hasAbsSentTime;		}
@@ -154,6 +158,7 @@ public:
 								 extension.dependencyDescryptor->templateDependencyStructure;	}
 	bool  HasVideoOrientation()		const	{ return extension.hasVideoOrientation;		}
 	bool  HasAbsoluteCaptureTime()		const	{ return extension.hasAbsoluteCaptureTime;	}
+	bool  HasPlayoutDelay()			const   { return extension.hasPlayoutDelay;		}
 	
 	void  OverrideActiveDecodeTargets(const std::optional<std::vector<bool>>& activeDecodeTargets) 
 	{
@@ -206,7 +211,9 @@ protected:
 						|| extension.hasAbsoluteCaptureTime
 						|| extension.hasAudioLevel
 						|| extension.hasVideoOrientation
-						|| extension.hasDependencyDescriptor; }
+						|| extension.hasDependencyDescriptor
+						|| extension.hasPlayoutDelay
+					; }
 
 private:
 	MediaFrame::Type media;

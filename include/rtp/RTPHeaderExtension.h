@@ -37,45 +37,47 @@ public:
 		MediaStreamId		= 9,
 		DependencyDescriptor	= 10,
 		AbsoluteCaptureTime	= 11,
+		PlayoutDelay		= 12,
 		Reserved		= 15
 	};
 	
 	static Type GetExtensionForName(const char* ext)
 	{
-		if	(strcasecmp(ext,"urn:ietf:params:rtp-hdrext:toffset")==0)						return TimeOffset;
-		else if (strcasecmp(ext,"http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time")==0)			return AbsoluteSendTime;
-		else if (strcasecmp(ext,"urn:ietf:params:rtp-hdrext:ssrc-audio-level")==0)					return SSRCAudioLevel;
-		else if (strcasecmp(ext,"urn:3gpp:video-orientation")==0)							return CoordinationOfVideoOrientation;
-		else if (strcasecmp(ext,"http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01")==0)	return TransportWideCC;
-		else if (strcasecmp(ext,"urn:ietf:params:rtp-hdrext:framemarking")==0)						return FrameMarking;
-		else if (strcasecmp(ext,"http://tools.ietf.org/html/draft-ietf-avtext-framemarking-07")==0)			return FrameMarking;
-		else if (strcasecmp(ext,"urn:ietf:params:rtp-hdrext:sdes:rtp-stream-id")==0)					return RTPStreamId;
-		else if (strcasecmp(ext,"urn:ietf:params:rtp-hdrext:sdes:repaired-rtp-stream-id")==0)				return RepairedRTPStreamId;
-		else if (strcasecmp(ext,"urn:ietf:params:rtp-hdrext:sdes:mid")==0)						return MediaStreamId;
-		else if (strcasecmp(ext,"https://aomediacodec.github.io/av1-rtp-spec/#dependency-descriptor-rtp-header-extension")==0) return DependencyDescriptor;
-		else if (strcasecmp(ext,"http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time") == 0)			return AbsoluteCaptureTime;
-		return UNKNOWN;
+		if	(strcasecmp(ext,"urn:ietf:params:rtp-hdrext:toffset")==0)						return Type::TimeOffset;
+		else if (strcasecmp(ext,"http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time")==0)			return Type::AbsoluteSendTime;
+		else if (strcasecmp(ext,"urn:ietf:params:rtp-hdrext:ssrc-audio-level")==0)					return Type::SSRCAudioLevel;
+		else if (strcasecmp(ext,"urn:3gpp:video-orientation")==0)							return Type::CoordinationOfVideoOrientation;
+		else if (strcasecmp(ext,"http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01")==0)	return Type::TransportWideCC;
+		else if (strcasecmp(ext,"urn:ietf:params:rtp-hdrext:framemarking")==0)						return Type::FrameMarking;
+		else if (strcasecmp(ext,"http://tools.ietf.org/html/draft-ietf-avtext-framemarking-07")==0)			return Type::FrameMarking;
+		else if (strcasecmp(ext,"urn:ietf:params:rtp-hdrext:sdes:rtp-stream-id")==0)					return Type::RTPStreamId;
+		else if (strcasecmp(ext,"urn:ietf:params:rtp-hdrext:sdes:repaired-rtp-stream-id")==0)				return Type::RepairedRTPStreamId;
+		else if (strcasecmp(ext,"urn:ietf:params:rtp-hdrext:sdes:mid")==0)						return Type::MediaStreamId;
+		else if (strcasecmp(ext,"https://aomediacodec.github.io/av1-rtp-spec/#dependency-descriptor-rtp-header-extension")==0) return Type::DependencyDescriptor;
+		else if (strcasecmp(ext,"http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time") == 0)			return Type::AbsoluteCaptureTime;
+		else if (strcasecmp(ext, "http://www.webrtc.org/experiments/rtp-hdrext/playout-delay") == 0)			return Type::PlayoutDelay;
+		return Type::UNKNOWN;
 	}
 
 	static const char* GetNameFor(Type ext)
 	{
 		switch (ext)
 		{
-			case TimeOffset:			return "TimeOffset";
-			case AbsoluteSendTime:			return "AbsoluteSendTime";
-			case SSRCAudioLevel:			return "SSRCAudioLevel";
-			case CoordinationOfVideoOrientation:	return "CoordinationOfVideoOrientation";
-			case TransportWideCC:			return "TransportWideCC";
-			case FrameMarking:			return "FrameMarking";
-			case RTPStreamId:			return "RTPStreamId";
-			case RepairedRTPStreamId:		return "RepairedRTPStreamId";
-			case MediaStreamId:			return "MediaStreamId";
-			case DependencyDescriptor:		return "DependencyDescriptor";
-			case AbsoluteCaptureTime:		return "AbsoluteCaptureTime";
-			default:				return "unknown";
+			case Type::TimeOffset:				return "TimeOffset";
+			case Type::AbsoluteSendTime:			return "AbsoluteSendTime";
+			case Type::SSRCAudioLevel:			return "SSRCAudioLevel";
+			case Type::CoordinationOfVideoOrientation:	return "CoordinationOfVideoOrientation";
+			case Type::TransportWideCC:			return "TransportWideCC";
+			case Type::FrameMarking:			return "FrameMarking";
+			case Type::RTPStreamId:				return "RTPStreamId";
+			case Type::RepairedRTPStreamId:			return "RepairedRTPStreamId";
+			case Type::MediaStreamId:			return "MediaStreamId";
+			case Type::DependencyDescriptor:		return "DependencyDescriptor";
+			case Type::AbsoluteCaptureTime:			return "AbsoluteCaptureTime";
+			case Type::PlayoutDelay:			return "PlayoutDelay";
+			default:					return "unknown";
 		}
 	}
-	
 	
 	// For Frame Marking RTP Header Extension:
 	// https://tools.ietf.org/html/draft-ietf-avtext-framemarking-04#page-4
@@ -146,6 +148,24 @@ public:
 
 		}
 	};
+
+	struct PlayoutDelay
+	{
+		uint16_t min = 0;	// In ms
+		uint16_t max = 0;	// In ms
+		PlayoutDelay() = default;
+		PlayoutDelay(uint16_t min, uint16_t max) : min(min), max(max)
+		{
+
+		}
+		void SetPlayoutDelay(uint16_t min, uint16_t max)
+		{
+			this->min = min;
+			this->max = max;
+		}
+
+		static constexpr int GranularityMs = 10;
+	};
 	
 public:
 	DWORD Parse(const RTPMap &extMap,const BYTE* data,const DWORD size);
@@ -166,6 +186,7 @@ public:
 	BitReader dependencyDescryptorReader; 
 	std::optional<::DependencyDescriptor> dependencyDescryptor;
 	struct AbsoluteCaptureTime absoluteCaptureTime;
+	struct PlayoutDelay playoutDelay;
 	
 	bool	hasAbsSentTime		= false;
 	bool	hasTimeOffset		= false;
@@ -178,6 +199,7 @@ public:
 	bool	hasMediaStreamId	= false;
 	bool	hasDependencyDescriptor	= false;
 	bool	hasAbsoluteCaptureTime	= false;
+	bool	hasPlayoutDelay		= false;
 };
 
 #endif /* RTPHEADEREXTENSION_H */

@@ -43,7 +43,20 @@ public:
 	RTPPacket::shared GetPacket(WORD seq) const;
 
 	void Stop();
-	
+
+	bool HasForcedPlayoutDelay() const 
+	{
+		return forcedPlayoutDelay.has_value();
+	}
+	const struct RTPHeaderExtension::PlayoutDelay& GetForcedPlayoutDelay() const
+	{
+		
+		return *forcedPlayoutDelay; 
+	}
+	void SetForcedPlayoutDelay(uint16_t min, uint16_t max)
+	{
+		forcedPlayoutDelay.emplace(min, max);
+	}
 	
 public:	
 	std::string mid;
@@ -55,6 +68,7 @@ private:
 	TimeService& timeService;
 	CircularBuffer<RTPPacket::shared, uint16_t, 512> packets;
 	std::set<Listener*> listeners;
+	std::optional<struct RTPHeaderExtension::PlayoutDelay> forcedPlayoutDelay;
 };
 
 

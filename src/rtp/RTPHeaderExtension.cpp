@@ -23,7 +23,7 @@ size_t WriteHeaderIdAndLength(BYTE* data, DWORD pos, BYTE id, DWORD length, int 
 
 	switch (headerLength)
 	{
-		case 1:
+		case  1:
 			//Check size
 			if (!length || (length-1)>0x0f)
 				return Warning("-WriteHeaderIdAndLength() | Wrong length for a 1 header byte extension [len:%d]\n", length);
@@ -163,7 +163,7 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 		//Check type
 		switch (type)
 		{
-			case SSRCAudioLevel:
+			case Type::SSRCAudioLevel:
 				// The payload of the audio level header extension element can be
 				// encoded using either the one-byte or two-byte 
 				// 0			 1
@@ -182,7 +182,7 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 				vad		= (ext[i] & 0x80) >> 7;
 				level		= (ext[i] & 0x7f);
 				break;
-			case TimeOffset:
+			case Type::TimeOffset:
 				//  0			 1			 2			 3
 				//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 				// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -197,7 +197,7 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 					// Negative offset
 					timeOffset = -(timeOffset & 0x7FFFFF);
 				break;
-			case AbsoluteSendTime:
+			case Type::AbsoluteSendTime:
 				//  0			 1			 2			 3
 				//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 				// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -209,7 +209,7 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 				hasAbsSentTime = true;
 				absSentTime = ((QWORD)get3(ext,i))*1000 >> 18;
 				break;
-			case CoordinationOfVideoOrientation:
+			case Type::CoordinationOfVideoOrientation:
 				// Bit#		7   6   5   4   3   2   1  0(LSB)
 				// Definition	0   0   0   0   C   F   R1 R0
 				// With the following definitions:
@@ -227,7 +227,7 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 				cvo.flip	= ext[i] >> 2 & 0x01;
 				cvo.rotation	= ext[i] & 0x03;
 				break;
-			case TransportWideCC:
+			case Type::TransportWideCC:
 				//  0                   1                   2                   3
 				//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 				// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -237,7 +237,7 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 				transportSeqNum =  get2(ext,i);
 				break;
 				
-			case FrameMarking:
+			case Type::FrameMarking:
 				// For Frame Marking RTP Header Extension:
 				// 
 				// https://tools.ietf.org/html/draft-ietf-avtext-framemarking-04#page-4
@@ -288,23 +288,23 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 				} 
 				break;
 			// SDES string items
-			case RTPStreamId:
+			case Type::RTPStreamId:
 				hasRId = true;
 				rid.assign((const char*)ext+i,len);
 				break;	
-			case RepairedRTPStreamId:
+			case Type::RepairedRTPStreamId:
 				hasRepairedId = true;
 				repairedId.assign((const char*)ext+i,len);
 				break;	
-			case MediaStreamId:
+			case Type::MediaStreamId:
 				hasMediaStreamId = true;
 				mid.assign((const char*)ext+i,len);
 				break;
-			case DependencyDescriptor:
+			case Type::DependencyDescriptor:
 				//Leave it for later
 				dependencyDescryptorReader.Wrap(ext+i,len);
 				break;
-			case AbsoluteCaptureTime:
+			case Type::AbsoluteCaptureTime:
 				//	Data layout of the shortened version of abs-capture-time with a 1-byte header + 8 bytes of data:
 				//
 				//					0                   1                   2                   3
@@ -354,6 +354,23 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 				if (len==16)
 					absoluteCaptureTime.estimatedCaptureClockOffsetNTP = (int64_t )get8(ext, i+8);
 				break;
+			case Type::PlayoutDelay:
+			{
+				//
+				//	 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+				//	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				//	|  ID   | len=2 |       MIN delay       |       MAX delay       |
+				//	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				//	12 bits for Minimum and Maximum delay. 
+				//	This represents a range of 0 - 40950 milliseconds for minimum and maximum (with a granularity of 10 ms).
+				hasPlayoutDelay = true;
+				//Get extension data
+				uint32_t raw = get3(ext, i);
+				//Get min & max
+				playoutDelay.min = (raw >> 12) * PlayoutDelay::GranularityMs;
+				playoutDelay.max = (raw & 0xfff) * PlayoutDelay::GranularityMs;
+				break;
+			}
 			default:
 				UltraDebug("-RTPHeaderExtension::Parse() | Unknown or unmapped extension [%d]\n",id);
 				break;
@@ -594,7 +611,7 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 		//     0                   1                   2                   3
 		//     0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 		//    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-		//    |  ID=? |  L=2  |S|E|I|D|B| TID |   LID	   |    TL0PICIDX  |
+		//    |  ID=? |  L=2  |S|E|I|D|B| TID |   LID         |    TL0PICIDX  |
 		//    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 		//
 
@@ -712,6 +729,30 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 		}
 	}
 
+	if (hasPlayoutDelay)
+	{
+		//Get id for extension
+		BYTE id = extMap.GetTypeForCodec(PlayoutDelay);
+
+		//   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+		//	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+		//	|  ID   | len=2 |       MIN delay       |       MAX delay       |
+		//	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+		//Write header 
+		if ((n = WriteHeaderIdAndLength(data, len, id, 3, headerLength)))
+		{
+			//Inc header len
+			len += n;
+
+			//Set them
+			set3(data, len , ((playoutDelay.min / PlayoutDelay::GranularityMs) << 12) | ((playoutDelay.max / PlayoutDelay::GranularityMs ) & 0xfff));
+
+			//Inc length
+			len += 2;
+		}
+	}
+
 	//Pad to 32 bit words
 	while(len%4)
 		data[len++] = 0;
@@ -769,6 +810,8 @@ void RTPHeaderExtension::Dump() const
 			absoluteCaptureTime.GetAbsoluteCaptureTimestamp(),
 			absoluteCaptureTime.GetAbsoluteCaptureTime()
 		);
+	if (hasPlayoutDelay)
+		Debug("\t\t\t[PlayoutDelay min=%u max=%u]\n", playoutDelay.min, playoutDelay.max);
 
 	Debug("\t\t[/RTPHeaderExtension]\n");
 }

@@ -640,6 +640,14 @@ DWORD DTLSICETransport::SendProbe(const RTPPacket::shared& original)
 	
 	//No frame markings
 	packet->DisableFrameMarkings();
+
+	//If we are forcing video playout delay add it to the last packet of an Iframe
+	if (group->type == MediaFrame::Video && group->HasForcedPlayoutDelay() && packet->IsKeyFrame() && packet->GetMark())
+		//Set delay
+		packet->SetPlayoutDelay(group->GetForcedPlayoutDelay());
+	else
+		//Disable playout delay
+		packet->DisablePlayoutDelay();
 	
 	//Pick one packet buffer from the pool
 	Packet buffer = packetPool.pick();
