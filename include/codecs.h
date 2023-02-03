@@ -75,19 +75,14 @@ public:
 class VideoCodec
 {
 public:
-	enum Type {JPEG=16,H263_1996=34,H263_1998=103,MPEG4=104,H264=99,SORENSON=100,VP6=106,VP8=107,VP9=112,ULPFEC=108,FLEXFEC=113,RED=109,RTX=110,AV1=111,H265=96,UNKNOWN=-1};
+	enum Type {JPEG=16,H264=99,VP8=107,VP9=112,ULPFEC=108,FLEXFEC=113,RED=109,RTX=110,AV1=111,H265=96,UNKNOWN=-1};
 	static const char* GetNameFor(Type type)
 	{
 		switch (type)
 		{
 			case JPEG:	return "JPEG";
-			case H263_1996:	return "H263_1996";
-			case H263_1998:	return "H263_1998";
-			case MPEG4:	return "MPEG4";
 			case H264:	return "H264";
 			case H265:	return "H265";
-			case SORENSON:  return "SORENSON";
-			case VP6:	return "VP6";
 			case VP8:	return "VP8";
 			case VP9:	return "VP9";
 			case AV1:	return "AV1";
@@ -102,15 +97,8 @@ public:
 	{
 		if	(strcasecmp(codec,"JPEG")==0) return JPEG;
 		else if (strcasecmp(codec,"MJPEG") == 0) return JPEG;
-		else if (strcasecmp(codec,"H263-1996")==0) return H263_1996;
-		else if (strcasecmp(codec,"H263")==0) return H263_1996;
-		else if (strcasecmp(codec,"H263P")==0) return H263_1998;
-		else if (strcasecmp(codec,"H263_1998")==0) return H263_1998;
-		else if (strcasecmp(codec,"MPEG4")==0) return MPEG4;
 		else if (strcasecmp(codec,"H264")==0) return H264;
 		else if (strcasecmp(codec,"H265") == 0) return H265;
-		else if (strcasecmp(codec,"SORENSON")==0) return SORENSON;
-		else if (strcasecmp(codec,"VP6")==0) return VP6;
 		else if (strcasecmp(codec,"VP8")==0) return VP8;
 		else if (strcasecmp(codec,"VP9")==0) return VP9;
 		else if (strcasecmp(codec,"AV1")==0) return AV1;
@@ -155,13 +143,8 @@ static MediaFrame::Type GetMediaForCodec(BYTE codec)
 		case AudioCodec::MP3:
 			return MediaFrame::Audio;
 		case VideoCodec::JPEG:
-		case VideoCodec::H263_1996:
-		case VideoCodec::H263_1998:
-		case VideoCodec::MPEG4:
 		case VideoCodec::H264:
 		case VideoCodec::H265:
-		case VideoCodec::SORENSON:  
-		case VideoCodec::VP6:
 		case VideoCodec::VP8:
 		case VideoCodec::VP9:
 		case VideoCodec::AV1:

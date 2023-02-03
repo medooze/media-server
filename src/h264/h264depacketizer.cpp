@@ -12,7 +12,12 @@
 #include "log.h"
 #include "h264.h"
 
-H264Depacketizer::H264Depacketizer() : RTPDepacketizer(MediaFrame::Video,VideoCodec::H264), frame(VideoCodec::H264,0)
+constexpr uint32_t AnnexBStartCode = 0x01;
+
+H264Depacketizer::H264Depacketizer(bool annexB) :
+	RTPDepacketizer(MediaFrame::Video,VideoCodec::H264),
+	frame(VideoCodec::H264,0),
+	annexB(annexB)
 {
 	//Set clock rate
 	frame.SetClockRate(90000);
@@ -198,8 +203,13 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 						break;
 				}
 
-				//Set size
-				set4(nalHeader,0,nalSize);
+				//Check if doing annex b
+				if (annexB)
+					//Set annex b start code
+					set4(nalHeader, 0, AnnexBStartCode);
+				else
+					//Set size
+					set4(nalHeader,0,nalSize);
 				//Append data
 				frame.AppendMedia(nalHeader, sizeof (nalHeader));
 				
@@ -287,8 +297,13 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 					return NULL;
 				//Get NAL size
 				DWORD nalSize = frame.GetLength()-iniFragNALU-4;
-				//Set it
-				set4(frame.GetData(),iniFragNALU,nalSize);
+				//Check if doing annex b
+				if (annexB)
+					//Set annex b start code
+					set4(frame.GetData(), iniFragNALU, AnnexBStartCode);
+				else
+					//Set size
+					set4(frame.GetData(), iniFragNALU, nalSize);
 				//Done with fragment
 				iniFragNALU = 0;
 				startedFrag = false;
@@ -336,8 +351,13 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 					config.AddPictureParameterSet(payload,nalSize);
 					break;
 			}
-			//Set size
-			set4(nalHeader,0,nalSize);
+			//Check if doing annex b
+			if (annexB)
+				//Set annex b start code
+				set4(nalHeader, 0, AnnexBStartCode);
+			else
+				//Set size
+				set4(nalHeader, 0, nalSize);
 			//Append data
 			frame.AppendMedia(nalHeader, sizeof (nalHeader));
 			//Append data and get current post
@@ -350,4 +370,3 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 
 	return &frame;
 }
-

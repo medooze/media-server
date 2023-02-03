@@ -14,16 +14,10 @@
 * VP9Decoder
 *	Consturctor
 ************************/
-VP9Decoder::VP9Decoder()
+VP9Decoder::VP9Decoder() :
+	VideoDecoder(VideoCodec::H264),
+	videoBufferPool(2, 4)
 {
-	type = VideoCodec::VP9;
-	frame = NULL;
-	frameSize = 0;
-	width = 0;
-	height = 0;
-	completeFrame = true;
-	first = true;
-	
 	//Codec config and flags
 	vpx_codec_flags_t flags = 0;
 	vpx_codec_dec_cfg_t cfg = {};
@@ -43,8 +37,7 @@ VP9Decoder::VP9Decoder()
 VP9Decoder::~VP9Decoder()
 {
 	vpx_codec_destroy(&decoder);
-	if (frame)
-		free(frame);
+
 }
 
 /***********************
@@ -80,15 +73,15 @@ int VP9Decoder::DecodePacket(const BYTE *data,DWORD size,int lost,int last)
 	return ret;
 }
 
-int VP9Decoder::Decode(const BYTE *buffer,DWORD len)
+int VP9Decoder::Decode(const BYTE * data,DWORD size)
 {
 	//Decode
-	vpx_codec_err_t err = vpx_codec_decode(&decoder,buffer,len,NULL,0);
+	vpx_codec_err_t err = vpx_codec_decode(&decoder, data,size,NULL,0);
 	
 	//Check error
 	if (err!=VPX_CODEC_OK)
 		//Error
-		return Error("Error decoding VP9 frame [error %d:%s]\n",decoder.err,decoder.err_detail);
+		return Error("-VP9Decoder::Decode() | Error decoding VP9 frame [error %d:%s]\n",decoder.err,decoder.err_detail);
 
 	//Ger image
 	vpx_codec_iter_t iter = NULL;
@@ -97,36 +90,32 @@ int VP9Decoder::Decode(const BYTE *buffer,DWORD len)
 	//Check img
 	if (!img)
 		//Do nothing
-		return Error("-No image\n");
+		return Error("-VP9Decoder::Decode() | No image\n");
 
 	//Get dimensions
 	width = img->d_w;
 	height = img->d_h;
-	DWORD u = width*height;
-	DWORD v = width*height*5/4;
-	DWORD size = width*height*3/2;
 
-	//Check size
-	if (size>frameSize)
-	{
-		Log("-Frame size %dx%d\n",width,height);
-		//Liberamos si habia
-		if(frame!=NULL)
-			free(frame);
-		//Y allocamos de nuevo
-		frame = (BYTE*) malloc(size);
-		frameSize = size;
-	}
+	//Set new size in pool
+	videoBufferPool.SetSize(width, height);
+
+	//Get new frame
+	videoBuffer = videoBufferPool.allocate();
+
+	//Get planes
+	Plane& y = videoBuffer->GetPlaneY();
+	Plane& u = videoBuffer->GetPlaneU();
+	Plane& v = videoBuffer->GetPlaneV();
 
 	//Copaamos  el Cy
-	for(DWORD i=0;i<height;i++)
-		memcpy(&frame[i*width],&img->planes[0][i*img->stride[0]],width);
+	for (int i = 0; i < std::min<uint32_t>(height, y.GetHeight()); i++)
+		memcpy(y.GetData() + i * y.GetStride(), &img->planes[0][i * img->stride[0]], y.GetWidth());
 
 	//Y el Cr y Cb
-	for(DWORD i=0;i<height/2;i++)
+	for (int i = 0; i < std::min<uint32_t>({ height / 2, u.GetHeight(), v.GetHeight() }); i++)
 	{
-		memcpy(&frame[i*width/2+u],&img->planes[1][i*img->stride[1]],width/2);
-		memcpy(&frame[i*width/2+v],&img->planes[2][i*img->stride[2]],width/2);
+		memcpy(u.GetData() + i * u.GetStride(), &img->planes[1][i * img->stride[1]], u.GetWidth());
+		memcpy(v.GetData() + i * v.GetStride(), &img->planes[2][i * img->stride[2]], v.GetWidth());
 	}
 
 	//Return ok

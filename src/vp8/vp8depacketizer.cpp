@@ -100,7 +100,7 @@ MediaFrame* VP8Depacketizer::AddPayload(const BYTE* payload, DWORD len)
 	{
 		Dump(payload,len);
 		//Error
-		Error("- VP8Depacketizer::AddPayload() | Error decoding VP8 payload header\n");
+		Error("-VP8Depacketizer::AddPayload() | Error decoding VP8 payload header\n");
 		return NULL;
 	}
 	

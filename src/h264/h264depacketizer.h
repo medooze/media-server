@@ -14,7 +14,7 @@
 class H264Depacketizer : public RTPDepacketizer
 {
 public:
-	H264Depacketizer();
+	H264Depacketizer(bool annexB = false);
 	virtual ~H264Depacketizer();
 	virtual MediaFrame* AddPacket(const RTPPacket::shared& packet) override;
 	virtual MediaFrame* AddPayload(const BYTE* payload,DWORD payload_len) override;
@@ -24,6 +24,7 @@ private:
 	AVCDescriptor config;
 	DWORD iniFragNALU = 0;
 	bool startedFrag = false;
+	bool annexB = false;
 };
 
 #endif	/* H264DEPACKETIZER_H */

@@ -81,15 +81,16 @@ H264Encoder::~H264Encoder()
 ***********************/
 int H264Encoder::SetSize(int width, int height)
 {
+	//Check if they are the same size
+	if (this->width==width && this->height==height)
+		//Do nothing
+		return 1;
 	
 	Log("-H264Encoder::SetSize() [width:%d,height:%d]\n",width,height);
 	
 	//Save values
 	this->width = width;
 	this->height = height;
-
-	//calculate number of pixels in  input image
-	numPixels = width*height;
 
 	// Open codec
 	return OpenCodec();
@@ -249,7 +250,7 @@ int H264Encoder::OpenCodec()
 * EncodeFrame
 *	Codifica un frame
 ***********************/
-VideoFrame* H264Encoder::EncodeFrame(BYTE *buffer,DWORD bufferSize)
+VideoFrame* H264Encoder::EncodeFrame(const VideoBuffer::const_shared& videoBuffer)
 {
 	if(!opened)
 	{
@@ -257,20 +258,18 @@ VideoFrame* H264Encoder::EncodeFrame(BYTE *buffer,DWORD bufferSize)
 		return NULL;
 	}
 
-	//Comprobamos el tama�o
-	if (numPixels*3/2 != bufferSize)
-	{
-		Error("-EncodeFrame length error [%d,%d]\n",numPixels*5/4,bufferSize);
-		return NULL;
-	}
+	//Get planes
+	const Plane& y = videoBuffer->GetPlaneY();
+	const Plane& u = videoBuffer->GetPlaneU();
+	const Plane& v = videoBuffer->GetPlaneV();
 
 	//POnemos los valores
-	pic.img.plane[0] = buffer;
-	pic.img.plane[1] = buffer+numPixels;
-	pic.img.plane[2] = buffer+numPixels*5/4;
-	pic.img.i_stride[0] = width;
-	pic.img.i_stride[1] = width/2;
-	pic.img.i_stride[2] = width/2; 
+	pic.img.plane[0] = (unsigned char*)y.GetData();
+	pic.img.plane[1] = (unsigned char*)u.GetData();
+	pic.img.plane[2] = (unsigned char*)v.GetData();
+	pic.img.i_stride[0] = y.GetStride();
+	pic.img.i_stride[1] = u.GetStride();
+	pic.img.i_stride[2] = v.GetStride();
 	pic.img.i_csp   = X264_CSP_I420;
 	pic.img.i_plane = 3;
 	pic.i_pts  = pts++;

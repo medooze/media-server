@@ -141,26 +141,16 @@ int VideoDecoderWorker::Decode()
 			//Try to decode what is in the buffer
 			videoDecoder->DecodePacket(NULL,0,1,1);
 			//Get picture
-			BYTE *frame = videoDecoder->GetFrame();
-			DWORD width = videoDecoder->GetWidth();
-			DWORD height = videoDecoder->GetHeight();
-			//Check values
-			if (frame && width && height)
+			const VideoBuffer::shared& frame = videoDecoder->GetFrame();
+			//Check
+			if (frame && !muted)
 			{
-				//Set frame size
 				//Sync
 				ScopedLock scope(mutex);
 				//For each output
 				for (auto output : outputs)
-				{
-					//Set frame size
-					output->SetVideoSize(width,height);
-				
-					//Check if muted
-					if (!muted)
-						//Send it
-						output->NextFrame(frame);
-				}
+					//Send it
+					output->NextFrame(frame);
 			}
 		}
 		
@@ -182,26 +172,18 @@ int VideoDecoderWorker::Decode()
 			frameTime = (QWORD)-1;
 
 			//Get picture
-			BYTE *frame = videoDecoder->GetFrame();
-			DWORD width = videoDecoder->GetWidth();
-			DWORD height = videoDecoder->GetHeight();
-			//Check values
-			if (frame && width && height)
+			const VideoBuffer::shared& frame = videoDecoder->GetFrame();
+			//Check
+			if (frame && !muted)
 			{
 				//Sync
 				ScopedLock scope(mutex);
 				//For each output
 				for (auto output : outputs)
-				{
-					//Set frame size
-					output->SetVideoSize(width,height);
-				
-					//Check if muted
-					if (!muted)
-						//Send it
-						output->NextFrame(frame);
-				}
+					//Send it
+					output->NextFrame(frame);
 			}
+
 			//Check if we got the waiting refresh
 			if (waitIntra && videoDecoder->IsKeyFrame())
 				//Do not wait anymore

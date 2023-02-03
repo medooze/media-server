@@ -198,20 +198,20 @@ int VideoEncoderWorker::Encode()
 		auto pic = input->GrabFrame(frameTime/1000);
 
 		//Check picture
-		if (!pic.buffer)
+		if (!pic)
 			//Exit
 			continue;
 		
 		//Check size
-		if (pic.width!=width || pic.height!=height)
+		if (pic->GetWidth() != width || pic->GetHeight() != height)
 		{
 			//Check
 			if (videoEncoder)
 				//Borramos el encoder
 				delete videoEncoder;
 			//Update size
-			width	= pic.width;
-			height	= pic.height;
+			width	= pic->GetWidth();
+			height	= pic->GetHeight();
 			//Create encoder again
 			videoEncoder = VideoCodecFactory::CreateEncoder(codec,properties);
 			//Reset bitrate
@@ -271,10 +271,8 @@ int VideoEncoderWorker::Encode()
 			current = target;
 		}
 
-		
-
 		//Procesamos el frame
-		VideoFrame *videoFrame = videoEncoder->EncodeFrame(pic.buffer,pic.GetBufferSize());
+		VideoFrame *videoFrame = videoEncoder->EncodeFrame(pic);
 
 		//If was failed
 		if (!videoFrame)
@@ -333,7 +331,7 @@ int VideoEncoderWorker::Encode()
 		}
 
 		//Add frame size in bits to bitrate calculator
-	        bitrateAcu.Update(getDifTime(&first)/1000,videoFrame->GetLength()*8);
+		bitrateAcu.Update(getDifTime(&first)/1000,videoFrame->GetLength()*8);
 
 		//Set clock rate
 		videoFrame->SetClockRate(90000);

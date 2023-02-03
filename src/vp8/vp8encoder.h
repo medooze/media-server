@@ -17,7 +17,7 @@ class VP8Encoder : public VideoEncoder
 public:
 	VP8Encoder(const Properties& properties);
 	virtual ~VP8Encoder();
-	virtual VideoFrame* EncodeFrame(BYTE *in,DWORD len);
+	virtual VideoFrame* EncodeFrame(const VideoBuffer::const_shared& videoBuffer);
 	virtual int FastPictureUpdate();
 	virtual int SetSize(int width,int height);
 	virtual int SetFrameRate(int fps,int kbits,int intraPeriod);

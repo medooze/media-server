@@ -68,12 +68,16 @@ VP8Encoder::~VP8Encoder()
 ***********************/
 int VP8Encoder::SetSize(int width, int height)
 {
+	//Check if they are the same size
+	if (this->width == width && this->height == height)
+		//Do nothing
+		return 1;
+
+	Log("-VP8Encoder::SetSize() [width:%d,height:%d]\n", width, height);
+
 	//Save values
 	this->width = width;
 	this->height = height;
-
-	//calculate number of pixels in  input image
-	numPixels = width*height;
 
 	// Open codec
 	return OpenCodec();
@@ -124,7 +128,7 @@ int VP8Encoder::SetFrameRate(int frames,int kbits,int intraPeriod)
 
 int VP8Encoder::OpenCodec()
 {
-	Log("-OpenCodec VP8 using %s [%dkbps,%dfps,%dintra]\n",vpx_codec_iface_name(interface),bitrate,fps,intraPeriod);
+	Log("-VP8Encoder::OpenCodec() | VP8 using %s [%dkbps,%dfps,%dintra]\n",vpx_codec_iface_name(interface),bitrate,fps,intraPeriod);
 
 	// Check
 	if (opened)
@@ -132,7 +136,7 @@ int VP8Encoder::OpenCodec()
 	
 	// populate encoder configuration with default values
 	if (vpx_codec_enc_config_default(interface, &config, 0))
-		return Error("");
+		return Error("-VP8Encoder::OpenCodec() | Error setting config defaults\n");
 
 	//Create image
 	pic = vpx_img_alloc(NULL, VPX_IMG_FMT_I420, width, height, 0);
@@ -206,7 +210,7 @@ int VP8Encoder::OpenCodec()
 	//Check result
 	if (vpx_codec_enc_init(&encoder, interface, &config, VPX_CODEC_USE_OUTPUT_PARTITION)!=VPX_CODEC_OK)
 		//Error
-		return Error("WEBRTC_VIDEO_CODEC_UNINITIALIZED [error %d:%s]\n",encoder.err,encoder.err_detail);
+		return Error("-VP8Encoder::OpenCodec() | Error initializing encoder [error %d:%s]\n",encoder.err,encoder.err_detail);
 
 	//The static threshold imposes a change threshold on blocks below which they will be skipped by the encoder.
 	vpx_codec_control(&encoder, VP8E_SET_STATIC_THRESHOLD, 100);
@@ -237,25 +241,28 @@ int VP8Encoder::FastPictureUpdate()
 	return true;
 }
 
-VideoFrame* VP8Encoder::EncodeFrame(BYTE *buffer,DWORD bufferSize)
+VideoFrame* VP8Encoder::EncodeFrame(const VideoBuffer::const_shared& videoBuffer)
 {
 	if(!opened)
 	{
-		Error("-Codec not opened\n");
+		Error("-VP8Encoder::EncodeFrame() | Codec not opened\n");
 		return NULL;
 	}
 
-	//Comprobamos el tamaño
-	if (numPixels*3/2 != bufferSize)
-	{
-		Error("-EncodeFrame length error [%d,%d]\n",numPixels*5/4,bufferSize);
-		return NULL;
-	}
-	
+	//Get planes
+	const Plane& y = videoBuffer->GetPlaneY();
+	const Plane& u = videoBuffer->GetPlaneU();
+	const Plane& v = videoBuffer->GetPlaneV();
+
 	//Set data
-	pic->planes[VPX_PLANE_Y] = buffer;
-	pic->planes[VPX_PLANE_U] = buffer+numPixels;
-	pic->planes[VPX_PLANE_V] = buffer+numPixels*5/4;
+	pic->planes[VPX_PLANE_Y] = (unsigned char*)y.GetData();
+	pic->planes[VPX_PLANE_U] = (unsigned char*)u.GetData();
+	pic->planes[VPX_PLANE_V] = (unsigned char*)v.GetData();
+	pic->planes[VPX_PLANE_ALPHA] = nullptr;
+	pic->stride[VPX_PLANE_Y] = y.GetStride();
+	pic->stride[VPX_PLANE_U] = u.GetStride();
+	pic->stride[VPX_PLANE_V] = v.GetStride();
+	pic->stride[VPX_PLANE_ALPHA] = 0;
 
 	int flags = 0;
 
@@ -273,7 +280,7 @@ VideoFrame* VP8Encoder::EncodeFrame(BYTE *buffer,DWORD bufferSize)
 	if (vpx_codec_encode(&encoder, pic, pts, duration, flags, VPX_DL_REALTIME)!=VPX_CODEC_OK)
 	{
 		//Error
-		Error("WEBRTC_VIDEO_CODEC_ERROR [error %d:%s]\n",encoder.err,encoder.err_detail);
+		Error("-VP8Encoder::EncodeFrame() | Encode error [error %d:%s]\n",encoder.err,encoder.err_detail);
 		//Exit
 		return NULL;
 	}

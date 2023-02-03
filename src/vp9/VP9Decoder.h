@@ -12,22 +12,22 @@ class VP9Decoder : public VideoDecoder
 public:
 	VP9Decoder();
 	virtual ~VP9Decoder();
-	virtual int DecodePacket(const BYTE *in,DWORD len,int lost,int last);
-	virtual int Decode(const BYTE *in,DWORD len);
-	virtual int GetWidth()	{return width;};
-	virtual int GetHeight()	{return height;};
-	virtual BYTE* GetFrame(){return (BYTE *)frame;};
+	virtual int DecodePacket(const BYTE* data, DWORD size, int lost, int last);
+	virtual int Decode(const BYTE* data, DWORD size);
+	virtual int GetWidth() { return width; };
+	virtual int GetHeight() { return height; };
+	virtual const VideoBuffer::shared& GetFrame() { return videoBuffer; };
 	virtual bool  IsKeyFrame();
 private:
 	vpx_codec_ctx_t  decoder;
+
 	VP9Depacketizer  depacketizer;
-	BYTE*		frame;
-	DWORD		frameSize;
-	DWORD		width;
-	DWORD		height;
-	bool		isKeyFrame;
-	bool		completeFrame;
-	bool		first;
+	VideoBuffer::shared videoBuffer;
+	VideoBufferPool	    videoBufferPool;
+
+	DWORD		width = 0;
+	DWORD		height = 0;
+	bool		isKeyFrame = false;
 };
 #endif	/* VP9DECODER_H */
 

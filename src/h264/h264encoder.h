@@ -12,7 +12,7 @@ class H264Encoder : public VideoEncoder
 public:
 	H264Encoder(const Properties& properties);
 	virtual ~H264Encoder();
-	virtual VideoFrame* EncodeFrame(BYTE *in,DWORD len);
+	virtual VideoFrame* EncodeFrame(const VideoBuffer::const_shared& videoBuffer);
 	virtual int FastPictureUpdate();
 	virtual int SetSize(int width,int height);
 	virtual int SetFrameRate(int fps,int kbits,int intraPeriod);
@@ -32,7 +32,6 @@ private:
 	int numNals;
 	int width;
 	int height;
-	DWORD numPixels;
 	int bitrate;
 	int fps;
 	int format;

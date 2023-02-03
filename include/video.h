@@ -5,13 +5,15 @@
 #include "media.h"
 #include "codecs.h"
 #include "rtp/LayerInfo.h"
+#include "VideoBuffer.h"
+#include "VideoBufferPool.h"
 
 struct LayerFrame
 {
-	DWORD pos	= 0;
-	DWORD size	= 0;
-	DWORD width	= 0;
-	DWORD height	= 0;
+	uint32_t pos	= 0;
+	uint32_t size	= 0;
+	uint32_t width	= 0;
+	uint32_t height	= 0;
 	LayerInfo info;
 };
 
@@ -28,7 +30,7 @@ public:
 		height = 0;
 	}
 
-	VideoFrame(VideoCodec::Type codec,DWORD size) : MediaFrame(MediaFrame::Video,size)
+	VideoFrame(VideoCodec::Type codec,uint32_t size) : MediaFrame(MediaFrame::Video,size)
 	{
 		//Store codec
 		this->codec = codec;
@@ -98,12 +100,12 @@ public:
 	
 	VideoCodec::Type GetCodec() const	{ return codec;			}
 	bool  IsIntra()	const			{ return isIntra;		}
-	DWORD GetWidth() const			{ return width;			}
-	DWORD GetHeight() const			{ return height;		}
+	uint32_t GetWidth() const			{ return width;			}
+	uint32_t GetHeight() const			{ return height;		}
 
 	void SetCodec(VideoCodec::Type codec)	{ this->codec = codec;		}
-	void SetWidth(DWORD width)		{ this->width = width;		}
-	void SetHeight(DWORD height)		{ this->height = height;	}
+	void SetWidth(uint32_t width)		{ this->width = width;		}
+	void SetHeight(uint32_t height)		{ this->height = height;	}
 	void SetIntra(bool isIntra)		{ this->isIntra = isIntra;	}
 	
 	bool	HasLayerFrames() const				{ return !layers.empty();	}
@@ -128,43 +130,21 @@ public:
 private:
 	VideoCodec::Type codec;
 	bool	isIntra;
-	DWORD	width;
-	DWORD	height;
+	uint32_t	width;
+	uint32_t	height;
 	std::vector<LayerFrame> layers;
 	std::optional<VideoOrientation> cvo;
 
 };
 
-struct VideoBuffer
-{
-	VideoBuffer() = default;
-	VideoBuffer(DWORD width, DWORD height,BYTE* buffer)
-	{
-		this->width = width;
-		this->height = height;
-		this->buffer = buffer;
-	}
-	
-	BYTE* GetBufferData() const
-	{
-		return buffer;
-	}
-	
-	DWORD GetBufferSize() const
-	{
-		return (width*height*3)/2;
-	}
-	
-	DWORD	width = 0;
-	DWORD	height = 0;
-	BYTE*	buffer = nullptr;
-};
 
 class VideoInput
 {
 public:
-	virtual int   StartVideoCapture(int width,int height,int fps)=0;
-	virtual VideoBuffer GrabFrame(DWORD timeout)=0;
+	virtual ~VideoInput() = default;
+
+	virtual int   StartVideoCapture(uint32_t width, uint32_t height, uint32_t fps)=0;
+	virtual VideoBuffer::const_shared GrabFrame(uint32_t timeout)=0;
 	virtual void  CancelGrabFrame()=0;
 	virtual int   StopVideoCapture()=0;
 };
@@ -172,9 +152,10 @@ public:
 class VideoOutput
 {
 public:
+	virtual ~VideoOutput() = default;
+
 	virtual void ClearFrame() = 0;
-	virtual int NextFrame(BYTE *pic)=0;
-	virtual int SetVideoSize(int width,int height)=0;
+	virtual int NextFrame(const VideoBuffer::const_shared& videoBuffer)=0;
 };
 
 
@@ -182,10 +163,10 @@ public:
 class VideoEncoder
 {
 public:
-	virtual ~VideoEncoder(){};
+	virtual ~VideoEncoder() = default;
 
 	virtual int SetSize(int width,int height)=0;
-	virtual VideoFrame* EncodeFrame(BYTE *in,DWORD len)=0;
+	virtual VideoFrame* EncodeFrame(const VideoBuffer::const_shared& videoBuffer)=0;
 	virtual int FastPictureUpdate()=0;
 	virtual int SetFrameRate(int fps,int kbits,int intraPeriod)=0;
 public:
@@ -195,13 +176,15 @@ public:
 class VideoDecoder
 {
 public:
-	virtual ~VideoDecoder(){};
+	VideoDecoder(VideoCodec::Type type) : type(type)
+	{};
+	virtual ~VideoDecoder() = default;
 
 	virtual int GetWidth()=0;
 	virtual int GetHeight()=0;
-	virtual int Decode(const BYTE *in,DWORD len) = 0;
-	virtual int DecodePacket(const BYTE *in,DWORD len,int lost,int last)=0;
-	virtual BYTE* GetFrame()=0;
+	virtual int Decode(const uint8_t *in,uint32_t len) = 0;
+	virtual int DecodePacket(const uint8_t *in,uint32_t len,int lost,int last)=0;
+	virtual const VideoBuffer::shared& GetFrame()=0;
 	virtual bool  IsKeyFrame()=0;
 public:
 	VideoCodec::Type type;

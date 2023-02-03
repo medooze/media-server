@@ -26,7 +26,7 @@ public:
 
 	RTPPayload::shared allocate()
 	{
-		RTPPayload* payload;
+		RTPPayload* payload = nullptr;
 
 		//Try to get one from the pool
 		if (!pool.try_dequeue(payload))

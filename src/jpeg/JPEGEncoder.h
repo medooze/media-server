@@ -11,7 +11,7 @@ class JPEGEncoder : public VideoEncoder
 public:
 	JPEGEncoder(const Properties& properties);
 	virtual ~JPEGEncoder();
-	virtual VideoFrame* EncodeFrame(BYTE* in, DWORD len);
+	virtual VideoFrame* EncodeFrame(const VideoBuffer::const_shared& videoBuffer);
 	virtual int FastPictureUpdate();
 	virtual int SetSize(int width, int height);
 	virtual int SetFrameRate(int fps, int kbits, int intraPeriod);
@@ -26,7 +26,6 @@ private:
 
 	int width = 0;
 	int height = 0;
-	uint32_t numPixels = 0;
 	int bitrate = 300000;
 	int fps = 30;
 	

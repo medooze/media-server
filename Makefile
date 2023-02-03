@@ -48,12 +48,6 @@ DEPACKETIZERSOBJ= RTPDepacketizer.o DependencyDescriptorLayerSelector.o
 G711DIR=g711
 G711OBJ=g711.o pcmucodec.o pcmacodec.o
 
-H263DIR=h263
-H263OBJ=h263.o h263codec.o mpeg4codec.o h263-1996codec.o
-
-
-FLV1DIR=flv1
-FLV1OBJ=flv1codec.o
 
 H264DIR=h264
 H264OBJ=h264encoder.o h264decoder.o 
@@ -61,9 +55,6 @@ DEPACKETIZERSOBJ+= h264depacketizer.o H264LayerSelector.o
 
 H265DIR=h265
 DEPACKETIZERSOBJ+= H265Depacketizer.o
-
-VP6DIR=vp6
-VP6OBJ=vp6decoder.o
 
 VP8DIR=vp8
 VP8OBJ=vp8encoder.o vp8decoder.o
@@ -103,7 +94,7 @@ MP4= mp4streamer.o mp4recorder.o mp4player.o
 RTMP= rtmpparticipant.o amf.o rtmpmessage.o rtmpchunk.o rtmpstream.o rtmpconnection.o  rtmpserver.o  rtmpflvstream.o flvrecorder.o flvencoder.o rtmppacketizer.o
 
 OBJS= xmlrpcserver.o xmlhandler.o xmlstreaminghandler.o statushandler.o CPUMonitor.o   EventSource.o eventstreaminghandler.o  AudioCodecFactory.o VideoCodecFactory.o cpim.o  groupchat.o websocketserver.o websocketconnection.o  mcu.o rtpparticipant.o multiconf.o    xmlrpcmcu.o    audiostream.o videostream.o  textmixer.o textmixerworker.o textstream.o pipetextinput.o pipetextoutput.o  logo.o overlay.o VideoEncoderWorker.o audioencoder.o audiodecoder.o textencoder.o rtmpmp4stream.o rtmpnetconnection.o   rtmpclientconnection.o vad.o  uploadhandler.o  appmixer.o  videopipe.o framescaler.o sidebar.o mosaic.o partedmosaic.o asymmetricmosaic.o pipmosaic.o videomixer.o audiomixer.o audiotransrater.o pipeaudioinput.o pipeaudiooutput.o pipevideoinput.o pipevideooutput.o broadcastsession.o  AudioPipe.o
-OBJS+= ${CORE} ${RTP} ${RTCP} ${RTMP} $(G711OBJ) $(H263OBJ) $(GSMOBJ)  $(H264OBJ) ${FLV1OBJ} $(SPEEXOBJ) $(NELLYOBJ) $(G722OBJ)  $(VADOBJ) $(VP6OBJ) $(VP8OBJ) $(VP9OBJ) $(OPUSOBJ) $(AACOBJ) $(DEPACKETIZERSOBJ) $(MP4)
+OBJS+= ${CORE} ${RTP} ${RTCP} ${RTMP} $(G711OBJ) $(GSMOBJ)  $(H264OBJ) $(SPEEXOBJ) $(NELLYOBJ) $(G722OBJ)  $(VADOBJ) $(VP8OBJ) $(VP9OBJ) $(OPUSOBJ) $(AACOBJ) $(DEPACKETIZERSOBJ) $(MP4)
 TARGETS=mcu test
 
 ifeq ($(VADWEBRTC),yes)
@@ -143,14 +134,11 @@ VPATH +=  %.cpp $(SRCDIR)/src/rtmp
 VPATH +=  %.cpp $(SRCDIR)/src/ws
 VPATH +=  %.cpp $(SRCDIR)/src/$(G711DIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(GSMDIR)
-VPATH +=  %.cpp $(SRCDIR)/src/$(H263DIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(H264DIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(H265DIR)
-VPATH +=  %.cpp $(SRCDIR)/src/$(FLV1DIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(SPEEXDIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(NELLYDIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(G722DIR)
-VPATH +=  %.cpp $(SRCDIR)/src/$(VP6DIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(VP8DIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(VP9DIR)
 VPATH +=  %.cpp $(SRCDIR)/src/$(AV1DIR)

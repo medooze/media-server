@@ -5,6 +5,7 @@ extern "C" {
 } 
 #include "codecs.h"
 #include "video.h"
+#include "h264depacketizer.h"
 
 class H264Decoder : public VideoDecoder
 {
@@ -15,17 +16,16 @@ public:
 	virtual int Decode(const BYTE *in,DWORD len);
 	virtual int GetWidth()		{ return ctx->width;		};
 	virtual int GetHeight()		{ return ctx->height;		};
-	virtual BYTE* GetFrame()	{ return (BYTE *)frame;		};
+	virtual const VideoBuffer::shared& GetFrame() { return videoBuffer;	};
 	virtual bool  IsKeyFrame()	{ return picture->key_frame;	};
 private:
-	AVCodec 	*codec;
-	AVCodecContext	*ctx;
-	AVFrame		*picture;
-	BYTE*		buffer;
-	DWORD		bufLen;
-	DWORD 		bufSize;
-	BYTE*		frame;
-	DWORD		frameSize;
-	BYTE		src;
+	AVCodec 	*codec = nullptr;
+	AVCodecContext	*ctx = nullptr;
+	AVFrame		*picture = nullptr;
+	
+	H264Depacketizer    depacketizer;
+	VideoBuffer::shared videoBuffer;
+	VideoBufferPool	    videoBufferPool;
+
 };
 #endif

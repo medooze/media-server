@@ -1,9 +1,3 @@
-/* 
- * File:   vp8decoder.cpp
- * Author: Sergio
- * 
- * Created on 13 de noviembre de 2012, 15:57
- */
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -11,37 +5,17 @@
 #include "vp8.h"
 #include "log.h"
 
-#define interface (vpx_codec_vp8_dx())
-/***********************
-* VP8Decoder
-*	Consturctor
-************************/
-VP8Decoder::VP8Decoder()
+VP8Decoder::VP8Decoder() :
+	VideoDecoder(VideoCodec::H264),
+	videoBufferPool(2, 4)
 {
-	type = VideoCodec::VP8;
-
-	//Guardamos los valores por defecto
-	buffer = NULL;
-	bufLen = 0;
-	bufSize = 0;
-
-	//Alocamos el buffer
-	bufSize = 1024*756*3/2;
-	buffer = (BYTE *)malloc(bufSize);
-	frame = NULL;
-	frameSize = 0;
-	src = 0;
-	width = 0;
-	height = 0;
-	completeFrame = true;
-	first = true;
 	//Set flags
 	vpx_codec_flags_t flags = 0;
 	/**< Postprocess decoded frame */
 	flags |= VPX_CODEC_USE_POSTPROC;
 	
 	//Get codec capatbilities
-	vpx_codec_caps_t caps = vpx_codec_get_caps(interface);
+	vpx_codec_caps_t caps = vpx_codec_get_caps(vpx_codec_vp8_dx());
 
         /*if (caps & VPX_CODEC_CAP_INPUT_FRAGMENTS)
 	{
@@ -56,7 +30,7 @@ VP8Decoder::VP8Decoder()
 	}*/
 	
 	//Init decoder
-	if(vpx_codec_dec_init(&decoder, interface, NULL, flags)!=VPX_CODEC_OK)
+	if(vpx_codec_dec_init(&decoder, vpx_codec_vp8_dx(), NULL, flags)!=VPX_CODEC_OK)
 		Error("Error initing VP8 decoder [error %d:%s]\n", decoder.err, decoder.err_detail ? decoder.err_detail : "(null)");
 
 	vp8_postproc_cfg_t  ppcfg;
@@ -68,262 +42,97 @@ VP8Decoder::VP8Decoder()
 	vpx_codec_control(&decoder, VP8_SET_POSTPROC, &ppcfg);
 }
 
-/***********************
-* ~VP8Decoder
-*	Destructor
-************************/
 VP8Decoder::~VP8Decoder()
 {
 	vpx_codec_destroy(&decoder);
-	if (buffer)
-		free(buffer);
-	if (frame)
-		free(frame);
 }
 
-/***********************
-* DecodePacket
-*	Decodifica un packete
-************************/
-int VP8Decoder::DecodePacket(const BYTE *in,DWORD inLen,int lost,int last)
+int VP8Decoder::DecodePacket(const BYTE* data, DWORD size, int lost, int last)
 {
-	vpx_codec_err_t err = VPX_CODEC_OK;
+	int ret = 1;
 
-	//Not key frame
-	isKeyFrame = false;
+	//Add to 
+	VideoFrame* frame = (VideoFrame*)depacketizer.AddPayload(data, size);
 
-	//Check if lost
-	if (lost)
-		//Not complete frame
-		completeFrame = false;
-
-	//Check if not empty last packet
-	if (inLen && completeFrame)
-	{
-		VP8PayloadDescriptor desc;
-
-		//Decode payload descriptr
-		DWORD pos = desc.Parse(in,inLen);
-
-		//Check if we have been able to parse frame
-		if (!pos)
-		{
-			//Frame not complete
-			completeFrame = false;
-			//Error
-			return Error("Could not parse VP8 payload descriptor\n");
-		}
-
-		//If it is first packetand it is not a partition start
-		if (first && !desc.startOfPartition)
-		{
-			//Frame not complete
-			completeFrame = false;
-			//Error but continue to handle last mark
-			Error("First packet lost of VP8 frame\n");
-		}
-
-		//Next is not first frame
-		first = false;
-
-		//If it is first of the partition
-		if (desc.startOfPartition && bufLen )
-		{
-			//Debug("-Decoding partition %d %d\n",desc.partitionIndex-1,bufLen);
-			//Discard not compelete partitions
-			if (completeFrame)
-				//Decode previous partition
-				err = vpx_codec_decode(&decoder,buffer,bufLen,NULL,0);
-			
-			//Reset length
-			bufLen = 0;
-
-			//Check error
-			if (err!=VPX_CODEC_OK)
-				//Error
-				Error("Error decoding VP8 partition [error %d:%s]\n", decoder.err, decoder.err_detail ? decoder.err_detail : "(null)");
-		}
-
-		//Check size
-		if (bufLen+inLen-pos<=bufSize)
-		{
-			//Append
-			memcpy(buffer+bufLen,in+pos,inLen-pos);
-			//Increase size
-			bufLen+=inLen-pos;
-		} else {
-			//Frame not complete
-			completeFrame = false;
-			//Error
-			Error("too much data in vp8 partition\n");
-		}
-	}
-
-	//Si es el ultimo
+	//Check last mark
 	if (last)
 	{
-		//Next is first again
-		first = true;
-
-		//Check if it is not compete
-		int corrupted = !completeFrame;
-		//Get len
-		DWORD len = bufLen;
-
-		//Clean next frame
-		completeFrame = true;
-		
-		//Debug("-Decoding last partition %d %d %d\n",inLen,len,bufLen);
-		
-		//Resetamos el buffer
-		bufLen=0;
-
-		//Check it is corrupted
-		if (corrupted)
-			//Do nothing
-			return Error("-Not complete VP8 frame\n");
-
-		//If got last partition
-		if (len)
-			//Decode last partition
-			err = vpx_codec_decode(&decoder,buffer,len,NULL,0);
-		/*
-		//Check error
-		if (err!=VPX_CODEC_OK)
-			//Error
-			return Error("Error decoding VP8 last [error %d:%s]\n", decoder.err, decoder.err_detail ? decoder.err_detail : "(null)");
-
-		//Decode end of frame
-		err = vpx_codec_decode(&decoder,NULL,0,NULL,0);
-		*/
-		
-		//Check error
-		if (err!=VPX_CODEC_OK)
-			//Error
-			return Error("Error decoding VP8 empty [error %d:%s]\n", decoder.err, decoder.err_detail ? decoder.err_detail : "(null)");
-
-		//Check if it is corrupted even if completed
-		if (vpx_codec_control(&decoder, VP8D_GET_FRAME_CORRUPTED, &corrupted)==VPX_CODEC_OK)
-			//Set key frame flag
-			isKeyFrame =  !(buffer[0] & 1) && !corrupted;
-
-		//Check it is corrupted
-		if (corrupted)
-			//Do nothing
-			return Error("-Corrupted VP8 frame\n");
-		
-		//Ger image
-		vpx_codec_iter_t iter = NULL;
-		vpx_image_t *img = vpx_codec_get_frame(&decoder, &iter);
-
-		//Check img
-		if (!img)
-			//Do nothing
-			return Error("-No image\n");
-		
-		//Get dimensions
-		width = img->d_w;
-		height = img->d_h;
-		DWORD u = width*height;
-		DWORD v = width*height*5/4;
-		DWORD size = width*height*3/2;
-
-		//Check size
-		if (size>frameSize)
+		//If got frame
+		if (frame)
 		{
-			Log("-Frame size %dx%d\n",width,height);
-			//Liberamos si habia
-			if(frame!=NULL)
-				free(frame);
-			//Y allocamos de nuevo
-			frame = (BYTE*) malloc(size);
-			frameSize = size;
+			//Check key frame amrk
+			isKeyFrame = frame->IsIntra();
+			//Decode it
+			ret = Decode(frame->GetData(), frame->GetLength());
+		} else {
+			//Not key frame
+			isKeyFrame = false;
 		}
-
-		//Copaamos  el Cy
-		for(DWORD i=0;i<height;i++)
-			memcpy(&frame[i*width],&img->planes[0][i*img->stride[0]],width);
-
-		//Y el Cr y Cb
-		for(DWORD i=0;i<height/2;i++)
-		{
-			memcpy(&frame[i*width/2+u],&img->planes[1][i*img->stride[1]],width/2);
-			memcpy(&frame[i*width/2+v],&img->planes[2][i*img->stride[2]],width/2);
-		}
+		//Reset frame
+		depacketizer.ResetFrame();
 	}
 
 	//Return ok
-	return 1;
+	return ret;
 }
 
-int VP8Decoder::Decode(const BYTE *buffer,DWORD len)
+int VP8Decoder::Decode(const BYTE* data, DWORD size)
 {
-	vpx_codec_err_t err = VPX_CODEC_OK;
-	int corrupted = false;
 	//Not key frame
 	isKeyFrame = false;
-
-	//Decode last partition
-	err = vpx_codec_decode(&decoder,buffer,len,NULL,0);
 	
+	//Decode frame
+	vpx_codec_err_t err = vpx_codec_decode(&decoder, data, size, NULL, 0);
+
 	//Check error
 	if (err!=VPX_CODEC_OK)
 		//Error
-		return Error("Error decoding VP8 empty [error %d:%s]\n", decoder.err, decoder.err_detail ? decoder.err_detail : "(null)");
+		return Error("-VP8Decoder::Decode() | Error decoding VP8 empty [error %d:%s]\n", decoder.err, decoder.err_detail ? decoder.err_detail : "(null)");
 
 	//Check if it is corrupted even if completed
+	int corrupted = false;
 	if (vpx_codec_control(&decoder, VP8D_GET_FRAME_CORRUPTED, &corrupted)==VPX_CODEC_OK)
 		//Set key frame flag
-		isKeyFrame =  !(buffer[0] & 1) && !corrupted;
+		isKeyFrame =  !(data[0] & 1) && !corrupted;
 
-	//Check it is corrupted
-	if (corrupted)
-		//Do nothing
-		return Error("-Corrupted VP8 frame\n");
-		
-	//Ger image
+	//Get image
 	vpx_codec_iter_t iter = NULL;
 	vpx_image_t *img = vpx_codec_get_frame(&decoder, &iter);
 
 	//Check img
 	if (!img)
 		//Do nothing
-		return Error("-No image\n");
+		return Error("-VP8Decoder::Decode() | No image\n");
 
 	//Get dimensions
 	width = img->d_w;
 	height = img->d_h;
-	DWORD u = width*height;
-	DWORD v = width*height*5/4;
-	DWORD size = width*height*3/2;
 
-	//Check size
-	if (size>frameSize)
-	{
-		Log("-Frame size %dx%d\n",width,height);
-		//Liberamos si habia
-		if(frame!=NULL)
-			free(frame);
-		//Y allocamos de nuevo
-		frame = (BYTE*) malloc(size);
-		frameSize = size;
-	}
+	//Set new size in pool
+	videoBufferPool.SetSize(width, height);
+
+	//Get new frame
+	videoBuffer = videoBufferPool.allocate();
+
+	//Get planes
+	Plane& y = videoBuffer->GetPlaneY();
+	Plane& u = videoBuffer->GetPlaneU();
+	Plane& v = videoBuffer->GetPlaneV();
 
 	//Copaamos  el Cy
-	for(DWORD i=0;i<height;i++)
-		memcpy(&frame[i*width],&img->planes[0][i*img->stride[0]],width);
+	for (int i = 0; i < std::min<uint32_t>(height, y.GetHeight()); i++)
+		memcpy(y.GetData() + i * y.GetStride(), &img->planes[0][i * img->stride[0]], y.GetWidth());
 
 	//Y el Cr y Cb
-	for(DWORD i=0;i<height/2;i++)
+	for (int i = 0; i < std::min<uint32_t>({ height / 2, u.GetHeight(), v.GetHeight() }); i++)
 	{
-		memcpy(&frame[i*width/2+u],&img->planes[1][i*img->stride[1]],width/2);
-		memcpy(&frame[i*width/2+v],&img->planes[2][i*img->stride[2]],width/2);
+		memcpy(u.GetData() + i * u.GetStride(), &img->planes[1][i * img->stride[1]], u.GetWidth());
+		memcpy(v.GetData() + i * v.GetStride(), &img->planes[2][i * img->stride[2]], v.GetWidth());
 	}
-
+		
 	//Return ok
 	return 1;
 }
-
 bool VP8Decoder::IsKeyFrame()
 {
 	return isKeyFrame;

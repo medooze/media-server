@@ -33,14 +33,16 @@ JPEGEncoder::~JPEGEncoder()
 
 int JPEGEncoder::SetSize(int width, int height)
 {
+	//Check if they are the same size
+	if (this->width == width && this->height == height)
+		//Do nothing
+		return 1;
+	
 	Log("-JPEGEncoder::SetSize() [width:%d,height:%d]\n", width, height);
 
 	//Save values
 	this->width = width;
 	this->height = height;
-
-	//calculate number of pixels in  input image
-	numPixels = width * height;
 
 	// Open codec
 	return OpenCodec();
@@ -109,19 +111,27 @@ int JPEGEncoder::OpenCodec()
 * EncodeFrame
 *	Codifica un frame
 ***********************/
-VideoFrame* JPEGEncoder::EncodeFrame(BYTE* buffer, DWORD bufferSize)
+VideoFrame* JPEGEncoder::EncodeFrame(const VideoBuffer::const_shared& videoBuffer)
 {
 	if (!codec)
-		return (VideoFrame*)Error("Codec not opened\n");
+	{
+		Error("-JPEGEncoder::EncodeFrame() | Codec not opened\n");
+		return nullptr;
+	}
+
+	//Get planes
+	const Plane& y = videoBuffer->GetPlaneY();
+	const Plane& u = videoBuffer->GetPlaneU();
+	const Plane& v = videoBuffer->GetPlaneV();
 
 	//Set input data
-	input->data[0] = buffer;
-	input->data[1] = buffer + numPixels;
-	input->data[2] = buffer + numPixels * 5 / 4;
+	input->data[0] = (unsigned char*)y.GetData();
+	input->data[1] = (unsigned char*)u.GetData();
+	input->data[2] = (unsigned char*)v.GetData();
 	input->data[3] = nullptr;
-	input->linesize[0] = width;
-	input->linesize[1] = width / 2;
-	input->linesize[2] = width / 2;
+	input->linesize[0] = y.GetStride();
+	input->linesize[1] = u.GetStride();
+	input->linesize[2] = v.GetStride();
 	input->linesize[3] = 0;
 	input->format = AV_PIX_FMT_YUVJ420P;
 	input->width  = width;
@@ -136,7 +146,10 @@ VideoFrame* JPEGEncoder::EncodeFrame(BYTE* buffer, DWORD bufferSize)
 	
 	int got_output = 0;
 	if (avcodec_encode_video2(ctx, packet.get(), input, &got_output)<0)
-		return (VideoFrame *)Error("Error encoding frame\n");
+	{
+		Error("-JPEGEncoder::EncodeFrame() | Error encoding frame\n");
+		return nullptr;
+	}
 		
 	if (!got_output)
 		return nullptr;
