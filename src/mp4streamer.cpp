@@ -113,17 +113,7 @@ int MP4Streamer::Open(const char *filename)
 				audio->packetIndex = 0;
 
 			} else if ((strcmp(type, MP4_VIDEO_TRACK_TYPE) == 0) && !video) {
-				// Depending on the name
-				if (strcmp("H263", name) == 0)
-					//Create new video track
-					video = new MP4RtpTrack(MediaFrame::Video,VideoCodec::H263_1996,payload,90000);
-				else if (strcmp("H263-1998", name) == 0)
-					//Create new video track
-					video = new MP4RtpTrack(MediaFrame::Video,VideoCodec::H263_1998,payload,90000);
-				else if (strcmp("H263-2000", name) == 0)
-					//Create new video track
-					video = new MP4RtpTrack(MediaFrame::Video,VideoCodec::H263_1998,payload,90000);
-				else if (strcmp("H264", name) == 0)
+				if (strcmp("H264", name) == 0)
 					//Create new video track
 					video = new MP4RtpTrack(MediaFrame::Video,VideoCodec::H264,payload,90000);
 				else if (strcmp("VP8", name) == 0)
