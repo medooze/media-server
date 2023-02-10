@@ -12,8 +12,6 @@ RTPIncomingMediaStreamMultiplexer::RTPIncomingMediaStreamMultiplexer(const RTPIn
 
 	if (incomingMediaStream)
 	{	
-		//Get ssrc
-		this->ssrc = incomingMediaStream->GetMediaSSRC();
 		//Add us as listeners
 		incomingMediaStream->AddListener(this);
 	}

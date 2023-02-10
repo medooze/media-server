@@ -20,7 +20,7 @@ public:
 	// RTPIncomingMediaStream interface;
 	virtual void AddListener(RTPIncomingMediaStream::Listener* listener) override;
 	virtual void RemoveListener(RTPIncomingMediaStream::Listener* listener) override;
-	virtual DWORD GetMediaSSRC() const override { return ssrc; }
+	virtual DWORD GetMediaSSRC() const override { return incomingMediaStream ? incomingMediaStream->GetMediaSSRC() : 0; }
 	virtual void Mute(bool muting);
 
 	// RTPIncomingMediaStream::Listener interface
@@ -32,7 +32,6 @@ public:
 	virtual TimeService& GetTimeService() override { return timeService; }
 	void Stop();
 private:
-	DWORD	ssrc = 0;
 	RTPIncomingMediaStream::shared incomingMediaStream;
 	TimeService& timeService;
 	std::set<RTPIncomingMediaStream::Listener*>  listeners;
