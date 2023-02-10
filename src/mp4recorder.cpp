@@ -123,36 +123,6 @@ int mp4track::CreateVideoTrack(VideoCodec::Type codec, DWORD rate, int width, in
 	//Check the codec
 	switch (codec)
 	{
-		case VideoCodec::H263_1996:
-		{
-			// Create video track
-			track = MP4AddH263VideoTrack(mp4, rate, 0, width, height, 0, 0, 0, 0);
-			//If hints are not disabled
-			if (!disableHints)
-			{
-				// Create video hint track
-				hint = MP4AddHintTrack(mp4, track);
-				// Set payload type for hint track
-				type = 34;
-				MP4SetHintTrackRtpPayload(mp4, hint, "H263", &type, 0, NULL, 1, 0);
-			}
-			break;
-		}
-		case VideoCodec::H263_1998:
-		{
-			// Create video track
-			track = MP4AddH263VideoTrack(mp4, rate, 0, width, height, 0, 0, 0, 0);
-			//If hints are not disabled
-			if (!disableHints)
-			{
-				// Create video hint track
-				hint = MP4AddHintTrack(mp4, track);
-				// Set payload type for hint track
-				type = 96;
-				MP4SetHintTrackRtpPayload(mp4, hint, "H263-1998", &type, 0, NULL, 1, 0);
-			}
-			break;
-		}
 		case VideoCodec::H264:
 		{
 			// Should parse video packet to get this values
