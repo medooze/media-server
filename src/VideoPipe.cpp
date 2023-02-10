@@ -209,8 +209,7 @@ int VideoPipe::NextFrame(const VideoBuffer::const_shared& videoBuffer)
 		videoWidth = ((uint32_t)(videoBuffer->GetWidth() / scaleResolutionDownBy)) & ~1;
 		videoHeight = ((uint32_t)(videoBuffer->GetHeight() / scaleResolutionDownBy)) & ~1;
 
-		//Logeamos
-		Error("-VideoPipe::NextFrame() | Scaling down from [%u,%u] to [%u,%u]\n", videoBuffer->GetWidth(), videoBuffer->GetHeight(), videoWidth, videoHeight);
+		//Debug("-VideoPipe::NextFrame() | Scaling down from [%u,%u] to [%u,%u]\n", videoBuffer->GetWidth(), videoBuffer->GetHeight(), videoWidth, videoHeight);
 
 		//Reset pool
 		videoBufferPool.SetSize(videoWidth, videoHeight);
