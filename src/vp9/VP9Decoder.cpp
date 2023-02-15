@@ -15,7 +15,7 @@
 *	Consturctor
 ************************/
 VP9Decoder::VP9Decoder() :
-	VideoDecoder(VideoCodec::H264),
+	VideoDecoder(VideoCodec::VP9),
 	videoBufferPool(2, 4)
 {
 	//Codec config and flags

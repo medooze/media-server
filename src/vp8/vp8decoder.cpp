@@ -6,7 +6,7 @@
 #include "log.h"
 
 VP8Decoder::VP8Decoder() :
-	VideoDecoder(VideoCodec::H264),
+	VideoDecoder(VideoCodec::VP8),
 	videoBufferPool(2, 4)
 {
 	//Set flags
