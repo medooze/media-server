@@ -155,10 +155,10 @@ int VideoEncoderWorker::Encode()
 	Log(">VideoEncoderWorker::Encode() [width:%d,size:%d,bitrate:%d,fps:%d,intra:%d]\n",width,height,bitrate,fps,intraPeriod);
 
 	//Creamos el encoder
-	VideoEncoder* videoEncoder = VideoCodecFactory::CreateEncoder(codec,properties);
+	std::unique_ptr<VideoEncoder> videoEncoder(VideoCodecFactory::CreateEncoder(codec,properties));
 
 	//Comprobamos que se haya creado correctamente
-	if (videoEncoder == NULL)
+	if (!videoEncoder)
 		//error
 		return Error("Can't create video encoder\n");
 
@@ -205,15 +205,11 @@ int VideoEncoderWorker::Encode()
 		//Check size
 		if (pic->GetWidth() != width || pic->GetHeight() != height)
 		{
-			//Check
-			if (videoEncoder)
-				//Borramos el encoder
-				delete videoEncoder;
 			//Update size
 			width	= pic->GetWidth();
 			height	= pic->GetHeight();
 			//Create encoder again
-			videoEncoder = VideoCodecFactory::CreateEncoder(codec,properties);
+			videoEncoder.reset(VideoCodecFactory::CreateEncoder(codec, properties));
 			//Reset bitrate
 			videoEncoder->SetFrameRate(fps,current,intraPeriod);
 			//Set on the encoder
@@ -389,11 +385,6 @@ int VideoEncoderWorker::Encode()
 
 	//Terminamos de capturar
 	input->StopVideoCapture();
-
-	//Check
-	if (videoEncoder)
-		//Borramos el encoder
-		delete videoEncoder;
 
 	//Salimos
 	Log("<VideoEncoderWorker::Encode()  [%d]\n",encoding);
