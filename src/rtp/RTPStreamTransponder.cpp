@@ -385,7 +385,7 @@ void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPP
 		DWORD pictureId = 0;
 		DWORD temporalLevelZeroIndex = 0;
 		//TODO: this should go into the layer selector??
-		if (rewritePicId && codec==VideoCodec::VP8 && packet->vp8PayloadDescriptor)
+		if (codec==VideoCodec::VP8 && packet->vp8PayloadDescriptor)
 		{
 			//Get VP8 desc
 			auto desc = *packet->vp8PayloadDescriptor;
@@ -395,8 +395,18 @@ void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPP
 			{
 				//Update ids
 				lastPicId = desc.pictureId;
-				//Increase picture id
-				picId++;
+
+				if (!picId)
+				{
+					picId = desc.pictureId;
+				}
+				else
+				{
+				 	//Increase picture id
+					(*picId)++;
+					//We need to rewrite vp8 picture ids
+					rewitePictureIds = true;
+				}
 			}
 		
 			//Check if we a new base layer
@@ -404,16 +414,24 @@ void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPP
 			{
 				//Update ids
 				lastTl0Idx = desc.temporalLevelZeroIndex;
-				//Increase tl0 index
-				tl0Idx++;
+
+				if (!tl0Idx)
+				{
+					tl0Idx = desc.temporalLevelZeroIndex;
+				}
+				else
+				{
+					//Increase tl0 index
+					(*tl0Idx)++;
+					//We need to rewrite vp8 picture ids
+					rewitePictureIds = true;
+				}
 			}
 		
 			//Rewrite picture id
-			pictureId = picId;
+			pictureId = *picId;
 			//Rewrite tl0 index
-			temporalLevelZeroIndex = tl0Idx;
-			//We need to rewrite vp8 picture ids
-			rewitePictureIds = true;
+			temporalLevelZeroIndex = *tl0Idx;
 		}
 	
 		//If we have to append h264 sprop parameters set for the first packet of an iframe
