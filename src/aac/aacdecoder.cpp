@@ -19,7 +19,10 @@ AACDecoder::AACDecoder()
 
 	// Check codec
 	if(!codec)
+	{
 		Error("No codec found\n");
+		return;
+	}
 
 	//Alocamos el conto y el picture
 	ctx = avcodec_alloc_context3(codec);
