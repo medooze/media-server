@@ -182,7 +182,8 @@ int RTMPConnection::Run()
 	int flag = 1;
         setsockopt(socket, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(int));
 	//Catch all IO errors
-	signal(SIGIO,EmptyCatch);
+	signal(SIGIO, EmptyCatch);
+	signal(SIGPIPE, EmptyCatch);
 
 	//Run until ended
 	while(running)
@@ -784,7 +785,7 @@ int RTMPConnection::WriteData(BYTE *data,const DWORD size)
 	write(fd,data,size);
 	MCU_CLOSE(fd);*/
 #endif
-	return write(socket,data,size);
+	return send(socket, data, size, MSG_NOSIGNAL);
 }
 
 void RTMPConnection::ProcessControlMessage(DWORD streamId,BYTE type,RTMPObject* msg)
