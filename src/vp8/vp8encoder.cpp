@@ -214,8 +214,8 @@ int VP8Encoder::OpenCodec()
 
 	//The static threshold imposes a change threshold on blocks below which they will be skipped by the encoder.
 	vpx_codec_control(&encoder, VP8E_SET_STATIC_THRESHOLD, 100);
-	//Set cpu usage, a bit lower than normal (-6) but higher than android (-12)
-	vpx_codec_control(&encoder, VP8E_SET_CPUUSED, -8);
+	//Set cpu usage, a bit higher than normal (-6)
+	vpx_codec_control(&encoder, VP8E_SET_CPUUSED, -4);
 	//Only one partition
 	vpx_codec_control(&encoder, VP8E_SET_TOKEN_PARTITIONS,VP8_ONE_TOKENPARTITION);
 	//Enable noise reduction
