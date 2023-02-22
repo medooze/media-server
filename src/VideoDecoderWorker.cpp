@@ -179,7 +179,9 @@ int VideoDecoderWorker::Decode()
 			//Get picture
 			const VideoBuffer::shared& frame = videoDecoder->GetFrame();
 
+			//If no frame received yet
 			if (!frame)
+				//Get next one
 				continue;
 
 			//Check if we need to apply deinterlacing

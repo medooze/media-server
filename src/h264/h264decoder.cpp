@@ -83,7 +83,7 @@ int H264Decoder::Decode(const BYTE *data,DWORD size)
 	//Check if we got any decoded frame
 	if (avcodec_receive_frame(ctx, picture) <0)
 		//No frame decoded yet
-		return 0;
+		return 1;
 	
 	if(ctx->width==0 || ctx->height==0)
 		return Error("-H264Decoder::Decode() | Wrong dimmensions [%d,%d]\n",ctx->width,ctx->height);
