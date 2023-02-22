@@ -24,40 +24,24 @@ public:
 	{
 		//Store codec
 		this->codec = codec;
-		//Init values
-		isIntra = 0;
-		width = 0;
-		height = 0;
 	}
 
 	VideoFrame(VideoCodec::Type codec,uint32_t size) : MediaFrame(MediaFrame::Video,size)
 	{
 		//Store codec
 		this->codec = codec;
-		//Init values
-		isIntra = 0;
-		width = 0;
-		height = 0;
 	}
 	
 	VideoFrame(VideoCodec::Type codec,const std::shared_ptr<Buffer>& buffer) : MediaFrame(MediaFrame::Video,buffer)
 	{
 		//Store codec
 		this->codec = codec;
-		//Init values
-		isIntra = 0;
-		width = 0;
-		height = 0;
 	}
 
 	VideoFrame(VideoCodec::Type codec, Buffer&& buffer) : MediaFrame(MediaFrame::Video, std::move(buffer))
 	{
 		//Store codec
 		this->codec = codec;
-		//Init values
-		isIntra = 0;
-		width = 0;
-		height = 0;
 	}
 
 	virtual MediaFrame* Clone() const
@@ -100,14 +84,14 @@ public:
 	
 	VideoCodec::Type GetCodec() const	{ return codec;			}
 	bool  IsIntra()	const			{ return isIntra;		}
-	uint32_t GetWidth() const			{ return width;			}
-	uint32_t GetHeight() const			{ return height;		}
+	uint32_t GetWidth() const		{ return width;			}
+	uint32_t GetHeight() const		{ return height;		}
 
 	void SetCodec(VideoCodec::Type codec)	{ this->codec = codec;		}
 	void SetWidth(uint32_t width)		{ this->width = width;		}
 	void SetHeight(uint32_t height)		{ this->height = height;	}
 	void SetIntra(bool isIntra)		{ this->isIntra = isIntra;	}
-	
+
 	bool	HasLayerFrames() const				{ return !layers.empty();	}
 	const std::vector<LayerFrame>& GetLayerFrames() const	{ return layers;		}
 	void AddLayerFrame(const LayerFrame& layer)		{ layers.push_back(layer);	}
@@ -129,12 +113,11 @@ public:
 	
 private:
 	VideoCodec::Type codec;
-	bool	isIntra;
-	uint32_t	width;
-	uint32_t	height;
+	bool	 isIntra	= false;
+	uint32_t width		= 0;
+	uint32_t height		= 0;
 	std::vector<LayerFrame> layers;
 	std::optional<VideoOrientation> cvo;
-
 };
 
 
