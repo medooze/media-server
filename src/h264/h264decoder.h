@@ -19,9 +19,10 @@ public:
 	virtual const VideoBuffer::shared& GetFrame() { return videoBuffer;	};
 	virtual bool  IsKeyFrame()	{ return picture->key_frame;	};
 private:
-	AVCodec 	*codec = nullptr;
-	AVCodecContext	*ctx = nullptr;
-	AVFrame		*picture = nullptr;
+	AVCodec*	codec	= nullptr;
+	AVCodecContext*	ctx	= nullptr;
+	AVFrame*	picture	= nullptr;
+	AVPacket*	packet	= nullptr;
 	
 	H264Depacketizer    depacketizer;
 	VideoBuffer::shared videoBuffer;

@@ -137,7 +137,7 @@ int VideoDecoderWorker::Decode()
 		//Check if we have lost the last packet from the previous frame by comparing both timestamps
 		if (ts>frameTime)
 		{
-			Debug("-lost mark packet ts:%llu frameTime:%llu\n",ts,frameTime);
+			Debug("-VideoDecoderWorker::Decode() | lost mark packet ts:%llu frameTime:%llu\n",ts,frameTime);
 			//Try to decode what is in the buffer
 			videoDecoder->DecodePacket(NULL,0,1,1);
 			//Get picture
@@ -165,17 +165,59 @@ int VideoDecoderWorker::Decode()
 		//Check if it is the last packet of a frame
 		if(packet->GetMark())
 		{
-			if (videoDecoder->IsKeyFrame())
-				Debug("-Got Intra\n");
+			//Check if we got the waiting refresh
+			if (waitIntra && videoDecoder->IsKeyFrame())
+			{
+				Debug("-VideoDecoderWorker::Decode() | Got Intra\n");
+				//Do not wait anymore
+				waitIntra = false;
+			}
 			
 			//No frame time yet for next frame
 			frameTime = (QWORD)-1;
 
 			//Get picture
 			const VideoBuffer::shared& frame = videoDecoder->GetFrame();
-			//Check
-			if (frame && !muted)
+
+			if (!frame)
+				continue;
+
+			//Check if we need to apply deinterlacing
+			if (frame->IsInterlaced())
 			{
+				//If we didn't had a deinterlacer or frame dimensions have changed (TODO)
+				if (!deinterlacer)
+				{
+					//Create new deinterlacer
+					deinterlacer.reset(new Deinterlacer());
+
+					//Start it
+					if (!deinterlacer->Start(frame->GetWidth(), frame->GetHeight()))
+					{
+						Error("-VideoDecoderWorker::Decode() | Could not start deinterlacer\n");
+						deinterlacer.reset();
+						continue;
+					}
+				}
+
+				//Deinterlace decoded frame
+				deinterlacer->Process(frame);
+
+				//Get any porcessed frame
+				while (auto deinterlaced = deinterlacer->GetNextFrame())
+				{
+					//Check if we are muted
+					if (!muted)
+					{
+						//Sync
+						ScopedLock scope(mutex);
+						//For each output
+						for (auto output : outputs)
+							//Send it
+							output->NextFrame(deinterlaced);
+					}
+				}
+			} else if (!muted) {
 				//Sync
 				ScopedLock scope(mutex);
 				//For each output
@@ -183,11 +225,6 @@ int VideoDecoderWorker::Decode()
 					//Send it
 					output->NextFrame(frame);
 			}
-
-			//Check if we got the waiting refresh
-			if (waitIntra && videoDecoder->IsKeyFrame())
-				//Do not wait anymore
-				waitIntra = false;
 		}
 	}
 

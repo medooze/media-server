@@ -76,6 +76,9 @@ public:
 		planeU.Fill(u);
 		planeV.Fill(v);
 	}
+
+	bool IsInterlaced() const { return isInterlaced; }
+	void SetInterlaced(bool isInterlaced) { this->isInterlaced = isInterlaced; }
 private:
 	
 	Plane	planeY;
@@ -83,6 +86,7 @@ private:
 	Plane	planeV;
 	DWORD	width = 0;
 	DWORD	height = 0;
+	bool	isInterlaced = false;
 	
 	
 	

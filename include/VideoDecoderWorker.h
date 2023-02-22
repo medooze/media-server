@@ -5,6 +5,7 @@
 #include "video.h"
 #include "waitqueue.h"
 #include "rtp.h"
+#include "Deinterlacer.h"
 
 class VideoDecoderWorker 
 	: public RTPIncomingMediaStream::Listener
@@ -36,6 +37,7 @@ private:
 	bool decoding	= false;
 	bool muted	= false;
 	std::unique_ptr<VideoDecoder>	videoDecoder;
+	std::unique_ptr<Deinterlacer>	deinterlacer;
 };
 
 #endif /* VIDEODECODERWORKER_H */
