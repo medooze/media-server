@@ -165,6 +165,11 @@ int AudioDecoderWorker::Decode()
 				//Create new codec from pacekt
 				codec.reset(AudioCodecFactory::CreateDecoder((AudioCodec::Type)packet->GetCodec()));
 
+				//Check we found one
+				if (!codec)
+					//Skip
+					continue;
+
 				//If it is aac and we have config
 				if (codec->type==AudioCodec::AAC && packet->config && !packet->config->IsEmpty())
 				{
@@ -173,11 +178,6 @@ int AudioDecoderWorker::Decode()
 					//Set config there
 					aac->SetConfig(packet->config->GetData(), packet->config->GetSize());
 				}
-
-				//Check we found one
-				if (!codec)
-					//Skip
-					continue;
 
 				//Update rate
 				rate = codec->GetRate();
