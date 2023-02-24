@@ -88,6 +88,9 @@ int H264Decoder::Decode(const BYTE *data,DWORD size)
 	if(ctx->width==0 || ctx->height==0)
 		return Error("-H264Decoder::Decode() | Wrong dimmensions [%d,%d]\n",ctx->width,ctx->height);
 
+
+	
+
 	//Set new size in pool
 	videoBufferPool.SetSize(ctx->width, ctx->height);
 
@@ -97,6 +100,58 @@ int H264Decoder::Decode(const BYTE *data,DWORD size)
 	//Set interlaced flags
 	videoBuffer->SetInterlaced(picture->interlaced_frame);
 
+	//Set color range
+	switch (picture->color_range)
+	{
+		case AVCOL_RANGE_MPEG:
+			//219*2^(n-8) "MPEG" YUV ranges
+			videoBuffer->SetColorRange(VideoBuffer::ColorRange::Partial);
+			break;
+		case AVCOL_RANGE_JPEG: 
+			//2^n-1   "JPEG" YUV ranges
+			videoBuffer->SetColorRange(VideoBuffer::ColorRange::Full);
+			break;
+		default:
+			//Unknown
+			videoBuffer->SetColorRange(VideoBuffer::ColorRange::Unknown);
+	}
+
+	//Get color space
+	switch (picture->colorspace)
+	{
+		case AVCOL_SPC_RGB:
+			///< order of coefficients is actually GBR, also IEC 61966-2-1 (sRGB)
+			videoBuffer->SetColorSpace(VideoBuffer::ColorSpace::SRGB);
+			break;
+		case AVCOL_SPC_BT709:
+			///< also ITU-R BT1361 / IEC 61966-2-4 xvYCC709 / SMPTE RP177 Annex B
+			videoBuffer->SetColorSpace(VideoBuffer::ColorSpace::BT709);
+			break;
+		case AVCOL_SPC_BT470BG:
+			///< also ITU-R BT601-6 625 / ITU-R BT1358 625 / ITU-R BT1700 625 PAL & SECAM / IEC 61966-2-4 xvYCC601
+			videoBuffer->SetColorSpace(VideoBuffer::ColorSpace::BT601);
+			break;
+		case AVCOL_SPC_SMPTE170M:
+			///< also ITU-R BT601-6 525 / ITU-R BT1358 525 / ITU-R BT1700 NTSC
+			videoBuffer->SetColorSpace(VideoBuffer::ColorSpace::SMPTE170);
+			break;
+		case AVCOL_SPC_SMPTE240M:
+			///< functionally identical to above
+			videoBuffer->SetColorSpace(VideoBuffer::ColorSpace::SMPTE240);
+			break;
+		case AVCOL_SPC_BT2020_NCL:
+			///< ITU-R BT2020 non-constant luminance system
+			videoBuffer->SetColorSpace(VideoBuffer::ColorSpace::BT2020);
+			break;
+		case AVCOL_SPC_BT2020_CL:
+			///< ITU-R BT2020 constant luminance system
+			videoBuffer->SetColorSpace(VideoBuffer::ColorSpace::BT2020);
+			break;
+		default:
+			//Unknown
+			videoBuffer->SetColorSpace(VideoBuffer::ColorSpace::Unknown);
+	}
+	
 	//Get planes
 	Plane& y = videoBuffer->GetPlaneY();
 	Plane& u = videoBuffer->GetPlaneU();

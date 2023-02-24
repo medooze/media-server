@@ -264,6 +264,45 @@ VideoFrame* VP8Encoder::EncodeFrame(const VideoBuffer::const_shared& videoBuffer
 	pic->stride[VPX_PLANE_V] = v.GetStride();
 	pic->stride[VPX_PLANE_ALPHA] = 0;
 
+	//Set color range
+	switch (videoBuffer->GetColorRange())
+	{
+		case VideoBuffer::ColorRange::Partial:
+			pic->range = VPX_CR_STUDIO_RANGE;
+			break;
+		case VideoBuffer::ColorRange::Full:
+			pic->range = VPX_CR_FULL_RANGE;
+			break;
+		default:
+			pic->range = VPX_CR_FULL_RANGE;
+	}
+
+	//Get color space
+	switch (videoBuffer->GetColorSpace())
+	{
+		case VideoBuffer::ColorSpace::SRGB:
+			pic->cs = VPX_CS_SRGB;
+			break;
+		case VideoBuffer::ColorSpace::BT709:
+			pic->cs = VPX_CS_BT_709;
+			break;
+		case VideoBuffer::ColorSpace::BT601:
+			pic->cs = VPX_CS_BT_601;
+			break;
+		case VideoBuffer::ColorSpace::SMPTE170:
+			pic->cs = VPX_CS_SMPTE_170;
+			break;
+		case VideoBuffer::ColorSpace::SMPTE240:
+			pic->cs = VPX_CS_SMPTE_240;
+			break;
+		case VideoBuffer::ColorSpace::BT2020:
+			pic->cs = VPX_CS_BT_2020;
+			break;
+		default:
+			//Unknown
+			pic->cs = VPX_CS_UNKNOWN;
+	}
+
 	int flags = 0;
 
 	//Check FPU

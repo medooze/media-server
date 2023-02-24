@@ -102,6 +102,51 @@ int VP9Decoder::Decode(const BYTE * data,DWORD size)
 	//Get new frame
 	videoBuffer = videoBufferPool.allocate();
 
+	//Set color range
+	switch (img->range)
+	{
+		case VPX_CR_STUDIO_RANGE:
+			//219*2^(n-8) "MPEG" YUV ranges
+			videoBuffer->SetColorRange(VideoBuffer::ColorRange::Partial);
+			break;
+		case VPX_CR_FULL_RANGE:
+			//2^n-1   "JPEG" YUV ranges
+			videoBuffer->SetColorRange(VideoBuffer::ColorRange::Full);
+			break;
+	}
+
+	//Get color space
+	switch (img->cs)
+	{
+		case VPX_CS_SRGB:
+			///< order of coefficients is actually GBR, also IEC 61966-2-1 (sRGB)
+			videoBuffer->SetColorSpace(VideoBuffer::ColorSpace::SRGB);
+			break;
+		case VPX_CS_BT_709:
+			///< also ITU-R BT1361 / IEC 61966-2-4 xvYCC709 / SMPTE RP177 Annex B
+			videoBuffer->SetColorSpace(VideoBuffer::ColorSpace::BT709);
+			break;
+		case VPX_CS_BT_601:
+			///< also ITU-R BT601-6 625 / ITU-R BT1358 625 / ITU-R BT1700 625 PAL & SECAM / IEC 61966-2-4 xvYCC601
+			videoBuffer->SetColorSpace(VideoBuffer::ColorSpace::BT601);
+			break;
+		case VPX_CS_SMPTE_170:
+			///< also ITU-R BT601-6 525 / ITU-R BT1358 525 / ITU-R BT1700 NTSC
+			videoBuffer->SetColorSpace(VideoBuffer::ColorSpace::SMPTE170);
+			break;
+		case VPX_CS_SMPTE_240:
+			///< functionally identical to above
+			videoBuffer->SetColorSpace(VideoBuffer::ColorSpace::SMPTE240);
+			break;
+		case VPX_CS_BT_2020:
+			///< ITU-R BT2020 non-constant luminance system
+			videoBuffer->SetColorSpace(VideoBuffer::ColorSpace::BT2020);
+			break;
+		default:
+			//Unknown
+			videoBuffer->SetColorSpace(VideoBuffer::ColorSpace::Unknown);
+	}
+
 	//Get planes
 	Plane& y = videoBuffer->GetPlaneY();
 	Plane& u = videoBuffer->GetPlaneU();

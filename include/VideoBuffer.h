@@ -47,6 +47,21 @@ class VideoBuffer
 public:
 	using shared = std::shared_ptr<VideoBuffer>;
 	using const_shared = std::shared_ptr<const VideoBuffer>;
+
+	enum class ColorRange {
+		Unknown=-1,
+		Partial=0,
+		Full=1
+	};
+	enum class ColorSpace {
+		Unknown = 0,
+		BT601 = 1, 
+		BT709 = 2,
+		SMPTE170 = 3, 
+		SMPTE240 = 4,
+		BT2020 = 5,
+		SRGB = 7,
+	};
 public:
 	VideoBuffer() = default;
 	VideoBuffer(DWORD width, DWORD height) : 
@@ -79,6 +94,13 @@ public:
 
 	bool IsInterlaced() const { return isInterlaced; }
 	void SetInterlaced(bool isInterlaced) { this->isInterlaced = isInterlaced; }
+
+	void SetColorRange(ColorRange colorRange) { this->colorRange = colorRange; }
+	void SetColorSpace(ColorSpace colorSpace) { this->colorSpace = colorSpace; }
+
+	ColorRange GetColorRange() const { return colorRange; }
+	ColorSpace GetColorSpace() const { return colorSpace; }
+
 private:
 	
 	Plane	planeY;
@@ -87,6 +109,8 @@ private:
 	DWORD	width = 0;
 	DWORD	height = 0;
 	bool	isInterlaced = false;
+	ColorSpace colorSpace = ColorSpace::Unknown;
+	ColorRange colorRange = ColorRange::Unknown;
 	
 	
 	

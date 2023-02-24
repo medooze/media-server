@@ -6,6 +6,7 @@
 #include "vp8/vp8encoder.h"
 #include "vp9/VP9Decoder.h"
 #include "jpeg/JPEGEncoder.h"
+#include "webp/WEBPEncoder.h"
 
 VideoDecoder* VideoCodecFactory::CreateDecoder(VideoCodec::Type codec)
 {
@@ -49,6 +50,8 @@ VideoEncoder* VideoCodecFactory::CreateEncoder(VideoCodec::Type codec,const Prop
 			return new VP8Encoder(properties);
 		case VideoCodec::JPEG:
 			return new JPEGEncoder(properties);
+		case VideoCodec::WEBP:
+			return new WEBPEncoder(properties);
 		default:
 			Error("Video Encoder not found\n");
 	}

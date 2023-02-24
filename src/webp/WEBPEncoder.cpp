@@ -4,17 +4,22 @@
 #include <inttypes.h>
 #include <memory.h>
 #include "log.h"
-#include "JPEGEncoder.h"
+#include "WEBPEncoder.h"
+
+extern "C"
+{
+#include <libavutil/opt.h>
+}
 
 /**********************
-* JPEGEncoder
+* WEBPEncoder
 *	Constructor de la clase
 ***********************/
-JPEGEncoder::JPEGEncoder(const Properties& properties) : frame(VideoCodec::JPEG)
+WEBPEncoder::WEBPEncoder(const Properties& properties) : frame(VideoCodec::WEBP)
 {
 	// Set default values
 
-	type = VideoCodec::JPEG;
+	type = VideoCodec::WEBP;
 	//No bitrate
 	bitrate = 0;
 	fps = 0;
@@ -23,7 +28,7 @@ JPEGEncoder::JPEGEncoder(const Properties& properties) : frame(VideoCodec::JPEG)
 	frame.DisableSharedBuffer();
 }
 
-JPEGEncoder::~JPEGEncoder()
+WEBPEncoder::~WEBPEncoder()
 {
 	if (codec) avcodec_close(ctx);
 	if (ctx) av_free(ctx);
@@ -31,14 +36,14 @@ JPEGEncoder::~JPEGEncoder()
 }
 
 
-int JPEGEncoder::SetSize(int width, int height)
+int WEBPEncoder::SetSize(int width, int height)
 {
 	//Check if they are the same size
 	if (this->width == width && this->height == height)
 		//Do nothing
 		return 1;
 	
-	Log("-JPEGEncoder::SetSize() [width:%d,height:%d]\n", width, height);
+	Log("-WEBPEncoder::SetSize() [width:%d,height:%d]\n", width, height);
 
 	//Save values
 	this->width = width;
@@ -52,7 +57,7 @@ int JPEGEncoder::SetSize(int width, int height)
 * SetFrameRate
 * 	Indica el numero de frames por segudno actual
 **************************/
-int JPEGEncoder::SetFrameRate(int frames, int kbits, int intraPeriod)
+int WEBPEncoder::SetFrameRate(int frames, int kbits, int intraPeriod)
 {
 	// Save frame rate
 	if (frames > 0)
@@ -71,28 +76,29 @@ int JPEGEncoder::SetFrameRate(int frames, int kbits, int intraPeriod)
 * OpenCodec
 *	Abre el codec
 ***********************/
-int JPEGEncoder::OpenCodec()
+int WEBPEncoder::OpenCodec()
 {
-	Log("-JPEGEncoder::OpenCodec() [%dkbps,%dfps,width:%d,height:%d]\n", bitrate, fps, width, height);
+	Log("-WEBPEncoder::OpenCodec() [%dkbps,%dfps,width:%d,height:%d]\n", bitrate, fps, width, height);
 
 	// Check 
 	if (codec)
 		return Error("Codec already opened\n");
 
-	//Open MJPEG codec
-	if (!(codec = avcodec_find_encoder(AV_CODEC_ID_MJPEG)))
+	//Open MWEBP codec
+	if (!(codec = avcodec_find_encoder(AV_CODEC_ID_WEBP)))
 		return Error("Codec not found\n");
 
 	//Allocate codec contex
 	if (!(ctx = avcodec_alloc_context3(codec)))
 		return Error("Could not allocate video codec context\n");
 
+
 	//Set properties
 	ctx->bit_rate = bitrate * 1000;
 	ctx->width = width;
 	ctx->height = height;
 	ctx->time_base = { 1, fps };
-	ctx->pix_fmt = AV_PIX_FMT_YUVJ420P;
+	ctx->pix_fmt = AV_PIX_FMT_YUV420P;
 
 	//Open encoder
 	if (avcodec_open2(ctx, codec, NULL) < 0)
@@ -111,11 +117,13 @@ int JPEGEncoder::OpenCodec()
 * EncodeFrame
 *	Codifica un frame
 ***********************/
-VideoFrame* JPEGEncoder::EncodeFrame(const VideoBuffer::const_shared& videoBuffer)
+VideoFrame* WEBPEncoder::EncodeFrame(const VideoBuffer::const_shared& videoBuffer)
 {
+	Log(">WEBPEncoder::EncodeFrame()\n");
+
 	if (!codec)
 	{
-		Error("-JPEGEncoder::EncodeFrame() | Codec not opened\n");
+		Error("-WEBPEncoder::EncodeFrame() | Codec not opened\n");
 		return nullptr;
 	}
 
@@ -192,15 +200,42 @@ VideoFrame* JPEGEncoder::EncodeFrame(const VideoBuffer::const_shared& videoBuffe
 		[](auto packet) {av_packet_free(&packet); }
 	);
 	
-	int got_output = 0;
-	if (avcodec_encode_video2(ctx, packet.get(), input, &got_output)<0)
+	//Send frame for encoding
+	if (avcodec_send_frame(ctx, input) < 0)
 	{
-		Error("-JPEGEncoder::EncodeFrame() | Error encoding frame\n");
+		Error("-WEBPEncoder::EncodeFrame() | Error encoding frame\n");
+		return nullptr;
+
+	}
+
+	if(avcodec_send_frame(ctx, nullptr) < 0)
+	{
+		Error("-WEBPEncoder::EncodeFrame() | Error encoding frame\n");
+		return nullptr;
+
+	}
+
+	//Get encoded packet
+	int ret = avcodec_receive_packet(ctx, packet.get());
+
+	if (ret == EAGAIN)
+	{
+		//Send empty frame 
+		if (avcodec_send_frame(ctx, nullptr) < 0)
+		{
+			Error("-WEBPEncoder::EncodeFrame() | Error encoding frame\n");
+			return nullptr;
+
+		}
+		//Get encoded packet
+		ret = avcodec_receive_packet(ctx, packet.get());
+	}
+	//Check errror
+	if (ret<0)
+	{
+		Error("-WEBPEncoder::EncodeFrame() | No frame [ret:%d]\n",ret);
 		return nullptr;
 	}
-		
-	if (!got_output)
-		return nullptr;
 
 	//Set the media
 	frame.SetMedia(packet->data, packet->size);
@@ -215,10 +250,12 @@ VideoFrame* JPEGEncoder::EncodeFrame(const VideoBuffer::const_shared& videoBuffe
 	//Emtpy rtp info
 	frame.ClearRTPPacketizationInfo();
 
+	Log("<WEBPEncoder::EncodeFrame()\n");
+
 	return &frame;
 }
 
-int JPEGEncoder::FastPictureUpdate()
+int WEBPEncoder::FastPictureUpdate()
 {
 	return 1;
 }

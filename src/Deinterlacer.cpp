@@ -128,6 +128,54 @@ void Deinterlacer::Process(const VideoBuffer::const_shared& videoBuffer)
         input->width = width;
         input->height = height;
         input->pts = 1;
+
+        //Set color range
+        switch (videoBuffer->GetColorRange())
+        {
+                case VideoBuffer::ColorRange::Partial:
+                        //219*2^(n-8) "MPEG" YUV ranges
+                        input->color_range = AVCOL_RANGE_MPEG;
+                        break;
+                case VideoBuffer::ColorRange::Full:
+                        //2^n-1   "JPEG" YUV ranges
+                        input->color_range = AVCOL_RANGE_JPEG;
+                        break;
+                default:
+                        //Unknown
+                        input->color_range = AVCOL_RANGE_UNSPECIFIED;
+        }
+
+        //Get color space
+        switch (videoBuffer->GetColorSpace())
+        {
+                case VideoBuffer::ColorSpace::SRGB:
+                        ///< order of coefficients is actually GBR, also IEC 61966-2-1 (sRGB)
+                        input->colorspace = AVCOL_SPC_RGB;
+                        break;
+                case VideoBuffer::ColorSpace::BT709:
+                        ///< also ITU-R BT1361 / IEC 61966-2-4 xvYCC709 / SMPTE RP177 Annex B
+                        input->colorspace = AVCOL_SPC_BT709;
+                        break;
+                case VideoBuffer::ColorSpace::BT601:
+                        ///< also ITU-R BT601-6 625 / ITU-R BT1358 625 / ITU-R BT1700 625 PAL & SECAM / IEC 61966-2-4 xvYCC601
+                        input->colorspace = AVCOL_SPC_BT470BG;
+                        break;
+                case VideoBuffer::ColorSpace::SMPTE170:
+                        ///< also ITU-R BT601-6 525 / ITU-R BT1358 525 / ITU-R BT1700 NTSC
+                        input->colorspace = AVCOL_SPC_SMPTE170M;
+                        break;
+                case VideoBuffer::ColorSpace::SMPTE240:
+                        ///< functionally identical to above
+                        input->colorspace = AVCOL_SPC_SMPTE240M;
+                        break;
+                case VideoBuffer::ColorSpace::BT2020:
+                        ///< ITU-R BT2020 non-constant luminance system
+                        input->colorspace = AVCOL_SPC_BT2020_NCL;
+                        break;
+                default:
+                        //Unknown
+                        input->colorspace = AVCOL_SPC_UNSPECIFIED;
+        }
         
         //Duplicate reference to the video buffer
         VideoBuffer::const_shared* opaque = new VideoBuffer::const_shared(videoBuffer);
@@ -163,6 +211,58 @@ VideoBuffer::shared Deinterlacer::GetNextFrame()
         
         //Get new frame
         auto videoBuffer = videoBufferPool.allocate();
+
+        //Set color range
+        switch (output->color_range)
+        {
+                case AVCOL_RANGE_MPEG:
+                        //219*2^(n-8) "MPEG" YUV ranges
+                        videoBuffer->SetColorRange(VideoBuffer::ColorRange::Partial);
+                        break;
+                case AVCOL_RANGE_JPEG:
+                        //2^n-1   "JPEG" YUV ranges
+                        videoBuffer->SetColorRange(VideoBuffer::ColorRange::Full);
+                        break;
+                default:
+                        //Unknown
+                        videoBuffer->SetColorRange(VideoBuffer::ColorRange::Unknown);
+        }
+
+        //Get color space
+        switch (output->colorspace)
+        {
+                case AVCOL_SPC_RGB:
+                        ///< order of coefficients is actually GBR, also IEC 61966-2-1 (sRGB)
+                        videoBuffer->SetColorSpace(VideoBuffer::ColorSpace::SRGB);
+                        break;
+                case AVCOL_SPC_BT709:
+                        ///< also ITU-R BT1361 / IEC 61966-2-4 xvYCC709 / SMPTE RP177 Annex B
+                        videoBuffer->SetColorSpace(VideoBuffer::ColorSpace::BT709);
+                        break;
+                case AVCOL_SPC_BT470BG:
+                        ///< also ITU-R BT601-6 625 / ITU-R BT1358 625 / ITU-R BT1700 625 PAL & SECAM / IEC 61966-2-4 xvYCC601
+                        videoBuffer->SetColorSpace(VideoBuffer::ColorSpace::BT601);
+                        break;
+                case AVCOL_SPC_SMPTE170M:
+                        ///< also ITU-R BT601-6 525 / ITU-R BT1358 525 / ITU-R BT1700 NTSC
+                        videoBuffer->SetColorSpace(VideoBuffer::ColorSpace::SMPTE170);
+                        break;
+                case AVCOL_SPC_SMPTE240M:
+                        ///< functionally identical to above
+                        videoBuffer->SetColorSpace(VideoBuffer::ColorSpace::SMPTE240);
+                        break;
+                case AVCOL_SPC_BT2020_NCL:
+                        ///< ITU-R BT2020 non-constant luminance system
+                        videoBuffer->SetColorSpace(VideoBuffer::ColorSpace::BT2020);
+                        break;
+                case AVCOL_SPC_BT2020_CL:
+                        ///< ITU-R BT2020 constant luminance system
+                        videoBuffer->SetColorSpace(VideoBuffer::ColorSpace::BT2020);
+                        break;
+                default:
+                        //Unknown
+                        videoBuffer->SetColorSpace(VideoBuffer::ColorSpace::Unknown);
+                }
 
         //Get planes
         Plane& y = videoBuffer->GetPlaneY();
