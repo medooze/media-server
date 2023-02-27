@@ -73,6 +73,8 @@ public:
 		frame.SetTime(packet->GetTime());
 		//Set sender time
 		frame.SetSenderTime(packet->GetSenderTime());
+		//Set timestamp skew
+		frame.SetTimestampSkew(packet->GetTimestampSkew());
 		//Set SSRC
 		frame.SetSSRC(packet->GetSSRC());
 		//Add payload
