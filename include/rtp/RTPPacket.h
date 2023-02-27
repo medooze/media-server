@@ -184,8 +184,8 @@ public:
 	bool  IsKeyFrame()			const	{ return isKeyFrame;			}
 	void  SetKeyFrame(bool isKeyFrame)		{ this->isKeyFrame = isKeyFrame;	}
 	
-	QWORD GetTimestampSkew() const { return timestampSkew; } 
-	void  SetTimestampSkew(QWORD timestampSkew) { this->timestampSkew = timestampSkew; } 
+	int64_t GetTimestampSkew() const { return timestampSkew; } 
+	void  SetTimestampSkew(int64_t timestampSkew) { this->timestampSkew = timestampSkew; } 
 
 	const RTPHeader&		GetRTPHeader()		const { return header;		}
 	const RTPHeaderExtension&	GetRTPHeaderExtension()	const { return extension;	}
@@ -232,7 +232,7 @@ private:
 	QWORD time			= 0;
 	bool isKeyFrame			= false;
 	QWORD senderTime		= 0;
-	QWORD timestampSkew 	= 0;
+	int64_t timestampSkew 	= 0;
 };
 #endif /* RTPPACKET_H */
 
