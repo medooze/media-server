@@ -184,12 +184,10 @@ public:
 	bool  IsKeyFrame()			const	{ return isKeyFrame;			}
 	void  SetKeyFrame(bool isKeyFrame)		{ this->isKeyFrame = isKeyFrame;	}
 	
-	int64_t GetTimestampSkew() const { return timestampSkew; } 
-	void  SetTimestampSkew(int64_t timestampSkew) { this->timestampSkew = timestampSkew; } 
-
 	const RTPHeader&		GetRTPHeader()		const { return header;		}
 	const RTPHeaderExtension&	GetRTPHeaderExtension()	const { return extension;	}
 
+	
 public:
 	//TODO:refactor a bit
 	std::optional<VP8PayloadDescriptor>	vp8PayloadDescriptor;
@@ -232,7 +230,7 @@ private:
 	QWORD time			= 0;
 	bool isKeyFrame			= false;
 	QWORD senderTime		= 0;
-	int64_t timestampSkew 	= 0;
+
 };
 #endif /* RTPPACKET_H */
 

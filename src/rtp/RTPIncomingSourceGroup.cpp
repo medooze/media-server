@@ -113,8 +113,6 @@ int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet, DWORD siz
 		QWORD senderTime = media.lastReceivedSenderTime + (delta) * 1000 / packet->GetClockRate();
 		//Set calculated sender time
 		packet->SetSenderTime(senderTime);
-		//Set skew in timestamp unit
-		packet->SetTimestampSkew(media.skew * packet->GetClockRate() / 1000);
 	}
 
 	//Get next time for dispatcht

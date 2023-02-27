@@ -27,7 +27,6 @@ public:
 		if (layerDimensions.find(ssrc) == layerDimensions.end())
 		{
 			layerDimensions[ssrc] = frame->GetWidth() * frame->GetHeight();
-			ssrcs.push_back(ssrc);
 		}
 
 		// Convert to relative timestamp
@@ -104,9 +103,6 @@ private:
 	std::unordered_map<uint64_t, uint64_t> initialTimestamps;
 	std::unordered_map<uint64_t, size_t> layerDimensions;
 	std::deque<std::unique_ptr<VideoFrame>> queue;
-
-	// For debug
-	std::vector<uint64_t> ssrcs;
 };
 
 #endif /* SIMULCASTVIDEOMULTIPLEXER_H */

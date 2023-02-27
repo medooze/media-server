@@ -1,5 +1,4 @@
 #include "SimulcastMediaFrameListener.h"
-#include "video.h"
 
 SimulcastMediaFrameListener::SimulcastMediaFrameListener(TimeService& timeService, DWORD ssrc, DWORD numLayers) :
 	timeService(timeService),

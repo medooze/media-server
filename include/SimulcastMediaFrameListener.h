@@ -34,9 +34,6 @@ private:
 	DWORD ssrc = 0;
 	std::set<MediaFrame::Listener::shared> listeners;
 
-	std::unordered_map<uint64_t, uint64_t> firstFrameTime;
-	std::unordered_map<uint64_t, uint64_t> firstTimeStamp;
-
 	SimulcastVideoMultiplexer selector;	
 };
 
