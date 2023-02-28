@@ -15,7 +15,7 @@ public:
 	static constexpr uint32_t MaxQueueSize = 10;
 
 	template<typename T>
-	void push(std::unique_ptr<VideoFrame> frame, const T& forwardFunc)
+	void Push(std::unique_ptr<VideoFrame> frame, const T& forwardFunc)
 	{
 		DWORD ssrc = frame->GetSSRC();
 
@@ -49,7 +49,7 @@ public:
 		//    layer frame was queued.
 		if (ssrc == selectedSsrc)
 		{
-			enqueue(std::move(frame), forwardFunc);
+			Enqueue(std::move(frame), forwardFunc);
 		}
 		else if (frame->IsIntra() && queue.front()->GetTimeStamp() <= frame->GetTimeStamp())
 		{
@@ -57,13 +57,13 @@ public:
 			    frame->GetTime() > (lastEnqueueTimeMs + MaxWaitingTimeBeforeSwitchingLayerMs))
 			{
 				selectedSsrc = ssrc;
-				enqueue(std::move(frame), forwardFunc);
+				Enqueue(std::move(frame), forwardFunc);
 			}
 		}
 	}
 
 	template<typename T>
-	void flush(const T& forwardFunc)
+	void Flush(const T& forwardFunc)
 	{
 		while(!queue.empty())
 		{
@@ -76,7 +76,7 @@ public:
 private:
 
 	template<typename T>
-	void enqueue(std::unique_ptr<VideoFrame> frame, const T& forwardFunc)
+	void Enqueue(std::unique_ptr<VideoFrame> frame, const T& forwardFunc)
 	{	
 		frame->SetSSRC(0);
 		lastEnqueueTimeMs = frame->GetTime();

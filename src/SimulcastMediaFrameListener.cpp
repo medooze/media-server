@@ -32,7 +32,7 @@ void SimulcastMediaFrameListener::Stop()
 {
 	timeService.Sync([=](std::chrono::milliseconds) {
 		// Store remaining
-		selector.flush([this](VideoFrame& frame){
+		selector.Flush([this](VideoFrame& frame){
 			ForwardFrame(frame);
 		});
 
@@ -57,7 +57,7 @@ void SimulcastMediaFrameListener::onMediaFrame(DWORD ssrc, const MediaFrame& fra
 	auto cloned = std::unique_ptr<VideoFrame>((VideoFrame*)frame.Clone());
 	cloned->SetSSRC(ssrc);
 
-	selector.push(std::move(cloned), [this](VideoFrame& frame){
+	selector.Push(std::move(cloned), [this](VideoFrame& frame){
 		ForwardFrame(frame);
 	});
 }
