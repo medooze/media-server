@@ -78,6 +78,7 @@ public:
 		//Set time
 		frame->SetTime(GetTime());
 		frame->SetSenderTime(GetSenderTime());
+		frame->SetTimestampSkew(GetTimestampSkew());
 		//Set duration
 		frame->SetDuration(GetDuration());
 		//If we have disabled the shared buffer for this frame
