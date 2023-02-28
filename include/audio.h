@@ -57,6 +57,7 @@ public:
 		//Set time
 		frame->SetTime(GetTime());
 		frame->SetSenderTime(GetSenderTime());
+		frame->SetTimestampSkew(GetTimestampSkew());
 		//Set duration
 		frame->SetDuration(GetDuration());
 		//Set number of channels
