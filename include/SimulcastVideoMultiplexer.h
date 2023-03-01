@@ -19,9 +19,15 @@ public:
 	{
 		DWORD ssrc = frame->GetSSRC();
 
+		if (!referenceFrameTime)
+		{
+			referenceFrameTime = frame->GetTime();
+		}
+
 		if (initialTimestamps.find(ssrc) == initialTimestamps.end())
 		{
-			initialTimestamps[ssrc] = frame->GetTimeStamp();
+			auto offset = (*referenceFrameTime - frame->GetTime()) * frame->GetClockRate() / 1000;
+			initialTimestamps[ssrc] = frame->GetTimeStamp() + offset;
 		}
 		
 		if (layerDimensions.find(ssrc) == layerDimensions.end())
@@ -100,6 +106,8 @@ private:
 
 	DWORD selectedSsrc = 0;
 	QWORD lastEnqueueTimeMs = 0;
+
+	std::optional<uint64_t> referenceFrameTime;
 
 	std::unordered_map<uint64_t, uint64_t> initialTimestamps;
 	std::unordered_map<uint64_t, size_t> layerDimensions;
