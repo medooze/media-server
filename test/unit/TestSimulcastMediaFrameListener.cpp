@@ -5,8 +5,6 @@
 #include <future>
 #include <include/gtest/gtest.h>
 #include <memory>
-#include <optional>
-#include <unordered_map>
 
 namespace {
 static constexpr uint32_t ClockRate = 90 * 1000;
@@ -35,6 +33,7 @@ public:
 		frame->SetTimestamp(nextTimestamp);
 		frame->SetTime(nextFrameTime);
 		frame->SetIntra(isIntra);
+		frame->SetLength(width * height);
 
 		nextTimestamp += TimestampInterval;
 		nextFrameTime += FrameTimeIntervalMs;
@@ -115,9 +114,9 @@ public:
 		listener.onMediaFrame(frame->GetSSRC(), *frame);
 	}
 
-	std::vector<std::pair<uint32_t, uint64_t>>& GetForwardedFrames()
+	std::vector<std::pair<uint32_t, uint64_t>> PopForwardedFrames()
 	{
-		return mediaFrameListener->forwardedFrames;
+		return std::move(mediaFrameListener->forwardedFrames);
 	}
 
 protected:
@@ -152,7 +151,7 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelection)
 		{1920, TimestampInterval * 4},
 	};
 
-	ASSERT_EQ(expectedFrames, GetForwardedFrames());
+	ASSERT_EQ(expectedFrames, PopForwardedFrames());
 }
 
 
@@ -175,7 +174,7 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelectionOffset)
 
 	std::vector<std::pair<uint32_t, uint64_t>> expectedFrames = {
 		{480, 0},
-		{960, 3},
+		{960, 3},			// Offset caused 
 		{1920, 6},
 		{1920, 2976},
 		{1920, 5946},
@@ -183,7 +182,7 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelectionOffset)
 		{1920, 11886},
 	};
 
-	ASSERT_EQ(expectedFrames, GetForwardedFrames());
+	ASSERT_EQ(expectedFrames, PopForwardedFrames());
 }
 
 TEST_F(TestSimulcastMediaFrameListener, LayerSelectionMissing) 
@@ -207,7 +206,7 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelectionMissing)
 	{
 		PushFrame(low.Generate());
 		PushFrame(mid.Generate());
-		(void)high.Generate();
+		(void)high.Generate();			// Missing one frame
 	}
 
 	for (size_t i = 0; i < 12; i++)
@@ -223,11 +222,11 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelectionMissing)
 		{1920, 6},
 		{1920, 2976},
 		{1920, 5946},
-		{1920, 11886},
+		{1920, 11886},	// Missing one frame, no switching layer
 		{1920, 14856},
 	};
 
-	ASSERT_EQ(expectedFrames, GetForwardedFrames());
+	ASSERT_EQ(expectedFrames, PopForwardedFrames());
 }
 
 
@@ -268,9 +267,7 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelectionOrder)
 		{1920, 11880},
 	};
 
-	ASSERT_EQ(expectedFrames, GetForwardedFrames());
-
-	GetForwardedFrames().clear();
+	ASSERT_EQ(expectedFrames, PopForwardedFrames());
 
 	for (size_t i = 0; i < 5; i++)
 	{
@@ -326,5 +323,5 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelectionOrder)
 		{1920, 83160},
 		};
 
-	ASSERT_EQ(expectedFrames, GetForwardedFrames());
+	ASSERT_EQ(expectedFrames, PopForwardedFrames());
 }
