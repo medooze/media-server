@@ -185,7 +185,10 @@ public:
 	
 	QWORD GetSenderTime() const		{ return senderTime;			}
 	void  SetSenderTime(QWORD senderTime )	{ this->senderTime = senderTime;	}
-
+			
+	int64_t GetTimestampSkew() const { return timestampSkew; } 
+	void  SetTimestampSkew(int64_t timestampSkew) { this->timestampSkew = timestampSkew; } 
+		
 	bool	HasRtpPacketizationInfo() const				{ return !rtpInfo.empty();	}
 	const RtpPacketizationInfo& GetRtpPacketizationInfo() const	{ return rtpInfo;		}
 	virtual MediaFrame* Clone() const = 0;
@@ -359,6 +362,7 @@ protected:
 	QWORD time			= 0;
 	QWORD senderTime		= 0;
 	DWORD ssrc			= 0;
+	int64_t timestampSkew 	= 0;
 	
 	Buffer::shared	buffer;
 	bool ownedBuffer		= false;
