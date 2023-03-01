@@ -16,18 +16,23 @@ enable_testing()
 
 add_subdirectory(ext/googletest)
 
-# Unit test executable
-add_executable(MediaServerUnitTest 
-    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestSimulcastVideoMultiplexer.cpp
+# Media server lib
+add_library(MediaServerLib 
+    ${CMAKE_CURRENT_LIST_DIR}/src/SimulcastMediaFrameListener.cpp
 )
 
-# Include directories
-target_include_directories(MediaServerUnitTest PRIVATE
+target_include_directories(MediaServerLib PUBLIC
     ${CMAKE_CURRENT_LIST_DIR}/include
     ${CMAKE_CURRENT_LIST_DIR}/ext/libdatachannels/src/internal
 )
 
-target_link_libraries(MediaServerUnitTest 
+# Unit test executable
+add_executable(MediaServerUnitTest 
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestSimulcastMediaFrameListener.cpp
+)
+
+target_link_libraries(MediaServerUnitTest
+    MediaServerLib
     gtest 
     gtest_main
 )

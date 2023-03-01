@@ -24,10 +24,12 @@ public:
 			referenceFrameTime = frame->GetTime();
 		}
 
+		if (*referenceFrameTime > frame->GetTime()) return;
+
 		if (initialTimestamps.find(ssrc) == initialTimestamps.end())
 		{
-			auto offset = (*referenceFrameTime - frame->GetTime()) * frame->GetClockRate() / 1000;
-			initialTimestamps[ssrc] = frame->GetTimeStamp() + offset;
+			auto offset = (frame->GetTime() - *referenceFrameTime) * frame->GetClockRate() / 1000;
+			initialTimestamps[ssrc] = frame->GetTimeStamp() - offset;
 		}
 		
 		if (layerDimensions.find(ssrc) == layerDimensions.end())
