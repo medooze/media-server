@@ -4,15 +4,23 @@
 #include "log.h"
 #include "video.h"
 
+#include <algorithm>
 #include <memory>
 #include <unordered_map>
 #include <deque>
+#include <iostream>
 
 class SimulcastVideoMultiplexer
 {
 public:
 	static constexpr uint32_t MaxWaitingTimeBeforeSwitchingLayerMs = 300;
+	static constexpr uint32_t MaxWaitingTimeFindingFirstBestLayerMs = 300;
 	static constexpr uint32_t MaxQueueSize = 10;
+
+	SimulcastVideoMultiplexer(uint32_t layers) : 
+		numLayers(layers)
+	{
+	}
 
 	template<typename T>
 	void Push(std::unique_ptr<VideoFrame> frame, const T& forwardFunc)
@@ -24,11 +32,9 @@ public:
 			referenceFrameTime = frame->GetTime();
 		}
 
-		if (*referenceFrameTime > frame->GetTime()) return;
-
 		if (initialTimestamps.find(ssrc) == initialTimestamps.end())
 		{
-			auto offset = (frame->GetTime() - *referenceFrameTime) * frame->GetClockRate() / 1000;
+			auto offset = (int64_t(frame->GetTime()) - int64_t(*referenceFrameTime)) * frame->GetClockRate() / 1000;
 			initialTimestamps[ssrc] = frame->GetTimeStamp() - offset;
 		}
 		
@@ -36,9 +42,10 @@ public:
 		{
 			layerDimensions[ssrc] = frame->GetWidth() * frame->GetHeight();
 		}
-
+	
 		// Convert to relative timestamp
-		frame->SetTimestamp(frame->GetTimeStamp() - initialTimestamps[ssrc]);
+		auto tm = frame->GetTimeStamp() > initialTimestamps[ssrc] ? frame->GetTimeStamp() - initialTimestamps[ssrc] : 0;
+		frame->SetTimestamp(tm);
 
 		// Initially, select the first intra frame. Will later to update to higher
 		// quality one if exists
@@ -63,9 +70,28 @@ public:
 			if (layerDimensions[ssrc] > layerDimensions[selectedSsrc] ||
 			    frame->GetTime() > (lastEnqueueTimeMs + MaxWaitingTimeBeforeSwitchingLayerMs))
 			{
+				UltraDebug("layer switch: 0x%x -> 0x%x, time: %lld, timestamp: %lld\n", ssrc, selectedSsrc, frame->GetTime(), frame->GetTimeStamp());
+
 				selectedSsrc = ssrc;
 				Enqueue(std::move(frame), forwardFunc);
 			}
+		}
+
+		// Select the best available frame in the queue during initialising
+		if (!initialised && queue.size() == MaxQueueSize)
+		{			 
+			auto bestLayer = std::max_element(layerDimensions.begin(), layerDimensions.end(), 
+				[](const auto& elementA, const auto& elementB) {
+					return elementA.second < elementB.second;
+				});
+
+			selectedSsrc = bestLayer->first;
+			while(!queue.empty() && queue.front()->GetSSRC() != selectedSsrc)
+			{
+				queue.pop_front();		
+			}
+
+			initialised = true;			
 		}
 	}
 
@@ -85,7 +111,6 @@ private:
 	template<typename T>
 	void Enqueue(std::unique_ptr<VideoFrame> frame, const T& forwardFunc)
 	{	
-		frame->SetSSRC(0);
 		lastEnqueueTimeMs = frame->GetTime();
 
 		// Check the queue to remove frames newer than current one
@@ -100,17 +125,21 @@ private:
 		if (queue.size() > MaxQueueSize)
 		{
 			auto f = std::move(queue.front());
+			f->SetSSRC(0);
 			queue.pop_front();
 			forwardFunc(*f);
 		}
 	}
 
+	uint32_t numLayers = 0;
+
+	bool initialised = false;
 	DWORD selectedSsrc = 0;
 	QWORD lastEnqueueTimeMs = 0;
 
 	std::optional<uint64_t> referenceFrameTime;
 
-	std::unordered_map<uint64_t, uint64_t> initialTimestamps;
+	std::unordered_map<uint64_t, int64_t> initialTimestamps;
 	std::unordered_map<uint64_t, size_t> layerDimensions;
 	std::deque<std::unique_ptr<VideoFrame>> queue;
 };

@@ -1,6 +1,7 @@
 #ifndef SIMULCASTMEDIAFRAMELISTENER_H
 #define SIMULCASTMEDIAFRAMELISTENER_H
 
+#include "SimulcastVideoMultiplexer.h"
 #include "media.h"
 #include "use.h"
 #include "video.h"
@@ -27,23 +28,13 @@ public:
 	void Stop();
 
 private:
-	void Select();
 	void ForwardFrame(VideoFrame& frame);
 private:
 	TimeService& timeService;
 	DWORD ssrc = 0;
-	DWORD numLayers = 0;
-	DWORD extSeqNum = 0;
 	std::set<MediaFrame::Listener::shared> listeners;
-	std::map<DWORD, std::unique_ptr<VideoFrame>> iframes;
-	std::vector<std::pair<DWORD,std::unique_ptr<VideoFrame>>> pendingFrames;
-	DWORD forwarded = 0;
 
-	uint64_t offsetTimestamp = 0;
-	uint64_t firstTimestamp = 0;
-	uint64_t lastTimestamp = 0;
-	uint64_t lastTime = 0;
-	uint64_t selectionTime = 0;
+	SimulcastVideoMultiplexer selector;	
 };
 
 #endif /* SIMULCASTMEDIAFRAMELISTENER_H */

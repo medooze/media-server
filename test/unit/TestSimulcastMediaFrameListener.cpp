@@ -173,8 +173,6 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelectionOffset)
 	}
 
 	std::vector<std::pair<uint32_t, uint64_t>> expectedFrames = {
-		{480, 0},
-		{960, 3},			// Offset caused 
 		{1920, 6},
 		{1920, 2976},
 		{1920, 5946},
@@ -217,8 +215,6 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelectionMissing)
 	}
 
 	std::vector<std::pair<uint32_t, uint64_t>> expectedFrames = {
-		{480, 0},
-		{960, 3},
 		{1920, 6},
 		{1920, 2976},
 		{1920, 5946},
