@@ -70,7 +70,7 @@ public:
 			if (layerDimensions[ssrc] > layerDimensions[selectedSsrc] ||
 			    frame->GetTime() > (lastEnqueueTimeMs + MaxWaitingTimeBeforeSwitchingLayerMs))
 			{
-				UltraDebug("layer switch: 0x%x -> 0x%x, time: %lld, timestamp: %lld\n", ssrc, selectedSsrc, frame->GetTime(), frame->GetTimeStamp());
+				//UltraDebug("layer switch: 0x%x -> 0x%x, time: %lld, timestamp: %lld\n", ssrc, selectedSsrc, frame->GetTime(), frame->GetTimeStamp());
 
 				selectedSsrc = ssrc;
 				Enqueue(std::move(frame), forwardFunc);
