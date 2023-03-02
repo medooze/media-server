@@ -5,6 +5,10 @@
 #include <future>
 #include <include/gtest/gtest.h>
 #include <memory>
+#include <sstream>
+#include <fstream>
+#include <regex>
+#include <unordered_map>
 
 namespace {
 static constexpr uint32_t ClockRate = 90 * 1000;
@@ -92,10 +96,12 @@ public:
 
 	virtual void onMediaFrame(DWORD ssrc, const MediaFrame &frame) override
 	{
-		forwardedFrames.emplace_back(dynamic_cast<const VideoFrame&>(frame).GetWidth(), frame.GetTimeStamp());
+		forwardedFrames.emplace_back(dynamic_cast<const VideoFrame&>(frame).GetWidth(), 
+									frame.GetTimeStamp(),
+									frame.GetTime());
 	}
 
-	std::vector<std::pair<uint32_t, uint64_t>> forwardedFrames;
+	std::vector<std::tuple<uint32_t, uint64_t, uint64_t>> forwardedFrames;
 };
 
 class TestSimulcastMediaFrameListener : public ::testing::Test
@@ -114,7 +120,7 @@ public:
 		listener.onMediaFrame(frame->GetSSRC(), *frame);
 	}
 
-	std::vector<std::pair<uint32_t, uint64_t>> PopForwardedFrames()
+	std::vector<std::tuple<uint32_t, uint64_t, uint64_t>> PopForwardedFrames()
 	{
 		return std::move(mediaFrameListener->forwardedFrames);
 	}
@@ -143,12 +149,12 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelection)
 		PushFrame(high.Generate());
 	}
 
-	std::vector<std::pair<uint32_t, uint64_t>> expectedFrames = {
-		{1920, 0},
-		{1920, TimestampInterval * 1},
-		{1920, TimestampInterval * 2},
-		{1920, TimestampInterval * 3},
-		{1920, TimestampInterval * 4},
+	std::vector<std::tuple<uint32_t, uint64_t, uint64_t>> expectedFrames = {
+		{1920, 0, 1000}, 
+		{1920, 2970, 1033}, 
+		{1920, 5940, 1066}, 
+		{1920, 8910, 1099}, 
+		{1920, 11880, 1132} 
 	};
 
 	ASSERT_EQ(expectedFrames, PopForwardedFrames());
@@ -172,12 +178,12 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelectionOffset)
 		PushFrame(high.Generate());
 	}
 
-	std::vector<std::pair<uint32_t, uint64_t>> expectedFrames = {
-		{1920, 6},
-		{1920, 2976},
-		{1920, 5946},
-		{1920, 8916},
-		{1920, 11886},
+	std::vector<std::tuple<uint32_t, uint64_t, uint64_t>> expectedFrames = {
+	 	{1920, 6, 1006}, 
+		{1920, 2976, 1039}, 
+		{1920, 5946, 1072}, 
+		{1920, 8916, 1105}, 
+		{1920, 11886, 1138}
 	};
 
 	ASSERT_EQ(expectedFrames, PopForwardedFrames());
@@ -214,12 +220,12 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelectionMissing)
 		PushFrame(high.Generate());
 	}
 
-	std::vector<std::pair<uint32_t, uint64_t>> expectedFrames = {
-		{1920, 6},
-		{1920, 2976},
-		{1920, 5946},
-		{1920, 11886},	// Missing one frame, no switching layer
-		{1920, 14856},
+	std::vector<std::tuple<uint32_t, uint64_t, uint64_t>> expectedFrames = {
+		{1920, 6, 1006},
+		{1920, 2976, 1039},
+		{1920, 5946, 1072},
+		{1920, 11886, 1138},	// Missing one frame, no switching layer
+		{1920, 14856, 1171},
 	};
 
 	ASSERT_EQ(expectedFrames, PopForwardedFrames());
@@ -255,12 +261,12 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelectionOrder)
 
 	repeatNonIntraFrames(9);
 
-	std::vector<std::pair<uint32_t, uint64_t>> expectedFrames = {
-		{1920, 0},
-		{1920, 2970},
-		{1920, 5940},
-		{1920, 8910},
-		{1920, 11880},
+	std::vector<std::tuple<uint32_t, uint64_t, uint64_t>> expectedFrames = {
+		{1920, 0, 1000},
+		{1920, 2970, 1033},
+		{1920, 5940, 1066},
+		{1920, 8910, 1099},
+		{1920, 11880, 1132},
 	};
 
 	ASSERT_EQ(expectedFrames, PopForwardedFrames());
@@ -303,21 +309,67 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelectionOrder)
 	repeatNonIntraFrames(11);
 
 	expectedFrames = {
-		{1920, 14850}, 
-		{1920, 17820}, 
-		{1920, 20790}, 
-		{1920, 23760}, 
-		{1920, 26730}, 
-		{1920, 29700}, 
-		{1920, 32670}, 
-		{1920, 35640}, 
-		{1920, 38610}, 
-		{1920, 41580},  // Start missing high layer frames
-		{480, 74250},	// Switch to low layer after timeout
-		{480, 77220},	// Keep low layer despite of recieving high layer non-intra frames
-		{1920, 80190},	// Switch to high layer once get high layer intra frame
-		{1920, 83160},
+		{1920, 14850, 1165},
+		{1920, 17820, 1198},
+		{1920, 20790, 1231},
+		{1920, 23760, 1264},
+		{1920, 26730, 1297},
+		{1920, 29700, 1330},
+		{1920, 32670, 1363},
+		{1920, 35640, 1396},
+		{1920, 38610, 1429},
+		{1920, 41580, 1462},  // Start missing high layer frames
+		{480, 74250, 1825},	  // Switch to low layer after timeout
+		{480, 77220, 1858},   // Keep low layer despite of recieving high layer non-intra frames
+		{1920, 80190, 1891},  // Switch to high layer once get high layer intra frame
+		{1920, 83160, 1924}
 		};
 
 	ASSERT_EQ(expectedFrames, PopForwardedFrames());
+}
+
+
+TEST_F(TestSimulcastMediaFrameListener, ActualInput)
+{
+	std::vector<std::unique_ptr<VideoFrame>> frames;
+	std::regex reg(R"(.*SimulcastMediaFrameListener::onMediaFrame.*\[([0-9]+),([0-9]+),([0-9]+),([0-9]+)\])");
+
+	std::unordered_map<uint32_t, uint32_t> dims;
+	dims[2783539029] = 1920;   // L
+	dims[3354030150] = 960;    // M
+	dims[1176922389] = 480;	   // S
+
+	size_t counter = 0;
+	std::ifstream infile("old_alg_final_2.log");
+	std::string line;
+	while (std::getline(infile, line))
+	{
+		std::smatch match;
+		if (std::regex_search(line, match, reg))
+		{
+			auto frame = std::make_unique<VideoFrame>(VideoCodec::Type::VP8);
+			auto ssrc = std::stoull(match[1]);
+			frame->SetSSRC(ssrc);
+			frame->SetIntra(std::stoull(match[2]));
+
+			frame->SetTimestamp(std::stoull(match[3]));
+			frame->SetTime(std::stoull(match[4]));
+			
+			ASSERT_TRUE(dims.find(frame->GetSSRC()) != dims.end());
+			frame->SetWidth(dims[ssrc]);
+			frame->SetHeight(dims[ssrc]);
+			frame->SetLength(dims[ssrc] * dims[ssrc]);
+
+			PushFrame(std::move(frame));
+
+			if (counter++ == 20000) break;
+		}
+	}
+
+	std::ofstream outfile("output.csv");
+	auto output = PopForwardedFrames();
+	for (auto [ssrc, timestamp, time] : output)
+	{
+		outfile << ssrc << "," << timestamp << "," << time << std::endl;
+	}
 }
