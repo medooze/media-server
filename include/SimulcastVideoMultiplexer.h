@@ -80,12 +80,12 @@ public:
 		// Select the best available frame in the queue during initialising
 		if (!initialised && queue.size() == MaxQueueSize)
 		{			 
-			auto bestLayer = std::max_element(layerDimensions.begin(), layerDimensions.end(), 
-				[](const auto& elementA, const auto& elementB) {
-					return elementA.second < elementB.second;
+			auto bestLayerFrame = std::max_element(queue.begin(), queue.end(), 
+				[this](const auto& elementA, const auto& elementB) {
+					return layerDimensions[elementA->GetSSRC()] < layerDimensions[elementB->GetSSRC()];
 				});
 
-			selectedSsrc = bestLayer->first;
+			selectedSsrc = (*bestLayerFrame)->GetSSRC();
 			while(!queue.empty() && queue.front()->GetSSRC() != selectedSsrc)
 			{
 				queue.pop_front();		
