@@ -65,6 +65,7 @@ public:
 			case MULTIOPUS:	return 48000;
 			case G722:	return 16000;
 			case AAC:	return 90000;
+			case EAC3:	return 48000;
 			default:	return 8000;
 		}
 	}
