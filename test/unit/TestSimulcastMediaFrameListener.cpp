@@ -16,6 +16,14 @@ static constexpr uint64_t TimestampInterval = 2970;
 static constexpr uint64_t FrameTimeIntervalMs = TimestampInterval * 1000 / ClockRate;
 }
 
+struct FrameInput
+{
+	uint32_t width;
+	uint32_t intra;
+	uint64_t timestamp;
+	uint64_t time;
+};
+
 class TestFrameGenerator
 {
 public:
@@ -23,8 +31,8 @@ public:
 		ssrc(ssrc),
 		width(width),
 		height(height),
-		nextFrameTime(initialTime),
-		nextTimestamp(initialTimestamp)
+		initialFrameTime(initialTime),
+		initialTimestamp(initialTimestamp)
 	{
 	}
 
@@ -34,15 +42,20 @@ public:
 		frame->SetSSRC(ssrc);
 		frame->SetWidth(width);
 		frame->SetHeight(height);
-		frame->SetTimestamp(nextTimestamp);
-		frame->SetTime(nextFrameTime);
+		frame->SetTimestamp(initialTimestamp + TimestampInterval * ticks);
+		frame->SetTime(initialFrameTime + FrameTimeIntervalMs * ticks);
 		frame->SetIntra(isIntra);
 		frame->SetLength(width * height);
+		frame->SetClockRate(ClockRate);
 
-		nextTimestamp += TimestampInterval;
-		nextFrameTime += FrameTimeIntervalMs;
+		ticks++;
 
 		return std::move(frame);
+	}
+
+	void AlignTo(const TestFrameGenerator& other)
+	{
+		ticks = other.ticks;
 	}
 
 private:
@@ -50,8 +63,10 @@ private:
 	uint32_t width;
 	uint32_t height;
 
-	uint64_t nextFrameTime;
-	uint64_t nextTimestamp;
+	uint64_t initialFrameTime;
+	uint64_t initialTimestamp;
+
+	uint32_t ticks = 0;
 };
 
 class TestTimeService : public TimeService
@@ -84,6 +99,86 @@ public:
 	{		
 		return std::async(std::launch::deferred, [&](){ func(std::chrono::milliseconds()); });
 	}
+};
+
+class FramePushHelper
+{
+public:
+	static constexpr uint8_t	LOW = 0x1;
+	static constexpr uint8_t	MID = 0x2;
+	static constexpr uint8_t	HIGH = 0x4;
+	static constexpr uint8_t	INTRA = 0x8;
+	static constexpr uint8_t	ALL_NON_INTRA = LOW | MID | HIGH;
+	static constexpr uint8_t	ALL_INTRA = LOW | MID | HIGH | INTRA;
+
+	class Excutor
+	{
+	public:
+		Excutor(FramePushHelper& fp, uint8_t type) : fp(fp), type(type)
+		{
+		}
+
+		void operator<<(uint32_t value)
+		{
+			repeats *= value;
+		}
+
+		~Excutor()
+		{
+			fp.PushAdvance(type, repeats);
+		}
+
+	private:
+		FramePushHelper& fp;
+		uint8_t type;
+		size_t repeats = 1;
+	};
+
+	FramePushHelper(SimulcastMediaFrameListener& listener, TestFrameGenerator &low, TestFrameGenerator &mid, TestFrameGenerator &high) :
+		listener(listener),
+		low(low), 
+		mid(mid),
+		high(high)
+	{
+	}
+
+	Excutor operator<<(uint8_t type) 
+	{ 
+		return Excutor(*this, type); 
+	};
+
+private:
+
+	void PushAdvance(uint8_t type, size_t repeats = 1)
+	{
+		bool intra = type & INTRA;
+
+		for (size_t i = 0; i < repeats; i++)
+		{
+			if (type & LOW)
+			{
+				auto frame = low.Generate(intra);
+				listener.onMediaFrame(frame->GetSSRC(), *frame);
+			}
+			
+			if (type & MID)
+			{
+				auto frame = mid.Generate(intra);
+				listener.onMediaFrame(frame->GetSSRC(), *frame);
+			}
+			
+			if (type & HIGH)
+			{
+				auto frame = high.Generate(intra);
+				listener.onMediaFrame(frame->GetSSRC(), *frame);
+			}
+		}
+	}
+
+	TestFrameGenerator &low;
+	TestFrameGenerator &mid;
+	TestFrameGenerator &high;
+	SimulcastMediaFrameListener &listener;
 };
 
 class TestMediaFrameListner: public MediaFrame::Listener
@@ -120,9 +215,44 @@ public:
 		listener.onMediaFrame(frame->GetSSRC(), *frame);
 	}
 
-	std::vector<std::tuple<uint32_t, uint64_t, uint64_t>> PopForwardedFrames()
+	void PushFrame(const FrameInput& input)
 	{
-		return std::move(mediaFrameListener->forwardedFrames);
+		auto frame = std::make_unique<VideoFrame>(VideoCodec::Type::VP8);
+		frame->SetSSRC(input.width);
+		frame->SetWidth(input.width);
+		frame->SetHeight(input.width);
+		frame->SetTimestamp(input.timestamp);
+		frame->SetTime(input.time);
+		frame->SetIntra(input.intra);
+		frame->SetLength(input.width*input.width);
+		frame->SetClockRate(ClockRate);	
+
+		listener.onMediaFrame(frame->GetSSRC(), *frame);
+	}
+
+	void CheckResetForwardedFrames(const std::vector<std::tuple<uint32_t, uint64_t, uint64_t>>& expected)
+	{
+		auto forwarded = std::move(mediaFrameListener->forwardedFrames);
+		size_t count = std::min(expected.size(), forwarded.size());
+		for (size_t i = 0; i < count; i++)
+		{
+#ifdef CHECK_WIDTH_ONLY
+			ASSERT_EQ(std::get<0>(expected[i]), std::get<0>(forwarded[i])) << "index:" << i << "\n" 
+					<< "expected: width:" << std::get<0>(expected[i]) << ",\ttimestamp:" << std::get<1>(expected[i]) << ",\ttime:" << std::get<2>(expected[i]) << "\n"
+					<< "  actual: width:" << std::get<0>(forwarded[i]) << ",\ttimestamp:" << std::get<1>(forwarded[i]) << ",\ttime:" << std::get<2>(forwarded[i]);
+#else
+			ASSERT_EQ(expected, forwarded);
+#endif
+		}
+	}
+
+	void CheckResetForwardedFrames(uint32_t expectedLayerWidth)
+	{
+		auto forwarded = std::move(mediaFrameListener->forwardedFrames);
+		for (auto &frame : forwarded)
+		{
+			ASSERT_EQ(expectedLayerWidth, std::get<0>(frame)) << "timestamp:" << std::get<1>(frame) << ",time:" << std::get<2>(frame);
+		}
 	}
 
 protected:
@@ -138,16 +268,9 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelection)
 	TestFrameGenerator mid(2, 960, 540,   1000, 20000);
 	TestFrameGenerator high(3, 1920, 1080, 1000, 30000);
 	
-	PushFrame(low.Generate(true));
-	PushFrame(mid.Generate(true));
-	PushFrame(high.Generate(true));
-
-	for (size_t i = 0; i < 14; i++)
-	{
-		PushFrame(low.Generate());
-		PushFrame(mid.Generate());
-		PushFrame(high.Generate());
-	}
+	FramePushHelper fp(listener, low, mid, high);
+	fp << FramePushHelper::ALL_INTRA;
+	fp << FramePushHelper::ALL_NON_INTRA << 14;
 
 	std::vector<std::tuple<uint32_t, uint64_t, uint64_t>> expectedFrames = {
 		{1920, 0, 1000}, 
@@ -157,36 +280,51 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelection)
 		{1920, 11880, 1132} 
 	};
 
-	ASSERT_EQ(expectedFrames, PopForwardedFrames());
+	CheckResetForwardedFrames(expectedFrames);
 }
-
 
 TEST_F(TestSimulcastMediaFrameListener, LayerSelectionOffset) 
 {
 	TestFrameGenerator low(1, 480, 270,   1000, 10000);
 	TestFrameGenerator mid(2, 960, 540,   1003, 20000);
 	TestFrameGenerator high(3, 1920, 1080, 1006, 30000);
-	
-	PushFrame(low.Generate(true));
-	PushFrame(mid.Generate(true));
-	PushFrame(high.Generate(true));
 
-	for (size_t i = 0; i < 14; i++)
-	{
-		PushFrame(low.Generate());
-		PushFrame(mid.Generate());
-		PushFrame(high.Generate());
-	}
+	FramePushHelper fp(listener, low, mid, high);
+	
+	fp << FramePushHelper::ALL_INTRA;
+	fp << FramePushHelper::ALL_NON_INTRA << 14;
 
 	std::vector<std::tuple<uint32_t, uint64_t, uint64_t>> expectedFrames = {
-	 	{1920, 6, 1006}, 
-		{1920, 2976, 1039}, 
-		{1920, 5946, 1072}, 
-		{1920, 8916, 1105}, 
-		{1920, 11886, 1138}
+	 	{1920, 540, 1006}, 
+		{1920, 3510, 1039}, 
+		{1920, 6480, 1072}, 
+		{1920, 9450, 1105}, 
+		{1920, 12420, 1138}
 	};
 
-	ASSERT_EQ(expectedFrames, PopForwardedFrames());
+	CheckResetForwardedFrames(expectedFrames);
+}
+
+TEST_F(TestSimulcastMediaFrameListener, LayerSelectionNegativeOffset) 
+{
+	TestFrameGenerator low(1, 480, 270,   1000, 10000);
+	TestFrameGenerator mid(2, 960, 540,   997, 20000);
+	TestFrameGenerator high(3, 1920, 1080, 990, 30000);
+
+	FramePushHelper fp(listener, low, mid, high);
+	
+	fp << FramePushHelper::ALL_INTRA;
+	fp << FramePushHelper::ALL_NON_INTRA << 14;
+
+	std::vector<std::tuple<uint32_t, uint64_t, uint64_t>> expectedFrames = {
+	 	{1920, 0, 990}, 
+		{1920, 2070, 1023}, 
+		{1920, 5040, 1056}, 
+		{1920, 8010, 1089}, 
+		{1920, 10980, 1122}
+	};
+
+	CheckResetForwardedFrames(expectedFrames);
 }
 
 TEST_F(TestSimulcastMediaFrameListener, LayerSelectionMissing) 
@@ -195,40 +333,27 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelectionMissing)
 	TestFrameGenerator mid(2, 960, 540,   1003, 20000);
 	TestFrameGenerator high(3, 1920, 1080, 1006, 30000);
 	
-	PushFrame(low.Generate(true));
-	PushFrame(mid.Generate(true));
-	PushFrame(high.Generate(true));
+	FramePushHelper fp(listener, low, mid, high);
 
-	for (size_t i = 0; i < 2; i++)
-	{
-		PushFrame(low.Generate());
-		PushFrame(mid.Generate());
-		PushFrame(high.Generate());
-	}
+	fp << FramePushHelper::ALL_INTRA;
+	fp << FramePushHelper::ALL_NON_INTRA << 2;
 
-	for (size_t i = 0; i < 1; i++)
-	{
-		PushFrame(low.Generate());
-		PushFrame(mid.Generate());
-		(void)high.Generate();			// Missing one frame
-	}
+	fp << FramePushHelper::LOW;
+	fp << FramePushHelper::MID;
+	
+	high.AlignTo(low);
 
-	for (size_t i = 0; i < 12; i++)
-	{
-		PushFrame(low.Generate());
-		PushFrame(mid.Generate());
-		PushFrame(high.Generate());
-	}
+	fp << FramePushHelper::ALL_NON_INTRA << 12;
 
 	std::vector<std::tuple<uint32_t, uint64_t, uint64_t>> expectedFrames = {
-		{1920, 6, 1006},
-		{1920, 2976, 1039},
-		{1920, 5946, 1072},
-		{1920, 11886, 1138},	// Missing one frame, no switching layer
-		{1920, 14856, 1171},
+		{1920, 540, 1006},
+		{1920, 3510, 1039},
+		{1920, 6480, 1072},
+		{1920, 12420, 1138},	// Missing one frame, no switching layer
+		{1920, 15390, 1171},
 	};
 
-	ASSERT_EQ(expectedFrames, PopForwardedFrames());
+	CheckResetForwardedFrames(expectedFrames);
 }
 
 
@@ -238,28 +363,13 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelectionOrder)
 	TestFrameGenerator mid(2, 960, 540,   1000, 20000);
 	TestFrameGenerator high(3, 1920, 1080, 1000, 30000);
 
-	auto repeatNonIntraFrames = [this, &low, &mid, &high](size_t count){
-		for (size_t i = 0; i < count; i++)
-		{
-			PushFrame(low.Generate());
-			PushFrame(mid.Generate());
-			PushFrame(high.Generate());
-		}
-	};
+	FramePushHelper fp(listener, low, mid, high);
 	
-	PushFrame(low.Generate(true));
-	PushFrame(mid.Generate(true));
-	PushFrame(high.Generate(true));
-
-	repeatNonIntraFrames(4);
-	
-	{
-		PushFrame(low.Generate(true));  // Intra frame
-		PushFrame(mid.Generate());
-		PushFrame(high.Generate());
-	}
-
-	repeatNonIntraFrames(9);
+	fp << FramePushHelper::ALL_INTRA;
+	fp << FramePushHelper::ALL_NON_INTRA << 4;		
+	fp << (FramePushHelper::LOW | FramePushHelper::INTRA);  // Intra frame
+	fp << (FramePushHelper::MID | FramePushHelper::HIGH);
+	fp << FramePushHelper::ALL_NON_INTRA << 9;
 
 	std::vector<std::tuple<uint32_t, uint64_t, uint64_t>> expectedFrames = {
 		{1920, 0, 1000},
@@ -269,44 +379,29 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelectionOrder)
 		{1920, 11880, 1132},
 	};
 
-	ASSERT_EQ(expectedFrames, PopForwardedFrames());
+	CheckResetForwardedFrames(expectedFrames);
 
-	for (size_t i = 0; i < 5; i++)
-	{
-		PushFrame(low.Generate());
-		PushFrame(mid.Generate());
-		(void)high.Generate();
-	}
+	fp << (FramePushHelper::LOW | FramePushHelper::MID) << 5;
 
-	{
-		PushFrame(low.Generate(true));	// This intra frame will be discarded as time is not 
-		                                // out for high layer despite it is missing frames
-		PushFrame(mid.Generate());
-		(void)high.Generate();
-	}
+	// This intra frame will be discarded as time is not 
+	// out for high layer despite it is missing frames
+	fp << (FramePushHelper::LOW | FramePushHelper::INTRA);	
+	fp << FramePushHelper::MID;
+	
+	fp << (FramePushHelper::LOW | FramePushHelper::MID) << 4;
 
-	for (size_t i = 0; i < 4; i++)
-	{
-		PushFrame(low.Generate());
-		PushFrame(mid.Generate());
-		(void)high.Generate();
-	}
+	// Intra frame, will switch to low layer
+	fp << (FramePushHelper::LOW | FramePushHelper::INTRA);
+	fp << FramePushHelper::MID;
+	
+	high.AlignTo(low);
 
-	{
-		PushFrame(low.Generate(true));  // Intra frame, will switch to low layer
-		PushFrame(mid.Generate());
-		PushFrame(high.Generate());
-	}
+	fp << FramePushHelper::ALL_NON_INTRA;	
 
-	repeatNonIntraFrames(1);
+	fp << (FramePushHelper::LOW | FramePushHelper::MID);
+	fp << (FramePushHelper::HIGH | FramePushHelper::INTRA);
 
-	{
-		PushFrame(low.Generate());  // Intra frame, will swith to high layer
-		PushFrame(mid.Generate());
-		PushFrame(high.Generate(true));
-	}
-
-	repeatNonIntraFrames(11);
+	fp << FramePushHelper::ALL_NON_INTRA << 11;	
 
 	expectedFrames = {
 		{1920, 14850, 1165},
@@ -325,12 +420,220 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelectionOrder)
 		{1920, 83160, 1924}
 		};
 
-	ASSERT_EQ(expectedFrames, PopForwardedFrames());
+	CheckResetForwardedFrames(expectedFrames);
+}
+
+TEST_F(TestSimulcastMediaFrameListener, NoHighLayerAtBeginning) 
+{
+	TestFrameGenerator low(1, 480, 270,   1000, 10000);
+	TestFrameGenerator mid(2, 960, 540,   1000, 20000);
+	TestFrameGenerator high(3, 1920, 1080, 1000, 30000);
+
+	FramePushHelper fp(listener, low, mid, high);
+
+	fp << (FramePushHelper::LOW | FramePushHelper::INTRA);  // Intra frame
+	fp << (FramePushHelper::MID | FramePushHelper::INTRA);  // Intra frame
+
+	fp << (FramePushHelper::LOW | FramePushHelper::MID) << 11; 
+	
+	high.AlignTo(low);
+
+	fp << (FramePushHelper::HIGH | FramePushHelper::INTRA);  // Intra frame
+	fp << (FramePushHelper::LOW | FramePushHelper::MID); 
+
+	fp << FramePushHelper::ALL_NON_INTRA << 10;
+
+	std::vector<std::tuple<uint32_t, uint64_t, uint64_t>> expectedFrames = { 
+		{960, 0, 1000},
+		{960, 2970, 1033},
+		{960, 5940, 1066},
+		{960, 8910, 1099},
+		{960, 11880, 1132},
+		{960, 14850, 1165},
+		{960, 17820, 1198},
+		{960, 20790, 1231},
+		{960, 23760, 1264},
+		{960, 26730, 1297},
+		{960, 29700, 1330},
+		{960, 32670, 1363},
+		{1920, 35640, 1396}
+ 	};
+
+	CheckResetForwardedFrames(expectedFrames);
 }
 
 
-TEST_F(TestSimulcastMediaFrameListener, ActualInput)
+TEST_F(TestSimulcastMediaFrameListener, HighLayerRemovedInMiddle)
 {
+	TestFrameGenerator low(1, 480, 270,   1000, 10000);
+	TestFrameGenerator mid(2, 960, 540,   1000, 20000);
+	TestFrameGenerator high(3, 1920, 1080, 1000, 30000);
+
+	FramePushHelper fp(listener, low, mid, high);
+
+	fp << FramePushHelper::ALL_INTRA << 1;
+	fp << FramePushHelper::ALL_NON_INTRA << 20;
+
+	fp << (FramePushHelper::LOW | FramePushHelper::MID) << 10; 
+	ASSERT_NO_FATAL_FAILURE(CheckResetForwardedFrames(1920));
+
+	fp << (FramePushHelper::LOW | FramePushHelper::MID | FramePushHelper::INTRA); 
+	fp << (FramePushHelper::LOW | FramePushHelper::MID) << 10; 
+
+	std::vector<std::tuple<uint32_t, uint64_t, uint64_t>> expectedFrames = { 
+		{1920, 32670, 1363},
+		{1920, 35640, 1396},
+		{1920, 38610, 1429},
+		{1920, 41580, 1462},
+		{1920, 44550, 1495},
+		{1920, 47520, 1528},
+		{1920, 50490, 1561},
+		{1920, 53460, 1594},
+		{1920, 56430, 1627},
+		{1920, 59400, 1660},
+		{960, 92070, 2023}
+ 	};
+
+	CheckResetForwardedFrames(expectedFrames);
+
+	high.AlignTo(low);
+
+	fp << (FramePushHelper::HIGH | FramePushHelper::INTRA);
+
+	fp << (FramePushHelper::LOW | FramePushHelper::MID); 
+	fp << FramePushHelper::ALL_NON_INTRA << 10;
+
+	expectedFrames = {
+		{960, 95040, 2056},
+		{960, 98010, 2089},
+		{960, 100980, 2122},
+		{960, 103950, 2155},
+		{960, 106920, 2188},
+		{960, 109890, 2221},
+		{960, 112860, 2254},
+		{960, 115830, 2287},
+		{960, 118800, 2320},
+		{960, 121770, 2353},
+		{1920, 124740, 2386}
+ 	};
+
+	CheckResetForwardedFrames(expectedFrames);
+}
+
+TEST_F(TestSimulcastMediaFrameListener, MidLayerIntraframe)
+{
+	TestFrameGenerator low(1, 480, 270,   1000, 10000);
+	TestFrameGenerator mid(2, 960, 540,   1000, 20000);
+	TestFrameGenerator high(3, 1920, 1080, 1000, 30000);
+
+	FramePushHelper fp(listener, low, mid, high);
+
+	fp << FramePushHelper::ALL_INTRA << 1;
+	fp << FramePushHelper::ALL_NON_INTRA << 20;
+
+	fp << (FramePushHelper::MID | FramePushHelper::INTRA); // An mid layer iframe
+	fp << (FramePushHelper::HIGH | FramePushHelper::LOW);
+
+	ASSERT_NO_FATAL_FAILURE(CheckResetForwardedFrames(1920));
+	fp << FramePushHelper::LOW << 10;
+
+	std::vector<std::tuple<uint32_t, uint64_t, uint64_t>> expectedFrames = {};
+
+	CheckResetForwardedFrames(expectedFrames);
+
+	mid.AlignTo(low);
+	fp << (FramePushHelper::MID | FramePushHelper::INTRA); // An mid layer iframe
+
+	high.AlignTo(mid);
+	low.AlignTo(mid);
+	fp << FramePushHelper::ALL_NON_INTRA << 10;
+
+	expectedFrames = { 
+		{1920, 35640, 1396},
+		{1920, 38610, 1429},
+		{1920, 41580, 1462},
+		{1920, 44550, 1495},
+		{1920, 47520, 1528},
+		{1920, 50490, 1561},
+		{1920, 53460, 1594},
+		{1920, 56430, 1627},
+		{1920, 59400, 1660},
+		{1920, 62370, 1693},
+		{960, 95040, 2056}
+ 	};
+
+	CheckResetForwardedFrames(expectedFrames);
+}
+
+
+TEST_F(TestSimulcastMediaFrameListener, HighLayerIFrames)
+{
+	TestFrameGenerator low(1, 480, 270,   1000, 10000);
+	TestFrameGenerator mid(2, 960, 540,   1003, 20000);
+	TestFrameGenerator high(3, 1920, 1080, 1006, 30000);
+
+	FramePushHelper fp(listener, low, mid, high);
+	
+	fp << (FramePushHelper::LOW | FramePushHelper::INTRA); // An lower layer iframe
+	fp << (FramePushHelper::MID);
+	
+	fp << (FramePushHelper::LOW | FramePushHelper::MID) << 10;
+
+	fp << (FramePushHelper::MID | FramePushHelper::INTRA);
+	fp << (FramePushHelper::LOW);
+
+	fp << (FramePushHelper::LOW | FramePushHelper::MID | FramePushHelper::MID) << 5;
+	fp << (FramePushHelper::LOW | FramePushHelper::MID | FramePushHelper::INTRA);
+
+	high.AlignTo(low);
+	fp << FramePushHelper::ALL_NON_INTRA << 10; // An mid layer iframe
+
+	fp << (FramePushHelper::HIGH | FramePushHelper::INTRA);
+	fp << (FramePushHelper::LOW | FramePushHelper::MID);
+
+	fp << FramePushHelper::ALL_NON_INTRA << 10;
+
+	std::vector<std::tuple<uint32_t, uint64_t, uint64_t>> expectedFrames = { 
+		{480, 0, 1000},
+		{480, 2970, 1033},
+		{480, 5940, 1066},
+		{480, 8910, 1099},
+		{480, 11880, 1132},
+		{480, 14850, 1165},
+		{480, 17820, 1198},
+		{480, 20790, 1231},
+		{480, 23760, 1264},
+		{480, 26730, 1297},
+		{480, 29700, 1330},
+		{960, 32940, 1366},
+		{960, 35910, 1399},
+		{960, 38880, 1432},
+		{960, 41850, 1465},
+		{960, 44820, 1498},
+		{960, 47790, 1531},
+		{960, 50760, 1564},
+		{960, 53730, 1597},
+		{960, 56700, 1630},
+		{960, 59670, 1663},
+		{960, 62640, 1696},
+		{960, 65610, 1729},
+		{960, 68580, 1762},
+		{960, 71550, 1795},
+		{960, 74520, 1828},
+		{960, 77490, 1861},
+		{960, 80460, 1894},
+		{1920, 83700, 1930}
+ 	};
+
+	CheckResetForwardedFrames(expectedFrames);
+}
+
+
+TEST_F(TestSimulcastMediaFrameListener, ActualLogProcess)
+{
+	// Comment for testing
+	GTEST_SKIP();
+
 	std::vector<std::unique_ptr<VideoFrame>> frames;
 	std::regex reg(R"(.*SimulcastMediaFrameListener::onMediaFrame.*\[([0-9]+),([0-9]+),([0-9]+),([0-9]+)\])");
 
@@ -360,16 +663,100 @@ TEST_F(TestSimulcastMediaFrameListener, ActualInput)
 			frame->SetHeight(dims[ssrc]);
 			frame->SetLength(dims[ssrc] * dims[ssrc]);
 
-			PushFrame(std::move(frame));
-
-			if (counter++ == 20000) break;
+			if (frame->GetTime() > 1677727591998)
+			{
+				//std::cout << "{" << dims[ssrc] << "," << match[2] << "," << match[3] << "," << match[4] << "}," << std::endl;
+				PushFrame(std::move(frame));
+				if (counter++ == 1500) break;
+			}
 		}
 	}
 
 	std::ofstream outfile("output.csv");
-	auto output = PopForwardedFrames();
-	for (auto [ssrc, timestamp, time] : output)
+	for (auto [ssrc, timestamp, time] : mediaFrameListener->forwardedFrames)
 	{
 		outfile << ssrc << "," << timestamp << "," << time << std::endl;
 	}
+}
+
+
+TEST_F(TestSimulcastMediaFrameListener, ActualDataInput)
+{
+	std::vector<FrameInput> inputs = {
+		{1920,1,1924004629,1677727601995},
+		{480,0,3469462456,1677727602023},
+		{960,0,233967998,1677727602024},
+		{1920,0,1924007599,1677727602029},
+		{480,0,3469465516,1677727602064},
+		{480,0,3469468486,1677727602096},
+		{960,0,233971058,1677727602065},
+		{960,0,233974028,1677727602100},
+		{1920,0,1924010659,1677727602059},
+		{480,0,3469471546,1677727602146},
+		{960,0,233977088,1677727602146},
+		{1920,0,1924013629,1677727602124},
+		{480,0,3469474516,1677727602152},
+		{960,0,233980058,1677727602152},
+		{1920,0,1924016689,1677727602151},
+		{1920,0,1924019659,1677727602168},
+		{480,0,3469477486,1677727602200},
+		{960,0,233983028,1677727602200},
+		{480,0,3469480456,1677727602220},
+		{1920,1,1924022629,1677727602199},
+		{480,0,3469483516,1677727602262},
+		{480,0,3469486486,1677727602314},
+		{960,0,233985998,1677727602229},
+		{480,0,3469489456,1677727602328},
+		{480,1,3469492516,1677727602396},
+		{960,0,233989058,1677727602358},
+		{960,0,233992028,1677727602470},
+		{1920,0,1924025599,1677727602298},
+		{960,0,233994998,1677727602474},
+		{480,0,3469522486,1677727602678},
+		{1920,0,1924028659,1677727602516},
+		{1920,0,1924031629,1677727602698},
+		{960,1,233998058,1677727602577},
+		{960,0,234016058,1677727602705},
+		{480,0,3469528516,1677727602748},
+		{960,0,234028028,1677727602748},
+		{960,0,234037028,1677727602798},
+		{960,0,234043058,1677727602850},
+		{1920,0,1924034599,1677727602700},
+		{960,0,234046028,1677727602899},
+		{1920,1,1924037659,1677727602896},
+		{480,0,3469558486,1677727603072},
+		{1920,0,1924055659,1677727603067},
+		{960,0,234066998,1677727603120},
+		{480,0,3469567486,1677727603196},
+		{1920,0,1924061599,1677727603120},
+		{960,0,234075998,1677727603209},
+		{1920,0,1924079599,1677727603201},
+		{480,0,3469573516,1677727603261},
+		{960,0,234079058,1677727603261},
+		{960,0,234082028,1677727603298},
+		{1920,0,1924091659,1677727603253},
+		{480,0,3469582516,1677727603353},
+		{960,0,234091028,1677727603398},
+		{1920,0,1924097599,1677727603347},
+		{480,0,3469588456,1677727603420},
+		{1920,0,1924100659,1677727603408},
+		{1920,0,1924118659,1677727603451},
+		{960,0,234102998,1677727603511},
+		{1920,0,1924121629,1677727603497},
+		{960,0,234106058,1677727603550},
+		{1920,0,1924124599,1677727603549},
+		{960,0,234109028,1677727603597},
+		{480,0,3469606456,1677727603615},
+		{1920,0,1924130629,1677727603597},
+		{960,0,234115058,1677727603666},
+		{1920,0,1924142599,1677727603649},
+		{1920,0,1924151599,1677727603696},
+	};
+
+	for (auto& input : inputs)
+	{
+		PushFrame(input);
+	}
+
+	CheckResetForwardedFrames(1920);
 }
