@@ -47,14 +47,16 @@ void SimulcastMediaFrameListener::Stop()
 void SimulcastMediaFrameListener::SetNumLayers(DWORD numLayers)
 {
 	(void)numLayers;
-	initialised = false;
-	selectedSsrc = 0;
-	lastEnqueueTimeMs = 0;
+	timeService.Sync([this](std::chrono::milliseconds) {
+		initialised = false;
+		selectedSsrc = 0;
+		lastEnqueueTimeMs = 0;
 
-	referenceFrameTime.reset();
-	initialTimestamps.clear();
-	layerDimensions.clear();
-	queue.clear();
+		referenceFrameTime.reset();
+		initialTimestamps.clear();
+		layerDimensions.clear();
+		queue.clear();
+	});
 }
 
 
