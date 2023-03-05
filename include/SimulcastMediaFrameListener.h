@@ -1,16 +1,17 @@
 #ifndef SIMULCASTMEDIAFRAMELISTENER_H
 #define SIMULCASTMEDIAFRAMELISTENER_H
 
-#include "SimulcastVideoMultiplexer.h"
 #include "media.h"
 #include "use.h"
 #include "video.h"
 #include "TimeService.h"
 
+#include <algorithm>
+#include <deque>
 #include <map>
 #include <memory>
 #include <set>
-
+#include <unordered_map>
 class SimulcastMediaFrameListener :
 	public MediaFrame::Listener
 {
@@ -29,12 +30,24 @@ public:
 
 private:
 	void ForwardFrame(VideoFrame& frame);
+
+	void Push(std::unique_ptr<VideoFrame> frame);
+	void Enqueue(std::unique_ptr<VideoFrame> frame);
+	void Flush();
 private:
 	TimeService& timeService;
 	DWORD ssrc = 0;
 	std::set<MediaFrame::Listener::shared> listeners;
 
-	SimulcastVideoMultiplexer selector;	
+	bool initialised = false;
+	DWORD selectedSsrc = 0;
+	QWORD lastEnqueueTimeMs = 0;
+
+	std::optional<uint64_t> referenceFrameTime;
+
+	std::unordered_map<uint64_t, int64_t> initialTimestamps;
+	std::unordered_map<uint64_t, size_t> layerDimensions;
+	std::deque<std::unique_ptr<VideoFrame>> queue;
 };
 
 #endif /* SIMULCASTMEDIAFRAMELISTENER_H */

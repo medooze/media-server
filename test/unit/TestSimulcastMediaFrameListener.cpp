@@ -462,6 +462,44 @@ TEST_F(TestSimulcastMediaFrameListener, NoHighLayerAtBeginning)
 	CheckResetForwardedFrames(expectedFrames);
 }
 
+TEST_F(TestSimulcastMediaFrameListener, NoHighLayerIntraAtBeginning) 
+{
+	TestFrameGenerator low(1, 480, 270,   1000, 10000);
+	TestFrameGenerator mid(2, 960, 540,   1000, 20000);
+	TestFrameGenerator high(3, 1920, 1080, 1000, 30000);
+
+	FramePushHelper fp(listener, low, mid, high);
+
+	fp << (FramePushHelper::LOW | FramePushHelper::INTRA);  // Intra frame
+	fp << (FramePushHelper::MID | FramePushHelper::INTRA);  // Intra frame
+
+	fp << FramePushHelper::ALL_NON_INTRA << 11; 
+	
+	high.AlignTo(low);
+
+	fp << (FramePushHelper::HIGH | FramePushHelper::INTRA);  // Intra frame
+	fp << (FramePushHelper::LOW | FramePushHelper::MID); 
+
+	fp << FramePushHelper::ALL_NON_INTRA << 10;
+
+	std::vector<std::tuple<uint32_t, uint64_t, uint64_t>> expectedFrames = { 
+		{960, 0, 1000},
+		{960, 2970, 1033},
+		{960, 5940, 1066},
+		{960, 8910, 1099},
+		{960, 11880, 1132},
+		{960, 14850, 1165},
+		{960, 17820, 1198},
+		{960, 20790, 1231},
+		{960, 23760, 1264},
+		{960, 26730, 1297},
+		{960, 29700, 1330},
+		{960, 32670, 1363},
+		{1920, 35640, 1396}
+ 	};
+
+	CheckResetForwardedFrames(expectedFrames);
+}
 
 TEST_F(TestSimulcastMediaFrameListener, HighLayerRemovedInMiddle)
 {
