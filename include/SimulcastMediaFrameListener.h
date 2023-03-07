@@ -40,6 +40,8 @@ private:
 	DWORD ssrc = 0;
 	std::set<MediaFrame::Listener::shared> listeners;
 
+	uint32_t maxQueueSize = 0;
+
 	bool initialised = false;
 	DWORD selectedSsrc = 0;
 	QWORD lastEnqueueTimeMs = 0;

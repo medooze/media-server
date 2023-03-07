@@ -58,6 +58,11 @@ public:
 		ticks = other.ticks;
 	}
 
+	void Reset()
+	{
+		ticks = 0;
+	}
+
 private:
 	uint32_t ssrc;
 	uint32_t width;
@@ -111,29 +116,6 @@ public:
 	static constexpr uint8_t	ALL_NON_INTRA = LOW | MID | HIGH;
 	static constexpr uint8_t	ALL_INTRA = LOW | MID | HIGH | INTRA;
 
-	class Excutor
-	{
-	public:
-		Excutor(FramePushHelper& fp, uint8_t type) : fp(fp), type(type)
-		{
-		}
-
-		void operator<<(uint32_t value)
-		{
-			repeats *= value;
-		}
-
-		~Excutor()
-		{
-			fp.PushAdvance(type, repeats);
-		}
-
-	private:
-		FramePushHelper& fp;
-		uint8_t type;
-		size_t repeats = 1;
-	};
-
 	FramePushHelper(SimulcastMediaFrameListener& listener, TestFrameGenerator &low, TestFrameGenerator &mid, TestFrameGenerator &high) :
 		listener(listener),
 		low(low), 
@@ -141,13 +123,6 @@ public:
 		high(high)
 	{
 	}
-
-	Excutor operator<<(uint8_t type) 
-	{ 
-		return Excutor(*this, type); 
-	};
-
-private:
 
 	void PushAdvance(uint8_t type, size_t repeats = 1)
 	{
@@ -174,6 +149,8 @@ private:
 			}
 		}
 	}
+
+private:
 
 	TestFrameGenerator &low;
 	TestFrameGenerator &mid;
@@ -233,17 +210,18 @@ public:
 	void CheckResetForwardedFrames(const std::vector<std::tuple<uint32_t, uint64_t, uint64_t>>& expected)
 	{
 		auto forwarded = std::move(mediaFrameListener->forwardedFrames);
-		size_t count = std::min(expected.size(), forwarded.size());
+#ifdef CHECK_WIDTH_ONLY
+		ASSERT_GE(forwarded.size(), expected.size());
+		size_t count = expected.size();
 		for (size_t i = 0; i < count; i++)
 		{
-#ifdef CHECK_WIDTH_ONLY
 			ASSERT_EQ(std::get<0>(expected[i]), std::get<0>(forwarded[i])) << "index:" << i << "\n" 
 					<< "expected: width:" << std::get<0>(expected[i]) << ",\ttimestamp:" << std::get<1>(expected[i]) << ",\ttime:" << std::get<2>(expected[i]) << "\n"
 					<< "  actual: width:" << std::get<0>(forwarded[i]) << ",\ttimestamp:" << std::get<1>(forwarded[i]) << ",\ttime:" << std::get<2>(forwarded[i]);
-#else
-			ASSERT_EQ(expected, forwarded);
-#endif
 		}
+#else
+		ASSERT_EQ(expected, forwarded);
+#endif
 	}
 
 	void CheckResetForwardedFrames(uint32_t expectedLayerWidth)
@@ -269,8 +247,8 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelection)
 	TestFrameGenerator high(3, 1920, 1080, 1000, 30000);
 	
 	FramePushHelper fp(listener, low, mid, high);
-	fp << FramePushHelper::ALL_INTRA;
-	fp << FramePushHelper::ALL_NON_INTRA << 14;
+	fp.PushAdvance(FramePushHelper::ALL_INTRA);
+	fp.PushAdvance(FramePushHelper::ALL_NON_INTRA, 14);
 
 	std::vector<std::tuple<uint32_t, uint64_t, uint64_t>> expectedFrames = {
 		{1920, 0, 1000}, 
@@ -280,8 +258,31 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelection)
 		{1920, 11880, 1132} 
 	};
 
-	CheckResetForwardedFrames(expectedFrames);
+	ASSERT_NO_FATAL_FAILURE(CheckResetForwardedFrames(expectedFrames));
+
+	// Change to just one layer
+	listener.SetNumLayers(1);
+	low.Reset();
+
+	// Test the frame will be forwarded immediately
+	fp.PushAdvance(FramePushHelper::LOW | FramePushHelper::INTRA);
+	expectedFrames = {{{480, 0, 1000}}};
+	ASSERT_NO_FATAL_FAILURE(CheckResetForwardedFrames(expectedFrames));
+
+	// Change to two layers
+	listener.SetNumLayers(2);
+	low.Reset();
+	high.Reset();
+	
+	fp.PushAdvance(FramePushHelper::LOW | FramePushHelper::HIGH | FramePushHelper::INTRA);
+	ASSERT_NO_FATAL_FAILURE(CheckResetForwardedFrames({}));
+
+	// The max queue size is 5 now. We need to push more than 4 frames to get the first frame	
+	fp.PushAdvance(FramePushHelper::LOW | FramePushHelper::HIGH, 5);
+	expectedFrames = {{{1920, 0, 1000}}};
+	ASSERT_NO_FATAL_FAILURE(CheckResetForwardedFrames(expectedFrames));
 }
+
 
 TEST_F(TestSimulcastMediaFrameListener, LayerSelectionOffset) 
 {
@@ -291,8 +292,8 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelectionOffset)
 
 	FramePushHelper fp(listener, low, mid, high);
 	
-	fp << FramePushHelper::ALL_INTRA;
-	fp << FramePushHelper::ALL_NON_INTRA << 14;
+	fp.PushAdvance(FramePushHelper::ALL_INTRA);
+	fp.PushAdvance(FramePushHelper::ALL_NON_INTRA, 14);
 
 	std::vector<std::tuple<uint32_t, uint64_t, uint64_t>> expectedFrames = {
 	 	{1920, 540, 1006}, 
@@ -302,7 +303,7 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelectionOffset)
 		{1920, 12420, 1138}
 	};
 
-	CheckResetForwardedFrames(expectedFrames);
+	ASSERT_NO_FATAL_FAILURE(CheckResetForwardedFrames(expectedFrames));
 }
 
 TEST_F(TestSimulcastMediaFrameListener, LayerSelectionNegativeOffset) 
@@ -313,8 +314,8 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelectionNegativeOffset)
 
 	FramePushHelper fp(listener, low, mid, high);
 	
-	fp << FramePushHelper::ALL_INTRA;
-	fp << FramePushHelper::ALL_NON_INTRA << 14;
+	fp.PushAdvance(FramePushHelper::ALL_INTRA);
+	fp.PushAdvance(FramePushHelper::ALL_NON_INTRA, 14);
 
 	std::vector<std::tuple<uint32_t, uint64_t, uint64_t>> expectedFrames = {
 	 	{1920, 0, 990}, 
@@ -324,7 +325,7 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelectionNegativeOffset)
 		{1920, 10980, 1122}
 	};
 
-	CheckResetForwardedFrames(expectedFrames);
+	ASSERT_NO_FATAL_FAILURE(CheckResetForwardedFrames(expectedFrames));
 }
 
 TEST_F(TestSimulcastMediaFrameListener, LayerSelectionMissing) 
@@ -335,15 +336,15 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelectionMissing)
 	
 	FramePushHelper fp(listener, low, mid, high);
 
-	fp << FramePushHelper::ALL_INTRA;
-	fp << FramePushHelper::ALL_NON_INTRA << 2;
+	fp.PushAdvance(FramePushHelper::ALL_INTRA);
+	fp.PushAdvance(FramePushHelper::ALL_NON_INTRA, 2);
 
-	fp << FramePushHelper::LOW;
-	fp << FramePushHelper::MID;
+	fp.PushAdvance(FramePushHelper::LOW);
+	fp.PushAdvance(FramePushHelper::MID);
 	
 	high.AlignTo(low);
 
-	fp << FramePushHelper::ALL_NON_INTRA << 12;
+	fp.PushAdvance(FramePushHelper::ALL_NON_INTRA, 12);
 
 	std::vector<std::tuple<uint32_t, uint64_t, uint64_t>> expectedFrames = {
 		{1920, 540, 1006},
@@ -353,7 +354,7 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelectionMissing)
 		{1920, 15390, 1171},
 	};
 
-	CheckResetForwardedFrames(expectedFrames);
+	ASSERT_NO_FATAL_FAILURE(CheckResetForwardedFrames(expectedFrames));
 }
 
 
@@ -365,11 +366,11 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelectionOrder)
 
 	FramePushHelper fp(listener, low, mid, high);
 	
-	fp << FramePushHelper::ALL_INTRA;
-	fp << FramePushHelper::ALL_NON_INTRA << 4;		
-	fp << (FramePushHelper::LOW | FramePushHelper::INTRA);  // Intra frame
-	fp << (FramePushHelper::MID | FramePushHelper::HIGH);
-	fp << FramePushHelper::ALL_NON_INTRA << 9;
+	fp.PushAdvance(FramePushHelper::ALL_INTRA);
+	fp.PushAdvance(FramePushHelper::ALL_NON_INTRA, 4);
+	fp.PushAdvance(FramePushHelper::LOW | FramePushHelper::INTRA);  // Intra frame
+	fp.PushAdvance(FramePushHelper::MID | FramePushHelper::HIGH);
+	fp.PushAdvance(FramePushHelper::ALL_NON_INTRA, 9);
 
 	std::vector<std::tuple<uint32_t, uint64_t, uint64_t>> expectedFrames = {
 		{1920, 0, 1000},
@@ -379,29 +380,29 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelectionOrder)
 		{1920, 11880, 1132},
 	};
 
-	CheckResetForwardedFrames(expectedFrames);
+	ASSERT_NO_FATAL_FAILURE(CheckResetForwardedFrames(expectedFrames));
 
-	fp << (FramePushHelper::LOW | FramePushHelper::MID) << 5;
+	fp.PushAdvance(FramePushHelper::LOW | FramePushHelper::MID, 5);
 
 	// This intra frame will be discarded as time is not 
 	// out for high layer despite it is missing frames
-	fp << (FramePushHelper::LOW | FramePushHelper::INTRA);	
-	fp << FramePushHelper::MID;
+	fp.PushAdvance(FramePushHelper::LOW | FramePushHelper::INTRA);	
+	fp.PushAdvance(FramePushHelper::MID);
 	
-	fp << (FramePushHelper::LOW | FramePushHelper::MID) << 4;
+	fp.PushAdvance(FramePushHelper::LOW | FramePushHelper::MID, 4);
 
 	// Intra frame, will switch to low layer
-	fp << (FramePushHelper::LOW | FramePushHelper::INTRA);
-	fp << FramePushHelper::MID;
+	fp.PushAdvance(FramePushHelper::LOW | FramePushHelper::INTRA);
+	fp.PushAdvance(FramePushHelper::MID);
 	
 	high.AlignTo(low);
 
-	fp << FramePushHelper::ALL_NON_INTRA;	
+	fp.PushAdvance(FramePushHelper::ALL_NON_INTRA);
 
-	fp << (FramePushHelper::LOW | FramePushHelper::MID);
-	fp << (FramePushHelper::HIGH | FramePushHelper::INTRA);
+	fp.PushAdvance(FramePushHelper::LOW | FramePushHelper::MID);
+	fp.PushAdvance(FramePushHelper::HIGH | FramePushHelper::INTRA);
 
-	fp << FramePushHelper::ALL_NON_INTRA << 11;	
+	fp.PushAdvance(FramePushHelper::ALL_NON_INTRA, 11);	
 
 	expectedFrames = {
 		{1920, 14850, 1165},
@@ -420,7 +421,7 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelectionOrder)
 		{1920, 83160, 1924}
 		};
 
-	CheckResetForwardedFrames(expectedFrames);
+	ASSERT_NO_FATAL_FAILURE(CheckResetForwardedFrames(expectedFrames));
 }
 
 TEST_F(TestSimulcastMediaFrameListener, NoHighLayerAtBeginning) 
@@ -431,17 +432,17 @@ TEST_F(TestSimulcastMediaFrameListener, NoHighLayerAtBeginning)
 
 	FramePushHelper fp(listener, low, mid, high);
 
-	fp << (FramePushHelper::LOW | FramePushHelper::INTRA);  // Intra frame
-	fp << (FramePushHelper::MID | FramePushHelper::INTRA);  // Intra frame
+	fp.PushAdvance(FramePushHelper::LOW | FramePushHelper::INTRA);  // Intra frame
+	fp.PushAdvance(FramePushHelper::MID | FramePushHelper::INTRA);  // Intra frame
 
-	fp << (FramePushHelper::LOW | FramePushHelper::MID) << 11; 
+	fp.PushAdvance(FramePushHelper::LOW | FramePushHelper::MID, 11); 
 	
 	high.AlignTo(low);
 
-	fp << (FramePushHelper::HIGH | FramePushHelper::INTRA);  // Intra frame
-	fp << (FramePushHelper::LOW | FramePushHelper::MID); 
+	fp.PushAdvance(FramePushHelper::HIGH | FramePushHelper::INTRA);  // Intra frame
+	fp.PushAdvance(FramePushHelper::LOW | FramePushHelper::MID); 
 
-	fp << FramePushHelper::ALL_NON_INTRA << 10;
+	fp.PushAdvance(FramePushHelper::ALL_NON_INTRA, 10);
 
 	std::vector<std::tuple<uint32_t, uint64_t, uint64_t>> expectedFrames = { 
 		{960, 0, 1000},
@@ -459,7 +460,7 @@ TEST_F(TestSimulcastMediaFrameListener, NoHighLayerAtBeginning)
 		{1920, 35640, 1396}
  	};
 
-	CheckResetForwardedFrames(expectedFrames);
+	ASSERT_NO_FATAL_FAILURE(CheckResetForwardedFrames(expectedFrames));
 }
 
 TEST_F(TestSimulcastMediaFrameListener, NoHighLayerIntraAtBeginning) 
@@ -470,17 +471,17 @@ TEST_F(TestSimulcastMediaFrameListener, NoHighLayerIntraAtBeginning)
 
 	FramePushHelper fp(listener, low, mid, high);
 
-	fp << (FramePushHelper::LOW | FramePushHelper::INTRA);  // Intra frame
-	fp << (FramePushHelper::MID | FramePushHelper::INTRA);  // Intra frame
+	fp.PushAdvance(FramePushHelper::LOW | FramePushHelper::INTRA);  // Intra frame
+	fp.PushAdvance(FramePushHelper::MID | FramePushHelper::INTRA);  // Intra frame
 
-	fp << FramePushHelper::ALL_NON_INTRA << 11; 
+	fp.PushAdvance(FramePushHelper::ALL_NON_INTRA, 11); 
 	
 	high.AlignTo(low);
 
-	fp << (FramePushHelper::HIGH | FramePushHelper::INTRA);  // Intra frame
-	fp << (FramePushHelper::LOW | FramePushHelper::MID); 
+	fp.PushAdvance(FramePushHelper::HIGH | FramePushHelper::INTRA);  // Intra frame
+	fp.PushAdvance(FramePushHelper::LOW | FramePushHelper::MID); 
 
-	fp << FramePushHelper::ALL_NON_INTRA << 10;
+	fp.PushAdvance(FramePushHelper::ALL_NON_INTRA, 10);
 
 	std::vector<std::tuple<uint32_t, uint64_t, uint64_t>> expectedFrames = { 
 		{960, 0, 1000},
@@ -498,7 +499,7 @@ TEST_F(TestSimulcastMediaFrameListener, NoHighLayerIntraAtBeginning)
 		{1920, 35640, 1396}
  	};
 
-	CheckResetForwardedFrames(expectedFrames);
+	ASSERT_NO_FATAL_FAILURE(CheckResetForwardedFrames(expectedFrames));
 }
 
 TEST_F(TestSimulcastMediaFrameListener, HighLayerRemovedInMiddle)
@@ -509,14 +510,14 @@ TEST_F(TestSimulcastMediaFrameListener, HighLayerRemovedInMiddle)
 
 	FramePushHelper fp(listener, low, mid, high);
 
-	fp << FramePushHelper::ALL_INTRA << 1;
-	fp << FramePushHelper::ALL_NON_INTRA << 20;
+	fp.PushAdvance(FramePushHelper::ALL_INTRA, 1);
+	fp.PushAdvance(FramePushHelper::ALL_NON_INTRA, 20);
 
-	fp << (FramePushHelper::LOW | FramePushHelper::MID) << 10; 
+	fp.PushAdvance(FramePushHelper::LOW | FramePushHelper::MID, 10); 
 	ASSERT_NO_FATAL_FAILURE(CheckResetForwardedFrames(1920));
 
-	fp << (FramePushHelper::LOW | FramePushHelper::MID | FramePushHelper::INTRA); 
-	fp << (FramePushHelper::LOW | FramePushHelper::MID) << 10; 
+	fp.PushAdvance(FramePushHelper::LOW | FramePushHelper::MID | FramePushHelper::INTRA); 
+	fp.PushAdvance(FramePushHelper::LOW | FramePushHelper::MID, 10); 
 
 	std::vector<std::tuple<uint32_t, uint64_t, uint64_t>> expectedFrames = { 
 		{1920, 32670, 1363},
@@ -532,14 +533,14 @@ TEST_F(TestSimulcastMediaFrameListener, HighLayerRemovedInMiddle)
 		{960, 92070, 2023}
  	};
 
-	CheckResetForwardedFrames(expectedFrames);
+	ASSERT_NO_FATAL_FAILURE(CheckResetForwardedFrames(expectedFrames));
 
 	high.AlignTo(low);
 
-	fp << (FramePushHelper::HIGH | FramePushHelper::INTRA);
+	fp.PushAdvance(FramePushHelper::HIGH | FramePushHelper::INTRA);
 
-	fp << (FramePushHelper::LOW | FramePushHelper::MID); 
-	fp << FramePushHelper::ALL_NON_INTRA << 10;
+	fp.PushAdvance(FramePushHelper::LOW | FramePushHelper::MID); 
+	fp.PushAdvance(FramePushHelper::ALL_NON_INTRA, 10);
 
 	expectedFrames = {
 		{960, 95040, 2056},
@@ -555,7 +556,7 @@ TEST_F(TestSimulcastMediaFrameListener, HighLayerRemovedInMiddle)
 		{1920, 124740, 2386}
  	};
 
-	CheckResetForwardedFrames(expectedFrames);
+	ASSERT_NO_FATAL_FAILURE(CheckResetForwardedFrames(expectedFrames));
 }
 
 TEST_F(TestSimulcastMediaFrameListener, MidLayerIntraframe)
@@ -566,25 +567,25 @@ TEST_F(TestSimulcastMediaFrameListener, MidLayerIntraframe)
 
 	FramePushHelper fp(listener, low, mid, high);
 
-	fp << FramePushHelper::ALL_INTRA << 1;
-	fp << FramePushHelper::ALL_NON_INTRA << 20;
+	fp.PushAdvance(FramePushHelper::ALL_INTRA, 1);
+	fp.PushAdvance(FramePushHelper::ALL_NON_INTRA, 20);
 
-	fp << (FramePushHelper::MID | FramePushHelper::INTRA); // An mid layer iframe
-	fp << (FramePushHelper::HIGH | FramePushHelper::LOW);
+	fp.PushAdvance(FramePushHelper::MID | FramePushHelper::INTRA); // An mid layer iframe
+	fp.PushAdvance(FramePushHelper::HIGH | FramePushHelper::LOW);
 
 	ASSERT_NO_FATAL_FAILURE(CheckResetForwardedFrames(1920));
-	fp << FramePushHelper::LOW << 10;
+	fp.PushAdvance(FramePushHelper::LOW, 10);
 
 	std::vector<std::tuple<uint32_t, uint64_t, uint64_t>> expectedFrames = {};
 
-	CheckResetForwardedFrames(expectedFrames);
+	ASSERT_NO_FATAL_FAILURE(CheckResetForwardedFrames(expectedFrames));
 
 	mid.AlignTo(low);
-	fp << (FramePushHelper::MID | FramePushHelper::INTRA); // An mid layer iframe
+	fp.PushAdvance(FramePushHelper::MID | FramePushHelper::INTRA); // An mid layer iframe
 
 	high.AlignTo(mid);
 	low.AlignTo(mid);
-	fp << FramePushHelper::ALL_NON_INTRA << 10;
+	fp.PushAdvance(FramePushHelper::ALL_NON_INTRA, 10);
 
 	expectedFrames = { 
 		{1920, 35640, 1396},
@@ -600,7 +601,7 @@ TEST_F(TestSimulcastMediaFrameListener, MidLayerIntraframe)
 		{960, 95040, 2056}
  	};
 
-	CheckResetForwardedFrames(expectedFrames);
+	ASSERT_NO_FATAL_FAILURE(CheckResetForwardedFrames(expectedFrames));
 }
 
 
@@ -612,24 +613,24 @@ TEST_F(TestSimulcastMediaFrameListener, HighLayerIFrames)
 
 	FramePushHelper fp(listener, low, mid, high);
 	
-	fp << (FramePushHelper::LOW | FramePushHelper::INTRA); // An lower layer iframe
-	fp << (FramePushHelper::MID);
+	fp.PushAdvance(FramePushHelper::LOW | FramePushHelper::INTRA); // An lower layer iframe
+	fp.PushAdvance(FramePushHelper::MID);
 	
-	fp << (FramePushHelper::LOW | FramePushHelper::MID) << 10;
+	fp.PushAdvance(FramePushHelper::LOW | FramePushHelper::MID, 10);
 
-	fp << (FramePushHelper::MID | FramePushHelper::INTRA);
-	fp << (FramePushHelper::LOW);
+	fp.PushAdvance(FramePushHelper::MID | FramePushHelper::INTRA);
+	fp.PushAdvance(FramePushHelper::LOW);
 
-	fp << (FramePushHelper::LOW | FramePushHelper::MID | FramePushHelper::MID) << 5;
-	fp << (FramePushHelper::LOW | FramePushHelper::MID | FramePushHelper::INTRA);
+	fp.PushAdvance(FramePushHelper::LOW | FramePushHelper::MID | FramePushHelper::MID, 5);
+	fp.PushAdvance(FramePushHelper::LOW | FramePushHelper::MID | FramePushHelper::INTRA);
 
 	high.AlignTo(low);
-	fp << FramePushHelper::ALL_NON_INTRA << 10; // An mid layer iframe
+	fp.PushAdvance(FramePushHelper::ALL_NON_INTRA, 10); // An mid layer iframe
 
-	fp << (FramePushHelper::HIGH | FramePushHelper::INTRA);
-	fp << (FramePushHelper::LOW | FramePushHelper::MID);
+	fp.PushAdvance(FramePushHelper::HIGH | FramePushHelper::INTRA);
+	fp.PushAdvance(FramePushHelper::LOW | FramePushHelper::MID);
 
-	fp << FramePushHelper::ALL_NON_INTRA << 10;
+	fp.PushAdvance(FramePushHelper::ALL_NON_INTRA, 10);
 
 	std::vector<std::tuple<uint32_t, uint64_t, uint64_t>> expectedFrames = { 
 		{480, 0, 1000},
@@ -663,7 +664,7 @@ TEST_F(TestSimulcastMediaFrameListener, HighLayerIFrames)
 		{1920, 83700, 1930}
  	};
 
-	CheckResetForwardedFrames(expectedFrames);
+	ASSERT_NO_FATAL_FAILURE(CheckResetForwardedFrames(expectedFrames));
 }
 
 
@@ -796,5 +797,5 @@ TEST_F(TestSimulcastMediaFrameListener, ActualDataInput)
 		PushFrame(input);
 	}
 
-	CheckResetForwardedFrames(1920);
+	ASSERT_NO_FATAL_FAILURE(CheckResetForwardedFrames(1920));
 }

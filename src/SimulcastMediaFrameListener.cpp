@@ -1,14 +1,25 @@
 #include "SimulcastMediaFrameListener.h"
 
 namespace {
-	static constexpr uint32_t MaxWaitingTimeBeforeSwitchingLayerMs = 300;
-	static constexpr uint32_t MaxWaitingTimeFindingFirstBestLayerMs = 300;
-	static constexpr uint32_t MaxQueueSize = 10;
+
+static constexpr uint32_t MaxWaitingTimeBeforeSwitchingLayerMs = 300;
+static constexpr uint32_t MaxWaitingTimeFindingFirstBestLayerMs = 300;
+
+// A factor to calculate the max queue size basing on the number of layers.
+// If there is only one layer, no queue is required. Otherwise, every 
+// additional layer increases the max queue size by this value
+static constexpr uint32_t MaxQueueSizeFactor = 5;
+
+constexpr uint32_t calcMaxQueueSize(DWORD numLayers)
+{
+	return numLayers > 0 ? (numLayers - 1) * MaxQueueSizeFactor : 0;
+} 
 }
 
 SimulcastMediaFrameListener::SimulcastMediaFrameListener(TimeService& timeService, DWORD ssrc, DWORD numLayers) :
 	timeService(timeService),
-	ssrc(ssrc)
+	ssrc(ssrc),
+	maxQueueSize(calcMaxQueueSize(numLayers))
 {
 }
 
@@ -47,7 +58,8 @@ void SimulcastMediaFrameListener::Stop()
 void SimulcastMediaFrameListener::SetNumLayers(DWORD numLayers)
 {
 	(void)numLayers;
-	timeService.Sync([this](std::chrono::milliseconds) {
+	timeService.Sync([this, numLayers](std::chrono::milliseconds) {
+		maxQueueSize = calcMaxQueueSize(numLayers);
 		initialised = false;
 		selectedSsrc = 0;
 		lastEnqueueTimeMs = 0;
@@ -127,7 +139,7 @@ void SimulcastMediaFrameListener::Push(std::unique_ptr<VideoFrame> frame)
 	{
 		Enqueue(std::move(frame));
 	}
-	else if (frame->IsIntra() && queue.front()->GetTimeStamp() <= frame->GetTimeStamp())
+	else if (frame->IsIntra() && !queue.empty() && queue.front()->GetTimeStamp() <= frame->GetTimeStamp())
 	{
 		if (layerDimensions[ssrc] > layerDimensions[selectedSsrc] ||
 			frame->GetTime() > (lastEnqueueTimeMs + MaxWaitingTimeBeforeSwitchingLayerMs))
@@ -140,7 +152,7 @@ void SimulcastMediaFrameListener::Push(std::unique_ptr<VideoFrame> frame)
 	}
 
 	// Select the best available frame in the queue during initialising
-	if (!initialised && queue.size() == MaxQueueSize)
+	if (!initialised && maxQueueSize > 0 && queue.size() == maxQueueSize)
 	{			 
 		auto bestLayerFrame = std::max_element(queue.begin(), queue.end(), 
 			[this](const auto& elementA, const auto& elementB) {
@@ -170,7 +182,7 @@ void SimulcastMediaFrameListener::Enqueue(std::unique_ptr<VideoFrame> frame)
 	queue.push_back(std::move(frame));
 
 	// forward the front frame if the queue is full
-	if (queue.size() > MaxQueueSize)
+	if (queue.size() > maxQueueSize)
 	{
 		auto f = std::move(queue.front());
 		f->SetSSRC(0);
