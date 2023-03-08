@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <deque>
+#include <list>
 #include <map>
 #include <memory>
 #include <set>
@@ -40,17 +41,23 @@ private:
 	DWORD ssrc = 0;
 	std::set<MediaFrame::Listener::shared> listeners;
 
+	uint32_t numLayers = 0;
 	uint32_t maxQueueSize = 0;
 
 	bool initialised = false;
 	DWORD selectedSsrc = 0;
 	QWORD lastEnqueueTimeMs = 0;
+	std::optional<QWORD> lastForwardedTimestamp;
+
 
 	std::optional<uint64_t> referenceFrameTime;
 
 	std::unordered_map<uint64_t, int64_t> initialTimestamps;
 	std::unordered_map<uint64_t, size_t> layerDimensions;
 	std::deque<std::unique_ptr<VideoFrame>> queue;
+
+	// An ordered list that stores ssrcs of recieved layers at certain timestamp
+	std::list<std::pair<uint64_t, std::set<uint32_t>>> timestampLayers;
 };
 
 #endif /* SIMULCASTMEDIAFRAMELISTENER_H */

@@ -19,6 +19,7 @@ constexpr uint32_t calcMaxQueueSize(DWORD numLayers)
 SimulcastMediaFrameListener::SimulcastMediaFrameListener(TimeService& timeService, DWORD ssrc, DWORD numLayers) :
 	timeService(timeService),
 	ssrc(ssrc),
+	numLayers(numLayers),
 	maxQueueSize(calcMaxQueueSize(numLayers))
 {
 }
@@ -57,17 +58,19 @@ void SimulcastMediaFrameListener::Stop()
 
 void SimulcastMediaFrameListener::SetNumLayers(DWORD numLayers)
 {
-	(void)numLayers;
 	timeService.Sync([this, numLayers](std::chrono::milliseconds) {
+		this->numLayers = numLayers;
 		maxQueueSize = calcMaxQueueSize(numLayers);
 		initialised = false;
 		selectedSsrc = 0;
 		lastEnqueueTimeMs = 0;
+		lastForwardedTimestamp.reset();
 
 		referenceFrameTime.reset();
 		initialTimestamps.clear();
 		layerDimensions.clear();
 		queue.clear();
+		timestampLayers.clear();
 	});
 }
 
@@ -121,6 +124,40 @@ void SimulcastMediaFrameListener::Push(std::unique_ptr<VideoFrame> frame)
 	auto tm = frame->GetTimeStamp() > initialTimestamps[ssrc] ? frame->GetTimeStamp() - initialTimestamps[ssrc] : 0;
 	frame->SetTimestamp(tm);
 
+	// Update the timestamp layer information list.
+	bool updated = false;
+	for (auto it = timestampLayers.begin(); !updated && it != timestampLayers.end(); ++it)
+	{
+		// Add the ssrc for timestamp that is no later than current
+		if (it->first <= tm)
+		{
+			it->second.insert(frame->GetSSRC());
+
+			if (it->first == tm)
+			{
+				// Found matching timestamp, just break
+				updated = true;
+				break;
+			}
+		}
+		else
+		{
+			// Couldn't find same timestamp, insert it and copy ssrcs 
+			// from the later timestamp
+			std::set<uint32_t> ssrcs = {frame->GetSSRC()};
+			ssrcs.insert(it->second.begin(), it->second.end());
+			timestampLayers.emplace(it, tm, ssrcs);
+			updated = true;
+			break;
+		}
+	}		
+
+	if (!updated)
+	{
+		// If current frame is newer, append the timestamp to the end
+		timestampLayers.emplace_back(tm, std::set{frame->GetSSRC()});
+	}
+
 	// Initially, select the first intra frame. Will later to update to higher
 	// quality one if exists
 	if (selectedSsrc == 0 && frame->IsIntra())
@@ -128,44 +165,51 @@ void SimulcastMediaFrameListener::Push(std::unique_ptr<VideoFrame> frame)
 		selectedSsrc = ssrc;
 	}
 
+	if (!initialised)
+	{			 
+		// Select the best available frame in the queue during initialising
+		if (maxQueueSize > 0 && queue.size() == maxQueueSize)
+		{
+			auto bestLayerFrame = std::max_element(queue.begin(), queue.end(), 
+				[this](const auto& elementA, const auto& elementB) {
+					return layerDimensions[elementA->GetSSRC()] < layerDimensions[elementB->GetSSRC()];
+				});
+
+			selectedSsrc = (*bestLayerFrame)->GetSSRC();
+			while(!queue.empty() && queue.front()->GetSSRC() != selectedSsrc)
+			{
+				queue.pop_front();		
+			}
+
+			initialised = true;
+		}
+		else if (maxQueueSize == 0)
+		{
+			initialised = true;		
+		}
+	}
+
 	// Enqueue the selected layer frame.
 	// If current frame is not from the selected layer. Switch
 	// layer if following conditions met:
 	// 1. The frame is intra.
-	// 2. The frame is at least not earlier than the first frame in the queue.
+	// 2. The frame is at least later than the last forwarded frame.
 	// 3. The frame has higher dimension or it has been too long since the current
 	//    layer frame was queued.
 	if (ssrc == selectedSsrc)
 	{
 		Enqueue(std::move(frame));
 	}
-	else if (frame->IsIntra() && !queue.empty() && queue.front()->GetTimeStamp() <= frame->GetTimeStamp())
+	else if (frame->IsIntra() && (!lastForwardedTimestamp || frame->GetTimeStamp() > *lastForwardedTimestamp))
 	{
 		if (layerDimensions[ssrc] > layerDimensions[selectedSsrc] ||
 			frame->GetTime() > (lastEnqueueTimeMs + MaxWaitingTimeBeforeSwitchingLayerMs))
 		{
-			//UltraDebug("layer switch: 0x%x -> 0x%x, time: %lld, timestamp: %lld\n", ssrc, selectedSsrc, frame->GetTime(), frame->GetTimeStamp());
+			//UltraDebug("layer switch: 0x%x -> 0x%x, time: %lld, timestamp: %lld\n", ssrc, selectedSsrc, frame->GetTime(), tm);
 
 			selectedSsrc = ssrc;
 			Enqueue(std::move(frame));
 		}
-	}
-
-	// Select the best available frame in the queue during initialising
-	if (!initialised && maxQueueSize > 0 && queue.size() == maxQueueSize)
-	{			 
-		auto bestLayerFrame = std::max_element(queue.begin(), queue.end(), 
-			[this](const auto& elementA, const auto& elementB) {
-				return layerDimensions[elementA->GetSSRC()] < layerDimensions[elementB->GetSSRC()];
-			});
-
-		selectedSsrc = (*bestLayerFrame)->GetSSRC();
-		while(!queue.empty() && queue.front()->GetSSRC() != selectedSsrc)
-		{
-			queue.pop_front();		
-		}
-
-		initialised = true;			
 	}
 }
 
@@ -181,13 +225,30 @@ void SimulcastMediaFrameListener::Enqueue(std::unique_ptr<VideoFrame> frame)
 
 	queue.push_back(std::move(frame));
 
-	// forward the front frame if the queue is full
-	if (queue.size() > maxQueueSize)
+	while (!queue.empty() && initialised)
 	{
-		auto f = std::move(queue.front());
-		f->SetSSRC(0);
-		queue.pop_front();
-		ForwardFrame(*f);
+		assert(!timestampLayers.empty());
+		// Remove the earlier timestamp information
+		while (queue.front()->GetTimeStamp() > timestampLayers.front().first)
+		{
+			timestampLayers.pop_front();
+		}
+
+		assert(!timestampLayers.empty());
+		// forward the front frame if the queue is full or the time indicates the front
+		// is the earliest possible eligible frame
+		if (queue.size() > maxQueueSize || timestampLayers.front().second.size() == numLayers)
+		{
+			auto f = std::move(queue.front());
+			f->SetSSRC(0);
+			queue.pop_front();
+			ForwardFrame(*f);
+			lastForwardedTimestamp = f->GetTimeStamp();
+		}
+		else 
+		{
+			break;
+		}
 	}
 }
 
