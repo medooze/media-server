@@ -8,10 +8,8 @@
 
 #include <algorithm>
 #include <deque>
-#include <list>
-#include <map>
 #include <memory>
-#include <set>
+#include <unordered_set>
 #include <unordered_map>
 
 class SimulcastMediaFrameListener :
@@ -26,7 +24,7 @@ public:
 	void RemoveMediaListener(const MediaFrame::Listener::shared& listener);
 
 	virtual void onMediaFrame(const MediaFrame& frame) { onMediaFrame(0, frame); }
-	virtual void onMediaFrame(DWORD ssrc, const MediaFrame& frame); 
+	virtual void onMediaFrame(DWORD ssrc, const MediaFrame& frame);
 
 	void Stop();
 
@@ -39,7 +37,7 @@ private:
 private:
 	TimeService& timeService;
 	DWORD ssrc = 0;
-	std::set<MediaFrame::Listener::shared> listeners;
+	std::unordered_set<MediaFrame::Listener::shared> listeners;
 
 	uint32_t numLayers = 0;
 	uint32_t maxQueueSize = 0;
@@ -49,16 +47,14 @@ private:
 	QWORD lastEnqueueTimeMs = 0;
 	std::optional<QWORD> lastForwardedTimestamp;
 
-
 	std::optional<uint64_t> referenceFrameTime;
 
 	std::unordered_map<uint64_t, int64_t> initialTimestamps;
 	std::unordered_map<uint64_t, size_t> layerDimensions;
 	std::deque<std::unique_ptr<VideoFrame>> queue;
 
-	// An ordered list that stores ssrcs of recieved layers at certain timestamp
-	std::list<std::pair<uint64_t, std::set<uint32_t>>> timestampLayers;
+	// Latest timestamps for each layer
+	std::unordered_map<uint32_t, uint64_t> layerTimestamps;
 };
 
 #endif /* SIMULCASTMEDIAFRAMELISTENER_H */
-
