@@ -64,6 +64,7 @@ void SimulcastMediaFrameListener::SetNumLayers(DWORD numLayers)
 		initialised = false;
 		selectedSsrc = 0;
 		lastEnqueueTimeMs = 0;
+		lastForwaredFrameTimeMs = 0;
 		lastForwardedTimestamp.reset();
 
 		referenceFrameTime.reset();
@@ -93,6 +94,14 @@ void SimulcastMediaFrameListener::ForwardFrame(VideoFrame& frame)
 {
 	//Debug
 	//UltraDebug("-SimulcastMediaFrameListener::ForwardFrame() | Forwarding frame [ts:%llu]\n", frame.GetTimestamp());
+
+	if (frame.GetTime() <= lastForwaredFrameTimeMs)
+	{
+		// Make the time at least advance by 1ms
+		frame.SetTime(lastForwaredFrameTimeMs + 1);
+	}
+
+	lastForwaredFrameTimeMs = frame.GetTime();
 
 	//Send it to all listeners
 	for (const auto& listener : listeners)

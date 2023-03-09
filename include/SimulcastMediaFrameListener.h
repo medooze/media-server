@@ -45,6 +45,7 @@ private:
 	bool initialised = false;
 	DWORD selectedSsrc = 0;
 	QWORD lastEnqueueTimeMs = 0;
+	QWORD lastForwaredFrameTimeMs = 0;
 	std::optional<QWORD> lastForwardedTimestamp;
 
 	std::optional<uint64_t> referenceFrameTime;
