@@ -209,7 +209,7 @@ void SimulcastMediaFrameListener::Enqueue(std::unique_ptr<VideoFrame> frame)
 		if (queue.size() > maxQueueSize || allLayersRecievedAtTimestamp)
 		{
 			auto f = std::move(queue.front());
-			f->SetSSRC(0);
+			f->SetSSRC(ssrc);
 			queue.pop_front();
 			ForwardFrame(*f);
 			lastForwardedTimestamp = f->GetTimeStamp();
