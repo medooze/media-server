@@ -36,7 +36,7 @@ private:
 	void Flush();
 private:
 	TimeService& timeService;
-	DWORD forwardedSsrc = 0;
+	DWORD forwardSsrc = 0;
 	std::unordered_set<MediaFrame::Listener::shared> listeners;
 
 	uint32_t numLayers = 0;

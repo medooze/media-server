@@ -18,7 +18,7 @@ constexpr uint32_t calcMaxQueueSize(DWORD numLayers)
 
 SimulcastMediaFrameListener::SimulcastMediaFrameListener(TimeService& timeService, DWORD ssrc, DWORD numLayers) :
 	timeService(timeService),
-	forwardedSsrc(ssrc),
+	forwardSsrc(ssrc),
 	numLayers(numLayers),
 	maxQueueSize(calcMaxQueueSize(numLayers))
 {
@@ -106,7 +106,7 @@ void SimulcastMediaFrameListener::ForwardFrame(VideoFrame& frame)
 	//Send it to all listeners
 	for (const auto& listener : listeners)
 		//Send cloned frame
-		listener->onMediaFrame(forwardedSsrc, frame);
+		listener->onMediaFrame(forwardSsrc, frame);
 }
 
 void SimulcastMediaFrameListener::Push(std::unique_ptr<VideoFrame> frame)
@@ -218,7 +218,7 @@ void SimulcastMediaFrameListener::Enqueue(std::unique_ptr<VideoFrame> frame)
 		if (queue.size() > maxQueueSize || allLayersRecievedAtTimestamp)
 		{
 			auto f = std::move(queue.front());
-			f->SetSSRC(forwardedSsrc);
+			f->SetSSRC(forwardSsrc);
 			queue.pop_front();
 			ForwardFrame(*f);
 			lastForwardedTimestamp = f->GetTimeStamp();
