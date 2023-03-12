@@ -103,6 +103,8 @@ void SimulcastMediaFrameListener::ForwardFrame(VideoFrame& frame)
 
 	lastForwaredFrameTimeMs = frame.GetTime();
 
+	frame.SetSSRC(forwardSsrc);
+
 	//Send it to all listeners
 	for (const auto& listener : listeners)
 		//Send cloned frame
@@ -218,7 +220,6 @@ void SimulcastMediaFrameListener::Enqueue(std::unique_ptr<VideoFrame> frame)
 		if (queue.size() > maxQueueSize || allLayersRecievedAtTimestamp)
 		{
 			auto f = std::move(queue.front());
-			f->SetSSRC(forwardSsrc);
 			queue.pop_front();
 			ForwardFrame(*f);
 			lastForwardedTimestamp = f->GetTimeStamp();
