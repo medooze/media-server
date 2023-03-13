@@ -306,7 +306,7 @@ struct VP8PayloadHeader
                 //  +-+-+-+-+-+-+-+-+
                 //  |     Size2     |
                 //  +-+-+-+-+-+-+-+-+
-		firstPartitionSize	= data[0] >> 5;
+		firstPartitionSize	= get3(data, 0) >> 5;
 		showFrame		= data[0] >> 4 & 0x01;
 		version			= data[0] >> 1 & 0x07;
 		isKeyFrame		= (data[0] & 0x01) == 0;
