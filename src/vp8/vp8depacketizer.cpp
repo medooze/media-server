@@ -65,6 +65,12 @@ MediaFrame* VP8Depacketizer::AddPacket(const RTPPacket::shared& packet)
 	//Set SSRC
 	frame.SetSSRC(packet->GetSSRC());
 
+	if (currentTimestamp != frame.GetTimestamp())
+	{
+		state = State::NONE;
+		currentTimestamp = frame.GetTimestamp();
+	}
+
 	// We expect the sequence number increases by one within a frame
 	if (state == State::PROCESSING && (packet->GetExtSeqNum() != (lastSeqNumber + 1)))
 	{
