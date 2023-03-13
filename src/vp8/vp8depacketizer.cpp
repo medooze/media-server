@@ -105,10 +105,10 @@ MediaFrame* VP8Depacketizer::AddPacket(const RTPPacket::shared& packet)
 			validFrame = &frame;
 			break;
 		case State::NONE:
-			Error("-VP8Depacketizer::AddPacket() | Dropped invalid frame as start packet missed. time: %lld\n", packet->GetTime());
+			Error("-VP8Depacketizer::AddPacket() | Dropped invalid frame as start packet missed. timestamp: %lld\n", packet->GetTimestamp());
 			break;
 		case State::ERROR:
-			Error("-VP8Depacketizer::AddPacket() | Dropped invalid frame as error occurred. time: %lld\n", packet->GetTime());
+			Error("-VP8Depacketizer::AddPacket() | Dropped invalid frame as error occurred. timestamp: %lld\n", packet->GetTimestamp());
 			break;
 		}
 
