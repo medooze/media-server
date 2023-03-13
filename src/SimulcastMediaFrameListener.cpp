@@ -1,23 +1,37 @@
 #include "SimulcastMediaFrameListener.h"
 
-constexpr uint32_t FrameWaitingTime = 300; // Time that we wait until all frames for all the layers are received before doing layer selection.
+namespace {
+
+static constexpr uint32_t MaxWaitingTimeBeforeSwitchingLayerMs = 300;
+static constexpr uint32_t MaxWaitingTimeFindingFirstBestLayerMs = 300;
+
+// A factor to calculate the max queue size basing on the number of layers.
+// If there is only one layer, no queue is required. Otherwise, every
+// additional layer increases the max queue size by this value
+static constexpr uint32_t MaxQueueSizeFactor = 5;
+
+constexpr uint32_t calcMaxQueueSize(DWORD numLayers)
+{
+	return numLayers > 0 ? (numLayers - 1) * MaxQueueSizeFactor : 0;
+}
+}
 
 SimulcastMediaFrameListener::SimulcastMediaFrameListener(TimeService& timeService, DWORD ssrc, DWORD numLayers) :
 	timeService(timeService),
-	ssrc(ssrc),
-	numLayers(numLayers)
+	forwardSsrc(ssrc),
+	numLayers(numLayers),
+	maxQueueSize(calcMaxQueueSize(numLayers))
 {
 }
 
 SimulcastMediaFrameListener::~SimulcastMediaFrameListener()
 {
-	Select();
 }
 
 void SimulcastMediaFrameListener::AddMediaListener(const MediaFrame::Listener::shared& listener)
 {
 	Debug("-MediaFrameListenerBridge::AddListener() [this:%p,listener:%p]\n", this, listener.get());
-	
+
 	timeService.Sync([=](std::chrono::milliseconds){
 		listeners.insert(listener);
 	});
@@ -33,9 +47,10 @@ void SimulcastMediaFrameListener::RemoveMediaListener(const MediaFrame::Listener
 
 void SimulcastMediaFrameListener::Stop()
 {
-	timeService.Sync([=](std::chrono::milliseconds) {
-		//Select last frame
-		Select();
+	timeService.Sync([this](std::chrono::milliseconds) {
+		// Store remaining
+		Flush();
+
 		//Clear listeners
 		listeners.clear();
 	});
@@ -43,124 +58,23 @@ void SimulcastMediaFrameListener::Stop()
 
 void SimulcastMediaFrameListener::SetNumLayers(DWORD numLayers)
 {
-	timeService.Sync([=](std::chrono::milliseconds) {
+	timeService.Sync([this, numLayers](std::chrono::milliseconds) {
 		this->numLayers = numLayers;
+		maxQueueSize = calcMaxQueueSize(numLayers);
+		initialised = false;
+		selectedSsrc = 0;
+		lastEnqueueTimeMs = 0;
+		lastForwaredFrameTimeMs = 0;
+		lastForwardedTimestamp.reset();
+
+		referenceFrameTime.reset();
+		initialTimestamps.clear();
+		layerDimensions.clear();
+		queue.clear();
+		layerTimestamps.clear();
 	});
 }
 
-void SimulcastMediaFrameListener::Select()
-{
-	//UltraDebug("-MediaFrameListenerBridge::Select() | [iframes:%u,pending:%d,forwarded:%u]\n", iframes.size(), pendingFrames.size(), forwarded);
-
-	DWORD prev = forwarded;
-	VideoFrame* selected = nullptr;
-	DWORD currentDimensions = 0;
-	DWORD currentSize = 0;
-
-	//Check if there was only iframe,  
-	if (iframes.size() == 1)
-	{
-		bool forwardedLayerAlive = false;
-		//Could be a bug on the encoder sending iframes on individual layer, check if we have frames from the current selected layer
-		for (auto& [ssrc, pending] : pendingFrames)
-		{
-			//If the frame is from the forwarded simulcast layer
-			if (ssrc == forwarded)
-			{
-				//The layer is still alive
-				forwardedLayerAlive = true;
-				//Forward frame
-				ForwardFrame(*pending);
-			}
-		}
-
-		//If it forwarded layer was still active
-		if (forwardedLayerAlive)
-		{
-			//Not selecting
-			selectionTime = 0;
-			//Clear pending frames
-			pendingFrames.clear();
-			//Clear pending frames from the rest of the streams
-			pendingFrames.clear();
-			//Done
-			return;
-		}
-	}
-
-	//For all pending frames
-	for (const auto& [ssrc, videoFrame] : iframes)
-	{
-
-		//UltraDebug("-MediaFrameListenerBridge::Select() | candidate [ssrc:%u,size:%d,dimensions:%ux%u,ts:%llu]\n", ssrc, videoFrame->GetLength(), videoFrame->GetWidth() , videoFrame->GetHeight(), videoFrame->GetTimeStamp());
-		//Calculate dimensions
-		DWORD dimensions = videoFrame->GetWidth() * videoFrame->GetHeight();
-		//Check if it is bigger, bigger is better
-		if (currentDimensions<dimensions && currentSize<videoFrame->GetLength())
-		{
-			//Try this
-			selected = videoFrame.get();
-			forwarded = ssrc;
-			currentSize = videoFrame->GetLength();
-		}
-	}
-
-	//If we found none
-	if (!selected)
-		return;
-
-	//If we are changing
-	if (prev!=forwarded)
-	{
-		//Recaulcate timestamp offsets diff
-		uint64_t diff = 0;
-
-		//Check if We have an iframe of the previus selected simulcast layer
-		auto it = iframes.find(prev);
-
-		//If found
-		if (it != iframes.end())
-		{
-			//Ensure it was increasing
-			if (it->second->GetTimeStamp() > lastTimestamp)
-				//Get timestamp difference between both frames on previous layer
-				diff = it->second->GetTimeStamp() - lastTimestamp;
-		} else {
-			//Ensure it is increasing
-			if (selected->GetTime() > lastTime)
-				//Get the timestamp difference between the time difference of this frame and the previous sent one
-				diff = (selected->GetTime() - lastTime) * selected->GetClockRate() / 1000 ;
-		}
-
-		//Increment offset
-		offsetTimestamp += (lastTimestamp - firstTimestamp) + diff;
-
-		//Reset first timestamp
-		firstTimestamp = selected->GetTimestamp();
-
-		//Debug
-		//UltraDebug("-MediaFrameListenerBridge::Select() | Changing active layer [prev:%u,current:%u,offset:%llu]\n", prev, forwarded, offsetTimestamp);
-	}
-
-	//Forward frame
-	ForwardFrame(*selected);
-
-	//Clear pending
-	iframes.clear();
-
-	//Not selecting
-	selectionTime = 0;
-
-	//For all pending frames
-	for ( auto& [ssrc,pending] : pendingFrames)
-		//If the frame is from the forwarded simulcast layer
-		if (ssrc == forwarded)
-			//Forward frame
-			ForwardFrame(*pending);
-
-	//Clear pending frames
-	pendingFrames.clear();
-}
 
 void SimulcastMediaFrameListener::onMediaFrame(DWORD ssrc, const MediaFrame& frame)
 {
@@ -169,85 +83,160 @@ void SimulcastMediaFrameListener::onMediaFrame(DWORD ssrc, const MediaFrame& fra
 		//Uh?
 		return;
 
-	//Get frame time
-	uint64_t frameTime = frame.GetTime();
-
 	//Get cloned video frame
 	auto cloned = std::unique_ptr<VideoFrame>((VideoFrame*)frame.Clone());
+	cloned->SetSSRC(ssrc);
 
-
-	//UltraDebug("-SimulcastMediaFrameListener::onMediaFrame() [ssrc:%u:,intra:%d,iframes:%d,pending:%d,ts:%llu,frameTime:%llu,selectionTime:%llu]\n", ssrc, cloned->IsIntra(), iframes.size(), pendingFrames.size(), cloned->GetTimestamp(), frameTime, selectionTime);
-
-
-	//We decide which layer to forwrd on each I frame
-	if (cloned->IsIntra())
-	{
-		//If it is the first one
-		if (iframes.empty())
-			//Start selection from now
-			//TODO: Create a timer so selection happens timely even if no further frame is recieved. 
-			//TODO: Currently pending frames will be deleivered on Stop() it no other frames are received.
-			selectionTime = frame.GetTime();
-		//Move cloned frame to the pending frames for selection
-		auto res = iframes.try_emplace(ssrc, std::move(cloned));
-		//If there was already another one for that layer
-		if (!res.second)
-			//Buffer it
-			pendingFrames.push_back({ ssrc, std::move(cloned) });
-		//If we have enough I frames or we timed out waiting
-		if (iframes.size() == numLayers || (frameTime > selectionTime + FrameWaitingTime))
-			//Do simulcast layer selection
-			Select();
-		//Done
-		return;
-	}
-
-	//Check if we are selecting and we have already an iframe for that 
-	if (selectionTime)
-	{
-		//Buffer it
-		pendingFrames.push_back({ ssrc, std::move(cloned) });
-
-		// If we have enough timed out waiting
-		if (frameTime > selectionTime + FrameWaitingTime)
-			//Don't wait for other layers and force layer selection
-			Select();
-
-		//Done
-		return;
-	}
-	
-	//If the frame is from the forwarded simulcast layer
-	if (ssrc == forwarded)
-		//Forward frame
-		ForwardFrame(*cloned);
+	Push(std::move(cloned));
 }
 
 void SimulcastMediaFrameListener::ForwardFrame(VideoFrame& frame)
 {
-	
-	//Get timestamp
-	uint64_t ts = frame.GetTimestamp();
-
-	//Discard out of order frames
-	if (ts < firstTimestamp)
-	{
-		//Error
-		Warning("SimulcastMediaFrameListener::ForwardFrame() | Discarding out of order frame [ts:%llu,first:%llu]\n", ts, firstTimestamp);
-		return;
-	}
-
-	//Correct timestamp
-	frame.SetTimestamp(ts - firstTimestamp + offsetTimestamp);
-
 	//Debug
 	//UltraDebug("-SimulcastMediaFrameListener::ForwardFrame() | Forwarding frame [ts:%llu]\n", frame.GetTimestamp());
+
+	if (frame.GetTime() <= lastForwaredFrameTimeMs)
+	{
+		// Make the time at least advance by 1ms
+		frame.SetTime(lastForwaredFrameTimeMs + 1);
+	}
+
+	lastForwaredFrameTimeMs = frame.GetTime();
+
+	frame.SetSSRC(forwardSsrc);
+
 	//Send it to all listeners
 	for (const auto& listener : listeners)
 		//Send cloned frame
-		listener->onMediaFrame(this->ssrc, frame);
+		listener->onMediaFrame(forwardSsrc, frame);
+}
 
-	//Set last sent timestamp
-	lastTimestamp = ts;
-	lastTime = frame.GetTime();
+void SimulcastMediaFrameListener::Push(std::unique_ptr<VideoFrame> frame)
+{
+	DWORD ssrc = frame->GetSSRC();
+
+	if (!referenceFrameTime)
+	{
+		if (!frame->IsIntra()) return;
+		referenceFrameTime = frame->GetTime();
+	}
+
+	if (initialTimestamps.find(ssrc) == initialTimestamps.end())
+	{
+		if (!frame->IsIntra()) return;
+		auto offset = (int64_t(frame->GetTime()) - int64_t(*referenceFrameTime)) * frame->GetClockRate() / 1000;
+		initialTimestamps[ssrc] = frame->GetTimeStamp() - offset;
+	}
+
+	if (layerDimensions.find(ssrc) == layerDimensions.end())
+	{
+		if (!frame->IsIntra()) return;
+		layerDimensions[ssrc] = frame->GetWidth() * frame->GetHeight();
+	}
+
+	// Convert to relative timestamp
+	auto tm = frame->GetTimeStamp() > initialTimestamps[ssrc] ? frame->GetTimeStamp() - initialTimestamps[ssrc] : 0;
+	frame->SetTimestamp(tm);
+
+	// Update the layer latest timestamp
+	layerTimestamps[ssrc] = tm;
+
+	// Initially, select the first intra frame. Will later to update to higher
+	// quality one if exists
+	if (selectedSsrc == 0 && frame->IsIntra())
+	{
+		selectedSsrc = ssrc;
+	}
+
+	if (maxQueueSize == 0)
+	{
+		assert(numLayers == 1);
+		initialised = true;
+	}
+
+	// Enqueue the selected layer frame.
+	// If current frame is not from the selected layer. Switch
+	// layer if following conditions met:
+	// 1. The frame is intra.
+	// 2. The frame is at least later than the last forwarded frame.
+	// 3. The frame has higher dimension or it has been too long since the current
+	//    layer frame was queued.
+	if (ssrc == selectedSsrc)
+	{
+		Enqueue(std::move(frame));
+	}
+	else if (frame->IsIntra() && (!lastForwardedTimestamp || frame->GetTimeStamp() > *lastForwardedTimestamp))
+	{
+		if (layerDimensions[ssrc] > layerDimensions[selectedSsrc] ||
+			frame->GetTime() > (lastEnqueueTimeMs + MaxWaitingTimeBeforeSwitchingLayerMs))
+		{
+			//UltraDebug("layer switch: 0x%x -> 0x%x, time: %lld, timestamp: %lld\n", ssrc, selectedSsrc, frame->GetTime(), tm);
+
+			selectedSsrc = ssrc;
+			Enqueue(std::move(frame));
+		}
+	}
+
+	// Select the best available frame in the queue during initialising
+	if (!initialised && (queue.size() == maxQueueSize || layerDimensions.size() == numLayers))
+	{
+		assert(maxQueueSize > 0);
+		auto bestLayerFrame = std::max_element(queue.begin(), queue.end(),
+			[this](const auto& elementA, const auto& elementB) {
+				return layerDimensions[elementA->GetSSRC()] < layerDimensions[elementB->GetSSRC()];
+			});
+
+		selectedSsrc = (*bestLayerFrame)->GetSSRC();
+		while(!queue.empty() && queue.front()->GetSSRC() != selectedSsrc)
+		{
+			queue.pop_front();
+		}
+
+		initialised = true;
+	}
+}
+
+void SimulcastMediaFrameListener::Enqueue(std::unique_ptr<VideoFrame> frame)
+{
+	lastEnqueueTimeMs = frame->GetTime();
+
+	// Check the queue to remove frames newer than current one
+	while(!queue.empty() && queue.back()->GetTimeStamp() >= frame->GetTimeStamp())
+	{
+		queue.pop_back();
+	}
+
+	queue.push_back(std::move(frame));
+
+	while (!queue.empty() && initialised)
+	{
+		auto tm = queue.front()->GetTimestamp();
+		bool allLayersRecievedAtTimestamp = std::all_of(layerTimestamps.begin(), layerTimestamps.end(), [tm](auto& lt) {
+			return lt.second >= tm;
+		});
+
+		// forward the front frame if the queue is full or the time indicates the front
+		// is the earliest possible eligible frame
+		if (queue.size() > maxQueueSize || allLayersRecievedAtTimestamp)
+		{
+			auto f = std::move(queue.front());
+			queue.pop_front();
+			ForwardFrame(*f);
+			lastForwardedTimestamp = f->GetTimeStamp();
+		}
+		else
+		{
+			break;
+		}
+	}
+}
+
+void SimulcastMediaFrameListener::Flush()
+{
+	while(!queue.empty())
+	{
+		auto f = std::move(queue.front());
+		queue.pop_front();
+		ForwardFrame(*f);
+	}
 }
