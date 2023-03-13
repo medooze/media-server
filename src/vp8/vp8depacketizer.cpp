@@ -12,39 +12,6 @@
 #include "rtp.h"
 #include "log.h"
 
-#ifndef AV_RL24
-#define AV_RL24(x) ((((const uint8_t*)(x))[2] << 16) | (((const uint8_t*)(x))[1] <<  8) | ((const uint8_t*)(x))[0])
-#endif
-
-namespace {
-
-static bool CheckFrameHeader(uint8_t* buf, size_t buf_size)
-{
-	if (buf_size < 3) {
-		return false;
-	}
-
-	auto keyframe  = !(buf[0] & 1);
-	auto profile   =  (buf[0]>>1) & 7;
-	auto invisible = !(buf[0] & 0x10);
-	auto header_size  = AV_RL24(buf) >> 5;
-	buf      += 3;
-	buf_size -= 3;
-
-	if (profile > 3)
-	{
-		Warning("Unknown profile %d\n", profile);
-	}
-
-	if (header_size > buf_size - 7 * keyframe) {
-		Error("Header size larger than data provided\n");
-		return false;
-	}
-
-	return true;
-}
-}
-
 
 VP8Depacketizer::VP8Depacketizer() : RTPDepacketizer(MediaFrame::Video,VideoCodec::VP8), frame(VideoCodec::VP8,0)
 {
@@ -98,10 +65,22 @@ MediaFrame* VP8Depacketizer::AddPacket(const RTPPacket::shared& packet)
 	//Set SSRC
 	frame.SetSSRC(packet->GetSSRC());
 
-	//Add payload
-	AddPayload(packet->GetMediaData(),packet->GetMediaLength());
+	// We expect the sequence number increases by one within a frame
+	if (state == State::PROCESSING && (packet->GetExtSeqNum() != (lastSeqNumber + 1)))
+	{
+		Error("-VP8Depacketizer::AddPacket() | Sequence number is not increasing by 1: %d -> %d\n", lastSeqNumber, packet->GetExtSeqNum());
+		state = State::ERROR;
+	}
+	lastSeqNumber = packet->GetExtSeqNum();
+
+	if (state != State::ERROR)
+	{
+		//Add payload
+		AddPayload(packet->GetMediaData(),packet->GetMediaLength());
+	}
+
 	//Check if it has vp8 descriptor
-	if (packet->vp8PayloadHeader)
+	if (state != State::ERROR && packet->vp8PayloadHeader)
 	{
 		//Set key frame
 		frame.SetIntra(packet->vp8PayloadHeader->isKeyFrame);
@@ -112,23 +91,32 @@ MediaFrame* VP8Depacketizer::AddPacket(const RTPPacket::shared& packet)
 			frame.SetWidth(packet->vp8PayloadHeader->width);
 			frame.SetHeight(packet->vp8PayloadHeader->height);
 		}
-
 	}
+
+	MediaFrame* validFrame = nullptr;
 
 	//If it is last return frame
 	if (packet->GetMark())
 	{
-		// Check for corrupted data
-		if (!CheckFrameHeader(frame.GetData(),frame.GetLength()))
+		switch (state)
 		{
-			Error("-VP8Depacketizer::AddPacket() | VP8 frame header decode error\n");
-			return nullptr;
+		case State::PROCESSING:
+			// No error, return the frame
+			validFrame = &frame;
+			break;
+		case State::NONE:
+			Error("-VP8Depacketizer::AddPacket() | Dropped invalid frame as start packet missed. time: %lld\n", packet->GetTime());
+			break;
+		case State::ERROR:
+			Error("-VP8Depacketizer::AddPacket() | Dropped invalid frame as error occurred. time: %lld\n", packet->GetTime());
+			break;
 		}
 
-		return &frame;
+		// Reset the state
+		state = State::NONE;
 	}
 
-	return nullptr;
+	return validFrame;
 }
 
 MediaFrame* VP8Depacketizer::AddPayload(const BYTE* payload, DWORD len)
@@ -150,6 +138,25 @@ MediaFrame* VP8Depacketizer::AddPayload(const BYTE* payload, DWORD len)
 		//Error
 		Error("-VP8Depacketizer::AddPayload() | Error decoding VP8 payload header\n");
 		return NULL;
+	}
+
+	switch (state)
+	{
+	case State::NONE:
+		if (desc.partitionIndex == 0 && desc.startOfPartition)
+		{
+			state = State::PROCESSING;
+		}
+		break;
+	case State::PROCESSING:
+		if (desc.partitionIndex == 0 && desc.startOfPartition)
+		{
+			Error("-VP8Depacketizer::AddPacket() | Unexpected startOfPartition set\n");
+			state = State::ERROR;
+		}
+		break;
+	case State::ERROR:
+		break;
 	}
 
 	//Skip desc
