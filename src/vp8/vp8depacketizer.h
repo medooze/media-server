@@ -21,15 +21,14 @@ public:
 private:
 	enum class State
 	{
-		NONE,
-		PROCESSING,
-		ERROR
+		None,
+		Processing,
+		Error
 	};
 
 	VideoFrame frame;
-	uint64_t lastSeqNumber = 0;
-	uint64_t currentTimestamp = 0;
-	State state = State::NONE;
+	uint32_t lastSeqNumber = 0;
+	State state = State::None;
 };
 
 #endif	/* VP8DEPACKETIZER_H */

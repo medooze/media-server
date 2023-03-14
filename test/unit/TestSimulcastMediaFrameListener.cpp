@@ -2,8 +2,9 @@
 #include "TimeService.h"
 #include "video.h"
 
+#include "TestCommon.h"
+
 #include <future>
-#include <include/gtest/gtest.h>
 #include <memory>
 #include <sstream>
 #include <fstream>

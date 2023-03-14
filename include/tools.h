@@ -235,6 +235,8 @@ inline DWORD get3(const BYTE *data,size_t i) { return (DWORD)(data[i+2]) | ((DWO
 inline DWORD get4(const BYTE *data,size_t i) { return (DWORD)(data[i+3]) | ((DWORD)(data[i+2]))<<8 | ((DWORD)(data[i+1]))<<16 | ((DWORD)(data[i]))<<24; }
 inline QWORD get8(const BYTE *data,size_t i) { return ((QWORD)get4(data,i))<<32 | get4(data,i+4);	}
 
+inline DWORD get3Reversed(const BYTE *data,size_t i) { return (DWORD)(data[i]) | ((DWORD)(data[i+1]))<<8 | ((DWORD)(data[i+2]))<<16; }
+
 inline DWORD getN(BYTE n, BYTE* data, size_t i)
 {
 	switch (n)
@@ -497,4 +499,3 @@ inline size_t CountBits(uint64_t val)
 	return count;
 }
 #endif
-

@@ -17,23 +17,32 @@ enable_testing()
 add_subdirectory(ext/googletest)
 
 # Media server lib
-add_library(MediaServerLib 
+add_library(MediaServerLib
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtp/DependencyDescriptor.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPDepacketizer.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPHeader.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPHeaderExtension.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPPacket.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPPayload.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/SimulcastMediaFrameListener.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/vp8/vp8depacketizer.cpp
 )
 
 target_include_directories(MediaServerLib PUBLIC
     ${CMAKE_CURRENT_LIST_DIR}/include
+    ${CMAKE_CURRENT_LIST_DIR}/src
     ${CMAKE_CURRENT_LIST_DIR}/ext/libdatachannels/src/internal
 )
 
 # Unit test executable
-add_executable(MediaServerUnitTest 
+add_executable(MediaServerUnitTest
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestSimulcastMediaFrameListener.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestVP8Depacketizer.cpp
 )
 
 target_link_libraries(MediaServerUnitTest
     MediaServerLib
-    gtest 
+    gtest
     gtest_main
 )
 

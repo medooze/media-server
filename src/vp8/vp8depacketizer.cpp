@@ -48,8 +48,11 @@ MediaFrame* VP8Depacketizer::AddPacket(const RTPPacket::shared& packet)
 	auto ts = packet->GetExtTimestamp();
 	//Check it is from same packet
 	if (frame.GetTimeStamp()!=ts)
+	{
 		//Reset frame
 		ResetFrame();
+		state = State::None;
+	}
 	//If not timestamp
 	if (frame.GetTimeStamp()==(DWORD)-1)
 	{
@@ -65,28 +68,22 @@ MediaFrame* VP8Depacketizer::AddPacket(const RTPPacket::shared& packet)
 	//Set SSRC
 	frame.SetSSRC(packet->GetSSRC());
 
-	if (currentTimestamp != frame.GetTimestamp())
-	{
-		state = State::NONE;
-		currentTimestamp = frame.GetTimestamp();
-	}
-
 	// We expect the sequence number increases by one within a frame
-	if (state == State::PROCESSING && (packet->GetExtSeqNum() != (lastSeqNumber + 1)))
+	if (state == State::Processing && (packet->GetExtSeqNum() != (lastSeqNumber + 1)))
 	{
-		Error("-VP8Depacketizer::AddPacket() | Sequence number is not increasing by 1: %d -> %d\n", lastSeqNumber, packet->GetExtSeqNum());
-		state = State::ERROR;
+		Warning("-VP8Depacketizer::AddPacket() | Sequence number is not increasing by 1: %d -> %d\n", lastSeqNumber, packet->GetExtSeqNum());
+		state = State::Error;
 	}
 	lastSeqNumber = packet->GetExtSeqNum();
 
-	if (state != State::ERROR)
+	if (state != State::Error)
 	{
 		//Add payload
 		AddPayload(packet->GetMediaData(),packet->GetMediaLength());
 	}
 
 	//Check if it has vp8 descriptor
-	if (state != State::ERROR && packet->vp8PayloadHeader)
+	if (state != State::Error && packet->vp8PayloadHeader)
 	{
 		//Set key frame
 		frame.SetIntra(packet->vp8PayloadHeader->isKeyFrame);
@@ -106,20 +103,20 @@ MediaFrame* VP8Depacketizer::AddPacket(const RTPPacket::shared& packet)
 	{
 		switch (state)
 		{
-		case State::PROCESSING:
-			// No error, return the frame
-			validFrame = &frame;
-			break;
-		case State::NONE:
-			Error("-VP8Depacketizer::AddPacket() | Dropped invalid frame as start packet missed. timestamp: %lld\n", packet->GetTimestamp());
-			break;
-		case State::ERROR:
-			Error("-VP8Depacketizer::AddPacket() | Dropped invalid frame as error occurred. timestamp: %lld\n", packet->GetTimestamp());
-			break;
+			case State::Processing:
+				// No error, return the frame
+				validFrame = &frame;
+				break;
+			case State::None:
+				Warning("-VP8Depacketizer::AddPacket() | Dropped invalid frame as start packet missed. timestamp: %lld\n", packet->GetTimestamp());
+				break;
+			case State::Error:
+				Warning("-VP8Depacketizer::AddPacket() | Dropped invalid frame as error occurred. timestamp: %lld\n", packet->GetTimestamp());
+				break;
 		}
 
 		// Reset the state
-		state = State::NONE;
+		state = State::None;
 	}
 
 	return validFrame;
@@ -146,23 +143,9 @@ MediaFrame* VP8Depacketizer::AddPayload(const BYTE* payload, DWORD len)
 		return NULL;
 	}
 
-	switch (state)
+	if (state == State::None && desc.partitionIndex == 0 && desc.startOfPartition)
 	{
-	case State::NONE:
-		if (desc.partitionIndex == 0 && desc.startOfPartition)
-		{
-			state = State::PROCESSING;
-		}
-		break;
-	case State::PROCESSING:
-		if (desc.partitionIndex == 0 && desc.startOfPartition)
-		{
-			Error("-VP8Depacketizer::AddPacket() | Unexpected startOfPartition set\n");
-			state = State::ERROR;
-		}
-		break;
-	case State::ERROR:
-		break;
+		state = State::Processing;
 	}
 
 	//Skip desc
