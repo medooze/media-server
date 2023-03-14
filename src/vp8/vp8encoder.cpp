@@ -43,7 +43,7 @@ VP8Encoder::VP8Encoder(const Properties& properties) : frame(VideoCodec::VP8)
 	fps = 0;
 	intraPeriod = 0;
 	threads = properties.GetProperty("vp8.threads", 1);
-	cpuused = properties.GetProperty("vp8.threads", -4);
+	cpuused = properties.GetProperty("vp8.cpuused", -4);
 
 	//Disable sharing buffer on clone
 	frame.DisableSharedBuffer();
@@ -129,7 +129,7 @@ int VP8Encoder::SetFrameRate(int frames,int kbits,int intraPeriod)
 
 int VP8Encoder::OpenCodec()
 {
-	Log("-VP8Encoder::OpenCodec() | VP8 using %s [%dkbps,%dfps,%dintra]\n",vpx_codec_iface_name(interface),bitrate,fps,intraPeriod);
+	Log("-VP8Encoder::OpenCodec() | VP8 using %s [%dkbps,%dfps,%dintra,cpuused:%d,trheads:%d]\n",vpx_codec_iface_name(interface),bitrate,fps,intraPeriod,cpuused,threads);
 
 	// Check
 	if (opened)
