@@ -40,6 +40,7 @@ private:
 	int pts;
 	int num;
 	int threads;
+	int cpuused;
 };
 
 #endif	/* VP8ENCODER_H */

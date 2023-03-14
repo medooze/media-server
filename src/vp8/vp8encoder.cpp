@@ -42,7 +42,8 @@ VP8Encoder::VP8Encoder(const Properties& properties) : frame(VideoCodec::VP8)
 	bitrate = 0;
 	fps = 0;
 	intraPeriod = 0;
-	threads = properties.GetProperty("vp8.threads",1);
+	threads = properties.GetProperty("vp8.threads", 1);
+	cpuused = properties.GetProperty("vp8.threads", -4);
 
 	//Disable sharing buffer on clone
 	frame.DisableSharedBuffer();
@@ -215,7 +216,7 @@ int VP8Encoder::OpenCodec()
 	//The static threshold imposes a change threshold on blocks below which they will be skipped by the encoder.
 	vpx_codec_control(&encoder, VP8E_SET_STATIC_THRESHOLD, 100);
 	//Set cpu usage, a bit higher than normal (-6)
-	vpx_codec_control(&encoder, VP8E_SET_CPUUSED, -4);
+	vpx_codec_control(&encoder, VP8E_SET_CPUUSED, cpuused);
 	//Only one partition
 	vpx_codec_control(&encoder, VP8E_SET_TOKEN_PARTITIONS,VP8_ONE_TOKENPARTITION);
 	//Enable noise reduction
