@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   vp8depacketizer.h
  * Author: Sergio
  *
@@ -19,8 +19,16 @@ public:
 	virtual MediaFrame* AddPayload(const BYTE* payload,DWORD payload_len) override;
 	virtual void ResetFrame() override;
 private:
+	enum class State
+	{
+		None,
+		Processing,
+		Error
+	};
+
 	VideoFrame frame;
+	uint32_t lastSeqNumber = 0;
+	State state = State::None;
 };
 
 #endif	/* VP8DEPACKETIZER_H */
-
