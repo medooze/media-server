@@ -1,7 +1,7 @@
-/* 
+/*
  * File:   h264depacketizer.cpp
  * Author: Sergio
- * 
+ *
  * Created on 26 de enero de 2012, 9:46
  */
 
@@ -66,10 +66,9 @@ MediaFrame* H264Depacketizer::AddPacket(const RTPPacket::shared& packet)
 	//If it is last return frame
 	if (!packet->GetMark())
 		return NULL;
-	//Set config size
-	frame.AllocateCodecConfig(config.GetSize());
-	//Serialize
-	config.Serialize(frame.GetCodecConfigData(),frame.GetCodecConfigSize());
+
+	SaveFrameConfig();
+
 	//Return frame
 	return &frame;
 }
@@ -95,10 +94,10 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 	 */
 	// BYTE nal_ref_idc = (payload[0] & 0x60) >> 5;
 	BYTE nalUnitType = payload[0] & 0x1f;
-	
+
 	//Get nal data
 	const BYTE *nalData = payload+1;
-	
+
 	//Get nalu size
 	DWORD nalSize = payloadLen;
 
@@ -158,7 +157,7 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 				/* strip NALU size */
 				payload += 2;
 				payloadLen -= 2;
-				
+
 				//Check
 				if (!nalSize || nalSize>payloadLen)
 					//Error
@@ -168,7 +167,7 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 				nalUnitType = payload[0] & 0x1f;
 				//Get data
 				nalData = payload+1;
-				
+
 				//Check if IDR SPS or PPS
 				switch (nalUnitType)
 				{
@@ -212,12 +211,12 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 					set4(nalHeader,0,nalSize);
 				//Append data
 				frame.AppendMedia(nalHeader, sizeof (nalHeader));
-				
+
 				//Append data and get current post
 				pos = frame.AppendMedia(payload,nalSize);
 				//Add RTP packet
 				frame.AddRtpPacket(pos,nalSize,NULL,0);
-				
+
 				payload += nalSize;
 				payloadLen -= nalSize;
 			}
@@ -237,7 +236,7 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 			//Check length
 			if (payloadLen < 2)
 				return NULL;
-			
+
 			/* +---------------+
 			 * |0|1|2|3|4|5|6|7|
 			 * +-+-+-+-+-+-+-+-+
@@ -248,7 +247,7 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 			 */
 			S = (payload[1] & 0x80) == 0x80;
 			E = (payload[1] & 0x40) == 0x40;
-			
+
 			/* strip off FU indicator and FU header bytes */
 			nalSize = payloadLen-2;
 
@@ -260,7 +259,7 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 
 				//Get nal type
 				nalUnitType = fragNalHeader & 0x1f;
-				
+
 				//Check it
 				if (nalUnitType==0x05)
 					//It is intra
@@ -277,7 +276,7 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 				//We have a start frag
 				startedFrag = true;
 			}
-			
+
 			//If we didn't receive a start frag
 			if (!startedFrag)
 				//Ignore
@@ -312,7 +311,7 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 			break;
 		default:
 			/* 1-23	 NAL unit	Single NAL unit packet per H.264	 5.6 */
-			
+
 			/* the entire payload is the output buffer */
 			nalSize = payloadLen;
 			//Check if IDR SPS or PPS
@@ -331,10 +330,10 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 					config.SetProfileCompatibility(nalData[1]);
 					config.SetAVCLevelIndication(nalData[2]);
 					config.SetNALUnitLength(sizeof(nalHeader)-1);
-					
+
 					//Add full nal to config
 					config.AddSequenceParameterSet(payload,nalSize);
-					
+
 					//Parse sps
 					if (sps.Decode(nalData,nalSize-1))
 					{
@@ -344,7 +343,7 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 					}
 					break;
 				case 0x08:
-					
+
 					//Consider it intra also
 					frame.SetIntra(true);
 					//Add full nal to config
@@ -369,4 +368,12 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 	}
 
 	return &frame;
+}
+
+void H264Depacketizer::SaveFrameConfig()
+{
+	//Set config size
+	frame.AllocateCodecConfig(config.GetSize());
+	//Serialize
+	config.Serialize(frame.GetCodecConfigData(),frame.GetCodecConfigSize());
 }

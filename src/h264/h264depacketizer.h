@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   h264depacketizer.h
  * Author: Sergio
  *
@@ -19,6 +19,8 @@ public:
 	virtual MediaFrame* AddPacket(const RTPPacket::shared& packet) override;
 	virtual MediaFrame* AddPayload(const BYTE* payload,DWORD payload_len) override;
 	virtual void ResetFrame() override;
+
+	void SaveFrameConfig();
 private:
 	VideoFrame frame;
 	AVCDescriptor config;
@@ -28,4 +30,3 @@ private:
 };
 
 #endif	/* H264DEPACKETIZER_H */
-
