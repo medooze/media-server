@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   vp8depacketizer.h
  * Author: Sergio
  *
@@ -18,9 +18,9 @@ public:
 	virtual MediaFrame* AddPacket(const RTPPacket::shared& packet) override;
 	virtual MediaFrame* AddPayload(const BYTE* payload,DWORD payload_len) override;
 	virtual void ResetFrame() override;
+	virtual void FinalizeFrame() override {};
 private:
 	VideoFrame frame;
 };
 
 #endif	/* VP8DEPACKETIZER_H */
-

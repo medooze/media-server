@@ -19,8 +19,7 @@ public:
 	virtual MediaFrame* AddPacket(const RTPPacket::shared& packet) override;
 	virtual MediaFrame* AddPayload(const BYTE* payload,DWORD payload_len) override;
 	virtual void ResetFrame() override;
-
-	void SaveFrameConfig();
+	virtual void FinalizeFrame() override;
 private:
 	VideoFrame frame;
 	AVCDescriptor config;

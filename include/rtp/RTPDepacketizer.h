@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-/* 
+/*
  * File:   RTPDepacketizer.h
  * Author: Sergio
  *
@@ -37,6 +37,7 @@ public:
 	virtual MediaFrame* AddPacket(const RTPPacket::shared& packet) = 0;
 	virtual MediaFrame* AddPayload(const BYTE* payload,DWORD payload_len) = 0;
 	virtual void ResetFrame() = 0;
+	virtual void FinalizeFrame() = 0;
 private:
 	MediaFrame::Type	mediaType;
 	DWORD			codec;
@@ -50,7 +51,7 @@ public:
 	{
 		frame.SetClockRate(rate);
 	}
-	
+
 	DummyAudioDepacketizer(AudioCodec::Type codec) : RTPDepacketizer(MediaFrame::Audio,codec), frame(codec)
 	{
 		frame.SetClockRate(8000);
@@ -97,9 +98,10 @@ public:
 		frame.Reset();
 	}
 
+	virtual void FinalizeFrame() override {};
+
 private:
 	AudioFrame frame;
 };
 
 #endif /* RTPDEPACKETIZER_H */
-

@@ -67,7 +67,7 @@ MediaFrame* H264Depacketizer::AddPacket(const RTPPacket::shared& packet)
 	if (!packet->GetMark())
 		return NULL;
 
-	SaveFrameConfig();
+	FinalizeFrame();
 
 	//Return frame
 	return &frame;
@@ -370,7 +370,7 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 	return &frame;
 }
 
-void H264Depacketizer::SaveFrameConfig()
+void H264Depacketizer::FinalizeFrame()
 {
 	//Set config size
 	frame.AllocateCodecConfig(config.GetSize());

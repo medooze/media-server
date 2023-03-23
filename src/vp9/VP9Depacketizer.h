@@ -11,10 +11,10 @@ public:
 	virtual MediaFrame* AddPacket(const RTPPacket::shared& packet) override;
 	virtual MediaFrame* AddPayload(const BYTE* payload,DWORD payload_len) override;
 	virtual void ResetFrame() override;
+	virtual void FinalizeFrame() override {};
 private:
 	VideoFrame frame;
 	LayerFrame layer;
 };
 
 #endif	/* VP9DEPACKETIZER_H */
-
