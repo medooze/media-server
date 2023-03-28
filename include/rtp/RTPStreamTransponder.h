@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-/* 
+/*
  * File:   RTPStreamTransponder.h
  * Author: Sergio
  *
@@ -18,7 +18,7 @@
 #include "VideoLayerSelector.h"
 #include "WrapExtender.h"
 
-class RTPStreamTransponder : 
+class RTPStreamTransponder :
 	public RTPIncomingMediaStream::Listener,
 	public RTPOutgoingSourceGroup::Listener
 {
@@ -29,12 +29,12 @@ public:
 public:
 	RTPStreamTransponder(const RTPOutgoingSourceGroup::shared& outgoing,const RTPSender::shared& sender);
 	virtual ~RTPStreamTransponder();
-	
+
 	bool ResetIncoming();
 	bool SetIncoming(const RTPIncomingMediaStream::shared& incoming, const RTPReceiver::shared& receiver, bool smooth = false);
 	bool AppendH264ParameterSets(const std::string& sprop);
 	void Close();
-	
+
 	// RTPIncomingMediaStream::Listener interface
 	virtual void onRTP(const RTPIncomingMediaStream* stream, const RTPPacket::shared& packet) override;
 	virtual void onBye(const RTPIncomingMediaStream* stream) override;
@@ -45,7 +45,7 @@ public:
 	virtual void onPLIRequest(const RTPOutgoingSourceGroup* group,DWORD ssrc) override;
 	virtual void onREMB(const RTPOutgoingSourceGroup* group, DWORD ssrc, DWORD bitrate) override;
 	virtual void onEnded(const RTPOutgoingSourceGroup* group) override;
-	
+
 	void SelectLayer(int spatialLayerId, int temporalLayerId);
 	void Mute(bool muting);
 	void SetIntraOnlyForwarding(bool intraOnlyForwarding);
@@ -64,9 +64,9 @@ private:
 	RTPReceiver::shared		receiver;
 	RTPIncomingMediaStream::shared  incomingNext;
 	RTPReceiver::shared		receiverNext;
-	
+
 	std::unique_ptr<VideoLayerSelector> selector;
-	
+
 	volatile bool reset	= false;
 	volatile bool muted	= false;
 	DWORD firstExtSeqNum	= NoSeqNum;	//First seq num of incoming stream
@@ -87,7 +87,7 @@ private:
 	volatile BYTE spatialLayerId		= LayerInfo::MaxLayerId;
 	volatile BYTE temporalLayerId		= LayerInfo::MaxLayerId;
 	volatile BYTE lastSpatialLayerId	= LayerInfo::MaxLayerId;
-	WORD lastPicId		= 0;
+	WORD lastSrcPicId		= 0;
 	WORD lastTl0Idx		= 0;
 	std::optional<QWORD> picId;
 	std::optional<WORD> tl0Idx;

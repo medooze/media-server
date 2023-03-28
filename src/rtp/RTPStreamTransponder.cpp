@@ -13,10 +13,10 @@ RTPStreamTransponder::RTPStreamTransponder(const RTPOutgoingSourceGroup::shared&
 {
 	//Store outgoing streams
 	ssrc = outgoing->media.ssrc;
-	
+
 	//Add us as listeners
 	outgoing->AddListener(this);
-	
+
 	Debug("-RTPStreamTransponder() | [outgoing:%p,sender:%p,ssrc:%u]\n",outgoing,sender,ssrc);
 }
 
@@ -40,10 +40,10 @@ bool RTPStreamTransponder::SetIncoming(const RTPIncomingMediaStream::shared& inc
 			//Exit
 			return;
 		}
-		
+
 		Debug(">RTPStreamTransponder::SetIncoming() | [incoming:%p,receiver:%p,ssrc:%u,smooth:%d]\n", incoming, receiver, ssrc, smooth);
 
-		if (smooth) 
+		if (smooth)
 		{
 			//If they are the same as next ones already
 			if (this->incomingNext == incoming && this->receiverNext == receiver)
@@ -103,10 +103,10 @@ bool RTPStreamTransponder::SetIncoming(const RTPIncomingMediaStream::shared& inc
 				//DO nothing
 				return;
 			}
-		
-	
+
+
 			//Remove listener from old stream
-			if (this->incoming) 
+			if (this->incoming)
 				this->incoming->RemoveListener(this);
 
 			//Reset packets before start listening again
@@ -115,20 +115,20 @@ bool RTPStreamTransponder::SetIncoming(const RTPIncomingMediaStream::shared& inc
 			//Store stream and receiver
 			this->incoming = incoming;
 			this->receiver = receiver;
-	
+
 			//Double check
 			if (this->incoming)
 			{
 				//Add us as listeners
 				this->incoming->AddListener(this);
-		
+
 				//Request update on the incoming
 				if (this->receiver) this->receiver->SendPLI(this->incoming->GetMediaSSRC());
 				//Update last requested PLI
 				lastSentPLI = now.count();
 			}
 		}
-	
+
 		Debug("<RTPStreamTransponder::SetIncoming() | [incoming:%p,receiver:%p]\n",incoming,receiver);
 	});
 
@@ -157,13 +157,13 @@ void RTPStreamTransponder::Close()
 		incomingNext = nullptr;
 		receiverNext = nullptr;
 	});
-	
+
 	//Stop listening
 	if (outgoing) outgoing->RemoveListener(this);
 	//Remove sources
 	outgoing = nullptr;
 	sender = nullptr;
-	
+
 	Debug("<RTPStreamTransponder::Close()\n");
 }
 
@@ -206,7 +206,7 @@ void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPP
 		if (stream != this->incoming.get())
 			//Skip
 			return;
-	
+
 		//If muted
 		if (muted)
 			//Skip
@@ -230,17 +230,17 @@ void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPP
 			//Exit
 			return;
 		}
-	
+
 		//Check sender
 		if (!sender)
 			//Nothing
 			return;
-	
+
 		//Check if source has changed
 		if (source && packet->GetSSRC()!=source)
 			//We need to reset
 			reset = true;
-	
+
 		//If we need to reset
 		if (reset)
 		{
@@ -276,7 +276,7 @@ void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPP
 			//No layer
 			spatialLayerId = LayerInfo::MaxLayerId;
 			temporalLayerId = LayerInfo::MaxLayerId;
-		
+
 			//Reset frame numbers
 			firstFrameNumber = NoFrameNum;
 			baseFrameNumber = lastFrameNumber + 1;
@@ -285,12 +285,12 @@ void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPP
 			//Reseted
 			reset = false;
 		}
-	
+
 		//Update source
 		source = packet->GetSSRC();
 		//Get new seq number
 		DWORD extSeqNum = packet->GetExtSeqNum();
-	
+
 		//Check if it the first received packet
 		if (firstExtSeqNum==NoSeqNum || firstTimestamp==NoTimestamp)
 		{
@@ -301,9 +301,9 @@ void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPP
 				QWORD offset = getTimeDiff(lastTime)/1000;
 				//Get timestamp diff on correct clock rate
 				QWORD diff = offset*packet->GetClockRate()/1000;
-			
+
 				//UltraDebug("-ts offset:%llu diff:%llu baseTimestap:%lu firstTimestamp:%llu lastTimestamp:%llu rate:%llu\n",offset,diff,baseTimestamp,firstTimestamp,lastTimestamp,packet->GetClockRate());
-			
+
 				//convert it to rtp time and add to the last sent timestamp
 				baseTimestamp = lastTimestamp + diff + 1;
 			}
@@ -314,15 +314,15 @@ void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPP
 			firstExtSeqNum = extSeqNum;
 			//Get first timestamp
 			firstTimestamp = packet->GetExtTimestamp();
-		
+
 			UltraDebug("-StreamTransponder::onRTP() | first seq:%lu base:%lu last:%lu ts:%llu baseSeq:%lu baseTimestamp:%llu lastTimestamp:%llu\n",firstExtSeqNum,baseExtSeqNum,lastExtSeqNum,firstTimestamp,baseExtSeqNum,baseTimestamp,lastTimestamp);
 		}
-	
+
 		//Ensure it is not before first one
 		if (extSeqNum<firstExtSeqNum)
 			//Exit
 			return;
-	
+
 		//Only for viedo
 		if (packet->GetMediaType()==MediaFrame::Video)
 		{
@@ -336,17 +336,17 @@ void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPP
 				selector->SelectTemporalLayer(temporalLayerId);
 			}
 		}
-	
+
 		//Get rtp marking
 		bool mark = packet->GetMark();
-	
+
 		//If we have selector for codec
 		if (selector)
 		{
 			//Select layer
 			selector->SelectSpatialLayer(spatialLayerId);
 			selector->SelectTemporalLayer(temporalLayerId);
-		
+
 			//Select pacekt
 			if (!packet->GetMediaLength() || !selector->Select(packet,mark))
 			{
@@ -366,49 +366,59 @@ void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPP
 			//Get current spatial layer id
 			lastSpatialLayerId = selector->GetSpatialLayer();
 		}
-	
+
 		//Set normalized seq num
 		extSeqNum = baseExtSeqNum + (extSeqNum - firstExtSeqNum) - dropped + added;
-	
+
 		//Set normailized timestamp
 		uint64_t timestamp = baseTimestamp + (packet->GetExtTimestamp()-firstTimestamp);
-	
+
 		//UPdate media codec and type
 		media = packet->GetMediaType();
 		codec = packet->GetCodec();
 		type  = packet->GetPayloadType();
-	
+
 		//UltraDebug("-ext seq:%lu base:%lu first:%lu current:%lu dropped:%lu added:%d ts:%lu normalized:%llu intra:%d codec=%d\n",extSeqNum,baseExtSeqNum,firstExtSeqNum,packet->GetExtSeqNum(),dropped,added,packet->GetTimestamp(),timestamp,packet->IsKeyFrame(),codec);
-	
+
 		//Rewrite pict id
 		bool rewitePictureIds = false;
 		DWORD pictureId = 0;
 		DWORD temporalLevelZeroIndex = 0;
 		//TODO: this should go into the layer selector??
-		if (codec==VideoCodec::VP8 && packet->vp8PayloadDescriptor)
+		if (codec==VideoCodec::VP8)
 		{
+			if (!packet->vp8PayloadDescriptor)
+			{
+				UltraDebug("VP8 packet missing payload descriptor");
+				return;
+			}
+
 			//Get VP8 desc
 			auto desc = *packet->vp8PayloadDescriptor;
-		
-			//Check if we have a new pictId
-			if (desc.pictureIdPresent && desc.pictureId!=lastPicId)
-			{
-				//Update ids
-				lastPicId = desc.pictureId;
 
-				if (!picId)
+			//Check if we have a new pictId
+			if (desc.pictureIdPresent)
+			{
+				if (desc.pictureId != lastSrcPicId)
 				{
-					picId = desc.pictureId;
+					//Update ids
+					lastSrcPicId = desc.pictureId;
+
+					if (!picId)
+					{
+						picId = desc.pictureId;
+					}
+					else
+					{
+						//Increase picture id
+						(*picId)++;
+					}
 				}
-				else
-				{
-				 	//Increase picture id
-					(*picId)++;
-					//We need to rewrite vp8 picture ids
-					rewitePictureIds = true;
-				}
+
+				//We may need to rewrite vp8 picture ids
+				rewitePictureIds = *picId != desc.pictureId;
 			}
-		
+
 			//Check if we a new base layer
 			if (desc.temporalLevelZeroIndexPresent && desc.temporalLevelZeroIndex!=lastTl0Idx)
 			{
@@ -427,18 +437,21 @@ void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPP
 					rewitePictureIds = true;
 				}
 			}
-		
+
 			//Rewrite picture id
-			pictureId = *picId;
+			if (picId) pictureId = *picId;
+
 			//Rewrite tl0 index
 			temporalLevelZeroIndex = *tl0Idx;
+
+			//Error("-ext seq:%lu pictureIdPresent:%d rewrite:%d pictId:%d lastPictId:%d origPictId:%d intra:%d mark:%d \n",extSeqNum, desc.pictureIdPresent, rewitePictureIds, pictureId, lastSrcPicId, packet->vp8PayloadDescriptor ? packet->vp8PayloadDescriptor->pictureId : -1, packet->IsKeyFrame(), packet->GetMark());
 		}
-	
+
 		//If we have to append h264 sprop parameters set for the first packet of an iframe
 		if (h264Parameters && codec==VideoCodec::H264 && packet->IsKeyFrame() && (timestamp!=lastTimestamp || firstExtSeqNum==packet->GetExtSeqNum()))
 		{
 			//UltraDebug("-addding h264 sprop\n");
-		
+
 			//Clone packet
 			auto cloned = h264Parameters->Clone();
 			//Set new seq numbers
@@ -456,13 +469,13 @@ void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPP
 			//Add new packet
 			added ++;
 			extSeqNum ++;
-		
+
 			//UltraDebug("-ext seq:%lu base:%lu first:%lu current:%lu dropped:%lu added:%d ts:%lu normalized:%llu intra:%d codec=%d\n",extSeqNum,baseExtSeqNum,firstExtSeqNum,packet->GetExtSeqNum(),dropped,added,packet->GetTimestamp(),timestamp,packet->IsKeyFrame(),codec);
 		}
-	
+
 		//Dependency descriptor active decodte target mask
 		std::optional<std::vector<bool>> forwaredDecodeTargets;
-	
+
 		//If it is AV1
 		if (codec==VideoCodec::AV1)
 			//Get decode target
@@ -498,7 +511,7 @@ void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPP
 				//UltraDebug("-frameNum first:%llu base:%llu current:%llu(%u) continous=%llu\n", firstFrameNumber, baseFrameNumber, lastFrameNumber, dd->frameNumber, continousFrameNumber);
 			}
 		}
-	
+
 		//Get last send seq num and timestamp
 		lastExtSeqNum = extSeqNum;
 		lastTimestamp = timestamp;
@@ -534,7 +547,7 @@ void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPP
 		if (packet->HasDependencyDestriptor() && continousFrameNumber != NoFrameNum)
 			//Update it
 			packet->OverrideFrameNumber(static_cast<uint16_t>(continousFrameNumber));
-	
+
 		//Send packet
 		if (sender)
 			//Enqueue it
@@ -545,12 +558,12 @@ void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPP
 void RTPStreamTransponder::onBye(const RTPIncomingMediaStream* stream)
 {
 	timeService.Async([=](auto) {
-	
+
 		//If they are the not same
 		if (this->incoming.get() != stream)
 			//DO nothing
 			return;
-	
+
 		//Reset packets
 		reset = true;
 	});
@@ -564,7 +577,7 @@ void RTPStreamTransponder::onEnded(const RTPIncomingMediaStream* stream)
 		{
 			//Reset packets before start listening again
 			reset = true;
-	
+
 			//No stream and receiver
 			this->incoming = nullptr;
 			this->receiver = nullptr;
@@ -618,7 +631,7 @@ void RTPStreamTransponder::SelectLayer(int spatialLayerId,int temporalLayerId)
 
 	this->spatialLayerId  = spatialLayerId;
 	this->temporalLayerId = temporalLayerId;
-	
+
 	if (lastSpatialLayerId!=spatialLayerId)
 		//Request update on the incoming
 		RequestPLI();
@@ -652,12 +665,12 @@ void RTPStreamTransponder::SetIntraOnlyForwarding(bool intraOnlyForwarding)
 
 bool RTPStreamTransponder::AppendH264ParameterSets(const std::string& sprop)
 {
-	
+
 	Debug("-RTPStreamTransponder::AppendH264ParameterSets() [sprop:%s]\n",sprop.c_str());
-	
+
 	//Create pakcet
 	auto rtp = std::make_shared<RTPPacket>(MediaFrame::Video,VideoCodec::H264);
-	
+
 	//Get current length
 	BYTE* data = rtp->AdquireMediaData();
 	DWORD len = 0;
@@ -666,16 +679,16 @@ bool RTPStreamTransponder::AppendH264ParameterSets(const std::string& sprop)
 	data[len++] = 24;
 	//Split by ","
 	auto start = 0;
-	
+
 	//Get next separator
 	auto end = sprop.find(',');
-	
+
 	//Parse
 	while(end!=std::string::npos)
 	{
 		//Get prop
 		auto prop = sprop.substr(start,end-start);
-		
+
 		Debug("-RTPStreamTransponder::AppendH264ParameterSets() [sprop:%s]\n",prop.c_str());
 		//Parse and keep space for size
 		auto l = av_base64_decode(data+len+2,prop.c_str(),size-len-2);
@@ -693,7 +706,7 @@ bool RTPStreamTransponder::AppendH264ParameterSets(const std::string& sprop)
 	}
 	//last one
 	auto prop = sprop.substr(start,end-start);
-	
+
 	//Parse and keep space for size
 	auto l = av_base64_decode(data+len+2,prop.c_str(),size-len-2);
 	//Check result
@@ -705,10 +718,10 @@ bool RTPStreamTransponder::AppendH264ParameterSets(const std::string& sprop)
 	len += l+2;
 	//Set new lenght
 	rtp->SetMediaLength(len);
-	
+
 	//Store it
 	this->h264Parameters = rtp;
-	
+
 	//Done
 	return true;
 }
