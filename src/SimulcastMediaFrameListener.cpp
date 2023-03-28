@@ -111,7 +111,7 @@ void SimulcastMediaFrameListener::ForwardFrame(VideoFrame& frame)
 		listener->onMediaFrame(forwardSsrc, frame);
 }
 
-void SimulcastMediaFrameListener::Push(std::unique_ptr<VideoFrame> frame)
+void SimulcastMediaFrameListener::Push(std::unique_ptr<VideoFrame>&& frame)
 {
 	DWORD ssrc = frame->GetSSRC();
 
@@ -196,7 +196,7 @@ void SimulcastMediaFrameListener::Push(std::unique_ptr<VideoFrame> frame)
 	}
 }
 
-void SimulcastMediaFrameListener::Enqueue(std::unique_ptr<VideoFrame> frame)
+void SimulcastMediaFrameListener::Enqueue(std::unique_ptr<VideoFrame>&& frame)
 {
 	lastEnqueueTimeMs = frame->GetTime();
 

@@ -31,8 +31,8 @@ public:
 private:
 	void ForwardFrame(VideoFrame& frame);
 
-	void Push(std::unique_ptr<VideoFrame> frame);
-	void Enqueue(std::unique_ptr<VideoFrame> frame);
+	void Push(std::unique_ptr<VideoFrame>&& frame);
+	void Enqueue(std::unique_ptr<VideoFrame>&& frame);
 	void Flush();
 private:
 	TimeService& timeService;
