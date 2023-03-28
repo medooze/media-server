@@ -71,7 +71,7 @@ private:
 private:
 	Listener*	listener    = NULL;
 	EvenSource*	eventSource = NULL;
-	Acumulator<uint32_t, uint64_t>	bitrateAcu;
+	MinMaxAcumulator<uint32_t, uint64_t>	bitrateAcu;
 	Streams		streams;
 	Use		lock;
 	DWORD minConfiguredBitRate;

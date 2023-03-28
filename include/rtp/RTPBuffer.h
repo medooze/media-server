@@ -53,20 +53,22 @@ public:
 			auto it = packets.begin();
 			//Get first seq num
 			DWORD seq = it->first;
-			//Get packet
-			auto candidate = it->second;
 			//Get time of the packet
-			QWORD time = candidate->GetTime();
+			QWORD time = it->second->GetTime();
 
 			//Check if first is the one expected or wait if not
 			if (next==(DWORD)-1 || seq==next || time+maxWaitTime<=now || hurryUp)
 			{
+				//Get packet
+				RTPPacket::shared candidate = std::move(it->second);
+				//Remove it
+				packets.erase(it);
+
 				//Update next
 				next = seq+1;
 				//Waiting time
 				waited.Update(now, now>time ? now-time : 0);
-				//Remove it
-				packets.erase(it);
+				
 				//If no mor packets
 				if (packets.empty())
 					//Not hurryUp more
@@ -84,7 +86,7 @@ public:
 			}
 		}
 		//Rerturn 
-		return NULL;
+		return nullptr;
 	}
 	
 	void Clear()
@@ -188,7 +190,7 @@ public:
 private:
 	//The event list
 	std::map<DWORD,RTPPacket::shared> packets;
-	Acumulator<uint32_t, uint64_t> waited;
+	MinMaxAcumulator<uint32_t, uint64_t> waited;
 	
 	bool  hurryUp		= false;
 	DWORD next		= (DWORD)-1;

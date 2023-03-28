@@ -59,6 +59,21 @@ public:
 		return queue[head];
 	}
 
+	const T& back() const
+	{
+		return queue[tail>0 ? tail - 1 : queue.size() - 1];
+	}
+
+	T& front()
+	{
+		return queue[head];
+	}
+
+	T& back()
+	{
+		return queue[tail > 0 ? tail - 1 : queue.size() - 1];
+	}
+
 	const T& at(size_t pos) const
 	{
 		return queue[(head + pos) % queue.size()];

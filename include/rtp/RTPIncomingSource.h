@@ -52,10 +52,10 @@ struct RTPIncomingSource : public RTPSource
 	std::map<WORD,LayerSource> layers;
 	
 	
-	Acumulator<uint32_t, uint64_t> acumulatorFrames;
-	Acumulator<int32_t, int64_t>   acumulatorFrameDelay;
-	Acumulator<int32_t, int64_t>   acumulatorCaptureDelay;
-	Acumulator<uint32_t, uint64_t> acumulatorLostPackets;
+	Acumulator<uint32_t, uint64_t>	  acumulatorFrames;
+	MaxAcumulator<int32_t, int64_t>   acumulatorFrameDelay;
+	MaxAcumulator<int32_t, int64_t>   acumulatorCaptureDelay;
+	MaxAcumulator<uint32_t, uint64_t> acumulatorLostPackets;
 	
 	RTPIncomingSource();
 	virtual ~RTPIncomingSource() = default;

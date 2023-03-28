@@ -265,7 +265,7 @@ void RTPIncomingSourceGroup::DispatchPackets(uint64_t time)
 		//We need to adjust the seq num due the in band probing packets
 		packet->SetExtSeqNum(packet->GetExtSeqNum() - packets.GetNumDiscardedPackets());
 		//Add to packets
-		ordered.push_back(packet);
+		ordered.emplace_back(std::move(packet));
 	}
 	
 	//If we have any rtp packets and we are not muted

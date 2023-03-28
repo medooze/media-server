@@ -1,6 +1,8 @@
 #include "rtp/RTPSource.h"
 
-RTPSource::RTPSource() : acumulator(1000),acumulatorPackets(1000)
+RTPSource::RTPSource() :
+	acumulator(1E3, 1E3, 1E3),
+	acumulatorPackets(1E3, 1E3, 1E3)
 {
 	ssrc		= 0;
 	extSeqNum	= 0;
@@ -90,4 +92,5 @@ void RTPSource::Reset()
 	clockrate	= 0;
 	//Reset accumulators
 	acumulator.Reset(0);
+	acumulatorPackets.Reset(0);
 }

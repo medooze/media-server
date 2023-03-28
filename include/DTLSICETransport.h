@@ -160,8 +160,6 @@ private:
 	};
 	
 private:
-	
-private:
 	Sender*		sender = nullptr;
 	TimeService&	timeService;
 	ObjectPool<Packet>& packetPool;
@@ -192,7 +190,6 @@ private:
 	char*	iceLocalUsername	= nullptr;
 	char*	iceLocalPwd		= nullptr;
 	
-	Acumulator<uint32_t, uint64_t> incomingBitrate;
 	Acumulator<uint32_t, uint64_t> outgoingBitrate;
 	Acumulator<uint32_t, uint64_t> rtxBitrate;
 	Acumulator<uint32_t, uint64_t> probingBitrate;

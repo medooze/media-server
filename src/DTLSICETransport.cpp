@@ -54,10 +54,9 @@ DTLSICETransport::DTLSICETransport(Sender *sender,TimeService& timeService, Obje
 	packetPool(packetPool),
 	endpoint(timeService),
 	dtls(*this,timeService,endpoint.GetTransport()),
-	incomingBitrate(250),
-	outgoingBitrate(250),
-	rtxBitrate(250),
-	probingBitrate(250),
+	outgoingBitrate(250, 1E3, 250),
+	rtxBitrate(250, 1E3, 250),
+	probingBitrate(250, 1E3, 250),
 	senderSideBandwidthEstimator(new SendSideBandwidthEstimation())
 {
 	Debug(">DTLSICETransport::DTLSICETransport() [this:%p]\n", this);
@@ -108,9 +107,6 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 	//Get current time
 	auto now = getTime();
 
-	//Acumulate bitrate
-	incomingBitrate.Update(now/1000,size);
-	
 	//Check if it a DTLS packet
 	if (DTLSConnection::IsDTLS(data,size))
 	{

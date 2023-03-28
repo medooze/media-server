@@ -73,10 +73,10 @@ private:
 	void UpdateKalman(int deltaTime, int deltaSize);
 private:
 	EvenSource *eventSource;
-	Acumulator<uint32_t, uint64_t> bitrateCalc;
-	Acumulator<uint32_t, uint64_t> fpsCalc;
-	Acumulator<uint32_t, uint64_t> packetCalc;
-	Acumulator<uint32_t, uint64_t> lostCalc;
+	MinMaxAcumulator<uint32_t, uint64_t> bitrateCalc;
+	MinMaxAcumulator<uint32_t, uint64_t> fpsCalc;
+	MinMaxAcumulator<uint32_t, uint64_t> packetCalc;
+	MinMaxAcumulator<uint32_t, uint64_t> lostCalc;
 	DWORD rtt;
 	DWORD absSendTimeCycles;
 	QWORD prevTS;
