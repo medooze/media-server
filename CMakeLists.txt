@@ -36,6 +36,10 @@ target_include_directories(MediaServerLib PUBLIC
 
 # Unit test executable
 add_executable(MediaServerUnitTest
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAccumulator.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestCircularBuffer.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestCircularQueue.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestMovingCounter.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestSimulcastMediaFrameListener.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestVP8Depacketizer.cpp
 )

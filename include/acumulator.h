@@ -54,10 +54,9 @@ public:
 			const auto& front = values.front();
 
 			//Check if value is in the time  window
-			if (front.timestamp > (now - window))
+			if (now < window || front.timestamp > (now - window))
 				//Stop removal
 				break;
-
 			//Ensure we don't overflow for unsigned types (should not happen)
 			if (!std::is_unsigned<T>::value || instant >= front.value)
 				//Remove from instant value
@@ -102,24 +101,22 @@ public:
 				back.value +=val;
 			} else {
 				//Insert new value
-				values.emplace_back(now, 0, val);
+				values.emplace_back(now, 1, val);
 			}
 		} else {
 			//Insert new value
-			values.emplace_back(now,0,val);
+			values.emplace_back(now, 1, val);
 		}
 		//Increase global window
 		count++;
-		//Erase old values
-		Update(now);
 		//If we do not have first
 		if (!first)
 			//This is first
 			first = now;
 		//Update last
 		last = now;
-		//Return accumulated value
-		return instant;
+		//Erase old values and Return accumulated value
+		return Update(now);
 	}
 
 	uint32_t GetCount() const
@@ -139,9 +136,9 @@ protected:
 			value(value)
 		{}
 		Value() = default;
-		uint64_t timestamp;
-		uint32_t count;
-		V	 value;
+		uint64_t timestamp = 0;
+		uint32_t count = 0;
+		V	 value = 0; 
 	};
 
 	CircularQueue<Value> values;
