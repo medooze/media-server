@@ -383,8 +383,6 @@ void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPP
 		//TODO: this should go into the layer selector??
 		if (codec==VideoCodec::VP8)
 		{
-			//Rewrite pict id
-			bool rewitePictureIds = false;
 			DWORD pictureId = 0;
 			DWORD temporalLevelZeroIndex = 0;
 
@@ -414,9 +412,6 @@ void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPP
 				}
 
 				pictureId = *picId;
-
-				//We may need to rewrite vp8 picture ids
-				rewitePictureIds = pictureId != desc.pictureId;
 
 				//Update ids
 				lastSrcPicId = desc.pictureId;
@@ -452,12 +447,11 @@ void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPP
 					//Update ids
 					lastSrcTl0PicIdx = desc.temporalLevelZeroIndex;
 				}
-
-				//We may need to rewrite vp8 picture ids
-				rewitePictureIds |= temporalLevelZeroIndex != desc.temporalLevelZeroIndex;
 			}
 
-			packet->rewitePictureIds = rewitePictureIds;
+			// Set if we need rewrite the picture ID or tl0 index
+			packet->rewitePictureIds = packet->vp8PayloadDescriptor->pictureId != pictureId ||
+			  						   packet->vp8PayloadDescriptor->temporalLevelZeroIndex != temporalLevelZeroIndex;
 
 			//Rewrite picture id
 			packet->vp8PayloadDescriptor->pictureId = pictureId;
