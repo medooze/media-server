@@ -80,7 +80,7 @@ public:
 	DWORD minWaitedTime	= 0;
 	DWORD maxWaitedTime	= 0;
 	long double avgWaitedTime = 0;
-	Acumulator<uint32_t, uint64_t> waited;
+	MinMaxAcumulator<uint32_t, uint64_t> waited;
 	volatile bool muted = false;
 };
 
