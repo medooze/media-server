@@ -380,73 +380,6 @@ void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPP
 
 		//UltraDebug("-ext seq:%lu base:%lu first:%lu current:%lu dropped:%lu added:%d ts:%lu normalized:%llu intra:%d codec=%d\n",extSeqNum,baseExtSeqNum,firstExtSeqNum,packet->GetExtSeqNum(),dropped,added,packet->GetTimestamp(),timestamp,packet->IsKeyFrame(),codec);
 
-		//Rewrite pict id
-		bool rewitePictureIds = false;
-		DWORD pictureId = 0;
-		DWORD temporalLevelZeroIndex = 0;
-		//TODO: this should go into the layer selector??
-		if (codec==VideoCodec::VP8)
-		{
-			if (!packet->vp8PayloadDescriptor)
-			{
-				UltraDebug("VP8 packet missing payload descriptor");
-				return;
-			}
-
-			//Get VP8 desc
-			auto desc = *packet->vp8PayloadDescriptor;
-
-			//Check if we have a new pictId
-			if (desc.pictureIdPresent)
-			{
-				if (desc.pictureId != lastSrcPicId)
-				{
-					//Update ids
-					lastSrcPicId = desc.pictureId;
-
-					if (!picId)
-					{
-						picId = desc.pictureId;
-					}
-					else
-					{
-						//Increase picture id
-						(*picId)++;
-					}
-				}
-
-				//We may need to rewrite vp8 picture ids
-				rewitePictureIds = *picId != desc.pictureId;
-			}
-
-			//Check if we a new base layer
-			if (desc.temporalLevelZeroIndexPresent && desc.temporalLevelZeroIndex!=lastTl0Idx)
-			{
-				//Update ids
-				lastTl0Idx = desc.temporalLevelZeroIndex;
-
-				if (!tl0Idx)
-				{
-					tl0Idx = desc.temporalLevelZeroIndex;
-				}
-				else
-				{
-					//Increase tl0 index
-					(*tl0Idx)++;
-					//We need to rewrite vp8 picture ids
-					rewitePictureIds = true;
-				}
-			}
-
-			//Rewrite picture id
-			if (picId) pictureId = *picId;
-
-			//Rewrite tl0 index
-			temporalLevelZeroIndex = *tl0Idx;
-
-			//Error("-ext seq:%lu pictureIdPresent:%d rewrite:%d pictId:%d lastPictId:%d origPictId:%d intra:%d mark:%d \n",extSeqNum, desc.pictureIdPresent, rewitePictureIds, pictureId, lastSrcPicId, packet->vp8PayloadDescriptor ? packet->vp8PayloadDescriptor->pictureId : -1, packet->IsKeyFrame(), packet->GetMark());
-		}
-
 		//If we have to append h264 sprop parameters set for the first packet of an iframe
 		if (h264Parameters && codec==VideoCodec::H264 && packet->IsKeyFrame() && (timestamp!=lastTimestamp || firstExtSeqNum==packet->GetExtSeqNum()))
 		{
@@ -480,6 +413,11 @@ void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPP
 		if (codec==VideoCodec::AV1)
 			//Get decode target
 			forwaredDecodeTargets = static_cast<DependencyDescriptorLayerSelector*>(selector.get())->GetForwardedDecodeTargets();
+
+		if (selector)
+		{
+			selector->UpdateSelectedPacketForSending(packet);
+		}
 
 		//Continous frame number
 		uint64_t continousFrameNumber = NoFrameNum;
@@ -529,16 +467,7 @@ void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPP
 		packet->SetMark(mark);
 		//Change ssrc
 		packet->SetSSRC(ssrc);
-		//We need to rewrite vp8 picture ids
-		packet->rewitePictureIds = rewitePictureIds;
-		//Ensure we have desc
-		if (packet->vp8PayloadDescriptor)
-		{
-			//Rewrite picture id
-			packet->vp8PayloadDescriptor->pictureId = pictureId;
-			//Rewrite tl0 index
-			packet->vp8PayloadDescriptor->temporalLevelZeroIndex = temporalLevelZeroIndex;
-		}
+
 		//If it has a dependency descriptor
 		if (forwaredDecodeTargets && packet->HasTemplateDependencyStructure())
 			//Override mak

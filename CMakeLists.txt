@@ -19,13 +19,16 @@ add_subdirectory(ext/googletest)
 # Media server lib
 add_library(MediaServerLib
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/DependencyDescriptor.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtp/LayerInfo.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPDepacketizer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPHeader.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPHeaderExtension.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPPacket.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPPayload.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/SimulcastMediaFrameListener.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/VideoLayerSelector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/vp8/vp8depacketizer.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/vp8/VP8LayerSelector.cpp
 )
 
 target_include_directories(MediaServerLib PUBLIC
@@ -38,6 +41,7 @@ target_include_directories(MediaServerLib PUBLIC
 add_executable(MediaServerUnitTest
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestSimulcastMediaFrameListener.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestVP8Depacketizer.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestVP8LayerSelector.cpp
 )
 
 target_link_libraries(MediaServerUnitTest

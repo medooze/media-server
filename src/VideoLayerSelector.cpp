@@ -13,11 +13,11 @@ public:
 	{
 		this->codec = codec;
 	}
-	
+
 	void SelectTemporalLayer(BYTE id) override {};
 	void SelectSpatialLayer(BYTE id) override {};
-	
-	bool Select(const RTPPacket::shared& packet,bool &mark)	override 
+
+	bool Select(const RTPPacket::shared& packet,bool &mark)	override
 	{
 		mark = packet->GetMark();
 		return true;
@@ -26,9 +26,10 @@ public:
 	BYTE GetTemporalLayer() const override { return LayerInfo::MaxLayerId;  }
 	BYTE GetSpatialLayer()	const override { return LayerInfo::MaxLayerId;  }
 	VideoCodec::Type GetCodec()	const override { return codec; }
+	void UpdateSelectedPacketForSending(RTPPacket::shared packet) override {};
 private:
 	VideoCodec::Type codec;
-	
+
 };
 
 VideoLayerSelector* VideoLayerSelector::Create(VideoCodec::Type codec)

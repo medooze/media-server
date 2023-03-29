@@ -12,12 +12,13 @@ public:
 	virtual void SelectTemporalLayer(BYTE id) = 0;
 	virtual void SelectSpatialLayer(BYTE id) = 0;
 	virtual bool Select(const RTPPacket::shared& packet,bool &mark) = 0;
-	
+
 	virtual BYTE GetTemporalLayer()		const = 0;
 	virtual BYTE GetSpatialLayer()		const = 0;
 	virtual VideoCodec::Type GetCodec()	const = 0;
 	virtual bool IsWaitingForIntra()	const = 0;
-	
+
+	virtual void UpdateSelectedPacketForSending(RTPPacket::shared packet) = 0;
 public:
 	//Factory method
 	static VideoLayerSelector* Create(VideoCodec::Type codec);
@@ -26,4 +27,3 @@ public:
 };
 
 #endif /* VIDEOLAYERSELECTOR_H */
-

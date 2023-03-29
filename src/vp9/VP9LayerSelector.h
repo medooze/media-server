@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-/* 
+/*
  * File:   VP9LayerSelector.h
  * Author: Sergio
  *
@@ -24,14 +24,15 @@ public:
 	virtual ~VP9LayerSelector() = default;
 	void SelectTemporalLayer(BYTE id)		override;
 	void SelectSpatialLayer(BYTE id)		override;
-	
+
 	bool Select(const RTPPacket::shared& packet,bool &mark)	override;
-	
+
 	BYTE GetTemporalLayer()		const override { return temporalLayerId;	}
 	BYTE GetSpatialLayer()		const override { return spatialLayerId;		}
 	VideoCodec::Type GetCodec()	const override { return VideoCodec::VP9;	}
 	bool IsWaitingForIntra()	const override { return false;			}
-	
+	void UpdateSelectedPacketForSending(RTPPacket::shared packet) override {};
+
 	static std::vector<LayerInfo> GetLayerIds(const RTPPacket::shared& packet);
 private:
 	bool waitingForIntra = true;
@@ -42,4 +43,3 @@ private:
 };
 
 #endif /* VP9LAYERSELECTOR_H */
-
