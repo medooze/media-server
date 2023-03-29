@@ -87,10 +87,11 @@ private:
 	volatile BYTE spatialLayerId		= LayerInfo::MaxLayerId;
 	volatile BYTE temporalLayerId		= LayerInfo::MaxLayerId;
 	volatile BYTE lastSpatialLayerId	= LayerInfo::MaxLayerId;
-	WORD lastSrcPicId		= 0;
-	WORD lastTl0Idx		= 0;
-	std::optional<QWORD> picId;
-	std::optional<WORD> tl0Idx;
+	uint16_t lastSrcPicId		= 0;
+	uint8_t lastSrcTl0PicIdx		= 0;
+	std::optional<uint16_t> picId;
+	std::optional<uint8_t> tl0PicIdx;
+	int tl0PicIdxOffset = 0;
 	QWORD lastSentPLI	= 0;
 	bool intraOnlyForwarding		= false;
 

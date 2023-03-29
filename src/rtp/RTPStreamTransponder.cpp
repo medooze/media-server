@@ -380,13 +380,14 @@ void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPP
 
 		//UltraDebug("-ext seq:%lu base:%lu first:%lu current:%lu dropped:%lu added:%d ts:%lu normalized:%llu intra:%d codec=%d\n",extSeqNum,baseExtSeqNum,firstExtSeqNum,packet->GetExtSeqNum(),dropped,added,packet->GetTimestamp(),timestamp,packet->IsKeyFrame(),codec);
 
-		//Rewrite pict id
-		bool rewitePictureIds = false;
-		DWORD pictureId = 0;
-		DWORD temporalLevelZeroIndex = 0;
 		//TODO: this should go into the layer selector??
 		if (codec==VideoCodec::VP8)
 		{
+			//Rewrite pict id
+			bool rewitePictureIds = false;
+			DWORD pictureId = 0;
+			DWORD temporalLevelZeroIndex = 0;
+
 			if (!packet->vp8PayloadDescriptor)
 			{
 				UltraDebug("VP8 packet missing payload descriptor");
@@ -399,11 +400,8 @@ void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPP
 			//Check if we have a new pictId
 			if (desc.pictureIdPresent)
 			{
-				if (desc.pictureId != lastSrcPicId)
+				if (desc.pictureId != lastSrcPicId || !picId)
 				{
-					//Update ids
-					lastSrcPicId = desc.pictureId;
-
 					if (!picId)
 					{
 						picId = desc.pictureId;
@@ -415,34 +413,56 @@ void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPP
 					}
 				}
 
+				pictureId = *picId;
+
 				//We may need to rewrite vp8 picture ids
-				rewitePictureIds = *picId != desc.pictureId;
+				rewitePictureIds = pictureId != desc.pictureId;
+
+				//Update ids
+				lastSrcPicId = desc.pictureId;
 			}
 
-			//Check if we a new base layer
-			if (desc.temporalLevelZeroIndexPresent && desc.temporalLevelZeroIndex!=lastTl0Idx)
+			//Check if we have a new base layer
+			if (desc.temporalLevelZeroIndexPresent)
 			{
-				//Update ids
-				lastTl0Idx = desc.temporalLevelZeroIndex;
-
-				if (!tl0Idx)
+				if (desc.temporalLayerIndexPresent && desc.temporalLayerIndex != 0)
 				{
-					tl0Idx = desc.temporalLevelZeroIndex;
+					// If it is not a base layer, apply the pic id offset
+					temporalLevelZeroIndex = uint8_t(int(desc.temporalLevelZeroIndex) + tl0PicIdxOffset);
 				}
 				else
 				{
-					//Increase tl0 index
-					(*tl0Idx)++;
-					//We need to rewrite vp8 picture ids
-					rewitePictureIds = true;
+					if (desc.temporalLevelZeroIndex!=lastSrcTl0PicIdx || !tl0PicIdx)
+					{
+						if (!tl0PicIdx)
+						{
+							tl0PicIdx = desc.temporalLevelZeroIndex;
+						}
+						else
+						{
+							//Increase tl0 index
+							(*tl0PicIdx)++;
+						}
+					}
+
+					tl0PicIdxOffset = int(*tl0PicIdx) - int(desc.temporalLevelZeroIndex);
+
+					temporalLevelZeroIndex = *tl0PicIdx;
+
+					//Update ids
+					lastSrcTl0PicIdx = desc.temporalLevelZeroIndex;
 				}
+
+				//We may need to rewrite vp8 picture ids
+				rewitePictureIds |= temporalLevelZeroIndex != desc.temporalLevelZeroIndex;
 			}
 
-			//Rewrite picture id
-			if (picId) pictureId = *picId;
+			packet->rewitePictureIds = rewitePictureIds;
 
+			//Rewrite picture id
+			packet->vp8PayloadDescriptor->pictureId = pictureId;
 			//Rewrite tl0 index
-			temporalLevelZeroIndex = *tl0Idx;
+			packet->vp8PayloadDescriptor->temporalLevelZeroIndex = temporalLevelZeroIndex;
 
 			//Error("-ext seq:%lu pictureIdPresent:%d rewrite:%d pictId:%d lastPictId:%d origPictId:%d intra:%d mark:%d \n",extSeqNum, desc.pictureIdPresent, rewitePictureIds, pictureId, lastSrcPicId, packet->vp8PayloadDescriptor ? packet->vp8PayloadDescriptor->pictureId : -1, packet->IsKeyFrame(), packet->GetMark());
 		}
@@ -529,16 +549,7 @@ void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPP
 		packet->SetMark(mark);
 		//Change ssrc
 		packet->SetSSRC(ssrc);
-		//We need to rewrite vp8 picture ids
-		packet->rewitePictureIds = rewitePictureIds;
-		//Ensure we have desc
-		if (packet->vp8PayloadDescriptor)
-		{
-			//Rewrite picture id
-			packet->vp8PayloadDescriptor->pictureId = pictureId;
-			//Rewrite tl0 index
-			packet->vp8PayloadDescriptor->temporalLevelZeroIndex = temporalLevelZeroIndex;
-		}
+
 		//If it has a dependency descriptor
 		if (forwaredDecodeTargets && packet->HasTemplateDependencyStructure())
 			//Override mak
