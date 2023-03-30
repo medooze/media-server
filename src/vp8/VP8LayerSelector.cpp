@@ -97,11 +97,6 @@ bool VP8LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 
 void VP8LayerSelector::UpdateSelectedPacketForSending(RTPPacket::shared packet)
 {
-	//Rewrite pict id
-	bool rewitePictureIds = false;
-	uint16_t pictureId = 0;
-	uint8_t temporalLevelZeroIndex = 0;
-
 	if (!packet->vp8PayloadDescriptor)
 	{
 		UltraDebug("VP8 packet missing payload descriptor");
@@ -112,6 +107,7 @@ void VP8LayerSelector::UpdateSelectedPacketForSending(RTPPacket::shared packet)
 	auto desc = *packet->vp8PayloadDescriptor;
 
 	//Check if we have a new pictId
+	uint16_t pictureId = 0;
 	if (desc.pictureIdPresent)
 	{
 		if (desc.pictureId != lastSrcPicId || !picId)
@@ -129,14 +125,12 @@ void VP8LayerSelector::UpdateSelectedPacketForSending(RTPPacket::shared packet)
 
 		pictureId = *picId;
 
-		//We may need to rewrite vp8 picture ids
-		rewitePictureIds = pictureId != desc.pictureId;
-
 		//Update ids
 		lastSrcPicId = desc.pictureId;
 	}
 
 	//Check if we have a new base layer
+	uint8_t temporalLevelZeroIndex = 0;
 	if (desc.temporalLevelZeroIndexPresent)
 	{
 		if (desc.temporalLayerIndexPresent && desc.temporalLayerIndex != 0)
@@ -166,19 +160,18 @@ void VP8LayerSelector::UpdateSelectedPacketForSending(RTPPacket::shared packet)
 			//Update ids
 			lastSrcTl0PicIdx = desc.temporalLevelZeroIndex;
 		}
-
-		//We may need to rewrite vp8 picture ids
-		rewitePictureIds |= temporalLevelZeroIndex != desc.temporalLevelZeroIndex;
 	}
 
-	packet->rewitePictureIds = rewitePictureIds;
+	if (pictureId != packet->vp8PayloadDescriptor->pictureId ||
+	    temporalLevelZeroIndex != packet->vp8PayloadDescriptor->temporalLevelZeroIndex)
+	{
+		packet->rewitePictureIds = true;
 
-	//Rewrite picture id
-	packet->vp8PayloadDescriptor->pictureId = pictureId;
-	//Rewrite tl0 index
-	packet->vp8PayloadDescriptor->temporalLevelZeroIndex = temporalLevelZeroIndex;
-
-	//Error("-ext seq:%lu pictureIdPresent:%d rewrite:%d pictId:%d lastPictId:%d origPictId:%d intra:%d mark:%d \n",extSeqNum, desc.pictureIdPresent, rewitePictureIds, pictureId, lastSrcPicId, packet->vp8PayloadDescriptor ? packet->vp8PayloadDescriptor->pictureId : -1, packet->IsKeyFrame(), packet->GetMark());
+		//Rewrite picture id
+		packet->vp8PayloadDescriptor->pictureId = pictureId;
+		//Rewrite tl0 index
+		packet->vp8PayloadDescriptor->temporalLevelZeroIndex = temporalLevelZeroIndex;
+	}
 }
 
 std::vector<LayerInfo> VP8LayerSelector::GetLayerIds(const RTPPacket::shared& packet)
