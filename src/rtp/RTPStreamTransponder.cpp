@@ -381,84 +381,84 @@ void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPP
 		//UltraDebug("-ext seq:%lu base:%lu first:%lu current:%lu dropped:%lu added:%d ts:%lu normalized:%llu intra:%d codec=%d\n",extSeqNum,baseExtSeqNum,firstExtSeqNum,packet->GetExtSeqNum(),dropped,added,packet->GetTimestamp(),timestamp,packet->IsKeyFrame(),codec);
 
 		//TODO: this should go into the layer selector??
-		if (codec==VideoCodec::VP8)
+		if (codec==VideoCodec::VP8 && packet->vp8PayloadDescriptor)
 		{
-			DWORD pictureId = 0;
-			DWORD temporalLevelZeroIndex = 0;
+			//Get VP8 description
+			auto& vp8PayloadDescriptor = *packet->vp8PayloadDescriptor;
 
-			if (!packet->vp8PayloadDescriptor)
+			//Check if we have a pictId
+			if (vp8PayloadDescriptor.pictureIdPresent)
 			{
-				UltraDebug("VP8 packet missing payload descriptor");
-				return;
-			}
-
-			//Get VP8 desc
-			auto desc = *packet->vp8PayloadDescriptor;
-
-			//Check if we have a new pictId
-			if (desc.pictureIdPresent)
-			{
-				if (desc.pictureId != lastSrcPicId || !picId)
+				//If we have not received any yet
+				if (!pictureId)
 				{
-					if (!picId)
-					{
-						picId = desc.pictureId;
-					}
-					else
-					{
-						//Increase picture id
-						(*picId)++;
-					}
+					//Use current as starting point
+					pictureId = vp8PayloadDescriptor.pictureId;
+					
+				} 
+				//If picture id is different than last received one
+				else if (vp8PayloadDescriptor.pictureId != lastSrcPictureId)
+				{
+					//Increase picture id
+					(*pictureId)++;
 				}
 
-				pictureId = *picId;
-
-				//Update ids
-				lastSrcPicId = desc.pictureId;
+				//Update last received pict id
+				lastSrcPictureId = vp8PayloadDescriptor.pictureId;
 			}
 
 			//Check if we have a new base layer
-			if (desc.temporalLevelZeroIndexPresent)
+			if (vp8PayloadDescriptor.temporalLevelZeroIndexPresent)
 			{
-				if (desc.temporalLayerIndexPresent && desc.temporalLayerIndex != 0)
+				/*
+				 * TL0PICIDX:  8 bits temporal level zero index.TL0PICIDX is a
+				 * running index for the temporal base layer frames, i.e., the
+				 * frames with TID set to 0.  If TID is larger than 0, TL0PICIDX
+				 * indicates on which base - layer frame the current image depends.
+				 * TL0PICIDX MUST be incremented when TID is 0.  The index MAY
+				 * start at a random value, and it MUST wrap to 0 after reaching
+				 * the maximum number 255.  Use of TL0PICIDX depends on the
+				 * presence of TID.Therefore, it is RECOMMENDED that the TID be
+				 * used whenever TL0PICIDX is.
+				*/
+
+				//Check if it is the base temporal layer
+				if (vp8PayloadDescriptor.temporalLayerIndex == 0)
 				{
-					// If it is not a base layer, apply the pic id offset
-					temporalLevelZeroIndex = uint8_t(int(desc.temporalLevelZeroIndex) + tl0PicIdxOffset);
-				}
-				else
-				{
-					if (desc.temporalLevelZeroIndex!=lastSrcTl0PicIdx || !tl0PicIdx)
+					// If we have not received any tl0 index yet
+					if (!temporalLevelZeroIndex)
 					{
-						if (!tl0PicIdx)
-						{
-							tl0PicIdx = desc.temporalLevelZeroIndex;
-						}
-						else
-						{
-							//Increase tl0 index
-							(*tl0PicIdx)++;
-						}
+						//Use current as starting point
+						temporalLevelZeroIndex = vp8PayloadDescriptor.temporalLevelZeroIndex;
+					}
+					//If it is different than last received tl0 index
+					else if (vp8PayloadDescriptor.temporalLevelZeroIndex != lastSrcTemporalLevelZeroIndex)
+					{
+						//Increase tl0 index
+						(*temporalLevelZeroIndex)++;
 					}
 
-					tl0PicIdxOffset = int(*tl0PicIdx) - int(desc.temporalLevelZeroIndex);
-
-					temporalLevelZeroIndex = *tl0PicIdx;
-
-					//Update ids
-					lastSrcTl0PicIdx = desc.temporalLevelZeroIndex;
+					//Update last received tl0 index
+					lastSrcTemporalLevelZeroIndex = vp8PayloadDescriptor.temporalLevelZeroIndex;
 				}
+
 			}
 
 			// Set if we need rewrite the picture ID or tl0 index
-			packet->rewitePictureIds = packet->vp8PayloadDescriptor->pictureId != pictureId ||
-			  						   packet->vp8PayloadDescriptor->temporalLevelZeroIndex != temporalLevelZeroIndex;
+			if (temporalLevelZeroIndex && pictureId && 
+				( vp8PayloadDescriptor.pictureId != *pictureId || vp8PayloadDescriptor.temporalLevelZeroIndex != *temporalLevelZeroIndex)
+			)
+			{
+				//Rewrite ids
+				packet->rewitePictureIds = true;
 
-			//Rewrite picture id
-			packet->vp8PayloadDescriptor->pictureId = pictureId;
-			//Rewrite tl0 index
-			packet->vp8PayloadDescriptor->temporalLevelZeroIndex = temporalLevelZeroIndex;
+				//Rewrite picture id
+				vp8PayloadDescriptor.pictureId = *pictureId;
+				//Rewrite tl0 index
+				vp8PayloadDescriptor.temporalLevelZeroIndex = *temporalLevelZeroIndex;
+			}
 
-			//Error("-ext seq:%lu pictureIdPresent:%d rewrite:%d pictId:%d lastPictId:%d origPictId:%d intra:%d mark:%d \n",extSeqNum, desc.pictureIdPresent, rewitePictureIds, pictureId, lastSrcPicId, packet->vp8PayloadDescriptor ? packet->vp8PayloadDescriptor->pictureId : -1, packet->IsKeyFrame(), packet->GetMark());
+			//Error("-ext seq:%lu pictureIdPresent:%d rewrite:%d pictId:%d lastPictId:%d origPictId:%d intra:%d mark:%d \n",extSeqNum, vp8PayloadDescriptor.pictureIdPresent, packet->rewitePictureIds, *pictureId, lastSrcPicId, vp8PayloadDescriptor.pictureId : -1, packet->IsKeyFrame(), packet->GetMark());
 		}
 
 		//If we have to append h264 sprop parameters set for the first packet of an iframe
