@@ -104,7 +104,6 @@ private:
 
 	RTPPacket::shared	h264Parameters;
 	
-	friend class TestRTPStreamTransponder;
 };
 
 #endif /* RTPSTREAMTRANSPONDER_H */

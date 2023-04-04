@@ -51,8 +51,9 @@ public:
         startPicId(GetParam().first),
         startTl0PicId(GetParam().second)
     {
-        transponder.incoming = stream;
-        
+        //Empty receiver
+        RTPReceiver::shared receiver;
+        transponder.SetIncoming(stream, receiver);
         transponder.SelectLayer(0, 1);
     };
 
