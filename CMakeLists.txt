@@ -18,14 +18,28 @@ add_subdirectory(ext/googletest)
 
 # Media server lib
 add_library(MediaServerLib
+    ${CMAKE_CURRENT_LIST_DIR}/src/DependencyDescriptorLayerSelector.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/h264/H264LayerSelector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/DependencyDescriptor.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtp/LayerInfo.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTCPCommonHeader.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTCPPacket.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTCPSenderReport.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPDepacketizer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPHeader.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPHeaderExtension.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPOutgoingSource.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPOutgoingSourceGroup.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPPacket.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPPayload.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPSource.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPStreamTransponder.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/SimulcastMediaFrameListener.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/VideoLayerSelector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/vp8/vp8depacketizer.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/vp8/VP8LayerSelector.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/vp9/VP9LayerSelector.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/vp9/VP9PayloadDescription.cpp
 )
 
 target_include_directories(MediaServerLib PUBLIC
@@ -40,6 +54,7 @@ add_executable(MediaServerUnitTest
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestCircularBuffer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestCircularQueue.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestMovingCounter.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestRTPStreamTransponder.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestSimulcastMediaFrameListener.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestVP8Depacketizer.cpp
 )

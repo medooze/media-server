@@ -1,29 +1,12 @@
 #include "vp8/vp8depacketizer.h"
-#include "TestCommon.h"
+#include "VP8TestBase.h"
 
 #include <limits>
 #include <memory>
 
-class TestVP8Depacketizer : public ::testing::Test
+class TestVP8Depacketizer : public VP8TestBase
 {
 public:
-
-    static constexpr uint32_t TEST_SSRC = 0x1234;
-
-    std::shared_ptr<RTPPacket> StartPacket(uint64_t tm, uint8_t pid)
-    {
-        return CreatePacket(tm, currentSeqNum++, true, pid, false);
-    }
-
-    std::shared_ptr<RTPPacket> MiddlePacket(uint64_t tm,  uint8_t pid)
-    {
-        return CreatePacket(tm, currentSeqNum++, false, pid, false);
-    }
-
-    std::shared_ptr<RTPPacket> MarkerPacket(uint64_t tm, uint8_t pid)
-    {
-        return CreatePacket(tm, currentSeqNum++, false, pid, true);
-    }
 
     MediaFrame* Add(std::shared_ptr<RTPPacket> packet)
     {
@@ -32,30 +15,7 @@ public:
 
 protected:
 
-    std::shared_ptr<RTPPacket> CreatePacket(uint64_t tm, uint32_t seqnum, bool startOfPartition, uint8_t pid, bool mark)
-    {
-        std::shared_ptr<RTPPacket> packet = std::make_shared<RTPPacket>(MediaFrame::Type::Video, VideoCodec::VP8);
-
-        packet->SetExtTimestamp(tm);
-        packet->SetSSRC(TEST_SSRC);
-        packet->SetExtSeqNum(seqnum);
-        packet->SetMark(mark);
-
-        constexpr size_t BufferSize = 1024;
-        unsigned char buffer[BufferSize];
-        memset(buffer, 0, BufferSize);
-
-        VP8PayloadDescriptor desc(startOfPartition, pid);
-        auto len = desc.Serialize(buffer, BufferSize);
-        packet->SetPayload(buffer, BufferSize);
-        packet->AdquireMediaData();
-
-        return packet;
-    }
-
     VP8Depacketizer depacketizer;
-
-    uint32_t currentSeqNum = 0;
 };
 
 TEST_F(TestVP8Depacketizer, NormalPackets)
