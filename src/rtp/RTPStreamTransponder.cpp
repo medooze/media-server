@@ -168,17 +168,10 @@ void RTPStreamTransponder::Close()
 }
 
 
-void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPPacket::shared& packet)
+std::future<void> RTPStreamTransponder::onRTPImpl(const RTPIncomingMediaStream* stream,const RTPPacket::shared& packet)
 {
-	//Trace method
-	TRACE_EVENT("rtp","RTPStreamTransponder::onRTP", "ssrc", packet->GetSSRC(), "seqnum", packet->GetSeqNum());
-
-	if (!packet)
-		//Exit
-		return;
-
 	//Run async
-	timeService.Async([=, packet = packet->Clone()](auto now){
+	return timeService.Async([=, packet = packet->Clone()](auto now){
 
 		//If it is from the next transitioning stream
 		if (stream == incomingNext.get())
@@ -558,6 +551,18 @@ void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPP
 			//Enqueue it
 			sender->Enqueue(packet);
 	});
+}
+
+void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPPacket::shared& packet)
+{
+	//Trace method
+	TRACE_EVENT("rtp","RTPStreamTransponder::onRTP", "ssrc", packet->GetSSRC(), "seqnum", packet->GetSeqNum());
+
+	if (!packet)
+		//Exit
+		return;
+	
+	(void)onRTPImpl(stream, packet);
 }
 
 void RTPStreamTransponder::onBye(const RTPIncomingMediaStream* stream)

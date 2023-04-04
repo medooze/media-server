@@ -34,6 +34,7 @@ public:
 	bool SetIncoming(const RTPIncomingMediaStream::shared& incoming, const RTPReceiver::shared& receiver, bool smooth = false);
 	bool AppendH264ParameterSets(const std::string& sprop);
 	void Close();
+	std::future<void> onRTPImpl(const RTPIncomingMediaStream* stream, const RTPPacket::shared& packet);
 
 	// RTPIncomingMediaStream::Listener interface
 	virtual void onRTP(const RTPIncomingMediaStream* stream, const RTPPacket::shared& packet) override;
@@ -103,6 +104,8 @@ private:
 	uint64_t lastFrameNumber	= NoFrameNum;
 
 	RTPPacket::shared	h264Parameters;
+	
+	friend class TestRTPStreamTransponder;
 };
 
 #endif /* RTPSTREAMTRANSPONDER_H */
