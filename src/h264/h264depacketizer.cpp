@@ -374,7 +374,7 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 
 void H264Depacketizer::FinalizeFrame()
 {
-	// Use config from current frame. Otherwise, use previously applied config
+	// Use config from current frame if available. Otherwise, use previously applied config if it is available.
 	if (config.GetNumOfPictureParameterSets() && config.GetNumOfSequenceParameterSets())
 	{
 		appliedConfig = config;
