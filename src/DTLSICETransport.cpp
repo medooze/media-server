@@ -1540,8 +1540,8 @@ int DTLSICETransport::SetRemoteCryptoDTLS(const char *setup,const char *hash,con
 
 	//Starting
 	SetState(DTLSState::Connecting);
-	//Init DTLS
-	return dtls.Init();
+	//Ok
+	return 1;
 }
 
 int DTLSICETransport::SetRemoteCryptoSDES(const char* suite, const BYTE* key, const DWORD len)
@@ -2663,6 +2663,9 @@ void DTLSICETransport::Start()
 
 	Debug("-DTLSICETransport::Start()\n");
 	
+	//Init DTLS
+	dtls.Init();
+
 	//Get init time
 	initTime = getTime();
 	dcOptions.localPort = 5000;
