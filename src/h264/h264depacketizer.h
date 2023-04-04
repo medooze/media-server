@@ -20,11 +20,10 @@ public:
 	virtual MediaFrame* AddPayload(const BYTE* payload,DWORD payload_len) override;
 	virtual void ResetFrame() override;
 	virtual void FinalizeFrame() override;
-
-	void ResetFrameImpl(bool resetConfig);
 private:
 	VideoFrame frame;
 	AVCDescriptor config;
+	AVCDescriptor appliedConfig;
 	DWORD iniFragNALU = 0;
 	bool startedFrag = false;
 	bool annexB = false;

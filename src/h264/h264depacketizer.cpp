@@ -29,7 +29,15 @@ H264Depacketizer::~H264Depacketizer()
 
 void H264Depacketizer::ResetFrame()
 {
-	ResetFrameImpl(true);
+	//Clear packetization info
+	frame.Reset();
+
+	//Clear config for current frame
+	config.ClearSequenceParameterSets();
+	config.ClearPictureParameterSets();
+	//No fragments
+	iniFragNALU = 0;
+	startedFrag = false;
 }
 
 MediaFrame* H264Depacketizer::AddPacket(const RTPPacket::shared& packet)
@@ -324,7 +332,6 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 					config.SetAVCLevelIndication(nalData[2]);
 					config.SetNALUnitLength(sizeof(nalHeader)-1);
 
-					config.ClearSequenceParameterSets();
 					//Add full nal to config
 					config.AddSequenceParameterSet(payload,nalSize);
 
@@ -341,7 +348,6 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 					//Consider it intra also
 					frame.SetIntra(true);
 
-					config.ClearPictureParameterSets();
 					//Add full nal to config
 					config.AddPictureParameterSet(payload,nalSize);
 					break;
@@ -368,25 +374,18 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 
 void H264Depacketizer::FinalizeFrame()
 {
-	if (!config.GetNumOfPictureParameterSets() || !config.GetNumOfSequenceParameterSets()) return;
+	// Use config from current frame. Otherwise, use previously applied config
+	if (config.GetNumOfPictureParameterSets() && config.GetNumOfSequenceParameterSets())
+	{
+		appliedConfig = config;
+	} 
+	else if (!appliedConfig.GetNumOfPictureParameterSets() || !appliedConfig.GetNumOfSequenceParameterSets())
+	{
+		return;
+	}
 
 	//Set config size
-	frame.AllocateCodecConfig(config.GetSize());
+	frame.AllocateCodecConfig(appliedConfig.GetSize());
 	//Serialize
-	config.Serialize(frame.GetCodecConfigData(),frame.GetCodecConfigSize());
-}
-
-void H264Depacketizer::ResetFrameImpl(bool resetConfig)
-{
-	//Clear packetization info
-	frame.Reset();
-	if (resetConfig)
-	{
-		//Clear config
-		config.ClearSequenceParameterSets();
-		config.ClearPictureParameterSets();
-	}
-	//No fragments
-	iniFragNALU = 0;
-	startedFrag = false;
+	appliedConfig.Serialize(frame.GetCodecConfigData(),frame.GetCodecConfigSize());
 }
