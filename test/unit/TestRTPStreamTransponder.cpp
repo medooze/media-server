@@ -58,7 +58,7 @@ public:
 
     void Add(std::shared_ptr<RTPPacket> packet, uint16_t expectedPicId, uint16_t expectedTl0PicIdx)
     {
-        transponder.onRTPImpl(stream.get(), packet).wait();
+        transponder.onRTP(stream.get(), packet);
         ASSERT_EQ(expectedPicId, sender->GetLastPacket()->vp8PayloadDescriptor->pictureId);
         ASSERT_EQ(expectedTl0PicIdx, sender->GetLastPacket()->vp8PayloadDescriptor->temporalLevelZeroIndex);
     }

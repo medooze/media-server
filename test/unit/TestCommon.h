@@ -32,7 +32,8 @@ public:
 
 	virtual std::future<void> Async(std::function<void(std::chrono::milliseconds)> func) override
 	{
-		return std::async(std::launch::deferred, [=](){ func(std::chrono::milliseconds()); });
+		func(std::chrono::milliseconds());
+		return std::async(std::launch::deferred, [](){});
 	}
 };
 
