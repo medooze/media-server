@@ -93,7 +93,7 @@ void MediaFrameListenerBridge::RemoveListener(RTPIncomingMediaStream::Listener* 
 	});
 }
 
-void MediaFrameListenerBridge::onMediaFrame(const MediaFrame& frame)
+void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& frame)
 {
 	timeService.Async([=, frame = std::shared_ptr<MediaFrame>(frame.Clone())] (auto now){
 		
