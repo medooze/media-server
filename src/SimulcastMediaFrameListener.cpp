@@ -33,7 +33,14 @@ void SimulcastMediaFrameListener::AddMediaListener(const MediaFrame::Listener::s
 	Debug("-MediaFrameListenerBridge::AddListener() [this:%p,listener:%p]\n", this, listener.get());
 
 	timeService.Sync([=](std::chrono::milliseconds){
+		//Add listener to set
 		listeners.insert(listener);
+		//If it is first listener
+		if (listeners.size()==1)
+			//For all producers
+			for (auto& producer : producers)
+				//Add us as listener to producer
+				producer->AddMediaListener(shared_from_this());
 	});
 }
 
@@ -41,7 +48,36 @@ void SimulcastMediaFrameListener::RemoveMediaListener(const MediaFrame::Listener
 {
 	Debug("-MediaFrameListenerBridge::RemoveListener() [this:%p,listener:%p]\n", this, listener.get());
 	timeService.Sync([=](std::chrono::milliseconds){
+		//Remove listener
 		listeners.erase(listener);
+		//If it was the last listener
+		if (listeners.empty())
+			//For all producers
+			for (auto& producer : producers)
+				//Remove us as listener to producer
+				producer->RemoveMediaListener(shared_from_this());
+	});
+}
+
+void SimulcastMediaFrameListener::AttachTo(const MediaFrame::Producer::shared& producer)
+{
+	Debug("-MediaFrameListenerBridge::AttachTo() [this:%p,producer:%p]\n", this, producer.get());
+
+	timeService.Sync([=](std::chrono::milliseconds) {
+		//Add producer
+		producers.insert(producer);
+		//If we have any listener
+		if (!listeners.empty())
+			//Add us as listener to producer
+			producer->AddMediaListener(shared_from_this());
+	});
+}
+
+void SimulcastMediaFrameListener::Detach(const MediaFrame::Producer::shared& producer)
+{
+	Debug("-MediaFrameListenerBridge::Detach() [this:%p,producer:%p]\n", this, producer.get());
+	timeService.Sync([=](std::chrono::milliseconds) {
+		producers.erase(producer);
 	});
 }
 
@@ -50,9 +86,13 @@ void SimulcastMediaFrameListener::Stop()
 	timeService.Sync([this](std::chrono::milliseconds) {
 		// Store remaining
 		Flush();
-
-		//Clear listeners
+		//For all producers
+		for (auto& producer : producers)
+			//Remove us as listener to producer
+			producer->RemoveMediaListener(shared_from_this());
+		//Clear listeners and producers
 		listeners.clear();
+		producers.clear();
 	});
 }
 

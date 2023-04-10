@@ -13,18 +13,28 @@
 #include <unordered_map>
 
 class SimulcastMediaFrameListener :
-	public MediaFrame::Listener
+	public MediaFrame::Listener,
+	public MediaFrame::Producer,
+	public std::enable_shared_from_this<MediaFrame::Listener>
+
 {
 public:
 	SimulcastMediaFrameListener(TimeService& timeService,DWORD ssrc, DWORD numLayers);
 	virtual ~SimulcastMediaFrameListener();
 
 	void SetNumLayers(DWORD numLayers);
-	void AddMediaListener(const MediaFrame::Listener::shared& listener);
-	void RemoveMediaListener(const MediaFrame::Listener::shared& listener);
 
-	virtual void onMediaFrame(const MediaFrame& frame) { onMediaFrame(0, frame); }
-	virtual void onMediaFrame(DWORD ssrc, const MediaFrame& frame);
+	//MediaFrame::Producer interface
+	virtual void AddMediaListener(const MediaFrame::Listener::shared& listener) override;
+	virtual void RemoveMediaListener(const MediaFrame::Listener::shared& listener) override;
+
+	//MediaFrame::Listener interface
+	virtual void onMediaFrame(const MediaFrame& frame) override { onMediaFrame(0, frame); };
+	virtual void onMediaFrame(DWORD ssrc, const MediaFrame& frame) override;
+
+
+	void AttachTo(const MediaFrame::Producer::shared& producer);
+	void Detach(const MediaFrame::Producer::shared& producer);
 
 	void Stop();
 
@@ -38,6 +48,7 @@ private:
 	TimeService& timeService;
 	DWORD forwardSsrc = 0;
 	std::unordered_set<MediaFrame::Listener::shared> listeners;
+	std::unordered_set<MediaFrame::Producer::shared> producers;
 
 	uint32_t numLayers = 0;
 	uint32_t maxQueueSize = 0;

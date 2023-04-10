@@ -9,19 +9,21 @@
 #include "use.h"
 
 class RTPIncomingMediaStreamDepacketizer :
-	public RTPIncomingMediaStream::Listener
+	public RTPIncomingMediaStream::Listener,
+	public MediaFrame::Producer
 {
 public:
 	RTPIncomingMediaStreamDepacketizer(const RTPIncomingMediaStream::shared& incomingSource);
 	virtual ~RTPIncomingMediaStreamDepacketizer();
 	
 	// RTPIncomingMediaStream::Listener interface
-	void onRTP(const RTPIncomingMediaStream* group,const RTPPacket::shared& packet) override;
-	void onBye(const RTPIncomingMediaStream* group) override;
-	void onEnded(const RTPIncomingMediaStream* group) override;
+	virtual void onRTP(const RTPIncomingMediaStream* group,const RTPPacket::shared& packet) override;
+	virtual void onBye(const RTPIncomingMediaStream* group) override;
+	virtual void onEnded(const RTPIncomingMediaStream* group) override;
 	
-	void AddMediaListener(const MediaFrame::Listener::shared& listener);
-	void RemoveMediaListener(const MediaFrame::Listener::shared& listener);
+	//  MediaFrame::Producer interface
+	virtual void AddMediaListener(const MediaFrame::Listener::shared& listener) override;
+	virtual void RemoveMediaListener(const MediaFrame::Listener::shared& listener) override;
 	
 	void Stop();
 	
