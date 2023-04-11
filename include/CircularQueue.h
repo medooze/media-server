@@ -12,8 +12,9 @@ class CircularQueue
 private:
 	constexpr static auto npos = std::numeric_limits<size_t>::max();
 public:
-	CircularQueue(std::size_t size = 0) : queue(size)
+	CircularQueue(std::size_t size = 0)
 	{
+		if (size) queue.reserve(size);
 	}
 
 	void push_back(const T& item)
