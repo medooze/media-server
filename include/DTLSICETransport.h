@@ -53,6 +53,8 @@ public:
 	class Listener
 	{
 	public:
+		using shared = std::shared_ptr<Listener>;
+	public:
 		virtual void onICETimeout() = 0;
 		virtual void onDTLSStateChanged(const DTLSState) = 0;
 		virtual void onRemoteICECandidateActivated(const std::string& ip, uint16_t port, uint32_t priority) = 0;
@@ -125,7 +127,7 @@ public:
 	
 	TimeService& GetTimeService() { return timeService; }
 	
-	void SetListener(Listener* listener);
+	void SetListener(const Listener::shared& listener);
 
 private:
 	void SetState(DTLSState state);
@@ -162,7 +164,7 @@ private:
 	ObjectPool<Packet>& packetPool;
 	datachannels::impl::Endpoint endpoint;
 	datachannels::Endpoint::Options dcOptions;
-	Listener*	listener = nullptr;
+	Listener::shared listener;
 	DTLSConnection	dtls;
 	DTLSState	state = DTLSState::New;
 	Maps		sendMaps;

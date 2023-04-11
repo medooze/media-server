@@ -2911,11 +2911,11 @@ void DTLSICETransport::Probe(QWORD now)
 	lastProbe = now;
 }
 
-void DTLSICETransport::SetListener(Listener* listener)
+void DTLSICETransport::SetListener(const Listener::shared& listener)
 {
-	Debug(">DTLSICETransport::SetListener() [this:%p,listener:%p]\n", this, listener);
-	//Add in main thread and wait
-	timeService.Sync([=](auto now){
+	Debug(">DTLSICETransport::SetListener() [this:%p,listener:%p]\n", this, listener.get());
+	//Add in main thread async
+	timeService.Async([=](auto now){
 		//Store listener
 		this->listener = listener;
 	});
