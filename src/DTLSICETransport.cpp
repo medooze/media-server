@@ -200,6 +200,9 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 	//If transport wide cc is used, process now as it can be padding only data not associated yet with any source used for bwe
 	if (packet->HasTransportWideCC())
 	{
+		//Store the last received ssrc for media to be signaled via twcc
+		lastMediaSSRC = ssrc;
+
 		// Get current seq mum
 		WORD transportSeqNum = packet->GetTransportSeqNum();
 
@@ -2619,7 +2622,7 @@ void DTLSICETransport::SetRTT(DWORD rtt, QWORD now)
 void DTLSICETransport::SendTransportWideFeedbackMessage(DWORD ssrc)
 {
 	//Debug
-	//UltraDebug("-DTLSICETriansport::SendTransportWideFeedbackMessage() [ssrc:%d]\n", ssrc);
+	//UltraDebug("-DTLSICETransport::SendTransportWideFeedbackMessage() [ssrc:%d]\n", ssrc);
 	//RTCP packet
 	auto rtcp = RTCPCompoundPacket::Create();
 
@@ -2693,7 +2696,7 @@ void DTLSICETransport::Start()
 	//Create sse timer
 	sseTimer = timeService.CreateTimer([this](std::chrono::milliseconds ms) {
 		//Send feedback now
-		SendTransportWideFeedbackMessage(0);
+		SendTransportWideFeedbackMessage(lastMediaSSRC);
 	});
 	//Set name for debug
 	sseTimer->SetName("DTLSICETransport - twcc feedback");

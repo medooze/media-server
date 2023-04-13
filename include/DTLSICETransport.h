@@ -185,6 +185,7 @@ private:
 	std::list<RTPPacket::shared> history;
 	
 	DWORD	mainSSRC		= 1;
+	DWORD   lastMediaSSRC		= 0;
 	DWORD   rtt			= 0;
 	char*	iceRemoteUsername	= nullptr;
 	char*	iceRemotePwd		= nullptr;
