@@ -91,7 +91,7 @@ void DTLSICETransport::onDTLSPendingData()
 		//Set read size
 		buffer.SetSize(len);
 		//Send
-		Log("-DTLSConnection::onDTLSPendingData() | dtls send [len:%d]\n",len);
+		//UltraDebug("-DTLSConnection::onDTLSPendingData() | dtls send [len:%d]\n",len);
 		//Send it back
 		sender->Send(active,std::move(buffer));
 		//Update bitrate
@@ -2740,7 +2740,9 @@ void DTLSICETransport::Stop()
 
 	//Stop
 	endpoint.Close();
-	dtls.Stop();
+
+	//Send dtls shutdown
+	dtls.Reset();
 
 	//End DTLS as well
 	dtls.End();
