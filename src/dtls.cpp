@@ -376,16 +376,6 @@ DTLSConnection::DTLSConnection(Listener& listener,TimeService& timeService,datac
 	sctp(sctp),
 	inited(false)
 {
-	//Set default values
-	rekey		  	     = 0;
-	setup			     = SETUP_PASSIVE;
-	connection		     = CONNECTION_NEW;
-	ssl			     = NULL;		// SSL session 
-	read_bio		     = NULL;		// Memory buffer for reading 
-	write_bio		     = NULL;		// Memory buffer for writing 
-	remoteHash		     = UNKNOWN_HASH;
-	//Reset remote fingerprint
-	memset(remoteFingerprint,0,EVP_MAX_MD_SIZE);
 }
 
 DTLSConnection::~DTLSConnection()
@@ -465,9 +455,6 @@ int DTLSConnection::Init()
 			return Error("-DTLSConnection::Init() | we are hold conn!");
 	}
 	
-	//New connection
-	connection = CONNECTION_NEW;
-	
 	//Now we are ready to read and write DTLS packets.
 	inited = true;
 	
@@ -544,9 +531,13 @@ void DTLSConnection::End()
 	
 }
 
-void DTLSConnection::Stop()
+void DTLSConnection::Shutdown()
 {
-	Log("<DTLSConnection::Stop()\n");
+	//If already ended
+	if (!inited || !ssl)
+		return;
+
+	Log("-DTLSConnection::Shutdown()\n");
 
 	// If the SSL session is not yet finalized don't bother resetting
 	if (!SSL_is_init_finished(ssl))
@@ -554,6 +545,9 @@ void DTLSConnection::Stop()
 
 	// Send close notify (no need to wait for other peer)
 	SSL_shutdown(ssl);
+
+	//Check if we need to send the DTLS shutdown packet
+	CheckPending();
 }
 
 void DTLSConnection::Reset()
@@ -561,10 +555,13 @@ void DTLSConnection::Reset()
 	TRACE_EVENT("dtls", "DTLSConnection::Reset");
 	Log("-DTLSConnection::Reset()\n");
 
+	if (!inited)
+		return;
+		
 	//Run in event loop thread
-	timeService.Async([this](auto now){
-		Stop();
-		connection = CONNECTION_NEW;
+	timeService.Sync([this](auto now){
+		//Send shutdown
+		Shutdown();
 	});
 }
 
@@ -660,23 +657,53 @@ int DTLSConnection::Read(BYTE* data,DWORD size)
 
 inline
 void DTLSConnection::onSSLInfo(int where, int ret)
-{
-	UltraDebug("-DTLSConnection::onSSLInfo() | SSL status: %s [where:%d, ret:%d] | handshake done: %s\n",  SSL_state_string_long(this->ssl),where, ret, SSL_is_init_finished(this->ssl) ? "yes" : "no");
+{	
+	//Log
+	UltraDebug("-DTLSConnection::onSSLInfo() | SSL status: %s [where:%d, ret:%d] | handshake done: %s\n", SSL_state_string_long(ssl), where, ret, SSL_is_init_finished(ssl) ? "yes" : "no");
 
-	if (where & SSL_CB_HANDSHAKE_START)
+	if (where & SSL_CB_ALERT) 
 	{
+		const char* alertType;
+		//Get alert type
+		switch (*SSL_alert_type_string(ret))
+		{
+			case 'W':
+				alertType = "warning";
+				break;
+
+			case 'F':
+				alertType = "fatal";
+				break;
+
+			default:
+				alertType = "undefined";
+		}
+		//Check direction
+		if ((where & SSL_CB_READ) != 0)
+			//Log
+			Debug("-DTLSConnection::onSSLInfo() | received DTLS %s alert: %s\n", alertType, SSL_alert_desc_string_long(ret));
+		else if ((where & SSL_CB_WRITE) != 0)
+			//Log
+			Debug("-DTLSConnection::onSSLInfo() | sending DTLS %s alert: %s\n", alertType, SSL_alert_desc_string_long(ret));
+		else
+			//Log
+			Debug("-DTLSConnection::onSSLInfo() | DTLS %s alert: %s\n", alertType, SSL_alert_desc_string_long(ret));
+	} else if (where & SSL_CB_EXIT) {
+		if (ret == 0)
+			//Log
+			Debug("-DTLSConnection::onSSLInfo() | failed in %s\n", SSL_state_string_long(ssl));
+	} else if (where & SSL_CB_HANDSHAKE_START) {
+		//Log
 		Debug("-DTLSConnection::onSSLInfo() | DTLS handshake starts\n");
 	} else if (where & SSL_CB_HANDSHAKE_DONE) {
+		//Log
 		Log("-DTLSConnection::onSSLInfo() | DTLS handshake done\n");
-
-		// Any further connections will be existing since this is now established 
-		connection = CONNECTION_EXISTING;
 
 		// Use the keying material to set up key/salt information 
 		if (!SetupSRTP())
 			//Error
 			listener.onDTLSSetupError();
-	}
+	} 
 
 	//Check pending data for writing
 	CheckPending();
@@ -686,17 +713,15 @@ int DTLSConnection::Renegotiate()
 {
 	TRACE_EVENT("dtls", "DTLSConnection::Renegotiate");
 	//Run in event loop thread
-	timeService.Async([this](auto now){
+	timeService.Sync([this](auto now){
 		if (ssl)
 		{
 
 			TRACE_EVENT("dtls", "DTLSConnection::Renegotiate::Work");
 			SSL_renegotiate(ssl);
 			SSL_do_handshake(ssl);
-
-			rekeyid = -1;
 		}
-	}).wait();
+	});
 	
 	return 1;
 }
@@ -815,7 +840,7 @@ int DTLSConnection::Write(const BYTE *buffer, DWORD size)
 	if (!DTLSConnection::hasDTLS)
 		return Error("-DTLSConnection::Write() | no DTLS\n");
 
-	if (!inited) 
+	if (!inited || !read_bio) 
 		return Error("-DTLSConnection::Write() | SSL not yet ready\n");
 
 	BIO_write(read_bio, buffer, size);
@@ -846,7 +871,7 @@ int DTLSConnection::Write(const BYTE *buffer, DWORD size)
 	{
 		Debug("-DTLSConnection::Write() | SSL_RECEIVED_SHUTDOWN on instance '%p', resetting SSL\n", this);
 		SSL_clear(ssl);
-		//Fire eventº
+		//Fire event
 		listener.onDTLSShutdown();
 		return 0;
 	}
@@ -859,7 +884,7 @@ void DTLSConnection::CheckPending()
 {
 	//UltraDebug("-DTLSConnection::CheckPending()\n");
 	//Check if there is any pending 
-	if (BIO_ctrl_pending(write_bio))
+	if (write_bio && BIO_ctrl_pending(write_bio))
 		listener.onDTLSPendingData();
 	//Reschedule timer
 	timeval tv = {};

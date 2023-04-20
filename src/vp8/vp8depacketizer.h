@@ -20,7 +20,16 @@ public:
 	virtual void ResetFrame() override;
 	virtual void FinalizeFrame() override {};
 private:
+	enum class State
+	{
+		None,
+		Processing,
+		Error
+	};
+
 	VideoFrame frame;
+	uint32_t lastSeqNumber = 0;
+	State state = State::None;
 };
 
 #endif	/* VP8DEPACKETIZER_H */

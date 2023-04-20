@@ -13,6 +13,7 @@ using namespace std::chrono_literals;
 
 class MediaFrameListenerBridge :
 	public MediaFrame::Listener,
+	public MediaFrame::Producer,
 	public RTPIncomingMediaStream,
 	public RTPReceiver
 {
@@ -24,24 +25,28 @@ public:
 public:
 	MediaFrameListenerBridge(TimeService& timeService, DWORD ssrc, bool smooth = false);
 	virtual ~MediaFrameListenerBridge();
-	
-	void AddMediaListener(const MediaFrame::Listener::shared& listener);
-	void RemoveMediaListener(const MediaFrame::Listener::shared& listener);
-        
-	virtual void AddListener(RTPIncomingMediaStream::Listener* listener);
-	virtual void RemoveListener(RTPIncomingMediaStream::Listener* listener);
-        
-	virtual DWORD GetMediaSSRC() const override{ return ssrc; }
-	
-	virtual void onMediaFrame(const MediaFrame &frame) override;
-	virtual void onMediaFrame(DWORD ssrc, const MediaFrame &frame) override { onMediaFrame(frame); }
-	virtual TimeService& GetTimeService() override  { return timeService; }
-	virtual void Mute(bool muting) override;
+
 	void Reset();
 	void Update();
 	void Update(QWORD now);
 	void Stop();
 
+	// MediaFrame::Producer interface
+	virtual void AddMediaListener(const MediaFrame::Listener::shared& listener) override;
+	virtual void RemoveMediaListener(const MediaFrame::Listener::shared& listener) override;
+
+	// MediaFrame::Listener interface
+	virtual void onMediaFrame(const MediaFrame& frame) override { onMediaFrame(0, frame); };
+	virtual void onMediaFrame(DWORD ssrc, const MediaFrame& frame) override;
+
+	// RTPIncomingMediaStream interface
+	virtual void AddListener(RTPIncomingMediaStream::Listener* listener) override;
+	virtual void RemoveListener(RTPIncomingMediaStream::Listener* listener) override;
+	virtual DWORD GetMediaSSRC() const override { return ssrc; }
+	virtual TimeService& GetTimeService() override { return timeService; }
+	virtual void Mute(bool muting) override;
+
+	// RTPReceiver interface
 	virtual int SendPLI(DWORD ssrc) override { return 1; };
 	virtual int Reset(DWORD ssrc) override { return 1; };
 
@@ -80,7 +85,7 @@ public:
 	DWORD minWaitedTime	= 0;
 	DWORD maxWaitedTime	= 0;
 	long double avgWaitedTime = 0;
-	Acumulator<uint32_t, uint64_t> waited;
+	MinMaxAcumulator<uint32_t, uint64_t> waited;
 	volatile bool muted = false;
 };
 

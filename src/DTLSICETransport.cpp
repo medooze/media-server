@@ -54,10 +54,9 @@ DTLSICETransport::DTLSICETransport(Sender *sender,TimeService& timeService, Obje
 	packetPool(packetPool),
 	endpoint(timeService),
 	dtls(*this,timeService,endpoint.GetTransport()),
-	incomingBitrate(250),
-	outgoingBitrate(250),
-	rtxBitrate(250),
-	probingBitrate(250),
+	outgoingBitrate(250, 1E3, 250),
+	rtxBitrate(250, 1E3, 250),
+	probingBitrate(250, 1E3, 250),
 	senderSideBandwidthEstimator(new SendSideBandwidthEstimation())
 {
 	Debug(">DTLSICETransport::DTLSICETransport() [this:%p]\n", this);
@@ -92,7 +91,7 @@ void DTLSICETransport::onDTLSPendingData()
 		//Set read size
 		buffer.SetSize(len);
 		//Send
-		Log("-DTLSConnection::onDTLSPendingData() | dtls send [len:%d]\n",len);
+		//UltraDebug("-DTLSConnection::onDTLSPendingData() | dtls send [len:%d]\n",len);
 		//Send it back
 		sender->Send(active,std::move(buffer));
 		//Update bitrate
@@ -108,9 +107,6 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 	//Get current time
 	auto now = getTime();
 
-	//Acumulate bitrate
-	incomingBitrate.Update(now/1000,size);
-	
 	//Check if it a DTLS packet
 	if (DTLSConnection::IsDTLS(data,size))
 	{
@@ -204,6 +200,9 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 	//If transport wide cc is used, process now as it can be padding only data not associated yet with any source used for bwe
 	if (packet->HasTransportWideCC())
 	{
+		//Store the last received ssrc for media to be signaled via twcc
+		lastMediaSSRC = ssrc;
+
 		// Get current seq mum
 		WORD transportSeqNum = packet->GetTransportSeqNum();
 
@@ -1544,8 +1543,8 @@ int DTLSICETransport::SetRemoteCryptoDTLS(const char *setup,const char *hash,con
 
 	//Starting
 	SetState(DTLSState::Connecting);
-	//Init DTLS
-	return dtls.Init();
+	//Ok
+	return 1;
 }
 
 int DTLSICETransport::SetRemoteCryptoSDES(const char* suite, const BYTE* key, const DWORD len)
@@ -1614,43 +1613,47 @@ void DTLSICETransport::onDTLSShutdown()
 	SetState(DTLSState::Closed);
 }
 
-bool DTLSICETransport::AddOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
+bool DTLSICETransport::AddOutgoingSourceGroup(const RTPOutgoingSourceGroup::shared& group)
 {
-	//Log
-	Log("-DTLSICETransport::AddOutgoingSourceGroup() [group:%p,ssrc:%u,rtx:%u]\n",group,group->media.ssrc,group->rtx.ssrc);
-	
-	//Done
-	bool done = true;
+	//It must contain media ssrc
+	if (!group)
+		return Error("-DTLSICETransport::AddOutgoingSourceGroup() | Empty group\n");
 
+	//Log
+	Log("-DTLSICETransport::AddOutgoingSourceGroup() [group:%p,ssrc:%u,rtx:%u]\n",group.get(), group->media.ssrc, group->rtx.ssrc);
+	
 	//Dispatch to the event loop thread
-	timeService.Sync([&](auto now){
+	timeService.Async([=](auto now){
+
 		//Get ssrcs
 		const auto media = group->media.ssrc;
-		const auto rtx   = group->rtx.ssrc;
-		
+		const auto rtx = group->rtx.ssrc;
+
+		//TODO: pass a callback for confirming creation
 		//Check they are not already assigned
-		if (media && outgoing.find(media)!=outgoing.end())
+		if (media && outgoing.find(media) != outgoing.end())
 		{
 			//Error
-			done = Error("-AddOutgoingSourceGroup media ssrc already assigned");
-			return;
-		}
-		if (rtx && outgoing.find(rtx)!=outgoing.end())
-		{
-			//Error
-			done = Error("-AddOutgoingSourceGroup rtx ssrc already assigned");
+			Error("-DTLSICETransport::AddOutgoingSourceGroup() | media ssrc already assigned");
 			return;
 		}
 
+		if (rtx && outgoing.find(rtx) != outgoing.end())
+		{
+			//Error
+			Error("-DTLSICETransport::AddOutgoingSourceGroup() | rtx ssrc already assigned");
+			return;
+		}
+	
 		//Add it for each group ssrc
 		if (media)
 		{
-			outgoing[media] = group;
+			outgoing[media] = group.get();
 			send.AddStream(media);
 		}
 		if (rtx)
 		{
-			outgoing[rtx] = group;
+			outgoing[rtx] = group.get();
 			send.AddStream(rtx);
 		}
 
@@ -1666,11 +1669,11 @@ bool DTLSICETransport::AddOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 	});
 	
 	//Done
-	return done;
+	return true;
 	
 }
 
-bool DTLSICETransport::RemoveOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
+bool DTLSICETransport::RemoveOutgoingSourceGroup(const RTPOutgoingSourceGroup::shared&  group)
 {
 	Log("-DTLSICETransport::RemoveOutgoingSourceGroup() [ssrc:%u,rtx:%u]\n",group->media.ssrc,group->rtx.ssrc);
 
@@ -1722,8 +1725,12 @@ bool DTLSICETransport::RemoveOutgoingSourceGroup(RTPOutgoingSourceGroup *group)
 	return true;
 }
 
-bool DTLSICETransport::AddIncomingSourceGroup(RTPIncomingSourceGroup *group)
+bool DTLSICETransport::AddIncomingSourceGroup(const RTPIncomingSourceGroup::shared& group)
 {
+	//It must contain media ssrc
+	if (!group)
+		return Error("-DTLSICETransport::AddIncomingSourceGroup() | Empty group\n");
+
 	//RTX should only be enabled for video and if RTX codec has been negotiated
 	bool isRTXEnabled = group->type == MediaFrame::Video && sendMaps.rtp.HasCodec(VideoCodec::RTX);
 
@@ -1734,11 +1741,8 @@ bool DTLSICETransport::AddIncomingSourceGroup(RTPIncomingSourceGroup *group)
 	if (!group->media.ssrc && group->rid.empty())
 		return Error("No media ssrc or rid defined, stream will not be added\n");
 	
-	//The asycn result
-	bool done = true;
-	
 	//Dispatch to the event loop thread
-	timeService.Sync([&](auto now){
+	timeService.Async([&](auto now){
 		//Get ssrcs
 		const auto media = group->media.ssrc;
 		const auto rtx   = group->rtx.ssrc;
@@ -1747,7 +1751,7 @@ bool DTLSICETransport::AddIncomingSourceGroup(RTPIncomingSourceGroup *group)
 		if (media && incoming.find(media)!=incoming.end())
 		{
 			//Error
-			done = Warning("-DTLSICETransport::AddIncomingSourceGroup() media ssrc already assigned\n");
+			Warning("-DTLSICETransport::AddIncomingSourceGroup() media ssrc already assigned\n");
 			return;
 		}
 		
@@ -1755,13 +1759,13 @@ bool DTLSICETransport::AddIncomingSourceGroup(RTPIncomingSourceGroup *group)
 		if (rtx && incoming.find(rtx)!=incoming.end())
 		{
 			//Error
-			done =  Warning("-DTLSICETransport::AddIncomingSourceGroup() rtx ssrc already assigned\n");
+			Warning("-DTLSICETransport::AddIncomingSourceGroup() rtx ssrc already assigned\n");
 			return;
 		}
 
 		//Add rid if any
 		if (!group->rid.empty())
-			rids[group->mid + "@" + group->rid] = group;
+			rids[group->mid + "@" + group->rid] = group.get();
 
 		//Add mid if any
 		if (!group->mid.empty())
@@ -1771,43 +1775,40 @@ bool DTLSICETransport::AddIncomingSourceGroup(RTPIncomingSourceGroup *group)
 			//If not there
 			if (it!=mids.end())
 				//Append
-				it->second.insert(group);
+				it->second.insert(group.get());
 			else
 				//Add new set
-				mids[group->mid] = { group };
+				mids[group->mid] = { group.get() };
 		}
 
 		//Add it for each group ssrc
 		if (media)
 		{
-			incoming[media] = group;
+			incoming[media] = group.get();
 			recv.AddStream(media);
 		}
 		if (rtx)
 		{
-			incoming[rtx] = group;
+			incoming[rtx] = group.get();
 			recv.AddStream(rtx);
 		}
 
 		//Set RTX supported flag only for video
 		group->SetRTXEnabled(isRTXEnabled);
-	});
-	
-	//Check result
-	if (!done)
-		return Warning("-DTLSICETransport::AddIncomingSourceGroup() Could not add incoming source\n");
-		
-	//If it is video and the transport wide cc is not enabled enable and not overriding the bitrate estimation
-	bool remb = group->type == MediaFrame::Video && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC)==RTPMap::NotFound && !overrideBWE && !disableREMB;
 
-	//Start distpaching
-	group->Start(remb);
+		//If it is video and the transport wide cc is not enabled enable and not overriding the bitrate estimation
+		bool remb = group->type == MediaFrame::Video && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC) == RTPMap::NotFound && !overrideBWE && !disableREMB;
+
+		//Start distpaching
+		group->Start(remb);
+	});
+
 	
 	//Done
 	return true;
 }
 
-bool DTLSICETransport::RemoveIncomingSourceGroup(RTPIncomingSourceGroup *group)
+bool DTLSICETransport::RemoveIncomingSourceGroup(const RTPIncomingSourceGroup::shared &group)
 {
 	Log("-DTLSICETransport::RemoveIncomingSourceGroup() [mid:'%s',rid:'%s',ssrc:%u,rtx:%u]\n",group->mid.c_str(),group->rid.c_str(),group->media.ssrc,group->rtx.ssrc);
 	
@@ -1824,7 +1825,7 @@ bool DTLSICETransport::RemoveIncomingSourceGroup(RTPIncomingSourceGroup *group)
 		if (it!=mids.end())
 		{
 			//Erase group
-			it->second.erase(group);
+			it->second.erase(group.get());
 			//If it is empty now
 			if(it->second.empty())
 				//Remove from mids
@@ -2621,7 +2622,7 @@ void DTLSICETransport::SetRTT(DWORD rtt, QWORD now)
 void DTLSICETransport::SendTransportWideFeedbackMessage(DWORD ssrc)
 {
 	//Debug
-	//UltraDebug("-DTLSICETriansport::SendTransportWideFeedbackMessage() [ssrc:%d]\n", ssrc);
+	//UltraDebug("-DTLSICETransport::SendTransportWideFeedbackMessage() [ssrc:%d]\n", ssrc);
 	//RTCP packet
 	auto rtcp = RTCPCompoundPacket::Create();
 
@@ -2667,6 +2668,9 @@ void DTLSICETransport::Start()
 
 	Debug("-DTLSICETransport::Start()\n");
 	
+	//Init DTLS
+	dtls.Init();
+
 	//Get init time
 	initTime = getTime();
 	dcOptions.localPort = 5000;
@@ -2692,7 +2696,7 @@ void DTLSICETransport::Start()
 	//Create sse timer
 	sseTimer = timeService.CreateTimer([this](std::chrono::milliseconds ms) {
 		//Send feedback now
-		SendTransportWideFeedbackMessage(0);
+		SendTransportWideFeedbackMessage(lastMediaSSRC);
 	});
 	//Set name for debug
 	sseTimer->SetName("DTLSICETransport - twcc feedback");
@@ -2736,7 +2740,9 @@ void DTLSICETransport::Stop()
 
 	//Stop
 	endpoint.Close();
-	dtls.Stop();
+
+	//Send dtls shutdown
+	dtls.Reset();
 
 	//End DTLS as well
 	dtls.End();
@@ -2910,11 +2916,11 @@ void DTLSICETransport::Probe(QWORD now)
 	lastProbe = now;
 }
 
-void DTLSICETransport::SetListener(Listener* listener)
+void DTLSICETransport::SetListener(const Listener::shared& listener)
 {
-	Debug(">DTLSICETransport::SetListener() [this:%p,listener:%p]\n", this, listener);
-	//Add in main thread and wait
-	timeService.Sync([=](auto now){
+	Debug(">DTLSICETransport::SetListener() [this:%p,listener:%p]\n", this, listener.get());
+	//Add in main thread async
+	timeService.Async([=](auto now){
 		//Store listener
 		this->listener = listener;
 	});

@@ -53,6 +53,8 @@ public:
 	class Listener
 	{
 	public:
+		using shared = std::shared_ptr<Listener>;
+	public:
 		virtual void onICETimeout() = 0;
 		virtual void onDTLSStateChanged(const DTLSState) = 0;
 		virtual void onRemoteICECandidateActivated(const std::string& ip, uint16_t port, uint32_t priority) = 0;
@@ -90,10 +92,10 @@ public:
 	int SetRemoteCryptoDTLS(const char *setup,const char *hash,const char *fingerprint);
 	int SetLocalSTUNCredentials(const char* username, const char* pwd);
 	int SetRemoteSTUNCredentials(const char* username, const char* pwd);
-	bool AddOutgoingSourceGroup(RTPOutgoingSourceGroup *group);
-	bool RemoveOutgoingSourceGroup(RTPOutgoingSourceGroup *group);
-	bool AddIncomingSourceGroup(RTPIncomingSourceGroup *group);
-	bool RemoveIncomingSourceGroup(RTPIncomingSourceGroup *group);
+	bool AddOutgoingSourceGroup(const RTPOutgoingSourceGroup::shared& group);
+	bool RemoveOutgoingSourceGroup(const RTPOutgoingSourceGroup::shared& group);
+	bool AddIncomingSourceGroup(const RTPIncomingSourceGroup::shared& group);
+	bool RemoveIncomingSourceGroup(const RTPIncomingSourceGroup::shared& group);
 	
 	void SetBandwidthProbing(bool probe);
 	void SetMaxProbingBitrate(DWORD bitrate);
@@ -125,7 +127,7 @@ public:
 	
 	TimeService& GetTimeService() { return timeService; }
 	
-	void SetListener(Listener* listener);
+	void SetListener(const Listener::shared& listener);
 
 private:
 	void SetState(DTLSState state);
@@ -144,14 +146,11 @@ private:
 	int SetRemoteCryptoSDES(const char* suite, const BYTE* key, const DWORD len);
 	//Helpers
 	RTPIncomingSourceGroup* GetIncomingSourceGroup(DWORD ssrc);
-	RTPIncomingSource*	GetIncomingSource(DWORD ssrc);
 	RTPOutgoingSourceGroup* GetOutgoingSourceGroup(DWORD ssrc);
+	RTPIncomingSource*	GetIncomingSource(DWORD ssrc);
 	RTPOutgoingSource*	GetOutgoingSource(DWORD ssrc);
 
 private:
-	typedef std::map<DWORD,RTPOutgoingSourceGroup*> OutgoingStreams;
-	typedef std::map<DWORD,RTPIncomingSourceGroup*> IncomingStreams;
-	
 	struct Maps
 	{
 		RTPMap		rtp;
@@ -160,14 +159,12 @@ private:
 	};
 	
 private:
-	
-private:
 	Sender*		sender = nullptr;
 	TimeService&	timeService;
 	ObjectPool<Packet>& packetPool;
 	datachannels::impl::Endpoint endpoint;
 	datachannels::Endpoint::Options dcOptions;
-	Listener*	listener = nullptr;
+	Listener::shared listener;
 	DTLSConnection	dtls;
 	DTLSState	state = DTLSState::New;
 	Maps		sendMaps;
@@ -179,20 +176,22 @@ private:
 	WORD		feedbackPacketCount		= 0;
 	DWORD		lastFeedbackPacketExtSeqNum	= 0;
 	WORD		feedbackCycles			= 0;
-	OutgoingStreams outgoing;
-	IncomingStreams incoming;
+
+	//TODO: change by shared pointers
+	std::map<DWORD, RTPOutgoingSourceGroup*> outgoing;
+	std::map<DWORD, RTPIncomingSourceGroup*> incoming;
 	std::map<std::string,RTPIncomingSourceGroup*> rids;
 	std::map<std::string,std::set<RTPIncomingSourceGroup*>> mids;
 	std::list<RTPPacket::shared> history;
 	
 	DWORD	mainSSRC		= 1;
+	DWORD   lastMediaSSRC		= 0;
 	DWORD   rtt			= 0;
 	char*	iceRemoteUsername	= nullptr;
 	char*	iceRemotePwd		= nullptr;
 	char*	iceLocalUsername	= nullptr;
 	char*	iceLocalPwd		= nullptr;
 	
-	Acumulator<uint32_t, uint64_t> incomingBitrate;
 	Acumulator<uint32_t, uint64_t> outgoingBitrate;
 	Acumulator<uint32_t, uint64_t> rtxBitrate;
 	Acumulator<uint32_t, uint64_t> probingBitrate;

@@ -18,16 +18,16 @@ constexpr uint64_t kRecoveryDuration		= 250E3;
 SendSideBandwidthEstimation::SendSideBandwidthEstimation() : 
 		rttMin(kLongTermDuration),
 		accumulatedDeltaMinCounter(kLongTermDuration),
-		totalSentAcumulator(kMonitorDuration,1E6),
-		mediaSentAcumulator(kMonitorDuration,1E6),
-		rtxSentAcumulator(kMonitorDuration,1E6),
-		probingSentAcumulator(kMonitorDuration,1E6),
-		totalRecvAcumulator(kMonitorDuration,1E6),
-		mediaRecvAcumulator(kMonitorDuration,1E6),
-		rtxRecvAcumulator(kMonitorDuration,1E6),
-		probingRecvAcumulator(kMonitorDuration,1E6),
-		packetsReceivedAcumulator(kMonitorDuration, 1E6),
-		packetsLostAcumulator(kMonitorDuration, 1E6)
+		totalSentAcumulator(kMonitorDuration, 1E6, 500),
+		mediaSentAcumulator(kMonitorDuration, 1E6, 500),
+		rtxSentAcumulator(kMonitorDuration, 1E6, 100),
+		probingSentAcumulator(kMonitorDuration, 1E6, 100),
+		totalRecvAcumulator(kMonitorDuration, 1E6, 500),
+		mediaRecvAcumulator(kMonitorDuration, 1E6, 500),
+		rtxRecvAcumulator(kMonitorDuration, 1E6, 100),
+		probingRecvAcumulator(kMonitorDuration,	1E6, 100),
+		packetsReceivedAcumulator(kMonitorDuration, 1E6, 500),
+		packetsLostAcumulator(kMonitorDuration, 1E6, 100)
 {
 }
 

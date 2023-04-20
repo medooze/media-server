@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   vp8.h
  * Author: Sergio
  *
@@ -46,14 +46,12 @@ struct VP8PayloadDescriptor
 		temporalLayerIndex = 0;
 		keyIndex = 0;
 	}
-	
+
 	VP8PayloadDescriptor(bool startOfPartition,BYTE partitionIndex)
 	{
 		//Empty
 		extendedControlBitsPresent = 0;
 		nonReferencePicture = 0;
-		startOfPartition = 0;
-		partitionIndex = 0;
 		pictureIdPresent = 0;
 		pictureIdLength = 1;
 		temporalLevelZeroIndexPresent = 0;
@@ -94,7 +92,7 @@ struct VP8PayloadDescriptor
 			return 0;
 		//Start parsing
 		DWORD len = 1;
-		
+
 		//Read first
 		extendedControlBitsPresent	= data[0] >> 7;
 		nonReferencePicture		= data[0] >> 5 & 0x01;
@@ -108,7 +106,7 @@ struct VP8PayloadDescriptor
 			if (size<len+1)
 				//Invalid
 				return 0;
-			
+
 			//Read second
 			pictureIdPresent		= data[1] >> 7;
 			temporalLevelZeroIndexPresent	= data[1] >> 6 & 0x01;
@@ -229,7 +227,7 @@ struct VP8PayloadDescriptor
 				//Inc lenght
 				len+=2;
 			} else {
-				//Set picture id 
+				//Set picture id
 				data[len] = pictureId & 0x7F;
 				//Inc lenght
 				len++;
@@ -289,14 +287,14 @@ struct VP8PayloadHeader
 	WORD height = 0;
 	BYTE horizontalScale = 0;
 	BYTE verticalScale = 0;
-	
+
 	DWORD Parse(const BYTE* data, DWORD size)
 	{
 		//Check size
 		if (size<3)
 			//Invalid
 			return 0;
-		
+
 		//Read comon 3 bytes
 		//   0 1 2 3 4 5 6 7
                 //  +-+-+-+-+-+-+-+-+
@@ -306,7 +304,7 @@ struct VP8PayloadHeader
                 //  +-+-+-+-+-+-+-+-+
                 //  |     Size2     |
                 //  +-+-+-+-+-+-+-+-+
-		firstPartitionSize	= data[0] >> 5;
+		firstPartitionSize	= get3Reversed(data, 0) >> 5;
 		showFrame		= data[0] >> 4 & 0x01;
 		version			= data[0] >> 1 & 0x07;
 		isKeyFrame		= (data[0] & 0x01) == 0;
@@ -318,7 +316,7 @@ struct VP8PayloadHeader
 			if (size<10)
 				//Invalid
 				return Error("Invalid intra size [%d]\n",size);
-			//Check Start code 
+			//Check Start code
 			if (get3(data,3)!=0x9d012a)
 			{
 				::Dump4(data,10);
@@ -339,12 +337,12 @@ struct VP8PayloadHeader
 		//No key frame
 		return 3;
 	}
-	
+
 	DWORD GetSize() const
 	{
 		return isKeyFrame ? 10 : 3;
 	}
-	
+
 	void Dump() const
 	{
 		Debug("[VP8PayloadHeader \n");
@@ -370,9 +368,9 @@ public:
 	{
 		if (length<GetSize())
 			return 0;
-		
+
 		int l = 0;
-		
+
 		buffer[l++] = profile;
 		buffer[l++] = level;
 		buffer[l++] = (bitDepth << 4) | (chromaSubsampling << 1) | (videoFullRangeFlag ? 1 : 0);
@@ -390,7 +388,7 @@ public:
 		//Done
 		return l;
 	}
-	
+
 	DWORD GetSize() const
 	{
 		return 8 + initializationData.size();
@@ -407,4 +405,3 @@ private:
 	std::vector<uint8_t> initializationData;
 };
 #endif	/* VP8_H */
-

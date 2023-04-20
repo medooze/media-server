@@ -42,10 +42,6 @@ public:
 		UNKNOWN_HASH
 	};
 
-	enum Connection {
-		CONNECTION_NEW,		// Endpoint wants to use a new connection 
-		CONNECTION_EXISTING	// Endpoint wishes to use existing connection 
-	};
 public:
 	class Listener
 	{
@@ -129,8 +125,6 @@ public:
 	void SetRemoteSetup(Setup setup);
 	void SetRemoteFingerprint(Hash hash, const char *fingerprint);
 	void End();
-	void Stop();
-	void Reset();
 
 	Setup GetSetup() const { return setup; }
 	
@@ -138,6 +132,7 @@ public:
 	int  Write(const BYTE *buffer,DWORD size);
 	int  HandleTimeout();
 	int  Renegotiate();
+	void  Reset();
 
 // Callbacks fired by OpenSSL events. 
 public:
@@ -145,21 +140,19 @@ public:
 
 protected:
 	int  SetupSRTP();
+	void Shutdown();
 	void CheckPending();
 private:
 	Listener& listener;
 	TimeService& timeService;
-	Timer::shared timeout;		// DTLS timout handler
-	datachannels::Transport &sctp;	// SCTP transport
-	SSL *ssl;			// SSL session 
-	BIO *read_bio;			// Memory buffer for reading 
-	BIO *write_bio;			// Memory buffer for writing 
-	Setup setup;			// Current setup state 
-	unsigned char remoteFingerprint[EVP_MAX_MD_SIZE];	// Fingerprint of the peer certificate 
-	Hash remoteHash;		// Hash of the peer fingerprint 
-	Connection connection;		// Whether this is a new or existing connection 
-	unsigned int rekey;		// Interval at which to renegotiate and rekey 
-	int rekeyid;			// Scheduled item id for rekeying 
+	Timer::shared timeout;			// DTLS timout handler
+	datachannels::Transport &sctp;		// SCTP transport
+	SSL *ssl	= nullptr;		// SSL session 
+	BIO *read_bio	= nullptr;		// Memory buffer for reading 
+	BIO *write_bio	= nullptr;		// Memory buffer for writing 
+	Setup setup	= SETUP_PASSIVE;	// Current setup state 
+	Hash remoteHash = UNKNOWN_HASH;		// Hash of the peer fingerprint 
+	unsigned char remoteFingerprint[EVP_MAX_MD_SIZE] = {};	// Fingerprint of the peer certificate 
 	std::atomic<bool> inited;	// Set to true once the SSL stuff is set for this DTLS session 
 	std::string profiles;		// Overrriden list of srtp profiles
 };

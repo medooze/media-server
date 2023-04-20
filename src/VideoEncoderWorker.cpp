@@ -149,8 +149,8 @@ int VideoEncoderWorker::Encode()
 	DWORD num = 0;
 	QWORD overslept = 0;
 
-	Acumulator bitrateAcu(1000);
-	Acumulator fpsAcu(1000);
+	MinMaxAcumulator bitrateAcu(1000);
+	MinMaxAcumulator fpsAcu(1000);
 
 	Log(">VideoEncoderWorker::Encode() [width:%d,size:%d,bitrate:%d,fps:%d,intra:%d]\n",width,height,bitrate,fps,intraPeriod);
 
@@ -372,6 +372,7 @@ int VideoEncoderWorker::Encode()
 //
 //		//Send it smoothly
 //		SmoothFrame(videoFrame,sendingTime);
+
 
 		//Dump statistics
 		if (num && ((num%fps*10)==0))

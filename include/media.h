@@ -25,6 +25,19 @@ public:
 		virtual void onMediaFrame(DWORD ssrc, const MediaFrame &frame) = 0;
 	};
 
+	class Producer
+	{
+	public:
+		using shared = std::shared_ptr<Producer>;
+	public:
+		//Virtual desctructor
+		virtual ~Producer() {};
+	public:
+		//Interface
+		virtual void AddMediaListener(const MediaFrame::Listener::shared& listener) = 0;
+		virtual void RemoveMediaListener(const MediaFrame::Listener::shared& listener) = 0;
+	};
+
 	class RtpPacketization
 	{
 	public:

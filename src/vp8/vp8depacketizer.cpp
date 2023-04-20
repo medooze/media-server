@@ -1,7 +1,7 @@
-/* 
+/*
  * File:   h264depacketizer.cpp
  * Author: Sergio
- * 
+ *
  * Created on 26 de enero de 2012, 9:46
  */
 
@@ -48,8 +48,11 @@ MediaFrame* VP8Depacketizer::AddPacket(const RTPPacket::shared& packet)
 	auto ts = packet->GetExtTimestamp();
 	//Check it is from same packet
 	if (frame.GetTimeStamp()!=ts)
+	{
 		//Reset frame
 		ResetFrame();
+		state = State::None;
+	}
 	//If not timestamp
 	if (frame.GetTimeStamp()==(DWORD)-1)
 	{
@@ -64,10 +67,23 @@ MediaFrame* VP8Depacketizer::AddPacket(const RTPPacket::shared& packet)
 	}
 	//Set SSRC
 	frame.SetSSRC(packet->GetSSRC());
-	//Add payload
-	AddPayload(packet->GetMediaData(),packet->GetMediaLength());
+
+	// We expect the sequence number increases by one within a frame
+	if (state == State::Processing && (packet->GetExtSeqNum() != (lastSeqNumber + 1)))
+	{
+		Warning("-VP8Depacketizer::AddPacket() | Sequence number is not increasing by 1: %d -> %d\n", lastSeqNumber, packet->GetExtSeqNum());
+		state = State::Error;
+	}
+	lastSeqNumber = packet->GetExtSeqNum();
+
+	if (state != State::Error)
+	{
+		//Add payload
+		AddPayload(packet->GetMediaData(),packet->GetMediaLength());
+	}
+
 	//Check if it has vp8 descriptor
-	if (packet->vp8PayloadHeader)
+	if (state != State::Error && packet->vp8PayloadHeader)
 	{
 		//Set key frame
 		frame.SetIntra(packet->vp8PayloadHeader->isKeyFrame);
@@ -79,8 +95,31 @@ MediaFrame* VP8Depacketizer::AddPacket(const RTPPacket::shared& packet)
 			frame.SetHeight(packet->vp8PayloadHeader->height);
 		}
 	}
+
+	MediaFrame* validFrame = nullptr;
+
 	//If it is last return frame
-	return packet->GetMark() ? &frame : NULL;
+	if (packet->GetMark())
+	{
+		switch (state)
+		{
+			case State::Processing:
+				// No error, return the frame
+				validFrame = &frame;
+				break;
+			case State::None:
+				Warning("-VP8Depacketizer::AddPacket() | Dropped invalid frame as start packet missed. timestamp: %lld\n", packet->GetTimestamp());
+				break;
+			case State::Error:
+				Warning("-VP8Depacketizer::AddPacket() | Dropped invalid frame as error occurred. timestamp: %lld\n", packet->GetTimestamp());
+				break;
+		}
+
+		// Reset the state
+		state = State::None;
+	}
+
+	return validFrame;
 }
 
 MediaFrame* VP8Depacketizer::AddPayload(const BYTE* payload, DWORD len)
@@ -89,12 +128,12 @@ MediaFrame* VP8Depacketizer::AddPayload(const BYTE* payload, DWORD len)
 	if (!len)
 		//Exit
 		return NULL;
-    
+
 	VP8PayloadDescriptor desc;
 
 	//Decode payload descriptr
 	DWORD descLen = desc.Parse(payload,len);
-	
+
 	//Check
 	if (!descLen || len<descLen)
 	{
@@ -103,13 +142,17 @@ MediaFrame* VP8Depacketizer::AddPayload(const BYTE* payload, DWORD len)
 		Error("-VP8Depacketizer::AddPayload() | Error decoding VP8 payload header\n");
 		return NULL;
 	}
-	
+
+	if (state == State::None && desc.partitionIndex == 0 && desc.startOfPartition)
+	{
+		state = State::Processing;
+	}
+
 	//Skip desc
 	DWORD pos = frame.AppendMedia(payload+descLen, len-descLen);
-	
+
 	//Add RTP packet
 	frame.AddRtpPacket(pos,len-descLen,payload,descLen);
-	
+
 	return &frame;
 }
-
