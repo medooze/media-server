@@ -15,7 +15,12 @@ class AVCDescriptor
 {
 public:
 	AVCDescriptor();
+	AVCDescriptor(const AVCDescriptor& other);
+	
 	~AVCDescriptor();
+	
+	AVCDescriptor& operator=(const AVCDescriptor& other);
+	
 	void AddSequenceParameterSet(const BYTE *data,DWORD size);
 	void AddPictureParameterSet(const BYTE *data,DWORD size);
 	void AddParametersFromFrame(const BYTE *data,DWORD size);
@@ -44,7 +49,6 @@ public:
 	void SetAVCProfileIndication(BYTE AVCProfileIndication)		{ this->AVCProfileIndication = AVCProfileIndication;	}
 	void SetConfigurationVersion(BYTE configurationVersion)		{ this->configurationVersion = configurationVersion;	}
 	void SetNALUnitLength(BYTE NALUnitLength)			{ this->NALUnitLength = NALUnitLength;			}
-
 
 private:
 	BYTE configurationVersion;

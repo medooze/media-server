@@ -19,10 +19,42 @@ AVCDescriptor::AVCDescriptor()
 	AVCProfileIndication = 0;
 	profileCompatibility = 0;
 	AVCLevelIndication = 0;
+	NALUnitLength = 0;
     	numOfSequenceParameterSets = 0;
 	numOfPictureParameterSets = 0;
 	ppsTotalSizes = 0;
 	spsTotalSizes = 0;
+}
+
+AVCDescriptor::AVCDescriptor(const AVCDescriptor& other)
+{
+	*this = other;
+}
+
+AVCDescriptor& AVCDescriptor::operator=(const AVCDescriptor& other)
+{
+	configurationVersion = other.configurationVersion;
+	AVCProfileIndication = other.AVCProfileIndication;
+	profileCompatibility = other.profileCompatibility;
+	AVCLevelIndication = other.AVCLevelIndication;
+	NALUnitLength = other.NALUnitLength;
+	
+	//Clean PPS
+	ClearPictureParameterSets();
+	//Clean SPS
+	ClearSequenceParameterSets();
+	
+	for (size_t i = 0; i < other.numOfSequenceParameterSets; i++)
+	{
+		AddSequenceParameterSet(other.spsData[i], other.spsSizes[i]);
+	}
+	
+	for (size_t i = 0; i < other.numOfPictureParameterSets; i++)
+	{
+		AddPictureParameterSet(other.ppsData[i], other.ppsSizes[i]);
+	}
+	
+	return *this;
 }
 
 bool AVCDescriptor::Parse(const BYTE* buffer,DWORD bufferLen)

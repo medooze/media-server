@@ -383,6 +383,8 @@ void H264Depacketizer::FinalizeFrame()
 	{
 		return;
 	}
+	
+	if (!frame.IsIntra()) return;
 
 	//Set config size
 	frame.AllocateCodecConfig(appliedConfig.GetSize());
