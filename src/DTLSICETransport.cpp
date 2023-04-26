@@ -1742,7 +1742,7 @@ bool DTLSICETransport::AddIncomingSourceGroup(const RTPIncomingSourceGroup::shar
 		return Error("No media ssrc or rid defined, stream will not be added\n");
 	
 	//Dispatch to the event loop thread
-	timeService.Async([&](auto now){
+	timeService.Async([=](auto now){
 		//Get ssrcs
 		const auto media = group->media.ssrc;
 		const auto rtx   = group->rtx.ssrc;
