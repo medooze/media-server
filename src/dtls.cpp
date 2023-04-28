@@ -405,7 +405,7 @@ int DTLSConnection::Init()
 	if (!profiles.empty())
 	{
 		//Set them
-		if (SSL_CTX_set_tlsext_use_srtp(ssl_ctx, profiles.c_str()))
+		if (SSL_set_tlsext_use_srtp(ssl, profiles.c_str()))
 		{
 			SSL_free(ssl);
 			ssl = nullptr;
