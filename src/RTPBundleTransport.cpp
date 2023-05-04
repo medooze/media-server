@@ -737,8 +737,8 @@ int RTPBundleTransport::AddRemoteCandidate(const std::string& username,const cha
 	//Copy ip 
 	auto ip = std::string(host);
 	
-	//Execute async and wait for completion
-	loop.Async([=](auto now){
+	//Execute Sync
+	loop.Sync([=](auto now){
 		//Check if we have an ICE transport for that username
 		auto it = connections.find(username);
 
@@ -772,7 +772,7 @@ int RTPBundleTransport::AddRemoteCandidate(const std::string& username,const cha
 		//Send binding request in any case
 		SendBindingRequest(connection,candidate);
 		
-	}).wait();
+	});
 	
 	return 1;
 }

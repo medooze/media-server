@@ -2764,26 +2764,11 @@ int DTLSICETransport::Enqueue(const RTPPacket::shared& packet)
 		"ssrc", packet->GetSSRC(),
 		"seqNum", packet->GetSeqNum());
 
+	//TODO: check if we are actuall sending from a different thread ocasionally
 	//Send async
-	timeService.Async([this,packet](auto now){
+	timeService.Async([=](auto now){
 		//Send
 		Send(packet->Clone());
-	});
-	
-	return 1;
-}
-
-int DTLSICETransport::Enqueue(const RTPPacket::shared& packet,std::function<RTPPacket::shared(const RTPPacket::shared&)> modifier)
-{
-	//Trace
-	TRACE_EVENT("rtp", "DTLSICETransport::Enqueue RTP",
-		"ssrc", packet->GetSSRC(),
-		"seqNum", packet->GetSeqNum());
-
-	//Send async
-	timeService.Async([this,packet,modifier](auto now){
-		//Send
-		Send(modifier(packet));
 	});
 	
 	return 1;

@@ -347,15 +347,38 @@ void EventLoop::Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet
 	Signal();
 }
 
-std::future<void> EventLoop::Async(std::function<void(std::chrono::milliseconds)> func)
+void EventLoop::Async(std::function<void(std::chrono::milliseconds)> func)
 {
 	//UltraDebug(">EventLoop::Async()\n");
+
+	//If not in the same thread
+	if (std::this_thread::get_id() != thread.get_id())
+	{
+		//Create task
+		auto task = std::make_pair(std::nullopt, std::move(func));
+
+		//Add to pending taks
+		tasks.enqueue(std::move(task));
+
+		//Signal the thread this will cause the poll call to exit
+		Signal();
+	} else {
+		//Call now otherwise
+		func(GetNow());
+	}
+
+	//UltraDebug("<EventLoop::Async()\n");
+}
+
+std::future<void> EventLoop::Future(std::function<void(std::chrono::milliseconds)> func)
+{
+	//UltraDebug(">EventLoop::Future()\n");
 	
 	//Create task
 	std::promise<void> promise;
 	auto task = std::make_pair(std::move(promise),std::move(func));
 	
-	//Get future before moving the promise
+	//Get future from promise
 	auto future = task.first.get_future();
 	
 	//If not in the same thread
@@ -374,7 +397,7 @@ std::future<void> EventLoop::Async(std::function<void(std::chrono::milliseconds)
 		task.first.set_value();
 	}
 	
-	//UltraDebug("<EventLoop::Async()\n");
+	//UltraDebug("<EventLoop::Future()\n");
 	
 	//Return the future for the promise
 	return future;
@@ -825,15 +848,17 @@ void EventLoop::ProcessTasks(const std::chrono::milliseconds& now)
 {
 	//Run queued task
 	TRACE_EVENT_BEGIN("eventloop", "EventLoop::ProcessTasks");
-	std::pair<std::promise<void>, std::function<void(std::chrono::milliseconds)>> task;
+	std::pair<std::optional<std::promise<void>>, std::function<void(std::chrono::milliseconds)>> task;
 	//Get all pending taks
 	while (tasks.try_dequeue(task))
 	{
 		//UltraDebug(">EventLoop::Run() | task pending\n");
 		//Execute it
 		task.second(now);
-		//Resolce promise
-		task.first.set_value();
+		//If we had a promise
+		if (task.first.has_value())
+			//Resolve promise
+			task.first->set_value();
 		//UltraDebug("<EventLoop::Run() | task run\n");
 	}
 	TRACE_EVENT_END("eventloop");
