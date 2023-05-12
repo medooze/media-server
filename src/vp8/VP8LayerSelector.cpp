@@ -127,6 +127,9 @@ bool VP8LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 			{
 				//Set key frame
 				packet->SetKeyFrame(header.isKeyFrame);
+				//Set width and height
+				packet->SetWidth(header.width);
+				packet->SetHeight(header.height);
 			} else {
 				//Clear desc
 				packet->vp8PayloadDescriptor.reset();
