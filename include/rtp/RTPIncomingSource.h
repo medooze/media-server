@@ -47,10 +47,15 @@ struct RTPIncomingSource : public RTPSource
 	int64_t skew;
 	double  drift;
 	bool	aggregatedLayers;
+
+	uint16_t width;
+	uint16_t height;
+
 	WrapExtender<uint32_t,uint64_t> timestampExtender;
 	WrapExtender<uint32_t,uint64_t> lastReceivedSenderRTPTimestampExtender;
 	std::map<WORD,LayerSource> layers;
-	
+
+
 	
 	Acumulator<uint32_t, uint64_t>	  acumulatorFrames;
 	MaxAcumulator<int32_t, int64_t>   acumulatorFrameDelay;
