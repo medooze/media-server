@@ -141,9 +141,11 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 		//UPdate size for video
 		if (frame->GetType() == MediaFrame::Video)
 		{
+			//Convert
+			auto  videoFrame = std::static_pointer_cast<VideoFrame>(frame);
 			//Set width and height
-			width = frame->GetWidth();
-			height = frame->GetHeight();
+			width = videoFrame->GetWidth();
+			height = videoFrame->GetHeight();
 		}
 
 		//Get info
