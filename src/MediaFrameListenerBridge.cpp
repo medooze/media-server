@@ -138,6 +138,14 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 			reset = false;
 		}
 
+		//UPdate size for video
+		if (frame->GetType() == MediaFrame::Video)
+		{
+			//Set width and height
+			width = frame->GetWidth();
+			height = frame->GetHeight();
+		}
+
 		//Get info
 		const MediaFrame::RtpPacketizationInfo& info = frame->GetRtpPacketizationInfo();
 
