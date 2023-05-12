@@ -426,13 +426,10 @@ bool H264LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 								//Parse sps
 								if (packet->h264SeqParameterSet->Decode(nalData, nalSize - 1))
 								{
-									Error("--- %d x %d\n", packet->h264SeqParameterSet->GetWidth(), packet->h264SeqParameterSet->GetHeight());
 									//Set dimensions
 									packet->SetWidth(packet->h264SeqParameterSet->GetWidth());
 									packet->SetHeight(packet->h264SeqParameterSet->GetHeight());
-									Error("--- %d x %d\n", packet->GetWidth(), packet->GetHeight());
 								} else {
-									Error("- NO DECODE --------------------------------------------------");
 									//Remove sps
 									packet->h264SeqParameterSet.reset();
 								}
@@ -468,14 +465,11 @@ bool H264LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 					//Parse sps
 					if (packet->h264SeqParameterSet->Decode(nalData, nalSize - 1))
 					{
-						Error("--- %d x %d\n", packet->h264SeqParameterSet->GetWidth(), packet->h264SeqParameterSet->GetHeight());
 						//Set dimensions
 						packet->SetWidth(packet->h264SeqParameterSet->GetWidth());
 						packet->SetHeight(packet->h264SeqParameterSet->GetHeight());
-						Error("--- %d x %d\n", packet->GetWidth(), packet->GetHeight());
-					}
-					else {
-						Error("- NO DECODE --------------------------------------------------");
+					} else {
+						//Remove sps
 						//Remove sps
 						packet->h264SeqParameterSet.reset();
 					}
