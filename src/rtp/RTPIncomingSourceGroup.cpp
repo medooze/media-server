@@ -354,15 +354,24 @@ RTPIncomingSource* RTPIncomingSourceGroup::Process(RTPPacket::shared &packet)
 	
 	//Set clockrate
 	source->clockrate = packet->GetClockRate();
-
+	
 	//if it is video
 	if (type == MediaFrame::Video)
 	{
 		//Check if we can ge the layer info
 		auto info = VideoLayerSelector::GetLayerIds(packet);
-		//UltraDebug("-VideoLayerSelector::GetLayerIds() | [id:%x,tid:%u,sid:%u]\n",info.GetId(),info.temporalLayerId,info.spatialLayerId);
+		//UltraDebug("-RTPIncomingSourceGroup::Process() | [id:%x,tid:%u,sid:%u]\n",info.GetId(),info.temporalLayerId,info.spatialLayerId);
 		//Update source and layer info
 		source->Update(time, packet->GetSeqNum(), packet->GetRTPHeader().GetSize() + packet->GetMediaLength(), info, VideoLayerSelector::AreLayersInfoeAggregated(packet));
+		
+		//If we have new size
+		if (packet->GetWidth() && packet->GetHeight())
+		{		
+			UltraDebug("-RTPIncomingSourceGroup::Processs() | [width:%u,height:%u]\n", packet->GetWidth(), packet->GetHeight());
+			//Update size
+			source->width = packet->GetWidth();
+			source->height = packet->GetHeight();
+		}
 	} else {
 		//Update source and layer info
 		source->Update(time, packet->GetSeqNum(), packet->GetRTPHeader().GetSize() + packet->GetMediaLength());

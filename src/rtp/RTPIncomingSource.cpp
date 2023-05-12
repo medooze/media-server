@@ -89,6 +89,8 @@ RTPIncomingSource::RTPIncomingSource() :
 	frameCaptureDelayMax		= 0;
 	lastCaptureTimestamp		= 0;
 	aggregatedLayers		= false;
+	width				= 0;
+	height				= 0;
 	minExtSeqNumSinceLastSR		= RTPPacket::MaxExtSeqNum;
 }
 
@@ -126,6 +128,8 @@ void RTPIncomingSource::Reset()
 	frameCaptureDelay		= 0;
 	frameCaptureDelayMax		= 0;
 	aggregatedLayers		= false;
+	width = 0;
+	height = 0;
 	minExtSeqNumSinceLastSR		= RTPPacket::MaxExtSeqNum;
 	timestampExtender.Reset();
 	lastReceivedSenderRTPTimestampExtender.Reset();
