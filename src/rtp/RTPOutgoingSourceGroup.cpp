@@ -54,6 +54,8 @@ void RTPOutgoingSourceGroup::RemoveListener(Listener* listener)
 
 void RTPOutgoingSourceGroup::AddPacket(const RTPPacket::shared& packet)
 {
+	//UltraDebug("-RTPOutgoingSourceGroup::AddPacket() | [seqNum:%d]\n",packet->GetSeqNum());
+	
 	//Add to the rtx queue
 	packets.Set(packet->GetSeqNum(), packet);
 }
@@ -76,7 +78,7 @@ RTPPacket::shared RTPOutgoingSourceGroup::GetPacket(WORD seq) const
 	if (!packet)
 	{
 		//Debug
-		UltraDebug("-RTPOutgoingSourceGroup::GetPacket() | packet not found [seqNum:%u,media:%u,first:%u,last:%u]\n",seq,media.cycles,packets.GetFirstSeq(), packets.GetLastSeq());
+		UltraDebug("-RTPOutgoingSourceGroup::GetPacket() | packet not found [seqNum:%u,cycles:%u,first:%u,last:%u]\n",seq,media.cycles,packets.GetFirstSeq(), packets.GetLastSeq());
 		//Not found
 		return nullptr;
 	}

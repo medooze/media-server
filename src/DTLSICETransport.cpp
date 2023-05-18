@@ -265,7 +265,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		Debug("-DTLSICETransport::onData() | Unknowing group for ssrc trying to retrieve by [ssrc:%u,rid:'%s']\n",ssrc,rid.c_str());
 
 		//If it is the repaidr stream or it has rid and it is rtx
-		if (!rid.empty() && packet->GetCodec()==VideoCodec::RTX)
+		if (!rid.empty() && (packet->GetCodec()==VideoCodec::RTX || packet->GetCodec() == AudioCodec::RTX))
 		{
 			//Try to find it on the rids and mids
 			auto it = rids.find(mid+"@"+rid);
@@ -322,7 +322,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 				//And to the srtp session
 				recv.AddStream(ssrc);
 			}
-		} else if (packet->HasMediaStreamId() && packet->GetCodec()==VideoCodec::RTX) {
+		} else if (packet->HasMediaStreamId() && (packet->GetCodec()==VideoCodec::RTX || packet->GetCodec() == AudioCodec::RTX)) {
 			//Try to find it on the rids and mids
 			auto it = mids.find(mid);
 			//If found
@@ -406,7 +406,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 			mids[mid] = { group };
 	}
 	
-	//UltraDebug("-Got RTP on media:%s sssrc:%u seq:%u pt:%u codec:%s rid:'%s', mid:'%s'\n",MediaFrame::TypeToString(group->type),ssrc,packet->GetSeqNum(),packet->GetPayloadType(),GetNameForCodec(group->type,codec),group->rid.c_str(),group->mid.c_str());
+	//UltraDebug("-DTLSICETransport::onData() | Got RTP on media:%s sssrc:%u seq:%u pt:%u codec:%s rid:'%s', mid:'%s'\n",MediaFrame::TypeToString(group->type),ssrc,packet->GetSeqNum(),packet->GetPayloadType(),GetNameForCodec(group->type,codec),group->rid.c_str(),group->mid.c_str());
 	
 	//Process packet and get source
 	RTPIncomingSource* source = group->Process(packet);
@@ -420,10 +420,9 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 	if (ssrc==group->rtx.ssrc && packet->GetMediaLength()) 
 	{
 		//Ensure that it is a RTX codec
-		if (codec!=VideoCodec::RTX)
+		if (codec!=VideoCodec::RTX && codec != AudioCodec::RTX)
 			//error
 			return  Warning("-DTLSICETransport::onData() | No RTX codec on rtx sssrc:%u type:%d codec:%d\n",packet->GetSSRC(),packet->GetPayloadType(),packet->GetCodec());
-	
 		//Find apt type
 		auto apt = recvMaps.apt.GetCodecForType(packet->GetPayloadType());
 		//Find codec 
@@ -449,6 +448,8 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		 packet->SetPayloadType(apt);
 		 //TODO: Move from here, required to fill the vp8/vp9 descriptors
 		 VideoLayerSelector::GetLayerIds(packet);
+
+		 //UltraDebug("-DTLSICETransport::onData() | Recovered RTX on media:%s sssrc:%u seq:%u pt:%u codec:%s rid:'%s', mid:'%s'\n", MediaFrame::TypeToString(group->type), ssrc, packet->GetSeqNum(), packet->GetPayloadType(), GetNameForCodec(group->type, codec), group->rid.c_str(), group->mid.c_str());
 	} 
 
 	//Add packet and see if we have lost any in between
@@ -460,7 +461,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		source->dropPackets++;
 	
 	//Send nack feedback
-	if ( group->type == MediaFrame::Video && 
+	if ((group->type == MediaFrame::Video || recvMaps.apt.GetTypeForCodec(packet->GetPayloadType()!=RTPMap::NotFound)) &&
 		( lost>0 ||  (group->GetCurrentLost() && (now-source->lastNACKed)/1000>fmax(rtt,20)))
 	   )
 	{
@@ -931,7 +932,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	auto instant = rtxBitrate.Update(now/1000) * 8;
 
 	//Log
-	UltraDebug("-DTLSICETransport::ReSendPacket() | resending [seq:%d,ssrc:%u,rtx:%u,instant:%llu, isWindow:%d, count:%d, empty:%d]\n", seq, group->media.ssrc, group->rtx.ssrc, instant, rtxBitrate.IsInWindow(), rtxBitrate.GetCount(), rtxBitrate.IsEmpty());
+	//UltraDebug("-DTLSICETransport::ReSendPacket() | resending [seq:%d,ssrc:%u,rtx:%u,instant:%llu, isWindow:%d, count:%d, empty:%d]\n", seq, group->media.ssrc, group->rtx.ssrc, instant, rtxBitrate.IsInWindow(), rtxBitrate.GetCount(), rtxBitrate.IsEmpty());
 
 	//if sse is enabled
 	if (senderSideEstimationEnabled && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC) != RTPMap::NotFound)
@@ -1145,8 +1146,22 @@ void DTLSICETransport::SetLocalProperties(const Properties& properties)
 		AudioCodec::Type codec = AudioCodec::GetCodecForName(it->GetProperty("codec"));
 		//Get codec type
 		BYTE type = it->GetProperty("pt",0);
-		//ADD it
-		sendMaps.rtp[type] = codec;
+		//Check
+		if (type && codec != AudioCodec::UNKNOWN)
+		{
+			//ADD it
+			sendMaps.rtp[type] = codec;
+			//Get rtx
+			BYTE rtx = it->GetProperty("rtx", 0);
+			//Check if it has rtx
+			if (rtx)
+			{
+				//ADD it
+				sendMaps.rtp[rtx] = AudioCodec::RTX;
+				//Add the reverse one
+				sendMaps.apt[rtx] = type;
+			}
+		}
 	}
 	
 	//Clear codecs
@@ -1249,8 +1264,22 @@ void DTLSICETransport::SetRemoteProperties(const Properties& properties)
 		AudioCodec::Type codec = AudioCodec::GetCodecForName(it->GetProperty("codec"));
 		//Get codec type
 		BYTE type = it->GetProperty("pt",0);
-		//ADD it
-		recvMaps.rtp[type] = codec;
+		//Check
+		if (type && codec != AudioCodec::UNKNOWN)
+		{
+			//ADD it
+			recvMaps.rtp[type] = codec;
+			//Get rtx
+			BYTE rtx = it->GetProperty("rtx", 0);
+			//Check if it has rtx
+			if (rtx)
+			{
+				//ADD it
+				recvMaps.rtp[rtx] = AudioCodec::RTX;
+				//Add the reverse one
+				recvMaps.apt[rtx] = type;
+			}
+		}
 	}
 	
 	//Clear codecs
@@ -1731,8 +1760,8 @@ bool DTLSICETransport::AddIncomingSourceGroup(const RTPIncomingSourceGroup::shar
 	if (!group)
 		return Error("-DTLSICETransport::AddIncomingSourceGroup() | Empty group\n");
 
-	//RTX should only be enabled for video and if RTX codec has been negotiated
-	bool isRTXEnabled = group->type == MediaFrame::Video && sendMaps.rtp.HasCodec(VideoCodec::RTX);
+	//RTX should only be enabled if RTX codec has been negotiated for the media type
+	bool isRTXEnabled = group->type==MediaFrame::Video ? sendMaps.rtp.HasCodec(VideoCodec::RTX) : sendMaps.rtp.HasCodec(AudioCodec::RTX);
 
 	//Log
 	Log("-DTLSICETransport::AddIncomingSourceGroup() [mid:'%s',rid:'%s',ssrc:%u,rtx:%u,isRTXEnabled:%d,disableREMB:%d]\n",group->mid.c_str(),group->rid.c_str(),group->media.ssrc,group->rtx.ssrc,isRTXEnabled, disableREMB);
@@ -2096,7 +2125,7 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 		//Disable playout delay
 		packet->DisablePlayoutDelay();
 
-	//if (group->type==MediaFrame::Video) UltraDebug("-Sending RTP on media:%s sssrc:%u seq:%u pt:%u ts:%lu codec:%s\n",MediaFrame::TypeToString(group->type),source.ssrc,packet->GetSeqNum(),packet->GetPayloadType(),packet->GetTimestamp(),GetNameForCodec(group->type,packet->GetCodec()));
+	//if (group->type==MediaFrame::Video) UltraDebug("-DTLSICETransport::Send() | Sending RTP on media:%s sssrc:%u seq:%u pt:%u ts:%lu codec:%s\n",MediaFrame::TypeToString(group->type),source.ssrc,packet->GetSeqNum(),packet->GetPayloadType(),packet->GetTimestamp(),GetNameForCodec(group->type,packet->GetCodec()));
 	
 	//Pick one packet buffer from the pool
 	Packet buffer = packetPool.pick();
@@ -2401,7 +2430,6 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 						{
 							//Get field
 							auto field = fb->GetField<RTCPRTPFeedback::NACKField>(i);
-
 							//Resent it
 							ReSendPacket(group, field->pid);
 							//Check each bit of the mask
