@@ -227,11 +227,13 @@ protected:
 
 private:
 	MediaFrame::Type media;
+
 	BYTE		codec;
 	DWORD		clockRate;
 	WORD		seqCycles	= 0;
 	DWORD		timestampCycles	= 0;
-	WORD		osn		= 0;
+
+	std::optional<WORD> osn;
 	
 	RTPHeader	   header;
 	RTPHeaderExtension extension;

@@ -246,7 +246,7 @@ DWORD RTPPacket::Serialize(BYTE* data,DWORD size,const RTPMap& extMap) const
 	if (osn)
 	{
 		//And set the original seq
-		set2(data, len, osn);
+		set2(data, len, *osn);
 		//Move payload start
 		len += 2;
 	}
