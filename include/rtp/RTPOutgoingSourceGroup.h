@@ -42,6 +42,9 @@ public:
 	void AddPacket(const RTPPacket::shared& packet);
 	RTPPacket::shared GetPacket(WORD seq) const;
 
+	bool isRTXAllowed(WORD seq, QWORD now) const;
+	void SetRTXTime(WORD seq, QWORD time);
+
 	void Stop();
 
 	bool HasForcedPlayoutDelay() const 
@@ -67,6 +70,7 @@ public:
 private:	
 	TimeService& timeService;
 	CircularBuffer<RTPPacket::shared, uint16_t, 512> packets;
+	CircularBuffer<QWORD, uint16_t, 512> rtxTimes;
 	std::set<Listener*> listeners;
 	std::optional<struct RTPHeaderExtension::PlayoutDelay> forcedPlayoutDelay;
 };

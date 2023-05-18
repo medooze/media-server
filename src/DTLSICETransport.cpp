@@ -932,7 +932,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	auto instant = rtxBitrate.Update(now/1000) * 8;
 
 	//Log
-	//UltraDebug("-DTLSICETransport::ReSendPacket() | resending [seq:%d,ssrc:%u,rtx:%u,instant:%llu, isWindow:%d, count:%d, empty:%d]\n", seq, group->media.ssrc, group->rtx.ssrc, instant, rtxBitrate.IsInWindow(), rtxBitrate.GetCount(), rtxBitrate.IsEmpty());
+	UltraDebug("-DTLSICETransport::ReSendPacket() | resending [seq:%d,ssrc:%u,rtx:%u,instant:%llu, isWindow:%d, count:%d, empty:%d]\n", seq, group->media.ssrc, group->rtx.ssrc, instant, rtxBitrate.IsInWindow(), rtxBitrate.GetCount(), rtxBitrate.IsEmpty());
 
 	//if sse is enabled
 	if (senderSideEstimationEnabled && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC) != RTPMap::NotFound)
@@ -945,6 +945,11 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 			//Error
 			return (void)UltraDebug("-DTLSICETransport::ReSendPacket() | Too much bitrate on rtx, skiping rtx:%lld estimated:%u target:%d\n",(uint64_t)(rtxBitrate.GetInstantAvg()*8), senderSideBandwidthEstimator->GetEstimatedBitrate(), targetBitrate);
 	}
+
+	//Check if we can retransmit the packet, or we have rtx recently
+	if (!group->isRTXAllowed(seq, now/1000))
+		//Debug
+		return (void)UltraDebug("-DTLSICETransport::ReSendPacket() | rtx not allowed for packet [seq:%d,ssrc:&%u,rtx:%u]\n", seq, group->media.ssrc, group->rtx.ssrc);
 	
 	//Find packet to retransmit
 	auto original = group->GetPacket(seq);
@@ -1093,6 +1098,9 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	
 	//Update stats
 	source.Update(now/1000, packet, len);
+
+	//Update rtx time
+	group->SetRTXTime(seq, now/1000);
 }
 
 void  DTLSICETransport::ActivateRemoteCandidate(ICERemoteCandidate* candidate,bool useCandidate, DWORD priority)

@@ -54,8 +54,6 @@ void RTPOutgoingSourceGroup::RemoveListener(Listener* listener)
 
 void RTPOutgoingSourceGroup::AddPacket(const RTPPacket::shared& packet)
 {
-	//UltraDebug("-RTPOutgoingSourceGroup::AddPacket() | [seqNum:%d]\n",packet->GetSeqNum());
-	
 	//Add to the rtx queue
 	packets.Set(packet->GetSeqNum(), packet);
 }
@@ -78,7 +76,7 @@ RTPPacket::shared RTPOutgoingSourceGroup::GetPacket(WORD seq) const
 	if (!packet)
 	{
 		//Debug
-		UltraDebug("-RTPOutgoingSourceGroup::GetPacket() | packet not found [seqNum:%u,cycles:%u,first:%u,last:%u]\n",seq,media.cycles,packets.GetFirstSeq(), packets.GetLastSeq());
+		UltraDebug("-RTPOutgoingSourceGroup::GetPacket() | packet not found [seqNum:%u,media:%u,first:%u,last:%u]\n",seq,media.cycles,packets.GetFirstSeq(), packets.GetLastSeq());
 		//Not found
 		return nullptr;
 	}
@@ -150,4 +148,29 @@ void RTPOutgoingSourceGroup::Stop()
 		listeners.clear();
 	});
 
+}
+
+bool RTPOutgoingSourceGroup::isRTXAllowed(WORD seq, QWORD now) const
+{
+	//If there are no rtx times
+	if (!rtxTimes.GetLength())
+		//It is the first rtx packet
+		return true;
+
+	//Find last rtx time
+	auto time = rtxTimes.Get(seq);
+
+	//If we don't have it
+	if (!time)
+		//First time rtx this packet
+		return true;
+
+	//Don't allow to rtx more than twice per rtt
+	return time.value() + media.rtt/2 < now;
+}
+
+void RTPOutgoingSourceGroup::SetRTXTime(WORD seq, QWORD time)
+{
+	//Update rtx time for seq
+	rtxTimes.Set(seq, time);
 }
