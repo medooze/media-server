@@ -41,7 +41,7 @@ void RTPIncomingSourceGroup::AddListener(RTPIncomingMediaStream::Listener* liste
 	Debug("-RTPIncomingSourceGroup::AddListener() [listener:%p]\n",listener);
 	
 	//Add it sync
-	timeService.Sync([=](auto){
+	timeService.Async([=](auto){
 		listeners.insert(listener);
 	});
 }
@@ -183,7 +183,7 @@ void RTPIncomingSourceGroup::UpdateAsync(std::function<void(std::chrono::millise
 	TRACE_EVENT("rtp", "RTPIncomingSourceGroup::Update");
 
 	//Update it sync
-	timeService.Async([=](std::chrono::milliseconds now) {
+	timeService.Aync([=](std::chrono::milliseconds now) {
 		//Set last updated time
 		lastUpdated = now.count();
 		//Update
