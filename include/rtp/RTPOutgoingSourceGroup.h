@@ -36,6 +36,7 @@ public:
 	TimeService& GetTimeService()	{ return timeService; }
 	RTPOutgoingSource* GetSource(DWORD ssrc);
 	
+	void UpdateAsync(std::function<void(std::chrono::milliseconds)> callback);
 	void Update(QWORD now);
 	void Update();
 	//RTX packets

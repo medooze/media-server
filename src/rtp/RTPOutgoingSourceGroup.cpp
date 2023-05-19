@@ -36,7 +36,7 @@ void RTPOutgoingSourceGroup::AddListener(Listener* listener)
 	Debug("-RTPOutgoingSourceGroup::AddListener() [listener:%p]\n",listener);
 	
 	//Add it sync
-	timeService.Sync([=](auto) {
+	timeService.Async([=](auto) {
 		listeners.insert(listener);
 	});
 	
@@ -106,6 +106,19 @@ void RTPOutgoingSourceGroup::onREMB(DWORD ssrc, DWORD bitrate)
 		for (auto listener : listeners)
 			listener->onREMB(this,ssrc,bitrate);
 	});
+}
+
+void RTPOutgoingSourceGroup::UpdateAsync(std::function<void(std::chrono::milliseconds)> callback)
+{
+	//Update it sync
+	timeService.Async([=](auto now) {
+		//Set last updated time
+		lastUpdated = now.count();
+		//Update
+		media.Update(now.count());
+		//Update
+		rtx.Update(now.count());
+	}, callback);
 }
 
 void RTPOutgoingSourceGroup::Update()

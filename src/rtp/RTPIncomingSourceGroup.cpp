@@ -176,6 +176,23 @@ void RTPIncomingSourceGroup::Update()
 		rtx.Update(now.count());
 	});
 }
+
+void RTPIncomingSourceGroup::UpdateAsync(std::function<void(std::chrono::milliseconds)> callback)
+{
+	//Trace method
+	TRACE_EVENT("rtp", "RTPIncomingSourceGroup::Update");
+
+	//Update it sync
+	timeService.Async([=](std::chrono::milliseconds now) {
+		//Set last updated time
+		lastUpdated = now.count();
+		//Update
+		media.Update(now.count());
+		//Update
+		rtx.Update(now.count());
+	}, callback);
+}
+
 void RTPIncomingSourceGroup::SetMaxWaitTime(DWORD maxWaitingTime)
 {
 	//Update it sync
