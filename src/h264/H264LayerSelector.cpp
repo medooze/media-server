@@ -492,7 +492,7 @@ bool H264LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 			}
 		}
 	}
-	//UltraDebug("-H264LayerSelector::GetLayerIds() | [isKeyFrame:%d]\n",packet->IsKeyFrame());
+	//UltraDebug("-H264LayerSelector::GetLayerIds() | [isKeyFrame:%d,width:%d,height:%d]\n",packet->IsKeyFrame(),packet->GetWidth(),packet->GetHeight());
 	
 	//Return layer infos
 	return infos;
