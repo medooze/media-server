@@ -183,7 +183,7 @@ void RTPIncomingSourceGroup::UpdateAsync(std::function<void(std::chrono::millise
 	TRACE_EVENT("rtp", "RTPIncomingSourceGroup::Update");
 
 	//Update it sync
-	timeService.Aync([=](std::chrono::milliseconds now) {
+	timeService.Async([=](std::chrono::milliseconds now) {
 		//Set last updated time
 		lastUpdated = now.count();
 		//Update
