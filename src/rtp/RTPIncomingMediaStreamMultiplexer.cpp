@@ -24,7 +24,7 @@ void RTPIncomingMediaStreamMultiplexer::Stop()
 	//Wait until all the previous async have finished as async calls are executed in order
 	timeService.Sync([=](auto now){
 		//Trace method
-		TRACE_EVENT("rtp", "RTPIncomingMediaStreamMultiplexer::onEnded async", "ssrc", ssrc);
+		TRACE_EVENT("rtp", "RTPIncomingMediaStreamMultiplexer::Stop async", "ssrc", GetMediaSSRC());
 		//If the source stream is alive
 		if (incomingMediaStream)
 			//Do not listen anymore
