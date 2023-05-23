@@ -29,7 +29,7 @@ bool RTPStreamTransponder::SetIncoming(const RTPIncomingMediaStream::shared& inc
 {
 	bool res = true;
 
-	timeService.Sync([=,&res](auto now){
+	timeService.Async([=,&res](auto now){
 		//Check we are not closed
 		if (!outgoing)
 		{

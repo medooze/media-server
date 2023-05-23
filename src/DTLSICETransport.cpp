@@ -3021,33 +3021,36 @@ void DTLSICETransport::CheckProbeTimer()
 {
 	Debug("-DTLSICETransport::CheckProbeTimer() | [probingTimer:%d]\n",!!probingTimer);
 
-	//If we don't have timer anumore
-	if (!probingTimer)
-		//Do nothing
-		return;
-	//No video
-	bool video = false;
-	//Check if there is any video source
-	for (auto& [ssrc,outgoing] : outgoing)
-	{
-		//If it is video
-		if (outgoing->type == MediaFrame::Video)
+	//Dispatch to the event loop thread
+	timeService.Sync([=](auto now) {
+		//If we don't have timer anumore
+		if (!probingTimer)
+			//Do nothing
+			return;
+		//No video
+		bool video = false;
+		//Check if there is any video source
+		for (const auto& [ssrc,outgoing] : outgoing)
 		{
-			//Got one
-			video = true;
-			break;
+			//If it is video
+			if (outgoing->type == MediaFrame::Video)
+			{
+				//Got one
+				video = true;
+				break;
+			}
 		}
-	}
 	
-	//Check if we have to start if
-	if (this->senderSideEstimationEnabled && this->probe && video && state == DTLSState::Connected)
-	{
-		//If not already started
-		if (!probingTimer->IsScheduled())
-			//Start probing timer again
-			probingTimer->Repeat(ProbingInterval);
-	}else {
-		//Stop probing
-		probingTimer->Cancel();
-	}
+		//Check if we have to start if
+		if (this->senderSideEstimationEnabled && this->probe && video && state == DTLSState::Connected)
+		{
+			//If not already started
+			if (!probingTimer->IsScheduled())
+				//Start probing timer again
+				probingTimer->Repeat(ProbingInterval);
+		} else {
+			//Stop probing
+			probingTimer->Cancel();
+		}
+	});
 }
