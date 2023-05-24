@@ -16,7 +16,7 @@
 #include "rtp/RTPPacket.h"
 #include "log.h"
 
-RTPPayloadPool RTPPacket::PayloadPool(16536);
+RTPPayloadPool RTPPacket::PayloadPool(65536);
 
 RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec, QWORD time) 
 {
