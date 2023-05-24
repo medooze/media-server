@@ -733,8 +733,14 @@ void RTMPConnection::ParseData(BYTE *data,const DWORD size)
 						RTMPMediaFrame* frame = msg->GetMediaFrame();
 						//Check if we have it
 						if (frame)
+						{
 							//Process message
 							ProcessMediaData(messageStreamId,frame);
+						}
+						else
+						{
+							Error("Failed to get media frame\n");
+						}
 					} else if (msg->IsMetaData() || msg->IsSharedObject()) {
 						//Get object
 						RTMPMetaData *meta = msg->GetMetaData();

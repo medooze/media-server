@@ -209,19 +209,27 @@ std::unique_ptr<AudioFrame> RTMPAACPacketizer::AddFrame(RTMPAudioFrame* audioFra
 	//Debug("-RTMPAACPacketizer::AddFrame() [size:%u,aac:%d,codec:%d]\n",audioFrame->GetMediaSize(),audioFrame->GetAACPacketType(),audioFrame->GetAudioCodec());
 	
 	if (audioFrame->GetAudioCodec()!=RTMPAudioFrame::AAC)
+	{
+		Debug("-RTMPAACPacketizer::AddFrame() | Skip non-AAC codec\n");
 		return nullptr;
+	}
 	
 	//Check if it is AAC descriptor
 	if (audioFrame->GetAACPacketType()==RTMPAudioFrame::AACSequenceHeader)
 	{
 		//Handle specific settings
 		gotConfig = aacSpecificConfig.Decode(audioFrame->GetMediaData(),audioFrame->GetMediaSize());
+		
+		Debug("-RTMPAACPacketizer::AddFrame() | Skip AACSequenceHeader frame\n");
 		return nullptr;
 	}
 	
 	if (audioFrame->GetAACPacketType()!=RTMPAudioFrame::AACRaw)
+	{
 		//DOne
+		Debug("-RTMPAACPacketizer::AddFrame() | Skp AACRaw frame\n");
 		return nullptr;
+	}
 
 	//IF we have aac config
 	if (!gotConfig)
