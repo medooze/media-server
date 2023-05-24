@@ -85,7 +85,7 @@ private:
 		}
 	};
 public:
-	EventLoop(Listener* listener = nullptr);
+	EventLoop(Listener* listener = nullptr, uint32_t packetPoolSize = 0);
 	virtual ~EventLoop();
 	
 	bool Start(std::function<void(void)> loop);

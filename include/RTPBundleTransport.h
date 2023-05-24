@@ -44,7 +44,7 @@ public:
 		
 	};
 public:
-	RTPBundleTransport();
+	RTPBundleTransport(uint32_t packetPoolSize = 0);
 	virtual ~RTPBundleTransport();
 	int Init();
 	int Init(int port);

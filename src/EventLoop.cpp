@@ -76,16 +76,17 @@ void free_cpu_set(cpu_set_t* s) {
 }
 #endif
 
-EventLoop::EventLoop(Listener *listener) :
+EventLoop::EventLoop(Listener *listener, uint32_t packetPoolSize) :
 	listener(listener),
-	packetPool(PacketPoolSize)
+	packetPool(packetPoolSize ? packetPoolSize : PacketPoolSize)
 {
-	Debug("-EventLoop::EventLoop() this:%p\n",this);
+	Debug("-EventLoop::EventLoop() [this:%p,packetPoolSize:%d]\n", this, packetPool.size());
 }
+
 
 EventLoop::~EventLoop()
 {
-	Debug("-EventLoop::~EventLoop() this:%p\n", this);
+	Debug("-EventLoop::~EventLoop() [this:%p]\n", this);
 	if (running)
 		Stop();
 }
