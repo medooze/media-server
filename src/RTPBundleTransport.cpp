@@ -97,8 +97,8 @@ void RTPBundleTransport::RTPBundleTransport::ClearRawTx()
 * RTPBundleTransport
 * 	Constructro
 **************************/
-RTPBundleTransport::RTPBundleTransport() : 
-	loop(this)
+RTPBundleTransport::RTPBundleTransport(uint32_t packetPoolSize) :
+	loop(this, packetPoolSize)
 {
 	//Init values
 	socket = FD_INVALID;
