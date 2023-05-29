@@ -1121,8 +1121,8 @@ void RTMPAudioFrame::Dump()
 
 DWORD RTMPAudioFrame::Parse(BYTE *data,DWORD size)
 {
-	BYTE* buf = data;
-	DWORD bufLen = size;
+	BYTE* chunk = data;
+	DWORD chunkLen = size;
 
         //Check size
         if (!size)
@@ -1133,18 +1133,18 @@ DWORD RTMPAudioFrame::Parse(BYTE *data,DWORD size)
 	if (headerPos == 0)
 	{
 		//Parse type
-		codec		= (AudioCodec)(buf[0]>>4);
-		rate		= (SoundRate)((buf[0]>>2) & 0x03);
-		sample16bits	= ((buf[0]>>1) & 0x01);
-		stereo		=  buf[0] & 0x01;
+		codec		= (AudioCodec)(chunk[0]>>4);
+		rate		= (SoundRate)((chunk[0]>>2) & 0x03);
+		sample16bits	= ((chunk[0]>>1) & 0x01);
+		stereo		=  chunk[0] & 0x01;
 		//Remove from data
-		buf++;
-		bufLen--;
+		chunk++;
+		chunkLen--;
 		headerPos++;
 	}
 
         //Check still something
-        if (!bufLen)
+        if (!chunkLen)
                 //Done so far
                 return size;
 
@@ -1152,20 +1152,20 @@ DWORD RTMPAudioFrame::Parse(BYTE *data,DWORD size)
 	if (codec==AAC && headerPos == 1)
 	{
 		//Get type
-		extraData[0] = buf[0];
+		extraData[0] = chunk[0];
 		//Remove from data
-		buf++;
-		bufLen--;
+		chunk++;
+		chunkLen--;
                 //Increase header pos
                 headerPos++;
 	}
 	//Parse the rest
-	DWORD len = RTMPMediaFrame::Parse(buf,bufLen);
+	DWORD len = RTMPMediaFrame::Parse(chunk,chunkLen);
 	//Increase media data
 	mediaSize += len;
 
 	//Return parsed data
-	return len+(buf-data);
+	return len+(chunk-data);
 }
 
 DWORD RTMPAudioFrame::Serialize(BYTE* data,DWORD size)
