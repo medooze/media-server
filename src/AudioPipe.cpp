@@ -213,12 +213,12 @@ int AudioPipe::RecBuffer(SWORD* buffer, DWORD size)
 	//Bloqueamos
 	pthread_mutex_lock(&mutex);
 	
-	if (canceled || !recording || size == 0)
+	if (!playing) 
+	{
+		pthread_mutex_unlock(&mutex);
 		return 0;
+	}
 	
-	// Wait for playing started or canceled
-	pthread_cond_wait(&cond, &mutex);
-
 	//Calculate total audio length
 	DWORD totalSize = size * numChannels;
 	
