@@ -645,7 +645,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 		{
 			struct sockaddr_in froms[MaxMultipleReceivingMessages] = {};
 			struct mmsghdr messages[MaxMultipleReceivingMessages] = {};
-			struct iovec iovs[MaxMultipleReceivingMessages][1] = {};
+			struct iovec iovs[MaxMultipleReceivingMessages][1] = {{}};
 
 			TRACE_EVENT("eventloop", "EventLoop::Run::ProcessIn");
 			//UltraDebug("-EventLoop::Run() | ufds[0].revents & POLLIN\n");
@@ -693,7 +693,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 			//Multiple messages struct
 			struct mmsghdr messages[MaxMultipleSendingMessages] = {};
 			struct sockaddr_in tos[MaxMultipleSendingMessages] = {};
-			struct iovec iovs[MaxMultipleSendingMessages][1] = {};
+			struct iovec iovs[MaxMultipleSendingMessages][1] = {{}};
 
 			TRACE_EVENT("eventloop", "EventLoop::Run::ProcessOut");
 			//UltraDebug("-EventLoop::Run() | ufds[0].revents & POLLOUT\n");
