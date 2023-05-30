@@ -48,7 +48,7 @@ private:
 	static DWORD table[256];
 	static bool inited;
 private:
-	DWORD crc;
+	DWORD crc = 0;
 };
 
 
