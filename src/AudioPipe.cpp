@@ -209,18 +209,29 @@ int AudioPipe::RecBuffer(SWORD* buffer, DWORD size)
 	//Debug("-pop %d cache %d\n",size,fifoBuffer.length());
 
 	DWORD len = 0;
+	DWORD totalSize = 0;
 
 	//Bloqueamos
 	pthread_mutex_lock(&mutex);
 	
-	if (!playing) 
+	while (!playing) 
 	{
-		pthread_mutex_unlock(&mutex);
-		return 0;
+		pthread_cond_wait(&cond, &mutex);
+
+		//If we have been canceled
+		if (canceled)
+		{
+			//Remove flag
+			canceled = false;
+			//Exit
+			Log("AudioPipe: RecBuffer cancelled.\n");
+			//End
+			goto end;
+		}
 	}
 	
 	//Calculate total audio length
-	DWORD totalSize = size * numChannels;
+	totalSize = size * numChannels;
 	
 	//Mientras no tengamos suficientes muestras
 	while (!canceled && recording && (fifoBuffer.length() < totalSize + cache))
