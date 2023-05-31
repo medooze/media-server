@@ -119,10 +119,14 @@ void RTPIncomingMediaStreamMultiplexer::onBye(const RTPIncomingMediaStream* stre
 void RTPIncomingMediaStreamMultiplexer::onEnded(const RTPIncomingMediaStream* stream)
 {
 	Debug("-RTPIncomingMediaStreamMultiplexer::onEnded() [stream:%p,this:%p]\n", stream, this);
-	//Check
-	if (incomingMediaStream.get() == stream)
-		//No stream
-		incomingMediaStream.reset();
+
+	//Dispatch in thread sync
+	timeService.Sync([=](auto now) {
+		//Check
+		if (incomingMediaStream.get() == stream)
+			//No stream
+			incomingMediaStream.reset();
+	});
 }
 
 void RTPIncomingMediaStreamMultiplexer::Mute(bool muting)
