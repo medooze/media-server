@@ -111,10 +111,10 @@ public:
 	void DisableREMB(bool disabled);
 	
 	ICERemoteCandidate* GetActiveRemoteCandidate() const { return active;	};
-	const char* GetRemoteUsername() const { return iceRemoteUsername;	};
-	const char* GetRemotePwd()	const { return iceRemotePwd;		};
-	const char* GetLocalUsername()	const { return iceLocalUsername;	};
-	const char* GetLocalPwd()	const { return iceLocalPwd;		};
+	const char* GetRemoteUsername() const { return iceRemoteUsername.c_str();	};
+	const char* GetRemotePwd()	const { return iceRemotePwd.c_str();		};
+	const char* GetLocalUsername()	const { return iceLocalUsername.c_str();	};
+	const char* GetLocalPwd()	const { return iceLocalPwd.c_str();		};
 	
 	virtual void onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMasterKey,DWORD localMasterKeySize,BYTE* remoteMasterKey,DWORD remoteMasterKeySize)  override;
 	virtual void onDTLSPendingData() override;
@@ -186,10 +186,10 @@ private:
 	DWORD	mainSSRC		= 1;
 	DWORD   lastMediaSSRC		= 0;
 	DWORD   rtt			= 0;
-	char*	iceRemoteUsername	= nullptr;
-	char*	iceRemotePwd		= nullptr;
-	char*	iceLocalUsername	= nullptr;
-	char*	iceLocalPwd		= nullptr;
+	std::string iceRemoteUsername;
+	std::string iceRemotePwd;
+	std::string iceLocalUsername;
+	std::string iceLocalPwd;
 	
 	Acumulator<uint32_t, uint64_t> outgoingBitrate;
 	Acumulator<uint32_t, uint64_t> rtxBitrate;
