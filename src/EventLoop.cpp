@@ -348,7 +348,7 @@ void EventLoop::Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet
 	Signal();
 }
 
-void EventLoop::Async(std::function<void(std::chrono::milliseconds)> func)
+void EventLoop::Async(const std::function<void(std::chrono::milliseconds)>& func)
 {
 	//UltraDebug(">EventLoop::Async()\n");
 
@@ -356,7 +356,7 @@ void EventLoop::Async(std::function<void(std::chrono::milliseconds)> func)
 	if (std::this_thread::get_id() != thread.get_id())
 	{
 		//Create task
-		auto task = std::make_pair(std::move(func),std::nullopt);
+		auto task = std::make_pair(func,std::nullopt);
 
 		//Add to pending taks
 		tasks.enqueue(std::move(task));
@@ -371,7 +371,7 @@ void EventLoop::Async(std::function<void(std::chrono::milliseconds)> func)
 	//UltraDebug("<EventLoop::Async()\n");
 }
 
-void EventLoop::Async(std::function<void(std::chrono::milliseconds)> func, std::function<void(std::chrono::milliseconds)> callback)
+void EventLoop::Async(const std::function<void(std::chrono::milliseconds)>& func, const std::function<void(std::chrono::milliseconds)>& callback)
 {
 	//UltraDebug(">EventLoop::Async()\n");
 
@@ -379,14 +379,14 @@ void EventLoop::Async(std::function<void(std::chrono::milliseconds)> func, std::
 	if (std::this_thread::get_id() != thread.get_id())
 	{
 		//Create task
-		auto task = std::make_pair(std::move(func), std::move(callback));
+		auto task = std::make_pair(func, callback);
 
 		//Add to pending taks
 		tasks.enqueue(std::move(task));
 
 		//Signal the thread this will cause the poll call to exit
 		Signal();
-	}else {
+	} else {
 		//Call now otherwise
 		func(GetNow());
 		//Call callback
@@ -396,7 +396,7 @@ void EventLoop::Async(std::function<void(std::chrono::milliseconds)> func, std::
 }
 
 
-std::future<void> EventLoop::Future(std::function<void(std::chrono::milliseconds)> func)
+std::future<void> EventLoop::Future(const std::function<void(std::chrono::milliseconds)>& func)
 {
 	//UltraDebug(">EventLoop::Future()\n");
 	
@@ -415,7 +415,7 @@ std::future<void> EventLoop::Future(std::function<void(std::chrono::milliseconds
 	return promise->get_future();;
 }
 
-Timer::shared EventLoop::CreateTimer(std::function<void(std::chrono::milliseconds)> callback)
+Timer::shared EventLoop::CreateTimer(const std::function<void(std::chrono::milliseconds)>& callback)
 {
 	//Create timer without scheduling it
 	auto timer = std::make_shared<TimerImpl>(*this,0ms,callback);
@@ -423,13 +423,13 @@ Timer::shared EventLoop::CreateTimer(std::function<void(std::chrono::millisecond
 	return std::static_pointer_cast<Timer>(timer);
 }
 
-Timer::shared EventLoop::CreateTimer(const std::chrono::milliseconds& ms, std::function<void(std::chrono::milliseconds)> callback)
+Timer::shared EventLoop::CreateTimer(const std::chrono::milliseconds& ms, const std::function<void(std::chrono::milliseconds)>& callback)
 {
 	//Timer without repeat
 	return CreateTimer(ms,0ms,callback);
 }
 
-Timer::shared EventLoop::CreateTimer(const std::chrono::milliseconds& ms, const std::chrono::milliseconds& repeat, std::function<void(std::chrono::milliseconds)> callback)
+Timer::shared EventLoop::CreateTimer(const std::chrono::milliseconds& ms, const std::chrono::milliseconds& repeat, const std::function<void(std::chrono::milliseconds)>& callback)
 {
 	//UltraDebug(">EventLoop::CreateTimer() | CreateTimer in %u\n", ms.count());
 

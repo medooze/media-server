@@ -322,6 +322,26 @@ void MediaFrameListenerBridge::Update()
 }
 
 
+void MediaFrameListenerBridge::UpdateAsync(std::function<void(std::chrono::milliseconds)> callback)
+{
+	//Update it sync
+	timeService.Async([=](auto now) {
+		//Update bitrate acumulator
+		acumulator.Update(now.count());
+		//Get bitrate in bps
+		bitrate		= acumulator.GetInstant()*8;
+		///Get value
+		minWaitedTime	= waited.GetMinValueInWindow();
+		//Get value
+		maxWaitedTime	= waited.GetMaxValueInWindow();
+		//Get value
+		avgWaitedTime	= waited.GetInstantMedia();
+		//Get packets and frames delta
+		numFramesDelta	= accumulatorFrames.GetInstant();
+		numPacketsDelta	= accumulatorPackets.GetInstant();
+	}, callback);
+}
+
 void MediaFrameListenerBridge::Update(QWORD now)
 {
 	timeService.Sync([=](auto now){

@@ -713,7 +713,7 @@ int DTLSConnection::Renegotiate()
 {
 	TRACE_EVENT("dtls", "DTLSConnection::Renegotiate");
 	//Run in event loop thread
-	timeService.Sync([this](auto now){
+	timeService.Async([this](auto now){
 		if (ssl)
 		{
 

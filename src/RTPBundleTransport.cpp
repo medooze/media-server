@@ -738,7 +738,7 @@ int RTPBundleTransport::AddRemoteCandidate(const std::string& username,const cha
 	auto ip = std::string(host);
 	
 	//Execute Sync
-	loop.Sync([=](auto now){
+	loop.Async([=](auto now){
 		//Check if we have an ICE transport for that username
 		auto it = connections.find(username);
 

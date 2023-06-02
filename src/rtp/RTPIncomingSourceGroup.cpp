@@ -196,7 +196,7 @@ void RTPIncomingSourceGroup::UpdateAsync(std::function<void(std::chrono::millise
 void RTPIncomingSourceGroup::SetMaxWaitTime(DWORD maxWaitingTime)
 {
 	//Update it sync
-	timeService.Sync([=](std::chrono::milliseconds now) {
+	timeService.Async([=](std::chrono::milliseconds now) {
 		//Set it
 		packets.SetMaxWaitTime(maxWaitingTime);
 		//Store overriden value
@@ -207,7 +207,7 @@ void RTPIncomingSourceGroup::SetMaxWaitTime(DWORD maxWaitingTime)
 void RTPIncomingSourceGroup::ResetMaxWaitTime()
 {
 	//Update it sync
-	timeService.Sync([=](std::chrono::milliseconds now) {
+	timeService.Async([=](std::chrono::milliseconds now) {
 		//Remove override
 		maxWaitingTime.reset();
 	});

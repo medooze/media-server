@@ -29,6 +29,7 @@ public:
 	void Reset();
 	void Update();
 	void Update(QWORD now);
+	void UpdateAsync(std::function<void(std::chrono::milliseconds)> callback);
 	void Stop();
 
 	// MediaFrame::Producer interface

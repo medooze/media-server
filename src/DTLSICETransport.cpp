@@ -1470,15 +1470,6 @@ void DTLSICETransport::Reset()
 
 	//Execute on timer thread
 	timeService.Sync([=](auto now){
-		//Clean mem
-		if (iceLocalUsername)
-			free(iceLocalUsername);
-		if (iceLocalPwd)
-			free(iceLocalPwd);
-		if (iceRemoteUsername)
-			free(iceRemoteUsername);
-		if (iceRemotePwd)
-			free(iceRemotePwd);
 		
 		//Reset srtp
 		send.Reset();
@@ -1493,10 +1484,10 @@ void DTLSICETransport::Reset()
 			dumper.reset();
 		}
 		//No ice
-		iceLocalUsername = NULL;
-		iceLocalPwd = NULL;
-		iceRemoteUsername = NULL;
-		iceRemotePwd = NULL;
+		iceLocalUsername.clear();
+		iceLocalPwd.clear();
+		iceRemoteUsername.clear();
+		iceRemotePwd.clear();
 		dumper = NULL;
 		dumpInRTP = false;
 		dumpOutRTP = false;
@@ -1520,14 +1511,9 @@ int DTLSICETransport::SetLocalCryptoSDES(const char* suite,const BYTE* key,const
 int DTLSICETransport::SetLocalSTUNCredentials(const char* username, const char* pwd)
 {
 	Log("-DTLSICETransport::SetLocalSTUNCredentials() | [frag:%s,pwd:%s]\n",username,pwd);
-	//Clean mem
-	if (iceLocalUsername)
-		free(iceLocalUsername);
-	if (iceLocalPwd)
-		free(iceLocalPwd);
 	//Store values
-	iceLocalUsername = strdup(username);
-	iceLocalPwd = strdup(pwd);
+	iceLocalUsername = username;
+	iceLocalPwd = pwd;
 	//Ok
 	return 1;
 }
@@ -1536,14 +1522,10 @@ int DTLSICETransport::SetLocalSTUNCredentials(const char* username, const char* 
 int DTLSICETransport::SetRemoteSTUNCredentials(const char* username, const char* pwd)
 {
 	Log("-DTLSICETransport::SetRemoteSTUNCredentials() |  [frag:%s,pwd:%s]\n",username,pwd);
-	//Clean mem
-	if (iceRemoteUsername)
-		free(iceRemoteUsername);
-	if (iceRemotePwd)
-		free(iceRemotePwd);
+	
 	//Store values
-	iceRemoteUsername = strdup(username);
-	iceRemotePwd = strdup(pwd);
+	iceRemoteUsername = username;
+	iceRemotePwd = pwd;
 	//Ok
 	return 1;
 }
@@ -1715,7 +1697,7 @@ bool DTLSICETransport::RemoveOutgoingSourceGroup(const RTPOutgoingSourceGroup::s
 	Log("-DTLSICETransport::RemoveOutgoingSourceGroup() [ssrc:%u,rtx:%u]\n",group->media.ssrc,group->rtx.ssrc);
 
 	//Dispatch to the event loop thread
-	timeService.Sync([=](auto now){
+	timeService.Async([=](auto now){
 		Log("-DTLSICETransport::RemoveOutgoingSourceGroup() | Async [ssrc:%u,rtx:%u]\n",group->media.ssrc,group->rtx.ssrc);
 		//Get ssrcs
 		std::vector<DWORD> ssrcs;
@@ -1850,7 +1832,7 @@ bool DTLSICETransport::RemoveIncomingSourceGroup(const RTPIncomingSourceGroup::s
 	Log("-DTLSICETransport::RemoveIncomingSourceGroup() [mid:'%s',rid:'%s',ssrc:%u,rtx:%u]\n",group->mid.c_str(),group->rid.c_str(),group->media.ssrc,group->rtx.ssrc);
 	
 	//Dispatch to the event loop thread
-	timeService.Sync([&](auto now){
+	timeService.Async([&](auto now){
 
 		//Remove rid if any
 		if (!group->rid.empty())
@@ -3022,7 +3004,7 @@ void DTLSICETransport::CheckProbeTimer()
 	Debug("-DTLSICETransport::CheckProbeTimer() | [probingTimer:%d]\n",!!probingTimer);
 
 	//Dispatch to the event loop thread
-	timeService.Sync([=](auto now) {
+	timeService.Async([=](auto now) {
 		//If we don't have timer anumore
 		if (!probingTimer)
 			//Do nothing
