@@ -20,21 +20,17 @@ RTPStreamTransponder::RTPStreamTransponder(const RTPOutgoingSourceGroup::shared&
 	Debug("-RTPStreamTransponder() | [outgoing:%p,sender:%p,ssrc:%u]\n",outgoing,sender,ssrc);
 }
 
-bool RTPStreamTransponder::ResetIncoming()
+void RTPStreamTransponder::ResetIncoming()
 {
-	return SetIncoming(nullptr, nullptr);
+	SetIncoming(nullptr, nullptr);
 }
 
-bool RTPStreamTransponder::SetIncoming(const RTPIncomingMediaStream::shared& incoming, const RTPReceiver::shared& receiver, bool smooth)
+void RTPStreamTransponder::SetIncoming(const RTPIncomingMediaStream::shared& incoming, const RTPReceiver::shared& receiver, bool smooth)
 {
-	bool res = true;
-
-	timeService.Async([=,&res](auto now){
+	timeService.Async([=](auto now){
 		//Check we are not closed
 		if (!outgoing)
 		{
-			//Not updated
-			res = false;
 			//Error
 			Error("-RTPStreamTransponder::SetIncoming() | Transponder already closed\n");
 			//Exit
@@ -47,12 +43,8 @@ bool RTPStreamTransponder::SetIncoming(const RTPIncomingMediaStream::shared& inc
 		{
 			//If they are the same as next ones already
 			if (this->incomingNext == incoming && this->receiverNext == receiver)
-			{
-				//Not updated
-				res = false;
 				//DO nothing
 				return;
-			}
 
 			//Remove listener from previues transitioning stream
 			if (this->incomingNext)
@@ -64,8 +56,6 @@ bool RTPStreamTransponder::SetIncoming(const RTPIncomingMediaStream::shared& inc
 				//And don't wait anymore
 				incomingNext = nullptr;
 				receiverNext = nullptr;
-				//Not updated
-				res = false;
 				//DO nothing
 				return;
 			}
@@ -97,13 +87,8 @@ bool RTPStreamTransponder::SetIncoming(const RTPIncomingMediaStream::shared& inc
 
 			//If they are the same as current ones
 			if (this->incoming==incoming && this->receiver==receiver)
-			{
-				//Not updated
-				res = false;
 				//DO nothing
 				return;
-			}
-
 
 			//Remove listener from old stream
 			if (this->incoming)
@@ -131,12 +116,12 @@ bool RTPStreamTransponder::SetIncoming(const RTPIncomingMediaStream::shared& inc
 
 		Debug("<RTPStreamTransponder::SetIncoming() | [incoming:%p,receiver:%p]\n",incoming,receiver);
 	});
-
-	return res;
 }
 
 RTPStreamTransponder::~RTPStreamTransponder()
 {
+	Debug("~RTPStreamTransponder::~RTPStreamTransponder() [this:%p]\n", this);
+
 	//If not already stopped
 	if (outgoing || incoming)
 		//Stop listeneing
@@ -145,7 +130,10 @@ RTPStreamTransponder::~RTPStreamTransponder()
 
 void RTPStreamTransponder::Close()
 {
-	Debug(">RTPStreamTransponder::Close()\n");
+	Debug(">RTPStreamTransponder::Close() [this:%p]\n",this);
+
+	//Stop listening
+	if (outgoing) outgoing->RemoveListener(this);
 
 	timeService.Sync([=](auto now) {
 		//Stop listening
@@ -155,16 +143,14 @@ void RTPStreamTransponder::Close()
 		incoming = nullptr;
 		receiver = nullptr;
 		incomingNext = nullptr;
+
 		receiverNext = nullptr;
+		//Remove sources
+		outgoing = nullptr;
+		sender = nullptr;
 	});
 
-	//Stop listening
-	if (outgoing) outgoing->RemoveListener(this);
-	//Remove sources
-	outgoing = nullptr;
-	sender = nullptr;
-
-	Debug("<RTPStreamTransponder::Close()\n");
+	Debug("<RTPStreamTransponder::Close() [this:%p]\n",this);
 }
 
 
