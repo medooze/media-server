@@ -1252,11 +1252,10 @@ void RTMPConnection::onCommand(DWORD streamId,const wchar_t *name,AMFData* obj)
 	SendCommand(streamId,name,new AMFNull(),obj->Clone());
 }
 
-void RTMPConnection::onNetStreamStatus(DWORD streamId,const RTMPNetStatusEventInfo &info,const wchar_t *message)
+void RTMPConnection::onNetStreamStatus(DWORD streamId,QWORD transId,const RTMPNetStatusEventInfo &info,const wchar_t *message)
 {
 	RTMPNetStatusEvent event(info.code,info.level,message);
-	//Send command
-	onCommand(streamId,L"onStatus",&event);
+	SendCommandResponse(streamId,L"onStatus",transId,new AMFNull(),event.Clone());
 }
 
 void RTMPConnection::onMediaFrame(DWORD streamId,RTMPMediaFrame *frame)
@@ -1345,11 +1344,11 @@ void RTMPConnection::onNetStreamDestroyed(DWORD streamId)
 	pthread_mutex_unlock(&mutex);
 }
 
-void RTMPConnection::onNetConnectionStatus(const RTMPNetStatusEventInfo &info,const wchar_t *message)
+void RTMPConnection::onNetConnectionStatus(QWORD transId,const RTMPNetStatusEventInfo &info,const wchar_t *message)
 {
 	RTMPNetStatusEvent event(info.code,info.level,message);
 	//Send command
-	onCommand(0,L"onStatus",&event);
+	SendCommandResponse(0,L"onStatus",transId,new AMFNull(),event.Clone());
 }
 
 void RTMPConnection::onNetConnectionDisconnected()

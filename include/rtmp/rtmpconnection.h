@@ -44,21 +44,21 @@ public:
 	int GetSocket() { return socket; }
 
 	//Listener from NetConnection
-	virtual void onNetConnectionStatus(const RTMPNetStatusEventInfo &info,const wchar_t *message);
-	virtual void onNetConnectionDisconnected();
+	virtual void onNetConnectionStatus(QWORD transId,const RTMPNetStatusEventInfo &info,const wchar_t *message) override;
+	virtual void onNetConnectionDisconnected() override;
 	//Listener from NetStream
-	virtual void onNetStreamDestroyed(DWORD id);
-	virtual void onNetStreamStatus(DWORD id,const RTMPNetStatusEventInfo &nfo,const wchar_t *message);
+	virtual void onNetStreamDestroyed(DWORD id) override;
+	virtual void onNetStreamStatus(DWORD streamId,QWORD transId,const RTMPNetStatusEventInfo &info,const wchar_t *message) override;
 	//Listener for the media data
-	virtual void onAttached(RTMPMediaStream *stream);
-	virtual void onMediaFrame(DWORD id,RTMPMediaFrame *frame);
-	virtual void onMetaData(DWORD id,RTMPMetaData *meta);
-	virtual void onCommand(DWORD id,const wchar_t *name,AMFData* obj);
-	virtual void onStreamBegin(DWORD id);
-	virtual void onStreamEnd(DWORD id);
+	virtual void onAttached(RTMPMediaStream *stream) override;
+	virtual void onMediaFrame(DWORD id,RTMPMediaFrame *frame) override;
+	virtual void onMetaData(DWORD id,RTMPMetaData *meta) override;
+	virtual void onCommand(DWORD id,const wchar_t *name,AMFData* obj) override;
+	virtual void onStreamBegin(DWORD id) override;
+	virtual void onStreamEnd(DWORD id) override;
 	//virtual void onStreamIsRecorded(DWORD id);
-	virtual void onStreamReset(DWORD id);
-	virtual void onDetached(RTMPMediaStream *stream);
+	virtual void onStreamReset(DWORD id) override;
+	virtual void onDetached(RTMPMediaStream *stream) override;
 	
 	DWORD GetRTT()	{ return rtt; }
 protected:

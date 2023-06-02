@@ -42,7 +42,7 @@ public:
 		bool UnPublish();
 
 	protected:
-		virtual void fireOnNetStreamStatus(const RTMPNetStatusEventInfo &info,const wchar_t* message);
+		virtual void fireOnNetStreamStatus(QWORD transId,const RTMPNetStatusEventInfo &info,const wchar_t* message);
 
 	protected:
 		friend class RTMPClientConnection;

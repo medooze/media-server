@@ -36,10 +36,10 @@ public:
 	public:
 		NetStream(DWORD streamId,MultiConf *conf,RTMPNetStream::Listener *listener);
 		virtual ~NetStream();
-		virtual void doPlay(std::wstring& url,RTMPMediaStream::Listener *listener);
-		virtual void doPublish(std::wstring& url);
-		virtual void doSeek(DWORD time);
-		virtual void doClose(RTMPMediaStream::Listener *listener);
+		virtual void doPlay(QWORD transId, std::wstring& url,RTMPMediaStream::Listener *listener) override;
+		virtual void doPublish(QWORD transId, std::wstring& url) override;
+		virtual void doSeek(QWORD transId, DWORD time) override;
+		virtual void doClose(QWORD transId, RTMPMediaStream::Listener *listener) override;
 	protected:
 		void Close();
 	private:

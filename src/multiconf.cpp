@@ -1795,7 +1795,7 @@ MultiConf::NetStream::~NetStream()
  * Play
  *	RTMP event listener
  **************************************/
-void MultiConf::NetStream::doPlay(std::wstring& url,RTMPMediaStream::Listener* listener)
+void MultiConf::NetStream::doPlay(QWORD transId, std::wstring& url,RTMPMediaStream::Listener* listener)
 {
 	RTMPMediaStream *stream = NULL;
 
@@ -1806,7 +1806,7 @@ void MultiConf::NetStream::doPlay(std::wstring& url,RTMPMediaStream::Listener* l
 	if (opened)
 	{
 		//Send error
-		fireOnNetStreamStatus(RTMP::Netstream::Failed,L"Stream already in use");
+		fireOnNetStreamStatus(transId, RTMP::Netstream::Failed,L"Stream already in use");
 		//Noting found
 		Error("Stream #%d already in use\n", GetStreamId());
 		//Exit
@@ -1831,7 +1831,7 @@ void MultiConf::NetStream::doPlay(std::wstring& url,RTMPMediaStream::Listener* l
 	if (j==std::wstring::npos)
 	{
 		//Send error
-		fireOnNetStreamStatus(RTMP::Netstream::Play::Failed,L"Wrong format stream name");
+		fireOnNetStreamStatus(transId, RTMP::Netstream::Play::Failed,L"Wrong format stream name");
 		//Noting found
 		Error("Wrong format stream name\n");
 		//Exit
@@ -1863,7 +1863,7 @@ void MultiConf::NetStream::doPlay(std::wstring& url,RTMPMediaStream::Listener* l
 		//Log
 		Error("-Application type name incorrect [%ls]\n",type.c_str());
 		//Send error
-		fireOnNetStreamStatus(RTMP::Netstream::Play::Failed,L"Type invalid");
+		fireOnNetStreamStatus(transId, RTMP::Netstream::Play::Failed,L"Type invalid");
 		//Nothing done
 		return;
 	}
@@ -1872,7 +1872,7 @@ void MultiConf::NetStream::doPlay(std::wstring& url,RTMPMediaStream::Listener* l
 	if (!stream)
 	{
 		//Send error
-		fireOnNetStreamStatus(RTMP::Netstream::Play::StreamNotFound,L"Token invalid");
+		fireOnNetStreamStatus(transId, RTMP::Netstream::Play::StreamNotFound,L"Token invalid");
 		//Exit
 		return;
 	}
@@ -1881,9 +1881,9 @@ void MultiConf::NetStream::doPlay(std::wstring& url,RTMPMediaStream::Listener* l
 	opened = true;
 
 	//Send reseted status
-	fireOnNetStreamStatus(RTMP::Netstream::Play::Reset,L"Playback reset");
+	fireOnNetStreamStatus(transId, RTMP::Netstream::Play::Reset,L"Playback reset");
 	//Send play status
-	fireOnNetStreamStatus(RTMP::Netstream::Play::Start,L"Playback started");
+	fireOnNetStreamStatus(transId, RTMP::Netstream::Play::Start,L"Playback started");
 
 	//Add listener
 	AddMediaListener(listener);
@@ -1891,16 +1891,16 @@ void MultiConf::NetStream::doPlay(std::wstring& url,RTMPMediaStream::Listener* l
 	Attach(stream);
 }
 
-void MultiConf::NetStream::doSeek(DWORD time)
+void MultiConf::NetStream::doSeek(QWORD transId, DWORD time)
 {
 	//Send status
-	fireOnNetStreamStatus(RTMP::Netstream::Seek::Failed,L"Seek not supported");
+	fireOnNetStreamStatus(transId, RTMP::Netstream::Seek::Failed,L"Seek not supported");
 }
 /***************************************
  * Publish
  *	RTMP event listener
  **************************************/
-void MultiConf::NetStream::doPublish(std::wstring& url)
+void MultiConf::NetStream::doPublish(QWORD transId, std::wstring& url)
 {
 	//Log
 	Log("-Publish stream [%ls]\n",url.c_str());
@@ -1909,7 +1909,7 @@ void MultiConf::NetStream::doPublish(std::wstring& url)
 	if (opened)
 	{
 		//Send error
-		fireOnNetStreamStatus(RTMP::Netstream::Failed,L"Stream already in use");
+		fireOnNetStreamStatus(transId, RTMP::Netstream::Failed,L"Stream already in use");
 		//Noting found
 		Error("Stream #%d already in use\n", GetStreamId());
 		//Exit
@@ -1934,7 +1934,7 @@ void MultiConf::NetStream::doPublish(std::wstring& url)
 	if (j==std::wstring::npos)
 	{
 		//Send error
-		fireOnNetStreamStatus(RTMP::Netstream::Publish::BadName,L"Wrong format stream name");
+		fireOnNetStreamStatus(transId, RTMP::Netstream::Publish::BadName,L"Wrong format stream name");
 		//Noting found
 		Error("Wrong format stream name\n");
 		//Exit
@@ -1952,7 +1952,7 @@ void MultiConf::NetStream::doPublish(std::wstring& url)
 		//Log
 		Error("-Application type name incorrect [%ls]\n",type.c_str());
 		//Send error
-		fireOnNetStreamStatus(RTMP::Netstream::Publish::BadName,L"Type invalid");
+		fireOnNetStreamStatus(transId, RTMP::Netstream::Publish::BadName,L"Type invalid");
 		//Nothing done
 		return;
 	}
@@ -1964,7 +1964,7 @@ void MultiConf::NetStream::doPublish(std::wstring& url)
 	if (!listener)
 	{
 		//Send error
-		fireOnNetStreamStatus(RTMP::Netstream::Publish::BadName,L"Token invalid");
+		fireOnNetStreamStatus(transId, RTMP::Netstream::Publish::BadName,L"Token invalid");
 		//Exit
 		return;
 	}
@@ -1976,10 +1976,10 @@ void MultiConf::NetStream::doPublish(std::wstring& url)
 	AddMediaListener(listener);
 
 	//Send publish notification
-	fireOnNetStreamStatus(RTMP::Netstream::Publish::Start,L"Publish started");
+	fireOnNetStreamStatus(transId, RTMP::Netstream::Publish::Start,L"Publish started");
 }
 
-void MultiConf::NetStream::doClose(RTMPMediaStream::Listener *listener)
+void MultiConf::NetStream::doClose(QWORD transId, RTMPMediaStream::Listener *listener)
 {
 	//Close
 	Close();

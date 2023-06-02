@@ -15,9 +15,9 @@ class RTMPMP4Stream :
 public:
 	RTMPMP4Stream(DWORD id,RTMPNetStream::Listener *listener);
 	virtual ~RTMPMP4Stream();
-	virtual void doPlay(std::wstring& url,RTMPMediaStream::Listener* listener);
-	virtual void doSeek(DWORD time);
-	virtual void doClose(RTMPMediaStream::Listener* listener);
+	virtual void doPlay(QWORD transId, std::wstring& url,RTMPMediaStream::Listener* listener) override;
+	virtual void doSeek(QWORD transId, DWORD time) override;
+	virtual void doClose(QWORD transId, RTMPMediaStream::Listener* listener) override;
 
 	/* MP4Streamer listener*/
 	virtual void onRTPPacket(RTPPacket &packet);
