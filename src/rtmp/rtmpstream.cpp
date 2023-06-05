@@ -515,45 +515,46 @@ RTMPNetStream::~RTMPNetStream()
 		listener->onNetStreamDestroyed(id);
 }
 
-void  RTMPNetStream::doPlay(std::wstring& url,RTMPMediaStream::Listener *listener)
+void  RTMPNetStream::doPlay(QWORD transId, std::wstring& url,RTMPMediaStream::Listener *listener)
 {
-	fireOnNetStreamStatus(RTMP::Netstream::Failed,L"Play not supported in this stream");
+	fireOnNetStreamStatus(transId, RTMP::Netstream::Failed,L"Play not supported in this stream");
 }
-void  RTMPNetStream::doPublish(std::wstring& url)
+void  RTMPNetStream::doPublish(QWORD transId, std::wstring& url)
 {
-	fireOnNetStreamStatus(RTMP::Netstream::Failed,L"Publish not supported in this stream");
+	fireOnNetStreamStatus(transId, RTMP::Netstream::Failed,L"Publish not supported in this stream");
 }
-void  RTMPNetStream::doPause()
+void  RTMPNetStream::doPause(QWORD transId)
 {
-	fireOnNetStreamStatus(RTMP::Netstream::Failed,L"Pause not supported in this stream");
+	fireOnNetStreamStatus(transId, RTMP::Netstream::Failed,L"Pause not supported in this stream");
 }
-void  RTMPNetStream::doResume()
+void  RTMPNetStream::doResume(QWORD transId)
 {
-	fireOnNetStreamStatus(RTMP::Netstream::Failed,L"Resume not supported in this stream");
+	fireOnNetStreamStatus(transId, RTMP::Netstream::Failed,L"Resume not supported in this stream");
 }
-void  RTMPNetStream::doSeek(DWORD time)
+void  RTMPNetStream::doSeek(QWORD transId, DWORD time)
 {
-	fireOnNetStreamStatus(RTMP::Netstream::Failed,L"Seek not supported in this stream");
+	fireOnNetStreamStatus(transId, RTMP::Netstream::Failed,L"Seek not supported in this stream");
 }
-void  RTMPNetStream::doClose(RTMPMediaStream::Listener *listener)
+void  RTMPNetStream::doClose(QWORD transId, RTMPMediaStream::Listener *listener)
 {
-	fireOnNetStreamStatus(RTMP::Netstream::Failed,L"Close not supported in this stream");
+	fireOnNetStreamStatus(transId, RTMP::Netstream::Failed,L"Close not supported in this stream");
 }
 
 void RTMPNetStream::doCommand(RTMPCommandMessage *cmd)
 {
 	cmd->Dump();
 }
-void  RTMPNetStream::fireOnNetStreamStatus(const RTMPNetStatusEventInfo &info,const wchar_t* message)
+void  RTMPNetStream::fireOnNetStreamStatus(QWORD transId, const RTMPNetStatusEventInfo &info,const wchar_t* message)
 {
 	if (listener)
-		listener->onNetStreamStatus(id,info,message);
+		listener->onNetStreamStatus(id,transId, info,message);
 }
 
 void RTMPNetStream::ProcessCommandMessage(RTMPCommandMessage* cmd)
 {
 	//Get message values
 	std::wstring name 	= cmd->GetName();
+	QWORD transId = cmd->GetTransId();
 
 	//Check command names
 	if (name.compare(L"play")==0)
@@ -561,7 +562,7 @@ void RTMPNetStream::ProcessCommandMessage(RTMPCommandMessage* cmd)
 		//Get url to play
 		std::wstring url = *(cmd->GetExtra(0));
 		//Play
-		doPlay(url,this);
+		doPlay(transId, url,this);
 	//Publish
 	} else if (name.compare(L"publish")==0){
 		//Get param
@@ -572,29 +573,29 @@ void RTMPNetStream::ProcessCommandMessage(RTMPCommandMessage* cmd)
 			//Get url to play
 			std::wstring url = *obj;
 			//Publish
-			doPublish(url);
+			doPublish(transId, url);
 		} else {
 			//Close
-			doClose(this);
+			doClose(transId, this);
 		}
 	} else if (name.compare(L"seek")==0) {
 		//Get timestamp
 		double time = *(cmd->GetExtra(0));
 		//Play
-		doSeek(time);
+		doSeek(transId, time);
 	} else if (name.compare(L"pause")==0) {
 		//Get pause/resume flag
 		bool flag = *(cmd->GetExtra(0));
 		//Check if it is pause or resume
 		if (!flag)
 			//Pause
-			doPause();
+			doPause(transId);
 		else
 			//Resume
-			doResume();
+			doResume(transId);
 	} else if (name.compare(L"closeStream")==0) {
 		//Close stream
-		doClose(this);
+		doClose(transId, this);
 	} else {
 		//Send command
 		doCommand(cmd);

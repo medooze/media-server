@@ -23,7 +23,7 @@ public:
 		virtual ~Listener(){};
 	public:
 		//Interface
-		virtual void onNetConnectionStatus(const RTMPNetStatusEventInfo &info,const wchar_t *message) = 0;
+		virtual void onNetConnectionStatus(QWORD transId, const RTMPNetStatusEventInfo &info,const wchar_t *message) = 0;
 		virtual void onNetConnectionDisconnected() = 0;
 	};
 
@@ -32,7 +32,7 @@ public:
 	virtual ~RTMPNetConnection();
 	virtual void AddListener(Listener* listener);
 	virtual void RemoveListener(Listener* listener);
-	virtual void SendStatus(const RTMPNetStatusEventInfo &info,const wchar_t *message);
+	virtual void SendStatus(QWORD transId, const RTMPNetStatusEventInfo &info,const wchar_t *message);
 	virtual void Disconnect();
 	
 	/* Interface */

@@ -908,7 +908,7 @@ void RTMPClientConnection::ProcessCommandMessage(DWORD streamId,RTMPCommandMessa
 DWORD RTMPClientConnection::Call(const wchar_t* name,AMFData* params,AMFData *extra)
 {
 	//Send command
-	DWORD transId = SendCommand(0,name,params,extra);
+	QWORD transId = SendCommand(0,name,params,extra);
 	//Create info
 	TransInfo info(CALL,transId,name);
 	//Add transaction
@@ -920,7 +920,7 @@ DWORD RTMPClientConnection::Call(const wchar_t* name,AMFData* params,AMFData *ex
 DWORD RTMPClientConnection::CreateStream(const std::wstring &tag)
 {
 	//Send command
-	DWORD transId = SendCommand(0,L"createStream",NULL,NULL);
+	QWORD transId = SendCommand(0,L"createStream",NULL,NULL);
 	//Create info
 	TransInfo info(CREATESTREAM,transId,tag);
 	//Add transaction
@@ -949,7 +949,7 @@ DWORD RTMPClientConnection::SendCommand(DWORD streamId,const wchar_t* name,AMFDa
 {
 	Log("-SendCommand [streamId:%d,name:%ls]\n",streamId,name);
 	//Get transId
-	DWORD transId = maxTransId++;
+	QWORD transId = maxTransId++;
 	//Create cmd response
 	RTMPCommandMessage *cmd = new RTMPCommandMessage(name,transId,params,extra);
 	//Dump
@@ -1151,7 +1151,7 @@ bool RTMPClientConnection::NetStream::UnPublish()
 	return true;
 }
 
-void RTMPClientConnection::NetStream::fireOnNetStreamStatus(const RTMPNetStatusEventInfo &info,const wchar_t* message)
+void RTMPClientConnection::NetStream::fireOnNetStreamStatus(QWORD transId,const RTMPNetStatusEventInfo &info,const wchar_t* message)
 {
 
 }

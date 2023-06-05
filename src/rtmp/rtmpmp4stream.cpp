@@ -35,7 +35,7 @@ RTMPMP4Stream::~RTMPMP4Stream()
 	streamer.Close();
 }
 
-void RTMPMP4Stream::doPlay(std::wstring& url,RTMPMediaStream::Listener* listener)
+void RTMPMP4Stream::doPlay(QWORD transId, std::wstring& url,RTMPMediaStream::Listener* listener)
 {
 	char filename[1024];
 
@@ -46,7 +46,7 @@ void RTMPMP4Stream::doPlay(std::wstring& url,RTMPMediaStream::Listener* listener
 	if (!streamer.Open(filename))
 	{
 		//Send error comand
-		fireOnNetStreamStatus(RTMP::Netstream::Play::StreamNotFound,L"Stream not found");
+		fireOnNetStreamStatus(transId, RTMP::Netstream::Play::StreamNotFound,L"Stream not found");
 		//Error
 		Error("Error opening mp4 file [path:\"%ls\"",filename);
 		//Exit
@@ -57,10 +57,10 @@ void RTMPMP4Stream::doPlay(std::wstring& url,RTMPMediaStream::Listener* listener
 	AddMediaListener(listener);
 
 	//Send play comand
-	fireOnNetStreamStatus(RTMP::Netstream::Play::Reset,L"Playback reset");
+	fireOnNetStreamStatus(transId, RTMP::Netstream::Play::Reset,L"Playback reset");
 
 	//Send play comand
-	fireOnNetStreamStatus(RTMP::Netstream::Play::Start,L"Playback started");
+	fireOnNetStreamStatus(transId, RTMP::Netstream::Play::Start,L"Playback started");
 
 	//Create metadata object
 	RTMPMetaData *meta = new RTMPMetaData(0);
@@ -147,14 +147,14 @@ void RTMPMP4Stream::doPlay(std::wstring& url,RTMPMediaStream::Listener* listener
 		//Close it
 		streamer.Close();
 		//Send error comand
-		fireOnNetStreamStatus(RTMP::Netstream::Play::Failed,L"Error openeing stream");
+		fireOnNetStreamStatus(transId, RTMP::Netstream::Play::Failed,L"Error openeing stream");
 		//Error
 		Error("Error starting playback of mp4 file [path:\"%ls\"",url.c_str());
 	}
 
 }
 
-void RTMPMP4Stream::doSeek(DWORD time)
+void RTMPMP4Stream::doSeek(QWORD transId, DWORD time)
 {
 	//Get
 	QWORD seeked = streamer.PreSeek(time);
@@ -187,7 +187,7 @@ void RTMPMP4Stream::doSeek(DWORD time)
 
 }
 
-void RTMPMP4Stream::doClose(RTMPMediaStream::Listener* listener)
+void RTMPMP4Stream::doClose(QWORD transId, RTMPMediaStream::Listener* listener)
 {
 	//Close streamer
 	streamer.Close();
