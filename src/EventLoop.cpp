@@ -76,16 +76,17 @@ void free_cpu_set(cpu_set_t* s) {
 }
 #endif
 
-EventLoop::EventLoop(Listener *listener) :
+EventLoop::EventLoop(Listener *listener, uint32_t packetPoolSize) :
 	listener(listener),
-	packetPool(PacketPoolSize)
+	packetPool(packetPoolSize ? packetPoolSize : PacketPoolSize)
 {
-	Debug("-EventLoop::EventLoop() this:%p\n",this);
+	Debug("-EventLoop::EventLoop() [this:%p,packetPoolSize:%d]\n", this, packetPool.size());
 }
+
 
 EventLoop::~EventLoop()
 {
-	Debug("-EventLoop::~EventLoop() this:%p\n", this);
+	Debug("-EventLoop::~EventLoop() [this:%p]\n", this);
 	if (running)
 		Stop();
 }
@@ -347,20 +348,16 @@ void EventLoop::Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet
 	Signal();
 }
 
-std::future<void> EventLoop::Async(std::function<void(std::chrono::milliseconds)> func)
+void EventLoop::Async(const std::function<void(std::chrono::milliseconds)>& func)
 {
 	//UltraDebug(">EventLoop::Async()\n");
-	
-	//Create task
-	std::promise<void> promise;
-	auto task = std::make_pair(std::move(promise),std::move(func));
-	
-	//Get future before moving the promise
-	auto future = task.first.get_future();
-	
+
 	//If not in the same thread
-	if (std::this_thread::get_id()!=thread.get_id())
+	if (std::this_thread::get_id() != thread.get_id())
 	{
+		//Create task
+		auto task = std::make_pair(func,std::nullopt);
+
 		//Add to pending taks
 		tasks.enqueue(std::move(task));
 
@@ -368,19 +365,57 @@ std::future<void> EventLoop::Async(std::function<void(std::chrono::milliseconds)
 		Signal();
 	} else {
 		//Call now otherwise
-		task.second(GetNow());
-		
-		//Resolve the promise
-		task.first.set_value();
+		func(GetNow());
 	}
-	
+
 	//UltraDebug("<EventLoop::Async()\n");
-	
-	//Return the future for the promise
-	return future;
 }
 
-Timer::shared EventLoop::CreateTimer(std::function<void(std::chrono::milliseconds)> callback)
+void EventLoop::Async(const std::function<void(std::chrono::milliseconds)>& func, const std::function<void(std::chrono::milliseconds)>& callback)
+{
+	//UltraDebug(">EventLoop::Async()\n");
+
+	//If not in the same thread
+	if (std::this_thread::get_id() != thread.get_id())
+	{
+		//Create task
+		auto task = std::make_pair(func, callback);
+
+		//Add to pending taks
+		tasks.enqueue(std::move(task));
+
+		//Signal the thread this will cause the poll call to exit
+		Signal();
+	} else {
+		//Call now otherwise
+		func(GetNow());
+		//Call callback
+		callback(GetNow());
+	}
+	//UltraDebug("<EventLoop::Async()\n");
+}
+
+
+std::future<void> EventLoop::Future(const std::function<void(std::chrono::milliseconds)>& func)
+{
+	//UltraDebug(">EventLoop::Future()\n");
+	
+	//As std::functions only allow copiable objets, we have to wrap the promise inside a shared_ptr
+	auto promise = std::make_shared<std::promise<void>>();
+
+	//Add an async with callback
+	Async(func, [=](std::chrono::milliseconds) {
+		//Resolve promise on callbak
+		promise->set_value();
+	});
+
+	//UltraDebug("<EventLoop::Future()\n");
+	
+	//Return the future for the promise
+	return promise->get_future();;
+}
+
+Timer::shared EventLoop::CreateTimer(const std::function<void(std::chrono::milliseconds)>& callback)
 {
 	//Create timer without scheduling it
 	auto timer = std::make_shared<TimerImpl>(*this,0ms,callback);
@@ -388,13 +423,13 @@ Timer::shared EventLoop::CreateTimer(std::function<void(std::chrono::millisecond
 	return std::static_pointer_cast<Timer>(timer);
 }
 
-Timer::shared EventLoop::CreateTimer(const std::chrono::milliseconds& ms, std::function<void(std::chrono::milliseconds)> callback)
+Timer::shared EventLoop::CreateTimer(const std::chrono::milliseconds& ms, const std::function<void(std::chrono::milliseconds)>& callback)
 {
 	//Timer without repeat
 	return CreateTimer(ms,0ms,callback);
 }
 
-Timer::shared EventLoop::CreateTimer(const std::chrono::milliseconds& ms, const std::chrono::milliseconds& repeat, std::function<void(std::chrono::milliseconds)> callback)
+Timer::shared EventLoop::CreateTimer(const std::chrono::milliseconds& ms, const std::chrono::milliseconds& repeat, const std::function<void(std::chrono::milliseconds)>& callback)
 {
 	//UltraDebug(">EventLoop::CreateTimer() | CreateTimer in %u\n", ms.count());
 
@@ -610,7 +645,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 		{
 			struct sockaddr_in froms[MaxMultipleReceivingMessages] = {};
 			struct mmsghdr messages[MaxMultipleReceivingMessages] = {};
-			struct iovec iovs[MaxMultipleReceivingMessages][1] = {};
+			struct iovec iovs[MaxMultipleReceivingMessages][1] = {{}};
 
 			TRACE_EVENT("eventloop", "EventLoop::Run::ProcessIn");
 			//UltraDebug("-EventLoop::Run() | ufds[0].revents & POLLIN\n");
@@ -658,7 +693,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 			//Multiple messages struct
 			struct mmsghdr messages[MaxMultipleSendingMessages] = {};
 			struct sockaddr_in tos[MaxMultipleSendingMessages] = {};
-			struct iovec iovs[MaxMultipleSendingMessages][1] = {};
+			struct iovec iovs[MaxMultipleSendingMessages][1] = {{}};
 
 			TRACE_EVENT("eventloop", "EventLoop::Run::ProcessOut");
 			//UltraDebug("-EventLoop::Run() | ufds[0].revents & POLLOUT\n");
@@ -825,15 +860,17 @@ void EventLoop::ProcessTasks(const std::chrono::milliseconds& now)
 {
 	//Run queued task
 	TRACE_EVENT_BEGIN("eventloop", "EventLoop::ProcessTasks");
-	std::pair<std::promise<void>, std::function<void(std::chrono::milliseconds)>> task;
+	std::pair<std::function<void(std::chrono::milliseconds)>,std::optional<std::function<void(std::chrono::milliseconds)>>> task;
 	//Get all pending taks
 	while (tasks.try_dequeue(task))
 	{
 		//UltraDebug(">EventLoop::Run() | task pending\n");
 		//Execute it
-		task.second(now);
-		//Resolce promise
-		task.first.set_value();
+		task.first(now);
+		//If we had a callback
+		if (task.second.has_value())
+			//Run now
+			task.second.value()(now);
 		//UltraDebug("<EventLoop::Run() | task run\n");
 	}
 	TRACE_EVENT_END("eventloop");

@@ -161,6 +161,7 @@ public:
 		Acumulator<V, T>(window, base, initialSize),
 		maxCounter(window)
 	{
+		ResetMax();
 	}
 	T GetMax()			const { return max; }
 	bool  IsInMaxWindow()		const { return this->inWindow; }
@@ -228,6 +229,7 @@ public:
 		MaxAcumulator<V,T>(window, base, initialSize),
 		minCounter(window)
 	{
+		ResetMinMax();
 	}
 	T GetMin()			const { return min; }
 	bool  IsInMinMaxWindow()	const { return this->inWindow && min != std::numeric_limits<T>::max(); }

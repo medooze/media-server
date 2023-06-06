@@ -22,9 +22,7 @@ public:
 		assert(false); // Not used
 		return nullptr;
 	}
-	virtual Timer::shared CreateTimer(const std::chrono::milliseconds& ms,
-										const std::chrono::milliseconds& repeat,
-										std::function<void(std::chrono::milliseconds)> timeout) override
+	virtual Timer::shared CreateTimer(const std::chrono::milliseconds& ms, const std::chrono::milliseconds& repeat, std::function<void(std::chrono::milliseconds)> timeout) override
 	{
 		assert(false); // Not used
 		return nullptr;

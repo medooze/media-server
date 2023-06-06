@@ -24,7 +24,7 @@ void RTPIncomingMediaStreamMultiplexer::Stop()
 	//Wait until all the previous async have finished as async calls are executed in order
 	timeService.Sync([=](auto now){
 		//Trace method
-		TRACE_EVENT("rtp", "RTPIncomingMediaStreamMultiplexer::onEnded async", "ssrc", ssrc);
+		TRACE_EVENT("rtp", "RTPIncomingMediaStreamMultiplexer::Stop async", "ssrc", GetMediaSSRC());
 		//If the source stream is alive
 		if (incomingMediaStream)
 			//Do not listen anymore
@@ -119,10 +119,14 @@ void RTPIncomingMediaStreamMultiplexer::onBye(const RTPIncomingMediaStream* stre
 void RTPIncomingMediaStreamMultiplexer::onEnded(const RTPIncomingMediaStream* stream)
 {
 	Debug("-RTPIncomingMediaStreamMultiplexer::onEnded() [stream:%p,this:%p]\n", stream, this);
-	//Check
-	if (incomingMediaStream.get() == stream)
-		//No stream
-		incomingMediaStream.reset();
+
+	//Dispatch in thread sync
+	timeService.Sync([=](auto now) {
+		//Check
+		if (incomingMediaStream.get() == stream)
+			//No stream
+			incomingMediaStream.reset();
+	});
 }
 
 void RTPIncomingMediaStreamMultiplexer::Mute(bool muting)

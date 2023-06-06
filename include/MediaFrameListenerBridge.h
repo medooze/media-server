@@ -29,6 +29,7 @@ public:
 	void Reset();
 	void Update();
 	void Update(QWORD now);
+	void UpdateAsync(std::function<void(std::chrono::milliseconds)> callback);
 	void Stop();
 
 	// MediaFrame::Producer interface
@@ -75,6 +76,8 @@ public:
 	DWORD numPacketsDelta	= 0;
 	DWORD totalBytes	= 0;
 	DWORD bitrate		= 0;
+	WORD  width		= 0;
+	WORD  height		= 0;
 	Acumulator<uint32_t, uint64_t> acumulator;
 	Acumulator<uint32_t, uint64_t> accumulatorFrames;
 	Acumulator<uint32_t, uint64_t> accumulatorPackets;

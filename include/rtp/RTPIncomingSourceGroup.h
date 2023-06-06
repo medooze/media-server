@@ -40,6 +40,7 @@ public:
 	void ResetMaxWaitTime();
 	void ResetPackets();
 	void Update();
+	void UpdateAsync(std::function<void(std::chrono::milliseconds)> callback);
 	void SetRTT(DWORD rtt, QWORD now);
 	std::list<RTCPRTPFeedback::NACKField::shared>  GetNacks() { return losts.GetNacks(); }
 	

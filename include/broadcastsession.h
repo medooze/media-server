@@ -26,8 +26,8 @@ private:
 	public:
 		PublisherNetStream(DWORD id,BroadcastSession *sess,Listener *listener);
 		virtual ~PublisherNetStream();
-		virtual void doPublish(std::wstring& url);
-		virtual void doClose(RTMPMediaStream::Listener *listener);
+		virtual void doPublish(QWORD transId, std::wstring& url);
+		virtual void doClose(QWORD transId, RTMPMediaStream::Listener *listener);
 		virtual void onDetached(RTMPMediaStream* stream);
 	private:
 		void Close();
@@ -41,9 +41,9 @@ private:
 	public:
 		WatcherNetStream(DWORD id,BroadcastSession *sess,Listener *listener);
 		virtual ~WatcherNetStream();
-		virtual void doPlay(std::wstring& url,RTMPMediaStream::Listener *listener);
-		virtual void doClose(RTMPMediaStream::Listener *listener);
-		virtual void onDetached(RTMPMediaStream* stream);
+		virtual void doPlay(QWORD transId, std::wstring& url,RTMPMediaStream::Listener *listener) override;
+		virtual void doClose(QWORD transId, RTMPMediaStream::Listener *listener) override;
+		virtual void onDetached(RTMPMediaStream* stream) override;
 	private:
 		void Close();
 	private:

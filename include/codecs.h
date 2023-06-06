@@ -9,7 +9,7 @@
 class AudioCodec
 {
 public:
-	enum Type {PCMA=8,PCMU=0,GSM=3,G722=9,SPEEX16=117,AMR=118,TELEPHONE_EVENT=100,NELLY8=130,NELLY11=131,OPUS=98,AAC=97,EAC3=101,MULTIOPUS=114,MP3=33,UNKNOWN=-1};
+	enum Type {PCMA=8,PCMU=0,GSM=3,G722=9,SPEEX16=117,AMR=118,TELEPHONE_EVENT=100,NELLY8=130,NELLY11=131,OPUS=98,AAC=97,EAC3=101,MULTIOPUS=114,MP3=33,RTX=115,UNKNOWN=-1};
 
 public:
 	static Type GetCodecForName(const char* codec)
@@ -47,6 +47,7 @@ public:
 			case AAC:	return "AAC";
 			case EAC3:	return "EAC3";
 			case MP3:	return "MP3";
+			case RTX:	return "RTX";
 			default:	return "unknown";
 		}
 	}
@@ -144,6 +145,7 @@ static MediaFrame::Type GetMediaForCodec(BYTE codec)
 		case AudioCodec::AAC:
 		case AudioCodec::EAC3:
 		case AudioCodec::MP3:
+		case AudioCodec::RTX:
 			return MediaFrame::Audio;
 		case VideoCodec::JPEG:
 		case VideoCodec::H264:

@@ -30,8 +30,8 @@ public:
 	RTPStreamTransponder(const RTPOutgoingSourceGroup::shared& outgoing,const RTPSender::shared& sender);
 	virtual ~RTPStreamTransponder();
 
-	bool ResetIncoming();
-	bool SetIncoming(const RTPIncomingMediaStream::shared& incoming, const RTPReceiver::shared& receiver, bool smooth = false);
+	void ResetIncoming();
+	void SetIncoming(const RTPIncomingMediaStream::shared& incoming, const RTPReceiver::shared& receiver, bool smooth = false);
 	bool AppendH264ParameterSets(const std::string& sprop);
 	void Close();
 

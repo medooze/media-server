@@ -265,7 +265,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		Debug("-DTLSICETransport::onData() | Unknowing group for ssrc trying to retrieve by [ssrc:%u,rid:'%s']\n",ssrc,rid.c_str());
 
 		//If it is the repaidr stream or it has rid and it is rtx
-		if (!rid.empty() && packet->GetCodec()==VideoCodec::RTX)
+		if (!rid.empty() && (packet->GetCodec()==VideoCodec::RTX || packet->GetCodec() == AudioCodec::RTX))
 		{
 			//Try to find it on the rids and mids
 			auto it = rids.find(mid+"@"+rid);
@@ -322,7 +322,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 				//And to the srtp session
 				recv.AddStream(ssrc);
 			}
-		} else if (packet->HasMediaStreamId() && packet->GetCodec()==VideoCodec::RTX) {
+		} else if (packet->HasMediaStreamId() && (packet->GetCodec()==VideoCodec::RTX || packet->GetCodec() == AudioCodec::RTX)) {
 			//Try to find it on the rids and mids
 			auto it = mids.find(mid);
 			//If found
@@ -406,7 +406,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 			mids[mid] = { group };
 	}
 	
-	//UltraDebug("-Got RTP on media:%s sssrc:%u seq:%u pt:%u codec:%s rid:'%s', mid:'%s'\n",MediaFrame::TypeToString(group->type),ssrc,packet->GetSeqNum(),packet->GetPayloadType(),GetNameForCodec(group->type,codec),group->rid.c_str(),group->mid.c_str());
+	//UltraDebug("-DTLSICETransport::onData() | Got RTP on media:%s sssrc:%u seq:%u pt:%u codec:%s rid:'%s', mid:'%s'\n",MediaFrame::TypeToString(group->type),ssrc,packet->GetSeqNum(),packet->GetPayloadType(),GetNameForCodec(group->type,codec),group->rid.c_str(),group->mid.c_str());
 	
 	//Process packet and get source
 	RTPIncomingSource* source = group->Process(packet);
@@ -420,10 +420,9 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 	if (ssrc==group->rtx.ssrc && packet->GetMediaLength()) 
 	{
 		//Ensure that it is a RTX codec
-		if (codec!=VideoCodec::RTX)
+		if (codec!=VideoCodec::RTX && codec != AudioCodec::RTX)
 			//error
 			return  Warning("-DTLSICETransport::onData() | No RTX codec on rtx sssrc:%u type:%d codec:%d\n",packet->GetSSRC(),packet->GetPayloadType(),packet->GetCodec());
-	
 		//Find apt type
 		auto apt = recvMaps.apt.GetCodecForType(packet->GetPayloadType());
 		//Find codec 
@@ -449,6 +448,8 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		 packet->SetPayloadType(apt);
 		 //TODO: Move from here, required to fill the vp8/vp9 descriptors
 		 VideoLayerSelector::GetLayerIds(packet);
+
+		 //UltraDebug("-DTLSICETransport::onData() | Recovered RTX on media:%s sssrc:%u seq:%u pt:%u codec:%s rid:'%s', mid:'%s'\n", MediaFrame::TypeToString(group->type), ssrc, packet->GetSeqNum(), packet->GetPayloadType(), GetNameForCodec(group->type, codec), group->rid.c_str(), group->mid.c_str());
 	} 
 
 	//Add packet and see if we have lost any in between
@@ -460,7 +461,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		source->dropPackets++;
 	
 	//Send nack feedback
-	if ( group->type == MediaFrame::Video && 
+	if ((group->type == MediaFrame::Video || recvMaps.apt.GetTypeForCodec(packet->GetPayloadType()!=RTPMap::NotFound)) &&
 		( lost>0 ||  (group->GetCurrentLost() && (now-source->lastNACKed)/1000>fmax(rtt,20)))
 	   )
 	{
@@ -944,6 +945,11 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 			//Error
 			return (void)UltraDebug("-DTLSICETransport::ReSendPacket() | Too much bitrate on rtx, skiping rtx:%lld estimated:%u target:%d\n",(uint64_t)(rtxBitrate.GetInstantAvg()*8), senderSideBandwidthEstimator->GetEstimatedBitrate(), targetBitrate);
 	}
+
+	//Check if we can retransmit the packet, or we have rtx recently
+	if (!group->isRTXAllowed(seq, now/1000))
+		//Debug
+		return (void)UltraDebug("-DTLSICETransport::ReSendPacket() | rtx not allowed for packet [seq:%d,ssrc:&%u,rtx:%u]\n", seq, group->media.ssrc, group->rtx.ssrc);
 	
 	//Find packet to retransmit
 	auto original = group->GetPacket(seq);
@@ -1092,6 +1098,9 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	
 	//Update stats
 	source.Update(now/1000, packet, len);
+
+	//Update rtx time
+	group->SetRTXTime(seq, now/1000);
 }
 
 void  DTLSICETransport::ActivateRemoteCandidate(ICERemoteCandidate* candidate,bool useCandidate, DWORD priority)
@@ -1145,8 +1154,22 @@ void DTLSICETransport::SetLocalProperties(const Properties& properties)
 		AudioCodec::Type codec = AudioCodec::GetCodecForName(it->GetProperty("codec"));
 		//Get codec type
 		BYTE type = it->GetProperty("pt",0);
-		//ADD it
-		sendMaps.rtp[type] = codec;
+		//Check
+		if (type && codec != AudioCodec::UNKNOWN)
+		{
+			//ADD it
+			sendMaps.rtp[type] = codec;
+			//Get rtx
+			BYTE rtx = it->GetProperty("rtx", 0);
+			//Check if it has rtx
+			if (rtx)
+			{
+				//ADD it
+				sendMaps.rtp[rtx] = AudioCodec::RTX;
+				//Add the reverse one
+				sendMaps.apt[rtx] = type;
+			}
+		}
 	}
 	
 	//Clear codecs
@@ -1249,8 +1272,22 @@ void DTLSICETransport::SetRemoteProperties(const Properties& properties)
 		AudioCodec::Type codec = AudioCodec::GetCodecForName(it->GetProperty("codec"));
 		//Get codec type
 		BYTE type = it->GetProperty("pt",0);
-		//ADD it
-		recvMaps.rtp[type] = codec;
+		//Check
+		if (type && codec != AudioCodec::UNKNOWN)
+		{
+			//ADD it
+			recvMaps.rtp[type] = codec;
+			//Get rtx
+			BYTE rtx = it->GetProperty("rtx", 0);
+			//Check if it has rtx
+			if (rtx)
+			{
+				//ADD it
+				recvMaps.rtp[rtx] = AudioCodec::RTX;
+				//Add the reverse one
+				recvMaps.apt[rtx] = type;
+			}
+		}
 	}
 	
 	//Clear codecs
@@ -1433,15 +1470,6 @@ void DTLSICETransport::Reset()
 
 	//Execute on timer thread
 	timeService.Sync([=](auto now){
-		//Clean mem
-		if (iceLocalUsername)
-			free(iceLocalUsername);
-		if (iceLocalPwd)
-			free(iceLocalPwd);
-		if (iceRemoteUsername)
-			free(iceRemoteUsername);
-		if (iceRemotePwd)
-			free(iceRemotePwd);
 		
 		//Reset srtp
 		send.Reset();
@@ -1456,10 +1484,10 @@ void DTLSICETransport::Reset()
 			dumper.reset();
 		}
 		//No ice
-		iceLocalUsername = NULL;
-		iceLocalPwd = NULL;
-		iceRemoteUsername = NULL;
-		iceRemotePwd = NULL;
+		iceLocalUsername.clear();
+		iceLocalPwd.clear();
+		iceRemoteUsername.clear();
+		iceRemotePwd.clear();
 		dumper = NULL;
 		dumpInRTP = false;
 		dumpOutRTP = false;
@@ -1483,14 +1511,9 @@ int DTLSICETransport::SetLocalCryptoSDES(const char* suite,const BYTE* key,const
 int DTLSICETransport::SetLocalSTUNCredentials(const char* username, const char* pwd)
 {
 	Log("-DTLSICETransport::SetLocalSTUNCredentials() | [frag:%s,pwd:%s]\n",username,pwd);
-	//Clean mem
-	if (iceLocalUsername)
-		free(iceLocalUsername);
-	if (iceLocalPwd)
-		free(iceLocalPwd);
 	//Store values
-	iceLocalUsername = strdup(username);
-	iceLocalPwd = strdup(pwd);
+	iceLocalUsername = username;
+	iceLocalPwd = pwd;
 	//Ok
 	return 1;
 }
@@ -1499,14 +1522,10 @@ int DTLSICETransport::SetLocalSTUNCredentials(const char* username, const char* 
 int DTLSICETransport::SetRemoteSTUNCredentials(const char* username, const char* pwd)
 {
 	Log("-DTLSICETransport::SetRemoteSTUNCredentials() |  [frag:%s,pwd:%s]\n",username,pwd);
-	//Clean mem
-	if (iceRemoteUsername)
-		free(iceRemoteUsername);
-	if (iceRemotePwd)
-		free(iceRemotePwd);
+	
 	//Store values
-	iceRemoteUsername = strdup(username);
-	iceRemotePwd = strdup(pwd);
+	iceRemoteUsername = username;
+	iceRemotePwd = pwd;
 	//Ok
 	return 1;
 }
@@ -1678,7 +1697,7 @@ bool DTLSICETransport::RemoveOutgoingSourceGroup(const RTPOutgoingSourceGroup::s
 	Log("-DTLSICETransport::RemoveOutgoingSourceGroup() [ssrc:%u,rtx:%u]\n",group->media.ssrc,group->rtx.ssrc);
 
 	//Dispatch to the event loop thread
-	timeService.Sync([=](auto now){
+	timeService.Async([=](auto now){
 		Log("-DTLSICETransport::RemoveOutgoingSourceGroup() | Async [ssrc:%u,rtx:%u]\n",group->media.ssrc,group->rtx.ssrc);
 		//Get ssrcs
 		std::vector<DWORD> ssrcs;
@@ -1731,8 +1750,8 @@ bool DTLSICETransport::AddIncomingSourceGroup(const RTPIncomingSourceGroup::shar
 	if (!group)
 		return Error("-DTLSICETransport::AddIncomingSourceGroup() | Empty group\n");
 
-	//RTX should only be enabled for video and if RTX codec has been negotiated
-	bool isRTXEnabled = group->type == MediaFrame::Video && sendMaps.rtp.HasCodec(VideoCodec::RTX);
+	//RTX should only be enabled if RTX codec has been negotiated for the media type
+	bool isRTXEnabled = group->type==MediaFrame::Video ? sendMaps.rtp.HasCodec(VideoCodec::RTX) : sendMaps.rtp.HasCodec(AudioCodec::RTX);
 
 	//Log
 	Log("-DTLSICETransport::AddIncomingSourceGroup() [mid:'%s',rid:'%s',ssrc:%u,rtx:%u,isRTXEnabled:%d,disableREMB:%d]\n",group->mid.c_str(),group->rid.c_str(),group->media.ssrc,group->rtx.ssrc,isRTXEnabled, disableREMB);
@@ -1742,7 +1761,7 @@ bool DTLSICETransport::AddIncomingSourceGroup(const RTPIncomingSourceGroup::shar
 		return Error("No media ssrc or rid defined, stream will not be added\n");
 	
 	//Dispatch to the event loop thread
-	timeService.Async([&](auto now){
+	timeService.Async([=](auto now){
 		//Get ssrcs
 		const auto media = group->media.ssrc;
 		const auto rtx   = group->rtx.ssrc;
@@ -1813,7 +1832,7 @@ bool DTLSICETransport::RemoveIncomingSourceGroup(const RTPIncomingSourceGroup::s
 	Log("-DTLSICETransport::RemoveIncomingSourceGroup() [mid:'%s',rid:'%s',ssrc:%u,rtx:%u]\n",group->mid.c_str(),group->rid.c_str(),group->media.ssrc,group->rtx.ssrc);
 	
 	//Dispatch to the event loop thread
-	timeService.Sync([&](auto now){
+	timeService.Async([&](auto now){
 
 		//Remove rid if any
 		if (!group->rid.empty())
@@ -2096,7 +2115,7 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 		//Disable playout delay
 		packet->DisablePlayoutDelay();
 
-	//if (group->type==MediaFrame::Video) UltraDebug("-Sending RTP on media:%s sssrc:%u seq:%u pt:%u ts:%lu codec:%s\n",MediaFrame::TypeToString(group->type),source.ssrc,packet->GetSeqNum(),packet->GetPayloadType(),packet->GetTimestamp(),GetNameForCodec(group->type,packet->GetCodec()));
+	//if (group->type==MediaFrame::Video) UltraDebug("-DTLSICETransport::Send() | Sending RTP on media:%s sssrc:%u seq:%u pt:%u ts:%lu codec:%s\n",MediaFrame::TypeToString(group->type),source.ssrc,packet->GetSeqNum(),packet->GetPayloadType(),packet->GetTimestamp(),GetNameForCodec(group->type,packet->GetCodec()));
 	
 	//Pick one packet buffer from the pool
 	Packet buffer = packetPool.pick();
@@ -2401,7 +2420,6 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 						{
 							//Get field
 							auto field = fb->GetField<RTCPRTPFeedback::NACKField>(i);
-
 							//Resent it
 							ReSendPacket(group, field->pid);
 							//Check each bit of the mask
@@ -2764,26 +2782,11 @@ int DTLSICETransport::Enqueue(const RTPPacket::shared& packet)
 		"ssrc", packet->GetSSRC(),
 		"seqNum", packet->GetSeqNum());
 
+	//TODO: check if we are actuall sending from a different thread ocasionally
 	//Send async
-	timeService.Async([this,packet](auto now){
+	timeService.Async([=](auto now){
 		//Send
 		Send(packet->Clone());
-	});
-	
-	return 1;
-}
-
-int DTLSICETransport::Enqueue(const RTPPacket::shared& packet,std::function<RTPPacket::shared(const RTPPacket::shared&)> modifier)
-{
-	//Trace
-	TRACE_EVENT("rtp", "DTLSICETransport::Enqueue RTP",
-		"ssrc", packet->GetSSRC(),
-		"seqNum", packet->GetSeqNum());
-
-	//Send async
-	timeService.Async([this,packet,modifier](auto now){
-		//Send
-		Send(modifier(packet));
 	});
 	
 	return 1;
@@ -3000,33 +3003,36 @@ void DTLSICETransport::CheckProbeTimer()
 {
 	Debug("-DTLSICETransport::CheckProbeTimer() | [probingTimer:%d]\n",!!probingTimer);
 
-	//If we don't have timer anumore
-	if (!probingTimer)
-		//Do nothing
-		return;
-	//No video
-	bool video = false;
-	//Check if there is any video source
-	for (auto& [ssrc,outgoing] : outgoing)
-	{
-		//If it is video
-		if (outgoing->type == MediaFrame::Video)
+	//Dispatch to the event loop thread
+	timeService.Async([=](auto now) {
+		//If we don't have timer anumore
+		if (!probingTimer)
+			//Do nothing
+			return;
+		//No video
+		bool video = false;
+		//Check if there is any video source
+		for (const auto& [ssrc,outgoing] : outgoing)
 		{
-			//Got one
-			video = true;
-			break;
+			//If it is video
+			if (outgoing->type == MediaFrame::Video)
+			{
+				//Got one
+				video = true;
+				break;
+			}
 		}
-	}
 	
-	//Check if we have to start if
-	if (this->senderSideEstimationEnabled && this->probe && video && state == DTLSState::Connected)
-	{
-		//If not already started
-		if (!probingTimer->IsScheduled())
-			//Start probing timer again
-			probingTimer->Repeat(ProbingInterval);
-	}else {
-		//Stop probing
-		probingTimer->Cancel();
-	}
+		//Check if we have to start if
+		if (this->senderSideEstimationEnabled && this->probe && video && state == DTLSState::Connected)
+		{
+			//If not already started
+			if (!probingTimer->IsScheduled())
+				//Start probing timer again
+				probingTimer->Repeat(ProbingInterval);
+		} else {
+			//Stop probing
+			probingTimer->Cancel();
+		}
+	});
 }

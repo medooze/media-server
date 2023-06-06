@@ -19,6 +19,7 @@
 #include "rtp/RTPHeaderExtension.h"
 #include "rtp/RTPPayload.h"
 #include "rtp/RTPPayloadPool.h"
+#include "h264/h264.h"
 #include "vp8/vp8.h"
 #include "vp9/VP9PayloadDescription.h"
 #include <memory>
@@ -190,11 +191,18 @@ public:
 	const RTPHeader&		GetRTPHeader()		const { return header;		}
 	const RTPHeaderExtension&	GetRTPHeaderExtension()	const { return extension;	}
 
+	uint32_t GetWidth() const	{ return width;			}
+	uint32_t GetHeight() const	{ return height;		}
+	void SetWidth(uint32_t width)	{ this->width = width;		}
+	void SetHeight(uint32_t height) { this->height = height;	}
+
 public:
 	//TODO:refactor a bit
 	std::optional<VP8PayloadDescriptor>	vp8PayloadDescriptor;
 	std::optional<VP8PayloadHeader>		vp8PayloadHeader;
 	std::optional<VP9PayloadDescription>	vp9PayloadDescriptor;
+	std::optional<H264SeqParameterSet>	h264SeqParameterSet;
+	std::optional<H264PictureParameterSet>	h264PictureParameterSet;
 	std::optional<std::vector<bool>>	activeDecodeTargets;
 	std::optional<TemplateDependencyStructure> templateDependencyStructure;
 	Buffer::shared				config;
@@ -219,11 +227,13 @@ protected:
 
 private:
 	MediaFrame::Type media;
+
 	BYTE		codec;
 	DWORD		clockRate;
 	WORD		seqCycles	= 0;
 	DWORD		timestampCycles	= 0;
-	WORD		osn		= 0;
+
+	std::optional<WORD> osn;
 	
 	RTPHeader	   header;
 	RTPHeaderExtension extension;
@@ -232,7 +242,9 @@ private:
 	QWORD time			= 0;
 	bool isKeyFrame			= false;
 	QWORD senderTime		= 0;
-	int64_t timestampSkew 	= 0;
+	int64_t timestampSkew 		= 0;
+	uint16_t width			= 0;
+	uint16_t height			= 0;
 };
 #endif /* RTPPACKET_H */
 

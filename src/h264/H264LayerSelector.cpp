@@ -322,29 +322,177 @@ bool H264LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 	} else {
 		//Get payload
 		const uint8_t* payload = packet->GetMediaData();
-		uint32_t len = packet->GetMediaLength();
+		uint32_t payloadLen = packet->GetMediaLength();
+
 		//Check size
-		if (len)
+		if (payloadLen)
 		{
-			//Check if first nal
-			BYTE nalUnitType = payload[0] & 0x1f;
+			/* +---------------+
+			 * |0|1|2|3|4|5|6|7|
+			 * +-+-+-+-+-+-+-+-+
+			 * |F|NRI|  Type   |
+			 * +---------------+
+			 *
+			 * F must be 0.
+			 */
+			 //Check if first nal
+			 BYTE nalUnitType = payload[0] & 0x1f;
 
-			//FU-A
-			if (nalUnitType == 28 && len>2)
-				//Get first nal type
-				nalUnitType = payload[1] & 0x1f;
-			//STAP-A
-			else if (nalUnitType == 24 && len>3)
-				//Get first nal type
-				nalUnitType = payload[3] & 0x1f;
+			//Get nal data
+			const BYTE* nalData = payload + 1;
 
-			//Check for IDR/PPS/SPS nals
-			if (nalUnitType==5 || nalUnitType==7 || nalUnitType==8)
-				//Key frame
-				packet->SetKeyFrame(true);
+			//Get nalu size
+			DWORD nalSize = payloadLen;
+
+			//Debug("-H264 [NAL:%d,type:%d,size:%d]\n", payload[0], nalUnitType, nalSize);
+
+			//Check type
+			switch (nalUnitType)
+			{
+				case 0:
+				case 30:
+				case 31:
+					/* undefined */
+					break;
+				case 25:
+					/* STAP-B		Single-time aggregation packet		 5.7.1 */
+					/* 2 byte extra header for DON */
+					/** Not supported */
+					break;
+				case 24:
+					/**
+					   Figure 7 presents an example of an RTP packet that contains an STAP-
+					   A.  The STAP contains two single-time aggregation units, labeled as 1
+					   and 2 in the figure.
+
+					       0                   1                   2                   3
+					       0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+					      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+					      |                          RTP Header                           |
+					      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+					      |STAP-A NAL HDR |         NALU 1 Size           | NALU 1 HDR    |
+					      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+					      |                         NALU 1 Data                           |
+					      :                                                               :
+					      +               +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+					      |               | NALU 2 Size                   | NALU 2 HDR    |
+					      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+					      |                         NALU 2 Data                           |
+					      :                                                               :
+					      |                               +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+					      |                               :...OPTIONAL RTP padding        |
+					      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+					      Figure 7.  An example of an RTP packet including an STAP-A and two
+							 single-time aggregation units
+					*/
+
+					/* Skip STAP-A NAL HDR */
+					payload++;
+					payloadLen--;
+
+					/* STAP-A Single-time aggregation packet 5.7.1 */
+					while (payloadLen > 2)
+					{
+						/* Get NALU size */
+						nalSize = get2(payload, 0);
+
+						/* strip NALU size */
+						payload += 2;
+						payloadLen -= 2;
+
+						//Check
+						if (!nalSize || nalSize > payloadLen)
+							//Error
+							break;
+
+						//Get nal type
+						nalUnitType = payload[0] & 0x1f;
+						//Get data
+						nalData = payload + 1;
+
+						//Check if IDR SPS or PPS
+						switch (nalUnitType)
+						{
+							case 0x05:
+								//It is intra
+								packet->SetKeyFrame(true);
+								break;
+							case 0x07:
+								//Consider it intra also
+								packet->SetKeyFrame(true);
+								//Create sps
+								packet->h264SeqParameterSet.emplace();
+								//Parse sps
+								if (packet->h264SeqParameterSet->Decode(nalData, nalSize - 1))
+								{
+									//Set dimensions
+									packet->SetWidth(packet->h264SeqParameterSet->GetWidth());
+									packet->SetHeight(packet->h264SeqParameterSet->GetHeight());
+								} else {
+									//Remove sps
+									packet->h264SeqParameterSet.reset();
+								}
+								break;
+							case 0x08:
+								//Consider it intra also
+								packet->SetKeyFrame(true);
+								//Create pps
+								packet->h264PictureParameterSet.emplace();
+								//Parse sps
+								if (!packet->h264PictureParameterSet->Decode(nalData, nalSize - 1))
+								{
+									//Remove sps
+									packet->h264SeqParameterSet.reset();
+								}
+								break;
+						}
+
+						//Next aggregation nal
+						payload += nalSize;
+						payloadLen -= nalSize;
+					}
+					break;
+				case 0x05:
+					//It is intra
+					packet->SetKeyFrame(true);
+					break;
+				case 0x07:
+					//Consider it intra also
+					packet->SetKeyFrame(true);
+					//Create sps
+					packet->h264SeqParameterSet.emplace();
+					//Parse sps
+					if (packet->h264SeqParameterSet->Decode(nalData, nalSize - 1))
+					{
+						//Set dimensions
+						packet->SetWidth(packet->h264SeqParameterSet->GetWidth());
+						packet->SetHeight(packet->h264SeqParameterSet->GetHeight());
+					} else {
+						//Remove sps
+						//Remove sps
+						packet->h264SeqParameterSet.reset();
+					}
+					break;
+				case 0x08:
+					//Consider it intra also
+					packet->SetKeyFrame(true);
+					//Create pps
+					packet->h264PictureParameterSet.emplace();
+					//Parse sps
+					if (!packet->h264PictureParameterSet->Decode(nalData, nalSize - 1))
+					{
+						//Remove sps
+						packet->h264SeqParameterSet.reset();
+					}
+					break;
+				default:
+					//Do nothing
+					break;
+			}
 		}
 	}
-	//UltraDebug("-H264LayerSelector::GetLayerIds() | [isKeyFrame:%d]\n",packet->IsKeyFrame());
+	//UltraDebug("-H264LayerSelector::GetLayerIds() | [isKeyFrame:%d,width:%d,height:%d]\n",packet->IsKeyFrame(),packet->GetWidth(),packet->GetHeight());
 	
 	//Return layer infos
 	return infos;

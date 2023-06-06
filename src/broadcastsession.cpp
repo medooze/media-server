@@ -322,14 +322,14 @@ BroadcastSession::PublisherNetStream::~PublisherNetStream()
 	Close();
 }
 
-void BroadcastSession::PublisherNetStream::doPublish(std::wstring& url)
+void BroadcastSession::PublisherNetStream::doPublish(QWORD transId, std::wstring& url)
 {
 	//Publish
 	sess->PublishMediaStream(url,this);
 	//Publish ok
-	fireOnNetStreamStatus(RTMP::Netstream::Publish::Start,L"Publish started");
+	fireOnNetStreamStatus(transId,RTMP::Netstream::Publish::Start,L"Publish started");
 }
-void BroadcastSession::PublisherNetStream::doClose(RTMPMediaStream::Listener *listener)
+void BroadcastSession::PublisherNetStream::doClose(QWORD transId, RTMPMediaStream::Listener *listener)
 {
 	//Close
 	Close();
@@ -377,7 +377,7 @@ BroadcastSession::WatcherNetStream::~WatcherNetStream()
 	//Close
 	Close();
 }
-void BroadcastSession::WatcherNetStream::doPlay(std::wstring& url,RTMPMediaStream::Listener *listener)
+void BroadcastSession::WatcherNetStream::doPlay(QWORD transId, std::wstring& url,RTMPMediaStream::Listener *listener)
 {
 	//Play
 	if (stream=sess->PlayMediaStream(url,this))
@@ -385,16 +385,16 @@ void BroadcastSession::WatcherNetStream::doPlay(std::wstring& url,RTMPMediaStrea
 		//Add listener
 		AddMediaListener(listener);
 		//Send reseted status
-		fireOnNetStreamStatus(RTMP::Netstream::Play::Reset,L"Playback reset");
+		fireOnNetStreamStatus(transId,RTMP::Netstream::Play::Reset,L"Playback reset");
 		//Send play status
-		fireOnNetStreamStatus(RTMP::Netstream::Play::Start,L"Playback started");
+		fireOnNetStreamStatus(transId,RTMP::Netstream::Play::Start,L"Playback started");
 	} else {
 		//Send error
-		fireOnNetStreamStatus(RTMP::Netstream::Play::StreamNotFound,L"Stream not found");
+		fireOnNetStreamStatus(transId,RTMP::Netstream::Play::StreamNotFound,L"Stream not found");
 	}
 }
 
-void BroadcastSession::WatcherNetStream::doClose(RTMPMediaStream::Listener *listener)
+void BroadcastSession::WatcherNetStream::doClose(QWORD transId, RTMPMediaStream::Listener *listener)
 {
 	//Close
 	Close();

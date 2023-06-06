@@ -97,8 +97,8 @@ void RTPBundleTransport::RTPBundleTransport::ClearRawTx()
 * RTPBundleTransport
 * 	Constructro
 **************************/
-RTPBundleTransport::RTPBundleTransport() : 
-	loop(this)
+RTPBundleTransport::RTPBundleTransport(uint32_t packetPoolSize) :
+	loop(this, packetPoolSize)
 {
 	//Init values
 	socket = FD_INVALID;
@@ -737,7 +737,7 @@ int RTPBundleTransport::AddRemoteCandidate(const std::string& username,const cha
 	//Copy ip 
 	auto ip = std::string(host);
 	
-	//Execute async and wait for completion
+	//Execute Sync
 	loop.Async([=](auto now){
 		//Check if we have an ICE transport for that username
 		auto it = connections.find(username);
@@ -772,7 +772,7 @@ int RTPBundleTransport::AddRemoteCandidate(const std::string& username,const cha
 		//Send binding request in any case
 		SendBindingRequest(connection,candidate);
 		
-	}).wait();
+	});
 	
 	return 1;
 }

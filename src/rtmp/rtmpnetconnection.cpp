@@ -7,14 +7,14 @@ RTMPNetConnection::~RTMPNetConnection()
 }
 
 
-void RTMPNetConnection::SendStatus(const RTMPNetStatusEventInfo &info,const wchar_t *message)
+void RTMPNetConnection::SendStatus(QWORD transId, const RTMPNetStatusEventInfo &info,const wchar_t *message)
 {
 	//Lock mutexk
 	listenerLock.Lock();
 	//For each listener
 	for(auto it = listeners.begin(); it!=listeners.end(); ++it)
 		//Disconnect
-		(*it)->onNetConnectionStatus(info,message);
+		(*it)->onNetConnectionStatus(transId, info,message);
 	//Unlock
 	listenerLock.Lock();
 }

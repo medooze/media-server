@@ -733,8 +733,14 @@ void RTMPConnection::ParseData(BYTE *data,const DWORD size)
 						RTMPMediaFrame* frame = msg->GetMediaFrame();
 						//Check if we have it
 						if (frame)
+						{
 							//Process message
 							ProcessMediaData(messageStreamId,frame);
+						}
+						else
+						{
+							Error("Failed to get media frame\n");
+						}
 					} else if (msg->IsMetaData() || msg->IsSharedObject()) {
 						//Get object
 						RTMPMetaData *meta = msg->GetMetaData();
@@ -1246,11 +1252,10 @@ void RTMPConnection::onCommand(DWORD streamId,const wchar_t *name,AMFData* obj)
 	SendCommand(streamId,name,new AMFNull(),obj->Clone());
 }
 
-void RTMPConnection::onNetStreamStatus(DWORD streamId,const RTMPNetStatusEventInfo &info,const wchar_t *message)
+void RTMPConnection::onNetStreamStatus(DWORD streamId,QWORD transId,const RTMPNetStatusEventInfo &info,const wchar_t *message)
 {
 	RTMPNetStatusEvent event(info.code,info.level,message);
-	//Send command
-	onCommand(streamId,L"onStatus",&event);
+	SendCommandResponse(streamId,L"onStatus",transId,new AMFNull(),event.Clone());
 }
 
 void RTMPConnection::onMediaFrame(DWORD streamId,RTMPMediaFrame *frame)
@@ -1339,11 +1344,11 @@ void RTMPConnection::onNetStreamDestroyed(DWORD streamId)
 	pthread_mutex_unlock(&mutex);
 }
 
-void RTMPConnection::onNetConnectionStatus(const RTMPNetStatusEventInfo &info,const wchar_t *message)
+void RTMPConnection::onNetConnectionStatus(QWORD transId,const RTMPNetStatusEventInfo &info,const wchar_t *message)
 {
 	RTMPNetStatusEvent event(info.code,info.level,message);
 	//Send command
-	onCommand(0,L"onStatus",&event);
+	SendCommandResponse(0,L"onStatus",transId,new AMFNull(),event.Clone());
 }
 
 void RTMPConnection::onNetConnectionDisconnected()

@@ -41,7 +41,7 @@ void RTPIncomingSourceGroup::AddListener(RTPIncomingMediaStream::Listener* liste
 	Debug("-RTPIncomingSourceGroup::AddListener() [listener:%p]\n",listener);
 	
 	//Add it sync
-	timeService.Sync([=](auto){
+	timeService.Async([=](auto){
 		listeners.insert(listener);
 	});
 }
@@ -176,10 +176,27 @@ void RTPIncomingSourceGroup::Update()
 		rtx.Update(now.count());
 	});
 }
+
+void RTPIncomingSourceGroup::UpdateAsync(std::function<void(std::chrono::milliseconds)> callback)
+{
+	//Trace method
+	TRACE_EVENT("rtp", "RTPIncomingSourceGroup::Update");
+
+	//Update it sync
+	timeService.Async([=](std::chrono::milliseconds now) {
+		//Set last updated time
+		lastUpdated = now.count();
+		//Update
+		media.Update(now.count());
+		//Update
+		rtx.Update(now.count());
+	}, callback);
+}
+
 void RTPIncomingSourceGroup::SetMaxWaitTime(DWORD maxWaitingTime)
 {
 	//Update it sync
-	timeService.Sync([=](std::chrono::milliseconds now) {
+	timeService.Async([=](std::chrono::milliseconds now) {
 		//Set it
 		packets.SetMaxWaitTime(maxWaitingTime);
 		//Store overriden value
@@ -190,7 +207,7 @@ void RTPIncomingSourceGroup::SetMaxWaitTime(DWORD maxWaitingTime)
 void RTPIncomingSourceGroup::ResetMaxWaitTime()
 {
 	//Update it sync
-	timeService.Sync([=](std::chrono::milliseconds now) {
+	timeService.Async([=](std::chrono::milliseconds now) {
 		//Remove override
 		maxWaitingTime.reset();
 	});
@@ -354,15 +371,24 @@ RTPIncomingSource* RTPIncomingSourceGroup::Process(RTPPacket::shared &packet)
 	
 	//Set clockrate
 	source->clockrate = packet->GetClockRate();
-
+	
 	//if it is video
 	if (type == MediaFrame::Video)
 	{
 		//Check if we can ge the layer info
 		auto info = VideoLayerSelector::GetLayerIds(packet);
-		//UltraDebug("-VideoLayerSelector::GetLayerIds() | [id:%x,tid:%u,sid:%u]\n",info.GetId(),info.temporalLayerId,info.spatialLayerId);
+		//UltraDebug("-RTPIncomingSourceGroup::Process() | [id:%x,tid:%u,sid:%u]\n",info.GetId(),info.temporalLayerId,info.spatialLayerId);
 		//Update source and layer info
 		source->Update(time, packet->GetSeqNum(), packet->GetRTPHeader().GetSize() + packet->GetMediaLength(), info, VideoLayerSelector::AreLayersInfoeAggregated(packet));
+		
+		//If we have new size
+		if (packet->GetWidth() && packet->GetHeight())
+		{		
+			UltraDebug("-RTPIncomingSourceGroup::Processs() | [width:%u,height:%u]\n", packet->GetWidth(), packet->GetHeight());
+			//Update size
+			source->width = packet->GetWidth();
+			source->height = packet->GetHeight();
+		}
 	} else {
 		//Update source and layer info
 		source->Update(time, packet->GetSeqNum(), packet->GetRTPHeader().GetSize() + packet->GetMediaLength());

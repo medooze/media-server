@@ -36,7 +36,7 @@ void RTPOutgoingSourceGroup::AddListener(Listener* listener)
 	Debug("-RTPOutgoingSourceGroup::AddListener() [listener:%p]\n",listener);
 	
 	//Add it sync
-	timeService.Sync([=](auto) {
+	timeService.Async([=](auto) {
 		listeners.insert(listener);
 	});
 	
@@ -108,6 +108,19 @@ void RTPOutgoingSourceGroup::onREMB(DWORD ssrc, DWORD bitrate)
 	});
 }
 
+void RTPOutgoingSourceGroup::UpdateAsync(std::function<void(std::chrono::milliseconds)> callback)
+{
+	//Update it sync
+	timeService.Async([=](auto now) {
+		//Set last updated time
+		lastUpdated = now.count();
+		//Update
+		media.Update(now.count());
+		//Update
+		rtx.Update(now.count());
+	}, callback);
+}
+
 void RTPOutgoingSourceGroup::Update()
 {
 	//Update it sync
@@ -148,4 +161,29 @@ void RTPOutgoingSourceGroup::Stop()
 		listeners.clear();
 	});
 
+}
+
+bool RTPOutgoingSourceGroup::isRTXAllowed(WORD seq, QWORD now) const
+{
+	//If there are no rtx times
+	if (!rtxTimes.GetLength())
+		//It is the first rtx packet
+		return true;
+
+	//Find last rtx time
+	auto time = rtxTimes.Get(seq);
+
+	//If we don't have it
+	if (!time)
+		//First time rtx this packet
+		return true;
+
+	//Don't allow to rtx more than twice per rtt
+	return time.value() + media.rtt/2 < now;
+}
+
+void RTPOutgoingSourceGroup::SetRTXTime(WORD seq, QWORD time)
+{
+	//Update rtx time for seq
+	rtxTimes.Set(seq, time);
 }

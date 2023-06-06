@@ -138,6 +138,16 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 			reset = false;
 		}
 
+		//UPdate size for video
+		if (frame->GetType() == MediaFrame::Video)
+		{
+			//Convert
+			auto  videoFrame = std::static_pointer_cast<VideoFrame>(frame);
+			//Set width and height
+			width = videoFrame->GetWidth();
+			height = videoFrame->GetHeight();
+		}
+
 		//Get info
 		const MediaFrame::RtpPacketizationInfo& info = frame->GetRtpPacketizationInfo();
 
@@ -311,6 +321,26 @@ void MediaFrameListenerBridge::Update()
 	Update(getTimeMS());
 }
 
+
+void MediaFrameListenerBridge::UpdateAsync(std::function<void(std::chrono::milliseconds)> callback)
+{
+	//Update it sync
+	timeService.Async([=](auto now) {
+		//Update bitrate acumulator
+		acumulator.Update(now.count());
+		//Get bitrate in bps
+		bitrate		= acumulator.GetInstant()*8;
+		///Get value
+		minWaitedTime	= waited.GetMinValueInWindow();
+		//Get value
+		maxWaitedTime	= waited.GetMaxValueInWindow();
+		//Get value
+		avgWaitedTime	= waited.GetInstantMedia();
+		//Get packets and frames delta
+		numFramesDelta	= accumulatorFrames.GetInstant();
+		numPacketsDelta	= accumulatorPackets.GetInstant();
+	}, callback);
+}
 
 void MediaFrameListenerBridge::Update(QWORD now)
 {

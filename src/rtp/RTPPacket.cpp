@@ -16,7 +16,7 @@
 #include "rtp/RTPPacket.h"
 #include "log.h"
 
-RTPPayloadPool RTPPacket::PayloadPool(16536);
+RTPPayloadPool RTPPacket::PayloadPool(65536);
 
 RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec, QWORD time) 
 {
@@ -123,6 +123,8 @@ RTPPacket::shared RTPPacket::Clone() const
 	cloned->SetKeyFrame(IsKeyFrame());
 	cloned->SetSenderTime(GetSenderTime());
 	cloned->SetTimestampSkew(GetTimestampSkew());
+	cloned->SetWidth(GetWidth());
+	cloned->SetHeight(GetHeight());
 	//Copy descriptors
 	cloned->rewitePictureIds     = rewitePictureIds;
 	cloned->vp8PayloadDescriptor = vp8PayloadDescriptor;
@@ -244,7 +246,7 @@ DWORD RTPPacket::Serialize(BYTE* data,DWORD size,const RTPMap& extMap) const
 	if (osn)
 	{
 		//And set the original seq
-		set2(data, len, osn);
+		set2(data, len, *osn);
 		//Move payload start
 		len += 2;
 	}

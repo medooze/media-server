@@ -255,7 +255,7 @@ public:
 		virtual ~Listener(){};
 	public:
 		//Interface
-		virtual void onNetStreamStatus(DWORD id,const RTMPNetStatusEventInfo &info,const wchar_t *message) = 0;
+		virtual void onNetStreamStatus(DWORD streamId, QWORD transId, const RTMPNetStatusEventInfo &info,const wchar_t *message) = 0;
 		virtual void onNetStreamDestroyed(DWORD id) = 0;
 	};
 	
@@ -265,13 +265,13 @@ public:
 	virtual ~RTMPNetStream();
 
 	//Netstream API
-	virtual void doPlay(std::wstring& url,RTMPMediaStream::Listener *listener);
-	virtual void doPublish(std::wstring& url);
-	virtual void doPause();
-	virtual void doResume();
-	virtual void doSeek(DWORD time);
+	virtual void doPlay(QWORD transId, std::wstring& url,RTMPMediaStream::Listener *listener);
+	virtual void doPublish(QWORD transId, std::wstring& url);
+	virtual void doPause(QWORD transId);
+	virtual void doResume(QWORD transId);
+	virtual void doSeek(QWORD transId, DWORD time);
 	virtual void doCommand(RTMPCommandMessage *cmd);
-	virtual void doClose(RTMPMediaStream::Listener *listener);
+	virtual void doClose(QWORD transId, RTMPMediaStream::Listener *listener);
 	//virtual void doPlay2();
 	//virtual void doReceiveAudio(bool flag);
 	//virtual void doReceiveVideo(bool flag);
@@ -282,7 +282,7 @@ public:
 	virtual void ProcessCommandMessage(RTMPCommandMessage* cmd);
 	
 protected:
-	virtual void fireOnNetStreamStatus(const RTMPNetStatusEventInfo &info,const wchar_t* message);
+	virtual void fireOnNetStreamStatus(QWORD transId, const RTMPNetStatusEventInfo &info,const wchar_t* message);
 
 protected:
 	Listener*		listener;
