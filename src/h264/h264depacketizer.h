@@ -21,6 +21,8 @@ public:
 	virtual void ResetFrame() override;
 	virtual void FinalizeFrame() override;
 private:
+	void AddFramePayload(VideoFrame& localFrame, const uint8_t* payload, uint32_t nalSize);
+	
 	VideoFrame frame;
 	AVCDescriptor config;
 	AVCDescriptor appliedConfig;

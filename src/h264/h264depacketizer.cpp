@@ -361,10 +361,8 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 				set4(nalHeader, 0, nalSize);
 			//Append data
 			frame.AppendMedia(nalHeader, sizeof (nalHeader));
-			//Append data and get current post
-			pos = frame.AppendMedia(payload, nalSize);
-			//Add RTP packet
-			frame.AddRtpPacket(pos,nalSize,NULL,0);
+			
+			AddFramePayload(frame, payload, nalSize);
 			//Done
 			break;
 	}
@@ -390,4 +388,71 @@ void H264Depacketizer::FinalizeFrame()
 	frame.AllocateCodecConfig(appliedConfig.GetSize());
 	//Serialize
 	appliedConfig.Serialize(frame.GetCodecConfigData(),frame.GetCodecConfigSize());
+}
+
+
+void H264Depacketizer::AddFramePayload(VideoFrame& localFrame, const uint8_t* payload, uint32_t nalSize)
+{
+	//Append data and get current post			
+	auto pos = localFrame.AppendMedia(payload, nalSize);
+	
+	//If it is small
+	if (nalSize < RTPPAYLOADSIZE)
+	{
+		//Single packetization
+		frame.AddRtpPacket(pos, nalSize);
+		return;
+	}
+	
+	/* +---------------+
+	 * |0|1|2|3|4|5|6|7|
+	 * +-+-+-+-+-+-+-+-+
+	 * |F|NRI|  Type   |
+	 * +---------------+
+	 */
+	uint8_t nri		= payload[0] & 0b0'11'00000;
+	uint8_t nalUnitType	= payload[0] & 0b0'00'11111;
+	
+
+	//Otherwise use FU-A
+	/*
+	* The FU indicator octet has the following format:
+	*
+	*       +---------------+
+	*       |0|1|2|3|4|5|6|7|
+	*       +-+-+-+-+-+-+-+-+
+	*       |F|NRI|  Type   |
+	*       +---------------+
+	*
+	* The FU header has the following format:
+	*
+	*      +---------------+
+	*      |0|1|2|3|4|5|6|7|
+	*      +-+-+-+-+-+-+-+-+
+	*      |S|E|R|  Type   |
+	*      +---------------+
+	*/
+	uint8_t nalHeader[2] = { nri | 28u, 0b100'00000 | nalUnitType };
+	//Pending uint8_ts
+	uint32_t pending = nalSize;
+	//Skip payload nal header
+	pending--;
+	pos++;
+	//Split it
+	while (pending)
+	{
+		int len = std::min<uint32_t>(RTPPAYLOADSIZE - 2, pending);
+		//Read it
+		pending -= len;
+		//If all added
+		if (!pending)
+			//Set end mark
+			nalHeader[1] |= 0b010'00000;
+		//Add packetization
+		frame.AddRtpPacket(pos, len, nalHeader, sizeof(nalHeader));
+		//Not first
+		nalHeader[1] &= 0b011'11111;
+		//Move start
+		pos += len;
+	}
 }
