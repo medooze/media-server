@@ -5,6 +5,7 @@
 #include "media.h"
 #include <map>
 #include <string.h>
+#include "rtp/RTPMap.h"
 
 class AudioCodec
 {
@@ -70,8 +71,6 @@ public:
 			default:	return 8000;
 		}
 	}
-
-	typedef std::map<int,Type> RTPMap;
 };
 
 class VideoCodec
@@ -109,7 +108,6 @@ public:
 		else if (strcasecmp(codec,"WEBP") == 0) return WEBP;
 		return UNKNOWN;
 	}
-	typedef std::map<int,Type> RTPMap;
 };
 
 
@@ -126,7 +124,6 @@ public:
 			default:	return "unknown";
 		}
 	}
-	typedef std::map<int,Type> RTPMap;
 };
 
 static MediaFrame::Type GetMediaForCodec(BYTE codec)

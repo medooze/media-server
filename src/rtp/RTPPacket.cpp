@@ -13,6 +13,7 @@
 
 #include <array>
 
+#include "codecs.h"
 #include "rtp/RTPPacket.h"
 #include "log.h"
 
