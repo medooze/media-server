@@ -80,7 +80,7 @@ void RTPIncomingMediaStreamDepacketizer::AddMediaListener(const MediaFrame::List
 		return;
 
 	//Add listener Sync
-	timeService.Sync([=](auto now){
+	timeService.Async([=](auto now){
 		//Add to set
 		listeners.insert(listener);
 	});

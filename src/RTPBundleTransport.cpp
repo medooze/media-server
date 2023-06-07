@@ -88,7 +88,7 @@ void RTPBundleTransport::SetRawTx(int32_t ifindex, unsigned int sndbuf, bool ski
 
 void RTPBundleTransport::RTPBundleTransport::ClearRawTx()
 {
-	loop.Async([this](std::chrono::milliseconds) { 
+	loop.Async([=](std::chrono::milliseconds) { 
 		loop.ClearRawTx(); 
 	}); 
 }
@@ -186,7 +186,7 @@ int RTPBundleTransport::RemoveICETransport(const std::string &username)
 	Log("-RTPBundleTransport::RemoveICETransport() [username:%s]\n",username.c_str());
   
 	//Synchronized
-	loop.Async([this,username](auto now){
+	loop.Async([=](auto now){
 
 		//Get transport
 		auto connectionIterator = connections.find(username);
@@ -244,7 +244,7 @@ bool RTPBundleTransport::RestartICETransport(const std::string& username, const 
 	}
 
 	//Synchronized
-	loop.Async([this, username, restarted, ice](auto now) {
+	loop.Async([=](auto now) {
 
 		//Get transport
 		auto connectionIterator = connections.find(username);

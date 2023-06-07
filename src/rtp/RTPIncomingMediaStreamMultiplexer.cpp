@@ -43,7 +43,7 @@ void RTPIncomingMediaStreamMultiplexer::AddListener(RTPIncomingMediaStream::List
 	Debug("-RTPIncomingMediaStreamMultiplexer::AddListener() [listener:%p,this:%p]\n",listener,this);
 	
 	//Dispatch in thread sync
-	timeService.Sync([=](auto now){
+	timeService.Async([=](auto now){
 		listeners.insert(listener);
 	});
 }
