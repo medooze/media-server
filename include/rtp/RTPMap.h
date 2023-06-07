@@ -31,16 +31,16 @@ public:
 		return data.empty();
 	}
 
-	decltype(data)::const_iterator begin() const
-	{
-		return data.cbegin();
-	}
-
 	void clear()
 	{
 		data.clear();
 		forward.fill(NotFound);
 		reverse.fill(NotFound);
+	}
+
+	BYTE GetFirstCodecType()
+	{
+		return data.cbegin()->first;
 	}
 
 	void SetCodecForType(BYTE type, BYTE codec)

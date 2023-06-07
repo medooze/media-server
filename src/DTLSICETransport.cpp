@@ -757,7 +757,7 @@ DWORD DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 	{
 		//Update RTX headers
 		header.ssrc		= source.ssrc;
-		header.payloadType	= sendMaps.apt.begin()->first;
+		header.payloadType	= sendMaps.apt.GetFirstCodecType();
 		header.sequenceNumber	= extSeqNum = source.NextSeqNum();
 		header.timestamp	= source.lastTimestamp++;
 		//Padding
