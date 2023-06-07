@@ -1158,16 +1158,16 @@ void DTLSICETransport::SetLocalProperties(const Properties& properties)
 		if (type && codec != AudioCodec::UNKNOWN)
 		{
 			//ADD it
-			sendMaps.rtp[type] = codec;
+			sendMaps.rtp.SetCodecForType(type, codec);
 			//Get rtx
 			BYTE rtx = it->GetProperty("rtx", 0);
 			//Check if it has rtx
 			if (rtx)
 			{
 				//ADD it
-				sendMaps.rtp[rtx] = AudioCodec::RTX;
+				sendMaps.rtp.SetCodecForType(rtx, AudioCodec::RTX);
 				//Add the reverse one
-				sendMaps.apt[rtx] = type;
+				sendMaps.apt.SetCodecForType(rtx, type);
 			}
 		}
 	}
@@ -1186,7 +1186,7 @@ void DTLSICETransport::SetLocalProperties(const Properties& properties)
 		//Get extension id
 		BYTE id = it->GetProperty("id",0);
 		//ADD it
-		sendMaps.ext[id] = ext;
+		sendMaps.ext.SetCodecForType(id, ext);
 	}
 	
 	//Clear extension
@@ -1206,16 +1206,16 @@ void DTLSICETransport::SetLocalProperties(const Properties& properties)
 		if (type && codec!=VideoCodec::UNKNOWN)
 		{
 			//ADD it
-			sendMaps.rtp[type] = codec;
+			sendMaps.rtp.SetCodecForType(type, codec);
 			//Get rtx
 			BYTE rtx = it->GetProperty("rtx",0);
 			//Check if it has rtx
 			if (rtx)
 			{
 				//ADD it
-				sendMaps.rtp[rtx] = VideoCodec::RTX;
+				sendMaps.rtp.SetCodecForType(rtx, VideoCodec::RTX);
 				//Add the reverse one
-				sendMaps.apt[rtx] = type;
+				sendMaps.apt.SetCodecForType(rtx, type);
 			}
 		}
 	}
@@ -1234,7 +1234,7 @@ void DTLSICETransport::SetLocalProperties(const Properties& properties)
 		//Get extension id
 		BYTE id = it->GetProperty("id",0);
 		//ADD it
-		sendMaps.ext[id] = ext;
+		sendMaps.ext.SetCodecForType(id, ext);
 	}
 	
 	//Clear extension
@@ -1276,16 +1276,16 @@ void DTLSICETransport::SetRemoteProperties(const Properties& properties)
 		if (type && codec != AudioCodec::UNKNOWN)
 		{
 			//ADD it
-			recvMaps.rtp[type] = codec;
+			recvMaps.rtp.SetCodecForType(type, codec);
 			//Get rtx
 			BYTE rtx = it->GetProperty("rtx", 0);
 			//Check if it has rtx
 			if (rtx)
 			{
 				//ADD it
-				recvMaps.rtp[rtx] = AudioCodec::RTX;
+				recvMaps.rtp.SetCodecForType(rtx, AudioCodec::RTX);
 				//Add the reverse one
-				recvMaps.apt[rtx] = type;
+				recvMaps.apt.SetCodecForType(rtx, type);
 			}
 		}
 	}
@@ -1304,7 +1304,7 @@ void DTLSICETransport::SetRemoteProperties(const Properties& properties)
 		//Get extension id
 		BYTE id = it->GetProperty("id",0);
 		//ADD it
-		recvMaps.ext[id] = ext;
+		recvMaps.ext.SetCodecForType(id, ext);
 	}
 	
 	//Clear extension
@@ -1324,16 +1324,16 @@ void DTLSICETransport::SetRemoteProperties(const Properties& properties)
 		if (type && codec!=VideoCodec::UNKNOWN)
 		{
 			//ADD it
-			recvMaps.rtp[type] = codec;
+			recvMaps.rtp.SetCodecForType(type, codec);
 			//Get rtx
 			BYTE rtx = it->GetProperty("rtx",0);
 			//Check if it has rtx
 			if (rtx)
 			{
 				//ADD it
-				recvMaps.rtp[rtx] = VideoCodec::RTX;
+				recvMaps.rtp.SetCodecForType(rtx, VideoCodec::RTX);
 				//Add the reverse one
-				recvMaps.apt[rtx] = type;
+				recvMaps.apt.SetCodecForType(rtx, type);
 			}
 		}
 	}
@@ -1352,7 +1352,7 @@ void DTLSICETransport::SetRemoteProperties(const Properties& properties)
 		//Get extension id
 		BYTE id = it->GetProperty("id",0);
 		//ADD it
-		recvMaps.ext[id] = ext;
+		recvMaps.ext.SetCodecForType(id, ext);
 	}
 	
 	//Clear extension

@@ -12,4 +12,13 @@
  */
 
 #include "rtp/RTPMap.h"
+#include "codecs.h"
 
+void RTPMap::Dump(MediaFrame::Type media) const
+{
+	Debug("[RTPMap]\n");
+	//Try to find it in the map
+	for (auto it = data.begin(); it!=data.end(); ++it)
+		Debug("\t[Codec name=%s payload=%d/]\n",GetNameForCodec(media,it->second),it->first);
+	Debug("[/RTPMap]\n");
+}

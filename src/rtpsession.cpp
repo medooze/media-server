@@ -234,13 +234,13 @@ int RTPSession::SetProperties(const Properties& properties)
 			useRTX = atoi(it->second.c_str());
 		} else if (it->first.compare("urn:ietf:params:rtp-hdrext:ssrc-audio-level")==0) {
 			//Set extension
-			extMap[atoi(it->second.c_str())] = RTPHeaderExtension::SSRCAudioLevel;
+			extMap.SetCodecForType(atoi(it->second.c_str()), RTPHeaderExtension::SSRCAudioLevel);
 		} else if (it->first.compare("urn:ietf:params:rtp-hdrext:toffset")==0) {
 			//Set extension
-			extMap[atoi(it->second.c_str())] = RTPHeaderExtension::TimeOffset;
+			extMap.SetCodecForType(atoi(it->second.c_str()), RTPHeaderExtension::TimeOffset);
 		} else if (it->first.compare("http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time")==0) {
 			//Set extension
-			extMap[atoi(it->second.c_str())] = RTPHeaderExtension::AbsoluteSendTime;
+			extMap.SetCodecForType(atoi(it->second.c_str()), RTPHeaderExtension::AbsoluteSendTime);
 			//Use timestamsp
 			useAbsTime = true;
 		} else {

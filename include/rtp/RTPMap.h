@@ -15,57 +15,46 @@
 #define RTPMAP_H
 #include "config.h"
 #include "log.h"
-#include "codecs.h"
+#include "media.h"
 #include <map>
 
-class RTPMap :
-	public std::map<BYTE,BYTE>
+class RTPMap
 {
+private:
+	std::map<BYTE, BYTE> data;
+	std::array<BYTE, 256> forward, reverse;
 public:
-	BYTE GetCodecForType(BYTE type) const
+	RTPMap() { clear(); }
+
+	bool empty() const
 	{
-		//Find the type in the map
-		const_iterator it = find(type);
-		//Check it is in there
-		if (it==end())
-			//Exit
-			return NotFound;
-		//It is our codec
-		return it->second;
+		return data.empty();
 	}
 
-	bool HasCodec(BYTE codec) const
+	decltype(data)::const_iterator begin() const
 	{
-		//Try to find it in the map
-		for (const_iterator it = begin(); it != end(); ++it)
-			//Is it ourr codec
-			if (it->second == codec)
-				//found
-				return true;
-		//Not found
-		return false;
+		return data.cbegin();
 	}
-	
-	BYTE GetTypeForCodec(BYTE codec) const
+
+	void clear()
 	{
-		//Try to find it in the map
-		for (const_iterator it = begin(); it!=end(); ++it)
-			//Is it ourr codec
-			if (it->second==codec)
-				//return it
-				return it->first;
-		//Exit
-		return NotFound;
+		data.clear();
+		forward.fill(NotFound);
+		reverse.fill(NotFound);
 	}
-	
-	void Dump(MediaFrame::Type media) const
+
+	void SetCodecForType(BYTE type, BYTE codec)
 	{
-		Debug("[RTPMap]\n");
-		//Try to find it in the map
-		for (const_iterator it = begin(); it!=end(); ++it)
-			Debug("\t[Codec name=%s payload=%d/]\n",GetNameForCodec(media,it->second),it->first);
-		Debug("[/RTPMap]\n");
+		data[type] = codec;
+		forward[type] = codec;
+		reverse[codec] = type;
 	}
+
+	BYTE GetCodecForType(BYTE type) const { return forward[type]; }
+	BYTE GetTypeForCodec(BYTE codec) const { return reverse[codec]; }
+	bool HasCodec(BYTE codec) const { return reverse[codec] != NotFound; }
+
+	void Dump(MediaFrame::Type media) const;
 public:
 	static const BYTE NotFound = -1;
 };
