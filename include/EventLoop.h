@@ -176,7 +176,7 @@ private:
 	int		fd		= 0;
 	int		pipe[2]		= {FD_INVALID, FD_INVALID};
 	pollfd		ufds[2]		= {};
-	volatile bool	signaled	= false;
+	std::atomic_flag signaled	= ATOMIC_FLAG_INIT;
 	volatile bool	running		= false;
 	std::chrono::milliseconds now	= 0ms;
 	moodycamel::ConcurrentQueue<SendBuffer>	sending;

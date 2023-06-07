@@ -213,7 +213,7 @@ bool EventLoop::Start(std::function<void(void)> loop)
 	running = true;
 
 	//Not signaled
-	signaled = false;
+	signaled.clear();
 	
 	//Start thread and run
 	thread = std::thread(loop);
@@ -258,7 +258,7 @@ bool EventLoop::Start(int fd)
 	running = true;
 
 	//Not signaled
-	signaled = false;
+	signaled.clear();
 	
 	//Start thread and run
 	thread = std::thread([this](){ Run(); });
@@ -557,14 +557,14 @@ void EventLoop::Signal()
 	uint64_t one = 1;
 	
 	//If we are in the same thread or already signaled and pipe is ok
-	if (std::this_thread::get_id()==thread.get_id() || signaled || pipe[1]==FD_INVALID)
+	if (std::this_thread::get_id()==thread.get_id() || signaled.test_and_set() || pipe[1] == FD_INVALID)
 		//No need to do anything
 		return;
 	
-	//We have signaled it
+	//We have signaled it above
 	//worst case scenario is that race happens between this to points
 	//and that we signal it twice
-	signaled = true;
+	
 	
 	//Write to tbe pipe, and assign to one to avoid warning in compile time
 	one = write(pipe[1],(uint8_t*)&one,sizeof(one));
@@ -853,7 +853,7 @@ void EventLoop::ClearSignal()
 		//DO nothing
 	}
 	//We are not signaled anymore
-	signaled = false;
+	signaled.clear();
 }
 
 void EventLoop::ProcessTasks(const std::chrono::milliseconds& now)
