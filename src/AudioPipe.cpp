@@ -30,7 +30,7 @@ int AudioPipe::StartRecording(DWORD rate)
 	//Set small cache 20ms
 	cache = rate/50;
 
-	//Bloqueamos
+	//Lock
 	pthread_mutex_lock(&mutex);
 
 	//If rate has changed
@@ -49,9 +49,13 @@ int AudioPipe::StartRecording(DWORD rate)
 	if (playRate != recordRate)
 		//Open it
 		transrater.Open(playRate, recordRate, numChannels);
-	//Estamos grabando
+	//We are recording now
 	recording = true;
-	//Desbloqueamos
+
+	//Signal
+	pthread_cond_signal(&cond);
+
+	//Unlock
 	pthread_mutex_unlock(&mutex);
 
 	return true;
@@ -66,13 +70,16 @@ int AudioPipe::StopRecording()
 	
 	Log("-AudioPipe stop recording\n");
 	
-	//Bloqueamos
+	//Lock
 	pthread_mutex_lock(&mutex);
 	
 	//Estamos grabando
 	recording = false;
 
-	//Desbloqueamos
+	//Signal
+	pthread_cond_signal(&cond);
+
+	//Unlock
 	pthread_mutex_unlock(&mutex);
 
 	return true;
@@ -87,7 +94,7 @@ void  AudioPipe::CancelRecBuffer()
 	//Cancel
 	canceled = true;
 
-	//Se�alamos
+	//Signal
 	pthread_cond_signal(&cond);
 
 	//Unloco mutex
@@ -153,13 +160,17 @@ int AudioPipe::PlayBuffer(SWORD* buffer, DWORD size, DWORD frameTime, BYTE vadLe
 {
 	//Debug("-push %d cache %d\n",size,fifoBuffer.length());
 
+	//Lock
+	pthread_mutex_lock(&mutex);
+
 	//Don't do anything if nobody is listening
 	if (!recording)
+	{
+		//Unlock
+		pthread_mutex_unlock(&mutex);
 		//Ok
 		return size;
-
-	//Bloqueamos
-	pthread_mutex_lock(&mutex);
+	}
 
 	//Check if we are transtrating
 	if (transrater.IsOpen())
@@ -191,13 +202,13 @@ int AudioPipe::PlayBuffer(SWORD* buffer, DWORD size, DWORD frameTime, BYTE vadLe
 		fifoBuffer.remove(totalSize - static_cast<DWORD>(left / numChannels)* numChannels);
 	}
 
-	//Metemos en la fifo
+	//Add data to fifo
 	fifoBuffer.push(buffer, totalSize);
 
 	//Signal rec
 	pthread_cond_signal(&cond);
 
-	//Desbloqueamos
+	//Unlock
 	pthread_mutex_unlock(&mutex);
 
 	return size;
@@ -211,14 +222,13 @@ int AudioPipe::RecBuffer(SWORD* buffer, DWORD size)
 	DWORD len = 0;
 	DWORD totalSize = 0;
 
-	//Bloqueamos
+	//Lock
 	pthread_mutex_lock(&mutex);
 	
+	//Ensere we are playing
 	while (!playing) 
 	{
-		pthread_cond_wait(&cond, &mutex);
-
-		//If we have been canceled
+		//If we have been canceled already
 		if (canceled)
 		{
 			//Remove flag
@@ -228,15 +238,17 @@ int AudioPipe::RecBuffer(SWORD* buffer, DWORD size)
 			//End
 			goto end;
 		}
+		//Wait for change
+		pthread_cond_wait(&cond, &mutex);
 	}
 	
 	//Calculate total audio length
 	totalSize = size * numChannels;
 	
-	//Mientras no tengamos suficientes muestras
+	//Until we have enought samples
 	while (!canceled && recording && (fifoBuffer.length() < totalSize + cache))
 	{
-		//Esperamos la condicion
+		//Wait for change
 		pthread_cond_wait(&cond, &mutex);
 
 		//If we have been canceled
@@ -255,7 +267,7 @@ int AudioPipe::RecBuffer(SWORD* buffer, DWORD size)
 	len = fifoBuffer.pop(buffer, totalSize) / numChannels;
 
 end:
-	//Desbloqueamos
+	//Unlock
 	pthread_mutex_unlock(&mutex);
 
 	//Debug("-poped %d cache %d\n",size,fifoBuffer.length());
@@ -266,13 +278,13 @@ end:
 
 int AudioPipe::ClearBuffer()
 {
-	//Bloqueamos
+	//Lock
 	pthread_mutex_lock(&mutex);
 
 	//Clear data
 	fifoBuffer.clear();
 
-	//Desbloqueamos
+	//Unlock
 	pthread_mutex_unlock(&mutex);
 	
 	return 1;
