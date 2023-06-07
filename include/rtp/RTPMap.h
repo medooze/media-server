@@ -18,36 +18,36 @@
 #include "codecs.h"
 #include <map>
 
-class RTPMap :
-	private std::map<BYTE,BYTE>
+class RTPMap
 {
 private:
+	std::map<BYTE, BYTE> data;
 	std::array<BYTE, 256> forward, reverse;
 public:
 	RTPMap() { clear(); }
 
 	bool empty() const
 	{
-		return std::map<BYTE,BYTE>::empty();
+		return data.empty();
 	}
 
-	const_iterator begin() const
+	decltype(data)::const_iterator begin() const
 	{
-		return this->cbegin();
+		return data.cbegin();
 	}
 
 	void clear()
 	{
-		std::map<BYTE,BYTE>::clear();
+		data.clear();
 		forward.fill(NotFound);
 		reverse.fill(NotFound);
 	}
 
 	void SetCodecForType(BYTE type, BYTE codec)
 	{
-		(*this)[type] = codec;
+		data[type] = codec;
 		forward[type] = codec;
-		reverse[type] = codec;
+		reverse[codec] = type;
 	}
 
 	BYTE GetCodecForType(BYTE type) const { return forward[type]; }
@@ -58,7 +58,7 @@ public:
 	{
 		Debug("[RTPMap]\n");
 		//Try to find it in the map
-		for (const_iterator it = begin(); it!=end(); ++it)
+		for (auto it = data.begin(); it!=data.end(); ++it)
 			Debug("\t[Codec name=%s payload=%d/]\n",GetNameForCodec(media,it->second),it->first);
 		Debug("[/RTPMap]\n");
 	}
