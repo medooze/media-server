@@ -19,9 +19,29 @@
 #include <map>
 
 class RTPMap :
-	public std::map<BYTE,BYTE>
+	private std::map<BYTE,BYTE>
 {
 public:
+	bool empty() const
+	{
+		return std::map<BYTE,BYTE>::empty();
+	}
+
+	const_iterator begin() const
+	{
+		return this->cbegin();
+	}
+
+	void clear()
+	{
+		std::map<BYTE,BYTE>::clear();
+	}
+
+	void SetCodecForType(BYTE type, BYTE codec)
+	{
+		(*this)[type] = codec;
+	}
+
 	BYTE GetCodecForType(BYTE type) const
 	{
 		//Find the type in the map

@@ -37,7 +37,7 @@ void PCAPTransportEmulator::SetRemoteProperties(const Properties& properties)
 		//Get codec type
 		BYTE type = it->GetProperty("pt",0);
 		//ADD it
-		rtpMap[type] = codec;
+		rtpMap.SetCodecForType(type, codec);
 	}
 	
 	//Clear codecs
@@ -54,7 +54,7 @@ void PCAPTransportEmulator::SetRemoteProperties(const Properties& properties)
 		//Get extension id
 		BYTE id = it->GetProperty("id",0);
 		//ADD it
-		extMap[id] = ext;
+		extMap.SetCodecForType(id, ext);
 	}
 	
 	//Clear extension
@@ -74,16 +74,16 @@ void PCAPTransportEmulator::SetRemoteProperties(const Properties& properties)
 		if (type && codec!=VideoCodec::UNKNOWN)
 		{
 			//ADD it
-			rtpMap[type] = codec;
+			rtpMap.SetCodecForType(type, codec);
 			//Get rtx
 			BYTE rtx = it->GetProperty("rtx",0);
 			//Check if it has rtx
 			if (rtx)
 			{
 				//ADD it
-				rtpMap[rtx] = VideoCodec::RTX;
+				rtpMap.SetCodecForType(rtx, VideoCodec::RTX);
 				//Add the reverse one
-				aptMap[rtx] = type;
+				aptMap.SetCodecForType(rtx, type);
 			}
 		}
 	}
@@ -102,7 +102,7 @@ void PCAPTransportEmulator::SetRemoteProperties(const Properties& properties)
 		//Get extension id
 		BYTE id = it->GetProperty("id",0);
 		//ADD it
-		extMap[id] = ext;
+		extMap.SetCodecForType(id, ext);
 	}
 	
 	//Clear extension
