@@ -21,7 +21,11 @@
 class RTPMap :
 	private std::map<BYTE,BYTE>
 {
+private:
+	std::array<BYTE, 256> forward, reverse;
 public:
+	RTPMap() { clear(); }
+
 	bool empty() const
 	{
 		return std::map<BYTE,BYTE>::empty();
@@ -35,49 +39,21 @@ public:
 	void clear()
 	{
 		std::map<BYTE,BYTE>::clear();
+		forward.fill(NotFound);
+		reverse.fill(NotFound);
 	}
 
 	void SetCodecForType(BYTE type, BYTE codec)
 	{
 		(*this)[type] = codec;
+		forward[type] = codec;
+		reverse[type] = codec;
 	}
 
-	BYTE GetCodecForType(BYTE type) const
-	{
-		//Find the type in the map
-		const_iterator it = find(type);
-		//Check it is in there
-		if (it==end())
-			//Exit
-			return NotFound;
-		//It is our codec
-		return it->second;
-	}
+	BYTE GetCodecForType(BYTE type) const { return forward[type]; }
+	BYTE GetTypeForCodec(BYTE codec) const { return reverse[codec]; }
+	bool HasCodec(BYTE codec) const { return reverse[codec] != NotFound; }
 
-	bool HasCodec(BYTE codec) const
-	{
-		//Try to find it in the map
-		for (const_iterator it = begin(); it != end(); ++it)
-			//Is it ourr codec
-			if (it->second == codec)
-				//found
-				return true;
-		//Not found
-		return false;
-	}
-	
-	BYTE GetTypeForCodec(BYTE codec) const
-	{
-		//Try to find it in the map
-		for (const_iterator it = begin(); it!=end(); ++it)
-			//Is it ourr codec
-			if (it->second==codec)
-				//return it
-				return it->first;
-		//Exit
-		return NotFound;
-	}
-	
 	void Dump(MediaFrame::Type media) const
 	{
 		Debug("[RTPMap]\n");
