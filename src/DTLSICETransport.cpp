@@ -2035,7 +2035,7 @@ int DTLSICETransport::Reset(DWORD ssrc)
 	return 1;
 }
 
-int DTLSICETransport::Send(RTPPacket::shared&& packet)
+int DTLSICETransport::Send(const RTPPacket::shared& packet)
 {
 	//Check packet
 	if (!packet)
