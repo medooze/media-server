@@ -88,7 +88,7 @@ void RTPIncomingMediaStreamMultiplexer::onRTP(const RTPIncomingMediaStream* stre
 		timeService.Async([=,ssrc = stream->GetMediaSSRC()](auto now){
 			//Trace method
 			TRACE_EVENT("rtp", "RTPIncomingMediaStreamMultiplexer::onRTP async", "ssrc", ssrc, "packets", packets.size());
-			//For each packet
+			//Process each packet in order, if we reverse the order of the loops, the last listeners would have a lot of delay
 			for (const auto& packet : packets)
 				//Deliver to all listeners
 				for (auto listener : listeners)
