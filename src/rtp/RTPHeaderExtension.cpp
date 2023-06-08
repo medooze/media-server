@@ -1,16 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/* 
- * File:   RTPHeaderExtension.cpp
- * Author: Sergio
- * 
- * Created on 3 de febrero de 2017, 11:51
- */
-
 #include "rtp/RTPHeaderExtension.h"
 #include "log.h"
 
@@ -371,6 +358,89 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 				playoutDelay.max = (raw & 0xfff) * PlayoutDelay::GranularityMs;
 				break;
 			}
+			case Type::ColorSpace:
+			{
+				//
+				// Data layout without HDR metadata (one-byte RTP header extension) 1-byte header + 4 bytes of data:
+				//
+				//	  0                   1                   2                   3
+				//	  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+				//	 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				//	 |  ID   | L = 3 |   primaries   |   transfer    |    matrix     |
+				//	 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				//	 |range+chr.sit. |
+				//	 +-+-+-+-+-+-+-+-+
+				//
+				// Data layout of color space with HDR metadata (two-byte RTP header extension) 2-byte header + 28 bytes of data:
+				//
+				//	  0                   1                   2                   3
+				//	  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+				//	 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				//	 |      ID       |   length=27   |   primaries   |   transfer    |
+				//	 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				//	 |    matrix     |range+chr.sit. |         luminance_max         |
+				//	 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				//	 |         luminance_min         |            mastering_metadata.|
+				//	 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				//	 |primary_r.x and .y             |            mastering_metadata.|
+				//	 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				//	 |primary_g.x and .y             |            mastering_metadata.|
+				//	 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				//	 |primary_b.x and .y             |            mastering_metadata.|
+				//	 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				//	 |white.x and .y                 |    max_content_light_level    |
+				//	 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				//	 | max_frame_average_light_level |
+				//	 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				//
+				if (len!=4 || len!=28)
+					break;
+				//Init flag and optional data
+				hasColorSpace = true;
+				colorSpace.emplace();
+				//Get base config
+				colorSpace->primaries	 = get1(ext, i++);
+				colorSpace->transfer	 = get1(ext, i++);
+				colorSpace->matrix	 = get1(ext, i++);
+				BYTE rangeChromaSiting	 = get1(ext, i++);
+
+				//Range and chroma siting : (range << 4) + (horz << 2) + vert.
+				colorSpace->range			= rangeChromaSiting >> 4;
+				colorSpace->chromeSitingHorizontal	= (rangeChromaSiting >> 2 ) & 0b11;
+				colorSpace->chromeSitingVertical	= rangeChromaSiting & 0b11;
+
+				//Check if we have hdr metadata
+				if (len == 28)
+				{
+					//Init data
+					colorSpace->hdrMetadata.emplace();
+
+					//Luminance
+					colorSpace->hdrMetadata->luminanceMax	= get1(ext, i++);
+					colorSpace->hdrMetadata->luminanceMin	= get1(ext, i++);
+					//Red
+					BYTE primaryR = get1(ext, i++);
+					colorSpace->hdrMetadata->primaryRX	= primaryR >>4;
+					colorSpace->hdrMetadata->primaryRY	= primaryR & 0b1111;
+					//Green
+					BYTE primaryG = get1(ext, i++);
+					colorSpace->hdrMetadata->primaryGX	= primaryG >> 4;
+					colorSpace->hdrMetadata->primaryGY	= primaryG & 0b1111;
+					//Blue
+					BYTE primaryB = get1(ext, i++);
+					colorSpace->hdrMetadata->primaryBX	= primaryB >> 4;
+					colorSpace->hdrMetadata->primaryBY	= primaryB & 0b1111;
+					//White
+					BYTE white = get1(ext, i++);
+					colorSpace->hdrMetadata->whiteX		= white >> 4;
+					colorSpace->hdrMetadata->whiteY		= white & 0b1111;
+					//Light
+					colorSpace->hdrMetadata->maxContentLightLevel		= get2(ext, i); i += 2;
+					colorSpace->hdrMetadata->maxFrameAverageLightLevel	= get2(ext, i); i += 2;
+				}
+
+				break;
+			}
 			default:
 				UltraDebug("-RTPHeaderExtension::Parse() | Unknown or unmapped extension [%d]\n",id);
 				break;
@@ -622,7 +692,7 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 			scalable = true;
 		
 		//Write header 
-		if ((n = WriteHeaderIdAndLength(data,len,id,(scalable ? 0x03 : 0x01),headerLength)))
+		if ((n = WriteHeaderIdAndLength(data,len,id,(scalable ? 3 : 1),headerLength)))
 		{
 			//Inc header len
 			len += n;
@@ -753,6 +823,52 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 		}
 	}
 
+	if (hasColorSpace && colorSpace)
+	{
+		//Get id for extension
+		BYTE id = extMap.GetTypeForCodec(ColorSpace);
+
+		//Write header 
+		if ((n = WriteHeaderIdAndLength(data, len, id, (colorSpace->hdrMetadata ? 28 : 4), headerLength)))
+		{
+			//Inc header len
+			len += n;
+
+			//Get base config
+			data[len++] = colorSpace->primaries;
+			data[len++] = colorSpace->transfer;
+			data[len++] = colorSpace->matrix;
+			data[len++] = (colorSpace->range << 4 )
+				| (colorSpace->chromeSitingHorizontal & 0b11 << 2 )
+				| (colorSpace->chromeSitingVertical & 0b11);
+
+			//Check if we have hdr metadata
+			if (colorSpace->hdrMetadata)
+			{
+				//Luminance
+				data[len++] = colorSpace->hdrMetadata->luminanceMax;
+				data[len++] = colorSpace->hdrMetadata->luminanceMin;
+				//Red
+				data[len++] = (colorSpace->hdrMetadata->primaryRX << 4 )
+					| (colorSpace->hdrMetadata->primaryRY & 0b1111);
+				//Green
+				data[len++] = (colorSpace->hdrMetadata->primaryGX << 4)
+					| (colorSpace->hdrMetadata->primaryGY & 0b1111);
+				//Blue
+				data[len++] = (colorSpace->hdrMetadata->primaryBX << 4)
+					| (colorSpace->hdrMetadata->primaryBX & 0b1111);
+				//White
+				data[len++] = (colorSpace->hdrMetadata->whiteX << 4)
+					| (colorSpace->hdrMetadata->whiteY & 0b1111);
+				//Light
+				set2(data, len, colorSpace->hdrMetadata->maxContentLightLevel);
+				len +=2;
+				set2(data, len, colorSpace->hdrMetadata->maxFrameAverageLightLevel);
+				len += 2;
+			}
+		}
+	}
+
 	//Pad to 32 bit words
 	while(len%4)
 		data[len++] = 0;
@@ -812,6 +928,32 @@ void RTPHeaderExtension::Dump() const
 		);
 	if (hasPlayoutDelay)
 		Debug("\t\t\t[PlayoutDelay min=%u max=%u]\n", playoutDelay.min, playoutDelay.max);
+	if (hasColorSpace && colorSpace)
+	{
+		Debug("\t\t\t[ColorSpace primaries=%u transfer=%u matrix=%u range=%u chromeSitingHorizontal=%u chromeSitingVertical=%u/]\n",
+			colorSpace->primaries,
+			colorSpace->transfer,
+			colorSpace->matrix,
+			colorSpace->range,
+			colorSpace->chromeSitingHorizontal,
+			colorSpace->chromeSitingVertical
+		);
+		if (colorSpace->hdrMetadata)
+			Debug("\t\t\t[ColorSpace HDR Metadata luminanceMax=%u luminanceMin=%u primaryRX=%u primaryRY=%u primaryGX=%u primaryGY=%u primaryBX=%u primaryBY=%u  whiteX=%u whiteY=%u  maxContentLightLevel=%u maxFrameAverageLightLevel=%u/]\n",
+				colorSpace->hdrMetadata->luminanceMax,
+				colorSpace->hdrMetadata->luminanceMin,
+				colorSpace->hdrMetadata->primaryRX,
+				colorSpace->hdrMetadata->primaryRY,
+				colorSpace->hdrMetadata->primaryGX,
+				colorSpace->hdrMetadata->primaryGY,
+				colorSpace->hdrMetadata->primaryBX,
+				colorSpace->hdrMetadata->primaryBY,
+				colorSpace->hdrMetadata->whiteX,
+				colorSpace->hdrMetadata->whiteY,
+				colorSpace->hdrMetadata->maxContentLightLevel,
+				colorSpace->hdrMetadata->maxFrameAverageLightLevel
+			);
+	}
 
 	Debug("\t\t[/RTPHeaderExtension]\n");
 }

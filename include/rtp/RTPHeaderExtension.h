@@ -1,16 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/* 
- * File:   RTPHeaderExtension.h
- * Author: Sergio
- *
- * Created on 3 de febrero de 2017, 11:51
- */
-
 #ifndef RTPHEADEREXTENSION_H
 #define RTPHEADEREXTENSION_H
 #include <optional>
@@ -38,6 +25,7 @@ public:
 		DependencyDescriptor	= 10,
 		AbsoluteCaptureTime	= 11,
 		PlayoutDelay		= 12,
+		ColorSpace		= 13,
 		Reserved		= 15
 	};
 	
@@ -55,7 +43,8 @@ public:
 		else if (strcasecmp(ext,"urn:ietf:params:rtp-hdrext:sdes:mid")==0)						return Type::MediaStreamId;
 		else if (strcasecmp(ext,"https://aomediacodec.github.io/av1-rtp-spec/#dependency-descriptor-rtp-header-extension")==0) return Type::DependencyDescriptor;
 		else if (strcasecmp(ext,"http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time") == 0)			return Type::AbsoluteCaptureTime;
-		else if (strcasecmp(ext, "http://www.webrtc.org/experiments/rtp-hdrext/playout-delay") == 0)			return Type::PlayoutDelay;
+		else if (strcasecmp(ext,"http://www.webrtc.org/experiments/rtp-hdrext/playout-delay") == 0)			return Type::PlayoutDelay;
+		else if (strcasecmp(ext,"http://www.webrtc.org/experiments/rtp-hdrext/color-space") == 0)			return Type::ColorSpace;
 		return Type::UNKNOWN;
 	}
 
@@ -75,6 +64,7 @@ public:
 			case Type::DependencyDescriptor:		return "DependencyDescriptor";
 			case Type::AbsoluteCaptureTime:			return "AbsoluteCaptureTime";
 			case Type::PlayoutDelay:			return "PlayoutDelay";
+			case Type::ColorSpace:				return "ColorSpace";
 			default:					return "unknown";
 		}
 	}
@@ -166,6 +156,66 @@ public:
 
 		static constexpr int GranularityMs = 10;
 	};
+	/*
+	* 
+	* Data layout without HDR metadata (one-byte RTP header extension) 1-byte header + 4 bytes of data:
+	*
+	*	  0                   1                   2                   3
+	*	  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+	*	 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	*	 |  ID   | L = 3 |   primaries   |   transfer    |    matrix     |
+	*	 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	*	 |range+chr.sit. |
+	*	 +-+-+-+-+-+-+-+-+
+	* 
+	* Data layout of color space with HDR metadata (two-byte RTP header extension) 2-byte header + 28 bytes of data:
+	*
+	*	  0                   1                   2                   3
+	*	  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+	*	 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	*	 |      ID       |   length=27   |   primaries   |   transfer    |
+	*	 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	*	 |    matrix     |range+chr.sit. |         luminance_max         |
+	*	 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	*	 |         luminance_min         |            mastering_metadata.|
+	*	 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	*	 |primary_r.x and .y             |            mastering_metadata.|
+	*	 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	*	 |primary_g.x and .y             |            mastering_metadata.|
+	*	 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	*	 |primary_b.x and .y             |            mastering_metadata.|
+	*	 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	*	 |white.x and .y                 |    max_content_light_level    |
+	*	 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	*	 | max_frame_average_light_level |
+	*	 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	*/
+	struct HDRMetadata
+	{
+		BYTE luminanceMax;
+		BYTE luminanceMin;
+		BYTE primaryRX;
+		BYTE primaryRY;
+		BYTE primaryGX;
+		BYTE primaryGY;
+		BYTE primaryBX;
+		BYTE primaryBY;
+		BYTE whiteX;
+		BYTE whiteY;
+		DWORD maxContentLightLevel;
+		DWORD maxFrameAverageLightLevel;
+	};
+	struct ColorSpace
+	{
+		BYTE primaries;
+		BYTE transfer;
+		BYTE matrix;
+		BYTE range;
+		BYTE chromeSitingHorizontal;
+		BYTE chromeSitingVertical;
+
+		std::optional<HDRMetadata> hdrMetadata;
+	};
 	
 public:
 	DWORD Parse(const RTPMap &extMap,const BYTE* data,const DWORD size);
@@ -187,6 +237,7 @@ public:
 	std::optional<::DependencyDescriptor> dependencyDescryptor;
 	struct AbsoluteCaptureTime absoluteCaptureTime;
 	struct PlayoutDelay playoutDelay;
+	std::optional<struct ColorSpace> colorSpace;
 	
 	bool	hasAbsSentTime		= false;
 	bool	hasTimeOffset		= false;
@@ -200,6 +251,7 @@ public:
 	bool	hasDependencyDescriptor	= false;
 	bool	hasAbsoluteCaptureTime	= false;
 	bool	hasPlayoutDelay		= false;
+	bool	hasColorSpace		= false;
 };
 
 #endif /* RTPHEADEREXTENSION_H */

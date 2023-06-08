@@ -1,16 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/* 
- * File:   RTPPacket.h
- * Author: Sergio
- *
- * Created on 3 de febrero de 2017, 11:52
- */
-
 #ifndef RTPPACKET_H
 #define RTPPACKET_H
 #include "config.h"
@@ -112,6 +99,7 @@ public:
 	void  SetAbsoluteCaptureTime(QWORD ms)						{ header.extension = extension.hasAbsoluteCaptureTime	= true; extension.absoluteCaptureTime.SetAbsoluteCaptureTime(ms);	}
 	void  SetPlayoutDelay(uint16_t min, uint16_t max)				{ header.extension = extension.hasPlayoutDelay		= true; extension.playoutDelay.SetPlayoutDelay(min, max);		}
 	void  SetPlayoutDelay(const struct RTPHeaderExtension::PlayoutDelay& playoutDelay) { header.extension = extension.hasPlayoutDelay	= true; extension.playoutDelay = playoutDelay;				}
+	void  SetColorSpace(const struct RTPHeaderExtension::ColorSpace& colorSpace)    { header.extension = extension.hasColorSpace		= true; extension.colorSpace = colorSpace;	}
 	
 	bool  ParseDependencyDescriptor(const std::optional<TemplateDependencyStructure>& templateDependencyStructure, std::optional<std::vector<bool>>& activeDecodeTargets);
 	
@@ -125,6 +113,7 @@ public:
 	void  DisableMediaStreamId()		{ extension.hasMediaStreamId		= false; CheckExtensionMark(); }
 	void  DisableDependencyDescriptor()	{ extension.hasDependencyDescriptor	= false; CheckExtensionMark(); }
 	void  DisablePlayoutDelay()		{ extension.hasPlayoutDelay		= false; CheckExtensionMark(); }
+	void  DisableColorSpace()		{ extension.hasColorSpace		= false; CheckExtensionMark(); }
 	
 
 	QWORD GetAbsSendTime()			const	{ return extension.absSentTime;			}
@@ -144,6 +133,7 @@ public:
 	const std::optional<std::vector<bool>>&			GetActiveDecodeTargets()	 const { return activeDecodeTargets;		}
 	const VideoOrientation&					GetVideoOrientation()		 const { return extension.cvo;			}
 	const struct RTPHeaderExtension::PlayoutDelay&		GetPlayoutDelay()		 const { return extension.playoutDelay;		}
+	const std::optional<struct RTPHeaderExtension::ColorSpace>&    GetColorSpace()		 const { return extension.colorSpace;		}
 	
 	bool  HasAudioLevel()			const	{ return extension.hasAudioLevel;		}
 	bool  HasAbsSentTime()			const	{ return extension.hasAbsSentTime;		}
@@ -160,6 +150,8 @@ public:
 	bool  HasVideoOrientation()		const	{ return extension.hasVideoOrientation;		}
 	bool  HasAbsoluteCaptureTime()		const	{ return extension.hasAbsoluteCaptureTime;	}
 	bool  HasPlayoutDelay()			const   { return extension.hasPlayoutDelay;		}
+	bool  HasColorSpace()			const   { return extension.hasColorSpace && extension.colorSpace;		}
+
 	
 	void  OverrideActiveDecodeTargets(const std::optional<std::vector<bool>>& activeDecodeTargets) 
 	{
