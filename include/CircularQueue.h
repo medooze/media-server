@@ -12,7 +12,8 @@ class CircularQueue
 private:
 	constexpr static auto npos = std::numeric_limits<size_t>::max();
 public:
-	CircularQueue(std::size_t size = 0)
+	CircularQueue(std::size_t size = 0, bool autoGrow = true) :
+		autoGrow(autoGrow)
 	{
 		if (size) queue.reserve(size);
 	}
@@ -21,8 +22,15 @@ public:
 	{
 		//If we don't have any more space
 		if (full())
-			//Increase queue size
-			grow(queue.size() ? std::ceil(queue.size()*1.2) : 1);
+		{
+			//If we grow automatically when full
+			if (autoGrow)
+				//Increase queue size
+				grow(queue.size() ? std::ceil(queue.size()*1.2) : 1);
+			else 
+				//Remove first
+				pop_front();
+		}
 
 		//If it is first
 		if (head == npos)
@@ -173,5 +181,6 @@ private:
 	std::vector<T> queue;
 	size_t head = npos;
 	size_t tail = 0;
+	bool autoGrow = true;
 };
 #endif /* CIRCULARQUEUE_H */

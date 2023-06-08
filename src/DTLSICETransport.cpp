@@ -54,7 +54,7 @@ DTLSICETransport::DTLSICETransport(Sender *sender,TimeService& timeService, Obje
 	packetPool(packetPool),
 	endpoint(timeService),
 	dtls(*this,timeService,endpoint.GetTransport()),
-	history(MaxProbingHistorySize),
+	history(MaxProbingHistorySize, false),
 	outgoingBitrate(250, 1E3, 250),
 	rtxBitrate(250, 1E3, 250),
 	probingBitrate(250, 1E3, 250),
