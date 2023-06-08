@@ -2779,10 +2779,10 @@ int DTLSICETransport::Enqueue(const RTPPacket::shared& packet)
 
 	//TODO: check if we are actuall sending from a different thread ocasionally
 	//Send async
-	timeService.Async([=](auto now){
+	//timeService.Async([=](auto now){
 		//Send
-		Send(packet->Clone());
-	});
+		Send(packet);
+	//});
 	
 	return 1;
 }

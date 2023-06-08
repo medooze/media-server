@@ -132,7 +132,7 @@ private:
 	void SetState(DTLSState state);
 	void CheckProbeTimer();
 	void Probe(QWORD now);
-	int Send(RTPPacket::shared&& packet);
+	int Send(const RTPPacket::shared& packet);
 	int Send(const RTCPCompoundPacket::shared& rtcp);
 	void SetRTT(DWORD rtt,QWORD now);
 	void onRTCP(const RTCPCompoundPacket::shared &rtcp);
