@@ -54,6 +54,7 @@ DTLSICETransport::DTLSICETransport(Sender *sender,TimeService& timeService, Obje
 	packetPool(packetPool),
 	endpoint(timeService),
 	dtls(*this,timeService,endpoint.GetTransport()),
+	history(MaxProbingHistorySize),
 	outgoingBitrate(250, 1E3, 250),
 	rtxBitrate(250, 1E3, 250),
 	probingBitrate(250, 1E3, 250),
@@ -2241,14 +2242,8 @@ int DTLSICETransport::Send(RTPPacket::shared&& packet)
 	
 	//If packets supports rtx
 	if (rtx)
-	{
 		//Append it to the end of the packet history
 		history.push_back(packet);
-		//Remove old ones
-		while (history.size()>MaxProbingHistorySize)
-			//Remove first
-			history.pop_front();
-	}
 	
 	//Did we send successfully?
 	return (len>=0);
@@ -2828,27 +2823,30 @@ void DTLSICETransport::Probe(QWORD now)
 			if (history.size())
 			{
 				int found = true;
-				//Get last packet as smallest
-				auto smallest = history.crbegin();
-				
+				//Get first packet
+				auto smallest = history.front();
+
 				//Sent until no more probe
 				while (probeSize && found)
 				{	
 					//We need to always send one at minimun
 					found = false;
-					//For each packet in history
-					for (auto it = history.crbegin(); it!=history.crend(); ++it)
+					//For each other packet in history
+					for (size_t i=1; i<history.length(); ++i)
 					{
+						//Get candidate
+						auto candidate = history.at(i);
+
 						//Don't send too much data
-						if ((*it)->GetMediaLength()>probeSize)
+						if (candidate->GetMediaLength()>probeSize)
 						{
-							if ((*it)->GetMediaLength()< (*smallest)->GetMediaLength())
-								smallest = it;
+							if (candidate->GetMediaLength() < smallest->GetMediaLength())
+								smallest = candidate;
 							//Try next
 							continue;
 						}
 						//Send probe packet
-						DWORD len = SendProbe(*it);
+						DWORD len = SendProbe(candidate);
 						//Check len
 						if (!len)
 							//Error
@@ -2868,7 +2866,7 @@ void DTLSICETransport::Probe(QWORD now)
 				if (!found)
 				{
 					//Send the smallest one
-					DWORD len = SendProbe(*smallest);
+					DWORD len = SendProbe(smallest);
 					//Check len
 					if (!len)
 						//Done

@@ -181,7 +181,7 @@ private:
 	std::map<DWORD, RTPIncomingSourceGroup*> incoming;
 	std::map<std::string,RTPIncomingSourceGroup*> rids;
 	std::map<std::string,std::set<RTPIncomingSourceGroup*>> mids;
-	std::list<RTPPacket::shared> history;
+	CircularQueue<RTPPacket::shared> history;
 	
 	DWORD	mainSSRC		= 1;
 	DWORD   lastMediaSSRC		= 0;
