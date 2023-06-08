@@ -12,26 +12,37 @@ public:
 		assert(false); // Not used
 		return std::chrono::milliseconds();
 	}
-	virtual Timer::shared CreateTimer(std::function<void(std::chrono::milliseconds)> callback) override
+	virtual Timer::shared CreateTimer(const std::function<void(std::chrono::milliseconds)>& callback) override
 	{
 		assert(false); // Not used
 		return nullptr;
 	}
-	virtual Timer::shared CreateTimer(const std::chrono::milliseconds& ms, std::function<void(std::chrono::milliseconds)> timeout) override
+	virtual Timer::shared CreateTimer(const std::chrono::milliseconds& ms, const std::function<void(std::chrono::milliseconds)>& timeout) override
 	{
 		assert(false); // Not used
 		return nullptr;
 	}
-	virtual Timer::shared CreateTimer(const std::chrono::milliseconds& ms, const std::chrono::milliseconds& repeat, std::function<void(std::chrono::milliseconds)> timeout) override
+	virtual Timer::shared CreateTimer(const std::chrono::milliseconds& ms, const std::chrono::milliseconds& repeat, const std::function<void(std::chrono::milliseconds)>& timeout) override
 	{
 		assert(false); // Not used
 		return nullptr;
 	};
 
-	virtual std::future<void> Async(std::function<void(std::chrono::milliseconds)> func) override
+
+	virtual void Async(const std::function<void(std::chrono::milliseconds)>& func) override
 	{
 		func(std::chrono::milliseconds());
-		return std::async(std::launch::deferred, [](){});
+	}
+
+	virtual void Async(const std::function<void(std::chrono::milliseconds)>& func, const std::function<void(std::chrono::milliseconds)>& callback) override
+	{
+		func(std::chrono::milliseconds());
+	}
+
+	virtual std::future<void> Future(const std::function<void(std::chrono::milliseconds)>& func) override
+	{
+		func(std::chrono::milliseconds());
+		return std::async(std::launch::deferred, []() {});
 	}
 };
 
