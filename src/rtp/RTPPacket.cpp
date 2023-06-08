@@ -6,7 +6,9 @@
 
 RTPPayloadPool RTPPacket::PayloadPool(65536);
 
-RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec, QWORD time) 
+RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec, QWORD time) :
+	//Create payload from pool
+	payload(RTPPacket::PayloadPool.allocate())
 {
 	this->media = media;
 	//Set codec
@@ -23,8 +25,6 @@ RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec, QWORD time)
 		default:
 			clockRate = 1000;
 	}
-	//Create payload from pool
-	payload = RTPPacket::PayloadPool.allocate();
 	//We own the payload
 	ownedPayload = true;
 	//Set time
@@ -43,7 +43,9 @@ RTPPacket::RTPPacket(MediaFrame::Type media, BYTE codec, const RTPHeader& header
 
 RTPPacket::RTPPacket(MediaFrame::Type media, BYTE codec, const RTPHeader& header, const RTPHeaderExtension& extension, QWORD time) :
 	header(header),
-	extension(extension)
+	extension(extension),
+	//Create payload from pool
+	payload(RTPPacket::PayloadPool.allocate())
 {
 	this->media = media;
 	//Set coced
@@ -60,8 +62,6 @@ RTPPacket::RTPPacket(MediaFrame::Type media, BYTE codec, const RTPHeader& header
 		default:
 			clockRate = 1000;
 	}
-	//Create payload from pool
-	payload = RTPPacket::PayloadPool.allocate();
 	//We own the payload
 	ownedPayload = true;
 	//Set time
@@ -71,7 +71,8 @@ RTPPacket::RTPPacket(MediaFrame::Type media, BYTE codec, const RTPHeader& header
 
 RTPPacket::RTPPacket(MediaFrame::Type media,BYTE codec,const RTPHeader &header, const RTPHeaderExtension &extension, const RTPPayload::shared &payload, QWORD time) :
 	header(header),
-	extension(extension)
+	extension(extension),
+	payload(payload)
 {
 	this->media = media;
 	//Set coced
