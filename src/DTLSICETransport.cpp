@@ -2820,7 +2820,7 @@ void DTLSICETransport::Probe(QWORD now)
 			//Log("-DTLSICETransport::Probe() | Sending probe packets [target:%ubps,bitrate:%ubps,limit:%ubps,probe:%u,probingSize:%d,sleep:%d]\n", target,  bitrate, limit, probe, probeSize, sleep);
 
 			//If we have packet history
-			if (history.size())
+			if (!history.empty())
 			{
 				int found = true;
 				//Get first packet
