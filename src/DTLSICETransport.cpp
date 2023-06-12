@@ -228,7 +228,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		transportWideReceivedPacketsStats[transportExtSeqNum] = PacketStats::Create(packet, size, now);
 
 		//If we have enought or timeout 
-		if (packet->GetMark() || transportWideReceivedPacketsStats.size() > TransportWideCCMaxPackets || (now - transportWideReceivedPacketsStats.begin()->second->time) > TransportWideCCMaxInterval)
+		if (packet->GetMark() || transportWideReceivedPacketsStats.size() > TransportWideCCMaxPackets || (now - transportWideReceivedPacketsStats.begin()->second.time) > TransportWideCCMaxInterval)
 			//Send feedback message
 			SendTransportWideFeedbackMessage(ssrc);
 		//Schedule for later
@@ -703,7 +703,7 @@ DWORD DTLSICETransport::SendProbe(const RTPPacket::shared& original)
 		sender->Send(candidate, std::move(buffer), [
 				weak = std::weak_ptr<SendSideBandwidthEstimation>(senderSideBandwidthEstimator),
 				stats = PacketStats::CreateProbing(packet, len, now)
-			](std::chrono::milliseconds now) {
+			](std::chrono::milliseconds now)  mutable {
 				//Get shared pointer from weak reference
 				auto senderSideBandwidthEstimator = weak.lock();
 				//If already gone
@@ -711,7 +711,7 @@ DWORD DTLSICETransport::SendProbe(const RTPPacket::shared& original)
 					//Ignore
 					return;
 				//Update sent timestamp
-				stats->timestamp = now.count();
+				stats.timestamp = now.count();
 				//Add new stat
 				senderSideBandwidthEstimator->SentPacket(stats);
 			}
@@ -891,7 +891,7 @@ DWORD DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 				header.timestamp,
 				now,
 				false
-			)](std::chrono::milliseconds now) {
+			)](std::chrono::milliseconds now) mutable {
 				//Get shared pointer from weak reference
 				auto senderSideBandwidthEstimator = weak.lock();
 				//If already gone
@@ -899,7 +899,7 @@ DWORD DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 					//Ignore
 					return;
 				//Update sent timestamp
-				stats->timestamp = now.count();
+				stats.timestamp = now.count();
 				//Add new stat
 				senderSideBandwidthEstimator->SentPacket(stats);
 			}
@@ -1073,7 +1073,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 		sender->Send(candidate, std::move(buffer), [
 			weak = std::weak_ptr<SendSideBandwidthEstimation>(senderSideBandwidthEstimator),
 				stats = PacketStats::CreateRTX(packet, len, now)
-				](std::chrono::milliseconds now) {
+				](std::chrono::milliseconds now) mutable {
 				//Get shared pointer from weak reference
 				auto senderSideBandwidthEstimator = weak.lock();
 				//If already gone
@@ -1081,7 +1081,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 					//Ignore
 					return;
 				//Update sent timestamp
-				stats->timestamp = now.count();
+				stats.timestamp = now.count();
 				//Add new stat
 				senderSideBandwidthEstimator->SentPacket(stats);
 			}
@@ -2180,7 +2180,7 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 		sender->Send(candidate, std::move(buffer), [
 				weak = std::weak_ptr<SendSideBandwidthEstimation>(senderSideBandwidthEstimator),
 				stats = PacketStats::Create(packet, len, now)
-			](std::chrono::milliseconds now) {
+			](std::chrono::milliseconds now) mutable {
 				//Get shared pointer from weak reference
 				auto senderSideBandwidthEstimator = weak.lock();
 				//If already gone
@@ -2188,7 +2188,7 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 					//Ignore
 					return;
 				//Update sent timestamp
-				stats->timestamp = now.count();
+				stats.timestamp = now.count();
 				//Add new stat
 				senderSideBandwidthEstimator->SentPacket(stats);
 			}
@@ -2651,11 +2651,11 @@ void DTLSICETransport::SendTransportWideFeedbackMessage(DWORD ssrc)
 		  it = transportWideReceivedPacketsStats.erase(it))
 	{
 		//Get stat
-		auto stats = it->second;
+		auto& stats = it->second;
 		//Get transport seq
 		DWORD transportExtSeqNum = it->first;
 		//Get relative time
-		QWORD time = stats->time - initTime;
+		QWORD time = stats.time - initTime;
 
 		//if not first and not out of order
 		if (lastFeedbackPacketExtSeqNum && transportExtSeqNum>lastFeedbackPacketExtSeqNum)

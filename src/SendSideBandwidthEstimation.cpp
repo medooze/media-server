@@ -39,38 +39,38 @@ SendSideBandwidthEstimation::~SendSideBandwidthEstimation()
 		close(fd);
 }
 	
-void SendSideBandwidthEstimation::SentPacket(const PacketStats::shared& stat)
+void SendSideBandwidthEstimation::SentPacket(const PacketStats& stat)
 {
 	//Check first packet sent time
 	if (!firstSent)
 		//Set first time
-		firstSent = stat->time;
+		firstSent = stat.time;
 	
 	//Add sent total
-	totalSentAcumulator.Update(stat->time,stat->size);
+	totalSentAcumulator.Update(stat.time,stat.size);
 
 	//Check type
-	if (stat->probing)
+	if (stat.probing)
 	{
 		//Update accumulators
-		probingSentAcumulator.Update(stat->time,stat->size);
-		rtxSentAcumulator.Update(stat->time);
-		mediaSentAcumulator.Update(stat->time);
-	} else if (stat->rtx) {
+		probingSentAcumulator.Update(stat.time,stat.size);
+		rtxSentAcumulator.Update(stat.time);
+		mediaSentAcumulator.Update(stat.time);
+	} else if (stat.rtx) {
 		//Update accumulators
-		probingSentAcumulator.Update(stat->time);
-		rtxSentAcumulator.Update(stat->time,stat->size);
-		mediaSentAcumulator.Update(stat->time);
+		probingSentAcumulator.Update(stat.time);
+		rtxSentAcumulator.Update(stat.time,stat.size);
+		mediaSentAcumulator.Update(stat.time);
 	} else {
 		//Update accumulators
-		probingSentAcumulator.Update(stat->time);
-		rtxSentAcumulator.Update(stat->time);
-		mediaSentAcumulator.Update(stat->time,stat->size);
+		probingSentAcumulator.Update(stat.time);
+		rtxSentAcumulator.Update(stat.time);
+		mediaSentAcumulator.Update(stat.time,stat.size);
 	}
 	
 	//Add to history map
-	if (!transportWideSentPacketsStats.Set(stat->transportWideSeqNum, SendSideBandwidthEstimation::Stats{stat->time, stat->size, stat->mark, stat->rtx, stat->probing}))
-		Warning("-SendSideBandwidthEstimation::SentPacket() Could not store stats for packet %u\n", stat->transportWideSeqNum);
+	if (!transportWideSentPacketsStats.Set(stat.transportWideSeqNum, SendSideBandwidthEstimation::Stats{stat.time, stat.size, stat.mark, stat.rtx, stat.probing}))
+		Warning("-SendSideBandwidthEstimation::SentPacket() Could not store stats for packet %u\n", stat.transportWideSeqNum);
 }
 
 void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const std::map<uint32_t,uint64_t>& packets, uint64_t when)

@@ -195,7 +195,7 @@ private:
 	Acumulator<uint32_t, uint64_t> rtxBitrate;
 	Acumulator<uint32_t, uint64_t> probingBitrate;
 	
-	std::map<DWORD,PacketStats::shared> transportWideReceivedPacketsStats;
+	std::map<DWORD,PacketStats> transportWideReceivedPacketsStats;
 	
 	std::unique_ptr<UDPDumper> dumper;
 	volatile bool dumpInRTP			= false;
