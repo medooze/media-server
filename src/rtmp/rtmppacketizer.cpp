@@ -235,10 +235,27 @@ std::unique_ptr<AudioFrame> RTMPAACPacketizer::AddFrame(RTMPAudioFrame* audioFra
 	if (!gotConfig)
 	{
 		//Error
-		Debug("-RTMPAACPacketizer::AddFrame() | Gor AAC frame but not valid description yet\n");
+		Debug("-RTMPAACPacketizer::AddFrame() | Got AAC frame but not valid description yet\n");
 		//DOne
 		return nullptr;
 	}
+
+	if (!aacSpecificConfig.GetRate())
+	{
+		//Error
+		Debug("-RTMPAACPacketizer::AddFrame() | Got zero rate, skipping packet\n");
+		//DOne
+		return nullptr;
+	}
+
+	if (!aacSpecificConfig.GetFrameLength())
+	{
+		//Error
+		Debug("-RTMPAACPacketizer::AddFrame() | Got zero frame length, skipping packet\n");
+		//DOne
+		return nullptr;
+	}
+
 
 	//Create frame
 	auto frame = std::make_unique<AudioFrame>(AudioCodec::AAC);
