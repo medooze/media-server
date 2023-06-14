@@ -83,8 +83,8 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 	 * F must be 0.
 	 */
 	 // BYTE nal_ref_idc = (payload[0] & 0x60) >> 5;
-	BYTE nalUnitType = payload[0] & 0x1f;
 
+	BYTE nalUnitType = payload[0] & 0x1f;
 	//Get nal data
 	const BYTE* nalData = payload + 2;
 
@@ -92,6 +92,7 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 	DWORD nalSize = payloadLen;
 
 	Debug("-H265 [NAL:%d,type:%d,size:%d]\n", payload[0], nalUnitType, nalSize);
+	UltraDebug("-SRTConnection::OnVideoData() | -H265 [NAL:%d,type:%d,size:%d]\n", payload[0], nalUnitType, nalSize);
 
 	//Check type
 	switch (nalUnitType)
