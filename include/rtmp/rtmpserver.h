@@ -22,7 +22,7 @@ public:
 	
 	/** Listener for RTMPConnection */
 	virtual RTMPNetConnection::shared OnConnect(const std::wstring& appName,RTMPNetConnection::Listener *listener,std::function<void(bool)> accept) override;
-	virtual void onDisconnect(RTMPConnection *con) override;
+	virtual void onDisconnect(const RTMPConnection::shared& con) override;
 
 protected:
         int Run();
@@ -40,7 +40,7 @@ private:
 	int serverPort = 0;
 	int server = FD_INVALID;
 
-	std::map<int,RTMPConnection::shared> connections;
+	std::set<RTMPConnection::shared> connections;
 	std::map<std::wstring,RTMPApplication *> applications;
 	pthread_t serverThread;
 	Mutex mutex;

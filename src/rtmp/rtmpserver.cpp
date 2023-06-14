@@ -206,7 +206,7 @@ void RTMPServer::CreateConnection(int fd)
 	mutex.Lock();
 
 	//Append
-	connections[fd] = rtmp;
+	connections.insert(std::move(rtmp));
 
 	//Unlock
 	mutex.Unlock();
@@ -226,7 +226,7 @@ void RTMPServer::DeleteAllConnections()
 	ScopedLock lock(mutex);
 
 	//For all connections
-	for (auto & [fd,connection] : connections)
+	for (auto &connection : connections)
 		//Stop it
 		connection->Stop();
 
@@ -332,7 +332,7 @@ RTMPNetConnection::shared RTMPServer::OnConnect(const std::wstring &appName,RTMP
  * OnDisconnect
  *   Event launched from RTMPConnection to indicate that the connection stream has been disconnected
   *************************************/
-void RTMPServer::onDisconnect(RTMPConnection *con)
+void RTMPServer::onDisconnect(const RTMPConnection::shared& con)
 {
 	Log("-RTMPServer::onDisconnect() [%p,socket:%d]\n",con,con->GetSocket());
 
@@ -340,7 +340,5 @@ void RTMPServer::onDisconnect(RTMPConnection *con)
 	ScopedLock lock(mutex);
 	
 	//Remove from list
-	connections.erase(con->GetSocket());
-
-	
+	connections.erase(con);
 }

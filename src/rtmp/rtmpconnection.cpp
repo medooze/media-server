@@ -282,7 +282,7 @@ int RTMPConnection::Run()
 	//Check listener
 	if (listener)
 		//launch event
-		listener->onDisconnect(this);
+		listener->onDisconnect(shared_from_this());
 	
 	Log("<RTMPConnection::Run() [connection:%p]\n",this);
 

@@ -21,6 +21,8 @@ class RTMPConnection :
 	public RTMPNetStream::Listener
 {
 public:
+	using shared = std::shared_ptr<RTMPConnection>;
+
 	class Listener
 	{
 	public:
@@ -29,9 +31,8 @@ public:
 	public:
 		//Interface
 		virtual RTMPNetConnection::shared OnConnect(const std::wstring& appName,RTMPNetConnection::Listener *listener,std::function<void(bool)> accept) = 0;
-		virtual void onDisconnect(RTMPConnection *con) = 0;
+		virtual void onDisconnect(const RTMPConnection::shared& con) = 0;
 	};
-	using shared = std::shared_ptr<RTMPConnection>;
 public:
 	RTMPConnection(Listener* listener);
 	~RTMPConnection();
