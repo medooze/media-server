@@ -13,7 +13,7 @@
 #include "rtmp/rtmphandshake.h"
 #include "rtmp/rtmpconnection.h"
 
-constexpr int PoolTimeout = 5E3; //5s
+constexpr int PoolTimeout = 30E3; //30s
 
 /********************************
  * RTMP connection demultiplex buffers streams from incoming raw data
@@ -1151,9 +1151,12 @@ void RTMPConnection::ProcessMetaData(DWORD streamId,RTMPMetaData *meta)
 		{
 			//Unnock mutex
 			pthread_mutex_unlock(&mutex);
+
+			//Log error
+			Error("-RTMPConnection::ProcessMetaData() stream not found [streamId:%d]\n", streamId);
 			
 			//Exit (Should close connection??)
-			return Error("-RTMPConnection::ProcessMetaData() stream not found [streamId:%d]\n", streamId);
+			return;
 		}
 
 		//Publish frame
