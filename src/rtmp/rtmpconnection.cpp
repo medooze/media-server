@@ -910,8 +910,13 @@ void RTMPConnection::ProcessCommandMessage(DWORD streamId,RTMPCommandMessage* cm
 
 		//Ensure valid
 		if (!stream)
+		{
+			//Unnock mutex
+			pthread_mutex_unlock(&mutex);
 			//Send error
 			return SendCommandError(streamId,transId,NULL,NULL);
+		}
+
 		//Let it process the message
 		stream->ProcessCommandMessage(cmd);
 		
@@ -1146,9 +1151,9 @@ void RTMPConnection::ProcessMetaData(DWORD streamId,RTMPMetaData *meta)
 		{
 			//Unnock mutex
 			pthread_mutex_unlock(&mutex);
-			Error("-RTMPConnection::ProcessMetaData() stream not found [streamId:%d]\n",streamId);
+			
 			//Exit (Should close connection??)
-			return;
+			return Error("-RTMPConnection::ProcessMetaData() stream not found [streamId:%d]\n", streamId);
 		}
 
 		//Publish frame
