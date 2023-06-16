@@ -3,6 +3,7 @@
 #define	H265DEPACKETIZER_H
 #include "rtp.h"
 #include "video.h"
+#include "HEVCdescriptor.h"
 
 class H265Depacketizer : public RTPDepacketizer
 {
@@ -14,6 +15,7 @@ public:
 	virtual void ResetFrame() override;
 private:
 	VideoFrame frame;
+	HEVCDescriptor config;
 	DWORD iniFragNALU = 0;
 	bool startedFrag = false;
 };

@@ -13,6 +13,138 @@
 
 #define CHECK(r) if(r.Error()) return false;
 
+/**
+ * Table 7-1 – NAL unit type codes and NAL unit type classes in
+ * T-REC-H.265-201802
+ */
+enum HEVC_RTP_NALU_Type {
+    TRAIL_N        = 0,
+    TRAIL_R        = 1,
+    TSA_N          = 2,
+    TSA_R          = 3,
+    STSA_N         = 4,
+    STSA_R         = 5,
+    RADL_N         = 6,
+    RADL_R         = 7,
+    RASL_N         = 8,
+    RASL_R         = 9,
+    VCL_N10        = 10,
+    VCL_R11        = 11,
+    VCL_N12        = 12,
+    VCL_R13        = 13,
+    VCL_N14        = 14,
+    VCL_R15        = 15,
+    BLA_W_LP       = 16,
+    BLA_W_RADL     = 17,
+    BLA_N_LP       = 18,
+    IDR_W_RADL     = 19,
+    IDR_N_LP       = 20,
+    CRA_NUT        = 21,
+    RSV_IRAP_VCL22 = 22,
+    RSV_IRAP_VCL23 = 23,
+    RSV_VCL24      = 24,
+    RSV_VCL25      = 25,
+    RSV_VCL26      = 26,
+    RSV_VCL27      = 27,
+    RSV_VCL28      = 28,
+    RSV_VCL29      = 29,
+    RSV_VCL30      = 30,
+    RSV_VCL31      = 31,
+    VPS            = 32,
+    SPS            = 33,
+    PPS            = 34,
+    AUD            = 35,
+    EOS            = 36,
+	EOB            = 37,
+    FD             = 38,
+    SEI_PREFIX     = 39,
+    SEI_SUFFIX     = 40,
+    RSV_NVCL41     = 41,
+    RSV_NVCL42     = 42,
+    RSV_NVCL43     = 43,
+    RSV_NVCL44     = 44,
+    RSV_NVCL45     = 45,
+    RSV_NVCL46     = 46,
+    RSV_NVCL47     = 47,
+    UNSPEC48_AP    = 48,
+    UNSPEC49_FU    = 49,
+    UNSPEC50_PACI  = 50,
+    UNSPEC51       = 51,
+    UNSPEC52       = 52,
+    UNSPEC53       = 53,
+    UNSPEC54       = 54,
+    UNSPEC55       = 55,
+    UNSPEC56       = 56,
+    UNSPEC57       = 57,
+    UNSPEC58       = 58,
+    UNSPEC59       = 59,
+    UNSPEC60       = 60,
+    UNSPEC61       = 61,
+    UNSPEC62       = 62,
+    UNSPEC63       = 63,
+};
+
+enum HEVCParams{
+    // 7.4.3.1: vps_max_layers_minus1 is in [0, 62].
+    MAX_LAYERS     = 63,
+    // 7.4.3.1: vps_max_sub_layers_minus1 is in [0, 6].
+    MAX_SUB_LAYERS = 7,
+    // 7.4.3.1: vps_num_layer_sets_minus1 is in [0, 1023].
+    MAX_LAYER_SETS = 1024,
+
+    // 7.4.2.1: vps_video_parameter_set_id is u(4).
+    MAX_VPS_COUNT = 16,
+    // 7.4.3.2.1: sps_seq_parameter_set_id is in [0, 15].
+    MAX_SPS_COUNT = 16,
+    // 7.4.3.3.1: pps_pic_parameter_set_id is in [0, 63].
+    MAX_PPS_COUNT = 64,
+
+    // A.4.2: MaxDpbSize is bounded above by 16.
+    MAX_DPB_SIZE = 16,
+    // 7.4.3.1: vps_max_dec_pic_buffering_minus1[i] is in [0, MaxDpbSize - 1].
+    MAX_REFS     = MAX_DPB_SIZE,
+
+    // 7.4.3.2.1: num_short_term_ref_pic_sets is in [0, 64].
+    MAX_SHORT_TERM_REF_PIC_SETS = 64,
+    // 7.4.3.2.1: num_long_term_ref_pics_sps is in [0, 32].
+    MAX_LONG_TERM_REF_PICS      = 32,
+
+    // A.3: all profiles require that CtbLog2SizeY is in [4, 6].
+    MIN_LOG2_CTB_SIZE = 4,
+    MAX_LOG2_CTB_SIZE = 6,
+
+    // E.3.2: cpb_cnt_minus1[i] is in [0, 31].
+    MAX_CPB_CNT = 32,
+
+    // A.4.1: in table A.6 the highest level allows a MaxLumaPs of 35 651 584.
+    MAX_LUMA_PS = 35651584,
+    // A.4.1: pic_width_in_luma_samples and pic_height_in_luma_samples are
+    // constrained to be not greater than sqrt(MaxLumaPs * 8).  Hence height/
+    // width are bounded above by sqrt(8 * 35651584) = 16888.2 samples.
+    MAX_WIDTH  = 16888,
+    MAX_HEIGHT = 16888,
+
+    // A.4.1: table A.6 allows at most 22 tile rows for any level.
+    MAX_TILE_ROWS    = 22,
+    // A.4.1: table A.6 allows at most 20 tile columns for any level.
+    MAX_TILE_COLUMNS = 20,
+
+    // A.4.2: table A.6 allows at most 600 slice segments for any level.
+    MAX_SLICE_SEGMENTS = 600,
+
+    // 7.4.7.1: in the worst case (tiles_enabled_flag and
+    // entropy_coding_sync_enabled_flag are both set), entry points can be
+    // placed at the beginning of every Ctb row in every tile, giving an
+    // upper bound of (num_tile_columns_minus1 + 1) * PicHeightInCtbsY - 1.
+    // Only a stream with very high resolution and perverse parameters could
+    // get near that, though, so set a lower limit here with the maximum
+    // possible value for 4K video (at most 135 16x16 Ctb rows).
+    MAX_ENTRY_POINT_OFFSETS = MAX_TILE_COLUMNS * 135,
+
+    // A.3.7: Screen content coding extensions
+    MAX_PALETTE_PREDICTOR_SIZE = 128,
+};
+
 class H265SeqParameterSet
 {
 public:
@@ -33,6 +165,37 @@ public:
   		//	sps->vps_id);
   		//	return AVERROR_INVALIDDATA;
   		//}
+		CHECK(r); max_sub_layers = r.Get(3) + 1;
+    	if (max_sub_layers > HEVCParams::MAX_SUB_LAYERS) {
+    	    Error( "sps_max_sub_layers out of range: %d\n", max_sub_layers);
+    	    return false;
+    	}
+
+    	CHECK(r); temporal_id_nesting_flag = r.Get(1);
+
+    //if ((ret = parse_ptl(gb, avctx, &sps->ptl, sps->max_sub_layers)) < 0)
+    //    return ret;
+
+    //*sps_id = get_ue_golomb_long(gb);
+    //if (*sps_id >= HEVC_MAX_SPS_COUNT) {
+    //    av_log(avctx, AV_LOG_ERROR, "SPS id out of range: %d\n", *sps_id);
+    //    return AVERROR_INVALIDDATA;
+    //}
+
+    //sps->chroma_format_idc = get_ue_golomb_long(gb);
+    //if (sps->chroma_format_idc > 3U) {
+    //    av_log(avctx, AV_LOG_ERROR, "chroma_format_idc %d is invalid\n", sps->chroma_format_idc);
+    //    return AVERROR_INVALIDDATA;
+    //}
+
+    //if (sps->chroma_format_idc == 3)
+    //    sps->separate_colour_plane_flag = get_bits1(gb);
+
+    //if (sps->separate_colour_plane_flag)
+    //    sps->chroma_format_idc = 0;
+
+    //sps->width  = get_ue_golomb_long(gb);
+    //sps->height = get_ue_golomb_long(gb);
 
 		//Free memory
 		free(aux);
@@ -66,7 +229,7 @@ public:
 	void Dump() const
 	{
 		Debug("[H265SeqParameterSet \n");
-		Debug("\tvpc_id=%.2x\n",					vpc_id);
+		Debug("\tvps_id=%.2x\n",					vps_id);
 		Debug("\tprofile_idc=%.2x\n",				profile_idc);
 		Debug("\tconstraint_set0_flag=%u\n",			constraint_set0_flag);
 		Debug("\tconstraint_set1_flag=%u\n",			constraint_set1_flag);
@@ -96,7 +259,11 @@ public:
 		Debug("/]\n");
 	}
 private:
-	BYTE			vpc_id = 0;
+	BYTE			vps_id = 0;
+	BYTE			max_sub_layers = 0;
+	BYTE			temporal_id_nesting_flag = 0;
+
+	//@Zita TODO: h264 params, need double check and updated to h265
 	BYTE			profile_idc = 0;
 	bool			constraint_set0_flag = false;
 	bool			constraint_set1_flag = false;

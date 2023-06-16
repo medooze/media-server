@@ -6,6 +6,7 @@
  */
 
 #include "H265Depacketizer.h"
+#include "h265.h"
 #include "media.h"
 #include "codecs.h"
 #include "rtp.h"
@@ -74,17 +75,19 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 		return NULL;
 
 	/* 
-	 *   +---------------+---------------+
-         *   |0|1|2|3|4|5|6|7|0|1|2|3|4|5|6|7|
-         *   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-         *   |F|   Type    |  LayerId  | TID |
-         *   +-------------+-----------------+
+     *   +-------------+-----------------+
+     *   |0|1|2|3|4|5|6|7|0|1|2|3|4|5|6|7|
+     *   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     *   |F|   Type    |  LayerId  | TID |
+     *   +-------------+-----------------+
 	 *
 	 * F must be 0.
 	 */
-	 // BYTE nal_ref_idc = (payload[0] & 0x60) >> 5;
 
-	BYTE nalUnitType = payload[0] & 0x1f;
+	BYTE nalUnitType = (payload[0] & 0x7e) >> 1;
+	BYTE nuh_layer_id = ((payload[0] & 0x1) << 5) + ((payload[1] & 0xf8) >> 3);
+	BYTE nuh_temporal_id = payload[1] & 0x7;
+
 	//Get nal data
 	const BYTE* nalData = payload + 2;
 
@@ -96,13 +99,13 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 	//Check type
 	switch (nalUnitType)
 	{
-		case 35: //AUD
-		case 36: //EOS
-		case 37: //EOB
-		case 38: //FD
+		case HEVC_RTP_NALU_Type::AUD:		//35
+		case HEVC_RTP_NALU_Type::EOS:		//36
+		case HEVC_RTP_NALU_Type::EOB:		//37
+		case HEVC_RTP_NALU_Type::FD:		//38
 			/* undefined */
-			return NULL;
-		case 24:
+			return nullptr;
+		case HEVC_RTP_NALU_Type::UNSPEC48_AP:	//48 
 			/**
 			   Figure 7 presents an example of an AP that contains two aggregation
 			   units, labeled as 1 and 2 in the figure, without the DONL and DOND
@@ -133,146 +136,207 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 			   Units without the DONL and DOND Fields
 
 			*/
+			Debug("-H265 TODO: non implemented yet, need update to rfc7798, return nullptr \n", payload[0], nalUnitType, nalSize);
+			return nullptr;
 
-			/* Skip SPayloadHdr */
-			payload+=2;
-			payloadLen-=2;
+			///* Skip SPayloadHdr */
+			//payload+=2;
+			//payloadLen-=2;
 
-			/* STAP-A Single-time aggregation packet 5.7.1 */
-			while (payloadLen > 2)
-			{
-				/* Get NALU size */
-				nalSize = get2(payload, 0);
+			///* STAP-A Single-time aggregation packet 5.7.1 */
+			//while (payloadLen > 2)
+			//{
+			//	/* Get NALU size */
+			//	nalSize = get2(payload, 0);
 
-				/* strip NALU size */
-				payload += 2;
-				payloadLen -= 2;
+			//	/* strip NALU size */
+			//	payload += 2;
+			//	payloadLen -= 2;
 
-				//Check
-				if (!nalSize || nalSize > payloadLen)
-					//Error
-					break;
+			//	//Check
+			//	if (!nalSize || nalSize > payloadLen)
+			//		//Error
+			//		break;
 
-				//Get nal type
-				nalUnitType = payload[0] & 0x1f;
-				//Get data
-				nalData = payload + 1;
+			//	//Get nal type
+			//	nalUnitType = payload[0] & 0x1f;
+			//	//Get data
+			//	nalData = payload + 1;
 
-				//Check if IDR SPS or PPS
-				switch (nalUnitType)
-				{
-					case 19: //IDR
-					case 20: //IDR
-					case 33: //SPS
-					case 34: //PPS
-						//It is intra
-						frame.SetIntra(true);
-						break;
-				}
+			//	//Check if IDR SPS or PPS
+			//	switch (nalUnitType)
+			//	{
+			//		case 19: //IDR
+			//		case 20: //IDR
+			//		case 33: //SPS
+			//		case 34: //PPS
+			//			//It is intra
+			//			frame.SetIntra(true);
+			//			break;
+			//	}
 
-				//Set size
-				set4(nalHeader, 0, nalSize);
-				//Append data
-				frame.AppendMedia(nalHeader, sizeof(nalHeader));
+			//	//Set size
+			//	set4(nalHeader, 0, nalSize);
+			//	//Append data
+			//	frame.AppendMedia(nalHeader, sizeof(nalHeader));
 
-				//Append data and get current post
-				pos = frame.AppendMedia(payload, nalSize);
-				//Add RTP packet
-				frame.AddRtpPacket(pos, nalSize, NULL, 0);
+			//	//Append data and get current post
+			//	pos = frame.AppendMedia(payload, nalSize);
+			//	//Add RTP packet
+			//	frame.AddRtpPacket(pos, nalSize, NULL, 0);
 
-				payload += nalSize;
-				payloadLen -= nalSize;
-			}
-			break;
-		case 29:
-			/* FU-A	Fragmentation unit	 5.8 */
-			/* FU-B	Fragmentation unit	 5.8 */
+			//	payload += nalSize;
+			//	payloadLen -= nalSize;
+			//}
+			//break;
+		case HEVC_RTP_NALU_Type::UNSPEC49_FU: 
+			/*
+						0                   1                   2                   3
+					    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+					   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+					   |    PayloadHdr (Type=49)       |   FU header   | DONL (cond)   |
+					   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-|
+					   | DONL (cond)   |                                               |
+					   |-+-+-+-+-+-+-+-+                                               |
+					   |                         FU payload                            |
+					   |                                                               |
+					   |                               +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+					   |                               :...OPTIONAL RTP padding        |
+					   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
+					                Figure 9: The Structure of an FU
 
-			//Check length
-			if (payloadLen < 3)
-				return NULL;
+			*/
+			Debug("-H265 TODO: non implemented yet, need update to rfc7798, return nullptr \n", payload[0], nalUnitType, nalSize);
+			return nullptr;
 
-			/* +---------------+
-			 * |0|1|2|3|4|5|6|7|
-			 * +-+-+-+-+-+-+-+-+
-			 * |S|E|R| Type	   |
-			 * +---------------+
-			 *
-			 * R is reserved and always 0
-			 */
-			S = (payload[2] & 0x80) == 0x80;
-			E = (payload[2] & 0x40) == 0x40;
+			////Check length
+			//if (payloadLen < 3)
+			//	return NULL;
 
-			/* strip off FU indicator and FU header bytes */
-			nalSize = payloadLen - 3;
+			///* +---------------+
+			// * |0|1|2|3|4|5|6|7|
+			// * +-+-+-+-+-+-+-+-+
+			// * |S|E|R| Type	   |
+			// * +---------------+
+			// *
+			// * R is reserved and always 0
+			// */
+			//S = (payload[2] & 0x80) == 0x80;
+			//E = (payload[2] & 0x40) == 0x40;
 
-			//if it is the start fragment of the nal unit
-			if (S)
-			{
-				/* NAL unit starts here */
-				BYTE fragNalHeader = (payload[0] & 0xe0) | (payload[2] & 0x1f);
+			///* strip off FU indicator and FU header bytes */
+			//nalSize = payloadLen - 3;
 
-				//Get nal type
-				nalUnitType = fragNalHeader & 0x1f;
+			////if it is the start fragment of the nal unit
+			//if (S)
+			//{
+			//	/* NAL unit starts here */
+			//	BYTE fragNalHeader = (payload[0] & 0xe0) | (payload[2] & 0x1f);
 
-				//Check it
-				if (nalUnitType == 0x05)
-					//It is intra
-					frame.SetIntra(true);
+			//	//Get nal type
+			//	nalUnitType = fragNalHeader & 0x1f;
 
-				//Get init of the nal
-				iniFragNALU = frame.GetLength();
-				//Set empty header, will be set later
-				set4(nalHeader, 0, 0);
-				//Append data
-				frame.AppendMedia(nalHeader, sizeof(nalHeader));
-				//Append NAL header
-				frame.AppendMedia(&fragNalHeader, 1);
-				//We have a start frag
-				startedFrag = true;
-			}
+			//	//Check it
+			//	if (nalUnitType == 0x05)
+			//		//It is intra
+			//		frame.SetIntra(true);
 
-			//If we didn't receive a start frag
-			if (!startedFrag)
-				//Ignore
-				return NULL;
+			//	//Get init of the nal
+			//	iniFragNALU = frame.GetLength();
+			//	//Set empty header, will be set later
+			//	set4(nalHeader, 0, 0);
+			//	//Append data
+			//	frame.AppendMedia(nalHeader, sizeof(nalHeader));
+			//	//Append NAL header
+			//	frame.AppendMedia(&fragNalHeader, 1);
+			//	//We have a start frag
+			//	startedFrag = true;
+			//}
 
-			//Append data and get current post
-			pos = frame.AppendMedia(payload + 3, nalSize);
-			//Add rtp payload
-			frame.AddRtpPacket(pos, nalSize, payload, 3);
+			////If we didn't receive a start frag
+			//if (!startedFrag)
+			//	//Ignore
+			//	return NULL;
 
-			//If it is the end fragment of the nal unit
-			if (E)
-			{
-				//Ensure it is valid
-				if (iniFragNALU + 4 > frame.GetLength())
-					//Error
-					return NULL;
-				//Get NAL size
-				DWORD nalSize = frame.GetLength() - iniFragNALU - 4;
-				//Set it
-				set4(frame.GetData(), iniFragNALU, nalSize);
-				//Done with fragment
-				iniFragNALU = 0;
-				startedFrag = false;
-			}
-			//Done
-			break;
+			////Append data and get current post
+			//pos = frame.AppendMedia(payload + 3, nalSize);
+			////Add rtp payload
+			//frame.AddRtpPacket(pos, nalSize, payload, 3);
+
+			////If it is the end fragment of the nal unit
+			//if (E)
+			//{
+			//	//Ensure it is valid
+			//	if (iniFragNALU + 4 > frame.GetLength())
+			//		//Error
+			//		return NULL;
+			//	//Get NAL size
+			//	DWORD nalSize = frame.GetLength() - iniFragNALU - 4;
+			//	//Set it
+			//	set4(frame.GetData(), iniFragNALU, nalSize);
+			//	//Done with fragment
+			//	iniFragNALU = 0;
+			//	startedFrag = false;
+			//}
+			////Done
+			//break;
 		default:
+			/* 4.4.1.  Single NAL Unit Packets */
+			/* 
+					0                   1                   2                   3
+				    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+				   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				   |           PayloadHdr          |      DONL (conditional)       |
+				   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				   |                                                               |
+				   |                  NAL unit payload data                        |
+				   |                                                               |
+				   |                               +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				   |                               :...OPTIONAL RTP padding        |
+				   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+			*/
+			/* @Zita Liao: sprop-max-don-diff is considered to be absent right now (so no DONL). Need to extract from SDP */
 			/* the entire payload is the output buffer */
 			nalSize = payloadLen;
-			//Check if IDR SPS or PPS
+			//Check if IDR/SPS/PPS, set Intra
+			if ((nalUnitType == HEVC_RTP_NALU_Type::IDR_W_RADL)
+				|| (nalUnitType == HEVC_RTP_NALU_Type::IDR_W_RADL)
+				|| (nalUnitType == HEVC_RTP_NALU_Type::SPS)
+				|| (nalUnitType == HEVC_RTP_NALU_Type::PPS))
+			{
+				frame.SetIntra(true);
+			}
+
 			switch (nalUnitType)
 			{
-				case 19: //IDR
-				case 20: //IDR
-				case 33: //SPS
-				case 34: //PPS
-					//It is intra
-					frame.SetIntra(true);
+				case HEVC_RTP_NALU_Type::SPS:			// 33
+				{
+					//Add full nal to config
+					config.AddSequenceParameterSet(payload,nalSize);
+					
+					//Parse sps
+					H265SeqParameterSet sps;
+					if (sps.Decode(nalData,nalSize-1))
+					{
+						//Set dimensions
+						frame.SetWidth(sps.GetWidth());
+						frame.SetHeight(sps.GetHeight());
+
+						//@Zita TODO: after sps.Decode(), get needed info from sps
+						////Set config
+						//config.SetConfigurationVersion(1);
+						//config.SetAVCProfileIndication(nalData[0]);
+						//config.SetProfileCompatibility(nalData[1]);
+						//config.SetAVCLevelIndication(nalData[2]);
+						//config.SetNALUnitLength(sizeof(nalHeader)-1);
+					}
 					break;
+				}
+				case HEVC_RTP_NALU_Type::PPS:			// 34
+					//Add full nal to config
+					config.AddPictureParameterSet(payload,nalSize);
+				break;
 			}
 			//Set size
 			set4(nalHeader, 0, nalSize);

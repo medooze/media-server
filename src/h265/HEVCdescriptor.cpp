@@ -260,7 +260,7 @@ void HEVCDescriptor::Dump() const
 	//Dump them
 	for (BYTE i=0;i<numOfSequenceParameterSets;i++)
 	{
-		H264SeqParameterSet sps;
+		H265SeqParameterSet sps;
 		//Decode
 		sps.Decode(spsData[i],spsSizes[i]);
 		//Dump
@@ -271,7 +271,7 @@ void HEVCDescriptor::Dump() const
 	//Dump them
 	for (BYTE i=0;i<numOfPictureParameterSets;i++)
 	{
-		H264PictureParameterSet pps;
+		H265PictureParameterSet pps;
 		//Decode
 		pps.Decode(spsData[i],spsSizes[i]);
 		//Dump

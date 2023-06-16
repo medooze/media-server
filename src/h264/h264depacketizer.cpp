@@ -102,7 +102,7 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 	//Get nalu size
 	DWORD nalSize = payloadLen;
 
-	//Debug("-H264 [NAL:%d,type:%d,size:%d]\n", payload[0], nalUnitType, nalSize);
+	Debug("-H264 [NAL:%d,type:%d,size:%d]\n", payload[0], nalUnitType, nalSize);
 
 	//Check type
 	switch (nalUnitType)

@@ -45,14 +45,13 @@ public:
 	void SetConfigurationVersion(BYTE configurationVersion)		{ this->configurationVersion = configurationVersion;	}
 	void SetNALUnitLength(BYTE NALUnitLength)			{ this->NALUnitLength = NALUnitLength;			}
 
-
 private:
 	BYTE configurationVersion;
 	BYTE HEVCProfileIndication;
 	BYTE profileCompatibility;
 	BYTE HEVCLevelIndication;
 	BYTE NALUnitLength;
-    	BYTE numOfSequenceParameterSets;
+    BYTE numOfSequenceParameterSets;
 	std::vector<WORD> spsSizes;
 	std::vector<BYTE*> spsData;
    	BYTE numOfPictureParameterSets;
