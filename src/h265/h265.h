@@ -14,9 +14,10 @@
 #define CHECK(r) if(r.Error()) return false;
 
 /**
- * Table 7-1 – NAL unit type codes and NAL unit type classes in
- * T-REC-H.265-201802
+ * Table 7-1 – NAL unit type codes and NAL unit type classes in T-REC-H.265-201802
+ * rfc7798: RTP payload for HEVC/H.265
  */
+
 enum HEVC_RTP_NALU_Type {
     TRAIL_N        = 0,
     TRAIL_R        = 1,

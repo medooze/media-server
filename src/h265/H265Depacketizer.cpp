@@ -94,7 +94,7 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 	//Get nalu size
 	DWORD nalSize = payloadLen;
 
-	Debug("-H265 [NAL:%d,type:%d,size:%d]\n", payload[0], nalUnitType, nalSize);
+	UltraDebug("-H265 [NAL header:0x%02x%02x,type:%d,layer_id:%d, temporal_id:%d, size:%d]\n", payload[0], payload[1], nalUnitType, nuh_layer_id, nuh_temporal_id, nalSize);
 
 	//Check type
 	switch (nalUnitType)
