@@ -103,6 +103,7 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 		case HEVC_RTP_NALU_Type::EOS:		//36
 		case HEVC_RTP_NALU_Type::EOB:		//37
 		case HEVC_RTP_NALU_Type::FD:		//38
+			Warning("-H265 Un-defined/implemented NALU, skipping");
 			/* undefined */
 			return nullptr;
 		case HEVC_RTP_NALU_Type::UNSPEC48_AP:	//48 
@@ -317,7 +318,7 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 					
 					//Parse sps
 					H265SeqParameterSet sps;
-					if (sps.Decode(nalData,nalSize-1))
+					if (sps.Decode(nalData,nalSize-1,nuh_layer_id))
 					{
 						//Set dimensions
 						frame.SetWidth(sps.GetWidth());

@@ -262,7 +262,8 @@ void HEVCDescriptor::Dump() const
 	{
 		H265SeqParameterSet sps;
 		//Decode
-		sps.Decode(spsData[i],spsSizes[i]);
+		// @Zita TODO: need extra nuh_layer_id from Nal header.
+		sps.Decode(spsData[i],spsSizes[i], /*nuh_layer_id*/ 0);
 		//Dump
 		sps.Dump();
 	}
