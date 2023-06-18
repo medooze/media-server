@@ -239,6 +239,7 @@
           <in>H265Depacketizer.cpp</in>
           <in>H265Depacketizer.h</in>
           <in>h265.h</in>
+          <in>h265.cpp</in>
           <in>HEVCdescriptor.cpp</in>
           <in>HEVCdescriptor.h</in>
         </df>
@@ -1385,6 +1386,10 @@
         </ccTool>
       </item>
       <item path="src/h264/h264encoder.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="2">
+        </ccTool>
+      </item>
+      <item path="src/h265/h265.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="2">
         </ccTool>
       </item>
@@ -4656,6 +4661,10 @@
         </ccTool>
       </item>
       <item path="src/h264/h264encoder.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/h265/h265.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
         </ccTool>
       </item>
@@ -10251,6 +10260,10 @@
         <ccTool flags="0">
         </ccTool>
       </item>
+      <item path="src/h265/h265.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="0">
+        </ccTool>
+      </item>
       <item path="src/h265/H265Depacketizer.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="0">
         </ccTool>
@@ -14159,6 +14172,10 @@
         <ccTool flags="1">
         </ccTool>
       </item>
+      <item path="src/h265/h265.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
       <item path="src/h265/H265Depacketizer.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
         </ccTool>
@@ -17577,6 +17594,10 @@
         </ccTool>
       </item>
       <item path="src/h264/h264encoder.cpp" ex="false" tool="1" flavor2="11">
+        <ccTool flags="1">
+        </ccTool>
+      </item>
+      <item path="src/h265/h265.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
         </ccTool>
       </item>
