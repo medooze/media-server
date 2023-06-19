@@ -323,6 +323,8 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 						//Set dimensions
 						frame.SetWidth(sps.GetWidth());
 						frame.SetHeight(sps.GetHeight());
+	
+						UltraDebug("-H265 frame (with cropping) size [width: %d, frame height: %d]\n", sps.GetWidth(), sps.GetHeight());
 
 						//@Zita TODO: after sps.Decode(), get needed info from sps
 						////Set config

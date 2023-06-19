@@ -148,6 +148,21 @@ enum HEVCParams{
 	MAX_PALETTE_PREDICTOR_SIZE = 128,
 };
 
+const std::array<BYTE, 4> hevc_sub_width_c {
+    1, 2, 2, 1
+};
+
+const std::array<BYTE, 4> hevc_sub_height_c{
+    1, 2, 1, 1
+};
+
+struct HEVCWindow {
+    DWORD left_offset = 0;
+    DWORD right_offset = 0;
+    DWORD top_offset = 0;
+    DWORD bottom_offset = 0;
+};
+
 class H265ProfileTierLevel
 {
 public:
@@ -177,6 +192,7 @@ public:
 	BYTE level_idc							;
 };
 
+
 class H265SeqParameterSet
 {
 public:
@@ -184,6 +200,7 @@ public:
 	bool Decode(const BYTE*	buffer,DWORD bufferSize, BYTE nuh_layer_id);
 
 private:
+
 	inline static DWORD	Escape(	BYTE *dst,const	BYTE *src, DWORD size )
 	{
 		DWORD len =	0;
@@ -208,8 +225,9 @@ private:
 	bool ParseProfileTierLevel(BitReader& r, bool profilePresentFlag, BYTE maxNumSubLayersMinus1);
 
 public:
-	DWORD GetWidth()	{ return ((pic_width_in_mbs_minus1 +1)*16) - frame_crop_right_offset *2	- frame_crop_left_offset *2; }
-	DWORD GetHeight()	{ return ((2 - frame_mbs_only_flag)* (pic_height_in_map_units_minus1 +1) * 16) - frame_crop_bottom_offset*2	- frame_crop_top_offset*2; }
+	DWORD GetWidth()	{ return pic_width_in_luma_samples - pic_conf_win.left_offset - pic_conf_win.right_offset; }
+	DWORD GetHeight()	{ return pic_height_in_luma_samples - pic_conf_win.top_offset - pic_conf_win.bottom_offset; }
+
 	void Dump()	const
 	{
 		Debug("[H265SeqParameterSet	\n");
@@ -251,7 +269,14 @@ private:
 	std::array<bool, HEVCParams::MAX_SUB_LAYERS> sub_layer_profile_present_flag;
 	std::array<bool, HEVCParams::MAX_SUB_LAYERS> sub_layer_level_present_flag;
 	std::array<H265ProfileTierLevel, HEVCParams::MAX_SUB_LAYERS> subLayerProfileTierLevel;
+	DWORD			pic_width_in_luma_samples = 0;
+	DWORD			pic_height_in_luma_samples = 0;
+	bool 			conformance_window_flag = false;
+	HEVCWindow		pic_conf_win;
 
+	BYTE			seq_parameter_set_id = 0;
+	BYTE			chroma_format_idc = 0;
+	bool			separate_colour_plane_flag = false;
 	//@Zita	TODO: h264 params, need	double check and updated to	h265
 	BYTE			profile_idc	= 0;
 	bool			constraint_set0_flag = false;
@@ -259,7 +284,7 @@ private:
 	bool			constraint_set2_flag = false;
 	BYTE			reserved_zero_5bits	 = 0;
 	BYTE			level_idc =	0;
-	BYTE			seq_parameter_set_id = 0;
+	//moved to h265 BYTE			seq_parameter_set_id = 0;
 	BYTE			log2_max_frame_num_minus4 =	0;
 	BYTE			pic_order_cnt_type = 0;
 	BYTE			log2_max_pic_order_cnt_lsb_minus4 =	0;

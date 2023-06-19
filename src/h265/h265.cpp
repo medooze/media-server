@@ -102,6 +102,7 @@ bool H265SeqParameterSet::Decode(const BYTE*	buffer,DWORD bufferSize, BYTE nuh_l
 	//	sps->vps_id);
 	//	return AVERROR_INVALIDDATA;
 	//}
+	// profiel_level_tier 
 	if (nuh_layer_id ==	0)
 	{
 		CHECK(r); max_sub_layers_minus1	= r.Get(3);
@@ -110,12 +111,10 @@ bool H265SeqParameterSet::Decode(const BYTE*	buffer,DWORD bufferSize, BYTE nuh_l
 	{
 		CHECK(r); ext_or_max_sub_layers_minus1 = r.Get(3);
 	}
-
 	if (max_sub_layers_minus1 >	HEVCParams::MAX_SUB_LAYERS - 1)	{
 		Error( "sps_max_sub_layers_minus1 out of range:	%d\n", max_sub_layers_minus1);
 		return false;
 	}
-
 	bool MultiLayerExtSpsFlag =	(nuh_layer_id != 0)	&& (ext_or_max_sub_layers_minus1 ==	7);
 	if (!MultiLayerExtSpsFlag)
 	{
@@ -123,31 +122,39 @@ bool H265SeqParameterSet::Decode(const BYTE*	buffer,DWORD bufferSize, BYTE nuh_l
 		if (!ParseProfileTierLevel(r, true,	max_sub_layers_minus1))
 			return false;
 	}
+	// sps id
+	seq_parameter_set_id =	ExpGolombDecoder::Decode(r);
+	if (seq_parameter_set_id >= HEVCParams::MAX_SPS_COUNT) {
+		Error("SPS id out of range:	%d\n", seq_parameter_set_id);
+		return false;
+	}
+	// chromo_format_idc
+	chroma_format_idc = ExpGolombDecoder::Decode(r);
+	if (chroma_format_idc > 3U) {
+		Error("chroma_format_idc %d	is invalid\n", chroma_format_idc);
+		return false;
+	}
+	if (chroma_format_idc == 3)
+	{
+		CHECK(r); separate_colour_plane_flag = r.Get(1);
+	}
+	if(separate_colour_plane_flag)
+		chroma_format_idc = 0;
+	// width & height in luma
+	pic_width_in_luma_samples  = ExpGolombDecoder::Decode(r);
+	pic_height_in_luma_samples = ExpGolombDecoder::Decode(r);
+	// conformance window
+	conformance_window_flag = r.Get(1);
+    if (conformance_window_flag) {
+        BYTE vert_mult  = hevc_sub_height_c[chroma_format_idc];
+        BYTE horiz_mult = hevc_sub_width_c[chroma_format_idc];
+        pic_conf_win.left_offset   = ExpGolombDecoder::Decode(r) * horiz_mult;
+        pic_conf_win.right_offset  = ExpGolombDecoder::Decode(r) * horiz_mult;
+        pic_conf_win.top_offset    = ExpGolombDecoder::Decode(r) *  vert_mult;
+        pic_conf_win.bottom_offset = ExpGolombDecoder::Decode(r) *  vert_mult;
+    }
 
-
-
-
-//*sps_id =	get_ue_golomb_long(gb);
-//if (*sps_id >= HEVC_MAX_SPS_COUNT) {
-//	  av_log(avctx,	AV_LOG_ERROR, "SPS id out of range:	%d\n", *sps_id);
-//	  return AVERROR_INVALIDDATA;
-//}
-
-//sps->chroma_format_idc = get_ue_golomb_long(gb);
-//if (sps->chroma_format_idc > 3U) {
-//	  av_log(avctx,	AV_LOG_ERROR, "chroma_format_idc %d	is invalid\n", sps->chroma_format_idc);
-//	  return AVERROR_INVALIDDATA;
-//}
-
-//if (sps->chroma_format_idc ==	3)
-//	  sps->separate_colour_plane_flag =	get_bits1(gb);
-
-//if (sps->separate_colour_plane_flag)
-//	  sps->chroma_format_idc = 0;
-
-//sps->width  =	get_ue_golomb_long(gb);
-//sps->height =	get_ue_golomb_long(gb);
-
+	// skip all following SPS element
 	//Free memory
 	free(aux);
 	//OK
