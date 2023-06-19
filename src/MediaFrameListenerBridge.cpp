@@ -7,54 +7,78 @@
 
 using namespace std::chrono_literals;
 
-MediaFrameListenerBridge::MediaFrameListenerBridge(TimeService& timeService,DWORD ssrc, bool smooth) : 
+MediaFrameListenerBridge::MediaFrameListenerBridge(TimeService& timeService,DWORD ssrc, bool smooth, TimeBase* timeBase) : 
 	timeService(timeService),
 	ssrc(ssrc),
 	smooth(smooth),
 	acumulator(1000),
 	accumulatorFrames(1000),
 	accumulatorPackets(1000),
-	waited(1000)
+	waited(1000),
+	timeBase(timeBase)
 {
 	Debug("-MediaFrameListenerBridge::MediaFrameListenerBridge() [this:%p]\n", this);
 
 	//Create packet dispatch timer
 	dispatchTimer = timeService.CreateTimer([=](auto now){
 
-		//Get how much should we send
-		auto period = lastSent!=0ms && now >= lastSent ? now - lastSent : 10ms;
+		// //Get how much should we send
+		// auto period = lastSent!=0ms && now >= lastSent ? now - lastSent : 10ms;
 
-		//Updated last dispatched 
-		lastSent = now;
+		// //Updated last dispatched 
+		// lastSent = now;
 
-		//Packets to send during the period
+		// //Packets to send during the period
 		std::vector<RTPPacket::shared> sending;
 
-		//Amount of time for the packets
-		auto accumulated = 0ms;
+		// //Amount of time for the packets
+		// auto accumulated = 0ms;
 
-		//Until no mor pacekts or full period
-		while (packets.size() && period >= accumulated)
+		// //Until no mor pacekts or full period
+		int64_t advanced = 0;
+		while (packets.size())
 		{
 			//Get first packet to send
-			const auto& [packet,duration] = packets.front();
+			const auto& [packet, unifiedTs] = packets.front();
 			//Increase accumulated time
-			accumulated += duration;
-			//Add to sending packets
+			//accumulated += duration;
+			uint64_t ts = 0;
+			advanced = timeBase->GetState(now, unifiedTs, ts);
+			if (advanced < 0)
+				break;
+			
+			//Add to sending packets			
+			packet->SetTimestamp(ts * packet->GetClockRate() / 90000);
 			sending.push_back(packet);
 			//remove it from pending packets
 			packets.pop();
 		}
 
 		//UltraDebug("-MediaFrameListenerBridge::dispatchTimer() [queue:%d,sending:%d,period:%llu,accumulated:%llu,next:%d,smooth:%d]\n", packets.size(), sending.size(), period.count(), accumulated.count(), packets.size() && accumulated > period ? (accumulated - period).count(): -1, this->smooth);
+		
+		// if (packets.size() > 0)
+		// {
+		// 	const auto& [packet,duration] = packets.back();
+		// 	//Increase accumulated time
+		// 	//accumulated += duration;
+		// 	uint64_t ts = 0;
+		// 	auto delay = timeBase->GetState(now, packet->GetTimestamp(), ts);
+			
+		// 	//Log("Queue: %s %lld %d\n", packet->GetMediaType() == MediaFrame::Audio ? "a" : "v", delay, packets.size());
+		// }
+		
+		// for (auto &p : sending)
+		// {
+		// 	//Log("Sending %s %lld\n", p->GetMediaType() == MediaFrame::Audio ? "a" : "v", p->GetTimestamp());
+		// }
 
 		//Dispatch RTP packets
 		Dispatch(sending);
 
 		//If we have packets in the queue
-		if (packets.size() && accumulated > period)
+		if (packets.size() && advanced < 0)
 			//Reschedule
-			dispatchTimer->Again(std::chrono::milliseconds(accumulated - period));
+			dispatchTimer->Again(std::chrono::milliseconds(-advanced));
 	});
 	dispatchTimer->SetName("MediaFrameListenerBridge::dispatchTimer");
 }
@@ -101,20 +125,33 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 		for (auto& listener : mediaFrameListeners)
 			listener->onMediaFrame(*frame);
 
-		//Dispatch any pending packet now
-		std::vector<RTPPacket::shared> sending;
-		//Remove all packets
-		while (packets.size())
-		{
-			//Get first packet to send
-			const auto& [packet, duration] = packets.front();
-			//Add to sending packets
-			sending.push_back(packet);
-			//remove it from pending packets
-			packets.pop();
-		}
-		//Dispatch RTP packets
-		Dispatch(sending);
+			
+		uint64_t unifiedTs = frame->GetTimeStamp() * 90000/frame->GetClockRate();
+			
+		if (timeBase) timeBase->Update(frame->GetType(), now, unifiedTs);
+
+		// //Dispatch any pending packet now
+		// std::vector<RTPPacket::shared> sending;
+		// //Remove all packets
+		// while (packets.size())
+		// {
+		// 	//Get first packet to send
+		// 	const auto& [packet, duration] = packets.front();
+		// 	//Add to sending packets
+		// 	sending.push_back(packet);
+		// 	//remove it from pending packets
+		// 	packets.pop();
+		// }
+		
+		// for (auto &p : sending)
+		// {
+		// 	auto org = p->GetTimestamp() - baseTimestamp + firstTimestamp;
+		// 	org = org * 90000 / p->GetClockRate();
+		// 	Log("Sending %s %lld, %lld, %lld, %lld\n -", p->GetMediaType() == MediaFrame::Audio ? "a" : "v", p->GetTimestamp(), firstTimestamp, baseTimestamp, org);
+		// }
+		
+		// //Dispatch RTP packets
+		// Dispatch(sending);
 
 		//Updated last dispatched 
 		lastSent = now;
@@ -211,19 +248,19 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 		bitrate = acumulator.GetInstant()*8;
 
 		//Check if it the first received packet
-		if (firstTimestamp==NoTimestamp)
-		{
-			//If we have a time offest from last sent packet
-			if (lastTime)
-			{
-				//Get offset
-				QWORD offset = std::max<QWORD>((QWORD)(getTimeDiff(lastTime)*frame->GetClockRate()/1E6),1ul);
-				//Calculate time difd and add to the last sent timestamp
-				baseTimestamp = lastTimestamp + offset;
-			}
-			//Get first timestamp
-			firstTimestamp = frame->GetTimeStamp();
-		}
+		// if (firstTimestamp==NoTimestamp)
+		// {
+		// 	//If we have a time offest from last sent packet
+		// 	if (lastTime)
+		// 	{
+		// 		//Get offset
+		// 		QWORD offset = std::max<QWORD>((QWORD)(getTimeDiff(lastTime)*frame->GetClockRate()/1E6),1ul);
+		// 		//Calculate time difd and add to the last sent timestamp
+		// 		baseTimestamp = lastTimestamp + offset;
+		// 	}
+		// 	//Get first timestamp
+		// 	firstTimestamp = frame->GetTimeStamp();
+		// }
 
 		//Calculate total length
 		uint32_t pendingLength = 0;
@@ -256,7 +293,7 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 			//Add prefix
 			packet->PrefixPayload(rtp.GetPrefixData(),rtp.GetPrefixLen());
 			//Calculate timestamp
-			lastTimestamp = baseTimestamp + (frame->GetTimeStamp()-firstTimestamp);
+			lastTimestamp = frame->GetTimeStamp();
 			//Set other values
 			packet->SetClockRate(rate);
 			packet->SetExtTimestamp(lastTimestamp*rate/frame->GetClockRate());
@@ -291,7 +328,7 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 			//UltraDebug("-MediaFrameListenerBridge::onMediaFrame() [this:%p,extSeqNum:%d,pending:%d,duration:%dms,total:%d,total:%dms\n", extSeqNum-1, pendingLength, packetDuration, info[i].GetTotalLength(), packetDuration);
 
 			//Insert it
-			packets.emplace(packet,packetDuration);
+			packets.emplace(packet, unifiedTs);
 
 			//Recalcualte pending
 			pendingLength -= info[i].GetTotalLength();
@@ -313,6 +350,8 @@ void MediaFrameListenerBridge::Reset()
 {
 	timeService.Async([=](auto now){
 		reset = true;
+					
+		timeBase->reset();
 	});
 }
 

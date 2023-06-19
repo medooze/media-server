@@ -8,6 +8,8 @@
 
 #include <queue>
 #include <memory>
+#include <mutex>
+#include <numeric>
 
 using namespace std::chrono_literals;
 
@@ -19,11 +21,112 @@ class MediaFrameListenerBridge :
 {
 public:
 	using shared = std::shared_ptr<MediaFrameListenerBridge>;
+	
+	class TimeBase
+	{
+	public:
+	
+		virtual void Update(MediaFrame::Type type, std::chrono::milliseconds now, uint64_t ts);
+		
+		virtual int64_t GetState(std::chrono::milliseconds now, uint64_t ts, uint64_t& tsOut) const = 0;
+		
+		virtual void reset() = 0;
+	};
+	
+	
+	
+	class TimeBaseImpl : public TimeBase
+	{
+	public:
+	
+		virtual void Update(MediaFrame::Type type, std::chrono::milliseconds now, uint64_t ts) override
+		{		
+			std::lock_guard<std::mutex> lock(mutex);
+				
+			if (!initialized)
+			{
+				if (refTime.count() != 0)
+				{
+					baseTs += (now.count() - refTime.count()) * 90000/1000;
+				}
+				
+				refTime = now;
+				refTimestamp = ts;	
+				
+				initialized = true;			
+				return;
+			}
+			
+
+			int64_t scheduledMs = (int64_t(ts) - int64_t(refTimestamp)) * 1000 / 90000;
+			int64_t actualTimeMs = now.count() - refTime.count();
+						
+			int offset = actualTimeMs - scheduledMs;			
+			if (offset > 10)  // Packet late
+			{
+				baseTs += ts - refTimestamp;
+				
+				refTime = now;
+				refTimestamp = ts;
+			}
+			else if (offset < -200)  // Packet early
+			{
+				tsDiffMap[type] = offset;			
+				auto otherType = type == MediaFrame::Audio ? MediaFrame::Video : MediaFrame::Audio;
+				if (tsDiffMap[otherType] < -200)
+				{
+					// Make reference time earlier for same time stamp, which means actual time
+					// becomes longer and packets will be flushed ealier.
+					refTime -= std::chrono::milliseconds(20);					
+					Log("Hurry up!\n");
+				}
+			}
+		}
+		
+		
+		virtual int64_t GetState(std::chrono::milliseconds now, uint64_t ts, uint64_t& tsOut) const override
+		{
+			std::lock_guard<std::mutex> lock(mutex);			
+			
+			auto diff = (int64_t(ts) - int64_t(refTimestamp)) * 1000 / 90000;
+			auto diffMs = now.count() - refTime.count();
+		
+			tsOut = baseTs + int64_t(ts) - int64_t(refTimestamp);
+		
+			// If > 0, it means the packet needs to be dispatched.
+			return diffMs - diff;
+		}
+		
+		virtual void reset() override
+		{
+			std::lock_guard<std::mutex> lock(mutex);
+					
+			initialized = false;
+		}
+		
+		
+	private:
+		
+		bool initialized = false;
+		
+		std::chrono::milliseconds refTime {0};
+		uint64_t refTimestamp = 0;
+		
+		uint64_t baseTs = 0;
+		
+		std::unordered_map<MediaFrame::Type, int64_t> tsDiffMap;
+		
+		mutable std::mutex mutex;
+	};
+	
+	
+	
 public:
 	static constexpr uint32_t NoSeqNum = std::numeric_limits<uint32_t>::max();
 	static constexpr uint64_t NoTimestamp = std::numeric_limits<uint64_t>::max();
 public:
-	MediaFrameListenerBridge(TimeService& timeService, DWORD ssrc, bool smooth = false);
+	MediaFrameListenerBridge(TimeService& timeService, DWORD ssrc, bool smooth = false, TimeBase* timeBase = nullptr);
+	
 	virtual ~MediaFrameListenerBridge();
 
 	void Reset();
@@ -58,7 +161,7 @@ public:
 	TimeService& timeService;
 	Timer::shared dispatchTimer;
 
-	std::queue<std::pair<RTPPacket::shared, std::chrono::milliseconds>> packets;
+	std::queue<std::pair<RTPPacket::shared, uint64_t>> packets;
 
 	DWORD ssrc = 0;
 	DWORD extSeqNum = 0;
@@ -90,6 +193,8 @@ public:
 	long double avgWaitedTime = 0;
 	MinMaxAcumulator<uint32_t, uint64_t> waited;
 	volatile bool muted = false;
+	
+	TimeBase* timeBase = nullptr;
 };
 
 #endif /* MEDIAFRAMELISTENERBRIDGE_H */
