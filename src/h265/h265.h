@@ -180,6 +180,7 @@ public:
 class H265SeqParameterSet
 {
 public:
+	H265SeqParameterSet();
 	bool Decode(const BYTE*	buffer,DWORD bufferSize, BYTE nuh_layer_id);
 
 private:
@@ -247,6 +248,9 @@ private:
 	BYTE			ext_or_max_sub_layers_minus1 = 0;
 	BYTE			temporal_id_nesting_flag = 0;
 	H265ProfileTierLevel generalProfileTierLevel;
+	std::array<bool, HEVCParams::MAX_SUB_LAYERS> sub_layer_profile_present_flag;
+	std::array<bool, HEVCParams::MAX_SUB_LAYERS> sub_layer_level_present_flag;
+	std::array<H265ProfileTierLevel, HEVCParams::MAX_SUB_LAYERS> subLayerProfileTierLevel;
 
 	//@Zita	TODO: h264 params, need	double check and updated to	h265
 	BYTE			profile_idc	= 0;
