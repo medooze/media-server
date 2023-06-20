@@ -149,28 +149,30 @@ enum HEVCParams{
 };
 
 const std::array<BYTE, 4> hevc_sub_width_c {
-    1, 2, 2, 1
+	1, 2, 2, 1
 };
 
 const std::array<BYTE, 4> hevc_sub_height_c{
-    1, 2, 1, 1
+	1, 2, 1, 1
 };
 
 struct HEVCWindow {
-    DWORD left_offset = 0;
-    DWORD right_offset = 0;
-    DWORD top_offset = 0;
-    DWORD bottom_offset = 0;
+	DWORD left_offset =	0;
+	DWORD right_offset = 0;
+	DWORD top_offset = 0;
+	DWORD bottom_offset	= 0;
 };
 
-class H265ProfileTierLevel
+DWORD H265Escape(BYTE *dst,const BYTE *src, DWORD size);
+
+class GenericProfileTierLevel
 {
 public:
 	bool Decode(BitReader& r);
 
 	BYTE profile_space = 0;
 	bool tier_flag = 0;
-	BYTE profile_idc = 0;
+	BYTE profile_idc = 0; // default as	1 (Main)?
 	std::array<bool, 32> profile_compatibility_flag;
 	bool progressive_source_flag	;
 	bool interlaced_source_flag		;
@@ -188,45 +190,53 @@ public:
 	bool lower_bit_rate_constraint_flag		;
 	bool max_14bit_constraint_flag			;
 	bool inbld_flag							;
-	/* 30 times Leverl in Table A.8 – General tier and level limits */
+	/* 30 times	Leverl in Table	A.8	– General tier and level limits	*/
 	BYTE level_idc							;
 };
 
+class H265ProfileTierLevel
+{
+public:
+	H265ProfileTierLevel();
+	bool Decode(BitReader& r, bool profilePresentFlag, BYTE	maxNumSubLayersMinus1);
+
+	GenericProfileTierLevel	generalProfileTierLevel;
+	std::array<bool, HEVCParams::MAX_SUB_LAYERS> sub_layer_profile_present_flag;
+	std::array<bool, HEVCParams::MAX_SUB_LAYERS> sub_layer_level_present_flag;
+	std::array<GenericProfileTierLevel, HEVCParams::MAX_SUB_LAYERS> subLayerProfileTierLevel;
+};
+
+class H265VideoParameterSet
+{
+public:
+	H265VideoParameterSet();
+	bool Decode(const BYTE*	buffer, DWORD bufferSize);
+	void Dump()	const
+	{
+		Debug("[H265VideoParameterSet	\n");
+		Debug("\tvps_id = %d\n", vps_id);
+		Debug("\tvps_max_layers_minus1 = %d\n", vps_max_layers_minus1);
+		Debug("\tvps_max_sub_layers_minus1 = %d\n", vps_max_sub_layers_minus1);
+		Debug("\tvps_temporal_id = %s\n", std::to_string(vps_temporal_id_nesting_flag));
+		Debug("\tH265 ProfileTierLevel dumping not finished yet!!\n");
+		Debug("/]\n");
+	}
+
+private:
+	BYTE vps_id;
+	BYTE vps_max_layers_minus1		;
+	BYTE vps_max_sub_layers_minus1	;
+	bool vps_temporal_id_nesting_flag  = false;
+	H265ProfileTierLevel profileTierLevel;
+};
 
 class H265SeqParameterSet
 {
 public:
-	H265SeqParameterSet();
-	bool Decode(const BYTE*	buffer,DWORD bufferSize, BYTE nuh_layer_id);
+	bool Decode(const BYTE*	buffer, DWORD buffersize, BYTE nuh_layer_id);
 
-private:
-
-	inline static DWORD	Escape(	BYTE *dst,const	BYTE *src, DWORD size )
-	{
-		DWORD len =	0;
-		DWORD i	= 0;
-		while(i<size)
-		{
-			//Check	if next	BYTEs are the scape	sequence
-					if((i+2<size) && (get3(src,i)==0x03))
-			{
-				//Copy the first two
-							dst[len++] = get1(src,i);
-							dst[len++] = get1(src,i+1);
-				//Skip the three
-							i += 3;
-					} else {
-							dst[len++] = get1(src,i++);
-					}
-			}
-		return len;
-	}
-
-	bool ParseProfileTierLevel(BitReader& r, bool profilePresentFlag, BYTE maxNumSubLayersMinus1);
-
-public:
-	DWORD GetWidth()	{ return pic_width_in_luma_samples - pic_conf_win.left_offset - pic_conf_win.right_offset; }
-	DWORD GetHeight()	{ return pic_height_in_luma_samples - pic_conf_win.top_offset - pic_conf_win.bottom_offset; }
+	DWORD GetWidth()	{ return pic_width_in_luma_samples - pic_conf_win.left_offset -	pic_conf_win.right_offset; }
+	DWORD GetHeight()	{ return pic_height_in_luma_samples	- pic_conf_win.top_offset -	pic_conf_win.bottom_offset;	}
 
 	void Dump()	const
 	{
@@ -265,17 +275,14 @@ private:
 	BYTE			max_sub_layers_minus1 =	0;
 	BYTE			ext_or_max_sub_layers_minus1 = 0;
 	BYTE			temporal_id_nesting_flag = 0;
-	H265ProfileTierLevel generalProfileTierLevel;
-	std::array<bool, HEVCParams::MAX_SUB_LAYERS> sub_layer_profile_present_flag;
-	std::array<bool, HEVCParams::MAX_SUB_LAYERS> sub_layer_level_present_flag;
-	std::array<H265ProfileTierLevel, HEVCParams::MAX_SUB_LAYERS> subLayerProfileTierLevel;
-	DWORD			pic_width_in_luma_samples = 0;
+	H265ProfileTierLevel profileTierLevel;
+	DWORD			pic_width_in_luma_samples =	0;
 	DWORD			pic_height_in_luma_samples = 0;
-	bool 			conformance_window_flag = false;
+	bool			conformance_window_flag	= false;
 	HEVCWindow		pic_conf_win;
 
 	BYTE			seq_parameter_set_id = 0;
-	BYTE			chroma_format_idc = 0;
+	BYTE			chroma_format_idc =	0;
 	bool			separate_colour_plane_flag = false;
 	//@Zita	TODO: h264 params, need	double check and updated to	h265
 	BYTE			profile_idc	= 0;
@@ -284,7 +291,7 @@ private:
 	bool			constraint_set2_flag = false;
 	BYTE			reserved_zero_5bits	 = 0;
 	BYTE			level_idc =	0;
-	//moved to h265 BYTE			seq_parameter_set_id = 0;
+	//moved	to h265	BYTE			seq_parameter_set_id = 0;
 	BYTE			log2_max_frame_num_minus4 =	0;
 	BYTE			pic_order_cnt_type = 0;
 	BYTE			log2_max_pic_order_cnt_lsb_minus4 =	0;
@@ -317,7 +324,7 @@ public:
 		//SHould be	done otherway, like	modifying the BitReader	to escape the input	NAL, but anyway.. duplicate	memory
 		BYTE *aux =	(BYTE*)malloc(bufferSize);
 		//Escape
-		DWORD len =	Escape(aux,buffer,bufferSize);
+		DWORD len =	H265Escape(aux,buffer,bufferSize);
 		//Create bit reader
 		BitReader r(aux,len);
 		//Read SQS
@@ -368,28 +375,7 @@ public:
 		//OK
 		return true;
 	}
-private:
-	inline static DWORD	Escape(	BYTE *dst,const	BYTE *src, DWORD size )
-	{
-		DWORD len =	0;
-		DWORD i	= 0;
-		while(i<size)
-		{
-			//Check	if next	BYTEs are the scape	sequence
-					if((i+2<size) && (get3(src,i)==0x03))
-			{
-				//Copy the first two
-							dst[len++] = get1(src,i);
-							dst[len++] = get1(src,i+1);
-				//Skip the three
-							i += 3;
-					} else {
-							dst[len++] = get1(src,i++);
-					}
-			}
-		return len;
-	}
-public:
+
 	void Dump()	const
 	{
 		Debug("[H265PictureParameterSet	\n");

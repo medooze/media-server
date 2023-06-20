@@ -311,10 +311,18 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 
 			switch (nalUnitType)
 			{
+				case HEVC_RTP_NALU_Type::VPS:			// 32
+				{
+					config.AddVideoParameterSet(payload,nalSize);
+					H265VideoParameterSet vps;
+					vps.Decode(nalData, nalSize-1);
+					//@Zita TODO: after vps.Decode(), get needed info from sps
+					break;
+				}
 				case HEVC_RTP_NALU_Type::SPS:			// 33
 				{
 					//Add full nal to config
-					config.AddSequenceParameterSet(payload,nalSize);
+					config.AddSequenceParameterSet(payload,nalSize, nuh_layer_id);
 					
 					//Parse sps
 					H265SeqParameterSet sps;
@@ -328,7 +336,7 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 
 						//@Zita TODO: after sps.Decode(), get needed info from sps
 						////Set config
-						//config.SetConfigurationVersion(1);
+						config.SetConfigurationVersion(1);
 						//config.SetAVCProfileIndication(nalData[0]);
 						//config.SetProfileCompatibility(nalData[1]);
 						//config.SetAVCLevelIndication(nalData[2]);

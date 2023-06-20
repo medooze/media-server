@@ -2,7 +2,28 @@
 
 #define CHECK(r) {if(r.Error()) return false;}
 
-bool H265ProfileTierLevel::Decode(BitReader& r)
+DWORD	H265Escape(	BYTE *dst,const	BYTE *src, DWORD size )
+{
+	DWORD len =	0;
+	DWORD i	= 0;
+	while(i<size)
+	{
+		//Check	if next	BYTEs are the scape	sequence
+				if((i+2<size) && (get3(src,i)==0x03))
+		{
+			//Copy the first two
+						dst[len++] = get1(src,i);
+						dst[len++] = get1(src,i+1);
+			//Skip the three
+						i += 3;
+				} else {
+						dst[len++] = get1(src,i++);
+				}
+		}
+	return len;
+}
+
+bool GenericProfileTierLevel::Decode(BitReader& r)
 {
 	if (r.Left() < 2+1+5 + 32 +	4 +	43 + 1)
 	{
@@ -77,7 +98,7 @@ bool H265ProfileTierLevel::Decode(BitReader& r)
 	return true;
 }
 
-H265SeqParameterSet::H265SeqParameterSet()
+H265ProfileTierLevel::H265ProfileTierLevel()
 {
 	for (size_t i = 0; i < sub_layer_profile_present_flag.size(); ++i)
 		sub_layer_profile_present_flag[i] = false;
@@ -85,13 +106,103 @@ H265SeqParameterSet::H265SeqParameterSet()
 		sub_layer_level_present_flag[i] = false;
 }
 
-bool H265SeqParameterSet::Decode(const BYTE*	buffer,DWORD bufferSize, BYTE nuh_layer_id)
+bool H265ProfileTierLevel::Decode(BitReader& r, bool profilePresentFlag, BYTE maxNumSubLayersMinus1)
 {
-	Debug("\t @Zita	TODO: H265SeqParameterSet::Decode()	is not finished	yet!\n");
+	if (profilePresentFlag)
+	{
+		if(!generalProfileTierLevel.Decode(r) ||
+			r.Left() < 8 + (8*2	* (maxNumSubLayersMinus1 > 0)))
+		{
+			Error("-H265: PTL information too short\n");
+			return false;
+		}
+	}
+
+	CHECK(r); generalProfileTierLevel.level_idc = r.Get(8);
+	Debug("-H265: [general_profile_level_idc: %d, level: %.02f]\n", generalProfileTierLevel.level_idc, static_cast<float>(generalProfileTierLevel.level_idc) / 30);
+
+	for (int i = 0; i	< maxNumSubLayersMinus1; i++) {
+		CHECK(r); sub_layer_profile_present_flag[i] = r.Get(1);
+		CHECK(r); sub_layer_level_present_flag[i]	 = r.Get(1);
+	}
+	if (maxNumSubLayersMinus1 > 0)
+		  for (int i = maxNumSubLayersMinus1; i < 8; i++)
+			  r.Skip(2);	// reserved_zero_2bits[i]
+
+	for (size_t i = 0; i < maxNumSubLayersMinus1; i++)
+	{
+		if (sub_layer_profile_present_flag[i])
+		{ 
+			if(!subLayerProfileTierLevel[i].Decode(r))
+			  {
+			  	Error("PTL information for sublayer %i too short\n",	i);
+			  	return false;
+			  }
+		}
+		if (sub_layer_level_present_flag[i])
+		{
+			if (r.Left() < 8)
+			{
+				Error("Not enough data for sublayer %i level_idc\n",	i);
+				return false;
+			}
+			else
+			{
+				CHECK(r); subLayerProfileTierLevel[i].level_idc = r.Get(8);
+				Debug("-H265: [sub_layer[%d].level_idc: %d, level: %.02f]\n", i, subLayerProfileTierLevel[i].level_idc, static_cast<float>(subLayerProfileTierLevel[i].level_idc) / 30);
+			}
+		}
+	}
+
+	return true;
+}
+
+H265VideoParameterSet::H265VideoParameterSet()
+{}
+
+bool H265VideoParameterSet::Decode(const BYTE* buffer,DWORD bufferSize)
+{
+	Debug("\t @Zita	TODO: H265VideoParameterSet::Decode()	is not finished	yet!\n");
 	//SHould be	done otherway, like	modifying the BitReader	to escape the input	NAL, but anyway.. duplicate	memory
 	BYTE *aux =	(BYTE*)malloc(bufferSize);
 	//Escape
-	DWORD len =	Escape(aux,buffer,bufferSize);
+	DWORD len =	H265Escape(aux,buffer,bufferSize);
+	//Create bit reader
+	BitReader r(aux,len);
+
+    CHECK(r); vps_id = r.Get(4);
+	r.Skip(1); // vps_base_layer_internal_flag
+	r.Skip(1); // vps_base_layer_available_flag
+
+	CHECK(r); vps_max_layers_minus1               = r.Get(6) + 1;
+	CHECK(r); vps_max_sub_layers_minus1           = r.Get(3) + 1;
+	CHECK(r); vps_temporal_id_nesting_flag = r.Get(1);
+
+	CHECK(r); WORD reserved = r.Get(16); 
+    if (reserved != 0xffff) { // vps_reserved_ffff_16bits
+        Error("vps_reserved_ffff_16bits is not 0xffff\n");
+        return false;
+    }
+
+    if (vps_max_sub_layers_minus1 + 1 > HEVCParams::MAX_SUB_LAYERS) {
+        Error("vps_max_sub_layers_minus1 out of range: %d\n", vps_max_sub_layers_minus1);
+		return false;
+    }
+
+    if (!profileTierLevel.Decode(r, true, vps_max_sub_layers_minus1))
+	{
+		return false;
+	}
+	// skip all the following element decode/parse
+	return true;
+}
+
+bool H265SeqParameterSet::Decode(const BYTE*	buffer,DWORD bufferSize, BYTE nuh_layer_id)
+{
+	
+	BYTE *aux =	(BYTE*)malloc(bufferSize);
+	//Escape
+	DWORD len =	H265Escape(aux,buffer,bufferSize);
 	//Create bit reader
 	BitReader r(aux,len);
 	//Read SPS
@@ -112,14 +223,14 @@ bool H265SeqParameterSet::Decode(const BYTE*	buffer,DWORD bufferSize, BYTE nuh_l
 		CHECK(r); ext_or_max_sub_layers_minus1 = r.Get(3);
 	}
 	if (max_sub_layers_minus1 >	HEVCParams::MAX_SUB_LAYERS - 1)	{
-		Error( "sps_max_sub_layers_minus1 out of range:	%d\n", max_sub_layers_minus1);
+		Error( "sps_max_sub_layers_minus1 out of range: %d\n", max_sub_layers_minus1);
 		return false;
 	}
 	bool MultiLayerExtSpsFlag =	(nuh_layer_id != 0)	&& (ext_or_max_sub_layers_minus1 ==	7);
 	if (!MultiLayerExtSpsFlag)
 	{
 		CHECK(r); temporal_id_nesting_flag = r.Get(1);
-		if (!ParseProfileTierLevel(r, true,	max_sub_layers_minus1))
+		if (!profileTierLevel.Decode(r, true,	max_sub_layers_minus1))
 			return false;
 	}
 	// sps id
@@ -159,53 +270,4 @@ bool H265SeqParameterSet::Decode(const BYTE*	buffer,DWORD bufferSize, BYTE nuh_l
 	free(aux);
 	//OK
 	return !r.Error();
-}
-
-bool H265SeqParameterSet::ParseProfileTierLevel(BitReader& r, bool profilePresentFlag, BYTE maxNumSubLayersMinus1)
-{
-	if(!generalProfileTierLevel.Decode(r) ||
-		r.Left() < 8 + (8*2	* (maxNumSubLayersMinus1 > 0)))
-	{
-		Error("-H265: PTL information too short\n");
-		return false;
-	}
-
-
-	CHECK(r); generalProfileTierLevel.level_idc = r.Get(8);
-	Debug("-H265: [general_profile_level_idc: %d, level: %.02f]\n", generalProfileTierLevel.level_idc, static_cast<float>(generalProfileTierLevel.level_idc) / 30);
-
-	for (int i = 0; i	< maxNumSubLayersMinus1; i++) {
-		CHECK(r); sub_layer_profile_present_flag[i] = r.Get(1);
-		CHECK(r); sub_layer_level_present_flag[i]	 = r.Get(1);
-	}
-	if (maxNumSubLayersMinus1 > 0)
-		  for (int i = maxNumSubLayersMinus1; i < 8; i++)
-			  r.Skip(2);	// reserved_zero_2bits[i]
-
-	for (size_t i = 0; i < maxNumSubLayersMinus1; i++)
-	{
-		if (sub_layer_profile_present_flag[i])
-		{ 
-			if(!subLayerProfileTierLevel[i].Decode(r))
-			  {
-			  	Error("PTL information for sublayer %i too short\n",	i);
-			  	return false;
-			  }
-		}
-		if (sub_layer_level_present_flag[i])
-		{
-			if (r.Left() < 8)
-			{
-				Error("Not enough data for sublayer %i level_idc\n",	i);
-				return false;
-			}
-			else
-			{
-				CHECK(r); subLayerProfileTierLevel[i].level_idc = r.Get(8);
-				Debug("-H265: [sub_layer[%d].level_idc: %d, level: %.02f]\n", i, subLayerProfileTierLevel[i].level_idc, static_cast<float>(subLayerProfileTierLevel[i].level_idc) / 30);
-			}
-		}
-	}
-
-	return true;
 }

@@ -15,78 +15,138 @@
 HEVCDescriptor::HEVCDescriptor()
 {
 	//Empty
-	configurationVersion = 0;
-	HEVCProfileIndication = 0;
-	profileCompatibility = 0;
-	HEVCLevelIndication = 0;
-    numOfSequenceParameterSets = 0;
-	numOfPictureParameterSets = 0;
-	ppsTotalSizes = 0;
-	spsTotalSizes = 0;
 }
 
 bool HEVCDescriptor::Parse(const BYTE* buffer,DWORD bufferLen)
 {
 	//Check size
-	if (bufferLen<7)
-		//Nothing
-		return false;
-	//Get data
-	configurationVersion = buffer[0];
-	HEVCProfileIndication = buffer[1];
-	profileCompatibility = buffer[2];
-	HEVCLevelIndication = buffer[3];
-	NALUnitLength = buffer[4] & 0x03;
-	//Get number of SPS
-	DWORD num = buffer[5] & 0x1F;
-	//Set size
-	DWORD pos = 6;
-	//Clean PPS
-	ClearPictureParameterSets();
-	//Clean SPS
-	ClearSequenceParameterSets();
-	//Read them
-	for (DWORD i=0;i<num;i++)
+	if (bufferLen < MediaParameterSize)
 	{
-		//Check size
-		if (pos+2>bufferLen)
-			//exit
+		//Nothing
+		Error("HEVCDescriptot is too short!");
+		return false;
+	}
+
+	// read pointer
+	DWORD pos = 0;
+
+	//Get data
+	configurationVersion 			= buffer[pos];
+	pos ++;
+	profileSpace  					= buffer[pos];
+	pos ++;
+	tierFlag   						= buffer[pos];	
+	pos ++;
+	profileIndication   			= buffer[pos];
+	pos ++;
+	profileCompatibilityIndication	= buffer[pos];	
+	pos ++;
+	levelIndication   				= buffer[pos];
+	pos ++;
+	//NALUnitLength = buffer[4] & 0x03;
+	NALUnitLength   				= buffer[pos] & 0x03;	
+	pos ++;
+
+	if (pos != MediaParameterSize)
+	{
+		Error(" HEVCDescriptoer parsing error!");
+		return false;
+	}
+
+	//Clean all parameter sets
+	ClearVideoParameterSets();
+	ClearSequenceParameterSets();
+	ClearPictureParameterSets();
+
+	// VPS
+	if( pos + 1 > bufferLen )//Check size
+	{
+		Error("-H265: Failed to parse VPS from descriptor");
+		return false;
+	}
+	BYTE num = buffer[pos];
+	pos++;
+	for (BYTE i=0;i<num;i++)
+	{
+		if (pos+2 > bufferLen)//Check size
+		{
+			Error("-H265: Failed to parse VPS from descriptor");
 			return false;
+		}
 		//Get length
 		WORD length = ((WORD)(buffer[pos]))<<8 | buffer[pos+1];
-		//Check size
-		if (pos+2+length>bufferLen)
-			//exit
+		if (pos+2+length>bufferLen)//Check size
+		{
+			Error("-H265: Failed to parse VPS from descriptor");
 			return false;
+		}
 		//Add it
-		AddSequenceParameterSet(buffer+pos+2,length);
-		//Skip them
+		AddVideoParameterSet(buffer+pos+2,length);
+		//Update read pointer
 		pos+=length+2;
 	}
-	//Check size
-	if (pos+1>bufferLen)
-		//exit
+	// SPS
+	if (pos+1>bufferLen)//Check size
+	{
+		Error("-H265: Failed to parse SPS from descriptor");
 		return false;
-	//Get number of PPS
+	}
 	num = buffer[pos];
-	//Skip
 	pos++;
-	//Read them
 	for (DWORD i=0;i<num;i++)
 	{
-		//Check size
-		if (pos+2>bufferLen)
-			//exit
+		//Get nul_layer_id	
+		if (pos+1>bufferLen)//Check size
+		{
+			Error("-H265: Failed to parse SPS from descriptor");
 			return false;
+		}
+		BYTE nul_layer_id = buffer[pos];
+		pos++;
+		if (pos+2>bufferLen)//Check size
+		{
+			Error("-H265: Failed to parse SPS from descriptor");
+			return false;
+		}
 		//Get length
 		WORD length = ((WORD)(buffer[pos]))<<8 | buffer[pos+1];
-		//Check size
-		if (pos+2+length>bufferLen)
-			//exit
+		
+		if (pos+2+length>bufferLen)//Check size
+		{
+			Error("-H265: Failed to parse SPS from descriptor");
 			return false;
+		}
+		//Add it
+		AddSequenceParameterSet(buffer+pos+2,length, nul_layer_id);
+		//Update read pointer
+		pos+=length+2;
+	}
+	// PPS
+	if (pos+1>bufferLen)//Check size
+	{
+		Error("-H265: Failed to parse PPS from descriptor");
+		return false;
+	}
+	num = buffer[pos];
+	pos++;
+	for (DWORD i=0;i<num;i++)
+	{
+		if (pos+2>bufferLen)//Check size
+		{
+			Error("-H265: Failed to parse PPS from descriptor");
+			return false;
+		}
+		//Get length
+		WORD length = ((WORD)(buffer[pos]))<<8 | buffer[pos+1];
+		
+		if (pos+2+length>bufferLen)//Check size
+		{
+			Error("-H265: Failed to parse PPS from descriptor");
+			return false;
+		}
 		//Add it
 		AddPictureParameterSet(buffer+pos+2,length);
-		//Skip them
+		//Update read pointer
 		pos+=length+2;
 	}
 
@@ -95,13 +155,31 @@ bool HEVCDescriptor::Parse(const BYTE* buffer,DWORD bufferLen)
 
 HEVCDescriptor::~HEVCDescriptor()
 {
+	//REmove VPS
+	ClearVideoParameterSets();
 	//REmove PPS
 	ClearSequenceParameterSets();
 	//Remove SPS
 	ClearPictureParameterSets();
 }
 
-void HEVCDescriptor::AddSequenceParameterSet(const BYTE *data,DWORD size)
+void HEVCDescriptor::AddVideoParameterSet(const BYTE *data,DWORD size)
+{
+	//Increase number of vps
+	numOfVideoParameterSets++;
+	//Create data
+	BYTE* vps = (BYTE*)malloc(size);
+	//Copy
+	memcpy(vps,data,size);
+	//Add size
+	vpsSizes.push_back(size);
+	//Add data
+	vpsData.push_back(vps);
+	//INcrease size
+	vpsTotalSizes+=size;
+}
+
+void HEVCDescriptor::AddSequenceParameterSet(const BYTE *data,DWORD size, BYTE nuh_layer_id)
 {
 	//Increase number of pps
 	numOfSequenceParameterSets++;
@@ -115,33 +193,8 @@ void HEVCDescriptor::AddSequenceParameterSet(const BYTE *data,DWORD size)
 	spsData.push_back(sps);
 	//INcrease size
 	spsTotalSizes+=size;
-}
-
-void HEVCDescriptor::AddParametersFromFrame(const BYTE *data,DWORD size)
-{
-	//Chop into NALs
-	while(size>4)
-	{
-		//Get nal size
-		DWORD nalSize =  get4(data,0);
-		//Get NAL start
-		const BYTE* nal = data+4;
-		//Depending on the type
-		switch(nal[0] & 0xF)
-		{
-			case 8:
-				//Append
-				AddPictureParameterSet(nal,nalSize);
-				break;
-			case 7:
-				//Append
-				AddSequenceParameterSet(nal,nalSize);
-				break;
-		}
-		//Skip it
-		data+=4+nalSize;
-		size-=4+nalSize;
-	}
+	//add nul_layer_ids
+	sps_nul_layer_ids.push_back(nuh_layer_id);
 }
 
 void HEVCDescriptor::AddPictureParameterSet(const BYTE *data,DWORD size)
@@ -160,6 +213,54 @@ void HEVCDescriptor::AddPictureParameterSet(const BYTE *data,DWORD size)
 	ppsTotalSizes+=size;
 }
 
+void HEVCDescriptor::AddParametersFromFrame(const BYTE *data,DWORD size, BYTE nuh_layer_id)
+{
+	//Chop into NALs
+	while(size>4)
+	{
+		//Get nal size
+		DWORD nalSize =  get4(data,0);
+		//Get NAL start
+		const BYTE* nal = data+4;
+		//Depending on the type
+		switch(nal[0] & 0xF)
+		{
+			case HEVC_RTP_NALU_Type::VPS:
+				AddVideoParameterSet(nal, nalSize);
+				break;
+			case HEVC_RTP_NALU_Type::PPS:
+				//Append
+				AddPictureParameterSet(nal,nalSize);
+				break;
+			case HEVC_RTP_NALU_Type::SPS:
+				//Append
+				AddSequenceParameterSet(nal,nalSize, nuh_layer_id);
+				break;
+		}
+		//Skip it
+		data+=4+nalSize;
+		size-=4+nalSize;
+	}
+}
+
+void  HEVCDescriptor::ClearVideoParameterSets()
+{
+	//Free vps memory
+	while(!vpsData.empty())
+	{
+		//Free memory
+		free(vpsData.back());
+		//remove
+		vpsData.pop_back();
+	}
+	//Cleare sizes
+	vpsSizes.clear();
+	//Clear sizes
+	vpsTotalSizes = 0;
+	//No params
+	numOfVideoParameterSets = 0;
+}
+
 void  HEVCDescriptor::ClearSequenceParameterSets()
 {
 	//Free sps memory
@@ -174,6 +275,8 @@ void  HEVCDescriptor::ClearSequenceParameterSets()
 	spsSizes.clear();
 	//Clear sizes
 	spsTotalSizes = 0;
+	//Clear nul_layer_id
+	sps_nul_layer_ids.clear();
 	//No params
 	numOfSequenceParameterSets = 0;
 }
@@ -198,37 +301,64 @@ void  HEVCDescriptor::ClearPictureParameterSets()
 
 DWORD HEVCDescriptor::Serialize(BYTE* buffer,DWORD bufferLength) const
 {
+	//write pointer
+	DWORD pos = 0;
 	//Check size
-	if (bufferLength<GetSize())
+	if (bufferLength < GetSize())
 		//Nothing
 		return -1;
+
 	//Get data
-	buffer[0] = configurationVersion ;
-	buffer[1] = HEVCProfileIndication;
-	buffer[2] = profileCompatibility;
-	buffer[3] = HEVCLevelIndication;
-	buffer[4] = NALUnitLength | 0xFC;
-	buffer[5] = numOfSequenceParameterSets | 0xE0;
-	//Set size
-	DWORD pos = 6;
-	//Read them
+	buffer[pos] = configurationVersion; pos++;
+	buffer[pos] = profileSpace; pos++;
+	buffer[pos] = tierFlag; pos++;
+	buffer[pos] = profileIndication; pos++;
+	buffer[pos] = profileCompatibilityIndication; pos++;
+	buffer[pos] = levelIndication; pos++;
+	buffer[pos] = NALUnitLength | 0xFC; pos++;
+
+	if (pos != MediaParameterSize)
+	{
+		Error(" HEVCDescriptoer serialization error!");
+		return -1;
+	}
+
+	// VPS
+	buffer[pos] = numOfVideoParameterSets;
+	pos++;
+	for (BYTE i=0;i<numOfVideoParameterSets;i++)
+	{
+		//Get length
+		WORD length = vpsSizes[i];
+		//Set len: 2 Bytes
+		buffer[pos]	= length >> 8;
+		buffer[pos+1]	= length ;
+		//Copy sps: length Bytes
+		memcpy(buffer+pos+2,vpsData[i],length);
+		//Update write pointer
+		pos+=length+2;
+	}
+	// SPS
+	buffer[pos] = numOfSequenceParameterSets;
+	pos++;
 	for (BYTE i=0;i<numOfSequenceParameterSets;i++)
 	{
+		//Set nul_layer_id 1B
+		buffer[pos] = sps_nul_layer_ids[i];
+		pos++;
 		//Get length
 		WORD length = spsSizes[i];
 		//Set len
 		buffer[pos]	= length >> 8;
-		buffer[pos+1]	= length ;
+		buffer[pos+1]	= length;
 		//Copy sps
 		memcpy(buffer+pos+2,spsData[i],length);
-		//Skip them
+		//Update write pointer
 		pos+=length+2;
 	}
-	//Get number of PPS
+	// PPS
 	buffer[pos] = numOfPictureParameterSets;
-	//Skip
 	pos++;
-	//Read them
 	for (BYTE i=0;i<numOfPictureParameterSets;i++)
 	{
 		//Get length
@@ -236,9 +366,9 @@ DWORD HEVCDescriptor::Serialize(BYTE* buffer,DWORD bufferLength) const
 		//Set len
 		buffer[pos]	= length >> 8;
 		buffer[pos+1]	= length;
-		//Copy sps
+		//Copy pps
 		memcpy(buffer+pos+2,ppsData[i],length);
-		//Skip them
+		//Update write pointer
 		pos+=length+2;
 	}
 	//Finished
@@ -250,26 +380,35 @@ void HEVCDescriptor::Dump() const
 	//Get data
 	Debug("[HEVCDescriptor\n");
 	Debug(" configurationVersion: %d\n",configurationVersion);
-	Debug(" HEVCProfileIndication: 0x%.2x\n",HEVCProfileIndication);
-	Debug(" profileCompatibility: 0x%.2x\n",profileCompatibility);
-	Debug(" HEVCLevelIndication: 0x%.2x\n",HEVCLevelIndication);
+	Debug(" profileSpace: %d\n",profileSpace);
+	Debug(" tierFlag: %d\n",tierFlag);
+	Debug(" profileIndication: %d\n",profileIndication);
+	Debug(" profileCompatibilityIndication: %d\n",profileCompatibilityIndication);
+	Debug(" levelIndication: %d\n",levelIndication);
 	Debug(" NALUnitLength: %d\n",NALUnitLength);
+	Debug(" numOfVideoParameterSets: %d\n",numOfVideoParameterSets);
 	Debug(" numOfSequenceParameterSets: %d\n",numOfSequenceParameterSets);
 	Debug(" numOfPictureParameterSets: %d\n",numOfPictureParameterSets);
 	Debug("]");
-	//Dump them
+	//Dump VPS
+	for (BYTE i=0;i<numOfVideoParameterSets;i++)
+	{
+		H265VideoParameterSet vps;
+		//Decode
+		vps.Decode(vpsData[i],vpsSizes[i]);
+		//Dump
+		vps.Dump();
+	}
+	//Dump SPS
 	for (BYTE i=0;i<numOfSequenceParameterSets;i++)
 	{
 		H265SeqParameterSet sps;
 		//Decode
-		// @Zita TODO: need extra nuh_layer_id from Nal header.
-		sps.Decode(spsData[i],spsSizes[i], /*nuh_layer_id*/ 0);
+		sps.Decode(spsData[i],spsSizes[i], sps_nul_layer_ids[i]);
 		//Dump
 		sps.Dump();
 	}
-	
-	
-	//Dump them
+	//Dump VPS
 	for (BYTE i=0;i<numOfPictureParameterSets;i++)
 	{
 		H265PictureParameterSet pps;
