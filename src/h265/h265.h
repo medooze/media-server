@@ -155,6 +155,18 @@ struct HEVCParams{
 	static const BYTE PROFILE_MAIN_STILL_PICTURE          = 3;
 	static const BYTE PROFILE_REXT                        = 4;
 	static const BYTE PROFILE_SCC                         = 9;
+
+	// RFC 7998
+	static const BYTE RTP_NAL_HEADER_SIZE				= 2;
+	/* 
+     *   +-------------+-----------------+
+     *   |0|1|2|3|4|5|6|7|0|1|2|3|4|5|6|7|
+     *   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     *   |F|   Type    |  LayerId  | TID |
+     *   +-------------+-----------------+
+	 *
+	 * F must be 0.
+	 */
 };
 
 const std::array<BYTE, 4> hevc_sub_width_c {
@@ -170,6 +182,14 @@ struct HEVCWindow {
 	DWORD right_offset = 0;
 	DWORD top_offset = 0;
 	DWORD bottom_offset	= 0;
+
+	void Dump(const std::string name) const
+	{
+		Debug("\t%s.left_offset = %d\n", name.c_str(), left_offset);
+		Debug("\t%s.right_offset = %d\n", name.c_str(), right_offset);
+		Debug("\t%s.top_offset = %d\n", name.c_str(), top_offset);
+		Debug("\t%s.bottom_offset = %d\n", name.c_str(), bottom_offset);
+	}
 };
 
 DWORD H265Escape(BYTE *dst,const BYTE *src, DWORD size);
@@ -200,7 +220,6 @@ public:
 	bool GetFrameOnlyConstraintFlag() const { return frame_only_constraint_flag; }
 	// setter
 	void SetLevelIdc(BYTE in) { level_idc = in; }
-
 
 private:
 	// initial values refer to RFC 7798 section 7.1
@@ -243,6 +262,11 @@ public:
 	bool GetGeneralNonPackedConstraintFlag() const { return generalProfileTierLevel.GetNonPackedConstraintFlag(); }
 	bool GetGeneralFrameOnlyConstraintFlag() const { return generalProfileTierLevel.GetFrameOnlyConstraintFlag(); }
 
+	void Dump() const
+	{
+		Warning("-H265: %s is not finished yet!\n", __PRETTY_FUNCTION__);
+	}
+
 private:
 	GenericProfileTierLevel	generalProfileTierLevel;
 	std::array<bool, HEVCParams::MAX_SUB_LAYERS> sub_layer_profile_present_flag;
@@ -261,9 +285,9 @@ public:
 		Debug("\tvps_id = %d\n", vps_id);
 		Debug("\tvps_max_layers_minus1 = %d\n", vps_max_layers_minus1);
 		Debug("\tvps_max_sub_layers_minus1 = %d\n", vps_max_sub_layers_minus1);
-		Debug("\tvps_temporal_id = %s\n", std::to_string(vps_temporal_id_nesting_flag));
-		Debug("\tH265 ProfileTierLevel dumping not finished yet!!\n");
-		Debug("]\n");
+		Debug("\tvps_temporal_id = %d\n", vps_temporal_id_nesting_flag);
+		profileTierLevel.Dump();
+		Debug("H265VideoParameterSet/]\n");
 	}
 
 	const H265ProfileTierLevel& GetProfileTierLevel() const {return profileTierLevel;}
@@ -286,35 +310,20 @@ public:
 
 	void Dump()	const
 	{
-		Debug("[H265SeqParameterSet	\n");
-		Debug("\tvps_id=%.2x\n",					vps_id);
-		Debug("\tprofile_idc=%.2x\n",				profile_idc);
-		Debug("\tconstraint_set0_flag=%u\n",			constraint_set0_flag);
-		Debug("\tconstraint_set1_flag=%u\n",			constraint_set1_flag);
-		Debug("\tconstraint_set2_flag=%u\n",			constraint_set2_flag);
-		Debug("\treserved_zero_5bits =%u\n",			reserved_zero_5bits	);
-		Debug("\tlevel_idc=%.2x\n",				level_idc);
-		Debug("\tseq_parameter_set_id=%u\n",			seq_parameter_set_id);
-		Debug("\tlog2_max_frame_num_minus4=%u\n",		log2_max_frame_num_minus4);
-		Debug("\tpic_order_cnt_type=%u\n",			pic_order_cnt_type);
-		Debug("\tlog2_max_pic_order_cnt_lsb_minus4=%u\n",	log2_max_pic_order_cnt_lsb_minus4);
-		Debug("\t delta_pic_order_always_zero_flag=%u\n",	delta_pic_order_always_zero_flag);
-		Debug("\toffset_for_non_ref_pic=%d\n",			offset_for_non_ref_pic);
-		Debug("\toffset_for_top_to_bottom_field=%d\n",		offset_for_top_to_bottom_field);
-		Debug("\tnum_ref_frames_in_pic_order_cnt_cycle=%u\n",	num_ref_frames_in_pic_order_cnt_cycle);
-		Debug("\tnum_ref_frames=%u\n",				num_ref_frames);
-		Debug("\tgaps_in_frame_num_value_allowed_flag=%u\n",	gaps_in_frame_num_value_allowed_flag);
-		Debug("\tpic_width_in_mbs_minus1=%u\n",			pic_width_in_mbs_minus1);
-		Debug("\tpic_height_in_map_units_minus1=%u\n",		pic_height_in_map_units_minus1);
-		Debug("\tframe_mbs_only_flag=%u\n",			frame_mbs_only_flag);
-		Debug("\tmb_adaptive_frame_field_flag=%u\n",		mb_adaptive_frame_field_flag);
-		Debug("\tdirect_8x8_inference_flag=%u\n",		direct_8x8_inference_flag);
-		Debug("\tframe_cropping_flag=%u\n",			frame_cropping_flag);
-		Debug("\tframe_crop_left_offset=%u\n",			frame_crop_left_offset);
-		Debug("\tframe_crop_right_offset=%u\n",			frame_crop_right_offset);
-		Debug("\tframe_crop_top_offset=%u\n",			frame_crop_top_offset);
-		Debug("\tframe_crop_bottom_offset=%u\n",		frame_crop_bottom_offset);
-		Debug("]\n");
+		Debug("[H265SeqParameterSet\n");
+		Debug("\tvps_id=%.2x\n", vps_id);
+		Debug("\tmax_sub_layers_minus1 = %d\n", max_sub_layers_minus1);
+		Debug("\text_or_max_sub_layers_minus1 = %d\n", ext_or_max_sub_layers_minus1);
+		Debug("\ttemporal_id_nesting_flag = %d\n", temporal_id_nesting_flag);
+		profileTierLevel.Dump();
+		Debug("\tpic_width_in_luma_samples = %d\n", pic_width_in_luma_samples);
+		Debug("\tpic_height_in_luma_samples = %d\n", pic_height_in_luma_samples);
+		Debug("\tconformance_window_flag = %d\n", conformance_window_flag );
+		pic_conf_win.Dump("pic_conf_win");
+		Debug("\tseq_parameter_set_id = %d\n", seq_parameter_set_id);
+		Debug("\tchroma_format_idc = %d\n", chroma_format_idc);
+		Debug("\tseparate_colour_plane_flag = %d\n", separate_colour_plane_flag);
+		Debug("H265SeqParameterSet/]\n");
 	}
 private:
 	BYTE			vps_id = 0;
@@ -330,35 +339,6 @@ private:
 	BYTE			seq_parameter_set_id = 0;
 	BYTE			chroma_format_idc =	0;
 	bool			separate_colour_plane_flag = false;
-	//@Zita	TODO: h264 params, need	double check and updated to	h265
-	BYTE			profile_idc	= 0;
-	bool			constraint_set0_flag = false;
-	bool			constraint_set1_flag = false;
-	bool			constraint_set2_flag = false;
-	BYTE			reserved_zero_5bits	 = 0;
-	BYTE			level_idc =	0;
-	//moved	to h265	BYTE			seq_parameter_set_id = 0;
-	BYTE			log2_max_frame_num_minus4 =	0;
-	BYTE			pic_order_cnt_type = 0;
-	BYTE			log2_max_pic_order_cnt_lsb_minus4 =	0;
-	bool			delta_pic_order_always_zero_flag = false;
-	int			offset_for_non_ref_pic = 0;
-	int			offset_for_top_to_bottom_field = 0;
-	BYTE			num_ref_frames_in_pic_order_cnt_cycle =	0;
-	std::vector<int>	offset_for_ref_frame;
-	DWORD			num_ref_frames = 0;
-	bool			gaps_in_frame_num_value_allowed_flag = false;
-	DWORD			pic_width_in_mbs_minus1	= 0;
-	DWORD			pic_height_in_map_units_minus1 = 0;
-	bool			frame_mbs_only_flag	= false;
-	bool			mb_adaptive_frame_field_flag = false;
-	bool			direct_8x8_inference_flag =	false;
-	bool			frame_cropping_flag	= false;
-	DWORD			frame_crop_left_offset = 0;
-	DWORD			frame_crop_right_offset	= 0;
-	DWORD			frame_crop_top_offset =	0;
-	DWORD			frame_crop_bottom_offset = 0;
-	//bool			vui_parameters_present_flag	= false;
 
 };
 
@@ -373,48 +353,8 @@ public:
 		DWORD len =	H265Escape(aux,buffer,bufferSize);
 		//Create bit reader
 		BitReader r(aux,len);
-		//Read SQS
-		CHECK(r); pic_parameter_set_id = ExpGolombDecoder::Decode(r);
-		CHECK(r); seq_parameter_set_id = ExpGolombDecoder::Decode(r);
-		CHECK(r); entropy_coding_mode_flag = r.Get(1);
-		CHECK(r); pic_order_present_flag = r.Get(1);
-		CHECK(r); num_slice_groups_minus1 =	ExpGolombDecoder::Decode(r);
-		if(	num_slice_groups_minus1	> 0	)
-		{
-			CHECK(r); slice_group_map_type = ExpGolombDecoder::Decode(r);
-			if(	slice_group_map_type ==	0 )
-				for( int iGroup	= 0; iGroup	<= num_slice_groups_minus1;	iGroup++ )
-				{
-					CHECK(r); run_length_minus1.assign(iGroup,ExpGolombDecoder::Decode(r));
-				}
-			else if( slice_group_map_type == 2 )
-				for( int iGroup	= 0; iGroup	< num_slice_groups_minus1; iGroup++	)
-				{
-					CHECK(r); top_left.assign(iGroup,ExpGolombDecoder::Decode(r));
-					CHECK(r); bottom_right.assign(iGroup,ExpGolombDecoder::Decode(r));
-				}
-			else if( slice_group_map_type == 3 || slice_group_map_type ==  4 ||	slice_group_map_type ==	5 )
-			{
-				CHECK(r); slice_group_change_direction_flag	= r.Get(1);
-				CHECK(r); slice_group_change_rate_minus1 = ExpGolombDecoder::Decode(r);
-			} else if( slice_group_map_type	== 6 ) {
-				CHECK(r); pic_size_in_map_units_minus1 = ExpGolombDecoder::Decode(r);
-				for( int i = 0;	i <= pic_size_in_map_units_minus1; i++ )
-				{
-					CHECK(r); slice_group_id.assign(i,r.Get(ceil(log2(num_slice_groups_minus1+1))));
-				}
-			}
-		}
-		CHECK(r); num_ref_idx_l0_active_minus1 = ExpGolombDecoder::Decode(r);
-		CHECK(r); num_ref_idx_l1_active_minus1 = ExpGolombDecoder::Decode(r);
-		CHECK(r); weighted_pred_flag = r.Get(1);
-		CHECK(r); weighted_bipred_idc =	r.Get(2);
-		CHECK(r); pic_init_qp_minus26 =	ExpGolombDecoder::DecodeSE(r); //Signed
-		CHECK(r); pic_init_qs_minus26 =	ExpGolombDecoder::DecodeSE(r); //Signed
-		CHECK(r); chroma_qp_index_offset = ExpGolombDecoder::DecodeSE(r); //Signed
-		CHECK(r); deblocking_filter_control_present_flag = r.Get(1);
-		CHECK(r); constrained_intra_pred_flag =	r.Get(1);
-		CHECK(r); redundant_pic_cnt_present_flag = r.Get(1);
+
+		Warning("-H265: %s is not finished yet!\n", __PRETTY_FUNCTION__);
 
 		//Free memory
 		free(aux);
@@ -424,52 +364,10 @@ public:
 
 	void Dump()	const
 	{
-		Debug("[H265PictureParameterSet	\n");
-		Debug("\tpic_parameter_set_id=%u\n",			pic_parameter_set_id);
-		Debug("\tseq_parameter_set_id=%u\n",			seq_parameter_set_id);
-		Debug("\tentropy_coding_mode_flag=%u\n",		entropy_coding_mode_flag);
-		Debug("\tpic_order_present_flag=%u\n",			pic_order_present_flag);
-		Debug("\tnum_slice_groups_minus1=%d\n",			num_slice_groups_minus1);
-		Debug("\tslice_group_map_type=%u\n",			slice_group_map_type);
-		Debug("\tslice_group_change_direction_flag=%u\n",	slice_group_change_direction_flag);
-		Debug("\tslice_group_change_rate_minus1=%u\n",		slice_group_change_rate_minus1);
-		Debug("\tpic_size_in_map_units_minus1=%d\n",		pic_size_in_map_units_minus1);
-		Debug("\tnum_ref_idx_l0_active_minus1=%d\n",		num_ref_idx_l0_active_minus1);
-		Debug("\tnum_ref_idx_l1_active_minus1=%d\n",		num_ref_idx_l1_active_minus1);
-		Debug("\tweighted_pred_flag=%u\n",			weighted_pred_flag);
-		Debug("\tweighted_bipred_idc=%u\n",			weighted_bipred_idc);
-		Debug("\tpic_init_qp_minus26=%d\n",			pic_init_qp_minus26);
-		Debug("\tpic_init_qs_minus26=%d\n",			pic_init_qs_minus26);
-		Debug("\tchroma_qp_index_offset=%d\n",			chroma_qp_index_offset);
-		Debug("\tdeblocking_filter_control_present_flag=%u\n",	deblocking_filter_control_present_flag);
-		Debug("\tconstrained_intra_pred_flag=%u\n",		constrained_intra_pred_flag);
-		Debug("\tredundant_pic_cnt_present_flag=%u\n",		redundant_pic_cnt_present_flag);
-		Debug("/]\n");
+		Warning("-H265: %s is not finished yet!\n", __PRETTY_FUNCTION__);
 	}
+
 private:
-	BYTE			pic_parameter_set_id = 0;
-	BYTE			seq_parameter_set_id = 0;
-	bool			entropy_coding_mode_flag = false;
-	bool			pic_order_present_flag = false;
-	int			num_slice_groups_minus1	= 0;
-	BYTE			slice_group_map_type = 0;
-	std::vector<DWORD>	run_length_minus1;
-	std::vector<DWORD>	top_left;
-	std::vector<DWORD>	bottom_right;
-	bool			slice_group_change_direction_flag =	false;
-	int			slice_group_change_rate_minus1 = 0;
-	int			pic_size_in_map_units_minus1 = 0;
-	std::vector<DWORD>	slice_group_id;
-	BYTE			num_ref_idx_l0_active_minus1 = 0;
-	BYTE			num_ref_idx_l1_active_minus1 = 0;
-	bool			weighted_pred_flag = false;
-	BYTE			weighted_bipred_idc	= 0;
-	int			pic_init_qp_minus26	= 0;
-	int			pic_init_qs_minus26	= 0;
-	int			chroma_qp_index_offset = 0;
-	bool			deblocking_filter_control_present_flag = false;
-	bool			constrained_intra_pred_flag	= false;
-	bool			redundant_pic_cnt_present_flag = false;
 };
 
 #undef CHECK

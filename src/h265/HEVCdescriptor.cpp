@@ -393,7 +393,7 @@ void HEVCDescriptor::Dump() const
 	{
 		H265VideoParameterSet vps;
 		//Decode
-		vps.Decode(vpsData[i],vpsSizes[i]);
+		vps.Decode(vpsData[i] + HEVCParams::RTP_NAL_HEADER_SIZE,vpsSizes[i] - HEVCParams::RTP_NAL_HEADER_SIZE);
 		//Dump
 		vps.Dump();
 	}
@@ -402,7 +402,7 @@ void HEVCDescriptor::Dump() const
 	{
 		H265SeqParameterSet sps;
 		//Decode
-		sps.Decode(spsData[i],spsSizes[i], sps_nul_layer_ids[i]);
+		sps.Decode(spsData[i] + HEVCParams::RTP_NAL_HEADER_SIZE,spsSizes[i] - HEVCParams::RTP_NAL_HEADER_SIZE, sps_nul_layer_ids[i]);
 		//Dump
 		sps.Dump();
 	}

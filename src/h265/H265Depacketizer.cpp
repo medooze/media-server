@@ -67,10 +67,10 @@ MediaFrame* H265Depacketizer::AddPacket(const RTPPacket::shared& packet)
 MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 {
 	BYTE nalHeader[4];
-	BYTE S, E;
+	//BYTE S, E;
 	DWORD pos;
 	//Check length
-	if (payloadLen<2)
+	if (payloadLen<HEVCParams::RTP_NAL_HEADER_SIZE)
 		//Exit
 		return NULL;
 
@@ -89,7 +89,7 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 	BYTE nuh_temporal_id = payload[1] & 0x7;
 
 	//Get nal data
-	const BYTE* nalData = payload + 2;
+	const BYTE* nalData = payload + HEVCParams::RTP_NAL_HEADER_SIZE;
 
 	//Get nalu size
 	DWORD nalSize = payloadLen;
@@ -313,7 +313,6 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 			{
 				case HEVC_RTP_NALU_Type::VPS:			// 32
 				{
-					config.AddVideoParameterSet(payload,nalSize);
 					H265VideoParameterSet vps;
 					if (vps.Decode(nalData, nalSize-1))
 					{
@@ -331,9 +330,10 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 														, profileTierLevel.GetGeneralNonPackedConstraintFlag()
 														, profileTierLevel.GetGeneralFrameOnlyConstraintFlag() );
 						}
+						//Add full nal to config
+						config.AddVideoParameterSet(payload,nalSize);
+						//Debug log level only
 						vps.Dump();
-						// Zita debuuging:
-						config.Dump();
 					}
 					else
 					{
@@ -343,9 +343,6 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 				}
 				case HEVC_RTP_NALU_Type::SPS:			// 33
 				{
-					//Add full nal to config
-					config.AddSequenceParameterSet(payload,nalSize, nuh_layer_id);
-					
 					//Parse sps
 					H265SeqParameterSet sps;
 					if (sps.Decode(nalData,nalSize-1,nuh_layer_id))
@@ -355,6 +352,11 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 						frame.SetHeight(sps.GetHeight());
 	
 						UltraDebug("-H265 frame (with cropping) size [width: %d, frame height: %d]\n", sps.GetWidth(), sps.GetHeight());
+
+						//Add full nal to config
+						config.AddSequenceParameterSet(payload,nalSize, nuh_layer_id);
+						//Debug log level only
+						sps.Dump();
 					}
 					else
 					{

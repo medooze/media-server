@@ -165,44 +165,11 @@ H265VideoParameterSet::H265VideoParameterSet()
 
 bool H265VideoParameterSet::Decode(const BYTE* buffer,DWORD bufferSize)
 {
-	// debug:
-	{
-		Debug("ttxgz: Before escape()\n");
-		for (auto i = 0; i < bufferSize; i++)
-		{
-			if (i + 3 <= bufferSize - 1)
-			{
-				Debug("ttxgz: buffer[%d,%d] = 0x%02x, 0x%02x, 0x%02x, 0x%02x \n"
-							, i + 3, i, buffer[i+3], buffer[i+2], buffer[i+1], buffer[i]);
-				i += 3;
-			}
-			else
-			{
-				Debug("ttxgz: buffer[%d] = 0x%02x\n", i, buffer[i]);
-			}
-		}
-	}
 	//SHould be	done otherway, like	modifying the BitReader	to escape the input	NAL, but anyway.. duplicate	memory
 	BYTE *aux =	(BYTE*)malloc(bufferSize);
 	//Escape
 	DWORD len =	H265Escape(aux,buffer,bufferSize);
-	// debug:
-	{
-		Debug("ttxgz: After escape()\n");
-		for (auto i = 0; i < len; i++)
-		{
-			if (i + 3 <= len - 1)
-			{
-				Debug("ttxgz: buffer[%d,%d] = 0x%02x, 0x%02x, 0x%02x, 0x%02x \n"
-							, i + 3, i, aux[i+3], aux[i+2], aux[i+1], aux[i]);
-				i += 3;
-			}
-			else
-			{
-				Debug("ttxgz: buffer[%d] = 0x%02x\n", i, aux[i]);
-			}
-		}
-	}
+
 	//Create bit reader
 	BitReader r(aux,len);
 
@@ -233,7 +200,7 @@ bool H265VideoParameterSet::Decode(const BYTE* buffer,DWORD bufferSize)
 	return true;
 }
 
-bool H265SeqParameterSet::Decode(const BYTE*	buffer,DWORD bufferSize, BYTE nuh_layer_id)
+bool H265SeqParameterSet::Decode(const BYTE* buffer,DWORD bufferSize, BYTE nuh_layer_id)
 {
 	
 	BYTE *aux =	(BYTE*)malloc(bufferSize);
@@ -243,12 +210,7 @@ bool H265SeqParameterSet::Decode(const BYTE*	buffer,DWORD bufferSize, BYTE nuh_l
 	BitReader r(aux,len);
 	//Read SPS
 	CHECK(r); vps_id = r.Get(4);
-	// ttxgz: TODO:	should check vps list is correct or	not
-	//if (vps_list && !vps_list[sps->vps_id]) {
-	//	av_log(avctx, AV_LOG_ERROR,	"VPS %d	does not exist\n",
-	//	sps->vps_id);
-	//	return AVERROR_INVALIDDATA;
-	//}
+
 	// profiel_level_tier 
 	if (nuh_layer_id ==	0)
 	{
