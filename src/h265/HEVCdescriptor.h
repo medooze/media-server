@@ -19,8 +19,6 @@ public:
 	HEVCDescriptor();
 	~HEVCDescriptor();
 
-	static const BYTE MediaParameterSize = 10; // serializable header size (in Byte) except VPS/PPS/SPS
-
 	void AddVideoParameterSet(const BYTE *data,DWORD size);
 	void AddSequenceParameterSet(const BYTE *data,DWORD size, BYTE nuh_layer_id);
 	void AddPictureParameterSet(const BYTE *data,DWORD size);
@@ -57,18 +55,22 @@ public:
 	void SetTierFlag(bool in)	{ tierFlag = static_cast<uint8_t> (in); }
 	void SetLevelIdc(BYTE in)	{ levelIndication = in; }
 	void SetProfileCompatibilityFlags(const H265ProfileCompatibilityFlags& profile_compatibility_flag)
+		{
+			profileCompatibilityIndication = 0; 
+			static_assert(profile_compatibility_flag.size() <= sizeof(profileCompatibilityIndication) * 8);
+			for (size_t i = 0; i < profile_compatibility_flag.size(); i++)
 			{
-				profileCompatibilityIndication = 0; 
-				static_assert(profile_compatibility_flag.size() <= sizeof(profileCompatibilityIndication) * 8);
-				static_assert(profile_compatibility_flag.size() == 32);
-				static_assert(sizeof(uint32_t) == 4);
-				static_assert(sizeof(DWORD) == 4);
-				static_assert(sizeof(profileCompatibilityIndication) == 4);
-				for (size_t i = 0; i < profile_compatibility_flag.size(); i++)
-				{
-					profileCompatibilityIndication += (profile_compatibility_flag[0] << i);
-				}
+				profileCompatibilityIndication += (profile_compatibility_flag[0] << i);
 			}
+		}
+	void SetInteropConstrains(bool progressive_source_flag, bool interlaced_source_flag, bool non_packed_constraint_flag, bool frame_only_constraint_flag)
+		{
+			interopConstraints = 0;
+			interopConstraints = progressive_source_flag
+							 + (interlaced_source_flag << 1)
+							 + (non_packed_constraint_flag << 2)
+							 + (frame_only_constraint_flag << 3);
+		}
 	void SetNALUnitLength(BYTE in)			{ NALUnitLength = in; }
 
 private:
@@ -81,7 +83,10 @@ private:
 	BYTE tierFlag; // [0,1]
 	BYTE profileIndication = 1; // [0, 31], 1(Main) if not present
 	DWORD profileCompatibilityIndication = 0; // 32 bits flags
-	//interopConstraints
+	// interop-constraings: six bytes of data, with 44bits reserved zero,
+	// + [frame_only_constraint_flag(1), non_packed_constraint_flag(1), interlaced_source_flag(0), progressive_source_flag(1)]
+	static const DWORD interopConstraintsReservedZero32Bits = 0; // not serialized, just for usage in case
+	WORD interopConstraints = 1 + (1<<2) + (1<<3);
 	BYTE levelIndication; // [0,255]
 	BYTE NALUnitLength;
 
@@ -101,6 +106,16 @@ private:
 	std::vector<WORD> ppsSizes;
 	std::vector<BYTE*> ppsData;
 	DWORD ppsTotalSizes = 0;
+public: 
+	// serializable header size (in Byte) except VPS/PPS/SPS
+	static const BYTE MediaParameterSize = sizeof(configurationVersion)
+										+ sizeof(profileSpace)
+										+ sizeof(tierFlag)
+										+ sizeof(profileIndication)
+										+ sizeof(profileCompatibilityIndication)
+										+ sizeof(interopConstraints)
+										+ sizeof(levelIndication)
+										+ sizeof(NALUnitLength);
 };
 
 #endif	/* HEVCDESCRIPTOR_H */

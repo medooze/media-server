@@ -87,53 +87,53 @@ enum HEVC_RTP_NALU_Type	{
 	UNSPEC63	   = 63,
 };
 
-enum HEVCParams{
+struct HEVCParams{
 	// 7.4.3.1:	vps_max_layers_minus1 is in	[0,	62].
-	MAX_LAYERS	   = 63,
+	static const BYTE  MAX_LAYERS	   = 63;
 	// 7.4.3.1:	vps_max_sub_layers_minus1 is in	[0,	6].
-	MAX_SUB_LAYERS = 7,
+	static const BYTE MAX_SUB_LAYERS = 7;
 	// 7.4.3.1:	vps_num_layer_sets_minus1 is in	[0,	1023].
-	MAX_LAYER_SETS = 1024,
+	static const WORD MAX_LAYER_SETS = 1024;
 
 	// 7.4.2.1:	vps_video_parameter_set_id is u(4).
-	MAX_VPS_COUNT =	16,
+	static const BYTE MAX_VPS_COUNT =	16;
 	// 7.4.3.2.1: sps_seq_parameter_set_id is in [0, 15].
-	MAX_SPS_COUNT =	16,
+	static const BYTE MAX_SPS_COUNT =	16;
 	// 7.4.3.3.1: pps_pic_parameter_set_id is in [0, 63].
-	MAX_PPS_COUNT =	64,
+	static const BYTE MAX_PPS_COUNT =	64;
 
 	// A.4.2: MaxDpbSize is	bounded	above by 16.
-	MAX_DPB_SIZE = 16,
+	static const BYTE MAX_DPB_SIZE = 16;
 	// 7.4.3.1:	vps_max_dec_pic_buffering_minus1[i]	is in [0, MaxDpbSize - 1].
-	MAX_REFS	 = MAX_DPB_SIZE,
+	static const BYTE MAX_REFS	 = MAX_DPB_SIZE;
 
 	// 7.4.3.2.1: num_short_term_ref_pic_sets is in	[0,	64].
-	MAX_SHORT_TERM_REF_PIC_SETS	= 64,
+	static const BYTE MAX_SHORT_TERM_REF_PIC_SETS	= 64;
 	// 7.4.3.2.1: num_long_term_ref_pics_sps is	in [0, 32].
-	MAX_LONG_TERM_REF_PICS		= 32,
+	static const BYTE MAX_LONG_TERM_REF_PICS		= 32;
 
 	// A.3:	all	profiles require that CtbLog2SizeY is in [4, 6].
-	MIN_LOG2_CTB_SIZE =	4,
-	MAX_LOG2_CTB_SIZE =	6,
+	static const BYTE MIN_LOG2_CTB_SIZE =	4;
+	static const BYTE MAX_LOG2_CTB_SIZE =	6;
 
 	// E.3.2: cpb_cnt_minus1[i]	is in [0, 31].
-	MAX_CPB_CNT	= 32,
+	static const BYTE MAX_CPB_CNT	= 32;
 
 	// A.4.1: in table A.6 the highest level allows	a MaxLumaPs	of 35 651 584.
-	MAX_LUMA_PS	= 35651584,
+	static const DWORD MAX_LUMA_PS	= 35651584;
 	// A.4.1: pic_width_in_luma_samples	and	pic_height_in_luma_samples are
 	// constrained to be not greater than sqrt(MaxLumaPs * 8).	Hence height/
 	// width are bounded above by sqrt(8 * 35651584) = 16888.2 samples.
-	MAX_WIDTH  = 16888,
-	MAX_HEIGHT = 16888,
+	static const WORD MAX_WIDTH  = 16888;
+	static const WORD MAX_HEIGHT = 16888;
 
 	// A.4.1: table	A.6	allows at most 22 tile rows	for	any	level.
-	MAX_TILE_ROWS	 = 22,
+	static const BYTE MAX_TILE_ROWS	 = 22;
 	// A.4.1: table	A.6	allows at most 20 tile columns for any level.
-	MAX_TILE_COLUMNS = 20,
+	static const BYTE MAX_TILE_COLUMNS = 20;
 
 	// A.4.2: table	A.6	allows at most 600 slice segments for any level.
-	MAX_SLICE_SEGMENTS = 600,
+	static const WORD MAX_SLICE_SEGMENTS = 600;
 
 	// 7.4.7.1:	in the worst case (tiles_enabled_flag and
 	// entropy_coding_sync_enabled_flag	are	both set), entry points	can	be
@@ -142,12 +142,19 @@ enum HEVCParams{
 	// Only	a stream with very high	resolution and perverse	parameters could
 	// get near	that, though, so set a lower limit here	with the maximum
 	// possible	value for 4K video (at most	135	16x16 Ctb rows).
-	MAX_ENTRY_POINT_OFFSETS	= MAX_TILE_COLUMNS * 135,
+	static const WORD MAX_ENTRY_POINT_OFFSETS	= MAX_TILE_COLUMNS * 135;
 
 	// A.3.7: Screen content coding	extensions
-	MAX_PALETTE_PREDICTOR_SIZE = 128,
+	static const BYTE MAX_PALETTE_PREDICTOR_SIZE = 128;
 
-	PROFILE_COMPATIBILITY_FLAGS_COUNT = 32,
+	static const BYTE PROFILE_COMPATIBILITY_FLAGS_COUNT = 32;
+
+	// HEVC PROFILE
+	static const BYTE PROFILE_MAIN                        = 1;
+	static const BYTE PROFILE_MAIN_10                     = 2;
+	static const BYTE PROFILE_MAIN_STILL_PICTURE          = 3;
+	static const BYTE PROFILE_REXT                        = 4;
+	static const BYTE PROFILE_SCC                         = 9;
 };
 
 const std::array<BYTE, 4> hevc_sub_width_c {
@@ -167,31 +174,44 @@ struct HEVCWindow {
 
 DWORD H265Escape(BYTE *dst,const BYTE *src, DWORD size);
 
-typedef std::array<bool, PROFILE_COMPATIBILITY_FLAGS_COUNT> H265ProfileCompatibilityFlags;
+typedef std::array<bool, HEVCParams::PROFILE_COMPATIBILITY_FLAGS_COUNT> H265ProfileCompatibilityFlags;
 
 class GenericProfileTierLevel
 {
 public:
+	GenericProfileTierLevel()
+	{
+		for (size_t i = 0; i < profile_compatibility_flag.size(); i++)
+		{
+			profile_compatibility_flag[i] = (i == profile_idc)? true:false;
+		}
+	}
+
 	bool Decode(BitReader& r);
 	// getter
 	BYTE GetProfileSpace() const { return profile_space; }
 	BYTE GetProfileIdc() const { return profile_idc; }
 	bool GetTierFlag() const { return tier_flag; }
 	BYTE GetLevelIdc() const { return level_idc; }
+	const H265ProfileCompatibilityFlags& GetProfileCompatibilityFlags() const { return profile_compatibility_flag; }
+	bool GetProgressiveSourceFlag() const { return progressive_source_flag; }
+	bool GetInterlacedSourceFlag() const { return interlaced_source_flag; }
+	bool GetNonPackedConstraintFlag() const { return non_packed_constraint_flag; }
+	bool GetFrameOnlyConstraintFlag() const { return frame_only_constraint_flag; }
 	// setter
 	void SetLevelIdc(BYTE in) { level_idc = in; }
 
-	const H265ProfileCompatibilityFlags& GetProfileCompatibilityFlags() const { return profile_compatibility_flag; }
 
 private:
+	// initial values refer to RFC 7798 section 7.1
 	BYTE profile_space = 0;
 	bool tier_flag = 0;
-	BYTE profile_idc = 0; // default as	1 (Main)?
-	H265ProfileCompatibilityFlags profile_compatibility_flag;
-	bool progressive_source_flag	;
-	bool interlaced_source_flag		;
-	bool non_packed_constraint_flag	;
-	bool frame_only_constraint_flag	;
+	BYTE profile_idc = HEVCParams::PROFILE_MAIN; // 1
+	H265ProfileCompatibilityFlags profile_compatibility_flag; // [PROFILE_MAIN/1]: true, others are false
+	bool progressive_source_flag	= true  ;
+	bool interlaced_source_flag		= false ;
+	bool non_packed_constraint_flag	= true  ;
+	bool frame_only_constraint_flag	= true  ;
 
 	bool max_12bit_constraint_flag		;
 	bool max_10bit_constraint_flag		;
@@ -205,7 +225,7 @@ private:
 	bool max_14bit_constraint_flag			;
 	bool inbld_flag							;
 	/* 30 times	Leverl in Table	A.8	– General tier and level limits	*/
-	BYTE level_idc							;
+	BYTE level_idc = 93	; // level 3.1
 };
 
 class H265ProfileTierLevel
@@ -218,6 +238,10 @@ public:
 	bool GetGeneralTierFlag() const { return generalProfileTierLevel.GetTierFlag(); }
 	BYTE GetGeneralLevelIdc() const { return generalProfileTierLevel.GetLevelIdc(); }
 	const H265ProfileCompatibilityFlags& GetGeneralProfileCompatibilityFlags() const { return generalProfileTierLevel.GetProfileCompatibilityFlags(); }
+	bool GetGeneralProgressiveSourceFlag() const { return generalProfileTierLevel.GetProgressiveSourceFlag(); }
+	bool GetGeneralInterlacedSourceFlag() const { return generalProfileTierLevel.GetInterlacedSourceFlag(); }
+	bool GetGeneralNonPackedConstraintFlag() const { return generalProfileTierLevel.GetNonPackedConstraintFlag(); }
+	bool GetGeneralFrameOnlyConstraintFlag() const { return generalProfileTierLevel.GetFrameOnlyConstraintFlag(); }
 
 private:
 	GenericProfileTierLevel	generalProfileTierLevel;
@@ -233,13 +257,13 @@ public:
 	bool Decode(const BYTE*	buffer, DWORD bufferSize);
 	void Dump()	const
 	{
-		Debug("[H265VideoParameterSet	\n");
+		Debug("[H265VideoParameterSet\n");
 		Debug("\tvps_id = %d\n", vps_id);
 		Debug("\tvps_max_layers_minus1 = %d\n", vps_max_layers_minus1);
 		Debug("\tvps_max_sub_layers_minus1 = %d\n", vps_max_sub_layers_minus1);
 		Debug("\tvps_temporal_id = %s\n", std::to_string(vps_temporal_id_nesting_flag));
 		Debug("\tH265 ProfileTierLevel dumping not finished yet!!\n");
-		Debug("/]\n");
+		Debug("]\n");
 	}
 
 	const H265ProfileTierLevel& GetProfileTierLevel() const {return profileTierLevel;}
@@ -290,7 +314,7 @@ public:
 		Debug("\tframe_crop_right_offset=%u\n",			frame_crop_right_offset);
 		Debug("\tframe_crop_top_offset=%u\n",			frame_crop_top_offset);
 		Debug("\tframe_crop_bottom_offset=%u\n",		frame_crop_bottom_offset);
-		Debug("/]\n");
+		Debug("]\n");
 	}
 private:
 	BYTE			vps_id = 0;

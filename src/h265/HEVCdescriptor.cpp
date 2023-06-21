@@ -31,18 +31,14 @@ bool HEVCDescriptor::Parse(const BYTE* buffer,DWORD bufferLen)
 	DWORD pos = 0;
 
 	//Get data
-	configurationVersion 			= buffer[pos];
-	pos ++;
-	profileSpace  					= buffer[pos];
-	pos ++;
-	tierFlag   						= buffer[pos];	
-	pos ++;
-	profileIndication 				= buffer[pos];
-	pos ++;
-	profileCompatibilityIndication	= buffer[pos];	
-	pos ++;
-	levelIndication   				= buffer[pos];
-	pos ++;
+	configurationVersion 			= buffer[pos]; pos ++;
+	profileSpace  					= buffer[pos]; pos ++;
+	tierFlag   						= buffer[pos]; pos ++;
+	profileIndication 				= buffer[pos]; pos ++;
+	profileCompatibilityIndication	= buffer[pos]; pos ++;
+	interopConstraints				= buffer[pos] + (buffer[pos + 1] << 8);
+	pos += 2;
+	levelIndication   				= buffer[pos]; pos ++;
 	//NALUnitLength = buffer[4] & 0x03;
 	NALUnitLength   				= buffer[pos] & 0x03;	
 	pos ++;
@@ -314,6 +310,8 @@ DWORD HEVCDescriptor::Serialize(BYTE* buffer,DWORD bufferLength) const
 	buffer[pos] = tierFlag; pos++;
 	buffer[pos] = profileIndication; pos++;
 	buffer[pos] = profileCompatibilityIndication; pos++;
+	buffer[pos] = interopConstraints & 0xff; pos++;
+	buffer[pos] = (interopConstraints & 0xff00) >> 8; pos++;
 	buffer[pos] = levelIndication; pos++;
 	buffer[pos] = NALUnitLength | 0xFC; pos++;
 
@@ -379,17 +377,17 @@ void HEVCDescriptor::Dump() const
 {
 	//Get data
 	Debug("[HEVCDescriptor\n");
-	Debug(" configurationVersion: %d\n",configurationVersion);
-	Debug(" profileSpace: %d\n",profileSpace);
-	Debug(" tierFlag: %d\n",tierFlag);
-	Debug(" profileIndication: %d\n",profileIndication);
-	Debug(" profileCompatibilityIndication: %d\n",profileCompatibilityIndication);
-	Debug(" levelIndication: %d\n",levelIndication);
-	Debug(" NALUnitLength: %d\n",NALUnitLength);
-	Debug(" numOfVideoParameterSets: %d\n",numOfVideoParameterSets);
-	Debug(" numOfSequenceParameterSets: %d\n",numOfSequenceParameterSets);
-	Debug(" numOfPictureParameterSets: %d\n",numOfPictureParameterSets);
-	Debug("]");
+	Debug("\tconfigurationVersion: %d\n",configurationVersion);
+	Debug("\tprofileSpace: %d\n",profileSpace);
+	Debug("\ttierFlag: %d\n",tierFlag);
+	Debug("\tprofileIndication: %d\n",profileIndication);
+	Debug("\tprofileCompatibilityIndication: 0x%x\n",profileCompatibilityIndication);
+	Debug("\tinteropConstraints: 0x%x\n",interopConstraints);
+	Debug("\tlevelIndication: %d\n",levelIndication);
+	Debug("\tNALUnitLength: %d\n",NALUnitLength);
+	Debug("\tnumOfVideoParameterSets: %d\n",numOfVideoParameterSets);
+	Debug("\tnumOfSequenceParameterSets: %d\n",numOfSequenceParameterSets);
+	Debug("\tnumOfPictureParameterSets: %d\n",numOfPictureParameterSets);
 	//Dump VPS
 	for (BYTE i=0;i<numOfVideoParameterSets;i++)
 	{

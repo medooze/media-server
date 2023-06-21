@@ -315,15 +315,29 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 				{
 					config.AddVideoParameterSet(payload,nalSize);
 					H265VideoParameterSet vps;
-					vps.Decode(nalData, nalSize-1);
-					if(config.GetConfigurationVersion() == 0)
+					if (vps.Decode(nalData, nalSize-1))
 					{
-						config.SetConfigurationVersion(vps.GetProfileTierLevel().GetGeneralProfileSpace());
-						config.SetProfileSpace(vps.GetProfileTierLevel().GetGeneralProfileSpace());
-						config.SetProfileIdc(vps.GetProfileTierLevel().GetGeneralProfileIdc());
-						config.SetTierFlag(vps.GetProfileTierLevel().GetGeneralTierFlag());
-						config.SetLevelIdc(vps.GetProfileTierLevel().GetGeneralLevelIdc());
-						config.SetProfileCompatibilityFlags(vps.GetProfileTierLevel().GetGeneralProfileCompatibilityFlags());
+						if(config.GetConfigurationVersion() == 0)
+						{
+							auto& profileTierLevel = vps.GetProfileTierLevel();
+							config.SetConfigurationVersion(profileTierLevel.GetGeneralProfileSpace());
+							config.SetProfileSpace(profileTierLevel.GetGeneralProfileSpace());
+							config.SetProfileIdc(profileTierLevel.GetGeneralProfileIdc());
+							config.SetTierFlag(profileTierLevel.GetGeneralTierFlag());
+							config.SetLevelIdc(profileTierLevel.GetGeneralLevelIdc());
+							config.SetProfileCompatibilityFlags(profileTierLevel.GetGeneralProfileCompatibilityFlags());
+							config.SetInteropConstrains(profileTierLevel.GetGeneralProgressiveSourceFlag()
+														, profileTierLevel.GetGeneralInterlacedSourceFlag()
+														, profileTierLevel.GetGeneralNonPackedConstraintFlag()
+														, profileTierLevel.GetGeneralFrameOnlyConstraintFlag() );
+						}
+						vps.Dump();
+						// Zita debuuging:
+						config.Dump();
+					}
+					else
+					{
+						Error("-H265: Decode of SPS failed");
 					}
 					break;
 				}
@@ -341,6 +355,10 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 						frame.SetHeight(sps.GetHeight());
 	
 						UltraDebug("-H265 frame (with cropping) size [width: %d, frame height: %d]\n", sps.GetWidth(), sps.GetHeight());
+					}
+					else
+					{
+						Error("-H265: Decode of SPS failed");
 					}
 					break;
 				}
