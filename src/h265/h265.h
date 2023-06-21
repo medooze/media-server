@@ -146,6 +146,8 @@ enum HEVCParams{
 
 	// A.3.7: Screen content coding	extensions
 	MAX_PALETTE_PREDICTOR_SIZE = 128,
+
+	PROFILE_COMPATIBILITY_FLAGS_COUNT = 32,
 };
 
 const std::array<BYTE, 4> hevc_sub_width_c {
@@ -165,15 +167,27 @@ struct HEVCWindow {
 
 DWORD H265Escape(BYTE *dst,const BYTE *src, DWORD size);
 
+typedef std::array<bool, PROFILE_COMPATIBILITY_FLAGS_COUNT> H265ProfileCompatibilityFlags;
+
 class GenericProfileTierLevel
 {
 public:
 	bool Decode(BitReader& r);
+	// getter
+	BYTE GetProfileSpace() const { return profile_space; }
+	BYTE GetProfileIdc() const { return profile_idc; }
+	bool GetTierFlag() const { return tier_flag; }
+	BYTE GetLevelIdc() const { return level_idc; }
+	// setter
+	void SetLevelIdc(BYTE in) { level_idc = in; }
 
+	const H265ProfileCompatibilityFlags& GetProfileCompatibilityFlags() const { return profile_compatibility_flag; }
+
+private:
 	BYTE profile_space = 0;
 	bool tier_flag = 0;
 	BYTE profile_idc = 0; // default as	1 (Main)?
-	std::array<bool, 32> profile_compatibility_flag;
+	H265ProfileCompatibilityFlags profile_compatibility_flag;
 	bool progressive_source_flag	;
 	bool interlaced_source_flag		;
 	bool non_packed_constraint_flag	;
@@ -199,7 +213,13 @@ class H265ProfileTierLevel
 public:
 	H265ProfileTierLevel();
 	bool Decode(BitReader& r, bool profilePresentFlag, BYTE	maxNumSubLayersMinus1);
+	BYTE GetGeneralProfileSpace() const { return generalProfileTierLevel.GetProfileSpace(); }
+	BYTE GetGeneralProfileIdc() const { return generalProfileTierLevel.GetProfileIdc(); }
+	bool GetGeneralTierFlag() const { return generalProfileTierLevel.GetTierFlag(); }
+	BYTE GetGeneralLevelIdc() const { return generalProfileTierLevel.GetLevelIdc(); }
+	const H265ProfileCompatibilityFlags& GetGeneralProfileCompatibilityFlags() const { return generalProfileTierLevel.GetProfileCompatibilityFlags(); }
 
+private:
 	GenericProfileTierLevel	generalProfileTierLevel;
 	std::array<bool, HEVCParams::MAX_SUB_LAYERS> sub_layer_profile_present_flag;
 	std::array<bool, HEVCParams::MAX_SUB_LAYERS> sub_layer_level_present_flag;
@@ -221,6 +241,8 @@ public:
 		Debug("\tH265 ProfileTierLevel dumping not finished yet!!\n");
 		Debug("/]\n");
 	}
+
+	const H265ProfileTierLevel& GetProfileTierLevel() const {return profileTierLevel;}
 
 private:
 	BYTE vps_id;

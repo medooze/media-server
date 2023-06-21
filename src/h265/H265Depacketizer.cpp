@@ -316,7 +316,15 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 					config.AddVideoParameterSet(payload,nalSize);
 					H265VideoParameterSet vps;
 					vps.Decode(nalData, nalSize-1);
-					//@Zita TODO: after vps.Decode(), get needed info from sps
+					if(config.GetConfigurationVersion() == 0)
+					{
+						config.SetConfigurationVersion(vps.GetProfileTierLevel().GetGeneralProfileSpace());
+						config.SetProfileSpace(vps.GetProfileTierLevel().GetGeneralProfileSpace());
+						config.SetProfileIdc(vps.GetProfileTierLevel().GetGeneralProfileIdc());
+						config.SetTierFlag(vps.GetProfileTierLevel().GetGeneralTierFlag());
+						config.SetLevelIdc(vps.GetProfileTierLevel().GetGeneralLevelIdc());
+						config.SetProfileCompatibilityFlags(vps.GetProfileTierLevel().GetGeneralProfileCompatibilityFlags());
+					}
 					break;
 				}
 				case HEVC_RTP_NALU_Type::SPS:			// 33
@@ -333,14 +341,6 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 						frame.SetHeight(sps.GetHeight());
 	
 						UltraDebug("-H265 frame (with cropping) size [width: %d, frame height: %d]\n", sps.GetWidth(), sps.GetHeight());
-
-						//@Zita TODO: after sps.Decode(), get needed info from sps
-						////Set config
-						config.SetConfigurationVersion(1);
-						//config.SetAVCProfileIndication(nalData[0]);
-						//config.SetProfileCompatibility(nalData[1]);
-						//config.SetAVCLevelIndication(nalData[2]);
-						//config.SetNALUnitLength(sizeof(nalHeader)-1);
 					}
 					break;
 				}

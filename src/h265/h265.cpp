@@ -34,7 +34,8 @@ bool GenericProfileTierLevel::Decode(BitReader& r)
 	CHECK(r); tier_flag	= r.Get(1);
 	CHECK(r); profile_idc =	r.Get(5);
 
-	for	(int i = 0;	i <	32;	i++) {
+	for	(int i = 0;	i <	HEVCParams::PROFILE_COMPATIBILITY_FLAGS_COUNT /*32*/;	i++)
+	{
 		CHECK(r); profile_compatibility_flag[i]	= r.Get(1);
 
 		if (profile_idc	==	0 && i > 0 && profile_compatibility_flag[i])
@@ -118,8 +119,8 @@ bool H265ProfileTierLevel::Decode(BitReader& r, bool profilePresentFlag, BYTE ma
 		}
 	}
 
-	CHECK(r); generalProfileTierLevel.level_idc = r.Get(8);
-	Debug("-H265: [general_profile_level_idc: %d, level: %.02f]\n", generalProfileTierLevel.level_idc, static_cast<float>(generalProfileTierLevel.level_idc) / 30);
+	CHECK(r); generalProfileTierLevel.SetLevelIdc(r.Get(8));
+	Debug("-H265: [general_profile_level_idc: %d, level: %.02f]\n", generalProfileTierLevel.GetLevelIdc(), static_cast<float>(generalProfileTierLevel.GetLevelIdc()) / 30);
 
 	for (int i = 0; i	< maxNumSubLayersMinus1; i++) {
 		CHECK(r); sub_layer_profile_present_flag[i] = r.Get(1);
@@ -148,8 +149,8 @@ bool H265ProfileTierLevel::Decode(BitReader& r, bool profilePresentFlag, BYTE ma
 			}
 			else
 			{
-				CHECK(r); subLayerProfileTierLevel[i].level_idc = r.Get(8);
-				Debug("-H265: [sub_layer[%d].level_idc: %d, level: %.02f]\n", i, subLayerProfileTierLevel[i].level_idc, static_cast<float>(subLayerProfileTierLevel[i].level_idc) / 30);
+				CHECK(r); subLayerProfileTierLevel[i].SetLevelIdc(r.Get(8));
+				Debug("-H265: [sub_layer[%d].level_idc: %d, level: %.02f]\n", i, subLayerProfileTierLevel[i].GetLevelIdc(), static_cast<float>(subLayerProfileTierLevel[i].GetLevelIdc()) / 30);
 			}
 		}
 	}

@@ -37,7 +37,7 @@ bool HEVCDescriptor::Parse(const BYTE* buffer,DWORD bufferLen)
 	pos ++;
 	tierFlag   						= buffer[pos];	
 	pos ++;
-	profileIndication   			= buffer[pos];
+	profileIndication 				= buffer[pos];
 	pos ++;
 	profileCompatibilityIndication	= buffer[pos];	
 	pos ++;

@@ -8,8 +8,10 @@
 #ifndef HEVCDESCRIPTOR_H
 #define	HEVCDESCRIPTOR_H
 
-#include "config.h"
 #include <vector>
+#include "assert.h"
+#include "config.h"
+#include "h265.h"
 
 class HEVCDescriptor
 {
@@ -17,7 +19,7 @@ public:
 	HEVCDescriptor();
 	~HEVCDescriptor();
 
-	static const BYTE MediaParameterSize = 7; // serializable header size (in Byte) except VPS/PPS/SPS
+	static const BYTE MediaParameterSize = 10; // serializable header size (in Byte) except VPS/PPS/SPS
 
 	void AddVideoParameterSet(const BYTE *data,DWORD size);
 	void AddSequenceParameterSet(const BYTE *data,DWORD size, BYTE nuh_layer_id);
@@ -49,16 +51,37 @@ public:
 								+ 2*numOfVideoParameterSets + vpsTotalSizes //VPS: length(2B) + data
 								+ (2+1)*numOfSequenceParameterSets + spsTotalSizes //SPS: nul_layer_id(1B) + length(2B) + data
 								+ 2*numOfPictureParameterSets + ppsTotalSizes;} //PPS: length(2B) + data
-	void SetConfigurationVersion(BYTE configurationVersion)		{ this->configurationVersion = configurationVersion;	}
-	void SetNALUnitLength(BYTE NALUnitLength)			{ this->NALUnitLength = NALUnitLength;			}
+	void SetConfigurationVersion(BYTE in)		{ configurationVersion = in; }
+	void SetProfileSpace(BYTE in)	{ profileSpace = in; }
+	void SetProfileIdc(BYTE in)	{ profileCompatibilityIndication = in; }
+	void SetTierFlag(bool in)	{ tierFlag = static_cast<uint8_t> (in); }
+	void SetLevelIdc(BYTE in)	{ levelIndication = in; }
+	void SetProfileCompatibilityFlags(const H265ProfileCompatibilityFlags& profile_compatibility_flag)
+			{
+				profileCompatibilityIndication = 0; 
+				static_assert(profile_compatibility_flag.size() <= sizeof(profileCompatibilityIndication) * 8);
+				static_assert(profile_compatibility_flag.size() == 32);
+				static_assert(sizeof(uint32_t) == 4);
+				static_assert(sizeof(DWORD) == 4);
+				static_assert(sizeof(profileCompatibilityIndication) == 4);
+				for (size_t i = 0; i < profile_compatibility_flag.size(); i++)
+				{
+					profileCompatibilityIndication += (profile_compatibility_flag[0] << i);
+				}
+			}
+	void SetNALUnitLength(BYTE in)			{ NALUnitLength = in; }
 
 private:
 	/* 7.1.  Media Type Registration in RFC 7798*/
+	/* currently only supports highest RTP stream (RFC 7798 3.1.2: a Single RTP stream on a Single media
+   Transport (SRST) ),
+   		which means the following profiel_tier_level info are from general layer, not from sublayer */
 	BYTE configurationVersion = 0;
 	BYTE profileSpace = 0; // [0, 3]
 	BYTE tierFlag; // [0,1]
 	BYTE profileIndication = 1; // [0, 31], 1(Main) if not present
-	BYTE profileCompatibilityIndication; // 32 bits flags
+	DWORD profileCompatibilityIndication = 0; // 32 bits flags
+	//interopConstraints
 	BYTE levelIndication; // [0,255]
 	BYTE NALUnitLength;
 
