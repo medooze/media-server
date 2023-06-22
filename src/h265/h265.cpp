@@ -202,7 +202,6 @@ bool H265VideoParameterSet::Decode(const BYTE* buffer,DWORD bufferSize)
 
 bool H265SeqParameterSet::Decode(const BYTE* buffer,DWORD bufferSize, BYTE nuh_layer_id)
 {
-	
 	BYTE *aux =	(BYTE*)malloc(bufferSize);
 	//Escape
 	DWORD len =	H265Escape(aux,buffer,bufferSize);
@@ -268,4 +267,46 @@ bool H265SeqParameterSet::Decode(const BYTE* buffer,DWORD bufferSize, BYTE nuh_l
 	free(aux);
 	//OK
 	return !r.Error();
+}
+
+bool H265PictureParameterSet::Decode(const BYTE* buffer,DWORD bufferSize)
+{
+	//SHould be	done otherway, like	modifying the BitReader	to escape the input	NAL, but anyway.. duplicate	memory
+	BYTE *aux =	(BYTE*)malloc(bufferSize);
+	//Escape
+	DWORD len =	H265Escape(aux,buffer,bufferSize);
+	//Create bit reader
+	BitReader r(aux,len);
+
+	pps_id = ExpGolombDecoder::Decode(r);
+    if (pps_id >= HEVCParams::MAX_PPS_COUNT) {
+        Error("PPS id out of range: %d !\n", pps_id);
+		return false;
+    }
+    sps_id = ExpGolombDecoder::Decode(r);
+    if (sps_id >= HEVCParams::MAX_SPS_COUNT) {
+        Error("SPS id out of range: %d !\n", sps_id);
+		return false;
+    }
+
+	CHECK(r); dependent_slice_segments_enabled_flag = r.Get(1);
+	CHECK(r); output_flag_present_flag              = r.Get(1);
+	CHECK(r); num_extra_slice_header_bits           = r.Get(3);
+
+    CHECK(r); sign_data_hiding_flag = r.Get(1);
+    CHECK(r); cabac_init_present_flag = r.Get(1);
+
+    CHECK(r); num_ref_idx_l0_default_active_minus1 = ExpGolombDecoder::Decode(r);
+    CHECK(r); num_ref_idx_l1_default_active_minus1 = ExpGolombDecoder::Decode(r);
+    if (num_ref_idx_l0_default_active_minus1 + 1 >= HEVCParams::MAX_REFS ||
+        num_ref_idx_l1_default_active_minus1 + 1 >= HEVCParams::MAX_REFS) {
+        Error("Too many default refs in PPS: %d/%d.\n",
+               num_ref_idx_l0_default_active_minus1 + 1, num_ref_idx_l1_default_active_minus1 + 1);
+		return false;
+    }
+
+	//Free memory
+	free(aux);
+	//OK
+	return true;
 }

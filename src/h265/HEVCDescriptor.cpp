@@ -48,8 +48,6 @@ bool HEVCDescriptor::Parse(const BYTE* buffer,DWORD bufferLen)
 	levelIndication   				= buffer[pos++];
 	NALUnitLength   				= buffer[pos++] & 0x03;	// last 2 bits
 
-	Debug("ttxgz: NALUnitLength: 0x%02x, buffer[pos-1]: 0x%02x\n", NALUnitLength, buffer[pos - 1]);
-
 	if (pos != MediaParameterSize)
 	{
 		Error(" -H265: HEVCDescriptoer parsing error! pos: %d, MediaParmeterSize: %d\n", pos, MediaParameterSize);
@@ -418,12 +416,12 @@ void HEVCDescriptor::Dump() const
 		//Dump
 		sps.Dump();
 	}
-	//Dump VPS
+	//Dump PPS
 	for (BYTE i=0;i<numOfPictureParameterSets;i++)
 	{
 		H265PictureParameterSet pps;
 		//Decode
-		pps.Decode(spsData[i],spsSizes[i]);
+		pps.Decode(ppsData[i] + HEVCParams::RTP_NAL_HEADER_SIZE,ppsSizes[i] - HEVCParams::RTP_NAL_HEADER_SIZE);
 		//Dump
 		pps.Dump();
 	}

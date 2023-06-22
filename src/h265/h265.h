@@ -223,6 +223,29 @@ public:
 	// setter
 	void SetLevelIdc(BYTE in) { level_idc = in; }
 
+	void Dump(const std::string& name) const
+	{
+		Debug("\t %s.profile_space = %d\n", name.c_str(), profile_space);
+		Debug("\t %s.tier_flag = %d\n", name.c_str(), tier_flag);
+		Debug("\t %s.profile_idc = %d\n", name.c_str(), profile_idc);
+		Debug("\t %s.progressive_source_flag = %d\n", name.c_str(), progressive_source_flag);
+		Debug("\t %s.interlaced_source_flag		 = %d\n", name.c_str(), interlaced_source_flag);
+		Debug("\t %s.non_packed_constraint_flag	 = %d\n", name.c_str(), non_packed_constraint_flag);
+		Debug("\t %s.frame_only_constraint_flag	 = %d\n", name.c_str(), frame_only_constraint_flag);
+		Debug("\t %s.max_12bit_constraint_flag		 = %d\n", name.c_str(), max_12bit_constraint_flag		);
+		Debug("\t %s.max_10bit_constraint_flag		 = %d\n", name.c_str(), max_10bit_constraint_flag		);
+		Debug("\t %s.max_8bit_constraint_flag		 = %d\n", name.c_str(), max_8bit_constraint_flag		);
+		Debug("\t %s.max_422chroma_constraint_flag	 = %d\n", name.c_str(), max_422chroma_constraint_flag	);
+		Debug("\t %s.max_420chroma_constraint_flag	 = %d\n", name.c_str(), max_420chroma_constraint_flag	);
+		Debug("\t %s.max_monochrome_constraint_flag	 = %d\n", name.c_str(), max_monochrome_constraint_flag	);
+		Debug("\t %s.intra_constraint_flag			 = %d\n", name.c_str(), intra_constraint_flag			);
+		Debug("\t %s.one_picture_only_constraint_flag	 = %d\n", name.c_str(), one_picture_only_constraint_flag	);
+		Debug("\t %s.lower_bit_rate_constraint_flag		 = %d\n", name.c_str(), lower_bit_rate_constraint_flag		);
+		Debug("\t %s.max_14bit_constraint_flag			 = %d\n", name.c_str(), max_14bit_constraint_flag			);
+		Debug("\t %s.inbld_flag							 = %d\n", name.c_str(), inbld_flag							);
+		Debug("\t %s.level_idc 							 = %d\n", name.c_str(), level_idc);
+	}
+
 private:
 	// initial values refer to RFC 7798 section 7.1
 	BYTE profile_space = 0;
@@ -266,7 +289,24 @@ public:
 
 	void Dump() const
 	{
-		Warning("-H265: %s is not finished yet!\n", __PRETTY_FUNCTION__);
+		general_profile_tier_level.Dump("general_profile_tier_level");
+		BYTE sub_layer_profile_present_flag_log = 0;
+		for (size_t i = 0; i < sub_layer_profile_present_flag.size(); ++i)
+		{
+			sub_layer_profile_present_flag_log += (sub_layer_profile_present_flag[i] << i);
+		}
+		Debug("\tsub_profile_level_present_flag = 0x%02x\n", sub_layer_profile_present_flag_log);
+		BYTE sub_layer_level_present_flag_log = 0;
+		for (size_t i = 0; i < sub_layer_level_present_flag.size(); ++i)
+		{
+			sub_layer_level_present_flag_log += (sub_layer_level_present_flag[i] << i);
+		}
+		Debug("\tsub_layer_level_present_flag = 0x%02x\n", sub_layer_level_present_flag_log);
+		for (size_t i = 0; i < sub_layer_profile_tier_level.size(); ++i)
+		{
+			const std::string sub_layer_ptl_log = "sub_layer_profile_tier_level[" + std::to_string(i) + "]";
+			//sub_layer_profile_tier_level[i].Dump(sub_layer_ptl_log);
+		}
 	}
 
 private:
@@ -347,29 +387,33 @@ private:
 class H265PictureParameterSet
 {
 public:
-	bool Decode(const BYTE*	buffer,DWORD bufferSize)
-	{
-		//SHould be	done otherway, like	modifying the BitReader	to escape the input	NAL, but anyway.. duplicate	memory
-		BYTE *aux =	(BYTE*)malloc(bufferSize);
-		//Escape
-		DWORD len =	H265Escape(aux,buffer,bufferSize);
-		//Create bit reader
-		BitReader r(aux,len);
-
-		Warning("-H265: %s is not finished yet!\n", __PRETTY_FUNCTION__);
-
-		//Free memory
-		free(aux);
-		//OK
-		return true;
-	}
-
+	bool Decode(const BYTE*	buffer,DWORD bufferSize);
 	void Dump()	const
 	{
-		Warning("-H265: %s is not finished yet!\n", __PRETTY_FUNCTION__);
+		Debug("[H265PicParameterSet\n");
+		Debug("\tpps_id = %d\n", pps_id);
+		Debug("\tsps_id = %d\n", sps_id);
+		Debug("\tdependent_slice_segments_enabled_flag = %d\n",dependent_slice_segments_enabled_flag );
+		Debug("\toutput_flag_present_flag = %d\n",output_flag_present_flag);
+		Debug("\tnum_extra_slice_header_bits = %d\n",num_extra_slice_header_bits);
+		Debug("\tsign_data_hiding_flag = %d\n",sign_data_hiding_flag);
+		Debug("\tcabac_init_present_flag = %d\n",cabac_init_present_flag);
+		Debug("\tnum_ref_idx_l0_default_active_minus1 = %d\n",num_ref_idx_l0_default_active_minus1);
+		Debug("\tnum_ref_idx_l1_default_active_minus1 = %d\n",num_ref_idx_l1_default_active_minus1);
+		Debug("H265PicParameterSet/]\n");
 	}
 
 private:
+	BYTE pps_id = 0; // [0, 63]
+	BYTE sps_id = 0; // [0, 15]
+	bool dependent_slice_segments_enabled_flag = false;
+	bool output_flag_present_flag = false;
+	BYTE num_extra_slice_header_bits = 0; // [0, 2]
+    bool sign_data_hiding_flag = false;
+    bool cabac_init_present_flag = false;
+
+    BYTE num_ref_idx_l0_default_active_minus1 = 0; // [0, 14] 
+    BYTE num_ref_idx_l1_default_active_minus1 = 0; // [0, 14] 
 };
 
 #undef CHECK
