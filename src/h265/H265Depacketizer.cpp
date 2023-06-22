@@ -27,17 +27,10 @@ H265Depacketizer::~H265Depacketizer()
 
 void H265Depacketizer::AddCodecConfig()
 {
-	//debug
-	Debug("ttxgz: config.GetSize(): %d", config.GetSize());
 	//Set config size
 	frame.AllocateCodecConfig(config.GetSize());
 	//Serialize
 	config.Serialize(frame.GetCodecConfigData(), frame.GetCodecConfigSize());
-
-	//for debug only
-	HEVCDescriptor config_debug;
-	config_debug.Parse(frame.GetCodecConfigData(), frame.GetCodecConfigSize());
-	config_debug.Dump();
 }
 
 void H265Depacketizer::ResetFrame()
@@ -108,7 +101,9 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 
 	BYTE nalUnitType = (payload[0] & 0x7e) >> 1;
 	BYTE nuh_layer_id = ((payload[0] & 0x1) << 5) + ((payload[1] & 0xf8) >> 3);
-	BYTE nuh_temporal_id = payload[1] & 0x7;
+	BYTE nuh_temporal_id_plus1 = payload[1] & 0x7;
+	// Suppress compilation warning. It's not used at the moment
+	(void) nuh_temporal_id_plus1;
 
 	//Get nal data
 	const BYTE* nalData = payload + HEVCParams::RTP_NAL_HEADER_SIZE;
@@ -116,7 +111,7 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 	//Get nalu size
 	DWORD nalSize = payloadLen;
 
-	UltraDebug("-H265 [NAL header:0x%02x%02x,type:%d,layer_id:%d, temporal_id:%d, size:%d]\n", payload[0], payload[1], nalUnitType, nuh_layer_id, nuh_temporal_id, nalSize);
+	//UltraDebug("-H265 [NAL header:0x%02x%02x,type:%d,layer_id:%d, temporal_id:%d, size:%d]\n", payload[0], payload[1], nalUnitType, nuh_layer_id, nuh_temporal_id, nalSize);
 
 	//Check type
 	switch (nalUnitType)
@@ -355,8 +350,6 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 						}
 						//Add full nal to config
 						config.AddVideoParameterSet(payload,nalSize);
-						//Debug log level only
-						vps.Dump();
 					}
 					else
 					{
@@ -374,12 +367,10 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 						frame.SetWidth(sps.GetWidth());
 						frame.SetHeight(sps.GetHeight());
 	
-						UltraDebug("-H265 frame (with cropping) size [width: %d, frame height: %d]\n", sps.GetWidth(), sps.GetHeight());
+						//UltraDebug("-H265 frame (with cropping) size [width: %d, frame height: %d]\n", sps.GetWidth(), sps.GetHeight());
 
 						//Add full nal to config
 						config.AddSequenceParameterSet(payload,nalSize, nuh_layer_id);
-						//Debug log level only
-						sps.Dump();
 					}
 					else
 					{

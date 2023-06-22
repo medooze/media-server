@@ -65,23 +65,22 @@ bool HEVCDescriptor::Parse(const BYTE* buffer,DWORD bufferLen)
 	// VPS
 	if( pos + 1 > bufferLen )//Check size
 	{
-		Error("-H265: Failed to parse VPS from descriptor\n");
+		Error("-H265: Failed to parse VPS count from descriptor! pos: %d, bufferLen: %d\n", pos, bufferLen);
 		return false;
 	}
 	BYTE num = buffer[pos++];
-	Debug("ttxgz (line %d): pos: %d, VPS num:%d, start to parse VPS\n", __LINE__, pos, num);
 	for (BYTE i=0;i<num;i++)
 	{
 		if (pos+2 > bufferLen)//Check size
 		{
-			Error("-H265: Failed to parse VPS from descriptor!\n");
+			Error("-H265: Failed to parse VPS[%d] length from descriptor! pos: %d, bufferLen: %d\n", i, pos, bufferLen);
 			return false;
 		}
 		//Get length
 		WORD length = ((WORD)(buffer[pos]))<<8 | buffer[pos+1];
 		if (pos+2+length>bufferLen)//Check size
 		{
-			Error("-H265: Failed to parse VPS from descriptor!\n");
+			Error("-H265: Failed to parse VPS[%d] data from descriptor! pos: %d, bufferLen: %d\n", i, pos, bufferLen);
 			return false;
 		}
 		//Add it
@@ -92,23 +91,22 @@ bool HEVCDescriptor::Parse(const BYTE* buffer,DWORD bufferLen)
 	// SPS
 	if (pos+1>bufferLen)//Check size
 	{
-		Error("-H265: Failed to parse SPS from descriptor!\n");
+		Error("-H265: Failed to parse SPS count from descriptor! pos: %d, bufferLen: %d\n", pos, bufferLen);
 		return false;
 	}
 	num = buffer[pos++];
-	Debug("ttxgz (line %d): pos: %d, SPS num:%d, start to parse SPS\n", __LINE__, pos, num);
 	for (DWORD i=0;i<num;i++)
 	{
 		//Get nul_layer_id	
 		if (pos+1>bufferLen)//Check size
 		{
-			Error("-H265: Failed to parse SPS from descriptor!\n");
+			Error("-H265: Failed to parse SPS[%d] nul_layer_id from descriptor! pos: %d, bufferLen: %d\n", i, pos, bufferLen);
 			return false;
 		}
 		BYTE nul_layer_id = buffer[pos++];
 		if (pos+2>bufferLen)//Check size
 		{
-			Error("-H265: Failed to parse SPS from descriptor!\n");
+			Error("-H265: Failed to parse SPS[%d] length from descriptor! pos: %d, bufferLen: %d\n", i, pos, bufferLen);
 			return false;
 		}
 		//Get length
@@ -116,7 +114,7 @@ bool HEVCDescriptor::Parse(const BYTE* buffer,DWORD bufferLen)
 		
 		if (pos+2+length>bufferLen)//Check size
 		{
-			Error("-H265: Failed to parse SPS from descriptor!\n");
+			Error("-H265: Failed to parse SPS[%d] data from descriptor! pos: %d, bufferLen: %d\n", i, pos, bufferLen);
 			return false;
 		}
 		//Add it
@@ -127,26 +125,23 @@ bool HEVCDescriptor::Parse(const BYTE* buffer,DWORD bufferLen)
 	// PPS
 	if (pos+1>bufferLen)//Check size
 	{
-		Error("-H265: Failed to parse PPS count from descriptor!\n");
+		Error("-H265: Failed to parse PPS count from descriptor! pos: %d, bufferLen: %d\n", pos, bufferLen);
 		return false;
 	}
 	num = buffer[pos++];
-	Debug("ttxgz (line %d): pos: %d, PPS num:%d, start to parse PPS\n", __LINE__, pos, num);
 	for (DWORD i=0;i<num;i++)
 	{
-		Debug("ttxgz (line %d): pos: %d, bufferLen: %d\n", __LINE__, pos, bufferLen);
 		if (pos+2>bufferLen)//Check size
 		{
-			Error("-H265: Failed to parse PPS data length from descriptor!\n");
+			Error("-H265: Failed to parse PPS[%d] length from descriptor! pos: %d, bufferLen: %d\n", i, pos, bufferLen);
 			return false;
 		}
 		//Get length
 		WORD length = ((WORD)(buffer[pos]))<<8 | buffer[pos+1];
-		Debug("ttxgz (line %d): pos: %d, PPS data length: %d, bufferLen: %d\n", __LINE__, pos, length, bufferLen);
 		
 		if (pos+2+length>bufferLen)//Check size
 		{
-			Error("-H265: Failed to parse PPS data from descriptor!\n");
+			Error("-H265: Failed to parse PPS[%d] data from descriptor! pos: %d, bufferLen: %d\n", i, pos, bufferLen);
 			return false;
 		}
 		//Add it
@@ -157,7 +152,7 @@ bool HEVCDescriptor::Parse(const BYTE* buffer,DWORD bufferLen)
 
 	if (pos != bufferLen)
 	{
-		Error("ttxgz (line %d): final pos: %d, bufferLen: %d!!!!!\n", __LINE__, pos, bufferLen);
+		Error("-H265: Error on parsing HEVCDesciptor, with final pos: %d, but bufferLen: %d!\n", pos, bufferLen);
 	}
 	return true;
 }
@@ -344,7 +339,7 @@ DWORD HEVCDescriptor::Serialize(BYTE* buffer,DWORD bufferLength) const
 
 	// VPS
 	buffer[pos++] = numOfVideoParameterSets;
-	Debug("ttxgz (line %d): pos: %d, VPS num:%d, start to serialize VPS\n", __LINE__, pos, numOfVideoParameterSets);
+	//Debug("-H265: start to serialize VPS [pos: %d, VPS count: %d]\n", pos, numOfVideoParameterSets);
 	for (BYTE i=0;i<numOfVideoParameterSets;i++)
 	{
 		//Get length
@@ -359,7 +354,7 @@ DWORD HEVCDescriptor::Serialize(BYTE* buffer,DWORD bufferLength) const
 	}
 	// SPS
 	buffer[pos++] = numOfSequenceParameterSets;
-	Debug("ttxgz (line %d): pos: %d, VPS num:%d, start to serialize SPS\n", __LINE__, pos, numOfSequenceParameterSets);
+	//Debug("-H265: start to serialize SPS [pos: %d, SPS count: %d]\n", pos, numOfSequenceParameterSets);
 	for (BYTE i=0;i<numOfSequenceParameterSets;i++)
 	{
 		//Set nul_layer_id 1B
@@ -376,12 +371,11 @@ DWORD HEVCDescriptor::Serialize(BYTE* buffer,DWORD bufferLength) const
 	}
 	// PPS
 	buffer[pos++] = numOfPictureParameterSets;
-	Debug("ttxgz (line %d): pos: %d, PPS num:%d, start to serialize PPS\n", __LINE__, pos, numOfPictureParameterSets);
+	//Debug("-H265: start to serialize PPS [pos: %d, SPS count: %d]\n", pos, numOfPictureParameterSets);
 	for (BYTE i=0;i<numOfPictureParameterSets;i++)
 	{
 		//Get length
 		WORD length = ppsSizes[i];
-		Debug("ttxgz (line %d): pos: %d, PPS data length:%d\n", __LINE__, pos, length);
 		//Set len
 		buffer[pos]	= length >> 8;
 		buffer[pos+1]	= length;
