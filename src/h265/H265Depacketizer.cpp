@@ -12,8 +12,10 @@
 #include "rtp.h"
 #include "log.h"
 
-
-H265Depacketizer::H265Depacketizer() : RTPDepacketizer(MediaFrame::Video, VideoCodec::H265), frame(VideoCodec::H265, 0)
+H265Depacketizer::H265Depacketizer(bool annexB_in) :
+	RTPDepacketizer(MediaFrame::Video, VideoCodec::H265),
+	frame(VideoCodec::H265, 0),
+	annexB(annexB_in)
 {
 	//Set clock rate
 	frame.SetClockRate(90000);
@@ -23,11 +25,29 @@ H265Depacketizer::~H265Depacketizer()
 {
 }
 
+void H265Depacketizer::AddCodecConfig()
+{
+	//debug
+	Debug("ttxgz: config.GetSize(): %d", config.GetSize());
+	//Set config size
+	frame.AllocateCodecConfig(config.GetSize());
+	//Serialize
+	config.Serialize(frame.GetCodecConfigData(), frame.GetCodecConfigSize());
+
+	//for debug only
+	HEVCDescriptor config_debug;
+	config_debug.Parse(frame.GetCodecConfigData(), frame.GetCodecConfigSize());
+	config_debug.Dump();
+}
+
 void H265Depacketizer::ResetFrame()
 {
 	//Clear packetization info
 	frame.Reset();
 	//Clear config
+	config.ClearVideoParameterSets();
+	config.ClearSequenceParameterSets();
+	config.ClearPictureParameterSets();
 	//No fragments
 	iniFragNALU = 0;
 	startedFrag = false;
@@ -59,14 +79,16 @@ MediaFrame* H265Depacketizer::AddPacket(const RTPPacket::shared& packet)
 	AddPayload(packet->GetMediaData(), packet->GetMediaLength());
 	//If it is last return frame
 	if (!packet->GetMark())
-		return NULL;
+		return nullptr;
+	//Add codec config
+	AddCodecConfig();
 	//Return frame
 	return &frame;
 }
 
 MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 {
-	BYTE nalHeader[4];
+	BYTE preffix[4];
 	//BYTE S, E;
 	DWORD pos;
 	//Check length
@@ -177,9 +199,9 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 			//	}
 
 			//	//Set size
-			//	set4(nalHeader, 0, nalSize);
+			//	set4(preffix, 0, nalSize);
 			//	//Append data
-			//	frame.AppendMedia(nalHeader, sizeof(nalHeader));
+			//	frame.AppendMedia(preffix, sizeof(preffix));
 
 			//	//Append data and get current post
 			//	pos = frame.AppendMedia(payload, nalSize);
@@ -246,9 +268,9 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 			//	//Get init of the nal
 			//	iniFragNALU = frame.GetLength();
 			//	//Set empty header, will be set later
-			//	set4(nalHeader, 0, 0);
+			//	set4(preffix, 0, 0);
 			//	//Append data
-			//	frame.AppendMedia(nalHeader, sizeof(nalHeader));
+			//	frame.AppendMedia(preffix, sizeof(preffix));
 			//	//Append NAL header
 			//	frame.AppendMedia(&fragNalHeader, 1);
 			//	//We have a start frag
@@ -302,7 +324,8 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 			nalSize = payloadLen;
 			//Check if IDR/SPS/PPS, set Intra
 			if ((nalUnitType == HEVC_RTP_NALU_Type::IDR_W_RADL)
-				|| (nalUnitType == HEVC_RTP_NALU_Type::IDR_W_RADL)
+				|| (nalUnitType == HEVC_RTP_NALU_Type::IDR_N_LP)
+				|| (nalUnitType == HEVC_RTP_NALU_Type::VPS)
 				|| (nalUnitType == HEVC_RTP_NALU_Type::SPS)
 				|| (nalUnitType == HEVC_RTP_NALU_Type::PPS))
 			{
@@ -337,7 +360,7 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 					}
 					else
 					{
-						Error("-H265: Decode of SPS failed");
+						Error("-H265: Decode of SPS failed!\n");
 					}
 					break;
 				}
@@ -360,23 +383,32 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 					}
 					else
 					{
-						Error("-H265: Decode of SPS failed");
+						Error("-H265: Decode of SPS failed!\n");
 					}
 					break;
 				}
 				case HEVC_RTP_NALU_Type::PPS:			// 34
 					//Add full nal to config
 					config.AddPictureParameterSet(payload,nalSize);
-				break;
+					break;
 			}
-			//Set size
-			set4(nalHeader, 0, nalSize);
+			 //Check if doing annex b
+			if (annexB)
+				//Set annex b start code
+				set4(preffix, 0, HEVCParams::ANNEX_B_START_CODE);
+			else
+				//Set size
+				set4(preffix, 0, nalSize);
 			//Append data
-			frame.AppendMedia(nalHeader, sizeof(nalHeader));
+			frame.AppendMedia(preffix, sizeof(preffix));
 			//Append data and get current post
 			pos = frame.AppendMedia(payload, nalSize);
 			//Add RTP packet
-			frame.AddRtpPacket(pos, nalSize, NULL, 0);
+			if (nalSize >= RTPPAYLOADSIZE)
+			{
+				Error("-H265: nalSize(%d) is larger than RTPPAYLOADSIZE (%d)!\n", nalSize, RTPPAYLOADSIZE);
+			}
+			frame.AddRtpPacket(pos, nalSize, nullptr, 0);
 			//Done
 			break;
 	}

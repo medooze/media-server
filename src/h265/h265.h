@@ -149,6 +149,8 @@ struct HEVCParams{
 
 	static const BYTE PROFILE_COMPATIBILITY_FLAGS_COUNT = 32;
 
+	static const BYTE ANNEX_B_START_CODE = 0x01;
+
 	// HEVC PROFILE
 	static const BYTE PROFILE_MAIN                        = 1;
 	static const BYTE PROFILE_MAIN_10                     = 2;

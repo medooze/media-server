@@ -3,21 +3,23 @@
 #define	H265DEPACKETIZER_H
 #include "rtp.h"
 #include "video.h"
-#include "HEVCdescriptor.h"
+#include "HEVCDescriptor.h"
 
 class H265Depacketizer : public RTPDepacketizer
 {
 public:
-	H265Depacketizer();
+	H265Depacketizer(bool annexB);
 	virtual ~H265Depacketizer();
 	virtual MediaFrame* AddPacket(const RTPPacket::shared& packet) override;
 	virtual MediaFrame* AddPayload(const BYTE* payload, DWORD payload_len) override;
 	virtual void ResetFrame() override;
+	void AddCodecConfig();
 private:
 	VideoFrame frame;
 	HEVCDescriptor config;
 	DWORD iniFragNALU = 0;
 	bool startedFrag = false;
+	bool annexB = false;
 };
 
 #endif	/* H265DEPACKETIZER_H */
