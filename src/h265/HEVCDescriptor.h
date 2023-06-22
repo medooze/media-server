@@ -9,7 +9,6 @@
 #define	HEVCDESCRIPTOR_H
 
 #include <vector>
-#include "assert.h"
 #include "config.h"
 #include "h265.h"
 
