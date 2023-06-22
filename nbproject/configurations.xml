@@ -16252,6 +16252,16 @@
             <Elem>FLOATING_POINT</Elem>
             <Elem>LOG_</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
+            <Elem>PIC</Elem>
+            <Elem>RANDOM_PREFIX=mcu</Elem>
+            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
+            <Elem>VADWEBRTC</Elem>
+            <Elem>_UNIX</Elem>
+            <Elem>__SSE2__</Elem>
+            <Elem>__STDC_CONSTANT_MACROS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
       <folder path="0/src/nelly">
         <ccTool>
           <incDir>
