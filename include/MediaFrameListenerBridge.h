@@ -5,6 +5,7 @@
 #include "media.h"
 #include "rtp.h"
 #include "TimeService.h"
+#include "PacketDispatchCoordinator.h"
 
 #include <queue>
 #include <memory>
@@ -24,6 +25,12 @@ public:
 	static constexpr uint64_t NoTimestamp = std::numeric_limits<uint64_t>::max();
 public:
 	MediaFrameListenerBridge(TimeService& timeService, DWORD ssrc, bool smooth = false);
+	
+	inline void SetPacketDispatchCoordinator(std::shared_ptr<PacketDispatchCoordinator> aDispatchCoordinator)
+	{
+		dispatchCoordinator = aDispatchCoordinator;
+	}
+	
 	virtual ~MediaFrameListenerBridge();
 
 	void Reset();
@@ -52,6 +59,27 @@ public:
 	virtual int Reset(DWORD ssrc) override { return 1; };
 
 private:
+	class DefaultPacketDispatchTimeCoordinator : public PacketDispatchCoordinator
+	{
+	public:
+		virtual void OnFrameArrival(MediaFrame::Type type, std::chrono::milliseconds now, uint64_t ts, uint64_t clockRate) override;
+		virtual void OnPacket(MediaFrame::Type type, uint64_t now, uint64_t ts, uint64_t clockRate) override;		
+		virtual std::pair<std::vector<RTPPacket::shared>, int64_t> GetPacketsToDispatch(std::queue<std::pair<RTPPacket::shared, std::chrono::milliseconds>>& packets, 
+												std::chrono::milliseconds period,
+												std::chrono::milliseconds now) const override;
+		virtual bool AlwaysDispatchPreviousFramePackets() const override { return true;	}		
+		virtual void Reset() override;
+	
+	private:
+		volatile bool reset	= false;
+		QWORD firstTimestamp	= NoTimestamp;
+		QWORD baseTimestamp	= 0;
+		QWORD lastTimestamp	= 0;
+		QWORD lastTime		= 0;
+		
+		uint64_t originalClockRate = 0;
+	};
+
 	void Dispatch(const std::vector<RTPPacket::shared>& packet);
         
 public:
@@ -65,11 +93,7 @@ public:
 	bool  smooth = true;
 	std::set<RTPIncomingMediaStream::Listener*> listeners;
         std::set<MediaFrame::Listener::shared> mediaFrameListeners;
-	volatile bool reset	= false;
-	QWORD firstTimestamp	= NoTimestamp;
-	QWORD baseTimestamp	= 0;
-	QWORD lastTimestamp	= 0;
-	QWORD lastTime		= 0;
+	
 	DWORD numFrames		= 0;
 	DWORD numFramesDelta	= 0;
 	DWORD numPackets	= 0;
@@ -81,7 +105,6 @@ public:
 	Acumulator<uint32_t, uint64_t> acumulator;
 	Acumulator<uint32_t, uint64_t> accumulatorFrames;
 	Acumulator<uint32_t, uint64_t> accumulatorPackets;
-
 	
 	std::chrono::milliseconds lastSent = 0ms;
 	
@@ -90,6 +113,8 @@ public:
 	long double avgWaitedTime = 0;
 	MinMaxAcumulator<uint32_t, uint64_t> waited;
 	volatile bool muted = false;
+	
+	std::shared_ptr<PacketDispatchCoordinator> dispatchCoordinator = nullptr;
 };
 
 #endif /* MEDIAFRAMELISTENERBRIDGE_H */
