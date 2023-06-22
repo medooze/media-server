@@ -82,28 +82,20 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 		//Multiplex
 		for (auto& listener : mediaFrameListeners)
 			listener->onMediaFrame(*frame);
-			
+		
+		dispatchCoordinator->OnFrameArrival(frame->GetType(), now, frame->GetTimestamp(), frame->GetClockRate());
+				
 		if (dispatchCoordinator->AlwaysDispatchPreviousFramePackets())
 		{
 			//Dispatch any pending packet now
-			std::vector<RTPPacket::shared> sending;
-			//Remove all packets
-			while (packets.size())
-			{
-				//Get first packet to send
-				const auto& [packet, duration] = packets.front();
-				//Add to sending packets
-				sending.push_back(packet);
-				//remove it from pending packets
-				packets.pop();
-			}
+			auto maxPeriod = std::chrono::milliseconds(std::numeric_limits<int64_t>::max());
+			auto [sending, unused] = dispatchCoordinator->GetPacketsToDispatch(packets, maxPeriod, now);
+			
 			//Dispatch RTP packets
 			Dispatch(sending);
 			
 			lastSent = now;
 		}
-		
-		dispatchCoordinator->OnFrameArrival(frame->GetType(), now, frame->GetTimestamp(), frame->GetClockRate());
 		
 		//Dispatch packets again
 		dispatchTimer->Again(0ms);
@@ -228,7 +220,6 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 				//No last
 				packet->SetMark(false);
 			
-
 			//Increase stats
 			numPackets++;
 
@@ -260,6 +251,12 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 
 void MediaFrameListenerBridge::Dispatch(const std::vector<RTPPacket::shared>& packets)
 {
+	// Uncomment for debugging
+	// for (auto &p : packets)
+	// {
+	// 	Log("Send %s: %lld\n", p->GetMediaType() == MediaFrame::Type::Audio ? "a" : "v", p->GetExtTimestamp());
+	// }
+	
 	if (!muted && packets.size())
 		//Dispatch it
 		for (auto listener : listeners)
@@ -377,9 +374,6 @@ void MediaFrameListenerBridge::DefaultPacketDispatchTimeCoordinator::OnFrameArri
 		//Get first timestamp
 		firstTimestamp = ts;
 	}
-	
-	lastTimestamp = baseTimestamp + (ts - firstTimestamp);
-	lastTime = now.count();
 }
 
 
@@ -404,7 +398,7 @@ std::pair<std::vector<RTPPacket::shared>, int64_t> MediaFrameListenerBridge::Def
 	//Amount of time for the packets
 	auto accumulated = 0ms;
 
-	//Until no mor pacekts or full period
+	//Until no more packets or full period
 	while (packets.size() && period >= accumulated)
 	{
 		//Get first packet to send
@@ -412,9 +406,10 @@ std::pair<std::vector<RTPPacket::shared>, int64_t> MediaFrameListenerBridge::Def
 		//Increase accumulated time
 		accumulated += duration;
 		
-		int64_t offset = PacketDispatchCoordinator::convertTimestampClockRate(int64_t(baseTimestamp) - int64_t(firstTimestamp),
-											originalClockRate, packet->GetClockRate());
-		packet->SetExtTimestamp(packet->GetExtTimestamp() + offset);
+		int64_t rawOffset = int64_t(baseTimestamp) - int64_t(firstTimestamp);
+		int64_t offset = PacketDispatchCoordinator::convertTimestampClockRate(rawOffset, originalClockRate, packet->GetClockRate());
+											
+		packet->SetExtTimestamp(std::max(int64_t(packet->GetExtTimestamp()) + offset, int64_t(0)));
 		
 		//Add to sending packets
 		sending.push_back(packet);

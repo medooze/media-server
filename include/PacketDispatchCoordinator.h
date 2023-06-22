@@ -64,7 +64,7 @@ public:
 	template<typename T>
 	static constexpr T convertTimestampClockRate(T ts, uint64_t originalRate, uint64_t targetRate)
 	{
-		return originalRate == targetRate ? ts : (ts * targetRate / originalRate);
+		return originalRate == targetRate ? ts : (ts * T(targetRate) / T(originalRate));
 	}
 };
 
