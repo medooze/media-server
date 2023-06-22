@@ -254,15 +254,15 @@ class H265ProfileTierLevel
 public:
 	H265ProfileTierLevel();
 	bool Decode(BitReader& r, bool profilePresentFlag, BYTE	maxNumSubLayersMinus1);
-	BYTE GetGeneralProfileSpace() const { return generalProfileTierLevel.GetProfileSpace(); }
-	BYTE GetGeneralProfileIdc() const { return generalProfileTierLevel.GetProfileIdc(); }
-	bool GetGeneralTierFlag() const { return generalProfileTierLevel.GetTierFlag(); }
-	BYTE GetGeneralLevelIdc() const { return generalProfileTierLevel.GetLevelIdc(); }
-	const H265ProfileCompatibilityFlags& GetGeneralProfileCompatibilityFlags() const { return generalProfileTierLevel.GetProfileCompatibilityFlags(); }
-	bool GetGeneralProgressiveSourceFlag() const { return generalProfileTierLevel.GetProgressiveSourceFlag(); }
-	bool GetGeneralInterlacedSourceFlag() const { return generalProfileTierLevel.GetInterlacedSourceFlag(); }
-	bool GetGeneralNonPackedConstraintFlag() const { return generalProfileTierLevel.GetNonPackedConstraintFlag(); }
-	bool GetGeneralFrameOnlyConstraintFlag() const { return generalProfileTierLevel.GetFrameOnlyConstraintFlag(); }
+	BYTE GetGeneralProfileSpace() const { return general_profile_tier_level.GetProfileSpace(); }
+	BYTE GetGeneralProfileIdc() const { return general_profile_tier_level.GetProfileIdc(); }
+	bool GetGeneralTierFlag() const { return general_profile_tier_level.GetTierFlag(); }
+	BYTE GetGeneralLevelIdc() const { return general_profile_tier_level.GetLevelIdc(); }
+	const H265ProfileCompatibilityFlags& GetGeneralProfileCompatibilityFlags() const { return general_profile_tier_level.GetProfileCompatibilityFlags(); }
+	bool GetGeneralProgressiveSourceFlag() const { return general_profile_tier_level.GetProgressiveSourceFlag(); }
+	bool GetGeneralInterlacedSourceFlag() const { return general_profile_tier_level.GetInterlacedSourceFlag(); }
+	bool GetGeneralNonPackedConstraintFlag() const { return general_profile_tier_level.GetNonPackedConstraintFlag(); }
+	bool GetGeneralFrameOnlyConstraintFlag() const { return general_profile_tier_level.GetFrameOnlyConstraintFlag(); }
 
 	void Dump() const
 	{
@@ -270,10 +270,10 @@ public:
 	}
 
 private:
-	GenericProfileTierLevel	generalProfileTierLevel;
+	GenericProfileTierLevel	general_profile_tier_level;
 	std::array<bool, HEVCParams::MAX_SUB_LAYERS> sub_layer_profile_present_flag;
 	std::array<bool, HEVCParams::MAX_SUB_LAYERS> sub_layer_level_present_flag;
-	std::array<GenericProfileTierLevel, HEVCParams::MAX_SUB_LAYERS> subLayerProfileTierLevel;
+	std::array<GenericProfileTierLevel, HEVCParams::MAX_SUB_LAYERS> sub_layer_profile_tier_level;
 };
 
 class H265VideoParameterSet
@@ -288,18 +288,18 @@ public:
 		Debug("\tvps_max_layers_minus1 = %d\n", vps_max_layers_minus1);
 		Debug("\tvps_max_sub_layers_minus1 = %d\n", vps_max_sub_layers_minus1);
 		Debug("\tvps_temporal_id = %d\n", vps_temporal_id_nesting_flag);
-		profileTierLevel.Dump();
+		profile_tier_level.Dump();
 		Debug("H265VideoParameterSet/]\n");
 	}
 
-	const H265ProfileTierLevel& GetProfileTierLevel() const {return profileTierLevel;}
+	const H265ProfileTierLevel& GetProfileTierLevel() const {return profile_tier_level;}
 
 private:
 	BYTE vps_id;
 	BYTE vps_max_layers_minus1		;
 	BYTE vps_max_sub_layers_minus1	;
 	bool vps_temporal_id_nesting_flag  = false;
-	H265ProfileTierLevel profileTierLevel;
+	H265ProfileTierLevel profile_tier_level;
 };
 
 class H265SeqParameterSet
@@ -317,7 +317,7 @@ public:
 		Debug("\tmax_sub_layers_minus1 = %d\n", max_sub_layers_minus1);
 		Debug("\text_or_max_sub_layers_minus1 = %d\n", ext_or_max_sub_layers_minus1);
 		Debug("\ttemporal_id_nesting_flag = %d\n", temporal_id_nesting_flag);
-		profileTierLevel.Dump();
+		profile_tier_level.Dump();
 		Debug("\tpic_width_in_luma_samples = %d\n", pic_width_in_luma_samples);
 		Debug("\tpic_height_in_luma_samples = %d\n", pic_height_in_luma_samples);
 		Debug("\tconformance_window_flag = %d\n", conformance_window_flag );
@@ -332,7 +332,7 @@ private:
 	BYTE			max_sub_layers_minus1 =	0;
 	BYTE			ext_or_max_sub_layers_minus1 = 0;
 	BYTE			temporal_id_nesting_flag = 0;
-	H265ProfileTierLevel profileTierLevel;
+	H265ProfileTierLevel profile_tier_level;
 	DWORD			pic_width_in_luma_samples =	0;
 	DWORD			pic_height_in_luma_samples = 0;
 	bool			conformance_window_flag	= false;

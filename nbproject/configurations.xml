@@ -235,14 +235,6 @@
           <in>h264depacketizer.cpp</in>
           <in>h264encoder.cpp</in>
         </df>
-        <df name="h265">
-          <in>H265Depacketizer.cpp</in>
-          <in>H265Depacketizer.h</in>
-          <in>h265.h</in>
-          <in>h265.cpp</in>
-          <in>HEVCDescriptor.cpp</in>
-          <in>HEVCDescriptor.h</in>
-        </df>
         <df name="nelly">
           <in>NellyCodec.cpp</in>
         </df>
@@ -644,20 +636,6 @@
         </ccTool>
       </folder>
       <folder path="0/src/h264">
-        <ccTool>
-          <incDir>
-            <pElem>ext/libdatachannels/src</pElem>
-            <pElem>ext/libdatachannels/src/internal</pElem>
-            <pElem>ext/crc32c/include</pElem>
-            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>DARWIN</Elem>
-          </preprocessorList>
-        </ccTool>
-      </folder>
-      <folder path="0/src/h265">
         <ccTool>
           <incDir>
             <pElem>ext/libdatachannels/src</pElem>
@@ -1386,18 +1364,6 @@
         </ccTool>
       </item>
       <item path="src/h264/h264encoder.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="2">
-        </ccTool>
-      </item>
-      <item path="src/h265/h265.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="2">
-        </ccTool>
-      </item>
-      <item path="src/h265/H265Depacketizer.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="2">
-        </ccTool>
-      </item>
-      <item path="src/h265/HEVCDescriptor.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="2">
         </ccTool>
       </item>
@@ -2911,41 +2877,6 @@
         </ccTool>
       </folder>
       <folder path="0/src/h264">
-        <ccTool>
-          <incDir>
-            <pElem>../../../include</pElem>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>ext/libdatachannels/src</pElem>
-            <pElem>ext/libdatachannels/src/internal</pElem>
-            <pElem>ext/crc32c/include</pElem>
-            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem>../../openssl_1_1_1-stable/include</pElem>
-            <pElem>../../libsrtp-2.2.0/include</pElem>
-            <pElem>../../../../include/x86_64-linux-gnu/ImageMagick-6</pElem>
-            <pElem>../../../../include/ImageMagick-6</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>DARWIN</Elem>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>HAVE_IMAGEMAGICK</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>MAGICKCORE_HDRI_ENABLE=0</Elem>
-            <Elem>MAGICKCORE_QUANTUM_DEPTH=16</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </folder>
-      <folder path="0/src/h265">
         <ccTool>
           <incDir>
             <pElem>../../../include</pElem>
@@ -4661,18 +4592,6 @@
         </ccTool>
       </item>
       <item path="src/h264/h264encoder.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="1">
-        </ccTool>
-      </item>
-      <item path="src/h265/h265.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="1">
-        </ccTool>
-      </item>
-      <item path="src/h265/H265Depacketizer.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="1">
-        </ccTool>
-      </item>
-      <item path="src/h265/HEVCDescriptor.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
         </ccTool>
       </item>
@@ -8964,33 +8883,6 @@
           </preprocessorList>
         </ccTool>
       </folder>
-      <folder path="0/src/h265">
-        <ccTool>
-          <incDir>
-            <pElem>src</pElem>
-            <pElem>include</pElem>
-            <pElem>ext</pElem>
-            <pElem>ext/libdatachannels/src</pElem>
-            <pElem>ext/libdatachannels/src/internal</pElem>
-            <pElem>ext/crc32c/include</pElem>
-            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>DARWIN</Elem>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </folder>
       <folder path="0/src/nelly">
         <ccTool>
           <incDir>
@@ -10257,18 +10149,6 @@
         </ccTool>
       </item>
       <item path="src/h264/h264encoder.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="0">
-        </ccTool>
-      </item>
-      <item path="src/h265/h265.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="0">
-        </ccTool>
-      </item>
-      <item path="src/h265/H265Depacketizer.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="0">
-        </ccTool>
-      </item>
-      <item path="src/h265/HEVCDescriptor.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="0">
         </ccTool>
       </item>
@@ -12992,29 +12872,6 @@
           </preprocessorList>
         </ccTool>
       </folder>
-      <folder path="0/src/h265">
-        <ccTool>
-          <incDir>
-            <pElem>ext/libdatachannels/src/internal</pElem>
-            <pElem>ext/crc32c/include</pElem>
-            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>DARWIN</Elem>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </folder>
       <folder path="0/src/nelly">
         <ccTool>
           <incDir>
@@ -14169,18 +14026,6 @@
         </ccTool>
       </item>
       <item path="src/h264/h264encoder.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="1">
-        </ccTool>
-      </item>
-      <item path="src/h265/h265.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="1">
-        </ccTool>
-      </item>
-      <item path="src/h265/H265Depacketizer.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="1">
-        </ccTool>
-      </item>
-      <item path="src/h265/HEVCDescriptor.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
         </ccTool>
       </item>
@@ -16407,39 +16252,6 @@
             <Elem>FLOATING_POINT</Elem>
             <Elem>LOG_</Elem>
             <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </folder>
-      <folder path="0/src/h265">
-        <ccTool>
-          <incDir>
-            <pElem>ext/libdatachannels/src/internal</pElem>
-            <pElem>ext/crc32c/include</pElem>
-            <pElem>ext/crc32c/config/Linux-x86_64</pElem>
-            <pElem></pElem>
-          </incDir>
-          <preprocessorList>
-            <Elem>DARWIN</Elem>
-            <Elem>FLOATING_POINT</Elem>
-            <Elem>LOG_</Elem>
-            <Elem>OUTSIDE_SPEEX</Elem>
-            <Elem>PIC</Elem>
-            <Elem>RANDOM_PREFIX=mcu</Elem>
-            <Elem>SPX_RESAMPLE_EXPORT=</Elem>
-            <Elem>VADWEBRTC</Elem>
-            <Elem>_UNIX</Elem>
-            <Elem>__SSE2__</Elem>
-            <Elem>__STDC_CONSTANT_MACROS</Elem>
-          </preprocessorList>
-        </ccTool>
-      </folder>
       <folder path="0/src/nelly">
         <ccTool>
           <incDir>
@@ -17594,18 +17406,6 @@
         </ccTool>
       </item>
       <item path="src/h264/h264encoder.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="1">
-        </ccTool>
-      </item>
-      <item path="src/h265/h265.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="1">
-        </ccTool>
-      </item>
-      <item path="src/h265/H265Depacketizer.cpp" ex="false" tool="1" flavor2="11">
-        <ccTool flags="1">
-        </ccTool>
-      </item>
-      <item path="src/h265/HEVCDescriptor.cpp" ex="false" tool="1" flavor2="11">
         <ccTool flags="1">
         </ccTool>
       </item>

@@ -46,8 +46,7 @@ bool HEVCDescriptor::Parse(const BYTE* buffer,DWORD bufferLen)
 	interopConstraints				= buffer[pos] + ((WORD)(buffer[pos + 1]) << 8);
 	pos += 2;
 	levelIndication   				= buffer[pos++];
-	//NALUnitLength = buffer[4] & 0x03;
-	NALUnitLength   				= buffer[pos++] & 0x03;	
+	NALUnitLength   				= buffer[pos++] & 0x03;	// last 2 bits
 
 	Debug("ttxgz: NALUnitLength: 0x%02x, buffer[pos-1]: 0x%02x\n", NALUnitLength, buffer[pos - 1]);
 
@@ -327,9 +326,7 @@ DWORD HEVCDescriptor::Serialize(BYTE* buffer,DWORD bufferLength) const
 	buffer[pos++] = interopConstraints & 0xff;
 	buffer[pos++] = (interopConstraints & 0xff00) >> 8;
 	buffer[pos++] = levelIndication;
-	buffer[pos++] = NALUnitLength | 0xFC;
-
-	Debug("ttxgz: NALUnitLength: 0x%02x, pos:%d, buffer[pos-1]: 0x%02x\n", NALUnitLength, pos, buffer[pos - 1]);
+	buffer[pos++] = NALUnitLength | 0xFC; // last 2 bits
 
 	if (pos != MediaParameterSize)
 	{

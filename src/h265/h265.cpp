@@ -113,7 +113,7 @@ bool H265ProfileTierLevel::Decode(BitReader& r, bool profilePresentFlag, BYTE ma
 {
 	if (profilePresentFlag)
 	{
-		if(!generalProfileTierLevel.Decode(r) ||
+		if(!general_profile_tier_level.Decode(r) ||
 			r.Left() < 8 + (8*2	* (maxNumSubLayersMinus1 > 0)))
 		{
 			Error("-H265: PTL information too short\n");
@@ -121,8 +121,8 @@ bool H265ProfileTierLevel::Decode(BitReader& r, bool profilePresentFlag, BYTE ma
 		}
 	}
 
-	CHECK(r); generalProfileTierLevel.SetLevelIdc(r.Get(8));
-	Debug("-H265: [general_profile_level_idc: %d, level: %.02f]\n", generalProfileTierLevel.GetLevelIdc(), static_cast<float>(generalProfileTierLevel.GetLevelIdc()) / 30);
+	CHECK(r); general_profile_tier_level.SetLevelIdc(r.Get(8));
+	Debug("-H265: [general_profile_level_idc: %d, level: %.02f]\n", general_profile_tier_level.GetLevelIdc(), static_cast<float>(general_profile_tier_level.GetLevelIdc()) / 30);
 
 	for (int i = 0; i	< maxNumSubLayersMinus1; i++) {
 		CHECK(r); sub_layer_profile_present_flag[i] = r.Get(1);
@@ -136,7 +136,7 @@ bool H265ProfileTierLevel::Decode(BitReader& r, bool profilePresentFlag, BYTE ma
 	{
 		if (sub_layer_profile_present_flag[i])
 		{ 
-			if(!subLayerProfileTierLevel[i].Decode(r))
+			if(!sub_layer_profile_tier_level[i].Decode(r))
 			  {
 			  	Error("PTL information for sublayer %i too short\n",	i);
 			  	return false;
@@ -151,8 +151,8 @@ bool H265ProfileTierLevel::Decode(BitReader& r, bool profilePresentFlag, BYTE ma
 			}
 			else
 			{
-				CHECK(r); subLayerProfileTierLevel[i].SetLevelIdc(r.Get(8));
-				Debug("-H265: [sub_layer[%d].level_idc: %d, level: %.02f]\n", i, subLayerProfileTierLevel[i].GetLevelIdc(), static_cast<float>(subLayerProfileTierLevel[i].GetLevelIdc()) / 30);
+				CHECK(r); sub_layer_profile_tier_level[i].SetLevelIdc(r.Get(8));
+				Debug("-H265: [sub_layer[%d].level_idc: %d, level: %.02f]\n", i, sub_layer_profile_tier_level[i].GetLevelIdc(), static_cast<float>(sub_layer_profile_tier_level[i].GetLevelIdc()) / 30);
 			}
 		}
 	}
@@ -192,7 +192,7 @@ bool H265VideoParameterSet::Decode(const BYTE* buffer,DWORD bufferSize)
 		return false;
     }
 
-    if (!profileTierLevel.Decode(r, true, vps_max_sub_layers_minus1))
+    if (!profile_tier_level.Decode(r, true, vps_max_sub_layers_minus1))
 	{
 		return false;
 	}
@@ -228,7 +228,7 @@ bool H265SeqParameterSet::Decode(const BYTE* buffer,DWORD bufferSize, BYTE nuh_l
 	if (!MultiLayerExtSpsFlag)
 	{
 		CHECK(r); temporal_id_nesting_flag = r.Get(1);
-		if (!profileTierLevel.Decode(r, true,	max_sub_layers_minus1))
+		if (!profile_tier_level.Decode(r, true,	max_sub_layers_minus1))
 			return false;
 	}
 	// sps id
