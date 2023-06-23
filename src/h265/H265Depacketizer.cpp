@@ -12,6 +12,8 @@
 #include "rtp.h"
 #include "log.h"
 
+#define use_new_code 0
+
 H265Depacketizer::H265Depacketizer(bool annexB_in) :
 	RTPDepacketizer(MediaFrame::Video, VideoCodec::H265),
 	frame(VideoCodec::H265, 0),
@@ -102,8 +104,6 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 	BYTE nalUnitType = (payload[0] & 0x7e) >> 1;
 	BYTE nuh_layer_id = ((payload[0] & 0x1) << 5) + ((payload[1] & 0xf8) >> 3);
 	BYTE nuh_temporal_id_plus1 = payload[1] & 0x7;
-	// Suppress compilation warning. It's not used at the moment
-	(void) nuh_temporal_id_plus1;
 
 	//Get nal data
 	const BYTE* nalData = payload + HEVCParams::RTP_NAL_HEADER_SIZE;
@@ -397,9 +397,85 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 			//Add RTP packet
 			if (nalSize >= RTPPAYLOADSIZE)
 			{
-				Error("-H265: nalSize(%d) is larger than RTPPAYLOADSIZE (%d)!\n", nalSize, RTPPAYLOADSIZE);
+				// use FU:
+				//  0                   1                   2                   3
+   				//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+   				// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   				// |    PayloadHdr (Type=49)       |   FU header   | DONL (cond)   |
+   				// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-|
+   				// | DONL (cond)   |                                               |
+   				// |-+-+-+-+-+-+-+-+                                               |
+   				// |                         FU payload                            |
+   				// |                                                               |
+   				// |                               +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   				// |                               :...OPTIONAL RTP padding        |
+   				// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				// FU header:
+				// +---------------+
+   				// |0|1|2|3|4|5|6|7|
+   				// +-+-+-+-+-+-+-+-+
+   				// |S|E|  FuType   |
+   				// +---------------+
+				Warning("-H265: nalSize(%d) is larger than RTPPAYLOADSIZE (%d)!\n", nalSize, RTPPAYLOADSIZE);
+				Debug("-H265: nalSize(%d) is larger than RTPPAYLOADSIZE (%d)!\n", nalSize, RTPPAYLOADSIZE);
+				#if use_new_code 
+				//nalHeader = {PayloadHdr, FU header}, we don't suppport DONL yet
+				const uint16_t nalHeaderFU = (HEVC_RTP_NALU_Type::UNSPEC49_FU << 1)
+											| ((uint16_t)(nuh_layer_id) << 7)
+											| ((uint16_t)(nuh_temporal_id_plus1) << 13); 
+				uint8_t S = 1, E = 0;
+				auto ConstructFUHeader = [&]() {return (uint8_t)(S | (E << 1) | (nalUnitType << 2));};
+				std::array<uint8_t, 3> nalHeader = {(uint8_t)(nalHeaderFU & 0xff), (uint8_t)((nalHeaderFU & 0xff00) >> 8), ConstructFUHeader()};
+				{
+					std::array<uint8_t, 3> test_nalHeader = { 0, 1, 2 };
+					if (test_nalHeader[2] != 2)
+					{
+						Error("ttxgz: ERROR! line %d\n", __LINE__);
+					}
+					uint8_t test_p[3] = {0,1,2};
+					if (* (test_p + 2) != 2)
+					{
+						Error("ttxgz: ERROR! line %d\n", __LINE__);
+					}
+				}
+
+				//Pending uint8_ts
+				uint32_t pending = nalSize;
+				//Skip payload nal header
+				pending -= HEVCParams::RTP_NAL_HEADER_SIZE;
+				pos += HEVCParams::RTP_NAL_HEADER_SIZE;
+
+    			//Split it
+    			while (pending)
+    			{
+    			    int len = std::min<uint32_t>(RTPPAYLOADSIZE - nalHeader.size(), pending);
+    			    //Read it
+    			    pending -= len;
+    			    //If all added
+    			    if (!pending) //Set end mark
+					{ 
+						E = 1;
+					}
+					nalHeader[2] = ConstructFUHeader();
+    			    //Add packetization
+    			    frame.AddRtpPacket(pos, len, nalHeader.data(), nalHeader.size());
+					if (S == 1) // set start mark to 0 after first FU packet
+					{
+						S = 0;
+					}
+    			    //Move start
+    			    pos += len;
+    			}
+				#endif
 			}
-			frame.AddRtpPacket(pos, nalSize, nullptr, 0);
+			#if use_new_code
+			else
+			{
+				frame.AddRtpPacket(pos, nalSize, nullptr, 0);
+			}
+			#else
+				frame.AddRtpPacket(pos, nalSize, nullptr, 0);
+			#endif
 			//Done
 			break;
 	}
