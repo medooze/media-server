@@ -54,7 +54,7 @@ H264OBJ=h264encoder.o h264decoder.o
 DEPACKETIZERSOBJ+= h264depacketizer.o H264LayerSelector.o
 
 H265DIR=h265
-DEPACKETIZERSOBJ+= H265Depacketizer.o
+DEPACKETIZERSOBJ+= H265Depacketizer.o HEVCDescriptor.o h265.o
 
 VP8DIR=vp8
 VP8OBJ=vp8encoder.o vp8decoder.o
