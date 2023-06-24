@@ -12,7 +12,6 @@
 #include "rtp.h"
 #include "log.h"
 
-#define use_new_code 0
 
 H265Depacketizer::H265Depacketizer(bool annexB_in) :
 	RTPDepacketizer(MediaFrame::Video, VideoCodec::H265),
@@ -417,8 +416,6 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
    				// |S|E|  FuType   |
    				// +---------------+
 				Warning("-H265: nalSize(%d) is larger than RTPPAYLOADSIZE (%d)!\n", nalSize, RTPPAYLOADSIZE);
-				Debug("-H265: nalSize(%d) is larger than RTPPAYLOADSIZE (%d)!\n", nalSize, RTPPAYLOADSIZE);
-				#if use_new_code 
 				//nalHeader = {PayloadHdr, FU header}, we don't suppport DONL yet
 				const uint16_t nalHeaderFU = (HEVC_RTP_NALU_Type::UNSPEC49_FU << 1)
 											| ((uint16_t)(nuh_layer_id) << 7)
@@ -466,16 +463,11 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
     			    //Move start
     			    pos += len;
     			}
-				#endif
 			}
-			#if use_new_code
 			else
 			{
 				frame.AddRtpPacket(pos, nalSize, nullptr, 0);
 			}
-			#else
-				frame.AddRtpPacket(pos, nalSize, nullptr, 0);
-			#endif
 			//Done
 			break;
 	}
