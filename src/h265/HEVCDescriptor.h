@@ -19,9 +19,9 @@ public:
 	~HEVCDescriptor();
 
 	void AddVideoParameterSet(const BYTE *data,DWORD size);
-	void AddSequenceParameterSet(const BYTE *data,DWORD size, BYTE nuh_layer_id);
+	void AddSequenceParameterSet(const BYTE *data,DWORD size);
 	void AddPictureParameterSet(const BYTE *data,DWORD size);
-	void AddParametersFromFrame(const BYTE *data,DWORD size, BYTE nuh_layer_id);
+	void AddParametersFromFrame(const BYTE *data,DWORD size);
 
 	void ClearVideoParameterSets();
 	void ClearSequenceParameterSets();
@@ -43,81 +43,99 @@ public:
 	DWORD GetPictureParameterSetSize(BYTE i)	const { return ppsSizes[i];	}
 	
 	BYTE GetConfigurationVersion()		const { return configurationVersion;		}
-	BYTE GetNALUnitLength()			const { return NALUnitLength;			}
+	BYTE GetNALUnitLengthSizeMinus1()	const { return NALUnitLengthSizeMinus1;		}
 	DWORD GetSize()		const { return MediaParameterSize
- 								//VPS count(1B) + length(2B) per VPS + total data
-								+ 1 + 2*numOfVideoParameterSets + vpsTotalSizes
-								//SPS count(1B) + nul_layer_id(1B) per SPS + length(2B) per SPS + total data 
-								+ 1 + (2+1)*numOfSequenceParameterSets + spsTotalSizes
-								 //PPS count(1B) + length(2B) per PPS + total data
-								+ 1 + 2*numOfPictureParameterSets + ppsTotalSizes;}
+								+ 
+ 								//VPS type(1B) + count(2B) + length(2B) per VPS + total data
+								+ 1 + 2 + 2*numOfVideoParameterSets + vpsTotalSizes
+								//SPS type(1B) + count(2B) +  length(2B) per SPS + total data 
+								+ 1 + 2 + 2*numOfSequenceParameterSets + spsTotalSizes
+								 //PPS type(1B) + count(2B) + length(2B) per PPS + total data
+								+ 1 + 2 + 2*numOfPictureParameterSets + ppsTotalSizes;}
 	void SetConfigurationVersion(BYTE in)		{ configurationVersion = in; }
-	void SetProfileSpace(BYTE in)	{ profileSpace = in; }
-	void SetProfileIdc(BYTE in)	{ profileCompatibilityIndication = in; }
-	void SetTierFlag(bool in)	{ tierFlag = static_cast<uint8_t> (in); }
-	void SetLevelIdc(BYTE in)	{ levelIndication = in; }
-	void SetProfileCompatibilityFlags(const H265ProfileCompatibilityFlags& profile_compatibility_flag)
+
+	//profileIndication = (generalProfileSpace << 6) | (generalTierFlag << 5) | (generalProfileIdc & 0x1f);
+	void SetGeneralProfileSpace(BYTE in)	{ generalProfileSpace = in; profileIndication &= 0b0011'1111; profileIndication |= (generalProfileSpace << 6); }
+	void SetGeneralProfileIdc(BYTE in)	{ generalProfileIdc = in; profileIndication &= 0b1110'0000; profileIndication |= (generalProfileIdc & 0b1'1111); }
+	void SetGeneralTierFlag(bool in)	{ generalTierFlag = static_cast<uint8_t> (in); profileIndication &= 0b1101'1111; profileIndication |= (generalTierFlag << 5); }
+
+	void SetGeneralLevelIdc(BYTE in)	{ generalLevelIdc = in; }
+	void SetGeneralProfileCompatibilityFlags(const H265ProfileCompatibilityFlags& profile_compatibility_flag)
 		{
-			profileCompatibilityIndication = 0; 
-			static_assert(profile_compatibility_flag.size() <= sizeof(profileCompatibilityIndication) * 8);
+			generalProfileCompatibilityFlags = 0;
+			static_assert(profile_compatibility_flag.size() == sizeof(generalProfileCompatibilityFlags) * 8);
 			for (size_t i = 0; i < profile_compatibility_flag.size(); i++)
 			{
-				profileCompatibilityIndication += (profile_compatibility_flag[0] << i);
+				generalProfileCompatibilityFlags |= (profile_compatibility_flag[i] << i);
 			}
 		}
-	void SetInteropConstrains(bool progressive_source_flag, bool interlaced_source_flag, bool non_packed_constraint_flag, bool frame_only_constraint_flag)
+	void SetGeneralConstraintIndicatorFlags(QWORD in)
 		{
-			interopConstraints = 0;
-			interopConstraints = progressive_source_flag
-							 + (interlaced_source_flag << 1)
-							 + (non_packed_constraint_flag << 2)
-							 + (frame_only_constraint_flag << 3);
+			static_assert(constraintIndicatorFlagsSize <= sizeof(in) * 8);
+			for (size_t i = 0; i < generalConstraintIndicatorFlags.size(); ++i)
+			{
+				const BYTE bits_offset = i * 8;
+				generalConstraintIndicatorFlags[i] = (in & (0xff << bits_offset)) >> bits_offset; 
+			}
 		}
-	void SetNALUnitLength(BYTE in)			{ NALUnitLength = in; }
+	void SetNALUnitLengthSizeMinus1(BYTE in)			{ NALUnitLengthSizeMinus1 = in; }
 
 private:
 	/* 7.1.  Media Type Registration in RFC 7798*/
-	/* currently only supports highest RTP stream (RFC 7798 3.1.2: a Single RTP stream on a Single media
-   Transport (SRST) ),
-   		which means the following profiel_tier_level info are from general layer, not from sublayer */
+	/* also refers to HEVCDecoderConfigurationRecord in shaka-packager */
 	BYTE configurationVersion = 0;
-	BYTE profileSpace = 0; // [0, 3]
-	BYTE tierFlag; // [0,1]
-	BYTE profileIndication = 1; // [0, 31], 1(Main) if not present
-	DWORD profileCompatibilityIndication = 0; // 32 bits flags
-	// interop-constraings: six bytes of data, with 44bits reserved zero,
-	// + [frame_only_constraint_flag(1), non_packed_constraint_flag(1), interlaced_source_flag(0), progressive_source_flag(1)]
-	static const DWORD interopConstraintsReservedZero32Bits = 0; // not serialized, just for usage in case
-	WORD interopConstraints = 1 + (1<<2) + (1<<3);
-	BYTE levelIndication; // [0,255]
-	BYTE NALUnitLength;
+	BYTE generalProfileSpace = 0; // serialized in profileIndication 
+	BYTE generalTierFlag = 0; // serialized in profileIndication 
+	BYTE generalProfileIdc = 0; // serialized in profileIndication 
+	BYTE profileIndication = 0; // (generalProfileSpace << 6) | (generalTierFlag << 5) | (generalProfileIdc & 0x1f);
+	DWORD generalProfileCompatibilityFlags = 0;
+	static const BYTE constraintIndicatorFlagsSize = 6;
+	std::array<BYTE, constraintIndicatorFlagsSize> generalConstraintIndicatorFlags = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};;
+	BYTE generalLevelIdc = 0;
+	static constexpr std::array<BYTE, 8> paddingBytes = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+	// bit(4) reserved = ‘1111’b;
+	// unsigned int(12) min_spatial_segmentation_idc;
+	// bit(6) reserved = ‘111111’b;
+	// unsigned int(2) parallelismType;
+	// bit(6) reserved = ‘111111’b;
+	// unsigned int(2) chroma_format_idc;
+	// bit(5) reserved = ‘11111’b;
+	// unsigned int(3) bit_depth_luma_minus8;
+	// bit(5) reserved = ‘11111’b;
+	// unsigned int(3) bit_depth_chroma_minus8;
+	// bit(16) avgFrameRate;
+	// bit(2) constantFrameRate;
+	// bit(3) numTemporalLayers;
+	// bit(1) temporalIdNested;
+	// unsigned int(2) lengthSizeMinusOne;
+	BYTE NALUnitLengthSizeMinus1 = 0;
+	const static BYTE numOfArrays = 3; // let's seperate it for VPS, PPS, SPS right now
 
 	// VPS
-    BYTE numOfVideoParameterSets = 0; // MAX_VPS_COUNT: 16 bcoz 7.4.2.1: vps_video_parameter_set_id is u(4)
+    WORD numOfVideoParameterSets = 0; // MAX_VPS_COUNT: 16 bcoz 7.4.2.1: vps_video_parameter_set_id is u(4), but need to be 2bytes to fit the record descriptor
 	std::vector<WORD> vpsSizes;
 	std::vector<BYTE*> vpsData;
 	DWORD vpsTotalSizes = 0;
 	// SPS
-    BYTE numOfSequenceParameterSets = 0; // MAX_SPS_COUNT: 16 bcoz 7.4.3.2.1: sps_seq_parameter_set_id is in [0, 15]
-	std::vector<BYTE> sps_nul_layer_ids; // needed to Decode SPS
+    WORD numOfSequenceParameterSets = 0; // MAX_SPS_COUNT: 16 bcoz 7.4.3.2.1: sps_seq_parameter_set_id is in [0, 15], but need to be 2bytes to fit the record descriptor
 	std::vector<WORD> spsSizes;
 	std::vector<BYTE*> spsData;
 	DWORD spsTotalSizes = 0;
 	// PPS
-   	BYTE numOfPictureParameterSets = 0; // MAX_PPS_COUNT: 64 bcoz // 7.4.3.3.1: pps_pic_parameter_set_id is in [0, 63]
+   	WORD numOfPictureParameterSets = 0; // MAX_PPS_COUNT: 64 bcoz // 7.4.3.3.1: pps_pic_parameter_set_id is in [0, 63], but need to be 2bytes to fit the record descriptor
 	std::vector<WORD> ppsSizes;
 	std::vector<BYTE*> ppsData;
 	DWORD ppsTotalSizes = 0;
 public: 
 	// serializable header size (in Byte) except VPS/PPS/SPS
 	static const BYTE MediaParameterSize = sizeof(configurationVersion)
-										+ sizeof(profileSpace)
-										+ sizeof(tierFlag)
 										+ sizeof(profileIndication)
-										+ sizeof(profileCompatibilityIndication)
-										+ sizeof(interopConstraints)
-										+ sizeof(levelIndication)
-										+ sizeof(NALUnitLength);
+										+ sizeof(generalProfileCompatibilityFlags)
+										+ constraintIndicatorFlagsSize
+										+ sizeof(generalLevelIdc)
+										+ paddingBytes.size() 
+										+ sizeof(NALUnitLengthSizeMinus1)
+										+ sizeof(numOfArrays);
 };
 
 #endif	/* HEVCDESCRIPTOR_H */

@@ -82,13 +82,13 @@ MediaFrame* H265Depacketizer::AddPacket(const RTPPacket::shared& packet)
 
 MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 {
-	BYTE preffix[4];
+	BYTE nalHeaderPreffix[4]; // set as AnenexB or not
 	//BYTE S, E;
 	DWORD pos;
 	//Check length
 	if (payloadLen<HEVCParams::RTP_NAL_HEADER_SIZE)
 		//Exit
-		return NULL;
+		return nullptr;
 
 	/* 
      *   +-------------+-----------------+
@@ -103,6 +103,12 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 	BYTE nalUnitType = (payload[0] & 0x7e) >> 1;
 	BYTE nuh_layer_id = ((payload[0] & 0x1) << 5) + ((payload[1] & 0xf8) >> 3);
 	BYTE nuh_temporal_id_plus1 = payload[1] & 0x7;
+
+	if (nuh_layer_id != 0)
+	{
+		Error("-H265: nuh_layer_id(%d) is not 0, which we don't support yet!\n", nuh_layer_id);
+		return nullptr;
+	}
 
 	//Get nal data
 	const BYTE* nalData = payload + HEVCParams::RTP_NAL_HEADER_SIZE;
@@ -153,7 +159,7 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 			   Units without the DONL and DOND Fields
 
 			*/
-			Debug("-H265 TODO: non implemented yet, need update to rfc7798, return nullptr \n", payload[0], nalUnitType, nalSize);
+			Error("-H265 TODO: non implemented yet, need update to rfc7798, return nullptr \n", payload[0], nalUnitType, nalSize);
 			return nullptr;
 
 			///* Skip SPayloadHdr */
@@ -224,7 +230,7 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 					                Figure 9: The Structure of an FU
 
 			*/
-			Debug("-H265 TODO: non implemented yet, need update to rfc7798, return nullptr \n", payload[0], nalUnitType, nalSize);
+			Error("-H265 TODO: non implemented yet, need update to rfc7798, return nullptr \n", payload[0], nalUnitType, nalSize);
 			return nullptr;
 
 			////Check length
@@ -337,15 +343,13 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 						{
 							auto& profileTierLevel = vps.GetProfileTierLevel();
 							config.SetConfigurationVersion(profileTierLevel.GetGeneralProfileSpace());
-							config.SetProfileSpace(profileTierLevel.GetGeneralProfileSpace());
-							config.SetProfileIdc(profileTierLevel.GetGeneralProfileIdc());
-							config.SetTierFlag(profileTierLevel.GetGeneralTierFlag());
-							config.SetLevelIdc(profileTierLevel.GetGeneralLevelIdc());
-							config.SetProfileCompatibilityFlags(profileTierLevel.GetGeneralProfileCompatibilityFlags());
-							config.SetInteropConstrains(profileTierLevel.GetGeneralProgressiveSourceFlag()
-														, profileTierLevel.GetGeneralInterlacedSourceFlag()
-														, profileTierLevel.GetGeneralNonPackedConstraintFlag()
-														, profileTierLevel.GetGeneralFrameOnlyConstraintFlag() );
+							config.SetGeneralProfileSpace(profileTierLevel.GetGeneralProfileSpace());
+							config.SetGeneralTierFlag(profileTierLevel.GetGeneralTierFlag());
+							config.SetGeneralProfileIdc(profileTierLevel.GetGeneralProfileIdc());
+							config.SetGeneralProfileCompatibilityFlags(profileTierLevel.GetGeneralProfileCompatibilityFlags());
+							config.SetGeneralConstraintIndicatorFlags(profileTierLevel.GetGeneralConstraintIndicatorFlags());
+							config.SetGeneralLevelIdc(profileTierLevel.GetGeneralLevelIdc());
+							config.SetNALUnitLengthSizeMinus1(sizeof(nalHeaderPreffix) - 1);
 						}
 						//Add full nal to config
 						config.AddVideoParameterSet(payload,nalSize);
@@ -360,7 +364,7 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 				{
 					//Parse sps
 					H265SeqParameterSet sps;
-					if (sps.Decode(nalData,nalSize-1,nuh_layer_id))
+					if (sps.Decode(nalData,nalSize-1))
 					{
 						//Set dimensions
 						frame.SetWidth(sps.GetWidth());
@@ -369,7 +373,7 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 						//UltraDebug("-H265 frame (with cropping) size [width: %d, frame height: %d]\n", sps.GetWidth(), sps.GetHeight());
 
 						//Add full nal to config
-						config.AddSequenceParameterSet(payload,nalSize, nuh_layer_id);
+						config.AddSequenceParameterSet(payload,nalSize);
 					}
 					else
 					{
@@ -385,12 +389,12 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 			 //Check if doing annex b
 			if (annexB)
 				//Set annex b start code
-				set4(preffix, 0, HEVCParams::ANNEX_B_START_CODE);
+				set4(nalHeaderPreffix, 0, HEVCParams::ANNEX_B_START_CODE);
 			else
 				//Set size
-				set4(preffix, 0, nalSize);
+				set4(nalHeaderPreffix, 0, nalSize);
 			//Append data
-			frame.AppendMedia(preffix, sizeof(preffix));
+			frame.AppendMedia(nalHeaderPreffix, sizeof(nalHeaderPreffix));
 			//Append data and get current post
 			pos = frame.AppendMedia(payload, nalSize);
 			//Add RTP packet
@@ -415,7 +419,7 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
    				// +-+-+-+-+-+-+-+-+
    				// |S|E|  FuType   |
    				// +---------------+
-				Warning("-H265: nalSize(%d) is larger than RTPPAYLOADSIZE (%d)!\n", nalSize, RTPPAYLOADSIZE);
+				Debug("-H265: nalSize(%d) is larger than RTPPAYLOADSIZE (%d)!\n", nalSize, RTPPAYLOADSIZE);
 				//nalHeader = {PayloadHdr, FU header}, we don't suppport DONL yet
 				const uint16_t nalHeaderFU = (HEVC_RTP_NALU_Type::UNSPEC49_FU << 1)
 											| ((uint16_t)(nuh_layer_id) << 7)

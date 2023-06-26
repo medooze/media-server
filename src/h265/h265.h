@@ -216,10 +216,7 @@ public:
 	bool GetTierFlag() const { return tier_flag; }
 	BYTE GetLevelIdc() const { return level_idc; }
 	const H265ProfileCompatibilityFlags& GetProfileCompatibilityFlags() const { return profile_compatibility_flag; }
-	bool GetProgressiveSourceFlag() const { return progressive_source_flag; }
-	bool GetInterlacedSourceFlag() const { return interlaced_source_flag; }
-	bool GetNonPackedConstraintFlag() const { return non_packed_constraint_flag; }
-	bool GetFrameOnlyConstraintFlag() const { return frame_only_constraint_flag; }
+	QWORD GetConstraintIndacatorFlags() const {return constraing_indicator_flags; }
 	// setter
 	void SetLevelIdc(BYTE in) { level_idc = in; }
 
@@ -243,6 +240,7 @@ public:
 		Debug("\t %s.lower_bit_rate_constraint_flag		 = %d\n", name.c_str(), lower_bit_rate_constraint_flag		);
 		Debug("\t %s.max_14bit_constraint_flag			 = %d\n", name.c_str(), max_14bit_constraint_flag			);
 		Debug("\t %s.inbld_flag							 = %d\n", name.c_str(), inbld_flag							);
+		Debug("\t %s.constraint_indicator_flags          = 0x%x\n", name.c_str(), constraing_indicator_flags);
 		Debug("\t %s.level_idc 							 = %d\n", name.c_str(), level_idc);
 	}
 
@@ -252,6 +250,7 @@ private:
 	bool tier_flag = 0;
 	BYTE profile_idc = HEVCParams::PROFILE_MAIN; // 1
 	H265ProfileCompatibilityFlags profile_compatibility_flag; // [PROFILE_MAIN/1]: true, others are false
+	QWORD constraing_indicator_flags = 0; // 6B, 48 bits
 	bool progressive_source_flag	= true  ;
 	bool interlaced_source_flag		= false ;
 	bool non_packed_constraint_flag	= true  ;
@@ -282,10 +281,7 @@ public:
 	bool GetGeneralTierFlag() const { return general_profile_tier_level.GetTierFlag(); }
 	BYTE GetGeneralLevelIdc() const { return general_profile_tier_level.GetLevelIdc(); }
 	const H265ProfileCompatibilityFlags& GetGeneralProfileCompatibilityFlags() const { return general_profile_tier_level.GetProfileCompatibilityFlags(); }
-	bool GetGeneralProgressiveSourceFlag() const { return general_profile_tier_level.GetProgressiveSourceFlag(); }
-	bool GetGeneralInterlacedSourceFlag() const { return general_profile_tier_level.GetInterlacedSourceFlag(); }
-	bool GetGeneralNonPackedConstraintFlag() const { return general_profile_tier_level.GetNonPackedConstraintFlag(); }
-	bool GetGeneralFrameOnlyConstraintFlag() const { return general_profile_tier_level.GetFrameOnlyConstraintFlag(); }
+	bool GetGeneralConstraintIndicatorFlags() const { return general_profile_tier_level.GetConstraintIndacatorFlags(); }
 
 	void Dump() const
 	{
@@ -345,7 +341,7 @@ private:
 class H265SeqParameterSet
 {
 public:
-	bool Decode(const BYTE*	buffer, DWORD buffersize, BYTE nuh_layer_id);
+	bool Decode(const BYTE*	buffer, DWORD buffersize);
 
 	DWORD GetWidth()	{ return pic_width_in_luma_samples - pic_conf_win.left_offset -	pic_conf_win.right_offset; }
 	DWORD GetHeight()	{ return pic_height_in_luma_samples	- pic_conf_win.top_offset -	pic_conf_win.bottom_offset;	}

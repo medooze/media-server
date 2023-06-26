@@ -32,22 +32,41 @@ bool HEVCDescriptor::Parse(const BYTE* buffer,DWORD bufferLen)
 
 	//Get data
 	configurationVersion 			= buffer[pos++];
-	profileSpace  					= buffer[pos++];
-	tierFlag   						= buffer[pos++];
-	profileIndication 				= buffer[pos++];
-	//DWORD profileCompatibilityIndication
-	profileCompatibilityIndication = 0;
-	for (size_t i = 0; i < sizeof(profileCompatibilityIndication); ++i)
-	{
-		const BYTE bitOffset = i*8;
-		profileCompatibilityIndication += ((DWORD)(buffer[pos++]) << bitOffset);
-	}
-	//WORD interopConstraints
-	interopConstraints				= buffer[pos] + ((WORD)(buffer[pos + 1]) << 8);
-	pos += 2;
-	levelIndication   				= buffer[pos++];
-	NALUnitLength   				= buffer[pos++] & 0x03;	// last 2 bits
 
+	profileIndication 				= buffer[pos++];
+	generalProfileSpace = profileIndication >> 6;
+	if (generalProfileSpace > 3)
+	{
+		Error("-H265: general_profile_space (%d) is too large!\n", generalProfileSpace);
+		return false;
+	}
+	generalTierFlag = (profileIndication >> 5) & 0x1;
+	generalProfileIdc = profileIndication & 0x1F;
+
+	//DWORD generalProfileCompatibilityFlags
+	generalProfileCompatibilityFlags = 0;
+	//for (size_t i = 0; i < sizeof(profileCompatibilityIndication); ++i)
+	//{
+	//	const BYTE bitOffset = i*8;
+	//	profileCompatibilityIndication += ((DWORD)(buffer[pos++]) << bitOffset);
+	//}
+	generalProfileCompatibilityFlags = get4(buffer, pos);
+	pos += 4;
+	for (size_t i = 0; i < generalConstraintIndicatorFlags.size(); ++i)
+	{
+		generalConstraintIndicatorFlags[i] = buffer[pos++];
+	}
+	generalLevelIdc = buffer[pos++];
+	// skip uninterested fields
+	pos += paddingBytes.size();
+	NALUnitLengthSizeMinus1 = buffer[pos++] & 0x3;
+	if (NALUnitLengthSizeMinus1 == 2)
+	{
+		Error("-H265: Invalid NALU length size\n");
+		return false;
+	}
+	// numOfArray
+	pos++;
 	if (pos != MediaParameterSize)
 	{
 		Error(" -H265: HEVCDescriptoer parsing error! pos: %d, MediaParmeterSize: %d\n", pos, MediaParameterSize);
@@ -60,13 +79,19 @@ bool HEVCDescriptor::Parse(const BYTE* buffer,DWORD bufferLen)
 	ClearPictureParameterSets();
 
 	// VPS
-	if( pos + 1 > bufferLen )//Check size
+	if( pos + 3 > bufferLen )//Check size
 	{
 		Error("-H265: Failed to parse VPS count from descriptor! pos: %d, bufferLen: %d\n", pos, bufferLen);
 		return false;
 	}
-	BYTE num = buffer[pos++];
-	for (BYTE i=0;i<num;i++)
+	if (buffer[pos++] != HEVC_RTP_NALU_Type::VPS)
+	{
+		Error("-H265: Failed to parse VPS nal unit type. pos: %d, bufferLen: %d\n", pos, bufferLen);
+		return false;
+	}
+	numOfVideoParameterSets = ((WORD)(buffer[pos]) << 8) | buffer[pos+1];
+	pos += 2;
+	for (WORD i=0;i<numOfVideoParameterSets;i++)
 	{
 		if (pos+2 > bufferLen)//Check size
 		{
@@ -83,24 +108,23 @@ bool HEVCDescriptor::Parse(const BYTE* buffer,DWORD bufferLen)
 		//Add it
 		AddVideoParameterSet(buffer+pos+2,length);
 		//Update read pointer
-		pos+=length+2;
+		pos += (length+2);
 	}
 	// SPS
-	if (pos+1>bufferLen)//Check size
+	if( pos + 3 > bufferLen )//Check size
 	{
 		Error("-H265: Failed to parse SPS count from descriptor! pos: %d, bufferLen: %d\n", pos, bufferLen);
 		return false;
 	}
-	num = buffer[pos++];
-	for (DWORD i=0;i<num;i++)
+	if (buffer[pos++] != HEVC_RTP_NALU_Type::SPS)
 	{
-		//Get nul_layer_id	
-		if (pos+1>bufferLen)//Check size
-		{
-			Error("-H265: Failed to parse SPS[%d] nul_layer_id from descriptor! pos: %d, bufferLen: %d\n", i, pos, bufferLen);
-			return false;
-		}
-		BYTE nul_layer_id = buffer[pos++];
+		Error("-H265: Failed to parse SPS nal unit type. pos: %d, bufferLen: %d\n", pos, bufferLen);
+		return false;
+	}
+	numOfSequenceParameterSets = ((WORD)(buffer[pos]) << 8) | buffer[pos+1];
+	pos += 2;
+	for (DWORD i=0; i<numOfSequenceParameterSets;i++)
+	{
 		if (pos+2>bufferLen)//Check size
 		{
 			Error("-H265: Failed to parse SPS[%d] length from descriptor! pos: %d, bufferLen: %d\n", i, pos, bufferLen);
@@ -115,18 +139,24 @@ bool HEVCDescriptor::Parse(const BYTE* buffer,DWORD bufferLen)
 			return false;
 		}
 		//Add it
-		AddSequenceParameterSet(buffer+pos+2,length, nul_layer_id);
+		AddSequenceParameterSet(buffer+pos+2,length);
 		//Update read pointer
-		pos+=length+2;
+		pos += (length+2);
 	}
 	// PPS
-	if (pos+1>bufferLen)//Check size
+	if( pos + 3 > bufferLen )//Check size
 	{
 		Error("-H265: Failed to parse PPS count from descriptor! pos: %d, bufferLen: %d\n", pos, bufferLen);
 		return false;
 	}
-	num = buffer[pos++];
-	for (DWORD i=0;i<num;i++)
+	if (buffer[pos++] != HEVC_RTP_NALU_Type::PPS)
+	{
+		Error("-H265: Failed to parse SPS nal unit type. pos: %d, bufferLen: %d\n", pos, bufferLen);
+		return false;
+	}
+	numOfPictureParameterSets = ((WORD)(buffer[pos]) << 8) | buffer[pos+1];
+	pos += 2;
+	for (WORD i=0; i<numOfPictureParameterSets; i++)
 	{
 		if (pos+2>bufferLen)//Check size
 		{
@@ -180,7 +210,7 @@ void HEVCDescriptor::AddVideoParameterSet(const BYTE *data,DWORD size)
 	vpsTotalSizes+=size;
 }
 
-void HEVCDescriptor::AddSequenceParameterSet(const BYTE *data,DWORD size, BYTE nuh_layer_id)
+void HEVCDescriptor::AddSequenceParameterSet(const BYTE *data,DWORD size)
 {
 	//Increase number of pps
 	numOfSequenceParameterSets++;
@@ -194,8 +224,6 @@ void HEVCDescriptor::AddSequenceParameterSet(const BYTE *data,DWORD size, BYTE n
 	spsData.push_back(sps);
 	//INcrease size
 	spsTotalSizes+=size;
-	//add nul_layer_ids
-	sps_nul_layer_ids.push_back(nuh_layer_id);
 }
 
 void HEVCDescriptor::AddPictureParameterSet(const BYTE *data,DWORD size)
@@ -214,7 +242,7 @@ void HEVCDescriptor::AddPictureParameterSet(const BYTE *data,DWORD size)
 	ppsTotalSizes+=size;
 }
 
-void HEVCDescriptor::AddParametersFromFrame(const BYTE *data,DWORD size, BYTE nuh_layer_id)
+void HEVCDescriptor::AddParametersFromFrame(const BYTE *data,DWORD size)
 {
 	//Chop into NALs
 	while(size>4)
@@ -235,7 +263,7 @@ void HEVCDescriptor::AddParametersFromFrame(const BYTE *data,DWORD size, BYTE nu
 				break;
 			case HEVC_RTP_NALU_Type::SPS:
 				//Append
-				AddSequenceParameterSet(nal,nalSize, nuh_layer_id);
+				AddSequenceParameterSet(nal,nalSize);
 				break;
 		}
 		//Skip it
@@ -276,8 +304,6 @@ void  HEVCDescriptor::ClearSequenceParameterSets()
 	spsSizes.clear();
 	//Clear sizes
 	spsTotalSizes = 0;
-	//Clear nul_layer_id
-	sps_nul_layer_ids.clear();
 	//No params
 	numOfSequenceParameterSets = 0;
 }
@@ -309,23 +335,18 @@ DWORD HEVCDescriptor::Serialize(BYTE* buffer,DWORD bufferLength) const
 		//Nothing
 		return -1;
 
-	//Get data
 	buffer[pos++] = configurationVersion;
-	buffer[pos++] = profileSpace;
-	buffer[pos++] = tierFlag;
 	buffer[pos++] = profileIndication;
 	//DWORD profileCompatibilityIndication
-	for (size_t i = 0; i < sizeof(profileCompatibilityIndication); ++i)
-	{
-		const BYTE bitOffset = i*8;
-		buffer[pos++] = (profileCompatibilityIndication & (0xff << bitOffset)) >> bitOffset;
-	}
-	//WORD interopConstraints
-	buffer[pos++] = interopConstraints & 0xff;
-	buffer[pos++] = (interopConstraints & 0xff00) >> 8;
-	buffer[pos++] = levelIndication;
-	buffer[pos++] = NALUnitLength | 0xFC; // last 2 bits
-
+	set4(buffer, pos, generalProfileCompatibilityFlags);
+	pos += 4;
+	memcpy(buffer+pos, generalConstraintIndicatorFlags.data(), generalConstraintIndicatorFlags.size());
+	pos += generalConstraintIndicatorFlags.size();
+	buffer[pos++] = generalLevelIdc;
+	memcpy(buffer+pos, paddingBytes.data(), paddingBytes.size());
+	pos += paddingBytes.size();
+	buffer[pos++] = NALUnitLengthSizeMinus1 | 0b1111'1100; //bit(2) constantFrameRate + bit(3) numTemporalLayers + bit(1) temporalIdNested; + unsigned int(2) lengthSizeMinusOne;
+	buffer[pos++] = numOfArrays;
 	if (pos != MediaParameterSize)
 	{
 		Error("-H265: HEVCDescriptoer serialization error! pos: %d, MediaParameterSize: %d \n", pos, MediaParameterSize);
@@ -333,7 +354,10 @@ DWORD HEVCDescriptor::Serialize(BYTE* buffer,DWORD bufferLength) const
 	}
 
 	// VPS
-	buffer[pos++] = numOfVideoParameterSets;
+	buffer[pos++] = HEVC_RTP_NALU_Type::VPS | 0b1000'0000;  // bit(1) array_completeness + unsigned int(1) reserved = 0; unsigned int(6) NAL_unit_type;
+	// numOfVideoParameterSets: 2 BYTE
+	buffer[pos++] = numOfVideoParameterSets >> 8;
+	buffer[pos++] = numOfVideoParameterSets & 0xff;
 	//Debug("-H265: start to serialize VPS [pos: %d, VPS count: %d]\n", pos, numOfVideoParameterSets);
 	for (BYTE i=0;i<numOfVideoParameterSets;i++)
 	{
@@ -348,12 +372,13 @@ DWORD HEVCDescriptor::Serialize(BYTE* buffer,DWORD bufferLength) const
 		pos+=length+2;
 	}
 	// SPS
-	buffer[pos++] = numOfSequenceParameterSets;
+	buffer[pos++] = HEVC_RTP_NALU_Type::SPS | 0b1000'0000;  // bit(1) array_completeness + unsigned int(1) reserved = 0; unsigned int(6) NAL_unit_type;
+	// numOfSequenceParameterSets: 2 BYTE
+	buffer[pos++] = numOfSequenceParameterSets >> 8;
+	buffer[pos++] = numOfSequenceParameterSets & 0xff;
 	//Debug("-H265: start to serialize SPS [pos: %d, SPS count: %d]\n", pos, numOfSequenceParameterSets);
 	for (BYTE i=0;i<numOfSequenceParameterSets;i++)
 	{
-		//Set nul_layer_id 1B
-		buffer[pos++] = sps_nul_layer_ids[i];
 		//Get length
 		WORD length = spsSizes[i];
 		//Set len
@@ -365,7 +390,10 @@ DWORD HEVCDescriptor::Serialize(BYTE* buffer,DWORD bufferLength) const
 		pos+=length+2;
 	}
 	// PPS
-	buffer[pos++] = numOfPictureParameterSets;
+	buffer[pos++] = HEVC_RTP_NALU_Type::SPS | 0b1000'0000;  // bit(1) array_completeness + unsigned int(1) reserved = 0; unsigned int(6) NAL_unit_type;
+	// numOfPictureParameterSets: 2 BYTE
+	buffer[pos++] = numOfPictureParameterSets >> 8;
+	buffer[pos++] = numOfPictureParameterSets & 0xff;
 	//Debug("-H265: start to serialize PPS [pos: %d, SPS count: %d]\n", pos, numOfPictureParameterSets);
 	for (BYTE i=0;i<numOfPictureParameterSets;i++)
 	{
@@ -388,13 +416,17 @@ void HEVCDescriptor::Dump() const
 	//Get data
 	Debug("[HEVCDescriptor\n");
 	Debug("\tconfigurationVersion: %d\n",configurationVersion);
-	Debug("\tprofileSpace: %d\n",profileSpace);
-	Debug("\ttierFlag: %d\n",tierFlag);
-	Debug("\tprofileIndication: %d\n",profileIndication);
-	Debug("\tprofileCompatibilityIndication: 0x%x\n",profileCompatibilityIndication);
-	Debug("\tinteropConstraints: 0x%x\n",interopConstraints);
-	Debug("\tlevelIndication: %d\n",levelIndication);
-	Debug("\tNALUnitLength: %d\n",NALUnitLength);
+	Debug("\tgeneralProfileSpace: %d\n",generalProfileSpace);
+	Debug("\tgeneralTierFlag: %d\n",generalTierFlag);
+	Debug("\tgeneralProfileIdc: %d\n",generalProfileIdc);
+	Debug("\tprofileIndication: 0x%02x\n",profileIndication);
+	Debug("\tgeneralprofileCompatibilityIndication: 0x%x\n",generalProfileCompatibilityFlags);
+	for (size_t i = 0; i < generalConstraintIndicatorFlags.size(); ++i)
+	{
+		Debug("\t: generalConstraintIndicatorFlags[%d]: 0x%02x\n", i, generalConstraintIndicatorFlags[i]);
+	}
+	Debug("\tgeneralLevelIdc: %d\n", generalLevelIdc);
+	Debug("\tNALUnitLengthSizeMinus1: %d\n", NALUnitLengthSizeMinus1);
 	Debug("\tnumOfVideoParameterSets: %d\n",numOfVideoParameterSets);
 	Debug("\tnumOfSequenceParameterSets: %d\n",numOfSequenceParameterSets);
 	Debug("\tnumOfPictureParameterSets: %d\n",numOfPictureParameterSets);
@@ -412,7 +444,7 @@ void HEVCDescriptor::Dump() const
 	{
 		H265SeqParameterSet sps;
 		//Decode
-		sps.Decode(spsData[i] + HEVCParams::RTP_NAL_HEADER_SIZE,spsSizes[i] - HEVCParams::RTP_NAL_HEADER_SIZE, sps_nul_layer_ids[i]);
+		sps.Decode(spsData[i] + HEVCParams::RTP_NAL_HEADER_SIZE,spsSizes[i] - HEVCParams::RTP_NAL_HEADER_SIZE);
 		//Dump
 		sps.Dump();
 	}
