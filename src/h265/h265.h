@@ -414,24 +414,5 @@ private:
 
 #undef CHECK
 
-inline void	H265ToAnnexB(BYTE* data, DWORD size)
-{
-	DWORD pos =	0;
-
-	while (pos < size)
-	{
-		//Get nal size
-		DWORD nalSize =	get4(data, pos);
-		//If it	was	already	in annex B
-		if (nalSize==1 && !pos)
-			//Done
-			return;
-		//Set annexB start code
-		set4(data, pos,	1);
-		//Next
-		pos	+= 4 + nalSize;
-	}
-}
-
 #endif	/* H265_H */
 
