@@ -28,10 +28,24 @@ H265Depacketizer::~H265Depacketizer()
 
 void H265Depacketizer::AddCodecConfig()
 {
+	/////////////debug////////////////
+	Debug("ttxgz: Dump config before add to frame and serialise\n");
+	config.Dump();
+	///////////////end of debug/////////////
+
 	//Set config size
 	frame.AllocateCodecConfig(config.GetSize());
 	//Serialize
 	config.Serialize(frame.GetCodecConfigData(), frame.GetCodecConfigSize());
+
+	/////////////debug////////////////
+	Debug("ttxgz: Dump config after add to frame and serialise\n");
+	config.Dump();
+	Debug("ttxgz: get config from frame and parse and dump to check\n");
+	HEVCDescriptor new_config;
+	new_config.Parse(frame.GetCodecConfigData(), frame.GetCodecConfigSize());
+	new_config.Dump();
+	//////////////end of debug /////////////////////
 }
 
 void H265Depacketizer::ResetFrame()
@@ -76,6 +90,7 @@ MediaFrame* H265Depacketizer::AddPacket(const RTPPacket::shared& packet)
 		return nullptr;
 	//Add codec config
 	AddCodecConfig();
+
 	//Return frame
 	return &frame;
 }
@@ -116,7 +131,7 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 	//Get nalu size
 	DWORD nalSize = payloadLen;
 
-	//UltraDebug("-H265 [NAL header:0x%02x%02x,type:%d,layer_id:%d, temporal_id:%d, size:%d]\n", payload[0], payload[1], nalUnitType, nuh_layer_id, nuh_temporal_id, nalSize);
+	UltraDebug("-H265 [NAL header:0x%02x%02x,type:%d,layer_id:%d, temporal_id:%d, size:%d]\n", payload[0], payload[1], nalUnitType, nuh_layer_id, nuh_temporal_id_plus1, nalSize);
 
 	//Check type
 	switch (nalUnitType)
@@ -159,7 +174,7 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 			   Units without the DONL and DOND Fields
 
 			*/
-			Error("-H265 TODO: non implemented yet, need update to rfc7798, return nullptr \n", payload[0], nalUnitType, nalSize);
+			Error("-H265 TODO: non implemented yet, need update to rfc7798, return nullptr (payload[0]: 0x%02x, nalUnitType: %d, nalSize: %d) \n", payload[0], nalUnitType, nalSize);
 			return nullptr;
 
 			///* Skip SPayloadHdr */
@@ -230,7 +245,7 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 					                Figure 9: The Structure of an FU
 
 			*/
-			Error("-H265 TODO: non implemented yet, need update to rfc7798, return nullptr \n", payload[0], nalUnitType, nalSize);
+			Error("-H265 TODO: non implemented yet, need update to rfc7798, return nullptr (payload[0]: 0x%02x, nalUnitType: %d, nalSize: %d)\n", payload[0], nalUnitType, nalSize);
 			return nullptr;
 
 			////Check length
@@ -342,7 +357,7 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 						if(config.GetConfigurationVersion() == 0)
 						{
 							auto& profileTierLevel = vps.GetProfileTierLevel();
-							config.SetConfigurationVersion(profileTierLevel.GetGeneralProfileSpace());
+							config.SetConfigurationVersion(1);
 							config.SetGeneralProfileSpace(profileTierLevel.GetGeneralProfileSpace());
 							config.SetGeneralTierFlag(profileTierLevel.GetGeneralTierFlag());
 							config.SetGeneralProfileIdc(profileTierLevel.GetGeneralProfileIdc());
@@ -385,6 +400,9 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 					//Add full nal to config
 					config.AddPictureParameterSet(payload,nalSize);
 					break;
+				default:
+					Error("-H265 : ttxgz non implemented anything for this type.(payload[0]: 0x%02x, nalUnitType: %d, nalSize: %d)\n", payload[0], nalUnitType, nalSize);
+					break;
 			}
 			 //Check if doing annex b
 			if (annexB)
@@ -421,24 +439,12 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
    				// +---------------+
 				Debug("-H265: nalSize(%d) is larger than RTPPAYLOADSIZE (%d)!\n", nalSize, RTPPAYLOADSIZE);
 				//nalHeader = {PayloadHdr, FU header}, we don't suppport DONL yet
-				const uint16_t nalHeaderFU = (HEVC_RTP_NALU_Type::UNSPEC49_FU << 1)
-											| ((uint16_t)(nuh_layer_id) << 7)
-											| ((uint16_t)(nuh_temporal_id_plus1) << 13); 
+				const uint16_t nalHeaderFU = ((uint16_t)(HEVC_RTP_NALU_Type::UNSPEC49_FU) << 9)
+											| ((uint16_t)(nuh_layer_id) << 3)
+											| ((uint16_t)(nuh_temporal_id_plus1)); 
 				uint8_t S = 1, E = 0;
-				auto ConstructFUHeader = [&]() {return (uint8_t)(S | (E << 1) | (nalUnitType << 2));};
-				std::array<uint8_t, 3> nalHeader = {(uint8_t)(nalHeaderFU & 0xff), (uint8_t)((nalHeaderFU & 0xff00) >> 8), ConstructFUHeader()};
-				{
-					std::array<uint8_t, 3> test_nalHeader = { 0, 1, 2 };
-					if (test_nalHeader[2] != 2)
-					{
-						Error("ttxgz: ERROR! line %d\n", __LINE__);
-					}
-					uint8_t test_p[3] = {0,1,2};
-					if (* (test_p + 2) != 2)
-					{
-						Error("ttxgz: ERROR! line %d\n", __LINE__);
-					}
-				}
+				auto ConstructFUHeader = [&]() {return (uint8_t)(S << 7 | (E << 6) | (nalUnitType & 0b11'1111));};
+				std::array<uint8_t, 3> nalHeader = {(uint8_t)((nalHeaderFU & 0xff00) >> 8), (uint8_t)(nalHeaderFU & 0xff), ConstructFUHeader()};
 
 				//Pending uint8_ts
 				uint32_t pending = nalSize;
@@ -460,6 +466,9 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 					nalHeader[2] = ConstructFUHeader();
     			    //Add packetization
     			    frame.AddRtpPacket(pos, len, nalHeader.data(), nalHeader.size());
+
+					Debug("-H265 ttxgz: FU headers: nalHeader[0][1][2] = 0x%02x, 0x%02x, 0x%02x\n", nalHeader[0], nalHeader[1], nalHeader[2]);
+
 					if (S == 1) // set start mark to 0 after first FU packet
 					{
 						S = 0;
