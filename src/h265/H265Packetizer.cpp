@@ -10,13 +10,9 @@ void OnH265Nal(VideoFrame& frame, HEVCDescriptor &config, BufferReader& reader)
 	if (!reader.GetLeft())
 		return;
 
-	//Get nal size
-	uint32_t nalSize = reader.GetLeft();
-	//Get nal unit
-	const uint8_t* nalUnit = reader.PeekData();
+	auto nalSize = reader.GetLeft();
+	auto nalUnit = reader.PeekData();
 
-	BYTE nalHeaderPrefix[4]; // set as AnnexB or not
-	DWORD pos;
 	//Check length
 	if (nalSize < HEVCParams::RTP_NAL_HEADER_SIZE)
 		//Exit
@@ -32,9 +28,10 @@ void OnH265Nal(VideoFrame& frame, HEVCDescriptor &config, BufferReader& reader)
 	 * F must be 0.
 	 */
 
-	BYTE nalUnitType = (nalUnit[0] & 0x7e) >> 1;
-	BYTE nuh_layer_id = ((nalUnit[0] & 0x1) << 5) + ((nalUnit[1] & 0xf8) >> 3);
-	BYTE nuh_temporal_id_plus1 = nalUnit[1] & 0x7;
+	auto naluHeader 		= reader.Get2();
+	BYTE nalUnitType		= (naluHeader >> 9) & 0b111111;
+	BYTE nuh_layer_id		= (naluHeader >> 3) & 0b111111;
+	BYTE nuh_temporal_id_plus1	= naluHeader & 0b111;
 
 	if (nuh_layer_id != 0)
 	{
@@ -42,10 +39,7 @@ void OnH265Nal(VideoFrame& frame, HEVCDescriptor &config, BufferReader& reader)
 		return;
 	}
 
-	//Get nal data
-	const BYTE* nalData = nalUnit + HEVCParams::RTP_NAL_HEADER_SIZE;
-
-	UltraDebug("-H265 [NAL header:0x%02x%02x,type:%d,layer_id:%d, temporal_id:%d, size:%d]\n", nalUnit[0], nalUnit[1], nalUnitType, nuh_layer_id, nuh_temporal_id_plus1, nalSize);
+	UltraDebug("-H265 [NAL header:0x%04x,type:%d,layer_id:%d, temporal_id:%d, size:%d]\n", naluHeader, nalUnitType, nuh_layer_id, nuh_temporal_id_plus1, nalSize);
 
 	//Check if IDR/SPS/PPS, set Intra
 	if ((nalUnitType == HEVC_RTP_NALU_Type::IDR_W_RADL)
@@ -68,10 +62,10 @@ void OnH265Nal(VideoFrame& frame, HEVCDescriptor &config, BufferReader& reader)
 			/* undefined */
 			return;
 		case HEVC_RTP_NALU_Type::UNSPEC48_AP:	//48 
-			Error("-H265 TODO: non implemented yet, need update to rfc7798, return nullptr (nalUnit[0]: 0x%02x, nalUnitType: %d, nalSize: %d) \n", nalUnit[0], nalUnitType, nalSize);
+			Error("-H265 TODO: non implemented yet, need update to rfc7798, return nullptr (header:0x%04x, nalUnitType: %d, nalSize: %d) \n", naluHeader, nalUnitType, nalSize);
 			return;
 		case HEVC_RTP_NALU_Type::UNSPEC49_FU: 
-			Error("-H265 TODO: non implemented yet, need update to rfc7798, return nullptr (nalUnit[0]: 0x%02x, nalUnitType: %d, nalSize: %d)\n", nalUnit[0], nalUnitType, nalSize);
+			Error("-H265 TODO: non implemented yet, need update to rfc7798, return nullptr (header:0x%04x, nalUnitType: %d, nalSize: %d)\n", naluHeader, nalUnitType, nalSize);
 			return;
 			/* 4.4.1.  Single NAL Unit Packets */
 			/* 
@@ -92,7 +86,7 @@ void OnH265Nal(VideoFrame& frame, HEVCDescriptor &config, BufferReader& reader)
 		case HEVC_RTP_NALU_Type::VPS:			// 32
 		{
 			H265VideoParameterSet vps;
-			if (vps.Decode(nalData, nalSize-1))
+			if (vps.Decode(reader.PeekData(), reader.GetLeft()))
 			{
 				if(config.GetConfigurationVersion() == 0)
 				{
@@ -119,7 +113,7 @@ void OnH265Nal(VideoFrame& frame, HEVCDescriptor &config, BufferReader& reader)
 		{
 			//Parse sps
 			H265SeqParameterSet sps;
-			if (sps.Decode(nalData,nalSize-1))
+			if (sps.Decode(reader.PeekData(), reader.GetLeft()))
 			{
 				//Set dimensions
 				frame.SetWidth(sps.GetWidth());
@@ -145,81 +139,7 @@ void OnH265Nal(VideoFrame& frame, HEVCDescriptor &config, BufferReader& reader)
 			break;
 	}
 
-	//Set size
-	set4(nalHeaderPrefix, 0, nalSize); // would not be AnnexB here
-
-	//Append data
-	frame.AppendMedia(nalHeaderPrefix, sizeof(nalHeaderPrefix));
-	//Append data and get current post
-	pos = frame.AppendMedia(nalUnit, nalSize);
-	//Add RTP packet
-	if (nalSize >= RTPPAYLOADSIZE)
-	{
-		// use FU:
-		//  0                   1                   2                   3
-		//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-		// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-		// |    PayloadHdr (Type=49)       |   FU header   | DONL (cond)   |
-		// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-|
-		// | DONL (cond)   |                                               |
-		// |-+-+-+-+-+-+-+-+                                               |
-		// |                         FU payload                            |
-		// |                                                               |
-		// |                               +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-		// |                               :...OPTIONAL RTP padding        |
-		// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-		// FU header:
-		// +---------------+
-		// |0|1|2|3|4|5|6|7|
-		// +-+-+-+-+-+-+-+-+
-		// |S|E|  FuType   |
-		// +---------------+
-
-		//Debug("-H265: nalSize(%d) is larger than RTPPAYLOADSIZE (%d)\n", nalSize, RTPPAYLOADSIZE);
-
-		//nalHeader = {PayloadHdr, FU header}, we don't suppport DONL yet
-		const uint16_t nalHeaderFU = ((uint16_t)(HEVC_RTP_NALU_Type::UNSPEC49_FU) << 9)
-									| ((uint16_t)(nuh_layer_id) << 3)
-									| ((uint16_t)(nuh_temporal_id_plus1)); 
-		uint8_t S = 1, E = 0;
-		auto ConstructFUHeader = [&]() {return (uint8_t)(S << 7 | (E << 6) | (nalUnitType & 0b11'1111));};
-		std::array<uint8_t, 3> nalHeader = {(uint8_t)((nalHeaderFU & 0xff00) >> 8), (uint8_t)(nalHeaderFU & 0xff), ConstructFUHeader()};
-
-		//Pending uint8_ts
-		uint32_t pending = nalSize;
-		//Skip payload nal header
-		pending -= HEVCParams::RTP_NAL_HEADER_SIZE;
-		pos += HEVCParams::RTP_NAL_HEADER_SIZE;
-
-		//Split it
-		while (pending)
-		{
-			int len = std::min<uint32_t>(RTPPAYLOADSIZE - nalHeader.size(), pending);
-			//Read it
-			pending -= len;
-			//If all added
-			if (!pending) //Set end mark
-			{ 
-				E = 1;
-			}
-			nalHeader[2] = ConstructFUHeader();
-			//Add packetization
-			frame.AddRtpPacket(pos, len, nalHeader.data(), nalHeader.size());
-
-			//Debug("-H265: FU headers: nalHeader[0][1][2] = 0x%02x, 0x%02x, 0x%02x\n", nalHeader[0], nalHeader[1], nalHeader[2]);
-
-			if (S == 1) // set start mark to 0 after first FU packet
-			{
-				S = 0;
-			}
-			//Move start
-			pos += len;
-		}
-	}
-	else
-	{
-		frame.AddRtpPacket(pos, nalSize, nullptr, 0);
-	}
+	EmitNal(frame, BufferReader(nalUnit, nalSize));
 }
 
 std::unique_ptr<VideoFrame> H265Packetizer::ProcessAU(BufferReader reader)
