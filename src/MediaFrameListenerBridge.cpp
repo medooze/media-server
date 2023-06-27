@@ -15,7 +15,7 @@ MediaFrameListenerBridge::MediaFrameListenerBridge(TimeService& timeService,DWOR
 	accumulatorFrames(1000),
 	accumulatorPackets(1000),
 	waited(1000),
-	dispatchCoordinator(new DefaultPacketDispatchTimeCoordinator())
+	dispatchCoordinator(new DefaultPacketDispatchTimeCoordinator(timeGetter))
 {
 	Debug("-MediaFrameListenerBridge::MediaFrameListenerBridge() [this:%p]\n", this);
 
@@ -194,7 +194,7 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 			//Create rtp packet
 			auto packet = std::make_shared<RTPPacket>(frame->GetType(),codec);
 
-			dispatchCoordinator->OnPacket(frame->GetType(), getTime(), frame->GetTimeStamp(), frame->GetClockRate());
+			dispatchCoordinator->OnPacket(frame->GetType(), timeGetter.GetTimeUs(), frame->GetTimeStamp(), frame->GetClockRate());
 			
 			//Make sure it is enought length
 			if (rtp.GetTotalLength()>packet->GetMaxMediaLength())
@@ -345,6 +345,10 @@ void MediaFrameListenerBridge::Mute(bool muting)
 	muted = muting;
 }
 
+MediaFrameListenerBridge::DefaultPacketDispatchTimeCoordinator::DefaultPacketDispatchTimeCoordinator(TimeGetterInterface& timeGetter) :
+	timeGetter(timeGetter)
+{	
+}
 
 void MediaFrameListenerBridge::DefaultPacketDispatchTimeCoordinator::OnFrameArrival(MediaFrame::Type type, std::chrono::milliseconds now, uint64_t ts, uint64_t clockRate)
 {	
@@ -367,8 +371,9 @@ void MediaFrameListenerBridge::DefaultPacketDispatchTimeCoordinator::OnFrameArri
 		if (lastTimeUs)
 		{
 			//Get offset
-			QWORD offset = std::max<QWORD>((QWORD)(getTimeDiff(lastTimeUs)*clockRate/1E6),1ul);
-			//Calculate time difd and add to the last sent timestamp
+			auto diff = timeGetter.GetTimeDiffUs(lastTimeUs);
+			QWORD offset = std::max<QWORD>((QWORD)(diff*clockRate/1E6),1ul);
+			//Calculate time diff and add to the last sent timestamp
 			baseTimestamp = lastTimestamp + offset;
 		}
 		//Get first timestamp

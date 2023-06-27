@@ -12,6 +12,28 @@
 
 using namespace std::chrono_literals;
 
+class TimeGetterInterface
+{
+public:
+	virtual QWORD GetTimeUs() = 0;
+	virtual QWORD GetTimeDiffUs(QWORD time) = 0;
+};
+
+class TimeGetter : public TimeGetterInterface
+{
+public:
+	virtual QWORD GetTimeUs() override
+	{
+		return getTime();
+	}
+
+	virtual QWORD GetTimeDiffUs(QWORD time) override
+	{
+		return getTimeDiff(time);
+	}
+};
+
+
 class MediaFrameListenerBridge :
 	public MediaFrame::Listener,
 	public MediaFrame::Producer,
@@ -62,6 +84,7 @@ private:
 	class DefaultPacketDispatchTimeCoordinator : public PacketDispatchCoordinator
 	{
 	public:
+		DefaultPacketDispatchTimeCoordinator(TimeGetterInterface& timeGetter);
 		virtual void OnFrameArrival(MediaFrame::Type type, std::chrono::milliseconds now, uint64_t ts, uint64_t clockRate) override;
 		virtual void OnPacket(MediaFrame::Type type, uint64_t nowUs, uint64_t ts, uint64_t clockRate) override;		
 		virtual std::pair<std::vector<RTPPacket::shared>, int64_t> GetPacketsToDispatch(std::queue<std::pair<RTPPacket::shared, std::chrono::milliseconds>>& packets, 
@@ -71,6 +94,7 @@ private:
 		virtual void Reset() override;
 	
 	private:
+		TimeGetterInterface& timeGetter;
 		volatile bool reset	= false;
 		QWORD firstTimestamp	= NoTimestamp;
 		QWORD baseTimestamp	= 0;
@@ -114,7 +138,10 @@ public:
 	MinMaxAcumulator<uint32_t, uint64_t> waited;
 	volatile bool muted = false;
 	
+	TimeGetter timeGetter;
 	std::shared_ptr<PacketDispatchCoordinator> dispatchCoordinator = nullptr;
+	
+	friend class TestDefaultPacketDispatchCoordinator;
 };
 
 #endif /* MEDIAFRAMELISTENERBRIDGE_H */
