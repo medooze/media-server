@@ -24,55 +24,18 @@ void H264Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 
 	//UltraDebug("-SRTConnection::OnVideoData() | Got nal [type:%d,size:%d]\n", nalUnitType, nalSize);
 
+	//Check if IDR/SPS/PPS, set Intra
+	if ((nalUnitType == 0x05)
+		|| (nalUnitType == 0x07)
+		|| (nalUnitType == 0x08))
+	{
+		//We consider frames having an SPS/PPS as intra due to intra frame refresh
+		frame.SetIntra(true);
+	}
+
 	//Check if IDR SPS or PPS
 	switch (nalUnitType)
 	{
-		case 0x05:
-			//It is intra
-			frame.SetIntra(true);
-			[[fallthrough]];
-		case 0x01:
-			//Either it is an iframe and we have valid SPS/PPS from previous frames, or it is a non-iframe with SPS/PPS
-			//Ensure we do this only once
-			if (frame.IsIntra() && !frame.HasCodecConfig() && config.GetNumOfPictureParameterSets() && config.GetNumOfSequenceParameterSets())
-			{
-				const uint8_t spsNum = config.GetNumOfSequenceParameterSets();
-				// Get total sps size
-				// Can improve by adding AVCDescriptorconfig::GetSPSTotolSize() in media-server
-				uint64_t spsTotalSize = 0;
-				for (uint8_t i = 0; i < spsNum; i++)
-				{
-					spsTotalSize += config.GetSequenceParameterSetSize(i);
-				}
-
-				const uint8_t ppsNum = config.GetNumOfPictureParameterSets();
-				// Get total pps size
-				// Can improve by adding AVCDescriptorconfig::GetPPSTotolSize() in media-server
-				uint64_t ppsTotalSize = 0;
-				for (uint8_t i = 0; i < ppsNum; i++)
-				{
-					ppsTotalSize += config.GetPictureParameterSetSize(i);
-				}
-
-				//UltraDebug("-SRTConnection::OnVideoData() | SPS [num: %d, size: %d], PPS [num: %d, size: %d]\n", spsNum, spsTotalSize, ppsNum, ppsTotalSize);
-				//Allocate enought space to prevent further reallocations
-				// preffix num: spsNum + ps_num + 1
-				frame.Alloc(frame.GetLength() + nalSize + spsTotalSize + ppsTotalSize + OUT_NALU_LENGTH_SIZE * (spsNum + ppsNum + 1));
-
-				// Add SPS
-				for (uint8_t i = 0; i < spsNum; i++)
-					EmitNal(frame, BufferReader(config.GetSequenceParameterSet(i), config.GetSequenceParameterSetSize(i)));
-
-				// Add PPS
-				for (uint8_t i = 0; i < ppsNum; i++)
-					EmitNal(frame, BufferReader(config.GetPictureParameterSet(i), config.GetPictureParameterSetSize(i)));
-
-				//Serialize config in to frame
-				frame.AllocateCodecConfig(config.GetSize());
-				config.Serialize(frame.GetCodecConfigData(), frame.GetCodecConfigSize());
-			}
-			
-			break;
 		case 0x07: // SPS
 			//Check nal data size
 			if (nalSize < 4)
@@ -87,7 +50,7 @@ void H264Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 			config.SetAVCLevelIndication(nalData[2]);
 			config.SetNALUnitLength(OUT_NALU_LENGTH_SIZE - 1);
 
-			//Reset previous PPS only on the 1st PPS in current frame
+			//Reset previous SPS only on the 1st SPS in current frame
 			if (noSPSInFrame)
 			{
 				//UltraDebug("-SRTConnection::OnVideoData() | Clear cached SPS\n");
@@ -108,12 +71,9 @@ void H264Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 					frame.SetHeight(sps.GetHeight());
 				}
 			}
-			//We consider frames having an SPS/PPS as intra due to intra frame refresh
-			frame.SetIntra(true);
-			//Don't do anything else yet
 			return;
 		case 0x08: // PPS
-			//Reset previous SPS only on the 1st SPS in current frame
+			//Reset previous PPS only on the 1st PPS in current frame
 			if (noPPSInFrame)
 			{
 				//UltraDebug("-SRTConnection::OnVideoData() | Clear cached PPS\n");
@@ -123,13 +83,60 @@ void H264Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 
 			//Add full nal to config
 			config.AddPictureParameterSet(nalUnit, nalSize);
-			//We consider frames having an SPS/PPS as intra due to intra frame refresh
-			frame.SetIntra(true);
-			//Don't do anything else yet
 			return;
 		case 0x09:
 			//Ignore fame acces unit delimiters
 			return;
+	}
+
+	// If this frame has been marked as intra (meaning it's either an IDR or a non-IDR
+	// with SPS/PPS), and the configuration descriptor is complete, then make sure to
+	// attach the configuration descriptor to the VideoFrame (for recording) and to
+	// emit the parameter sets.
+	//
+	// We only need to do this once per frame, and the appropriate time to do it is
+	// just before the first slice of the frame:
+	if (
+		// this NALU is a slice
+		((nalUnitType >= 1 && nalUnitType <= 5) || (nalUnitType >= 19 && nalUnitType <= 21)) &&
+		// it belongs to an intra frame
+		frame.IsIntra() &&
+		// no need to do this more than once per frame
+		!frame.HasCodecConfig() &&
+		// the configuration descriptor is fully populated by now
+		config.GetNumOfPictureParameterSets() && config.GetNumOfSequenceParameterSets()
+	)
+	{
+		const uint8_t spsNum = config.GetNumOfSequenceParameterSets();
+		// Get total sps size
+		// Can improve by adding AVCDescriptorconfig::GetSPSTotolSize() in media-server
+		uint64_t spsTotalSize = 0;
+		for (uint8_t i = 0; i < spsNum; i++)
+			spsTotalSize += config.GetSequenceParameterSetSize(i);
+
+		const uint8_t ppsNum = config.GetNumOfPictureParameterSets();
+		// Get total pps size
+		// Can improve by adding AVCDescriptorconfig::GetPPSTotolSize() in media-server
+		uint64_t ppsTotalSize = 0;
+		for (uint8_t i = 0; i < ppsNum; i++)
+			ppsTotalSize += config.GetPictureParameterSetSize(i);
+
+		//UltraDebug("-SRTConnection::OnVideoData() | SPS [num: %d, size: %d], PPS [num: %d, size: %d]\n", spsNum, spsTotalSize, ppsNum, ppsTotalSize);
+		//Allocate enought space to prevent further reallocations
+		// preffix num: spsNum + ps_num + 1
+		frame.Alloc(frame.GetLength() + nalSize + spsTotalSize + ppsTotalSize + OUT_NALU_LENGTH_SIZE * (spsNum + ppsNum + 1));
+
+		// Add SPS
+		for (uint8_t i = 0; i < spsNum; i++)
+			EmitNal(frame, BufferReader(config.GetSequenceParameterSet(i), config.GetSequenceParameterSetSize(i)));
+
+		// Add PPS
+		for (uint8_t i = 0; i < ppsNum; i++)
+			EmitNal(frame, BufferReader(config.GetPictureParameterSet(i), config.GetPictureParameterSetSize(i)));
+
+		//Serialize config in to frame
+		frame.AllocateCodecConfig(config.GetSize());
+		config.Serialize(frame.GetCodecConfigData(), frame.GetCodecConfigSize());
 	}
 
 	EmitNal(frame, BufferReader(nalUnit, nalSize));
