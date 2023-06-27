@@ -81,7 +81,7 @@ inline void NalSliceAnnexB(BufferReader reader, std::function<void(BufferReader 
 	}
 }
 
-inline void H264ToAnnexB(BYTE* data, DWORD size)
+inline void NalToAnnexB(BYTE* data, DWORD size)
 {
 	DWORD pos = 0;
 

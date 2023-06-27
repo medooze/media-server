@@ -1,29 +1,9 @@
 #include "h265.h"
 
-#define CHECK(r) {if(r.Error()) return false;}
+// H.265 uses same stream format (Annex B)
+#include "h264/h264nal.h"
 
-DWORD	H265Escape(	BYTE *dst,const	BYTE *src, DWORD size )
-{
-	DWORD len =	0;
-	DWORD i	= 0;
-	while(i<size)
-	{
-		//Check	if next	BYTEs are the scape	sequence
-		if((i+2<size) && (get3(src,i)==0x03))
-		{
-			//Copy the first two
-			dst[len++] = get1(src,i);
-			dst[len++] = get1(src,i+1);
-			//Skip the three
-			i += 3;
-		}
-		else
-		{
-			dst[len++] = get1(src,i++);
-		}
-	}
-	return len;
-}
+#define CHECK(r) {if(r.Error()) return false;}
 
 bool GenericProfileTierLevel::Decode(BitReader& r)
 {
@@ -186,7 +166,7 @@ bool H265VideoParameterSet::Decode(const BYTE* buffer,DWORD bufferSize)
 	//SHould be	done otherway, like	modifying the BitReader	to escape the input	NAL, but anyway.. duplicate	memory
 	BYTE *aux =	(BYTE*)malloc(bufferSize);
 	//Escape
-	DWORD len =	H265Escape(aux,buffer,bufferSize);
+	DWORD len =	NalUnescapeRbsp(aux,buffer,bufferSize);
 
 	//Create bit reader
 	BitReader r(aux,len);
@@ -222,7 +202,7 @@ bool H265SeqParameterSet::Decode(const BYTE* buffer,DWORD bufferSize)
 {
 	BYTE *aux =	(BYTE*)malloc(bufferSize);
 	//Escape
-	DWORD len =	H265Escape(aux,buffer,bufferSize);
+	DWORD len =	NalUnescapeRbsp(aux,buffer,bufferSize);
 	//Create bit reader
 	BitReader r(aux,len);
 	//Read SPS
