@@ -353,7 +353,7 @@ DWORD HEVCDescriptor::Serialize(BYTE* buffer,DWORD bufferLength) const
 	}
 
 	// VPS
-	buffer[pos++] = HEVC_RTP_NALU_Type::VPS | 0b0000'0000;  // bit(1) array_completeness + unsigned int(1) reserved = 0; unsigned int(6) NAL_unit_type;
+	buffer[pos++] = HEVC_RTP_NALU_Type::VPS;  // bit(1) array_completeness + unsigned int(1) reserved = 0; unsigned int(6) NAL_unit_type;
 	// numOfVideoParameterSets: 2 BYTE
 	buffer[pos++] = numOfVideoParameterSets >> 8;
 	buffer[pos++] = numOfVideoParameterSets & 0xff;
@@ -371,7 +371,7 @@ DWORD HEVCDescriptor::Serialize(BYTE* buffer,DWORD bufferLength) const
 		pos+=length+2;
 	}
 	// SPS
-	buffer[pos++] = HEVC_RTP_NALU_Type::SPS | 0b0000'0000;  // bit(1) array_completeness + unsigned int(1) reserved = 0; unsigned int(6) NAL_unit_type;
+	buffer[pos++] = HEVC_RTP_NALU_Type::SPS;  // bit(1) array_completeness + unsigned int(1) reserved = 0; unsigned int(6) NAL_unit_type;
 	// numOfSequenceParameterSets: 2 BYTE
 	buffer[pos++] = numOfSequenceParameterSets >> 8;
 	buffer[pos++] = numOfSequenceParameterSets & 0xff;
@@ -389,7 +389,7 @@ DWORD HEVCDescriptor::Serialize(BYTE* buffer,DWORD bufferLength) const
 		pos+=length+2;
 	}
 	// PPS
-	buffer[pos++] = HEVC_RTP_NALU_Type::PPS | 0b0000'0000;  // bit(1) array_completeness + unsigned int(1) reserved = 0; unsigned int(6) NAL_unit_type;
+	buffer[pos++] = HEVC_RTP_NALU_Type::PPS;  // bit(1) array_completeness + unsigned int(1) reserved = 0; unsigned int(6) NAL_unit_type;
 	// numOfPictureParameterSets: 2 BYTE
 	buffer[pos++] = numOfPictureParameterSets >> 8;
 	buffer[pos++] = numOfPictureParameterSets & 0xff;

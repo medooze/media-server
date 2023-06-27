@@ -13,8 +13,9 @@ public:
 	virtual MediaFrame* AddPacket(const RTPPacket::shared& packet) override;
 	virtual MediaFrame* AddPayload(const BYTE* payload, DWORD payload_len) override;
 	virtual void ResetFrame() override;
-	void AddCodecConfig();
 private:
+	void AddCodecConfig();
+
 	VideoFrame frame;
 	HEVCDescriptor config;
 	DWORD iniFragNALU = 0;

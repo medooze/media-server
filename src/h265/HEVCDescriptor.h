@@ -82,7 +82,7 @@ public:
 
 private:
 	/* 7.1.  Media Type Registration in RFC 7798*/
-	/* also refers to HEVCDecoderConfigurationRecord in shaka-packager */
+	/* ISO/IEC 14496-15 */
 	BYTE configurationVersion = 0;
 	BYTE generalProfileSpace = 0; // serialized in profileIndication 
 	BYTE generalTierFlag = 0; // serialized in profileIndication 
