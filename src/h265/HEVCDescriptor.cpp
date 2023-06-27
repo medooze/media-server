@@ -7,7 +7,6 @@
 #include "log.h"
 #include "HEVCDescriptor.h"
 #include "tools.h"
-#include "h265.h"
 #include <string.h>
 #include <stdlib.h>
 #include <vector>
@@ -19,8 +18,6 @@ HEVCDescriptor::HEVCDescriptor()
 
 bool HEVCDescriptor::Parse(const BYTE* buffer,DWORD bufferLen)
 {
-	Debug("ttxgz: %s, %d: bufferlen: %d\n", __PRETTY_FUNCTION__, __LINE__, bufferLen);
-
 	//Check size
 	if (bufferLen < MediaParameterSize)
 	{
@@ -93,11 +90,8 @@ bool HEVCDescriptor::Parse(const BYTE* buffer,DWORD bufferLen)
 	}
 	WORD num = ((WORD)(buffer[pos]) << 8) | buffer[pos+1];
 	pos += 2;
-	Debug("ttxgz: %s, %d: pos, buffer[%d]: 0x%02x, buffer[%d]: 0x%02x\n", __PRETTY_FUNCTION__, __LINE__, pos, pos-2, buffer[pos-2], pos-1, buffer[pos-1]);	
-	Debug("ttxgz: %s, %d: numOfVideoParameterSets: %d\n", __PRETTY_FUNCTION__, __LINE__, num);
 	for (WORD i=0;i<num;++i)
 	{
-		Debug("ttxgz: %s, %d: pos: %d, i:%d, numOfVideoParameterSets: %d\n", __PRETTY_FUNCTION__, __LINE__, pos, i, numOfVideoParameterSets);
 		if (pos+2 > bufferLen)//Check size
 		{
 			Error("-H265: Failed to parse VPS[%d] length from descriptor! pos: %d, bufferLen: %d\n", i, pos, bufferLen);
@@ -115,17 +109,14 @@ bool HEVCDescriptor::Parse(const BYTE* buffer,DWORD bufferLen)
 		//Update read pointer
 		pos += (length+2);
 	}
-	Debug("ttxgz: %s, %d: pos:%d\n", __PRETTY_FUNCTION__, __LINE__, pos);
 	// SPS
 	if( pos + 3 > bufferLen )//Check size
 	{
-		Debug("ttxgz: %s, %d: pos:%d\n", __PRETTY_FUNCTION__, __LINE__, pos);
 		Error("-H265: Failed to parse SPS count from descriptor! pos: %d, bufferLen: %d\n", pos, bufferLen);
 		return false;
 	}
 	if (buffer[pos++] != HEVC_RTP_NALU_Type::SPS)
 	{
-		Debug("ttxgz: %s, %d: pos:%d\n", __PRETTY_FUNCTION__, __LINE__, pos);
 		Error("-H265: Failed to parse SPS nal unit type. pos: %d, bufferLen: %d, data: 0x%02x\n", pos, bufferLen, buffer[pos - 1]);
 		return false;
 	}
@@ -133,7 +124,6 @@ bool HEVCDescriptor::Parse(const BYTE* buffer,DWORD bufferLen)
 	pos += 2;
 	for (DWORD i=0; i<num;i++)
 	{
-		Debug("ttxgz: %s, %d: pos: %d\n", __PRETTY_FUNCTION__, __LINE__, pos);	
 		if (pos+2>bufferLen)//Check size
 		{
 			Error("-H265: Failed to parse SPS[%d] length from descriptor! pos: %d, bufferLen: %d\n", i, pos, bufferLen);
@@ -152,7 +142,6 @@ bool HEVCDescriptor::Parse(const BYTE* buffer,DWORD bufferLen)
 		//Update read pointer
 		pos += (length+2);
 	}
-	Debug("ttxgz: %s, %d: pos:%d\n", __PRETTY_FUNCTION__, __LINE__, pos);
 	// PPS
 	if( pos + 3 > bufferLen )//Check size
 	{
@@ -161,7 +150,6 @@ bool HEVCDescriptor::Parse(const BYTE* buffer,DWORD bufferLen)
 	}
 	if (buffer[pos++] != HEVC_RTP_NALU_Type::PPS)
 	{
-		Debug("ttxgz: %s, %d: pos:%d\n", __PRETTY_FUNCTION__, __LINE__, pos);
 		Error("-H265: Failed to parse PPS nal unit type. pos: %d, bufferLen: %d, data: 0x%02x\n", pos, bufferLen, buffer[pos - 1]);
 		return false;
 	}
@@ -364,18 +352,14 @@ DWORD HEVCDescriptor::Serialize(BYTE* buffer,DWORD bufferLength) const
 		return -1;
 	}
 
-	Debug("ttxgz: %s, %d: pos: %d\n", __PRETTY_FUNCTION__, __LINE__, pos);	
 	// VPS
-	//buffer[pos++] = HEVC_RTP_NALU_Type::VPS | 0b1000'0000;  // bit(1) array_completeness + unsigned int(1) reserved = 0; unsigned int(6) NAL_unit_type;
 	buffer[pos++] = HEVC_RTP_NALU_Type::VPS | 0b0000'0000;  // bit(1) array_completeness + unsigned int(1) reserved = 0; unsigned int(6) NAL_unit_type;
 	// numOfVideoParameterSets: 2 BYTE
 	buffer[pos++] = numOfVideoParameterSets >> 8;
 	buffer[pos++] = numOfVideoParameterSets & 0xff;
-	Debug("ttxgz: %s, %d: pos, buffer[%d]: 0x%02x, buffer[%d]: 0x%02x\n", __PRETTY_FUNCTION__, __LINE__, pos, pos -2, buffer[pos-2], pos-1, buffer[pos-1]);	
 	//Debug("-H265: start to serialize VPS [pos: %d, VPS count: %d]\n", pos, numOfVideoParameterSets);
 	for (BYTE i=0;i<numOfVideoParameterSets;i++)
 	{
-		Debug("ttxgz: %s, %d: pos: %d\n", __PRETTY_FUNCTION__, __LINE__, pos);	
 		//Get length
 		WORD length = vpsSizes[i];
 		//Set len: 2 Bytes
@@ -387,8 +371,6 @@ DWORD HEVCDescriptor::Serialize(BYTE* buffer,DWORD bufferLength) const
 		pos+=length+2;
 	}
 	// SPS
-	Debug("ttxgz: %s, %d: pos: %d\n", __PRETTY_FUNCTION__, __LINE__, pos);	
-	//buffer[pos++] = HEVC_RTP_NALU_Type::SPS | 0b1000'0000;  // bit(1) array_completeness + unsigned int(1) reserved = 0; unsigned int(6) NAL_unit_type;
 	buffer[pos++] = HEVC_RTP_NALU_Type::SPS | 0b0000'0000;  // bit(1) array_completeness + unsigned int(1) reserved = 0; unsigned int(6) NAL_unit_type;
 	// numOfSequenceParameterSets: 2 BYTE
 	buffer[pos++] = numOfSequenceParameterSets >> 8;
@@ -396,7 +378,6 @@ DWORD HEVCDescriptor::Serialize(BYTE* buffer,DWORD bufferLength) const
 	//Debug("-H265: start to serialize SPS [pos: %d, SPS count: %d]\n", pos, numOfSequenceParameterSets);
 	for (BYTE i=0;i<numOfSequenceParameterSets;i++)
 	{
-		Debug("ttxgz: %s, %d: pos: %d\n", __PRETTY_FUNCTION__, __LINE__, pos);	
 		//Get length
 		WORD length = spsSizes[i];
 		//Set len
@@ -408,8 +389,6 @@ DWORD HEVCDescriptor::Serialize(BYTE* buffer,DWORD bufferLength) const
 		pos+=length+2;
 	}
 	// PPS
-	Debug("ttxgz: %s, %d: pos: %d\n", __PRETTY_FUNCTION__, __LINE__, pos);	
-	//buffer[pos++] = HEVC_RTP_NALU_Type::PPS | 0b1000'0000;  // bit(1) array_completeness + unsigned int(1) reserved = 0; unsigned int(6) NAL_unit_type;
 	buffer[pos++] = HEVC_RTP_NALU_Type::PPS | 0b0000'0000;  // bit(1) array_completeness + unsigned int(1) reserved = 0; unsigned int(6) NAL_unit_type;
 	// numOfPictureParameterSets: 2 BYTE
 	buffer[pos++] = numOfPictureParameterSets >> 8;

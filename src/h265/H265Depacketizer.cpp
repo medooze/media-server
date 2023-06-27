@@ -6,7 +6,6 @@
  */
 
 #include "H265Depacketizer.h"
-#include "h265.h"
 #include "media.h"
 #include "codecs.h"
 #include "rtp.h"
@@ -28,24 +27,10 @@ H265Depacketizer::~H265Depacketizer()
 
 void H265Depacketizer::AddCodecConfig()
 {
-	/////////////debug////////////////
-	Debug("ttxgz: Dump config before add to frame and serialise\n");
-	config.Dump();
-	///////////////end of debug/////////////
-
 	//Set config size
 	frame.AllocateCodecConfig(config.GetSize());
 	//Serialize
 	config.Serialize(frame.GetCodecConfigData(), frame.GetCodecConfigSize());
-
-	/////////////debug////////////////
-	Debug("ttxgz: Dump config after add to frame and serialise\n");
-	config.Dump();
-	Debug("ttxgz: get config from frame and parse and dump to check\n");
-	HEVCDescriptor new_config;
-	new_config.Parse(frame.GetCodecConfigData(), frame.GetCodecConfigSize());
-	new_config.Dump();
-	//////////////end of debug /////////////////////
 }
 
 void H265Depacketizer::ResetFrame()
@@ -401,7 +386,7 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 					config.AddPictureParameterSet(payload,nalSize);
 					break;
 				default:
-					Error("-H265 : ttxgz non implemented anything for this type.(payload[0]: 0x%02x, nalUnitType: %d, nalSize: %d)\n", payload[0], nalUnitType, nalSize);
+					//Debug("-H265 : Nothing to do for this NaluType nalu. Just forwarding it.(nalUnitType: %d, nalSize: %d)\n", nalUnitType, nalSize);
 					break;
 			}
 			 //Check if doing annex b
@@ -466,8 +451,6 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 					nalHeader[2] = ConstructFUHeader();
     			    //Add packetization
     			    frame.AddRtpPacket(pos, len, nalHeader.data(), nalHeader.size());
-
-					Debug("-H265 ttxgz: FU headers: nalHeader[0][1][2] = 0x%02x, 0x%02x, 0x%02x\n", nalHeader[0], nalHeader[1], nalHeader[2]);
 
 					if (S == 1) // set start mark to 0 after first FU packet
 					{
