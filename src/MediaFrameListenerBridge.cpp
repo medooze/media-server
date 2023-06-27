@@ -382,7 +382,7 @@ void MediaFrameListenerBridge::DefaultPacketDispatchTimeCoordinator::OnPacket(Me
 	if (originalClockRate != clockRate) throw std::runtime_error("Clock rate is not consistent");
 	
 	lastTime = now;
-	lastTimestamp = ts;
+	lastTimestamp = ts - firstTimestamp;
 }
 
 std::pair<std::vector<RTPPacket::shared>, int64_t> MediaFrameListenerBridge::DefaultPacketDispatchTimeCoordinator::GetPacketsToDispatch(
