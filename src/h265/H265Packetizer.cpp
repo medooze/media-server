@@ -4,7 +4,7 @@
 // H.265 uses same stream format (Annex B)
 #include "h264/h264nal.h"
 
-void OnH265Nal(VideoFrame& frame, HEVCDescriptor &config, bool& noPPSInFrame, bool& noSPSInFrame, bool& noVPSInFrame, BufferReader& reader)
+void H265Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 {
 	//Return if current NAL is empty
 	if (!reader.GetLeft())
@@ -68,22 +68,6 @@ void OnH265Nal(VideoFrame& frame, HEVCDescriptor &config, bool& noPPSInFrame, bo
 			//UltraDebug("-H265 Un-defined/implemented NALU, skipping");
 			/* undefined */
 			return;
-			/* 4.4.1.  Single NAL Unit Packets */
-			/* 
-					0                   1                   2                   3
-				    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-				   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-				   |           PayloadHdr          |      DONL (conditional)       |
-				   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-				   |                                                               |
-				   |                  NAL unit payload data                        |
-				   |                                                               |
-				   |                               +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-				   |                               :...OPTIONAL RTP padding        |
-				   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-			*/
-			/* @Zita Liao: sprop-max-don-diff is considered to be absent right now (so no DONL). Need to extract from SDP */
-			/* the entire payload is the output buffer */
 		case HEVC_RTP_NALU_Type::VPS:			// 32
 		{
 			H265VideoParameterSet vps;
@@ -101,7 +85,7 @@ void OnH265Nal(VideoFrame& frame, HEVCDescriptor &config, bool& noPPSInFrame, bo
 			config.SetGeneralProfileCompatibilityFlags(profileTierLevel.GetGeneralProfileCompatibilityFlags());
 			config.SetGeneralConstraintIndicatorFlags(profileTierLevel.GetGeneralConstraintIndicatorFlags());
 			config.SetGeneralLevelIdc(profileTierLevel.GetGeneralLevelIdc());
-			config.SetNALUnitLengthSizeMinus1(sizeof(nalHeaderPrefix) - 1);
+			config.SetNALUnitLengthSizeMinus1(OUT_NALU_LENGTH_SIZE - 1);
 
 			//Reset previous VPS only on the 1st VPS in current frame
 			if (noVPSInFrame)
@@ -226,29 +210,9 @@ void OnH265Nal(VideoFrame& frame, HEVCDescriptor &config, bool& noPPSInFrame, bo
 
 std::unique_ptr<VideoFrame> H265Packetizer::ProcessAU(BufferReader reader)
 {
-	//UltraDebug("-H265Packetizer::ProcessAU() | H265 AU [len:%d]\n", reader.GetLeft());
+	noPPSInFrame = true;
+	noSPSInFrame = true;
+	noVPSInFrame = true;
 
-	//Alocate enought data
-	auto frame = std::make_unique<VideoFrame>(VideoCodec::H265, reader.GetSize());
-	bool noPPSInFrame = true;
-	bool noSPSInFrame = true;
-	bool noVPSInFrame = true;
-
-	NalSliceAnnexB(std::move(reader), [&](auto reader) {
-		OnH265Nal(*frame, config, noPPSInFrame, noSPSInFrame, noVPSInFrame, reader);
-	});
-
-	//Check if we have new width and heigth
-	if (frame->GetWidth() && frame->GetHeight())
-	{
-		//Update cache
-		width = frame->GetWidth();
-		height = frame->GetHeight();
-	} else {
-		//Update from cache
-		frame->SetWidth(width);
-		frame->SetHeight(height);
-	}
-
-	return frame;
+	return H26xPacketizer::ProcessAU(reader);
 }
