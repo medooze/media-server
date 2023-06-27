@@ -364,10 +364,10 @@ void MediaFrameListenerBridge::DefaultPacketDispatchTimeCoordinator::OnFrameArri
 	if (firstTimestamp==NoTimestamp)
 	{
 		//If we have a time offest from last sent packet
-		if (lastTime)
+		if (lastTimeUs)
 		{
 			//Get offset
-			QWORD offset = std::max<QWORD>((QWORD)(getTimeDiff(lastTime)*clockRate/1E6),1ul);
+			QWORD offset = std::max<QWORD>((QWORD)(getTimeDiff(lastTimeUs)*clockRate/1E6),1ul);
 			//Calculate time difd and add to the last sent timestamp
 			baseTimestamp = lastTimestamp + offset;
 		}
@@ -377,11 +377,11 @@ void MediaFrameListenerBridge::DefaultPacketDispatchTimeCoordinator::OnFrameArri
 }
 
 
-void MediaFrameListenerBridge::DefaultPacketDispatchTimeCoordinator::OnPacket(MediaFrame::Type type, uint64_t now, uint64_t ts, uint64_t clockRate)
+void MediaFrameListenerBridge::DefaultPacketDispatchTimeCoordinator::OnPacket(MediaFrame::Type type, uint64_t nowUs, uint64_t ts, uint64_t clockRate)
 {
 	if (originalClockRate != clockRate) throw std::runtime_error("Clock rate is not consistent");
 	
-	lastTime = now;
+	lastTimeUs = nowUs;
 	lastTimestamp = ts - firstTimestamp;
 }
 

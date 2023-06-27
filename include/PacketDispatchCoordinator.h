@@ -22,11 +22,11 @@ public:
 	 * Update internal time info for a generated packet.
 	 * 
 	 * @param type 	The media type
-	 * @param now 	The arrival time, in milliseconds
+	 * @param nowUs	The packet time, in microseconds.
 	 * @param ts 	The frame timestamp
 	 * @param clockRate The clock rate
 	 */
-	virtual void OnPacket(MediaFrame::Type type, uint64_t now, uint64_t ts, uint64_t clockRate) = 0;
+	virtual void OnPacket(MediaFrame::Type type, uint64_t nowUs, uint64_t ts, uint64_t clockRate) = 0;
 	
 	/**
 	 * Get the packets for sending

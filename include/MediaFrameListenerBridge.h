@@ -63,7 +63,7 @@ private:
 	{
 	public:
 		virtual void OnFrameArrival(MediaFrame::Type type, std::chrono::milliseconds now, uint64_t ts, uint64_t clockRate) override;
-		virtual void OnPacket(MediaFrame::Type type, uint64_t now, uint64_t ts, uint64_t clockRate) override;		
+		virtual void OnPacket(MediaFrame::Type type, uint64_t nowUs, uint64_t ts, uint64_t clockRate) override;		
 		virtual std::pair<std::vector<RTPPacket::shared>, int64_t> GetPacketsToDispatch(std::queue<std::pair<RTPPacket::shared, std::chrono::milliseconds>>& packets, 
 												std::chrono::milliseconds period,
 												std::chrono::milliseconds now) const override;
@@ -75,7 +75,7 @@ private:
 		QWORD firstTimestamp	= NoTimestamp;
 		QWORD baseTimestamp	= 0;
 		QWORD lastTimestamp	= 0;
-		QWORD lastTime		= 0;
+		QWORD lastTimeUs	= 0;
 		
 		uint64_t originalClockRate = 0;
 	};
