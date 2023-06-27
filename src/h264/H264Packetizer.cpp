@@ -226,60 +226,15 @@ void OnH264Nal(VideoFrame& frame, AVCDescriptor &config, bool& noPPSInFrame, boo
 std::unique_ptr<VideoFrame> H264Packetizer::ProcessAU(BufferReader reader)
 {
 	//UltraDebug("-H264Packetizer::ProcessAU() | H264 AU [len:%d]\n", reader.GetLeft());
-
-	//Start of current nal unit
-	uint32_t start = std::numeric_limits<uint32_t>::max();
 	
 	//Alocate enought data
 	auto frame = std::make_unique<VideoFrame>(VideoCodec::H264, reader.GetSize());
 	bool noPPSInFrame = true;
 	bool noSPSInFrame = true;
 
-	//Parse h264 stream
-	while (reader.GetLeft())
-	{
-		uint8_t  startCodeLength = 0;
-		//Check if we have a nal start
-		if (reader.GetLeft()>4 && reader.Peek4() == 0x01)
-			startCodeLength = 4;
-		else if (reader.GetLeft()>3 && reader.Peek3() == 0x01)
-			startCodeLength = 3;
-
-		//If we found a nal unit and not first
-		if (startCodeLength)
-		{
-			//Get nal end
-			uint32_t end = reader.Mark();
-
-			//If we have a nal unit
-			if (end > start)
-			{
-				//Get nalu reader
-				BufferReader nalu = reader.GetReader(start, end - start);
-				//Process current NALU
-				OnH264Nal(*frame, config, noPPSInFrame, noSPSInFrame, nalu);
-			}
-			//Skip start code
-			reader.Skip(startCodeLength);
-			//Begin new NALU
-			start = reader.Mark();
-		} else {
-			//Next
-			reader.Skip(1);
-		}
-	}
-
-	//Get nal end
-	uint32_t end = reader.Mark();
-
-	//If we have a nal unit
-	if (end > start)
-	{
-		//Get nalu reader
-		BufferReader nalu = reader.GetReader(start, end - start);
-		//Process current NALU
-		OnH264Nal(*frame, config, noPPSInFrame, noSPSInFrame, nalu);
-	}
+	NalSliceAnnexB(std::move(reader), [&](auto reader) {
+		OnH264Nal(*frame, config, noPPSInFrame, noSPSInFrame, reader);
+	});
 
 	//Check if we have new width and heigth
 	if (frame->GetWidth() && frame->GetHeight())
