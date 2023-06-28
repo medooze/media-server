@@ -44,7 +44,7 @@ bool GenericProfileTierLevel::Decode(BitReader& r)
 			profile_idc	= i;
 	}
 
-	constraing_indicator_flags  = 0;
+	constraing_indicator_flags	= 0;
 	CHECK(r); progressive_source_flag		= r.Get(1);
 	constraing_indicator_flags |= progressive_source_flag;
 	CHECK(r); interlaced_source_flag		= r.Get(1);
@@ -155,10 +155,10 @@ bool H265ProfileTierLevel::Decode(BitReader& r, bool profilePresentFlag, BYTE ma
 		if (sub_layer_profile_present_flag[i])
 		{ 
 			if(!sub_layer_profile_tier_level[i].Decode(r))
-			  {
-			  	Error("PTL information for sublayer %i too short\n",	i);
-			  	return false;
-			  }
+			{
+				Error("PTL information for sublayer %i too short\n",	i);
+				return false;
+			}
 		}
 		if (sub_layer_level_present_flag[i])
 		{
@@ -191,26 +191,26 @@ bool H265VideoParameterSet::Decode(const BYTE* buffer,DWORD bufferSize)
 	//Create bit reader
 	BitReader r(aux,len);
 
-    CHECK(r); vps_id = r.Get(4);
+	CHECK(r); vps_id = r.Get(4);
 	r.Skip(1); // vps_base_layer_internal_flag
 	r.Skip(1); // vps_base_layer_available_flag
 
-	CHECK(r); vps_max_layers_minus1               = r.Get(6);
-	CHECK(r); vps_max_sub_layers_minus1           = r.Get(3);
+	CHECK(r); vps_max_layers_minus1				  = r.Get(6);
+	CHECK(r); vps_max_sub_layers_minus1			  = r.Get(3);
 	CHECK(r); vps_temporal_id_nesting_flag = r.Get(1);
 
 	CHECK(r); WORD reserved = r.Get(16); 
-    if (reserved != 0xffff) { // vps_reserved_ffff_16bits
-        Error("vps_reserved_ffff_16bits is not 0xffff\n");
-        return false;
-    }
-
-    if (vps_max_sub_layers_minus1 + 1 > HEVCParams::MAX_SUB_LAYERS) {
-        Error("vps_max_sub_layers_minus1 out of range: %d\n", vps_max_sub_layers_minus1);
+	if (reserved != 0xffff) { // vps_reserved_ffff_16bits
+		Error("vps_reserved_ffff_16bits is not 0xffff\n");
 		return false;
-    }
+	}
 
-    if (!profile_tier_level.Decode(r, true, vps_max_sub_layers_minus1))
+	if (vps_max_sub_layers_minus1 + 1 > HEVCParams::MAX_SUB_LAYERS) {
+		Error("vps_max_sub_layers_minus1 out of range: %d\n", vps_max_sub_layers_minus1);
+		return false;
+	}
+
+	if (!profile_tier_level.Decode(r, true, vps_max_sub_layers_minus1))
 	{
 		return false;
 	}
@@ -272,14 +272,14 @@ bool H265SeqParameterSet::Decode(const BYTE* buffer,DWORD bufferSize)
 	pic_height_in_luma_samples = ExpGolombDecoder::Decode(r);
 	// conformance window
 	conformance_window_flag = r.Get(1);
-    if (conformance_window_flag) {
-        BYTE vert_mult  = hevc_sub_height_c[chroma_format_idc];
-        BYTE horiz_mult = hevc_sub_width_c[chroma_format_idc];
-        pic_conf_win.left_offset   = ExpGolombDecoder::Decode(r) * horiz_mult;
-        pic_conf_win.right_offset  = ExpGolombDecoder::Decode(r) * horiz_mult;
-        pic_conf_win.top_offset    = ExpGolombDecoder::Decode(r) *  vert_mult;
-        pic_conf_win.bottom_offset = ExpGolombDecoder::Decode(r) *  vert_mult;
-    }
+	if (conformance_window_flag) {
+		BYTE vert_mult	= hevc_sub_height_c[chroma_format_idc];
+		BYTE horiz_mult = hevc_sub_width_c[chroma_format_idc];
+		pic_conf_win.left_offset   = ExpGolombDecoder::Decode(r) * horiz_mult;
+		pic_conf_win.right_offset  = ExpGolombDecoder::Decode(r) * horiz_mult;
+		pic_conf_win.top_offset    = ExpGolombDecoder::Decode(r) *	vert_mult;
+		pic_conf_win.bottom_offset = ExpGolombDecoder::Decode(r) *	vert_mult;
+	}
 
 	// skip all following SPS element
 	//Free memory
@@ -298,31 +298,31 @@ bool H265PictureParameterSet::Decode(const BYTE* buffer,DWORD bufferSize)
 	BitReader r(aux,len);
 
 	pps_id = ExpGolombDecoder::Decode(r);
-    if (pps_id >= HEVCParams::MAX_PPS_COUNT) {
-        Error("PPS id out of range: %d !\n", pps_id);
+	if (pps_id >= HEVCParams::MAX_PPS_COUNT) {
+		Error("PPS id out of range: %d !\n", pps_id);
 		return false;
-    }
-    sps_id = ExpGolombDecoder::Decode(r);
-    if (sps_id >= HEVCParams::MAX_SPS_COUNT) {
-        Error("SPS id out of range: %d !\n", sps_id);
+	}
+	sps_id = ExpGolombDecoder::Decode(r);
+	if (sps_id >= HEVCParams::MAX_SPS_COUNT) {
+		Error("SPS id out of range: %d !\n", sps_id);
 		return false;
-    }
+	}
 
 	CHECK(r); dependent_slice_segments_enabled_flag = r.Get(1);
-	CHECK(r); output_flag_present_flag              = r.Get(1);
-	CHECK(r); num_extra_slice_header_bits           = r.Get(3);
+	CHECK(r); output_flag_present_flag				= r.Get(1);
+	CHECK(r); num_extra_slice_header_bits			= r.Get(3);
 
-    CHECK(r); sign_data_hiding_flag = r.Get(1);
-    CHECK(r); cabac_init_present_flag = r.Get(1);
+	CHECK(r); sign_data_hiding_flag = r.Get(1);
+	CHECK(r); cabac_init_present_flag = r.Get(1);
 
-    CHECK(r); num_ref_idx_l0_default_active_minus1 = ExpGolombDecoder::Decode(r);
-    CHECK(r); num_ref_idx_l1_default_active_minus1 = ExpGolombDecoder::Decode(r);
-    if (num_ref_idx_l0_default_active_minus1 + 1 >= HEVCParams::MAX_REFS ||
-        num_ref_idx_l1_default_active_minus1 + 1 >= HEVCParams::MAX_REFS) {
-        Error("Too many default refs in PPS: %d/%d.\n",
-               num_ref_idx_l0_default_active_minus1 + 1, num_ref_idx_l1_default_active_minus1 + 1);
+	CHECK(r); num_ref_idx_l0_default_active_minus1 = ExpGolombDecoder::Decode(r);
+	CHECK(r); num_ref_idx_l1_default_active_minus1 = ExpGolombDecoder::Decode(r);
+	if (num_ref_idx_l0_default_active_minus1 + 1 >= HEVCParams::MAX_REFS ||
+		num_ref_idx_l1_default_active_minus1 + 1 >= HEVCParams::MAX_REFS) {
+		Error("Too many default refs in PPS: %d/%d.\n",
+			   num_ref_idx_l0_default_active_minus1 + 1, num_ref_idx_l1_default_active_minus1 + 1);
 		return false;
-    }
+	}
 
 	//Free memory
 	free(aux);

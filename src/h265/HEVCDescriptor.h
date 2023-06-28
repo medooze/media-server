@@ -50,7 +50,7 @@ public:
 								+ 1 + 2 + 2*numOfVideoParameterSets + vpsTotalSizes
 								//SPS type(1B) + count(2B) +  length(2B) per SPS + total data 
 								+ 1 + 2 + 2*numOfSequenceParameterSets + spsTotalSizes
-								 //PPS type(1B) + count(2B) + length(2B) per PPS + total data
+								//PPS type(1B) + count(2B) + length(2B) per PPS + total data
 								+ 1 + 2 + 2*numOfPictureParameterSets + ppsTotalSizes;}
 	void SetConfigurationVersion(BYTE in)		{ configurationVersion = in; }
 
