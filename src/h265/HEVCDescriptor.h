@@ -1,8 +1,8 @@
 /* 
  * File:   HEVCDescriptor.h
- * Author: Sergio
+ * Author: Zita
  *
- * Created on 21 de junio de 2011, 12:21
+ * Created on 21 June 2023, 12:21
  */
 
 #ifndef HEVCDESCRIPTOR_H
