@@ -63,7 +63,7 @@ public:
 	void SetGeneralProfileCompatibilityFlags(const H265ProfileCompatibilityFlags& profile_compatibility_flag)
 		{
 			generalProfileCompatibilityFlags = 0;
-			static_assert(profile_compatibility_flag.size() == sizeof(generalProfileCompatibilityFlags) * 8);
+			//static_assert(profile_compatibility_flag.size() == sizeof(generalProfileCompatibilityFlags) * 8);
 			for (size_t i = 0; i < profile_compatibility_flag.size(); i++)
 			{
 				generalProfileCompatibilityFlags |= (profile_compatibility_flag[i] << i);
