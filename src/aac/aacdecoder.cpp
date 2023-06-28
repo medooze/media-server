@@ -118,7 +118,7 @@ int AACDecoder::Decode(const BYTE *in, int inLen, SWORD* out, int outLen)
 	{
 		//Make sure that we have enough data
 		if (outLen < (len + frame->nb_samples) * frame->channels)
-			return Error("-AACDecoder::Decode() | AAC returned too much data [len:%d,samples:%d,channels:%d,outLen:%d]\n", len, frame->nb_samples, frame->channels);
+			return Error("-AACDecoder::Decode() | AAC returned too much data [len:%d,samples:%d,channels:%d,outLen:%d]\n", len, frame->nb_samples, frame->channelsm, outLen);
 
 		//Convert to SWORD
 		for (size_t i = 0; i < frame->nb_samples && (i * frame->channels) < outLen; ++i)
