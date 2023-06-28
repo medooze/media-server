@@ -91,14 +91,14 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 		return nullptr;
 
 	/* 
-     *   +-------------+-----------------+
-     *   |0|1|2|3|4|5|6|7|0|1|2|3|4|5|6|7|
-     *   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-     *   |F|   Type    |  LayerId  | TID |
-     *   +-------------+-----------------+
-	 *
-	 * F must be 0.
-	 */
+	*   +-------------+-----------------+
+	*   |0|1|2|3|4|5|6|7|0|1|2|3|4|5|6|7|
+	*   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	*   |F|   Type    |  LayerId  | TID |
+	*   +-------------+-----------------+
+	*
+	* F must be 0.
+	*/
 
 	BYTE nalUnitType = (payload[0] & 0x7e) >> 1;
 	BYTE nuh_layer_id = ((payload[0] & 0x1) << 5) + ((payload[1] & 0xf8) >> 3);
@@ -130,33 +130,33 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 			return nullptr;
 		case HEVC_RTP_NALU_Type::UNSPEC48_AP:	//48 
 			/**
-			   Figure 7 presents an example of an AP that contains two aggregation
-			   units, labeled as 1 and 2 in the figure, without the DONL and DOND
-			   fields being present.
+			Figure 7 presents an example of an AP that contains two aggregation
+			units, labeled as 1 and 2 in the figure, without the DONL and DOND
+			fields being present.
 
-			    0                   1                   2                   3
-			    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-			   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-			   |                          RTP Header                           |
-			   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-			   |   PayloadHdr (Type=48)        |         NALU 1 Size           |
-			   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-			   |          NALU 1 HDR           |                               |
-			   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+         NALU 1 Data           |
-			   |                   . . .                                       |
-			   |                                                               |
-			   +               +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-			   |  . . .        | NALU 2 Size                   | NALU 2 HDR    |
-			   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-			   | NALU 2 HDR    |                                               |
-			   +-+-+-+-+-+-+-+-+              NALU 2 Data                      |
-			   |                   . . .                                       |
-			   |                               +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-			   |                               :...OPTIONAL RTP padding        |
-			   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+			0                   1                   2                   3
+			0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+			+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+			|                          RTP Header                           |
+			+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+			|   PayloadHdr (Type=48)        |         NALU 1 Size           |
+			+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+			|          NALU 1 HDR           |                               |
+			+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+         NALU 1 Data           |
+			|                   . . .                                       |
+			|                                                               |
+			+               +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+			|  . . .        | NALU 2 Size                   | NALU 2 HDR    |
+			+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+			| NALU 2 HDR    |                                               |
+			+-+-+-+-+-+-+-+-+              NALU 2 Data                      |
+			|                   . . .                                       |
+			|                               +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+			|                               :...OPTIONAL RTP padding        |
+			+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-			   Figure 7: An Example of an AP Packet Containing Two Aggregation
-			   Units without the DONL and DOND Fields
+			Figure 7: An Example of an AP Packet Containing Two Aggregation
+			Units without the DONL and DOND Fields
 
 			*/
 			Error("-H265 TODO: non implemented yet, need update to rfc7798, return nullptr (payload[0]: 0x%02x, nalUnitType: %d, nalSize: %d) \n", payload[0], nalUnitType, nalSize);
@@ -307,17 +307,17 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 		default:
 			/* 4.4.1.  Single NAL Unit Packets */
 			/* 
-					0                   1                   2                   3
-				    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-				   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-				   |           PayloadHdr          |      DONL (conditional)       |
-				   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-				   |                                                               |
-				   |                  NAL unit payload data                        |
-				   |                                                               |
-				   |                               +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-				   |                               :...OPTIONAL RTP padding        |
-				   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				0                   1                   2                   3
+				 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+				+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				|           PayloadHdr          |      DONL (conditional)       |
+				+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				|                                                               |
+				|                  NAL unit payload data                        |
+				|                                                               |
+				|                               +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+				|                               :...OPTIONAL RTP padding        |
+				+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 			*/
 			/* @Zita Liao: sprop-max-don-diff is considered to be absent right now (so no DONL). Need to extract from SDP */
 			/* the entire payload is the output buffer */
@@ -389,7 +389,7 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 					//Debug("-H265 : Nothing to do for this NaluType nalu. Just forwarding it.(nalUnitType: %d, nalSize: %d)\n", nalUnitType, nalSize);
 					break;
 			}
-			 //Check if doing annex b
+			//Check if doing annex b
 			if (annexB)
 				//Set annex b start code
 				set4(nalHeaderPreffix, 0, HEVCParams::ANNEX_B_START_CODE);
@@ -403,62 +403,7 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 			//Add RTP packet
 			if (nalSize >= RTPPAYLOADSIZE)
 			{
-				// use FU:
-				//  0                   1                   2                   3
-   				//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-   				// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   				// |    PayloadHdr (Type=49)       |   FU header   | DONL (cond)   |
-   				// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-|
-   				// | DONL (cond)   |                                               |
-   				// |-+-+-+-+-+-+-+-+                                               |
-   				// |                         FU payload                            |
-   				// |                                                               |
-   				// |                               +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   				// |                               :...OPTIONAL RTP padding        |
-   				// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-				// FU header:
-				// +---------------+
-   				// |0|1|2|3|4|5|6|7|
-   				// +-+-+-+-+-+-+-+-+
-   				// |S|E|  FuType   |
-   				// +---------------+
-				Debug("-H265: nalSize(%d) is larger than RTPPAYLOADSIZE (%d)!\n", nalSize, RTPPAYLOADSIZE);
-				//nalHeader = {PayloadHdr, FU header}, we don't suppport DONL yet
-				const uint16_t nalHeaderFU = ((uint16_t)(HEVC_RTP_NALU_Type::UNSPEC49_FU) << 9)
-											| ((uint16_t)(nuh_layer_id) << 3)
-											| ((uint16_t)(nuh_temporal_id_plus1)); 
-				uint8_t S = 1, E = 0;
-				auto ConstructFUHeader = [&]() {return (uint8_t)(S << 7 | (E << 6) | (nalUnitType & 0b11'1111));};
-				std::array<uint8_t, 3> nalHeader = {(uint8_t)((nalHeaderFU & 0xff00) >> 8), (uint8_t)(nalHeaderFU & 0xff), ConstructFUHeader()};
-
-				//Pending uint8_ts
-				uint32_t pending = nalSize;
-				//Skip payload nal header
-				pending -= HEVCParams::RTP_NAL_HEADER_SIZE;
-				pos += HEVCParams::RTP_NAL_HEADER_SIZE;
-
-    			//Split it
-    			while (pending)
-    			{
-    			    int len = std::min<uint32_t>(RTPPAYLOADSIZE - nalHeader.size(), pending);
-    			    //Read it
-    			    pending -= len;
-    			    //If all added
-    			    if (!pending) //Set end mark
-					{ 
-						E = 1;
-					}
-					nalHeader[2] = ConstructFUHeader();
-    			    //Add packetization
-    			    frame.AddRtpPacket(pos, len, nalHeader.data(), nalHeader.size());
-
-					if (S == 1) // set start mark to 0 after first FU packet
-					{
-						S = 0;
-					}
-    			    //Move start
-    			    pos += len;
-    			}
+				Error("-H265: nalSize(%d) is larger than RTPPAYLOADSIZE (%d)!\n", nalSize, RTPPAYLOADSIZE);
 			}
 			else
 			{
