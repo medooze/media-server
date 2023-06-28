@@ -1,9 +1,10 @@
 /* 
  * File:   HEVCDescriptor.cpp
- * Author: Sergio
+ * Author: Zita
  * 
- * Created on 21 de junio de 2011, 12:21
+ * Created on 21 June 2023, 12:21
  */
+
 #include "log.h"
 #include "HEVCDescriptor.h"
 #include "tools.h"

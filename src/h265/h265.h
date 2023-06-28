@@ -21,75 +21,75 @@
  */
 
 enum HEVC_RTP_NALU_Type	{
-	TRAIL_N		   = 0,
-	TRAIL_R		   = 1,
-	TSA_N		   = 2,
-	TSA_R		   = 3,
-	STSA_N		   = 4,
-	STSA_R		   = 5,
-	RADL_N		   = 6,
-	RADL_R		   = 7,
-	RASL_N		   = 8,
-	RASL_R		   = 9,
-	VCL_N10		   = 10,
-	VCL_R11		   = 11,
-	VCL_N12		   = 12,
-	VCL_R13		   = 13,
-	VCL_N14		   = 14,
-	VCL_R15		   = 15,
-	BLA_W_LP	   = 16,
-	BLA_W_RADL	   = 17,
-	BLA_N_LP	   = 18,
-	IDR_W_RADL	   = 19,
-	IDR_N_LP	   = 20,
-	CRA_NUT		   = 21,
+	TRAIL_N		= 0,
+	TRAIL_R		= 1,
+	TSA_N		= 2,
+	TSA_R		= 3,
+	STSA_N		= 4,
+	STSA_R		= 5,
+	RADL_N		= 6,
+	RADL_R		= 7,
+	RASL_N		= 8,
+	RASL_R		= 9,
+	VCL_N10		= 10,
+	VCL_R11		= 11,
+	VCL_N12		= 12,
+	VCL_R13		= 13,
+	VCL_N14		= 14,
+	VCL_R15		= 15,
+	BLA_W_LP	= 16,
+	BLA_W_RADL	= 17,
+	BLA_N_LP	= 18,
+	IDR_W_RADL	= 19,
+	IDR_N_LP	= 20,
+	CRA_NUT		= 21,
 	RSV_IRAP_VCL22 = 22,
 	RSV_IRAP_VCL23 = 23,
-	RSV_VCL24	   = 24,
-	RSV_VCL25	   = 25,
-	RSV_VCL26	   = 26,
-	RSV_VCL27	   = 27,
-	RSV_VCL28	   = 28,
-	RSV_VCL29	   = 29,
-	RSV_VCL30	   = 30,
-	RSV_VCL31	   = 31,
-	VPS			   = 32,
-	SPS			   = 33,
-	PPS			   = 34,
-	AUD			   = 35,
-	EOS			   = 36,
-	EOB			   = 37,
-	FD			   = 38,
-	SEI_PREFIX	   = 39,
-	SEI_SUFFIX	   = 40,
-	RSV_NVCL41	   = 41,
-	RSV_NVCL42	   = 42,
-	RSV_NVCL43	   = 43,
-	RSV_NVCL44	   = 44,
-	RSV_NVCL45	   = 45,
-	RSV_NVCL46	   = 46,
-	RSV_NVCL47	   = 47,
-	UNSPEC48_AP	   = 48,
-	UNSPEC49_FU	   = 49,
-	UNSPEC50_PACI  = 50,
-	UNSPEC51	   = 51,
-	UNSPEC52	   = 52,
-	UNSPEC53	   = 53,
-	UNSPEC54	   = 54,
-	UNSPEC55	   = 55,
-	UNSPEC56	   = 56,
-	UNSPEC57	   = 57,
-	UNSPEC58	   = 58,
-	UNSPEC59	   = 59,
-	UNSPEC60	   = 60,
-	UNSPEC61	   = 61,
-	UNSPEC62	   = 62,
-	UNSPEC63	   = 63,
+	RSV_VCL24	= 24,
+	RSV_VCL25	= 25,
+	RSV_VCL26	= 26,
+	RSV_VCL27	= 27,
+	RSV_VCL28	= 28,
+	RSV_VCL29	= 29,
+	RSV_VCL30	= 30,
+	RSV_VCL31	= 31,
+	VPS			= 32,
+	SPS			= 33,
+	PPS			= 34,
+	AUD			= 35,
+	EOS			= 36,
+	EOB			= 37,
+	FD			= 38,
+	SEI_PREFIX	= 39,
+	SEI_SUFFIX	= 40,
+	RSV_NVCL41	= 41,
+	RSV_NVCL42	= 42,
+	RSV_NVCL43	= 43,
+	RSV_NVCL44	= 44,
+	RSV_NVCL45	= 45,
+	RSV_NVCL46	= 46,
+	RSV_NVCL47	= 47,
+	UNSPEC48_AP	= 48,
+	UNSPEC49_FU	= 49,
+	UNSPEC50_PACI= 50,
+	UNSPEC51	= 51,
+	UNSPEC52	= 52,
+	UNSPEC53	= 53,
+	UNSPEC54	= 54,
+	UNSPEC55	= 55,
+	UNSPEC56	= 56,
+	UNSPEC57	= 57,
+	UNSPEC58	= 58,
+	UNSPEC59	= 59,
+	UNSPEC60	= 60,
+	UNSPEC61	= 61,
+	UNSPEC62	= 62,
+	UNSPEC63	= 63,
 };
 
 struct HEVCParams{
 	// 7.4.3.1:	vps_max_layers_minus1 is in	[0,	62].
-	static const BYTE  MAX_LAYERS	   = 63;
+	static const BYTE  MAX_LAYERS	= 63;
 	// 7.4.3.1:	vps_max_sub_layers_minus1 is in	[0,	6].
 	static const BYTE MAX_SUB_LAYERS = 7;
 	// 7.4.3.1:	vps_num_layer_sets_minus1 is in	[0,	1023].
@@ -105,7 +105,11 @@ struct HEVCParams{
 	// A.4.2: MaxDpbSize is	bounded	above by 16.
 	static const BYTE MAX_DPB_SIZE = 16;
 	// 7.4.3.1:	vps_max_dec_pic_buffering_minus1[i]	is in [0, MaxDpbSize - 1].
+<<<<<<< HEAD
 	static const BYTE MAX_REFS	 = MAX_DPB_SIZE;
+=======
+	static const BYTE MAX_REFS	= MAX_DPB_SIZE;
+>>>>>>> dev/zliao/h265_recording_hevc_descriptor
 
 	// 7.4.3.2.1: num_short_term_ref_pic_sets is in	[0,	64].
 	static const BYTE MAX_SHORT_TERM_REF_PIC_SETS	= 64;
@@ -128,7 +132,11 @@ struct HEVCParams{
 	static const WORD MAX_HEIGHT = 16888;
 
 	// A.4.1: table	A.6	allows at most 22 tile rows	for	any	level.
+<<<<<<< HEAD
 	static const BYTE MAX_TILE_ROWS	 = 22;
+=======
+	static const BYTE MAX_TILE_ROWS = 22;
+>>>>>>> dev/zliao/h265_recording_hevc_descriptor
 	// A.4.1: table	A.6	allows at most 20 tile columns for any level.
 	static const BYTE MAX_TILE_COLUMNS = 20;
 
@@ -152,15 +160,24 @@ struct HEVCParams{
 	static const BYTE ANNEX_B_START_CODE = 0x01;
 
 	// HEVC PROFILE
+<<<<<<< HEAD
 	static const BYTE PROFILE_MAIN                        = 1;
 	static const BYTE PROFILE_MAIN_10                     = 2;
 	static const BYTE PROFILE_MAIN_STILL_PICTURE          = 3;
 	static const BYTE PROFILE_REXT                        = 4;
 	static const BYTE PROFILE_SCC                         = 9;
+=======
+	static const BYTE PROFILE_MAIN						= 1;
+	static const BYTE PROFILE_MAIN_10					= 2;
+	static const BYTE PROFILE_MAIN_STILL_PICTURE		= 3;
+	static const BYTE PROFILE_REXT						= 4;
+	static const BYTE PROFILE_SCC						= 9;
+>>>>>>> dev/zliao/h265_recording_hevc_descriptor
 
 	// RFC 7998
 	static const BYTE RTP_NAL_HEADER_SIZE				= 2;
 	/* 
+<<<<<<< HEAD
      *   +-------------+-----------------+
      *   |0|1|2|3|4|5|6|7|0|1|2|3|4|5|6|7|
      *   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -169,6 +186,16 @@ struct HEVCParams{
 	 *
 	 * F must be 0.
 	 */
+=======
+	* +-------------+-----------------+
+	* |0|1|2|3|4|5|6|7|0|1|2|3|4|5|6|7|
+	* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	* |F|   Type    |  LayerId  | TID |
+	* +-------------+-----------------+
+	*
+	* F must be 0.
+	*/
+>>>>>>> dev/zliao/h265_recording_hevc_descriptor
 };
 
 const std::array<BYTE, 4> hevc_sub_width_c {
@@ -226,6 +253,7 @@ public:
 		Debug("\t %s.tier_flag = %d\n", name.c_str(), tier_flag);
 		Debug("\t %s.profile_idc = %d\n", name.c_str(), profile_idc);
 		Debug("\t %s.progressive_source_flag = %d\n", name.c_str(), progressive_source_flag);
+<<<<<<< HEAD
 		Debug("\t %s.interlaced_source_flag		 = %d\n", name.c_str(), interlaced_source_flag);
 		Debug("\t %s.non_packed_constraint_flag	 = %d\n", name.c_str(), non_packed_constraint_flag);
 		Debug("\t %s.frame_only_constraint_flag	 = %d\n", name.c_str(), frame_only_constraint_flag);
@@ -242,6 +270,24 @@ public:
 		Debug("\t %s.inbld_flag							 = %d\n", name.c_str(), inbld_flag							);
 		Debug("\t %s.constraint_indicator_flags          = 0x%x\n", name.c_str(), constraing_indicator_flags);
 		Debug("\t %s.level_idc 							 = %d\n", name.c_str(), level_idc);
+=======
+		Debug("\t %s.interlaced_source_flag		= %d\n", name.c_str(), interlaced_source_flag);
+		Debug("\t %s.non_packed_constraint_flag	= %d\n", name.c_str(), non_packed_constraint_flag);
+		Debug("\t %s.frame_only_constraint_flag	= %d\n", name.c_str(), frame_only_constraint_flag);
+		Debug("\t %s.max_12bit_constraint_flag		= %d\n", name.c_str(), max_12bit_constraint_flag		);
+		Debug("\t %s.max_10bit_constraint_flag		= %d\n", name.c_str(), max_10bit_constraint_flag		);
+		Debug("\t %s.max_8bit_constraint_flag		= %d\n", name.c_str(), max_8bit_constraint_flag		);
+		Debug("\t %s.max_422chroma_constraint_flag	= %d\n", name.c_str(), max_422chroma_constraint_flag	);
+		Debug("\t %s.max_420chroma_constraint_flag	= %d\n", name.c_str(), max_420chroma_constraint_flag	);
+		Debug("\t %s.max_monochrome_constraint_flag	= %d\n", name.c_str(), max_monochrome_constraint_flag	);
+		Debug("\t %s.intra_constraint_flag			= %d\n", name.c_str(), intra_constraint_flag			);
+		Debug("\t %s.one_picture_only_constraint_flag	= %d\n", name.c_str(), one_picture_only_constraint_flag	);
+		Debug("\t %s.lower_bit_rate_constraint_flag		= %d\n", name.c_str(), lower_bit_rate_constraint_flag		);
+		Debug("\t %s.max_14bit_constraint_flag			= %d\n", name.c_str(), max_14bit_constraint_flag			);
+		Debug("\t %s.inbld_flag							= %d\n", name.c_str(), inbld_flag							);
+		Debug("\t %s.constraint_indicator_flags			= 0x%x\n", name.c_str(), constraing_indicator_flags);
+		Debug("\t %s.level_idc							= %d\n", name.c_str(), level_idc);
+>>>>>>> dev/zliao/h265_recording_hevc_descriptor
 	}
 
 private:
@@ -251,10 +297,17 @@ private:
 	BYTE profile_idc = HEVCParams::PROFILE_MAIN; // 1
 	H265ProfileCompatibilityFlags profile_compatibility_flag; // [PROFILE_MAIN/1]: true, others are false
 	QWORD constraing_indicator_flags = 0; // 6B, 48 bits
+<<<<<<< HEAD
 	bool progressive_source_flag	= true  ;
 	bool interlaced_source_flag		= false ;
 	bool non_packed_constraint_flag	= true  ;
 	bool frame_only_constraint_flag	= true  ;
+=======
+	bool progressive_source_flag	= true	;
+	bool interlaced_source_flag		= false ;
+	bool non_packed_constraint_flag	= true	;
+	bool frame_only_constraint_flag	= true	;
+>>>>>>> dev/zliao/h265_recording_hevc_descriptor
 
 	bool max_12bit_constraint_flag		;
 	bool max_10bit_constraint_flag		;
@@ -405,11 +458,19 @@ private:
 	bool dependent_slice_segments_enabled_flag = false;
 	bool output_flag_present_flag = false;
 	BYTE num_extra_slice_header_bits = 0; // [0, 2]
+<<<<<<< HEAD
     bool sign_data_hiding_flag = false;
     bool cabac_init_present_flag = false;
 
     BYTE num_ref_idx_l0_default_active_minus1 = 0; // [0, 14] 
     BYTE num_ref_idx_l1_default_active_minus1 = 0; // [0, 14] 
+=======
+	bool sign_data_hiding_flag = false;
+	bool cabac_init_present_flag = false;
+
+	BYTE num_ref_idx_l0_default_active_minus1 = 0; // [0, 14] 
+	BYTE num_ref_idx_l1_default_active_minus1 = 0; // [0, 14] 
+>>>>>>> dev/zliao/h265_recording_hevc_descriptor
 };
 
 #undef CHECK
