@@ -33,6 +33,8 @@ RTPDepacketizer* RTPDepacketizer::Create(MediaFrame::Type mediaType,DWORD codec)
 			 {
 				 case VideoCodec::H264:
 					 return new H264Depacketizer();
+				 case VideoCodec::H265:
+					 return new H265Depacketizer();
 				 case VideoCodec::VP8:
 					 return new VP8Depacketizer();
 				 case VideoCodec::VP9:
