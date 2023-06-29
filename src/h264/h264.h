@@ -10,6 +10,7 @@
 #include "config.h"
 #include "math.h"
 #include "bitstream.h"
+#include "h264nal.h"
 
 #define CHECK(r) if(r.Error()) return false;
 
@@ -21,7 +22,7 @@ public:
 		//SHould be done otherway, like modifying the BitReader to escape the input NAL, but anyway.. duplicate memory
 		BYTE *aux = (BYTE*)malloc(bufferSize);
 		//Escape
-		DWORD len = Escape(aux,buffer,bufferSize);
+		DWORD len = NalUnescapeRbsp(aux,buffer,bufferSize);
 		//Create bit reader
 		BitReader r(aux,len);
 		//Read SPS
@@ -103,27 +104,6 @@ public:
 		//OK
 		return !r.Error();
 	}
-private:
-	inline static DWORD Escape( BYTE *dst,const BYTE *src, DWORD size )
-	{
-		DWORD len = 0;
-		DWORD i = 0;
-		while(i<size)
-		{
-			//Check if next BYTEs are the scape sequence
-	                if((i+2<size) && (get3(src,i)==0x03))
-			{
-				//Copy the first two
-	                        dst[len++] = get1(src,i);
-	                        dst[len++] = get1(src,i+1);
-				//Skip the three
-	                        i += 3;
-	                } else {
-	                        dst[len++] = get1(src,i++);
-	                }
-	        }
-		return len;
-	}
 public:
 	DWORD GetWidth()	{ return ((pic_width_in_mbs_minus1 +1)*16) - frame_crop_right_offset *2 - frame_crop_left_offset *2; }
 	DWORD GetHeight()	{ return ((2 - frame_mbs_only_flag)* (pic_height_in_map_units_minus1 +1) * 16) - frame_crop_bottom_offset*2 - frame_crop_top_offset*2; }
@@ -198,7 +178,7 @@ public:
 		//SHould be done otherway, like modifying the BitReader to escape the input NAL, but anyway.. duplicate memory
 		BYTE *aux = (BYTE*)malloc(bufferSize);
 		//Escape
-		DWORD len = Escape(aux,buffer,bufferSize);
+		DWORD len = NalUnescapeRbsp(aux,buffer,bufferSize);
 		//Create bit reader
 		BitReader r(aux,len);
 		//Read SQS
@@ -248,27 +228,6 @@ public:
 		free(aux);
 		//OK
 		return true;
-	}
-private:
-	inline static DWORD Escape( BYTE *dst,const BYTE *src, DWORD size )
-	{
-		DWORD len = 0;
-		DWORD i = 0;
-		while(i<size)
-		{
-			//Check if next BYTEs are the scape sequence
-	                if((i+2<size) && (get3(src,i)==0x03))
-			{
-				//Copy the first two
-	                        dst[len++] = get1(src,i);
-	                        dst[len++] = get1(src,i+1);
-				//Skip the three
-	                        i += 3;
-	                } else {
-	                        dst[len++] = get1(src,i++);
-	                }
-	        }
-		return len;
 	}
 public:
 	void Dump() const
@@ -322,25 +281,6 @@ private:
 };
 
 #undef CHECK
-
-inline void H264ToAnnexB(BYTE* data, DWORD size)
-{
-	DWORD pos = 0;
-
-	while (pos < size)
-	{
-		//Get nal size
-		DWORD nalSize = get4(data, pos);
-		//If it was already in annex B
-		if (nalSize==1 && !pos)
-			//Done
-			return;
-		//Set annexB start code
-		set4(data, pos, 1);
-		//Next
-		pos += 4 + nalSize;
-	}
-}
 
 #endif	/* H264_H */
 
