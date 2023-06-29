@@ -568,7 +568,8 @@ void RTMPConnection::ParseData(BYTE *data,const DWORD size)
 							chunkInputStream->SetMessageTypeId	(type0.GetMessageTypeId());
 							chunkInputStream->SetMessageStreamId	(type0.GetMessageStreamId());
 							//Check if we have extended timestamp
-							if (type0.GetTimestamp()!=0xFFFFFF)
+							chunkInputStream->SetIsExtendedTimestamp(type0.GetTimestamp() == 0xFFFFFF);
+							if (!chunkInputStream->IsExtendedTimestamp())
 							{
 								//Set timesptamp
 								chunkInputStream->SetTimestamp(type0.GetTimestamp());
@@ -598,7 +599,8 @@ void RTMPConnection::ParseData(BYTE *data,const DWORD size)
 							chunkInputStream->SetMessageLength(type1.GetMessageLength());
 							chunkInputStream->SetMessageTypeId(type1.GetMessageTypeId());
 							//Check if we have extended timestam
-							if (type1.GetTimestampDelta()!=0xFFFFFF)
+							chunkInputStream->SetIsExtendedTimestamp(type1.GetTimestampDelta() == 0xFFFFFF);
+							if (!chunkInputStream->IsExtendedTimestamp())
 							{
 								//Set timestamp delta
 								chunkInputStream->SetTimestampDelta(type1.GetTimestampDelta());
@@ -624,8 +626,9 @@ void RTMPConnection::ParseData(BYTE *data,const DWORD size)
 							//Debug
 							//Debug("Got type 2 header [timestampDelta:%lu]\n",type2.GetTimestampDelta());
 							//type2.Dump();
-							//Check if we have extended timestam
-							if (type2.GetTimestampDelta()!=0xFFFFFF)
+							//Check if we have extended timestam							
+							chunkInputStream->SetIsExtendedTimestamp(type2.GetTimestampDelta() == 0xFFFFFF);
+							if (!chunkInputStream->IsExtendedTimestamp())
 							{
 								//Set timestamp delta
 								chunkInputStream->SetTimestampDelta(type2.GetTimestampDelta());
@@ -653,7 +656,7 @@ void RTMPConnection::ParseData(BYTE *data,const DWORD size)
 						//Start data reception
 						chunkInputStream->StartChunkData();
 						//Move to next state
-						state = CHUNK_DATA_WAIT;
+						state = chunkInputStream->IsExtendedTimestamp() ? CHUNK_EXT_TIMESTAMP_WAIT : CHUNK_DATA_WAIT;
 						//Reset sent bytes in buffer
 						chunkLen = 0;
 						break;

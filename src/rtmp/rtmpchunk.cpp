@@ -14,6 +14,7 @@ RTMPChunkStreamInfo::RTMPChunkStreamInfo()
 	timestampDelta = 0;
 	streamId = -1;
 	length = -1;
+	isExtendedTimestamp = false;
 }	
 
 void RTMPChunkStreamInfo::SetTimestamp(DWORD ts)
@@ -66,6 +67,16 @@ DWORD RTMPChunkStreamInfo::GetMessageStreamId()
 BYTE RTMPChunkStreamInfo::GetMessageTypeId()
 {
 	return (BYTE)type;
+}
+
+void RTMPChunkStreamInfo::SetIsExtendedTimestamp(bool isExtended)
+{
+	isExtendedTimestamp = isExtended;
+}
+
+bool RTMPChunkStreamInfo::IsExtendedTimestamp() const
+{
+	return isExtendedTimestamp;
 }
 
 /***********************************

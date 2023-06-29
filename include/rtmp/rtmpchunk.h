@@ -21,12 +21,15 @@ public:
 	BYTE  GetMessageTypeId();
 	DWORD GetTimestamp();
 
+	void SetIsExtendedTimestamp(bool isExtended);
+	bool IsExtendedTimestamp() const;
 protected:
 	RTMPMessage::Type	type;
 	DWORD 			streamId;
 	DWORD			length;
 	DWORD			timestamp;
 	DWORD			timestampDelta;
+	bool 			isExtendedTimestamp;
 };
 
 
