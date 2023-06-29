@@ -928,7 +928,7 @@ AVCDescriptor* MP4Streamer::GetAVCDescriptor()
 	MP4GetTrackH264LengthSize(video->mp4, video->track, &len);
 
 	//Set it
-	desc->SetNALUnitLength(len-1);
+	desc->SetNALUnitLengthSizeMinus1(len-1);
 
 	// Get SEI informaMP4GetTrackH264SeqPictHeaderstion
 	MP4GetTrackH264SeqPictHeaders(video->mp4, video->track, &sequenceHeader, &sequenceHeaderSize, &pictureHeader, &pictureHeaderSize);

@@ -692,7 +692,7 @@ int FLVEncoder::EncodeVideo()
 			desc.SetAVCProfileIndication(0x42);
 			desc.SetProfileCompatibility(0x80);
 			desc.SetAVCLevelIndication(0x0C);
-			desc.SetNALUnitLength(3);
+			desc.SetNALUnitLengthSizeMinus1(3);
 			//Get encoded data
 			BYTE *data = encoded->GetData();
 			//Get size

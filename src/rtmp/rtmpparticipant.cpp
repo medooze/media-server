@@ -645,7 +645,7 @@ int RTMPParticipant::SendVideo()
 			desc.SetAVCProfileIndication(0x42);
 			desc.SetProfileCompatibility(0x80);
 			desc.SetAVCLevelIndication(0x0C);
-			desc.SetNALUnitLength(3);
+			desc.SetNALUnitLengthSizeMinus1(3);
 			//Get encoded data
 			BYTE *data = encoded->GetData();
 			//Get size
@@ -944,7 +944,7 @@ int RTMPParticipant::RecVideo()
 			}
 
 			//Get nal
-			NALUnitLength = desc.GetNALUnitLength()+1;
+			NALUnitLength = desc.GetNALUnitLengthSizeMinus1()+1;
 
 			//Decode SPS
 			for (int i=0;i<desc.GetNumOfSequenceParameterSets();i++)
