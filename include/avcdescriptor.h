@@ -52,7 +52,7 @@ private:
 	BYTE profileCompatibility;
 	BYTE AVCLevelIndication;
 	BYTE NALUnitLengthSizeMinus1;
-    BYTE numOfSequenceParameterSets;
+	BYTE numOfSequenceParameterSets;
 	std::vector<WORD> spsSizes;
 	std::vector<BYTE*> spsData;
    	BYTE numOfPictureParameterSets;
