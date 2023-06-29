@@ -337,7 +337,7 @@ VideoFrame* H264Encoder::EncodeFrame(const VideoBuffer::const_shared& videoBuffe
 				config.SetAVCProfileIndication(nalData[0]);
 				config.SetProfileCompatibility(nalData[1]);
 				config.SetAVCLevelIndication(nalData[2]);
-				config.SetNALUnitLength(3);
+				config.SetNALUnitLengthSizeMinus1(3);
 				//Add full nal to config
 				config.AddSequenceParameterSet(nalData,nalSize);
 				break;

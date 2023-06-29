@@ -37,13 +37,13 @@ public:
 	BYTE GetProfileCompatibility()		const { return profileCompatibility;		}
 	BYTE GetAVCProfileIndication()		const { return AVCProfileIndication;		}
 	BYTE GetConfigurationVersion()		const { return configurationVersion;		}
-	BYTE GetNALUnitLength()			const { return NALUnitLength;			}
+	BYTE GetNALUnitLengthSizeMinus1()			const { return NALUnitLengthSizeMinus1;			}
 	DWORD GetSize()				const { return 7+2*(numOfSequenceParameterSets+numOfPictureParameterSets)+ppsTotalSizes+spsTotalSizes;	}
 	void SetAVCLevelIndication(BYTE AVCLevelIndication)		{ this->AVCLevelIndication = AVCLevelIndication;	}
 	void SetProfileCompatibility(BYTE profileCompatibility)		{ this->profileCompatibility = profileCompatibility;	}
 	void SetAVCProfileIndication(BYTE AVCProfileIndication)		{ this->AVCProfileIndication = AVCProfileIndication;	}
 	void SetConfigurationVersion(BYTE configurationVersion)		{ this->configurationVersion = configurationVersion;	}
-	void SetNALUnitLength(BYTE NALUnitLength)			{ this->NALUnitLength = NALUnitLength;			}
+	void SetNALUnitLengthSizeMinus1(BYTE NALUnitLengthSizeMinus1)			{ this->NALUnitLengthSizeMinus1 = NALUnitLengthSizeMinus1;			}
 
 
 private:
@@ -51,8 +51,8 @@ private:
 	BYTE AVCProfileIndication;
 	BYTE profileCompatibility;
 	BYTE AVCLevelIndication;
-	BYTE NALUnitLength;
-    	BYTE numOfSequenceParameterSets;
+	BYTE NALUnitLengthSizeMinus1;
+    BYTE numOfSequenceParameterSets;
 	std::vector<WORD> spsSizes;
 	std::vector<BYTE*> spsData;
    	BYTE numOfPictureParameterSets;

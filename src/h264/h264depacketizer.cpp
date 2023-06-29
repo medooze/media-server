@@ -184,7 +184,7 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 						config.SetAVCProfileIndication(nalData[0]);
 						config.SetProfileCompatibility(nalData[1]);
 						config.SetAVCLevelIndication(nalData[2]);
-						config.SetNALUnitLength(sizeof(nalHeader)-1);
+						config.SetNALUnitLengthSizeMinus1(sizeof(nalHeader)-1);
 						//Add full nal to config
 						config.AddSequenceParameterSet(payload,nalSize);
 						//Parse sps
@@ -330,7 +330,7 @@ MediaFrame* H264Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 					config.SetAVCProfileIndication(nalData[0]);
 					config.SetProfileCompatibility(nalData[1]);
 					config.SetAVCLevelIndication(nalData[2]);
-					config.SetNALUnitLength(sizeof(nalHeader)-1);
+					config.SetNALUnitLengthSizeMinus1(sizeof(nalHeader)-1);
 					
 					//Add full nal to config
 					config.AddSequenceParameterSet(payload,nalSize);

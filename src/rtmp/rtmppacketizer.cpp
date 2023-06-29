@@ -40,7 +40,7 @@ std::unique_ptr<VideoFrame> RTMPAVCPacketizer::AddFrame(RTMPVideoFrame* videoFra
 	}
 	
 	//GEt nal header length
-	DWORD nalUnitLength = desc.GetNALUnitLength() + 1;
+	DWORD nalUnitLength = desc.GetNALUnitLengthSizeMinus1() + 1;
 	//Create it
 	BYTE nalHeader[4];
 	

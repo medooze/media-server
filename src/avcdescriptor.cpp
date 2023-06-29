@@ -36,7 +36,7 @@ bool AVCDescriptor::Parse(const BYTE* buffer,DWORD bufferLen)
 	AVCProfileIndication = buffer[1];
 	profileCompatibility = buffer[2];
 	AVCLevelIndication = buffer[3];
-	NALUnitLength = buffer[4] & 0x03;
+	NALUnitLengthSizeMinus1 = buffer[4] & 0x03;
 	//Get number of SPS
 	DWORD num = buffer[5] & 0x1F;
 	//Set size
@@ -207,7 +207,7 @@ DWORD AVCDescriptor::Serialize(BYTE* buffer,DWORD bufferLength) const
 	buffer[1] = AVCProfileIndication;
 	buffer[2] = profileCompatibility;
 	buffer[3] = AVCLevelIndication;
-	buffer[4] = NALUnitLength | 0xFC;
+	buffer[4] = NALUnitLengthSizeMinus1 | 0xFC;
 	buffer[5] = numOfSequenceParameterSets | 0xE0;
 	//Set size
 	DWORD pos = 6;
@@ -253,7 +253,7 @@ void AVCDescriptor::Dump() const
 	Debug(" AVCProfileIndication: 0x%.2x\n",AVCProfileIndication);
 	Debug(" profileCompatibility: 0x%.2x\n",profileCompatibility);
 	Debug(" AVCLevelIndication: 0x%.2x\n",AVCLevelIndication);
-	Debug(" NALUnitLength: %d\n",NALUnitLength);
+	Debug(" NALUnitLengthSizeMinus1: %d\n",NALUnitLengthSizeMinus1);
 	Debug(" numOfSequenceParameterSets: %d\n",numOfSequenceParameterSets);
 	Debug(" numOfPictureParameterSets: %d\n",numOfPictureParameterSets);
 	Debug("]");
