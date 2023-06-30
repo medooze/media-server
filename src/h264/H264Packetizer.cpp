@@ -37,6 +37,7 @@ void H264Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 	switch (nalUnitType)
 	{
 		case 0x07: // SPS
+		{
 			//Check nal data size
 			if (nalSize < 4)
 				break;
@@ -72,6 +73,7 @@ void H264Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 				}
 			}
 			return;
+		}
 		case 0x08: // PPS
 			//Reset previous PPS only on the 1st PPS in current frame
 			if (noPPSInFrame)
