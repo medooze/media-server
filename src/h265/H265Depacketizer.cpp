@@ -213,69 +213,69 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 			//}
 			//break;
 		case HEVC_RTP_NALU_Type::UNSPEC49_FU: 
+		{
 			/*
-						0                   1                   2                   3
-					    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-					   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-					   |    PayloadHdr (Type=49)       |   FU header   | DONL (cond)   |
-					   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-|
-					   | DONL (cond)   |                                               |
-					   |-+-+-+-+-+-+-+-+                                               |
-					   |                         FU payload                            |
-					   |                                                               |
-					   |                               +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-					   |                               :...OPTIONAL RTP padding        |
-					   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-					                Figure 9: The Structure of an FU
-
+			  0                   1                   2                   3
+			  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+			 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+			 |    PayloadHdr (Type=49)       |   FU header   | DONL (cond)   |
+			 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-|
+			 | DONL (cond)   |                                               |
+			 |-+-+-+-+-+-+-+-+                                               |
+			 |                         FU payload                            |
+			 |                                                               |
+			 |                               +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+			 |                               :...OPTIONAL RTP padding        |
+			 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+			 FU header:
+			 +---------------+
+			 |0|1|2|3|4|5|6|7|
+			 +-+-+-+-+-+-+-+-+
+			 |S|E|  FuType   |
+			 +---------------+
 			*/
+
+			// DONL is not supported at the moment
+
 			Error("-H265 TODO: non implemented yet, need update to rfc7798, return nullptr (payload[0]: 0x%02x, nalUnitType: %d, nalSize: %d)\n", payload[0], nalUnitType, nalSize);
 			return nullptr;
 
-			////Check length
-			//if (payloadLen < 3)
-			//	return NULL;
+			//Check length is larger then RTP header + FU header
+			if (payloadLen < HEVCParams::RTP_NAL_HEADER_SIZE + 1)
+				return nullptr;
 
-			///* +---------------+
-			// * |0|1|2|3|4|5|6|7|
-			// * +-+-+-+-+-+-+-+-+
-			// * |S|E|R| Type	   |
-			// * +---------------+
-			// *
-			// * R is reserved and always 0
-			// */
-			//S = (payload[2] & 0x80) == 0x80;
-			//E = (payload[2] & 0x40) == 0x40;
+			bool S = (payload[2] & 0x80) == 0x80;
+			bool E = (payload[2] & 0x40) == 0x40;
+			//Get real nal type
+			nalUnitType = payload[2] & 0b0011'1111;
 
-			///* strip off FU indicator and FU header bytes */
-			//nalSize = payloadLen - 3;
+			/* strip off FU indicator and FU header bytes */
+			nalSize = payloadLen - 3;
 
-			////if it is the start fragment of the nal unit
-			//if (S)
-			//{
-			//	/* NAL unit starts here */
-			//	BYTE fragNalHeader = (payload[0] & 0xe0) | (payload[2] & 0x1f);
+			//if it is the start fragment of the nal unit
+			if (S)
+			{
+				/* NAL unit starts here */
+				std::array<BYTE, 2> fragNalHeader;
+				fragNalHeader[0] = (payload[0] & 0b1000'0001) || (nalUnitType << 1); 
+				fragNalHeader[1] = payload[1];
 
-			//	//Get nal type
-			//	nalUnitType = fragNalHeader & 0x1f;
+				//Check it
+				if (nalUnitType == 0x05)
+					//It is intra
+					frame.SetIntra(true);
 
-			//	//Check it
-			//	if (nalUnitType == 0x05)
-			//		//It is intra
-			//		frame.SetIntra(true);
-
-			//	//Get init of the nal
-			//	iniFragNALU = frame.GetLength();
-			//	//Set empty header, will be set later
-			//	set4(preffix, 0, 0);
-			//	//Append data
-			//	frame.AppendMedia(preffix, sizeof(preffix));
-			//	//Append NAL header
-			//	frame.AppendMedia(&fragNalHeader, 1);
-			//	//We have a start frag
-			//	startedFrag = true;
-			//}
+				//Get init of the nal
+				iniFragNALU = frame.GetLength();
+				//Set empty header, will be set later
+				set4(preffix, 0, 0);
+				//Append data
+				frame.AppendMedia(preffix, sizeof(preffix));
+				//Append NAL header
+				frame.AppendMedia(&fragNalHeader, 1);
+				//We have a start frag
+				startedFrag = true;
+			}
 
 			////If we didn't receive a start frag
 			//if (!startedFrag)
@@ -304,6 +304,7 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 			//}
 			////Done
 			//break;
+		}
 		default:
 			/* 4.4.1.  Single NAL Unit Packets */
 			/* 
