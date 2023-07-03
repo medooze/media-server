@@ -15,6 +15,7 @@ public:
 	virtual void ResetFrame() override;
 private:
 	void AddCodecConfig();
+	bool AddSingleNalUnitPayload(const BYTE* nalUnit, DWORD nalSize /*include nalHeader*/);
 
 	VideoFrame frame;
 	HEVCDescriptor config;
