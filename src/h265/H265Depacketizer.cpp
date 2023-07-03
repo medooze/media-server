@@ -48,8 +48,7 @@ void H265Depacketizer::ResetFrame()
 
 MediaFrame* H265Depacketizer::AddPacket(const RTPPacket::shared& packet)
 {
-	UltraDebug("-H265 : \n");
-	Debug("-H265 : \n");
+	UltraDebug("-H265 : %s\n", __PRETTY_FUNCTION__);
 	//Get timestamp in ms
 	auto ts = packet->GetExtTimestamp();
 	//Check it is from same packet
@@ -230,8 +229,6 @@ bool H265Depacketizer::AddSingleNalUnitPayload(const BYTE* nalUnit, DWORD nalSiz
 
 MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 {
-	UltraDebug("-H265 : \n");
-	Debug("-H265 : \n");
 	BYTE nalHeaderPreffix[4]; // set as AnenexB or not
 	//BYTE S, E;
 	DWORD pos;
