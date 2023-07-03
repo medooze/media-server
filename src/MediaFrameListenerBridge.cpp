@@ -291,7 +291,8 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 			//UltraDebug("-MediaFrameListenerBridge::onMediaFrame() [this:%p,extSeqNum:%d,pending:%d,duration:%dms,total:%d,total:%dms\n", extSeqNum-1, pendingLength, packetDuration, info[i].GetTotalLength(), packetDuration);
 
 			//Insert it
-			pendingPackets.emplace(packet,packetDuration);
+			auto schedued = now + dispatchingDelayMs.load();
+			pendingPackets.emplace(schedued, std::pair<RTPPacket::shared, std::chrono::milliseconds>(packet,packetDuration));
 
 			//Recalcualte pending
 			pendingLength -= info[i].GetTotalLength();
@@ -303,9 +304,9 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 		while (!pendingPackets.empty())
 		{
 			const auto& it = pendingPackets.front();
-			if (it.first->GetExtTimestamp() > dispatchingTimestamp) break;
+			if (now >= it.first) break;
 			
-			packets.push(it);
+			packets.push(it.second);
 			pendingPackets.pop();
 		}
 	});

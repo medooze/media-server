@@ -32,7 +32,7 @@ public:
 	void UpdateAsync(std::function<void(std::chrono::milliseconds)> callback);
 	void Stop();
 	
-	void SetDispatchingTimestamp(uint64_t timestamp) { dispatchingTimestamp = timestamp; };
+	void SetDelayMs(std::chrono::milliseconds delayMs) { dispatchingDelayMs = delayMs; };
 
 	// MediaFrame::Producer interface
 	virtual void AddMediaListener(const MediaFrame::Listener::shared& listener) override;
@@ -60,7 +60,7 @@ public:
 	TimeService& timeService;
 	Timer::shared dispatchTimer;
 
-	std::queue<std::pair<RTPPacket::shared, std::chrono::milliseconds>> pendingPackets;
+	std::queue<std::pair<std::chrono::milliseconds, std::pair<RTPPacket::shared, std::chrono::milliseconds>>> pendingPackets;
 	
 	std::queue<std::pair<RTPPacket::shared, std::chrono::milliseconds>> packets;
 
@@ -95,9 +95,7 @@ public:
 	MinMaxAcumulator<uint32_t, uint64_t> waited;
 	volatile bool muted = false;
 	
-	// The reference timestamp for dispatching. The packets with timestamps that smaller than or equal with it
-	// will be dispatched immediately.
-	std::atomic<uint64_t> dispatchingTimestamp = std::numeric_limits<uint64_t>::max();
+	std::atomic<std::chrono::milliseconds> dispatchingDelayMs = std::chrono::milliseconds(0);
 };
 
 #endif /* MEDIAFRAMELISTENERBRIDGE_H */
