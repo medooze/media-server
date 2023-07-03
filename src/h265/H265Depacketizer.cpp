@@ -235,24 +235,6 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 	BYTE nalHeaderPreffix[4]; // set as AnenexB or not
 	//BYTE S, E;
 	DWORD pos;
-//	//Check length
-//	if (payloadLen<HEVCParams::RTP_NAL_HEADER_SIZE)
-//		//Exit
-//		return nullptr;
-//
-//	/* 
-//	*   +-------------+-----------------+
-//	*   |0|1|2|3|4|5|6|7|0|1|2|3|4|5|6|7|
-//	*   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//	*   |F|   Type    |  LayerId  | TID |
-//	*   +-------------+-----------------+
-//	*
-//	* F must be 0.
-//	*/
-//
-//	BYTE nalUnitType = (payload[0] & 0x7e) >> 1;
-//	BYTE nuh_layer_id = ((payload[0] & 0x1) << 5) + ((payload[1] & 0xf8) >> 3);
-//	BYTE nuh_temporal_id_plus1 = payload[1] & 0x7;
 
 	BYTE nalUnitType{0}, nuh_layer_id{0}, nuh_temporal_id_plus1{0};
 	if (!DecodeNalHeader(payload, payloadLen, nalUnitType, nuh_layer_id, nuh_temporal_id_plus1))
@@ -266,9 +248,6 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 		Error("-H265: nuh_layer_id(%d) is not 0, which we don't support yet!\n", nuh_layer_id);
 		return nullptr;
 	}
-
-	//Get nal data
-	//const BYTE* nalData = payload + HEVCParams::RTP_NAL_HEADER_SIZE;
 
 	//Get nalu size
 	DWORD nalSize = payloadLen;
@@ -468,111 +447,6 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 			break;
 		}
 		default:
-			///* 4.4.1.  Single NAL Unit Packets */
-			///* 
-			//	0                   1                   2                   3
-			//	 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-			//	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-			//	|           PayloadHdr          |      DONL (conditional)       |
-			//	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-			//	|                                                               |
-			//	|                  NAL unit payload data                        |
-			//	|                                                               |
-			//	|                               +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-			//	|                               :...OPTIONAL RTP padding        |
-			//	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-			//*/
-			///* @Zita Liao: sprop-max-don-diff is considered to be absent right now (so no DONL). Need to extract from SDP */
-			///* the entire payload is the output buffer */
-			//nalSize = payloadLen;
-			////Check if IDR/VPS/SPS/PPS, set Intra
-			//if ((nalUnitType == HEVC_RTP_NALU_Type::IDR_W_RADL)
-			//	|| (nalUnitType == HEVC_RTP_NALU_Type::IDR_N_LP)
-			//	|| (nalUnitType == HEVC_RTP_NALU_Type::VPS)
-			//	|| (nalUnitType == HEVC_RTP_NALU_Type::SPS)
-			//	|| (nalUnitType == HEVC_RTP_NALU_Type::PPS))
-			//{
-			//	frame.SetIntra(true);
-			//}
-
-			//switch (nalUnitType)
-			//{
-			//	case HEVC_RTP_NALU_Type::VPS:			// 32
-			//	{
-			//		H265VideoParameterSet vps;
-			//		if (vps.Decode(nalData, nalSize-1))
-			//		{
-			//			if(config.GetConfigurationVersion() == 0)
-			//			{
-			//				auto& profileTierLevel = vps.GetProfileTierLevel();
-			//				config.SetConfigurationVersion(1);
-			//				config.SetGeneralProfileSpace(profileTierLevel.GetGeneralProfileSpace());
-			//				config.SetGeneralTierFlag(profileTierLevel.GetGeneralTierFlag());
-			//				config.SetGeneralProfileIdc(profileTierLevel.GetGeneralProfileIdc());
-			//				config.SetGeneralProfileCompatibilityFlags(profileTierLevel.GetGeneralProfileCompatibilityFlags());
-			//				config.SetGeneralConstraintIndicatorFlags(profileTierLevel.GetGeneralConstraintIndicatorFlags());
-			//				config.SetGeneralLevelIdc(profileTierLevel.GetGeneralLevelIdc());
-			//				config.SetNALUnitLengthSizeMinus1(sizeof(nalHeaderPreffix) - 1);
-			//			}
-			//			//Add full nal to config
-			//			config.AddVideoParameterSet(payload,nalSize);
-			//		}
-			//		else
-			//		{
-			//			Error("-H265: Decode of SPS failed!\n");
-			//		}
-			//		break;
-			//	}
-			//	case HEVC_RTP_NALU_Type::SPS:			// 33
-			//	{
-			//		//Parse sps
-			//		H265SeqParameterSet sps;
-			//		if (sps.Decode(nalData,nalSize-1))
-			//		{
-			//			//Set dimensions
-			//			frame.SetWidth(sps.GetWidth());
-			//			frame.SetHeight(sps.GetHeight());
-	
-			//			//UltraDebug("-H265 frame (with cropping) size [width: %d, frame height: %d]\n", sps.GetWidth(), sps.GetHeight());
-
-			//			//Add full nal to config
-			//			config.AddSequenceParameterSet(payload,nalSize);
-			//		}
-			//		else
-			//		{
-			//			Error("-H265: Decode of SPS failed!\n");
-			//		}
-			//		break;
-			//	}
-			//	case HEVC_RTP_NALU_Type::PPS:			// 34
-			//		//Add full nal to config
-			//		config.AddPictureParameterSet(payload,nalSize);
-			//		break;
-			//	default:
-			//		//Debug("-H265 : Nothing to do for this NaluType nalu. Just forwarding it.(nalUnitType: %d, nalSize: %d)\n", nalUnitType, nalSize);
-			//		break;
-			//}
-			////Check if doing annex b
-			//if (annexB)
-			//	//Set annex b start code
-			//	set4(nalHeaderPreffix, 0, HEVCParams::ANNEX_B_START_CODE);
-			//else
-			//	//Set size
-			//	set4(nalHeaderPreffix, 0, nalSize);
-			////Append data
-			//frame.AppendMedia(nalHeaderPreffix, sizeof(nalHeaderPreffix));
-			////Append data and get current post
-			//pos = frame.AppendMedia(payload, nalSize);
-			////Add RTP packet
-			//if (nalSize >= RTPPAYLOADSIZE)
-			//{
-			//	Error("-H265: nalSize(%d) is larger than RTPPAYLOADSIZE (%d)!\n", nalSize, RTPPAYLOADSIZE);
-			//}
-			//else
-			//{
-			//	frame.AddRtpPacket(pos, nalSize, nullptr, 0);
-			//}
-			////Done
 			if (!AddSingleNalUnitPayload(payload, payloadLen))
 			{
 				Error("-H265: Failed to add Nal Unit payload\n");
