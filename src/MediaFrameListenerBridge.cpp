@@ -291,12 +291,22 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 			//UltraDebug("-MediaFrameListenerBridge::onMediaFrame() [this:%p,extSeqNum:%d,pending:%d,duration:%dms,total:%d,total:%dms\n", extSeqNum-1, pendingLength, packetDuration, info[i].GetTotalLength(), packetDuration);
 
 			//Insert it
-			packets.emplace(packet,packetDuration);
+			pendingPackets.emplace(packet,packetDuration);
 
 			//Recalcualte pending
 			pendingLength -= info[i].GetTotalLength();
 			pendingDuration -= packetDuration;
 
+		}
+		
+		// Check and enque packets that needs to be dispatched.
+		while (!pendingPackets.empty())
+		{
+			const auto& it = pendingPackets.front();
+			if (it.first->GetExtTimestamp() > dispatchingTimestamp) break;
+			
+			packets.push(it);
+			pendingPackets.pop();
 		}
 	});
 }
