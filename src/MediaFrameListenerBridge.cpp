@@ -36,8 +36,11 @@ MediaFrameListenerBridge::MediaFrameListenerBridge(TimeService& timeService,DWOR
 		//Until no mor pacekts or full period
 		while (packets.size() && period >= accumulated)
 		{
+			auto scheduled = packets.front().first;
+			if (scheduled > now) break;
+			
 			//Get first packet to send
-			const auto& [packet,duration] = packets.front();
+			const auto& [packet,duration] = packets.front().second;
 			//Increase accumulated time
 			accumulated += duration;
 			//Add to sending packets
@@ -77,6 +80,13 @@ void MediaFrameListenerBridge::Stop()
 	});
 }
 
+void MediaFrameListenerBridge::SetDelayMs(std::chrono::milliseconds delayMs)
+{
+	timeService.Async([&](auto now) { 
+		dispatchingDelayMs = delayMs; 
+	});
+}
+
 void MediaFrameListenerBridge::AddListener(RTPIncomingMediaStream::Listener* listener)
 {
 	Debug("-MediaFrameListenerBridge::AddListener() [this:%p,listener:%p]\n", this, listener);
@@ -106,8 +116,11 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 		//Remove all packets
 		while (packets.size())
 		{
+			auto scheduled = packets.front().first;
+			if (scheduled > now) break;
+			
 			//Get first packet to send
-			const auto& [packet, duration] = packets.front();
+			const auto& [packet, duration] = packets.front().second;
 			//Add to sending packets
 			sending.push_back(packet);
 			//remove it from pending packets
@@ -291,23 +304,13 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 			//UltraDebug("-MediaFrameListenerBridge::onMediaFrame() [this:%p,extSeqNum:%d,pending:%d,duration:%dms,total:%d,total:%dms\n", extSeqNum-1, pendingLength, packetDuration, info[i].GetTotalLength(), packetDuration);
 
 			//Insert it
-			auto schedued = now + dispatchingDelayMs.load();
-			pendingPackets.emplace(schedued, std::pair<RTPPacket::shared, std::chrono::milliseconds>(packet,packetDuration));
+			auto schedued = now + dispatchingDelayMs;
+			packets.emplace(schedued, std::pair<RTPPacket::shared, std::chrono::milliseconds>(packet,packetDuration));
 
 			//Recalcualte pending
 			pendingLength -= info[i].GetTotalLength();
 			pendingDuration -= packetDuration;
 
-		}
-		
-		// Check and enque packets that needs to be dispatched.
-		while (!pendingPackets.empty())
-		{
-			const auto& it = pendingPackets.front();
-			if (now >= it.first) break;
-			
-			packets.push(it.second);
-			pendingPackets.pop();
 		}
 	});
 }
