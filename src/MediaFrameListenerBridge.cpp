@@ -257,6 +257,14 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 		//Calculate each packet duration
 		uint32_t pendingDuration = frame->GetDuration() * 1000 / rate;
 
+		// Calculate the scheduled time
+		auto schedued = now + dispatchingDelayMs;
+		if (!packets.empty())
+		{
+			// Ensure scheduled time increasing
+			schedued = std::max(schedued, packets.back().first + std::chrono::milliseconds(1));
+		}
+			
 		//For each one
 		for (size_t i=0;i<info.size();i++)
 		{
@@ -314,7 +322,6 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 			//UltraDebug("-MediaFrameListenerBridge::onMediaFrame() [this:%p,extSeqNum:%d,pending:%d,duration:%dms,total:%d,total:%dms\n", extSeqNum-1, pendingLength, packetDuration, info[i].GetTotalLength(), packetDuration);
 
 			//Insert it
-			auto schedued = now + dispatchingDelayMs;
 			packets.emplace(schedued, std::pair<RTPPacket::shared, std::chrono::milliseconds>(packet,packetDuration));
 
 			//Recalcualte pending
