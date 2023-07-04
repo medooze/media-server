@@ -55,9 +55,19 @@ MediaFrameListenerBridge::MediaFrameListenerBridge(TimeService& timeService,DWOR
 		Dispatch(sending);
 
 		//If we have packets in the queue
-		if (packets.size() && accumulated > period)
+		if (packets.size())
+		{
 			//Reschedule
-			dispatchTimer->Again(std::chrono::milliseconds(accumulated - period));
+			auto deferMs = packets.front().first - now;
+			if (deferMs.count() > 0)
+			{
+				dispatchTimer->Again(deferMs);
+			}
+			else if (accumulated > period)
+			{
+				dispatchTimer->Again(std::chrono::milliseconds(accumulated - period));
+			}
+		}
 	});
 	dispatchTimer->SetName("MediaFrameListenerBridge::dispatchTimer");
 }
