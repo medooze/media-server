@@ -31,7 +31,6 @@ public:
 		virtual void Again(const std::chrono::milliseconds& ms)
 		{
 			next = loop.GetNow() + ms;
-			
 			loop.pendingTimers.emplace_back(next, shared_from_this());
 		}
 		
@@ -67,23 +66,33 @@ public:
 	 */
 	inline void SetNow(std::chrono::milliseconds time)
 	{
+		TimerSchedule lastTimeSchedule;
+		
 		// Trigger the scheduled timer by order
 		while (!timers.empty() && timers.top().first <= time)
 		{
-			now = timers.top().first;
-			timers.top().second->callback(now);
+			// Skip duplicated schedules
+			if (timers.top() != lastTimeSchedule)
+			{
+				now = timers.top().first;
+				timers.top().second->callback(now);
+				
+				lastTimeSchedule = timers.top();
+			}
+			
 			timers.pop();
 		}
 		
-		now = time;
-		
-		// Any rescheduled timer will be executed in next SetNow() call
 		for (auto& t : pendingTimers)
 		{
 			timers.push(t);
 		}
-		
 		pendingTimers.clear();
+		
+		if (!timers.empty() && timers.top().first <= time)
+			SetNow(time);
+		else
+			now = time;
 	}
 
 	virtual const std::chrono::milliseconds GetNow() const override
