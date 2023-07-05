@@ -35,6 +35,7 @@ add_library(MediaServerLib
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPSource.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPStreamTransponder.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/EventLoop.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/FrameDispatchCoordinator.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/MediaFrameListenerBridge.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/PacketHeader.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/SimulcastMediaFrameListener.cpp
@@ -56,6 +57,7 @@ add_executable(MediaServerUnitTest
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAccumulator.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestCircularBuffer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestCircularQueue.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestFrameDispatchCoordinator.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestMovingCounter.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestRTPStreamTransponder.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestSimulcastMediaFrameListener.cpp
