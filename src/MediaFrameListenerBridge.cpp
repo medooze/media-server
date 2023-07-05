@@ -36,15 +36,13 @@ MediaFrameListenerBridge::MediaFrameListenerBridge(TimeService& timeService,DWOR
 		//Until no mor pacekts or full period
 		while (packets.size() && period >= accumulated)
 		{
-			auto scheduled = packets.front().first;
-			if (scheduled > now) break;
+			const auto& packetInfo = packets.front();
+			if (packetInfo.scheduled > now) break;
 			
-			//Get first packet to send
-			const auto& [packet,duration] = packets.front().second;
 			//Increase accumulated time
-			accumulated += duration;
+			accumulated += packetInfo.duration;
 			//Add to sending packets
-			sending.push_back(packet);
+			sending.push_back(packetInfo.packet);
 			//remove it from pending packets
 			packets.pop();
 		}
@@ -58,7 +56,7 @@ MediaFrameListenerBridge::MediaFrameListenerBridge(TimeService& timeService,DWOR
 		if (packets.size())
 		{
 			//Reschedule
-			auto deferMs = packets.front().first - now;
+			auto deferMs = packets.front().scheduled - now;
 			if (deferMs.count() > 0)
 			{
 				dispatchTimer->Again(deferMs);
@@ -121,18 +119,15 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 		for (auto& listener : mediaFrameListeners)
 			listener->onMediaFrame(*frame);
 
-		//Dispatch any pending packet now
-		std::vector<RTPPacket::shared> sending;
-		//Remove all packets
+		//Dispatch any READY packets now
+		std::vector<RTPPacket::shared> sending;		
 		while (packets.size())
 		{
-			auto scheduled = packets.front().first;
-			if (scheduled > now) break;
+			const auto& packetInfo = packets.front();
+			if (packetInfo.scheduled > now) break;
 			
-			//Get first packet to send
-			const auto& [packet, duration] = packets.front().second;
 			//Add to sending packets
-			sending.push_back(packet);
+			sending.push_back(packetInfo.packet);
 			//remove it from pending packets
 			packets.pop();
 		}
@@ -258,11 +253,11 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 		uint32_t pendingDuration = frame->GetDuration() * 1000 / rate;
 
 		// Calculate the scheduled time
-		auto schedued = now + dispatchingDelayMs;
+		auto scheduled = now + dispatchingDelayMs;
 		if (!packets.empty())
 		{
 			// Ensure scheduled time increasing
-			schedued = std::max(schedued, packets.back().first + std::chrono::milliseconds(1));
+			scheduled = std::max(scheduled, packets.back().scheduled + std::chrono::milliseconds(1));
 		}
 			
 		//For each one
@@ -322,7 +317,7 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 			//UltraDebug("-MediaFrameListenerBridge::onMediaFrame() [this:%p,extSeqNum:%d,pending:%d,duration:%dms,total:%d,total:%dms\n", extSeqNum-1, pendingLength, packetDuration, info[i].GetTotalLength(), packetDuration);
 
 			//Insert it
-			packets.emplace(schedued, std::pair<RTPPacket::shared, std::chrono::milliseconds>(packet,packetDuration));
+			packets.emplace(scheduled, packet, std::chrono::milliseconds(packetDuration));
 
 			//Recalcualte pending
 			pendingLength -= info[i].GetTotalLength();

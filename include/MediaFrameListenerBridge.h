@@ -22,6 +22,18 @@ public:
 public:
 	static constexpr uint32_t NoSeqNum = std::numeric_limits<uint32_t>::max();
 	static constexpr uint64_t NoTimestamp = std::numeric_limits<uint64_t>::max();
+	
+	struct PacketScheduleInfo
+	{
+		PacketScheduleInfo(std::chrono::milliseconds scheduled, RTPPacket::shared packet, std::chrono::milliseconds duration) :
+			scheduled(scheduled), packet(packet), duration(duration)
+		{}
+			
+		std::chrono::milliseconds scheduled;
+		RTPPacket::shared packet;
+		std::chrono::milliseconds duration;
+	};	
+	
 public:
 	MediaFrameListenerBridge(TimeService& timeService, DWORD ssrc, bool smooth = false);
 	virtual ~MediaFrameListenerBridge();
@@ -60,7 +72,7 @@ public:
 	TimeService& timeService;
 	Timer::shared dispatchTimer;
 
-	std::queue<std::pair<std::chrono::milliseconds, std::pair<RTPPacket::shared, std::chrono::milliseconds>>> packets;
+	std::queue<PacketScheduleInfo> packets;
 
 	DWORD ssrc = 0;
 	DWORD extSeqNum = 0;
