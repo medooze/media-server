@@ -34,6 +34,9 @@ add_library(MediaServerLib
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPPayload.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPSource.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPStreamTransponder.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/EventLoop.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/MediaFrameListenerBridge.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/PacketHeader.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/SimulcastMediaFrameListener.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/VideoLayerSelector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/vp8/vp8depacketizer.cpp
