@@ -36,12 +36,13 @@ MediaFrameListenerBridge::MediaFrameListenerBridge(TimeService& timeService,DWOR
 		//Until no mor pacekts or full period
 		while (packets.size() && period >= accumulated)
 		{
-			//Get first packet to send
-			const auto& [packet,duration] = packets.front();
+			const auto& packetInfo = packets.front();
+			if (packetInfo.scheduled > now) break;
+			
 			//Increase accumulated time
-			accumulated += duration;
+			accumulated += packetInfo.duration;
 			//Add to sending packets
-			sending.push_back(packet);
+			sending.push_back(packetInfo.packet);
 			//remove it from pending packets
 			packets.pop();
 		}
@@ -52,9 +53,19 @@ MediaFrameListenerBridge::MediaFrameListenerBridge(TimeService& timeService,DWOR
 		Dispatch(sending);
 
 		//If we have packets in the queue
-		if (packets.size() && accumulated > period)
+		if (packets.size())
+		{
 			//Reschedule
-			dispatchTimer->Again(std::chrono::milliseconds(accumulated - period));
+			auto deferMs = packets.front().scheduled - now;
+			if (deferMs.count() > 0)
+			{
+				dispatchTimer->Again(deferMs);
+			}
+			else if (accumulated > period)
+			{
+				dispatchTimer->Again(std::chrono::milliseconds(accumulated - period));
+			}
+		}
 	});
 	dispatchTimer->SetName("MediaFrameListenerBridge::dispatchTimer");
 }
@@ -74,6 +85,13 @@ void MediaFrameListenerBridge::Stop()
 			listener->onEnded(this);
 		//Clear listeners
 		listeners.clear();
+	});
+}
+
+void MediaFrameListenerBridge::SetDelayMs(std::chrono::milliseconds delayMs)
+{
+	timeService.Async([&](auto now) { 
+		dispatchingDelayMs = delayMs; 
 	});
 }
 
@@ -101,15 +119,15 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 		for (auto& listener : mediaFrameListeners)
 			listener->onMediaFrame(*frame);
 
-		//Dispatch any pending packet now
-		std::vector<RTPPacket::shared> sending;
-		//Remove all packets
+		//Dispatch any READY packets now
+		std::vector<RTPPacket::shared> sending;		
 		while (packets.size())
 		{
-			//Get first packet to send
-			const auto& [packet, duration] = packets.front();
+			const auto& packetInfo = packets.front();
+			if (packetInfo.scheduled > now) break;
+			
 			//Add to sending packets
-			sending.push_back(packet);
+			sending.push_back(packetInfo.packet);
 			//remove it from pending packets
 			packets.pop();
 		}
@@ -234,6 +252,14 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 		//Calculate each packet duration
 		uint32_t pendingDuration = frame->GetDuration() * 1000 / rate;
 
+		// Calculate the scheduled time
+		auto scheduled = now + dispatchingDelayMs;
+		if (!packets.empty())
+		{
+			// Ensure scheduled time increasing
+			scheduled = std::max(scheduled, packets.back().scheduled + std::chrono::milliseconds(1));
+		}
+			
 		//For each one
 		for (size_t i=0;i<info.size();i++)
 		{
@@ -291,7 +317,7 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 			//UltraDebug("-MediaFrameListenerBridge::onMediaFrame() [this:%p,extSeqNum:%d,pending:%d,duration:%dms,total:%d,total:%dms\n", extSeqNum-1, pendingLength, packetDuration, info[i].GetTotalLength(), packetDuration);
 
 			//Insert it
-			packets.emplace(packet,packetDuration);
+			packets.emplace(scheduled, packet, std::chrono::milliseconds(packetDuration));
 
 			//Recalcualte pending
 			pendingLength -= info[i].GetTotalLength();

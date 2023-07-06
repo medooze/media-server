@@ -22,6 +22,18 @@ public:
 public:
 	static constexpr uint32_t NoSeqNum = std::numeric_limits<uint32_t>::max();
 	static constexpr uint64_t NoTimestamp = std::numeric_limits<uint64_t>::max();
+	
+	struct PacketScheduleInfo
+	{
+		PacketScheduleInfo(std::chrono::milliseconds scheduled, RTPPacket::shared packet, std::chrono::milliseconds duration) :
+			scheduled(scheduled), packet(packet), duration(duration)
+		{}
+			
+		std::chrono::milliseconds scheduled;
+		RTPPacket::shared packet;
+		std::chrono::milliseconds duration;
+	};	
+	
 public:
 	MediaFrameListenerBridge(TimeService& timeService, DWORD ssrc, bool smooth = false);
 	virtual ~MediaFrameListenerBridge();
@@ -31,6 +43,8 @@ public:
 	void Update(QWORD now);
 	void UpdateAsync(std::function<void(std::chrono::milliseconds)> callback);
 	void Stop();
+	
+	void SetDelayMs(std::chrono::milliseconds delayMs);
 
 	// MediaFrame::Producer interface
 	virtual void AddMediaListener(const MediaFrame::Listener::shared& listener) override;
@@ -58,7 +72,7 @@ public:
 	TimeService& timeService;
 	Timer::shared dispatchTimer;
 
-	std::queue<std::pair<RTPPacket::shared, std::chrono::milliseconds>> packets;
+	std::queue<PacketScheduleInfo> packets;
 
 	DWORD ssrc = 0;
 	DWORD extSeqNum = 0;
@@ -90,6 +104,8 @@ public:
 	long double avgWaitedTime = 0;
 	MinMaxAcumulator<uint32_t, uint64_t> waited;
 	volatile bool muted = false;
+	
+	std::chrono::milliseconds dispatchingDelayMs = std::chrono::milliseconds(0);
 };
 
 #endif /* MEDIAFRAMELISTENERBRIDGE_H */
