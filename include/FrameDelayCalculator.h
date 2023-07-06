@@ -10,13 +10,8 @@
 class FrameDelayCalculator
 {
 public:
-	static constexpr int DefaultUpdateRefsPacketEarlyThresholdMs = -200;
-	static constexpr int DefaultUpdateRefsPacketLateThresholdMs = 0;	
-	static constexpr std::chrono::milliseconds DefaultUpdateRefsStepPacketEarlyMs = std::chrono::milliseconds(20);
 
-	FrameDelayCalculator(int aUpdateRefsPacketEarlyThresholdMs = DefaultUpdateRefsPacketEarlyThresholdMs,
-			int aUpdateRefsPacketLateThresholdMs = DefaultUpdateRefsPacketLateThresholdMs, 
-			std::chrono::milliseconds aUpdateRefsStepPacketEarlyMs = DefaultUpdateRefsStepPacketEarlyMs);
+	FrameDelayCalculator(int aUpdateRefsPacketEarlyThresholdMs, int aUpdateRefsPacketLateThresholdMs, std::chrono::milliseconds aUpdateRefsStepPacketEarlyMs);
 	
 	/**
 	 * Calculate the dispatch delay for the arrived frame
@@ -29,6 +24,16 @@ public:
 	 * @return The delay against the arrivial time for dispatching the frame, 
 	 */
 	std::chrono::milliseconds OnFrame(uint64_t streamIdentifier, std::chrono::milliseconds now, uint64_t ts, uint64_t clockRate);
+
+	inline std::chrono::milliseconds GetRefTime() const
+	{
+		return refTime;
+	}
+	
+	inline uint64_t GetRefTimestamp() const
+	{
+		return refTimestamp;
+	}
 
 private:
 	

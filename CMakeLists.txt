@@ -35,6 +35,7 @@ add_library(MediaServerLib
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPSource.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPStreamTransponder.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/EventLoop.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/FrameDelayCalculator.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/FrameDispatchCoordinator.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/MediaFrameListenerBridge.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/PacketHeader.cpp

@@ -828,14 +828,14 @@ void TestFrameDispatchCoordinator::TestDispatch(const std::vector<std::tuple<Med
 					
 		if (references.empty())
 		{
-			references.emplace_back(dispatch->refTime.count(), dispatch->refTimestamp);
+			references.emplace_back(dispatch->frameDelayCalculator.GetRefTime().count(), dispatch->frameDelayCalculator.GetRefTimestamp());
 		}
 		else
 		{
 			auto lastRef = references.back();
-			if (lastRef.first != dispatch->refTime.count() || lastRef.second != dispatch->refTimestamp)
+			if (lastRef.first != dispatch->frameDelayCalculator.GetRefTime().count() || lastRef.second != dispatch->frameDelayCalculator.GetRefTimestamp())
 			{
-				references.emplace_back(dispatch->refTime.count(), dispatch->refTimestamp);
+				references.emplace_back(dispatch->frameDelayCalculator.GetRefTime().count(), dispatch->frameDelayCalculator.GetRefTimestamp());
 			}
 		}
 		
