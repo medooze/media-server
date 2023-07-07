@@ -8,7 +8,7 @@
 class H265Depacketizer : public RTPDepacketizer
 {
 public:
-	H265Depacketizer(bool annexB = false);
+	H265Depacketizer();
 	virtual ~H265Depacketizer();
 	virtual MediaFrame* AddPacket(const RTPPacket::shared& packet) override;
 	virtual MediaFrame* AddPayload(const BYTE* payload, DWORD payload_len) override;
@@ -21,7 +21,6 @@ private:
 	HEVCDescriptor config;
 	DWORD iniFragNALU = 0;
 	bool startedFrag = false;
-	bool annexB = false;
 };
 
 #endif	/* H265DEPACKETIZER_H */
