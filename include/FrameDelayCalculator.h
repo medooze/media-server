@@ -25,16 +25,6 @@ public:
 	 */
 	std::chrono::milliseconds OnFrame(uint64_t streamIdentifier, std::chrono::milliseconds now, uint64_t ts, uint64_t clockRate);
 
-	inline std::chrono::milliseconds GetRefTime() const
-	{
-		return refTime;
-	}
-	
-	inline uint64_t GetRefTimestamp() const
-	{
-		return refTimestamp;
-	}
-
 private:
 	
 	/**
