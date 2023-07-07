@@ -12,10 +12,9 @@
 #include "log.h"
 
 
-H265Depacketizer::H265Depacketizer(bool annexB_in) :
+H265Depacketizer::H265Depacketizer() :
 	RTPDepacketizer(MediaFrame::Video, VideoCodec::H265),
-	frame(VideoCodec::H265, 0),
-	annexB(annexB_in)
+	frame(VideoCodec::H265, 0)
 {
 	//Set clock rate
 	frame.SetClockRate(90000);
@@ -204,13 +203,8 @@ bool H265Depacketizer::AddSingleNalUnitPayload(const BYTE* nalUnit, DWORD nalSiz
 			//Debug("-H265 : Nothing to do for this NaluType nalu. Just forwarding it.(nalUnitType: %d, nalSize: %d)\n", nalUnitType, nalSize);
 			break;
 	}
-	//Check if doing annex b
-	if (annexB)
-		//Set annex b start code
-		set4(nalHeaderPreffix, 0, HEVCParams::ANNEX_B_START_CODE);
-	else
-		//Set size
-		set4(nalHeaderPreffix, 0, nalSize);
+	//Set size
+	set4(nalHeaderPreffix, 0, nalSize);
 	//Append data
 	frame.AppendMedia(nalHeaderPreffix, sizeof(nalHeaderPreffix));
 	//Append data and get current post
