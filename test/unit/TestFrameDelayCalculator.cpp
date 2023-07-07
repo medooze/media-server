@@ -20,13 +20,13 @@ class TestFrameDelayCalculator : public testing::Test
 {
 public:
 	/**
-	 * Test dispatching.
+	 * Test frame delay calculator.
 	 * 
 	 * @param framesInfo	The frame arrival info
 	 * @param references 	The expected latencies of the reference time and timestamps againt the first arrived frame
 	 * @param delays	The expected delay to be set for each stream. The first element of the pair is the ssrc of the stream.
 	 */
-	void TestDispatch(const std::vector<std::tuple<MediaFrame::Type, uint64_t, uint64_t, uint32_t>>& framesInfo, 
+	void TestDelayCalculator(const std::vector<std::tuple<MediaFrame::Type, uint64_t, uint64_t, uint32_t>>& framesInfo, 
 			const std::vector<int64_t>& expectedLatencies, 
 			const std::vector<std::pair<uint64_t, int64_t>>& delays);
 	
@@ -42,7 +42,7 @@ protected:
 	std::unique_ptr<FrameDelayCalculator> calculator;
 };
 
-void TestFrameDelayCalculator::TestDispatch(const std::vector<std::tuple<MediaFrame::Type, uint64_t, uint64_t, uint32_t>>& framesInfo,
+void TestFrameDelayCalculator::TestDelayCalculator(const std::vector<std::tuple<MediaFrame::Type, uint64_t, uint64_t, uint32_t>>& framesInfo,
 						const std::vector<int64_t>& expectedLatencies,
 						const std::vector<std::pair<uint64_t, int64_t>>& expectedDelays)
 {
@@ -104,7 +104,7 @@ std::vector<int64_t> TestFrameDelayCalculator::calcLatency(const std::vector<std
 	return latencies;
 }
 
-TEST_F(TestFrameDelayCalculator, testDispatch)
+TEST_F(TestFrameDelayCalculator, TestNormal)
 {
 	calculator = std::make_unique<FrameDelayCalculator>(-200, 0, std::chrono::milliseconds(20));
 
@@ -208,7 +208,7 @@ TEST_F(TestFrameDelayCalculator, testDispatch)
 		{ 2, 156 }, { 2, 169 }, { 2, 161 }, { 2, 165 }
 	};
 	
-	ASSERT_NO_FATAL_FAILURE(TestDispatch(TestData::FramesArrivalInfo, expectedLatencies, expectedDelays));
+	ASSERT_NO_FATAL_FAILURE(TestDelayCalculator(TestData::FramesArrivalInfo, expectedLatencies, expectedDelays));
 }
 
 TEST_F(TestFrameDelayCalculator, testLatencyReduction)
@@ -345,5 +345,5 @@ TEST_F(TestFrameDelayCalculator, testLatencyReduction)
 		{ 2, 48 }, { 2, 42 }, { 2, 14 }, { 2, 18 }
 	};
 	
-	ASSERT_NO_FATAL_FAILURE(TestDispatch(TestData::FramesArrivalInfo, expectedLatencies, expectedDelays));
+	ASSERT_NO_FATAL_FAILURE(TestDelayCalculator(TestData::FramesArrivalInfo, expectedLatencies, expectedDelays));
 }
