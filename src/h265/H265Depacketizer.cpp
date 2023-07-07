@@ -48,7 +48,8 @@ void H265Depacketizer::ResetFrame()
 
 MediaFrame* H265Depacketizer::AddPacket(const RTPPacket::shared& packet)
 {
-	UltraDebug("-H265 : %s\n", __PRETTY_FUNCTION__);
+	UltraDebug("-H265Depacketizer::AddPacket()\n");
+	
 	//Get timestamp in ms
 	auto ts = packet->GetExtTimestamp();
 	//Check it is from same packet
