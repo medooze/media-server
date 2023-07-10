@@ -16,12 +16,15 @@ public:
 private:
 	void AddCodecConfig();
 	bool AddSingleNalUnitPayload(const BYTE* nalUnit, DWORD nalSize /*include nalHeader*/);
+	MediaFrame* AddPayload(const BYTE* payload, DWORD payload_len, bool rtpMark);
+	bool AppendNalUnitPayload(const BYTE* nalUnit, DWORD nalSize);
 
 	VideoFrame frame;
 	HEVCDescriptor config;
 	DWORD iniFragNALU = 0;
 	bool startedFrag = false;
 	bool annexB = false;
+	DWORD currentNaluSize = 0;
 };
 
 #endif	/* H265DEPACKETIZER_H */
