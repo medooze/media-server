@@ -284,7 +284,7 @@ int RTMPConnection::Run()
 		//launch event
 		listener->onDisconnect(shared_from_this());
 	
-	Log("<RTMPConnection::Run() [connection:%p]\n",this);
+	Log("<RTMPConnection::Run() Disconnected [connection:%p]\n",this);
 
 	//Done
 	return 1;
@@ -961,9 +961,13 @@ void RTMPConnection::ProcessCommandMessage(DWORD streamId,RTMPCommandMessage* cm
 			objectEncoding = (double)obj->GetProperty(L"objectEncoding");
 
 		//Call listener
-		app = listener->OnConnect(appName,this,[=,self=shared_from_this()](bool accepted){
+		app = listener->OnConnect(appName,this,[streamId, transId, objectEncoding, selfWeak=weak_from_this()](bool accepted){
 			//Log
 			Log("-RTMPConnection::ProcessCommandMessage() Accepting connection [accepted:%d]\n",accepted);
+			
+			auto self = selfWeak.lock();
+			if (!self) return;
+			
 			//IF not acepted
 			if (!accepted)
 			{
@@ -973,15 +977,15 @@ void RTMPConnection::ProcessCommandMessage(DWORD streamId,RTMPCommandMessage* cm
 				return;
 			}
 			//Send start stream
-			SendControlMessage(RTMPMessage::UserControlMessage,RTMPUserControlMessage::CreateStreamBegin(0));
+			self->SendControlMessage(RTMPMessage::UserControlMessage,RTMPUserControlMessage::CreateStreamBegin(0));
 			//Send window acknoledgement
-			SendControlMessage(RTMPMessage::WindowAcknowledgementSize, RTMPWindowAcknowledgementSize::Create(512000));
+			self->SendControlMessage(RTMPMessage::WindowAcknowledgementSize, RTMPWindowAcknowledgementSize::Create(512000));
 			//Send client bandwitdh
-			SendControlMessage(RTMPMessage::SetPeerBandwidth, RTMPSetPeerBandWidth::Create(512000,2));
+			self->SendControlMessage(RTMPMessage::SetPeerBandwidth, RTMPSetPeerBandWidth::Create(512000,2));
 			//Increase chunk size
-			maxOutChunkSize = 512;
+			self->maxOutChunkSize = 512;
 			//Send client bandwitdh
-			SendControlMessage(RTMPMessage::SetChunkSize, RTMPSetChunkSize::Create(maxOutChunkSize));
+			self->SendControlMessage(RTMPMessage::SetChunkSize, RTMPSetChunkSize::Create(self->maxOutChunkSize));
 
 			//Create params & extra info
 			AMFObject* params = new AMFObject();
