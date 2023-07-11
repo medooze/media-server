@@ -455,11 +455,7 @@ Timer::shared EventLoop::CreateTimer(const std::chrono::milliseconds& ms, const 
 void EventLoop::TimerImpl::Cancel()
 {
 	//Add it async
-	loop.Async([timerWeak = weak_from_this()](auto now){
-
-		auto timer = timerWeak.lock();
-		if (!timer) return;
-		
+	loop.Async([timer = shared_from_this()](auto now){
 		//Remove us
 		timer->loop.CancelTimer(timer);
 	});
@@ -473,11 +469,7 @@ void EventLoop::TimerImpl::Again(const std::chrono::milliseconds& ms)
 	auto next = loop.Now() + ms;
 	
 	//Reschedule it async
-	loop.Async([timerWeak = weak_from_this(),next](auto now){
-		
-		auto timer = timerWeak.lock();
-		if (!timer) return;
-		
+	loop.Async([timer = shared_from_this(),next](auto now){
 		//Remove us
 		timer->loop.CancelTimer(timer);
 
@@ -504,11 +496,7 @@ void EventLoop::TimerImpl::Reschedule(const std::chrono::milliseconds& ms, const
 	auto next = loop.Now() + ms;
 
 	//Reschedule it async
-	loop.Async([timerWeak = weak_from_this(), next, repeat](auto now){
-		
-		auto timer = timerWeak.lock();
-		if (!timer) return;
-		
+	loop.Async([timer = shared_from_this(), next, repeat](auto now){
 		//Remove us
 		timer->loop.CancelTimer(timer);
 
