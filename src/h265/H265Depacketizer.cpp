@@ -281,7 +281,6 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 
 			// DONL/DOND is not supported at the moment
 
-			Debug("ttxgz: receive H265 AP\n");
 			/* Skip PayloadHdr */
 			payload += HEVCParams::RTP_NAL_HEADER_SIZE;
 			payloadLen -= HEVCParams::RTP_NAL_HEADER_SIZE;
@@ -339,8 +338,6 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 			*/
 
 			// DONL is not supported at the moment
-
-			Debug("ttxgz: receive H265 FU\n");
 
 			//Check length is larger then RTP header + FU header
 			const size_t nalAndFuHeadersLength = HEVCParams::RTP_NAL_HEADER_SIZE + 1;
