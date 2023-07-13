@@ -33,7 +33,6 @@ void H265Depacketizer::AddCodecConfig()
 
 void H265Depacketizer::ResetFrame()
 {
-	UltraDebug("-H265 : %s\n", __PRETTY_FUNCTION__);
 	//Clear packetization info
 	frame.Reset();
 	//Clear config
@@ -48,6 +47,7 @@ void H265Depacketizer::ResetFrame()
 MediaFrame* H265Depacketizer::AddPacket(const RTPPacket::shared& packet)
 {
 	UltraDebug("-H265Depacketizer::AddPacket()\n");
+
 	//Get timestamp in ms
 	auto ts = packet->GetExtTimestamp();
 	//Check it is from same packet
@@ -70,7 +70,6 @@ MediaFrame* H265Depacketizer::AddPacket(const RTPPacket::shared& packet)
 	frame.SetSSRC(packet->GetSSRC());
 	//Add payload
 	AddPayload(packet->GetMediaData(), packet->GetMediaLength());
-	//AddPayload(packet->GetMediaData(), packet->GetMediaLength(), packet->GetMark());
 	//If it is last return frame
 	if (!packet->GetMark())
 		return nullptr;
@@ -195,7 +194,7 @@ bool H265Depacketizer::AddSingleNalUnitPayload(const BYTE* nalUnit, DWORD nalSiz
 			config.AddPictureParameterSet(nalUnit,nalSize);
 			break;
 		default:
-			Debug("-H265 : Nothing to do for this NaluType nalu. Just forwarding it.(nalUnitType: %d, nalSize: %d)\n", nalUnitType, nalSize);
+			//Debug("-H265 : Nothing to do for this NaluType nalu. Just forwarding it.(nalUnitType: %d, nalSize: %d)\n", nalUnitType, nalSize);
 			break;
 	}
 
@@ -220,7 +219,6 @@ bool H265Depacketizer::AddSingleNalUnitPayload(const BYTE* nalUnit, DWORD nalSiz
 
 MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 {
-	UltraDebug("-H265 : %s\n", __PRETTY_FUNCTION__);
 	BYTE nalHeaderPreffix[4]; // set as AnenexB or not
 	DWORD pos;
 

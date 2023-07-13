@@ -36,7 +36,7 @@ void H265Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 	if (nuh_layer_id != 0)
 	{
 		Error("-H265: H265Packetizer: nuh_layer_id(%d) is not 0, which we don't support yet!\n", nuh_layer_id);
-		//return;
+		return;
 	}
 
 	UltraDebug("-H265 [NAL header:0x%04x,type:%d,layer_id:%d, temporal_id:%d, size:%d]\n", naluHeader, nalUnitType, nuh_layer_id, nuh_temporal_id_plus1, nalSize);
