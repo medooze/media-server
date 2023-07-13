@@ -11,7 +11,6 @@
 #include "rtp.h"
 #include "log.h"
 
-
 H265Depacketizer::H265Depacketizer() :
 	RTPDepacketizer(MediaFrame::Video, VideoCodec::H265),
 	frame(VideoCodec::H265, 0)
@@ -48,7 +47,7 @@ void H265Depacketizer::ResetFrame()
 MediaFrame* H265Depacketizer::AddPacket(const RTPPacket::shared& packet)
 {
 	UltraDebug("-H265Depacketizer::AddPacket()\n");
-	
+
 	//Get timestamp in ms
 	auto ts = packet->GetExtTimestamp();
 	//Check it is from same packet
@@ -105,10 +104,8 @@ bool DecodeNalHeader(const BYTE* payload, DWORD payloadLen, BYTE& nalUnitType, B
 	return true;
 }
 
-bool H265Depacketizer::AddSingleNalUnitPayload(const BYTE* nalUnit, DWORD nalSize /*includ nalHeader*/)
+bool H265Depacketizer::AddSingleNalUnitPayload(const BYTE* nalUnit, DWORD nalSize /*include nalHeader*/)
 {
-	UltraDebug("-H265 : \n");
-	Debug("-H265 : \n");
 	BYTE nalUnitType{0}, nuh_layer_id{0}, nuh_temporal_id_plus1{0};
 	if (!DecodeNalHeader(nalUnit, nalSize, nalUnitType, nuh_layer_id, nuh_temporal_id_plus1))
 	{
@@ -137,8 +134,7 @@ bool H265Depacketizer::AddSingleNalUnitPayload(const BYTE* nalUnit, DWORD nalSiz
 	const BYTE* nalData = nalUnit + HEVCParams::RTP_NAL_HEADER_SIZE;
 	const size_t nalDataSize = nalSize - HEVCParams::RTP_NAL_HEADER_SIZE;
 	//Check if IDR/VPS/SPS/PPS, set Intra
-	if ((nalUnitType == HEVC_RTP_NALU_Type::IDR_W_RADL)
-		|| (nalUnitType == HEVC_RTP_NALU_Type::IDR_N_LP)
+	if ((nalUnitType >= HEVC_RTP_NALU_Type::BLA_W_LP && nalUnitType <= HEVC_RTP_NALU_Type::CRA_NUT)
 		|| (nalUnitType == HEVC_RTP_NALU_Type::VPS)
 		|| (nalUnitType == HEVC_RTP_NALU_Type::SPS)
 		|| (nalUnitType == HEVC_RTP_NALU_Type::PPS))
@@ -153,18 +149,16 @@ bool H265Depacketizer::AddSingleNalUnitPayload(const BYTE* nalUnit, DWORD nalSiz
 			H265VideoParameterSet vps;
 			if (vps.Decode(nalData, nalDataSize))
 			{
-				if(config.GetConfigurationVersion() == 0)
-				{
-					auto& profileTierLevel = vps.GetProfileTierLevel();
-					config.SetConfigurationVersion(1);
-					config.SetGeneralProfileSpace(profileTierLevel.GetGeneralProfileSpace());
-					config.SetGeneralTierFlag(profileTierLevel.GetGeneralTierFlag());
-					config.SetGeneralProfileIdc(profileTierLevel.GetGeneralProfileIdc());
-					config.SetGeneralProfileCompatibilityFlags(profileTierLevel.GetGeneralProfileCompatibilityFlags());
-					config.SetGeneralConstraintIndicatorFlags(profileTierLevel.GetGeneralConstraintIndicatorFlags());
-					config.SetGeneralLevelIdc(profileTierLevel.GetGeneralLevelIdc());
-					config.SetNALUnitLengthSizeMinus1(sizeof(nalHeaderPreffix) - 1);
-				}
+				auto& profileTierLevel = vps.GetProfileTierLevel();
+				config.SetConfigurationVersion(1);
+				config.SetGeneralProfileSpace(profileTierLevel.GetGeneralProfileSpace());
+				config.SetGeneralTierFlag(profileTierLevel.GetGeneralTierFlag());
+				config.SetGeneralProfileIdc(profileTierLevel.GetGeneralProfileIdc());
+				config.SetGeneralProfileCompatibilityFlags(profileTierLevel.GetGeneralProfileCompatibilityFlags());
+				config.SetGeneralConstraintIndicatorFlags(profileTierLevel.GetGeneralConstraintIndicatorFlags());
+				config.SetGeneralLevelIdc(profileTierLevel.GetGeneralLevelIdc());
+				config.SetNALUnitLengthSizeMinus1(sizeof(nalHeaderPreffix) - 1);
+
 				//Add full nal to config
 				config.AddVideoParameterSet(nalUnit,nalSize);
 			}
@@ -203,6 +197,7 @@ bool H265Depacketizer::AddSingleNalUnitPayload(const BYTE* nalUnit, DWORD nalSiz
 			//Debug("-H265 : Nothing to do for this NaluType nalu. Just forwarding it.(nalUnitType: %d, nalSize: %d)\n", nalUnitType, nalSize);
 			break;
 	}
+
 	//Set size
 	set4(nalHeaderPreffix, 0, nalSize);
 	//Append data
@@ -225,19 +220,12 @@ bool H265Depacketizer::AddSingleNalUnitPayload(const BYTE* nalUnit, DWORD nalSiz
 MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 {
 	BYTE nalHeaderPreffix[4]; // set as AnenexB or not
-	//BYTE S, E;
 	DWORD pos;
 
 	BYTE nalUnitType{0}, nuh_layer_id{0}, nuh_temporal_id_plus1{0};
 	if (!DecodeNalHeader(payload, payloadLen, nalUnitType, nuh_layer_id, nuh_temporal_id_plus1))
 	{
 		Error("-H265: Failed to decode NAL Header!\n");
-		return nullptr;
-	}
-
-	if (nuh_layer_id != 0)
-	{
-		Error("-H265: nuh_layer_id(%d) is not 0, which we don't support yet!\n", nuh_layer_id);
 		return nullptr;
 	}
 
@@ -309,7 +297,7 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 				//Check
 				if (!nalSize || nalSize > payloadLen)
 				{
-					Error("-H265: RTP AP depacketizer error!\n");
+					Error("-H265: RTP AP depacketizer error! nalSize: %d, payloadLen: %d\n", nalSize, payloadLen);
 					return nullptr;
 				}
 
@@ -349,13 +337,13 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 
 			// DONL is not supported at the moment
 
-			Error("-H265 TODO: non implemented yet, need update to rfc7798, return nullptr (payload[0]: 0x%02x, nalUnitType: %d, nalSize: %d)\n", payload[0], nalUnitType, nalSize);
-			return nullptr;
-
 			//Check length is larger then RTP header + FU header
 			const size_t nalAndFuHeadersLength = HEVCParams::RTP_NAL_HEADER_SIZE + 1;
 			if (payloadLen < nalAndFuHeadersLength)
+			{
+				Error("- H265: payloadLen (%d) is smaller than normal nal and FU header len (%d), skipping this packet\n", payloadLen, nalAndFuHeadersLength);
 				return nullptr;
+			}
 
 			bool S = (payload[2] & 0x80) == 0x80;
 			bool E = (payload[2] & 0x40) == 0x40;
@@ -384,8 +372,7 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 				fragNalHeader[1] = payload[1];
 
 				//Check if IDR/VPS/SPS/PPS, set Intra
-				if ((nalUnitType == HEVC_RTP_NALU_Type::IDR_W_RADL)
-					|| (nalUnitType == HEVC_RTP_NALU_Type::IDR_N_LP)
+				if((nalUnitType >= HEVC_RTP_NALU_Type::BLA_W_LP && nalUnitType <= HEVC_RTP_NALU_Type::CRA_NUT)
 					|| (nalUnitType == HEVC_RTP_NALU_Type::VPS)
 					|| (nalUnitType == HEVC_RTP_NALU_Type::SPS)
 					|| (nalUnitType == HEVC_RTP_NALU_Type::PPS))

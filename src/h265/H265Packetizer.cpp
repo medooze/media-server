@@ -35,7 +35,7 @@ void H265Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 
 	if (nuh_layer_id != 0)
 	{
-		Error("-H265: nuh_layer_id(%d) is not 0, which we don't support yet!\n", nuh_layer_id);
+		Error("-H265: H265Packetizer: nuh_layer_id(%d) is not 0, which we don't support yet!\n", nuh_layer_id);
 		return;
 	}
 
