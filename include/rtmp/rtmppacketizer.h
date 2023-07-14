@@ -6,17 +6,23 @@
 #include "media.h"
 #include "audio.h"
 #include "video.h"
+#include "h264/h264.h"
 #include <memory>
 
-
-class RTMPAVCPacketizer
+template<typename DescClass, typename SPSClass, VideoCodec::Type codec>
+class RTMPH26xPacketizer
 {
 public:
 	std::unique_ptr<VideoFrame> AddFrame(RTMPVideoFrame* videoFrame);
+
 private:
-	AVCDescriptor desc;
+	
+	DescClass desc;
 	bool gotConfig = false;
 };
+
+using RTMPAVCPacketizer = RTMPH26xPacketizer<AVCDescriptor, H264SeqParameterSet, VideoCodec::H264>;
+using RTMPHEVCPacketizer = RTMPH26xPacketizer<HEVCDescriptor, H265SeqParameterSet, VideoCodec::H265>;
 
 class RTMPAACPacketizer
 {

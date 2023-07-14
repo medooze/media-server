@@ -4,9 +4,29 @@
 #include "rtmp.h"
 #include "amf.h"
 #include "rtmp.h"
+#include "video.h"
+#include "objectparser.h"
 #include "avcdescriptor.h"
+#include "h265/HEVCDescriptor.h"
 #include "aac/aacconfig.h"
 #include <vector>
+
+
+
+template<class InputIt>
+constexpr uint32_t FourCcToUint32(InputIt first)
+{
+	static_assert(sizeof(decltype(*first)) == 1);
+	
+	uint32_t result = 0;
+	for (unsigned i = 0; i < sizeof(uint32_t); i++)
+	{
+		result += (result << 8) + *first++;
+	}
+	
+	return result;
+}
+
 
 class RTMPMediaFrame 
 {
@@ -55,12 +75,26 @@ protected:
 	Type type;
 };
 
+
 class RTMPVideoFrame : public RTMPMediaFrame
 {
 public:
-	enum VideoCodec {FLV1=2,SV=3,VP6=4,VP6A=5,SV2=6,AVC=7};
-	enum FrameType  {INTRA=1,INTER=2,DISPOSABLE_INTER=3,GENERATED_KEY_FRAME=4,VIDEO_INFO=5};
-	enum AVCType	{AVCHEADER = 0, AVCNALU = 1, AVCEND = 2 };
+	enum class RtmpVideoCodec {FLV1=2,SV=3,VP6=4,VP6A=5,SV2=6,AVC=7};
+	enum class FrameType  {INTRA=1,INTER=2,DISPOSABLE_INTER=3,GENERATED_KEY_FRAME=4,VIDEO_INFO=5};
+	enum class AVCType	{AVCHEADER = 0, AVCNALU = 1, AVCEND = 2 };
+	enum class PacketType {
+		SequenceStart = 0,
+		CodedFrames = 1,
+		SequenceEnd = 2,
+		CodedFramesX = 3,
+		Metadata = 4,
+		MPEG2TSSequenceStart = 5
+	};
+	enum class RtmpVideoCodecEx {
+		AV1 = FourCcToUint32("av01"),
+		VP9 = FourCcToUint32("vp09"),
+		HEVC = FourCcToUint32("hvc1")
+	};
 public:
 	RTMPVideoFrame(QWORD timestamp,DWORD size);
 	RTMPVideoFrame(QWORD timestamp, const AVCDescriptor &desc);
@@ -71,22 +105,98 @@ public:
 	virtual DWORD	Serialize(BYTE* buffer,DWORD size);
 	virtual DWORD	GetSize();
 
-	void		SetVideoCodec(VideoCodec codec)		{ this->codec = codec;		}
+	void		SetVideoCodec(RtmpVideoCodec codec)		{ this->codec = codec;		}
 	void		SetFrameType(FrameType frameType)	{ this->frameType = frameType;	}
-	VideoCodec	GetVideoCodec()				const { return codec;		}
+	RtmpVideoCodec	GetVideoCodec()				const { return codec;		}
 	FrameType	GetFrameType()				const { return frameType;	}
-	BYTE		GetAVCType()				const { return extraData[0];	}
+	AVCType		GetAVCType()				const { return AVCType(extraData[0]);	}
 	DWORD		GetAVCTS()				const { return ((DWORD)extraData[1]) << 16 | ((DWORD)extraData[2]) << 8 | extraData[3]; }
 	
 	DWORD		SetVideoFrame(BYTE* data,DWORD size);
-	void		SetAVCType(BYTE type)			{ extraData[0] = type;		}
+	void		SetAVCType(AVCType type)		{ extraData[0] = uint8_t(type);	}
 	void		SetAVCTS(DWORD ts)			{ extraData[1] = ts >>16 ; extraData[2] = ts >>8 ;  extraData[3] = ts; }
 	virtual void	Dump();
-protected:
-	VideoCodec	codec;
+	
+	bool		IsExtended() const			{ return isExHeader; }
+	RtmpVideoCodecEx	GetVideoCodecEx() const			{ return codecEx; }
+	PacketType      GetPacketType() const			{ return packetType; }
+	
+	
+	
+	bool IsConfig() const
+	{
+		if (!isExHeader)
+		{
+			return GetAVCType() == RTMPVideoFrame::AVCType::AVCHEADER;
+		}
+		
+		return GetPacketType() == RTMPVideoFrame::PacketType::SequenceStart;
+	}
+	
+	virtual bool IsCodedFrames()
+	{
+		if (!isExHeader)
+		{
+			return  GetAVCType() == RTMPVideoFrame::AVCType::AVCNALU;
+		}
+		
+		return GetPacketType() == RTMPVideoFrame::PacketType::CodedFrames ||
+			GetPacketType() == RTMPVideoFrame::PacketType::CodedFramesX;
+	}
+	
+	VideoCodec::Type GetGenericVideoCodec() const
+	{
+		if (!isExHeader)
+		{
+			switch (codec)
+			{
+			case RtmpVideoCodec::AVC: 
+				return VideoCodec::H264;
+			default:
+				return VideoCodec::UNKNOWN;
+			}
+		}
+		
+		switch (codecEx)
+		{
+		case RtmpVideoCodecEx::HEVC: 
+			return VideoCodec::H265;
+		
+		case RtmpVideoCodecEx::AV1: 
+			return VideoCodec::AV1;
+		
+		case RtmpVideoCodecEx::VP9: 
+			return VideoCodec::VP9;
+			
+		default:
+			return VideoCodec::UNKNOWN;
+		}
+	}
+	
+private:
+	
+	enum class ParsingState
+	{
+		VIDEO_TAG_HEADER,
+		VIDEO_TAG_HEADER_FOUR_CC,
+		VIDEO_TAG_AVC_EXTRA,
+		VIDEO_TAG_BODY,
+		VIDEO_TAG_HEVC_COMPOSITION_TIME,
+		VIDEO_TAG_DATA,
+	};
+
+	bool		isExHeader = false;
+	RtmpVideoCodec		codec;
+	RtmpVideoCodecEx	codecEx;
+	
 	FrameType	frameType;
+	PacketType	packetType;
+	
 	BYTE		extraData[4];
-	DWORD		headerPos;
+
+	ParsingState parsingState = ParsingState::VIDEO_TAG_HEADER;
+	
+	std::unique_ptr<ObjectParser>	objectParser;
 };
 
 class RTMPAudioFrame : public RTMPMediaFrame

@@ -1,18 +1,18 @@
 
 #include "rtmp/rtmppacketizer.h"
-#include "h264/h264.h"
 
-std::unique_ptr<VideoFrame> RTMPAVCPacketizer::AddFrame(RTMPVideoFrame* videoFrame)
+template<typename DescClass, typename SPSClass, VideoCodec::Type codec>
+std::unique_ptr<VideoFrame> RTMPH26xPacketizer<DescClass, SPSClass, codec>::AddFrame(RTMPVideoFrame* videoFrame)
 {
 	//Debug("-RTMPAVCPacketizer::AddFrame() [size:%u,intra:%d]\n",videoFrame->GetMediaSize(), videoFrame->GetFrameType() == RTMPVideoFrame::INTRA);
 	
 	//Check it is AVC
-	if (videoFrame->GetVideoCodec()!=RTMPVideoFrame::AVC)
+	if (videoFrame->GetGenericVideoCodec() != codec)
 		//Ignore
 		return nullptr;
-		
+	
 	//Check if it is AVC descriptor
-	if (videoFrame->GetAVCType()==RTMPVideoFrame::AVCHEADER)
+	if (videoFrame->IsConfig())
 	{
 		//Parse it
 		if(desc.Parse(videoFrame->GetMediaData(),videoFrame->GetMaxMediaSize()))
@@ -26,7 +26,7 @@ std::unique_ptr<VideoFrame> RTMPAVCPacketizer::AddFrame(RTMPVideoFrame* videoFra
 	}
 	
 	//It should be a nalu then
-	if (videoFrame->GetAVCType()!=RTMPVideoFrame::AVCNALU)
+	if (!videoFrame->IsCodedFrames())
 		//DOne
 		return nullptr;
 	
@@ -45,7 +45,7 @@ std::unique_ptr<VideoFrame> RTMPAVCPacketizer::AddFrame(RTMPVideoFrame* videoFra
 	BYTE nalHeader[4];
 	
 	//Create frame
-	auto frame = std::make_unique<VideoFrame>(VideoCodec::H264,videoFrame->GetSize()+desc.GetSize()+256);
+	auto frame = std::make_unique<VideoFrame>(codec,videoFrame->GetSize()+desc.GetSize()+256);
 	
 	//Set time
 	frame->SetTime(videoFrame->GetTimestamp());
@@ -66,7 +66,7 @@ std::unique_ptr<VideoFrame> RTMPAVCPacketizer::AddFrame(RTMPVideoFrame* videoFra
 	free(config);
 		
 	//If is an intra
-	if (videoFrame->GetFrameType()==RTMPVideoFrame::INTRA)
+	if (videoFrame->GetFrameType()==RTMPVideoFrame::FrameType::INTRA)
 	{
 		//Decode SPS
 		for (int i=0;i<desc.GetNumOfSequenceParameterSets();i++)
@@ -84,7 +84,7 @@ std::unique_ptr<VideoFrame> RTMPAVCPacketizer::AddFrame(RTMPVideoFrame* videoFra
 			frame->AddRtpPacket(ini,desc.GetSequenceParameterSetSize(i),nullptr,0);
 			
 			//Parse sps skipping nal type (first byte)
-			H264SeqParameterSet sps;
+			SPSClass sps;
 			if (sps.Decode(desc.GetSequenceParameterSet(i)+1,desc.GetSequenceParameterSetSize(i)-1))
 			{
 				//Set dimensions
@@ -203,6 +203,9 @@ std::unique_ptr<VideoFrame> RTMPAVCPacketizer::AddFrame(RTMPVideoFrame* videoFra
 	return frame; 
 }
 
+
+template class RTMPH26xPacketizer<AVCDescriptor, H264SeqParameterSet, VideoCodec::H264>;
+template class RTMPH26xPacketizer<HEVCDescriptor, H265SeqParameterSet, VideoCodec::H265>;
 
 std::unique_ptr<AudioFrame> RTMPAACPacketizer::AddFrame(RTMPAudioFrame* audioFrame)
 {

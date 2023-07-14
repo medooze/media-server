@@ -3,6 +3,7 @@
 #include "avcdescriptor.h"
 #include <stdexcept>
 #include <cstdlib>
+#include <cassert>
 
 /************************************
  * RTMPMesssage
@@ -903,18 +904,16 @@ void RTMPMediaFrame::Dump()
 
 RTMPVideoFrame::RTMPVideoFrame(QWORD timestamp,DWORD size) : RTMPMediaFrame(Video,timestamp,size)
 {
-	//No header
-	headerPos = 0;
 }
 
 RTMPVideoFrame::RTMPVideoFrame(QWORD timestamp,const AVCDescriptor &desc) : RTMPMediaFrame(Video,timestamp, desc.GetSize())
 {
 	//Set type
-	SetVideoCodec(RTMPVideoFrame::AVC);
+	SetVideoCodec(RTMPVideoFrame::RtmpVideoCodec::AVC);
 	//Set type
-	SetFrameType(RTMPVideoFrame::INTRA);
+	SetFrameType(RTMPVideoFrame::FrameType::INTRA);
 	//Set NALU type
-	SetAVCType(AVCHEADER);
+	SetAVCType(AVCType::AVCHEADER);
 	//Set no delay
 	SetAVCTS(0);
 	//Serialize
@@ -923,17 +922,15 @@ RTMPVideoFrame::RTMPVideoFrame(QWORD timestamp,const AVCDescriptor &desc) : RTMP
 
 RTMPVideoFrame::~RTMPVideoFrame()
 {
-	//No header
-	headerPos = 0;
 }
 
 void RTMPVideoFrame::Dump()
 {
 	//Dump
 	Debug("[VideoFrame codec:%d intra:%d timestamp:%lld bufferSize:%d mediaSize:%d]\n",codec,frameType,timestamp,bufferSize,mediaSize);
-	if (codec==AVC)
+	if (codec==RtmpVideoCodec::AVC)
 		Debug("\t[AVC header 0x%.2x 0x%.2x 0x%.2x 0x%.2x /]\n",extraData[0],extraData[1],extraData[2],extraData[3]);
-	if (codec==AVC && extraData[0]==AVCHEADER)
+	if (codec==RtmpVideoCodec::AVC && AVCType(extraData[0])==AVCType::AVCHEADER)
 	{
 		//Paser AVCDesc
 		AVCDescriptor desc;
@@ -956,58 +953,133 @@ DWORD RTMPVideoFrame::Parse(BYTE *data,DWORD size)
 	BYTE* buffer = data;
 	DWORD bufferLen = size;
 
-	//check size
-	if(!size)
-		//return consumed
-		return size;
-
-	//If it is the first
-	if (!headerPos)
+	while (bufferLen > 0)
 	{
-		//Parse type
-		codec = (VideoCodec) (buffer[0] & 0x0f);
-		frameType = (FrameType) ((buffer[0] & 0xf0) >> 4);
-		//Remove from data
-		buffer++;
-		bufferLen--;
-		//INcrease header
-		headerPos++;
+		bool isParsed = false;		
+		uint32_t usedBytes = 0;
+		
+		switch (parsingState)
+		{
+		case ParsingState::VIDEO_TAG_HEADER:
+			isExHeader = buffer[0] & 0x80;
+			if (!isExHeader)
+			{
+				//Parse type
+				codec = RtmpVideoCodec(buffer[0] & 0x0f);
+				
+				if (codec == RtmpVideoCodec::AVC)
+				{		
+					objectParser = std::make_unique<ObjectParser>(4);		
+					parsingState = ParsingState::VIDEO_TAG_AVC_EXTRA;
+				}
+				else
+				{
+					parsingState = ParsingState::VIDEO_TAG_DATA;
+				}
+			}
+			else
+			{
+				packetType = PacketType(buffer[0] & 0x0f);
+				
+				objectParser = std::make_unique<ObjectParser>(4);
+				parsingState = ParsingState::VIDEO_TAG_HEADER_FOUR_CC;
+			}
+			
+			// The frame type wouldn't be valid when packet type is PacketTypeMetaData for extended header.
+			// But it wouldn't be used anyway.
+			frameType = (FrameType) ((buffer[0] & 0x70) >> 4);
+			
+			usedBytes = 1;
+			break;
+			
+		case ParsingState::VIDEO_TAG_AVC_EXTRA:
+			assert(objectParser);
+			std::tie(isParsed, usedBytes) = objectParser->Parse(buffer, bufferLen);
+			if (isParsed)
+			{
+				memcpy(extraData, objectParser->GetBuffer().data(), 4);
+				objectParser.reset();
+				parsingState = ParsingState::VIDEO_TAG_DATA;
+			}
+			break;
+			
+		case ParsingState::VIDEO_TAG_HEADER_FOUR_CC:
+			assert(objectParser);
+			std::tie(isParsed, usedBytes) = objectParser->Parse(buffer, bufferLen);
+			if (isParsed)
+			{
+				codecEx = RtmpVideoCodecEx(FourCcToUint32(objectParser->GetBuffer().begin()));				
+				objectParser.reset();				
+				parsingState = ParsingState::VIDEO_TAG_BODY;
+			}
+			break;
+			
+		case ParsingState::VIDEO_TAG_BODY:
+			if (packetType == PacketType::Metadata)
+			{
+				// colorInfo AMF encoded meta data. Ignore for now.
+				
+				// Frame type is not valid for meta data
+				frameType = FrameType(0);
+				return size;
+			}
+			else if (packetType == PacketType::SequenceEnd)
+			{
+				// signals end of sequence
+				return size;
+			}
+			
+			if (codecEx == RtmpVideoCodecEx::HEVC)
+			{
+				if (packetType == PacketType::SequenceStart)
+				{
+					// HEVCDecoderConfigurationRecord
+					parsingState = ParsingState::VIDEO_TAG_DATA;
+				}
+				else if (packetType == PacketType::CodedFrames)
+				{
+					objectParser = std::make_unique<ObjectParser>(3);
+					parsingState = ParsingState::VIDEO_TAG_HEVC_COMPOSITION_TIME;
+				}
+				else if (packetType == PacketType::CodedFramesX)
+				{					
+					parsingState = ParsingState::VIDEO_TAG_DATA;					
+				}
+			}
+			else
+			{
+				// Not implemented for other codecs
+				return size;
+			}
+			
+			break;
+			
+		case ParsingState::VIDEO_TAG_HEVC_COMPOSITION_TIME:
+			assert(objectParser);
+			std::tie(isParsed, usedBytes) = objectParser->Parse(buffer, bufferLen);
+			if (isParsed)
+			{	
+				objectParser.reset();				
+				parsingState = ParsingState::VIDEO_TAG_DATA;
+			}
+			break;
+			
+		case ParsingState::VIDEO_TAG_DATA:
+			usedBytes = RTMPMediaFrame::Parse(buffer,bufferLen);
+			//Increase media data
+			mediaSize += usedBytes;
+			
+			return usedBytes + (buffer - data);
+		default:
+			assert(false);
+			break;
+		}
+		
+		buffer	  += usedBytes;
+		bufferLen -= usedBytes;
 	}
 
-	//check size
-	if(!bufferLen)
-		//return consumed
-		return size;
-
-	//Check codec type
-	if (headerPos<5 && codec==AVC)
-	{
-		//How much is left
-		DWORD len = 5-headerPos;
-		//Copy data available
-		if (len>bufferLen)
-			len = bufferLen;
-		//Copy
-		memcpy(extraData+headerPos-1,buffer,len);
-		//Skip next 4 bytes
-		buffer	  += len;
-		bufferLen -= len;
-		//Inc header
-		headerPos += len;
-	}
-	DWORD parsed = 0;
-
-	//Check size
-	if (bufferLen)
-	{
-		//Parse the rest
-		parsed = RTMPMediaFrame::Parse(buffer,bufferLen);
-		//Increase media data
-		mediaSize += parsed;
-	}
-
-	//Return parsed data
-	return parsed+(buffer-data);
+	return size;
 }
 
 DWORD RTMPVideoFrame::Serialize(BYTE* data,DWORD size)
@@ -1016,7 +1088,7 @@ DWORD RTMPVideoFrame::Serialize(BYTE* data,DWORD size)
 	DWORD extra = 0;
 
 	//Check codec
-	if (codec==AVC)
+	if (codec==RtmpVideoCodec::AVC)
 		//Extra header
 		extra = 4;
 
@@ -1026,10 +1098,10 @@ DWORD RTMPVideoFrame::Serialize(BYTE* data,DWORD size)
 		return 0;
 
 	//Set first byte
-	data[0] = (frameType <<4 ) | (codec & 0x0f);
+	data[0] = (uint8_t(frameType) <<4 ) | (uint8_t(codec) & 0x0f);
 
 	//If it is AVC
-	if (codec==AVC)
+	if (codec==RtmpVideoCodec::AVC)
 	{
 		data[1] = extraData[0];
 		data[2] = extraData[1];
@@ -1046,7 +1118,7 @@ DWORD RTMPVideoFrame::Serialize(BYTE* data,DWORD size)
 DWORD RTMPVideoFrame::GetSize()
 {
 	//If it is not AVC
-	if (codec!=AVC)
+	if (codec!=RtmpVideoCodec::AVC)
 		//Check if enought space
 		return mediaSize+1;
 	else
