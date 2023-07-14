@@ -23,7 +23,7 @@ public:
 protected:
 	void OnNal(VideoFrame& frame, BufferReader& nal) override;
 
-	void EmitNal(VideoFrame& frame, BufferReader& nal)
+	void EmitNal(VideoFrame& frame, BufferReader nal)
 	{
 		auto naluHeader 		= nal.Peek2();
 		BYTE nalUnitType		= (naluHeader >> 9) & 0b111111;
