@@ -2,10 +2,11 @@
 #include "video.h"
 
 // H.265 uses same stream format (Annex B)
-#include "h264/h264nal.h"
+#include "h264/H26xNal.h"
 
 void H265Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 {
+	UltraDebug("-H265Packetizer::OnNal()\n");
 	//Return if current NAL is empty
 	if (!reader.GetLeft())
 		return;
@@ -208,11 +209,12 @@ void H265Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 	EmitNal(frame, BufferReader(nalUnit, nalSize));
 }
 
-std::unique_ptr<VideoFrame> H265Packetizer::ProcessAU(BufferReader reader)
+bool H265Packetizer::ProcessAU(VideoFrame& frame, BufferReader& reader)
 {
+	UltraDebug("-H265Packetizer::ProcessAU()| H265 AU [len:%d]\n", reader.GetLeft());
 	noPPSInFrame = true;
 	noSPSInFrame = true;
 	noVPSInFrame = true;
 
-	return H26xPacketizer::ProcessAU(reader);
+	return H26xPacketizer::ProcessAU(frame, reader);
 }

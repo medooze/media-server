@@ -15,7 +15,7 @@ public:
 	// the packetizer only supports 4-byte length as output
 	static constexpr size_t OUT_NALU_LENGTH_SIZE = 4;
 
-	virtual std::unique_ptr<VideoFrame> ProcessAU(BufferReader payload);
+	virtual bool ProcessAU(VideoFrame& frame, BufferReader& payload);
 
 protected:
 	/** called by ProcessAU() for every NALU found in the AU */
