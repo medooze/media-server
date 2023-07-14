@@ -5,6 +5,38 @@
 
 #define CHECK(r) {if(r.Error()) return false;}
 
+bool H265DecodeNalHeader(const BYTE* payload, DWORD payloadLen, BYTE& nalUnitType, BYTE& nuh_layer_id, BYTE& nuh_temporal_id_plus1)
+{
+	//Check length
+	if (payloadLen<HEVCParams::RTP_NAL_HEADER_SIZE)
+		//Exit
+		return false;
+
+	/* 
+	*   +-------------+-----------------+
+	*   |0|1|2|3|4|5|6|7|0|1|2|3|4|5|6|7|
+	*   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	*   |F|   Type    |  LayerId  | TID |
+	*   +-------------+-----------------+
+	*
+	* F must be 0.
+	*/
+
+	nalUnitType = (payload[0] & 0x7e) >> 1;
+	nuh_layer_id = ((payload[0] & 0x1) << 5) + ((payload[1] & 0xf8) >> 3);
+	nuh_temporal_id_plus1 = payload[1] & 0x7;
+	UltraDebug("-H265DecodeNalHeader: [NAL header:0x%02x%02x,type:%d,layer_id:%d, temporal_id:%d]\n", payload[0], payload[1], nalUnitType, nuh_layer_id, nuh_temporal_id_plus1);
+	return true;
+}
+
+bool H265IsIntra(BYTE nalUnitType)
+{
+	return ((nalUnitType >= HEVC_RTP_NALU_Type::BLA_W_LP && nalUnitType <= HEVC_RTP_NALU_Type::CRA_NUT) 
+			|| (nalUnitType == HEVC_RTP_NALU_Type::VPS)
+			|| (nalUnitType == HEVC_RTP_NALU_Type::SPS)
+			|| (nalUnitType == HEVC_RTP_NALU_Type::PPS));
+}
+
 bool GenericProfileTierLevel::Decode(BitReader& r)
 {
 	if (r.Left() < 2+1+5 + 32 +	4 +	43 + 1)

@@ -338,7 +338,7 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 			// DONL is not supported at the moment
 
 			//Check length is larger then RTP header + FU header
-			const size_t nalAndFuHeadersLength = HEVCParams::RTP_NAL_HEADER_SIZE + 1;
+			const size_t nalAndFuHeadersLength = HEVCParams::RTP_NAL_HEADER_SIZE + HEVCParams::RTP_NAL_FU_HEADER_SIZE;
 			if (payloadLen < nalAndFuHeadersLength)
 			{
 				Error("- H265: payloadLen (%d) is smaller than normal nal and FU header len (%d), skipping this packet\n", payloadLen, nalAndFuHeadersLength);
