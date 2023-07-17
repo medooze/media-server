@@ -9,6 +9,8 @@
 #include "h264/h264.h"
 #include <memory>
 
+VideoCodec::Type GetRtmpFrameVideoCodec(const RTMPVideoFrame& videoFrame);
+
 template<typename DescClass, typename SPSClass, VideoCodec::Type codec>
 class RTMPH26xPacketizer
 {
