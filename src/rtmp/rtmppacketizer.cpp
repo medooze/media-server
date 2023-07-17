@@ -68,7 +68,7 @@ std::unique_ptr<VideoFrame> RTMPH26xPacketizer<DescClass, SPSClass, codec>::AddF
 	//If is an intra
 	if (videoFrame->GetFrameType()==RTMPVideoFrame::FrameType::INTRA)
 	{
-		//Decode VPS
+		//Add VPS
 		for (int i=0;i<desc.GetNumOfVideoParameterSets();i++)
 		{
 			//Set size
