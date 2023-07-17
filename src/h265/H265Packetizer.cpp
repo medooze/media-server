@@ -6,7 +6,7 @@
 
 void H265Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 {
-	UltraDebug("-H265Packetizer::OnNal()\n");
+	//UltraDebug("-H265Packetizer::OnNal()\n");
 	//Return if current NAL is empty
 	if (!reader.GetLeft())
 		return;
@@ -19,24 +19,6 @@ void H265Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 		//Exit
 		return;
 
-
-#if 0
-	/* 
-	 *   +-------------+-----------------+
-	 *   |0|1|2|3|4|5|6|7|0|1|2|3|4|5|6|7|
-	 *   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-	 *   |F|   Type    |  LayerId  | TID |
-	 *   +-------------+-----------------+
-	 *
-	 * F must be 0.
-	 */
-
-	auto naluHeader 		= reader.Get2();
-	BYTE nalUnitType		= (naluHeader >> 9) & 0b111111;
-	BYTE nuh_layer_id		= (naluHeader >> 3) & 0b111111;
-	BYTE nuh_temporal_id_plus1	= naluHeader & 0b111;
-
-#else
 	BYTE nalUnitType;
 	BYTE nuh_layer_id;
 	BYTE nuh_temporal_id_plus1;
@@ -46,7 +28,6 @@ void H265Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 		return;
 	}
 	reader.Skip(HEVCParams::RTP_NAL_HEADER_SIZE);
-#endif
 
 	if (nuh_layer_id != 0)
 	{
