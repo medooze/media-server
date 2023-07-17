@@ -10,7 +10,7 @@
 #include "h265/HEVCDescriptor.h"
 #include "aac/aacconfig.h"
 #include <vector>
-
+#include <variant>
 
 
 template<class InputIt>
@@ -81,7 +81,7 @@ class RTMPVideoFrame : public RTMPMediaFrame
 public:
 	enum class RtmpVideoCodec {FLV1=2,SV=3,VP6=4,VP6A=5,SV2=6,AVC=7};
 	enum class FrameType  {INTRA=1,INTER=2,DISPOSABLE_INTER=3,GENERATED_KEY_FRAME=4,VIDEO_INFO=5};
-	enum class AVCType	{AVCHEADER = 0, AVCNALU = 1, AVCEND = 2 };
+	enum class AVCPacketType	{AVCHEADER = 0, AVCNALU = 1, AVCEND = 2 };
 	enum class PacketType {
 		SequenceStart = 0,
 		CodedFrames = 1,
@@ -105,29 +105,28 @@ public:
 	virtual DWORD	Serialize(BYTE* buffer,DWORD size);
 	virtual DWORD	GetSize();
 
-	void		SetVideoCodec(RtmpVideoCodec codec)		{ this->codec = codec;		}
+	void		SetVideoCodec(RtmpVideoCodec codec)	{ this->codec = codec;		}
 	void		SetFrameType(FrameType frameType)	{ this->frameType = frameType;	}
-	RtmpVideoCodec	GetVideoCodec()				const { return codec;		}
+	RtmpVideoCodec	GetVideoCodec()	const 			{ return std::get<RtmpVideoCodec>(codec); }
+	RtmpVideoCodecEx GetVideoCodecEx() const		{ return std::get<RtmpVideoCodecEx>(codec); }
 	FrameType	GetFrameType()				const { return frameType;	}
-	AVCType		GetAVCType()				const { return AVCType(extraData[0]);	}
-	DWORD		GetAVCTS()				const { return ((DWORD)extraData[1]) << 16 | ((DWORD)extraData[2]) << 8 | extraData[3]; }
+	AVCPacketType	GetAVCType() const 			{ return std::get<AVCPacketType>(packetType); }	
+	PacketType	GetPacketType() const			{ return std::get<PacketType>(packetType); }
+	int32_t		GetAVCTS()				const { return compositionTime; }
 	
 	DWORD		SetVideoFrame(BYTE* data,DWORD size);
-	void		SetAVCType(AVCType type)		{ extraData[0] = uint8_t(type);	}
-	void		SetAVCTS(DWORD ts)			{ extraData[1] = ts >>16 ; extraData[2] = ts >>8 ;  extraData[3] = ts; }
+	void		SetAVCType(AVCPacketType type)		{ packetType = type;	}
+	void		SetAVCTS(int32_t ts)			{ compositionTime = ts; }
 	virtual void	Dump();
 	
-	bool		IsExtended() const			{ return isExHeader; }
-	RtmpVideoCodecEx	GetVideoCodecEx() const			{ return codecEx; }
-	PacketType      GetPacketType() const			{ return packetType; }
-	
+	bool		IsExtended() const			{ return isExtended; }
 	
 	
 	bool IsConfig() const
 	{
-		if (!isExHeader)
+		if (!isExtended)
 		{
-			return GetAVCType() == RTMPVideoFrame::AVCType::AVCHEADER;
+			return GetAVCType() == RTMPVideoFrame::AVCPacketType::AVCHEADER;
 		}
 		
 		return GetPacketType() == RTMPVideoFrame::PacketType::SequenceStart;
@@ -135,9 +134,9 @@ public:
 	
 	virtual bool IsCodedFrames()
 	{
-		if (!isExHeader)
+		if (!isExtended)
 		{
-			return  GetAVCType() == RTMPVideoFrame::AVCType::AVCNALU;
+			return  GetAVCType() == RTMPVideoFrame::AVCPacketType::AVCNALU;
 		}
 		
 		return GetPacketType() == RTMPVideoFrame::PacketType::CodedFrames ||
@@ -146,9 +145,9 @@ public:
 	
 	VideoCodec::Type GetGenericVideoCodec() const
 	{
-		if (!isExHeader)
+		if (!isExtended)
 		{
-			switch (codec)
+			switch (std::get<RtmpVideoCodec>(codec))
 			{
 			case RtmpVideoCodec::AVC: 
 				return VideoCodec::H264;
@@ -157,7 +156,7 @@ public:
 			}
 		}
 		
-		switch (codecEx)
+		switch (std::get<RtmpVideoCodecEx>(codec))
 		{
 		case RtmpVideoCodecEx::HEVC: 
 			return VideoCodec::H265;
@@ -185,17 +184,15 @@ private:
 		VIDEO_TAG_DATA,
 	};
 
-	bool		isExHeader = false;
-	RtmpVideoCodec		codec;
-	RtmpVideoCodecEx	codecEx;
+	bool		isExtended = false;	
+	FrameType	frameType = FrameType::INTER;
 	
-	FrameType	frameType;
-	PacketType	packetType;
+	std::variant<RtmpVideoCodec, RtmpVideoCodecEx>	codec = RtmpVideoCodec::AVC;
+	std::variant<AVCPacketType, PacketType> packetType = AVCPacketType::AVCHEADER;
 	
-	BYTE		extraData[4];
+	int32_t	compositionTime = 0;
 
-	ParsingState parsingState = ParsingState::VIDEO_TAG_HEADER;
-	
+	ParsingState parsingState = ParsingState::VIDEO_TAG_HEADER;	
 	std::unique_ptr<ObjectParser>	objectParser;
 };
 

@@ -305,7 +305,7 @@ void RTMPPipedMediaStream:: onMediaFrame(DWORD id,RTMPMediaFrame *frame)
 			if (video->GetVideoCodec()==RTMPVideoFrame::RtmpVideoCodec::AVC)
 			{
 				//Check type
-				if(video->GetAVCType()==RTMPVideoFrame::AVCType::AVCHEADER)
+				if(video->GetAVCType()==RTMPVideoFrame::AVCPacketType::AVCHEADER)
 				{
 					//Check if we already had one desc
 					if (desc)
