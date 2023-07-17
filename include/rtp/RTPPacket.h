@@ -7,6 +7,7 @@
 #include "rtp/RTPPayload.h"
 #include "rtp/RTPPayloadPool.h"
 #include "h264/h264.h"
+#include "h265/h265.h"
 #include "vp8/vp8.h"
 #include "vp9/VP9PayloadDescription.h"
 #include <memory>
@@ -195,6 +196,10 @@ public:
 	std::optional<VP9PayloadDescription>	vp9PayloadDescriptor;
 	std::optional<H264SeqParameterSet>	h264SeqParameterSet;
 	std::optional<H264PictureParameterSet>	h264PictureParameterSet;
+	//ttxgz
+	std::optional<H265VideoParameterSet>	h265VideoParameterSet;
+	std::optional<H265SeqParameterSet>	h265SeqParameterSet;
+	std::optional<H265PictureParameterSet>	h265PictureParameterSet;
 	std::optional<std::vector<bool>>	activeDecodeTargets;
 	std::optional<TemplateDependencyStructure> templateDependencyStructure;
 	Buffer::shared				config;

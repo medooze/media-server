@@ -44,6 +44,7 @@ bool H264LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 		//Check if it is intra
 		isIntra = fm.startOfFrame && fm.independent;
 		
+		UltraDebug("-H264LayerSelector::Select() | Get Frame Mark\n");
 		Log("-H264LayerSelector::Select() | [ssrc:%u,isIntra:%d,s:%d,independet:%d,baseLayerSync:%d,tid:%d]\n",packet->GetSSRC(),isIntra,fm.startOfFrame,fm.independent,fm.baseLayerSync,fm.temporalLayerId);
 		
 		//Store current temporal id
@@ -285,7 +286,7 @@ bool H264LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 		}
 	} 
 
-	//Debug("-intra:%d\t waitingForIntra:%d\n",isIntra,waitingForIntra);
+	Debug("-intra:%d\t waitingForIntra:%d\n",isIntra,waitingForIntra);
 	
 	//If we have to wait for first intra
 	if (waitingForIntra)
@@ -313,6 +314,7 @@ bool H264LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 	//If packet has frame markings
 	if (packet->HasFrameMarkings())
 	{
+		UltraDebug("-H264LayerSelector::GetLayerIds() | Get Frame Mark\n");
 		//Get it from frame markings
 		const auto& fm = packet->GetFrameMarks();
 		//Get data from frame marking
@@ -492,7 +494,7 @@ bool H264LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 			}
 		}
 	}
-	//UltraDebug("-H264LayerSelector::GetLayerIds() | [isKeyFrame:%d,width:%d,height:%d]\n",packet->IsKeyFrame(),packet->GetWidth(),packet->GetHeight());
+	UltraDebug("-H264LayerSelector::GetLayerIds() | [isKeyFrame:%d,width:%d,height:%d]\n",packet->IsKeyFrame(),packet->GetWidth(),packet->GetHeight());
 	
 	//Return layer infos
 	return infos;

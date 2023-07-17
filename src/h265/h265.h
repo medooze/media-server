@@ -206,7 +206,7 @@ struct HEVCWindow {
 };
 
 // helper function for all H265 decoding/parsing
-DWORD H265Escape(BYTE *dst,const BYTE *src, DWORD size);
+// DWORD H265Escape(BYTE *dst,const BYTE *src, DWORD size);
 bool H265DecodeNalHeader(const BYTE* payload, DWORD payloadLen, BYTE& nalUnitType, BYTE& nuh_layer_id, BYTE& nuh_temporal_id_plus1);
 bool H265IsIntra(BYTE nalUnitType);
 

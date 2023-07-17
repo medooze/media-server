@@ -3,6 +3,8 @@
 #include "vp9/VP9LayerSelector.h"
 #include "vp8/VP8LayerSelector.h"
 #include "h264/H264LayerSelector.h"
+//ttxgz
+#include "h265/H265LayerSelector.h"
 #include "DependencyDescriptorLayerSelector.h"
 
 
@@ -43,6 +45,9 @@ VideoLayerSelector* VideoLayerSelector::Create(VideoCodec::Type codec)
 			return new VP8LayerSelector();
 		case VideoCodec::H264:
 			return new H264LayerSelector();
+		//ttxgz
+		case VideoCodec::H265:
+			return new H265LayerSelector();
 		case VideoCodec::AV1:
 			return new DependencyDescriptorLayerSelector(VideoCodec::AV1);
 		default:
@@ -50,8 +55,9 @@ VideoLayerSelector* VideoLayerSelector::Create(VideoCodec::Type codec)
 	}
 }
 
- std::vector<LayerInfo> VideoLayerSelector::GetLayerIds(const RTPPacket::shared& packet)
+std::vector<LayerInfo> VideoLayerSelector::GetLayerIds(const RTPPacket::shared& packet)
 {
+	Debug("VideoLayerSelector::GetLayerIds() [codec:%d]\n", packet->GetCodec());
 	switch(packet->GetCodec())
 	{
 		case VideoCodec::VP9:
@@ -60,6 +66,9 @@ VideoLayerSelector* VideoLayerSelector::Create(VideoCodec::Type codec)
 			return VP8LayerSelector::GetLayerIds(packet);
 		case VideoCodec::H264:
 			return H264LayerSelector::GetLayerIds(packet);
+		//ttxgz
+		case VideoCodec::H265:
+			return H265LayerSelector::GetLayerIds(packet);
 		case VideoCodec::AV1:
 			return DependencyDescriptorLayerSelector::GetLayerIds(packet);
 		default:
