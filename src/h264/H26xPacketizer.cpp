@@ -5,7 +5,7 @@
 
 void H26xPacketizer::EmitNal(VideoFrame& frame, BufferReader nal, std::string& fuPrefix, int naluHeaderSize)
 {
-	UltraDebug("-H26xPacketizer::EmitNal()\n");
+	//UltraDebug("-H26xPacketizer::EmitNal()\n");
 	//Empty prefix
 	uint8_t prefix[4] = {};
 
@@ -71,7 +71,7 @@ void H26xPacketizer::EmitNal(VideoFrame& frame, BufferReader nal, std::string& f
 
 bool H26xPacketizer::ProcessAU(VideoFrame& frame, BufferReader& reader)
 {
-	UltraDebug("-H26xPacketizer::ProcessAU() | H26x AU [len:%d]\n", reader.GetLeft());
+	//UltraDebug("-H26xPacketizer::ProcessAU() | H26x AU [len:%d]\n", reader.GetLeft());
 	
 	NalSliceAnnexB(reader
 		, [&](auto nalReader){OnNal(frame, nalReader);}
