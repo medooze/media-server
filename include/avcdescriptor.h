@@ -25,6 +25,11 @@ public:
 	bool Parse(const BYTE* data,DWORD size);
 	void Dump() const;
 
+	// For compatibility with RTMP packetizer. Not used for AVC
+	BYTE GetNumOfVideoParameterSets()		const { return 0;	}	
+	BYTE* GetVideoParameterSet(BYTE i)		const { return nullptr;	}
+	DWORD GetVideoParameterSetSize(BYTE i)		const { return 0;	}
+
 	BYTE GetNumOfPictureParameterSets()		const { return numOfPictureParameterSets;	}
 	BYTE GetNumOfSequenceParameterSets()		const { return numOfSequenceParameterSets;	}
 	
