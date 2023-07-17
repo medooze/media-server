@@ -305,7 +305,7 @@ bool H265PictureParameterSet::Decode(const BYTE* buffer,DWORD bufferSize)
 	//SHould be	done otherway, like	modifying the BitReader	to escape the input	NAL, but anyway.. duplicate	memory
 	BYTE *aux =	(BYTE*)malloc(bufferSize);
 	//Escape
-	DWORD len =	H265Escape(aux,buffer,bufferSize);
+	DWORD len =	NalUnescapeRbsp(aux,buffer,bufferSize);
 	//Create bit reader
 	BitReader r(aux,len);
 
