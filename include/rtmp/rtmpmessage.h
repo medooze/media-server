@@ -12,7 +12,6 @@
 #include <vector>
 
 
-
 template<class InputIt>
 constexpr uint32_t FourCcToUint32(InputIt first)
 {
@@ -117,7 +116,7 @@ public:
 	void		SetAVCTS(DWORD ts)			{ extraData[1] = ts >>16 ; extraData[2] = ts >>8 ;  extraData[3] = ts; }
 	virtual void	Dump();
 	
-	bool		IsExtended() const			{ return isExHeader; }
+	bool		IsExtended() const			{ return isExtended; }
 	RtmpVideoCodecEx	GetVideoCodecEx() const			{ return codecEx; }
 	PacketType      GetPacketType() const			{ return packetType; }
 	
@@ -125,7 +124,7 @@ public:
 	
 	bool IsConfig() const
 	{
-		if (!isExHeader)
+		if (!isExtended)
 		{
 			return GetAVCType() == RTMPVideoFrame::AVCType::AVCHEADER;
 		}
@@ -135,7 +134,7 @@ public:
 	
 	virtual bool IsCodedFrames()
 	{
-		if (!isExHeader)
+		if (!isExtended)
 		{
 			return  GetAVCType() == RTMPVideoFrame::AVCType::AVCNALU;
 		}
@@ -146,7 +145,7 @@ public:
 	
 	VideoCodec::Type GetGenericVideoCodec() const
 	{
-		if (!isExHeader)
+		if (!isExtended)
 		{
 			switch (codec)
 			{
@@ -185,7 +184,7 @@ private:
 		VIDEO_TAG_DATA,
 	};
 
-	bool		isExHeader = false;
+	bool		isExtended = false;
 	RtmpVideoCodec		codec;
 	RtmpVideoCodecEx	codecEx;
 	

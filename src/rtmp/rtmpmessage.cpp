@@ -961,8 +961,8 @@ DWORD RTMPVideoFrame::Parse(BYTE *data,DWORD size)
 		switch (parsingState)
 		{
 		case ParsingState::VIDEO_TAG_HEADER:
-			isExHeader = buffer[0] & 0x80;
-			if (!isExHeader)
+			isExtended = buffer[0] & 0x80;
+			if (!isExtended)
 			{
 				//Parse type
 				codec = RtmpVideoCodec(buffer[0] & 0x0f);
