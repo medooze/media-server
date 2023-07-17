@@ -12,7 +12,6 @@
 #include <vector>
 #include <variant>
 
-
 template<class InputIt>
 constexpr uint32_t FourCcToUint32(InputIt first)
 {
