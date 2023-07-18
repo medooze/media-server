@@ -297,15 +297,15 @@ void RTMPPipedMediaStream:: onMediaFrame(DWORD id,RTMPMediaFrame *frame)
 			RTMPVideoFrame* video = (RTMPVideoFrame*)frame;
 
 			//check frame type
-			if (video->GetFrameType()!=RTMPVideoFrame::FrameType::INTRA && video->GetFrameType()!=RTMPVideoFrame::FrameType::GENERATED_KEY_FRAME)
+			if (video->GetFrameType()!=RTMPVideoFrame::INTRA && video->GetFrameType()!=RTMPVideoFrame::GENERATED_KEY_FRAME)
 				//Skip
 				return;
 			
 			//Check if it is h264
-			if (video->GetVideoCodec()==RTMPVideoFrame::RtmpVideoCodec::AVC)
+			if (video->GetVideoCodec()==RTMPVideoFrame::AVC)
 			{
 				//Check type
-				if(video->GetAVCType()==RTMPVideoFrame::AVCPacketType::AVCHEADER)
+				if(video->GetAVCType()==RTMPVideoFrame::AVCHEADER)
 				{
 					//Check if we already had one desc
 					if (desc)
@@ -489,7 +489,7 @@ DWORD RTMPCachedPipedMediaStream::AddMediaListener(RTMPMediaStream::Listener* li
 void RTMPCachedPipedMediaStream::SendMediaFrame(RTMPMediaFrame *frame)
 {
 	//Check if it is video intra
-	if (frame->GetType()==RTMPMediaFrame::Video && ((RTMPVideoFrame*)frame)->GetFrameType()==RTMPVideoFrame::FrameType::INTRA)
+	if (frame->GetType()==RTMPMediaFrame::Video && ((RTMPVideoFrame*)frame)->GetFrameType()==RTMPVideoFrame::INTRA)
 		//Clear cache
 		Clear();
 	//Append to queue

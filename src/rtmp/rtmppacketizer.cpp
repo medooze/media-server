@@ -1,13 +1,43 @@
 
 #include "rtmp/rtmppacketizer.h"
 
+
+VideoCodec::Type GetRtmpFrameVideoCodec(const RTMPVideoFrame& videoFrame)
+{
+	if (!videoFrame.IsExtended())
+	{
+		switch (videoFrame.GetVideoCodec())
+		{
+		case RTMPVideoFrame::AVC:
+			return VideoCodec::H264;
+		default:
+			return VideoCodec::UNKNOWN;
+		}
+	}
+	
+	switch (videoFrame.GetVideoCodecEx())
+	{
+	case RTMPVideoFrame::HEVC: 
+		return VideoCodec::H265;
+	
+	case RTMPVideoFrame::AV1: 
+		return VideoCodec::AV1;
+	
+	case RTMPVideoFrame::VP9: 
+		return VideoCodec::VP9;
+		
+	default:
+		return VideoCodec::UNKNOWN;
+	}
+}
+
 template<typename DescClass, typename SPSClass, VideoCodec::Type codec>
 std::unique_ptr<VideoFrame> RTMPH26xPacketizer<DescClass, SPSClass, codec>::AddFrame(RTMPVideoFrame* videoFrame)
 {
 	//Debug("-RTMPAVCPacketizer::AddFrame() [size:%u,intra:%d]\n",videoFrame->GetMediaSize(), videoFrame->GetFrameType() == RTMPVideoFrame::INTRA);
 	
 	//Check it is processing codec
-	if (videoFrame->GetGenericVideoCodec() != codec)
+	if (GetRtmpFrameVideoCodec(*videoFrame) != codec)
 		//Ignore
 		return nullptr;
 	
@@ -66,7 +96,7 @@ std::unique_ptr<VideoFrame> RTMPH26xPacketizer<DescClass, SPSClass, codec>::AddF
 	free(config);
 		
 	//If is an intra
-	if (videoFrame->GetFrameType()==RTMPVideoFrame::FrameType::INTRA)
+	if (videoFrame->GetFrameType()==RTMPVideoFrame::INTRA)
 	{
 		//Add VPS
 		for (int i=0;i<desc.GetNumOfVideoParameterSets();i++)
