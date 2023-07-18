@@ -158,6 +158,9 @@ int main(int argc,char **argv)
 	const char *crtfile = NULL;
 	const char *keyfile = NULL;
     
+	Logger::EnableDebug(true);
+	Logger::EnableUltraDebug(true);
+
 	//Get all
 	for(int i=1;i<argc;i++)
 	{

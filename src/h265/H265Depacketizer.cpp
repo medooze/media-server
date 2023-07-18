@@ -349,6 +349,7 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 			bool E = (payload[2] & 0x40) == 0x40;
 			//Get real nal type
 			nalUnitType = payload[2] & 0b0011'1111;
+			UltraDebug("-H265: FU header: NAL Unit Type: %d, S: %d, E: %d\n", nalUnitType, S, E);
 
 			/* strip off FU indicator and FU header bytes */
 			nalSize = payloadLen - nalAndFuHeadersLength;

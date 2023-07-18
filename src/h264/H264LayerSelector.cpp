@@ -302,6 +302,8 @@ bool H264LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 	//RTP mark is unchanged
 	mark = packet->GetMark();
 	
+	UltraDebug("-H264LayerSelector::Select() return true!\n");
+
 	//Select
 	return true;
 	
@@ -495,6 +497,7 @@ bool H264LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 		}
 	}
 	UltraDebug("-H264LayerSelector::GetLayerIds() | [isKeyFrame:%d,width:%d,height:%d]\n",packet->IsKeyFrame(),packet->GetWidth(),packet->GetHeight());
+	UltraDebug("-H264LayerSelector::GetLayerIds() | return infos.size: %\n", infos.size());
 	
 	//Return layer infos
 	return infos;

@@ -44,6 +44,9 @@ int main(int argc, char** argv)
 	std::string remotePassword	= "receiver";
 	bool useRTX = true;
 	
+	Logger::EnableDebug(true);
+	Logger::EnableUltraDebug(true);
+
 	//Get all
 	for(int i=1;i<argc;i++)
 	{

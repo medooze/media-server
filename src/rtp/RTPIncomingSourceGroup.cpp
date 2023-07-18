@@ -377,6 +377,7 @@ RTPIncomingSource* RTPIncomingSourceGroup::Process(RTPPacket::shared &packet)
 	{
 		//Check if we can ge the layer info
 		auto info = VideoLayerSelector::GetLayerIds(packet);
+		UltraDebug("ttxgz: calling GetLayerIds here %s, %d, returned info size: %d\n", __PRETTY_FUNCTION__, __LINE__, info.size());
 		//UltraDebug("-RTPIncomingSourceGroup::Process() | [id:%x,tid:%u,sid:%u]\n",info.GetId(),info.temporalLayerId,info.spatialLayerId);
 		//Update source and layer info
 		source->Update(time, packet->GetSeqNum(), packet->GetRTPHeader().GetSize() + packet->GetMediaLength(), info, VideoLayerSelector::AreLayersInfoeAggregated(packet));

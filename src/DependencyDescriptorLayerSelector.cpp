@@ -124,7 +124,7 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	auto currentDecodeTarget = NoDecodeTarget;
 
 	//Log
-	//UltraDebug("-DependencyDescriptorLayerSelector::Select() | frame [number=%llu,decodable=%d,ts:%lu,mark:%d]\n", extFrameNum, decodable, packet->GetTimestamp(),packet->GetMark());
+	UltraDebug("-DependencyDescriptorLayerSelector::Select() | frame [number=%llu,decodable=%d,ts:%lu,mark:%d]\n", extFrameNum, decodable, packet->GetTimestamp(),packet->GetMark());
 	
 	//If we are doing content adaptation
 	if (spatialLayerId!=LayerInfo::MaxLayerId || temporalLayerId!=LayerInfo::MaxLayerId)
@@ -264,7 +264,7 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 		//Request iframe if chain for the top active layer is broken
 		waitingForIntra = (topLayer!=currentLayer);
 		//Log
-		//UltraDebug("-DependencyDescriptorLayerSelector::Select() | Discarding packet, not decodable\n")
+		UltraDebug("-DependencyDescriptorLayerSelector::Select() | Discarding packet, not decodable\n");
 		//Ignore packet
 		return false;
 	}
@@ -273,7 +273,7 @@ bool DependencyDescriptorLayerSelector::Select(const RTPPacket::shared& packet,b
 	if (dti==DecodeTargetIndication::NotPresent)
 	{
 		//Log
-		//UltraDebug("-DependencyDescriptorLayerSelector::Select() | Discarding packet, not present\n");
+		UltraDebug("-DependencyDescriptorLayerSelector::Select() | Discarding packet, not present\n");
 		//Ignore packet
 		return false;
 	}

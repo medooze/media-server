@@ -450,7 +450,8 @@ void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPP
 		//If we have to append h264 sprop parameters set for the first packet of an iframe
 		if (h264Parameters && codec==VideoCodec::H264 && packet->IsKeyFrame() && (timestamp!=lastTimestamp || firstExtSeqNum==packet->GetExtSeqNum()))
 		{
-			//UltraDebug("-addding h264 sprop\n");
+			UltraDebug("-addding h264 sprop\n");
+			Debug("ttxgz: %s, line %d\n", __PRETTY_FUNCTION__, __LINE__);	
 
 			//Clone packet
 			auto cloned = h264Parameters->Clone();

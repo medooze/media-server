@@ -33,8 +33,8 @@ protected:
 		const uint16_t nalHeaderFU = ((uint16_t)(HEVC_RTP_NALU_Type::UNSPEC49_FU) << 9)
 							| ((uint16_t)(nuh_layer_id) << 3)
 							| ((uint16_t)(nuh_temporal_id_plus1)); 
-		std::string fuPrefix = {0, 0, (char)nalUnitType};
-		memcpy(fuPrefix.data(), &nalHeaderFU, HEVCParams::RTP_NAL_HEADER_SIZE);
+		//std::string fuPrefix = {static_cast<char>((nalHeaderFU & 0xff00) >> 8), static_cast<char>(nalHeaderFU & 0xff), (char)nalUnitType};
+		std::string fuPrefix = {static_cast<uint8_t>((nalHeaderFU & 0xff00) >> 8), static_cast<uint8_t>(nalHeaderFU & 0xff), (char)nalUnitType};
 		H26xPacketizer::EmitNal(frame, nal, fuPrefix, HEVCParams::RTP_NAL_HEADER_SIZE);
 	}
 

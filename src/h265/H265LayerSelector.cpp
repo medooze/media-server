@@ -20,10 +20,12 @@ void H265LayerSelector::SelectTemporalLayer(BYTE id)
 void H265LayerSelector::SelectSpatialLayer(BYTE id)
 {
 	//Not supported
+	UltraDebug("-H265LayerSelector::SelectSpatialLayer() [layerId:%d]\n",id);
 }
 
 bool H265LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 {
+	UltraDebug("-H265LayerSelector::Select()\n");
 	//We only siwtch on SPS/PPS not intra, as we need the SPS/PPS
 	bool isIntra = false;
 	//Get payload
@@ -32,8 +34,11 @@ bool H265LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 	
 	//Check we have data
 	if (!payloadLen)
+	{
+		Error("-H265LayerSelector::Select() return false!\n");
 		//Nothing
 		return false;
+	}
 	
 	//If packet has frame markings
 	if (packet->HasFrameMarkings())
@@ -75,6 +80,8 @@ bool H265LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 		if (currentTemporalLayerId<fm.temporalLayerId)
 		{
 			UltraDebug("-H265LayerSelector::Select() | dropping packet based on temporalLayerId [current:%d,desc:%d,mark:%d]\n",currentTemporalLayerId,fm.temporalLayerId,packet->GetMark());
+			Warning("-H265LayerSelector::Select() | dropping packet based on temporalLayerId [current:%d,desc:%d,mark:%d]\n",currentTemporalLayerId,fm.temporalLayerId,packet->GetMark());
+			Error("-H265LayerSelector::Select() return false!\n");
 			//Drop it
 			return false;
 		}
@@ -87,6 +94,7 @@ bool H265LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
  		if(!H265DecodeNalHeader(payload, payloadLen, nalUnitType, nuh_layer_id, nuh_temporal_id_plus1))
 		{
 			Error("-H265LayerSelector::Select() | Failed to decode H265 Nal Header!\n");
+			Error("-H265LayerSelector::Select() return false!\n");
 			return false;
 		}
 
@@ -107,6 +115,7 @@ bool H265LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 			case HEVC_RTP_NALU_Type::FD:		//38
 				//UltraDebug("-H265 Un-defined/implemented NALU, skipping");
 				/* undefined */
+				Error("-H265LayerSelector::Select() return false!\n");
 				return false;
 			case HEVC_RTP_NALU_Type::UNSPEC48_AP:	//48 
 			{
@@ -162,12 +171,14 @@ bool H265LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 					if (!nalSize || nalSize > payloadLen)
 					{
 						Error("-H265: RTP AP depacketizer error! nalSize: %d, payloadLen: %d\n", nalSize, payloadLen);
+						Error("-H265LayerSelector::Select() return false!\n");
 						return false;
 					}
 
  					if(!H265DecodeNalHeader(payload, nalSize, nalUnitType, nuh_layer_id, nuh_temporal_id_plus1))
 					{
 						Error("-H265LayerSelector::Select() | Failed to decode H265 Nal Header in AP!\n");
+						Error("-H265LayerSelector::Select() return false!\n");
 						return false;
 					}
 
@@ -212,6 +223,7 @@ bool H265LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 				if (payloadLen < nalAndFuHeadersLength)
 				{
 					Error("- H265: payloadLen (%d) is smaller than normal nal and FU header len (%d), skipping this packet\n", payloadLen, nalAndFuHeadersLength);
+					Error("-H265LayerSelector::Select() return false!\n");
 					return false;
 				}
 
@@ -247,8 +259,11 @@ bool H265LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 	{
 		//If this is not intra
 		if (!isIntra)
+		{
+			Warning("-H265LayerSelector::Select() return false!\n");
 			//Discard
 			return false;
+		}
 		//Stop waiting
 		waitingForIntra = 0;
 	}
@@ -256,6 +271,7 @@ bool H265LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 	//RTP mark is unchanged
 	mark = packet->GetMark();
 	
+	UltraDebug("-H265LayerSelector::Select() return true!\n");
 	//Select
 	return true;
 }
@@ -491,7 +507,7 @@ std::vector<LayerInfo> H265LayerSelector::GetLayerIds(const RTPPacket::shared& p
 	//packet->SetHeight(720);
 
 	UltraDebug("-H265LayerSelector::GetLayerIds() | [isKeyFrame:%d,width:%d,height:%d]\n",packet->IsKeyFrame(),packet->GetWidth(),packet->GetHeight());
-	//UltraDebug("-H265LayerSelector::GetLayerIds() | infos[0] = {%d, %d}\n", infos[0].);
+	UltraDebug("-H265LayerSelector::GetLayerIds() | return infos.size: %\n", infos.size());
 	
 	//Return layer infos
 	return infos;

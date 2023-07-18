@@ -266,6 +266,7 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 			
 			//Get packet
 			const MediaFrame::RtpPacketization& rtp = info[i];
+			UltraDebug("ttxgz: %s, %d, get packetization info\n", __PRETTY_FUNCTION__, __LINE__);
 
 			//Create rtp packet
 			auto packet = std::make_shared<RTPPacket>(frame->GetType(),codec);
@@ -304,12 +305,18 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 			//Fill payload descriptors
 			//TODO: move out of here
 			if (frame->GetType()==MediaFrame::Video)
-				VideoLayerSelector::GetLayerIds(packet);
+			{
+				auto info = VideoLayerSelector::GetLayerIds(packet);
+				UltraDebug("ttxgz: %s, %d, GetLayerIds, info size: %d\n", __PRETTY_FUNCTION__, __LINE__, info.size());
+			}
 
 			//If it the media frame has config
 			if (frame->HasCodecConfig())
+			{
 				//Set it in the rtp packet
 				packet->config = frame->GetCodecConfig();
+				UltraDebug("ttxgz: %s, %d, set packet codec config\n", __PRETTY_FUNCTION__, __LINE__);
+			}
 
 			//calculate packet duration based on relative size to keep bitrate smooth
 			const uint32_t packetDuration = smooth ? pendingDuration * info[i].GetTotalLength() / pendingLength : 0;
@@ -329,6 +336,7 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 
 void MediaFrameListenerBridge::Dispatch(const std::vector<RTPPacket::shared>& packets)
 {
+	UltraDebug("ttxgz: %s, %d\n", __PRETTY_FUNCTION__, __LINE__);
 	if (!muted && packets.size())
 		//Dispatch it
 		for (auto listener : listeners)

@@ -451,6 +451,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		 VideoLayerSelector::GetLayerIds(packet);
 
 		 //UltraDebug("-DTLSICETransport::onData() | Recovered RTX on media:%s sssrc:%u seq:%u pt:%u codec:%s rid:'%s', mid:'%s'\n", MediaFrame::TypeToString(group->type), ssrc, packet->GetSeqNum(), packet->GetPayloadType(), GetNameForCodec(group->type, codec), group->rid.c_str(), group->mid.c_str());
+		 UltraDebug("ttxgz: -DTLSICETransport::onData() | Recovered RTX on media:%s sssrc:%u seq:%u pt:%u codec:%s rid:'%s', mid:'%s'\n", MediaFrame::TypeToString(group->type), ssrc, packet->GetSeqNum(), packet->GetPayloadType(), GetNameForCodec(group->type, codec), group->rid.c_str(), group->mid.c_str());
 	} 
 
 	//Add packet and see if we have lost any in between

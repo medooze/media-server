@@ -20,6 +20,7 @@ add_subdirectory(ext/googletest)
 add_library(MediaServerLib
     ${CMAKE_CURRENT_LIST_DIR}/src/DependencyDescriptorLayerSelector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/h264/H264LayerSelector.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/h265/H265LayerSelector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/DependencyDescriptor.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/LayerInfo.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTCPCommonHeader.cpp
