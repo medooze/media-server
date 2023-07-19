@@ -4,16 +4,41 @@
 #include <vector>
 #include <stdint.h>
 
+/**
+ * A class to help parsing a fixed size object from chunked data. The object
+ * can be an opaque block of data.
+ * 
+ * When parsing a new block of data, it would try to use as much data as needed
+ * to fill the desired buffer.
+ * 
+ */
 class ObjectParser
 {
 public:
+	/**
+	 * Constructor
+	 * 
+	 * @param objectSize The object size.
+	 */
 	ObjectParser(size_t objectSize) :
 		objectSize(objectSize)
 	{		
 	}
 	
+	/**
+	 * Destructor
+	 */
 	virtual ~ObjectParser() = default;
 	
+	/**
+	 * Parse a chunk of data
+	 * 
+	 * @param data The data to be parsed.
+	 * @param len Length of the data
+	 * 
+	 * @return An pair. The first element is whether the object has been parsed. The second
+	 *         element is the length of data that was used.
+	 */
 	std::pair<bool, size_t> Parse(uint8_t* data, size_t len)
 	{
 		if (buffer.size() >= objectSize)
@@ -28,11 +53,9 @@ public:
 		return { objectSize == buffer.size(), parsed };
 	}
 	
-	void Reset()
-	{
-		buffer.clear();
-	}
-	
+	/**
+	 * Get the object buffer
+	 */
 	const std::vector<uint8_t>& GetBuffer() const
 	{
 		return buffer;
