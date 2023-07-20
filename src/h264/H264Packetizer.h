@@ -13,27 +13,15 @@
 class H264Packetizer : public H26xPacketizer
 {
 public:
-
-	/** this is not private because MPEGTSAVCStream needs to access it
-	    to know when to start allowing frames through */
-	AVCDescriptor config;
-
-	std::unique_ptr<VideoFrame> ProcessAU(BufferReader reader) override;
+	H264Packetizer();
+	std::unique_ptr<MediaFrame> ProcessAU(BufferReader &reader) override;
 
 protected:
 	void OnNal(VideoFrame& frame, BufferReader& nal) override;
-
-	void EmitNal(VideoFrame& frame, BufferReader nal)
-	{
-		uint8_t naluHeader 	= nal.Peek1();
-		uint8_t nri		= naluHeader & 0b0'11'00000;
-		uint8_t nalUnitType	= naluHeader & 0b0'00'11111;
-
-		std::string fuPrefix = { (char)(nri | 28u), (char)nalUnitType };
-		H26xPacketizer::EmitNal(frame, nal, fuPrefix, 1);
-	}
-
-	bool noPPSInFrame, noSPSInFrame;
+	void EmitNal(VideoFrame& frame, BufferReader nal);
+	AVCDescriptor config;
+	bool noPPSInFrame = true;
+	bool noSPSInFrame = true;
 };
 
 #endif // H264PACKETIZER_H
