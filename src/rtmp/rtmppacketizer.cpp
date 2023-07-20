@@ -129,9 +129,10 @@ std::unique_ptr<VideoFrame> RTMPH26xPacketizer<DescClass, SPSClass, codec>::AddF
 			//Crete rtp packet
 			frame->AddRtpPacket(ini,desc.GetSequenceParameterSetSize(i),nullptr,0);
 			
-			//Parse sps skipping nal type (first byte)
+			//Parse sps skipping nal header
+			auto nalHeaderSize = (codec == VideoCodec::H264) ? 1 : 2;
 			SPSClass sps;
-			if (sps.Decode(desc.GetSequenceParameterSet(i)+1,desc.GetSequenceParameterSetSize(i)-1))
+			if (sps.Decode(desc.GetSequenceParameterSet(i)+nalHeaderSize,desc.GetSequenceParameterSetSize(i)-nalHeaderSize))
 			{
 				//Set dimensions
 				frame->SetWidth(sps.GetWidth());
