@@ -3,6 +3,10 @@
 #include "video.h"
 #include "h264/h264.h"
 
+H26xPacketizer::H26xPacketizer(VideoCodec::Type codec) :
+	RTPPacketizer(MediaFrame::Video, codec)
+{}
+
 void H26xPacketizer::EmitNal(VideoFrame& frame, BufferReader nal, std::string& fuPrefix, int naluHeaderSize)
 {
 	//UltraDebug("-H26xPacketizer::EmitNal()\n");
@@ -69,25 +73,27 @@ void H26xPacketizer::EmitNal(VideoFrame& frame, BufferReader nal, std::string& f
 	}
 }
 
-bool H26xPacketizer::ProcessAU(VideoFrame& frame, BufferReader& reader)
+std::unique_ptr<MediaFrame> H26xPacketizer::ProcessAU(BufferReader& reader)
 {
 	//UltraDebug("-H26xPacketizer::ProcessAU() | H26x AU [len:%d]\n", reader.GetLeft());
 	
+	auto frame = std::make_unique<VideoFrame>(static_cast<VideoCodec::Type>(codec), reader.GetLeft());
+
 	NalSliceAnnexB(reader
-		, [&](auto nalReader){OnNal(frame, nalReader);}
-		);
+		, [&](auto nalReader){OnNal(*frame, nalReader);}
+	);
 
 	//Check if we have new width and heigth
-	if (frame.GetWidth() && frame.GetHeight())
+	if (frame->GetWidth() && frame->GetHeight())
 	{
 		//Update cache
-		width = frame.GetWidth();
-		height = frame.GetHeight();
+		width = frame->GetWidth();
+		height = frame->GetHeight();
 	} else {
 		//Update from cache
-		frame.SetWidth(width);
-		frame.SetHeight(height);
+		frame->SetWidth(width);
+		frame->SetHeight(height);
 	}
 
-	return true;
+	return frame;
 }

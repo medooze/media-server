@@ -3,6 +3,22 @@
 #include "video.h"
 #include "h264/h264.h"
 
+
+H264Packetizer::H264Packetizer() : H26xPacketizer(VideoCodec::H264)
+{
+
+}
+
+void H264Packetizer::EmitNal(VideoFrame& frame, BufferReader nal)
+{
+	uint8_t naluHeader = nal.Peek1();
+	uint8_t nri = naluHeader & 0b0'11'00000;
+	uint8_t nalUnitType = naluHeader & 0b0'00'11111;
+
+	std::string fuPrefix = { (char)(nri | 28u), (char)nalUnitType };
+	H26xPacketizer::EmitNal(frame, nal, fuPrefix, 1);
+}
+
 void H264Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 {
 	//Return if current NAL is empty
@@ -19,7 +35,7 @@ void H264Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 	 * +---------------+
 	 */
 	uint8_t naluHeader 	= reader.Get1();
-	uint8_t nri		= naluHeader & 0b0'11'00000;
+	[[maybe_unused]] uint8_t nri		= naluHeader & 0b0'11'00000;
 	uint8_t nalUnitType	= naluHeader & 0b0'00'11111;
 
 	//UltraDebug("-SRTConnection::OnVideoData() | Got nal [type:%d,size:%d]\n", nalUnitType, nalSize);
@@ -49,7 +65,7 @@ void H264Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 			config.SetAVCProfileIndication(nalData[0]);
 			config.SetProfileCompatibility(nalData[1]);
 			config.SetAVCLevelIndication(nalData[2]);
-			config.SetNALUnitLength(OUT_NALU_LENGTH_SIZE - 1);
+			config.SetNALUnitLengthSizeMinus1(OUT_NALU_LENGTH_SIZE - 1);
 
 			//Reset previous SPS only on the 1st SPS in current frame
 			if (noSPSInFrame)
@@ -144,7 +160,7 @@ void H264Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 	EmitNal(frame, BufferReader(nalUnit, nalSize));
 }
 
-std::unique_ptr<VideoFrame> H264Packetizer::ProcessAU(BufferReader reader)
+std::unique_ptr<MediaFrame> H264Packetizer::ProcessAU(BufferReader& reader)
 {
 	noPPSInFrame = true;
 	noSPSInFrame = true;

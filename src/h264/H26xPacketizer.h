@@ -2,6 +2,7 @@
 #define H26XPACKETIZER_H
 
 #include "video.h"
+#include "rtp/RTPPacketizer.h"
 
 /**
  * base class for H.264 and H.265 packetizers containing logic common to both:
@@ -9,13 +10,14 @@
  *  - NALU fragmentation in RTP
  *  - frame size caching
  */
-class H26xPacketizer
+class H26xPacketizer : public RTPPacketizer
 {
 public:
 	// the packetizer only supports 4-byte length as output
 	static constexpr size_t OUT_NALU_LENGTH_SIZE = 4;
 
-	virtual bool ProcessAU(VideoFrame& frame, BufferReader& payload);
+	H26xPacketizer(VideoCodec::Type codec);
+	virtual std::unique_ptr<MediaFrame> ProcessAU(BufferReader& payload);
 
 protected:
 	/** called by ProcessAU() for every NALU found in the AU */

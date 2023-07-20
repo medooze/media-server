@@ -4,6 +4,26 @@
 // H.265 uses same stream format (Annex B)
 #include "h264/H26xNal.h"
 
+H265Packetizer::H265Packetizer() : H26xPacketizer(VideoCodec::H265)
+{
+
+}
+
+void H265Packetizer::EmitNal(VideoFrame& frame, BufferReader nal)
+{
+	auto naluHeader = nal.Peek2();
+	BYTE nalUnitType = (naluHeader >> 9) & 0b111111;
+	BYTE nuh_layer_id = (naluHeader >> 3) & 0b111111;
+	BYTE nuh_temporal_id_plus1 = naluHeader & 0b111;
+
+	const uint16_t nalHeaderFU = ((uint16_t)(HEVC_RTP_NALU_Type::UNSPEC49_FU) << 9)
+		| ((uint16_t)(nuh_layer_id) << 3)
+		| ((uint16_t)(nuh_temporal_id_plus1));
+	std::string fuPrefix = { 0, 0, (char)nalUnitType };
+	memcpy(fuPrefix.data(), &nalHeaderFU, HEVCParams::RTP_NAL_HEADER_SIZE);
+	H26xPacketizer::EmitNal(frame, nal, fuPrefix, HEVCParams::RTP_NAL_HEADER_SIZE);
+}
+
 void H265Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 {
 	//UltraDebug("-H265Packetizer::OnNal()\n");
@@ -199,12 +219,12 @@ void H265Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 	EmitNal(frame, BufferReader(nalUnit, nalSize));
 }
 
-bool H265Packetizer::ProcessAU(VideoFrame& frame, BufferReader& reader)
+std::unique_ptr<MediaFrame> H265Packetizer::ProcessAU(BufferReader& reader)
 {
 	UltraDebug("-H265Packetizer::ProcessAU()| H265 AU [len:%d]\n", reader.GetLeft());
 	noPPSInFrame = true;
 	noSPSInFrame = true;
 	noVPSInFrame = true;
 
-	return H26xPacketizer::ProcessAU(frame, reader);
+	return H26xPacketizer::ProcessAU(reader);
 }
