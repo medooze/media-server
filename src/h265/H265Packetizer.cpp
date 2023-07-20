@@ -51,7 +51,7 @@ void H265Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 
 	if (nuh_layer_id != 0)
 	{
-		Error("-H265: H265Packetizer: nuh_layer_id(%d) is not 0, which we don't support yet!\n", nuh_layer_id);
+		Error("-H265Packetizer::OnNal() | nuh_layer_id(%d) is not 0, which we don't support yet!\n", nuh_layer_id);
 		return;
 	}
 
@@ -64,7 +64,7 @@ void H265Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 
 	if (nalUnitType >= HEVC_RTP_NALU_Type::UNSPEC48_AP)
 	{
-		Error("-H265 got unspecified (>=48) NALU in a context where it is not allowed (nalUnitType: %d, nalSize: %d) \n", nalUnitType, nalSize);
+		Error("-H265Packetizer::OnNal() | got unspecified (>=48) NALU in a context where it is not allowed (nalUnitType: %d, nalSize: %d) \n", nalUnitType, nalSize);
 		return;
 	}
 
@@ -83,7 +83,7 @@ void H265Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 			H265VideoParameterSet vps;
 			if (!vps.Decode(reader.PeekData(), reader.GetLeft()))
 			{
-				Error("-H265: Decode of SPS failed!\n");
+				Error("-H265Packetizer::OnNal() | Decode of SPS failed!\n");
 				break;
 			}
 
@@ -115,7 +115,7 @@ void H265Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 			H265SeqParameterSet sps;
 			if (!sps.Decode(reader.PeekData(), reader.GetLeft()))
 			{
-				Error("-H265: Decode of SPS failed!\n");
+				Error("-H265Packetizer::OnNal() | Decode of SPS failed!\n");
 				break;
 			}
 
