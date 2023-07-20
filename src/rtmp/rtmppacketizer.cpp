@@ -2,7 +2,7 @@
 #include "rtmp/rtmppacketizer.h"
 
 
-VideoCodec::Type GetRtmpFrameVideoCodec(const RTMPVideoFrame& videoFrame)
+VideoCodec::Type RtmpVideoPacketizer::GetRtmpFrameVideoCodec(const RTMPVideoFrame& videoFrame)
 {
 	if (!videoFrame.IsExtended())
 	{
@@ -31,23 +31,29 @@ VideoCodec::Type GetRtmpFrameVideoCodec(const RTMPVideoFrame& videoFrame)
 	}
 }
 
-template<typename DescClass, typename SPSClass, VideoCodec::Type codec>
-std::unique_ptr<VideoFrame> RTMPH26xPacketizer<DescClass, SPSClass, codec>::AddFrame(RTMPVideoFrame* videoFrame)
+RtmpVideoPacketizer::RtmpVideoPacketizer(VideoCodec::Type codec, std::unique_ptr<CodecConfigurationRecord> codecConfig) : 
+	RawFrameProcessor(),
+	codec(codec), 
+	codecConfig(std::move(codecConfig)) 
 {
-	//Debug("-RTMPAVCPacketizer::AddFrame() [size:%u,intra:%d]\n",videoFrame->GetMediaSize(), videoFrame->GetFrameType() == RTMPVideoFrame::INTRA);
-	
+}
+
+std::unique_ptr<MediaFrame> RtmpVideoPacketizer::AddFrame(RawFrame* rawFrame)
+{
 	//Check it is processing codec
-	if (GetRtmpFrameVideoCodec(*videoFrame) != codec)
+	if (GetRtmpFrameVideoCodec(*static_cast<RTMPVideoFrame*>(rawFrame))!= codec)
 		//Ignore
 		return nullptr;
 	
 	//Check if it is descriptor
-	if (videoFrame->IsConfig())
+	if (rawFrame->GetRawMediaType() == RawFrameMediaType::Config)
 	{
 		//Parse it
-		if(desc.Parse(videoFrame->GetMediaData(),videoFrame->GetMediaSize()))
+		if(codecConfig->Parse(rawFrame->GetMediaData(),rawFrame->GetMediaSize()))
+		{
 			//Got config
 			gotConfig = true;
+		}
 		else
 			//Show error
 			Error(" RTMPAVCPacketizer::AddFrame() | AVCDescriptor parse error\n");
@@ -56,7 +62,7 @@ std::unique_ptr<VideoFrame> RTMPH26xPacketizer<DescClass, SPSClass, codec>::AddF
 	}
 	
 	//It should be a nalu then
-	if (!videoFrame->IsCodedFrames())
+	if (rawFrame->GetRawMediaType() != RawFrameMediaType::CodedFrames)
 		//DOne
 		return nullptr;
 	
@@ -69,97 +75,51 @@ std::unique_ptr<VideoFrame> RTMPH26xPacketizer<DescClass, SPSClass, codec>::AddF
 		return nullptr;
 	}
 	
-	//GEt nal header length
-	DWORD nalUnitLength = desc.GetNALUnitLengthSizeMinus1() + 1;
-	//Create it
-	BYTE nalHeader[4];
-	
 	//Create frame
-	auto frame = std::make_unique<VideoFrame>(codec,videoFrame->GetSize()+desc.GetSize()+256);
+	auto frame = std::make_unique<VideoFrame>(codec,rawFrame->GetSize()+codecConfig->GetSize()+256);
 	
 	//Set time
-	frame->SetTime(videoFrame->GetTimestamp());
+	frame->SetTime(rawFrame->GetTimestamp());
 	//Set clock rate
 	frame->SetClockRate(1000);
 	//Set timestamp
-	frame->SetTimestamp(videoFrame->GetTimestamp());
+	frame->SetTimestamp(rawFrame->GetTimestamp());
 	
 	//Get AVC data size
-	auto configSize = desc.GetSize();
+	auto configSize = codecConfig->GetSize();
 	//Allocate mem
 	BYTE* config = (BYTE*)malloc(configSize);
 	//Serialize AVC codec data
-	DWORD configLen = desc.Serialize(config,configSize);
+	DWORD configLen = codecConfig->Serialize(config,configSize);
 	//Set it
 	frame->SetCodecConfig(config,configLen);
 	//Free data
 	free(config);
-		
+	
+	frame->SetWidth(frameWidth);
+	frame->SetHeight(frameHeight);
+	
+	DWORD nalUnitLength = codecConfig->GetNALUnitLengthSizeMinus1() + 1;
+	
+	auto appender = FrameMediaAppender::Create(*frame, nalUnitLength);
+				
 	//If is an intra
-	if (videoFrame->GetFrameType()==RTMPVideoFrame::INTRA)
+	if (rawFrame->IsKeyFrame())
 	{
-		//Add VPS
-		for (int i=0;i<desc.GetNumOfVideoParameterSets();i++)
-		{
-			//Set size
-			setN(nalUnitLength, nalHeader, 0, desc.GetVideoParameterSetSize(i));
-			
-			//Append nal size header
-			frame->AppendMedia(nalHeader, nalUnitLength);
-			
-			//Append nal
-			auto ini = frame->AppendMedia(desc.GetVideoParameterSet(i),desc.GetVideoParameterSetSize(i));
-			
-			//Crete rtp packet
-			frame->AddRtpPacket(ini,desc.GetVideoParameterSetSize(i),nullptr,0);
-		}
+		codecConfig->Map([&appender](const uint8_t* data, size_t size) {
+			appender->AppendUnit(data, size);
+		});
 		
-		//Decode SPS
-		for (int i=0;i<desc.GetNumOfSequenceParameterSets();i++)
-		{
-			//Set size
-			setN(nalUnitLength, nalHeader, 0, desc.GetSequenceParameterSetSize(i));
-			
-			//Append nal size header
-			frame->AppendMedia(nalHeader, nalUnitLength);
-			
-			//Append nal
-			auto ini = frame->AppendMedia(desc.GetSequenceParameterSet(i),desc.GetSequenceParameterSetSize(i));
-			
-			//Crete rtp packet
-			frame->AddRtpPacket(ini,desc.GetSequenceParameterSetSize(i),nullptr,0);
-			
-			//Parse sps skipping nal type (first byte)
-			SPSClass sps;
-			if (sps.Decode(desc.GetSequenceParameterSet(i)+1,desc.GetSequenceParameterSetSize(i)-1))
-			{
-				//Set dimensions
-				frame->SetWidth(sps.GetWidth());
-				frame->SetHeight(sps.GetHeight());
-			}
-		}
-		//Decode PPS
-		for (int i=0;i<desc.GetNumOfPictureParameterSets();i++)
-		{
-			//Set size
-			setN(nalUnitLength, nalHeader, 0, desc.GetPictureParameterSetSize(i));
-			
-			//Append nal size header
-			frame->AppendMedia(nalHeader, nalUnitLength);
-			//Append nal
-			auto ini = frame->AppendMedia(desc.GetPictureParameterSet(i),desc.GetPictureParameterSetSize(i));
-			
-			//Crete rtp packet
-			frame->AddRtpPacket(ini,desc.GetPictureParameterSetSize(i),nullptr,0);
-		}
+		(void)codecConfig->GetResolution(frameWidth, frameHeight);
+		
 		//Set intra flag
 		frame->SetIntra(true);
 	}
 
 	//Malloc
-	BYTE *data = videoFrame->GetMediaData();
+	BYTE *data = rawFrame->GetMediaData();
 	//Get size
-	DWORD size = videoFrame->GetMediaSize();
+	DWORD size = rawFrame->GetMediaSize();
 	
 	//Chop into NALs
 	while(size>nalUnitLength)
@@ -171,7 +131,7 @@ std::unique_ptr<VideoFrame> RTMPH26xPacketizer<DescClass, SPSClass, codec>::AddF
 		if (nalSize+nalUnitLength>size)
 		{
 			//Error
-			Error("-RTMPAVCPacketizer::AddFrame() Error adding size=%d nalSize=%d fameSize=%d\n",size,nalSize,videoFrame->GetMediaSize());
+			Error("-RTMPAVCPacketizer::AddFrame() Error adding size=%d nalSize=%d fameSize=%d\n",size,nalSize,rawFrame->GetMediaSize());
 			//Skip
 			break;
 		}
@@ -179,102 +139,18 @@ std::unique_ptr<VideoFrame> RTMPH26xPacketizer<DescClass, SPSClass, codec>::AddF
 		//Get NAL start
 		BYTE* nal = data + nalUnitLength;
 
-		//Skip fill data nalus for h264
-		if (codec == VideoCodec::H264 && nal[0] == 12)
-		{
-			//Skip it
-			data += nalUnitLength + nalSize;
-			size -= nalUnitLength + nalSize;
-			//Next
-			continue;
-		}
-
-		//Append nal header
-		frame->AppendMedia(data, nalUnitLength);
-
-		//Log("-NAL %x size=%d nalSize=%d fameSize=%d\n",nal[0],size,nalSize,videoFrame->GetMediaSize());
+		//Log("-NAL %x size=%d nalSize=%d fameSize=%d\n",nal[0],size,nalSize,rawFrame->GetMediaSize());
 		
-		//Append nal
-		auto ini = frame->AppendMedia(nal,nalSize);
+		appender->AppendUnit(nal,nalSize);
 		
 		//Skip it
 		data+=nalUnitLength+nalSize;
 		size-=nalUnitLength+nalSize;
-		
-		//Check if NAL is bigger than RTPPAYLOADSIZE
-		if (nalSize>RTPPAYLOADSIZE)
-		{
-			std::vector<uint8_t> fragmentationHeader;
-			if (codec == VideoCodec::H264)
-			{
-				//Get original nal type
-				BYTE nalUnitType = nal[0] & 0x1f;
-				//The fragmentation unit A header, S=1
-				/* +---------------+---------------+
-				 * |0|1|2|3|4|5|6|7|0|1|2|3|4|5|6|7|
-				 * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-				 * |F|NRI|   28    |S|E|R| Type	   |
-				 * +---------------+---------------+
-				*/
-				fragmentationHeader = {
-					(BYTE)((nal[0] & 0xE0) | 28),
-					(BYTE)(0x80 | nalUnitType)
-				};
-				
-				//Skip original header
-				ini++;
-				nalSize--;
-			}
-			else
-			{
-				auto naluHeader = get2(nal, 0);
-				BYTE nalUnitType		= (naluHeader >> 9) & 0b111111;
-				BYTE nuh_layer_id		= (naluHeader >> 3) & 0b111111;
-				BYTE nuh_temporal_id_plus1	= naluHeader & 0b111;
-
-				const uint16_t nalHeaderFU = ((uint16_t)(HEVC_RTP_NALU_Type::UNSPEC49_FU) << 9)
-									| ((uint16_t)(nuh_layer_id) << 3)
-									| ((uint16_t)(nuh_temporal_id_plus1)); 
-				fragmentationHeader.resize(3);
-				set2(fragmentationHeader.data(), 0, nalHeaderFU);
-				fragmentationHeader[2] = nalUnitType | 0x80;
-				
-				//Skip original header
-				ini+= 2;
-				nalSize-=2;
-			}
-
-			//Add all
-			while (nalSize)
-			{
-				//Get fragment size
-				auto fragSize = std::min(nalSize,(DWORD)(RTPPAYLOADSIZE-fragmentationHeader.size()));
-				//Check if it is last
-				if (fragSize==nalSize)
-					//Set end bit
-					fragmentationHeader.back() |= 0x40;
-				//Add rpt packet info
-				frame->AddRtpPacket(ini,fragSize,fragmentationHeader.data(),fragmentationHeader.size());
-				//Remove start bit
-				fragmentationHeader.back() &= 0x7F;
-				//Next
-				ini += fragSize;
-				//Remove size
-				nalSize -= fragSize;
-			}
-		} else {
-			//Add nal unit
-			frame->AddRtpPacket(ini,nalSize,nullptr,0);
-		}
 	}
 	//Done
 	return frame;
 }
-
-
-template class RTMPH26xPacketizer<AVCDescriptor, H264SeqParameterSet, VideoCodec::H264>;
-template class RTMPH26xPacketizer<HEVCDescriptor, H265SeqParameterSet, VideoCodec::H265>;
-
+	
 std::unique_ptr<AudioFrame> RTMPAACPacketizer::AddFrame(RTMPAudioFrame* audioFrame)
 {
 	//Debug("-RTMPAACPacketizer::AddFrame() [size:%u,aac:%d,codec:%d]\n",audioFrame->GetMediaSize(),audioFrame->GetAACPacketType(),audioFrame->GetAudioCodec());

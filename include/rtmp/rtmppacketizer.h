@@ -9,22 +9,30 @@
 #include "h264/h264.h"
 #include <memory>
 
-VideoCodec::Type GetRtmpFrameVideoCodec(const RTMPVideoFrame& videoFrame);
+#include "RawFrameProcessor.h"
+#include "FrameMediaAppender.h"
 
-template<typename DescClass, typename SPSClass, VideoCodec::Type codec>
-class RTMPH26xPacketizer
+
+class RtmpVideoPacketizer : public RawFrameProcessor
 {
 public:
-	std::unique_ptr<VideoFrame> AddFrame(RTMPVideoFrame* videoFrame);
+	RtmpVideoPacketizer(VideoCodec::Type codec, std::unique_ptr<CodecConfigurationRecord> codecConfig);
 
+	virtual std::unique_ptr<MediaFrame> AddFrame(RawFrame* rawFrame) override;
+
+	static VideoCodec::Type GetRtmpFrameVideoCodec(const RTMPVideoFrame& rawFrame);
+	
 private:
 	
-	DescClass desc;
+	VideoCodec::Type codec;
+	
+	std::unique_ptr<CodecConfigurationRecord> codecConfig;
+	
+	unsigned frameWidth = 0;
+	unsigned frameHeight = 0;
+	
 	bool gotConfig = false;
 };
-
-using RTMPAVCPacketizer = RTMPH26xPacketizer<AVCDescriptor, H264SeqParameterSet, VideoCodec::H264>;
-using RTMPHEVCPacketizer = RTMPH26xPacketizer<HEVCDescriptor, H265SeqParameterSet, VideoCodec::H265>;
 
 class RTMPAACPacketizer
 {

@@ -956,7 +956,7 @@ void RTMPVideoFrame::Dump()
 			Debug("\t[AVC header 0x%.2x 0x%.2x 0x%.2x 0x%.2x /]\n",extraData[0],extraData[1],extraData[2],extraData[3]);
 		}
 			
-		if (vcodec==VideoCodec::AVC && IsConfig())
+		if (vcodec==VideoCodec::AVC && GetRawMediaType() == RawFrameMediaType::Config)
 		{
 			//Paser AVCDesc
 			AVCDescriptor desc;
@@ -987,7 +987,7 @@ void RTMPVideoFrame::Dump()
 			Debug("\t[HEVC composition time: %d/]\n", compositionTime);
 		}
 			
-		if (vcodec==VideoCodecEx::HEVC && IsConfig())
+		if (vcodec==VideoCodecEx::HEVC && GetRawMediaType() == RawFrameMediaType::Config)
 		{
 			//Paser HEVCDescriptor
 			HEVCDescriptor desc;

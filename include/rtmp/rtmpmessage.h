@@ -7,6 +7,8 @@
 #include "avcdescriptor.h"
 #include "h265/HEVCDescriptor.h"
 #include "aac/aacconfig.h"
+#include "RawFrame.h"
+
 #include <vector>
 #include <variant>
 
@@ -24,7 +26,7 @@ constexpr uint32_t FourCcToUint32(InputIt first)
 	return result;
 }
 
-class RTMPMediaFrame 
+class RTMPMediaFrame : public RawFrame
 {
 public:
 	enum Type {Audio=8,Video=9};
@@ -57,6 +59,16 @@ public:
 				return "Video";
 		}
 		return "Unknown";
+	}
+	
+	virtual RawFrameMediaType GetRawMediaType() const override
+	{
+		return RawFrameMediaType::CodedFrames;
+	}
+	
+	virtual bool IsKeyFrame() const override
+	{
+		return false;
 	}
 
 protected:
@@ -117,25 +129,37 @@ public:
 	PacketType      GetPacketType() const			{ return std::get<PacketType>(packetType); }
 	
 	
-	bool IsConfig() const
+	virtual RawFrameMediaType GetRawMediaType() const override
 	{
 		if (!isExtended)
 		{
-			return GetAVCType() == RTMPVideoFrame::AVCHEADER;
+			switch (GetAVCType())
+			{
+			case AVCHEADER:
+				return RawFrameMediaType::Config;
+			case AVCNALU:
+				return RawFrameMediaType::CodedFrames;
+			default:
+				return RawFrameMediaType::Other;				
+			}
 		}
 		
-		return GetPacketType() == RTMPVideoFrame::SequenceStart;
+		switch (GetPacketType())
+		{
+		case SequenceStart:
+			return RawFrameMediaType::Config;
+		case CodedFrames:
+		case CodedFramesX:
+			return RawFrameMediaType::CodedFrames;
+		default:
+			return RawFrameMediaType::Other;
+		}
 	}
 	
-	virtual bool IsCodedFrames()
-	{
-		if (!isExtended)
-		{
-			return  GetAVCType() == RTMPVideoFrame::AVCNALU;
-		}
 		
-		return GetPacketType() == RTMPVideoFrame::CodedFrames ||
-			GetPacketType() == RTMPVideoFrame::CodedFramesX;
+	virtual bool IsKeyFrame() const override
+	{
+		return frameType == FrameType::INTRA;
 	}
 	
 private:

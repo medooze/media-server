@@ -12,7 +12,9 @@
 #include "config.h"
 #include "h265.h"
 
-class HEVCDescriptor
+#include "CodecConfigurationRecord.h"
+
+class HEVCDescriptor : public CodecConfigurationRecord
 {
 public:
 	HEVCDescriptor();
@@ -80,6 +82,42 @@ public:
 		}
 	void SetNALUnitLengthSizeMinus1(BYTE in)			{ NALUnitLengthSizeMinus1 = in; }
 
+	virtual bool GetResolution(unsigned& width, unsigned& height) const
+	{
+		for (int i=0;i<GetNumOfSequenceParameterSets();i++)
+		{
+			H265SeqParameterSet sps;
+			if (sps.Decode(GetSequenceParameterSet(i)+2, GetSequenceParameterSetSize(i)-2))
+			{
+				//Set dimensions
+				width = sps.GetWidth();
+				height = sps.GetHeight();
+				
+				return true;
+			}
+		}
+		
+		return false;
+	}
+
+	virtual void Map(const std::function<void (const uint8_t*, size_t)>& func) override
+	{
+		for (int i=0;i<GetNumOfVideoParameterSets();i++)
+		{
+			func(GetVideoParameterSet(i),GetVideoParameterSetSize(i));
+		}
+		
+		for (int i=0;i<GetNumOfSequenceParameterSets();i++)
+		{
+			func(GetSequenceParameterSet(i),GetSequenceParameterSetSize(i));
+		}
+		
+		for (int i=0;i<GetNumOfPictureParameterSets();i++)
+		{
+			func(GetPictureParameterSet(i),GetPictureParameterSetSize(i));
+		}
+	}
+	
 private:
 	/* 7.1.  Media Type Registration in RFC 7798*/
 	/* ISO/IEC 14496-15 */

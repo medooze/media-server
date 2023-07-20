@@ -11,7 +11,10 @@
 #include "config.h"
 #include <vector>
 
-class AVCDescriptor
+#include "CodecConfigurationRecord.h"
+#include "h264/h264.h"
+
+class AVCDescriptor : public CodecConfigurationRecord
 {
 public:
 	AVCDescriptor();
@@ -51,6 +54,37 @@ public:
 	void SetNALUnitLengthSizeMinus1(BYTE NALUnitLengthSizeMinus1)			{ this->NALUnitLengthSizeMinus1 = NALUnitLengthSizeMinus1;			}
 
 
+	virtual bool GetResolution(unsigned& width, unsigned& height) const
+	{
+		for (int i=0;i<GetNumOfSequenceParameterSets();i++)
+		{
+			H264SeqParameterSet sps;
+			if (sps.Decode(GetSequenceParameterSet(i)+1, GetSequenceParameterSetSize(i)-1))
+			{
+				//Set dimensions
+				width = sps.GetWidth();
+				height = sps.GetHeight();
+				
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	
+	virtual void Map(const std::function<void (const uint8_t*, size_t)>& func) override
+	{
+		for (int i=0;i<GetNumOfSequenceParameterSets();i++)
+		{
+			func(GetSequenceParameterSet(i),GetSequenceParameterSetSize(i));
+		}
+		
+		for (int i=0;i<GetNumOfPictureParameterSets();i++)
+		{
+			func(GetPictureParameterSet(i),GetPictureParameterSetSize(i));
+		}
+	}
+		
 private:
 	BYTE configurationVersion;
 	BYTE AVCProfileIndication;
