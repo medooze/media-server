@@ -9,21 +9,6 @@ H265Packetizer::H265Packetizer() : H26xPacketizer(VideoCodec::H265)
 
 }
 
-void H265Packetizer::EmitNal(VideoFrame& frame, BufferReader nal)
-{
-	auto naluHeader = nal.Peek2();
-	BYTE nalUnitType = (naluHeader >> 9) & 0b111111;
-	BYTE nuh_layer_id = (naluHeader >> 3) & 0b111111;
-	BYTE nuh_temporal_id_plus1 = naluHeader & 0b111;
-
-	const uint16_t nalHeaderFU = ((uint16_t)(HEVC_RTP_NALU_Type::UNSPEC49_FU) << 9)
-		| ((uint16_t)(nuh_layer_id) << 3)
-		| ((uint16_t)(nuh_temporal_id_plus1));
-	std::string fuPrefix = { 0, 0, (char)nalUnitType };
-	memcpy(fuPrefix.data(), &nalHeaderFU, HEVCParams::RTP_NAL_HEADER_SIZE);
-	H26xPacketizer::EmitNal(frame, nal, fuPrefix, HEVCParams::RTP_NAL_HEADER_SIZE);
-}
-
 void H265Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 {
 	//UltraDebug("-H265Packetizer::OnNal()\n");
@@ -199,24 +184,22 @@ void H265Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 		// preffix num: spsNum + ps_num + 1
 		frame.Alloc(frame.GetLength() + nalSize + vpsTotalSize + spsTotalSize + ppsTotalSize + OUT_NALU_LENGTH_SIZE * (vpsNum + spsNum + ppsNum + 1));
 
-		// Add VPS
-		for (uint8_t i = 0; i < vpsNum; i++)
-			EmitNal(frame, BufferReader(config.GetVideoParameterSet(i), config.GetVideoParameterSetSize(i)));
+		DWORD nalUnitLength = config.GetNALUnitLengthSizeMinus1() + 1;	
+		appender = FrameMediaAppender::Create(frame, nalUnitLength);
 
-		// Add SPS
-		for (uint8_t i = 0; i < spsNum; i++)
-			EmitNal(frame, BufferReader(config.GetSequenceParameterSet(i), config.GetSequenceParameterSetSize(i)));
-
-		// Add PPS
-		for (uint8_t i = 0; i < ppsNum; i++)
-			EmitNal(frame, BufferReader(config.GetPictureParameterSet(i), config.GetPictureParameterSetSize(i)));
+		if (appender)
+		{
+			config.Map([this](const uint8_t* data, size_t size){
+				appender->AppendUnit(data, size);	
+			});
+		}
 
 		//Serialize config in to frame
 		frame.AllocateCodecConfig(config.GetSize());
 		config.Serialize(frame.GetCodecConfigData(), frame.GetCodecConfigSize());
 	}
 
-	EmitNal(frame, BufferReader(nalUnit, nalSize));
+	if (appender) appender->AppendUnit(nalUnit, nalSize);
 }
 
 std::unique_ptr<MediaFrame> H265Packetizer::ProcessAU(BufferReader& reader)

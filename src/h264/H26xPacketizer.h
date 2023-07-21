@@ -3,6 +3,7 @@
 
 #include "video.h"
 #include "rtp/RTPPacketizer.h"
+#include "H26xFrameAppender.h"
 
 /**
  * base class for H.264 and H.265 packetizers containing logic common to both:
@@ -23,13 +24,7 @@ protected:
 	/** called by ProcessAU() for every NALU found in the AU */
 	virtual void OnNal(VideoFrame& frame, BufferReader& nal) = 0;
 
-	/**
-	 * @brief add a NALU to the frame, fragmenting it in RTP if necessary
-	 * 
-	 * @param fuPrefix the FU prefix, including the FU header byte, with the S and E bits not filled in
-	 */
-	void EmitNal(VideoFrame& frame, BufferReader nal, std::string& fuPrefix, int naluHeaderSize);
-
+	std::unique_ptr<FrameMediaAppender> appender;
 private:
 	// cached frame size
 	uint32_t width = 0;

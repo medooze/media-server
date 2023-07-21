@@ -9,16 +9,6 @@ H264Packetizer::H264Packetizer() : H26xPacketizer(VideoCodec::H264)
 
 }
 
-void H264Packetizer::EmitNal(VideoFrame& frame, BufferReader nal)
-{
-	uint8_t naluHeader = nal.Peek1();
-	uint8_t nri = naluHeader & 0b0'11'00000;
-	uint8_t nalUnitType = naluHeader & 0b0'00'11111;
-
-	std::string fuPrefix = { (char)(nri | 28u), (char)nalUnitType };
-	H26xPacketizer::EmitNal(frame, nal, fuPrefix, 1);
-}
-
 void H264Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 {
 	//Return if current NAL is empty
@@ -144,20 +134,22 @@ void H264Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 		// preffix num: spsNum + ps_num + 1
 		frame.Alloc(frame.GetLength() + nalSize + spsTotalSize + ppsTotalSize + OUT_NALU_LENGTH_SIZE * (spsNum + ppsNum + 1));
 
-		// Add SPS
-		for (uint8_t i = 0; i < spsNum; i++)
-			EmitNal(frame, BufferReader(config.GetSequenceParameterSet(i), config.GetSequenceParameterSetSize(i)));
+		DWORD nalUnitLength = config.GetNALUnitLengthSizeMinus1() + 1;	
+		appender = FrameMediaAppender::Create(frame, nalUnitLength);
 
-		// Add PPS
-		for (uint8_t i = 0; i < ppsNum; i++)
-			EmitNal(frame, BufferReader(config.GetPictureParameterSet(i), config.GetPictureParameterSetSize(i)));
+		if (appender)
+		{
+			config.Map([this](const uint8_t* data, size_t size){
+				appender->AppendUnit(data, size);	
+			});
+		}
 
 		//Serialize config in to frame
 		frame.AllocateCodecConfig(config.GetSize());
 		config.Serialize(frame.GetCodecConfigData(), frame.GetCodecConfigSize());
 	}
 
-	EmitNal(frame, BufferReader(nalUnit, nalSize));
+	if (appender) appender->AppendUnit(nalUnit, nalSize);
 }
 
 std::unique_ptr<MediaFrame> H264Packetizer::ProcessAU(BufferReader& reader)

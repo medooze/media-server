@@ -18,7 +18,7 @@ public:
 
 protected:
 	void OnNal(VideoFrame& frame, BufferReader& nal) override;
-	void EmitNal(VideoFrame& frame, BufferReader nal);
+	
 	AVCDescriptor config;
 	bool noPPSInFrame = true;
 	bool noSPSInFrame = true;
