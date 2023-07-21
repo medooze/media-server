@@ -3,8 +3,13 @@
 #include "video.h"
 #include "h264/h264.h"
 
+H26xPacketizer::H26xPacketizer(VideoCodec::Type codec) :
+	RTPPacketizer(MediaFrame::Video, codec)
+{}
+
 void H26xPacketizer::EmitNal(VideoFrame& frame, BufferReader nal, std::string& fuPrefix, int naluHeaderSize)
 {
+	//UltraDebug("-H26xPacketizer::EmitNal()\n");
 	//Empty prefix
 	uint8_t prefix[4] = {};
 
@@ -68,16 +73,15 @@ void H26xPacketizer::EmitNal(VideoFrame& frame, BufferReader nal, std::string& f
 	}
 }
 
-std::unique_ptr<VideoFrame> H26xPacketizer::ProcessAU(BufferReader reader)
+std::unique_ptr<MediaFrame> H26xPacketizer::ProcessAU(BufferReader& reader)
 {
 	//UltraDebug("-H26xPacketizer::ProcessAU() | H26x AU [len:%d]\n", reader.GetLeft());
 	
-	//Alocate enough data
-	auto frame = std::make_unique<VideoFrame>(VideoCodec::H264, reader.GetSize());
+	auto frame = std::make_unique<VideoFrame>(static_cast<VideoCodec::Type>(codec), reader.GetLeft());
 
-	NalSliceAnnexB(std::move(reader), [&](auto reader) {
-		OnNal(*frame, reader);
-	});
+	NalSliceAnnexB(reader
+		, [&](auto nalReader){OnNal(*frame, nalReader);}
+	);
 
 	//Check if we have new width and heigth
 	if (frame->GetWidth() && frame->GetHeight())

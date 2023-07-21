@@ -1,5 +1,5 @@
-#ifndef H264NAL_H
-#define	H264NAL_H
+#ifndef H26xNAL_H
+#define	H26xNAL_H
 
 #include <cstdint>
 #include <limits>
@@ -29,7 +29,7 @@ inline DWORD NalUnescapeRbsp(BYTE *dst, const BYTE *src, DWORD size)
 	return len;
 }
 
-inline void NalSliceAnnexB(BufferReader reader, std::function<void(BufferReader nalu)> onNalu)
+inline void NalSliceAnnexB(BufferReader& reader, std::function<void(BufferReader& nalReader)> onNalu)
 {
 	//Start of current nal unit
 	uint32_t start = std::numeric_limits<uint32_t>::max();

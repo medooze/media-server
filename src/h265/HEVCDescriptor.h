@@ -47,7 +47,6 @@ public:
 	BYTE GetConfigurationVersion()		const { return configurationVersion;		}
 	BYTE GetNALUnitLengthSizeMinus1()	const { return NALUnitLengthSizeMinus1;		}
 	DWORD GetSize()		const { return MediaParameterSize
-								+ 
  								//VPS type(1B) + count(2B) + length(2B) per VPS + total data
 								+ 1 + 2 + 2*numOfVideoParameterSets + vpsTotalSizes
 								//SPS type(1B) + count(2B) +  length(2B) per SPS + total data 
@@ -63,23 +62,23 @@ public:
 
 	void SetGeneralLevelIdc(BYTE in)	{ generalLevelIdc = in; }
 	void SetGeneralProfileCompatibilityFlags(const H265ProfileCompatibilityFlags& profile_compatibility_flag)
+	{
+		generalProfileCompatibilityFlags = 0;
+		//static_assert(profile_compatibility_flag.size() == sizeof(generalProfileCompatibilityFlags) * 8);
+		for (size_t i = 0; i < profile_compatibility_flag.size(); i++)
 		{
-			generalProfileCompatibilityFlags = 0;
-			//static_assert(profile_compatibility_flag.size() == sizeof(generalProfileCompatibilityFlags) * 8);
-			for (size_t i = 0; i < profile_compatibility_flag.size(); i++)
-			{
-				generalProfileCompatibilityFlags |= (profile_compatibility_flag[i] << i);
-			}
+			generalProfileCompatibilityFlags |= (profile_compatibility_flag[i] << i);
 		}
+	}
 	void SetGeneralConstraintIndicatorFlags(QWORD in)
+	{
+		static_assert(constraintIndicatorFlagsSize <= sizeof(in) * 8);
+		for (size_t i = 0; i < generalConstraintIndicatorFlags.size(); ++i)
 		{
-			static_assert(constraintIndicatorFlagsSize <= sizeof(in) * 8);
-			for (size_t i = 0; i < generalConstraintIndicatorFlags.size(); ++i)
-			{
-				const BYTE bits_offset = i * 8;
-				generalConstraintIndicatorFlags[i] = (in & (0xff << bits_offset)) >> bits_offset; 
-			}
+			const BYTE bits_offset = i * 8;
+			generalConstraintIndicatorFlags[i] = (in & (0xff << bits_offset)) >> bits_offset; 
 		}
+	}
 	void SetNALUnitLengthSizeMinus1(BYTE in)			{ NALUnitLengthSizeMinus1 = in; }
 
 	virtual bool GetResolution(unsigned& width, unsigned& height) const
