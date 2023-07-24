@@ -1,5 +1,6 @@
 
-#include "H26xFrameAppender.h"
+#include "h264/H264FrameMediaAppender.h"
+#include "h265/H265FrameMediaAppender.h"
 
 std::unique_ptr<FrameMediaAppender> FrameMediaAppender::Create(VideoFrame& frame, unsigned unitLengthSize)
 {

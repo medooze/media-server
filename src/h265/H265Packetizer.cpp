@@ -2,7 +2,7 @@
 #include "video.h"
 
 // H.265 uses same stream format (Annex B)
-#include "h264/H26xNal.h"
+#include "h26x/H26xNal.h"
 
 H265Packetizer::H265Packetizer() : H26xPacketizer(VideoCodec::H265)
 {

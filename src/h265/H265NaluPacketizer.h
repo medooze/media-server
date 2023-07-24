@@ -2,7 +2,7 @@
 #define H265NALUPACKETIZER_H
 
 #include "h265.h"
-#include "H26xNaluPacketizer.h"
+#include "h26x/H26xNaluPacketizer.h"
 
 class H265NaluPacketizer : public H26xNaluPacketizer
 {

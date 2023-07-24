@@ -1,7 +1,7 @@
 #ifndef H264NALUPACKETIZER_H
 #define H264NALUPACKETIZER_H
 
-#include "H26xNaluPacketizer.h"
+#include "h26x/H26xNaluPacketizer.h"
 
 class H264NaluPacketizer : public H26xNaluPacketizer
 {
@@ -36,7 +36,5 @@ public:
 		H26xNaluPacketizer::Packetize(fragmentationHeader, unitOffsetInFrameMedia + 1, unitSize - 1);
 	}
 };
-
-
 
 #endif

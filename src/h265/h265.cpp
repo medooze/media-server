@@ -1,7 +1,7 @@
 #include "h265.h"
 
 // H.265 uses same stream format (Annex B)
-#include "h264/H26xNal.h"
+#include "h26x/H26xNal.h"
 
 #define CHECK(r) {if(r.Error()) return false;}
 

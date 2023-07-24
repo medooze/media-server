@@ -10,7 +10,7 @@
 #include "config.h"
 #include "math.h"
 #include "bitstream.h"
-#include "H26xNal.h"
+#include "h26x/H26xNal.h"
 
 #define CHECK(r) if(r.Error()) return false;
 

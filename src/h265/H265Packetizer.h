@@ -1,7 +1,7 @@
 #ifndef H265PACKETIZER_H
 #define H265PACKETIZER_H
 
-#include "h264/H26xPacketizer.h"
+#include "h26x/H26xPacketizer.h"
 #include "h265/HEVCDescriptor.h"
 
 /**
