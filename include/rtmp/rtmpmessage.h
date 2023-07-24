@@ -18,7 +18,7 @@ constexpr uint32_t FourCcToUint32(InputIt first)
 	uint32_t result = 0;
 	for (unsigned i = 0; i < sizeof(uint32_t); i++)
 	{
-		result += (result << 8) + uint8_t(*first++);
+		result = (result << 8) + uint8_t(*first++);
 	}
 	
 	return result;
