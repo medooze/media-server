@@ -1123,6 +1123,18 @@ DWORD RTMPVideoFrame::Parse(BYTE *data,DWORD size)
 					parsingState = ParsingState::VideoTagData;
 				}
 			}
+			else if (std::get<VideoCodecEx>(codec) == AV1)
+			{
+				if (ptype == SequenceStart || ptype == CodedFrames)
+				{
+					// Av1CodecConfigurationRecord
+					parsingState = ParsingState::VideoTagData;
+				}
+				else
+				{
+					return size;
+				}
+			}
 			else
 			{
 				// Not implemented for other codecs
