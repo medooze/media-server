@@ -17,6 +17,18 @@ int32_t GetSI24(const uint8_t* data)
 	return (int32_t(get3(data, 0)) << 8) >> 8;
 }
 
+
+std::string Uint32ToFourCcStr(uint32_t value)
+{
+	std::string str;
+	for (size_t i = 0; i < sizeof(uint32_t); i++)
+	{
+		str.push_back(char(value >> (8 * (sizeof(uint32_t) - i - 1))));
+	}
+	
+	return str;
+}
+
 }
 
 
@@ -945,7 +957,7 @@ void RTMPVideoFrame::Dump()
 	if (!isExtended)
 	{
 		auto vcodec = std::get<VideoCodec>(codec);
-		Debug("[VideoFrame extended: false codec: %d intra:%d timestamp:%lld bufferSize:%d mediaSize:%d]\n",vcodec,frameType,timestamp,bufferSize,mediaSize);
+		Debug("[VideoFrame extended: false codec: %d frameType:%d timestamp:%lld bufferSize:%d mediaSize:%d]\n",vcodec,frameType,timestamp,bufferSize,mediaSize);
 		
 		if (vcodec==VideoCodec::AVC)
 		{
@@ -979,8 +991,10 @@ void RTMPVideoFrame::Dump()
 		auto vcodec = std::get<VideoCodecEx>(codec);
 		auto ptype = std::get<PacketType>(packetType);
 		
-		Debug("[VideoFrame extended: true codec: %d intra:%d timestamp:%lld bufferSize:%d mediaSize:%d packetType: %d]\n",
-			vcodec,frameType,timestamp,bufferSize,mediaSize,ptype);
+
+		auto codecStr = Uint32ToFourCcStr(vcodec);
+		Debug("[VideoFrame extended: true codec: %s frameType:%d timestamp:%lld bufferSize:%d mediaSize:%d packetType: %d]\n",
+			codecStr.c_str(),frameType,timestamp,bufferSize,mediaSize,ptype);
 		
 		if (vcodec==VideoCodecEx::HEVC && ptype == CodedFrames)
 		{

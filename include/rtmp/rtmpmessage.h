@@ -20,7 +20,7 @@ constexpr uint32_t FourCcToUint32(InputIt first)
 	uint32_t result = 0;
 	for (unsigned i = 0; i < sizeof(uint32_t); i++)
 	{
-		result += (result << 8) + uint8_t(*first++);
+		result = (result << 8) + uint8_t(*first++);
 	}
 	
 	return result;
@@ -114,9 +114,15 @@ public:
 
 	void		SetVideoCodec(VideoCodec codec)		{ this->codec = codec;		}
 	void		SetFrameType(FrameType frameType)	{ this->frameType = frameType;	}
-	VideoCodec	GetVideoCodec()				const { return std::get<VideoCodec>(codec);	}
+	VideoCodec	GetVideoCodec()	const {
+		if (!std::holds_alternative<VideoCodec>(codec)) 	return VideoCodec(-1);
+		return std::get<VideoCodec>(codec);	
+	}
 	FrameType	GetFrameType()				const { return frameType;	}
-	AVCType		GetAVCType()				const { return std::get<AVCType>(packetType);	}
+	AVCType		GetAVCType() const {
+		if (!std::holds_alternative<AVCType>(packetType)) 	return AVCType(-1);
+		return std::get<AVCType>(packetType);	
+	}
 	int32_t		GetAVCTS()				const { return compositionTime; }
 	
 	DWORD		SetVideoFrame(BYTE* data,DWORD size);
@@ -125,8 +131,14 @@ public:
 	virtual void	Dump();
 	
 	bool		IsExtended() const			{ return isExtended; }
-	VideoCodecEx	GetVideoCodecEx() const			{ return std::get<VideoCodecEx>(codec); }
-	PacketType      GetPacketType() const			{ return std::get<PacketType>(packetType); }
+	VideoCodecEx	GetVideoCodecEx() const {
+		if (!std::holds_alternative<VideoCodecEx>(codec)) 	return VideoCodecEx(-1);
+		return std::get<VideoCodecEx>(codec); 
+	}
+	PacketType      GetPacketType() const {
+		if (!std::holds_alternative<PacketType>(packetType)) 	return PacketType(-1);
+		return std::get<PacketType>(packetType); 
+	}
 	
 	
 	virtual RawFrameMediaType GetRawMediaType() const override
