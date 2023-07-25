@@ -3,7 +3,6 @@
 #include "avcdescriptor.h"
 #include <stdexcept>
 #include <cstdlib>
-#include <cassert>
 
 /************************************
  * RTMPMesssage
@@ -993,7 +992,13 @@ DWORD RTMPVideoFrame::Parse(BYTE *data,DWORD size)
 			break;
 			
 		case ParsingState::VideoTagAvcExtra:
-			assert(objectParser);
+			if (!objectParser)
+			{
+				// This should never happen
+				Error("No object parser\n");
+				return size;	
+			}
+			
 			std::tie(isParsed, usedBytes) = objectParser->Parse(buffer, bufferLen);
 			if (isParsed)
 			{
@@ -1004,7 +1009,13 @@ DWORD RTMPVideoFrame::Parse(BYTE *data,DWORD size)
 			break;
 			
 		case ParsingState::VideoTagHeaderFourCc:
-			assert(objectParser);
+			if (!objectParser)
+			{
+				// This should never happen
+				Error("No object parser\n");
+				return size;	
+			}
+			
 			std::tie(isParsed, usedBytes) = objectParser->Parse(buffer, bufferLen);
 			if (isParsed)
 			{
@@ -1055,7 +1066,13 @@ DWORD RTMPVideoFrame::Parse(BYTE *data,DWORD size)
 			break;
 			
 		case ParsingState::VideoTagHevcCompositionTime:
-			assert(objectParser);
+			if (!objectParser)
+			{
+				// This should never happen
+				Error("No object parser\n");
+				return size;	
+			}
+			
 			std::tie(isParsed, usedBytes) = objectParser->Parse(buffer, bufferLen);
 			if (isParsed)
 			{	
@@ -1071,8 +1088,8 @@ DWORD RTMPVideoFrame::Parse(BYTE *data,DWORD size)
 			
 			return usedBytes + (buffer - data);
 		default:
-			assert(false);
-			break;
+			Error("Invalid ParsingState: %d", parsingState);
+			return size;
 		}
 		
 		buffer	  += usedBytes;
