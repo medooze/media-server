@@ -3,7 +3,6 @@
 #include "config.h"
 #include "rtmp.h"
 #include "amf.h"
-#include "objectparser.h"
 #include "avcdescriptor.h"
 #include "h265/HEVCDescriptor.h"
 #include "aac/aacconfig.h"
