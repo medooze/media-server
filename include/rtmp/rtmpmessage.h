@@ -3,10 +3,27 @@
 #include "config.h"
 #include "rtmp.h"
 #include "amf.h"
-#include "rtmp.h"
 #include "avcdescriptor.h"
+#include "h265/HEVCDescriptor.h"
 #include "aac/aacconfig.h"
+#include "BufferWritter.h"
 #include <vector>
+
+
+template<class InputIt>
+constexpr uint32_t FourCcToUint32(InputIt first)
+{
+	static_assert(sizeof(decltype(*first)) == 1);
+	
+	uint32_t result = 0;
+	for (unsigned i = 0; i < sizeof(uint32_t); i++)
+	{
+		result = (result << 8) + uint8_t(*first++);
+	}
+	
+	return result;
+}
+
 
 class RTMPMediaFrame 
 {
@@ -61,6 +78,19 @@ public:
 	enum VideoCodec {FLV1=2,SV=3,VP6=4,VP6A=5,SV2=6,AVC=7};
 	enum FrameType  {INTRA=1,INTER=2,DISPOSABLE_INTER=3,GENERATED_KEY_FRAME=4,VIDEO_INFO=5};
 	enum AVCType	{AVCHEADER = 0, AVCNALU = 1, AVCEND = 2 };
+	enum PacketType {
+		SequenceStart = 0,
+		CodedFrames = 1,
+		SequenceEnd = 2,
+		CodedFramesX = 3,
+		Metadata = 4,
+		MPEG2TSSequenceStart = 5
+	};
+	enum VideoCodecEx {
+		AV1 = FourCcToUint32("av01"),
+		VP9 = FourCcToUint32("vp09"),
+		HEVC = FourCcToUint32("hvc1")
+	};
 public:
 	RTMPVideoFrame(QWORD timestamp,DWORD size);
 	RTMPVideoFrame(QWORD timestamp, const AVCDescriptor &desc);
@@ -82,11 +112,58 @@ public:
 	void		SetAVCType(BYTE type)			{ extraData[0] = type;		}
 	void		SetAVCTS(DWORD ts)			{ extraData[1] = ts >>16 ; extraData[2] = ts >>8 ;  extraData[3] = ts; }
 	virtual void	Dump();
-protected:
+	
+	bool		IsExtended() const			{ return isExtended; }
+	VideoCodecEx	GetVideoCodecEx() const			{ return codecEx; }
+	PacketType      GetPacketType() const			{ return packetType; }
+	
+	
+	bool IsConfig() const
+	{
+		if (!isExtended)
+		{
+			return GetAVCType() == RTMPVideoFrame::AVCHEADER;
+		}
+		
+		return GetPacketType() == RTMPVideoFrame::SequenceStart;
+	}
+	
+	virtual bool IsCodedFrames()
+	{
+		if (!isExtended)
+		{
+			return  GetAVCType() == RTMPVideoFrame::AVCNALU;
+		}
+		
+		return GetPacketType() == RTMPVideoFrame::CodedFrames ||
+			GetPacketType() == RTMPVideoFrame::CodedFramesX;
+	}
+	
+private:
+	
+	enum class ParsingState
+	{
+		VideoTagHeader,
+		VideoTagHeaderFourCc,
+		VideoTagAvcExtra,
+		VideoTagBody,
+		VideoTagHevcCompositionTime,
+		VideoTagData,
+	};
+
+	bool		isExtended = false;
 	VideoCodec	codec;
+	VideoCodecEx	codecEx;
+	
 	FrameType	frameType;
+	PacketType	packetType;
+	
 	BYTE		extraData[4];
-	DWORD		headerPos;
+	BYTE		fourCc[4];
+
+	ParsingState parsingState = ParsingState::VideoTagHeader;
+	
+	std::unique_ptr<BufferWritter> bufferWritter;
 };
 
 class RTMPAudioFrame : public RTMPMediaFrame

@@ -959,6 +959,13 @@ void RTMPConnection::ProcessCommandMessage(DWORD streamId,RTMPCommandMessage* cm
 		if (obj->HasProperty(L"objectEncoding"))
 			//Get object encoding used by client
 			objectEncoding = (double)obj->GetProperty(L"objectEncoding");
+		//Check fourCcList
+		AMFStrictArray fourCcList;
+		if (obj->HasProperty(L"fourCcList"))
+		{
+			//Get fourCcList supported by client
+			fourCcList = static_cast<AMFStrictArray&>(obj->GetProperty(L"fourCcList"));
+		}
 
 		//Call listener
 		app = listener->OnConnect(appName,this,[streamId, transId, objectEncoding, selfWeak=weak_from_this()](bool accepted){
