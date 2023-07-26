@@ -160,10 +160,10 @@ private:
 	PacketType	packetType;
 	
 	BYTE		extraData[4];
+	BYTE		fourCc[4];
 
 	ParsingState parsingState = ParsingState::VideoTagHeader;
 	
-	std::vector<uint8_t> dataBuffer;
 	std::unique_ptr<BufferWritter> bufferWritter;
 };
 
