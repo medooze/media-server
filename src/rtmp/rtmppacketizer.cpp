@@ -1,5 +1,7 @@
 
 #include "rtmp/rtmppacketizer.h"
+#include "av1/AV1.h"
+#include "av1/Obu.h"
 
 
 VideoCodec::Type GetRtmpFrameVideoCodec(const RTMPVideoFrame& videoFrame)
@@ -275,6 +277,125 @@ std::unique_ptr<VideoFrame> RTMPH26xPacketizer<DescClass, SPSClass, codec>::AddF
 
 template class RTMPH26xPacketizer<AVCDescriptor, H264SeqParameterSet, VideoCodec::H264>;
 template class RTMPH26xPacketizer<HEVCDescriptor, H265SeqParameterSet, VideoCodec::H265>;
+
+
+std::unique_ptr<VideoFrame> RTMPAv1Packetizer::AddFrame(RTMPVideoFrame* videoFrame)
+{
+	//Debug("-RTMPAVCPacketizer::AddFrame() [size:%u,intra:%d]\n",videoFrame->GetMediaSize(), videoFrame->GetFrameType() == RTMPVideoFrame::INTRA);
+	
+	//Check it is processing codec
+	if (GetRtmpFrameVideoCodec(*videoFrame) != VideoCodec::AV1)
+		//Ignore
+		return nullptr;
+	
+	//Check if it is descriptor
+	if (videoFrame->IsConfig())
+	{
+		//Parse it
+		if(desc.Parse(videoFrame->GetMediaData(),videoFrame->GetMediaSize()))
+			//Got config
+			gotConfig = true;
+		else
+			//Show error
+			Error(" RTMPAVCPacketizer::AddFrame() | AVCDescriptor parse error\n");
+		//DOne
+		return nullptr;
+	}
+	
+	//It should be a nalu then
+	if (!videoFrame->IsCodedFrames())
+		//DOne
+		return nullptr;
+	
+	//Ensure that we have got config
+	if (!gotConfig)
+	{
+		//Error
+		Debug("-RTMPAVCPacketizer::AddFrame() | Gor NAL frame but not valid description yet\n");
+		//DOne
+		return nullptr;
+	}
+
+	
+	//Create frame
+	auto frame = std::make_unique<VideoFrame>(VideoCodec::AV1,videoFrame->GetSize()+desc.GetSize()+256);
+	
+	//Set time
+	frame->SetTime(videoFrame->GetTimestamp());
+	//Set clock rate
+	frame->SetClockRate(1000);
+	//Set timestamp
+	frame->SetTimestamp(videoFrame->GetTimestamp());
+	
+	// //Get AVC data size
+	// auto configSize = desc.GetSize();
+	// //Allocate mem
+	// BYTE* config = (BYTE*)malloc(configSize);
+	// //Serialize AVC codec data
+	// DWORD configLen = desc.Serialize(config,configSize);
+	// //Set it
+	// frame->SetCodecConfig(config,configLen);
+	// //Free data
+	// free(config);
+	
+	//Generic AV1 config
+	AV1CodecConfig config;
+	//Set config size
+	frame->AllocateCodecConfig(config.GetSize());
+	//Serialize
+	config.Serialize(frame->GetCodecConfigData(),frame->GetCodecConfigSize());
+		
+	//If is an intra
+	if (videoFrame->GetFrameType()==RTMPVideoFrame::INTRA)
+	{
+		if (desc.sequenceHeader)
+		{
+			auto ini = frame->AppendMedia(desc.sequenceHeader->data(),desc.sequenceHeader->size());
+			
+			//Crete rtp packet
+			//frame->AddRtpPacket(ini, + desc.sequenceHeader->size(),nullptr,0);
+		
+			auto info = ObuHelper::GetObuInfo(desc.sequenceHeader->data(), desc.sequenceHeader->size());
+			
+			SequenceHeaderObu sho;
+			if (info && sho.Parse(info->payload, info->payloadSize))
+			{
+				//Set dimensions
+				frame->SetWidth(sho.max_frame_width_minus_1 + 1);
+				frame->SetHeight(sho.max_frame_height_minus_1 + 1);
+			}
+		}
+		
+		//Set intra flag
+		frame->SetIntra(true);
+	}
+
+	//Malloc
+	BYTE *data = videoFrame->GetMediaData();
+	//Get size
+	DWORD size = videoFrame->GetMediaSize();
+	
+	//Chop into NALs
+	while(size>0)
+	{
+		auto info = ObuHelper::GetObuInfo(data, size);
+		if (!info) return nullptr;
+		
+		if (info->obuSize > size)
+		{
+			return nullptr;
+		}
+		
+		auto ini = frame->AppendMedia(data, info->obuSize);
+		
+		data += info->obuSize;
+		size -= info->obuSize;
+	}
+
+	//Done
+	return frame;
+}
+
 
 std::unique_ptr<AudioFrame> RTMPAACPacketizer::AddFrame(RTMPAudioFrame* audioFrame)
 {

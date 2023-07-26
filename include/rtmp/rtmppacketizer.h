@@ -7,6 +7,8 @@
 #include "audio.h"
 #include "video.h"
 #include "h264/h264.h"
+#include "av1/AV1CodecConfigurationRecord.h"
+
 #include <memory>
 
 VideoCodec::Type GetRtmpFrameVideoCodec(const RTMPVideoFrame& videoFrame);
@@ -25,6 +27,18 @@ private:
 
 using RTMPAVCPacketizer = RTMPH26xPacketizer<AVCDescriptor, H264SeqParameterSet, VideoCodec::H264>;
 using RTMPHEVCPacketizer = RTMPH26xPacketizer<HEVCDescriptor, H265SeqParameterSet, VideoCodec::H265>;
+
+class RTMPAv1Packetizer
+{
+public:
+	std::unique_ptr<VideoFrame> AddFrame(RTMPVideoFrame* videoFrame);
+
+private:
+	
+	AV1CodecConfigurationRecord desc;
+	bool gotConfig = false;
+};
+
 
 class RTMPAACPacketizer
 {
