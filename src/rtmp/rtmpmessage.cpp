@@ -954,7 +954,6 @@ DWORD RTMPVideoFrame::Parse(BYTE *data,DWORD size)
 
 	while (bufferLen > 0)
 	{
-		bool isParsed = false;		
 		uint32_t usedBytes = 0;
 		
 		switch (parsingState)
@@ -967,8 +966,10 @@ DWORD RTMPVideoFrame::Parse(BYTE *data,DWORD size)
 				codec = VideoCodec(buffer[0] & 0x0f);
 				
 				if (codec == AVC)
-				{		
-					objectParser = std::make_unique<ObjectParser>(4);		
+				{	
+					dataBuffer.resize(4);
+					bufferWritter = std::make_unique<BufferWritter>(dataBuffer.data(), dataBuffer.size());
+					
 					parsingState = ParsingState::VideoTagAvcExtra;
 				}
 				else
@@ -980,7 +981,9 @@ DWORD RTMPVideoFrame::Parse(BYTE *data,DWORD size)
 			{
 				packetType = PacketType(buffer[0] & 0x0f);
 				
-				objectParser = std::make_unique<ObjectParser>(4);
+				dataBuffer.resize(4);
+				bufferWritter = std::make_unique<BufferWritter>(dataBuffer.data(), dataBuffer.size());
+				
 				parsingState = ParsingState::VideoTagHeaderFourCc;
 			}
 			
@@ -992,35 +995,39 @@ DWORD RTMPVideoFrame::Parse(BYTE *data,DWORD size)
 			break;
 			
 		case ParsingState::VideoTagAvcExtra:
-			if (!objectParser)
+			if (!bufferWritter)
 			{
 				// This should never happen
-				Error("No object parser\n");
+				Error("No buffer writter\n");
 				return size;	
 			}
 			
-			std::tie(isParsed, usedBytes) = objectParser->Parse(buffer, bufferLen);
-			if (isParsed)
+			usedBytes = std::min(uint32_t(bufferWritter->GetLeft()), bufferLen);
+			(void)bufferWritter->Set({buffer, usedBytes});
+			
+			if (bufferWritter->GetLeft() == 0)
 			{
-				memcpy(extraData, objectParser->GetBuffer().data(), 4);
-				objectParser.reset();
+				memcpy(extraData, dataBuffer.data(), 4);
+				bufferWritter.reset();
 				parsingState = ParsingState::VideoTagData;
 			}
 			break;
 			
 		case ParsingState::VideoTagHeaderFourCc:
-			if (!objectParser)
+			if (!bufferWritter)
 			{
 				// This should never happen
-				Error("No object parser\n");
+				Error("No buffer writter\n");
 				return size;	
 			}
 			
-			std::tie(isParsed, usedBytes) = objectParser->Parse(buffer, bufferLen);
-			if (isParsed)
+			usedBytes = std::min(uint32_t(bufferWritter->GetLeft()), bufferLen);
+			(void)bufferWritter->Set({buffer, usedBytes});
+			
+			if (bufferWritter->GetLeft() == 0)
 			{
-				codecEx = VideoCodecEx(FourCcToUint32(objectParser->GetBuffer().begin()));				
-				objectParser.reset();				
+				codecEx = VideoCodecEx(FourCcToUint32(dataBuffer.begin()));
+				bufferWritter.reset();				
 				parsingState = ParsingState::VideoTagBody;
 			}
 			break;
@@ -1049,7 +1056,9 @@ DWORD RTMPVideoFrame::Parse(BYTE *data,DWORD size)
 				}
 				else if (packetType == CodedFrames)
 				{
-					objectParser = std::make_unique<ObjectParser>(3);
+					dataBuffer.resize(3);
+					bufferWritter = std::make_unique<BufferWritter>(dataBuffer.data(), dataBuffer.size());
+					
 					parsingState = ParsingState::VideoTagHevcCompositionTime;
 				}
 				else if (packetType == CodedFramesX)
@@ -1066,17 +1075,19 @@ DWORD RTMPVideoFrame::Parse(BYTE *data,DWORD size)
 			break;
 			
 		case ParsingState::VideoTagHevcCompositionTime:
-			if (!objectParser)
+			if (!bufferWritter)
 			{
 				// This should never happen
-				Error("No object parser\n");
+				Error("No buffer writter\n");
 				return size;	
 			}
 			
-			std::tie(isParsed, usedBytes) = objectParser->Parse(buffer, bufferLen);
-			if (isParsed)
+			usedBytes = std::min(uint32_t(bufferWritter->GetLeft()), bufferLen);
+			(void)bufferWritter->Set({buffer, usedBytes});
+			
+			if (bufferWritter->GetLeft() == 0)
 			{	
-				objectParser.reset();				
+				bufferWritter.reset();				
 				parsingState = ParsingState::VideoTagData;
 			}
 			break;

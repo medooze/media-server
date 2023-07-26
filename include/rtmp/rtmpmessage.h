@@ -7,6 +7,7 @@
 #include "avcdescriptor.h"
 #include "h265/HEVCDescriptor.h"
 #include "aac/aacconfig.h"
+#include "BufferWritter.h"
 #include <vector>
 
 
@@ -162,7 +163,8 @@ private:
 
 	ParsingState parsingState = ParsingState::VideoTagHeader;
 	
-	std::unique_ptr<ObjectParser>	objectParser;
+	std::vector<uint8_t> dataBuffer;
+	std::unique_ptr<BufferWritter> bufferWritter;
 };
 
 class RTMPAudioFrame : public RTMPMediaFrame
