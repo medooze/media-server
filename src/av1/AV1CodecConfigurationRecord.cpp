@@ -14,7 +14,7 @@ DWORD AV1CodecConfigurationRecord::Serialize(BYTE* buffer,DWORD bufferLength) co
 	
 	if (sequenceHeader)
 	{
-		if (bufferLength >  sequenceHeader->size())
+		if (bufferLength >= sequenceHeader->size())
 			memcpy(buffer, sequenceHeader->data(), sequenceHeader->size());	
 		else
 			return 0;

@@ -344,23 +344,17 @@ std::unique_ptr<VideoFrame> RTMPAv1Packetizer::AddFrame(RTMPVideoFrame* videoFra
 	//Set timestamp
 	frame->SetTimestamp(videoFrame->GetTimestamp());
 	
-	// //Get AVC data size
-	// auto configSize = desc.GetSize();
-	// //Allocate mem
-	// BYTE* config = (BYTE*)malloc(configSize);
-	// //Serialize AVC codec data
-	// DWORD configLen = desc.Serialize(config,configSize);
-	// //Set it
-	// frame->SetCodecConfig(config,configLen);
-	// //Free data
-	// free(config);
+	//Get AVC data size
+	auto configSize = desc.GetSize();
+	//Allocate mem
+	BYTE* config = (BYTE*)malloc(configSize);
+	//Serialize AVC codec data
+	DWORD configLen = desc.Serialize(config,configSize);
+	//Set it
+	frame->SetCodecConfig(config,configLen);
+	//Free data
+	free(config);
 	
-	//Generic AV1 config
-	AV1CodecConfig config;
-	//Set config size
-	frame->AllocateCodecConfig(config.GetSize());
-	//Serialize
-	config.Serialize(frame->GetCodecConfigData(),frame->GetCodecConfigSize());
 		
 	//If is an intra
 	if (videoFrame->GetFrameType()==RTMPVideoFrame::INTRA)
