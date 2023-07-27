@@ -117,4 +117,13 @@ public:
 	}
 };
 
+struct AggreationHeader
+{
+	uint8_t Reserved : 3;
+	uint8_t N : 1;	
+	uint8_t W : 2;
+	uint8_t Y : 1;	
+	uint8_t Z : 1;
+};
+
 #endif

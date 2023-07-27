@@ -354,19 +354,16 @@ std::unique_ptr<VideoFrame> RTMPAv1Packetizer::AddFrame(RTMPVideoFrame* videoFra
 	frame->SetCodecConfig(config,configLen);
 	//Free data
 	free(config);
-	
 		
 	//If is an intra
 	if (videoFrame->GetFrameType()==RTMPVideoFrame::INTRA)
 	{
 		if (desc.sequenceHeader)
 		{
-			auto ini = frame->AppendMedia(desc.sequenceHeader->data(),desc.sequenceHeader->size());
-			
-			//Crete rtp packet
-			//frame->AddRtpPacket(ini, + desc.sequenceHeader->size(),nullptr,0);
-		
 			auto info = ObuHelper::GetObuInfo(desc.sequenceHeader->data(), desc.sequenceHeader->size());
+			
+			auto ini = frame->AppendMedia(desc.sequenceHeader->data(),desc.sequenceHeader->size());
+			ini += info->obuSize - info->payloadSize;		
 			
 			SequenceHeaderObu sho;
 			if (info && sho.Parse(info->payload, info->payloadSize))
@@ -375,6 +372,30 @@ std::unique_ptr<VideoFrame> RTMPAv1Packetizer::AddFrame(RTMPVideoFrame* videoFra
 				frame->SetWidth(sho.max_frame_width_minus_1 + 1);
 				frame->SetHeight(sho.max_frame_height_minus_1 + 1);
 			}
+			
+			/*		
+			* 0 1 2 3 4 5 6 7
+			* +-+-+-+-+-+-+-+-+
+			*|Z|Y| W |N|-|-|-|
+			* +-+-+-+-+-+-+-+-+
+			*/
+			AggreationHeader header;
+			memset((void*)&header, 0, sizeof(AggreationHeader));
+			header.W = 1; // Send one OBU element each time
+			
+			uint8_t obuHeader[2];
+			memcpy(obuHeader, desc.sequenceHeader->data(), info->headerSize);
+			obuHeader[0] &= ~0b0000'0010; // Clear has_size_field
+		
+			header.Z = 0; // No prev fragment
+			header.Y = 0; // No next fragment
+			header.N = 1; // New coded sequence
+					
+			uint8_t prefix[3];
+			memcpy(&prefix[0], (void*)&header, 1);
+			memcpy(&prefix[1], (void*)&obuHeader, info->headerSize);
+			
+			frame->AddRtpPacket(ini, info->payloadSize, prefix, info->headerSize + 1);
 		}
 		
 		//Set intra flag
@@ -388,19 +409,82 @@ std::unique_ptr<VideoFrame> RTMPAv1Packetizer::AddFrame(RTMPVideoFrame* videoFra
 	
 	//Chop into NALs
 	while(size>0)
-	{
+	{	
 		auto info = ObuHelper::GetObuInfo(data, size);
-		if (!info) return nullptr;
+		if (!info || info->obuSize > size) return nullptr;
 		
-		if (info->obuSize > size)
-		{
-			return nullptr;
-		}
+		/*		
+		* 0 1 2 3 4 5 6 7
+		* +-+-+-+-+-+-+-+-+
+		*|Z|Y| W |N|-|-|-|
+		* +-+-+-+-+-+-+-+-+
+		*/
+		AggreationHeader header;
+		memset((void*)&header, 0, sizeof(AggreationHeader));
+		header.W = 1; // Send one OBU element each time
 		
+		uint8_t obuHeader[2];
+		memcpy(obuHeader, data, info->headerSize);
+		obuHeader[0] &= ~0b0000'0010; // Clear has_size_field
+			
+		uint8_t prefix[3];
+	
 		auto ini = frame->AppendMedia(data, info->obuSize);
+		ini += info->obuSize - info->payloadSize;	// We will replace the OBU header
 		
 		data += info->obuSize;
 		size -= info->obuSize;
+		
+		bool firstSegment = true;
+		if ((info->headerSize + info->payloadSize + 1) > RTPPAYLOADSIZE)
+		{
+			auto payloadSize = info->payloadSize;
+			while (payloadSize)
+			{
+				//Get fragment size
+				size_t fragSize = 0;
+				if (firstSegment)
+				{	
+					fragSize = std::min(payloadSize, size_t(RTPPAYLOADSIZE - info->headerSize - 1));
+					
+					header.Z = 0; // No prev fragment
+					header.Y = 1; // Has next fragment
+					header.N = 1; // New coded sequence
+					 
+					memcpy(&prefix[0], (void*)&header, 1);
+					memcpy(&prefix[1], (void*)&obuHeader, info->headerSize);
+					frame->AddRtpPacket(ini, fragSize, prefix, info->headerSize + 1);
+					firstSegment = false;
+				}
+				else
+				{
+					fragSize = std::min(payloadSize, size_t(RTPPAYLOADSIZE - 1));
+					
+					header.Z = 1;	// Has prev fragment
+					header.Y = (fragSize==payloadSize) ? 0 : 1;
+					header.N = 0;   // Not new coded sequence
+					
+					memcpy(&prefix[0], (void*)&header, 1);
+					frame->AddRtpPacket(ini, fragSize, prefix, 1);					
+				}
+				
+				//Next
+				ini += fragSize;
+				//Remove size
+				payloadSize -= fragSize;
+			}
+		}
+		else
+		{
+			header.Z = 0; // No prev fragment
+			header.Y = 0; // No next fragment
+			header.N = 1; // New coded sequence
+					
+			memcpy(&prefix[0], (void*)&header, 1);
+			memcpy(&prefix[1], (void*)&obuHeader, info->headerSize);
+			
+			frame->AddRtpPacket(ini, info->payloadSize, prefix, info->headerSize + 1);
+		}
 	}
 
 	//Done
