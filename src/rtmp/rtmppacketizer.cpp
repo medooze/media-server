@@ -449,7 +449,7 @@ std::unique_ptr<VideoFrame> RTMPAv1Packetizer::AddFrame(RTMPVideoFrame* videoFra
 					
 					header.Z = 0; // No prev fragment
 					header.Y = 1; // Has next fragment
-					header.N = 1; // New coded sequence
+					header.N = frame->IsIntra() ? 1 : 0; // New coded sequence
 					 
 					memcpy(&prefix[0], (void*)&header, 1);
 					memcpy(&prefix[1], (void*)&obuHeader, info->headerSize);
@@ -478,7 +478,7 @@ std::unique_ptr<VideoFrame> RTMPAv1Packetizer::AddFrame(RTMPVideoFrame* videoFra
 		{
 			header.Z = 0; // No prev fragment
 			header.Y = 0; // No next fragment
-			header.N = 1; // New coded sequence
+			header.N = frame->IsIntra() ? 1 : 0; // New coded sequence
 					
 			memcpy(&prefix[0], (void*)&header, 1);
 			memcpy(&prefix[1], (void*)&obuHeader, info->headerSize);
