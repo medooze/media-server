@@ -34,7 +34,7 @@ bool AV1CodecConfigurationRecord::Parse(const BYTE* data,DWORD size)
 	
 	while (size > 0)
 	{
-		auto info = ObuHelper::GetObuInfo(data, size);
+		auto info = GetObuInfo(data, size);
 		if (!info) return false;
 		
 		if (info->obuType == ObuType::ObuSequenceHeader)

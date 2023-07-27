@@ -360,7 +360,7 @@ std::unique_ptr<VideoFrame> RTMPAv1Packetizer::AddFrame(RTMPVideoFrame* videoFra
 	{
 		if (desc.sequenceHeader)
 		{
-			auto info = ObuHelper::GetObuInfo(desc.sequenceHeader->data(), desc.sequenceHeader->size());
+			auto info = GetObuInfo(desc.sequenceHeader->data(), desc.sequenceHeader->size());
 			
 			auto ini = frame->AppendMedia(desc.sequenceHeader->data(),desc.sequenceHeader->size());
 			ini += info->obuSize - info->payloadSize;		
@@ -379,8 +379,8 @@ std::unique_ptr<VideoFrame> RTMPAv1Packetizer::AddFrame(RTMPVideoFrame* videoFra
 			*|Z|Y| W |N|-|-|-|
 			* +-+-+-+-+-+-+-+-+
 			*/
-			AggreationHeader header;
-			memset((void*)&header, 0, sizeof(AggreationHeader));
+			RtpAv1AggreationHeader header;
+			memset((void*)&header, 0, sizeof(RtpAv1AggreationHeader));
 			header.W = 1; // Send one OBU element each time
 			
 			uint8_t obuHeader[2];
@@ -410,7 +410,7 @@ std::unique_ptr<VideoFrame> RTMPAv1Packetizer::AddFrame(RTMPVideoFrame* videoFra
 	//Chop into NALs
 	while(size>0)
 	{	
-		auto info = ObuHelper::GetObuInfo(data, size);
+		auto info = GetObuInfo(data, size);
 		if (!info || info->obuSize > size) return nullptr;
 		
 		/*		
@@ -419,8 +419,8 @@ std::unique_ptr<VideoFrame> RTMPAv1Packetizer::AddFrame(RTMPVideoFrame* videoFra
 		*|Z|Y| W |N|-|-|-|
 		* +-+-+-+-+-+-+-+-+
 		*/
-		AggreationHeader header;
-		memset((void*)&header, 0, sizeof(AggreationHeader));
+		RtpAv1AggreationHeader header;
+		memset((void*)&header, 0, sizeof(RtpAv1AggreationHeader));
 		header.W = 1; // Send one OBU element each time
 		
 		uint8_t obuHeader[2];
