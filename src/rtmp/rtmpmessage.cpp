@@ -3,7 +3,6 @@
 #include "avcdescriptor.h"
 #include <stdexcept>
 #include <cstdlib>
-#include <cassert>
 
 
 namespace 
@@ -956,19 +955,11 @@ void RTMPVideoFrame::Dump()
 	//Dump
 	if (!isExtended)
 	{
-		auto vcodec = std::get<VideoCodec>(codec);
-		Debug("[VideoFrame extended: false codec: %d frameType:%d timestamp:%lld bufferSize:%d mediaSize:%d]\n",vcodec,frameType,timestamp,bufferSize,mediaSize);
+		Debug("[VideoFrame extended: false codec: %d frameType:%d timestamp:%lld bufferSize:%d mediaSize:%d]\n",codec,frameType,timestamp,bufferSize,mediaSize);
 		
-		if (vcodec==VideoCodec::AVC)
-		{
-			uint8_t extraData[4];
-			extraData[0] = uint8_t(std::get<AVCType>(packetType));
-			set3(extraData, 1, compositionTime);
-			
+		if (codec==AVC)
 			Debug("\t[AVC header 0x%.2x 0x%.2x 0x%.2x 0x%.2x /]\n",extraData[0],extraData[1],extraData[2],extraData[3]);
-		}
-			
-		if (vcodec==VideoCodec::AVC && IsConfig())
+		if (codec==VideoCodec::AVC && IsConfig())
 		{
 			//Paser AVCDesc
 			AVCDescriptor desc;
@@ -983,25 +974,20 @@ void RTMPVideoFrame::Dump()
 		} else {
 			::Dump(buffer,bufferSize);
 		}
-		
 		Debug("[/VideoFrame]\n");
 	}
 	else
 	{
-		auto vcodec = std::get<VideoCodecEx>(codec);
-		auto ptype = std::get<PacketType>(packetType);
-		
-
-		auto codecStr = Uint32ToFourCcStr(vcodec);
+		auto codecStr = Uint32ToFourCcStr(codecEx);
 		Debug("[VideoFrame extended: true codec: %s frameType:%d timestamp:%lld bufferSize:%d mediaSize:%d packetType: %d]\n",
-			codecStr.c_str(),frameType,timestamp,bufferSize,mediaSize,ptype);
+			codecStr.c_str(),frameType,timestamp,bufferSize,mediaSize,packetType);
 		
-		if (vcodec==VideoCodecEx::HEVC && ptype == CodedFrames)
+		if (codecEx==VideoCodecEx::HEVC && packetType == CodedFrames)
 		{
-			Debug("\t[HEVC composition time: %d/]\n", compositionTime);
+			Debug("\t[HEVC composition time: %d/]\n", GetSI24(extraData));
 		}
 			
-		if (vcodec==VideoCodecEx::HEVC && IsConfig())
+		if (codecEx==VideoCodecEx::HEVC && IsConfig())
 		{
 			//Paser HEVCDescriptor
 			HEVCDescriptor desc;
@@ -1028,7 +1014,6 @@ DWORD RTMPVideoFrame::Parse(BYTE *data,DWORD size)
 
 	while (bufferLen > 0)
 	{
-		bool isParsed = false;		
 		uint32_t usedBytes = 0;
 		
 		switch (parsingState)
@@ -1040,9 +1025,10 @@ DWORD RTMPVideoFrame::Parse(BYTE *data,DWORD size)
 				//Parse type
 				codec = VideoCodec(buffer[0] & 0x0f);
 				
-				if (std::get<VideoCodec>(codec) == VideoCodec::AVC)
-				{		
-					objectParser = std::make_unique<ObjectParser>(4);
+				if (codec == AVC)
+				{
+					bufferWritter = std::make_unique<BufferWritter>(extraData, 4);
+					
 					parsingState = ParsingState::VideoTagAvcExtra;
 				}
 				else
@@ -1054,7 +1040,8 @@ DWORD RTMPVideoFrame::Parse(BYTE *data,DWORD size)
 			{
 				packetType = PacketType(buffer[0] & 0x0f);
 				
-				objectParser = std::make_unique<ObjectParser>(4);
+				bufferWritter = std::make_unique<BufferWritter>(fourCc, 4);
+				
 				parsingState = ParsingState::VideoTagHeaderFourCc;
 			}
 			
@@ -1066,33 +1053,44 @@ DWORD RTMPVideoFrame::Parse(BYTE *data,DWORD size)
 			break;
 			
 		case ParsingState::VideoTagAvcExtra:
-			assert(objectParser);
-			std::tie(isParsed, usedBytes) = objectParser->Parse(buffer, bufferLen);
-			if (isParsed)
+			if (!bufferWritter)
 			{
-				packetType = AVCType(objectParser->GetBuffer().data()[0]);
-				compositionTime = GetSI24(objectParser->GetBuffer().data() + 1);
-				
-				objectParser.reset();
+				// This should never happen
+				Error("No buffer writter\n");
+				return size;	
+			}
+			
+			usedBytes = std::min(uint32_t(bufferWritter->GetLeft()), bufferLen);
+			(void)bufferWritter->Set({buffer, usedBytes});
+			
+			if (bufferWritter->GetLeft() == 0)
+			{
+				bufferWritter.reset();
 				parsingState = ParsingState::VideoTagData;
 			}
 			break;
 			
 		case ParsingState::VideoTagHeaderFourCc:
-			assert(objectParser);
-			std::tie(isParsed, usedBytes) = objectParser->Parse(buffer, bufferLen);
-			if (isParsed)
+			if (!bufferWritter)
 			{
-				codec = VideoCodecEx(FourCcToUint32(objectParser->GetBuffer().begin()));
-				objectParser.reset();				
+				// This should never happen
+				Error("No buffer writter\n");
+				return size;	
+			}
+			
+			usedBytes = std::min(uint32_t(bufferWritter->GetLeft()), bufferLen);
+			(void)bufferWritter->Set({buffer, usedBytes});
+			
+			if (bufferWritter->GetLeft() == 0)
+			{
+				codecEx = VideoCodecEx(FourCcToUint32(fourCc));
+				bufferWritter.reset();				
 				parsingState = ParsingState::VideoTagBody;
 			}
 			break;
 			
 		case ParsingState::VideoTagBody:
-		{
-			auto ptype = std::get<PacketType>(packetType);
-			if (ptype == Metadata)
+			if (packetType == Metadata)
 			{
 				// colorInfo AMF encoded meta data. Ignore for now.
 				
@@ -1100,27 +1098,28 @@ DWORD RTMPVideoFrame::Parse(BYTE *data,DWORD size)
 				frameType = FrameType(0);
 				return size;
 			}
-			else if (ptype == SequenceEnd)
+			else if (packetType == SequenceEnd)
 			{
 				// signals end of sequence
 				return size;
 			}
 			
-			if (std::get<VideoCodecEx>(codec) == HEVC)
+			if (codecEx == HEVC)
 			{
-				if (ptype == SequenceStart)
+				if (packetType == SequenceStart)
 				{
 					// HEVCDecoderConfigurationRecord
 					parsingState = ParsingState::VideoTagData;
 				}
-				else if (ptype == CodedFrames)
+				else if (packetType == CodedFrames)
 				{
-					objectParser = std::make_unique<ObjectParser>(3);
+					bufferWritter = std::make_unique<BufferWritter>(extraData, 3);
+					
 					parsingState = ParsingState::VideoTagHevcCompositionTime;
 				}
-				else if (ptype == CodedFramesX)
+				else if (packetType == CodedFramesX)
 				{					
-					parsingState = ParsingState::VideoTagData;
+					parsingState = ParsingState::VideoTagData;					
 				}
 			}
 			else
@@ -1130,15 +1129,21 @@ DWORD RTMPVideoFrame::Parse(BYTE *data,DWORD size)
 			}
 			
 			break;
-		}
+			
 		case ParsingState::VideoTagHevcCompositionTime:
-			assert(objectParser);
-			std::tie(isParsed, usedBytes) = objectParser->Parse(buffer, bufferLen);
-			if (isParsed)
+			if (!bufferWritter)
+			{
+				// This should never happen
+				Error("No buffer writter\n");
+				return size;	
+			}
+			
+			usedBytes = std::min(uint32_t(bufferWritter->GetLeft()), bufferLen);
+			(void)bufferWritter->Set({buffer, usedBytes});
+			
+			if (bufferWritter->GetLeft() == 0)
 			{	
-				compositionTime = GetSI24(objectParser->GetBuffer().data());
-				
-				objectParser.reset();
+				bufferWritter.reset();				
 				parsingState = ParsingState::VideoTagData;
 			}
 			break;
@@ -1150,8 +1155,8 @@ DWORD RTMPVideoFrame::Parse(BYTE *data,DWORD size)
 			
 			return usedBytes + (buffer - data);
 		default:
-			assert(false);
-			break;
+			Error("Invalid ParsingState: %d", parsingState);
+			return size;
 		}
 		
 		buffer	  += usedBytes;
@@ -1168,43 +1173,40 @@ DWORD RTMPVideoFrame::Serialize(BYTE* data,DWORD size)
 	if (!isExtended)
 	{
 		DWORD extra = 0;
-		auto vcodec = std::get<VideoCodec>(codec);
 
 		//Check codec
-		if (vcodec==VideoCodec::AVC)
+		if (codec==AVC)
 			//Extra header
 			extra = 4;
 
+		//Check if enought space
+		if (size<mediaSize+1+extra)
+			//Failed
+			return 0;
+
 		//Set first byte
-		data[0] = (uint8_t(frameType) <<4 ) | (uint8_t(vcodec) & 0x0f);
+		data[0] = (uint8_t(frameType) <<4 ) | (uint8_t(codec) & 0x0f);
 
 		//If it is AVC
-		if (vcodec==VideoCodec::AVC)
+		if (codec==AVC)
 		{
-			data[1] = uint8_t(std::get<AVCType>(packetType));
-			set3(data, 2, compositionTime);
+			data[1] = extraData[0];
+			data[2] = extraData[1];
+			data[3] = extraData[2];
+			data[4] = extraData[3];
 		}
-
-		//Copy media
-		memcpy(data+1+extra,buffer,mediaSize);
-
-		//Exit
-		return mediaSize+1+extra;
 	}
 	else
-	{
-		auto vcodec = std::get<VideoCodecEx>(codec);
-		auto ptype = std::get<PacketType>(packetType);
-		
-		*data = (uint8_t(frameType) <<4 ) | (uint8_t(ptype) & 0x0f) | 0x80;
+	{	
+		*data = (uint8_t(frameType) <<4 ) | (uint8_t(packetType) & 0x0f) | 0x80;
 		data++;
 		
-		set4(data, 0, uint32_t(vcodec));
+		set4(data, 0, uint32_t(codecEx));
 		data += 4;
 		
-		if (vcodec == VideoCodecEx::HEVC && ptype == PacketType::CodedFrames)
+		if (codecEx == VideoCodecEx::HEVC && packetType == PacketType::CodedFrames)
 		{
-			set3(data, 0, compositionTime);
+			memcpy(data, extraData, 3);
 			data += 3;
 		}
 		
@@ -1218,23 +1220,18 @@ DWORD RTMPVideoFrame::GetSize()
 {
 	if (!isExtended)
 	{
-		auto vcodec = std::get<VideoCodec>(codec);
-		
 		//If it is not AVC
-		if (vcodec!=VideoCodec::AVC)
+		if (codec!=VideoCodec::AVC)
 			return mediaSize+1;
 		else
 			return mediaSize+1+4;
 	}
 	else
-	{
-		auto vcodec = std::get<VideoCodecEx>(codec);
-		auto ptype = std::get<PacketType>(packetType);
-		
+	{	
 		uint32_t sz = 1; // The first byte
 		sz += 4; 	 // The fouc CC
 		
-		if (vcodec == VideoCodecEx::HEVC && ptype == PacketType::CodedFrames)
+		if (codecEx == VideoCodecEx::HEVC && packetType == PacketType::CodedFrames)
 		{
 			sz += 3;	// The composition offset
 		}		
@@ -1266,14 +1263,16 @@ RTMPMediaFrame *RTMPVideoFrame::Clone()
 {
 	RTMPVideoFrame *frame =  new RTMPVideoFrame(timestamp,mediaSize);
 	//Set values
-	frame->codec = codec;
-	frame->frameType = frameType;
+	frame->SetVideoCodec(codec);
+	frame->SetFrameType(frameType);
 	frame->SetVideoFrame(buffer,mediaSize);
-
-	frame->compositionTime = compositionTime;
+	//Copy extra data
+	memcpy(frame->extraData,extraData,4);
+	memcpy(frame->fourCc,fourCc,4);
+	
+	frame->codecEx = codecEx;
 	frame->packetType = packetType;
 	frame->isExtended = isExtended;
-
 	//Return frame
 	return frame;
 }

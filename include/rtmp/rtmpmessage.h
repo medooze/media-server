@@ -3,12 +3,12 @@
 #include "config.h"
 #include "rtmp.h"
 #include "amf.h"
-#include "objectparser.h"
 #include "avcdescriptor.h"
 #include "h265/HEVCDescriptor.h"
 #include "aac/aacconfig.h"
+#include "BufferWritter.h"
 #include <vector>
-#include <variant>
+
 
 template<class InputIt>
 constexpr uint32_t FourCcToUint32(InputIt first)
@@ -23,6 +23,7 @@ constexpr uint32_t FourCcToUint32(InputIt first)
 	
 	return result;
 }
+
 
 class RTMPMediaFrame 
 {
@@ -102,31 +103,19 @@ public:
 
 	void		SetVideoCodec(VideoCodec codec)		{ this->codec = codec;		}
 	void		SetFrameType(FrameType frameType)	{ this->frameType = frameType;	}
-	VideoCodec	GetVideoCodec()	const {
-		if (!std::holds_alternative<VideoCodec>(codec)) 	return VideoCodec(-1);
-		return std::get<VideoCodec>(codec);	
-	}
+	VideoCodec	GetVideoCodec()				const { return codec;		}
 	FrameType	GetFrameType()				const { return frameType;	}
-	AVCType		GetAVCType() const {
-		if (!std::holds_alternative<AVCType>(packetType)) 	return AVCType(-1);
-		return std::get<AVCType>(packetType);	
-	}
-	int32_t		GetAVCTS()				const { return compositionTime; }
+	BYTE		GetAVCType()				const { return extraData[0];	}
+	DWORD		GetAVCTS()				const { return ((DWORD)extraData[1]) << 16 | ((DWORD)extraData[2]) << 8 | extraData[3]; }
 	
 	DWORD		SetVideoFrame(BYTE* data,DWORD size);
-	void		SetAVCType(AVCType type)		{ packetType = type;		}
-	void		SetAVCTS(int32_t ts)			{ compositionTime = ts; }
+	void		SetAVCType(BYTE type)			{ extraData[0] = type;		}
+	void		SetAVCTS(DWORD ts)			{ extraData[1] = ts >>16 ; extraData[2] = ts >>8 ;  extraData[3] = ts; }
 	virtual void	Dump();
 	
 	bool		IsExtended() const			{ return isExtended; }
-	VideoCodecEx	GetVideoCodecEx() const {
-		if (!std::holds_alternative<VideoCodecEx>(codec)) 	return VideoCodecEx(-1);
-		return std::get<VideoCodecEx>(codec); 
-	}
-	PacketType      GetPacketType() const {
-		if (!std::holds_alternative<PacketType>(packetType)) 	return PacketType(-1);
-		return std::get<PacketType>(packetType); 
-	}
+	VideoCodecEx	GetVideoCodecEx() const			{ return codecEx; }
+	PacketType      GetPacketType() const			{ return packetType; }
 	
 	
 	bool IsConfig() const
@@ -163,16 +152,18 @@ private:
 	};
 
 	bool		isExtended = false;
-	FrameType	frameType = FrameType::INTER;
+	VideoCodec	codec;
+	VideoCodecEx	codecEx;
 	
-	std::variant<VideoCodec, VideoCodecEx>	codec = AVC;
-	std::variant<AVCType, PacketType> packetType = AVCHEADER;
+	FrameType	frameType;
+	PacketType	packetType;
 	
-	int32_t	compositionTime = 0;
+	BYTE		extraData[4];
+	BYTE		fourCc[4];
 
 	ParsingState parsingState = ParsingState::VideoTagHeader;
 	
-	std::unique_ptr<ObjectParser>	objectParser;
+	std::unique_ptr<BufferWritter> bufferWritter;
 };
 
 class RTMPAudioFrame : public RTMPMediaFrame
