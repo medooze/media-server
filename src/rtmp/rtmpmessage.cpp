@@ -959,7 +959,7 @@ void RTMPVideoFrame::Dump()
 		
 		if (codec==AVC)
 			Debug("\t[AVC header 0x%.2x 0x%.2x 0x%.2x 0x%.2x /]\n",extraData[0],extraData[1],extraData[2],extraData[3]);
-		if (codec==VideoCodec::AVC && IsConfig())
+		if (codec==AVC && IsConfig())
 		{
 			//Paser AVCDesc
 			AVCDescriptor desc;
@@ -1195,6 +1195,12 @@ DWORD RTMPVideoFrame::Serialize(BYTE* data,DWORD size)
 			data[3] = extraData[2];
 			data[4] = extraData[3];
 		}
+		
+		//Copy media
+		memcpy(data+1+extra,buffer,mediaSize);
+
+		//Exit
+		return mediaSize+1+extra;
 	}
 	else
 	{	
@@ -1221,7 +1227,7 @@ DWORD RTMPVideoFrame::GetSize()
 	if (!isExtended)
 	{
 		//If it is not AVC
-		if (codec!=VideoCodec::AVC)
+		if (codec!=AVC)
 			return mediaSize+1;
 		else
 			return mediaSize+1+4;
