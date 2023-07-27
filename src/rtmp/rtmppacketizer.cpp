@@ -98,20 +98,23 @@ std::unique_ptr<VideoFrame> RTMPH26xPacketizer<DescClass, SPSClass, codec>::AddF
 	//If is an intra
 	if (videoFrame->GetFrameType()==RTMPVideoFrame::INTRA)
 	{
-		//Add VPS
-		for (int i=0;i<desc.GetNumOfVideoParameterSets();i++)
+		if constexpr (std::is_same_v<DescClass, HEVCDescriptor>)
 		{
-			//Set size
-			setN(nalUnitLength, nalHeader, 0, desc.GetVideoParameterSetSize(i));
-			
-			//Append nal size header
-			frame->AppendMedia(nalHeader, nalUnitLength);
-			
-			//Append nal
-			auto ini = frame->AppendMedia(desc.GetVideoParameterSet(i),desc.GetVideoParameterSetSize(i));
-			
-			//Crete rtp packet
-			frame->AddRtpPacket(ini,desc.GetVideoParameterSetSize(i),nullptr,0);
+			//Add VPS
+			for (int i=0;i<desc.GetNumOfVideoParameterSets();i++)
+			{
+				//Set size
+				setN(nalUnitLength, nalHeader, 0, desc.GetVideoParameterSetSize(i));
+				
+				//Append nal size header
+				frame->AppendMedia(nalHeader, nalUnitLength);
+				
+				//Append nal
+				auto ini = frame->AppendMedia(desc.GetVideoParameterSet(i),desc.GetVideoParameterSetSize(i));
+				
+				//Crete rtp packet
+				frame->AddRtpPacket(ini,desc.GetVideoParameterSetSize(i),nullptr,0);
+			}
 		}
 		
 		//Decode SPS
