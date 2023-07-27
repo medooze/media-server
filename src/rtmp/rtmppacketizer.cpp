@@ -1,58 +1,6 @@
 
 #include "rtmp/rtmppacketizer.h"
 
-template<typename T>
-std::optional<std::pair<unsigned, unsigned>> IterateParameters(const AVCDescriptor&desc, const T& func)
-{
-	std::optional<std::pair<unsigned, unsigned>> dim;
-	
-	for (int i=0;i<desc.GetNumOfSequenceParameterSets();i++)
-	{
-		func(desc.GetSequenceParameterSet(i), desc.GetSequenceParameterSetSize(i));
-		
-		H264SeqParameterSet sps;
-		if (sps.Decode(desc.GetSequenceParameterSet(i)+1,desc.GetSequenceParameterSetSize(i)-1))
-		{
-			dim = {sps.GetWidth(), sps.GetHeight()};
-		}
-	}
-
-	for (int i=0;i<desc.GetNumOfPictureParameterSets();i++)
-	{
-		func(desc.GetPictureParameterSet(i), desc.GetPictureParameterSetSize(i));
-	}
-	
-	return dim;
-}
-
-template<typename T>
-std::optional<std::pair<unsigned, unsigned>> IterateParameters(const HEVCDescriptor&desc, const T& func)
-{
-	std::optional<std::pair<unsigned, unsigned>> dim;
-	
-	for (int i=0;i<desc.GetNumOfVideoParameterSets();i++)
-	{
-		func(desc.GetVideoParameterSet(i), desc.GetVideoParameterSetSize(i));
-	}
-
-	for (int i=0;i<desc.GetNumOfSequenceParameterSets();i++)
-	{
-		func(desc.GetSequenceParameterSet(i), desc.GetSequenceParameterSetSize(i));
-		
-		H265SeqParameterSet sps;
-		if (sps.Decode(desc.GetSequenceParameterSet(i)+2,desc.GetSequenceParameterSetSize(i)-2))
-		{
-			dim = {sps.GetWidth(), sps.GetHeight()};
-		}
-	}
-
-	for (int i=0;i<desc.GetNumOfPictureParameterSets();i++)
-	{
-		func(desc.GetPictureParameterSet(i), desc.GetPictureParameterSetSize(i));
-	}
-	
-	return dim;
-}
 
 VideoCodec::Type GetRtmpFrameVideoCodec(const RTMPVideoFrame& videoFrame)
 {
@@ -83,8 +31,8 @@ VideoCodec::Type GetRtmpFrameVideoCodec(const RTMPVideoFrame& videoFrame)
 	}
 }
 
-template<typename DescClass, VideoCodec::Type codec>
-std::unique_ptr<VideoFrame> RTMPH26xPacketizer<DescClass, codec>::AddFrame(RTMPVideoFrame* videoFrame)
+template<typename DescClass, typename SPSClass, VideoCodec::Type codec>
+std::unique_ptr<VideoFrame> RTMPH26xPacketizer<DescClass, SPSClass, codec>::AddFrame(RTMPVideoFrame* videoFrame)
 {
 	//Debug("-RTMPAVCPacketizer::AddFrame() [size:%u,intra:%d]\n",videoFrame->GetMediaSize(), videoFrame->GetFrameType() == RTMPVideoFrame::INTRA);
 	
@@ -150,26 +98,61 @@ std::unique_ptr<VideoFrame> RTMPH26xPacketizer<DescClass, codec>::AddFrame(RTMPV
 	//If is an intra
 	if (videoFrame->GetFrameType()==RTMPVideoFrame::INTRA)
 	{
-		auto dim = IterateParameters(desc, [&](const uint8_t* data, size_t len) {
+		//Add VPS
+		for (int i=0;i<desc.GetNumOfVideoParameterSets();i++)
+		{
 			//Set size
-			setN(nalUnitLength, nalHeader, 0, len);
+			setN(nalUnitLength, nalHeader, 0, desc.GetVideoParameterSetSize(i));
 			
 			//Append nal size header
 			frame->AppendMedia(nalHeader, nalUnitLength);
 			
 			//Append nal
-			auto ini = frame->AppendMedia(data, len);
+			auto ini = frame->AppendMedia(desc.GetVideoParameterSet(i),desc.GetVideoParameterSetSize(i));
 			
 			//Crete rtp packet
-			frame->AddRtpPacket(ini,len,nullptr,0);
-		});
+			frame->AddRtpPacket(ini,desc.GetVideoParameterSetSize(i),nullptr,0);
+		}
 		
-		if (dim.has_value())
+		//Decode SPS
+		for (int i=0;i<desc.GetNumOfSequenceParameterSets();i++)
 		{
-			frame->SetWidth(dim->first);
-			frame->SetHeight(dim->second);
-		}		
-		
+			//Set size
+			setN(nalUnitLength, nalHeader, 0, desc.GetSequenceParameterSetSize(i));
+			
+			//Append nal size header
+			frame->AppendMedia(nalHeader, nalUnitLength);
+			
+			//Append nal
+			auto ini = frame->AppendMedia(desc.GetSequenceParameterSet(i),desc.GetSequenceParameterSetSize(i));
+			
+			//Crete rtp packet
+			frame->AddRtpPacket(ini,desc.GetSequenceParameterSetSize(i),nullptr,0);
+			
+			//Parse sps skipping nal header
+			auto nalHeaderSize = (codec == VideoCodec::H264) ? 1 : 2;
+			SPSClass sps;
+			if (sps.Decode(desc.GetSequenceParameterSet(i)+nalHeaderSize,desc.GetSequenceParameterSetSize(i)-nalHeaderSize))
+			{
+				//Set dimensions
+				frame->SetWidth(sps.GetWidth());
+				frame->SetHeight(sps.GetHeight());
+			}
+		}
+		//Decode PPS
+		for (int i=0;i<desc.GetNumOfPictureParameterSets();i++)
+		{
+			//Set size
+			setN(nalUnitLength, nalHeader, 0, desc.GetPictureParameterSetSize(i));
+			
+			//Append nal size header
+			frame->AppendMedia(nalHeader, nalUnitLength);
+			//Append nal
+			auto ini = frame->AppendMedia(desc.GetPictureParameterSet(i),desc.GetPictureParameterSetSize(i));
+			
+			//Crete rtp packet
+			frame->AddRtpPacket(ini,desc.GetPictureParameterSetSize(i),nullptr,0);
+		}
 		//Set intra flag
 		frame->SetIntra(true);
 	}
@@ -290,8 +273,8 @@ std::unique_ptr<VideoFrame> RTMPH26xPacketizer<DescClass, codec>::AddFrame(RTMPV
 }
 
 
-template class RTMPH26xPacketizer<AVCDescriptor, VideoCodec::H264>;
-template class RTMPH26xPacketizer<HEVCDescriptor, VideoCodec::H265>;
+template class RTMPH26xPacketizer<AVCDescriptor, H264SeqParameterSet, VideoCodec::H264>;
+template class RTMPH26xPacketizer<HEVCDescriptor, H265SeqParameterSet, VideoCodec::H265>;
 
 std::unique_ptr<AudioFrame> RTMPAACPacketizer::AddFrame(RTMPAudioFrame* audioFrame)
 {
