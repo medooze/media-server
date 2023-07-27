@@ -4,6 +4,33 @@
 #include <stdexcept>
 #include <cstdlib>
 
+
+namespace 
+{
+
+/**
+ * Get signed 24bit integer
+ */
+int32_t GetSI24(const uint8_t* data)
+{
+	return (int32_t(get3(data, 0)) << 8) >> 8;
+}
+
+
+std::string Uint32ToFourCcStr(uint32_t value)
+{
+	std::string str;
+	for (size_t i = 0; i < sizeof(uint32_t); i++)
+	{
+		str.push_back(char(value >> (8 * (sizeof(uint32_t) - i - 1))));
+	}
+	
+	return str;
+}
+
+}
+
+
 /************************************
  * RTMPMesssage
  *
@@ -926,25 +953,58 @@ RTMPVideoFrame::~RTMPVideoFrame()
 void RTMPVideoFrame::Dump()
 {
 	//Dump
-	Debug("[VideoFrame codec:%d intra:%d timestamp:%lld bufferSize:%d mediaSize:%d]\n",codec,frameType,timestamp,bufferSize,mediaSize);
-	if (codec==AVC)
-		Debug("\t[AVC header 0x%.2x 0x%.2x 0x%.2x 0x%.2x /]\n",extraData[0],extraData[1],extraData[2],extraData[3]);
-	if (codec==AVC && AVCType(extraData[0])==AVCHEADER)
+	if (!isExtended)
 	{
-		//Paser AVCDesc
-		AVCDescriptor desc;
-		//Parse it
-		desc.Parse(buffer,bufferSize);
-		//Dump it
-		desc.Dump();
+		Debug("[VideoFrame extended: false codec: %d frameType:%d timestamp:%lld bufferSize:%d mediaSize:%d]\n",codec,frameType,timestamp,bufferSize,mediaSize);
+		
+		if (codec==AVC)
+			Debug("\t[AVC header 0x%.2x 0x%.2x 0x%.2x 0x%.2x /]\n",extraData[0],extraData[1],extraData[2],extraData[3]);
+		if (codec==AVC && IsConfig())
+		{
+			//Paser AVCDesc
+			AVCDescriptor desc;
+			//Parse it
+			desc.Parse(buffer,bufferSize);
+			//Dump it
+			desc.Dump();
 
-	} else if(bufferSize>16) {
-		//Dump first 16 bytes only
-		::Dump(buffer,16);
-	} else {
-		::Dump(buffer,bufferSize);
+		} else if(bufferSize>16) {
+			//Dump first 16 bytes only
+			::Dump(buffer,16);
+		} else {
+			::Dump(buffer,bufferSize);
+		}
+		Debug("[/VideoFrame]\n");
 	}
-	Debug("[/VideoFrame]\n",type,timestamp,bufferSize,mediaSize);
+	else
+	{
+		auto codecStr = Uint32ToFourCcStr(codecEx);
+		Debug("[VideoFrame extended: true codec: %s frameType:%d timestamp:%lld bufferSize:%d mediaSize:%d packetType: %d]\n",
+			codecStr.c_str(),frameType,timestamp,bufferSize,mediaSize,packetType);
+		
+		if (codecEx==VideoCodecEx::HEVC && packetType == CodedFrames)
+		{
+			Debug("\t[HEVC composition time: %d/]\n", GetSI24(extraData));
+		}
+			
+		if (codecEx==VideoCodecEx::HEVC && IsConfig())
+		{
+			//Paser HEVCDescriptor
+			HEVCDescriptor desc;
+			//Parse it
+			desc.Parse(buffer,bufferSize);
+			//Dump it
+			desc.Dump();
+
+		} else if(bufferSize>16) {
+			//Dump first 16 bytes only
+			::Dump(buffer,16);
+		} else {
+			::Dump(buffer,bufferSize);
+		}
+		
+		Debug("[/VideoFrame]\n");
+	}
 }
 
 DWORD RTMPVideoFrame::Parse(BYTE *data,DWORD size)
@@ -1108,46 +1168,83 @@ DWORD RTMPVideoFrame::Parse(BYTE *data,DWORD size)
 
 DWORD RTMPVideoFrame::Serialize(BYTE* data,DWORD size)
 {
-
-	DWORD extra = 0;
-
-	//Check codec
-	if (codec==AVC)
-		//Extra header
-		extra = 4;
-
-	//Check if enought space
-	if (size<mediaSize+1+extra)
-		//Failed
-		return 0;
-
-	//Set first byte
-	data[0] = (uint8_t(frameType) <<4 ) | (uint8_t(codec) & 0x0f);
-
-	//If it is AVC
-	if (codec==AVC)
+	if (size < GetSize()) return 0;
+		
+	if (!isExtended)
 	{
-		data[1] = extraData[0];
-		data[2] = extraData[1];
-		data[3] = extraData[2];
-		data[4] = extraData[3];
+		DWORD extra = 0;
+
+		//Check codec
+		if (codec==AVC)
+			//Extra header
+			extra = 4;
+
+		//Check if enought space
+		if (size<mediaSize+1+extra)
+			//Failed
+			return 0;
+
+		//Set first byte
+		data[0] = (uint8_t(frameType) <<4 ) | (uint8_t(codec) & 0x0f);
+
+		//If it is AVC
+		if (codec==AVC)
+		{
+			data[1] = extraData[0];
+			data[2] = extraData[1];
+			data[3] = extraData[2];
+			data[4] = extraData[3];
+		}
+		
+		//Copy media
+		memcpy(data+1+extra,buffer,mediaSize);
+
+		//Exit
+		return mediaSize+1+extra;
 	}
-
-	//Copy media
-	memcpy(data+1+extra,buffer,mediaSize);
-
-	//Exit
-	return mediaSize+1+extra;
+	else
+	{	
+		*data = (uint8_t(frameType) <<4 ) | (uint8_t(packetType) & 0x0f) | 0x80;
+		data++;
+		
+		set4(data, 0, uint32_t(codecEx));
+		data += 4;
+		
+		if (codecEx == VideoCodecEx::HEVC && packetType == PacketType::CodedFrames)
+		{
+			memcpy(data, extraData, 3);
+			data += 3;
+		}
+		
+		memcpy(data, buffer, mediaSize);
+		
+		return GetSize();
+	}
 }
+
 DWORD RTMPVideoFrame::GetSize()
 {
-	//If it is not AVC
-	if (codec!=AVC)
-		//Check if enought space
-		return mediaSize+1;
+	if (!isExtended)
+	{
+		//If it is not AVC
+		if (codec!=AVC)
+			return mediaSize+1;
+		else
+			return mediaSize+1+4;
+	}
 	else
-		//Check if enought space
-		return mediaSize+1+4;
+	{	
+		uint32_t sz = 1; // The first byte
+		sz += 4; 	 // The fouc CC
+		
+		if (codecEx == VideoCodecEx::HEVC && packetType == PacketType::CodedFrames)
+		{
+			sz += 3;	// The composition offset
+		}		
+		
+		sz += mediaSize;		
+		return sz;
+	}
 }
 
 DWORD RTMPVideoFrame::SetVideoFrame(BYTE* data,DWORD size)
@@ -1177,6 +1274,11 @@ RTMPMediaFrame *RTMPVideoFrame::Clone()
 	frame->SetVideoFrame(buffer,mediaSize);
 	//Copy extra data
 	memcpy(frame->extraData,extraData,4);
+	memcpy(frame->fourCc,fourCc,4);
+	
+	frame->codecEx = codecEx;
+	frame->packetType = packetType;
+	frame->isExtended = isExtended;
 	//Return frame
 	return frame;
 }
