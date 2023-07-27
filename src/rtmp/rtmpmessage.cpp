@@ -966,9 +966,8 @@ DWORD RTMPVideoFrame::Parse(BYTE *data,DWORD size)
 				codec = VideoCodec(buffer[0] & 0x0f);
 				
 				if (codec == AVC)
-				{	
-					dataBuffer.resize(4);
-					bufferWritter = std::make_unique<BufferWritter>(dataBuffer.data(), dataBuffer.size());
+				{
+					bufferWritter = std::make_unique<BufferWritter>(extraData, 4);
 					
 					parsingState = ParsingState::VideoTagAvcExtra;
 				}
@@ -981,8 +980,7 @@ DWORD RTMPVideoFrame::Parse(BYTE *data,DWORD size)
 			{
 				packetType = PacketType(buffer[0] & 0x0f);
 				
-				dataBuffer.resize(4);
-				bufferWritter = std::make_unique<BufferWritter>(dataBuffer.data(), dataBuffer.size());
+				bufferWritter = std::make_unique<BufferWritter>(fourCc, 4);
 				
 				parsingState = ParsingState::VideoTagHeaderFourCc;
 			}
@@ -1007,7 +1005,6 @@ DWORD RTMPVideoFrame::Parse(BYTE *data,DWORD size)
 			
 			if (bufferWritter->GetLeft() == 0)
 			{
-				memcpy(extraData, dataBuffer.data(), 4);
 				bufferWritter.reset();
 				parsingState = ParsingState::VideoTagData;
 			}
@@ -1026,7 +1023,7 @@ DWORD RTMPVideoFrame::Parse(BYTE *data,DWORD size)
 			
 			if (bufferWritter->GetLeft() == 0)
 			{
-				codecEx = VideoCodecEx(FourCcToUint32(dataBuffer.begin()));
+				codecEx = VideoCodecEx(FourCcToUint32(fourCc));
 				bufferWritter.reset();				
 				parsingState = ParsingState::VideoTagBody;
 			}
@@ -1056,8 +1053,7 @@ DWORD RTMPVideoFrame::Parse(BYTE *data,DWORD size)
 				}
 				else if (packetType == CodedFrames)
 				{
-					dataBuffer.resize(3);
-					bufferWritter = std::make_unique<BufferWritter>(dataBuffer.data(), dataBuffer.size());
+					bufferWritter = std::make_unique<BufferWritter>(extraData, 3);
 					
 					parsingState = ParsingState::VideoTagHevcCompositionTime;
 				}

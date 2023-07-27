@@ -3,7 +3,6 @@
 #include "config.h"
 #include "rtmp.h"
 #include "amf.h"
-#include "objectparser.h"
 #include "avcdescriptor.h"
 #include "h265/HEVCDescriptor.h"
 #include "aac/aacconfig.h"
@@ -160,10 +159,10 @@ private:
 	PacketType	packetType;
 	
 	BYTE		extraData[4];
+	BYTE		fourCc[4];
 
 	ParsingState parsingState = ParsingState::VideoTagHeader;
 	
-	std::vector<uint8_t> dataBuffer;
 	std::unique_ptr<BufferWritter> bufferWritter;
 };
 
