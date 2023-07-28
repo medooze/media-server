@@ -64,7 +64,7 @@ public:
 	DWORD GetRTT()	{ return rtt; }
 protected:
 	
-	int Run(const std::shared_ptr<RTMPConnection>& connection);
+	int Run();
 	void PingRequest();
 private:
 	void ParseData(BYTE *data,const DWORD size);
