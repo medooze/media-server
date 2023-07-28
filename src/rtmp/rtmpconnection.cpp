@@ -102,11 +102,11 @@ void RTMPConnection::Start()
 	running = true;
 	
 	//Start thread and run
-	thread = std::thread([=](){
+	thread = std::thread([=, connection=shared_from_this()](){
 		//Block signals to avoid exiting on SIGUSR1
 		blocksignals();
 		//Run
-		Run(); 
+		Run(connection);
 	});
 }
 
@@ -162,7 +162,7 @@ int RTMPConnection::End()
  * Run
  * 	Server running thread
  ***************************/
-int RTMPConnection::Run()
+int RTMPConnection::Run(const std::shared_ptr<RTMPConnection>& connection)
 {
 	BYTE data[1400];
 	unsigned int size = 1400;
@@ -282,7 +282,7 @@ int RTMPConnection::Run()
 	//Check listener
 	if (listener)
 		//launch event
-		listener->onDisconnect(shared_from_this());
+		listener->onDisconnect(connection);
 	
 	Log("<RTMPConnection::Run() Disconnected [connection:%p]\n",this);
 
