@@ -101,12 +101,12 @@ void RTMPConnection::Start()
 	//We are running
 	running = true;
 	
-	//Start thread and run
-	thread = std::thread([=](){
+	//Start thread and run, hold reference to us to prevent being destroyed before Run ends.
+	thread = std::thread([=, self=shared_from_this()](){
 		//Block signals to avoid exiting on SIGUSR1
 		blocksignals();
 		//Run
-		Run(); 
+		Run();
 	});
 }
 
