@@ -106,6 +106,8 @@ public:
 	volatile bool muted = false;
 	
 	std::chrono::milliseconds dispatchingDelayMs = std::chrono::milliseconds(0);
+	
+	bool timerCancelled = false;
 };
 
 #endif /* MEDIAFRAMELISTENERBRIDGE_H */

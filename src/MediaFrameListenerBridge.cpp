@@ -19,8 +19,10 @@ MediaFrameListenerBridge::MediaFrameListenerBridge(TimeService& timeService,DWOR
 	Debug("-MediaFrameListenerBridge::MediaFrameListenerBridge() [this:%p]\n", this);
 
 	//Create packet dispatch timer
-	dispatchTimer = timeService.CreateTimer([=](auto now){
+	dispatchTimer = timeService.CreateTimer([this](auto now){
 
+		if (timerCancelled) return;
+		
 		//Get how much should we send
 		auto period = lastSent!=0ms && now >= lastSent ? now - lastSent : 10ms;
 
@@ -73,6 +75,12 @@ MediaFrameListenerBridge::MediaFrameListenerBridge(TimeService& timeService,DWOR
 MediaFrameListenerBridge::~MediaFrameListenerBridge()
 {
 	Debug("-MediaFrameListenerBridge::~MediaFrameListenerBridge() [this:%p]\n", this);
+	
+	dispatchTimer->Cancel();
+	
+	timeService.Sync([this](auto){
+		timerCancelled = true;	
+	});
 }
 
 void MediaFrameListenerBridge::Stop()
