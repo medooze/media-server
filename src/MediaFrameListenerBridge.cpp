@@ -21,7 +21,7 @@ MediaFrameListenerBridge::MediaFrameListenerBridge(TimeService& timeService,DWOR
 	//Create packet dispatch timer
 	dispatchTimer = timeService.CreateTimer([this](auto now){
 
-		if (timerCancelled) return;
+		if (stopped) return;
 		
 		//Get how much should we send
 		auto period = lastSent!=0ms && now >= lastSent ? now - lastSent : 10ms;
@@ -76,23 +76,44 @@ MediaFrameListenerBridge::~MediaFrameListenerBridge()
 {
 	Debug("-MediaFrameListenerBridge::~MediaFrameListenerBridge() [this:%p]\n", this);
 	
-	dispatchTimer->Cancel();
-	
-	timeService.Sync([this](auto){
-		timerCancelled = true;	
-	});
+	Stop();
 }
 
 void MediaFrameListenerBridge::Stop()
 {
 	Debug("-MediaFrameListenerBridge::Stop() [this:%p]\n", this);
+	
+	if (stopped) return;
 
 	timeService.Sync([=](auto now) {
+		
+		//Dispatch pending READY packets now
+		std::vector<RTPPacket::shared> pending;		
+		while (packets.size())
+		{
+			const auto& packetInfo = packets.front();
+			
+			//Add to pending packets
+			pending.push_back(packetInfo.packet);
+			//remove it from pending packets
+			packets.pop();
+		}
+		//Dispatch RTP packets
+		Dispatch(pending);
+
+                //Updated last dispatched 
+		lastSent = now;
+
+		//Cancel dispatch timer
+                dispatchTimer->Cancel();
+		
 		//TODO wait onMediaFrame end
 		for (auto listener : listeners)
 			listener->onEnded(this);
 		//Clear listeners
 		listeners.clear();
+		
+		stopped = true;
 	});
 }
 
@@ -144,6 +165,8 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 
 		//Updated last dispatched 
 		lastSent = now;
+		
+		if (stopped) return;
 
 		//Dispatch packets again
 		dispatchTimer->Again(0ms);

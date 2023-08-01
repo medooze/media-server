@@ -107,7 +107,7 @@ public:
 	
 	std::chrono::milliseconds dispatchingDelayMs = std::chrono::milliseconds(0);
 	
-	bool timerCancelled = false;
+	bool stopped = false;
 };
 
 #endif /* MEDIAFRAMELISTENERBRIDGE_H */
