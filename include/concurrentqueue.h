@@ -79,6 +79,8 @@
 #include <thread>		// partly for __WINPTHREADS_VERSION if on MinGW-w64 w/ POSIX threading
 #include <mutex>        // used for thread exit synchronization
 
+#include "log.h"
+
 // Platform-specific definitions of a numeric thread ID type and an invalid value
 namespace moodycamel { namespace details {
 	template<typename thread_id_t> struct thread_id_converter {
@@ -857,6 +859,9 @@ public:
 	// This method is not thread safe.
 	~ConcurrentQueue()
 	{
+		// Customized changes: Instrument code to ensure function not called after destruction.
+		(void)isDestroyed.store(true, std::memory_order_relaxed);
+		
 		// Destroy producers
 		auto ptr = producerListTail.load(std::memory_order_relaxed);
 		while (ptr != nullptr) {
@@ -994,6 +999,13 @@ public:
 	// Thread-safe.
 	inline bool enqueue(T const& item)
 	{
+		// Customized changes: Instrument code to ensure function not called after destruction.
+		if (isDestroyed.load(std::memory_order_relaxed))
+		{	
+			Warning("ConcurrentQueue::enqueue called after destruction.");
+			return false;
+		}
+		
 		MOODYCAMEL_CONSTEXPR_IF (INITIAL_IMPLICIT_PRODUCER_HASH_SIZE == 0) return false;
 		else return inner_enqueue<CanAlloc>(item);
 	}
@@ -1005,6 +1017,13 @@ public:
 	// Thread-safe.
 	inline bool enqueue(T&& item)
 	{
+		// Customized changes: Instrument code to ensure function not called after destruction.
+		if (isDestroyed.load(std::memory_order_relaxed))
+		{	
+			Warning("ConcurrentQueue::enqueue called after destruction.");
+			return false;
+		}
+		
 		MOODYCAMEL_CONSTEXPR_IF (INITIAL_IMPLICIT_PRODUCER_HASH_SIZE == 0) return false;
 		else return inner_enqueue<CanAlloc>(std::move(item));
 	}
@@ -1059,6 +1078,13 @@ public:
 	// Thread-safe.
 	inline bool try_enqueue(T const& item)
 	{
+		// Customized changes: Instrument code to ensure function not called after destruction.
+		if (isDestroyed.load(std::memory_order_relaxed))
+		{	
+			Warning("ConcurrentQueue::enqueue called after destruction.");
+			return false;
+		}
+		
 		MOODYCAMEL_CONSTEXPR_IF (INITIAL_IMPLICIT_PRODUCER_HASH_SIZE == 0) return false;
 		else return inner_enqueue<CannotAlloc>(item);
 	}
@@ -1070,6 +1096,13 @@ public:
 	// Thread-safe.
 	inline bool try_enqueue(T&& item)
 	{
+		// Customized changes: Instrument code to ensure function not called after destruction.
+		if (isDestroyed.load(std::memory_order_relaxed))
+		{	
+			Warning("ConcurrentQueue::enqueue called after destruction.");
+			return false;
+		}
+		
 		MOODYCAMEL_CONSTEXPR_IF (INITIAL_IMPLICIT_PRODUCER_HASH_SIZE == 0) return false;
 		else return inner_enqueue<CannotAlloc>(std::move(item));
 	}
@@ -1124,6 +1157,13 @@ public:
 	template<typename U>
 	bool try_dequeue(U& item)
 	{
+		// Customized changes: Instrument code to ensure function not called after destruction.
+		if (isDestroyed.load(std::memory_order_relaxed))
+		{	
+			Warning("ConcurrentQueue::enqueue called after destruction.");
+			return false;
+		}
+		
 		// Instead of simply trying each producer in turn (which could cause needless contention on the first
 		// producer), we score them heuristically.
 		size_t nonEmptyCount = 0;
@@ -3410,6 +3450,9 @@ private:
 			// Look for the id in this hash
 			auto index = hashedId;
 			while (true) {		// Not an infinite loop because at least one slot is free in the hash table
+				// Customized changes: Instrument code to check capacity must be power of 2
+				assert((hash->capacity & (hash->capacity - 1)) == 0);
+				
 				index &= hash->capacity - 1u;
 				
 				auto probedKey = hash->entries[index].key.load(std::memory_order_relaxed);
@@ -3479,6 +3522,8 @@ private:
 						newHash->entries[i].key.store(details::invalid_thread_id, std::memory_order_relaxed);
 					}
 					newHash->prev = mainHash;
+					// Customized changes: Instrument code to check capacity must be power of 2
+					assert((newHash->capacity & (newHash->capacity - 1)) == 0);
 					implicitProducerHash.store(newHash, std::memory_order_release);
 					implicitProducerHashResizeInProgress.clear(std::memory_order_release);
 					mainHash = newHash;
@@ -3677,6 +3722,9 @@ private:
 	std::atomic<ExplicitProducer*> explicitProducers;
 	std::atomic<ImplicitProducer*> implicitProducers;
 #endif
+
+	// Customized changes: Instrument code to ensure function not called after destruction.
+	std::atomic_bool isDestroyed = false;
 };
 
 
