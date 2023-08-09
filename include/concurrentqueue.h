@@ -1081,7 +1081,7 @@ public:
 		// Customized changes: Instrument code to ensure function not called after destruction.
 		if (isDestroyed.load(std::memory_order_relaxed))
 		{	
-			Warning("ConcurrentQueue::enqueue called after destruction.");
+			Warning("ConcurrentQueue::try_enqueue called after destruction.");
 			return false;
 		}
 		
@@ -1099,7 +1099,7 @@ public:
 		// Customized changes: Instrument code to ensure function not called after destruction.
 		if (isDestroyed.load(std::memory_order_relaxed))
 		{	
-			Warning("ConcurrentQueue::enqueue called after destruction.");
+			Warning("ConcurrentQueue::try_enqueue called after destruction.");
 			return false;
 		}
 		
@@ -1160,7 +1160,7 @@ public:
 		// Customized changes: Instrument code to ensure function not called after destruction.
 		if (isDestroyed.load(std::memory_order_relaxed))
 		{	
-			Warning("ConcurrentQueue::enqueue called after destruction.");
+			Warning("ConcurrentQueue::try_dequeue called after destruction.");
 			return false;
 		}
 		
