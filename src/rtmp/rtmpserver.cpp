@@ -313,7 +313,7 @@ int RTMPServer::AddApplication(const wchar_t* name,RTMPApplication *app)
  *   Event launched from RTMPConnection to indicate a net connection stream
  *   Should return the RTMPStream associated to the url
  *************************************/
-RTMPNetConnection::shared RTMPServer::OnConnect(const std::wstring &appName,RTMPNetConnection::Listener *listener,std::function<void(bool)> accept)
+RTMPNetConnection::shared RTMPServer::OnConnect(const struct sockaddr_in& peername, const std::wstring &appName,RTMPNetConnection::Listener *listener,std::function<void(bool)> accept)
 {
 	//Recorremos la lista
 	for (auto it=applications.begin(); it!=applications.end(); ++it)
@@ -321,7 +321,7 @@ RTMPNetConnection::shared RTMPServer::OnConnect(const std::wstring &appName,RTMP
 		//Si la uri empieza por la base del handler
 		if (appName.find(it->first)==0)
 			//Ejecutamos el handler
-			return it->second->Connect(appName,listener,accept);
+			return it->second->Connect(peername, appName,listener,accept);
 	}
 
 	//Not found
