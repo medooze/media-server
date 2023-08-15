@@ -43,7 +43,7 @@
 
 constexpr auto IceTimeout			= 30000ms;
 constexpr auto ProbingInterval			= 5ms;
-constexpr auto MaxRTXOverhead			= 0.50f;
+constexpr auto MaxRTXOverhead			= 0.70f;
 constexpr auto TransportWideCCMaxPackets	= 100;
 constexpr auto TransportWideCCMaxInterval	= 5E4;	//50ms
 constexpr auto MaxProbingHistorySize		= 50;

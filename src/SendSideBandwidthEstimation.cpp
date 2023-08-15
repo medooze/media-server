@@ -314,7 +314,7 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 	uint64_t rtxSentBitrate		= rtxSentAcumulator.GetInstantAvg() * 8;
 	
 	
-	if (lossRate > 0.06)
+	if (lossRate > 0.35)
 	{
 		//We are on a loosy environment
 		SetState(ChangeState::Loosy);
