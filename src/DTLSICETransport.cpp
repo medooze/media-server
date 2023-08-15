@@ -47,6 +47,7 @@ constexpr auto MaxRTXOverhead			= 0.50f;
 constexpr auto TransportWideCCMaxPackets	= 100;
 constexpr auto TransportWideCCMaxInterval	= 5E4;	//50ms
 constexpr auto MaxProbingHistorySize		= 50;
+constexpr auto RtxRttThresholdMs 		= 300;
 
 DTLSICETransport::DTLSICETransport(Sender *sender,TimeService& timeService, ObjectPool<Packet>& packetPool) :
 	sender(sender),
@@ -934,6 +935,12 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 
 	//Log
 	UltraDebug("-DTLSICETransport::ReSendPacket() | resending [seq:%d,ssrc:%u,rtx:%u,instant:%llu, isWindow:%d, count:%d, empty:%d]\n", seq, group->media.ssrc, group->rtx.ssrc, instant, rtxBitrate.IsInWindow(), rtxBitrate.GetCount(), rtxBitrate.IsEmpty());
+
+	// If rtt is too large, disable RTX
+	if (rtt > RtxRttThresholdMs)
+	{
+		return (void)UltraDebug("-DTLSICETransport::ReSendPacket() | Too large RTT, skiping rtx. RTT:%d\n", rtt);
+	}
 
 	//if sse is enabled
 	if (senderSideEstimationEnabled && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC) != RTPMap::NotFound)
