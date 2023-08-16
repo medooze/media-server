@@ -4,11 +4,17 @@
 #include "rtmpnetconnection.h"
 #include <string>
 #include <functional>
+#include <sys/socket.h>
 
 class RTMPApplication
 {
 public:
-	virtual RTMPNetConnection::shared Connect(const std::wstring& appName,RTMPNetConnection::Listener *listener,std::function<void(bool)> accept) = 0;
+	virtual RTMPNetConnection::shared Connect(
+		const struct sockaddr_in& peername,
+		const std::wstring& appName,
+		RTMPNetConnection::Listener *listener,
+		std::function<void(bool)> accept
+	) = 0;
 };
 
 #endif

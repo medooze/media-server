@@ -2,6 +2,7 @@
 #define _RTMPCONNECTION_H_
 #include <pthread.h>
 #include <sys/poll.h>
+#include <sys/socket.h>
 #include "config.h"
 #include "rtmp.h"
 #include "rtmpchunk.h"
@@ -30,7 +31,12 @@ public:
 		virtual ~Listener(){};
 	public:
 		//Interface
-		virtual RTMPNetConnection::shared OnConnect(const std::wstring& appName,RTMPNetConnection::Listener *listener,std::function<void(bool)> accept) = 0;
+		virtual RTMPNetConnection::shared OnConnect(
+			const struct sockaddr_in& peername,
+			const std::wstring& appName,
+			RTMPNetConnection::Listener *listener,
+			std::function<void(bool)> accept
+		) = 0;
 		virtual void onDisconnect(const RTMPConnection::shared& con) = 0;
 	};
 public:
