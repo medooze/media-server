@@ -109,6 +109,7 @@ int VP8Encoder::SetFrameRate(int frames,int kbits,int intraPeriod)
 	if (opened)
 	{
 		//Reconfig parameters
+		UltraDebug("VP8Encoder::SetFrameRate() | Reset codec config with bitrate: %d, frames: %d, max_iframe_br: %d\n", bitrate, frames, maxKeyFrameBitratePct);
 		config.rc_target_bitrate = bitrate;
 		config.kf_mode = intraPeriod ? VPX_KF_AUTO : VPX_KF_DISABLED;
 		config.kf_max_dist = intraPeriod;
