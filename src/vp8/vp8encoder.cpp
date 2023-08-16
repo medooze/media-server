@@ -44,6 +44,8 @@ VP8Encoder::VP8Encoder(const Properties& properties) : frame(VideoCodec::VP8)
 	intraPeriod = 0;
 	threads = properties.GetProperty("vp8.threads", 1);
 	cpuused = properties.GetProperty("vp8.cpuused", -4);
+	maxKeyFrameBitratePct = properties.GetProperty("vp8.max_iframe_br", 0); // 0 means no limitation
+	deadline = properties.GetProperty("vp8.deadline", VPX_DL_REALTIME);
 
 	//Disable sharing buffer on clone
 	frame.DisableSharedBuffer();
@@ -120,7 +122,7 @@ int VP8Encoder::SetFrameRate(int frames,int kbits,int intraPeriod)
 		//	special (and default) value 0 meaning unlimited, or no additional clamping
 		//	beyond the codec's built-in algorithm.
 		//	For example, to allocate no more than 4.5 frames worth of bitrate to a keyframe, set this to 450.
-		vpx_codec_control(&encoder, VP8E_SET_MAX_INTRA_BITRATE_PCT,0);
+		vpx_codec_control(&encoder, VP8E_SET_MAX_INTRA_BITRATE_PCT,maxKeyFrameBitratePct);
 	}
 	
 	return 1;
@@ -227,7 +229,7 @@ int VP8Encoder::OpenCodec()
 	//	special (and default) value 0 meaning unlimited, or no additional clamping
 	//	beyond the codec's built-in algorithm.
 	//	For example, to allocate no more than 4.5 frames worth of bitrate to a keyframe, set this to 450.
-	vpx_codec_control(&encoder, VP8E_SET_MAX_INTRA_BITRATE_PCT,0);
+	vpx_codec_control(&encoder, VP8E_SET_MAX_INTRA_BITRATE_PCT, maxKeyFrameBitratePct);
 
 	// We are opened
 	opened=true;
@@ -317,7 +319,7 @@ VideoFrame* VP8Encoder::EncodeFrame(const VideoBuffer::const_shared& videoBuffer
 		
 	uint32_t duration = 1000 / fps;
 
-	if (vpx_codec_encode(&encoder, pic, pts, duration, flags, VPX_DL_REALTIME)!=VPX_CODEC_OK)
+	if (vpx_codec_encode(&encoder, pic, pts, duration, flags, deadline)!=VPX_CODEC_OK)
 	{
 		//Error
 		Error("-VP8Encoder::EncodeFrame() | Encode error [error %d:%s]\n",encoder.err,encoder.err_detail);
