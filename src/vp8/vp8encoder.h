@@ -41,6 +41,8 @@ private:
 	int num;
 	int threads;
 	int cpuused;
+	int maxKeyFrameBitratePct;
+	int deadline;
 };
 
 #endif	/* VP8ENCODER_H */
