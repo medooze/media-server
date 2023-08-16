@@ -44,7 +44,7 @@ VP8Encoder::VP8Encoder(const Properties& properties) : frame(VideoCodec::VP8)
 	intraPeriod = 0;
 	threads = properties.GetProperty("vp8.threads", 1);
 	cpuused = properties.GetProperty("vp8.cpuused", -4);
-	maxKeyFrameBitratePct = properties.GetProperty("vp8.max_iframe_br", 0); // 0 means no limitation
+	maxKeyFrameBitratePct = properties.GetProperty("vp8.max_keyframe_bitrate_pct", 0); // 0 means no limitation
 	deadline = properties.GetProperty("vp8.deadline", VPX_DL_REALTIME);
 
 	//Disable sharing buffer on clone
@@ -109,7 +109,7 @@ int VP8Encoder::SetFrameRate(int frames,int kbits,int intraPeriod)
 	if (opened)
 	{
 		//Reconfig parameters
-		UltraDebug("VP8Encoder::SetFrameRate() | Reset codec config with bitrate: %d, frames: %d, max_iframe_br: %d\n", bitrate, frames, maxKeyFrameBitratePct);
+		UltraDebug("VP8Encoder::SetFrameRate() | Reset codec config with bitrate: %d, frames: %d, max_keyframe_bitrate_pct: %d\n", bitrate, frames, maxKeyFrameBitratePct);
 		config.rc_target_bitrate = bitrate;
 		config.kf_mode = intraPeriod ? VPX_KF_AUTO : VPX_KF_DISABLED;
 		config.kf_max_dist = intraPeriod;
@@ -132,7 +132,7 @@ int VP8Encoder::SetFrameRate(int frames,int kbits,int intraPeriod)
 
 int VP8Encoder::OpenCodec()
 {
-	Log("-VP8Encoder::OpenCodec() | VP8 using %s [%dkbps,%dfps,%dintra,cpuused:%d,trheads:%d]\n",vpx_codec_iface_name(interface),bitrate,fps,intraPeriod,cpuused,threads);
+	Log("-VP8Encoder::OpenCodec() | VP8 using %s [%dkbps,%dfps,%dintra,cpuused:%d,threads:%d,max_keyframe_bitrate_pct:%d,deadline:%d]\n",vpx_codec_iface_name(interface),bitrate,fps,intraPeriod,cpuused,threads,maxKeyFrameBitratePct,deadline);
 
 	// Check
 	if (opened)
