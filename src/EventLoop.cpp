@@ -16,6 +16,7 @@
 #include <cmath>
 
 #include "log.h"
+#include "ThreadRegistry.h"
 
 const size_t EventLoop::MaxSendingQueueSize = 64*1024;
 const size_t EventLoop::PacketPoolSize = 1024;
@@ -574,6 +575,17 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 {
 	//Log(">EventLoop::Run() | [%p,running:%d,duration:%llu]\n",this,running,duration.count());
 	
+	std::promise<void> promise;
+	auto registered = ThreadRegistry::RegisterCurrentThread(
+		[this, &promise](){
+			running = false;
+			return promise.get_future();
+		}, 
+		[&promise](){
+			promise.set_value();
+		});
+	if (!registered) return;
+	
 	//Recv data
 	uint8_t datas[MaxMultipleReceivingMessages][MTU] ZEROALIGNEDTO32;
 	size_t  size = MTU;
@@ -812,7 +824,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 	
 	//Run queued tasks before exiting
 	ProcessTasks(now);
-
+	
 	//Log("<EventLoop::Run()\n");
 }
 
