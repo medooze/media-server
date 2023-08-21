@@ -15,12 +15,12 @@ public:
 	class ScopedRegister
 	{
 	public:
-		ScopedRegister(std::thread::id threadId, const std::function<std::future<void>()>& onThreadRegistryCleanUp, 
+		ScopedRegister(std::thread::id threadId, const std::function<std::future<void>()>& onThreadRegistryClose, 
 				const std::function<void()> &onExitScope) :
 			threadId(threadId),
 			onExitScope(onExitScope)
 		{
-			if (!ThreadRegistry::Register(threadId, onThreadRegistryCleanUp))
+			if (!ThreadRegistry::Register(threadId, onThreadRegistryClose))
 				throw std::runtime_error("Failed to register thread");
 		}
 		
@@ -34,29 +34,29 @@ public:
 		std::function<void()> onExitScope;
 	};
 	
-	static std::unique_ptr<ScopedRegister> RegisterCurrentThread(const std::function<std::future<void>()>& onThreadRegistryCleanUp,
+	static std::unique_ptr<ScopedRegister> RegisterCurrentThread(const std::function<std::future<void>()>& onThreadRegistryClose,
 								const std::function<void()> &onExitScope)
 	{
 		std::unique_ptr<ScopedRegister> scopedregister;
 		try
 		{
-			scopedregister = std::make_unique<ScopedRegister>(std::this_thread::get_id(), onThreadRegistryCleanUp, onExitScope);
+			scopedregister = std::make_unique<ScopedRegister>(std::this_thread::get_id(), onThreadRegistryClose, onExitScope);
 		}
 		catch(const std::exception& e)
 		{
-			// Failed
+			// Failed, ThreadRegistry was already closed
 		}
 		
 		return scopedregister;
 	}
 
 
-	static bool Register(std::thread::id threadId, const std::function<std::future<void>()>& onThreadRegistryCleanUp)
+	static bool Register(std::thread::id threadId, const std::function<std::future<void>()>& onThreadRegistryClose)
 	{
 		std::lock_guard<std::mutex> lock(callbackMutex);
 		if (closed) return false;
 		
-		callbacks[threadId] = onThreadRegistryCleanUp;
+		callbacks[threadId] = onThreadRegistryClose;
 		return true;
 	}
 	
