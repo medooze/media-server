@@ -11,9 +11,10 @@
 #include "rtp.h"
 #include "log.h"
 
-H265Depacketizer::H265Depacketizer() :
+H265Depacketizer::H265Depacketizer(bool annexB_in) :
 	RTPDepacketizer(MediaFrame::Video, VideoCodec::H265),
-	frame(VideoCodec::H265, 0)
+	frame(VideoCodec::H265, 0),
+	annexB(annexB_in)
 {
 	//Set clock rate
 	frame.SetClockRate(90000);
@@ -100,7 +101,7 @@ bool DecodeNalHeader(const BYTE* payload, DWORD payloadLen, BYTE& nalUnitType, B
 	nalUnitType = (payload[0] & 0x7e) >> 1;
 	nuh_layer_id = ((payload[0] & 0x1) << 5) + ((payload[1] & 0xf8) >> 3);
 	nuh_temporal_id_plus1 = payload[1] & 0x7;
-	UltraDebug("-H265 : [NAL header:0x%02x%02x,type:%d,layer_id:%d, temporal_id:%d]\n", payload[0], payload[1], nalUnitType, nuh_layer_id, nuh_temporal_id_plus1);
+	//UltraDebug("-H265 : [NAL header:0x%02x%02x,type:%d,layer_id:%d, temporal_id:%d]\n", payload[0], payload[1], nalUnitType, nuh_layer_id, nuh_temporal_id_plus1);
 	return true;
 }
 
@@ -198,8 +199,13 @@ bool H265Depacketizer::AddSingleNalUnitPayload(const BYTE* nalUnit, DWORD nalSiz
 			break;
 	}
 
-	//Set size
-	set4(nalHeaderPreffix, 0, nalSize);
+	//Check if doing annex b
+	if (annexB)
+		//Set annex b start code
+		set4(nalHeaderPreffix, 0, AnnexBStartCode);
+	else
+		//Set size
+		set4(nalHeaderPreffix, 0, nalSize);
 	//Append data
 	frame.AppendMedia(nalHeaderPreffix, sizeof(nalHeaderPreffix));
 	//Append data and get current post
@@ -232,7 +238,7 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 	//Get nalu size
 	DWORD nalSize = payloadLen;
 
-	UltraDebug("-H265 [NAL header:0x%02x%02x,type:%d,layer_id:%d, temporal_id:%d, size:%d]\n", payload[0], payload[1], nalUnitType, nuh_layer_id, nuh_temporal_id_plus1, nalSize);
+	UltraDebug("-H265Depacketizer::AddPayload() | [NAL header:0x%02x%02x,type:%d,layer_id:%d, temporal_id:%d, size:%d]\n", payload[0], payload[1], nalUnitType, nuh_layer_id, nuh_temporal_id_plus1, nalSize);
 
 	//Check type
 	switch (nalUnitType)
@@ -416,8 +422,12 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 				}
 				//Get NAL size
 				DWORD nalSize = frame.GetLength() - iniFragNALU - 4;
-				//Set it
-				set4(frame.GetData(), iniFragNALU, nalSize);
+				//Check if doing annex b
+				if (annexB)
+					//Set annex b start code
+					set4(frame.GetData(), iniFragNALU, AnnexBStartCode);
+				else
+					set4(frame.GetData(), iniFragNALU, nalSize);
 				//Done with fragment
 				iniFragNALU = 0;
 				startedFrag = false;

@@ -2,6 +2,7 @@
 #include "VideoCodecFactory.h"
 #include "h264/h264encoder.h"
 #include "h264/h264decoder.h"
+#include "h265/h265decoder.h"
 #include "vp8/vp8decoder.h"
 #include "vp8/vp8encoder.h"
 #include "vp9/VP9Decoder.h"
@@ -17,6 +18,8 @@ VideoDecoder* VideoCodecFactory::CreateDecoder(VideoCodec::Type codec)
 	{
 		case VideoCodec::H264:
 			return new H264Decoder();
+		case VideoCodec::H265:
+			return new H265Decoder();
 		case VideoCodec::VP8:
 			return new VP8Decoder();
 		case VideoCodec::VP9:
