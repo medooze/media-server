@@ -83,7 +83,6 @@ void H265Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 			if (!vps.Decode(reader.PeekData(), reader.GetLeft()))
 			{
 				Error("-H265Packetizer::OnNal() | Decode of SPS failed!\n");
-				//break;
 				return;
 			}
 
