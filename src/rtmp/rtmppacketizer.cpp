@@ -71,11 +71,6 @@ std::unique_ptr<VideoFrame> RTMPH26xPacketizer<DescClass, SPSClass, codec>::AddF
 		return nullptr;
 	}
 	
-	//GEt nal header length
-	DWORD nalUnitLength = desc.GetNALUnitLengthSizeMinus1() + 1;
-	//Create it
-	BYTE nalHeader[4];
-	
 	//Create frame
 	auto frame = std::make_unique<VideoFrame>(codec,videoFrame->GetSize()+desc.GetSize()+256);
 	
@@ -96,6 +91,12 @@ std::unique_ptr<VideoFrame> RTMPH26xPacketizer<DescClass, SPSClass, codec>::AddF
 	frame->SetCodecConfig(config,configLen);
 	//Free data
 	free(config);
+	
+		
+	//GEt nal header length
+	DWORD nalUnitLength = desc.GetNALUnitLengthSizeMinus1() + 1;
+	//Create it
+	BYTE nalHeader[4];
 		
 	//If is an intra
 	if (videoFrame->GetFrameType()==RTMPVideoFrame::INTRA)
