@@ -102,6 +102,7 @@ int H264Encoder::SetSize(int width, int height)
 **************************/
 int H264Encoder::SetFrameRate(int frames,int kbits,int intraPeriod)
 {
+	//UltraDebug("-H264Encoder::SetFrameRate() [fps: %d, kbits: %d, intra: %d]\n",frames,kbits,intraPeriod);
 	// Save frame rate
 	if (frames>0)
 		fps=frames;
@@ -118,7 +119,8 @@ int H264Encoder::SetFrameRate(int frames,int kbits,int intraPeriod)
 	//Check if already opened
 	if (opened)
 	{
-		//Reconfig parameters -> FPS is not allowed to be recondigured
+		//UltraDebug("-H264Encoder::SetFrameRate() | reconfig x264 encoder\n");
+		//Reconfig parameters -> FPS is not allowed to be reconfigured
 		params.i_keyint_max         = this->intraPeriod ;
 		params.i_frame_reference    = 1;
 		params.rc.i_rc_method	    = X264_RC_ABR;
@@ -184,6 +186,7 @@ int H264Encoder::OpenCodec()
 		params.b_intra_refresh	    = 1;
 	} else  {
 		params.rc.i_vbv_buffer_size = bitrate;
+		params.i_slice_max_size     = RTPPAYLOADSIZE-8;
 	}
 	params.rc.f_vbv_buffer_init = 0;
 	params.i_threads	    = threads; //0 is auto!!
