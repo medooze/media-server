@@ -101,12 +101,12 @@ void RTMPConnection::Start()
 	//We are running
 	running = true;
 	
-	//Start thread and run
-	thread = std::thread([=](){
+	//Start thread and run, hold reference to us to prevent being destroyed before Run ends.
+	thread = std::thread([=, self=shared_from_this()](){
 		//Block signals to avoid exiting on SIGUSR1
 		blocksignals();
 		//Run
-		Run(); 
+		Run();
 	});
 }
 
@@ -945,6 +945,16 @@ void RTMPConnection::ProcessCommandMessage(DWORD streamId,RTMPCommandMessage* cm
 			//Send error
 			return SendCommandError(streamId,transId);
 
+		//Get client address
+		struct sockaddr_in peername;
+		socklen_t peernameLen = sizeof(peername);
+		if (
+			getpeername(socket, (sockaddr*) &peername, &peernameLen) < 0 ||
+			peernameLen != sizeof(peername) ||
+			peername.sin_family != AF_INET)
+		{
+			abort();
+		}
 		//Get url to connect
 		appName = (std::wstring)obj->GetProperty(L"app");
 		//Get peer video capabilities
@@ -968,7 +978,7 @@ void RTMPConnection::ProcessCommandMessage(DWORD streamId,RTMPCommandMessage* cm
 		}
 
 		//Call listener
-		app = listener->OnConnect(appName,this,[streamId, transId, objectEncoding, selfWeak=weak_from_this()](bool accepted){
+		app = listener->OnConnect(peername,appName,this,[streamId, transId, objectEncoding, selfWeak=weak_from_this()](bool accepted){
 			//Log
 			Log("-RTMPConnection::ProcessCommandMessage() Accepting connection [accepted:%d]\n",accepted);
 			

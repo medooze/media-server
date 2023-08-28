@@ -84,11 +84,11 @@ public:
 	QWORD baseTimestamp	= 0;
 	QWORD lastTimestamp	= 0;
 	QWORD lastTime		= 0;
-	DWORD numFrames		= 0;
-	DWORD numFramesDelta	= 0;
-	DWORD numPackets	= 0;
-	DWORD numPacketsDelta	= 0;
-	DWORD totalBytes	= 0;
+	QWORD numFrames		= 0;
+	QWORD numFramesDelta	= 0;
+	QWORD numPackets	= 0;
+	QWORD numPacketsDelta	= 0;
+	QWORD totalBytes	= 0;
 	DWORD bitrate		= 0;
 	WORD  width		= 0;
 	WORD  height		= 0;
@@ -106,6 +106,8 @@ public:
 	volatile bool muted = false;
 	
 	std::chrono::milliseconds dispatchingDelayMs = std::chrono::milliseconds(0);
+	
+	bool stopped = false;
 };
 
 #endif /* MEDIAFRAMELISTENERBRIDGE_H */

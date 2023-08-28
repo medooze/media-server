@@ -21,14 +21,19 @@ public:
 	int End();
 	
 	/** Listener for RTMPConnection */
-	virtual RTMPNetConnection::shared OnConnect(const std::wstring& appName,RTMPNetConnection::Listener *listener,std::function<void(bool)> accept) override;
+	virtual RTMPNetConnection::shared OnConnect(
+		const struct sockaddr_in& peername,
+		const std::wstring& appName,
+		RTMPNetConnection::Listener *listener,
+		std::function<void(bool)> accept
+	) override;
 	virtual void onDisconnect(const RTMPConnection::shared& con) override;
 
 protected:
-        int Run();
+	int Run();
 
 private:
-        static void * run(void *par);
+	static void * run(void *par);
 
 	void CreateConnection(int fd);
 	void DeleteAllConnections();
