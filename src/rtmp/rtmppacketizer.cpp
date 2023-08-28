@@ -300,7 +300,7 @@ std::unique_ptr<VideoFrame> RTMPAv1Packetizer::AddFrame(RTMPVideoFrame* videoFra
 			gotConfig = true;
 		else
 			//Show error
-			Error(" RTMPAVCPacketizer::AddFrame() | AVCDescriptor parse error\n");
+			Error(" RTMPAv1Packetizer::AddFrame() | Config parse error\n");
 		//DOne
 		return nullptr;
 	}
@@ -314,7 +314,7 @@ std::unique_ptr<VideoFrame> RTMPAv1Packetizer::AddFrame(RTMPVideoFrame* videoFra
 	if (!gotConfig)
 	{
 		//Error
-		Debug("-RTMPAVCPacketizer::AddFrame() | Gor NAL frame but not valid description yet\n");
+		Debug("-RTMPAv1Packetizer::AddFrame() | Got frame but not valid description yet\n");
 		//DOne
 		return nullptr;
 	}
@@ -330,11 +330,11 @@ std::unique_ptr<VideoFrame> RTMPAv1Packetizer::AddFrame(RTMPVideoFrame* videoFra
 	//Set timestamp
 	frame->SetTimestamp(videoFrame->GetTimestamp());
 	
-	//Get AVC data size
+	//Get config data size
 	auto configSize = desc.GetSize();
 	//Allocate mem
 	BYTE* config = (BYTE*)malloc(configSize);
-	//Serialize AVC codec data
+	//Serialize config data
 	DWORD configLen = desc.Serialize(config,configSize);
 	//Set it
 	frame->SetCodecConfig(config,configLen);
@@ -388,7 +388,6 @@ std::unique_ptr<VideoFrame> RTMPAv1Packetizer::AddFrame(RTMPVideoFrame* videoFra
 		frame->SetIntra(true);
 	}
 
-	//Malloc
 	BYTE *data = videoFrame->GetMediaData();
 	//Get size
 	DWORD size = videoFrame->GetMediaSize();
