@@ -33,8 +33,8 @@ VideoCodec::Type GetRtmpFrameVideoCodec(const RTMPVideoFrame& videoFrame)
 	}
 }
 
-template<typename DescClass, typename SPSClass, VideoCodec::Type codec>
-std::unique_ptr<VideoFrame> RTMPH26xPacketizer<DescClass, SPSClass, codec>::AddFrame(RTMPVideoFrame* videoFrame)
+template<typename DescClass, VideoCodec::Type codec>
+std::unique_ptr<VideoFrame> RTMPPacketizer<DescClass, codec>::PrepareFrame(RTMPVideoFrame* videoFrame)
 {
 	//Debug("-RTMPAVCPacketizer::AddFrame() [size:%u,intra:%d]\n",videoFrame->GetMediaSize(), videoFrame->GetFrameType() == RTMPVideoFrame::INTRA);
 	
@@ -52,7 +52,7 @@ std::unique_ptr<VideoFrame> RTMPH26xPacketizer<DescClass, SPSClass, codec>::AddF
 			gotConfig = true;
 		else
 			//Show error
-			Error(" RTMPAVCPacketizer::AddFrame() | AVCDescriptor parse error\n");
+			Error(" RTMPPacketizer::AddFrame() | Config parse error\n");
 		//DOne
 		return nullptr;
 	}
@@ -66,7 +66,7 @@ std::unique_ptr<VideoFrame> RTMPH26xPacketizer<DescClass, SPSClass, codec>::AddF
 	if (!gotConfig)
 	{
 		//Error
-		Debug("-RTMPAVCPacketizer::AddFrame() | Gor NAL frame but not valid description yet\n");
+		Debug("-RTMPPacketizer::AddFrame() | Got media frame but not valid description yet\n");
 		//DOne
 		return nullptr;
 	}
@@ -91,8 +91,20 @@ std::unique_ptr<VideoFrame> RTMPH26xPacketizer<DescClass, SPSClass, codec>::AddF
 	frame->SetCodecConfig(config,configLen);
 	//Free data
 	free(config);
+
+	return frame;
+}
+
+template<typename DescClass, typename SPSClass, VideoCodec::Type codec>
+std::unique_ptr<VideoFrame> RTMPH26xPacketizer<DescClass, SPSClass, codec>::AddFrame(RTMPVideoFrame* videoFrame)
+{
+	//Debug("-RTMPH26xPacketizer::AddFrame() [size:%u,intra:%d]\n",videoFrame->GetMediaSize(), videoFrame->GetFrameType() == RTMPVideoFrame::INTRA);
 	
-		
+	auto frame = this->PrepareFrame(videoFrame);
+	if (!frame) return nullptr;	
+	
+	auto& desc = this->desc;
+	
 	//GEt nal header length
 	DWORD nalUnitLength = desc.GetNALUnitLengthSizeMinus1() + 1;
 	//Create it
@@ -285,62 +297,10 @@ template class RTMPH26xPacketizer<HEVCDescriptor, H265SeqParameterSet, VideoCode
 
 std::unique_ptr<VideoFrame> RTMPAv1Packetizer::AddFrame(RTMPVideoFrame* videoFrame)
 {
-	//Debug("-RTMPAVCPacketizer::AddFrame() [size:%u,intra:%d]\n",videoFrame->GetMediaSize(), videoFrame->GetFrameType() == RTMPVideoFrame::INTRA);
+	//Debug("-RTMPAv1Packetizer::AddFrame() [size:%u,intra:%d]\n",videoFrame->GetMediaSize(), videoFrame->GetFrameType() == RTMPVideoFrame::INTRA);
 	
-	//Check it is processing codec
-	if (GetRtmpFrameVideoCodec(*videoFrame) != VideoCodec::AV1)
-		//Ignore
-		return nullptr;
-	
-	//Check if it is descriptor
-	if (videoFrame->IsConfig())
-	{
-		//Parse it
-		if(desc.Parse(videoFrame->GetMediaData(),videoFrame->GetMediaSize()))
-			//Got config
-			gotConfig = true;
-		else
-			//Show error
-			Error(" RTMPAv1Packetizer::AddFrame() | Config parse error\n");
-		//DOne
-		return nullptr;
-	}
-	
-	//It should be a nalu then
-	if (!videoFrame->IsCodedFrames())
-		//DOne
-		return nullptr;
-	
-	//Ensure that we have got config
-	if (!gotConfig)
-	{
-		//Error
-		Debug("-RTMPAv1Packetizer::AddFrame() | Got frame but not valid description yet\n");
-		//DOne
-		return nullptr;
-	}
-
-	
-	//Create frame
-	auto frame = std::make_unique<VideoFrame>(VideoCodec::AV1,videoFrame->GetSize()+desc.GetSize()+256);
-	
-	//Set time
-	frame->SetTime(videoFrame->GetTimestamp());
-	//Set clock rate
-	frame->SetClockRate(1000);
-	//Set timestamp
-	frame->SetTimestamp(videoFrame->GetTimestamp());
-	
-	//Get config data size
-	auto configSize = desc.GetSize();
-	//Allocate mem
-	BYTE* config = (BYTE*)malloc(configSize);
-	//Serialize config data
-	DWORD configLen = desc.Serialize(config,configSize);
-	//Set it
-	frame->SetCodecConfig(config,configLen);
-	//Free data
-	free(config);
+	auto frame = PrepareFrame(videoFrame);
+	if (!frame) return nullptr;
 		
 	//If is an intra
 	if (videoFrame->GetFrameType()==RTMPVideoFrame::INTRA)
@@ -393,7 +353,7 @@ std::unique_ptr<VideoFrame> RTMPAv1Packetizer::AddFrame(RTMPVideoFrame* videoFra
 	//Get size
 	DWORD size = videoFrame->GetMediaSize();
 	
-	//Chop into NALs
+	//Chop into OBUs
 	while(size>0)
 	{	
 		auto info = GetObuInfo(data, size);
