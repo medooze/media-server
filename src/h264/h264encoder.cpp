@@ -54,7 +54,7 @@ H264Encoder::H264Encoder(const Properties& properties) : frame(VideoCodec::H264)
 	annexb = properties.GetProperty("h264.annexb",false);
 
 	//Check mode
-	streaming = properties.HasProperty("streaming");
+	streaming = properties.GetProperty("h264.streaming",true);
 
 	//Disable sharing buffer on clone
 	frame.DisableSharedBuffer();
