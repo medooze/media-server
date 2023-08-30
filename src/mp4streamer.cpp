@@ -88,6 +88,12 @@ int MP4Streamer::Open(const char *filename)
 			// Check track type
 			if ((strcmp(type, MP4_AUDIO_TRACK_TYPE) == 0) && !audio)
 			{
+				if (!name)
+				{
+					Log("-MP4Streamer::Open() | audio stream with empty codec name, skip this stream\n");
+					continue;
+				}
+
 				// Depending on the name
 				if (strcmp("PCMU", name) == 0)
 					//Create new audio track
@@ -113,7 +119,14 @@ int MP4Streamer::Open(const char *filename)
 				audio->packetIndex = 0;
 
 			} else if ((strcmp(type, MP4_VIDEO_TRACK_TYPE) == 0) && !video) {
-				if (strcmp("H264", name) == 0)
+				if (!name)
+				{
+					Log("-MP4Streamer::Open() | video stream with empty codec name, skip this stream\n");
+					//continue;
+					Debug("ttxgz: force it to H264");
+					video = new MP4RtpTrack(MediaFrame::Video,VideoCodec::H264,payload,90000);
+				}
+				else if (strcmp("H264", name) == 0)
 					//Create new video track
 					video = new MP4RtpTrack(MediaFrame::Video,VideoCodec::H264,payload,90000);
 				else if (strcmp("VP8", name) == 0)
@@ -448,11 +461,12 @@ int MP4RtpTrack::SendH264Parameters(Listener *listener)
 					data[len++] = 24;
 				}
 				//Set nal size
-				set2(data,len,sequenceHeaderSize[i]+1);
+				//set2(data,len,sequenceHeaderSize[i]+1);
+				set2(data,len,sequenceHeaderSize[i]);
 				//Inc len
 				len += 2;
-				//Append SPS nal header
-				data[len++] = 0x07;
+				////Append SPS nal header
+				//data[len++] = 0x07;
 				// Copy data
 				memcpy(data+len,sequenceHeader[i],sequenceHeaderSize[i]);	
 				// Increase pointer
@@ -493,11 +507,12 @@ int MP4RtpTrack::SendH264Parameters(Listener *listener)
 					data[len++] = 24;
 				}
 				//Set nal size
-				set2(data,len,pictureHeaderSize[i]+1);
+				//set2(data,len,pictureHeaderSize[i]+1);
+				set2(data,len,pictureHeaderSize[i]);
 				//Inc len
 				len += 2;
-				//Append PPS nal header
-				data[len++] = 0x08;
+				////Append PPS nal header
+				//data[len++] = 0x08;
 				// Copy data
 				memcpy(data+len,pictureHeader[i],pictureHeaderSize[i]);	
 				// Increase pointer
