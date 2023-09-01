@@ -249,6 +249,7 @@ int H264Encoder::OpenCodec()
 }
 
 
+size_t encoded_frame = 0;
 /**********************
 * EncodeFrame
 *	Codifica un frame
@@ -281,13 +282,29 @@ VideoFrame* H264Encoder::EncodeFrame(const VideoBuffer::const_shared& videoBuffe
 	int len = x264_encoder_encode(enc, &nals, &numNals, &pic, &pic_out);
 
 	//Check it
-	if (len<=0)
+	if (len<0)
 	{
 		//Error
 		Error("Error encoding frame [len:%d]\n",len);
 		return NULL;
 	}
+	else if (len == 0)
+	{
+		Warning("Encode H264 returns no output frame");
+		return nullptr;
+	}
 
+#if 0
+	if (encoded_frame > 1)
+	{
+		return nullptr;
+	}
+	else
+	{
+		encoded_frame++;
+	}
+#endif
+	
 	//Set the media
 	frame.SetMedia(nals[0].p_payload,len);
 
@@ -334,7 +351,7 @@ VideoFrame* H264Encoder::EncodeFrame(const VideoBuffer::const_shared& videoBuffe
 				//Get profile as hex representation
 				DWORD profileLevel = strtol (h264ProfileLevelId.c_str(),NULL,16);
 				//Modify profile level ID to match offered one
-				set3(nalData,0,profileLevel);
+				// ttxgz set3(nalData,0,profileLevel);
 				//Set config
 				config.SetConfigurationVersion(1);
 				config.SetAVCProfileIndication(nalData[0]);
@@ -342,16 +359,17 @@ VideoFrame* H264Encoder::EncodeFrame(const VideoBuffer::const_shared& videoBuffe
 				config.SetAVCLevelIndication(nalData[2]);
 				config.SetNALUnitLengthSizeMinus1(3);
 				//Add full nal to config
-				config.AddSequenceParameterSet(nalData,nalSize);
+				config.AddSequenceParameterSet(nalUnit,nalUnitSize);
 				break;
 			}
 			case 0x08:
 				//Add full nal to config
-				config.AddPictureParameterSet(nalData,nalSize);
+				config.AddPictureParameterSet(nalUnit,nalUnitSize);
 				break;
 		}
 		//Add rtp packet
 		frame.AddRtpPacket(pos,nalUnitSize,NULL,0);
+		Log("ttxgz: naltype: %d, nalUnitSize: %d, pos: %d\n", nalType, nalUnitSize, pos);
 	}
 
 	//Set first nal
