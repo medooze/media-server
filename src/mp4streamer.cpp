@@ -586,15 +586,20 @@ QWORD MP4RtpTrack::Read(Listener *listener)
 		}
 
 		// Get number of samples for this sample
-		frameSamples = MP4GetSampleDuration(mp4, hint, sampleId);
+		frameSamples = MP4GetSampleDuration(mp4, track, sampleId);
 
 		// Get size of sample
-		frameSize = MP4GetSampleSize(mp4, hint, sampleId);
+		frameSize = MP4GetSampleSize(mp4, track, sampleId);
+		// extend buffer for frame size
+		if (frame->GetMaxMediaLength() < frameSize)
+		{
+			frame->Alloc(frameSize);
+		}
 
 		// Get sample timestamp
-		frameTime = MP4GetSampleTime(mp4, hint, sampleId);
+		frameTime = MP4GetSampleTime(mp4, track, sampleId);
 		//Convert to miliseconds
-		frameTime = MP4ConvertFromTrackTimestamp(mp4, hint, frameTime, 1000);
+		frameTime = MP4ConvertFromTrackTimestamp(mp4, track, frameTime, 1000);
 
 		//Get max data lenght
 		BYTE *data = NULL;
