@@ -40,6 +40,8 @@ private:
 	int pts;
 	std::string h264ProfileLevelId;
 	int threads;
+	bool experiment;
+	size_t encoded_frame = 0;
 };
 
 #endif 
