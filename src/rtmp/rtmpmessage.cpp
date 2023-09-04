@@ -1122,6 +1122,13 @@ DWORD RTMPVideoFrame::Parse(BYTE *data,DWORD size)
 					parsingState = ParsingState::VideoTagData;					
 				}
 			}
+			else if (codecEx == AV1)
+			{
+				if (packetType == SequenceStart || packetType == CodedFrames)
+					parsingState = ParsingState::VideoTagData;
+				else
+					return size;
+			}
 			else
 			{
 				// Not implemented for other codecs
