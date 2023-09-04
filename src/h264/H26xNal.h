@@ -6,6 +6,8 @@
 #include <functional>
 #include "bitstream.h"
 
+constexpr uint32_t AnnexBStartCode = 0x01;
+
 // H.264 NAL logic that can be shared with H.265 (mostly emulation prevention, annex B stream)
 
 inline DWORD NalUnescapeRbsp(BYTE *dst, const BYTE *src, DWORD size)

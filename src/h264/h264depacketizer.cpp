@@ -12,7 +12,6 @@
 #include "log.h"
 #include "h264.h"
 
-constexpr uint32_t AnnexBStartCode = 0x01;
 
 H264Depacketizer::H264Depacketizer(bool annexB) :
 	RTPDepacketizer(MediaFrame::Video,VideoCodec::H264),

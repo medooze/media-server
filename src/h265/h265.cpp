@@ -25,7 +25,7 @@ bool H265DecodeNalHeader(const BYTE* payload, DWORD payloadLen, BYTE& nalUnitTyp
 	nalUnitType = (payload[0] & 0x7e) >> 1;
 	nuh_layer_id = ((payload[0] & 0x1) << 5) + ((payload[1] & 0xf8) >> 3);
 	nuh_temporal_id_plus1 = payload[1] & 0x7;
-	UltraDebug("-H265DecodeNalHeader: [NAL header:0x%02x%02x,type:%d,layer_id:%d, temporal_id:%d]\n", payload[0], payload[1], nalUnitType, nuh_layer_id, nuh_temporal_id_plus1);
+	UltraDebug("-H265DecodeNalHeader: [NAL header:0x%02x%02x,Nalu type:%d,layer_id:%d, temporal_id:%d]\n", payload[0], payload[1], nalUnitType, nuh_layer_id, nuh_temporal_id_plus1);
 	return true;
 }
 

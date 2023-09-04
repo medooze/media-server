@@ -152,7 +152,7 @@ int VideoEncoderWorker::Encode()
 	MinMaxAcumulator bitrateAcu(1000);
 	MinMaxAcumulator fpsAcu(1000);
 
-	Log(">VideoEncoderWorker::Encode() [width:%d,size:%d,bitrate:%d,fps:%d,intra:%d]\n",width,height,bitrate,fps,intraPeriod);
+	Log(">VideoEncoderWorker::Encode() [width:%d,height:%d,bitrate:%d,fps:%d,intra:%d]\n",width,height,bitrate,fps,intraPeriod);
 
 	//Creamos el encoder
 	std::unique_ptr<VideoEncoder> videoEncoder(VideoCodecFactory::CreateEncoder(codec,properties));

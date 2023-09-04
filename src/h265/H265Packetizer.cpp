@@ -83,7 +83,7 @@ void H265Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 			if (!vps.Decode(reader.PeekData(), reader.GetLeft()))
 			{
 				Error("-H265Packetizer::OnNal() | Decode of SPS failed!\n");
-				break;
+				return;
 			}
 
 			auto& profileTierLevel = vps.GetProfileTierLevel();
@@ -106,7 +106,7 @@ void H265Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 
 			//Add full nal to config
 			config.AddVideoParameterSet(nalUnit,nalSize);
-			break;
+			return;
 		}
 		case HEVC_RTP_NALU_Type::SPS:			// 33
 		{
@@ -134,7 +134,7 @@ void H265Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 
 			//Add full nal to config
 			config.AddSequenceParameterSet(nalUnit,nalSize);
-			break;
+			return;
 		}
 		case HEVC_RTP_NALU_Type::PPS:			// 34
 			//Reset previous PPS only on the 1st PPS in current frame
@@ -147,7 +147,7 @@ void H265Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 
 			//Add full nal to config
 			config.AddPictureParameterSet(nalUnit, nalSize);
-			break;
+			return;
 		default:
 			//Debug("-H265 : Nothing to do for this NaluType nalu. Just forwarding it.(nalUnitType: %d, nalSize: %d)\n", nalUnitType, nalSize);
 			break;
@@ -161,15 +161,16 @@ void H265Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 	// We only need to do this once per frame, and the appropriate time to do it is
 	// just before the first slice of the frame:
 	if (
-		// this NALU is a slice
+		// this NALU is a slice or SEI
 		((nalUnitType >= HEVC_RTP_NALU_Type::TRAIL_N && nalUnitType <= HEVC_RTP_NALU_Type::RASL_R)
-		 || (nalUnitType >= HEVC_RTP_NALU_Type::BLA_W_LP && nalUnitType <= HEVC_RTP_NALU_Type::CRA_NUT)) &&
+		 || (nalUnitType >= HEVC_RTP_NALU_Type::BLA_W_LP && nalUnitType <= HEVC_RTP_NALU_Type::CRA_NUT)
+		 || (nalUnitType == HEVC_RTP_NALU_Type::SEI_PREFIX) || (nalUnitType == HEVC_RTP_NALU_Type::SEI_SUFFIX))
 		// it belongs to an intra frame
-		frame.IsIntra() &&
+		&& frame.IsIntra()
 		// no need to do this more than once per frame
-		!frame.HasCodecConfig() &&
+		&& !frame.HasCodecConfig()
 		// the configuration descriptor is fully populated by now
-		config.GetNumOfPictureParameterSets() && config.GetNumOfSequenceParameterSets() && config.GetNumOfVideoParameterSets()
+		&& config.GetNumOfPictureParameterSets() && config.GetNumOfSequenceParameterSets() && config.GetNumOfVideoParameterSets()
 	)
 	{
 		const uint8_t vpsNum = config.GetNumOfVideoParameterSets();
