@@ -347,7 +347,7 @@ MediaFrame* H265Depacketizer::AddPayload(const BYTE* payload, DWORD payloadLen)
 			const size_t nalAndFuHeadersLength = HEVCParams::RTP_NAL_HEADER_SIZE + 1;
 			if (payloadLen < nalAndFuHeadersLength)
 			{
-				Error("- H265: payloadLen (%d) is smaller than normal nal and FU header len (%d), skipping this packet\n", payloadLen, nalAndFuHeadersLength);
+				Error("- H265: payloadLen (%d) is smaller than normal nal and FU header len (%ze), skipping this packet\n", payloadLen, nalAndFuHeadersLength);
 				return nullptr;
 			}
 

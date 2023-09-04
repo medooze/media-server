@@ -252,7 +252,7 @@ void HEVCDescriptor::AddParametersFromFrame(const BYTE *data,DWORD size)
 		//Get NAL start
 		const BYTE* nal = data+4;
 		//Depending on the type
-		switch(nal[0] & 0xF)
+		switch((nal[0] & 0b0111'1110) >> 1)
 		{
 			case HEVC_RTP_NALU_Type::VPS:
 				AddVideoParameterSet(nal, nalSize);
@@ -423,7 +423,7 @@ void HEVCDescriptor::Dump() const
 	Debug("\tgeneralprofileCompatibilityIndication: 0x%x\n",generalProfileCompatibilityFlags);
 	for (size_t i = 0; i < generalConstraintIndicatorFlags.size(); ++i)
 	{
-		Debug("\t: generalConstraintIndicatorFlags[%d]: 0x%02x\n", i, generalConstraintIndicatorFlags[i]);
+		Debug("\t: generalConstraintIndicatorFlags[%zu]: 0x%02x\n", i, generalConstraintIndicatorFlags[i]);
 	}
 	Debug("\tgeneralLevelIdc: %d\n", generalLevelIdc);
 	Debug("\tNALUnitLengthSizeMinus1: %d\n", NALUnitLengthSizeMinus1);
