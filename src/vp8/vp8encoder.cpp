@@ -42,10 +42,22 @@ VP8Encoder::VP8Encoder(const Properties& properties) : frame(VideoCodec::VP8)
 	bitrate = 0;
 	fps = 0;
 	intraPeriod = 0;
-	threads = properties.GetProperty("vp8.threads", 1);
-	cpuused = properties.GetProperty("vp8.cpuused", -4);
-	maxKeyFrameBitratePct = properties.GetProperty("vp8.max_keyframe_bitrate_pct", 0); // 0 means no limitation
-	deadline = properties.GetProperty("vp8.deadline", VPX_DL_REALTIME);
+
+	threads				= properties.GetProperty("vp8.threads"			, 1);
+	cpuused				= properties.GetProperty("vp8.cpuused"			, -4);
+	maxKeyFrameBitratePct		= properties.GetProperty("vp8.max_keyframe_bitrate_pct"	, 0); // 0 means no limitation
+	deadline			= properties.GetProperty("vp8.deadline"			, VPX_DL_REALTIME);
+	endUsage			= (vpx_rc_mode)properties.GetProperty("vp8.rc_end_usage", VPX_CBR);
+	dropFrameThreshold		= properties.GetProperty("vp8.rc_dropframe_thresh"	, 0);
+	minQuantizer			= properties.GetProperty("vp8.rc_min_quantizer"		, 2);
+	maxQuantizer			= properties.GetProperty("vp8.rc_max_quantizer"		, 56);
+	undershootPct			= properties.GetProperty("vp8.rc_undershoot_pct"	, 100);
+	overshootPct			= properties.GetProperty("vp8.rc_overshoot_pct"		, 15);
+	bufferSize			= properties.GetProperty("vp8.rc_buf_sz"		, 1000);
+	bufferInitialSize		= properties.GetProperty("vp8.rc_buf_initial_sz"	, 500);
+	bufferOptimalSize		= properties.GetProperty("vp8.rc_buf_optimal_sz"	, 600);
+	staticThreshold			= properties.GetProperty("vp8.static_thresh"		, 100);
+	noiseReductionSensitivity	= properties.GetProperty("vp8.noise_sensitivity"	, 0);
 
 	//Disable sharing buffer on clone
 	frame.DisableSharedBuffer();
@@ -123,7 +135,7 @@ int VP8Encoder::SetFrameRate(int frames,int kbits,int intraPeriod)
 		//	special (and default) value 0 meaning unlimited, or no additional clamping
 		//	beyond the codec's built-in algorithm.
 		//	For example, to allocate no more than 4.5 frames worth of bitrate to a keyframe, set this to 450.
-		vpx_codec_control(&encoder, VP8E_SET_MAX_INTRA_BITRATE_PCT,maxKeyFrameBitratePct);
+		vpx_codec_control(&encoder, VP8E_SET_MAX_INTRA_BITRATE_PCT, maxKeyFrameBitratePct);
 	}
 	
 	return 1;
@@ -164,14 +176,14 @@ int VP8Encoder::OpenCodec()
 	config.g_threads = threads;
 	// rate control settings
 	config.rc_dropframe_thresh = 0;
-	config.rc_end_usage = VPX_CBR;
+	config.rc_end_usage = endUsage;
 	config.g_pass = VPX_RC_ONE_PASS;
 	config.kf_mode = intraPeriod ? VPX_KF_AUTO : VPX_KF_DISABLED;
 	config.kf_min_dist = 0;
 	config.kf_max_dist = intraPeriod;
 	config.rc_resize_allowed = 0;
-	config.rc_min_quantizer = 2;
-	config.rc_max_quantizer = 56;
+	config.rc_min_quantizer = minQuantizer;
+	config.rc_max_quantizer = maxQuantizer;
 	//Rate control adaptation undershoot control.
 	//	This value, expressed as a percentage of the target bitrate, 
 	//	controls the maximum allowed adaptation speed of the codec.
@@ -179,7 +191,7 @@ int VP8Encoder::OpenCodec()
 	//	subtracted from the target bitrate in order to compensate for
 	//	prior overshoot.
 	//	Valid values in the range 0-1000.
-	config.rc_undershoot_pct = 100;
+	config.rc_undershoot_pct = undershootPct;
 	//Rate control adaptation overshoot control.
 	//	This value, expressed as a percentage of the target bitrate, 
 	//	controls the maximum allowed adaptation speed of the codec.
@@ -187,7 +199,7 @@ int VP8Encoder::OpenCodec()
 	//	added to the target bitrate in order to compensate for prior
 	//	undershoot.
 	//	Valid values in the range 0-1000.
-	config.rc_overshoot_pct = 15;
+	config.rc_overshoot_pct = overshootPct;
 	//Decoder Buffer Size.
 	//	This value indicates the amount of data that may be buffered
 	//	by the decoding application. Note that this value is expressed
@@ -195,21 +207,21 @@ int VP8Encoder::OpenCodec()
 	//	indicates that the client will buffer (at least) 5000ms worth
 	//	of encoded data. Use the target bitrate (rc_target_bitrate) to
 	//	convert to bits/bytes, if necessary.
-	config.rc_buf_sz = 1000;
+	config.rc_buf_sz = bufferSize;
 	//Decoder Buffer Initial Size.
 	//	This value indicates the amount of data that will be buffered 
 	//	by the decoding application prior to beginning playback.
 	//	This value is expressed in units of time (milliseconds).
 	//	Use the target bitrate (rc_target_bitrate) to convert to
 	//	bits/bytes, if necessary.
-	config.rc_buf_initial_sz = 500;
+	config.rc_buf_initial_sz = bufferInitialSize;
 	//Decoder Buffer Optimal Size.
 	//	This value indicates the amount of data that the encoder should
 	//	try to maintain in the decoder's buffer. This value is expressed
 	//	in units of time (milliseconds).
 	//	Use the target bitrate (rc_target_bitrate) to convert to
 	//	bits/bytes, if necessary.
-	config.rc_buf_optimal_sz = 600;
+	config.rc_buf_optimal_sz = bufferOptimalSize;
 	
 	//Check result
 	if (vpx_codec_enc_init(&encoder, interface, &config, VPX_CODEC_USE_OUTPUT_PARTITION)!=VPX_CODEC_OK)
@@ -217,13 +229,13 @@ int VP8Encoder::OpenCodec()
 		return Error("-VP8Encoder::OpenCodec() | Error initializing encoder [error %d:%s]\n",encoder.err,encoder.err_detail);
 
 	//The static threshold imposes a change threshold on blocks below which they will be skipped by the encoder.
-	vpx_codec_control(&encoder, VP8E_SET_STATIC_THRESHOLD, 100);
-	//Set cpu usage, a bit higher than normal (-6)
+	vpx_codec_control(&encoder, VP8E_SET_STATIC_THRESHOLD, staticThreshold);
+	//Set cpu usage
 	vpx_codec_control(&encoder, VP8E_SET_CPUUSED, cpuused);
 	//Only one partition
-	vpx_codec_control(&encoder, VP8E_SET_TOKEN_PARTITIONS,VP8_ONE_TOKENPARTITION);
+	vpx_codec_control(&encoder, VP8E_SET_TOKEN_PARTITIONS, VP8_ONE_TOKENPARTITION);
 	//Enable noise reduction
-	vpx_codec_control(&encoder, VP8E_SET_NOISE_SENSITIVITY,0);
+	vpx_codec_control(&encoder, VP8E_SET_NOISE_SENSITIVITY, noiseReductionSensitivity);
 	//Set max data rate for Intra frames.
 	//	This value controls additional clamping on the maximum size of a keyframe.
 	//	It is expressed as a percentage of the average per-frame bitrate, with the
