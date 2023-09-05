@@ -145,7 +145,6 @@ int H264Encoder::SetSize(int width, int height)
 int H264Encoder::SetFrameRate(int frames,int kbits,int intraPeriod)
 {
 	//UltraDebug("-H264Encoder::SetFrameRate() [fps: %d, kbits: %d, intra: %d]\n",frames,kbits,intraPeriod);
-	//Log("-H264Encoder::SetFrameRate() [fps: %d, kbits: %d, intra: %d]\n",frames,kbits,intraPeriod);
 	// Save frame rate
 	if (frames>0)
 		fps=frames;
@@ -164,15 +163,10 @@ int H264Encoder::SetFrameRate(int frames,int kbits,int intraPeriod)
 	{
 		//UltraDebug("-H264Encoder::SetFrameRate() | reconfig x264 encoder\n");
 		//Reconfig parameters -> FPS is not allowed to be reconfigured
-		//params.i_keyint_max         = this->intraPeriod ;
-		//params.i_frame_reference    = 1;
-		//params.rc.i_rc_method	    = X264_RC_ABR;
+		params.i_keyint_max         = this->intraPeriod ;
 		params.rc.i_bitrate         = bitrate;
 		params.rc.i_vbv_max_bitrate = bitrate;
-		//params.rc.i_vbv_buffer_size = bitrate/fps;
 		params.rc.i_vbv_buffer_size = bitrate/10;
-		//params.rc.f_vbv_buffer_init = 0;
-		//params.rc.f_rate_tolerance  = 0.1;
 		
 		//Reconfig
 		if (x264_encoder_reconfig(enc,&params)!=0)
@@ -189,7 +183,6 @@ int H264Encoder::SetFrameRate(int frames,int kbits,int intraPeriod)
 ***********************/
 int H264Encoder::OpenCodec()
 {
-	Log("-H264Encoder::OpenCodec() | codec version: 0310\n");
 	Log("-H264Encoder::OpenCodec() [%dkbps,%dfps,%dintra,width:%d,height:%d, profile: %s, level: %s, preset: %s, tune: %s, streaming: %d, ipratio: %f, ratetol: %f]\n",bitrate,fps,intraPeriod,width,height, ProfileInUse().c_str(), LevelInUse().c_str(), PresetInUse().c_str(), TuneInUse().c_str(), streaming, ipratio, ratetol);
 
 	// Check 
@@ -225,22 +218,12 @@ int H264Encoder::OpenCodec()
 	if (!streaming)
 	{
 		params.rc.i_vbv_buffer_size = bitrate/fps;
-		params.rc.f_rate_tolerance  = ratetol;
 		params.rc.b_stat_write      = 0;
-		params.i_slice_max_size     = RTPPAYLOADSIZE-8;
 		params.b_intra_refresh	    = 1;
 	} else  {
-#if 0
-		params.rc.i_vbv_buffer_size = bitrate;
-#else
-		//params.rc.i_vbv_buffer_size = bitrate/fps;
 		params.rc.i_vbv_buffer_size = bitrate/10;
-		//params.rc.f_rate_tolerance  = 0.1;
-		params.rc.f_rate_tolerance  = ratetol;
-		//params.rc.f_rate_tolerance  = fps/3;
-		//params.rc.b_stat_write      = 0;
-#endif
 	}
+	params.rc.f_rate_tolerance  = ratetol;
 	Log("-H264Encoder::OpenCodec() | config ratetol:%f\n", params.rc.f_rate_tolerance);
 	// change ipratio only when it's configured in profile
 	// or else leave its value according to preset & tune
@@ -255,12 +238,15 @@ int H264Encoder::OpenCodec()
 		Log("-H264Encoder::OpenCodec() | neither preset or tune is set by profile, config encoder to fit realtime streaming mode\n");
 		params.b_sliced_threads	    = 0;
 		params.rc.i_lookahead       = 0;
-		params.i_sync_lookahead	    = 0;
 		params.rc.b_mb_tree       = 0;
+		params.i_sync_lookahead	    = 0;
+		params.i_scenecut_threshold = 0;
+		params.analyse.i_subpel_refine = 5; //Subpixel motion estimation and mode decision :3 qpel (medim:6, ultrafast:1)
 	}
+
 	params.analyse.i_weighted_pred = X264_WEIGHTP_NONE;
 	params.analyse.i_me_method = X264_ME_UMH;
-	//params.rc.f_vbv_buffer_init = 0;
+
 	params.i_threads	    = threads; //0 is auto!!
 
 	params.i_bframe             = 0;
@@ -269,33 +255,11 @@ int H264Encoder::OpenCodec()
 	params.i_fps_num	    = fps;
 	params.i_fps_den	    = 1;
 	params.vui.i_chroma_loc	    = 0;
-	//params.i_scenecut_threshold = 0;
-	//params.analyse.i_subpel_refine = 5; //Subpixel motion estimation and mode decision :3 qpel (medim:6, ultrafast:1)
 
 	//Set level
 	params.i_level_idc = LevelNumberToLevelIdc(LevelInUse().c_str());
 
-#if 0
-	//Depending on the profile in hex
-	switch (profile)
-	{
-		case 100:
-		case 88:
-			//High
-			x264_param_apply_profile(&params,"high");
-			break;
-		case 77:
-			//Main
-			x264_param_apply_profile(&params,"main");
-			break;
-		case 66:
-		default:
-			//Baseline
-			x264_param_apply_profile(&params,"baseline");
-	}
-#else
-		x264_param_apply_profile(&params, ProfileInUse().c_str());
-#endif
+	x264_param_apply_profile(&params, ProfileInUse().c_str());
 
 	// Open encoder
 	enc = x264_encoder_open(&params);
@@ -354,26 +318,15 @@ VideoFrame* H264Encoder::EncodeFrame(const VideoBuffer::const_shared& videoBuffe
 	if (len<0)
 	{
 		//Error
-		Error("Error encoding frame [len:%d]\n",len);
+		Error("-H264Encoder::EncodeFrame() | Error encoding frame [len:%d]\n",len);
 		return NULL;
 	}
 	else if (len == 0)
 	{
-		Warning("Encode H264 returns no output frame");
+		Warning("-H264Encoder::EncodeFrame() | Encode H264 returns no output frame, got delay");
 		return nullptr;
 	}
 
-#if 0
-	if (encoded_frame > 1)
-	{
-		return nullptr;
-	}
-	else
-	{
-		encoded_frame++;
-	}
-#endif
-	
 	//Set the media
 	frame.SetMedia(nals[0].p_payload,len);
 
@@ -398,7 +351,6 @@ VideoFrame* H264Encoder::EncodeFrame(const VideoBuffer::const_shared& videoBuffe
 		config.ClearPictureParameterSets();
 	}
 
-	encoded_frame++;
 	//Add packetization
 	for (int i=0;i<numNals;i++)
 	{
@@ -418,11 +370,6 @@ VideoFrame* H264Encoder::EncodeFrame(const VideoBuffer::const_shared& videoBuffe
 		{
 			case 0x07:
 			{
-				//Get profile as hex representation
-				//DWORD profileLevel = strtol (h264ProfileLevelId.c_str(),NULL,16);
-				//Modify profile level ID to match offered one
-				Log("encoded profile-level-id: 0x%02x%02x%02x\n", *nalData, *(nalData+1), *(nalData+2));
-				//set3(nalData,0,profileLevel);
 				//Set config
 				config.SetConfigurationVersion(1);
 				config.SetAVCProfileIndication(nalData[0]);
@@ -431,17 +378,14 @@ VideoFrame* H264Encoder::EncodeFrame(const VideoBuffer::const_shared& videoBuffe
 				config.SetNALUnitLengthSizeMinus1(3);
 				//Add full nal to config
 				config.AddSequenceParameterSet(nalUnit,nalUnitSize);
-				//config.AddSequenceParameterSet(nalData,nalSize);
 				break;
 			}
 			case 0x08:
 				//Add full nal to config
 				config.AddPictureParameterSet(nalUnit,nalUnitSize);
-				//config.AddPictureParameterSet(nalData,nalSize);
 				break;
 		}
 
-		//Log("ttxgz: encoded_frame: %d, naltype: %d, nalUnitSize: %d, pos: %d\n", encoded_frame, nalType, nalUnitSize, pos);
 		//Add rtp packet
 		if (nalUnitSize < RTPPAYLOADSIZE)
 		{
@@ -460,15 +404,6 @@ VideoFrame* H264Encoder::EncodeFrame(const VideoBuffer::const_shared& videoBuffe
       		*    +---------------+      +---------------+
 			* For H.264, R must be 0.
 			*/
-
-#if 0
-	uint8_t naluHeader = nal.Peek1();
-	uint8_t nri = naluHeader & 0b0'11'00000;
-	uint8_t nalUnitType = naluHeader & 0b0'00'11111;
-
-	std::string fuPrefix = { (char)(nri | 28u), (char)nalUnitType };
-	H26xPacketizer::EmitNal(frame, nal, fuPrefix, 1);
-#endif
 
 			//Start with S = 1, E = 0
 			const size_t naluHeaderSize = 1;
@@ -490,7 +425,6 @@ VideoFrame* H264Encoder::EncodeFrame(const VideoBuffer::const_shared& videoBuffe
 					fuPrefix[1] |= 0b01'000000;
 				//Add packetization
 				frame.AddRtpPacket(pos, pkt_len, fuPrefix.data(), fuPrefix.size());
-				//Log("ttxgz: FU packet: pos:%d, pkt_len:%d\n",pos,pkt_len);
 				//Not first
 				fuPrefix[1] &= 0b01'111111;
 				//Move start

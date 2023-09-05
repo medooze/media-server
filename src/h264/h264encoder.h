@@ -56,7 +56,6 @@ private:
 	float ipratio;
 	float ratetol;
 	int threads;
-	size_t encoded_frame = 0;
 };
 
 #endif 
