@@ -219,7 +219,6 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::GetSize() const
 				//Remove all statuses
 				statuses.clear();
 				//REset
-				lastStatus = PacketStatus::Reserved;
 				maxStatus = PacketStatus::NotReceived;
 				allsame = true;
 			} else {
@@ -416,7 +415,6 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Serialize(BYTE* data,D
 				//Remove all statuses
 				statuses.clear();
 				//Reset status
-				lastStatus = PacketStatus::Reserved;
 				maxStatus = PacketStatus::NotReceived;
 				allsame = true;
 			} else {

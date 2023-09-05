@@ -725,16 +725,16 @@ int RTPTransport::SendRTPPacket(Packet&& packet)
 				request->AddAttribute(STUNMessage::Attribute::Priority,(DWORD)33554431);
 				
 				//Create new mesage
-				Packet packet = rtpLoop.GetPacketPool().pick();
+				Packet localPacket = rtpLoop.GetPacketPool().pick();
 
 				//Serialize and autenticate
-				size_t len = request->AuthenticatedFingerPrint(packet.GetData(),packet.GetCapacity(),iceLocalPwd);
+				size_t len = request->AuthenticatedFingerPrint(localPacket.GetData(),localPacket.GetCapacity(),iceLocalPwd);
 
 				//Resize
-				packet.SetSize(len);
+				localPacket.SetSize(len);
 				
 				//Send response
-				rtpLoop.Send(ntohl(sendAddr.sin_addr.s_addr),ntohs(sendAddr.sin_port),std::move(packet));
+				rtpLoop.Send(ntohl(sendAddr.sin_addr.s_addr),ntohs(sendAddr.sin_port),std::move(localPacket));
 
 				//Clean response
 				delete(request);
