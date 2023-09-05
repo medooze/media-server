@@ -16,7 +16,7 @@ void RTMPNetConnection::SendStatus(QWORD transId, const RTMPNetStatusEventInfo &
 		//Disconnect
 		(*it)->onNetConnectionStatus(transId, info,message);
 	//Unlock
-	listenerLock.Lock();
+	listenerLock.Unlock();
 }
 	
 void RTMPNetConnection::Disconnect()
