@@ -97,7 +97,7 @@ int RTMPClientConnection::Connect(const char* server,int port, const char* app,L
 	//If not found
 	if (!host)
 		//Error
-		return Error("-Could not resolve %s\n",host);
+		return Error("-Could not resolve %s\n",server);
 	//Set to zero
 	bzero((char *) &addr, sizeof(addr));
 
