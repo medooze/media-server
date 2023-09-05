@@ -7,7 +7,8 @@ extern "C" {
 }
 #include "avcdescriptor.h"
 
-static const char * const x264_level_names[] = { "1", "1b", "3.1", "3.2"};
+static const char * const x264_level_names[] = { "1", "1b", "1.1", "1.2", "1.3", "2", "2.1", "2.2", "3", "3.1", "3.2",
+                                                "4", "4.1", "4.2", "5", "5.1", "5.2", "6", "6.1", "6.2", 0}; // need 0 as last element to comfort to x264_xxx_names
 static const std::string h264UnSet = "UnSet";
 
 class H264Encoder : public VideoEncoder
@@ -48,7 +49,6 @@ private:
 	int opened;
 	int intraPeriod;
 	int pts;
-	//std::string h264ProfileLevelId;
 	std::string profile = h264UnSet;
 	std::string level = h264UnSet;
 	std::string preset = h264UnSet;

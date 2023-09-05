@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
-#include <functional>
 #include "log.h"
 #include "h264encoder.h"
 
@@ -28,12 +27,11 @@ static void X264_log(void *p, int level, const char *fmt, va_list args)
 
 bool H264Encoder::IsParamsValid(const char * const options[], const std::string& input) const
 {
-	size_t options_num = sizeof(options);
-
 	if (input == h264UnSet)
 		return true;
 
-	for (size_t i = 0; i < options_num; ++i)
+	// this check should only apply to x264_xxx_names[]
+	for (size_t i = 0; options[i]; ++i)
 	{
 		if (input == std::string(options[i]))
 		{
@@ -46,8 +44,7 @@ bool H264Encoder::IsParamsValid(const char * const options[], const std::string&
 int H264Encoder::LevelNumberToLevelIdc(const std::string& levelNumber) const
 {
 	// H264 A.3.2
-	return (levelNumber == "1b") ? 9
-								 : (std::stof(levelNumber) * 10);
+	return (levelNumber == "1b") ? 9 : (std::stof(levelNumber) * 10);
 }
 
 /**********************
@@ -59,7 +56,7 @@ H264Encoder::H264Encoder(const Properties& properties) : frame(VideoCodec::H264)
 	// Set default values
 	type    = VideoCodec::H264;
 	format  = 0;
-	pts	= 0;
+	pts     = 0;
 
 	//No estamos abiertos
 	opened = false;
@@ -72,7 +69,7 @@ H264Encoder::H264Encoder(const Properties& properties) : frame(VideoCodec::H264)
 	//Number of threads or auto
 	threads = properties.GetProperty("h264.threads",0);
 
-	auto GetAndCheckHightLevelProperty = [this, &properties](const std::string& property_name, std::string& var, const char * const options[], const std::string& defaultInUse){
+	auto GetAndCheckX264HighLevelProperty = [this, &properties](const std::string& property_name, std::string& var, const char * const options[], const std::string& defaultInUse){
 		var = properties.GetProperty("h264." + property_name,h264UnSet);
 		if (!IsParamsValid(options, var))
 		{
@@ -82,10 +79,10 @@ H264Encoder::H264Encoder(const Properties& properties) : frame(VideoCodec::H264)
 	};
 
 	//Check profile/level/preset/tune
-	GetAndCheckHightLevelProperty("profile", profile, x264_profile_names, ProfileInUse());
-	GetAndCheckHightLevelProperty("level", level, x264_level_names, LevelInUse());
-	GetAndCheckHightLevelProperty("preset", preset, x264_preset_names, PresetInUse());
-	GetAndCheckHightLevelProperty("tune", tune, x264_tune_names, TuneInUse());
+	GetAndCheckX264HighLevelProperty("profile", profile, x264_profile_names, ProfileInUse());
+	GetAndCheckX264HighLevelProperty("level", level, x264_level_names, LevelInUse());
+	GetAndCheckX264HighLevelProperty("preset", preset, x264_preset_names, PresetInUse());
+	GetAndCheckX264HighLevelProperty("tune", tune, x264_tune_names, TuneInUse());
 
 	//ipratio
 	ipratio = properties.GetProperty("h264.ipratio", -1.0F);
@@ -225,17 +222,17 @@ int H264Encoder::OpenCodec()
 	}
 	params.rc.f_rate_tolerance  = ratetol;
 	Log("-H264Encoder::OpenCodec() | config ratetol:%f\n", params.rc.f_rate_tolerance);
-	// change ipratio only when it's configured in profile
+	// change ipratio only when it's configured in profile property
 	// or else leave its value according to preset & tune
 	if (ipratio >= 0)
 	{
 		params.rc.f_ip_factor = ipratio;
 	}
 	Log("-H264Encoder::OpenCodec() | config ipratio:%f\n", params.rc.f_ip_factor);
-	// set controls only when tune is not configued in profile
+	// set controls only when tune is not configued in profile property
 	if (tune == h264UnSet && preset == h264UnSet)
 	{
-		Log("-H264Encoder::OpenCodec() | neither preset or tune is set by profile, config encoder to fit realtime streaming mode\n");
+		Log("-H264Encoder::OpenCodec() | neither preset or tune is set by profile property, config encoder to fit realtime streaming mode\n");
 		params.b_sliced_threads	    = 0;
 		params.rc.i_lookahead       = 0;
 		params.rc.b_mb_tree       = 0;
@@ -364,7 +361,6 @@ VideoFrame* H264Encoder::EncodeFrame(const VideoBuffer::const_shared& videoBuffe
 		BYTE nalType = (nalUnit[0] & 0x1f);
 		//Skip header
 		BYTE* nalData = nalUnit+1;
-		DWORD nalSize = nalUnitSize-1;
 		//Check if IDR SPS or PPS
 		switch (nalType)
 		{
@@ -397,11 +393,11 @@ VideoFrame* H264Encoder::EncodeFrame(const VideoBuffer::const_shared& videoBuffe
 			/*
 			* the FU indicator + FU header octet has the following format:
 			*
-      		*    +---------------+      +---------------+
-      		*    |0|1|2|3|4|5|6|7|      |0|1|2|3|4|5|6|7|
-      		*    +-+-+-+-+-+-+-+-+      +-+-+-+-+-+-+-+-+
-      		*    |F|NRI| FU-A(28)|      |S|E|R|  Type   |
-      		*    +---------------+      +---------------+
+			*    +---------------+      +---------------+
+			*    |0|1|2|3|4|5|6|7|      |0|1|2|3|4|5|6|7|
+			*    +-+-+-+-+-+-+-+-+      +-+-+-+-+-+-+-+-+
+			*    |F|NRI| FU-A(28)|      |S|E|R|  Type   |
+			*    +---------------+      +---------------+
 			* For H.264, R must be 0.
 			*/
 
