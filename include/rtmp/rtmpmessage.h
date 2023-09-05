@@ -64,12 +64,12 @@ protected:
 	RTMPMediaFrame(Type type,QWORD timestamp,BYTE *data,DWORD size);
 	RTMPMediaFrame(Type type,QWORD timestamp,DWORD size);
 
-	QWORD timestamp;
-	BYTE *buffer;
-	DWORD bufferSize;
-	DWORD mediaSize;
-	DWORD pos;
-	Type type;
+	QWORD timestamp = 0;
+	BYTE *buffer = nullptr;
+	DWORD bufferSize = 0;
+	DWORD mediaSize = 0;
+	DWORD pos = 0;
+	Type type = Type(0);
 };
 
 class RTMPVideoFrame : public RTMPMediaFrame
@@ -152,11 +152,11 @@ private:
 	};
 
 	bool		isExtended = false;
-	VideoCodec	codec;
-	VideoCodecEx	codecEx;
+	VideoCodec	codec = VideoCodec::AVC;
+	VideoCodecEx	codecEx = VideoCodecEx::HEVC;
 	
-	FrameType	frameType;
-	PacketType	packetType;
+	FrameType	frameType = FrameType::INTER;
+	PacketType	packetType = PacketType::SequenceStart;
 	
 	BYTE		extraData[4];
 	BYTE		fourCc[4];
@@ -197,11 +197,11 @@ public:
 
 	virtual void	Dump();
 private:
-	AudioCodec	codec;
-	SoundRate	rate;
-	bool		sample16bits;
-	bool		stereo;
-	DWORD		headerPos;
+	AudioCodec	codec = AudioCodec::AAC;
+	SoundRate	rate = SoundRate::RATE44khz;
+	bool		sample16bits = false;
+	bool		stereo = false;
+	DWORD		headerPos = 0;
 	BYTE		extraData[1];
 };
 
@@ -380,9 +380,9 @@ private:
 	DWORD 	length;
 	QWORD 	timestamp;
 	//Parsing variables
-	bool skip;
-	bool parsing;	
-	DWORD pos;
+	bool skip = false;
+	bool parsing = false;	
+	DWORD pos = 0;
 };
 
 

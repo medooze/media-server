@@ -10,6 +10,7 @@
  **************************************/
 RTMPChunkStreamInfo::RTMPChunkStreamInfo()
 {
+	type = RTMPMessage::Type(0);
 	timestamp = 0;
 	timestampDelta = 0;
 	streamId = -1;

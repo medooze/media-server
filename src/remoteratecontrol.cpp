@@ -171,13 +171,13 @@ void RemoteRateControl::UpdateKalman(int deltaTime, int deltaSize)
 				//Check 
 				if (overUseCount>2)
 				{
-					UltraDebug("BWE: Overusing bitrate:%.0llf max:%.0llf min:%.0llf T:%f,threshold:%f\n",bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg(),std::fabs(T),threshold);
+					UltraDebug("BWE: Overusing bitrate:%.0Lf max:%.0Lf min:%.0Lf T:%f,threshold:%f\n",bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg(),std::fabs(T),threshold);
 					//Overusing
 					hypothesis = OverUsing;
 					//Reset counter
 					overUseCount=0;
 				} else {
-					UltraDebug("BWE: Overusing bitrate:%.0llf max:%.0llf min:%.0llf T:%f,threshold:%f\n",overUseCount,bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg(),std::fabs(T),threshold);
+					UltraDebug("BWE: Overusing bitrate:%.0Lf max:%.0Lf min:%.0Lf T:%f,threshold:%f\n",bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg(),std::fabs(T),threshold);
 					//increase counter
 					overUseCount++;
 				}
@@ -186,7 +186,7 @@ void RemoteRateControl::UpdateKalman(int deltaTime, int deltaSize)
 			//If we change state
 			if (hypothesis!=UnderUsing)
 			{
-				UltraDebug("BWE:  UnderUsing bitrate:%.0llf max:%.0llf min:%.0llf T:%d\n",bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg(),std::fabs(T));
+				UltraDebug("BWE:  UnderUsing bitrate:%.0Lf max:%.0Lf min:%.0Lf T:%f\n",bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg(),std::fabs(T));
 				//Reset bitrate
 				bitrateCalc.ResetMinMax();
 				//Under using, do nothing until going back to normal
@@ -201,7 +201,7 @@ void RemoteRateControl::UpdateKalman(int deltaTime, int deltaSize)
 		if (hypothesis!=Normal)
 		{
 			//Log
-			UltraDebug("BWE:  Normal  bitrate:%.0llf max:%.0llf min:%.0llf\n",bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg());
+			UltraDebug("BWE:  Normal  bitrate:%.0Lf max:%.0Lf min:%.0Lf\n",bitrateCalc.GetInstantAvg(),bitrateCalc.GetMaxAvg(),bitrateCalc.GetMinAvg());
 			//Reset
 			bitrateCalc.ResetMinMax();
 			//Normal
@@ -261,7 +261,7 @@ bool RemoteRateControl::UpdateLost(DWORD num)
 				//Reset lost counter
 				lostCalc.Reset(getTime());
 				//Debug
-				UltraDebug("BWE: UpdateLostlost:%d hipothesis:%s,num:%d,packets:%f,lost:%f\n",num,GetName(hypothesis),num,packets,lost);
+				UltraDebug("BWE: UpdateLostlost:%d hipothesis:%s,num:%d,packets:%Lf,lost:%Lf\n",num,GetName(hypothesis),num,packets,lost);
 			} else {
 				//increase counter
 				overUseCount++;

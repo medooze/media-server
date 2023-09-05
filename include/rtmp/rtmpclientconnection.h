@@ -151,8 +151,8 @@ private:
 			this->tag = tag;
 		}
 		
-		TransType type;
-		DWORD par;
+		TransType type {};
+		DWORD par = 0;
 		std::wstring tag;
 
 	};
@@ -162,7 +162,7 @@ private:
 	typedef std::map<DWORD,TransInfo> Transactions;
 private:
 	int fd;
-	pollfd ufds[1];
+	pollfd ufds[1] = {};
 	bool inited;
 	bool running;
 	State state;
@@ -175,8 +175,8 @@ private:
 	
 	bool digest;
 
-	DWORD videoCodecs;
-	DWORD audioCodecs;
+	DWORD videoCodecs = 0;
+	DWORD audioCodecs = 0;
 
 	RTMPChunkBasicHeader header;
 	RTMPChunkType0	type0;
@@ -186,11 +186,11 @@ private:
 
 	RTMPChunkInputStreams  	chunkInputStreams;
 	RTMPChunkOutputStreams  chunkOutputStreams;
-	RTMPChunkInputStream* 	chunkInputStream;
+	RTMPChunkInputStream* 	chunkInputStream = nullptr;
 	Transactions		transactions;
 
-	DWORD chunkStreamId;
-	DWORD chunkLen;
+	DWORD chunkStreamId = 0;
+	DWORD chunkLen = 0;
 	DWORD maxChunkSize;
 	DWORD maxOutChunkSize;
 
@@ -212,8 +212,8 @@ private:
 	DWORD inBytes;
 	DWORD outBytes;
 
-	bool	needsAuth;
-	DWORD	data;
+	bool	needsAuth = false;
+	DWORD	data = 0;
 	std::wstring tag;
 	std::wstring user;
 	std::wstring pwd;

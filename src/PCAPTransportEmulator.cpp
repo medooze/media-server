@@ -460,7 +460,7 @@ outher:	while(running)
 		if (len>=size)
 		{
 			///Debug
-			UltraDebug("-PCAPTransportEmulator::Run() | Refusing to create a packet with empty payload [ini:%u,len:%u]\n",len,size,len);
+			UltraDebug("-PCAPTransportEmulator::Run() | Refusing to create a packet with empty payload [ini:%u,len:%u]\n",size,len);
 			//Ignore this try again
 			goto outher;
 		}
@@ -586,7 +586,7 @@ outher:	while(running)
 			if (codec==RTPMap::NotFound)
 			{
 				//Error
-				Debug("-PCAPTransportEmulator::Run() | RTP RTX packet apt type unknown [%d]\n",MediaFrame::TypeToString(packet->GetMediaType()),packet->GetPayloadType());
+				Debug("-PCAPTransportEmulator::Run() | RTP RTX packet apt type unknown [%s %d]\n",MediaFrame::TypeToString(packet->GetMediaType()),packet->GetPayloadType());
 				//Skip
 				continue;
 			}

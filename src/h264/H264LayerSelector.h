@@ -29,8 +29,8 @@ private:
 	bool waitingForIntra;
 	H264SeqParameterSet sps;
 	H264PictureParameterSet pps;
-	BYTE temporalLayerId;
-	BYTE nextTemporalLayerId;
+	BYTE temporalLayerId = 0;
+	BYTE nextTemporalLayerId = 0;
 private:
 
 };

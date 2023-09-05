@@ -337,7 +337,7 @@ int DTLSConnection::Initialize()
 	// OK, we have DTLS.
 	DTLSConnection::hasDTLS = true;
 
-	Debug("<DTLSConnection::Initialize(%d)\n",availableHashes.size());
+	Debug("<DTLSConnection::Initialize(%lu)\n",availableHashes.size());
 	//OK
 	return 1;
 }
@@ -488,7 +488,7 @@ int DTLSConnection::Init()
 			//Read from sctp transport
 			while((len = sctp.ReadPacket(msg,MTU)))
 			{
-				UltraDebug("-sctp::OnPendingData() [len:%d]\n",len);
+				UltraDebug("-sctp::OnPendingData() [len:%lu]\n",len);
 				DumpAsC(msg,len);
 				//Write it to the ssl context
 				SSL_write(ssl,msg,len);
@@ -799,7 +799,7 @@ int DTLSConnection::SetupSRTP()
 	
 	//Check we know it
 	if (suite==UNKNOWN_SUITE)
-		return Error("-DTLSConnection::SetupSRTP() | Unknown negotiated SRTP suite [id:%d,name:'%s']\n",profile->id,profile->name);
+		return Error("-DTLSConnection::SetupSRTP() | Unknown negotiated SRTP suite [id:%lu,name:'%s']\n",profile->id,profile->name);
 	
 	//Get key & salt lengths
 	auto keysalt = SuiteKeySaltLength(suite);

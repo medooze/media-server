@@ -610,7 +610,7 @@ QWORD MP4RtpTrack::Read(Listener *listener)
 			return MP4_INVALID_TIMESTAMP;
 		}
 		
-		UltraDebug("Got frame [time:%d,start:%d,duration:%d,lenght:%d,offset:%d,sinc:%d\n",frameTime,startTime,duration,dataLen,renderingOffset,isSyncSample);
+		UltraDebug("Got frame [time:%d,start:%lu,duration:%lu,lenght:%d,offset:%lu,sinc:%d\n",frameTime,startTime,duration,dataLen,renderingOffset,isSyncSample);
 		
 		//Check type
 		if (media == MediaFrame::Video)

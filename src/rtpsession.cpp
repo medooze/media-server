@@ -395,7 +395,7 @@ int RTPSession::SendPacket(const RTCPCompoundPacket::shared &rtcp)
 	//Check result
 	if (len<=0 || len>size)
 		//Error
-		return Error("-RTPSession::SendPacket(%s) | Error serializing RTCP packet [len:%d]\n",MediaFrame::TypeToString(media),len);
+		return Error("-RTPSession::SendPacket(%s) | Error serializing RTCP packet [len:%lu]\n",MediaFrame::TypeToString(media),len);
 
 	//Set serialized packet size
 	buffer.SetSize(len);
@@ -644,7 +644,7 @@ void RTPSession::onRTPPacket(const BYTE* data, DWORD size)
 		source->dropPackets++;
 	} else if (lost>0) {
 		//Log
-		UltraDebug("-RTPSession::onRTPPacket(%s) | RTX: Missing %d [nack:%d,diff:%llu,rtt:%llu]\n",MediaFrame::TypeToString(media),lost,isNACKEnabled,getDifTime(&lastFPU)/1000,rtt);
+		UltraDebug("-RTPSession::onRTPPacket(%s) | RTX: Missing %d [nack:%d,diff:%llu,rtt:%u]\n",MediaFrame::TypeToString(media),lost,isNACKEnabled,getDifTime(&lastFPU)/1000,rtt);
 	}
 	
 	//If nack is enable t waiting for a PLI/FIR response (to not oeverflow)

@@ -492,7 +492,7 @@ int mp4track::FlushTextFrame(TextFrame *frame, DWORD duration)
 	//Copy text
 	memcpy(data+2,frame->GetData(),frame->GetLength());
 	//Log
-	Debug("-mp4track::FlushTextFrame() [timestamp:%d,duration:%d,size:%u]\n]",frame->GetTimeStamp(),frameduration,size+2);
+	Debug("-mp4track::FlushTextFrame() [timestamp:%lu,duration:%lu,size:%u]\n]",frame->GetTimeStamp(),frameduration,size+2);
 	//Write sample
 	MP4WriteSample( mp4, track, data, size+2, frameduration, 0, false );
 
@@ -500,7 +500,7 @@ int mp4track::FlushTextFrame(TextFrame *frame, DWORD duration)
 	if (duration-frameduration>0)
 	{
 		//Log
-		Debug("-mp4track::FlushTextFrame() empty text [timestamp:%d,duration:%d]\n]",frame->GetTimeStamp()+frameduration,duration-frameduration);
+		Debug("-mp4track::FlushTextFrame() empty text [timestamp:%lu,duration:%lu]\n]",frame->GetTimeStamp()+frameduration,duration-frameduration);
 		//Put empty text
 		data[0] = 0;
 		data[1] = 0;
@@ -589,7 +589,7 @@ int mp4track::Close()
 			//Calculate new clockrate
 			uint64_t adjusted = lround(drift*clockrate);
 			//Log
-			Log("-mp4track::Close() | Clockdrift detecteced, adjusting clockrate [skew:%lldms,dirft:%f,clockrate:%u,adjusted:%u\n",skew,drift,clockrate,adjusted);
+			Log("-mp4track::Close() | Clockdrift detecteced, adjusting clockrate [skew:%lldms,dirft:%f,clockrate:%u,adjusted:%lu\n",skew,drift,clockrate,adjusted);
 			//Update timescale
 			MP4SetTrackIntegerProperty(mp4, track, "mdia.mdhd.timeScale", adjusted);
 		}

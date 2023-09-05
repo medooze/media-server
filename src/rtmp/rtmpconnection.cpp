@@ -176,11 +176,11 @@ int RTMPConnection::Run()
 	//Set non blocking so we can get an error when we are closed by end
 	int fsflags = fcntl(socket,F_GETFL,0);
 	fsflags |= O_NONBLOCK;
-	fcntl(socket,F_SETFL,fsflags);
+	(void)fcntl(socket,F_SETFL,fsflags);
 
 	//Set no delay option
 	int flag = 1;
-        setsockopt(socket, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(int));
+        (void)setsockopt(socket, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(int));
 	//Catch all IO errors
 	signal(SIGIO, EmptyCatch);
 	signal(SIGPIPE, EmptyCatch);
@@ -477,7 +477,7 @@ void RTMPConnection::ParseData(BYTE *data,const DWORD size)
 						//calculate digest for s1 only, skipping s0
 						GenerateS1Data(digesOffsetMethod,s01.GetData()+1,s01.GetSize()-1);
 					//Send S01 data
-					WriteData(s01.GetData(),s01.GetSize());
+					(void)WriteData(s01.GetData(),s01.GetSize());
 					//Move to next state
 					state = HEADER_C2_WAIT;
 					//Debug
@@ -493,7 +493,7 @@ void RTMPConnection::ParseData(BYTE *data,const DWORD size)
 						//calculate digest for s1
 						GenerateS2Data(digesOffsetMethod,s2.GetData(),s2.GetSize());
 					//Send S2 data
-					WriteData(s2.GetData(),s2.GetSize());
+					(void)WriteData(s2.GetData(),s2.GetSize());
 					//Debug
 					Log("Sending c2.\n");
 				}
@@ -703,7 +703,7 @@ void RTMPConnection::ParseData(BYTE *data,const DWORD size)
 				if (!len)
 				{
 					//Debug
-					Error("Chunk data of size zero  [maxChunkSize:%d,chunkLen:%d]\n");
+					Error("Chunk data of size zero\n");
 					//Skip
 					break;
 				}

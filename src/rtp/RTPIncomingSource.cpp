@@ -270,7 +270,7 @@ void RTPIncomingSource::Process(QWORD now, const RTCPSenderReport::shared& sr)
 		skew = deltaTimeMs - deltaTimeThroughTimestampMs;
 		drift = deltaTimeMs ? (double)deltaTimeThroughTimestampMs/deltaTimeMs : 1;
 		//Debug
-		UltraDebug("-RTPIncomingSource::Process() | Sender Report [ssrc:0x%x,skew:%lld,deltaTime:%llu,deltaTimestamp:%llu,senderTime:%llu,firstTime:%lld,firstTimestamp:%lld,lastExtSeqNum:%u(%u),clockrate:%u]\n",ssrc,skew,deltaTimeMs,deltaTimeThroughTimestampMs,lastReceivedSenderTime, firstReceivedSenderTime, firstReceivedSenderTimestamp, sr->GetRTPTimestamp(), lastReceivedSenderRTPTimestampExtender.GetExtSeqNum(),clockrate);
+		UltraDebug("-RTPIncomingSource::Process() | Sender Report [ssrc:0x%x,skew:%lld,deltaTime:%llu,deltaTimestamp:%llu,senderTime:%llu,firstTime:%lld,firstTimestamp:%lld,rtpTimestamp:%d,lastExtSeqNum:%llu,clockrate:%u]\n",ssrc,skew,deltaTimeMs,deltaTimeThroughTimestampMs,lastReceivedSenderTime, firstReceivedSenderTime, firstReceivedSenderTimestamp, sr->GetRTPTimestamp(), lastReceivedSenderRTPTimestampExtender.GetExtSeqNum(),clockrate);
 	}
 }
 

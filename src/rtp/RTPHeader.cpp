@@ -112,7 +112,7 @@ DWORD RTPHeader::GetSize() const
 
 void RTPHeader::Dump() const
 {
-	Debug("[RTPHeader v=%d p=%d x=%d cc=%d m=%d pt=%d seq=%u ts=%u ssrc=%u/]\n",
+	Debug("[RTPHeader v=%d p=%d x=%d cc=%lu m=%d pt=%d seq=%u ts=%u ssrc=%u/]\n",
 		version,
 		padding,
 		extension,

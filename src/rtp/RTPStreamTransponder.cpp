@@ -301,7 +301,7 @@ void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPP
 			//Get first timestamp
 			firstTimestamp = packet->GetExtTimestamp();
 
-			UltraDebug("-StreamTransponder::onRTP() | first seq:%lu base:%lu last:%lu ts:%llu baseSeq:%lu baseTimestamp:%llu lastTimestamp:%llu\n",firstExtSeqNum,baseExtSeqNum,lastExtSeqNum,firstTimestamp,baseExtSeqNum,baseTimestamp,lastTimestamp);
+			UltraDebug("-StreamTransponder::onRTP() | first seq:%u base:%u last:%u ts:%llu baseSeq:%u baseTimestamp:%llu lastTimestamp:%llu\n",firstExtSeqNum,baseExtSeqNum,lastExtSeqNum,firstTimestamp,baseExtSeqNum,baseTimestamp,lastTimestamp);
 		}
 
 		//Ensure it is not before first one

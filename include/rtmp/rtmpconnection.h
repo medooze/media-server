@@ -97,7 +97,7 @@ private:
 	typedef std::map<DWORD,RTMPNetStream::shared> RTMPNetStreams;
 private:
 	int socket;
-	pollfd ufds[1];
+	pollfd ufds[1] = {};
 	volatile bool inited;
 	volatile bool running;
 	State state;
@@ -110,8 +110,8 @@ private:
 	
 	bool digest;
 
-	DWORD videoCodecs;
-	DWORD audioCodecs;
+	DWORD videoCodecs = 0;
+	DWORD audioCodecs = 0;
 
 	RTMPChunkBasicHeader header;
 	RTMPChunkType0	type0;
@@ -121,10 +121,10 @@ private:
 
 	RTMPChunkInputStreams  	chunkInputStreams;
 	RTMPChunkOutputStreams  chunkOutputStreams;
-	RTMPChunkInputStream* 	chunkInputStream;
+	RTMPChunkInputStream* 	chunkInputStream = nullptr;
 
-	DWORD chunkStreamId;
-	DWORD chunkLen;
+	DWORD chunkStreamId = 0;
+	DWORD chunkLen = 0;
 	DWORD maxChunkSize;
 	DWORD maxOutChunkSize;
 
@@ -146,9 +146,9 @@ private:
 	DWORD inBytes;
 	DWORD outBytes;
 
-	QWORD bandIni;
-	DWORD bandSize;
-	DWORD bandCalc;
+	QWORD bandIni = 0;
+	DWORD bandSize = 0;
+	DWORD bandCalc = 0;
 	
 	DWORD rtt = 0;
 };

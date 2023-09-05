@@ -57,7 +57,7 @@ QWORD RTCPSenderReport::GetTimestamp() const
 
 void RTCPSenderReport::Dump()
 {
-	Debug("\t[RTCPSenderReport ssrc=%u count=%u \n",ssrc,reports.size());
+	Debug("\t[RTCPSenderReport ssrc=%u count=%llu \n",ssrc,reports.size());
 	Debug("\t\tntpSec=%u\n"		,ntpSec);
 	Debug("\t\tntpFrac=%u\n"	,ntpFrac);
 	Debug("\t\trtpTimestamp=%u\n"	,rtpTimestamp);

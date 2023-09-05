@@ -306,7 +306,7 @@ inline void DumpAsC(const BYTE *data,DWORD size)
 			Debug("\t0x%.2x, 0x%.2x, 0x%.2x\n",data[size-3],data[size-2],data[size-1]);
 			break;
 	}
-	Debug("};\n",size);
+	Debug("};\n");
 }
 
 inline void Dump4(const BYTE *data,DWORD size)
@@ -319,13 +319,13 @@ inline void Dump4(const BYTE *data,DWORD size)
 	switch(size%4)
 	{
 		case 1:
-			Debug("[%.4x] [0x%.2x                      %c%c]\n",size-1,data[size-1],PC(data[size-1]));
+			Debug("[%.4x] [0x%.2x                      %c]\n",size-1,data[size-1],PC(data[size-1]));
 			break;
 		case 2:
 			Debug("[%.4x] [0x%.2x   0x%.2x                %c%c]\n",size-2,data[size-2],data[size-1],PC(data[size-2]),PC(data[size-1]));
 			break;
 		case 3:
-			Debug("[%.4x] [0x%.2x   0x%.2x   0x%.2x          %c%c%c%c]\n",size-3,data[size-3],data[size-2],data[size-1],PC(data[size-3]),PC(data[size-2]),PC(data[size-1]));
+			Debug("[%.4x] [0x%.2x   0x%.2x   0x%.2x          %c%c%c]\n",size-3,data[size-3],data[size-2],data[size-1],PC(data[size-3]),PC(data[size-2]),PC(data[size-1]));
 			break;
 	}
 }

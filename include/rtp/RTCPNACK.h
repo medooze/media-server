@@ -25,9 +25,9 @@ public:
 	virtual DWORD Parse(const BYTE* data,DWORD size);
 	virtual DWORD Serialize(BYTE* data,DWORD size);
 private:
-	DWORD ssrc;
-	WORD fsn;
-	WORD blp;
+	DWORD ssrc = 0;
+	WORD fsn = 0;
+	WORD blp = 0;
 };
 
 #endif /* RTCPNACK_H */

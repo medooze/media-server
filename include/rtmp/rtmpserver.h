@@ -47,7 +47,7 @@ private:
 
 	std::set<RTMPConnection::shared> connections;
 	std::map<std::wstring,RTMPApplication *> applications;
-	pthread_t serverThread;
+	pthread_t serverThread = 0;
 	Mutex mutex;
 };
 

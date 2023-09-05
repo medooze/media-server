@@ -724,7 +724,7 @@ void RTCPRTPFeedback::TransportWideFeedbackMessageField::Dump() const
 {
 	QWORD prev = 0;
 	//Debug
-	Debug("\t\t[TransportWideFeedbackMessage seq:%d num:%d]\n",feedbackPacketCount,packets.size());
+	Debug("\t\t[TransportWideFeedbackMessage seq:%d num:%llu]\n",feedbackPacketCount,packets.size());
 	//For each packet
 	for (Packets::const_iterator it = packets.begin(); it!=packets.end(); ++it)
 	{

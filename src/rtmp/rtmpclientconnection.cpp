@@ -107,6 +107,8 @@ int RTMPClientConnection::Connect(const char* server,int port, const char* app,L
 	addr.sin_port = htons(port);
 
 	//Connect
+// Ignore coverity error: "this->fd" is passed to a parameter that cannot be negative.
+// coverity[negative_returns]
 	if (connect(fd,(sockaddr *) &addr,sizeof(addr)) < 0)
 		//Exit
 		return Error("Connection error [%d]\n",errno);
@@ -210,7 +212,7 @@ int RTMPClientConnection::Disconnect()
 ************************/
 void * RTMPClientConnection::run(void *par)
 {
-        Log("-RTMP Connecttion Thread [%d,0x%x]\n",getpid(),par);
+        Log("-RTMP Connecttion Thread [%d,0x%p]\n",getpid(),par);
 
 	//Block signals to avoid exiting on SIGUSR1
 	blocksignals();
@@ -242,11 +244,11 @@ int RTMPClientConnection::Run()
 	//Set non blocking so we can get an error when we are closed by end
 	int fsflags = fcntl(fd,F_GETFL,0);
 	fsflags |= O_NONBLOCK;
-	fcntl(fd,F_SETFL,fsflags);
+	(void)fcntl(fd,F_SETFL,fsflags);
 
 	//Set no delay option
 	int flag = 1;
-        setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(int));
+        (void)setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(int));
 	//Catch all IO errors
 	signal(SIGIO,EmptyCatch);
 
@@ -667,7 +669,7 @@ void RTMPClientConnection::ParseData(BYTE *data,const DWORD size)
 				if (!len)
 				{
 					//Debug
-					Error("Chunk data of size zero  [maxChunkSize:%d,chunkLen:%d]\n");
+					Error("Chunk data of size zero\n");
 					//Skip
 					break;
 				}
@@ -869,7 +871,7 @@ void RTMPClientConnection::ProcessCommandMessage(DWORD streamId,RTMPCommandMessa
 	if (it==transactions.end())
 	{
 		//Error
-		Error("Transaction not found [%d]\n",transId);
+		Error("Transaction not found [%llu]\n",transId);
 		//Exit
 		return;
 	}

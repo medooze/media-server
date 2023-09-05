@@ -24,7 +24,7 @@ void RTCPSDES::Dump()
 	
 	if (descriptions.size())
 	{
-		Debug("\t[RTCPSDES count=%u]\n",descriptions.size());
+		Debug("\t[RTCPSDES count=%llu]\n",descriptions.size());
 		for(Descriptions::iterator it = descriptions.begin();it!=descriptions.end();++it)
 			(*it)->Dump();
 		Debug("\t[/RTCPSDES]\n");
@@ -124,7 +124,7 @@ void RTCPSDES::Description::Dump()
 {
 	if (items.size())
 	{
-		Debug("\t\t[Description ssrc=%u count=%u\n",ssrc,items.size());
+		Debug("\t\t[Description ssrc=%u count=%llu\n",ssrc,items.size());
 		for(Items::iterator it=items.begin();it!=items.end();++it)
 			Debug("\t\t\t[%s '%.*s'/]\n",RTCPSDES::Item::TypeToString((*it)->GetType()),(*it)->GetSize(),(*it)->GetData());
 		Debug("\t\t[/Description]\n");

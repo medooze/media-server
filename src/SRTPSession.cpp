@@ -35,6 +35,8 @@ bool SRTPSession::Setup(const char* suite,const uint8_t* key,const size_t len)
 		srtp_crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtcp);
 	} else if (strcmp(suite,"AES_CM_128_HMAC_SHA1_32")==0) {
 		srtp_crypto_policy_set_aes_cm_128_hmac_sha1_32(&policy.rtp);
+// Ignore coverity error: "srtp_crypto_policy_set_rtp_default" in "srtp_crypto_policy_set_rtp_default(&this->policy.rtcp)" looks like a copy-paste error.
+// coverity[copy_paste_error]
 		srtp_crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtcp);  // NOTE: Must be 80 for RTCP!
 	} else if (strcmp(suite,"AES_CM_128_NULL_AUTH")==0) {
 		srtp_crypto_policy_set_aes_cm_128_null_auth(&policy.rtp);
@@ -60,7 +62,7 @@ bool SRTPSession::Setup(const char* suite,const uint8_t* key,const size_t len)
 	if (len!=(size_t)policy.rtp.cipher_key_len)
 	{
 		//Error
-		Error("-SRTPSession::Setup() | Could not create srtp session wrong key size[got:%d,needed:%d]\n",len,policy.rtp.cipher_key_len);
+		Error("-SRTPSession::Setup() | Could not create srtp session wrong key size[got:%llu,needed:%d]\n",len,policy.rtp.cipher_key_len);
 		//Set error
 		err = Status::BadParam;
 		return false;

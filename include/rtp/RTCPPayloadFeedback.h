@@ -126,6 +126,8 @@ public:
 
 		ReferencePictureSelectionField()
 		{
+			padding = 0;
+			type = 0;
 			payload = NULL;
 			length = 0;
 		}
@@ -273,6 +275,9 @@ public:
 		BYTE* payload;
 		VideoBackChannelMessageField()
 		{
+			ssrc = 0;
+			seq = 0;
+			type = 0;
 			payload = 0;
 			length = 0;
 		}
@@ -447,9 +452,9 @@ public:
 private:
 	typedef std::vector<Field::shared> Fields;
 private:
-	FeedbackType feedbackType;
-	DWORD senderSSRC;
-	DWORD mediaSSRC;
+	FeedbackType feedbackType {};
+	DWORD senderSSRC = 0;
+	DWORD mediaSSRC = 0;
 	Fields fields;
 };
 

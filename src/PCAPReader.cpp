@@ -41,10 +41,10 @@ bool PCAPReader::Open(const char* file)
 void PCAPReader::Rewind()
 {
 	//Go just after header
-	lseek(fd, PCAP_HEADER_SIZE, SEEK_SET);
+	(void)lseek(fd, PCAP_HEADER_SIZE, SEEK_SET);
 	
 	//Debug
-	UltraDebug("-PCAPReader::Rewind() | retry at [pos:%d]\n",lseek(fd, 0, SEEK_CUR));
+	UltraDebug("-PCAPReader::Rewind() | retry at [pos:%ld]\n",lseek(fd, 0, SEEK_CUR));
 }
 
 uint64_t PCAPReader::Next()
@@ -68,6 +68,8 @@ retry:
 
 	//UltraDebug("-Got packet captured:%u size:%d\n",captured,size);
 	//Read the packet
+// Ignore coverity error: Passing tainted expression "captured" to "read", which uses it as an offset.
+// coverity[tainted_data]
 	if (read(fd,data,captured)!=size) 
 	{
 		Error("-PCAPReader::GetNextPacket() | Short read\n");
@@ -127,7 +129,9 @@ uint64_t PCAPReader::Seek(const uint64_t time)
 		if (ts>=time)
 		{
 			//Go to the begining of the packet
-			lseek(fd, pos, SEEK_SET);
+// Ignore Coverity error: "pos" is passed to a parameter that cannot be negative.
+// coverity[negative_returns]
+			(void)lseek(fd, pos, SEEK_SET);
 			//Return packet time
 			return ts;
 		}

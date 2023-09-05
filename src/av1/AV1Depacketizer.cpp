@@ -327,7 +327,7 @@ void AV1Depacketizer::AddObu(BufferReader& obu)
 		//Ensure the size is correct
 		if (size!=obu.GetLeft())
 		{
-			UltraDebug("-AV1Depacketizer::AddObu() | Droping obu, size not correct [obu:%d,lev128:%d]\n",obu.GetLeft(),size);
+			UltraDebug("-AV1Depacketizer::AddObu() | Droping obu, size not correct [obu:%llu,lev128:%llu]\n",obu.GetLeft(),size);
 			//Skip obu
 			return;
 		}
