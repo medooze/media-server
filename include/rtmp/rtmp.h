@@ -136,7 +136,7 @@ public:
 	DWORD 	GetMessageType() 	{ return get3(data,0); }
 	DWORD 	GetPayloadLength() 	{ return get4(data,3); }
 	BYTE 	GetTimestamp()		{ return get1(data,7); }
-	DWORD 	GetStreamId() 		{ return get4(data,8); }
+	DWORD 	GetStreamId() 		{ return get3(data,8); }
 
         void    SetMessageType(DWORD messageType)	{ set1(data,0,messageType); }
 	void	SetPayloadLength(DWORD payloadLength) 	{ set3(data,1,payloadLength); }
