@@ -74,7 +74,7 @@ public:
 	static BYTE GetSampleRateIndex(DWORD rate)
 	{
 		//Search
-		for (DWORD i=0;i<sizeof(rates);i++)
+		for (DWORD i=0;i<sizeof(rates)/sizeof(rates[0]);i++)
 			//Check rate
 			if (rates[i]==rate)
 				//Found
@@ -130,7 +130,7 @@ public:
 		CHECK(r); objectType = r.Get(5);
 		CHECK(r); rateIndex = r.Get(4);
 		//Check rate index
-		if (rateIndex<sizeof(rates))
+		if (rateIndex<(sizeof(rates)/sizeof(rates[0])))
 		{
 			//Get rate from table
 			rate = rates[rateIndex];

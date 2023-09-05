@@ -343,7 +343,7 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 				packet->config = frame->GetCodecConfig();
 
 			//calculate packet duration based on relative size to keep bitrate smooth
-			const uint32_t packetDuration = smooth ? pendingDuration * info[i].GetTotalLength() / pendingLength : 0;
+			const uint32_t packetDuration = (smooth && pendingLength > 0) ? pendingDuration * info[i].GetTotalLength() / pendingLength : 0;
 
 			//UltraDebug("-MediaFrameListenerBridge::onMediaFrame() [this:%p,extSeqNum:%d,pending:%d,duration:%dms,total:%d,total:%dms\n", extSeqNum-1, pendingLength, packetDuration, info[i].GetTotalLength(), packetDuration);
 
@@ -399,7 +399,7 @@ void MediaFrameListenerBridge::UpdateAsync(std::function<void(std::chrono::milli
 	}, callback);
 }
 
-void MediaFrameListenerBridge::Update(QWORD now)
+void MediaFrameListenerBridge::Update(QWORD)
 {
 	timeService.Sync([=](auto now){
 		//Update bitrate acumulator

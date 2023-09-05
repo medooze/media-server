@@ -393,7 +393,7 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 				//	 | max_frame_average_light_level |
 				//	 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 				//
-				if (len!=4 || len!=28)
+				if (len!=4 && len!=28)
 					break;
 				//Init flag and optional data
 				hasColorSpace = true;
