@@ -7,6 +7,9 @@ extern "C" {
 }
 #include "avcdescriptor.h"
 
+static const char * const x264_level_names[] = { "1", "1b", "3.1", "3.2"};
+static const std::string h264UnSet = "UnSet";
+
 class H264Encoder : public VideoEncoder
 {
 public:
@@ -19,6 +22,13 @@ public:
 
 private:
 	int OpenCodec();
+	bool IsParamsValid(const char * const options[], const std::string& input) const;
+	int LevelNumberToLevelIdc(const std::string& levelNumber) const;
+	std::string LevelInUse() const { return level == h264UnSet? "3.1":level;}
+	std::string ProfileInUse() const { return profile == h264UnSet? "baseline":profile;}
+	std::string PresetInUse() const { return preset == h264UnSet? "medium":preset;}
+	std::string TuneInUse() const { return tune == h264UnSet? "zerolatency":tune;}
+
 	AVCDescriptor config;
 	bool streaming;
 	bool annexb;
@@ -38,9 +48,14 @@ private:
 	int opened;
 	int intraPeriod;
 	int pts;
-	std::string h264ProfileLevelId;
+	//std::string h264ProfileLevelId;
+	std::string profile = h264UnSet;
+	std::string level = h264UnSet;
+	std::string preset = h264UnSet;
+	std::string tune = h264UnSet;
+	float ipratio;
+	float ratetol;
 	int threads;
-	bool experiment;
 	size_t encoded_frame = 0;
 };
 
