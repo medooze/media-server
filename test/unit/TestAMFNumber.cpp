@@ -48,7 +48,7 @@ TEST(TestAMFNumber, TestAMFNumberParsing)
 	}	
 
 	{
-		// Negative numaber close to zero
+		// Negative number close to zero
 		AMFNumber number;
 		std::vector<uint8_t> data = {0x81, 0xB7, 0xD7, 0x84, 0x00, 0x00, 0x00, 0x00};	
 		ASSERT_EQ(8, number.Parse(data.data(), data.size()));
@@ -56,7 +56,7 @@ TEST(TestAMFNumber, TestAMFNumberParsing)
 	}
 	
 	{
-		// Min positive number
+		// Min (positive) number
 		AMFNumber number;
 		std::vector<uint8_t> data = {0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};	
 		ASSERT_EQ(8, number.Parse(data.data(), data.size()));
@@ -72,7 +72,7 @@ TEST(TestAMFNumber, TestAMFNumberParsing)
 	}
 	
 	{
-		// Lowest number
+		// Lowest (negative) number
 		AMFNumber number;
 		std::vector<uint8_t> data = {0xFF, 0xEF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};	
 		ASSERT_EQ(8, number.Parse(data.data(), data.size()));
