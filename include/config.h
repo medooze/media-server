@@ -296,6 +296,24 @@ public:
 		//Return value
 		return atoi(it->second.c_str());
 	}
+
+	float GetProperty(const char* key,float defaultValue) const
+	{
+		return GetProperty(std::string(key),defaultValue);
+	}
+
+	float GetProperty(const std::string &key,float defaultValue) const
+	{
+		//Find item
+		const_iterator it = find(key);
+		//If not found
+		if (it==end())
+			//return default
+			return defaultValue;
+		//Return value
+		return atof(it->second.c_str());
+	}
+	
 	
 	QWORD GetProperty(const char* key,QWORD defaultValue) const
 	{
