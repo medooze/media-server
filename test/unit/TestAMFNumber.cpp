@@ -78,4 +78,20 @@ TEST(TestAMFNumber, TestAMFNumberParsing)
 		ASSERT_EQ(8, number.Parse(data.data(), data.size()));
 		EXPECT_EQ(std::numeric_limits<double>::lowest(), number.GetNumber());
 	}
+	
+	{
+		// The exponent part max is 0x7FE, otherwise 0 is returned
+		AMFNumber number;
+		std::vector<uint8_t> data = {0x7F, 0xF0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1};	
+		ASSERT_EQ(8, number.Parse(data.data(), data.size()));
+		EXPECT_EQ(0, number.GetNumber());
+	}
+	
+	{
+		// The exponent part max is 0x7FE, otherwise 0 is returned
+		AMFNumber number;
+		std::vector<uint8_t> data = {0xFF, 0xF0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1};	
+		ASSERT_EQ(8, number.Parse(data.data(), data.size()));
+		EXPECT_EQ(0, number.GetNumber());
+	}
 }
