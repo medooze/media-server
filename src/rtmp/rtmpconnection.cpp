@@ -1334,6 +1334,8 @@ void RTMPConnection::onMetaData(DWORD streamId,RTMPMetaData *meta)
 
 void RTMPConnection::onStreamReset(DWORD id)
 {
+	std::vector<uint32_t> abortChunkIds;
+	
 	//Lock mutex
 	pthread_mutex_lock(&mutex);
 
@@ -1346,12 +1348,19 @@ void RTMPConnection::onStreamReset(DWORD id)
 
 		//Check it it has data pending
 		if (chunkOutputStream->ResetStream(id))
-			//Send Abort message
-			SendControlMessage(RTMPMessage::AbortMessage, RTMPAbortMessage::Create(chunkId));
+		{
+			abortChunkIds.push_back(chunkId);
+		}
 	}
 
 	//Lock mutex
 	pthread_mutex_unlock(&mutex);
+	
+	//Send Abort message later
+	for (auto chunkId : abortChunkIds)
+	{
+		SendControlMessage(RTMPMessage::AbortMessage, RTMPAbortMessage::Create(chunkId));
+	}
 
 	//We need to write
 	SignalWriteNeeded();

@@ -564,10 +564,10 @@ namespace details
 	{
 		typedef void (*callback_t)(void*);
 		callback_t callback;
-		void* userData;
+		void* userData = nullptr;
 		
-		ThreadExitListener* next;		// reserved for use by the ThreadExitNotifier
-		ThreadExitNotifier* chain;		// reserved for use by the ThreadExitNotifier
+		ThreadExitListener* next = nullptr;		// reserved for use by the ThreadExitNotifier
+		ThreadExitNotifier* chain = nullptr;		// reserved for use by the ThreadExitNotifier
 	};
 
 	class ThreadExitNotifier
@@ -1672,7 +1672,7 @@ private:
 	public:
 		Block* next;
 		std::atomic<size_t> elementsCompletelyDequeued;
-		std::atomic<bool> emptyFlags[BLOCK_SIZE <= EXPLICIT_BLOCK_EMPTY_COUNTER_THRESHOLD ? BLOCK_SIZE : 1];
+		std::atomic<bool> emptyFlags[BLOCK_SIZE <= EXPLICIT_BLOCK_EMPTY_COUNTER_THRESHOLD ? BLOCK_SIZE : 1] = {};
 	public:
 		std::atomic<std::uint32_t> freeListRefs;
 		std::atomic<Block*> freeListNext;
@@ -2036,6 +2036,8 @@ private:
 					}
 					else {
 						element = std::move(el); // NOLINT
+// Coverity error: "el" is used after it has been already moved.
+// coverity[use_after_move]
 						el.~T(); // NOLINT
 						block->ConcurrentQueue::Block::template set_empty<explicit_context>(index);
 					}
@@ -2594,6 +2596,8 @@ private:
 					}
 					else {
 						element = std::move(el); // NOLINT
+// Coverity error: "el" is used after it has been already moved.
+// coverity[use_after_move]
 						el.~T(); // NOLINT
 
 						if (block->ConcurrentQueue::Block::template set_empty<implicit_context>(index)) {
