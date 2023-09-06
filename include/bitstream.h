@@ -126,7 +126,7 @@ public:
 
 	inline QWORD Left()
 	{
-		return (bufferLen - bufferPos) * 8 - cached;
+		return QWORD(bufferLen - bufferPos) * 8 - cached;
 	}
 
 	inline DWORD Peek(DWORD n)
@@ -429,7 +429,7 @@ public:
 	
 	inline QWORD Left()
 	{
-		return (size - bufferLen) * 8 - cached;
+		return QWORD(size - bufferLen) * 8 - cached;
 	}
 
 	inline DWORD Put(BYTE n,BitReader &reader)

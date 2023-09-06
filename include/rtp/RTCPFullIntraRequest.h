@@ -25,7 +25,7 @@ public:
 	virtual DWORD Parse(const BYTE* data,DWORD size);
 	virtual DWORD Serialize(BYTE* data,DWORD size);
 private:
-	DWORD ssrc;
+	DWORD ssrc = 0;
 };
 #endif /* RTCPFULLINTRAREQUEST_H */
 

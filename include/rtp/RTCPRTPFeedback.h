@@ -27,6 +27,7 @@ class RTCPRTPFeedback : public RTCPPacket
 public:
 	using shared = std::shared_ptr<RTCPRTPFeedback>;
 	enum FeedbackType {
+		UNKNOWN = 0,
 		NACK = 1,
 		TempMaxMediaStreamBitrateRequest = 3,
 		TempMaxMediaStreamBitrateNotification = 4,
@@ -45,6 +46,8 @@ public:
 				return "TempMaxMediaStreamBitrateNotification";
 			case TransportWideFeedbackMessage:
 				return "TransportWideFeedbackMessage";
+			case UNKNOWN:
+				return "Unknown";
 		}
 		return "Unknown";
 	}
@@ -310,7 +313,7 @@ public:
 private:
 	typedef std::vector<Field::shared> Fields;
 private:
-	FeedbackType feedbackType;
+	FeedbackType feedbackType = UNKNOWN;
 	DWORD senderSSRC = 0;
 	DWORD mediaSSRC = 0;
 	Fields fields;

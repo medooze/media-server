@@ -23,7 +23,7 @@ struct LayerSource : LayerInfo
 {
 	DWORD		numPackets = 0;
 	QWORD		totalBytes = 0;
-	DWORD		bitrate;
+	DWORD		bitrate = 0;
 	Acumulator<uint32_t, uint64_t>	acumulator;
 	
 	LayerSource() : acumulator(1000)

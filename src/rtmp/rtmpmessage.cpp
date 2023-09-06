@@ -925,7 +925,7 @@ void RTMPMediaFrame::Dump()
 		::Dump(buffer,8);
 	else
 		::Dump(buffer,bufferSize);
-	Debug("[/MediaFrame]\n",type,timestamp,bufferSize,mediaSize);
+	Debug("[/MediaFrame]\n");
 }
 
 RTMPVideoFrame::RTMPVideoFrame(QWORD timestamp,DWORD size) : RTMPMediaFrame(Video,timestamp,size)

@@ -74,7 +74,9 @@ int RTMPServer::BindServer()
 
 	//Set SO_REUSEADDR on a socket to true (1):
 	int optval = 1;
-	setsockopt(server, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
+// Ignore coverity error: "this->server" is passed to a parameter that cannot be negative.
+// coverity[negative_returns]
+	(void)setsockopt(server, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
 
 	//Bind to first available port
 	sockaddr_in addr;
@@ -114,7 +116,7 @@ int RTMPServer::Run()
 	//Set non blocking so we can get an error when we are closed by end
 	int fsflags = fcntl(server,F_GETFL,0);
 	fsflags |= O_NONBLOCK;
-	fcntl(server,F_SETFL,fsflags);
+	(void)fcntl(server,F_SETFL,fsflags);
 
 	//Run until ended
 	while(inited)
@@ -177,7 +179,7 @@ int RTMPServer::Run()
 		//Set non blocking again
 		fsflags = fcntl(fd,F_GETFL,0);
 		fsflags |= O_NONBLOCK;
-		fcntl(fd,F_SETFL,fsflags);
+		(void)fcntl(fd,F_SETFL,fsflags);
 
 		//Create the connection
 		CreateConnection(fd);
@@ -243,7 +245,7 @@ void RTMPServer::DeleteAllConnections()
 ************************/
 void * RTMPServer::run(void *par)
 {
-        Log("-RTMP Server Thread [%p]\n",pthread_self());
+        Log("-RTMP Server Thread [%llu]\n",pthread_self());
 
         //Obtenemos el parametro
         RTMPServer *ses = (RTMPServer *)par;
@@ -282,9 +284,9 @@ int RTMPServer::End()
 	server = FD_INVALID;
 
 	//Wait for server thread to close
-        Log("-RTMPServer::End() Joining server thread [%d,%d]\n",serverThread,inited);
+        Log("-RTMPServer::End() Joining server thread [%lu,%d]\n",serverThread,inited);
         pthread_join(serverThread,NULL);
-        Log("-RTMPServer::End() Joined server thread [%d]\n",serverThread);
+        Log("-RTMPServer::End() Joined server thread [%lu]\n",serverThread);
 
 	//Delete connections
 	DeleteAllConnections();

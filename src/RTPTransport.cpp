@@ -205,6 +205,8 @@ int RTPTransport::SetLocalCryptoSDES(const char* suite,const BYTE* key,const DWO
 	} else if (strcmp(suite,"AES_CM_128_HMAC_SHA1_32")==0) {
 		Log("-RTPTransport::SetLocalCryptoSDES() | suite: AES_CM_128_HMAC_SHA1_32\n");
 		srtp_crypto_policy_set_aes_cm_128_hmac_sha1_32(&policy.rtp);
+// Ignore coverity error: "srtp_crypto_policy_set_rtp_default" in "srtp_crypto_policy_set_rtp_default(&policy.rtcp)" looks like a copy-paste error.
+// coverity[copy_paste_error]
 		srtp_crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtcp);  // NOTE: Must be 80 for RTCP!
 	} else if (strcmp(suite,"AES_CM_128_NULL_AUTH")==0) {
 		Log("-RTPTransport::SetLocalCryptoSDES() | suite: AES_CM_128_NULL_AUTH\n");
@@ -267,6 +269,8 @@ int RTPTransport::SetLocalCryptoSDES(const char* suite, const char* key64)
 	//Get lenght
 	WORD len64 = strlen(key64);
 	//Allocate memory for the key
+// Ignore coverity error: Allocating insufficient memory for the terminating null of the string.
+// coverity[alloc_strlen]
 	BYTE sendKey[len64];
 	//Decode
 	WORD len = av_base64_decode(sendKey,key64,len64);
@@ -357,6 +361,8 @@ int RTPTransport::SetRemoteCryptoSDES(const char* suite, const BYTE* key, const 
 	} else if (strcmp(suite,"AES_CM_128_HMAC_SHA1_32")==0) {
 		Log("-RTPTransport::SetRemoteCryptoSDES() | suite: AES_CM_128_HMAC_SHA1_32\n");
 		srtp_crypto_policy_set_aes_cm_128_hmac_sha1_32(&policy.rtp);
+// Ignore coverity error: "srtp_crypto_policy_set_rtp_default" in "srtp_crypto_policy_set_rtp_default(&policy.rtcp)" looks like a copy-paste error.
+// coverity[copy_paste_error]
 		srtp_crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtcp);  // NOTE: Must be 80 for RTCP!
 	} else if (strcmp(suite,"AES_CM_128_NULL_AUTH")==0) {
 		Log("-RTPTransport::SetRemoteCryptoSDES() | suite: AES_CM_128_NULL_AUTH\n");
@@ -420,6 +426,8 @@ int RTPTransport::SetRemoteCryptoSDES(const char* suite, const char* key64)
 	//Get length
 	WORD len64 = strlen(key64);
 	//Allocate memory for the key
+// Ignore coverity error: Allocating insufficient memory for the terminating null of the string.
+// coverity[alloc_strlen]
 	BYTE recvKey[len64];
 	//Decode
 	WORD len = av_base64_decode(recvKey,key64,len64);
@@ -482,11 +490,11 @@ int RTPTransport::SetRemotePort(char *ip,int sendPort)
 void RTPTransport::SendEmptyPacket()
 {
 	//Open rtp
-	sendto(simSocket,rtpEmpty,sizeof(rtpEmpty),0,(sockaddr *)&sendAddr,sizeof(struct sockaddr_in));
+	(void)sendto(simSocket,rtpEmpty,sizeof(rtpEmpty),0,(sockaddr *)&sendAddr,sizeof(struct sockaddr_in));
 	//If not muxing
 	if (!muxRTCP)
 		//Send
-		sendto(simRtcpSocket,rtpEmpty,sizeof(rtpEmpty),0,(sockaddr *)&sendRtcpAddr,sizeof(struct sockaddr_in));
+		(void)sendto(simRtcpSocket,rtpEmpty,sizeof(rtpEmpty),0,(sockaddr *)&sendRtcpAddr,sizeof(struct sockaddr_in));
 }
 
 /********************************
@@ -540,6 +548,8 @@ int RTPTransport::Init()
 		//Try to bind to port
 		recAddr.sin_port = htons(simPort);
 		//Bind the rtcp socket
+// Ignore coverity error: "this->simSocket" is passed to a parameter that cannot be negative.
+// coverity[negative_returns]
 		if(bind(simSocket,(struct sockaddr *)&recAddr,sizeof(struct sockaddr_in))!=0)
 		{
 			//Use random
@@ -565,6 +575,8 @@ int RTPTransport::Init()
 		//Try to bind to port
 		recAddr.sin_port = htons(simRtcpPort);
 		//Bind the rtcp socket
+// Ignore coverity error: "this->simRtcpSocket" is passed to a parameter that cannot be negative.
+// coverity[negative_returns]
 		if(bind(simRtcpSocket,(struct sockaddr *)&recAddr,sizeof(struct sockaddr_in))!=0)
 		{
 			//Use random
@@ -576,13 +588,13 @@ int RTPTransport::Init()
 #ifdef SO_PRIORITY
 		//Set COS
 		int cos = 5;
-		setsockopt(simSocket,     SOL_SOCKET, SO_PRIORITY, &cos, sizeof(cos));
-		setsockopt(simRtcpSocket, SOL_SOCKET, SO_PRIORITY, &cos, sizeof(cos));
+		(void)setsockopt(simSocket,     SOL_SOCKET, SO_PRIORITY, &cos, sizeof(cos));
+		(void)setsockopt(simRtcpSocket, SOL_SOCKET, SO_PRIORITY, &cos, sizeof(cos));
 #endif
 		//Set TOS
 		int tos = 0x2E;
-		setsockopt(simSocket,     IPPROTO_IP, IP_TOS, &tos, sizeof(tos));
-		setsockopt(simRtcpSocket, IPPROTO_IP, IP_TOS, &tos, sizeof(tos));
+		(void)setsockopt(simSocket,     IPPROTO_IP, IP_TOS, &tos, sizeof(tos));
+		(void)setsockopt(simRtcpSocket, IPPROTO_IP, IP_TOS, &tos, sizeof(tos));
 		//Everything ok
 		Log("-RTPTransport::Init() | Got ports [%d,%d]\n",simPort,simRtcpPort);
 		//Start receiving
@@ -713,16 +725,16 @@ int RTPTransport::SendRTPPacket(Packet&& packet)
 				request->AddAttribute(STUNMessage::Attribute::Priority,(DWORD)33554431);
 				
 				//Create new mesage
-				Packet packet = rtpLoop.GetPacketPool().pick();
+				Packet localPacket = rtpLoop.GetPacketPool().pick();
 
 				//Serialize and autenticate
-				size_t len = request->AuthenticatedFingerPrint(packet.GetData(),packet.GetCapacity(),iceLocalPwd);
+				size_t len = request->AuthenticatedFingerPrint(localPacket.GetData(),localPacket.GetCapacity(),iceLocalPwd);
 
 				//Resize
-				packet.SetSize(len);
+				localPacket.SetSize(len);
 				
 				//Send response
-				rtpLoop.Send(ntohl(sendAddr.sin_addr.s_addr),ntohs(sendAddr.sin_port),std::move(packet));
+				rtpLoop.Send(ntohl(sendAddr.sin_addr.s_addr),ntohs(sendAddr.sin_port),std::move(localPacket));
 
 				//Clean response
 				delete(request);
@@ -1105,7 +1117,7 @@ int RTPTransport::ReadRTP(const uint8_t* data, const size_t size, const uint32_t
 	if (size<12)
 	{
 		//Debug
-		Debug("-RTPTransport::ReadRTP() | RTP data not big enought[%d]\n",size);
+		Debug("-RTPTransport::ReadRTP() | RTP data not big enought[%ld]\n",size);
 		//Exit
 		return 0;
 	}

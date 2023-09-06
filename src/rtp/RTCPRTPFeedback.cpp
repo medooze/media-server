@@ -219,7 +219,6 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::GetSize() const
 				//Remove all statuses
 				statuses.clear();
 				//REset
-				lastStatus = PacketStatus::Reserved;
 				maxStatus = PacketStatus::NotReceived;
 				allsame = true;
 			} else {
@@ -416,7 +415,6 @@ DWORD RTCPRTPFeedback::TransportWideFeedbackMessageField::Serialize(BYTE* data,D
 				//Remove all statuses
 				statuses.clear();
 				//Reset status
-				lastStatus = PacketStatus::Reserved;
 				maxStatus = PacketStatus::NotReceived;
 				allsame = true;
 			} else {
@@ -724,7 +722,7 @@ void RTCPRTPFeedback::TransportWideFeedbackMessageField::Dump() const
 {
 	QWORD prev = 0;
 	//Debug
-	Debug("\t\t[TransportWideFeedbackMessage seq:%d num:%d]\n",feedbackPacketCount,packets.size());
+	Debug("\t\t[TransportWideFeedbackMessage seq:%d num:%llu]\n",feedbackPacketCount,packets.size());
 	//For each packet
 	for (Packets::const_iterator it = packets.begin(); it!=packets.end(); ++it)
 	{

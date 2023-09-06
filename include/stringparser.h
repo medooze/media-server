@@ -434,7 +434,7 @@ public:
 	}
 
 private:
-	long int number;
+	long int number = 0;
 };
 
 class WideStringParser : public BaseStringParser<wchar_t,std::wstring>
@@ -560,7 +560,7 @@ public:
 		return number;
 	}
 private:
-	long int number;
+	long int number = 0;
 };
 
 class JSONValue 
@@ -1197,7 +1197,7 @@ public:
 	}
 
 private:
-	long double number;
+	long double number = 0.0;
 };
 #endif	/* STRINGPARSER_H */
 

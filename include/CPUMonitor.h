@@ -34,10 +34,10 @@ private:
         static void * run(void *par);
 
 private:
-	int		numcpu;
-	int		interval;
-	bool		started;
-	pthread_t	thread;
+	int		numcpu = 0;
+	int		interval = 0;
+	bool		started = false;
+	pthread_t	thread = 0;
 	Wait		wait;
 	Listeners	listeners;
 };

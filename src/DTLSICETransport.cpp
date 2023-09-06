@@ -40,6 +40,7 @@
 #include "EventLoop.h"
 #include "Endpoint.h"
 #include "VideoLayerSelector.h"
+#include <algorithm>
 
 constexpr auto IceTimeout			= 30000ms;
 constexpr auto ProbingInterval			= 5ms;
@@ -431,7 +432,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		//Check codec
 		if (codec==RTPMap::NotFound)
 			  //Error
-			  return Warning("-DTLSICETransport::onData() | RTP RTX packet apt type unknown [%d]\n",MediaFrame::TypeToString(packet->GetMediaType()),packet->GetPayloadType());
+			  return Warning("-DTLSICETransport::onData() | RTP RTX packet apt type unknown [%s %d]\n",MediaFrame::TypeToString(packet->GetMediaType()),packet->GetPayloadType());
 		
 		//Remove OSN and restore seq num
 		if (!packet->RecoverOSN())
@@ -463,7 +464,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 	
 	//Send nack feedback
 	if ((group->type == MediaFrame::Video || recvMaps.apt.GetTypeForCodec(packet->GetPayloadType()!=RTPMap::NotFound)) &&
-		( lost>0 ||  (group->GetCurrentLost() && (now-source->lastNACKed)/1000>fmax(rtt,20)))
+		( lost>0 ||  (group->GetCurrentLost() && (now-source->lastNACKed)/1000>std::max(rtt,20u)))
 	   )
 	{
 		//UltraDebug("-DTLSICETransport::onData() | Lost packets [ssrc:%u,ssrc:%u,seq:%d,lost:%d,total:%u]\n",ssrc,packet->GetSSRC(),packet->GetSeqNum(),lost,group->GetCurrentLost());
@@ -534,7 +535,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 			}
 			
 			//LOg
-			UltraDebug("-DTLSICETransport::onData() | Sending REMB [ssrc:%u,mid:'%s',count:%d,bitrate:%u]\n",group->media.ssrc,group->mid.c_str(),ssrcs.size(),bitrate);
+			UltraDebug("-DTLSICETransport::onData() | Sending REMB [ssrc:%u,mid:'%s',count:%lu,bitrate:%u]\n",group->media.ssrc,group->mid.c_str(),ssrcs.size(),bitrate);
 			
 			// SSRC of media source (32 bits):  Always 0; this is the same convention as in [RFC5104] section 4.2.2.2 (TMMBN).
 			auto remb = rtcp->CreatePacket<RTCPPayloadFeedback>(RTCPPayloadFeedback::ApplicationLayerFeeedbackMessage,group->media.ssrc,WORD(0));
@@ -2245,8 +2246,7 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 		//Append it to the end of the packet history
 		history.push_back(packet);
 	
-	//Did we send successfully?
-	return (len>=0);
+	return true;
 }
 
 void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
@@ -2444,6 +2444,9 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 								senderSideBandwidthEstimator->ReceivedFeedback(field->feedbackPacketCount,field->packets,now);
 							}
 						break;
+					case RTCPRTPFeedback::UNKNOWN:
+						UltraDebug("-DTLSICETransport::onRTCP() | RTCPRTPFeedback type unknown\n");
+						break;
 				}
 				break;
 			}
@@ -2540,6 +2543,9 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 								}
 							}
 						}
+						break;
+					case RTCPPayloadFeedback::UNKNOWN:
+						Debug("-DTLSICETransport::onRTCP() | RTCPPayloadFeedback type unknown\n");
 						break;
 				}
 				break;

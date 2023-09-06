@@ -117,7 +117,7 @@ public:
 			//Check error
 			if (ret)
 				//Print error
-				Error("-Wait cond timedwait error [%rd,%d]\n",ret,errno);
+				Error("-Wait cond timedwait error [%d,%d]\n",ret,errno);
 		}
 
 		//If we have been cancel

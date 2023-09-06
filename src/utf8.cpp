@@ -157,6 +157,8 @@ DWORD UTF8Parser::GetLength() const
 
 void UTF8Parser::SetWString(const std::wstring& str)
 {
+	Reset();
+	
 	//Set value
 	value = str;
 	//Calculate UTF8Size again

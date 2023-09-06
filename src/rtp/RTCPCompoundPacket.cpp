@@ -158,7 +158,7 @@ RTCPCompoundPacket::shared RTCPCompoundPacket::Parse(const BYTE *data,DWORD size
 
 void RTCPCompoundPacket::Dump() const
 {
-	Debug("[RTCPCompoundPacket count=%d size=%d]\n",packets.size(),GetSize());
+	Debug("[RTCPCompoundPacket count=%llu size=%d]\n",packets.size(),GetSize());
 	//For each one
 	for(RTCPPackets::const_iterator it = packets.begin(); it!=packets.end(); ++it)
 		//Dump

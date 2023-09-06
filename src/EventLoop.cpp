@@ -80,7 +80,7 @@ EventLoop::EventLoop(Listener *listener, uint32_t packetPoolSize) :
 	listener(listener),
 	packetPool(packetPoolSize ? packetPoolSize : PacketPoolSize)
 {
-	Debug("-EventLoop::EventLoop() [this:%p,packetPoolSize:%d]\n", this, packetPool.size());
+	Debug("-EventLoop::EventLoop() [this:%p,packetPoolSize:%lu]\n", this, packetPool.size());
 }
 
 
@@ -145,7 +145,7 @@ bool EventLoop::SetAffinity(int cpu)
 	//If got socket
 	if (fd)
 		//Set incoming socket cpu affinity
-		setsockopt(fd, SOL_SOCKET, SO_INCOMING_CPU, &cpu, sizeof(cpu));
+		(void)setsockopt(fd, SOL_SOCKET, SO_INCOMING_CPU, &cpu, sizeof(cpu));
 #endif
 
 	//Set event loop thread affinity
@@ -322,7 +322,7 @@ void EventLoop::Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet
 			//We are overflowing
 			state = State::Overflown;
 			//Log
-			Error("-EventLoop::Send() | sending queue overflown [aprox:%u]\n",aprox);
+			Error("-EventLoop::Send() | sending queue overflown [aprox:%lu]\n",aprox);
 		}
 		//Do not enqueue more
 		return;
@@ -330,12 +330,12 @@ void EventLoop::Send(const uint32_t ipAddr, const uint16_t port, Packet&& packet
 		//We are lagging behind
 		state = State::Lagging;
 		//Log
-		Error("-EventLoop::Send() | sending queue lagging behind [aprox:%u]\n",aprox);
+		Error("-EventLoop::Send() | sending queue lagging behind [aprox:%lu]\n",aprox);
 	} else if (aprox<MaxSendingQueueSize/4 && state!=State::Normal)  {
 		//We are normal again
 		state = State::Normal;
 		//Log
-		Log("-EventLoop::Send() | sending queue back to normal [aprox:%u]\n",aprox);
+		Log("-EventLoop::Send() | sending queue back to normal [aprox:%lu]\n",aprox);
 	}
 	
 	//Create send packet
@@ -575,6 +575,8 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 	//Log(">EventLoop::Run() | [%p,running:%d,duration:%llu]\n",this,running,duration.count());
 	
 	//Recv data
+// Ignore coverity error: Local variable "datas" uses 192000 bytes of stack space, which exceeds the maximum single use of 20000 bytes.
+// coverity[stack_use_local_overflow]
 	uint8_t datas[MaxMultipleReceivingMessages][MTU] ZEROALIGNEDTO32;
 	size_t  size = MTU;
 	
@@ -593,7 +595,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 	//Set non blocking so we can get an error when we are closed by end
 	int fsflags = fcntl(fd,F_GETFL,0);
 	fsflags |= O_NONBLOCK;
-	fcntl(fd,F_SETFL,fsflags);
+	(void)fcntl(fd,F_SETFL,fsflags);
 
 
 	//Catch all IO errors and do nothing
@@ -623,7 +625,7 @@ void EventLoop::Run(const std::chrono::milliseconds &duration)
 		//Wait for events
 		{
 			//TRACE_EVENT("eventloop", "poll", "timeout", timeout);
-			poll(ufds,sizeof(ufds)/sizeof(pollfd),timeout);
+			(void)poll(ufds,sizeof(ufds)/sizeof(pollfd),timeout);
 		}
 		
 		//Update now

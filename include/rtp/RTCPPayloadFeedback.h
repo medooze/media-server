@@ -27,6 +27,7 @@ public:
 	using shared = std::shared_ptr<RTCPPayloadFeedback>;
 	
 	enum FeedbackType {
+		UNKNOWN=0,
 		PictureLossIndication =1,
 		SliceLossIndication = 2,
 		ReferencePictureSelectionIndication = 3,
@@ -57,6 +58,8 @@ public:
 				return "VideoBackChannelMessage";
 			case ApplicationLayerFeeedbackMessage:
 				return "ApplicationLayerFeeedbackMessage";
+			case UNKNOWN:
+				return "Unkown";
 		}
 		return "Unknown";
 	}
@@ -126,6 +129,8 @@ public:
 
 		ReferencePictureSelectionField()
 		{
+			padding = 0;
+			type = 0;
 			payload = NULL;
 			length = 0;
 		}
@@ -273,6 +278,9 @@ public:
 		BYTE* payload;
 		VideoBackChannelMessageField()
 		{
+			ssrc = 0;
+			seq = 0;
+			type = 0;
 			payload = 0;
 			length = 0;
 		}
@@ -447,9 +455,9 @@ public:
 private:
 	typedef std::vector<Field::shared> Fields;
 private:
-	FeedbackType feedbackType;
-	DWORD senderSSRC;
-	DWORD mediaSSRC;
+	FeedbackType feedbackType = UNKNOWN;
+	DWORD senderSSRC = 0;
+	DWORD mediaSSRC = 0;
 	Fields fields;
 };
 

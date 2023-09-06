@@ -47,10 +47,10 @@ private:
 	typedef std::list<RTMPMessage*> RTMPMessages;
 private:
 	RTMPMessages messages;	
-	DWORD chunkStreamId;
-	RTMPMessage* message;
-	DWORD pos;
-	BYTE* msgBuffer;
+	DWORD chunkStreamId = 0;
+	RTMPMessage* message = nullptr;
+	DWORD pos = 0;
+	BYTE* msgBuffer = nullptr;
 	pthread_mutex_t mutex;
 };
 

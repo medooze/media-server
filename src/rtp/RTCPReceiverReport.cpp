@@ -28,7 +28,7 @@ void RTCPReceiverReport::Dump()
 {
 	if (reports.size())
 	{
-		Debug("\t[RTCPReceiverReport ssrc=%u count=%u]\n",ssrc,reports.size());
+		Debug("\t[RTCPReceiverReport ssrc=%u count=%llu]\n",ssrc,reports.size());
 		for(Reports::iterator it = reports.begin();it!=reports.end();++it)
 			(*it)->Dump();
 		Debug("\t[/RTCPReceiverReport]\n");

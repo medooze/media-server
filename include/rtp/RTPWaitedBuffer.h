@@ -205,7 +205,7 @@ public:
 				//Check error
 				if (ret)
 					//Print error
-					Error("-WaitQueue cond timedwait error [%rd,%d]\n",ret,errno);
+					Error("-WaitQueue cond timedwait error [%d,%d]\n",ret,errno);
 			}
 		}
 		

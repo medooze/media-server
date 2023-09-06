@@ -119,7 +119,6 @@ public:
 			default:
 				return "Unknown";
 		}
-		return "Unknown";
 	}
 
 	MediaFrame(Type type)

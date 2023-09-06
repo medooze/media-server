@@ -18,8 +18,8 @@ public:
 	DWORD Serialize(BYTE *data,DWORD size);
 	DWORD GetSize();
 private:
-	WORD value;
-	WORD len;
+	WORD value = 0;
+	WORD len = 0;
 };
 
 class U32Parser
@@ -34,8 +34,8 @@ public:
 	DWORD Serialize(BYTE *data,DWORD size);
 	DWORD GetSize();
 private:
-	DWORD value;
-	WORD len;
+	DWORD value = 0;
+	WORD len = 0;
 };
 
 class U29Parser
@@ -47,9 +47,9 @@ public:
 	bool IsParsed();
 	DWORD GetValue();
 private:
-	DWORD value;
-	WORD len;
-	bool last;
+	DWORD value = 0;
+	WORD len = 0;
+	bool last = false;
 };
 
 
@@ -321,7 +321,7 @@ public:
 	virtual ValueType GetType() {return Date;};
 	time_t& GetDate();
 private:
-	time_t value;
+	time_t value {};
 };
 
 
@@ -361,7 +361,8 @@ public:
 	virtual ValueType GetType() {return Reference;};
 	WORD GetReference();
 private:
-	WORD value;
+
+	WORD value = 0;
 };
 
 class AMFUnsupported : public AMFData

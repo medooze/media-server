@@ -70,16 +70,16 @@ struct ProgramMap
 	/** data for an Elementary Stream entry in a PMT */
 	struct ElementaryStream
 	{
-		uint8_t streamType;
-		uint16_t pid;
-		uint8_t _reserved1;
+		uint8_t streamType = 0;
+		uint16_t pid = 0;
+		uint8_t _reserved1 = 0;
 		BufferReader descriptor;
 
 		static ElementaryStream Parse(BufferReader& reader);
 	};
 
-	uint16_t pcrPid;
-	uint8_t _reserved1;
+	uint16_t pcrPid = 0;
+	uint8_t _reserved1 = 0;
 	BufferReader programInfo;
 	std::vector<ElementaryStream> streams;
 

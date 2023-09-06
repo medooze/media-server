@@ -58,7 +58,7 @@ void CPUMonitor::Stop()
 
 void * CPUMonitor::run(void *par)
 {
-        Log("-CPU Monitor Thread [%d]\n",pthread_self());
+        Log("-CPU Monitor Thread [%lu]\n",pthread_self());
 
         //Obtenemos el parametro
         CPUMonitor *monitor = (CPUMonitor *)par;
@@ -76,7 +76,7 @@ int CPUMonitor::Run()
 {
 	rusage prev;
 	rusage next;
-	timeval before;
+	timeval before = {};
 	//Get previous measure
 	getrusage(RUSAGE_SELF,&prev);
 	//Get current time

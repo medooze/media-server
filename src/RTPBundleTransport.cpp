@@ -64,7 +64,7 @@ void RTPBundleTransport::SetRawTx(int32_t ifindex, unsigned int sndbuf, bool ski
 	if (!fd.isValid())
 		throw std::system_error(std::error_code(errno, std::system_category()), "failed creating AF_PACKET socket");
 
-	fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
+	(void)fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
 
 	struct sockaddr_ll bindAddr;
 	bindAddr.sll_family = AF_PACKET;
@@ -313,6 +313,8 @@ int RTPBundleTransport::Init()
 		//Try to bind to port
 		recAddr.sin_port = htons(port);
 		//Bind the rtp socket
+// Ignore coverity error: "this->socket" is passed to a parameter that cannot be negative.
+// coverity[negative_returns]
 		if(bind(socket,(struct sockaddr *)&recAddr,sizeof(struct sockaddr_in))!=0)
 		{
 			Log("-could not bind");
@@ -333,16 +335,16 @@ int RTPBundleTransport::Init()
 #ifdef SO_PRIORITY
 		//Set COS
 		int cos = 5;
-		setsockopt(socket, SOL_SOCKET, SO_PRIORITY, &cos, sizeof(cos));
+		(void)setsockopt(socket, SOL_SOCKET, SO_PRIORITY, &cos, sizeof(cos));
 #endif
 		//Set TOS
 		int tos = 0x2E;
-		setsockopt(socket, IPPROTO_IP, IP_TOS, &tos, sizeof(tos));
+		(void)setsockopt(socket, IPPROTO_IP, IP_TOS, &tos, sizeof(tos));
 		
 #ifdef IP_PMTUDISC_DONT			
 		//Disable path mtu discoveruy
 		int pmtu = IP_PMTUDISC_DONT;
-		setsockopt(socket, IPPROTO_IP, IP_MTU_DISCOVER, &pmtu, sizeof(pmtu));
+		(void)setsockopt(socket, IPPROTO_IP, IP_MTU_DISCOVER, &pmtu, sizeof(pmtu));
 #endif
 		
 		//Everything ok
@@ -398,6 +400,8 @@ int RTPBundleTransport::Init(int port)
 	//Try to bind to port
 	recAddr.sin_port = htons(port);
 	//Bind the rtp socket
+// Ignore coverity error: "this->socket" is passed to a parameter that cannot be negative.
+// coverity[negative_returns]
 	if(bind(socket,(struct sockaddr *)&recAddr,sizeof(struct sockaddr_in))!=0)
 		//Error
 		return Error("-RTPBundleTransport::Init() | could not open port\n");
@@ -405,16 +409,16 @@ int RTPBundleTransport::Init(int port)
 #ifdef SO_PRIORITY
 	//Set COS
 	int cos = 5;
-	setsockopt(socket, SOL_SOCKET, SO_PRIORITY, &cos, sizeof(cos));
+	(void)setsockopt(socket, SOL_SOCKET, SO_PRIORITY, &cos, sizeof(cos));
 #endif
 	//Set TOS
 	int tos = 0x2E;
-	setsockopt(socket, IPPROTO_IP, IP_TOS, &tos, sizeof(tos));
+	(void)setsockopt(socket, IPPROTO_IP, IP_TOS, &tos, sizeof(tos));
 	
 #ifdef IP_PMTUDISC_DONT	
 	//Disable path mtu discoveruy
 	int pmtu = IP_PMTUDISC_DONT;
-	setsockopt(socket, IPPROTO_IP, IP_MTU_DISCOVER, &pmtu, sizeof(pmtu));
+	(void)setsockopt(socket, IPPROTO_IP, IP_MTU_DISCOVER, &pmtu, sizeof(pmtu));
 #endif
 	//Everything ok
 	Log("-RTPBundleTransport::Init() | Got port [%d]\n",port);

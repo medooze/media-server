@@ -321,7 +321,7 @@ struct VP8PayloadHeader
 			{
 				::Dump4(data,10);
 				//Invalid
-				return Error("Invalid start code [%p]\n",get3(data,3));
+				return Error("Invalid start code [%u]\n",get3(data,3));
 			}
 			//Get size in le
 			WORD hor = data[7]<<8 | data[6];

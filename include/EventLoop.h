@@ -158,8 +158,8 @@ private:
 		SendBuffer(const SendBuffer&) = delete;
 		SendBuffer& operator=(SendBuffer const&) = delete;
 		
-		uint32_t ipAddr;
-		uint16_t port;
+		uint32_t ipAddr = 0;
+		uint16_t port = 0;
 		Packet   packet;
 		std::optional<PacketHeader::FlowRoutingInfo> rawTxData;
 		std::optional<std::function<void(std::chrono::milliseconds)>> callback;
