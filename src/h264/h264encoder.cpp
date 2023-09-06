@@ -28,11 +28,11 @@ static void X264_log(void *p, int level, const char *fmt, va_list args)
 void GetAndCheckX264HighLevelProperty(const Properties& properties, const std::string& property_name, std::optional<std::string>& var, const char * const options[], const std::string& defaultInUse)
 {
 	const std::string notConfiged = "";
-	std::string var_str = properties.GetProperty("h264." + property_name, notConfiged);
+	std::string varStr = properties.GetProperty("h264." + property_name, notConfiged);
 
 	var.reset();
 	// no property is set, leave var as nullopt
-	if (var_str.empty())
+	if (varStr.empty())
 	{
 		return;
 	}
@@ -40,10 +40,10 @@ void GetAndCheckX264HighLevelProperty(const Properties& properties, const std::s
 	// this check should only apply to x264_xxx_names[]
 	for (size_t i = 0; options[i]; ++i)
 	{
-		if (var_str == std::string(options[i]))
+		if (varStr == std::string(options[i]))
 		{
 			// found valid property, assign to var
-			var.emplace(var_str);
+			var.emplace(varStr);
 			return;
 		}
 	}

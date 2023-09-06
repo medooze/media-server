@@ -48,11 +48,11 @@ private:
 	int opened;
 	int intraPeriod;
 	int pts;
-	std::optional<std::string> profile = std::nullopt;
-	std::optional<std::string> level   = std::nullopt;
-	std::optional<std::string> preset  = std::nullopt;
-	std::optional<std::string> tune    = std::nullopt;
-	float ipratio;
+	std::optional<std::string> profile ;
+	std::optional<std::string> level   ;
+	std::optional<std::string> preset  ;
+	std::optional<std::string> tune    ;
+	float ipratio = -1.0F;
 	float ratetol;
 	int threads;
 };
