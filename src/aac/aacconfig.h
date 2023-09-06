@@ -58,7 +58,7 @@
 class AACSpecificConfig
 {
 public:
-	static constexpr DWORD rates[13] = {
+	static constexpr std::array<DWORD, 13> rates = {
 		96000, 88200, 64000, 48000, 44100, 32000,
 		24000, 22050, 16000, 12000, 11025,  8000,
 		7350
@@ -74,7 +74,7 @@ public:
 	static BYTE GetSampleRateIndex(DWORD rate)
 	{
 		//Search
-		for (DWORD i=0;i<sizeof(rates)/sizeof(rates[0]);i++)
+		for (DWORD i=0;i<rates.size();i++)
 			//Check rate
 			if (rates[i]==rate)
 				//Found
@@ -130,7 +130,7 @@ public:
 		CHECK(r); objectType = r.Get(5);
 		CHECK(r); rateIndex = r.Get(4);
 		//Check rate index
-		if (rateIndex<(sizeof(rates)/sizeof(rates[0])))
+		if (rateIndex<rates.size())
 		{
 			//Get rate from table
 			rate = rates[rateIndex];
