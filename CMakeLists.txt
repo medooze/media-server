@@ -20,6 +20,7 @@ add_subdirectory(ext/googletest)
 add_library(MediaServerLib
     ${CMAKE_CURRENT_LIST_DIR}/src/DependencyDescriptorLayerSelector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/h264/H264LayerSelector.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtmp/amf.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/DependencyDescriptor.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/LayerInfo.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTCPCommonHeader.cpp
@@ -41,6 +42,7 @@ add_library(MediaServerLib
     ${CMAKE_CURRENT_LIST_DIR}/src/PacketHeader.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/SimulcastMediaFrameListener.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/VideoLayerSelector.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/utf8.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/vp8/vp8depacketizer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/vp8/VP8LayerSelector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/vp9/VP9LayerSelector.cpp
@@ -64,6 +66,7 @@ add_executable(MediaServerUnitTest
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestRTPStreamTransponder.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestSimulcastMediaFrameListener.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestVP8Depacketizer.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAMFNumber.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/data/FramesArrivalInfo.cpp
 )
 

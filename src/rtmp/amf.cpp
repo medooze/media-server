@@ -463,7 +463,7 @@ double AMFNumber::GetNumber()
 {
 	if(value+value > 0xFFEULL<<52)
         	return 0.0;
-    	return ldexp(((value&((1LL<<52)-1)) + (1LL<<52)) * (value>>63|1), (value>>52&0x7FF)-1075);
+    	return std::ldexp(((value&((1LL<<52)-1)) + (1LL<<52)), (value>>52&0x7FF)-1075) * (((value>>63) == 1) ? -1 : 1);
 }
 
 void AMFNumber::SetNumber(double d)
