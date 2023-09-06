@@ -253,7 +253,7 @@ public:
 		Debug("\t %s.lower_bit_rate_constraint_flag		= %d\n", name.c_str(), lower_bit_rate_constraint_flag		);
 		Debug("\t %s.max_14bit_constraint_flag			= %d\n", name.c_str(), max_14bit_constraint_flag			);
 		Debug("\t %s.inbld_flag							= %d\n", name.c_str(), inbld_flag							);
-		Debug("\t %s.constraint_indicator_flags			= 0x%x\n", name.c_str(), constraing_indicator_flags);
+		Debug("\t %s.constraint_indicator_flags			= 0x%lu\n", name.c_str(), constraing_indicator_flags);
 		Debug("\t %s.level_idc							= %d\n", name.c_str(), level_idc);
 	}
 
@@ -344,9 +344,9 @@ public:
 	const H265ProfileTierLevel& GetProfileTierLevel() const {return profile_tier_level;}
 
 private:
-	BYTE vps_id;
-	BYTE vps_max_layers_minus1		;
-	BYTE vps_max_sub_layers_minus1	;
+	BYTE vps_id  = 0;
+	BYTE vps_max_layers_minus1		= 0;
+	BYTE vps_max_sub_layers_minus1	= 0;
 	bool vps_temporal_id_nesting_flag  = false;
 	H265ProfileTierLevel profile_tier_level;
 };

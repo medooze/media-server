@@ -168,7 +168,7 @@ bool H265ProfileTierLevel::Decode(BitReader& r, bool profilePresentFlag, BYTE ma
 		{ 
 			if(!sub_layer_profile_tier_level[i].Decode(r))
 			{
-				Error("PTL information for sublayer %i too short\n",	i);
+				Error("PTL information for sublayer %zu too short\n",	i);
 				return false;
 			}
 		}
@@ -176,13 +176,13 @@ bool H265ProfileTierLevel::Decode(BitReader& r, bool profilePresentFlag, BYTE ma
 		{
 			if (r.Left() < 8)
 			{
-				Error("Not enough data for sublayer %i level_idc\n",	i);
+				Error("Not enough data for sublayer %zu level_idc\n",	i);
 				return false;
 			}
 			else
 			{
 				CHECK(r); sub_layer_profile_tier_level[i].SetLevelIdc(r.Get(8));
-				Debug("-H265: [sub_layer[%d].level_idc: %d, level: %.02f]\n", i, sub_layer_profile_tier_level[i].GetLevelIdc(), static_cast<float>(sub_layer_profile_tier_level[i].GetLevelIdc()) / 30);
+				Debug("-H265: [sub_layer[%zu].level_idc: %d, level: %.02f]\n", i, sub_layer_profile_tier_level[i].GetLevelIdc(), static_cast<float>(sub_layer_profile_tier_level[i].GetLevelIdc()) / 30);
 			}
 		}
 	}

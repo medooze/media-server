@@ -74,7 +74,7 @@ public:
 		for (size_t i = 0; i < generalConstraintIndicatorFlags.size(); ++i)
 		{
 			const BYTE bits_offset = i * 8;
-			generalConstraintIndicatorFlags[i] = (in & (0xff << bits_offset)) >> bits_offset; 
+			generalConstraintIndicatorFlags[i] = (in & (0xffULL << bits_offset)) >> bits_offset; 
 		}
 	}
 	void SetNALUnitLengthSizeMinus1(BYTE in)			{ NALUnitLengthSizeMinus1 = in; }
