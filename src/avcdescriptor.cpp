@@ -263,9 +263,11 @@ void AVCDescriptor::Dump() const
 	{
 		H264SeqParameterSet sps;
 		//Decode
-		(void)sps.Decode(spsData[i],spsSizes[i]);
-		//Dump
-		sps.Dump();
+		if (sps.Decode(spsData[i],spsSizes[i]))
+		{
+			//Dump
+			sps.Dump();
+		}
 	}
 	
 	
@@ -274,9 +276,11 @@ void AVCDescriptor::Dump() const
 	{
 		H264PictureParameterSet pps;
 		//Decode
-		pps.Decode(spsData[i],spsSizes[i]);
-		//Dump
-		pps.Dump();
+		if (pps.Decode(spsData[i],spsSizes[i]))
+		{
+			//Dump
+			pps.Dump();
+		}
 	}
 	Debug("[AVCDescriptor/]\n");
 }

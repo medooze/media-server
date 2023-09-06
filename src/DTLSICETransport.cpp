@@ -464,7 +464,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 	
 	//Send nack feedback
 	if ((group->type == MediaFrame::Video || recvMaps.apt.GetTypeForCodec(packet->GetPayloadType()!=RTPMap::NotFound)) &&
-		( lost>0 ||  (group->GetCurrentLost() && (now-source->lastNACKed)/1000>std::max(rtt,uint32_t(20))))
+		( lost>0 ||  (group->GetCurrentLost() && (now-source->lastNACKed)/1000>std::max(rtt,20u)))
 	   )
 	{
 		//UltraDebug("-DTLSICETransport::onData() | Lost packets [ssrc:%u,ssrc:%u,seq:%d,lost:%d,total:%u]\n",ssrc,packet->GetSSRC(),packet->GetSeqNum(),lost,group->GetCurrentLost());
@@ -2444,6 +2444,9 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 								senderSideBandwidthEstimator->ReceivedFeedback(field->feedbackPacketCount,field->packets,now);
 							}
 						break;
+					case RTCPRTPFeedback::UNKNOWN:
+						UltraDebug("-DTLSICETransport::onRTCP() | RTCPRTPFeedback type unknown\n");
+						break;
 				}
 				break;
 			}
@@ -2540,6 +2543,9 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 								}
 							}
 						}
+						break;
+					case RTCPPayloadFeedback::UNKNOWN:
+						Debug("-DTLSICETransport::onRTCP() | RTCPPayloadFeedback type unknown\n");
 						break;
 				}
 				break;

@@ -898,6 +898,8 @@ void RTPSession::onRTCPPacket(const BYTE* buffer, DWORD size)
 							}
 						}
 						break;
+					case RTCPPayloadFeedback::UNKNOWN:
+						break;
 				}
 				break;
 			}

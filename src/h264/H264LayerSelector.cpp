@@ -3,8 +3,6 @@
 		
 H264LayerSelector::H264LayerSelector()
 {
-	waitingForIntra = true;
-	nextTemporalLayerId = 0;
 }
 
 void H264LayerSelector::SelectTemporalLayer(BYTE id)
