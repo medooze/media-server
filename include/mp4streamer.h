@@ -76,7 +76,7 @@ struct MP4RtpTrack
 				break;
 			default:
 				//Not supported here
-				break;
+				return;
 		}
 		//Set clock rate
 		frame->SetClockRate(clockrate);

@@ -875,7 +875,9 @@ QWORD MP4TextTrack::GetNextFrameTime()
 
 double MP4Streamer::GetDuration()
 {
-	return MP4GetDuration(mp4)/MP4GetTimeScale(mp4);
+	auto scale = MP4GetTimeScale(mp4);
+	if (scale == 0) return 0.0;
+	return MP4GetDuration(mp4)/scale;
 }
 
 DWORD MP4Streamer::GetVideoWidth()

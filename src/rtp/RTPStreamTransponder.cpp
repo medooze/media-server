@@ -477,7 +477,7 @@ void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPP
 		std::optional<std::vector<bool>> forwaredDecodeTargets;
 
 		//If it is AV1
-		if (codec==VideoCodec::AV1)
+		if (codec==VideoCodec::AV1 && selector)
 			//Get decode target
 			forwaredDecodeTargets = static_cast<DependencyDescriptorLayerSelector*>(selector.get())->GetForwardedDecodeTargets();
 
