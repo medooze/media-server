@@ -25,20 +25,31 @@ static void X264_log(void *p, int level, const char *fmt, va_list args)
 	Log("x264 %s",line);
 }
 
-bool H264Encoder::IsParamsValid(const char * const options[], const std::string& input) const
+void GetAndCheckX264HighLevelProperty(const Properties& properties, const std::string& property_name, std::optional<std::string>& var, const char * const options[], const std::string& defaultInUse)
 {
-	if (input == h264UnSet)
-		return true;
+	const std::string notConfiged = "";
+	std::string var_str = properties.GetProperty("h264." + property_name, notConfiged);
+
+	var.reset();
+	// no property is set, leave var as nullopt
+	if (var_str.empty())
+	{
+		return;
+	}
 
 	// this check should only apply to x264_xxx_names[]
 	for (size_t i = 0; options[i]; ++i)
 	{
-		if (input == std::string(options[i]))
+		if (var_str == std::string(options[i]))
 		{
-			return true;
+			// found valid property, assign to var
+			var.emplace(var_str);
+			return;
 		}
 	}
-	return false;
+
+	// not valid property settings
+	Error("-H264Encoder::H264Encoder: Invalid %s in profile property, force it to %s\n", property_name.c_str(), defaultInUse.c_str());
 }
 
 int H264Encoder::LevelNumberToLevelIdc(const std::string& levelNumber) const
@@ -69,20 +80,11 @@ H264Encoder::H264Encoder(const Properties& properties) : frame(VideoCodec::H264)
 	//Number of threads or auto
 	threads = properties.GetProperty("h264.threads",0);
 
-	auto GetAndCheckX264HighLevelProperty = [this, &properties](const std::string& property_name, std::string& var, const char * const options[], const std::string& defaultInUse){
-		var = properties.GetProperty("h264." + property_name,h264UnSet);
-		if (!IsParamsValid(options, var))
-		{
-			var = h264UnSet;
-			Warning("-H264Encoder::H264Encoder: Invalid %s in profile property, force it to %s\n", property_name.c_str(), defaultInUse.c_str());
-		}
-	};
-
 	//Check profile/level/preset/tune
-	GetAndCheckX264HighLevelProperty("profile", profile, x264_profile_names, ProfileInUse());
-	GetAndCheckX264HighLevelProperty("level", level, x264_level_names, LevelInUse());
-	GetAndCheckX264HighLevelProperty("preset", preset, x264_preset_names, PresetInUse());
-	GetAndCheckX264HighLevelProperty("tune", tune, x264_tune_names, TuneInUse());
+	GetAndCheckX264HighLevelProperty(properties, "profile", profile, x264_profile_names, GetProfileInUse());
+	GetAndCheckX264HighLevelProperty(properties, "level", level, x264_level_names, GetLevelInUse());
+	GetAndCheckX264HighLevelProperty(properties, "preset", preset, x264_preset_names, GetPresetInUse());
+	GetAndCheckX264HighLevelProperty(properties, "tune", tune, x264_tune_names, GetTuneInUse());
 
 	//ipratio
 	ipratio = properties.GetProperty("h264.ipratio", -1.0F);
@@ -180,7 +182,7 @@ int H264Encoder::SetFrameRate(int frames,int kbits,int intraPeriod)
 ***********************/
 int H264Encoder::OpenCodec()
 {
-	Log("-H264Encoder::OpenCodec() [%dkbps,%dfps,%dintra,width:%d,height:%d, profile: %s, level: %s, preset: %s, tune: %s, streaming: %d, ipratio: %f, ratetol: %f]\n",bitrate,fps,intraPeriod,width,height, ProfileInUse().c_str(), LevelInUse().c_str(), PresetInUse().c_str(), TuneInUse().c_str(), streaming, ipratio, ratetol);
+	Log("-H264Encoder::OpenCodec() [%dkbps,%dfps,%dintra,width:%d,height:%d, profile: %s, level: %s, preset: %s, tune: %s, streaming: %d, ipratio: %f, ratetol: %f]\n",bitrate,fps,intraPeriod,width,height, GetProfileInUse().c_str(), GetLevelInUse().c_str(), GetPresetInUse().c_str(), GetTuneInUse().c_str(), streaming, ipratio, ratetol);
 
 	// Check 
 	if (opened)
@@ -190,7 +192,7 @@ int H264Encoder::OpenCodec()
 	x264_param_default(&params);
 
 	// Use a defulat preset
-	x264_param_default_preset(&params,PresetInUse().c_str(),TuneInUse().c_str());
+	x264_param_default_preset(&params,GetPresetInUse().c_str(),GetTuneInUse().c_str());
 
 	// Set log
 	params.pf_log               = X264_log;
@@ -230,7 +232,7 @@ int H264Encoder::OpenCodec()
 	}
 	Log("-H264Encoder::OpenCodec() | config ipratio:%f\n", params.rc.f_ip_factor);
 	// set controls only when tune is not configued in profile property
-	if (tune == h264UnSet && preset == h264UnSet)
+	if (!tune.has_value() && !preset.has_value())
 	{
 		Log("-H264Encoder::OpenCodec() | neither preset or tune is set by profile property, config encoder to fit realtime streaming mode\n");
 		params.b_sliced_threads	    = 0;
@@ -254,9 +256,9 @@ int H264Encoder::OpenCodec()
 	params.vui.i_chroma_loc	    = 0;
 
 	//Set level
-	params.i_level_idc = LevelNumberToLevelIdc(LevelInUse().c_str());
+	params.i_level_idc = LevelNumberToLevelIdc(GetLevelInUse().c_str());
 
-	x264_param_apply_profile(&params, ProfileInUse().c_str());
+	x264_param_apply_profile(&params, GetProfileInUse().c_str());
 
 	// Open encoder
 	enc = x264_encoder_open(&params);

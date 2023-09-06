@@ -1,5 +1,6 @@
 #ifndef _H264ENCODER_H_
 #define _H264ENCODER_H_
+#include <optional>
 #include "codecs.h"
 #include "video.h"
 extern "C" {
@@ -9,7 +10,6 @@ extern "C" {
 
 static const char * const x264_level_names[] = { "1", "1b", "1.1", "1.2", "1.3", "2", "2.1", "2.2", "3", "3.1", "3.2",
                                                 "4", "4.1", "4.2", "5", "5.1", "5.2", "6", "6.1", "6.2", 0}; // need 0 as last element to comfort to x264_xxx_names
-static const std::string h264UnSet = "UnSet";
 
 class H264Encoder : public VideoEncoder
 {
@@ -23,12 +23,11 @@ public:
 
 private:
 	int OpenCodec();
-	bool IsParamsValid(const char * const options[], const std::string& input) const;
 	int LevelNumberToLevelIdc(const std::string& levelNumber) const;
-	std::string LevelInUse() const { return level == h264UnSet? "3.1":level;}
-	std::string ProfileInUse() const { return profile == h264UnSet? "baseline":profile;}
-	std::string PresetInUse() const { return preset == h264UnSet? "medium":preset;}
-	std::string TuneInUse() const { return tune == h264UnSet? "zerolatency":tune;}
+	std::string GetLevelInUse() const { return level.value_or("3.1");}
+	std::string GetProfileInUse() const { return profile.value_or("baseline");}
+	std::string GetPresetInUse() const { return preset.value_or("medium");}
+	std::string GetTuneInUse() const { return tune.value_or("zerolatency");}
 
 	AVCDescriptor config;
 	bool streaming;
@@ -49,10 +48,10 @@ private:
 	int opened;
 	int intraPeriod;
 	int pts;
-	std::string profile = h264UnSet;
-	std::string level = h264UnSet;
-	std::string preset = h264UnSet;
-	std::string tune = h264UnSet;
+	std::optional<std::string> profile = std::nullopt;
+	std::optional<std::string> level   = std::nullopt;
+	std::optional<std::string> preset  = std::nullopt;
+	std::optional<std::string> tune    = std::nullopt;
 	float ipratio;
 	float ratetol;
 	int threads;
