@@ -82,10 +82,14 @@ VideoLayerSelector* VideoLayerSelector::Create(VideoCodec::Type codec)
 			layer.active = false;
 		//For each active layer
 		for (const auto& activeLayer : videoLayersAllocation->activeSpatialLayers)
+		{
 			//IF it is from us
 			if (activeLayer.streamIdx == videoLayersAllocation->streamIdx)
+			{
+				bool found = false;
 				//Find layer
 				for (auto& layer: layerInfo)
+				{
 					//if found
 					if (layer.spatialLayerId == activeLayer.spatialId)
 					{
@@ -97,7 +101,32 @@ VideoLayerSelector* VideoLayerSelector::Create(VideoCodec::Type codec)
 						layer.targetWidth = activeLayer.width;
 						layer.targetHeight = activeLayer.height;
 						layer.targetFps = activeLayer.fps;
+						//Layer found
+						found = true;
 					}
+				}
+				//If layer was not found on the layer info or ther was no layer info
+				if (!found)
+				{
+					//For each temporal layer
+					for (auto temporaLayerId = 0; temporaLayerId < activeLayer.targetBitratePerTemporalLayer.size(); ++temporaLayerId)
+					{
+						//Create new Layer
+						LayerInfo layer(activeLayer.spatialId, temporaLayerId);
+						//It is active
+						layer.active = true;
+						//Get bitrate for temporal layer
+						layer.targetBitrate = activeLayer.targetBitratePerTemporalLayer[layer.temporalLayerId];
+						//Set dimensios for the spatial layer
+						layer.targetWidth = activeLayer.width;
+						layer.targetHeight = activeLayer.height;
+						layer.targetFps = activeLayer.fps;
+						//Append to layers
+						layerInfo.push_back(layer);
+					}
+				}
+			}
+		}
 	}
 	
 	return layerInfo;
