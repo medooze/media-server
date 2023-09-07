@@ -13,7 +13,7 @@
 * https://webrtc.googlesource.com/src/+/refs/heads/main/docs/native-code/rtp-hdrext/video-layers-allocation00
 *
 *				   +-+-+-+-+-+-+-+-+
-*				   |streamIdx| NS| sl_bm |
+*				   |RID| NS| sl_bm |
 *				   +-+-+-+-+-+-+-+-+
 *	 Spatial layer bitmask     |sl0_bm |sl1_bm |
 *	   up to 2 bytes           |---------------|
@@ -28,11 +28,11 @@
 *				   +-+-+-+-+-+-+-+-+
 *	 Resolution and framerate  |               |
 *	 5 bytes per spatial layer + width-1 for   +
-*	      (optional)           | streamIdx=0, sid=0  |
+*	      (optional)           | RID=0, sid=0  |
 *				   +---------------+
 *				   |               |
 *				   + height-1 for  +
-*				   | streamIdx=0, sid=0  |
+*				   | RID=0, sid=0  |
 *				   +---------------+
 *				   | max framerate |
 *				   +-+-+-+-+-+-+-+-+
