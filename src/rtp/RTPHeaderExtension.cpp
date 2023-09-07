@@ -462,7 +462,7 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 				{
 					//Everything went well
 					hasVideoLayersAllocation = true;
-					videoLayersAllocation->rid = 0;
+					videoLayersAllocation->streamIdx = 0;
 					break;
 				}
 
@@ -470,7 +470,7 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 				BitReader headerBitReader(reader,1);
 
 				//Get rid, num streams
-				videoLayersAllocation->rid = headerBitReader.Get(2);
+				videoLayersAllocation->streamIdx = headerBitReader.Get(2);
 				videoLayersAllocation->numRtpStreams = 1 + headerBitReader.Get(2);
 				int numActiveLayers = 0;
 
@@ -691,7 +691,7 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 			BitWritter headerBitWritter(&header, 1);
 
 			//Set rid and number of streams
-			headerBitWritter.Put(2, videoLayersAllocation->rid);
+			headerBitWritter.Put(2, videoLayersAllocation->streamIdx);
 			headerBitWritter.Put(2, videoLayersAllocation->numRtpStreams - 1);
 
 			//If using master

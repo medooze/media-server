@@ -13,7 +13,7 @@
 * https://webrtc.googlesource.com/src/+/refs/heads/main/docs/native-code/rtp-hdrext/video-layers-allocation00
 *
 *				   +-+-+-+-+-+-+-+-+
-*				   |RID| NS| sl_bm |
+*				   |streamIdx| NS| sl_bm |
 *				   +-+-+-+-+-+-+-+-+
 *	 Spatial layer bitmask     |sl0_bm |sl1_bm |
 *	   up to 2 bytes           |---------------|
@@ -28,11 +28,11 @@
 *				   +-+-+-+-+-+-+-+-+
 *	 Resolution and framerate  |               |
 *	 5 bytes per spatial layer + width-1 for   +
-*	      (optional)           | rid=0, sid=0  |
+*	      (optional)           | streamIdx=0, sid=0  |
 *				   +---------------+
 *				   |               |
 *				   + height-1 for  +
-*				   | rid=0, sid=0  |
+*				   | streamIdx=0, sid=0  |
 *				   +---------------+
 *				   | max framerate |
 *				   +-+-+-+-+-+-+-+-+
@@ -101,7 +101,7 @@ struct VideoLayersAllocation
 	};
 
 	// Index of the rtp stream this allocation is sent on. Used for mapping a SpatialLayer to a rtp stream.
-	uint8_t rid = 0;
+	uint8_t streamIdx = 0;
 	uint8_t numRtpStreams = 0;
 	std::vector<SpatialLayer> activeSpatialLayers;
 
@@ -119,14 +119,14 @@ struct VideoLayersAllocation
 
 	bool operator== (const VideoLayersAllocation& other) const
 	{
-		return rid == other.rid
+		return streamIdx == other.streamIdx
 			&& numRtpStreams == other.numRtpStreams
 			&& activeSpatialLayers == other.activeSpatialLayers;
 	}
 
 	void Dump() const
 	{
-		Debug("[VideoLayersAllocation rid=%d numRtpStreams=%d]\n", rid, numRtpStreams);
+		Debug("[VideoLayersAllocation streamIdx=%d numRtpStreams=%d]\n", streamIdx, numRtpStreams);
 		auto spatialLayesrMask = GetSpatialLayersMask();
 		for (int i = 0; i < MaxSpatialIds; ++i)
 			Debug("\t[SpatialLayerMask  layer=%d mask=%d%d%d%d]\n", i, spatialLayesrMask[i][0], spatialLayesrMask[i][1], spatialLayesrMask[i][2], spatialLayesrMask[i][3]);
