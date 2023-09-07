@@ -204,6 +204,7 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 		const BYTE *frameData = NULL;
 		DWORD frameSize = 0;
 		QWORD rate = 1000;
+		DWORD targetBitrate = 0;
 
 		//Depending on the type
 		switch(frame->GetType())
@@ -234,6 +235,8 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 				frameSize = video->GetLength();
 				//Set clock rate
 				rate = 90000;
+				//Get target bitrate
+				targetBitrate = video->GetTargetBitrate();
 				break;
 			}
 			default:
@@ -318,6 +321,7 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 			packet->SetClockRate(rate);
 			packet->SetExtTimestamp(lastTimestamp*rate/frame->GetClockRate());
 			packet->SetAbsoluteCaptureTime(time);
+
 			//Check
 			if (i+1==info.size())
 				//last
@@ -333,9 +337,37 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 			lastTime = getTime();
 
 			//Fill payload descriptors
-			//TODO: move out of here
 			if (frame->GetType()==MediaFrame::Video)
+			{
+				//get Video frame
+				VideoFrame* video = (VideoFrame*)frame.get();
+
+				//TODO: move out of here
 				VideoLayerSelector::GetLayerIds(packet);
+				
+				//If video has a target bitrate and it is the first packet of an intra frame
+				if (i==0 && video->IsIntra() && video->GetTargetBitrate())
+				{
+					//Create VLA info
+					VideoLayersAllocation videoLayersAllocation = {
+						0,
+						1,
+						{
+							{
+								0,
+								0,
+								std::vector<uint16_t>{ (uint16_t)video->GetTargetBitrate() },
+								video->GetWidth(),
+								video->GetHeight(),
+								video->GetTargetFps()
+							}
+						}
+					};
+											
+					//Set it in packet
+					packet->SetVideoLayersAllocation(videoLayersAllocation);
+				}
+			}
 
 			//If it the media frame has config
 			if (frame->HasCodecConfig())
