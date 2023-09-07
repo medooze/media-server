@@ -1,6 +1,10 @@
 #include "rtp/RTPHeaderExtension.h"
 #include "log.h"
 
+#include <cmath>
+
+#include "BufferReader.h"
+#include "BufferWritter.h"
 
 size_t WriteHeaderIdAndLength(BYTE* data, DWORD pos, BYTE id, DWORD length, int headerLength)
 {
@@ -398,11 +402,15 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 				//Init flag and optional data
 				hasColorSpace = true;
 				colorSpace.emplace();
+
+				//Get reader
+				BufferReader reader(ext+i, len);
+
 				//Get base config
-				colorSpace->primaries	 = get1(ext, i++);
-				colorSpace->transfer	 = get1(ext, i++);
-				colorSpace->matrix	 = get1(ext, i++);
-				BYTE rangeChromaSiting	 = get1(ext, i++);
+				colorSpace->primaries	 = reader.Get1();
+				colorSpace->transfer	 = reader.Get1();
+				colorSpace->matrix	 = reader.Get1();
+				BYTE rangeChromaSiting	 = reader.Get1();
 
 				//Range and chroma siting : (range << 4) + (horz << 2) + vert.
 				colorSpace->range			= rangeChromaSiting >> 4;
@@ -416,28 +424,156 @@ DWORD RTPHeaderExtension::Parse(const RTPMap &extMap,const BYTE* data,const DWOR
 					colorSpace->hdrMetadata.emplace();
 
 					//Luminance
-					colorSpace->hdrMetadata->luminanceMax	= get1(ext, i++);
-					colorSpace->hdrMetadata->luminanceMin	= get1(ext, i++);
+					colorSpace->hdrMetadata->luminanceMax	= reader.Get1();
+					colorSpace->hdrMetadata->luminanceMin	= reader.Get1();
 					//Red
-					BYTE primaryR = get1(ext, i++);
+					BYTE primaryR = reader.Get1();
 					colorSpace->hdrMetadata->primaryRX	= primaryR >>4;
 					colorSpace->hdrMetadata->primaryRY	= primaryR & 0b1111;
 					//Green
-					BYTE primaryG = get1(ext, i++);
+					BYTE primaryG = reader.Get1();
 					colorSpace->hdrMetadata->primaryGX	= primaryG >> 4;
 					colorSpace->hdrMetadata->primaryGY	= primaryG & 0b1111;
 					//Blue
-					BYTE primaryB = get1(ext, i++);
+					BYTE primaryB = reader.Get1();
 					colorSpace->hdrMetadata->primaryBX	= primaryB >> 4;
 					colorSpace->hdrMetadata->primaryBY	= primaryB & 0b1111;
 					//White
-					BYTE white = get1(ext, i++);
+					BYTE white = reader.Get1();
 					colorSpace->hdrMetadata->whiteX		= white >> 4;
 					colorSpace->hdrMetadata->whiteY		= white & 0b1111;
 					//Light
-					colorSpace->hdrMetadata->maxContentLightLevel		= get2(ext, i); i += 2;
-					colorSpace->hdrMetadata->maxFrameAverageLightLevel	= get2(ext, i); i += 2;
+					colorSpace->hdrMetadata->maxContentLightLevel		= reader.Get2();
+					colorSpace->hdrMetadata->maxFrameAverageLightLevel	= reader.Get2();
 				}
+
+				break;
+			}
+			case Type::VideoLayersAllocation:
+			{
+				//Init data, flag will be set when parsing is ok
+				videoLayersAllocation.emplace();
+
+				//Get reader for extension data
+				BufferReader reader(ext + i, len);
+
+				//If it is single layer with no info
+				if (reader.GetLeft() == 1 && reader.Peek1() == 0)
+				{
+					//Everything went well
+					hasVideoLayersAllocation = true;
+					videoLayersAllocation->streamIdx = 0;
+					break;
+				}
+
+				// Header byte.
+				BitReader headerBitReader(reader,1);
+
+				//Get rid, num streams
+				videoLayersAllocation->streamIdx = headerBitReader.Get(2);
+				videoLayersAllocation->numRtpStreams = 1 + headerBitReader.Get(2);
+				int numActiveLayers = 0;
+
+				std::array<std::array<bool, VideoLayersAllocation::MaxSpatialIds>, VideoLayersAllocation::MaxStreams> spatialLayesrMask{};
+				//Read "master" layer mask
+				for (auto j = 0; j < VideoLayersAllocation::MaxSpatialIds && headerBitReader.Left() > 0 ; ++j )
+					//Get number of active layers and update mask
+					numActiveLayers += spatialLayesrMask[0][j] = headerBitReader.Get(1);
+
+				//if mask is not empty
+				if (numActiveLayers)
+				{
+					//Fill all the other stream with the same mask
+					for (int i = 1; i < videoLayersAllocation->numRtpStreams && i < VideoLayersAllocation::MaxStreams; ++i)
+						//Get number of active layers and update mask for stream
+						spatialLayesrMask[i] = spatialLayesrMask[0];
+					//Set total layers for all streams
+					numActiveLayers  = numActiveLayers * videoLayersAllocation->numRtpStreams;
+				}
+				else
+				// Spatial layer bitmasks when they are different for different RTP streams.
+				{
+					//Get mask length in bytes
+					const int length = std::ceil(double(videoLayersAllocation->numRtpStreams) * VideoLayersAllocation::MaxSpatialIds / 8);
+
+					//Double check size	
+					if (reader.GetLeft() < length)
+						//Error
+						break;
+					//Get mask 
+					BitReader maskBitReader(reader, length);
+					
+					//For each stream
+					for (int i = 0; i < videoLayersAllocation->numRtpStreams; ++i)
+						//for each layer
+						for (auto j = 0; j < VideoLayersAllocation::MaxSpatialIds && maskBitReader.Left() > 0; ++j)
+							//Get number of active layers and update mask for stream
+							numActiveLayers += spatialLayesrMask[i][j] = maskBitReader.Get(1);
+				}
+
+				//Get temporal layers length in bytes
+				const int length = std::ceil(double(numActiveLayers) / 4 );
+
+				//Double check size	
+				if (reader.GetLeft() < length)
+					//Error
+					break;
+
+				BitReader temporalLayersBitReader(reader, length);
+
+				//Reserve mem for active layers
+				videoLayersAllocation->activeSpatialLayers.reserve(numActiveLayers);
+
+				// Read number of temporal layers for each stream
+				for (int streamIdx = 0; streamIdx < videoLayersAllocation->numRtpStreams; ++streamIdx)
+				{
+					//For each spatial layer
+					for (int spatialId = 0; spatialId < VideoLayersAllocation::MaxSpatialIds; ++spatialId)
+					{
+						//If the layer is not active
+						if (spatialLayesrMask[streamIdx][spatialId] == 0)
+							//No temporal info available for it
+							continue;
+
+						//Check length
+						if (temporalLayersBitReader.Left() < 2)
+							//Error
+							break;
+						//Create new active layer
+						videoLayersAllocation->activeSpatialLayers.emplace_back(streamIdx,spatialId, temporalLayersBitReader.Get(2));
+					}
+				}
+
+				//Target bitrates for each active spatial layer
+				for (auto& layer : videoLayersAllocation->activeSpatialLayers)
+				{
+					//For each temporal layer of the spatial layer
+					for (auto& rate : layer.targetBitratePerTemporalLayer)
+					{
+						if (reader.GetLeft() == 0)
+							//Error
+							break;
+
+						//In kbps
+						rate = reader.DecodeLev128();
+					}
+				}
+
+				//Check we have enough size left
+				if (reader.GetLeft() >= 5 * numActiveLayers)
+				{
+					//For each active layer
+					for (auto& layer : videoLayersAllocation->activeSpatialLayers)
+					{
+						//Get all dimenensions and fps 
+						layer.width = 1 + reader.Get2();
+						layer.height = 1 + reader.Get2();
+						layer.fps = reader.Get1();
+					}
+				}
+
+				//Everything went well
+				hasVideoLayersAllocation = true;
 
 				break;
 			}
@@ -523,6 +659,141 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 				len += extLen;
 			}
 		}
+	}
+
+
+	if (hasVideoLayersAllocation && videoLayersAllocation)
+	{
+		//Use a temporary memory to serialize and check final size
+		BYTE ext[255];
+
+		BufferWritter writter(ext,255);
+
+		if (!videoLayersAllocation->activeSpatialLayers.size())
+		{
+			//Nothing active
+			writter.Set1(0);
+		} else {
+			auto spatialLayesrMask = videoLayersAllocation->GetSpatialLayersMask();
+
+			bool allEqual = true;
+			//For all except the first one
+			for (auto i = 1; i<spatialLayesrMask.size() && i<videoLayersAllocation->numRtpStreams && allEqual; ++i)
+				//Check if 
+				allEqual = std::equal(
+					spatialLayesrMask[0].begin(),
+					spatialLayesrMask[0].end(),
+					spatialLayesrMask[i].begin()
+				);
+
+			//Extension header
+			uint8_t header = 0;
+			BitWritter headerBitWritter(&header, 1);
+
+			//Set rid and number of streams
+			headerBitWritter.Put(2, videoLayersAllocation->streamIdx);
+			headerBitWritter.Put(2, videoLayersAllocation->numRtpStreams - 1);
+
+			//If using master
+			if (allEqual)
+				//Get active layer mask
+				for (const auto& active : spatialLayesrMask[0])
+					//Write in header
+					headerBitWritter.Put(1, active);
+
+			//Flush header
+			headerBitWritter.Flush();
+
+			//Write header to extension
+			writter.Set1(header);
+
+			//If each layer is different
+			if (!allEqual)
+			{
+				//Active spatial layer mask for each stream
+				std::array<uint8_t, VideoLayersAllocation::MaxStreams / 2> mask = {};
+				BitWritter maskBitWritter(mask.data(), mask.size());
+
+				//For each stream
+				for (auto i = 0; i < videoLayersAllocation->numRtpStreams && i < VideoLayersAllocation::MaxStreams; ++i)
+					//for each layer in stream
+					for (const auto& active : spatialLayesrMask[i])
+						//Write in mask
+						maskBitWritter.Put(1, active);
+				//Flush mask
+				int len = maskBitWritter.Flush();
+
+				//Set mask in extension
+				writter.SetN(mask, len);
+			}
+
+			//Temporal layers for each spatial layer
+			std::array<uint8_t, VideoLayersAllocation::MaxSpatialIds / 4> numTemporalLayers = {};
+			BitWritter numTemporalLayersBitWritter(numTemporalLayers.data(), numTemporalLayers.size());
+
+			//For each active spatial layer
+			for (const auto& spatialLayer : videoLayersAllocation->activeSpatialLayers)
+			{
+				//Set the number of layers
+				numTemporalLayersBitWritter.Put(2, spatialLayer.targetBitratePerTemporalLayer.size());
+			}
+
+			//Flush temporal layers number
+			int len = numTemporalLayersBitWritter.Flush();
+			
+			//Set  temporal layers number in extension
+			writter.SetN(numTemporalLayers, len);
+			
+			bool optionalResolutionAndFrameRate = true;
+
+			//Target bitrates.
+			for (const auto& spatialLayer : videoLayersAllocation->activeSpatialLayers)
+			{
+				//Get rata for each temporal layer
+				for (const auto& bitrate : spatialLayer.targetBitratePerTemporalLayer)
+					//Write it
+					writter.EncodeLeb128(bitrate);
+				//Check if we have all the optional info
+				optionalResolutionAndFrameRate &= spatialLayer.width.has_value() 
+					&& spatialLayer.height.has_value()
+					&& spatialLayer.fps.has_value();
+			}
+			
+			//If all active layers have the optional info
+			if (optionalResolutionAndFrameRate)
+			{
+				for (const auto& spatialLayer : videoLayersAllocation->activeSpatialLayers)
+				{
+					//Write them
+					writter.Set2(spatialLayer.width.value());
+					writter.Set2(spatialLayer.height.value());
+					writter.Set2(spatialLayer.fps.value());
+				}
+			 }
+		}
+
+		//Get written length
+		const uint32_t extLen = writter.GetLength();
+
+		//Check length
+		if (extLen > 0x0f)
+			//We need to use 2 byte header extensions
+			headerLength = 2;
+		
+		//Get id for extension
+		BYTE id = extMap.GetTypeForCodec(VideoLayersAllocation);
+
+		//Write header 
+		if ((n = WriteHeaderIdAndLength(data, len, id, extLen, headerLength)))
+		{
+			//Inc header len
+			len += n;
+			//Copy str contents
+			memcpy(data + len, ext, extLen);
+			//Append length
+			len += extLen;
+		}
+
 	}
 	
 	
@@ -868,6 +1139,7 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 			}
 		}
 	}
+
 
 	//Pad to 32 bit words
 	while(len%4)
