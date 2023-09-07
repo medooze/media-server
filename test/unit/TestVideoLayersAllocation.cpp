@@ -46,7 +46,7 @@ TEST(TestVideoLayersAllocation, CanWriteAndParse2SpatialWith2TemporalLayers)
 	extension.hasVideoLayersAllocation = true;
 	extension.videoLayersAllocation.emplace();
 
-	extension.videoLayersAllocation->rid = 1;
+	extension.videoLayersAllocation->streamIdx = 1;
 	extension.videoLayersAllocation->numRtpStreams = 2;
 	extension.videoLayersAllocation->activeSpatialLayers = 
 	{
@@ -88,7 +88,7 @@ TEST(TestVideoLayersAllocation, CanWriteAndParseAllocationWithDifferentNumerOfSp
 	extension.hasVideoLayersAllocation = true;
 	extension.videoLayersAllocation.emplace();
 
-	extension.videoLayersAllocation->rid = 1;
+	extension.videoLayersAllocation->streamIdx = 1;
 	extension.videoLayersAllocation->numRtpStreams = 2;
 	extension.videoLayersAllocation->activeSpatialLayers =
 	{
@@ -135,7 +135,7 @@ TEST(TestVideoLayersAllocation, CanWriteAndParseAllocationWithSkippedLowerSpatia
 	extension.hasVideoLayersAllocation = true;
 	extension.videoLayersAllocation.emplace();
 
-	extension.videoLayersAllocation->rid = 1;
+	extension.videoLayersAllocation->streamIdx = 1;
 	extension.videoLayersAllocation->numRtpStreams = 2;
 	extension.videoLayersAllocation->activeSpatialLayers =
 	{
@@ -177,7 +177,7 @@ TEST(TestVideoLayersAllocation,	CanWriteAndParseAllocationWithSkippedRtpStreamId
 	extension.hasVideoLayersAllocation = true;
 	extension.videoLayersAllocation.emplace();
 
-	extension.videoLayersAllocation->rid = 2;
+	extension.videoLayersAllocation->streamIdx = 2;
 	extension.videoLayersAllocation->numRtpStreams = 3;
 	extension.videoLayersAllocation->activeSpatialLayers =
 	{
@@ -221,7 +221,7 @@ TEST(TestVideoLayersAllocation, CanWriteAndParseAllocationWithDifferentNumerOfTe
 	extension.hasVideoLayersAllocation = true;
 	extension.videoLayersAllocation.emplace();
 
-	extension.videoLayersAllocation->rid = 1;
+	extension.videoLayersAllocation->streamIdx = 1;
 	extension.videoLayersAllocation->numRtpStreams = 3;
 	extension.videoLayersAllocation->activeSpatialLayers =
 	{
@@ -257,7 +257,7 @@ TEST(TestVideoLayersAllocation, CanWriteAndParseAllocationWithResolution)
 	extension.hasVideoLayersAllocation = true;
 	extension.videoLayersAllocation.emplace();
 
-	extension.videoLayersAllocation->rid = 1;
+	extension.videoLayersAllocation->streamIdx = 1;
 	extension.videoLayersAllocation->numRtpStreams = 3;
 	extension.videoLayersAllocation->activeSpatialLayers =
 	{
@@ -298,7 +298,7 @@ TEST(TestVideoLayersAllocation, WriteEmptyAllocationCanHaveAnyRtpStreamIndex)
 	//Empty layer
 	extension.hasVideoLayersAllocation = true;
 	extension.videoLayersAllocation.emplace();
-	extension.videoLayersAllocation->rid = 1;
+	extension.videoLayersAllocation->streamIdx = 1;
 
 	//Serialize
 	int len = extension.Serialize(extMap, buffer.data(), buffer.size());
