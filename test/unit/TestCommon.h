@@ -25,17 +25,13 @@ public:
 	
 		virtual void Cancel() override
 		{
-			for (auto& schedule : loop.pendingTimers)
-			{
-				if (schedule.timer.get() == this)
-					schedule.cancelled = true;
-			}
+			assert(false); // Not used
 		}
 		
 		virtual void Again(const std::chrono::milliseconds& ms)
 		{
 			next = loop.GetNow() + ms;
-			loop.pendingTimers.push_back({next, shared_from_this(), false});
+			loop.pendingTimers.emplace_back(next, shared_from_this());
 		}
 		
 		virtual void Repeat(const std::chrono::milliseconds& repeat)
@@ -73,13 +69,13 @@ public:
 		TimerSchedule lastTimeSchedule;
 		
 		// Trigger the scheduled timer by order
-		while (!timers.empty() && timers.top().scheduled <= time)
+		while (!timers.empty() && timers.top().first <= time)
 		{
-			// Skip cancelled and duplicated schedules
-			if (!timers.top().cancelled && timers.top() != lastTimeSchedule)
+			// Skip duplicated schedules
+			if (timers.top() != lastTimeSchedule)
 			{
-				now = timers.top().scheduled;
-				timers.top().timer->callback(now);
+				now = timers.top().first;
+				timers.top().second->callback(now);
 				
 				lastTimeSchedule = timers.top();
 			}
@@ -93,7 +89,7 @@ public:
 		}
 		pendingTimers.clear();
 		
-		if (!timers.empty() && timers.top().scheduled <= time)
+		if (!timers.empty() && timers.top().first <= time)
 			SetNow(time);
 		else
 			now = time;
@@ -138,30 +134,14 @@ public:
 		func(now);
 		return std::async(std::launch::deferred, []() {});
 	}
-	
-	struct TimerSchedule
-	{
-		std::chrono::milliseconds scheduled;
-		TimerImpl::shared timer;
-		bool cancelled;
-		
-		bool operator==(const TimerSchedule& other) const
-		{
-			return scheduled == other.scheduled && timer == other.timer && cancelled == other.cancelled;
-		}
-		
-		bool operator!=(const TimerSchedule& other) const
-		{
-			return !this->operator==(other);	
-		}
-	};
-	
+
 private:
+	using TimerSchedule = std::pair<std::chrono::milliseconds, TimerImpl::shared>;
 	struct CompareFunc
 	{
 		bool operator()(const TimerSchedule& t1, const TimerSchedule& t2)
 		{
-			return t1.scheduled > t2.scheduled;
+			return t1.first > t2.first;
 		}
 	};
 	
