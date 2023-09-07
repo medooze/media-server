@@ -6,13 +6,14 @@
 constexpr uint64_t kInitialDuration		= 500E3;	// 500ms
 constexpr uint64_t kReportInterval		= 250E3;	// 250ms
 constexpr uint64_t kMonitorDuration		= 150E3;	// 150ms
-constexpr uint64_t kLongTermDuration		= 2.5E6;	// 2.5s
+constexpr uint64_t kLongTermDuration		= 10E6;		// 10s
 constexpr uint64_t kMinRate			= 128E3;	// 128kbps
 constexpr uint64_t kMaxRate			= 100E6;	// 100mbps
 constexpr uint64_t kMinRateChangeBps		= 10000;
 constexpr double   kSamplingStep		= 0.05f;
 constexpr double   kInitialRampUp		= 1.30f;
 constexpr uint64_t kRecoveryDuration		= 250E3;
+constexpr double   LoosRateThreshold		= 0.35;		// 35% packet loss before moving to loosy state
 
 
 SendSideBandwidthEstimation::SendSideBandwidthEstimation() : 
@@ -314,7 +315,7 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 	uint64_t rtxSentBitrate		= rtxSentAcumulator.GetInstantAvg() * 8;
 	
 	
-	if (lossRate > 0.06)
+	if (lossRate > LoosRateThreshold)
 	{
 		//We are on a loosy environment
 		SetState(ChangeState::Loosy);
