@@ -29,6 +29,7 @@ add_library(MediaServerLib
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPDepacketizer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPHeader.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPHeaderExtension.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPMap.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPOutgoingSource.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPOutgoingSourceGroup.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPPacket.cpp
@@ -67,6 +68,7 @@ add_executable(MediaServerUnitTest
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestSimulcastMediaFrameListener.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestVP8Depacketizer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAMFNumber.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestVideoLayersAllocation.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/data/FramesArrivalInfo.cpp
 )
 

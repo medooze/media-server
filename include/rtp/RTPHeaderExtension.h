@@ -2,11 +2,13 @@
 #define RTPHEADEREXTENSION_H
 #include <optional>
 #include <cmath>
+#include <vector>
 
 #include "config.h"
 #include "tools.h"
 #include "rtp/RTPMap.h"
 #include "rtp/DependencyDescriptor.h"
+#include "rtp/VideoLayersAllocation.h"
 
 class RTPHeaderExtension
 {
@@ -26,6 +28,7 @@ public:
 		AbsoluteCaptureTime	= 11,
 		PlayoutDelay		= 12,
 		ColorSpace		= 13,
+		VideoLayersAllocation	= 14,
 		Reserved		= 15
 	};
 	
@@ -45,6 +48,7 @@ public:
 		else if (strcasecmp(ext,"http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time") == 0)			return Type::AbsoluteCaptureTime;
 		else if (strcasecmp(ext,"http://www.webrtc.org/experiments/rtp-hdrext/playout-delay") == 0)			return Type::PlayoutDelay;
 		else if (strcasecmp(ext,"http://www.webrtc.org/experiments/rtp-hdrext/color-space") == 0)			return Type::ColorSpace;
+		else if (strcasecmp(ext,"http://www.webrtc.org/experiments/rtp-hdrext/video-layers-allocation00") == 0)		return Type::VideoLayersAllocation;
 		return Type::UNKNOWN;
 	}
 
@@ -65,6 +69,7 @@ public:
 			case Type::AbsoluteCaptureTime:			return "AbsoluteCaptureTime";
 			case Type::PlayoutDelay:			return "PlayoutDelay";
 			case Type::ColorSpace:				return "ColorSpace";
+			case Type::VideoLayersAllocation:		return "VideoLayersAllocation";
 			default:					return "unknown";
 		}
 	}
@@ -216,7 +221,7 @@ public:
 
 		std::optional<HDRMetadata> hdrMetadata;
 	};
-	
+
 public:
 	DWORD Parse(const RTPMap &extMap,const BYTE* data,const DWORD size);
 	bool  ParseDependencyDescriptor(const std::optional<TemplateDependencyStructure>& templateDependencyStructure);
@@ -238,6 +243,7 @@ public:
 	struct AbsoluteCaptureTime absoluteCaptureTime;
 	struct PlayoutDelay playoutDelay;
 	std::optional<struct ColorSpace> colorSpace;
+	std::optional<struct VideoLayersAllocation> videoLayersAllocation;
 	
 	bool	hasAbsSentTime		= false;
 	bool	hasTimeOffset		= false;
@@ -252,6 +258,7 @@ public:
 	bool	hasAbsoluteCaptureTime	= false;
 	bool	hasPlayoutDelay		= false;
 	bool	hasColorSpace		= false;
+	bool    hasVideoLayersAllocation= false;
 };
 
 #endif /* RTPHEADEREXTENSION_H */

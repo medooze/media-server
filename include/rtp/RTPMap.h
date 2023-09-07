@@ -3,7 +3,6 @@
 #include "config.h"
 #include "log.h"
 #include "media.h"
-#include <map>
 
 class RTPMap
 {
@@ -53,7 +52,7 @@ public:
 
         void Dump(MediaFrame::Type media) const;
 public:
-        static const BYTE NotFound = -1;
+        static constexpr BYTE NotFound = -1;
 private:
         std::array<BYTE, 256> forward;
         std::array<BYTE, 256> reverse;
