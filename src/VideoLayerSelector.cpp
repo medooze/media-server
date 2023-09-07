@@ -52,19 +52,55 @@ VideoLayerSelector* VideoLayerSelector::Create(VideoCodec::Type codec)
 
  std::vector<LayerInfo> VideoLayerSelector::GetLayerIds(const RTPPacket::shared& packet)
 {
+	 std::vector<LayerInfo> layerInfo;
+
 	switch(packet->GetCodec())
 	{
 		case VideoCodec::VP9:
-			return VP9LayerSelector::GetLayerIds(packet);
+			layerInfo = VP9LayerSelector::GetLayerIds(packet);
+			break;
 		case VideoCodec::VP8:
-			return VP8LayerSelector::GetLayerIds(packet);
+			layerInfo = VP8LayerSelector::GetLayerIds(packet);
+			break;
 		case VideoCodec::H264:
-			return H264LayerSelector::GetLayerIds(packet);
+			layerInfo = H264LayerSelector::GetLayerIds(packet);
+			break;
 		case VideoCodec::AV1:
-			return DependencyDescriptorLayerSelector::GetLayerIds(packet);
+			layerInfo = DependencyDescriptorLayerSelector::GetLayerIds(packet);
+			break;
 		default:
-			return {};
+			break;
 	}
+
+	//If packet has VLA header extension 
+	if (packet->HasVideoLayersAllocation())
+	{
+		//Get vla info
+		const auto& videoLayersAllocation = packet->GetVideoLayersAllocation();
+		//Deactivate all layers
+		for (auto& layer: layerInfo)
+			layer.active = false;
+		//For each active layer
+		for (const auto& activeLayer : videoLayersAllocation->activeSpatialLayers)
+			//IF it is from us
+			if (activeLayer.streamIdx == videoLayersAllocation->streamIdx)
+				//Find layer
+				for (auto& layer: layerInfo)
+					//if found
+					if (layer.spatialLayerId == activeLayer.spatialId)
+					{
+						//It is active
+						layer.active = true;
+						//Get bitrate for temporal layer
+						layer.targetBitrate = activeLayer.targetBitratePerTemporalLayer[layer.temporalLayerId];
+						//Set dimensios for the spatial layer
+						layer.targetWidth = activeLayer.width;
+						layer.targetHeight = activeLayer.height;
+						layer.targetFps = activeLayer.fps;
+					}
+	}
+	
+	return layerInfo;
 }
 
 
