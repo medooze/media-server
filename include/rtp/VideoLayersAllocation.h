@@ -79,7 +79,7 @@ struct VideoLayersAllocation
 		std::optional<uint16_t> width;
 		std::optional<uint16_t> height;
 		// Max frame rate used in any temporal layer of this spatial layer.
-		std::optional<uint8_t> fps = 0;
+		std::optional<uint8_t> fps;
 
 		bool operator== (const SpatialLayer& other) const
 		{
