@@ -65,6 +65,9 @@ public:
 		frame->SetDuration(GetDuration());
 		//Set CVO
 		if (cvo) frame->SetVideoOrientation(*cvo);
+		//Copy target bitrate and fps
+		frame->SetTargetBitrate(targetBitrate);
+		frame->SetTargetFps(targetFps);
 		//If we have disabled the shared buffer for this frame
 		if (disableSharedBuffer)
 			//Copy data
