@@ -204,7 +204,6 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 		const BYTE *frameData = NULL;
 		DWORD frameSize = 0;
 		QWORD rate = 1000;
-		DWORD targetBitrate = 0;
 
 		//Depending on the type
 		switch(frame->GetType())
@@ -235,8 +234,6 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 				frameSize = video->GetLength();
 				//Set clock rate
 				rate = 90000;
-				//Get target bitrate
-				targetBitrate = video->GetTargetBitrate();
 				break;
 			}
 			default:
@@ -344,7 +341,7 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 
 				//TODO: move out of here
 				VideoLayerSelector::GetLayerIds(packet);
-				
+
 				//If video has a target bitrate and it is the first packet of an intra frame
 				if (i==0 && video->IsIntra() && video->GetTargetBitrate())
 				{
