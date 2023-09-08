@@ -63,7 +63,10 @@ struct VideoLayersAllocation
 			) :
 			streamIdx(streamIdx),
 			spatialId(spatialId),
-			targetBitratePerTemporalLayer(targetBitratePerTemporalLayer)
+			targetBitratePerTemporalLayer(targetBitratePerTemporalLayer),
+			width(width),
+			height(height),
+			fps(fps)
 		{
 		}
 
