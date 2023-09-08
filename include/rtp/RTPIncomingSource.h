@@ -71,7 +71,7 @@ struct RTPIncomingSource : public RTPSource
 	DWORD ExtendTimestamp(DWORD timestamp);
 	DWORD RecoverTimestamp(DWORD timestamp);
 	
-	void Update(QWORD now,DWORD seqNum,DWORD size,const std::vector<LayerInfo> &layerInfos, bool aggreagtedLayers);
+	void Update(QWORD now,DWORD seqNum,DWORD size,const std::vector<LayerInfo> &layerInfos, bool aggreagtedLayers, const std::optional<struct VideoLayersAllocation>& videoLayersAllocation);
 	
 	void Process(QWORD now, const RTCPSenderReport::shared& sr);
 	void SetLastTimestamp(QWORD now, QWORD timestamp, QWORD captureTimestamp = 0);

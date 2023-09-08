@@ -50,86 +50,21 @@ VideoLayerSelector* VideoLayerSelector::Create(VideoCodec::Type codec)
 	}
 }
 
- std::vector<LayerInfo> VideoLayerSelector::GetLayerIds(const RTPPacket::shared& packet)
+std::vector<LayerInfo> VideoLayerSelector::GetLayerIds(const RTPPacket::shared& packet)
 {
-	 std::vector<LayerInfo> layerInfo;
-
 	switch(packet->GetCodec())
 	{
 		case VideoCodec::VP9:
-			layerInfo = VP9LayerSelector::GetLayerIds(packet);
-			break;
+			return VP9LayerSelector::GetLayerIds(packet);
 		case VideoCodec::VP8:
-			layerInfo = VP8LayerSelector::GetLayerIds(packet);
-			break;
+			return VP8LayerSelector::GetLayerIds(packet);
 		case VideoCodec::H264:
-			layerInfo = H264LayerSelector::GetLayerIds(packet);
-			break;
+			return H264LayerSelector::GetLayerIds(packet);
 		case VideoCodec::AV1:
-			layerInfo = DependencyDescriptorLayerSelector::GetLayerIds(packet);
-			break;
+			return DependencyDescriptorLayerSelector::GetLayerIds(packet);
 		default:
-			break;
+			return {};
 	}
-
-	//If packet has VLA header extension 
-	if (packet->HasVideoLayersAllocation())
-	{
-		//Get vla info
-		const auto& videoLayersAllocation = packet->GetVideoLayersAllocation();
-		//Deactivate all layers
-		for (auto& layer: layerInfo)
-			layer.active = false;
-		//For each active layer
-		for (const auto& activeLayer : videoLayersAllocation->activeSpatialLayers)
-		{
-			//IF it is from us
-			if (activeLayer.streamIdx == videoLayersAllocation->streamIdx)
-			{
-				bool found = false;
-				//Find layer
-				for (auto& layer: layerInfo)
-				{
-					//if found
-					if (layer.spatialLayerId == activeLayer.spatialId)
-					{
-						//It is active
-						layer.active = true;
-						//Get bitrate for temporal layer
-						layer.targetBitrate = activeLayer.targetBitratePerTemporalLayer[layer.temporalLayerId];
-						//Set dimensios for the spatial layer
-						layer.targetWidth = activeLayer.width;
-						layer.targetHeight = activeLayer.height;
-						layer.targetFps = activeLayer.fps;
-						//Layer found
-						found = true;
-					}
-				}
-				//If layer was not found on the layer info or ther was no layer info
-				if (!found)
-				{
-					//For each temporal layer
-					for (auto temporaLayerId = 0; temporaLayerId < activeLayer.targetBitratePerTemporalLayer.size(); ++temporaLayerId)
-					{
-						//Create new Layer
-						LayerInfo layer(activeLayer.spatialId, temporaLayerId);
-						//It is active
-						layer.active = true;
-						//Get bitrate for temporal layer
-						layer.targetBitrate = activeLayer.targetBitratePerTemporalLayer[layer.temporalLayerId];
-						//Set dimensios for the spatial layer
-						layer.targetWidth = activeLayer.width;
-						layer.targetHeight = activeLayer.height;
-						layer.targetFps = activeLayer.fps;
-						//Append to layers
-						layerInfo.push_back(layer);
-					}
-				}
-			}
-		}
-	}
-	
-	return layerInfo;
 }
 
 
