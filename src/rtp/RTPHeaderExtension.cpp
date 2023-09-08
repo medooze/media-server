@@ -754,8 +754,8 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 					//Write it
 					writter.EncodeLeb128(bitrate);
 				//Check if we have all the optional info
-				optionalResolutionAndFrameRate &= spatialLayer.width.has_value() 
-					&& spatialLayer.height.has_value()
+				optionalResolutionAndFrameRate &= spatialLayer.width.has_value() && spatialLayer.width.value() > 0
+					&& spatialLayer.height.has_value() && spatialLayer.height.value() > 0
 					&& spatialLayer.fps.has_value();
 			}
 			
@@ -765,9 +765,9 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 				for (const auto& spatialLayer : videoLayersAllocation->activeSpatialLayers)
 				{
 					//Write them
-					writter.Set2(spatialLayer.width.value());
-					writter.Set2(spatialLayer.height.value());
-					writter.Set2(spatialLayer.fps.value());
+					writter.Set2(spatialLayer.width.value() - 1);
+					writter.Set2(spatialLayer.height.value() - 1);
+					writter.Set1(spatialLayer.fps.value());
 				}
 			 }
 		}
