@@ -338,7 +338,11 @@ int VideoEncoderWorker::Encode()
 		videoFrame->SetTime(now);
 		//Set dudation
 		videoFrame->SetDuration(frameTime*90000/1E6);
-		
+
+		//Set target bitrate and fps
+		videoFrame->SetTargetBitrate(target);
+		videoFrame->SetTargetFps(fps);
+
 		//Lock
 		pthread_mutex_lock(&mutex);
 

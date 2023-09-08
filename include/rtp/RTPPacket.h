@@ -98,8 +98,9 @@ public:
 	void  SetAbsoluteCaptureTimestamp(QWORD ntp)					{ header.extension = extension.hasAbsoluteCaptureTime	= true; extension.absoluteCaptureTime.SetAbsoluteCaptureTimestamp(ntp); }
 	void  SetAbsoluteCaptureTime(QWORD ms)						{ header.extension = extension.hasAbsoluteCaptureTime	= true; extension.absoluteCaptureTime.SetAbsoluteCaptureTime(ms);	}
 	void  SetPlayoutDelay(uint16_t min, uint16_t max)				{ header.extension = extension.hasPlayoutDelay		= true; extension.playoutDelay.SetPlayoutDelay(min, max);		}
-	void  SetPlayoutDelay(const struct RTPHeaderExtension::PlayoutDelay& playoutDelay) { header.extension = extension.hasPlayoutDelay	= true; extension.playoutDelay = playoutDelay;				}
-	void  SetColorSpace(const struct RTPHeaderExtension::ColorSpace& colorSpace)    { header.extension = extension.hasColorSpace		= true; extension.colorSpace = colorSpace;	}
+	void  SetPlayoutDelay(const struct RTPHeaderExtension::PlayoutDelay& playoutDelay)	{ header.extension = extension.hasPlayoutDelay		= true; extension.playoutDelay = playoutDelay;				}
+	void  SetColorSpace(const struct RTPHeaderExtension::ColorSpace& colorSpace)		{ header.extension = extension.hasColorSpace		= true; extension.colorSpace = colorSpace;				}
+	void  SetVideoLayersAllocation(const VideoLayersAllocation& videoLayersAllocation)	{ header.extension = extension.hasVideoLayersAllocation = true; extension.videoLayersAllocation = videoLayersAllocation;	}
 	
 	bool  ParseDependencyDescriptor(const std::optional<TemplateDependencyStructure>& templateDependencyStructure, std::optional<std::vector<bool>>& activeDecodeTargets);
 	
@@ -134,6 +135,7 @@ public:
 	const VideoOrientation&					GetVideoOrientation()		 const { return extension.cvo;			}
 	const struct RTPHeaderExtension::PlayoutDelay&		GetPlayoutDelay()		 const { return extension.playoutDelay;		}
 	const std::optional<struct RTPHeaderExtension::ColorSpace>&    GetColorSpace()		 const { return extension.colorSpace;		}
+	const std::optional<struct VideoLayersAllocation>&	GetVideoLayersAllocation()	 const { return extension.videoLayersAllocation;}
 	
 	bool  HasAudioLevel()			const	{ return extension.hasAudioLevel;		}
 	bool  HasAbsSentTime()			const	{ return extension.hasAbsSentTime;		}
@@ -151,6 +153,7 @@ public:
 	bool  HasAbsoluteCaptureTime()		const	{ return extension.hasAbsoluteCaptureTime;	}
 	bool  HasPlayoutDelay()			const   { return extension.hasPlayoutDelay;		}
 	bool  HasColorSpace()			const   { return extension.hasColorSpace && extension.colorSpace;		}
+	bool  HasVideoLayersAllocation()	const	{ return extension.hasVideoLayersAllocation && extension.videoLayersAllocation; }
 
 	
 	void  OverrideActiveDecodeTargets(const std::optional<std::vector<bool>>& activeDecodeTargets) 

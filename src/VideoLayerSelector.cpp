@@ -50,7 +50,7 @@ VideoLayerSelector* VideoLayerSelector::Create(VideoCodec::Type codec)
 	}
 }
 
- std::vector<LayerInfo> VideoLayerSelector::GetLayerIds(const RTPPacket::shared& packet)
+std::vector<LayerInfo> VideoLayerSelector::GetLayerIds(const RTPPacket::shared& packet)
 {
 	switch(packet->GetCodec())
 	{

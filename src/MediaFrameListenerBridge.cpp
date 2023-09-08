@@ -119,7 +119,7 @@ void MediaFrameListenerBridge::Stop()
 
 void MediaFrameListenerBridge::SetDelayMs(std::chrono::milliseconds delayMs)
 {
-	timeService.Async([&](auto now) { 
+	timeService.Async([=](auto now) { 
 		// Set a delay limit so the queue wouldn't grow without control if something is wrong, i.e. the packet
 		// time info was not valid
 		constexpr int64_t MaxDelayMs = 5000;
@@ -329,6 +329,7 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 			packet->SetClockRate(rate);
 			packet->SetExtTimestamp(lastTimestamp*rate/frame->GetClockRate());
 			packet->SetAbsoluteCaptureTime(time);
+
 			//Check
 			if (i+1==info.size())
 				//last
@@ -344,9 +345,37 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 			lastTime = getTime();
 
 			//Fill payload descriptors
-			//TODO: move out of here
 			if (frame->GetType()==MediaFrame::Video)
+			{
+				//get Video frame
+				VideoFrame* video = (VideoFrame*)frame.get();
+
+				//TODO: move out of here
 				VideoLayerSelector::GetLayerIds(packet);
+
+				//If video has a target bitrate and it is the first packet of an intra frame
+				if (i==0 && video->IsIntra() && video->GetTargetBitrate())
+				{
+					//Create VLA info
+					VideoLayersAllocation videoLayersAllocation = {
+						0,
+						1,
+						{
+							{
+								0,
+								0,
+								std::vector<uint16_t>{ (uint16_t)video->GetTargetBitrate() },
+								video->GetWidth(),
+								video->GetHeight(),
+								video->GetTargetFps()
+							}
+						}
+					};
+											
+					//Set it in packet
+					packet->SetVideoLayersAllocation(videoLayersAllocation);
+				}
+			}
 
 			//If it the media frame has config
 			if (frame->HasCodecConfig())

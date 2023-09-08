@@ -65,6 +65,9 @@ public:
 		frame->SetDuration(GetDuration());
 		//Set CVO
 		if (cvo) frame->SetVideoOrientation(*cvo);
+		//Copy target bitrate and fps
+		frame->SetTargetBitrate(targetBitrate);
+		frame->SetTargetFps(targetFps);
 		//If we have disabled the shared buffer for this frame
 		if (disableSharedBuffer)
 			//Copy data
@@ -99,7 +102,13 @@ public:
 	
 	void SetVideoOrientation(const VideoOrientation cvo)		{ this->cvo = cvo;	}
 	std::optional<VideoOrientation> GetVideoOrientation() const	{ return this->cvo;	}
-	
+
+	void SetTargetBitrate(uint32_t targetBitrate)	{ this->targetBitrate = targetBitrate;	}
+	uint32_t GetTargetBitrate() const		{ return this->targetBitrate;		}
+
+	void SetTargetFps(uint32_t targetFps)		{ this->targetFps = targetFps;		}	
+	uint32_t GetTargetFps() const			{ return this->targetFps;		}
+
 	void Reset() 
 	{
 		//Reset media frame
@@ -117,6 +126,8 @@ private:
 	bool	 isIntra	= false;
 	uint32_t width		= 0;
 	uint32_t height		= 0;
+	uint32_t targetBitrate	= 0;
+	uint32_t targetFps	= 0;
 	std::vector<LayerFrame> layers;
 	std::optional<VideoOrientation> cvo;
 };

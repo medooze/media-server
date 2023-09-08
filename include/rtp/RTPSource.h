@@ -19,12 +19,22 @@
 #include "rtp/RTCPSenderReport.h"
 #include "rtp/RTCPCompoundPacket.h"
 
+#include <optional>
+
 struct LayerSource : LayerInfo
 {
 	DWORD		numPackets = 0;
 	QWORD		totalBytes = 0;
 	DWORD		bitrate = 0;
+
 	Acumulator<uint32_t, uint64_t>	acumulator;
+
+	// From VideoLayerAllocation info
+	bool active = true;
+	std::optional<uint32_t> targetBitrate;
+	std::optional<uint16_t> targetWidth;
+	std::optional<uint16_t> targetHeight;
+	std::optional<uint8_t>  targetFps;
 	
 	LayerSource() : acumulator(1000)
 	{

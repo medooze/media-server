@@ -44,10 +44,11 @@
 
 constexpr auto IceTimeout			= 30000ms;
 constexpr auto ProbingInterval			= 5ms;
-constexpr auto MaxRTXOverhead			= 0.50f;
+constexpr auto MaxRTXOverhead			= 0.70f;
 constexpr auto TransportWideCCMaxPackets	= 100;
 constexpr auto TransportWideCCMaxInterval	= 5E4;	//50ms
 constexpr auto MaxProbingHistorySize		= 50;
+constexpr auto RtxRttThresholdMs 		= 300;
 
 DTLSICETransport::DTLSICETransport(Sender *sender,TimeService& timeService, ObjectPool<Packet>& packetPool) :
 	sender(sender),
@@ -936,6 +937,12 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	//Log
 	UltraDebug("-DTLSICETransport::ReSendPacket() | resending [seq:%d,ssrc:%u,rtx:%u,instant:%llu, isWindow:%d, count:%d, empty:%d]\n", seq, group->media.ssrc, group->rtx.ssrc, instant, rtxBitrate.IsInWindow(), rtxBitrate.GetCount(), rtxBitrate.IsEmpty());
 
+	// If rtt is too large, disable RTX
+	if (rtt > RtxRttThresholdMs)
+	{
+		return (void)UltraDebug("-DTLSICETransport::ReSendPacket() | Too large RTT, skiping rtx. RTT:%d\n", rtt);
+	}
+
 	//if sse is enabled
 	if (senderSideEstimationEnabled && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC) != RTPMap::NotFound)
 	{
@@ -946,6 +953,10 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 		if (targetBitrate && rtxBitrate.GetInstantAvg()*8 > targetBitrate * MaxRTXOverhead)
 			//Error
 			return (void)UltraDebug("-DTLSICETransport::ReSendPacket() | Too much bitrate on rtx, skiping rtx:%lld estimated:%u target:%d\n",(uint64_t)(rtxBitrate.GetInstantAvg()*8), senderSideBandwidthEstimator->GetEstimatedBitrate(), targetBitrate);
+		
+		if (targetBitrate && outgoingBitrate.GetInstantAvg()*8 > targetBitrate)
+			//Error
+			return (void)UltraDebug("-DTLSICETransport::ReSendPacket() | Too much outgoing bitrate, skiping rtx. outgoing:%lld estimated:%u target:%d\n",(uint64_t)(outgoingBitrate.GetInstantAvg()*8), senderSideBandwidthEstimator->GetEstimatedBitrate(), targetBitrate);
 	}
 
 	//Check if we can retransmit the packet, or we have rtx recently
