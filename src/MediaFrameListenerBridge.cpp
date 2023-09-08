@@ -119,8 +119,19 @@ void MediaFrameListenerBridge::Stop()
 
 void MediaFrameListenerBridge::SetDelayMs(std::chrono::milliseconds delayMs)
 {
-	timeService.Async([&](auto now) { 
-		dispatchingDelayMs = delayMs; 
+	timeService.Async([=](auto now) { 
+		// Set a delay limit so the queue wouldn't grow without control if something is wrong, i.e. the packet
+		// time info was not valid
+		constexpr int64_t MaxDelayMs = 5000;
+		if (delayMs.count() > MaxDelayMs)
+		{
+			Warning("-MediaFrameListenerBridge::AddListener() too large dispatch delay: %lldms", delayMs.count());
+			dispatchingDelayMs = std::chrono::milliseconds(MaxDelayMs);
+		}
+		else
+		{
+			dispatchingDelayMs = delayMs;
+		}
 	});
 }
 
