@@ -10,7 +10,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: Initialize submodules
     - uses: actions/checkout@v1
       with:
         submodules: 'true'
@@ -18,7 +17,8 @@ jobs:
     - run: ls -l ./
     - run: ls ./ext/googletest/
     - run: ls ./ext/libdatachannels
-    - run: git submodule update --init --recursive
+    - name: Initialize submodules
+      run: git submodule update --init --recursive
     - name: Configure
       run: mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release ..
     - name: make
