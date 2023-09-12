@@ -156,6 +156,11 @@ public:
 		SetProperty(std::string(key),std::to_string(val));
 	}
 
+	void SetProperty(const char* key, float val)
+	{
+		SetProperty(std::string(key), std::to_string(val));
+	}
+
 	void SetProperty(const char* key,const char* val)
 	{
 		SetProperty(std::string(key),std::string(val));
