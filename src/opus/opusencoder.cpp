@@ -17,6 +17,10 @@ OpusEncoder::OpusEncoder(const Properties &properties)
 	numChannels = 1;
 	//Set number of input frames for codec
 	numFrameSamples = rate * 20 / 1000;
+
+	for (Properties::const_iterator it = properties.begin(); it != properties.end(); ++it)
+		Debug("-OpusEncoder::OpusEncoder() | Setting property [%s:%s]\n", it->first.c_str(), it->second.c_str());
+
 	//Set default mode
 	mode = properties.GetProperty("opus.application.audio",false) ? OPUS_APPLICATION_VOIP : OPUS_APPLICATION_AUDIO;
 

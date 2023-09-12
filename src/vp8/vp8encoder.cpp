@@ -43,6 +43,9 @@ VP8Encoder::VP8Encoder(const Properties& properties) : frame(VideoCodec::VP8)
 	fps = 0;
 	intraPeriod = 0;
 
+	for (Properties::const_iterator it = properties.begin(); it != properties.end(); ++it)
+		Debug("-VP8Encoder::VP8Encoder() | Setting property [%s:%s]\n", it->first.c_str(), it->second.c_str());
+
 	threads				= properties.GetProperty("vp8.threads"			, 1);
 	cpuused				= properties.GetProperty("vp8.cpuused"			, -4);
 	maxKeyFrameBitratePct		= properties.GetProperty("vp8.max_keyframe_bitrate_pct"	, 0); // 0 means no limitation

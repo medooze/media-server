@@ -36,6 +36,9 @@ AACEncoder::AACEncoder(const Properties &properties)
 		return;
 	}
 
+	for (Properties::const_iterator it = properties.begin(); it != properties.end(); ++it)
+		Debug("-AACEncoder::AACEncoder() | Setting property [%s:%s]\n", it->first.c_str(), it->second.c_str());
+
 	//Set params
 	ctx->channels		= 1;
 	ctx->channel_layout	= AV_CH_LAYOUT_MONO;
