@@ -251,9 +251,17 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 				return;
 
 		}
+		
+		// Calculate the scheduled time
+		auto scheduled = now + dispatchingDelayMs;
+		if (!packets.empty())
+		{
+			// Ensure scheduled time increasing
+			scheduled = std::max(scheduled, packets.back().scheduled + std::chrono::milliseconds(1));
+		}
 
-		//Get now in ms
-		uint64_t ms = now.count();
+		//Get scheduled time in ms
+		uint64_t ms = scheduled.count();
 		//Get frame reception time
 		uint64_t time = frame->GetTime();
 
@@ -293,14 +301,6 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 
 		//Calculate each packet duration
 		uint32_t pendingDuration = frame->GetDuration() * 1000 / rate;
-
-		// Calculate the scheduled time
-		auto scheduled = now + dispatchingDelayMs;
-		if (!packets.empty())
-		{
-			// Ensure scheduled time increasing
-			scheduled = std::max(scheduled, packets.back().scheduled + std::chrono::milliseconds(1));
-		}
 			
 		//For each one
 		for (size_t i=0;i<info.size();i++)
