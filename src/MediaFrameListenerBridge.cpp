@@ -260,7 +260,7 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 			scheduled = std::max(scheduled, packets.back().scheduled + std::chrono::milliseconds(1));
 		}
 
-		//Get now in ms
+		//Get scheduled time in ms
 		uint64_t ms = scheduled.count();
 		//Get frame reception time
 		uint64_t time = frame->GetTime();
