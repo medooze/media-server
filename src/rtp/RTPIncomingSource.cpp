@@ -192,7 +192,6 @@ void RTPIncomingSource::Update(QWORD now,DWORD seqNum,DWORD size,const std::vect
 					//if found
 					if (layerSource.spatialLayerId == activeLayer.spatialId)
 					{
-						Log("- %d %d %d\n", layerSource.spatialLayerId, layerSource.temporalLayerId, activeLayer.targetBitratePerTemporalLayer[layerSource.temporalLayerId]);
 						//It is active
 						layerSource.active = true;
 						//Get bitrate for temporal layer, in bps
@@ -212,7 +211,7 @@ void RTPIncomingSource::Update(QWORD now,DWORD seqNum,DWORD size,const std::vect
 					for (size_t temporalLayerId = 0; temporalLayerId < activeLayer.targetBitratePerTemporalLayer.size(); ++temporalLayerId)
 					{
 						//Create new Layer
-						LayerInfo layerInfo(activeLayer.spatialId, temporalLayerId);
+						LayerInfo layerInfo(temporalLayerId, activeLayer.spatialId);
 						//Insert layer info if it doesn't exist
 						auto [it, inserted] = layers.try_emplace(layerInfo.GetId(), layerInfo);
 						//Update layer source
@@ -225,8 +224,6 @@ void RTPIncomingSource::Update(QWORD now,DWORD seqNum,DWORD size,const std::vect
 						it->second.targetWidth = activeLayer.width;
 						it->second.targetHeight = activeLayer.height;
 						it->second.targetFps = activeLayer.fps;
-
-						Log("-new %d %d %d\n", activeLayer.spatialId, temporalLayerId, activeLayer.targetBitratePerTemporalLayer[temporalLayerId]);
 					}
 				}
 			}
