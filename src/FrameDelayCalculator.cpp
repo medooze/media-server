@@ -33,6 +33,10 @@ FrameDelayCalculator::FrameDelayCalculator(int aUpdateRefsPacketEarlyThresholdMs
 
 std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifier, std::chrono::milliseconds now, uint64_t ts, uint64_t clockRate)
 {	
+	//Log("S: %lld, now: %lld, ts: %lld, clk: %lld\n", streamIdentifier, now.count(), ts, clockRate);
+	
+	if (ts == 0) return std::chrono::milliseconds(0);
+	
 	auto unifiedTs = convertTimestampClockRate(ts, clockRate, UnifiedClockRate);
 		
 	if (!initialized)
