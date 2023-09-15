@@ -9,7 +9,10 @@ FrameDispatchCoordinator::FrameDispatchCoordinator(int aUpdateRefsPacketEarlyThr
 
 void FrameDispatchCoordinator::OnFrame(std::chrono::milliseconds now, uint64_t ts, uint64_t clockRate, MediaFrameListenerBridge& listenerBridge)
 {
-	auto delayMs = frameDelayCalculator.OnFrame(listenerBridge.GetMediaSSRC(), now, ts, clockRate);
+	if (ts)
+	{
+		auto delayMs = frameDelayCalculator.OnFrame(listenerBridge.GetMediaSSRC(), now, ts, clockRate);
 	
-	listenerBridge.SetDelayMs(std::max(delayMs, std::chrono::milliseconds(0)));
+		listenerBridge.SetDelayMs(std::max(delayMs, std::chrono::milliseconds(0)));
+	}
 }
