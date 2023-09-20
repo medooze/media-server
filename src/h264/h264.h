@@ -42,7 +42,7 @@ public:
 			CHECK(r); [[maybe_unused]] auto chroma_format_idc = ExpGolombDecoder::Decode(r);
 			if( chroma_format_idc == 3 )
 			{
-				CHECK(r); [[maybe_unused]] auto separate_colour_plane_flag = r.Get(1);
+				CHECK(r); separate_colour_plane_flag = r.Get(1);
 			}
 			CHECK(r); [[maybe_unused]] auto bit_depth_luma_minus8 = ExpGolombDecoder::Decode(r);
 			CHECK(r); [[maybe_unused]] auto bit_depth_chroma_minus8 = ExpGolombDecoder::Decode(r);
@@ -107,6 +107,10 @@ public:
 public:
 	DWORD GetWidth()	{ return ((pic_width_in_mbs_minus1 +1)*16) - frame_crop_right_offset *2 - frame_crop_left_offset *2; }
 	DWORD GetHeight()	{ return ((2 - frame_mbs_only_flag)* (pic_height_in_map_units_minus1 +1) * 16) - frame_crop_bottom_offset*2 - frame_crop_top_offset*2; }
+
+	bool GetSeparateColourPlaneFlag() const { return separate_colour_plane_flag; }
+	bool GetFrameMbsOnlyFlag() const { return frame_mbs_only_flag; }
+	
 	void Dump() const
 	{
 		Debug("[H264SeqParameterSet \n");
@@ -136,6 +140,7 @@ public:
 		Debug("\tframe_crop_right_offset=%u\n",			frame_crop_right_offset);
 		Debug("\tframe_crop_top_offset=%u\n",			frame_crop_top_offset);
 		Debug("\tframe_crop_bottom_offset=%u\n",		frame_crop_bottom_offset);
+		Debug("\tseparate_colour_plane_flag=%u\n",		separate_colour_plane_flag);
 		Debug("/]\n");
 	}
 private:
@@ -167,7 +172,7 @@ private:
 	DWORD			frame_crop_top_offset = 0;
 	DWORD			frame_crop_bottom_offset = 0;
 	//bool			vui_parameters_present_flag = false;
-
+	bool			separate_colour_plane_flag = 0;
 };
 
 class H264PictureParameterSet
