@@ -19,7 +19,7 @@ void H264Packetizer::EmitNal(VideoFrame& frame, BufferReader nal)
 	H26xPacketizer::EmitNal(frame, nal, fuPrefix, 1);
 }
 
-void H264Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
+void H264Packetizer::OnNal(VideoFrame& frame, BufferReader& reader, std::optional<bool>& frameEnd)
 {
 	//Return if current NAL is empty
 	if (!reader.GetLeft())
@@ -80,12 +80,12 @@ void H264Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 
 			//Parse sps
 			{
-				H264SeqParameterSet sps;
-				if (sps.Decode(nalData, nalSize - 1))
+				sps = std::make_unique<H264SeqParameterSet>();
+				if (sps->Decode(nalData, nalSize - 1))
 				{
 					//Set dimensions
-					frame.SetWidth(sps.GetWidth());
-					frame.SetHeight(sps.GetHeight());
+					frame.SetWidth(sps->GetWidth());
+					frame.SetHeight(sps->GetHeight());
 				}
 			}
 			return;
@@ -105,6 +105,19 @@ void H264Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 		case 0x09:
 			//Ignore fame acces unit delimiters
 			return;
+		case 0x01:
+		case 0x02:
+		case 0x05:
+			if (sps)
+			{
+				H264SliceHeader header(*sps);
+				if (header.Decode(reader.PeekData(), reader.GetLeft()))
+				{
+					frameEnd = header.IsFrameEnd();
+				}
+			}
+			
+			break;
 	}
 
 	// If this frame has been marked as intra (meaning it's either an IDR or a non-IDR
@@ -162,6 +175,8 @@ void H264Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 
 std::unique_ptr<MediaFrame> H264Packetizer::ProcessAU(BufferReader& reader)
 {
+	sps.reset();
+	
 	noPPSInFrame = true;
 	noSPSInFrame = true;
 

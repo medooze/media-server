@@ -285,6 +285,62 @@ private:
 	bool			redundant_pic_cnt_present_flag = false;
 };
 
+class H264SliceHeader
+{
+public:
+	H264SliceHeader(const H264SeqParameterSet& sps) : sps(sps)
+	{
+	}
+
+	bool Decode(const BYTE* buffer,DWORD bufferSize)
+	{	
+		BitReader r(buffer, bufferSize);
+		
+		[[maybe_unused]] auto firstMbInSlice = ExpGolombDecoder::Decode(r); CHECK(r);
+		[[maybe_unused]] auto sliceType = ExpGolombDecoder::Decode(r); CHECK(r);
+		[[maybe_unused]] auto picPpsId = ExpGolombDecoder::Decode(r); CHECK(r);
+		
+		if (sps.GetSeparateColourPlaneFlag())
+		{
+			[[maybe_unused]] auto colourPlaneId = r.Get(2); CHECK(r);
+		}
+		
+		[[maybe_unused]] auto num = r.Get(4); CHECK(r); 
+		
+		if (!sps.GetFrameMbsOnlyFlag())
+		{
+			auto fieldPicFlag = r.Get(1); CHECK(r); 
+			if (fieldPicFlag)
+			{
+				auto bottomFieldFlag = r.Get(1); CHECK(r);
+				if (bottomFieldFlag)
+				{
+					frameEnd = true;
+				}
+			}
+			else
+			{
+				frameEnd = true;
+			}
+		}
+		else
+		{
+			frameEnd = true;
+		}
+		
+		return true;
+	}
+	
+	inline bool IsFrameEnd() const
+	{
+		return frameEnd;
+	}
+	
+private:
+	const H264SeqParameterSet& sps;
+	bool frameEnd = false;
+};
+
 #undef CHECK
 
 #endif	/* H264_H */

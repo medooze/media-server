@@ -23,7 +23,7 @@ void H265Packetizer::EmitNal(VideoFrame& frame, BufferReader nal)
 	H26xPacketizer::EmitNal(frame, nal, fuPrefix, HEVCParams::RTP_NAL_HEADER_SIZE);
 }
 
-void H265Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
+void H265Packetizer::OnNal(VideoFrame& frame, BufferReader& reader, std::optional<bool>& frameEnd)
 {
 	//UltraDebug("-H265Packetizer::OnNal()\n");
 	//Return if current NAL is empty
