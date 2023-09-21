@@ -175,8 +175,6 @@ void H264Packetizer::OnNal(VideoFrame& frame, BufferReader& reader, std::optiona
 
 std::unique_ptr<MediaFrame> H264Packetizer::ProcessAU(BufferReader& reader)
 {
-	sps.reset();
-	
 	noPPSInFrame = true;
 	noSPSInFrame = true;
 
