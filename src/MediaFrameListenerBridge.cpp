@@ -385,7 +385,7 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 			//calculate packet duration based on relative size to keep bitrate smooth
 			const uint32_t packetDuration = (smooth && pendingLength > 0) ? pendingDuration * info[i].GetTotalLength() / pendingLength : 0;
 
-			//UltraDebug("-MediaFrameListenerBridge::onMediaFrame() [this:%p,extSeqNum:%d,pending:%d,duration:%dms,total:%d,total:%dms\n", extSeqNum-1, pendingLength, packetDuration, info[i].GetTotalLength(), packetDuration);
+			//UltraDebug("-MediaFrameListenerBridge::onMediaFrame() [this:%p,extSeqNum:%d,pending:%d,duration:%dms,total:%d,total:%dms\n", this, extSeqNum-1, pendingLength, packetDuration, info[i].GetTotalLength(), packetDuration);
 
 			//Insert it
 			packets.emplace(scheduled, packet, std::chrono::milliseconds(packetDuration));
