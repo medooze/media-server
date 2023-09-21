@@ -544,8 +544,8 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 			remb->AddField(RTCPPayloadFeedback::ApplicationLayerFeeedbackField::CreateReceiverEstimatedMaxBitrate(ssrcs,bitrate));
 		}
 		
-		//If there is no outgoing stream
-		if (outgoing.empty() && group->rtx.ssrc)
+		//If there is no outgoing stream, send NACK request on media sourcefor calculating RTT
+		if (outgoing.empty() && group->media.ssrc == source->ssrc && group->rtx.ssrc)
 		{
 			//Get last seq num for calculating rtt based on rtx
 			WORD last = group->SetRTTRTX(now);
@@ -962,7 +962,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	//Check if we can retransmit the packet, or we have rtx recently
 	if (!group->isRTXAllowed(seq, now/1000))
 		//Debug
-		return (void)UltraDebug("-DTLSICETransport::ReSendPacket() | rtx not allowed for packet [seq:%d,ssrc:&%u,rtx:%u]\n", seq, group->media.ssrc, group->rtx.ssrc);
+		return (void)UltraDebug("-DTLSICETransport::ReSendPacket() | rtx not allowed for packet [seq:%d,ssrc:%u,rtx:%u]\n", seq, group->media.ssrc, group->rtx.ssrc);
 	
 	//Find packet to retransmit
 	auto original = group->GetPacket(seq);
