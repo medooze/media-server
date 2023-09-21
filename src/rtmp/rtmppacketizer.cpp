@@ -36,7 +36,7 @@ VideoCodec::Type GetRtmpFrameVideoCodec(const RTMPVideoFrame& videoFrame)
 template<typename DescClass, VideoCodec::Type codec>
 std::unique_ptr<VideoFrame> RTMPPacketizer<DescClass, codec>::PrepareFrame(RTMPVideoFrame* videoFrame)
 {
-	//Debug("-RTMPAVCPacketizer::AddFrame() [size:%u,intra:%d]\n",videoFrame->GetMediaSize(), videoFrame->GetFrameType() == RTMPVideoFrame::INTRA);
+	//Debug("-RTMPPacketizer::PrepareFrame() [codec:%d, isConfig:%d, isCodedFrames:%d]\n", GetRtmpFrameVideoCodec(*videoFrame), videoFrame->IsConfig(), videoFrame->IsCodedFrames());
 	
 	//Check it is processing codec
 	if (GetRtmpFrameVideoCodec(*videoFrame) != codec)
@@ -52,7 +52,7 @@ std::unique_ptr<VideoFrame> RTMPPacketizer<DescClass, codec>::PrepareFrame(RTMPV
 			gotConfig = true;
 		else
 			//Show error
-			Error(" RTMPPacketizer::AddFrame() | Config parse error\n");
+			Warning(" RTMPPacketizer::PrepareFrame() | Config parse error\n");
 		//DOne
 		return nullptr;
 	}
@@ -66,7 +66,7 @@ std::unique_ptr<VideoFrame> RTMPPacketizer<DescClass, codec>::PrepareFrame(RTMPV
 	if (!gotConfig)
 	{
 		//Error
-		Debug("-RTMPPacketizer::AddFrame() | Got media frame but not valid description yet\n");
+		Debug("-RTMPPacketizer::PrepareFrame() | Got media frame but not valid description yet\n");
 		//DOne
 		return nullptr;
 	}
