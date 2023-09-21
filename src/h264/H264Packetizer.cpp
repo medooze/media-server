@@ -110,10 +110,10 @@ void H264Packetizer::OnNal(VideoFrame& frame, BufferReader& reader, std::optiona
 		case 0x05:
 			if (sps)
 			{
-				H264SliceHeader header(*sps);
-				if (header.Decode(reader.PeekData(), reader.GetLeft()))
+				H264SliceHeader header;
+				if (header.Decode(reader.PeekData(), reader.GetLeft(), *sps))
 				{
-					frameEnd = header.IsFrameEnd();
+					frameEnd = header.GetBottomFieldFlag();
 				}
 			}
 			

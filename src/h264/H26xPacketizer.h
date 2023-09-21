@@ -19,7 +19,7 @@ public:
 	H26xPacketizer(VideoCodec::Type codec);
 	virtual std::unique_ptr<MediaFrame> ProcessAU(BufferReader& payload);
 
-	void resetFrame();
+	void ResetFrame();
 	
 protected:
 	/** called by ProcessAU() for every NALU found in the AU */

@@ -106,7 +106,7 @@ std::unique_ptr<MediaFrame> H26xPacketizer::ProcessAU(BufferReader& reader)
 	return std::move(currentFrame);
 }
 
-void H26xPacketizer::resetFrame()
+void H26xPacketizer::ResetFrame()
 {
 	currentFrame.reset();
 }	

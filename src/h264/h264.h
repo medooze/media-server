@@ -288,57 +288,74 @@ private:
 class H264SliceHeader
 {
 public:
-	H264SliceHeader(const H264SeqParameterSet& sps) : sps(sps)
-	{
-	}
 
-	bool Decode(const BYTE* buffer,DWORD bufferSize)
+	bool Decode(const BYTE* buffer, DWORD bufferSize, const H264SeqParameterSet& sps)
 	{	
 		BitReader r(buffer, bufferSize);
 		
-		[[maybe_unused]] auto firstMbInSlice = ExpGolombDecoder::Decode(r); CHECK(r);
-		[[maybe_unused]] auto sliceType = ExpGolombDecoder::Decode(r); CHECK(r);
-		[[maybe_unused]] auto picPpsId = ExpGolombDecoder::Decode(r); CHECK(r);
+		firstMbInSlice = ExpGolombDecoder::Decode(r); CHECK(r);
+		sliceType = ExpGolombDecoder::Decode(r); CHECK(r);
+		picPpsId = ExpGolombDecoder::Decode(r); CHECK(r);
 		
 		if (sps.GetSeparateColourPlaneFlag())
 		{
-			[[maybe_unused]] auto colourPlaneId = r.Get(2); CHECK(r);
+			colourPlaneId = r.Get(2); CHECK(r);
 		}
 		
-		[[maybe_unused]] auto num = r.Get(4); CHECK(r); 
+		frameNum = r.Get(4); CHECK(r); 
 		
+		// We regard it as bottom if the bottomfield is not present
+		bottomFieldFlag = true;
 		if (!sps.GetFrameMbsOnlyFlag())
 		{
 			auto fieldPicFlag = r.Get(1); CHECK(r); 
 			if (fieldPicFlag)
 			{
-				auto bottomFieldFlag = r.Get(1); CHECK(r);
-				if (bottomFieldFlag)
-				{
-					frameEnd = true;
-				}
+				bottomFieldFlag = r.Get(1); CHECK(r);
 			}
-			else
-			{
-				frameEnd = true;
-			}
-		}
-		else
-		{
-			frameEnd = true;
 		}
 		
 		return true;
 	}
 	
-	inline bool IsFrameEnd() const
+	inline uint32_t GetFirstMbInSlice() const
 	{
-		return frameEnd;
+		return firstMbInSlice;
+	}
+	
+	inline uint32_t GetSliceType() const
+	{
+		return sliceType;
+	}
+	
+	inline uint32_t GetPicPpsId() const
+	{
+		return picPpsId;
+	}
+	
+	inline uint32_t GetColourPlaneId() const
+	{
+		return colourPlaneId;
+	}
+	
+	inline uint32_t GetFrameNum() const
+	{
+		return frameNum;
+	}
+	
+	inline bool GetBottomFieldFlag() const
+	{
+		return bottomFieldFlag;
 	}
 	
 private:
-	const H264SeqParameterSet& sps;
-	bool frameEnd = false;
+	uint32_t firstMbInSlice = 0;
+	uint32_t sliceType = 0;
+	uint32_t picPpsId = 0;
+	uint8_t colourPlaneId = 0;
+	uint8_t frameNum = 0;
+	
+	bool bottomFieldFlag = false;
 };
 
 #undef CHECK
