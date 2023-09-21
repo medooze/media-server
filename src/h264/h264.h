@@ -285,6 +285,79 @@ private:
 	bool			redundant_pic_cnt_present_flag = false;
 };
 
+class H264SliceHeader
+{
+public:
+
+	bool Decode(const BYTE* buffer, DWORD bufferSize, const H264SeqParameterSet& sps)
+	{	
+		BitReader r(buffer, bufferSize);
+		
+		firstMbInSlice = ExpGolombDecoder::Decode(r); CHECK(r);
+		sliceType = ExpGolombDecoder::Decode(r); CHECK(r);
+		picPpsId = ExpGolombDecoder::Decode(r); CHECK(r);
+		
+		if (sps.GetSeparateColourPlaneFlag())
+		{
+			colourPlaneId = r.Get(2); CHECK(r);
+		}
+		
+		frameNum = r.Get(4); CHECK(r); 
+		
+		// We regard it as bottom if the bottomfield is not present
+		bottomFieldFlag = true;
+		if (!sps.GetFrameMbsOnlyFlag())
+		{
+			auto fieldPicFlag = r.Get(1); CHECK(r); 
+			if (fieldPicFlag)
+			{
+				bottomFieldFlag = r.Get(1); CHECK(r);
+			}
+		}
+		
+		return true;
+	}
+	
+	inline uint32_t GetFirstMbInSlice() const
+	{
+		return firstMbInSlice;
+	}
+	
+	inline uint32_t GetSliceType() const
+	{
+		return sliceType;
+	}
+	
+	inline uint32_t GetPicPpsId() const
+	{
+		return picPpsId;
+	}
+	
+	inline uint32_t GetColourPlaneId() const
+	{
+		return colourPlaneId;
+	}
+	
+	inline uint32_t GetFrameNum() const
+	{
+		return frameNum;
+	}
+	
+	inline bool GetBottomFieldFlag() const
+	{
+		return bottomFieldFlag;
+	}
+	
+private:
+	uint32_t firstMbInSlice = 0;
+	uint32_t sliceType = 0;
+	uint32_t picPpsId = 0;
+	uint8_t colourPlaneId = 0;
+	uint8_t frameNum = 0;
+	
+	bool bottomFieldFlag = false;
+};
+
 #undef CHECK
 
 #endif	/* H264_H */

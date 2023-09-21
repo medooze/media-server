@@ -77,23 +77,36 @@ std::unique_ptr<MediaFrame> H26xPacketizer::ProcessAU(BufferReader& reader)
 {
 	//UltraDebug("-H26xPacketizer::ProcessAU() | H26x AU [len:%d]\n", reader.GetLeft());
 	
-	auto frame = std::make_unique<VideoFrame>(static_cast<VideoCodec::Type>(codec), reader.GetLeft());
+	if (!currentFrame)
+		currentFrame = std::make_unique<VideoFrame>(static_cast<VideoCodec::Type>(codec), reader.GetLeft());
 
+	std::optional<bool> frameEnd;
 	NalSliceAnnexB(reader
-		, [&](auto nalReader){OnNal(*frame, nalReader);}
+		, [&](auto nalReader){OnNal(*currentFrame, nalReader, frameEnd);}
 	);
-
-	//Check if we have new width and heigth
-	if (frame->GetWidth() && frame->GetHeight())
+	
+	// If frame end is not got, regard it as the frame complete.
+	if (frameEnd.has_value() && !frameEnd.value())
 	{
-		//Update cache
-		width = frame->GetWidth();
-		height = frame->GetHeight();
-	} else {
-		//Update from cache
-		frame->SetWidth(width);
-		frame->SetHeight(height);
+		return nullptr;
 	}
 
-	return frame;
+	//Check if we have new width and heigth
+	if (currentFrame->GetWidth() && currentFrame->GetHeight())
+	{
+		//Update cache
+		width = currentFrame->GetWidth();
+		height = currentFrame->GetHeight();
+	} else {
+		//Update from cache
+		currentFrame->SetWidth(width);
+		currentFrame->SetHeight(height);
+	}
+
+	return std::move(currentFrame);
 }
+
+void H26xPacketizer::ResetFrame()
+{
+	currentFrame.reset();
+}	

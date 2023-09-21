@@ -17,11 +17,13 @@ public:
 	std::unique_ptr<MediaFrame> ProcessAU(BufferReader &reader) override;
 
 protected:
-	void OnNal(VideoFrame& frame, BufferReader& nal) override;
+	void OnNal(VideoFrame& frame, BufferReader& nal, std::optional<bool>& frameEnd) override;
 	void EmitNal(VideoFrame& frame, BufferReader nal);
 	AVCDescriptor config;
 	bool noPPSInFrame = true;
 	bool noSPSInFrame = true;
+	
+	std::unique_ptr<H264SeqParameterSet> sps;
 };
 
 #endif // H264PACKETIZER_H

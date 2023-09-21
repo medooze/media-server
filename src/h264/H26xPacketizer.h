@@ -19,9 +19,11 @@ public:
 	H26xPacketizer(VideoCodec::Type codec);
 	virtual std::unique_ptr<MediaFrame> ProcessAU(BufferReader& payload);
 
+	void ResetFrame();
+	
 protected:
 	/** called by ProcessAU() for every NALU found in the AU */
-	virtual void OnNal(VideoFrame& frame, BufferReader& nal) = 0;
+	virtual void OnNal(VideoFrame& frame, BufferReader& nal, std::optional<bool>& frameEnd) = 0;
 
 	/**
 	 * @brief add a NALU to the frame, fragmenting it in RTP if necessary
@@ -31,6 +33,9 @@ protected:
 	void EmitNal(VideoFrame& frame, BufferReader nal, std::string& fuPrefix, int naluHeaderSize);
 
 private:
+
+	std::unique_ptr<VideoFrame> currentFrame;
+
 	// cached frame size
 	uint32_t width = 0;
 	uint32_t height = 0;
