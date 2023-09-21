@@ -25,6 +25,8 @@ void H265Packetizer::EmitNal(VideoFrame& frame, BufferReader nal)
 
 void H265Packetizer::OnNal(VideoFrame& frame, BufferReader& reader, std::optional<bool>& frameEnd)
 {
+	//@todo Set frameEnd as per slice header
+	
 	//UltraDebug("-H265Packetizer::OnNal()\n");
 	//Return if current NAL is empty
 	if (!reader.GetLeft())

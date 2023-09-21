@@ -85,7 +85,7 @@ std::unique_ptr<MediaFrame> H26xPacketizer::ProcessAU(BufferReader& reader)
 		, [&](auto nalReader){OnNal(*currentFrame, nalReader, frameEnd);}
 	);
 	
-	// If frame end is got, regard it as the frame complete.
+	// If frame end is not got, regard it as the frame complete.
 	if (frameEnd.has_value() && !frameEnd.value())
 	{
 		return nullptr;
