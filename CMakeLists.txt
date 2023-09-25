@@ -18,6 +18,7 @@ endif()
 enable_testing()
 
 add_subdirectory(ext/googletest)
+add_subdirectory(ext/mp4v2)
 
 file(GLOB_RECURSE SOURCES_H265 RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/h265/*.cpp")
 file(GLOB_RECURSE SOURCES_H264 RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/h264/*.cpp")
@@ -81,7 +82,7 @@ target_include_directories(MediaServerLib PUBLIC
     ${CMAKE_CURRENT_LIST_DIR}/include
     ${CMAKE_CURRENT_LIST_DIR}/src
     ${CMAKE_CURRENT_LIST_DIR}/ext/libdatachannels/src/internal
-    ${CMAKE_SOURCE_DIR}/ext/mp4v2/include
+    ${CMAKE_CURRENT_LIST_DIR}/ext/mp4v2/include
 )
 
 target_link_libraries(MediaServerLib
