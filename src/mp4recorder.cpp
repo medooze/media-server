@@ -326,7 +326,7 @@ int mp4track::WriteAudioFrame(AudioFrame &audioFrame)
 
 int mp4track::FlushVideoFrame(VideoFrame* frame,DWORD duration)
 {
-	//Log("-mp4track::FlushVideoFrame() [duration:%u,width:%d,height:%d%s]\n",duration, frame->GetWidth(), frame->GetWidth(), frame->IsIntra() ? ",intra" : "");
+	// Log("-mp4track::FlushVideoFrame() [duration:%u,width:%d,height:%d%s]\n",duration, frame->GetWidth(), frame->GetHeight(), frame->IsIntra() ? ",intra" : "");
 	// Save video frame
 	MP4WriteSample(mp4, track, frame->GetData(), frame->GetLength(), duration, 0, frame->IsIntra());
 
@@ -557,7 +557,7 @@ int mp4track::Close()
 				break;
 			case MediaFrame::Video:
 				//Flush it
-				FlushVideoFrame((VideoFrame*)frame,frame->GetClockRate());
+				FlushVideoFrame((VideoFrame*)frame,frame->GetDuration());
 				break;
 			case MediaFrame::Text:
 				//Flush it
