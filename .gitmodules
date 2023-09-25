@@ -4,3 +4,6 @@
 [submodule "ext/googletest"]
 	path = ext/googletest
 	url = https://github.com/google/googletest.git
+[submodule "ext/mp4v2"]
+	path = ext/mp4v2
+	url = https://github.com/medooze/mp4v2.git
