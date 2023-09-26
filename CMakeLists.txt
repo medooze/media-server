@@ -6,9 +6,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -ggdb -O0 -Wliteral-suffix")
-
-
 # Do not allow in-source build.
 if( ${PROJECT_SOURCE_DIR} STREQUAL ${PROJECT_BINARY_DIR} )
     message( FATAL_ERROR "In-source build is not allowed. Please build in a separate directory, such as ${PROJECT_SOURCE_DIR}/build." )
@@ -28,12 +25,6 @@ file(GLOB_RECURSE SOURCES_JPEG RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/jpeg/*.cp
 file(GLOB_RECURSE SOURCES_WEBP RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/webp/*.cpp")
 
 file(GLOB_RECURSE SOURCES RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/*.cpp")
-
-#message(CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
-#message(CMAKE_CURRENT_LIST_DIR="${CMAKE_CURRENT_LIST_DIR}")
-#message(SOURCES_h265="${SOURCES_h265}")
-#
-#message(SOURCES="${SOURCES}")
 
 # Media server lib
 add_library(MediaServerLib
@@ -73,11 +64,6 @@ add_library(MediaServerLib
     ${CMAKE_CURRENT_LIST_DIR}/src/utf8.cpp
 )
 
-#add_library(MediaServerLib
-#	${SOURCES}
-#)
-
-
 target_include_directories(MediaServerLib PUBLIC
     ${CMAKE_CURRENT_LIST_DIR}/include
     ${CMAKE_CURRENT_LIST_DIR}/src
@@ -93,10 +79,11 @@ target_link_libraries(MediaServerLib
     avutil
 )
 
-target_compile_options(MediaServerLib PUBLIC
-    -ggdb
-    -O0
-)
+#for debugging
+#target_compile_options(MediaServerLib PUBLIC
+#    -ggdb
+#    -O0
+#)
 
 # Unit test executable
 add_executable(MediaServerUnitTest

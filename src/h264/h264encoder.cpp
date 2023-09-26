@@ -77,6 +77,9 @@ H264Encoder::H264Encoder(const Properties& properties) : frame(VideoCodec::H264)
 	fps = 0;
 	intraPeriod = X264_KEYINT_MAX_INFINITE;
 	
+	for (Properties::const_iterator it = properties.begin(); it != properties.end(); ++it)
+		Debug("-H264Encoder::H264Encoder() | Setting property [%s:%s]\n", it->first.c_str(), it->second.c_str());
+
 	//Number of threads or auto
 	threads = properties.GetProperty("h264.threads",0);
 
@@ -144,7 +147,6 @@ int H264Encoder::SetSize(int width, int height)
 int H264Encoder::SetFrameRate(int frames,int kbits,int intraPeriod)
 {
 	//UltraDebug("-H264Encoder::SetFrameRate() [fps: %d, kbits: %d, intra: %d]\n",frames,kbits,intraPeriod);
-	Log("-H264Encoder::SetFrameRate() [fps: %d, kbits: %d, intra: %d]\n",frames,kbits,intraPeriod);
 	// Save frame rate
 	if (frames>0)
 		fps=frames;
