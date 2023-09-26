@@ -76,7 +76,7 @@ H264Encoder::H264Encoder(const Properties& properties) : frame(VideoCodec::H264)
 	bitrate = 0;
 	fps = 0;
 	intraPeriod = X264_KEYINT_MAX_INFINITE;
-	
+
 	for (Properties::const_iterator it = properties.begin(); it != properties.end(); ++it)
 		Debug("-H264Encoder::H264Encoder() | Setting property [%s:%s]\n", it->first.c_str(), it->second.c_str());
 
