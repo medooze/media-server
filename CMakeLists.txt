@@ -15,7 +15,18 @@ endif()
 enable_testing()
 
 add_subdirectory(ext/googletest)
-add_subdirectory(ext/mp4v2)
+
+# get/clone medooze/mp4v2 and add/populate it to the project
+include(FetchContent)
+fetchcontent_declare(
+	mp4v2
+	GIT_REPOSITORY https://github.com/medooze/mp4v2.git
+	GIT_TAG dev/zliao/cmake
+	SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/ext/mp4v2
+	)
+
+FetchContent_MakeAvailable(mp4v2)
+
 
 file(GLOB_RECURSE SOURCES_H265 RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/h265/*.cpp")
 file(GLOB_RECURSE SOURCES_H264 RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/h264/*.cpp")
