@@ -268,60 +268,6 @@ VideoFrame* VP8Encoder::EncodeFrame(const VideoBuffer::const_shared& videoBuffer
 		return NULL;
 	}
 
-	//Get planes
-	const Plane& y = videoBuffer->GetPlaneY();
-	const Plane& u = videoBuffer->GetPlaneU();
-	const Plane& v = videoBuffer->GetPlaneV();
-
-	//Set data
-	pic->planes[VPX_PLANE_Y] = (unsigned char*)y.GetData();
-	pic->planes[VPX_PLANE_U] = (unsigned char*)u.GetData();
-	pic->planes[VPX_PLANE_V] = (unsigned char*)v.GetData();
-	pic->planes[VPX_PLANE_ALPHA] = nullptr;
-	pic->stride[VPX_PLANE_Y] = y.GetStride();
-	pic->stride[VPX_PLANE_U] = u.GetStride();
-	pic->stride[VPX_PLANE_V] = v.GetStride();
-	pic->stride[VPX_PLANE_ALPHA] = 0;
-
-	//Set color range
-	switch (videoBuffer->GetColorRange())
-	{
-		case VideoBuffer::ColorRange::Partial:
-			pic->range = VPX_CR_STUDIO_RANGE;
-			break;
-		case VideoBuffer::ColorRange::Full:
-			pic->range = VPX_CR_FULL_RANGE;
-			break;
-		default:
-			pic->range = VPX_CR_FULL_RANGE;
-	}
-
-	//Get color space
-	switch (videoBuffer->GetColorSpace())
-	{
-		case VideoBuffer::ColorSpace::SRGB:
-			pic->cs = VPX_CS_SRGB;
-			break;
-		case VideoBuffer::ColorSpace::BT709:
-			pic->cs = VPX_CS_BT_709;
-			break;
-		case VideoBuffer::ColorSpace::BT601:
-			pic->cs = VPX_CS_BT_601;
-			break;
-		case VideoBuffer::ColorSpace::SMPTE170:
-			pic->cs = VPX_CS_SMPTE_170;
-			break;
-		case VideoBuffer::ColorSpace::SMPTE240:
-			pic->cs = VPX_CS_SMPTE_240;
-			break;
-		case VideoBuffer::ColorSpace::BT2020:
-			pic->cs = VPX_CS_BT_2020;
-			break;
-		default:
-			//Unknown
-			pic->cs = VPX_CS_UNKNOWN;
-	}
-
 	int flags = 0;
 
 	//Check FPU
@@ -332,15 +278,83 @@ VideoFrame* VP8Encoder::EncodeFrame(const VideoBuffer::const_shared& videoBuffer
 		//Not next one
 		forceKeyFrame = false;
 	}
-		
+
 	uint32_t duration = 1000 / fps;
 
-	if (vpx_codec_encode(&encoder, pic, pts, duration, flags, deadline)!=VPX_CODEC_OK)
+	if (videoBuffer)
 	{
-		//Error
-		Error("-VP8Encoder::EncodeFrame() | Encode error [error %d:%s]\n",encoder.err,encoder.err_detail);
-		//Exit
-		return NULL;
+		//Get planes
+		const Plane& y = videoBuffer->GetPlaneY();
+		const Plane& u = videoBuffer->GetPlaneU();
+		const Plane& v = videoBuffer->GetPlaneV();
+
+		//Set data
+		pic->planes[VPX_PLANE_Y] = (unsigned char*)y.GetData();
+		pic->planes[VPX_PLANE_U] = (unsigned char*)u.GetData();
+		pic->planes[VPX_PLANE_V] = (unsigned char*)v.GetData();
+		pic->planes[VPX_PLANE_ALPHA] = nullptr;
+		pic->stride[VPX_PLANE_Y] = y.GetStride();
+		pic->stride[VPX_PLANE_U] = u.GetStride();
+		pic->stride[VPX_PLANE_V] = v.GetStride();
+		pic->stride[VPX_PLANE_ALPHA] = 0;
+
+		//Set color range
+		switch (videoBuffer->GetColorRange())
+		{
+			case VideoBuffer::ColorRange::Partial:
+				pic->range = VPX_CR_STUDIO_RANGE;
+				break;
+			case VideoBuffer::ColorRange::Full:
+				pic->range = VPX_CR_FULL_RANGE;
+				break;
+			default:
+				pic->range = VPX_CR_FULL_RANGE;
+		}
+
+		//Get color space
+		switch (videoBuffer->GetColorSpace())
+		{
+			case VideoBuffer::ColorSpace::SRGB:
+				pic->cs = VPX_CS_SRGB;
+				break;
+			case VideoBuffer::ColorSpace::BT709:
+				pic->cs = VPX_CS_BT_709;
+				break;
+			case VideoBuffer::ColorSpace::BT601:
+				pic->cs = VPX_CS_BT_601;
+				break;
+			case VideoBuffer::ColorSpace::SMPTE170:
+				pic->cs = VPX_CS_SMPTE_170;
+				break;
+			case VideoBuffer::ColorSpace::SMPTE240:
+				pic->cs = VPX_CS_SMPTE_240;
+				break;
+			case VideoBuffer::ColorSpace::BT2020:
+				pic->cs = VPX_CS_BT_2020;
+				break;
+			default:
+				//Unknown
+				pic->cs = VPX_CS_UNKNOWN;
+		}
+
+		if (vpx_codec_encode(&encoder, pic, pts, duration, flags, deadline)!=VPX_CODEC_OK)
+		{
+			//Error
+			Error("-VP8Encoder::EncodeFrame() | Encode error [error %d:%s]\n",encoder.err,encoder.err_detail);
+			//Exit
+			return nullptr;
+		}
+	}
+	// end of stream, flushing buffered encoded frame
+	else
+	{
+		if (vpx_codec_encode(&encoder, nullptr, pts, duration, flags, deadline)!=VPX_CODEC_OK)
+		{
+			//Error
+			Error("-VP8Encoder::EncodeFrame() | Encode error [error %d:%s]\n",encoder.err,encoder.err_detail);
+			//Exit
+			return nullptr;
+		}
 	}
 
 	//Increase timestamp

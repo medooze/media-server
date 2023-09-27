@@ -79,7 +79,7 @@ H264Encoder::H264Encoder(const Properties& properties) : frame(VideoCodec::H264)
 
 	for (Properties::const_iterator it = properties.begin(); it != properties.end(); ++it)
 		Debug("-H264Encoder::H264Encoder() | Setting property [%s:%s]\n", it->first.c_str(), it->second.c_str());
-	
+
 	//Number of threads or auto
 	threads = properties.GetProperty("h264.threads",0);
 
@@ -297,24 +297,34 @@ VideoFrame* H264Encoder::EncodeFrame(const VideoBuffer::const_shared& videoBuffe
 		return NULL;
 	}
 
-	//Get planes
-	const Plane& y = videoBuffer->GetPlaneY();
-	const Plane& u = videoBuffer->GetPlaneU();
-	const Plane& v = videoBuffer->GetPlaneV();
+	int len = 0;
+	if (videoBuffer)
+	{
+		//Get planes
+		const Plane& y = videoBuffer->GetPlaneY();
+		const Plane& u = videoBuffer->GetPlaneU();
+		const Plane& v = videoBuffer->GetPlaneV();
 
-	//POnemos los valores
-	pic.img.plane[0] = (unsigned char*)y.GetData();
-	pic.img.plane[1] = (unsigned char*)u.GetData();
-	pic.img.plane[2] = (unsigned char*)v.GetData();
-	pic.img.i_stride[0] = y.GetStride();
-	pic.img.i_stride[1] = u.GetStride();
-	pic.img.i_stride[2] = v.GetStride();
-	pic.img.i_csp   = X264_CSP_I420;
-	pic.img.i_plane = 3;
-	pic.i_pts  = pts++;
+		//POnemos los valores
+		pic.img.plane[0] = (unsigned char*)y.GetData();
+		pic.img.plane[1] = (unsigned char*)u.GetData();
+		pic.img.plane[2] = (unsigned char*)v.GetData();
+		pic.img.i_stride[0] = y.GetStride();
+		pic.img.i_stride[1] = u.GetStride();
+		pic.img.i_stride[2] = v.GetStride();
+		pic.img.i_csp   = X264_CSP_I420;
+		pic.img.i_plane = 3;
+		pic.i_pts  = pts++;
 
-	// Encode frame and get length
-	int len = x264_encoder_encode(enc, &nals, &numNals, &pic, &pic_out);
+		// Encode frame and get length
+		len = x264_encoder_encode(enc, &nals, &numNals, &pic, &pic_out);
+	}
+	// end of stream, flushing buffered encoded frame
+	else
+	{
+		len = x264_encoder_encode(enc, &nals, &numNals, nullptr, &pic_out);
+	}
+	
 
 	//Check it
 	if (len<0)

@@ -16,10 +16,36 @@ enable_testing()
 
 add_subdirectory(ext/googletest)
 
+# get/clone medooze/mp4v2 and add/populate it to the project
+include(FetchContent)
+fetchcontent_declare(
+	mp4v2
+	GIT_REPOSITORY https://github.com/medooze/mp4v2.git
+	GIT_TAG dev/zliao/cmake
+	SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/ext/mp4v2
+	)
+
+FetchContent_MakeAvailable(mp4v2)
+
+
+file(GLOB_RECURSE SOURCES_H265 RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/h265/*.cpp")
+file(GLOB_RECURSE SOURCES_H264 RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/h264/*.cpp")
+file(GLOB_RECURSE SOURCES_VP8 RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/vp8/*.cpp")
+file(GLOB_RECURSE SOURCES_VP9 RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/vp9/*.cpp")
+file(GLOB_RECURSE SOURCES_JPEG RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/jpeg/*.cpp")
+file(GLOB_RECURSE SOURCES_WEBP RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/webp/*.cpp")
+
+file(GLOB_RECURSE SOURCES RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/*.cpp")
+
 # Media server lib
 add_library(MediaServerLib
+	${SOURCES_H264}
+	${SOURCES_H265}
+	${SOURCES_VP8}
+	${SOURCES_VP9}
+	${SOURCES_JPEG}
+	${SOURCES_WEBP}
     ${CMAKE_CURRENT_LIST_DIR}/src/DependencyDescriptorLayerSelector.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/h264/H264LayerSelector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtmp/amf.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/DependencyDescriptor.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/LayerInfo.cpp
@@ -36,25 +62,39 @@ add_library(MediaServerLib
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPPayload.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPSource.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPStreamTransponder.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/avcdescriptor.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/EventLoop.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/FrameDelayCalculator.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/FrameDispatchCoordinator.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/MediaFrameListenerBridge.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/PacketHeader.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/mp4recorder.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/SimulcastMediaFrameListener.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/VideoLayerSelector.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/VideoCodecFactory.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/utf8.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/vp8/vp8depacketizer.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/vp8/VP8LayerSelector.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/vp9/VP9LayerSelector.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/vp9/VP9PayloadDescription.cpp
 )
 
 target_include_directories(MediaServerLib PUBLIC
     ${CMAKE_CURRENT_LIST_DIR}/include
     ${CMAKE_CURRENT_LIST_DIR}/src
     ${CMAKE_CURRENT_LIST_DIR}/ext/libdatachannels/src/internal
+    ${CMAKE_CURRENT_LIST_DIR}/ext/mp4v2/include
 )
+
+target_link_libraries(MediaServerLib
+    pthread
+    vpx
+    x264
+    avcodec
+    avutil
+)
+
+#for debugging
+#target_compile_options(MediaServerLib PUBLIC
+#    -ggdb
+#    -O0
+#)
 
 # Unit test executable
 add_executable(MediaServerUnitTest
