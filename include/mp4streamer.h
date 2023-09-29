@@ -174,6 +174,7 @@ public:
 	QWORD Tell()		{ return t+seeked;	}
 	int Stop();
 	int Close();
+	void SetPlaybackSpeed(float playbackSpeed)	{ this->playbackSpeed = playbackSpeed; }
 	
 private:
 	int PlayLoop();
@@ -186,6 +187,7 @@ private:
 	bool		playing = false;
 	QWORD		seeked	= 0;
 	QWORD		t	= 0;
+	float		playbackSpeed = 1.0;
 
 	MP4FileHandle	mp4	= MP4_INVALID_FILE_HANDLE;
 	MP4RtpTrack*	audio	= nullptr;

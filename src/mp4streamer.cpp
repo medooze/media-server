@@ -3,11 +3,13 @@
 #include <unistd.h>
 #include <string.h>
 #include "log.h"
+#include "tools.h"
 #include "codecs.h"
 #include "rtp.h"
 #include "mp4streamer.h"
 #include "video.h"
 #include "audio.h"
+
 
 
 MP4Streamer::MP4Streamer(Listener *listener)
@@ -279,7 +281,7 @@ int MP4Streamer::PlayLoop()
 		}
 
 		// Wait time diff
-		QWORD now = getTimeDiff(ini)/1000;
+		QWORD now = playbackSpeed * getTimeDiff(ini)/1000;
 
 		if (t>now)
 		{
