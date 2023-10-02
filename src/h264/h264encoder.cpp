@@ -77,9 +77,10 @@ H264Encoder::H264Encoder(const Properties& properties) : frame(VideoCodec::H264)
 	fps = 0;
 	intraPeriod = X264_KEYINT_MAX_INFINITE;
 
+	Debug("-H264Encoder::H264Encoder()\n");
 	for (Properties::const_iterator it = properties.begin(); it != properties.end(); ++it)
 		Debug("-H264Encoder::H264Encoder() | Setting property [%s:%s]\n", it->first.c_str(), it->second.c_str());
-
+	
 	//Number of threads or auto
 	threads = properties.GetProperty("h264.threads",0);
 
@@ -96,6 +97,9 @@ H264Encoder::H264Encoder(const Properties& properties) : frame(VideoCodec::H264)
 	streaming = properties.GetProperty("h264.streaming",true);
 	//ratetol, please check after h264.streaming
 	ratetol = properties.GetProperty("h264.ratetol", streaming? 0.0F : 0.1F);
+
+	//VBV buffer size in frames according to the bitrate
+	bufferSizeInFrames = properties.GetProperty("h264.buffersize_in_frames", streaming ? 3 : 1);
 
 	//Use annex b
 	annexb = properties.GetProperty("h264.annexb",false);
@@ -168,7 +172,7 @@ int H264Encoder::SetFrameRate(int frames,int kbits,int intraPeriod)
 		params.i_keyint_max         = this->intraPeriod ;
 		params.rc.i_bitrate         = bitrate;
 		params.rc.i_vbv_max_bitrate = bitrate;
-		params.rc.i_vbv_buffer_size = bitrate/10;
+		params.rc.i_vbv_buffer_size = bufferSizeInFrames * bitrate / fps;
 		
 		//Reconfig
 		if (x264_encoder_reconfig(enc,&params)!=0)
@@ -219,14 +223,16 @@ int H264Encoder::OpenCodec()
 	params.rc.i_vbv_max_bitrate = bitrate;
 	if (!streaming)
 	{
-		params.rc.i_vbv_buffer_size = bitrate/fps;
 		params.rc.b_stat_write      = 0;
 		params.b_intra_refresh	    = 1;
-	} else  {
-		params.rc.i_vbv_buffer_size = bitrate/10;
 	}
+	params.rc.i_vbv_buffer_size = bufferSizeInFrames * bitrate / fps;
 	params.rc.f_rate_tolerance  = ratetol;
-	Log("-H264Encoder::OpenCodec() | config ratetol:%f\n", params.rc.f_rate_tolerance);
+
+
+	Debug("-H264Encoder::OpenCodec() | config params.rc.f_rate_tolerance:%f params.rc.i_vbv_buffer_size:%d\n", params.rc.f_rate_tolerance, params.rc.i_vbv_buffer_size);
+
+
 	// change ipratio only when it's configured in profile property
 	// or else leave its value according to preset & tune
 	if (ipratio >= 0)

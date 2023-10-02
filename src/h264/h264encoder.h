@@ -53,7 +53,8 @@ private:
 	std::optional<std::string> preset  ;
 	std::optional<std::string> tune    ;
 	float ipratio = -1.0F;
-	float ratetol;
+	float ratetol = 1.0F;
+	int bufferSizeInFrames = 1;
 	int threads;
 };
 
