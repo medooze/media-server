@@ -239,30 +239,23 @@ int H264Encoder::OpenCodec()
 	{
 		params.rc.f_ip_factor = ipratio;
 	}
-	Log("-H264Encoder::OpenCodec() | config ipratio:%f\n", params.rc.f_ip_factor);
-	// set controls only when tune is not configued in profile property
-	if (!tune.has_value() && !preset.has_value())
-	{
-		Log("-H264Encoder::OpenCodec() | neither preset or tune is set by profile property, config encoder to fit realtime streaming mode\n");
-		params.b_sliced_threads	    = 0;
-		params.rc.i_lookahead       = 0;
-		params.rc.b_mb_tree       = 0;
-		params.i_sync_lookahead	    = 0;
-		params.i_scenecut_threshold = 0;
-		params.analyse.i_subpel_refine = 5; //Subpixel motion estimation and mode decision :3 qpel (medim:6, ultrafast:1)
-	}
-
-	params.analyse.i_weighted_pred = X264_WEIGHTP_NONE;
-	params.analyse.i_me_method = X264_ME_UMH;
-
-	params.i_threads	    = threads; //0 is auto!!
-
-	params.i_bframe             = 0;
-	params.b_annexb		    = annexb; 
-	params.b_repeat_headers     = 1;
-	params.i_fps_num	    = fps;
-	params.i_fps_den	    = 1;
-	params.vui.i_chroma_loc	    = 0;
+	
+	params.i_threads		= threads; //0 is auto!!
+	params.b_sliced_threads		= 1;
+	params.b_vfr_input		= 0;
+	params.rc.i_lookahead		= 0;
+	params.rc.b_mb_tree		= 0;
+	params.i_sync_lookahead		= 0;
+	params.i_scenecut_threshold	= 0;
+	params.analyse.i_subpel_refine	= 5; //Subpixel motion estimation and mode decision :3 qpel (medim:6, ultrafast:1)
+	params.analyse.i_weighted_pred	= X264_WEIGHTP_NONE;
+	params.analyse.i_me_method	= X264_ME_UMH;
+	params.i_bframe			= 0;
+	params.b_annexb			= annexb; 
+	params.b_repeat_headers		= 1;
+	params.i_fps_num		= fps;
+	params.i_fps_den		= 1;
+	params.vui.i_chroma_loc		= 0;
 
 	//Set level
 	params.i_level_idc = LevelNumberToLevelIdc(GetLevelInUse().c_str());
