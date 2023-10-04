@@ -16,10 +16,17 @@ public:
 	virtual int Decode(const BYTE *in,DWORD len);
 	virtual int GetWidth()		{ return ctx->width;		};
 	virtual int GetHeight()		{ return ctx->height;		};
-	virtual const VideoBuffer::shared& GetFrame() { return videoBuffer;	};
-	virtual bool  IsKeyFrame()	{ return picture->key_frame;	};
+	virtual const VideoBuffer::shared& GetFrame() { return videoBuffer;		};
+	virtual bool  IsKeyFrame()
+	{
+#if AV_FRAME_FLAG_KEY
+		return picture->flags & AV_FRAME_FLAG_KEY;
+#else
+		return picture->key_frame;
+#endif
+	}
 private:
-	AVCodec*	codec	= nullptr;
+	const AVCodec*	codec	= nullptr;
 	AVCodecContext*	ctx	= nullptr;
 	AVFrame*	picture	= nullptr;
 	AVPacket*	packet	= nullptr;
