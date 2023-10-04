@@ -19,7 +19,7 @@ public:
 private:
 	int OpenCodec();
 private:
-	AVCodec* codec		= nullptr;
+	const AVCodec* codec	= nullptr;
 	AVCodecContext* ctx	= nullptr;
 	AVFrame* input		= nullptr;
 	VideoFrame	frame;

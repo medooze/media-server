@@ -26,7 +26,7 @@ public:
 	virtual DWORD GetRate()			{ return 8000;	}
 	virtual DWORD GetClockRate()		{ return 8000;	}
 private:
-	AVCodec 	*codec;
+	const AVCodec 	*codec;
 	AVCodecContext	*ctx;
 	AVFrame         *frame;
 	fifo<SWORD,512>  samples;
@@ -43,7 +43,7 @@ public:
 	virtual DWORD GetClockRate()		{ return 11025;	}
 private:
 	SpeexResamplerState *resampler;
-	AVCodec 	*codec;
+	const AVCodec 	*codec;
 	AVCodecContext	*ctx;
 	AVFrame         *frame;
 	fifo<SWORD,1024>  samples8;
@@ -60,7 +60,7 @@ public:
 	virtual DWORD GetRate()			{ return 8000;	}
 private:
 	SpeexResamplerState *resampler;
-	AVCodec 	*codec;
+	const AVCodec 	*codec;
 	AVCodecContext	*ctx;
 	fifo<SWORD,1024>  samples;
 };

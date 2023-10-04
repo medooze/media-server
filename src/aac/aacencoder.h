@@ -27,11 +27,11 @@ public:
 	virtual DWORD GetRate()					{ return ctx->sample_rate?ctx->sample_rate:8000;}
 	virtual DWORD GetClockRate()				{ return GetRate();				}
 private:
-	AVCodec 	*codec;
-	AVCodecContext	*ctx;
-	SwrContext *swr;
-	AVFrame         *frame;
-	BYTE *samples;
+	const AVCodec*	codec	= nullptr;
+	AVCodecContext*	ctx	= nullptr;
+	SwrContext*	swr	= nullptr;
+	AVFrame*	frame	= nullptr;
+	BYTE*		samples = nullptr;
 	int samplesSize;
 	int samplesNum;
 };

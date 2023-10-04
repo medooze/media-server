@@ -21,7 +21,7 @@ public:
 	bool SetConfig(const uint8_t* data,const size_t size);
 private:
 	bool		inited	= false;
-	AVCodec*	codec	= nullptr;
+	const AVCodec* codec	= nullptr;
 	AVCodecContext*	ctx	= nullptr;
 	AVPacket*	packet	= nullptr;
 	AVFrame*	frame	= nullptr;
