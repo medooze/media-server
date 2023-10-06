@@ -1,10 +1,3 @@
-/* 
- * File:   videopipe.h
- * Author: Sergio
- *
- * Created on 19 de marzo de 2013, 16:08
- */
-
 #ifndef VIDEOPIPE_H
 #define	VIDEOPIPE_H
 
@@ -18,17 +11,21 @@ class VideoPipe :
 {
 public:
 	VideoPipe();
-	virtual ~VideoPipe();
+	~VideoPipe() override;
+
 	int Init(float scaleResolutionDownBy = 0.0f);
-	/** VideoInput */
-	virtual int   StartVideoCapture(uint32_t width, uint32_t height, uint32_t fps);
-	virtual VideoBuffer::const_shared GrabFrame(uint32_t timeout);
-	virtual void  CancelGrabFrame();
-	virtual int   StopVideoCapture();
-	/** VideoOutput */
-	virtual int NextFrame(const VideoBuffer::const_shared& videoBuffer);
-	virtual void ClearFrame();
 	int End();
+
+	/** VideoInput */
+	int StartVideoCapture(uint32_t width, uint32_t height, uint32_t fps) override;
+	VideoBuffer::const_shared GrabFrame(uint32_t timeout) override;
+	void CancelGrabFrame() override;
+	int StopVideoCapture() override;
+
+	/** VideoOutput */
+	int NextFrame(const VideoBuffer::const_shared& videoBuffer) override;
+	void ClearFrame() override;
+
 private:
 	uint32_t videoWidth = 0;
 	uint32_t videoHeight = 0;
@@ -38,7 +35,7 @@ private:
 	float scaleResolutionDownBy = 0.0f;
 	int inited = false;
 	int capturing = false;
-	VideoBuffer::const_shared imgBuffer[2];
+	std::array<VideoBuffer::const_shared,2> imgBuffer;
 
 	pthread_mutex_t newPicMutex;
 	pthread_cond_t  newPicCond;
