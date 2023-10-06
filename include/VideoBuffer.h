@@ -84,6 +84,9 @@ public:
 
 	DWORD GetWidth() const	{ return width;		}
 	DWORD GetHeight() const { return height;	}
+	DWORD GetPixelWidth() const		{ return pixelWidth; }
+	DWORD GetPixelHeight() const	{ return pixelHeight; }
+	void SetPixelAspectRatio(DWORD parWidth, DWORD parHeight) { pixelWidth = parWidth; pixelHeight = parHeight; }
 
 	void Fill(BYTE y, BYTE u, BYTE v)
 	{
@@ -109,10 +112,12 @@ private:
 	DWORD	width = 0;
 	DWORD	height = 0;
 	bool	isInterlaced = false;
+	// default PAR (pixel aspect ratio) is 1:1
+	// shall be relatively prime. From H265/H264 it's relative prime.
+	DWORD pixelWidth = 1;
+	DWORD pixelHeight = 1;
 	ColorSpace colorSpace = ColorSpace::Unknown;
 	ColorRange colorRange = ColorRange::Unknown;
-	
-	
 	
 };
 

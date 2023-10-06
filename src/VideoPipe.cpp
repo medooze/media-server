@@ -3,6 +3,7 @@
 #include "tools.h"
 #include <stdlib.h>
 #include <string.h>
+#include <numeric>
 
 VideoPipe::VideoPipe() :
 	videoBufferPool(2,4)
@@ -154,6 +155,29 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 	//Unlock
 	pthread_mutex_unlock(&newPicMutex);
 
+	// check if need to consider none 1:1 PAR (pixil aspect ratio)
+	const bool PARIsNot1_1 = videoBuffer && 
+							((videoBuffer->GetPixelWidth() % videoBuffer->GetPixelHeight()) != 1);
+
+	//If we have a dynamic resize, or PAR is not 1:1 in the source
+	if (videoBuffer && (scaleResolutionDownBy > 0 || PARIsNot1_1))
+	{
+		// supose the pixelWidth and pixelHeight is relatively prime
+		DWORD finalScaleDownWidth = ((scaleResolutionDownBy == 0) ? 1:scaleResolutionDownBy)
+									* videoBuffer->GetPixelWidth();
+		DWORD finalScaleDownHeight = ((scaleResolutionDownBy == 0) ? 1:scaleResolutionDownBy)
+									* videoBuffer->GetPixelHeight();
+
+		//Check adjusted video size
+		videoWidth = ((uint32_t)(videoBuffer->GetWidth() / finalScaleDownWidth)) & ~1;
+		videoHeight = ((uint32_t)(videoBuffer->GetHeight() / finalScaleDownHeight)) & ~1;
+
+		Debug("-VideoPipe::GrabFrame() | Scaling down from [%u,%u] with PAR (%u:%u) to [%u,%u]\n", videoBuffer->GetWidth(), videoBuffer->GetHeight(), videoBuffer->GetPixelWidth(), videoBuffer->GetPixelHeight(), videoWidth, videoHeight);
+
+		//Reset pool
+		videoBufferPool.SetSize(videoWidth, videoHeight);
+	}
+
 	//If we got a frame and it is from a different size
 	if (videoBuffer  && (videoBuffer->GetWidth() != videoWidth || videoBuffer->GetHeight() !=videoHeight))
 	{
@@ -201,19 +225,6 @@ int VideoPipe::NextFrame(const VideoBuffer::const_shared& videoBuffer)
 
 	//Hay imagen
 	imgNew = true;
-
-	//If we have a dinamic resize
-	if (scaleResolutionDownBy > 0)
-	{
-		//Check adjusted video size
-		videoWidth = ((uint32_t)(videoBuffer->GetWidth() / scaleResolutionDownBy)) & ~1;
-		videoHeight = ((uint32_t)(videoBuffer->GetHeight() / scaleResolutionDownBy)) & ~1;
-
-		//Debug("-VideoPipe::NextFrame() | Scaling down from [%u,%u] to [%u,%u]\n", videoBuffer->GetWidth(), videoBuffer->GetHeight(), videoWidth, videoHeight);
-
-		//Reset pool
-		videoBufferPool.SetSize(videoWidth, videoHeight);
-	}
 
 	//Se�alamos
 	pthread_cond_signal(&newPicCond);
