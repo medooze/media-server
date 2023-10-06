@@ -21,7 +21,6 @@ include(FetchContent)
 fetchcontent_declare(
 	mp4v2
 	GIT_REPOSITORY https://github.com/medooze/mp4v2.git
-	#GIT_TAG dev/zliao/cmake
 	GIT_TAG master
 	SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/ext/mp4v2
 	)
