@@ -105,6 +105,11 @@ int H265Decoder::Decode(const BYTE *data,DWORD size)
 	//Set interlaced flags
 	videoBuffer->SetInterlaced(picture->interlaced_frame);
 
+	//IF the pixel aspect ratio is valid
+	if (picture->sample_aspect_ratio.num != 0)
+		//Set pixel aspect ration
+		videoBuffer->SetPixelAspectRatio(picture->sample_aspect_ratio.num, picture->sample_aspect_ratio.den);
+
 	//Set color range
 	switch (picture->color_range)
 	{

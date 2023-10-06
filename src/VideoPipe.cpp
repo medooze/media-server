@@ -154,6 +154,30 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 	//Unlock
 	pthread_mutex_unlock(&newPicMutex);
 
+	//If we have a dinamic resize
+	if (scaleResolutionDownBy > 0 || videoBuffer->HasNonSquarePixelAspectRatio())
+	{
+		//Get pixel aspect ratio
+		const auto [parNum, parDen] = videoBuffer->GetPixelAspectRatio();
+
+		//Choose which dimension we want to use for adjusting the pixel aspect ratio
+		if (parNum>parDen)
+		{
+			//Check adjusted video size
+			videoWidth = ((uint32_t)((videoBuffer->GetWidth() * parNum) / (scaleResolutionDownBy * parDen))) & ~1;
+			videoHeight = ((uint32_t)(videoBuffer->GetHeight() / scaleResolutionDownBy)) & ~1;
+		} else {
+			//Check adjusted video size
+			videoWidth = ((uint32_t)(videoBuffer->GetWidth() / scaleResolutionDownBy)) & ~1;
+			videoHeight = ((uint32_t)((videoBuffer->GetHeight() * parDen) / (scaleResolutionDownBy * parNum))) & ~1;
+		}
+
+		//Debug("-VideoPipe::GrabFrame() | Scaling down from [%u,%u] to [%u,%u] with par [%u,%u]\n", videoBuffer->GetWidth(), videoBuffer->GetHeight(), videoWidth, videoHeight, parNum, parDen);
+
+		//Reset pool
+		videoBufferPool.SetSize(videoWidth, videoHeight);
+	}
+
 	//If we got a frame and it is from a different size
 	if (videoBuffer  && (videoBuffer->GetWidth() != videoWidth || videoBuffer->GetHeight() !=videoHeight))
 	{
@@ -201,19 +225,6 @@ int VideoPipe::NextFrame(const VideoBuffer::const_shared& videoBuffer)
 
 	//Hay imagen
 	imgNew = true;
-
-	//If we have a dinamic resize
-	if (scaleResolutionDownBy > 0)
-	{
-		//Check adjusted video size
-		videoWidth = ((uint32_t)(videoBuffer->GetWidth() / scaleResolutionDownBy)) & ~1;
-		videoHeight = ((uint32_t)(videoBuffer->GetHeight() / scaleResolutionDownBy)) & ~1;
-
-		//Debug("-VideoPipe::NextFrame() | Scaling down from [%u,%u] to [%u,%u]\n", videoBuffer->GetWidth(), videoBuffer->GetHeight(), videoWidth, videoHeight);
-
-		//Reset pool
-		videoBufferPool.SetSize(videoWidth, videoHeight);
-	}
 
 	//Se�alamos
 	pthread_cond_signal(&newPicCond);

@@ -101,6 +101,11 @@ public:
 	ColorRange GetColorRange() const { return colorRange; }
 	ColorSpace GetColorSpace() const { return colorSpace; }
 
+	void SetPixelAspectRatio(int pixelAspectRatioNum, int pixelAspectRatioDen)	{ this->pixelAspectRatio = { pixelAspectRatioNum , pixelAspectRatioDen }; }
+	void SetPixelAspectRatio(std::pair<int,int> pixelAspectRatio)			{ this->pixelAspectRatio = pixelAspectRatio; }
+	std::pair<int, int> GetPixelAspectRatio() const			{ return this->pixelAspectRatio; }
+	bool HasNonSquarePixelAspectRatio() const			{ return this->pixelAspectRatio.first && this->pixelAspectRatio.first != this->pixelAspectRatio.second; }
+
 private:
 	
 	Plane	planeY;
@@ -111,6 +116,7 @@ private:
 	bool	isInterlaced = false;
 	ColorSpace colorSpace = ColorSpace::Unknown;
 	ColorRange colorRange = ColorRange::Unknown;
+	std::pair<int, int> pixelAspectRatio = {1,1};
 	
 	
 	
