@@ -7,36 +7,37 @@
 VideoPipe::VideoPipe() :
 	videoBufferPool(2,4)
 {
-	//Inicializamos los mutex
+	//Init mutex
 	pthread_mutex_init(&newPicMutex,0);
 	pthread_cond_init(&newPicCond,0);
-
-	//No estamos iniciados
-	//inited = false;
-	capturing = false;
 }
 
 VideoPipe::~VideoPipe()
 {
-	//Liberamos los mutex
+	//Destroy mutex
 	pthread_mutex_destroy(&newPicMutex);
 	pthread_cond_destroy(&newPicCond);
 }
 
 int VideoPipe::Init(float scaleResolutionDownBy)
 {
+	//scaleResolutionDownBy can't be 0
+	if (!scaleResolutionDownBy)
+		//Log error and exit
+		return Error("-VideoPipe::Init() | scaleResolutionDownBy is 0\n");
+
 	Log("-VideoPipe::Init() [scaleResolutionDownBy:%f]\n",scaleResolutionDownBy);
 
-	//Protegemos
+	//Lock
 	pthread_mutex_lock(&newPicMutex);
 
-	//Iniciamos
+	//We are inited
 	inited = true;
 	
 	//Store scaleResolutionDownBy
 	this->scaleResolutionDownBy = scaleResolutionDownBy;
 
-	//Protegemos
+	//Unlock
 	pthread_mutex_unlock(&newPicMutex);
 
 	return true;
@@ -47,16 +48,16 @@ int VideoPipe::End()
 	
 	Log("-VideoPipe::End()\n)");
 		
-	//Protegemos
+	//Lock
 	pthread_mutex_lock(&newPicMutex);
 
-	//Terminamos
+	//We are ended
 	inited = false;
 
-	//Se�alizamos la condicion
+	//Exit any pending operation
 	pthread_cond_signal(&newPicCond);
 
-	//Protegemos
+	//Unlock
 	pthread_mutex_unlock(&newPicMutex);
 
 	return true;
@@ -66,10 +67,10 @@ int VideoPipe::StartVideoCapture(uint32_t width, uint32_t height, uint32_t fps)
 {
 	Log("-VideoPipe::StartVideoCapture() [%u,%u,%u]\n",width,height,fps);
 
-	//Protegemos
+	//Lock
 	pthread_mutex_lock(&newPicMutex);
 
-	//Almacenamos el tama�o
+	//Store new settigns
 	videoWidth = width;
 	videoHeight = height;
 	videoFPS = fps;
@@ -77,14 +78,14 @@ int VideoPipe::StartVideoCapture(uint32_t width, uint32_t height, uint32_t fps)
 	//Reset pool
 	videoBufferPool.SetSize(videoWidth, videoHeight);
 	
-	//El inicio
+	//No new image yet
 	imgPos = false;
 	imgNew = false;
 
-	//Estamos capturando
+	//We are capturing now
 	capturing = true;
 
-	//Desprotegemos
+	//Unlock
 	pthread_mutex_unlock(&newPicMutex);
 
 	return true;
@@ -94,17 +95,17 @@ int VideoPipe::StopVideoCapture()
 {
 	Log("-VideoPipe::StopVideoCapture()\n");
 
-	//Protegemos
+	//Lock
 	pthread_mutex_lock(&newPicMutex);
 
-	//LIberamos los buffers
+	//Free buffers
 	imgBuffer[0].reset();
 	imgBuffer[1].reset();
 
-	//Y no estamos capturando
+	//Not capturing anymore
 	capturing = false;
 
-	//Desprotegemos
+	//Unlock
 	pthread_mutex_unlock(&newPicMutex);
 
 	return true;
@@ -113,22 +114,21 @@ int VideoPipe::StopVideoCapture()
 VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 {
 	VideoBuffer::const_shared videoBuffer;
-	
+
 	//Lock until we have a new picture
 	pthread_mutex_lock(&newPicMutex);
 
-	//Si no estamos iniciados
+	//Check we have been inited
 	if (!inited)
 	{
-		//Logeamos
 		Error("-VideoPipe::GrabFrame() | VideoPipe no inited, grab failed\n");
-		//Desbloqueamos
+		//Unlock
 		pthread_mutex_unlock(&newPicMutex);
-		//Salimos
+		//Return no frame
 		return videoBuffer;
 	}
 
-	//Miramos a ver si hay un nuevo pict
+	//Check if there is any new image
 	if(imgNew==0)
 	{
 		//If timeout has been specified
@@ -145,14 +145,19 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 		}
 	}
 
-	//Lo vamos a consumir
+	//Reset new image flag
 	imgNew=0;
 
-	//Nos quedamos con el puntero antes de que lo cambien
+	//Get current image
 	videoBuffer = imgBuffer[imgPos];
 
 	//Unlock
 	pthread_mutex_unlock(&newPicMutex);
+
+	//Check we have a new frame
+	if (!videoBuffer)
+		//No frame
+		return videoBuffer;
 
 	//If we have a dinamic resize
 	if (scaleResolutionDownBy > 0 || videoBuffer->HasNonSquarePixelAspectRatio())
@@ -179,7 +184,7 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 	}
 
 	//If we got a frame and it is from a different size
-	if (videoBuffer  && (videoBuffer->GetWidth() != videoWidth || videoBuffer->GetHeight() !=videoHeight))
+	if (videoBuffer->GetWidth() != videoWidth || videoBuffer->GetHeight() != videoHeight)
 	{
 		//Get new buffer
 		VideoBuffer::shared resized = videoBufferPool.allocate();
@@ -197,16 +202,16 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 
 void  VideoPipe::CancelGrabFrame()
 {
-	//Protegemos
+	//Lock
 	pthread_mutex_lock(&newPicMutex);
 
 	//No image
 	imgNew = false;
 
-	//Se�alamos
+	//Signal to cancel any pending GrabFrame()
 	pthread_cond_signal(&newPicCond);
 
-	//Unloco mutex
+	//Unlock
 	pthread_mutex_unlock(&newPicMutex);
 
 }
@@ -214,22 +219,22 @@ void  VideoPipe::CancelGrabFrame()
 int VideoPipe::NextFrame(const VideoBuffer::const_shared& videoBuffer)
 {
 
-	//Protegemos
+	//Lock
 	pthread_mutex_lock(&newPicMutex);
 
-	//Actualizamos el grabPic
+	//Update current image with frame
 	imgBuffer[imgPos] = videoBuffer;
 
-	//Pasamos al siguiente
+	//Use next buffer
 	imgPos = !imgPos;
 
-	//Hay imagen
+	//There is an image available for grabbing
 	imgNew = true;
 
-	//Se�alamos
+	//Signal any pending grap operation
 	pthread_cond_signal(&newPicCond);
 
-	//Y desbloqueamos
+	//Unlock
 	pthread_mutex_unlock(&newPicMutex);
 
 	return 1;
