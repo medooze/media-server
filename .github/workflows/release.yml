@@ -17,7 +17,7 @@ jobs:
       run: git submodule update --init --recursive
     - uses: actions/checkout@v1
     - name: Install pre-requisite package
-      run: sudo apt-get install -y libavcodec-dev libx264-dev libavutil-dev libvpx-dev
+      run: sudo apt-get install -y libavcodec-dev libx264-dev libavutil-dev libvpx-dev libswscale-dev libavformat-dev
     - name: Configure
       run: mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release ..
     - name: Get number of CPU cores

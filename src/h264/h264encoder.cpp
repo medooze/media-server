@@ -80,7 +80,7 @@ H264Encoder::H264Encoder(const Properties& properties) : frame(VideoCodec::H264)
 	Debug("-H264Encoder::H264Encoder()\n");
 	for (Properties::const_iterator it = properties.begin(); it != properties.end(); ++it)
 		Debug("-H264Encoder::H264Encoder() | Setting property [%s:%s]\n", it->first.c_str(), it->second.c_str());
-	
+
 	//Number of threads or auto
 	threads = properties.GetProperty("h264.threads",0);
 
