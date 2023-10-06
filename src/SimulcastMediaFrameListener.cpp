@@ -250,6 +250,8 @@ void SimulcastMediaFrameListener::Enqueue(std::unique_ptr<VideoFrame>&& frame)
 
 	while (!queue.empty() && initialised)
 	{
+// Ignore coverity error: Attempting to access the managed object of an empty smart pointer "this->queue.front()".
+// coverity[dereference]
 		auto tm = queue.front()->GetTimestamp();
 		bool allLayersRecievedAtTimestamp = std::all_of(layerTimestamps.begin(), layerTimestamps.end(), [tm](auto& lt) {
 			return lt.second >= tm;
@@ -277,6 +279,8 @@ void SimulcastMediaFrameListener::Flush()
 	{
 		auto f = std::move(queue.front());
 		queue.pop_front();
+// Ignore coverity error: Attempting to access the managed object of an empty smart pointer "f".
+// coverity[dereference]
 		ForwardFrame(*f);
 	}
 }
