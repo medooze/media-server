@@ -32,8 +32,8 @@ private:
 	SwrContext*	swr	= nullptr;
 	AVFrame*	frame	= nullptr;
 	BYTE*		samples = nullptr;
-	int samplesSize;
-	int samplesNum;
+	int samplesSize = 0;
+	int samplesNum = 0;
 };
 
 #endif	/* AACENCODER_H */

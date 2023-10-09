@@ -29,6 +29,9 @@ AudioEncoderWorker::AudioEncoderWorker()
 	audioCodec=AudioCodec::PCMU;
 	//Create mutex
 	pthread_mutex_init(&mutex,0);
+	
+	audioInput = nullptr;
+	encodingAudioThread = 0;
 }
 
 /*******************************
