@@ -68,6 +68,15 @@ H264Encoder::H264Encoder(const Properties& properties) : frame(VideoCodec::H264)
 	type    = VideoCodec::H264;
 	format  = 0;
 	pts     = 0;
+	curNal = 0;
+	numNals = 0;
+	width = 0;
+	height = 0;
+	nals = 0;
+	
+	memset(&pic, 0, sizeof(pic));
+	memset(&pic_out, 0, sizeof(pic_out));
+	memset(&params, 0, sizeof(params));
 
 	//No estamos abiertos
 	opened = false;

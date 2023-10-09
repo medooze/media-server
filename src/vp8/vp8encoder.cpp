@@ -31,7 +31,16 @@ VP8Encoder::VP8Encoder(const Properties& properties) : frame(VideoCodec::VP8)
 	type    = VideoCodec::VP8;
 	pts	= 0;
 	num	= 0;
-	pic	= NULL;
+	pic	= NULL;	
+	width = 0;
+	height = 0;
+	numPixels = 0;
+	format = 0;
+	errorResilientPartitions = 0;
+	
+	memset(&config, 0, sizeof(config));
+	memset(&encoder, 0, sizeof(encoder));
+	
 	//not force
 	forceKeyFrame = false;
 	
@@ -71,6 +80,7 @@ VP8Encoder::VP8Encoder(const Properties& properties) : frame(VideoCodec::VP8)
 	frame.AllocateCodecConfig(vp8Config.GetSize());
 	//Add codec config
 	vp8Config.Serialize(frame.GetCodecConfigData(), frame.GetCodecConfigSize());
+	
 }
 
 VP8Encoder::~VP8Encoder()

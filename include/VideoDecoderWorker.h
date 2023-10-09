@@ -32,7 +32,7 @@ private:
 private:
 	std::set<VideoOutput*> outputs;
 	WaitQueue<RTPPacket::shared> packets;
-	pthread_t thread;
+	pthread_t thread = 0;
 	Mutex mutex;
 	bool decoding	= false;
 	bool muted	= false;
