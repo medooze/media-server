@@ -1,0 +1,17 @@
+{
+  "name": "github-actions-cpu-cores",
+  "version": "2.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "preversion": "yarn build && git add dist/",
+    "build": "ncc build index.js"
+  },
+  "devDependencies": {
+    "@vercel/ncc": "^0.38.0",
+    "prettier": "^3.0.0"
+  },
+  "dependencies": {
+    "@actions/core": "^1.10.0"
+  }
+}

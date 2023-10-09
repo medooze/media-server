@@ -65,7 +65,7 @@ void H265Packetizer::OnNal(VideoFrame& frame, BufferReader& reader, std::optiona
 
 	if (nalUnitType >= HEVC_RTP_NALU_Type::UNSPEC48_AP)
 	{
-		Error("-H265Packetizer::OnNal() | got unspecified (>=48) NALU in a context where it is not allowed (nalUnitType: %d, nalSize: %d) \n", nalUnitType, nalSize);
+		Error("-H265Packetizer::OnNal() | got unspecified (>=48) NALU in a context where it is not allowed (nalUnitType: %u, nalSize: %zu) \n", nalUnitType, nalSize);
 		return;
 	}
 
@@ -164,7 +164,7 @@ void H265Packetizer::OnNal(VideoFrame& frame, BufferReader& reader, std::optiona
 	// just before the first slice of the frame:
 	if (
 		// this NALU is a slice or SEI
-		((nalUnitType >= HEVC_RTP_NALU_Type::TRAIL_N && nalUnitType <= HEVC_RTP_NALU_Type::RASL_R)
+		((nalUnitType <= HEVC_RTP_NALU_Type::RASL_R)
 		 || (nalUnitType >= HEVC_RTP_NALU_Type::BLA_W_LP && nalUnitType <= HEVC_RTP_NALU_Type::CRA_NUT)
 		 || (nalUnitType == HEVC_RTP_NALU_Type::SEI_PREFIX) || (nalUnitType == HEVC_RTP_NALU_Type::SEI_SUFFIX))
 		// it belongs to an intra frame
@@ -223,7 +223,7 @@ void H265Packetizer::OnNal(VideoFrame& frame, BufferReader& reader, std::optiona
 
 std::unique_ptr<MediaFrame> H265Packetizer::ProcessAU(BufferReader& reader)
 {
-	UltraDebug("-H265Packetizer::ProcessAU()| H265 AU [len:%d]\n", reader.GetLeft());
+	UltraDebug("-H265Packetizer::ProcessAU()| H265 AU [len:%zd]\n", reader.GetLeft());
 	noPPSInFrame = true;
 	noSPSInFrame = true;
 	noVPSInFrame = true;

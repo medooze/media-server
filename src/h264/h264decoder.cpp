@@ -88,9 +88,6 @@ int H264Decoder::Decode(const BYTE *data,DWORD size)
 	if(ctx->width==0 || ctx->height==0)
 		return Error("-H264Decoder::Decode() | Wrong dimmensions [%d,%d]\n",ctx->width,ctx->height);
 
-
-	
-
 	//Set new size in pool
 	videoBufferPool.SetSize(ctx->width, ctx->height);
 
@@ -99,6 +96,11 @@ int H264Decoder::Decode(const BYTE *data,DWORD size)
 
 	//Set interlaced flags
 	videoBuffer->SetInterlaced(picture->interlaced_frame);
+
+	//IF the pixel aspect ratio is valid
+	if (picture->sample_aspect_ratio.num!=0)
+		//Set pixel aspect ration
+		videoBuffer->SetPixelAspectRatio(picture->sample_aspect_ratio.num, picture->sample_aspect_ratio.den);
 
 	//Set color range
 	switch (picture->color_range)

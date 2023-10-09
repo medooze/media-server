@@ -21,7 +21,7 @@ include(FetchContent)
 fetchcontent_declare(
 	mp4v2
 	GIT_REPOSITORY https://github.com/medooze/mp4v2.git
-	GIT_TAG dev/zliao/cmake
+	GIT_TAG master
 	SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/ext/mp4v2
 	)
 
@@ -69,6 +69,7 @@ add_library(MediaServerLib
     ${CMAKE_CURRENT_LIST_DIR}/src/MediaFrameListenerBridge.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/PacketHeader.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/mp4recorder.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/VideoBufferScaler.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/SimulcastMediaFrameListener.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/VideoLayerSelector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/VideoCodecFactory.cpp
@@ -88,6 +89,7 @@ target_link_libraries(MediaServerLib
     x264
     avcodec
     avutil
+    swscale
 )
 
 #for debugging

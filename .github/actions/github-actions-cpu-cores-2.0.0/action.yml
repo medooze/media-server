@@ -1,0 +1,8 @@
+name: "CPU Core Count"
+description: "Get the number of available cores on the runner"
+outputs:
+  count:
+    description: "The count of available CPU cores"
+runs:
+  using: "node20"
+  main: "dist/index.js"

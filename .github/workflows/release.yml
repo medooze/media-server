@@ -10,18 +10,18 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v3
       with:
         submodules: 'recursive'
     - name: Initialize submodules
       run: git submodule update --init --recursive
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v3
     - name: Install pre-requisite package
-      run: sudo apt-get install -y libavcodec-dev libx264-dev libavutil-dev libvpx-dev
+      run: sudo apt-get install -y libavcodec-dev libx264-dev libavutil-dev libvpx-dev libswscale-dev libavformat-dev
     - name: Configure
       run: mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release ..
     - name: Get number of CPU cores
-      uses: SimenB/github-actions-cpu-cores@v2.0.0
+      uses: "./.github/actions/github-actions-cpu-cores-2.0.0"
       id: cpu-cores
     - name: make
       run: cd build && make -j${{ steps.cpu-cores.outputs.count }} 
