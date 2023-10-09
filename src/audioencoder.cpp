@@ -23,15 +23,8 @@ AudioEncoderWorker::AudioEncoderWorker()
 {
 	Log("-AudioEncoderWorker::AudioEncoderWorker()\n");
 
-	//Not encoding
-	encodingAudio=0;
-	//Set default codec to PCMU
-	audioCodec=AudioCodec::PCMU;
 	//Create mutex
 	pthread_mutex_init(&mutex,0);
-	
-	audioInput = nullptr;
-	encodingAudioThread = 0;
 }
 
 /*******************************

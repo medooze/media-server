@@ -59,7 +59,7 @@ DWORD OpusEncoder::TrySetRate(DWORD rate, DWORD numChannels)
 		numFrameSamples = rate * 20 / 1000;
 	}
 
-	if (enc == nullptr) return 0;
+	if (!enc) return 0;
 	
 	//Enable FEC
 	opus_encoder_ctl(enc, OPUS_SET_INBAND_FEC(0));
@@ -76,7 +76,7 @@ OpusEncoder::~OpusEncoder()
 
 int OpusEncoder::Encode(SWORD *in,int inLen,BYTE* out,int outLen)
 {
-	if (enc == nullptr) return OPUS_BAD_ARG;
+	if (!enc) return -1;
 	
 	return opus_encode(enc, in, inLen , out, outLen);
 }
