@@ -29,28 +29,6 @@ VP8Encoder::VP8Encoder(const Properties& properties) : frame(VideoCodec::VP8)
 {
 	// Set default values
 	type    = VideoCodec::VP8;
-	pts	= 0;
-	num	= 0;
-	pic	= NULL;	
-	width = 0;
-	height = 0;
-	numPixels = 0;
-	format = 0;
-	errorResilientPartitions = 0;
-	
-	memset(&config, 0, sizeof(config));
-	memset(&encoder, 0, sizeof(encoder));
-	
-	//not force
-	forceKeyFrame = false;
-	
-	//No estamos abiertos
-	opened = false;
-
-	//No bitrate
-	bitrate = 0;
-	fps = 0;
-	intraPeriod = 0;
 
 	for (Properties::const_iterator it = properties.begin(); it != properties.end(); ++it)
 		Debug("-VP8Encoder::VP8Encoder() | Setting property [%s:%s]\n", it->first.c_str(), it->second.c_str());
