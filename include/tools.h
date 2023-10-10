@@ -486,6 +486,21 @@ inline DWORD pad32(DWORD size)
 		return size;
 }
 
+/**
+ * Align memory to 4 bytes boundary and pad the skipped memory with zero.
+ * 
+ * @param data The data to be aligned
+ * @param size The size of existing data
+ * 
+ * @return The size after aligned 
+ */
+inline uint32_t alignMemory4Bytes(uint8_t* data, uint32_t size)
+{
+	auto aligned = pad32(size);
+	memset(data + size, 0, aligned - size);
+	return aligned;
+}
+
 // Counts the number of bits used in the binary representation of val.
 
 inline size_t CountBits(uint64_t val)
