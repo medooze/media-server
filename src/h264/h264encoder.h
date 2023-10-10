@@ -29,25 +29,25 @@ private:
 	std::string GetPresetInUse() const { return preset.value_or("medium");}
 	std::string GetTuneInUse() const { return tune.value_or("zerolatency");}
 
-	AVCDescriptor config;
-	bool streaming;
-	bool annexb;
-	x264_t*		enc;
-	x264_param_t    params;
-	x264_nal_t*	nals;
-	x264_picture_t  pic;
-	x264_picture_t 	pic_out;
+	AVCDescriptor config = {};
+	bool streaming = false;
+	bool annexb = false;
+	x264_t*		enc = nullptr;
+	x264_param_t    params = {};
+	x264_nal_t*	nals = nullptr;
+	x264_picture_t  pic = {};
+	x264_picture_t 	pic_out = {};
 	VideoFrame	frame;
-	int curNal;
-	int numNals;
-	int width;
-	int height;
-	int bitrate;
-	int fps;
-	int format;
-	int opened;
-	int intraPeriod;
-	int pts;
+	int curNal = 0;
+	int numNals = 0;
+	int width = 0;
+	int height = 0;
+	int bitrate = 0;
+	int fps = 0;
+	int format = 0;
+	int opened = 0;
+	int intraPeriod = X264_KEYINT_MAX_INFINITE;
+	int pts = 0;
 	std::optional<std::string> profile ;
 	std::optional<std::string> level   ;
 	std::optional<std::string> preset  ;
@@ -55,7 +55,7 @@ private:
 	float ipratio = -1.0F;
 	float ratetol = 1.0F;
 	int bufferSizeInFrames = 1;
-	int threads;
+	int threads = 0;
 };
 
 #endif 

@@ -59,7 +59,7 @@ private:
 	int bitrateLimitCount	= 0;
 	Properties properties;
 
-	pthread_t	thread;
+	pthread_t	thread = 0;
 	pthread_mutex_t mutex;
 	pthread_cond_t	cond;
 	bool	encoding	 = false;

@@ -66,17 +66,6 @@ H264Encoder::H264Encoder(const Properties& properties) : frame(VideoCodec::H264)
 {
 	// Set default values
 	type    = VideoCodec::H264;
-	format  = 0;
-	pts     = 0;
-
-	//No estamos abiertos
-	opened = false;
-
-	//No bitrate
-	bitrate = 0;
-	fps = 0;
-	intraPeriod = X264_KEYINT_MAX_INFINITE;
-
 	Debug("-H264Encoder::H264Encoder()\n");
 	for (Properties::const_iterator it = properties.begin(); it != properties.end(); ++it)
 		Debug("-H264Encoder::H264Encoder() | Setting property [%s:%s]\n", it->first.c_str(), it->second.c_str());
@@ -106,9 +95,6 @@ H264Encoder::H264Encoder(const Properties& properties) : frame(VideoCodec::H264)
 
 	//Disable sharing buffer on clone
 	frame.DisableSharedBuffer();
-
-	//Reste values
-	enc = NULL;
 }
 
 /**********************
