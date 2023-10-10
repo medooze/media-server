@@ -33,12 +33,12 @@ private:
 	
 private:
 	Listeners		listeners;
-	AudioInput*		audioInput;
-	AudioCodec::Type	audioCodec;
+	AudioInput*		audioInput = nullptr;
+	AudioCodec::Type	audioCodec = AudioCodec::PCMU;
 	Properties		audioProperties;
 	pthread_mutex_t		mutex;
-	pthread_t		encodingAudioThread;
-	int			encodingAudio;
+	pthread_t		encodingAudioThread = 0;
+	int			encodingAudio = 0;
 };
 
 #endif	/* AUDIOENCODER_H */

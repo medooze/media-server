@@ -63,7 +63,7 @@ int AudioTransrater::ProcessBuffer(SWORD * in, DWORD sizeIn, SWORD * out, DWORD 
 	//Check out
 	if (!out || !sizeOut)
 		//Error
-		return Error("-No output buffer/size [%p,%d]\n",out,sizeOut);
+		return Error("-No output buffer/size [%p,%p]\n",out,sizeOut);
 
 	//Resample
 	int err = mcu_resampler_process_interleaved_int(resampler, (spx_int16_t*) in, (spx_uint32_t*) & sizeIn, (spx_int16_t*) out, (spx_uint32_t*) sizeOut);

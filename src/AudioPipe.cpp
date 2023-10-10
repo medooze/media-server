@@ -173,15 +173,18 @@ int AudioPipe::PlayBuffer(SWORD* buffer, DWORD size, DWORD frameTime, BYTE vadLe
 	}
 
 	//Check if we are transtrating
+	SWORD resampled[8192];
 	if (transrater.IsOpen())
 	{
-		SWORD resampled[8192];
 		DWORD resampledSize = 8192 / numChannels;
 
 		//Proccess
 		if (!transrater.ProcessBuffer(buffer, size, resampled, &resampledSize))
+		{
 			//Error
+			pthread_mutex_unlock(&mutex);
 			return Error("-AudioPipe could not transrate\n");
+		}
 
 		//Update parameters
 		buffer = resampled;
