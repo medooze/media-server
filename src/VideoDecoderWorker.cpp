@@ -26,7 +26,7 @@ int VideoDecoderWorker::Start()
 }
 void * VideoDecoderWorker::startDecoding(void *par)
 {
-	Log("VideoDecoderThread [%p]\n",pthread_self());
+	Log("VideoDecoderThread [%lu]\n",pthread_self());
 	//Get worker
 	VideoDecoderWorker *worker = (VideoDecoderWorker *)par;
 	//Block all signals

@@ -138,7 +138,9 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 			//Calculate timeout
 			calcTimout(&ts,timeout);
 			//wait
-			pthread_cond_timedwait(&newPicCond,&newPicMutex,&ts);
+			int ret = pthread_cond_timedwait(&newPicCond,&newPicMutex,&ts);
+			if (ret && ret!=ETIMEDOUT)
+				Error("-VideoPipe cond timedwait error [%d,%d]\n",ret,errno);
 		} else {
 			//Wait ad infinitum
 			pthread_cond_wait(&newPicCond,&newPicMutex);

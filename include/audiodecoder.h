@@ -40,7 +40,7 @@ private:
 private:
 	std::set<AudioOutput*> outputs;
 	WaitQueue<RTPPacket::shared> packets;
-	pthread_t thread;
+	pthread_t thread = 0;
 	Mutex mutex;
 	bool		decoding	= false;
 	DWORD		rate		= 0;
