@@ -289,7 +289,7 @@ DWORD STUNMessage::AuthenticatedFingerPrint(BYTE* data,DWORD size,const char* pw
 			//Copy
 			memcpy(data+i+4,(*it)->attr,(*it)->size);
 		//Move
-		i = pad32(i+4+(*it)->size);
+		i = alignMemory4Bytes(data, i+4+(*it)->size);
 	}
 
 	DWORD len;
@@ -306,7 +306,7 @@ DWORD STUNMessage::AuthenticatedFingerPrint(BYTE* data,DWORD size,const char* pw
 	set2(data,i+2,len);
 
 	//INcrease sixe
-	i = pad32(i+4+len);
+	i = alignMemory4Bytes(data, i+4+len);
 
 	//REstore length
 	set2(data,2,msgSize-20);
@@ -320,7 +320,7 @@ DWORD STUNMessage::AuthenticatedFingerPrint(BYTE* data,DWORD size,const char* pw
 	set4(data,i+4,crc32);
 
 	//INcrease sixe
-	i = pad32(i+8);
+	i = alignMemory4Bytes(data, i+8);
 
 	//Return size
 	return i;
