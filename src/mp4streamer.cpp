@@ -942,7 +942,12 @@ AVCDescriptor* MP4Streamer::GetAVCDescriptor()
 	desc->SetAVCLevelIndication(AVCLevelIndication);
 
 	//Set nalu length
-	MP4GetTrackH264LengthSize(video->mp4, video->track, &len);
+	try{
+		MP4GetTrackH264LengthSize(video->mp4, video->track, &len);
+	}
+	catch( ... ) {
+		Error("-MP4Streamer::GetAVCDescriptor() | Falied to get H264 NALU length from video track\n");
+	}
 
 	//Set it
 	desc->SetNALUnitLengthSizeMinus1(len-1);

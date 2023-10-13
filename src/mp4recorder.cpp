@@ -494,7 +494,12 @@ int mp4track::FlushTextFrame(TextFrame *frame, DWORD duration)
 	//Log
 	Debug("-mp4track::FlushTextFrame() [timestamp:%lu,duration:%lu,size:%u]\n]",frame->GetTimeStamp(),frameduration,size+2);
 	//Write sample
-	MP4WriteSample( mp4, track, data, size+2, frameduration, 0, false );
+	try{
+		MP4WriteSample( mp4, track, data, size+2, frameduration, 0, false );
+	}
+	catch( ... ){
+		Error("-mp4track::FlushTextFrame() | Failed to write MP4 samples\n");
+	}
 
 	//If we have to clear the screen after 7 seconds
 	if (duration-frameduration>0)
@@ -844,7 +849,12 @@ void MP4Recorder::processMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD t
 				//Create object
 				audioTrack = new mp4track(mp4);
 				//Create track
-				audioTrack->CreateAudioTrack(audioFrame.GetCodec(),audioFrame.GetClockRate(),disableHints);
+				try{
+					audioTrack->CreateAudioTrack(audioFrame.GetCodec(),audioFrame.GetClockRate(),disableHints);
+				}
+				catch( ... ) {
+					Error("-MP4Recorder::processMediaFrame() | Falied to create audio track\n");
+				}
 				//Set name as ssrc
 				audioTrack->SetTrackName(std::to_string(ssrc));
 				//If it is not first
@@ -914,7 +924,12 @@ void MP4Recorder::processMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD t
 					//Create object
 					videoTrack = new mp4track(mp4);
 					//Create track
-					videoTrack->CreateVideoTrack(videoFrame.GetCodec(),videoFrame.GetClockRate(),videoFrame.GetWidth(),videoFrame.GetHeight(),disableHints);
+					try{
+						videoTrack->CreateVideoTrack(videoFrame.GetCodec(),videoFrame.GetClockRate(),videoFrame.GetWidth(),videoFrame.GetHeight(),disableHints);
+					}
+					catch( ... ) {
+						Error("-MP4Recorder::processMediaFrame() | Falied to create video track\n");
+					}
 					//Set name as ssrc
 					videoTrack->SetTrackName(std::to_string(ssrc));
 					//Add it to map
@@ -1010,7 +1025,12 @@ void MP4Recorder::processMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD t
 				//Create object
 				textTrack = new mp4track(mp4);
 				//Create track
-				textTrack->CreateTextTrack();
+				try{
+					textTrack->CreateTextTrack();
+				}
+				catch( ... ) {
+					Error("-MP4Recorder::processMediaFrame() | Falied to create text track\n");
+				}
 				//Set name as ssrc
 				textTrack->SetTrackName(std::to_string(ssrc));
 				//Create empty text frame
