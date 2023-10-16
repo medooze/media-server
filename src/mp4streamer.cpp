@@ -944,16 +944,17 @@ AVCDescriptor* MP4Streamer::GetAVCDescriptor()
 	//Set nalu length
 	try{
 		MP4GetTrackH264LengthSize(video->mp4, video->track, &len);
+
+		//Set it
+		desc->SetNALUnitLengthSizeMinus1(len-1);
+
+		// Get SEI informaMP4GetTrackH264SeqPictHeaderstion
+		MP4GetTrackH264SeqPictHeaders(video->mp4, video->track, &sequenceHeader, &sequenceHeaderSize, &pictureHeader, &pictureHeaderSize);
 	}
 	catch( ... ) {
-		Error("-MP4Streamer::GetAVCDescriptor() | Falied to get H264 NALU length from video track\n");
+		Error("-MP4Streamer::GetAVCDescriptor() | Falied to get H264 NALU length/Seq headers from video track\n");
 	}
 
-	//Set it
-	desc->SetNALUnitLengthSizeMinus1(len-1);
-
-	// Get SEI informaMP4GetTrackH264SeqPictHeaderstion
-	MP4GetTrackH264SeqPictHeaders(video->mp4, video->track, &sequenceHeader, &sequenceHeaderSize, &pictureHeader, &pictureHeaderSize);
 
 	// Send sequence headers
 	i=0;
