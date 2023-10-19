@@ -933,7 +933,7 @@ AVCDescriptor* MP4Streamer::GetAVCDescriptor()
 		return NULL;
 
 	//Create descriptor
-	AVCDescriptor* desc = new AVCDescriptor();
+	std::unique_ptr<AVCDescriptor> desc = std::make_unique<AVCDescriptor>();
 
 	//Set default
 	desc->SetConfigurationVersion(0x01);
@@ -942,19 +942,13 @@ AVCDescriptor* MP4Streamer::GetAVCDescriptor()
 	desc->SetAVCLevelIndication(AVCLevelIndication);
 
 	//Set nalu length
-	try{
-		MP4GetTrackH264LengthSize(video->mp4, video->track, &len);
+	MP4GetTrackH264LengthSize(video->mp4, video->track, &len);
 
-		//Set it
-		desc->SetNALUnitLengthSizeMinus1(len-1);
+	//Set it
+	desc->SetNALUnitLengthSizeMinus1(len-1);
 
-		// Get SEI informaMP4GetTrackH264SeqPictHeaderstion
-		MP4GetTrackH264SeqPictHeaders(video->mp4, video->track, &sequenceHeader, &sequenceHeaderSize, &pictureHeader, &pictureHeaderSize);
-	}
-	catch( ... ) {
-		Error("-MP4Streamer::GetAVCDescriptor() | Falied to get H264 NALU length/Seq headers from video track\n");
-	}
-
+	// Get SEI informaMP4GetTrackH264SeqPictHeaderstion
+	MP4GetTrackH264SeqPictHeaders(video->mp4, video->track, &sequenceHeader, &sequenceHeaderSize, &pictureHeader, &pictureHeaderSize);
 
 	// Send sequence headers
 	i=0;
@@ -1002,7 +996,7 @@ AVCDescriptor* MP4Streamer::GetAVCDescriptor()
 	if (pictureHeaderSize)
 		free(pictureHeaderSize);
 
-	return desc;
+	return desc.release();
 }
 
 

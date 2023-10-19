@@ -484,40 +484,32 @@ int mp4track::FlushTextFrame(TextFrame *frame, DWORD duration)
 	DWORD size = frame->GetLength();
 
 	//Create data to send
-	BYTE* data = (BYTE*)malloc(size+2);
+	std::vector<BYTE> data(size+2);
 
 	//Set size
 	data[0] = size>>8;
 	data[1] = size & 0xFF;
 	//Copy text
-	memcpy(data+2,frame->GetData(),frame->GetLength());
+	memcpy(data.data()+2,frame->GetData(),frame->GetLength());
 	//Log
 	Debug("-mp4track::FlushTextFrame() [timestamp:%lu,duration:%lu,size:%u]\n]",frame->GetTimeStamp(),frameduration,size+2);
 	//Write sample
-	try{
-		MP4WriteSample( mp4, track, data, size+2, frameduration, 0, false );
+	MP4WriteSample( mp4, track, data.data(), size+2, frameduration, 0, false );
 
-		//If we have to clear the screen after 7 seconds
-		if (duration-frameduration>0)
-		{
-			//Log
-			Debug("-mp4track::FlushTextFrame() empty text [timestamp:%lu,duration:%lu]\n]",frame->GetTimeStamp()+frameduration,duration-frameduration);
-			//Put empty text
-			data[0] = 0;
-			data[1] = 0;
+	//If we have to clear the screen after 7 seconds
+	if (duration-frameduration>0)
+	{
+		//Log
+		Debug("-mp4track::FlushTextFrame() empty text [timestamp:%lu,duration:%lu]\n]",frame->GetTimeStamp()+frameduration,duration-frameduration);
+		//Put empty text
+		data[0] = 0;
+		data[1] = 0;
 
-			//Write sample
-			MP4WriteSample( mp4, track, data, 2, duration-frameduration, 0, false );
-		}
+		//Write sample
+		MP4WriteSample( mp4, track, data.data(), 2, duration-frameduration, 0, false );
 	}
-	catch( ... ){
-		Error("-mp4track::FlushTextFrame() | Failed to write MP4 samples\n");
-	}
-
 	// Delete old one
 	delete frame;
-	//Free data
-	free(data);
 	//Stored
 	return 1;
 }
@@ -848,35 +840,31 @@ void MP4Recorder::processMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD t
 				// Calculate time diff since first
 				QWORD delta = time > first ? time-first : 0;
 				//Create object
-				audioTrack = new mp4track(mp4);
+				auto audioTrackPtr = std::make_unique<mp4track>(mp4);
 				//Create track
-				try{
-					audioTrack->CreateAudioTrack(audioFrame.GetCodec(),audioFrame.GetClockRate(),disableHints);
-					//Set name as ssrc
-					audioTrack->SetTrackName(std::to_string(ssrc));
-					//If it is not first
-					if (delta)
-					{
-						//Calculate duration
-						uint64_t duration = delta*audioFrame.GetClockRate()/1000;
-						//Create empty text frame
-						AudioFrame empty(audioFrame.GetCodec());
-						//Set time
-						empty.SetTime(time);
-						//Set timestamp
-						empty.SetTimestamp(audioFrame.GetTimeStamp()>duration ? audioFrame.GetTimeStamp() - duration : 0);
-						//Set clock rate
-						empty.SetClockRate(audioFrame.GetClockRate());
-						//Set duration
-						empty.SetDuration(duration);
-						//Send first empty packet
-						audioTrack->WriteAudioFrame(empty);
-					}
-				}
-				catch( ... ) {
-					Error("-MP4Recorder::processMediaFrame() | Falied to create audio track\n");
+				audioTrackPtr->CreateAudioTrack(audioFrame.GetCodec(),audioFrame.GetClockRate(),disableHints);
+				//Set name as ssrc
+				audioTrackPtr->SetTrackName(std::to_string(ssrc));
+				//If it is not first
+				if (delta)
+				{
+					//Calculate duration
+					uint64_t duration = delta*audioFrame.GetClockRate()/1000;
+					//Create empty text frame
+					AudioFrame empty(audioFrame.GetCodec());
+					//Set time
+					empty.SetTime(time);
+					//Set timestamp
+					empty.SetTimestamp(audioFrame.GetTimeStamp()>duration ? audioFrame.GetTimeStamp() - duration : 0);
+					//Set clock rate
+					empty.SetClockRate(audioFrame.GetClockRate());
+					//Set duration
+					empty.SetDuration(duration);
+					//Send first empty packet
+					audioTrackPtr->WriteAudioFrame(empty);
 				}
 				//Add it to map
+				audioTrack = audioTrackPtr.release();
 				audioTracks[ssrc] = audioTrack;
 			}
 			// Save audio rtp packet
@@ -923,18 +911,13 @@ void MP4Recorder::processMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD t
 					// Calculate time diff since first
 					QWORD delta = time > first ? time-first : 0;
 					//Create object
-					videoTrack = new mp4track(mp4);
+					auto videoTrackPtr = std::make_unique<mp4track>(mp4);
 					//Create track
-					try{
-						videoTrack->CreateVideoTrack(videoFrame.GetCodec(),videoFrame.GetClockRate(),videoFrame.GetWidth(),videoFrame.GetHeight(),disableHints);
-						//Set name as ssrc
-						videoTrack->SetTrackName(std::to_string(ssrc));
-					}
-					catch( ... ) {
-						Error("-MP4Recorder::processMediaFrame() | Falied to create video track/set track name\n");
-					}
-					
+					videoTrackPtr->CreateVideoTrack(videoFrame.GetCodec(),videoFrame.GetClockRate(),videoFrame.GetWidth(),videoFrame.GetHeight(),disableHints);
+					//Set name as ssrc
+					videoTrackPtr->SetTrackName(std::to_string(ssrc));
 					//Add it to map
+					videoTrack = videoTrackPtr.release();
 					videoTracks[ssrc] = videoTrack;
 					
 					//If it is h264
@@ -1025,23 +1008,17 @@ void MP4Recorder::processMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD t
 			if (!textTrack)
 			{
 				//Create object
-				textTrack = new mp4track(mp4);
+				auto textTrackPtr = std::make_unique<mp4track>(mp4);
 				//Create track
-				try{
-					textTrack->CreateTextTrack();
-					//Set name as ssrc
-					textTrack->SetTrackName(std::to_string(ssrc));
-					//Create empty text frame
-					TextFrame empty(0,(BYTE*)NULL,0);
-					//Send first empty packet
-					textTrack->WriteTextFrame(empty);
-				
-				}
-				catch( ... ) {
-					Error("-MP4Recorder::processMediaFrame() | Falied to create text track/write text frame\n");
-				}
-				
+				textTrackPtr->CreateTextTrack();
+				//Set name as ssrc
+				textTrackPtr->SetTrackName(std::to_string(ssrc));
+				//Create empty text frame
+				TextFrame empty(0,(BYTE*)NULL,0);
+				//Send first empty packet
+				textTrackPtr->WriteTextFrame(empty);
 				//Add it to map
+				textTrack = textTrackPtr.release();
 				textTracks[ssrc] = textTrack;
 			}
 
