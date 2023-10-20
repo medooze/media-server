@@ -167,7 +167,7 @@ public:
 	DWORD GetVideoHeight();
 	DWORD GetVideoBitrate();
 	double GetVideoFramerate();
-	AVCDescriptor* GetAVCDescriptor();
+	std::unique_ptr<AVCDescriptor> GetAVCDescriptor();
 	int Play();
 	QWORD PreSeek(QWORD time);
 	int Seek(QWORD time);
@@ -190,9 +190,9 @@ private:
 	float		playbackSpeed = 1.0;
 
 	MP4FileHandle	mp4	= MP4_INVALID_FILE_HANDLE;
-	MP4RtpTrack*	audio	= nullptr;
-	MP4RtpTrack*	video	= nullptr;
-	MP4TextTrack*	text	= nullptr;
+	std::unique_ptr<MP4RtpTrack>	audio	= nullptr;
+	std::unique_ptr<MP4RtpTrack>	video	= nullptr;
+	std::unique_ptr<MP4TextTrack>	text	= nullptr;
 };
 
 #endif

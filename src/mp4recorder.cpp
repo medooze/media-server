@@ -609,19 +609,6 @@ MP4Recorder::~MP4Recorder()
         if (mp4!=MP4_INVALID_FILE_HANDLE)
 		//Close sync
 		Close(false);
-        
-	//For each audio track
-	for (Tracks::iterator it = audioTracks.begin(); it!=audioTracks.end(); ++it)
-		//delete it
-		delete(it->second);
-	//For each video track
-	for (Tracks::iterator it = videoTracks.begin(); it!=videoTracks.end(); ++it)
-		//delete it
-		delete(it->second);
-	//For each text track
-	for (Tracks::iterator it = textTracks.begin(); it!=textTracks.end(); ++it)
-		//delete it
-		delete(it->second);
 }
 
 bool MP4Recorder::Create(const char* filename)
@@ -660,7 +647,6 @@ bool MP4Recorder::Record(bool waitVideo)
 
 bool MP4Recorder::Record(bool waitVideo, bool disableHints)
 {
-	
 	Log("-MP4Recorder::Record() [waitVideo:%d,disableHints:%d]\n",waitVideo,disableHints);
 	
         //Check mp4 file is opened
@@ -811,14 +797,6 @@ void MP4Recorder::processMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD t
 	{
 		case MediaFrame::Audio:
 		{
-			//It is an audio track
-			mp4track* audioTrack = NULL;
-			//Find the ssrc
-			Tracks::iterator it = audioTracks.find(ssrc);
-			//If found
-			if (it!=audioTracks.end())
-				//Get it
-				audioTrack = it->second;
 			//Convert to audio frame
 			AudioFrame &audioFrame = (AudioFrame&) frame;
 			//Check if it is the first
@@ -835,16 +813,16 @@ void MP4Recorder::processMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD t
 			}
 
 			// Check if we have the audio track
-			if (!audioTrack)
+			if (audioTracks.find(ssrc)==audioTracks.end())
 			{
 				// Calculate time diff since first
 				QWORD delta = time > first ? time-first : 0;
 				//Create object
-				auto audioTrackPtr = std::make_unique<mp4track>(mp4);
+				auto audioTrack = std::make_unique<mp4track>(mp4);
 				//Create track
-				audioTrackPtr->CreateAudioTrack(audioFrame.GetCodec(),audioFrame.GetClockRate(),disableHints);
+				audioTrack->CreateAudioTrack(audioFrame.GetCodec(),audioFrame.GetClockRate(),disableHints);
 				//Set name as ssrc
-				audioTrackPtr->SetTrackName(std::to_string(ssrc));
+				audioTrack->SetTrackName(std::to_string(ssrc));
 				//If it is not first
 				if (delta)
 				{
@@ -861,26 +839,18 @@ void MP4Recorder::processMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD t
 					//Set duration
 					empty.SetDuration(duration);
 					//Send first empty packet
-					audioTrackPtr->WriteAudioFrame(empty);
+					audioTrack->WriteAudioFrame(empty);
 				}
 				//Add it to map
-				audioTrack = audioTrackPtr.release();
-				audioTracks[ssrc] = audioTrack;
+				audioTracks[ssrc] = std::move(audioTrack);
 			}
 			// Save audio rtp packet
-			audioTrack->WriteAudioFrame(audioFrame);
+			audioTracks[ssrc]->WriteAudioFrame(audioFrame);
 			break;
 		}
 		case MediaFrame::Video:
 		{
-			//It is an video track
-			mp4track* videoTrack = NULL;
-			//Find the ssrc
-			Tracks::iterator it = videoTracks.find(ssrc);
-			//If found
-			if (it!=videoTracks.end())
-				//Get it
-				videoTrack = it->second;
+	
 			//Convert to video frame
 			VideoFrame &videoFrame = (VideoFrame&) frame;
 
@@ -906,19 +876,16 @@ void MP4Recorder::processMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD t
 			if (!waitVideo)
 			{
 				// Check if we have the audio track
-				if (!videoTrack)
+				if (videoTracks.find(ssrc) == videoTracks.end())
 				{
 					// Calculate time diff since first
 					QWORD delta = time > first ? time-first : 0;
 					//Create object
-					auto videoTrackPtr = std::make_unique<mp4track>(mp4);
+					auto videoTrack = std::make_unique<mp4track>(mp4);
 					//Create track
-					videoTrackPtr->CreateVideoTrack(videoFrame.GetCodec(),videoFrame.GetClockRate(),videoFrame.GetWidth(),videoFrame.GetHeight(),disableHints);
+					videoTrack->CreateVideoTrack(videoFrame.GetCodec(),videoFrame.GetClockRate(),videoFrame.GetWidth(),videoFrame.GetHeight(),disableHints);
 					//Set name as ssrc
-					videoTrackPtr->SetTrackName(std::to_string(ssrc));
-					//Add it to map
-					videoTrack = videoTrackPtr.release();
-					videoTracks[ssrc] = videoTrack;
+					videoTrack->SetTrackName(std::to_string(ssrc));
 					
 					//If it is h264
 					if (videoFrame.GetCodec() == VideoCodec::H264)
@@ -984,42 +951,33 @@ void MP4Recorder::processMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD t
 						//Send first empty packet
 						videoTrack->WriteVideoFrame(empty);
 					}
+					
+					//Add it to map
+					videoTracks[ssrc] = std::move(videoTrack);
 				}
 
 				// Save audio rtp packet
-				videoTrack->WriteVideoFrame(videoFrame);
+				videoTracks[ssrc]->WriteVideoFrame(videoFrame);
 			}
 			break;
 		}
 		case MediaFrame::Text:
 		{
-			//It is an text track
-			mp4track* textTrack = NULL;
-			//Find the ssrc
-			Tracks::iterator it = textTracks.find(ssrc);
-			//If found
-			if (it!=textTracks.end())
-				//Get it
-				textTrack = it->second;
-			//Convert to audio frame
-			TextFrame &textFrame = (TextFrame&) frame;
-
 			// Check if we have the audio track
-			if (!textTrack)
+			if (textTracks.find(ssrc) == textTracks.end())
 			{
 				//Create object
-				auto textTrackPtr = std::make_unique<mp4track>(mp4);
+				auto textTrack = std::make_unique<mp4track>(mp4);
 				//Create track
-				textTrackPtr->CreateTextTrack();
+				textTrack->CreateTextTrack();
 				//Set name as ssrc
-				textTrackPtr->SetTrackName(std::to_string(ssrc));
+				textTrack->SetTrackName(std::to_string(ssrc));
 				//Create empty text frame
 				TextFrame empty(0,(BYTE*)NULL,0);
 				//Send first empty packet
-				textTrackPtr->WriteTextFrame(empty);
-				//Add it to map
-				textTrack = textTrackPtr.release();
-				textTracks[ssrc] = textTrack;
+				textTrack->WriteTextFrame(empty);
+				
+				textTracks[ssrc] = std::move(textTrack);
 			}
 
 			//Check if it is the first
@@ -1034,13 +992,17 @@ void MP4Recorder::processMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD t
 					//Send event
 					this->listener->onFirstFrame(first);
 			}
+				
+			//Convert to audio frame
+			TextFrame &textFrame = (TextFrame&) frame;
+
 			// Calculate new timestamp
 			QWORD timestamp = time-first;
 			//Update timestamp
 			textFrame.SetTimestamp(timestamp);
 
 			// Save audio rtp packet
-			textTrack->WriteTextFrame(textFrame);
+			textTracks[ssrc]->WriteTextFrame(textFrame);
 			break;
 		}
 		case MediaFrame::Unknown:
