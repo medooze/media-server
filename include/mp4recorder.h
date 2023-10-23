@@ -84,7 +84,7 @@ public:
 private:
 	void processMediaFrame(DWORD ssrc, const MediaFrame &frame, QWORD time);
 private:	
-	typedef std::map<DWORD,mp4track*>	Tracks;
+	typedef std::unordered_map<DWORD, std::unique_ptr<mp4track>>	Tracks;
 private:
 	EventLoop	loop;
 	Listener*	listener	= nullptr;

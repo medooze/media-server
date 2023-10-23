@@ -130,7 +130,7 @@ void RTMPMP4Stream::doPlay(QWORD transId, std::wstring& url,RTMPMediaStream::Lis
 	SendMetaData(meta);
 
 	//Get AVC descriptor if any
-	desc = streamer.GetAVCDescriptor();
+	desc = streamer.GetAVCDescriptor().release();
 
 	//If we have one
 	if (desc)
