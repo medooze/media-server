@@ -93,15 +93,22 @@ EventLoop::~EventLoop()
 
 bool EventLoop::SetThreadName(std::thread::native_handle_type thread, const std::string& name)
 {
+	if (thread == nullptr) {
+		return false;
+	}
+
 #if defined(__linux__)
 	return !pthread_setname_np(thread, name.c_str());
-#else
-	return false;
 #endif
+	return false;
 }
 
 bool EventLoop::SetAffinity(std::thread::native_handle_type thread, int cpu)
 {
+	if (thread == nullptr) {
+		return false;
+	}
+
 #ifdef THREAD_AFFINITY_POLICY
 	if (cpu >= 0)
 	{
@@ -160,6 +167,10 @@ bool EventLoop::SetThreadName(const std::string& name)
 
 bool EventLoop::SetPriority(int priority)
 {
+	if (thread.native_handle() == nullptr) {
+		return false;
+	}
+
 	sched_param param = { 
 		.sched_priority = priority
 	};

@@ -103,6 +103,13 @@ RTPBundleTransport::RTPBundleTransport(uint32_t packetPoolSize) :
 	//Init values
 	socket = FD_INVALID;
 	port = 0;
+
+	//Init random
+	static init_seed = false;
+	if (!init_seed) {
+		init_seed = true;
+		srand (time(NULL));
+	}
 }
 
 /*************************
@@ -288,8 +295,6 @@ int RTPBundleTransport::Init()
 
 	//Clear addr
 	memset(&recAddr,0,sizeof(struct sockaddr_in));
-	//Init ramdon
-	srand (time(NULL));
 
 	//Set family
 	recAddr.sin_family     	= AF_INET;
@@ -380,8 +385,6 @@ int RTPBundleTransport::Init(int port)
 
 	//Clear addr
 	memset(&recAddr,0,sizeof(struct sockaddr_in));
-	//Init ramdon
-	srand (time(NULL));
 
 	//Set family
 	recAddr.sin_family     	= AF_INET;
