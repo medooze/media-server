@@ -93,7 +93,7 @@ EventLoop::~EventLoop()
 
 bool EventLoop::SetThreadName(std::thread::native_handle_type thread, const std::string& name)
 {
-	if (thread == nullptr) {
+	if (static_cast<void*>(thread) == nullptr) {
 		return false;
 	}
 
@@ -105,7 +105,7 @@ bool EventLoop::SetThreadName(std::thread::native_handle_type thread, const std:
 
 bool EventLoop::SetAffinity(std::thread::native_handle_type thread, int cpu)
 {
-	if (thread == nullptr) {
+	if (static_cast<void*>(thread) == nullptr) {
 		return false;
 	}
 
@@ -167,7 +167,7 @@ bool EventLoop::SetThreadName(const std::string& name)
 
 bool EventLoop::SetPriority(int priority)
 {
-	if (thread.native_handle() == nullptr) {
+	if (static_cast<void*>(thread.native_handle()) == nullptr) {
 		return false;
 	}
 

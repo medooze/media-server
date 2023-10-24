@@ -103,13 +103,6 @@ RTPBundleTransport::RTPBundleTransport(uint32_t packetPoolSize) :
 	//Init values
 	socket = FD_INVALID;
 	port = 0;
-
-	//Init random
-	static init_seed = false;
-	if (!init_seed) {
-		init_seed = true;
-		srand (time(NULL));
-	}
 }
 
 /*************************
