@@ -288,8 +288,6 @@ int RTPBundleTransport::Init()
 
 	//Clear addr
 	memset(&recAddr,0,sizeof(struct sockaddr_in));
-	//Init ramdon
-	srand (time(NULL));
 
 	//Set family
 	recAddr.sin_family     	= AF_INET;
@@ -380,8 +378,6 @@ int RTPBundleTransport::Init(int port)
 
 	//Clear addr
 	memset(&recAddr,0,sizeof(struct sockaddr_in));
-	//Init ramdon
-	srand (time(NULL));
 
 	//Set family
 	recAddr.sin_family     	= AF_INET;
