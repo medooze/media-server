@@ -23,7 +23,7 @@ AACEncoder::AACEncoder(const Properties &properties)
 	// Check codec
 	if(!codec)
 	{
-		Error("AAC: No encoder found\n");
+		Error("-AACEncoder::AACEncoder() No encoder found\n");
 		return;
 	}
 	//Alocamos el conto y el picture
@@ -32,7 +32,7 @@ AACEncoder::AACEncoder(const Properties &properties)
 	//Check
 	if (ctx == NULL)
 	{
-		Error("AAC: could not allocate context.\n");
+		Error("-AACEncoder::AACEncoder() could not allocate context.\n");
 		return;
 	}
 
@@ -56,7 +56,7 @@ AACEncoder::AACEncoder(const Properties &properties)
 	if (avcodec_open2(ctx, codec, NULL) < 0)
 	{
 		//Error
-	        Error("AAC: could not open codec\n");
+	        Error("-AACEncoder::AACEncoder() could not open codec\n");
 		//Exit
 		return;
 	}
@@ -92,7 +92,7 @@ AACEncoder::AACEncoder(const Properties &properties)
 	frame->channel_layout = ctx->channel_layout;
 
 	//Log
-	Log("AAC: Encoder open with frame size %d.\n", numFrameSamples);
+	Log("-AACEncoder::AACEncoder() Encoder open with frame size %d.\n", numFrameSamples);
 }
 
 AACEncoder::~AACEncoder()
@@ -121,12 +121,12 @@ int AACEncoder::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 		return 0;
 	
 	if (ctx == NULL)
-		return Error("AAC: no context.\n");
+		return Error("-AACEncoder::Encode() no context.\n");
 
 	//If not enought samples
 	if (inLen!=numFrameSamples)
 		//Exit
-		return Error("AAC: sample size %d is not correct. Should be %d\n", inLen, numFrameSamples);
+		return Error("-AACEncoder::Encode() sample size %d is not correct. Should be %d\n", inLen, numFrameSamples);
 
 	//Convert
 	int len = swr_convert(swr, &samples, samplesNum, (const BYTE**)&in, inLen);
@@ -134,7 +134,7 @@ int AACEncoder::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 	//Check 
 	if (avcodec_fill_audio_frame(frame, ctx->channels, ctx->sample_fmt, (BYTE*)samples, samplesSize, 0)<0)
                 //Exit
-                return Error("AAC: could not fill audio frame \n");
+                return Error("-AACEncoder::Encode() could not fill audio frame \n");
 
 	//Reset packet
 	av_init_packet(&pkt);
@@ -143,15 +143,15 @@ int AACEncoder::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
         pkt.data = out;
         pkt.size = outLen;
 
-        //Encode audio
-        if (avcodec_encode_audio2(ctx, &pkt, frame, &got_output)<0)
-                //Exit
-                return Error("AAC: could not encode audio frame\n");
+	//Send frame for encoding
+	if (avcodec_send_frame(ctx, frame) != 0)
+		//Exit
+		return Error("-AACEncoder::Encode() could not encode audio frame\n");
 
-        //Check if we got output
-        if (!got_output)
+	//Receive encoded packet
+	if (avcodec_receive_packet(ctx, &pkt) != 0)
                 //Exit
-                return Error("AAC: could not get output packet\n");
+                return Error("-AACEncoder::Encode() could not get output packet\n");
 
         //Return encoded size
         return pkt.size;
