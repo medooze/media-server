@@ -80,7 +80,9 @@ void VideoDecoderWorker::RemoveVideoOutput(VideoOutput* output)
 
 int VideoDecoderWorker::Decode()
 {
+	QWORD		frameTimestamp = (QWORD)-1;
 	QWORD		frameTime = (QWORD)-1;
+	DWORD		frameClockRate = (DWORD)-1;
 	DWORD		lastSeq = RTPPacket::MaxExtSeqNum;
 	bool		waitIntra = false;
 
@@ -105,6 +107,8 @@ int VideoDecoderWorker::Decode()
 		//Get extended sequence number and timestamp
 		DWORD seq = packet->GetExtSeqNum();
 		QWORD ts = packet->GetExtTimestamp();
+		QWORD time = packet->GetTime();
+		DWORD clockRate = packet->GetClockRate();
 
 		//If we don't have codec
 		if (!videoDecoder || (packet->GetCodec()!=videoDecoder->type))
@@ -135,9 +139,9 @@ int VideoDecoderWorker::Decode()
 			waitIntra = true;
 
 		//Check if we have lost the last packet from the previous frame by comparing both timestamps
-		if (ts>frameTime)
+		if (ts>frameTimestamp)
 		{
-			Debug("-VideoDecoderWorker::Decode() | lost mark packet ts:%llu frameTime:%llu\n",ts,frameTime);
+			Debug("-VideoDecoderWorker::Decode() | lost mark packet ts:%llu frameTimestamp:%llu\n",ts,frameTimestamp);
 			//Try to decode what is in the buffer
 			videoDecoder->DecodePacket(NULL,0,1,1);
 			//Get picture
@@ -145,6 +149,10 @@ int VideoDecoderWorker::Decode()
 			//Check
 			if (frame && !muted)
 			{
+				//Set frame times
+				frame->SetTime(frameTime);
+				frame->SetTimestamp(frameTimestamp);
+				frame->SetClockRate(frameClockRate);
 				//Sync
 				ScopedLock scope(mutex);
 				//For each output
@@ -154,8 +162,10 @@ int VideoDecoderWorker::Decode()
 			}
 		}
 		
-		//Update frame time
-		frameTime = ts;
+		//Update frame timestamp
+		frameTimestamp = ts;
+		frameTime = time;
+		frameClockRate = clockRate;
 		
 		//Decode packet
 		if(!videoDecoder->DecodePacket(packet->GetMediaData(),packet->GetMediaLength(),lost,packet->GetMark()))
@@ -173,8 +183,8 @@ int VideoDecoderWorker::Decode()
 				waitIntra = false;
 			}
 			
-			//No frame time yet for next frame
-			frameTime = (QWORD)-1;
+			//No frame timestamp yet for next frame
+			frameTimestamp = (QWORD)-1;
 
 			//Get picture
 			const VideoBuffer::shared& frame = videoDecoder->GetFrame();
@@ -183,6 +193,11 @@ int VideoDecoderWorker::Decode()
 			if (!frame)
 				//Get next one
 				continue;
+
+			//Set frame times
+			frame->SetTime(frameTime);
+			frame->SetTimestamp(frameTimestamp);
+			frame->SetClockRate(frameClockRate);
 
 			//Check if we need to apply deinterlacing
 			if (frame->IsInterlaced())
@@ -208,6 +223,12 @@ int VideoDecoderWorker::Decode()
 				//Get any porcessed frame
 				while (auto deinterlaced = deinterlacer->GetNextFrame())
 				{
+					//Set frame times
+					//TODO: should this be done inside the interlacer?
+					deinterlaced->SetTime(frameTime);
+					deinterlaced->SetTimestamp(frameTimestamp);
+					deinterlaced->SetClockRate(frameClockRate);
+
 					//Check if we are muted
 					if (!muted)
 					{

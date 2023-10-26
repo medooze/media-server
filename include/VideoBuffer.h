@@ -2,6 +2,7 @@
 #define VIDEOBUFFER_H_
 #include "config.h"
 #include <memory>
+#include <optional>
 
 class Plane
 {
@@ -106,6 +107,21 @@ public:
 	std::pair<int, int> GetPixelAspectRatio() const			{ return this->pixelAspectRatio; }
 	bool HasNonSquarePixelAspectRatio() const			{ return this->pixelAspectRatio.first && this->pixelAspectRatio.first != this->pixelAspectRatio.second; }
 
+	bool    HasTimestamp() const	{ return ts.has_value();	}
+	QWORD	GetTimestamp() const	{ return ts.value();		}
+	void	SetTimestamp(QWORD ts)	{ this->ts = ts;		}
+	bool    HasTime() const		{ return time.has_value();	}
+	QWORD	GetTime() const		{ return time.value();		}
+	void	SetTime(QWORD time)	{ this->time = time;		}
+
+	bool    HasSenderTime() const   { return senderTime.has_value();	}
+	QWORD   GetSenderTime() const	{ return senderTime.value();		}
+	void    SetSenderTime(QWORD senderTime) { this->senderTime = senderTime;}
+
+	DWORD   HasClockRate() const	{ return clockRate.has_value();		}
+	DWORD   GetClockRate() const	{ return clockRate.value();		}
+	void    SetClockRate(DWORD clockRate) { this->clockRate = clockRate;	}
+
 private:
 	
 	Plane	planeY;
@@ -117,6 +133,11 @@ private:
 	ColorSpace colorSpace = ColorSpace::Unknown;
 	ColorRange colorRange = ColorRange::Unknown;
 	std::pair<int, int> pixelAspectRatio = {1,1};
+
+	std::optional<QWORD> ts;
+	std::optional<QWORD> time;
+	std::optional<QWORD> senderTime;
+	std::optional<DWORD> clockRate;
 	
 	
 	

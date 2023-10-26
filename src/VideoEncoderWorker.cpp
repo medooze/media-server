@@ -329,15 +329,17 @@ int VideoEncoderWorker::Encode()
 		//Add frame size in bits to bitrate calculator
 		bitrateAcu.Update(getDifTime(&first)/1000,videoFrame->GetLength()*8);
 
-		//Set clock rate
-		videoFrame->SetClockRate(90000);
+		
+		
 		//Get now
 		auto now = getDifTime(&first)/1000;
+		//Set clock rate
+		videoFrame->SetClockRate(pic->HasClockRate() ? pic->GetClockRate() : 90000);
 		//Set frame timestamp
-		videoFrame->SetTimestamp(now*90);
-		videoFrame->SetTime(now);
+		videoFrame->SetTimestamp(pic->HasTimestamp() ? pic->GetTimestamp() : now*90);
+		videoFrame->SetTime(pic->HasTime() ? pic->GetTime() : now);
 		//Set dudation
-		videoFrame->SetDuration(frameTime*90000/1E6);
+		videoFrame->SetDuration(frameTime*videoFrame->GetClockRate()/1E6);
 
 		//Set target bitrate and fps
 		videoFrame->SetTargetBitrate(target);
