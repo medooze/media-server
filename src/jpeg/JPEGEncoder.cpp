@@ -192,14 +192,15 @@ VideoFrame* JPEGEncoder::EncodeFrame(const VideoBuffer::const_shared& videoBuffe
 		[](auto packet) {av_packet_free(&packet); }
 	);
 	
-	int got_output = 0;
-	if (avcodec_encode_video2(ctx, packet.get(), input, &got_output)<0)
+	//Send frame for encoding
+	if (avcodec_send_frame(ctx, input) !=0 )
 	{
 		Error("-JPEGEncoder::EncodeFrame() | Error encoding frame\n");
 		return nullptr;
 	}
-		
-	if (!got_output)
+	
+	//Receive encoded packet
+	if (avcodec_receive_packet(ctx, packet.get()) != 0)
 		return nullptr;
 
 	//Set the media
