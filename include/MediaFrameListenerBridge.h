@@ -45,7 +45,7 @@ public:
 	void Stop();
 	
 	void SetDelayMs(std::chrono::milliseconds delayMs);
-	void SetTargetEncoderBitrateHint(uint32_t targetBitrateHint);
+	void SetTargetBitrateHint(uint32_t targetBitrateHint);
 
 	// MediaFrame::Producer interface
 	virtual void AddMediaListener(const MediaFrame::Listener::shared& listener) override;

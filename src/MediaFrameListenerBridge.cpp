@@ -491,10 +491,10 @@ void MediaFrameListenerBridge::Mute(bool muting)
 	muted = muting;
 }
 
-void MediaFrameListenerBridge::SetTargetEncoderBitrateHint(uint32_t targetBitrateHint)
+void MediaFrameListenerBridge::SetTargetBitrateHint(uint32_t targetBitrateHint)
 {
 	//Log
-	Debug("-MediaFrameListenerBridge::SetTargetEncoderBitrateHint() | [targetBitrateHint:%d]\n", targetBitrateHint);
+	Debug("-MediaFrameListenerBridge::SetTargetBitrateHint() | [targetBitrateHint:%d]\n", targetBitrateHint);
 
 	//Update hint
 	this->targetBitrateHint = targetBitrateHint;
