@@ -353,8 +353,11 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 				//TODO: move out of here
 				VideoLayerSelector::GetLayerIds(packet);
 
+				//Get media frame target bitrate or hint
+				auto targetBitrate = video->GetTargetBitrate() ? video->GetTargetBitrate() : targetBitrateHint;
+
 				//If video has a target bitrate and it is the first packet of an intra frame
-				if (i==0 && video->IsIntra() && video->GetTargetBitrate())
+				if (i==0 && video->IsIntra() && targetBitrate)
 				{
 					//Create VLA info
 					VideoLayersAllocation videoLayersAllocation = {
@@ -364,7 +367,7 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 							{
 								0,
 								0,
-								std::vector<uint16_t>{ (uint16_t)video->GetTargetBitrate() },
+								std::vector<uint16_t>{ (uint16_t)targetBitrate },
 								video->GetWidth(),
 								video->GetHeight(),
 								video->GetTargetFps()
@@ -482,8 +485,17 @@ void MediaFrameListenerBridge::RemoveMediaListener(const MediaFrame::Listener::s
 void MediaFrameListenerBridge::Mute(bool muting)
 {
 	//Log
-	UltraDebug("-MediaFrameListenerBridge::Mute() | [muting:%d]\n", muting);
+	Debug("-MediaFrameListenerBridge::Mute() | [muting:%d]\n", muting);
 
 	//Update state
 	muted = muting;
+}
+
+void MediaFrameListenerBridge::SetTargetEncoderBitrateHint(uint32_t targetBitrateHint)
+{
+	//Log
+	Debug("-MediaFrameListenerBridge::SetTargetEncoderBitrateHint() | [targetBitrateHint:%d]\n", targetBitrateHint);
+
+	//Update hint
+	this->targetBitrateHint = targetBitrateHint;
 }

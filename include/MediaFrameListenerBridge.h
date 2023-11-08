@@ -45,6 +45,7 @@ public:
 	void Stop();
 	
 	void SetDelayMs(std::chrono::milliseconds delayMs);
+	void SetTargetEncoderBitrateHint(uint32_t targetBitrateHint);
 
 	// MediaFrame::Producer interface
 	virtual void AddMediaListener(const MediaFrame::Listener::shared& listener) override;
@@ -64,6 +65,7 @@ public:
 	// RTPReceiver interface
 	virtual int SendPLI(DWORD ssrc) override { return 1; };
 	virtual int Reset(DWORD ssrc) override { return 1; };
+
 
 private:
 	void Dispatch(const std::vector<RTPPacket::shared>& packet);
@@ -106,8 +108,10 @@ public:
 	volatile bool muted = false;
 	
 	std::chrono::milliseconds dispatchingDelayMs = std::chrono::milliseconds(0);
-	
+		
 	bool stopped = false;
+
+	uint32_t targetBitrateHint = 0;
 };
 
 #endif /* MEDIAFRAMELISTENERBRIDGE_H */
