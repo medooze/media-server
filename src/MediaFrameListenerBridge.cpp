@@ -207,6 +207,9 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 			//Set width and height
 			width = videoFrame->GetWidth();
 			height = videoFrame->GetHeight();
+							
+			// Increase bframes
+			accumulatorBFrames.Update(now.count(), videoFrame->IsBFrame() ? 1 : 0);
 		}
 
 		//Get info
@@ -246,9 +249,6 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 				frameSize = video->GetLength();
 				//Set clock rate
 				rate = 90000;
-				
-				// Increase bframes
-				accumulatorBFrames.Update(now.count(), video->IsBFrame() ? 1 : 0);
 		
 				break;
 			}

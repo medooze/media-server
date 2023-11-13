@@ -53,6 +53,8 @@ public:
 		frame->SetHeight(height);
 		//Set intra
 		frame->SetIntra(isIntra);
+		//Set B frame
+		frame->SetBFrame(isBFrame);
 		//Set clock rate
 		frame->SetClockRate(GetClockRate());
 		//Set timestamp
@@ -117,7 +119,9 @@ public:
 		//Reset media frame
 		MediaFrame::Reset();
 		//No intra
-		SetIntra(false);
+		SetIntra(false);		
+		//Reset B frame
+		SetBFrame(false);
 		//No new config
 		ClearCodecConfig();
 		//Clear layers
