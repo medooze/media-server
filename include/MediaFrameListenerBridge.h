@@ -94,10 +94,12 @@ public:
 	DWORD bitrate		= 0;
 	WORD  width		= 0;
 	WORD  height		= 0;
+	QWORD  bframes		= 0;
+	QWORD  bframesDelta	= 0;
 	Acumulator<uint32_t, uint64_t> acumulator;
 	Acumulator<uint32_t, uint64_t> accumulatorFrames;
 	Acumulator<uint32_t, uint64_t> accumulatorPackets;
-
+	Acumulator<uint32_t, uint64_t> accumulatorBFrames;
 	
 	std::chrono::milliseconds lastSent = 0ms;
 	

@@ -114,6 +114,12 @@ void H264Packetizer::OnNal(VideoFrame& frame, BufferReader& reader, std::optiona
 				if (header.Decode(reader.PeekData(), reader.GetLeft(), *sps))
 				{
 					frameEnd = header.GetBottomFieldFlag();
+					// Use the last slice type to determine the frame type
+					if (frameEnd)
+					{
+						auto sliceType = header.GetSliceType();
+						frame.SetBFrame(sliceType == 1 || sliceType == 6);
+					}
 				}
 			}
 			

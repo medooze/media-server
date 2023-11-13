@@ -14,6 +14,7 @@ MediaFrameListenerBridge::MediaFrameListenerBridge(TimeService& timeService,DWOR
 	acumulator(1000),
 	accumulatorFrames(1000),
 	accumulatorPackets(1000),
+	accumulatorBFrames(1000),
 	waited(1000)
 {
 	Debug("-MediaFrameListenerBridge::MediaFrameListenerBridge() [this:%p]\n", this);
@@ -245,6 +246,10 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 				frameSize = video->GetLength();
 				//Set clock rate
 				rate = 90000;
+				
+				// Increase bframes
+				accumulatorBFrames.Update(now.count(), video->IsBFrame() ? 1 : 0);
+		
 				break;
 			}
 			default:
@@ -439,6 +444,9 @@ void MediaFrameListenerBridge::UpdateAsync(std::function<void(std::chrono::milli
 		//Get packets and frames delta
 		numFramesDelta	= accumulatorFrames.GetInstant();
 		numPacketsDelta	= accumulatorPackets.GetInstant();
+		
+		bframes = accumulatorBFrames.GetAcumulated();
+		bframesDelta = accumulatorBFrames.GetInstant();
 	}, callback);
 }
 
@@ -458,6 +466,9 @@ void MediaFrameListenerBridge::Update(QWORD)
 		//Get packets and frames delta
 		numFramesDelta	= accumulatorFrames.GetInstant();
 		numPacketsDelta	= accumulatorPackets.GetInstant();
+		
+		bframes = accumulatorBFrames.GetAcumulated();
+		bframesDelta = accumulatorBFrames.GetInstant();
 	});
 }
 

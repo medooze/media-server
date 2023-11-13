@@ -109,6 +109,9 @@ public:
 	void SetTargetFps(uint32_t targetFps)		{ this->targetFps = targetFps;		}	
 	uint32_t GetTargetFps() const			{ return this->targetFps;		}
 
+	void SetBFrame(bool isBFrame) { this->isBFrame = isBFrame; }
+	bool IsBFrame() const { return isBFrame; }
+
 	void Reset() 
 	{
 		//Reset media frame
@@ -124,6 +127,7 @@ public:
 private:
 	VideoCodec::Type codec;
 	bool	 isIntra	= false;
+	bool	 isBFrame	= false;
 	uint32_t width		= 0;
 	uint32_t height		= 0;
 	uint32_t targetBitrate	= 0;
