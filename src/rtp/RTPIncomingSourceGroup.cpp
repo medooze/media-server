@@ -372,8 +372,8 @@ RTPIncomingSource* RTPIncomingSourceGroup::Process(RTPPacket::shared &packet)
 	//Set clockrate
 	source->clockrate = packet->GetClockRate();
 	
-	//if it is video
-	if (type == MediaFrame::Video)
+	//if it is the main video source
+	if (type == MediaFrame::Video && source==&media)
 	{
 		//Check if we can ge the layer info
 		auto info = VideoLayerSelector::GetLayerIds(packet);

@@ -50,6 +50,10 @@ struct RTPIncomingSource : public RTPSource
 
 	uint16_t width;
 	uint16_t height;
+	std::optional<uint32_t> targetBitrate;
+	std::optional<uint16_t> targetWidth;
+	std::optional<uint16_t> targetHeight;
+	std::optional<uint8_t>  targetFps;
 
 	WrapExtender<uint32_t,uint64_t> timestampExtender;
 	WrapExtender<uint32_t,uint64_t> lastReceivedSenderRTPTimestampExtender;
