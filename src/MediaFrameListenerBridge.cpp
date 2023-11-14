@@ -208,7 +208,7 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 			//Set width and height
 			width = videoFrame->GetWidth();
 			height = videoFrame->GetHeight();
-							
+
 			// Increase bframes
 			accumulatorBFrames.Update(now.count(), videoFrame->IsBFrame() ? 1 : 0);
 			// Increase iframes
@@ -474,7 +474,7 @@ void MediaFrameListenerBridge::Update(QWORD)
 		
 		iframes = accumulatorIFrames.GetAcumulated();
 		iframesDelta = accumulatorIFrames.GetInstant();
-		
+
 		bframes = accumulatorBFrames.GetAcumulated();
 		bframesDelta = accumulatorBFrames.GetInstant();
 	});
