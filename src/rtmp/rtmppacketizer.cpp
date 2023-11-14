@@ -149,12 +149,10 @@ std::unique_ptr<VideoFrame> RTMPH26xPacketizer<DescClass, SPSClass, codec>::AddF
 			
 			//Parse sps skipping nal header
 			auto nalHeaderSize = (codec == VideoCodec::H264) ? 1 : 2;
-			SPSClass sps;
-			if (sps.Decode(desc.GetSequenceParameterSet(i)+nalHeaderSize,desc.GetSequenceParameterSetSize(i)-nalHeaderSize))
+			SPSClass localSps;
+			if (localSps.Decode(desc.GetSequenceParameterSet(i)+nalHeaderSize,desc.GetSequenceParameterSetSize(i)-nalHeaderSize))
 			{
-				//Set dimensions
-				frame->SetWidth(sps.GetWidth());
-				frame->SetHeight(sps.GetHeight());
+				sps = localSps;
 			}
 		}
 		//Decode PPS
@@ -174,11 +172,20 @@ std::unique_ptr<VideoFrame> RTMPH26xPacketizer<DescClass, SPSClass, codec>::AddF
 		//Set intra flag
 		frame->SetIntra(true);
 	}
+	
+	if (sps.has_value())
+	{
+		//Set dimensions
+		frame->SetWidth(sps->GetWidth());
+		frame->SetHeight(sps->GetHeight());
+	}
 
 	//Malloc
 	BYTE *data = videoFrame->GetMediaData();
 	//Get size
 	DWORD size = videoFrame->GetMediaSize();
+	
+	bool parsingFrameType = true;
 	
 	//Chop into NALs
 	while(size>nalUnitLength)
@@ -206,6 +213,25 @@ std::unique_ptr<VideoFrame> RTMPH26xPacketizer<DescClass, SPSClass, codec>::AddF
 			size -= nalUnitLength + nalSize;
 			//Next
 			continue;
+		}
+		
+		if (parsingFrameType && sps.has_value())
+		{
+			if constexpr (std::is_same_v<SPSClass, H264SeqParameterSet>)
+			{
+				BYTE nalUnitType = nal[0] & 0x1f;
+				if (nalUnitType == 1 || nalUnitType == 2 || nalUnitType == 5)
+				{
+					H264SliceHeader header;
+					if (header.Decode(nal + 1, nalSize - 1, *sps))
+					{
+						auto sliceType = header.GetSliceType();
+						frame->SetBFrame(sliceType == 1 || sliceType == 6);
+						
+						parsingFrameType = false;
+					}
+				}
+			}
 		}
 
 		//Append nal header
