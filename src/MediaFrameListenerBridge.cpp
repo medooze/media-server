@@ -252,7 +252,6 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 				frameSize = video->GetLength();
 				//Set clock rate
 				rate = 90000;
-		
 				break;
 			}
 			default:
@@ -472,6 +471,9 @@ void MediaFrameListenerBridge::Update(QWORD)
 		//Get packets and frames delta
 		numFramesDelta	= accumulatorFrames.GetInstant();
 		numPacketsDelta	= accumulatorPackets.GetInstant();
+		
+		iframes = accumulatorIFrames.GetAcumulated();
+		iframesDelta = accumulatorIFrames.GetInstant();
 		
 		bframes = accumulatorBFrames.GetAcumulated();
 		bframesDelta = accumulatorBFrames.GetInstant();
