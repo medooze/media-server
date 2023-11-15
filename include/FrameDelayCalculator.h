@@ -48,7 +48,9 @@ private:
 	std::chrono::milliseconds updateRefsStepPacketEarlyMs {0};
 	 
 	bool initialized = false;
-	bool reducingLatency = false;
+	
+	// The start time when all streams arrive early. If packets become late, this time will be reset.
+	std::optional<std::chrono::milliseconds> allEarlyStartTimeMs;
 	
 	std::chrono::milliseconds refTime {0};
 	uint64_t refTimestamp = 0;
