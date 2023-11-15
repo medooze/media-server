@@ -7,12 +7,10 @@
 class FrameDispatchCoordinator
 {
 public:	
-	static constexpr int DefaultUpdateRefsPacketEarlyThresholdMs = -20;
 	static constexpr int DefaultUpdateRefsPacketLateThresholdMs = 0;	
 	static constexpr std::chrono::milliseconds DefaultUpdateRefsStepPacketEarlyMs = std::chrono::milliseconds(20);
 
-	FrameDispatchCoordinator(int aUpdateRefsPacketEarlyThresholdMs = DefaultUpdateRefsPacketEarlyThresholdMs,
-			int aUpdateRefsPacketLateThresholdMs = DefaultUpdateRefsPacketLateThresholdMs, 
+	FrameDispatchCoordinator(int aUpdateRefsPacketLateThresholdMs = DefaultUpdateRefsPacketLateThresholdMs, 
 			std::chrono::milliseconds aUpdateRefsStepPacketEarlyMs = DefaultUpdateRefsStepPacketEarlyMs);
 			
 	/**

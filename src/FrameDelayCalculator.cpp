@@ -22,10 +22,8 @@ static constexpr T convertTimestampClockRate(T ts, uint64_t originalRate, uint64
 static constexpr uint64_t UnifiedClockRate = 90 * 1000;
 }
 
-FrameDelayCalculator::FrameDelayCalculator(int aUpdateRefsPacketEarlyThresholdMs,
-					int aUpdateRefsPacketLateThresholdMs, 
+FrameDelayCalculator::FrameDelayCalculator(int aUpdateRefsPacketLateThresholdMs, 
 					std::chrono::milliseconds aUpdateRefsStepPacketEarlyMs) :
-	updateRefsPacketEarlyThresholdMs(aUpdateRefsPacketEarlyThresholdMs),
 	updateRefsPacketLateThresholdMs(aUpdateRefsPacketLateThresholdMs),
 	updateRefsStepPacketEarlyMs(aUpdateRefsStepPacketEarlyMs)
 {
@@ -53,6 +51,7 @@ std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifie
 	
 	// We would delay the early arrived frame
 	std::chrono::milliseconds delayMs(-lateMs);
+	auto updateRefsPacketEarlyThresholdMs = -updateRefsStepPacketEarlyMs.count();
 	
 	if (lateMs > updateRefsPacketLateThresholdMs)  // Packet late
 	{
@@ -62,7 +61,7 @@ std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifie
 		allEarlyStartTimeMs.reset();
 		delayMs = std::chrono::milliseconds(0);
 	}
-	else if (lateMs < updateRefsPacketEarlyThresholdMs)  // Packet early
+	else if (lateMs < -updateRefsPacketEarlyThresholdMs)  // Packet early
 	{
 		// Loop to see if all the streams have arrived earlier
 		bool allEarly = std::all_of(frameArrivalInfo.begin(), frameArrivalInfo.end(), 
