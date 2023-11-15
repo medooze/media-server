@@ -14,6 +14,8 @@ MediaFrameListenerBridge::MediaFrameListenerBridge(TimeService& timeService,DWOR
 	acumulator(1000),
 	accumulatorFrames(1000),
 	accumulatorPackets(1000),
+	accumulatorIFrames(1000),
+	accumulatorBFrames(1000),
 	waited(1000)
 {
 	Debug("-MediaFrameListenerBridge::MediaFrameListenerBridge() [this:%p]\n", this);
@@ -206,6 +208,11 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 			//Set width and height
 			width = videoFrame->GetWidth();
 			height = videoFrame->GetHeight();
+
+			// Increase bframes
+			accumulatorBFrames.Update(now.count(), videoFrame->IsBFrame() ? 1 : 0);
+			// Increase iframes
+			accumulatorIFrames.Update(now.count(), videoFrame->IsIntra() ? 1 : 0);
 		}
 
 		//Get info
@@ -439,6 +446,12 @@ void MediaFrameListenerBridge::UpdateAsync(std::function<void(std::chrono::milli
 		//Get packets and frames delta
 		numFramesDelta	= accumulatorFrames.GetInstant();
 		numPacketsDelta	= accumulatorPackets.GetInstant();
+		
+		iframes = accumulatorIFrames.GetAcumulated();
+		iframesDelta = accumulatorIFrames.GetInstant();
+		
+		bframes = accumulatorBFrames.GetAcumulated();
+		bframesDelta = accumulatorBFrames.GetInstant();
 	}, callback);
 }
 
@@ -458,6 +471,12 @@ void MediaFrameListenerBridge::Update(QWORD)
 		//Get packets and frames delta
 		numFramesDelta	= accumulatorFrames.GetInstant();
 		numPacketsDelta	= accumulatorPackets.GetInstant();
+		
+		iframes = accumulatorIFrames.GetAcumulated();
+		iframesDelta = accumulatorIFrames.GetInstant();
+
+		bframes = accumulatorBFrames.GetAcumulated();
+		bframesDelta = accumulatorBFrames.GetInstant();
 	});
 }
 

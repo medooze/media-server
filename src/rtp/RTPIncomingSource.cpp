@@ -131,8 +131,13 @@ void RTPIncomingSource::Reset()
 	width = 0;
 	height = 0;
 	minExtSeqNumSinceLastSR		= RTPPacket::MaxExtSeqNum;
+
 	timestampExtender.Reset();
 	lastReceivedSenderRTPTimestampExtender.Reset();
+	targetBitrate.reset();
+	targetWidth.reset();
+	targetHeight.reset();
+	targetFps.reset();
 }
 
 DWORD RTPIncomingSource::ExtendTimestamp(DWORD timestamp)
@@ -190,7 +195,7 @@ void RTPIncomingSource::Update(QWORD now,DWORD seqNum,DWORD size,const std::vect
 				for (auto& [layerId,layerSource] : layers)
 				{
 					//if found
-					if (layerSource.spatialLayerId == activeLayer.spatialId)
+					if (layerSource.spatialLayerId == activeLayer.spatialId || layerSource.spatialLayerId == LayerInfo::MaxLayerId)
 					{
 						//It is active
 						layerSource.active = true;
@@ -207,23 +212,35 @@ void RTPIncomingSource::Update(QWORD now,DWORD seqNum,DWORD size,const std::vect
 				//If layer was not found on the layer info or ther was no layer info
 				if (!found)
 				{
-					//For each temporal layer
-					for (size_t temporalLayerId = 0; temporalLayerId < activeLayer.targetBitratePerTemporalLayer.size(); ++temporalLayerId)
+					//If we don't have any layer and the vla is coming from the base layer, do not create a new one
+					if (layers.empty() && activeLayer.targetBitratePerTemporalLayer.size() == 1 && activeLayer.spatialId == 0)
 					{
-						//Create new Layer
-						LayerInfo layerInfo(temporalLayerId, activeLayer.spatialId);
-						//Insert layer info if it doesn't exist
-						auto [it, inserted] = layers.try_emplace(layerInfo.GetId(), layerInfo);
-						//Update layer source
-						it->second.Update(now, size);
-						//It is active
-						it->second.active = true;
 						//Get bitrate for temporal layer, in bps
-						it->second.targetBitrate = activeLayer.targetBitratePerTemporalLayer[temporalLayerId] * 1000;
+						this->targetBitrate = activeLayer.targetBitratePerTemporalLayer[0] * 1000;
 						//Set dimensios for the spatial layer
-						it->second.targetWidth = activeLayer.width;
-						it->second.targetHeight = activeLayer.height;
-						it->second.targetFps = activeLayer.fps;
+						this->targetWidth = activeLayer.width;
+						this->targetHeight = activeLayer.height;
+						this->targetFps = activeLayer.fps;
+
+					} else {
+						//For each temporal layer
+						for (size_t temporalLayerId = 0; temporalLayerId < activeLayer.targetBitratePerTemporalLayer.size(); ++temporalLayerId)
+						{
+							//Create new Layer
+							LayerInfo layerInfo(temporalLayerId, activeLayer.spatialId);
+							//Insert layer info if it doesn't exist
+							auto [it, inserted] = layers.try_emplace(layerInfo.GetId(), layerInfo);
+							//Update layer source
+							it->second.Update(now, size);
+							//It is active
+							it->second.active = true;
+							//Get bitrate for temporal layer, in bps
+							it->second.targetBitrate = activeLayer.targetBitratePerTemporalLayer[temporalLayerId] * 1000;
+							//Set dimensios for the spatial layer
+							it->second.targetWidth = activeLayer.width;
+							it->second.targetHeight = activeLayer.height;
+							it->second.targetFps = activeLayer.fps;
+						}
 					}
 				}
 			}

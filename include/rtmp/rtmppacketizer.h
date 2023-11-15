@@ -33,6 +33,8 @@ class RTMPH26xPacketizer : public RTMPPacketizer<DescClass, codec>
 {
 public:
 	virtual std::unique_ptr<VideoFrame> AddFrame(RTMPVideoFrame* videoFrame) override;
+	
+	std::optional<SPSClass> sps;
 };
 
 using RTMPAVCPacketizer = RTMPH26xPacketizer<AVCDescriptor, H264SeqParameterSet, VideoCodec::H264>;
