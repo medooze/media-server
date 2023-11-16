@@ -61,7 +61,7 @@ std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifie
 		allEarlyStartTimeMs.reset();
 		delayMs = std::chrono::milliseconds(0);
 	}
-	else if (lateMs < -updateRefsPacketEarlyThresholdMs)  // Packet early
+	else if (lateMs < updateRefsPacketEarlyThresholdMs)  // Packet early
 	{
 		// Loop to see if all the streams have arrived earlier
 		bool allEarly = std::all_of(frameArrivalInfo.begin(), frameArrivalInfo.end(), 
