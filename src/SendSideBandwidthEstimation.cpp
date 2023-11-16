@@ -122,9 +122,10 @@ void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const st
 	//For each packet
 	for (const auto& feedback : packets)
 	{
-		//Get feedback data
-		auto transportSeqNum	= feedback.first;
-		auto receivedTime	= feedback.second; 
+		//We need to wrap the sequence number as the rtcp reports calculates it as base+counter
+		// which is required to be able to retrieve the packets in increasing order her
+		uint16_t transportSeqNum	= static_cast<uint16_t>(feedback.first);
+		uint64_t receivedTime		= feedback.second; 
 
 		//Get packet
 		auto stat = transportWideSentPacketsStats.Get(transportSeqNum);
@@ -427,7 +428,7 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 	//If rtt increasing
 	if (lastFeedbackDelta > 2000 && delta > 0)
 	{
-		auto prev = targetBitrate;
+		[[maybe_unused]] auto prev = targetBitrate;
 		//Decrease factor
 		double factor = 1 - static_cast<double>(delta) / (delta + rttEstimated * 1000 + kMonitorDuration);
 		//Adapt to rtt slope, accumulatedDelta MUST be possitive
