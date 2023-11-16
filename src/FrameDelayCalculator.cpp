@@ -100,6 +100,9 @@ std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifie
 		
 		// Reduce the delay
 		delayMs -= updateRefsStepPacketEarlyMs;
+		
+		// Restart the latency reduction process
+		allEarlyStartTimeMs.reset();
 	}
 	
 	return std::max(delayMs, std::chrono::milliseconds(0));
