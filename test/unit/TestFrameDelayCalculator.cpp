@@ -25,10 +25,11 @@ public:
 	 * @param framesInfo	The frame arrival info
 	 * @param references 	The expected latencies of the reference time and timestamps againt the first arrived frame
 	 * @param delays	The expected delay to be set for each stream. The first element of the pair is the ssrc of the stream.
+	 *                      If nullptr, the delays wouldn't be checked.
 	 */
 	void TestDelayCalculator(const std::vector<std::tuple<MediaFrame::Type, uint64_t, uint64_t, uint32_t>>& framesInfo, 
 			const std::vector<int64_t>& expectedLatencies, 
-			const std::vector<std::pair<uint64_t, int64_t>>& delays);
+			const std::vector<std::pair<uint64_t, int64_t>>* delays);
 	
 protected:
 	
@@ -44,7 +45,7 @@ protected:
 
 void TestFrameDelayCalculator::TestDelayCalculator(const std::vector<std::tuple<MediaFrame::Type, uint64_t, uint64_t, uint32_t>>& framesInfo,
 						const std::vector<int64_t>& expectedLatencies,
-						const std::vector<std::pair<uint64_t, int64_t>>& expectedDelays)
+						const std::vector<std::pair<uint64_t, int64_t>>* expectedDelays)
 {
 	std::queue<std::pair<RTPPacket::shared, std::chrono::milliseconds>> audioPackets;
 	std::queue<std::pair<RTPPacket::shared, std::chrono::milliseconds>> videoPackets;
@@ -81,7 +82,9 @@ void TestFrameDelayCalculator::TestDelayCalculator(const std::vector<std::tuple<
 	auto latencies = calcLatency(references);
 	
 	ASSERT_EQ(expectedLatencies, latencies);
-	ASSERT_EQ(expectedDelays, delays);
+	
+	if (expectedDelays != nullptr)
+		ASSERT_EQ(*expectedDelays, delays);
 }
 
 
@@ -208,7 +211,7 @@ TEST_F(TestFrameDelayCalculator, TestNormal)
 		{ 2, 156 }, { 2, 169 }, { 2, 161 }, { 2, 165 }
 	};
 	
-	ASSERT_NO_FATAL_FAILURE(TestDelayCalculator(TestData::FramesArrivalInfo, expectedLatencies, expectedDelays));
+	ASSERT_NO_FATAL_FAILURE(TestDelayCalculator(TestData::FramesArrivalInfo, expectedLatencies, &expectedDelays));
 }
 
 TEST_F(TestFrameDelayCalculator, testLatencyReduction)
@@ -317,5 +320,39 @@ TEST_F(TestFrameDelayCalculator, testLatencyReduction)
 		{ 2, 153 }, { 2, 166 }, { 2, 158 }, { 2, 162 }
 	};
 	
-	ASSERT_NO_FATAL_FAILURE(TestDelayCalculator(TestData::FramesArrivalInfo, expectedLatencies, expectedDelays));
+	ASSERT_NO_FATAL_FAILURE(TestDelayCalculator(TestData::FramesArrivalInfo, expectedLatencies, &expectedDelays));
+}
+
+
+TEST_F(TestFrameDelayCalculator, testLatencyReduction2)
+{	
+	{
+		calculator = std::make_unique<FrameDelayCalculator>(10, std::chrono::milliseconds(20));
+		// No reference time change in this case
+		std::vector<int64_t> expectedLatencies = {
+			0
+		};
+
+		ASSERT_NO_FATAL_FAILURE(TestDelayCalculator(TestData::FramesArrivalInfo2, expectedLatencies, nullptr));
+	}
+	
+	{
+		calculator = std::make_unique<FrameDelayCalculator>(10, std::chrono::milliseconds(5));	
+		// There are reference changes due to reducing the threshold (step)
+		std::vector<int64_t> expectedLatencies = {
+			0, -5, -10
+		};
+
+		ASSERT_NO_FATAL_FAILURE(TestDelayCalculator(TestData::FramesArrivalInfo2, expectedLatencies, nullptr));
+	}
+	
+	{
+		calculator = std::make_unique<FrameDelayCalculator>(0, std::chrono::milliseconds(5));
+		// There are more reference changes since we reduce the "late" threshold
+		std::vector<int64_t> expectedLatencies = {
+			0, 2, 5, 0, 1, 3, 6, 1, -4, -9, -7, -12, -6, -6, -5, -4, -3, -8, -6, -5, -4, -4, -9, -8, -4, -3
+		};
+
+		ASSERT_NO_FATAL_FAILURE(TestDelayCalculator(TestData::FramesArrivalInfo2, expectedLatencies, nullptr));
+	}
 }
