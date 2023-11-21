@@ -16,6 +16,7 @@ MediaFrameListenerBridge::MediaFrameListenerBridge(TimeService& timeService,DWOR
 	accumulatorPackets(1000),
 	accumulatorIFrames(1000),
 	accumulatorBFrames(1000),
+	accumulatorPFrames(1000),
 	waited(1000)
 {
 	Debug("-MediaFrameListenerBridge::MediaFrameListenerBridge() [this:%p]\n", this);
@@ -213,6 +214,9 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 			accumulatorBFrames.Update(now.count(), videoFrame->IsBFrame() ? 1 : 0);
 			// Increase iframes
 			accumulatorIFrames.Update(now.count(), videoFrame->IsIntra() ? 1 : 0);
+			
+			bool isPFrame = !(videoFrame->IsIntra() || videoFrame->IsBFrame());
+			accumulatorPFrames.Update(now.count(), isPFrame ? 1 : 0);
 		}
 
 		//Get info
@@ -267,8 +271,6 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 			scheduled = std::max(scheduled, packets.back().scheduled + std::chrono::milliseconds(1));
 		}
 
-		//Get scheduled time in ms
-		uint64_t ms = scheduled.count();
 		//Get frame reception time
 		uint64_t time = frame->GetTime();
 
@@ -276,11 +278,14 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 		numFrames++;
 		totalBytes += frameSize;
 
-		//Increate accumulators
-		accumulatorFrames.Update(ms,1);
+		//Increate accumulators.
+		accumulatorFrames.Update(now.count(),1);
 		//Update bitrate acumulator
-		acumulator.Update(ms,frameSize);
-		//Waiting time
+		acumulator.Update(now.count(),frameSize);
+
+		//Get scheduled time in ms
+		uint64_t ms = scheduled.count();
+		//Waiting time uses scheduled time
 		waited.Update(ms, ms>time ? ms-time : 0);
 		//Get bitrate in bps
 		bitrate = acumulator.GetInstant()*8;
@@ -452,6 +457,9 @@ void MediaFrameListenerBridge::UpdateAsync(std::function<void(std::chrono::milli
 		
 		bframes = accumulatorBFrames.GetAcumulated();
 		bframesDelta = accumulatorBFrames.GetInstant();
+		
+		pframes = accumulatorPFrames.GetAcumulated();
+		pframesDelta = accumulatorPFrames.GetInstant();
 	}, callback);
 }
 
@@ -477,6 +485,9 @@ void MediaFrameListenerBridge::Update(QWORD)
 
 		bframes = accumulatorBFrames.GetAcumulated();
 		bframesDelta = accumulatorBFrames.GetInstant();
+		
+		pframes = accumulatorPFrames.GetAcumulated();
+		pframesDelta = accumulatorPFrames.GetInstant();
 	});
 }
 
