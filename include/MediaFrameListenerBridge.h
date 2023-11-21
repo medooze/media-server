@@ -98,11 +98,14 @@ public:
 	QWORD iframesDelta	= 0;
 	QWORD bframes		= 0;
 	QWORD bframesDelta	= 0;
+	QWORD pframes		= 0;
+	QWORD pframesDelta	= 0;
 	Acumulator<uint32_t, uint64_t> acumulator;
 	Acumulator<uint32_t, uint64_t> accumulatorFrames;
 	Acumulator<uint32_t, uint64_t> accumulatorPackets;
 	Acumulator<uint32_t, uint64_t> accumulatorIFrames;
-	Acumulator<uint32_t, uint64_t> accumulatorBFrames;	
+	Acumulator<uint32_t, uint64_t> accumulatorBFrames;
+	Acumulator<uint32_t, uint64_t> accumulatorPFrames;
 	
 	std::chrono::milliseconds lastSent = 0ms;
 	
