@@ -78,6 +78,8 @@ public:
 
 	DWORD ssrc = 0;
 	DWORD extSeqNum = 0;
+	DWORD audioCodec = UINT32_MAX;
+	DWORD videoCodec = UINT32_MAX;
 	bool  smooth = true;
 	std::set<RTPIncomingMediaStream::Listener*> listeners;
         std::set<MediaFrame::Listener::shared> mediaFrameListeners;

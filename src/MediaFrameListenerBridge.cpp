@@ -235,7 +235,8 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 				//get audio frame
 				AudioFrame* audio = (AudioFrame*)frame.get();
 				//Get codec
-				codec = audio->GetCodec();
+				audioCodec = audio->GetCodec();
+				codec = audioCodec;
 				//Get data
 				frameData = audio->GetData();
 				//Get size
@@ -249,7 +250,8 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 				//get Video frame
 				VideoFrame* video = (VideoFrame*)frame.get();
 				//Get codec
-				codec = video->GetCodec();
+				videoCodec = video->GetCodec();
+				codec = videoCodec;
 				//Get data
 				frameData = video->GetData();
 				//Get size
