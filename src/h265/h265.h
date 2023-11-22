@@ -478,6 +478,9 @@ public:
 		
 		return true;
 	}
+	
+	uint32_t GetSliceType() const { return sliceType; }
+	
 
 	
 private:
