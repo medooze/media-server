@@ -78,8 +78,6 @@ public:
 
 	DWORD ssrc = 0;
 	DWORD extSeqNum = 0;
-	DWORD audioCodec = UINT32_MAX;
-	DWORD videoCodec = UINT32_MAX;
 	bool  smooth = true;
 	std::set<RTPIncomingMediaStream::Listener*> listeners;
         std::set<MediaFrame::Listener::shared> mediaFrameListeners;
@@ -102,6 +100,9 @@ public:
 	QWORD bframesDelta	= 0;
 	QWORD pframes		= 0;
 	QWORD pframesDelta	= 0;
+	DWORD audioCodec = UINT32_MAX;
+	DWORD videoCodec = UINT32_MAX;
+
 	Acumulator<uint32_t, uint64_t> acumulator;
 	Acumulator<uint32_t, uint64_t> accumulatorFrames;
 	Acumulator<uint32_t, uint64_t> accumulatorPackets;
