@@ -446,9 +446,7 @@ class H265SliceHeader
 {
 public:
 
-	bool Decode(const BYTE* buffer, DWORD bufferSize, uint8_t nalUnitType, 
-	            const H265PictureParameterSet& pps,
-		    const H265SeqParameterSet& sps)
+	bool Decode(const BYTE* buffer, DWORD bufferSize, uint8_t nalUnitType, const H265PictureParameterSet& pps, const H265SeqParameterSet& sps)
 	{	
 		BitReader r(buffer, bufferSize);
 		
@@ -479,9 +477,17 @@ public:
 		return true;
 	}
 	
-	uint32_t GetSliceType() const { return sliceType; }
+	uint8_t GetFirstSliceSegmentInPicFlag() const { return firstSliceSegmentInPicFlag; }
 	
-
+	uint8_t GetNoOutputOfPriorPicsFlag() const { return noOutputOfPriorPicsFlag; }	
+	
+	uint32_t GetSlicePpsId() const { return slicePpsId; }
+	
+	uint8_t GetDependentSliceSegmentFlag() const { return dependentSliceSegmentFlag; }
+	
+	uint32_t GetSliceSegmentAddress() const { return sliceSegmentAddress; }
+	
+	uint32_t GetSliceType() const { return sliceType; }
 	
 private:
 	uint8_t firstSliceSegmentInPicFlag = 0;
