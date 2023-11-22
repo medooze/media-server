@@ -358,6 +358,8 @@ public:
 
 	DWORD GetWidth()	{ return pic_width_in_luma_samples - pic_conf_win.left_offset -	pic_conf_win.right_offset; }
 	DWORD GetHeight()	{ return pic_height_in_luma_samples	- pic_conf_win.top_offset -	pic_conf_win.bottom_offset;	}
+	
+	uint8_t GetLog2PicSizeInCtbsY() const { return log2PicSizeInCtbsY; }
 
 	void Dump()	const
 	{
@@ -381,7 +383,7 @@ private:
 	BYTE			max_sub_layers_minus1 =	0;
 	BYTE			ext_or_max_sub_layers_minus1 = 0;
 	BYTE			temporal_id_nesting_flag = 0;
-	H265ProfileTierLevel profile_tier_level;
+	H265ProfileTierLevel 	profile_tier_level;
 	DWORD			pic_width_in_luma_samples =	0;
 	DWORD			pic_height_in_luma_samples = 0;
 	bool			conformance_window_flag	= false;
@@ -390,7 +392,18 @@ private:
 	BYTE			seq_parameter_set_id = 0;
 	BYTE			chroma_format_idc =	0;
 	bool			separate_colour_plane_flag = false;
+	
+	uint32_t 		bit_depth_luma_minus8 = 0;
+	uint32_t 		bit_depth_chroma_minus8 = 0;
+	uint32_t 		log2_max_pic_order_cnt_lsb_minus4 = 0;
+	uint8_t 		sps_sub_layer_ordering_info_present_flag = 0;
+	uint32_t 		log2_min_luma_coding_block_size_minus3 = 0;
+	uint32_t 		log2_diff_max_min_luma_coding_block_size = 0;
+	uint32_t 		log2_min_luma_transform_block_size_minus2 = 0;
+	uint32_t 		log2_diff_max_min_luma_transform_block_size = 0;	
 
+	// Calculated value basing one raw fields
+	uint8_t 		log2PicSizeInCtbsY = 0;
 };
 
 class H265PictureParameterSet
@@ -412,6 +425,9 @@ public:
 		Debug("H265PicParameterSet/]\n");
 	}
 
+	uint8_t GetNumExtraSliceHeaderBits() const { return num_extra_slice_header_bits; }
+	bool GetDependentSliceSegmentsEnabledFlag() const { return dependent_slice_segments_enabled_flag; }
+	
 private:
 	BYTE pps_id = 0; // [0, 63]
 	BYTE sps_id = 0; // [0, 15]
@@ -422,7 +438,55 @@ private:
 	bool cabac_init_present_flag = false;
 
 	BYTE num_ref_idx_l0_default_active_minus1 = 0; // [0, 14] 
-	BYTE num_ref_idx_l1_default_active_minus1 = 0; // [0, 14] 
+	BYTE num_ref_idx_l1_default_active_minus1 = 0; // [0, 14]
+};
+
+
+class H265SliceHeader
+{
+public:
+
+	bool Decode(const BYTE* buffer, DWORD bufferSize, uint8_t nalUnitType, 
+	            const H265PictureParameterSet& pps,
+		    const H265SeqParameterSet& sps)
+	{	
+		BitReader r(buffer, bufferSize);
+		
+		firstSliceSegmentInPicFlag = r.Get(1); CHECK(r);
+		if (nalUnitType >= HEVC_RTP_NALU_Type::BLA_W_LP && nalUnitType <= HEVC_RTP_NALU_Type::RSV_IRAP_VCL23)
+		{
+			noOutputOfPriorPicsFlag = r.Get(1); CHECK(r);
+		}
+		slicePpsId = ExpGolombDecoder::Decode(r); CHECK(r);
+		
+		if (!firstSliceSegmentInPicFlag)
+		{
+			if (pps.GetDependentSliceSegmentsEnabledFlag())
+			{
+				dependentSliceSegmentFlag = r.Get(1); CHECK(r);
+			}
+			
+			sliceSegmentAddress = r.Get(sps.GetLog2PicSizeInCtbsY()); CHECK(r);
+		}
+		
+		if (!dependentSliceSegmentFlag)
+		{
+			r.Get(pps.GetNumExtraSliceHeaderBits()); CHECK(r);
+			
+			sliceType =  ExpGolombDecoder::Decode(r); CHECK(r);
+		}
+		
+		return true;
+	}
+
+	
+private:
+	uint8_t firstSliceSegmentInPicFlag = 0;
+	uint8_t noOutputOfPriorPicsFlag = 0;
+	uint32_t slicePpsId = 0;
+	uint8_t dependentSliceSegmentFlag = 0;
+	uint32_t sliceSegmentAddress = 0;
+	uint32_t sliceType = 0;
 };
 
 #undef CHECK
