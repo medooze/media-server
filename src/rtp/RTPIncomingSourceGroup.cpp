@@ -97,7 +97,8 @@ int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet, DWORD siz
 		if (lost) remoteRateEstimator.UpdateLost(media.ssrc,lost,now);
 	}
 	
-	codec = packet->GetCodec();
+	this->codec = packet->GetCodec();
+	Debug(">RTPIncomingSourceGroup::AddPacket() | [now:%lld, codec:%u]\n",now,this->codec);
 
 	//Add to packet queue
 	if (!packets.Add(packet))
@@ -218,7 +219,10 @@ void RTPIncomingSourceGroup::ResetMaxWaitTime()
 void RTPIncomingSourceGroup::SetRTT(DWORD rtt, QWORD now)
 {
 	//Store rtt
+	rtt = 111;
 	this->rtt = rtt;
+	Debug("-RTPIncomingSourceGroup::SetRTT() | [rtt %u CHANGING TO 111]\n",rtt);
+	
 	//If the max wait time is not overriden
 	if (!maxWaitingTime.has_value())
 	{
