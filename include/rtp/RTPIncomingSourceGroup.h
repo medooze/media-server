@@ -73,6 +73,7 @@ public:
 	long double avgWaitedTime = 0;
 	
 	QWORD lastUpdated = 0;
+	DWORD codec = UINT32_MAX;
 
 	//TODO: FIx
 	RemoteRateEstimator remoteRateEstimator;

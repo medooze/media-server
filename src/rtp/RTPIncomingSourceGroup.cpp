@@ -97,6 +97,8 @@ int RTPIncomingSourceGroup::AddPacket(const RTPPacket::shared &packet, DWORD siz
 		if (lost) remoteRateEstimator.UpdateLost(media.ssrc,lost,now);
 	}
 	
+	codec = packet->GetCodec();
+
 	//Add to packet queue
 	if (!packets.Add(packet))
 		//Rejected packet
