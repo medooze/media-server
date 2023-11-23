@@ -218,7 +218,6 @@ void RTPIncomingSourceGroup::SetRTT(DWORD rtt, QWORD now)
 {
 	//Store rtt
 	this->rtt = rtt;
-	
 	//If the max wait time is not overriden
 	if (!maxWaitingTime.has_value())
 	{
