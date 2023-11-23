@@ -852,8 +852,8 @@ void RTMPConnection::ProcessControlMessage(DWORD streamId,BYTE type,RTMPObject* 
 					
 					//Check if a stream has been created with that id
 					pthread_mutex_lock(&mutex);
-					for (auto it=streams.begin(); it!=streams.end(); ++it)
-						it->second->SetRTT(rtt);
+					for (auto const &it : streams)
+						it.second->SetRTT(rtt);
 					pthread_mutex_unlock(&mutex);
 					
 					Log("PingResponse [ping:%d,delay:%d]\n",ping,rtt);
