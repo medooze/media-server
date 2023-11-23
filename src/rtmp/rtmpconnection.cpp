@@ -844,12 +844,21 @@ void RTMPConnection::ProcessControlMessage(DWORD streamId,BYTE type,RTMPObject* 
 					SendControlMessage(RTMPMessage::UserControlMessage,RTMPUserControlMessage::CreatePingResponse(event->GetEventData()));
 					break;
 				case RTMPUserControlMessage::PingResponse:
+				{
 					//Get response
 					DWORD ping = event->GetEventData();
 					//Get roundtrip delay
 					rtt = getDifTime(&startTime)/1000-ping;
+					
+					//Check if a stream has been created with that id
+					pthread_mutex_lock(&mutex);
+					for (auto it=streams.begin(); it!=streams.end(); ++it)
+						it->second->SetRTT(rtt);
+					pthread_mutex_unlock(&mutex);
+					
 					Log("PingResponse [ping:%d,delay:%d]\n",ping,rtt);
 					break;
+				}
 
 			}
 			break;
@@ -1057,6 +1066,7 @@ void RTMPConnection::ProcessCommandMessage(DWORD streamId,RTMPCommandMessage* cm
 		}
 		
 		//Add to the streams vector
+		stream->SetRTT(rtt);
 		streams[mediaStreamId] = stream;
 		
 		//Unlock mutex
