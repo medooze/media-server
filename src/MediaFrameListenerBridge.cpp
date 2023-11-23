@@ -222,7 +222,6 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 		//Get info
 		const MediaFrame::RtpPacketizationInfo& info = frame->GetRtpPacketizationInfo();
 
-		DWORD codec = 0;
 		const BYTE *frameData = NULL;
 		DWORD frameSize = 0;
 		QWORD rate = 1000;
@@ -235,8 +234,7 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 				//get audio frame
 				AudioFrame* audio = (AudioFrame*)frame.get();
 				//Get codec
-				audioCodec = audio->GetCodec();
-				codec = audioCodec;
+				codec = audio->GetCodec();
 				//Get data
 				frameData = audio->GetData();
 				//Get size
@@ -250,8 +248,7 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 				//get Video frame
 				VideoFrame* video = (VideoFrame*)frame.get();
 				//Get codec
-				videoCodec = video->GetCodec();
-				codec = videoCodec;
+				codec = video->GetCodec();
 				//Get data
 				frameData = video->GetData();
 				//Get size

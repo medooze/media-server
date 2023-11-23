@@ -100,8 +100,7 @@ public:
 	QWORD bframesDelta	= 0;
 	QWORD pframes		= 0;
 	QWORD pframesDelta	= 0;
-	DWORD audioCodec = UINT32_MAX;
-	DWORD videoCodec = UINT32_MAX;
+	DWORD codec			= UINT32_MAX;
 
 	Acumulator<uint32_t, uint64_t> acumulator;
 	Acumulator<uint32_t, uint64_t> accumulatorFrames;
