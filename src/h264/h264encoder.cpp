@@ -89,9 +89,13 @@ H264Encoder::H264Encoder(const Properties& properties) : frame(VideoCodec::H264)
 
 	//VBV buffer size in frames according to the bitrate
 	bufferSizeInFrames = properties.GetProperty("h264.buffersize_in_frames", streaming ? 3 : 1);
+	maxBitrateMultiplier = properties.GetProperty("h264.max_bitrate_multiplier", 1.0F);
 
 	//Use annex b
 	annexb = properties.GetProperty("h264.annexb",false);
+
+	qMin = properties.GetProperty("h264.qmin", qMin);
+	qMax = properties.GetProperty("h264.qmax", qMax);
 
 	//Disable sharing buffer on clone
 	frame.DisableSharedBuffer();
@@ -157,7 +161,7 @@ int H264Encoder::SetFrameRate(int frames,int kbits,int intraPeriod)
 		//Reconfig parameters -> FPS is not allowed to be reconfigured
 		params.i_keyint_max         = this->intraPeriod ;
 		params.rc.i_bitrate         = bitrate;
-		params.rc.i_vbv_max_bitrate = bitrate;
+		params.rc.i_vbv_max_bitrate = bitrate * maxBitrateMultiplier;
 		params.rc.i_vbv_buffer_size = bufferSizeInFrames * bitrate / fps;
 		
 		//Reconfig
@@ -205,8 +209,16 @@ int H264Encoder::OpenCodec()
 	params.i_keyint_max         = intraPeriod;
 	params.i_frame_reference    = 2;
 	params.rc.i_rc_method	    = X264_RC_ABR;
+	//param->rc.i_rc_method	    = X264_RC_CRF;
+	//param->rc.f_rf_constant   = 23;
+
 	params.rc.i_bitrate         = bitrate;
-	params.rc.i_vbv_max_bitrate = bitrate;
+	params.rc.i_vbv_max_bitrate = bitrate * maxBitrateMultiplier;
+	if (qMin) 
+		params.rc.i_qp_min	    = qMin;
+	if (qMax)
+		params.rc.i_qp_max	    = qMax;
+	params.rc.i_aq_mode	    = X264_AQ_AUTOVARIANCE_BIASED;
 	if (!streaming)
 	{
 		params.rc.b_stat_write      = 0;
@@ -233,7 +245,7 @@ int H264Encoder::OpenCodec()
 	params.rc.b_mb_tree		= 0;
 	params.i_sync_lookahead		= 0;
 	params.i_scenecut_threshold	= 0;
-	params.analyse.i_subpel_refine	= 5; //Subpixel motion estimation and mode decision :3 qpel (medim:6, ultrafast:1)
+	params.analyse.i_subpel_refine	= 6; //Subpixel motion estimation and mode decision :3 qpel (medim:6, ultrafast:1)
 	params.analyse.i_weighted_pred	= X264_WEIGHTP_NONE;
 	params.analyse.i_me_method	= X264_ME_UMH;
 	params.i_bframe			= 0;
