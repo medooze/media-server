@@ -227,13 +227,14 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 		QWORD rate = 1000;
 
 		//Depending on the type
-		switch(frame->GetType())
+		type = frame->GetType();
+		switch(type)
 		{
 			case MediaFrame::Audio:
 			{
 				//get audio frame
 				AudioFrame* audio = (AudioFrame*)frame.get();
-				//Get codec
+				// Note: This may truncate UNKNOWN but we do that many places elsewhere treating -1 == 0xFF == UNKNOWN so being consistent here as well
 				codec = audio->GetCodec();
 				//Get data
 				frameData = audio->GetData();
@@ -247,7 +248,7 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 			{
 				//get Video frame
 				VideoFrame* video = (VideoFrame*)frame.get();
-				//Get codec
+				// Note: This may truncate UNKNOWN but we do that many places elsewhere treating -1 == 0xFF == UNKNOWN so being consistent here as well
 				codec = video->GetCodec();
 				//Get data
 				frameData = video->GetData();

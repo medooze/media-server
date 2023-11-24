@@ -100,7 +100,9 @@ public:
 	QWORD bframesDelta	= 0;
 	QWORD pframes		= 0;
 	QWORD pframesDelta	= 0;
-	DWORD codec			= UINT32_MAX;
+
+	MediaFrame::Type type = MediaFrame::Type::Unknown;
+	BYTE codec = -1;
 
 	Acumulator<uint32_t, uint64_t> acumulator;
 	Acumulator<uint32_t, uint64_t> accumulatorFrames;
