@@ -333,7 +333,7 @@ TEST_F(TestFrameDelayCalculator, testLatencyReduction2)
 			0
 		};
 
-		ASSERT_NO_FATAL_FAILURE(TestDelayCalculator(TestData::FramesArrivalInfo2, expectedLatencies, nullptr));
+		ASSERT_NO_FATAL_FAILURE(TestDelayCalculator(TestData::FramesArrivalInfoLargeAVDesync, expectedLatencies, nullptr));
 	}
 	
 	{
@@ -343,7 +343,7 @@ TEST_F(TestFrameDelayCalculator, testLatencyReduction2)
 			0, -5, -10
 		};
 
-		ASSERT_NO_FATAL_FAILURE(TestDelayCalculator(TestData::FramesArrivalInfo2, expectedLatencies, nullptr));
+		ASSERT_NO_FATAL_FAILURE(TestDelayCalculator(TestData::FramesArrivalInfoLargeAVDesync, expectedLatencies, nullptr));
 	}
 	
 	{
@@ -353,6 +353,6 @@ TEST_F(TestFrameDelayCalculator, testLatencyReduction2)
 			0, 2, 5, 0, 1, 3, 6, 1, -4, -9, -7, -12, -6, -6, -5, -4, -3, -8, -6, -5, -4, -4, -9, -8, -4, -3
 		};
 
-		ASSERT_NO_FATAL_FAILURE(TestDelayCalculator(TestData::FramesArrivalInfo2, expectedLatencies, nullptr));
+		ASSERT_NO_FATAL_FAILURE(TestDelayCalculator(TestData::FramesArrivalInfoLargeAVDesync, expectedLatencies, nullptr));
 	}
 }

@@ -11,7 +11,7 @@ namespace TestData
 	
 extern std::vector<std::tuple<MediaFrame::Type, uint64_t, uint64_t, uint32_t>> FramesArrivalInfo;
 
-extern std::vector<std::tuple<MediaFrame::Type, uint64_t, uint64_t, uint32_t>> FramesArrivalInfo2;
+extern std::vector<std::tuple<MediaFrame::Type, uint64_t, uint64_t, uint32_t>> FramesArrivalInfoLargeAVDesync;
 	
 }
 

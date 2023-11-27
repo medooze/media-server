@@ -53,18 +53,18 @@ std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifie
 	std::chrono::milliseconds delayMs(-lateMs);
 	auto updateRefsPacketEarlyThresholdMs = -updateRefsStepPacketEarlyMs.count();
 	
+	bool allEarly = false;
 	if (lateMs > updateRefsPacketLateThresholdMs)  // Packet late
 	{
 		refTime = now;
 		refTimestamp = unifiedTs;
 		
-		allEarlyStartTimeMs.reset();
 		delayMs = std::chrono::milliseconds(0);
 	}
 	else if (lateMs < updateRefsPacketEarlyThresholdMs)  // Packet early
 	{
 		// Loop to see if all the streams have arrived earlier
-		bool allEarly = std::all_of(frameArrivalInfo.begin(), frameArrivalInfo.end(), 
+		allEarly = std::all_of(frameArrivalInfo.begin(), frameArrivalInfo.end(), 
 			[&](const auto& info) {
 				if (info.first == streamIdentifier) return true;
 							
@@ -73,21 +73,18 @@ std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifie
 				
 				return frameLateMs < updateRefsPacketEarlyThresholdMs;
 			});
+	}
 			
-		if (allEarly)
-		{
-			if (!allEarlyStartTimeMs.has_value())
-				allEarlyStartTimeMs = now;
-		}
-		else
-		{
-			allEarlyStartTimeMs.reset();
-		}
+	if (allEarly)
+	{
+		if (!allEarlyStartTimeMs.has_value())
+			allEarlyStartTimeMs = now;
 	}
 	else
 	{
 		allEarlyStartTimeMs.reset();
 	}
+
 
 	frameArrivalInfo[streamIdentifier] = {now, unifiedTs};
 	
@@ -101,7 +98,9 @@ std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifie
 		// Reduce the delay
 		delayMs -= updateRefsStepPacketEarlyMs;
 		
-		// Restart the latency reduction process
+		// Restart the latency reduction process to have a max reduction rate
+		// at 20ms per second as we don't expect the latency would be too large,
+		// which normall would be below 1 second.
 		allEarlyStartTimeMs.reset();
 	}
 	
