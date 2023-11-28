@@ -314,22 +314,23 @@ int VideoEncoderWorker::Encode()
 		//Set sending time of previous frame
 		getUpdDifTime(&prev);
 		
+/*
 		//Calculate sending times based on bitrate
-		DWORD sendingTime = videoFrame->GetLength()*8/current;
+		DWORD sendingTime = videoFrame->GetLength()*8/bitrate;
 
 		//Adjust to maximum time
 		if (sendingTime>frameTime/1000)
 			//Cap it
 			sendingTime = frameTime/1000;
 
-//                //If it was a I frame
-//                if (videoFrame->IsIntra())
-//			//Clean rtp rtx buffer
-//			FlushRTXPackets();
-//
-//		//Send it smoothly
-//		SmoothFrame(videoFrame,sendingTime);
+                //If it was a I frame
+                if (videoFrame->IsIntra())
+			//Clean rtp rtx buffer
+			FlushRTXPackets();
 
+		//Send it smoothly
+		SmoothFrame(videoFrame,sendingTime);
+*/
 
 		//Dump statistics
 		if (num && ((num%fps*10)==0))
