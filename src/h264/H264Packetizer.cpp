@@ -84,8 +84,8 @@ void H264Packetizer::OnNal(VideoFrame& frame, BufferReader& reader, std::optiona
 				if (localSps->Decode(nalData, nalSize - 1))
 				{
 					//Set dimensions
-					frame.SetWidth(sps->GetWidth());
-					frame.SetHeight(sps->GetHeight());
+					frame.SetWidth(localSps->GetWidth());
+					frame.SetHeight(localSps->GetHeight());
 					
 					sps = std::move(localSps);
 				}
