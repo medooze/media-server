@@ -863,7 +863,7 @@ void RTPBundleTransport::onTimer(std::chrono::milliseconds now)
 			//Fire the timer again for timing out the transaction
 			iceTimer->Again(ts + iceTimeout - now);
 			//Done
-			return;
+			break;
 		}
 		//Get username and remote address of ice candidate
 		auto& [username,remote] = it->second;
@@ -873,7 +873,7 @@ void RTPBundleTransport::onTimer(std::chrono::milliseconds now)
 			
 		//If not found
 		if (cconnectionIterator==connections.end())
-			break;
+			continue;
 			
 		//Get ice connection
 		auto connection = cconnectionIterator->second;
@@ -883,7 +883,7 @@ void RTPBundleTransport::onTimer(std::chrono::milliseconds now)
 			
 		//Check we have it
 		if (candidateIterator==candidates.end())
-			break;
+			continue;
 		
 		//Get it
 		ICERemoteCandidate* candidate = &candidateIterator->second;
