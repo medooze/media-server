@@ -55,7 +55,10 @@ private:
 	float ipratio = -1.0F;
 	float ratetol = 1.0F;
 	int bufferSizeInFrames = 1;
+	float maxBitrateMultiplier = 1;
 	int threads = 0;
+	int qMin = 0;
+	int qMax = 0;
 };
 
 #endif 
