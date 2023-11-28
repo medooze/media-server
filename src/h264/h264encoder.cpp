@@ -160,6 +160,7 @@ int H264Encoder::SetFrameRate(int frames,int kbits,int intraPeriod)
 		//UltraDebug("-H264Encoder::SetFrameRate() | reconfig x264 encoder\n");
 		//Reconfig parameters -> FPS is not allowed to be reconfigured
 		params.i_keyint_max         = this->intraPeriod ;
+		params.i_keyint_min	    = this->intraPeriod;
 		params.rc.i_bitrate         = bitrate;
 		params.rc.i_vbv_max_bitrate = bitrate * maxBitrateMultiplier;
 		params.rc.i_vbv_buffer_size = bufferSizeInFrames * bitrate / fps;
@@ -207,6 +208,7 @@ int H264Encoder::OpenCodec()
 
 	// Set parameters
 	params.i_keyint_max         = intraPeriod;
+	params.i_keyint_min	    = intraPeriod;
 	params.i_frame_reference    = 2;
 	params.rc.i_rc_method	    = X264_RC_ABR;
 	//param->rc.i_rc_method	    = X264_RC_CRF;
@@ -224,6 +226,10 @@ int H264Encoder::OpenCodec()
 		params.rc.b_stat_write      = 0;
 		params.b_intra_refresh	    = 1;
 	}
+	params.b_deblocking_filter = 1;
+	params.i_deblocking_filter_alphac0 = -2;
+	params.i_deblocking_filter_beta = 2;
+
 	params.rc.i_vbv_buffer_size = bufferSizeInFrames * bitrate / fps;
 	params.rc.f_rate_tolerance  = ratetol;
 
