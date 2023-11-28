@@ -170,11 +170,9 @@ int VideoEncoderWorker::Encode()
 	if (!input->StartVideoCapture(width,height,fps))
 		return Error("Couldn't set video capture\n");
 
-	//Start at 80%
-	int current = bitrate*0.8;
 
-	//Send at higher bitrate first frame, but skip frames after that so sending bitrate is kept
-	videoEncoder->SetFrameRate(fps,current*5,intraPeriod);
+	//Set bitrate
+	videoEncoder->SetFrameRate(fps,bitrate,intraPeriod);
 
 	//No wait for first
 	QWORD frameTime = 0;
@@ -211,7 +209,7 @@ int VideoEncoderWorker::Encode()
 			//Create encoder again
 			videoEncoder.reset(VideoCodecFactory::CreateEncoder(codec, properties));
 			//Reset bitrate
-			videoEncoder->SetFrameRate(fps,current,intraPeriod);
+			videoEncoder->SetFrameRate(fps,bitrate,intraPeriod);
 			//Set on the encoder
 			videoEncoder->SetSize(width,height);
 		}
@@ -229,42 +227,6 @@ int VideoEncoderWorker::Encode()
 				//Update last FPU
 				getUpdDifTime(&lastFPU);
 			}
-		}
-		//Calculate target bitrate
-		int target = current;
-
-		//Check temporal limits for estimations
-		if (bitrateAcu.IsInWindow())
-		{
-			//Get real sent bitrate during last second and convert to kbits
-			DWORD instant = bitrateAcu.GetInstantAvg()/1000;
-			//If we are in quarentine
-			if (bitrateLimitCount)
-				//Limit sending bitrate
-				target = bitrateLimit;
-			//Check if sending below limits
-			else if (instant<bitrate)
-				//Increase a 8% each second or fps kbps
-				target += (DWORD)(target*0.08/fps)+1;
-		}
-
-		//Check target bitrate agains max conf bitrate
-		if (target>bitrate*1.2)
-			//Set limit to max bitrate allowing a 20% overflow so instant bitrate can get closer to target
-			target = bitrate*1.2;
-
-		//Check limits counter
-		if (bitrateLimitCount>0)
-			//One frame less of limit
-			bitrateLimitCount--;
-
-		//Check if we have a new bitrate
-		if (target && target!=current)
-		{
-			//Reset bitrate
-			videoEncoder->SetFrameRate(fps,target,intraPeriod);
-			//Upate current
-			current = target;
 		}
 
 		//Procesamos el frame
@@ -314,22 +276,11 @@ int VideoEncoderWorker::Encode()
 				overslept = 0;
 		}
 		
-		//If first
-		if (!frameTime)
-		{
-			//Set frame time, slower
-			frameTime = 5*1E6/fps;
-			//Restore frame rate
-			videoEncoder->SetFrameRate(fps,current,intraPeriod);
-		} else {
-			//Set frame time
-			frameTime = 1E6/fps;
-		}
+		//Set frame time
+		frameTime = 1E6/fps;
 
 		//Add frame size in bits to bitrate calculator
 		bitrateAcu.Update(getDifTime(&first)/1000,videoFrame->GetLength()*8);
-
-		
 		
 		//Get now
 		auto now = getDifTime(&first)/1000;
@@ -342,7 +293,7 @@ int VideoEncoderWorker::Encode()
 		videoFrame->SetDuration(frameTime*videoFrame->GetClockRate()/1E6);
 
 		//Set target bitrate and fps
-		videoFrame->SetTargetBitrate(target);
+		videoFrame->SetTargetBitrate(bitrate);
 		videoFrame->SetTargetFps(fps);
 
 		//Lock
