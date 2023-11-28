@@ -25,6 +25,9 @@ protected:
 	bool noPPSInFrame = true;
 	bool noSPSInFrame = true;
 	bool noVPSInFrame = true;
+	
+	std::unique_ptr<H265PictureParameterSet> pps;
+	std::unique_ptr<H265SeqParameterSet> sps;
 };
 
 #endif // H265PACKETIZER_H

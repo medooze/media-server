@@ -293,9 +293,35 @@ bool H265SeqParameterSet::Decode(const BYTE* buffer,DWORD bufferSize)
 		pic_conf_win.bottom_offset = ExpGolombDecoder::Decode(r) *	vert_mult;
 	}
 
+	CHECK(r); bit_depth_luma_minus8 = ExpGolombDecoder::Decode(r); 
+	CHECK(r); bit_depth_chroma_minus8 = ExpGolombDecoder::Decode(r);
+	CHECK(r); log2_max_pic_order_cnt_lsb_minus4 = ExpGolombDecoder::Decode(r);
+	CHECK(r); sps_sub_layer_ordering_info_present_flag = r.Get(1);
+	
+	for (size_t i = (sps_sub_layer_ordering_info_present_flag ? 0 : max_sub_layers_minus1);
+	     i <= max_sub_layers_minus1; i++)
+	{
+		CHECK(r); ExpGolombDecoder::Decode(r);  // sps_max_dec_pic_buffering_minus1[ i ]
+		CHECK(r); ExpGolombDecoder::Decode(r);  // sps_max_num_reorder_pics[ i ]
+		CHECK(r); ExpGolombDecoder::Decode(r);  // sps_max_latency_increase_plus1[ i ]
+	}
+	
+	CHECK(r); log2_min_luma_coding_block_size_minus3 = ExpGolombDecoder::Decode(r);
+	CHECK(r); log2_diff_max_min_luma_coding_block_size = ExpGolombDecoder::Decode(r);
+	CHECK(r); log2_min_luma_transform_block_size_minus2 = ExpGolombDecoder::Decode(r);
+	CHECK(r); log2_diff_max_min_luma_transform_block_size = ExpGolombDecoder::Decode(r);
+
 	// skip all following SPS element
 	//Free memory
 	free(aux);
+	
+	// Calculate log2PicSizeInCtbsY
+	auto MinCbLog2SizeY = log2_min_luma_coding_block_size_minus3 + 3;
+	auto CtbLog2SizeY = MinCbLog2SizeY + log2_diff_max_min_luma_coding_block_size;
+	auto CtbSizeY = 1 << CtbLog2SizeY;	
+	auto PicWidthInCtbsY = ceil(pic_width_in_luma_samples / double(CtbSizeY));
+	log2PicSizeInCtbsY = std::ceil(log2(PicWidthInCtbsY));
+	
 	//OK
 	return !r.Error();
 }

@@ -80,12 +80,14 @@ void H264Packetizer::OnNal(VideoFrame& frame, BufferReader& reader, std::optiona
 
 			//Parse sps
 			{
-				sps = std::make_unique<H264SeqParameterSet>();
-				if (sps->Decode(nalData, nalSize - 1))
+				auto localSps = std::make_unique<H264SeqParameterSet>();
+				if (localSps->Decode(nalData, nalSize - 1))
 				{
 					//Set dimensions
 					frame.SetWidth(sps->GetWidth());
 					frame.SetHeight(sps->GetHeight());
+					
+					sps = std::move(localSps);
 				}
 			}
 			return;
