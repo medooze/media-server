@@ -11,7 +11,7 @@ class FrameDelayCalculator
 {
 public:
 
-	FrameDelayCalculator(int aUpdateRefsPacketEarlyThresholdMs, int aUpdateRefsPacketLateThresholdMs, std::chrono::milliseconds aUpdateRefsStepPacketEarlyMs);
+	FrameDelayCalculator(int aUpdateRefsPacketLateThresholdMs, std::chrono::milliseconds aUpdateRefsStepPacketEarlyMs);
 	
 	/**
 	 * Calculate the dispatch delay for the arrived frame
@@ -40,15 +40,15 @@ private:
 	// The following thresholds are checking the offsets of arrival time with regard to the previously
 	// scheduled time.
 	
-	// Controls the stability of the dispatching delay.
-	int updateRefsPacketEarlyThresholdMs = 0;	
 	// Controls how accurate the a/v sync. Smaller means more in sync. Must >= 0. 
 	int updateRefsPacketLateThresholdMs = 0;
 	// Controls the latency reduction speed
 	std::chrono::milliseconds updateRefsStepPacketEarlyMs {0};
 	 
 	bool initialized = false;
-	bool reducingLatency = false;
+	
+	// The start time when all streams arrive early. If packets become late, this time will be reset.
+	std::optional<std::chrono::milliseconds> allEarlyStartTimeMs;
 	
 	std::chrono::milliseconds refTime {0};
 	uint64_t refTimestamp = 0;
