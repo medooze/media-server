@@ -19,7 +19,7 @@ void H264Packetizer::EmitNal(VideoFrame& frame, BufferReader nal)
 	H26xPacketizer::EmitNal(frame, nal, fuPrefix, 1);
 }
 
-void H264Packetizer::OnNal(VideoFrame& frame, BufferReader& reader, std::optional<bool>& frameEnd)
+void H264Packetizer::OnNal(VideoFrame& frame, BufferReader& reader)
 {
 	//Return if current NAL is empty
 	if (!reader.GetLeft())
@@ -115,13 +115,9 @@ void H264Packetizer::OnNal(VideoFrame& frame, BufferReader& reader, std::optiona
 				H264SliceHeader header;
 				if (header.Decode(reader.PeekData(), reader.GetLeft(), *sps))
 				{
-					frameEnd = header.GetBottomFieldFlag();
 					// Use the last slice type to determine the frame type
-					if (frameEnd)
-					{
-						auto sliceType = header.GetSliceType();
-						frame.SetBFrame(sliceType == 1 || sliceType == 6);
-					}
+					auto sliceType = header.GetSliceType();
+					frame.SetBFrame(sliceType == 1 || sliceType == 6);
 				}
 			}
 			

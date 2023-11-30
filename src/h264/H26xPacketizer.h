@@ -23,7 +23,7 @@ public:
 	
 protected:
 	/** called by ProcessAU() for every NALU found in the AU */
-	virtual void OnNal(VideoFrame& frame, BufferReader& nal, std::optional<bool>& frameEnd) = 0;
+	virtual void OnNal(VideoFrame& frame, BufferReader& nal) = 0;
 
 	/**
 	 * @brief add a NALU to the frame, fragmenting it in RTP if necessary
