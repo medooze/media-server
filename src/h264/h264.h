@@ -294,23 +294,23 @@ public:
 	{	
 		BitReader r(buffer, bufferSize);
 		
-		firstMbInSlice = ExpGolombDecoder::Decode(r); CHECK(r);
-		sliceType = ExpGolombDecoder::Decode(r); CHECK(r);
-		picPpsId = ExpGolombDecoder::Decode(r); CHECK(r);
+		first_mb_in_slice = ExpGolombDecoder::Decode(r); CHECK(r);
+		slice_type = ExpGolombDecoder::Decode(r); CHECK(r);
+		pic_parameter_set_id = ExpGolombDecoder::Decode(r); CHECK(r);
 		
 		if (sps.GetSeparateColourPlaneFlag())
 		{
-			colourPlaneId = r.Get(2); CHECK(r);
+			colour_plane_id = r.Get(2); CHECK(r);
 		}
 		
-		frameNum = r.Get(sps.GetLog2MaxFrameNumMinus4() + 4); CHECK(r); 
+		frame_num = r.Get(sps.GetLog2MaxFrameNumMinus4() + 4); CHECK(r);
 		
 		if (!sps.GetFrameMbsOnlyFlag())
 		{
-			fieldPicFlag = r.Get(1); CHECK(r); 
-			if (fieldPicFlag)
+			field_pic_flag = r.Get(1); CHECK(r);
+			if (field_pic_flag)
 			{
-				bottomFieldFlag = r.Get(1); CHECK(r);
+				bottom_field_flag = r.Get(1); CHECK(r);
 			}
 		}
 		
@@ -319,48 +319,59 @@ public:
 	
 	inline uint32_t GetFirstMbInSlice() const
 	{
-		return firstMbInSlice;
+		return first_mb_in_slice;
 	}
 	
 	inline uint32_t GetSliceType() const
 	{
-		return sliceType;
+		return slice_type;
 	}
 	
 	inline uint32_t GetPicPpsId() const
 	{
-		return picPpsId;
+		return pic_parameter_set_id;
 	}
 	
 	inline uint32_t GetColourPlaneId() const
 	{
-		return colourPlaneId;
+		return colour_plane_id;
 	}
 	
 	inline uint32_t GetFrameNum() const
 	{
-		return frameNum;
+		return frame_num;
 	}
 	
 	inline bool GetFieldPicFlag() const
 	{
-		return fieldPicFlag;
+		return field_pic_flag;
 	}
 	
 	inline bool GetBottomFieldFlag() const
 	{
-		return bottomFieldFlag;
+		return bottom_field_flag;
 	}
 	
+	void Dump() const
+	{
+		Debug("[H264SliceHeader \n");
+		Debug("\tfirstMbInSlice=%u\n", first_mb_in_slice);
+		Debug("\tslice_type=%u\n", slice_type);
+		Debug("\tpic_parameter_set_id=%u\n", pic_parameter_set_id);
+		Debug("\tcolour_plane_id=%u\n", colour_plane_id);
+		Debug("\field_pic_flag=%d\n", field_pic_flag);
+		Debug("\tbottom_field_flag=%d\n", bottom_field_flag);
+		Debug("/]\n");
+	}
+
 private:
-	uint32_t firstMbInSlice = 0;
-	uint32_t sliceType = 0;
-	uint32_t picPpsId = 0;
-	uint8_t colourPlaneId = 0;
-	uint8_t frameNum = 0;
-	
-	bool fieldPicFlag = false;
-	bool bottomFieldFlag = false;
+	uint32_t first_mb_in_slice = 0;
+	uint32_t slice_type = 0;
+	uint32_t pic_parameter_set_id = 0;
+	uint8_t colour_plane_id = 0;
+	uint8_t frame_num = 0;
+	bool field_pic_flag = false;
+	bool bottom_field_flag = false;
 };
 
 #undef CHECK
