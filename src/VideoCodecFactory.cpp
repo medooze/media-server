@@ -1,6 +1,7 @@
 #include "log.h"
 #include "VideoCodecFactory.h"
 #include "h264/h264encoder.h"
+#include "h264/OpenH264Encoder.h"
 #include "h264/h264decoder.h"
 #include "h265/h265decoder.h"
 #include "vp8/vp8decoder.h"
@@ -48,7 +49,10 @@ VideoEncoder* VideoCodecFactory::CreateEncoder(VideoCodec::Type codec,const Prop
 	switch(codec)
 	{
 		case VideoCodec::H264:
-			return new H264Encoder(properties);
+			//if (strcmp(properties.GetProperty("impl","x264"),"x264")==0)
+			//	return new H264Encoder(properties);
+			//else
+				return new OpenH264Encoder(properties);
 		case VideoCodec::VP8:
 			return new VP8Encoder(properties);
 		case VideoCodec::JPEG:

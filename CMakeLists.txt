@@ -81,6 +81,7 @@ target_include_directories(MediaServerLib PUBLIC
     ${CMAKE_CURRENT_LIST_DIR}/src
     ${CMAKE_CURRENT_LIST_DIR}/ext/libdatachannels/src/internal
     ${CMAKE_CURRENT_LIST_DIR}/ext/mp4v2/include
+    /usr/local/src/openh264/
 )
 
 target_link_libraries(MediaServerLib
@@ -90,6 +91,7 @@ target_link_libraries(MediaServerLib
     avcodec
     avutil
     swscale
+    openh264
 )
 
 #for debugging
