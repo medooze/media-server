@@ -4,11 +4,25 @@
 #include <media.h>
 #include <acumulator.h>
 
+/**
+ * Check timestamp as per past timestamps and receiving (frame arrival) time to determine
+ * whether the timestamp is valid. 
+ * 
+ * It assumes the receiving time is always correct, as it is set on the server. The duration
+ * calculated from timestamp since last frame will be compared with the actual receiving time
+ * gap. If the difference between the two is too big, it would be regarded as invalid. 
+ * 
+ * At starting/resetting, the first frame is always regarded as valid. Invalid frames are not
+ * used for reference.
+ * 
+ * If the time and timestamps pair are continously regarded as invalid for a certain frames,
+ * the time checker will be reset.
+ */
 class TimeStampChecker
 {
 public:
-	static constexpr uint32_t MaxDurationDiffMs = 3000;
-	static constexpr uint32_t MaxContinousInvalidFrames = 5;
+	static constexpr uint32_t DefaultMaxDurationDiffMs = 3000;
+	static constexpr uint32_t DefaultMaxContinousInvalidFrames = 5;
 	
 	enum class CheckResult
 	{
@@ -17,27 +31,34 @@ public:
 		Reset
 	};
 	
-	CheckResult Check(const MediaFrame &frame)
+	TimeStampChecker(uint32_t maxDurationDiffMs = DefaultMaxDurationDiffMs, 
+			uint32_t maxContinousInvalidFrames = DefaultMaxContinousInvalidFrames) :
+		maxDurationDiffMs(maxDurationDiffMs),
+		maxContinousInvalidFrames(maxContinousInvalidFrames)
+	{
+	}
+	
+	CheckResult Check(uint64_t recvTimeMs, uint64_t timestamp, uint32_t clock)
 	{
 		// Check if it is just started
 		if (lastRecvTime == 0 && lastTimeStamp == 0)
 		{
-			lastTimeStamp = frame.GetTimeStamp();
-			lastRecvTime = frame.GetTime();
+			lastTimeStamp = timestamp;
+			lastRecvTime = recvTimeMs;
 			return CheckResult::Valid;
 		}
 		
-		auto durationOnTs = (frame.GetTimeStamp() - lastTimeStamp) * 1000 / frame.GetClockRate();
-		auto durationOnRecv = frame.GetTime() - lastRecvTime;
+		auto durationOnTs = (timestamp - lastTimeStamp) * 1000 / clock;
+		auto durationOnRecv = recvTimeMs - lastRecvTime;
 		
 		// The difference between expected duration as per timestamp and actual duration since last frame
 		auto diff = int64_t(durationOnTs) - int64_t(durationOnRecv);
 		
-		bool valid = labs(diff) < MaxDurationDiffMs;
+		bool valid = labs(diff) < maxDurationDiffMs;
 		if (valid)
 		{
-			lastTimeStamp = frame.GetTimeStamp();
-			lastRecvTime = frame.GetTime();
+			lastTimeStamp = timestamp;
+			lastRecvTime = recvTimeMs;
 			
 			numContinousInvalidFrames = 0;
 		}
@@ -47,7 +68,7 @@ public:
 		}
 		
 		// If there are continous invalid frames, it could be due to reference wrong. Reset to restart.
-		if (numContinousInvalidFrames > MaxContinousInvalidFrames)
+		if (numContinousInvalidFrames > maxContinousInvalidFrames)
 		{
 			lastRecvTime = 0;
 			lastTimeStamp = 0;
@@ -60,6 +81,9 @@ public:
 	}
 	
 private:
+	uint32_t maxDurationDiffMs = 0;
+	uint32_t maxContinousInvalidFrames = 0;
+
 	uint64_t lastTimeStamp = 0;
 	uint64_t lastRecvTime = 0;
 	
