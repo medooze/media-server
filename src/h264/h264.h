@@ -110,6 +110,7 @@ public:
 
 	bool GetSeparateColourPlaneFlag() const { return separate_colour_plane_flag; }
 	bool GetFrameMbsOnlyFlag() const { return frame_mbs_only_flag; }
+	BYTE GetLog2MaxFrameNumMinus4() const { return log2_max_frame_num_minus4; }
 	
 	void Dump() const
 	{
@@ -302,13 +303,11 @@ public:
 			colourPlaneId = r.Get(2); CHECK(r);
 		}
 		
-		frameNum = r.Get(4); CHECK(r); 
+		frameNum = r.Get(sps.GetLog2MaxFrameNumMinus4() + 4); CHECK(r); 
 		
-		// We regard it as bottom if the bottomfield is not present
-		bottomFieldFlag = true;
 		if (!sps.GetFrameMbsOnlyFlag())
 		{
-			auto fieldPicFlag = r.Get(1); CHECK(r); 
+			fieldPicFlag = r.Get(1); CHECK(r); 
 			if (fieldPicFlag)
 			{
 				bottomFieldFlag = r.Get(1); CHECK(r);
@@ -343,6 +342,11 @@ public:
 		return frameNum;
 	}
 	
+	inline bool GetFieldPicFlag() const
+	{
+		return fieldPicFlag;
+	}
+	
 	inline bool GetBottomFieldFlag() const
 	{
 		return bottomFieldFlag;
@@ -355,6 +359,7 @@ private:
 	uint8_t colourPlaneId = 0;
 	uint8_t frameNum = 0;
 	
+	bool fieldPicFlag = false;
 	bool bottomFieldFlag = false;
 };
 
