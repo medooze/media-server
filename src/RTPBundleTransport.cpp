@@ -315,7 +315,7 @@ int RTPBundleTransport::Init()
 // coverity[negative_returns]
 		if(bind(socket,(struct sockaddr *)&recAddr,sizeof(struct sockaddr_in))!=0)
 		{
-			Log("-could not bind");
+			Log("-could not bind port %u reason: %s\n", port, strerror(errno));
 			//Try again
 			continue;
 		}
