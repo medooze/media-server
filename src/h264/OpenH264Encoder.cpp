@@ -250,6 +250,8 @@ VideoFrame* OpenH264Encoder::EncodeFrame(const VideoBuffer::const_shared& videoB
 		//For each nal
 		for (int i = 0; i < layerInfo.iNalCount; i++)
 		{
+			//No annex b
+			set4(layerInfo.pBsBuf, layerLength, layerInfo.pNalLengthInByte[i] - 4);
 			// Get NAL data pointer skiping the header (nalUnit = type + nal)
 			BYTE* nalUnit = layerInfo.pBsBuf + layerLength + 4;
 			//Get nal unit size
@@ -263,7 +265,6 @@ VideoFrame* OpenH264Encoder::EncodeFrame(const VideoBuffer::const_shared& videoB
 			//Skip header
 			BYTE* nalData = nalUnit + 1;
 
-			Log("-nal type=%d size=%d length=%d pos=%d layerLength=%d\n", nalType, layerInfo.pNalLengthInByte[i], nalUnitSize, pos, layerLength);
 			//Check if IDR SPS or PPS
 			switch (nalType)
 			{
@@ -335,8 +336,6 @@ VideoFrame* OpenH264Encoder::EncodeFrame(const VideoBuffer::const_shared& videoB
 		}
 		//Append the layer 
 		int pos = frame.AppendMedia(layerInfo.pBsBuf, layerLength);
-
-		Log("-layer size=%d pos=%d framelength=%d\n", layerLength, pos, frame.GetLength());
 	}
 
 	//If intra
