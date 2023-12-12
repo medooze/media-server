@@ -764,6 +764,16 @@ int RTPBundleTransport::AddRemoteCandidate(const std::string& username,const cha
 		//Get candidate
 		ICERemoteCandidate* candidate = &itc->second;
 	
+		//If the candidate already existed and belonged to a different transport,
+		//then the other side is sharing an endpoint for many transports, which
+		//prevents operation entirely. The user is responsible not to break this
+		//assumption, but in case it ever happens, we print an error.
+		if (candidate->GetListener() != transport)
+		{
+			Error("-RTPBundleTransport::AddRemoteCandidate() | candidate %s already used by another transport [username:%s}\n", remote.c_str(), username.c_str());
+			return;
+		}
+
 		//If it was new
 		if (inserted)
 			//Add candidate and add it to the connection

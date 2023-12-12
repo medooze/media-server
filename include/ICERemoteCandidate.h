@@ -91,6 +91,7 @@ public:
 	std::string	GetRemoteAddress()	const { return std::string(GetIP()) + ":" + std::to_string(GetPort()); }
 	State		GetState()		const { return state;				}
 	const std::optional<PacketHeader::FlowRoutingInfo>&	GetRawTxData()	const { return rawTxData;		}
+	std::shared_ptr<Listener>	GetListener()	const { return listener; }
 public:
 	static std::string GetRemoteAddress(DWORD address,WORD port)
 	{
