@@ -48,13 +48,13 @@ public:
 			return CheckResult::Valid;
 		}
 		
-		auto durationOnTs = (timestamp - lastTimeStamp) * 1000 / clock;
-		auto durationOnRecv = recvTimeMs - lastRecvTime;
+		auto durationOnTs = GetDiff(timestamp, lastTimeStamp) * 1000 / clock;
+		auto durationOnRecv = GetDiff(recvTimeMs, lastRecvTime);
 		
 		// The difference between expected duration as per timestamp and actual duration since last frame
-		auto diff = int64_t(durationOnTs) - int64_t(durationOnRecv);
+		auto diff = GetDiff(durationOnTs, durationOnRecv);
 		
-		bool valid = labs(diff) < maxDurationDiffMs;
+		bool valid = diff < maxDurationDiffMs;
 		if (valid)
 		{
 			lastTimeStamp = timestamp;
@@ -78,6 +78,11 @@ public:
 		}
 
 		return valid ? CheckResult::Valid : CheckResult::Invalid;
+	}
+	
+	inline static constexpr uint64_t GetDiff(uint64_t lhs, uint64_t rhs)
+	{
+		return lhs > rhs ? (lhs - rhs) : (rhs - lhs);
 	}
 	
 private:
