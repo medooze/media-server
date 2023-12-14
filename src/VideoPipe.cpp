@@ -19,9 +19,9 @@ VideoPipe::~VideoPipe()
 	pthread_cond_destroy(&newPicCond);
 }
 
-int VideoPipe::Init(float scaleResolutionDownBy, uint32_t scaleResolutionToHeigth, AllowedDownScaling allowedDownScaling)
+int VideoPipe::Init(float scaleResolutionDownBy, uint32_t scaleResolutionToHeight, AllowedDownScaling allowedDownScaling)
 {
-	Log("-VideoPipe::Init() [scaleResolutionDownBy:%f,scaleResolutionDownBy:%d,allowedDownScaling:%d]\n",scaleResolutionDownBy, scaleResolutionToHeigth, allowedDownScaling);
+	Log("-VideoPipe::Init() [scaleResolutionDownBy:%f,scaleResolutionDownBy:%d,allowedDownScaling:%d]\n",scaleResolutionDownBy, scaleResolutionToHeight, allowedDownScaling);
 
 	//Lock
 	pthread_mutex_lock(&newPicMutex);
@@ -30,7 +30,7 @@ int VideoPipe::Init(float scaleResolutionDownBy, uint32_t scaleResolutionToHeigt
 	inited = true;
 	
 	//Store dinamyc scaling settings
-	this->scaleResolutionToHeigth = scaleResolutionToHeigth;
+	this->scaleResolutionToHeight = scaleResolutionToHeight;
 	this->scaleResolutionDownBy = scaleResolutionDownBy;
 	this->allowedDownScaling = allowedDownScaling;
 
@@ -162,19 +162,19 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 	float scale = scaleResolutionDownBy;
 
 	//If we are downscaling to an specific height
-	if (scaleResolutionToHeigth)
+	if (scaleResolutionToHeight)
 	{
 		//Get video height
 		auto videoHeight = videoBuffer->GetHeight();
 
 		//Check if we are allowed to downscale given the input height
-		if ((allowedDownScaling == AllowedDownScaling::SameOrLower && videoHeight<scaleResolutionToHeigth)
-			|| (allowedDownScaling == AllowedDownScaling::LowerOnly && videoHeight <= scaleResolutionToHeigth))
+		if ((allowedDownScaling == AllowedDownScaling::SameOrLower && videoHeight<scaleResolutionToHeight)
+			|| (allowedDownScaling == AllowedDownScaling::LowerOnly && videoHeight <= scaleResolutionToHeight))
 			//Skip frame
 			return nullptr;
 
 		//Change scale to match target height
-		scale = videoHeight / scaleResolutionToHeigth;
+		scale = videoHeight / scaleResolutionToHeight;
 	}
 
 	//If we have a dinamic resize

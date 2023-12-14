@@ -20,7 +20,7 @@ public:
 	VideoPipe();
 	~VideoPipe() override;
 
-	int Init(float scaleResolutionDownBy = 0.0f, uint32_t scaleResolutionToHeigth = 0, AllowedDownScaling allowedDownScaling = AllowedDownScaling::Any);
+	int Init(float scaleResolutionDownBy = 0.0f, uint32_t scaleResolutionToHeight = 0, AllowedDownScaling allowedDownScaling = AllowedDownScaling::Any);
 	int End();
 
 	/** VideoInput */
@@ -40,7 +40,7 @@ private:
 	int imgPos = 0;
 	int imgNew = false;
 	float scaleResolutionDownBy = 0.0f;
-	uint32_t scaleResolutionToHeigth = 0;
+	uint32_t scaleResolutionToHeight = 0;
 	int inited = false;
 	int capturing = false;
 	std::array<VideoBuffer::const_shared,2> imgBuffer;
