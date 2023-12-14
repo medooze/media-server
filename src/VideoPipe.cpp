@@ -19,14 +19,9 @@ VideoPipe::~VideoPipe()
 	pthread_cond_destroy(&newPicCond);
 }
 
-int VideoPipe::Init(float scaleResolutionDownBy)
+int VideoPipe::Init(float scaleResolutionDownBy, uint32_t scaleResolutionToHeigth, AllowedDownScaling allowedDownScaling)
 {
-	//scaleResolutionDownBy can't be 0
-	if (!scaleResolutionDownBy)
-		//Log error and exit
-		return Error("-VideoPipe::Init() | scaleResolutionDownBy is 0\n");
-
-	Log("-VideoPipe::Init() [scaleResolutionDownBy:%f]\n",scaleResolutionDownBy);
+	Log("-VideoPipe::Init() [scaleResolutionDownBy:%f,scaleResolutionDownBy:%d,allowedDownScaling:%d]\n",scaleResolutionDownBy, scaleResolutionToHeigth, allowedDownScaling);
 
 	//Lock
 	pthread_mutex_lock(&newPicMutex);
@@ -34,8 +29,10 @@ int VideoPipe::Init(float scaleResolutionDownBy)
 	//We are inited
 	inited = true;
 	
-	//Store scaleResolutionDownBy
+	//Store dinamyc scaling settings
+	this->scaleResolutionToHeigth = scaleResolutionToHeigth;
 	this->scaleResolutionDownBy = scaleResolutionDownBy;
+	this->allowedDownScaling = allowedDownScaling;
 
 	//Unlock
 	pthread_mutex_unlock(&newPicMutex);
@@ -161,8 +158,27 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 		//No frame
 		return videoBuffer;
 
+	//Get scaling factor
+	float scale = scaleResolutionDownBy;
+
+	//If we are downscaling to an specific height
+	if (scaleResolutionToHeigth)
+	{
+		//Get video height
+		auto videoHeight = videoBuffer->GetHeight();
+
+		//Check if we are allowed to downscale given the input height
+		if ((allowedDownScaling == AllowedDownScaling::SameOrLower && videoHeight<scaleResolutionToHeigth)
+			|| (allowedDownScaling == AllowedDownScaling::LowerOnly && videoHeight <= scaleResolutionToHeigth))
+			//Skip frame
+			return nullptr;
+
+		//Change scale to match target height
+		scale = videoHeight / scaleResolutionToHeigth;
+	}
+
 	//If we have a dinamic resize
-	if (scaleResolutionDownBy > 0 || videoBuffer->HasNonSquarePixelAspectRatio())
+	if (scale > 0 || videoBuffer->HasNonSquarePixelAspectRatio())
 	{
 		//Get pixel aspect ratio
 		const auto [parNum, parDen] = videoBuffer->GetPixelAspectRatio();
@@ -171,12 +187,12 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 		if (parNum>parDen)
 		{
 			//Check adjusted video size
-			videoWidth = ((uint32_t)((videoBuffer->GetWidth() * parNum) / (scaleResolutionDownBy * parDen))) & ~1;
-			videoHeight = ((uint32_t)(videoBuffer->GetHeight() / scaleResolutionDownBy)) & ~1;
+			videoWidth = ((uint32_t)((videoBuffer->GetWidth() * parNum) / (scale * parDen))) & ~1;
+			videoHeight = ((uint32_t)(videoBuffer->GetHeight() / scale)) & ~1;
 		} else {
 			//Check adjusted video size
-			videoWidth = ((uint32_t)(videoBuffer->GetWidth() / scaleResolutionDownBy)) & ~1;
-			videoHeight = ((uint32_t)((videoBuffer->GetHeight() * parDen) / (scaleResolutionDownBy * parNum))) & ~1;
+			videoWidth = ((uint32_t)(videoBuffer->GetWidth() / scale)) & ~1;
+			videoHeight = ((uint32_t)((videoBuffer->GetHeight() * parDen) / (scale * parNum))) & ~1;
 		}
 
 		//Debug("-VideoPipe::GrabFrame() | Scaling down from [%u,%u] to [%u,%u] with par [%u,%u]\n", videoBuffer->GetWidth(), videoBuffer->GetHeight(), videoWidth, videoHeight, parNum, parDen);
