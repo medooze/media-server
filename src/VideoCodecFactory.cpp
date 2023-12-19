@@ -6,6 +6,7 @@
 #include "vp8/vp8decoder.h"
 #include "vp8/vp8encoder.h"
 #include "vp9/VP9Decoder.h"
+#include "vp9/VP9Encoder.h"
 #include "jpeg/JPEGEncoder.h"
 #include "webp/WEBPEncoder.h"
 
@@ -51,6 +52,8 @@ VideoEncoder* VideoCodecFactory::CreateEncoder(VideoCodec::Type codec,const Prop
 			return new H264Encoder(properties);
 		case VideoCodec::VP8:
 			return new VP8Encoder(properties);
+		case VideoCodec::VP9:
+			return new VP9Encoder(properties);
 		case VideoCodec::JPEG:
 			return new JPEGEncoder(properties);
 		case VideoCodec::WEBP:
