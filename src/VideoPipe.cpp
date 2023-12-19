@@ -174,7 +174,7 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 			return nullptr;
 
 		//Change scale to match target height
-		scale = videoHeight / scaleResolutionToHeight;
+		scale = (float)videoHeight / scaleResolutionToHeight;
 	}
 
 	//If we have a dinamic resize
