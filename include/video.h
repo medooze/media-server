@@ -53,6 +53,8 @@ public:
 		frame->SetHeight(height);
 		//Set intra
 		frame->SetIntra(isIntra);
+		//Set B frame
+		frame->SetBFrame(isBFrame);
 		//Set clock rate
 		frame->SetClockRate(GetClockRate());
 		//Set timestamp
@@ -109,12 +111,17 @@ public:
 	void SetTargetFps(uint32_t targetFps)		{ this->targetFps = targetFps;		}	
 	uint32_t GetTargetFps() const			{ return this->targetFps;		}
 
+	void SetBFrame(bool isBFrame) { this->isBFrame = isBFrame; }
+	bool IsBFrame() const { return isBFrame; }
+
 	void Reset() 
 	{
 		//Reset media frame
 		MediaFrame::Reset();
 		//No intra
-		SetIntra(false);
+		SetIntra(false);		
+		//Reset B frame
+		SetBFrame(false);
 		//No new config
 		ClearCodecConfig();
 		//Clear layers
@@ -124,6 +131,7 @@ public:
 private:
 	VideoCodec::Type codec;
 	bool	 isIntra	= false;
+	bool	 isBFrame	= false;
 	uint32_t width		= 0;
 	uint32_t height		= 0;
 	uint32_t targetBitrate	= 0;

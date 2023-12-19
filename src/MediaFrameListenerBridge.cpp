@@ -14,6 +14,9 @@ MediaFrameListenerBridge::MediaFrameListenerBridge(TimeService& timeService,DWOR
 	acumulator(1000),
 	accumulatorFrames(1000),
 	accumulatorPackets(1000),
+	accumulatorIFrames(1000),
+	accumulatorBFrames(1000),
+	accumulatorPFrames(1000),
 	waited(1000)
 {
 	Debug("-MediaFrameListenerBridge::MediaFrameListenerBridge() [this:%p]\n", this);
@@ -206,24 +209,32 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 			//Set width and height
 			width = videoFrame->GetWidth();
 			height = videoFrame->GetHeight();
+
+			// Increase bframes
+			accumulatorBFrames.Update(now.count(), videoFrame->IsBFrame() ? 1 : 0);
+			// Increase iframes
+			accumulatorIFrames.Update(now.count(), videoFrame->IsIntra() ? 1 : 0);
+			
+			bool isPFrame = !(videoFrame->IsIntra() || videoFrame->IsBFrame());
+			accumulatorPFrames.Update(now.count(), isPFrame ? 1 : 0);
 		}
 
 		//Get info
 		const MediaFrame::RtpPacketizationInfo& info = frame->GetRtpPacketizationInfo();
 
-		DWORD codec = 0;
 		const BYTE *frameData = NULL;
 		DWORD frameSize = 0;
 		QWORD rate = 1000;
 
 		//Depending on the type
-		switch(frame->GetType())
+		type = frame->GetType();
+		switch(type)
 		{
 			case MediaFrame::Audio:
 			{
 				//get audio frame
 				AudioFrame* audio = (AudioFrame*)frame.get();
-				//Get codec
+				// Note: This may truncate UNKNOWN but we do that many places elsewhere treating -1 == 0xFF == UNKNOWN so being consistent here as well
 				codec = audio->GetCodec();
 				//Get data
 				frameData = audio->GetData();
@@ -237,7 +248,7 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 			{
 				//get Video frame
 				VideoFrame* video = (VideoFrame*)frame.get();
-				//Get codec
+				// Note: This may truncate UNKNOWN but we do that many places elsewhere treating -1 == 0xFF == UNKNOWN so being consistent here as well
 				codec = video->GetCodec();
 				//Get data
 				frameData = video->GetData();
@@ -260,8 +271,6 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 			scheduled = std::max(scheduled, packets.back().scheduled + std::chrono::milliseconds(1));
 		}
 
-		//Get scheduled time in ms
-		uint64_t ms = scheduled.count();
 		//Get frame reception time
 		uint64_t time = frame->GetTime();
 
@@ -269,11 +278,14 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 		numFrames++;
 		totalBytes += frameSize;
 
-		//Increate accumulators
-		accumulatorFrames.Update(ms,1);
+		//Increate accumulators.
+		accumulatorFrames.Update(now.count(),1);
 		//Update bitrate acumulator
-		acumulator.Update(ms,frameSize);
-		//Waiting time
+		acumulator.Update(now.count(),frameSize);
+
+		//Get scheduled time in ms
+		uint64_t ms = scheduled.count();
+		//Waiting time uses scheduled time
 		waited.Update(ms, ms>time ? ms-time : 0);
 		//Get bitrate in bps
 		bitrate = acumulator.GetInstant()*8;
@@ -439,6 +451,15 @@ void MediaFrameListenerBridge::UpdateAsync(std::function<void(std::chrono::milli
 		//Get packets and frames delta
 		numFramesDelta	= accumulatorFrames.GetInstant();
 		numPacketsDelta	= accumulatorPackets.GetInstant();
+		
+		iframes = accumulatorIFrames.GetAcumulated();
+		iframesDelta = accumulatorIFrames.GetInstant();
+		
+		bframes = accumulatorBFrames.GetAcumulated();
+		bframesDelta = accumulatorBFrames.GetInstant();
+		
+		pframes = accumulatorPFrames.GetAcumulated();
+		pframesDelta = accumulatorPFrames.GetInstant();
 	}, callback);
 }
 
@@ -458,6 +479,15 @@ void MediaFrameListenerBridge::Update(QWORD)
 		//Get packets and frames delta
 		numFramesDelta	= accumulatorFrames.GetInstant();
 		numPacketsDelta	= accumulatorPackets.GetInstant();
+		
+		iframes = accumulatorIFrames.GetAcumulated();
+		iframesDelta = accumulatorIFrames.GetInstant();
+
+		bframes = accumulatorBFrames.GetAcumulated();
+		bframesDelta = accumulatorBFrames.GetInstant();
+		
+		pframes = accumulatorPFrames.GetAcumulated();
+		pframesDelta = accumulatorPFrames.GetInstant();
 	});
 }
 

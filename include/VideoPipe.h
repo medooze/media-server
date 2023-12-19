@@ -10,10 +10,17 @@ class VideoPipe :
 	public VideoInput
 {
 public:
+	enum AllowedDownScaling
+	{
+		Any		= 0,
+		SameOrLower	= 1,
+		LowerOnly	= 2
+	};
+public:
 	VideoPipe();
 	~VideoPipe() override;
 
-	int Init(float scaleResolutionDownBy = 0.0f);
+	int Init(float scaleResolutionDownBy = 0.0f, uint32_t scaleResolutionToHeight = 0, AllowedDownScaling allowedDownScaling = AllowedDownScaling::Any);
 	int End();
 
 	/** VideoInput */
@@ -33,6 +40,7 @@ private:
 	int imgPos = 0;
 	int imgNew = false;
 	float scaleResolutionDownBy = 0.0f;
+	uint32_t scaleResolutionToHeight = 0;
 	int inited = false;
 	int capturing = false;
 	std::array<VideoBuffer::const_shared,2> imgBuffer;
@@ -42,6 +50,7 @@ private:
 
 	VideoBufferPool	videoBufferPool;
 	VideoBufferScaler scaler;
+	AllowedDownScaling allowedDownScaling = AllowedDownScaling::Any;
 
 };
 

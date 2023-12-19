@@ -58,8 +58,8 @@ void Header::Dump() const
 		payloadUnitStartIndication,
 		transportPriority,
 		packetIdentifier,
-		adaptationFieldControl,
 		transportScramblingControl,
+		adaptationFieldControl,
 		continuityCounter
 	);
 }
@@ -86,7 +86,7 @@ AdaptationField AdaptationField::Parse(BufferReader& reader)
 	uint8_t adaptationFieldLength = reader.Get1();
 
 	//Ensure we have enough
-	if (adaptationFieldLength + 1 > reader.GetLeft())
+	if (adaptationFieldLength > reader.GetLeft())
 		throw std::runtime_error("Not enought data to read mpegts adaptation field");
 
 	//Get current position

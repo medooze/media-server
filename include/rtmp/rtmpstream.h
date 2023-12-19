@@ -174,6 +174,8 @@ public:
 	DWORD GetData()			{ return data;		}
 	void  SetTag(const std::wstring &tag)	{ this->tag = tag;	}
 	std::wstring GetTag()		{ return tag;		}
+	void SetRTT(DWORD rtt)		{ this->rtt = rtt;	}
+	DWORD GetRTT() const		{ return rtt;		}
 
 	virtual void SendMetaData(RTMPMetaData *meta);
 	virtual void SendMediaFrame(RTMPMediaFrame *frame);
@@ -185,11 +187,12 @@ public:
 private:
 	typedef std::set<Listener*> Listeners;
 protected:
-	DWORD		id;
-	DWORD		data;
+	DWORD		id = 0;
+	DWORD		data = 0;
 	std::wstring	tag;
 	Listeners	listeners;
 	Use		lock;
+	DWORD		rtt = 0;
 };
 
 class RTMPPipedMediaStream :

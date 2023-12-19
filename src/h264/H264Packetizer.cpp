@@ -80,12 +80,14 @@ void H264Packetizer::OnNal(VideoFrame& frame, BufferReader& reader, std::optiona
 
 			//Parse sps
 			{
-				sps = std::make_unique<H264SeqParameterSet>();
-				if (sps->Decode(nalData, nalSize - 1))
+				auto localSps = std::make_unique<H264SeqParameterSet>();
+				if (localSps->Decode(nalData, nalSize - 1))
 				{
 					//Set dimensions
-					frame.SetWidth(sps->GetWidth());
-					frame.SetHeight(sps->GetHeight());
+					frame.SetWidth(localSps->GetWidth());
+					frame.SetHeight(localSps->GetHeight());
+					
+					sps = std::move(localSps);
 				}
 			}
 			return;
@@ -113,7 +115,11 @@ void H264Packetizer::OnNal(VideoFrame& frame, BufferReader& reader, std::optiona
 				H264SliceHeader header;
 				if (header.Decode(reader.PeekData(), reader.GetLeft(), *sps))
 				{
-					frameEnd = header.GetBottomFieldFlag();
+					// If no field pic flag, regard it as frame End
+					frameEnd = header.GetFieldPicFlag() ? header.GetBottomFieldFlag() : true;
+
+					auto sliceType = header.GetSliceType();
+					frame.SetBFrame(sliceType == 1 || sliceType == 6);
 				}
 			}
 			

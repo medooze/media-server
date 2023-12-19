@@ -1,9 +1,8 @@
 #include "FrameDispatchCoordinator.h"
 
-FrameDispatchCoordinator::FrameDispatchCoordinator(int aUpdateRefsPacketEarlyThresholdMs,
-					int aUpdateRefsPacketLateThresholdMs, 
+FrameDispatchCoordinator::FrameDispatchCoordinator(int aUpdateRefsPacketLateThresholdMs, 
 					std::chrono::milliseconds aUpdateRefsStepPacketEarlyMs) :
-	frameDelayCalculator(aUpdateRefsPacketEarlyThresholdMs, aUpdateRefsPacketLateThresholdMs, aUpdateRefsStepPacketEarlyMs)
+	frameDelayCalculator(aUpdateRefsPacketLateThresholdMs, aUpdateRefsStepPacketEarlyMs)
 {
 }
 
