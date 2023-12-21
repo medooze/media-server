@@ -86,7 +86,7 @@ target_include_directories(MediaServerLib PUBLIC
 target_link_libraries(MediaServerLib
     pthread
     vpx
-    x264
+    /usr/local/src/medooze/x264-realtime/libx264.so.164
     avcodec
     avutil
     swscale

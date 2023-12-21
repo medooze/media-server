@@ -94,8 +94,14 @@ H264Encoder::H264Encoder(const Properties& properties) : frame(VideoCodec::H264)
 	//Use annex b
 	annexb = properties.GetProperty("h264.annexb",false);
 
+	//QP
 	qMin = properties.GetProperty("h264.qmin", qMin);
 	qMax = properties.GetProperty("h264.qmax", qMax);
+
+	//RT modes
+	rtModeEnabled = properties.GetProperty("h264.rt", rtModeEnabled);
+	rtBufferSizeMultiplier = properties.GetProperty("h264.rt_buffersize_multiplier", rtBufferSizeMultiplier);
+	rtTolerance = properties.GetProperty("h264.rt_tolerance", rtTolerance);
 
 	//Disable sharing buffer on clone
 	frame.DisableSharedBuffer();
@@ -164,7 +170,13 @@ int H264Encoder::SetFrameRate(int frames,int kbits,int intraPeriod)
 		params.rc.i_bitrate         = bitrate;
 		params.rc.i_vbv_max_bitrate = bitrate * maxBitrateMultiplier;
 		params.rc.i_vbv_buffer_size = bufferSizeInFrames * bitrate / fps;
-		
+
+#ifdef X264_RT_ENABLED
+		params.rc.i_rt_buffer	    = rtBufferSizeMultiplier * params.rc.i_vbv_buffer_size;
+		params.rc.i_rt_tolerance    = rtTolerance;
+		params.rc.i_rt_overshot     = 0;
+#endif
+
 		//Reconfig
 		if (x264_encoder_reconfig(enc,&params)!=0)
 			//reconfigure
@@ -210,40 +222,40 @@ int H264Encoder::OpenCodec()
 	params.i_keyint_max         = intraPeriod;
 	params.i_keyint_min	    = intraPeriod;
 	params.i_frame_reference    = 2;
-	params.rc.i_rc_method	    = X264_RC_ABR;
-	//param->rc.i_rc_method	    = X264_RC_CRF;
-	//param->rc.f_rf_constant   = 23;
 
+	params.rc.i_rc_method       = X264_RC_ABR;
 	params.rc.i_bitrate         = bitrate;
 	params.rc.i_vbv_max_bitrate = bitrate * maxBitrateMultiplier;
-	if (qMin) 
-		params.rc.i_qp_min	    = qMin;
-	if (qMax)
-		params.rc.i_qp_max	    = qMax;
-	params.rc.i_aq_mode	    = X264_AQ_AUTOVARIANCE_BIASED;
-	if (!streaming)
-	{
-		params.rc.b_stat_write      = 0;
-		params.b_intra_refresh	    = 1;
-	}
-	params.b_deblocking_filter = 1;
-	params.i_deblocking_filter_alphac0 = -2;
-	params.i_deblocking_filter_beta = 2;
-
 	params.rc.i_vbv_buffer_size = bufferSizeInFrames * bitrate / fps;
 	params.rc.f_rate_tolerance  = ratetol;
+	params.rc.f_vbv_buffer_init = 0;
+	params.rc.i_aq_mode         = X264_AQ_AUTOVARIANCE_BIASED;
+	if (ipratio >= 0)
+		params.rc.f_ip_factor = ipratio;
+	if (qMin) 
+		params.rc.i_qp_min  = qMin;
+	if (qMax)
+		params.rc.i_qp_max  = qMax;
 
+#ifdef X264_RT_ENABLED
+	params.rc.i_rt_enabled = rtModeEnabled;
+	params.rc.i_rt_buffer = rtBufferSizeMultiplier * params.rc.i_vbv_buffer_size;
+	params.rc.i_rt_tolerance = rtTolerance;
+	params.rc.i_rt_overshot = 0;
+#endif
+	
+	if (!streaming)
+	{
+		params.rc.b_stat_write		= 0;
+		params.b_intra_refresh		= 1;
+	}
+
+	params.b_deblocking_filter		= 1;
+	params.i_deblocking_filter_alphac0	= -2;
+	params.i_deblocking_filter_beta		= 2;
 
 	Debug("-H264Encoder::OpenCodec() | config params.rc.f_rate_tolerance:%f params.rc.i_vbv_buffer_size:%d\n", params.rc.f_rate_tolerance, params.rc.i_vbv_buffer_size);
 
-
-	// change ipratio only when it's configured in profile property
-	// or else leave its value according to preset & tune
-	if (ipratio >= 0)
-	{
-		params.rc.f_ip_factor = ipratio;
-	}
-	
 	params.i_threads		= threads; //0 is auto!!
 	params.b_sliced_threads		= 1;
 	params.b_vfr_input		= 0;

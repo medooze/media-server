@@ -59,6 +59,9 @@ private:
 	int threads = 0;
 	int qMin = 0;
 	int qMax = 0;
+	bool rtModeEnabled = false;
+	float rtBufferSizeMultiplier = 1;
+	int rtTolerance = 1;
 };
 
 #endif 
