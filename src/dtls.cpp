@@ -122,8 +122,8 @@ int DTLSConnection::GenerateCertificate()
 		goto error;
 	}
 	
-	X509_NAME_add_entry_by_txt(cert_name, "O", MBSTRING_ASC, (BYTE*)"Medooze Media Server", -1, -1, 0);
-	X509_NAME_add_entry_by_txt(cert_name, "CN", MBSTRING_ASC, (BYTE*)"Medooze Media Server", -1, -1, 0);
+	X509_NAME_add_entry_by_txt(cert_name, "O", MBSTRING_ASC, (BYTE*)"medooze", -1, -1, 0);
+	X509_NAME_add_entry_by_txt(cert_name, "CN", MBSTRING_ASC, (BYTE*)"medooze", -1, -1, 0);
 
 	// It is self-signed so set the issuer name to be the same as the subject.
 	ret = X509_set_issuer_name(certificate, cert_name);
