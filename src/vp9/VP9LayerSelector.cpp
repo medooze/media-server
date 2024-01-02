@@ -189,6 +189,16 @@ bool VP9LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 	{
 		//Get data from header
 		infos.emplace_back(packet->vp9PayloadDescriptor->temporalLayerId,packet->vp9PayloadDescriptor->spatialLayerId);
+		
+		auto& desc = packet->vp9PayloadDescriptor.value();
+		if (desc.scalabiltiyStructureDataPresent && desc.scalabilityStructure.spatialLayerFrameResolutionPresent && desc.layerIndicesPresent &&
+			desc.spatialLayerId < desc.scalabilityStructure.spatialLayerFrameResolutions.size())
+		{
+			auto& resolution = desc.scalabilityStructure.spatialLayerFrameResolutions[desc.spatialLayerId];
+			packet->SetWidth(resolution.first);
+			packet->SetHeight(resolution.second);
+		}
+		
 	} else if (packet->GetMaxMediaLength()) { 
 		Error("-VP9LayerSelector::GetLayerIds() | no descriptor");
 	}
