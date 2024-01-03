@@ -1,6 +1,8 @@
 #include <vector>
 
 #include "DependencyDescriptorLayerSelector.h"
+#include "av1/AV1.h"
+#include "av1/Obu.h"
 
 constexpr uint32_t NoChain		= std::numeric_limits<uint32_t>::max();
 constexpr uint32_t NoDecodeTarget	= std::numeric_limits<uint32_t>::max();
@@ -340,6 +342,37 @@ std::vector<LayerInfo> DependencyDescriptorLayerSelector::GetLayerIds(const RTPP
 			auto& res = currentTemplateDependencyStructure->resolutions[frameDependencyTemplate.spatialLayerId];
 			packet->SetWidth(res.width);
 			packet->SetHeight(res.height);
+		}
+	}
+	
+	if (packet->GetWidth() == 0 || packet->GetHeight() == 0)
+	{
+		if (packet->GetCodec() == VideoCodec::AV1 && packet->GetMediaLength() > 0)
+		{
+			const RtpAv1AggreationHeader* header = reinterpret_cast<const RtpAv1AggreationHeader*>(packet->GetMediaData());
+			BufferReader reader(packet->GetMediaData() + 1, packet->GetMediaLength() - 1);
+			
+			uint32_t obuSize = reader.GetLeft();
+			// There must be a length field following aggregation header if the number of OBU elements field is not 1
+			if (header->W != 1)
+			{
+				obuSize = reader.DecodeLev128();
+			}
+			
+			if (obuSize <= reader.GetLeft())
+			{
+				auto info = GetObuInfo(reader.PeekData(), obuSize);
+				if (info && info->obuType == ObuType::ObuSequenceHeader)
+				{
+					SequenceHeaderObu sho;
+					if (sho.Parse(info->payload, info->payloadSize))
+					{
+						//Set dimensions
+						packet->SetWidth(sho.max_frame_width_minus_1 + 1);
+						packet->SetHeight(sho.max_frame_height_minus_1 + 1);
+					}
+				}
+			}
 		}
 	}
 	
