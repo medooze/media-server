@@ -29,6 +29,7 @@ struct LayerSource : LayerInfo
 	DWORD totalBitrate = 0;
 
 	Acumulator<uint32_t, uint64_t>	acumulator;
+	Acumulator<uint32_t, uint64_t> acumulatorTotalBitrate;
 
 	// From VideoLayerAllocation info
 	bool active = true;
@@ -37,13 +38,17 @@ struct LayerSource : LayerInfo
 	std::optional<uint16_t> targetHeight;
 	std::optional<uint8_t>  targetFps;
 	
-	LayerSource() : acumulator(1000)
+	LayerSource() :
+		acumulator(1E3, 1E3, 1E3),
+		acumulatorTotalBitrate(1E3, 1E3, 1E3),
 	{
 		
 	}
 	virtual ~LayerSource() = default;
 	
-	LayerSource(const LayerInfo& layerInfo) : acumulator(1000)
+	LayerSource(const LayerInfo& layerInfo) : 
+		acumulator(1E3, 1E3, 1E3),
+		acumulatorTotalBitrate(1E3, 1E3, 1E3),
 	{
 		spatialLayerId  = layerInfo.spatialLayerId;
 		temporalLayerId = layerInfo.temporalLayerId; 
