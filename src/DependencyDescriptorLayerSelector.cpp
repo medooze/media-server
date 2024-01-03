@@ -332,6 +332,15 @@ std::vector<LayerInfo> DependencyDescriptorLayerSelector::GetLayerIds(const RTPP
 				last = layerInfo;
 			}
 		}
+		
+		const auto& frameDependencyTemplate = currentTemplateDependencyStructure->GetFrameDependencyTemplate(dependencyDescriptor->frameDependencyTemplateId);
+
+		if (currentTemplateDependencyStructure->resolutions.size() > frameDependencyTemplate.spatialLayerId)
+		{
+			auto& res = currentTemplateDependencyStructure->resolutions[frameDependencyTemplate.spatialLayerId];
+			packet->SetWidth(res.width);
+			packet->SetHeight(res.height);
+		}
 	}
 	
 	//Return empty layer info
