@@ -1,8 +1,6 @@
 #include <vector>
 
 #include "DependencyDescriptorLayerSelector.h"
-#include "av1/AV1.h"
-#include "av1/Obu.h"
 
 constexpr uint32_t NoChain		= std::numeric_limits<uint32_t>::max();
 constexpr uint32_t NoDecodeTarget	= std::numeric_limits<uint32_t>::max();
@@ -342,47 +340,6 @@ std::vector<LayerInfo> DependencyDescriptorLayerSelector::GetLayerIds(const RTPP
 			auto& res = currentTemplateDependencyStructure->resolutions[frameDependencyTemplate.spatialLayerId];
 			packet->SetWidth(res.width);
 			packet->SetHeight(res.height);
-		}
-	}
-	
-	if (packet->GetWidth() == 0 || packet->GetHeight() == 0)
-	{
-		if (packet->GetCodec() == VideoCodec::AV1 && packet->GetMediaLength() > 0)
-		{
-			BufferReader reader(packet->GetMediaData(), packet->GetMediaLength());
-	
-			// Get aggregation header
-			BYTE aggregationHeader = reader.Get1();
-		
-			const RtpAv1AggreationHeader* header = reinterpret_cast<const RtpAv1AggreationHeader*>(&aggregationHeader);
-			// Skip fragmented first element
-			if (header->Z) return infos;
-			
-			uint32_t obuSize = reader.GetLeft();
-			// We only parse the first OBU, so the size fiedl would not present when only one element in the packet
-			if (header->W != 1)
-			{
-				obuSize = reader.DecodeLev128();
-			}
-			
-			// Note enough data
-			if (obuSize > reader.GetLeft()) return infos;
-			
-			auto obu = reader.GetReader(obuSize);
-			
-			auto info = GetObuInfo(obu.PeekData(), obuSize);
-			// The sequence header always be the first element in the packet if present, so we just need to check
-			// the first one.
-			if (info && info->obuType == ObuType::ObuSequenceHeader && info->obuSize == obuSize)
-			{
-				SequenceHeaderObu sho;
-				if (sho.Parse(info->payload, info->payloadSize))
-				{
-					//Set dimensions
-					packet->SetWidth(sho.max_frame_width_minus_1 + 1);
-					packet->SetHeight(sho.max_frame_height_minus_1 + 1);
-				}
-			}
 		}
 	}
 	
