@@ -138,8 +138,6 @@ MediaFrame* AV1Depacketizer::AddPacket(const RTPPacket::shared& packet)
 		AddPayload(packet->GetMediaData(), packet->GetMediaLength());
 	}
 
-	packet->SetWidth(layer.width);
-	packet->SetHeight(layer.height);
 
 	/*
 	if (packet->GetMark())
