@@ -40,7 +40,7 @@ struct LayerSource : LayerInfo
 	
 	LayerSource() :
 		acumulator(1E3, 1E3, 1E3),
-		acumulatorTotalBitrate(1E3, 1E3, 1E3),
+		acumulatorTotalBitrate(1E3, 1E3, 1E3)
 	{
 		
 	}
@@ -48,7 +48,7 @@ struct LayerSource : LayerInfo
 	
 	LayerSource(const LayerInfo& layerInfo) : 
 		acumulator(1E3, 1E3, 1E3),
-		acumulatorTotalBitrate(1E3, 1E3, 1E3),
+		acumulatorTotalBitrate(1E3, 1E3, 1E3)
 	{
 		spatialLayerId  = layerInfo.spatialLayerId;
 		temporalLayerId = layerInfo.temporalLayerId; 
