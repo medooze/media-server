@@ -23,9 +23,10 @@
 
 struct LayerSource : LayerInfo
 {
-	DWORD		numPackets = 0;
-	QWORD		totalBytes = 0;
-	DWORD		bitrate = 0;
+	DWORD numPackets = 0;
+	QWORD totalBytes = 0;
+	DWORD bitrate = 0;
+	DWORD totalBitrate = 0;
 
 	Acumulator<uint32_t, uint64_t>	acumulator;
 
@@ -48,42 +49,42 @@ struct LayerSource : LayerInfo
 		temporalLayerId = layerInfo.temporalLayerId; 
 	}
 	
-	void Update(QWORD now, DWORD size) 
+	void Update(QWORD now, DWORD size, DWORD overheadSize)
 	{
+		//Calculate total size
+		DWORD totalSize = size + overheadSize;
+
 		//Increase stats
 		numPackets++;
-		totalBytes += size;
+		totalBytes += totalSize;
 		
-		//Update bitrate acumulator
-		acumulator.Update(now,size);
-		
-		//Update bitrate in bps
-		bitrate = acumulator.GetInstant()*8;
+		//Update bitrate acumulators and get value in bps
+		bitrate = acumulator.Update(now, size) * 8;
+		totalBitrate = acumulatorTotalBitrate.Update(now, totalSize) * 8;
 	}
 	
 	virtual void Update(QWORD now)
 	{
-		//Update bitrate acumulator
-		acumulator.Update(now);
-		//Update bitrate in bps
-		bitrate = acumulator.GetInstant()*8;
+		//Update bitrate acumulators and get value in bps
+		bitrate = acumulator.Update(now) * 8;
+		totalBitrate = acumulatorTotalBitrate.Update(now) * 8;
 	}
 };
 
 struct RTPSource
 {
-	DWORD	ssrc = 0;
-	DWORD   extSeqNum = 0;
-	DWORD	cycles = 0;
-	DWORD	jitter = 0;
-	DWORD	numPackets = 0;
-	DWORD   numPacketsDelta = 0;
-	DWORD	numRTCPPackets = 0;
-	QWORD	totalBytes = 0;
-	QWORD	totalRTCPBytes = 0;
-	DWORD   bitrate = 0;
-	DWORD   totalBitrate = 0;
-	DWORD	clockrate = 0;
+	DWORD ssrc = 0;
+	DWORD extSeqNum = 0;
+	DWORD cycles = 0;
+	DWORD jitter = 0;
+	DWORD numPackets = 0;
+	DWORD numPacketsDelta = 0;
+	DWORD numRTCPPackets = 0;
+	QWORD totalBytes = 0;
+	QWORD totalRTCPBytes = 0;
+	DWORD bitrate = 0;
+	DWORD totalBitrate = 0;
+	DWORD clockrate = 0;
 	Acumulator<uint32_t, uint64_t> acumulator;
 	Acumulator<uint32_t, uint64_t> acumulatorTotalBitrate;
 	Acumulator<uint32_t, uint64_t> acumulatorPackets;

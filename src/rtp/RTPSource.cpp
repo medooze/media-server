@@ -51,13 +51,14 @@ void RTPSource::SetExtSeqNum(DWORD extSeqNum )
 
 void RTPSource::Update(QWORD now, DWORD seqNum,DWORD size,DWORD overheadSize) 
 {
-	auto totalSize = size + overheadSize;
+	//Calculate total size
+	DWORD totalSize = size + overheadSize;
 	
 	//Increase stats
 	numPackets++;
 	totalBytes += totalSize;
 
-	//Update bitrate acumulator and get value in bps
+	//Update bitrate acumulators and get value in bps
 	bitrate = acumulator.Update(now,size) * 8;
 	totalBitrate = acumulatorTotalBitrate.Update(now, totalSize) * 8;
 	
@@ -67,7 +68,7 @@ void RTPSource::Update(QWORD now, DWORD seqNum,DWORD size,DWORD overheadSize)
 
 void RTPSource::Update(QWORD now) 
 {
-	//Update bitrate acumulator and get value in bps
+	//Update bitrate acumulators and get value in bps
 	bitrate = acumulator.Update(now) * 8;
 	totalBitrate = acumulatorTotalBitrate.Update(now) * 8;
 	//Update packets acumulator

@@ -161,7 +161,7 @@ WORD RTPIncomingSource::ExtendSeqNum(WORD seqNum)
 void RTPIncomingSource::Update(QWORD now,DWORD seqNum,DWORD size,DWORD overheadSize,const std::vector<LayerInfo> &layerInfos, bool aggreagtedLayers, const std::optional<struct VideoLayersAllocation>& videoLayersAllocation)
 {
 	//Update source normally
-	RTPIncomingSource::Update(now,seqNum,size, overheadSize);
+	RTPIncomingSource::Update(now, seqNum, size, overheadSize);
 	//Set aggregated layers flag
 	this->aggregatedLayers = aggreagtedLayers;
 	//For each layer
@@ -173,7 +173,7 @@ void RTPIncomingSource::Update(QWORD now,DWORD seqNum,DWORD size,DWORD overheadS
 			//Insert layer info if it doesn't exist
 			auto [it, inserted] = layers.try_emplace(layerInfo.GetId(), layerInfo);
 			//Update layer source
-			it->second.Update(now,size);
+			it->second.Update(now, size, overheadSize);
 		}
 	}
 	//If packet has VLA header extension 
@@ -231,7 +231,7 @@ void RTPIncomingSource::Update(QWORD now,DWORD seqNum,DWORD size,DWORD overheadS
 							//Insert layer info if it doesn't exist
 							auto [it, inserted] = layers.try_emplace(layerInfo.GetId(), layerInfo);
 							//Update layer source
-							it->second.Update(now, size);
+							it->second.Update(now, size, overheadSize);
 							//It is active
 							it->second.active = true;
 							//Get bitrate for temporal layer, in bps
