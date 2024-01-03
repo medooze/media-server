@@ -158,10 +158,10 @@ WORD RTPIncomingSource::ExtendSeqNum(WORD seqNum)
 	return cycles; 
 }
 
-void RTPIncomingSource::Update(QWORD now,DWORD seqNum,DWORD size,const std::vector<LayerInfo> &layerInfos, bool aggreagtedLayers, const std::optional<struct VideoLayersAllocation>& videoLayersAllocation)
+void RTPIncomingSource::Update(QWORD now,DWORD seqNum,DWORD size,DWORD overheadSize,const std::vector<LayerInfo> &layerInfos, bool aggreagtedLayers, const std::optional<struct VideoLayersAllocation>& videoLayersAllocation)
 {
 	//Update source normally
-	RTPIncomingSource::Update(now,seqNum,size);
+	RTPIncomingSource::Update(now,seqNum,size, overheadSize);
 	//Set aggregated layers flag
 	this->aggregatedLayers = aggreagtedLayers;
 	//For each layer
@@ -248,16 +248,16 @@ void RTPIncomingSource::Update(QWORD now,DWORD seqNum,DWORD size,const std::vect
 	}
 }
 
-void RTPIncomingSource::Update(QWORD now,DWORD seqNum,DWORD size)
+void RTPIncomingSource::Update(QWORD now,DWORD seqNum,DWORD size,DWORD overheadSize)
 {
 	//Store last seq number before updating
 	//DWORD lastExtSeqNum = extSeqNum;
 
 	//Update source
-	RTPSource::Update(now,seqNum,size);
+	RTPSource::Update(now,seqNum,size,overheadSize);
 
 	totalPacketsSinceLastSR++;
-	totalBytesSinceLastSR += size;
+	totalBytesSinceLastSR += size + overheadSize;
 	
 	//TODO: remove, this should be redundant
 	SetSeqNum(seqNum);

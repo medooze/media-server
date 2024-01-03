@@ -382,7 +382,7 @@ RTPIncomingSource* RTPIncomingSourceGroup::Process(RTPPacket::shared &packet)
 		auto info = VideoLayerSelector::GetLayerIds(packet);
 		//UltraDebug("-RTPIncomingSourceGroup::Process() | [id:%x,tid:%u,sid:%u]\n",info.GetId(),info.temporalLayerId,info.spatialLayerId);
 		//Update source and layer info
-		source->Update(time, packet->GetSeqNum(), packet->GetMediaLength(), info, VideoLayerSelector::AreLayersInfoeAggregated(packet), packet->GetVideoLayersAllocation());
+		source->Update(time, packet->GetSeqNum(), packet->GetMediaLength(), packet->GetRTPHeader().GetSize(), info, VideoLayerSelector::AreLayersInfoeAggregated(packet), packet->GetVideoLayersAllocation());
 		
 		//If we have new size
 		if (packet->GetWidth() && packet->GetHeight())
@@ -394,7 +394,7 @@ RTPIncomingSource* RTPIncomingSourceGroup::Process(RTPPacket::shared &packet)
 		}
 	} else {
 		//Update source and layer info
-		source->Update(time, packet->GetSeqNum(), packet->GetMediaLength());
+		source->Update(time, packet->GetSeqNum(), packet->GetMediaLength(), packet->GetRTPHeader().GetSize());
 	}
 	
 	if (source==&media)
