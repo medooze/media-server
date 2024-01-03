@@ -27,8 +27,8 @@ std::vector<LayerInfo> AV1LayerSelector::GetLayerIds(const RTPPacket::shared& pa
 	// Skip fragmented first element
 	if (header->Z) return infos;
 	
+	// We only parse the first OBU. The size field would not present when only one element in the packet
 	uint32_t obuSize = reader.GetLeft();
-	// We only parse the first OBU, so the size fiedl would not present when only one element in the packet
 	if (header->W != 1)
 	{
 		obuSize = reader.DecodeLev128();
@@ -37,10 +37,8 @@ std::vector<LayerInfo> AV1LayerSelector::GetLayerIds(const RTPPacket::shared& pa
 	// Not enough data
 	if (obuSize > reader.GetLeft()) return infos;
 	
-	auto obu = reader.GetReader(obuSize);
-	
-	auto info = GetObuInfo(obu.PeekData(), obuSize);
-	// The sequence header always be the first element in the packet if present, so we just need to check
+	auto info = GetObuInfo(reader.PeekData(), obuSize);
+	// The sequence header is always the first element in the packet if present, so we just need to check
 	// the first one.
 	if (info && info->obuType == ObuType::ObuSequenceHeader && info->obuSize == obuSize)
 	{
