@@ -2,19 +2,10 @@
 
 RTPSource::RTPSource() :
 	acumulator(1E3, 1E3, 1E3),
+	acumulatorTotalBitrate(1E3, 1E3, 1E3),
 	acumulatorPackets(1E3, 1E3, 1E3)
 {
-	ssrc		= 0;
-	extSeqNum	= 0;
-	cycles		= 0;
-	numPackets	= 0;
-	numPacketsDelta = 0;	
-	numRTCPPackets	= 0;
-	totalBytes	= 0;
-	totalRTCPBytes	= 0;
-	jitter		= 0;
-	bitrate		= 0;
-	clockrate	= 0;
+
 }
 
 WORD RTPSource::SetSeqNum(WORD seqNum)
@@ -58,14 +49,18 @@ void RTPSource::SetExtSeqNum(DWORD extSeqNum )
 
 }
 
-void RTPSource::Update(QWORD now, DWORD seqNum,DWORD size) 
+void RTPSource::Update(QWORD now, DWORD seqNum,DWORD size,DWORD overheadSize) 
 {
+	auto totalSize = size + overheadSize;
+	
 	//Increase stats
 	numPackets++;
-	totalBytes += size;
+	totalBytes += totalSize;
 
 	//Update bitrate acumulator and get value in bps
 	bitrate = acumulator.Update(now,size) * 8;
+	totalBitrate = acumulatorTotalBitrate.Update(now, totalSize) * 8;
+	
 	//Update packets acumulator
 	numPacketsDelta = acumulatorPackets.Update(now,1);
 }
@@ -74,6 +69,7 @@ void RTPSource::Update(QWORD now)
 {
 	//Update bitrate acumulator and get value in bps
 	bitrate = acumulator.Update(now) * 8;
+	totalBitrate = acumulatorTotalBitrate.Update(now) * 8;
 	//Update packets acumulator
 	numPacketsDelta = acumulatorPackets.Update(now);
 }
@@ -89,8 +85,10 @@ void RTPSource::Reset()
 	totalRTCPBytes	= 0;
 	jitter		= 0;
 	bitrate		= 0;
+	totalBitrate	= 0;
 	clockrate	= 0;
 	//Reset accumulators
 	acumulator.Reset(0);
+	acumulatorTotalBitrate.Reset(0);
 	acumulatorPackets.Reset(0);
 }

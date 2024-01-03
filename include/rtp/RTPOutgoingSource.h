@@ -45,7 +45,7 @@ struct RTPOutgoingSource :
 	
 	
 	virtual void Reset() override;
-	virtual void Update(QWORD now,DWORD seqNum,DWORD size) override;
+	virtual void Update(QWORD now,DWORD seqNum,DWORD size,DWORD overheadSize) override;
 	virtual void Update(QWORD now) override;
 	
 	RTCPSenderReport::shared CreateSenderReport(QWORD time);

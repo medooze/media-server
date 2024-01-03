@@ -72,18 +72,20 @@ struct LayerSource : LayerInfo
 
 struct RTPSource
 {
-	DWORD	ssrc;
-	DWORD   extSeqNum;
-	DWORD	cycles;
-	DWORD	jitter;
-	DWORD	numPackets;
-	DWORD   numPacketsDelta;
-	DWORD	numRTCPPackets;
-	QWORD	totalBytes;
-	QWORD	totalRTCPBytes;
-	DWORD   bitrate;
-	DWORD	clockrate;
+	DWORD	ssrc = 0;
+	DWORD   extSeqNum = 0;
+	DWORD	cycles = 0;
+	DWORD	jitter = 0;
+	DWORD	numPackets = 0;
+	DWORD   numPacketsDelta = 0;
+	DWORD	numRTCPPackets = 0;
+	QWORD	totalBytes = 0;
+	QWORD	totalRTCPBytes = 0;
+	DWORD   bitrate = 0;
+	DWORD   totalBitrate = 0;
+	DWORD	clockrate = 0;
 	Acumulator<uint32_t, uint64_t> acumulator;
+	Acumulator<uint32_t, uint64_t> acumulatorTotalBitrate;
 	Acumulator<uint32_t, uint64_t> acumulatorPackets;
 	
 	RTPSource();
@@ -91,7 +93,7 @@ struct RTPSource
 	
 	WORD SetSeqNum(WORD seqNum);
 	void SetExtSeqNum(DWORD extSeqNum );
-	virtual void Update(QWORD now, DWORD seqNum,DWORD size);
+	virtual void Update(QWORD now, DWORD seqNum,DWORD size, DWORD overheadSize);
 	virtual void Update(QWORD now);
 	virtual void Reset();
 };
