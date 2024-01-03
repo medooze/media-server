@@ -72,6 +72,10 @@ std::optional<ObuInfo> GetObuInfo(const BYTE* data, DWORD size)
 	{
 		payloadSize = reader.DecodeLev128();			
 	}
+	else
+	{
+		payloadSize = reader.GetLeft();
+	}
 	
 	auto* payload = reader.GetData(payloadSize);
 	ObuInfo info {(payload - data) + payloadSize, header.type, headerSize, payload, payloadSize};
