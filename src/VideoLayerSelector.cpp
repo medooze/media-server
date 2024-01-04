@@ -3,7 +3,7 @@
 #include "vp9/VP9LayerSelector.h"
 #include "vp8/VP8LayerSelector.h"
 #include "h264/H264LayerSelector.h"
-#include "DependencyDescriptorLayerSelector.h"
+#include "av1/AV1LayerSelector.h"
 
 
 class DummyVideoLayerSelector : public VideoLayerSelector
@@ -44,7 +44,7 @@ VideoLayerSelector* VideoLayerSelector::Create(VideoCodec::Type codec)
 		case VideoCodec::H264:
 			return new H264LayerSelector();
 		case VideoCodec::AV1:
-			return new DependencyDescriptorLayerSelector(VideoCodec::AV1);
+			return new AV1LayerSelector();
 		default:
 			return new DummyVideoLayerSelector(codec);
 	}
@@ -61,7 +61,7 @@ std::vector<LayerInfo> VideoLayerSelector::GetLayerIds(const RTPPacket::shared& 
 		case VideoCodec::H264:
 			return H264LayerSelector::GetLayerIds(packet);
 		case VideoCodec::AV1:
-			return DependencyDescriptorLayerSelector::GetLayerIds(packet);
+			return AV1LayerSelector::GetLayerIds(packet);
 		default:
 			return {};
 	}

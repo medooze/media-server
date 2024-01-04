@@ -3,7 +3,7 @@
 #include "rtp/RTPStreamTransponder.h"
 #include "waitqueue.h"
 #include "vp8/vp8.h"
-#include "DependencyDescriptorLayerSelector.h"
+#include "av1/AV1LayerSelector.h"
 
 
 RTPStreamTransponder::RTPStreamTransponder(const RTPOutgoingSourceGroup::shared& outgoing, const RTPSender::shared& sender) :
@@ -479,7 +479,7 @@ void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPP
 		//If it is AV1
 		if (codec==VideoCodec::AV1 && selector)
 			//Get decode target
-			forwaredDecodeTargets = static_cast<DependencyDescriptorLayerSelector*>(selector.get())->GetForwardedDecodeTargets();
+			forwaredDecodeTargets = static_cast<AV1LayerSelector*>(selector.get())->GetForwardedDecodeTargets();
 
 		//Continous frame number
 		uint64_t continousFrameNumber = NoFrameNum;
