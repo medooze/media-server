@@ -571,7 +571,7 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 			DWORD prio = priority ? get4(priority->attr,0) : 0;
 			
 			//Find candidate or try to create one if not present
-			auto [itc, inserted] = candidates.try_emplace(remote,ip,port,transport);
+			auto [itc, inserted] = candidates.try_emplace(remote,ip,port,transport,username);
 			
 			//Get candidate
 			ICERemoteCandidate* candidate = &itc->second;
@@ -759,11 +759,21 @@ int RTPBundleTransport::AddRemoteCandidate(const std::string& username,const cha
 		std::string remote = ip + ":" + std::to_string(port);
 		
 		//Create new candidate if it is not already present
-		auto [itc, inserted] = candidates.try_emplace(remote,ip,port,transport);
+		auto [itc, inserted] = candidates.try_emplace(remote,ip,port,transport,username);
 		
 		//Get candidate
 		ICERemoteCandidate* candidate = &itc->second;
 	
+		//If the candidate already existed and belonged to a different transport,
+		//then the other side is sharing an endpoint for many transports, which
+		//prevents operation entirely. The user is responsible not to break this
+		//assumption, but in case it ever happens, we print an error.
+		if (candidate->GetUsername() != username)
+		{
+			Error("-RTPBundleTransport::AddRemoteCandidate() | candidate %s already used by another transport [username:%s}\n", remote.c_str(), username.c_str());
+			return;
+		}
+
 		//If it was new
 		if (inserted)
 			//Add candidate and add it to the connection
