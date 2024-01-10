@@ -210,6 +210,14 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 		//Rescale
 		scaler.Resize(videoBuffer, resized, true);
 
+		//Set timing info from original video buffer
+		if (videoBuffer->HasClockRate())
+			resized->SetClockRate(videoBuffer->GetClockRate());
+		if (videoBuffer->HasTimestamp())
+			resized->SetTimestamp(videoBuffer->GetTimestamp());
+		if (videoBuffer->HasTime())
+			resized->SetTime(videoBuffer->HasTime());
+
 		//Swap buffers
 		videoBuffer = std::move(resized);
 	}
