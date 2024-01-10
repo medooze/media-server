@@ -188,8 +188,14 @@ int VideoDecoderWorker::Decode()
 
 			//If no frame received yet
 			if (!frame)
-				//Get next one, treat this frame as incomplete despite the mark bit
+			{
+				// Reset the timestamps to be ready for the next frame
+				frameTimestamp = (QWORD)-1;
+				frameTime = (QWORD)-1;
+				frameClockRate = (DWORD)-1;
+				//Get next one
 				continue;
+			}
 
 			//Set frame times
 			frame->SetTime(frameTime);
