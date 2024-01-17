@@ -13,6 +13,7 @@
 
 #include "VP9LayerSelector.h"
 #include "VP9PayloadDescription.h"
+#include "VP9.h"
 
 
 VP9LayerSelector::VP9LayerSelector(BYTE temporalLayerId,BYTE spatialLayerId )
@@ -199,6 +200,24 @@ bool VP9LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 			packet->SetHeight(resolution.second);
 		}
 		
+			
+		// We will parse the resolution only if it is not set yet
+		if ((packet->GetWidth() == 0 || packet->GetHeight() == 0) && desc.startOfLayerFrame && packet->GetMediaLength() > desc.GetSize())
+		{
+			VP9FrameHeader frameHeader;
+			if (frameHeader.Parse(packet->GetMediaData() + desc.GetSize(), packet->GetMediaLength() - desc.GetSize()))
+			{
+				if (frameHeader.GetFrameWidthMinus1().has_value() && frameHeader.GetFrameHeightMinus1().has_value())
+				{
+					packet->SetWidth(*frameHeader.GetFrameWidthMinus1() + 1);
+					packet->SetHeight(*frameHeader.GetFrameHeightMinus1() + 1);
+				}
+			}
+			else
+			{
+				Error("-VP9LayerSelector::GetLayerIds() | parse frame header error. Size: %d\n", packet->GetMediaLength() - desc.GetSize());
+			}
+		}
 	} else if (packet->GetMaxMediaLength()) { 
 		Error("-VP9LayerSelector::GetLayerIds() | no descriptor");
 	}
