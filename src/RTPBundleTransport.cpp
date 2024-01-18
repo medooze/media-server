@@ -575,6 +575,16 @@ void RTPBundleTransport::OnRead(const int fd, const uint8_t* data, const size_t 
 			
 			//Get candidate
 			ICERemoteCandidate* candidate = &itc->second;
+
+			//If the candidate already existed and belonged to a different transport,
+			//then the other side is sharing an endpoint for many transports, which
+			//prevents operation entirely.
+			if (candidate->GetUsername() != username)
+			{
+				//Log error and exit
+				Warning("-RTPBundleTransport:::Read() | candidate %s already used by another transport [username:%s,owner:%s]\n", remote.c_str(), username.c_str(), candidate->GetUsername().c_str());
+				return;
+			}
 			
 			//Check if it is not already present
 			if (inserted)
@@ -770,7 +780,7 @@ int RTPBundleTransport::AddRemoteCandidate(const std::string& username,const cha
 		//assumption, but in case it ever happens, we print an error.
 		if (candidate->GetUsername() != username)
 		{
-			Error("-RTPBundleTransport::AddRemoteCandidate() | candidate %s already used by another transport [username:%s}\n", remote.c_str(), username.c_str());
+			Error("-RTPBundleTransport::AddRemoteCandidate() | candidate %s already used by another transport [username:%s,owner:%s]\n", remote.c_str(), username.c_str(), candidate->GetUsername().c_str());
 			return;
 		}
 
