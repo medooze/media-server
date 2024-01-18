@@ -46,6 +46,8 @@ add_library(MediaServerLib
 	${SOURCES_JPEG}
 	${SOURCES_WEBP}
     ${CMAKE_CURRENT_LIST_DIR}/src/DependencyDescriptorLayerSelector.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/av1/AV1LayerSelector.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/av1/Obu.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtmp/amf.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/DependencyDescriptor.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/LayerInfo.cpp
