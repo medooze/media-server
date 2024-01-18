@@ -78,8 +78,8 @@ public:
 		auto frame_marker = reader.Get(2);
 		if (frame_marker != 2) return false;
 		
-		profile_low_bit = reader.Get(1);
-		profile_high_bit = reader.Get(1);
+		auto profile_low_bit = reader.Get(1);
+		auto profile_high_bit = reader.Get(1);
 		
 		profile = profile_low_bit + (profile_high_bit << 1);
 		if (profile == 3) reader.Get(1);
@@ -106,17 +106,17 @@ public:
 		return !reader.Error();
 	}
 	
-	inline std::optional<uint8_t> GetFrameType() const
+	inline const std::optional<FrameType>& GetFrameType() const
 	{
 		return frame_type;
 	}
 	
-	inline std::optional<uint16_t> GetFrameWidthMinus1() const
+	inline const std::optional<uint16_t>& GetFrameWidthMinus1() const
 	{
 		return frame_width_minus_1;
 	}
 	
-	inline std::optional<uint16_t> GetFrameHeightMinus1() const
+	inline const std::optional<uint16_t>& GetFrameHeightMinus1() const
 	{
 		return frame_height_minus_1;
 	}
@@ -169,8 +169,6 @@ private:
 		frame_height_minus_1 = reader.Get(16);
 	}
 
-	uint8_t profile_low_bit = 0;
-	uint8_t profile_high_bit = 0;
 	uint8_t show_existing_frame = 0;
 	std::optional<uint8_t> frame_to_show_map_idx;
 	std::optional<FrameType> frame_type;

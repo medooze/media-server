@@ -215,7 +215,7 @@ bool VP9LayerSelector::Select(const RTPPacket::shared& packet,bool &mark)
 			}
 			else
 			{
-				Error("-VP9LayerSelector::GetLayerIds() | parse frame header error. Size: %d\n", packet->GetMediaLength() - desc.GetSize());
+				Warning("-VP9LayerSelector::GetLayerIds() | parse frame header error. Size: %d\n", packet->GetMediaLength() - desc.GetSize());
 			}
 		}
 	} else if (packet->GetMaxMediaLength()) { 
