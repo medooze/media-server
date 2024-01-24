@@ -43,6 +43,7 @@ private:
 	uint32_t scaleResolutionToHeight = 0;
 	int inited = false;
 	int capturing = false;
+	int cancelledGrab = false;
 	std::array<VideoBuffer::const_shared,2> imgBuffer;
 
 	pthread_mutex_t newPicMutex;
