@@ -76,8 +76,9 @@ int VideoPipe::StartVideoCapture(uint32_t width, uint32_t height, uint32_t fps)
 	videoBufferPool.SetSize(videoWidth, videoHeight);
 	
 	//No new image yet
-	imgPos = false;
-	imgNew = false;
+	buffer.Clear();
+	//imgPos = false;
+	//imgNew = false;
 
 	//We are capturing now
 	capturing = true;
@@ -95,9 +96,10 @@ int VideoPipe::StopVideoCapture()
 	//Lock
 	pthread_mutex_lock(&newPicMutex);
 
+	buffer.Clear();
 	//Free buffers
-	imgBuffer[0].reset();
-	imgBuffer[1].reset();
+	//imgBuffer[0].reset();
+	//imgBuffer[1].reset();
 
 	//Not capturing anymore
 	capturing = false;
@@ -111,6 +113,10 @@ int VideoPipe::StopVideoCapture()
 VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 {
 	VideoBuffer::const_shared videoBuffer;
+
+	auto now = getTime();
+	auto diff = now - lastPull;
+	lastPull = now;
 
 	//Lock until we have a new picture
 	pthread_mutex_lock(&newPicMutex);
@@ -143,7 +149,8 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 	// * End() : Setting inited == false
 	// * CancelGrabFrame() : Setting cancelledGrab == true
 	// * NextFrame() : Adding a new frame setting imgNew = true
-	while(inited && imgNew==0 && !cancelledGrab)
+	bool timedOut = false;
+	while(inited && buffer.Size()==0 && !cancelledGrab && !timedOut)
 	{
 		int ret = -1;
 
@@ -154,8 +161,9 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 			ret = pthread_cond_timedwait(&newPicCond,&newPicMutex,&ts);
 			if (ret == ETIMEDOUT)
 			{
-				pthread_mutex_unlock(&newPicMutex);
-				return videoBuffer;
+				//Debug("-VideoPipe::GrabFrame() timed out. Processing as normal though\n");
+				timedOut = true;
+				ret = 0;
 			}
 		}
 		else
@@ -171,24 +179,30 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 	}
 
 	//Reset new image flag
-	imgNew=0;
+	//imgNew=0;
 
 	// If this was true, handle img as normal (may exist or may not) and clear this flag so we dont cancel the next one as well
 	cancelledGrab=0;
 
 	//Get current image
-	videoBuffer = imgBuffer[imgPos];
-
-	// Make sure we dont get it again by accident in case of some bug
-	imgBuffer[imgPos].reset();
+	//videoBuffer = std::move(imgBuffer[imgPos]);
+	buffer.PopFront(&videoBuffer);
+	size_t bufferSize = buffer.Size();
 
 	//Unlock
 	pthread_mutex_unlock(&newPicMutex);
 
+	now = getTime();
+	auto ldiff = now - lastPull;
+
 	//Check we have a new frame
 	if (!videoBuffer)
+	{
+		//Debug("-VideoPipe::GrabFrame() TDIFF:%llu(%llu) Returning with empty frame\n", diff, ldiff);
 		//No frame
 		return videoBuffer;
+	}
+	//Debug("-VideoPipe::GrabFrame() TDIFF:%llu(%llu) returning with frame ts: %llu and buffer size: %u\n", diff, ldiff, videoBuffer->GetTimestamp(), bufferSize);
 
 	//Get scaling factor
 	float scale = scaleResolutionDownBy;
@@ -263,9 +277,6 @@ void  VideoPipe::CancelGrabFrame()
 	//Lock
 	pthread_mutex_lock(&newPicMutex);
 
-	//No image
-	imgNew = false;
-
 	// We need to also set this to identify we want to exit the cond var loop
 	// on any current or the next call to GrabFrame
 	// 
@@ -282,29 +293,19 @@ void  VideoPipe::CancelGrabFrame()
 
 int VideoPipe::NextFrame(const VideoBuffer::const_shared& videoBuffer)
 {
+	auto now = getTime();
+	auto diff = now - lastPush;
+	lastPush = now;
 
 	//Lock
 	pthread_mutex_lock(&newPicMutex);
+	now = getTime();
+	auto ldiff = now - lastPush;
 
-	if (imgNew)
+	if (!buffer.PushBack(videoBuffer))
 	{
-		unsigned long long oldTimestamp = 0;
-		if (imgBuffer[!imgPos])
-		{
-			oldTimestamp = imgBuffer[!imgPos]->GetTimestamp();
-		}
-		Debug("-VideoPipe::NextFrame() NextFrame and GrabFrame requests are not nicely interleaved resulting in dropped frames. Adding new videoBuffer with timestamp:%llu resulting in skipping previous frame that has not yet been consumed with timestamp:%llu\n", videoBuffer->GetTimestamp(), oldTimestamp);
+		Debug("-VideoPipe::NextFrame() TDIFF:%llu(%llu) NextFrame and GrabFrame requests have significant jitter butween them resulting in dropped frames. Adding new videoBuffer with timestamp:%llu resulting in skipping a previously buffered frame that has not yet been consumed\n", diff, ldiff, videoBuffer->GetTimestamp());
 	}
-
-	//Update current image with frame
-	imgBuffer[imgPos] = videoBuffer;
-
-	//Use previous buffer (I.e. The new data we wrote is in old imgPos, GrabFrame will pull from new imgPos which happens to be pointing now to what we stored last frame not the new data)
-	// I.e. This is a 1 frame ring buffer, we are pushing on the back and consuming from the front
-	imgPos = !imgPos;
-
-	//There is an image available for grabbing
-	imgNew = true;
 
 	//Signal any pending grap operation
 	pthread_cond_signal(&newPicCond);
@@ -326,3 +327,5 @@ void VideoPipe::ClearFrame()
 	//Put as next
 	NextFrame(black);
 }
+
+
