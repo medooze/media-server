@@ -26,6 +26,8 @@ RTPOutgoingSource* RTPOutgoingSourceGroup::GetSource(DWORD ssrc)
 {
 	if (ssrc == media.ssrc)
 		return &media;
+	else if (ssrc == fec.ssrc)
+		return &fec;
 	else if (ssrc == rtx.ssrc)
 		return &rtx;
 	return NULL;
@@ -117,6 +119,8 @@ void RTPOutgoingSourceGroup::UpdateAsync(std::function<void(std::chrono::millise
 		//Update
 		media.Update(now.count());
 		//Update
+		fec.Update(now.count());
+		//Update
 		rtx.Update(now.count());
 	}, callback);
 }
@@ -130,6 +134,8 @@ void RTPOutgoingSourceGroup::Update()
 		//Update
 		media.Update(now.count());
 		//Update
+		fec.Update(now.count());
+		//Update
 		rtx.Update(now.count());
 	});
 }
@@ -142,6 +148,8 @@ void RTPOutgoingSourceGroup::Update(QWORD now)
 		lastUpdated = now;
 		//Update
 		media.Update(now);
+		//Update
+		fec.Update(now);
 		//Update
 		rtx.Update(now);
 	});
