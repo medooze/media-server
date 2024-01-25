@@ -77,6 +77,7 @@ add_library(MediaServerLib
     ${CMAKE_CURRENT_LIST_DIR}/src/VideoCodecFactory.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/utf8.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/ForwardErrorCorrection.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/FecProbeGenerator.cpp
 )
 
 target_include_directories(MediaServerLib PUBLIC
@@ -116,6 +117,7 @@ add_executable(MediaServerUnitTest
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestVideoLayersAllocation.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestTools.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestForwardErrorCorrection.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestFecProbeGenerator.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/data/FramesArrivalInfo.cpp
 )
 
