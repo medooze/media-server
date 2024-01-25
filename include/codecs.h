@@ -70,7 +70,7 @@ public:
 class VideoCodec
 {
 public:
-	enum Type {JPEG=16,H264=99,VP8=107,VP9=112,ULPFEC=108,FLEXFEC=113,RED=109,RTX=110,AV1=111,H265=96,WEBP=43,UNKNOWN=-1};
+	enum Type {JPEG=16,H264=99,VP8=107,VP9=112,ULPFEC=108,FLEXFEC03=113,RED=109,RTX=110,AV1=111,H265=96,WEBP=43,UNKNOWN=-1};
 	static const char* GetNameFor(Type type)
 	{
 		switch (type)
@@ -84,7 +84,7 @@ public:
 			case RED:	return "RED";
 			case RTX:	return "RTX";
 			case ULPFEC:	return "FEC";
-			case FLEXFEC:	return "flexfec-03";
+			case FLEXFEC03:	return "flexfec-03";
 			case WEBP:	return "WEBP";
 			default:	return "unknown";
 		}
@@ -98,7 +98,7 @@ public:
 		else if (strcasecmp(codec,"VP8")==0) return VP8;
 		else if (strcasecmp(codec,"VP9")==0) return VP9;
 		else if (strcasecmp(codec,"AV1")==0) return AV1;
-		else if (strcasecmp(codec,"FLEXFEC")==0) return FLEXFEC;
+		else if (strcasecmp(codec,"FLEXFEC-03")==0) return FLEXFEC03;
 		else if (strcasecmp(codec,"WEBP") == 0) return WEBP;
 		return UNKNOWN;
 	}
@@ -145,7 +145,7 @@ static MediaFrame::Type GetMediaForCodec(BYTE codec)
 		case VideoCodec::RED:
 		case VideoCodec::RTX:
 		case VideoCodec::ULPFEC:
-		case VideoCodec::FLEXFEC:
+		case VideoCodec::FLEXFEC03:
 		case VideoCodec::WEBP:
 			return MediaFrame::Video;
 		case TextCodec::T140:

@@ -1652,13 +1652,14 @@ bool DTLSICETransport::AddOutgoingSourceGroup(const RTPOutgoingSourceGroup::shar
 		return Error("-DTLSICETransport::AddOutgoingSourceGroup() | Empty group\n");
 
 	//Log
-	Log("-DTLSICETransport::AddOutgoingSourceGroup() [group:%p,ssrc:%u,rtx:%u]\n",group.get(), group->media.ssrc, group->rtx.ssrc);
+	Log("-DTLSICETransport::AddOutgoingSourceGroup() [group:%p,ssrc:%u,fec:%u,rtx:%u]\n",group.get(), group->media.ssrc, group->fec.ssrc, group->rtx.ssrc);
 	
 	//Dispatch to the event loop thread
 	timeService.Async([=](auto now){
 
 		//Get ssrcs
 		const auto media = group->media.ssrc;
+		const auto fec = group->fec.ssrc;
 		const auto rtx = group->rtx.ssrc;
 
 		//TODO: pass a callback for confirming creation
@@ -1667,6 +1668,13 @@ bool DTLSICETransport::AddOutgoingSourceGroup(const RTPOutgoingSourceGroup::shar
 		{
 			//Error
 			Error("-DTLSICETransport::AddOutgoingSourceGroup() | media ssrc already assigned");
+			return;
+		}
+
+		if (fec && outgoing.find(fec)!=outgoing.end())
+		{
+			//Error
+			Error("-DTLSICETransport::AddOutgoingSourceGroup() | fec ssrc already assigned");
 			return;
 		}
 
@@ -1682,6 +1690,11 @@ bool DTLSICETransport::AddOutgoingSourceGroup(const RTPOutgoingSourceGroup::shar
 		{
 			outgoing[media] = group.get();
 			send.AddStream(media);
+		}
+		if (fec)
+		{
+			outgoing[fec] = group.get();
+			send.AddStream(fec);
 		}
 		if (rtx)
 		{
@@ -1707,14 +1720,15 @@ bool DTLSICETransport::AddOutgoingSourceGroup(const RTPOutgoingSourceGroup::shar
 
 bool DTLSICETransport::RemoveOutgoingSourceGroup(const RTPOutgoingSourceGroup::shared&  group)
 {
-	Log("-DTLSICETransport::RemoveOutgoingSourceGroup() [ssrc:%u,rtx:%u]\n",group->media.ssrc,group->rtx.ssrc);
+	Log("-DTLSICETransport::RemoveOutgoingSourceGroup() [ssrc:%u,fec:%u,rtx:%u]\n", group->media.ssrc, group->fec.ssrc, group->rtx.ssrc);
 
 	//Dispatch to the event loop thread
 	timeService.Async([=](auto now){
-		Log("-DTLSICETransport::RemoveOutgoingSourceGroup() | Async [ssrc:%u,rtx:%u]\n",group->media.ssrc,group->rtx.ssrc);
+		Log("-DTLSICETransport::RemoveOutgoingSourceGroup() | Async [ssrc:%u,fec:%u,rtx:%u]\n", group->media.ssrc, group->fec.ssrc, group->rtx.ssrc);
 		//Get ssrcs
 		std::vector<DWORD> ssrcs;
 		const auto media = group->media.ssrc;
+		const auto fec = group->fec.ssrc;
 		const auto rtx   = group->rtx.ssrc;
 		
 		//If got media ssrc
@@ -1725,6 +1739,15 @@ bool DTLSICETransport::RemoveOutgoingSourceGroup(const RTPOutgoingSourceGroup::s
 			send.RemoveStream(media);
 			//Add group ssrcs
 			ssrcs.push_back(media);
+		}
+		//IF got fec ssrc
+		if (fec)
+		{
+			//Remove from ssrc mapping and srtp session
+			outgoing.erase(fec);
+			send.RemoveStream(fec);
+			//Add group ssrcs
+			ssrcs.push_back(fec);
 		}
 		//IF got rtx ssrc
 		if (rtx)

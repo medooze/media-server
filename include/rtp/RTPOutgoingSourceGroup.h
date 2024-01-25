@@ -66,6 +66,7 @@ public:
 	std::string mid;
 	MediaFrame::Type type;
 	RTPOutgoingSource media;
+	RTPOutgoingSource fec;
 	RTPOutgoingSource rtx;
 	QWORD lastUpdated = 0;
 private:	
