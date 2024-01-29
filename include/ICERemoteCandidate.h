@@ -43,8 +43,8 @@ public:
 	};
 public:
 	
-	ICERemoteCandidate(const std::string& ip,const WORD port,std::shared_ptr<Listener> listener) :
-		listener(listener)
+	ICERemoteCandidate(const std::string& ip,const WORD port,std::shared_ptr<Listener> listener,std::string username) :
+		listener(listener), username(username)
 	{
 		//Set values
 		addr.sin_family		= AF_INET;
@@ -52,8 +52,8 @@ public:
 		addr.sin_addr.s_addr	= inet_addr(ip.c_str());
 	}
 	
-	ICERemoteCandidate(const char *ip,const WORD port, std::shared_ptr<Listener> listener) :
-		listener(listener)
+	ICERemoteCandidate(const char *ip,const WORD port, std::shared_ptr<Listener> listener,std::string username) :
+		listener(listener), username(username)
 	{
 		//Set values
 		addr.sin_family		= AF_INET;
@@ -61,8 +61,8 @@ public:
 		addr.sin_addr.s_addr	= inet_addr(ip);
 	}
 	
-	ICERemoteCandidate(const DWORD ipAddr ,const WORD port, std::shared_ptr<Listener> listener) :
-		listener(listener)
+	ICERemoteCandidate(const DWORD ipAddr ,const WORD port, std::shared_ptr<Listener> listener,std::string username) :
+		listener(listener), username(username)
 	{
 		//Set values
 		addr.sin_family		= AF_INET;
@@ -91,6 +91,7 @@ public:
 	std::string	GetRemoteAddress()	const { return std::string(GetIP()) + ":" + std::to_string(GetPort()); }
 	State		GetState()		const { return state;				}
 	const std::optional<PacketHeader::FlowRoutingInfo>&	GetRawTxData()	const { return rawTxData;		}
+	std::string	GetUsername()		const { return username; }
 public:
 	static std::string GetRemoteAddress(DWORD address,WORD port)
 	{
@@ -106,6 +107,7 @@ private:
 	sockaddr_in addr	= {};
 	std::shared_ptr<Listener> listener;
 	std::optional<PacketHeader::FlowRoutingInfo> rawTxData;
+	std::string username;
 };
 
 

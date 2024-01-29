@@ -183,16 +183,19 @@ int VideoDecoderWorker::Decode()
 				waitIntra = false;
 			}
 			
-			//No frame timestamp yet for next frame
-			frameTimestamp = (QWORD)-1;
-
 			//Get picture
 			const VideoBuffer::shared& frame = videoDecoder->GetFrame();
 
 			//If no frame received yet
 			if (!frame)
+			{
+				// Reset the timestamps to be ready for the next frame
+				frameTimestamp = (QWORD)-1;
+				frameTime = (QWORD)-1;
+				frameClockRate = (DWORD)-1;
 				//Get next one
 				continue;
+			}
 
 			//Set frame times
 			frame->SetTime(frameTime);
@@ -248,6 +251,11 @@ int VideoDecoderWorker::Decode()
 					//Send it
 					output->NextFrame(frame);
 			}
+
+			// Reset the timestamps to be ready for the next frame
+			frameTimestamp = (QWORD)-1;
+			frameTime = (QWORD)-1;
+			frameClockRate = (DWORD)-1;
 		}
 	}
 
