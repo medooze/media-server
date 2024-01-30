@@ -51,8 +51,11 @@ public:
 		auto durationOnTs = GetDiff(timestamp, lastTimeStamp) * 1000 / clock;
 		auto durationOnRecv = GetDiff(recvTimeMs, lastRecvTime);
 		
+		bool sameOrder = (recvTimeMs >= lastRecvTime && timestamp >= lastTimeStamp) || 
+				 (recvTimeMs <= lastRecvTime && timestamp <= lastTimeStamp);
+		
 		// The difference between expected duration as per timestamp and actual duration since last frame
-		auto diff = GetDiff(durationOnTs, durationOnRecv);
+		auto diff = sameOrder ? GetDiff(durationOnTs, durationOnRecv) : (durationOnTs + durationOnRecv);
 		
 		bool valid = diff < maxDurationDiffMs;
 		if (valid)
