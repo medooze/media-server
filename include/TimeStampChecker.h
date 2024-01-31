@@ -40,6 +40,8 @@ public:
 	
 	CheckResult Check(uint64_t recvTimeMs, uint64_t timestamp, uint32_t clock)
 	{
+		if (clock == 0) return CheckResult::Invalid;
+		
 		// Check if it is just started
 		if (lastRecvTime == 0 && lastTimeStamp == 0)
 		{
