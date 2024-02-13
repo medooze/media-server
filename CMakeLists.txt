@@ -110,7 +110,7 @@ add_executable(MediaServerUnitTest
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestMovingCounter.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestRTPStreamTransponder.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestSimulcastMediaFrameListener.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestTimeStampChecker.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestTimestampChecker.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestVP8Depacketizer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAMFNumber.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestVideoLayersAllocation.cpp

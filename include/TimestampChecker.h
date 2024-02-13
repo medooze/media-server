@@ -18,7 +18,7 @@
  * If the time and timestamps pair are continously regarded as invalid for a certain frames,
  * the time checker will be reset.
  */
-class TimeStampChecker
+class TimestampChecker
 {
 public:
 	static constexpr uint32_t DefaultMaxDurationDiffMs = 3000;
@@ -31,7 +31,7 @@ public:
 		Reset
 	};
 	
-	TimeStampChecker(uint32_t maxDurationDiffMs = DefaultMaxDurationDiffMs, 
+	TimestampChecker(uint32_t maxDurationDiffMs = DefaultMaxDurationDiffMs, 
 			uint32_t maxContinousInvalidFrames = DefaultMaxContinousInvalidFrames) :
 		maxDurationDiffMs(maxDurationDiffMs),
 		maxContinousInvalidFrames(maxContinousInvalidFrames)
