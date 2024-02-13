@@ -168,7 +168,7 @@ inline int Debug(const char *msg, ...)
 		pthread_getname_np(pthread_self(), name,sizeof(name));
 		char threadIdentifier[32];
 		snprintf(threadIdentifier, sizeof(threadIdentifier), "%s|%d", name, tid);
-		printf("[%-16s][%.10ld.%.3ld][DBG]", threadIdentifier, (long)tv.tv_sec, (long)tv.tv_usec / 1000);
+		printf("[-20s][%.10ld.%.3ld][DBG]", threadIdentifier, (long)tv.tv_sec, (long)tv.tv_usec / 1000);
 #else
 		printf("[0x%lx][%.10ld.%.3ld][DBG]", (long)pthread_self(), (long)tv.tv_sec, (long)tv.tv_usec / 1000);
 #endif
