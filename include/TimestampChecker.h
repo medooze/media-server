@@ -72,11 +72,11 @@ public:
 			numContinousInvalidFrames++;
 		}
 		
-		// If there are continous invalid frames, it could be due to reference wrong. Reset to restart.
+		// If there are continous invalid frames, it could be due to reference wrong. Reset to current.
 		if (numContinousInvalidFrames > maxContinousInvalidFrames)
 		{
-			lastRecvTime = 0;
-			lastTimeStamp = 0;
+			lastTimeStamp = timestamp;
+			lastRecvTime = recvTimeMs;
 			numContinousInvalidFrames = 0;
 			
 			return CheckResult::Reset;
