@@ -91,7 +91,7 @@ inline int Log(const char *msg, ...)
 		pid_t tid = gettid();
 		char name[16];
 		pthread_getname_np(pthread_self(), name,sizeof(name));
-		printf("[%-16s][%-8d][%.10ld.%.3ld][LOG]", name, tid, (long)tv.tv_sec, (long)tv.tv_usec / 1000);
+		printf("[%-16s][0x%-4x][%.10ld.%.3ld][LOG]", name, tid, (long)tv.tv_sec, (long)tv.tv_usec / 1000);
 #else
 		printf("[0x%lx][%.10ld.%.3ld][LOG]", (long)pthread_self(), (long)tv.tv_sec, (long)tv.tv_usec / 1000);
 #endif
@@ -114,7 +114,7 @@ inline int Log2(const char* prefix,const char *msg, ...)
 		pid_t tid = gettid();
 		char name[16];
 		pthread_getname_np(pthread_self(), name,sizeof(name));
-		printf("[%-16s][%-8d][%.10ld.%.3ld][LOG]%s", name, tid, (long)tv.tv_sec, (long)tv.tv_usec / 1000, prefix);
+		printf("[%-16s][0x%-4x][%.10ld.%.3ld][LOG]%s", name, tid, (long)tv.tv_sec, (long)tv.tv_usec / 1000, prefix);
 #else
 		printf("[0x%lx][%.10ld.%.3ld][LOG]%s", (long)pthread_self(), (long)tv.tv_sec, (long)tv.tv_usec / 1000, prefix);
 #endif
@@ -137,7 +137,7 @@ inline int UltraDebug(const char *msg, ...)
 		pid_t tid = gettid();
 		char name[16];
 		pthread_getname_np(pthread_self(), name,sizeof(name));
-		printf("[%-16s][%-8d][%.10ld.%.3ld][DBG]", name, tid, (long)tv.tv_sec, (long)tv.tv_usec / 1000);
+		printf("[%-16s][0x%-4x][%.10ld.%.3ld][DBG]", name, tid, (long)tv.tv_sec, (long)tv.tv_usec / 1000);
 #else
 		printf("[0x%lx][%.10ld.%.3ld][DBG]", (long)pthread_self(), (long)tv.tv_sec, (long)tv.tv_usec / 1000);
 #endif
@@ -160,7 +160,7 @@ inline int Debug(const char *msg, ...)
 		pid_t tid = gettid();
 		char name[16];
 		pthread_getname_np(pthread_self(), name,sizeof(name));
-		printf("[%-16s][%-8d][%.10ld.%.3ld][DBG]", name, tid, (long)tv.tv_sec, (long)tv.tv_usec / 1000);
+		printf("[%-16s][0x%-4x][%.10ld.%.3ld][DBG]", name, tid, (long)tv.tv_sec, (long)tv.tv_usec / 1000);
 #else
 		printf("[0x%lx][%.10ld.%.3ld][DBG]", (long)pthread_self(), (long)tv.tv_sec, (long)tv.tv_usec / 1000);
 #endif
@@ -183,7 +183,7 @@ inline int Warning(const char *msg, ...)
 		pid_t tid = gettid();
 		char name[16];
 		pthread_getname_np(pthread_self(), name,sizeof(name));
-		printf("[%-16s][%-8d][%.10ld.%.3ld][WRN]", name, tid, (long)tv.tv_sec, (long)tv.tv_usec / 1000);
+		printf("[%-16s][0x%-4x][%.10ld.%.3ld][WRN]", name, tid, (long)tv.tv_sec, (long)tv.tv_usec / 1000);
 #else
 		printf("[0x%lx][%.10ld.%.3ld][WRN]", (long)pthread_self(), (long)tv.tv_sec, (long)tv.tv_usec / 1000);
 #endif
@@ -205,7 +205,7 @@ inline int Error(const char *msg, ...)
 	pid_t tid = gettid();
 	char name[16];
 	pthread_getname_np(pthread_self(), name,sizeof(name));
-	printf("[%-16s][%-8d][%.10ld.%.3ld][ERR]", name, tid, (long)tv.tv_sec, (long)tv.tv_usec / 1000);
+	printf("[%-16s][0x%-4x][%.10ld.%.3ld][ERR]", name, tid, (long)tv.tv_sec, (long)tv.tv_usec / 1000);
 #else
 	printf("[0x%lx][%.10ld.%.3ld][ERR]", (long)pthread_self(), (long)tv.tv_sec, (long)tv.tv_usec / 1000);
 #endif
