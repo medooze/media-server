@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include "video.h"
 #include "VideoBufferScaler.h"
+#include "CircularQueue.h"
 
 class VideoPipe :
 	public VideoOutput,
@@ -37,13 +38,13 @@ private:
 	uint32_t videoWidth = 0;
 	uint32_t videoHeight = 0;
 	int videoFPS = 0;
-	int imgPos = 0;
-	int imgNew = false;
 	float scaleResolutionDownBy = 0.0f;
 	uint32_t scaleResolutionToHeight = 0;
 	int inited = false;
 	int capturing = false;
-	std::array<VideoBuffer::const_shared,2> imgBuffer;
+	int cancelledGrab = false;
+
+	CircularQueue<VideoBuffer::const_shared> queue;
 
 	pthread_mutex_t newPicMutex;
 	pthread_cond_t  newPicCond;
@@ -51,7 +52,6 @@ private:
 	VideoBufferPool	videoBufferPool;
 	VideoBufferScaler scaler;
 	AllowedDownScaling allowedDownScaling = AllowedDownScaling::Any;
-
 };
 
 #endif	/* VIDEOPIPE_H */

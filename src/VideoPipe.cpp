@@ -4,8 +4,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-VideoPipe::VideoPipe() :
-	videoBufferPool(2,4)
+static constexpr size_t MAX_OUTSTANDING_FRAMES = 2;
+VideoPipe::VideoPipe() 
+	// Want a non growing queue
+	: queue(MAX_OUTSTANDING_FRAMES, false)
+	, videoBufferPool(MAX_OUTSTANDING_FRAMES,MAX_OUTSTANDING_FRAMES + 2)
 {
 	//Init mutex
 	pthread_mutex_init(&newPicMutex,0);
@@ -76,8 +79,7 @@ int VideoPipe::StartVideoCapture(uint32_t width, uint32_t height, uint32_t fps)
 	videoBufferPool.SetSize(videoWidth, videoHeight);
 	
 	//No new image yet
-	imgPos = false;
-	imgNew = false;
+	queue.clear();
 
 	//We are capturing now
 	capturing = true;
@@ -95,9 +97,7 @@ int VideoPipe::StopVideoCapture()
 	//Lock
 	pthread_mutex_lock(&newPicMutex);
 
-	//Free buffers
-	imgBuffer[0].reset();
-	imgBuffer[1].reset();
+	queue.clear();
 
 	//Not capturing anymore
 	capturing = false;
@@ -125,30 +125,61 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 		return videoBuffer;
 	}
 
-	//Check if there is any new image
-	if(imgNew==0)
+	// timespec calced once outside the loop so we wait for the correct timeout duration
+	// when handling spurious wakeups
+	timespec wakeupTime;
+	if (timeout)
 	{
+		//Calculate timeout
+		calcTimout(&wakeupTime,timeout);
+	}
+
+	// Check if there is a new image, or we need to wakeup for some other reason
+	//
+	// Note: This is in a loop as is required when using pthread_cond_wait calls. You need to check for 
+	// spurious wakeups (which are uncommon) and cant just rely on signal() waking up on event
+	// See: https://pubs.opengroup.org/onlinepubs/009604599/functions/pthread_cond_timedwait.html
+	// 
+	// This means we need to check all conditions in the loop predicate that may signal the condition to wakeup including:
+	// * End() : Setting inited == false
+	// * CancelGrabFrame() : Setting cancelledGrab == true
+	// * NextFrame() : Adding a new frame to the queue
+	while(inited && queue.length()==0 && !cancelledGrab)
+	{
+		int ret = -1;
+
 		//If timeout has been specified
 		if (timeout)
 		{
-			timespec   ts;
-			//Calculate timeout
-			calcTimout(&ts,timeout);
 			//wait
-			int ret = pthread_cond_timedwait(&newPicCond,&newPicMutex,&ts);
-			if (ret && ret!=ETIMEDOUT)
-				Error("-VideoPipe cond timedwait error [%d,%d]\n",ret,errno);
-		} else {
+			ret = pthread_cond_timedwait(&newPicCond,&newPicMutex,&wakeupTime);
+			if (ret == ETIMEDOUT)
+			{
+				// On timeout exit the loop
+				break;
+			}
+		}
+		else
+		{
 			//Wait ad infinitum
-			pthread_cond_wait(&newPicCond,&newPicMutex);
+			ret = pthread_cond_wait(&newPicCond,&newPicMutex);
+		}
+		
+		if (ret)
+		{
+			Error("-VideoPipe cond wait error [%d,%d]\n",ret,errno);
 		}
 	}
 
-	//Reset new image flag
-	imgNew=0;
+	// If this was true, handle img as normal (may exist or may not) and clear this flag so we dont cancel the next one as well
+	cancelledGrab=0;
 
-	//Get current image
-	videoBuffer = imgBuffer[imgPos];
+	//Get current image if there is anything in the queue
+	if (!queue.empty())
+	{
+		videoBuffer = queue.front();
+		queue.pop_front();
+	}
 
 	//Unlock
 	pthread_mutex_unlock(&newPicMutex);
@@ -231,8 +262,10 @@ void  VideoPipe::CancelGrabFrame()
 	//Lock
 	pthread_mutex_lock(&newPicMutex);
 
-	//No image
-	imgNew = false;
+	// We need to set this to identify we want to exit the cond var loop
+	// on any existing or next call to GrabFrame()
+	cancelledGrab = true;
+	queue.clear();
 
 	//Signal to cancel any pending GrabFrame()
 	pthread_cond_signal(&newPicCond);
@@ -248,22 +281,25 @@ int VideoPipe::NextFrame(const VideoBuffer::const_shared& videoBuffer)
 	//Lock
 	pthread_mutex_lock(&newPicMutex);
 
-	//Update current image with frame
-	imgBuffer[imgPos] = videoBuffer;
-
-	//Use next buffer
-	imgPos = !imgPos;
-
-	//There is an image available for grabbing
-	imgNew = true;
-
+	// Push the new decoded picture onto the queue (log if dropping it because encoder not keeping up)
+	if (queue.full())
+	{
+		// This might be better as a form of statistic available in the dashboard so we get a better idea 
+		// of transcoder health without flooding the logs when it is overloaded but is udeful for debugging 
+		// right now. We should not see it if everything is operating as expected
+		Debug("-VideoPipe::NextFrame() Video frame queue full with size: %u, pushing: %llu, dropping the oldest frame in the queue: %llu. Is the encoder keeping up?\n", queue.length(), videoBuffer->GetTimestamp(), queue.front()->GetTimestamp());
+	}
+	queue.push_back(videoBuffer);
+	size_t qsize = queue.length();
+	
 	//Signal any pending grap operation
 	pthread_cond_signal(&newPicCond);
 
 	//Unlock
 	pthread_mutex_unlock(&newPicMutex);
 
-	return 1;
+	// We will return the size of the queue so it can be used in stats reporting from the decode worker
+	return (int)qsize;
 }
 
 void VideoPipe::ClearFrame()

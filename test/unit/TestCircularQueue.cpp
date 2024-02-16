@@ -250,3 +250,50 @@ TEST(TestCircularQueue, GrowMore)
 		ASSERT_EQ(q.at(j), j + 10);
 	}
 }
+
+TEST(TestCircularQueue, NoGrowOverflow)
+{
+	// Testing the overflow behaviour used in the VideoPipe
+	static const int QMAX = 1;
+	CircularQueue<int> q(QMAX, false);
+
+	// Lets make sure it starts in a different spot (internally in the array) each time but still has same external behaviour
+	for (size_t iteration = 0; iteration < QMAX+1; ++iteration)
+	{
+		// Since the impl resets head each time it is empty, lets push some items on to start at a different location each iteration before running the test
+		for (size_t i = 0; i < iteration; ++i)
+		{
+			q.push_back(i);
+		}
+
+		for (size_t i = 0; i < QMAX; ++i)
+		{
+			q.push_back(i+1);
+			ASSERT_EQ(q.length(), std::min<size_t>(i + 1U + iteration, QMAX));
+		}
+		ASSERT_TRUE(q.full());
+		ASSERT_FALSE(q.empty());
+		ASSERT_EQ(q.length(), QMAX);
+
+		// Will push and overwrite
+		q.push_back(QMAX+1);
+		ASSERT_TRUE(q.full());
+		ASSERT_FALSE(q.empty());
+		ASSERT_EQ(q.length(), QMAX);
+
+		for (size_t i = 0; i < QMAX; ++i)
+		{
+			int item = 0;
+			item = q.front();
+			ASSERT_TRUE(q.pop_front());
+			ASSERT_EQ(q.length(), QMAX - i - 1);
+			ASSERT_EQ(item, i + 1 + 1);
+		}
+
+		ASSERT_TRUE(q.empty());
+		ASSERT_FALSE(q.full());
+		ASSERT_EQ(q.length(), 0);
+		ASSERT_FALSE(q.pop_front());
+
+	}
+}
