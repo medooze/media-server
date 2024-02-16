@@ -22,7 +22,8 @@ public:
 public:
 	static constexpr uint32_t NoSeqNum = std::numeric_limits<uint32_t>::max();
 	static constexpr uint64_t NoTimestamp = std::numeric_limits<uint64_t>::max();
-	
+	static constexpr int64_t  MaxDispatchingDelayMs = 5000;
+
 	struct PacketScheduleInfo
 	{
 		PacketScheduleInfo(std::chrono::milliseconds scheduled, RTPPacket::shared packet, std::chrono::milliseconds duration) :
@@ -44,6 +45,7 @@ public:
 	void UpdateAsync(std::function<void(std::chrono::milliseconds)> callback);
 	void Stop();
 	
+	void SetMaxDelayMs(std::chrono::milliseconds maxDelayMs);
 	void SetDelayMs(std::chrono::milliseconds delayMs);
 	void SetTargetBitrateHint(uint32_t targetBitrateHint);
 
@@ -120,6 +122,7 @@ public:
 	volatile bool muted = false;
 	
 	std::chrono::milliseconds dispatchingDelayMs = std::chrono::milliseconds(0);
+	std::chrono::milliseconds maxDispatchingDelayMs = std::chrono::milliseconds(MaxDispatchingDelayMs);
 		
 	bool stopped = false;
 

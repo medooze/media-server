@@ -120,16 +120,28 @@ void MediaFrameListenerBridge::Stop()
 	});
 }
 
+void MediaFrameListenerBridge::SetMaxDelayMs(std::chrono::milliseconds maxDelayMs)
+{
+	UltraDebug("-MediaFrameListenerBridge::SetMaxDelayMs() [delay:%s]", maxDelayMs.count());
+
+	timeService.Async([=](auto now) {
+		maxDispatchingDelayMs = maxDelayMs;
+		if (dispatchingDelayMs > maxDispatchingDelayMs)
+			dispatchingDelayMs = maxDispatchingDelayMs;
+	});
+}
+
 void MediaFrameListenerBridge::SetDelayMs(std::chrono::milliseconds delayMs)
 {
+	UltraDebug("-MediaFrameListenerBridge::SetDelayMs() [delay:%s]", delayMs.count());
+
 	timeService.Async([=](auto now) { 
 		// Set a delay limit so the queue wouldn't grow without control if something is wrong, i.e. the packet
 		// time info was not valid
-		constexpr int64_t MaxDelayMs = 5000;
-		if (delayMs.count() > MaxDelayMs)
+		if (delayMs > maxDispatchingDelayMs)
 		{
-			Warning("-MediaFrameListenerBridge::AddListener() too large dispatch delay: %lldms", delayMs.count());
-			dispatchingDelayMs = std::chrono::milliseconds(MaxDelayMs);
+			Warning("-MediaFrameListenerBridge::SetDelayMs() too large dispatch delay:%lldms max:%lldms", delayMs.count(), maxDispatchingDelayMs.count());
+			dispatchingDelayMs = maxDispatchingDelayMs;
 		}
 		else
 		{
