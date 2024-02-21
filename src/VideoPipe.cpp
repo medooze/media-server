@@ -171,11 +171,10 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 		}
 	}
 
-	// If this was true, handle img as normal (may exist or may not) and clear this flag so we dont cancel the next one as well
 	if (cancelledGrab)
 	{
 		//Reset flag	
-		cancelledGrab = 0;
+		cancelledGrab = false;
 		//A canceled grab returns no frame
 		return videoBuffer;
 	}
@@ -271,7 +270,6 @@ void  VideoPipe::CancelGrabFrame()
 	// We need to set this to identify we want to exit the cond var loop
 	// on any existing or next call to GrabFrame()
 	cancelledGrab = true;
-	queue.clear();
 
 	//Signal to cancel any pending GrabFrame()
 	pthread_cond_signal(&newPicCond);
