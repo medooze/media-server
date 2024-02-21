@@ -8,7 +8,7 @@ static constexpr size_t MaxOutstandingFrames = 2;
 VideoPipe::VideoPipe() 
 	// Want a non growing queue
 	: queue(MaxOutstandingFrames, false)
-	, videoBufferPool(MAX_OUTSTANDING_FRAMES,MAX_OUTSTANDING_FRAMES + 2)
+	, videoBufferPool(MaxOutstandingFrames, MaxOutstandingFrames + 2)
 {
 	//Init mutex
 	pthread_mutex_init(&newPicMutex,0);
