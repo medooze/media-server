@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static constexpr size_t MAX_OUTSTANDING_FRAMES = 2;
+static constexpr size_t MaxOutstandingFrames = 2;
 VideoPipe::VideoPipe() 
 	// Want a non growing queue
 	: queue(MAX_OUTSTANDING_FRAMES, false)
