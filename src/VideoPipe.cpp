@@ -172,7 +172,13 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 	}
 
 	// If this was true, handle img as normal (may exist or may not) and clear this flag so we dont cancel the next one as well
-	cancelledGrab=0;
+	if (cancelledGrab)
+	{
+		//Reset flag	
+		cancelledGrab = 0;
+		//A canceled grab returns no frame
+		return videoBuffer;
+	}
 
 	//Get current image if there is anything in the queue
 	if (!queue.empty())
