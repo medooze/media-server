@@ -91,6 +91,9 @@ public:
 			ret = cache >> (32-n);
 			//Cache next
 			Cache();
+			//Check available
+			if (cached<a)
+				error = true;
 			//Get the remaining
 			ret =  ret | GetCached(a);
 		} else if (n) {
@@ -171,19 +174,21 @@ public:
 		return (v << 1) - m + extra_bit;
 	}
 
-	inline uint64_t GetVariableLengthUnsigned()
+	inline uint32_t GetVariableLengthUnsigned()
 	{
 		int leadingZeros = 0;
-		while (Get(1) && !error)
+		while (1)
 		{
 			bool done = Get(1);
+			if (error)
+				return UINT32_MAX;
 			if (done)
 				break;
 			leadingZeros++;
 		}
 		if (leadingZeros >= 32)
-			return (1lu << 32) - 1;
-		uint64_t value = Get(leadingZeros);
+			return UINT32_MAX;
+		uint32_t value = Get(leadingZeros);
 		return value + (1lu << leadingZeros) - 1;
 	}
 public:
@@ -265,7 +270,10 @@ public:
 		//Check length
 		if (!n) return;
 		//Move
-		cache = cache << n;
+		if (n < 32)
+			cache = cache << n;
+		else
+			cache = 0;
 		//Update cached bytes
 		cached -= n;
 
@@ -414,6 +422,8 @@ public:
 			//Increase cached
 			cached = b;
 		} else {
+			//Don't invoke UB if empty
+			if (!n) return v;
 			//Add to cache
 			cache = (cache << n) | (v & (0xFFFFFFFF>>(32-n)));
 			//Increase cached
