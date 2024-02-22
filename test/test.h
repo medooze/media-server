@@ -12,6 +12,7 @@
 #include <string>
 #include <ostream>  
 #include <iostream>
+#include <functional>
 #undef NDEBUG
 #include <assert.h>
 
@@ -26,18 +27,19 @@ public:
 	}
 	virtual void Execute() = 0;
 	
-	std::string GetName() { return name; }
+	std::string GetName() const { return name; }
 public:
-	static int ExecuteAll() 
+	static int ExecuteAll(std::function<bool(const TestPlan&)> filter) 
 	{
 		//Enable debug
 		Logger::EnableDebug(true);
 		Logger::EnableUltraDebug(true);
 		
-		Log(">Executing all test plan\r\n");
+		Log(">Executing test plans\r\n");
 		for (TestPlans::iterator it = tests.begin(); it != tests.end(); ++it)
 		{
 			TestPlan* test = *it;
+			if (!filter(*test)) continue;
 			Log(">Executing: %s\r\n", test->GetName().c_str());
 			test->Execute();
 			Log("<Executed %s\r\n", test->GetName().c_str());
