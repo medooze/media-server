@@ -323,9 +323,7 @@ size_t VideoPipe::NextFrame(const VideoBuffer::const_shared& videoBuffer)
 	{
 		if (droppedFramesAcu.GetAcumulated() > 0)
 		{
-			uint32_t fps = droppedFramesAcu.GetCount();
-			uint32_t droppedFps = droppedFramesAcu.GetAcumulated();
-			Debug("-VideoPipe::NextFrame() Video frame queue overflowed dropping %u of %u frames per second. Is the encoder keeping up?\n", droppedFps, fps);
+			Debug("-VideoPipe::NextFrame() Video frame queue overflowed dropping %u of %u frames per second. Is the encoder keeping up?\n", (unsigned int)droppedFramesAcu.GetAcumulated(), (unsigned int)droppedFramesAcu.GetCount());
 		}
 
 		droppedFramesAcu.Reset(now);
