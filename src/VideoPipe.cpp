@@ -279,7 +279,7 @@ void  VideoPipe::CancelGrabFrame()
 
 }
 
-int VideoPipe::NextFrame(const VideoBuffer::const_shared& videoBuffer)
+size_t VideoPipe::NextFrame(const VideoBuffer::const_shared& videoBuffer)
 {
 
 	//Lock
@@ -303,7 +303,7 @@ int VideoPipe::NextFrame(const VideoBuffer::const_shared& videoBuffer)
 	pthread_mutex_unlock(&newPicMutex);
 
 	// We will return the size of the queue so it can be used in stats reporting from the decode worker
-	return (int)qsize;
+	return qsize;
 }
 
 void VideoPipe::ClearFrame()

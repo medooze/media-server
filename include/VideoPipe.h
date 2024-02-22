@@ -31,7 +31,7 @@ public:
 	int StopVideoCapture() override;
 
 	/** VideoOutput */
-	int NextFrame(const VideoBuffer::const_shared& videoBuffer) override;
+	size_t NextFrame(const VideoBuffer::const_shared& videoBuffer) override;
 	void ClearFrame() override;
 
 private:
