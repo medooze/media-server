@@ -62,8 +62,8 @@ public:
 
 		sleep(3);
 
-		main.Stop();
 		tester.Stop();
+		main.Stop();
 	}
 
 };
