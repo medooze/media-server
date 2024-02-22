@@ -5,13 +5,13 @@
 #include <string.h>
 
 static constexpr size_t MaxOutstandingFrames = 2;
-VideoPipe::VideoPipe() 
+VideoPipe::VideoPipe() :
 	// Want a non growing queue
-	: queue(MaxOutstandingFrames, false)
-	, videoBufferPool(MaxOutstandingFrames, MaxOutstandingFrames + 2)
-
-	// Time is in usec and want to store just over 1 sec worth of data
-	, droppedFramesAcu(2000000, 1000000)
+	queue(MaxOutstandingFrames, false),
+	videoBufferPool(MaxOutstandingFrames, MaxOutstandingFrames + 2),
+	// Time is in ms and want to store just over 1 sec worth of data
+	droppedFramesAcu(1000, 1000, 60),
+	totalFramesAcu(1000, 1000, 60)
 {
 	//Init mutex
 	pthread_mutex_init(&newPicMutex,0);
@@ -34,9 +34,6 @@ int VideoPipe::Init(float scaleResolutionDownBy, uint32_t scaleResolutionToHeigh
 
 	//We are inited
 	inited = true;
-	totalDroppedFrames = 0;
-	lastDroppedReport = getTime();
-	droppedFramesAcu.Reset(getTime());
 	
 	//Store dinamyc scaling settings
 	this->scaleResolutionToHeight = scaleResolutionToHeight;
@@ -89,9 +86,6 @@ int VideoPipe::StartVideoCapture(uint32_t width, uint32_t height, uint32_t fps)
 
 	//We are capturing now
 	capturing = true;
-	totalDroppedFrames = 0;
-	lastDroppedReport = getTime();
-	droppedFramesAcu.Reset(getTime());
 
 	//Unlock
 	pthread_mutex_unlock(&newPicMutex);
@@ -299,21 +293,17 @@ size_t VideoPipe::NextFrame(const VideoBuffer::const_shared& videoBuffer)
 
 	auto now = getTime();
 
-	// Push the new decoded picture onto the queue (log if dropping it because encoder not keeping up)
+	// Push the new decoded picture onto the queue
 	if (queue.full())
-	{
-		++totalDroppedFrames;
-		droppedFramesAcu.Update(now, 1);
+		//Increase dropped frame count
+		droppedFramesAcu.Update(now/1000, 1);
 
-		// For more detailed debugging, still too noisy to leave uncommented
-		//UltraDebug("-VideoPipe::NextFrame() Video frame queue full with size: %u, pushing: %llu, dropping the oldest frame in the queue: %llu. Total dropped for this stream: %u, dropped in last second: %llu. Is the encoder keeping up?\n", queue.length(), videoBuffer->GetTimestamp(), queue.front()->GetTimestamp(), totalDroppedFrames, droppedFramesAcu.GetAcumulated());
-	}
-	else
-	{
-		droppedFramesAcu.Update(now, 0);
-	}
+	//Enqueue frame
 	queue.push_back(videoBuffer);
 	size_t qsize = queue.length();
+
+	//Increase total encoded
+	totalFramesAcu.Update(now/1000);
 	
 	//Signal any pending grap operation
 	pthread_cond_signal(&newPicCond);
@@ -324,12 +314,18 @@ size_t VideoPipe::NextFrame(const VideoBuffer::const_shared& videoBuffer)
 	// Lets report dropped frames roughly every second if they happened
 	if (lastDroppedReport + 1000000LLU <= now)
 	{
-		if (droppedFramesAcu.GetAcumulated() > 0)
+		//Update dropped count
+		droppedFramesAcu.Update(now/1000);
+
+		//If any frame has been dropped during the last second
+		if (droppedFramesAcu.GetInstant() > 0)
 		{
-			Debug("-VideoPipe::NextFrame() Video frame queue overflowed dropping %u of %u frames per second. Is the encoder keeping up?\n", (unsigned int)droppedFramesAcu.GetAcumulated(), (unsigned int)droppedFramesAcu.GetCount());
+			Debug("-VideoPipe::NextFrame() Video frame queue overflowed dropping %llu of %llu frames last second. Is the encoder keeping up?\n",
+				droppedFramesAcu.GetInstant(),
+				totalFramesAcu.GetInstant());
 		}
 
-		droppedFramesAcu.Reset(now);
+		
 		lastDroppedReport = now;
 	}
 

@@ -54,9 +54,9 @@ private:
 	VideoBufferScaler scaler;
 	AllowedDownScaling allowedDownScaling = AllowedDownScaling::Any;
 
-	size_t totalDroppedFrames = 0;
 	uint64_t lastDroppedReport = 0;
 	Acumulator<uint32_t, uint64_t> droppedFramesAcu;
+	Acumulator<uint32_t, uint64_t> totalFramesAcu;
 };
 
 #endif	/* VIDEOPIPE_H */
