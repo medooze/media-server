@@ -6,6 +6,7 @@
 // and synchronized with descriptor_undef.h.
 
 #define	CHECK(r) if(r.Error()) return false;
+#define DECODE_SUBOBJECT(lvalue, ...) if (!(lvalue).Decode(__VA_ARGS__)) return false;
 
 #define DUMP_FIELD(field, format) \
 	Debug("%s" #field "=" format "\n", prefix, (field));

@@ -1,3 +1,4 @@
 #undef CHECK
+#undef DECODE_SUBOBJECT
 #undef DUMP_FIELD
 #undef DUMP_SUBOBJECT

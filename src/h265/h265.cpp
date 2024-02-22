@@ -143,8 +143,8 @@ bool H265ProfileTierLevel::Decode(BitReader& r, bool profilePresentFlag, BYTE ma
 {
 	if (profilePresentFlag)
 	{
-		if(!general_profile_tier_level.Decode(r) ||
-			r.Left() < 8 + (8*2	* (maxNumSubLayersMinus1 > 0)))
+		DECODE_SUBOBJECT(general_profile_tier_level, r);
+		if(r.Left() < 8 + (8*2	* (maxNumSubLayersMinus1 > 0)))
 		{
 			Error("-H265: PTL information too short\n");
 			return false;
@@ -166,11 +166,7 @@ bool H265ProfileTierLevel::Decode(BitReader& r, bool profilePresentFlag, BYTE ma
 	{
 		if (sub_layer_profile_present_flag[i])
 		{ 
-			if(!sub_layer_profile_tier_level[i].Decode(r))
-			{
-				Error("PTL information for sublayer %zu too short\n",	i);
-				return false;
-			}
+			DECODE_SUBOBJECT(sub_layer_profile_tier_level[i], r);
 		}
 		if (sub_layer_level_present_flag[i])
 		{
@@ -222,10 +218,7 @@ bool H265VideoParameterSet::Decode(const BYTE* buffer,DWORD bufferSize)
 		return false;
 	}
 
-	if (!profile_tier_level.Decode(r, true, vps_max_sub_layers_minus1))
-	{
-		return false;
-	}
+	DECODE_SUBOBJECT(profile_tier_level, r, true, vps_max_sub_layers_minus1);
 	// skip all the following element decode/parse
 	return true;
 }
@@ -258,8 +251,7 @@ bool H265SeqParameterSet::Decode(const BYTE* buffer,DWORD bufferSize)
 	if (!MultiLayerExtSpsFlag)
 	{
 		CHECK(r); temporal_id_nesting_flag = r.Get(1);
-		if (!profile_tier_level.Decode(r, true,	max_sub_layers_minus1))
-			return false;
+		CHECK(r); DECODE_SUBOBJECT(profile_tier_level, r, true, max_sub_layers_minus1);
 	}
 	// sps id
 	seq_parameter_set_id =	ExpGolombDecoder::Decode(r);
