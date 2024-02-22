@@ -60,7 +60,7 @@ public:
 			timer->Again(0ms);
 		});
 
-		sleep(300);
+		sleep(3);
 
 		main.Stop();
 		tester.Stop();
