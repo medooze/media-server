@@ -34,6 +34,7 @@ file(GLOB_RECURSE SOURCES_VP8 RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/vp8/*.cpp"
 file(GLOB_RECURSE SOURCES_VP9 RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/vp9/*.cpp")
 file(GLOB_RECURSE SOURCES_JPEG RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/jpeg/*.cpp")
 file(GLOB_RECURSE SOURCES_WEBP RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/webp/*.cpp")
+file(GLOB_RECURSE SOURCES_AAC RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/aac/*.cpp")
 
 file(GLOB_RECURSE SOURCES RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/*.cpp")
 
@@ -45,27 +46,55 @@ add_library(MediaServerLib
 	${SOURCES_VP9}
 	${SOURCES_JPEG}
 	${SOURCES_WEBP}
+    ${SOURCES_AAC}
     ${CMAKE_CURRENT_LIST_DIR}/src/DependencyDescriptorLayerSelector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/av1/AV1LayerSelector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/av1/Obu.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtmp/rtmpserver.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtmp/amf.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtmp/rtmpclientconnection.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtmp/rtmpmessage.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtmp/rtmpserver.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtmp/rtmpconnection.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtmp/rtmpstream.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtmp/rtmpnetconnection.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtmp/rtmpchunk.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtmp/rtmppacketizer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/DependencyDescriptor.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/LayerInfo.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTCPCommonHeader.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTCPPacket.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTCPSenderReport.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTCPReport.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPDepacketizer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPHeader.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPHeaderExtension.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTCPApp.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTCPExtendedJitterReport.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPMap.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPOutgoingSource.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPOutgoingSourceGroup.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTCPBye.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTCPFullIntraRequest.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTCPPayloadFeedback.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTCPRTPFeedback.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPPacket.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPPayload.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPSource.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTCPCompoundPacket.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTCPNACK.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTCPReceiverReport.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTCPSDES.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPPacketSched.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPStreamTransponder.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPLostPackets.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPIncomingMediaStreamMultiplexer.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPIncomingMediaStreamDepacketizer.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPIncomingSource.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/rtp/RTPIncomingSourceGroup.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/avcdescriptor.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/EventLoop.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/stunmessage.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/FrameDelayCalculator.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/FrameDispatchCoordinator.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/MediaFrameListenerBridge.cpp
@@ -78,6 +107,7 @@ add_library(MediaServerLib
     ${CMAKE_CURRENT_LIST_DIR}/src/utf8.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/ForwardErrorCorrection.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/FecProbeGenerator.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/crc32calc.cpp
 )
 
 target_include_directories(MediaServerLib PUBLIC
@@ -94,6 +124,8 @@ target_link_libraries(MediaServerLib
     avcodec
     avutil
     swscale
+    swresample
+    crypto
 )
 
 #for debugging
@@ -131,3 +163,30 @@ target_link_libraries(MediaServerUnitTest
 
 add_test(NAME MediaServerUnitTest
          COMMAND MediaServerUnitTest)
+
+
+add_executable(MediaServerLegacyTest
+    ${CMAKE_CURRENT_LIST_DIR}/test/main.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/test.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/aac.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/cpim.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/dd.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/ddls.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/eventloop.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/fec.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/h264.cpp
+    #${CMAKE_CURRENT_LIST_DIR}/test/overlay.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/rtmp.cpp
+    #${CMAKE_CURRENT_LIST_DIR}/test/rtp.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/stun.cpp
+    #${CMAKE_CURRENT_LIST_DIR}/test/tools.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/vp8.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/vp9.cpp
+)
+
+target_link_libraries(MediaServerLegacyTest
+    MediaServerLib
+)
+
+add_test(NAME MediaServerLegacyTest
+         COMMAND MediaServerLegacyTest)

@@ -11,9 +11,6 @@ extern "C" {
 int main(int argc, char** argv)
 {
 	Logger::EnableDebug(true);
-        //Init avcodecs
-        av_register_all();
-        avcodec_register_all();
 
 	return TestPlan::ExecuteAll();
 }
