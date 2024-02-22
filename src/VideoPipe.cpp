@@ -184,6 +184,9 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 	{
 		//Reset flag	
 		cancelledGrab = false;
+
+		pthread_mutex_unlock(&newPicMutex);
+
 		//A canceled grab returns no frame
 		return videoBuffer;
 	}
