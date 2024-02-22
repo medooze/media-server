@@ -5,7 +5,6 @@
 #include "video.h"
 #include "VideoBufferScaler.h"
 #include "CircularQueue.h"
-#include "acumulator.h"
 
 class VideoPipe :
 	public VideoOutput,
