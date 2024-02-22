@@ -3,7 +3,7 @@
 // H.265 uses same stream format (Annex B)
 #include "h264/H26xNal.h"
 
-#define CHECK(r) {if(r.Error()) return false;}
+#include "descriptor.h"
 
 bool H265DecodeNalHeader(const BYTE* payload, DWORD payloadLen, BYTE& nalUnitType, BYTE& nuh_layer_id, BYTE& nuh_temporal_id_plus1)
 {

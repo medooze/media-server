@@ -1,0 +1,3 @@
+#undef CHECK
+#undef DUMP_FIELD
+#undef DUMP_SUBOBJECT

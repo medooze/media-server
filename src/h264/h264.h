@@ -9,12 +9,10 @@
 #define	H264_H
 #include "config.h"
 #include "math.h"
-#include "bitstream.h"
+#include "descriptor.h"
 #include "H26xNal.h"
 
-#define CHECK(r) if(r.Error()) return false;
-
-class H264SeqParameterSet
+class H264SeqParameterSet : public Descriptor
 {
 public:
 	bool Decode(const BYTE* buffer,DWORD bufferSize)
@@ -112,37 +110,35 @@ public:
 	bool GetFrameMbsOnlyFlag() const { return frame_mbs_only_flag; }
 	BYTE GetLog2MaxFrameNumMinus4() const { return log2_max_frame_num_minus4; }
 	
-	void Dump() const
+	void DumpFields(const char* prefix) const
 	{
-		Debug("[H264SeqParameterSet \n");
-		Debug("\tprofile_idc=%.2x\n",				profile_idc);
-		Debug("\tconstraint_set0_flag=%u\n",			constraint_set0_flag);
-		Debug("\tconstraint_set1_flag=%u\n",			constraint_set1_flag);
-		Debug("\tconstraint_set2_flag=%u\n",			constraint_set2_flag);
-		Debug("\treserved_zero_5bits =%u\n",			reserved_zero_5bits );
-		Debug("\tlevel_idc=%.2x\n",				level_idc);
-		Debug("\tseq_parameter_set_id=%u\n",			seq_parameter_set_id);
-		Debug("\tlog2_max_frame_num_minus4=%u\n",		log2_max_frame_num_minus4);
-		Debug("\tpic_order_cnt_type=%u\n",			pic_order_cnt_type);
-		Debug("\tlog2_max_pic_order_cnt_lsb_minus4=%u\n",	log2_max_pic_order_cnt_lsb_minus4);
-		Debug("\t delta_pic_order_always_zero_flag=%u\n",	delta_pic_order_always_zero_flag);
-		Debug("\toffset_for_non_ref_pic=%d\n",			offset_for_non_ref_pic);
-		Debug("\toffset_for_top_to_bottom_field=%d\n",		offset_for_top_to_bottom_field);
-		Debug("\tnum_ref_frames_in_pic_order_cnt_cycle=%u\n",	num_ref_frames_in_pic_order_cnt_cycle);
-		Debug("\tnum_ref_frames=%u\n",				num_ref_frames);
-		Debug("\tgaps_in_frame_num_value_allowed_flag=%u\n",	gaps_in_frame_num_value_allowed_flag);
-		Debug("\tpic_width_in_mbs_minus1=%u\n",			pic_width_in_mbs_minus1);
-		Debug("\tpic_height_in_map_units_minus1=%u\n",		pic_height_in_map_units_minus1);
-		Debug("\tframe_mbs_only_flag=%u\n",			frame_mbs_only_flag);
-		Debug("\tmb_adaptive_frame_field_flag=%u\n",		mb_adaptive_frame_field_flag);
-		Debug("\tdirect_8x8_inference_flag=%u\n",		direct_8x8_inference_flag);
-		Debug("\tframe_cropping_flag=%u\n",			frame_cropping_flag);
-		Debug("\tframe_crop_left_offset=%u\n",			frame_crop_left_offset);
-		Debug("\tframe_crop_right_offset=%u\n",			frame_crop_right_offset);
-		Debug("\tframe_crop_top_offset=%u\n",			frame_crop_top_offset);
-		Debug("\tframe_crop_bottom_offset=%u\n",		frame_crop_bottom_offset);
-		Debug("\tseparate_colour_plane_flag=%u\n",		separate_colour_plane_flag);
-		Debug("/]\n");
+		DUMP_FIELD(profile_idc, "%.2x");
+		DUMP_FIELD(constraint_set0_flag, "%u");
+		DUMP_FIELD(constraint_set1_flag, "%u");
+		DUMP_FIELD(constraint_set2_flag, "%u");
+		DUMP_FIELD(reserved_zero_5bits, "%u");
+		DUMP_FIELD(level_idc, "%.2x");
+		DUMP_FIELD(seq_parameter_set_id, "%u");
+		DUMP_FIELD(log2_max_frame_num_minus4, "%u");
+		DUMP_FIELD(pic_order_cnt_type, "%u");
+		DUMP_FIELD(log2_max_pic_order_cnt_lsb_minus4, "%u");
+		DUMP_FIELD(delta_pic_order_always_zero_flag, "%u");
+		DUMP_FIELD(offset_for_non_ref_pic, "%d");
+		DUMP_FIELD(offset_for_top_to_bottom_field, "%d");
+		DUMP_FIELD(num_ref_frames_in_pic_order_cnt_cycle, "%u");
+		DUMP_FIELD(num_ref_frames, "%u");
+		DUMP_FIELD(gaps_in_frame_num_value_allowed_flag, "%u");
+		DUMP_FIELD(pic_width_in_mbs_minus1, "%u");
+		DUMP_FIELD(pic_height_in_map_units_minus1, "%u");
+		DUMP_FIELD(frame_mbs_only_flag, "%u");
+		DUMP_FIELD(mb_adaptive_frame_field_flag, "%u");
+		DUMP_FIELD(direct_8x8_inference_flag, "%u");
+		DUMP_FIELD(frame_cropping_flag, "%u");
+		DUMP_FIELD(frame_crop_left_offset, "%u");
+		DUMP_FIELD(frame_crop_right_offset, "%u");
+		DUMP_FIELD(frame_crop_top_offset, "%u");
+		DUMP_FIELD(frame_crop_bottom_offset, "%u");
+		DUMP_FIELD(separate_colour_plane_flag, "%u");
 	}
 private:
 	BYTE			profile_idc = 0;
@@ -176,7 +172,7 @@ private:
 	bool			separate_colour_plane_flag = 0;
 };
 
-class H264PictureParameterSet
+class H264PictureParameterSet : public Descriptor
 {
 public:
 	bool Decode(const BYTE* buffer,DWORD bufferSize)
@@ -236,29 +232,27 @@ public:
 		return true;
 	}
 public:
-	void Dump() const
+	void DumpFields(const char* prefix) const
 	{
-		Debug("[H264PictureParameterSet \n");
-		Debug("\tpic_parameter_set_id=%u\n",			pic_parameter_set_id);
-		Debug("\tseq_parameter_set_id=%u\n",			seq_parameter_set_id);
-		Debug("\tentropy_coding_mode_flag=%u\n",		entropy_coding_mode_flag);
-		Debug("\tpic_order_present_flag=%u\n",			pic_order_present_flag);
-		Debug("\tnum_slice_groups_minus1=%d\n",			num_slice_groups_minus1);
-		Debug("\tslice_group_map_type=%u\n",			slice_group_map_type);
-		Debug("\tslice_group_change_direction_flag=%u\n",	slice_group_change_direction_flag);
-		Debug("\tslice_group_change_rate_minus1=%u\n",		slice_group_change_rate_minus1);
-		Debug("\tpic_size_in_map_units_minus1=%d\n",		pic_size_in_map_units_minus1);
-		Debug("\tnum_ref_idx_l0_active_minus1=%d\n",		num_ref_idx_l0_active_minus1);
-		Debug("\tnum_ref_idx_l1_active_minus1=%d\n",		num_ref_idx_l1_active_minus1);
-		Debug("\tweighted_pred_flag=%u\n",			weighted_pred_flag);
-		Debug("\tweighted_bipred_idc=%u\n",			weighted_bipred_idc);
-		Debug("\tpic_init_qp_minus26=%d\n",			pic_init_qp_minus26);
-		Debug("\tpic_init_qs_minus26=%d\n",			pic_init_qs_minus26);
-		Debug("\tchroma_qp_index_offset=%d\n",			chroma_qp_index_offset);
-		Debug("\tdeblocking_filter_control_present_flag=%u\n",	deblocking_filter_control_present_flag);
-		Debug("\tconstrained_intra_pred_flag=%u\n",		constrained_intra_pred_flag);
-		Debug("\tredundant_pic_cnt_present_flag=%u\n",		redundant_pic_cnt_present_flag);
-		Debug("/]\n");
+		DUMP_FIELD(pic_parameter_set_id, "%u");
+		DUMP_FIELD(seq_parameter_set_id, "%u");
+		DUMP_FIELD(entropy_coding_mode_flag, "%u");
+		DUMP_FIELD(pic_order_present_flag, "%u");
+		DUMP_FIELD(num_slice_groups_minus1, "%d");
+		DUMP_FIELD(slice_group_map_type, "%u");
+		DUMP_FIELD(slice_group_change_direction_flag, "%u");
+		DUMP_FIELD(slice_group_change_rate_minus1, "%u");
+		DUMP_FIELD(pic_size_in_map_units_minus1, "%d");
+		DUMP_FIELD(num_ref_idx_l0_active_minus1, "%d");
+		DUMP_FIELD(num_ref_idx_l1_active_minus1, "%d");
+		DUMP_FIELD(weighted_pred_flag, "%u");
+		DUMP_FIELD(weighted_bipred_idc, "%u");
+		DUMP_FIELD(pic_init_qp_minus26, "%d");
+		DUMP_FIELD(pic_init_qs_minus26, "%d");
+		DUMP_FIELD(chroma_qp_index_offset, "%d");
+		DUMP_FIELD(deblocking_filter_control_present_flag, "%u");
+		DUMP_FIELD(constrained_intra_pred_flag, "%u");
+		DUMP_FIELD(redundant_pic_cnt_present_flag, "%u");
 	}
 private:
 	BYTE			pic_parameter_set_id = 0;
@@ -286,7 +280,7 @@ private:
 	bool			redundant_pic_cnt_present_flag = false;
 };
 
-class H264SliceHeader
+class H264SliceHeader : public Descriptor
 {
 public:
 
@@ -352,16 +346,14 @@ public:
 		return bottom_field_flag;
 	}
 	
-	void Dump() const
+	void DumpFields(const char* prefix) const
 	{
-		Debug("[H264SliceHeader \n");
-		Debug("\tfirstMbInSlice=%u\n", first_mb_in_slice);
-		Debug("\tslice_type=%u\n", slice_type);
-		Debug("\tpic_parameter_set_id=%u\n", pic_parameter_set_id);
-		Debug("\tcolour_plane_id=%u\n", colour_plane_id);
-		Debug("\field_pic_flag=%d\n", field_pic_flag);
-		Debug("\tbottom_field_flag=%d\n", bottom_field_flag);
-		Debug("/]\n");
+		DUMP_FIELD(first_mb_in_slice, "%u");
+		DUMP_FIELD(slice_type, "%u");
+		DUMP_FIELD(pic_parameter_set_id, "%u");
+		DUMP_FIELD(colour_plane_id, "%u");
+		DUMP_FIELD(field_pic_flag, "%d");
+		DUMP_FIELD(bottom_field_flag, "%d");
 	}
 
 private:
@@ -374,7 +366,7 @@ private:
 	bool bottom_field_flag = false;
 };
 
-#undef CHECK
+#include "descriptor_undef.h"
 
 #endif	/* H264_H */
 
