@@ -11,10 +11,322 @@
 #include "math.h"
 #include "descriptor.h"
 #include "H26xNal.h"
+#include <optional>
+
+template <class T>
+class H264Optional: public std::optional<T>
+{
+public:
+	bool Decode(BitReader& r)
+	{
+		bool present = r.Get(1);
+		CHECK(r);
+
+		if (!present)
+			this->reset();
+		else
+			DECODE_SUBOBJECT(this->emplace(), r);
+
+		return !r.Error();
+	}
+
+	void DumpFields(const char* prefix) const
+	{
+		if(*this)
+			(*this)->DumpFields(prefix);
+		else
+			Debug("%s<Not present>\n", prefix);
+	}
+};
+
+class H264HrdParameters : public Descriptor
+{
+public:
+	struct SchedSel : public Descriptor
+	{
+		bool Decode(BitReader& r)
+		{
+			CHECK(r); bit_rate_value_minus1 = ExpGolombDecoder::Decode(r);
+			CHECK(r); cpb_size_value_minus1 = ExpGolombDecoder::Decode(r);
+			CHECK(r); cbr_flag = r.Get(1);
+			return !r.Error();
+		}
+		void DumpFields(const char* prefix) const
+		{
+			DUMP_FIELD(bit_rate_value_minus1, "%u");
+			DUMP_FIELD(cpb_size_value_minus1, "%u");
+			DUMP_FIELD(cbr_flag, "%u");
+		}
+		DWORD			bit_rate_value_minus1 = 0;
+		DWORD			cpb_size_value_minus1 = 0;
+		bool			cbr_flag = false;
+	};
+
+	bool Decode(BitReader& r)
+	{
+		CHECK(r); cpb_cnt_minus1 = ExpGolombDecoder::Decode(r);
+		CHECK(r); bit_rate_scale = r.Get(4);
+		CHECK(r); cpb_size_scale = r.Get(4);
+		SchedSels.resize(cpb_cnt_minus1 + 1);
+		for (size_t i = 0; i < SchedSels.size(); i++) {
+			CHECK(r); DECODE_SUBOBJECT(SchedSels[i], r);
+		}
+		CHECK(r); initial_cpb_removal_delay_length_minus1 = r.Get(5);
+		CHECK(r); cpb_removal_delay_length_minus1 = r.Get(5);
+		CHECK(r); dpb_output_delay_length_minus1 = r.Get(5);
+		CHECK(r); time_offset_length = r.Get(5);
+		return !r.Error();
+	}
+public:
+	void DumpFields(const char* prefix) const
+	{
+		DUMP_FIELD(cpb_cnt_minus1, "%u");
+		DUMP_FIELD(bit_rate_scale, "%u");
+		DUMP_FIELD(cpb_size_scale, "%u");
+		for (size_t i = 0; i < SchedSels.size(); i++) {
+			Debug("%sSchedSels[%u]=[\n", prefix, i);
+			SchedSels[i].DumpFields((std::string(prefix) + "\t").c_str());
+			Debug("%s]\n", prefix);
+		}
+		DUMP_FIELD(initial_cpb_removal_delay_length_minus1, "%u");
+		DUMP_FIELD(cpb_removal_delay_length_minus1, "%u");
+		DUMP_FIELD(dpb_output_delay_length_minus1, "%u");
+		DUMP_FIELD(time_offset_length, "%u");
+	}
+private:
+	DWORD			cpb_cnt_minus1 = 0;
+	BYTE			bit_rate_scale = 0;
+	BYTE			cpb_size_scale = 0;
+	std::vector<SchedSel>	SchedSels;
+	BYTE			initial_cpb_removal_delay_length_minus1 = 0;
+	BYTE			cpb_removal_delay_length_minus1 = 0;
+	BYTE			dpb_output_delay_length_minus1 = 0;
+	BYTE			time_offset_length = 0;
+};
+
+class H264VuiParameters : public Descriptor
+{
+public:
+	struct AspectRatioInfo : public Descriptor
+	{
+		bool Decode(BitReader& r)
+		{
+			CHECK(r); aspect_ratio_idc = r.Get(8);
+			if (aspect_ratio_idc == Extended_SAR) {
+				CHECK(r); sar_width = r.Get(16);
+				CHECK(r); sar_height = r.Get(16);
+			}
+			return !r.Error();
+		}
+		void DumpFields(const char* prefix) const
+		{
+			DUMP_FIELD(aspect_ratio_idc, "%u");
+			if (aspect_ratio_idc == Extended_SAR) {
+				DUMP_FIELD(sar_width, "%u");
+				DUMP_FIELD(sar_height, "%u");
+			}
+		}
+		BYTE			aspect_ratio_idc = 0;
+		WORD			sar_width = 0;
+		WORD			sar_height = 0;
+
+		static const BYTE Extended_SAR = 0xFF;
+	};
+
+	struct OverscanInfo : public Descriptor
+	{
+		bool Decode(BitReader& r)
+		{
+			CHECK(r); overscan_appropriate_flag = r.Get(1);
+			return !r.Error();
+		}
+		void DumpFields(const char* prefix) const
+		{
+			DUMP_FIELD(overscan_appropriate_flag, "%u");
+		}
+		bool			overscan_appropriate_flag = false;
+	};
+
+	struct ColourDescription : public Descriptor
+	{
+		bool Decode(BitReader& r)
+		{
+			CHECK(r); colour_primaries = r.Get(8);
+			CHECK(r); transfer_characteristics = r.Get(8);
+			CHECK(r); matrix_coefficients = r.Get(8);
+			return !r.Error();
+		}
+		void DumpFields(const char* prefix) const
+		{
+			DUMP_FIELD(colour_primaries, "%u");
+			DUMP_FIELD(transfer_characteristics, "%u");
+			DUMP_FIELD(matrix_coefficients, "%u");
+		}
+		BYTE			colour_primaries = 0;
+		BYTE			transfer_characteristics = 0;
+		BYTE			matrix_coefficients = 0;
+	};
+
+	struct VideoSignalType : public Descriptor
+	{
+		bool Decode(BitReader& r)
+		{
+			CHECK(r); video_format = r.Get(3);
+			CHECK(r); video_full_range_flag = r.Get(1);
+			CHECK(r); DECODE_SUBOBJECT(colour_description, r);
+			return !r.Error();
+		}
+		void DumpFields(const char* prefix) const
+		{
+			DUMP_FIELD(video_format, "%u");
+			DUMP_FIELD(video_full_range_flag, "%u");
+			DUMP_SUBOBJECT(colour_description);
+		}
+		BYTE				video_format = 0;
+		BYTE				video_full_range_flag = 0;
+		H264Optional<ColourDescription>	colour_description;
+	};
+
+	struct ChromaSampleLocInfo : public Descriptor
+	{
+		bool Decode(BitReader& r)
+		{
+			CHECK(r); type_top_field = ExpGolombDecoder::Decode(r);
+			CHECK(r); type_bottom_field = ExpGolombDecoder::Decode(r);
+			return !r.Error();
+		}
+		void DumpFields(const char* prefix) const
+		{
+			DUMP_FIELD(type_top_field, "%u");
+			DUMP_FIELD(type_bottom_field, "%u");
+		}
+		DWORD			type_top_field = 0;
+		DWORD			type_bottom_field = 0;
+	};
+
+	struct TimingInfo : public Descriptor
+	{
+		bool Decode(BitReader& r)
+		{
+			CHECK(r); num_units_in_tick = r.Get(32);
+			CHECK(r); time_scale = r.Get(32);
+			CHECK(r); fixed_frame_rate_flag = r.Get(1);
+			return !r.Error();
+		}
+		void DumpFields(const char* prefix) const
+		{
+			DUMP_FIELD(num_units_in_tick, "%u");
+			DUMP_FIELD(time_scale, "%u");
+			DUMP_FIELD(fixed_frame_rate_flag, "%u");
+		}
+		DWORD			num_units_in_tick = 0;
+		DWORD			time_scale = 0;
+		bool			fixed_frame_rate_flag = false;
+	};
+
+	struct BitstreamRestriction : public Descriptor
+	{
+		bool Decode(BitReader& r)
+		{
+			CHECK(r); motion_vectors_over_pic_boundaries_flag = r.Get(1);
+			CHECK(r); max_bytes_per_pic_denom = ExpGolombDecoder::Decode(r);
+			CHECK(r); max_bits_per_mb_denom = ExpGolombDecoder::Decode(r);
+			CHECK(r); log2_max_mv_length_horizontal = ExpGolombDecoder::Decode(r);
+			CHECK(r); log2_max_mv_length_vertical = ExpGolombDecoder::Decode(r);
+			CHECK(r); max_num_reorder_frames = ExpGolombDecoder::Decode(r);
+			CHECK(r); max_dec_frame_buffering = ExpGolombDecoder::Decode(r);
+			return !r.Error();
+		}
+		void DumpFields(const char* prefix) const
+		{
+			DUMP_FIELD(motion_vectors_over_pic_boundaries_flag, "%u");
+			DUMP_FIELD(max_bytes_per_pic_denom, "%u");
+			DUMP_FIELD(max_bits_per_mb_denom, "%u");
+			DUMP_FIELD(log2_max_mv_length_horizontal, "%u");
+			DUMP_FIELD(log2_max_mv_length_vertical, "%u");
+			DUMP_FIELD(max_num_reorder_frames, "%u");
+			DUMP_FIELD(max_dec_frame_buffering, "%u");
+		}
+		bool			motion_vectors_over_pic_boundaries_flag = false;
+		DWORD			max_bytes_per_pic_denom = 0;
+		DWORD			max_bits_per_mb_denom = 0;
+		DWORD			log2_max_mv_length_horizontal = 0;
+		DWORD			log2_max_mv_length_vertical = 0;
+		DWORD			max_num_reorder_frames = 0;
+		DWORD			max_dec_frame_buffering = 0;
+	};
+
+	bool Decode(BitReader& r)
+	{
+		CHECK(r); DECODE_SUBOBJECT(aspect_ratio_info, r);
+		CHECK(r); DECODE_SUBOBJECT(overscan_info, r);
+		CHECK(r); DECODE_SUBOBJECT(video_signal_type, r);
+		CHECK(r); DECODE_SUBOBJECT(chroma_loc_info, r);
+		CHECK(r); DECODE_SUBOBJECT(timing_info, r);
+		CHECK(r); DECODE_SUBOBJECT(nal_hrd_parameters, r);
+		CHECK(r); DECODE_SUBOBJECT(vcl_hrd_parameters, r);
+		if (nal_hrd_parameters || vcl_hrd_parameters)
+		{
+			CHECK(r); low_delay_hrd_flag = r.Get(1);
+		}
+		CHECK(r); pic_struct_present_flag = r.Get(1);
+		CHECK(r); DECODE_SUBOBJECT(bitstream_restriction, r);
+		return !r.Error();
+	}
+public:
+	void DumpFields(const char* prefix) const
+	{
+		DUMP_SUBOBJECT(aspect_ratio_info);
+		DUMP_SUBOBJECT(overscan_info);
+		DUMP_SUBOBJECT(video_signal_type);
+		DUMP_SUBOBJECT(chroma_loc_info);
+		DUMP_SUBOBJECT(timing_info);
+		DUMP_SUBOBJECT(nal_hrd_parameters);
+		DUMP_SUBOBJECT(vcl_hrd_parameters);
+		if (nal_hrd_parameters || vcl_hrd_parameters)
+			DUMP_FIELD(low_delay_hrd_flag, "%u");
+		DUMP_FIELD(pic_struct_present_flag, "%u");
+		DUMP_SUBOBJECT(bitstream_restriction);
+	}
+private:
+	H264Optional<AspectRatioInfo>		aspect_ratio_info;
+	H264Optional<OverscanInfo>		overscan_info;
+	H264Optional<VideoSignalType>		video_signal_type;
+	H264Optional<ChromaSampleLocInfo>	chroma_loc_info;
+	H264Optional<TimingInfo>		timing_info;
+	H264Optional<H264HrdParameters>		nal_hrd_parameters;
+	H264Optional<H264HrdParameters>		vcl_hrd_parameters;
+	bool					low_delay_hrd_flag = false;
+	bool					pic_struct_present_flag = false;
+	H264Optional<BitstreamRestriction> 	bitstream_restriction;
+};
 
 class H264SeqParameterSet : public Descriptor
 {
 public:
+	struct FrameCrop : public Descriptor
+	{
+		bool Decode(BitReader& r)
+		{
+			CHECK(r); left_offset = ExpGolombDecoder::Decode(r);
+			CHECK(r); right_offset = ExpGolombDecoder::Decode(r);
+			CHECK(r); top_offset = ExpGolombDecoder::Decode(r);
+			CHECK(r); bottom_offset = ExpGolombDecoder::Decode(r);
+			return !r.Error();
+		}
+		void DumpFields(const char* prefix) const
+		{
+			DUMP_FIELD(left_offset, "%u");
+			DUMP_FIELD(right_offset, "%u");
+			DUMP_FIELD(top_offset, "%u");
+			DUMP_FIELD(bottom_offset, "%u");
+		}
+		DWORD			left_offset = 0;
+		DWORD			right_offset = 0;
+		DWORD			top_offset = 0;
+		DWORD			bottom_offset = 0;
+	};
+
 	bool Decode(const BYTE* buffer,DWORD bufferSize)
 	{
 		//SHould be done otherway, like modifying the BitReader to escape the input NAL, but anyway.. duplicate memory
@@ -88,23 +400,17 @@ public:
 			CHECK(r); mb_adaptive_frame_field_flag = r.Get(1);
 		}
 		CHECK(r); direct_8x8_inference_flag = r.Get(1);
-		CHECK(r); frame_cropping_flag = r.Get(1);
-		if (frame_cropping_flag)
-		{
-			CHECK(r); frame_crop_left_offset = ExpGolombDecoder::Decode(r);
-			CHECK(r); frame_crop_right_offset = ExpGolombDecoder::Decode(r);
-			CHECK(r); frame_crop_top_offset = ExpGolombDecoder::Decode(r);
-			CHECK(r); frame_crop_bottom_offset = ExpGolombDecoder::Decode(r);
-		}
-		//CHECK(r); vui_parameters_present_flag = r.Get(1);
+		CHECK(r); DECODE_SUBOBJECT(frame_crop, r);
+		CHECK(r); DECODE_SUBOBJECT(vui_parameters, r);
 		//Free memory
 		free(aux);
 		//OK
 		return !r.Error();
 	}
 public:
-	DWORD GetWidth()	{ return ((pic_width_in_mbs_minus1 +1)*16) - frame_crop_right_offset *2 - frame_crop_left_offset *2; }
-	DWORD GetHeight()	{ return ((2 - frame_mbs_only_flag)* (pic_height_in_map_units_minus1 +1) * 16) - frame_crop_bottom_offset*2 - frame_crop_top_offset*2; }
+	FrameCrop GetFrameCrop() const	{ return frame_crop.value_or(FrameCrop()); }
+	DWORD GetWidth() const	{ return ((pic_width_in_mbs_minus1 +1)*16) - GetFrameCrop().right_offset *2 - GetFrameCrop().left_offset *2; }
+	DWORD GetHeight() const	{ return ((2 - frame_mbs_only_flag)* (pic_height_in_map_units_minus1 +1) * 16) - GetFrameCrop().bottom_offset*2 - GetFrameCrop().top_offset*2; }
 
 	bool GetSeparateColourPlaneFlag() const { return separate_colour_plane_flag; }
 	bool GetFrameMbsOnlyFlag() const { return frame_mbs_only_flag; }
@@ -133,11 +439,8 @@ public:
 		DUMP_FIELD(frame_mbs_only_flag, "%u");
 		DUMP_FIELD(mb_adaptive_frame_field_flag, "%u");
 		DUMP_FIELD(direct_8x8_inference_flag, "%u");
-		DUMP_FIELD(frame_cropping_flag, "%u");
-		DUMP_FIELD(frame_crop_left_offset, "%u");
-		DUMP_FIELD(frame_crop_right_offset, "%u");
-		DUMP_FIELD(frame_crop_top_offset, "%u");
-		DUMP_FIELD(frame_crop_bottom_offset, "%u");
+		DUMP_SUBOBJECT(frame_crop);
+		DUMP_SUBOBJECT(vui_parameters);
 		DUMP_FIELD(separate_colour_plane_flag, "%u");
 	}
 private:
@@ -163,12 +466,8 @@ private:
 	bool			frame_mbs_only_flag = false;
 	bool			mb_adaptive_frame_field_flag = false;
 	bool			direct_8x8_inference_flag = false;
-	bool			frame_cropping_flag = false;
-	DWORD			frame_crop_left_offset = 0;
-	DWORD			frame_crop_right_offset = 0;
-	DWORD			frame_crop_top_offset = 0;
-	DWORD			frame_crop_bottom_offset = 0;
-	//bool			vui_parameters_present_flag = false;
+	H264Optional<FrameCrop>	frame_crop;
+	H264Optional<H264VuiParameters>	vui_parameters;
 	bool			separate_colour_plane_flag = 0;
 };
 
