@@ -4,6 +4,8 @@
 #include <pthread.h>
 #include "video.h"
 #include "VideoBufferScaler.h"
+#include "CircularQueue.h"
+#include "acumulator.h"
 
 class VideoPipe :
 	public VideoOutput,
@@ -30,20 +32,20 @@ public:
 	int StopVideoCapture() override;
 
 	/** VideoOutput */
-	int NextFrame(const VideoBuffer::const_shared& videoBuffer) override;
+	size_t NextFrame(const VideoBuffer::const_shared& videoBuffer) override;
 	void ClearFrame() override;
 
 private:
 	uint32_t videoWidth = 0;
 	uint32_t videoHeight = 0;
 	int videoFPS = 0;
-	int imgPos = 0;
-	int imgNew = false;
 	float scaleResolutionDownBy = 0.0f;
 	uint32_t scaleResolutionToHeight = 0;
 	int inited = false;
 	int capturing = false;
-	std::array<VideoBuffer::const_shared,2> imgBuffer;
+	int cancelledGrab = false;
+
+	CircularQueue<VideoBuffer::const_shared> queue;
 
 	pthread_mutex_t newPicMutex;
 	pthread_cond_t  newPicCond;
@@ -52,6 +54,9 @@ private:
 	VideoBufferScaler scaler;
 	AllowedDownScaling allowedDownScaling = AllowedDownScaling::Any;
 
+	size_t totalDroppedFrames = 0;
+	uint64_t lastDroppedReport = 0;
+	Acumulator<uint32_t, uint64_t> droppedFramesAcu;
 };
 
 #endif	/* VIDEOPIPE_H */

@@ -158,7 +158,9 @@ public:
 	virtual ~VideoOutput() = default;
 
 	virtual void ClearFrame() = 0;
-	virtual int NextFrame(const VideoBuffer::const_shared& videoBuffer)=0;
+
+	// Returns the current occupancy of the frame buffer queue
+	virtual size_t NextFrame(const VideoBuffer::const_shared& videoBuffer)=0;
 };
 
 
