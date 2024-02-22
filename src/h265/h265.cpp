@@ -56,15 +56,15 @@ bool GenericProfileTierLevel::Decode(BitReader& r)
 			profile_idc	= i;
 	}
 
-	constraing_indicator_flags	= 0;
+	constraint_indicator_flags	= 0;
 	CHECK(r); progressive_source_flag		= r.Get(1);
-	constraing_indicator_flags |= progressive_source_flag;
+	constraint_indicator_flags |= progressive_source_flag;
 	CHECK(r); interlaced_source_flag		= r.Get(1);
-	constraing_indicator_flags |= (interlaced_source_flag << 1);
+	constraint_indicator_flags |= (interlaced_source_flag << 1);
 	CHECK(r); non_packed_constraint_flag	= r.Get(1);
-	constraing_indicator_flags |= (non_packed_constraint_flag << 2);
+	constraint_indicator_flags |= (non_packed_constraint_flag << 2);
 	CHECK(r); frame_only_constraint_flag	= r.Get(1);
-	constraing_indicator_flags |= (frame_only_constraint_flag << 3);
+	constraint_indicator_flags |= (frame_only_constraint_flag << 3);
 
 	auto CheckProfileIdc = [&](unsigned	char idc){
 		return profile_idc	==	idc	|| profile_compatibility_flag[idc];
@@ -84,20 +84,20 @@ bool GenericProfileTierLevel::Decode(BitReader& r)
 		CHECK(r); one_picture_only_constraint_flag	= r.Get(1);
 		CHECK(r); lower_bit_rate_constraint_flag	= r.Get(1);
 
-		constraing_indicator_flags |= (max_12bit_constraint_flag << 4);		  
-		constraing_indicator_flags |= (max_10bit_constraint_flag << 5);		  
-		constraing_indicator_flags |= (max_8bit_constraint_flag << 6);		  
-		constraing_indicator_flags |= (max_422chroma_constraint_flag << 7);		  
-		constraing_indicator_flags |= (max_420chroma_constraint_flag << 8);		  
-		constraing_indicator_flags |= (max_monochrome_constraint_flag << 9);		  
-		constraing_indicator_flags |= (intra_constraint_flag << 10);		  
-		constraing_indicator_flags |= (one_picture_only_constraint_flag << 11);		  
-		constraing_indicator_flags |= (lower_bit_rate_constraint_flag << 12);		  
+		constraint_indicator_flags |= (max_12bit_constraint_flag << 4);		  
+		constraint_indicator_flags |= (max_10bit_constraint_flag << 5);		  
+		constraint_indicator_flags |= (max_8bit_constraint_flag << 6);		  
+		constraint_indicator_flags |= (max_422chroma_constraint_flag << 7);		  
+		constraint_indicator_flags |= (max_420chroma_constraint_flag << 8);		  
+		constraint_indicator_flags |= (max_monochrome_constraint_flag << 9);		  
+		constraint_indicator_flags |= (intra_constraint_flag << 10);		  
+		constraint_indicator_flags |= (one_picture_only_constraint_flag << 11);		  
+		constraint_indicator_flags |= (lower_bit_rate_constraint_flag << 12);		  
 
 		if (CheckProfileIdc(5) ||	CheckProfileIdc(9) ||	CheckProfileIdc(10))
 		{
 			CHECK(r); max_14bit_constraint_flag	  =	r.Get(1);
-			constraing_indicator_flags |= (max_14bit_constraint_flag << 13);		  
+			constraint_indicator_flags |= (max_14bit_constraint_flag << 13);		  
 			r.Skip(33);	// XXX_reserved_zero_33bits[0..32]
 		}
 		else
@@ -109,7 +109,7 @@ bool GenericProfileTierLevel::Decode(BitReader& r)
 	{
 		r.Skip(7);
 		CHECK(r); one_picture_only_constraint_flag = r.Get(1);
-		constraing_indicator_flags |= (one_picture_only_constraint_flag << 11);		  
+		constraint_indicator_flags |= (one_picture_only_constraint_flag << 11);		  
 		r.Skip(35);	// XXX_reserved_zero_35bits[0..34]
 	}
 	else
@@ -121,7 +121,7 @@ bool GenericProfileTierLevel::Decode(BitReader& r)
 		CheckProfileIdc(4) ||	CheckProfileIdc(5) ||	CheckProfileIdc(9))
 	{
 		CHECK(r); inbld_flag	= r.Get(1);
-		constraing_indicator_flags |= ((QWORD)(inbld_flag) << 47);		  
+		constraint_indicator_flags |= ((QWORD)(inbld_flag) << 47);		  
 	}
 	else
 	{
