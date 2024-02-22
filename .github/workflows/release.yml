@@ -19,7 +19,7 @@ jobs:
     - name: Install pre-requisite package
       run: |
         sudo apt-get update
-        sudo apt-get install --fix-missing -y libavcodec-dev libx264-dev libavutil-dev libvpx-dev libswscale-dev libavformat-dev
+        sudo apt-get install --fix-missing -y libavcodec-dev libx264-dev libavutil-dev libvpx-dev libswscale-dev libswresample-dev libavformat-dev libssl-dev
     - name: Configure
       run: mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release ..
     - name: Get number of CPU cores
@@ -29,3 +29,5 @@ jobs:
       run: cd build && make -j${{ steps.cpu-cores.outputs.count }} 
     - name: Run Test
       run: cd build && ./MediaServerUnitTest
+    - name: Run Legacy Test
+      run: cd build && ./MediaServerLegacyTest
