@@ -80,7 +80,8 @@ std::unique_ptr<VideoFrame> RTMPPacketizer<DescClass, codec>::PrepareFrame(RTMPV
 	frame->SetClockRate(1000);
 	//Set timestamp
 	frame->SetTimestamp(videoFrame->GetTimestamp());
-	
+	//Set Sender time
+	frame->SetSenderTime(videoFrame->GetSenderTime());
 	//Get AVC data size
 	auto configSize = desc.GetSize();
 	//Allocate mem
