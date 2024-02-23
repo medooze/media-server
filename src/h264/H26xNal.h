@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <limits>
+#include <optional>
 #include <functional>
 #include "bitstream.h"
 
@@ -29,6 +30,31 @@ inline DWORD NalUnescapeRbsp(BYTE *dst, const BYTE *src, DWORD size)
 		}
 	}
 	return len;
+}
+
+inline std::optional<DWORD> NalEscapeRbsp(BYTE *dst, DWORD dstsize, const BYTE *src, DWORD size)
+{
+	DWORD len = 0;
+	DWORD i = 0;
+	while(i<size)
+	{
+		//Check if next BYTEs are an emulation code (00 00 [00-03])
+		if((i+3<=size) ? (get3(src,i)<4) : (i+2==size && !get2(src,i)))
+		{
+			//Emit emulation prevention code (00 00 03)
+			if (len+3 > dstsize)
+				return std::nullopt;
+			set3(dst, len, 3);
+			len += 3;
+			//Skip the two zeros
+			i += 2;
+		} else {
+			if (len >= dstsize)
+				return std::nullopt;
+			dst[len++] = get1(src,i++);
+		}
+	}
+	return std::optional(len);
 }
 
 inline void NalSliceAnnexB(BufferReader& reader, std::function<void(BufferReader& nalReader)> onNalu)
