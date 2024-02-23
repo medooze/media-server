@@ -352,7 +352,7 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 			//Set other values
 			packet->SetClockRate(rate);
 			packet->SetExtTimestamp(lastTimestamp*rate/frame->GetClockRate());
-			packet->SetAbsoluteCaptureTime(time);
+			packet->SetAbsoluteCaptureTime(frame->GetSenderTime() ? frame->GetSenderTime() : time);
 
 			//Check
 			if (i+1==info.size())
