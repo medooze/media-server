@@ -275,8 +275,10 @@ public:
 		else
 			cache = 0;
 		//Update cached bytes
-		cached -= n;
-
+		if (n <= cached)
+			cached -= n;
+		else
+			cached = 0;
 	}
 
 	inline DWORD GetCached(DWORD n)
