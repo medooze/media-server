@@ -189,6 +189,29 @@ std::unique_ptr<VideoFrame> RTMPH26xPacketizer<DescClass, SPSClass, PPSClass, co
 		frame->SetHeight(sps->GetHeight());
 	}
 
+	if (videoFrame->GetSenderTime())
+	{
+		//Add unregistered SEI message NAL
+		uint8_t sei[28] = { 0x06, 0x05, 0x18, 0x00, 0x11, 0x22, 0x33, 0x44,
+				    0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc,
+				    0xdd, 0xee, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00,
+				    0x00, 0x00, 0x00, 0x80 };
+		//Set size
+		setN(nalUnitLength, nalHeader, 0, sizeof(sei));
+
+		//Append nal size header
+		frame->AppendMedia(nalHeader, nalUnitLength);
+
+		//Set timestamp
+		set8(sei, 19, videoFrame->GetSenderTime());
+
+		//Append nal
+		auto ini = frame->AppendMedia(sei, sizeof(sei));
+
+		//Crete rtp packet
+		frame->AddRtpPacket(ini, sizeof(sei), nullptr, 0);
+	}
+
 	//Malloc
 	BYTE *data = videoFrame->GetMediaData();
 	//Get size
