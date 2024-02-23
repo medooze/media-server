@@ -37,6 +37,9 @@ public:
 	QWORD GetTimestamp()	{ return timestamp;	}
 	void  SetTimestamp(QWORD timestamp) { this->timestamp = timestamp; }
 
+	QWORD GetSenderTime() const { return senderTime; }
+	void  SetSenderTime(QWORD senderTime) { this->senderTime = senderTime; }
+
 	virtual DWORD Parse(BYTE *data,DWORD size);
 	virtual DWORD Serialize(BYTE* buffer,DWORD size);
 	virtual DWORD GetSize()	{ return bufferSize+1; 	}
@@ -65,6 +68,7 @@ protected:
 	RTMPMediaFrame(Type type,QWORD timestamp,DWORD size);
 
 	QWORD timestamp = 0;
+	QWORD senderTime = 0;
 	BYTE *buffer = nullptr;
 	DWORD bufferSize = 0;
 	DWORD mediaSize = 0;
