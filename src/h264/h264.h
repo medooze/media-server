@@ -12,7 +12,7 @@
 #include "descriptor.h"
 #include "H26xNal.h"
 
-class H264SeqParameterSet : public Descriptor
+class H264SeqParameterSet : public Descriptor<H264SeqParameterSet>
 {
 public:
 	bool Decode(const BYTE* buffer,DWORD bufferSize)
@@ -172,7 +172,7 @@ private:
 	bool			separate_colour_plane_flag = 0;
 };
 
-class H264PictureParameterSet : public Descriptor
+class H264PictureParameterSet : public Descriptor<H264PictureParameterSet>
 {
 public:
 	bool Decode(const BYTE* buffer,DWORD bufferSize)
@@ -280,7 +280,7 @@ private:
 	bool			redundant_pic_cnt_present_flag = false;
 };
 
-class H264SliceHeader : public Descriptor
+class H264SliceHeader : public Descriptor<H264SliceHeader>
 {
 public:
 

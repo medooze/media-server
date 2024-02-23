@@ -188,7 +188,7 @@ const std::array<BYTE, 4> hevc_sub_height_c{
 	1, 2, 1, 1
 };
 
-class HEVCWindow : public Descriptor
+class HEVCWindow : public Descriptor<HEVCWindow>
 {
 public:
 	DWORD left_offset =	0;
@@ -211,7 +211,7 @@ bool H265IsIntra(BYTE nalUnitType);
 
 typedef std::array<bool, HEVCParams::PROFILE_COMPATIBILITY_FLAGS_COUNT> H265ProfileCompatibilityFlags;
 
-class GenericProfileTierLevel : public Descriptor
+class GenericProfileTierLevel : public Descriptor<GenericProfileTierLevel>
 {
 public:
 	GenericProfileTierLevel()
@@ -284,7 +284,7 @@ private:
 	BYTE level_idc = 93	; // level 3.1
 };
 
-class H265ProfileTierLevel : public Descriptor
+class H265ProfileTierLevel : public Descriptor<H265ProfileTierLevel>
 {
 public:
 	H265ProfileTierLevel();
@@ -325,7 +325,7 @@ private:
 	std::array<GenericProfileTierLevel, HEVCParams::MAX_SUB_LAYERS> sub_layer_profile_tier_level;
 };
 
-struct H265VideoParameterSet : public Descriptor
+struct H265VideoParameterSet : public Descriptor<H265VideoParameterSet>
 {
 	H265VideoParameterSet();
 	bool Decode(const BYTE*	buffer, DWORD bufferSize);
@@ -348,7 +348,7 @@ private:
 	H265ProfileTierLevel profile_tier_level;
 };
 
-class H265SeqParameterSet : public Descriptor
+class H265SeqParameterSet : public Descriptor<H265SeqParameterSet>
 {
 public:
 	bool Decode(const BYTE*	buffer, DWORD buffersize);
@@ -401,7 +401,7 @@ private:
 	uint8_t 		log2PicSizeInCtbsY = 0;
 };
 
-class H265PictureParameterSet : public Descriptor
+class H265PictureParameterSet : public Descriptor<H265PictureParameterSet>
 {
 public:
 	bool Decode(const BYTE*	buffer,DWORD bufferSize);
@@ -435,7 +435,7 @@ private:
 };
 
 
-class H265SliceHeader : public Descriptor
+class H265SliceHeader : public Descriptor<H265SliceHeader>
 {
 public:
 

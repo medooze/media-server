@@ -24,17 +24,18 @@
 #include "bitstream.h"
 #include <cxxabi.h>
 
-class Descriptor
+template <class T> class Descriptor
 {
 public:
-	virtual void DumpFields(const char* prefix) const = 0;
+	// child has to implement this method:
+	// void DumpFields(const char* prefix) const;
 
 	// for convenience and compatibility with previous code
 	void Dump() const { Dump(""); }
 	void Dump(const char* prefix) const {
-		const char* name = abi::__cxa_demangle(typeid(*this).name(), NULL, NULL, NULL);
+		const char* name = abi::__cxa_demangle(typeid(T).name(), NULL, NULL, NULL);
 		Debug("%s[%s\n", prefix, name);
-		DumpFields((std::string(prefix) + "\t").c_str());
+		static_cast<const T*>(this)->DumpFields((std::string(prefix) + "\t").c_str());
 		Debug("%s[/%s]\n", prefix, name);
 		free((void *)name);
 	}
