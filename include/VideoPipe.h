@@ -5,7 +5,6 @@
 #include "video.h"
 #include "VideoBufferScaler.h"
 #include "CircularQueue.h"
-#include "acumulator.h"
 
 class VideoPipe :
 	public VideoOutput,
@@ -54,9 +53,9 @@ private:
 	VideoBufferScaler scaler;
 	AllowedDownScaling allowedDownScaling = AllowedDownScaling::Any;
 
-	size_t totalDroppedFrames = 0;
 	uint64_t lastDroppedReport = 0;
-	Acumulator<uint32_t, uint64_t> droppedFramesAcu;
+	unsigned int droppedFramesSinceReport = 0;
+	unsigned int totalFramesSinceReport = 0;
 };
 
 #endif	/* VIDEOPIPE_H */
