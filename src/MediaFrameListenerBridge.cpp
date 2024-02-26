@@ -133,7 +133,7 @@ void MediaFrameListenerBridge::SetMaxDelayMs(std::chrono::milliseconds maxDelayM
 
 void MediaFrameListenerBridge::SetDelayMs(std::chrono::milliseconds delayMs)
 {
-	UltraDebug("-MediaFrameListenerBridge::SetDelayMs() [delay:%s]", delayMs.count());
+	UltraDebug("-MediaFrameListenerBridge::SetDelayMs() [delay:%lld]", delayMs.count());
 
 	timeService.Async([=](auto now) { 
 		// Set a delay limit so the queue wouldn't grow without control if something is wrong, i.e. the packet
