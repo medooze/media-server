@@ -50,6 +50,7 @@ add_library(MediaServerLib
     ${CMAKE_CURRENT_LIST_DIR}/src/DependencyDescriptorLayerSelector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/av1/AV1LayerSelector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/av1/Obu.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/mpegts/SpliceInfoSection.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtmp/rtmpserver.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtmp/amf.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtmp/rtmpclientconnection.cpp
@@ -151,6 +152,7 @@ add_executable(MediaServerUnitTest
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestTools.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestForwardErrorCorrection.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestFecProbeGenerator.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestSpliceInfoSection.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/data/FramesArrivalInfo.cpp
 )
 
