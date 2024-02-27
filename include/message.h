@@ -48,9 +48,7 @@ public:
 		data = other.data;
 		len = other.len;
 		
-		other.info.type = MessageType::Unkown;
-		other.info.port = 0;
-		other.info.streamId = 0;
+		other.info = MessageInfo();
 		other.data = nullptr;
 		other.len = 0;
 	}
@@ -76,9 +74,7 @@ public:
 			data = other.data;
 			len = other.len;
 			
-			other.info.type = MessageType::Unkown;
-			other.info.port = 0;
-			other.info.streamId = 0;
+			other.info = MessageInfo();
 			other.data = nullptr;
 			other.len = 0;
 		}
