@@ -22,6 +22,7 @@ SimulcastMediaFrameListener::SimulcastMediaFrameListener(TimeService& timeServic
 	numLayers(numLayers),
 	maxQueueSize(calcMaxQueueSize(numLayers))
 {
+	Debug("-SimulcastMediaFrameListener::RemoveListener() [this:%p]\n", this);
 }
 
 SimulcastMediaFrameListener::~SimulcastMediaFrameListener()
@@ -30,7 +31,7 @@ SimulcastMediaFrameListener::~SimulcastMediaFrameListener()
 
 void SimulcastMediaFrameListener::AddMediaListener(const MediaFrame::Listener::shared& listener)
 {
-	Debug("-MediaFrameListenerBridge::AddListener() [this:%p,listener:%p]\n", this, listener.get());
+	Debug("-SimulcastMediaFrameListener::AddListener() [this:%p,listener:%p]\n", this, listener.get());
 
 	timeService.Sync([=](std::chrono::milliseconds){
 		//Add listener to set
@@ -46,7 +47,7 @@ void SimulcastMediaFrameListener::AddMediaListener(const MediaFrame::Listener::s
 
 void SimulcastMediaFrameListener::RemoveMediaListener(const MediaFrame::Listener::shared& listener)
 {
-	Debug("-MediaFrameListenerBridge::RemoveListener() [this:%p,listener:%p]\n", this, listener.get());
+	Debug("-SimulcastMediaFrameListener::RemoveListener() [this:%p,listener:%p]\n", this, listener.get());
 	timeService.Sync([=](std::chrono::milliseconds){
 		//Remove listener
 		listeners.erase(listener);
@@ -61,7 +62,7 @@ void SimulcastMediaFrameListener::RemoveMediaListener(const MediaFrame::Listener
 
 void SimulcastMediaFrameListener::AttachTo(const MediaFrame::Producer::shared& producer)
 {
-	Debug("-MediaFrameListenerBridge::AttachTo() [this:%p,producer:%p]\n", this, producer.get());
+	Debug("-SimulcastMediaFrameListener::AttachTo() [this:%p,producer:%p]\n", this, producer.get());
 
 	timeService.Sync([=](std::chrono::milliseconds) {
 		//Add producer
@@ -75,7 +76,7 @@ void SimulcastMediaFrameListener::AttachTo(const MediaFrame::Producer::shared& p
 
 void SimulcastMediaFrameListener::Detach(const MediaFrame::Producer::shared& producer)
 {
-	Debug("-MediaFrameListenerBridge::Detach() [this:%p,producer:%p]\n", this, producer.get());
+	Debug("-SimulcastMediaFrameListener::Detach() [this:%p,producer:%p]\n", this, producer.get());
 	timeService.Sync([=](std::chrono::milliseconds) {
 		producers.erase(producer);
 	});
@@ -124,10 +125,13 @@ void SimulcastMediaFrameListener::onMediaFrame(DWORD ssrc, const MediaFrame& fra
 		return;
 
 	//Get cloned video frame
-	auto cloned = std::unique_ptr<VideoFrame>((VideoFrame*)frame.Clone());
+	auto cloned = (VideoFrame*)frame.Clone();
 	cloned->SetSSRC(ssrc);
+	Log("SimulcastMediaFrameListener: ssrc: %d w: %d, h: %d\n", ssrc, cloned->GetWidth(), cloned->GetHeight());
 
-	Push(std::move(cloned));
+	timeService.Async([this, cloned](std::chrono::milliseconds) {
+		Push(std::unique_ptr<VideoFrame>(cloned));
+	});
 }
 
 void SimulcastMediaFrameListener::ForwardFrame(VideoFrame& frame)
@@ -210,7 +214,7 @@ void SimulcastMediaFrameListener::Push(std::unique_ptr<VideoFrame>&& frame)
 		if (layerDimensions[ssrc] > layerDimensions[selectedSsrc] ||
 			frame->GetTime() > (lastEnqueueTimeMs + MaxWaitingTimeBeforeSwitchingLayerMs))
 		{
-			//UltraDebug("layer switch: 0x%x -> 0x%x, time: %lld, timestamp: %lld\n", ssrc, selectedSsrc, frame->GetTime(), tm);
+			UltraDebug("layer switch: 0x%x -> 0x%x, time: %lld, timestamp: %lld\n", ssrc, selectedSsrc, frame->GetTime(), tm);
 
 			selectedSsrc = ssrc;
 			Enqueue(std::move(frame));

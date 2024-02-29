@@ -168,11 +168,15 @@ void MediaFrameListenerBridge::RemoveListener(RTPIncomingMediaStream::Listener* 
 
 void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& frame)
 {
-	timeService.Async([=, frame = std::shared_ptr<MediaFrame>(frame.Clone())] (auto now){
+	auto cloned = frame.Clone();
+	cloned->SetSSRC(ssrc);
+	timeService.Async([=, frame = std::shared_ptr<MediaFrame>(cloned)] (auto now){
 		
 		//Multiplex
 		for (auto& listener : mediaFrameListeners)
+		{
 			listener->onMediaFrame(*frame);
+		}
 
 		//Dispatch any READY packets now
 		std::vector<RTPPacket::shared> sending;		
