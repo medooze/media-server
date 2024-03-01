@@ -29,7 +29,7 @@ public:
 	virtual void RemoveMediaListener(const MediaFrame::Listener::shared& listener) override;
 
 	//MediaFrame::Listener interface
-	virtual void onMediaFrame(const MediaFrame& frame) override { onMediaFrame(0, frame); };
+	virtual void onMediaFrame(const MediaFrame& frame) override { onMediaFrame(frame.GetSSRC(), frame); };
 	virtual void onMediaFrame(DWORD ssrc, const MediaFrame& frame) override;
 
 
