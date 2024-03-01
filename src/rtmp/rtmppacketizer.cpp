@@ -2,6 +2,7 @@
 #include "rtmp/rtmppacketizer.h"
 #include "av1/AV1.h"
 #include "av1/Obu.h"
+#include "h264/H26xNal.h"
 
 
 VideoCodec::Type GetRtmpFrameVideoCodec(const RTMPVideoFrame& videoFrame)
@@ -187,6 +188,33 @@ std::unique_ptr<VideoFrame> RTMPH26xPacketizer<DescClass, SPSClass, PPSClass, co
 		//Set dimensions
 		frame->SetWidth(sps->GetWidth());
 		frame->SetHeight(sps->GetHeight());
+	}
+
+	if (videoFrame->GetSenderTime())
+	{
+		//Add unregistered SEI message NAL
+		uint8_t sei[28] = { 0x06, 0x05, 0x18, 0x00, 0x11, 0x22, 0x33, 0x44,
+				    0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc,
+				    0xdd, 0xee, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00,
+				    0x00, 0x00, 0x00, 0x80 };
+		//Set size
+		setN(nalUnitLength, nalHeader, 0, sizeof(sei));
+
+		//Append nal size header
+		frame->AppendMedia(nalHeader, nalUnitLength);
+
+		//Set timestamp
+		set8(sei, 19, videoFrame->GetSenderTime());
+
+		//Escape nal
+		uint8_t seiEscaped[sizeof(sei)*2];
+		auto seiSize = NalEscapeRbsp(seiEscaped, sizeof(seiEscaped), sei, sizeof(sei)).value();
+
+		//Append nal
+		auto ini = frame->AppendMedia(seiEscaped, seiSize);
+
+		//Crete rtp packet
+		frame->AddRtpPacket(ini, seiSize, nullptr, 0);
 	}
 
 	//Malloc
