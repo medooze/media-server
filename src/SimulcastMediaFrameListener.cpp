@@ -22,7 +22,6 @@ SimulcastMediaFrameListener::SimulcastMediaFrameListener(TimeService& timeServic
 	numLayers(numLayers),
 	maxQueueSize(calcMaxQueueSize(numLayers))
 {
-	Debug("-SimulcastMediaFrameListener::RemoveListener() [this:%p]\n", this);
 }
 
 SimulcastMediaFrameListener::~SimulcastMediaFrameListener()
@@ -213,7 +212,7 @@ void SimulcastMediaFrameListener::Push(std::unique_ptr<VideoFrame>&& frame)
 		if (layerDimensions[ssrc] > layerDimensions[selectedSsrc] ||
 			frame->GetTime() > (lastEnqueueTimeMs + MaxWaitingTimeBeforeSwitchingLayerMs))
 		{
-			UltraDebug("layer switch: 0x%x -> 0x%x, time: %lld, timestamp: %lld\n", ssrc, selectedSsrc, frame->GetTime(), tm);
+			//UltraDebug("layer switch: 0x%x -> 0x%x, time: %lld, timestamp: %lld\n", ssrc, selectedSsrc, frame->GetTime(), tm);
 
 			selectedSsrc = ssrc;
 			Enqueue(std::move(frame));
