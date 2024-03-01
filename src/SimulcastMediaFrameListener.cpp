@@ -127,7 +127,6 @@ void SimulcastMediaFrameListener::onMediaFrame(DWORD ssrc, const MediaFrame& fra
 	//Get cloned video frame
 	auto cloned = (VideoFrame*)frame.Clone();
 	cloned->SetSSRC(ssrc);
-	Log("SimulcastMediaFrameListener: ssrc: %d w: %d, h: %d\n", ssrc, cloned->GetWidth(), cloned->GetHeight());
 
 	timeService.Async([this, cloned](std::chrono::milliseconds) {
 		Push(std::unique_ptr<VideoFrame>(cloned));
