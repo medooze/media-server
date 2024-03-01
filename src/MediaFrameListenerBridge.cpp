@@ -122,7 +122,7 @@ void MediaFrameListenerBridge::Stop()
 
 void MediaFrameListenerBridge::SetMaxDelayMs(std::chrono::milliseconds maxDelayMs)
 {
-	UltraDebug("-MediaFrameListenerBridge::SetMaxDelayMs() [delay:%s]", maxDelayMs.count());
+	UltraDebug("-MediaFrameListenerBridge::SetMaxDelayMs() [delay:%lld]", maxDelayMs.count());
 
 	timeService.Async([=](auto now) {
 		maxDispatchingDelayMs = maxDelayMs;
