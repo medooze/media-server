@@ -16,12 +16,11 @@
 class Logger
 {
 public:
-        static Logger& getInstance()
-        {
-            static Logger   instance;
-            return instance;
-        }
-	
+	static Logger& getInstance()
+	{
+		return instance;
+	}
+
 	static bool IsUltraDebugEnabled()
 	{
 		return getInstance().ultradebug;
@@ -67,7 +66,11 @@ protected:
 	bool debug;
 	bool ultradebug;
 private:
-        Logger()
+
+	// Global logger instance
+	static Logger instance;
+
+	Logger()
 	{
 		log = true;
 		debug = false;
