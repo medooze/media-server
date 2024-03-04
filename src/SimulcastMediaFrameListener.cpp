@@ -124,11 +124,11 @@ void SimulcastMediaFrameListener::onMediaFrame(DWORD ssrc, const MediaFrame& fra
 		return;
 
 	//Get cloned video frame
-	auto cloned = (VideoFrame*)frame.Clone();
+	std::shared_ptr<VideoFrame> cloned(static_cast<VideoFrame*>(frame.Clone()));
 	cloned->SetSSRC(ssrc);
 
-	timeService.Async([this, cloned](std::chrono::milliseconds) {
-		Push(std::unique_ptr<VideoFrame>(cloned));
+	timeService.Async([this, cloned = std::move(cloned)](std::chrono::milliseconds) mutable {
+		Push(std::move(cloned));
 	});
 }
 
@@ -153,7 +153,7 @@ void SimulcastMediaFrameListener::ForwardFrame(VideoFrame& frame)
 		listener->onMediaFrame(forwardSsrc, frame);
 }
 
-void SimulcastMediaFrameListener::Push(std::unique_ptr<VideoFrame>&& frame)
+void SimulcastMediaFrameListener::Push(std::shared_ptr<VideoFrame>&& frame)
 {
 	DWORD ssrc = frame->GetSSRC();
 
@@ -238,7 +238,7 @@ void SimulcastMediaFrameListener::Push(std::unique_ptr<VideoFrame>&& frame)
 	}
 }
 
-void SimulcastMediaFrameListener::Enqueue(std::unique_ptr<VideoFrame>&& frame)
+void SimulcastMediaFrameListener::Enqueue(std::shared_ptr<VideoFrame>&& frame)
 {
 	lastEnqueueTimeMs = frame->GetTime();
 

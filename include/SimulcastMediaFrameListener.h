@@ -41,8 +41,8 @@ public:
 private:
 	void ForwardFrame(VideoFrame& frame);
 
-	void Push(std::unique_ptr<VideoFrame>&& frame);
-	void Enqueue(std::unique_ptr<VideoFrame>&& frame);
+	void Push(std::shared_ptr<VideoFrame>&& frame);
+	void Enqueue(std::shared_ptr<VideoFrame>&& frame);
 	void Flush();
 private:
 	TimeService& timeService;
@@ -63,7 +63,7 @@ private:
 
 	std::unordered_map<uint64_t, int64_t> initialTimestamps;
 	std::unordered_map<uint64_t, size_t> layerDimensions;
-	std::deque<std::unique_ptr<VideoFrame>> queue;
+	std::deque<std::shared_ptr<VideoFrame>> queue;
 
 	// Latest timestamps for each layer
 	std::unordered_map<uint32_t, uint64_t> layerTimestamps;
