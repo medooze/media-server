@@ -433,9 +433,9 @@ int DTLSConnection::Init()
 	BIO_set_mem_eof_return(write_bio, -1);
 
 	//Set MTU of datagrams so it fits in an UDP packet
-	SSL_set_mtu(ssl, RTPPAYLOADSIZE);
+	SSL_set_mtu(ssl, UDPPAYLOADSIZE);
 	//DTLS_set_link_mtu(ssl, MTU);
-	BIO_ctrl(write_bio, BIO_CTRL_DGRAM_SET_MTU, RTPPAYLOADSIZE, NULL);
+	BIO_ctrl(write_bio, BIO_CTRL_DGRAM_SET_MTU, UDPPAYLOADSIZE, NULL);
 
 	SSL_set_bio(ssl, read_bio, write_bio);
 

@@ -211,15 +211,7 @@ bool H265Depacketizer::AddSingleNalUnitPayload(const BYTE* nalUnit, DWORD nalSiz
 	//Append data and get current post
 	auto pos = frame.AppendMedia(nalUnit, nalSize);
 	//Add RTP packet
-	if (nalSize >= RTPPAYLOADSIZE)
-	{
-		Error("-H265: nalSize(%d) is larger than RTPPAYLOADSIZE (%d)!\n", nalSize, RTPPAYLOADSIZE);
-		return false;
-	}
-	else
-	{
-		frame.AddRtpPacket(pos, nalSize, nullptr, 0);
-	}
+	frame.AddRtpPacket(pos, nalSize, nullptr, 0);
 	return true;
 }
 
