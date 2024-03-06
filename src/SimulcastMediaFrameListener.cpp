@@ -125,7 +125,8 @@ void SimulcastMediaFrameListener::onMediaFrame(DWORD ssrc, const MediaFrame& fra
 
 	//Get cloned video frame
 	std::shared_ptr<VideoFrame> cloned(static_cast<VideoFrame*>(frame.Clone()));
-
+	cloned->SetSSRC(ssrc);
+	
 	Push(std::move(cloned));
 }
 
