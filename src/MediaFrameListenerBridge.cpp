@@ -168,9 +168,10 @@ void MediaFrameListenerBridge::RemoveListener(RTPIncomingMediaStream::Listener* 
 
 void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& frame)
 {
-	std::shared_ptr<MediaFrame> cloned(frame.Clone());
-	cloned->SetSSRC(ssrc);
-	timeService.Async([=, frame = std::move(cloned)] (auto now){
+	timeService.Async([=, frame = std::shared_ptr<MediaFrame>(frame.Clone())] (auto now){
+		
+		// Assign SSRC
+		frame->SetSSRC(ssrc);
 		
 		//Multiplex
 		for (auto& listener : mediaFrameListeners)
