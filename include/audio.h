@@ -62,6 +62,8 @@ public:
 		frame->SetDuration(GetDuration());
 		//Set number of channels
 		frame->SetNumChannels(GetNumChannels());
+		// SSRC
+		frame->SetSSRC(GetSSRC());
 		//Set config
 		if (HasCodecConfig()) frame->SetCodecConfig(GetCodecConfigData(),GetCodecConfigSize());
 		//If we have disabled the shared buffer for this frame

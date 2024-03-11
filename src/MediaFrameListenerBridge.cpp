@@ -170,6 +170,9 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 {
 	timeService.Async([=, frame = std::shared_ptr<MediaFrame>(frame.Clone())] (auto now){
 		
+		// Assign SSRC
+		frame->SetSSRC(ssrc);
+		
 		//Multiplex
 		for (auto& listener : mediaFrameListeners)
 			listener->onMediaFrame(*frame);

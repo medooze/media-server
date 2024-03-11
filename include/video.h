@@ -70,6 +70,8 @@ public:
 		//Copy target bitrate and fps
 		frame->SetTargetBitrate(targetBitrate);
 		frame->SetTargetFps(targetFps);
+		// SSRC
+		frame->SetSSRC(GetSSRC());
 		//If we have disabled the shared buffer for this frame
 		if (disableSharedBuffer)
 			//Copy data

@@ -29,7 +29,7 @@ public:
 	virtual void RemoveMediaListener(const MediaFrame::Listener::shared& listener) override;
 
 	//MediaFrame::Listener interface
-	virtual void onMediaFrame(const MediaFrame& frame) override { onMediaFrame(0, frame); };
+	virtual void onMediaFrame(const MediaFrame& frame) override { onMediaFrame(frame.GetSSRC(), frame); };
 	virtual void onMediaFrame(DWORD ssrc, const MediaFrame& frame) override;
 
 
@@ -41,8 +41,8 @@ public:
 private:
 	void ForwardFrame(VideoFrame& frame);
 
-	void Push(std::unique_ptr<VideoFrame>&& frame);
-	void Enqueue(std::unique_ptr<VideoFrame>&& frame);
+	void Push(std::shared_ptr<VideoFrame>&& frame);
+	void Enqueue(std::shared_ptr<VideoFrame>&& frame);
 	void Flush();
 private:
 	TimeService& timeService;
@@ -63,7 +63,7 @@ private:
 
 	std::unordered_map<uint64_t, int64_t> initialTimestamps;
 	std::unordered_map<uint64_t, size_t> layerDimensions;
-	std::deque<std::unique_ptr<VideoFrame>> queue;
+	std::deque<std::shared_ptr<VideoFrame>> queue;
 
 	// Latest timestamps for each layer
 	std::unordered_map<uint32_t, uint64_t> layerTimestamps;
