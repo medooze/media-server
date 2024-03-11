@@ -1395,7 +1395,7 @@ DWORD AMFStrictArray::Parse(BYTE *data,DWORD size)
 			if (num.IsParsed())
 			{
 				//Allocate memory
-				elements = (AMFData**)malloc(num.GetValue()*sizeof(AMFObject*));
+				elements = (AMFData**)calloc(num.GetValue(), sizeof(AMFObject*));
 				//Set first
 				cur = 0;
 			}
