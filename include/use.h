@@ -45,7 +45,7 @@ public:
 		pthread_mutex_lock(&lock);
 		pthread_mutex_lock(&mutex);
 		while(cont)
-			pthread_cond_wait(&cond,&mutex);
+			(void)pthread_cond_wait(&cond,&mutex);
 	};
 
 	void Unlock()
