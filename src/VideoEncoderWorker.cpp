@@ -289,8 +289,14 @@ int VideoEncoderWorker::Encode()
 		//Set frame timestamp
 		videoFrame->SetTimestamp(pic->HasTimestamp() ? pic->GetTimestamp() : now*90);
 		videoFrame->SetTime(pic->HasTime() ? pic->GetTime() : now);
-		//Set dudation
-		videoFrame->SetDuration(frameTime*videoFrame->GetClockRate()/1E6);
+
+		// Set duration to 0 indicating we dont know its actual value
+		// We *could* delay the frame until the next one and use timestamps 
+		// to calculate the duration however we dont want to pay that latency cost. 
+		// We cant use the fps as there are cases where this is incorrect and some
+		// things (shaka recording) require being able to know if this is reliable/correct
+		// so we mark it as not set.
+		videoFrame->SetDuration(0);
 
 		//Set target bitrate and fps
 		videoFrame->SetTargetBitrate(bitrate);

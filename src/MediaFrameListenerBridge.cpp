@@ -240,6 +240,7 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 		const BYTE *frameData = NULL;
 		DWORD frameSize = 0;
 		QWORD rate = 1000;
+		uint32_t pendingDuration = 0;
 
 		//Depending on the type
 		type = frame->GetType();
@@ -257,6 +258,8 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 				frameSize = audio->GetLength();
 				//Set correct clock rate for audio codec
 				rate = AudioCodec::GetClockRate(audio->GetCodec());
+
+				pendingDuration = frame->GetDuration() * 1000 / rate;
 				break;
 			}
 			case MediaFrame::Video:
@@ -271,6 +274,21 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 				frameSize = video->GetLength();
 				//Set clock rate
 				rate = 90000;
+
+				//The duration is used used below to decide when we want to have finished sending all
+				//the packets that make up this media frame when doing packet smoothing
+				//
+				//When transcoding video, we dont know the duration of the resulting frame and so it
+				//is 0. In this case we will estimate it based on the target fps which the transcoder
+				//does set which is sufficient for this use case.
+				if (frame->GetDuration() == 0 && video->GetTargetFps() != 0)
+				{
+					pendingDuration = 1000.0 / video->GetTargetFps();
+				}
+				else
+				{
+					pendingDuration = frame->GetDuration() * 1000 / rate;
+				}
 				break;
 			}
 			default:
@@ -326,9 +344,6 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 			//Get total length
 			pendingLength += info[i].GetTotalLength();
 
-		//Calculate each packet duration
-		uint32_t pendingDuration = frame->GetDuration() * 1000 / rate;
-			
 		//For each one
 		for (size_t i=0;i<info.size();i++)
 		{
