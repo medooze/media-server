@@ -80,10 +80,6 @@ void VideoDecoderWorker::RemoveVideoOutput(VideoOutput* output)
 
 int VideoDecoderWorker::Decode()
 {
-	QWORD		frameTimestamp = (QWORD)-1;
-	QWORD		frameTime = (QWORD)-1;
-	DWORD		frameClockRate = (DWORD)-1;
-	QWORD		frameSenderTime = 0;
 	bool		waitIntra = false;
 
 	Log(">VideoDecoderWorker::Decode()\n");
@@ -104,30 +100,23 @@ int VideoDecoderWorker::Decode()
 			//Check condition again
 			continue;
 		
-		//Get extended sequence number and timestamp
-		QWORD ts = packet->GetTimestamp();
-		QWORD time = packet->GetTime();
-		DWORD clockRate = packet->GetClockRate();
-		QWORD senderTime = packet->GetSenderTime();
+		//Get timestamp
+		DWORD frameTimestamp = packet->GetTimestamp();
+		DWORD frameTime = packet->GetTime();
+		DWORD frameClockRate = packet->GetClockRate();
+		DWORD frameSenderTime = packet->GetSenderTime();
 
 		//If we don't have codec
 		if (!videoDecoder || (packet->GetCodec()!=videoDecoder->type))
 		{
 			//Create new codec from pacekt
-			videoDecoder.reset(VideoCodecFactory::CreateDecoder((VideoCodec::Type)packet->GetCodec()));
+			videoDecoder.reset(VideoCodecFactory::CreateDecoder(packet->GetCodec()));
 				
 			//Check we found one
 			if (!videoDecoder)
 				//Skip
 				continue;
 		}
-		
-		//Update frame timestamp
-		frameTimestamp = ts;
-		frameTime = time;
-		frameClockRate = clockRate;
-		if (senderTime)
-			frameSenderTime = senderTime;
 		
 		//Decode packet
 		if(!videoDecoder->Decode(packet->GetData(), packet->GetLength()))
@@ -147,21 +136,14 @@ int VideoDecoderWorker::Decode()
 
 			//If no frame received yet
 			if (!frame)
-			{
-				// Reset the timestamps to be ready for the next frame
-				frameTimestamp = (QWORD)-1;
-				frameTime = (QWORD)-1;
-				frameClockRate = (DWORD)-1;
-				frameSenderTime = 0;
 				//Get next one
 				continue;
-			}
 
 			//Set frame times
 			frame->SetTime(frameTime);
 			frame->SetTimestamp(frameTimestamp);
 			frame->SetClockRate(frameClockRate);
-			frame->SetSenderTime(senderTime);
+			frame->SetSenderTime(frameSenderTime);
 
 			//Check if we need to apply deinterlacing
 			if (frame->IsInterlaced())
@@ -213,12 +195,6 @@ int VideoDecoderWorker::Decode()
 					//Send it
 					output->NextFrame(frame);
 			}
-
-			// Reset the timestamps to be ready for the next frame
-			frameTimestamp = (QWORD)-1;
-			frameTime = (QWORD)-1;
-			frameClockRate = (DWORD)-1;
-			frameSenderTime = 0;
 	}
 
 	Log("<VideoDecoderWorker::Decode()\n");
