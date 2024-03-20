@@ -30,7 +30,7 @@ private:
 
 private:
 	std::set<VideoOutput*> outputs;
-	WaitQueue<std::shared_ptr<VideoFrame>> packets;
+	WaitQueue<std::shared_ptr<VideoFrame>> frames;
 	pthread_t thread = 0;
 	Mutex mutex;
 	bool decoding	= false;
