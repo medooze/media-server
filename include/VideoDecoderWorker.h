@@ -8,16 +8,15 @@
 #include "Deinterlacer.h"
 
 class VideoDecoderWorker 
-	: public RTPIncomingMediaStream::Listener
+	: public MediaFrame::Listener
 {
 public:
 	VideoDecoderWorker() = default;
 	virtual ~VideoDecoderWorker();
 
 	int Start();
-	virtual void onRTP(const RTPIncomingMediaStream* stream,const RTPPacket::shared& packet);
-	virtual void onEnded(const RTPIncomingMediaStream* stream);
-	virtual void onBye(const RTPIncomingMediaStream* stream);
+	virtual void onMediaFrame(const MediaFrame &frame);
+	virtual void onMediaFrame(DWORD ssrc, const MediaFrame &frame) { onMediaFrame(frame); }
 	int Stop();
 	
 	void AddVideoOutput(VideoOutput* ouput);
@@ -31,7 +30,7 @@ private:
 
 private:
 	std::set<VideoOutput*> outputs;
-	WaitQueue<RTPPacket::shared> packets;
+	WaitQueue<std::shared_ptr<VideoFrame>> packets;
 	pthread_t thread = 0;
 	Mutex mutex;
 	bool decoding	= false;
