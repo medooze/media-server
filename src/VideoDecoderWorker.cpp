@@ -83,7 +83,6 @@ int VideoDecoderWorker::Decode()
 	QWORD		frameTimestamp = (QWORD)-1;
 	QWORD		frameTime = (QWORD)-1;
 	DWORD		frameClockRate = (DWORD)-1;
-	DWORD		lastSeq = RTPPacket::MaxExtSeqNum;
 	bool		waitIntra = false;
 
 	Log(">VideoDecoderWorker::Decode()\n");
@@ -105,8 +104,7 @@ int VideoDecoderWorker::Decode()
 			continue;
 		
 		//Get extended sequence number and timestamp
-		DWORD seq = packet->GetExtSeqNum();
-		QWORD ts = packet->GetExtTimestamp();
+		QWORD ts = packet->GetTimestamp();
 		QWORD time = packet->GetTime();
 		DWORD clockRate = packet->GetClockRate();
 
@@ -122,59 +120,16 @@ int VideoDecoderWorker::Decode()
 				continue;
 		}
 		
-		//Lost packets since last
-		DWORD lost = 0;
-
-		//If not first
-		if (lastSeq!=RTPPacket::MaxExtSeqNum)
-			//Calculate losts
-			lost = seq-lastSeq-1;
-		
-		//Update last sequence number
-		lastSeq = seq;
-		
-		//If lost some packets or still have not got an iframe
-		if(lost)
-			//Waiting for refresh
-			waitIntra = true;
-
-		//Check if we have lost the last packet from the previous frame by comparing both timestamps
-		if (ts>frameTimestamp)
-		{
-			Debug("-VideoDecoderWorker::Decode() | lost mark packet ts:%llu frameTimestamp:%llu\n",ts,frameTimestamp);
-			//Try to decode what is in the buffer
-			videoDecoder->DecodePacket(NULL,0,1,1);
-			//Get picture
-			const VideoBuffer::shared& frame = videoDecoder->GetFrame();
-			//Check
-			if (frame && !muted)
-			{
-				//Set frame times
-				frame->SetTime(frameTime);
-				frame->SetTimestamp(frameTimestamp);
-				frame->SetClockRate(frameClockRate);
-				//Sync
-				ScopedLock scope(mutex);
-				//For each output
-				for (auto output : outputs)
-					//Send it
-					output->NextFrame(frame);
-			}
-		}
-		
 		//Update frame timestamp
 		frameTimestamp = ts;
 		frameTime = time;
 		frameClockRate = clockRate;
 		
 		//Decode packet
-		if(!videoDecoder->DecodePacket(packet->GetMediaData(),packet->GetMediaLength(),lost,packet->GetMark()))
+		if(!videoDecoder->Decode(packet->GetData(), packet->GetLength()))
 			//Waiting for refresh
 			waitIntra = true;
 
-		//Check if it is the last packet of a frame
-		if(packet->GetMark())
-		{
 			//Check if we got the waiting refresh
 			if (waitIntra && videoDecoder->IsKeyFrame())
 			{
@@ -256,7 +211,6 @@ int VideoDecoderWorker::Decode()
 			frameTimestamp = (QWORD)-1;
 			frameTime = (QWORD)-1;
 			frameClockRate = (DWORD)-1;
-		}
 	}
 
 	Log("<VideoDecoderWorker::Decode()\n");
@@ -265,21 +219,18 @@ int VideoDecoderWorker::Decode()
 	return 0;
 }
 
-void VideoDecoderWorker::onRTP(const RTPIncomingMediaStream* stream, const RTPPacket::shared& packet)
+void VideoDecoderWorker::onMediaFrame(const MediaFrame& frame_)
 {
+	//Clone it
+	auto frame = std::shared_ptr<MediaFrame>(frame_.Clone());
+
+	//Check it's a video frame
+	if (frame->GetType() != MediaFrame::Type::Video)
+	{
+		Warning("-VideoDecoderWorker::onMediaFrame(): got %s frame [this: %p]\n", MediaFrame::TypeToString(frame->GetType()), this);
+		return;
+	}
+
 	//Put it on the queue
-	packets.Add(packet->Clone());
-}
-
-void VideoDecoderWorker::onEnded(const RTPIncomingMediaStream* stream)
-{
-	//Cancel packets wait
-	packets.Cancel();
-}
-
-
-void VideoDecoderWorker::onBye(const RTPIncomingMediaStream* stream)
-{
-	//Cancel packets wait
-	packets.Cancel();
+	packets.Add(std::static_pointer_cast<VideoFrame>(frame));
 }
