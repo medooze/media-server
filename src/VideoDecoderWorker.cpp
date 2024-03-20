@@ -48,7 +48,7 @@ int  VideoDecoderWorker::Stop()
 	decoding=0;
 
 	//Cancel any pending wait
-	packets.Cancel();
+	frames.Cancel();
 
 	//Esperamos
 	pthread_join(thread,NULL);
@@ -88,29 +88,29 @@ int VideoDecoderWorker::Decode()
 	while(decoding)
 	{
 		//Obtenemos el paquete
-		if (!packets.Wait(0))
+		if (!frames.Wait(0))
 			//Done
 			break;
 
-		//Get packet in queue
-		auto packet = packets.Pop();
+		//Get frame in queue
+		auto encFrame = frames.Pop();
 
 		//Check
-		if (!packet)
+		if (!encFrame)
 			//Check condition again
 			continue;
 		
 		//Get timestamp
-		DWORD frameTimestamp = packet->GetTimestamp();
-		DWORD frameTime = packet->GetTime();
-		DWORD frameClockRate = packet->GetClockRate();
-		DWORD frameSenderTime = packet->GetSenderTime();
+		DWORD frameTimestamp = encFrame->GetTimestamp();
+		DWORD frameTime = encFrame->GetTime();
+		DWORD frameClockRate = encFrame->GetClockRate();
+		DWORD frameSenderTime = encFrame->GetSenderTime();
 
 		//If we don't have codec
-		if (!videoDecoder || (packet->GetCodec()!=videoDecoder->type))
+		if (!videoDecoder || (encFrame->GetCodec()!=videoDecoder->type))
 		{
 			//Create new codec from pacekt
-			videoDecoder.reset(VideoCodecFactory::CreateDecoder(packet->GetCodec()));
+			videoDecoder.reset(VideoCodecFactory::CreateDecoder(encFrame->GetCodec()));
 				
 			//Check we found one
 			if (!videoDecoder)
@@ -119,7 +119,7 @@ int VideoDecoderWorker::Decode()
 		}
 		
 		//Decode packet
-		if(!videoDecoder->Decode(packet->GetData(), packet->GetLength()))
+		if(!videoDecoder->Decode(encFrame->GetData(), encFrame->GetLength()))
 			//Waiting for refresh
 			waitIntra = true;
 
@@ -216,5 +216,5 @@ void VideoDecoderWorker::onMediaFrame(const MediaFrame& frame_)
 	}
 
 	//Put it on the queue
-	packets.Add(std::static_pointer_cast<VideoFrame>(frame));
+	frames.Add(std::static_pointer_cast<VideoFrame>(frame));
 }
