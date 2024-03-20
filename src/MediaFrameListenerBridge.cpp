@@ -275,19 +275,21 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 				//Set clock rate
 				rate = 90000;
 
-				//The duration is used used below to decide when we want to have finished sending all
-				//the packets that make up this media frame when doing packet smoothing
-				//
 				//When transcoding video, we dont know the duration of the resulting frame and so it
 				//is 0. In this case we will estimate it based on the target fps which the transcoder
-				//does set which is sufficient for this use case.
-				if (frame->GetDuration() == 0 && video->GetTargetFps() != 0)
+				//does set and fall back to some default otherwise.
+				if (frame->GetDuration())
+				{
+					pendingDuration = frame->GetDuration() * 1000 / rate;
+				}
+				else if (video->GetTargetFps())
 				{
 					pendingDuration = 1000.0 / video->GetTargetFps();
 				}
-				else
+				else 
 				{
-					pendingDuration = frame->GetDuration() * 1000 / rate;
+					//Use a default of 8ms for smooth sending (max 125fps).
+					pendingDuration = 8;
 				}
 				break;
 			}
