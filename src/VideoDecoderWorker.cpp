@@ -203,18 +203,16 @@ int VideoDecoderWorker::Decode()
 	return 0;
 }
 
-void VideoDecoderWorker::onMediaFrame(const MediaFrame& frame_)
+void VideoDecoderWorker::onMediaFrame(const MediaFrame& frame)
 {
-	//Clone it
-	auto frame = std::shared_ptr<MediaFrame>(frame_.Clone());
-
 	//Check it's a video frame
-	if (frame->GetType() != MediaFrame::Type::Video)
+	if (frame.GetType() != MediaFrame::Type::Video)
 	{
-		Warning("-VideoDecoderWorker::onMediaFrame(): got %s frame [this: %p]\n", MediaFrame::TypeToString(frame->GetType()), this);
+		Warning("-VideoDecoderWorker::onMediaFrame(): got %s frame [this: %p]\n", MediaFrame::TypeToString(frame.GetType()), this);
 		return;
 	}
-
+	//Clone it
+	auto cloned = std::shared_ptr<MediaFrame>(frame.Clone());
 	//Put it on the queue
-	frames.Add(std::static_pointer_cast<VideoFrame>(frame));
+	frames.Add(std::static_pointer_cast<VideoFrame>(cloned));
 }
