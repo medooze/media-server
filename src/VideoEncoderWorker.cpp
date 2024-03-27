@@ -12,10 +12,11 @@
 #include "VideoCodecFactory.h"
 
 VideoEncoderWorker::VideoEncoderWorker() 
+	: bitrateAcu(1000)
+	, fpsAcu(1000)
 {
 	//Create objects
 	pthread_mutex_init(&mutex,NULL);
-	pthread_cond_init(&cond,NULL);
 }
 
 VideoEncoderWorker::~VideoEncoderWorker()
@@ -23,7 +24,6 @@ VideoEncoderWorker::~VideoEncoderWorker()
 	End();
 	//Clean object
 	pthread_mutex_destroy(&mutex);
-	pthread_cond_destroy(&cond);
 }
 
 int VideoEncoderWorker::Init(VideoInput *input)
@@ -61,6 +61,7 @@ int VideoEncoderWorker::SetVideoCodec(VideoCodec::Type codec, int width, int hei
         //Store properties
         this->properties  = properties;
 
+	this->frameTime = 1E6/fps;
 	//Good
 	return 1;
 }
@@ -111,11 +112,8 @@ int VideoEncoderWorker::Stop()
 		//Stop
 		encoding=0;
 
-		//Cancel and frame grabbing
+		//Cancel and frame grabbing (also wakes up the thread loop)
 		input->CancelGrabFrame();
-
-		//Cancel sending
-		pthread_cond_signal(&cond);
 
 		//Esperamos
 		pthread_join(thread,NULL);
@@ -142,20 +140,11 @@ int VideoEncoderWorker::End()
 
 int VideoEncoderWorker::Encode()
 {
-	timeval first;
-	timeval prev;
-	timeval lastFPU;
-	
-	DWORD num = 0;
-	QWORD overslept = 0;
-
-	MinMaxAcumulator bitrateAcu(1000);
-	MinMaxAcumulator fpsAcu(1000);
 
 	Log(">VideoEncoderWorker::Encode() [width:%d,height:%d,bitrate:%d,fps:%d,intra:%d]\n",width,height,bitrate,fps,intraPeriod);
 
 	//Creamos el encoder
-	std::unique_ptr<VideoEncoder> videoEncoder(VideoCodecFactory::CreateEncoder(codec,properties));
+	videoEncoder = std::unique_ptr<VideoEncoder>(VideoCodecFactory::CreateEncoder(codec,properties));
 
 	//Comprobamos que se haya creado correctamente
 	if (!videoEncoder)
@@ -174,17 +163,11 @@ int VideoEncoderWorker::Encode()
 	//Set bitrate
 	videoEncoder->SetFrameRate(fps,bitrate,intraPeriod);
 
-	//No wait for first
-	QWORD frameTime = 0;
-
 	//Iniciamos el tamama�o del encoder
  	videoEncoder->SetSize(width,height);
 	
 	//The time of the first one
 	gettimeofday(&first,NULL);
-
-	//The time of the previos one
-	gettimeofday(&prev,NULL);
 
 	//Fist FPU
 	gettimeofday(&lastFPU,NULL);
@@ -192,151 +175,21 @@ int VideoEncoderWorker::Encode()
 	//Mientras tengamos que capturar
 	while(encoding)
 	{
-		//Capture video frame buffer
-		auto pic = input->GrabFrame(frameTime/1000);
-
-		//Check picture
+		// Get the next video frame that was decoded as soon as it is ready
+		// The frameTime/1000 timeout is just to allow safety for checking
+		// the "encoding" bool in case of a bug prevents deadlock and not
+		// really required. The generation of new frames is not driven by a
+		// local timer but instead driven by the incoming frames
+		// so the produced frames operate on the same clock as the source
+		// frames.
+		//
+		// Frame rate transrating is handled by looking at timestamps so it
+		// is also driven by the original clock (but with some jitter)
+		auto pic = input->GrabFrame((unsigned long)frameTime/1000);
 		if (!pic)
-			//Exit
-			continue;
-		
-		//Check size
-		if (pic->GetWidth() != width || pic->GetHeight() != height)
-		{
-			//Update size
-			width	= pic->GetWidth();
-			height	= pic->GetHeight();
-			//Create encoder again
-			videoEncoder.reset(VideoCodecFactory::CreateEncoder(codec, properties));
-			//Reset bitrate
-			videoEncoder->SetFrameRate(fps,bitrate,intraPeriod);
-			//Set on the encoder
-			videoEncoder->SetSize(width,height);
-		}
-
-		//Check if we need to send intra
-		if (sendFPU)
-		{
-			//Do not send anymore
-			sendFPU = false;
-			//Do not send if just send one (100ms)
-			if (getDifTime(&lastFPU)/100>100)
-			{
-				//Set it
-				videoEncoder->FastPictureUpdate();
-				//Update last FPU
-				getUpdDifTime(&lastFPU);
-			}
-		}
-
-		//Procesamos el frame
-		VideoFrame *videoFrame = videoEncoder->EncodeFrame(pic);
-
-		//If was failed
-		if (!videoFrame)
-			//Next
 			continue;
 
-		//Increase frame counter
-		fpsAcu.Update(getTime()/1000,1);
-
-		//Check
-		if (frameTime)
-		{
-			timespec ts;
-			//Lock
-			pthread_mutex_lock(&mutex);
-			//Calculate slept time
-			QWORD sleep = frameTime;
-			//Remove extra sleep from prev
-			if (overslept<sleep)
-				//Remove it
-				sleep -= overslept;
-			else
-				//Do not overflow
-				sleep = 1;
-			//Calculate timeout
-			calcAbsTimeoutNS(&ts,&prev,sleep);
-			//Wait next or stopped
-			int canceled  = !pthread_cond_timedwait(&cond,&mutex,&ts);
-			//Unlock
-			pthread_mutex_unlock(&mutex);
-			//Check if we have been canceled
-			if (canceled)
-				//Exit
-				break;
-			//Get differencence
-			QWORD diff = getDifTime(&prev);
-			//If it is biffer
-			if (diff>frameTime)
-				//Get what we have slept more
-				overslept = diff-frameTime;
-			else
-				//No oversletp (shoulddn't be possible)
-				overslept = 0;
-		}
-		
-		//Set frame time
-		frameTime = 1E6/fps;
-
-		//Add frame size in bits to bitrate calculator
-		bitrateAcu.Update(getDifTime(&first)/1000,videoFrame->GetLength()*8);
-		
-		//Get now
-		auto now = getDifTime(&first)/1000;
-		//Set clock rate
-		videoFrame->SetClockRate(pic->HasClockRate() ? pic->GetClockRate() : 90000);
-		//Set frame timestamp
-		videoFrame->SetTimestamp(pic->HasTimestamp() ? pic->GetTimestamp() : now*90);
-		videoFrame->SetTime(pic->HasTime() ? pic->GetTime() : now);
-
-		// Set duration to 0 indicating we dont know its actual value
-		// We *could* delay the frame until the next one and use timestamps 
-		// to calculate the duration however we dont want to pay that latency cost. 
-		// We cant use the fps as there are cases where this is incorrect and some
-		// things (shaka recording) require being able to know if this is reliable/correct
-		// so we mark it as not set.
-		videoFrame->SetDuration(0);
-
-		//Set target bitrate and fps
-		videoFrame->SetTargetBitrate(bitrate);
-		videoFrame->SetTargetFps(fps);
-
-		//Lock
-		pthread_mutex_lock(&mutex);
-
-		//For each listener
-		for (auto &listener : listeners)
-		{
-			//If was not null
-			if (listener)
-				//Call listener
-				listener->onMediaFrame(*videoFrame);
-		}
-
-		//unlock
-		pthread_mutex_unlock(&mutex);
-
-		//Set sending time of previous frame
-		getUpdDifTime(&prev);
-		
-/*
-		//Calculate sending times based on bitrate
-		DWORD sendingTime = videoFrame->GetLength()*8/bitrate;
-
-		//Adjust to maximum time
-		if (sendingTime>frameTime/1000)
-			//Cap it
-			sendingTime = frameTime/1000;
-
-                //If it was a I frame
-                if (videoFrame->IsIntra())
-			//Clean rtp rtx buffer
-			FlushRTXPackets();
-
-		//Send it smoothly
-		SmoothFrame(videoFrame,sendingTime);
-*/
+		HandleFrame(pic);
 
 		//Dump statistics
 		if (num && ((num%fps*10)==0))
@@ -357,6 +210,154 @@ int VideoEncoderWorker::Encode()
 	//Done
 	return 1;
 }
+
+void VideoEncoderWorker::HandleFrame(VideoBuffer::const_shared pic)
+{
+	// This only works if all incoming frames have timestamps
+	assert(pic->HasTimestamp());
+
+	if (pic->GetWidth() != width || pic->GetHeight() != height)
+	{
+		//Update size
+		width	= pic->GetWidth();
+		height	= pic->GetHeight();
+		//Create encoder again
+		videoEncoder.reset(VideoCodecFactory::CreateEncoder(codec, properties));
+		//Reset bitrate
+		videoEncoder->SetFrameRate(fps,bitrate,intraPeriod);
+		//Set on the encoder
+		videoEncoder->SetSize(width,height);
+	}
+
+	// synchronize on the first frame
+	if (!lastFrame)
+	{
+		lastFrame = pic;
+		firstEncodedTimestamp = pic->GetTimestamp();
+		EncodeFrame(pic, firstEncodedTimestamp);
+		++encodedFrames;
+
+		return;
+	}
+
+	// Calculate the next timestamp to encode (Dont just += frameTime here as we want to be able to cope with fractional fps)
+	// @todo The fps really should be originally either a float OR as often represented in video code as numerator/denominator
+	// @todo For now we may get issues with accuracy as encodedFrames grows larger
+	for (uint64_t nextEncodedTimestamp = firstEncodedTimestamp + static_cast<uint64_t>(frameTime * encodedFrames);
+		nextEncodedTimestamp <= pic->GetTimestamp();
+		++encodedFrames)
+	{
+		// Either lastFrame ir pic depending on timestamp
+		VideoBuffer::const_shared frameToEncode;
+		if (nextEncodedTimestamp < pic->GetTimestamp())
+		{
+			assert(nextEncodedTimestamp >= lastFrame->GetTimestamp());
+			assert(nextEncodedTimestamp < pic->GetTimestamp());
+			frameToEncode = lastFrame;
+		}
+		else
+		{
+			assert(nextEncodedTimestamp == pic->GetTimestamp());
+			frameToEncode = pic;
+		}
+		
+		// Note: If this fails for some reason we will simply skip sending
+		// that frame
+		EncodeFrame(frameToEncode, nextEncodedTimestamp);
+		lastEncodedTimestamp = nextEncodedTimestamp;
+	}
+	lastFrame = pic;
+}
+
+bool VideoEncoderWorker::EncodeFrame(VideoBuffer::const_shared frame, uint64_t timestamp)
+{
+	//Check if we need to send intra
+	if (sendFPU)
+	{
+		//Do not send anymore
+		sendFPU = false;
+		//Do not send if just send one (100ms)
+		if (getDifTime(&lastFPU)/100>100)
+		{
+			//Set it
+			videoEncoder->FastPictureUpdate();
+			//Update last FPU
+			getUpdDifTime(&lastFPU);
+		}
+	}
+
+	//Procesamos el frame
+	VideoFrame *videoFrame = videoEncoder->EncodeFrame(frame);
+	if (!videoFrame)
+		return false;
+
+	//Increase frame counter
+	fpsAcu.Update(getTime()/1000,1);
+
+
+	//Add frame size in bits to bitrate calculator
+	bitrateAcu.Update(getDifTime(&first)/1000,videoFrame->GetLength()*8);
+	
+	// @todo Like we require tiumestamp set, I think we can rely on this as well right?
+	assert(frame->HasTime());
+	assert(frame->HasClockRate());
+	auto now = getDifTime(&first)/1000;
+
+	videoFrame->SetClockRate(frame->HasClockRate() ? frame->GetClockRate() : 90000);
+	videoFrame->SetTimestamp(timestamp);
+	videoFrame->SetTime(frame->HasTime() ? frame->GetTime() : now);
+
+	videoFrame->SetDuration(timestamp - lastEncodedTimestamp);
+	//@todo bcost fix this
+	// Set duration to 0 indicating we dont know its actual value
+	// We *could* delay the frame until the next one and use timestamps 
+	// to calculate the duration however we dont want to pay that latency cost. 
+	// We cant use the fps as there are cases where this is incorrect and some
+	// things (shaka recording) require being able to know if this is reliable/correct
+	// so we mark it as not set.
+	//videoFrame->SetDuration(0);
+
+
+	//Set target bitrate and fps
+	videoFrame->SetTargetBitrate(bitrate);
+	videoFrame->SetTargetFps(fps);
+
+	//Lock
+	pthread_mutex_lock(&mutex);
+
+	//For each listener
+	for (auto &listener : listeners)
+	{
+		//If was not null
+		if (listener)
+			//Call listener
+			listener->onMediaFrame(*videoFrame);
+	}
+
+	//unlock
+	pthread_mutex_unlock(&mutex);
+
+	
+/*
+	//Calculate sending times based on bitrate
+	DWORD sendingTime = videoFrame->GetLength()*8/bitrate;
+
+	//Adjust to maximum time
+	if (sendingTime>frameTime/1000)
+		//Cap it
+		sendingTime = frameTime/1000;
+
+			//If it was a I frame
+			if (videoFrame->IsIntra())
+		//Clean rtp rtx buffer
+		FlushRTXPackets();
+
+	//Send it smoothly
+	SmoothFrame(videoFrame,sendingTime);
+*/
+
+}
+
 
 int VideoEncoderWorker::SetTemporalBitrateLimit(int estimation)
 {

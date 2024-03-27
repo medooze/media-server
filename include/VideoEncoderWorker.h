@@ -13,6 +13,7 @@
 #include "config.h"
 #include "codecs.h"
 #include "video.h"
+#include "acumulator.h"
 
 class VideoEncoderWorker
 {
@@ -38,6 +39,9 @@ public:
 protected:
 	int Encode();
 
+	void HandleFrame(VideoBuffer::const_shared frame);
+	bool EncodeFrame(VideoBuffer::const_shared frame, uint64_t timestamp);
+
 private:
 	static void *startEncoding(void *par);
 
@@ -61,9 +65,27 @@ private:
 
 	pthread_t	thread = 0;
 	pthread_mutex_t mutex;
-	pthread_cond_t	cond;
 	bool	encoding	 = false;
 	bool	sendFPU		 = false;
+
+	
+	size_t encodedFrames = 0;
+	uint64_t firstEncodedTimestamp = 0;
+	uint64_t lastEncodedTimestamp = 0;
+	uint64_t nextEncodedTimestamp = 0;
+	VideoBuffer::const_shared lastFrame;
+
+
+	timeval first;
+	timeval lastFPU;
+	DWORD num = 0;
+
+	MinMaxAcumulator<uint32_t, uint64_t> bitrateAcu;
+	MinMaxAcumulator<uint32_t, uint64_t> fpsAcu;
+
+	std::unique_ptr<VideoEncoder> videoEncoder;
+	double frameTime = 0;
+
 };
 
 
