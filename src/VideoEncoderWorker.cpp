@@ -12,8 +12,8 @@
 #include "VideoCodecFactory.h"
 
 VideoEncoderWorker::VideoEncoderWorker() 
-	: bitrateAcu(1000)
-	, fpsAcu(1000)
+	//: bitrateAcu(1000)
+	//, fpsAcu(1000)
 {
 	//Create objects
 	pthread_mutex_init(&mutex,NULL);
@@ -195,8 +195,8 @@ int VideoEncoderWorker::Encode()
 		if (num && ((num%fps*10)==0))
 		{
 			//Debug("-Send bitrate current=%d avg=%llf rate=[%llf,%llf] fps=[%llf,%llf] limit=%d\n",current,bitrateAcu.GetInstantAvg()/1000,bitrateAcu.GetMinAvg()/1000,bitrateAcu.GetMaxAvg()/1000,fpsAcu.GetMinAvg(),fpsAcu.GetMaxAvg(),bitrateLimit);
-			bitrateAcu.ResetMinMax();
-			fpsAcu.ResetMinMax();
+			//bitrateAcu.ResetMinMax();
+			//fpsAcu.ResetMinMax();
 		}
 		num++;
 	}
@@ -215,7 +215,10 @@ void VideoEncoderWorker::HandleFrame(VideoBuffer::const_shared pic)
 {
 	// This only works if all incoming frames have timestamps
 	assert(pic->HasTimestamp());
+	assert(pic->HasClockRate());
+	assert(pic->GetClockRate() != 0);
 
+	// Recreate the encoder if the resolution changes
 	if (pic->GetWidth() != width || pic->GetHeight() != height)
 	{
 		//Update size
@@ -229,44 +232,71 @@ void VideoEncoderWorker::HandleFrame(VideoBuffer::const_shared pic)
 		videoEncoder->SetSize(width,height);
 	}
 
-	// synchronize on the first frame
-	if (!lastFrame)
+	// synchronize on the first frame or on any problems seen with the incoming clock
+	if (!lastFrame 
+
+		// If the clock rate changes then we need to resync
+		|| currentClockRate != pic->GetClockRate()
+
+		// Something wrong with the current clock rate
+		|| currentClockRate == 0
+
+		// Time should not go backwards, if it does something is wrong and we should resync
+		|| pic->GetTimestamp() < lastFrame->GetTimestamp()
+		
+		// Time should not jump by a significant amount (lets say 20 sec), if it does something is wrong and we should resync
+		|| pic->GetTimestamp() > (lastFrame->GetTimestamp() + (currentClockRate * 20))
+		)
 	{
+		Debug("VideoEncoderWorker: Syncing encode clock from decoded frame with timestamp: %llu[%p], clock rate: %u, previous sync was: %llu and last seen frame: %llu\n", pic->GetTimestamp(), pic.get(), pic->GetClockRate(), firstEncodedTimestamp, (lastFrame ? lastFrame->GetTimestamp() : 0LLU));
 		lastFrame = pic;
 		firstEncodedTimestamp = pic->GetTimestamp();
+		currentClockRate = pic->GetClockRate();
+		assert(currentClockRate != 0);
+
 		EncodeFrame(pic, firstEncodedTimestamp);
 		++encodedFrames;
-
 		return;
 	}
 
-	// Calculate the next timestamp to encode (Dont just += frameTime here as we want to be able to cope with fractional fps)
-	// @todo The fps really should be originally either a float OR as often represented in video code as numerator/denominator
-	// @todo For now we may get issues with accuracy as encodedFrames grows larger
-	for (uint64_t nextEncodedTimestamp = firstEncodedTimestamp + static_cast<uint64_t>(frameTime * encodedFrames);
+	auto ToEncodedTimestamp = [&] (size_t frameIndex) -> uint64_t {
+		// The fps is currently an int, other video related software often store fps as a int(numerator)/int(denominator)
+		// For now we will treat the period as a double in the calculations so we can handle fps values like 30fps with 
+		// a period of 0.03333... and have accurate integral timestamps that change over time as necessary
+		//
+		// Note: This method will have issues when the frameIndex gets super large but so will the uint64_t timestamps
+		double  encodedFramePeriod = currentClockRate / (double)fps;
+		return firstEncodedTimestamp + (uint64_t)(encodedFramePeriod * frameIndex);
+	};
+
+	// When we get a new frame it may produce 0..N encoded frames depending on where we are in 
+	// the encoded frame timeline and the fps of the ingress vs encoded video
+	for (
+		uint64_t nextEncodedTimestamp = ToEncodedTimestamp(encodedFrames);
 		nextEncodedTimestamp <= pic->GetTimestamp();
-		++encodedFrames)
+		nextEncodedTimestamp = ToEncodedTimestamp(encodedFrames)
+		)
 	{
-		// Either lastFrame ir pic depending on timestamp
-		VideoBuffer::const_shared frameToEncode;
-		if (nextEncodedTimestamp < pic->GetTimestamp())
+		// We will duplicate from the nearest frame.
+		uint64_t midPoint = (lastFrame->GetTimestamp() + pic->GetTimestamp()) / 2;
+		if (nextEncodedTimestamp < midPoint)
 		{
-			assert(nextEncodedTimestamp >= lastFrame->GetTimestamp());
-			assert(nextEncodedTimestamp < pic->GetTimestamp());
-			frameToEncode = lastFrame;
+			EncodeFrame(lastFrame, nextEncodedTimestamp);
 		}
 		else
 		{
-			assert(nextEncodedTimestamp == pic->GetTimestamp());
-			frameToEncode = pic;
+			EncodeFrame(pic, nextEncodedTimestamp);
 		}
 		
 		// Note: If this fails for some reason we will simply skip sending
 		// that frame
-		EncodeFrame(frameToEncode, nextEncodedTimestamp);
 		lastEncodedTimestamp = nextEncodedTimestamp;
+		++encodedFrames;
 	}
 	lastFrame = pic;
+
+	//float overallFps = (double)encodedFrames / ((getTime() - firstTime) / 1000000.0);
+	//Debug("VideoEncoderWorker[%p]: Encoded %u frames from this ingress packet: %llu overall fps: %f (target:%d), frames: %lu\n", this, encodedThisTick, pic->GetTimestamp(), overallFps, fps, (unsigned long)encodedFrames);
 }
 
 bool VideoEncoderWorker::EncodeFrame(VideoBuffer::const_shared frame, uint64_t timestamp)
@@ -287,16 +317,21 @@ bool VideoEncoderWorker::EncodeFrame(VideoBuffer::const_shared frame, uint64_t t
 	}
 
 	//Procesamos el frame
+	auto estart = getTime();
 	VideoFrame *videoFrame = videoEncoder->EncodeFrame(frame);
 	if (!videoFrame)
+	{
 		return false;
+	}
+	auto eend = getTime();
+	//Debug("VideoEncoderWorker[%p]: Encoding frame: %llu[%p] returning videoFrame: %llu[%p] setting timestamp to: %llu\n", this, frame->GetTimestamp(), frame.get(), videoFrame->GetTimestamp(), videoFrame, timestamp);
 
 	//Increase frame counter
-	fpsAcu.Update(getTime()/1000,1);
+	//fpsAcu.Update(getTime()/1000,1);
 
 
 	//Add frame size in bits to bitrate calculator
-	bitrateAcu.Update(getDifTime(&first)/1000,videoFrame->GetLength()*8);
+	//bitrateAcu.Update(getDifTime(&first)/1000,videoFrame->GetLength()*8);
 	
 	// @todo Like we require tiumestamp set, I think we can rely on this as well right?
 	assert(frame->HasTime());
@@ -307,7 +342,7 @@ bool VideoEncoderWorker::EncodeFrame(VideoBuffer::const_shared frame, uint64_t t
 	videoFrame->SetTimestamp(timestamp);
 	videoFrame->SetTime(frame->HasTime() ? frame->GetTime() : now);
 
-	videoFrame->SetDuration(timestamp - lastEncodedTimestamp);
+	//videoFrame->SetDuration(timestamp - lastEncodedTimestamp);
 	//@todo bcost fix this
 	// Set duration to 0 indicating we dont know its actual value
 	// We *could* delay the frame until the next one and use timestamps 
@@ -315,12 +350,29 @@ bool VideoEncoderWorker::EncodeFrame(VideoBuffer::const_shared frame, uint64_t t
 	// We cant use the fps as there are cases where this is incorrect and some
 	// things (shaka recording) require being able to know if this is reliable/correct
 	// so we mark it as not set.
-	//videoFrame->SetDuration(0);
+	videoFrame->SetDuration(0);
 
 
 	//Set target bitrate and fps
 	videoFrame->SetTargetBitrate(bitrate);
 	videoFrame->SetTargetFps(fps);
+
+	//Debug("VideoEncoderWorker[%p]: Encoded video frame: %llu[%p] from latest: %llu[%p]\n", this, videoFrame->GetTimestamp(), videoFrame, frame->GetTimestamp(), frame);
+
+
+	auto nowt = getTime();
+	auto ToUsec = [&](uint64_t ts) -> uint64_t {return ts * 1000000/videoFrame->GetClockRate();};
+	if (!tslog)
+	{
+		std::ostringstream ss;
+		ss << "encode_tslog_video" << nowt << "_" << (void*)this << ".csv";
+		tslog.open(ss.str().c_str());
+		tslog << "time,timestamp,tsnrm,encoded,encdur,ofps,from,intra\n";
+	}
+
+	float overallFps = (double)encodedFrames / ((nowt - firstTime) / 1000000.0);
+	tslog << nowt << "," << videoFrame->GetTimestamp() << "," << ToUsec(videoFrame->GetTimestamp()) << "," << encodedFrames << "," << (eend - estart) << "," << overallFps << "," << frame->GetTimestamp() << "," << (videoFrame->IsIntra() ? "1" : "0") << "\n";
+
 
 	//Lock
 	pthread_mutex_lock(&mutex);

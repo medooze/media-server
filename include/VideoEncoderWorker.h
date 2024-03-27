@@ -14,6 +14,7 @@
 #include "codecs.h"
 #include "video.h"
 #include "acumulator.h"
+#include <fstream>
 
 class VideoEncoderWorker
 {
@@ -80,12 +81,16 @@ private:
 	timeval lastFPU;
 	DWORD num = 0;
 
-	MinMaxAcumulator<uint32_t, uint64_t> bitrateAcu;
-	MinMaxAcumulator<uint32_t, uint64_t> fpsAcu;
+	//MinMaxAcumulator<uint32_t, uint64_t> bitrateAcu;
+	//MinMaxAcumulator<uint32_t, uint64_t> fpsAcu;
 
 	std::unique_ptr<VideoEncoder> videoEncoder;
 	double frameTime = 0;
 
+	uint32_t currentClockRate = 0;
+	uint64_t firstTime =0;
+
+	std::ofstream tslog;
 };
 
 
