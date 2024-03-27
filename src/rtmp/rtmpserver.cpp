@@ -326,7 +326,7 @@ RTMPNetConnection::shared RTMPServer::OnConnect(const struct sockaddr_in& peerna
 			return it->second->Connect(peername, appName,listener,accept);
 	}
 
-	Log("-RTMPServer::OnConnect() app not found:%ls rejecting connection\n",appName.c_str());
+	Log("-RTMPServer::OnConnect() rejecting connection as app not found: %ls\n",appName.c_str());
 
 	//Not found
 	return nullptr;
