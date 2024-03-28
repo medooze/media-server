@@ -42,7 +42,7 @@ protected:
 
 	void HandleFrame(VideoBuffer::const_shared frame);
 	bool EncodeFrame(VideoBuffer::const_shared frame, uint64_t timestamp);
-	void UpdateStats(const VideoBuffer::shared& sourceFrame, const VideoFrame* encodedFrame, uint64_t encodeDuration);
+	void UpdateStats(const VideoBuffer::const_shared& sourceFrame, const VideoFrame* encodedFrame, uint64_t encodeDuration);
 
 private:
 	static void *startEncoding(void *par);
@@ -72,9 +72,10 @@ private:
 
 	
 	size_t encodedFrames = 0;
+	uint64_t firstEncodedTime = 0;
 	uint64_t firstEncodedTimestamp = 0;
-	uint64_t lastEncodedTimestamp = 0;
-	uint64_t nextEncodedTimestamp = 0;
+	//uint64_t lastEncodedTimestamp = 0;
+	//uint64_t nextEncodedTimestamp = 0;
 	VideoBuffer::const_shared lastFrame;
 
 
@@ -89,8 +90,8 @@ private:
 	double frameTime = 0;
 
 	uint32_t currentClockRate = 0;
-	uint64_t firstTime =0;
 
+	//uint64_t firstTime =0;
 	std::ofstream tslog;
 };
 

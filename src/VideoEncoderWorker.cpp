@@ -256,6 +256,8 @@ void VideoEncoderWorker::HandleFrame(VideoBuffer::const_shared pic)
 		Debug("VideoEncoderWorker[%p]::HandleFrame() Syncing encode clock from decoded frame with timestamp: %llu[%p], clock rate: %u, previous sync was: %llu and last seen frame: %llu\n", this, pic->GetTimestamp(), pic.get(), pic->GetClockRate(), firstEncodedTimestamp, (lastFrame ? lastFrame->GetTimestamp() : 0LLU));
 		lastFrame = pic;
 		firstEncodedTimestamp = pic->GetTimestamp();
+		firstEncodedTime = getTime();
+		encodedFrames = 0;
 		currentClockRate = pic->GetClockRate();
 		assert(currentClockRate != 0);
 
@@ -295,12 +297,12 @@ void VideoEncoderWorker::HandleFrame(VideoBuffer::const_shared pic)
 		
 		// Note: If this fails for some reason we will simply skip sending
 		// that frame
-		lastEncodedTimestamp = nextEncodedTimestamp;
+		//lastEncodedTimestamp = nextEncodedTimestamp;
 		++encodedFrames;
 	}
 	lastFrame = pic;
 
-	//float overallFps = (double)encodedFrames / ((getTime() - firstTime) / 1000000.0);
+	//float overallFps = (double)encodedFrames / ((getTime() - firstEncodedTime) / 1000000.0);
 	//Debug("VideoEncoderWorker[%p]: Encoded %u frames from this ingress packet: %llu overall fps: %f (target:%d), frames: %lu\n", this, encodedThisTick, pic->GetTimestamp(), overallFps, fps, (unsigned long)encodedFrames);
 }
 
@@ -401,7 +403,7 @@ bool VideoEncoderWorker::EncodeFrame(VideoBuffer::const_shared frame, uint64_t t
 
 }
 
-void VideoEncoderWorker::UpdateStats(const VideoBuffer::shared& sourceFrame, const VideoFrame* encodedFrame, uint64_t encodeDuration)
+void VideoEncoderWorker::UpdateStats(const VideoBuffer::const_shared& sourceFrame, const VideoFrame* encodedFrame, uint64_t encodeDuration)
 {
 	auto nowt = getTime();
 	if (!tslog)
@@ -420,7 +422,7 @@ void VideoEncoderWorker::UpdateStats(const VideoBuffer::shared& sourceFrame, con
 			<< "\n";
 	}
 
-	float overallFps = (double)encodedFrames / ((nowt - firstTime) / 1000000.0);
+	float overallFps = (double)encodedFrames / ((nowt - firstEncodedTime) / 1000000.0);
 	tslog << nowt 
 		<< "," << encodedFrame->GetClockRate() 
 		<< "," << encodedFrame->GetTimestamp() 
