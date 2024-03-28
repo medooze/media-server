@@ -12,15 +12,18 @@
 #include "VideoCodecFactory.h"
 
 VideoEncoderWorker::VideoEncoderWorker() 
-	//: bitrateAcu(1000)
-	//, fpsAcu(1000)
+	: bitrateAcu(1000)
+	, fpsAcu(1000)
 {
+	Log("-VideoEncoderWorker[%p]::VideoEncoderWorker()\n", this);
+
 	//Create objects
 	pthread_mutex_init(&mutex,NULL);
 }
 
 VideoEncoderWorker::~VideoEncoderWorker()
 {
+	Log("-VideoEncoderWorker[%p]::~VideoEncoderWorker()\n", this);
 	End();
 	//Clean object
 	pthread_mutex_destroy(&mutex);
@@ -28,6 +31,8 @@ VideoEncoderWorker::~VideoEncoderWorker()
 
 int VideoEncoderWorker::Init(VideoInput *input)
 {
+	Log("-VideoEncoderWorker[%p]::Init()\n", this);
+
 	//Store it
 	this->input = input;
 	//Done
@@ -41,7 +46,7 @@ int VideoEncoderWorker::SetCodec(VideoCodec::Type codec,int mode,int fps,int bit
 
 int VideoEncoderWorker::SetVideoCodec(VideoCodec::Type codec, int width, int height, int fps,int bitrate,int intraPeriod, const Properties& properties)
 {
-	Log("-VideoEncoderWorker::SetCodec() [%s,width:%d,height:%d,fps:%d,bitrate:%d,intraPeriod:%d]\n",VideoCodec::GetNameFor(codec),width,height,fps,bitrate,intraPeriod);
+	Log("-VideoEncoderWorker[%p]::SetCodec() [%s,width:%d,height:%d,fps:%d,bitrate:%d,intraPeriod:%d]\n",this,VideoCodec::GetNameFor(codec),width,height,fps,bitrate,intraPeriod);
 
 	//Check size
 	if (!width || !height)
@@ -68,12 +73,12 @@ int VideoEncoderWorker::SetVideoCodec(VideoCodec::Type codec, int width, int hei
 
 int VideoEncoderWorker::Start()
 {
-	Log("-VideoEncoderWorker::Start()\n");
+	Log("-VideoEncoderWorker[%p]::Start()\n", this);
 	
 	//Check
 	if (!input)
 		//Exit
-		return Error("-VideoEncoderWorker::Start() Error: null video input");
+		return Error("-VideoEncoderWorker[%p]::Start() Error: null video input", this);
 	
 	
 	//Check if need to restart
@@ -104,7 +109,7 @@ void * VideoEncoderWorker::startEncoding(void *par)
 
 int VideoEncoderWorker::Stop()
 {
-	Log(">VideoEncoderWorker::Stop()\n");
+	Log(">VideoEncoderWorker[%p]::Stop()\n", this);
 
 	//If we were started
 	if (encoding)
@@ -119,7 +124,7 @@ int VideoEncoderWorker::Stop()
 		pthread_join(thread,NULL);
 	}
 
-	Log("<VideoEncoderWorker::Stop()\n");
+	Log("<VideoEncoderWorker[%p]::Stop()\n",this);
 
 	return 1;
 }
@@ -141,7 +146,7 @@ int VideoEncoderWorker::End()
 int VideoEncoderWorker::Encode()
 {
 
-	Log(">VideoEncoderWorker::Encode() [width:%d,height:%d,bitrate:%d,fps:%d,intra:%d]\n",width,height,bitrate,fps,intraPeriod);
+	Log(">VideoEncoderWorker[%p]::Encode() [width:%d,height:%d,bitrate:%d,fps:%d,intra:%d]\n",this,width,height,bitrate,fps,intraPeriod);
 
 	//Creamos el encoder
 	videoEncoder = std::unique_ptr<VideoEncoder>(VideoCodecFactory::CreateEncoder(codec,properties));
@@ -194,9 +199,9 @@ int VideoEncoderWorker::Encode()
 		//Dump statistics
 		if (num && ((num%fps*10)==0))
 		{
-			//Debug("-Send bitrate current=%d avg=%llf rate=[%llf,%llf] fps=[%llf,%llf] limit=%d\n",current,bitrateAcu.GetInstantAvg()/1000,bitrateAcu.GetMinAvg()/1000,bitrateAcu.GetMaxAvg()/1000,fpsAcu.GetMinAvg(),fpsAcu.GetMaxAvg(),bitrateLimit);
-			//bitrateAcu.ResetMinMax();
-			//fpsAcu.ResetMinMax();
+			//Debug("-VideoEncoderWorker[%p]::Encode() Send bitrate avg=%llf rate=[%llf,%llf] fps=[%llf,%llf] limit=%d\n",this,bitrateAcu.GetInstantAvg()/1000,bitrateAcu.GetMinAvg()/1000,bitrateAcu.GetMaxAvg()/1000,fpsAcu.GetMinAvg(),fpsAcu.GetMaxAvg(),bitrateLimit);
+			bitrateAcu.ResetMinMax();
+			fpsAcu.ResetMinMax();
 		}
 		num++;
 	}
@@ -205,7 +210,7 @@ int VideoEncoderWorker::Encode()
 	input->StopVideoCapture();
 
 	//Salimos
-	Log("<VideoEncoderWorker::Encode()  [%d]\n",encoding);
+	Log("<VideoEncoderWorker[%p]::Encode()  [%d]\n",this,encoding);
 	
 	//Done
 	return 1;
@@ -248,7 +253,7 @@ void VideoEncoderWorker::HandleFrame(VideoBuffer::const_shared pic)
 		|| pic->GetTimestamp() > (lastFrame->GetTimestamp() + (currentClockRate * 20))
 		)
 	{
-		Debug("VideoEncoderWorker: Syncing encode clock from decoded frame with timestamp: %llu[%p], clock rate: %u, previous sync was: %llu and last seen frame: %llu\n", pic->GetTimestamp(), pic.get(), pic->GetClockRate(), firstEncodedTimestamp, (lastFrame ? lastFrame->GetTimestamp() : 0LLU));
+		Debug("VideoEncoderWorker[%p]::HandleFrame() Syncing encode clock from decoded frame with timestamp: %llu[%p], clock rate: %u, previous sync was: %llu and last seen frame: %llu\n", this, pic->GetTimestamp(), pic.get(), pic->GetClockRate(), firstEncodedTimestamp, (lastFrame ? lastFrame->GetTimestamp() : 0LLU));
 		lastFrame = pic;
 		firstEncodedTimestamp = pic->GetTimestamp();
 		currentClockRate = pic->GetClockRate();
@@ -324,14 +329,14 @@ bool VideoEncoderWorker::EncodeFrame(VideoBuffer::const_shared frame, uint64_t t
 		return false;
 	}
 	auto eend = getTime();
-	//Debug("VideoEncoderWorker[%p]: Encoding frame: %llu[%p] returning videoFrame: %llu[%p] setting timestamp to: %llu\n", this, frame->GetTimestamp(), frame.get(), videoFrame->GetTimestamp(), videoFrame, timestamp);
+	// Debug("VideoEncoderWorker[%p]: Encoding frame: %llu[%p] returning videoFrame: %llu[%p] setting timestamp to: %llu\n", this, frame->GetTimestamp(), frame.get(), videoFrame->GetTimestamp(), videoFrame, timestamp);
 
 	//Increase frame counter
-	//fpsAcu.Update(getTime()/1000,1);
+	fpsAcu.Update(getTime()/1000,1);
 
 
 	//Add frame size in bits to bitrate calculator
-	//bitrateAcu.Update(getDifTime(&first)/1000,videoFrame->GetLength()*8);
+	bitrateAcu.Update(getDifTime(&first)/1000,videoFrame->GetLength()*8);
 	
 	// @todo Like we require tiumestamp set, I think we can rely on this as well right?
 	assert(frame->HasTime());
@@ -342,8 +347,6 @@ bool VideoEncoderWorker::EncodeFrame(VideoBuffer::const_shared frame, uint64_t t
 	videoFrame->SetTimestamp(timestamp);
 	videoFrame->SetTime(frame->HasTime() ? frame->GetTime() : now);
 
-	//videoFrame->SetDuration(timestamp - lastEncodedTimestamp);
-	//@todo bcost fix this
 	// Set duration to 0 indicating we dont know its actual value
 	// We *could* delay the frame until the next one and use timestamps 
 	// to calculate the duration however we dont want to pay that latency cost. 
@@ -358,21 +361,7 @@ bool VideoEncoderWorker::EncodeFrame(VideoBuffer::const_shared frame, uint64_t t
 	videoFrame->SetTargetFps(fps);
 
 	//Debug("VideoEncoderWorker[%p]: Encoded video frame: %llu[%p] from latest: %llu[%p]\n", this, videoFrame->GetTimestamp(), videoFrame, frame->GetTimestamp(), frame);
-
-
-	auto nowt = getTime();
-	auto ToUsec = [&](uint64_t ts) -> uint64_t {return ts * 1000000/videoFrame->GetClockRate();};
-	if (!tslog)
-	{
-		std::ostringstream ss;
-		ss << "encode_tslog_video" << nowt << "_" << (void*)this << ".csv";
-		tslog.open(ss.str().c_str());
-		tslog << "time,timestamp,tsnrm,encoded,encdur,ofps,from,intra\n";
-	}
-
-	float overallFps = (double)encodedFrames / ((nowt - firstTime) / 1000000.0);
-	tslog << nowt << "," << videoFrame->GetTimestamp() << "," << ToUsec(videoFrame->GetTimestamp()) << "," << encodedFrames << "," << (eend - estart) << "," << overallFps << "," << frame->GetTimestamp() << "," << (videoFrame->IsIntra() ? "1" : "0") << "\n";
-
+	UpdateStats(frame, videoFrame, eend - estart);
 
 	//Lock
 	pthread_mutex_lock(&mutex);
@@ -388,6 +377,8 @@ bool VideoEncoderWorker::EncodeFrame(VideoBuffer::const_shared frame, uint64_t t
 
 	//unlock
 	pthread_mutex_unlock(&mutex);
+
+	return true;
 
 	
 /*
@@ -410,6 +401,36 @@ bool VideoEncoderWorker::EncodeFrame(VideoBuffer::const_shared frame, uint64_t t
 
 }
 
+void VideoEncoderWorker::UpdateStats(const VideoBuffer::shared& sourceFrame, const VideoFrame* encodedFrame, uint64_t encodeDuration)
+{
+	auto nowt = getTime();
+	if (!tslog)
+	{
+		std::ostringstream ss;
+		ss << "encode_tslog_video_" << nowt << "_" << sourceFrame->GetHeight() << "p_" << (void*)this << ".csv";
+		tslog.open(ss.str().c_str());
+		tslog << "time"
+			<< ",clockrate"
+			<< ",timestamp"
+			<< ",encodedFrames"
+			<< ",encodeDuration"
+			<< ",overallFps"
+			<< ",fromTimestamp"
+			<< ",intra"
+			<< "\n";
+	}
+
+	float overallFps = (double)encodedFrames / ((nowt - firstTime) / 1000000.0);
+	tslog << nowt 
+		<< "," << encodedFrame->GetClockRate() 
+		<< "," << encodedFrame->GetTimestamp() 
+		<< "," << encodedFrames 
+		<< "," << encodeDuration 
+		<< "," << overallFps 
+		<< "," << sourceFrame->GetTimestamp() 
+		<< "," << (encodedFrame->IsIntra() ? "1" : "0") 
+		<< "\n";
+}
 
 int VideoEncoderWorker::SetTemporalBitrateLimit(int estimation)
 {

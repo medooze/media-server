@@ -42,6 +42,7 @@ protected:
 
 	void HandleFrame(VideoBuffer::const_shared frame);
 	bool EncodeFrame(VideoBuffer::const_shared frame, uint64_t timestamp);
+	void UpdateStats(const VideoBuffer::shared& sourceFrame, const VideoFrame* encodedFrame, uint64_t encodeDuration);
 
 private:
 	static void *startEncoding(void *par);
@@ -81,8 +82,8 @@ private:
 	timeval lastFPU;
 	DWORD num = 0;
 
-	//MinMaxAcumulator<uint32_t, uint64_t> bitrateAcu;
-	//MinMaxAcumulator<uint32_t, uint64_t> fpsAcu;
+	MinMaxAcumulator<uint32_t, uint64_t> bitrateAcu;
+	MinMaxAcumulator<uint32_t, uint64_t> fpsAcu;
 
 	std::unique_ptr<VideoEncoder> videoEncoder;
 	double frameTime = 0;
