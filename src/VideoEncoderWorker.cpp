@@ -10,6 +10,7 @@
 #include "tools.h"
 #include "acumulator.h"
 #include "VideoCodecFactory.h"
+#include <iostream>
 
 VideoEncoderWorker::VideoEncoderWorker() 
 	: bitrateAcu(1000)
@@ -409,8 +410,13 @@ void VideoEncoderWorker::UpdateStats(const VideoBuffer::const_shared& sourceFram
 	if (!tslog)
 	{
 		std::ostringstream ss;
-		ss << "encode_tslog_video_" << nowt << "_" << sourceFrame->GetHeight() << "p_" << (void*)this << ".csv";
+		ss << "/opt/millicast/var/stats/encode_tslog_video_" << nowt << "_" << sourceFrame->GetHeight() << "p_" << (void*)this << ".csv";
 		tslog.open(ss.str().c_str());
+		if (!tslog)
+		{
+			std::cerr << "Failed to open file: " << ss.str() << std::endl;
+		}
+
 		tslog << "time"
 			<< ",clockrate"
 			<< ",timestamp"
