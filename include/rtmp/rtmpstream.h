@@ -168,12 +168,12 @@ public:
 	virtual DWORD AddMediaListener(Listener *listener);
 	virtual DWORD RemoveMediaListener(Listener *listener);
 	virtual void RemoveAllMediaListeners();
-	DWORD GetNumListeners()		{ return listeners.size(); }
-	DWORD GetStreamId()		{ return id;		}
+	DWORD GetNumListeners()	const	{ return listeners.size(); }
+	DWORD GetStreamId() const	{ return id;		}
 	void  SetData(DWORD data)	{ this->data = data;	}
-	DWORD GetData()			{ return data;		}
+	DWORD GetData()	const 		{ return data;		}
 	void  SetTag(const std::wstring &tag)	{ this->tag = tag;	}
-	std::wstring GetTag()		{ return tag;		}
+	std::wstring GetTag() const	{ return tag;		}
 	void SetRTT(DWORD rtt)		{ this->rtt = rtt;	}
 	DWORD GetRTT() const		{ return rtt;		}
 
