@@ -519,11 +519,11 @@ std::unique_ptr<VideoFrame> RTMPAv1Packetizer::AddFrame(RTMPVideoFrame* videoFra
 
 std::unique_ptr<AudioFrame> RTMPAACPacketizer::AddFrame(RTMPAudioFrame* audioFrame)
 {
-	//Debug("-RTMPAACPacketizer::AddFrame() [size:%u,aac:%d,codec:%d]\n",audioFrame->GetMediaSize(),audioFrame->GetAACPacketType(),audioFrame->GetAudioCodec());
+	//UltraDebug("-RTMPAACPacketizer::AddFrame() [size:%u,aac:%d,codec:%d]\n",audioFrame->GetMediaSize(),audioFrame->GetAACPacketType(),audioFrame->GetAudioCodec());
 	
 	if (audioFrame->GetAudioCodec()!=RTMPAudioFrame::AAC)
 	{
-		Debug("-RTMPAACPacketizer::AddFrame() | Skip non-AAC codec\n");
+		Debug("-RTMPAACPacketizer::AddFrame() | Skiping non-AAC codec\n");
 		return nullptr;
 	}
 	
@@ -533,14 +533,15 @@ std::unique_ptr<AudioFrame> RTMPAACPacketizer::AddFrame(RTMPAudioFrame* audioFra
 		//Handle specific settings
 		gotConfig = aacSpecificConfig.Decode(audioFrame->GetMediaData(),audioFrame->GetMediaSize());
 		
-		Debug("-RTMPAACPacketizer::AddFrame() | Skip AACSequenceHeader frame\n");
+		Debug("-RTMPAACPacketizer::AddFrame() | Got AACSequenceHeader frame\n");
+		aacSpecificConfig.Dump();
 		return nullptr;
 	}
 	
 	if (audioFrame->GetAACPacketType()!=RTMPAudioFrame::AACRaw)
 	{
 		//DOne
-		Debug("-RTMPAACPacketizer::AddFrame() | Skp AACRaw frame\n");
+		Debug("-RTMPAACPacketizer::AddFrame() | Skiping non AACRaw frame\n");
 		return nullptr;
 	}
 
