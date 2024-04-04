@@ -230,6 +230,7 @@ public:
 	AMFData*	GetParams()  		{ return params; 		}
 	DWORD		GetExtraLength() 	{ return extra.size(); 		}
 	AMFData*	GetExtra(DWORD i) 	{ return extra[i]; 		}
+	const std::vector<AMFData*>& GetExtra() { return extra;			}
 	void		Dump();
 	RTMPCommandMessage* Clone() const;
 	
