@@ -67,7 +67,13 @@ int RTMPClientConnection::Connect(const char* server, int port, const char* app,
 	Log(">RTMPClientConnection::Connect() [host:%s:%d,url:%s]\n", server, port, app);
 
 	//Create socket
-	fd = socket(AF_INET, SOCK_STREAM, 0);
+	fd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
+
+	//Set no delay option
+	int flag = 1;
+	(void)setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(int));
+	//Catch all IO errors
+	signal(SIGIO, EmptyCatch);
 
 	//Get ip of server
 	host = gethostbyname(server);
@@ -75,7 +81,8 @@ int RTMPClientConnection::Connect(const char* server, int port, const char* app,
 	//If not found
 	if (!host)
 		//Error
-		return Error("-Could not resolve %s\n", server);
+		return Error("-RTMPClientConnection::Connect() Could not resolve %s\n", server);
+
 	//Set to zero
 	bzero((char*)&addr, sizeof(addr));
 
@@ -87,7 +94,7 @@ int RTMPClientConnection::Connect(const char* server, int port, const char* app,
 	//Connect
 // Ignore coverity error: "this->fd" is passed to a parameter that cannot be negative.
 // coverity[negative_returns]
-	if (connect(fd, (sockaddr*)&addr, sizeof(addr)) < 0)
+	if (connect(fd, (sockaddr*)&addr, sizeof(addr)) < 0 && errno != EINPROGRESS)
 		//Exit
 		return Error("Connection error [%d]\n", errno);
 
@@ -205,37 +212,13 @@ int RTMPClientConnection::Run()
 {
 	BYTE data[1400];
 	unsigned int size = 1400;
+	bool connected = false;
 
 	Log("-RTMPClientConnection::Run() connection [%p]\n", this);
 
 	//Set values for polling
 	ufds[0].fd = fd;
-	ufds[0].events = POLLIN | POLLERR | POLLHUP;
-
-	//Set non blocking so we can get an error when we are closed by end
-	int fsflags = fcntl(fd, F_GETFL, 0);
-	fsflags |= O_NONBLOCK;
-	(void)fcntl(fd, F_SETFL, fsflags);
-
-	//Set no delay option
-	int flag = 1;
-	(void)setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(int));
-	//Catch all IO errors
-	signal(SIGIO, EmptyCatch);
-
-	//Create C01 and send it
-	c01.SetRTMPVersion(3);
-	c01.SetTime(getDifTime(&startTime) / 1000);
-	c01.SetVersion(0, 0, 0, 0);
-	//Do not calculate digest
-	digest = false;
-	//Set state
-	state = HEADER_S0_WAIT;
-	//Send it
-	WriteData(c01.GetData(), c01.GetSize());
-
-	//Debug
-	Log("-RTMPClientConnection::Run() Sending c0 and c1 with digest %s size %d\n", digest ? "on" : "off", c01.GetSize());
+	ufds[0].events = POLLOUT | POLLIN | POLLERR | POLLHUP;
 
 	//Run until ended
 	while (running)
@@ -247,6 +230,49 @@ int RTMPClientConnection::Run()
 
 		if (ufds[0].revents & POLLOUT)
 		{
+			//Check if socket was not connected yet
+			if (!connected)
+			{
+				//Double check it is connected
+				int err;
+				socklen_t len = sizeof(err);
+				if (getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &len) == -1)
+				{
+					Warning("-RTMPClientConnection::Run() getsockopt failed [%p]\n", this);
+					//Disconnect application
+					listener->onDisconnected(this);
+					//exit
+					break;
+				}
+
+				//Check status
+				if (err != 0)
+				{
+					Warning("-RTMPClientConnection::Run() getsockopt error [%p, errno:%d]\n", this, err);
+					//Disconnect application
+					listener->onDisconnected(this);
+					//exit
+					break;
+				}
+
+				//Connected
+				connected = true;
+
+				//Create C01 and send it
+				c01.SetRTMPVersion(3);
+				c01.SetTime(getDifTime(&startTime) / 1000);
+				c01.SetVersion(0, 0, 0, 0);
+				//Do not calculate digest
+				digest = false;
+				//Set state
+				state = HEADER_S0_WAIT;
+				//Send it
+				WriteData(c01.GetData(), c01.GetSize());
+
+				//Debug
+				Debug("-RTMPClientConnection::Run() Socket connected, Sending c0 and c1 with digest %s size %d\n", digest ? "on" : "off", c01.GetSize());
+			}
+
 			//Write data buffer
 			DWORD len = SerializeChunkData(data, size);
 			//Send it
