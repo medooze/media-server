@@ -28,10 +28,10 @@ Header Header::Parse(BufferReader& reader)
 									'10' (0x80) = Scrambled with even key
 									'11' (0xC0) = Scrambled with odd key
 
-	Adaptation field control		2	0x30		01 - no adaptation field, payload only,
-									10 - adaptation field only, no payload,
-									11 - adaptation field followed by payload,
-									00 - RESERVED for future use [11]
+	Adaptation field control		2	0x30		01 � no adaptation field, payload only,
+									10 � adaptation field only, no payload,
+									11 � adaptation field followed by payload,
+									00 � RESERVED for future use [11]
 
 	Continuity counter			4	0xf		Sequence number of payload packets (0x00 to 0x0F) within each stream (except PID 8191)
 									Incremented per-PID, only when a payload flag is set.
