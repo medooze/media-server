@@ -28,10 +28,10 @@ Header Header::Parse(BufferReader& reader)
 									'10' (0x80) = Scrambled with even key
 									'11' (0xC0) = Scrambled with odd key
 
-	Adaptation field control		2	0x30		01 – no adaptation field, payload only,
-									10 – adaptation field only, no payload,
-									11 – adaptation field followed by payload,
-									00 – RESERVED for future use [11]
+	Adaptation field control		2	0x30		01 ï¿½ no adaptation field, payload only,
+									10 ï¿½ adaptation field only, no payload,
+									11 ï¿½ adaptation field followed by payload,
+									00 ï¿½ RESERVED for future use [11]
 
 	Continuity counter			4	0xf		Sequence number of payload packets (0x00 to 0x0F) within each stream (except PID 8191)
 									Incremented per-PID, only when a payload flag is set.
@@ -123,34 +123,6 @@ Packet Packet::Parse(BufferReader& reader)
 	if (packet.header.adaptationFieldControl == AdaptationFieldOnly || packet.header.adaptationFieldControl == AdaptationFiedlAndPayload)
 		//Parse Adaptation field
 		packet.adaptationField = mpegts::AdaptationField::Parse(reader);
-
-	//If it has payload
-	if (packet.header.adaptationFieldControl == PayloadOnly || packet.header.adaptationFieldControl == AdaptationFiedlAndPayload)
-	{
-		/*
-			Payload Pointer (optional)	8	0xff	Present only if the Payload Unit Start Indicator (PUSI) flag is set.
-									It gives the index after this uint8_t at which the new payload unit starts.
-									Any payload uint8_t before the index is part of the previous payload unit.
-			Actual Payload	variable			The content of the payload.
-		*/
-		packet.payloadPointer = 0;
-
-		//If we have a new payload unit
-		if (packet.header.payloadUnitStartIndication)
-		{
-			//Ensure we have at least 1 uint8_t
-			if (!reader.GetLeft())
-				throw std::runtime_error("Not enought data to read mpegts payload pointer");
-
-			//Get optional payload pointer
-			packet.payloadPointer = reader.Peek1();
-
-			//If we have any
-			if (*packet.payloadPointer)
-				//Consume it
-				reader.Skip(1);
-		}
-	}
 
 	return packet;
 }
