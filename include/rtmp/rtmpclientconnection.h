@@ -20,63 +20,65 @@ public:
 	{
 	public:
 		//Virtual desctructor
-		virtual ~Listener(){};
+		virtual ~Listener() {};
 	public:
 		//Interface
 		virtual void onConnected(RTMPClientConnection* conn) = 0;
 		virtual void onDisconnected(RTMPClientConnection* conn) = 0;
+		virtual void onCommand(RTMPClientConnection* conn, DWORD messageStreamId, const wchar_t* name, AMFData* obj, const std::vector<AMFData*>&) = 0;
 	};
 public:
 	RTMPClientConnection(const std::wstring& tag);
 	virtual ~RTMPClientConnection();
 
-	int Connect(const char* server,int port, const char* app,RTMPClientConnection::Listener *listener);
-	DWORD SendCommand(DWORD streamId, const wchar_t* name,AMFData* params,AMFData *extra, std::function<void(bool, AMFData*, const std::vector<AMFData*>&)> callback);
+	int Connect(const char* server, int port, const char* app, RTMPClientConnection::Listener* listener);
+	DWORD SendCommand(DWORD streamId, const wchar_t* name, AMFData* params, AMFData* extra, std::function<void(bool, AMFData*, const std::vector<AMFData*>&)> callback);
+	DWORD SendCommand(DWORD streamId, const wchar_t* name, AMFData* params, AMFData* extra);
 	int Disconnect();
 
-	void  SetUserData(DWORD data)	{ this->data = data;	}
-	DWORD GetUserData()		{ return data;		}
+	void  SetUserData(DWORD data) { this->data = data; }
+	DWORD GetUserData() { return data; }
 
 	//Listener for the media data
-	virtual void onAttached(RTMPMediaStream *stream);
-	virtual void onMediaFrame(DWORD id,RTMPMediaFrame *frame);
-	virtual void onMetaData(DWORD id,RTMPMetaData *meta);
-	virtual void onCommand(DWORD id,const wchar_t *name,AMFData* obj);
+	virtual void onAttached(RTMPMediaStream* stream);
+	virtual void onMediaFrame(DWORD id, RTMPMediaFrame* frame);
+	virtual void onMetaData(DWORD id, RTMPMetaData* meta);
+	virtual void onCommand(DWORD id, const wchar_t* name, AMFData* obj);
 	virtual void onStreamBegin(DWORD id);
 	virtual void onStreamEnd(DWORD id);
 	virtual void onStreamReset(DWORD id);
-	virtual void onDetached(RTMPMediaStream *stream);
-	
+	virtual void onDetached(RTMPMediaStream* stream);
+
 protected:
 	void Start();
 	void Stop();
 	int Run();
 private:
 
-	static  void* run(void *par);
-	void ParseData(BYTE *data,const DWORD size);
-	DWORD SerializeChunkData(BYTE *data,const DWORD size);
-	int WriteData(BYTE *data,const DWORD size);
+	static  void* run(void* par);
+	void ParseData(BYTE* data, const DWORD size);
+	DWORD SerializeChunkData(BYTE* data, const DWORD size);
+	int WriteData(BYTE* data, const DWORD size);
 
-	void ProcessControlMessage(DWORD messageStremId,BYTE type,RTMPObject* msg);
-	void ProcessCommandMessage(DWORD messageStremId,RTMPCommandMessage* cmd);
-	void ProcessMediaData(DWORD messageStremId,RTMPMediaFrame* frame);
-	void ProcessMetaData(DWORD messageStremId,RTMPMetaData* frame);
+	void ProcessControlMessage(DWORD streamId, BYTE type, RTMPObject* msg);
+	void ProcessCommandMessage(DWORD streamId, RTMPCommandMessage* cmd);
+	void ProcessMediaData(DWORD streamId, RTMPMediaFrame* frame);
+	void ProcessMetaData(DWORD streamId, RTMPMetaData* frame);
 
-	void SendCommandError(DWORD messageStreamId,QWORD transId,AMFData* params = NULL,AMFData *extra = NULL);
-	void SendCommandResult(DWORD messageStreamId,QWORD transId,AMFData* params,AMFData *extra);
-	void SendCommandResponse(DWORD messageStreamId,const wchar_t* name,QWORD transId,AMFData* params,AMFData *extra);
-	
-	DWORD SendCommand(DWORD messageStreamId,const wchar_t* name,AMFData* params,AMFData *extra);
-	void SendControlMessage(RTMPMessage::Type type,RTMPObject* msg);
-	
+	void SendCommandError(DWORD streamId, QWORD transId, AMFData* params = NULL, AMFData* extra = NULL);
+	void SendCommandResult(DWORD streamId, QWORD transId, AMFData* params, AMFData* extra);
+	void SendCommandResponse(DWORD streamId, const wchar_t* name, QWORD transId, AMFData* params, AMFData* extra);
+
+
+	void SendControlMessage(RTMPMessage::Type type, RTMPObject* msg);
+
 	void SignalWriteNeeded();
 private:
 
-	enum State {NONE=0,HEADER_S0_WAIT=1,HEADER_S1_WAIT=2,HEADER_S2_WAIT=3,CHUNK_HEADER_WAIT=4,CHUNK_TYPE_WAIT=5,CHUNK_EXT_TIMESTAMP_WAIT=6,CHUNK_DATA_WAIT=7};
-	
-	typedef std::map<DWORD,RTMPChunkInputStream*>  RTMPChunkInputStreams;
-	typedef std::map<DWORD,RTMPChunkOutputStream*> RTMPChunkOutputStreams;
+	enum State { NONE = 0, HEADER_S0_WAIT = 1, HEADER_S1_WAIT = 2, HEADER_S2_WAIT = 3, CHUNK_HEADER_WAIT = 4, CHUNK_TYPE_WAIT = 5, CHUNK_EXT_TIMESTAMP_WAIT = 6, CHUNK_DATA_WAIT = 7 };
+
+	typedef std::map<DWORD, RTMPChunkInputStream*>  RTMPChunkInputStreams;
+	typedef std::map<DWORD, RTMPChunkOutputStream*> RTMPChunkOutputStreams;
 	typedef std::map<DWORD, std::function<void(bool, AMFData*, const std::vector<AMFData*>&)>> Transactions;
 private:
 	int fd = FD_INVALID;
@@ -90,7 +92,7 @@ private:
 	RTMPHandshake0 s0;
 	RTMPHandshake1 s1;
 	RTMPHandshake2 s2;
-	
+
 	bool digest = false;
 
 	DWORD videoCodecs = 0;
@@ -104,7 +106,7 @@ private:
 
 	RTMPChunkInputStreams  	chunkInputStreams;
 	RTMPChunkOutputStreams  chunkOutputStreams;
-	RTMPChunkInputStream* 	chunkInputStream = nullptr;
+	RTMPChunkInputStream*	chunkInputStream = nullptr;
 	Transactions		transactions;
 
 	DWORD chunkStreamId = 0;
@@ -120,12 +122,12 @@ private:
 	DWORD maxStreamId = -1;
 	DWORD maxTransId = 0;
 
-	Listener* listener;
+	Listener* listener = nullptr;
 
 	timeval startTime;
 	DWORD windowSize = 0;
 	DWORD curWindowSize = 0;
-	DWORD recvSize= 0;
+	DWORD recvSize = 0;
 	DWORD inBytes = 0;
 	DWORD outBytes = 0;
 
