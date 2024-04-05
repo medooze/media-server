@@ -476,7 +476,25 @@ void RTMPClientConnection::ParseData(BYTE* data, const DWORD size)
 					params->AddProperty(L"flasVer", L"FMLE3/0 (compatible; FMSc/1.0)");
 					params->AddProperty(L"swfUrl", tcUrl);
 					//Send connect message
-					SendCommand(0, L"connect", params, new AMFNull());
+					SendCommand(0, L"connect", params, new AMFNull(), [=](bool isError, AMFData* params, const std::vector<AMFData*>& extra){
+						//Check if we need to authenticathe
+						if (isError)
+						{
+							//Get error object
+							RTMPNetStatusEvent* error = (RTMPNetStatusEvent*)params;
+							//Check if we need auth
+							if (RTMP::NetConnection::Connect::Rejected == error->GetCode())
+							{
+								//Check code
+							}
+
+							//Call listener
+							listener->onDisconnected(this);
+						} else {
+							//Call listener
+							listener->onConnected(this);
+						}
+					});
 					//Move to next state
 					state = CHUNK_HEADER_WAIT;
 				}
@@ -832,44 +850,23 @@ void RTMPClientConnection::ProcessControlMessage(DWORD streamId, BYTE type, RTMP
  ************************************/
 void RTMPClientConnection::ProcessCommandMessage(DWORD streamId, RTMPCommandMessage* cmd)
 {
-	bool isError = false;
 	//Get message values
 	std::wstring name = cmd->GetName();
 	QWORD transId = cmd->GetTransId();
 	AMFData* params = cmd->GetParams();
+	auto& extra = cmd->GetExtra();
 
-	cmd->Dump();
-
-	//Log
-	Log("-RTMPClientConnection::ProcessCommandMessage() [streamId:%d,name:\"%ls\",transId:%ld]\n", streamId, name.c_str(), transId);
-
-	//Check if it is an errror
-	if (name.compare(L"_error") == 0)
-		//Not error
-		isError = true;
-
-	//If it is the connect transaction
-	if (transId == 0)
+	
+	//If it is not a result
+	if (name.compare(L"_error") == 0 || name.compare(L"_result") == 0)
 	{
-		//Check if we need to authenticathe
-		if (isError)
-		{
-			//Get error object
-			RTMPNetStatusEvent* error = (RTMPNetStatusEvent*)params;
-			//Check if we need auth
-			if (RTMP::NetConnection::Connect::Rejected == error->GetCode())
-			{
-				//Check
-			}
 
-			//Call listener
-			listener->onDisconnected(this);
-		}
-		else {
-			//Call listener
-			listener->onConnected(this);
-		}
-	} else {
+		//Log
+		Log("-RTMPClientConnection::ProcessCommandMessage() Got response [streamId:%d,name:\"%ls\",transId:%ld]\n", streamId, name.c_str(), transId);
+		cmd->Dump();
+
+		//Check if it is an errror
+		bool isError = name.compare(L"_error") == 0;
 
 		//Find transaction
 		const auto it = transactions.find(transId);
@@ -881,11 +878,20 @@ void RTMPClientConnection::ProcessCommandMessage(DWORD streamId, RTMPCommandMess
 			Error("Transaction not found [%llu]\n", transId);
 			//Exit
 			return;
-		}
+		} 
+		//Call listener
+		it->second(isError, params, extra);
+
+		//Erase transaction
+		transactions.erase(it);
+	} else {
+		//Log
+		Log("-RTMPClientConnection::ProcessCommandMessage() Got command [streamId:%d,name:\"%ls\",transId:%ld]\n", streamId, name.c_str(), transId);
+		cmd->Dump();
 
 		//Call listener
-		it->second(isError, params, cmd->GetExtra());
-	}
+		listener->onCommand(this, streamId, name.c_str(), params, extra);
+	} 
 
 }
 
@@ -913,7 +919,7 @@ DWORD RTMPClientConnection::SendCommand(DWORD streamId, const wchar_t* name, AMF
 {
 	Log("-RTMPClientConnection::SendCommand() [streamId:%d,name:%ls]\n", streamId, name);
 	//Get transId
-	QWORD transId = maxTransId++;
+	QWORD transId = ++maxTransId;
 	//Create cmd response
 	RTMPCommandMessage* cmd = new RTMPCommandMessage(name, transId, params, extra);
 	//Dump
@@ -972,12 +978,12 @@ void RTMPClientConnection::SendControlMessage(RTMPMessage::Type type, RTMPObject
  ****************************************/
 void RTMPClientConnection::onAttached(RTMPMediaStream* stream)
 {
-
 }
+
 void RTMPClientConnection::onDetached(RTMPMediaStream* stream)
 {
-
 }
+
 void RTMPClientConnection::onStreamBegin(DWORD streamId)
 {
 	//Send control message
