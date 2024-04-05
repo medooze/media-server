@@ -252,9 +252,9 @@ public:
 		AddProperty(L"description",description);
 	};
 
-	const std::wstring GetCode()		{ return (std::wstring)GetProperty(L"code");		}
-	const std::wstring GetLevel()		{ return (std::wstring)GetProperty(L"level");		}
-	const std::wstring GetDescription()	{ return (std::wstring)GetProperty(L"description");	}
+	const std::wstring GetCode()		{ return HasProperty(L"code") ? (std::wstring)GetProperty(L"code") : L"";		}
+	const std::wstring GetLevel()		{ return HasProperty(L"level") ? (std::wstring)GetProperty(L"level") : L"";		}
+	const std::wstring GetDescription()	{ return HasProperty(L"description") ? (std::wstring)GetProperty(L"description") : L"";	}
 };
 
 class RTMPMetaData
