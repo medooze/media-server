@@ -36,6 +36,11 @@ public:
 		return getInstance().log;
 	}
 
+	static bool IsWarningEnabled()
+	{
+		return getInstance().warning;
+	}
+
 	static bool EnableDebug(bool debug)
 	{
 		return getInstance().debug = debug;
@@ -52,6 +57,11 @@ public:
 		return getInstance().log = log;
 	}
 	
+	static bool EnableWarning(bool warning)
+	{
+		return getInstance().warning = warning;
+	}
+	
 	inline int Log(const char *msg, ...)
 	{
 		return 1;
@@ -62,6 +72,7 @@ public:
 		return 0;
 	}
 protected:
+	bool warning;
 	bool log;
 	bool debug;
 	bool ultradebug;
@@ -72,6 +83,7 @@ private:
 
 	Logger()
 	{
+		warning = true;
 		log = true;
 		debug = false;
 		ultradebug = false;
@@ -177,7 +189,7 @@ inline int Debug(const char *msg, ...)
 
 inline int Warning(const char *msg, ...)
 {
-	if (Logger::IsDebugEnabled())
+	if (Logger::IsWarningEnabled())
 	{
 		struct timeval tv;
 		va_list ap;
