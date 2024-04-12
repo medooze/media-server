@@ -187,12 +187,12 @@ void Deinterlacer::Process(const VideoBuffer::const_shared& videoBuffer)
         }, (void*)opaque, AV_BUFFER_FLAG_READONLY);
 
         //Push the frame into the filtergraph
-        if (av_buffersrc_add_frame_flags(bufferSrcCtx, input, AV_BUFFERSRC_FLAG_KEEP_REF) < 0)
+        if (av_buffersrc_add_frame(bufferSrcCtx, input) < 0)
                 //Just print error
                 Error("-Deinterlacer::Process() | Error while feeding the filtergraph\n");
         
-       //Free frame ref, it will be freed when consumed inside the graph wh
-       av_frame_unref(input);
+        //Release frame
+        av_frame_free(&input);
 }
 
 VideoBuffer::shared Deinterlacer::GetNextFrame()
