@@ -31,6 +31,7 @@
 #include "Endpoint.h"
 #include "SRTPSession.h"
 #include "SendSideBandwidthEstimation.h"
+#include "DatachannelTimeService.h"
 
 class DTLSICETransport : 
 	public RTPSender,
@@ -160,6 +161,8 @@ private:
 private:
 	Sender*		sender = nullptr;
 	TimeService&	timeService;
+	DatachannelTimeService dcTimeService;
+	
 	ObjectPool<Packet>& packetPool;
 	datachannels::impl::Endpoint endpoint;
 	datachannels::Endpoint::Options dcOptions;

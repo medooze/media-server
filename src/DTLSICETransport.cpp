@@ -53,8 +53,9 @@ constexpr auto RtxRttThresholdMs 		= 300;
 DTLSICETransport::DTLSICETransport(Sender *sender,TimeService& timeService, ObjectPool<Packet>& packetPool) :
 	sender(sender),
 	timeService(timeService),
+	dcTimeService(timeService),
 	packetPool(packetPool),
-	endpoint(timeService),
+	endpoint(dcTimeService),
 	dtls(*this,timeService,endpoint.GetTransport()),
 	history(MaxProbingHistorySize, false),
 	outgoingBitrate(250, 1E3, 250),

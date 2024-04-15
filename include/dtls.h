@@ -11,6 +11,7 @@
 #include <vector>
 #include "config.h"
 #include "log.h"
+#include "TimeService.h"
 #include "Datachannels.h"
 
 class DTLSConnection

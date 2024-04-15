@@ -94,7 +94,8 @@ bool RTPTransport::SetPortRange(int minPort, int maxPort)
 RTPTransport::RTPTransport(Listener *listener) :
 	rtpLoop(this),
 	rtcpLoop(this),
-	endpoint(rtpLoop),
+	dcTimeService(rtpLoop),
+	endpoint(dcTimeService),
 	dtls(*this,rtpLoop,endpoint.GetTransport())
 {
 	this->listener = listener;
