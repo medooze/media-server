@@ -28,7 +28,7 @@
 #include "remoterateestimator.h"
 #include "EventLoop.h"
 #include "Datachannels.h"
-#include "Endpoint.h"
+#include "Sctp.h"
 #include "SRTPSession.h"
 #include "SendSideBandwidthEstimation.h"
 #include "DatachannelTimeService.h"
@@ -164,7 +164,7 @@ private:
 	DatachannelTimeService dcTimeService;
 	
 	ObjectPool<Packet>& packetPool;
-	datachannels::impl::Endpoint endpoint;
+	datachannels::impl::Sctp sctp;
 	datachannels::Endpoint::Options dcOptions;
 	Listener::shared listener;
 	DTLSConnection	dtls;

@@ -95,8 +95,8 @@ RTPTransport::RTPTransport(Listener *listener) :
 	rtpLoop(this),
 	rtcpLoop(this),
 	dcTimeService(rtpLoop),
-	endpoint(dcTimeService),
-	dtls(*this,rtpLoop,endpoint.GetTransport())
+	sctp(dcTimeService),
+	dtls(*this,rtpLoop,sctp.GetTransport())
 {
 	this->listener = listener;
 	//Init values

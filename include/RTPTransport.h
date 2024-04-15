@@ -21,7 +21,7 @@
 #include "dtls.h"
 #include "EventLoop.h"
 #include "Datachannels.h"
-#include "Endpoint.h"
+#include "Sctp.h"
 #include "PCAPFile.h"
 #include "DatachannelTimeService.h"
 
@@ -106,7 +106,7 @@ private:
 	EventLoop rtcpLoop;
 
 	DatachannelTimeService dcTimeService;
-	datachannels::impl::Endpoint endpoint;
+	datachannels::impl::Sctp sctp;
 	DTLSConnection dtls;
 	bool	encript;
 	bool	decript;
