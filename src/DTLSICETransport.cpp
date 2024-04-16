@@ -2727,8 +2727,7 @@ void DTLSICETransport::Start()
 
 	//Get init time
 	initTime = getTime();
-	dcOptions.localPort = 5000;
-	dcOptions.remotePort = 5000;
+
 	//Run ice timeout timer
 	iceTimeoutTimer = timeService.CreateTimer(IceTimeout,[this](auto now){
 		//Log
