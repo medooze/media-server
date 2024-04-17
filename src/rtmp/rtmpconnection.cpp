@@ -898,6 +898,21 @@ void RTMPConnection::ProcessCommandMessage(DWORD streamId,RTMPCommandMessage* cm
 
 	//Log
 	Log("-RTMPConnection::ProcessCommandMessage() [streamId:%d,name:\"%ls\",transId:%ld]\n",streamId,name.c_str(),transId);
+	if (Logger::IsDebugEnabled())
+	{
+		if (params && params->GetType() != AMFData::ValueType::Null)
+		{
+			params->Dump();
+		}
+		for (size_t i=0;i<cmd->GetExtraLength();++i)
+		{
+			auto extra = cmd->GetExtra(i);
+			if (extra)
+			{
+				extra->Dump();
+			}
+		}
+	}
 
 	//Check message Stream
 	if (streamId)
