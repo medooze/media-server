@@ -64,7 +64,19 @@ TEST(TestAAC, AACSpecificConfig)
 	}
 
 	{
-		//UNknown 3 bytes after config on OBS config
+		//With syncExtensionType
+		/*AudioSpecificConfig:
+		audioObjectType          0b00010 = 2
+			samplingFrequenctyIndex  0b0011 = 3
+			changelConfiguration     0b0010 = 2
+			GASpecificConfig :
+			frameLengthFlag         0
+			dependOnCoreCoder       0
+			extensionFlag           0
+			syncExtensionType        0b0101 0110 111 = 0x2b7
+			extensionAudioObjectType 0b00101 = 0x5
+			sbrPresentFlag           0
+		*/
 		BYTE aac[5] = { 0x11, 0x90, 0x56, 0xe5, 0x00 };
 		AACSpecificConfig config;
 		ASSERT_TRUE(config.Decode(aac, sizeof(aac)));
