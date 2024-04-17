@@ -434,7 +434,7 @@ void RTMPConnection::ParseData(BYTE *data,const DWORD size)
 					//Move to next state
 					state = HEADER_C1_WAIT;
 					//Debug
-					Log("Received c0 version: %d\n",c0.GetRTMPVersion());
+					Log("-RTMPConnection::ParseData() Received c0 version: %d\n",c0.GetRTMPVersion());
 				}
 				break;
 			case HEADER_C1_WAIT:
@@ -446,7 +446,7 @@ void RTMPConnection::ParseData(BYTE *data,const DWORD size)
 				//If it is parsed
 				if (c1.IsParsed())
 				{
-					Log("-Received C1 client version [%d,%d,%d,%d]\n",c1.GetVersion()[0],c1.GetVersion()[1],c1.GetVersion()[2],c1.GetVersion()[3]);
+					Log("-RTMPConnection::ParseData() Received C1 client version [%d,%d,%d,%d]\n",c1.GetVersion()[0],c1.GetVersion()[1],c1.GetVersion()[2],c1.GetVersion()[3]);
 					//Set s0 data
 					s01.SetRTMPVersion(3);
 					//Set current timestamp
@@ -481,7 +481,7 @@ void RTMPConnection::ParseData(BYTE *data,const DWORD size)
 					//Move to next state
 					state = HEADER_C2_WAIT;
 					//Debug
-					Log("Sending s0 and s1 with digest %s offset method %d\n",digest?"on":"off",digesOffsetMethod);
+					Log("-RTMPConnection::ParseData() Sending s0 and s1 with digest %s offset method %d\n",digest?"on":"off",digesOffsetMethod);
 					//Set s2 data
 					s2.SetTime(c1.GetTime());
 					//Set current timestamp
@@ -510,7 +510,7 @@ void RTMPConnection::ParseData(BYTE *data,const DWORD size)
 					//Move to next state
 					state = CHUNK_HEADER_WAIT;
 					//Debug
-					Log("Received c2. CONNECTED.\n");
+					Log("-RTMPConnection::ParseData() Received c2. CONNECTED.\n");
 				}
 				break;
 			case CHUNK_HEADER_WAIT:
@@ -703,7 +703,7 @@ void RTMPConnection::ParseData(BYTE *data,const DWORD size)
 				if (!len)
 				{
 					//Debug
-					Error("Chunk data of size zero\n");
+					Error("-RTMPConnection::ParseData() Chunk data of size zero\n");
 					//Skip
 					break;
 				}
@@ -742,7 +742,7 @@ void RTMPConnection::ParseData(BYTE *data,const DWORD size)
 						}
 						else
 						{
-							Error("Failed to get media frame\n");
+							Error("-RTMPConnection::ParseData() Failed to get media frame\n");
 						}
 					} else if (msg->IsMetaData() || msg->IsSharedObject()) {
 						//Get object
@@ -890,7 +890,7 @@ void RTMPConnection::ProcessCommandMessage(DWORD streamId,RTMPCommandMessage* cm
 		//Skip
 		return;
 	}
-	
+
 	//Get message values
 	std::wstring name 	= cmd->GetName();
 	QWORD transId 		= cmd->GetTransId();
