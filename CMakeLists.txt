@@ -138,6 +138,7 @@ target_link_libraries(MediaServerLib
 
 # Unit test executable
 add_executable(MediaServerUnitTest
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAACSpecificConfig.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAccumulator.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestCircularBuffer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestCircularQueue.cpp
@@ -171,7 +172,6 @@ add_test(NAME MediaServerUnitTest
 add_executable(MediaServerLegacyTest
     ${CMAKE_CURRENT_LIST_DIR}/test/main.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/test.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/test/aac.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/cpim.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/dd.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/ddls.cpp
