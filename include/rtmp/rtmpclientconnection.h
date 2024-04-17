@@ -112,7 +112,7 @@ private:
 	DWORD chunkStreamId = 0;
 	DWORD chunkLen = 0;
 	DWORD maxChunkSize = 128;
-	DWORD maxOutChunkSize = 128;
+	DWORD maxOutChunkSize = 512;
 
 	pthread_t thread;
 	pthread_mutex_t mutex;

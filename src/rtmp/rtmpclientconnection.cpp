@@ -210,8 +210,8 @@ void* RTMPClientConnection::run(void* par)
  ***************************/
 int RTMPClientConnection::Run()
 {
-	BYTE data[1400];
-	unsigned int size = 1400;
+	BYTE data[4096*2];
+	unsigned int size = 4096*2;
 	bool connected = false;
 
 	Log("-RTMPClientConnection::Run() connection [%p]\n", this);
@@ -467,6 +467,10 @@ void RTMPClientConnection::ParseData(BYTE* data, const DWORD size)
 				{
 					//Debug
 					Log("-RTMPClientConnection::ParseData() Received s2. Sending connect.\n");
+					//Update chunk size
+					maxOutChunkSize = 4096;
+					SendControlMessage(RTMPMessage::SetChunkSize, RTMPSetChunkSize::Create(maxOutChunkSize));
+					
 					//Params
 					AMFObject* params = new AMFObject();
 					//Add params
@@ -787,60 +791,60 @@ void RTMPClientConnection::ProcessControlMessage(DWORD streamId, BYTE type, RTMP
 	//Check type
 	switch ((RTMPMessage::Type)type)
 	{
-	case RTMPMessage::SetChunkSize:
-		//Get new chunk size
-		maxChunkSize = ((RTMPSetChunkSize*)msg)->GetChunkSize();
-		Log("-RTMPClientConnection::ProcessControlMessage() Set new chunk size [%d]\n", maxChunkSize);
-		break;
-	case RTMPMessage::AbortMessage:
-		Log("-RTMPClientConnection::ProcessControlMessage() AbortMessage [chunkId:%d]\n", ((RTMPAbortMessage*)msg)->GetChunkStreamId());
-		break;
-	case RTMPMessage::Acknowledgement:
-		Log("-RTMPClientConnection::ProcessControlMessage() Acknowledgement [seq:%d]\n", ((RTMPAcknowledgement*)msg)->GetSeNumber());
-		break;
-	case RTMPMessage::UserControlMessage:
-		//Get event
-		event = (RTMPUserControlMessage*)msg;
-		//Depending on the event received
-		switch (event->GetEventType())
-		{
-		case RTMPUserControlMessage::StreamBegin:
-			Log("-RTMPClientConnection::ProcessControlMessage() StreamBegin [stream:%d]\n", event->GetEventData());
+		case RTMPMessage::SetChunkSize:
+			//Get new chunk size
+			maxChunkSize = ((RTMPSetChunkSize*)msg)->GetChunkSize();
+			Log("-RTMPClientConnection::ProcessControlMessage() Set new chunk size [%d]\n", maxChunkSize);
 			break;
-		case RTMPUserControlMessage::StreamEOF:
-			Log("-RTMPClientConnection::ProcessControlMessage() StreamEOF [stream:%d]\n", event->GetEventData());
+		case RTMPMessage::AbortMessage:
+			Log("-RTMPClientConnection::ProcessControlMessage() AbortMessage [chunkId:%d]\n", ((RTMPAbortMessage*)msg)->GetChunkStreamId());
 			break;
-		case RTMPUserControlMessage::StreamDry:
-			Log("-RTMPClientConnection::ProcessControlMessage() StreamDry [stream:%d]\n", event->GetEventData());
+		case RTMPMessage::Acknowledgement:
+			Log("-RTMPClientConnection::ProcessControlMessage() Acknowledgement [seq:%d]\n", ((RTMPAcknowledgement*)msg)->GetSeNumber());
 			break;
-		case RTMPUserControlMessage::SetBufferLength:
-			Log("-RTMPClientConnection::ProcessControlMessage() SetBufferLength [stream:%d,size:%d]\n", event->GetEventData(), event->GetEventData2());
-			break;
-		case RTMPUserControlMessage::StreamIsRecorded:
-			Log("-RTMPClientConnection::ProcessControlMessage() StreamIsRecorded [stream:%d]\n", event->GetEventData());
-			break;
-		case RTMPUserControlMessage::PingRequest:
-			Log("-RTMPClientConnection::ProcessControlMessage() PingRequest [milis:%d]\n", event->GetEventData());
-			//Send ping response
-			SendControlMessage(RTMPMessage::UserControlMessage, RTMPUserControlMessage::CreatePingResponse(0));
-			break;
-		case RTMPUserControlMessage::PingResponse:
-			Log("-RTMPClientConnection::ProcessControlMessage() PingResponse [milis:%d]\n", event->GetEventData());
-			break;
+		case RTMPMessage::UserControlMessage:
+			//Get event
+			event = (RTMPUserControlMessage*)msg;
+			//Depending on the event received
+			switch (event->GetEventType())
+			{
+			case RTMPUserControlMessage::StreamBegin:
+				Log("-RTMPClientConnection::ProcessControlMessage() StreamBegin [stream:%d]\n", event->GetEventData());
+				break;
+			case RTMPUserControlMessage::StreamEOF:
+				Log("-RTMPClientConnection::ProcessControlMessage() StreamEOF [stream:%d]\n", event->GetEventData());
+				break;
+			case RTMPUserControlMessage::StreamDry:
+				Log("-RTMPClientConnection::ProcessControlMessage() StreamDry [stream:%d]\n", event->GetEventData());
+				break;
+			case RTMPUserControlMessage::SetBufferLength:
+				Log("-RTMPClientConnection::ProcessControlMessage() SetBufferLength [stream:%d,size:%d]\n", event->GetEventData(), event->GetEventData2());
+				break;
+			case RTMPUserControlMessage::StreamIsRecorded:
+				Log("-RTMPClientConnection::ProcessControlMessage() StreamIsRecorded [stream:%d]\n", event->GetEventData());
+				break;
+			case RTMPUserControlMessage::PingRequest:
+				Log("-RTMPClientConnection::ProcessControlMessage() PingRequest [milis:%d]\n", event->GetEventData());
+				//Send ping response
+				SendControlMessage(RTMPMessage::UserControlMessage, RTMPUserControlMessage::CreatePingResponse(0));
+				break;
+			case RTMPUserControlMessage::PingResponse:
+				Log("-RTMPClientConnection::ProcessControlMessage() PingResponse [milis:%d]\n", event->GetEventData());
+				break;
 
-		}
-		break;
-	case RTMPMessage::WindowAcknowledgementSize:
-		//Store new acknowledgement size
-		windowSize = ((RTMPWindowAcknowledgementSize*)msg)->GetWindowSize();
-		Log("-RTMPClientConnection::ProcessControlMessage() WindowAcknowledgementSize [%d]\n", windowSize);
-		break;
-	case RTMPMessage::SetPeerBandwidth:
-		Log("-RTMPClientConnection::ProcessControlMessage() SetPeerBandwidth\n");
-		break;
-	default:
-		Log("-RTMPClientConnection::ProcessControlMessage() Unknown [type:%d]\n", type);
-		break;
+			}
+			break;
+		case RTMPMessage::WindowAcknowledgementSize:
+			//Store new acknowledgement size
+			windowSize = ((RTMPWindowAcknowledgementSize*)msg)->GetWindowSize();
+			Log("-RTMPClientConnection::ProcessControlMessage() WindowAcknowledgementSize [%d]\n", windowSize);
+			break;
+		case RTMPMessage::SetPeerBandwidth:
+			Log("-RTMPClientConnection::ProcessControlMessage() SetPeerBandwidth\n");
+			break;
+		default:
+			Log("-RTMPClientConnection::ProcessControlMessage() Unknown [type:%d]\n", type);
+			break;
 	}
 }
 
@@ -978,26 +982,35 @@ void RTMPClientConnection::SendControlMessage(RTMPMessage::Type type, RTMPObject
  ****************************************/
 void RTMPClientConnection::onAttached(RTMPMediaStream* stream)
 {
+	Debug("-RTMPClientConnection::onAttached()\n");
 }
 
 void RTMPClientConnection::onDetached(RTMPMediaStream* stream)
 {
+	Debug("-RTMPClientConnection::onDetached()\n");
 }
 
 void RTMPClientConnection::onStreamBegin(DWORD streamId)
 {
+	Debug("-RTMPClientConnection::onStreamBegin()\n");
+
 	//Send control message
 	SendControlMessage(RTMPMessage::UserControlMessage, RTMPUserControlMessage::CreateStreamBegin(streamId));
 }
 
 void RTMPClientConnection::onStreamEnd(DWORD streamId)
 {
+	Debug("-RTMPClientConnection::onStreamEnd()\n");
+
 	//Send control message
 	SendControlMessage(RTMPMessage::UserControlMessage, RTMPUserControlMessage::CreateStreamEOF(streamId));
 }
 
 void RTMPClientConnection::onCommand(DWORD streamId, const wchar_t* name, AMFData* obj)
 {
+	Debug("-RTMPClientConnection::onCommand() [name:%ls]\n", name);
+	if (obj) obj->Dump();
+
 	//Send new command
 	SendCommand(streamId, name, new AMFNull(), obj);
 }
@@ -1029,6 +1042,8 @@ void RTMPClientConnection::onMediaFrame(DWORD streamId, RTMPMediaFrame* frame)
 
 void RTMPClientConnection::onMetaData(DWORD streamId, RTMPMetaData* meta)
 {
+	Debug("-RTMPClientConnection::onMetaData()\n");
+
 	//Get the timestamp of the metadata
 	QWORD ts = meta->GetTimestamp();
 
@@ -1045,6 +1060,9 @@ void RTMPClientConnection::onMetaData(DWORD streamId, RTMPMetaData* meta)
 
 void RTMPClientConnection::onStreamReset(DWORD id)
 {
+	Debug("-RTMPClientConnection::onStreamReset()\n");
+
+
 	for (RTMPChunkOutputStreams::iterator it = chunkOutputStreams.begin(); it != chunkOutputStreams.end(); ++it)
 	{
 		//Get stream
