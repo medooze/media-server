@@ -49,6 +49,10 @@ public:
 	virtual void onStreamReset(DWORD id);
 	virtual void onDetached(RTMPMediaStream* stream);
 
+
+	QWORD GetInBytes() const	{ return inBytes;	}
+	QWORD GetOutBytes() const	{ return outBytes;	}
+
 protected:
 	void Start();
 	void Stop();
@@ -128,8 +132,8 @@ private:
 	DWORD windowSize = 0;
 	DWORD curWindowSize = 0;
 	DWORD recvSize = 0;
-	DWORD inBytes = 0;
-	DWORD outBytes = 0;
+	QWORD inBytes = 0;
+	QWORD outBytes = 0;
 
 	bool	needsAuth = false;
 	DWORD	data = 0;
