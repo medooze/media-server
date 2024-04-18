@@ -218,7 +218,7 @@ std::unique_ptr<VideoFrame> RTMPH26xPacketizer<DescClass, SPSClass, PPSClass, co
 	}
 
 	//Malloc
-	BYTE *data = videoFrame->GetMediaData();
+	const BYTE *data = videoFrame->GetMediaData();
 	//Get size
 	DWORD size = videoFrame->GetMediaSize();
 	
@@ -240,7 +240,7 @@ std::unique_ptr<VideoFrame> RTMPH26xPacketizer<DescClass, SPSClass, PPSClass, co
 		}
 
 		//Get NAL start
-		BYTE* nal = data + nalUnitLength;
+		const BYTE* nal = data + nalUnitLength;
 
 		//Skip fill data nalus for h264
 		if (codec == VideoCodec::H264 && nal[0] == 12)
@@ -256,7 +256,7 @@ std::unique_ptr<VideoFrame> RTMPH26xPacketizer<DescClass, SPSClass, PPSClass, co
 		{
 			if constexpr (std::is_same_v<SPSClass, H264SeqParameterSet>)
 			{
-				BYTE nalUnitType = nal[0] & 0x1f;
+				const BYTE nalUnitType = nal[0] & 0x1f;
 				if (nalUnitType == 1 || nalUnitType == 2 || nalUnitType == 5)
 				{
 					H264SliceHeader header;
@@ -428,7 +428,7 @@ std::unique_ptr<VideoFrame> RTMPAv1Packetizer::AddFrame(RTMPVideoFrame* videoFra
 		frame->SetIntra(true);
 	}
 
-	BYTE *data = videoFrame->GetMediaData();
+	const BYTE *data = videoFrame->GetMediaData();
 	//Get size
 	DWORD size = videoFrame->GetMediaSize();
 	

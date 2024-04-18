@@ -237,7 +237,7 @@ inline QWORD get8(const BYTE *data,size_t i) { return ((QWORD)get4(data,i))<<32 
 
 inline DWORD get3Reversed(const BYTE *data,size_t i) { return (DWORD)(data[i]) | ((DWORD)(data[i+1]))<<8 | ((DWORD)(data[i+2]))<<16; }
 
-inline DWORD getN(BYTE n, BYTE* data, size_t i)
+inline DWORD getN(BYTE n, const BYTE* data, size_t i)
 {
 	switch (n)
 	{
