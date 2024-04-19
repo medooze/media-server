@@ -4,7 +4,7 @@
 #include <inttypes.h>
 #include "log.h"
 #include "h264encoder.h"
-
+#include "H26xNal.h"
 
 //////////////////////////////////////////////////////////////////////////
 //Encoder
@@ -365,6 +365,8 @@ VideoFrame* H264Encoder::EncodeFrame(const VideoBuffer::const_shared& videoBuffe
 		config.ClearSequenceParameterSets();
 		config.ClearPictureParameterSets();
 	}
+	//Insert SEI timecode
+	bool inserted = false;
 
 	//Add packetization
 	for (int i=0;i<numNals;i++)
@@ -382,6 +384,43 @@ VideoFrame* H264Encoder::EncodeFrame(const VideoBuffer::const_shared& videoBuffe
 		//Check if IDR SPS or PPS
 		switch (nalType)
 		{
+			case 0x01:
+				[[fallthrough]];
+			case 0x05:
+				//If we need to insert the timestamp in the first video nal
+				if (videoBuffer->GetSenderTime() && !inserted)
+				{
+					uint8_t  nalHeader[4] = {0x00, 0x00, 0x00, 0x01};
+					//Add unregistered SEI message NAL
+					uint8_t sei[28] = { 0x06, 0x05, 0x18, 0x00, 0x11, 0x22, 0x33, 0x44,
+							    0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc,
+							    0xdd, 0xee, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00,
+							    0x00, 0x00, 0x00, 0x80 };
+
+					if (!annexb)
+						//Set size
+						setN(4, nalHeader, 0, sizeof(sei));
+
+					//Append nal size header
+					frame.AppendMedia(nalHeader, sizeof(nalHeader));
+
+					//Set timestamp
+					set8(sei, 19, videoBuffer->GetSenderTime());
+
+					//Escape nal
+					uint8_t seiEscaped[sizeof(sei) * 2];
+					auto seiSize = NalEscapeRbsp(seiEscaped, sizeof(seiEscaped), sei, sizeof(sei)).value();
+
+					//Append nal
+					auto ini = frame.AppendMedia(seiEscaped, seiSize);
+
+					//Crete rtp packet
+					frame.AddRtpPacket(ini, seiSize, nullptr, 0);
+
+					//We have inserted the SEI timestamp correctly
+					inserted = true;
+				}
+				break;
 			case 0x07:
 			{
 				//Set config
@@ -422,7 +461,7 @@ VideoFrame* H264Encoder::EncodeFrame(const VideoBuffer::const_shared& videoBuffe
 			//Start with S = 1, E = 0
 			const size_t naluHeaderSize = 1;
 			const uint8_t nri = nalUnit[0] & 0b0110'0000;
-			std::array<uint8_t, 2> fuPrefix = { nri | 28u, nalType };
+			std::array<uint8_t, 2> fuPrefix = { static_cast<uint8_t>(nri | 28u), nalType };
 			fuPrefix[1] &= 0b0011'1111;
 			fuPrefix[1] |= 0b1000'0000;
 			// Skip payload nal header
