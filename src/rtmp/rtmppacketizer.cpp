@@ -601,3 +601,58 @@ std::unique_ptr<AudioFrame> RTMPAACPacketizer::AddFrame(RTMPAudioFrame* audioFra
 	//DOne
 	return frame;
 }
+
+
+std::unique_ptr<AudioFrame> RTMPG711APacketizer::AddFrame(RTMPAudioFrame* audioFrame)
+{
+	//UltraDebug("-RTMPG711APacketizer::AddFrame() [size:%u,aac:%d,codec:%d]\n",audioFrame->GetMediaSize(),audioFrame->GetAACPacketType(),audioFrame->GetAudioCodec());
+
+	//Create frame
+	auto frame = std::make_unique<AudioFrame>(AudioCodec::PCMA);
+
+	//Set time in ms
+	frame->SetTime(audioFrame->GetTimestamp());
+
+	//Calculate timestamp in sample rate clock
+	uint64_t timestamp = audioFrame->GetTimestamp() *8;
+
+	//Set info from AAC config
+	frame->SetClockRate(8000);
+	frame->SetNumChannels(1);
+	frame->SetTimestamp(timestamp);
+	frame->SetDuration(160);
+	
+	//Add frame in single rtp 
+	auto ini = frame->AppendMedia(audioFrame->GetMediaData(), audioFrame->GetMediaSize());
+	frame->AddRtpPacket(ini, audioFrame->GetMediaSize(), nullptr, 0);
+
+	//DOne
+	return frame;
+}
+
+std::unique_ptr<AudioFrame> RTMPG711UPacketizer::AddFrame(RTMPAudioFrame* audioFrame)
+{
+	//UltraDebug("-RTMPG711UPacketizer::AddFrame() [size:%u,aac:%d,codec:%d]\n",audioFrame->GetMediaSize(),audioFrame->GetAACPacketType(),audioFrame->GetAudioCodec());
+
+	//Create frame
+	auto frame = std::make_unique<AudioFrame>(AudioCodec::PCMU);
+
+	//Set time in ms
+	frame->SetTime(audioFrame->GetTimestamp());
+
+	//Calculate timestamp in sample rate clock
+	uint64_t timestamp = audioFrame->GetTimestamp() * 8;
+
+	//Set info from AAC config
+	frame->SetClockRate(8000);
+	frame->SetNumChannels(1);
+	frame->SetTimestamp(timestamp);
+	frame->SetDuration(160);
+
+	//Add frame in single rtp 
+	auto ini = frame->AppendMedia(audioFrame->GetMediaData(), audioFrame->GetMediaSize());
+	frame->AddRtpPacket(ini, audioFrame->GetMediaSize(), nullptr, 0);
+
+	//DOne
+	return frame;
+}
