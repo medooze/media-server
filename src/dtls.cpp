@@ -370,10 +370,11 @@ std::string DTLSConnection::GetCertificateFingerPrint(Hash hash)
 }
 
 
-DTLSConnection::DTLSConnection(Listener& listener,TimeService& timeService,datachannels::Transport& sctp) :
+DTLSConnection::DTLSConnection(Listener& listener,TimeService& timeService) :
 	listener(listener),
 	timeService(timeService),
-	sctp(sctp),
+	dcTimeService(timeService),
+	sctp(dcTimeService, *this),
 	inited(false)
 {
 }
@@ -476,28 +477,6 @@ int DTLSConnection::Init()
 
 	//Set name for debug
 	timeout->SetName("DTLSConnection - timeout");
-	
-	//Start sctp transport
-	sctp.OnPendingData([this](){
-		//UltraDebug("-sctp::OnPendingData() [ssl:%p]\n",ssl);
-
-		if (ssl)
-		{
-			BYTE msg[MTU];
-			size_t len;
-			//Read from sctp transport
-			while((len = sctp.ReadPacket(msg,MTU)))
-			{
-				UltraDebug("-sctp::OnPendingData() [len:%lu]\n",len);
-				DumpAsC(msg,len);
-				//Write it to the ssl context
-				SSL_write(ssl,msg,len);
-			}
-			
-			//Check if there is any pending data
-			CheckPending();
-		}
-	});
 
 	Log("<DTLSConnection::Init()\n");
 
@@ -538,6 +517,8 @@ void DTLSConnection::Shutdown()
 		return;
 
 	Log("-DTLSConnection::Shutdown()\n");
+	
+	sctp.Close();
 
 	// If the SSL session is not yet finalized don't bother resetting
 	if (!SSL_is_init_finished(ssl))
@@ -709,6 +690,28 @@ void DTLSConnection::onSSLInfo(int where, int ret)
 	CheckPending();
 }
 
+void DTLSConnection::OnDataPending()
+{
+	//UltraDebug("-sctp::OnPendingData() [ssl:%p]\n",ssl);
+
+	if (ssl)
+	{
+		BYTE msg[MTU];
+		size_t len;
+		//Read from sctp transport
+		while((len = sctp.ReadPacket(msg,MTU)))
+		{
+			UltraDebug("-sctp::OnPendingData() [len:%lu]\n",len);
+			DumpAsC(msg,len);
+			//Write it to the ssl context
+			SSL_write(ssl,msg,len);
+		}
+		
+		//Check if there is any pending data
+		CheckPending();
+	}
+}
+
 int DTLSConnection::Renegotiate()
 {
 	TRACE_EVENT("dtls", "DTLSConnection::Renegotiate");
@@ -864,7 +867,7 @@ int DTLSConnection::Write(const BYTE *buffer, DWORD size)
 	if (len) DumpAsC(msg,len);
 	//Pass data to sctp
 	if (len && !sctp.WritePacket(msg,len))
-		return Error("sctp parse error");
+		return Error("sctp parse error\n");
 
 	// Check if the peer sent close alert or a fatal error happened.
 	if (SSL_get_shutdown(ssl) & SSL_RECEIVED_SHUTDOWN)

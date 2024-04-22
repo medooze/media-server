@@ -13,8 +13,10 @@
 #include "log.h"
 #include "TimeService.h"
 #include "Datachannels.h"
+#include "Sctp.h"
+#include "DatachannelTimeService.h"
 
-class DTLSConnection
+class DTLSConnection : datachannels::OnDataPendingListener
 {
 public:
 	enum Setup
@@ -117,7 +119,7 @@ private:
 	static bool		hasDTLS;
 
 public:
-	DTLSConnection(Listener& listener,TimeService& timeService,datachannels::Transport& sctp);
+	DTLSConnection(Listener& listener,TimeService& timeService);
 	~DTLSConnection();
 
 	void SetSRTPProtectionProfiles(const std::string& profiles);
@@ -138,6 +140,8 @@ public:
 public:
 	void onSSLInfo(int where, int ret);
 
+	virtual void OnDataPending() override;
+
 protected:
 	int  SetupSRTP();
 	void Shutdown();
@@ -145,8 +149,10 @@ protected:
 private:
 	Listener& listener;
 	TimeService& timeService;
+	DatachannelTimeService dcTimeService;
+	
 	Timer::shared timeout;			// DTLS timout handler
-	datachannels::Transport &sctp;		// SCTP transport
+	datachannels::impl::Sctp sctp;		// SCTP transport
 	SSL *ssl	= nullptr;		// SSL session 
 	BIO *read_bio	= nullptr;		// Memory buffer for reading 
 	BIO *write_bio	= nullptr;		// Memory buffer for writing 

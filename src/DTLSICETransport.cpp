@@ -53,10 +53,8 @@ constexpr auto RtxRttThresholdMs 		= 300;
 DTLSICETransport::DTLSICETransport(Sender *sender,TimeService& timeService, ObjectPool<Packet>& packetPool) :
 	sender(sender),
 	timeService(timeService),
-	dcTimeService(timeService),
 	packetPool(packetPool),
-	sctp(dcTimeService),
-	dtls(*this,timeService,sctp.GetTransport()),
+	dtls(*this,timeService),
 	history(MaxProbingHistorySize, false),
 	outgoingBitrate(250, 1E3, 250),
 	rtxBitrate(250, 1E3, 250),
@@ -2753,8 +2751,7 @@ void DTLSICETransport::Start()
 	});
 	//Set name for debug
 	sseTimer->SetName("DTLSICETransport - twcc feedback");
-	//Start
-	sctp.AddEndpoint(dcOptions);
+
 	//Started
 	started = true;
 }
@@ -2790,9 +2787,6 @@ void DTLSICETransport::Stop()
 	if (iceTimeoutTimer)
 		//Stop probing
 		iceTimeoutTimer->Cancel();
-
-	//Stop
-	sctp.Close();
 
 	//Send dtls shutdown
 	dtls.Reset();

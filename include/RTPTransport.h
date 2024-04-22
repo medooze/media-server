@@ -105,8 +105,6 @@ private:
 	EventLoop rtpLoop;
 	EventLoop rtcpLoop;
 
-	DatachannelTimeService dcTimeService;
-	datachannels::impl::Sctp sctp;
 	DTLSConnection dtls;
 	bool	encript;
 	bool	decript;

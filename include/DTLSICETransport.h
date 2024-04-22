@@ -161,11 +161,8 @@ private:
 private:
 	Sender*		sender = nullptr;
 	TimeService&	timeService;
-	DatachannelTimeService dcTimeService;
 	
 	ObjectPool<Packet>& packetPool;
-	datachannels::impl::Sctp sctp;
-	datachannels::Endpoint::Options dcOptions;
 	Listener::shared listener;
 	DTLSConnection	dtls;
 	DTLSState	state = DTLSState::New;
