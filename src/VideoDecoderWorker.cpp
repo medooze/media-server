@@ -83,6 +83,7 @@ int VideoDecoderWorker::Decode()
 	QWORD		frameTimestamp = (QWORD)-1;
 	QWORD		frameTime = (QWORD)-1;
 	DWORD		frameClockRate = (DWORD)-1;
+	QWORD		frameSenderTime = 0;
 	DWORD		lastSeq = RTPPacket::MaxExtSeqNum;
 	bool		waitIntra = false;
 
@@ -109,6 +110,7 @@ int VideoDecoderWorker::Decode()
 		QWORD ts = packet->GetExtTimestamp();
 		QWORD time = packet->GetTime();
 		DWORD clockRate = packet->GetClockRate();
+		QWORD senderTime = packet->GetSenderTime();
 
 		//If we don't have codec
 		if (!videoDecoder || (packet->GetCodec()!=videoDecoder->type))
@@ -153,6 +155,7 @@ int VideoDecoderWorker::Decode()
 				frame->SetTime(frameTime);
 				frame->SetTimestamp(frameTimestamp);
 				frame->SetClockRate(frameClockRate);
+				frame->SetSenderTime(frameSenderTime);
 				//Sync
 				ScopedLock scope(mutex);
 				//For each output
@@ -166,6 +169,8 @@ int VideoDecoderWorker::Decode()
 		frameTimestamp = ts;
 		frameTime = time;
 		frameClockRate = clockRate;
+		if (senderTime)
+			frameSenderTime = senderTime;
 		
 		//Decode packet
 		if(!videoDecoder->DecodePacket(packet->GetMediaData(),packet->GetMediaLength(),lost,packet->GetMark()))
@@ -193,6 +198,7 @@ int VideoDecoderWorker::Decode()
 				frameTimestamp = (QWORD)-1;
 				frameTime = (QWORD)-1;
 				frameClockRate = (DWORD)-1;
+				frameSenderTime = 0;
 				//Get next one
 				continue;
 			}
@@ -201,6 +207,7 @@ int VideoDecoderWorker::Decode()
 			frame->SetTime(frameTime);
 			frame->SetTimestamp(frameTimestamp);
 			frame->SetClockRate(frameClockRate);
+			frame->SetSenderTime(senderTime);
 
 			//Check if we need to apply deinterlacing
 			if (frame->IsInterlaced())
@@ -231,6 +238,7 @@ int VideoDecoderWorker::Decode()
 					deinterlaced->SetTime(frameTime);
 					deinterlaced->SetTimestamp(frameTimestamp);
 					deinterlaced->SetClockRate(frameClockRate);
+					deinterlaced->SetSenderTime(frameSenderTime);
 
 					//Check if we are muted
 					if (!muted)
@@ -256,6 +264,7 @@ int VideoDecoderWorker::Decode()
 			frameTimestamp = (QWORD)-1;
 			frameTime = (QWORD)-1;
 			frameClockRate = (DWORD)-1;
+			frameSenderTime = 0;
 		}
 	}
 

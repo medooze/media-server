@@ -289,6 +289,7 @@ int VideoEncoderWorker::Encode()
 		//Set frame timestamp
 		videoFrame->SetTimestamp(pic->HasTimestamp() ? pic->GetTimestamp() : now*90);
 		videoFrame->SetTime(pic->HasTime() ? pic->GetTime() : now);
+		if (pic->HasSenderTime()) videoFrame->SetSenderTime(pic->GetSenderTime());
 
 		// Set duration to 0 indicating we dont know its actual value
 		// We *could* delay the frame until the next one and use timestamps 
