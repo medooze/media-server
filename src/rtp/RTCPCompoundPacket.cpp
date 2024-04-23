@@ -35,7 +35,7 @@ DWORD RTCPCompoundPacket::RTCPCompoundPacket::GetSize() const
 	//Calculate
 	for(RTCPPackets::const_iterator it = packets.begin(); it!=packets.end(); ++it)
 		//Append size
-		size = (*it)->GetSize();
+		size += (*it)->GetSize();
 	//Return total size
 	return size;
 }
