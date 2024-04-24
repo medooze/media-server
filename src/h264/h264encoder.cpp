@@ -388,7 +388,7 @@ VideoFrame* H264Encoder::EncodeFrame(const VideoBuffer::const_shared& videoBuffe
 				[[fallthrough]];
 			case 0x05:
 				//If we need to insert the timestamp in the first video nal
-				if (videoBuffer->GetSenderTime() && !inserted)
+				if (videoBuffer->HasSenderTime() && !inserted)
 				{
 					uint8_t  nalHeader[4] = {0x00, 0x00, 0x00, 0x01};
 					//Add unregistered SEI message NAL
