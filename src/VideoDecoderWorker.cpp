@@ -110,7 +110,7 @@ int VideoDecoderWorker::Decode()
 		QWORD ts = packet->GetExtTimestamp();
 		QWORD time = packet->GetTime();
 		DWORD clockRate = packet->GetClockRate();
-		QWORD senderTime = packet->GetSenderTime();
+		QWORD senderTime = packet->HasAbsoluteCaptureTime() ? packet->GetAbsoluteCaptureTime() : 0;
 
 		//If we don't have codec
 		if (!videoDecoder || (packet->GetCodec()!=videoDecoder->type))
