@@ -690,7 +690,7 @@ void DTLSConnection::onSSLInfo(int where, int ret)
 	CheckPending();
 }
 
-void DTLSConnection::OnDataPending()
+void DTLSConnection::OnTransmissionPending()
 {
 	//UltraDebug("-sctp::OnPendingData() [ssl:%p]\n",ssl);
 

@@ -61,6 +61,13 @@ public:
 		virtual void onRemoteICECandidateActivated(const std::string& ip, uint16_t port, uint32_t priority) = 0;
 		virtual ~Listener() = default;
 	};
+	
+	class DataChannelListener
+	{
+	public:
+		virtual void OnEndpointCreated(std::shared_ptr<datachannels::Endpoint>& endpoint) = 0;
+	};
+	
 	class Sender
 	{
 	public:
@@ -96,6 +103,8 @@ public:
 	bool RemoveOutgoingSourceGroup(const RTPOutgoingSourceGroup::shared& group);
 	bool AddIncomingSourceGroup(const RTPIncomingSourceGroup::shared& group);
 	bool RemoveIncomingSourceGroup(const RTPIncomingSourceGroup::shared& group);
+	
+	std::shared_ptr<datachannels::Endpoint> GetDataChannelEndpoint(const std::string& endpointIdentifier = "");
 	
 	void SetBandwidthProbing(bool probe);
 	void SetMaxProbingBitrate(DWORD bitrate);

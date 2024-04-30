@@ -24,6 +24,11 @@ public:
 	{
 		return timer->GetRepeat();
 	}
+	
+	bool IsScheduled() const override
+	{
+		return timer->IsScheduled();
+	}
 private:
 
 	::Timer::shared timer;
@@ -53,6 +58,12 @@ public:
 	{
 		return std::make_shared<DatachannelTimer>(timeService.CreateTimer(ms, repeat, timeout));
 	}
+	
+	void Async(const std::function<void(std::chrono::milliseconds)>& func) override
+	{
+		timeService.Async(func);
+	}
+	
 private:
 	::TimeService& timeService;
 };

@@ -16,7 +16,7 @@
 #include "Sctp.h"
 #include "DatachannelTimeService.h"
 
-class DTLSConnection : datachannels::OnDataPendingListener
+class DTLSConnection : datachannels::OnTransmissionPendingListener
 {
 public:
 	enum Setup
@@ -140,7 +140,7 @@ public:
 public:
 	void onSSLInfo(int where, int ret);
 
-	virtual void OnDataPending() override;
+	virtual void OnTransmissionPending() override;
 
 protected:
 	int  SetupSRTP();
