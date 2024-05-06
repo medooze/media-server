@@ -130,6 +130,8 @@ public:
 
 	Setup GetSetup() const { return setup; }
 	
+	datachannels::impl::Sctp& GetSctp() { return sctp; }
+	
 	int  Read(BYTE* data,DWORD size);
 	int  Write(const BYTE *buffer,DWORD size);
 	int  HandleTimeout();

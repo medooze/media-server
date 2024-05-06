@@ -59,13 +59,8 @@ public:
 		virtual void onICETimeout() = 0;
 		virtual void onDTLSStateChanged(const DTLSState) = 0;
 		virtual void onRemoteICECandidateActivated(const std::string& ip, uint16_t port, uint32_t priority) = 0;
+		virtual void onDataChannelOpen(const std::string& endpointId, const std::shared_ptr<datachannels::DataChannel>& dataChannel) = 0;
 		virtual ~Listener() = default;
-	};
-	
-	class DataChannelListener
-	{
-	public:
-		virtual void OnEndpointCreated(std::shared_ptr<datachannels::Endpoint>& endpoint) = 0;
 	};
 	
 	class Sender
@@ -104,7 +99,8 @@ public:
 	bool AddIncomingSourceGroup(const RTPIncomingSourceGroup::shared& group);
 	bool RemoveIncomingSourceGroup(const RTPIncomingSourceGroup::shared& group);
 	
-	std::shared_ptr<datachannels::Endpoint> GetDataChannelEndpoint(const std::string& endpointIdentifier = "");
+	void SetDataChannelEndpointMode(datachannels::Endpoint::Mode mode);
+	std::shared_ptr<datachannels::Endpoint> CreateDataChannel(const std::string& label, const std::string& endpointIdentifier);
 	
 	void SetBandwidthProbing(bool probe);
 	void SetMaxProbingBitrate(DWORD bitrate);
