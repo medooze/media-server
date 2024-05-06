@@ -157,17 +157,21 @@ protected:
 	RTMPMediaFrame(Type type, QWORD timestamp, DWORD size);
 	RTMPMediaFrame(Type type, QWORD timestamp, const Buffer::shared& buffer);
 
-	void AdquireBuffer()
+	bool AdquireBuffer()
 	{
+		if (!buffer) return false;
+		
 		//If already owning
-		if (ownedBuffer && buffer)
+		if (ownedBuffer)
 			//Do nothing
-			return;
+			return true;
 
 		//Clone payload
 		buffer = std::make_shared<Buffer>(buffer->GetData(), buffer->GetSize());
 		//We own the payload
 		ownedBuffer = true;
+		
+		return true;
 	}
 
 	Type type;

@@ -888,7 +888,7 @@ DWORD RTMPMediaFrame::Serialize(BYTE* data,DWORD size)
 void RTMPMediaFrame::Dump()
 {
 	//Dump
-	Debug("[MediaFrame type:%d timestamp:%lld mediaSize:%d]\n",type,timestamp, buffer->GetSize());
+	Debug("[MediaFrame type:%d timestamp:%lld mediaSize:%zu]\n",type,timestamp, buffer->GetSize());
 	if(buffer->GetSize() >8)
 		::Dump(buffer->GetData(), 8);
 	else
@@ -926,7 +926,7 @@ void RTMPVideoFrame::Dump()
 	//Dump
 	if (!isExtended)
 	{
-		Debug("[VideoFrame extended: false codec: %d frameType:%d timestamp:%lld mediaSize:%d]\n",codec,frameType,timestamp,buffer->GetSize());
+		Debug("[VideoFrame extended: false codec: %d frameType:%d timestamp:%lld mediaSize:%zu]\n",codec,frameType,timestamp,buffer->GetSize());
 		
 		if (codec==AVC)
 			Debug("\t[AVC header 0x%.2x 0x%.2x 0x%.2x 0x%.2x /]\n",extraData[0],extraData[1],extraData[2],extraData[3]);
@@ -950,7 +950,7 @@ void RTMPVideoFrame::Dump()
 	else
 	{
 		auto codecStr = Uint32ToFourCcStr(codecEx);
-		Debug("[VideoFrame extended: true codec: %s frameType:%d timestamp:%lld bufferSize:%d mediaSize:%d packetType: %d]\n",
+		Debug("[VideoFrame extended: true codec: %s frameType:%d timestamp:%lld mediaSize:%zu packetType: %d]\n",
 			codecStr.c_str(),frameType,timestamp,buffer->GetSize(), packetType);
 		
 		if (codecEx==VideoCodecEx::HEVC && packetType == CodedFrames)
@@ -1283,7 +1283,7 @@ RTMPAudioFrame::RTMPAudioFrame(QWORD timestamp,DWORD size) : RTMPMediaFrame(Audi
 void RTMPAudioFrame::Dump()
 {
 	//Dump
-	Debug("[AudioFrame type:%d codec:%d rate:%d sample16bits:%d stereo:%d timestamp:%lld mediaSize:%d]\n",type,codec,rate,sample16bits,stereo,timestamp,buffer->GetSize());
+	Debug("[AudioFrame type:%d codec:%d rate:%d sample16bits:%d stereo:%d timestamp:%lld mediaSize:%zu]\n",type,codec,rate,sample16bits,stereo,timestamp,buffer->GetSize());
 	if(buffer->GetSize()>8)
 		::Dump(buffer->GetData(), 8);
 	else
