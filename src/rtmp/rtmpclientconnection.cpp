@@ -71,6 +71,8 @@ int RTMPClientConnection::Connect(const char* server, int port, const char* app,
 
 	//Set no delay option
 	int flag = 1;
+// Ignore coverity error: "this->fd" is passed to a parameter that cannot be negative.
+// coverity[negative_returns]
 	(void)setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(int));
 	//Catch all IO errors
 	signal(SIGIO, EmptyCatch);
