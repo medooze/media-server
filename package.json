@@ -1,0 +1,14 @@
+{
+	"name": "medooze-media-server-src",
+	"version": "0.0.2",
+	"description": "Redistributable Source for Medooze Media Server",
+	"files": [
+		"package.json",
+		"index.js",
+		"README.md",
+		"src/",
+		"include/",
+		"ext/"
+	],
+	"repository": "https://github.com/medooze/media-server.git"
+}
