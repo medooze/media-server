@@ -21,7 +21,7 @@
 #include "dtls.h"
 #include "EventLoop.h"
 #include "Datachannels.h"
-#include "Sctp.h"
+#include "EndpointManager.h"
 #include "PCAPFile.h"
 #include "DatachannelTimeService.h"
 
@@ -82,6 +82,7 @@ public:
 	virtual void onDTLSPendingData() override;
 	virtual void onDTLSSetupError() override;
 	virtual void onDTLSShutdown() override;
+	virtual void onDataChannelCreated(const datachannels::DataChannel::shared& dataChannel) override;
 	
 	TimeService& GetTimeService() { return rtpLoop; }
 	

@@ -102,6 +102,12 @@ void DTLSICETransport::onDTLSPendingData()
 	//UltraDebug("<DTLSConnection::onDTLSPendingData() | no more data\n");
 }
 
+void DTLSICETransport::onDataChannelCreated(const datachannels::DataChannel::shared& dataChannel)
+{
+	if (listener) listener->onDataChannelCreated(dataChannel);
+}
+
+
 int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* data,DWORD size)
 {
 	TRACE_EVENT("transport", "DTLSICETransport::onData", "size", size);
@@ -3068,3 +3074,14 @@ void DTLSICETransport::CheckProbeTimer()
 		}
 	});
 }
+
+void DTLSICETransport::SetDataChannelEndpointMode(datachannels::Endpoint::Mode mode)
+{
+	dtls.GetEndpointManager().SetEndpointMode(mode);
+}
+
+void DTLSICETransport::CreateDataChannel(const std::string& label, const std::string& endpointIdentifier)
+{
+	dtls.GetEndpointManager().CreateDataChannel(label, endpointIdentifier);
+}
+	

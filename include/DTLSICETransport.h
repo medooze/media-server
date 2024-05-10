@@ -28,7 +28,7 @@
 #include "remoterateestimator.h"
 #include "EventLoop.h"
 #include "Datachannels.h"
-#include "Sctp.h"
+#include "EndpointManager.h"
 #include "SRTPSession.h"
 #include "SendSideBandwidthEstimation.h"
 #include "DatachannelTimeService.h"
@@ -59,7 +59,7 @@ public:
 		virtual void onICETimeout() = 0;
 		virtual void onDTLSStateChanged(const DTLSState) = 0;
 		virtual void onRemoteICECandidateActivated(const std::string& ip, uint16_t port, uint32_t priority) = 0;
-		virtual void onDataChannelOpen(const std::string& endpointId, const std::shared_ptr<datachannels::DataChannel>& dataChannel) = 0;
+		virtual void onDataChannelCreated(const datachannels::DataChannel::shared& dataChannel) = 0;
 		virtual ~Listener() = default;
 	};
 	
@@ -100,7 +100,7 @@ public:
 	bool RemoveIncomingSourceGroup(const RTPIncomingSourceGroup::shared& group);
 	
 	void SetDataChannelEndpointMode(datachannels::Endpoint::Mode mode);
-	std::shared_ptr<datachannels::Endpoint> CreateDataChannel(const std::string& label, const std::string& endpointIdentifier);
+	void CreateDataChannel(const std::string& label, const std::string& endpointIdentifier);
 	
 	void SetBandwidthProbing(bool probe);
 	void SetMaxProbingBitrate(DWORD bitrate);
@@ -127,6 +127,7 @@ public:
 	virtual void onDTLSSetupError() override;
 	virtual void onDTLSShutdown() override;
 	virtual int onData(const ICERemoteCandidate* candidate,const BYTE* data,DWORD size)  override;
+	virtual void onDataChannelCreated(const datachannels::DataChannel::shared& dataChannel) override;
 	
 	DWORD GetRTT() const { return rtt; }
 	

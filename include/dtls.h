@@ -13,10 +13,10 @@
 #include "log.h"
 #include "TimeService.h"
 #include "Datachannels.h"
-#include "Sctp.h"
 #include "DatachannelTimeService.h"
+#include "EndpointManager.h"
 
-class DTLSConnection : datachannels::OnTransmissionPendingListener
+class DTLSConnection : public datachannels::OnTransportDataPendingListener, public datachannels::OnDataChannelCreatedListener
 {
 public:
 	enum Setup
@@ -57,6 +57,7 @@ public:
 		virtual void onDTLSSetup(Suite suite,BYTE* localMasterKey,DWORD localMasterKeySize,BYTE* remoteMasterKey,DWORD remoteMasterKeySize) = 0;
 		virtual void onDTLSSetupError() = 0;
 		virtual void onDTLSShutdown() = 0;
+		virtual void onDataChannelCreated(const datachannels::DataChannel::shared& dataChannel) = 0;
 	};
 
 public:
@@ -130,7 +131,7 @@ public:
 
 	Setup GetSetup() const { return setup; }
 	
-	datachannels::impl::Sctp& GetSctp() { return sctp; }
+	datachannels::impl::EndpointManager& GetEndpointManager() { return endpointManager; }
 	
 	int  Read(BYTE* data,DWORD size);
 	int  Write(const BYTE *buffer,DWORD size);
@@ -142,7 +143,8 @@ public:
 public:
 	void onSSLInfo(int where, int ret);
 
-	virtual void OnTransmissionPending() override;
+	virtual void OnTransportDataPending() override;
+	virtual void OnDataChannelCreated(const datachannels::DataChannel::shared& dataChannel) override;
 
 protected:
 	int  SetupSRTP();
@@ -154,7 +156,7 @@ private:
 	DatachannelTimeService dcTimeService;
 	
 	Timer::shared timeout;			// DTLS timout handler
-	datachannels::impl::Sctp sctp;		// SCTP transport
+	datachannels::impl::EndpointManager endpointManager;		// Data channel endpoint manager
 	SSL *ssl	= nullptr;		// SSL session 
 	BIO *read_bio	= nullptr;		// Memory buffer for reading 
 	BIO *write_bio	= nullptr;		// Memory buffer for writing 

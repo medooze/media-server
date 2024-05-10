@@ -374,7 +374,7 @@ DTLSConnection::DTLSConnection(Listener& listener,TimeService& timeService) :
 	listener(listener),
 	timeService(timeService),
 	dcTimeService(timeService),
-	sctp(dcTimeService, *this),
+	endpointManager(dcTimeService, *this, *this),
 	inited(false)
 {
 }
@@ -518,7 +518,7 @@ void DTLSConnection::Shutdown()
 
 	Log("-DTLSConnection::Shutdown()\n");
 	
-	sctp.Close();
+	endpointManager.Close();
 
 	// If the SSL session is not yet finalized don't bother resetting
 	if (!SSL_is_init_finished(ssl))
@@ -690,18 +690,18 @@ void DTLSConnection::onSSLInfo(int where, int ret)
 	CheckPending();
 }
 
-void DTLSConnection::OnTransmissionPending()
+void DTLSConnection::OnTransportDataPending()
 {
-	//UltraDebug("-sctp::OnPendingData() [ssl:%p]\n",ssl);
+	//UltraDebug("-endpointManager::OnPendingData() [ssl:%p]\n",ssl);
 
 	if (ssl)
 	{
 		BYTE msg[MTU];
 		size_t len;
-		//Read from sctp transport
-		while((len = sctp.ReadPacket(msg,MTU)))
+		//Read from endpointManager transport
+		while((len = endpointManager.ReadPacket(msg,MTU)))
 		{
-			UltraDebug("-sctp::OnPendingData() [len:%lu]\n",len);
+			UltraDebug("-endpointManager::OnPendingData() [len:%lu]\n",len);
 			DumpAsC(msg,len);
 			//Write it to the ssl context
 			SSL_write(ssl,msg,len);
@@ -710,6 +710,11 @@ void DTLSConnection::OnTransmissionPending()
 		//Check if there is any pending data
 		CheckPending();
 	}
+}
+
+void DTLSConnection::OnDataChannelCreated(const datachannels::DataChannel::shared& dataChannel)
+{
+	listener.onDataChannelCreated(dataChannel);
 }
 
 int DTLSConnection::Renegotiate()
@@ -863,11 +868,11 @@ int DTLSConnection::Write(const BYTE *buffer, DWORD size)
 			return 0;
 	}
 	//DumpAsC(msg,len);
-	Debug("-sctp of len %d\n",len);
+	Debug("-endpointManager of len %d\n",len);
 	if (len) DumpAsC(msg,len);
-	//Pass data to sctp
-	if (len && !sctp.WritePacket(msg,len))
-		return Error("sctp parse error\n");
+	//Pass data to endpointManager
+	if (len && !endpointManager.WritePacket(msg,len))
+		return Error("endpointManager parse error\n");
 
 	// Check if the peer sent close alert or a fatal error happened.
 	if (SSL_get_shutdown(ssl) & SSL_RECEIVED_SHUTDOWN)

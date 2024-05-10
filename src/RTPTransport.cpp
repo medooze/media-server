@@ -1226,3 +1226,8 @@ void RTPTransport::onDTLSShutdown()
 {
 	
 }
+
+ void RTPTransport::onDataChannelCreated(const datachannels::DataChannel::shared& dataChannel)
+ {
+	
+ }
