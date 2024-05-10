@@ -7,7 +7,7 @@ on:
       - 'lester/*'
 
 jobs:
-  publish-to-github-packages:
+  publish-npmjs:
     permissions:
       packages: write
       contents: read
