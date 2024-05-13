@@ -67,7 +67,14 @@ public:
 
 
 		//We need to create a new one
-		return VideoBuffer::shared(buffer);
+		return VideoBuffer::shared(buffer, [&](auto p) {
+			//Reset it
+			p->Reset();
+			//Ensure we are not overallocating
+			if (maxallocate && pool.size_approx() < maxallocate)
+				//Enqueue it back
+				pool.enqueue(p);
+		});
 	}
 
 private:

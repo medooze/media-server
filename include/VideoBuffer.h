@@ -122,6 +122,18 @@ public:
 	DWORD   GetClockRate() const	{ return clockRate.value();		}
 	void    SetClockRate(DWORD clockRate) { this->clockRate = clockRate;	}
 
+	void	Reset()
+	{
+		isInterlaced = false;
+		colorSpace = ColorSpace::Unknown;
+		colorRange = ColorRange::Unknown;
+		pixelAspectRatio = { 1,1 };
+		ts.reset();
+		time.reset();
+		senderTime.reset();
+		clockRate.reset();
+	}
+
 private:
 	
 	Plane	planeY;
