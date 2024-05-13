@@ -221,9 +221,13 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 		{
 			//Convert
 			auto  videoFrame = std::static_pointer_cast<VideoFrame>(frame);
-			//Set width and height
-			width = videoFrame->GetWidth();
-			height = videoFrame->GetHeight();
+			
+			if (videoFrame->GetWidth() != 0 && videoFrame->GetHeight() != 0)
+			{
+				//Set width and height
+				width = videoFrame->GetWidth();
+				height = videoFrame->GetHeight();
+			}
 
 			// Increase bframes
 			accumulatorBFrames.Update(now.count(), videoFrame->IsBFrame() ? 1 : 0);
