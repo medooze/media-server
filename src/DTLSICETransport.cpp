@@ -3077,11 +3077,15 @@ void DTLSICETransport::CheckProbeTimer()
 
 void DTLSICETransport::SetDataChannelEndpointMode(datachannels::Endpoint::Mode mode)
 {
-	dtls.GetEndpointManager().SetEndpointMode(mode);
+	timeService.Sync([this, mode](...) {
+		dtls.GetEndpointManager().SetEndpointMode(mode);
+	});
 }
 
 void DTLSICETransport::CreateDataChannel(const std::string& label, const std::string& endpointIdentifier)
 {
-	dtls.GetEndpointManager().CreateDataChannel(label, endpointIdentifier);
+	timeService.Sync([this, label, endpointIdentifier](...) {
+		dtls.GetEndpointManager().CreateDataChannel(label, endpointIdentifier);
+	});
 }
 	

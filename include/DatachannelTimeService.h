@@ -63,7 +63,11 @@ public:
 	{
 		timeService.Async(func);
 	}
-	
+
+	void Sync(const std::function<void(std::chrono::milliseconds)>& func) override
+	{
+		timeService.Async(func);
+	}
 private:
 	::TimeService& timeService;
 };
