@@ -12,8 +12,7 @@ class H265Decoder : public VideoDecoder
 public:
 	H265Decoder();
 	virtual ~H265Decoder();
-	virtual int DecodePacket(const BYTE *in,DWORD len,int lost,int last);
-	virtual int Decode(const BYTE *in,DWORD len);
+	virtual int Decode(const VideoFrame::const_shared& frame);
 	virtual int GetWidth()		{ return ctx->width;		};
 	virtual int GetHeight()		{ return ctx->height;		};
 	virtual const VideoBuffer::shared& GetFrame() { return videoBuffer;		};
@@ -31,7 +30,6 @@ private:
 	AVFrame*	picture	= nullptr;
 	AVPacket*	packet	= nullptr;
 	
-	H265Depacketizer    depacketizer;
 	VideoBuffer::shared videoBuffer;
 	VideoBufferPool	    videoBufferPool;
 

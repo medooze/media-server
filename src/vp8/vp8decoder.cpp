@@ -47,37 +47,15 @@ VP8Decoder::~VP8Decoder()
 	vpx_codec_destroy(&decoder);
 }
 
-int VP8Decoder::DecodePacket(const BYTE* data, DWORD size, int lost, int last)
+int VP8Decoder::Decode(const VideoFrame::const_shared& frame)
 {
-	int ret = 1;
+	if (!frame)
+		return 0;
 
-	//Add to 
-	VideoFrame* frame = (VideoFrame*)depacketizer.AddPayload(data, size);
+	//Get video frame payload
+	const BYTE* data = frame->GetData();
+	DWORD size = frame->GetLength();
 
-	//Check last mark
-	if (last)
-	{
-		//If got frame
-		if (frame)
-		{
-			//Check key frame amrk
-			isKeyFrame = frame->IsIntra();
-			//Decode it
-			ret = Decode(frame->GetData(), frame->GetLength());
-		} else {
-			//Not key frame
-			isKeyFrame = false;
-		}
-		//Reset frame
-		depacketizer.ResetFrame();
-	}
-
-	//Return ok
-	return ret;
-}
-
-int VP8Decoder::Decode(const BYTE* data, DWORD size)
-{
 	//Not key frame
 	isKeyFrame = false;
 	

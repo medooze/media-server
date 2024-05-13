@@ -12,8 +12,7 @@ class VP9Decoder : public VideoDecoder
 public:
 	VP9Decoder();
 	virtual ~VP9Decoder();
-	virtual int DecodePacket(const BYTE* data, DWORD size, int lost, int last);
-	virtual int Decode(const BYTE* data, DWORD size);
+	virtual int Decode(const VideoFrame::const_shared& frame);
 	virtual int GetWidth() { return width; };
 	virtual int GetHeight() { return height; };
 	virtual const VideoBuffer::shared& GetFrame() { return videoBuffer; };
@@ -21,7 +20,6 @@ public:
 private:
 	vpx_codec_ctx_t  decoder;
 
-	VP9Depacketizer  depacketizer;
 	VideoBuffer::shared videoBuffer;
 	VideoBufferPool	    videoBufferPool;
 

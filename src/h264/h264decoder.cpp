@@ -7,7 +7,6 @@
 
 H264Decoder::H264Decoder() :
 	VideoDecoder(VideoCodec::H264),
-	depacketizer(true),
 	videoBufferPool(2,4)
 {
 	//Open libavcodec
@@ -46,31 +45,15 @@ H264Decoder::~H264Decoder()
 		av_frame_free(&picture);
 }
 
-int H264Decoder::DecodePacket(const BYTE* data, DWORD size, int lost, int last)
+int H264Decoder::Decode(const VideoFrame::const_shared& frame)
 {
+	if (!frame)
+		return 0;
 
-	int ret = 1;
+	//Get video frame payload
+	const BYTE* data  = frame->GetData();
+	DWORD size = frame->GetLength();
 
-	//Add to 
-	VideoFrame* frame = (VideoFrame*)depacketizer.AddPayload(data, size);
-
-	//Check last mark
-	if (last)
-	{
-		//If got frame
-		if (frame)
-			//Decode it
-			ret = Decode(frame->GetData(), frame->GetLength());
-		//Reset frame
-		depacketizer.ResetFrame();
-	}
-
-	//Return ok
-	return ret;
-}
-
-int H264Decoder::Decode(const BYTE *data,DWORD size)
-{
 	//Set data
 	packet->data = (uint8_t*)data;
 	packet->size = size;
@@ -78,7 +61,7 @@ int H264Decoder::Decode(const BYTE *data,DWORD size)
 	//Decode it
 	if (avcodec_send_packet(ctx, packet) < 0)
 		//Error
-		return Error("-H264Decoder::Decode() Error decoding H264 packet\n");
+		return Warning("-H264Decoder::Decode() Error decoding H264 packet\n");
 
 	//Check if we got any decoded frame
 	if (avcodec_receive_frame(ctx, picture) <0)
