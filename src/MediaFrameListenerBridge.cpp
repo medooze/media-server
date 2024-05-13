@@ -228,6 +228,12 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 				width = videoFrame->GetWidth();
 				height = videoFrame->GetHeight();
 			}
+			else if (width != 0 && height != 0)
+			{
+				// Set as per previous width/height
+				videoFrame->SetWidth(width);
+				videoFrame->SetHeight(height);
+			}
 
 			// Increase bframes
 			accumulatorBFrames.Update(now.count(), videoFrame->IsBFrame() ? 1 : 0);
@@ -400,6 +406,17 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 
 				//TODO: move out of here
 				VideoLayerSelector::GetLayerIds(packet);
+				
+				// Set frame resolution if needed
+				if ((video->GetWidth() == 0 || video->GetHeight() == 0) && 
+				    (packet->GetWidth() != 0 && packet->GetHeight() != 0))
+				{
+					video->SetWidth(packet->GetWidth());
+					video->SetHeight(packet->GetHeight());
+					
+					width = video->GetWidth();
+					height = video->GetHeight();
+				}
 
 				//Get media frame target bitrate or hint
 				auto targetBitrate = video->GetTargetBitrate() ? video->GetTargetBitrate() : targetBitrateHint;
