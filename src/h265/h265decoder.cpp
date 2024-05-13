@@ -7,7 +7,6 @@
 
 H265Decoder::H265Decoder() :
 	VideoDecoder(VideoCodec::H265),
-	depacketizer(true),
 	videoBufferPool(2,4)
 {
 	//Open libavcodec
@@ -48,32 +47,16 @@ H265Decoder::~H265Decoder()
 		av_frame_free(&picture);
 }
 
-int H265Decoder::DecodePacket(const BYTE* data, DWORD size, int lost, int last)
+
+int H265Decoder::Decode(const VideoFrame::const_shared& frame)
 {
-	//UltraDebug("-H265Decoder::DecodePacket() | packet size: %d, last: %d\n", size, last);
+	if (!frame)
+		return 0;
 
-	int ret = 1;
+	//Get video frame payload
+	const BYTE* data = frame->GetData();
+	DWORD size = frame->GetLength();
 
-	//Add to 
-	VideoFrame* frame = (VideoFrame*)depacketizer.AddPayload(data, size);
-
-	//Check last mark
-	if (last)
-	{
-		//If got frame
-		if (frame)
-			//Decode it
-			ret = Decode(frame->GetData(), frame->GetLength());
-		//Reset frame
-		depacketizer.ResetFrame();
-	}
-
-	//Return ok
-	return ret;
-}
-
-int H265Decoder::Decode(const BYTE *data,DWORD size)
-{
 	//Set data
 	packet->data = (uint8_t*)data;
 	packet->size = size;

@@ -40,41 +40,15 @@ VP9Decoder::~VP9Decoder()
 
 }
 
-/***********************
-* DecodePacket
-*	Decodifica un packete
-************************/
-int VP9Decoder::DecodePacket(const BYTE *data,DWORD size,int lost,int last)
+int VP9Decoder::Decode(const VideoFrame::const_shared& frame)
 {
-	int ret = 1;
-	
-	//Add to 
-	VideoFrame* frame = (VideoFrame*)depacketizer.AddPayload(data, size);
-	
-	//Check last mark
-	if (last)
-	{
-		//If got frame
-		if (frame)
-		{
-			//Check key frame amrk
-			isKeyFrame = frame->IsIntra();
-			//Decode it
-			ret = Decode(frame->GetData(),frame->GetLength());
-		} else {
-			//Not key frame
-			isKeyFrame = false;
-		}
-		//Reset frame
-		depacketizer.ResetFrame();
-	}
+	if (!frame)
+		return 0;
 
-	//Return ok
-	return ret;
-}
+	//Get video frame payload
+	const BYTE* data = frame->GetData();
+	DWORD size = frame->GetLength();
 
-int VP9Decoder::Decode(const BYTE * data,DWORD size)
-{
 	//Decode
 	vpx_codec_err_t err = vpx_codec_decode(&decoder, data,size,NULL,0);
 	
