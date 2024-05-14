@@ -4,6 +4,9 @@
 #include <netinet/in.h>
 #include "log.h"
 #include "h264decoder.h"
+extern "C" {
+#include <libavutil/opt.h>
+}
 
 H264Decoder::H264Decoder() :
 	VideoDecoder(VideoCodec::H264),
@@ -21,6 +24,11 @@ H264Decoder::H264Decoder() :
 
 	//Get codec context
 	ctx = avcodec_alloc_context3(codec);
+
+	//Use not annex b
+	av_opt_set_int(ctx, "is_avc", 1, AV_OPT_SEARCH_CHILDREN);
+	av_opt_set_int(ctx, "nal_length_size", 4, AV_OPT_SEARCH_CHILDREN);
+
 	//Create packet
 	packet = av_packet_alloc();
 	//Allocate frame
