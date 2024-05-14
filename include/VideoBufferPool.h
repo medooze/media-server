@@ -8,7 +8,6 @@ class VideoBufferPool
 {
 public:
 	VideoBufferPool(std::size_t preallocate, std::size_t maxallocate) :
-		pool(new moodycamel::ConcurrentQueue<VideoBuffer*>()),
 		preallocate(preallocate),
 		maxallocate(maxallocate)
 	{
@@ -86,7 +85,7 @@ public:
 	}
 
 private:
-	std::shared_ptr<moodycamel::ConcurrentQueue<VideoBuffer*>> pool;
+	std::shared_ptr<moodycamel::ConcurrentQueue<VideoBuffer*>> pool = std::make_shared<moodycamel::ConcurrentQueue<VideoBuffer*>>();
 
 	std::size_t preallocate = 0;
 	std::size_t maxallocate = 0;
