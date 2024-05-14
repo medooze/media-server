@@ -80,8 +80,6 @@ void VideoDecoderWorker::RemoveVideoOutput(VideoOutput* output)
 
 int VideoDecoderWorker::Decode()
 {
-	bool		waitIntra = false;
-
 	Log(">VideoDecoderWorker::Decode()\n");
 
 	//Mientras tengamos que capturar
@@ -114,16 +112,8 @@ int VideoDecoderWorker::Decode()
 		
 		//Decode packet
 		if(!videoDecoder->Decode(videoFrame))
-			//Waiting for refresh
-			waitIntra = true;
-
-		//Check if we got the waiting refresh
-		if (waitIntra && videoDecoder->IsKeyFrame())
-		{
-			Debug("-VideoDecoderWorker::Decode() | Got Intra\n");
-			//Do not wait anymore
-			waitIntra = false;
-		}
+			//Skip
+			continue;
 			
 		//Get picture
 		const VideoBuffer::shared& videoBuffer = videoDecoder->GetFrame();
