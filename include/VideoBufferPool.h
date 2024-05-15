@@ -67,7 +67,7 @@ public:
 
 
 		//We need to create a new one
-		return VideoBuffer::shared(buffer, [=, weak = std::weak_ptr<moodycamel::ConcurrentQueue<VideoBuffer*>>(pool) ](auto p) {
+		return VideoBuffer::shared(buffer, [maxallocate = maxallocate, weak = std::weak_ptr<moodycamel::ConcurrentQueue<VideoBuffer*>>(pool) ](auto p) {
 			//Try to get a reference to the pool, as it may have been already deleted
 			auto pool = weak.lock();
 			//Ensure we are not overallocating
