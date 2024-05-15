@@ -79,7 +79,7 @@ public:
 				pool->enqueue(p);
 			} else {
 				//Delete it
-				delete (buffer);
+				delete (p);
 			}
 		});
 	}
