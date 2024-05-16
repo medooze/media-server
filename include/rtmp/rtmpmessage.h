@@ -30,7 +30,7 @@ class RTMPMediaFrame
 public:
 	enum Type {Audio=8,Video=9};
 public:
-	virtual ~RTMPMediaFrame();
+	virtual ~RTMPMediaFrame() = default;
 	virtual RTMPMediaFrame* Clone() = 0;
 
 	Type  GetType()		{ return type;		}
@@ -42,12 +42,102 @@ public:
 
 	virtual DWORD Parse(BYTE *data,DWORD size);
 	virtual DWORD Serialize(BYTE* buffer,DWORD size);
-	virtual DWORD GetSize()	{ return bufferSize+1; 	}
+	virtual DWORD GetSize()	{ return buffer->GetSize() + 1; }
 
-	virtual BYTE*	GetMediaData()			{ return buffer;		}
-	virtual DWORD	GetMediaSize()			{ return mediaSize;		}
-	virtual DWORD	GetMaxMediaSize()		{ return bufferSize;		}
-	virtual void	SetMediaSize(DWORD mediaSize)	{ this->mediaSize = mediaSize;	}
+	virtual DWORD	GetMediaSize()			{ return buffer->GetSize();			}
+	virtual DWORD	GetMaxMediaSize()		{ return buffer->GetCapacity();			}
+	virtual void	SetMediaSize(DWORD mediaSize)	{ AdquireBuffer(); buffer->SetSize(mediaSize);	}
+
+	
+	const BYTE*	GetMediaData() const		{ return buffer->GetData();			}
+	//BYTE*		GetMediaData()			{ AdquireBuffer(); return buffer->GetData();	}
+	const Buffer::shared& GetBuffer() const		{ return buffer; }
+
+	void DisableSharedBuffer() { disableSharedBuffer = true; }
+
+	void ResetData(DWORD size = 0)
+	{
+		//Create new owned buffer
+		buffer = std::make_shared<Buffer>(size);
+		//Owned buffer
+		ownedBuffer = true;
+	}
+
+	void Alloc(DWORD size)
+	{
+		//Adquire buffer
+		AdquireBuffer();
+		//Allocate mem
+		buffer->Alloc(size);
+	}
+
+	void SetMedia(const BYTE* data, DWORD size)
+	{
+		//Adquire buffer
+		AdquireBuffer();
+		//Allocate mem
+		buffer->SetData(data, size);
+	}
+
+	DWORD AppendMedia(const BYTE* data, DWORD size)
+	{
+		//Get current pos
+		DWORD pos = buffer->GetSize();
+		//Adquire buffer
+		AdquireBuffer();
+		//Append data
+		buffer->AppendData(data, size);
+		//Return previous pos
+		return pos;
+	}
+
+	DWORD AppendMedia(BufferReader& reader, DWORD size)
+	{
+		//Get current pos
+		DWORD pos = buffer->GetSize();
+		//Adquire buffer
+		AdquireBuffer();
+		//Append data
+		buffer->AppendData(reader.GetData(size), size);
+		//Return previous pos
+		return pos;
+	}
+
+	DWORD AppendMedia(const Buffer& append)
+	{
+		//Get current pos
+		DWORD pos = buffer->GetSize();
+		//Adquire buffer
+		AdquireBuffer();
+		//Append data
+		buffer->AppendData(append.GetData(), append.GetSize());
+		//Return previous pos
+		return pos;
+	}
+
+	DWORD AppendMedia(BufferReader& reader)
+	{
+		return AppendMedia(reader, reader.GetLeft());
+	}
+
+	void PrependMedia(const BYTE* data, DWORD size)
+	{
+		//Store old buffer
+		auto old = buffer;
+		//New one
+		buffer = std::make_shared<Buffer>(old->GetSize() + size);
+		//We own the payload
+		ownedBuffer = true;
+		//Append data
+		buffer->AppendData(data, size);
+		//Append data
+		buffer->AppendData(old->GetData(), old->GetSize());
+	}
+
+	void PrependMedia(const Buffer& buffer)
+	{
+		PrependMedia(buffer.GetData(), buffer.GetSize());
+	}
 
 	virtual void	Dump();
 
@@ -64,16 +154,35 @@ public:
 	}
 
 protected:
-	RTMPMediaFrame(Type type,QWORD timestamp,BYTE *data,DWORD size);
-	RTMPMediaFrame(Type type,QWORD timestamp,DWORD size);
+	RTMPMediaFrame(Type type, QWORD timestamp, DWORD size);
+	RTMPMediaFrame(Type type, QWORD timestamp, const Buffer::shared& buffer);
 
+	bool AdquireBuffer()
+	{
+		if (!buffer) return false;
+		
+		//If already owning
+		if (ownedBuffer)
+			//Do nothing
+			return true;
+
+		//Clone payload
+		buffer = std::make_shared<Buffer>(buffer->GetData(), buffer->GetSize());
+		//We own the payload
+		ownedBuffer = true;
+		
+		return true;
+	}
+
+	Type type;
 	QWORD timestamp = 0;
 	QWORD senderTime = 0;
-	BYTE *buffer = nullptr;
-	DWORD bufferSize = 0;
-	DWORD mediaSize = 0;
-	DWORD pos = 0;
-	Type type = Type(0);
+
+	Buffer::shared	buffer;
+	bool ownedBuffer = false;
+	bool disableSharedBuffer = false;
+
+	
 };
 
 class RTMPVideoFrame : public RTMPMediaFrame
@@ -96,9 +205,10 @@ public:
 		HEVC = FourCcToUint32("hvc1")
 	};
 public:
-	RTMPVideoFrame(QWORD timestamp,DWORD size);
+	RTMPVideoFrame(QWORD timestamp, DWORD size);
+	RTMPVideoFrame(QWORD timestamp, const Buffer::shared& buffer);
 	RTMPVideoFrame(QWORD timestamp, const AVCDescriptor &desc);
-	virtual ~RTMPVideoFrame();
+	virtual ~RTMPVideoFrame() = default;
 	virtual RTMPMediaFrame* Clone();
 
 	virtual DWORD	Parse(BYTE *data,DWORD size);
@@ -177,9 +287,10 @@ public:
 	enum SoundRate		{RATE5khz=0,RATE11khz=1,RATE22khz=2,RATE44khz=3};
 	enum AACPacketType	{AACSequenceHeader = 0, AACRaw = 1};
 public:
-	RTMPAudioFrame(QWORD timestamp,DWORD size);
-	RTMPAudioFrame(QWORD timestamp,const AACSpecificConfig &config);
-	virtual ~RTMPAudioFrame();
+	RTMPAudioFrame(QWORD timestamp, DWORD size);
+	RTMPAudioFrame(QWORD timestamp, const Buffer::shared& buffer);
+	RTMPAudioFrame(QWORD timestamp, const AACSpecificConfig &config);
+	virtual ~RTMPAudioFrame() = default;
 	virtual RTMPMediaFrame* Clone();
 
 	virtual DWORD	Parse(BYTE *data,DWORD size);

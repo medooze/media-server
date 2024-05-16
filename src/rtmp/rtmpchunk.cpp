@@ -223,7 +223,7 @@ DWORD RTMPChunkOutputStream::GetNextChunk(BYTE *data,DWORD size,DWORD maxChunkSi
 		message->Serialize(msgBuffer,msgLength);
 
 		//Select wich header
-		if (!msgStreamId || msgStreamId!=streamId || msgTimestamp<timestamp)
+		if (!msgStreamId || msgStreamId!=streamId || !timestamp || msgTimestamp<timestamp)
 		{
 			//Create chunk header type 0 (last check is for backward time on Seek)
 			RTMPChunkType0* type0 = new RTMPChunkType0();

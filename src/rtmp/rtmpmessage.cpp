@@ -1,4 +1,5 @@
 #include "tools.h"
+#include "Buffer.h"
 #include "rtmp/rtmpmessage.h"
 #include "avcdescriptor.h"
 #include <stdexcept>
@@ -844,89 +845,61 @@ void RTMPMetaData::Dump()
  * MediaFrame
  *
  ************************/
-RTMPMediaFrame::RTMPMediaFrame(Type type,QWORD timestamp,BYTE *data,DWORD size)
+
+RTMPMediaFrame::RTMPMediaFrame(Type type, QWORD timestamp, const Buffer::shared& buffer) :
+	type(type),
+	timestamp(timestamp),
+	buffer(buffer)
 {
-	this->type = type;
-	this->timestamp = timestamp;
-	this->bufferSize = size;
-	//Create buffer with padding
-	this->buffer = (BYTE*)malloc(bufferSize+16);
-	//Copy
-	memcpy(buffer,data,bufferSize);
-	//Set media size
-	mediaSize = size;
-	//Set position to the begining
-	this->pos = 0;
-	//Empty padding
-	memset(buffer+bufferSize,0,16);
+	//Not owned buffer
+	ownedBuffer = false;
 }
 
-RTMPMediaFrame::RTMPMediaFrame(Type type,QWORD timestamp,DWORD size)
+RTMPMediaFrame::RTMPMediaFrame(Type type, QWORD timestamp,DWORD size) :
+	type(type),
+	timestamp(timestamp)
 {
-	this->type = type;
-	this->timestamp = timestamp;
-	this->bufferSize = size;
-	//Create buffer with padding
-	this->buffer = (BYTE*)malloc(bufferSize+16);
-	this->pos = 0;
-	this->mediaSize = 0;
-	//Empty padding
-	memset(buffer+bufferSize,0,16);
+	ResetData(size);
 }
 
 DWORD RTMPMediaFrame::Parse(BYTE *data,DWORD size)
 {
-	DWORD len = size;
-	//Check size
-	if (pos+len>bufferSize)
-	{
-		//Error message
-		char msg[1024];
-		//Print it
-		sprintf(msg,"Not enought size for parsing frame [bufferSize:%d,pos:%d,size:%d]\n",bufferSize,pos,size);
-		//Error
-		throw std::runtime_error(msg);
-	}
-	//ONly copy what we can eat
-	memcpy(buffer+pos,data,len);
-	//Increase pos
-	pos+=len;
-	//Retrun copied data
-	return len;
+	//Append to buffer
+	AppendMedia(data, size);
+	//Return consumed data length
+	return size;
 }
 
 DWORD RTMPMediaFrame::Serialize(BYTE* data,DWORD size)
 {
 	//Check if enought space
-	if (size<bufferSize)
+	if (size < buffer->GetSize())
 		//Failed
 		return 0;
 
 	//Copy data
-	memcpy(data,buffer,mediaSize);
+	memcpy(data, buffer->GetData(), buffer->GetSize());
 	
 	//Exit
-	return mediaSize;
+	return buffer->GetSize();
 }
 
-RTMPMediaFrame::~RTMPMediaFrame()
-{
-	//Check buffer alwasy
-	if (buffer)
-		//Delete
-		free(buffer);
-}
 
 void RTMPMediaFrame::Dump()
 {
 	//Dump
-	Debug("[MediaFrame type:%d timestamp:%lld bufferSize:%d mediaSize:%d]\n",type,timestamp,bufferSize,mediaSize);
-	if(bufferSize>8)
-		::Dump(buffer,8);
+	Debug("[MediaFrame type:%d timestamp:%lld mediaSize:%zu]\n",type,timestamp, buffer->GetSize());
+	if(buffer->GetSize() >8)
+		::Dump(buffer->GetData(), 8);
 	else
-		::Dump(buffer,bufferSize);
+		::Dump(buffer->GetData(), buffer->GetSize());
 	Debug("[/MediaFrame]\n");
 }
+
+RTMPVideoFrame::RTMPVideoFrame(QWORD timestamp, const Buffer::shared& buffer) : RTMPMediaFrame(Video, timestamp, buffer)
+{
+}
+
 
 RTMPVideoFrame::RTMPVideoFrame(QWORD timestamp,DWORD size) : RTMPMediaFrame(Video,timestamp,size)
 {
@@ -943,11 +916,9 @@ RTMPVideoFrame::RTMPVideoFrame(QWORD timestamp,const AVCDescriptor &desc) : RTMP
 	//Set no delay
 	SetAVCTS(0);
 	//Serialize
-	mediaSize = desc.Serialize(buffer,bufferSize);
-}
-
-RTMPVideoFrame::~RTMPVideoFrame()
-{
+	DWORD size = desc.Serialize(buffer->GetData(), buffer->GetCapacity());
+	//Set new length
+	buffer->SetSize(size);
 }
 
 void RTMPVideoFrame::Dump()
@@ -955,7 +926,7 @@ void RTMPVideoFrame::Dump()
 	//Dump
 	if (!isExtended)
 	{
-		Debug("[VideoFrame extended: false codec: %d frameType:%d timestamp:%lld bufferSize:%d mediaSize:%d]\n",codec,frameType,timestamp,bufferSize,mediaSize);
+		Debug("[VideoFrame extended: false codec: %d frameType:%d timestamp:%lld mediaSize:%zu]\n",codec,frameType,timestamp,buffer->GetSize());
 		
 		if (codec==AVC)
 			Debug("\t[AVC header 0x%.2x 0x%.2x 0x%.2x 0x%.2x /]\n",extraData[0],extraData[1],extraData[2],extraData[3]);
@@ -964,23 +935,23 @@ void RTMPVideoFrame::Dump()
 			//Paser AVCDesc
 			AVCDescriptor desc;
 			//Parse it
-			desc.Parse(buffer,bufferSize);
+			desc.Parse(buffer->GetData(), buffer->GetSize());
 			//Dump it
 			desc.Dump();
 
-		} else if(bufferSize>16) {
+		} else if(buffer->GetSize() > 16) {
 			//Dump first 16 bytes only
-			::Dump(buffer,16);
+			::Dump(buffer->GetData(), 16);
 		} else {
-			::Dump(buffer,bufferSize);
+			::Dump(buffer->GetData(), buffer->GetSize());
 		}
 		Debug("[/VideoFrame]\n");
 	}
 	else
 	{
 		auto codecStr = Uint32ToFourCcStr(codecEx);
-		Debug("[VideoFrame extended: true codec: %s frameType:%d timestamp:%lld bufferSize:%d mediaSize:%d packetType: %d]\n",
-			codecStr.c_str(),frameType,timestamp,bufferSize,mediaSize,packetType);
+		Debug("[VideoFrame extended: true codec: %s frameType:%d timestamp:%lld mediaSize:%zu packetType: %d]\n",
+			codecStr.c_str(),frameType,timestamp,buffer->GetSize(), packetType);
 		
 		if (codecEx==VideoCodecEx::HEVC && packetType == CodedFrames)
 		{
@@ -992,15 +963,15 @@ void RTMPVideoFrame::Dump()
 			//Paser HEVCDescriptor
 			HEVCDescriptor desc;
 			//Parse it
-			desc.Parse(buffer,bufferSize);
+			desc.Parse(buffer->GetData(), buffer->GetSize());
 			//Dump it
 			desc.Dump();
 
-		} else if(bufferSize>16) {
+		} else if(buffer->GetSize() > 16) {
 			//Dump first 16 bytes only
-			::Dump(buffer,16);
+			::Dump(buffer->GetData(), 16);
 		} else {
-			::Dump(buffer,bufferSize);
+			::Dump(buffer->GetData(), buffer->GetSize());
 		}
 		
 		Debug("[/VideoFrame]\n");
@@ -1018,152 +989,150 @@ DWORD RTMPVideoFrame::Parse(BYTE *data,DWORD size)
 		
 		switch (parsingState)
 		{
-		case ParsingState::VideoTagHeader:
-			isExtended = buffer[0] & 0x80;
-			if (!isExtended)
-			{
-				//Parse type
-				codec = VideoCodec(buffer[0] & 0x0f);
-				
-				if (codec == AVC)
+			case ParsingState::VideoTagHeader:
+				isExtended = buffer[0] & 0x80;
+				if (!isExtended)
 				{
-					bufferWritter = std::make_unique<BufferWritter>(extraData, 4);
+					//Parse type
+					codec = VideoCodec(buffer[0] & 0x0f);
+				
+					if (codec == AVC)
+					{
+						bufferWritter = std::make_unique<BufferWritter>(extraData, 4);
 					
-					parsingState = ParsingState::VideoTagAvcExtra;
+						parsingState = ParsingState::VideoTagAvcExtra;
+					}
+					else
+					{
+						parsingState = ParsingState::VideoTagData;
+					}
 				}
 				else
 				{
-					parsingState = ParsingState::VideoTagData;
+					packetType = PacketType(buffer[0] & 0x0f);
+				
+					bufferWritter = std::make_unique<BufferWritter>(fourCc, 4);
+				
+					parsingState = ParsingState::VideoTagHeaderFourCc;
 				}
-			}
-			else
-			{
-				packetType = PacketType(buffer[0] & 0x0f);
-				
-				bufferWritter = std::make_unique<BufferWritter>(fourCc, 4);
-				
-				parsingState = ParsingState::VideoTagHeaderFourCc;
-			}
 			
-			// The frame type wouldn't be valid when packet type is PacketTypeMetaData for extended header.
-			// But it wouldn't be used anyway.
-			frameType = (FrameType) ((buffer[0] & 0x70) >> 4);
+				// The frame type wouldn't be valid when packet type is PacketTypeMetaData for extended header.
+				// But it wouldn't be used anyway.
+				frameType = (FrameType) ((buffer[0] & 0x70) >> 4);
 			
-			usedBytes = 1;
-			break;
+				usedBytes = 1;
+				break;
 			
-		case ParsingState::VideoTagAvcExtra:
-			if (!bufferWritter)
-			{
-				// This should never happen
-				Error("No buffer writter\n");
-				return size;	
-			}
-			
-			usedBytes = std::min(uint32_t(bufferWritter->GetLeft()), bufferLen);
-			(void)bufferWritter->Set({buffer, usedBytes});
-			
-			if (bufferWritter->GetLeft() == 0)
-			{
-				bufferWritter.reset();
-				parsingState = ParsingState::VideoTagData;
-			}
-			break;
-			
-		case ParsingState::VideoTagHeaderFourCc:
-			if (!bufferWritter)
-			{
-				// This should never happen
-				Error("No buffer writter\n");
-				return size;	
-			}
-			
-			usedBytes = std::min(uint32_t(bufferWritter->GetLeft()), bufferLen);
-			(void)bufferWritter->Set({buffer, usedBytes});
-			
-			if (bufferWritter->GetLeft() == 0)
-			{
-				codecEx = VideoCodecEx(FourCcToUint32(fourCc));
-				bufferWritter.reset();				
-				parsingState = ParsingState::VideoTagBody;
-			}
-			break;
-			
-		case ParsingState::VideoTagBody:
-			if (packetType == Metadata)
-			{
-				// colorInfo AMF encoded meta data. Ignore for now.
-				
-				// Frame type is not valid for meta data
-				frameType = FrameType(0);
-				return size;
-			}
-			else if (packetType == SequenceEnd)
-			{
-				// signals end of sequence
-				return size;
-			}
-			
-			if (codecEx == HEVC)
-			{
-				if (packetType == SequenceStart)
+			case ParsingState::VideoTagAvcExtra:
+				if (!bufferWritter)
 				{
-					// HEVCDecoderConfigurationRecord
-					parsingState = ParsingState::VideoTagData;
+					// This should never happen
+					Error("No buffer writter\n");
+					return size;	
 				}
-				else if (packetType == CodedFrames)
+			
+				usedBytes = std::min(uint32_t(bufferWritter->GetLeft()), bufferLen);
+				(void)bufferWritter->Set({buffer, usedBytes});
+			
+				if (bufferWritter->GetLeft() == 0)
 				{
-					bufferWritter = std::make_unique<BufferWritter>(extraData, 3);
-					
-					parsingState = ParsingState::VideoTagHevcCompositionTime;
-				}
-				else if (packetType == CodedFramesX)
-				{					
-					parsingState = ParsingState::VideoTagData;					
-				}
-			}
-			else if (codecEx == AV1)
-			{
-				if (packetType == SequenceStart || packetType == CodedFrames)
+					bufferWritter.reset();
 					parsingState = ParsingState::VideoTagData;
-				else
+				}
+				break;
+			
+			case ParsingState::VideoTagHeaderFourCc:
+				if (!bufferWritter)
+				{
+					// This should never happen
+					Error("No buffer writter\n");
+					return size;	
+				}
+			
+				usedBytes = std::min(uint32_t(bufferWritter->GetLeft()), bufferLen);
+				(void)bufferWritter->Set({buffer, usedBytes});
+			
+				if (bufferWritter->GetLeft() == 0)
+				{
+					codecEx = VideoCodecEx(FourCcToUint32(fourCc));
+					bufferWritter.reset();				
+					parsingState = ParsingState::VideoTagBody;
+				}
+				break;
+			
+			case ParsingState::VideoTagBody:
+				if (packetType == Metadata)
+				{
+					// colorInfo AMF encoded meta data. Ignore for now.
+				
+					// Frame type is not valid for meta data
+					frameType = FrameType(0);
 					return size;
-			}
-			else
-			{
-				// Not implemented for other codecs
+				}
+				else if (packetType == SequenceEnd)
+				{
+					// signals end of sequence
+					return size;
+				}
+			
+				if (codecEx == HEVC)
+				{
+					if (packetType == SequenceStart)
+					{
+						// HEVCDecoderConfigurationRecord
+						parsingState = ParsingState::VideoTagData;
+					}
+					else if (packetType == CodedFrames)
+					{
+						bufferWritter = std::make_unique<BufferWritter>(extraData, 3);
+					
+						parsingState = ParsingState::VideoTagHevcCompositionTime;
+					}
+					else if (packetType == CodedFramesX)
+					{					
+						parsingState = ParsingState::VideoTagData;					
+					}
+				}
+				else if (codecEx == AV1)
+				{
+					if (packetType == SequenceStart || packetType == CodedFrames)
+						parsingState = ParsingState::VideoTagData;
+					else
+						return size;
+				}
+				else
+				{
+					// Not implemented for other codecs
+					return size;
+				}
+			
+				break;
+			
+			case ParsingState::VideoTagHevcCompositionTime:
+				if (!bufferWritter)
+				{
+					// This should never happen
+					Error("No buffer writter\n");
+					return size;	
+				}
+			
+				usedBytes = std::min(uint32_t(bufferWritter->GetLeft()), bufferLen);
+				(void)bufferWritter->Set({buffer, usedBytes});
+			
+				if (bufferWritter->GetLeft() == 0)
+				{	
+					bufferWritter.reset();				
+					parsingState = ParsingState::VideoTagData;
+				}
+				break;
+			
+			case ParsingState::VideoTagData:
+				usedBytes = RTMPMediaFrame::Parse(buffer,bufferLen);
+			
+				return usedBytes + (buffer - data);
+			default:
+				Error("Invalid ParsingState: %d", parsingState);
 				return size;
-			}
-			
-			break;
-			
-		case ParsingState::VideoTagHevcCompositionTime:
-			if (!bufferWritter)
-			{
-				// This should never happen
-				Error("No buffer writter\n");
-				return size;	
-			}
-			
-			usedBytes = std::min(uint32_t(bufferWritter->GetLeft()), bufferLen);
-			(void)bufferWritter->Set({buffer, usedBytes});
-			
-			if (bufferWritter->GetLeft() == 0)
-			{	
-				bufferWritter.reset();				
-				parsingState = ParsingState::VideoTagData;
-			}
-			break;
-			
-		case ParsingState::VideoTagData:
-			usedBytes = RTMPMediaFrame::Parse(buffer,bufferLen);
-			//Increase media data
-			mediaSize += usedBytes;
-			
-			return usedBytes + (buffer - data);
-		default:
-			Error("Invalid ParsingState: %d", parsingState);
-			return size;
 		}
 		
 		buffer	  += usedBytes;
@@ -1187,7 +1156,7 @@ DWORD RTMPVideoFrame::Serialize(BYTE* data,DWORD size)
 			extra = 4;
 
 		//Check if enought space
-		if (size<mediaSize+1+extra)
+		if (size < buffer->GetSize() + 1 + extra)
 			//Failed
 			return 0;
 
@@ -1204,10 +1173,10 @@ DWORD RTMPVideoFrame::Serialize(BYTE* data,DWORD size)
 		}
 		
 		//Copy media
-		memcpy(data+1+extra,buffer,mediaSize);
+		memcpy(data+1+extra, buffer->GetData(), buffer->GetSize());
 
 		//Exit
-		return mediaSize+1+extra;
+		return buffer->GetSize() + 1 + extra;
 	}
 	else
 	{	
@@ -1223,7 +1192,7 @@ DWORD RTMPVideoFrame::Serialize(BYTE* data,DWORD size)
 			data += 3;
 		}
 		
-		memcpy(data, buffer, mediaSize);
+		memcpy(data, buffer->GetData(), buffer->GetSize());
 		
 		return GetSize();
 	}
@@ -1235,9 +1204,9 @@ DWORD RTMPVideoFrame::GetSize()
 	{
 		//If it is not AVC
 		if (codec!=AVC)
-			return mediaSize+1;
+			return buffer->GetSize() + 1;
 		else
-			return mediaSize+1+4;
+			return buffer->GetSize() + 1 + 4;
 	}
 	else
 	{	
@@ -1249,43 +1218,37 @@ DWORD RTMPVideoFrame::GetSize()
 			sz += 3;	// The composition offset
 		}		
 		
-		sz += mediaSize;		
+		sz += buffer->GetSize();
 		return sz;
 	}
 }
 
-DWORD RTMPVideoFrame::SetVideoFrame(BYTE* data,DWORD size)
+DWORD RTMPVideoFrame::SetVideoFrame(BYTE* data, DWORD size)
 {
-	//Check if enought space
-	if (size>bufferSize)
-		//Failed
-		return 0;
-
-	//Copy media
-	memcpy(buffer,data,size);
-
-	//Set media sie
-	mediaSize = size;
-
-	//Exit
-	return mediaSize;
+	//Set payload
+	buffer->SetData(data, size);
+	//Done
+	return size;
 }
 
 
 RTMPMediaFrame *RTMPVideoFrame::Clone()
 {
-	RTMPVideoFrame *frame =  new RTMPVideoFrame(timestamp,mediaSize);
+	RTMPVideoFrame *frame =  new RTMPVideoFrame(timestamp, buffer);
 	//Set values
 	frame->SetVideoCodec(codec);
 	frame->SetFrameType(frameType);
-	frame->SetVideoFrame(buffer,mediaSize);
 	//Copy extra data
 	memcpy(frame->extraData,extraData,4);
 	memcpy(frame->fourCc,fourCc,4);
-	
+	//Copy v1 properties
 	frame->codecEx = codecEx;
 	frame->packetType = packetType;
 	frame->isExtended = isExtended;
+	//If we have disabled the shared buffer for this frame
+	if (disableSharedBuffer)
+		//Copy data
+		frame->AdquireBuffer();
 	//Return frame
 	return frame;
 }
@@ -1300,7 +1263,15 @@ RTMPAudioFrame::RTMPAudioFrame(QWORD timestamp,const AACSpecificConfig &config) 
 	//Set type
 	SetAACPacketType(AACSequenceHeader);
 	//Set data
-	mediaSize = config.Serialize(buffer,bufferSize);
+	DWORD mediaSize = config.Serialize(buffer->GetData(), buffer->GetCapacity());
+	//Update length
+	buffer->SetSize(mediaSize);
+}
+
+RTMPAudioFrame::RTMPAudioFrame(QWORD timestamp, const Buffer::shared& buffer) : RTMPMediaFrame(Audio, timestamp, buffer)
+{
+	//No header for parsing
+	headerPos = 0;
 }
 
 RTMPAudioFrame::RTMPAudioFrame(QWORD timestamp,DWORD size) : RTMPMediaFrame(Audio,timestamp,size)
@@ -1309,18 +1280,14 @@ RTMPAudioFrame::RTMPAudioFrame(QWORD timestamp,DWORD size) : RTMPMediaFrame(Audi
 	headerPos = 0;
 }
 
-RTMPAudioFrame::~RTMPAudioFrame()
-{
-}
-
 void RTMPAudioFrame::Dump()
 {
 	//Dump
-	Debug("[AudioFrame type:%d codec:%d rate:%d sample16bits:%d stereo:%d timestamp:%lld bufferSize:%d mediaSize:%d]\n",type,codec,rate,sample16bits,stereo,timestamp,bufferSize,mediaSize);
-	if(bufferSize>8)
-		::Dump(buffer,8);
+	Debug("[AudioFrame type:%d codec:%d rate:%d sample16bits:%d stereo:%d timestamp:%lld mediaSize:%zu]\n",type,codec,rate,sample16bits,stereo,timestamp,buffer->GetSize());
+	if(buffer->GetSize()>8)
+		::Dump(buffer->GetData(), 8);
 	else
-		::Dump(buffer,bufferSize);
+		::Dump(buffer->GetData(), buffer->GetSize());
 	Debug("[/AudioFrame]\n");
 }
 
@@ -1366,8 +1333,6 @@ DWORD RTMPAudioFrame::Parse(BYTE *data,DWORD size)
 	}
 	//Parse the rest
 	DWORD len = RTMPMediaFrame::Parse(chunk,chunkLen);
-	//Increase media data
-	mediaSize += len;
 
 	//Return parsed data
 	return len+(chunk-data);
@@ -1391,49 +1356,43 @@ DWORD RTMPAudioFrame::Serialize(BYTE* data,DWORD size)
 		data[pos++] = extraData[0];
 
 	//Copy media
-	memcpy(data+pos,buffer,mediaSize);
+	memcpy(data+pos,buffer->GetData(), buffer->GetSize());
 
 	//Exit
-	return mediaSize+pos;
+	return buffer->GetSize()+pos;
 }
 DWORD RTMPAudioFrame::GetSize()
 {
 	//Check if extradata is used
 	if (codec!=AAC)
 		//Check if enought space
-		return mediaSize+1;
+		return buffer->GetSize() + 1;
 	else
 		//Check if enought space
-		return mediaSize+2;
+		return buffer->GetSize() + 2;
 }
 
 DWORD RTMPAudioFrame::SetAudioFrame(const BYTE* data,DWORD size)
 {
-	//Check if enought space
-	if (size>bufferSize)
-		//Failed
-		return 0;
-
-	//Copy media
-	memcpy(buffer,data,size);
-
-	//Set media sie
-	mediaSize = size;
-
-	//Exit
-	return mediaSize;
+	//Set payload
+	buffer->SetData(data,size);
+	//Done
+	return size;
 }
 
 RTMPMediaFrame *RTMPAudioFrame::Clone()
 {
-	RTMPAudioFrame *frame =  new RTMPAudioFrame(timestamp,mediaSize);
+	RTMPAudioFrame *frame =  new RTMPAudioFrame(timestamp, buffer);
 	//Set values
 	frame->SetAudioCodec(codec);
 	frame->SetSoundRate(rate);
 	frame->SetSamples16Bits(sample16bits);
 	frame->SetStereo(stereo);
 	frame->SetAACPacketType(GetAACPacketType());
-	frame->SetAudioFrame(buffer,mediaSize);
+	//If we have disabled the shared buffer for this frame
+	if (disableSharedBuffer)
+		//Copy data
+		frame->AdquireBuffer();
 	//Return frame
 	return frame;
 }

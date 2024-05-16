@@ -192,16 +192,12 @@ std::unique_ptr<VideoFrame> RTMPH26xPacketizer<DescClass, SPSClass, PPSClass, co
 
 	if (videoFrame->GetSenderTime())
 	{
+		               
 		//Add unregistered SEI message NAL
-		uint8_t sei[28] = { 0x06, 0x05, 0x18, 0x00, 0x11, 0x22, 0x33, 0x44,
-				    0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc,
-				    0xdd, 0xee, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00,
+		uint8_t sei[28] = { 0x06, 0x05, 0x18, 0x9a, 0x21, 0xf3, 0xbe, 0x31,
+				    0xf0, 0x4b, 0x78, 0xb0, 0xbe, 0xc7, 0xf7, 0xdb,
+				    0xb9, 0x72, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00,
 				    0x00, 0x00, 0x00, 0x80 };
-		//Set size
-		setN(nalUnitLength, nalHeader, 0, sizeof(sei));
-
-		//Append nal size header
-		frame->AppendMedia(nalHeader, nalUnitLength);
 
 		//Set timestamp
 		set8(sei, 19, videoFrame->GetSenderTime());
@@ -209,6 +205,12 @@ std::unique_ptr<VideoFrame> RTMPH26xPacketizer<DescClass, SPSClass, PPSClass, co
 		//Escape nal
 		uint8_t seiEscaped[sizeof(sei)*2];
 		auto seiSize = NalEscapeRbsp(seiEscaped, sizeof(seiEscaped), sei, sizeof(sei)).value();
+
+		//Set size after escaping
+		setN(nalUnitLength, nalHeader, 0, seiSize);
+
+		//Append nal size header
+		frame->AppendMedia(nalHeader, nalUnitLength);
 
 		//Append nal
 		auto ini = frame->AppendMedia(seiEscaped, seiSize);
@@ -218,7 +220,7 @@ std::unique_ptr<VideoFrame> RTMPH26xPacketizer<DescClass, SPSClass, PPSClass, co
 	}
 
 	//Malloc
-	BYTE *data = videoFrame->GetMediaData();
+	const BYTE *data = videoFrame->GetMediaData();
 	//Get size
 	DWORD size = videoFrame->GetMediaSize();
 	
@@ -240,7 +242,7 @@ std::unique_ptr<VideoFrame> RTMPH26xPacketizer<DescClass, SPSClass, PPSClass, co
 		}
 
 		//Get NAL start
-		BYTE* nal = data + nalUnitLength;
+		const BYTE* nal = data + nalUnitLength;
 
 		//Skip fill data nalus for h264
 		if (codec == VideoCodec::H264 && nal[0] == 12)
@@ -256,7 +258,7 @@ std::unique_ptr<VideoFrame> RTMPH26xPacketizer<DescClass, SPSClass, PPSClass, co
 		{
 			if constexpr (std::is_same_v<SPSClass, H264SeqParameterSet>)
 			{
-				BYTE nalUnitType = nal[0] & 0x1f;
+				const BYTE nalUnitType = nal[0] & 0x1f;
 				if (nalUnitType == 1 || nalUnitType == 2 || nalUnitType == 5)
 				{
 					H264SliceHeader header;
@@ -428,7 +430,7 @@ std::unique_ptr<VideoFrame> RTMPAv1Packetizer::AddFrame(RTMPVideoFrame* videoFra
 		frame->SetIntra(true);
 	}
 
-	BYTE *data = videoFrame->GetMediaData();
+	const BYTE *data = videoFrame->GetMediaData();
 	//Get size
 	DWORD size = videoFrame->GetMediaSize();
 	
@@ -597,6 +599,61 @@ std::unique_ptr<AudioFrame> RTMPAACPacketizer::AddFrame(RTMPAudioFrame* audioFra
 	//Add aac frame in single rtp 
 	auto ini = frame->AppendMedia(audioFrame->GetMediaData(),audioFrame->GetMediaSize());
 	frame->AddRtpPacket(ini,audioFrame->GetMediaSize(),nullptr,0);
+
+	//DOne
+	return frame;
+}
+
+
+std::unique_ptr<AudioFrame> RTMPG711APacketizer::AddFrame(RTMPAudioFrame* audioFrame)
+{
+	//UltraDebug("-RTMPG711APacketizer::AddFrame() [size:%u,aac:%d,codec:%d]\n",audioFrame->GetMediaSize(),audioFrame->GetAACPacketType(),audioFrame->GetAudioCodec());
+
+	//Create frame
+	auto frame = std::make_unique<AudioFrame>(AudioCodec::PCMA);
+
+	//Set time in ms
+	frame->SetTime(audioFrame->GetTimestamp());
+
+	//Calculate timestamp in sample rate clock
+	uint64_t timestamp = audioFrame->GetTimestamp() *8;
+
+	//Set info from AAC config
+	frame->SetClockRate(8000);
+	frame->SetNumChannels(1);
+	frame->SetTimestamp(timestamp);
+	frame->SetDuration(160);
+	
+	//Add frame in single rtp 
+	auto ini = frame->AppendMedia(audioFrame->GetMediaData(), audioFrame->GetMediaSize());
+	frame->AddRtpPacket(ini, audioFrame->GetMediaSize(), nullptr, 0);
+
+	//DOne
+	return frame;
+}
+
+std::unique_ptr<AudioFrame> RTMPG711UPacketizer::AddFrame(RTMPAudioFrame* audioFrame)
+{
+	//UltraDebug("-RTMPG711UPacketizer::AddFrame() [size:%u,aac:%d,codec:%d]\n",audioFrame->GetMediaSize(),audioFrame->GetAACPacketType(),audioFrame->GetAudioCodec());
+
+	//Create frame
+	auto frame = std::make_unique<AudioFrame>(AudioCodec::PCMU);
+
+	//Set time in ms
+	frame->SetTime(audioFrame->GetTimestamp());
+
+	//Calculate timestamp in sample rate clock
+	uint64_t timestamp = audioFrame->GetTimestamp() * 8;
+
+	//Set info from AAC config
+	frame->SetClockRate(8000);
+	frame->SetNumChannels(1);
+	frame->SetTimestamp(timestamp);
+	frame->SetDuration(160);
+
+	//Add frame in single rtp 
+	auto ini = frame->AppendMedia(audioFrame->GetMediaData(), audioFrame->GetMediaSize());
+	frame->AddRtpPacket(ini, audioFrame->GetMediaSize(), nullptr, 0);
 
 	//DOne
 	return frame;

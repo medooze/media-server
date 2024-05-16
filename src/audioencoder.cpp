@@ -73,7 +73,7 @@ int AudioEncoderWorker::Init(AudioInput *input)
 	//Y aun no estamos mandando nada
 	encodingAudio=0;
 
-	Log("<AudioEncoderWorker::Init()n");
+	Log("<AudioEncoderWorker::Init()\n");
 
 	return 1;
 }

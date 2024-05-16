@@ -57,5 +57,18 @@ private:
         bool gotConfig = false;
 };
 
+
+class RTMPG711APacketizer
+{
+public:
+	std::unique_ptr<AudioFrame> AddFrame(RTMPAudioFrame* videoFrame);
+};
+
+class RTMPG711UPacketizer
+{
+public:
+	std::unique_ptr<AudioFrame> AddFrame(RTMPAudioFrame* videoFrame);
+};
+
 #endif /* RTMPPACKETIZER_H */
 
