@@ -2,7 +2,8 @@
 #define FRAMEDISPATCHCOORDINATOR_H
 
 #include "FrameDelayCalculator.h"
-#include "MediaFrameListenerBridge.h"
+
+class MediaFrameListenerBridge;
 
 class FrameDispatchCoordinator
 {

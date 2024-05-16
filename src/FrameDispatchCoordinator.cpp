@@ -1,3 +1,4 @@
+#include "MediaFrameListenerBridge.h"
 #include "FrameDispatchCoordinator.h"
 
 FrameDispatchCoordinator::FrameDispatchCoordinator(int aUpdateRefsPacketLateThresholdMs, 
