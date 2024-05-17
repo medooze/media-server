@@ -9,11 +9,9 @@
 #define	H265_H
 #include "config.h"
 #include "math.h"
-#include "bitstream.h"
+#include "descriptor.h"
 #include "log.h"
 #include <array>
-
-#define	CHECK(r) if(r.Error()) return false;
 
 /**
  * Table 7-1 – NAL unit	type codes and NAL unit	type classes in	T-REC-H.265-201802
@@ -190,18 +188,20 @@ const std::array<BYTE, 4> hevc_sub_height_c{
 	1, 2, 1, 1
 };
 
-struct HEVCWindow {
+class HEVCWindow : public Descriptor<HEVCWindow>
+{
+public:
 	DWORD left_offset =	0;
 	DWORD right_offset = 0;
 	DWORD top_offset = 0;
 	DWORD bottom_offset	= 0;
 
-	void Dump(const std::string name) const
+	void DumpFields(const char* prefix) const
 	{
-		Debug("\t%s.left_offset = %d\n", name.c_str(), left_offset);
-		Debug("\t%s.right_offset = %d\n", name.c_str(), right_offset);
-		Debug("\t%s.top_offset = %d\n", name.c_str(), top_offset);
-		Debug("\t%s.bottom_offset = %d\n", name.c_str(), bottom_offset);
+		DUMP_FIELD(left_offset, "%d");
+		DUMP_FIELD(right_offset, "%d");
+		DUMP_FIELD(top_offset, "%d");
+		DUMP_FIELD(bottom_offset, "%d");
 	}
 };
 
@@ -211,7 +211,7 @@ bool H265IsIntra(BYTE nalUnitType);
 
 typedef std::array<bool, HEVCParams::PROFILE_COMPATIBILITY_FLAGS_COUNT> H265ProfileCompatibilityFlags;
 
-class GenericProfileTierLevel
+class GenericProfileTierLevel : public Descriptor<GenericProfileTierLevel>
 {
 public:
 	GenericProfileTierLevel()
@@ -229,32 +229,32 @@ public:
 	bool GetTierFlag() const { return tier_flag; }
 	BYTE GetLevelIdc() const { return level_idc; }
 	const H265ProfileCompatibilityFlags& GetProfileCompatibilityFlags() const { return profile_compatibility_flag; }
-	QWORD GetConstraintIndacatorFlags() const {return constraing_indicator_flags; }
+	QWORD GetConstraintIndacatorFlags() const {return constraint_indicator_flags; }
 	// setter
 	void SetLevelIdc(BYTE in) { level_idc = in; }
 
-	void Dump(const std::string& name) const
+	void DumpFields(const char* prefix) const
 	{
-		Debug("\t %s.profile_space = %d\n", name.c_str(), profile_space);
-		Debug("\t %s.tier_flag = %d\n", name.c_str(), tier_flag);
-		Debug("\t %s.profile_idc = %d\n", name.c_str(), profile_idc);
-		Debug("\t %s.progressive_source_flag = %d\n", name.c_str(), progressive_source_flag);
-		Debug("\t %s.interlaced_source_flag		= %d\n", name.c_str(), interlaced_source_flag);
-		Debug("\t %s.non_packed_constraint_flag	= %d\n", name.c_str(), non_packed_constraint_flag);
-		Debug("\t %s.frame_only_constraint_flag	= %d\n", name.c_str(), frame_only_constraint_flag);
-		Debug("\t %s.max_12bit_constraint_flag		= %d\n", name.c_str(), max_12bit_constraint_flag		);
-		Debug("\t %s.max_10bit_constraint_flag		= %d\n", name.c_str(), max_10bit_constraint_flag		);
-		Debug("\t %s.max_8bit_constraint_flag		= %d\n", name.c_str(), max_8bit_constraint_flag		);
-		Debug("\t %s.max_422chroma_constraint_flag	= %d\n", name.c_str(), max_422chroma_constraint_flag	);
-		Debug("\t %s.max_420chroma_constraint_flag	= %d\n", name.c_str(), max_420chroma_constraint_flag	);
-		Debug("\t %s.max_monochrome_constraint_flag	= %d\n", name.c_str(), max_monochrome_constraint_flag	);
-		Debug("\t %s.intra_constraint_flag			= %d\n", name.c_str(), intra_constraint_flag			);
-		Debug("\t %s.one_picture_only_constraint_flag	= %d\n", name.c_str(), one_picture_only_constraint_flag	);
-		Debug("\t %s.lower_bit_rate_constraint_flag		= %d\n", name.c_str(), lower_bit_rate_constraint_flag		);
-		Debug("\t %s.max_14bit_constraint_flag			= %d\n", name.c_str(), max_14bit_constraint_flag			);
-		Debug("\t %s.inbld_flag							= %d\n", name.c_str(), inbld_flag							);
-		Debug("\t %s.constraint_indicator_flags			= 0x%lu\n", name.c_str(), constraing_indicator_flags);
-		Debug("\t %s.level_idc							= %d\n", name.c_str(), level_idc);
+		DUMP_FIELD(profile_space, "%d");
+		DUMP_FIELD(tier_flag, "%d");
+		DUMP_FIELD(profile_idc, "%d");
+		DUMP_FIELD(progressive_source_flag, "%d");
+		DUMP_FIELD(interlaced_source_flag, "%d");
+		DUMP_FIELD(non_packed_constraint_flag, "%d");
+		DUMP_FIELD(frame_only_constraint_flag, "%d");
+		DUMP_FIELD(max_12bit_constraint_flag, "%d");
+		DUMP_FIELD(max_10bit_constraint_flag, "%d");
+		DUMP_FIELD(max_8bit_constraint_flag, "%d");
+		DUMP_FIELD(max_422chroma_constraint_flag, "%d");
+		DUMP_FIELD(max_420chroma_constraint_flag, "%d");
+		DUMP_FIELD(max_monochrome_constraint_flag, "%d");
+		DUMP_FIELD(intra_constraint_flag, "%d");
+		DUMP_FIELD(one_picture_only_constraint_flag, "%d");
+		DUMP_FIELD(lower_bit_rate_constraint_flag, "%d");
+		DUMP_FIELD(max_14bit_constraint_flag, "%d");
+		DUMP_FIELD(inbld_flag, "%d");
+		DUMP_FIELD(constraint_indicator_flags, "%#x");
+		DUMP_FIELD(level_idc, "%d");
 	}
 
 private:
@@ -263,7 +263,7 @@ private:
 	bool tier_flag = 0;
 	BYTE profile_idc = HEVCParams::PROFILE_MAIN; // 1
 	H265ProfileCompatibilityFlags profile_compatibility_flag; // [PROFILE_MAIN/1]: true, others are false
-	QWORD constraing_indicator_flags = 0; // 6B, 48 bits
+	QWORD constraint_indicator_flags = 0; // 6B, 48 bits
 	bool progressive_source_flag	= true	;
 	bool interlaced_source_flag		= false ;
 	bool non_packed_constraint_flag	= true	;
@@ -284,7 +284,7 @@ private:
 	BYTE level_idc = 93	; // level 3.1
 };
 
-class H265ProfileTierLevel
+class H265ProfileTierLevel : public Descriptor<H265ProfileTierLevel>
 {
 public:
 	H265ProfileTierLevel();
@@ -296,21 +296,21 @@ public:
 	const H265ProfileCompatibilityFlags& GetGeneralProfileCompatibilityFlags() const { return general_profile_tier_level.GetProfileCompatibilityFlags(); }
 	bool GetGeneralConstraintIndicatorFlags() const { return general_profile_tier_level.GetConstraintIndacatorFlags(); }
 
-	void Dump() const
+	void DumpFields(const char* prefix) const
 	{
-		general_profile_tier_level.Dump("general_profile_tier_level");
+		DUMP_SUBOBJECT(general_profile_tier_level);
 		BYTE sub_layer_profile_present_flag_log = 0;
 		for (size_t i = 0; i < sub_layer_profile_present_flag.size(); ++i)
 		{
 			sub_layer_profile_present_flag_log += (sub_layer_profile_present_flag[i] << i);
 		}
-		Debug("\tsub_profile_level_present_flag = 0x%02x\n", sub_layer_profile_present_flag_log);
+		Debug("%ssub_profile_level_present_flag = %#02x\n", prefix, sub_layer_profile_present_flag_log);
 		BYTE sub_layer_level_present_flag_log = 0;
 		for (size_t i = 0; i < sub_layer_level_present_flag.size(); ++i)
 		{
 			sub_layer_level_present_flag_log += (sub_layer_level_present_flag[i] << i);
 		}
-		Debug("\tsub_layer_level_present_flag = 0x%02x\n", sub_layer_level_present_flag_log);
+		Debug("%ssub_layer_level_present_flag = %#02x\n", prefix, sub_layer_level_present_flag_log);
 		for (size_t i = 0; i < sub_layer_profile_tier_level.size(); ++i)
 		{
 			const std::string sub_layer_ptl_log = "sub_layer_profile_tier_level[" + std::to_string(i) + "]";
@@ -325,20 +325,17 @@ private:
 	std::array<GenericProfileTierLevel, HEVCParams::MAX_SUB_LAYERS> sub_layer_profile_tier_level;
 };
 
-class H265VideoParameterSet
+struct H265VideoParameterSet : public Descriptor<H265VideoParameterSet>
 {
-public:
 	H265VideoParameterSet();
 	bool Decode(const BYTE*	buffer, DWORD bufferSize);
-	void Dump()	const
+	void DumpFields(const char* prefix) const
 	{
-		Debug("[H265VideoParameterSet\n");
-		Debug("\tvps_id = %d\n", vps_id);
-		Debug("\tvps_max_layers_minus1 = %d\n", vps_max_layers_minus1);
-		Debug("\tvps_max_sub_layers_minus1 = %d\n", vps_max_sub_layers_minus1);
-		Debug("\tvps_temporal_id = %d\n", vps_temporal_id_nesting_flag);
-		profile_tier_level.Dump();
-		Debug("H265VideoParameterSet/]\n");
+		DUMP_FIELD(vps_id, "%d");
+		DUMP_FIELD(vps_max_layers_minus1, "%d");
+		DUMP_FIELD(vps_max_sub_layers_minus1, "%d");
+		DUMP_FIELD(vps_temporal_id_nesting_flag, "%d");
+		DUMP_SUBOBJECT(profile_tier_level);
 	}
 
 	const H265ProfileTierLevel& GetProfileTierLevel() const {return profile_tier_level;}
@@ -351,7 +348,7 @@ private:
 	H265ProfileTierLevel profile_tier_level;
 };
 
-class H265SeqParameterSet
+class H265SeqParameterSet : public Descriptor<H265SeqParameterSet>
 {
 public:
 	bool Decode(const BYTE*	buffer, DWORD buffersize);
@@ -361,22 +358,20 @@ public:
 	
 	uint8_t GetLog2PicSizeInCtbsY() const { return log2PicSizeInCtbsY; }
 
-	void Dump()	const
+	void DumpFields(const char* prefix) const
 	{
-		Debug("[H265SeqParameterSet\n");
-		Debug("\tvps_id=%.2x\n", vps_id);
-		Debug("\tmax_sub_layers_minus1 = %d\n", max_sub_layers_minus1);
-		Debug("\text_or_max_sub_layers_minus1 = %d\n", ext_or_max_sub_layers_minus1);
-		Debug("\ttemporal_id_nesting_flag = %d\n", temporal_id_nesting_flag);
-		profile_tier_level.Dump();
-		Debug("\tpic_width_in_luma_samples = %d\n", pic_width_in_luma_samples);
-		Debug("\tpic_height_in_luma_samples = %d\n", pic_height_in_luma_samples);
-		Debug("\tconformance_window_flag = %d\n", conformance_window_flag );
-		pic_conf_win.Dump("pic_conf_win");
-		Debug("\tseq_parameter_set_id = %d\n", seq_parameter_set_id);
-		Debug("\tchroma_format_idc = %d\n", chroma_format_idc);
-		Debug("\tseparate_colour_plane_flag = %d\n", separate_colour_plane_flag);
-		Debug("H265SeqParameterSet/]\n");
+		DUMP_FIELD(vps_id, "%.2x");
+		DUMP_FIELD(max_sub_layers_minus1, "%d");
+		DUMP_FIELD(ext_or_max_sub_layers_minus1, "%d");
+		DUMP_FIELD(temporal_id_nesting_flag, "%d");
+		DUMP_SUBOBJECT(profile_tier_level);
+		DUMP_FIELD(pic_width_in_luma_samples, "%d");
+		DUMP_FIELD(pic_height_in_luma_samples, "%d");
+		DUMP_FIELD(conformance_window_flag, "%d");
+		DUMP_SUBOBJECT(pic_conf_win);
+		DUMP_FIELD(seq_parameter_set_id, "%d");
+		DUMP_FIELD(chroma_format_idc, "%d");
+		DUMP_FIELD(separate_colour_plane_flag, "%d");
 	}
 private:
 	BYTE			vps_id = 0;
@@ -406,23 +401,21 @@ private:
 	uint8_t 		log2PicSizeInCtbsY = 0;
 };
 
-class H265PictureParameterSet
+class H265PictureParameterSet : public Descriptor<H265PictureParameterSet>
 {
 public:
 	bool Decode(const BYTE*	buffer,DWORD bufferSize);
-	void Dump()	const
+	void DumpFields(const char* prefix) const
 	{
-		Debug("[H265PicParameterSet\n");
-		Debug("\tpps_id = %d\n", pps_id);
-		Debug("\tsps_id = %d\n", sps_id);
-		Debug("\tdependent_slice_segments_enabled_flag = %d\n",dependent_slice_segments_enabled_flag );
-		Debug("\toutput_flag_present_flag = %d\n",output_flag_present_flag);
-		Debug("\tnum_extra_slice_header_bits = %d\n",num_extra_slice_header_bits);
-		Debug("\tsign_data_hiding_flag = %d\n",sign_data_hiding_flag);
-		Debug("\tcabac_init_present_flag = %d\n",cabac_init_present_flag);
-		Debug("\tnum_ref_idx_l0_default_active_minus1 = %d\n",num_ref_idx_l0_default_active_minus1);
-		Debug("\tnum_ref_idx_l1_default_active_minus1 = %d\n",num_ref_idx_l1_default_active_minus1);
-		Debug("H265PicParameterSet/]\n");
+		DUMP_FIELD(pps_id, "%d");
+		DUMP_FIELD(sps_id, "%d");
+		DUMP_FIELD(dependent_slice_segments_enabled_flag, "%d");
+		DUMP_FIELD(output_flag_present_flag, "%d");
+		DUMP_FIELD(num_extra_slice_header_bits, "%d");
+		DUMP_FIELD(sign_data_hiding_flag, "%d");
+		DUMP_FIELD(cabac_init_present_flag, "%d");
+		DUMP_FIELD(num_ref_idx_l0_default_active_minus1, "%d");
+		DUMP_FIELD(num_ref_idx_l1_default_active_minus1, "%d");
 	}
 
 	uint8_t GetNumExtraSliceHeaderBits() const { return num_extra_slice_header_bits; }
@@ -442,7 +435,7 @@ private:
 };
 
 
-class H265SliceHeader
+class H265SliceHeader : public Descriptor<H265SliceHeader>
 {
 public:
 
@@ -489,6 +482,16 @@ public:
 	
 	uint32_t GetSliceType() const { return sliceType; }
 	
+	void DumpFields(const char* prefix) const
+	{
+		DUMP_FIELD(firstSliceSegmentInPicFlag, "%u");
+		DUMP_FIELD(noOutputOfPriorPicsFlag, "%u");
+		DUMP_FIELD(slicePpsId, "%u");
+		DUMP_FIELD(dependentSliceSegmentFlag, "%u");
+		DUMP_FIELD(sliceSegmentAddress, "%u");
+		DUMP_FIELD(sliceType, "%u");
+	}
+
 private:
 	uint8_t firstSliceSegmentInPicFlag = 0;
 	uint8_t noOutputOfPriorPicsFlag = 0;
@@ -498,7 +501,7 @@ private:
 	uint32_t sliceType = 0;
 };
 
-#undef CHECK
+#include "descriptor_undef.h"
 
 #endif	/* H265_H */
 
