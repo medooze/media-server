@@ -692,7 +692,7 @@ void DTLSConnection::onSSLInfo(int where, int ret)
 
 void DTLSConnection::OnTransportDataPending()
 {
-	//UltraDebug("-endpointManager::OnPendingData() [ssl:%p]\n",ssl);
+	//UltraDebug("-DTLSConnection::OnTransportDataPending() [ssl:%p]\n",ssl);
 
 	if (ssl)
 	{
@@ -701,7 +701,7 @@ void DTLSConnection::OnTransportDataPending()
 		//Read from endpointManager transport
 		while((len = endpointManager.ReadPacket(msg,MTU)))
 		{
-			UltraDebug("-endpointManager::OnPendingData() [len:%lu]\n",len);
+			UltraDebug("-DTLSConnection::OnTransportDataPending() [len:%lu]\n",len);
 			DumpAsC(msg,len);
 			//Write it to the ssl context
 			SSL_write(ssl,msg,len);
@@ -868,7 +868,7 @@ int DTLSConnection::Write(const BYTE *buffer, DWORD size)
 			return 0;
 	}
 	//DumpAsC(msg,len);
-	Debug("-endpointManager of len %d\n",len);
+	Debug("- Sctp of len %d\n",len);
 	if (len) DumpAsC(msg,len);
 	//Pass data to endpointManager
 	if (len && !endpointManager.WritePacket(msg,len))
