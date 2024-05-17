@@ -13,19 +13,14 @@ public:
 	VP8Decoder();
 	virtual ~VP8Decoder();
 	virtual int Decode(const VideoFrame::const_shared& frame);
-	virtual int GetWidth()	{return width;};
-	virtual int GetHeight()	{return height;};
-	virtual const VideoBuffer::shared& GetFrame() { return videoBuffer; };
-	virtual bool  IsKeyFrame();
+	virtual VideoBuffer::shared GetFrame();
 private:
 	vpx_codec_ctx_t  decoder;
 
-	VideoBuffer::shared videoBuffer;
 	VideoBufferPool	    videoBufferPool;
 
-	DWORD		width = 0;
-	DWORD		height = 0;
-	bool		isKeyFrame = false;
+	uint32_t count = 0;
+	CircularBuffer<VideoFrame::const_shared, uint32_t, 64> videoFrames;
 };
 #endif	/* VP8DECODER_H */
 

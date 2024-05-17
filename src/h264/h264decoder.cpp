@@ -55,35 +55,63 @@ H264Decoder::~H264Decoder()
 
 int H264Decoder::Decode(const VideoFrame::const_shared& frame)
 {
-	if (!frame)
-		return 0;
-
 	//Get video frame payload
-	const BYTE* data  = frame->GetData();
-	DWORD size = frame->GetLength();
+	packet->data = frame ? (uint8_t*)frame->GetData() : nullptr;
+	packet->size = frame ? frame->GetLength() : 0;
 
-	//Set data
-	packet->data = (uint8_t*)data;
-	packet->size = size;
+	//Store frame num, it will be copied to the decoded avpacket
+	ctx->reordered_opaque = count++;
+
+	//Store frame reference
+	videoFrames.Set(ctx->reordered_opaque, frame);
 
 	//Decode it
 	if (avcodec_send_packet(ctx, packet) < 0)
 		//Error
 		return Warning("-H264Decoder::Decode() Error decoding H264 packet\n");
 
+	//OK
+	return 1;
+}
+
+VideoBuffer::shared H264Decoder::GetFrame()
+{
+
 	//Check if we got any decoded frame
 	if (avcodec_receive_frame(ctx, picture) <0)
+	{	
 		//No frame decoded yet
-		return 1;
+		return {};
+	}
 	
 	if(ctx->width==0 || ctx->height==0)
-		return Error("-H264Decoder::Decode() | Wrong dimmensions [%d,%d]\n",ctx->width,ctx->height);
+	{
+		//Warning
+		Warning("-H264Decoder::Decode() | Wrong dimmensions [%d,%d]\n", ctx->width, ctx->height);
+		//No frame
+		return {};
+	}
+
+	//Get original video Frame
+	auto ref = videoFrames.Get(picture->reordered_opaque);
+
+	//If not found
+	if (!ref)
+	{
+		//Warning
+		Warning("-H264Decoder::Decode() | Could not found reference frame [reordered:%llu,current:%llu]\n", picture->reordered_opaque, count);
+		//No frame
+		return {};
+	}
 
 	//Set new size in pool
 	videoBufferPool.SetSize(ctx->width, ctx->height);
 
 	//Get new frame
-	videoBuffer = videoBufferPool.allocate();
+	auto videoBuffer = videoBufferPool.allocate();
+
+	//Copy timing info
+	CopyTimingInfo(*ref, videoBuffer);
 
 	//Set interlaced flags
 	videoBuffer->SetInterlaced(picture->interlaced_frame);
@@ -162,6 +190,6 @@ int H264Decoder::Decode(const VideoFrame::const_shared& frame)
 	}
 
 	//OK
-	return 1;
+	return videoBuffer;
 }
 

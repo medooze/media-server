@@ -50,16 +50,28 @@ H265Decoder::~H265Decoder()
 
 int H265Decoder::Decode(const VideoFrame::const_shared& frame)
 {
-	if (!frame)
-		return 0;
+	if (frame)
+	{
+		//Copy nal data
+		annexb.SetData(*frame->GetBuffer());
 
-	//Get video frame payload
-	const BYTE* data = frame->GetData();
-	DWORD size = frame->GetLength();
+		//Convert to annex b
+		NalToAnnexB(annexb);
 
-	//Set data
-	packet->data = (uint8_t*)data;
-	packet->size = size;
+		//Set data
+		packet->data = (uint8_t*)annexb.GetData();
+		packet->size = annexb.GetSize();
+	} else {
+		//No data
+		packet->data = nullptr;
+		packet->size = 0;
+	}
+
+	//Store frame num, it will be copied to the decoded avpacket
+	ctx->reordered_opaque = count++;
+
+	//Store frame reference
+	videoFrames.Set(ctx->reordered_opaque, frame);
 
 	//Decode it
 	if (avcodec_send_packet(ctx, packet) < 0)
@@ -68,22 +80,45 @@ int H265Decoder::Decode(const VideoFrame::const_shared& frame)
 		return Error("-H265Decoder::Decode() | Error decoding H265 packet\n");
 	}
 
+	//OK
+	return 1;
+}
+
+VideoBuffer::shared H265Decoder::GetFrame()
+{
+
 	//Check if we got any decoded frame
 	if (avcodec_receive_frame(ctx, picture) <0)
 	{
 		//No frame decoded yet
-		//UltraDebug("-H265Decoder::Decode() | got no frame out\n");
-		return 1;
+		return {};
 	}
 	
 	if(ctx->width==0 || ctx->height==0)
-		return Error("-H265Decoder::Decode() | Wrong dimmensions [%d,%d]\n",ctx->width,ctx->height);
+	{
+		//Warning
+		Warning("-H265Decoder::Decode() | Wrong dimmensions [%d,%d]\n",ctx->width,ctx->height);
+		//No frame
+		return {};
+	}
 
 	//Set new size in pool
 	videoBufferPool.SetSize(ctx->width, ctx->height);
 
+	//Get original video Frame
+	auto ref = videoFrames.Get(picture->reordered_opaque);
+
+	//If not found
+	if (!ref)
+	{
+		//Warning
+		Warning("-H264Decoder::Decode() | Could not found reference frame [reordered:%llu,current:%llu]\n", picture->reordered_opaque, count);
+		//No frame
+		return {};
+	}
+
 	//Get new frame
-	videoBuffer = videoBufferPool.allocate();
+	auto videoBuffer = videoBufferPool.allocate();
 
 	//Set interlaced flags
 	videoBuffer->SetInterlaced(picture->interlaced_frame);
@@ -161,7 +196,12 @@ int H265Decoder::Decode(const VideoFrame::const_shared& frame)
 		memcpy(v.GetData() + i * v.GetStride(), &picture->data[2][i * picture->linesize[2]], v.GetWidth());
 	}
 
+	//Get original video Frame
+	if (auto ref = videoFrames.Get(picture->reordered_opaque))
+		//Copy timing info
+		CopyTimingInfo(*ref, videoBuffer);
+
 	//OK
-	return 1;
+	return videoBuffer;
 }
 

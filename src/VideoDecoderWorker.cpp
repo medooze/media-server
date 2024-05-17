@@ -116,71 +116,54 @@ int VideoDecoderWorker::Decode()
 			continue;
 			
 		//Get picture
-		const VideoBuffer::shared& videoBuffer = videoDecoder->GetFrame();
-
-		//If no frame received yet
-		if (!videoBuffer)
-			//Get next one
-			continue;
-
-		//Set frame times
-		//TODO: Move to the decoders so we can keep better track of b-frames
-		videoBuffer->SetTime(videoFrame->GetTime());
-		videoBuffer->SetTimestamp(videoFrame->GetTimestamp());
-		videoBuffer->SetClockRate(videoFrame->GetClockRate());
-		if (videoFrame->GetSenderTime())
-			videoBuffer->SetSenderTime(videoFrame->GetSenderTime());
-
-		//Check if we need to apply deinterlacing
-		if (videoBuffer->IsInterlaced())
+		while (auto videoBuffer = videoDecoder->GetFrame())
 		{
-			//If we didn't had a deinterlacer or frame dimensions have changed (TODO)
-			if (!deinterlacer)
+			//Check if we need to apply deinterlacing
+			if (videoBuffer->IsInterlaced())
 			{
-				//Create new deinterlacer
-				deinterlacer.reset(new Deinterlacer());
-
-				//Start it
-				if (!deinterlacer->Start(videoBuffer->GetWidth(), videoBuffer->GetHeight()))
+				//If we didn't had a deinterlacer or frame dimensions have changed (TODO)
+				if (!deinterlacer)
 				{
-					Error("-VideoDecoderWorker::Decode() | Could not start deinterlacer\n");
-					deinterlacer.reset();
-					continue;
+					//Create new deinterlacer
+					deinterlacer.reset(new Deinterlacer());
+
+					//Start it
+					if (!deinterlacer->Start(videoBuffer->GetWidth(), videoBuffer->GetHeight()))
+					{
+						Error("-VideoDecoderWorker::Decode() | Could not start deinterlacer\n");
+						deinterlacer.reset();
+						continue;
+					}
 				}
-			}
 
-			//Deinterlace decoded frame
-			deinterlacer->Process(videoBuffer);
+				//Deinterlace decoded frame
+				deinterlacer->Process(videoBuffer);
 
-			//Get any porcessed frame
-			while (auto deinterlaced = deinterlacer->GetNextFrame())
-			{
-				//Set frame times
-				//TODO: should this be done inside the interlacer?
-				deinterlaced->SetTime(videoBuffer->GetTime());
-				deinterlaced->SetTimestamp(videoBuffer->GetTimestamp());
-				deinterlaced->SetClockRate(videoBuffer->GetClockRate());
-				if (videoBuffer->HasSenderTime())
-					deinterlaced->SetSenderTime(videoBuffer->GetSenderTime());
-
-				//Check if we are muted
-				if (!muted)
+				//Get any porcessed frame
+				while (auto deinterlaced = deinterlacer->GetNextFrame())
 				{
-					//Sync
-					ScopedLock scope(mutex);
-					//For each output
-					for (auto output : outputs)
-						//Send it
-						output->NextFrame(deinterlaced);
+					//Set frame times
+					deinterlaced->SetTimingInfo(videoBuffer);
+
+					//Check if we are muted
+					if (!muted)
+					{
+						//Sync
+						ScopedLock scope(mutex);
+						//For each output
+						for (auto output : outputs)
+							//Send it
+							output->NextFrame(deinterlaced);
+					}
 				}
+			} else if (!muted) {
+				//Sync
+				ScopedLock scope(mutex);
+				//For each output
+				for (auto output : outputs)
+					//Send it
+					output->NextFrame(videoBuffer);
 			}
-		} else if (!muted) {
-			//Sync
-			ScopedLock scope(mutex);
-			//For each output
-			for (auto output : outputs)
-				//Send it
-				output->NextFrame(videoBuffer);
 		}
 	}
 

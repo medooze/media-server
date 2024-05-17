@@ -189,15 +189,24 @@ public:
 	VideoDecoder(VideoCodec::Type type) : type(type)
 	{};
 	virtual ~VideoDecoder() = default;
-
-	virtual int GetWidth()=0;
-	virtual int GetHeight()=0;
 	virtual int Decode(const VideoFrame::const_shared &frame) = 0;
-	virtual const VideoBuffer::shared& GetFrame()=0;
-	virtual bool  IsKeyFrame()=0;
+	virtual VideoBuffer::shared GetFrame() = 0;
 public:
 	VideoCodec::Type type;
 
 };
+
+inline void CopyTimingInfo(const VideoFrame::const_shared& videoFrame, VideoBuffer::shared& videoBuffer)
+{
+	if (!videoFrame)
+		return;
+
+	videoBuffer->SetTime(videoFrame->GetTime());
+	videoBuffer->SetTimestamp(videoFrame->GetTimestamp());
+	videoBuffer->SetClockRate(videoFrame->GetClockRate());
+
+	if (videoFrame->GetSenderTime())
+		videoBuffer->SetSenderTime(videoFrame->GetSenderTime());
+}
 
 #endif

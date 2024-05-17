@@ -13,25 +13,17 @@ public:
 	H265Decoder();
 	virtual ~H265Decoder();
 	virtual int Decode(const VideoFrame::const_shared& frame);
-	virtual int GetWidth()		{ return ctx->width;		};
-	virtual int GetHeight()		{ return ctx->height;		};
-	virtual const VideoBuffer::shared& GetFrame() { return videoBuffer;		};
-	virtual bool  IsKeyFrame()
-	{
-#if AV_FRAME_FLAG_KEY
-		return picture->flags & AV_FRAME_FLAG_KEY;
-#else
-		return picture->key_frame;
-#endif
-	}
+	virtual VideoBuffer::shared GetFrame();
 private:
 	const AVCodec*	codec	= nullptr;
 	AVCodecContext*	ctx	= nullptr;
 	AVFrame*	picture	= nullptr;
 	AVPacket*	packet	= nullptr;
 	
-	VideoBuffer::shared videoBuffer;
 	VideoBufferPool	    videoBufferPool;
 
+	Buffer annexb;
+	uint32_t count = 0;
+	CircularBuffer<VideoFrame::const_shared, uint32_t, 64> videoFrames;
 };
 #endif
