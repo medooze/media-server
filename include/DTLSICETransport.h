@@ -37,7 +37,8 @@ class DTLSICETransport :
 	public RTPSender,
 	public RTPReceiver,
 	public DTLSConnection::Listener,
-	public ICERemoteCandidate::Listener
+	public ICERemoteCandidate::Listener,
+	public datachannels::DataChannel::Listener
 {
 public:
 	using shared = std::shared_ptr<DTLSICETransport>;
@@ -59,7 +60,8 @@ public:
 		virtual void onICETimeout() = 0;
 		virtual void onDTLSStateChanged(const DTLSState) = 0;
 		virtual void onRemoteICECandidateActivated(const std::string& ip, uint16_t port, uint32_t priority) = 0;
-		virtual void onDataChannelCreated(const datachannels::DataChannel::shared& dataChannel) = 0;
+		virtual void onDataChannelOpen(const datachannels::DataChannel::shared& dataChannel) = 0;
+		virtual void onDataChannelClose(const datachannels::DataChannel::shared& dataChannel) = 0;
 		virtual ~Listener() = default;
 	};
 	
@@ -101,6 +103,9 @@ public:
 	
 	void SetDataChannelEndpointMode(datachannels::Endpoint::Mode mode);
 	void CreateDataChannel(const std::string& label, const std::string& endpointIdentifier);
+	
+	virtual void OnOpen(const datachannels::DataChannel::shared& dataChannel) override;
+	virtual void OnClosed(const datachannels::DataChannel::shared& dataChannel) override;
 	
 	void SetBandwidthProbing(bool probe);
 	void SetMaxProbingBitrate(DWORD bitrate);

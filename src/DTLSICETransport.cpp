@@ -104,7 +104,7 @@ void DTLSICETransport::onDTLSPendingData()
 
 void DTLSICETransport::onDataChannelCreated(const datachannels::DataChannel::shared& dataChannel)
 {
-	if (listener) listener->onDataChannelCreated(dataChannel);
+	dataChannel->SetListener(this);
 }
 
 
@@ -3088,4 +3088,15 @@ void DTLSICETransport::CreateDataChannel(const std::string& label, const std::st
 		dtls.GetEndpointManager().CreateDataChannel(label, endpointIdentifier);
 	});
 }
-	
+
+void DTLSICETransport::OnOpen(const datachannels::DataChannel::shared& dataChannel)
+{
+	if (listener)
+		listener->onDataChannelOpen(dataChannel);
+}
+
+void DTLSICETransport::OnClosed(const datachannels::DataChannel::shared& dataChannel)
+{
+	if (listener)
+		listener->onDataChannelClose(dataChannel);
+}
