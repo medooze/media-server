@@ -228,12 +228,6 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 				width = videoFrame->GetWidth();
 				height = videoFrame->GetHeight();
 			}
-			else if (width != 0 && height != 0)
-			{
-				// Set as per previous width/height
-				videoFrame->SetWidth(width);
-				videoFrame->SetHeight(height);
-			}
 
 			// Increase bframes
 			accumulatorBFrames.Update(now.count(), videoFrame->IsBFrame() ? 1 : 0);
@@ -411,9 +405,6 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 				if ((video->GetWidth() == 0 || video->GetHeight() == 0) && 
 				    (packet->GetWidth() != 0 && packet->GetHeight() != 0))
 				{
-					video->SetWidth(packet->GetWidth());
-					video->SetHeight(packet->GetHeight());
-					
 					width = video->GetWidth();
 					height = video->GetHeight();
 				}
