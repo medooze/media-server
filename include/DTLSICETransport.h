@@ -140,6 +140,11 @@ public:
 	
 	void SetListener(const Listener::shared& listener);
 	std::vector<std::shared_ptr<datachannels::DataChannel>> GetDataChannels() const;
+	
+	std::optional<std::string> GetEndpointIdentifier(datachannels::DataChannel& dataChannel) const
+	{
+		return dtls.GetEndpointManager().GetEndpointIdentifier(dataChannel);
+	}
 
 private:
 	void SetState(DTLSState state);
