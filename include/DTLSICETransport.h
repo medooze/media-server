@@ -139,6 +139,7 @@ public:
 	TimeService& GetTimeService() { return timeService; }
 	
 	void SetListener(const Listener::shared& listener);
+	std::vector<std::shared_ptr<datachannels::DataChannel>> GetDataChannels() const;
 
 private:
 	void SetState(DTLSState state);

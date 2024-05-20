@@ -132,6 +132,7 @@ public:
 	Setup GetSetup() const { return setup; }
 	
 	datachannels::impl::EndpointManager& GetEndpointManager() { return endpointManager; }
+	const datachannels::impl::EndpointManager& GetEndpointManager() const { return endpointManager; }
 	
 	int  Read(BYTE* data,DWORD size);
 	int  Write(const BYTE *buffer,DWORD size);

@@ -2967,6 +2967,16 @@ void DTLSICETransport::SetListener(const Listener::shared& listener)
 	});
 }
 
+std::vector<std::shared_ptr<datachannels::DataChannel>> DTLSICETransport::GetDataChannels() const
+{
+	std::vector<std::shared_ptr<datachannels::DataChannel>> dataChannels;
+	timeService.Sync([this,&dataChannels](auto now){
+		dataChannels = this->dtls.GetEndpointManager().GetDataChannels();
+	});
+	
+	return dataChannels;
+}
+
 void DTLSICETransport::SetState(DTLSState state)
 {
 	//Store state
