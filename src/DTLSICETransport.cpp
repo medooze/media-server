@@ -43,6 +43,7 @@
 #include <algorithm>
 
 constexpr auto IceTimeout			= 30000ms;
+constexpr auto EstimationTimeoutInterval	= 1000ms;
 constexpr auto ProbingInterval			= 5ms;
 constexpr auto MaxRTXOverhead			= 0.70f;
 constexpr auto TransportWideCCMaxPackets	= 100;
@@ -2476,6 +2477,9 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 								auto field = fb->GetField<RTCPRTPFeedback::TransportWideFeedbackMessageField>(i);
 								//Pass it to the estimator
 								senderSideBandwidthEstimator->ReceivedFeedback(field->feedbackPacketCount,field->packets,now);
+								//Reset estimation timeout
+								if (estimateTimeoutTimer)
+									estimateTimeoutTimer->Reschedule(EstimationTimeoutInterval, EstimationTimeoutInterval);
 							}
 						break;
 					case RTCPRTPFeedback::UNKNOWN:
@@ -2743,9 +2747,16 @@ void DTLSICETransport::Start()
 	probingTimer = timeService.CreateTimer([this](std::chrono::milliseconds ms) {
 		//Do probe
 		Probe(ms.count());
-		});
+	});
 	//Set name for debug
 	probingTimer->SetName("DTLSICETransport - bwe probe");
+	//Create bandwidth extimation timer
+	estimateTimeoutTimer = timeService.CreateTimer([this](std::chrono::milliseconds ms) {
+		//Calculate stimation now
+		senderSideBandwidthEstimator->EstimateBandwidthRate(ms.count());
+	});
+	//Set name for debug
+	estimateTimeoutTimer->SetName("DTLSICETransport - estimation timeout timer");
 	//Create sse timer
 	sseTimer = timeService.CreateTimer([this](std::chrono::milliseconds ms) {
 		//Send feedback now
@@ -2775,6 +2786,15 @@ void DTLSICETransport::Stop()
 		probingTimer->Cancel();
 		//Remove timer
 		probingTimer.reset();
+	}
+
+	//Check estimation timer
+	if (estimateTimeoutTimer)
+	{
+		//Stop probing
+		estimateTimeoutTimer->Cancel();
+		//Remove timer
+		estimateTimeoutTimer.reset();
 	}
 
 	//Check sse timer
@@ -2999,6 +3019,7 @@ void DTLSICETransport::DisableREMB(bool disabled)
 	Debug("-DTLSICETransport::DisableREMB() [disabled:%d]\n", disabled);
 	this->disableREMB = disabled;
 }
+
 void DTLSICETransport::SetMaxProbingBitrate(DWORD bitrate)
 {
 	//Log
@@ -3031,6 +3052,14 @@ void DTLSICETransport::EnableSenderSideEstimation(bool enabled)
 	Debug("-DTLSICETransport::EnableSenderSideEstimation() [enabled:%d]\n", enabled);
 	//Update flag
 	this->senderSideEstimationEnabled = enabled;
+
+	//If enabled
+	if (this->senderSideEstimationEnabled)
+		//Start estimation timer
+		estimateTimeoutTimer->Reschedule(EstimationTimeoutInterval, EstimationTimeoutInterval);
+	else
+		//Cancel it
+		estimateTimeoutTimer->Cancel();
 
 	//Check if we need to start the timer
 	CheckProbeTimer();

@@ -38,13 +38,13 @@ public:
 	uint32_t UpdateMinRTT(uint64_t when);
 	uint32_t GetMinRTT() const;
 	void SetListener(RemoteRateEstimator::Listener* listener) { this->listener = listener; }
-
+	void EstimateBandwidthRate(uint64_t when);
         
         int Dump(const char* filename);
 	int StopDump();
 private:
 	void SetState(ChangeState state);
-	void EstimateBandwidthRate(uint64_t when);
+	
 private:
 	class Stats
 	{
