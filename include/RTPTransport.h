@@ -82,7 +82,9 @@ public:
 	virtual void onDTLSPendingData() override;
 	virtual void onDTLSSetupError() override;
 	virtual void onDTLSShutdown() override;
-	virtual void onDataChannelCreated(const datachannels::DataChannel::shared& dataChannel) override;
+	virtual void onDataChannelOpen(const std::string& endpointIdentifier, const datachannels::DataChannel::shared& dataChannel) override;
+	virtual void onDataChannelClose(const std::string& endpointIdentifier, const datachannels::DataChannel::shared& dataChannel) override;
+	
 	
 	TimeService& GetTimeService() { return rtpLoop; }
 	

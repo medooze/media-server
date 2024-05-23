@@ -102,11 +102,6 @@ void DTLSICETransport::onDTLSPendingData()
 	//UltraDebug("<DTLSConnection::onDTLSPendingData() | no more data\n");
 }
 
-void DTLSICETransport::onDataChannelCreated(const datachannels::DataChannel::shared& dataChannel)
-{
-	dataChannel->SetListener(this);
-}
-
 
 int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* data,DWORD size)
 {
@@ -2967,9 +2962,9 @@ void DTLSICETransport::SetListener(const Listener::shared& listener)
 	});
 }
 
-std::vector<std::shared_ptr<datachannels::DataChannel>> DTLSICETransport::GetDataChannels() const
+std::unordered_map<std::string, std::vector<datachannels::DataChannel::shared>> DTLSICETransport::GetDataChannels() const
 {
-	std::vector<std::shared_ptr<datachannels::DataChannel>> dataChannels;
+	std::unordered_map<std::string, std::vector<datachannels::DataChannel::shared>>  dataChannels;
 	timeService.Sync([this,&dataChannels](auto now){
 		dataChannels = this->dtls.GetEndpointManager().GetDataChannels();
 	});
@@ -3099,14 +3094,14 @@ void DTLSICETransport::CreateDataChannel(const std::string& label, const std::st
 	});
 }
 
-void DTLSICETransport::OnOpen(const datachannels::DataChannel::shared& dataChannel)
+void DTLSICETransport::onDataChannelOpen(const std::string& endpoingIdentifier, const datachannels::DataChannel::shared& dataChannel)
 {
 	if (listener)
-		listener->onDataChannelOpen(dataChannel);
+		listener->onDataChannelOpen(endpoingIdentifier, dataChannel);
 }
 
-void DTLSICETransport::OnClosed(const datachannels::DataChannel::shared& dataChannel)
+void DTLSICETransport::onDataChannelClose(const std::string& endpoingIdentifier, const datachannels::DataChannel::shared& dataChannel)
 {
 	if (listener)
-		listener->onDataChannelClose(dataChannel);
+		listener->onDataChannelClose(endpoingIdentifier, dataChannel);
 }

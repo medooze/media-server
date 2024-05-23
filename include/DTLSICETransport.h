@@ -60,8 +60,8 @@ public:
 		virtual void onICETimeout() = 0;
 		virtual void onDTLSStateChanged(const DTLSState) = 0;
 		virtual void onRemoteICECandidateActivated(const std::string& ip, uint16_t port, uint32_t priority) = 0;
-		virtual void onDataChannelOpen(const datachannels::DataChannel::shared& dataChannel) = 0;
-		virtual void onDataChannelClose(const datachannels::DataChannel::shared& dataChannel) = 0;
+		virtual void onDataChannelOpen(const std::string& endpointIdentifier, const datachannels::DataChannel::shared& dataChannel) = 0;
+		virtual void onDataChannelClose(const std::string& endpointIdentifier, const datachannels::DataChannel::shared& dataChannel) = 0;
 		virtual ~Listener() = default;
 	};
 	
@@ -132,14 +132,16 @@ public:
 	virtual void onDTLSSetupError() override;
 	virtual void onDTLSShutdown() override;
 	virtual int onData(const ICERemoteCandidate* candidate,const BYTE* data,DWORD size)  override;
-	virtual void onDataChannelCreated(const datachannels::DataChannel::shared& dataChannel) override;
+	
+	virtual void onDataChannelOpen(const std::string& endpoingIdentifier, const datachannels::DataChannel::shared& dataChannel) override;
+	virtual void onDataChannelClose(const std::string& endpoingIdentifier, const datachannels::DataChannel::shared& dataChannel) override;
 	
 	DWORD GetRTT() const { return rtt; }
 	
 	TimeService& GetTimeService() { return timeService; }
 	
 	void SetListener(const Listener::shared& listener);
-	std::vector<std::shared_ptr<datachannels::DataChannel>> GetDataChannels() const;
+	std::unordered_map<std::string, std::vector<datachannels::DataChannel::shared>>  GetDataChannels() const;
 	
 	std::optional<std::string> GetEndpointIdentifier(datachannels::DataChannel& dataChannel) const
 	{

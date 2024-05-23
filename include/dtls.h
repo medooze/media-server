@@ -16,7 +16,7 @@
 #include "DatachannelTimeService.h"
 #include "EndpointManager.h"
 
-class DTLSConnection : public datachannels::OnTransportDataPendingListener, public datachannels::OnDataChannelCreatedListener
+class DTLSConnection : public datachannels::OnTransportDataPendingListener, public datachannels::OnDataChannelLifecycleListener
 {
 public:
 	enum Setup
@@ -57,7 +57,8 @@ public:
 		virtual void onDTLSSetup(Suite suite,BYTE* localMasterKey,DWORD localMasterKeySize,BYTE* remoteMasterKey,DWORD remoteMasterKeySize) = 0;
 		virtual void onDTLSSetupError() = 0;
 		virtual void onDTLSShutdown() = 0;
-		virtual void onDataChannelCreated(const datachannels::DataChannel::shared& dataChannel) = 0;
+		virtual void onDataChannelOpen(const std::string& endpoingIdentifier, const datachannels::DataChannel::shared& dataChannel) = 0;
+		virtual void onDataChannelClose(const std::string& endpoingIdentifier, const datachannels::DataChannel::shared& dataChannel) = 0;
 	};
 
 public:
@@ -145,7 +146,8 @@ public:
 	void onSSLInfo(int where, int ret);
 
 	virtual void OnTransportDataPending() override;
-	virtual void OnDataChannelCreated(const datachannels::DataChannel::shared& dataChannel) override;
+	virtual void OnDataChannelOpen(const std::string& endpointIdentifier, const datachannels::DataChannel::shared& dataChannel) override;
+	virtual void OnDataChannelClose(const std::string& endpointIdentifier, const datachannels::DataChannel::shared& dataChannel) override;
 
 protected:
 	int  SetupSRTP();

@@ -1227,7 +1227,12 @@ void RTPTransport::onDTLSShutdown()
 	
 }
 
- void RTPTransport::onDataChannelCreated(const datachannels::DataChannel::shared& dataChannel)
- {
+void RTPTransport::onDataChannelOpen(const std::string& endpointIdentifier, const datachannels::DataChannel::shared& dataChannel)
+{
 	
- }
+}
+
+void RTPTransport::onDataChannelClose(const std::string& endpointIdentifier, const datachannels::DataChannel::shared& dataChannel)
+{
+	
+}

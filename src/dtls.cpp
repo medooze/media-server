@@ -712,10 +712,16 @@ void DTLSConnection::OnTransportDataPending()
 	}
 }
 
-void DTLSConnection::OnDataChannelCreated(const datachannels::DataChannel::shared& dataChannel)
+void DTLSConnection::OnDataChannelOpen(const std::string& endpointIdentifier, const datachannels::DataChannel::shared& dataChannel)
 {
-	listener.onDataChannelCreated(dataChannel);
+	listener.onDataChannelOpen(endpointIdentifier, dataChannel);
 }
+
+void DTLSConnection::OnDataChannelClose(const std::string& endpointIdentifier, const datachannels::DataChannel::shared& dataChannel)
+{
+	listener.onDataChannelOpen(endpointIdentifier, dataChannel);
+}
+
 
 int DTLSConnection::Renegotiate()
 {
