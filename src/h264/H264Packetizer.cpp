@@ -175,6 +175,37 @@ void H264Packetizer::OnNal(VideoFrame& frame, BufferReader& reader, std::optiona
 		frame.AllocateCodecConfig(config.GetSize());
 		config.Serialize(frame.GetCodecConfigData(), frame.GetCodecConfigSize());
 	}
+	
+	if (!scteMessages.empty())
+	{
+		auto&& scte = scteMessages.front();
+		scteMessages.pop();
+		
+		//Add unregistered SEI message NAL
+		std::vector<uint8_t> sei;
+		sei.push_back(0x06);	// SEI NAL
+		sei.push_back(0x05);	// User unregistered data
+		sei.push_back(3 + 16 + scte.GetSize());
+		
+		uint8_t uuid[16] = {
+			0x2b, 0x69, 0xba, 0x1b, 0x77, 0x7e, 0x46, 0x53,
+			0x99, 0x7a, 0xc6, 0x75, 0xb9, 0xd3, 0xac, 0xaf
+		};
+		sei.insert(sei.end(), uuid, uuid + sizeof(uuid));
+		
+		// scte payload
+		sei.insert(sei.end(), scte.GetData(), scte.GetData() + scte.GetSize());
+		
+		// rbsp_trailing_bits
+		sei.push_back(0x80);
+
+		//Escape nal
+		uint8_t seiEscaped[sei.size()*2];
+		auto seiSize = NalEscapeRbsp(seiEscaped, sizeof(seiEscaped), sei.data(), sei.size()).value();
+		
+		EmitNal(frame, BufferReader(seiEscaped, seiSize));
+	}
+	
 
 	EmitNal(frame, BufferReader(nalUnit, nalSize));
 }
@@ -185,4 +216,19 @@ std::unique_ptr<MediaFrame> H264Packetizer::ProcessAU(BufferReader& reader)
 	noSPSInFrame = true;
 
 	return H26xPacketizer::ProcessAU(reader);
+}
+
+void H264Packetizer::PushScte(Buffer data)
+{
+	scteMessages.emplace(std::move(data));
+}
+
+std::optional<Buffer> H264Packetizer::PopScte()
+{
+	if (scteMessages.empty()) return std::nullopt;
+	
+	auto buffer = std::move(scteMessages.front());
+	scteMessages.pop();
+	
+	return buffer;
 }

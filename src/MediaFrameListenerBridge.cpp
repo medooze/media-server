@@ -561,3 +561,18 @@ void MediaFrameListenerBridge::SetTargetBitrateHint(uint32_t targetBitrateHint)
 	//Update hint
 	this->targetBitrateHint = targetBitrateHint;
 }
+
+void MediaFrameListenerBridge::PushScte(Buffer data)
+{
+	scteMessages.emplace(std::move(data));
+}
+
+std::optional<Buffer> MediaFrameListenerBridge::PopScte()
+{
+	if (scteMessages.empty()) return std::nullopt;
+	
+	auto buffer = std::move(scteMessages.front());
+	scteMessages.pop();
+	
+	return buffer;
+}

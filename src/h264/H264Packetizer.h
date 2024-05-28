@@ -4,6 +4,8 @@
 #include "H26xPacketizer.h"
 #include "avcdescriptor.h"
 
+#include <queue>
+
 /**
  * RTP packetizer for H.264 streams.
  * 
@@ -16,6 +18,9 @@ public:
 	H264Packetizer();
 	std::unique_ptr<MediaFrame> ProcessAU(BufferReader &reader) override;
 
+	void PushScte(Buffer data);
+	std::optional<Buffer> PopScte();
+	
 protected:
 	void OnNal(VideoFrame& frame, BufferReader& nal, std::optional<bool>& frameEnd) override;
 	void EmitNal(VideoFrame& frame, BufferReader nal);
@@ -24,6 +29,8 @@ protected:
 	bool noSPSInFrame = true;
 	
 	std::unique_ptr<H264SeqParameterSet> sps;
+	
+	std::queue<Buffer> scteMessages;
 };
 
 #endif // H264PACKETIZER_H
