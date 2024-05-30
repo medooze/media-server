@@ -1,0 +1,16 @@
+name: Publish
+on: 
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  publish-npmjs:
+    permissions:
+      packages: write
+      contents: read
+    uses: millicast/github-actions/.github/workflows/npm-publish.yml@main
+    with:
+      registry-url: 'https://registry.npmjs.org/'
+    secrets:
+      token: ${{ secrets.NPMJS_PUBLISH_TOKEN }}

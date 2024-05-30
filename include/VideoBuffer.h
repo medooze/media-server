@@ -122,6 +122,7 @@ public:
 	DWORD   GetClockRate() const	{ return clockRate.value();		}
 	void    SetClockRate(DWORD clockRate) { this->clockRate = clockRate;	}
 
+
 	void    SetTimingInfo(const VideoBuffer::shared& videoBuffer)
 	{
 		SetTime(videoBuffer->GetTime());
@@ -129,6 +130,18 @@ public:
 		SetClockRate(videoBuffer->GetClockRate());
 		if (videoBuffer->HasSenderTime())
 			SetSenderTime(GetSenderTime());
+  }
+  
+	void	Reset()
+	{
+		isInterlaced = false;
+		colorSpace = ColorSpace::Unknown;
+		colorRange = ColorRange::Unknown;
+		pixelAspectRatio = { 1,1 };
+		ts.reset();
+		time.reset();
+		senderTime.reset();
+		clockRate.reset();
 	}
 
 private:

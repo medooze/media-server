@@ -24,7 +24,7 @@ public:
 		VideoBuffer* buffer;
 
 		//Get all the object from the pool
-		while (pool.try_dequeue(buffer))
+		while (pool->try_dequeue(buffer))
 			//Delete them
 			delete(buffer);
 
@@ -33,7 +33,7 @@ public:
 		this->height = height;
 		//Allocate some buffer objects by default
 		for (std::size_t i = 0; i < preallocate; ++i)
-			pool.enqueue(new VideoBuffer(width, height));
+			pool->enqueue(new VideoBuffer(width, height));
 	}
 
 	~VideoBufferPool()
@@ -41,7 +41,7 @@ public:
 		VideoBuffer* buffer;
 
 		//Get all the object from the pool
-		while (pool.try_dequeue(buffer))
+		while (pool->try_dequeue(buffer))
 			//Delete them
 			delete(buffer);
 	}
@@ -51,7 +51,7 @@ public:
 		VideoBuffer* buffer = nullptr;
 
 		//Try to get one from the pool
-		if (!pool.try_dequeue(buffer))
+		if (!pool->try_dequeue(buffer))
 		{
 			//Create a new one
 			buffer = new VideoBuffer(width, height);
@@ -67,14 +67,31 @@ public:
 
 
 		//We need to create a new one
-		return VideoBuffer::shared(buffer);
+		return VideoBuffer::shared(buffer, [maxallocate = maxallocate, weak = std::weak_ptr<moodycamel::ConcurrentQueue<VideoBuffer*>>(pool) ](auto p) {
+			//Try to get a reference to the pool, as it may have been already deleted
+			auto pool = weak.lock();
+			//Ensure we are not overallocating
+			if (maxallocate && pool && pool->size_approx() < maxallocate)
+			{
+				//Reset it
+				p->Reset();
+				//Enqueue it back
+				pool->enqueue(p);
+			} else {
+				//Delete it
+				delete (p);
+			}
+		});
 	}
 
 private:
+	std::shared_ptr<moodycamel::ConcurrentQueue<VideoBuffer*>> pool = std::make_shared<moodycamel::ConcurrentQueue<VideoBuffer*>>();
+
 	std::size_t preallocate = 0;
 	std::size_t maxallocate = 0;
+
 	DWORD width = 0;
 	DWORD height = 0;
-	moodycamel::ConcurrentQueue<VideoBuffer*> pool;
+	
 };
 #endif // !VIDEOBUFFERPOOL_H_
