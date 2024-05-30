@@ -177,7 +177,10 @@ void VideoDecoderWorker::onMediaFrame(const MediaFrame& frame)
 {
 	//Ensure it is video
 	if (frame.GetType()!=MediaFrame::Video)
+	{
+		Warning("-VideoDecoderWorker::onMediaFrame()  got wrong frame type: %s [this: %p]\n", MediaFrame::TypeToString(frame.GetType()), this);
 		return;
+	}
 
 	//Put it on the queue
 	frames.Add(std::shared_ptr<VideoFrame>(static_cast<VideoFrame*>(frame.Clone())));
