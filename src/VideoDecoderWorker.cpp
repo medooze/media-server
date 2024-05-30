@@ -102,7 +102,7 @@ int VideoDecoderWorker::Decode()
 		if (!videoDecoder || (videoFrame->GetCodec()!=videoDecoder->type))
 		{
 			//Create new codec from pacekt
-			videoDecoder.reset(VideoCodecFactory::CreateDecoder((VideoCodec::Type)videoFrame->GetCodec()));
+			videoDecoder.reset(VideoCodecFactory::CreateDecoder(videoFrame->GetCodec()));
 				
 			//Check we found one
 			if (!videoDecoder)
