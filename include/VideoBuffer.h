@@ -122,6 +122,16 @@ public:
 	DWORD   GetClockRate() const	{ return clockRate.value();		}
 	void    SetClockRate(DWORD clockRate) { this->clockRate = clockRate;	}
 
+
+	void    SetTimingInfo(const VideoBuffer::shared& videoBuffer)
+	{
+		SetTime(videoBuffer->GetTime());
+		SetTimestamp(videoBuffer->GetTimestamp());
+		SetClockRate(videoBuffer->GetClockRate());
+		if (videoBuffer->HasSenderTime())
+			SetSenderTime(GetSenderTime());
+  }
+  
 	void	Reset()
 	{
 		isInterlaced = false;
