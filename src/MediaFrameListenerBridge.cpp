@@ -405,8 +405,8 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 				if ((video->GetWidth() == 0 || video->GetHeight() == 0) && 
 				    (packet->GetWidth() != 0 && packet->GetHeight() != 0))
 				{
-					width = video->GetWidth();
-					height = video->GetHeight();
+					width = packet->GetWidth();
+					height = packet->GetHeight();
 				}
 
 				//Get media frame target bitrate or hint
