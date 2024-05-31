@@ -124,11 +124,11 @@ public:
 
 	void SetTSClockRate(uint32_t v) { tsClockRate = v;}
 	void SetPTS(uint64_t v) { pts = v;}
-	void SetDTS(uint64_t v) { dts = v;}
 	uint32_t GetTSClockRate() const { return tsClockRate;}
 	uint64_t GetPTS() const { return pts;}
-	uint64_t GetDTS() const { return dts;}
 
+	// ONLY Used by deinterlacer and "COPIES" data directly from videoBuffer. 
+	// I.e. The meta-data is identical and a pure copy
 	void    SetTimingInfo(const VideoBuffer::shared& videoBuffer)
 	{
 		SetTime(videoBuffer->GetTime());
@@ -136,6 +136,9 @@ public:
 		SetClockRate(videoBuffer->GetClockRate());
 		if (videoBuffer->HasSenderTime())
 			SetSenderTime(GetSenderTime());
+
+		SetTSClockRate(videoBuffer->GetTSClockRate());
+		SetPTS(videoBuffer->GetPTS());
 	}
   
 	void	Reset()
@@ -149,9 +152,9 @@ public:
 		senderTime.reset();
 		clockRate.reset();
 
-		SetTSClockRate(videoBuffer->GetTSClockRate());
-		SetPTS(videoBuffer->GetPTS());
-		SetDTS(videoBuffer->GetDTS());
+		tsClockRate = 0;
+		pts = 0;
+		//dts = 0;
 	}
 
 private:
@@ -171,12 +174,9 @@ private:
 	std::optional<QWORD> senderTime;
 	std::optional<DWORD> clockRate;
 	
-	// We will store the original PTS/DTS here separate from the base timestamp
-	// This allows the code to change the base timestamp as needed but not forget 
-	// the original PTS/DTS
+	// This stores decoded video so there is no DTS time as is already decoded
 	uint32_t tsClockRate = 0;
 	uint64_t pts = 0;
-	uint64_t dts = 0;
 };
 
 #endif // !VIDEOBUFFER_H_

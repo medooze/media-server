@@ -220,21 +220,25 @@ public:
 
 };
 
-inline void CopyTimingInfo(const VideoFrame::const_shared& videoFrame, VideoBuffer::shared& videoBuffer)
+// Used by decoders after potentially reordering so needs to copy PTS from source
+// to the decoded frame timestamp
+//
+// Unlike SetTimingInfo() this takes into account the change in meaning of "timestamp" from a DTS to a PTS
+inline void CopyTimingInfoFromEncodedToDecoded(const VideoFrame::const_shared& videoFrame, VideoBuffer::shared& videoBuffer)
 {
 	if (!videoFrame)
 		return;
 
 	videoBuffer->SetTime(videoFrame->GetTime());
-	videoBuffer->SetTimestamp(videoFrame->GetTimestamp());
-	videoBuffer->SetClockRate(videoFrame->GetClockRate());
+
+	videoBuffer->SetTimestamp(videoFrame->GetPTS());
+	videoBuffer->SetClockRate(videoFrame->GetTSClockRate());
 
 	if (videoFrame->GetSenderTime())
 		videoBuffer->SetSenderTime(videoFrame->GetSenderTime());
 
 	videoBuffer->SetTSClockRate(videoFrame->GetTSClockRate());
 	videoBuffer->SetPTS(videoFrame->GetPTS());
-	videoBuffer->SetDTS(videoFrame->GetDTS());
 }
 
 #endif

@@ -250,6 +250,9 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 		if (videoBuffer->HasSenderTime())
 			resized->SetSenderTime(videoBuffer->GetSenderTime());
 
+		resized->SetPTS(videoBuffer->GetPTS());
+		resized->SetTSClockRate(videoBuffer->GetTSClockRate());
+
 		//Swap buffers
 		videoBuffer = std::move(resized);
 	}

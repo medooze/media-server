@@ -111,7 +111,7 @@ VideoBuffer::shared H264Decoder::GetFrame()
 	auto videoBuffer = videoBufferPool.allocate();
 
 	//Copy timing info
-	CopyTimingInfo(*ref, videoBuffer);
+	CopyTimingInfoFromEncodedToDecoded(*ref, videoBuffer);
 
 	//Set interlaced flags
 	videoBuffer->SetInterlaced(picture->interlaced_frame);
