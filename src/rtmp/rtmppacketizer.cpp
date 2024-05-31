@@ -82,7 +82,6 @@ std::unique_ptr<VideoFrame> RTMPPacketizer<DescClass, codec>::PrepareFrame(RTMPV
 	//Set timestamp
 	frame->SetTimestamp(videoFrame->GetTimestamp());
 
-	Warning("bcost rtmp RTMPPacketizer::PrepareFrame GetTimestamp: %lld GetAVCTS: %lld\n", videoFrame->GetTimestamp(), videoFrame->GetAVCTS());
 	frame->SetDTS(videoFrame->GetTimestamp());
 	frame->SetPTS(videoFrame->GetTimestamp() + videoFrame->GetAVCTS());
 	frame->SetTSClockRate(frame->GetClockRate());
