@@ -291,6 +291,17 @@ int VideoEncoderWorker::Encode()
 		videoFrame->SetTime(pic->HasTime() ? pic->GetTime() : now);
 		if (pic->HasSenderTime()) videoFrame->SetSenderTime(pic->GetSenderTime());
 
+		// Copy PTS to both PTS/DTS as we dont encode with b-frames
+		//
+		// TODO: We should create another PR to move the timestamp copies into the 
+		// encoders like we do for the decoders as we dont really know the 
+		// "correct" thing to do here. In practice this code will work though
+		// as we always configure the encoders without B-frames and with settings
+		// that dont introduce any latency
+		videoFrame->SetPTS(pic->GetPTS());
+		videoFrame->SetDTS(pic->GetPTS());
+		videoFrame->SetTSClockRate(pic->GetTSClockRate());
+
 		// Set duration to 0 indicating we dont know its actual value
 		// We *could* delay the frame until the next one and use timestamps 
 		// to calculate the duration however we dont want to pay that latency cost. 
