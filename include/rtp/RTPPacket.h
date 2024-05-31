@@ -191,6 +191,14 @@ public:
 	void SetWidth(uint32_t width)	{ this->width = width;		}
 	void SetHeight(uint32_t height) { this->height = height;	}
 
+
+	void SetTSClockRate(uint32_t v) { tsClockRate = v;}
+	void SetPTS(uint64_t v) { pts = v;}
+	void SetDTS(uint64_t v) { dts = v;}
+	uint32_t GetTSClockRate() const { return tsClockRate;}
+	uint64_t GetPTS() const { return pts;}
+	uint64_t GetDTS() const { return dts;}
+
 public:
 	//TODO:refactor a bit
 	std::optional<VP8PayloadDescriptor>	vp8PayloadDescriptor;
@@ -240,6 +248,14 @@ private:
 	int64_t timestampSkew 		= 0;
 	uint16_t width			= 0;
 	uint16_t height			= 0;
+
+	// We will store the original PTS/DTS here separate from the base timestamp
+	// This allows the code to change the base timestamp as needed but not forget 
+	// the original PTS/DTS
+	uint32_t tsClockRate = 0;
+	uint64_t pts = 0;
+	uint64_t dts = 0;
+
 };
 #endif /* RTPPACKET_H */
 

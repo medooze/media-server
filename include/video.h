@@ -68,6 +68,12 @@ public:
 		frame->SetTimestampSkew(GetTimestampSkew());
 		//Set duration
 		frame->SetDuration(GetDuration());
+
+		// Original time meta-data
+		frame->SetTSClockRate(GetTSClockRate());
+		frame->SetPTS(GetPTS());
+		frame->SetDTS(GetDTS());
+
 		//Set CVO
 		if (cvo) frame->SetVideoOrientation(*cvo);
 		//Copy target bitrate and fps
@@ -119,6 +125,13 @@ public:
 	void SetBFrame(bool isBFrame) { this->isBFrame = isBFrame; }
 	bool IsBFrame() const { return isBFrame; }
 
+	void SetTSClockRate(uint32_t v) { tsClockRate = v;}
+	void SetPTS(uint64_t v) { pts = v;}
+	void SetDTS(uint64_t v) { dts = v;}
+	uint32_t GetTSClockRate() const { return tsClockRate;}
+	uint64_t GetPTS() const { return pts;}
+	uint64_t GetDTS() const { return dts;}
+
 	void Reset() 
 	{
 		//Reset media frame
@@ -131,6 +144,10 @@ public:
 		ClearCodecConfig();
 		//Clear layers
 		layers.clear();
+
+		tsClockRate = 0;
+		pts = 0;
+		dts = 0;
 	}
 	
 private:
@@ -143,6 +160,13 @@ private:
 	uint32_t targetFps	= 0;
 	std::vector<LayerFrame> layers;
 	std::optional<VideoOrientation> cvo;
+
+	// We will store the original PTS/DTS here separate from the base timestamp
+	// This allows the code to change the base timestamp as needed but not forget 
+	// the original PTS/DTS
+	uint32_t tsClockRate = 0;
+	uint64_t pts = 0;
+	uint64_t dts = 0;
 };
 
 
@@ -207,6 +231,10 @@ inline void CopyTimingInfo(const VideoFrame::const_shared& videoFrame, VideoBuff
 
 	if (videoFrame->GetSenderTime())
 		videoBuffer->SetSenderTime(videoFrame->GetSenderTime());
+
+	videoBuffer->SetTSClockRate(videoFrame->GetTSClockRate());
+	videoBuffer->SetPTS(videoFrame->GetPTS());
+	videoBuffer->SetDTS(videoFrame->GetDTS());
 }
 
 #endif

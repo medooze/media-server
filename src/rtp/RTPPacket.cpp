@@ -114,6 +114,11 @@ RTPPacket::shared RTPPacket::Clone() const
 	cloned->SetTimestampSkew(GetTimestampSkew());
 	cloned->SetWidth(GetWidth());
 	cloned->SetHeight(GetHeight());
+
+	cloned->SetTSClockRate(GetTSClockRate());
+	cloned->SetPTS(GetPTS());
+	cloned->SetDTS(GetDTS());
+
 	//Copy descriptors
 	cloned->rewitePictureIds     = rewitePictureIds;
 	cloned->vp8PayloadDescriptor = vp8PayloadDescriptor;

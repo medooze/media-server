@@ -67,6 +67,10 @@ MediaFrame* H265Depacketizer::AddPacket(const RTPPacket::shared& packet)
 		//Set sender time
 		frame.SetSenderTime(packet->GetSenderTime());
 	}
+	frame.SetTSClockRate(packet->GetTSClockRate());
+	frame.SetPTS(packet->GetPTS());
+	frame.SetDTS(packet->GetDTS());
+
 	//Set SSRC
 	frame.SetSSRC(packet->GetSSRC());
 	//Add payload
