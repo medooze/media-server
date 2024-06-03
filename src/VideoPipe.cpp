@@ -196,44 +196,35 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 	if (!videoBuffer)
 		//No frame
 		return videoBuffer;
-
-	//Get scaling factor
-	float scale = scaleResolutionDownBy;
-
-	//If we are downscaling to an specific height
-	if (scaleResolutionToHeight)
+	
+	if (scaleResolutionToHeight || scaleResolutionDownBy) 
 	{
-		//Get video height
-		auto videoHeight = videoBuffer->GetHeight();
-
-		//Check if we are allowed to downscale given the input height
-		if ((allowedDownScaling == AllowedDownScaling::SameOrLower && videoHeight<scaleResolutionToHeight)
-			|| (allowedDownScaling == AllowedDownScaling::LowerOnly && videoHeight <= scaleResolutionToHeight))
-			//Skip frame
-			return nullptr;
-
-		//Change scale to match target height
-		scale = (float)videoHeight / scaleResolutionToHeight;
-	}
-
-	//If we have a dinamic resize
-	if (scale > 0 || videoBuffer->HasNonSquarePixelAspectRatio())
-	{
-		//Get pixel aspect ratio
+		float scale = 0.0f;
+		auto srcVideoHeight = videoBuffer->GetHeight();
 		const auto [parNum, parDen] = videoBuffer->GetPixelAspectRatio();
-
-		//Choose which dimension we want to use for adjusting the pixel aspect ratio
-		if (parNum>parDen)
+		if(scaleResolutionToHeight) 
 		{
-			//Check adjusted video size
-			videoWidth = ((uint32_t)((videoBuffer->GetWidth() * parNum) / (scale * parDen))) & ~1;
-			videoHeight = ((uint32_t)(videoBuffer->GetHeight() / scale)) & ~1;
-		} else {
-			//Check adjusted video size
-			videoWidth = ((uint32_t)(videoBuffer->GetWidth() / scale)) & ~1;
-			videoHeight = ((uint32_t)((videoBuffer->GetHeight() * parDen) / (scale * parNum))) & ~1;
-		}
 
+			if ((allowedDownScaling == AllowedDownScaling::SameOrLower && srcVideoHeight < scaleResolutionToHeight)
+				|| (allowedDownScaling == AllowedDownScaling::LowerOnly && srcVideoHeight <= scaleResolutionToHeight))
+				//Skip frame
+				return nullptr;
+			//Change scale to match target height
+			scale = (float)srcVideoHeight / scaleResolutionToHeight;
+		}
+		else 
+		{
+			//Check if we are allowed to downscale given the input height
+			if ((allowedDownScaling == AllowedDownScaling::SameOrLower && scaleResolutionDownBy < 1.0f)
+				|| (allowedDownScaling == AllowedDownScaling::LowerOnly && scaleResolutionDownBy <= 1.0f))
+				//Skip frame
+				return nullptr;
+			scale = scaleResolutionDownBy;
+		}
+		//rescaled video height
+		videoHeight = (uint32_t)(videoBuffer->GetHeight() / scale) & ~1;
+		//rescale width to retain DAR, plus 1 to round up to nearest even number
+		videoWidth = (uint32_t)((videoBuffer->GetWidth() * parNum) / (scale * parDen) + 1) & ~1;
 		//Debug("-VideoPipe::GrabFrame() | Scaling down from [%u,%u] to [%u,%u] with par [%u,%u]\n", videoBuffer->GetWidth(), videoBuffer->GetHeight(), videoWidth, videoHeight, parNum, parDen);
 
 		//Reset pool

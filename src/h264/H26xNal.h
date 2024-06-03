@@ -118,7 +118,7 @@ inline void NalToAnnexB(BYTE* data, DWORD size)
 		//Get nal size
 		DWORD nalSize = get4(data, pos);
 		//If it was already in annex B
-		if (nalSize==1 && !pos)
+		if (nalSize == 1 && !pos)
 			//Done
 			return;
 		//Set annexB start code
@@ -127,5 +127,11 @@ inline void NalToAnnexB(BYTE* data, DWORD size)
 		pos += 4 + nalSize;
 	}
 }
+
+inline void NalToAnnexB(Buffer& buffer)
+{
+	NalToAnnexB(buffer.GetData(), buffer.GetSize());
+}
+
 
 #endif	/* H264NAL_H */

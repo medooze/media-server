@@ -47,72 +47,63 @@ VP8Decoder::~VP8Decoder()
 	vpx_codec_destroy(&decoder);
 }
 
-int VP8Decoder::DecodePacket(const BYTE* data, DWORD size, int lost, int last)
+int VP8Decoder::Decode(const VideoFrame::const_shared& frame)
 {
-	int ret = 1;
+	//Get video frame payload
+	const BYTE* data = frame ? frame->GetData() : nullptr;
+	DWORD size = frame ? frame->GetLength() : 0;
 
-	//Add to 
-	VideoFrame* frame = (VideoFrame*)depacketizer.AddPayload(data, size);
-
-	//Check last mark
-	if (last)
-	{
-		//If got frame
-		if (frame)
-		{
-			//Check key frame amrk
-			isKeyFrame = frame->IsIntra();
-			//Decode it
-			ret = Decode(frame->GetData(), frame->GetLength());
-		} else {
-			//Not key frame
-			isKeyFrame = false;
-		}
-		//Reset frame
-		depacketizer.ResetFrame();
-	}
-
-	//Return ok
-	return ret;
-}
-
-int VP8Decoder::Decode(const BYTE* data, DWORD size)
-{
-	//Not key frame
-	isKeyFrame = false;
+	//Set frame counter as private data
+	uint64_t user_priv = count++;
+	//Store frame reference
+	videoFrames.Set(user_priv, frame);
 	
 	//Decode frame
-	vpx_codec_err_t err = vpx_codec_decode(&decoder, data, size, NULL, 0);
+	vpx_codec_err_t err = vpx_codec_decode(&decoder, data, size, (void*)user_priv, 0);
 
 	//Check error
 	if (err!=VPX_CODEC_OK)
 		//Error
 		return Error("-VP8Decoder::Decode() | Error decoding VP8 empty [error %d:%s]\n", decoder.err, decoder.err_detail ? decoder.err_detail : "(null)");
+	//Ok
+	return 1;
+}
 
-	//Check if it is corrupted even if completed
-	int corrupted = false;
-	if (vpx_codec_control(&decoder, VP8D_GET_FRAME_CORRUPTED, &corrupted)==VPX_CODEC_OK)
-		//Set key frame flag
-		isKeyFrame =  !(data[0] & 1) && !corrupted;
-
+VideoBuffer::shared VP8Decoder::GetFrame()
+{
 	//Get image
 	vpx_codec_iter_t iter = NULL;
 	vpx_image_t *img = vpx_codec_get_frame(&decoder, &iter);
 
 	//Check img
 	if (!img)
-		//Do nothing
-		return Error("-VP8Decoder::Decode() | No image\n");
+	{
+		//Warning
+		Warning("-VP8Decoder::Decode() | No image\n");
+		//No frame
+		return {};
+	}
 
-	//Get dimensions
-	width = img->d_w;
-	height = img->d_h;
+	//Get original video Frame
+	auto ref = videoFrames.Get((uint64_t)img->user_priv);
+
+	//If not found
+	if (!ref)
+	{
+		//Warning
+		Warning("-VP8Decoder::Decode() | Could not found reference frame [reordered:%llu,current:%llu]\n", (uint64_t)img->user_priv, count);
+		//No frame
+		return {};
+	}
 
 	//Set new size in pool
-	videoBufferPool.SetSize(width, height);
+	videoBufferPool.SetSize(img->d_w, img->d_h);
 
 	//Get new frame
-	videoBuffer = videoBufferPool.allocate();
+	auto videoBuffer = videoBufferPool.allocate();
+
+	//Copy timing info
+	CopyTimingInfo(*ref, videoBuffer);
 
 	//Set color range
 	switch (img->range)
@@ -165,20 +156,16 @@ int VP8Decoder::Decode(const BYTE* data, DWORD size)
 	Plane& v = videoBuffer->GetPlaneV();
 
 	//Copaamos  el Cy
-	for (int i = 0; i < std::min<uint32_t>(height, y.GetHeight()); i++)
+	for (int i = 0; i < std::min<uint32_t>(img->d_h, y.GetHeight()); i++)
 		memcpy(y.GetData() + i * y.GetStride(), &img->planes[0][i * img->stride[0]], y.GetWidth());
 
 	//Y el Cr y Cb
-	for (int i = 0; i < std::min<uint32_t>({ height / 2, u.GetHeight(), v.GetHeight() }); i++)
+	for (int i = 0; i < std::min<uint32_t>({ img->d_h / 2, u.GetHeight(), v.GetHeight() }); i++)
 	{
 		memcpy(u.GetData() + i * u.GetStride(), &img->planes[1][i * img->stride[1]], u.GetWidth());
 		memcpy(v.GetData() + i * v.GetStride(), &img->planes[2][i * img->stride[2]], v.GetWidth());
 	}
-		
+
 	//Return ok
-	return 1;
-}
-bool VP8Decoder::IsKeyFrame()
-{
-	return isKeyFrame;
+	return videoBuffer;
 }

@@ -4,10 +4,12 @@
 #include <netinet/in.h>
 #include "log.h"
 #include "h264decoder.h"
+extern "C" {
+#include <libavutil/opt.h>
+}
 
 H264Decoder::H264Decoder() :
 	VideoDecoder(VideoCodec::H264),
-	depacketizer(true),
 	videoBufferPool(2,4)
 {
 	//Open libavcodec
@@ -22,6 +24,11 @@ H264Decoder::H264Decoder() :
 
 	//Get codec context
 	ctx = avcodec_alloc_context3(codec);
+
+	//Use not annex b
+	av_opt_set_int(ctx, "is_avc", 1, AV_OPT_SEARCH_CHILDREN);
+	av_opt_set_int(ctx, "nal_length_size", 4, AV_OPT_SEARCH_CHILDREN);
+
 	//Create packet
 	packet = av_packet_alloc();
 	//Allocate frame
@@ -46,53 +53,65 @@ H264Decoder::~H264Decoder()
 		av_frame_free(&picture);
 }
 
-int H264Decoder::DecodePacket(const BYTE* data, DWORD size, int lost, int last)
+int H264Decoder::Decode(const VideoFrame::const_shared& frame)
 {
+	//Get video frame payload
+	packet->data = frame ? (uint8_t*)frame->GetData() : nullptr;
+	packet->size = frame ? frame->GetLength() : 0;
 
-	int ret = 1;
+	//Store frame num, it will be copied to the decoded avpacket
+	ctx->reordered_opaque = count++;
 
-	//Add to 
-	VideoFrame* frame = (VideoFrame*)depacketizer.AddPayload(data, size);
-
-	//Check last mark
-	if (last)
-	{
-		//If got frame
-		if (frame)
-			//Decode it
-			ret = Decode(frame->GetData(), frame->GetLength());
-		//Reset frame
-		depacketizer.ResetFrame();
-	}
-
-	//Return ok
-	return ret;
-}
-
-int H264Decoder::Decode(const BYTE *data,DWORD size)
-{
-	//Set data
-	packet->data = (uint8_t*)data;
-	packet->size = size;
+	//Store frame reference
+	videoFrames.Set(ctx->reordered_opaque, frame);
 
 	//Decode it
 	if (avcodec_send_packet(ctx, packet) < 0)
 		//Error
-		return Error("-H264Decoder::Decode() Error decoding H264 packet\n");
+		return Warning("-H264Decoder::Decode() Error decoding H264 packet\n");
+
+	//OK
+	return 1;
+}
+
+VideoBuffer::shared H264Decoder::GetFrame()
+{
 
 	//Check if we got any decoded frame
 	if (avcodec_receive_frame(ctx, picture) <0)
+	{	
 		//No frame decoded yet
-		return 1;
+		return {};
+	}
 	
 	if(ctx->width==0 || ctx->height==0)
-		return Error("-H264Decoder::Decode() | Wrong dimmensions [%d,%d]\n",ctx->width,ctx->height);
+	{
+		//Warning
+		Warning("-H264Decoder::Decode() | Wrong dimmensions [%d,%d]\n", ctx->width, ctx->height);
+		//No frame
+		return {};
+	}
+
+	//Get original video Frame
+	auto ref = videoFrames.Get(picture->reordered_opaque);
+
+	//If not found
+	if (!ref)
+	{
+		//Warning
+		Warning("-H264Decoder::Decode() | Could not found reference frame [reordered:%llu,current:%llu]\n", picture->reordered_opaque, count);
+		//No frame
+		return {};
+	}
 
 	//Set new size in pool
 	videoBufferPool.SetSize(ctx->width, ctx->height);
 
 	//Get new frame
-	videoBuffer = videoBufferPool.allocate();
+	auto videoBuffer = videoBufferPool.allocate();
+
+	//Copy timing info
+	CopyTimingInfo(*ref, videoBuffer);
 
 	//Set interlaced flags
 	videoBuffer->SetInterlaced(picture->interlaced_frame);
@@ -171,6 +190,6 @@ int H264Decoder::Decode(const BYTE *data,DWORD size)
 	}
 
 	//OK
-	return 1;
+	return videoBuffer;
 }
 

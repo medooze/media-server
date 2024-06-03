@@ -103,6 +103,7 @@ add_library(MediaServerLib
     ${CMAKE_CURRENT_LIST_DIR}/src/PacketHeader.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/mp4recorder.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/VideoBufferScaler.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/VideoPipe.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/SimulcastMediaFrameListener.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/VideoLayerSelector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/VideoCodecFactory.cpp
@@ -149,6 +150,7 @@ add_executable(MediaServerUnitTest
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestSimulcastMediaFrameListener.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestTimestampChecker.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestVP8Depacketizer.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestVideoPipe.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAMFNumber.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestVideoLayersAllocation.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestTools.cpp
