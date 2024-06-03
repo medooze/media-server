@@ -64,10 +64,11 @@ MediaFrame* VP8Depacketizer::AddPacket(const RTPPacket::shared& packet)
 		frame.SetTime(packet->GetTime());
 		//Set sender time
 		frame.SetSenderTime(packet->GetSenderTime());
+
+		frame.SetTSClockRate(packet->GetClockRate());
+		frame.SetPTS(packet->GetTimestamp());
+		frame.SetDTS(packet->GetTimestamp());
 	}
-	frame.SetTSClockRate(packet->GetTSClockRate());
-	frame.SetPTS(packet->GetPTS());
-	frame.SetDTS(packet->GetDTS());
 
 	//Set SSRC
 	frame.SetSSRC(packet->GetSSRC());
