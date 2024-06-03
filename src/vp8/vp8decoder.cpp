@@ -103,7 +103,7 @@ VideoBuffer::shared VP8Decoder::GetFrame()
 	auto videoBuffer = videoBufferPool.allocate();
 
 	//Copy timing info
-	CopyTimingInfoFromEncodedToDecoded(*ref, videoBuffer);
+	CopyPresentedTimingInfo(*ref, videoBuffer);
 
 	//Set color range
 	switch (img->range)

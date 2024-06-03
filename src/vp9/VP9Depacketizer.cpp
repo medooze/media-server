@@ -63,9 +63,8 @@ MediaFrame* VP9Depacketizer::AddPacket(const RTPPacket::shared& packet)
 		//Set sender time
 		frame.SetSenderTime(packet->GetSenderTime());
 
-		frame.SetTSClockRate(packet->GetClockRate());
-		frame.SetPTS(packet->GetTimestamp());
-		frame.SetDTS(packet->GetTimestamp());
+		// Presentation time == DTS as there are no B-frames in RTP at the moment
+		frame.SetPresentationTime(packet->GetTimestamp());
 	}
 
 	//Set SSRC

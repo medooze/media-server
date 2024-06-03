@@ -291,16 +291,13 @@ int VideoEncoderWorker::Encode()
 		videoFrame->SetTime(pic->HasTime() ? pic->GetTime() : now);
 		if (pic->HasSenderTime()) videoFrame->SetSenderTime(pic->GetSenderTime());
 
-		// Copy PTS to both PTS/DTS as we dont encode with b-frames
+		// @todo Add New ticket to move the code that sets timing information into the encoder like we do for the decoder
 		//
-		// TODO: We should create another PR to move the timestamp copies into the 
-		// encoders like we do for the decoders as we dont really know the 
-		// "correct" thing to do here. In practice this code will work though
-		// as we always configure the encoders without B-frames and with settings
-		// that dont introduce any latency
-		videoFrame->SetPTS(pic->GetPTS());
-		videoFrame->SetDTS(pic->GetPTS());
-		videoFrame->SetTSClockRate(pic->GetTSClockRate());
+		// The VideoBuffer is decoded and its timestamp IS a presentation time
+		// We are producing an encoded VideoFrame object that could have separate PTS/DTS
+		// However we only ever encode without B-frames so in this case they are identical
+		// but in general, the encoder should be the one to tell us what to use.
+		videoFrame->SetPresentationTime(pic->GetTimestamp());
 
 		// Set duration to 0 indicating we dont know its actual value
 		// We *could* delay the frame until the next one and use timestamps 

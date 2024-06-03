@@ -62,17 +62,13 @@ public:
 		frame->SetClockRate(GetClockRate());
 		//Set timestamp
 		frame->SetTimestamp(GetTimeStamp());
+		frame->SetPresentationTime(GetPresentationTime());
 		//Set time
 		frame->SetTime(GetTime());
 		frame->SetSenderTime(GetSenderTime());
 		frame->SetTimestampSkew(GetTimestampSkew());
 		//Set duration
 		frame->SetDuration(GetDuration());
-
-		// Original time meta-data
-		frame->SetTSClockRate(GetTSClockRate());
-		frame->SetPTS(GetPTS());
-		frame->SetDTS(GetDTS());
 
 		//Set CVO
 		if (cvo) frame->SetVideoOrientation(*cvo);
@@ -125,12 +121,8 @@ public:
 	void SetBFrame(bool isBFrame) { this->isBFrame = isBFrame; }
 	bool IsBFrame() const { return isBFrame; }
 
-	void SetTSClockRate(uint32_t v) { tsClockRate = v;}
-	void SetPTS(uint64_t v) { pts = v;}
-	void SetDTS(uint64_t v) { dts = v;}
-	uint32_t GetTSClockRate() const { return tsClockRate;}
-	uint64_t GetPTS() const { return pts;}
-	uint64_t GetDTS() const { return dts;}
+	void SetPresentationTime(uint64_t v) { presentationTime = v;}
+	uint64_t GetPresentationTime() const { return presentationTime;}
 
 	void Reset() 
 	{
@@ -145,9 +137,7 @@ public:
 		//Clear layers
 		layers.clear();
 
-		tsClockRate = 0;
-		pts = 0;
-		dts = 0;
+		presentationTime = 0;
 	}
 	
 private:
@@ -160,13 +150,7 @@ private:
 	uint32_t targetFps	= 0;
 	std::vector<LayerFrame> layers;
 	std::optional<VideoOrientation> cvo;
-
-	// We will store the original PTS/DTS here separate from the base timestamp
-	// This allows the code to change the base timestamp as needed but not forget 
-	// the original PTS/DTS
-	uint32_t tsClockRate = 0;
-	uint64_t pts = 0;
-	uint64_t dts = 0;
+	uint64_t presentationTime = 0;
 };
 
 
@@ -220,25 +204,22 @@ public:
 
 };
 
-// Used by decoders after potentially reordering so needs to copy PTS from source
-// to the decoded frame timestamp
+// Used by decoders after potentially reordering so needs to copy all timing info 
+// from the given source to the decoded frame timestamp. 
 //
-// Unlike SetTimingInfo() this takes into account the change in meaning of "timestamp" from a DTS to a PTS
-inline void CopyTimingInfoFromEncodedToDecoded(const VideoFrame::const_shared& videoFrame, VideoBuffer::shared& videoBuffer)
+// Note: This will copy the presentation time as the reference timestamp now
+// this video data has been decoded/presented
+inline void CopyPresentedTimingInfo(const VideoFrame::const_shared& videoFrame, VideoBuffer::shared& videoBuffer)
 {
 	if (!videoFrame)
 		return;
 
 	videoBuffer->SetTime(videoFrame->GetTime());
-
-	videoBuffer->SetTimestamp(videoFrame->GetPTS());
-	videoBuffer->SetClockRate(videoFrame->GetTSClockRate());
+	videoBuffer->SetTimestamp(videoFrame->GetPresentationTime());
+	videoBuffer->SetClockRate(videoFrame->GetClockRate());
 
 	if (videoFrame->GetSenderTime())
 		videoBuffer->SetSenderTime(videoFrame->GetSenderTime());
-
-	videoBuffer->SetTSClockRate(videoFrame->GetTSClockRate());
-	videoBuffer->SetPTS(videoFrame->GetPTS());
 }
 
 #endif
