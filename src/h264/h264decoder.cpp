@@ -62,8 +62,6 @@ int H264Decoder::Decode(const VideoFrame::const_shared& frame)
 	//Store frame num, it will be copied to the decoded avpacket
 	ctx->reordered_opaque = count++;
 
-	Warning("bcost H264Decoder::Decode sending packet with reordered_opaque:%lld timestamp(dts):%llu pts:%llu\n", ctx->reordered_opaque, frame->GetTimestamp(), frame->GetPresentationTimestamp());
-
 	//Store frame reference
 	videoFrames.Set(ctx->reordered_opaque, frame);
 
@@ -115,7 +113,6 @@ VideoBuffer::shared H264Decoder::GetFrame()
 
 	//Copy timing info
 	CopyPresentedTimingInfo(*ref, videoBuffer);
-	Warning("bcost H264Decoder::GetFrame sending packet with reordered_opaque:%lld timestamp(pts):%llu coded_picture_number:%d display_picture_number:%d\n", picture->reordered_opaque, videoBuffer->GetTimestamp(), picture->coded_picture_number, picture->display_picture_number);
 
 	//Set interlaced flags
 	videoBuffer->SetInterlaced(picture->interlaced_frame);
