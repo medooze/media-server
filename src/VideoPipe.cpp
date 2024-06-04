@@ -189,9 +189,6 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 		queue.pop_front();
 	}
 
-	//Unlock
-	pthread_mutex_unlock(&newPicMutex);
-
 	//Check we have a new frame
 	if (!videoBuffer)
 	{
