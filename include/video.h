@@ -62,7 +62,7 @@ public:
 		frame->SetClockRate(GetClockRate());
 		//Set timestamp
 		frame->SetTimestamp(GetTimeStamp());
-		frame->SetPresentationTime(GetPresentationTime());
+		frame->SetPresentationTimestamp(GetPresentationTimestamp());
 		//Set time
 		frame->SetTime(GetTime());
 		frame->SetSenderTime(GetSenderTime());
@@ -121,8 +121,8 @@ public:
 	void SetBFrame(bool isBFrame) { this->isBFrame = isBFrame; }
 	bool IsBFrame() const { return isBFrame; }
 
-	void SetPresentationTime(uint64_t v) { presentationTime = v;}
-	uint64_t GetPresentationTime() const { return presentationTime;}
+	void SetPresentationTimestamp(uint64_t ts) { presentationTimestamp = ts;}
+	uint64_t GetPresentationTimestamp() const { return presentationTimestamp;}
 
 	void Reset() 
 	{
@@ -137,7 +137,12 @@ public:
 		//Clear layers
 		layers.clear();
 
-		presentationTime = 0;
+		width		= 0;
+		height		= 0;
+		targetBitrate	= 0;
+		targetFps	= 0;
+		cvo.reset();
+		presentationTimestamp = 0;
 	}
 	
 private:
@@ -150,7 +155,7 @@ private:
 	uint32_t targetFps	= 0;
 	std::vector<LayerFrame> layers;
 	std::optional<VideoOrientation> cvo;
-	uint64_t presentationTime = 0;
+	uint64_t presentationTimestamp = 0;
 };
 
 
@@ -215,7 +220,7 @@ inline void CopyPresentedTimingInfo(const VideoFrame::const_shared& videoFrame, 
 		return;
 
 	videoBuffer->SetTime(videoFrame->GetTime());
-	videoBuffer->SetTimestamp(videoFrame->GetPresentationTime());
+	videoBuffer->SetTimestamp(videoFrame->GetPresentationTimestamp());
 	videoBuffer->SetClockRate(videoFrame->GetClockRate());
 
 	if (videoFrame->GetSenderTime())

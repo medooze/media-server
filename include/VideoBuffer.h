@@ -124,17 +124,10 @@ public:
 
 	void    CopyTimingInfo(const VideoBuffer::const_shared& videoBuffer)
 	{
-		if (videoBuffer->HasTime())
-			SetTime(videoBuffer->GetTime());
-
-		if (videoBuffer->HasTimestamp())
-			SetTimestamp(videoBuffer->GetTimestamp());
-
-		if (videoBuffer->HasClockRate())
-			SetClockRate(videoBuffer->GetClockRate());
-
-		if (videoBuffer->HasSenderTime())
-			SetSenderTime(GetSenderTime());
+		time = videoBuffer->time;
+		ts = videoBuffer->ts;
+		clockRate = videoBuffer->clockRate;
+		senderTime = videoBuffer->senderTime;
 	}
   
 	void	Reset()

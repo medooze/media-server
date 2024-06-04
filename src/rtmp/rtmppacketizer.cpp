@@ -81,7 +81,7 @@ std::unique_ptr<VideoFrame> RTMPPacketizer<DescClass, codec>::PrepareFrame(RTMPV
 	frame->SetClockRate(1000);
 	//Set timestamp
 	frame->SetTimestamp(videoFrame->GetTimestamp());
-	frame->SetPresentationTime(videoFrame->GetTimestamp() + videoFrame->GetAVCTS());
+	frame->SetPresentationTimestamp(videoFrame->GetTimestamp() + videoFrame->GetAVCTS());
 
 
 	//Set Sender time

@@ -297,7 +297,7 @@ int VideoEncoderWorker::Encode()
 		// We are producing an encoded VideoFrame object that could have separate PTS/DTS
 		// However we only ever encode without B-frames so in this case they are identical
 		// but in general, the encoder should be the one to tell us what to use.
-		videoFrame->SetPresentationTime(pic->GetTimestamp());
+		videoFrame->SetPresentationTimestamp(pic->GetTimestamp());
 
 		// Set duration to 0 indicating we dont know its actual value
 		// We *could* delay the frame until the next one and use timestamps 
