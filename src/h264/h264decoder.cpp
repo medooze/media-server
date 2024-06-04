@@ -104,6 +104,7 @@ VideoBuffer::shared H264Decoder::GetFrame()
 		return {};
 	}
 
+
 	//Set new size in pool
 	videoBufferPool.SetSize(ctx->width, ctx->height);
 
@@ -111,7 +112,7 @@ VideoBuffer::shared H264Decoder::GetFrame()
 	auto videoBuffer = videoBufferPool.allocate();
 
 	//Copy timing info
-	CopyTimingInfo(*ref, videoBuffer);
+	CopyPresentedTimingInfo(*ref, videoBuffer);
 
 	//Set interlaced flags
 	videoBuffer->SetInterlaced(picture->interlaced_frame);

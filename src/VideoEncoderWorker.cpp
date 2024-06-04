@@ -291,6 +291,14 @@ int VideoEncoderWorker::Encode()
 		videoFrame->SetTime(pic->HasTime() ? pic->GetTime() : now);
 		if (pic->HasSenderTime()) videoFrame->SetSenderTime(pic->GetSenderTime());
 
+		// @todo Add New ticket to move the code that sets timing information into the encoder like we do for the decoder
+		//
+		// The VideoBuffer is decoded and its timestamp IS a presentation time
+		// We are producing an encoded VideoFrame object that could have separate PTS/DTS
+		// However we only ever encode without B-frames so in this case they are identical
+		// but in general, the encoder should be the one to tell us what to use.
+		videoFrame->SetPresentationTimestamp(pic->GetTimestamp());
+
 		// Set duration to 0 indicating we dont know its actual value
 		// We *could* delay the frame until the next one and use timestamps 
 		// to calculate the duration however we dont want to pay that latency cost. 

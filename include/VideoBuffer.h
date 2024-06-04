@@ -122,15 +122,13 @@ public:
 	DWORD   GetClockRate() const	{ return clockRate.value();		}
 	void    SetClockRate(DWORD clockRate) { this->clockRate = clockRate;	}
 
-
-	void    SetTimingInfo(const VideoBuffer::shared& videoBuffer)
+	void    CopyTimingInfo(const VideoBuffer::const_shared& videoBuffer)
 	{
-		SetTime(videoBuffer->GetTime());
-		SetTimestamp(videoBuffer->GetTimestamp());
-		SetClockRate(videoBuffer->GetClockRate());
-		if (videoBuffer->HasSenderTime())
-			SetSenderTime(GetSenderTime());
-  }
+		time = videoBuffer->time;
+		ts = videoBuffer->ts;
+		clockRate = videoBuffer->clockRate;
+		senderTime = videoBuffer->senderTime;
+	}
   
 	void	Reset()
 	{
@@ -160,9 +158,6 @@ private:
 	std::optional<QWORD> time;
 	std::optional<QWORD> senderTime;
 	std::optional<DWORD> clockRate;
-	
-	
-	
 };
 
 #endif // !VIDEOBUFFER_H_

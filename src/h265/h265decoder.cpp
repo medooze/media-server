@@ -199,7 +199,7 @@ VideoBuffer::shared H265Decoder::GetFrame()
 	//Get original video Frame
 	if (auto ref = videoFrames.Get(picture->reordered_opaque))
 		//Copy timing info
-		CopyTimingInfo(*ref, videoBuffer);
+		CopyPresentedTimingInfo(*ref, videoBuffer);
 
 	//OK
 	return videoBuffer;

@@ -133,14 +133,14 @@ void MediaFrameListenerBridge::SetMaxDelayMs(std::chrono::milliseconds maxDelayM
 
 void MediaFrameListenerBridge::SetDelayMs(std::chrono::milliseconds delayMs)
 {
-	UltraDebug("-MediaFrameListenerBridge::SetDelayMs() [delay:%lld]", delayMs.count());
+	UltraDebug("-MediaFrameListenerBridge::SetDelayMs() [delay:%lld]\n", delayMs.count());
 
 	timeService.Async([=](auto now) { 
 		// Set a delay limit so the queue wouldn't grow without control if something is wrong, i.e. the packet
 		// time info was not valid
 		if (delayMs > maxDispatchingDelayMs)
 		{
-			Warning("-MediaFrameListenerBridge::SetDelayMs() too large dispatch delay:%lldms max:%lldms", delayMs.count(), maxDispatchingDelayMs.count());
+			Warning("-MediaFrameListenerBridge::SetDelayMs() too large dispatch delay:%lldms max:%lldms\n", delayMs.count(), maxDispatchingDelayMs.count());
 			dispatchingDelayMs = maxDispatchingDelayMs;
 		}
 		else
@@ -208,6 +208,8 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 		//If we need to reset
 		if (reset)
 		{
+			Log("-MediaFrameListenerBridge[%p]::onMediaFrame Handling frame: %llu Resetting timestamp base to: %llu\n", this, frame->GetTimestamp(), lastTimestamp);
+
 			//Reset first paquet seq num and timestamp
 			firstTimestamp = NoTimestamp;
 			//Store the last send ones
@@ -335,9 +337,11 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 				QWORD offset = std::max<QWORD>((QWORD)(getTimeDiff(lastTime)*frame->GetClockRate()/1E6),1ul);
 				//Calculate time difd and add to the last sent timestamp
 				baseTimestamp = lastTimestamp + offset;
+				Log("-MediaFrameListenerBridge[%p]::onMediaFrame Handling frame: %llu Resetting timestamp base to: %llu using offset: %llu\n", this, frame->GetTimestamp(), baseTimestamp, offset);
 			}
 			//Get first timestamp
 			firstTimestamp = frame->GetTimeStamp();
+			Log("-MediaFrameListenerBridge[%p]::onMediaFrame Handling frame: %llu Resetting firstTimestamp to: %llu\n", this, frame->GetTimestamp(), firstTimestamp);
 		}
 
 		//Calculate total length
