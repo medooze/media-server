@@ -179,16 +179,10 @@ VideoBuffer::shared H264Decoder::GetFrame()
 	Plane& u = videoBuffer->GetPlaneU();
 	Plane& v = videoBuffer->GetPlaneV();
 		
-	//Copaamos  el Cy
-	for (uint32_t i = 0; i < std::min<uint32_t>(ctx->height, y.GetHeight()); i++)
-		memcpy(y.GetData() + i * y.GetStride(), &picture->data[0][i * picture->linesize[0]], y.GetWidth());
-
-	//Y el Cr y Cb
-	for (uint32_t i = 0; i < std::min<uint32_t>({ ctx->height / 2, u.GetHeight(), v.GetHeight() }); i++)
-	{
-		memcpy(u.GetData() + i * u.GetStride(), &picture->data[1][i * picture->linesize[1]], u.GetWidth());
-		memcpy(v.GetData() + i * v.GetStride(), &picture->data[2][i * picture->linesize[2]], v.GetWidth());
-	}
+	//Copy data to each plane
+	y.SetData(picture->data[0], ctx->width, ctx->height, picture->linesize[0]);
+	u.SetData(picture->data[1], ctx->width / 2, ctx->height / 2, picture->linesize[1]);
+	v.SetData(picture->data[2], ctx->width / 2, ctx->height / 2, picture->linesize[2]);
 
 	//OK
 	return videoBuffer;
