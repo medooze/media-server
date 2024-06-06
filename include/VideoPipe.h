@@ -53,6 +53,7 @@ private:
 	VideoBufferScaler scaler;
 	AllowedDownScaling allowedDownScaling = AllowedDownScaling::Any;
 
+	uint64_t lastGrabbedTimestamp = 0;
 	uint64_t lastDroppedReport = 0;
 	unsigned int droppedFramesSinceReport = 0;
 	unsigned int totalFramesSinceReport = 0;

@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static constexpr size_t MaxOutstandingFrames = 2;
+static constexpr size_t MaxOutstandingFrames = 30;
 VideoPipe::VideoPipe() : 
 	// Want a non growing queue
 	queue(MaxOutstandingFrames, false),
@@ -134,60 +134,64 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 		calcTimout(&wakeupTime,timeout);
 	}
 
-	// Check if there is a new image, or we need to wakeup for some other reason
-	//
-	// Note: This is in a loop as is required when using pthread_cond_wait calls. You need to check for 
-	// spurious wakeups (which are uncommon) and cant just rely on signal() waking up on event
-	// See: https://pubs.opengroup.org/onlinepubs/009604599/functions/pthread_cond_timedwait.html
-	// 
-	// This means we need to check all conditions in the loop predicate that may signal the condition to wakeup including:
-	// * End() : Setting inited == false
-	// * CancelGrabFrame() : Setting cancelledGrab == true
-	// * NextFrame() : Adding a new frame to the queue
-	while(inited && queue.length()==0 && !cancelledGrab)
+	do 
 	{
-		int ret = -1;
-
-		//If timeout has been specified
-		if (timeout)
+		// Check if there is a new image, or we need to wakeup for some other reason
+		//
+		// Note: This is in a loop as is required when using pthread_cond_wait calls. You need to check for 
+		// spurious wakeups (which are uncommon) and cant just rely on signal() waking up on event
+		// See: https://pubs.opengroup.org/onlinepubs/009604599/functions/pthread_cond_timedwait.html
+		// 
+		// This means we need to check all conditions in the loop predicate that may signal the condition to wakeup including:
+		// * End() : Setting inited == false
+		// * CancelGrabFrame() : Setting cancelledGrab == true
+		// * NextFrame() : Adding a new frame to the queue
+		while(inited && queue.length()==0 && !cancelledGrab)
 		{
-			//wait
-			ret = pthread_cond_timedwait(&newPicCond,&newPicMutex,&wakeupTime);
-			if (ret == ETIMEDOUT)
+			int ret = -1;
+
+			//If timeout has been specified
+			if (timeout)
 			{
-				// On timeout exit the loop
-				break;
+				//wait
+				ret = pthread_cond_timedwait(&newPicCond,&newPicMutex,&wakeupTime);
+				if (ret == ETIMEDOUT)
+				{
+					// On timeout exit the loop
+					break;
+				}
+			}
+			else
+			{
+				//Wait ad infinitum
+				ret = pthread_cond_wait(&newPicCond,&newPicMutex);
+			}
+		
+			if (ret)
+			{
+				Error("-VideoPipe cond wait error [%d,%d]\n",ret,errno);
 			}
 		}
-		else
+
+		if (cancelledGrab)
 		{
-			//Wait ad infinitum
-			ret = pthread_cond_wait(&newPicCond,&newPicMutex);
+			//Reset flag	
+			cancelledGrab = false;
+
+			pthread_mutex_unlock(&newPicMutex);
+
+			//A canceled grab returns no frame
+			return videoBuffer;
 		}
-		
-		if (ret)
+
+		//Get current image if there is anything in the queue
+		if (!queue.empty())
 		{
-			Error("-VideoPipe cond wait error [%d,%d]\n",ret,errno);
+			videoBuffer = queue.front();
+			queue.pop_front();
 		}
-	}
-
-	if (cancelledGrab)
-	{
-		//Reset flag	
-		cancelledGrab = false;
-
-		pthread_mutex_unlock(&newPicMutex);
-
-		//A canceled grab returns no frame
-		return videoBuffer;
-	}
-
-	//Get current image if there is anything in the queue
-	if (!queue.empty())
-	{
-		videoBuffer = queue.front();
-		queue.pop_front();
-	}
+	//Ignore all the frames before the next timestamp to match the capture fps
+	} while (videoBuffer && videoBuffer->HasTimestamp() && lastTimestamp + videoBuffer->GetClockRate()/videoFPS >= videoBuffer->GetTimestamp())
 
 	//Unlock
 	pthread_mutex_unlock(&newPicMutex);
@@ -245,6 +249,9 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 		//Swap buffers
 		videoBuffer = std::move(resized);
 	}
+
+	//Update timestamp
+	lastTimestamp = videoBuffer->GetTimestamp();
 
 	//Done
 	return videoBuffer;
