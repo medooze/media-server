@@ -291,7 +291,6 @@ TEST(TestVideoPipe, pictureResizeScaleDownBy)
 }
 
 
-
 TEST(TestVideoPipe, downrating)
 {
         int infps = 60;
@@ -306,20 +305,52 @@ TEST(TestVideoPipe, downrating)
         vidPipe.StartVideoCapture(width, height, outfps);
 
         //Enqueue 10 frames        
-        for (int i = 0; i< 10; ++i )
+        for (int i = 0; i< 30; ++i )
         {
                 VideoBuffer::shared sharedVidBuffer = std::make_shared<VideoBuffer>(width, height);
                 sharedVidBuffer->SetClockRate(clockrate);
-                sharedVidBuffer->SetTimestamp(i*clockrate/infps);
+                sharedVidBuffer->SetTimestamp(i* (double)clockrate/infps);
                 auto queued = vidPipe.NextFrame(sharedVidBuffer);
                 ASSERT_EQ(queued, i+1);
         }
 
-        for (int i = 0; i < 5; ++i)
+        for (int i = 0; i < 15; ++i)
         {
                 auto pic = vidPipe.GrabFrame(0);
                 ASSERT_TRUE(pic);
-                ASSERT_EQ(pic->GetTimestamp(), i * clockrate / outfps);
+                ASSERT_EQ(pic->GetTimestamp(), (int)(i * (double)clockrate / outfps));
         }
        
+}
+
+TEST(TestVideoPipe, downratingNotExact)
+{
+        int infps = 60;
+        int outfps = 30;
+        int clockrate = 1000;
+
+        int width = 640;
+        int height = 480;
+
+        VideoPipe vidPipe;
+        vidPipe.Init();
+        vidPipe.StartVideoCapture(width, height, outfps);
+
+        //Enqueue 10 frames        
+        for (int i = 0; i < 30; ++i)
+        {
+                VideoBuffer::shared sharedVidBuffer = std::make_shared<VideoBuffer>(width, height);
+                sharedVidBuffer->SetClockRate(clockrate);
+                sharedVidBuffer->SetTimestamp(i * (double)clockrate / infps);
+                auto queued = vidPipe.NextFrame(sharedVidBuffer);
+                ASSERT_EQ(queued, i + 1);
+        }
+
+        for (int i = 0; i < 15; ++i)
+        {
+                auto pic = vidPipe.GrabFrame(0);
+                ASSERT_TRUE(pic);
+                ASSERT_EQ(pic->GetTimestamp(), (int)(i * (double)clockrate / outfps));
+        }
+
 }

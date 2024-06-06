@@ -191,7 +191,12 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 			queue.pop_front();
 		}
 	//Ignore all the frames before the next timestamp to match the capture fps
-	} while (videoBuffer && videoFPS && videoBuffer->HasTimestamp() && lastGrabbedTimestamp + videoBuffer->GetClockRate()/videoFPS > videoBuffer->GetTimestamp());
+	} while (videoBuffer 
+		&& videoFPS
+		&& lastGrabbedTimestamp!= NoTimestamp 
+		&& videoBuffer->HasTimestamp() 
+		&& lastGrabbedTimestamp + videoBuffer->GetClockRate()/videoFPS - 1 > videoBuffer->GetTimestamp()
+	);
 
 	//Unlock
 	pthread_mutex_unlock(&newPicMutex);

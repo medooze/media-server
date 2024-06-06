@@ -17,6 +17,8 @@ public:
 		SameOrLower	= 1,
 		LowerOnly	= 2
 	};
+	static constexpr uint64_t NoTimestamp = std::numeric_limits<uint64_t>::max();
+
 public:
 	VideoPipe();
 	~VideoPipe() override;
@@ -53,7 +55,7 @@ private:
 	VideoBufferScaler scaler;
 	AllowedDownScaling allowedDownScaling = AllowedDownScaling::Any;
 
-	uint64_t lastGrabbedTimestamp = 0;
+	uint64_t lastGrabbedTimestamp = NoTimestamp;
 	uint64_t lastDroppedReport = 0;
 	unsigned int droppedFramesSinceReport = 0;
 	unsigned int totalFramesSinceReport = 0;
