@@ -146,7 +146,7 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 		// * End() : Setting inited == false
 		// * CancelGrabFrame() : Setting cancelledGrab == true
 		// * NextFrame() : Adding a new frame to the queue
-		while(inited && queue.length()==0 && !cancelledGrab)
+		while(inited && capturing && queue.length()==0 && !cancelledGrab)
 		{
 			int ret = -1;
 
@@ -191,7 +191,7 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 			queue.pop_front();
 		}
 	//Ignore all the frames before the next timestamp to match the capture fps
-	} while (videoBuffer && videoBuffer->HasTimestamp() && lastTimestamp + videoBuffer->GetClockRate()/videoFPS >= videoBuffer->GetTimestamp());
+	} while (videoBuffer && videoFPS && videoBuffer->HasTimestamp() && lastGrabbedTimestamp + videoBuffer->GetClockRate()/videoFPS >= videoBuffer->GetTimestamp());
 
 	//Unlock
 	pthread_mutex_unlock(&newPicMutex);
@@ -253,7 +253,7 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 	//If we got timestamps in the video buffer
 	if (videoBuffer->HasTimestamp())
 		//Update timestamp
-		lastTimestamp = videoBuffer->GetTimestamp();
+		lastGrabbedTimestamp = videoBuffer->GetTimestamp();
 
 	//Done
 	return videoBuffer;

@@ -289,3 +289,36 @@ TEST(TestVideoPipe, pictureResizeScaleDownBy)
         ASSERT_EQ(pic, nullptr);
     }
 }
+
+
+
+TEST(TestVideoPipe, downrating)
+{
+        int infps = 60;
+        int outfps = 30;
+        int clockrate = 90000;
+
+        int width = 640;
+        int height = 480;
+
+        VideoPipe vidPipe;
+        vidPipe.Init();
+        vidPipe.StartVideoCapture(width, height, outfps);
+
+        //Enqueue 10 frames        
+        for (int i = 0; i< 10; ++i )
+        {
+                VideoBuffer::shared sharedVidBuffer = std::make_shared<VideoBuffer>(width, height);
+                sharedVidBuffer->SetClockRate(clockrate);
+                sharedVidBuffer->SetTimestamp(clockrate/(i*infps));
+                vidPipe.NextFrame(sharedVidBuffer);
+        }
+
+        for (int i = 0; i < 5; ++i)
+        {
+                auto pic = vidPipe.GrabFrame(0);
+                ASSERT_TRUE(pic);
+                ASSERT_EQ(pic->GetTimestamp(), clockrate / (i * outfps));
+        }
+       
+}
