@@ -4,12 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-// For 60fps lets permit at most 500msec latency = 30 frames
-// Note: this will only increase latency if NEEDED if running 
-// as expected under normal conditions then wont introduce 
-// more than a frames worth of latency. This is the max bound
-static constexpr size_t MaxOutstandingFrames = 30;
-
+static constexpr size_t MaxOutstandingFrames = 2;
 VideoPipe::VideoPipe() : 
 	// Want a non growing queue
 	queue(MaxOutstandingFrames, false),
