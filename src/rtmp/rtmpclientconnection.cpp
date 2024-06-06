@@ -82,8 +82,15 @@ int RTMPClientConnection::Connect(const char* server, int port, const char* app,
 
 	//If not found
 	if (!host)
+	{
 		//Error
+		if (listener)
+		{
+			listener->onError(this, RTMPClientConnection::ErrorCode::FailedToResolveURL);
+		}
+			
 		return Error("-RTMPClientConnection::Connect() Could not resolve %s\n", server);
+	}
 
 	//Set to zero
 	bzero((char*)&addr, sizeof(addr));
@@ -97,8 +104,15 @@ int RTMPClientConnection::Connect(const char* server, int port, const char* app,
 // Ignore coverity error: "this->fd" is passed to a parameter that cannot be negative.
 // coverity[negative_returns]
 	if (connect(fd, (sockaddr*)&addr, sizeof(addr)) < 0 && errno != EINPROGRESS)
+	{
+		if (listener)
+		{
+			listener->onError(this, RTMPClientConnection::ErrorCode::FailedToConnectSocket);
+		}
+		
 		//Exit
 		return Error("Connection error [%d]\n", errno);
+	}
 
 	//I am inited
 	inited = true;
@@ -173,15 +187,8 @@ int RTMPClientConnection::Disconnect()
 		setZeroThread(&thread);
 	}
 
-	//If got application
-	if (listener)
-	{
-		//Disconnect application
-		listener->onDisconnected(this);
-		//NO listener
-		listener = NULL;
-	}
-
+	listener = NULL;
+	
 	//Ended
 	Log("<RTMPClientConnection::Disconnect() Ended RTMP connection\n");
 
@@ -242,7 +249,7 @@ int RTMPClientConnection::Run()
 				{
 					Warning("-RTMPClientConnection::Run() getsockopt failed [%p]\n", this);
 					//Disconnect application
-					listener->onDisconnected(this);
+					if (listener) listener->onError(this, RTMPClientConnection::ErrorCode::Generic);
 					//exit
 					break;
 				}
@@ -252,7 +259,7 @@ int RTMPClientConnection::Run()
 				{
 					Warning("-RTMPClientConnection::Run() getsockopt error [%p, errno:%d]\n", this, err);
 					//Disconnect application
-					listener->onDisconnected(this);
+					if (listener) listener->onError(this, RTMPClientConnection::ErrorCode::Generic);
 					//exit
 					break;
 				}
@@ -287,10 +294,19 @@ int RTMPClientConnection::Run()
 		{
 			//Read data from connection
 			int len = read(fd, data, size);
-			if (len <= 0)
+			if (len == 0)
+			{
+				if (listener) listener->onError(this, RTMPClientConnection::ErrorCode::PeerClosed);
+				break;
+			}
+			
+			if (len < 0)
 			{
 				//Error
 				Log("-RTMPClientConnection::Run() Readed [%d,%d]\n", len, errno);
+				
+				if (listener) listener->onError(this, RTMPClientConnection::ErrorCode::Generic);
+				
 				//Exit
 				break;
 			}
@@ -306,6 +322,9 @@ int RTMPClientConnection::Run()
 				Error("-RTMPClientConnection::Run() Exception parsing data: %s\n", e.what());
 				//Dump it
 				Dump(data, len);
+				
+				if (listener) listener->onError(this, RTMPClientConnection::ErrorCode::FailedToParseData);
+				
 				//Break on any error
 				break;
 			}
@@ -315,12 +334,22 @@ int RTMPClientConnection::Run()
 		{
 			//Error
 			Log("-RTMPClientConnection::Run() Pool error event [%d]\n", ufds[0].revents);
+			
+			if (listener) listener->onError(this, RTMPClientConnection::ErrorCode::Generic);
+			
 			//Exit
 			break;
 		}
 	}
-
-	Log("<RTMPClientConnection::Run()\n");
+	
+	//If got application
+	if (listener)
+	{
+		//Disconnect application
+		listener->onDisconnected(this);
+	}
+	
+	Log("<RTMPClientConnection::Run() completed.\n");
 
 	//Done
 	return 1;
@@ -495,7 +524,7 @@ void RTMPClientConnection::ParseData(BYTE* data, const DWORD size)
 							}
 
 							//Call listener
-							listener->onDisconnected(this);
+							listener->onError(this, RTMPClientConnection::ErrorCode::ConnectCommandFailed);
 						} else {
 							//Call listener
 							listener->onConnected(this);

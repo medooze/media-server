@@ -16,6 +16,17 @@ class RTMPClientConnection :
 {
 public:
 
+	enum class ErrorCode
+	{
+		Generic = 1,
+		FailedToResolveURL = 2,
+		FailedToConnectSocket = 3,
+		ConnectCommandFailed = 4,
+		PublishCommandFailed = 5,
+		FailedToParseData = 6,
+		PeerClosed = 7
+	};
+
 	class Listener
 	{
 	public:
@@ -25,6 +36,7 @@ public:
 		//Interface
 		virtual void onConnected(RTMPClientConnection* conn) = 0;
 		virtual void onDisconnected(RTMPClientConnection* conn) = 0;
+		virtual void onError(RTMPClientConnection* conn, ErrorCode code) = 0;
 		virtual void onCommand(RTMPClientConnection* conn, DWORD messageStreamId, const wchar_t* name, AMFData* obj, const std::vector<AMFData*>&) = 0;
 	};
 public:
