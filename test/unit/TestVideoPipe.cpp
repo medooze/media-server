@@ -310,15 +310,16 @@ TEST(TestVideoPipe, downrating)
         {
                 VideoBuffer::shared sharedVidBuffer = std::make_shared<VideoBuffer>(width, height);
                 sharedVidBuffer->SetClockRate(clockrate);
-                sharedVidBuffer->SetTimestamp(clockrate/(i*infps));
-                vidPipe.NextFrame(sharedVidBuffer);
+                sharedVidBuffer->SetTimestamp(i*clockrate/infps);
+                auto queued = vidPipe.NextFrame(sharedVidBuffer);
+                ASSERT_EQ(queued, i+1);
         }
 
         for (int i = 0; i < 5; ++i)
         {
                 auto pic = vidPipe.GrabFrame(0);
                 ASSERT_TRUE(pic);
-                ASSERT_EQ(pic->GetTimestamp(), clockrate / (i * outfps));
+                ASSERT_EQ(pic->GetTimestamp(), i * clockrate / outfps);
         }
        
 }
