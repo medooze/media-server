@@ -249,7 +249,7 @@ int RTMPClientConnection::Run()
 				{
 					Warning("-RTMPClientConnection::Run() getsockopt failed [%p]\n", this);
 					//Disconnect application
-					if (listener) listener->onError(this, RTMPClientConnection::ErrorCode::Generic);
+					if (listener) listener->onError(this, RTMPClientConnection::ErrorCode::GetSockOptError);
 					//exit
 					break;
 				}
@@ -259,7 +259,7 @@ int RTMPClientConnection::Run()
 				{
 					Warning("-RTMPClientConnection::Run() getsockopt error [%p, errno:%d]\n", this, err);
 					//Disconnect application
-					if (listener) listener->onError(this, RTMPClientConnection::ErrorCode::Generic);
+					if (listener) listener->onError(this, RTMPClientConnection::ErrorCode::GetSockOptError);
 					//exit
 					break;
 				}
@@ -305,7 +305,7 @@ int RTMPClientConnection::Run()
 				//Error
 				Log("-RTMPClientConnection::Run() Readed [%d,%d]\n", len, errno);
 				
-				if (listener) listener->onError(this, RTMPClientConnection::ErrorCode::Generic);
+				if (listener) listener->onError(this, RTMPClientConnection::ErrorCode::ReadError);
 				
 				//Exit
 				break;
@@ -333,9 +333,9 @@ int RTMPClientConnection::Run()
 		if ((ufds[0].revents & POLLHUP) || (ufds[0].revents & POLLERR))
 		{
 			//Error
-			Log("-RTMPClientConnection::Run() Pool error event [%d]\n", ufds[0].revents);
+			Log("-RTMPClientConnection::Run() Poll error event [%d]\n", ufds[0].revents);
 			
-			if (listener) listener->onError(this, RTMPClientConnection::ErrorCode::Generic);
+			if (listener) listener->onError(this, RTMPClientConnection::ErrorCode::PollError);
 			
 			//Exit
 			break;

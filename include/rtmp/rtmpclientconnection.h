@@ -20,11 +20,14 @@ public:
 	{
 		Generic = 1,
 		FailedToResolveURL = 2,
-		FailedToConnectSocket = 3,
-		ConnectCommandFailed = 4,
-		PublishCommandFailed = 5,
-		FailedToParseData = 6,
-		PeerClosed = 7
+		GetSockOptError = 3,
+		FailedToConnectSocket = 4,
+		ConnectCommandFailed = 5,
+		PublishCommandFailed = 6,
+		FailedToParseData = 7,
+		PeerClosed = 8,
+		ReadError = 9,
+		PollError = 10
 	};
 
 	class Listener
