@@ -241,7 +241,7 @@ int VideoEncoderWorker::Encode()
 		fpsAcu.Update(getTime()/1000,1);
 
 		//Check
-		if (frameTime)
+	/*	if (frameTime)
 		{
 			timespec ts;
 			//Lock
@@ -278,6 +278,7 @@ int VideoEncoderWorker::Encode()
 		
 		//Set frame time
 		frameTime = 1E6/fps;
+		*/
 
 		//Add frame size in bits to bitrate calculator
 		bitrateAcu.Update(getDifTime(&first)/1000,videoFrame->GetLength()*8);
