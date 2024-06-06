@@ -250,8 +250,10 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 		videoBuffer = std::move(resized);
 	}
 
-	//Update timestamp
-	lastTimestamp = videoBuffer->GetTimestamp();
+	//If we got timestamps in the video buffer
+	if (videoBuffer->HasTimestamp())
+		//Update timestamp
+		lastTimestamp = videoBuffer->GetTimestamp();
 
 	//Done
 	return videoBuffer;
