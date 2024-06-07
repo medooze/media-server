@@ -293,6 +293,22 @@ size_t VideoPipe::NextFrame(const VideoBuffer::const_shared& videoBuffer)
 	if (queue.full())
 		++droppedFramesSinceReport;
 
+
+	//Do not enqueue more than the max delay
+	while (maxDelay 
+		&& !queue.empty() 
+		&& videoBuffer->HasTimestamp() 
+		&& queue.front()->HasTimestamp()
+		&& videoBuffer->GetTimestamp() > queue.front()->GetTimestamp()
+		&& videoBuffer->GetClockRate() == queue.front()->GetClockRate()
+		&& (videoBuffer->GetTimestamp() - queue.front()->GetTimestamp()) >= (maxDelay * videoBuffer->GetClockRate()) / 1000
+	)
+	{
+		//Drop first picture
+		queue.pop_front();
+		++droppedFramesSinceReport;
+	}
+
 	queue.push_back(videoBuffer);
 	size_t qsize = queue.length();
 	++totalFramesSinceReport;

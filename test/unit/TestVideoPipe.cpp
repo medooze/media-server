@@ -354,3 +354,42 @@ TEST(TestVideoPipe, downratingNotExact)
         }
 
 }
+
+
+
+TEST(TestVideoPipe, maxDelay)
+{
+        int infps = 50;
+        int outfps = 50;
+        int clockrate = 1000;
+
+        int width = 640;
+        int height = 480;
+
+        VideoPipe vidPipe;
+        vidPipe.Init();
+        vidPipe.StartVideoCapture(width, height, outfps);
+
+        //3 frames
+        int totalFrames = 30;
+        int delayInFrames = 3;
+        vidPipe.SetMaxDelay(delayInFrames *clockrate/infps);
+
+        //Enqueue 10 frames        
+        for (int i = 0; i < totalFrames; ++i)
+        {
+                VideoBuffer::shared sharedVidBuffer = std::make_shared<VideoBuffer>(width, height);
+                sharedVidBuffer->SetClockRate(clockrate);
+                sharedVidBuffer->SetTimestamp(i * (double)clockrate / infps);
+                auto queued = vidPipe.NextFrame(sharedVidBuffer);
+                ASSERT_LE(queued, 3);
+        }
+
+        for (int i=0; i < delayInFrames; ++i)
+        {
+                auto pic = vidPipe.GrabFrame(0);
+                ASSERT_TRUE(pic);
+                ASSERT_EQ(pic->GetTimestamp(), (int)((totalFrames - delayInFrames + i ) * (double)clockrate / outfps));
+        }
+
+}

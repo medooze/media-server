@@ -36,6 +36,9 @@ public:
 	size_t NextFrame(const VideoBuffer::const_shared& videoBuffer) override;
 	void ClearFrame() override;
 
+
+	void SetMaxDelay(uint32_t maxDelay) { this->maxDelay = maxDelay; };
+
 private:
 	uint32_t videoWidth = 0;
 	uint32_t videoHeight = 0;
@@ -45,7 +48,7 @@ private:
 	int inited = false;
 	int capturing = false;
 	int cancelledGrab = false;
-
+	
 	CircularQueue<VideoBuffer::const_shared> queue;
 
 	pthread_mutex_t newPicMutex;
@@ -59,6 +62,8 @@ private:
 	uint64_t lastDroppedReport = 0;
 	unsigned int droppedFramesSinceReport = 0;
 	unsigned int totalFramesSinceReport = 0;
+
+	uint32_t maxDelay = 0;
 };
 
 #endif	/* VIDEOPIPE_H */
