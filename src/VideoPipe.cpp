@@ -198,13 +198,14 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 		&& lastGrabbedTimestamp + videoBuffer->GetClockRate()/videoFPS - 1 > videoBuffer->GetTimestamp()
 	);
 
-	//Unlock
-	pthread_mutex_unlock(&newPicMutex);
-
 	//Check we have a new frame
 	if (!videoBuffer)
-		//No frame
+	{
+		//Unlock
+		pthread_mutex_unlock(&newPicMutex);
+		//Return no frame
 		return videoBuffer;
+	}
 	
 	if (scaleResolutionToHeight || scaleResolutionDownBy) 
 	{
@@ -254,7 +255,10 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 		//Swap buffers
 		videoBuffer = std::move(resized);
 	}
-
+  
+  //Unlock
+	pthread_mutex_unlock(&newPicMutex);
+  
 	//If we got timestamps in the video buffer
 	if (videoBuffer->HasTimestamp())
 		//Update timestamp

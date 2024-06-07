@@ -102,9 +102,9 @@ int VideoBufferScaler::Resize(const VideoBuffer::const_shared& input, const Vide
 		iv.GetData()
 	};
 	int srcStride[3] = {
-		iy.GetStride(),
-		iu.GetStride(),
-		iv.GetStride()
+		static_cast<int>(iy.GetStride()),
+		static_cast<int>(iu.GetStride()),
+		static_cast<int>(iv.GetStride())
 	};
 	//Get destination info
 	BYTE* dstData[3] = {
@@ -113,9 +113,9 @@ int VideoBufferScaler::Resize(const VideoBuffer::const_shared& input, const Vide
 		ov.GetData() + offsetX/2 + (offsetY/2) * ov.GetStride()
 	};
 	int dstStride[3] = {
-		oy.GetStride(),
-		ou.GetStride(),
-		ov.GetStride()
+		static_cast<int>(oy.GetStride()),
+		static_cast<int>(ou.GetStride()),
+		static_cast<int>(ov.GetStride())
 	};
 
 	// Resize frame 

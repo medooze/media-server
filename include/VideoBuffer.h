@@ -35,6 +35,13 @@ public:
 		memset(buffer, color, size);
 	}
 
+	void SetData(const uint8_t* data, uint32_t width, uint32_t heigth, uint32_t stride)
+	{
+		for (uint32_t i = 0; i < std::min<uint32_t>(height, GetHeight()); i++)
+			memcpy(GetData() + i * GetStride(), data + i * stride, std::min<uint32_t>(width, GetWidth()));
+
+	}
+
 private:
 	DWORD stride = 0;
 	DWORD width = 0;
