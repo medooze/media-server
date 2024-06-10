@@ -937,11 +937,16 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	//Log
 	UltraDebug("-DTLSICETransport::ReSendPacket() | resending [seq:%d,ssrc:%u,rtx:%u,instant:%llu, isWindow:%d, count:%d, empty:%d]\n", seq, group->media.ssrc, group->rtx.ssrc, instant, rtxBitrate.IsInWindow(), rtxBitrate.GetCount(), rtxBitrate.IsEmpty());
 
-	// If rtt is too large, disable RTX
-	if (rtt > RtxRttThresholdMs)
-	{
-		return (void)UltraDebug("-DTLSICETransport::ReSendPacket() | Too large RTT, skiping rtx. RTT:%d\n", rtt);
-	}
+	//Check if we have a custom playout buffer for the grou
+	uint32_t maxRTT = group->HasForcedPlayoutDelay()
+		? std::max<uint32_t>(group->GetForcedPlayoutDelay().max, RtxRttThresholdMs)
+		: RtxRttThresholdMs;
+
+	// If rtt is too large
+	if (rtt > maxRTT)
+		//Disable RTX
+		return (void)UltraDebug("-DTLSICETransport::ReSendPacket() | Too large RTT, skiping rtx. [rtt:%d,max:%d]\n", rtt, maxRTT);
+	
 
 	//if sse is enabled
 	if (senderSideEstimationEnabled && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC) != RTPMap::NotFound)
