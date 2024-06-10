@@ -2144,8 +2144,8 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 	packet->DisableFrameMarkings();
 
 	//If we are forcing video playout delay
-	if (group->type == MediaFrame::Video && group->HasForcedPlayoutDelay() && packet->IsKeyFrame())
-		//Set delay
+	if (group->type == MediaFrame::Video && group->HasForcedPlayoutDelay() && packet->GetMark())
+		//Set delay on the last packet of the frame
 		packet->SetPlayoutDelay(group->GetForcedPlayoutDelay());
 	else
 		//Disable playout delay
