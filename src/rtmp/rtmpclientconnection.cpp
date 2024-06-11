@@ -187,8 +187,15 @@ int RTMPClientConnection::Disconnect()
 		setZeroThread(&thread);
 	}
 
-	listener = NULL;
-	
+	//If got application
+	if (listener)
+	{
+		//Disconnect application
+		listener->onDisconnected(this);
+		//NO listener
+		listener = NULL;
+	}
+
 	//Ended
 	Log("<RTMPClientConnection::Disconnect() Ended RTMP connection\n");
 
@@ -341,14 +348,7 @@ int RTMPClientConnection::Run()
 			break;
 		}
 	}
-	
-	//If got application
-	if (listener)
-	{
-		//Disconnect application
-		listener->onDisconnected(this);
-	}
-	
+
 	Log("<RTMPClientConnection::Run() completed.\n");
 
 	//Done
