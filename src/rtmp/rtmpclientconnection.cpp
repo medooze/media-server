@@ -255,7 +255,7 @@ int RTMPClientConnection::Run()
 				if (getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &len) == -1)
 				{
 					Warning("-RTMPClientConnection::Run() getsockopt failed [%p]\n", this);
-					//Disconnect application
+					
 					if (listener) listener->onError(this, RTMPClientConnection::ErrorCode::GetSockOptError);
 					//exit
 					break;
@@ -265,7 +265,7 @@ int RTMPClientConnection::Run()
 				if (err != 0)
 				{
 					Warning("-RTMPClientConnection::Run() getsockopt error [%p, errno:%d]\n", this, err);
-					//Disconnect application
+					
 					if (listener) listener->onError(this, RTMPClientConnection::ErrorCode::GetSockOptError);
 					//exit
 					break;
