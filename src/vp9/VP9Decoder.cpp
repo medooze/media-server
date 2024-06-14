@@ -146,16 +146,10 @@ VideoBuffer::shared VP9Decoder::GetFrame()
 	Plane& u = videoBuffer->GetPlaneU();
 	Plane& v = videoBuffer->GetPlaneV();
 
-	//Copaamos  el Cy
-	for (int i = 0; i < std::min<uint32_t>(img->d_h, y.GetHeight()); i++)
-		memcpy(y.GetData() + i * y.GetStride(), &img->planes[0][i * img->stride[0]], y.GetWidth());
-
-	//Y el Cr y Cb
-	for (int i = 0; i < std::min<uint32_t>({ img->d_h / 2, u.GetHeight(), v.GetHeight() }); i++)
-	{
-		memcpy(u.GetData() + i * u.GetStride(), &img->planes[1][i * img->stride[1]], u.GetWidth());
-		memcpy(v.GetData() + i * v.GetStride(), &img->planes[2][i * img->stride[2]], v.GetWidth());
-	}
+	//Copy data to each plane
+	y.SetData(img->planes[0], img->d_w, img->d_h, img->stride[0]);
+	u.SetData(img->planes[1], img->d_w / 2, img->d_h / 2, img->stride[1]);
+	v.SetData(img->planes[2], img->d_w / 2, img->d_h / 2, img->stride[2]);
 
 	//Return ok
 	return videoBuffer;

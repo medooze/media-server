@@ -14,10 +14,11 @@ VP8Decoder::VP8Decoder() :
 	/**< Postprocess decoded frame */
 	flags |= VPX_CODEC_USE_POSTPROC;
 	
+        /*
 	//Get codec capatbilities
-	vpx_codec_caps_t caps = vpx_codec_get_caps(vpx_codec_vp8_dx());
-
-        /*if (caps & VPX_CODEC_CAP_INPUT_FRAGMENTS)
+	 vpx_codec_caps_t caps = vpx_codec_get_caps(vpx_codec_vp8_dx()); 
+	
+	if (caps & VPX_CODEC_CAP_INPUT_FRAGMENTS)
 	{
 		Debug("-VPX_CODEC_USE_INPUT_FRAGMENTS enabled\n");
 		flags |= VPX_CODEC_USE_INPUT_FRAGMENTS;
@@ -103,7 +104,7 @@ VideoBuffer::shared VP8Decoder::GetFrame()
 	auto videoBuffer = videoBufferPool.allocate();
 
 	//Copy timing info
-	CopyTimingInfo(*ref, videoBuffer);
+	CopyPresentedTimingInfo(*ref, videoBuffer);
 
 	//Set color range
 	switch (img->range)
@@ -155,16 +156,10 @@ VideoBuffer::shared VP8Decoder::GetFrame()
 	Plane& u = videoBuffer->GetPlaneU();
 	Plane& v = videoBuffer->GetPlaneV();
 
-	//Copaamos  el Cy
-	for (int i = 0; i < std::min<uint32_t>(img->d_h, y.GetHeight()); i++)
-		memcpy(y.GetData() + i * y.GetStride(), &img->planes[0][i * img->stride[0]], y.GetWidth());
-
-	//Y el Cr y Cb
-	for (int i = 0; i < std::min<uint32_t>({ img->d_h / 2, u.GetHeight(), v.GetHeight() }); i++)
-	{
-		memcpy(u.GetData() + i * u.GetStride(), &img->planes[1][i * img->stride[1]], u.GetWidth());
-		memcpy(v.GetData() + i * v.GetStride(), &img->planes[2][i * img->stride[2]], v.GetWidth());
-	}
+	//Copy data to each plane
+	y.SetData(img->planes[0], img->d_w, img->d_h, img->stride[0]);
+	u.SetData(img->planes[1], img->d_w / 2, img->d_h / 2, img->stride[1]);
+	v.SetData(img->planes[2], img->d_w / 2, img->d_h / 2, img->stride[2]);
 
 	//Return ok
 	return videoBuffer;

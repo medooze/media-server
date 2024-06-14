@@ -62,12 +62,14 @@ public:
 		frame->SetClockRate(GetClockRate());
 		//Set timestamp
 		frame->SetTimestamp(GetTimeStamp());
+		frame->SetPresentationTimestamp(GetPresentationTimestamp());
 		//Set time
 		frame->SetTime(GetTime());
 		frame->SetSenderTime(GetSenderTime());
 		frame->SetTimestampSkew(GetTimestampSkew());
 		//Set duration
 		frame->SetDuration(GetDuration());
+
 		//Set CVO
 		if (cvo) frame->SetVideoOrientation(*cvo);
 		//Copy target bitrate and fps
@@ -119,6 +121,9 @@ public:
 	void SetBFrame(bool isBFrame) { this->isBFrame = isBFrame; }
 	bool IsBFrame() const { return isBFrame; }
 
+	void SetPresentationTimestamp(uint64_t ts) { presentationTimestamp = ts;}
+	uint64_t GetPresentationTimestamp() const { return presentationTimestamp;}
+
 	void Reset() 
 	{
 		//Reset media frame
@@ -131,6 +136,13 @@ public:
 		ClearCodecConfig();
 		//Clear layers
 		layers.clear();
+
+		width		= 0;
+		height		= 0;
+		targetBitrate	= 0;
+		targetFps	= 0;
+		cvo.reset();
+		presentationTimestamp = 0;
 	}
 	
 private:
@@ -143,6 +155,7 @@ private:
 	uint32_t targetFps	= 0;
 	std::vector<LayerFrame> layers;
 	std::optional<VideoOrientation> cvo;
+	uint64_t presentationTimestamp = 0;
 };
 
 
@@ -196,13 +209,18 @@ public:
 
 };
 
-inline void CopyTimingInfo(const VideoFrame::const_shared& videoFrame, VideoBuffer::shared& videoBuffer)
+// Used by decoders after potentially reordering so needs to copy all timing info 
+// from the given source to the decoded frame timestamp. 
+//
+// Note: This will copy the presentation time as the reference timestamp now
+// this video data has been decoded/presented
+inline void CopyPresentedTimingInfo(const VideoFrame::const_shared& videoFrame, VideoBuffer::shared& videoBuffer)
 {
 	if (!videoFrame)
 		return;
 
 	videoBuffer->SetTime(videoFrame->GetTime());
-	videoBuffer->SetTimestamp(videoFrame->GetTimestamp());
+	videoBuffer->SetTimestamp(videoFrame->GetPresentationTimestamp());
 	videoBuffer->SetClockRate(videoFrame->GetClockRate());
 
 	if (videoFrame->GetSenderTime())

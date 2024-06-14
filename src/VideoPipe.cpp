@@ -189,13 +189,14 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 		queue.pop_front();
 	}
 
-	//Unlock
-	pthread_mutex_unlock(&newPicMutex);
-
 	//Check we have a new frame
 	if (!videoBuffer)
-		//No frame
+	{
+		//Unlock
+		pthread_mutex_unlock(&newPicMutex);
+		//Return no frame
 		return videoBuffer;
+	}
 	
 	if (scaleResolutionToHeight || scaleResolutionDownBy) 
 	{
@@ -240,19 +241,14 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 		//Rescale
 		scaler.Resize(videoBuffer, resized, true);
 
-		//Set timing info from original video buffer
-		if (videoBuffer->HasClockRate())
-			resized->SetClockRate(videoBuffer->GetClockRate());
-		if (videoBuffer->HasTimestamp())
-			resized->SetTimestamp(videoBuffer->GetTimestamp());
-		if (videoBuffer->HasTime())
-			resized->SetTime(videoBuffer->GetTime());
-		if (videoBuffer->HasSenderTime())
-			resized->SetSenderTime(videoBuffer->GetSenderTime());
+		resized->CopyTimingInfo(videoBuffer);
 
 		//Swap buffers
 		videoBuffer = std::move(resized);
 	}
+
+	//Unlock
+	pthread_mutex_unlock(&newPicMutex);
 
 	//Done
 	return videoBuffer;

@@ -50,8 +50,8 @@ private:
 	VideoInput *input	= nullptr;
 	VideoCodec::Type codec  = VideoCodec::UNKNOWN;
 
-	int width		= 0;	
-	int height		= 0;	
+	uint32_t width		= 0;	
+	uint32_t height		= 0;
 	int fps			= 0;
 	DWORD bitrate		= 0;
 	int intraPeriod		= 0;

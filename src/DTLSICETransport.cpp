@@ -937,11 +937,16 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	//Log
 	UltraDebug("-DTLSICETransport::ReSendPacket() | resending [seq:%d,ssrc:%u,rtx:%u,instant:%llu, isWindow:%d, count:%d, empty:%d]\n", seq, group->media.ssrc, group->rtx.ssrc, instant, rtxBitrate.IsInWindow(), rtxBitrate.GetCount(), rtxBitrate.IsEmpty());
 
-	// If rtt is too large, disable RTX
-	if (rtt > RtxRttThresholdMs)
-	{
-		return (void)UltraDebug("-DTLSICETransport::ReSendPacket() | Too large RTT, skiping rtx. RTT:%d\n", rtt);
-	}
+	//Check if we have a custom playout buffer for the grou
+	uint32_t maxRTT = group->HasForcedPlayoutDelay()
+		? std::max<uint32_t>(group->GetForcedPlayoutDelay().max, RtxRttThresholdMs)
+		: RtxRttThresholdMs;
+
+	// If rtt is too large
+	if (rtt > maxRTT)
+		//Disable RTX
+		return (void)UltraDebug("-DTLSICETransport::ReSendPacket() | Too large RTT, skiping rtx. [rtt:%d,max:%d]\n", rtt, maxRTT);
+	
 
 	//if sse is enabled
 	if (senderSideEstimationEnabled && sendMaps.ext.GetTypeForCodec(RTPHeaderExtension::TransportWideCC) != RTPMap::NotFound)
@@ -951,12 +956,14 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	
 		//Check if we are sending way to much bitrate
 		if (targetBitrate && rtxBitrate.GetInstantAvg()*8 > targetBitrate * MaxRTXOverhead)
+		{
 			//Error
-			return (void)UltraDebug("-DTLSICETransport::ReSendPacket() | Too much bitrate on rtx, skiping rtx:%lld estimated:%u target:%d\n",(uint64_t)(rtxBitrate.GetInstantAvg()*8), senderSideBandwidthEstimator->GetEstimatedBitrate(), targetBitrate);
+			/*return*/ (void)UltraDebug("-DTLSICETransport::ReSendPacket() | Too much bitrate on rtx, skiping rtx:%lld estimated:%u target:%d\n", (uint64_t)(rtxBitrate.GetInstantAvg() * 8), senderSideBandwidthEstimator->GetEstimatedBitrate(), targetBitrate);
 		
-		if (targetBitrate && outgoingBitrate.GetInstantAvg()*8 > targetBitrate)
+		} else if (targetBitrate && outgoingBitrate.GetInstantAvg()*8 > targetBitrate) {
 			//Error
-			return (void)UltraDebug("-DTLSICETransport::ReSendPacket() | Too much outgoing bitrate, skiping rtx. outgoing:%lld estimated:%u target:%d\n",(uint64_t)(outgoingBitrate.GetInstantAvg()*8), senderSideBandwidthEstimator->GetEstimatedBitrate(), targetBitrate);
+			/*return*/ (void)UltraDebug("-DTLSICETransport::ReSendPacket() | Too much outgoing bitrate, skiping rtx. outgoing:%lld estimated:%u target:%d\n", (uint64_t)(outgoingBitrate.GetInstantAvg() * 8), senderSideBandwidthEstimator->GetEstimatedBitrate(), targetBitrate);
+		}
 	}
 
 	//Check if we can retransmit the packet, or we have rtx recently
@@ -2143,9 +2150,9 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 	//No frame markings
 	packet->DisableFrameMarkings();
 
-	//If we are forcing video playout delay
-	if (group->type == MediaFrame::Video && group->HasForcedPlayoutDelay() && packet->IsKeyFrame())
-		//Set delay
+	//If we are forcing playout delay, send it on all audio and last video packet per frame
+	if (group->HasForcedPlayoutDelay() && (group->type == MediaFrame::Audio || packet->GetMark()))
+		//Set delay on the last packet of the frame
 		packet->SetPlayoutDelay(group->GetForcedPlayoutDelay());
 	else
 		//Disable playout delay
