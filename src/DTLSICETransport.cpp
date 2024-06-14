@@ -2150,8 +2150,8 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 	//No frame markings
 	packet->DisableFrameMarkings();
 
-	//If we are forcing playout delay, send it on all audio and last video packet per frame
-	if (group->HasForcedPlayoutDelay() && (group->type == MediaFrame::Audio || packet->GetMark()))
+	//Override force playout delay
+	if (group->HasForcedPlayoutDelay())
 		//Set delay on the last packet of the frame
 		packet->SetPlayoutDelay(group->GetForcedPlayoutDelay());
 	else
