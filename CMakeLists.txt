@@ -107,6 +107,8 @@ add_library(MediaServerLib
     ${CMAKE_CURRENT_LIST_DIR}/src/SimulcastMediaFrameListener.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/VideoLayerSelector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/VideoCodecFactory.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/VideoDecoderWorker.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/Deinterlacer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/utf8.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/ForwardErrorCorrection.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/FecProbeGenerator.cpp
@@ -125,6 +127,7 @@ target_link_libraries(MediaServerLib
     vpx
     x264
     avcodec
+    avfilter
     avutil
     swscale
     swresample
@@ -151,6 +154,7 @@ add_executable(MediaServerUnitTest
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestTimestampChecker.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestVP8Depacketizer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestVideoPipe.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestBFrame.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAMFNumber.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestVideoLayersAllocation.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestTools.cpp
