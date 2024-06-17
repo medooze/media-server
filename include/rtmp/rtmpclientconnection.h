@@ -18,16 +18,16 @@ public:
 
 	enum class ErrorCode
 	{
+		NoError = 0,
 		Generic = 1,
 		FailedToResolveURL = 2,
 		GetSockOptError = 3,
 		FailedToConnectSocket = 4,
 		ConnectCommandFailed = 5,
-		PublishCommandFailed = 6,
-		FailedToParseData = 7,
-		PeerClosed = 8,
-		ReadError = 9,
-		PollError = 10
+		FailedToParseData = 6,
+		PeerClosed = 7,
+		ReadError = 8,
+		PollError = 9
 	};
 
 	class Listener
@@ -38,15 +38,14 @@ public:
 	public:
 		//Interface
 		virtual void onConnected(RTMPClientConnection* conn) = 0;
-		virtual void onDisconnected(RTMPClientConnection* conn) = 0;
-		virtual void onError(RTMPClientConnection* conn, ErrorCode code) = 0;
+		virtual void onDisconnected(RTMPClientConnection* conn, ErrorCode code) = 0;
 		virtual void onCommand(RTMPClientConnection* conn, DWORD messageStreamId, const wchar_t* name, AMFData* obj, const std::vector<AMFData*>&) = 0;
 	};
 public:
 	RTMPClientConnection(const std::wstring& tag);
 	virtual ~RTMPClientConnection();
 
-	int Connect(const char* server, int port, const char* app, RTMPClientConnection::Listener* listener);
+	ErrorCode Connect(const char* server, int port, const char* app, RTMPClientConnection::Listener* listener);
 	DWORD SendCommand(DWORD streamId, const wchar_t* name, AMFData* params, AMFData* extra, std::function<void(bool, AMFData*, const std::vector<AMFData*>&)> callback);
 	DWORD SendCommand(DWORD streamId, const wchar_t* name, AMFData* params, AMFData* extra);
 	int Disconnect();
