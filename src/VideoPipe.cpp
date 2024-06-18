@@ -202,7 +202,11 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 	} while (videoBuffer 
 		&& videoFPS
 		&& lastGrabbedTimestamp!= NoTimestamp 
-		&& videoBuffer->HasTimestamp() 
+		&& videoBuffer->HasTimestamp()
+
+		// The -1 here is to handle potential quantization of timestamps (we have 
+		// seen occasionally with msec accurate clocks) resulting in values differing
+		// by 1 occasionally not causing unnecessary drops.
 		&& lastGrabbedTimestamp + videoBuffer->GetClockRate()/videoFPS - 1 > videoBuffer->GetTimestamp()
 	);
 
