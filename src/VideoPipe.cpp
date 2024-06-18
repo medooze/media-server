@@ -173,6 +173,14 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 			}
 		}
 
+
+		// Need to reset the videoBuffer or when downrating
+		// and empty queue will loop in here until another 
+		// frame arrives instead of returning no frame yet
+		// Also done before the cancelledGrab so it doesnt 
+		// return an invalid frame
+		videoBuffer.reset();
+
 		if (cancelledGrab)
 		{
 			//Reset flag	
@@ -293,10 +301,6 @@ size_t VideoPipe::NextFrame(const VideoBuffer::const_shared& videoBuffer)
 
 	auto now = getTime();
 
-	// Push the new decoded picture onto the queue
-	if (queue.full())
-		++droppedFramesSinceReport;
-
 
 	//Do not enqueue more than the max delay
 	while (maxDelay 
@@ -313,6 +317,9 @@ size_t VideoPipe::NextFrame(const VideoBuffer::const_shared& videoBuffer)
 		++droppedFramesSinceReport;
 	}
 
+	// Push the new decoded picture onto the queue
+	if (queue.full())
+		++droppedFramesSinceReport;
 	queue.push_back(videoBuffer);
 	size_t qsize = queue.length();
 	++totalFramesSinceReport;

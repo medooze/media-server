@@ -291,6 +291,38 @@ TEST(TestVideoPipe, pictureResizeScaleDownBy)
 }
 
 
+TEST(TestVideoPipe, matchingfps)
+{
+        int infps = 60;
+        int outfps = 60;
+        int clockrate = 90000;
+
+        int width = 640;
+        int height = 480;
+
+        VideoPipe vidPipe;
+        vidPipe.Init();
+        vidPipe.StartVideoCapture(width, height, outfps);
+
+        //Enqueue 10 frames        
+        for (int i = 0; i< 30; ++i )
+        {
+                VideoBuffer::shared sharedVidBuffer = std::make_shared<VideoBuffer>(width, height);
+                sharedVidBuffer->SetClockRate(clockrate);
+                sharedVidBuffer->SetTimestamp(i* (double)clockrate/infps);
+                auto queued = vidPipe.NextFrame(sharedVidBuffer);
+                ASSERT_EQ(queued, i+1);
+        }
+
+        for (int i = 0; i < 30; ++i)
+        {
+                auto pic = vidPipe.GrabFrame(0);
+                ASSERT_TRUE(pic);
+                ASSERT_EQ(pic->GetTimestamp(), (int)(i * (double)clockrate / outfps));
+        }
+       
+}
+
 TEST(TestVideoPipe, downrating)
 {
         int infps = 60;
@@ -319,6 +351,39 @@ TEST(TestVideoPipe, downrating)
                 auto pic = vidPipe.GrabFrame(0);
                 ASSERT_TRUE(pic);
                 ASSERT_EQ(pic->GetTimestamp(), (int)(i * (double)clockrate / outfps));
+        }
+       
+}
+
+
+TEST(TestVideoPipe, uprating)
+{
+        int infps = 30;
+        int outfps = 60;
+        int clockrate = 90000;
+
+        int width = 640;
+        int height = 480;
+
+        VideoPipe vidPipe;
+        vidPipe.Init();
+        vidPipe.StartVideoCapture(width, height, outfps);
+
+        //Enqueue 10 frames        
+        for (int i = 0; i< 30; ++i )
+        {
+                VideoBuffer::shared sharedVidBuffer = std::make_shared<VideoBuffer>(width, height);
+                sharedVidBuffer->SetClockRate(clockrate);
+                sharedVidBuffer->SetTimestamp(i* (double)clockrate/infps);
+                auto queued = vidPipe.NextFrame(sharedVidBuffer);
+                ASSERT_EQ(queued, i+1);
+        }
+
+        for (int i = 0; i < 30; ++i)
+        {
+                auto pic = vidPipe.GrabFrame(0);
+                ASSERT_TRUE(pic);
+                ASSERT_EQ(pic->GetTimestamp(), (int)(i * (double)clockrate / infps));
         }
        
 }
@@ -392,4 +457,112 @@ TEST(TestVideoPipe, maxDelay)
                 ASSERT_EQ(pic->GetTimestamp(), (int)((totalFrames - delayInFrames + i ) * (double)clockrate / outfps));
         }
 
+}
+
+
+TEST(TestVideoPipe, cancelledGrab)
+{
+        int outfps = 60;
+        int clockrate = 90000;
+
+        int width = 640;
+        int height = 480;
+
+        VideoPipe vidPipe;
+        vidPipe.Init();
+        vidPipe.StartVideoCapture(width, height, outfps);
+
+        auto blocking_grab_frame = std::async(std::launch::async, [&]()->auto{
+            return vidPipe.GrabFrame(0);
+        });
+
+        vidPipe.CancelGrabFrame();
+
+        auto pic = blocking_grab_frame.get();
+        ASSERT_FALSE(pic);
+}
+
+TEST(TestVideoPipe, downratingCancelGrabInvalidFrame)
+{
+        int infps = 60;
+        int outfps = 30;
+        int clockrate = 90000;
+
+        int width = 640;
+        int height = 480;
+
+        VideoPipe vidPipe;
+        vidPipe.Init();
+        vidPipe.StartVideoCapture(width, height, outfps);
+
+        // Enqueue a few frames. First is consumed and second is dropped for downrating
+        for (int i = 0; i< 2; ++i )
+        {
+                VideoBuffer::shared sharedVidBuffer = std::make_shared<VideoBuffer>(width, height);
+                sharedVidBuffer->SetClockRate(clockrate);
+                sharedVidBuffer->SetTimestamp(i* (double)clockrate/infps);
+                auto queued = vidPipe.NextFrame(sharedVidBuffer);
+                ASSERT_EQ(queued, i+1);
+        }
+
+        {
+                auto pic = vidPipe.GrabFrame(0);
+                ASSERT_TRUE(pic);
+                ASSERT_EQ(pic->GetTimestamp(), 0U);
+        }
+
+        // Start grab frame that is waiting for the next input
+        // without cancel will block forever
+        auto blocking_grab_frame = std::async(std::launch::async, [&]()->auto{
+            return vidPipe.GrabFrame(0);
+        });
+
+        // Force the condition to be waiting on another frame OR a cancel.
+        // I.e. It would have woken up and handled second frame which it 
+        // decides to drop before we call cancel
+        using namespace std::chrono_literals;
+        std::this_thread::sleep_for(2s);
+        vidPipe.CancelGrabFrame();
+
+        auto pic = blocking_grab_frame.get();
+        ASSERT_FALSE(pic);
+}
+
+TEST(TestVideoPipe, dontBlockOnEmptyQueueWhenDownrating)
+{
+        int infps = 60;
+        int outfps = 30;
+        int clockrate = 90000;
+
+        int width = 640;
+        int height = 480;
+
+        VideoPipe vidPipe;
+        vidPipe.Init();
+        vidPipe.StartVideoCapture(width, height, outfps);
+
+        // Enqueue a few frames. First is consumed and second is dropped for downrating
+        for (int i = 0; i< 2; ++i )
+        {
+                VideoBuffer::shared sharedVidBuffer = std::make_shared<VideoBuffer>(width, height);
+                sharedVidBuffer->SetClockRate(clockrate);
+                sharedVidBuffer->SetTimestamp(i* (double)clockrate/infps);
+                auto queued = vidPipe.NextFrame(sharedVidBuffer);
+                ASSERT_EQ(queued, i+1);
+        }
+
+        {
+                auto pic = vidPipe.GrabFrame(0);
+                ASSERT_TRUE(pic);
+                ASSERT_EQ(pic->GetTimestamp(), 0U);
+        }
+
+        // Start grab frame that is waiting for the next input
+        // for at most 10msec, however with bug will wait forever
+        auto blocking_grab_frame = std::async(std::launch::async, [&]()->auto{
+            return vidPipe.GrabFrame(10);
+        });
+
+        auto pic = blocking_grab_frame.get();
+        ASSERT_FALSE(pic);
 }
