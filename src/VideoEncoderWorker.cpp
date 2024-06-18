@@ -174,9 +174,6 @@ int VideoEncoderWorker::Encode()
 	//Set bitrate
 	videoEncoder->SetFrameRate(fps,bitrate,intraPeriod);
 
-	//No wait for first
-	QWORD frameTime = 0;
-
 	//Iniciamos el tamama�o del encoder
  	videoEncoder->SetSize(width,height);
 	
@@ -193,19 +190,12 @@ int VideoEncoderWorker::Encode()
 	while(encoding)
 	{
 		//Capture video frame buffer
-		auto pic = input->GrabFrame(frameTime/1000);
+		auto pic = input->GrabFrame(0);
 
 		//Check picture
 		if (!pic)
 			//Exit
 			continue;
-		
-		// Apparently we want to wait forever for the first frame
-		// or until a CancelGrab is called on the pipe to avoid polling
-		// unnecessarily before we get any data.
-		//
-		// So set this after the first frame was recieved
-		frameTime = 1E6/fps;
 		
 		//Check size
 		if (pic->GetWidth() != width || pic->GetHeight() != height)
