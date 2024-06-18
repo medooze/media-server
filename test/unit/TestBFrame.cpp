@@ -37,6 +37,7 @@ class AVPacketGenerator
         {
             av_frame_free(&frame);
             av_packet_free(&pkt);
+            avcodec_free_context(&codecCtx);
         }
 		
         std::queue<AVPacket*>& generateAVPackets() 
