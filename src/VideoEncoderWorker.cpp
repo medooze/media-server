@@ -200,6 +200,13 @@ int VideoEncoderWorker::Encode()
 			//Exit
 			continue;
 		
+		// Apparently we want to wait forever for the first frame
+		// or until a CancelGrab is called on the pipe to avoid polling
+		// unnecessarily before we get any data.
+		//
+		// So set this after the first frame was recieved
+		frameTime = 1E6/fps;
+		
 		//Check size
 		if (pic->GetWidth() != width || pic->GetHeight() != height)
 		{
@@ -236,9 +243,7 @@ int VideoEncoderWorker::Encode()
 		if (!videoFrame)
 			//Next
 			continue;
-		}
 
-		frameTime = 1E6/fps;
 
 		//Increase frame counter
 		fpsAcu.Update(getTime()/1000,1);
