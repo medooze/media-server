@@ -569,3 +569,93 @@ TEST(TestVideoPipe, dontBlockOnEmptyQueueWhenDownrating)
     auto pic = blocking_grab_frame.get();
     ASSERT_EQ(pic, nullptr);
 }
+
+
+TEST(TestVideoPipe, setMaxDelayWithExistingDataThenOverflows)
+{
+    // Mostly was written to test the SetMaxDelay works when there is already data in the queue.
+    // However following that I also verify the new max delay takes effect correctly
+    // by pushing frames past the new delay and expecting them to be dropped
+
+    // Change fps/clock rate values to something a bit easier to debug
+    int infps = 20;
+    int outfps = 10;
+    int clockrate = 1000;
+
+    int width = 640;
+    int height = 480;
+
+    VideoPipe vidPipe;
+    vidPipe.Init();
+    vidPipe.StartVideoCapture(width, height, outfps);
+
+    
+    // Lets fill up the pipe
+    uint64_t nextPushTimestamp = 0;
+    uint64_t nextPullTimestamp = 0;
+    for (int i = 0; i < VideoPipe::MaxOutstandingFramesDefault; ++i)
+    {
+        VideoBuffer::shared sharedVidBuffer = std::make_shared<VideoBuffer>(width, height);
+        sharedVidBuffer->SetClockRate(clockrate);
+        sharedVidBuffer->SetTimestamp(nextPushTimestamp);
+        nextPushTimestamp += (double)clockrate / infps;
+        auto queued = vidPipe.NextFrame(sharedVidBuffer);
+        ASSERT_EQ(queued, i + 1);
+    }
+
+    // Now lets change the max latency to a few frames larger than the default queue size
+    // so that it forces a circular queue resize
+    // We do this while there is data in the queue already
+    float f = (VideoPipe::MaxOutstandingFramesDefault + 2.0) / infps * 1000.0;
+    uint32_t maxDelayMS = std::round(f);
+    vidPipe.SetMaxDelay(maxDelayMS);
+
+    // Now lets drain the queue and make sure the items are still correct in there
+    for (int i = 0; i < VideoPipe::MaxOutstandingFramesDefault/2; ++i)
+    {
+        auto pic = vidPipe.GrabFrame(0);
+        ASSERT_NE(pic, nullptr);
+        ASSERT_EQ(pic->GetTimestamp(), nextPullTimestamp);
+        nextPullTimestamp += (double)clockrate / outfps;
+    }
+
+    // Should be nothing left in queue (well not that is valid for our fps anyway)
+    {
+        auto pic = vidPipe.GrabFrame(10);
+        ASSERT_EQ(pic, nullptr);
+    }
+
+    // Lets set the max delay to a value that requires the queue size to be adjusted
+    int fillDelayFrames = maxDelayMS * infps / 1000;
+    for (int i = 0; i < fillDelayFrames; ++i)
+    {
+        VideoBuffer::shared sharedVidBuffer = std::make_shared<VideoBuffer>(width, height);
+        sharedVidBuffer->SetClockRate(clockrate);
+        sharedVidBuffer->SetTimestamp(nextPushTimestamp);
+        nextPushTimestamp += (double)clockrate / infps;
+        auto queued = vidPipe.NextFrame(sharedVidBuffer);
+    }
+
+    // Lets add a few extra frames to go over the max latency
+    const size_t extraFrames = 10;
+    for (int i = fillDelayFrames; i < fillDelayFrames + extraFrames; ++i)
+    {
+        VideoBuffer::shared sharedVidBuffer = std::make_shared<VideoBuffer>(width, height);
+        sharedVidBuffer->SetClockRate(clockrate);
+        sharedVidBuffer->SetTimestamp(nextPushTimestamp);
+        nextPushTimestamp += (double)clockrate / infps;
+        auto queued = vidPipe.NextFrame(sharedVidBuffer);
+    }
+
+    // We would have dropped extraFrames frames from input
+    nextPullTimestamp += extraFrames * ((double)clockrate / infps);
+
+    for (int i = 0; i < fillDelayFrames/2; ++i)
+    {
+        auto pic = vidPipe.GrabFrame(10);
+        ASSERT_NE(pic, nullptr);
+        ASSERT_EQ(pic->GetTimestamp(), nextPullTimestamp);
+        nextPullTimestamp += (double)clockrate / outfps;
+    }
+
+}

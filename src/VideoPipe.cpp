@@ -4,11 +4,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-static constexpr size_t MaxOutstandingFrames = 30;
 VideoPipe::VideoPipe() : 
 	// Want a non growing queue
-	queue(MaxOutstandingFrames, false),
-	videoBufferPool(MaxOutstandingFrames, MaxOutstandingFrames + 2)
+	queue(MaxOutstandingFramesDefault, false),
+	videoBufferPool(MaxOutstandingFramesDefault, MaxOutstandingFramesDefault + 2)
 {
 	//Init mutex
 	pthread_mutex_init(&newPicMutex,0);
@@ -61,6 +60,30 @@ int VideoPipe::End()
 	pthread_mutex_unlock(&newPicMutex);
 
 	return true;
+}
+
+void VideoPipe::SetMaxDelay(uint32_t maxDelay)
+{
+	pthread_mutex_lock(&newPicMutex);
+
+	// Note: We dont *know* the ingest fps, so will just assume max is 60fps for now
+	// If for whatever reason the egress fps is larger we will know about it here
+	int maxFPS = std::max(60, videoFPS);
+
+	// Figure out the max frames we might every have in this queue. 
+	// Note: Actual latency values are enforced by the maxDelay
+	// we are providing an upper limit on the outstanding items in the queue
+	// and will resize this queue to be larger in case we increase the latency
+	// past what is likely to be supported by the queues default
+	size_t maxDelayInFrames = std::ceil((maxDelay * maxFPS) / 1000.0);
+	Log("-VideoPipe::SetMaxDelay() Setting max delay: %ums (0 indicates no max)\n", maxDelay);
+	if (queue.size() < maxDelayInFrames)
+	{
+		Log("-VideoPipe::SetMaxDelay() Increasing size of video pipe queue to: %u from %u to permit new max delay: %ums\n",queue.size(),maxDelayInFrames, maxDelay);
+		queue.grow(maxDelayInFrames);
+	}
+	this->maxDelay = maxDelay;
+	pthread_mutex_unlock(&newPicMutex);
 }
 
 int VideoPipe::StartVideoCapture(uint32_t width, uint32_t height, uint32_t fps)
@@ -303,27 +326,35 @@ void  VideoPipe::CancelGrabFrame()
 
 size_t VideoPipe::NextFrame(const VideoBuffer::const_shared& videoBuffer)
 {
-
 	//Lock
 	pthread_mutex_lock(&newPicMutex);
 
 	auto now = getTime();
 
 
-	//Do not enqueue more than the max delay
-	while (maxDelay 
-		&& !queue.empty() 
-		&& videoBuffer->HasTimestamp() 
-		&& queue.front()->HasTimestamp()
-		&& videoBuffer->GetTimestamp() > queue.front()->GetTimestamp()
-		&& videoBuffer->GetClockRate() == queue.front()->GetClockRate()
-		&& (videoBuffer->GetTimestamp() - queue.front()->GetTimestamp()) >= (maxDelay * videoBuffer->GetClockRate()) / 1000
-	)
+		//Do not enqueue more than the max delay packets
+	if (maxDelay && videoBuffer->HasTimestamp())
 	{
-		//Drop first picture
-		queue.pop_front();
-		++droppedFramesSinceReport;
+		auto maxDelayInClockTicks = (maxDelay * videoBuffer->GetClockRate()) / 1000;
+
+		while (!queue.empty() 
+			// Dont drop if no valid timestamp or changing clock rates as we cant legit compare them
+			&& queue.front()->HasTimestamp()
+			&& videoBuffer->GetClockRate() == queue.front()->GetClockRate()
+
+			// Make sure not to get timestamp oveflow in the subtraction
+			&& videoBuffer->GetTimestamp() > queue.front()->GetTimestamp()
+
+			// Compare the duration diff to the max delay
+			&& (videoBuffer->GetTimestamp() - queue.front()->GetTimestamp()) >= maxDelayInClockTicks
+		)
+		{
+			//Drop first picture
+			queue.pop_front();
+			++droppedFramesSinceReport;
+		}
 	}
+
 
 	// Push the new decoded picture onto the queue
 	if (queue.full())
