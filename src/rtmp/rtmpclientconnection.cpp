@@ -507,7 +507,7 @@ void RTMPClientConnection::ParseData(const BYTE* data, const DWORD size)
 					//Move to next state
 					state = HEADER_S2_WAIT;
 					//Send S2 data
-					WriteData(c2.GetData(), c2.GetSize());
+					tls.encrypt(c2.GetData(), c2.GetSize());
 					//Debug
 					Log("-RTMPClientConnection::Sending c2.\n");
 				}
@@ -919,7 +919,6 @@ void RTMPClientConnection::ProcessCommandMessage(DWORD streamId, RTMPCommandMess
 	//If it is not a result
 	if (name.compare(L"_error") == 0 || name.compare(L"_result") == 0)
 	{
-
 		//Log
 		Log("-RTMPClientConnection::ProcessCommandMessage() Got response [streamId:%d,name:\"%ls\",transId:%ld]\n", streamId, name.c_str(), transId);
 		cmd->Dump();

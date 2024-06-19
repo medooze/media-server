@@ -5,7 +5,6 @@
 
 TlsClient::TlsClient()
 {
-	/* SSL library initialisation */
 	SSL_library_init();
 	OpenSSL_add_all_algorithms();
 	SSL_load_error_strings();
@@ -20,7 +19,7 @@ bool TlsClient::initialize(int fd, const char* hostname)
 	ctx = SSL_CTX_new(TLS_method());
 	if (!ctx)
 	{
-		Error("SSL_CTX_new()");
+		Error("-TlsClient::initialize() Failed to ceate SSL context\n");
 		return false;
 	}
 
@@ -36,11 +35,12 @@ bool TlsClient::initialize(int fd, const char* hostname)
 	ssl = SSL_new(ctx);
 	if (!ssl)
 	{
-		Error("SSL_new()");
+		Error("-TlsClient::initialize() Failed to ceate SSL\n");
 		return false;
 	}
 
-	SSL_set_connect_state(ssl); /* ssl client mode */
+	// Set client mode
+	SSL_set_connect_state(ssl);
 
 	SSL_set_bio(ssl, rbio, wbio);
 	
@@ -49,6 +49,7 @@ bool TlsClient::initialize(int fd, const char* hostname)
 		SSL_set_tlsext_host_name(ssl, hostname); // TLS SNI
 	}
 	
+	// Start handshake
 	if (handshake() == TlsError::Failed)
 	{
 		return false;
@@ -59,47 +60,51 @@ bool TlsClient::initialize(int fd, const char* hostname)
 
 TlsClient::TlsError TlsClient::decrypt(const uint8_t* data, size_t size)
 {
-	Log("Decrypt: %llu\n", size);
-	
 	auto len = BIO_write(rbio, data, size);
 	if (len <= 0)
 	{
-		Error("Failed to BIO_write\n");
+		Error("-TlsClient::decrypt() Failed to BIO_write\n");
 		return TlsClient::TlsError::Failed;
 	}
 	
 	if (!SSL_is_init_finished(ssl))
 	{
+		Log("-TlsClient::decrypt() ssl not initialised\n");
+		
 		if (handshake() == TlsError::Failed)
 		{
-			Error("Failed to handshake\n");
+			Error("-TlsClient::decrypt() Failed to handshake\n");
 			return TlsClient::TlsError::Failed;
 		}
 		
 		if (!SSL_is_init_finished(ssl))
 		{
-			Error("Pending init\n");
+			Error("-TlsClient::decrypt() Pending init\n");
 			return TlsClient::TlsError::Pending;
 		}
 	}
-	else if (!initialised)
+	
+	if (!initialised)
 	{
-		Log("Tls client initialised\n");
-		
+		Log("-TlsClient::decrypt() Tls client initialised\n");
 		initialised = true;
 	}
 	
-	for (auto bytes = SSL_read(ssl, decryptCache, sizeof(decryptCache)); bytes > 0;)
-	{
-		queueDecryptedData(decryptCache, bytes);
-	}
+	int bytes = 0;
+	do {
+		bytes = SSL_read(ssl, decryptCache, sizeof(decryptCache));
+		if (bytes > 0) 
+		{
+			queueDecryptedData(decryptCache, bytes);
+		}
+	} while (bytes > 0);
 	
 	return TlsClient::TlsError::None;
 }
 
 TlsClient::TlsError TlsClient::encrypt(const uint8_t* data, size_t size)
 {
-	Log("encrypt: %llu\n", size);
+	if (size == 0) return TlsClient::TlsError::None;
 	
 	if (!SSL_is_init_finished(ssl))
 	{
