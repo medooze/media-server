@@ -444,7 +444,7 @@ void RTMPClientConnection::sendRtmpData(const uint8_t* data, size_t size)
 	{
 		if (tls->encrypt(data, size) != TlsClient::TlsError::None)
 		{
-			Warning("TLS encrypt error\n");
+			Warning("-RTMPClientConnection::sendRtmpData() TLS encrypt error\n");
 		}
 	}
 	else
@@ -462,7 +462,7 @@ void RTMPClientConnection::processReceivedData(const uint8_t* data, size_t size)
 		auto ret = tls->decrypt(data, size);
 		if (ret == TlsClient::TlsError::Failed)
 		{
-			Warning("Failed to decrypt\n");
+			Warning("-RTMPClientConnection::processReceivedData() Failed to decrypt\n");
 		}
 	}
 	else
@@ -867,7 +867,7 @@ void RTMPClientConnection::ParseData(const BYTE* data, const DWORD size)
  ***********************/
 int RTMPClientConnection::WriteData(const BYTE* data, const DWORD size)
 {
-	return	write(fd, data, size);
+	return write(fd, data, size);
 }
 
 void RTMPClientConnection::ProcessControlMessage(DWORD streamId, BYTE type, RTMPObject* msg)
