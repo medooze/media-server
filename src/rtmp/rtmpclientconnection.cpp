@@ -289,7 +289,11 @@ int RTMPClientConnection::Run()
 					//Set state
 					state = HEADER_S0_WAIT;
 					//Send it
-					tls.encrypt(c01.GetData(), c01.GetSize());
+					
+					if (tls.encrypt(c01.GetData(), c01.GetSize()) != TlsClient::TlsError::None)
+					{
+						Warning("TLS encrypt error\n");
+					}
 
 					//Debug
 					Debug("-RTMPClientConnection::Run() Socket connected, Sending c0 and c1 with digest %s size %d\n", digest ? "on" : "off", c01.GetSize());
@@ -298,7 +302,11 @@ int RTMPClientConnection::Run()
 				//Write data buffer
 				DWORD len = SerializeChunkData(data, size);
 				//Send it
-				tls.encrypt(data, len);
+				if (tls.encrypt(data, len) != TlsClient::TlsError::None)
+				{
+					Warning("TLS encrypt error\n");
+				}
+				
 				//Increase sent bytes
 				outBytes += len;
 			}
@@ -334,17 +342,16 @@ int RTMPClientConnection::Run()
 			inBytes += len;
 
 			try {
-				bool success = tls.decrypt(data, len);
+				auto ret = tls.decrypt(data, len);
+				if (ret == TlsClient::TlsError::Failed)
+				{
+					Warning("Failed to decrypt\n");
+				}
 				
 				tls.popAllDecypted([this](auto&& data) {
 					//Parse data
 					ParseData(data.data(), data.size());
 				});
-				
-				if (!success)
-				{
-					Warning("Failed to decrypt\n");
-				}
 			}
 			catch (std::exception& e) {
 				//Show error
