@@ -8,6 +8,8 @@
 #include "rtmpmessage.h"
 #include "rtmpstream.h"
 #include "rtmpapplication.h"
+#include "TlsClient.h"
+
 #include <pthread.h>
 #include <map>
 
@@ -74,9 +76,9 @@ protected:
 private:
 
 	static  void* run(void* par);
-	void ParseData(BYTE* data, const DWORD size);
+	void ParseData(const BYTE* data, const DWORD size);
 	DWORD SerializeChunkData(BYTE* data, const DWORD size);
-	int WriteData(BYTE* data, const DWORD size);
+	int WriteData(const BYTE* data, const DWORD size);
 
 	void ProcessControlMessage(DWORD streamId, BYTE type, RTMPObject* msg);
 	void ProcessCommandMessage(DWORD streamId, RTMPCommandMessage* cmd);
@@ -157,6 +159,8 @@ private:
 	std::wstring method;
 	std::wstring challenge;
 	std::wstring opaque;
+	
+	TlsClient tls;
 };
 
 #endif
