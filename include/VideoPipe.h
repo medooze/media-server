@@ -25,6 +25,7 @@ public:
 
 	int Init(float scaleResolutionDownBy = 0.0f, uint32_t scaleResolutionToHeight = 0, AllowedDownScaling allowedDownScaling = AllowedDownScaling::Any);
 	int End();
+	void SetMaxDelay(uint32_t maxDelay) { this->maxDelay = maxDelay; };
 
 	/** VideoInput */
 	int StartVideoCapture(uint32_t width, uint32_t height, uint32_t fps) override;
@@ -35,9 +36,6 @@ public:
 	/** VideoOutput */
 	size_t NextFrame(const VideoBuffer::const_shared& videoBuffer) override;
 	void ClearFrame() override;
-
-
-	void SetMaxDelay(uint32_t maxDelay) { this->maxDelay = maxDelay; };
 
 private:
 	uint32_t videoWidth = 0;

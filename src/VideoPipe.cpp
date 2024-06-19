@@ -198,12 +198,16 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 			videoBuffer = queue.front();
 			queue.pop_front();
 		}
-	//Ignore all the frames before the next timestamp to match the capture fps
-	} while (videoBuffer 
-		&& videoFPS
+
+	} while (
+		// Make sure condition below is valid to check
+		videoFPS != 0
 		&& lastGrabbedTimestamp!= NoTimestamp 
+		&& videoBuffer 
 		&& videoBuffer->HasTimestamp()
 
+		// Loops dropping frames before the next timestamp to match the capture fps
+		//
 		// The -1 here is to handle potential quantization of timestamps (we have 
 		// seen occasionally with msec accurate clocks) resulting in values differing
 		// by 1 occasionally not causing unnecessary drops.
