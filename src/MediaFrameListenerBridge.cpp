@@ -223,9 +223,13 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 		{
 			//Convert
 			auto  videoFrame = std::static_pointer_cast<VideoFrame>(frame);
-			//Set width and height
-			width = videoFrame->GetWidth();
-			height = videoFrame->GetHeight();
+			
+			if (videoFrame->GetWidth() != 0 && videoFrame->GetHeight() != 0)
+			{
+				//Set width and height
+				width = videoFrame->GetWidth();
+				height = videoFrame->GetHeight();
+			}
 
 			// Increase bframes
 			accumulatorBFrames.Update(now.count(), videoFrame->IsBFrame() ? 1 : 0);
@@ -400,6 +404,14 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 
 				//TODO: move out of here
 				VideoLayerSelector::GetLayerIds(packet);
+				
+				// Set frame resolution if needed
+				if ((video->GetWidth() == 0 || video->GetHeight() == 0) && 
+				    (packet->GetWidth() != 0 && packet->GetHeight() != 0))
+				{
+					width = packet->GetWidth();
+					height = packet->GetHeight();
+				}
 
 				//Get media frame target bitrate or hint
 				auto targetBitrate = video->GetTargetBitrate() ? video->GetTargetBitrate() : targetBitrateHint;
