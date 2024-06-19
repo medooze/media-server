@@ -79,7 +79,7 @@ void VideoPipe::SetMaxDelay(uint32_t maxDelay)
 	Log("-VideoPipe::SetMaxDelay() Setting max delay: %ums (0 indicates no max)\n", maxDelay);
 	if (queue.size() < maxDelayInFrames)
 	{
-		Log("-VideoPipe::SetMaxDelay() Increasing size of video pipe queue to: %u from %u to permit new max delay: %ums\n",queue.size(),maxDelayInFrames, maxDelay);
+		Log("-VideoPipe::SetMaxDelay() Increasing size of video pipe queue to: %u from %u to permit new max delay: %ums\n",maxDelayInFrames, queue.size(), maxDelay);
 		queue.grow(maxDelayInFrames);
 	}
 	this->maxDelay = maxDelay;
