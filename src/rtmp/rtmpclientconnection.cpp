@@ -248,8 +248,6 @@ int RTMPClientConnection::Run()
 
 		if (ufds[0].revents & POLLOUT)
 		{
-			Log("POLLOUT\n");
-			
 			if (tls.isInitialised())
 			{
 				//Check if socket was not connected yet
@@ -318,8 +316,6 @@ int RTMPClientConnection::Run()
 
 		if (ufds[0].revents & POLLIN)
 		{
-			Log("POLLIN\n");
-			
 			//Read data from connection
 			int len = read(fd, data, size);
 			if (len == 0)

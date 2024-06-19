@@ -64,6 +64,7 @@ TlsClient::TlsError TlsClient::decrypt(const uint8_t* data, size_t size)
 	auto len = BIO_write(rbio, data, size);
 	if (len <= 0)
 	{
+		Error("Failed to BIO_write\n");
 		return TlsClient::TlsError::Failed;
 	}
 	
@@ -71,16 +72,20 @@ TlsClient::TlsError TlsClient::decrypt(const uint8_t* data, size_t size)
 	{
 		if (handshake() == TlsError::Failed)
 		{
+			Error("Failed to handshake\n");
 			return TlsClient::TlsError::Failed;
 		}
 		
 		if (!SSL_is_init_finished(ssl))
 		{
+			Error("Pending init\n");
 			return TlsClient::TlsError::Pending;
 		}
 	}
-	else
+	else if (!initialised)
 	{
+		Log("Tls client initialised\n");
+		
 		initialised = true;
 	}
 	
@@ -94,6 +99,8 @@ TlsClient::TlsError TlsClient::decrypt(const uint8_t* data, size_t size)
 
 TlsClient::TlsError TlsClient::encrypt(const uint8_t* data, size_t size)
 {
+	Log("encrypt: %llu\n", size);
+	
 	if (!SSL_is_init_finished(ssl))
 	{
 		return TlsClient::TlsError::Pending;
