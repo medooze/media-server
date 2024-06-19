@@ -108,7 +108,7 @@ RTMPClientConnection::ErrorCode RTMPClientConnection::Connect(const char* server
 		return RTMPClientConnection::ErrorCode::FailedToConnectSocket;
 	}
 	
-	if (!tls.initialize(nullptr))
+	if (!tls.initialize())
 	{
 		Error("Failed to initlise tls: %s:%d\n", server, port);
 		return RTMPClientConnection::ErrorCode::Generic;
@@ -304,13 +304,13 @@ int RTMPClientConnection::Run()
 				{
 					Warning("TLS encrypt error\n");
 				}
-				
-				//Increase sent bytes
-				outBytes += len;
 			}
 			
 			tls.popAllEncrypted([this](auto&& data){
 				WriteData(data.data(), data.size());
+				
+				//Increase sent bytes
+				outBytes += data.size();
 			});
 		}
 
