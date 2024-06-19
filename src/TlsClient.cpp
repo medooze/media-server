@@ -13,7 +13,7 @@ TlsClient::TlsClient()
 	ERR_load_crypto_strings();	
 }
 
-bool TlsClient::initialize(int fd, const char* hostname)
+bool TlsClient::initialize(const char* hostname)
 {
 	/* create the SSL server context */
 	ctx = SSL_CTX_new(TLS_method());
@@ -25,9 +25,6 @@ bool TlsClient::initialize(int fd, const char* hostname)
 
 	/* Recommended to avoid SSLv2 & SSLv3 */
 	SSL_CTX_set_options(ctx, SSL_OP_NO_QUERY_MTU);
-
-	// Init client
-	fd = fd;
 
 	rbio = BIO_new(BIO_s_mem());
 	wbio = BIO_new(BIO_s_mem());

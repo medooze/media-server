@@ -108,7 +108,7 @@ RTMPClientConnection::ErrorCode RTMPClientConnection::Connect(const char* server
 		return RTMPClientConnection::ErrorCode::FailedToConnectSocket;
 	}
 	
-	if (!tls.initialize(fd, nullptr))
+	if (!tls.initialize(nullptr))
 	{
 		Error("Failed to initlise tls: %s:%d\n", server, port);
 		return RTMPClientConnection::ErrorCode::Generic;

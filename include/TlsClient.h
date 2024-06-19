@@ -23,7 +23,7 @@ public:
 	
 	TlsClient();
 	
-	bool initialize(int fd, const char* hostname);
+	bool initialize(const char* hostname);
 	
 	TlsError decrypt(const uint8_t* data, size_t size);
 
