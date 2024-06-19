@@ -15,16 +15,14 @@ TlsClient::TlsClient()
 
 bool TlsClient::initialize(const char* hostname)
 {
-	/* create the SSL server context */
 	ctx = SSL_CTX_new(TLS_method());
 	if (!ctx)
 	{
 		Error("-TlsClient::initialize() Failed to ceate SSL context\n");
 		return false;
 	}
-
-	/* Recommended to avoid SSLv2 & SSLv3 */
-	SSL_CTX_set_options(ctx, SSL_OP_NO_QUERY_MTU);
+	
+	SSL_CTX_set_options(ctx, SSL_OP_ALL);
 
 	rbio = BIO_new(BIO_s_mem());
 	wbio = BIO_new(BIO_s_mem());
@@ -43,7 +41,7 @@ bool TlsClient::initialize(const char* hostname)
 	
 	if (hostname)
 	{
-		SSL_set_tlsext_host_name(ssl, hostname); // TLS SNI
+		SSL_set_tlsext_host_name(ssl, hostname);
 	}
 	
 	// Start handshake
