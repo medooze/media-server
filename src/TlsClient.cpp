@@ -134,6 +134,11 @@ TlsClient::TlsError TlsClient::encrypt(const uint8_t* data, size_t size)
 
 void TlsClient::shutdown()
 {
+	initialised = false;
+	
+	encrypted.clear();
+	decrypted.clear();
+	
 	SSL_free(ssl);
 	SSL_CTX_free(ctx);
 }

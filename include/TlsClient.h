@@ -81,7 +81,4 @@ private:
 	bool initialised = false;
 };
 
-
-
 #endif
-
