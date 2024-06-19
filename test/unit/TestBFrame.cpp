@@ -1,5 +1,6 @@
 #include "TestCommon.h"
-extern "C" {
+extern "C"
+{
 #include <libswscale/swscale.h>
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
@@ -8,7 +9,8 @@ extern "C" {
 #include "VideoDecoderWorker.h"
 #include "VideoPipe.h"
 
-struct EncodingParams {
+struct EncodingParams
+{
     int width;
     int height;
     int fps;
@@ -17,186 +19,185 @@ struct EncodingParams {
     AVCodecID codecId;
 };
 
-class AVPacketGenerator 
+class AVPacketGenerator
 {
-    public:
-        AVPacketGenerator(EncodingParams params, int numPackets) : 
-            numPackets(numPackets),
-            width(params.width),
-            height(params.height),
-            fps(params.fps),
-            bframes(params.bframes),
-            codecId(params.codecId),
-            pixelFmt(params.pixelFmt),
-            packetTimestamp(0)
-        {
-            prepareEncoderContext();
-        }
+public:
+    AVPacketGenerator(EncodingParams params, int numPackets) : 
+        numPackets(numPackets),
+        width(params.width),
+        height(params.height),
+        fps(params.fps),
+        bframes(params.bframes),
+        codecId(params.codecId),
+        pixelFmt(params.pixelFmt),
+        packetTimestamp(0)
+    {
+        prepareEncoderContext();
+    }
 
-        ~AVPacketGenerator() 
+    ~AVPacketGenerator()
+    {
+        av_frame_free(&frame);
+        av_packet_free(&pkt);
+        avcodec_free_context(&codecCtx);
+    }
+
+    std::queue<AVPacket *> &generateAVPackets()
+    {
+        for (int i = 0; i < numPackets; ++i)
         {
-            av_frame_free(&frame);
-            av_packet_free(&pkt);
-            avcodec_free_context(&codecCtx);
-        }
-		
-        std::queue<AVPacket*>& generateAVPackets() 
-        {
-            for (int i = 0; i < numPackets; ++i) 
+            int x, y;
+            /* Y */
+            for (y = 0; y < height; y++)
             {
-                int x, y;
-                /* Y */
-                for (y = 0; y < height; y++) 
+                for (x = 0; x < width; x++)
                 {
-                    for (x = 0; x < width; x++) 
-                    {
-                        frame->data[0][y * frame->linesize[0] + x] = i * 10 + 1;
-                    }
+                    frame->data[0][y * frame->linesize[0] + x] = i * 10 + 1;
                 }
-                /* Cb and Cr */
-                for (y = 0; y < height/2; y++) 
+            }
+            /* Cb and Cr */
+            for (y = 0; y < height / 2; y++)
+            {
+                for (x = 0; x < width / 2; x++)
                 {
-                    for (x = 0; x < width/2; x++) 
-                    {
-                        frame->data[1][y * frame->linesize[1] + x] = 128 + y + i * 2;
-                        frame->data[2][y * frame->linesize[2] + x] = 64 + x + i * 5;
-                    }
+                    frame->data[1][y * frame->linesize[1] + x] = 128 + y + i * 2;
+                    frame->data[2][y * frame->linesize[2] + x] = 64 + x + i * 5;
                 }
-                frame->pts = i;
-				encode(frame, pkt);    	
             }
-            // flush encoder
-			encode(nullptr, pkt);
-            return avPackets;
+            frame->pts = i;
+            encode(frame, pkt);
         }
-    private:
-        int width;
-        int height;
-        int fps;
-        const char* preset;
-        int bframes;
-        AVCodecID codecId;
-        AVPixelFormat pixelFmt;
+        // flush encoder
+        encode(nullptr, pkt);
+        return avPackets;
+    }
 
-        AVCodec *codec;
-        AVCodecContext* codecCtx;
-        AVFrame* frame;
-        AVPacket* pkt;
+private:
+    int width;
+    int height;
+    int fps;
+    const char *preset;
+    int bframes;
+    AVCodecID codecId;
+    AVPixelFormat pixelFmt;
 
-        int numPackets;
-        int packetTimestamp;
-        std::queue<AVPacket*> avPackets;
-        
-        int prepareEncoderContext() 
+    AVCodec *codec;
+    AVCodecContext *codecCtx;
+    AVFrame *frame;
+    AVPacket *pkt;
+
+    int numPackets;
+    int packetTimestamp;
+    std::queue<AVPacket *> avPackets;
+
+    int prepareEncoderContext()
+    {
+        int ret;
+        codec = avcodec_find_encoder(codecId);
+
+        if (!codec)
         {
-            int ret;
-            codec = avcodec_find_encoder(codecId);
-           
-            if (!codec) 
-            {
-                return Error("Codec not found");
-            }
-
-            codecCtx = avcodec_alloc_context3(codec);
-            if(!codecCtx) 
-            {
-                return Error("Codec not alloc codec context");
-            }
-            codecCtx->width = width;
-            codecCtx->height = height;
-            codecCtx->time_base = (AVRational){1, fps};
-            codecCtx->framerate = (AVRational){fps, 1};
-            codecCtx->max_b_frames = bframes;
-            codecCtx->pix_fmt = pixelFmt;
-
-            if (avcodec_open2(codecCtx, codec, NULL) < 0) 
-            {
-                return Error("Could not open codec");
-            }
-        
-            pkt = av_packet_alloc();
-            if (!pkt) 
-            {
-                return Error("Could not allocate video packet");
-            }
-           
-            frame = av_frame_alloc();
-            if (!frame) 
-            {
-                return Error("Could not allocate video frame");
-            }
-
-            frame->format = codecCtx->pix_fmt;
-            frame->width = codecCtx->width;
-            frame->height = codecCtx->height;
-            ret = av_frame_get_buffer(frame, 0);
-            if (ret < 0) 
-            {
-                return Error("Could not allocate the video frame data");
-            }
-            return 1;
+            return Error("Codec not found");
         }
 
-        int encode(AVFrame* input, AVPacket* pkt) 
+        codecCtx = avcodec_alloc_context3(codec);
+        if (!codecCtx)
         {
+            return Error("Codec not alloc codec context");
+        }
+        codecCtx->width = width;
+        codecCtx->height = height;
+        codecCtx->time_base = (AVRational){1, fps};
+        codecCtx->framerate = (AVRational){fps, 1};
+        codecCtx->max_b_frames = bframes;
+        codecCtx->pix_fmt = pixelFmt;
 
-			int ret;
-			ret = avcodec_send_frame(codecCtx, input);
-			if (ret < 0) 
-            {
-                return Error("Error sending frame for encoding");
-			}
+        if (avcodec_open2(codecCtx, codec, NULL) < 0)
+        {
+            return Error("Could not open codec");
+        }
 
-			while (ret >= 0) 
+        pkt = av_packet_alloc();
+        if (!pkt)
+        {
+            return Error("Could not allocate video packet");
+        }
+
+        frame = av_frame_alloc();
+        if (!frame)
+        {
+            return Error("Could not allocate video frame");
+        }
+
+        frame->format = codecCtx->pix_fmt;
+        frame->width = codecCtx->width;
+        frame->height = codecCtx->height;
+        ret = av_frame_get_buffer(frame, 0);
+        if (ret < 0)
+        {
+            return Error("Could not allocate the video frame data");
+        }
+        return 1;
+    }
+
+    int encode(AVFrame *input, AVPacket *pkt)
+    {
+        int ret;
+        ret = avcodec_send_frame(codecCtx, input);
+        if (ret < 0)
+        {
+            return Error("Error sending frame for encoding");
+        }
+
+        while (ret >= 0)
+        {
+            ret = avcodec_receive_packet(codecCtx, pkt);
+            if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
+                break;
+            else if (ret < 0)
             {
-				ret = avcodec_receive_packet(codecCtx, pkt);
-				if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
-					break;
-				else if (ret < 0) 
-                {
-                    return Error("Error during encoding");
-				}
-                
-				AVPacket* dst = av_packet_clone(pkt);
-                dst->dts = packetTimestamp++;
-				avPackets.push(dst);
-				av_packet_unref(pkt);
-			}
-            return 1;
-		}
+                return Error("Error during encoding");
+            }
+
+            AVPacket *dst = av_packet_clone(pkt);
+            dst->dts = packetTimestamp++;
+            avPackets.push(dst);
+            av_packet_unref(pkt);
+        }
+        return 1;
+    }
 };
 
-
-void runBFrameTest(const char* codecName, EncodingParams& params, int numPackets)
+void runBFrameTest(const char *codecName, EncodingParams &params, int numPackets)
 {
     uint64_t frameTime = 1E6 / params.fps;
     VideoCodec::Type type = VideoCodec::GetCodecForName(codecName);
 
     AVPacketGenerator generator(params, numPackets);
-    std::queue<AVPacket*> inputPackets = generator.generateAVPackets();
-    
+    std::queue<AVPacket *> inputPackets = generator.generateAVPackets();
+
     std::vector<uint8_t> generatedPixelValue;
     std::vector<uint8_t> expectedPixelValue;
-    
+
     std::vector<int> generatedPTS;
     std::vector<int> expectedPTS;
 
-    for(int i=0;i<numPackets;i++) 
+    for (int i = 0; i < numPackets; ++i)
     {
         // same equation used in generateAVPackets function
-        expectedPixelValue.push_back(10*i+1);
+        expectedPixelValue.push_back(10 * i + 1);
         expectedPTS.push_back(i);
     }
 
     VideoPipe vidPipe;
     vidPipe.Init(0.0, 0);
     vidPipe.StartVideoCapture(params.width, params.height, params.fps);
-   
+
     VideoDecoderWorker worker;
     worker.AddVideoOutput(&vidPipe);
     worker.Start();
 
-    for(int i=0;i<numPackets;i++) 
+    for (int i = 0; i < numPackets; ++i)
     {
         auto packet = inputPackets.front();
         auto frame = std::make_unique<VideoFrame>(type, packet->size);
@@ -209,7 +210,7 @@ void runBFrameTest(const char* codecName, EncodingParams& params, int numPackets
         worker.onMediaFrame(*frame);
         // get decoded frame through video pipe
         auto pic = vidPipe.GrabFrame(frameTime / 1000);
-        if(pic)
+        if (pic)
         {
             generatedPTS.push_back(pic->GetTimestamp());
             generatedPixelValue.push_back(pic->GetPlaneY().GetData()[0]);
@@ -217,11 +218,11 @@ void runBFrameTest(const char* codecName, EncodingParams& params, int numPackets
         av_packet_free(&packet);
         inputPackets.pop();
     }
-   
+
     // flush the decoder
     auto frame = std::make_unique<VideoFrame>(type, 0);
     worker.onMediaFrame(*frame);
-    while(auto pic = vidPipe.GrabFrame(frameTime / 1000)) 
+    while (auto pic = vidPipe.GrabFrame(frameTime / 1000))
     {
         generatedPTS.push_back(pic->GetTimestamp());
         generatedPixelValue.push_back(pic->GetPlaneY().GetData()[0]);
@@ -229,20 +230,19 @@ void runBFrameTest(const char* codecName, EncodingParams& params, int numPackets
 
     ASSERT_EQ(generatedPTS.size(), expectedPTS.size()) << "PTS input frames and output frames are of unequal length";
     ASSERT_EQ(generatedPixelValue.size(), expectedPixelValue.size()) << "input frames and output frames are of unequal length";
-    
-    for (int i = 0; i < expectedPTS.size(); ++i) 
+
+    for (int i = 0; i < expectedPTS.size(); ++i)
     {
         EXPECT_EQ(expectedPTS[i], generatedPTS[i]) << "pts differ at index " << i;
     }
 
-    for (int i = 0; i < expectedPixelValue.size(); ++i) 
+    for (int i = 0; i < expectedPixelValue.size(); ++i)
     {
         EXPECT_EQ(expectedPixelValue[i], generatedPixelValue[i]) << "pixel value differ at index " << i;
     }
-
 }
 
-TEST(TestBFrame, H264CodecBFrame) 
+TEST(TestBFrame, H264CodecBFrame)
 {
 
     int height = 360, width = 640, fps = 30, bframes = 4;
@@ -252,13 +252,12 @@ TEST(TestBFrame, H264CodecBFrame)
         fps,
         bframes,
         AV_PIX_FMT_YUV420P,
-        AV_CODEC_ID_H264
-    };
-    int numPackets = params.fps+1;
-    runBFrameTest("H264", params, numPackets); 
+        AV_CODEC_ID_H264};
+    int numPackets = params.fps + 1;
+    runBFrameTest("H264", params, numPackets);
 }
 
-TEST(TestBFrame, H265CodecBFrame) 
+TEST(TestBFrame, H265CodecBFrame)
 {
     int height = 360, width = 640, fps = 30, bframes = 4;
     EncodingParams params = {
@@ -267,13 +266,12 @@ TEST(TestBFrame, H265CodecBFrame)
         fps,
         bframes,
         AV_PIX_FMT_YUV420P,
-        AV_CODEC_ID_HEVC
-    };
-    int numPackets = params.fps+1;
+        AV_CODEC_ID_HEVC};
+    int numPackets = params.fps + 1;
     runBFrameTest("H265", params, numPackets);
 }
 
-TEST(TestBFrame, VP8CodecBFrame) 
+TEST(TestBFrame, VP8CodecBFrame)
 {
     int height = 360, width = 640, fps = 30, bframes = 4;
     EncodingParams params = {
@@ -282,14 +280,13 @@ TEST(TestBFrame, VP8CodecBFrame)
         fps,
         bframes,
         AV_PIX_FMT_YUV420P,
-        AV_CODEC_ID_VP8
-    };
-   
-    int numPackets = params.fps+1;
+        AV_CODEC_ID_VP8};
+
+    int numPackets = params.fps + 1;
     runBFrameTest("VP8", params, numPackets);
 }
 
-TEST(TestBFrame, VP9CodecBFrame) 
+TEST(TestBFrame, VP9CodecBFrame)
 {
     int height = 360, width = 640, fps = 30, bframes = 4;
     EncodingParams params = {
@@ -298,10 +295,8 @@ TEST(TestBFrame, VP9CodecBFrame)
         fps,
         bframes,
         AV_PIX_FMT_YUV420P,
-        AV_CODEC_ID_VP9
-    };
-   
-    int numPackets = params.fps+1;
+        AV_CODEC_ID_VP9};
+
+    int numPackets = params.fps + 1;
     runBFrameTest("VP9", params, numPackets);
 }
-
