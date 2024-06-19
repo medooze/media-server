@@ -118,7 +118,7 @@ RTMPClientConnection::ErrorCode RTMPClientConnection::Connect(const char* server
 		if (!tls->initialize())
 		{
 			Error("Failed to initlise tls: %s:%d\n", server, port);
-			return RTMPClientConnection::ErrorCode::Generic;
+			return RTMPClientConnection::ErrorCode::TlsInitError;
 		}
 	}
 
@@ -442,7 +442,7 @@ void RTMPClientConnection::sendRtmpData(const uint8_t* data, size_t size)
 {
 	if (tls)
 	{
-		if (tls->encrypt(data, size) != TlsClient::TlsError::None)
+		if (tls->encrypt(data, size) != TlsClient::Status::OK)
 		{
 			Warning("-RTMPClientConnection::sendRtmpData() TLS encrypt error\n");
 		}
@@ -460,7 +460,7 @@ void RTMPClientConnection::processReceivedData(const uint8_t* data, size_t size)
 	if (tls)
 	{
 		auto ret = tls->decrypt(data, size);
-		if (ret == TlsClient::TlsError::Failed)
+		if (ret == TlsClient::Status::Failed)
 		{
 			Warning("-RTMPClientConnection::processReceivedData() Failed to decrypt\n");
 		}

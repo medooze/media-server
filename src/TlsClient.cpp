@@ -47,7 +47,7 @@ bool TlsClient::initialize(const char* hostname)
 	}
 	
 	// Start handshake
-	if (handshake() == TlsError::Failed)
+	if (handshake() == Status::Failed)
 	{
 		return false;
 	}
@@ -55,29 +55,29 @@ bool TlsClient::initialize(const char* hostname)
 	return true;
 }
 
-TlsClient::TlsError TlsClient::decrypt(const uint8_t* data, size_t size)
+TlsClient::Status TlsClient::decrypt(const uint8_t* data, size_t size)
 {
 	auto len = BIO_write(rbio, data, size);
 	if (len <= 0)
 	{
 		Error("-TlsClient::decrypt() Failed to BIO_write\n");
-		return TlsClient::TlsError::Failed;
+		return TlsClient::Status::Failed;
 	}
 	
 	if (!SSL_is_init_finished(ssl))
 	{
 		Log("-TlsClient::decrypt() ssl not initialised\n");
 		
-		if (handshake() == TlsError::Failed)
+		if (handshake() == Status::Failed)
 		{
 			Error("-TlsClient::decrypt() Failed to handshake\n");
-			return TlsClient::TlsError::Failed;
+			return TlsClient::Status::Failed;
 		}
 		
 		if (!SSL_is_init_finished(ssl))
 		{
 			Error("-TlsClient::decrypt() Pending init\n");
-			return TlsClient::TlsError::Pending;
+			return TlsClient::Status::Pending;
 		}
 	}
 	
@@ -96,16 +96,16 @@ TlsClient::TlsError TlsClient::decrypt(const uint8_t* data, size_t size)
 		}
 	} while (bytes > 0);
 	
-	return TlsClient::TlsError::None;
+	return TlsClient::Status::OK;
 }
 
-TlsClient::TlsError TlsClient::encrypt(const uint8_t* data, size_t size)
+TlsClient::Status TlsClient::encrypt(const uint8_t* data, size_t size)
 {
-	if (size == 0) return TlsClient::TlsError::None;
+	if (size == 0) return TlsClient::Status::OK;
 	
 	if (!SSL_is_init_finished(ssl))
 	{
-		return TlsClient::TlsError::Pending;
+		return TlsClient::Status::Pending;
 	}
 	
 	auto len = SSL_write(ssl, data, size);
@@ -120,16 +120,16 @@ TlsClient::TlsError TlsClient::encrypt(const uint8_t* data, size_t size)
 			}
 			else if (!BIO_should_retry(wbio))
 			{
-				return TlsClient::TlsError::Failed;
+				return TlsClient::Status::Failed;
 			}
 		} while (bytes > 0);
 	}
 	else
 	{
-		return TlsClient::TlsError::Failed;
+		return TlsClient::Status::Failed;
 	}
 	
-	return TlsClient::TlsError::None;
+	return TlsClient::Status::OK;
 }
 
 void TlsClient::shutdown()
@@ -143,28 +143,28 @@ void TlsClient::shutdown()
 	SSL_CTX_free(ctx);
 }
 
-TlsClient::TlsError TlsClient::getSslStatus(int returnCode)
+TlsClient::Status TlsClient::getSslStatus(int returnCode)
 {
 	switch (SSL_get_error(ssl, returnCode))
 	{
 		case SSL_ERROR_NONE:
-			return TlsError::None;
+			return Status::OK;
 		case SSL_ERROR_WANT_WRITE:
 		case SSL_ERROR_WANT_READ:
-			return TlsError::Pending;
+			return Status::Pending;
 		case SSL_ERROR_ZERO_RETURN:
 		case SSL_ERROR_SYSCALL:
 		default:
-			return TlsError::Failed;
+			return Status::Failed;
 	}
 }
 
-TlsClient::TlsError TlsClient::handshake()
+TlsClient::Status TlsClient::handshake()
 {	
 	auto ret = SSL_do_handshake(ssl);
 	
 	auto TlsError = getSslStatus(ret);
-	if (TlsError == TlsError::Pending)
+	if (TlsError == Status::Pending)
 	{
 		int bytes = 0;
 		do {
@@ -175,7 +175,7 @@ TlsClient::TlsError TlsClient::handshake()
 			}
 			else if (!BIO_should_retry(wbio))
 			{
-				return TlsError::Failed;
+				return Status::Failed;
 			}
 		} while (bytes > 0);
 	}

@@ -29,7 +29,8 @@ public:
 		FailedToParseData = 6,
 		PeerClosed = 7,
 		ReadError = 8,
-		PollError = 9
+		PollError = 9,
+		TlsInitError = 10
 	};
 
 	class Listener

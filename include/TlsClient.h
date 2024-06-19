@@ -14,9 +14,9 @@
 class TlsClient 
 {
 public:
-	enum class TlsError
+	enum class Status
 	{ 
-		None,
+		OK,
 		Pending,
 		Failed
 	};
@@ -25,9 +25,9 @@ public:
 	
 	bool initialize(const char* hostname = nullptr);
 	
-	TlsError decrypt(const uint8_t* data, size_t size);
+	Status decrypt(const uint8_t* data, size_t size);
 
-	TlsError encrypt(const uint8_t* data, size_t size);
+	Status encrypt(const uint8_t* data, size_t size);
 	
 	template<typename T>
 	void popAllDecypted(const T& callback)
@@ -58,9 +58,9 @@ public:
 
 private:
 
-	TlsError getSslStatus(int returnCode);
+	Status getSslStatus(int returnCode);
 
-	TlsError handshake();
+	Status handshake();
 	
 	void queueEncryptedData(const uint8_t* data, size_t size);
 	
