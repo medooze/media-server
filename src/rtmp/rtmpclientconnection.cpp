@@ -28,7 +28,7 @@
  * to the message layer.
  *******************************************************************/
 
-RTMPClientConnection::RTMPClientConnection(const std::wstring& tag) :
+RTMPClientConnection::RTMPClientConnection(bool secure, const std::wstring& tag) :
 	tag(tag)
 {
 	setZeroThread(&thread);
@@ -44,6 +44,11 @@ RTMPClientConnection::RTMPClientConnection(const std::wstring& tag) :
 	chunkOutputStreams[4] = new RTMPChunkOutputStream(4);
 	//Create output chunk streams for video
 	chunkOutputStreams[5] = new RTMPChunkOutputStream(5);
+	
+	if (secure)
+	{
+		tls = std::make_unique<TlsClient>();
+	}
 }
 
 RTMPClientConnection::~RTMPClientConnection()
@@ -108,10 +113,13 @@ RTMPClientConnection::ErrorCode RTMPClientConnection::Connect(const char* server
 		return RTMPClientConnection::ErrorCode::FailedToConnectSocket;
 	}
 	
-	if (!tls.initialize())
+	if (tls)
 	{
-		Error("Failed to initlise tls: %s:%d\n", server, port);
-		return RTMPClientConnection::ErrorCode::Generic;
+		if (!tls->initialize())
+		{
+			Error("Failed to initlise tls: %s:%d\n", server, port);
+			return RTMPClientConnection::ErrorCode::Generic;
+		}
 	}
 
 	//I am inited
@@ -152,7 +160,7 @@ void RTMPClientConnection::Stop()
 	//If got socket
 	if (fd != FD_INVALID)
 	{
-		tls.shutdown();
+		if (tls) tls->shutdown();
 		
 		//Not running;
 		running = false;
@@ -248,7 +256,7 @@ int RTMPClientConnection::Run()
 
 		if (ufds[0].revents & POLLOUT)
 		{
-			if (tls.isInitialised())
+			if (!tls || tls->isInitialised())
 			{
 				//Check if socket was not connected yet
 				if (!connected)
@@ -287,11 +295,7 @@ int RTMPClientConnection::Run()
 					//Set state
 					state = HEADER_S0_WAIT;
 					//Send it
-					
-					if (tls.encrypt(c01.GetData(), c01.GetSize()) != TlsClient::TlsError::None)
-					{
-						Warning("TLS encrypt error\n");
-					}
+					sendRtmpData(c01.GetData(), c01.GetSize());
 
 					//Debug
 					Debug("-RTMPClientConnection::Run() Socket connected, Sending c0 and c1 with digest %s size %d\n", digest ? "on" : "off", c01.GetSize());
@@ -300,18 +304,15 @@ int RTMPClientConnection::Run()
 				//Write data buffer
 				DWORD len = SerializeChunkData(data, size);
 				//Send it
-				if (tls.encrypt(data, len) != TlsClient::TlsError::None)
-				{
-					Warning("TLS encrypt error\n");
-				}
+				sendRtmpData(data, len);
 			}
 			
-			tls.popAllEncrypted([this](auto&& data){
-				WriteData(data.data(), data.size());
-				
-				//Increase sent bytes
-				outBytes += data.size();
-			});
+			if (tls)
+			{
+				tls->popAllEncrypted([this](auto&& data){
+					WriteData(data.data(), data.size());
+				});
+			}
 		}
 
 		if (ufds[0].revents & POLLIN)
@@ -338,16 +339,15 @@ int RTMPClientConnection::Run()
 			inBytes += len;
 
 			try {
-				auto ret = tls.decrypt(data, len);
-				if (ret == TlsClient::TlsError::Failed)
-				{
-					Warning("Failed to decrypt\n");
-				}
+				processReceivedData(data, len);
 				
-				tls.popAllDecypted([this](auto&& data) {
-					//Parse data
-					ParseData(data.data(), data.size());
-				});
+				if (tls)
+				{
+					tls->popAllDecypted([this](auto&& data) {
+						//Parse data
+						ParseData(data.data(), data.size());
+					});
+				}
 			}
 			catch (std::exception& e) {
 				//Show error
@@ -438,6 +438,39 @@ end:
 	return len;
 }
 
+void RTMPClientConnection::sendRtmpData(const uint8_t* data, size_t size)
+{
+	if (tls)
+	{
+		if (tls->encrypt(data, size) != TlsClient::TlsError::None)
+		{
+			Warning("TLS encrypt error\n");
+		}
+	}
+	else
+	{
+		WriteData(data, size);
+	}
+	
+	outBytes += size;
+}
+
+void RTMPClientConnection::processReceivedData(const uint8_t* data, size_t size)
+{
+	if (tls)
+	{
+		auto ret = tls->decrypt(data, size);
+		if (ret == TlsClient::TlsError::Failed)
+		{
+			Warning("Failed to decrypt\n");
+		}
+	}
+	else
+	{
+		ParseData(data, size);
+	}
+}
+
 /***********************
  * ParseData
  * 	Process incomming data
@@ -507,7 +540,7 @@ void RTMPClientConnection::ParseData(const BYTE* data, const DWORD size)
 					//Move to next state
 					state = HEADER_S2_WAIT;
 					//Send S2 data
-					tls.encrypt(c2.GetData(), c2.GetSize());
+					sendRtmpData(c2.GetData(), c2.GetSize());
 					//Debug
 					Log("-RTMPClientConnection::Sending c2.\n");
 				}

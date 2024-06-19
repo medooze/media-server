@@ -44,7 +44,7 @@ public:
 		virtual void onCommand(RTMPClientConnection* conn, DWORD messageStreamId, const wchar_t* name, AMFData* obj, const std::vector<AMFData*>&) = 0;
 	};
 public:
-	RTMPClientConnection(const std::wstring& tag);
+	RTMPClientConnection(bool secure, const std::wstring& tag);
 	virtual ~RTMPClientConnection();
 
 	ErrorCode Connect(const char* server, int port, const char* app, RTMPClientConnection::Listener* listener);
@@ -74,6 +74,9 @@ protected:
 	void Stop();
 	int Run();
 private:
+	
+	void sendRtmpData(const uint8_t* data, size_t size);
+	void processReceivedData(const uint8_t* data, size_t size);
 
 	static  void* run(void* par);
 	void ParseData(const BYTE* data, const DWORD size);
@@ -160,7 +163,7 @@ private:
 	std::wstring challenge;
 	std::wstring opaque;
 	
-	TlsClient tls;
+	std::unique_ptr<TlsClient> tls;
 };
 
 #endif
