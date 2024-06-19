@@ -62,6 +62,8 @@ private:
 
 	Status handshake();
 	
+	Status readBioEncrypted();
+	
 	void queueEncryptedData(const uint8_t* data, size_t size);
 	
 	void queueDecryptedData(const uint8_t* data, size_t size);
