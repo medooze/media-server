@@ -513,4 +513,22 @@ inline size_t CountBits(uint64_t val)
 	}
 	return count;
 }
+
+// simple hash function to compute a unique ID for a stream of data
+
+inline uint32_t computeUniqueHash(const char* s, size_t len)
+{
+   constexpr uint32_t primeA = 54059;
+   constexpr uint32_t primeB = 76963;
+   constexpr uint32_t seed = 37;
+   uint32_t h = seed;
+   size_t i = 0;
+   while ((i < len) && *s) {
+     h = (h * primeA) ^ (s[0] * primeB);
+     s++;
+	 i++;
+   }
+   return h;
+}
+
 #endif
