@@ -20,6 +20,8 @@ public:
 
 	void PushScte(Buffer data);
 	std::optional<Buffer> PopScte();
+	void PushScteTimestamp(uint64_t data);
+	std::optional<uint64_t> PopScteTimestamp();
 	
 protected:
 	void OnNal(VideoFrame& frame, BufferReader& nal, std::optional<bool>& frameEnd) override;
@@ -31,6 +33,8 @@ protected:
 	std::unique_ptr<H264SeqParameterSet> sps;
 	
 	std::queue<Buffer> scteMessages;
+	std::queue<uint64_t> scteTimestamps;
+	u_int8_t scteFrameRepeatCount;
 };
 
 #endif // H264PACKETIZER_H
