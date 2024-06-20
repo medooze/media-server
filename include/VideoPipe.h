@@ -68,7 +68,7 @@ private:
 	unsigned int droppedFramesSinceReport = 0;
 	unsigned int totalFramesSinceReport = 0;
 
-	uint32_t maxDelay = 0;
+	uint32_t maxDelayMs = 0;
 };
 
 #endif	/* VIDEOPIPE_H */

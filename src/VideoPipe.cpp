@@ -62,7 +62,7 @@ int VideoPipe::End()
 	return true;
 }
 
-void VideoPipe::SetMaxDelay(uint32_t maxDelay)
+void VideoPipe::SetMaxDelay(uint32_t maxDelayMs)
 {
 	pthread_mutex_lock(&newPicMutex);
 
@@ -71,18 +71,18 @@ void VideoPipe::SetMaxDelay(uint32_t maxDelay)
 	int maxFPS = std::max(60, videoFPS);
 
 	// Figure out the max frames we might every have in this queue. 
-	// Note: Actual latency values are enforced by the maxDelay
+	// Note: Actual latency values are enforced by the maxDelayMs
 	// we are providing an upper limit on the outstanding items in the queue
 	// and will resize this queue to be larger in case we increase the latency
 	// past what is likely to be supported by the queues default
-	size_t maxDelayInFrames = std::ceil((maxDelay * maxFPS) / 1000.0);
-	Log("-VideoPipe::SetMaxDelay() Setting max delay: %ums (0 indicates no max)\n", maxDelay);
+	size_t maxDelayInFrames = std::ceil((maxDelayMs * maxFPS) / 1000.0);
+	Log("-VideoPipe::SetMaxDelay() Setting max delay: %ums (0 indicates no max)\n", maxDelayMs);
 	if (queue.size() < maxDelayInFrames)
 	{
-		Log("-VideoPipe::SetMaxDelay() Increasing size of video pipe queue to: %u from %u to permit new max delay: %ums\n",maxDelayInFrames, queue.size(), maxDelay);
+		Log("-VideoPipe::SetMaxDelay() Increasing size of video pipe queue to: %u from %u to permit new max delay: %ums\n",maxDelayInFrames, queue.size(), maxDelayMs);
 		queue.grow(maxDelayInFrames);
 	}
-	this->maxDelay = maxDelay;
+	this->maxDelayMs = maxDelayMs;
 	pthread_mutex_unlock(&newPicMutex);
 }
 
@@ -333,9 +333,9 @@ size_t VideoPipe::NextFrame(const VideoBuffer::const_shared& videoBuffer)
 
 
 		//Do not enqueue more than the max delay packets
-	if (maxDelay && videoBuffer->HasTimestamp())
+	if (maxDelayMs && videoBuffer->HasTimestamp())
 	{
-		auto maxDelayInClockTicks = (maxDelay * videoBuffer->GetClockRate()) / 1000;
+		auto maxDelayInClockTicks = (maxDelayMs * videoBuffer->GetClockRate()) / 1000;
 
 		while (!queue.empty() 
 			// Dont drop if no valid timestamp or changing clock rates as we cant legit compare them
