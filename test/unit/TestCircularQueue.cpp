@@ -297,3 +297,30 @@ TEST(TestCircularQueue, NoGrowOverflow)
 
 	}
 }
+
+
+TEST(TestCircularQueue, MaxSize)
+{
+	size_t maxSize = 10;
+	size_t num = 256;
+	CircularQueue<size_t> q(10, maxSize);
+
+	for (size_t i = 0; i < num; ++i)
+	{
+		q.push_back(i);
+		ASSERT_EQ(q.length(), std::min(i + 1, maxSize));
+		for (size_t j = 0; j < q.length(); j++)
+			ASSERT_EQ(q.at(j), (i >= maxSize ? i-maxSize + j +1 : j) );
+	}
+
+	ASSERT_EQ(q.length(), maxSize);
+
+	for (size_t i = num - maxSize; i < num; ++i)
+	{
+		ASSERT_EQ(i, q.front());
+		q.pop_front();
+	}
+
+	ASSERT_TRUE(q.empty());
+	ASSERT_EQ(q.length(), 0);
+}

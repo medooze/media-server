@@ -12,10 +12,15 @@ class CircularQueue
 private:
 	constexpr static auto npos = std::numeric_limits<size_t>::max();
 public:
-	CircularQueue(std::size_t size = 0, bool autoGrow = true) : 
-		autoGrow(autoGrow)
+
+	CircularQueue(std::size_t size = 0, bool autoGrow = true) :
+		CircularQueue(size, autoGrow ? std::numeric_limits<size_t>::max() : 0)
+	{}
+
+	CircularQueue(std::size_t size, std::size_t maxSize) :
+		maxSize(maxSize)
 	{
-		if (size) queue.reserve(size);
+		if (size) queue.reserve(std::min(size, maxSize));
 	}
 
 	void push_back(const T& item)
@@ -23,11 +28,16 @@ public:
 		//If we don't have any more space
 		if (full())
 		{
-			//If we grow the queue as needed
-			if (autoGrow)
+		
+			//If we can grow the queue as needed
+			if (maxSize && queue.size() < maxSize)
 				//Increase queue size
-				grow(queue.capacity() ? std::ceil(queue.capacity() * 1.2) : 1);
-			else 
+				grow(std::min(
+					queue.capacity()
+						? static_cast<size_t>(std::ceil(queue.capacity() * 1.2))
+						: 1
+					, maxSize));
+			else
 				//Remove first
 				pop_front();
 		}
@@ -48,15 +58,19 @@ public:
 	}
 
 	template<class... Args>
-	void emplace_back(Args&&... args) 
+	void emplace_back(Args&&... args)
 	{
 		//If we don't have any more space
 		if (full())
-		{ 
-			//If we grow the queue as needed
-			if (autoGrow)
+		{
+			//If we can grow the queue as needed
+			if (maxSize && queue.size() < maxSize)
 				//Increase queue size
-				grow(queue.capacity() ? std::ceil(queue.capacity() * 1.2) : 1);
+				grow(std::min(
+					queue.capacity() 
+						? static_cast<size_t>(std::ceil(queue.capacity() * 1.2))
+						: 1
+					, maxSize));
 			else
 				//Remove first
 				pop_front();
@@ -135,6 +149,9 @@ public:
 		//Allocate current buffer
 		queue.reserve(size);
 
+		//Extend max size if needed
+		maxSize = std::max(size, maxSize);
+
 		//If not empty
 		if (!empty())
 		{
@@ -196,6 +213,6 @@ private:
 	std::vector<T> queue;
 	size_t head = npos;
 	size_t tail = 0;
-	bool autoGrow = true;
+	size_t maxSize = std::numeric_limits<size_t>::max();
 };
 #endif /* CIRCULARQUEUE_H */
