@@ -42,8 +42,15 @@ public:
         avcodec_free_context(&codecCtx);
     }
 
+    uint8_t generateLumaPixelVal(int imageIdx) 
+    {
+        return (10 * imageIdx + 1) % 256;
+    } 
+    
     std::queue<AVPacket *> &generateAVPackets()
     {
+        // Create dummy images with YUV420 format, this format stores the Y, Cb and Cr components in three separate planes. 
+        // The luma plane comes first, so frame->data[0] points to Y plane, frame->data[1] and frame->data[2] point to chroma planes.
         for (int i = 0; i < numPackets; ++i)
         {
             int x, y;
@@ -52,16 +59,19 @@ public:
             {
                 for (x = 0; x < width; x++)
                 {
-                    frame->data[0][y * frame->linesize[0] + x] = i * 10 + 1;
+                    frame->data[0][y * frame->linesize[0] + x] = generateLumaPixelVal(i);
                 }
             }
             /* Cb and Cr */
+            // With this chosen pixel format, the chroma planes are subsampled by 2 in each direction which means luma lines contain half
+            // of the number of pixels and bytes of the luma lines, and the chroma planes contain half of the number of lines of the luma plane. 
+            // The chroma value are chosen randomly, it is sufficient to check luma pixal values for these tests.
             for (y = 0; y < height / 2; y++)
             {
                 for (x = 0; x < width / 2; x++)
                 {
-                    frame->data[1][y * frame->linesize[1] + x] = 128 + y + i * 2;
-                    frame->data[2][y * frame->linesize[2] + x] = 64 + x + i * 5;
+                    frame->data[1][y * frame->linesize[1] + x] = (128 + y + i * 2) % 256;
+                    frame->data[2][y * frame->linesize[2] + x] = (64 + x + i * 5) % 256;
                 }
             }
             frame->pts = i;
@@ -168,7 +178,7 @@ private:
     }
 };
 
-void runBFrameTest(const char *codecName, EncodingParams &params, int numPackets)
+void runBFrameTest(const char *codecName, const EncodingParams &params, int numPackets)
 {
     uint64_t frameTime = 1E6 / params.fps;
     VideoCodec::Type type = VideoCodec::GetCodecForName(codecName);
@@ -185,7 +195,7 @@ void runBFrameTest(const char *codecName, EncodingParams &params, int numPackets
     for (int i = 0; i < numPackets; ++i)
     {
         // same equation used in generateAVPackets function
-        expectedPixelValue.push_back(10 * i + 1);
+        expectedPixelValue.push_back(generator.generateLumaPixelVal(i));
         expectedPTS.push_back(i);
     }
 
