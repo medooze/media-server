@@ -174,9 +174,6 @@ int VideoEncoderWorker::Encode()
 	//Set bitrate
 	videoEncoder->SetFrameRate(fps,bitrate,intraPeriod);
 
-	//No wait for first
-	QWORD frameTime = 0;
-
 	//Iniciamos el tamama�o del encoder
  	videoEncoder->SetSize(width,height);
 	
@@ -193,7 +190,7 @@ int VideoEncoderWorker::Encode()
 	while(encoding)
 	{
 		//Capture video frame buffer
-		auto pic = input->GrabFrame(frameTime/1000);
+		auto pic = input->GrabFrame(0);
 
 		//Check picture
 		if (!pic)
@@ -237,47 +234,9 @@ int VideoEncoderWorker::Encode()
 			//Next
 			continue;
 
+
 		//Increase frame counter
 		fpsAcu.Update(getTime()/1000,1);
-
-		//Check
-		if (frameTime)
-		{
-			timespec ts;
-			//Lock
-			pthread_mutex_lock(&mutex);
-			//Calculate slept time
-			QWORD sleep = frameTime;
-			//Remove extra sleep from prev
-			if (overslept<sleep)
-				//Remove it
-				sleep -= overslept;
-			else
-				//Do not overflow
-				sleep = 1;
-			//Calculate timeout
-			calcAbsTimeoutNS(&ts,&prev,sleep);
-			//Wait next or stopped
-			int canceled  = !pthread_cond_timedwait(&cond,&mutex,&ts);
-			//Unlock
-			pthread_mutex_unlock(&mutex);
-			//Check if we have been canceled
-			if (canceled)
-				//Exit
-				break;
-			//Get differencence
-			QWORD diff = getDifTime(&prev);
-			//If it is biffer
-			if (diff>frameTime)
-				//Get what we have slept more
-				overslept = diff-frameTime;
-			else
-				//No oversletp (shoulddn't be possible)
-				overslept = 0;
-		}
-		
-		//Set frame time
-		frameTime = 1E6/fps;
 
 		//Add frame size in bits to bitrate calculator
 		bitrateAcu.Update(getDifTime(&first)/1000,videoFrame->GetLength()*8);
@@ -285,9 +244,9 @@ int VideoEncoderWorker::Encode()
 		//Get now
 		auto now = getDifTime(&first)/1000;
 		//Set clock rate
-		videoFrame->SetClockRate(pic->HasClockRate() ? pic->GetClockRate() : 90000);
+		videoFrame->SetClockRate(pic->GetClockRate());
 		//Set frame timestamp
-		videoFrame->SetTimestamp(pic->HasTimestamp() ? pic->GetTimestamp() : now*90);
+		videoFrame->SetTimestamp(pic->GetTimestamp());
 		videoFrame->SetTime(pic->HasTime() ? pic->GetTime() : now);
 		if (pic->HasSenderTime()) videoFrame->SetSenderTime(pic->GetSenderTime());
 
