@@ -562,17 +562,26 @@ void MediaFrameListenerBridge::SetTargetBitrateHint(uint32_t targetBitrateHint)
 	this->targetBitrateHint = targetBitrateHint;
 }
 
-void MediaFrameListenerBridge::PushScte(Buffer data)
+void MediaFrameListenerBridge::SetScteData(Buffer data)
 {
-	scteMessages.emplace(std::move(data));
+	scteMessage = std::move(data);
 }
 
-std::optional<Buffer> MediaFrameListenerBridge::PopScte()
+std::optional<Buffer> MediaFrameListenerBridge::GetScteData()
 {
-	if (scteMessages.empty()) return std::nullopt;
+	if (scteMessage.GetData() == nullptr) return std::nullopt;
 	
-	auto buffer = std::move(scteMessages.front());
-	scteMessages.pop();
+	auto buffer = std::move(scteMessage);
 	
 	return buffer;
+}
+
+void MediaFrameListenerBridge::SetScteTimestamp(uint64_t time)
+{
+	scteTimestamp = time;
+}
+
+uint64_t MediaFrameListenerBridge::GetScteTimestamp()
+{
+	return scteTimestamp;
 }

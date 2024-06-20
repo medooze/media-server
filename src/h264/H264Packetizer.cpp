@@ -179,13 +179,8 @@ void H264Packetizer::OnNal(VideoFrame& frame, BufferReader& reader, std::optiona
 		config.Serialize(frame.GetCodecConfigData(), frame.GetCodecConfigSize());
 	}
 	
-	if (!scteMessages.empty())
-	{
-		auto&& scte = scteMessages.front();
-		auto&& timestamp = !scteTimestamps.empty() ? scteTimestamps.front() : 0;
-		// scteMessages.pop();
-		printf("SCTE timestamp %lu \n", timestamp);
-		
+	if (scteMessage.GetSize() != 0)
+	{	
 		//Add unregistered SEI message NAL
 		std::vector<uint8_t> sei;
 		sei.push_back(0x06);	// SEI NAL
@@ -200,7 +195,7 @@ void H264Packetizer::OnNal(VideoFrame& frame, BufferReader& reader, std::optiona
 		/* Construct json encoded as a string
 		Example:
 		{
-  			id: '14194058',
+  			id: 14194058,
   			start: 1717005742629,
   			duration: 30,
 	  		tag: '/DBcAAAAAAAAAP/wBQb//ciI8QBGAh1DVUVJXQk9EX+fAQ5FUDAxODAzODQwMDY2NiEEZAIZQ1VFSV0JPRF/3wABLit7AQVDMTQ2NDABAQEKQ1VFSQCAMTUwKnPhdcU='
@@ -208,39 +203,32 @@ void H264Packetizer::OnNal(VideoFrame& frame, BufferReader& reader, std::optiona
 		 We need to compute a unique hash for every scte payload received. 
 		 The operation is idempotent so repeating tags will re use the same hash ID.
 		*/
-		uint32_t hashId = computeUniqueHash(reinterpret_cast<const char*>(scte.GetData()), scte.GetSize());
-		// printf("\n Hash is %u \n", hashId);
+		uint32_t hashId = computeUniqueHash(reinterpret_cast<const char*>(scteMessage.GetData()), scteMessage.GetSize());
 
 		std::string seiScteJson = "{\"id\":" 
 								+ std::to_string(hashId)
 								+ ",\"start\":" 
-								+ std::to_string(timestamp) 
+								+ std::to_string(scteTimestamp) 
 								+ "," 
 								+ "\"duration\":0,\"tag\":\"";
 		
 		// Convert scte data to base64
-		uint8_t scteBase64[scte.GetSize()*2] = {0};
-		av_base64_encode((char*)scteBase64, scte.GetSize()*2, scte.GetData(), scte.GetSize());
+		uint8_t scteBase64[scteMessage.GetSize()*2] = {0};
+		av_base64_encode((char*)scteBase64, scteMessage.GetSize()*2, scteMessage.GetData(), scteMessage.GetSize());
 		uint32_t base64Len = 0;
-		// add a comment
-		for (uint32_t i = 0; i < scte.GetSize() * 2; i++)
+		
+		for (uint32_t i = 0; i < scteMessage.GetSize() * 2; i++)
 		{
 			if (scteBase64[i] == '\0')
 			{
 				base64Len = i;
 				break;
 			}
-			// printf("%c", scteBase64[i]);
 		}
 		printf("\nLen is %u\n", base64Len);
 		seiScteJson.append((char *) scteBase64, base64Len);
 		seiScteJson += "\"}";
 		const uint8_t* ptr = reinterpret_cast<const uint8_t*>(&seiScteJson[0]);
-		printf("Final length is %lu\n", seiScteJson.length());
-		// for (unsigned int i=0; i<seiScteJson.length(); i++)
-		// {
-		// 	printf("%u , ", ptr[i]);
-		// }
 
 		// Insert the payload size at pos 2 (zero indexed) 
 		// [0] 0x06 SEI NAL 
@@ -257,22 +245,13 @@ void H264Packetizer::OnNal(VideoFrame& frame, BufferReader& reader, std::optiona
 		//Escape nal
 		uint8_t seiEscaped[sei.size()*2];
 		auto seiSize = NalEscapeRbsp(seiEscaped, sizeof(seiEscaped), sei.data(), sei.size()).value();
-		Log("amaha: Emit scte SEI NAL\n");
-
-		// for (uint8_t i : sei)
-		// {
-		// 	printf("%x ", i);
-		// }
-
+		
+		Debug("H264Packetizer::OnNal() | Emit SCTE data as SEI Unregistered User Data, Size %lu \n", seiSize);
 
 		EmitNal(frame, BufferReader(seiEscaped, seiSize));
 		if (scteFrameRepeatCount-- <= 0)
 		{
-			scteMessages.pop();
-			if (!scteTimestamps.empty())
-			{
-				scteTimestamps.pop();
-			}
+			scteMessage.Reset();
 			scteFrameRepeatCount = 20;
 		}
 		
@@ -290,32 +269,26 @@ std::unique_ptr<MediaFrame> H264Packetizer::ProcessAU(BufferReader& reader)
 	return H26xPacketizer::ProcessAU(reader);
 }
 
-void H264Packetizer::PushScte(Buffer data)
+void H264Packetizer::SetScteData(Buffer data)
 {
-	scteMessages.emplace(std::move(data));
+	scteMessage = std::move(data);
 }
 
-std::optional<Buffer> H264Packetizer::PopScte()
+std::optional<Buffer> H264Packetizer::GetScteData()
 {
-	if (scteMessages.empty()) return std::nullopt;
+	if (scteMessage.GetData() == nullptr) return std::nullopt;
 	
-	auto buffer = std::move(scteMessages.front());
-	scteMessages.pop();
+	auto buffer = std::move(scteMessage);
 	
 	return buffer;
 }
 
-void H264Packetizer::PushScteTimestamp(uint64_t time)
+void H264Packetizer::SetScteTimestamp(uint64_t time)
 {
-	scteTimestamps.emplace(time);
+	scteTimestamp = time;
 }
 
-std::optional<uint64_t> H264Packetizer::PopScteTimestamp()
+uint64_t H264Packetizer::GetScteTimestamp()
 {
-	if (scteTimestamps.empty()) return std::nullopt;
-	
-	auto ts = std::move(scteTimestamps.front());
-	scteTimestamps.pop();
-	
-	return ts;
+	return scteTimestamp;
 }

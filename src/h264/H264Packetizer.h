@@ -18,10 +18,10 @@ public:
 	H264Packetizer();
 	std::unique_ptr<MediaFrame> ProcessAU(BufferReader &reader) override;
 
-	void PushScte(Buffer data);
-	std::optional<Buffer> PopScte();
-	void PushScteTimestamp(uint64_t data);
-	std::optional<uint64_t> PopScteTimestamp();
+	void SetScteData(Buffer data);
+	std::optional<Buffer> GetScteData();
+	void SetScteTimestamp(uint64_t ts);
+	uint64_t GetScteTimestamp();
 	
 protected:
 	void OnNal(VideoFrame& frame, BufferReader& nal, std::optional<bool>& frameEnd) override;
@@ -32,8 +32,8 @@ protected:
 	
 	std::unique_ptr<H264SeqParameterSet> sps;
 	
-	std::queue<Buffer> scteMessages;
-	std::queue<uint64_t> scteTimestamps;
+	Buffer scteMessage;
+	uint64_t scteTimestamp;
 	u_int8_t scteFrameRepeatCount;
 };
 
