@@ -22,6 +22,22 @@ bool TlsClient::initialize(const char* hostname)
 		return false;
 	}
 	
+	SSL_CTX_set_default_verify_dir(ctx);
+	
+	SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, [](int preverify, X509_STORE_CTX* ctx) -> int {
+		auto cert = X509_STORE_CTX_get_current_cert(ctx);
+		char name[256];
+		X509_NAME_oneline(X509_get_subject_name(cert), name, sizeof(name));
+		
+		auto err = X509_STORE_CTX_get_error(ctx);
+  		auto depth = X509_STORE_CTX_get_error_depth(ctx);
+		
+		Log("-TlsClient::initialize() SSL certificate subject: %s preverify: %d error: %s depth: %d\n", 
+			name, preverify, X509_verify_cert_error_string(err), depth);
+		
+		return preverify;
+	});
+	
 	SSL_CTX_set_options(ctx, SSL_OP_ALL);
 
 	rbio = BIO_new(BIO_s_mem());
