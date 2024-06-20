@@ -60,22 +60,16 @@ bool TlsClient::initialize(const char* hostname)
 		SSL_set_tlsext_host_name(ssl, hostname);
 	}
 	
-	// Start handshake
-	if (handshake() == Status::Failed)
-	{
-		return false;
-	}
-	
 	return true;
 }
 
-TlsClient::Status TlsClient::decrypt(const uint8_t* data, size_t size)
+TlsClient::TlsClientError TlsClient::decrypt(const uint8_t* data, size_t size)
 {
 	auto len = BIO_write(rbio, data, size);
 	if (len <= 0)
 	{
 		Error("-TlsClient::decrypt() Failed to BIO_write\n");
-		return Status::Failed;
+		return TlsClientError::Failed;
 	}
 	
 	if (!SSL_is_init_finished(ssl))
@@ -86,13 +80,13 @@ TlsClient::Status TlsClient::decrypt(const uint8_t* data, size_t size)
 		if (handshake() == Status::Failed)
 		{
 			Error("-TlsClient::decrypt() Failed to handshake\n");
-			return Status::Failed;
+			return TlsClientError::HandshakeFailed;
 		}
 		
 		if (!SSL_is_init_finished(ssl))
 		{
 			Error("-TlsClient::decrypt() Pending init\n");
-			return Status::Pending;
+			return TlsClientError::Pending;
 		}
 	}
 	
@@ -115,30 +109,30 @@ TlsClient::Status TlsClient::decrypt(const uint8_t* data, size_t size)
 	// This may happen when ssl renegotiation is needed
 	if (status == Status::Pending)
 	{
-		return readBioEncrypted();
+		return readBioEncrypted() ? TlsClientError::NoError : TlsClientError::Failed;
 	}
 	
-	return Status::OK;
+	return TlsClientError::NoError;
 }
 
-TlsClient::Status TlsClient::encrypt(const uint8_t* data, size_t size)
+TlsClient::TlsClientError TlsClient::encrypt(const uint8_t* data, size_t size)
 {
-	if (size == 0) return Status::OK;
+	if (size == 0) return TlsClientError::NoError;
 	
 	if (!SSL_is_init_finished(ssl))
 	{
 		initialised = false;
-		return Status::Pending;
+		return TlsClientError::Pending;
 	}
 	
 	auto len = SSL_write(ssl, data, size);
 	if (len > 0)
 	{
-		return readBioEncrypted();
+		return readBioEncrypted() ? TlsClientError::NoError : TlsClientError::Failed;
 	}
 	else
 	{
-		return Status::Failed;
+		return TlsClientError::Failed;
 	}
 }
 
@@ -176,13 +170,13 @@ TlsClient::Status TlsClient::handshake()
 	auto TlsError = getSslStatus(ret);
 	if (TlsError == Status::Pending)
 	{
-		return readBioEncrypted();
+		return readBioEncrypted() ? Status::OK : Status::Failed;
 	}
 	
 	return TlsError;
 }
 
-TlsClient::Status TlsClient::readBioEncrypted()
+bool TlsClient::readBioEncrypted()
 {
 	int bytes = 0;
 	do {
@@ -193,11 +187,11 @@ TlsClient::Status TlsClient::readBioEncrypted()
 		}
 		else if (!BIO_should_retry(wbio))
 		{
-			return Status::Failed;
+			return false;
 		}
 	} while (bytes > 0);
 	
-	return Status::OK;
+	return true;
 }
 
 void TlsClient::queueEncryptedData(const uint8_t* data, size_t size)

@@ -120,6 +120,12 @@ RTMPClientConnection::ErrorCode RTMPClientConnection::Connect(const char* server
 			Error("Failed to initlise tls: %s:%d\n", server, port);
 			return RTMPClientConnection::ErrorCode::TlsInitError;
 		}
+		
+		// Start handshake
+		if (tls->handshake() == TlsClient::Status::Failed)
+		{
+			return RTMPClientConnection::ErrorCode::TlsHandshakeError;
+		}
 	}
 
 	//I am inited
@@ -442,9 +448,12 @@ void RTMPClientConnection::sendRtmpData(const uint8_t* data, size_t size)
 {
 	if (tls)
 	{
-		if (tls->encrypt(data, size) != TlsClient::Status::OK)
+		if (tls->encrypt(data, size) != TlsClient::TlsClientError::NoError)
 		{
-			Warning("-RTMPClientConnection::sendRtmpData() TLS encrypt error\n");
+			Error("-RTMPClientConnection::sendRtmpData() TLS encrypt error\n");
+			
+			if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::TlsEncryptError);
+			return;
 		}
 	}
 	else
@@ -460,9 +469,19 @@ void RTMPClientConnection::processReceivedData(const uint8_t* data, size_t size)
 	if (tls)
 	{
 		auto ret = tls->decrypt(data, size);
-		if (ret == TlsClient::Status::Failed)
+		switch(ret) 
 		{
+		case TlsClient::TlsClientError::NoError:
+			return;
+		case TlsClient::TlsClientError::HandshakeFailed:
+			Warning("-RTMPClientConnection::processReceivedData() TLS handshake error\n");
+			if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::TlsHandshakeError);
+			return;
+		case TlsClient::TlsClientError::Failed:
+		default:
 			Warning("-RTMPClientConnection::processReceivedData() Failed to decrypt\n");
+			if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::TlsEncryptError);
+			return;
 		}
 	}
 	else

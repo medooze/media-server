@@ -21,13 +21,23 @@ public:
 		Failed
 	};
 	
+	enum class TlsClientError
+	{
+		NoError,
+		Pending,
+		HandshakeFailed,
+		Failed
+	};
+	
 	TlsClient();
 	
 	bool initialize(const char* hostname = nullptr);
-	
-	Status decrypt(const uint8_t* data, size_t size);
 
-	Status encrypt(const uint8_t* data, size_t size);
+	Status handshake();
+	
+	TlsClientError decrypt(const uint8_t* data, size_t size);
+
+	TlsClientError encrypt(const uint8_t* data, size_t size);
 	
 	template<typename T>
 	void popAllDecypted(const T& callback)
@@ -60,9 +70,7 @@ private:
 
 	Status getSslStatus(int returnCode);
 
-	Status handshake();
-	
-	Status readBioEncrypted();
+	bool readBioEncrypted();
 	
 	void queueEncryptedData(const uint8_t* data, size_t size);
 	

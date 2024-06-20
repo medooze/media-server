@@ -30,7 +30,10 @@ public:
 		PeerClosed = 7,
 		ReadError = 8,
 		PollError = 9,
-		TlsInitError = 10
+		TlsInitError = 10,
+		TlsHandshakeError = 11,
+		TlsDecryptError = 12,
+		TlsEncryptError = 13
 	};
 
 	class Listener
