@@ -5,12 +5,12 @@
 
 constexpr uint64_t kInitialDuration		= 500E3;	// 500ms
 constexpr uint64_t kReportInterval		= 250E3;	// 250ms
-constexpr uint64_t kMonitorDuration		= 150E3;	// 150ms
+constexpr uint64_t kMonitorDuration		= 150E3;	// 150ms bcost could make a larger window if flip-flopping data
 constexpr uint64_t kLongTermDuration		= 10E6;		// 10s
 constexpr uint64_t kMinRate			= 128E3;	// 128kbps
 constexpr uint64_t kMaxRate			= 100E6;	// 100mbps
 constexpr uint64_t kMinRateChangeBps		= 10000;
-constexpr double   kSamplingStep		= 0.05f;
+constexpr double   kSamplingStep		= 0.05f; // bcost could change this to move slower
 constexpr double   kInitialRampUp		= 1.30f;
 constexpr uint64_t kRecoveryDuration		= 250E3;
 constexpr double   LoosRateThreshold		= 0.35;		// 35% packet loss before moving to loosy state
@@ -326,13 +326,14 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 			bandwidthEstimation = totalRecvBitrate;
 		//Increase target bitrate
 		targetBitrate = std::max<uint32_t>(bandwidthEstimation, targetBitrate);
+
 	} else if (rttEstimated>(10+rttMin*1.3)) {
 		//We are in congestion
 		SetState(ChangeState::Congestion);
 		//If there was any feedback loss
 		if (totalRecvAcumulator.IsInWindow())
 			//Converge bwe as received rate
-			bandwidthEstimation = bandwidthEstimation * 0.80 + totalRecvBitrate * 0.20;
+			bandwidthEstimation = bandwidthEstimation * 0.80 + totalRecvBitrate * 0.20; // todo bcost could modify this to smooth more simple smoothing not configured changed on state
 		//Decrease target bitrate
 		targetBitrate = std::min<uint32_t>(bandwidthEstimation, totalRecvBitrate);
 	} else if (mediaSentBitrate > targetBitrate) {
