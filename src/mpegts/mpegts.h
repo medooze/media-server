@@ -50,7 +50,6 @@ struct Packet
 {
 	Header header;
 	std::optional<AdaptationField> adaptationField = {};
-	std::optional<uint8_t> payloadPointer = {};
 
 	static Packet Parse(BufferReader& reader);
 };
