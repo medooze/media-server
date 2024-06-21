@@ -957,10 +957,12 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 		//Check if we are sending way to much bitrate
 		if (targetBitrate && rtxBitrate.GetInstantAvg()*8 > targetBitrate * MaxRTXOverhead)
 		{
+			// @todo Looks like we are doing RTX even if it will go over the estimated bitrate possibly causing more congestion.
 			//Error
 			/*return*/ (void)UltraDebug("-DTLSICETransport::ReSendPacket() | Too much bitrate on rtx, skiping rtx:%lld estimated:%u target:%d\n", (uint64_t)(rtxBitrate.GetInstantAvg() * 8), senderSideBandwidthEstimator->GetEstimatedBitrate(), targetBitrate);
 		
 		} else if (targetBitrate && outgoingBitrate.GetInstantAvg()*8 > targetBitrate) {
+			// @todo Looks like we are doing RTX even if it will go over the estimated bitrate possibly causing more congestion.
 			//Error
 			/*return*/ (void)UltraDebug("-DTLSICETransport::ReSendPacket() | Too much outgoing bitrate, skiping rtx. outgoing:%lld estimated:%u target:%d\n", (uint64_t)(outgoingBitrate.GetInstantAvg() * 8), senderSideBandwidthEstimator->GetEstimatedBitrate(), targetBitrate);
 		}

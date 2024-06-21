@@ -7,6 +7,92 @@
 
 using namespace std::chrono_literals;
 
+
+// @todo Remove is for debugging.
+#include <iostream>
+#include <sstream>
+static void UpdateStats(std::ofstream& tslog, const char* prefix, const void* owner, const MediaFrame& frame)
+{
+       auto nowt = getTime();
+       if (!tslog)
+       {
+               std::ostringstream ss;
+               ss << "/opt/millicast/var/stats/tslog_" << prefix;
+               if (frame.GetType() == MediaFrame::Video)
+               {
+                       const VideoFrame* video = static_cast<const VideoFrame*>(&frame);
+                       ss << "video_" << nowt << "_" << video->GetHeight() << "p_" << (void*)owner << ".csv";
+               }
+               else
+               {
+                       const AudioFrame* audio = static_cast<const AudioFrame*>(&frame);
+                       ss << "audio_" << nowt << "_" << AudioCodec::GetNameFor(audio->GetCodec()) << "_" << (void*)owner << ".csv";
+               }
+
+               tslog.open(ss.str().c_str());
+               if (!tslog)
+               {
+                       std::cerr << "Failed to open file: " << ss.str() << std::endl;
+               }
+
+               tslog
+                       << "time"
+                       << ",clockrate"
+                       << ",timestamp"
+                       << ",duration";
+               if (frame.GetType() == MediaFrame::Video)
+               {
+                       const VideoFrame* video = static_cast<const VideoFrame*>(&frame);
+                       tslog
+                               << ",type"
+                               << ",width"
+                               << ",height"
+                               << ",pts"
+                               << ",obj"
+                       ;
+               }
+               else
+               {
+                       const AudioFrame* audio = static_cast<const AudioFrame*>(&frame);
+                       tslog
+                               << ",channels"
+                               << ",obj"
+                               ;
+               }
+
+               tslog << "\n";
+       }
+
+       tslog << nowt
+               << "," << frame.GetClockRate()
+               << "," << frame.GetTimestamp()
+               << "," << frame.GetDuration()
+               ;
+               if (frame.GetType() == MediaFrame::Video)
+               {
+                       const VideoFrame* video = static_cast<const VideoFrame*>(&frame);
+                       tslog
+                               << "," << (video->IsIntra() ? "I" : (video->IsBFrame() ? "B" : "P"))
+                               << "," << video->GetWidth()
+                               << "," << video->GetHeight()
+                               << "," << video->GetPresentationTimestamp()
+                               << "," << (const void*)video
+                               ;
+               }
+               else
+               {
+                       const AudioFrame* audio = static_cast<const AudioFrame*>(&frame);
+                       tslog
+                               << "," << audio->GetNumChannels()
+                               << "," << (const void*)audio
+                               ;
+               }
+               tslog << "\n";
+			   tslog << std::flush;
+}
+
+
+
 MediaFrameListenerBridge::MediaFrameListenerBridge(TimeService& timeService,DWORD ssrc, bool smooth) : 
 	timeService(timeService),
 	ssrc(ssrc),
@@ -168,6 +254,7 @@ void MediaFrameListenerBridge::RemoveListener(RTPIncomingMediaStream::Listener* 
 
 void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& frame)
 {
+	UpdateStats(tslog, "", this, frame);
 	timeService.Async([=, frame = std::shared_ptr<MediaFrame>(frame.Clone())] (auto now){
 		
 		// Assign SSRC

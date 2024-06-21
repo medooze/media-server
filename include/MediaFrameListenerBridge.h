@@ -9,6 +9,9 @@
 #include <queue>
 #include <memory>
 
+// TODO : Remove is for debugging
+#include <fstream>
+
 using namespace std::chrono_literals;
 
 class MediaFrameListenerBridge :
@@ -20,6 +23,9 @@ class MediaFrameListenerBridge :
 public:
 	using shared = std::shared_ptr<MediaFrameListenerBridge>;
 public:
+	// TODO : Remove is for debugging
+	std::ofstream tslog;
+
 	static constexpr uint32_t NoSeqNum = std::numeric_limits<uint32_t>::max();
 	static constexpr uint64_t NoTimestamp = std::numeric_limits<uint64_t>::max();
 	static constexpr int64_t  MaxDispatchingDelayMs = 5000;
