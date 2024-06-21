@@ -122,7 +122,7 @@ RTMPClientConnection::ErrorCode RTMPClientConnection::Connect(const char* server
 		}
 		
 		// Start handshake
-		if (tls->handshake() == TlsClient::Status::Failed)
+		if (tls->handshake() == TlsClient::SslStatus::Failed)
 		{
 			return RTMPClientConnection::ErrorCode::TlsHandshakeError;
 		}

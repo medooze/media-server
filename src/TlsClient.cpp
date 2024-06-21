@@ -98,7 +98,7 @@ TlsClient::TlsClientError TlsClient::decrypt(const uint8_t* data, size_t size)
 		Log("-TlsClient::decrypt() ssl not initialised\n");
 		initialised = false;
 		
-		if (handshake() == Status::Failed)
+		if (handshake() == SslStatus::Failed)
 		{
 			Error("-TlsClient::decrypt() Failed to handshake\n");
 			return TlsClientError::HandshakeFailed;
@@ -128,7 +128,7 @@ TlsClient::TlsClientError TlsClient::decrypt(const uint8_t* data, size_t size)
 	
 	auto status = getSslStatus(bytes);
 	// This may happen when ssl renegotiation is needed
-	if (status == Status::Pending)
+	if (status == SslStatus::Pending)
 	{
 		return readBioEncrypted() ? TlsClientError::NoError : TlsClientError::Failed;
 	}
@@ -168,30 +168,30 @@ void TlsClient::shutdown()
 	SSL_CTX_free(ctx);
 }
 
-TlsClient::Status TlsClient::getSslStatus(int returnCode)
+TlsClient::SslStatus TlsClient::getSslStatus(int returnCode)
 {
 	switch (SSL_get_error(ssl, returnCode))
 	{
 		case SSL_ERROR_NONE:
-			return Status::OK;
+			return SslStatus::OK;
 		case SSL_ERROR_WANT_WRITE:
 		case SSL_ERROR_WANT_READ:
-			return Status::Pending;
+			return SslStatus::Pending;
 		case SSL_ERROR_ZERO_RETURN:
 		case SSL_ERROR_SYSCALL:
 		default:
-			return Status::Failed;
+			return SslStatus::Failed;
 	}
 }
 
-TlsClient::Status TlsClient::handshake()
+TlsClient::SslStatus TlsClient::handshake()
 {	
 	auto ret = SSL_do_handshake(ssl);
 	
 	auto TlsError = getSslStatus(ret);
-	if (TlsError == Status::Pending)
+	if (TlsError == SslStatus::Pending)
 	{
-		return readBioEncrypted() ? Status::OK : Status::Failed;
+		return readBioEncrypted() ? SslStatus::OK : SslStatus::Failed;
 	}
 	
 	return TlsError;

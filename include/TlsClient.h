@@ -14,7 +14,7 @@
 class TlsClient 
 {
 public:
-	enum class Status
+	enum class SslStatus
 	{ 
 		OK,
 		Pending,
@@ -37,7 +37,7 @@ public:
 	*/
 	bool initialize(const char* hostname = nullptr);
 
-	Status handshake();
+	SslStatus handshake();
 	
 	TlsClientError decrypt(const uint8_t* data, size_t size);
 
@@ -72,7 +72,7 @@ public:
 
 private:
 
-	Status getSslStatus(int returnCode);
+	SslStatus getSslStatus(int returnCode);
 
 	bool readBioEncrypted();
 	
