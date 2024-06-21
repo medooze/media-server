@@ -3,7 +3,26 @@
 
 #include <cassert>
 
-TlsClient::TlsClient()
+namespace {
+	
+void LogCertificateInfo(int preverify, X509_STORE_CTX* ctx)
+{
+	auto cert = X509_STORE_CTX_get_current_cert(ctx);
+	char name[256];
+	X509_NAME_oneline(X509_get_subject_name(cert), name, sizeof(name));
+	
+	auto err = X509_STORE_CTX_get_error(ctx);
+	auto depth = X509_STORE_CTX_get_error_depth(ctx);
+	
+	Log("-TlsClient::initialize() SSL certificate subject: %s preverify: %d error: %s depth: %d\n", 
+		name, preverify, X509_verify_cert_error_string(err), depth);
+}
+	
+}
+
+
+TlsClient::TlsClient(bool allowAllCertificates) :
+	allowAllCertificates(allowAllCertificates)
 {
 	SSL_library_init();
 	OpenSSL_add_all_algorithms();
@@ -24,19 +43,21 @@ bool TlsClient::initialize(const char* hostname)
 	
 	SSL_CTX_set_default_verify_dir(ctx);
 	
-	SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, [](int preverify, X509_STORE_CTX* ctx) -> int {
-		auto cert = X509_STORE_CTX_get_current_cert(ctx);
-		char name[256];
-		X509_NAME_oneline(X509_get_subject_name(cert), name, sizeof(name));
-		
-		auto err = X509_STORE_CTX_get_error(ctx);
-  		auto depth = X509_STORE_CTX_get_error_depth(ctx);
-		
-		Log("-TlsClient::initialize() SSL certificate subject: %s preverify: %d error: %s depth: %d\n", 
-			name, preverify, X509_verify_cert_error_string(err), depth);
-		
-		return preverify;
-	});
+	if (allowAllCertificates)
+	{
+		SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, [](int preverify, X509_STORE_CTX* ctx) -> int {
+			LogCertificateInfo(preverify, ctx);
+			// Allow all certificates
+			return 1;
+		});
+	}
+	else
+	{
+		SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, [](int preverify, X509_STORE_CTX* ctx) -> int {
+			LogCertificateInfo(preverify, ctx);
+			return preverify;
+		});
+	}
 	
 	SSL_CTX_set_options(ctx, SSL_OP_ALL);
 

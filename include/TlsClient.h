@@ -29,7 +29,7 @@ public:
 		Failed
 	};
 	
-	TlsClient();
+	TlsClient(bool allowAllCertificates = false);
 	
 	bool initialize(const char* hostname = nullptr);
 
@@ -89,6 +89,7 @@ private:
 	std::deque<std::vector<uint8_t>> decrypted;
 	
 	bool initialised = false;
+	bool allowAllCertificates = false;
 };
 
 #endif
