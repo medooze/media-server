@@ -31,6 +31,10 @@ public:
 	
 	TlsClient(bool allowAllCertificates = false);
 	
+	/**
+	 * Refer to following link for use of hostname.
+	 * https://knowledge.digicert.com/quovadis/ssl-certificates/ssl-general-topics/what-is-sni-server-name-indication
+	*/
 	bool initialize(const char* hostname = nullptr);
 
 	Status handshake();
