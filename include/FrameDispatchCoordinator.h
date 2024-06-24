@@ -3,6 +3,8 @@
 
 #include "FrameDelayCalculator.h"
 
+#include <atomic>
+
 class MediaFrameListenerBridge;
 
 class FrameDispatchCoordinator
@@ -22,6 +24,8 @@ public:
 private:
 	
 	FrameDelayCalculator frameDelayCalculator;
+	
+	std::atomic_flag lock = ATOMIC_FLAG_INIT;
 	
 	friend class TestFrameDispatchCoordinator;
 };

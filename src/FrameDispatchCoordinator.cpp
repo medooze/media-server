@@ -11,7 +11,9 @@ void FrameDispatchCoordinator::OnFrame(std::chrono::milliseconds now, uint64_t t
 {
 	if (ts)
 	{
+		while (lock.test_and_set(std::memory_order_acq_rel));
 		auto delayMs = frameDelayCalculator.OnFrame(listenerBridge.GetMediaSSRC(), now, ts, clockRate);
+		lock.clear(std::memory_order_release);
 	
 		listenerBridge.SetDelayMs(std::max(delayMs, std::chrono::milliseconds(0)));
 	}
