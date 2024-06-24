@@ -30,21 +30,22 @@ public:
 	};
 	
 	TlsClient(bool allowAllCertificates = false);
+	~TlsClient();
 	
 	/**
 	 * Refer to following link for use of hostname.
 	 * https://knowledge.digicert.com/quovadis/ssl-certificates/ssl-general-topics/what-is-sni-server-name-indication
 	*/
-	bool initialize(const char* hostname = nullptr);
+	bool Initialize(const char* hostname = nullptr);
 
-	SslStatus handshake();
+	SslStatus Handshake();
 	
-	TlsClientError decrypt(const uint8_t* data, size_t size);
+	TlsClientError Decrypt(const uint8_t* data, size_t size);
 
-	TlsClientError encrypt(const uint8_t* data, size_t size);
+	TlsClientError Encrypt(const uint8_t* data, size_t size);
 	
 	template<typename T>
-	void popAllDecypted(const T& callback)
+	void PopAllDecypted(const T& callback)
 	{
 		while (!decrypted.empty())
 		{	
@@ -54,7 +55,7 @@ public:
 	}
 
 	template<typename T>
-	void popAllEncrypted(const T& callback)
+	void PopAllEncrypted(const T& callback)
 	{	
 		while (!encrypted.empty())
 		{
@@ -63,22 +64,22 @@ public:
 		}
 	}
 	
-	inline bool isInitialised() const
+	inline bool IsInitialised() const
 	{
 		return initialised;
 	}
 	
-	void shutdown();
+	void Shutdown();
 
 private:
 
-	SslStatus getSslStatus(int returnCode);
+	SslStatus GetSslStatus(int returnCode);
 
-	bool readBioEncrypted();
+	bool ReadBioEncrypted();
 	
-	void queueEncryptedData(const uint8_t* data, size_t size);
+	void QueueEncryptedData(const uint8_t* data, size_t size);
 	
-	void queueDecryptedData(const uint8_t* data, size_t size);
+	void QueueDecryptedData(const uint8_t* data, size_t size);
 
 	SSL_CTX *ctx = nullptr;
 	SSL *ssl = nullptr;

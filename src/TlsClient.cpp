@@ -32,7 +32,12 @@ TlsClient::TlsClient(bool allowAllCertificates) :
 	ERR_load_crypto_strings();	
 }
 
-bool TlsClient::initialize(const char* hostname)
+TlsClient::~TlsClient()
+{
+	Shutdown();
+}
+
+bool TlsClient::Initialize(const char* hostname)
 {
 	ctx = SSL_CTX_new(TLS_method());
 	if (!ctx)
@@ -84,36 +89,36 @@ bool TlsClient::initialize(const char* hostname)
 	return true;
 }
 
-TlsClient::TlsClientError TlsClient::decrypt(const uint8_t* data, size_t size)
+TlsClient::TlsClientError TlsClient::Decrypt(const uint8_t* data, size_t size)
 {
 	auto len = BIO_write(rbio, data, size);
 	if (len <= 0)
 	{
-		Error("-TlsClient::decrypt() Failed to BIO_write\n");
+		Error("-TlsClient::Decrypt() Failed to BIO_write\n");
 		return TlsClientError::Failed;
 	}
 	
 	if (!SSL_is_init_finished(ssl))
 	{
-		Log("-TlsClient::decrypt() ssl not initialised\n");
+		Log("-TlsClient::Decrypt() ssl not initialised\n");
 		initialised = false;
 		
-		if (handshake() == SslStatus::Failed)
+		if (Handshake() == SslStatus::Failed)
 		{
-			Error("-TlsClient::decrypt() Failed to handshake\n");
+			Error("-TlsClient::Decrypt() Failed to handshake\n");
 			return TlsClientError::HandshakeFailed;
 		}
 		
 		if (!SSL_is_init_finished(ssl))
 		{
-			Error("-TlsClient::decrypt() Pending init\n");
+			Error("-TlsClient::Decrypt() Pending init\n");
 			return TlsClientError::Pending;
 		}
 	}
 	
 	if (!initialised)
 	{
-		Log("-TlsClient::decrypt() Tls client initialised\n");
+		Log("-TlsClient::Decrypt() Tls client initialised\n");
 		initialised = true;
 	}
 	
@@ -122,21 +127,21 @@ TlsClient::TlsClientError TlsClient::decrypt(const uint8_t* data, size_t size)
 		bytes = SSL_read(ssl, decryptCache, sizeof(decryptCache));
 		if (bytes > 0) 
 		{
-			queueDecryptedData(decryptCache, bytes);
+			QueueDecryptedData(decryptCache, bytes);
 		}
 	} while (bytes > 0);
 	
-	auto status = getSslStatus(bytes);
+	auto status = GetSslStatus(bytes);
 	// This may happen when ssl renegotiation is needed
 	if (status == SslStatus::Pending)
 	{
-		return readBioEncrypted() ? TlsClientError::NoError : TlsClientError::Failed;
+		return ReadBioEncrypted() ? TlsClientError::NoError : TlsClientError::Failed;
 	}
 	
 	return TlsClientError::NoError;
 }
 
-TlsClient::TlsClientError TlsClient::encrypt(const uint8_t* data, size_t size)
+TlsClient::TlsClientError TlsClient::Encrypt(const uint8_t* data, size_t size)
 {
 	if (size == 0) return TlsClientError::NoError;
 	
@@ -149,7 +154,7 @@ TlsClient::TlsClientError TlsClient::encrypt(const uint8_t* data, size_t size)
 	auto len = SSL_write(ssl, data, size);
 	if (len > 0)
 	{
-		return readBioEncrypted() ? TlsClientError::NoError : TlsClientError::Failed;
+		return ReadBioEncrypted() ? TlsClientError::NoError : TlsClientError::Failed;
 	}
 	else
 	{
@@ -157,7 +162,7 @@ TlsClient::TlsClientError TlsClient::encrypt(const uint8_t* data, size_t size)
 	}
 }
 
-void TlsClient::shutdown()
+void TlsClient::Shutdown()
 {
 	initialised = false;
 	
@@ -168,7 +173,7 @@ void TlsClient::shutdown()
 	SSL_CTX_free(ctx);
 }
 
-TlsClient::SslStatus TlsClient::getSslStatus(int returnCode)
+TlsClient::SslStatus TlsClient::GetSslStatus(int returnCode)
 {
 	switch (SSL_get_error(ssl, returnCode))
 	{
@@ -184,27 +189,27 @@ TlsClient::SslStatus TlsClient::getSslStatus(int returnCode)
 	}
 }
 
-TlsClient::SslStatus TlsClient::handshake()
+TlsClient::SslStatus TlsClient::Handshake()
 {	
 	auto ret = SSL_do_handshake(ssl);
 	
-	auto TlsError = getSslStatus(ret);
+	auto TlsError = GetSslStatus(ret);
 	if (TlsError == SslStatus::Pending)
 	{
-		return readBioEncrypted() ? SslStatus::OK : SslStatus::Failed;
+		return ReadBioEncrypted() ? SslStatus::OK : SslStatus::Failed;
 	}
 	
 	return TlsError;
 }
 
-bool TlsClient::readBioEncrypted()
+bool TlsClient::ReadBioEncrypted()
 {
 	int bytes = 0;
 	do {
 		bytes = BIO_read(wbio, encryptCache, sizeof(encryptCache));
 		if (bytes > 0)
 		{
-			queueEncryptedData(encryptCache, bytes);
+			QueueEncryptedData(encryptCache, bytes);
 		}
 		else if (!BIO_should_retry(wbio))
 		{
@@ -215,12 +220,12 @@ bool TlsClient::readBioEncrypted()
 	return true;
 }
 
-void TlsClient::queueEncryptedData(const uint8_t* data, size_t size)
+void TlsClient::QueueEncryptedData(const uint8_t* data, size_t size)
 {
 	encrypted.emplace_back(data, data + size);
 }
 
-void TlsClient::queueDecryptedData(const uint8_t* data, size_t size)
+void TlsClient::QueueDecryptedData(const uint8_t* data, size_t size)
 {
 	decrypted.emplace_back(data, data + size);
 }
