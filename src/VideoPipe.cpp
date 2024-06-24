@@ -256,8 +256,11 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 
 			if ((allowedDownScaling == AllowedDownScaling::SameOrLower && srcVideoHeight < scaleResolutionToHeight)
 				|| (allowedDownScaling == AllowedDownScaling::LowerOnly && srcVideoHeight <= scaleResolutionToHeight))
+			{
+				pthread_mutex_unlock(&newPicMutex);
 				//Skip frame
 				return nullptr;
+			}
 			//Change scale to match target height
 			scale = (float)srcVideoHeight / scaleResolutionToHeight;
 		}
@@ -266,8 +269,11 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 			//Check if we are allowed to downscale given the input height
 			if ((allowedDownScaling == AllowedDownScaling::SameOrLower && scaleResolutionDownBy < 1.0f)
 				|| (allowedDownScaling == AllowedDownScaling::LowerOnly && scaleResolutionDownBy <= 1.0f))
+			{
+				pthread_mutex_unlock(&newPicMutex);
 				//Skip frame
 				return nullptr;
+			}
 			scale = scaleResolutionDownBy;
 		}
 		//rescaled video height
@@ -295,7 +301,7 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 		videoBuffer = std::move(resized);
 	}
   
-  //Unlock
+	//Unlock
 	pthread_mutex_unlock(&newPicMutex);
   
 	//If we got timestamps in the video buffer
