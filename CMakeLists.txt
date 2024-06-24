@@ -126,21 +126,23 @@ target_link_libraries(MediaServerLib
     x264
     avcodec
     avutil
+    avformat
     swscale
     swresample
     crypto
 )
 
 #for debugging
-#target_compile_options(MediaServerLib PUBLIC
+# target_compile_options(MediaServerLib PUBLIC
 #    -ggdb
 #    -O0
-#)
+# )
 
 # Unit test executable
 add_executable(MediaServerUnitTest
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAACSpecificConfig.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAccumulator.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAudioCodec.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestCircularBuffer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestCircularQueue.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestFrameDelayCalculator.cpp
@@ -165,7 +167,7 @@ target_link_libraries(MediaServerUnitTest
     gtest
     gtest_main
 )
-
+set(CMAKE_BUILD_TYPE Debug)
 
 add_test(NAME MediaServerUnitTest
          COMMAND MediaServerUnitTest)

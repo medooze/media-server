@@ -124,8 +124,8 @@ void AudioDecoderWorker::SetAACConfig(const uint8_t* data,const size_t size)
 
 int AudioDecoderWorker::Decode()
 {
-	SWORD		raw[4096];
-	DWORD		rawSize=4096;
+	SWORD		raw[34560];
+	DWORD		rawSize=34560;
 	QWORD		frameTime=0;
 	QWORD		lastTime=0;
 

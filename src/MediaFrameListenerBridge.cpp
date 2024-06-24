@@ -262,6 +262,7 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 				frameData = audio->GetData();
 				//Get size
 				frameSize = audio->GetLength();
+				Warning("-yezhan audio frame size:%d, MFLB: %p\n", frameSize, this);
 				//Set correct clock rate for audio codec
 				rate = AudioCodec::GetClockRate(audio->GetCodec());
 
@@ -365,9 +366,12 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 			auto packet = std::make_shared<RTPPacket>(frame->GetType(),codec);
 
 			//Make sure it is enought length
-			if (rtp.GetTotalLength()>packet->GetMaxMediaLength())
+			if (rtp.GetTotalLength()>packet->GetMaxMediaLength()) {
 				//Error
+				Warning("-yezhan MFLB: rtp packet size exceeds limit, frame type:%d, frame length:%d, rtp.GetTotalLength():%d\n", frame->GetType(), frame->GetLength(), rtp.GetTotalLength());
 				continue;
+			}
+				
 			//Set src
 			packet->SetSSRC(ssrc);
 			packet->SetExtSeqNum(extSeqNum++);

@@ -85,7 +85,7 @@ int MP3Decoder::Decode(const BYTE *in, int inLen, SWORD* out, int outLen)
 	//Set data
 	packet->data = (BYTE*)in;
 	packet->size = inLen;
-
+	Warning("mp3 decoder inLen:%d\n", inLen);
 	//Decode it
 	if (avcodec_send_packet(ctx, packet)<0)
 		//nothing
@@ -94,20 +94,41 @@ int MP3Decoder::Decode(const BYTE *in, int inLen, SWORD* out, int outLen)
 	//Release side data
 	av_packet_free_side_data(packet);
 	
-	//If we got a frame
-	if (avcodec_receive_frame(ctx, frame)<0)
-		//Nothing yet
-		return 0;
+	// //If we got a frame
+	// if (avcodec_receive_frame(ctx, frame)<0)
+	// 	//Nothing yet
+	// 	return 0;
 	
-	//Get number of samples
-	auto len = frame->nb_samples;
-	//Convert to SWORD
-	for (size_t i=0; i<len && (i*frame->channels)<outLen; ++i)
-		//For each channel
-		for (size_t n=0; n<std::min(frame->channels,2); ++n)
-			//Interleave
-			out[i*frame->channels + n] = ((float*)(frame->extended_data[n]))[i] * (1<<15);
-	//Return number of samples
+	// //Get number of samples
+	// auto len = frame->nb_samples;
+	// //Convert to SWORD
+	// for (size_t i=0; i<len && (i*frame->channels)<outLen; ++i)
+	// 	//For each channel
+	// 	for (size_t n=0; n<std::min(frame->channels,2); ++n)
+	// 		//Interleave
+	// 		out[i*frame->channels + n] = ((float*)(frame->extended_data[n]))[i] * (1<<15);
+
+	//If we got a frame
+	int len = 0;
+	
+	while(avcodec_receive_frame(ctx, frame)==0) 
+	{
+		//Get number of samples
+		// auto len = frame->nb_samples;
+		//Convert to SWORD
+		for (size_t i=0; i< frame->nb_samples && (i*frame->channels)<outLen; ++i)
+			//For each channel
+			for (size_t n=0; n<std::min(frame->channels,2); ++n)
+				//Interleave
+				// out[i*frame->channels + n] = ((float*)(frame->extended_data[n]))[i] * (1<<15);
+				out[(len + i) * frame->channels + n] = ((float*)(frame->extended_data[n]))[i] * (1 << 15);
+		
+		len+=frame->nb_samples;
+		
+	}
+
+	
+	Warning("decoded mp3 len returned:%d\n", len);
 	return len;
 }
 

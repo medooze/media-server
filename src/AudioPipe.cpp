@@ -158,7 +158,7 @@ int AudioPipe::StopPlaying()
 
 int AudioPipe::PlayBuffer(SWORD* buffer, DWORD size, DWORD frameTime, BYTE vadLevel)
 {
-	//Debug("-push %d cache %d\n",size,fifoBuffer.length());
+	Debug("-push %d cache %d\n",size,fifoBuffer.length());
 
 	//Lock
 	pthread_mutex_lock(&mutex);
@@ -173,11 +173,11 @@ int AudioPipe::PlayBuffer(SWORD* buffer, DWORD size, DWORD frameTime, BYTE vadLe
 	}
 
 	//Check if we are transtrating
-	SWORD resampled[8192];
+	SWORD resampled[8640];
 	if (transrater.IsOpen())
 	{
-		DWORD resampledSize = 8192 / numChannels;
-
+		DWORD resampledSize = 8640 / numChannels;
+		Warning("-yezhan transrater is open\n");
 		//Proccess
 		if (!transrater.ProcessBuffer(buffer, size, resampled, &resampledSize))
 		{
@@ -185,10 +185,11 @@ int AudioPipe::PlayBuffer(SWORD* buffer, DWORD size, DWORD frameTime, BYTE vadLe
 			pthread_mutex_unlock(&mutex);
 			return Error("-AudioPipe could not transrate\n");
 		}
-
+		
 		//Update parameters
 		buffer = resampled;
 		size = resampledSize;
+		Warning("-yezhan transrater is open: resampledSize = %d\n", size);
 	}
 
 	//Calculate total audio length
@@ -220,7 +221,7 @@ int AudioPipe::PlayBuffer(SWORD* buffer, DWORD size, DWORD frameTime, BYTE vadLe
 
 int AudioPipe::RecBuffer(SWORD* buffer, DWORD size)
 {
-	//Debug("-pop %d cache %d\n",size,fifoBuffer.length());
+	Debug("-pop %d cache %d\n",size,fifoBuffer.length());
 
 	DWORD len = 0;
 	DWORD totalSize = 0;
@@ -268,6 +269,7 @@ int AudioPipe::RecBuffer(SWORD* buffer, DWORD size)
 
 	//Get samples from queue
 	len = fifoBuffer.pop(buffer, totalSize) / numChannels;
+	Warning("-yezhan poped len:%d\n", len);
 
 end:
 	//Unlock

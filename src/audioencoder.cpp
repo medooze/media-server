@@ -203,6 +203,7 @@ int AudioEncoderWorker::Encode()
 	while(encodingAudio)
 	{
 		//Capturamos 20ms
+		Warning("-yezhan audio encoder worker num frame samples:%d\n", codec->numFrameSamples);
 		if (audioInput->RecBuffer(recBuffer,codec->numFrameSamples)==0)
 			//Skip and probably exit
 			continue;
