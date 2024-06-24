@@ -23,6 +23,11 @@ VideoBuffer::const_shared testPictureResize(const ScalingParam &param)
     auto allowedDownScaling = param.allowedDownScaling;
 
     vidPipe.Init(scaleResolutionDownBy, scaleResolutionToHeight, allowedDownScaling);
+    
+    // Need to enable "capturing" bool. Resolution here is basically unused. 
+    // Real system sets to 640x480 before changing it later and will be set every frame
+    // TODO: Later we should remove these parameters from the call as it is confusing
+    vidPipe.StartVideoCapture(640, 480, fps);
 
     VideoBuffer::shared sharedVidBuffer = std::make_shared<VideoBuffer>(param.srcVideoWidth, param.srcVideoHeight);
     sharedVidBuffer->SetPixelAspectRatio({param.srcPicPAR.first, param.srcPicPAR.second});
