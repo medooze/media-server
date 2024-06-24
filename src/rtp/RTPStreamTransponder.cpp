@@ -517,11 +517,6 @@ void RTPStreamTransponder::onRTP(const RTPIncomingMediaStream* stream,const RTPP
 		lastTimestamp = timestamp;
 		//Update last sent time
 		lastTime = getTime();
-		
-		if (packet->GetMediaType()==MediaFrame::Video)
-		{
-			Debug("onRTP: ssrc:%d ext:%llu ts:%llu first:%llu c:%d\n", ssrc, packet->GetTimestamp(), timestamp, firstTimestamp, packet->GetClockRate());
-		}
 
 		//Get last frame number
 		lastFrameNumber = continousFrameNumber;

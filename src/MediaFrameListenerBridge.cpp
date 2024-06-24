@@ -179,7 +179,6 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 		
 		if (coordinator)
 		{
-			Debug("OnFrame: %p, %llu, %u\n", this, frame->GetTimeStamp(), frame->GetClockRate());
 			coordinator->OnFrame(now, frame->GetTimeStamp(), frame->GetClockRate(), *this);
 		}
 		
