@@ -147,7 +147,6 @@ int VideoEncoderWorker::Encode()
 	timeval lastFPU;
 	
 	DWORD num = 0;
-	QWORD overslept = 0;
 
 	MinMaxAcumulator bitrateAcu(1000);
 	MinMaxAcumulator fpsAcu(1000);

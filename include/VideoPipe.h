@@ -2,6 +2,8 @@
 #define	VIDEOPIPE_H
 
 #include <pthread.h>
+#include <mutex>
+#include <condition_variable>
 #include "video.h"
 #include "VideoBufferScaler.h"
 #include "CircularQueue.h"
@@ -56,8 +58,8 @@ private:
 	
 	CircularQueue<VideoBuffer::const_shared> queue;
 
-	pthread_mutex_t newPicMutex;
-	pthread_cond_t  newPicCond;
+	std::mutex newPicMutex;
+	std::condition_variable newPicCond;
 
 	VideoBufferPool	videoBufferPool;
 	VideoBufferScaler scaler;
