@@ -4,8 +4,6 @@
 #include "H26xPacketizer.h"
 #include "avcdescriptor.h"
 
-#include <queue>
-
 /**
  * RTP packetizer for H.264 streams.
  * 
@@ -18,10 +16,7 @@ public:
 	H264Packetizer();
 	std::unique_ptr<MediaFrame> ProcessAU(BufferReader &reader) override;
 
-	void SetScteData(Buffer data);
-	std::optional<Buffer> GetScteData();
-	void SetScteTimestamp(uint64_t ts);
-	uint64_t GetScteTimestamp();
+	void AppendScteData(uint64_t ts, const Buffer& data, uint8_t repeatCount);
 	
 protected:
 	void OnNal(VideoFrame& frame, BufferReader& nal, std::optional<bool>& frameEnd) override;
@@ -34,7 +29,14 @@ protected:
 	
 	Buffer scteMessage;
 	uint64_t scteTimestamp;
-	u_int8_t scteFrameRepeatCount;
+	// To account for potential packet loss, we repeat the SEI containing 
+	// scte tags for 20 frames to provide added resiliency.
+	// Also, we assume that another scte message cannot arrive within is interval
+	uint8_t scteFrameRepeatCount;
+	uint8_t repeatFrameCounter;
+	//Unregistered SEI message NAL
+	std::vector<uint8_t> sei;
+	uint32_t scteMessageId;
 };
 
 #endif // H264PACKETIZER_H

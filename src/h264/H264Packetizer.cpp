@@ -3,13 +3,18 @@
 #include "video.h"
 #include "h264/h264.h"
 
-constexpr int FrameRepeatCount = 20;
-
 H264Packetizer::H264Packetizer() : H26xPacketizer(VideoCodec::H264)
 {
-	// To account for potential packet loss, we repeat the SEI containing 
-	// scte tags for 20 frames to provide added resiliency
-	scteFrameRepeatCount = FrameRepeatCount;
+	sei.clear();            // Flush any previous data
+	sei.push_back(0x06);	// SEI NAL
+	sei.push_back(0x05);	// User unregistered data
+	
+	uint8_t uuid[16] = {
+		0x2b, 0x69, 0xba, 0x1b, 0x77, 0x7e, 0x46, 0x53,
+		0x99, 0x7a, 0xc6, 0x75, 0xb9, 0xd3, 0xac, 0xaf
+	};
+	sei.insert(sei.end(), uuid, uuid + sizeof(uuid));
+	scteMessageId = 0;
 }
 
 void H264Packetizer::EmitNal(VideoFrame& frame, BufferReader nal)
@@ -181,82 +186,19 @@ void H264Packetizer::OnNal(VideoFrame& frame, BufferReader& reader, std::optiona
 	
 	if (scteMessage.GetSize() != 0)
 	{	
-		//Add unregistered SEI message NAL
-		std::vector<uint8_t> sei;
-		sei.push_back(0x06);	// SEI NAL
-		sei.push_back(0x05);	// User unregistered data
-		
-		uint8_t uuid[16] = {
-			0x2b, 0x69, 0xba, 0x1b, 0x77, 0x7e, 0x46, 0x53,
-			0x99, 0x7a, 0xc6, 0x75, 0xb9, 0xd3, 0xac, 0xaf
-		};
-		sei.insert(sei.end(), uuid, uuid + sizeof(uuid));
-		
-		/* Construct json encoded as a string
-		Example:
-		{
-  			id: 14194058,
-  			start: 1717005742629,
-  			duration: 30,
-	  		tag: '/DBcAAAAAAAAAP/wBQb//ciI8QBGAh1DVUVJXQk9EX+fAQ5FUDAxODAzODQwMDY2NiEEZAIZQ1VFSV0JPRF/3wABLit7AQVDMTQ2NDABAQEKQ1VFSQCAMTUwKnPhdcU='
-		}
-		 We need to compute a unique hash for every scte payload received. 
-		 The operation is idempotent so repeating tags will re use the same hash ID.
-		*/
-		uint32_t hashId = computeUniqueHash(reinterpret_cast<const char*>(scteMessage.GetData()), scteMessage.GetSize());
-
-		std::string seiScteJson = "{\"id\":" 
-								+ std::to_string(hashId)
-								+ ",\"start\":" 
-								+ std::to_string(scteTimestamp) 
-								+ "," 
-								+ "\"duration\":0,\"tag\":\"";
-		
-		// Convert scte data to base64
-		uint8_t scteBase64[scteMessage.GetSize()*2] = {0};
-		av_base64_encode((char*)scteBase64, scteMessage.GetSize()*2, scteMessage.GetData(), scteMessage.GetSize());
-		uint32_t base64Len = 0;
-		
-		for (uint32_t i = 0; i < scteMessage.GetSize() * 2; i++)
-		{
-			if (scteBase64[i] == '\0')
-			{
-				base64Len = i;
-				break;
-			}
-		}
-		printf("\nLen is %u\n", base64Len);
-		seiScteJson.append((char *) scteBase64, base64Len);
-		seiScteJson += "\"}";
-		const uint8_t* ptr = reinterpret_cast<const uint8_t*>(&seiScteJson[0]);
-
-		// Insert the payload size at pos 2 (zero indexed) 
-		// [0] 0x06 SEI NAL 
-		// [1] 0x05 Unregistered user data
-		// [2] Payload size
-		sei.insert(sei.begin() + 2, 16 + seiScteJson.length()); // UUID 16 bytes + Serialized JSON length
-
-		// scte payload
-		sei.insert(sei.end(), seiScteJson.begin(), seiScteJson.end());
-		
-		// rbsp_trailing_bits
-		sei.push_back(0x80);
-
 		//Escape nal
 		uint8_t seiEscaped[sei.size()*2];
 		auto seiSize = NalEscapeRbsp(seiEscaped, sizeof(seiEscaped), sei.data(), sei.size()).value();
-		
 		Debug("H264Packetizer::OnNal() | Emit SCTE data as SEI Unregistered User Data, Size %lu \n", seiSize);
 
 		EmitNal(frame, BufferReader(seiEscaped, seiSize));
-		if (scteFrameRepeatCount-- <= 0)
+		if (repeatFrameCounter-- <= 0)
 		{
 			scteMessage.Reset();
-			scteFrameRepeatCount = 20;
+			repeatFrameCounter = scteFrameRepeatCount;
 		}
 		
 	}
-	
 
 	EmitNal(frame, BufferReader(nalUnit, nalSize));
 }
@@ -269,26 +211,69 @@ std::unique_ptr<MediaFrame> H264Packetizer::ProcessAU(BufferReader& reader)
 	return H26xPacketizer::ProcessAU(reader);
 }
 
-void H264Packetizer::SetScteData(Buffer data)
+void H264Packetizer::AppendScteData(uint64_t ts, const Buffer& data, uint8_t repeatCount)
 {
-	scteMessage = std::move(data);
-}
+	scteMessage.AppendData(data.GetData(), data.GetSize());
+	scteFrameRepeatCount = repeatFrameCounter = repeatCount;
+	scteTimestamp = ts;
 
-std::optional<Buffer> H264Packetizer::GetScteData()
-{
-	if (scteMessage.GetData() == nullptr) return std::nullopt;
+	// Clear just the scte payload and retail the 2 byte code and 16 bytes UUID
+	sei.erase(sei.begin() + 2 + 16, sei.end());
 	
-	auto buffer = std::move(scteMessage);
+	/* Construct json encoded as a string
+	Example:
+	{
+		id: 14194058,
+		start: 1717005742629,
+		duration: 30,
+		tag: '/DBcAAAAAAAAAP/wBQb//ciI8QBGAh1DVUVJXQk9EX+fAQ5FUDAxODAzODQwMDY2NiEEZAIZQ1VFSV0JPRF/3wABLit7AQVDMTQ2NDABAQEKQ1VFSQCAMTUwKnPhdcU='
+	}
+		We need to compute a unique hash for every scte payload received. 
+		The operation is idempotent so repeating tags will re use the same hash ID.
+	*/
+	// printf("\n");
+	// uint8_t *buf = scteMessage.GetData();
+	// for (u_int16_t k = 0; k < scteMessage.GetSize(); k++)
+	// {
+	// 	printf("%x ", buf[k]);
+	// }
+
+	std::string seiScteJson = "{\"id\":" 
+							+ std::to_string(scteMessageId++)
+							+ ",\"start\":" 
+							+ std::to_string(scteTimestamp) 
+							+ "," 
+							+ "\"duration\":0,\"tag\":\"";
 	
-	return buffer;
-}
+	// Convert scte data to base64
+	uint8_t scteBase64[scteMessage.GetSize()*2] = {0};
+	av_base64_encode((char*)scteBase64, scteMessage.GetSize()*2, scteMessage.GetData(), scteMessage.GetSize());
+	uint32_t base64Len = 0;
+	
+	for (uint32_t i = 0; i < scteMessage.GetSize() * 2; i++)
+	{
+		if (scteBase64[i] == '\0')
+		{
+			base64Len = i;
+			break;
+		}
+	}
+	printf("\nLen is %u, id is %u \n", base64Len, scteMessageId);
+	seiScteJson.append((char *) scteBase64, base64Len);
+	seiScteJson += "\"}";
+	const uint8_t* ptr = reinterpret_cast<const uint8_t*>(&seiScteJson[0]);
 
-void H264Packetizer::SetScteTimestamp(uint64_t time)
-{
-	scteTimestamp = time;
-}
+	// Insert the payload size at pos 2 (zero indexed) 
+	// [0] 0x06 SEI NAL 
+	// [1] 0x05 Unregistered user data
+	// [2] Payload size
+	sei.insert(sei.begin() + 2, 16 + seiScteJson.length()); // UUID 16 bytes + Serialized JSON length
 
-uint64_t H264Packetizer::GetScteTimestamp()
-{
-	return scteTimestamp;
+	// scte payload
+	sei.insert(sei.end(), seiScteJson.begin(), seiScteJson.end());
+	
+	// rbsp_trailing_bits
+	sei.push_back(0x80);
+
+	
 }
