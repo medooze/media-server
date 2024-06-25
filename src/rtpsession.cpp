@@ -1095,7 +1095,7 @@ void RTPSession::onTargetBitrateRequested(DWORD bitrate, DWORD bandwidthEstimati
 		//Do nothing
 		return;
 	
-	UltraDebug("-RTPSession::onTargetBitrateRequested() | [%d]\n",bitrate);
+	UltraDebug("bcost -RTPSession::onTargetBitrateRequested() | [%d]\n",bitrate);
 
 	//Create rtcp sender retpor
 	auto rtcp = CreateSenderReport();

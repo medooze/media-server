@@ -163,7 +163,7 @@ void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const st
 			int32_t rttEstimated = rttMin + acumulatedDeltaRelative /1000;
 			
 			//Dump stats
-			//Log("recv #%u sent:%.8lu (+%.6ld) recv:%.8lu (+%.6ld) delta:%.6ld fb:%u, size:%u, bwe:%lu rtt:%lld rttMin:%lld acuDelta:%lld acuDeltaMin:%lld)\n",transportSeqNum,sent,deltaSent,recv,deltaRecv,delta,feedbackNum, stat->size, bandwidthEstimation, rttEstimated, rttMin, accumulatedDelta/1000, accumulatedDeltaMin/1000);
+			Log("recv #%u sent:%.8lu (+%.6ld) recv:%.8lu (+%.6ld) delta:%.6ld fb:%u, size:%u, bwe:%lu rtt:%lld rttMin:%lld acuDelta:%lld acuDeltaMin:%lld)\n",transportSeqNum,sent,deltaSent,recv,deltaRecv,delta,feedbackNum, stat->size, bandwidthEstimation, rttEstimated, rttMin, accumulatedDelta/1000, accumulatedDeltaMin/1000);
 			
 			//If dumping to file
 			if (fd!=FD_INVALID)
@@ -275,7 +275,7 @@ uint32_t SendSideBandwidthEstimation::GetTotalSentBitrate() const
 
 void SendSideBandwidthEstimation::SetState(ChangeState state)
 {
-	UltraDebug("-SendSideBandwidthEstimation::SetState() [state:%d,prev:%d,consecutiveChanges:%d]\n",state,this->state,consecutiveChanges);
+	UltraDebug("bcost -SendSideBandwidthEstimation::SetState() [state:%d,prev:%d,consecutiveChanges:%d]\n",state,this->state,consecutiveChanges);
 
 	//Set number of consecutive chantes
 	if (this->state == state)
@@ -297,6 +297,7 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 	double lossRate = lostPackets / (receivedPackets + lostPackets);
 
 	//Get current estimated rtt and minimum delta
+	// @todo what are the units for this? I assume msec?
 	int32_t rttMin			= UpdateMinRTT(when);
 	int64_t accumulatedDeltaMin	= accumulatedDeltaMinCounter.Min(when).value_or(0);
 	//Get relative delta
@@ -324,34 +325,51 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 		if (totalRecvAcumulator.IsInWindow())
 			//Set bwe as received rate
 			bandwidthEstimation = totalRecvBitrate;
+		
 		//Increase target bitrate
+		// @todo why the max and not min? What is targetBitrate? We saw a lot of loss and so will adjust bw to be what was actually rx'ed, so why max here?
 		targetBitrate = std::max<uint32_t>(bandwidthEstimation, targetBitrate);
 
+	// @todo why fixed value of 10msec? Whats it based on?
 	} else if (rttEstimated>(10+rttMin*1.3)) {
 		//We are in congestion
 		SetState(ChangeState::Congestion);
+
+
 		//If there was any feedback loss
+		// @todo is IsInWindow() true for recv mean there was loss? I need to understand this method as it is used below in cases I think there is a bug.
 		if (totalRecvAcumulator.IsInWindow())
 			//Converge bwe as received rate
-			bandwidthEstimation = bandwidthEstimation * 0.80 + totalRecvBitrate * 0.20; // todo bcost could modify this to smooth more simple smoothing not configured changed on state
+			// todo bcost in *SOME* loss we will converge slowly to the totalRecvBitrate according to the comment. 
+			bandwidthEstimation = bandwidthEstimation * 0.80 + totalRecvBitrate * 0.20;
+
 		//Decrease target bitrate
 		targetBitrate = std::min<uint32_t>(bandwidthEstimation, totalRecvBitrate);
+
 	} else if (mediaSentBitrate > targetBitrate) {
+
 		//We are overshooting
 		SetState(ChangeState::OverShoot);
+
 		//If there was any feedback loss
 		if (totalRecvAcumulator.IsInWindow())
 			//Take maximum of the spike and current value
 			bandwidthEstimation = std::max<uint64_t>(bandwidthEstimation, totalRecvBitrate);
+
+		// @todo Why are these two if statements identical? One is supposed to be lossy and the other not lossy. I tink this is a bug. Need to understand IsInWindow()
 		//If there was enough data
 		if (totalRecvAcumulator.IsInWindow())
 			//Decrease target bitrate
 			targetBitrate = std::min<uint32_t>(bandwidthEstimation, totalRecvBitrate);
+
+
 	} else if (state == ChangeState::Initial) {
+
 		//If first state 
 		if (!lastChange)
 			//Set to now
 			lastChange = when;
+
 		//Wait until we have  enought data
 		else if (lastChange + kInitialDuration < when)
 			//We are going to increase rate again
@@ -361,6 +379,7 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 			SetState(ChangeState::Initial);
 
 		//If there was enough data
+		// @todo totalRecvAcumulator.IsInWindow() is used to check loss in other states. We should probably check loss and if losst set to recv and if not lossy set to max as currently
 		if (totalRecvAcumulator.IsInWindow())
 			bandwidthEstimation = std::max(bandwidthEstimation, totalRecvBitrate);
 
@@ -370,24 +389,41 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 		int64_t rateChange = std::max<uint64_t>(bandwidthEstimation * confidenceAmplifier * kInitialRampUp, kMinRateChangeBps);
 		//Increase
 		targetBitrate = std::min(targetBitrate, bandwidthEstimation) + rateChange;
+
 	} else if  (state == ChangeState::OverShoot) {
+
+		// @todo Should we only increase again if there was no loss in the overshoot?
 		//Increase again
 		SetState(ChangeState::Increase);
+
 		//If bitrate is higher than bwe
 		if (totalSentBitrate > bandwidthEstimation)
 			//bwe to converge to target bitrate
 			bandwidthEstimation = bandwidthEstimation * 0.90 + totalSentBitrate * 0.10;
+
 	} else if (state==ChangeState::Congestion || state == ChangeState::Loosy) {
+
+		// @todo Instead of a temporary "recovery" state, should we remember this somehow? Like some kind of rate adjustment for long term etc?
 		//We are going to conservatively reach the previous estimation again
 		SetState(ChangeState::Recovery);
+
 	} else if (mediaSentBitrate > targetBitrate) {
+
 		//We are overshooting
 		SetState(ChangeState::OverShoot);
+		
+		// @todo How do we know there was no loss? Why are we taking max here?
+		// I.e. We sent more than we expected to, if that went ok then yes lets take the max. If it didnt go ok then we should use the bwe or recv
+
 		//Take maximum of the spike and current value
 		bandwidthEstimation = std::max<uint64_t>(bandwidthEstimation, totalRecvBitrate);
+
+
 		//Set target to currenct received rate
 		targetBitrate = totalRecvBitrate;
+
 	} else if (state == ChangeState::Recovery) {
+
 		//If there was enough data
 		if (totalRecvAcumulator.IsInWindow())
 			//Decrease bwe to converge to the received rate
@@ -395,6 +431,7 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 
 		//Initial conversion factor
 		double confidenceAmplifier = std::log(consecutiveChanges + 1);
+
 		//Get rate change
 		int64_t rateChange = std::max<uint64_t>(bandwidthEstimation * confidenceAmplifier * kSamplingStep, kMinRateChangeBps);
 
@@ -408,14 +445,19 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 		else 
 			//We are going to conservatively reach the previous estimation again
 			SetState(ChangeState::Recovery);
+
 	
 	} else if (state==ChangeState::Increase) {
+
 		//Keep state
 		SetState(ChangeState::Increase);
+
 		//Initial conversion factor
 		double confidenceAmplifier = 1 + std::log(consecutiveChanges+1);
+
 		//Get rate change
 		int64_t rateChange = std::max<uint64_t>(totalRecvBitrate * confidenceAmplifier * kSamplingStep, kMinRateChangeBps);
+
 		//If bitrate is higher than bwe
 		if (totalSentBitrate > bandwidthEstimation)
 			//bwe to converge to target bitrate
@@ -479,21 +521,21 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 	//Check when we have to trigger a new bwe change on the app
 	if (state != ChangeState::Initial && (((state == ChangeState::Congestion || state == ChangeState::Loosy) && consecutiveChanges==0) || ( lastChange + kReportInterval < when)))
 	{
-		//Log("-SendSideBandwidthEstimation::EstimateBandwidthRate() [estimate:%llubps,target:%llubps,available:%llubps,sent:%llubps,recv:%llubps,rtx=%llubps,state:%d,delta=%d,media:%u,rtx:%d,overhead:%f,when:%llu,diff:%llu\n",
-		//	bandwidthEstimation,
-		//	targetBitrate,
-		//	availableRate,
-		//	totalSentBitrate,
-		//	totalRecvBitrate,
-		//	rtxSentBitrate,
-		//	state,
-		//	static_cast<int32_t>(delta/1000),
-		//	mediaSentAcumulator.GetAcumulated(),
-		//	rtxSentAcumulator.GetAcumulated(),
-		//	(1-overhead),
-		//	when,
-		//	when - lastChange
-		//);
+		Log("-SendSideBandwidthEstimation::EstimateBandwidthRate() [estimate:%llubps,target:%llubps,available:%llubps,sent:%llubps,recv:%llubps,rtx=%llubps,state:%d,delta=%d,media:%u,rtx:%d,overhead:%f,when:%llu,diff:%llu\n",
+			bandwidthEstimation,
+			targetBitrate,
+			availableRate,
+			totalSentBitrate,
+			totalRecvBitrate,
+			rtxSentBitrate,
+			state,
+			static_cast<int32_t>(delta/1000),
+			mediaSentAcumulator.GetAcumulated(),
+			rtxSentAcumulator.GetAcumulated(),
+			(1-overhead),
+			when,
+			when - lastChange
+		);
 		//Call listener	
 		listener->onTargetBitrateRequested(availableRate, bandwidthEstimation, totalSentBitrate);
 		//Upddate last changed time
