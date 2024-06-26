@@ -115,14 +115,14 @@ RTMPClientConnection::ErrorCode RTMPClientConnection::Connect(const char* server
 	
 	if (tls)
 	{
-		if (!tls->initialize())
+		if (!tls->Initialize())
 		{
-			Error("Failed to initlise tls: %s:%d\n", server, port);
+			Error("Failed to initialise tls: %s:%d\n", server, port);
 			return RTMPClientConnection::ErrorCode::TlsInitError;
 		}
 		
 		// Start handshake
-		if (tls->handshake() == TlsClient::SslStatus::Failed)
+		if (tls->Handshake() == TlsClient::SslStatus::Failed)
 		{
 			return RTMPClientConnection::ErrorCode::TlsHandshakeError;
 		}
@@ -166,7 +166,7 @@ void RTMPClientConnection::Stop()
 	//If got socket
 	if (fd != FD_INVALID)
 	{
-		if (tls) tls->shutdown();
+		if (tls) tls->Shutdown();
 		
 		//Not running;
 		running = false;
@@ -262,7 +262,7 @@ int RTMPClientConnection::Run()
 
 		if (ufds[0].revents & POLLOUT)
 		{
-			if (!tls || tls->isInitialised())
+			if (!tls || tls->IsInitialised())
 			{
 				//Check if socket was not connected yet
 				if (!connected)
@@ -315,7 +315,7 @@ int RTMPClientConnection::Run()
 			
 			if (tls)
 			{
-				tls->popAllEncrypted([this](auto&& data){
+				tls->PopAllEncrypted([this](auto&& data){
 					WriteData(data.data(), data.size());
 				});
 			}
@@ -349,7 +349,7 @@ int RTMPClientConnection::Run()
 				
 				if (tls)
 				{
-					tls->popAllDecypted([this](auto&& data) {
+					tls->PopAllDecypted([this](auto&& data) {
 						//Parse data
 						ParseData(data.data(), data.size());
 					});
@@ -448,7 +448,7 @@ void RTMPClientConnection::sendRtmpData(const uint8_t* data, size_t size)
 {
 	if (tls)
 	{
-		if (tls->encrypt(data, size) != TlsClient::TlsClientError::NoError)
+		if (tls->Encrypt(data, size) != TlsClient::TlsClientError::NoError)
 		{
 			Error("-RTMPClientConnection::sendRtmpData() TLS encrypt error\n");
 			
@@ -468,7 +468,7 @@ void RTMPClientConnection::processReceivedData(const uint8_t* data, size_t size)
 {
 	if (tls)
 	{
-		auto ret = tls->decrypt(data, size);
+		auto ret = tls->Decrypt(data, size);
 		switch(ret) 
 		{
 		case TlsClient::TlsClientError::NoError:
@@ -480,7 +480,7 @@ void RTMPClientConnection::processReceivedData(const uint8_t* data, size_t size)
 		case TlsClient::TlsClientError::Failed:
 		default:
 			Warning("-RTMPClientConnection::processReceivedData() Failed to decrypt\n");
-			if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::TlsEncryptError);
+			if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::TlsDecryptError);
 			return;
 		}
 	}
