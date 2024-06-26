@@ -36,7 +36,7 @@ protected:
 	uint8_t repeatFrameCounter;
 	//Unregistered SEI message NAL
 	std::vector<uint8_t> sei;
-	uint32_t scteMessageId;
+	uint16_t scteMessageId;
 };
 
 #endif // H264PACKETIZER_H

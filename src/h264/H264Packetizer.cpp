@@ -8,6 +8,7 @@ H264Packetizer::H264Packetizer() : H26xPacketizer(VideoCodec::H264)
 	sei.clear();            // Flush any previous data
 	sei.push_back(0x06);	// SEI NAL
 	sei.push_back(0x05);	// User unregistered data
+	sei.push_back(0x00);    // Payload size
 	
 	uint8_t uuid[16] = {
 		0x2b, 0x69, 0xba, 0x1b, 0x77, 0x7e, 0x46, 0x53,
@@ -217,33 +218,10 @@ void H264Packetizer::AppendScteData(uint64_t ts, const Buffer& data, uint8_t rep
 	scteFrameRepeatCount = repeatFrameCounter = repeatCount;
 	scteTimestamp = ts;
 
-	// Clear just the scte payload and retail the 2 byte code and 16 bytes UUID
-	sei.erase(sei.begin() + 2 + 16, sei.end());
-	
-	/* Construct json encoded as a string
-	Example:
-	{
-		id: 14194058,
-		start: 1717005742629,
-		duration: 30,
-		tag: '/DBcAAAAAAAAAP/wBQb//ciI8QBGAh1DVUVJXQk9EX+fAQ5FUDAxODAzODQwMDY2NiEEZAIZQ1VFSV0JPRF/3wABLit7AQVDMTQ2NDABAQEKQ1VFSQCAMTUwKnPhdcU='
-	}
-		We need to compute a unique hash for every scte payload received. 
-		The operation is idempotent so repeating tags will re use the same hash ID.
-	*/
-	// printf("\n");
-	// uint8_t *buf = scteMessage.GetData();
-	// for (u_int16_t k = 0; k < scteMessage.GetSize(); k++)
-	// {
-	// 	printf("%x ", buf[k]);
-	// }
+	// Clear just the scte payload and retain the 2 byte code, size and 16 bytes UUID
+	sei.erase(sei.begin() + 2 + 1 + 16, sei.end());
 
-	std::string seiScteJson = "{\"id\":" 
-							+ std::to_string(scteMessageId++)
-							+ ",\"start\":" 
-							+ std::to_string(scteTimestamp) 
-							+ "," 
-							+ "\"duration\":0,\"tag\":\"";
+	// Binary format - SEI NAL (0x06) + Unregistered User data code (0x05) + UUID (16 bytes) + SCTE ID (2 bytes) + TS (8 bytes) + Base64 encoded scte payload (x bytes)
 	
 	// Convert scte data to base64
 	uint8_t scteBase64[scteMessage.GetSize()*2] = {0};
@@ -258,19 +236,22 @@ void H264Packetizer::AppendScteData(uint64_t ts, const Buffer& data, uint8_t rep
 			break;
 		}
 	}
-	printf("\nLen is %u, id is %u \n", base64Len, scteMessageId);
-	seiScteJson.append((char *) scteBase64, base64Len);
-	seiScteJson += "\"}";
-	const uint8_t* ptr = reinterpret_cast<const uint8_t*>(&seiScteJson[0]);
 
-	// Insert the payload size at pos 2 (zero indexed) 
+	// Modify the payload size at pos 2 (zero indexed) 
 	// [0] 0x06 SEI NAL 
 	// [1] 0x05 Unregistered user data
 	// [2] Payload size
-	sei.insert(sei.begin() + 2, 16 + seiScteJson.length()); // UUID 16 bytes + Serialized JSON length
+	sei.at(2) = 16 + 2 + 8 + base64Len; // UUID 16 bytes + SCTE ID (2 bytes) + TS (8 bytes) + Base64 encoded scte payload (x bytes)
+
+	// Insert 2 byte scte message ID
+	scteMessageId++;
+	sei.insert(sei.end(), (uint8_t*)&scteMessageId, (uint8_t*)&scteMessageId + sizeof(uint16_t));
+
+	// Insert 8 byte timestamp
+	sei.insert(sei.end(), (uint8_t*)&scteTimestamp, (uint8_t*)&scteTimestamp + sizeof(uint64_t));
 
 	// scte payload
-	sei.insert(sei.end(), seiScteJson.begin(), seiScteJson.end());
+	sei.insert(sei.end(), scteBase64, scteBase64 + base64Len);
 	
 	// rbsp_trailing_bits
 	sei.push_back(0x80);
