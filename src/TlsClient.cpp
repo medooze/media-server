@@ -1,8 +1,6 @@
 #include "TlsClient.h"
 #include "log.h"
 
-#include <cassert>
-
 namespace {
 	
 void LogCertificateInfo(int preverify, X509_STORE_CTX* ctx)
@@ -24,12 +22,6 @@ void LogCertificateInfo(int preverify, X509_STORE_CTX* ctx)
 TlsClient::TlsClient(bool allowAllCertificates) :
 	allowAllCertificates(allowAllCertificates)
 {
-	SSL_library_init();
-	OpenSSL_add_all_algorithms();
-	SSL_load_error_strings();
-	
-	assert(OPENSSL_VERSION_MAJOR >= 3);
-	ERR_load_crypto_strings();	
 }
 
 bool TlsClient::initialize(const char* hostname)
