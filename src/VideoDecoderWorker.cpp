@@ -143,7 +143,7 @@ int VideoDecoderWorker::Decode()
 				while (auto deinterlaced = deinterlacer->GetNextFrame())
 				{
 					//Set frame times
-					deinterlaced->SetTimingInfo(videoBuffer);
+					deinterlaced->CopyTimingInfo(videoBuffer);
 
 					//Check if we are muted
 					if (!muted)

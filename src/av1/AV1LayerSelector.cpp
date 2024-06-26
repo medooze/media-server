@@ -24,6 +24,12 @@ std::vector<LayerInfo> AV1LayerSelector::GetLayerIds(const RTPPacket::shared& pa
 	BYTE aggregationHeader = reader.Get1();
 
 	const RtpAv1AggreationHeader* header = reinterpret_cast<const RtpAv1AggreationHeader*>(&aggregationHeader);
+
+	//If startsNewCodedVideoSequence
+	if (header->N)
+		//It is intra
+		packet->SetKeyFrame(true);
+
 	// Skip fragmented first element
 	if (header->Z) return infos;
 	

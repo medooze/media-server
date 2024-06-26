@@ -35,6 +35,13 @@ public:
 		memset(buffer, color, size);
 	}
 
+	void SetData(const uint8_t* data, uint32_t width, uint32_t heigth, uint32_t stride)
+	{
+		for (uint32_t i = 0; i < std::min<uint32_t>(height, GetHeight()); i++)
+			memcpy(GetData() + i * GetStride(), data + i * stride, std::min<uint32_t>(width, GetWidth()));
+
+	}
+
 private:
 	DWORD stride = 0;
 	DWORD width = 0;
@@ -122,15 +129,13 @@ public:
 	DWORD   GetClockRate() const	{ return clockRate.value();		}
 	void    SetClockRate(DWORD clockRate) { this->clockRate = clockRate;	}
 
-
-	void    SetTimingInfo(const VideoBuffer::shared& videoBuffer)
+	void    CopyTimingInfo(const VideoBuffer::const_shared& videoBuffer)
 	{
-		SetTime(videoBuffer->GetTime());
-		SetTimestamp(videoBuffer->GetTimestamp());
-		SetClockRate(videoBuffer->GetClockRate());
-		if (videoBuffer->HasSenderTime())
-			SetSenderTime(GetSenderTime());
-  }
+		time = videoBuffer->time;
+		ts = videoBuffer->ts;
+		clockRate = videoBuffer->clockRate;
+		senderTime = videoBuffer->senderTime;
+	}
   
 	void	Reset()
 	{
@@ -160,9 +165,6 @@ private:
 	std::optional<QWORD> time;
 	std::optional<QWORD> senderTime;
 	std::optional<DWORD> clockRate;
-	
-	
-	
 };
 
 #endif // !VIDEOBUFFER_H_

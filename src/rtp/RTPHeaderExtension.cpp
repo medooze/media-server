@@ -1090,8 +1090,9 @@ DWORD RTPHeaderExtension::Serialize(const RTPMap &extMap,BYTE* data,const DWORD 
 			set3(data, len , ((playoutDelay.min / PlayoutDelay::GranularityMs) << 12) | ((playoutDelay.max / PlayoutDelay::GranularityMs ) & 0xfff));
 
 			//Inc length
-			len += 2;
+			len += 3;
 		}
+
 	}
 
 	if (hasColorSpace && colorSpace)
