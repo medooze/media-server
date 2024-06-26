@@ -68,11 +68,6 @@ public:
 	virtual int SendPLI(DWORD ssrc) override { return 1; };
 	virtual int Reset(DWORD ssrc) override { return 1; };
 
-	void SetScteData(Buffer data);
-	std::optional<Buffer> GetScteData();
-	void SetScteTimestamp(uint64_t ts);
-	uint64_t GetScteTimestamp();
-
 private:
 	void Dispatch(const std::vector<RTPPacket::shared>& packet);
         
@@ -80,10 +75,7 @@ public:
 	TimeService& timeService;
 	Timer::shared dispatchTimer;
 
-	std::queue<PacketScheduleInfo> packets;
-	
-	Buffer scteMessage;
-	uint64_t scteTimestamp;
+	std::queue<PacketScheduleInfo> packets;	
 
 	DWORD ssrc = 0;
 	DWORD extSeqNum = 0;
