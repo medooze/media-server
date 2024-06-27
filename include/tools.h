@@ -513,4 +513,5 @@ inline size_t CountBits(uint64_t val)
 	}
 	return count;
 }
+
 #endif
