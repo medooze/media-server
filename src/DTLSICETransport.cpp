@@ -50,7 +50,8 @@ constexpr auto TransportWideCCMaxInterval	= 5E4;	//50ms
 constexpr auto MaxProbingHistorySize		= 50;
 constexpr auto RtxRttThresholdMs 		= 300;
 
-DTLSICETransport::DTLSICETransport(Sender *sender,TimeService& timeService, ObjectPool<Packet>& packetPool) :
+DTLSICETransport::DTLSICETransport(Sender *sender,TimeService& timeService, ObjectPool<Packet>& packetPool, const SendSideBandwidthEstimation::Options& bweOptions) :
+	bweOptions(bweOptions),
 	sender(sender),
 	timeService(timeService),
 	packetPool(packetPool),
@@ -60,7 +61,7 @@ DTLSICETransport::DTLSICETransport(Sender *sender,TimeService& timeService, Obje
 	outgoingBitrate(250, 1E3, 250),
 	rtxBitrate(250, 1E3, 250),
 	probingBitrate(250, 1E3, 250),
-	senderSideBandwidthEstimator(new SendSideBandwidthEstimation())
+	senderSideBandwidthEstimator(new SendSideBandwidthEstimation(bweOptions))
 {
 	Debug(">DTLSICETransport::DTLSICETransport() [this:%p]\n", this);
 }
@@ -957,14 +958,18 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 		//Check if we are sending way to much bitrate
 		if (targetBitrate && rtxBitrate.GetInstantAvg()*8 > targetBitrate * MaxRTXOverhead)
 		{
-			// @todo Looks like we are doing RTX even if it will go over the estimated bitrate possibly causing more congestion.
-			//Error
-			/*return*/ (void)UltraDebug("-DTLSICETransport::ReSendPacket() | Too much bitrate on rtx, skiping rtx:%lld estimated:%u target:%d\n", (uint64_t)(rtxBitrate.GetInstantAvg() * 8), senderSideBandwidthEstimator->GetEstimatedBitrate(), targetBitrate);
+			UltraDebug("-DTLSICETransport::ReSendPacket() | Too much bitrate on rtx, %s rtx. rtx:%lld estimated:%u target:%d\n", bweOptions.enableCongestedRTX?"ALLOWING":"SKIPPING", (uint64_t)(rtxBitrate.GetInstantAvg() * 8), senderSideBandwidthEstimator->GetEstimatedBitrate(), targetBitrate);
+			if (!bweOptions.enableCongestedRTX)
+			{
+				return;
+			}
 		
 		} else if (targetBitrate && outgoingBitrate.GetInstantAvg()*8 > targetBitrate) {
-			// @todo Looks like we are doing RTX even if it will go over the estimated bitrate possibly causing more congestion.
-			//Error
-			/*return*/ (void)UltraDebug("-DTLSICETransport::ReSendPacket() | Too much outgoing bitrate, skiping rtx. outgoing:%lld estimated:%u target:%d\n", (uint64_t)(outgoingBitrate.GetInstantAvg() * 8), senderSideBandwidthEstimator->GetEstimatedBitrate(), targetBitrate);
+			UltraDebug("-DTLSICETransport::ReSendPacket() | Too much outgoing bitrate, %s rtx. outgoing:%lld estimated:%u target:%d\n", bweOptions.enableCongestedRTX?"ALLOWING":"SKIPPING", (uint64_t)(outgoingBitrate.GetInstantAvg() * 8), senderSideBandwidthEstimator->GetEstimatedBitrate(), targetBitrate);
+			if (!bweOptions.enableCongestedRTX)
+			{
+				return;
+			}
 		}
 	}
 
@@ -2985,7 +2990,6 @@ void DTLSICETransport::SetState(DTLSState state)
 		//Fire change
 		listener->onDTLSStateChanged(state);
 }
-
 
 void DTLSICETransport::SetRemoteOverrideBWE(bool overrideBWE)
 {

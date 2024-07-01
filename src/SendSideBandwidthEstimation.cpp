@@ -5,31 +5,36 @@
 
 constexpr uint64_t kInitialDuration		= 500E3;	// 500ms
 constexpr uint64_t kReportInterval		= 250E3;	// 250ms
-constexpr uint64_t kMonitorDuration		= 150E3;	// 150ms bcost could make a larger window if flip-flopping data
 constexpr uint64_t kLongTermDuration		= 10E6;		// 10s
 constexpr uint64_t kMinRate			= 128E3;	// 128kbps
 constexpr uint64_t kMaxRate			= 100E6;	// 100mbps
-constexpr uint64_t kMinRateChangeBps		= 10000;
-constexpr double   kSamplingStep		= 0.05f; // bcost could change this to move slower
 constexpr double   kInitialRampUp		= 1.30f;
 constexpr uint64_t kRecoveryDuration		= 250E3;
 constexpr double   LoosRateThreshold		= 0.35;		// 35% packet loss before moving to loosy state
 
 
-SendSideBandwidthEstimation::SendSideBandwidthEstimation() : 
+SendSideBandwidthEstimation::SendSideBandwidthEstimation(const Options& options_in) : 
+		options(options_in),
 		rttMin(kLongTermDuration),
 		accumulatedDeltaMinCounter(kLongTermDuration),
-		totalSentAcumulator(kMonitorDuration, 1E6, 500),
-		mediaSentAcumulator(kMonitorDuration, 1E6, 500),
-		rtxSentAcumulator(kMonitorDuration, 1E6, 100),
-		probingSentAcumulator(kMonitorDuration, 1E6, 100),
-		totalRecvAcumulator(kMonitorDuration, 1E6, 500),
-		mediaRecvAcumulator(kMonitorDuration, 1E6, 500),
-		rtxRecvAcumulator(kMonitorDuration, 1E6, 100),
-		probingRecvAcumulator(kMonitorDuration,	1E6, 100),
-		packetsReceivedAcumulator(kMonitorDuration, 1E6, 500),
-		packetsLostAcumulator(kMonitorDuration, 1E6, 100)
+		totalSentAcumulator(options.monitorDuration, 1E6, 500),
+		mediaSentAcumulator(options.monitorDuration, 1E6, 500),
+		rtxSentAcumulator(options.monitorDuration, 1E6, 100),
+		probingSentAcumulator(options.monitorDuration, 1E6, 100),
+		totalRecvAcumulator(options.monitorDuration, 1E6, 500),
+		mediaRecvAcumulator(options.monitorDuration, 1E6, 500),
+		rtxRecvAcumulator(options.monitorDuration, 1E6, 100),
+		probingRecvAcumulator(options.monitorDuration,	1E6, 100),
+		packetsReceivedAcumulator(options.monitorDuration, 1E6, 500),
+		packetsLostAcumulator(options.monitorDuration, 1E6, 100)
 {
+	Error("[%p]-SendSideBandwidthEstimation::SendSideBandwidthEstimation() bcost Using BWE options [forceSmooth:%s, enableCongestedRTX:%s, monitorDuration:%llu, minRateChangeBps: %llu, rateChangePercentage:%f]\n", 
+		this,
+		options.forceSmooth?"true":"false",
+		options.enableCongestedRTX?"true":"false",
+		options.monitorDuration,
+		options.minRateChangeBps,
+		options.rateChangePercentage);
 }
 
 SendSideBandwidthEstimation::~SendSideBandwidthEstimation()
@@ -386,7 +391,7 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 		//Initial conversion factor
 		double confidenceAmplifier = 1 + std::log(consecutiveChanges + 1);
 		//Get rate change
-		int64_t rateChange = std::max<uint64_t>(bandwidthEstimation * confidenceAmplifier * kInitialRampUp, kMinRateChangeBps);
+		int64_t rateChange = std::max<uint64_t>(bandwidthEstimation * confidenceAmplifier * kInitialRampUp, options.minRateChangeBps);
 		//Increase
 		targetBitrate = std::min(targetBitrate, bandwidthEstimation) + rateChange;
 
@@ -433,9 +438,10 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 		double confidenceAmplifier = std::log(consecutiveChanges + 1);
 
 		//Get rate change
-		int64_t rateChange = std::max<uint64_t>(bandwidthEstimation * confidenceAmplifier * kSamplingStep, kMinRateChangeBps);
+		int64_t rateChange = std::max<uint64_t>(bandwidthEstimation * confidenceAmplifier * options.rateChangePercentage, options.minRateChangeBps);
 
 		//Increase the target rate
+		// @todo I think this is wrong and can overshoot the actual estimate. if target + change > estimate
 		targetBitrate = std::min(bandwidthEstimation, targetBitrate) + rateChange;
 
 		//When we have reached the bwe
@@ -456,7 +462,7 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 		double confidenceAmplifier = 1 + std::log(consecutiveChanges+1);
 
 		//Get rate change
-		int64_t rateChange = std::max<uint64_t>(totalRecvBitrate * confidenceAmplifier * kSamplingStep, kMinRateChangeBps);
+		int64_t rateChange = std::max<uint64_t>(totalRecvBitrate * confidenceAmplifier * options.rateChangePercentage, options.minRateChangeBps);
 
 		//If bitrate is higher than bwe
 		if (totalSentBitrate > bandwidthEstimation)
@@ -473,7 +479,7 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 	{
 		[[maybe_unused]] auto prev = targetBitrate;
 		//Decrease factor
-		double factor = 1 - static_cast<double>(delta) / (delta + rttEstimated * 1000 + kMonitorDuration);
+		double factor = 1 - static_cast<double>(delta) / (delta + rttEstimated * 1000 + options.monitorDuration);
 		//Adapt to rtt slope, accumulatedDelta MUST be possitive
 		targetBitrate = targetBitrate * factor;
 
