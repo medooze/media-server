@@ -12,17 +12,21 @@ void FrameDispatchCoordinator::OnFrame(std::chrono::milliseconds now, uint64_t t
 {
 	if (ts)
 	{
-		while (lock.test_and_set(std::memory_order_acq_rel));
-		auto delayMs = frameDelayCalculator.OnFrame(listenerBridge.GetMediaSSRC(), now, ts, clockRate);
-		lock.clear(std::memory_order_release);
+		std::chrono::milliseconds delayMs;
+		
+		{
+			std::lock_guard<std::mutex> lock(mutex);
+			delayMs = std::clamp(frameDelayCalculator.OnFrame(listenerBridge.GetMediaSSRC(), now, ts, clockRate),
+					std::chrono::milliseconds(0), maxDelayMs);
+		}
 	
-		listenerBridge.SetDelayMs(std::clamp(delayMs, std::chrono::milliseconds(0), maxDelayMs));
+		listenerBridge.SetDelayMs(delayMs);
 	}
 }
 
 void FrameDispatchCoordinator::SetMaxDelayMs(std::chrono::milliseconds maxDelayMs)
 {
-	while (lock.test_and_set(std::memory_order_acq_rel));
+	std::lock_guard<std::mutex> lock(mutex);
+	
 	this->maxDelayMs = maxDelayMs;
-	lock.clear(std::memory_order_release);
 }

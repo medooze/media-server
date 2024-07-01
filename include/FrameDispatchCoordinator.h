@@ -3,7 +3,7 @@
 
 #include "FrameDelayCalculator.h"
 
-#include <atomic>
+#include <mutex>
 
 class MediaFrameListenerBridge;
 
@@ -30,7 +30,7 @@ private:
 	
 	FrameDelayCalculator frameDelayCalculator;
 	
-	std::atomic_flag lock = ATOMIC_FLAG_INIT;
+	std::mutex mutex;
 	
 	std::chrono::milliseconds maxDelayMs;
 	
