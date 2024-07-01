@@ -21,11 +21,18 @@ public:
 	 */
 	void OnFrame(std::chrono::milliseconds now, uint64_t ts, uint64_t clockRate, MediaFrameListenerBridge& listenerBridge);
 
+	/**
+	 * Set max delay in milliseconds
+	 */
+	void SetMaxDelayMs(std::chrono::milliseconds maxDelayMs);
+
 private:
 	
 	FrameDelayCalculator frameDelayCalculator;
 	
 	std::atomic_flag lock = ATOMIC_FLAG_INIT;
+	
+	std::chrono::milliseconds maxDelayMs;
 	
 	friend class TestFrameDispatchCoordinator;
 };
