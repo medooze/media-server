@@ -330,21 +330,22 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 			//Set bwe as received rate
 			bandwidthEstimation = totalRecvBitrate;
 		//Increase target bitrate
-		// @todo why the max and not min? We saw a lot of loss and so will adjust bandwidthEstimation to be what was actually rx'ed, so why max here?
+		// @todo why the max and not min? We saw a lot of loss and so will adjust bandwidthEstimation to be what was actually rx'ed, so why max here and not min?
 		targetBitrate = std::max<uint32_t>(bandwidthEstimation, targetBitrate);
 
 	// If RTT is a a fair bit higher than the min rtt we have seen, then assume we are entering congestion and the network buffers are starting to fill and may drop soon
 	} else if (rttEstimated>(10+rttMin*1.3)) {
-		// @todo why fixed value of 10msec and 1.3? Whats it based on?
+		// @todo why fixed value of 10msec and 1.3? Whats it based on? Was it just a guess?
 
 		//We are in congestion
 		SetState(ChangeState::Congestion);
 
-		// @todo There is no guarantee that the totalRecvBitrate is smaller yet right? In theory yes as the rtt increased because buffering, but if it isnt then might we just make things worse here?
 		//If there was any feedback loss
 		if (totalRecvAcumulator.IsInWindow())
 			//Converge bwe as received rate
 			bandwidthEstimation = bandwidthEstimation * 0.80 + totalRecvBitrate * 0.20;
+
+		// @todo There is no guarantee that the totalRecvBitrateand bandwidthEstimation is smaller than targetBitrate right? In theory maybe it is smaller as the rtt increased because buffering so maybe sending slower so recv is smaller, but if it isnt then might we just make things worse here?
 		//Decrease target bitrate
 		targetBitrate = std::min<uint32_t>(bandwidthEstimation, totalRecvBitrate);
 	} else if (mediaSentBitrate > targetBitrate) {
@@ -383,7 +384,7 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 		targetBitrate = std::min(targetBitrate, bandwidthEstimation) + rateChange;
 	} else if  (state == ChangeState::OverShoot) {
 
-		// @todo Should we only increase again if there was no loss in the overshoot?
+		// @todo Should we only increase again if there was no loss in the overshoot? We havent checked that yet right?
 		//Increase again
 		SetState(ChangeState::Increase);
 		//If bitrate is higher than bwe
