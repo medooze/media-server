@@ -330,7 +330,7 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 			//Set bwe as received rate
 			bandwidthEstimation = totalRecvBitrate;
 		//Increase target bitrate
-		// @todo why the max and not min? What is targetBitrate? We saw a lot of loss and so will adjust bandwidthEstimation to be what was actually rx'ed, so why max here?
+		// @todo why the max and not min? We saw a lot of loss and so will adjust bandwidthEstimation to be what was actually rx'ed, so why max here?
 		targetBitrate = std::max<uint32_t>(bandwidthEstimation, targetBitrate);
 
 	// If RTT is a a fair bit higher than the min rtt we have seen, then assume we are entering congestion and the network buffers are starting to fill and may drop soon
