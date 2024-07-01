@@ -4,7 +4,7 @@
 FrameDispatchCoordinator::FrameDispatchCoordinator(int aUpdateRefsPacketLateThresholdMs, 
 					std::chrono::milliseconds aUpdateRefsStepPacketEarlyMs) :
 	frameDelayCalculator(aUpdateRefsPacketLateThresholdMs, aUpdateRefsStepPacketEarlyMs),
-	maxDelayMs(2000) // Max delay 2 seconds
+	maxDelayMs(5000) // Max delay 5 seconds
 {
 }
 
