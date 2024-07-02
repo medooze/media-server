@@ -50,7 +50,8 @@ H265Decoder::~H265Decoder()
 
 int H265Decoder::Decode(const VideoFrame::const_shared& frame)
 {
-	if (frame)
+	// if frame exists but no data in frame, the packet is considered as a flush packet
+	if (frame && frame->GetLength() > 0)
 	{
 		//Copy nal data
 		annexb.SetData(*frame->GetBuffer());

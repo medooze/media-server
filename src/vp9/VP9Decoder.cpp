@@ -95,7 +95,7 @@ VideoBuffer::shared VP9Decoder::GetFrame()
 
 	//Get new frame
 	auto videoBuffer = videoBufferPool.allocate();
-
+	CopyPresentedTimingInfo(*ref, videoBuffer);
 	//Set color range
 	switch (img->range)
 	{
