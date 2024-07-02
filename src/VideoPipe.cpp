@@ -23,7 +23,7 @@ VideoPipe::~VideoPipe()
 
 int VideoPipe::Init(float scaleResolutionDownBy, uint32_t scaleResolutionToHeight, AllowedDownScaling allowedDownScaling)
 {
-	Log("-VideoPipe::Init() [scaleResolutionDownBy:%f,scaleResolutionDownBy:%d,allowedDownScaling:%d]\n",scaleResolutionDownBy, scaleResolutionToHeight, allowedDownScaling);
+	Log("-VideoPipe::Init() [scaleResolutionDownBy:%f,scaleResolutionToHeight:%d,allowedDownScaling:%d]\n",scaleResolutionDownBy, scaleResolutionToHeight, allowedDownScaling);
 
 	//Lock
 	pthread_mutex_lock(&newPicMutex);

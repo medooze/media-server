@@ -214,7 +214,8 @@ void runBFrameTest(const char *codecName, const EncodingParams &params, int numP
         frame->SetTime(packet->dts);
         frame->SetTimestamp(packet->dts);
         frame->SetPresentationTimestamp(packet->pts);
-        frame->SetClockRate(1000);
+        // since we expect pts diff to be 1, so clockrate should be fps
+        frame->SetClockRate(params.fps);
         frame->AppendMedia(packet->data, packet->size);
         // push generated VideoFrame to decoder worker
         worker.onMediaFrame(*frame);
