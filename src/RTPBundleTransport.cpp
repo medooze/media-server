@@ -148,6 +148,7 @@ RTPBundleTransport::Connection::shared RTPBundleTransport::AddICETransport(const
 	Properties bwe;
 	properties.GetChildren("bwe",bwe);
 	SendSideBandwidthEstimation::Options bweOptions;
+	bweOptions.logId = bwe.GetProperty("logId", bweOptions.logId);
 	bweOptions.forceSmooth = bwe.GetProperty("forceSmooth", bweOptions.forceSmooth);
 	bweOptions.enableCongestedRTX = bwe.GetProperty("enableCongestedRTX", bweOptions.enableCongestedRTX);
 	bweOptions.monitorDuration = bwe.GetProperty("monitorDuration", bweOptions.monitorDuration);

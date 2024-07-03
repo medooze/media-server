@@ -29,6 +29,7 @@ public:
 	struct Options
 	{
 		// @todo All these options are not used in here. Cleanup later removing the two bools at least
+		std::string logId;
 		bool forceSmooth = false;
 		bool enableCongestedRTX = false;
 		uint64_t monitorDuration = 150E3;
