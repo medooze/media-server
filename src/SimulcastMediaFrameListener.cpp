@@ -77,6 +77,7 @@ void SimulcastMediaFrameListener::Detach(const MediaFrame::Producer::shared& pro
 {
 	Debug("-SimulcastMediaFrameListener::Detach() [this:%p,producer:%p]\n", this, producer.get());
 	timeService.Sync([=](std::chrono::milliseconds) {
+		producer->RemoveMediaListener(shared_from_this());
 		producers.erase(producer);
 	});
 }
