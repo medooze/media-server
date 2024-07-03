@@ -149,15 +149,15 @@ class TestSimulcastMediaFrameListener : public ::testing::Test
 public:
 	TestSimulcastMediaFrameListener() :
 		timerService(),
-		listener(timerService, 0, 3),
+		listener(new SimulcastMediaFrameListener(timerService, 0, 3)),
 		mediaFrameListener(new TestMediaFrameListner)
 	{
-		listener.AddMediaListener(mediaFrameListener);
+		listener->AddMediaListener(mediaFrameListener);
 	}
 
 	void PushFrame(std::unique_ptr<VideoFrame> frame)
 	{
-		listener.onMediaFrame(frame->GetSSRC(), *frame);
+		listener->onMediaFrame(frame->GetSSRC(), *frame);
 	}
 
 	void PushFrame(const FrameInput& input)
@@ -172,7 +172,7 @@ public:
 		frame->SetLength(input.width*input.width);
 		frame->SetClockRate(ClockRate);
 
-		listener.onMediaFrame(frame->GetSSRC(), *frame);
+		listener->onMediaFrame(frame->GetSSRC(), *frame);
 	}
 
 	void CheckResetForwardedFrames(const std::vector<std::tuple<uint32_t, uint64_t, uint64_t>>& expected)
@@ -204,7 +204,7 @@ public:
 protected:
 	TestTimeService timerService;
 	std::shared_ptr<TestMediaFrameListner> mediaFrameListener;
-	SimulcastMediaFrameListener listener;
+	std::shared_ptr<SimulcastMediaFrameListener> listener;
 };
 
 
@@ -214,7 +214,7 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelection)
 	TestFrameGenerator mid(2, 960, 540,   1000, 20000);
 	TestFrameGenerator high(3, 1920, 1080, 1000, 30000);
 
-	FramePushHelper fp(listener, low, mid, high);
+	FramePushHelper fp(*listener, low, mid, high);
 	fp.PushAdvance(FramePushHelper::ALL_INTRA);
 	fp.PushAdvance(FramePushHelper::ALL_NON_INTRA, 1);
 
@@ -226,7 +226,7 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelection)
 	ASSERT_NO_FATAL_FAILURE(CheckResetForwardedFrames(expectedFrames));
 
 	// Change to just one layer
-	listener.SetNumLayers(1);
+	listener->SetNumLayers(1);
 	low.Reset();
 
 	// Test the frame will be forwarded immediately
@@ -235,7 +235,7 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelection)
 	ASSERT_NO_FATAL_FAILURE(CheckResetForwardedFrames(expectedFrames));
 
 	// Change to two layers
-	listener.SetNumLayers(2);
+	listener->SetNumLayers(2);
 	low.Reset();
 	high.Reset();
 
@@ -264,7 +264,7 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelectionOffset)
 	TestFrameGenerator mid(2, 960, 540,   1003, 20000);
 	TestFrameGenerator high(3, 1920, 1080, 1006, 30000);
 
-	FramePushHelper fp(listener, low, mid, high);
+	FramePushHelper fp(*listener, low, mid, high);
 
 	fp.PushAdvance(FramePushHelper::ALL_INTRA);
 	fp.PushAdvance(FramePushHelper::ALL_NON_INTRA, 2);
@@ -283,7 +283,7 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelectionNegativeOffset)
 	TestFrameGenerator mid(2, 960, 540,   997, 20000);
 	TestFrameGenerator high(3, 1920, 1080, 990, 30000);
 
-	FramePushHelper fp(listener, low, mid, high);
+	FramePushHelper fp(*listener, low, mid, high);
 
 	fp.PushAdvance(FramePushHelper::ALL_INTRA);
 	fp.PushAdvance(FramePushHelper::ALL_NON_INTRA, 1);
@@ -302,7 +302,7 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelectionMissing)
 	TestFrameGenerator mid(2, 960, 540,   1003, 20000);
 	TestFrameGenerator high(3, 1920, 1080, 1006, 30000);
 
-	FramePushHelper fp(listener, low, mid, high);
+	FramePushHelper fp(*listener, low, mid, high);
 
 	fp.PushAdvance(FramePushHelper::ALL_INTRA);
 	fp.PushAdvance(FramePushHelper::ALL_NON_INTRA, 2);
@@ -335,7 +335,7 @@ TEST_F(TestSimulcastMediaFrameListener, LayerSelectionOrder)
 	TestFrameGenerator mid(2, 960, 540,   1000, 20000);
 	TestFrameGenerator high(3, 1920, 1080, 1000, 30000);
 
-	FramePushHelper fp(listener, low, mid, high);
+	FramePushHelper fp(*listener, low, mid, high);
 
 	fp.PushAdvance(FramePushHelper::ALL_INTRA);
 	fp.PushAdvance(FramePushHelper::ALL_NON_INTRA, 4);
@@ -401,7 +401,7 @@ TEST_F(TestSimulcastMediaFrameListener, NoHighLayerAtBeginning)
 	TestFrameGenerator mid(2, 960, 540,   1000, 20000);
 	TestFrameGenerator high(3, 1920, 1080, 1000, 30000);
 
-	FramePushHelper fp(listener, low, mid, high);
+	FramePushHelper fp(*listener, low, mid, high);
 
 	fp.PushAdvance(FramePushHelper::LOW | FramePushHelper::INTRA);  // Intra frame
 	fp.PushAdvance(FramePushHelper::MID | FramePushHelper::INTRA);  // Intra frame
@@ -441,7 +441,7 @@ TEST_F(TestSimulcastMediaFrameListener, NoHighLayerIntraAtBeginning)
 	TestFrameGenerator mid(2, 960, 540,   1000, 20000);
 	TestFrameGenerator high(3, 1920, 1080, 1000, 30000);
 
-	FramePushHelper fp(listener, low, mid, high);
+	FramePushHelper fp(*listener, low, mid, high);
 
 	fp.PushAdvance(FramePushHelper::LOW | FramePushHelper::INTRA);  // Intra frame
 	fp.PushAdvance(FramePushHelper::MID | FramePushHelper::INTRA);  // Intra frame
@@ -481,7 +481,7 @@ TEST_F(TestSimulcastMediaFrameListener, HighLayerRemovedInMiddle)
 	TestFrameGenerator mid(2, 960, 540,   1000, 20000);
 	TestFrameGenerator high(3, 1920, 1080, 1000, 30000);
 
-	FramePushHelper fp(listener, low, mid, high);
+	FramePushHelper fp(*listener, low, mid, high);
 
 	fp.PushAdvance(FramePushHelper::ALL_INTRA, 1);
 	fp.PushAdvance(FramePushHelper::ALL_NON_INTRA, 20);
@@ -529,7 +529,7 @@ TEST_F(TestSimulcastMediaFrameListener, MidLayerIntraframe)
 	TestFrameGenerator mid(2, 960, 540,   1000, 20000);
 	TestFrameGenerator high(3, 1920, 1080, 1000, 30000);
 
-	FramePushHelper fp(listener, low, mid, high);
+	FramePushHelper fp(*listener, low, mid, high);
 
 	fp.PushAdvance(FramePushHelper::ALL_INTRA, 1);
 	fp.PushAdvance(FramePushHelper::ALL_NON_INTRA, 20);
@@ -579,7 +579,7 @@ TEST_F(TestSimulcastMediaFrameListener, HighLayerIFrames)
 	TestFrameGenerator mid(2, 960, 540,   1003, 20000);
 	TestFrameGenerator high(3, 1920, 1080, 1006, 30000);
 
-	FramePushHelper fp(listener, low, mid, high);
+	FramePushHelper fp(*listener, low, mid, high);
 
 	fp.PushAdvance(FramePushHelper::LOW | FramePushHelper::INTRA); // An lower layer iframe
 	fp.PushAdvance(FramePushHelper::MID);
