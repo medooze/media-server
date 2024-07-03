@@ -2,7 +2,10 @@
 #define FRAMEDISPATCHCOORDINATOR_H
 
 #include "FrameDelayCalculator.h"
-#include "MediaFrameListenerBridge.h"
+
+#include <mutex>
+
+class MediaFrameListenerBridge;
 
 class FrameDispatchCoordinator
 {
@@ -18,9 +21,18 @@ public:
 	 */
 	void OnFrame(std::chrono::milliseconds now, uint64_t ts, uint64_t clockRate, MediaFrameListenerBridge& listenerBridge);
 
+	/**
+	 * Set max delay in milliseconds
+	 */
+	void SetMaxDelayMs(std::chrono::milliseconds maxDelayMs);
+
 private:
 	
 	FrameDelayCalculator frameDelayCalculator;
+	
+	std::mutex mutex;
+	
+	std::chrono::milliseconds maxDelayMs;
 	
 	friend class TestFrameDispatchCoordinator;
 };
