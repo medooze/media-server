@@ -9,24 +9,17 @@ VideoPipe::VideoPipe() :
 	queue(MaxOutstandingFramesDefault, false),
 	videoBufferPool(MaxOutstandingFramesDefault, MaxOutstandingFramesDefault + 2)
 {
-	//Init mutex
-	pthread_mutex_init(&newPicMutex,0);
-	pthread_cond_init(&newPicCond,0);
 }
 
 VideoPipe::~VideoPipe()
 {
-	//Destroy mutex
-	pthread_mutex_destroy(&newPicMutex);
-	pthread_cond_destroy(&newPicCond);
 }
 
 int VideoPipe::Init(float scaleResolutionDownBy, uint32_t scaleResolutionToHeight, AllowedDownScaling allowedDownScaling)
 {
 	Log("-VideoPipe::Init() [scaleResolutionDownBy:%f,scaleResolutionToHeight:%d,allowedDownScaling:%d]\n",scaleResolutionDownBy, scaleResolutionToHeight, allowedDownScaling);
 
-	//Lock
-	pthread_mutex_lock(&newPicMutex);
+	std::unique_lock newPicLock(newPicMutex);
 
 	//We are inited
 	inited = true;
@@ -36,9 +29,6 @@ int VideoPipe::Init(float scaleResolutionDownBy, uint32_t scaleResolutionToHeigh
 	this->scaleResolutionDownBy = scaleResolutionDownBy;
 	this->allowedDownScaling = allowedDownScaling;
 
-	//Unlock
-	pthread_mutex_unlock(&newPicMutex);
-
 	return true;
 }
 
@@ -47,24 +37,22 @@ int VideoPipe::End()
 	
 	Log("-VideoPipe::End()\n)");
 		
-	//Lock
-	pthread_mutex_lock(&newPicMutex);
+	std::unique_lock newPicLock(newPicMutex);
 
 	//We are ended
 	inited = false;
 
 	//Exit any pending operation
-	pthread_cond_signal(&newPicCond);
-
-	//Unlock
-	pthread_mutex_unlock(&newPicMutex);
+	// See docs for https://en.cppreference.com/w/cpp/thread/condition_variable/notify_one best release before notify not necessarily the same as pthreads
+	newPicLock.unlock();
+	newPicCond.notify_one();
 
 	return true;
 }
 
 void VideoPipe::SetMaxDelay(uint32_t maxDelayMs)
 {
-	pthread_mutex_lock(&newPicMutex);
+	std::unique_lock newPicLock(newPicMutex);
 
 	// Note: We dont *know* the ingest fps, so will just assume max is 60fps for now
 	// If for whatever reason the egress fps is larger we will know about it here
@@ -83,15 +71,13 @@ void VideoPipe::SetMaxDelay(uint32_t maxDelayMs)
 		queue.grow(maxDelayInFrames);
 	}
 	this->maxDelayMs = maxDelayMs;
-	pthread_mutex_unlock(&newPicMutex);
 }
 
 int VideoPipe::StartVideoCapture(uint32_t width, uint32_t height, uint32_t fps)
 {
 	Log("-VideoPipe::StartVideoCapture() [%u,%u,%u]\n",width,height,fps);
 
-	//Lock
-	pthread_mutex_lock(&newPicMutex);
+	std::unique_lock newPicLock(newPicMutex);
 
 	//Store new settigns
 	videoWidth = width;
@@ -107,9 +93,6 @@ int VideoPipe::StartVideoCapture(uint32_t width, uint32_t height, uint32_t fps)
 	//We are capturing now
 	capturing = true;
 
-	//Unlock
-	pthread_mutex_unlock(&newPicMutex);
-
 	return true;
 }
 
@@ -117,16 +100,12 @@ int VideoPipe::StopVideoCapture()
 {
 	Log("-VideoPipe::StopVideoCapture()\n");
 
-	//Lock
-	pthread_mutex_lock(&newPicMutex);
+	std::unique_lock newPicLock(newPicMutex);
 
 	queue.clear();
 
 	//Not capturing anymore
 	capturing = false;
-
-	//Unlock
-	pthread_mutex_unlock(&newPicMutex);
 
 	return true;
 }
@@ -135,81 +114,61 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 {
 	VideoBuffer::const_shared videoBuffer;
 
-	//Lock until we have a new picture
-	pthread_mutex_lock(&newPicMutex);
+	std::unique_lock newPicLock(newPicMutex);
 
 	//Check we have been inited
 	if (!inited)
 	{
 		Error("-VideoPipe::GrabFrame() | VideoPipe no inited, grab failed\n");
-		//Unlock
-		pthread_mutex_unlock(&newPicMutex);
 		//Return no frame
 		return videoBuffer;
 	}
 
 	// timespec calced once outside the loop so we wait for the correct timeout duration
 	// when handling spurious wakeups
-	timespec wakeupTime;
+	std::optional<std::chrono::steady_clock::time_point> wakeupTime;
 	if (timeout)
 	{
-		//Calculate timeout
-		calcTimout(&wakeupTime,timeout);
+		wakeupTime = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeout);
 	}
 
 	do 
 	{
-		// Check if there is a new image, or we need to wakeup for some other reason
-		//
-		// Note: This is in a loop as is required when using pthread_cond_wait calls. You need to check for 
-		// spurious wakeups (which are uncommon) and cant just rely on signal() waking up on event
-		// See: https://pubs.opengroup.org/onlinepubs/009604599/functions/pthread_cond_timedwait.html
-		// 
-		// This means we need to check all conditions in the loop predicate that may signal the condition to wakeup including:
-		// * End() : Setting inited == false
-		// * CancelGrabFrame() : Setting cancelledGrab == true
-		// * NextFrame() : Adding a new frame to the queue
-		while(inited && capturing && queue.length()==0 && !cancelledGrab)
-		{
-			int ret = -1;
-
-			//If timeout has been specified
-			if (timeout)
-			{
-				//wait
-				ret = pthread_cond_timedwait(&newPicCond,&newPicMutex,&wakeupTime);
-				if (ret == ETIMEDOUT)
-				{
-					// On timeout exit the loop
-					break;
-				}
-			}
-			else
-			{
-				//Wait ad infinitum
-				ret = pthread_cond_wait(&newPicCond,&newPicMutex);
-			}
-		
-			if (ret)
-			{
-				Error("-VideoPipe cond wait error [%d,%d]\n",ret,errno);
-			}
-		}
-
-
-		// Need to reset the videoBuffer or when downrating
+		// Need to reset the videoBuffer when downrating
 		// and empty queue will loop in here until another 
 		// frame arrives instead of returning no frame yet
 		// Also done before the cancelledGrab so it doesnt 
 		// return an invalid frame
 		videoBuffer.reset();
 
+		// To avoid spurious wakeups we need to check all conditions in the predicate that may signal the condition to wakeup including:
+		// * End() : Setting inited == false
+		// * CancelGrabFrame() : Setting cancelledGrab == true
+		// * NextFrame() : Adding a new frame to the queue
+		//If timeout has been specified
+		auto haveWork = [&]()->bool{
+			return !(inited && capturing && queue.length()==0 && !cancelledGrab);
+			};
+		if (!haveWork())
+		{
+			if (wakeupTime)
+			{
+				if (!newPicCond.wait_until(newPicLock, wakeupTime.value(), haveWork))
+				{
+					// On timeout return null
+					return videoBuffer;
+				}
+			}
+			else
+			{
+				newPicCond.wait(newPicLock, haveWork);
+			}
+		}
+
 		if (cancelledGrab)
 		{
 			//Reset flag	
 			cancelledGrab = false;
-
-			pthread_mutex_unlock(&newPicMutex);
 
 			//A canceled grab returns no frame
 			return videoBuffer;
@@ -240,8 +199,6 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 	//Check we have a new frame
 	if (!videoBuffer)
 	{
-		//Unlock
-		pthread_mutex_unlock(&newPicMutex);
 		//Return no frame
 		return videoBuffer;
 	}
@@ -257,7 +214,6 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 			if ((allowedDownScaling == AllowedDownScaling::SameOrLower && srcVideoHeight < scaleResolutionToHeight)
 				|| (allowedDownScaling == AllowedDownScaling::LowerOnly && srcVideoHeight <= scaleResolutionToHeight))
 			{
-				pthread_mutex_unlock(&newPicMutex);
 				//Skip frame
 				return nullptr;
 			}
@@ -270,7 +226,6 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 			if ((allowedDownScaling == AllowedDownScaling::SameOrLower && scaleResolutionDownBy < 1.0f)
 				|| (allowedDownScaling == AllowedDownScaling::LowerOnly && scaleResolutionDownBy <= 1.0f))
 			{
-				pthread_mutex_unlock(&newPicMutex);
 				//Skip frame
 				return nullptr;
 			}
@@ -301,8 +256,7 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 		videoBuffer = std::move(resized);
 	}
   
-	//Unlock
-	pthread_mutex_unlock(&newPicMutex);
+	newPicLock.unlock();
   
 	//If we got timestamps in the video buffer
 	if (videoBuffer->HasTimestamp())
@@ -315,25 +269,22 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 
 void  VideoPipe::CancelGrabFrame()
 {
-	//Lock
-	pthread_mutex_lock(&newPicMutex);
+	std::unique_lock newPicLock(newPicMutex);
 
 	// We need to set this to identify we want to exit the cond var loop
 	// on any existing or next call to GrabFrame()
 	cancelledGrab = true;
 
 	//Signal to cancel any pending GrabFrame()
-	pthread_cond_signal(&newPicCond);
-
-	//Unlock
-	pthread_mutex_unlock(&newPicMutex);
+	// See docs for https://en.cppreference.com/w/cpp/thread/condition_variable/notify_one best release before notify not necessarily the same as pthreads
+	newPicLock.unlock();
+	newPicCond.notify_one();
 
 }
 
 size_t VideoPipe::NextFrame(const VideoBuffer::const_shared& videoBuffer)
 {
-	//Lock
-	pthread_mutex_lock(&newPicMutex);
+	std::unique_lock newPicLock(newPicMutex);
 
 	auto now = getTime();
 
@@ -370,10 +321,9 @@ size_t VideoPipe::NextFrame(const VideoBuffer::const_shared& videoBuffer)
 	++totalFramesSinceReport;
 	
 	//Signal any pending grap operation
-	pthread_cond_signal(&newPicCond);
-
-	//Unlock
-	pthread_mutex_unlock(&newPicMutex);
+	// See docs for https://en.cppreference.com/w/cpp/thread/condition_variable/notify_one best release before notify not necessarily the same as pthreads
+	newPicLock.unlock();
+	newPicCond.notify_one();
 
 	// Lets report dropped frames roughly every second if they happened
 	if (lastDroppedReport + 1000000LLU <= now)
