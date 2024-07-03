@@ -63,12 +63,12 @@ DTLSICETransport::DTLSICETransport(Sender *sender,TimeService& timeService, Obje
 	probingBitrate(250, 1E3, 250),
 	senderSideBandwidthEstimator(new SendSideBandwidthEstimation(bweOptions))
 {
-	Debug(">DTLSICETransport::DTLSICETransport() [this:%p]\n", this);
+	Debug("[%s][%p]>DTLSICETransport::DTLSICETransport() [this:%p]\n", bweOptions.logId.c_str(), this);
 }
 
 DTLSICETransport::~DTLSICETransport()
 {
-	Debug(">DTLSICETransport::~DTLSICETransport() [this:%p,started:%d\n", this, started);
+	Debug("[%s][%p]>DTLSICETransport::~DTLSICETransport() [started:%d\n", bweOptions.logId.c_str(), this, started);
 	
 	//Stop
 	Stop();
@@ -76,7 +76,7 @@ DTLSICETransport::~DTLSICETransport()
 
 void DTLSICETransport::onDTLSPendingData()
 {
-	//UltraDebug(">DTLSConnection::onDTLSPendingData() [active:%p]\n",active);
+	//UltraDebug("[%s][%p]>DTLSConnection::onDTLSPendingData() [active:%p]\n", bweOptions.logId.c_str(), this,active);
 	//Until depleted
 	while(active)
 	{
@@ -95,13 +95,13 @@ void DTLSICETransport::onDTLSPendingData()
 		//Set read size
 		buffer.SetSize(len);
 		//Send
-		//UltraDebug("-DTLSConnection::onDTLSPendingData() | dtls send [len:%d]\n",len);
+		//UltraDebug("[%s][%p]-DTLSConnection::onDTLSPendingData() | dtls send [len:%d]\n", bweOptions.logId.c_str(), this,len);
 		//Send it back
 		sender->Send(active,std::move(buffer));
 		//Update bitrate
 		outgoingBitrate.Update(getTimeMS(),len);
 	}
-	//UltraDebug("<DTLSConnection::onDTLSPendingData() | no more data\n");
+	//UltraDebug("[%s][%p]<DTLSConnection::onDTLSPendingData() | no more data\n", bweOptions.logId.c_str(), this);
 }
 
 int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* data,DWORD size)
@@ -127,7 +127,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 
 		//Check session
 		if (!recv.IsSetup())
-			return Warning("-DTLSICETransport::onData() |  Recv SRTPSession is not setup\n");
+			return Warning("[%s][%p]-DTLSICETransport::onData() |  Recv SRTPSession is not setup\n", bweOptions.logId.c_str(), this);
 
 		//unprotect
 		size_t len = recv.UnprotectRTCP((BYTE*)data,size);
@@ -135,7 +135,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		//Check size
 		if (!len)
 			//Error
-			return Warning("-DTLSICETransport::onData() | Error unprotecting rtcp packet [%s]\n",recv.GetLastError());
+			return Warning("[%s][%p]-DTLSICETransport::onData() | Error unprotecting rtcp packet [%s]\n", bweOptions.logId.c_str(), this,recv.GetLastError());
 
 		//If dumping
 		if (dumper && dumpRTCP)
@@ -149,7 +149,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		if (!rtcp)
 		{
 			//Debug
-			Debug("-DTLSICETransport::onData() | RTCP wrong data\n");
+			Debug("[%s][%p]-DTLSICETransport::onData() | RTCP wrong data\n", bweOptions.logId.c_str(), this);
 			//Dump it
 			::Dump(data,size);
 			//Exit
@@ -165,14 +165,14 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 
 	//Check session
 	if (!recv.IsSetup())
-		return Warning("-DTLSICETransport::onData() | Recv SRTPSession is not setup\n");
+		return Warning("[%s][%p]-DTLSICETransport::onData() | Recv SRTPSession is not setup\n", bweOptions.logId.c_str(), this);
 	
 	//unprotect
 	size_t len = recv.UnprotectRTP((BYTE*)data,size);
 	//Check status
 	if (!len)
 		//Error
-		return Warning("-DTLSICETransport::onData() | Error unprotecting rtp packet [%s]\n",recv.GetLastError());
+		return Warning("[%s][%p]-DTLSICETransport::onData() | Error unprotecting rtp packet [%s]\n", bweOptions.logId.c_str(), this,recv.GetLastError());
 	
 	//Parse rtp packet
 	RTPPacket::shared packet = RTPPacket::Parse(data,len,recvMaps.rtp,recvMaps.ext,now/1000);
@@ -180,7 +180,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 	//Check
 	if (!packet)
 		//Error
-		return Warning("-DTLSICETransport::onData() | Could not parse rtp packet\n");
+		return Warning("[%s][%p]-DTLSICETransport::onData() | Could not parse rtp packet\n", bweOptions.logId.c_str(), this);
 
 	TRACE_EVENT("rtp", "DTLSICETransport::onData::RTP",
 		"ssrc", packet->GetSSRC(),
@@ -254,7 +254,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 	//Check codec
 	if (codec==RTPMap::NotFound)
 		//Exit
-		return Warning("-DTLSICETransport::onData() | RTP packet payload type unknown [%d]\n",packet->GetPayloadType());
+		return Warning("[%s][%p]-DTLSICETransport::onData() | RTP packet payload type unknown [%d]\n", bweOptions.logId.c_str(), this,packet->GetPayloadType());
 	
 	//Get group
 	RTPIncomingSourceGroup *group = GetIncomingSourceGroup(ssrc);
@@ -266,7 +266,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		auto mid = packet->GetMediaStreamId();
 		auto rid = packet->HasRepairedId() ? packet->GetRepairedId() : packet->GetRId();
 
-		Debug("-DTLSICETransport::onData() | Unknowing group for ssrc trying to retrieve by [ssrc:%u,rid:'%s']\n",ssrc,rid.c_str());
+		Debug("[%s][%p]-DTLSICETransport::onData() | Unknowing group for ssrc trying to retrieve by [ssrc:%u,rid:'%s']\n", bweOptions.logId.c_str(), this,ssrc,rid.c_str());
 
 		//If it is the repaidr stream or it has rid and it is rtx
 		if (!rid.empty() && (packet->GetCodec()==VideoCodec::RTX || packet->GetCodec() == AudioCodec::RTX))
@@ -276,7 +276,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 			//If found
 			if (it!=rids.end())
 			{
-				Log("-DTLSICETransport::onData() | Associating rtx stream to ssrc [ssrc:%u,mid:'%s',rid:'%s']\n",ssrc,mid.c_str(),rid.c_str());
+				Log("[%s][%p]-DTLSICETransport::onData() | Associating rtx stream to ssrc [ssrc:%u,mid:'%s',rid:'%s']\n", bweOptions.logId.c_str(), this,ssrc,mid.c_str(),rid.c_str());
 
 				//Got source
 				group = it->second;
@@ -304,7 +304,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 			//If found
 			if (it!=rids.end())
 			{
-				Log("-DTLSICETransport::onData() | Associating rtp stream to ssrc [ssrc:%u,mid:'%s',rid:'%s']\n",ssrc,mid.c_str(),rid.c_str());
+				Log("[%s][%p]-DTLSICETransport::onData() | Associating rtp stream to ssrc [ssrc:%u,mid:'%s',rid:'%s']\n", bweOptions.logId.c_str(), this,ssrc,mid.c_str(),rid.c_str());
 
 				//Got source
 				group = it->second;
@@ -332,7 +332,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 			//If found
 			if (it!=mids.end())
 			{
-				Log("-DTLSICETransport::onData() | Associating rtx stream id to ssrc [ssrc:%u,mid:'%s']\n",ssrc,mid.c_str());
+				Log("[%s][%p]-DTLSICETransport::onData() | Associating rtx stream id to ssrc [ssrc:%u,mid:'%s']\n", bweOptions.logId.c_str(), this,ssrc,mid.c_str());
 
 				//Get first source in set, if there was more it should have contained an rid
 				group = *it->second.begin();
@@ -360,7 +360,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 			//If found
 			if (it!=mids.end())
 			{
-				Log("-DTLSICETransport::onData() | Associating rtp stream to ssrc [ssrc:%u,mid:'%s']\n",ssrc,mid.c_str());
+				Log("[%s][%p]-DTLSICETransport::onData() | Associating rtp stream to ssrc [ssrc:%u,mid:'%s']\n", bweOptions.logId.c_str(), this,ssrc,mid.c_str());
 
 				//Get first source in set, if there was more it should have contained an rid
 				group = *it->second.begin();
@@ -388,7 +388,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 	//Ensure it has a group
 	if (!group)	
 		//error
-		return Warning("-DTLSICETransport::onData() | Unknowing group for ssrc [%u]\n",ssrc);
+		return Warning("[%s][%p]-DTLSICETransport::onData() | Unknowing group for ssrc [%u]\n", bweOptions.logId.c_str(), this,ssrc);
 	
 	//Assing mid if found
 	if (group->mid.empty() && packet->HasMediaStreamId())
@@ -396,7 +396,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		//Get mid
 		auto mid = packet->GetMediaStreamId();
 		//Debug
-		Log("-DTLSICETransport::onData() | Assinging media stream id [ssrc:%u,mid:'%s']\n",ssrc,mid.c_str());
+		Log("[%s][%p]-DTLSICETransport::onData() | Assinging media stream id [ssrc:%u,mid:'%s']\n", bweOptions.logId.c_str(), this,ssrc,mid.c_str());
 		//Set it
 		group->mid = mid;
 		//Find mid 
@@ -410,7 +410,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 			mids[mid] = { group };
 	}
 	
-	//UltraDebug("-DTLSICETransport::onData() | Got RTP on media:%s sssrc:%u seq:%u pt:%u codec:%s rid:'%s', mid:'%s'\n",MediaFrame::TypeToString(group->type),ssrc,packet->GetSeqNum(),packet->GetPayloadType(),GetNameForCodec(group->type,codec),group->rid.c_str(),group->mid.c_str());
+	//UltraDebug("[%s][%p]-DTLSICETransport::onData() | Got RTP on media:%s sssrc:%u seq:%u pt:%u codec:%s rid:'%s', mid:'%s'\n", bweOptions.logId.c_str(), this,MediaFrame::TypeToString(group->type),ssrc,packet->GetSeqNum(),packet->GetPayloadType(),GetNameForCodec(group->type,codec),group->rid.c_str(),group->mid.c_str());
 	
 	//Process packet and get source
 	RTPIncomingSource* source = group->Process(packet);
@@ -418,7 +418,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 	//Ensure it has a source
 	if (!source)
 		//error
-		return Warning("-DTLSICETransport::onData() | Group does not contain ssrc [%u]\n",ssrc);
+		return Warning("[%s][%p]-DTLSICETransport::onData() | Group does not contain ssrc [%u]\n", bweOptions.logId.c_str(), this,ssrc);
 
 	//If it was an RTX packet and not a padding only one
 	if (ssrc==group->rtx.ssrc && packet->GetMediaLength()) 
@@ -426,7 +426,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		//Ensure that it is a RTX codec
 		if (codec!=VideoCodec::RTX && codec != AudioCodec::RTX)
 			//error
-			return  Warning("-DTLSICETransport::onData() | No RTX codec on rtx sssrc:%u type:%d codec:%d\n",packet->GetSSRC(),packet->GetPayloadType(),packet->GetCodec());
+			return  Warning("[%s][%p]-DTLSICETransport::onData() | No RTX codec on rtx sssrc:%u type:%d codec:%d\n", bweOptions.logId.c_str(), this,packet->GetSSRC(),packet->GetPayloadType(),packet->GetCodec());
 		//Find apt type
 		auto apt = recvMaps.apt.GetCodecForType(packet->GetPayloadType());
 		//Find codec 
@@ -434,12 +434,12 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		//Check codec
 		if (codec==RTPMap::NotFound)
 			  //Error
-			  return Warning("-DTLSICETransport::onData() | RTP RTX packet apt type unknown [%s %d]\n",MediaFrame::TypeToString(packet->GetMediaType()),packet->GetPayloadType());
+			  return Warning("[%s][%p]-DTLSICETransport::onData() | RTP RTX packet apt type unknown [%s %d]\n", bweOptions.logId.c_str(), this,MediaFrame::TypeToString(packet->GetMediaType()),packet->GetPayloadType());
 		
 		//Remove OSN and restore seq num
 		if (!packet->RecoverOSN())
 			//Error
-			return Warning("-DTLSICETransport::onData() | RTP Could not recoever OSX\n");
+			return Warning("[%s][%p]-DTLSICETransport::onData() | RTP Could not recoever OSX\n", bweOptions.logId.c_str(), this);
 		
 		 //Set original ssrc
 		 packet->SetSSRC(group->media.ssrc);
@@ -453,7 +453,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		 //TODO: Move from here, required to fill the vp8/vp9 descriptors
 		 VideoLayerSelector::GetLayerIds(packet);
 
-		 //UltraDebug("-DTLSICETransport::onData() | Recovered RTX on media:%s sssrc:%u seq:%u pt:%u codec:%s rid:'%s', mid:'%s'\n", MediaFrame::TypeToString(group->type), ssrc, packet->GetSeqNum(), packet->GetPayloadType(), GetNameForCodec(group->type, codec), group->rid.c_str(), group->mid.c_str());
+		 //UltraDebug("[%s][%p]-DTLSICETransport::onData() | Recovered RTX on media:%s sssrc:%u seq:%u pt:%u codec:%s rid:'%s', mid:'%s'\n", bweOptions.logId.c_str(), this, MediaFrame::TypeToString(group->type), ssrc, packet->GetSeqNum(), packet->GetPayloadType(), GetNameForCodec(group->type, codec), group->rid.c_str(), group->mid.c_str());
 	} 
 
 	//Add packet and see if we have lost any in between
@@ -469,7 +469,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 		( lost>0 ||  (group->GetCurrentLost() && (now-source->lastNACKed)/1000>std::max(rtt,20u)))
 	   )
 	{
-		//UltraDebug("-DTLSICETransport::onData() | Lost packets [ssrc:%u,ssrc:%u,seq:%d,lost:%d,total:%u]\n",ssrc,packet->GetSSRC(),packet->GetSeqNum(),lost,group->GetCurrentLost());
+		//UltraDebug("[%s][%p]-DTLSICETransport::onData() | Lost packets [ssrc:%u,ssrc:%u,seq:%d,lost:%d,total:%u]\n", bweOptions.logId.c_str(), this,ssrc,packet->GetSSRC(),packet->GetSeqNum(),lost,group->GetCurrentLost());
 
 		//Create rtcp sender retpor
 		auto rtcp = RTCPCompoundPacket::Create();
@@ -537,7 +537,7 @@ int DTLSICETransport::onData(const ICERemoteCandidate* candidate,const BYTE* dat
 			}
 			
 			//LOg
-			UltraDebug("-DTLSICETransport::onData() | Sending REMB [ssrc:%u,mid:'%s',count:%lu,bitrate:%u]\n",group->media.ssrc,group->mid.c_str(),ssrcs.size(),bitrate);
+			UltraDebug("[%s][%p]-DTLSICETransport::onData() | Sending REMB [ssrc:%u,mid:'%s',count:%lu,bitrate:%u]\n", bweOptions.logId.c_str(), this,group->media.ssrc,group->mid.c_str(),ssrcs.size(),bitrate);
 			
 			// SSRC of media source (32 bits):  Always 0; this is the same convention as in [RFC5104] section 4.2.2.2 (TMMBN).
 			auto remb = rtcp->CreatePacket<RTCPPayloadFeedback>(RTCPPayloadFeedback::ApplicationLayerFeeedbackMessage,group->media.ssrc,WORD(0));
@@ -573,12 +573,12 @@ DWORD DTLSICETransport::SendProbe(const RTPPacket::shared& original)
 	//Check packet
 	if (!original)
 		//Done
-		return Error("-DTLSICETransport::SendProbe() | No packet\n");
+		return Error("[%s][%p]-DTLSICETransport::SendProbe() | No packet\n", bweOptions.logId.c_str(), this);
 	
 	//Check if we have an active DTLS connection yet
 	if (!send.IsSetup())
 		//Done
-		return Warning("-DTLSICETransport::SendProbe() | Send SRTPSession is not setup yet\n");;
+		return Warning("[%s][%p]-DTLSICETransport::SendProbe() | Send SRTPSession is not setup yet\n", bweOptions.logId.c_str(), this);
 	
 	//Get ssrc
 	DWORD ssrc = original->GetSSRC();
@@ -589,7 +589,7 @@ DWORD DTLSICETransport::SendProbe(const RTPPacket::shared& original)
 	//If not found
 	if (!group)
 		//Error
-		return Warning("-DTLSICETransport::SendProbe() | Outgoind source not registered for ssrc:%u\n",ssrc);
+		return Warning("[%s][%p]-DTLSICETransport::SendProbe() | Outgoind source not registered for ssrc:%u\n", bweOptions.logId.c_str(), this,ssrc);
 
 	//Get current time
 	auto now = getTime();
@@ -602,7 +602,7 @@ DWORD DTLSICETransport::SendProbe(const RTPPacket::shared& original)
 		
 	//Check if we ar using rtx or not
 	if (!group->rtx.ssrc || apt==RTPMap::NotFound)
-		return Error("-DTLSICETransport::SendProbe() | No rtx or apt found [group:%p,ssrc:%u,apt:%d]\n", group, group->rtx.ssrc, apt);
+		return Error("[%s][%p]-DTLSICETransport::SendProbe() | No rtx or apt found [group:%p,ssrc:%u,apt:%d]\n", bweOptions.logId.c_str(), this, group, group->rtx.ssrc, apt);
 	
 	//Get rtx source
 	RTPOutgoingSource& source = group->rtx;
@@ -659,7 +659,7 @@ DWORD DTLSICETransport::SendProbe(const RTPPacket::shared& original)
 		//Return packet to pool
 		packetPool.release(std::move(buffer));
 		//Log warning and exit
-		return Warning("-DTLSICETransport::SendProbe() | Could not serialize packet\n");
+		return Warning("[%s][%p]-DTLSICETransport::SendProbe() | Could not serialize packet\n", bweOptions.logId.c_str(), this);
 	}
 
 	//If we don't have an active candidate yet
@@ -669,7 +669,7 @@ DWORD DTLSICETransport::SendProbe(const RTPPacket::shared& original)
 		packetPool.release(std::move(buffer));
 		//Log warning and exit
 		//Error
-		return Warning("-DTLSICETransport::SendProbe() | We don't have an active candidate yet\n");
+		return Warning("[%s][%p]-DTLSICETransport::SendProbe() | We don't have an active candidate yet\n", bweOptions.logId.c_str(), this);
 	}
 
 	//If dumping
@@ -691,7 +691,7 @@ DWORD DTLSICETransport::SendProbe(const RTPPacket::shared& original)
 		packetPool.release(std::move(buffer));
 		//Log warning and exit
 		//Error
-		return Error("-DTLSICETransport::SendProbe() | Error protecting RTP packet [ssrc:%u,%s]\n",source.ssrc,send.GetLastError());
+		return Error("[%s][%p]-DTLSICETransport::SendProbe() | Error protecting RTP packet [ssrc:%u,%s]\n", bweOptions.logId.c_str(), this,source.ssrc,send.GetLastError());
 	}
 	
 	//Store candidate before unlocking
@@ -731,7 +731,7 @@ DWORD DTLSICETransport::SendProbe(const RTPPacket::shared& original)
 	//Update last send time and stats
 	source.Update(now/1000, packet, len);
 	
-	//Log("-DTLSICETransport::SendProbe() |  Sent probe [size:%d]\n", len);
+	//Log("[%s][%p]-DTLSICETransport::SendProbe() |  Sent probe [size:%d]\n", bweOptions.logId.c_str(), this, len);
 
 	return len;
 }
@@ -741,7 +741,7 @@ DWORD DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 	//Check if we have an active DTLS connection yet
 	if (!send.IsSetup())
 		//Error
-		return Warning("-DTLSICETransport::SendProbe() | Send SRTPSession is not setup\n");
+		return Warning("[%s][%p]-DTLSICETransport::SendProbe() | Send SRTPSession is not setup\n", bweOptions.logId.c_str(), this);
 	
 	//Overrride headers
 	RTPHeader		header;
@@ -814,7 +814,7 @@ DWORD DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 		//Return packet to pool
 		packetPool.release(std::move(buffer));
 		//Error
-		return Error("-DTLSICETransport::SendProbe() | Error serializing rtp headers\n");
+		return Error("[%s][%p]-DTLSICETransport::SendProbe() | Error serializing rtp headers\n", bweOptions.logId.c_str(), this);
 	}
 
 	//Inc len
@@ -831,7 +831,7 @@ DWORD DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 			//Return packet to pool
 			packetPool.release(std::move(buffer));
 			//Error
-			return Error("-DTLSICETransport::SendProbe() | Error serializing rtp extension headers\n");
+			return Error("[%s][%p]-DTLSICETransport::SendProbe() | Error serializing rtp extension headers\n", bweOptions.logId.c_str(), this);
 		}
 		//Inc len
 		len += n;
@@ -852,7 +852,7 @@ DWORD DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 		//Return packet to pool
 		packetPool.release(std::move(buffer));
 		//Error
-		return Debug("-DTLSICETransport::SendProbe() | We don't have an active candidate yet\n");
+		return Debug("[%s][%p]-DTLSICETransport::SendProbe() | We don't have an active candidate yet\n", bweOptions.logId.c_str(), this);
 	}
 
 	//If dumping
@@ -873,7 +873,7 @@ DWORD DTLSICETransport::SendProbe(RTPOutgoingSourceGroup *group,BYTE padding)
 		//Return packet to pool
 		packetPool.release(std::move(buffer));
 		//Error
-		return Error("-RTPTransport::SendProbe() | Error protecting RTP packet [ssrc:%u,%s]\n",source.ssrc,send.GetLastError());
+		return Error("[%s][%p]-RTPTransport::SendProbe() | Error protecting RTP packet [ssrc:%u,%s]\n", bweOptions.logId.c_str(), this,source.ssrc,send.GetLastError());
 	}
 
 	//Store candidate before unlocking
@@ -927,7 +927,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	//Check if we have an active DTLS connection yet
 	if (!send.IsSetup())
 		//Error
-		return (void)Debug("-DTLSICETransport::ReSendPacket() | Send SRTPSession is not setup yet\n");
+		return (void)Debug("[%s][%p]-DTLSICETransport::ReSendPacket() | Send SRTPSession is not setup yet\n", bweOptions.logId.c_str(), this);
 	
 	//Get current time
 	auto now = getTime();
@@ -936,7 +936,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	auto instant = rtxBitrate.Update(now/1000) * 8;
 
 	//Log
-	UltraDebug("-DTLSICETransport::ReSendPacket() | resending [seq:%d,ssrc:%u,rtx:%u,instant:%llu, isWindow:%d, count:%d, empty:%d]\n", seq, group->media.ssrc, group->rtx.ssrc, instant, rtxBitrate.IsInWindow(), rtxBitrate.GetCount(), rtxBitrate.IsEmpty());
+	UltraDebug("[%s][%p]-DTLSICETransport::ReSendPacket() | resending [seq:%d,ssrc:%u,rtx:%u,instant:%llu, isWindow:%d, count:%d, empty:%d]\n", bweOptions.logId.c_str(), this, seq, group->media.ssrc, group->rtx.ssrc, instant, rtxBitrate.IsInWindow(), rtxBitrate.GetCount(), rtxBitrate.IsEmpty());
 
 	//Check if we have a custom playout buffer for the grou
 	uint32_t maxRTT = group->HasForcedPlayoutDelay()
@@ -946,7 +946,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	// If rtt is too large
 	if (rtt > maxRTT)
 		//Disable RTX
-		return (void)UltraDebug("-DTLSICETransport::ReSendPacket() | Too large RTT, skiping rtx. [rtt:%d,max:%d]\n", rtt, maxRTT);
+		return (void)UltraDebug("[%s][%p]-DTLSICETransport::ReSendPacket() | Too large RTT, skiping rtx. [rtt:%d,max:%d]\n", bweOptions.logId.c_str(), this, rtt, maxRTT);
 	
 
 	//if sse is enabled
@@ -958,14 +958,14 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 		//Check if we are sending way to much bitrate
 		if (targetBitrate && rtxBitrate.GetInstantAvg()*8 > targetBitrate * MaxRTXOverhead)
 		{
-			UltraDebug("-DTLSICETransport::ReSendPacket() | Too much bitrate on rtx, %s rtx. rtx:%lld estimated:%u target:%d\n", bweOptions.enableCongestedRTX?"ALLOWING":"SKIPPING", (uint64_t)(rtxBitrate.GetInstantAvg() * 8), senderSideBandwidthEstimator->GetEstimatedBitrate(), targetBitrate);
+			UltraDebug("[%s][%p]-DTLSICETransport::ReSendPacket() | Too much bitrate on rtx, %s rtx. rtx:%lld estimated:%u target:%d\n", bweOptions.logId.c_str(), this, bweOptions.enableCongestedRTX?"ALLOWING":"SKIPPING", (uint64_t)(rtxBitrate.GetInstantAvg() * 8), senderSideBandwidthEstimator->GetEstimatedBitrate(), targetBitrate);
 			if (!bweOptions.enableCongestedRTX)
 			{
 				return;
 			}
 		
 		} else if (targetBitrate && outgoingBitrate.GetInstantAvg()*8 > targetBitrate) {
-			UltraDebug("-DTLSICETransport::ReSendPacket() | Too much outgoing bitrate, %s rtx. outgoing:%lld estimated:%u target:%d\n", bweOptions.enableCongestedRTX?"ALLOWING":"SKIPPING", (uint64_t)(outgoingBitrate.GetInstantAvg() * 8), senderSideBandwidthEstimator->GetEstimatedBitrate(), targetBitrate);
+			UltraDebug("[%s][%p]-DTLSICETransport::ReSendPacket() | Too much outgoing bitrate, %s rtx. outgoing:%lld estimated:%u target:%d\n", bweOptions.logId.c_str(), this, bweOptions.enableCongestedRTX?"ALLOWING":"SKIPPING", (uint64_t)(outgoingBitrate.GetInstantAvg() * 8), senderSideBandwidthEstimator->GetEstimatedBitrate(), targetBitrate);
 			if (!bweOptions.enableCongestedRTX)
 			{
 				return;
@@ -976,7 +976,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	//Check if we can retransmit the packet, or we have rtx recently
 	if (!group->isRTXAllowed(seq, now/1000))
 		//Debug
-		return (void)UltraDebug("-DTLSICETransport::ReSendPacket() | rtx not allowed for packet [seq:%d,ssrc:%u,rtx:%u]\n", seq, group->media.ssrc, group->rtx.ssrc);
+		return (void)UltraDebug("[%s][%p]-DTLSICETransport::ReSendPacket() | rtx not allowed for packet [seq:%d,ssrc:%u,rtx:%u]\n", bweOptions.logId.c_str(), this, seq, group->media.ssrc, group->rtx.ssrc);
 	
 	//Find packet to retransmit
 	auto original = group->GetPacket(seq);
@@ -984,7 +984,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 	//If we don't have it anymore
 	if (!original)
 		//Debug
-		return (void)UltraDebug("-DTLSICETransport::ReSendPacket() | packet not found[seq:%d,ssrc:&%u,rtx:%u]\n",seq,group->media.ssrc,group->rtx.ssrc);
+		return (void)UltraDebug("[%s][%p]-DTLSICETransport::ReSendPacket() | packet not found[seq:%d,ssrc:&%u,rtx:%u]\n", bweOptions.logId.c_str(), this,seq,group->media.ssrc,group->rtx.ssrc);
 	
 	//Create resend packet
 	auto packet = original->Clone();
@@ -1054,7 +1054,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 		//Return packet to pool
 		packetPool.release(std::move(buffer));
 		//Log warnign and exit
-		return (void)Warning("-DTLSICETransport::ReSendPacket() | Could not serialize packet\n");
+		return (void)Warning("[%s][%p]-DTLSICETransport::ReSendPacket() | Could not serialize packet\n", bweOptions.logId.c_str(), this);
 	}
 
 	//If we don't have an active candidate yet
@@ -1063,7 +1063,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 		//Return packet to pool
 		packetPool.release(std::move(buffer));
 		//Error
-		return (void)Warning("-DTLSICETransport::ReSendPacket() | We don't have an active candidate yet\n");
+		return (void)Warning("[%s][%p]-DTLSICETransport::ReSendPacket() | We don't have an active candidate yet\n", bweOptions.logId.c_str(), this);
 	}
 
 	//If dumping
@@ -1084,7 +1084,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 		//Return packet to pool
 		packetPool.release(std::move(buffer));
 		//Error
-		return (void)Error("-RTPTransport::ReSendPacket() | Error protecting RTP packet [ssrc:%u,%s]\n",source.ssrc,send.GetLastError());
+		return (void)Error("[%s][%p]-RTPTransport::ReSendPacket() | Error protecting RTP packet [ssrc:%u,%s]\n", bweOptions.logId.c_str(), this,source.ssrc,send.GetLastError());
 	}
 	
 	//Store candidate before unlocking
@@ -1133,7 +1133,7 @@ void DTLSICETransport::ReSendPacket(RTPOutgoingSourceGroup *group,WORD seq)
 void  DTLSICETransport::ActivateRemoteCandidate(ICERemoteCandidate* candidate,bool useCandidate, DWORD priority)
 {
 	//Debug
-	//UltraDebug("-DTLSICETransport::ActivateRemoteCandidate() | Remote candidate [%s:%hu,use:%d,prio:%d,active:%p]\n",candidate->GetIP(),candidate->GetPort(),useCandidate,priority,active);
+	//UltraDebug("[%s][%p]-DTLSICETransport::ActivateRemoteCandidate() | Remote candidate [%s:%hu,use:%d,prio:%d,active:%p]\n", bweOptions.logId.c_str(), this,candidate->GetIP(),candidate->GetPort(),useCandidate,priority,active);
 	
 	//Restart timer
 	iceTimeoutTimer->Again(IceTimeout);
@@ -1142,7 +1142,7 @@ void  DTLSICETransport::ActivateRemoteCandidate(ICERemoteCandidate* candidate,bo
 	if (!active || (useCandidate && candidate!=active))
 	{
 		//Debug
-		Debug("-DTLSICETransport::ActivateRemoteCandidate() | Activating candidate [%s:%hu,use:%d,prio:%d,dtls:%d]\n",candidate->GetIP(),candidate->GetPort(),useCandidate,priority,dtls.GetSetup());	
+		Debug("[%s][%p]-DTLSICETransport::ActivateRemoteCandidate() | Activating candidate [%s:%hu,use:%d,prio:%d,dtls:%d]\n", bweOptions.logId.c_str(), this,candidate->GetIP(),candidate->GetPort(),useCandidate,priority,dtls.GetSetup());	
 		
 		//Send data to this one from now on
 		active = candidate;
@@ -1164,7 +1164,7 @@ void DTLSICETransport::SetLocalProperties(const Properties& properties)
 	
 	//For each property
 	for (Properties::const_iterator it=properties.begin();it!=properties.end();++it)
-		Debug("-DTLSICETransport::SetLocalProperties | Setting property [%s:%s]\n",it->first.c_str(),it->second.c_str());
+		Debug("[%s][%p]-DTLSICETransport::SetLocalProperties | Setting property [%s:%s]\n", bweOptions.logId.c_str(), this,it->first.c_str(),it->second.c_str());
 	
 	//Cleant maps
 	sendMaps.rtp.clear();
@@ -1279,7 +1279,7 @@ void DTLSICETransport::SetRemoteProperties(const Properties& properties)
 	//For each property
 	for (Properties::const_iterator it=properties.begin();it!=properties.end();++it)
 		//Log
-		Debug("-DTLSICETransport::SetRemoteProperties | Setting property [%s:%s]\n",it->first.c_str(),it->second.c_str());
+		Debug("[%s][%p]-DTLSICETransport::SetRemoteProperties | Setting property [%s:%s]\n", bweOptions.logId.c_str(), this,it->first.c_str(),it->second.c_str());
 	
 	std::vector<Properties> codecs;
 	std::vector<Properties> extensions;
@@ -1387,7 +1387,7 @@ void DTLSICETransport::SetRemoteProperties(const Properties& properties)
 }
 int DTLSICETransport::Dump(UDPDumper* dumper, bool inbound, bool outbound, bool rtcp, bool rtpHeadersOnly)
 {
-	Debug("-DTLSICETransport::Dump() | [inbound:%d,outboud:%d,rtcp:%d,rtpHeadersOnly:%d]\n",inbound,outbound,rtcp,rtpHeadersOnly);
+	Debug("[%s][%p]-DTLSICETransport::Dump() | [inbound:%d,outboud:%d,rtcp:%d,rtpHeadersOnly:%d]\n", bweOptions.logId.c_str(), this,inbound,outbound,rtcp,rtpHeadersOnly);
 	
 	//Done
 	int done = 1;
@@ -1397,7 +1397,7 @@ int DTLSICETransport::Dump(UDPDumper* dumper, bool inbound, bool outbound, bool 
 		if (this->dumper)
 		{
 			//Error
-			done = Error("-DTLSICETransport::Dump() | Already dumping\n");
+			done = Error("[%s][%p]-DTLSICETransport::Dump() | Already dumping\n", bweOptions.logId.c_str(), this);
 			return;
 		}
 
@@ -1416,7 +1416,7 @@ int DTLSICETransport::Dump(UDPDumper* dumper, bool inbound, bool outbound, bool 
 
 int DTLSICETransport::StopDump()
 {
-	Debug("-DTLSICETransport::StopDump()\n");
+	Debug("[%s][%p]-DTLSICETransport::StopDump()\n", bweOptions.logId.c_str(), this);
 	
 	//Done
 	int done = 1;
@@ -1426,7 +1426,7 @@ int DTLSICETransport::StopDump()
 		if (!this->dumper)
 		{
 			//Error
-			done = Error("-DTLSICETransport::StopDump() | Not dumping\n");
+			done = Error("[%s][%p]-DTLSICETransport::StopDump() | Not dumping\n", bweOptions.logId.c_str(), this);
 			return;
 		}
 		//Close dumper
@@ -1440,7 +1440,7 @@ int DTLSICETransport::StopDump()
 
 int DTLSICETransport::Dump(const char* filename, bool inbound, bool outbound, bool rtcp, bool rtpHeadersOnly)
 {
-	Log("-DTLSICETransport::Dump() | [pcap:%s,inbound:%d,outboud:%d,rtcp:%d,rtpHeadersOnly:%d]\n",filename,inbound,outbound,rtcp,rtpHeadersOnly);
+	Log("[%s][%p]-DTLSICETransport::Dump() | [pcap:%s,inbound:%d,outboud:%d,rtcp:%d,rtpHeadersOnly:%d]\n", bweOptions.logId.c_str(), this,filename,inbound,outbound,rtcp,rtpHeadersOnly);
 	
 	//Done
 	int done = 1;
@@ -1450,7 +1450,7 @@ int DTLSICETransport::Dump(const char* filename, bool inbound, bool outbound, bo
 		if (this->dumper)
 		{
 			//Error
-			done = Error("Already dumping\n");
+			done = Error("[%s][%p]Already dumping\n", bweOptions.logId.c_str(), this);
 			return;
 		}
 
@@ -1461,7 +1461,7 @@ int DTLSICETransport::Dump(const char* filename, bool inbound, bool outbound, bo
 		if (!pcap->Open(filename))
 		{
 			//Error
-			done = Error("Error opening pcap file for dumping\n");
+			done = Error("[%s][%p]Error opening pcap file for dumping\n", bweOptions.logId.c_str(), this);
 			//Error
 			delete(pcap);
 			return ;
@@ -1493,7 +1493,7 @@ int DTLSICETransport::StopDumpBWEStats()
 
 void DTLSICETransport::Reset()
 {
-	Log("-DTLSICETransport::Reset()\n");
+	Log("[%s][%p]-DTLSICETransport::Reset()\n", bweOptions.logId.c_str(), this);
 
 	//Execute on timer thread
 	timeService.Sync([=](auto now){
@@ -1524,12 +1524,12 @@ void DTLSICETransport::Reset()
 
 int DTLSICETransport::SetLocalCryptoSDES(const char* suite,const BYTE* key,const DWORD len)
 {
-	Log("-DTLSICETransport::SetLocalCryptoSDES() | [suite:%s]\n",suite);
+	Log("[%s][%p]-DTLSICETransport::SetLocalCryptoSDES() | [suite:%s]\n", bweOptions.logId.c_str(), this,suite);
 	
 	//Set sending srtp session
 	if (!send.Setup(suite,key,len))
 		//Error
-		return Error("-DTLSICETransport::SetLocalCryptoSDES() | Error [%s]\n",send.GetLastError());
+		return Error("[%s][%p]-DTLSICETransport::SetLocalCryptoSDES() | Error [%s]\n", bweOptions.logId.c_str(), this,send.GetLastError());
 	//Done
 	return 1;
 }
@@ -1537,7 +1537,7 @@ int DTLSICETransport::SetLocalCryptoSDES(const char* suite,const BYTE* key,const
 
 int DTLSICETransport::SetLocalSTUNCredentials(const char* username, const char* pwd)
 {
-	Log("-DTLSICETransport::SetLocalSTUNCredentials() | [frag:%s,pwd:%s]\n",username,pwd);
+	Log("[%s][%p]-DTLSICETransport::SetLocalSTUNCredentials() | [frag:%s,pwd:%s]\n", bweOptions.logId.c_str(), this,username,pwd);
 	//Store values
 	iceLocalUsername = username;
 	iceLocalPwd = pwd;
@@ -1548,7 +1548,7 @@ int DTLSICETransport::SetLocalSTUNCredentials(const char* username, const char* 
 
 int DTLSICETransport::SetRemoteSTUNCredentials(const char* username, const char* pwd)
 {
-	Log("-DTLSICETransport::SetRemoteSTUNCredentials() |  [frag:%s,pwd:%s]\n",username,pwd);
+	Log("[%s][%p]-DTLSICETransport::SetRemoteSTUNCredentials() |  [frag:%s,pwd:%s]\n", bweOptions.logId.c_str(), this,username,pwd);
 	
 	//Store values
 	iceRemoteUsername = username;
@@ -1559,7 +1559,7 @@ int DTLSICETransport::SetRemoteSTUNCredentials(const char* username, const char*
 
 int DTLSICETransport::SetRemoteCryptoDTLS(const char *setup,const char *hash,const char *fingerprint)
 {
-	Log("-DTLSICETransport::SetRemoteCryptoDTLS | [setup:%s,hash:%s,fingerprint:%s]\n",setup,hash,fingerprint);
+	Log("[%s][%p]-DTLSICETransport::SetRemoteCryptoDTLS | [setup:%s,hash:%s,fingerprint:%s]\n", bweOptions.logId.c_str(), this,setup,hash,fingerprint);
 
 	//Set Suite
 	if (strcasecmp(setup,"active")==0)
@@ -1571,7 +1571,7 @@ int DTLSICETransport::SetRemoteCryptoDTLS(const char *setup,const char *hash,con
 	else if (strcasecmp(setup,"holdconn")==0)
 		dtls.SetRemoteSetup(DTLSConnection::SETUP_HOLDCONN);
 	else
-		return Error("-DTLSICETransport::SetRemoteCryptoDTLS | Unknown setup");
+		return Error("[%s][%p]-DTLSICETransport::SetRemoteCryptoDTLS | Unknown setup\n", bweOptions.logId.c_str(), this);
 
 	//Set fingerprint
 	if (strcasecmp(hash,"SHA-1")==0)
@@ -1585,7 +1585,7 @@ int DTLSICETransport::SetRemoteCryptoDTLS(const char *setup,const char *hash,con
 	else if (strcasecmp(hash,"SHA-512")==0)
 		dtls.SetRemoteFingerprint(DTLSConnection::SHA512,fingerprint);
 	else
-		return Error("-DTLSICETransport::SetRemoteCryptoDTLS | Unknown hash");
+		return Error("[%s][%p]-DTLSICETransport::SetRemoteCryptoDTLS | Unknown hash\n", bweOptions.logId.c_str(), this);
 
 	//Starting
 	SetState(DTLSState::Connecting);
@@ -1595,19 +1595,19 @@ int DTLSICETransport::SetRemoteCryptoDTLS(const char *setup,const char *hash,con
 
 int DTLSICETransport::SetRemoteCryptoSDES(const char* suite, const BYTE* key, const DWORD len)
 {
-	Log("-DTLSICETransport::SetRemoteCryptoSDES() | [suite:%s]\n",suite);
+	Log("[%s][%p]-DTLSICETransport::SetRemoteCryptoSDES() | [suite:%s]\n", bweOptions.logId.c_str(), this,suite);
 	
 	//Set sending srtp session
 	if (!recv.Setup(suite,key,len))
 		//Error
-		return Error("-DTLSICETransport::SetRemoteCryptoSDES() | Error [%s]\n",send.GetLastError());
+		return Error("[%s][%p]-DTLSICETransport::SetRemoteCryptoSDES() | Error [%s]\n", bweOptions.logId.c_str(), this,send.GetLastError());
 	//Done
 	return 1;
 }
 
 void DTLSICETransport::onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMasterKey,DWORD localMasterKeySize,BYTE* remoteMasterKey,DWORD remoteMasterKeySize)
 {
-	Log("-DTLSICETransport::onDTLSSetup() [suite:%d]\n",suite);
+	Log("[%s][%p]-DTLSICETransport::onDTLSSetup() [suite:%d]\n", bweOptions.logId.c_str(), this,suite);
 
 	switch (suite)
 	{
@@ -1635,7 +1635,7 @@ void DTLSICETransport::onDTLSSetup(DTLSConnection::Suite suite,BYTE* localMaster
 			//Error
 			SetState(DTLSState::Failed);
 			//Log
-			Error("-DTLSICETransport::onDTLSSetup() | Unknown suite\n");
+			Error("[%s][%p]-DTLSICETransport::onDTLSSetup() | Unknown suite\n", bweOptions.logId.c_str(), this);
 			//Exit
 			return;
 	}
@@ -1663,10 +1663,10 @@ bool DTLSICETransport::AddOutgoingSourceGroup(const RTPOutgoingSourceGroup::shar
 {
 	//It must contain media ssrc
 	if (!group)
-		return Error("-DTLSICETransport::AddOutgoingSourceGroup() | Empty group\n");
+		return Error("[%s][%p]-DTLSICETransport::AddOutgoingSourceGroup() | Empty group\n", bweOptions.logId.c_str(), this);
 
 	//Log
-	Log("-DTLSICETransport::AddOutgoingSourceGroup() [group:%p,ssrc:%u,fec:%u,rtx:%u]\n",group.get(), group->media.ssrc, group->fec.ssrc, group->rtx.ssrc);
+	Log("[%s][%p]-DTLSICETransport::AddOutgoingSourceGroup() [group:%p,ssrc:%u,fec:%u,rtx:%u]\n", bweOptions.logId.c_str(), this,group.get(), group->media.ssrc, group->fec.ssrc, group->rtx.ssrc);
 	
 	//Dispatch to the event loop thread
 	timeService.Async([=](auto now){
@@ -1681,21 +1681,21 @@ bool DTLSICETransport::AddOutgoingSourceGroup(const RTPOutgoingSourceGroup::shar
 		if (media && outgoing.find(media) != outgoing.end())
 		{
 			//Error
-			Error("-DTLSICETransport::AddOutgoingSourceGroup() | media ssrc already assigned");
+			Error("[%s][%p]-DTLSICETransport::AddOutgoingSourceGroup() | media ssrc already assigned\n", bweOptions.logId.c_str(), this);
 			return;
 		}
 
 		if (fec && outgoing.find(fec)!=outgoing.end())
 		{
 			//Error
-			Error("-DTLSICETransport::AddOutgoingSourceGroup() | fec ssrc already assigned");
+			Error("[%s][%p]-DTLSICETransport::AddOutgoingSourceGroup() | fec ssrc already assigned\n", bweOptions.logId.c_str(), this);
 			return;
 		}
 
 		if (rtx && outgoing.find(rtx) != outgoing.end())
 		{
 			//Error
-			Error("-DTLSICETransport::AddOutgoingSourceGroup() | rtx ssrc already assigned");
+			Error("[%s][%p]-DTLSICETransport::AddOutgoingSourceGroup() | rtx ssrc already assigned\n", bweOptions.logId.c_str(), this);
 			return;
 		}
 	
@@ -1734,11 +1734,11 @@ bool DTLSICETransport::AddOutgoingSourceGroup(const RTPOutgoingSourceGroup::shar
 
 bool DTLSICETransport::RemoveOutgoingSourceGroup(const RTPOutgoingSourceGroup::shared&  group)
 {
-	Log("-DTLSICETransport::RemoveOutgoingSourceGroup() [ssrc:%u,fec:%u,rtx:%u]\n", group->media.ssrc, group->fec.ssrc, group->rtx.ssrc);
+	Log("[%s][%p]-DTLSICETransport::RemoveOutgoingSourceGroup() [ssrc:%u,fec:%u,rtx:%u]\n", bweOptions.logId.c_str(), this, group->media.ssrc, group->fec.ssrc, group->rtx.ssrc);
 
 	//Dispatch to the event loop thread
 	timeService.Async([=](auto now){
-		Log("-DTLSICETransport::RemoveOutgoingSourceGroup() | Async [ssrc:%u,fec:%u,rtx:%u]\n", group->media.ssrc, group->fec.ssrc, group->rtx.ssrc);
+		Log("[%s][%p]-DTLSICETransport::RemoveOutgoingSourceGroup() | Async [ssrc:%u,fec:%u,rtx:%u]\n", bweOptions.logId.c_str(), this, group->media.ssrc, group->fec.ssrc, group->rtx.ssrc);
 		//Get ssrcs
 		std::vector<DWORD> ssrcs;
 		const auto media = group->media.ssrc;
@@ -1798,17 +1798,17 @@ bool DTLSICETransport::AddIncomingSourceGroup(const RTPIncomingSourceGroup::shar
 {
 	//It must contain media ssrc
 	if (!group)
-		return Error("-DTLSICETransport::AddIncomingSourceGroup() | Empty group\n");
+		return Error("[%s][%p]-DTLSICETransport::AddIncomingSourceGroup() | Empty group\n", bweOptions.logId.c_str(), this);
 
 	//RTX should only be enabled if RTX codec has been negotiated for the media type
 	bool isRTXEnabled = group->type==MediaFrame::Video ? sendMaps.rtp.HasCodec(VideoCodec::RTX) : sendMaps.rtp.HasCodec(AudioCodec::RTX);
 
 	//Log
-	Log("-DTLSICETransport::AddIncomingSourceGroup() [mid:'%s',rid:'%s',ssrc:%u,rtx:%u,isRTXEnabled:%d,disableREMB:%d]\n",group->mid.c_str(),group->rid.c_str(),group->media.ssrc,group->rtx.ssrc,isRTXEnabled, disableREMB);
+	Log("[%s][%p]-DTLSICETransport::AddIncomingSourceGroup() [mid:'%s',rid:'%s',ssrc:%u,rtx:%u,isRTXEnabled:%d,disableREMB:%d]\n", bweOptions.logId.c_str(), this,group->mid.c_str(),group->rid.c_str(),group->media.ssrc,group->rtx.ssrc,isRTXEnabled, disableREMB);
 	
 	//It must contain media ssrc
 	if (!group->media.ssrc && group->rid.empty())
-		return Error("No media ssrc or rid defined, stream will not be added\n");
+		return Error("No media ssrc or rid defined, stream will not be added\n", bweOptions.logId.c_str(), this);
 	
 	//Dispatch to the event loop thread
 	timeService.Async([=](auto now){
@@ -1820,7 +1820,7 @@ bool DTLSICETransport::AddIncomingSourceGroup(const RTPIncomingSourceGroup::shar
 		if (media && incoming.find(media)!=incoming.end())
 		{
 			//Error
-			Warning("-DTLSICETransport::AddIncomingSourceGroup() media ssrc already assigned\n");
+			Warning("[%s][%p]-DTLSICETransport::AddIncomingSourceGroup() media ssrc already assigned\n", bweOptions.logId.c_str(), this);
 			return;
 		}
 		
@@ -1828,7 +1828,7 @@ bool DTLSICETransport::AddIncomingSourceGroup(const RTPIncomingSourceGroup::shar
 		if (rtx && incoming.find(rtx)!=incoming.end())
 		{
 			//Error
-			Warning("-DTLSICETransport::AddIncomingSourceGroup() rtx ssrc already assigned\n");
+			Warning("[%s][%p]-DTLSICETransport::AddIncomingSourceGroup() rtx ssrc already assigned\n", bweOptions.logId.c_str(), this);
 			return;
 		}
 
@@ -1879,7 +1879,7 @@ bool DTLSICETransport::AddIncomingSourceGroup(const RTPIncomingSourceGroup::shar
 
 bool DTLSICETransport::RemoveIncomingSourceGroup(const RTPIncomingSourceGroup::shared &group)
 {
-	Log("-DTLSICETransport::RemoveIncomingSourceGroup() [mid:'%s',rid:'%s',ssrc:%u,rtx:%u]\n",group->mid.c_str(),group->rid.c_str(),group->media.ssrc,group->rtx.ssrc);
+	Log("[%s][%p]-DTLSICETransport::RemoveIncomingSourceGroup() [mid:'%s',rid:'%s',ssrc:%u,rtx:%u]\n", bweOptions.logId.c_str(), this,group->mid.c_str(),group->rid.c_str(),group->media.ssrc,group->rtx.ssrc);
 	
 	//Dispatch to the event loop thread
 	timeService.Async([=](auto now){
@@ -1938,12 +1938,12 @@ int DTLSICETransport::Send(const RTCPCompoundPacket::shared &rtcp)
 	//Double check message
 	if (!rtcp)
 		//Log
-		return Error("-DTLSICETransport::Send() | NULL rtcp message\n");
+		return Error("[%s][%p]-DTLSICETransport::Send() | NULL rtcp message\n", bweOptions.logId.c_str(), this);
 	
 	//Check if we have an active DTLS connection yet
 	if (!send.IsSetup())
 		//Log 
-		return Debug("-DTLSICETransport::Send() | We don't have an DTLS setup yet\n");
+		return Debug("[%s][%p]-DTLSICETransport::Send() | We don't have an DTLS setup yet\n", bweOptions.logId.c_str(), this);
 	
 	//Pick one packet buffer from the pool
 	Packet buffer = packetPool.pick();
@@ -1961,7 +1961,7 @@ int DTLSICETransport::Send(const RTCPCompoundPacket::shared &rtcp)
 		//Dump it
 		rtcp->Dump();
 		//Error
-		return Error("-DTLSICETransport::Send() | Error serializing RTCP packet [len:%d,size:%d]\n",len,size);
+		return Error("[%s][%p]-DTLSICETransport::Send() | Error serializing RTCP packet [len:%d,size:%d]\n", bweOptions.logId.c_str(), this,len,size);
 	}
 	
 	//If we don't have an active candidate yet
@@ -1970,7 +1970,7 @@ int DTLSICETransport::Send(const RTCPCompoundPacket::shared &rtcp)
 		//Return packet to pool
 		packetPool.release(std::move(buffer));
 		//Log
-		return Debug("-DTLSICETransport::Send() | We don't have an active candidate yet\n");
+		return Debug("[%s][%p]-DTLSICETransport::Send() | We don't have an active candidate yet\n", bweOptions.logId.c_str(), this);
 	}
 
 	//Get current time
@@ -1990,7 +1990,7 @@ int DTLSICETransport::Send(const RTCPCompoundPacket::shared &rtcp)
 		//Return packet to pool
 		packetPool.release(std::move(buffer));
 		//Error
-		return Error("-DTLSICETransport::Send() | Error protecting RTCP packet [%s]\n",send.GetLastError());
+		return Error("[%s][%p]-DTLSICETransport::Send() | Error protecting RTCP packet [%s]\n", bweOptions.logId.c_str(), this,send.GetLastError());
 	}
 
 	//Store active candidate1889
@@ -2011,7 +2011,7 @@ int DTLSICETransport::Send(const RTCPCompoundPacket::shared &rtcp)
 int DTLSICETransport::SendPLI(DWORD ssrc)
 {
 	//Log
-	Debug("-DTLSICETransport::SendPLI() | [ssrc:%u]\n",ssrc);
+	Debug("[%s][%p]-DTLSICETransport::SendPLI() | [ssrc:%u]\n", bweOptions.logId.c_str(), this,ssrc);
 	
 	//Execute on the event loop thread and do not wait
 	timeService.Async([=](auto now){
@@ -2020,13 +2020,13 @@ int DTLSICETransport::SendPLI(DWORD ssrc)
 
 		//If not found
 		if (!group)
-			return (void)Debug("-DTLSICETransport::SendPLI() | no incoming source found for [ssrc:%u]\n",ssrc);
+			return (void)Debug("[%s][%p]-DTLSICETransport::SendPLI() | no incoming source found for [ssrc:%u]\n", bweOptions.logId.c_str(), this,ssrc);
 		//Get now in ms
 		auto ms = now.count();
 		//Check if we have sent a PLI recently (less than half a second ago)
 		if ((ms - group->media.lastPLI)<1E3/2)
 			//We refuse to end more
-			return (void)UltraDebug("-DTLSICETransport::SendPLI() | ignored, we send a PLI recently\n");
+			return (void)UltraDebug("[%s][%p]-DTLSICETransport::SendPLI() | ignored, we send a PLI recently\n", bweOptions.logId.c_str(), this);
 		//Update last PLI requested time
 		group->media.lastPLI = ms;
 		//And number of requested plis
@@ -2048,7 +2048,7 @@ int DTLSICETransport::SendPLI(DWORD ssrc)
 int DTLSICETransport::Reset(DWORD ssrc)
 {
 	//Log
-	Debug("-DTLSICETransport::Reset() | [ssrc:%u]\n", ssrc);
+	Debug("[%s][%p]-DTLSICETransport::Reset() | [ssrc:%u]\n", bweOptions.logId.c_str(), this, ssrc);
 
 	//Execute on the event loop thread and do not wait
 	timeService.Async([=](auto now) {
@@ -2057,7 +2057,7 @@ int DTLSICETransport::Reset(DWORD ssrc)
 
 		//If not found
 		if (!group)
-			return (void)Debug("-DTLSICETransport::Reset() | no incoming source found for [ssrc:%u]\n", ssrc);
+			return (void)Debug("[%s][%p]-DTLSICETransport::Reset() | no incoming source found for [ssrc:%u]\n", bweOptions.logId.c_str(), this, ssrc);
 
 		//Reset buffers
 		group->ResetPackets();
@@ -2089,12 +2089,12 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 	//Check packet
 	if (!packet)
 		//Error
-		return Error("-DTLSICETransport::Send() | Error null packet\n");
+		return Error("[%s][%p]-DTLSICETransport::Send() | Error null packet\n", bweOptions.logId.c_str(), this);
 	
 	//Check if we have an active DTLS connection yet
 	if (!send.IsSetup())
 		//Error
-		return Debug("-DTLSICETransport::Send() | We don't have an DTLS setup yet\n");
+		return Debug("[%s][%p]-DTLSICETransport::Send() | We don't have an DTLS setup yet\n", bweOptions.logId.c_str(), this);
 
 	//Trace
 	TRACE_EVENT("rtp", "DTLSICETransport::Send RTP",
@@ -2110,7 +2110,7 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 	//If not found
 	if (!group)
 		//Error
-		return Warning("-DTLSICETransport::Send() | Outgoind source not registered for ssrc:%u\n",packet->GetSSRC());
+		return Warning("[%s][%p]-DTLSICETransport::Send() | Outgoind source not registered for ssrc:%u\n", bweOptions.logId.c_str(), this,packet->GetSSRC());
 	
 	//Get outgoing source
 	RTPOutgoingSource& source = group->media;
@@ -2165,7 +2165,7 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 		//Disable playout delay
 		packet->DisablePlayoutDelay();
 
-	//if (group->type==MediaFrame::Video) UltraDebug("-DTLSICETransport::Send() | Sending RTP on media:%s sssrc:%u seq:%u pt:%u ts:%lu codec:%s\n",MediaFrame::TypeToString(group->type),source.ssrc,packet->GetSeqNum(),packet->GetPayloadType(),packet->GetTimestamp(),GetNameForCodec(group->type,packet->GetCodec()));
+	//if (group->type==MediaFrame::Video) UltraDebug("[%s][%p]-DTLSICETransport::Send() | Sending RTP on media:%s sssrc:%u seq:%u pt:%u ts:%lu codec:%s\n", bweOptions.logId.c_str(), this,MediaFrame::TypeToString(group->type),source.ssrc,packet->GetSeqNum(),packet->GetPayloadType(),packet->GetTimestamp(),GetNameForCodec(group->type,packet->GetCodec()));
 	
 	//Pick one packet buffer from the pool
 	Packet buffer = packetPool.pick();
@@ -2181,7 +2181,7 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 		//Return packet to pool
 		packetPool.release(std::move(buffer));
 		//Log warning and exit
-		return Warning("-DTLSICETransport::Send() | Could not serialize packet\n");
+		return Warning("[%s][%p]-DTLSICETransport::Send() | Could not serialize packet\n", bweOptions.logId.c_str(), this);
 	}
 
 	//Add packet for RTX
@@ -2193,7 +2193,7 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 		//Return packet to pool
 		packetPool.release(std::move(buffer));
 		//Error
-		return Debug("-DTLSICETransport::Send() | We don't have an active candidate yet\n");
+		return Debug("[%s][%p]-DTLSICETransport::Send() | We don't have an active candidate yet\n", bweOptions.logId.c_str(), this);
 	}
 
 	//If dumping
@@ -2214,7 +2214,7 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 		//Return packet to pool
 		packetPool.release(std::move(buffer));
 		//Error
-		return Error("-RTPTransport::Send() | Error protecting RTP packet [ssrc:%u,%s]\n",ssrc,send.GetLastError());
+		return Error("[%s][%p]-RTPTransport::Send() | Error protecting RTP packet [ssrc:%u,%s]\n", bweOptions.logId.c_str(), this,ssrc,send.GetLastError());
 	}
 
 	//Store candidate
@@ -2281,7 +2281,7 @@ int DTLSICETransport::Send(const RTPPacket::shared& packet)
 		//Get number of probes, do not send more than 32 continoues packets (~aprox 2mpbs)
 		BYTE num = std::min<QWORD>((probingBitrate*33)/(8000*size),32);
 
-		//UltraDebug("-DTLSICETransport::Run() | Sending inband probing packets [at:%u,estimated:%u,bitrate:%u,probing:%u,max:%u,num:%d]\n", packet->GetSeqNum(), estimated, bitrate,probingBitrate,maxProbingBitrate, num, sleep);
+		//UltraDebug("[%s][%p]-DTLSICETransport::Run() | Sending inband probing packets [at:%u,estimated:%u,bitrate:%u,probing:%u,max:%u,num:%d]\n", bweOptions.logId.c_str(), this, packet->GetSeqNum(), estimated, bitrate,probingBitrate,maxProbingBitrate, num, sleep);
 
 		//Set all the probes
 		for (BYTE i=0;i<num;++i)
@@ -2328,7 +2328,7 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 				//If not found
 				if (!source)
 				{
-					Warning("-DTLSICETransport::onRTCP() | Could not find incoming source for RTCP SR [ssrc:%u]\n",ssrc);
+					Warning("[%s][%p]-DTLSICETransport::onRTCP() | Could not find incoming source for RTCP SR [ssrc:%u]\n", bweOptions.logId.c_str(), this,ssrc);
 					rtcp->Dump();
 					continue;
 				}
@@ -2422,7 +2422,7 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 					RTPIncomingSourceGroup* group = GetIncomingSourceGroup(ssrc);
 
 					//Debug
-					Debug("-DTLSICETransport::onRTCP() | Got BYE [ssrc:%u,group:%p,this:%p]\n", ssrc, group, this);
+					Debug("[%s][%p]-DTLSICETransport::onRTCP() | Got BYE [ssrc:%u,group:%p,this:%p]\n", bweOptions.logId.c_str(), this, ssrc, group, this);
 
 					//If found
 					if (group)
@@ -2455,7 +2455,7 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 							//Dump
 							fb->Dump();
 							//Debug
-							Warning("-DTLSICETransport::onRTCP() | Got NACK feedback message for unknown media  [ssrc:%u]\n", ssrc);
+							Warning("[%s][%p]-DTLSICETransport::onRTCP() | Got NACK feedback message for unknown media  [ssrc:%u]\n", bweOptions.logId.c_str(), this, ssrc);
 							//Ups! Skip
 							break;
 						}
@@ -2475,10 +2475,10 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 						break;
 					}
 					case RTCPRTPFeedback::TempMaxMediaStreamBitrateRequest:
-						UltraDebug("-DTLSICETransport::onRTCP() | TempMaxMediaStreamBitrateRequest\n");
+						UltraDebug("[%s][%p]-DTLSICETransport::onRTCP() | TempMaxMediaStreamBitrateRequest\n", bweOptions.logId.c_str(), this);
 						break;
 					case RTCPRTPFeedback::TempMaxMediaStreamBitrateNotification:
-						UltraDebug("-DTLSICETransport::onRTCP() | TempMaxMediaStreamBitrateNotification\n");
+						UltraDebug("[%s][%p]-DTLSICETransport::onRTCP() | TempMaxMediaStreamBitrateNotification\n", bweOptions.logId.c_str(), this);
 						break;
 					case RTCPRTPFeedback::TransportWideFeedbackMessage:
 						//If sender side estimation is enabled
@@ -2493,7 +2493,7 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 							}
 						break;
 					case RTCPRTPFeedback::UNKNOWN:
-						UltraDebug("-DTLSICETransport::onRTCP() | RTCPRTPFeedback type unknown\n");
+						UltraDebug("[%s][%p]-DTLSICETransport::onRTCP() | RTCPRTPFeedback type unknown\n", bweOptions.logId.c_str(), this);
 						break;
 				}
 				break;
@@ -2517,7 +2517,7 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 						RTPOutgoingSourceGroup* group = GetOutgoingSourceGroup(ssrc);
 						
 						//Debug
-						Debug("-DTLSICETransport::onRTCP() | FPU requested [ssrc:%u,group:%p,this:%p]\n",ssrc,group,this);
+						Debug("[%s][%p]-DTLSICETransport::onRTCP() | FPU requested [ssrc:%u,group:%p,this:%p]\n", bweOptions.logId.c_str(), this,ssrc,group,this);
 						
 						//If not found
 						if (!group)
@@ -2525,7 +2525,7 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 							//Dump
 							fb->Dump();
 							//Debug
-							Warning("-Got feedback message for unknown media  [ssrc:%u]\n",ssrc);
+							Warning("[%s][%p]-Got feedback message for unknown media  [ssrc:%u]\n", bweOptions.logId.c_str(), this,ssrc);
 							//Ups! Skip
 							continue;
 						}
@@ -2534,19 +2534,19 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 						break;
 					}
 					case RTCPPayloadFeedback::SliceLossIndication:
-						Debug("-DTLSICETransport::onRTCP() | SliceLossIndication\n");
+						Debug("[%s][%p]-DTLSICETransport::onRTCP() | SliceLossIndication\n", bweOptions.logId.c_str(), this);
 						break;
 					case RTCPPayloadFeedback::ReferencePictureSelectionIndication:
-						Debug("-DTLSICETransport::onRTCP() | ReferencePictureSelectionIndication\n");
+						Debug("[%s][%p]-DTLSICETransport::onRTCP() | ReferencePictureSelectionIndication\n", bweOptions.logId.c_str(), this);
 						break;
 					case RTCPPayloadFeedback::TemporalSpatialTradeOffRequest:
-						Debug("-DTLSICETransport::onRTCP() | TemporalSpatialTradeOffRequest\n");
+						Debug("[%s][%p]-DTLSICETransport::onRTCP() | TemporalSpatialTradeOffRequest\n", bweOptions.logId.c_str(), this);
 						break;
 					case RTCPPayloadFeedback::TemporalSpatialTradeOffNotification:
-						Debug("-DTLSICETransport::onRTCP() | TemporalSpatialTradeOffNotification\n");
+						Debug("[%s][%p]-DTLSICETransport::onRTCP() | TemporalSpatialTradeOffNotification\n", bweOptions.logId.c_str(), this);
 						break;
 					case RTCPPayloadFeedback::VideoBackChannelMessage:
-						Debug("-DTLSICETransport::onRTCP() | VideoBackChannelMessage\n");
+						Debug("[%s][%p]-DTLSICETransport::onRTCP() | VideoBackChannelMessage\n", bweOptions.logId.c_str(), this);
 						break;
 					case RTCPPayloadFeedback::ApplicationLayerFeeedbackMessage:
 						//For all message fields
@@ -2582,7 +2582,7 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 									RTPOutgoingSourceGroup* group = GetOutgoingSourceGroup(target);
 
 									//Debug
-									Debug("-DTLSICETransport::onRTCP() | REMB received [bitrate:%d,target:%u,group:%p,this:%p]\n", bitrate, target, group, this);
+									Debug("[%s][%p]-DTLSICETransport::onRTCP() | REMB received [bitrate:%d,target:%u,group:%p,this:%p]\n", bweOptions.logId.c_str(), this, bitrate, target, group, this);
 									
 									//If found
 									if (group)
@@ -2593,18 +2593,18 @@ void DTLSICETransport::onRTCP(const RTCPCompoundPacket::shared& rtcp)
 						}
 						break;
 					case RTCPPayloadFeedback::UNKNOWN:
-						Debug("-DTLSICETransport::onRTCP() | RTCPPayloadFeedback type unknown\n");
+						Debug("[%s][%p]-DTLSICETransport::onRTCP() | RTCPPayloadFeedback type unknown\n", bweOptions.logId.c_str(), this);
 						break;
 				}
 				break;
 			}
 			case RTCPPacket::FullIntraRequest:
 				//THis is deprecated
-				Debug("-DTLSICETransport::onRTCP() | FullIntraRequest!\n");
+				Debug("[%s][%p]-DTLSICETransport::onRTCP() | FullIntraRequest!\n", bweOptions.logId.c_str(), this);
 				break;
 			case RTCPPacket::NACK:
 				//THis is deprecated
-				Debug("-DTLSICETransport::onRTCP() | NACK!\n");
+				Debug("[%s][%p]-DTLSICETransport::onRTCP() | NACK!\n", bweOptions.logId.c_str(), this);
 				break;
 		}
 	}
@@ -2673,7 +2673,7 @@ RTPOutgoingSource* DTLSICETransport::GetOutgoingSource(DWORD ssrc)
 void DTLSICETransport::SetRTT(DWORD rtt, QWORD now)
 {
 	//Debug
-	UltraDebug("-DTLSICETransport::SetRTT() [rtt:%d]\n",rtt);
+	UltraDebug("[%s][%p]-DTLSICETransport::SetRTT() [rtt:%d]\n", bweOptions.logId.c_str(), this,rtt);
 	//Sore it
 	this->rtt = rtt;
 	//Update jitters
@@ -2689,7 +2689,7 @@ void DTLSICETransport::SetRTT(DWORD rtt, QWORD now)
 void DTLSICETransport::SendTransportWideFeedbackMessage(DWORD ssrc)
 {
 	//Debug
-	//UltraDebug("-DTLSICETransport::SendTransportWideFeedbackMessage() [ssrc:%d]\n", ssrc);
+	//UltraDebug("[%s][%p]-DTLSICETransport::SendTransportWideFeedbackMessage() [ssrc:%d]\n", bweOptions.logId.c_str(), this, ssrc);
 	//RTCP packet
 	auto rtcp = RTCPCompoundPacket::Create();
 
@@ -2733,7 +2733,7 @@ void DTLSICETransport::Start()
 {
 	TRACE_EVENT("transport", "DTLSICETransport::Start");
 
-	Debug("-DTLSICETransport::Start()\n");
+	Debug("[%s][%p]-DTLSICETransport::Start()\n", bweOptions.logId.c_str(), this);
 	
 	//Init DTLS
 	dtls.Init();
@@ -2745,7 +2745,7 @@ void DTLSICETransport::Start()
 	//Run ice timeout timer
 	iceTimeoutTimer = timeService.CreateTimer(IceTimeout,[this](auto now){
 		//Log
-		Debug("-DTLSICETransport::onIceTimeoutTimer() ICE timeout\n");
+		Debug("[%s][%p]-DTLSICETransport::onIceTimeoutTimer() ICE timeout\n", bweOptions.logId.c_str(), this);
 		//If got listener
 		if (listener)
 			//Fire timeout 
@@ -2780,7 +2780,7 @@ void DTLSICETransport::Stop()
 	
 	//Log
 	TRACE_EVENT("transport", "DTLSICETransport::Stop");
-	Debug(">DTLSICETransport::Stop()\n");
+	Debug("[%s][%p]>DTLSICETransport::Stop()\n", bweOptions.logId.c_str(), this);
 	
 	//Check probing timer
 	if (probingTimer)
@@ -2821,7 +2821,7 @@ void DTLSICETransport::Stop()
 	started = false;
 	
 	//Log
-	Debug("<DTLSICETransport::Stop()\n");
+	Debug("[%s][%p]<DTLSICETransport::Stop()\n", bweOptions.logId.c_str(), this);
 }
 
 int DTLSICETransport::Enqueue(const RTPPacket::shared& packet)
@@ -2860,7 +2860,7 @@ void DTLSICETransport::Probe(QWORD now)
 		DWORD target		= senderSideBandwidthEstimator->GetAvailableBitrate();
 		DWORD limit		= std::min(target, probingBitrateLimit);
 
-		//Log(">DTLSICETransport::Probe() | [target:%ubps,bitrate:%ubps,probing:%ubps,history:%d,probingBitrateLimit=%ubps,maxProbingBitrate=%ubps]\n",target,bitrate,probing,history.size(),probingBitrateLimit,maxProbingBitrate);
+		//Log("[%s][%p]>DTLSICETransport::Probe() | [target:%ubps,bitrate:%ubps,probing:%ubps,history:%d,probingBitrateLimit=%ubps,maxProbingBitrate=%ubps]\n", bweOptions.logId.c_str(), this,target,bitrate,probing,history.size(),probingBitrateLimit,maxProbingBitrate);
 			
 		//If we can still send more
 		if (bitrate<limit && probing<maxProbingBitrate)
@@ -2871,7 +2871,7 @@ void DTLSICETransport::Probe(QWORD now)
 			//Get size of probes
 			DWORD probeSize = probe*sleep/8000;
 			
-			//Log("-DTLSICETransport::Probe() | Sending probe packets [target:%ubps,bitrate:%ubps,limit:%ubps,probe:%u,probingSize:%d,sleep:%d]\n", target,  bitrate, limit, probe, probeSize, sleep);
+			//Log("[%s][%p]-DTLSICETransport::Probe() | Sending probe packets [target:%ubps,bitrate:%ubps,limit:%ubps,probe:%u,probingSize:%d,sleep:%d]\n", bweOptions.logId.c_str(), this, target,  bitrate, limit, probe, probeSize, sleep);
 
 			//If we have packet history
 			if (!history.empty())
@@ -2965,7 +2965,7 @@ void DTLSICETransport::Probe(QWORD now)
 		//bitrate = static_cast<DWORD>(outgoingBitrate.GetInstantAvg() * 8);
 		//probing = static_cast<DWORD>(probingBitrate.GetInstantAvg() * 8);
 		//Log
-		//Log("<DTLSICETransport::Probe() | [target:%ubps,bitrate:%ubps,probing:%ubps]\n", target, bitrate, probing);
+		//Log("[%s][%p]<DTLSICETransport::Probe() | [target:%ubps,bitrate:%ubps,probing:%ubps]\n", bweOptions.logId.c_str(), this, target, bitrate, probing);
 	}
 	//Update last probe time
 	lastProbe = now;
@@ -2973,7 +2973,7 @@ void DTLSICETransport::Probe(QWORD now)
 
 void DTLSICETransport::SetListener(const Listener::shared& listener)
 {
-	Debug(">DTLSICETransport::SetListener() [this:%p,listener:%p]\n", this, listener.get());
+	Debug("[%s][%p]>DTLSICETransport::SetListener() [this:%p,listener:%p]\n", bweOptions.logId.c_str(), this, this, listener.get());
 	//Add in main thread async
 	timeService.Async([=](auto now){
 		//Store listener
@@ -2995,14 +2995,14 @@ void DTLSICETransport::SetState(DTLSState state)
 void DTLSICETransport::SetRemoteOverrideBWE(bool overrideBWE)
 {
 	//Log
-	Debug("-DTLSICETransport::SetRemoteOverrideBWE() [override:%d]\n", overrideBWE);
+	Debug("[%s][%p]-DTLSICETransport::SetRemoteOverrideBWE() [override:%d]\n", bweOptions.logId.c_str(), this, overrideBWE);
 	this->overrideBWE = overrideBWE; 
 }
 
 void DTLSICETransport::SetRemoteOverrideBitrate(DWORD bitrate) 
 { 
 	//Log
-	Debug("-DTLSICETransport::SetRemoteOverrideBitrate() [bitrate:%d]\n", bitrate);
+	Debug("[%s][%p]-DTLSICETransport::SetRemoteOverrideBitrate() [bitrate:%d]\n", bweOptions.logId.c_str(), this, bitrate);
 	this->remoteOverrideBitrate = bitrate; 
 }
 
@@ -3010,27 +3010,27 @@ void DTLSICETransport::SetRemoteOverrideBitrate(DWORD bitrate)
 void DTLSICETransport::DisableREMB(bool disabled)
 {
 	//Log
-	Debug("-DTLSICETransport::DisableREMB() [disabled:%d]\n", disabled);
+	Debug("[%s][%p]-DTLSICETransport::DisableREMB() [disabled:%d]\n", bweOptions.logId.c_str(), this, disabled);
 	this->disableREMB = disabled;
 }
 void DTLSICETransport::SetMaxProbingBitrate(DWORD bitrate)
 {
 	//Log
-	Debug("-DTLSICETransport::SetMaxProbingBitrate() [bitrate:%d]\n", bitrate);
+	Debug("[%s][%p]-DTLSICETransport::SetMaxProbingBitrate() [bitrate:%d]\n", bweOptions.logId.c_str(), this, bitrate);
 	this->maxProbingBitrate = bitrate;
 }
 
 void DTLSICETransport::SetProbingBitrateLimit(DWORD bitrate)
 {
 	//Log
-	Debug("-DTLSICETransport::SetProbingBitrateLimit() [bitrate:%d]\n", bitrate);
+	Debug("[%s][%p]-DTLSICETransport::SetProbingBitrateLimit() [bitrate:%d]\n", bweOptions.logId.c_str(), this, bitrate);
 	this->probingBitrateLimit = bitrate;
 }
 
 void DTLSICETransport::SetBandwidthProbing(bool probe)
 {
 	//Log
-	Debug("-DTLSICETransport::SetBandwidthProbing() [probe:%d]\n", probe);
+	Debug("[%s][%p]-DTLSICETransport::SetBandwidthProbing() [probe:%d]\n", bweOptions.logId.c_str(), this, probe);
 	//Set probing status
 	this->probe = probe;
 
@@ -3042,7 +3042,7 @@ void DTLSICETransport::SetBandwidthProbing(bool probe)
 void DTLSICETransport::EnableSenderSideEstimation(bool enabled)
 { 
 	//Log
-	Debug("-DTLSICETransport::EnableSenderSideEstimation() [enabled:%d]\n", enabled);
+	Debug("[%s][%p]-DTLSICETransport::EnableSenderSideEstimation() [enabled:%d]\n", bweOptions.logId.c_str(), this, enabled);
 	//Update flag
 	this->senderSideEstimationEnabled = enabled;
 
@@ -3053,7 +3053,7 @@ void DTLSICETransport::EnableSenderSideEstimation(bool enabled)
 
 void DTLSICETransport::CheckProbeTimer()
 {
-	Debug("-DTLSICETransport::CheckProbeTimer() | [probingTimer:%d]\n",!!probingTimer);
+	Debug("[%s][%p]-DTLSICETransport::CheckProbeTimer() | [probingTimer:%d]\n", bweOptions.logId.c_str(), this,!!probingTimer);
 
 	//Dispatch to the event loop thread
 	timeService.Async([=](auto now) {
