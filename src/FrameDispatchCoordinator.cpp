@@ -13,13 +13,8 @@ void FrameDispatchCoordinator::OnFrame(std::chrono::milliseconds now, uint64_t t
 {
 	if (ts)
 	{
-		std::chrono::milliseconds delayMs;
-		
-		{
-			std::lock_guard<std::mutex> lock(mutex);
-			delayMs = std::clamp(frameDelayCalculator.OnFrame(listenerBridge.GetMediaSSRC(), now, ts, clockRate),
-					std::chrono::milliseconds(0), maxDelayMs.load());
-		}
+		auto delayMs = std::clamp(frameDelayCalculator.OnFrame(listenerBridge.GetMediaSSRC(), now, ts, clockRate),
+				std::chrono::milliseconds(0), maxDelayMs.load());
 	
 		listenerBridge.SetDelayMs(delayMs);
 	}

@@ -64,16 +64,19 @@ void TestFrameDelayCalculator::TestDelayCalculator(const std::vector<std::tuple<
 		auto delayMs = calculator->OnFrame(ssrc, now, std::get<2>(f), std::get<3>(f));		
 		delays.emplace_back(ssrc, delayMs.count());
 		
+		auto refTime = calculator->reference.content.refTime;
+		auto refTs = calculator->reference.content.refTimestamp;
+		
 		if (references.empty())
 		{
-			references.emplace_back(calculator->refTime.count(), calculator->refTimestamp);
+			references.emplace_back(refTime, refTs);
 		}
 		else
 		{
 			auto lastRef = references.back();
-			if (lastRef.first != calculator->refTime.count() || lastRef.second != calculator->refTimestamp)
+			if (lastRef.first != refTime || lastRef.second != refTs)
 			{
-				references.emplace_back(calculator->refTime.count(), calculator->refTimestamp);
+				references.emplace_back(refTime, refTs);
 			}
 		}
 		

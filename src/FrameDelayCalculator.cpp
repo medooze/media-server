@@ -18,13 +18,28 @@ namespace
  * @return The timestamp basing on the target clock rate
  */
 template<typename T>
-static constexpr T convertTimestampClockRate(T ts, uint64_t originalRate, uint64_t targetRate)
+static constexpr T ConvertTimestampClockRate(T ts, uint64_t originalRate, uint64_t targetRate)
 {
 	static_assert(sizeof(T) >= 8);
 	return originalRate == targetRate ? ts : (ts * T(targetRate) / T(originalRate));
 }
 
 static constexpr uint64_t UnifiedClockRate = 90 * 1000;
+
+void SyncWriteUint128(__uint128_t *dst, __uint128_t value)
+{
+    __uint128_t dstval = 0;
+    __uint128_t olddst = 0;
+    
+    dstval = *dst;
+    do
+    {
+        olddst = dstval;
+        dstval = __sync_val_compare_and_swap(dst, dstval, value);
+    }
+    while(dstval != olddst);
+}
+
 }
 
 FrameDelayCalculator::FrameDelayCalculator(int aUpdateRefsPacketLateThresholdMs, 
@@ -32,6 +47,8 @@ FrameDelayCalculator::FrameDelayCalculator(int aUpdateRefsPacketLateThresholdMs,
 	updateRefsPacketLateThresholdMs(aUpdateRefsPacketLateThresholdMs),
 	updateRefsStepPacketEarlyMs(aUpdateRefsStepPacketEarlyMs)
 {
+	static_assert(sizeof(Reference) == 16);
+	static_assert(sizeof(reference.content) == 16);
 }
 
 std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifier, std::chrono::milliseconds now, uint64_t ts, uint64_t clockRate)
@@ -40,19 +57,23 @@ std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifie
 	
 	if (ts == 0) return std::chrono::milliseconds(0);
 	
-	auto unifiedTs = convertTimestampClockRate(ts, clockRate, UnifiedClockRate);
-		
+	auto unifiedTs = ConvertTimestampClockRate(ts, clockRate, UnifiedClockRate);
+	
+	Reference currentRef;
+	currentRef.value = __sync_fetch_and_add((__uint128_t*)&reference, 0);
+	
 	if (!initialized)
 	{
-		refTime = now;
-		refTimestamp = unifiedTs;
+		currentRef.content = { now.count(), unifiedTs };
+		SyncWriteUint128(&reference.value, currentRef.value);
 		
 		initialized = true;			
 		return std::chrono::milliseconds(0);
 	}
 			
 	// Note the lateMs could be negative when the frame arrives earlier than scheduled	
-	auto lateMs = GetFrameArrivalDelayMs(now, unifiedTs);
+	auto lateMs = GetFrameArrivalDelayMs(now, unifiedTs,
+				std::chrono::milliseconds(currentRef.content.refTime), currentRef.content.refTimestamp);
 	
 	// We would delay the early arrived frame
 	std::chrono::milliseconds delayMs(-lateMs);
@@ -61,8 +82,8 @@ std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifie
 	bool allEarly = false;
 	if (lateMs > updateRefsPacketLateThresholdMs)  // Packet late
 	{
-		refTime = now;
-		refTimestamp = unifiedTs;
+		currentRef.content = { now.count(), unifiedTs };
+		SyncWriteUint128(&reference.value, currentRef.value);
 		
 		delayMs = std::chrono::milliseconds(0);
 	}
@@ -74,7 +95,8 @@ std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifie
 				if (info.first == streamIdentifier) return true;
 							
 				auto [time, timestamp] = info.second;
-				auto frameLateMs = GetFrameArrivalDelayMs(time, timestamp);
+				auto frameLateMs = GetFrameArrivalDelayMs(time, timestamp, std::chrono::milliseconds(currentRef.content.refTime),
+									currentRef.content.refTimestamp);
 				
 				return frameLateMs < updateRefsPacketEarlyThresholdMs;
 			});
@@ -98,7 +120,8 @@ std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifie
 	{
 		// Make reference time earlier for same time stamp, which means
 		// frames will be dispatched ealier.
-		refTime -= updateRefsStepPacketEarlyMs;
+		currentRef.content.refTime -= updateRefsStepPacketEarlyMs.count();
+		SyncWriteUint128(&reference.value, currentRef.value);
 		
 		// Reduce the delay
 		delayMs -= updateRefsStepPacketEarlyMs;
@@ -112,7 +135,7 @@ std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifie
 	return std::max(delayMs, std::chrono::milliseconds(0));
 }
 
-int64_t FrameDelayCalculator::GetFrameArrivalDelayMs(std::chrono::milliseconds now, uint64_t unifiedTs) const
+int64_t FrameDelayCalculator::GetFrameArrivalDelayMs(std::chrono::milliseconds now, uint64_t unifiedTs, std::chrono::milliseconds refTime, uint64_t refTimestamp)
 {	
 	constexpr int64_t MsToTimestampFactor = UnifiedClockRate / 1000;
 	auto scheduledMs = (int64_t(unifiedTs) - int64_t(refTimestamp)) / MsToTimestampFactor + refTime.count();

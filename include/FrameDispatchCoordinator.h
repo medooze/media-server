@@ -30,8 +30,6 @@ private:
 	
 	FrameDelayCalculator frameDelayCalculator;
 	
-	std::mutex mutex;
-	
 	std::atomic<std::chrono::milliseconds> maxDelayMs;
 	
 	friend class TestFrameDispatchCoordinator;

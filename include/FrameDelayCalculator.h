@@ -26,16 +26,28 @@ public:
 	std::chrono::milliseconds OnFrame(uint64_t streamIdentifier, std::chrono::milliseconds now, uint64_t ts, uint64_t clockRate);
 
 private:
+
+	union alignas (16) Reference
+	{
+		__uint128_t value;
+		struct
+		{
+			int64_t refTime;
+			uint64_t refTimestamp;
+		} content;
+	};
 	
 	/**
 	 * Get the delay of current frame
 	 * 
 	 * @param now The current time
 	 * @param unifiedTs The unified timestamp
+	 * @param refTime The reference time
+	 * @param refTimestamp The reference timestamp
 	 * 
 	 * @return The delay of current frame, which is value of current time minus scheduled time for the packet, in milliseconds.
 	 */
-	int64_t GetFrameArrivalDelayMs(std::chrono::milliseconds now, uint64_t unifiedTs) const;
+	static int64_t GetFrameArrivalDelayMs(std::chrono::milliseconds now, uint64_t unifiedTs, std::chrono::milliseconds refTime, uint64_t refTimestamp);
 	
 	// The following thresholds are checking the offsets of arrival time with regard to the previously
 	// scheduled time.
@@ -50,8 +62,7 @@ private:
 	// The start time when all streams arrive early. If packets become late, this time will be reset.
 	std::optional<std::chrono::milliseconds> allEarlyStartTimeMs;
 	
-	std::chrono::milliseconds refTime {0};
-	uint64_t refTimestamp = 0;
+	Reference reference;
 	
 	std::unordered_map<uint64_t, std::pair<std::chrono::milliseconds, uint64_t>> frameArrivalInfo;
 	
