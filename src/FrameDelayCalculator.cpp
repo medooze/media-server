@@ -43,12 +43,15 @@ void SyncWriteUint128(__uint128_t *dst, __uint128_t value)
 }
 
 FrameDelayCalculator::FrameDelayCalculator(int aUpdateRefsPacketLateThresholdMs, 
-					std::chrono::milliseconds aUpdateRefsStepPacketEarlyMs) :
+					std::chrono::milliseconds aUpdateRefsStepPacketEarlyMs, TimeService* timeService) :
 	updateRefsPacketLateThresholdMs(aUpdateRefsPacketLateThresholdMs),
-	updateRefsStepPacketEarlyMs(aUpdateRefsStepPacketEarlyMs)
+	updateRefsStepPacketEarlyMs(aUpdateRefsStepPacketEarlyMs),
+	timeService(timeService)
 {
 	static_assert(sizeof(Reference) == 16);
 	static_assert(sizeof(reference.content) == 16);
+	
+	reference.value = 0;
 }
 
 std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifier, std::chrono::milliseconds now, uint64_t ts, uint64_t clockRate)
@@ -62,12 +65,11 @@ std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifie
 	Reference currentRef;
 	currentRef.value = __sync_fetch_and_add(&reference.value, 0);
 	
-	if (!initialized)
+	if (currentRef.value == 0)
 	{
 		currentRef.content = { now.count(), unifiedTs };
 		SyncWriteUint128(&reference.value, currentRef.value);
 		
-		initialized = true;			
 		return std::chrono::milliseconds(0);
 	}
 			
@@ -79,7 +81,7 @@ std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifie
 	std::chrono::milliseconds delayMs(-lateMs);
 	auto updateRefsPacketEarlyThresholdMs = -updateRefsStepPacketEarlyMs.count();
 	
-	bool allEarly = false;
+	bool early = false;
 	if (lateMs > updateRefsPacketLateThresholdMs)  // Packet late
 	{
 		currentRef.content = { now.count(), unifiedTs };
@@ -89,48 +91,64 @@ std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifie
 	}
 	else if (lateMs < updateRefsPacketEarlyThresholdMs)  // Packet early
 	{
-		// Loop to see if all the streams have arrived earlier
-		allEarly = std::all_of(frameArrivalInfo.begin(), frameArrivalInfo.end(), 
-			[&](const auto& info) {
-				if (info.first == streamIdentifier) return true;
-							
-				auto [time, timestamp] = info.second;
-				auto frameLateMs = GetFrameArrivalDelayMs(time, timestamp, std::chrono::milliseconds(currentRef.content.refTime),
-									currentRef.content.refTimestamp);
-				
-				return frameLateMs < updateRefsPacketEarlyThresholdMs;
-			});
-	}
+		early = true;
+		
+		timeService->Async([selfWeak = weak_from_this(), currentRef, now, streamIdentifier, updateRefsPacketEarlyThresholdMs, &delayMs](std::chrono::milliseconds) {
 			
-	if (allEarly)
-	{
-		if (!allEarlyStartTimeMs.has_value())
-			allEarlyStartTimeMs = now;
-	}
-	else
-	{
-		allEarlyStartTimeMs.reset();
-	}
+			auto self = selfWeak.lock();
+			if (!self) return;
+			
+			// Loop to see if all the streams have arrived earlier
+			bool allEarly = std::all_of(self->frameArrivalInfo.begin(), self->frameArrivalInfo.end(), 
+				[&](const auto& info) {
+					if (info.first == streamIdentifier) return true;
+								
+					auto [time, timestamp] = info.second;
+					auto frameLateMs = GetFrameArrivalDelayMs(time, timestamp, std::chrono::milliseconds(currentRef.content.refTime),
+										currentRef.content.refTimestamp);
+					
+					return frameLateMs < updateRefsPacketEarlyThresholdMs;
+				});
+				
+			if (allEarly)
+			{
+				if (!self->allEarlyStartTimeMs.has_value())
+					self->allEarlyStartTimeMs = now;
+					
+				// If all stream becomes ealier for a while (> 2s), we reduce the latency
+				if ((now - *self->allEarlyStartTimeMs) > 2000ms)
+				{
+					// Make reference time earlier for same time stamp, which means
+					// frames will be dispatched ealier.
+					auto ref = currentRef;
+					ref.content.refTime -= self->updateRefsStepPacketEarlyMs.count();
+					SyncWriteUint128(&self->reference.value, ref.value);
 
-
-	frameArrivalInfo[streamIdentifier] = {now, unifiedTs};
+					// Restart the latency reduction process to have a max reduction rate
+					// at 20ms per second as we don't expect the latency would be too large,
+					// which normall would be below 1 second.
+					self->allEarlyStartTimeMs.reset();
+				}
+			}
+			else
+			{
+				self->allEarlyStartTimeMs.reset();
+			}
+		});
+	}
 	
-	// If all stream becomes ealier for a while (> 2s), we reduce the latency
-	if (allEarlyStartTimeMs.has_value() && (now - *allEarlyStartTimeMs) > 2000ms)
-	{
-		// Make reference time earlier for same time stamp, which means
-		// frames will be dispatched ealier.
-		currentRef.content.refTime -= updateRefsStepPacketEarlyMs.count();
-		SyncWriteUint128(&reference.value, currentRef.value);
+	timeService->Async([selfWeak = weak_from_this(), early, streamIdentifier, now, unifiedTs](std::chrono::milliseconds) {
 		
-		// Reduce the delay
-		delayMs -= updateRefsStepPacketEarlyMs;
-		
-		// Restart the latency reduction process to have a max reduction rate
-		// at 20ms per second as we don't expect the latency would be too large,
-		// which normall would be below 1 second.
-		allEarlyStartTimeMs.reset();
-	}
+		auto self = selfWeak.lock();
+		if (!self) return;
+			
+		if (!early)
+		{
+			self->allEarlyStartTimeMs.reset();
+		}
+
+		self->frameArrivalInfo[streamIdentifier] = {now, unifiedTs};
+	});
 	
 	return std::max(delayMs, std::chrono::milliseconds(0));
 }

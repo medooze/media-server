@@ -2,8 +2,10 @@
 #include "FrameDispatchCoordinator.h"
 
 FrameDispatchCoordinator::FrameDispatchCoordinator(int aUpdateRefsPacketLateThresholdMs, 
-					std::chrono::milliseconds aUpdateRefsStepPacketEarlyMs) :
-	frameDelayCalculator(aUpdateRefsPacketLateThresholdMs, aUpdateRefsStepPacketEarlyMs),
+					std::chrono::milliseconds aUpdateRefsStepPacketEarlyMs,
+					std::shared_ptr<TimeService> timeService) :
+	frameDelayCalculator(std::make_shared<FrameDelayCalculator>(aUpdateRefsPacketLateThresholdMs, aUpdateRefsStepPacketEarlyMs, timeService.get())),
+	timeService(timeService),
 	maxDelayMs(std::chrono::milliseconds(5000)) // Max delay 5 seconds
 {
 	static_assert(std::atomic<std::chrono::milliseconds>::is_always_lock_free);
@@ -13,7 +15,7 @@ void FrameDispatchCoordinator::OnFrame(std::chrono::milliseconds now, uint64_t t
 {
 	if (ts)
 	{
-		auto delayMs = std::clamp(frameDelayCalculator.OnFrame(listenerBridge.GetMediaSSRC(), now, ts, clockRate),
+		auto delayMs = std::clamp(frameDelayCalculator->OnFrame(listenerBridge.GetMediaSSRC(), now, ts, clockRate),
 				std::chrono::milliseconds(0), maxDelayMs.load());
 	
 		listenerBridge.SetDelayMs(delayMs);
