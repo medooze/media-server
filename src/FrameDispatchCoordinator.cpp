@@ -4,8 +4,9 @@
 FrameDispatchCoordinator::FrameDispatchCoordinator(int aUpdateRefsPacketLateThresholdMs, 
 					std::chrono::milliseconds aUpdateRefsStepPacketEarlyMs) :
 	frameDelayCalculator(aUpdateRefsPacketLateThresholdMs, aUpdateRefsStepPacketEarlyMs),
-	maxDelayMs(5000) // Max delay 5 seconds
+	maxDelayMs(std::chrono::milliseconds(5000)) // Max delay 5 seconds
 {
+	static_assert(std::atomic<std::chrono::milliseconds>::is_always_lock_free);
 }
 
 void FrameDispatchCoordinator::OnFrame(std::chrono::milliseconds now, uint64_t ts, uint64_t clockRate, MediaFrameListenerBridge& listenerBridge)
@@ -17,7 +18,7 @@ void FrameDispatchCoordinator::OnFrame(std::chrono::milliseconds now, uint64_t t
 		{
 			std::lock_guard<std::mutex> lock(mutex);
 			delayMs = std::clamp(frameDelayCalculator.OnFrame(listenerBridge.GetMediaSSRC(), now, ts, clockRate),
-					std::chrono::milliseconds(0), maxDelayMs);
+					std::chrono::milliseconds(0), maxDelayMs.load());
 		}
 	
 		listenerBridge.SetDelayMs(delayMs);
@@ -26,7 +27,5 @@ void FrameDispatchCoordinator::OnFrame(std::chrono::milliseconds now, uint64_t t
 
 void FrameDispatchCoordinator::SetMaxDelayMs(std::chrono::milliseconds maxDelayMs)
 {
-	std::lock_guard<std::mutex> lock(mutex);
-	
 	this->maxDelayMs = maxDelayMs;
 }

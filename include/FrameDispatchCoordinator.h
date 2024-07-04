@@ -32,7 +32,7 @@ private:
 	
 	std::mutex mutex;
 	
-	std::chrono::milliseconds maxDelayMs;
+	std::atomic<std::chrono::milliseconds> maxDelayMs;
 	
 	friend class TestFrameDispatchCoordinator;
 };
