@@ -60,7 +60,7 @@ std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifie
 	auto unifiedTs = ConvertTimestampClockRate(ts, clockRate, UnifiedClockRate);
 	
 	Reference currentRef;
-	currentRef.value = __sync_fetch_and_add((__uint128_t*)&reference, 0);
+	currentRef.value = __sync_fetch_and_add(&reference.value, 0);
 	
 	if (!initialized)
 	{
