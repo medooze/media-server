@@ -13,7 +13,7 @@ class FrameDelayCalculator : public std::enable_shared_from_this<FrameDelayCalcu
 {
 public:
 
-	FrameDelayCalculator(int aUpdateRefsPacketLateThresholdMs, std::chrono::milliseconds aUpdateRefsStepPacketEarlyMs, TimeService* timeService);
+	FrameDelayCalculator(int aUpdateRefsPacketLateThresholdMs, std::chrono::milliseconds aUpdateRefsStepPacketEarlyMs, TimeService& timeService);
 	
 	/**
 	 * Calculate the dispatch delay for the arrived frame. This function is thread safe.
@@ -50,8 +50,11 @@ private:
 	 * @return The delay of current frame, which is value of current time minus scheduled time for the packet, in milliseconds.
 	 */
 	static int64_t GetFrameArrivalDelayMs(std::chrono::milliseconds now, uint64_t unifiedTs, std::chrono::milliseconds refTime, uint64_t refTimestamp);
-		
-	TimeService* timeService;
+	
+	/**
+	 * Timeservice for latency reduction
+	 */
+	TimeService& timeService;
 	
 	// The following thresholds are checking the offsets of arrival time with regard to the previously
 	// scheduled time.
@@ -62,7 +65,7 @@ private:
 	std::chrono::milliseconds updateRefsStepPacketEarlyMs {0};
 	
 	// Time reference
-	Reference reference;
+	Reference reference = {0};
 
 	// The start time when all streams arrive early. If packets become late, this time will be reset.
 	std::optional<std::chrono::milliseconds> allEarlyStartTimeMs;

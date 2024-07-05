@@ -114,7 +114,7 @@ std::vector<int64_t> TestFrameDelayCalculator::calcLatency(const std::vector<std
 
 TEST_F(TestFrameDelayCalculator, TestNormal)
 {
-	calculator = std::make_shared<FrameDelayCalculator>(0, std::chrono::milliseconds(20), &timeService);
+	calculator = std::make_shared<FrameDelayCalculator>(0, std::chrono::milliseconds(20), timeService);
 
 	std::vector<int64_t> expectedLatencies = {0, 18, 18, 24, 27, 28};
 	
@@ -221,7 +221,7 @@ TEST_F(TestFrameDelayCalculator, TestNormal)
 
 TEST_F(TestFrameDelayCalculator, testLatencyReduction)
 {	
-	calculator = std::make_shared<FrameDelayCalculator>(0, std::chrono::milliseconds(3), &timeService);
+	calculator = std::make_shared<FrameDelayCalculator>(0, std::chrono::milliseconds(3), timeService);
 	
 	std::vector<int64_t> expectedLatencies = {
 		0, 18, 18, 24, 21, 27, 28, 25
@@ -332,7 +332,7 @@ TEST_F(TestFrameDelayCalculator, testLatencyReduction)
 TEST_F(TestFrameDelayCalculator, testLatencyReduction2)
 {	
 	{
-		calculator = std::make_shared<FrameDelayCalculator>(10, std::chrono::milliseconds(20), &timeService);
+		calculator = std::make_shared<FrameDelayCalculator>(10, std::chrono::milliseconds(20), timeService);
 		// No reference time change in this case
 		std::vector<int64_t> expectedLatencies = {
 			0
@@ -342,7 +342,7 @@ TEST_F(TestFrameDelayCalculator, testLatencyReduction2)
 	}
 	
 	{
-		calculator = std::make_shared<FrameDelayCalculator>(10, std::chrono::milliseconds(5), &timeService);	
+		calculator = std::make_shared<FrameDelayCalculator>(10, std::chrono::milliseconds(5), timeService);	
 		// There are reference changes due to reducing the threshold (step)
 		std::vector<int64_t> expectedLatencies = {
 			0, -5, -10
@@ -352,7 +352,7 @@ TEST_F(TestFrameDelayCalculator, testLatencyReduction2)
 	}
 	
 	{
-		calculator = std::make_shared<FrameDelayCalculator>(0, std::chrono::milliseconds(5), &timeService);
+		calculator = std::make_shared<FrameDelayCalculator>(0, std::chrono::milliseconds(5), timeService);
 		// There are more reference changes since we reduce the "late" threshold
 		std::vector<int64_t> expectedLatencies = {
 			0, 2, 5, 0, 1, 3, 6, 1, -4, -9, -7, -12, -6, -6, -5, -4, -3, -8, -6, -5, -4, -4, -9, -8, -4, -3
