@@ -63,13 +63,7 @@ void TestFrameDelayCalculator::TestDelayCalculator(const std::vector<std::tuple<
 				
 		auto mediaType = std::get<0>(f);
 		auto ssrc = MediaTypeToSsrc(mediaType);
-		
-		auto delayMs = calculator->OnFrame(ssrc, now, std::get<2>(f), std::get<3>(f));		
-		
-		std::cout << "{ " << ssrc << ", " << delayMs.count() << " }, ";
-		
-		if (++cnt % 8 == 0) std::cout << ",\n";
-		
+		auto delayMs = calculator->OnFrame(ssrc, now, std::get<2>(f), std::get<3>(f));
 		delays.emplace_back(ssrc, delayMs.count());
 		
 		auto refTime = calculator->reference.content.refTime;
