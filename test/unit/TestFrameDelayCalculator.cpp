@@ -56,6 +56,7 @@ void TestFrameDelayCalculator::TestDelayCalculator(const std::vector<std::tuple<
 	std::vector<std::pair<uint64_t, int64_t>> delays;
 
 	// Loop through all frames
+	int cnt = 0;
 	for (auto& f : framesInfo)
 	{	
 		auto now = std::chrono::milliseconds(std::get<1>(f));
@@ -64,6 +65,11 @@ void TestFrameDelayCalculator::TestDelayCalculator(const std::vector<std::tuple<
 		auto ssrc = MediaTypeToSsrc(mediaType);
 		
 		auto delayMs = calculator->OnFrame(ssrc, now, std::get<2>(f), std::get<3>(f));		
+		
+		std::cout << "{ " << ssrc << ", " << delayMs.count() << " }, ";
+		
+		if (++cnt % 8 == 0) std::cout << ",\n";
+		
 		delays.emplace_back(ssrc, delayMs.count());
 		
 		auto refTime = calculator->reference.content.refTime;
@@ -269,7 +275,7 @@ TEST_F(TestFrameDelayCalculator, testLatencyReduction)
 		{ 1, 7 }, { 1, 29 }, { 1, 50 }, { 1, 71 }, { 1, 93 }, { 1, 114 }, { 1, 135 }, { 1, 157 }, 
 		{ 2, 158 }, { 2, 174 }, { 2, 157 }, { 2, 170 }, { 2, 163 }, { 1, 20 }, { 1, 41 }, { 1, 63 }, 
 		{ 1, 84 }, { 1, 105 }, { 1, 127 }, { 1, 148 }, { 1, 169 }, { 2, 177 }, { 2, 169 }, { 2, 172 }, 
-		{ 2, 165 }, { 2, 154 }, { 1, 15 }, { 1, 36 }, { 1, 57 }, { 1, 79 }, { 1, 99 }, { 1, 120 }, 
+		{ 2, 165 }, { 2, 157 }, { 1, 15 }, { 1, 36 }, { 1, 57 }, { 1, 79 }, { 1, 99 }, { 1, 120 }, 
 		{ 1, 142 }, { 1, 163 }, { 2, 167 }, { 2, 160 }, { 2, 162 }, { 2, 156 }, { 2, 168 }, { 1, 12 }, 
 		{ 1, 34 }, { 1, 55 }, { 1, 76 }, { 1, 98 }, { 1, 118 }, { 1, 139 }, { 1, 161 }, { 2, 161 }, 
 		{ 2, 157 }, { 2, 160 }, { 2, 153 }, { 2, 166 }, { 1, 23 }, { 1, 44 }, { 1, 66 }, { 1, 87 }, 
@@ -320,7 +326,7 @@ TEST_F(TestFrameDelayCalculator, testLatencyReduction)
 		{ 1, 167 }, { 2, 169 }, { 2, 163 }, { 2, 177 }, { 2, 169 }, { 2, 172 }, { 1, 28 }, { 1, 49 }, 
 		{ 1, 70 }, { 1, 92 }, { 1, 113 }, { 1, 134 }, { 1, 146 }, { 1, 166 }, { 2, 164 }, { 2, 167 }, 
 		{ 2, 170 }, { 2, 153 }, { 2, 171 }, { 1, 29 }, { 1, 51 }, { 1, 72 }, { 1, 93 }, { 1, 115 }, 
-		{ 1, 123 }, { 1, 144 }, { 1, 166 }, { 2, 160 }, { 2, 172 }, { 2, 166 }, { 2, 168 }, { 2, 160 }, 
+		{ 1, 126 }, { 1, 144 }, { 1, 166 }, { 2, 160 }, { 2, 172 }, { 2, 166 }, { 2, 168 }, { 2, 160 }, 
 		{ 1, 24 }, { 1, 45 }, { 1, 67 }, { 1, 88 }, { 1, 109 }, { 1, 131 }, { 1, 152 }, { 1, 173 }, 
 		{ 2, 153 }, { 2, 166 }, { 2, 158 }, { 2, 162 }
 	};

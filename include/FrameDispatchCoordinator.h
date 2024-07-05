@@ -4,8 +4,6 @@
 #include "FrameDelayCalculator.h"
 #include "EventLoop.h"
 
-#include <mutex>
-
 class MediaFrameListenerBridge;
 
 class FrameDispatchCoordinator
