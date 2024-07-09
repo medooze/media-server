@@ -144,9 +144,19 @@ RTPBundleTransport::Connection::shared RTPBundleTransport::AddICETransport(const
 		//Error
 		return NULL;
 	}
-	
+
+	Properties bwe;
+	properties.GetChildren("bwe",bwe);
+	SendSideBandwidthEstimation::Options bweOptions;
+	bweOptions.logId = bwe.GetProperty("logId", bweOptions.logId);
+	bweOptions.forceSmooth = bwe.GetProperty("forceSmooth", bweOptions.forceSmooth);
+	bweOptions.enableCongestedRTX = bwe.GetProperty("enableCongestedRTX", bweOptions.enableCongestedRTX);
+	bweOptions.monitorDuration = bwe.GetProperty("monitorDuration", bweOptions.monitorDuration);
+	bweOptions.minRateChangeBps = bwe.GetProperty("minRateChangeBps", bweOptions.minRateChangeBps);
+	bweOptions.rateChangePercentage = bwe.GetProperty("rateChangePercentage", bweOptions.rateChangePercentage);
+
 	//Create new ICE transport
-	auto transport = std::make_shared<DTLSICETransport>(this,loop,loop.GetPacketPool());
+	auto transport = std::make_shared<DTLSICETransport>(this,loop,loop.GetPacketPool(), bweOptions);
 	
 	//Set SRTP protection profiles
 	std::string profiles = properties.GetProperty("srtpProtectionProfiles","");

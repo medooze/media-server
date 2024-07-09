@@ -342,7 +342,7 @@ void RemoteRateEstimator::Update(RemoteRateControl::BandwidthUsage usage, bool r
 		//Set maximum
 		currentBitRate = maxConfiguredBitRate;
 
-	UltraDebug("BWE: estimation state=%s region=%s usage=%s currentBitRate=%d current=%d incoming=%f min=%Lf max=%Lf\n",GetName(state),RemoteRateControl::GetName(region),RemoteRateControl::GetName(usage),currentBitRate/1000,current/1000,incomingBitRate/1000,bitrateAcu.GetMinAvg()/1000,bitrateAcu.GetMaxAvg()/1000);
+	UltraDebug("bcost BWE: estimation state=%s region=%s usage=%s currentBitRate=%d current=%d incoming=%f min=%Lf max=%Lf\n",GetName(state),RemoteRateControl::GetName(region),RemoteRateControl::GetName(usage),currentBitRate/1000,current/1000,incomingBitRate/1000,bitrateAcu.GetMinAvg()/1000,bitrateAcu.GetMaxAvg()/1000);
 
 	if (eventSource)
 		eventSource->SendEvent

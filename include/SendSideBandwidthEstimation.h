@@ -26,7 +26,18 @@ public:
 	}
 ;
 public:
-	SendSideBandwidthEstimation();
+	struct Options
+	{
+		// @todo All these options are not used in here. Cleanup later removing the two bools at least
+		std::string logId;
+		bool forceSmooth = false;
+		bool enableCongestedRTX = false;
+		uint64_t monitorDuration = 150E3;
+		uint64_t minRateChangeBps = 10000;
+		float rateChangePercentage = 0.05f;
+	};
+
+	SendSideBandwidthEstimation(const Options& options);
         ~SendSideBandwidthEstimation();
 	void SentPacket(const PacketStats& packet);
 	void ReceivedFeedback(uint8_t feedbackNum, const std::map<uint32_t,uint64_t>& packets, uint64_t when = 0);
@@ -56,6 +67,8 @@ private:
 		bool  probing = false;
 	};
 private:
+	const Options options;
+
 	CircularBuffer<Stats, uint16_t, 32768> transportWideSentPacketsStats;
 	uint64_t bandwidthEstimation = 0;
 	uint64_t targetBitrate = 0;
