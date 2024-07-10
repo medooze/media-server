@@ -132,6 +132,7 @@ target_link_libraries(MediaServerLib
     swscale
     swresample
     crypto
+    aom
 )
 
 #for debugging
