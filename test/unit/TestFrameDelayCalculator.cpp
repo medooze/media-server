@@ -5,6 +5,7 @@
 #include "audio.h"
 #include "rtp/RTPPacket.h"
 #include "data/FramesArrivalInfo.h"
+#include "TestCommon.h"
 
 namespace
 {
@@ -40,7 +41,8 @@ protected:
 	 */
 	std::vector<int64_t> calcLatency(const std::vector<std::pair<uint64_t, uint64_t>>& references);
 
-	std::unique_ptr<FrameDelayCalculator> calculator;
+	TestTimeService timeService;
+	std::shared_ptr<FrameDelayCalculator> calculator;
 };
 
 void TestFrameDelayCalculator::TestDelayCalculator(const std::vector<std::tuple<MediaFrame::Type, uint64_t, uint64_t, uint32_t>>& framesInfo,
@@ -54,26 +56,29 @@ void TestFrameDelayCalculator::TestDelayCalculator(const std::vector<std::tuple<
 	std::vector<std::pair<uint64_t, int64_t>> delays;
 
 	// Loop through all frames
+	int cnt = 0;
 	for (auto& f : framesInfo)
 	{	
 		auto now = std::chrono::milliseconds(std::get<1>(f));
 				
 		auto mediaType = std::get<0>(f);
 		auto ssrc = MediaTypeToSsrc(mediaType);
-		
-		auto delayMs = calculator->OnFrame(ssrc, now, std::get<2>(f), std::get<3>(f));		
+		auto delayMs = calculator->OnFrame(ssrc, now, std::get<2>(f), std::get<3>(f));
 		delays.emplace_back(ssrc, delayMs.count());
+		
+		auto refTime = calculator->reference.content.refTime;
+		auto refTs = calculator->reference.content.refTimestamp;
 		
 		if (references.empty())
 		{
-			references.emplace_back(calculator->refTime.count(), calculator->refTimestamp);
+			references.emplace_back(refTime, refTs);
 		}
 		else
 		{
 			auto lastRef = references.back();
-			if (lastRef.first != calculator->refTime.count() || lastRef.second != calculator->refTimestamp)
+			if (lastRef.first != refTime || lastRef.second != refTs)
 			{
-				references.emplace_back(calculator->refTime.count(), calculator->refTimestamp);
+				references.emplace_back(refTime, refTs);
 			}
 		}
 		
@@ -109,7 +114,7 @@ std::vector<int64_t> TestFrameDelayCalculator::calcLatency(const std::vector<std
 
 TEST_F(TestFrameDelayCalculator, TestNormal)
 {
-	calculator = std::make_unique<FrameDelayCalculator>(0, std::chrono::milliseconds(20));
+	calculator = std::make_shared<FrameDelayCalculator>(0, std::chrono::milliseconds(20), timeService);
 
 	std::vector<int64_t> expectedLatencies = {0, 18, 18, 24, 27, 28};
 	
@@ -216,7 +221,7 @@ TEST_F(TestFrameDelayCalculator, TestNormal)
 
 TEST_F(TestFrameDelayCalculator, testLatencyReduction)
 {	
-	calculator = std::make_unique<FrameDelayCalculator>(0, std::chrono::milliseconds(3));
+	calculator = std::make_shared<FrameDelayCalculator>(0, std::chrono::milliseconds(3), timeService);
 	
 	std::vector<int64_t> expectedLatencies = {
 		0, 18, 18, 24, 21, 27, 28, 25
@@ -264,7 +269,7 @@ TEST_F(TestFrameDelayCalculator, testLatencyReduction)
 		{ 1, 7 }, { 1, 29 }, { 1, 50 }, { 1, 71 }, { 1, 93 }, { 1, 114 }, { 1, 135 }, { 1, 157 }, 
 		{ 2, 158 }, { 2, 174 }, { 2, 157 }, { 2, 170 }, { 2, 163 }, { 1, 20 }, { 1, 41 }, { 1, 63 }, 
 		{ 1, 84 }, { 1, 105 }, { 1, 127 }, { 1, 148 }, { 1, 169 }, { 2, 177 }, { 2, 169 }, { 2, 172 }, 
-		{ 2, 165 }, { 2, 154 }, { 1, 15 }, { 1, 36 }, { 1, 57 }, { 1, 79 }, { 1, 99 }, { 1, 120 }, 
+		{ 2, 165 }, { 2, 157 }, { 1, 15 }, { 1, 36 }, { 1, 57 }, { 1, 79 }, { 1, 99 }, { 1, 120 }, 
 		{ 1, 142 }, { 1, 163 }, { 2, 167 }, { 2, 160 }, { 2, 162 }, { 2, 156 }, { 2, 168 }, { 1, 12 }, 
 		{ 1, 34 }, { 1, 55 }, { 1, 76 }, { 1, 98 }, { 1, 118 }, { 1, 139 }, { 1, 161 }, { 2, 161 }, 
 		{ 2, 157 }, { 2, 160 }, { 2, 153 }, { 2, 166 }, { 1, 23 }, { 1, 44 }, { 1, 66 }, { 1, 87 }, 
@@ -315,7 +320,7 @@ TEST_F(TestFrameDelayCalculator, testLatencyReduction)
 		{ 1, 167 }, { 2, 169 }, { 2, 163 }, { 2, 177 }, { 2, 169 }, { 2, 172 }, { 1, 28 }, { 1, 49 }, 
 		{ 1, 70 }, { 1, 92 }, { 1, 113 }, { 1, 134 }, { 1, 146 }, { 1, 166 }, { 2, 164 }, { 2, 167 }, 
 		{ 2, 170 }, { 2, 153 }, { 2, 171 }, { 1, 29 }, { 1, 51 }, { 1, 72 }, { 1, 93 }, { 1, 115 }, 
-		{ 1, 123 }, { 1, 144 }, { 1, 166 }, { 2, 160 }, { 2, 172 }, { 2, 166 }, { 2, 168 }, { 2, 160 }, 
+		{ 1, 126 }, { 1, 144 }, { 1, 166 }, { 2, 160 }, { 2, 172 }, { 2, 166 }, { 2, 168 }, { 2, 160 }, 
 		{ 1, 24 }, { 1, 45 }, { 1, 67 }, { 1, 88 }, { 1, 109 }, { 1, 131 }, { 1, 152 }, { 1, 173 }, 
 		{ 2, 153 }, { 2, 166 }, { 2, 158 }, { 2, 162 }
 	};
@@ -327,7 +332,7 @@ TEST_F(TestFrameDelayCalculator, testLatencyReduction)
 TEST_F(TestFrameDelayCalculator, testLatencyReduction2)
 {	
 	{
-		calculator = std::make_unique<FrameDelayCalculator>(10, std::chrono::milliseconds(20));
+		calculator = std::make_shared<FrameDelayCalculator>(10, std::chrono::milliseconds(20), timeService);
 		// No reference time change in this case
 		std::vector<int64_t> expectedLatencies = {
 			0
@@ -337,7 +342,7 @@ TEST_F(TestFrameDelayCalculator, testLatencyReduction2)
 	}
 	
 	{
-		calculator = std::make_unique<FrameDelayCalculator>(10, std::chrono::milliseconds(5));	
+		calculator = std::make_shared<FrameDelayCalculator>(10, std::chrono::milliseconds(5), timeService);	
 		// There are reference changes due to reducing the threshold (step)
 		std::vector<int64_t> expectedLatencies = {
 			0, -5, -10
@@ -347,7 +352,7 @@ TEST_F(TestFrameDelayCalculator, testLatencyReduction2)
 	}
 	
 	{
-		calculator = std::make_unique<FrameDelayCalculator>(0, std::chrono::milliseconds(5));
+		calculator = std::make_shared<FrameDelayCalculator>(0, std::chrono::milliseconds(5), timeService);
 		// There are more reference changes since we reduce the "late" threshold
 		std::vector<int64_t> expectedLatencies = {
 			0, 2, 5, 0, 1, 3, 6, 1, -4, -9, -7, -12, -6, -6, -5, -4, -3, -8, -6, -5, -4, -4, -9, -8, -4, -3
