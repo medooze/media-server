@@ -3,6 +3,8 @@
 #include "config.h"
 #include "log.h"
 #include "bitstream.h"
+#include "BufferWritter.h"
+#include "BufferReader.h"
 
 class AV1CodecConfig
 {
@@ -109,7 +111,13 @@ struct SequenceHeaderObu
 
 	bool Parse(const BYTE* buffer, DWORD length)
 	{
-		BitReader r(buffer, length);
+		BufferReader reader(buffer, length);
+		return Parse(reader);
+	}
+
+	bool Parse(BufferReader& reader)
+	{
+		BitReader r(reader.PeekData(), reader.GetLeft());
 
 		seq_profile = r.Get(3);
 		still_picture = r.Get(1);
@@ -250,19 +258,78 @@ struct SequenceHeaderObu
 		//TODO color_config();
 		//film_grain_params_present = r.Get(1);
 
-		return 1;
+		//Skip readed bits
+		reader.Skip(r.Flush());
+
+		return true;
 	}
 
 
 };
 
+/*
+ * 0 1 2 3 4 5 6 7
+ * +-+-+-+-+-+-+-+-+
+ * |Z|Y| W |N|-|-|-|
+ * +-+-+-+-+-+-+-+-+
+ * Z: MUST be set to 1 if the first OBU element is an OBU fragment that is a continuation
+ *  of an OBU fragment from the previous packet, and MUST be set to 0 otherwise.
+ *
+ * Y: MUST be set to 1 if the last OBU element is an OBU fragment that will continue in 
+ * the next packet, and MUST be set to 0 otherwise.
+ *
+ * W: two bit field that describes the number of OBU elements in the packet. This field 
+ * MUST be set equal to 0 or equal to the number of OBU elements contained in the packet.
+ * If set to 0, each OBU element MUST be preceded by a length field.
+ *  If not set to 0 (i.e., W = 1, 2 or 3) the last OBU element MUST NOT be preceded by a 
+ * length field. Instead, the length of the last OBU element contained in the packet can be 
+ * calculated as follows:
+ * Length of the last OBU element = 
+ * -  length of the RTP payload
+ * -  length of aggregation header
+ * - length of previous OBU elements including length fields
+ * 
+ * N: MUST be set to 1 if the packet is the first packet of a coded video sequence, and MUST 
+ * be set to 0 otherwise.
+ */
 struct RtpAv1AggreationHeader
 {
-	uint8_t Reserved : 3;
-	uint8_t N : 1;	
-	uint8_t W : 2;
-	uint8_t Y : 1;	
-	uint8_t Z : 1;
+	struct Field {
+
+		uint8_t Reserved : 3;
+		uint8_t N : 1;
+		uint8_t W : 2;
+		uint8_t Y : 1;
+		uint8_t Z : 1;
+	};
+
+	Field field = {};
+
+	DWORD Serialize(BYTE* buffer, DWORD length) const
+	{
+		BufferWritter writter(buffer, length);
+		return Serialize(writter);
+	}
+
+	DWORD Serialize(BufferWritter& writter) const
+	{
+		if (writter.GetLeft() < GetSize()) return 0;
+		memcpy(writter.Consume(GetSize()), (void*)&field, GetSize());
+		return GetSize();
+	}
+
+	DWORD GetSize() const
+	{
+		return sizeof(field);
+	}
+	bool Parse(BufferReader& reader)
+	{
+		if (!reader.Assert(1))
+			return false;
+		uint8_t header = reader.Get1();
+		memcpy((void*)&field, &header, sizeof(header));
+		return true;
+	}
 };
 
 #endif /* AV1_H */
