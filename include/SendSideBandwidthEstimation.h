@@ -82,7 +82,10 @@ private:
         uint64_t lastChange = 0;
 	int64_t  accumulatedDelta = 0;
 	int64_t  lastFeedbackDelta = 0;
-        int fd = FD_INVALID;
+	int fd = FD_INVALID;
+	ssize_t bweStatsBytesWritten = 0;
+	std::string bweStatsFileName;
+	ssize_t bweStatsFileCount = 0;
 	
 	ChangeState state = ChangeState::Initial;
 	uint32_t consecutiveChanges = 0;

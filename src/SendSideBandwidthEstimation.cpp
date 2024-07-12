@@ -171,6 +171,23 @@ void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const st
 			//Dump stats
 			//Log("[%s][%p] recv #%u sent:%.8lu (+%.6ld) recv:%.8lu (+%.6ld) delta:%.6ld fb:%u, size:%u, bwe:%lu rtt:%lld rttMin:%lld acuDelta:%lld acuDeltaMin:%lld)\n",options.logId.c_str(),this,transportSeqNum,sent,deltaSent,recv,deltaRecv,delta,feedbackNum, stat->size, bandwidthEstimation, rttEstimated, rttMin, accumulatedDelta/1000, accumulatedDeltaMin/1000);
 			
+			//Check if we've written more than 50MB and if so, create a new file to write
+			if (bweStatsBytesWritten > 50000000)
+			{
+				//Close file
+				if (fd != FD_INVALID)
+				{
+					close(fd);
+					//Open a new file with a count appended for the same ID. Cron job will take care of cleanup
+					std::string newFile = bweStatsFileName + "_" + std::to_string(bweStatsFileCount++);
+					if ((fd = open(newFile.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0600))<0)
+					{
+						Log("[%s]Failed to create BWE stats file. Abort stats dump\n", newFile.c_str());
+						fd = FD_INVALID;
+					}
+					bweStatsBytesWritten = 0;
+				}
+			}
 			//If dumping to file
 			if (fd!=FD_INVALID)
 			{
@@ -178,7 +195,7 @@ void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const st
 				//Create log
 				int len = snprintf(msg, 1024, "%.8lu|%u|%hhu|%u|%lu|%lu|%lu|%lu|%ld|%ld|%ld|%u|%u|%u|%u|%u|%d|%d|%d|%d|%d\n", fb, transportSeqNum, feedbackNum, stat->size, sent, recv, deltaSent, deltaRecv, delta, accumulatedDelta/1000, accumulatedDeltaMin/1000, GetEstimatedBitrate(), GetTargetBitrate(), GetAvailableBitrate(), rtt, rttMin, rttEstimated, stat->mark, stat->rtx, stat->probing, state);
 				//Write it
-				[[maybe_unused]] ssize_t written = write(fd,msg,len);
+				bweStatsBytesWritten += write(fd,msg,len);
 			}
 			
 			//Check if it was not lost
@@ -534,6 +551,8 @@ int SendSideBandwidthEstimation::Dump(const char* filename)
 		return 0;
 	
 	Log("[%s][%p]-SendSideBandwidthEstimation::Dump() [\"%s\"]\n",options.logId.c_str(),this,filename);
+	
+	bweStatsFileName = filename;
 	
 	//Open file
 	if ((fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0600))<0)
