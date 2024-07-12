@@ -31,7 +31,7 @@ public:
 		// @todo All these options are not used in here. Cleanup later removing the two bools at least
 		std::string logId;
 		bool forceSmooth = false;
-		bool enableCongestedRTX = false;
+		bool enableCongestedRTX = true;
 		uint64_t monitorDuration = 150E3;
 		uint64_t minRateChangeBps = 10000;
 		float rateChangePercentage = 0.05f;
