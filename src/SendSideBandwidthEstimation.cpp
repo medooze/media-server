@@ -28,7 +28,8 @@ SendSideBandwidthEstimation::SendSideBandwidthEstimation(const Options& options_
 		packetsReceivedAcumulator(options.monitorDuration, 1E6, 500),
 		packetsLostAcumulator(options.monitorDuration, 1E6, 100)
 {
-	Debug("[%s][%p]-SendSideBandwidthEstimation::SendSideBandwidthEstimation() Using BWE options [forceSmooth:%s, enableCongestedRTX:%s, monitorDuration:%llu, minRateChangeBps: %llu, rateChangePercentage:%f]\n", 
+	// @todo For now cant see anything lower than error reports without ultra debug
+	Error("[%s][%p]-SendSideBandwidthEstimation::SendSideBandwidthEstimation() Using BWE options [forceSmooth:%s, enableCongestedRTX:%s, monitorDuration:%llu, minRateChangeBps: %llu, rateChangePercentage:%f]\n", 
 		options.logId.c_str(),
 		this,
 		options.forceSmooth?"true":"false",
@@ -198,7 +199,7 @@ void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const st
 				ssize_t written = write(fd,msg,len);
 				if (written < 0)
 				{
-					Error("[%s][%p]-SendSideBandwidthEstimation::ReceivedFeedback() Failed writing to BWE log %s : reason %s\n", options.logId.c_str(),this,newFile.c_str(), strerror(errno));
+					Error("[%s][%p]-SendSideBandwidthEstimation::ReceivedFeedback() Failed writing to BWE log : reason %s\n", options.logId.c_str(),this,strerror(errno));
 					close(fd);
 					fd = FD_INVALID;
 				}
