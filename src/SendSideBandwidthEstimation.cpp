@@ -182,7 +182,7 @@ void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const st
 					std::string newFile = bweStatsFileName + "_" + std::to_string(bweStatsFileCount++);
 					if ((fd = open(newFile.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0600))<0)
 					{
-						Log("[%s]Failed to create BWE stats file. Abort stats dump\n", newFile.c_str());
+						Error("[%s][%p]-SendSideBandwidthEstimation::ReceivedFeedback() Failed to create updated BWE stats file %s : reason %s\n", options.logId.c_str(),this,newFile.c_str(),strerror(errno));
 						fd = FD_INVALID;
 					}
 					bweStatsBytesWritten = 0;
@@ -195,7 +195,17 @@ void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const st
 				//Create log
 				int len = snprintf(msg, 1024, "%.8lu|%u|%hhu|%u|%lu|%lu|%lu|%lu|%ld|%ld|%ld|%u|%u|%u|%u|%u|%d|%d|%d|%d|%d\n", fb, transportSeqNum, feedbackNum, stat->size, sent, recv, deltaSent, deltaRecv, delta, accumulatedDelta/1000, accumulatedDeltaMin/1000, GetEstimatedBitrate(), GetTargetBitrate(), GetAvailableBitrate(), rtt, rttMin, rttEstimated, stat->mark, stat->rtx, stat->probing, state);
 				//Write it
-				bweStatsBytesWritten += write(fd,msg,len);
+				ssize_t written = write(fd,msg,len);
+				if (written < 0)
+				{
+					Error("[%s][%p]-SendSideBandwidthEstimation::ReceivedFeedback() Failed writing to BWE log %s : reason %s\n", options.logId.c_str(),this,newFile.c_str(), strerror(errno));
+					close(fd);
+					fd = FD_INVALID;
+				}
+				else
+				{
+					bweStatsBytesWritten  += written;
+				}
 			}
 			
 			//Check if it was not lost
