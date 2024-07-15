@@ -37,6 +37,7 @@ private:
 	uint8_t* packet = nullptr;
 	uint32_t packetLen = 0;
 	int fd = -1;
+	bool reversed = false;
 };
 
 #endif /* PCAPMEDIAFILE_H */

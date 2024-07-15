@@ -32,9 +32,17 @@ bool PCAPReader::Open(const char* file)
 
 	uint32_t cookie = get4(data,0);
 
-	if (cookie!=PCAP_MAGIC_COOKIE)
-		return Error("-PCAPReader::Open() | PCAP magic cookie %x nof founr, got %x, reversed are not supported (yet).\n",PCAP_MAGIC_COOKIE,cookie);
+	if (cookie != PCAP_MAGIC_COOKIE)
+	{
+		//Try reverse order
+		cookie = get4Reversed(data, 0);
 
+		if (cookie != PCAP_MAGIC_COOKIE)
+			return Error("-PCAPReader::Open() | PCAP magic cookie %x nof found, got %x.\n", PCAP_MAGIC_COOKIE, cookie);
+		
+		reversed = true;
+	}
+		
 	return true;
 }
 
@@ -58,10 +66,10 @@ retry:
 		return false;
 	
 	//Get packet data
-	uint32_t seconds	= get4(data,0);
-	uint32_t nanoseonds	= get4(data,4);
-	uint32_t size		= get4(data,8);
-	uint32_t captured	= get4(data,12);
+	uint32_t seconds	= !reversed ? get4(data, 0)		: get4Reversed(data, 0);
+	uint32_t nanoseonds = !reversed ? get4(data, 4)		: get4Reversed(data, 4);
+	uint32_t size		= !reversed ? get4(data, 8)		: get4Reversed(data, 8);
+	uint32_t captured	= !reversed ? get4(data, 12)	: get4Reversed(data, 12);
 	
 	//Get current timestamp
 	uint64_t ts = (((uint64_t)seconds)*1000000+nanoseonds);
@@ -76,22 +84,21 @@ retry:
 		//retry
 		goto retry;
 	}
-
 	// Get the udp size including udp headers
-	uint16_t udpLen = get2(data,38);
+	uint16_t udpLen = get2(data, 38);
 
 	//Check length
 	if (udpLen!=(size-34) || udpLen<8)
 	{
-		Error("-PCAPReader::GetNextPacket() | Wrong UDP packet len:%u\n",udpLen);
+		Error("-PCAPReader::GetNextPacket() | Wrong UDP packet len:%u size:%d\n",udpLen, size);
 		//retry
 		goto retry;
 	}
 	//Get ip and ports
-	originIp	= get4(data,26);
-	destIp		= get4(data,30);
-	originPort	= get2(data,34);
-	destPort	= get2(data,36);
+	originIp	= !reversed ? get4(data, 26) : get4Reversed(data, 26);
+	destIp		= !reversed ? get4(data, 30) : get4Reversed(data, 30);
+	originPort	= !reversed ? get2(data, 34) : get2Reversed(data, 34);
+	destPort	= !reversed ? get2(data, 36) : get2Reversed(data, 36);
 	
 	//The udp packet
 	packet	  = data + 42;
@@ -119,10 +126,10 @@ uint64_t PCAPReader::Seek(const uint64_t time)
 			break;
 
 		//Get packet data
-		uint32_t seconds	= get4(data,0);
-		uint32_t nanoseonds	= get4(data,4);
-		uint32_t packetSize	= get4(data,8);
-[[maybe_unused]]uint32_t packetLen	= get4(data,12);
+		uint32_t seconds	= !reversed ? get4(data, 0) : get4Reversed(data, 0);
+		uint32_t nanoseonds	= !reversed ? get4(data, 4) : get4Reversed(data, 4);
+		uint32_t packetSize	= !reversed ? get4(data, 8) : get4Reversed(data, 8);
+		[[maybe_unused]] uint32_t packetLen = !reversed ? get4(data, 12) : get4Reversed(data, 12);
 		uint64_t ts = (((uint64_t)seconds)*1000000+nanoseonds);
 
 		//If we have got to the correct time
