@@ -196,7 +196,6 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 			}
 		}
 
-
 		// Need to reset the videoBuffer or when downrating
 		// and empty queue will loop in here until another 
 		// frame arrives instead of returning no frame yet
@@ -228,6 +227,11 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
 		&& lastGrabbedTimestamp!= NoTimestamp 
 		&& videoBuffer 
 		&& videoBuffer->HasTimestamp()
+
+		// If ts goes backwards then just return as something is weird
+		// Happens when encoder resets without resetting the stream
+		// Jumping forwards a big jump will already work fine in the check below
+		&& videoBuffer->GetTimestamp() >= lastGrabbedTimestamp
 
 		// Loops dropping frames before the next timestamp to match the capture fps
 		//
@@ -306,8 +310,17 @@ VideoBuffer::const_shared VideoPipe::GrabFrame(uint32_t timeout)
   
 	//If we got timestamps in the video buffer
 	if (videoBuffer->HasTimestamp())
+	{
+		// Sometimes video encoders might be reset and NOT the stream causing the timestamps to
+		// jump backwards. Lets log this case as it is weird and shouldnt happen often. 
+		// If it does happen often and spams we want to know about it
+		if (lastGrabbedTimestamp != NoTimestamp && videoBuffer->GetTimestamp() < lastGrabbedTimestamp)
+		{
+			Warning("-VideoPipe Warning video stream timestamp seemed to go backwards from: %lld to: %lld\n", lastGrabbedTimestamp, videoBuffer->GetTimestamp());
+		}
 		//Update timestamp
 		lastGrabbedTimestamp = videoBuffer->GetTimestamp();
+	}
 
 	//Done
 	return videoBuffer;
