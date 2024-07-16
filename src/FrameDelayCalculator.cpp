@@ -8,6 +8,7 @@ using namespace std::chrono;
 namespace
 {
 
+
 /**
  * Convert timestamp from one clock rate to another
  * 
@@ -25,6 +26,7 @@ static constexpr T convertTimestampClockRate(T ts, uint64_t originalRate, uint64
 }
 
 static constexpr uint64_t UnifiedClockRate = 90 * 1000;
+static constexpr uint64_t MaxClockDesync = 100 * UnifiedClockRate; //100s
 }
 
 FrameDelayCalculator::FrameDelayCalculator(int aUpdateRefsPacketLateThresholdMs, 
@@ -36,9 +38,9 @@ FrameDelayCalculator::FrameDelayCalculator(int aUpdateRefsPacketLateThresholdMs,
 
 std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifier, std::chrono::milliseconds now, uint64_t ts, uint64_t clockRate)
 {	
-	//Log("S: %lld, now: %lld, ts: %lld, clk: %lld\n", streamIdentifier, now.count(), ts, clockRate);
+	//Log("-FrameDelayCalculator::OnFrame() | [streamIdentifier:%lld,now:%lld,ts:%lld,clockRate:%lld,refTime:%lld,refTimestamp:%lld]\n", streamIdentifier, now.count(), ts, clockRate, refTime, refTimestamp);
 	
-	if (ts == 0) return std::chrono::milliseconds(0);
+	if (ts == 0) return 0ms;
 	
 	auto unifiedTs = convertTimestampClockRate(ts, clockRate, UnifiedClockRate);
 		
@@ -48,23 +50,46 @@ std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifie
 		refTimestamp = unifiedTs;
 		
 		initialized = true;			
-		return std::chrono::milliseconds(0);
+		return 0ms;
 	}
 			
 	// Note the lateMs could be negative when the frame arrives earlier than scheduled	
 	auto lateMs = GetFrameArrivalDelayMs(now, unifiedTs);
-	
+
+	//Calculate the timestamp diff to ensure we are using same 
+	uint64_t timestampDiff = unifiedTs > refTimestamp ? unifiedTs - refTimestamp : refTimestamp - unifiedTs;
+
 	// We would delay the early arrived frame
 	std::chrono::milliseconds delayMs(-lateMs);
 	auto updateRefsPacketEarlyThresholdMs = -updateRefsStepPacketEarlyMs.count();
+
+	//Log("-FrameDelayCalculator::OnFrame() | [ts:%lld,late:%lld,delay:%lld,timestampDiff:%lld]\n", unifiedTs, lateMs, delayMs.count(), timestampDiff);
 	
 	bool allEarly = false;
-	if (lateMs > updateRefsPacketLateThresholdMs)  // Packet late
+	//If we detect a clock difference between the timestamps
+	if (refTimestamp && timestampDiff > MaxClockDesync)
+	{
+		//Reset calculator, we keep the refTimestamp so it is not set to the stream that has the jump
+		Warning("-FrameDelayCalculator::OnFrame() | Timestamp clock jump detected [diff:%llu]\n",timestampDiff);
+		allEarlyStartTimeMs.reset();
+		frameArrivalInfo.erase(streamIdentifier);
+		refTime = 0ms;
+		return 0ms;
+	}
+	//If we were reseted because of a ts jump
+	else if (!refTime.count())
+	{
+		//Store valid timestamp after reset
+		refTime = now;
+		refTimestamp = unifiedTs;
+	}
+
+    if (lateMs > updateRefsPacketLateThresholdMs)  // Packet late
 	{
 		refTime = now;
 		refTimestamp = unifiedTs;
 		
-		delayMs = std::chrono::milliseconds(0);
+		delayMs = 0ms;
 	}
 	else if (lateMs < updateRefsPacketEarlyThresholdMs)  // Packet early
 	{
@@ -77,9 +102,11 @@ std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifie
 				auto frameLateMs = GetFrameArrivalDelayMs(time, timestamp);
 				
 				return frameLateMs < updateRefsPacketEarlyThresholdMs;
-			});
+			});		
 	}
 			
+	//Log("-FrameDelayCalculator::OnFrame() | [delay:%lld,allEarly:%lld,allEarlyStartTime:%lld]\n", delayMs.count(), allEarly, allEarlyStartTimeMs.value_or(0ms).count());
+
 	if (allEarly)
 	{
 		if (!allEarlyStartTimeMs.has_value())
@@ -109,7 +136,7 @@ std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifie
 		allEarlyStartTimeMs.reset();
 	}
 	
-	return std::max(delayMs, std::chrono::milliseconds(0));
+	return std::max(delayMs, 0ms);
 }
 
 int64_t FrameDelayCalculator::GetFrameArrivalDelayMs(std::chrono::milliseconds now, uint64_t unifiedTs) const
