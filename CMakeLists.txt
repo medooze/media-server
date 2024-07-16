@@ -49,6 +49,7 @@ add_library(MediaServerLib
 	${SOURCES_WEBP}
 	${SOURCES_AV1}
     ${SOURCES_AAC}
+    ${SOURCES_AV1}
     ${CMAKE_CURRENT_LIST_DIR}/src/DependencyDescriptorLayerSelector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/av1/AV1LayerSelector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/av1/Obu.cpp
@@ -160,6 +161,7 @@ add_executable(MediaServerUnitTest
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestVP8Depacketizer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestVideoPipe.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestBFrame.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAV1.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAMFNumber.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestVideoLayersAllocation.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestTools.cpp
