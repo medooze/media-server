@@ -16,6 +16,7 @@ void FrameDispatchCoordinator::OnFrame(std::chrono::milliseconds now, uint64_t t
 		
 		{
 			std::lock_guard<std::mutex> lock(mutex);
+			// @todo I think we should NOT clamp here but instead use the MFLB to clamp which already does max check. This means we pass back to MFLB what we thing the desired delay is and it forces it into a valid range. It will aloow better logging of the calced values
 			delayMs = std::clamp(frameDelayCalculator.OnFrame(listenerBridge.GetMediaSSRC(), now, ts, clockRate),
 					std::chrono::milliseconds(0), maxDelayMs);
 		}
