@@ -113,6 +113,8 @@ add_library(MediaServerLib
     ${CMAKE_CURRENT_LIST_DIR}/src/ForwardErrorCorrection.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/FecProbeGenerator.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/crc32calc.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/PCAPFile.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/PCAPReader.cpp
 )
 
 target_include_directories(MediaServerLib PUBLIC
@@ -199,3 +201,15 @@ target_link_libraries(MediaServerLegacyTest
 
 add_test(NAME MediaServerLegacyTest
          COMMAND MediaServerLegacyTest)
+
+add_executable(srtextract
+    ${CMAKE_CURRENT_LIST_DIR}/src/log.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/PCAPReader.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/tools/srtextract.cpp
+)
+
+target_include_directories(srtextract PUBLIC
+    ${CMAKE_CURRENT_LIST_DIR}/include
+    ${CMAKE_CURRENT_LIST_DIR}/src
+    ${CMAKE_CURRENT_LIST_DIR}/ext/libdatachannels/src/internal
+)
