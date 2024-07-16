@@ -68,9 +68,13 @@ std::chrono::milliseconds FrameDelayCalculator::OnFrame(uint64_t streamIdentifie
 	}
 	else if (lateMs < updateRefsPacketEarlyThresholdMs)  // Packet early
 	{
+		// @todo I think we need to check it being VERY early for a encoder reset without a stream reset and reset everything. We dont want to slowly adjust if the timestamp jumped back hours.
+
 		// Loop to see if all the streams have arrived earlier
 		allEarly = std::all_of(frameArrivalInfo.begin(), frameArrivalInfo.end(), 
 			[&](const auto& info) {
+				// If get a packet for THIS stream then we dont want to compare it relative to itself only compare relative to other streams we want to sync with
+				// By returning true here it is basically identical to filtering streamIdentifier out of the frameArrivalInfo list and then all_of on the filtered version
 				if (info.first == streamIdentifier) return true;
 							
 				auto [time, timestamp] = info.second;
