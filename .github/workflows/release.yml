@@ -21,7 +21,7 @@ jobs:
         sudo apt-get update
         sudo apt-get install --fix-missing -y libavcodec-dev libx264-dev libx265-dev libavutil-dev libvpx-dev libswscale-dev libswresample-dev libavformat-dev libssl-dev libavfilter-dev
         sudo wget https://ftp.debian.org/debian/pool/main/a/aom/libaom3_3.9.1-1_amd64.deb
-        sudo wget wget https://ftp.debian.org/debian/pool/main/a/aom/libaom-dev_3.9.1-1_amd64.deb
+        sudo wget https://ftp.debian.org/debian/pool/main/a/aom/libaom-dev_3.9.1-1_amd64.deb
         sudo dpkg -i libaom3_3.9.1-1_amd64.deb libaom-dev_3.9.1-1_amd64.deb
     - name: Configure
       run: mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release ..
