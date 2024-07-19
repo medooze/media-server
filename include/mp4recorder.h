@@ -41,6 +41,7 @@ private:
 	bool hasSPS		= false;
 	bool hasPPS		= false;
 	bool hasDimensions	= false;
+	bool hasConfigObu	= false;
 	uint64_t firstSenderTime= 0;
 	uint64_t firstTimestamp = 0;
 	uint64_t lastSenderTime = 0;
