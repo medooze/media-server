@@ -104,7 +104,7 @@ std::vector<RTPPacket::shared> generateRTPStream(const std::vector<FrameDescript
 		packet->SetMark(true);
 		
 		//Create dependency descriptor
-		DependencyDescriptor dependencyDescriptor = {true, true, frameDependencyTemplateId, frame.frameNumber };
+		DependencyDescriptor dependencyDescriptor = {true, true, frameDependencyTemplateId, static_cast<uint16_t>(frame.frameNumber) };
 		dependencyDescriptor.customFrameDiffs = frame.customFrameDiffs;
 		dependencyDescriptor.customFrameDiffsChains = frame.customFrameDiffsChains;
 		//Only send template structure on intra

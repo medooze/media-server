@@ -91,7 +91,7 @@ private:
     AVCodecID codecId;
     AVPixelFormat pixelFmt;
 
-    AVCodec *codec;
+    const AVCodec *codec;
     AVCodecContext *codecCtx;
     AVFrame *frame;
     AVPacket *pkt;

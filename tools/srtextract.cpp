@@ -33,12 +33,17 @@ int extract(const char* orig, const char* pcap, const char* filename)
 			{
 				data += 16;
 				size -= 16;
-				write(fd, data, size);
+				if (write(fd, data, size)!=size)
+					//Error
+					return Error("Could not write to file [err:%d]\n", errno);
 			}
 		}
 	}
+
 	close(fd);
 	reader.Close();
+
+	return true;
 }
 
 int main(int argc, char** argv)
