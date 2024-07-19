@@ -225,7 +225,7 @@ int AV1Encoder::OpenCodec()
 #endif
 	SET_ENCODER_PARAM_OR_RETURN_ERROR(AV1E_SET_DELTAQ_MODE, 0);
 	SET_ENCODER_PARAM_OR_RETURN_ERROR(AV1E_SET_ENABLE_ORDER_HINT, 0);
-	SET_ENCODER_PARAM_OR_RETURN_ERROR(AV1E_SET_AQ_MODE, 3);
+	SET_ENCODER_PARAM_OR_RETURN_ERROR(AV1E_SET_AQ_MODE, aqMode);
 	SET_ENCODER_PARAM_OR_RETURN_ERROR(AOME_SET_MAX_INTRA_BITRATE_PCT, maxKeyFrameBitratePct);
 #ifdef AV1E_SET_COEFF_COST_UPD_FREQ
 	SET_ENCODER_PARAM_OR_RETURN_ERROR(AV1E_SET_COEFF_COST_UPD_FREQ, 3);
@@ -348,7 +348,7 @@ int AV1Encoder::FastPictureUpdate()
 
 VideoFrame* AV1Encoder::EncodeFrame(const VideoBuffer::const_shared& videoBuffer)
 {
-	Debug(">AV1Encoder::EncodeFrame()\n");
+	//Debug(">AV1Encoder::EncodeFrame()\n");
 
 	if (!opened)
 	{
@@ -562,7 +562,7 @@ VideoFrame* AV1Encoder::EncodeFrame(const VideoBuffer::const_shared& videoBuffer
 		}
 	}
 
-	Debug("<AV1Encoder::EncodeFrame()\n");
+	//Debug("<AV1Encoder::EncodeFrame()\n");
 
 	return &frame;
 }
