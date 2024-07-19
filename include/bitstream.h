@@ -11,6 +11,7 @@
 #include "tools.h"
 #include <stdexcept>
 #include "BufferReader.h"
+#include "BufferWritter.h"
 
 class BitReader
 {
@@ -40,11 +41,11 @@ public:
 		error = false;
 	}
 
-	BitReader(BufferReader& reader, const DWORD size) : 
+	BitReader(BufferReader& reader, const DWORD size) :
 		BitReader(reader.GetData(size), size)
 	{
 	}
-	
+
 	inline void Wrap(const BYTE *data,const DWORD size)
 	{
 		//Store
@@ -121,7 +122,7 @@ public:
 			//Skip cache
 			SkipCached(n);
 		}
-		//Debug("Skiped %d: cached:%d\n", n, cached);
+		//Debug("Skiped n:%d: cached:%d\n", n, cached);
 	}
 
 	inline QWORD Left()
@@ -186,7 +187,67 @@ public:
 		uint64_t value = Get(leadingZeros);
 		return value + (1lu << leadingZeros) - 1;
 	}
-public:
+
+	inline DWORD Flush()
+	{
+		Align();
+		FlushCache();
+		return bufferPos;
+	}
+
+	inline void FlushCache()
+	{
+		//Check if we have already finished
+		if (!cached)
+			//exit
+			return;
+		//Check size
+		if (cached > bufferPos * 8)
+		{
+			//We can't use exceptions so set error flag
+			error = true;
+			//Exit
+			return;
+		}
+		//BitDump(cache,cached);
+		// We need to return the cached bits to the buffer
+		auto bytes = cached / 8;
+		//Debug("Flushing Cache cached:%d bytes:%d len:%u pos:%u\n", cached, bytes, bufferLen, bufferPos);
+
+		//Increase pointers
+		bufferLen += bytes;
+		buffer -= bytes;
+		bufferPos -= bytes;
+
+		//Nothing cached
+		cached = 0;
+		cache = 0;
+		//Debug("Flushed cache len:%u pos:%u\n", bufferLen, bufferPos);
+
+	}
+
+	inline void Align()
+	{
+		if (cached % 8 == 0)
+			return;
+
+		if (cached > 24)
+			Skip(32 - cached);
+		else if (cached > 16)
+			Skip(24 - cached);
+		else if (cached > 8)
+			Skip(16 - cached);
+		else
+			Skip(8 - cached);
+	}
+
+	inline bool Error()
+	{
+		//We won't use exceptions, so we need to signal errors somehow
+		return error;
+	}
+
+private:
 	inline DWORD Cache()
 	{
 		//Check left buffer
@@ -283,12 +344,6 @@ public:
 		return ret;
 	}
 	
-	inline bool Error()
-	{
-		//We won't use exceptions, so we need to signal errors somehow
-		return error;
-	}
-
 private:
 	const BYTE* buffer;
 	DWORD bufferLen;
@@ -310,6 +365,11 @@ public:
 		this->size = size;
 		//And reset to init values
 		Reset();
+	}
+
+	BitWritter(BufferWritter& writter, DWORD size) : 
+		BitWritter(writter.Consume(size), size)
+	{
 	}
 
 	inline void Reset()
