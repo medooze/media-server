@@ -26,8 +26,8 @@ public:
 		uint32_t bitrate		= 0;
 		uint16_t maxEncodingTime	= 0;
 		uint16_t avgEncodingTime	= 0;
-		uint16_t maxCaptureTime		= 0;
-		uint16_t avgCaptureTime		= 0;
+		uint16_t maxCapturingTime	= 0;
+		uint16_t avgCapturingTime	= 0;
 		
 	};
 public:

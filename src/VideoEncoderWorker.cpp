@@ -225,7 +225,7 @@ int VideoEncoderWorker::Encode()
 		}
 
 		//Get time before encoding
-		uint64_t encodeStartTime = getTimeMS();
+		uint64_t encodeStartTime = captureTimeEnd;
 
 		//Procesamos el frame
 		VideoFrame *videoFrame = videoEncoder->EncodeFrame(pic);
@@ -238,7 +238,7 @@ int VideoEncoderWorker::Encode()
 		num++;
 
 		//Get time after encoding
-		uint64_t encodeEndTime = getTime() / 1000;
+		uint64_t encodeEndTime = getTimeMS();
 
 		//Calculate encoding time
 		encodingTimeAcu.Update(encodeEndTime, encodeEndTime - encodeStartTime);
@@ -286,8 +286,8 @@ int VideoEncoderWorker::Encode()
 		stats.bitrate			= bitrateAcu.GetInstant();
 		stats.maxEncodingTime		= encodingTimeAcu.GetMaxValueInWindow();
 		stats.avgEncodingTime		= static_cast<uint16_t>(encodingTimeAcu.GetInstantMedia());
-		stats.maxCaptureTime		= capturingTimeAcu.GetMaxValueInWindow();
-		stats.avgCaptureTime		= static_cast<uint16_t>(capturingTimeAcu.GetInstantMedia());
+		stats.maxCapturingTime		= capturingTimeAcu.GetMaxValueInWindow();
+		stats.avgCapturingTime		= static_cast<uint16_t>(capturingTimeAcu.GetInstantMedia());
 
 		//For each listener
 		for (auto &listener : listeners)
