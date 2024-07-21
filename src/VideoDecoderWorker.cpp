@@ -93,7 +93,7 @@ int VideoDecoderWorker::Decode()
 
 	Log(">VideoDecoderWorker::Decode()\n");
 
-	//Capturing time init
+	//Waif for frame time init
 	uint64_t waitFrameStart = getTimeMS();
 
 	//Mientras tengamos que capturar
@@ -112,7 +112,7 @@ int VideoDecoderWorker::Decode()
 			//Check condition again
 			continue;
 
-		//Get capturing time
+		//Get waif time end
 		uint64_t waitFrameEnd = getTimeMS();
 
 		//Update
@@ -233,6 +233,9 @@ int VideoDecoderWorker::Decode()
 					output->NextFrame(videoBuffer);
 			}
 		}
+
+		//Waif for frame time init
+		waitFrameStart = getTimeMS();
 	}
 
 	Log("<VideoDecoderWorker::Decode()\n");
