@@ -210,6 +210,7 @@ add_test(NAME MediaServerLegacyTest
 add_executable(srtextract
     ${CMAKE_CURRENT_LIST_DIR}/src/log.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/PCAPReader.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/PCAPFile.cpp
     ${CMAKE_CURRENT_LIST_DIR}/tools/srtextract.cpp
 )
 

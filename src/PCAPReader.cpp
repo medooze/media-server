@@ -21,7 +21,7 @@ PCAPReader::~PCAPReader()
 
 bool PCAPReader::Open(const char* file)
 {
-	Log("-PCAPReader::Open() | Opening pcap file [%s]\n",file);
+	Log(">PCAPReader::Open() | Opening pcap file [%s]\n",file);
 	// Open filename
 	if ((fd = open(file, O_RDONLY))==-1)
 		return Error("-PCAPReader::Open() | Error opening pcap file\n");
@@ -43,6 +43,7 @@ bool PCAPReader::Open(const char* file)
 		reversed = true;
 	}
 		
+	Log("<PCAPReader::Open() | Opened pcap file [reversed:%d]\n", reversed);
 	return true;
 }
 
@@ -58,7 +59,7 @@ void PCAPReader::Rewind()
 uint64_t PCAPReader::Next()
 {
 retry:
-	//UltraDebug("-PCAPReader::GetNextPacket() | retry at [pos:%d]\n",lseek(fd, 0, SEEK_CUR));
+	UltraDebug("-PCAPReader::GetNextPacket() | retry at [pos:%d]\n",lseek(fd, 0, SEEK_CUR));
 
 	//read header
 	if (read(fd,data,PCAP_PACKET_HEADER_SIZE)!=PCAP_PACKET_HEADER_SIZE)
@@ -66,15 +67,15 @@ retry:
 		return false;
 	
 	//Get packet data
-	uint32_t seconds	= !reversed ? get4(data, 0)		: get4Reversed(data, 0);
-	uint32_t nanoseonds = !reversed ? get4(data, 4)		: get4Reversed(data, 4);
-	uint32_t size		= !reversed ? get4(data, 8)		: get4Reversed(data, 8);
+	uint32_t seconds	= !reversed ? get4(data, 0)	: get4Reversed(data, 0);
+	uint32_t nanoseonds	= !reversed ? get4(data, 4)	: get4Reversed(data, 4);
+	uint32_t size		= !reversed ? get4(data, 8)	: get4Reversed(data, 8);
 	uint32_t captured	= !reversed ? get4(data, 12)	: get4Reversed(data, 12);
 	
 	//Get current timestamp
 	uint64_t ts = (((uint64_t)seconds)*1000000+nanoseonds);
 
-	//UltraDebug("-Got packet captured:%u size:%d\n",captured,size);
+	UltraDebug("-Got packet captured:%u size:%d\n",captured,size);
 	//Read the packet
 // Ignore coverity error: Passing tainted expression "captured" to "read", which uses it as an offset.
 // coverity[tainted_data]
@@ -84,27 +85,33 @@ retry:
 		//retry
 		goto retry;
 	}
+	//Get outmost protocl
+	uint32_t protocol	= !reversed ? get2(data, 0) : get2Reversed(data, 0);
+
+	//linux cooked capture or ethenet
+	uint32_t ini = protocol == 0x0008 ? 20 : 14;
+
 	// Get the udp size including udp headers
-	uint16_t udpLen = get2(data, 38);
+	uint16_t udpLen = get2(data, ini + 24);
 
 	//Check length
-	if (udpLen!=(size-34) || udpLen<8)
+	if (udpLen!=(size - ini - 20) || udpLen<8)
 	{
-		Error("-PCAPReader::GetNextPacket() | Wrong UDP packet len:%u size:%d\n",udpLen, size);
+		Error("-PCAPReader::GetNextPacket() | Wrong UDP packet len:%u[%x] size:%d\n",udpLen, udpLen, size);
 		//retry
 		goto retry;
 	}
 	//Get ip and ports
-	originIp	= !reversed ? get4(data, 26) : get4Reversed(data, 26);
-	destIp		= !reversed ? get4(data, 30) : get4Reversed(data, 30);
-	originPort	= !reversed ? get2(data, 34) : get2Reversed(data, 34);
-	destPort	= !reversed ? get2(data, 36) : get2Reversed(data, 36);
+	originIp	= !reversed ? get4(data, ini + 12) : get4Reversed(data, ini + 12);
+	destIp		= !reversed ? get4(data, ini + 16) : get4Reversed(data, ini + 16);
+	originPort	= !reversed ? get2(data, ini + 20) : get2Reversed(data, ini + 20);
+	destPort	= !reversed ? get2(data, ini + 24) : get2Reversed(data, ini + 24);
 	
 	//The udp packet
-	packet	  = data + 42;
+	packet	  = data + ini + 28;
 	packetLen = udpLen - 8;
 	
-	//UltraDebug("-PCAPReader::GetNextPacket() | got packet [len:%d,pos:%d,ts:%llu]\n",packetLen,lseek(fd, 0, SEEK_CUR),ts);
+	UltraDebug("-PCAPReader::GetNextPacket() | got packet [len:%d,pos:%d,ts:%llu]\n",packetLen,lseek(fd, 0, SEEK_CUR),ts);
 	
 	//Return timestamp of this packet
 	return ts;
