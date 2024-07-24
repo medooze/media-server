@@ -1,6 +1,6 @@
 {
 	"name": "medooze-media-server-src",
-	"version": "1.3.0",
+	"version": "1.3.1",
 	"description": "Redistributable Source for Medooze Media Server",
 	"main": "index.js",
 	"files": [
