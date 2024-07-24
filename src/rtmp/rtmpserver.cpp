@@ -48,15 +48,15 @@ int RTMPServer::Init(int port)
 	//Save server port
 	serverPort = port;
 
-	//I am inited
-	inited = 1;
-
 	//Init server socket
 	if (!BindServer())
 		return 0;
 
 	//Create threads
 	createPriorityThread(&serverThread,run,this,0);
+
+	//I am inited
+	inited = 1;
 
 	//Return ok
 	return 1;
