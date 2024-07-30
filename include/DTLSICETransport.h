@@ -67,7 +67,7 @@ public:
 	};
 
 public:
-	DTLSICETransport(Sender *sender,TimeService& timeService, ObjectPool<Packet>& packetPool);
+	DTLSICETransport(Sender *sender,TimeService& timeService, ObjectPool<Packet>& packetPool, const SendSideBandwidthEstimation::Options& bweOptions);
 	virtual ~DTLSICETransport();
 	
 	void Start();
@@ -158,6 +158,9 @@ private:
 	};
 	
 private:
+	// @todo Dont need to store them all but simpler for now in case adding other things
+	SendSideBandwidthEstimation::Options bweOptions;
+	
 	Sender*		sender = nullptr;
 	TimeService&	timeService;
 	ObjectPool<Packet>& packetPool;

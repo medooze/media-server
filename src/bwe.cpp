@@ -28,7 +28,7 @@ int main(int argc, char** argv)
 	uint64_t time;
 	RTPMap extMap;
 	PCAPReader reader;
-	SendSideBandwidthEstimation senderSideBandwidthEstimator;
+	SendSideBandwidthEstimation senderSideBandwidthEstimator{SendSideBandwidthEstimation::Options{}};
 	
 	extMap[1] = RTPHeaderExtension::SSRCAudioLevel;
 	//extMap[5] = RTPHeaderExtension::TransportWideCC;
