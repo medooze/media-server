@@ -8,6 +8,8 @@
 #include "rtmpmessage.h"
 #include "rtmpstream.h"
 #include "rtmpapplication.h"
+#include "TlsClient.h"
+
 #include <pthread.h>
 #include <map>
 #include <functional>
@@ -29,7 +31,11 @@ public:
 		FailedToParseData = 6,
 		PeerClosed = 7,
 		ReadError = 8,
-		PollError = 9
+		PollError = 9,
+		TlsInitError = 10,
+		TlsHandshakeError = 11,
+		TlsDecryptError = 12,
+		TlsEncryptError = 13
 	};
 
 	class Listener
@@ -44,7 +50,7 @@ public:
 		virtual void onCommand(RTMPClientConnection* conn, DWORD messageStreamId, const wchar_t* name, AMFData* obj, const std::vector<AMFData*>&) = 0;
 	};
 public:
-	RTMPClientConnection(const std::wstring& tag);
+	RTMPClientConnection(bool secure, const std::wstring& tag);
 	virtual ~RTMPClientConnection();
 
 	ErrorCode Connect(const char* server, int port, const char* app, RTMPClientConnection::Listener* listener);
@@ -76,11 +82,14 @@ protected:
 	void Stop();
 	int Run();
 private:
+	
+	void sendRtmpData(const uint8_t* data, size_t size);
+	void processReceivedData(const uint8_t* data, size_t size);
 
 	static  void* run(void* par);
-	void ParseData(BYTE* data, const DWORD size);
+	void ParseData(const BYTE* data, const DWORD size);
 	DWORD SerializeChunkData(BYTE* data, const DWORD size);
-	int WriteData(BYTE* data, const DWORD size);
+	int WriteData(const BYTE* data, const DWORD size);
 
 	void ProcessControlMessage(DWORD streamId, BYTE type, RTMPObject* msg);
 	void ProcessCommandMessage(DWORD streamId, RTMPCommandMessage* cmd);
@@ -162,6 +171,8 @@ private:
 	std::wstring method;
 	std::wstring challenge;
 	std::wstring opaque;
+	
+	std::unique_ptr<TlsClient> tls;
 };
 
 #endif

@@ -28,7 +28,7 @@
  * to the message layer.
  *******************************************************************/
 
-RTMPClientConnection::RTMPClientConnection(const std::wstring& tag) :
+RTMPClientConnection::RTMPClientConnection(bool secure, const std::wstring& tag) :
 	tag(tag)
 {
 	setZeroThread(&thread);
@@ -44,6 +44,11 @@ RTMPClientConnection::RTMPClientConnection(const std::wstring& tag) :
 	chunkOutputStreams[4] = new RTMPChunkOutputStream(4);
 	//Create output chunk streams for video
 	chunkOutputStreams[5] = new RTMPChunkOutputStream(5);
+	
+	if (secure)
+	{
+		tls = std::make_unique<TlsClient>();
+	}
 }
 
 RTMPClientConnection::~RTMPClientConnection()
@@ -107,6 +112,21 @@ RTMPClientConnection::ErrorCode RTMPClientConnection::Connect(const char* server
 		
 		return RTMPClientConnection::ErrorCode::FailedToConnectSocket;
 	}
+	
+	if (tls)
+	{
+		if (!tls->Initialize())
+		{
+			Error("Failed to initialise tls: %s:%d\n", server, port);
+			return RTMPClientConnection::ErrorCode::TlsInitError;
+		}
+		
+		// Start handshake
+		if (tls->Handshake() == TlsClient::SslStatus::Failed)
+		{
+			return RTMPClientConnection::ErrorCode::TlsHandshakeError;
+		}
+	}
 
 	//I am inited
 	inited = true;
@@ -146,6 +166,8 @@ void RTMPClientConnection::Stop()
 	//If got socket
 	if (fd != FD_INVALID)
 	{
+		if (tls) tls->Shutdown();
+		
 		//Not running;
 		running = false;
 		//Close socket
@@ -240,55 +262,63 @@ int RTMPClientConnection::Run()
 
 		if (ufds[0].revents & POLLOUT)
 		{
-			//Check if socket was not connected yet
-			if (!connected)
+			if (!tls || tls->IsInitialised())
 			{
-				//Double check it is connected
-				int err;
-				socklen_t len = sizeof(err);
-				if (getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &len) == -1)
+				//Check if socket was not connected yet
+				if (!connected)
 				{
-					Warning("-RTMPClientConnection::Run() getsockopt failed [%p]\n", this);
-					
-					if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::GetSockOptError);
-					//exit
-					break;
+					//Double check it is connected
+					int err;
+					socklen_t len = sizeof(err);
+					if (getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &len) == -1)
+					{
+						Warning("-RTMPClientConnection::Run() getsockopt failed [%p]\n", this);
+						
+						if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::GetSockOptError);
+						//exit
+						break;
+					}
+
+					//Check status
+					if (err != 0)
+					{
+						Warning("-RTMPClientConnection::Run() getsockopt error [%p, errno:%d]\n", this, err);
+						
+						if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::GetSockOptError);
+						//exit
+						break;
+					}
+
+					//Connected
+					connected = true;
+
+					//Create C01 and send it
+					c01.SetRTMPVersion(3);
+					c01.SetTime(getDifTime(&startTime) / 1000);
+					c01.SetVersion(0, 0, 0, 0);
+					//Do not calculate digest
+					digest = false;
+					//Set state
+					state = HEADER_S0_WAIT;
+					//Send it
+					sendRtmpData(c01.GetData(), c01.GetSize());
+
+					//Debug
+					Debug("-RTMPClientConnection::Run() Socket connected, Sending c0 and c1 with digest %s size %d\n", digest ? "on" : "off", c01.GetSize());
 				}
 
-				//Check status
-				if (err != 0)
-				{
-					Warning("-RTMPClientConnection::Run() getsockopt error [%p, errno:%d]\n", this, err);
-					
-					if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::GetSockOptError);
-					//exit
-					break;
-				}
-
-				//Connected
-				connected = true;
-
-				//Create C01 and send it
-				c01.SetRTMPVersion(3);
-				c01.SetTime(getDifTime(&startTime) / 1000);
-				c01.SetVersion(0, 0, 0, 0);
-				//Do not calculate digest
-				digest = false;
-				//Set state
-				state = HEADER_S0_WAIT;
+				//Write data buffer
+				DWORD len = SerializeChunkData(data, size);
 				//Send it
-				WriteData(c01.GetData(), c01.GetSize());
-
-				//Debug
-				Debug("-RTMPClientConnection::Run() Socket connected, Sending c0 and c1 with digest %s size %d\n", digest ? "on" : "off", c01.GetSize());
+				sendRtmpData(data, len);
 			}
-
-			//Write data buffer
-			DWORD len = SerializeChunkData(data, size);
-			//Send it
-			WriteData(data, len);
-			//Increase sent bytes
-			outBytes += len;
+			
+			if (tls)
+			{
+				tls->PopAllEncrypted([this](auto&& data){
+					WriteData(data.data(), data.size());
+				});
+			}
 		}
 
 		if (ufds[0].revents & POLLIN)
@@ -315,8 +345,15 @@ int RTMPClientConnection::Run()
 			inBytes += len;
 
 			try {
-				//Parse data
-				ParseData(data, len);
+				processReceivedData(data, len);
+				
+				if (tls)
+				{
+					tls->PopAllDecypted([this](auto&& data) {
+						//Parse data
+						ParseData(data.data(), data.size());
+					});
+				}
 			}
 			catch (std::exception& e) {
 				//Show error
@@ -407,18 +444,64 @@ end:
 	return len;
 }
 
+void RTMPClientConnection::sendRtmpData(const uint8_t* data, size_t size)
+{
+	if (tls)
+	{
+		if (tls->Encrypt(data, size) != TlsClient::TlsClientError::NoError)
+		{
+			Error("-RTMPClientConnection::sendRtmpData() TLS encrypt error\n");
+			
+			if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::TlsEncryptError);
+			return;
+		}
+	}
+	else
+	{
+		WriteData(data, size);
+	}
+	
+	outBytes += size;
+}
+
+void RTMPClientConnection::processReceivedData(const uint8_t* data, size_t size)
+{
+	if (tls)
+	{
+		auto ret = tls->Decrypt(data, size);
+		switch(ret) 
+		{
+		case TlsClient::TlsClientError::NoError:
+			return;
+		case TlsClient::TlsClientError::HandshakeFailed:
+			Warning("-RTMPClientConnection::processReceivedData() TLS handshake error\n");
+			if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::TlsHandshakeError);
+			return;
+		case TlsClient::TlsClientError::Failed:
+		default:
+			Warning("-RTMPClientConnection::processReceivedData() Failed to decrypt\n");
+			if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::TlsDecryptError);
+			return;
+		}
+	}
+	else
+	{
+		ParseData(data, size);
+	}
+}
+
 /***********************
  * ParseData
  * 	Process incomming data
  **********************/
-void RTMPClientConnection::ParseData(BYTE* data, const DWORD size)
+void RTMPClientConnection::ParseData(const BYTE* data, const DWORD size)
 {
 	RTMPChunkInputStreams::iterator it;
 	int len = 0;
 	int digesOffsetMethod = 0;
 
 	//Get pointer and data size
-	BYTE* buffer = data;
+	BYTE* buffer = const_cast<BYTE*>(data);
 	DWORD bufferSize = size;
 	DWORD digestPosServer = 0;
 
@@ -476,7 +559,7 @@ void RTMPClientConnection::ParseData(BYTE* data, const DWORD size)
 					//Move to next state
 					state = HEADER_S2_WAIT;
 					//Send S2 data
-					WriteData(c2.GetData(), c2.GetSize());
+					sendRtmpData(c2.GetData(), c2.GetSize());
 					//Debug
 					Log("-RTMPClientConnection::Sending c2.\n");
 				}
@@ -801,9 +884,8 @@ void RTMPClientConnection::ParseData(BYTE* data, const DWORD size)
  * WriteData
  *	Write data to socket
  ***********************/
-int RTMPClientConnection::WriteData(BYTE* data, const DWORD size)
+int RTMPClientConnection::WriteData(const BYTE* data, const DWORD size)
 {
-	//Write it
 	return write(fd, data, size);
 }
 
@@ -889,7 +971,6 @@ void RTMPClientConnection::ProcessCommandMessage(DWORD streamId, RTMPCommandMess
 	//If it is a result from a previous command
 	if (name.compare(L"_error") == 0 || name.compare(L"_result") == 0)
 	{
-
 		//Log
 		Log("-RTMPClientConnection::ProcessCommandMessage() Got response [streamId:%d,name:\"%ls\",transId:%ld]\n", streamId, name.c_str(), transId);
 		cmd->Dump();
