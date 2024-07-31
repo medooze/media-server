@@ -309,7 +309,7 @@ private:
 	// Prevent future problems with shallow copies for now by preventing them
 	// Maybe later we will support deep copying of "elements"
 	AMFStrictArray(const AMFStrictArray& rhs) = delete;
-	AMFStrictArray* operator=(const AMFStrictArray& rhs) = delete;
+	AMFStrictArray& operator=(const AMFStrictArray& rhs) = delete;
 
 	AMFData** elements;
 	AMFParser parser;
