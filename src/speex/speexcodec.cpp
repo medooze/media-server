@@ -114,8 +114,11 @@ DWORD SpeexDecoder::TrySetRate(DWORD rate)
 	return GetRate();
 }
 
-int SpeexDecoder::Decode (const BYTE *in, int inLen, SWORD* out, int outLen)
+int SpeexDecoder::Decode(const AudioFrame::const_shared& audioFrame, SWORD* out, int outLen)
 {
+
+	const uint8_t* in = audioFrame ? (uint8_t*)audioFrame->GetData() : nullptr;
+	int inLen = audioFrame ? audioFrame->GetLength() : 0;
 	//Nothing to decode
 	if (!inLen)
 		//Exit
