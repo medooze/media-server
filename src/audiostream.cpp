@@ -443,7 +443,7 @@ int AudioStream::SendAudio()
 		frameTime += codec->numFrameSamples*clock/rate;
 
 		//Capture audio data
-		if (audioInput->RecBuffer(recBuffer,codec->numFrameSamples)==0)
+		if (audioInput->RecBuffer(recBuffer,codec->numFrameSamples, 0)==0)
 			continue;
 
 		//Encode it

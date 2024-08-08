@@ -218,7 +218,7 @@ int AudioPipe::PlayBuffer(SWORD* buffer, DWORD size, DWORD frameTime, BYTE vadLe
 }
 
 
-int AudioPipe::RecBuffer(SWORD* buffer, DWORD size)
+int AudioPipe::RecBuffer(SWORD* buffer, DWORD size, uint32_t timeout)
 {
 	//Debug("-pop %d cache %d\n",size,fifoBuffer.length());
 
@@ -227,6 +227,12 @@ int AudioPipe::RecBuffer(SWORD* buffer, DWORD size)
 
 	//Lock
 	pthread_mutex_lock(&mutex);
+	timespec wakeupTime;
+	if (timeout)
+	{
+		//Calculate timeout
+		calcTimout(&wakeupTime,timeout);
+	}
 	
 	//Ensere we are playing
 	while (!playing) 
@@ -251,8 +257,28 @@ int AudioPipe::RecBuffer(SWORD* buffer, DWORD size)
 	//Until we have enought samples
 	while (!canceled && recording && (fifoBuffer.length() < totalSize + cache))
 	{
-		//Wait for change
-		pthread_cond_wait(&cond, &mutex);
+		int ret = -1;
+		//If timeout has been specified
+		if (timeout)
+		{
+			//wait
+			ret = pthread_cond_timedwait(&cond,&mutex,&wakeupTime);
+			if (ret == ETIMEDOUT)
+			{
+				// On timeout exit the loop
+				break;
+			}
+		}
+		else
+		{
+			//Wait ad infinitum
+			ret = pthread_cond_wait(&cond,&mutex);
+		}
+	
+		if (ret)
+		{
+			Error("-AudioPipe cond wait error [%d,%d]\n",ret,errno);
+		}
 
 		//If we have been canceled
 		if (canceled)

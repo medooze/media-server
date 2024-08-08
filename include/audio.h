@@ -4,36 +4,10 @@
 #include "media.h"
 #include "codecs.h"
 
-class AudioEncoder
-{
-public:
-	// Must have virtual destructor to ensure child class's destructor is called
-	virtual ~AudioEncoder(){};
-	virtual int   Encode(SWORD *in,int inLen,BYTE* out,int outLen)=0;
-	virtual DWORD TrySetRate(DWORD rate, DWORD numChannels)=0;
-	virtual DWORD GetRate()=0;
-	virtual DWORD GetNumChannels() { return 1; }
-	virtual DWORD GetClockRate()=0;
-	AudioCodec::Type	type;
-	int			numFrameSamples;
-};
-
-class AudioDecoder
-{
-public:
-	// Must have virtual destructor to ensure child class's destructor is called
-	virtual ~AudioDecoder(){};
-	virtual int   Decode(const BYTE *in,int inLen,SWORD* out,int outLen)=0;
-	virtual DWORD TrySetRate(DWORD rate)=0;
-	virtual DWORD GetRate()=0;
-	virtual DWORD GetNumChannels() { return 1; }
-	AudioCodec::Type	type;
-	int			numFrameSamples;
-};
-
 class AudioFrame : public MediaFrame
 {
 public:
+	using const_shared = std::shared_ptr<const AudioFrame>;
 	AudioFrame(AudioCodec::Type codec) : MediaFrame(MediaFrame::Audio,2048)
 	{
 		//Store codec
@@ -96,13 +70,42 @@ public:
 	virtual DWORD GetNativeRate()=0;
 	virtual DWORD GetRecordingRate()=0;
 	virtual DWORD GetNumChannels()=0;
-	virtual int RecBuffer(SWORD *buffer,DWORD size)=0;
+	virtual int RecBuffer(SWORD *buffer,DWORD size, uint32_t timeout)=0;
 	virtual int ClearBuffer() = 0;
 	virtual void  CancelRecBuffer()=0;
 	virtual int StartRecording(DWORD samplerate)=0;
 	virtual int StopRecording()=0;
 
 };
+
+class AudioEncoder
+{
+public:
+	// Must have virtual destructor to ensure child class's destructor is called
+	virtual ~AudioEncoder(){};
+	virtual int   Encode(SWORD *in,int inLen,BYTE* out,int outLen)=0;
+	virtual DWORD TrySetRate(DWORD rate, DWORD numChannels)=0;
+	virtual DWORD GetRate()=0;
+	virtual DWORD GetNumChannels() { return 1; }
+	virtual DWORD GetClockRate()=0;
+	AudioCodec::Type	type;
+	int			numFrameSamples;
+};
+
+class AudioDecoder
+{
+public:
+	// Must have virtual destructor to ensure child class's destructor is called
+	virtual ~AudioDecoder(){};
+	virtual int   Decode(const AudioFrame::const_shared& frame, SWORD* out,int outLen)=0;
+	virtual DWORD TrySetRate(DWORD rate)=0;
+	virtual DWORD GetRate()=0;
+	virtual DWORD GetNumChannels() { return 1; }
+	AudioCodec::Type	type;
+	int			numFrameSamples;
+};
+
+
 
 class AudioOutput
 {

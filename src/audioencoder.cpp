@@ -203,7 +203,7 @@ int AudioEncoderWorker::Encode()
 	while(encodingAudio)
 	{
 		//Capturamos 20ms
-		if (audioInput->RecBuffer(recBuffer,codec->numFrameSamples)==0)
+		if (audioInput->RecBuffer(recBuffer,codec->numFrameSamples, 0)==0)
 			//Skip and probably exit
 			continue;
 

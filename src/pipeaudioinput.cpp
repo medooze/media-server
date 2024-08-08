@@ -36,7 +36,7 @@ int PipeAudioInput::ClearBuffer()
 	//Desbloqueamos
 	pthread_mutex_unlock(&mutex);
 }
-int PipeAudioInput::RecBuffer(SWORD *buffer,DWORD size)
+int PipeAudioInput::RecBuffer(SWORD *buffer,DWORD size, uint32_t timeout)
 {
 	int len = 0;
 

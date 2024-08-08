@@ -12,7 +12,7 @@ class PipeAudioInput :
 public:
 	PipeAudioInput();
 	~PipeAudioInput();
-	virtual int RecBuffer(SWORD *buffer,DWORD size);
+	virtual int RecBuffer(SWORD *buffer,DWORD size, uint32_t timeout);
 	virtual int ClearBuffer();
 	virtual void CancelRecBuffer();
 	virtual int StartRecording(DWORD rate);

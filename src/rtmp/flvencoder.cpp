@@ -467,7 +467,7 @@ int FLVEncoder::EncodeAudio()
 		}
 		
 		//Capturamos
-		DWORD  recLen = audioInput->RecBuffer(recBuffer,encoder->numFrameSamples);
+		DWORD  recLen = audioInput->RecBuffer(recBuffer,encoder->numFrameSamples, 0);
 		//Check len
 		if (!recLen)
 		{
