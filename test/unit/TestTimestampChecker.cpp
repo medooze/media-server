@@ -12,7 +12,8 @@ TEST(TestTimestampChecker, NormalStream)
 		ss << "type: " << type << " time: " << time << " ts: " << ts;
 		SCOPED_TRACE(ss.str());
 		
-		ASSERT_EQ(TimestampChecker::CheckResult::Valid, checkers[type].Check(time, ts, clk));
+		auto [result, rts] = checkers[type].Check(time, ts, clk);
+		ASSERT_EQ(TimestampChecker::CheckResult::Valid, result);
 	}
 }
 
@@ -30,11 +31,14 @@ TEST(TestTimestampChecker, TimestampSpike)
 		if (counter == 20)
 		{
 			ts = ts + 1000000;
-			ASSERT_EQ(TimestampChecker::CheckResult::Invalid, checkers[type].Check(time, ts, clk));
+			
+			auto [result, rts] = checkers[type].Check(time, ts, clk);
+			ASSERT_EQ(TimestampChecker::CheckResult::Invalid, result);
 		}
 		else
 		{
-			ASSERT_EQ(TimestampChecker::CheckResult::Valid, checkers[type].Check(time, ts, clk));
+			auto [result, rts] = checkers[type].Check(time, ts, clk);
+			ASSERT_EQ(TimestampChecker::CheckResult::Valid, result);
 		}
 		
 		counter++;
@@ -56,21 +60,25 @@ TEST(TestTimestampChecker, FirstTimeStampWrong)
 		if (counter == 0)
 		{
 			ts = 1000000;
-			ASSERT_EQ(TimestampChecker::CheckResult::Valid, checkers[type].Check(time, ts, clk));
+			auto [result, rts] = checkers[type].Check(time, ts, clk);
+			ASSERT_EQ(TimestampChecker::CheckResult::Valid, result);
 		}
 		else if (counter > 0 && counter < (1 + TimestampChecker::DefaultMaxContinousInvalidFrames))
 		{
 			// As firt time stamp was used a reference, the following few frames would be regarded as invalid
-			ASSERT_EQ(TimestampChecker::CheckResult::Invalid, checkers[type].Check(time, ts, clk));
+			auto [result, rts] = checkers[type].Check(time, ts, clk);
+			ASSERT_EQ(TimestampChecker::CheckResult::Invalid, result);
 		}
 		else if (counter == (1 + TimestampChecker::DefaultMaxContinousInvalidFrames))
 		{
-			ASSERT_EQ(TimestampChecker::CheckResult::Reset, checkers[type].Check(time, ts, clk));
+			auto [result, rts] = checkers[type].Check(time, ts, clk);
+			ASSERT_EQ(TimestampChecker::CheckResult::Reset, result);
 		}
 		else
 		{
 			// After the continous invalid frames reach a threshold, the checking would be reset.
-			ASSERT_EQ(TimestampChecker::CheckResult::Valid, checkers[type].Check(time, ts, clk));
+			auto [result, rts] = checkers[type].Check(time, ts, clk);
+			ASSERT_EQ(TimestampChecker::CheckResult::Valid, result);
 		}
 		
 		counters[type]++;
@@ -97,22 +105,24 @@ TEST(TestTimestampChecker, TimeStampWrong)
 			ts = ts + 1000000;
 		}
 		
+		auto [result, rts] = checkers[type].Check(time, ts, clk);
+		
 		if (counter >= 20 && counter < (20 + TimestampChecker::DefaultMaxContinousInvalidFrames))
 		{	
-			ASSERT_EQ(TimestampChecker::CheckResult::Invalid, checkers[type].Check(time, ts, clk));
+			ASSERT_EQ(TimestampChecker::CheckResult::Invalid, result);
 		}
 		else if (counter >= 41 && counter < (41 + TimestampChecker::DefaultMaxContinousInvalidFrames))
 		{
-			ASSERT_EQ(TimestampChecker::CheckResult::Invalid, checkers[type].Check(time, ts, clk));
+			ASSERT_EQ(TimestampChecker::CheckResult::Invalid, result);
 		}
 		else if (counter == (20 + TimestampChecker::DefaultMaxContinousInvalidFrames) || 
 			counter == (41 + TimestampChecker::DefaultMaxContinousInvalidFrames))
 		{
-			ASSERT_EQ(TimestampChecker::CheckResult::Reset, checkers[type].Check(time, ts, clk));
+			ASSERT_EQ(TimestampChecker::CheckResult::Reset, result);
 		}
 		else
 		{	
-			ASSERT_EQ(TimestampChecker::CheckResult::Valid, checkers[type].Check(time, ts, clk));
+			ASSERT_EQ(TimestampChecker::CheckResult::Valid, result);
 		}
 		
 		counters[type]++;
