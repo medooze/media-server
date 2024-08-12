@@ -13,9 +13,23 @@
 #include "config.h"
 #include "codecs.h"
 #include "video.h"
+#include "acumulator.h"
 
 class VideoEncoderWorker
 {
+public: 
+	struct Stats
+	{
+		uint64_t timestamp		= 0;
+		uint64_t totalEncodedFrames	= 0;
+		uint16_t fps			= 0;
+		uint32_t bitrate		= 0;
+		uint16_t maxEncodingTime	= 0;
+		uint16_t avgEncodingTime	= 0;
+		uint16_t maxCapturingTime	= 0;
+		uint16_t avgCapturingTime	= 0;
+		
+	};
 public:
 	VideoEncoderWorker();
 	virtual ~VideoEncoderWorker();
@@ -25,7 +39,6 @@ public:
 	int SetVideoCodec(VideoCodec::Type codec,int width, int height, int fps,int bitrate,int intraPeriod,const Properties & properties);
 	int End();
 
-	int  SetTemporalBitrateLimit(int bitrate);
 	bool AddListener(const MediaFrame::Listener::shared& listener);
 	bool RemoveListener(const MediaFrame::Listener::shared& listener);
 	void SendFPU();
@@ -34,6 +47,8 @@ public:
 	
 	int Start();
 	int Stop();
+
+	Stats GetStats(); 
 	
 protected:
 	int Encode();
@@ -55,8 +70,6 @@ private:
 	int fps			= 0;
 	DWORD bitrate		= 0;
 	int intraPeriod		= 0;
-	int bitrateLimit	= 0;
-	int bitrateLimitCount	= 0;
 	Properties properties;
 
 	pthread_t	thread = 0;
@@ -64,6 +77,14 @@ private:
 	pthread_cond_t	cond;
 	bool	encoding	 = false;
 	bool	sendFPU		 = false;
+
+
+	Acumulator<uint16_t> bitrateAcu;
+	Acumulator<uint16_t> fpsAcu;
+	MaxAcumulator<uint16_t> encodingTimeAcu;
+	MaxAcumulator<uint16_t> capturingTimeAcu;
+
+	Stats	stats;
 };
 
 

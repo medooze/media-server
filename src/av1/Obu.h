@@ -2,7 +2,9 @@
 #define OBU_H
 
 #include "bitstream.h"
-
+#include "BufferReader.h"
+#include "BufferWritter.h"
+#include "rtp/LayerInfo.h"
 #include <optional>
 
 enum ObuType
@@ -20,31 +22,32 @@ enum ObuType
 
 class ObuHeader
 {
+public: 
+	struct Extension
+	{
+		LayerInfo layerInfo;
+	};
 public:
 	uint8_t type = 0;
-	bool extensionFlag = 0;
-	bool hasSizeField = 0;
+	std::optional<Extension> extension;
+	std::optional<uint64_t> length;
 	
-	// Extention fields
-	uint8_t temporalId = 0;
-	uint8_t spatialId = 0;
-		
-	DWORD Serialize(BYTE* buffer,DWORD bufferLength) const;
+	DWORD Serialize(BufferWritter& writter) const;
+	inline DWORD Serialize(BYTE* buffer, DWORD bufferLength) const
+	{
+		BufferWritter writter(buffer, bufferLength);
+		return Serialize(writter);
+	}
 	
 	size_t GetSize() const;
 	
-	bool Parse(const BYTE* data, DWORD size);
+	bool Parse(BufferReader& reader);
+	inline bool Parse(const BYTE* data, DWORD size)
+	{
+		BufferReader reader(data, size);
+		return Parse(reader);
+	}
+	
 };
-
-struct ObuInfo
-{
-	size_t obuSize = 0;
-	uint8_t obuType = 0;
-	size_t headerSize = 0;
-	const uint8_t* payload = nullptr;
-	size_t payloadSize = 0;	
-};
-
-std::optional<ObuInfo> GetObuInfo(const BYTE* data, DWORD size);
 
 #endif

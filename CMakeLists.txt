@@ -35,6 +35,7 @@ file(GLOB_RECURSE SOURCES_VP9 RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/vp9/*.cpp"
 file(GLOB_RECURSE SOURCES_JPEG RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/jpeg/*.cpp")
 file(GLOB_RECURSE SOURCES_WEBP RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/webp/*.cpp")
 file(GLOB_RECURSE SOURCES_AAC RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/aac/*.cpp")
+file(GLOB_RECURSE SOURCES_AV1 RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/av1/*.cpp")
 
 file(GLOB_RECURSE SOURCES RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/*.cpp")
 
@@ -46,7 +47,9 @@ add_library(MediaServerLib
 	${SOURCES_VP9}
 	${SOURCES_JPEG}
 	${SOURCES_WEBP}
+	${SOURCES_AV1}
     ${SOURCES_AAC}
+    ${SOURCES_AV1}
     ${CMAKE_CURRENT_LIST_DIR}/src/DependencyDescriptorLayerSelector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/av1/AV1LayerSelector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/av1/Obu.cpp
@@ -134,6 +137,7 @@ target_link_libraries(MediaServerLib
     swscale
     swresample
     crypto
+    aom
 )
 
 #for debugging
@@ -157,6 +161,7 @@ add_executable(MediaServerUnitTest
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestVP8Depacketizer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestVideoPipe.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestBFrame.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAV1.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAMFNumber.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestVideoLayersAllocation.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestTools.cpp
@@ -205,6 +210,7 @@ add_test(NAME MediaServerLegacyTest
 add_executable(srtextract
     ${CMAKE_CURRENT_LIST_DIR}/src/log.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/PCAPReader.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/PCAPFile.cpp
     ${CMAKE_CURRENT_LIST_DIR}/tools/srtextract.cpp
 )
 

@@ -6,12 +6,26 @@
 #include "waitqueue.h"
 #include "rtp.h"
 #include "Deinterlacer.h"
+#include "acumulator.h"
 
 class VideoDecoderWorker 
 	: public MediaFrame::Listener
 {
 public:
-	VideoDecoderWorker() = default;
+	struct Stats
+	{
+		uint64_t timestamp		= 0;
+		uint64_t totalDecodedFrames	= 0;
+		uint16_t fps			= 0;
+		uint16_t maxDecodingTime	= 0;
+		uint16_t avgDecodingTime	= 0;
+		uint16_t maxWaitingFrameTime	= 0;
+		uint16_t avgWaitingFrameTime	= 0;
+		uint16_t maxDeinterlacingTime	= 0;
+		uint16_t avgDeinterlacingTime	= 0;
+	};
+public:
+	VideoDecoderWorker();
 	virtual ~VideoDecoderWorker();
 
 	int Start();
@@ -24,6 +38,7 @@ public:
 	void AddVideoOutput(VideoOutput* ouput);
 	void RemoveVideoOutput(VideoOutput* ouput);
 
+	Stats GetStats();
 protected:
 	int Decode();
 
@@ -39,6 +54,13 @@ private:
 	bool muted	= false;
 	std::unique_ptr<VideoDecoder>	videoDecoder;
 	std::unique_ptr<Deinterlacer>	deinterlacer;
+
+	Stats stats;
+	Acumulator<uint16_t> bitrateAcu;
+	Acumulator<uint16_t> fpsAcu;
+	MaxAcumulator<uint16_t> decodingTimeAcu;
+	MaxAcumulator<uint16_t> waitingFrameTimeAcu;
+	MaxAcumulator<uint16_t> deinterlacingTimeAcu;
 };
 
 #endif /* VIDEODECODERWORKER_H */

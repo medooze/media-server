@@ -10,6 +10,8 @@
 #include "rtmpapplication.h"
 #include <pthread.h>
 #include <map>
+#include <functional>
+#include <optional>
 
 class RTMPClientConnection :
 	public RTMPMediaStream::Listener
@@ -46,8 +48,10 @@ public:
 	virtual ~RTMPClientConnection();
 
 	ErrorCode Connect(const char* server, int port, const char* app, RTMPClientConnection::Listener* listener);
-	DWORD SendCommand(DWORD streamId, const wchar_t* name, AMFData* params, AMFData* extra, std::function<void(bool, AMFData*, const std::vector<AMFData*>&)> callback);
-	DWORD SendCommand(DWORD streamId, const wchar_t* name, AMFData* params, AMFData* extra);
+	DWORD SendCommand(DWORD streamId, const wchar_t* name, AMFData* params, AMFData* extra)
+		{ return SendCommandInternal(streamId, name, params, extra, std::nullopt); }
+	DWORD SendCommand(DWORD streamId, const wchar_t* name, AMFData* params, AMFData* extra, std::function<void(bool, AMFData*, const std::vector<AMFData*>&)> callback)
+		{ return SendCommandInternal(streamId, name, params, extra, std::optional(callback)); }
 	int Disconnect();
 
 	void  SetUserData(DWORD data) { this->data = data; }
@@ -89,6 +93,7 @@ private:
 
 
 	void SendControlMessage(RTMPMessage::Type type, RTMPObject* msg);
+	DWORD SendCommandInternal(DWORD streamId, const wchar_t* name, AMFData* params, AMFData* extra, std::optional<std::function<void(bool, AMFData*, const std::vector<AMFData*>&)>> callback);
 
 	void SignalWriteNeeded();
 private:
