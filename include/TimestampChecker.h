@@ -38,16 +38,19 @@ public:
 	{
 	}
 	
-	CheckResult Check(uint64_t recvTimeMs, uint64_t timestamp, uint32_t clock)
+	std::pair<CheckResult, uint64_t> Check(uint64_t recvTimeMs, uint64_t timestamp, uint32_t clock)
 	{
-		if (clock == 0) return CheckResult::Invalid;
+		if (clock == 0) return { CheckResult::Invalid, 0};
 		
 		// Check if it is just started
-		if (lastRecvTime == 0 && lastTimeStamp == 0)
+		if (!initialised)
 		{
 			lastTimeStamp = timestamp;
 			lastRecvTime = recvTimeMs;
-			return CheckResult::Valid;
+			
+			initialised = true;
+			
+			return {CheckResult::Valid, timestamp};
 		}
 		
 		auto durationOnTs = GetDiff(timestamp, lastTimeStamp) * 1000 / clock;
@@ -59,6 +62,8 @@ public:
 		// The difference between expected duration as per timestamp and actual duration since last frame
 		auto diff = sameOrder ? GetDiff(durationOnTs, durationOnRecv) : (durationOnTs + durationOnRecv);
 		
+		int64_t rectifiedTs = 0;
+		
 		bool valid = diff < maxDurationDiffMs;
 		if (valid)
 		{
@@ -66,23 +71,31 @@ public:
 			lastRecvTime = recvTimeMs;
 			
 			numContinousInvalidFrames = 0;
+			
+			rectifiedTs = timestamp + offset;
+			
+			return { CheckResult::Valid, rectifiedTs };
 		}
 		else
 		{
 			numContinousInvalidFrames++;
-		}
-		
-		// If there are continous invalid frames, it could be due to reference wrong. Reset to current.
-		if (numContinousInvalidFrames > maxContinousInvalidFrames)
-		{
-			lastTimeStamp = timestamp;
-			lastRecvTime = recvTimeMs;
-			numContinousInvalidFrames = 0;
 			
-			return CheckResult::Reset;
-		}
+			rectifiedTs = (int64_t(recvTimeMs) - int64_t(lastRecvTime))* clock / 1000 + lastTimeStamp + offset;
 
-		return valid ? CheckResult::Valid : CheckResult::Invalid;
+			// If there are continous invalid frames, it could be due to reference wrong. Reset to current.
+			if (numContinousInvalidFrames > maxContinousInvalidFrames)
+			{
+				lastTimeStamp = timestamp;
+				lastRecvTime = recvTimeMs;
+				numContinousInvalidFrames = 0;
+				
+				offset = rectifiedTs - timestamp;
+				
+				return { CheckResult::Reset, rectifiedTs};
+			}
+
+			return { CheckResult::Invalid, rectifiedTs };
+		}
 	}
 	
 	inline static constexpr uint64_t GetDiff(uint64_t lhs, uint64_t rhs)
@@ -98,6 +111,10 @@ private:
 	uint64_t lastRecvTime = 0;
 	
 	uint32_t numContinousInvalidFrames = 0;
+	
+	int64_t offset = 0;
+	
+	bool initialised = false;
 };
 
 
