@@ -22,7 +22,6 @@ fetchcontent_declare(
 	mp4v2
 	GIT_REPOSITORY https://github.com/medooze/mp4v2.git
 	GIT_TAG master
-	SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/ext/mp4v2
 	)
 
 FetchContent_MakeAvailable(mp4v2)
@@ -124,7 +123,6 @@ target_include_directories(MediaServerLib PUBLIC
     ${CMAKE_CURRENT_LIST_DIR}/include
     ${CMAKE_CURRENT_LIST_DIR}/src
     ${CMAKE_CURRENT_LIST_DIR}/ext/libdatachannels/src/internal
-    ${CMAKE_CURRENT_LIST_DIR}/ext/mp4v2/include
 )
 
 target_link_libraries(MediaServerLib
@@ -138,6 +136,7 @@ target_link_libraries(MediaServerLib
     swresample
     crypto
     aom
+    mp4v2-static
 )
 
 #for debugging
