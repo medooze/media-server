@@ -7,6 +7,7 @@
 #include "rtp/RTPIncomingMediaStream.h"
 #include "RTPDepacketizer.h"
 #include "use.h"
+#include "TimestampChecker.h"
 
 class RTPIncomingMediaStreamDepacketizer :
 	public RTPIncomingMediaStream::Listener,
@@ -32,6 +33,8 @@ private:
 	std::unique_ptr<RTPDepacketizer> depacketizer;
 	RTPIncomingMediaStream::shared incomingSource;
 	TimeService &timeService;
+	
+	TimestampChecker tsChecker;
 };
 
 #endif /* STREAMTRACKDEPACKETIZERDEPACKETIZER_H */

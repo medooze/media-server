@@ -7,7 +7,7 @@
 
 using namespace std::chrono_literals;
 
-MediaFrameListenerBridge::MediaFrameListenerBridge(TimeService& timeService,DWORD ssrc, bool smooth) : 
+MediaFrameListenerBridge::MediaFrameListenerBridge(TimeService& timeService,DWORD ssrc, bool smooth, bool checkTimestamp) : 
 	timeService(timeService),
 	ssrc(ssrc),
 	smooth(smooth),
@@ -17,7 +17,8 @@ MediaFrameListenerBridge::MediaFrameListenerBridge(TimeService& timeService,DWOR
 	accumulatorIFrames(1000),
 	accumulatorBFrames(1000),
 	accumulatorPFrames(1000),
-	waited(1000)
+	waited(1000),
+	tsChecker(checkTimestamp? new TimestampChecker : nullptr)
 {
 	Debug("-MediaFrameListenerBridge::MediaFrameListenerBridge() [this:%p]\n", this);
 
@@ -176,6 +177,18 @@ void MediaFrameListenerBridge::SetFrameDispatchCoordinator(const std::shared_ptr
 void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& frame)
 {
 	timeService.Async([=, frame = std::shared_ptr<MediaFrame>(frame.Clone())] (auto now){
+		
+		if (tsChecker)
+		{
+			// Check timestamp
+			auto [status, rts] = tsChecker->Check(frame->GetTime(), frame->GetTimeStamp(), frame->GetClockRate());
+			if (status != TimestampChecker::CheckResult::Valid)
+			{
+				Log("Invalid timestamp. status: %d, info: %s, corrected: %llu\n", int(status), frame->TimeInfoToString().c_str(), rts);
+			}
+			// Use corrected timestamp
+			frame->SetTimestamp(rts);
+		}
 		
 		if (coordinator)
 		{

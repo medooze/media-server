@@ -5,6 +5,7 @@
 #include "media.h"
 #include "rtp.h"
 #include "TimeService.h"
+#include "TimestampChecker.h"
 #include "FrameDispatchCoordinator.h"
 
 #include <queue>
@@ -37,7 +38,7 @@ public:
 	};	
 	
 public:
-	MediaFrameListenerBridge(TimeService& timeService, DWORD ssrc, bool smooth = false);
+	MediaFrameListenerBridge(TimeService& timeService, DWORD ssrc, bool smooth = false, bool checkTimestamp = false);
 	virtual ~MediaFrameListenerBridge();
 
 	void SetFrameDispatchCoordinator(const std::shared_ptr<FrameDispatchCoordinator>& coordinator);
@@ -130,6 +131,7 @@ public:
 
 	uint32_t targetBitrateHint = 0;
 	
+	std::unique_ptr<TimestampChecker> tsChecker;
 	std::shared_ptr<FrameDispatchCoordinator> coordinator;
 };
 

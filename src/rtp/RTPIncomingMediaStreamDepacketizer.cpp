@@ -40,6 +40,16 @@ void RTPIncomingMediaStreamDepacketizer::onRTP(const RTPIncomingMediaStream* gro
 	 //If we have a new frame
 	 if (frame)
 	 {
+		// Check timestamp
+		auto [status, rts] = tsChecker.Check(frame->GetTime(), frame->GetTimeStamp(), frame->GetClockRate());
+		if (status != TimestampChecker::CheckResult::Valid)
+		{
+			Log("Invalid timestamp. status: %d, info: %s, corrected: %llu\n", int(status), frame->TimeInfoToString().c_str(), rts);
+		}
+		
+		// Use corrected timestamp
+		frame->SetTimestamp(rts);
+		
 		 //Call all listeners
 		 for (const auto& listener : listeners)
 			 //Call listener
