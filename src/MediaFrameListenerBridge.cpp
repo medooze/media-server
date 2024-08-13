@@ -184,7 +184,7 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 			auto [status, rts] = tsChecker->Check(frame->GetTime(), frame->GetTimeStamp(), frame->GetClockRate());
 			if (status != TimestampChecker::CheckResult::Valid)
 			{
-				Log("Invalid timestamp. status: %d, info: %s, corrected: %llu\n", int(status), frame->TimeInfoToString().c_str(), rts);
+				Error("Invalid timestamp. status: %d, info: %s, corrected: %llu\n", int(status), frame->TimeInfoToString().c_str(), rts);
 			}
 			
 			if (frame->GetType() == MediaFrame::Video)
