@@ -186,8 +186,19 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 			{
 				Log("Invalid timestamp. status: %d, info: %s, corrected: %llu\n", int(status), frame->TimeInfoToString().c_str(), rts);
 			}
-			// Use corrected timestamp
-			frame->SetTimestamp(rts);
+			
+			if (frame->GetType() == MediaFrame::Video)
+			{
+				VideoFrame* vframe = static_cast<VideoFrame*>(frame.get());
+				auto pts = rts + vframe->GetPresentationTimestamp() - vframe->GetTimestamp();
+				
+				vframe->SetTimestamp(rts);
+				vframe->SetPresentationTimestamp(pts);
+			}
+			else
+			{			
+				frame->SetTimestamp(rts);
+			}
 		}
 		
 		if (coordinator)
