@@ -354,6 +354,20 @@ public:
 	DWORD GetClockRate() const			{ return clockRate;				}
 	void  SetClockRate(DWORD clockRate)		{ this->clockRate = clockRate;			}
 
+
+	std::string TimeInfoToString()
+	{
+		std::stringstream ss;
+		ss << MediaFrame::TypeToString(GetType()) << ", ";
+		ss << " ts: " << GetTimeStamp() << ", ";
+		ss << " time: " << GetTime() << ", ";
+		ss << " senderTime: " << GetSenderTime() << ", ";
+		ss << " sz: " << GetLength() << ", ";
+		ss << " duration: " << GetDuration();
+		
+		return ss.str();
+	}
+
 protected:
 	void AdquireBuffer()
 	{
