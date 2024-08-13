@@ -98,6 +98,11 @@ public:
 		}
 	}
 	
+	inline int64_t GetTimestampOffset() const
+	{
+		return offset;
+	}
+	
 	inline static constexpr uint64_t GetDiff(uint64_t lhs, uint64_t rhs)
 	{
 		return lhs > rhs ? (lhs - rhs) : (rhs - lhs);
