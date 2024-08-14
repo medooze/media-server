@@ -6,10 +6,24 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <deque>
+#include <memory>
 
 #include <OpenSSL.h>
 
 #include "log.h"
+
+template <typename T, void (*function)(T*)>
+struct FunctionDeleter {
+  void operator()(T* pointer) const { function(pointer); }
+  typedef std::unique_ptr<T, FunctionDeleter> Pointer;
+};
+
+template <typename T, void (*function)(T*)>
+using DeleteFnPtr = typename FunctionDeleter<T, function>::Pointer;
+
+using BIOPointer = DeleteFnPtr<BIO, BIO_free_all>;
+using SSLCtxPointer = DeleteFnPtr<SSL_CTX, SSL_CTX_free>;
+using SSLPointer = DeleteFnPtr<SSL, SSL_free>;
 
 class TlsClient 
 {
@@ -81,11 +95,11 @@ private:
 	
 	void QueueDecryptedData(const uint8_t* data, size_t size);
 
-	SSL_CTX *ctx = nullptr;
-	SSL *ssl = nullptr;
+	SSLCtxPointer ctx;
+	SSLPointer ssl;
 
-	BIO *rbio = nullptr;
-	BIO *wbio = nullptr;
+	BIOPointer rbio;
+	BIOPointer wbio;
 	
 	uint8_t decryptCache[MTU];
 	uint8_t encryptCache[MTU];

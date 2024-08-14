@@ -31,18 +31,18 @@ TlsClient::~TlsClient()
 
 bool TlsClient::Initialize(const char* hostname)
 {
-	ctx = SSL_CTX_new(TLS_method());
+	ctx = SSLCtxPointer(SSL_CTX_new(TLS_method()));
 	if (!ctx)
 	{
 		Error("-TlsClient::initialize() Failed to ceate SSL context\n");
 		return false;
 	}
 	
-	SSL_CTX_set_default_verify_dir(ctx);
+	SSL_CTX_set_default_verify_dir(ctx.get());
 	
 	if (allowAllCertificates)
 	{
-		SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, [](int preverify, X509_STORE_CTX* ctx) -> int {
+		SSL_CTX_set_verify(ctx.get(), SSL_VERIFY_PEER, [](int preverify, X509_STORE_CTX* ctx) -> int {
 			LogCertificateInfo(preverify, ctx);
 			// Allow all certificates
 			return 1;
@@ -50,18 +50,18 @@ bool TlsClient::Initialize(const char* hostname)
 	}
 	else
 	{
-		SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, [](int preverify, X509_STORE_CTX* ctx) -> int {
+		SSL_CTX_set_verify(ctx.get(), SSL_VERIFY_PEER, [](int preverify, X509_STORE_CTX* ctx) -> int {
 			LogCertificateInfo(preverify, ctx);
 			return preverify;
 		});
 	}
 	
-	SSL_CTX_set_options(ctx, SSL_OP_ALL);
+	SSL_CTX_set_options(ctx.get(), SSL_OP_ALL);
 
-	rbio = BIO_new(BIO_s_mem());
-	wbio = BIO_new(BIO_s_mem());
+	rbio = BIOPointer(BIO_new(BIO_s_mem()));
+	wbio = BIOPointer(BIO_new(BIO_s_mem()));
 	
-	ssl = SSL_new(ctx);
+	ssl = SSLPointer(SSL_new(ctx.get()));
 	if (!ssl)
 	{
 		Error("-TlsClient::initialize() Failed to ceate SSL\n");
@@ -69,13 +69,13 @@ bool TlsClient::Initialize(const char* hostname)
 	}
 
 	// Set client mode
-	SSL_set_connect_state(ssl);
+	SSL_set_connect_state(ssl.get());
 
-	SSL_set_bio(ssl, rbio, wbio);
+	SSL_set_bio(ssl.get(), rbio.get(), wbio.get());
 	
 	if (hostname)
 	{
-		SSL_set_tlsext_host_name(ssl, hostname);
+		SSL_set_tlsext_host_name(ssl.get(), hostname);
 	}
 	
 	return true;
@@ -83,14 +83,14 @@ bool TlsClient::Initialize(const char* hostname)
 
 TlsClient::TlsClientError TlsClient::Decrypt(const uint8_t* data, size_t size)
 {
-	auto len = BIO_write(rbio, data, size);
+	auto len = BIO_write(rbio.get(), data, size);
 	if (len <= 0)
 	{
 		Error("-TlsClient::Decrypt() Failed to BIO_write\n");
 		return TlsClientError::Failed;
 	}
 	
-	if (!SSL_is_init_finished(ssl))
+	if (!SSL_is_init_finished(ssl.get()))
 	{
 		Log("-TlsClient::Decrypt() ssl not initialised\n");
 		initialised = false;
@@ -101,7 +101,7 @@ TlsClient::TlsClientError TlsClient::Decrypt(const uint8_t* data, size_t size)
 			return TlsClientError::HandshakeFailed;
 		}
 		
-		if (!SSL_is_init_finished(ssl))
+		if (!SSL_is_init_finished(ssl.get()))
 		{
 			Error("-TlsClient::Decrypt() Pending init\n");
 			return TlsClientError::Pending;
@@ -116,7 +116,7 @@ TlsClient::TlsClientError TlsClient::Decrypt(const uint8_t* data, size_t size)
 	
 	int bytes = 0;
 	do {
-		bytes = SSL_read(ssl, decryptCache, sizeof(decryptCache));
+		bytes = SSL_read(ssl.get(), decryptCache, sizeof(decryptCache));
 		if (bytes > 0) 
 		{
 			QueueDecryptedData(decryptCache, bytes);
@@ -137,13 +137,13 @@ TlsClient::TlsClientError TlsClient::Encrypt(const uint8_t* data, size_t size)
 {
 	if (size == 0) return TlsClientError::NoError;
 	
-	if (!SSL_is_init_finished(ssl))
+	if (!SSL_is_init_finished(ssl.get()))
 	{
 		initialised = false;
 		return TlsClientError::Pending;
 	}
 	
-	auto len = SSL_write(ssl, data, size);
+	auto len = SSL_write(ssl.get(), data, size);
 	if (len > 0)
 	{
 		return ReadBioEncrypted() ? TlsClientError::NoError : TlsClientError::Failed;
@@ -160,14 +160,11 @@ void TlsClient::Shutdown()
 	
 	encrypted.clear();
 	decrypted.clear();
-	
-	SSL_free(ssl);
-	SSL_CTX_free(ctx);
 }
 
 TlsClient::SslStatus TlsClient::GetSslStatus(int returnCode)
 {
-	switch (SSL_get_error(ssl, returnCode))
+	switch (SSL_get_error(ssl.get(), returnCode))
 	{
 		case SSL_ERROR_NONE:
 			return SslStatus::OK;
@@ -183,7 +180,7 @@ TlsClient::SslStatus TlsClient::GetSslStatus(int returnCode)
 
 TlsClient::SslStatus TlsClient::Handshake()
 {	
-	auto ret = SSL_do_handshake(ssl);
+	auto ret = SSL_do_handshake(ssl.get());
 	
 	auto TlsError = GetSslStatus(ret);
 	if (TlsError == SslStatus::Pending)
@@ -198,12 +195,12 @@ bool TlsClient::ReadBioEncrypted()
 {
 	int bytes = 0;
 	do {
-		bytes = BIO_read(wbio, encryptCache, sizeof(encryptCache));
+		bytes = BIO_read(wbio.get(), encryptCache, sizeof(encryptCache));
 		if (bytes > 0)
 		{
 			QueueEncryptedData(encryptCache, bytes);
 		}
-		else if (!BIO_should_retry(wbio))
+		else if (!BIO_should_retry(wbio.get()))
 		{
 			return false;
 		}
