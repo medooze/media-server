@@ -28,7 +28,7 @@
  * to the message layer.
  *******************************************************************/
 
-RTMPClientConnection::RTMPClientConnection(bool secure, const std::wstring& tag) :
+RTMPClientConnection::RTMPClientConnection(const std::wstring& tag) :
 	tag(tag)
 {
 	setZeroThread(&thread);
@@ -44,11 +44,6 @@ RTMPClientConnection::RTMPClientConnection(bool secure, const std::wstring& tag)
 	chunkOutputStreams[4] = new RTMPChunkOutputStream(4);
 	//Create output chunk streams for video
 	chunkOutputStreams[5] = new RTMPChunkOutputStream(5);
-	
-	if (secure)
-	{
-		tls = std::make_unique<TlsClient>();
-	}
 }
 
 RTMPClientConnection::~RTMPClientConnection()
@@ -113,21 +108,6 @@ RTMPClientConnection::ErrorCode RTMPClientConnection::Connect(const char* server
 		return RTMPClientConnection::ErrorCode::FailedToConnectSocket;
 	}
 	
-	if (tls)
-	{
-		if (!tls->Initialize())
-		{
-			Error("Failed to initialise tls: %s:%d\n", server, port);
-			return RTMPClientConnection::ErrorCode::TlsInitError;
-		}
-		
-		// Start handshake
-		if (tls->Handshake() == TlsClient::SslStatus::Failed)
-		{
-			return RTMPClientConnection::ErrorCode::TlsHandshakeError;
-		}
-	}
-
 	//I am inited
 	inited = true;
 
@@ -147,18 +127,18 @@ RTMPClientConnection::ErrorCode RTMPClientConnection::Connect(const char* server
 	this->listener = listener;
 
 	//Start
-	Start();
-
-	return RTMPClientConnection::ErrorCode::NoError;
+	return Start();
 }
 
-void RTMPClientConnection::Start()
+RTMPClientConnection::ErrorCode RTMPClientConnection::Start()
 {
 	//We are running
 	running = true;
 
 	//Create thread
 	createPriorityThread(&thread, run, this, 0);
+	
+	return RTMPClientConnection::ErrorCode::NoError;
 }
 
 void RTMPClientConnection::Stop()
@@ -166,8 +146,6 @@ void RTMPClientConnection::Stop()
 	//If got socket
 	if (fd != FD_INVALID)
 	{
-		if (tls) tls->Shutdown();
-		
 		//Not running;
 		running = false;
 		//Close socket
@@ -262,7 +240,7 @@ int RTMPClientConnection::Run()
 
 		if (ufds[0].revents & POLLOUT)
 		{
-			if (!tls || tls->IsInitialised())
+			if (IsConnectionReady())
 			{
 				//Check if socket was not connected yet
 				if (!connected)
@@ -313,12 +291,7 @@ int RTMPClientConnection::Run()
 				sendRtmpData(data, len);
 			}
 			
-			if (tls)
-			{
-				tls->PopAllEncrypted([this](auto&& data){
-					WriteData(data.data(), data.size());
-				});
-			}
+			OnReadyToTransfer();
 		}
 
 		if (ufds[0].revents & POLLIN)
@@ -346,14 +319,6 @@ int RTMPClientConnection::Run()
 
 			try {
 				processReceivedData(data, len);
-				
-				if (tls)
-				{
-					tls->PopAllDecypted([this](auto&& data) {
-						//Parse data
-						ParseData(data.data(), data.size());
-					});
-				}
 			}
 			catch (std::exception& e) {
 				//Show error
@@ -446,48 +411,12 @@ end:
 
 void RTMPClientConnection::sendRtmpData(const uint8_t* data, size_t size)
 {
-	if (tls)
-	{
-		if (tls->Encrypt(data, size) != TlsClient::TlsClientError::NoError)
-		{
-			Error("-RTMPClientConnection::sendRtmpData() TLS encrypt error\n");
-			
-			if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::TlsEncryptError);
-			return;
-		}
-	}
-	else
-	{
-		WriteData(data, size);
-	}
-	
-	outBytes += size;
+	WriteData(data, size);
 }
 
 void RTMPClientConnection::processReceivedData(const uint8_t* data, size_t size)
 {
-	if (tls)
-	{
-		auto ret = tls->Decrypt(data, size);
-		switch(ret) 
-		{
-		case TlsClient::TlsClientError::NoError:
-			return;
-		case TlsClient::TlsClientError::HandshakeFailed:
-			Warning("-RTMPClientConnection::processReceivedData() TLS handshake error\n");
-			if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::TlsHandshakeError);
-			return;
-		case TlsClient::TlsClientError::Failed:
-		default:
-			Warning("-RTMPClientConnection::processReceivedData() Failed to decrypt\n");
-			if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::TlsDecryptError);
-			return;
-		}
-	}
-	else
-	{
-		ParseData(data, size);
-	}
+	ParseData(data, size);
 }
 
 /***********************
@@ -886,7 +815,11 @@ void RTMPClientConnection::ParseData(const BYTE* data, const DWORD size)
  ***********************/
 int RTMPClientConnection::WriteData(const BYTE* data, const DWORD size)
 {
-	return write(fd, data, size);
+	auto bytes = write(fd, data, size);
+	
+	if (bytes > 0) outBytes += bytes;
+	
+	return bytes;
 }
 
 void RTMPClientConnection::ProcessControlMessage(DWORD streamId, BYTE type, RTMPObject* msg)

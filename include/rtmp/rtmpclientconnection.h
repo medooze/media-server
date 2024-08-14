@@ -8,7 +8,6 @@
 #include "rtmpmessage.h"
 #include "rtmpstream.h"
 #include "rtmpapplication.h"
-#include "TlsClient.h"
 
 #include <pthread.h>
 #include <map>
@@ -48,7 +47,7 @@ public:
 		virtual void onCommand(RTMPClientConnection* conn, DWORD messageStreamId, const wchar_t* name, AMFData* obj, const std::vector<AMFData*>&) = 0;
 	};
 public:
-	RTMPClientConnection(bool secure, const std::wstring& tag);
+	RTMPClientConnection(const std::wstring& tag);
 	virtual ~RTMPClientConnection();
 
 	ErrorCode Connect(const char* server, int port, const char* app, RTMPClientConnection::Listener* listener);
@@ -74,18 +73,23 @@ public:
 	QWORD GetOutBytes() const	{ return outBytes;	}
 
 protected:
-	void Start();
-	void Stop();
-	int Run();
+	
+	virtual RTMPClientConnection::ErrorCode Start();
+	virtual void Stop();
+	virtual bool IsConnectionReady() { return inited; };
+	virtual void OnReadyToTransfer() {};
+	virtual void processReceivedData(const uint8_t* data, size_t size);
+	virtual void sendRtmpData(const uint8_t* data, size_t size);
+	
+	inline Listener* GetListener() { return listener; }
+	int WriteData(const BYTE* data, const DWORD size);
+	void ParseData(const BYTE* data, const DWORD size);
 private:
 	
-	void sendRtmpData(const uint8_t* data, size_t size);
-	void processReceivedData(const uint8_t* data, size_t size);
+	int Run();
 
 	static  void* run(void* par);
-	void ParseData(const BYTE* data, const DWORD size);
 	DWORD SerializeChunkData(BYTE* data, const DWORD size);
-	int WriteData(const BYTE* data, const DWORD size);
 
 	void ProcessControlMessage(DWORD streamId, BYTE type, RTMPObject* msg);
 	void ProcessCommandMessage(DWORD streamId, RTMPCommandMessage* cmd);
@@ -166,8 +170,6 @@ private:
 	std::wstring method;
 	std::wstring challenge;
 	std::wstring opaque;
-	
-	std::unique_ptr<TlsClient> tls;
 };
 
 #endif
