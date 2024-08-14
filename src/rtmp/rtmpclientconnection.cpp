@@ -901,7 +901,7 @@ void RTMPClientConnection::ProcessCommandMessage(DWORD streamId, RTMPCommandMess
 	auto& extra = cmd->GetExtra();
 
 	
-	//If it is not a result
+	//If it is a result from a previous command
 	if (name.compare(L"_error") == 0 || name.compare(L"_result") == 0)
 	{
 		//Log
@@ -938,17 +938,6 @@ void RTMPClientConnection::ProcessCommandMessage(DWORD streamId, RTMPCommandMess
 
 }
 
-DWORD RTMPClientConnection::SendCommand(DWORD streamId, const wchar_t* name, AMFData* params, AMFData* extra, std::function<void(bool, AMFData*, const std::vector<AMFData*>&)> callback)
-{
-	//Send command
-	QWORD transId = SendCommand(streamId, name, params, extra);
-	//Add transaction
-	transactions[transId] = callback;
-	//Return id
-	return transId;
-}
-
-
 
 void RTMPClientConnection::ProcessMediaData(DWORD streamId, RTMPMediaFrame* frame)
 {
@@ -958,7 +947,7 @@ void RTMPClientConnection::ProcessMetaData(DWORD streamId, RTMPMetaData* meta)
 {
 }
 
-DWORD RTMPClientConnection::SendCommand(DWORD streamId, const wchar_t* name, AMFData* params, AMFData* extra)
+DWORD RTMPClientConnection::SendCommandInternal(DWORD streamId, const wchar_t* name, AMFData* params, AMFData* extra, std::optional<std::function<void(bool, AMFData*, const std::vector<AMFData*>&)>> callback)
 {
 	Log("-RTMPClientConnection::SendCommand() [streamId:%d,name:%ls]\n", streamId, name);
 	//Get transId
@@ -969,6 +958,9 @@ DWORD RTMPClientConnection::SendCommand(DWORD streamId, const wchar_t* name, AMF
 	cmd->Dump();
 	//Get timestamp
 	QWORD ts = getDifTime(&startTime) / 1000;
+	//Before sending, attach the callback (if any)
+	if (callback)
+		transactions[transId] = *callback;
 	//Append message to command stream
 	chunkOutputStreams[3]->SendMessage(new RTMPMessage(streamId, ts, cmd));
 	//We have new data to send

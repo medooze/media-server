@@ -11,7 +11,11 @@
 #include "acumulator.h"
 #include "VideoCodecFactory.h"
 
-VideoEncoderWorker::VideoEncoderWorker() 
+VideoEncoderWorker::VideoEncoderWorker() :
+	bitrateAcu(1000),
+	fpsAcu(1000),
+	encodingTimeAcu(1000),
+	capturingTimeAcu(1000)
 {
 	//Create objects
 	pthread_mutex_init(&mutex,NULL);
@@ -55,9 +59,6 @@ int VideoEncoderWorker::SetVideoCodec(VideoCodec::Type codec, int width, int hei
 	this->bitrate	  = bitrate;
 	this->fps	  = fps;
 	this->intraPeriod = intraPeriod;
-	//Init limits
-	this->bitrateLimit	= bitrate;
-	this->bitrateLimitCount	= fps;
         //Store properties
         this->properties  = properties;
 
@@ -142,22 +143,16 @@ int VideoEncoderWorker::End()
 
 int VideoEncoderWorker::Encode()
 {
-	timeval first;
-	timeval prev;
 	timeval lastFPU;
 	
 	DWORD num = 0;
-	QWORD overslept = 0;
-
-	MinMaxAcumulator bitrateAcu(1000);
-	MinMaxAcumulator fpsAcu(1000);
 
 	Log(">VideoEncoderWorker::Encode() [width:%d,height:%d,bitrate:%d,fps:%d,intra:%d]\n",width,height,bitrate,fps,intraPeriod);
 
-	//Creamos el encoder
+	//Create encoder
 	std::unique_ptr<VideoEncoder> videoEncoder(VideoCodecFactory::CreateEncoder(codec,properties));
 
-	//Comprobamos que se haya creado correctamente
+	//Check
 	if (!videoEncoder)
 		//error
 		return Error("Can't create video encoder\n");
@@ -166,7 +161,7 @@ int VideoEncoderWorker::Encode()
 	if (input == NULL)
 		return Error("No video input");
 
-	//Iniciamos el tama�o del video
+	//Start vicedeo capture
 	if (!input->StartVideoCapture(width,height,fps))
 		return Error("Couldn't set video capture\n");
 
@@ -174,17 +169,11 @@ int VideoEncoderWorker::Encode()
 	//Set bitrate
 	videoEncoder->SetFrameRate(fps,bitrate,intraPeriod);
 
-	//No wait for first
-	QWORD frameTime = 0;
-
-	//Iniciamos el tamama�o del encoder
+	//Set initial size
  	videoEncoder->SetSize(width,height);
 	
-	//The time of the first one
-	gettimeofday(&first,NULL);
-
-	//The time of the previos one
-	gettimeofday(&prev,NULL);
+	//Capturing time init
+	uint64_t captureTimeStart = getTimeMS();
 
 	//Fist FPU
 	gettimeofday(&lastFPU,NULL);
@@ -193,12 +182,18 @@ int VideoEncoderWorker::Encode()
 	while(encoding)
 	{
 		//Capture video frame buffer
-		auto pic = input->GrabFrame(frameTime/1000);
+		auto pic = input->GrabFrame(0);
 
 		//Check picture
 		if (!pic)
 			//Exit
 			continue;
+
+		//Get capturing time
+		uint64_t captureTimeEnd = getTimeMS();
+
+		//Update
+		capturingTimeAcu.Update(captureTimeEnd, captureTimeEnd - captureTimeStart);
 		
 		//Check size
 		if (pic->GetWidth() != width || pic->GetHeight() != height)
@@ -229,6 +224,9 @@ int VideoEncoderWorker::Encode()
 			}
 		}
 
+		//Get time before encoding
+		uint64_t encodeStartTime = captureTimeEnd;
+
 		//Procesamos el frame
 		VideoFrame *videoFrame = videoEncoder->EncodeFrame(pic);
 
@@ -236,59 +234,26 @@ int VideoEncoderWorker::Encode()
 		if (!videoFrame)
 			//Next
 			continue;
+		//One encoded frame more
+		num++;
 
-		//Increase frame counter
-		fpsAcu.Update(getTime()/1000,1);
+		//Get time after encoding
+		uint64_t encodeEndTime = getTimeMS();
 
-		//Check
-		if (frameTime)
-		{
-			timespec ts;
-			//Lock
-			pthread_mutex_lock(&mutex);
-			//Calculate slept time
-			QWORD sleep = frameTime;
-			//Remove extra sleep from prev
-			if (overslept<sleep)
-				//Remove it
-				sleep -= overslept;
-			else
-				//Do not overflow
-				sleep = 1;
-			//Calculate timeout
-			calcAbsTimeoutNS(&ts,&prev,sleep);
-			//Wait next or stopped
-			int canceled  = !pthread_cond_timedwait(&cond,&mutex,&ts);
-			//Unlock
-			pthread_mutex_unlock(&mutex);
-			//Check if we have been canceled
-			if (canceled)
-				//Exit
-				break;
-			//Get differencence
-			QWORD diff = getDifTime(&prev);
-			//If it is biffer
-			if (diff>frameTime)
-				//Get what we have slept more
-				overslept = diff-frameTime;
-			else
-				//No oversletp (shoulddn't be possible)
-				overslept = 0;
-		}
+		//Calculate encoding time
+		encodingTimeAcu.Update(encodeEndTime, encodeEndTime - encodeStartTime);
 		
-		//Set frame time
-		frameTime = 1E6/fps;
+		//Increase frame counter
+		fpsAcu.Update(encodeEndTime, 1);
 
 		//Add frame size in bits to bitrate calculator
-		bitrateAcu.Update(getDifTime(&first)/1000,videoFrame->GetLength()*8);
+		bitrateAcu.Update(encodeEndTime, videoFrame->GetLength()*8);
 		
-		//Get now
-		auto now = getDifTime(&first)/1000;
 		//Set clock rate
-		videoFrame->SetClockRate(pic->HasClockRate() ? pic->GetClockRate() : 90000);
+		videoFrame->SetClockRate(pic->GetClockRate());
 		//Set frame timestamp
-		videoFrame->SetTimestamp(pic->HasTimestamp() ? pic->GetTimestamp() : now*90);
-		videoFrame->SetTime(pic->HasTime() ? pic->GetTime() : now);
+		videoFrame->SetTimestamp(pic->GetTimestamp());
+		videoFrame->SetTime(pic->HasTime() ? pic->GetTime() : encodeStartTime);
 		if (pic->HasSenderTime()) videoFrame->SetSenderTime(pic->GetSenderTime());
 
 		// @todo Add New ticket to move the code that sets timing information into the encoder like we do for the decoder
@@ -314,6 +279,16 @@ int VideoEncoderWorker::Encode()
 		//Lock
 		pthread_mutex_lock(&mutex);
 
+		//Recalculate stats
+		stats.timestamp			= encodeEndTime;
+		stats.totalEncodedFrames	= num;
+		stats.fps			= fpsAcu.GetInstant();
+		stats.bitrate			= bitrateAcu.GetInstant();
+		stats.maxEncodingTime		= encodingTimeAcu.GetMaxValueInWindow();
+		stats.avgEncodingTime		= static_cast<uint16_t>(encodingTimeAcu.GetInstantMedia());
+		stats.maxCapturingTime		= capturingTimeAcu.GetMaxValueInWindow();
+		stats.avgCapturingTime		= static_cast<uint16_t>(capturingTimeAcu.GetInstantMedia());
+
 		//For each listener
 		for (auto &listener : listeners)
 		{
@@ -326,35 +301,9 @@ int VideoEncoderWorker::Encode()
 		//unlock
 		pthread_mutex_unlock(&mutex);
 
-		//Set sending time of previous frame
-		getUpdDifTime(&prev);
+		//Update previus capture time
+		captureTimeStart = getTimeMS();
 		
-/*
-		//Calculate sending times based on bitrate
-		DWORD sendingTime = videoFrame->GetLength()*8/bitrate;
-
-		//Adjust to maximum time
-		if (sendingTime>frameTime/1000)
-			//Cap it
-			sendingTime = frameTime/1000;
-
-                //If it was a I frame
-                if (videoFrame->IsIntra())
-			//Clean rtp rtx buffer
-			FlushRTXPackets();
-
-		//Send it smoothly
-		SmoothFrame(videoFrame,sendingTime);
-*/
-
-		//Dump statistics
-		if (num && ((num%fps*10)==0))
-		{
-			//Debug("-Send bitrate current=%d avg=%llf rate=[%llf,%llf] fps=[%llf,%llf] limit=%d\n",current,bitrateAcu.GetInstantAvg()/1000,bitrateAcu.GetMinAvg()/1000,bitrateAcu.GetMaxAvg()/1000,fpsAcu.GetMinAvg(),fpsAcu.GetMaxAvg(),bitrateLimit);
-			bitrateAcu.ResetMinMax();
-			fpsAcu.ResetMinMax();
-		}
-		num++;
 	}
 
 	//Terminamos de capturar
@@ -364,16 +313,6 @@ int VideoEncoderWorker::Encode()
 	Log("<VideoEncoderWorker::Encode()  [%d]\n",encoding);
 	
 	//Done
-	return 1;
-}
-
-int VideoEncoderWorker::SetTemporalBitrateLimit(int estimation)
-{
-	//Set bitrate limit
-	bitrateLimit = estimation/1000;
-	//Set limit of bitrate to 1 second;
-	bitrateLimitCount = fps;
-	//Exit
 	return 1;
 }
 
@@ -414,4 +353,17 @@ bool VideoEncoderWorker::RemoveListener(const MediaFrame::Listener::shared& list
 void VideoEncoderWorker::SendFPU()
 {
 	sendFPU = true;
+}
+
+VideoEncoderWorker::Stats VideoEncoderWorker::GetStats()
+{
+	//Lock
+	pthread_mutex_lock(&mutex);
+
+	Stats cloned = stats;
+
+	//Unlock
+	pthread_mutex_unlock(&mutex);
+
+	return cloned;
 }

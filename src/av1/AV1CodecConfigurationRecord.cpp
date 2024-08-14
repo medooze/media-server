@@ -3,47 +3,48 @@
 #include "Obu.h"
 #include "BufferWritter.h"
 
-DWORD AV1CodecConfigurationRecord::Serialize(BYTE* buffer,DWORD bufferLength) const
+DWORD AV1CodecConfigurationRecord::Serialize(BufferWritter& writter) const
 {
-	if (bufferLength < GetSize()) return 0;
-	
-	memcpy(buffer, reinterpret_cast<const void*>(&fields), sizeof(Fields));
-	
-	buffer += sizeof(Fields);
-	bufferLength -= sizeof(Fields);
+	if (!writter.Assert(GetSize())) return 0;
+
+	auto mark = writter.Mark();
+
+	memcpy(writter.Consume(sizeof(Fields)), reinterpret_cast<const void*>(&fields), sizeof(Fields));
 	
 	if (sequenceHeader)
-	{
-		if (bufferLength >= sequenceHeader->size())
-			memcpy(buffer, sequenceHeader->data(), sequenceHeader->size());	
-		else
-			return 0;
-	}
+		writter.Set(*sequenceHeader);
 	
-	return GetSize();
+	return writter.GetOffset(mark);
 }
 
-bool AV1CodecConfigurationRecord::Parse(const BYTE* data,DWORD size)
+bool AV1CodecConfigurationRecord::Parse(BufferReader& reader)
 {
-	if (size < sizeof(Fields)) return false;
+	if (!reader.Assert(sizeof(Fields))) return false;
 	
-	fields = *reinterpret_cast<const Fields*>(data);
-	
-	data += sizeof(Fields);
-	size -= sizeof(Fields);
-	
-	while (size > 0)
-	{
-		auto info = GetObuInfo(data, size);
-		if (!info) return false;
+	fields = *reinterpret_cast<const Fields*>(reader.GetData(sizeof(Fields)));
+
+	//Init of obu
+	auto mark = reader.Mark();
+	auto* obu = reader.PeekData();
 		
-		if (info->obuType == ObuType::ObuSequenceHeader)
-		{
-			sequenceHeader.emplace(data, data + info->obuSize);
-		}
-		
-		size -= info->obuSize;
-	}
+	//Parse header
+	ObuHeader obuHeader;
+	if (!obuHeader.Parse(reader))
+		return false;
+
+	//Get obu body size
+	auto payloadSize = obuHeader.length.value_or(reader.GetLeft());
+	
+	if (!reader.Assert(payloadSize)) return 0;
+
+	//Go to the end of the obu
+	reader.Skip(payloadSize);
+
+	auto obuSize = reader.GetOffset(mark);
+
+	//If it is a sequence header
+	if (obuHeader.type == ObuType::ObuSequenceHeader)
+		sequenceHeader.emplace(obu, obuSize);
 	
 	return true;
 }
@@ -53,9 +54,7 @@ size_t AV1CodecConfigurationRecord::GetSize() const
 {
 	size_t sz = sizeof(Fields);	
 	if (sequenceHeader)
-	{
-		sz += sequenceHeader->size();
-	}
+		sz += sequenceHeader->GetSize();
 	
 	return sz;
 }

@@ -3,7 +3,7 @@
 #include "FrameDispatchCoordinator.h"
 #include "video.h"
 #include "audio.h"
-
+#include "MediaFrameListenerBridge.h"
 #include "TestCommon.h"
 #include "data/FramesArrivalInfo.h"
 class TestFrameDispatchCoordinator : public testing::Test, public RTPIncomingMediaStream::Listener

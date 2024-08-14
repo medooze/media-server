@@ -122,7 +122,7 @@ void MediaFrameListenerBridge::Stop()
 
 void MediaFrameListenerBridge::SetMaxDelayMs(std::chrono::milliseconds maxDelayMs)
 {
-	UltraDebug("-MediaFrameListenerBridge::SetMaxDelayMs() [delay:%lld]", maxDelayMs.count());
+	UltraDebug("-MediaFrameListenerBridge::SetMaxDelayMs() [delay:%lld]\n", maxDelayMs.count());
 
 	timeService.Async([=](auto now) {
 		maxDispatchingDelayMs = maxDelayMs;
@@ -166,9 +166,21 @@ void MediaFrameListenerBridge::RemoveListener(RTPIncomingMediaStream::Listener* 
 	});
 }
 
+void MediaFrameListenerBridge::SetFrameDispatchCoordinator(const std::shared_ptr<FrameDispatchCoordinator>& coordinator)
+{
+	timeService.Sync([=](auto now){
+		this->coordinator = coordinator;
+	});
+}
+
 void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& frame)
 {
 	timeService.Async([=, frame = std::shared_ptr<MediaFrame>(frame.Clone())] (auto now){
+		
+		if (coordinator)
+		{
+			coordinator->OnFrame(now, frame->GetTimeStamp(), frame->GetClockRate(), *this);
+		}
 		
 		// Assign SSRC
 		frame->SetSSRC(ssrc);

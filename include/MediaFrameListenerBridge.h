@@ -5,6 +5,7 @@
 #include "media.h"
 #include "rtp.h"
 #include "TimeService.h"
+#include "FrameDispatchCoordinator.h"
 
 #include <queue>
 #include <memory>
@@ -39,6 +40,8 @@ public:
 	MediaFrameListenerBridge(TimeService& timeService, DWORD ssrc, bool smooth = false);
 	virtual ~MediaFrameListenerBridge();
 
+	void SetFrameDispatchCoordinator(const std::shared_ptr<FrameDispatchCoordinator>& coordinator);
+	
 	void Reset();
 	void Update();
 	void Update(QWORD now);
@@ -68,7 +71,6 @@ public:
 	virtual int SendPLI(DWORD ssrc) override { return 1; };
 	virtual int Reset(DWORD ssrc) override { return 1; };
 
-
 private:
 	void Dispatch(const std::vector<RTPPacket::shared>& packet);
         
@@ -76,7 +78,7 @@ public:
 	TimeService& timeService;
 	Timer::shared dispatchTimer;
 
-	std::queue<PacketScheduleInfo> packets;
+	std::queue<PacketScheduleInfo> packets;	
 
 	DWORD ssrc = 0;
 	DWORD extSeqNum = 0;
@@ -127,6 +129,8 @@ public:
 	bool stopped = false;
 
 	uint32_t targetBitrateHint = 0;
+	
+	std::shared_ptr<FrameDispatchCoordinator> coordinator;
 };
 
 #endif /* MEDIAFRAMELISTENERBRIDGE_H */

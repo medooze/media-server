@@ -3,26 +3,38 @@
 #include <string.h>
 #include <netinet/in.h>
 #include "log.h"
-#include "h265decoder.h"
+#include "AV1Decoder.h"
+extern "C" {
+#include <libavutil/opt.h>
+}
 
-H265Decoder::H265Decoder() :
-	VideoDecoder(VideoCodec::H265),
+AV1Decoder::AV1Decoder() :
+	VideoDecoder(VideoCodec::AV1),
 	videoBufferPool(2,4)
 {
-	//Open libavcodec
-	codec = avcodec_find_decoder(AV_CODEC_ID_HEVC);
+	// find libdav1d decoder
+	codec = avcodec_find_decoder_by_name("libdav1d");
 
-	//Check
 	if(!codec)
 	{
-		Error("H265Decoder::H265Decoder() | No decoder found\n");
+		Error("AV1Decoder::AV1Decoder() | No decoder found\n");
 		return;
 	}
 
 	//Get codec context
 	ctx = avcodec_alloc_context3(codec);
-	//ctx->log_level_offset = AV_LOG_TRACE;
-	//ctx->log_level_offset = AV_LOG_ERROR;
+
+	// tilethreads default value is 0, range [0, 64]
+	// av_opt_set_int(ctx, "tilethreads", 0, 0);
+	// // framethreads default value is 0, range [0, 256]
+	// av_opt_set_int(ctx, "framethreads", 0, 0);
+	// // select an operating point of the scalable bitstream, default -1, range [-1, 31]
+	// av_opt_set_int(ctx, "oppoint", -1, 0);
+	// // deprecated?
+	// av_opt_set_int(ctx, "filmgrain", 1, 0);
+	// // output all spatial layers, default 0
+	// av_opt_set_int(ctx, "alllayers", 1, 0);
+
 	//Create packet
 	packet = av_packet_alloc();
 	//Allocate frame
@@ -32,7 +44,7 @@ H265Decoder::H265Decoder() :
 	avcodec_open2(ctx, codec, NULL);
 }
 
-H265Decoder::~H265Decoder()
+AV1Decoder::~AV1Decoder()
 {
 	if (ctx)
 	{
@@ -45,52 +57,34 @@ H265Decoder::~H265Decoder()
 	if (picture)
 		//Release frame
 		av_frame_free(&picture);
+	
 }
 
-
-int H265Decoder::Decode(const VideoFrame::const_shared& frame)
+int AV1Decoder::Decode(const VideoFrame::const_shared& frame)
 {
-	// if frame exists but no data in frame, the packet is considered as a flush packet
-	if (frame && frame->GetLength() > 0)
-	{
-		//Copy nal data
-		annexb.SetData(*frame->GetBuffer());
-
-		//Convert to annex b
-		NalToAnnexB(annexb);
-
-		//Set data
-		packet->data = (uint8_t*)annexb.GetData();
-		packet->size = annexb.GetSize();
-	} else {
-		//No data
-		packet->data = nullptr;
-		packet->size = 0;
-	}
+	//Get video frame payload
+	packet->data = frame ? (uint8_t*)frame->GetData() : nullptr;
+	packet->size = frame ? frame->GetLength() : 0;
 
 	//Store frame num, it will be copied to the decoded avpacket
 	ctx->reordered_opaque = count++;
-
+	
 	//Store frame reference
 	videoFrames.Set(ctx->reordered_opaque, frame);
-
+	
 	//Decode it
-	if (avcodec_send_packet(ctx, packet) < 0)
-	{
+	if (avcodec_send_packet(ctx, packet) < 0) 
 		//Error
-		return Error("-H265Decoder::Decode() | Error decoding H265 packet\n");
-	}
+		return Error("-AV1Decoder::Decode() Error decoding AV1 packet\n");
 
 	//OK
 	return 1;
 }
 
-VideoBuffer::shared H265Decoder::GetFrame()
+VideoBuffer::shared AV1Decoder::GetFrame()
 {
-
-	//Check if we got any decoded frame
 	if (avcodec_receive_frame(ctx, picture) <0)
-	{
+	{	
 		//No frame decoded yet
 		return {};
 	}
@@ -98,7 +92,18 @@ VideoBuffer::shared H265Decoder::GetFrame()
 	if(ctx->width==0 || ctx->height==0)
 	{
 		//Warning
-		Warning("-H265Decoder::Decode() | Wrong dimmensions [%d,%d]\n",ctx->width,ctx->height);
+		Warning("-AV1Decoder::Decode() | Wrong dimmensions [%d,%d]\n", ctx->width, ctx->height);
+		//No frame
+		return {};
+	}
+
+	//Get original video Frame
+	auto ref = videoFrames.Get(picture->reordered_opaque);
+	//If not found
+	if (!ref)
+	{
+		//Warning
+		Warning("-AV1Decoder::Decode() | Could not found reference frame [reordered:%llu,current:%llu]\n", picture->reordered_opaque, count);
 		//No frame
 		return {};
 	}
@@ -106,30 +111,17 @@ VideoBuffer::shared H265Decoder::GetFrame()
 	//Set new size in pool
 	videoBufferPool.SetSize(ctx->width, ctx->height);
 
-	//Get original video Frame
-	auto ref = videoFrames.Get(picture->reordered_opaque);
-
-	//If not found
-	if (!ref)
-	{
-		//Warning
-		Warning("-H264Decoder::Decode() | Could not found reference frame [reordered:%llu,current:%llu]\n", picture->reordered_opaque, count);
-		//No frame
-		return {};
-	}
-
 	//Get new frame
 	auto videoBuffer = videoBufferPool.allocate();
 
-	//Set interlaced flags
-	videoBuffer->SetInterlaced(picture->interlaced_frame);
+	//Copy timing info
+	CopyPresentedTimingInfo(*ref, videoBuffer);
 
-	//IF the pixel aspect ratio is valid
-	if (picture->sample_aspect_ratio.num != 0)
+	videoBuffer->SetInterlaced(picture->interlaced_frame);
+	if (picture->sample_aspect_ratio.num!=0)
 		//Set pixel aspect ration
 		videoBuffer->SetPixelAspectRatio(picture->sample_aspect_ratio.num, picture->sample_aspect_ratio.den);
 
-	//Set color range
 	switch (picture->color_range)
 	{
 		case AVCOL_RANGE_MPEG:
@@ -144,7 +136,6 @@ VideoBuffer::shared H265Decoder::GetFrame()
 			//Unknown
 			videoBuffer->SetColorRange(VideoBuffer::ColorRange::Unknown);
 	}
-
 	//Get color space
 	switch (picture->colorspace)
 	{
@@ -180,24 +171,15 @@ VideoBuffer::shared H265Decoder::GetFrame()
 			//Unknown
 			videoBuffer->SetColorSpace(VideoBuffer::ColorSpace::Unknown);
 	}
-	
 	//Get planes
 	Plane& y = videoBuffer->GetPlaneY();
 	Plane& u = videoBuffer->GetPlaneU();
 	Plane& v = videoBuffer->GetPlaneV();
 		
-	//Copy data to each plane
 	y.SetData(picture->data[0], ctx->width, ctx->height, picture->linesize[0]);
-	u.SetData(picture->data[1], ctx->width/2, ctx->height/2, picture->linesize[1]);
-	v.SetData(picture->data[2], ctx->width/2, ctx->height/2, picture->linesize[2]);
+	u.SetData(picture->data[1], ctx->width / 2, ctx->height / 2, picture->linesize[1]);
+	v.SetData(picture->data[2], ctx->width / 2, ctx->height / 2, picture->linesize[2]);
 
-
-	//Get original video Frame
-	if (auto ref = videoFrames.Get(picture->reordered_opaque))
-		//Copy timing info
-		CopyPresentedTimingInfo(*ref, videoBuffer);
-
-	//OK
 	return videoBuffer;
 }
 

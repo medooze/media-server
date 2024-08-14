@@ -2,6 +2,15 @@
 #include "media.h"
 #include "VideoCodecFactory.h"
 
+VideoDecoderWorker::VideoDecoderWorker() :
+	bitrateAcu(1000),
+	fpsAcu(1000),
+	decodingTimeAcu(1000),
+	waitingFrameTimeAcu(1000),
+	deinterlacingTimeAcu(1000)
+{
+}
+
 VideoDecoderWorker::~VideoDecoderWorker()
 {
 	Stop();
@@ -80,7 +89,12 @@ void VideoDecoderWorker::RemoveVideoOutput(VideoOutput* output)
 
 int VideoDecoderWorker::Decode()
 {
+	DWORD num = 0;
+
 	Log(">VideoDecoderWorker::Decode()\n");
+
+	//Waif for frame time init
+	uint64_t waitFrameStart = getTimeMS();
 
 	//Mientras tengamos que capturar
 	while(decoding)
@@ -97,7 +111,13 @@ int VideoDecoderWorker::Decode()
 		if (!videoFrame)
 			//Check condition again
 			continue;
-		
+
+		//Get waif time end
+		uint64_t waitFrameEnd = getTimeMS();
+
+		//Update
+		waitingFrameTimeAcu.Update(waitFrameEnd, waitFrameEnd - waitFrameStart);
+
 		//If we don't have codec
 		if (!videoDecoder || (videoFrame->GetCodec()!=videoDecoder->type))
 		{
@@ -110,11 +130,26 @@ int VideoDecoderWorker::Decode()
 				continue;
 		}
 		
+		//Get time before decode
+		uint64_t decodeStartTime = waitFrameEnd;
+
 		//Decode packet
 		if(!videoDecoder->Decode(videoFrame))
 			//Skip
 			continue;
 			
+		//Increase deocder frames
+		num ++;
+
+		//Get time after decoding
+		uint64_t decodeEndTime = getTimeMS();
+
+		//Calculate encoding time
+		decodingTimeAcu.Update(decodeEndTime, decodeEndTime - decodeStartTime);
+
+		//Increase frame counter
+		fpsAcu.Update(decodeEndTime, 1);
+
 		//Get picture
 		while (auto videoBuffer = videoDecoder->GetFrame())
 		{
@@ -136,8 +171,17 @@ int VideoDecoderWorker::Decode()
 					}
 				}
 
+				//Get time before deinterlacing
+				uint64_t deinterlaceStartTime = decodeEndTime;
+
 				//Deinterlace decoded frame
 				deinterlacer->Process(videoBuffer);
+
+				//Get time after deinterlacing
+				uint64_t deinterlaceEndTime = getTimeMS();
+
+				//Calculate deinterlacing time
+				deinterlacingTimeAcu.Update(deinterlaceEndTime, deinterlaceEndTime - deinterlaceStartTime);
 
 				//Get any porcessed frame
 				while (auto deinterlaced = deinterlacer->GetNextFrame())
@@ -150,6 +194,16 @@ int VideoDecoderWorker::Decode()
 					{
 						//Sync
 						ScopedLock scope(mutex);
+						//Recalculate stats
+						stats.timestamp = deinterlaceEndTime;
+						stats.totalDecodedFrames = num;
+						stats.fps = fpsAcu.GetInstant();
+						stats.maxDecodingTime = decodingTimeAcu.GetMaxValueInWindow();
+						stats.avgDecodingTime = static_cast<uint16_t>(decodingTimeAcu.GetInstantMedia());
+						stats.maxWaitingFrameTime = waitingFrameTimeAcu.GetMaxValueInWindow();
+						stats.avgWaitingFrameTime = static_cast<uint16_t>(waitingFrameTimeAcu.GetInstantMedia());
+						stats.maxDeinterlacingTime = deinterlacingTimeAcu.GetMaxValueInWindow();
+						stats.avgDeinterlacingTime = static_cast<uint16_t>(deinterlacingTimeAcu.GetInstantMedia());
 						//For each output
 						for (auto output : outputs)
 							//Send it
@@ -157,14 +211,31 @@ int VideoDecoderWorker::Decode()
 					}
 				}
 			} else if (!muted) {
+
+				//Calculate deinterlacing time
+				deinterlacingTimeAcu.Update(decodeEndTime);
+
 				//Sync
 				ScopedLock scope(mutex);
+				//Recalculate stats
+				stats.timestamp = decodeEndTime;
+				stats.totalDecodedFrames = num;
+				stats.fps = fpsAcu.GetInstant();
+				stats.maxDecodingTime = decodingTimeAcu.GetMaxValueInWindow();
+				stats.avgDecodingTime = static_cast<uint16_t>(decodingTimeAcu.GetInstantMedia());
+				stats.maxWaitingFrameTime = waitingFrameTimeAcu.GetMaxValueInWindow();
+				stats.avgWaitingFrameTime = static_cast<uint16_t>(waitingFrameTimeAcu.GetInstantMedia());
+				stats.maxDeinterlacingTime = deinterlacingTimeAcu.GetMaxValueInWindow();
+				stats.avgDeinterlacingTime = static_cast<uint16_t>(deinterlacingTimeAcu.GetInstantMedia());
 				//For each output
 				for (auto output : outputs)
 					//Send it
 					output->NextFrame(videoBuffer);
 			}
 		}
+
+		//Waif for frame time init
+		waitFrameStart = getTimeMS();
 	}
 
 	Log("<VideoDecoderWorker::Decode()\n");
@@ -186,3 +257,8 @@ void VideoDecoderWorker::onMediaFrame(const MediaFrame& frame)
 	frames.Add(std::shared_ptr<VideoFrame>(static_cast<VideoFrame*>(frame.Clone())));
 }
 
+VideoDecoderWorker::Stats VideoDecoderWorker::GetStats()
+{
+	ScopedLock scope(mutex);
+	return stats;
+}

@@ -77,7 +77,7 @@ void ActiveSpeakerMultiplexer::RemoveRTPStreamTransponder(RTPStreamTransponder* 
 
 void ActiveSpeakerMultiplexer::AddIncomingSourceGroup(RTPIncomingMediaStream::shared incoming, uint32_t id)
 {
-	Debug("-ActiveSpeakerMultiplexer::AddIncomingSourceGroup() [incoming:%p,id:%d]\n", incoming, id);
+	Debug("-ActiveSpeakerMultiplexer::AddIncomingSourceGroup() [incoming:%p,id:%d]\n", incoming.get(), id);
 
 	if (!incoming)
 		return;
@@ -96,19 +96,19 @@ void ActiveSpeakerMultiplexer::AddIncomingSourceGroup(RTPIncomingMediaStream::sh
 
 void ActiveSpeakerMultiplexer::RemoveIncomingSourceGroup(RTPIncomingMediaStream::shared incoming)
 {
-	Debug("-ActiveSpeakerMultiplexer::RemoveIncomingSourceGroup() [incoming:%p]\n", incoming);
+	Debug("-ActiveSpeakerMultiplexer::RemoveIncomingSourceGroup() [incoming:%p]\n", incoming.get());
 
 	if (!incoming)
 		return;
 
 	timeService.Sync([=](const auto& now) {
-		Debug("-ActiveSpeakerMultiplexer::RemoveIncomingSourceGroup() async [incoming:%p]\n", incoming);
+		Debug("-ActiveSpeakerMultiplexer::RemoveIncomingSourceGroup() async [incoming:%p]\n", incoming.get());
 		//Find source
 		auto it = sources.find(incoming.get());
 		//check it was not present
 		if (it==sources.end())
 		{
-			Debug("-ActiveSpeakerMultiplexer::RemoveIncomingSourceGroup() async not found[incoming:%p]\n", incoming);
+			Debug("-ActiveSpeakerMultiplexer::RemoveIncomingSourceGroup() async not found[incoming:%p]\n", incoming.get());
 			//Do nothing, probably called onEnded before
 			return;
 		}

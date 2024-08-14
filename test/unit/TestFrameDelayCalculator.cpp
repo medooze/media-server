@@ -3,8 +3,10 @@
 #include "FrameDelayCalculator.h"
 #include "video.h"
 #include "audio.h"
-
+#include "rtp/RTPPacket.h"
 #include "data/FramesArrivalInfo.h"
+
+using namespace std::chrono;
 
 namespace
 {
@@ -355,4 +357,29 @@ TEST_F(TestFrameDelayCalculator, testLatencyReduction2)
 
 		ASSERT_NO_FATAL_FAILURE(TestDelayCalculator(TestData::FramesArrivalInfoLargeAVDesync, expectedLatencies, nullptr));
 	}
+}
+
+
+TEST_F(TestFrameDelayCalculator, testNoSameClock)
+{
+	FrameDelayCalculator calculator(0, std::chrono::milliseconds(3));
+
+	uint64_t clockrate = 1000;
+	
+	ASSERT_EQ(calculator.OnFrame(1, 1000ms, 86000020, clockrate).count(), 0);
+	ASSERT_EQ(calculator.OnFrame(2, 1000ms, 86000000, clockrate).count(), 0);
+
+	ASSERT_EQ(calculator.OnFrame(1, 1020ms, 86000040, clockrate).count(), 20);
+	ASSERT_EQ(calculator.OnFrame(2, 1020ms,       40, clockrate).count(), 0);
+
+	ASSERT_EQ(calculator.OnFrame(1, 1020ms, 86000060, clockrate).count(), 0);
+	ASSERT_EQ(calculator.OnFrame(2, 1020ms,       60, clockrate).count(), 0);
+
+	ASSERT_EQ(calculator.OnFrame(1, 2020ms, 86001060, clockrate).count(), 0);
+	ASSERT_EQ(calculator.OnFrame(2, 2020ms,     1060, clockrate).count(), 0);
+
+	ASSERT_EQ(calculator.OnFrame(1, 2020ms, 86001080, clockrate).count(), 0);
+	ASSERT_EQ(calculator.OnFrame(2, 2020ms,     1080, clockrate).count(), 0);
+	ASSERT_EQ(calculator.OnFrame(2, 2040ms,     1100, clockrate).count(), 0);
+
 }

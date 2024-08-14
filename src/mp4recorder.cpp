@@ -3,8 +3,11 @@
 #include <unistd.h>
 #include <string.h>
 #include "log.h"
+#include "Buffer.h"
+#include "BufferReader.h"
 #include "mp4recorder.h"
 #include "h264/h264.h"
+#include "av1/Obu.h"
 #include "aac/aacconfig.h"
 #include "opus/opusconfig.h"
 
@@ -187,7 +190,30 @@ int mp4track::CreateVideoTrack(VideoCodec::Type codec, DWORD rate, int width, in
 				//If hints are not disabled
 			}
 			break;
-		}		
+		}
+		case VideoCodec::AV1:
+		{
+			// Should parse video packet to get this values
+			MP4Duration av1FrameDuration = 1.0 / 30;
+#ifdef MP4_AV1_VIDEO_TYPE      
+			// Create video track
+			track = MP4AddAV1VideoTrack(mp4, rate, av1FrameDuration, width, height);
+#else
+			// Create video track
+			track = MP4AddVideoTrack(mp4, rate, av1FrameDuration, width, height, MP4_PRIVATE_VIDEO_TYPE);
+#endif
+			//If hints are not disabled
+			if (!disableHints)
+			{
+				// Create video hint track
+				hint = MP4AddHintTrack(mp4, track);
+				// Set payload type for hint track
+				type = 103;
+				MP4SetHintTrackRtpPayload(mp4, hint, "VP9", &type, 0, NULL, 1, 0);
+				//If hints are not disabled
+			}
+			break;
+		}
 		default:
 			return Error("-Codec %s not supported yet\n",VideoCodec::GetNameFor(codec));
 	}
@@ -330,6 +356,42 @@ int mp4track::FlushVideoFrame(VideoFrame* frame,DWORD duration)
 	// Save video frame
 	MP4WriteSample(mp4, track, frame->GetData(), frame->GetLength(), duration, 0, frame->IsIntra());
 
+	//Tyr to extract the OBU sequence if we don't have one already
+	if (frame->GetCodec() == VideoCodec::AV1 && !hasConfigObu)
+	{
+		//Get reader for av1 encoded packet
+		ObuHeader obuHeader;
+		BufferReader reader(frame->GetData(), frame->GetLength());
+		//Start of obu mark
+		auto ini = reader.Mark();
+		//For each obu
+		while (reader.GetLeft() && obuHeader.Parse(reader))
+		{
+			//Get length from header or read the rest available
+			auto payloadSize = obuHeader.length.value_or(reader.GetLeft());
+			//Ensure we have enought data for the rest of the obu
+			if (!reader.Assert(payloadSize))
+				break;
+
+			//Skip the rest of the obu
+			reader.Skip(payloadSize);
+
+			//If it is a obu sequence
+			if (obuHeader.type == ObuType::ObuSequenceHeader)
+			{
+				Debug("-mp4track::SetAv1SequenceObu() | Got Sequence OBU\n");
+				//Add to the mp4 codec config
+				MP4SetAv1SequenceObu(mp4, track, reader.PeekData(ini), reader.GetOffset(ini));
+				//No need to search more
+				hasConfigObu = true;
+				//Done
+				break;
+			}
+			//Start of obu mark
+			ini = reader.Mark();
+		}
+	}
+
 	//Check if we have rtp data
 	if (hint && frame->HasRtpPacketizationInfo())
 	{
@@ -393,6 +455,7 @@ int mp4track::FlushVideoFrame(VideoFrame* frame,DWORD duration)
 	return 1;
 }
 
+
 void mp4track::AddH264SequenceParameterSet(const BYTE* data, DWORD size)
 {
 	//If it a SPS NAL
@@ -424,6 +487,7 @@ void mp4track::AddH264SequenceParameterSet(const BYTE* data, DWORD size)
 		}
 	}
 }
+
 
 void mp4track::AddH264PictureParameterSet(const BYTE* data, DWORD size)
 {
