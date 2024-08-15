@@ -69,11 +69,11 @@ void RTMPSClientConnection::processReceivedData(const uint8_t* data, size_t size
 	});
 }
 
-void RTMPSClientConnection::sendRtmpData(const uint8_t* data, size_t size)
+void RTMPSClientConnection::addPendingRtmpData(const uint8_t* data, size_t size)
 {
 	if (tls.Encrypt(data, size) != TlsClient::TlsClientError::NoError)
 	{
-		Error("-RTMPClientConnection::sendRtmpData() TLS encrypt error\n");
+		Error("-RTMPClientConnection::addPendingRtmpData() TLS encrypt error\n");
 		
 		if (GetListener()) GetListener()->onDisconnected(this, RTMPClientConnection::ErrorCode::TlsEncryptError);
 		return;

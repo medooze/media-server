@@ -83,7 +83,7 @@ protected:
 	virtual bool IsConnectionReady() { return inited; };
 	virtual void OnReadyToTransfer() {};
 	virtual void processReceivedData(const uint8_t* data, size_t size);
-	virtual void sendRtmpData(const uint8_t* data, size_t size);
+	virtual void addPendingRtmpData(const uint8_t* data, size_t size);
 	
 	inline Listener* GetListener() { return listener; }
 	int WriteData(const BYTE* data, const DWORD size);
