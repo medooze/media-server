@@ -228,8 +228,16 @@ int RTMPClientConnection::Run()
 	//Run until ended
 	while (EventLoop::IsRunning())
 	{
+		now = Now();
+			
+		//Process pending tasks
+                ProcessTasks(now);
+
+                //Timers triggered
+                ProcessTriggers(now);
+		
 		//Wait for events
-		if (poll(ufds, 1, -1) < 0)
+		if (poll(ufds, 1, 0) < 0)
 			//Check again
 			continue;
 
@@ -338,14 +346,6 @@ int RTMPClientConnection::Run()
 			//Exit
 			break;
 		}
-		
-		now = Now();
-			
-		//Process pending tasks
-                ProcessTasks(now);
-
-                //Timers triggered
-                ProcessTriggers(now);
 	}
 
 			
