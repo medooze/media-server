@@ -8,6 +8,7 @@
 #include "rtmpmessage.h"
 #include "rtmpstream.h"
 #include "rtmpapplication.h"
+#include "EventLoop.h"
 
 #include <pthread.h>
 #include <map>
@@ -15,6 +16,7 @@
 #include <optional>
 
 class RTMPClientConnection :
+	public EventLoop,
 	public RTMPMediaStream::Listener
 {
 public:
@@ -120,7 +122,6 @@ private:
 	int fd = FD_INVALID;
 	pollfd ufds[1] = {};
 	bool inited = false;
-	bool running = false;
 	State state = State::NONE;
 
 	RTMPHandshake01 c01;
@@ -150,7 +151,6 @@ private:
 	DWORD maxChunkSize = 128;
 	DWORD maxOutChunkSize = 512;
 
-	pthread_t thread;
 	pthread_mutex_t mutex;
 
 	std::wstring	 appName;
