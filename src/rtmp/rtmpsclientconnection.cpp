@@ -51,7 +51,7 @@ void RTMPSClientConnection::processReceivedData(const uint8_t* data, size_t size
 	switch(ret) 
 	{
 	case TlsClient::TlsClientError::NoError:
-		return;
+		break;
 	case TlsClient::TlsClientError::HandshakeFailed:
 		Warning("-RTMPClientConnection::processReceivedData() TLS handshake error\n");
 		if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::TlsHandshakeError);
@@ -62,6 +62,11 @@ void RTMPSClientConnection::processReceivedData(const uint8_t* data, size_t size
 		if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::TlsDecryptError);
 		return;
 	}
+	
+	tls.PopAllDecypted([this](auto&& data) {
+		//Parse data
+		ParseData(data.data(), data.size());
+	});
 }
 
 void RTMPSClientConnection::sendRtmpData(const uint8_t* data, size_t size)

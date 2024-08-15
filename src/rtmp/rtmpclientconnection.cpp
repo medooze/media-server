@@ -1093,7 +1093,6 @@ void RTMPClientConnection::onStreamReset(DWORD id)
 {
 	Debug("-RTMPClientConnection::onStreamReset()\n");
 
-
 	for (RTMPChunkOutputStreams::iterator it = chunkOutputStreams.begin(); it != chunkOutputStreams.end(); ++it)
 	{
 		//Get stream
