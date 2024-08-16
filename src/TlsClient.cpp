@@ -160,6 +160,11 @@ void TlsClient::Shutdown()
 	
 	encrypted.clear();
 	decrypted.clear();
+	
+	ssl.reset();
+	rbio.reset();
+	wbio.reset();
+	ctx.reset();
 }
 
 TlsClient::SslStatus TlsClient::GetSslStatus(int returnCode)
