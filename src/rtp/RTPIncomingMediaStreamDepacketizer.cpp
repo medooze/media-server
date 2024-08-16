@@ -44,7 +44,8 @@ void RTPIncomingMediaStreamDepacketizer::onRTP(const RTPIncomingMediaStream* gro
 		auto [status, rts] = tsChecker.Check(frame->GetTime(), frame->GetTimeStamp(), frame->GetClockRate());
 		if (status != TimestampChecker::CheckResult::Valid)
 		{
-			Error("Invalid timestamp. status: %d, info: %s, corrected: %llu\n", int(status), frame->TimeInfoToString().c_str(), rts);
+			Error("Invalid timestamp. status: %d, info: %s, corrected: %llu offset: %lld \n", 
+				TimestampChecker::CheckResultToString(status), frame->TimeInfoToString().c_str(), rts, tsChecker.GetTimestampOffset());
 		}
 		
 		// Use corrected timestamp
