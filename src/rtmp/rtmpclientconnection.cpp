@@ -219,6 +219,9 @@ int RTMPClientConnection::Run()
 	//Set values for polling
 	ufds[0].fd = fd;
 	ufds[0].events = POLLOUT | POLLIN | POLLERR | POLLHUP;
+	ufds[1].fd = GetPipe()[0];
+	//Set to wait also for write events on pipe for signaling
+	ufds[1].events = POLLIN | POLLERR | POLLHUP;
 
 	//Catch all IO errors and do nothing
 	signal(SIGIO,[](int){});
@@ -228,16 +231,10 @@ int RTMPClientConnection::Run()
 	//Run until ended
 	while (EventLoop::IsRunning())
 	{
-		now = Now();
-			
-		//Process pending tasks
-                ProcessTasks(now);
-
-                //Timers triggered
-                ProcessTriggers(now);
+		int timeout = GetNextTimeout(10E3);
 		
 		//Wait for events
-		if (poll(ufds, 1, 0) < 0)
+		if (poll(ufds, 2, timeout) < 0)
 			//Check again
 			continue;
 
@@ -346,14 +343,27 @@ int RTMPClientConnection::Run()
 			//Exit
 			break;
 		}
+		
+		//Read first from signal pipe
+		if (ufds[1].revents & POLLIN)
+			//Clear signal flag
+			ClearSignal();
+			
+		now = Now();
+			
+		//Process pending tasks
+		ProcessTasks(now);
+
+		//Timers triggered
+		ProcessTriggers(now);
 	}
 
 			
 	//Process pending tasks
-        ProcessTasks(now);
+	ProcessTasks(now);
 
-        //Timers triggered
-        ProcessTriggers(now);
+	//Timers triggered
+	ProcessTriggers(now);
 	
 	Log("<RTMPClientConnection::Run() completed.\n");
 

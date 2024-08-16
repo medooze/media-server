@@ -120,7 +120,7 @@ private:
 	typedef std::map<DWORD, std::function<void(bool, AMFData*, const std::vector<AMFData*>&)>> Transactions;
 private:
 	int fd = FD_INVALID;
-	pollfd ufds[1] = {};
+	pollfd ufds[2] = {};
 	bool inited = false;
 	State state = State::NONE;
 
