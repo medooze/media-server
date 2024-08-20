@@ -1473,9 +1473,9 @@ int DTLSICETransport::Dump(const char* filename, bool inbound, bool outbound, bo
 	return done;
 }
 
-int DTLSICETransport::DumpBWEStats(const char* filename)
+int DTLSICETransport::DumpBWEStats(const char* filename, size_t fileSizeLimit)
 {
-	return senderSideBandwidthEstimator->Dump(filename);
+	return senderSideBandwidthEstimator->Dump(filename, fileSizeLimit);
 }
 
 int DTLSICETransport::StopDumpBWEStats()
