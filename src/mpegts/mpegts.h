@@ -26,7 +26,11 @@ struct Header
 	AdaptationFieldControl adaptationFieldControl;
 	uint8_t  continuityCounter;
 
+	void Encode(BufferWritter& writer);
+	
 	static Header Parse(BufferReader& reader);
+	
+	
 	void Dump() const;
 
 };
@@ -34,6 +38,8 @@ struct Header
 struct AdaptationField
 {
 	static AdaptationField Parse(BufferReader& reader);
+	
+	void Encode(BufferWritter& writer);
 
 	bool discontinuityIndicator;
 	bool randomAccessIndicator;
@@ -52,6 +58,8 @@ struct Packet
 	std::optional<AdaptationField> adaptationField = {};
 	std::optional<uint8_t> payloadPointer = {};
 
+	void Encode(BufferWritter& writer);
+	
 	static Packet Parse(BufferReader& reader);
 };
 
