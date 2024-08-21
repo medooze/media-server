@@ -18,7 +18,8 @@ MediaFrameListenerBridge::MediaFrameListenerBridge(TimeService& timeService,DWOR
 	accumulatorBFrames(1000),
 	accumulatorPFrames(1000),
 	waited(1000),
-	tsChecker(checkTimestamp? new TimestampChecker : nullptr)
+	tsChecker(checkTimestamp? new TimestampChecker : nullptr),
+	ptsChecker(checkTimestamp? new TimestampChecker : nullptr)
 {
 	Debug("-MediaFrameListenerBridge::MediaFrameListenerBridge() [this:%p]\n", this);
 
@@ -184,22 +185,27 @@ void MediaFrameListenerBridge::onMediaFrame(DWORD ignored, const MediaFrame& fra
 			auto [status, rts] = tsChecker->Check(frame->GetTime(), frame->GetTimeStamp(), frame->GetClockRate());
 			if (status != TimestampChecker::CheckResult::Valid)
 			{
-				Error("Invalid timestamp. status: %d, info: %s, corrected: %llu offset: %lld \n", 
+				Error("Invalid timestamp. status: %s, info: %s, corrected: %llu offset: %lld \n", 
 					TimestampChecker::CheckResultToString(status), frame->TimeInfoToString().c_str(), rts, tsChecker->GetTimestampOffset());
 			}
-			
-			if (frame->GetType() == MediaFrame::Video)
-			{
-				VideoFrame* vframe = static_cast<VideoFrame*>(frame.get());
-				auto pts = rts + vframe->GetPresentationTimestamp() - vframe->GetTimestamp();
 				
-				vframe->SetTimestamp(rts);
-				vframe->SetPresentationTimestamp(pts);
+			frame->SetTimestamp(rts);
+		}
+		
+		if (ptsChecker && frame->GetType() == MediaFrame::Video)
+		{
+			VideoFrame* vframe = static_cast<VideoFrame*>(frame.get());
+			
+			// Check timestamp
+			auto [status, rpts] = ptsChecker->Check(vframe->GetTime(), vframe->GetPresentationTimestamp(), vframe->GetClockRate());
+			if (status != TimestampChecker::CheckResult::Valid)
+			{
+				Error("Invalid presentation timestamp. status: %s, info: %s, pts: %llu, corrected: %llu offset: %lld \n", 
+					TimestampChecker::CheckResultToString(status), frame->TimeInfoToString().c_str(), vframe->GetPresentationTimestamp(), 
+					rpts, ptsChecker->GetTimestampOffset());
 			}
-			else
-			{			
-				frame->SetTimestamp(rts);
-			}
+
+			vframe->SetPresentationTimestamp(rpts);
 		}
 		
 		if (coordinator)

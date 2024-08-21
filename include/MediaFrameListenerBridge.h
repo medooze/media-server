@@ -132,6 +132,7 @@ public:
 	uint32_t targetBitrateHint = 0;
 	
 	std::unique_ptr<TimestampChecker> tsChecker;
+	std::unique_ptr<TimestampChecker> ptsChecker;
 	std::shared_ptr<FrameDispatchCoordinator> coordinator;
 };
 
