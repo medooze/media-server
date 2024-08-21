@@ -1,10 +1,13 @@
 cmake_minimum_required( VERSION 3.13.0 )
-project( MediaServer LANGUAGES CXX)
+project( MediaServer LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD_REQUIRED True)
 
 # Do not allow in-source build.
 if( ${PROJECT_SOURCE_DIR} STREQUAL ${PROJECT_BINARY_DIR} )
@@ -35,9 +38,14 @@ file(GLOB_RECURSE SOURCES_JPEG RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/jpeg/*.cp
 file(GLOB_RECURSE SOURCES_WEBP RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/webp/*.cpp")
 file(GLOB_RECURSE SOURCES_AAC RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/aac/*.cpp")
 file(GLOB_RECURSE SOURCES_AV1 RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/av1/*.cpp")
+file(GLOB_RECURSE SOURCES_G711 RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/g711/*.cpp")
+file(GLOB_RECURSE SOURCES_G722 RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/g722/*.cpp")
+file(GLOB_RECURSE SOURCES_GSM RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/gsm/*.cpp")
+file(GLOB_RECURSE SOURCES_MP3 RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/mp3/*.cpp")
+file(GLOB_RECURSE SOURCES_OPUS RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/opus/*.cpp")
+file(GLOB_RECURSE SOURCES_SPEEX RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/speex/*.cpp")
 
 file(GLOB_RECURSE SOURCES RELATIVE ${CMAKE_CURRENT_LIST_DIR} "src/*.cpp")
-
 # Media server lib
 add_library(MediaServerLib
 	${SOURCES_H264}
@@ -48,7 +56,15 @@ add_library(MediaServerLib
 	${SOURCES_WEBP}
 	${SOURCES_AV1}
     ${SOURCES_AAC}
-    ${SOURCES_AV1}
+    ${SOURCES_MP3}
+    ${SOURCES_G711}
+    ${SOURCES_G722}
+    ${SOURCES_GSM}
+    ${SOURCES_OPUS}
+    ${SOURCES_SPEEX}
+    ${CMAKE_CURRENT_LIST_DIR}/src/g722/g722_encode.c
+    ${CMAKE_CURRENT_LIST_DIR}/src/g722/g722_decode.c
+    ${CMAKE_CURRENT_LIST_DIR}/src/speex/resample.c
     ${CMAKE_CURRENT_LIST_DIR}/src/DependencyDescriptorLayerSelector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/av1/AV1LayerSelector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/av1/Obu.cpp
@@ -110,6 +126,10 @@ add_library(MediaServerLib
     ${CMAKE_CURRENT_LIST_DIR}/src/VideoLayerSelector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/VideoCodecFactory.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/VideoDecoderWorker.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/audiodecoder.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/audiotransrater.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/AudioPipe.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/AudioCodecFactory.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/Deinterlacer.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/utf8.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/ForwardErrorCorrection.cpp
@@ -137,8 +157,15 @@ target_link_libraries(MediaServerLib
     crypto
     aom
     mp4v2-static
+    gsm
+    opus
+    speex
+    fftw3
 )
-
+# required by speex resampler
+target_compile_options(MediaServerLib PUBLIC
+    -DSPX_RESAMPLE_EXPORT= -DRANDOM_PREFIX=mcu -DOUTSIDE_SPEEX -DFLOATING_POINT
+)
 #for debugging
 #target_compile_options(MediaServerLib PUBLIC
 #    -ggdb
@@ -161,6 +188,7 @@ add_executable(MediaServerUnitTest
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestVideoPipe.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestBFrame.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAV1.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAAC.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAMFNumber.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestVideoLayersAllocation.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestTools.cpp
