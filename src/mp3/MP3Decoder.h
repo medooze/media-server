@@ -14,7 +14,7 @@ class MP3Decoder : public AudioDecoder
 public:
 	MP3Decoder();
 	virtual ~MP3Decoder();
-	virtual int Decode(const BYTE *in,int inLen,SWORD* out,int outLen);
+	virtual int Decode(const AudioFrame::const_shared& frame, SWORD* out, int outLen);
 	virtual DWORD TrySetRate(DWORD rate)	{ return ctx->sample_rate;		}
 	virtual DWORD GetRate()			{ return ctx->sample_rate;		}
 	virtual DWORD GetNumChannels()		{ return std::min(ctx->channels,2);	}
