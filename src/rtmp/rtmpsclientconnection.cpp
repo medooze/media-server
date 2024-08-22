@@ -43,7 +43,7 @@ void RTMPSClientConnection::OnReadyToTransfer()
 	});
 }
 
-void RTMPSClientConnection::processReceivedData(const uint8_t* data, size_t size)
+void RTMPSClientConnection::ProcessReceivedData(const uint8_t* data, size_t size)
 {
 	auto listener = GetListener();
 	
@@ -53,12 +53,12 @@ void RTMPSClientConnection::processReceivedData(const uint8_t* data, size_t size
 	case TlsClient::TlsClientError::NoError:
 		break;
 	case TlsClient::TlsClientError::HandshakeFailed:
-		Warning("-RTMPClientConnection::processReceivedData() TLS handshake error\n");
+		Warning("-RTMPClientConnection::ProcessReceivedData() TLS handshake error\n");
 		if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::TlsHandshakeError);
 		return;
 	case TlsClient::TlsClientError::Failed:
 	default:
-		Warning("-RTMPClientConnection::processReceivedData() Failed to decrypt\n");
+		Warning("-RTMPClientConnection::ProcessReceivedData() Failed to decrypt\n");
 		if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::TlsDecryptError);
 		return;
 	}
