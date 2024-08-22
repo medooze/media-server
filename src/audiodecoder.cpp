@@ -50,7 +50,7 @@ int  AudioDecoderWorker::Stop()
 	decoding=0;
 
 	//Cancel any pending wait
-	packets.Cancel();
+	frames.Cancel();
 
 	//Esperamos
 	pthread_join(thread,NULL);
@@ -90,13 +90,13 @@ void AudioDecoderWorker::SetAACConfig(const uint8_t* data,const size_t size)
 	ScopedLock scope(mutex);
 		
 	//IF no codec
-	if (!codec)
+	if (!audioDecoder)
 	{
 		//Create new AAC odec from pacekt
-		codec.reset(AudioCodecFactory::CreateDecoder(AudioCodec::AAC));
+		audioDecoder.reset(AudioCodecFactory::CreateDecoder(AudioCodec::AAC));
 
 		//Check we found one
-		if (!codec)
+		if (!audioDecoder)
 			//Skip
 			return;
 	} else {
@@ -107,13 +107,13 @@ void AudioDecoderWorker::SetAACConfig(const uint8_t* data,const size_t size)
 	}
 	
 	//Convert it to AAC encoder
-	auto aac = static_cast<AACDecoder*>(codec.get());
+	auto aac = static_cast<AACDecoder*>(audioDecoder.get());
 	//Set config there
 	aac->SetConfig(data,size);
 
 	//Update rate
-	rate = codec->GetRate();
-	numChannels = codec->GetNumChannels();
+	rate = audioDecoder->GetRate();
+	numChannels = audioDecoder->GetNumChannels();
 
 	//For each output
 	for (auto output : outputs)
@@ -126,7 +126,7 @@ int AudioDecoderWorker::Decode()
 {
 	SWORD		raw[4096];
 	DWORD		rawSize=4096;
-	QWORD		frameTime=0;
+	QWORD		frameDuration=0;
 	QWORD		lastTime=0;
 
 	Log(">AudioDecoderWorker::Decode()\n");
@@ -135,53 +135,52 @@ int AudioDecoderWorker::Decode()
 	while(decoding)
 	{
 		//Obtenemos el paquete
-		if (!packets.Wait(0))
+		if (!frames.Wait(0))
 			//Done
 			break;
 
 		//Get packet in queue
-		auto packet = packets.Pop();
+		auto frame = frames.Pop();
 
 		//Check
-		if (!packet)
+		if (!frame)
 			//Check condition again
 			continue;
-		
 		//SYNC
 		{
 			//Lock
 			ScopedLock scope(mutex);
 
 			//If we don't have codec
-			if (!codec || (packet->GetCodec()!=codec->type))
+			if (!audioDecoder || (frame->GetCodec()!=audioDecoder->type))
 			{
 				//If got a previous codec
-				if (codec)
+				if (audioDecoder)
 					//For each output
 					for (auto output : outputs)
 						//Stop it
 						output->StopPlaying();
 
 				//Create new codec from pacekt
-				codec.reset(AudioCodecFactory::CreateDecoder((AudioCodec::Type)packet->GetCodec()));
+				audioDecoder.reset(AudioCodecFactory::CreateDecoder((AudioCodec::Type)frame->GetCodec()));
 
 				//Check we found one
-				if (!codec)
+				if (!audioDecoder)
 					//Skip
 					continue;
 
-				//If it is aac and we have config
-				if (codec->type==AudioCodec::AAC && packet->config && !packet->config->IsEmpty())
+				// If it is aac and we have config
+				if (audioDecoder->type==AudioCodec::AAC && frame->HasCodecConfig())
 				{
 					//Convert it to AAC encoder
-					auto aac = static_cast<AACDecoder*>(codec.get());
+					auto aac = static_cast<AACDecoder*>(audioDecoder.get());
 					//Set config there
-					aac->SetConfig(packet->config->GetData(), packet->config->GetSize());
+					aac->SetConfig(frame->GetCodecConfigData(), frame->GetCodecConfigSize());
 				}
 
 				//Update rate
-				rate = codec->GetRate();
-				numChannels = codec->GetNumChannels();
+				rate = audioDecoder->GetRate();
+				numChannels = audioDecoder->GetNumChannels();
 
 				//Ensure that we have rate and samples
 				if (!rate || !numChannels)
@@ -195,14 +194,14 @@ int AudioDecoderWorker::Decode()
 			}
 
 			//Lo decodificamos
-			int len = codec->Decode(packet->GetMediaData(),packet->GetMediaLength(),raw,rawSize);
+			int len = audioDecoder->Decode(frame,raw,rawSize);
 			
 			//Check if we have a different channel count
-			if (numChannels != codec->GetNumChannels())
+			if (numChannels != audioDecoder->GetNumChannels())
 			{
 				//Update rate
-				rate = codec->GetRate();
-				numChannels = codec->GetNumChannels();
+				rate = audioDecoder->GetRate();
+				numChannels = audioDecoder->GetNumChannels();
 
 				//For each output
 				for (auto output : outputs)
@@ -213,17 +212,16 @@ int AudioDecoderWorker::Decode()
 					output->StartPlaying(rate, numChannels);
 				}
 			}
-
 			//Get last frame time duration
-			frameTime = packet->GetExtTimestamp() - lastTime;
+			frameDuration = frame->GetTimestamp() - lastTime;
 
-			//Update last sent time
-			lastTime = packet->GetExtTimestamp();
+			// Update last sent time
+			lastTime = frame->GetTimestamp();
 
 			//For each output
 			for (auto output : outputs)
 				//Send buffer
-				output->PlayBuffer(raw, len, frameTime);
+				output->PlayBuffer(raw, len, frameDuration);
 		}
 	}
 
@@ -232,7 +230,7 @@ int AudioDecoderWorker::Decode()
 		//Stop playing
 		ScopedLock scope(mutex);
 		//Check codec
-		if (codec)
+		if (audioDecoder)
 			//For each output
 			for (auto output : outputs)
 				//Stop it
@@ -246,21 +244,15 @@ int AudioDecoderWorker::Decode()
 	return 0;
 }
 
-void AudioDecoderWorker::onRTP(const RTPIncomingMediaStream* stream,const RTPPacket::shared& packet)
+void AudioDecoderWorker::onMediaFrame(const MediaFrame& frame)
 {
+	//Ensure it is audio
+	if (frame.GetType()!=MediaFrame::Audio)
+	{
+		Warning("-AudioDecoderWorker::onMediaFrame()  got wrong frame type: %s [this: %p]\n", MediaFrame::TypeToString(frame.GetType()), this);
+		return;
+	}
+
 	//Put it on the queue
-	packets.Add(packet->Clone());
-}
-
-void AudioDecoderWorker::onEnded(const RTPIncomingMediaStream* stream)
-{
-	//Cancel packets wait
-	packets.Cancel();
-}
-
-
-void AudioDecoderWorker::onBye(const RTPIncomingMediaStream* stream)
-{
-	//Cancel packets wait
-	packets.Cancel();
+	frames.Add(std::shared_ptr<AudioFrame>(static_cast<AudioFrame*>(frame.Clone())));
 }
