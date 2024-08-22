@@ -15,7 +15,7 @@ class AACDecoder : public AudioDecoder
 public:
 	AACDecoder();
 	virtual ~AACDecoder();
-	virtual int Decode(const BYTE *in,int inLen,SWORD* out,int outLen);
+	virtual int Decode(const std::shared_ptr<const AudioFrame>& frame, SWORD* out, int outLen);
 	virtual DWORD TrySetRate(DWORD rate)	{ return ctx->sample_rate;		}
 	virtual DWORD GetRate()			{ return ctx->sample_rate;		}
 	virtual DWORD GetNumChannels()		{ return std::min(ctx->channels,2);	}
