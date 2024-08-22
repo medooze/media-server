@@ -5,11 +5,11 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include <deque>
 #include <memory>
 
 #include <OpenSSL.h>
 
+#include "CircularQueue.h"
 #include "log.h"
 
 template <typename T, void (*function)(T*)>
@@ -104,8 +104,8 @@ private:
 	uint8_t decryptCache[MTU];
 	uint8_t encryptCache[MTU];
 	
-	std::deque<std::vector<uint8_t>> encrypted;
-	std::deque<std::vector<uint8_t>> decrypted;
+	CircularQueue<std::vector<uint8_t>> encrypted;
+	CircularQueue<std::vector<uint8_t>> decrypted;
 	
 	bool initialised = false;
 	bool allowAllCertificates = false;

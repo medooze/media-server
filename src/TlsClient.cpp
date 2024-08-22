@@ -15,11 +15,14 @@ void LogCertificateInfo(int preverify, X509_STORE_CTX* ctx)
 	Log("-TlsClient::initialize() SSL certificate subject: %s preverify: %d error: %s depth: %d\n", 
 		name, preverify, X509_verify_cert_error_string(err), depth);
 }
-	
+
+constexpr size_t InitialCircularQueueSize = 256;
 }
 
 
 TlsClient::TlsClient(bool allowAllCertificates) :
+	encrypted(InitialCircularQueueSize, true),
+	decrypted(InitialCircularQueueSize, true),
 	allowAllCertificates(allowAllCertificates)
 {
 }
@@ -216,10 +219,22 @@ bool TlsClient::ReadBioEncrypted()
 
 void TlsClient::QueueEncryptedData(const uint8_t* data, size_t size)
 {
+	if (encrypted.full())
+	{
+		// This is unlikely to happen as we clean up the queue immediately.
+		Warning("TLS encrypted queue full. Queue size: %zu.", encrypted.size());
+	}
+	
 	encrypted.emplace_back(data, data + size);
 }
 
 void TlsClient::QueueDecryptedData(const uint8_t* data, size_t size)
 {
+	if (decrypted.full())
+	{
+		// This is unlikely to happen as we clean up the queue immediately.
+		Warning("TLS decrypted queue full. Queue size: %zu.", decrypted.size());
+	}
+	
 	decrypted.emplace_back(data, data + size);
 }
