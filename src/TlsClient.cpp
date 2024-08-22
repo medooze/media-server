@@ -222,7 +222,7 @@ void TlsClient::QueueEncryptedData(const uint8_t* data, size_t size)
 	if (encrypted.full())
 	{
 		// This is unlikely to happen as we clean up the queue immediately.
-		Warning("TLS encrypted queue full. Queue size: %zu.", encrypted.size());
+		Warning("TLS encrypted queue full. Queue size: %zu.\n", encrypted.size());
 	}
 	
 	encrypted.emplace_back(data, data + size);
@@ -233,7 +233,7 @@ void TlsClient::QueueDecryptedData(const uint8_t* data, size_t size)
 	if (decrypted.full())
 	{
 		// This is unlikely to happen as we clean up the queue immediately.
-		Warning("TLS decrypted queue full. Queue size: %zu.", decrypted.size());
+		Warning("TLS decrypted queue full. Queue size: %zu.\n", decrypted.size());
 	}
 	
 	decrypted.emplace_back(data, data + size);
