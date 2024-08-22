@@ -6,11 +6,9 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <memory>
+#include <functional>
 
 #include <OpenSSL.h>
-
-#include "CircularQueue.h"
-#include "log.h"
 
 template <typename T, void (*function)(T*)>
 struct FunctionDeleter {
@@ -21,13 +19,14 @@ struct FunctionDeleter {
 template <typename T, void (*function)(T*)>
 using DeleteFnPtr = typename FunctionDeleter<T, function>::Pointer;
 
-using BIOPointer = DeleteFnPtr<BIO, BIO_free_all>;
 using SSLCtxPointer = DeleteFnPtr<SSL_CTX, SSL_CTX_free>;
 using SSLPointer = DeleteFnPtr<SSL, SSL_free>;
 
 class TlsClient 
 {
 public:
+	using Callback = std::function<void(const uint8_t* data, size_t size)>;
+	
 	enum class SslStatus
 	{ 
 		OK,
@@ -54,29 +53,11 @@ public:
 
 	SslStatus Handshake();
 	
-	TlsClientError Decrypt(const uint8_t* data, size_t size);
+	TlsClientError Decrypt(const uint8_t* data, size_t size, const Callback& callback);
 
 	TlsClientError Encrypt(const uint8_t* data, size_t size);
-	
-	template<typename T>
-	void PopAllDecypted(const T& callback)
-	{
-		while (!decrypted.empty())
-		{	
-			callback(std::move(decrypted.front()));
-			decrypted.pop_front();
-		}
-	}
 
-	template<typename T>
-	void PopAllEncrypted(const T& callback)
-	{	
-		while (!encrypted.empty())
-		{
-			callback(std::move(encrypted.front()));
-			encrypted.pop_front();
-		}
-	}
+	bool ReadEncrypted(const Callback& callback);
 	
 	inline bool IsInitialised() const
 	{
@@ -89,25 +70,20 @@ private:
 
 	SslStatus GetSslStatus(int returnCode);
 
-	bool ReadBioEncrypted();
-	
-	void QueueEncryptedData(const uint8_t* data, size_t size);
-	
-	void QueueDecryptedData(const uint8_t* data, size_t size);
+	bool ReadBioEncrypted(const Callback& callback);
 
 	SSLCtxPointer ctx;
 	SSLPointer ssl;
 
-	BIOPointer rbio;
-	BIOPointer wbio;
+	BIO* rbio = nullptr;
+	BIO* wbio = nullptr;
 	
 	uint8_t decryptCache[MTU];
 	uint8_t encryptCache[MTU];
 	
-	CircularQueue<std::vector<uint8_t>> encrypted;
-	CircularQueue<std::vector<uint8_t>> decrypted;
-	
 	bool initialised = false;
+	bool isPendingEncrypted = false;
+	
 	bool allowAllCertificates = false;
 };
 
