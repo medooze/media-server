@@ -62,6 +62,7 @@ public:
 		// The difference between expected duration as per timestamp and actual duration since last frame
 		auto diff = sameOrder ? GetDiff(durationOnTs, durationOnRecv) : (durationOnTs + durationOnRecv);
 		
+		auto result = CheckResult::Valid;
 		int64_t rectifiedTs = 0;
 		
 		bool valid = diff < maxDurationDiffMs;
@@ -74,7 +75,7 @@ public:
 			
 			rectifiedTs = timestamp + offset;
 			
-			return { CheckResult::Valid, rectifiedTs };
+			result = CheckResult::Valid;
 		}
 		else
 		{
@@ -91,11 +92,15 @@ public:
 				
 				offset = rectifiedTs - timestamp;
 				
-				return { CheckResult::Reset, rectifiedTs};
+				result = CheckResult::Reset;
 			}
-
-			return { CheckResult::Invalid, rectifiedTs };
+			else
+			{
+				result = CheckResult::Invalid;
+			}
 		}
+		
+		return { result, uint64_t(rectifiedTs) };
 	}
 	
 	inline int64_t GetTimestampOffset() const
