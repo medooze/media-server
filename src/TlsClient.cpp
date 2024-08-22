@@ -32,7 +32,7 @@ TlsClient::~TlsClient()
 
 bool TlsClient::Initialize(const char* hostname)
 {
-	ctx = SSLCtxPointer(SSL_CTX_new(TLS_method()));
+	ctx = std::unique_ptr<SSL_CTX, SSLCtxDeleter>(SSL_CTX_new(TLS_method()));
 	if (!ctx)
 	{
 		Error("-TlsClient::initialize() Failed to ceate SSL context\n");
@@ -62,7 +62,7 @@ bool TlsClient::Initialize(const char* hostname)
 	rbio = BIO_new(BIO_s_mem());
 	wbio = BIO_new(BIO_s_mem());
 	
-	ssl = SSLPointer(SSL_new(ctx.get()));
+	ssl = std::unique_ptr<SSL, SSLDeleter>(SSL_new(ctx.get()));
 	if (!ssl)
 	{
 		Error("-TlsClient::initialize() Failed to ceate SSL\n");

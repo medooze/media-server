@@ -10,18 +10,6 @@
 
 #include <OpenSSL.h>
 
-template <typename T, void (*function)(T*)>
-struct FunctionDeleter {
-  void operator()(T* pointer) const { function(pointer); }
-  typedef std::unique_ptr<T, FunctionDeleter> Pointer;
-};
-
-template <typename T, void (*function)(T*)>
-using DeleteFnPtr = typename FunctionDeleter<T, function>::Pointer;
-
-using SSLCtxPointer = DeleteFnPtr<SSL_CTX, SSL_CTX_free>;
-using SSLPointer = DeleteFnPtr<SSL, SSL_free>;
-
 class TlsClient 
 {
 public:
@@ -72,8 +60,8 @@ private:
 
 	bool ReadBioEncrypted(const Callback& callback);
 
-	SSLCtxPointer ctx;
-	SSLPointer ssl;
+	std::unique_ptr<SSL_CTX, SSLCtxDeleter> ctx;
+	std::unique_ptr<SSL, SSLDeleter> ssl;
 
 	BIO* rbio = nullptr;
 	BIO* wbio = nullptr;
