@@ -16,8 +16,8 @@ protected:
 	virtual void Stop() override;
 	virtual bool IsConnectionReady() override;
 	virtual void OnReadyToTransfer() override;
-	virtual void processReceivedData(const uint8_t* data, size_t size) override;
-	virtual void addPendingRtmpData(const uint8_t* data, size_t size) override;
+	virtual void ProcessReceivedData(const uint8_t* data, size_t size) override;
+	virtual void AddPendingRtmpData(const uint8_t* data, size_t size) override;
 
 private:
 	TlsClient tls;

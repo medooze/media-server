@@ -69,7 +69,7 @@ void RTMPSClientConnection::processReceivedData(const uint8_t* data, size_t size
 	});
 }
 
-void RTMPSClientConnection::addPendingRtmpData(const uint8_t* data, size_t size)
+void RTMPSClientConnection::AddPendingRtmpData(const uint8_t* data, size_t size)
 {
 	if (tls.Encrypt(data, size) != TlsClient::TlsClientError::NoError)
 	{

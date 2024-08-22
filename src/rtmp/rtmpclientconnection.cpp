@@ -279,7 +279,7 @@ int RTMPClientConnection::Run()
 					//Set state
 					state = HEADER_S0_WAIT;
 					//Send it
-					addPendingRtmpData(c01.GetData(), c01.GetSize());
+					AddPendingRtmpData(c01.GetData(), c01.GetSize());
 
 					//Debug
 					Debug("-RTMPClientConnection::Run() Socket connected, Sending c0 and c1 with digest %s size %d\n", digest ? "on" : "off", c01.GetSize());
@@ -288,7 +288,7 @@ int RTMPClientConnection::Run()
 				//Write data buffer
 				DWORD len = SerializeChunkData(data, size);
 				//Send it
-				addPendingRtmpData(data, len);
+				AddPendingRtmpData(data, len);
 			}
 			
 			OnReadyToTransfer();
@@ -318,7 +318,7 @@ int RTMPClientConnection::Run()
 			inBytes += len;
 
 			try {
-				processReceivedData(data, len);
+				ProcessReceivedData(data, len);
 			}
 			catch (std::exception& e) {
 				//Show error
@@ -409,13 +409,13 @@ end:
 	return len;
 }
 
-void RTMPClientConnection::addPendingRtmpData(const uint8_t* data, size_t size)
+void RTMPClientConnection::AddPendingRtmpData(const uint8_t* data, size_t size)
 {
 	// Send immediately
 	WriteData(data, size);
 }
 
-void RTMPClientConnection::processReceivedData(const uint8_t* data, size_t size)
+void RTMPClientConnection::ProcessReceivedData(const uint8_t* data, size_t size)
 {
 	ParseData(data, size);
 }
@@ -489,7 +489,7 @@ void RTMPClientConnection::ParseData(const BYTE* data, const DWORD size)
 					//Move to next state
 					state = HEADER_S2_WAIT;
 					//Send S2 data
-					addPendingRtmpData(c2.GetData(), c2.GetSize());
+					AddPendingRtmpData(c2.GetData(), c2.GetSize());
 					//Debug
 					Log("-RTMPClientConnection::Sending c2.\n");
 				}
