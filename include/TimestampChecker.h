@@ -10,13 +10,18 @@
  * 
  * It assumes the receiving time is always correct, as it is set on the server. The duration
  * calculated from timestamp since last frame will be compared with the actual receiving time
- * gap. If the difference between the two is too big, it would be regarded as invalid. 
+ * gap. If the difference between the two is too big, it would be regarded as invalid.
  * 
  * At starting/resetting, the first frame is always regarded as valid. Invalid frames are not
  * used for reference.
  * 
+ * If the time stamp is regarded as invalid, a rectified timestamp would be calculated as per
+ * the receiving time and current timestamp reference, including the offset.
+ * 
  * If the time and timestamps pair are continously regarded as invalid for a certain frames,
- * the time checker will be reset.
+ * the time checker will be reset. When there is a reset, an offset will be calculated to ensure
+ * the rectified timestamp to be incremental and sensible to the receiving time. After reset,
+ * the rectified timestamp will be calculated basing on the actual received timestamp and offset.
  */
 class TimestampChecker
 {
@@ -38,6 +43,16 @@ public:
 	{
 	}
 	
+	/**
+	 * Check the timestamp
+	 * 
+	 * @param recvTimeMs The receiving time, in milliseconds
+	 * @param timestamp  The timestamp to be checked.
+	 * @param clock      The timestamp clock 
+	 * 
+	 * @return  A pair of check result and rectified timestamp. Caller should use the rectified
+	 *	    timestamp to ensure the timestamp to be incremental and sensible.
+	 */
 	std::pair<CheckResult, uint64_t> Check(uint64_t recvTimeMs, uint64_t timestamp, uint32_t clock)
 	{
 		if (clock == 0) return { CheckResult::Invalid, 0};
