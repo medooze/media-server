@@ -62,7 +62,7 @@ bool TlsClient::Initialize(const char* hostname)
 	rbio = BIO_new(BIO_s_mem());
 	wbio = BIO_new(BIO_s_mem());
 	
-	ssl = std::unique_ptr<SSL, SSLDeleter>(SSL_new(ctx.get()));
+	ssl.reset(SSL_new(ctx.get()));
 	if (!ssl)
 	{
 		Error("-TlsClient::initialize() Failed to ceate SSL\n");
