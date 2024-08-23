@@ -18,6 +18,8 @@ H265Depacketizer::H265Depacketizer(bool annexB_in) :
 {
 	//Set clock rate
 	frame.SetClockRate(90000);
+	//Disable shared buffer
+	frame.DisableSharedBuffer();
 }
 
 H265Depacketizer::~H265Depacketizer()
