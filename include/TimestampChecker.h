@@ -68,17 +68,17 @@ public:
 			return {CheckResult::Valid, timestamp};
 		}
 		
-		auto durationOnTs = GetDiff(timestamp, lastTimeStamp) * 1000 / clock;
-		auto durationOnRecv = GetDiff(recvTimeMs, lastRecvTime);
+		auto durationOnTs = GetAbsDiff(timestamp, lastTimeStamp) * 1000 / clock;
+		auto durationOnRecv = GetAbsDiff(recvTimeMs, lastRecvTime);
 		
 		bool sameOrder = (recvTimeMs >= lastRecvTime && timestamp >= lastTimeStamp) || 
 				 (recvTimeMs <= lastRecvTime && timestamp <= lastTimeStamp);
 		
 		// The difference between expected duration as per timestamp and actual duration since last frame
-		auto diff = sameOrder ? GetDiff(durationOnTs, durationOnRecv) : (durationOnTs + durationOnRecv);
+		auto diff = sameOrder ? GetAbsDiff(durationOnTs, durationOnRecv) : (durationOnTs + durationOnRecv);
 		
 		auto result = CheckResult::Valid;
-		int64_t rectifiedTs = 0;
+		int64_t rectifiedTs = timestamp;
 		
 		bool valid = diff < maxDurationDiffMs;
 		if (valid)
@@ -123,7 +123,7 @@ public:
 		return offset;
 	}
 	
-	inline static constexpr uint64_t GetDiff(uint64_t lhs, uint64_t rhs)
+	inline static constexpr uint64_t GetAbsDiff(uint64_t lhs, uint64_t rhs)
 	{
 		return lhs > rhs ? (lhs - rhs) : (rhs - lhs);
 	}
