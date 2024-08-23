@@ -32,7 +32,7 @@ TlsClient::~TlsClient()
 
 bool TlsClient::Initialize(const char* hostname)
 {
-	ctx = std::unique_ptr<SSL_CTX, SSLCtxDeleter>(SSL_CTX_new(TLS_method()));
+	ctx.reset(SSL_CTX_new(TLS_method()));
 	if (!ctx)
 	{
 		Error("-TlsClient::initialize() Failed to ceate SSL context\n");
