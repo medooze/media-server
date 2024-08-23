@@ -129,10 +129,6 @@ protected:
 
 	const std::chrono::milliseconds Now();
 	
-	std::thread& GetThread()
-	{
-		return thread;
-	}
 	
 private:
 	struct SendBuffer
