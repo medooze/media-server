@@ -107,7 +107,7 @@ RTMPClientConnection::ErrorCode RTMPClientConnection::Connect(const char* server
 		
 		return RTMPClientConnection::ErrorCode::FailedToConnectSocket;
 	}
-
+	
 	//I am inited
 	inited = true;
 
@@ -127,18 +127,18 @@ RTMPClientConnection::ErrorCode RTMPClientConnection::Connect(const char* server
 	this->listener = listener;
 
 	//Start
-	Start();
-
-	return RTMPClientConnection::ErrorCode::NoError;
+	return Start();
 }
 
-void RTMPClientConnection::Start()
+RTMPClientConnection::ErrorCode RTMPClientConnection::Start()
 {
 	//We are running
 	running = true;
 
 	//Create thread
 	createPriorityThread(&thread, run, this, 0);
+	
+	return RTMPClientConnection::ErrorCode::NoError;
 }
 
 void RTMPClientConnection::Stop()
@@ -240,55 +240,58 @@ int RTMPClientConnection::Run()
 
 		if (ufds[0].revents & POLLOUT)
 		{
-			//Check if socket was not connected yet
-			if (!connected)
+			if (IsConnectionReady())
 			{
-				//Double check it is connected
-				int err;
-				socklen_t len = sizeof(err);
-				if (getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &len) == -1)
+				//Check if socket was not connected yet
+				if (!connected)
 				{
-					Warning("-RTMPClientConnection::Run() getsockopt failed [%p]\n", this);
-					
-					if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::GetSockOptError);
-					//exit
-					break;
+					//Double check it is connected
+					int err;
+					socklen_t len = sizeof(err);
+					if (getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &len) == -1)
+					{
+						Warning("-RTMPClientConnection::Run() getsockopt failed [%p]\n", this);
+						
+						if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::GetSockOptError);
+						//exit
+						break;
+					}
+
+					//Check status
+					if (err != 0)
+					{
+						Warning("-RTMPClientConnection::Run() getsockopt error [%p, errno:%d]\n", this, err);
+						
+						if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::GetSockOptError);
+						//exit
+						break;
+					}
+
+					//Connected
+					connected = true;
+
+					//Create C01 and send it
+					c01.SetRTMPVersion(3);
+					c01.SetTime(getDifTime(&startTime) / 1000);
+					c01.SetVersion(0, 0, 0, 0);
+					//Do not calculate digest
+					digest = false;
+					//Set state
+					state = HEADER_S0_WAIT;
+					//Send it
+					AddPendingRtmpData(c01.GetData(), c01.GetSize());
+
+					//Debug
+					Debug("-RTMPClientConnection::Run() Socket connected, Sending c0 and c1 with digest %s size %d\n", digest ? "on" : "off", c01.GetSize());
 				}
 
-				//Check status
-				if (err != 0)
-				{
-					Warning("-RTMPClientConnection::Run() getsockopt error [%p, errno:%d]\n", this, err);
-					
-					if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::GetSockOptError);
-					//exit
-					break;
-				}
-
-				//Connected
-				connected = true;
-
-				//Create C01 and send it
-				c01.SetRTMPVersion(3);
-				c01.SetTime(getDifTime(&startTime) / 1000);
-				c01.SetVersion(0, 0, 0, 0);
-				//Do not calculate digest
-				digest = false;
-				//Set state
-				state = HEADER_S0_WAIT;
+				//Write data buffer
+				DWORD len = SerializeChunkData(data, size);
 				//Send it
-				WriteData(c01.GetData(), c01.GetSize());
-
-				//Debug
-				Debug("-RTMPClientConnection::Run() Socket connected, Sending c0 and c1 with digest %s size %d\n", digest ? "on" : "off", c01.GetSize());
+				AddPendingRtmpData(data, len);
 			}
-
-			//Write data buffer
-			DWORD len = SerializeChunkData(data, size);
-			//Send it
-			WriteData(data, len);
-			//Increase sent bytes
-			outBytes += len;
+			
+			OnReadyToTransfer();
 		}
 
 		if (ufds[0].revents & POLLIN)
@@ -315,8 +318,7 @@ int RTMPClientConnection::Run()
 			inBytes += len;
 
 			try {
-				//Parse data
-				ParseData(data, len);
+				ProcessReceivedData(data, len);
 			}
 			catch (std::exception& e) {
 				//Show error
@@ -407,18 +409,29 @@ end:
 	return len;
 }
 
+void RTMPClientConnection::AddPendingRtmpData(const uint8_t* data, size_t size)
+{
+	// Send immediately
+	WriteData(data, size);
+}
+
+void RTMPClientConnection::ProcessReceivedData(const uint8_t* data, size_t size)
+{
+	ParseData(data, size);
+}
+
 /***********************
  * ParseData
  * 	Process incomming data
  **********************/
-void RTMPClientConnection::ParseData(BYTE* data, const DWORD size)
+void RTMPClientConnection::ParseData(const BYTE* data, const DWORD size)
 {
 	RTMPChunkInputStreams::iterator it;
 	int len = 0;
 	int digesOffsetMethod = 0;
 
 	//Get pointer and data size
-	BYTE* buffer = data;
+	BYTE* buffer = const_cast<BYTE*>(data);
 	DWORD bufferSize = size;
 	DWORD digestPosServer = 0;
 
@@ -476,7 +489,7 @@ void RTMPClientConnection::ParseData(BYTE* data, const DWORD size)
 					//Move to next state
 					state = HEADER_S2_WAIT;
 					//Send S2 data
-					WriteData(c2.GetData(), c2.GetSize());
+					AddPendingRtmpData(c2.GetData(), c2.GetSize());
 					//Debug
 					Log("-RTMPClientConnection::Sending c2.\n");
 				}
@@ -801,10 +814,13 @@ void RTMPClientConnection::ParseData(BYTE* data, const DWORD size)
  * WriteData
  *	Write data to socket
  ***********************/
-int RTMPClientConnection::WriteData(BYTE* data, const DWORD size)
+int RTMPClientConnection::WriteData(const BYTE* data, const DWORD size)
 {
-	//Write it
-	return write(fd, data, size);
+	auto bytes = write(fd, data, size);
+	
+	if (bytes > 0) outBytes += bytes;
+	
+	return bytes;
 }
 
 void RTMPClientConnection::ProcessControlMessage(DWORD streamId, BYTE type, RTMPObject* msg)
@@ -889,7 +905,6 @@ void RTMPClientConnection::ProcessCommandMessage(DWORD streamId, RTMPCommandMess
 	//If it is a result from a previous command
 	if (name.compare(L"_error") == 0 || name.compare(L"_result") == 0)
 	{
-
 		//Log
 		Log("-RTMPClientConnection::ProcessCommandMessage() Got response [streamId:%d,name:\"%ls\",transId:%ld]\n", streamId, name.c_str(), transId);
 		cmd->Dump();
@@ -1078,7 +1093,6 @@ void RTMPClientConnection::onMetaData(DWORD streamId, RTMPMetaData* meta)
 void RTMPClientConnection::onStreamReset(DWORD id)
 {
 	Debug("-RTMPClientConnection::onStreamReset()\n");
-
 
 	for (RTMPChunkOutputStreams::iterator it = chunkOutputStreams.begin(); it != chunkOutputStreams.end(); ++it)
 	{

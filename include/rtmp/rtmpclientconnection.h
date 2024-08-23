@@ -8,6 +8,7 @@
 #include "rtmpmessage.h"
 #include "rtmpstream.h"
 #include "rtmpapplication.h"
+
 #include <pthread.h>
 #include <map>
 #include <functional>
@@ -29,7 +30,11 @@ public:
 		FailedToParseData = 6,
 		PeerClosed = 7,
 		ReadError = 8,
-		PollError = 9
+		PollError = 9,
+		TlsInitError = 10,
+		TlsHandshakeError = 11,
+		TlsDecryptError = 12,
+		TlsEncryptError = 13
 	};
 
 	class Listener
@@ -72,15 +77,23 @@ public:
 	QWORD GetOutBytes() const	{ return outBytes;	}
 
 protected:
-	void Start();
-	void Stop();
-	int Run();
+	
+	virtual RTMPClientConnection::ErrorCode Start();
+	virtual void Stop();
+	virtual bool IsConnectionReady() { return inited; };
+	virtual void OnReadyToTransfer() {};
+	virtual void ProcessReceivedData(const uint8_t* data, size_t size);
+	virtual void AddPendingRtmpData(const uint8_t* data, size_t size);
+	
+	inline Listener* GetListener() { return listener; }
+	int WriteData(const BYTE* data, const DWORD size);
+	void ParseData(const BYTE* data, const DWORD size);
 private:
+	
+	int Run();
 
 	static  void* run(void* par);
-	void ParseData(BYTE* data, const DWORD size);
 	DWORD SerializeChunkData(BYTE* data, const DWORD size);
-	int WriteData(BYTE* data, const DWORD size);
 
 	void ProcessControlMessage(DWORD streamId, BYTE type, RTMPObject* msg);
 	void ProcessCommandMessage(DWORD streamId, RTMPCommandMessage* cmd);
