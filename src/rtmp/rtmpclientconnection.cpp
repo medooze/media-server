@@ -382,11 +382,8 @@ void RTMPClientConnection::SignalWriteNeeded()
 	//Unlock
 	pthread_mutex_unlock(&mutex);
 
-	auto threadHandle = GetThread().native_handle();
-	//Check thread
-	if (!isZeroThread(threadHandle))
-		//Signal the pthread this will cause the poll call to exit
-		pthread_kill(threadHandle, SIGIO);
+	//Signal will cause the poll call to exit
+	Signal();
 }
 
 DWORD RTMPClientConnection::SerializeChunkData(BYTE* data, DWORD size)
