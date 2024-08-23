@@ -49,11 +49,13 @@ public:
 	DummyAudioDepacketizer(AudioCodec::Type codec, DWORD rate) : RTPDepacketizer(MediaFrame::Audio,codec), frame(codec)
 	{
 		frame.SetClockRate(rate);
+		frame.DisableSharedBuffer();
 	}
 	
 	DummyAudioDepacketizer(AudioCodec::Type codec) : RTPDepacketizer(MediaFrame::Audio,codec), frame(codec)
 	{
 		frame.SetClockRate(8000);
+		frame.DisableSharedBuffer();
 	}
 
 	virtual ~DummyAudioDepacketizer()
