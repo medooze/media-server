@@ -4,6 +4,22 @@
 namespace mpegts
 {
 
+void Header::Encode(BufferWritter& writer)
+{
+	if (writer.GetLeft()<4)
+		throw std::runtime_error("Not enought data to write mpegts packet header");
+		
+	BitWritter bitwriter(writer, 4);
+	bitwriter.Put(8, syncByte);
+	bitwriter.Put(1, transportErrorIndication);
+	bitwriter.Put(1, payloadUnitStartIndication);
+	bitwriter.Put(1, transportPriority);
+	bitwriter.Put(13, packetIdentifier);
+	bitwriter.Put(2, transportScramblingControl);
+	bitwriter.Put(2, adaptationFieldControl);
+	bitwriter.Put(4, continuityCounter);
+}
+
 Header Header::Parse(BufferReader& reader)
 {
 	if (reader.GetLeft()<4)
@@ -28,10 +44,10 @@ Header Header::Parse(BufferReader& reader)
 									'10' (0x80) = Scrambled with even key
 									'11' (0xC0) = Scrambled with odd key
 
-	Adaptation field control		2	0x30		01 – no adaptation field, payload only,
-									10 – adaptation field only, no payload,
-									11 – adaptation field followed by payload,
-									00 – RESERVED for future use [11]
+	Adaptation field control		2	0x30		01 ï¿½ no adaptation field, payload only,
+									10 ï¿½ adaptation field only, no payload,
+									11 ï¿½ adaptation field followed by payload,
+									00 ï¿½ RESERVED for future use [11]
 
 	Continuity counter			4	0xf		Sequence number of payload packets (0x00 to 0x0F) within each stream (except PID 8191)
 									Incremented per-PID, only when a payload flag is set.
@@ -65,6 +81,29 @@ void Header::Dump() const
 }
 
 
+void AdaptationField::Encode(BufferWritter& writer)
+{
+	if (writer.GetLeft() < adaptationFieldLength + 1)
+		throw std::runtime_error("Not enought data to write mpegts adaptation field");
+	
+	writer.Set1(adaptationFieldLength);
+	
+	if (adaptationFieldLength > 0)
+	{
+		BitWritter bitwriter(writer, 1);
+		
+		bitwriter.Put(1, discontinuityIndicator);
+		bitwriter.Put(1, randomAccessIndicator);
+		bitwriter.Put(1, elementaryStreamPriorityIndicator);
+		bitwriter.Put(1, pcrFlag);
+		
+		bitwriter.Put(1, opcrFlag);
+		bitwriter.Put(1, splicingPointFlag);
+		bitwriter.Put(1, transportPrivateDataFlag);
+		bitwriter.Put(1, adaptationFieldExtensionFlag);
+	}
+}
+
 
 AdaptationField AdaptationField::Parse(BufferReader& reader)
 {
@@ -93,6 +132,7 @@ AdaptationField AdaptationField::Parse(BufferReader& reader)
 	uint32_t start = reader.Mark();
 
 	AdaptationField adaptationField = {};
+	adaptationField.adaptationFieldLength = adaptationFieldLength;
 
 	//Get bit reader
 	BitReader bitreader(reader.GetData(1), 1);
@@ -111,6 +151,14 @@ AdaptationField AdaptationField::Parse(BufferReader& reader)
 
 	//Done
 	return adaptationField;
+}
+
+
+void Packet::Encode(BufferWritter& writer)
+{
+	header.Encode(writer);
+	if (adaptationField) adaptationField->Encode(writer);
+	if (payloadPointer) writer.Set1(*payloadPointer);
 }
 
 Packet Packet::Parse(BufferReader& reader)
@@ -158,6 +206,16 @@ Packet Packet::Parse(BufferReader& reader)
 namespace pes
 {
 
+void Header::Encode(BufferWritter& writer)
+{
+	if (writer.GetLeft() < 6)
+		throw std::runtime_error("Not enought data to write mpegtsp pes header");
+	
+	writer.Set3(packetStartCodePrefix);
+	writer.Set1(streamId);
+	writer.Set2(packetLength);
+}
+
 Header Header::Parse(BufferReader& reader)
 {
 	if (reader.GetLeft() < 6)
@@ -177,6 +235,51 @@ Header Header::Parse(BufferReader& reader)
 	header.packetLength = reader.Get2();
 
 	return header;
+}
+
+void HeaderExtension::Encode(BufferWritter& writer)
+{
+	if (writer.GetLeft() < 3)
+		throw std::runtime_error("Not enought data to write mpegtsp pes extension header");
+	
+	BitWritter bitwriter(writer, 3);
+	
+	bitwriter.Put(2, markerBits);
+	bitwriter.Put(2, scramblingControl);
+	bitwriter.Put(1, priority);
+	bitwriter.Put(1, dataAlignmentIndicator);
+	bitwriter.Put(1, copyright);
+	bitwriter.Put(1, original);
+	bitwriter.Put(2, ptsdtsIndicator);
+	bitwriter.Put(1, escrFlag);
+	bitwriter.Put(1, rateFlag);
+	bitwriter.Put(1, trickModeFlag);
+	bitwriter.Put(1, aditionalInfoFlag);
+	bitwriter.Put(1, crcFlag);
+	bitwriter.Put(1, extensionFlag);
+	bitwriter.Put(8, remainderHeaderLength);
+	
+	if (pts)
+	{
+		BitWritter bitwriter(writer, 5);
+		bitwriter.Put(4, 0x0010);
+		bitwriter.Put(3, (*pts >> 30) & 0x7);
+		bitwriter.Put(1, 0x1);
+		bitwriter.Put(15, (*pts >> 15) & 0x7fff);
+		bitwriter.Put(1, 0x1);
+		bitwriter.Put(15, (*pts) & 0x7fff);
+	}
+	
+	if (dts)
+	{
+		BitWritter bitwriter(writer, 5);
+		bitwriter.Put(4, 0x0001);
+		bitwriter.Put(3, (*dts >> 30) & 0x7);
+		bitwriter.Put(1, 0x1);
+		bitwriter.Put(15, (*dts >> 15) & 0x7fff);
+		bitwriter.Put(1, 0x1);
+		bitwriter.Put(15, (*dts) & 0x7fff);
+	}
 }
 
 HeaderExtension HeaderExtension::Parse(BufferReader& reader)
@@ -212,7 +315,7 @@ HeaderExtension HeaderExtension::Parse(BufferReader& reader)
 	headerExtension.scramblingControl	= bitreader.Get(2);
 	headerExtension.priority		= bitreader.Get(1);
 	headerExtension.dataAlignmentIndicator	= bitreader.Get(1);
-	headerExtension.copyrigth		= bitreader.Get(1);
+	headerExtension.copyright		= bitreader.Get(1);
 	headerExtension.original		= bitreader.Get(1);
 	headerExtension.ptsdtsIndicator		= (PTSDTSIndicator)bitreader.Get(2);
 	headerExtension.escrFlag		= bitreader.Get(1);
@@ -294,6 +397,11 @@ StreamType GetStreamType(const uint8_t& streamId)
 		return Invalid;
 }
 
+void Packet::Encode(BufferWritter& writer)
+{
+	
+}
+
 Packet Packet::Parse(BufferReader& reader)
 {
 	//Parse header
@@ -361,8 +469,8 @@ namespace adts
 		header.channelConfiguration	 = bitreader.Get(3);
 		header.originality		 = bitreader.Get(1);
 		header.home			 = bitreader.Get(1);
-		header.copyrigth		 = bitreader.Get(1);
-		header.copyrigthStart		 = bitreader.Get(1);
+		header.copyright		 = bitreader.Get(1);
+		header.copyrightStart		 = bitreader.Get(1);
 		header.frameLength		 = bitreader.Get(13);
 		header.bufferFullness		 = bitreader.Get(11);
 		header.numberOfFrames		 = bitreader.Get(2) + 1;
