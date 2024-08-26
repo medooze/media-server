@@ -32,12 +32,12 @@ DWORD U16Parser::Parse(BYTE *data,DWORD size)
 	return i;
 }
 
-bool U16Parser::IsParsed()
+bool U16Parser::IsParsed() const
 {
 	return !(len);
 }
 
-WORD U16Parser::GetValue()
+WORD U16Parser::GetValue() const
 {
 	return value;
 }
@@ -58,7 +58,7 @@ DWORD U16Parser::Serialize(BYTE* data,DWORD size)
 	return 2;
 }
 
-DWORD U16Parser::GetSize()
+DWORD U16Parser::GetSize() const
 {
 	return 2;
 }
@@ -88,12 +88,12 @@ DWORD U32Parser::Parse(BYTE *data,DWORD size)
 	return i;
 }
 
-bool U32Parser::IsParsed()
+bool U32Parser::IsParsed() const
 {
 	return !(len);
 }
 
-DWORD U32Parser::GetValue()
+DWORD U32Parser::GetValue() const
 {
 	return value;
 }
@@ -114,7 +114,7 @@ DWORD U32Parser::Serialize(BYTE* data,DWORD size)
 	return 4;
 }
 
-DWORD U32Parser::GetSize()
+DWORD U32Parser::GetSize() const
 {
 	return 4;
 }
@@ -155,12 +155,12 @@ DWORD U29Parser::Parse(BYTE *data,DWORD size)
 	return i;
 }
 
-bool U29Parser::IsParsed()
+bool U29Parser::IsParsed() const
 {
 	return last;
 }
 
-DWORD U29Parser::GetValue()
+DWORD U29Parser::GetValue() const
 {
 	return value;
 }
@@ -285,7 +285,7 @@ AMFData* AMFParser::GetObject()
 	return NULL;
 }
 
-bool AMFParser::IsParsed()
+bool AMFParser::IsParsed() const
 {
 	return object?object->IsParsed():false;
 }
@@ -311,7 +311,7 @@ AMFData::AMFData()
 	len=0;
 }
 
-AMFData* AMFData::Clone()
+AMFData* AMFData::Clone() const
 {
 	return new AMFNull();
 }
@@ -330,46 +330,46 @@ DWORD AMFData::Serialize(BYTE* buffer,DWORD size)
 	if (!size)
 		return -1;
 
-	//By default unsuported
+	//By default unsuported::Clone() const
 	buffer[0]=AMFParser::UnsupportedMarker;
 
 	return 1;
 }
 
-void AMFData::Dump()
+void AMFData::Dump() const
 {
 	Debug("[%s]\n",GetTypeName());
 }
 
-DWORD AMFData::GetSize()
+DWORD AMFData::GetSize() const
 {
 	return 1;
 }
 
-void AMFData::AssertType(ValueType type)
+void AMFData::AssertType(ValueType type) const
 { 
 	if(GetType()!=type)
 		throw std::runtime_error("AMFData cast exception");
 }
 
-bool AMFData::CheckType(ValueType type)
+bool AMFData::CheckType(ValueType type) const
 {
 	return GetType()==type;
 }
 
-AMFData::operator double()
+AMFData::operator double() const
 { 
 	AssertType(Number);
 	return ((AMFNumber*)this)->GetNumber();         
 }
 
-AMFData::operator bool()
+AMFData::operator bool() const
 {
 	AssertType(Boolean);
 	return ((AMFBoolean*)this)->GetBoolean();
 }
 
-AMFData::operator std::wstring()
+AMFData::operator std::wstring() const
 {
 	if (GetType()==String)
 		return ((AMFString*)this)->GetWString();
@@ -381,12 +381,12 @@ AMFData::operator std::wstring()
 	throw std::runtime_error("AMFData cast exception to string"); 
 }
 
-const char* AMFData::GetTypeName()
+const char* AMFData::GetTypeName() const
 {
 	return TypeToString(GetType());
 }
 
-const char* AMFData::TypeToString(ValueType type)
+const char* AMFData::TypeToString(ValueType type) 
 {
 	switch (type)
 	{
@@ -437,7 +437,7 @@ AMFNumber::AMFNumber()
 	value = 0;
 }
 
-AMFData* AMFNumber::Clone()
+AMFData* AMFNumber::Clone() const
 {
 	AMFNumber *obj = new AMFNumber();
 	obj->SetNumber(GetNumber());
@@ -454,12 +454,12 @@ DWORD AMFNumber::Parse(BYTE *data,DWORD size)
 	return i;
 }
 
-bool AMFNumber::IsParsed()
+bool AMFNumber::IsParsed() const
 {
 	return (!len);
 }
 
-double AMFNumber::GetNumber()
+double AMFNumber::GetNumber() const
 {
 	if(value+value > 0xFFEULL<<52)
         	return 0.0;
@@ -480,7 +480,7 @@ void AMFNumber::SetNumber(double d)
 	}
 }
 
-DWORD AMFNumber::GetSize()
+DWORD AMFNumber::GetSize() const
 {
 	return 9;
 }
@@ -498,7 +498,7 @@ DWORD AMFNumber::Serialize(BYTE* data,DWORD size)
 	return 9;
 }
 
-void AMFNumber::Dump()
+void AMFNumber::Dump() const
 {
 	Debug("[Number %lf]\n",GetNumber());
 }
@@ -535,13 +535,13 @@ DWORD AMFBoolean::Parse(BYTE *data,DWORD size)
 	return 1;
 }
 
-bool AMFBoolean::IsParsed()
+bool AMFBoolean::IsParsed() const
 {
 	//Have we read 1 byte?	
 	return (len);
 }
 
-bool AMFBoolean::GetBoolean()
+bool AMFBoolean::GetBoolean() const
 {
 	return value;
 }
@@ -563,19 +563,19 @@ DWORD AMFBoolean::Serialize(BYTE* data,DWORD size)
 	return 2;
 }
 
-DWORD AMFBoolean::GetSize()
+DWORD AMFBoolean::GetSize() const
 {
 	return 2;
 }
 
-AMFData* AMFBoolean::Clone()
+AMFData* AMFBoolean::Clone() const
 {
 	AMFBoolean *obj = new AMFBoolean();
 	obj->SetBoolean(GetBoolean());
 	return obj;
 }
 
-void AMFBoolean::Dump()
+void AMFBoolean::Dump() const
 {
 	Debug("[Boolean %s]\n",value?"true":"false");
 }
@@ -605,7 +605,7 @@ void AMFString::Reset()
 	utf8parser.Reset();
 }
 
-AMFData* AMFString::Clone()
+AMFData* AMFString::Clone() const
 {
 	AMFString *obj = new AMFString();
 	obj->SetWString(GetWString());
@@ -647,26 +647,26 @@ DWORD AMFString::Parse(BYTE *data,DWORD size)
 	return (buffer-data);
 }
 
-bool AMFString::IsParsed()
+bool AMFString::IsParsed() const
 {
 	return utf8parser.IsParsed();
 }
 
-std::wstring AMFString::GetWString()
+std::wstring AMFString::GetWString() const
 {
 	return utf8parser.GetWString();
 }
-const wchar_t* AMFString::GetWChar()
+const wchar_t* AMFString::GetWChar() const
 {
 	return utf8parser.GetWChar();
 }
 
-DWORD AMFString::GetUTF8Size()
+DWORD AMFString::GetUTF8Size() const
 {
 	return u16parser.GetValue();
 }
 
-std::string AMFString::GetUTF8String()
+std::string AMFString::GetUTF8String() const
 {
 	return utf8parser.GetUTF8String();
 }
@@ -679,7 +679,7 @@ void AMFString::SetWString(const std::wstring& str)
 	u16parser.SetValue(utf8parser.GetUTF8Size());
 }
 
-DWORD AMFString::GetSize()
+DWORD AMFString::GetSize() const
 {
 	return utf8parser.GetUTF8Size()+u16parser.GetSize()+1;
 	
@@ -705,7 +705,7 @@ DWORD AMFString::Serialize(BYTE* data,DWORD size)
 
 }
 
-void AMFString::Dump()
+void AMFString::Dump() const
 {
 	Debug("[String \"%ls\"]\n",utf8parser.GetWString().c_str());
 }
@@ -753,22 +753,22 @@ DWORD AMFLongString::Parse(BYTE *data,DWORD size)
 	return (buffer-data);
 }
 
-bool AMFLongString::IsParsed()
+bool AMFLongString::IsParsed() const
 {
 	return utf8parser.IsParsed();
 }
 
-std::wstring AMFLongString::GetWString()
+std::wstring AMFLongString::GetWString() const
 {
 	return utf8parser.GetWString();
 }
 
-std::string AMFLongString::GetUTF8String()
+std::string AMFLongString::GetUTF8String() const
 {
 	return utf8parser.GetUTF8String();
 }
 
-DWORD AMFLongString::GetUTF8Size()
+DWORD AMFLongString::GetUTF8Size() const
 {
 	return u32parser.GetValue();
 }
@@ -782,7 +782,7 @@ AMFObject::AMFObject()
 	marker = false;
 }
 
-AMFData* AMFObject::Clone()
+AMFData* AMFObject::Clone() const
 {
 	AMFObject *obj = new AMFObject();
 
@@ -790,7 +790,7 @@ AMFData* AMFObject::Clone()
 	for (size_t i=0;i<propertiesOrder.size();i++)
 	{
 		//Search for the property
-		AMFObjectMap::iterator it = properties.find(propertiesOrder[i]);
+		AMFObjectMap::const_iterator it = properties.find(propertiesOrder[i]);
 		//Ad property
 		obj->AddProperty(it->first.c_str(),it->second->Clone());
 	}
@@ -800,9 +800,9 @@ AMFData* AMFObject::Clone()
 
 AMFObject::~AMFObject()
 {
-	for (AMFObjectMap::iterator it=properties.begin(); it!=properties.end(); it++)
-		if (it->second)
-			delete(it->second);
+	for (auto&  [key,value]: properties)
+		if (value)
+			delete(value);
 }
 
 DWORD AMFObject::Parse(BYTE *data,DWORD size)
@@ -865,7 +865,7 @@ DWORD AMFObject::Parse(BYTE *data,DWORD size)
 	return (buffer-data);
 }
 
-bool AMFObject::IsParsed()
+bool AMFObject::IsParsed() const
 {
 	return marker;
 }
@@ -880,7 +880,7 @@ AMFData& AMFObject::GetProperty(const wchar_t* key)
 	return *(properties[std::wstring(key)]);
 }
 
-bool AMFObject::HasProperty(const wchar_t* key)
+bool AMFObject::HasProperty (const wchar_t* key) const
 {
 	return properties.find(std::wstring(key)) != properties.end();
 }
@@ -942,7 +942,7 @@ void AMFObject::AddProperty(const wchar_t* key,const bool value)
 	propertiesOrder.push_back(key);
 }
 
-void AMFObject::AddProperty(const wchar_t* key,AMFData *obj)
+void AMFObject::AddProperty(const wchar_t* key, AMFData* obj)
 {
 	//Set property
 	properties[key] = obj;
@@ -950,7 +950,7 @@ void AMFObject::AddProperty(const wchar_t* key,AMFData *obj)
 	propertiesOrder.push_back(key);
 }
 
-void AMFObject::AddProperty(const wchar_t* key,AMFData &obj)
+void AMFObject::AddProperty(const wchar_t* key,const AMFData& obj)
 {
 	//Set property
 	properties[key] = obj.Clone();
@@ -958,19 +958,19 @@ void AMFObject::AddProperty(const wchar_t* key,AMFData &obj)
 	propertiesOrder.push_back(key);
 }
 
-DWORD AMFObject::GetSize()
+DWORD AMFObject::GetSize() const
 {
 	//Aux string to calc sizes
 	UTF8Parser key;
 	//Start and end mark
 	DWORD len = 4;
 	//Loop properties
-	for (AMFObjectMap::iterator it=properties.begin();it!=properties.end();it++)
+	for (const auto& it : properties)
 	{
 		//Set key value
-		key.SetWString(it->first);
+		key.SetWString(it.first);
 		//Calc sizes
-		len+=2+key.GetUTF8Size()+it->second->GetSize();
+		len+=2+key.GetUTF8Size()+it.second->GetSize();
 	}
 
 	return len;
@@ -1010,14 +1010,14 @@ DWORD AMFObject::Serialize(BYTE* data,DWORD size)
 	return len;
 }
 
-void AMFObject::Dump()
+void AMFObject::Dump() const
 {
 	Debug("[Object]\n");
 	//Loop properties in insert order
 	for (size_t i=0;i<propertiesOrder.size();i++)
 	{
 		//Search for the property
-		AMFObjectMap::iterator it = properties.find(propertiesOrder[i]);
+		AMFObjectMap::const_iterator it = properties.find(propertiesOrder[i]);
 		Debug("  %*ls:\t",20,it->first.c_str());
 		it->second->Dump();
 	}
@@ -1073,12 +1073,12 @@ DWORD AMFTypedObject::Parse(BYTE *data,DWORD size)
 	return (buffer-data);
 }
 
-bool AMFTypedObject::IsParsed()
+bool AMFTypedObject::IsParsed() const
 {
 	return AMFObject::IsParsed();
 }
 
-std::wstring AMFTypedObject::GetClassName()
+std::wstring AMFTypedObject::GetClassName() const
 {
 	return utf8parser.GetWString();
 }
@@ -1100,12 +1100,12 @@ DWORD AMFReference::Parse(BYTE *data,DWORD size)
 	return i;
 }
 
-bool AMFReference::IsParsed()
+bool AMFReference::IsParsed() const
 {
 	return (len==2);
 }
 
-WORD AMFReference::GetReference()
+WORD AMFReference::GetReference() const
 {
 	return value;
 }
@@ -1192,7 +1192,7 @@ DWORD AMFEcmaArray::Parse(BYTE *data,DWORD size)
 	return (buffer-data);
 }
 
-bool AMFEcmaArray::IsParsed()
+bool AMFEcmaArray::IsParsed() const
 {
 	return num.IsParsed() && marker;
 }
@@ -1202,7 +1202,7 @@ AMFObjectMap& AMFEcmaArray::GetElements()
 	return elements;
 }
 
-DWORD AMFEcmaArray::GetLength()
+DWORD AMFEcmaArray::GetLength() const
 {
 	return elements.size();
 }
@@ -1212,7 +1212,7 @@ AMFData& AMFEcmaArray::GetProperty(const wchar_t* key)
 	return *(elements[std::wstring(key)]);
 }
 
-bool AMFEcmaArray::HasProperty(const wchar_t* key)
+bool AMFEcmaArray::HasProperty (const wchar_t* key) const
 {
 	return elements.find(std::wstring(key)) != elements.end();
 }
@@ -1268,36 +1268,36 @@ void AMFEcmaArray::AddProperty(const wchar_t* key,AMFData *obj)
 	elements[key] = obj;
 }
 
-void AMFEcmaArray::AddProperty(const wchar_t* key,AMFData &obj)
+void AMFEcmaArray::AddProperty(const wchar_t* key,const AMFData &obj)
 {
 	//Set property
 	elements[key] = obj.Clone();
 }
 
-void AMFEcmaArray::Dump()
+void AMFEcmaArray::Dump() const
 {
 	Debug("[EcmaArray]\n");
-	for (AMFObjectMap::iterator it=elements.begin();it!=elements.end();it++)
+	for (const auto& it : elements)
 	{
-		Debug("  %*ls:\t",20,it->first.c_str());
-		it->second->Dump();
+		Debug("  %*ls:\t",20,it.first.c_str());
+		it.second->Dump();
 	}
 	Debug("[/EcmaArray]\n");
 }
 
-DWORD AMFEcmaArray::GetSize()
+DWORD AMFEcmaArray::GetSize() const
 {
 	//Aux string to calc sizes
 	UTF8Parser key;
 	//Start and end mark and number
 	DWORD len = 8;
 	//Loop properties
-	for (AMFObjectMap::iterator it=elements.begin();it!=elements.end();it++)
+	for (const auto& it : elements)
 	{
 		//Set key value
-		key.SetWString(it->first);
+		key.SetWString(it.first);
 		//Calc sizes
-		len+=2+key.GetUTF8Size()+it->second->GetSize();
+		len+=2+key.GetUTF8Size()+it.second->GetSize();
 	}
 	return len;	
 }
@@ -1320,10 +1320,10 @@ DWORD AMFEcmaArray::Serialize(BYTE* data,DWORD size)
 	//Add number of properties
 	len += num.Serialize(data+len,size-len);
 	//Loop elements
-	for (AMFObjectMap::iterator it=elements.begin();it!=elements.end();it++)
+	for (const auto& it : elements)
 	{
 		//Set key value
-		key.SetWString(it->first);
+		key.SetWString(it.first);
 		//Set utf8 size
 		u16key.SetValue(key.GetUTF8Size());
 		//Serialize utf8 size
@@ -1331,7 +1331,7 @@ DWORD AMFEcmaArray::Serialize(BYTE* data,DWORD size)
 		//Serialize key
 		len += key.Serialize(data+len,size-len);
 		//Serialize value
-		len += it->second->Serialize(data+len,size-len);
+		len += it.second->Serialize(data+len,size-len);
 	}
 	//Set end mark
 	data[len++] = 0;
@@ -1342,11 +1342,11 @@ DWORD AMFEcmaArray::Serialize(BYTE* data,DWORD size)
 	return len;
 }
 
-AMFData* AMFEcmaArray::Clone()
+AMFData* AMFEcmaArray::Clone() const
 {
 	AMFEcmaArray *obj = new AMFEcmaArray();
-	for (AMFObjectMap::iterator it=elements.begin(); it!=elements.end(); it++)
-		obj->AddProperty(it->first.c_str(),it->second->Clone());
+	for (const auto& it : elements)
+		obj->AddProperty(it.first.c_str(),it.second->Clone());
 	return obj;
 }
 
@@ -1356,22 +1356,16 @@ AMFData* AMFEcmaArray::Clone()
  *************************/	
 AMFStrictArray::AMFStrictArray()
 {
-	cur = -1;
-	elements = NULL;
 }
 
 AMFStrictArray::~AMFStrictArray()
 {
-	if (elements)
-	{
-		//For each property
-		for (DWORD i=0;i<GetLength();i++)
-			if (elements[i])
-				//delete object
-				delete(elements[i]);
-		//Free array memory
-		free(elements);
-	}
+	//For each property
+	for (auto element : elements)
+		//If present
+		if (element)
+			//delete object
+			delete(element);
 }
 
 DWORD AMFStrictArray::Parse(BYTE *data,DWORD size)
@@ -1393,12 +1387,8 @@ DWORD AMFStrictArray::Parse(BYTE *data,DWORD size)
 			bufferSize -= copy;
 			//If we have it
 			if (num.IsParsed())
-			{
-				//Allocate memory
-				elements = (AMFData**)calloc(num.GetValue(), sizeof(AMFObject*));
-				//Set first
-				cur = 0;
-			}
+				//Reserve memory
+				elements.reserve(num.GetValue());
 		} else {
 			//Parse the property object
 			DWORD copy = parser.Parse(buffer,bufferSize);
@@ -1412,7 +1402,7 @@ DWORD AMFStrictArray::Parse(BYTE *data,DWORD size)
 			if (parser.IsParsed())
 			{
 				//Append the objecct to the array
-				elements[cur++] = parser.GetObject();
+				elements.push_back(parser.GetObject());
 				//Check number of elements
 				if (IsParsed())
 					//Finished
@@ -1426,36 +1416,101 @@ DWORD AMFStrictArray::Parse(BYTE *data,DWORD size)
 	return (buffer-data);
 }
 
-bool AMFStrictArray::IsParsed()
+bool AMFStrictArray::IsParsed() const
 {
-	return (cur==num.GetValue());
+	return (elements.size() == num.GetValue());
 }
 
-AMFData** AMFStrictArray::GetElements()
+std::vector<AMFData*>& AMFStrictArray::GetElements()
 {
 	return elements;
 }
 
-DWORD AMFStrictArray::GetLength()
+DWORD AMFStrictArray::GetLength() const
 {
 	return num.GetValue();
 }
 
-void AMFStrictArray::Dump()
+void AMFStrictArray::Dump() const
 {
 	Debug("[StrictArray]\n");
-	if (elements)
+	//For each property
+	for (auto element : elements)
 	{
-		//For each property
-		for (DWORD i=0;i<GetLength();i++)
-			if (elements[i])
-				elements[i]->Dump();
-			else	
-				Debug("[NULL/]\n");
+		//If present
+		if (element)
+			element->Dump();
+		else
+			Debug("[NULL/]\n");
 	}
 	Debug("[/StrictArray]\n");
 }
 
+AMFData* AMFStrictArray::Clone() const
+{
+	AMFStrictArray* obj = new AMFStrictArray();
+	for (auto element : elements)
+		obj->AddElement(element);
+	return obj;
+}
+
+
+void AMFStrictArray::AddElement(const wchar_t* value)
+{
+	//Create string object
+	AMFString* str = new AMFString();
+	//Set elements
+	elements.push_back(str);
+}
+void AMFStrictArray::AddElement(const std::wstring& value)
+{
+	//Create string object
+	AMFString* str = new AMFString();
+	//Add value
+	str->SetWString(value);
+	//Set elements
+	elements.push_back(str);
+}
+
+void AMFStrictArray::AddElement(const wchar_t* value, DWORD length)
+{
+	//Create string object
+	AMFString* str = new AMFString();
+	//Add value
+	str->SetWString(std::wstring(value, length));
+	//Set elements
+	elements.push_back(str);
+}
+
+void AMFStrictArray::AddElement(const double value)
+{
+	//Create string object
+	AMFNumber* num = new AMFNumber();
+	//Add value
+	num->SetNumber(value);
+	//Set elements
+	elements.push_back(num);
+}
+
+void AMFStrictArray::AddElement(const bool value)
+{
+	//Create boolean object
+	AMFBoolean* boolean = new AMFBoolean(value);
+	//Set elements
+	elements.push_back(boolean);
+}
+
+void AMFStrictArray::AddElement(AMFData* obj)
+{
+	//Add it
+	elements.push_back(obj->Clone());
+}
+
+void AMFStrictArray::AddElement(AMFData& obj)
+{
+	//Add it
+	elements.push_back(obj.Clone());
+}
 
 /********************
  * AMFNumber
@@ -1473,12 +1528,12 @@ DWORD AMFDate::Parse(BYTE *data,DWORD size)
 	return i;
 }
 
-bool AMFDate::IsParsed()
+bool AMFDate::IsParsed() const
 {
 	return (len==10);
 }
 
-time_t& AMFDate::GetDate()
+time_t AMFDate::GetDate() const
 {
 	return value;
 }
