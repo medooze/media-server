@@ -23,6 +23,8 @@ VP8Depacketizer::VP8Depacketizer() : RTPDepacketizer(MediaFrame::Video,VideoCode
 	config.Serialize(frame.GetCodecConfigData(),frame.GetCodecConfigSize());
 	//Set clock rate
 	frame.SetClockRate(90000);
+	//Disable shared buffer
+	frame.DisableSharedBuffer();
 }
 
 VP8Depacketizer::~VP8Depacketizer()

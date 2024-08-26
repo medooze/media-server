@@ -37,10 +37,13 @@ int PCMUEncoder::Encode (SWORD *in,int inLen,BYTE* out,int outLen)
 	return inLen;
 }
 
-int PCMUDecoder::Decode (const BYTE *in,int inLen,SWORD* out,int outLen)
+int PCMUDecoder::Decode(const AudioFrame::const_shared& audioFrame, SWORD* out,int outLen)
 {
-	//Comprobamos las longitudes
-	if (outLen<inLen)
+	// Comprobamos las longitudes
+	// inLen: compressed data length in bytes/samples one byte per sample for g711a, outLen: pcm data size in samples
+	int inLen = audioFrame->GetLength();
+	const uint8_t* in = audioFrame->GetData();
+	if (outLen<inLen || !in)
 		return 0;
 
 	//Decodificamos

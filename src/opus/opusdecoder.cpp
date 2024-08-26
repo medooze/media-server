@@ -48,9 +48,11 @@ OpusDecoder::~OpusDecoder()
 		opus_decoder_destroy(dec);
 }
 
-int OpusDecoder::Decode(const BYTE *in,int inLen,SWORD* out,int outLen)
+int OpusDecoder::Decode(const AudioFrame::const_shared& audioFrame, SWORD* out, int outLen)
 {
 	//Decode without FEC
+	BYTE* in = audioFrame ? (uint8_t*)audioFrame->GetData() : nullptr;
+	int inLen = audioFrame ? audioFrame->GetLength() : 0;
 	int ret = opus_decode(dec,in,inLen,out,outLen,0);
 	//Check error
 	if (ret<0)

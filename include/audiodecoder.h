@@ -13,7 +13,7 @@
 #include "rtp.h"
 
 class AudioDecoderWorker 
-	: public RTPIncomingMediaStream::Listener
+	: public MediaFrame::Listener
 {
 public:
 	AudioDecoderWorker() = default;
@@ -21,11 +21,8 @@ public:
 
 	int Start();
 	int Stop();
-
-	// RTPIncomingMediaStream::Listener interface
-	virtual void onRTP(const RTPIncomingMediaStream* stream, const RTPPacket::shared& packet) override;
-	virtual void onBye(const RTPIncomingMediaStream* stream) override;
-	virtual void onEnded(const RTPIncomingMediaStream* stream)  override;
+	virtual void onMediaFrame(const MediaFrame& frame) override;
+	virtual void onMediaFrame(DWORD ssrc, const MediaFrame& frame)  override { onMediaFrame(frame); }
 
 	void SetAACConfig(const uint8_t* data,const size_t size);
 	void AddAudioOuput(AudioOutput* ouput);
@@ -39,13 +36,13 @@ private:
 
 private:
 	std::set<AudioOutput*> outputs;
-	WaitQueue<RTPPacket::shared> packets;
+	WaitQueue<std::shared_ptr<AudioFrame>> frames;
 	pthread_t thread = 0;
 	Mutex mutex;
 	bool		decoding	= false;
 	DWORD		rate		= 0;
 	DWORD		numChannels = 0;
-	std::unique_ptr<AudioDecoder>	codec;
+	std::unique_ptr<AudioDecoder> audioDecoder;
 };
 
 #endif	/* AUDIODECODER_H */

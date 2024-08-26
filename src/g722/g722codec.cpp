@@ -40,8 +40,10 @@ G722Decoder::G722Decoder()
 }
 
 
-int G722Decoder::Decode(const BYTE *in, int inLen, SWORD* out, int outLen)
+int G722Decoder::Decode(const AudioFrame::const_shared& audioFrame, SWORD* out,int outLen)
 {
+	int inLen = audioFrame->GetLength();
+	const uint8_t* in = audioFrame->GetData();
 	return g722_decode(&decoder,out,in,inLen);
 }
 
