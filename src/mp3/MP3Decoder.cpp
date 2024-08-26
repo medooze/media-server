@@ -72,20 +72,22 @@ bool MP3Decoder::SetConfig(const uint8_t* data,const size_t size)
 	return true;
 }
 
-int MP3Decoder::Decode(const BYTE *in, int inLen, SWORD* out, int outLen)
+int MP3Decoder::Decode(const AudioFrame::const_shared& audioFrame, SWORD* out, int outLen)
 {
 	//Check we have config
 	//if (!inited)
 	//	return Error("-MP3Decoder::Decode() Not inited\n");
 	
 	//If we have input
-	if (inLen<=0)
-		return 0;
+	
 	
 	//Set data
-	packet->data = (BYTE*)in;
-	packet->size = inLen;
+	packet->data = audioFrame ? (uint8_t*)audioFrame->GetData() : nullptr;
+	packet->size = audioFrame ? audioFrame->GetLength() : 0;
 
+	// if (inLen<=0)
+	// 	return 0;
+	// TODO: update this if to while since a packet may contain multiple complete compressed audio frames
 	//Decode it
 	if (avcodec_send_packet(ctx, packet)<0)
 		//nothing

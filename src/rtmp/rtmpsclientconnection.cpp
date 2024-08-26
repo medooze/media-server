@@ -26,9 +26,9 @@ RTMPClientConnection::ErrorCode RTMPSClientConnection::Start()
 
 void RTMPSClientConnection::Stop()
 {
-	tls.Shutdown();
-	
 	RTMPClientConnection::Stop();
+	
+	tls.Shutdown();	
 }
 
 bool RTMPSClientConnection::IsConnectionReady()
@@ -38,38 +38,41 @@ bool RTMPSClientConnection::IsConnectionReady()
 
 void RTMPSClientConnection::OnReadyToTransfer()
 {
-	tls.PopAllEncrypted([this](auto&& data){
-		WriteData(data.data(), data.size());
+	bool result = tls.ReadEncrypted([this](const uint8_t* data, size_t size){
+		WriteData(data, size);
 	});
+	
+	if (!result)
+	{
+		Error("-RTMPSClientConnection::OnReadyToTransfer() Failed to read TLS encrypted data.");
+	}
 }
 
-void RTMPSClientConnection::processReceivedData(const uint8_t* data, size_t size)
+void RTMPSClientConnection::ProcessReceivedData(const uint8_t* data, size_t size)
 {
 	auto listener = GetListener();
 	
-	auto ret = tls.Decrypt(data, size);
+	auto ret = tls.Decrypt(data, size, [this](const uint8_t* data, size_t size){
+		ParseData(data, size);
+	});
+	
 	switch(ret) 
 	{
 	case TlsClient::TlsClientError::NoError:
 		break;
 	case TlsClient::TlsClientError::HandshakeFailed:
-		Warning("-RTMPClientConnection::processReceivedData() TLS handshake error\n");
+		Warning("-RTMPClientConnection::ProcessReceivedData() TLS handshake error\n");
 		if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::TlsHandshakeError);
 		return;
 	case TlsClient::TlsClientError::Failed:
 	default:
-		Warning("-RTMPClientConnection::processReceivedData() Failed to decrypt\n");
+		Warning("-RTMPClientConnection::ProcessReceivedData() Failed to decrypt\n");
 		if (listener) listener->onDisconnected(this, RTMPClientConnection::ErrorCode::TlsDecryptError);
 		return;
 	}
-	
-	tls.PopAllDecypted([this](auto&& data) {
-		//Parse data
-		ParseData(data.data(), data.size());
-	});
 }
 
-void RTMPSClientConnection::addPendingRtmpData(const uint8_t* data, size_t size)
+void RTMPSClientConnection::AddPendingRtmpData(const uint8_t* data, size_t size)
 {
 	if (tls.Encrypt(data, size) != TlsClient::TlsClientError::NoError)
 	{

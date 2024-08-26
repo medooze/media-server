@@ -128,8 +128,6 @@ protected:
 	}
 
 	const std::chrono::milliseconds Now();
-	
-	
 private:
 	struct SendBuffer
 	{

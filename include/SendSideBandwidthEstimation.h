@@ -40,7 +40,7 @@ public:
 	void SetListener(RemoteRateEstimator::Listener* listener) { this->listener = listener; }
 
         
-        int Dump(const char* filename);
+        int Dump(const char* filename, size_t fileSizeLimit=0);
 	int StopDump();
 private:
 	void SetState(ChangeState state);
@@ -69,7 +69,12 @@ private:
         uint64_t lastChange = 0;
 	int64_t  accumulatedDelta = 0;
 	int64_t  lastFeedbackDelta = 0;
-        int fd = FD_INVALID;
+	int fd = FD_INVALID;
+
+	size_t bweStatsFileSizeLimit = 0;
+	ssize_t bweStatsBytesWritten = 0;
+	std::string bweStatsFileName;
+	ssize_t bweStatsFileCount = 0;
 	
 	ChangeState state = ChangeState::Initial;
 	uint32_t consecutiveChanges = 0;

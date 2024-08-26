@@ -22,5 +22,12 @@ private:
 	static pthread_mutex_t* mutexArray;
 };
 
+template <typename T, void (*function)(T*)>
+struct SSLFunctionDeleter {
+  void operator()(T* pointer) const { function(pointer); }
+};
+
+using SSLCtxDeleter = SSLFunctionDeleter<SSL_CTX, SSL_CTX_free>;
+using SSLDeleter = SSLFunctionDeleter<SSL, SSL_free>;
 
 #endif

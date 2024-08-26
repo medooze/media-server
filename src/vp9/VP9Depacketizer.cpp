@@ -24,6 +24,8 @@ VP9Depacketizer::VP9Depacketizer() : RTPDepacketizer(MediaFrame::Video,VideoCode
 	config.Serialize(frame.GetCodecConfigData(),frame.GetCodecConfigSize());
 	//Set clock rate
 	frame.SetClockRate(90000);
+	//Disable shared buffer
+	frame.DisableSharedBuffer();
 }
 
 VP9Depacketizer::~VP9Depacketizer()

@@ -15,7 +15,8 @@ void LogCertificateInfo(int preverify, X509_STORE_CTX* ctx)
 	Log("-TlsClient::initialize() SSL certificate subject: %s preverify: %d error: %s depth: %d\n", 
 		name, preverify, X509_verify_cert_error_string(err), depth);
 }
-	
+
+constexpr size_t InitialCircularQueueSize = 256;
 }
 
 
@@ -31,7 +32,7 @@ TlsClient::~TlsClient()
 
 bool TlsClient::Initialize(const char* hostname)
 {
-	ctx = SSLCtxPointer(SSL_CTX_new(TLS_method()));
+	ctx.reset(SSL_CTX_new(TLS_method()));
 	if (!ctx)
 	{
 		Error("-TlsClient::initialize() Failed to ceate SSL context\n");
@@ -58,20 +59,26 @@ bool TlsClient::Initialize(const char* hostname)
 	
 	SSL_CTX_set_options(ctx.get(), SSL_OP_ALL);
 
-	rbio = BIOPointer(BIO_new(BIO_s_mem()));
-	wbio = BIOPointer(BIO_new(BIO_s_mem()));
+	rbio = BIO_new(BIO_s_mem());
+	wbio = BIO_new(BIO_s_mem());
 	
-	ssl = SSLPointer(SSL_new(ctx.get()));
+	ssl.reset(SSL_new(ctx.get()));
 	if (!ssl)
 	{
 		Error("-TlsClient::initialize() Failed to ceate SSL\n");
+		
+		BIO_free(rbio);
+		rbio = nullptr;
+		BIO_free(wbio);
+		wbio = nullptr;
+		
 		return false;
 	}
 
 	// Set client mode
 	SSL_set_connect_state(ssl.get());
 
-	SSL_set_bio(ssl.get(), rbio.get(), wbio.get());
+	SSL_set_bio(ssl.get(), rbio, wbio);
 	
 	if (hostname)
 	{
@@ -81,9 +88,10 @@ bool TlsClient::Initialize(const char* hostname)
 	return true;
 }
 
-TlsClient::TlsClientError TlsClient::Decrypt(const uint8_t* data, size_t size)
+
+TlsClient::TlsClientError TlsClient::Decrypt(const uint8_t* data, size_t size, const Callback& callback)
 {
-	auto len = BIO_write(rbio.get(), data, size);
+	auto len = BIO_write(rbio, data, size);
 	if (len <= 0)
 	{
 		Error("-TlsClient::Decrypt() Failed to BIO_write\n");
@@ -119,7 +127,7 @@ TlsClient::TlsClientError TlsClient::Decrypt(const uint8_t* data, size_t size)
 		bytes = SSL_read(ssl.get(), decryptCache, sizeof(decryptCache));
 		if (bytes > 0) 
 		{
-			QueueDecryptedData(decryptCache, bytes);
+			callback(decryptCache, bytes);
 		}
 	} while (bytes > 0);
 	
@@ -127,7 +135,7 @@ TlsClient::TlsClientError TlsClient::Decrypt(const uint8_t* data, size_t size)
 	// This may happen when ssl renegotiation is needed
 	if (status == SslStatus::Pending)
 	{
-		return ReadBioEncrypted() ? TlsClientError::NoError : TlsClientError::Failed;
+		isPendingEncrypted = true;
 	}
 	
 	return TlsClientError::NoError;
@@ -146,7 +154,8 @@ TlsClient::TlsClientError TlsClient::Encrypt(const uint8_t* data, size_t size)
 	auto len = SSL_write(ssl.get(), data, size);
 	if (len > 0)
 	{
-		return ReadBioEncrypted() ? TlsClientError::NoError : TlsClientError::Failed;
+		isPendingEncrypted = true;
+		return TlsClientError::NoError;
 	}
 	else
 	{
@@ -154,12 +163,25 @@ TlsClient::TlsClientError TlsClient::Encrypt(const uint8_t* data, size_t size)
 	}
 }
 
+bool TlsClient::ReadEncrypted(const Callback& callback)
+{	
+	if (!isPendingEncrypted) return true;
+	
+	bool result = ReadBioEncrypted(callback);
+	
+	isPendingEncrypted = false;
+	
+	return result;
+}
+
 void TlsClient::Shutdown()
 {
 	initialised = false;
 	
-	encrypted.clear();
-	decrypted.clear();
+	ssl.reset(); // This will also free rbio and wbio
+	rbio = nullptr;
+	wbio = nullptr;
+	ctx.reset();
 }
 
 TlsClient::SslStatus TlsClient::GetSslStatus(int returnCode)
@@ -185,36 +207,26 @@ TlsClient::SslStatus TlsClient::Handshake()
 	auto TlsError = GetSslStatus(ret);
 	if (TlsError == SslStatus::Pending)
 	{
-		return ReadBioEncrypted() ? SslStatus::OK : SslStatus::Failed;
+		isPendingEncrypted = true;
 	}
 	
 	return TlsError;
 }
 
-bool TlsClient::ReadBioEncrypted()
+bool TlsClient::ReadBioEncrypted(const Callback& callback)
 {
 	int bytes = 0;
 	do {
-		bytes = BIO_read(wbio.get(), encryptCache, sizeof(encryptCache));
+		bytes = BIO_read(wbio, encryptCache, sizeof(encryptCache));
 		if (bytes > 0)
 		{
-			QueueEncryptedData(encryptCache, bytes);
+			callback(encryptCache, bytes);
 		}
-		else if (!BIO_should_retry(wbio.get()))
+		else if (!BIO_should_retry(wbio))
 		{
 			return false;
 		}
 	} while (bytes > 0);
 	
 	return true;
-}
-
-void TlsClient::QueueEncryptedData(const uint8_t* data, size_t size)
-{
-	encrypted.emplace_back(data, data + size);
-}
-
-void TlsClient::QueueDecryptedData(const uint8_t* data, size_t size)
-{
-	decrypted.emplace_back(data, data + size);
 }

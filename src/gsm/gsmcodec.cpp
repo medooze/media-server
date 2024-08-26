@@ -51,9 +51,11 @@ GSMDecoder::~GSMDecoder()
 	gsm_destroy(g);
 }
 
-int GSMDecoder::Decode (const BYTE *in,int inLen,SWORD* out,int outLen)
+int GSMDecoder::Decode(const AudioFrame::const_shared& audioFrame, SWORD* out,int outLen)
 {
 	//Dependiendo de la longitud tenemos un tipo u otro
+	int inLen = audioFrame->GetLength();
+	const uint8_t* in = audioFrame->GetData();
 	if (inLen==33)
 	{
 		//GSM Clasico
