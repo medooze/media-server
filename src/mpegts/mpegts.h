@@ -136,23 +136,24 @@ namespace adts
 
 struct Header
 {
-	uint16_t syncWord;
-	bool     version;
-	uint8_t  layer;
-	bool     protectionAbsence;
-	uint8_t  objectType;
-	uint8_t  samplingFrequency;
-	bool     priv;
-	uint8_t  channelConfiguration;
-	bool     originality;
-	bool     home;
-	bool     copyright;
-	bool     copyrightStart;
-	uint16_t frameLength;
-	uint16_t bufferFullness;
-	uint8_t  numberOfFrames;
-	uint16_t crc;
+	uint16_t syncWord = 0xfff;
+	bool     version = false;
+	uint8_t  layer = 0;
+	bool     protectionAbsence = false;
+	uint8_t  objectType = 1;
+	uint8_t  samplingFrequency = 0;
+	bool     priv = false;
+	uint8_t  channelConfiguration = 0;
+	bool     originality = false;
+	bool     home = false;
+	bool     copyright = false;
+	bool     copyrightStart = false;
+	uint16_t frameLength = 0;
+	uint16_t bufferFullness = 0;
+	uint8_t  numberOfFrames = 0;
+	uint16_t crc = 0;
 
+	void Encode(BufferWritter& writer);
 	static Header Parse(BufferReader& reader);
 };
 }; //namespace mpegts::pes::adts

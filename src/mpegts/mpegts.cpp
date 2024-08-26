@@ -399,7 +399,8 @@ StreamType GetStreamType(const uint8_t& streamId)
 
 void Packet::Encode(BufferWritter& writer)
 {
-	
+	header.Encode(writer);
+	if (headerExtension) headerExtension->Encode(writer);
 }
 
 Packet Packet::Parse(BufferReader& reader)
@@ -429,6 +430,33 @@ Packet Packet::Parse(BufferReader& reader)
 
 namespace adts
 {
+	void Header::Encode(BufferWritter& writer)
+	{
+		if (writer.GetLeft() < 7)
+			throw std::runtime_error("Not enought data to write mpegtsp pes adts header");
+		
+		BitWritter bitwriter(writer, 7);
+		
+		bitwriter.Put(12, syncWord);
+		bitwriter.Put(1, version);
+		bitwriter.Put(2, layer);
+		bitwriter.Put(1, protectionAbsence);
+		bitwriter.Put(2, objectType - 1);
+		bitwriter.Put(4, samplingFrequency);
+		bitwriter.Put(1, priv);
+		bitwriter.Put(3, channelConfiguration);
+		bitwriter.Put(1, originality);
+		bitwriter.Put(1, home);
+		bitwriter.Put(1, copyright);
+		bitwriter.Put(1, copyrightStart);
+		bitwriter.Put(13, frameLength);
+		bitwriter.Put(11, bufferFullness);
+		bitwriter.Put(2, numberOfFrames);
+		
+		if (!protectionAbsence)
+			bitwriter.Put(16, crc);
+	}
+
 	Header Header::Parse(BufferReader& reader)
 	{
 		//Ensure we have enought data for the header
