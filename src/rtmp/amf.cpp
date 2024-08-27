@@ -22,7 +22,7 @@ void U16Parser::Reset()
 	value = 0;
 }
 
-DWORD U16Parser::Parse(BYTE *data,DWORD size)
+DWORD U16Parser::Parse(const BYTE *data,DWORD size)
 {
 	BYTE i=0;
 
@@ -47,7 +47,7 @@ void U16Parser::SetValue(WORD value)
 	this->value = value;
 }
 
-DWORD U16Parser::Serialize(BYTE* data,DWORD size)
+DWORD U16Parser::Serialize(BYTE* data,DWORD size) const
 {
 	if (size<2)
 		return -1;
@@ -78,7 +78,7 @@ void U32Parser::Reset()
 	value = 0;
 }
 
-DWORD U32Parser::Parse(BYTE *data,DWORD size)
+DWORD U32Parser::Parse(const BYTE *data,DWORD size)
 {
 	BYTE i=0;
 
@@ -103,7 +103,7 @@ void U32Parser::SetValue(DWORD value)
 	this->value = value;
 }
 
-DWORD U32Parser::Serialize(BYTE* data,DWORD size)
+DWORD U32Parser::Serialize(BYTE* data,DWORD size) const
 {
 	if (size<4)
 		return -1;
@@ -134,7 +134,7 @@ void U29Parser::Reset()
 	value = 0;
 }
 
-DWORD U29Parser::Parse(BYTE *data,DWORD size)
+DWORD U29Parser::Parse(const BYTE *data,DWORD size)
 {
 	BYTE i=0;
 
@@ -181,7 +181,7 @@ AMFParser::~AMFParser()
 		delete object;
 }
 
-DWORD AMFParser::Parse(BYTE *data,DWORD size)
+DWORD AMFParser::Parse(const BYTE *data,DWORD size)
 {
 	//Check if we are already parsing an object
 	if (object)
@@ -325,7 +325,7 @@ void AMFData::Reset()
 	len = 0;
 }
 
-DWORD AMFData::Serialize(BYTE* buffer,DWORD size)
+DWORD AMFData::Serialize(BYTE* buffer,DWORD size) const
 {
 	if (!size)
 		return -1;
@@ -444,7 +444,7 @@ AMFData* AMFNumber::Clone() const
 	return obj;
 }
 
-DWORD AMFNumber::Parse(BYTE *data,DWORD size)
+DWORD AMFNumber::Parse(const BYTE *data,DWORD size)
 {
 	BYTE i=0;
 
@@ -485,7 +485,7 @@ DWORD AMFNumber::GetSize() const
 	return 9;
 }
 
-DWORD AMFNumber::Serialize(BYTE* data,DWORD size)
+DWORD AMFNumber::Serialize(BYTE* data,DWORD size) const
 {
 	if (size<9)
 		return -1;
@@ -516,7 +516,7 @@ AMFBoolean::AMFBoolean(bool val)
 	SetBoolean(val);
 }
 
-DWORD AMFBoolean::Parse(BYTE *data,DWORD size)
+DWORD AMFBoolean::Parse(const BYTE *data,DWORD size)
 {
 	//Check we have enought data
 	if (!size)	
@@ -550,7 +550,7 @@ void AMFBoolean::SetBoolean(bool value)
 {
 	this->value = value;
 }
-DWORD AMFBoolean::Serialize(BYTE* data,DWORD size)
+DWORD AMFBoolean::Serialize(BYTE* data,DWORD size) const
 {
 	if (size<2)
 		return -1;
@@ -612,9 +612,9 @@ AMFData* AMFString::Clone() const
 	return obj;
 }
 
-DWORD AMFString::Parse(BYTE *data,DWORD size)
+DWORD AMFString::Parse(const BYTE *data,DWORD size)
 {
-	BYTE *buffer = data;
+	const BYTE *buffer = data;
 	DWORD bufferSize = size;
 
 	//Check if we still have not parsed the utf8 size
@@ -685,7 +685,7 @@ DWORD AMFString::GetSize() const
 	
 }
 
-DWORD AMFString::Serialize(BYTE* data,DWORD size)
+DWORD AMFString::Serialize(BYTE* data,DWORD size) const
 {
 	DWORD len = GetSize();
 
@@ -720,9 +720,9 @@ void AMFLongString::Reset()
 	utf8parser.Reset();
 }
 
-DWORD AMFLongString::Parse(BYTE *data,DWORD size)
+DWORD AMFLongString::Parse(const BYTE *data,DWORD size)
 {
-	BYTE *buffer = data;
+	const BYTE *buffer = data;
 	DWORD bufferSize = size;
 
 	//Check if we still have not parsed the utf8 size
@@ -805,9 +805,9 @@ AMFObject::~AMFObject()
 			delete(value);
 }
 
-DWORD AMFObject::Parse(BYTE *data,DWORD size)
+DWORD AMFObject::Parse(const BYTE *data,DWORD size)
 {
-	BYTE *buffer = data;
+	const BYTE *buffer = data;
 	DWORD bufferSize = size;
 
 	//While input data
@@ -965,18 +965,18 @@ DWORD AMFObject::GetSize() const
 	//Start and end mark
 	DWORD len = 4;
 	//Loop properties
-	for (const auto& it : properties)
+	for (const auto& [k,v] : properties)
 	{
 		//Set key value
-		key.SetWString(it.first);
+		key.SetWString(k);
 		//Calc sizes
-		len+=2+key.GetUTF8Size()+it.second->GetSize();
+		len+=2+key.GetUTF8Size()+v->GetSize();
 	}
 
 	return len;
 }
 
-DWORD AMFObject::Serialize(BYTE* data,DWORD size)
+DWORD AMFObject::Serialize(BYTE* data,DWORD size) const
 {
 	//Aux string to calc sizes
 	U16Parser u16key;
@@ -989,7 +989,7 @@ DWORD AMFObject::Serialize(BYTE* data,DWORD size)
 	for (size_t i=0;i<propertiesOrder.size();i++)
 	{
 		//Search for the property
-		AMFObjectMap::iterator it = properties.find(propertiesOrder[i]);
+		AMFObjectMap::const_iterator it = properties.find(propertiesOrder[i]);
 		//Set key value
 		key.SetWString(it->first);
 		//Set utf8 size
@@ -1028,9 +1028,9 @@ void AMFObject::Dump() const
  * AMFTypedObject
  *
  *************************/	
-DWORD AMFTypedObject::Parse(BYTE *data,DWORD size)
+DWORD AMFTypedObject::Parse(const BYTE *data,DWORD size)
 {
-	BYTE *buffer = data;
+	const BYTE *buffer = data;
 	DWORD bufferSize = size;
 
 	//Iterate data
@@ -1087,7 +1087,7 @@ std::wstring AMFTypedObject::GetClassName() const
  * AMFReference
  *
  ********************/
-DWORD AMFReference::Parse(BYTE *data,DWORD size)
+DWORD AMFReference::Parse(const BYTE *data,DWORD size)
 {
 	BYTE i=0;
 
@@ -1121,14 +1121,13 @@ AMFEcmaArray::AMFEcmaArray()
 
 AMFEcmaArray::~AMFEcmaArray()
 {
-	for (AMFObjectMap::iterator it=elements.begin(); it!=elements.end(); it++)
-		if (it->second)
-			delete(it->second);
+	for (const auto& [k, v] : elements)
+		delete(v);
 }
 
-DWORD AMFEcmaArray::Parse(BYTE *data,DWORD size)
+DWORD AMFEcmaArray::Parse(const BYTE *data,DWORD size)
 {
-	BYTE *buffer = data;
+	const BYTE *buffer = data;
 	DWORD bufferSize = size;
 
 	while (bufferSize && !IsParsed())
@@ -1277,10 +1276,10 @@ void AMFEcmaArray::AddProperty(const wchar_t* key,const AMFData &obj)
 void AMFEcmaArray::Dump() const
 {
 	Debug("[EcmaArray]\n");
-	for (const auto& it : elements)
+	for (const auto& [k,v] : elements)
 	{
-		Debug("  %*ls:\t",20,it.first.c_str());
-		it.second->Dump();
+		Debug("  %*ls:\t",20,k.c_str());
+		v->Dump();
 	}
 	Debug("[/EcmaArray]\n");
 }
@@ -1292,17 +1291,17 @@ DWORD AMFEcmaArray::GetSize() const
 	//Start and end mark and number
 	DWORD len = 8;
 	//Loop properties
-	for (const auto& it : elements)
+	for (const auto& [k,v] : elements)
 	{
 		//Set key value
-		key.SetWString(it.first);
+		key.SetWString(k);
 		//Calc sizes
-		len+=2+key.GetUTF8Size()+it.second->GetSize();
+		len+=2+key.GetUTF8Size()+v->GetSize();
 	}
 	return len;	
 }
 
-DWORD AMFEcmaArray::Serialize(BYTE* data,DWORD size)
+DWORD AMFEcmaArray::Serialize(BYTE* data,DWORD size) const
 {
 	//Check size
 	if (size<GetSize())
@@ -1316,14 +1315,15 @@ DWORD AMFEcmaArray::Serialize(BYTE* data,DWORD size)
 	//Set mark
 	data[len++] = AMFParser::EcmaArrayMarker;
 	//Set number of properties
+	U32Parser num;
 	num.SetValue(elements.size());
 	//Add number of properties
 	len += num.Serialize(data+len,size-len);
 	//Loop elements
-	for (const auto& it : elements)
+	for (const auto& [k,v] : elements)
 	{
 		//Set key value
-		key.SetWString(it.first);
+		key.SetWString(k);
 		//Set utf8 size
 		u16key.SetValue(key.GetUTF8Size());
 		//Serialize utf8 size
@@ -1331,7 +1331,7 @@ DWORD AMFEcmaArray::Serialize(BYTE* data,DWORD size)
 		//Serialize key
 		len += key.Serialize(data+len,size-len);
 		//Serialize value
-		len += it.second->Serialize(data+len,size-len);
+		len += v->Serialize(data+len,size-len);
 	}
 	//Set end mark
 	data[len++] = 0;
@@ -1345,8 +1345,8 @@ DWORD AMFEcmaArray::Serialize(BYTE* data,DWORD size)
 AMFData* AMFEcmaArray::Clone() const
 {
 	AMFEcmaArray *obj = new AMFEcmaArray();
-	for (const auto& it : elements)
-		obj->AddProperty(it.first.c_str(),it.second->Clone());
+	for (const auto& [k,v] : elements)
+		obj->AddProperty(k.c_str(),v->Clone());
 	return obj;
 }
 
@@ -1368,9 +1368,9 @@ AMFStrictArray::~AMFStrictArray()
 			delete(element);
 }
 
-DWORD AMFStrictArray::Parse(BYTE *data,DWORD size)
+DWORD AMFStrictArray::Parse(const BYTE *data,DWORD size)
 {
-	BYTE *buffer = data;
+	const BYTE *buffer = data;
 	DWORD bufferSize = size;
 
 	while (bufferSize && !IsParsed())
@@ -1516,7 +1516,7 @@ void AMFStrictArray::AddElement(AMFData& obj)
  * AMFNumber
  *
  ********************/
-DWORD AMFDate::Parse(BYTE *data,DWORD size)
+DWORD AMFDate::Parse(const BYTE *data,DWORD size)
 {
 	BYTE i=0;
 
@@ -1542,7 +1542,7 @@ time_t AMFDate::GetDate() const
 /**************************
  * AMFNull
  * ************************/
-DWORD AMFNull::Serialize(BYTE* data,DWORD size)
+DWORD AMFNull::Serialize(BYTE* data,DWORD size) const
 {
 	if (!size)
 		return -1;
