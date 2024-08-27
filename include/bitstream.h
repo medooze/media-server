@@ -277,7 +277,7 @@ public:
 		} else if (n < 32) {
 			//Move
 			cache = cache << n;
-			/Update cached bytes
+			//Update cached bytes
 			cached -= n;
 		} else {
 			//cached == 32
