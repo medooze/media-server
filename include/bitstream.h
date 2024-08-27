@@ -91,9 +91,6 @@ public:
 			ret = cache >> (32-n);
 			//Cache next
 			Cache();
-			//Check available
-			if (cached<a)
-				error = true;
 			//Get the remaining
 			ret =  ret | GetCached(a);
 		} else if (n) {
@@ -285,6 +282,12 @@ public:
 	{
 		//Check length
 		if (!n) return 0;
+		//Check available
+		if (cached<n)
+		{
+			error = true;
+			return UINT32_MAX;
+		}
 		//Get bits
 		DWORD ret = cache >> (32-n);
 		//Skip those bits
@@ -407,8 +410,12 @@ public:
 
 	inline DWORD Put(BYTE n,DWORD v)
 	{
-		if (n+cached>32)
+		
+		if (!n) 
 		{
+			//Nothing to do
+			return v;
+		} else if (n+cached>32) {
 			BYTE a = 32-cached;
 			BYTE b =  n-a;
 			//Check if cache is not full
@@ -424,8 +431,6 @@ public:
 			//Increase cached
 			cached = b;
 		} else {
-			//Don't invoke UB if empty
-			if (!n) return v;
 			//Add to cache
 			cache = (cache << n) | (v & (0xFFFFFFFF>>(32-n)));
 			//Increase cached
