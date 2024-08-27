@@ -191,10 +191,8 @@ struct SequenceHeaderObu
 				}
 			}
 		}
-		Log("pos:%d\n",r.GetPos());
 		auto frame_width_bits_minus_1 = r.Get(4);
 		auto frame_height_bits_minus_1 = r.Get(4);
-		Log("%d %d %d cache:%x\n", frame_width_bits_minus_1, frame_height_bits_minus_1,r.GetPos(),r.cache);
 		max_frame_width_minus_1 = r.Get(frame_width_bits_minus_1 + 1);
 		max_frame_height_minus_1 = r.Get(frame_height_bits_minus_1 + 1);
 		if (reduced_still_picture_header)

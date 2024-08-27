@@ -9,7 +9,6 @@
 #define	_BITSTREAM_H_
 #include "config.h"
 #include "tools.h"
-#include "log.h"
 #include <stdexcept>
 #include "BufferReader.h"
 #include "BufferWritter.h"
@@ -101,8 +100,8 @@ public:
 			//Get from cache
 			ret = GetCached(n);
 		}
-		Debug("Readed n:%d val:%d cached:%d\n",n,ret,cached);
-		BitDump(ret,n);
+		//Debug("Readed %d: cached:%d\n",n, cached);
+		//BitDump(ret,n);
 		return ret;
 	}
 
@@ -127,7 +126,7 @@ public:
 			//Skip cache
 			SkipCached(n);
 		}
-		Debug("Skiped n:%d: cached:%d\n", n, cached);
+		//Debug("Skiped n:%d: cached:%d\n", n, cached);
 	}
 
 	inline QWORD Left()
@@ -152,8 +151,8 @@ public:
 			//Get from cache
 			ret = cache >> (32-n);
 		}
-		Debug("Peeked n:%d val:%d\n",n,ret);
-		BitDump(ret,n);
+		//Debug("Peeked %d:\n",n);
+		//BitDump(ret,n);
 		return ret;
 	}
 
@@ -218,10 +217,10 @@ public:
 			//Exit
 			return;
 		}
-		BitDump(cache,cached);
+		//BitDump(cache,cached);
 		// We need to return the cached bits to the buffer
 		auto bytes = cached / 8;
-		Debug("Flushing Cache cached:%d bytes:%d len:%u pos:%u\n", cached, bytes, bufferLen, bufferPos);
+		//Debug("Flushing Cache cached:%d bytes:%d len:%u pos:%u\n", cached, bytes, bufferLen, bufferPos);
 
 		//Increase pointers
 		bufferLen += bytes;
@@ -231,7 +230,7 @@ public:
 		//Nothing cached
 		cached = 0;
 		cache = 0;
-		Debug("Flushed cache len:%u pos:%u\n", bufferLen, bufferPos);
+		//Debug("Flushed cache len:%u pos:%u\n", bufferLen, bufferPos);
 
 	}
 
@@ -298,8 +297,8 @@ private:
 		}
 			
 
-		Debug("Reading int cache %x:%d\n",cache,cached);
-		BitDump(cache>>(32-cached),cached);
+		//Debug("Reading int cache %x:%d\n",cache,cached);
+		//BitDump(cache>>(32-cached),cached);
 
 		//return number of bits
 		return cached;
@@ -366,7 +365,7 @@ private:
 		return ret;
 	}
 	
-public:
+private:
 	const BYTE* buffer;
 	DWORD bufferLen;
 	DWORD bufferPos;
