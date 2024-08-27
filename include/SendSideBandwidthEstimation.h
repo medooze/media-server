@@ -26,7 +26,7 @@ public:
 	}
 ;
 public:
-	SendSideBandwidthEstimation();
+	SendSideBandwidthEstimation(const std::string& logId="");
         ~SendSideBandwidthEstimation();
 	void SentPacket(const PacketStats& packet);
 	void ReceivedFeedback(uint8_t feedbackNum, const std::map<uint32_t,uint64_t>& packets, uint64_t when = 0);
@@ -56,6 +56,7 @@ private:
 		bool  probing = false;
 	};
 private:
+	const std::string logId;
 	CircularBuffer<Stats, uint16_t, 32768> transportWideSentPacketsStats;
 	uint64_t bandwidthEstimation = 0;
 	uint64_t targetBitrate = 0;
@@ -72,7 +73,7 @@ private:
 	int fd = FD_INVALID;
 
 	size_t bweStatsFileSizeLimit = 0;
-	ssize_t bweStatsBytesWritten = 0;
+	size_t bweStatsBytesWritten = 0;
 	std::string bweStatsFileName;
 	ssize_t bweStatsFileCount = 0;
 	

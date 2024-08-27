@@ -16,7 +16,8 @@ constexpr uint64_t kRecoveryDuration		= 250E3;
 constexpr double   LoosRateThreshold		= 0.35;		// 35% packet loss before moving to loosy state
 
 
-SendSideBandwidthEstimation::SendSideBandwidthEstimation() : 
+SendSideBandwidthEstimation::SendSideBandwidthEstimation(const std::string& logId) : 
+		logId(logId),
 		rttMin(kLongTermDuration),
 		accumulatedDeltaMinCounter(kLongTermDuration),
 		totalSentAcumulator(kMonitorDuration, 1E6, 500),
@@ -71,7 +72,7 @@ void SendSideBandwidthEstimation::SentPacket(const PacketStats& stat)
 	
 	//Add to history map
 	if (!transportWideSentPacketsStats.Set(stat.transportWideSeqNum, SendSideBandwidthEstimation::Stats{stat.time, stat.size, stat.mark, stat.rtx, stat.probing}))
-		Warning("-SendSideBandwidthEstimation::SentPacket() Could not store stats for packet %u\n", stat.transportWideSeqNum);
+		Warning("[%s][%p]-SendSideBandwidthEstimation::SentPacket() Could not store stats for packet %u\n", logId.c_str(), this, stat.transportWideSeqNum);
 }
 
 void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const std::map<uint32_t,uint64_t>& packets, uint64_t when)
@@ -85,7 +86,7 @@ void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const st
 	if (lastFeedbackNum && extFeedbabkNum > lastFeedbackNum + 1)
 	{
 		//Log
-		UltraDebug("-SendSideBandwidthEstimation::ReceivedFeedback() missing feedback [seqNum:%u,extSeqNum:%llu,last:%llu]\n", feedbackNum, extFeedbabkNum, lastFeedbackNum);
+		UltraDebug("[%s][%p]-SendSideBandwidthEstimation::ReceivedFeedback() missing feedback [seqNum:%u,extSeqNum:%llu,last:%llu]\n", logId.c_str(), this, feedbackNum, extFeedbabkNum, lastFeedbackNum);
 		//Reset received accumulator
 		totalRecvAcumulator.Reset(0);
 	}
@@ -163,7 +164,7 @@ void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const st
 			int32_t rttEstimated = rttMin + acumulatedDeltaRelative /1000;
 			
 			//Dump stats
-			//Log("recv #%u sent:%.8lu (+%.6ld) recv:%.8lu (+%.6ld) delta:%.6ld fb:%u, size:%u, bwe:%lu rtt:%lld rttMin:%lld acuDelta:%lld acuDeltaMin:%lld)\n",transportSeqNum,sent,deltaSent,recv,deltaRecv,delta,feedbackNum, stat->size, bandwidthEstimation, rttEstimated, rttMin, accumulatedDelta/1000, accumulatedDeltaMin/1000);
+			//Log("[%s][%p]recv #%u sent:%.8lu (+%.6ld) recv:%.8lu (+%.6ld) delta:%.6ld fb:%u, size:%u, bwe:%lu rtt:%lld rttMin:%lld acuDelta:%lld acuDeltaMin:%lld)\n", logId.c_str(), this, transportSeqNum, sent, deltaSent, recv, deltaRecv, delta, feedbackNum, stat->size, bandwidthEstimation, rttEstimated, rttMin, accumulatedDelta/1000, accumulatedDeltaMin/1000);
 			
 			//Check if we've written more than max size and if so, create a new file to write
 			if (bweStatsFileSizeLimit > 0 && bweStatsBytesWritten > bweStatsFileSizeLimit)
@@ -176,7 +177,7 @@ void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const st
 					std::string newFile = bweStatsFileName + "." + std::to_string(bweStatsFileCount++);
 					if ((fd = open(newFile.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0600))<0)
 					{
-						Error("-SendSideBandwidthEstimation::ReceivedFeedback() Failed to create updated BWE stats file %s : reason %s\n",newFile.c_str(),strerror(errno));
+						Error("[%s][%p]-SendSideBandwidthEstimation::ReceivedFeedback() Failed to create updated BWE stats file %s : reason %s\n", logId.c_str(), this, newFile.c_str(), strerror(errno));
 						fd = FD_INVALID;
 					}
 					bweStatsBytesWritten = 0;
@@ -192,7 +193,7 @@ void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const st
 				ssize_t written = write(fd,msg,len);
 				if (written < 0)
 				{
-					Error("-SendSideBandwidthEstimation::ReceivedFeedback() Failed writing to BWE log : reason %s\n",strerror(errno));
+					Error("[%s][%p]-SendSideBandwidthEstimation::ReceivedFeedback() Failed writing to BWE log : reason %s\n", logId.c_str(), this, strerror(errno));
 					close(fd);
 					fd = FD_INVALID;
 				}
@@ -240,7 +241,7 @@ void SendSideBandwidthEstimation::ReceivedFeedback(uint8_t feedbackNum, const st
 			}
 		} else {
 			//Log
-			Warning("-SendSideBandwidthEstimation::ReceivedFeedback() | Packet not found [transportSeqNum:%u,receivedTime:%llu,first:%u,last:%u]\n", transportSeqNum, receivedTime, transportWideSentPacketsStats.GetFirstSeq(), transportWideSentPacketsStats.GetLastSeq());
+			Warning("[%s][%p]-SendSideBandwidthEstimation::ReceivedFeedback() | Packet not found [transportSeqNum:%u,receivedTime:%llu,first:%u,last:%u]\n", logId.c_str(), this, transportSeqNum, receivedTime, transportWideSentPacketsStats.GetFirstSeq(), transportWideSentPacketsStats.GetLastSeq());
 		}
 	}
 
@@ -302,7 +303,7 @@ uint32_t SendSideBandwidthEstimation::GetTotalSentBitrate() const
 
 void SendSideBandwidthEstimation::SetState(ChangeState state)
 {
-	UltraDebug("-SendSideBandwidthEstimation::SetState() [state:%d,prev:%d,consecutiveChanges:%d]\n",state,this->state,consecutiveChanges);
+	UltraDebug("[%s][%p]-SendSideBandwidthEstimation::SetState() [state:%d,prev:%d,consecutiveChanges:%d]\n", logId.c_str(), this, state, this->state, consecutiveChanges);
 
 	//Set number of consecutive chantes
 	if (this->state == state)
@@ -315,7 +316,7 @@ void SendSideBandwidthEstimation::SetState(ChangeState state)
 
 void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 {
-	//Log("-SendSideBandwidthEstimation::EstimateBandwidthRate() [lastChane:%lld,when:%lldd]\n",lastChange,when);
+	//Log("[%s][%p]-SendSideBandwidthEstimation::EstimateBandwidthRate() [lastChane:%lld,when:%lldd]\n", logId.c_str(), this, lastChange, when);
 	
 	//Get loss rate
 	double receivedPackets = packetsReceivedAcumulator.GetInstantAvg();
@@ -461,8 +462,8 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 		//Adapt to rtt slope, accumulatedDelta MUST be possitive
 		targetBitrate = targetBitrate * factor;
 
-		//Log("lastFeedbackDelta:%d delta:%d accumulatedDeltaMin:%d accumulatedDelta:%d bwe:%lld,target:%lld,new:%lld,factor:%f\n", lastFeedbackDelta, delta, accumulatedDeltaMin, accumulatedDelta, bandwidthEstimation, prev, targetBitrate, factor);
-	} 
+		//Log("[%s][%p]-SendSideBandwidthEstimation::EstimateBandwidthRate() lastFeedbackDelta:%d delta:%d accumulatedDeltaMin:%d accumulatedDelta:%d bwe:%lld,target:%lld,new:%lld,factor:%f\n", logId.c_str(), this, lastFeedbackDelta, delta, accumulatedDeltaMin, accumulatedDelta, bandwidthEstimation, prev, targetBitrate, factor);
+	}	
 
 	//Calculate term rtx overhead
 	double overhead = mediaSentBitrate ? static_cast<double>(mediaSentBitrate) / (mediaSentBitrate + rtxSentBitrate) : 1.0f;
@@ -470,7 +471,8 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 	//Available rate taking into account current rtx overhead
 	availableRate = targetBitrate * overhead; 
 
-	//Log("-SendSideBandwidthEstimation::EstimateBandwidthRate() [this:%p,estimate:%llubps,target:%llubps,available:%llubps,sent:%llubps,recv:%llubps,rtx=%llubps,state:%d,delta=%d,acuDelta:%d,aduDeltaMin:%d,media:%u,rtx:%d,overhead:%.2f,rttEstimated:%d,rttMin:%d,received:%f,lost:%f,lossRate:%f\n",
+	//Log("[%s][%p]-SendSideBandwidthEstimation::EstimateBandwidthRate() [estimate:%llubps,target:%llubps,available:%llubps,sent:%llubps,recv:%llubps,rtx=%llubps,state:%d,delta=%d,acuDelta:%d,aduDeltaMin:%d,media:%u,rtx:%d,overhead:%.2f,rttEstimated:%d,rttMin:%d,received:%f,lost:%f,lossRate:%f\n",
+	//	logId.c_str(), 
 	//	this,
 	//	bandwidthEstimation,
 	//	targetBitrate,
@@ -505,7 +507,9 @@ void SendSideBandwidthEstimation::EstimateBandwidthRate(uint64_t when)
 	//Check when we have to trigger a new bwe change on the app
 	if (state != ChangeState::Initial && (((state == ChangeState::Congestion || state == ChangeState::Loosy) && consecutiveChanges==0) || ( lastChange + kReportInterval < when)))
 	{
-		//Log("-SendSideBandwidthEstimation::EstimateBandwidthRate() [estimate:%llubps,target:%llubps,available:%llubps,sent:%llubps,recv:%llubps,rtx=%llubps,state:%d,delta=%d,media:%u,rtx:%d,overhead:%f,when:%llu,diff:%llu\n",
+		//Log("[%s][%p]-SendSideBandwidthEstimation::EstimateBandwidthRate() [estimate:%llubps,target:%llubps,available:%llubps,sent:%llubps,recv:%llubps,rtx=%llubps,state:%d,delta=%d,media:%u,rtx:%d,overhead:%f,when:%llu,diff:%llu]\n",
+		//	logId.c_str(),
+		//	this,
 		//	bandwidthEstimation,
 		//	targetBitrate,
 		//	availableRate,
@@ -534,12 +538,12 @@ int SendSideBandwidthEstimation::Dump(const char* filename, size_t fileSizeLimit
 		//Error
 		return 0;
 	
-	Log("-SendSideBandwidthEstimation::Dump() [\"%s\"]\n",filename);
+	Log("[%s][%p]-SendSideBandwidthEstimation::Dump() [\"%s\",limit:%u]\n", logId.c_str(), this,filename, fileSizeLimit);
 	
 	//Open file
 	if ((fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0600))<0)
 		//Error
-		return Error("Could not open file [file:%s,err:%d:%s]\n",filename,errno,strerror(errno));
+		return Error("[%s][%p]-SendSideBandwidthEstimation::Dump() Could not open file [file:%s,err:%d:%s]\n", logId.c_str(), this, filename, errno, strerror(errno));
 	bweStatsFileName = filename;
 	bweStatsFileSizeLimit = fileSizeLimit;
 	
@@ -554,7 +558,7 @@ int SendSideBandwidthEstimation::StopDump()
 		//Error
 		return 0;
 	
-	Log("-SendSideBandwidthEstimation::StopDump()\n");
+	Log("[%s][%p]-SendSideBandwidthEstimation::StopDump()\n", logId.c_str(), this);
 	
 	
 	//Close file

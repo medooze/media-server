@@ -118,7 +118,10 @@ RTPBundleTransport::~RTPBundleTransport()
 RTPBundleTransport::Connection::shared RTPBundleTransport::AddICETransport(const std::string &username,const Properties& properties)
 {
 	TRACE_EVENT("transport", "RTPBundleTransport::AddICETransport", "username", username);
-	Log("-RTPBundleTransport::AddICETransport() | [%s]\n",username.c_str());
+
+	// Ensure logs can map username and logId, as username is used elsewhere dealing with the transport in here
+	std::string logId = properties.GetProperty("logId", "");
+	Log("-RTPBundleTransport::AddICETransport() | [username:%s,logId:%s]\n", username.c_str(), logId.c_str());
 	
 	Properties ice;
 	Properties dtls;
@@ -144,9 +147,10 @@ RTPBundleTransport::Connection::shared RTPBundleTransport::AddICETransport(const
 		//Error
 		return NULL;
 	}
+
 	
 	//Create new ICE transport
-	auto transport = std::make_shared<DTLSICETransport>(this,loop,loop.GetPacketPool());
+	auto transport = std::make_shared<DTLSICETransport>(this,loop,loop.GetPacketPool(),logId);
 	
 	//Set SRTP protection profiles
 	std::string profiles = properties.GetProperty("srtpProtectionProfiles","");
