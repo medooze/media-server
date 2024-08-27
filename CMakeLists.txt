@@ -69,6 +69,7 @@ add_library(MediaServerLib
     ${CMAKE_CURRENT_LIST_DIR}/src/av1/AV1LayerSelector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/av1/Obu.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/mpegts/SpliceInfoSection.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/mpegts/mpegts.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtmp/rtmpserver.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtmp/amf.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/rtmp/rtmpclientconnection.cpp
@@ -181,6 +182,7 @@ add_executable(MediaServerUnitTest
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestFrameDelayCalculator.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestFrameDispatchCoordinator.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestMovingCounter.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestMpegts.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestRTPStreamTransponder.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestSimulcastMediaFrameListener.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestTimestampChecker.cpp

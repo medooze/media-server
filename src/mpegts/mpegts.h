@@ -30,9 +30,7 @@ struct Header
 	void Encode(BufferWritter& writer);
 	static Header Parse(BufferReader& reader);
 	
-	
 	void Dump() const;
-
 };
 
 struct AdaptationField
@@ -106,7 +104,7 @@ struct HeaderExtension
 	bool	copyright = false;
 	bool	original = false;
 	PTSDTSIndicator ptsdtsIndicator = PTSDTSIndicator::None;
-	bool	escrFlag = flase;
+	bool	escrFlag = false;
 	bool	rateFlag = false;
 	bool	trickModeFlag = false;
 	bool	aditionalInfoFlag = false;
