@@ -83,8 +83,10 @@ public:
 	inline DWORD Get(DWORD n)
 	{
 		DWORD ret = 0;
-		if (n>cached)
-		{
+		if (n>32) {
+			//We can't use exceptions so set error flag
+			error = true;
+		} else if (n>cached){
 			//What we have to read next
 			BYTE a = n-cached;
 			//Get remaining in the cache
@@ -109,8 +111,10 @@ public:
 
 	inline void Skip(DWORD n)
 	{
-		if (n>cached)
-		{
+		if (n>32) {
+			//We can't use exceptions so set error flag
+			error = true;
+		} else if (n>cached) {
 			//Get what is left to skip
 			BYTE a = n-cached;
 			//Cache next
@@ -132,8 +136,10 @@ public:
 	inline DWORD Peek(DWORD n)
 	{
 		DWORD ret = 0;
-		if (n>cached)
-		{
+		if (n>32) {
+			//We can't use exceptions so set error flag
+			error = true;
+		} else if (n>cached) {
 			//What we have to read next
 			BYTE a = n-cached;
 			//Get remaining in the cache
@@ -261,23 +267,25 @@ public:
 		}
 	}
 
-
 	inline void SkipCached(DWORD n)
 	{
 		//Check length
 		if (!n) return;
-		//Move
-		if (n < 32)
+		if (n > cached)
+		{
+			error = true;
+		} else if (n < 32) {
+			//Move
 			cache = cache << n;
-		else
-			cache = 0;
-		//Update cached bytes
-		if (n <= cached)
+			/Update cached bytes
 			cached -= n;
-		else
+		} else {
+			//cached == 32
+			cache = 0;
 			cached = 0;
+		}
+			
 	}
-
 	inline DWORD GetCached(DWORD n)
 	{
 		//Check length
