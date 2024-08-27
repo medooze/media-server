@@ -1,6 +1,7 @@
 #ifndef OBU_H
 #define OBU_H
 
+#include "log.h"
 #include "bitstream.h"
 #include "BufferReader.h"
 #include "BufferWritter.h"
@@ -48,6 +49,18 @@ public:
 		return Parse(reader);
 	}
 	
+	inline void Dump()
+	{
+		Debug("[ObuHeader \n");
+		Debug("\ttype=%u\n", type);
+		if (extension)
+			Debug("\textension.layerInfo=[%u,%u]\n", extension->layerInfo.temporalLayerId, extension->layerInfo.spatialLayerId);
+		if (length)
+			Debug("\textension.layerInfo=[%u,%u]\n", extension->layerInfo.temporalLayerId, extension->layerInfo.spatialLayerId);
+		if (length)
+			Debug("\tlength=%u\n", length.value());
+		Debug("/]\n");
+	}
 };
 
 #endif
