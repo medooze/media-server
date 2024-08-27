@@ -84,8 +84,10 @@ public:
 	inline DWORD Get(DWORD n)
 	{
 		DWORD ret = 0;
-		if (n>cached)
-		{
+		if (n>32) {
+			//We can't use exceptions so set error flag
+			error = true;
+		} else if (n>cached){
 			//What we have to read next
 			BYTE a = n-cached;
 			//Get remaining in the cache
@@ -110,8 +112,10 @@ public:
 
 	inline void Skip(DWORD n)
 	{
-		if (n>cached)
-		{
+		if (n>32) {
+			//We can't use exceptions so set error flag
+			error = true;
+		} else if (n>cached) {
 			//Get what is left to skip
 			BYTE a = n-cached;
 			//Cache next
@@ -133,8 +137,10 @@ public:
 	inline DWORD Peek(DWORD n)
 	{
 		DWORD ret = 0;
-		if (n>cached)
-		{
+		if (n>32) {
+			//We can't use exceptions so set error flag
+			error = true;
+		} else if (n>cached) {
 			//What we have to read next
 			BYTE a = n-cached;
 			//Get remaining in the cache
@@ -172,19 +178,21 @@ public:
 		return (v << 1) - m + extra_bit;
 	}
 
-	inline uint64_t GetVariableLengthUnsigned()
+	inline uint32_t GetVariableLengthUnsigned()
 	{
 		int leadingZeros = 0;
-		while (Get(1) && !error)
+		while (1)
 		{
 			bool done = Get(1);
+			if (error)
+				return UINT32_MAX;
 			if (done)
 				break;
 			leadingZeros++;
 		}
 		if (leadingZeros >= 32)
-			return (1lu << 32) - 1;
-		uint64_t value = Get(leadingZeros);
+			return UINT32_MAX;
+		uint32_t value = Get(leadingZeros);
 		return value + (1lu << leadingZeros) - 1;
 	}
 
@@ -320,22 +328,35 @@ private:
 		}
 	}
 
-
 	inline void SkipCached(DWORD n)
 	{
 		//Check length
 		if (!n) return;
-		//Move
-		cache = cache << n;
-		//Update cached bytes
-		cached -= n;
-
+		if (n > cached)
+		{
+			error = true;
+		} else if (n < 32) {
+			//Move
+			cache = cache << n;
+			//Update cached bytes
+			cached -= n;
+		} else {
+			//cached == 32
+			cache = 0;
+			cached = 0;
+		}
+			
 	}
-
 	inline DWORD GetCached(DWORD n)
 	{
 		//Check length
 		if (!n) return 0;
+		//Check available
+		if (cached<n)
+		{
+			error = true;
+			return UINT32_MAX;
+		}
 		//Get bits
 		DWORD ret = cache >> (32-n);
 		//Skip those bits
@@ -457,8 +478,12 @@ public:
 
 	inline DWORD Put(BYTE n,DWORD v)
 	{
-		if (n+cached>32)
+		
+		if (!n) 
 		{
+			//Nothing to do
+			return v;
+		} else if (n+cached>32) {
 			BYTE a = 32-cached;
 			BYTE b =  n-a;
 			//Check if cache is not full
