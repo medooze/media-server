@@ -6,6 +6,12 @@ namespace mpegts
 namespace psi
 {
 
+void SyntaxData::Encode(BufferWritter& writer)
+{
+	
+}
+
+
 SyntaxData SyntaxData::Parse(BufferReader& reader)
 {
 	SyntaxData syntaxData = {};
@@ -43,6 +49,11 @@ SyntaxData SyntaxData::Parse(BufferReader& reader)
 	return syntaxData;
 }
 
+void Table::Encode(BufferWritter& writer)
+{
+	
+}
+
 Table Table::Parse(BufferReader& reader)
 {
 	Table table;
@@ -66,19 +77,19 @@ Table Table::Parse(BufferReader& reader)
 	BitReader bitreader(reader, 3);
 
 	table.tableId			= bitreader.Get(8);
-	bool sectionSyntaxIndicator	= bitreader.Get(1) != 0;
+	table.sectionSyntaxIndicator	= bitreader.Get(1) != 0;
 	table.privateBit		= bitreader.Get(1) != 0;
 	table._reserved1		= bitreader.Get(2);
 	bitreader.Skip(2);		//length unused bits
-	uint16_t sectionLength		= bitreader.Get(10);
+	table.sectionLength		= bitreader.Get(10);
 
 	// read table contents (either syntax section or just data)
-	if (reader.GetLeft()<sectionLength)
+	if (reader.GetLeft()<table.sectionLength)
 		throw std::runtime_error("Not enough data to read mpegts psi table data");
 
-	BufferReader dataReader (reader.GetData(sectionLength), sectionLength);
+	BufferReader dataReader (reader.GetData(table.sectionLength), table.sectionLength);
 
-	if (sectionSyntaxIndicator) 
+	if (table.sectionSyntaxIndicator) 
 	{
 		// we have a syntax section surrounding data
 		table.data = SyntaxData::Parse(dataReader);
@@ -111,6 +122,11 @@ std::vector<Table> ParsePayloadUnit(BufferReader& reader)
 }
 
 // PAT
+
+void ProgramAssociation::Encode(BufferWritter& writer)
+{
+	
+}
 
 ProgramAssociation ProgramAssociation::Parse(BufferReader& reader)
 {
@@ -194,6 +210,11 @@ ProgramMap::ElementaryStream ProgramMap::ElementaryStream::Parse(BufferReader& r
 }
 
 // PMT
+
+void ProgramMap::Encode(BufferWritter& writer)
+{
+	
+}
 
 ProgramMap ProgramMap::Parse(BufferReader& reader)
 {

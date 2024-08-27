@@ -52,6 +52,8 @@ struct AdaptationField
 
 struct Packet
 {
+	static constexpr size_t PacketSize = 188;
+	
 	Header header;
 	std::optional<AdaptationField> adaptationField = {};
 	std::optional<uint8_t> payloadPointer = {};

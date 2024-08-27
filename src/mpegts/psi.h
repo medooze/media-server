@@ -29,6 +29,7 @@ struct SyntaxData
 	// fields following table data
 	uint32_t crc32;
 
+	void Encode(BufferWritter& writer);
 	static SyntaxData Parse(BufferReader& reader);
 };
 
@@ -36,10 +37,13 @@ struct SyntaxData
 struct Table
 {
 	uint8_t tableId;
+	bool sectionSyntaxIndicator;
 	bool privateBit;
 	uint8_t _reserved1;
+	uint16_t sectionLength;
 	std::variant<BufferReader, SyntaxData> data;
 
+	void Encode(BufferWritter& writer);
 	static Table Parse(BufferReader& reader);
 };
 
@@ -55,6 +59,8 @@ struct ProgramAssociation
 	uint16_t programNum;
 	uint16_t pmtPid;
 
+	void Encode(BufferWritter& writer);
+	
 	/** parse a single PAT entry */
 	static ProgramAssociation Parse(BufferReader& reader);
 
@@ -72,7 +78,6 @@ struct ProgramMap
 	{
 		uint8_t streamType = 0;
 		uint16_t pid = 0;
-		uint8_t _reserved1 = 0;
 		BufferReader descriptor;
 
 		static ElementaryStream Parse(BufferReader& reader);
@@ -83,6 +88,7 @@ struct ProgramMap
 	BufferReader programInfo;
 	std::vector<ElementaryStream> streams;
 
+	void Encode(BufferWritter& writer);
 	static ProgramMap Parse(BufferReader& reader);
 };
 
