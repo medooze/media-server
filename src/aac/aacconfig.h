@@ -9,9 +9,9 @@
 #define	AACCONFIG_H
 
 #include "config.h"
-#include "bitstream.h"
+#include "bitstream/BitReader.h"
+#include "bitstream/BitWritter.h"
 
-#define CHECK(r) if(r.Error()) return false;
 
 //AudioSpecificConfig ()
 //{
@@ -97,26 +97,34 @@ public:
 		
 		//Put bytes
 		BitWritter writter(data,size);
+
+		try
+		{
 		
-		//object type - AAC-LC
-		writter.Put(5,objectType);
-		//Get rate index
-		BYTE index = GetSampleRateIndex(rate);
-		//Set index rate
-		writter.Put(4, index);
-		//If not found
-		if (index==0x0F)
-			//Set rate
-			writter.Put(24,rate);
-		//Set cannles
-		writter.Put(4, channels);
-		//GASpecificConfig
-		writter.Put(1, frameLength); 
-		writter.Put(1, coreCoder); 
-		writter.Put(1, extension); 
-		
-		//Flush
-		return writter.Flush();
+			//object type - AAC-LC
+			writter.Put(5,objectType);
+			//Get rate index
+			BYTE index = GetSampleRateIndex(rate);
+			//Set index rate
+			writter.Put(4, index);
+			//If not found
+			if (index==0x0F)
+				//Set rate
+				writter.Put(24,rate);
+			//Set cannles
+			writter.Put(4, channels);
+			//GASpecificConfig
+			writter.Put(1, frameLength); 
+			writter.Put(1, coreCoder); 
+			writter.Put(1, extension); 
+
+			//Flush
+			return writter.Flush();
+		}
+		catch (std::exception& e) 
+		{
+			return 0;
+		}
 	}
 	
 	bool Decode(const BYTE* data,const DWORD size)
@@ -125,38 +133,45 @@ public:
 		
 		//Create bit reader
 		BitReader r(data,size);
+
+		try{
 		
-		//Get object type and rate
-		CHECK(r); objectType = r.Get(5);
-		CHECK(r); rateIndex = r.Get(4);
-		//Check rate index
-		if (rateIndex<rates.size())
-		{
-			//Get rate from table
-			rate = rates[rateIndex];
-		} else if (rateIndex==0x0F) {
-			//Get raw rate
-			CHECK(r); rate = r.Get(24);
-		} else {
-			//Wrong rate
-			return 0;
-		}
-		//Get channel config
-		CHECK(r);channels = r.Get(4);
-		//Get GASpecific config
-		if( objectType == 1 || objectType == 2 || objectType == 3 || objectType == 4 || objectType == 6 || objectType == 7 )
-		{
-			CHECK(r); frameLength = r.Get(1);
-			CHECK(r); coreCoder = r.Get(1);
-			if (coreCoder)
+			//Get object type and rate
+			objectType = r.Get(5);
+			rateIndex  = r.Get(4);
+			//Check rate index
+			if (rateIndex<rates.size())
 			{
-				CHECK(r); coreCoderDelay = r.Get(14);
+				//Get rate from table
+				rate = rates[rateIndex];
+			} else if (rateIndex==0x0F) {
+				//Get raw rate
+				rate = r.Get(24);
+			} else {
+				//Wrong rate
+				return 0;
 			}
-			CHECK(r); extension = r.Get(1);
+			//Get channel config
+			channels = r.Get(4);
+			//Get GASpecific config
+			if( objectType == 1 || objectType == 2 || objectType == 3 || objectType == 4 || objectType == 6 || objectType == 7 )
+			{
+				frameLength = r.Get(1);
+				coreCoder = r.Get(1);
+				if (coreCoder)
+				{
+					coreCoderDelay = r.Get(14);
+				}
+				extension = r.Get(1);
 			
-			//TODO: handle extensions
-		} else {
-			//TODO: not supported
+				//TODO: handle extensions
+			} else {
+				//TODO: not supported
+			}
+		}
+		catch (std::exception& e)
+		{
+			return false;
 		}
 		return true;
 	}

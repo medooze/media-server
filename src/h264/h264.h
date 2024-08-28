@@ -1,18 +1,9 @@
-/* 
- * File:   h264.h
- * Author: Sergio
- *
- * Created on 18 de julio de 2012, 17:12
- */
-
 #ifndef H264_H
 #define	H264_H
 #include "config.h"
 #include "math.h"
-#include "bitstream.h"
 #include "H26xNal.h"
-
-#define CHECK(r) if(r.Error()) return false;
+#include "bitstream/BitReader.h"
 
 class H264SeqParameterSet
 {
@@ -20,89 +11,106 @@ public:
 	bool Decode(const BYTE* buffer,DWORD bufferSize)
 	{
 		//SHould be done otherway, like modifying the BitReader to escape the input NAL, but anyway.. duplicate memory
-		BYTE *aux = (BYTE*)malloc(bufferSize);
-		//Escape
-		DWORD len = NalUnescapeRbsp(aux,buffer,bufferSize);
+		Buffer escaped = NalUnescapeRbsp(buffer, bufferSize);
 		//Create bit reader
-		BitReader r(aux,len);
-		//Read SPS
-		CHECK(r); profile_idc = r.Get(8);
-		CHECK(r); constraint_set0_flag = r.Get(1);
-		CHECK(r); constraint_set1_flag = r.Get(1);
-		CHECK(r); constraint_set2_flag = r.Get(1);
-		CHECK(r); reserved_zero_5bits  = r.Get(5);
-		CHECK(r); level_idc = r.Get(8);
-		CHECK(r); seq_parameter_set_id = ExpGolombDecoder::Decode(r);
+		BitReader r(escaped);
+
+		try {
+			//Read SPS
+			profile_idc = r.Get(8);
+			constraint_set0_flag = r.Get(1);
+			constraint_set1_flag = r.Get(1);
+			constraint_set2_flag = r.Get(1);
+			reserved_zero_5bits  = r.Get(5);
+			level_idc = r.Get(8);
+			seq_parameter_set_id = r.GetExpGolomb();
 		
-		//Check profile
-		if(profile_idc==100 || profile_idc==110 || profile_idc==122 || profile_idc==244 || profile_idc==44 || 
-			profile_idc==83 || profile_idc==86 || profile_idc==118 || profile_idc==128 || profile_idc==138 || profile_idc==139 || 
-			profile_idc==134 || profile_idc==135)
-		{
-			CHECK(r); [[maybe_unused]] auto chroma_format_idc = ExpGolombDecoder::Decode(r);
-			if( chroma_format_idc == 3 )
+			//Check profile
+			if(profile_idc==100 || profile_idc==110 || profile_idc==122 || profile_idc==244 || profile_idc==44 || 
+				profile_idc==83 || profile_idc==86 || profile_idc==118 || profile_idc==128 || profile_idc==138 || profile_idc==139 || 
+				profile_idc==134 || profile_idc==135)
 			{
-				CHECK(r); separate_colour_plane_flag = r.Get(1);
-			}
-			CHECK(r); [[maybe_unused]] auto bit_depth_luma_minus8 = ExpGolombDecoder::Decode(r);
-			CHECK(r); [[maybe_unused]] auto bit_depth_chroma_minus8 = ExpGolombDecoder::Decode(r);
-			CHECK(r); [[maybe_unused]] auto qpprime_y_zero_transform_bypass_flag = r.Get(1);
-			CHECK(r); [[maybe_unused]] auto seq_scaling_matrix_present_flag = r.Get(1);
-			if( seq_scaling_matrix_present_flag )
-			{	
-				for(uint32_t i = 0; i < (( chroma_format_idc != 3 ) ? 8 : 12 ); i++ )
+				auto chroma_format_idc = r.GetExpGolomb();
+
+				if( chroma_format_idc == 3 )
 				{
-					CHECK(r); auto seq_scaling_list_present_flag = r.Get(1);
-					if( seq_scaling_list_present_flag)
+					separate_colour_plane_flag = r.Get(1);
+				}
+
+				[[maybe_unused]] auto bit_depth_luma_minus8			= r.GetExpGolomb();
+				[[maybe_unused]] auto bit_depth_chroma_minus8			= r.GetExpGolomb();
+				[[maybe_unused]] auto qpprime_y_zero_transform_bypass_flag	= r.Get(1);
+				[[maybe_unused]] auto seq_scaling_matrix_present_flag		= r.Get(1);
+
+				if( seq_scaling_matrix_present_flag )
+				{	
+					for(uint32_t i = 0; i < (( chroma_format_idc != 3 ) ? 8 : 12 ); i++ )
 					{
-						//Not supported
-						return false;
-//						if( i < 6 )
-//							scaling_list( ScalingList4x4[ i ], 16, UseDefaultScalingMatrix4x4Flag[ i ] )
-//						else
-//							scaling_list( ScalingList8x8[ i − 6 ], 64, UseDefaultScalingMatrix8x8Flag[ i − 6 ] )
+						auto seq_scaling_list_present_flag = r.Get(1);
+						if( seq_scaling_list_present_flag)
+						{
+							//Not supported
+							return false;
+	//						if( i < 6 )
+	//							scaling_list( ScalingList4x4[ i ], 16, UseDefaultScalingMatrix4x4Flag[ i ] )
+	//						else
+	//							scaling_list( ScalingList8x8[ i − 6 ], 64, UseDefaultScalingMatrix8x8Flag[ i − 6 ] )
+						}
 					}
 				}
 			}
-		}
-		CHECK(r); log2_max_frame_num_minus4 = ExpGolombDecoder::Decode(r);
-		pic_order_cnt_type = ExpGolombDecoder::Decode(r);
-		if( pic_order_cnt_type == 0 )
-		{
-			CHECK(r); log2_max_pic_order_cnt_lsb_minus4 = ExpGolombDecoder::Decode(r);
-		} else if( pic_order_cnt_type == 1 ) {
-			CHECK(r); delta_pic_order_always_zero_flag = r.Get(1);
-			CHECK(r); offset_for_non_ref_pic = ExpGolombDecoder::Decode(r); 
-			CHECK(r); offset_for_top_to_bottom_field = ExpGolombDecoder::Decode(r); 
-			CHECK(r); num_ref_frames_in_pic_order_cnt_cycle = ExpGolombDecoder::Decode(r);
-			for( DWORD i = 0; i < num_ref_frames_in_pic_order_cnt_cycle; i++ )
+
+			log2_max_frame_num_minus4	= r.GetExpGolomb();
+			pic_order_cnt_type		= r.GetExpGolomb();
+
+			if( pic_order_cnt_type == 0 )
 			{
-				CHECK(r); offset_for_ref_frame.assign(i,ExpGolombDecoder::Decode(r));
+				log2_max_pic_order_cnt_lsb_minus4 = r.GetExpGolomb();
+			} else if( pic_order_cnt_type == 1 ) {
+				delta_pic_order_always_zero_flag	= r.Get(1);
+				offset_for_non_ref_pic			= r.GetExpGolomb(); 
+				offset_for_top_to_bottom_field		= r.GetExpGolomb(); 
+				num_ref_frames_in_pic_order_cnt_cycle	= r.GetExpGolomb();
+
+				for( DWORD i = 0; i < num_ref_frames_in_pic_order_cnt_cycle; i++ )
+				{
+					offset_for_ref_frame.assign(i,r.GetExpGolomb());
+				}
 			}
+
+			num_ref_frames				= r.GetExpGolomb();
+			gaps_in_frame_num_value_allowed_flag	= r.Get(1);
+			pic_width_in_mbs_minus1			= r.GetExpGolomb();
+			pic_height_in_map_units_minus1		= r.GetExpGolomb();
+			frame_mbs_only_flag			= r.Get(1);
+
+			if (!frame_mbs_only_flag)
+			{
+				mb_adaptive_frame_field_flag	= r.Get(1);
+			}
+
+			direct_8x8_inference_flag		= r.Get(1);
+			frame_cropping_flag	= r.Get(1);
+			
+			if (frame_cropping_flag)
+			{
+				frame_crop_left_offset		= r.GetExpGolomb();
+				frame_crop_right_offset		= r.GetExpGolomb();
+				frame_crop_top_offset		= r.GetExpGolomb();
+				frame_crop_bottom_offset	= r.GetExpGolomb();
+			}
+
+			[[maybe_unused]] auto vui_parameters_present_flag = r.Get(1);
+			
+			//TODO: parse vui
 		}
-		CHECK(r); num_ref_frames = ExpGolombDecoder::Decode(r);
-		CHECK(r); gaps_in_frame_num_value_allowed_flag = r.Get(1);
-		CHECK(r); pic_width_in_mbs_minus1 = ExpGolombDecoder::Decode(r);
-		CHECK(r); pic_height_in_map_units_minus1 = ExpGolombDecoder::Decode(r);
-		CHECK(r); frame_mbs_only_flag = r.Get(1);
-		if (!frame_mbs_only_flag)
+		catch (std::exception &e) 
 		{
-			CHECK(r); mb_adaptive_frame_field_flag = r.Get(1);
+			//Error
+			return false;
 		}
-		CHECK(r); direct_8x8_inference_flag = r.Get(1);
-		CHECK(r); frame_cropping_flag = r.Get(1);
-		if (frame_cropping_flag)
-		{
-			CHECK(r); frame_crop_left_offset = ExpGolombDecoder::Decode(r);
-			CHECK(r); frame_crop_right_offset = ExpGolombDecoder::Decode(r);
-			CHECK(r); frame_crop_top_offset = ExpGolombDecoder::Decode(r);
-			CHECK(r); frame_crop_bottom_offset = ExpGolombDecoder::Decode(r);
-		}
-		//CHECK(r); vui_parameters_present_flag = r.Get(1);
-		//Free memory
-		free(aux);
 		//OK
-		return !r.Error();
+		return true;
 	}
 public:
 	DWORD GetWidth()	{ return ((pic_width_in_mbs_minus1 +1)*16) - frame_crop_right_offset *2 - frame_crop_left_offset *2; }
@@ -182,56 +190,69 @@ public:
 	bool Decode(const BYTE* buffer,DWORD bufferSize)
 	{
 		//SHould be done otherway, like modifying the BitReader to escape the input NAL, but anyway.. duplicate memory
-		BYTE *aux = (BYTE*)malloc(bufferSize);
-		//Escape
-		DWORD len = NalUnescapeRbsp(aux,buffer,bufferSize);
+		Buffer escaped = NalUnescapeRbsp(buffer, bufferSize);
 		//Create bit reader
-		BitReader r(aux,len);
-		//Read SQS
-		CHECK(r); pic_parameter_set_id = ExpGolombDecoder::Decode(r);
-		CHECK(r); seq_parameter_set_id = ExpGolombDecoder::Decode(r);
-		CHECK(r); entropy_coding_mode_flag = r.Get(1);
-		CHECK(r); pic_order_present_flag = r.Get(1);
-		CHECK(r); num_slice_groups_minus1 = ExpGolombDecoder::Decode(r);
-		if( num_slice_groups_minus1 > 0 )
+		BitReader r(escaped);
+
+		try
 		{
-			CHECK(r); slice_group_map_type = ExpGolombDecoder::Decode(r);
-			if( slice_group_map_type == 0 )
-				for( int iGroup = 0; iGroup <= num_slice_groups_minus1; iGroup++ )
-				{
-					CHECK(r); run_length_minus1.assign(iGroup,ExpGolombDecoder::Decode(r));
-				}
-			else if( slice_group_map_type == 2 )
-				for( int iGroup = 0; iGroup < num_slice_groups_minus1; iGroup++ )
-				{
-					CHECK(r); top_left.assign(iGroup,ExpGolombDecoder::Decode(r));
-					CHECK(r); bottom_right.assign(iGroup,ExpGolombDecoder::Decode(r));
-				}
-			else if( slice_group_map_type == 3 || slice_group_map_type ==  4 || slice_group_map_type == 5 )
+			//Read SQS
+			pic_parameter_set_id	 = r.GetExpGolomb();
+			seq_parameter_set_id	 = r.GetExpGolomb();
+			entropy_coding_mode_flag = r.Get(1);
+			pic_order_present_flag	 = r.Get(1);
+			num_slice_groups_minus1	 = r.GetExpGolomb();
+
+			if( num_slice_groups_minus1 > 0 )
 			{
-				CHECK(r); slice_group_change_direction_flag = r.Get(1);
-				CHECK(r); slice_group_change_rate_minus1 = ExpGolombDecoder::Decode(r);
-			} else if( slice_group_map_type == 6 ) {
-				CHECK(r); pic_size_in_map_units_minus1 = ExpGolombDecoder::Decode(r);
-				for( int i = 0; i <= pic_size_in_map_units_minus1; i++ )
+				slice_group_map_type = r.GetExpGolomb();
+
+				if( slice_group_map_type == 0 )
 				{
-					CHECK(r); slice_group_id.assign(i,r.Get(ceil(log2(num_slice_groups_minus1+1))));
+					for( int iGroup = 0; iGroup <= num_slice_groups_minus1; iGroup++ )
+					{
+						run_length_minus1.assign(iGroup,r.GetExpGolomb());
+					}
+				}
+				else if( slice_group_map_type == 2 ) 
+				{
+					for( int iGroup = 0; iGroup < num_slice_groups_minus1; iGroup++ )
+					{
+						top_left.assign(iGroup,r.GetExpGolomb());
+						bottom_right.assign(iGroup,r.GetExpGolomb());
+					}
+				}
+				else if( slice_group_map_type == 3 || slice_group_map_type ==  4 || slice_group_map_type == 5 )
+				{
+					slice_group_change_direction_flag = r.Get(1);
+					slice_group_change_rate_minus1 = r.GetExpGolomb();
+				}
+				else if( slice_group_map_type == 6 ) 
+				{
+					pic_size_in_map_units_minus1 = r.GetExpGolomb();
+					for( int i = 0; i <= pic_size_in_map_units_minus1; i++ )
+					{
+						slice_group_id.assign(i,r.Get(ceil(log2(num_slice_groups_minus1+1))));
+					}
 				}
 			}
-		}
-		CHECK(r); num_ref_idx_l0_active_minus1 = ExpGolombDecoder::Decode(r);
-		CHECK(r); num_ref_idx_l1_active_minus1 = ExpGolombDecoder::Decode(r);
-		CHECK(r); weighted_pred_flag = r.Get(1);
-		CHECK(r); weighted_bipred_idc = r.Get(2);
-		CHECK(r); pic_init_qp_minus26 = ExpGolombDecoder::DecodeSE(r); //Signed
-		CHECK(r); pic_init_qs_minus26 = ExpGolombDecoder::DecodeSE(r); //Signed
-		CHECK(r); chroma_qp_index_offset = ExpGolombDecoder::DecodeSE(r); //Signed
-		CHECK(r); deblocking_filter_control_present_flag = r.Get(1);
-		CHECK(r); constrained_intra_pred_flag = r.Get(1);
-		CHECK(r); redundant_pic_cnt_present_flag = r.Get(1);
 
-		//Free memory
-		free(aux);
+			num_ref_idx_l0_active_minus1		= r.GetExpGolomb();
+			num_ref_idx_l1_active_minus1		= r.GetExpGolomb();
+			weighted_pred_flag			= r.Get(1);
+			weighted_bipred_idc			= r.Get(2);
+			pic_init_qp_minus26			= r.GetExpGolombSigned(); //Signed
+			pic_init_qs_minus26			= r.GetExpGolombSigned(); //Signed
+			chroma_qp_index_offset			= r.GetExpGolombSigned(); //Signed
+			deblocking_filter_control_present_flag	= r.Get(1);
+			constrained_intra_pred_flag		= r.Get(1);
+			redundant_pic_cnt_present_flag		= r.Get(1);
+		}
+		catch (std::exception& e)
+		{
+			//Error
+			return false;
+		}
 		//OK
 		return true;
 	}
@@ -294,26 +315,34 @@ public:
 	{	
 		BitReader r(buffer, bufferSize);
 		
-		first_mb_in_slice = ExpGolombDecoder::Decode(r); CHECK(r);
-		slice_type = ExpGolombDecoder::Decode(r); CHECK(r);
-		pic_parameter_set_id = ExpGolombDecoder::Decode(r); CHECK(r);
-		
-		if (sps.GetSeparateColourPlaneFlag())
+		try
 		{
-			colour_plane_id = r.Get(2); CHECK(r);
-		}
+			first_mb_in_slice	= r.GetExpGolomb();
+			slice_type		= r.GetExpGolomb();
+			pic_parameter_set_id	= r.GetExpGolomb();
 		
-		frame_num = r.Get(sps.GetLog2MaxFrameNumMinus4() + 4); CHECK(r);
-		
-		if (!sps.GetFrameMbsOnlyFlag())
-		{
-			field_pic_flag = r.Get(1); CHECK(r);
-			if (field_pic_flag)
+			if (sps.GetSeparateColourPlaneFlag())
 			{
-				bottom_field_flag = r.Get(1); CHECK(r);
+				colour_plane_id = r.Get(2);
+			}
+		
+			frame_num = r.Get(sps.GetLog2MaxFrameNumMinus4() + 4);
+		
+			if (!sps.GetFrameMbsOnlyFlag())
+			{
+				field_pic_flag = r.Get(1);
+				if (field_pic_flag)
+				{
+					bottom_field_flag = r.Get(1);
+				}
 			}
 		}
-		
+		catch (std::exception& e)
+		{
+			//Error
+			return false;
+		}
+		//OK
 		return true;
 	}
 	

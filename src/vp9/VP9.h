@@ -2,7 +2,7 @@
 #define VP9_H
 #include "config.h"
 #include "log.h"
-#include "bitstream.h"
+#include "bitstream/BitReader.h"
 
 #include <optional>
 
@@ -74,36 +74,45 @@ public:
 	bool Parse(const uint8_t *data, uint8_t size)
 	{
 		BitReader reader(data, size);
-		
-		auto frame_marker = reader.Get(2);
-		if (frame_marker != 2) return false;
-		
-		auto profile_low_bit = reader.Get(1);
-		auto profile_high_bit = reader.Get(1);
-		
-		profile = profile_low_bit + (profile_high_bit << 1);
-		if (profile == 3) reader.Get(1);
-		
-		show_existing_frame = reader.Get(1);
-		if (show_existing_frame)
+
+		try
 		{
-			frame_to_show_map_idx = reader.Get(3);
-		}
-		else
-		{
-			frame_type = FrameType(reader.Get(1));
-			show_frame = reader.Get(1);
-			error_resilient_mode = reader.Get(1);
-			
-			if (frame_type == FrameType::KEY_FRAME)
+		
+			auto frame_marker	= reader.Get(2);
+			if (frame_marker != 2) return false;
+		
+			auto profile_low_bit	= reader.Get(1);
+			auto profile_high_bit	= reader.Get(1);
+		
+			profile = profile_low_bit + (profile_high_bit << 1);
+			if (profile == 3) reader.Get(1);
+		
+			show_existing_frame	= reader.Get(1);
+
+			if (show_existing_frame)
 			{
-				ParseFrameSyncCode(reader);
-				ParseColorConfig(reader);
-				ParseFrameSize(reader);
+				frame_to_show_map_idx = reader.Get(3);
 			}
+			else
+			{
+				frame_type		= FrameType(reader.Get(1));
+				show_frame		= reader.Get(1);
+				error_resilient_mode	= reader.Get(1);
+			
+				if (frame_type == FrameType::KEY_FRAME)
+				{
+					ParseFrameSyncCode(reader);
+					ParseColorConfig(reader);
+					ParseFrameSize(reader);
+				}
+			}
+		} 
+		catch (std::exception& e)
+		{
+			return false;
 		}
 		
-		return !reader.Error();
+		return true;
 	}
 	
 	inline const std::optional<FrameType>& GetFrameType() const
@@ -124,9 +133,9 @@ public:
 private:
 	void ParseFrameSyncCode(BitReader& reader)
 	{
-		reader.Get(8);
-		reader.Get(8);
-		reader.Get(8);
+		reader.Skip(8);
+		reader.Skip(8);
+		reader.Skip(8);
 	}
 	
 	void ParseColorConfig(BitReader& reader)
@@ -143,7 +152,7 @@ private:
 			{
 				subsampling_x = reader.Get(1);
 				subsampling_y = reader.Get(1);
-				reader.Get(1); // reserved_zero
+				reader.Skip(1); // reserved_zero
 			}
 			else
 			{
@@ -165,11 +174,12 @@ private:
 	
 	void ParseFrameSize(BitReader& reader)
 	{
-		frame_width_minus_1 = reader.Get(16);
-		frame_height_minus_1 = reader.Get(16);
+		frame_width_minus_1	= reader.Get(16);
+		frame_height_minus_1	= reader.Get(16);
 	}
 
 	uint8_t show_existing_frame = 0;
+
 	std::optional<uint8_t> frame_to_show_map_idx;
 	std::optional<FrameType> frame_type;
 	std::optional<uint8_t> show_frame;
