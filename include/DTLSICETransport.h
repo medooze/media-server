@@ -70,7 +70,7 @@ public:
 public:
 	DTLSICETransport(Sender *sender,TimeService& timeService, ObjectPool<Packet>& packetPool, const std::string& logId="");
 	virtual ~DTLSICETransport();
-	
+
 	void Start();
 	void Stop();
 	
@@ -160,7 +160,8 @@ private:
 	};
 	
 private:
-	const std::string logId;
+	std::string logId;
+	std::string logPrefix;
 	Sender*		sender = nullptr;
 	TimeService&	timeService;
 	ObjectPool<Packet>& packetPool;

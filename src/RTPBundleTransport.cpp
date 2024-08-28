@@ -115,12 +115,11 @@ RTPBundleTransport::~RTPBundleTransport()
 	End();
 }
 
-RTPBundleTransport::Connection::shared RTPBundleTransport::AddICETransport(const std::string &username,const Properties& properties)
+RTPBundleTransport::Connection::shared RTPBundleTransport::AddICETransport(const std::string &username,const Properties& properties,const std::string& logId)
 {
 	TRACE_EVENT("transport", "RTPBundleTransport::AddICETransport", "username", username);
 
 	// Ensure logs can map username and logId, as username is used elsewhere dealing with the transport in here
-	std::string logId = properties.GetProperty("logId", "");
 	Log("-RTPBundleTransport::AddICETransport() | [username:%s,logId:%s]\n", username.c_str(), logId.c_str());
 	
 	Properties ice;
