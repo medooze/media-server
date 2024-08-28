@@ -351,7 +351,7 @@ private:
 
 	inline DWORD GetCached(DWORD n)
 	{
-		assert(n>cached);
+		assert(n <= cached);
 
 		//Check length
 		if (!n) return 0;
