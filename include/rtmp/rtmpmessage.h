@@ -192,17 +192,24 @@ public:
 	enum FrameType  {INTRA=1,INTER=2,DISPOSABLE_INTER=3,GENERATED_KEY_FRAME=4,VIDEO_INFO=5};
 	enum AVCType	{AVCHEADER = 0, AVCNALU = 1, AVCEND = 2 };
 	enum PacketType {
-		SequenceStart = 0,
-		CodedFrames = 1,
-		SequenceEnd = 2,
-		CodedFramesX = 3,
-		Metadata = 4,
-		MPEG2TSSequenceStart = 5
+		SequenceStart		= 0,
+		CodedFrames		= 1,
+		SequenceEnd		= 2,
+		CodedFramesX		= 3,
+		Metadata		= 4,
+		MPEG2TSSequenceStart	= 5,
+		MultiTrack		= 6
+	};
+	enum MultTrackType {
+		OneTrack		= 0x00,
+		ManyTracks		= 0x10,
+		ManyTracksManyCodecs	= 0x20,
 	};
 	enum VideoCodecEx {
-		AV1 = FourCcToUint32("av01"),
-		VP9 = FourCcToUint32("vp09"),
-		HEVC = FourCcToUint32("hvc1")
+		H264	= FourCcToUint32("avc1"),
+		AV1	= FourCcToUint32("av01"),
+		VP9	= FourCcToUint32("vp09"),
+		HEVC	= FourCcToUint32("hvc1"),
 	};
 public:
 	RTMPVideoFrame(QWORD timestamp, DWORD size);
@@ -263,17 +270,22 @@ private:
 		VideoTagBody,
 		VideoTagHevcCompositionTime,
 		VideoTagData,
+		VideoTagHeaderMultiTrack,
+		VideoTagHeaderTrackId,
 	};
 
 	bool		isExtended = false;
+	bool		isMultiTrack = false;
+	
 	VideoCodec	codec = VideoCodec::AVC;
 	VideoCodecEx	codecEx = VideoCodecEx::HEVC;
 	
 	FrameType	frameType = FrameType::INTER;
 	PacketType	packetType = PacketType::SequenceStart;
 	
-	BYTE		extraData[4];
-	BYTE		fourCc[4];
+	BYTE		extraData[4] = {};
+	BYTE		fourCc[4] = {};
+	BYTE		trackId	= 0;
 
 	ParsingState parsingState = ParsingState::VideoTagHeader;
 	

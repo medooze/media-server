@@ -20,17 +20,20 @@ VideoCodec::Type GetRtmpFrameVideoCodec(const RTMPVideoFrame& videoFrame)
 	
 	switch (videoFrame.GetVideoCodecEx())
 	{
-	case RTMPVideoFrame::HEVC: 
-		return VideoCodec::H265;
+		case RTMPVideoFrame::H264:
+			return VideoCodec::H264;
+
+		case RTMPVideoFrame::HEVC: 
+			return VideoCodec::H265;
 	
-	case RTMPVideoFrame::AV1: 
-		return VideoCodec::AV1;
+		case RTMPVideoFrame::AV1: 
+			return VideoCodec::AV1;
 	
-	case RTMPVideoFrame::VP9: 
-		return VideoCodec::VP9;
+		case RTMPVideoFrame::VP9: 
+			return VideoCodec::VP9;
 		
-	default:
-		return VideoCodec::UNKNOWN;
+		default:
+			return VideoCodec::UNKNOWN;
 	}
 }
 
