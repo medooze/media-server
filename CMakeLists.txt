@@ -188,6 +188,7 @@ add_executable(MediaServerUnitTest
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestVideoPipe.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestBFrame.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAV1.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAV1Bitstream.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAAC.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestAMFNumber.cpp
     ${CMAKE_CURRENT_LIST_DIR}/test/unit/TestVideoLayersAllocation.cpp

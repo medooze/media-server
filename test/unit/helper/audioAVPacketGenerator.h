@@ -149,7 +149,7 @@ private:
     // srcData stores generated sine tone in flt format
     uint8_t** srcData;
 
-    AVCodec *codec = nullptr;
+    const AVCodec *codec = nullptr;
     AVCodecContext *codecCtx = nullptr;
     AVFrame *frame = nullptr;
     AVPacket *pkt = nullptr;
