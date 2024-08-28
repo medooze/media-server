@@ -6,6 +6,7 @@
 #include <vector>
 #include "BufferReader.h"
 #include "BufferWritter.h"
+#include "mpegts.h"
 
 namespace mpegts
 {
@@ -14,8 +15,15 @@ namespace mpegts
 namespace psi
 {
 
+class Encodable
+{
+public:
+	virtual ~Encodable() = default;
+	virtual void Encode(BufferWritter& writer) = 0;	
+};
+
 /** PSI syntax section, optionally surrounding table data */
-struct SyntaxData
+struct SyntaxData : public Encodable
 {
 	// fields preceding table data
 	uint16_t tableIdExtension;
@@ -25,31 +33,30 @@ struct SyntaxData
 	uint8_t sectionNumber;
 	uint8_t lastSectionNumber;
 
-	BufferReader data;
+	std::variant<BufferReader, std::unique_ptr<Encodable>> data;
 
 	// fields following table data
 	uint32_t crc32;
 
-	void Encode(BufferWritter& writer);
-	static SyntaxData Parse(BufferReader& reader);
+	void Encode(BufferWritter& writer) override;
+	
+	static std::unique_ptr<SyntaxData> Parse(BufferReader& reader);
 };
 
 /** PSI table section (checksum not verified if present) */
-struct Table
+struct Table : public Encodable
 {
 	uint8_t tableId;
 	bool sectionSyntaxIndicator;
 	bool privateBit;
 	uint8_t _reserved1;
 	uint16_t sectionLength;
-	std::variant<BufferReader, SyntaxData> data;
-
+	
+	std::variant<BufferReader, std::unique_ptr<Encodable>> data;
+	
 	void Encode(BufferWritter& writer);
-	static Table Parse(BufferReader& reader);
+	static std::unique_ptr<Table> Parse(BufferReader& reader);
 };
-
-/** parse a full PSI payload unit */
-std::vector<Table> ParsePayloadUnit(BufferReader& reader);
 
 /** PSI table data for a Program Association Table */
 struct ProgramAssociation
@@ -64,9 +71,6 @@ struct ProgramAssociation
 	
 	/** parse a single PAT entry */
 	static ProgramAssociation Parse(BufferReader& reader);
-
-	/** convenience method: parse a full PSI payload unit containing a PAT (PID = 0) */
-	static std::vector<ProgramAssociation> ParsePayloadUnit(BufferReader& reader);
 };
 
 /** PSI table data for a Program Map Table */
@@ -92,6 +96,17 @@ struct ProgramMap
 	void Encode(BufferWritter& writer);
 	static ProgramMap Parse(BufferReader& reader);
 };
+
+template <typename T>
+T DowncastEncodable(const std::variant<BufferReader, std::unique_ptr<Encodable>>& data)
+{
+	auto encodable = std::get_if<std::unique_ptr<Encodable>>(&data);
+	
+	if (!encodable)
+		throw std::runtime_error("failed to downcast Encodable object");
+
+	return static_cast<T>(encodable->get());
+}
 
 }; //namespace mpegts::psi
 }; //namespace mpegts

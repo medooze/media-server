@@ -12,9 +12,10 @@ void SyntaxData::Encode(BufferWritter& writer)
 }
 
 
-SyntaxData SyntaxData::Parse(BufferReader& reader)
+std::unique_ptr<SyntaxData> SyntaxData::Parse(BufferReader& reader)
 {
-	SyntaxData syntaxData = {};
+	std::unique_ptr<SyntaxData> syntaxDataPtr = std::make_unique<SyntaxData>();
+	SyntaxData& syntaxData = *syntaxDataPtr;
 
 	/*
 	 * Table ID extension		16	Informational only identifier. The PAT uses this for the transport stream identifier and the PMT uses this for the Program num
@@ -46,7 +47,7 @@ SyntaxData SyntaxData::Parse(BufferReader& reader)
 
 	//TODO: check crc?
 	
-	return syntaxData;
+	return syntaxDataPtr;
 }
 
 void Table::Encode(BufferWritter& writer)
@@ -54,9 +55,10 @@ void Table::Encode(BufferWritter& writer)
 	
 }
 
-Table Table::Parse(BufferReader& reader)
+std::unique_ptr<Table> Table::Parse(BufferReader& reader)
 {
-	Table table;
+	std::unique_ptr<Table> tablePtr = std::make_unique<Table>();
+	Table& table = *tablePtr;
 
 	/*
 	 * Table ID			8	Table Identifier, that defines the structure of the syntax section and other contained data.
@@ -99,26 +101,7 @@ Table Table::Parse(BufferReader& reader)
 	}
 
 	// return parsed table
-	return table;
-}
-
-std::vector<Table> ParsePayloadUnit(BufferReader& reader)
-{
-	// read pointer
-	if (reader.GetLeft()<1)
-		throw std::runtime_error("Not enough data to read mpegts psi pointer");
-	uint8_t pointerField = reader.Get1();
-	if (reader.GetLeft()<pointerField)
-		throw std::runtime_error("Not enough data to read mpegts psi pointer filler bytes");
-	reader.GetData(pointerField);
-
-	// read tables until EOF or 0xFF byte (which is followed by stuffing)
-	std::vector<Table> tables;
-	while (reader.GetLeft() > 0 && reader.Peek1() != 0xFF)
-		// FIXME: it would probably be nice to catch parsing errors and return partial result
-		tables.push_back(Table::Parse(reader));
-
-	return tables;
+	return tablePtr;
 }
 
 // PAT
@@ -148,32 +131,6 @@ ProgramAssociation ProgramAssociation::Parse(BufferReader& reader)
 	programAssociation.pmtPid	= bitreader.Get(13);
 
 	return programAssociation;
-}
-
-std::vector<ProgramAssociation> ProgramAssociation::ParsePayloadUnit(BufferReader& reader)
-{
-	auto tables = mpegts::psi::ParsePayloadUnit(reader);
-
-	// FIXME: this is probably too strict
-	// FIXME: maybe check CRCs
-
-	if (tables.size() != 1)
-		throw std::runtime_error("PAT did not contain exactly one table");
-	auto syntax = std::get_if<SyntaxData>(&tables[0].data);
-	if (!(
-		tables[0].tableId == ProgramAssociation::TABLE_ID &&
-		tables[0].privateBit == false &&
-		syntax &&
-		syntax->isCurrent
-	))
-		throw std::runtime_error("malformed PAT table section");
-
-	BufferReader dataReader = syntax->data;
-	std::vector<ProgramAssociation> entries;
-	while (dataReader.GetLeft() > 0)
-		entries.push_back(ProgramAssociation::Parse(dataReader));
-
-	return entries;
 }
 
 ProgramMap::ElementaryStream ProgramMap::ElementaryStream::Parse(BufferReader& reader)
