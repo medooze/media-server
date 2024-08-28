@@ -146,7 +146,6 @@ RTPBundleTransport::Connection::shared RTPBundleTransport::AddICETransport(const
 		//Error
 		return NULL;
 	}
-
 	
 	//Create new ICE transport
 	auto transport = std::make_shared<DTLSICETransport>(this,loop,loop.GetPacketPool(),logId);
