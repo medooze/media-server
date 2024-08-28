@@ -1,6 +1,7 @@
 #include "test.h"
 #include "rtp.h"
-#include "bitstream.h"
+#include "bitstream/BitReader.h"
+#include "bitstream/BitWritter.h"
 
 class DependencyDescriptorTestPlan: public TestPlan
 {

@@ -1,8 +1,6 @@
 #ifndef OBU_H
 #define OBU_H
 
-#include "log.h"
-#include "bitstream.h"
 #include "BufferReader.h"
 #include "BufferWritter.h"
 #include "rtp/LayerInfo.h"

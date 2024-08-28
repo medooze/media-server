@@ -1,9 +1,13 @@
 #ifndef BITREADER_H_
 #define	BITREADER_H_
+
+#include <stdexcept>
+#include <cassert>
+
 #include "config.h"
 #include "tools.h"
-#include <stdexcept>
 #include "BufferReader.h"
+
 
 class BitReader
 {
@@ -17,9 +21,8 @@ public:
 		cached = 0;
 		cache = 0;
 		bufferPos = 0;
-		//No error
-		error = false;
 	}
+
 	BitReader(const BYTE *data,const DWORD size)
 	{
 		//Store
@@ -29,12 +32,15 @@ public:
 		cached = 0;
 		cache = 0;
 		bufferPos = 0;
-		//No error
-		error = false;
 	}
 
 	BitReader(BufferReader& reader, const DWORD size) :
 		BitReader(reader.GetData(size), size)
+	{
+	}
+
+	BitReader(const Buffer& reader) :
+		BitReader(reader.GetData(), reader.GetSize())
 	{
 	}
 
@@ -47,8 +53,6 @@ public:
 		cached = 0;
 		cache = 0;
 		bufferPos = 0;
-		//No error
-		error = false;
 	}
 	
 	inline void Release()
@@ -60,8 +64,6 @@ public:
 		cached = 0;
 		cache = 0;
 		bufferPos = 0;
-		//No error
-		error = false;
 	}
 	
 	inline void Reset()
@@ -70,16 +72,16 @@ public:
 		cached = 0;
 		cache = 0;
 		bufferPos = 0;
-		//No error
-		error = false;
 	}
+
 	inline DWORD Get(DWORD n)
 	{
+		assert(n <= 32);
+
 		DWORD ret = 0;
-		if (n>32) {
-			//We can't use exceptions so set error flag
-			error = true;
-		} else if (n>cached){
+			
+		if (n>cached)
+		{
 			//What we have to read next
 			BYTE a = n-cached;
 			//Get remaining in the cache
@@ -97,17 +99,17 @@ public:
 		return ret;
 	}
 
-	inline bool Check(int n,DWORD val)
+	inline bool Check(int n, DWORD val)
 	{
 		return Get(n)==val;
 	}
 
 	inline void Skip(DWORD n)
 	{
-		if (n>32) {
-			//We can't use exceptions so set error flag
-			error = true;
-		} else if (n>cached) {
+		assert(n <= 32);
+
+		if (n>cached) 
+		{
 			//Get what is left to skip
 			BYTE a = n-cached;
 			//Cache next
@@ -128,11 +130,12 @@ public:
 
 	inline DWORD Peek(DWORD n)
 	{
+		assert(n <= 32);
+
 		DWORD ret = 0;
-		if (n>32) {
-			//We can't use exceptions so set error flag
-			error = true;
-		} else if (n>cached) {
+
+		if (n>cached) 
+		{
 			//What we have to read next
 			BYTE a = n-cached;
 			//Get remaining in the cache
@@ -176,8 +179,6 @@ public:
 		while (1)
 		{
 			bool done = Get(1);
-			if (error)
-				return UINT32_MAX;
 			if (done)
 				break;
 			leadingZeros++;
@@ -186,6 +187,31 @@ public:
 			return UINT32_MAX;
 		uint32_t value = Get(leadingZeros);
 		return value + (1lu << leadingZeros) - 1;
+	}
+
+	inline DWORD GetExpGolomb()
+	{
+		//No len yet
+		DWORD len = 0;
+		//Count zeros
+		while (!Get(1))
+			//Increase len
+			++len;
+		//Check 0
+		if (!len) return 0;
+		//Get the exp
+		DWORD value = Get(len);
+
+		//Calc value
+		return (1 << len) - 1 + value;
+	}
+
+	inline int GetExpGolombSigned()
+	{
+		//Get code num
+		DWORD codeNum = GetExpGolomb();
+		//Conver to signed
+		return codeNum & 0x01 ? codeNum >> 1 : -(codeNum >> 1);
 	}
 
 	inline DWORD Flush()
@@ -197,18 +223,13 @@ public:
 
 	inline void FlushCache()
 	{
+		assert (cached <= bufferPos * 8);
+
 		//Check if we have already finished
 		if (!cached)
 			//exit
 			return;
-		//Check size
-		if (cached > bufferPos * 8)
-		{
-			//We can't use exceptions so set error flag
-			error = true;
-			//Exit
-			return;
-		}
+
 		//BitDump(cache,cached);
 		// We need to return the cached bits to the buffer
 		auto bytes = cached / 8;
@@ -223,7 +244,6 @@ public:
 		cached = 0;
 		cache = 0;
 		//Debug("Flushed cache len:%u pos:%u\n", bufferLen, bufferPos);
-
 	}
 
 	inline void Align()
@@ -239,12 +259,6 @@ public:
 			Skip(16 - cached);
 		else
 			Skip(8 - cached);
-	}
-
-	inline bool Error()
-	{
-		//We won't use exceptions, so we need to signal errors somehow
-		return error;
 	}
 
 private:
@@ -282,10 +296,7 @@ private:
 			//Increase pointer
 			bufferPos++;
 		} else {
-			//We can't use exceptions so set error flag
-			error = true;
-			//Exit
-			return 0;
+			throw std::out_of_range("no more bytes to read from");
 		}
 			
 
@@ -313,21 +324,19 @@ private:
 			//return  cached
 			return get1(buffer+bufferPos,0)<<24;
 		} else {
-			//We can't use exceptions so set error flag
-			error = true;
-			//Exit
-			return 0;
+			throw std::out_of_range("no more bytes to read from");
 		}
 	}
 
 	inline void SkipCached(DWORD n)
 	{
+		assert(n <= cached);
+
 		//Check length
 		if (!n) return;
-		if (n > cached)
+
+		if (n < 32)
 		{
-			error = true;
-		} else if (n < 32) {
 			//Move
 			cache = cache << n;
 			//Update cached bytes
@@ -339,16 +348,13 @@ private:
 		}
 			
 	}
+
 	inline DWORD GetCached(DWORD n)
 	{
+		assert(n>cached);
+
 		//Check length
 		if (!n) return 0;
-		//Check available
-		if (cached<n)
-		{
-			error = true;
-			return UINT32_MAX;
-		}
 		//Get bits
 		DWORD ret = cache >> (32-n);
 		//Skip those bits
@@ -363,7 +369,6 @@ private:
 	DWORD bufferPos;
 	DWORD cache;
 	BYTE  cached;
-	bool  error;
 };
 
 

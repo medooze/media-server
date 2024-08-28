@@ -7,8 +7,6 @@
 #include <utility>
 #include <vector>
 
-#include "bitstream.h"
-
 /*
 * https://webrtc.googlesource.com/src/+/refs/heads/main/docs/native-code/rtp-hdrext/video-layers-allocation00
 *

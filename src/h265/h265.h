@@ -1,19 +1,12 @@
-/* 
- * File:   h265.h
- * Author: Zita	Liao
- *
- * Created on 14 June 2023,	10:19
- */
-
 #ifndef	H265_H
 #define	H265_H
-#include "config.h"
-#include "math.h"
-#include "bitstream.h"
-#include "log.h"
+
 #include <array>
 
-#define	CHECK(r) if(r.Error()) return false;
+#include "config.h"
+#include "math.h"
+#include "log.h"
+#include "bitstream/BitReader.h"
 
 /**
  * Table 7-1 – NAL unit	type codes and NAL unit	type classes in	T-REC-H.265-201802
@@ -450,28 +443,35 @@ public:
 	{	
 		BitReader r(buffer, bufferSize);
 		
-		firstSliceSegmentInPicFlag = r.Get(1); CHECK(r);
-		if (nalUnitType >= HEVC_RTP_NALU_Type::BLA_W_LP && nalUnitType <= HEVC_RTP_NALU_Type::RSV_IRAP_VCL23)
+		try
 		{
-			noOutputOfPriorPicsFlag = r.Get(1); CHECK(r);
-		}
-		slicePpsId = ExpGolombDecoder::Decode(r); CHECK(r);
-		
-		if (!firstSliceSegmentInPicFlag)
-		{
-			if (pps.GetDependentSliceSegmentsEnabledFlag())
+			firstSliceSegmentInPicFlag = r.Get(1);
+			if (nalUnitType >= HEVC_RTP_NALU_Type::BLA_W_LP && nalUnitType <= HEVC_RTP_NALU_Type::RSV_IRAP_VCL23)
 			{
-				dependentSliceSegmentFlag = r.Get(1); CHECK(r);
+				noOutputOfPriorPicsFlag = r.Get(1);
 			}
-			
-			sliceSegmentAddress = r.Get(sps.GetLog2PicSizeInCtbsY()); CHECK(r);
-		}
+			slicePpsId = r.GetExpGolomb();
 		
-		if (!dependentSliceSegmentFlag)
-		{
-			r.Get(pps.GetNumExtraSliceHeaderBits()); CHECK(r);
+			if (!firstSliceSegmentInPicFlag)
+			{
+				if (pps.GetDependentSliceSegmentsEnabledFlag())
+				{
+					dependentSliceSegmentFlag = r.Get(1);
+				}
 			
-			sliceType =  ExpGolombDecoder::Decode(r); CHECK(r);
+				sliceSegmentAddress = r.Get(sps.GetLog2PicSizeInCtbsY());
+			}
+		
+			if (!dependentSliceSegmentFlag)
+			{
+				r.Get(pps.GetNumExtraSliceHeaderBits());
+			
+				sliceType =  r.GetExpGolomb();
+			}
+		}
+		catch (std::exception& e) 
+		{
+			return false;
 		}
 		
 		return true;

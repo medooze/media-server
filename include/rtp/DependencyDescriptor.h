@@ -6,9 +6,11 @@
 #include <utility>
 #include <vector>
 
-#include "bitstream.h"
 #include "WrapExtender.h"
+#include "bitstream/BitReader.h"
+#include "bitstream/BitWritter.h"
 #include "rtp/LayerInfo.h"
+
 
 enum DecodeTargetIndication
 {
