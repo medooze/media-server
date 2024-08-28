@@ -11,10 +11,10 @@ VideoCodec::Type GetRtmpFrameVideoCodec(const RTMPVideoFrame& videoFrame)
 	{
 		switch (videoFrame.GetVideoCodec())
 		{
-		case RTMPVideoFrame::AVC:
-			return VideoCodec::H264;
-		default:
-			return VideoCodec::UNKNOWN;
+			case RTMPVideoFrame::AVC:
+				return VideoCodec::H264;
+			default:
+				return VideoCodec::UNKNOWN;
 		}
 	}
 	
@@ -37,8 +37,38 @@ VideoCodec::Type GetRtmpFrameVideoCodec(const RTMPVideoFrame& videoFrame)
 	}
 }
 
+std::unique_ptr<RTMPVideoPacketizer> CreateRTMPVideoPacketizer(VideoCodec::Type type)
+{
+	switch (type)
+	{
+		case VideoCodec::H264:
+			return std::unique_ptr<RTMPVideoPacketizer>(new RTMPAVCPacketizer());
+		case VideoCodec::H265:
+			return std::unique_ptr<RTMPVideoPacketizer>(new RTMPHEVCPacketizer());
+		case VideoCodec::AV1:
+			return std::unique_ptr<RTMPVideoPacketizer>(new RTMPAv1Packetizer());
+		default:
+			return nullptr;
+	}
+}
+
+std::unique_ptr<RTMPAudioPacketizer> CreateRTMPAudioPacketizer(AudioCodec::Type type)
+{
+	switch (type)
+	{
+		case AudioCodec::AAC:
+			return std::unique_ptr<RTMPAudioPacketizer>(new RTMPAACPacketizer());
+		case AudioCodec::PCMA:
+			return std::unique_ptr<RTMPAudioPacketizer>(new RTMPG711APacketizer());
+		case AudioCodec::PCMU:
+			return std::unique_ptr<RTMPAudioPacketizer>(new RTMPG711UPacketizer());
+		default:
+			return nullptr;
+	}
+}
+
 template<typename DescClass, VideoCodec::Type codec>
-std::unique_ptr<VideoFrame> RTMPPacketizer<DescClass, codec>::PrepareFrame(RTMPVideoFrame* videoFrame)
+std::unique_ptr<VideoFrame> RTMPVideoPacketizerImpl<DescClass, codec>::PrepareFrame(RTMPVideoFrame* videoFrame)
 {
 	Debug("-RTMPPacketizer::PrepareFrame() [codec:%d, isConfig:%d, isCodedFrames:%d]\n", GetRtmpFrameVideoCodec(*videoFrame), videoFrame->IsConfig(), videoFrame->IsCodedFrames());
 	
