@@ -197,12 +197,10 @@ ProgramMap ProgramMap::Parse(BufferReader& reader)
 	programMap.pcrPid	= bitreader.Get(13);
 	bitreader.Skip(4);	//Reserved
 	bitreader.Skip(2);	//Unused
-	uint16_t piLength	= bitreader.Get(10);
+	programMap.piLength	= bitreader.Get(10);
 
-	if (reader.GetLeft()<piLength)
+	if (reader.GetLeft()<programMap.piLength)
 		throw std::runtime_error("Not enough data to read mpegts pmt descriptor");
-
-	programMap.programInfo = BufferReader(reader.GetData(piLength), piLength);
 
 	while (reader.GetLeft() > 0)
 		programMap.streams.push_back(ProgramMap::ElementaryStream::Parse(reader));

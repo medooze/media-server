@@ -46,15 +46,15 @@ struct SyntaxData : public Encodable
 /** PSI table section (checksum not verified if present) */
 struct Table : public Encodable
 {
-	uint8_t tableId;
-	bool sectionSyntaxIndicator;
-	bool privateBit;
-	uint8_t _reserved1;
-	uint16_t sectionLength;
+	uint8_t tableId = 0;
+	bool sectionSyntaxIndicator = false;
+	bool privateBit = false;
+	uint8_t _reserved1 = 0x3;
+	uint16_t sectionLength = 0;
 	
 	std::variant<BufferReader, std::unique_ptr<Encodable>> data;
 	
-	void Encode(BufferWritter& writer);
+	void Encode(BufferWritter& writer) override;
 	static std::unique_ptr<Table> Parse(BufferReader& reader);
 };
 
@@ -64,8 +64,8 @@ struct ProgramAssociation
 	static const uint16_t PID = 0x0000;
 	static const uint8_t TABLE_ID = 0x00;
 
-	uint16_t programNum;
-	uint16_t pmtPid;
+	uint16_t programNum = 0;
+	uint16_t pmtPid = 0;
 
 	void Encode(BufferWritter& writer);
 	
@@ -90,7 +90,8 @@ struct ProgramMap
 
 	uint16_t pcrPid = 0;
 	uint8_t _reserved1 = 0;
-	BufferReader programInfo;
+	uint16_t piLength = 0;
+	
 	std::vector<ElementaryStream> streams;
 
 	void Encode(BufferWritter& writer);
