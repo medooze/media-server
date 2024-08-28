@@ -143,7 +143,7 @@ public:
 	virtual DWORD Parse(const BYTE *data,DWORD size) override;
 	virtual bool IsParsed() const override;
 	virtual DWORD GetSize() const override;
-	DWORD virtual Serialize(BYTE* data,DWORD size) const override;
+	virtual DWORD Serialize(BYTE* data,DWORD size) const override;
 	virtual ValueType GetType()  const  override {return Number;};
 	double GetNumber() const;
 	void SetNumber(double value);
@@ -160,7 +160,7 @@ public:
 	AMFBoolean(bool val);
 	virtual DWORD Parse(const BYTE *data,DWORD size) override;
 	virtual bool IsParsed() const override;
-	DWORD virtual Serialize(BYTE* data,DWORD size) const override;
+	virtual DWORD Serialize(BYTE* data,DWORD size) const override;
 	virtual DWORD GetSize() const override;
 	virtual ValueType GetType() const  override {return Boolean;};
 	bool GetBoolean() const;
@@ -180,7 +180,7 @@ public:
 	virtual DWORD Parse(const BYTE *data,DWORD size) override;
 	virtual bool IsParsed() const override;
 	virtual DWORD GetSize() const override;
-	DWORD virtual Serialize(BYTE* data,DWORD size) const override;
+	virtual DWORD Serialize(BYTE* data,DWORD size) const override;
 	virtual ValueType GetType()  const  override {return String;};
 	virtual void Reset() override;
 	std::wstring GetWString() const;
@@ -200,7 +200,8 @@ class AMFLongString : public AMFData
 public:
 	virtual DWORD Parse(const BYTE *data,DWORD size) override;
 	virtual bool IsParsed() const override;
-	//DWORD virtual Serialize(BYTE* data,DWORD size) const;		
+	//TODO: Implement
+	//virtual DWORD Serialize(BYTE* data,DWORD size) const;		
 	virtual ValueType GetType() const  override {return LongString;};
 	virtual void Reset() override;
 	std::wstring GetWString() const;
@@ -258,7 +259,7 @@ public:
 	~AMFEcmaArray();
 	virtual DWORD Parse(const BYTE *data,DWORD size) override;
 	virtual bool IsParsed() const override;
-	DWORD virtual Serialize(BYTE* data,DWORD size) const override;
+	virtual DWORD Serialize(BYTE* data,DWORD size) const override;
 	virtual DWORD GetSize() const override;
 	virtual ValueType GetType()  const  override {return EcmaArray;};
 	virtual void Dump() const override;
@@ -295,7 +296,8 @@ class AMFTypedObject : public AMFObject
 public:
 	virtual DWORD Parse(const BYTE *data,DWORD size) override;
 	virtual bool IsParsed() const override;
-	//DWORD virtual Serialize(BYTE* data,DWORD size) const;		
+	//TODO: Implement
+	//virtual DWORD Serialize(BYTE* data,DWORD size) const;		
 	virtual ValueType GetType()  const  override {return TypedObject;};
 	std::wstring GetClassName() const;
 
@@ -312,7 +314,8 @@ public:
 	virtual ~AMFStrictArray();
 	virtual DWORD Parse(const BYTE *data,DWORD size) override;
 	virtual bool IsParsed() const override;
-	//DWORD virtual Serialize(BYTE* data,DWORD size) const;		
+	//TODO: Implement
+	//virtual DWORD Serialize(BYTE* data,DWORD size) const;		
 	virtual ValueType GetType() const override {return StrictArray;};
 	virtual void Dump() const override;
 	std::vector<AMFData*>& GetElements();
@@ -341,7 +344,8 @@ class AMFDate : public AMFData
 public:
 	virtual DWORD Parse(const BYTE *data,DWORD size) override;
 	virtual bool IsParsed() const override;
-	//DWORD virtual Serialize(BYTE* data,DWORD size) const;		
+	//TODO: Implement
+	//virtual DWORD Serialize(BYTE* data,DWORD size) const;		
 	virtual ValueType GetType() const override {return Date;};
 	time_t GetDate() const;
 private:
@@ -354,7 +358,8 @@ class AMFMovieClip : public AMFData
 public:
 	virtual DWORD Parse(const BYTE *data,DWORD size) override {return 0;};
 	virtual bool IsParsed()  const override {return true;};
-	//DWORD virtual Serialize(BYTE* data,DWORD size) const {return true;};		
+	//TODO: Implement
+	//virtual DWORD Serialize(BYTE* data,DWORD size) const;		
 	virtual ValueType GetType()  const  override {return MovieClip;};
 };
 
@@ -363,7 +368,7 @@ class AMFNull : public AMFData
 public:
 	virtual DWORD Parse(const BYTE *data,DWORD size)  override {return 0;};
 	virtual bool IsParsed()  const  override {return true;};
-	DWORD virtual Serialize(BYTE* data,DWORD size) const override;
+	virtual DWORD Serialize(BYTE* data,DWORD size) const override;
 	virtual ValueType GetType()  const  override {return Null;};
 };
 
@@ -372,7 +377,8 @@ class AMFUndefined : public AMFData
 public:
 	virtual DWORD Parse(const BYTE *data,DWORD size)  override {return 0;};
 	virtual bool IsParsed()  const  override {return true;};
-	//DWORD virtual Serialize(BYTE* data,DWORD size) const {return true;};		
+	//TODO: Implement
+	//virtual DWORD Serialize(BYTE* data,DWORD size) const;		
 	virtual ValueType GetType()  const override {return Undefined;};
 };
 
@@ -381,7 +387,7 @@ class AMFReference : public AMFData
 public:
 	virtual DWORD Parse(const BYTE *data,DWORD size) override;
 	virtual bool IsParsed() const override;
-	//DWORD virtual Serialize(BYTE* data,DWORD size) const {return true;};		
+	//virtual DWORD Serialize(BYTE* data,DWORD size) const;	
 	virtual ValueType GetType() const  override {return Reference;};
 	WORD GetReference() const;
 private:
@@ -394,7 +400,8 @@ class AMFUnsupported : public AMFData
 public:
 	virtual DWORD Parse(const BYTE *data,DWORD size)  override {return 0;};
 	virtual bool IsParsed()  const  override {return true;};
-	//DWORD virtual Serialize(BYTE* data,DWORD size) const {return true;};		
+	//TODO: Implement
+	//virtual DWORD Serialize(BYTE* data,DWORD size) const;	
 	virtual ValueType GetType()  const  override {return Unsupported;};
 };
 
@@ -403,7 +410,8 @@ class AMFRecordSet : public AMFData
 public:
 	virtual DWORD Parse(const BYTE *data,DWORD size)  override {return 0;};
 	virtual bool IsParsed()  const  override {return true;};
-	//DWORD virtual Serialize(BYTE* data,DWORD size) const {return true;};		
+	//TODO: Implement
+	//virtual DWORD Serialize(BYTE* data,DWORD size) const;	
 	virtual ValueType GetType() const  override {return RecordSet;};
 };
 
