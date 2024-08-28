@@ -18,6 +18,8 @@ public:
 		testSelector();
 
 		testGetLayerIds();
+
+		testVUI();
 	}
 	
 	void testDepacketizer()
@@ -326,6 +328,15 @@ public:
 
 		rtp->Dump();
 		assert(rtp->IsKeyFrame());
+	}
+
+	void testVUI()
+	{
+		const BYTE data [] = { 100, 0, 30, 172, 178, 1, 0, 32, 243, 207, 128, 181, 6, 6, 6, 165, 0, 0, 3, 0, 1, 0, 0, 3, 0, 60, 159, 22, 46, 72 };
+		H264SeqParameterSet decoded;
+		assert(decoded.Decode(data, sizeof(data)));
+		decoded.Dump();
+		// TODO: check contents
 	}
 };
 
