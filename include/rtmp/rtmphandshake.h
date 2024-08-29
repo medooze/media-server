@@ -63,7 +63,7 @@ static void HMACsha256(const uint8_t *message, size_t messageLen, const uint8_t 
 	HMAC_CTX_init(&ctx); 
 	HMAC_Init_ex(&ctx, key, keylen, EVP_sha256(), 0);
 	HMAC_Update(&ctx, message, messageLen);
-	HMAC_Final(&ctx, );
+	HMAC_Final(&ctx, digest, &digestLen);
 	HMAC_CTX_cleanup(&ctx);
 #else
 	HMAC_CTX *ctx = HMAC_CTX_new();
